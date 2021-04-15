@@ -135,14 +135,6 @@ void fem(py::module& m)
       },
       "Create Form from a pointer to ufc_form.");
   m.def(
-      "create_coordinate_map",
-      [](std::uintptr_t cmap) {
-        const ufc_coordinate_mapping* p
-            = reinterpret_cast<const ufc_coordinate_mapping*>(cmap);
-        return dolfinx::fem::create_coordinate_map(*p);
-      },
-      "Create CoordinateElement from a pointer to ufc_coordinate_map.");
-  m.def(
       "build_dofmap",
       [](const MPICommWrapper comm, const dolfinx::mesh::Topology& topology,
          const dolfinx::fem::ElementDofLayout& element_dof_layout) {
@@ -229,6 +221,8 @@ void fem(py::module& m)
   py::class_<dolfinx::fem::CoordinateElement,
              std::shared_ptr<dolfinx::fem::CoordinateElement>>(
       m, "CoordinateElement", "Coordinate map element")
+      .def(py::init<dolfinx::mesh::CellType, int>(), py::arg("celltype"),
+           py::arg("degree"))
       .def_property_readonly("dof_layout",
                              &dolfinx::fem::CoordinateElement::dof_layout)
       .def("push_forward",
@@ -241,8 +235,7 @@ void fem(py::module& m)
              std::copy_n(X.data(), X.size(), _X.data());
              std::copy_n(cell_geometry.data(), cell_geometry.size(),
                          _cell_geometry.data());
-             dolfinx::array2d<double> x(_X.shape[0],
-                                        self.geometric_dimension());
+             dolfinx::array2d<double> x(_X.shape[0], cell_geometry.shape(1));
              xt::xtensor<double, 2> phi
                  = xt::view(self.tabulate(0, _X), 0, xt::all(), xt::all(), 0);
              self.push_forward(x, _cell_geometry, phi);

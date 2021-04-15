@@ -6,7 +6,7 @@
 //
 // Unit tests for Distributed Meshes
 
-#include "cmap.h"
+#include <basix/finite-element.h>
 #include <catch.hpp>
 #include <dolfinx.h>
 #include <dolfinx/common/MPI.h>
@@ -24,10 +24,9 @@ namespace
 void create_mesh_file()
 {
   // Create mesh using all processes and save xdmf
-  auto cmap = fem::create_coordinate_map(*coordinate_mapping_cmap);
   auto mesh = std::make_shared<mesh::Mesh>(generation::RectangleMesh::create(
-      MPI_COMM_WORLD, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 0.0}}}, {32, 32}, cmap,
-      mesh::GhostMode::shared_facet));
+      MPI_COMM_WORLD, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 0.0}}}, {32, 32},
+      mesh::CellType::triangle, mesh::GhostMode::shared_facet));
 
   // Save mesh in XDMF format
   io::XDMFFile file(MPI_COMM_WORLD, "mesh.xdmf", "w");
@@ -54,12 +53,14 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
   MPI_Comm_create_group(MPI_COMM_WORLD, new_group, 0, &subset_comm);
 
   // Create coordinate map
-  auto cmap = fem::create_coordinate_map(*coordinate_mapping_cmap);
+  auto e = std::make_shared<basix::FiniteElement>(
+      basix::create_element("Lagrange", "triangle", 1));
+  fem::CoordinateElement cmap(e);
 
   // read mesh data
   dolfinx::array2d<double> x(0, 3);
   dolfinx::array2d<std::int64_t> cells(
-      0, dolfinx::mesh::num_cell_vertices(cmap.cell_shape()));
+      0, dolfinx::mesh::num_cell_vertices(mesh::CellType::triangle));
   graph::AdjacencyList<std::int32_t> dest(0);
   if (subset_comm != MPI_COMM_NULL)
   {
@@ -68,7 +69,7 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
     cells = infile.read_topology_data("mesh");
     x = infile.read_geometry_data("mesh");
     auto [data, offsets] = graph::create_adjacency_data(cells);
-    const int tdim = mesh::cell_dim(cmap.cell_shape());
+    const int tdim = mesh::cell_dim(mesh::CellType::triangle);
     dest = partitioner(
         subset_comm, nparts, tdim,
         graph::AdjacencyList<std::int64_t>(std::move(data), std::move(offsets)),
