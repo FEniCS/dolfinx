@@ -12,7 +12,6 @@
 #include <algorithm>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/UniqueIdGenerator.h>
-#include <dolfinx/common/span.hpp>
 #include <dolfinx/common/utils.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/partition.h>
@@ -21,6 +20,7 @@
 #include <memory>
 #include <utility>
 #include <vector>
+#include <xtl/xspan.hpp>
 
 namespace dolfinx
 {
@@ -140,7 +140,7 @@ template <typename T>
 mesh::MeshTags<T>
 create_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh, const int dim,
                 const graph::AdjacencyList<std::int32_t>& entities,
-                const tcb::span<const T>& values)
+                const xtl::span<const T>& values)
 {
   assert(mesh);
   if ((std::size_t)entities.num_nodes() != values.size())
