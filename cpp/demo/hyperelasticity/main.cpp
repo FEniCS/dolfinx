@@ -122,11 +122,9 @@ int main(int argc, char* argv[])
     // .. code-block:: cpp
 
     // Create mesh and define function space
-    auto cmap
-        = fem::create_coordinate_map(*coordinate_mapping_hyperelasticity);
     auto mesh = std::make_shared<mesh::Mesh>(generation::BoxMesh::create(
         MPI_COMM_WORLD, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}}}, {10, 10, 10},
-        cmap, mesh::GhostMode::none));
+        mesh::CellType::tetrahedron, mesh::GhostMode::none));
 
     auto V = fem::create_functionspace(
         functionspace_form_hyperelasticity_F, "u", mesh);
