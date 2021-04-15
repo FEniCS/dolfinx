@@ -158,60 +158,39 @@ void CoordinateElement::compute_reference_geometry(
   }
   else
   {
-    std::cout << "should'nt be here";
+    xt::xtensor<double, 1> Xk = xt::empty<double>({tdim});
+    xt::xtensor<double, 1> dX = xt::empty<double>({tdim});
+    for (int ip = 0; ip < num_points; ++ip)
+    {
+      Xk.fill(0);
+      int k;
+      for (k = 0; k < non_affine_max_its; ++k)
+      {
+        xt::xtensor<double, 4> tabulated_data = _element->tabulate(1, Xk);
+        auto phi0 = xt::view(tabulated_data, 0, 0, xt::all(), 0);
+        auto xk = xt::linalg::dot(xt::transpose(cell_geometry), phi0);
+
+        // Compute Jacobian, its inverse and determinant
+        compute_jacobian(tabulated_data, cell_geometry, J);
+        compute_jacobian_inverse(J, K);
+        compute_jacobian_determinant(J, detJ);
+
+        // Calculate X for each point
+        auto K0 = xt::view(K, 0, xt::all(), xt::all());
+        dX = xt::linalg::dot(K0, xt::row(x, ip) - xk);
+
+        if (xt::linalg::norm(dX) < non_affine_atol)
+          break;
+        Xk += dX;
+      }
+      xt::row(X, ip) = Xk;
+      if (k == non_affine_max_its)
+      {
+        throw std::runtime_error(
+            "Newton method failed to converge for non-affine geometry");
+      }
+    }
   }
-  //   // Newton's method for non-affine geometry
-  //   Eigen::Matrix<double, Eigen::Dynamic, 1, Eigen::ColMajor, 3, 1> xk(
-  //       _x.cols());
-  //   Eigen::RowVectorXd Xk(tdim);
-  //   Eigen::RowVectorXd dX(tdim);
-
-  //   for (int ip = 0; ip < num_points; ++ip)
-  //   {
-  //     Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
-  //                              Eigen::RowMajor>>
-  //         Jview(J.data() + ip * gdim * tdim, gdim, tdim);
-  //     Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
-  //                              Eigen::RowMajor>>
-  //         Kview(K.data() + ip * gdim * tdim, tdim, gdim);
-  //     // TODO: Xk - use cell midpoint instead?
-  //     Xk.setZero();
-  //     int k;
-  //     for (k = 0; k < non_affine_max_its; ++k)
-  //     {
-  //       basix::tabulate(_basix_element_handle, tabulated_data.data(), 1,
-  //                       Xk.data(), 1);
-
-  //       // Compute physical coordinates
-  //       xk = tabulated_data.row(0).matrix() * _cell_geometry.matrix();
-
-  //       // Compute Jacobian and inverse
-  //       dphi = tabulated_data.block(1, 0, tdim, d).transpose();
-  //       Jview = _cell_geometry.matrix().transpose() * dphi;
-  //       if (gdim == tdim)
-  //         Kview = Jview.inverse();
-  //       else
-  //         // Penrose-Moore pseudo-inverse
-  //         Kview = (Jview.transpose() * Jview).inverse() * Jview.transpose();
-
-  //       // Increment to new point in reference
-  //       dX = Kview * (_x.row(ip).matrix().transpose() - xk);
-  //       if (dX.norm() < non_affine_atol)
-  //         break;
-  //       Xk += dX;
-  //     }
-  //     if (k == non_affine_max_its)
-  //     {
-  //       throw std::runtime_error(
-  //           "Newton method failed to converge for non-affine geometry");
-  //     }
-  //     _X.row(ip) = Xk;
-  //     if (gdim == tdim)
-  //       detJ[ip] = Jview.determinant();
-  //     else
-  //       detJ[ip] = std::sqrt((Jview.transpose() * Jview).determinant());
-  //   }
-  // }
 }
 //-----------------------------------------------------------------------------
 void CoordinateElement::permute_dofs(tcb::span<std::int32_t> dofs,
