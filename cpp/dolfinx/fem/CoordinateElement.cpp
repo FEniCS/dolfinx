@@ -97,7 +97,7 @@ void CoordinateElement::push_forward(array2d<double>& x,
 }
 //-----------------------------------------------------------------------------
 void CoordinateElement::compute_reference_geometry(
-    array2d<double>& X, std::vector<double>& J, xtl::span<double> detJ,
+    xt::xtensor<double, 2>& X, std::vector<double>& J, xtl::span<double> detJ,
     std::vector<double>& K, const array2d<double>& x,
     const array2d<double>& cell_geometry) const
 {
@@ -106,16 +106,6 @@ void CoordinateElement::compute_reference_geometry(
   if (num_points == 0)
     return;
 
-  Eigen::Map<
-      Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
-      _X(X.data(), X.shape[0], X.shape[1]);
-  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                Eigen::RowMajor>>
-      _x(x.data(), x.shape[0], x.shape[1]);
-  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                Eigen::RowMajor>>
-      _cell_geometry(cell_geometry.data(), cell_geometry.shape[0],
-                     cell_geometry.shape[1]);
 
   // in-argument checks
   const int tdim = this->topological_dimension();
@@ -245,12 +235,20 @@ void CoordinateElement::compute_reference_geometry(
 void CoordinateElement::permute_dofs(tcb::span<std::int32_t> dofs,
                                      const uint32_t cell_perm) const
 {
+  assert(_element);
   _element->permute_dofs(dofs, cell_perm);
 }
 //-----------------------------------------------------------------------------
 void CoordinateElement::unpermute_dofs(tcb::span<std::int32_t> dofs,
                                        const uint32_t cell_perm) const
 {
+  assert(_element);
+  _element->unpermute_dofs(dofs, cell_perm);
+}
+//-----------------------------------------------------------------------------
+bool CoordinateElement::needs_permutation_data() const
+{
+  assert(_element);
   return !_element->dof_transformations_are_identity();
 }
 //-----------------------------------------------------------------------------
