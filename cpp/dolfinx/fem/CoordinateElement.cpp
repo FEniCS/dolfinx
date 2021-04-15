@@ -129,13 +129,12 @@ void CoordinateElement::compute_reference_geometry(
   assert((int)cell_geometry.shape(1) == gdim);
 
   // In/out size checks
-  assert(X.shape(0) == num_points);
-  assert(X.shape(1) == tdim);
+  assert((int)X.shape(0) == num_points);
+  assert((int)X.shape(1) == tdim);
   assert((int)J.size() == num_points * gdim * tdim);
   assert((int)detJ.size() == num_points);
   assert((int)K.size() == num_points * gdim * tdim);
 
-  const int d = cell_geometry.shape(0);
   if (_is_affine)
   {
     // Tabulate shape function and first derivative at the origin

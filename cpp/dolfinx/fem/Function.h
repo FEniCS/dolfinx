@@ -28,6 +28,7 @@
 #include <vector>
 #include <xtensor/xtensor.hpp>
 #include <xtl/xspan.hpp>
+#include <xtensor/xadapt.hpp>
 
 namespace dolfinx::fem
 {
