@@ -40,15 +40,9 @@ nearest_simplex(const xt::xtensor<double, 2>& s)
       return {s, v};
     }
     if (lm < 0.0)
-    {
-      auto _s0 = xt::reshape_view(s0, {1, 3});
-      return {_s0, _s0};
-    }
+      return {xt::reshape_view(s0, {1, 3}), s0};
     else
-    {
-      auto _s1 = xt::reshape_view(s1, {1, 3});
-      return {s1, s1};
-    }
+      return {xt::reshape_view(s1, {1, 3}), s1};
   }
   else if (s.shape(0) == 4)
   {
@@ -79,7 +73,6 @@ nearest_simplex(const xt::xtensor<double, 2>& s)
       }
 
       // The origin projection P faces BCD
-      // auto s_top = xt::view(s, xt::range(0, 3), xt::all());
       return nearest_simplex(xt::view(s, xt::range(0, 3), xt::all()));
     }
 
@@ -201,7 +194,7 @@ geometry::compute_distance_gjk(const xt::xtensor<double, 2>& p,
   assert(p.shape(1) == 3);
   assert(q.shape(1) == 3);
 
-  const int maxk = 10; // Maximum number of iterations of the GJK algorithm
+  constexpr int maxk = 10; // Maximum number of iterations of the GJK algorithm
 
   // Tolerance
   constexpr double eps = 1e-12;
@@ -209,22 +202,25 @@ geometry::compute_distance_gjk(const xt::xtensor<double, 2>& p,
   // Initialise vector and simplex
   xt::xtensor_fixed<double, xt::xshape<3>> v = xt::row(p, 0) - xt::row(q, 0);
   xt::xtensor<double, 2> s({1, 3});
-  s = v;
+  xt::row(s, 0) = v;
 
   // Begin GJK iteration
   int k;
   for (k = 0; k < maxk; ++k)
   {
     // Support function
-    auto w = support(p, -v) - support(q, v);
+    const xt::xtensor_fixed<double, xt::xshape<3>> w
+        = support(p, -v) - support(q, v);
 
     // Break if any existing points are the same as w
+    assert(s.shape(1) == 3);
     std::size_t m;
     for (m = 0; m < s.shape(0); ++m)
     {
       if (s(m, 0) == w[0] and s(m, 1) == w[1] and s(m, 2) == w[2])
         break;
     }
+
     if (m != s.shape(0))
       break;
 
@@ -235,10 +231,12 @@ geometry::compute_distance_gjk(const xt::xtensor<double, 2>& p,
       break;
 
     // Add new vertex to simplex
-    s = xt::vstack(xt::xtuple(s, w));
+    s = xt::vstack(xt::xtuple(s, xt::reshape_view(w, {1, 3})));
+    assert(s.shape(1) == 3);
 
     // Find nearest subset of simplex
     std::tie(s, v) = nearest_simplex(s);
+    assert(s.shape(1) == 3);
 
     // 2nd exit condition - intersecting or touching
     if (xt::norm_sq(v)() < eps * eps)

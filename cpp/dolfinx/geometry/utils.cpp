@@ -316,7 +316,7 @@ double geometry::squared_distance(const mesh::Mesh& mesh, int dim,
 
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
 
-  xt::xtensor_fixed<double, xt::xshape<3>> _p;
+  xt::xtensor_fixed<double, xt::xshape<1, 3>> _p;
   std::copy(p.begin(), p.end(), _p.data());
 
   if (dim == tdim)
