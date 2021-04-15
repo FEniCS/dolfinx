@@ -123,7 +123,7 @@ int main(int argc, char* argv[])
         MPI_COMM_WORLD, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 0.0}}}, {32, 32},
         mesh::CellType::triangle, mesh::GhostMode::none));
 
-    auto V = fem::create_functionspace(create_functionspace_form_poisson_a, "u",
+    auto V = fem::create_functionspace(functionspace_form_poisson_a, "u",
                                        mesh);
 
     // Next, we define the variational formulation by initializing the
@@ -140,10 +140,12 @@ int main(int argc, char* argv[])
     auto g = std::make_shared<fem::Function<PetscScalar>>(V);
 
     // Define variational forms
-    auto a = fem::create_form<PetscScalar>(create_form_poisson_a, {V, V}, {},
-                                           {{"kappa", kappa}}, {});
-    auto L = fem::create_form<PetscScalar>(create_form_poisson_L, {V},
-                                           {{"f", f}, {"g", g}}, {}, {});
+    auto a = std::make_shared<fem::Form<PetscScalar>>(
+        fem::create_form<PetscScalar>(*form_poisson_a, {V, V}, {},
+                                      {{"kappa", kappa}}, {}));
+    auto L = std::make_shared<fem::Form<PetscScalar>>(
+        fem::create_form<PetscScalar>(*form_poisson_L, {V},
+                                      {{"f", f}, {"g", g}}, {}, {}));
 
     // Now, the Dirichlet boundary condition (:math:`u = 0`) can be created
     // using the class :cpp:class:`DirichletBC`. A :cpp:class:`DirichletBC`

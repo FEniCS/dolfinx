@@ -127,14 +127,16 @@ int main(int argc, char* argv[])
         mesh::CellType::tetrahedron, mesh::GhostMode::none));
 
     auto V = fem::create_functionspace(
-        create_functionspace_form_hyperelasticity_F, "u", mesh);
+        functionspace_form_hyperelasticity_F, "u", mesh);
 
     // Define solution function
     auto u = std::make_shared<fem::Function<PetscScalar>>(V);
-    auto a = fem::create_form<PetscScalar>(create_form_hyperelasticity_J,
-                                           {V, V}, {{"u", u}}, {}, {});
-    auto L = fem::create_form<PetscScalar>(create_form_hyperelasticity_F, {V},
-                                           {{"u", u}}, {}, {});
+    auto a = std::make_shared<fem::Form<PetscScalar>>(
+        fem::create_form<PetscScalar>(*form_hyperelasticity_J, {V, V},
+                                      {{"u", u}}, {}, {}));
+    auto L = std::make_shared<fem::Form<PetscScalar>>(
+        fem::create_form<PetscScalar>(*form_hyperelasticity_F, {V}, {{"u", u}},
+                                      {}, {}));
 
     auto u_rotation = std::make_shared<fem::Function<PetscScalar>>(V);
     u_rotation->interpolate([](auto& x) {

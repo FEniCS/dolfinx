@@ -174,8 +174,7 @@ Form<T> create_form(
   for (std::size_t i = 0; i < spaces.size(); ++i)
   {
     assert(spaces[i]->element());
-    std::unique_ptr<ufc_finite_element, decltype(free)*> ufc_element(
-        ufc_form.create_finite_element(i), free);
+    ufc_finite_element* ufc_element = ufc_form.finite_elements[i];
     assert(ufc_element);
     if (std::string(ufc_element->signature)
         != spaces[i]->element()->signature())
@@ -198,17 +197,17 @@ Form<T> create_form(
   bool needs_permutation_data = false;
 
   // Attach cell kernels
-  std::vector<int> cell_integral_ids(ufc_form.num_cell_integrals);
-  ufc_form.get_cell_integral_ids(cell_integral_ids.data());
-  for (int id : cell_integral_ids)
+  std::vector<int> cell_integral_ids(ufc_form.integral_ids(cell),
+                                     ufc_form.integral_ids(cell)
+                                         + ufc_form.num_integrals(cell));
+  for (int i = 0; i < ufc_form.num_integrals(cell); ++i)
   {
-    ufc_integral* integral = ufc_form.create_cell_integral(id);
+    ufc_integral* integral = ufc_form.integrals(cell)[i];
     assert(integral);
     if (integral->needs_transformation_data)
       needs_permutation_data = true;
     integral_data[IntegralType::cell].first.emplace_back(
-        id, integral->tabulate_tensor);
-    std::free(integral);
+        cell_integral_ids[i], integral->tabulate_tensor);
   }
 
   // Attach cell subdomain data
@@ -221,8 +220,8 @@ Form<T> create_form(
   // FIXME: Can facets be handled better?
 
   // Create facets, if required
-  if (ufc_form.num_exterior_facet_integrals > 0
-      or ufc_form.num_interior_facet_integrals > 0)
+  if (ufc_form.num_integrals(exterior_facet) > 0
+      or ufc_form.num_integrals(interior_facet) > 0)
   {
     if (!spaces.empty())
     {
@@ -234,17 +233,17 @@ Form<T> create_form(
 
   // Attach exterior facet kernels
   std::vector<int> exterior_facet_integral_ids(
-      ufc_form.num_exterior_facet_integrals);
-  ufc_form.get_exterior_facet_integral_ids(exterior_facet_integral_ids.data());
-  for (int id : exterior_facet_integral_ids)
+      ufc_form.integral_ids(exterior_facet),
+      ufc_form.integral_ids(exterior_facet)
+          + ufc_form.num_integrals(exterior_facet));
+  for (int i = 0; i < ufc_form.num_integrals(exterior_facet); ++i)
   {
-    ufc_integral* integral = ufc_form.create_exterior_facet_integral(id);
+    ufc_integral* integral = ufc_form.integrals(exterior_facet)[i];
     assert(integral);
     if (integral->needs_transformation_data)
       needs_permutation_data = true;
     integral_data[IntegralType::exterior_facet].first.emplace_back(
-        id, integral->tabulate_tensor);
-    std::free(integral);
+        exterior_facet_integral_ids[i], integral->tabulate_tensor);
   }
 
   // Attach exterior facet subdomain data
@@ -256,17 +255,17 @@ Form<T> create_form(
 
   // Attach interior facet kernels
   std::vector<int> interior_facet_integral_ids(
-      ufc_form.num_interior_facet_integrals);
-  ufc_form.get_interior_facet_integral_ids(interior_facet_integral_ids.data());
-  for (int id : interior_facet_integral_ids)
+      ufc_form.integral_ids(interior_facet),
+      ufc_form.integral_ids(interior_facet)
+          + ufc_form.num_integrals(interior_facet));
+  for (int i = 0; i < ufc_form.num_integrals(interior_facet); ++i)
   {
-    ufc_integral* integral = ufc_form.create_interior_facet_integral(id);
+    ufc_integral* integral = ufc_form.integrals(interior_facet)[i];
     assert(integral);
     if (integral->needs_transformation_data)
       needs_permutation_data = true;
     integral_data[IntegralType::interior_facet].first.emplace_back(
-        id, integral->tabulate_tensor);
-    std::free(integral);
+        interior_facet_integral_ids[i], integral->tabulate_tensor);
   }
 
   // Attach interior facet subdomain data
@@ -274,15 +273,6 @@ Form<T> create_form(
       it != subdomains.end() and !interior_facet_integral_ids.empty())
   {
     integral_data[IntegralType::interior_facet].second = it->second;
-  }
-
-  // Vertex integrals: not currently working
-  std::vector<int> vertex_integral_ids(ufc_form.num_vertex_integrals);
-  ufc_form.get_vertex_integral_ids(vertex_integral_ids.data());
-  if (!vertex_integral_ids.empty())
-  {
-    throw std::runtime_error(
-        "Vertex integrals not supported. Under development.");
   }
 
   return fem::Form(spaces, integral_data, coefficients, constants,

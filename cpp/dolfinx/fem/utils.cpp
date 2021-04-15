@@ -108,14 +108,12 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
   // assumption
 
   // Create UFC subdofmaps and compute offset
-  std::vector<std::shared_ptr<ufc_dofmap>> ufc_sub_dofmaps;
   std::vector<int> offsets(1, 0);
+  std::vector<std::shared_ptr<const fem::ElementDofLayout>> sub_dofmaps;
 
   for (int i = 0; i < dofmap.num_sub_dofmaps; ++i)
   {
-    auto ufc_sub_dofmap
-        = std::shared_ptr<ufc_dofmap>(dofmap.create_sub_dofmap(i), std::free);
-    ufc_sub_dofmaps.push_back(ufc_sub_dofmap);
+    ufc_dofmap* ufc_sub_dofmap = dofmap.sub_dofmaps[i];
     if (element_block_size == 1)
     {
       offsets.push_back(offsets.back()
@@ -124,20 +122,14 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
     }
     else
       offsets.push_back(offsets.back() + 1);
-  }
 
-  std::vector<std::shared_ptr<const fem::ElementDofLayout>> sub_dofmaps;
-  for (std::size_t i = 0; i < ufc_sub_dofmaps.size(); ++i)
-  {
-    auto ufc_sub_dofmap = ufc_sub_dofmaps[i];
-    assert(ufc_sub_dofmap);
     std::vector<int> parent_map_sub(ufc_sub_dofmap->num_element_support_dofs
                                     * ufc_sub_dofmap->block_size);
     for (std::size_t j = 0; j < parent_map_sub.size(); ++j)
       parent_map_sub[j] = offsets[i] + element_block_size * j;
     sub_dofmaps.push_back(
         std::make_shared<fem::ElementDofLayout>(create_element_dof_layout(
-            *ufc_sub_dofmaps[i], cell_type, parent_map_sub)));
+            *ufc_sub_dofmap, cell_type, parent_map_sub)));
   }
 
   // Check for "block structure". This should ultimately be replaced,
@@ -200,15 +192,13 @@ fem::create_functionspace(ufc_function_space* (*fptr)(const char*),
                           std::shared_ptr<mesh::Mesh> mesh)
 {
   ufc_function_space* space = fptr(function_name.c_str());
-  ufc_dofmap* ufc_map = space->create_dofmap();
-  ufc_finite_element* ufc_element = space->create_element();
+  ufc_dofmap* ufc_map = space->dofmap;
+  ufc_finite_element* ufc_element = space->finite_element;
   auto V = std::make_shared<fem::FunctionSpace>(
       mesh, std::make_shared<fem::FiniteElement>(*ufc_element),
       std::make_shared<fem::DofMap>(
           fem::create_dofmap(mesh->mpi_comm(), *ufc_map, mesh->topology())));
-  std::free(ufc_element);
-  std::free(ufc_map);
-  std::free(space);
+
   return V;
 }
 //-----------------------------------------------------------------------------
