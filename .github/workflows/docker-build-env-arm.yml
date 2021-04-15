@@ -41,7 +41,7 @@ jobs:
 
   build_test_env_openmpi:
     name: Build fenicsproject/test-env:openmpi image
-    if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/main' }}
+    #if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/main' }}
     needs: start_runner
     runs-on: ${{ needs.start_runner.outputs.label }}
     env:
@@ -59,7 +59,7 @@ jobs:
 
   build_test_env_mpich:
     name: Build fenicsproject/test-env:mpich image
-    if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/main' }}
+    #if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/main' }}
     needs: start_runner
     runs-on: ${{ needs.start_runner.outputs.label }}
     env:
@@ -77,7 +77,7 @@ jobs:
 
   build_dev_env:
     name: Build dolfinx/dev-env image
-    if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/main' }}
+    #if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/main' }}
     needs: start_runner
     runs-on: ${{ needs.start_runner.outputs.label }}
     env:
