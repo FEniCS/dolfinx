@@ -67,6 +67,9 @@ target_include_directories(dolfinx SYSTEM PRIVATE ${EIGEN3_INCLUDE_DIR})
 
 # xtensor
 target_include_directories(dolfinx SYSTEM PUBLIC ${xtensor_INCLUDE_DIRS})
+target_include_directories(dolfinx SYSTEM PRIVATE ${xtensor_blas_INCLUDE_DIR})
+target_link_libraries(dolfinx PRIVATE ${xtensor_blas_LIBRARY})
+target_link_libraries(dolfinx PRIVATE ${LAPACK_LIBRARIES})
 
 # Boost
 target_link_libraries(dolfinx PUBLIC Boost::headers)
