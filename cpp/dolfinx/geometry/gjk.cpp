@@ -28,7 +28,11 @@ std::pair<xt::xtensor<double, 2>, xt::xtensor_fixed<double, xt::xshape<3>>>
 nearest_simplex(const xt::xtensor<double, 2>& s)
 {
   assert(s.shape(1) == 3);
-  if (s.shape(0) == 2)
+  const std::size_t s_rows = s.shape(0);
+
+  switch (s_rows)
+  {
+  case 2:
   {
     auto s0 = xt::row(s, 0);
     auto s1 = xt::row(s, 1);
@@ -39,12 +43,13 @@ nearest_simplex(const xt::xtensor<double, 2>& s)
       auto v = s0 + lm * (s1 - s0);
       return {s, v};
     }
+
     if (lm < 0.0)
       return {xt::reshape_view(s0, {1, 3}), s0};
     else
       return {xt::reshape_view(s1, {1, 3}), s1};
   }
-  else if (s.shape(0) == 4)
+  case 4:
   {
     auto s0 = xt::row(s, 0);
     auto s1 = xt::row(s, 1);
@@ -67,13 +72,9 @@ nearest_simplex(const xt::xtensor<double, 2>& s)
     if (f_inside[1] and f_inside[2] and f_inside[3])
     {
       if (f_inside[0]) // The origin is inside the tetrahedron
-      {
-        xt::xtensor_fixed<double, xt::xshape<3>> tmp = xt::zeros<double>({3});
-        return {s, tmp};
-      }
-
-      // The origin projection P faces BCD
-      return nearest_simplex(xt::view(s, xt::range(0, 3), xt::all()));
+        return {s, xt::zeros<double>({3})};
+      else // The origin projection P faces BCD
+        return nearest_simplex(xt::view(s, xt::range(0, 3), xt::all()));
     }
 
     // Test ACD, ABD and/or ABC.
@@ -90,7 +91,7 @@ nearest_simplex(const xt::xtensor<double, 2>& s)
         xt::row(M, 1) = xt::row(s, facets[i][1]);
         xt::row(M, 2) = xt::row(s, facets[i][2]);
 
-        auto [snew, v] = nearest_simplex(M);
+        const auto [snew, v] = nearest_simplex(M);
         const double q = xt::norm_sq(v)();
         if (q < qmin)
         {
@@ -100,7 +101,9 @@ nearest_simplex(const xt::xtensor<double, 2>& s)
         }
       }
     }
-    return {std::move(smin), std::move(vmin)};
+
+    return {std::move(smin), vmin};
+  }
   }
 
   assert(s.shape(0) == 3);
@@ -217,14 +220,14 @@ geometry::compute_distance_gjk(const xt::xtensor<double, 2>& p,
     std::size_t m;
     for (m = 0; m < s.shape(0); ++m)
     {
-      if (s(m, 0) == w[0] and s(m, 1) == w[1] and s(m, 2) == w[2])
+      if (xt::row(s, m) == w)
         break;
     }
 
     if (m != s.shape(0))
       break;
 
-    // 1st exit condition (v-w).v = 0
+    // 1st exit condition (v - w).v = 0
     const double vnorm2 = xt::norm_sq(v)();
     const double vw = vnorm2 - xt::sum(v * w)();
     if (vw < (eps * vnorm2) or vw < eps)

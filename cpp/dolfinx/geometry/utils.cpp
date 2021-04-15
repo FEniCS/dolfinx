@@ -322,7 +322,6 @@ double geometry::squared_distance(const mesh::Mesh& mesh, int dim,
   if (dim == tdim)
   {
     auto dofs = x_dofmap.links(index);
-    // array2d<double> nodes(dofs.size(), 3);
     xt::xtensor<double, 2> nodes({dofs.size(), 3});
     for (std::size_t i = 0; i < dofs.size(); ++i)
       for (std::size_t j = 0; j < 3; ++j)
