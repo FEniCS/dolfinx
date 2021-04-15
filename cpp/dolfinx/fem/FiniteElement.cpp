@@ -88,14 +88,13 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
 
   // Fill value dimension
   for (int i = 0; i < ufc_element.value_rank; ++i)
-    _value_dimension.push_back(ufc_element.value_dimension(i));
+    _value_dimension.push_back(ufc_element.value_shape[i]);
 
   // Create all sub-elements
   for (int i = 0; i < ufc_element.num_sub_elements; ++i)
   {
-    ufc_finite_element* ufc_sub_element = ufc_element.create_sub_element(i);
+    ufc_finite_element* ufc_sub_element = ufc_element.sub_elements[i];
     _sub_elements.push_back(std::make_shared<FiniteElement>(*ufc_sub_element));
-    std::free(ufc_sub_element);
   }
 }
 //-----------------------------------------------------------------------------
@@ -201,7 +200,7 @@ void FiniteElement::evaluate_reference_basis_derivatives(
 void FiniteElement::transform_reference_basis(
     std::vector<double>& values, const std::vector<double>& reference_values,
     const array2d<double>& X, const std::vector<double>& J,
-    const tcb::span<const double>& detJ, const std::vector<double>& K) const
+    const xtl::span<const double>& detJ, const std::vector<double>& K) const
 {
   const int num_points = X.shape[0];
   const int scalar_dim = _space_dim / _bs;

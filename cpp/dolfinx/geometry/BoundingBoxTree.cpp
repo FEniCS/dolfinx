@@ -48,7 +48,7 @@ compute_bbox_of_entity(const mesh::Mesh& mesh, int dim, std::int32_t index)
   // FIXME: return of small dynamic array is expensive
   const std::array<std::int32_t, 1> entity = {index};
   array2d vertex_indices = mesh::entities_to_geometry(mesh, dim, entity, false);
-  tcb::span<const int> entity_vertex_indices = vertex_indices.row(0);
+  xtl::span<const int> entity_vertex_indices = vertex_indices.row(0);
 
   std::array<std::array<double, 3>, 2> b;
   std::copy_n(geom_dofs.row(entity_vertex_indices[0]).begin(), 3, b[0].begin());
@@ -70,7 +70,7 @@ compute_bbox_of_entity(const mesh::Mesh& mesh, int dim, std::int32_t index)
 //-----------------------------------------------------------------------------
 // Compute bounding box of bounding boxes
 std::array<std::array<double, 3>, 2> compute_bbox_of_bboxes(
-    const tcb::span<const std::pair<std::array<std::array<double, 3>, 2>,
+    const xtl::span<const std::pair<std::array<std::array<double, 3>, 2>,
                                     std::int32_t>>& leaf_bboxes)
 {
   // Compute min and max over remaining boxes
@@ -91,7 +91,7 @@ std::array<std::array<double, 3>, 2> compute_bbox_of_bboxes(
 }
 //------------------------------------------------------------------------------
 int _build_from_leaf(
-    tcb::span<std::pair<std::array<std::array<double, 3>, 2>, std::int32_t>>
+    xtl::span<std::pair<std::array<std::array<double, 3>, 2>, std::int32_t>>
         leaf_bboxes,
     std::vector<std::array<int, 2>>& bboxes,
     std::vector<double>& bbox_coordinates)
@@ -136,9 +136,9 @@ int _build_from_leaf(
                      });
 
     // Split bounding boxes into two groups and call recursively
-    std::array bbox{_build_from_leaf(tcb::span(leaf_bboxes.begin(), middle),
+    std::array bbox{_build_from_leaf(xtl::span(leaf_bboxes.begin(), middle),
                                      bboxes, bbox_coordinates),
-                    _build_from_leaf(tcb::span(middle, leaf_bboxes.end()),
+                    _build_from_leaf(xtl::span(middle, leaf_bboxes.end()),
                                      bboxes, bbox_coordinates)};
 
     // Store bounding box data. Note that root box will be added last.
@@ -168,7 +168,7 @@ std::pair<std::vector<std::int32_t>, std::vector<double>> build_from_leaf(
 }
 //-----------------------------------------------------------------------------
 int _build_from_point(
-    tcb::span<std::pair<std::array<double, 3>, std::int32_t>> points,
+    xtl::span<std::pair<std::array<double, 3>, std::int32_t>> points,
     std::vector<std::array<std::int32_t, 2>>& bboxes,
     std::vector<double>& bbox_coordinates)
 {
@@ -207,9 +207,9 @@ int _build_from_point(
       });
 
   // Split bounding boxes into two groups and call recursively
-  std::array bbox{_build_from_point(tcb::span(points.begin(), middle), bboxes,
+  std::array bbox{_build_from_point(xtl::span(points.begin(), middle), bboxes,
                                     bbox_coordinates),
-                  _build_from_point(tcb::span(middle, points.end()), bboxes,
+                  _build_from_point(xtl::span(middle, points.end()), bboxes,
                                     bbox_coordinates)};
 
   // Store bounding box data. Note that root box will be added last.
@@ -230,7 +230,7 @@ BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, int tdim,
 }
 //-----------------------------------------------------------------------------
 BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, int tdim,
-                                 const tcb::span<const std::int32_t>& entities,
+                                 const xtl::span<const std::int32_t>& entities,
                                  double padding)
     : _tdim(tdim)
 {
@@ -343,13 +343,11 @@ int BoundingBoxTree::tdim() const { return _tdim; }
 //-----------------------------------------------------------------------------
 void BoundingBoxTree::tree_print(std::stringstream& s, int i) const
 {
-  Eigen::Map<const Eigen::Array<double, 2, 3, Eigen::RowMajor>> bbox(
-      _bbox_coordinates.data() + 6 * i, 2, 3);
   s << "[";
   for (int j = 0; j < 2; ++j)
   {
     for (int k = 0; k < 3; ++k)
-      s << bbox(j, k) << " ";
+      s << _bbox_coordinates[6 * i + j * 3 + k] << " ";
     if (j == 0)
       s << "]->"
         << "[";

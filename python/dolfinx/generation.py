@@ -10,7 +10,7 @@ import typing
 import numpy
 import ufl
 
-from dolfinx import cpp, fem
+from dolfinx import cpp
 
 __all__ = [
     "IntervalMesh", "UnitIntervalMesh", "RectangleMesh", "UnitSquareMesh",
@@ -34,8 +34,7 @@ def IntervalMesh(comm, nx: int, points: list, ghost_mode=cpp.mesh.GhostMode.shar
 
     """
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", "interval", 1))
-    cmap = fem.create_coordinate_map(comm, domain)
-    mesh = cpp.generation.create_interval_mesh(comm, nx, points, cmap, ghost_mode, partitioner)
+    mesh = cpp.generation.create_interval_mesh(comm, nx, points, ghost_mode, partitioner)
     domain._ufl_cargo = mesh
     mesh._ufl_domain = domain
     return mesh
@@ -74,8 +73,7 @@ def RectangleMesh(comm, points: typing.List[numpy.array], n: list, cell_type=cpp
 
     """
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", cpp.mesh.to_string(cell_type), 1))
-    cmap = fem.create_coordinate_map(comm, domain)
-    mesh = cpp.generation.create_rectangle_mesh(comm, points, n, cmap, ghost_mode, partitioner, diagonal)
+    mesh = cpp.generation.create_rectangle_mesh(comm, points, n, cell_type, ghost_mode, partitioner, diagonal)
     domain._ufl_cargo = mesh
     mesh._ufl_domain = domain
     return mesh
@@ -120,8 +118,7 @@ def BoxMesh(comm, points: typing.List[numpy.array], n: list,
 
     """
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", cpp.mesh.to_string(cell_type), 1))
-    cmap = fem.create_coordinate_map(comm, domain)
-    mesh = cpp.generation.create_box_mesh(comm, points, n, cmap, ghost_mode, partitioner)
+    mesh = cpp.generation.create_box_mesh(comm, points, n, cell_type, ghost_mode, partitioner)
     domain._ufl_cargo = mesh
     mesh._ufl_domain = domain
     return mesh
