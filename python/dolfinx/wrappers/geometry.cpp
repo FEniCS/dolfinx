@@ -6,7 +6,6 @@
 
 #include "array.h"
 #include "caster_mpi.h"
-#include <dolfinx/common/span.hpp>
 #include <dolfinx/geometry/BoundingBoxTree.h>
 #include <dolfinx/geometry/gjk.h>
 #include <dolfinx/geometry/utils.h>
@@ -18,6 +17,7 @@
 #include <pybind11/stl.h>
 #include <xtensor/xbuilder.hpp>
 #include <xtensor/xtensor.hpp>
+#include <xtl/xspan.hpp>
 
 namespace py = pybind11;
 
@@ -87,7 +87,9 @@ void geometry(py::module& m)
            const py::array_t<std::int32_t, py::array::c_style>& candidate_cells,
            const std::array<double, 3>& point, int n) {
           return as_pyarray(dolfinx::geometry::select_colliding_cells(
-              mesh, tcb::span(candidate_cells.data(), candidate_cells.size()),
+              mesh,
+              xtl::span<const std::int32_t>(candidate_cells.data(),
+                                            candidate_cells.size()),
               point, n));
         });
 
@@ -102,7 +104,9 @@ void geometry(py::module& m)
                   const py::array_t<std::int32_t, py::array::c_style>& entities,
                   double padding) {
                  return dolfinx::geometry::BoundingBoxTree(
-                     mesh, tdim, tcb::span(entities.data(), entities.size()),
+                     mesh, tdim,
+                     xtl::span<const std::int32_t>(entities.data(),
+                                                   entities.size()),
                      padding);
                }),
            py::arg("mesh"), py::arg("tdim"), py::arg("entity_indices"),

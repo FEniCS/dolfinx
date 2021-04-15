@@ -366,7 +366,7 @@ double geometry::squared_distance(const mesh::Mesh& mesh, int dim,
 //-------------------------------------------------------------------------------
 std::vector<std::int32_t> geometry::select_colliding_cells(
     const mesh::Mesh& mesh,
-    const tcb::span<const std::int32_t>& candidate_cells,
+    const xtl::span<const std::int32_t>& candidate_cells,
     const std::array<double, 3>& p, int n)
 {
   const double eps2 = 1e-20;

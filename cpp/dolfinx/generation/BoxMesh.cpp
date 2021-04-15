@@ -92,7 +92,6 @@ array2d<double> create_geom(MPI_Comm comm,
 mesh::Mesh build_tet(MPI_Comm comm,
                      const std::array<std::array<double, 3>, 2>& p,
                      std::array<std::size_t, 3> n,
-                     const fem::CoordinateElement& element,
                      const mesh::GhostMode ghost_mode,
                      const mesh::CellPartitionFunction& partitioner)
 {
@@ -134,6 +133,7 @@ mesh::Mesh build_tet(MPI_Comm comm,
     xt::view(cells, xt::range(offset, offset + 6), xt::all()) = c;
   }
 
+  fem::CoordinateElement element(mesh::CellType::tetrahedron, 1);
   auto [data, offset] = graph::create_adjacency_data(cells);
   return mesh::create_mesh(
       comm,
@@ -144,7 +144,6 @@ mesh::Mesh build_tet(MPI_Comm comm,
 mesh::Mesh build_hex(MPI_Comm comm,
                      const std::array<std::array<double, 3>, 2>& p,
                      std::array<std::size_t, 3> n,
-                     const fem::CoordinateElement& element,
                      const mesh::GhostMode ghost_mode,
                      const mesh::CellPartitionFunction& partitioner)
 {
@@ -181,6 +180,7 @@ mesh::Mesh build_hex(MPI_Comm comm,
     xt::view(cells, i - range_c[0], xt::all()) = cell;
   }
 
+  fem::CoordinateElement element(mesh::CellType::hexahedron, 1);
   auto [data, offset] = graph::create_adjacency_data(cells);
   return mesh::create_mesh(
       comm,
@@ -195,15 +195,18 @@ mesh::Mesh build_hex(MPI_Comm comm,
 mesh::Mesh BoxMesh::create(MPI_Comm comm,
                            const std::array<std::array<double, 3>, 2>& p,
                            std::array<std::size_t, 3> n,
-                           const fem::CoordinateElement& element,
+                           mesh::CellType celltype,
                            const mesh::GhostMode ghost_mode,
                            const mesh::CellPartitionFunction& partitioner)
 {
-  if (element.cell_shape() == mesh::CellType::tetrahedron)
-    return build_tet(comm, p, n, element, ghost_mode, partitioner);
-  else if (element.cell_shape() == mesh::CellType::hexahedron)
-    return build_hex(comm, p, n, element, ghost_mode, partitioner);
-  else
-    throw std::runtime_error("Generate rectangle mesh. Wrong cell type");
+  switch (celltype)
+  {
+  case mesh::CellType::tetrahedron:
+    return build_tet(comm, p, n, ghost_mode, partitioner);
+  case mesh::CellType::hexahedron:
+    return build_hex(comm, p, n, ghost_mode, partitioner);
+  default:
+    throw std::runtime_error("Generate box mesh. Wrong cell type");
+  }
 }
 //-----------------------------------------------------------------------------
