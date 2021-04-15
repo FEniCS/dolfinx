@@ -134,7 +134,7 @@ nearest_simplex(const xt::xtensor<double, 2>& s)
 
     // Renormalise n in plane of ABC
     v *= xt::sum(v * p) / xt::norm_sq(v);
-    return {std::move(s), std::move(v)};
+    return {std::move(s), v};
   }
 
   // Get closest point
@@ -143,7 +143,7 @@ nearest_simplex(const xt::xtensor<double, 2>& s)
   double qmin = xt::norm_sq(vmin)();
 
   xt::xtensor<double, 2> smin({1, 3});
-  smin = vmin;
+  xt::row(smin, 0) = vmin;
 
   // Check if edges are closer
   constexpr const int f[3][2] = {{0, 1}, {0, 2}, {1, 2}};
@@ -166,7 +166,7 @@ nearest_simplex(const xt::xtensor<double, 2>& s)
     }
   }
 
-  return {std::move(smin), std::move(vmin)};
+  return {std::move(smin), vmin};
 }
 //----------------------------------------------------------------------------
 // Support function, finds point p in bd which maximises p.v
