@@ -51,7 +51,7 @@ void io(py::module& m)
                     std::vector<std::int32_t>>
               e = dolfinx::io::xdmf_utils::extract_local_entities(
                   mesh, entity_dim, _entities,
-                  tcb::span(values.data(), values.size()));
+                  xtl::span(values.data(), values.size()));
           return std::pair(as_pyarray2d(std::move(e.first)),
                            as_pyarray(std::move(e.second)));
         });
