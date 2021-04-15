@@ -35,7 +35,7 @@ jobs:
           mode: start
           github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
           ec2-image-id: ami-0de56e022172321f4
-          ec2-instance-type: t4g.micro
+          ec2-instance-type: cg6.large
           subnet-id: subnet-dc2151b7
           security-group-id: sg-03fc69ee7a6ba8bc4
 
@@ -96,7 +96,9 @@ jobs:
     name: Stop self-hosted EC2 runner
     needs:
       - start_runner # required to get output from the start-runner job
-      - test_job # required to wait when the main job is done
+      - build_test_env_openmpi # required to wait when the main job is done
+      - build_test_env_mpich
+      - build_dev_env
     runs-on: ubuntu-latest
     if: ${{ always() }} # required to stop the runner even if the error happened in the previous jobs
     steps:
