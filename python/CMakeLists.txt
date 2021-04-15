@@ -4,7 +4,6 @@ PROJECT(dolfinx_pybind11)
 
 find_package(Basix REQUIRED)
 find_package(DOLFINX REQUIRED)
-find_package(xtensor REQUIRED)
 
 # Set C++ standard before finding pybind11
 set(CMAKE_CXX_STANDARD 17)
