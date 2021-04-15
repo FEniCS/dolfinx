@@ -50,9 +50,9 @@ public:
   int topological_dimension() const;
 
   /// Compute basis values and derivatives at set of points.
-  /// @param[in] nd The order of derivatives, up to and including, to
+  /// @param[in] n The order of derivatives, up to and including, to
   /// compute. Use 0 for the basis functions only.
-  /// @param[in] x The points at which to compute the basis functions.
+  /// @param[in] X The points at which to compute the basis functions.
   /// The shape of x is (number of points, geometric dimension).
   /// @return The basis functions (and derivatives). The shape is
   /// (derivative, number point, number of basis fn, value size).
