@@ -98,11 +98,9 @@ xt::xtensor<double, 2> create_new_geometry(
   for (auto& e : local_edge_to_new_vertex)
     edges[i++] = e.first;
 
-  const array2d<double> midpoints = mesh::midpoints(mesh, 1, edges);
-  auto _midpoints = xt::adapt(midpoints.data(), midpoints.size(),
-                              xt::no_ownership(), midpoints.shape);
+  const xt::xtensor<double, 2> midpoints = mesh::midpoints(mesh, 1, edges);
   xt::view(new_vertex_coordinates, xt::range(-num_new_vertices, _), xt::all())
-      = _midpoints;
+      = midpoints;
 
   const std::size_t gdim = mesh.geometry().dim();
   std::cout << "Test: " << gdim << ",  " << new_vertex_coordinates.shape(1)

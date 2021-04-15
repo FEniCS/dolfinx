@@ -100,7 +100,7 @@ void mesh(py::module& m)
   m.def("cell_normals",
         [](const dolfinx::mesh::Mesh& mesh, int dim,
            const py::array_t<std::int32_t, py::array::c_style>& entities) {
-          return as_pyarray2d(dolfinx::mesh::cell_normals(
+          return xt_as_pyarray(dolfinx::mesh::cell_normals(
               mesh, dim, xtl::span(entities.data(), entities.size())));
         });
   m.def("get_entity_vertices", &dolfinx::mesh::get_entity_vertices);
@@ -119,7 +119,7 @@ void mesh(py::module& m)
   m.def("midpoints",
         [](const dolfinx::mesh::Mesh& mesh, int dim,
            py::array_t<std::int32_t, py::array::c_style> entity_list) {
-          return as_pyarray2d(dolfinx::mesh::midpoints(
+          return xt_as_pyarray(dolfinx::mesh::midpoints(
               mesh, dim, xtl::span(entity_list.data(), entity_list.size())));
         });
   m.def("compute_boundary_facets", &dolfinx::mesh::compute_boundary_facets);

@@ -99,7 +99,7 @@ std::vector<double> mesh::h(const Mesh& mesh,
   return h_cells;
 }
 //-----------------------------------------------------------------------------
-array2d<double>
+xt::xtensor<double, 2>
 mesh::cell_normals(const mesh::Mesh& mesh, int dim,
                    const xtl::span<const std::int32_t>& entities)
 {
@@ -108,7 +108,7 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
       = mesh::cell_entity_type(mesh.topology().cell_type(), dim);
 
   // Find geometry nodes for topology entities
-  const xt::xtensor<double, 2>& geom_dofs = mesh.geometry().x();
+  const xt::xtensor<double, 2>& xg = mesh.geometry().x();
 
   // Orient cells if they are tetrahedron
   bool orient = false;
@@ -117,21 +117,20 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
   array2d<std::int32_t> geometry_entities
       = entities_to_geometry(mesh, dim, entities, orient);
 
-  const std::int32_t num_entities = entities.size();
-  array2d<double> _n(num_entities, 3);
-  auto n = xt::adapt(_n.data(), _n.size(), xt::no_ownership(), _n.shape);
+  const std::size_t num_entities = entities.size();
+  xt::xtensor<double, 2> n({num_entities, 3});
   switch (type)
   {
   case mesh::CellType::interval:
   {
     if (gdim > 2)
       throw std::invalid_argument("Interval cell normal undefined in 3D");
-    for (int i = 0; i < num_entities; ++i)
+    for (std::size_t i = 0; i < num_entities; ++i)
     {
       // Get the two vertices as points
       auto vertices = geometry_entities.row(i);
-      auto p0 = xt::row(geom_dofs, vertices[0]);
-      auto p1 = xt::row(geom_dofs, vertices[1]);
+      auto p0 = xt::row(xg, vertices[0]);
+      auto p1 = xt::row(xg, vertices[1]);
 
       // Define normal by rotating tangent counter-clockwise
       auto t = p1 - p0;
@@ -141,53 +140,52 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
       ni[2] = 0.0;
       ni /= xt::norm_l2(ni);
     }
-    return _n;
+    return n;
   }
   case mesh::CellType::triangle:
   {
-    for (int i = 0; i < num_entities; ++i)
+    for (std::size_t i = 0; i < num_entities; ++i)
     {
       // Get the three vertices as points
       auto vertices = geometry_entities.row(i);
-      auto p0 = xt::row(geom_dofs, vertices[0]);
-      auto p1 = xt::row(geom_dofs, vertices[1]);
-      auto p2 = xt::row(geom_dofs, vertices[2]);
+      auto p0 = xt::row(xg, vertices[0]);
+      auto p1 = xt::row(xg, vertices[1]);
+      auto p2 = xt::row(xg, vertices[2]);
 
       // Define cell normal via cross product of first two edges
       auto ni = xt::row(n, i);
       ni = xt::linalg::cross((p1 - p0), (p2 - p0));
       ni /= xt::norm_l2(ni);
     }
-    return _n;
+    return n;
   }
   case mesh::CellType::quadrilateral:
   {
     // TODO: check
-    for (int i = 0; i < num_entities; ++i)
+    for (std::size_t i = 0; i < num_entities; ++i)
     {
       // Get three vertices as points
       auto vertices = geometry_entities.row(i);
-      auto p0 = xt::row(geom_dofs, vertices[0]);
-      auto p1 = xt::row(geom_dofs, vertices[1]);
-      auto p2 = xt::row(geom_dofs, vertices[2]);
+      auto p0 = xt::row(xg, vertices[0]);
+      auto p1 = xt::row(xg, vertices[1]);
+      auto p2 = xt::row(xg, vertices[2]);
 
       // Defined cell normal via cross product of first two edges:
       auto ni = xt::row(n, i);
       ni = xt::linalg::cross((p1 - p0), (p2 - p0));
       ni /= xt::norm_l2(ni);
     }
-    return _n;
+    return n;
   }
   default:
     throw std::invalid_argument(
         "cell_normal not supported for this cell type.");
   }
-
-  return array2d<double>(0, 3);
 }
 //-----------------------------------------------------------------------------
-array2d<double> mesh::midpoints(const mesh::Mesh& mesh, int dim,
-                                const xtl::span<const std::int32_t>& entities)
+xt::xtensor<double, 2>
+mesh::midpoints(const mesh::Mesh& mesh, int dim,
+                const xtl::span<const std::int32_t>& entities)
 {
   const xt::xtensor<double, 2>& x = mesh.geometry().x();
 
@@ -196,10 +194,7 @@ array2d<double> mesh::midpoints(const mesh::Mesh& mesh, int dim,
   array2d<std::int32_t> entity_to_geometry
       = entities_to_geometry(mesh, dim, entities, false);
 
-  array2d<double> midpoints(entities.size(), 3);
-  auto x_mid = xt::adapt(midpoints.data(), midpoints.size(), xt::no_ownership(),
-                         midpoints.shape);
-
+  xt::xtensor<double, 2> x_mid({entities.size(), 3});
   for (std::size_t e = 0; e < entity_to_geometry.shape[0]; ++e)
   {
     auto entity_vertices = entity_to_geometry.row(e);
@@ -210,7 +205,7 @@ array2d<double> mesh::midpoints(const mesh::Mesh& mesh, int dim,
     x_e /= entity_vertices.size();
   }
 
-  return midpoints;
+  return x_mid;
 }
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t> mesh::locate_entities(

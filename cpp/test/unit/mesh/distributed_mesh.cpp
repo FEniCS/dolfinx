@@ -58,7 +58,7 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
   fem::CoordinateElement cmap(e);
 
   // read mesh data
-  dolfinx::array2d<double> x(0, 3);
+  xt::xtensor<double, 2> x({0, 3});
   dolfinx::array2d<std::int64_t> cells(
       0, dolfinx::mesh::num_cell_vertices(mesh::CellType::triangle));
   graph::AdjacencyList<std::int32_t> dest(0);
@@ -100,7 +100,7 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
   CHECK(mesh->topology().index_map(0)->size_global() == 1089);
   CHECK(mesh->topology().index_map(0)->size_local() > 0);
 
-  CHECK(mesh->geometry().x().shape[0]
+  CHECK(mesh->geometry().x().shape(0)
         == mesh->topology().index_map(0)->size_local()
                + mesh->topology().index_map(0)->num_ghosts());
 }

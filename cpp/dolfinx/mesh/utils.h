@@ -44,12 +44,13 @@ std::vector<double> h(const Mesh& mesh,
                       const xtl::span<const std::int32_t>& entities, int dim);
 
 /// Compute normal to given cell (viewed as embedded in 3D)
-array2d<double> cell_normals(const Mesh& mesh, int dim,
-                             const xtl::span<const std::int32_t>& entities);
+xt::xtensor<double, 2>
+cell_normals(const Mesh& mesh, int dim,
+             const xtl::span<const std::int32_t>& entities);
 
 /// Compute midpoints or mesh entities of a given dimension
-array2d<double> midpoints(const mesh::Mesh& mesh, int dim,
-                          const xtl::span<const std::int32_t>& entities);
+xt::xtensor<double, 2> midpoints(const mesh::Mesh& mesh, int dim,
+                                 const xtl::span<const std::int32_t>& entities);
 
 /// Compute indicies of all mesh entities that evaluate to true for the
 /// provided geometric marking function. An entity is considered marked
