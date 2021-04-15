@@ -142,17 +142,17 @@ T assemble_cells(
     const array2d<T>& coeffs, const std::vector<T>& constant_values,
     const std::vector<std::uint32_t>& cell_info)
 {
-  const int gdim = geometry.dim();
+  const std::size_t gdim = geometry.dim();
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
 
   // FIXME: Add proper interface for num coordinate dofs
-  const int num_dofs_g = x_dofmap.num_links(0);
-  const array2d<double>& x_g = geometry.x();
+  const std::size_t num_dofs_g = x_dofmap.num_links(0);
+  const xt::xtensor<double, 2>& x_g = geometry.x();
 
   // Create data structures used in assembly
-  std::vector<double> coordinate_dofs(num_dofs_g * gdim);
+  xt::xtensor<double, 2> coordinate_dofs({num_dofs_g, gdim});
 
   // Iterate over all cells
   T value(0);
@@ -160,11 +160,7 @@ T assemble_cells(
   {
     // Get cell coordinates/geometry
     auto x_dofs = x_dofmap.links(c);
-    for (std::size_t i = 0; i < x_dofs.size(); ++i)
-    {
-      std::copy_n(x_g.row(x_dofs[i]).data(), gdim,
-                  std::next(coordinate_dofs.begin(), i * gdim));
-    }
+    coordinate_dofs = xt::view(x_g, xt::keep(x_dofs), xt::range(0, gdim));
 
     auto coeff_cell = coeffs.row(c);
     fn(&value, coeff_cell.data(), constant_values.data(),
@@ -183,18 +179,18 @@ T assemble_exterior_facets(
     const std::vector<std::uint32_t>& cell_info,
     const std::vector<std::uint8_t>& perms)
 {
-  const int gdim = mesh.geometry().dim();
+  const std::size_t gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
 
   // FIXME: Add proper interface for num coordinate dofs
-  const int num_dofs_g = x_dofmap.num_links(0);
-  const array2d<double>& x_g = mesh.geometry().x();
+  const std::size_t num_dofs_g = x_dofmap.num_links(0);
+  const xt::xtensor<double, 2>& x_g = mesh.geometry().x();
 
   // Creat data structures used in assembly
-  std::vector<double> coordinate_dofs(num_dofs_g * gdim);
+  xt::xtensor<double, 2> coordinate_dofs({num_dofs_g, gdim});
 
   auto f_to_c = mesh.topology().connectivity(tdim - 1, tdim);
   assert(f_to_c);
@@ -217,11 +213,7 @@ T assemble_exterior_facets(
 
     // Get cell coordinates/geometry
     auto x_dofs = x_dofmap.links(cell);
-    for (std::size_t i = 0; i < x_dofs.size(); ++i)
-    {
-      std::copy_n(x_g.row(x_dofs[i]).data(), gdim,
-                  std::next(coordinate_dofs.begin(), i * gdim));
-    }
+    coordinate_dofs = xt::view(x_g, xt::keep(x_dofs), xt::range(0, gdim));
 
     auto coeff_cell = coeffs.row(cell);
     fn(&value, coeff_cell.data(), constant_values.data(),
@@ -242,18 +234,18 @@ T assemble_interior_facets(
     const std::vector<std::uint32_t>& cell_info,
     const std::vector<std::uint8_t>& perms)
 {
-  const int gdim = mesh.geometry().dim();
+  const std::size_t gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
 
   // FIXME: Add proper interface for num coordinate dofs
-  const int num_dofs_g = x_dofmap.num_links(0);
-  const array2d<double>& x_g = mesh.geometry().x();
+  const std::size_t num_dofs_g = x_dofmap.num_links(0);
+  const xt::xtensor<double, 2>& x_g = mesh.geometry().x();
 
   // Creat data structures used in assembly
-  std::vector<double> coordinate_dofs(2 * num_dofs_g * gdim);
+  xt::xtensor<double, 3> coordinate_dofs({2, num_dofs_g, gdim});
   std::vector<T> coeff_array(2 * offsets.back());
   assert(offsets.back() == coeffs.shape[1]);
 
@@ -264,7 +256,6 @@ T assemble_interior_facets(
 
   // Iterate over all facets
   T value = 0;
-  const int offset_g = gdim * num_dofs_g;
   for (std::int32_t f : active_facets)
   {
     // Create attached cell
@@ -286,14 +277,10 @@ T assemble_interior_facets(
     // Get cell geometry
     auto x_dofs0 = x_dofmap.links(cells[0]);
     auto x_dofs1 = x_dofmap.links(cells[1]);
-    for (int i = 0; i < num_dofs_g; ++i)
-    {
-      for (int j = 0; j < gdim; ++j)
-      {
-        coordinate_dofs[i * gdim + j] = x_g(x_dofs0[i], j);
-        coordinate_dofs[offset_g + i * gdim + j] = x_g(x_dofs1[i], j);
-      }
-    }
+    xt::view(coordinate_dofs, 0, xt::all(), xt::all())
+        = xt::view(x_g, xt::keep(x_dofs0), xt::range(0, gdim));
+    xt::view(coordinate_dofs, 1, xt::all(), xt::all())
+        = xt::view(x_g, xt::keep(x_dofs1), xt::range(0, gdim));
 
     // Layout for the restricted coefficients is flattened
     // w[coefficient][restriction][dof]

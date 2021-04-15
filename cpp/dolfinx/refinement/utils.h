@@ -59,7 +59,7 @@ void update_logical_edgefunction(
 /// @param[in] mesh Existing mesh
 /// @param[in] marked_edges
 /// @return edge_to_new_vertex map and geometry array
-std::pair<std::map<std::int32_t, std::int64_t>, array2d<double>>
+std::pair<std::map<std::int32_t, std::int64_t>, xt::xtensor<double, 2>>
 create_new_vertices(
     const MPI_Comm& neighbor_comm,
     const std::map<std::int32_t, std::vector<std::int32_t>>& shared_edges,
@@ -75,7 +75,7 @@ create_new_vertices(
 /// @return New mesh
 mesh::Mesh partition(const mesh::Mesh& old_mesh,
                      const graph::AdjacencyList<std::int64_t>& cell_topology,
-                     const array2d<double>& new_vertex_coordinates,
+                     const xt::xtensor<double, 2>& new_vertex_coordinates,
                      bool redistribute, mesh::GhostMode ghost_mode);
 
 /// Adjust indices to account for extra n values on each process This

@@ -277,7 +277,7 @@ void interpolate(
         = mesh->geometry().dofmap();
     // FIXME: Add proper interface for num coordinate dofs
     const int num_dofs_g = x_dofmap.num_links(0);
-    const array2d<double>& x_g = mesh->geometry().x();
+    const xt::xtensor<double, 2>& x_g = mesh->geometry().x();
 
     // Create data structures for Jacobian info
     array2d<double> x_cell(X.shape[0], gdim);

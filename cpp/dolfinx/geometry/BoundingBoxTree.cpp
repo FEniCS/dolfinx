@@ -41,7 +41,7 @@ compute_bbox_of_entity(const mesh::Mesh& mesh, int dim, std::int32_t index)
 {
   // Get the geometrical indices for the mesh entity
   const int tdim = mesh.topology().dim();
-  const array2d<double>& geom_dofs = mesh.geometry().x();
+  const xt::xtensor<double, 2>& xg = mesh.geometry().x();
 
   mesh.topology_mutable().create_connectivity(dim, tdim);
 
@@ -51,7 +51,8 @@ compute_bbox_of_entity(const mesh::Mesh& mesh, int dim, std::int32_t index)
   xtl::span<const int> entity_vertex_indices = vertex_indices.row(0);
 
   std::array<std::array<double, 3>, 2> b;
-  std::copy_n(geom_dofs.row(entity_vertex_indices[0]).begin(), 3, b[0].begin());
+  b[0] = {xg(entity_vertex_indices[0], 0), xg(entity_vertex_indices[0], 1),
+          xg(entity_vertex_indices[0], 2)};
   b[1] = b[0];
 
   // Compute min and max over remaining vertices
@@ -60,8 +61,8 @@ compute_bbox_of_entity(const mesh::Mesh& mesh, int dim, std::int32_t index)
     const int local_vertex = entity_vertex_indices[i];
     for (int j = 0; j < 3; ++j)
     {
-      b[0][j] = std::min(b[0][j], geom_dofs(local_vertex, j));
-      b[1][j] = std::max(b[1][j], geom_dofs(local_vertex, j));
+      b[0][j] = std::min(b[0][j], xg(local_vertex, j));
+      b[1][j] = std::max(b[1][j], xg(local_vertex, j));
     }
   }
 

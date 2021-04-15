@@ -51,12 +51,13 @@ std::vector<Scalar> _get_point_data_values(const fem::Function<Scalar>& u)
 {
   std::shared_ptr<const mesh::Mesh> mesh = u.function_space()->mesh();
   assert(mesh);
-  const array2d<Scalar> data_values = u.compute_point_values();
+  const xt::xtensor<Scalar, 2> data_values = u.compute_point_values();
 
   const int width = get_padded_width(*u.function_space()->element());
   assert(mesh->geometry().index_map());
-  const int num_local_points = mesh->geometry().index_map()->size_local();
-  assert((int)data_values.shape[0] >= num_local_points);
+  const std::size_t num_local_points
+      = mesh->geometry().index_map()->size_local();
+  assert(data_values.shape(0) >= num_local_points);
 
   // FIXME: Unpick the below code for the new layout of data from
   //        GenericFunction::compute_vertex_values
@@ -66,7 +67,7 @@ std::vector<Scalar> _get_point_data_values(const fem::Function<Scalar>& u)
   {
     // Transpose vector/tensor data arrays
     const int value_size = u.function_space()->element()->value_size();
-    for (int i = 0; i < num_local_points; i++)
+    for (std::size_t i = 0; i < num_local_points; i++)
     {
       for (int j = 0; j < value_size; j++)
       {
@@ -80,7 +81,7 @@ std::vector<Scalar> _get_point_data_values(const fem::Function<Scalar>& u)
   {
     _data_values = std::vector<Scalar>(
         data_values.data(),
-        data_values.data() + num_local_points * data_values.shape[1]);
+        data_values.data() + num_local_points * data_values.shape(1));
   }
 
   return _data_values;

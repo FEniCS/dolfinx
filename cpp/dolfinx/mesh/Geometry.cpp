@@ -28,9 +28,9 @@ std::shared_ptr<const common::IndexMap> Geometry::index_map() const
   return _index_map;
 }
 //-----------------------------------------------------------------------------
-array2d<double>& Geometry::x() { return _x; }
+xt::xtensor<double, 2>& Geometry::x() { return _x; }
 //-----------------------------------------------------------------------------
-const array2d<double>& Geometry::x() const { return _x; }
+const xt::xtensor<double, 2>& Geometry::x() const { return _x; }
 //-----------------------------------------------------------------------------
 const fem::CoordinateElement& Geometry::cmap() const { return _cmap; }
 //-----------------------------------------------------------------------------
@@ -45,14 +45,17 @@ mesh::Geometry
 mesh::create_geometry(MPI_Comm comm, const Topology& topology,
                       const fem::CoordinateElement& coordinate_element,
                       const graph::AdjacencyList<std::int64_t>& cell_nodes,
-                      const array2d<double>& x)
+                      const xt::xtensor<double, 2>& x)
 {
+  std::cout << "Start geo" << std::endl;
   // TODO: make sure required entities are initialised, or extend
   // fem::build_dofmap_data
 
   //  Build 'geometry' dofmap on the topology
   auto [dof_index_map, bs, dofmap]
       = fem::build_dofmap_data(comm, topology, coordinate_element.dof_layout());
+
+  std::cout << "Start geo 2" << std::endl;
 
   // If the mesh has higher order geometry, permute the dofmap
   if (coordinate_element.needs_permutation_data())
@@ -67,6 +70,8 @@ mesh::create_geometry(MPI_Comm comm, const Topology& topology,
                                         cell_info[cell]);
   }
 
+  std::cout << "Start geo 3" << std::endl;
+
   // Build list of unique (global) node indices from adjacency list
   // (geometry nodes)
   std::vector<std::int64_t> indices = cell_nodes.array();
@@ -75,8 +80,10 @@ mesh::create_geometry(MPI_Comm comm, const Topology& topology,
 
   //  Fetch node coordinates by global index from other ranks. Order of
   //  coords matches order of the indices in 'indices'
-  array2d<double> coords
+  xt::xtensor<double, 2> coords
       = graph::build::distribute_data<double>(comm, indices, x);
+
+  std::cout << "Start geo 4" << std::endl;
 
   // Compute local-to-global map from local indices in dofmap to the
   // corresponding global indices in cell_nodes
@@ -88,18 +95,22 @@ mesh::create_geometry(MPI_Comm comm, const Topology& topology,
   // coords
   std::vector l2l = graph::build::compute_local_to_local(l2g, indices);
 
+  std::cout << "Start geo 5" << std::endl;
+
   // Build coordinate dof array
-  array2d<double> xg(coords.shape[0], coords.shape[1]);
+  xt::xtensor<double, 2> xg({coords.shape(0), coords.shape(1)});
 
   // Allocate space for input global indices
   std::vector<std::int64_t> igi(indices.size());
 
-  for (std::size_t i = 0; i < coords.shape[0]; ++i)
+  for (std::size_t i = 0; i < coords.shape(0); ++i)
   {
-    for (std::size_t j = 0; j < coords.shape[1]; ++j)
+    for (std::size_t j = 0; j < coords.shape(1); ++j)
       xg(i, j) = coords(l2l[i], j);
     igi[i] = indices[l2l[i]];
   }
+
+  std::cout << "Start geo 6" << std::endl;
 
   // If the mesh has higher order geometry, permute the dofmap
   if (coordinate_element.needs_permutation_data())
@@ -113,6 +124,8 @@ mesh::create_geometry(MPI_Comm comm, const Topology& topology,
       coordinate_element.permute_dofs(dofmap.links(cell).data(),
                                       cell_info[cell]);
   }
+
+  std::cout << "Start geo 7" << std::endl;
 
   return Geometry(dof_index_map, std::move(dofmap), coordinate_element,
                   std::move(xg), std::move(igi));

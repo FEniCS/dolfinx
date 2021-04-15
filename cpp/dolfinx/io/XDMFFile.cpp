@@ -227,16 +227,15 @@ mesh::Mesh XDMFFile::read_mesh(const fem::CoordinateElement& element,
 {
   // Read mesh data
   const array2d<std::int64_t> cells = XDMFFile::read_topology_data(name, xpath);
-  const auto x = XDMFFile::read_geometry_data(name, xpath);
+  const xt::xtensor<double, 2> x = XDMFFile::read_geometry_data(name, xpath);
 
   // Create mesh
   auto [data, offset] = graph::create_adjacency_data(cells);
   graph::AdjacencyList<std::int64_t> cells_adj(std::move(data),
                                                std::move(offset));
 
-  array2d<double> x_vec(x);
   mesh::Mesh mesh
-      = mesh::create_mesh(_mpi_comm.comm(), cells_adj, element, x_vec, mode);
+      = mesh::create_mesh(_mpi_comm.comm(), cells_adj, element, x, mode);
   mesh.name = name;
   return mesh;
 }
@@ -258,8 +257,9 @@ XDMFFile::read_topology_data(const std::string name,
   return xdmf_mesh::read_topology_data(_mpi_comm.comm(), _h5_id, grid_node);
 }
 //-----------------------------------------------------------------------------
-array2d<double> XDMFFile::read_geometry_data(const std::string name,
-                                             const std::string xpath) const
+xt::xtensor<double, 2>
+XDMFFile::read_geometry_data(const std::string name,
+                             const std::string xpath) const
 {
   pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
   if (!node)

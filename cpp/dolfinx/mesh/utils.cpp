@@ -72,7 +72,7 @@ std::vector<double> mesh::h(const Mesh& mesh,
   // Get geometry dofmap and dofs
   const mesh::Geometry& geometry = mesh.geometry();
   const graph::AdjacencyList<std::int32_t>& x_dofs = geometry.dofmap();
-  const array2d<double>& geom_dofs = geometry.x();
+  const xt::xtensor<double, 2>& geom_dofs = geometry.x();
   std::vector<double> h_cells(entities.size(), 0);
   assert(num_vertices <= 8);
   xt::xtensor_fixed<double, xt::xshape<8, 3>> points;
@@ -108,9 +108,7 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
       = mesh::cell_entity_type(mesh.topology().cell_type(), dim);
 
   // Find geometry nodes for topology entities
-  auto geom_dofs
-      = xt::adapt(mesh.geometry().x().data(), mesh.geometry().x().size(),
-                  xt::no_ownership(), mesh.geometry().x().shape);
+  const xt::xtensor<double, 2>& geom_dofs = mesh.geometry().x();
 
   // Orient cells if they are tetrahedron
   bool orient = false;
@@ -191,9 +189,7 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
 array2d<double> mesh::midpoints(const mesh::Mesh& mesh, int dim,
                                 const xtl::span<const std::int32_t>& entities)
 {
-  // FIXME: Use eigen map for now
-  auto x = xt::adapt(mesh.geometry().x().data(), mesh.geometry().x().size(),
-                     xt::no_ownership(), mesh.geometry().x().shape);
+  const xt::xtensor<double, 2>& x = mesh.geometry().x();
 
   // Build map from entity -> geometry dof
   // FIXME: This assumes a linear geometry.
@@ -246,7 +242,7 @@ std::vector<std::int32_t> mesh::locate_entities(
   }
 
   // Pack coordinates of vertices
-  const array2d<double>& x_nodes = mesh.geometry().x();
+  const xt::xtensor<double, 2>& x_nodes = mesh.geometry().x();
   array2d<double> x_vertices(3, vertex_to_node.size());
   for (std::size_t i = 0; i < vertex_to_node.size(); ++i)
     for (std::size_t j = 0; j < 3; ++j)
@@ -326,10 +322,7 @@ std::vector<std::int32_t> mesh::locate_entities_boundary(
 
   // Get geometry data
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
-
-  auto x_nodes
-      = xt::adapt(mesh.geometry().x().data(), mesh.geometry().x().size(),
-                  xt::no_ownership(), mesh.geometry().x().shape);
+  const xt::xtensor<double, 2>& x_nodes = mesh.geometry().x();
 
   // Build vector of boundary vertices
   const std::vector<std::int32_t> vertices(boundary_vertices.begin(),
@@ -409,7 +402,7 @@ mesh::entities_to_geometry(const mesh::Mesh& mesh, int dim,
     throw std::runtime_error("Can only orient facets of a tetrahedral mesh");
 
   const mesh::Geometry& geometry = mesh.geometry();
-  const array2d<double>& geom_dofs = geometry.x();
+  const xt::xtensor<double, 2>& geom_dofs = geometry.x();
   const mesh::Topology& topology = mesh.topology();
 
   const int tdim = topology.dim();
@@ -450,10 +443,9 @@ mesh::entities_to_geometry(const mesh::Mesh& mesh, int dim,
       midpoint /= xc.size();
 
       // Compute vector triple product of two edges and vector to midpoint
-      xt::xtensor_fixed<double, xt::xshape<3>> p0, p1, p2;
-      std::copy_n(geom_dofs.row(entity_geometry(i, 0)).begin(), 3, p0.data());
-      std::copy_n(geom_dofs.row(entity_geometry(i, 1)).begin(), 3, p1.data());
-      std::copy_n(geom_dofs.row(entity_geometry(i, 2)).begin(), 3, p2.data());
+      auto p0 = xt::row(geom_dofs, entity_geometry(i, 0));
+      auto p1 = xt::row(geom_dofs, entity_geometry(i, 1));
+      auto p2 = xt::row(geom_dofs, entity_geometry(i, 2));
 
       xt::xtensor_fixed<double, xt::xshape<3, 3>> a;
       xt::row(a, 0) = midpoint - p0;
