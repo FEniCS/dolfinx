@@ -47,15 +47,12 @@ mesh::create_geometry(MPI_Comm comm, const Topology& topology,
                       const graph::AdjacencyList<std::int64_t>& cell_nodes,
                       const xt::xtensor<double, 2>& x)
 {
-  std::cout << "Start geo" << std::endl;
   // TODO: make sure required entities are initialised, or extend
   // fem::build_dofmap_data
 
   //  Build 'geometry' dofmap on the topology
   auto [dof_index_map, bs, dofmap]
       = fem::build_dofmap_data(comm, topology, coordinate_element.dof_layout());
-
-  std::cout << "Start geo 2" << std::endl;
 
   // If the mesh has higher order geometry, permute the dofmap
   if (coordinate_element.needs_permutation_data())
@@ -70,8 +67,6 @@ mesh::create_geometry(MPI_Comm comm, const Topology& topology,
                                         cell_info[cell]);
   }
 
-  std::cout << "Start geo 3" << std::endl;
-
   // Build list of unique (global) node indices from adjacency list
   // (geometry nodes)
   std::vector<std::int64_t> indices = cell_nodes.array();
@@ -83,8 +78,6 @@ mesh::create_geometry(MPI_Comm comm, const Topology& topology,
   xt::xtensor<double, 2> coords
       = graph::build::distribute_data<double>(comm, indices, x);
 
-  std::cout << "Start geo 4" << std::endl;
-
   // Compute local-to-global map from local indices in dofmap to the
   // corresponding global indices in cell_nodes
   std::vector l2g
@@ -94,8 +87,6 @@ mesh::create_geometry(MPI_Comm comm, const Topology& topology,
   // local-to-global for dofs and (ii) local-to-global for entries in
   // coords
   std::vector l2l = graph::build::compute_local_to_local(l2g, indices);
-
-  std::cout << "Start geo 5" << std::endl;
 
   // Build coordinate dof array
   xt::xtensor<double, 2> xg({coords.shape(0), coords.shape(1)});
@@ -110,8 +101,6 @@ mesh::create_geometry(MPI_Comm comm, const Topology& topology,
     igi[i] = indices[l2l[i]];
   }
 
-  std::cout << "Start geo 6" << std::endl;
-
   // If the mesh has higher order geometry, permute the dofmap
   if (coordinate_element.needs_permutation_data())
   {
@@ -124,8 +113,6 @@ mesh::create_geometry(MPI_Comm comm, const Topology& topology,
       coordinate_element.permute_dofs(dofmap.links(cell).data(),
                                       cell_info[cell]);
   }
-
-  std::cout << "Start geo 7" << std::endl;
 
   return Geometry(dof_index_map, std::move(dofmap), coordinate_element,
                   std::move(xg), std::move(igi));

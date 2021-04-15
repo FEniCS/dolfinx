@@ -26,6 +26,7 @@
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
+#include <xtensor/xadapt.hpp>
 #include <xtl/xspan.hpp>
 
 namespace py = pybind11;
@@ -153,8 +154,9 @@ void mesh(py::module& m)
               };
 
         const std::size_t shape1 = x.ndim() == 1 ? 1 : x.shape()[1];
-        dolfinx::array2d<double> _x(x.shape()[0], shape1);
-        std::copy_n(x.data(), x.size(), _x.data());
+        std::array<std::size_t, 2> shape
+            = {static_cast<std::size_t>(x.shape(0)), shape1};
+        auto _x = xt::adapt(x.data(), x.size(), xt::no_ownership(), shape);
         return dolfinx::mesh::create_mesh(comm.get(), cells, element, _x,
                                           ghost_mode, partitioner_wrapper);
       },
@@ -182,17 +184,22 @@ void mesh(py::module& m)
             assert(x.ndim() <= 2);
             if (x.ndim() == 1)
             {
-              dolfinx::array2d<double> _x(x.shape()[0], 1);
-              std::copy(x.data(), x.data() + x.size(), _x.data());
-              return dolfinx::mesh::Geometry(map, dofmap, element,
-                                             std::move(_x), std::move(indices));
+              std::array<std::size_t, 2> shape
+                  = {static_cast<std::size_t>(x.shape(1)), 1};
+              auto _x
+                  = xt::adapt(x.data(), x.size(), xt::no_ownership(), shape);
+              return dolfinx::mesh::Geometry(map, dofmap, element, _x,
+                                             std::move(indices));
             }
             else
             {
-              dolfinx::array2d<double> _x(x.shape()[0], x.shape()[1]);
-              std::copy(x.data(), x.data() + x.size(), _x.data());
-              return dolfinx::mesh::Geometry(map, dofmap, element,
-                                             std::move(_x), std::move(indices));
+              std::array<std::size_t, 2> shape
+                  = {static_cast<std::size_t>(x.shape(0)),
+                     static_cast<std::size_t>(x.shape(1))};
+              auto _x
+                  = xt::adapt(x.data(), x.size(), xt::no_ownership(), shape);
+              return dolfinx::mesh::Geometry(map, dofmap, element, _x,
+                                             std::move(indices));
             }
           }))
       .def_property_readonly("dim", &dolfinx::mesh::Geometry::dim,
@@ -202,9 +209,8 @@ void mesh(py::module& m)
       .def_property_readonly(
           "x",
           [](const dolfinx::mesh::Geometry& self) {
-            const dolfinx::array2d<double>& x = self.x();
-            return py::array_t<double>(x.shape, x.strides(), x.data(),
-                                       py::cast(self));
+            const xt::xtensor<double, 2>& x = self.x();
+            return py::array_t<double>(x.shape(), x.data(), py::cast(self));
           },
           "Return coordinates of all geometry points. Each row is the "
           "coordinate of a point.")

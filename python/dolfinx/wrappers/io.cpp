@@ -45,11 +45,10 @@ void io(py::module& m)
            const py::array_t<std::int64_t, py::array::c_style>& entities,
            const py::array_t<std::int32_t, py::array::c_style>& values) {
           dolfinx::array2d<std::int64_t> _entities(entities.shape()[0],
-                                                           entities.shape()[1]);
+                                                   entities.shape()[1]);
           std::copy_n(entities.data(), entities.size(), _entities.data());
-          std::pair<dolfinx::array2d<std::int32_t>,
-                    std::vector<std::int32_t>>
-              e = dolfinx::io::xdmf_utils::extract_local_entities(
+          std::pair<dolfinx::array2d<std::int32_t>, std::vector<std::int32_t>> e
+              = dolfinx::io::xdmf_utils::extract_local_entities(
                   mesh, entity_dim, _entities,
                   xtl::span(values.data(), values.size()));
           return std::pair(as_pyarray2d(std::move(e.first)),
@@ -96,7 +95,7 @@ void io(py::module& m)
           "read_geometry_data",
           [](dolfinx::io::XDMFFile& self, const std::string& name,
              const std::string& xpath) {
-            return as_pyarray2d(self.read_geometry_data(name, xpath));
+            return xt_as_pyarray(self.read_geometry_data(name, xpath));
           },
           py::arg("name") = "mesh", py::arg("xpath") = "/Xdmf/Domain")
       .def("read_geometry_data", &dolfinx::io::XDMFFile::read_geometry_data,

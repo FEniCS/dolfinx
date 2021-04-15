@@ -649,9 +649,18 @@ void fem(py::module& m)
              const py::array_t<std::int32_t, py::array::c_style>& cells,
              py::array_t<PetscScalar, py::array::c_style>& u) {
             // TODO: handle 1d case
-            dolfinx::array2d<double> _x(x.shape()[0], x.shape()[1]);
-            std::copy_n(x.data(), x.size(), _x.data());
-            dolfinx::array2d<PetscScalar> _u(u.shape()[0], u.shape()[1]);
+
+            std::array<std::size_t, 2> shape_x
+                = {static_cast<std::size_t>(x.shape(0)),
+                   static_cast<std::size_t>(x.shape(1))};
+            auto _x
+                = xt::adapt(x.data(), x.size(), xt::no_ownership(), shape_x);
+
+            std::array<std::size_t, 2> shape_u
+                = {static_cast<std::size_t>(u.shape(0)),
+                   static_cast<std::size_t>(u.shape(1))};
+            xt::xtensor<double, 2> _u = xt::adapt(u.mutable_data(), u.size(),
+                                                  xt::no_ownership(), shape_u);
             self.eval(_x, xtl::span(cells.data(), cells.size()), _u);
             std::copy_n(_u.data(), _u.size(), u.mutable_data());
           },
@@ -660,7 +669,7 @@ void fem(py::module& m)
       .def(
           "compute_point_values",
           [](const dolfinx::fem::Function<PetscScalar>& self) {
-            return as_pyarray2d(self.compute_point_values());
+            return xt_as_pyarray(self.compute_point_values());
           },
           "Compute values at all mesh points")
       .def_property_readonly(

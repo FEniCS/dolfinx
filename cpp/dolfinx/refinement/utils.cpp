@@ -105,6 +105,8 @@ xt::xtensor<double, 2> create_new_geometry(
       = _midpoints;
 
   const std::size_t gdim = mesh.geometry().dim();
+  std::cout << "Test: " << gdim << ",  " << new_vertex_coordinates.shape(1)
+            << std::endl;
   xt::xtensor<double, 2> x({new_vertex_coordinates.shape(0), gdim});
   for (std::size_t i = 0; i < x.shape(0); ++i)
     for (std::size_t j = 0; j < x.shape(1); ++j)
