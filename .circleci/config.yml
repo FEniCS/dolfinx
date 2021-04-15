@@ -86,7 +86,7 @@ demos-python-mpi: &demos-python-mpi
     python3 -m pytest -n=2 -v -m mpi test.py --num-proc=3
 
 set-jit-defaults: &set-jit-defaults
-  name: Set default DOLFINX JIT parameters
+  name: Set default DOLFINx JIT parameters
   command: |
     mkdir -p ~/.config/dolfinx
     echo '{ "cffi_extra_compile_args" : ["-g0", "-O0" ] }' > ~/.config/dolfinx/dolfinx_jit_parameters.json

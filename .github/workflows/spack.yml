@@ -54,7 +54,7 @@ jobs:
           spack add fenics-dolfinx
           spack -v install
 
-      - name: Get DOLFIN-X code (to access test files)
+      - name: Get DOLFINx code (to access test files)
         uses: actions/checkout@v2
         with:
           path: ./dolfinx-test

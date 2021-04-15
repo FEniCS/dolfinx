@@ -1,6 +1,6 @@
 name: Docker end-user images
 
-# Builds images with dolfinx and all of the required FEniCS Project
+# Builds images with DOLFINx and all of the required FEniCS Project
 # components nightly.
 
 on:
@@ -15,7 +15,7 @@ on:
 
 jobs:
   build_end_user_images:
-    name: Build dolfinx end-user images
+    name: Build DOLFINx end-user images
     if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-20.04
     env:
@@ -48,7 +48,7 @@ jobs:
       - name: Set default FFCX parameters
         run: |
           echo '{ }' > dolfinx/docker/ffcx_parameters.json
-      - name: Set default DOLFINX JIT parameters
+      - name: Set default DOLFINx JIT parameters
         run: |
           echo '{ "cffi_extra_compile_args" : ["-O2", "-march=sandybridge" ]}' > dolfinx/docker/dolfinx_jit_parameters.json
       - name: Build the Docker images
