@@ -35,7 +35,7 @@ jobs:
           mode: start
           github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
           ec2-image-id: ami-0de56e022172321f4
-          ec2-instance-type: cg6.large
+          ec2-instance-type: c6g.large
           subnet-id: subnet-dc2151b7
           security-group-id: sg-03fc69ee7a6ba8bc4
 
@@ -78,6 +78,7 @@ jobs:
   build_dev_env:
     name: Build dolfinx/dev-env image
     if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/main' }}
+    needs: start_runner
     runs-on: ${{ needs.start_runner.outputs.label }}
     env:
       PETSC_SLEPC_OPTFLAGS: "-O2 -march=sandybridge"
