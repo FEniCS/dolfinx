@@ -253,7 +253,7 @@ compute_nonlocal_dual_graph(
   MPI_Allreduce(&num_vertices_local, &num_vertices_per_facet, 1, MPI_INT32_T,
                 MPI_MAX, comm);
 
-  LOG(INFO) << "nv per facet=" << num_vertices_per_facet << "\n";
+  LOG(INFO) << "nv per facet=" << num_vertices_per_facet;
 
   // At this stage facet_cell map only contains facets->cells with edge
   // facets either interprocess or external boundaries

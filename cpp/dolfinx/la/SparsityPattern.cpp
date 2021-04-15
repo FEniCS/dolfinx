@@ -382,8 +382,7 @@ void SparsityPattern::assemble()
   // Column map increased due to received rows from other processes (see
   // above)
   LOG(INFO) << "Column ghost size increased from "
-            << _index_maps[1]->ghosts().size() << " to " << _col_ghosts.size()
-            << "\n";
+            << _index_maps[1]->ghosts().size() << " to " << _col_ghosts.size();
 
   _off_diagonal = std::make_shared<graph::AdjacencyList<std::int32_t>>(
       std::move(adj_data_off), std::move(adj_offsets_off));
