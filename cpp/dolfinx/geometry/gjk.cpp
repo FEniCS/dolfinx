@@ -27,22 +27,28 @@ namespace
 std::pair<xt::xtensor<double, 2>, xt::xtensor_fixed<double, xt::xshape<3>>>
 nearest_simplex(const xt::xtensor<double, 2>& s)
 {
+  assert(s.shape(1) == 3);
   if (s.shape(0) == 2)
   {
     auto s0 = xt::row(s, 0);
     auto s1 = xt::row(s, 1);
-    auto ab = s1 - s0;
-    const double lm = -xt::norm_sq(s0 * ab)() / xt::norm_sq(ab)();
+    const double lm = -xt::sum(s0 * (s1 - s0))() / xt::norm_sq(s1 - s0)();
     if (lm >= 0.0 and lm <= 1.0)
     {
       // The origin is between A and B
-      auto v = s0 + lm * ab;
-      return {xt::view(s, xt::range(0, 2), xt::all()), v};
+      auto v = s0 + lm * (s1 - s0);
+      return {s, v};
     }
     if (lm < 0.0)
-      return {s0, s0};
+    {
+      auto _s0 = xt::reshape_view(s0, {1, 3});
+      return {_s0, _s0};
+    }
     else
+    {
+      auto _s1 = xt::reshape_view(s1, {1, 3});
       return {s1, s1};
+    }
   }
   else if (s.shape(0) == 4)
   {
@@ -50,12 +56,9 @@ nearest_simplex(const xt::xtensor<double, 2>& s)
     auto s1 = xt::row(s, 1);
     auto s2 = xt::row(s, 2);
     auto s3 = xt::row(s, 3);
-
     auto W1 = xt::linalg::cross(s0, s1);
     auto W2 = xt::linalg::cross(s2, s3);
 
-    // xt::xtensor_fixed<double, xt::xshape<4>> B
-    //     = {s2 * W1, -s3 * W1, s0 * W2, -s1 * W2};
     xt::xtensor_fixed<double, xt::xshape<4>> B;
     B[0] = xt::sum(s2 * W1)();
     B[1] = -xt::sum(s3 * W1)();
@@ -76,8 +79,8 @@ nearest_simplex(const xt::xtensor<double, 2>& s)
       }
 
       // The origin projection P faces BCD
-      auto s_top = xt::view(s, xt::range(0, 3), xt::all());
-      return nearest_simplex(s_top);
+      // auto s_top = xt::view(s, xt::range(0, 3), xt::all());
+      return nearest_simplex(xt::view(s, xt::range(0, 3), xt::all()));
     }
 
     // Test ACD, ABD and/or ABC.
