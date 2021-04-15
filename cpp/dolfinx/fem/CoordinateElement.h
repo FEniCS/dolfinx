@@ -91,7 +91,7 @@ public:
   /// coordinates x
   void compute_reference_geometry(
       xt::xtensor<double, 2>& X, xt::xtensor<double, 3>& J,
-      xt::xtensor<double, 1> detJ, xt::xtensor<double, 3>& K,
+      xt::xtensor<double, 1>& detJ, xt::xtensor<double, 3>& K,
       const xt::xtensor<double, 2>& x,
       const xt::xtensor<double, 2>& cell_geometry) const;
 
