@@ -89,11 +89,11 @@ public:
 
   /// Compute reference coordinates X, and J, detJ and K for physical
   /// coordinates x
-  void compute_reference_geometry(array2d<double>& X, std::vector<double>& J,
-                                  xtl::span<double> detJ,
-                                  std::vector<double>& K,
-                                  const array2d<double>& x,
-                                  const array2d<double>& cell_geometry) const;
+  void compute_reference_geometry(
+      xt::xtensor<double, 2>& X, xt::xtensor<double, 3>& J,
+      xt::xtensor<double, 1> detJ, xt::xtensor<double, 3>& K,
+      const xt::xtensor<double, 2>& x,
+      const xt::xtensor<double, 2>& cell_geometry) const;
 
   /// Permutes a list of DOF numbers on a cell
   void permute_dofs(tcb::span<std::int32_t> dofs,

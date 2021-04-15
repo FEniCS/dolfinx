@@ -15,6 +15,22 @@
 using namespace dolfinx;
 using namespace dolfinx::fem;
 
+namespace
+{
+// Computes the determinant of rectangular matrices
+// det(AT * A) = det(A) * det(A)
+double compute_determinant(xt::xtensor<double, 2>& A)
+{
+  if (A.shape(0) == A.shape(1))
+    return xt::linalg::det(A);
+  else
+  {
+    auto ATA = xt::linalg::dot(xt::transpose(A), A);
+    return std::sqrt(xt::linalg::det(ATA));
+  }
+}
+} // namespace
+
 //-----------------------------------------------------------------------------
 CoordinateElement::CoordinateElement(
     std::shared_ptr<basix::FiniteElement> element)
@@ -97,139 +113,105 @@ void CoordinateElement::push_forward(array2d<double>& x,
 }
 //-----------------------------------------------------------------------------
 void CoordinateElement::compute_reference_geometry(
-    xt::xtensor<double, 2>& X, std::vector<double>& J, xtl::span<double> detJ,
-    std::vector<double>& K, const array2d<double>& x,
-    const array2d<double>& cell_geometry) const
+    xt::xtensor<double, 2>& X, xt::xtensor<double, 3>& J,
+    xt::xtensor<double, 1> detJ, xt::xtensor<double, 3>& K,
+    const xt::xtensor<double, 2>& x,
+    const xt::xtensor<double, 2>& cell_geometry) const
 {
   // Number of points
-  int num_points = x.shape[0];
+  int num_points = x.shape(0);
   if (num_points == 0)
     return;
 
-
   // in-argument checks
   const int tdim = this->topological_dimension();
-  const int gdim = _x.cols();
-  assert(_cell_geometry.cols() == gdim);
+  const int gdim = x.shape(1);
+  assert((int)cell_geometry.shape(1) == gdim);
 
   // In/out size checks
-  assert(_X.rows() == num_points);
-  assert(_X.cols() == tdim);
+  assert(X.shape(0) == num_points);
+  assert(X.shape(1) == tdim);
   assert((int)J.size() == num_points * gdim * tdim);
   assert((int)detJ.size() == num_points);
   assert((int)K.size() == num_points * gdim * tdim);
 
-  // FIXME: Array and matrix rows/cols transpose etc all very tortuous
-  // FIXME: tidy up and sort out
-
-  const int d = _cell_geometry.rows();
-  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> dphi(
-      d, tdim);
-
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      tabulated_data(tdim + 1, _cell_geometry.rows());
-
+  const int d = cell_geometry.shape(0);
   if (_is_affine)
   {
-    Eigen::Matrix<double, Eigen::Dynamic, 1, Eigen::ColMajor, 3, 1> x0(gdim);
-    Eigen::ArrayXXd X0 = Eigen::ArrayXXd::Zero(1, tdim);
+    // Tabulate shape function and first derivative at the origin
+    xt::xtensor<double, 2> X0 = xt::zeros<double>({1, tdim});
+    xt::xtensor<double, 4> tabulated_data = _element->tabulate(1, X0);
 
-    basix::tabulate(_basix_element_handle, tabulated_data.data(), 1, X0.data(),
-                    1);
+    // Compute Jacobian, its inverse and determinant
+    compute_jacobian(tabulated_data, cell_geometry, J);
+    compute_jacobian_inverse(J, K);
+    compute_jacobian_determinant(J, detJ);
 
-    // Compute physical coordinates at X=0.
-    x0 = tabulated_data.row(0).matrix() * _cell_geometry.matrix();
-
-    // Compute Jacobian and inverse
-    dphi = tabulated_data.block(1, 0, tdim, d).transpose();
-    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor, 3, 3>
-        J0(gdim, tdim);
-    J0 = _cell_geometry.matrix().transpose() * dphi;
-    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor, 3, 3>
-        K0(tdim, gdim);
-
-    // Fill result for J, K and detJ
-    if (gdim == tdim)
-    {
-      K0 = J0.inverse();
-      std::fill(detJ.begin(), detJ.end(), J0.determinant());
-    }
-    else
-    {
-      // Penrose-Moore pseudo-inverse
-      K0 = (J0.transpose() * J0).inverse() * J0.transpose();
-      // detJ.fill(std::sqrt((J0.transpose() * J0).determinant()));
-      std::fill(detJ.begin(), detJ.end(),
-                std::sqrt((J0.transpose() * J0).determinant()));
-    }
-
-    Eigen::Map<
-        Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
-        Jview(J.data(), gdim * num_points, tdim);
-    Jview = J0.replicate(num_points, 1);
-    Eigen::Map<
-        Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
-        Kview(K.data(), tdim * num_points, gdim);
-    Kview = K0.replicate(num_points, 1);
+    // Compute physical coordinates at X=0 (phi(X) * cell_geom).
+    auto phi0 = xt::view(tabulated_data, 0, 0, xt::all(), 0);
+    auto x0 = xt::linalg::dot(xt::transpose(cell_geometry), phi0);
 
     // Calculate X for each point
+    auto K0 = xt::view(K, 0, xt::all(), xt::all());
     for (int ip = 0; ip < num_points; ++ip)
-      _X.row(ip) = K0 * (_x.row(ip).matrix().transpose() - x0);
+      xt::row(X, ip) = xt::linalg::dot(K0, xt::row(x, ip) - x0);
   }
   else
   {
-    // Newton's method for non-affine geometry
-    Eigen::Matrix<double, Eigen::Dynamic, 1, Eigen::ColMajor, 3, 1> xk(
-        _x.cols());
-    Eigen::RowVectorXd Xk(tdim);
-    Eigen::RowVectorXd dX(tdim);
-
-    for (int ip = 0; ip < num_points; ++ip)
-    {
-      Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
-                               Eigen::RowMajor>>
-          Jview(J.data() + ip * gdim * tdim, gdim, tdim);
-      Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
-                               Eigen::RowMajor>>
-          Kview(K.data() + ip * gdim * tdim, tdim, gdim);
-      // TODO: Xk - use cell midpoint instead?
-      Xk.setZero();
-      int k;
-      for (k = 0; k < non_affine_max_its; ++k)
-      {
-        basix::tabulate(_basix_element_handle, tabulated_data.data(), 1,
-                        Xk.data(), 1);
-
-        // Compute physical coordinates
-        xk = tabulated_data.row(0).matrix() * _cell_geometry.matrix();
-
-        // Compute Jacobian and inverse
-        dphi = tabulated_data.block(1, 0, tdim, d).transpose();
-        Jview = _cell_geometry.matrix().transpose() * dphi;
-        if (gdim == tdim)
-          Kview = Jview.inverse();
-        else
-          // Penrose-Moore pseudo-inverse
-          Kview = (Jview.transpose() * Jview).inverse() * Jview.transpose();
-
-        // Increment to new point in reference
-        dX = Kview * (_x.row(ip).matrix().transpose() - xk);
-        if (dX.norm() < non_affine_atol)
-          break;
-        Xk += dX;
-      }
-      if (k == non_affine_max_its)
-      {
-        throw std::runtime_error(
-            "Newton method failed to converge for non-affine geometry");
-      }
-      _X.row(ip) = Xk;
-      if (gdim == tdim)
-        detJ[ip] = Jview.determinant();
-      else
-        detJ[ip] = std::sqrt((Jview.transpose() * Jview).determinant());
-    }
+    std::cout << "should'nt be here";
   }
+  //   // Newton's method for non-affine geometry
+  //   Eigen::Matrix<double, Eigen::Dynamic, 1, Eigen::ColMajor, 3, 1> xk(
+  //       _x.cols());
+  //   Eigen::RowVectorXd Xk(tdim);
+  //   Eigen::RowVectorXd dX(tdim);
+
+  //   for (int ip = 0; ip < num_points; ++ip)
+  //   {
+  //     Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
+  //                              Eigen::RowMajor>>
+  //         Jview(J.data() + ip * gdim * tdim, gdim, tdim);
+  //     Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
+  //                              Eigen::RowMajor>>
+  //         Kview(K.data() + ip * gdim * tdim, tdim, gdim);
+  //     // TODO: Xk - use cell midpoint instead?
+  //     Xk.setZero();
+  //     int k;
+  //     for (k = 0; k < non_affine_max_its; ++k)
+  //     {
+  //       basix::tabulate(_basix_element_handle, tabulated_data.data(), 1,
+  //                       Xk.data(), 1);
+
+  //       // Compute physical coordinates
+  //       xk = tabulated_data.row(0).matrix() * _cell_geometry.matrix();
+
+  //       // Compute Jacobian and inverse
+  //       dphi = tabulated_data.block(1, 0, tdim, d).transpose();
+  //       Jview = _cell_geometry.matrix().transpose() * dphi;
+  //       if (gdim == tdim)
+  //         Kview = Jview.inverse();
+  //       else
+  //         // Penrose-Moore pseudo-inverse
+  //         Kview = (Jview.transpose() * Jview).inverse() * Jview.transpose();
+
+  //       // Increment to new point in reference
+  //       dX = Kview * (_x.row(ip).matrix().transpose() - xk);
+  //       if (dX.norm() < non_affine_atol)
+  //         break;
+  //       Xk += dX;
+  //     }
+  //     if (k == non_affine_max_its)
+  //     {
+  //       throw std::runtime_error(
+  //           "Newton method failed to converge for non-affine geometry");
+  //     }
+  //     _X.row(ip) = Xk;
+  //     if (gdim == tdim)
+  //       detJ[ip] = Jview.determinant();
+  //     else
+  //       detJ[ip] = std::sqrt((Jview.transpose() * Jview).determinant());
+  //   }
+  // }
 }
 //-----------------------------------------------------------------------------
 void CoordinateElement::permute_dofs(tcb::span<std::int32_t> dofs,
@@ -306,7 +288,7 @@ void CoordinateElement::compute_jacobian_inverse(
 
   int num_points = J.shape(0);
   const int gdim = J.shape(1);
-  const int tdim = K.shape(2);
+  const int tdim = K.shape(1);
 
   xt::xtensor<double, 2> K0 = xt::empty<double>({tdim, gdim});
   xt::xtensor<double, 2> J0 = xt::empty<double>({gdim, tdim});
@@ -315,7 +297,9 @@ void CoordinateElement::compute_jacobian_inverse(
   {
     J0 = xt::view(J, 0, xt::all(), xt::all());
     if (gdim == tdim)
+    {
       K0 = xt::linalg::inv(J0);
+    }
     else
       K0 = xt::linalg::pinv(J0);
     K = xt::broadcast(K0, K.shape());
@@ -344,15 +328,17 @@ void CoordinateElement::compute_jacobian_determinant(
 
   if (_is_affine)
   {
-    auto J0 = xt::view(J, 0, xt::all(), xt::all());
-    Jdet.fill(xt::linalg::det(J0));
+    xt::xtensor<double, 2> J0 = xt::view(J, 0, xt::all(), xt::all());
+    double det = compute_determinant(J0);
+    Jdet.fill(det);
   }
   else
   {
     for (int ip = 0; ip < num_points; ip++)
     {
-      auto Jip = xt::view(J, ip, xt::all(), xt::all());
-      Jdet[ip] = xt::linalg::det(Jip);
+      xt::xtensor<double, 2> Jip = xt::view(J, ip, xt::all(), xt::all());
+      double det = compute_determinant(Jip);
+      Jdet[ip] = det;
     }
   }
 }

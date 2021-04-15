@@ -290,7 +290,7 @@ public:
 
     // Prepare geometry data structures
     std::vector<double> J(gdim * tdim);
-    std::array<double, 1> detJ;
+    std::vector<double> detJ(1);
     std::vector<double> K(tdim * gdim);
     array2d<double> X(1, tdim);
 
@@ -335,7 +335,16 @@ public:
         xp(0, j) = x(p, j);
 
       // Compute reference coordinates X, and J, detJ and K
-      cmap.compute_reference_geometry(X, J, detJ, K, xp, coordinate_dofs);
+      xt::xtensor<double, 2> Xview = xt::adapt(X.data(), X.shape);
+      xt::xtensor<double, 3> Jview = xt::adapt(J.data(), {1, gdim, tdim});
+      xt::xtensor<double, 3> Kview = xt::adapt(K.data(), {1, tdim, gdim});
+      xt::xtensor<double, 1> detJview = xt::adapt(detJ.data(), {1});
+      xt::xtensor<double, 2> xpview = xt::adapt(xp.data(), xp.shape);
+      xt::xtensor<double, 2> coord_view
+          = xt::adapt(coordinate_dofs.data(), coordinate_dofs.shape);
+      
+      cmap.compute_reference_geometry(Xview, Jview, detJview, Kview, xpview,
+                                      coord_view);
 
       // Compute basis on reference element
       element->evaluate_reference_basis(basis_reference_values, X);
