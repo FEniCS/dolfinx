@@ -136,12 +136,6 @@ set_package_properties(Boost PROPERTIES TYPE REQUIRED
   DESCRIPTION "Boost C++ libraries"
   URL "http://www.boost.org")
 
-# Check for required package Eigen3
-find_package(Eigen3 3.2.90 REQUIRED)
-set_package_properties(Eigen3 PROPERTIES TYPE REQUIRED
-  DESCRIPTION "Lightweight C++ template library for linear algebra"
-  URL "http://eigen.tuxfamily.org")
-
 # Check for required package xtensor
 find_package(xtensor REQUIRED)
 set_package_properties(xtensor PROPERTIES TYPE REQUIRED
