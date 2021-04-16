@@ -227,7 +227,7 @@ def _(A: PETSc.Mat,
     if _a.function_spaces[0].id == _a.function_spaces[1].id:
         A.assemblyBegin(PETSc.Mat.AssemblyType.FLUSH)
         A.assemblyEnd(PETSc.Mat.AssemblyType.FLUSH)
-        cpp.fem.set_diagonal(A, _a.function_spaces[0], bcs, diagonal)
+        cpp.fem.insert_diagonal(A, _a.function_spaces[0], bcs, diagonal)
     return A
 
 
@@ -325,7 +325,7 @@ def _(A: PETSc.Mat,
             if a_sub is not None:
                 Asub = A.getLocalSubMatrix(is_rows[i], is_cols[j])
                 if a_sub.function_spaces[0].id == a_sub.function_spaces[1].id:
-                    cpp.fem.set_diagonal(Asub, a_sub.function_spaces[0], bcs, diagonal)
+                    cpp.fem.insert_diagonal(Asub, a_sub.function_spaces[0], bcs, diagonal)
                 A.restoreLocalSubMatrix(is_rows[i], is_cols[j], Asub)
 
     return A

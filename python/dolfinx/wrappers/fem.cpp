@@ -337,7 +337,7 @@ void fem(py::module& m)
                   a.function_spaces()[1]->dofmap()->bs(), ADD_VALUES),
               a, rows0, rows1);
         });
-  m.def("set_diagonal",
+  m.def("insert_diagonal",
         [](Mat A, const dolfinx::fem::FunctionSpace& V,
            const std::vector<std::shared_ptr<
                const dolfinx::fem::DirichletBC<PetscScalar>>>& bcs,
