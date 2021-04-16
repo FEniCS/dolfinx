@@ -56,23 +56,28 @@ void eval(array2d<T>& values, const fem::Expression<T>& e,
 
   // Create data structures used in evaluation
   const std::size_t gdim = mesh->geometry().dim();
-  xt::xtensor<double, 2> coordinate_dofs({num_dofs_g, gdim});
+  std::vector<double> coordinate_dofs(num_dofs_g * gdim);
 
   // Iterate over cells and 'assemble' into values
   std::vector<T> values_e(e.num_points() * e.value_size(), 0);
-  for (std::size_t i = 0; i < active_cells.size(); ++i)
+  for (std::size_t c = 0; c < active_cells.size(); ++c)
   {
-    const std::int32_t c = active_cells[i];
-    auto x_dofs = x_dofmap.links(c);
-    coordinate_dofs = xt::view(x_g, xt::keep(x_dofs), xt::range(0, gdim));
+    const std::int32_t cell = active_cells[i];
 
-    auto coeff_cell = coeffs.row(c);
+    auto x_dofs = x_dofmap.links(c);
+    for (std::size_t i = 0; i < x_dofs.size(); ++i)
+    {
+      std::copy_n(xt::row(x_g, x_dofs[i]).begin(), gdim,
+                  std::next(coordinate_dofs.begin(), i * gdim));
+    }
+
+    auto coeff_cell = coeffs.row(cell);
     std::fill(values_e.begin(), values_e.end(), 0.0);
     fn(values_e.data(), coeff_cell.data(), constant_values.data(),
        coordinate_dofs.data());
 
     for (std::size_t j = 0; j < values_e.size(); ++j)
-      values(i, j) = values_e[j];
+      values(c, j) = values_e[j];
   }
 }
 

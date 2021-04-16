@@ -93,8 +93,11 @@ mesh::create_geometry(MPI_Comm comm, const Topology& topology,
   // Build coordinate dof array,  copying coordinates to correct
   // position
   xt::xtensor<double, 2> xg({coords.shape(0), coords.shape(1)});
-  xt::view(xg, xt::all(), xt::all())
-      = xt::view(coords, xt::keep(l2l), xt::all());
+  for (std::size_t i = 0; i < coords.shape(0); ++i)
+  {
+    auto row = xt::view(coords, l2l[i]);
+    std::copy(row.cbegin(), row.cend(), xt::row(xg, i).begin());
+  }
 
   // Allocate space for input global indices and copy data
   std::vector<std::int64_t> igi(indices.size());
