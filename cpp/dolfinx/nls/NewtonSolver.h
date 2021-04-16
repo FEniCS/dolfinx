@@ -33,6 +33,8 @@ class NewtonSolver
 public:
   /// Create nonlinear solver
   /// @param[in] comm The MPI communicator for the solver
+  /// @param[in] solver_type The linear solver to use (defaults to LU)
+  /// @param[in] pc_type The preconditioner to use
   explicit NewtonSolver(MPI_Comm comm,
                         const std::string solver_type = "preonly",
                         const std::string pc_type = "lu");
