@@ -582,10 +582,10 @@ xdmf_utils::extract_local_entities(const mesh::Mesh& mesh, const int entity_dim,
     }
   }
 
-  std::array<std::size_t, 2> shaoe = {
+  std::array<std::size_t, 2> shape_r = {
       entities_new.size() / num_vertices_per_entity, num_vertices_per_entity};
   auto e_new = xt::adapt(entities_new.data(), entities_new.size(),
-                         xt::no_ownership(), shape);
+                         xt::no_ownership(), shape_r);
   return {e_new, values_new};
 }
 //-----------------------------------------------------------------------------
