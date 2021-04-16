@@ -9,7 +9,6 @@
 #include "MeshTags.h"
 #include "cell_types.h"
 #include "graphbuild.h"
-#include <Eigen/Dense>
 #include <algorithm>
 #include <cfloat>
 #include <cstdlib>
@@ -191,7 +190,6 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
 array2d<double> mesh::midpoints(const mesh::Mesh& mesh, int dim,
                                 const xtl::span<const std::int32_t>& entities)
 {
-  // FIXME: Use eigen map for now
   auto x = xt::adapt(mesh.geometry().x().data(), mesh.geometry().x().size(),
                      xt::no_ownership(), mesh.geometry().x().shape);
 
