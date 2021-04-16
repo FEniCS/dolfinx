@@ -612,12 +612,12 @@ void assemble_cells(
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
 
   // FIXME: Add proper interface for num coordinate dofs
-  const std::size_t num_dofs_g = x_dofmap.num_links(0);
+  const int num_dofs_g = x_dofmap.num_links(0);
   const xt::xtensor<double, 2>& x_g = geometry.x();
 
   // FIXME: Add proper interface for num_dofs
   // Create data structures used in assembly
-  const std::size_t num_dofs = dofmap.links(0).size();
+  const int num_dofs = dofmap.links(0).size();
   std::vector<double> coordinate_dofs(num_dofs_g * gdim);
   std::vector<T> be(bs * num_dofs);
 
