@@ -9,12 +9,12 @@
 #include "ElementDofLayout.h"
 #include <cstdint>
 #include <dolfinx/common/array2d.h>
-#include <dolfinx/common/span.hpp>
 #include <dolfinx/mesh/cell_types.h>
 #include <functional>
 #include <memory>
 #include <string>
 #include <xtensor/xtensor.hpp>
+#include <xtl/xspan.hpp>
 
 namespace basix
 {
@@ -30,21 +30,17 @@ namespace dolfinx::fem
 class CoordinateElement
 {
 public:
-  /// Create a coordinate element
-  /// @param[in] element Element from basix
-  /// @param[in] geometric_dimension Geometric dimension
-  /// @param[in] signature Signature string description of coordinate map
-  /// @param[in] dof_layout Layout of the geometry degrees-of-freedom
-  CoordinateElement(std::shared_ptr<basix::FiniteElement> element,
-                    int geometric_dimension, const std::string& signature,
-                    const ElementDofLayout& dof_layout);
+  /// Create a coordinate element from a Basix element
+  /// @param[in] element Element from Basix
+  explicit CoordinateElement(std::shared_ptr<basix::FiniteElement> element);
+
+  /// Create a Lagrage coordinate element
+  /// @param[in] celltype The cell shape
+  /// @param[in] degree Polynomial degree of the map
+  CoordinateElement(mesh::CellType celltype, int degree);
 
   /// Destructor
   virtual ~CoordinateElement() = default;
-
-  /// String identifying the finite element
-  /// @return The signature
-  std::string signature() const;
 
   /// Cell shape
   /// @return The cell shape
@@ -52,9 +48,6 @@ public:
 
   /// Return the topological dimension of the cell shape
   int topological_dimension() const;
-
-  /// Return the geometric dimension of the cell shape
-  int geometric_dimension() const;
 
   /// Tabulate shape functions up to n-th order derivative at points X in the
   /// reference geometry
@@ -66,11 +59,11 @@ public:
   void compute_jacobian_data(const xt::xtensor<double, 4>& tabulated_data,
                              const array2d<double>& X,
                              const array2d<double>& cell_geometry,
-                             std::vector<double>& J, tcb::span<double> detJ,
+                             std::vector<double>& J, xtl::span<double> detJ,
                              std::vector<double>& K) const;
 
   /// Return the dof layout
-  const ElementDofLayout& dof_layout() const;
+  ElementDofLayout dof_layout() const;
 
   /// Absolute increment stopping criterium for non-affine Newton solver
   double non_affine_atol = 1.0e-8;
@@ -89,31 +82,22 @@ public:
   /// Compute reference coordinates X, and J, detJ and K for physical
   /// coordinates x
   void compute_reference_geometry(array2d<double>& X, std::vector<double>& J,
-                                  tcb::span<double> detJ,
+                                  xtl::span<double> detJ,
                                   std::vector<double>& K,
                                   const array2d<double>& x,
                                   const array2d<double>& cell_geometry) const;
 
   /// Permutes a list of DOF numbers on a cell
-  void permute_dofs(std::int32_t* dofs, const uint32_t cell_perm) const;
+  void permute_dofs(std::int32_t* dofs, std::uint32_t cell_perm) const;
 
   /// Reverses a DOF permutation
-  void unpermute_dofs(std::int32_t* dofs, const uint32_t cell_perm) const;
+  void unpermute_dofs(std::int32_t* dofs, std::uint32_t cell_perm) const;
 
   /// Indicates whether the coordinate map needs permutation data
   /// passing in (for higher order geometries)
   bool needs_permutation_data() const;
 
 private:
-  // Geometric dimensions
-  int _gdim;
-
-  // Signature, usually from UFC
-  std::string _signature;
-
-  // Layout of dofs on element
-  ElementDofLayout _dof_layout;
-
   // Flag denoting affine map
   bool _is_affine;
 
@@ -122,7 +106,7 @@ private:
   // Basix element
   int _basix_element_handle;
 
-  // Basix Element (basix::FiniteElement)
+  // Basix Element
   std::shared_ptr<basix::FiniteElement> _element;
 };
 } // namespace dolfinx::fem

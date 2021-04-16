@@ -304,10 +304,10 @@ compute_nonlocal_dual_graph(
   std::vector<int> pos(send_buffer.num_nodes(), 0);
   for (std::size_t i = 0; i < facet_cell_map.shape[0]; ++i)
   {
-    tcb::span<const std::int64_t> facet = facet_cell_map.row(i);
+    xtl::span<const std::int64_t> facet = facet_cell_map.row(i);
     const int dest_proc = dolfinx::MPI::index_owner(
         num_processes, facet[0] - global_min, global_range);
-    tcb::span<std::int64_t> buffer = send_buffer.links(dest_proc);
+    xtl::span<std::int64_t> buffer = send_buffer.links(dest_proc);
     std::copy(facet.begin(), facet.end(),
               std::next(buffer.begin(), pos[dest_proc]));
     buffer[pos[dest_proc] + num_vertices_per_facet] += cell_offset;

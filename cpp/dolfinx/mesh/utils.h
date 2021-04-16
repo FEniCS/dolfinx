@@ -8,10 +8,10 @@
 
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/array2d.h>
-#include <dolfinx/common/span.hpp>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/partition.h>
 #include <functional>
+#include <xtl/xspan.hpp>
 
 namespace dolfinx
 {
@@ -41,15 +41,15 @@ extract_topology(const CellType& cell_type, const fem::ElementDofLayout& layout,
 
 /// Compute greatest distance between any two vertices
 std::vector<double> h(const Mesh& mesh,
-                      const tcb::span<const std::int32_t>& entities, int dim);
+                      const xtl::span<const std::int32_t>& entities, int dim);
 
 /// Compute normal to given cell (viewed as embedded in 3D)
 array2d<double> cell_normals(const Mesh& mesh, int dim,
-                             const tcb::span<const std::int32_t>& entities);
+                             const xtl::span<const std::int32_t>& entities);
 
 /// Compute midpoints or mesh entities of a given dimension
 array2d<double> midpoints(const mesh::Mesh& mesh, int dim,
-                          const tcb::span<const std::int32_t>& entities);
+                          const xtl::span<const std::int32_t>& entities);
 
 /// Compute indices of all mesh entities that evaluate to true for the
 /// provided geometric marking function. An entity is considered marked
@@ -102,7 +102,7 @@ std::vector<std::int32_t> locate_entities_boundary(
 /// the entity entity_list[i].
 array2d<std::int32_t>
 entities_to_geometry(const mesh::Mesh& mesh, int dim,
-                     const tcb::span<const std::int32_t>& entity_list,
+                     const xtl::span<const std::int32_t>& entity_list,
                      bool orient);
 
 /// Compute the indices (local) of all exterior facets. An exterior facet

@@ -32,12 +32,12 @@ namespace dolfinx::fem::impl
 /// before assembly.
 /// @param[in] L The linear forms to assemble into b
 template <typename T>
-void assemble_vector(tcb::span<T> b, const Form<T>& L);
+void assemble_vector(xtl::span<T> b, const Form<T>& L);
 
 /// Execute kernel over cells and accumulate result in vector
 template <typename T>
 void assemble_cells(
-    tcb::span<T> b, const mesh::Geometry& geometry,
+    xtl::span<T> b, const mesh::Geometry& geometry,
     const std::vector<std::int32_t>& active_cells,
     const graph::AdjacencyList<std::int32_t>& dofmap, const int bs,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
@@ -48,7 +48,7 @@ void assemble_cells(
 /// Execute kernel over cells and accumulate result in vector
 template <typename T>
 void assemble_exterior_facets(
-    tcb::span<T> b, const mesh::Mesh& mesh,
+    xtl::span<T> b, const mesh::Mesh& mesh,
     const std::vector<std::int32_t>& active_facets,
     const graph::AdjacencyList<std::int32_t>& dofmap, const int bs,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
@@ -60,7 +60,7 @@ void assemble_exterior_facets(
 /// Assemble linear form interior facet integrals into an vector
 template <typename T>
 void assemble_interior_facets(
-    tcb::span<T> b, const mesh::Mesh& mesh,
+    xtl::span<T> b, const mesh::Mesh& mesh,
     const std::vector<std::int32_t>& active_facets, const fem::DofMap& dofmap,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& fn,
@@ -88,9 +88,9 @@ void assemble_interior_facets(
 /// @param[in] scale Scaling to apply
 template <typename T>
 void apply_lifting(
-    tcb::span<T> b, const std::vector<std::shared_ptr<const Form<T>>> a,
+    xtl::span<T> b, const std::vector<std::shared_ptr<const Form<T>>> a,
     const std::vector<std::vector<std::shared_ptr<const DirichletBC<T>>>>& bcs1,
-    const tcb::span<const T>& x0, double scale);
+    const xtl::span<const T>& x0, double scale);
 
 /// Modify RHS vector to account for boundary condition such that: b <-
 ////
@@ -105,15 +105,15 @@ void apply_lifting(
 /// solution' in a Newton method
 /// @param[in] scale Scaling to apply
 template <typename T>
-void lift_bc(tcb::span<T> b, const Form<T>& a,
-             const tcb::span<const T>& bc_values1,
-             const std::vector<bool>& bc_markers1, const tcb::span<const T>& x0,
+void lift_bc(xtl::span<T> b, const Form<T>& a,
+             const xtl::span<const T>& bc_values1,
+             const std::vector<bool>& bc_markers1, const xtl::span<const T>& x0,
              double scale);
 
 // Implementation of bc application
 template <typename T>
 void _lift_bc_cells(
-    tcb::span<T> b, const mesh::Geometry& geometry,
+    xtl::span<T> b, const mesh::Geometry& geometry,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& kernel,
     const std::vector<std::int32_t>& active_cells,
@@ -121,8 +121,8 @@ void _lift_bc_cells(
     const graph::AdjacencyList<std::int32_t>& dofmap1, int bs1,
     const array2d<T>& coeffs, const std::vector<T>& constant_values,
     const std::vector<std::uint32_t>& cell_info,
-    const tcb::span<const T>& bc_values1, const std::vector<bool>& bc_markers1,
-    const tcb::span<const T>& x0, double scale)
+    const xtl::span<const T>& bc_values1, const std::vector<bool>& bc_markers1,
+    const xtl::span<const T>& x0, double scale)
 {
   // Prepare cell geometry
   const int gdim = geometry.dim();
@@ -207,7 +207,7 @@ void _lift_bc_cells(
 //----------------------------------------------------------------------------
 template <typename T>
 void _lift_bc_exterior_facets(
-    tcb::span<T> b, const mesh::Mesh& mesh,
+    xtl::span<T> b, const mesh::Mesh& mesh,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& kernel,
     const std::vector<std::int32_t>& active_facets,
@@ -216,8 +216,8 @@ void _lift_bc_exterior_facets(
     const array2d<T>& coeffs, const std::vector<T>& constant_values,
     const std::vector<std::uint32_t>& cell_info,
     const std::vector<std::uint8_t>& perms,
-    const tcb::span<const T>& bc_values1, const std::vector<bool>& bc_markers1,
-    const tcb::span<const T>& x0, double scale)
+    const xtl::span<const T>& bc_values1, const std::vector<bool>& bc_markers1,
+    const xtl::span<const T>& x0, double scale)
 {
   const int gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();
@@ -323,7 +323,7 @@ void _lift_bc_exterior_facets(
 //----------------------------------------------------------------------------
 template <typename T>
 void _lift_bc_interior_facets(
-    tcb::span<T> b, const mesh::Mesh& mesh,
+    xtl::span<T> b, const mesh::Mesh& mesh,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& kernel,
     const std::vector<std::int32_t>& active_facets,
@@ -333,8 +333,8 @@ void _lift_bc_interior_facets(
     const std::vector<T>& constant_values,
     const std::vector<std::uint32_t>& cell_info,
     const std::vector<std::uint8_t>& perms,
-    const tcb::span<const T>& bc_values1, const std::vector<bool>& bc_markers1,
-    const tcb::span<const T>& x0, double scale)
+    const xtl::span<const T>& bc_values1, const std::vector<bool>& bc_markers1,
+    const xtl::span<const T>& x0, double scale)
 {
   const int gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();
@@ -397,15 +397,15 @@ void _lift_bc_interior_facets(
     }
 
     // Get dof maps for cells and pack
-    const tcb::span<const std::int32_t> dmap0_cell0 = dofmap0.links(cells[0]);
-    const tcb::span<const std::int32_t> dmap0_cell1 = dofmap0.links(cells[1]);
+    const xtl::span<const std::int32_t> dmap0_cell0 = dofmap0.links(cells[0]);
+    const xtl::span<const std::int32_t> dmap0_cell1 = dofmap0.links(cells[1]);
     dmapjoint0.resize(dmap0_cell0.size() + dmap0_cell1.size());
     std::copy(dmap0_cell0.begin(), dmap0_cell0.end(), dmapjoint0.begin());
     std::copy(dmap0_cell1.begin(), dmap0_cell1.end(),
               std::next(dmapjoint0.begin(), dmap0_cell0.size()));
 
-    const tcb::span<const std::int32_t> dmap1_cell0 = dofmap1.links(cells[0]);
-    const tcb::span<const std::int32_t> dmap1_cell1 = dofmap1.links(cells[1]);
+    const xtl::span<const std::int32_t> dmap1_cell0 = dofmap1.links(cells[0]);
+    const xtl::span<const std::int32_t> dmap1_cell1 = dofmap1.links(cells[1]);
     dmapjoint1.resize(dmap1_cell0.size() + dmap1_cell1.size());
     std::copy(dmap1_cell0.begin(), dmap1_cell0.end(), dmapjoint1.begin());
     std::copy(dmap1_cell1.begin(), dmap1_cell1.end(),
@@ -522,7 +522,7 @@ void _lift_bc_interior_facets(
 }
 //-----------------------------------------------------------------------------
 template <typename T>
-void assemble_vector(tcb::span<T> b, const Form<T>& L)
+void assemble_vector(xtl::span<T> b, const Form<T>& L)
 {
   std::shared_ptr<const mesh::Mesh> mesh = L.mesh();
   assert(mesh);
@@ -595,7 +595,7 @@ void assemble_vector(tcb::span<T> b, const Form<T>& L)
 //-----------------------------------------------------------------------------
 template <typename T>
 void assemble_cells(
-    tcb::span<T> b, const mesh::Geometry& geometry,
+    xtl::span<T> b, const mesh::Geometry& geometry,
     const std::vector<std::int32_t>& active_cells,
     const graph::AdjacencyList<std::int32_t>& dofmap, const int bs,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
@@ -644,7 +644,7 @@ void assemble_cells(
 //-----------------------------------------------------------------------------
 template <typename T>
 void assemble_exterior_facets(
-    tcb::span<T> b, const mesh::Mesh& mesh,
+    xtl::span<T> b, const mesh::Mesh& mesh,
     const std::vector<std::int32_t>& active_facets,
     const graph::AdjacencyList<std::int32_t>& dofmap, const int bs,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
@@ -709,7 +709,7 @@ void assemble_exterior_facets(
 //-----------------------------------------------------------------------------
 template <typename T>
 void assemble_interior_facets(
-    tcb::span<T> b, const mesh::Mesh& mesh,
+    xtl::span<T> b, const mesh::Mesh& mesh,
     const std::vector<std::int32_t>& active_facets, const fem::DofMap& dofmap,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& fn,
@@ -787,8 +787,8 @@ void assemble_interior_facets(
     }
 
     // Get dofmaps for cells
-    tcb::span<const std::int32_t> dmap0 = dofmap.cell_dofs(cells[0]);
-    tcb::span<const std::int32_t> dmap1 = dofmap.cell_dofs(cells[1]);
+    xtl::span<const std::int32_t> dmap0 = dofmap.cell_dofs(cells[0]);
+    xtl::span<const std::int32_t> dmap1 = dofmap.cell_dofs(cells[1]);
 
     // Tabulate element vector
     be.resize(bs * (dmap0.size() + dmap1.size()));
@@ -811,9 +811,9 @@ void assemble_interior_facets(
 //-----------------------------------------------------------------------------
 template <typename T>
 void apply_lifting(
-    tcb::span<T> b, const std::vector<std::shared_ptr<const Form<T>>> a,
+    xtl::span<T> b, const std::vector<std::shared_ptr<const Form<T>>> a,
     const std::vector<std::vector<std::shared_ptr<const DirichletBC<T>>>>& bcs1,
-    const std::vector<tcb::span<const T>>& x0, double scale)
+    const std::vector<xtl::span<const T>>& x0, double scale)
 {
   // FIXME: make changes to reactivate this check
   if (!x0.empty() and x0.size() != a.size())
@@ -852,7 +852,7 @@ void apply_lifting(
         lift_bc<T>(b, *a[j], bc_values1, bc_markers1, x0[j], scale);
       else
       {
-        lift_bc<T>(b, *a[j], bc_values1, bc_markers1, tcb::span<const T>(),
+        lift_bc<T>(b, *a[j], bc_values1, bc_markers1, xtl::span<const T>(),
                    scale);
       }
     }
@@ -860,9 +860,9 @@ void apply_lifting(
 }
 //-----------------------------------------------------------------------------
 template <typename T>
-void lift_bc(tcb::span<T> b, const Form<T>& a,
-             const tcb::span<const T>& bc_values1,
-             const std::vector<bool>& bc_markers1, const tcb::span<const T>& x0,
+void lift_bc(xtl::span<T> b, const Form<T>& a,
+             const xtl::span<const T>& bc_values1,
+             const std::vector<bool>& bc_markers1, const xtl::span<const T>& x0,
              double scale)
 {
   std::shared_ptr<const mesh::Mesh> mesh = a.mesh();
