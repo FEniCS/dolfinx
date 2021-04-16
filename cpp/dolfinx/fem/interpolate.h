@@ -12,6 +12,7 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <functional>
 #include <variant>
+#include <xtensor/xadapt.hpp>
 #include <xtensor/xtensor.hpp>
 #include <xtl/xspan.hpp>
 
@@ -292,7 +293,8 @@ void interpolate(
 
     // Tabulate 0th and 1st order derivatives of shape functions at
     // interpolation coords
-    xt::xtensor<double, 4> tabulated_data = cmap.tabulate(1, X);
+    xt::xtensor<double, 2> _X = xt::adapt(X.data(), X.shape);
+    xt::xtensor<double, 4> tabulated_data = cmap.tabulate(1, _X);
     for (std::int32_t c : cells)
     {
       auto x_dofs = x_dofmap.links(c);

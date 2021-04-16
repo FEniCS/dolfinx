@@ -56,7 +56,7 @@ public:
   /// The shape of x is (number of points, geometric dimension).
   /// @return The basis functions (and derivatives). The shape is
   /// (derivative, number point, number of basis fn, value size).
-  xt::xtensor<double, 4> tabulate(int n, const array2d<double>& X) const;
+  xt::xtensor<double, 4> tabulate(int n, const xt::xtensor<double, 2>& X) const;
 
   /// Compute Jacobian for a cell with given geometry using the
   /// basis functions and first order derivatives.
@@ -117,12 +117,12 @@ public:
       const xt::xtensor<double, 2>& cell_geometry) const;
 
   /// Permutes a list of DOF numbers on a cell
-  void permute_dofs(tcb::span<std::int32_t> dofs,
-                    const uint32_t cell_perm) const;
+  void permute_dofs(xtl::span<std::int32_t> dofs,
+                    const std::uint32_t cell_perm) const;
 
   /// Reverses a DOF permutation
-  void unpermute_dofs(tcb::span<std::int32_t> dofs,
-                      const uint32_t cell_perm) const;
+  void unpermute_dofs(xtl::span<std::int32_t> dofs,
+                      const std::uint32_t cell_perm) const;
 
   /// Indicates whether the coordinate map needs permutation data
   /// passing in (for higher order geometries)

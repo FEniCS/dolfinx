@@ -110,26 +110,26 @@ void CoordinateElement::compute_reference_geometry(
     const xt::xtensor<double, 2>& cell_geometry) const
 {
   // Number of points
-  int num_points = x.shape(0);
+  std::size_t num_points = x.shape(0);
   if (num_points == 0)
     return;
 
   // in-argument checks
-  const int tdim = this->topological_dimension();
-  const int gdim = x.shape(1);
-  assert((int)cell_geometry.shape(1) == gdim);
+  const std::size_t tdim = this->topological_dimension();
+  const std::size_t gdim = x.shape(1);
+  assert(cell_geometry.shape(1) == gdim);
 
   // In/out size checks
-  assert((int)X.shape(0) == num_points);
-  assert((int)X.shape(1) == tdim);
-  assert((int)J.size() == num_points * gdim * tdim);
-  assert((int)detJ.size() == num_points);
-  assert((int)K.size() == num_points * gdim * tdim);
+  assert(X.shape(0) == num_points);
+  assert(X.shape(1) == tdim);
+  assert(J.size() == num_points * gdim * tdim);
+  assert(detJ.size() == num_points);
+  assert(K.size() == num_points * gdim * tdim);
 
   if (_is_affine)
   {
     // Tabulate shape function and first derivative at the origin
-    xt::xtensor<double, 2> X0 = xt::zeros<double>({1, tdim});
+    xt::xtensor<double, 2> X0({1, tdim});
     xt::xtensor<double, 4> tabulated_data = _element->tabulate(1, X0);
 
     // Compute Jacobian, its inverse and determinant
@@ -143,14 +143,14 @@ void CoordinateElement::compute_reference_geometry(
 
     // Calculate X for each point
     auto K0 = xt::view(K, 0, xt::all(), xt::all());
-    for (int ip = 0; ip < num_points; ++ip)
+    for (std::size_t ip = 0; ip < num_points; ++ip)
       xt::row(X, ip) = xt::linalg::dot(K0, xt::row(x, ip) - x0);
   }
   else
   {
-    xt::xtensor<double, 2> Xk = xt::empty<double>({1, tdim});
+    xt::xtensor<double, 2> Xk({1, tdim});
     xt::xtensor<double, 1> dX = xt::empty<double>({tdim});
-    for (int ip = 0; ip < num_points; ++ip)
+    for (std::size_t ip = 0; ip < num_points; ++ip)
     {
       Xk.fill(0);
       int k;
@@ -182,15 +182,15 @@ void CoordinateElement::compute_reference_geometry(
   }
 }
 //-----------------------------------------------------------------------------
-void CoordinateElement::permute_dofs(tcb::span<std::int32_t> dofs,
-                                     const uint32_t cell_perm) const
+void CoordinateElement::permute_dofs(xtl::span<std::int32_t> dofs,
+                                     const std::uint32_t cell_perm) const
 {
   assert(_element);
   _element->permute_dofs(dofs, cell_perm);
 }
 //-----------------------------------------------------------------------------
-void CoordinateElement::unpermute_dofs(tcb::span<std::int32_t> dofs,
-                                       const uint32_t cell_perm) const
+void CoordinateElement::unpermute_dofs(xtl::span<std::int32_t> dofs,
+                                       const std::uint32_t cell_perm) const
 {
   assert(_element);
   _element->unpermute_dofs(dofs, cell_perm);
@@ -203,10 +203,9 @@ bool CoordinateElement::needs_permutation_data() const
 }
 //-----------------------------------------------------------------------------
 xt::xtensor<double, 4>
-CoordinateElement::tabulate(int n, const array2d<double>& X) const
+CoordinateElement::tabulate(int n, const xt::xtensor<double, 2>& X) const
 {
-  auto _X = xt::adapt(X.data(), X.shape);
-  return _element->tabulate(n, _X);
+  return _element->tabulate(n, X);
 }
 //--------------------------------------------------------------------------------
 void CoordinateElement::compute_jacobian(
@@ -214,18 +213,18 @@ void CoordinateElement::compute_jacobian(
     const xt::xtensor<double, 2>& cell_geom, xt::xtensor<double, 3>& J) const
 {
   // Number of points
-  int num_points = tabulated_data.shape(1);
+  std::size_t num_points = tabulated_data.shape(1);
   if (num_points == 0)
     return;
 
-  assert(int(J.shape(0)) == num_points);
+  assert(J.shape(0) == num_points);
 
   // in-argument checks
   const int tdim = this->topological_dimension();
   const int gdim = cell_geom.shape(1);
 
   // In/out size checks
-  assert((int)J.size() == num_points * gdim * tdim);
+  assert(J.size() == num_points * gdim * tdim);
   const int d = cell_geom.shape(0);
   xt::xtensor<double, 2> dphi = xt::empty<double>({tdim, d});
 
@@ -237,7 +236,7 @@ void CoordinateElement::compute_jacobian(
   }
   else
   {
-    for (int ip = 0; ip < num_points; ++ip)
+    for (std::size_t ip = 0; ip < num_points; ++ip)
     {
       dphi = xt::view(tabulated_data, xt::range(1, tdim + 1), ip, xt::all(), 0);
       auto J_ip = xt::view(J, ip, xt::all(), xt::all());
