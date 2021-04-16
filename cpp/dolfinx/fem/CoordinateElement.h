@@ -60,13 +60,14 @@ public:
 
   /// Compute Jacobian for a cell with given geometry using the
   /// basis functions and first order derivatives.
-  /// @param[in] tabulated_data Pre-computed basis values and derivatives at set
-  /// of points. Need at least first order derivative.
+  /// @param[in] dphi Pre-computed first order derivatives of basis functions at
+  /// set of points.
+  /// The shape of dphi is (tdim, number of points, number of basis fn, 1).
   /// @param[in] cell_geometry Coordinates/geometry
   /// @param[in,out] J The Jacobian
   /// The shape of J is (number of points, geometric dimension, topological
   /// dimenson).
-  void compute_jacobian(const xt::xtensor<double, 4>& tabulated_data,
+  void compute_jacobian(const xt::xtensor<double, 4>& dphi,
                         const xt::xtensor<double, 2>& cell_geometry,
                         xt::xtensor<double, 3>& J) const;
 
@@ -105,7 +106,8 @@ public:
   /// @param[in,out] x The physical coordinates of the reference points X
   /// @param[in] cell_geometry The cell node coordinates (physical)
   /// @param[in] phi Tabulated basis functions at reference points X
-  void push_forward(array2d<double>& x, const array2d<double>& cell_geometry,
+  void push_forward(xt::xtensor<double, 2>& x,
+                    const xt::xtensor<double, 2>& cell_geometry,
                     const xt::xtensor<double, 2>& phi) const;
 
   /// Compute reference coordinates X, and J, detJ and K for physical

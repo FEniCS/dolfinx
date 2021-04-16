@@ -14,6 +14,7 @@
 #include <variant>
 #include <xtensor/xadapt.hpp>
 #include <xtensor/xtensor.hpp>
+#include <xtensor/xview.hpp>
 #include <xtl/xspan.hpp>
 
 namespace dolfinx::fem
@@ -291,10 +292,12 @@ void interpolate(
     array2d<T> reference_data(value_size, X.shape[0]);
     array2d<T> _vals(value_size, X.shape[0]);
 
-    // Tabulate 0th and 1st order derivatives of shape functions at
-    // interpolation coords
+    // Tabulate 1st order derivatives of shape functions at interpolation coords
     xt::xtensor<double, 2> _X = xt::adapt(X.data(), X.shape);
-    xt::xtensor<double, 4> tabulated_data = cmap.tabulate(1, _X);
+    xt::xtensor<double, 4> dphi
+        = xt::view(cmap.tabulate(1, _X), xt::range(1, tdim + 1), xt::all(),
+                   xt::all(), xt::all());
+
     for (std::int32_t c : cells)
     {
       auto x_dofs = x_dofmap.links(c);
@@ -303,7 +306,7 @@ void interpolate(
           coordinate_dofs(i, j) = x_g(x_dofs[i], j);
 
       // Compute J, detJ and K
-      cmap.compute_jacobian(tabulated_data, coordinate_dofs, J);
+      cmap.compute_jacobian(dphi, coordinate_dofs, J);
       cmap.compute_jacobian_inverse(J, K);
       cmap.compute_jacobian_determinant(J, detJ);
 

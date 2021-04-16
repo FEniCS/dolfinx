@@ -88,18 +88,18 @@ ElementDofLayout CoordinateElement::dof_layout() const
   return ElementDofLayout(1, entity_dofs, {}, {}, this->cell_shape());
 }
 //-----------------------------------------------------------------------------
-void CoordinateElement::push_forward(array2d<double>& x,
-                                     const array2d<double>& cell_geometry,
-                                     const xt::xtensor<double, 2>& phi) const
+void CoordinateElement::push_forward(
+    xt::xtensor<double, 2>& x, const xt::xtensor<double, 2>& cell_geometry,
+    const xt::xtensor<double, 2>& phi) const
 {
-  assert(phi.shape(2) == cell_geometry.shape[0]);
+  assert(phi.shape(2) == cell_geometry.shape(0));
 
   // Compute physical coordinates
   // x = phi * cell_geometry;
   std::fill(x.data(), x.data() + x.size(), 0.0);
-  for (std::size_t i = 0; i < x.shape[0]; ++i)
-    for (std::size_t j = 0; j < x.shape[1]; ++j)
-      for (std::size_t k = 0; k < cell_geometry.shape[0]; ++k)
+  for (std::size_t i = 0; i < x.shape(0); ++i)
+    for (std::size_t j = 0; j < x.shape(1); ++j)
+      for (std::size_t k = 0; k < cell_geometry.shape(0); ++k)
         x(i, j) += phi(i, k) * cell_geometry(k, j);
 }
 //-----------------------------------------------------------------------------
@@ -117,6 +117,7 @@ void CoordinateElement::compute_reference_geometry(
   // in-argument checks
   const std::size_t tdim = this->topological_dimension();
   const std::size_t gdim = x.shape(1);
+  const std::size_t d = cell_geometry.shape(0);
   assert(cell_geometry.shape(1) == gdim);
 
   // In/out size checks
@@ -126,14 +127,19 @@ void CoordinateElement::compute_reference_geometry(
   assert(detJ.size() == num_points);
   assert(K.size() == num_points * gdim * tdim);
 
+  xt::xtensor<double, 4> tabulated_data({tdim + 1, 1, d, 1});
+
+  xt::xtensor<double, 4> dphi({tdim, num_points, d, 1});
   if (_is_affine)
   {
     // Tabulate shape function and first derivative at the origin
     xt::xtensor<double, 2> X0({1, tdim});
-    xt::xtensor<double, 4> tabulated_data = _element->tabulate(1, X0);
+    tabulated_data = _element->tabulate(1, X0);
+    dphi = xt::view(tabulated_data, xt::range(1, tdim + 1), xt::all(),
+                    xt::all(), xt::all());
 
     // Compute Jacobian, its inverse and determinant
-    compute_jacobian(tabulated_data, cell_geometry, J);
+    compute_jacobian(dphi, cell_geometry, J);
     compute_jacobian_inverse(J, K);
     compute_jacobian_determinant(J, detJ);
 
@@ -156,12 +162,15 @@ void CoordinateElement::compute_reference_geometry(
       int k;
       for (k = 0; k < non_affine_max_its; ++k)
       {
-        xt::xtensor<double, 4> tabulated_data = _element->tabulate(1, Xk);
+        tabulated_data = _element->tabulate(1, Xk);
+        dphi = xt::view(tabulated_data, xt::range(1, tdim + 1), xt::all(),
+                        xt::all(), xt::all());
+
         auto phi0 = xt::view(tabulated_data, 0, 0, xt::all(), 0);
         auto xk = xt::linalg::dot(xt::transpose(cell_geometry), phi0);
 
         // Compute Jacobian, its inverse and determinant
-        compute_jacobian(tabulated_data, cell_geometry, J);
+        compute_jacobian(dphi, cell_geometry, J);
         compute_jacobian_inverse(J, K);
         compute_jacobian_determinant(J, detJ);
 
@@ -209,38 +218,42 @@ CoordinateElement::tabulate(int n, const xt::xtensor<double, 2>& X) const
 }
 //--------------------------------------------------------------------------------
 void CoordinateElement::compute_jacobian(
-    const xt::xtensor<double, 4>& tabulated_data,
-    const xt::xtensor<double, 2>& cell_geom, xt::xtensor<double, 3>& J) const
+    const xt::xtensor<double, 4>& dphi, const xt::xtensor<double, 2>& cell_geom,
+    xt::xtensor<double, 3>& J) const
 {
   // Number of points
-  std::size_t num_points = tabulated_data.shape(1);
+  std::size_t num_points = dphi.shape(1);
   if (num_points == 0)
     return;
 
-  assert(J.shape(0) == num_points);
-
   // in-argument checks
-  const int tdim = this->topological_dimension();
-  const int gdim = cell_geom.shape(1);
+  const std::size_t tdim = this->topological_dimension();
+  const std::size_t gdim = cell_geom.shape(1);
+  const std::size_t d = cell_geom.shape(0);
 
   // In/out size checks
-  assert(J.size() == num_points * gdim * tdim);
-  const int d = cell_geom.shape(0);
-  xt::xtensor<double, 2> dphi = xt::empty<double>({tdim, d});
+  assert(J.shape(0) == num_points);
+  assert(J.shape(1) == gdim);
+  assert(J.shape(2) == tdim);
+  assert(dphi.shape(0) == tdim);
+  assert(dphi.shape(1) == num_points);
+  assert(dphi.shape(3) == 1); // Assumes that value size is equal to 1
+
+  xt::xtensor<double, 2> dphi0 = xt::empty<double>({tdim, d});
 
   if (_is_affine)
   {
-    dphi = xt::view(tabulated_data, xt::range(1, tdim + 1), 0, xt::all(), 0);
-    auto J0 = xt::linalg::dot(xt::transpose(cell_geom), xt::transpose(dphi));
+    dphi0 = xt::view(dphi, xt::range(1, tdim + 1), 0, xt::all(), 0);
+    auto J0 = xt::linalg::dot(xt::transpose(cell_geom), xt::transpose(dphi0));
     J = xt::broadcast(J0, J.shape());
   }
   else
   {
     for (std::size_t ip = 0; ip < num_points; ++ip)
     {
-      dphi = xt::view(tabulated_data, xt::range(1, tdim + 1), ip, xt::all(), 0);
+      dphi0 = xt::view(dphi, xt::all(), ip, xt::all(), 0);
       auto J_ip = xt::view(J, ip, xt::all(), xt::all());
-      auto J0 = xt::linalg::dot(xt::transpose(cell_geom), xt::transpose(dphi));
+      auto J0 = xt::linalg::dot(xt::transpose(cell_geom), xt::transpose(dphi0));
       J_ip.assign(J0);
     }
   }

@@ -154,8 +154,9 @@ FunctionSpace::tabulate_dof_coordinates(bool transpose) const
   xt::xtensor<double, 2> coords = xt::zeros<double>({shape_c0, shape_c1});
 
   // Loop over cells and tabulate dofs
-  array2d<double> x(scalar_dofs, gdim);
-  array2d<double> coordinate_dofs(num_dofs_g, gdim);
+  xt::xtensor<double, 2> x = xt::zeros<double>({scalar_dofs, gdim});
+  xt::xtensor<double, 2> coordinate_dofs
+      = xt::zeros<double>({num_dofs_g, gdim});
 
   auto map = _mesh->topology().index_map(tdim);
   assert(map);
@@ -183,7 +184,7 @@ FunctionSpace::tabulate_dof_coordinates(bool transpose) const
     // Tabulate dof coordinates on cell
     cmap.push_forward(x, coordinate_dofs, phi);
 
-    _element->apply_dof_transformation(x.data(), cell_info[c], x.shape[1]);
+    _element->apply_dof_transformation(x.data(), cell_info[c], x.shape(1));
 
     // Get cell dofmap
     auto dofs = _dofmap->cell_dofs(c);
