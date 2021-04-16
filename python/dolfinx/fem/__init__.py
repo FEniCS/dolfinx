@@ -19,8 +19,7 @@ from dolfinx.fem.dirichletbc import (DirichletBC, locate_dofs_geometrical,
                                      locate_dofs_topological)
 from dolfinx.fem.dofmap import DofMap
 from dolfinx.fem.form import Form
-from dolfinx.fem.formmanipulations import (adjoint, derivative, increase_order,
-                                           tear)
+from dolfinx.fem.formmanipulations import adjoint
 from dolfinx.fem.function import (Constant, Expression, Function,
                                   FunctionSpace, TensorFunctionSpace,
                                   VectorFunctionSpace)
@@ -38,7 +37,6 @@ __all__ = [
     "assemble_matrix_block", "assemble_matrix_nest",
     "assemble_matrix", "set_bc", "set_bc_nest",
     "DirichletBC", "DofMap", "Form", "IntegralType",
-    "derivative", "adjoint", "increase_order",
-    "tear", "LinearProblem", "locate_dofs_geometrical", "locate_dofs_topological",
+    "adjoint", "LinearProblem", "locate_dofs_geometrical", "locate_dofs_topological",
     "NonlinearProblem", "NewtonSolver"
 ]
