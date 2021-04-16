@@ -102,7 +102,7 @@ void CoordinateElement::push_forward(
         x(i, j) += phi(i, k) * cell_geometry(k, j);
 }
 //-----------------------------------------------------------------------------
-void CoordinateElement::compute_reference_geometry(
+void CoordinateElement::compute_pull_back(
     xt::xtensor<double, 2>& X, xt::xtensor<double, 3>& J,
     xt::xtensor<double, 1>& detJ, xt::xtensor<double, 3>& K,
     const xt::xtensor<double, 2>& x,

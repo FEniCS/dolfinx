@@ -95,12 +95,6 @@ public:
   /// Return the dof layout
   ElementDofLayout dof_layout() const;
 
-  /// Absolute increment stopping criterium for non-affine Newton solver
-  double non_affine_atol = 1.0e-8;
-
-  /// Maximum number of iterations for non-affine Newton solver
-  int non_affine_max_its = 10;
-
   /// Compute physical coordinates x for points X  in the reference
   /// configuration
   /// @param[in,out] x The physical coordinates of the reference points X
@@ -112,7 +106,7 @@ public:
 
   /// Compute reference coordinates X, and J, detJ and K for physical
   /// coordinates x
-  void compute_reference_geometry(
+  void compute_pull_back(
       xt::xtensor<double, 2>& X, xt::xtensor<double, 3>& J,
       xt::xtensor<double, 1>& detJ, xt::xtensor<double, 3>& K,
       const xt::xtensor<double, 2>& x,
@@ -129,6 +123,12 @@ public:
   /// Indicates whether the coordinate map needs permutation data
   /// passing in (for higher order geometries)
   bool needs_permutation_data() const;
+
+  /// Absolute increment stopping criterium for non-affine Newton solver
+  double non_affine_atol = 1.0e-8;
+
+  /// Maximum number of iterations for non-affine Newton solver
+  int non_affine_max_its = 10;
 
 private:
   // Flag denoting affine map
