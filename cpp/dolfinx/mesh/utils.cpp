@@ -9,7 +9,6 @@
 #include "MeshTags.h"
 #include "cell_types.h"
 #include "graphbuild.h"
-#include <Eigen/Dense>
 #include <algorithm>
 #include <cfloat>
 #include <cstdlib>

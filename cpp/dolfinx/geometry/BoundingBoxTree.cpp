@@ -7,7 +7,6 @@
 
 #include "BoundingBoxTree.h"
 #include "utils.h"
-#include <Eigen/Core>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/array2d.h>
