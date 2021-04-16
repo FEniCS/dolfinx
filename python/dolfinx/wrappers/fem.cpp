@@ -229,17 +229,22 @@ void fem(py::module& m)
            [](const dolfinx::fem::CoordinateElement& self,
               const py::array_t<double, py::array::c_style>& X,
               const py::array_t<double, py::array::c_style>& cell_geometry) {
-             dolfinx::array2d<double> _X(X.shape()[0], X.shape()[1]),
-                 _cell_geometry(cell_geometry.shape()[0],
-                                cell_geometry.shape()[1]);
+             xt::xtensor<double, 2> _X
+                 = xt::empty<double>({X.shape()[0], X.shape()[1]});
+             xt::xtensor<double, 2> _cell_geometry = xt::empty<double>(
+                 {cell_geometry.shape()[0], cell_geometry.shape()[1]});
+
              std::copy_n(X.data(), X.size(), _X.data());
              std::copy_n(cell_geometry.data(), cell_geometry.size(),
                          _cell_geometry.data());
-             dolfinx::array2d<double> x(_X.shape[0], cell_geometry.shape(1));
+
+             xt::xtensor<double, 2> x = xt::empty<double>(
+                 {_X.shape(0), std::size_t(cell_geometry.shape(1))});
              xt::xtensor<double, 2> phi
                  = xt::view(self.tabulate(0, _X), 0, xt::all(), xt::all(), 0);
+
              self.push_forward(x, _cell_geometry, phi);
-             return as_pyarray2d(std::move(x));
+             return xt_as_pyarray(std::move(x));
            })
       .def_readwrite("non_affine_atol",
                      &dolfinx::fem::CoordinateElement::non_affine_atol)
