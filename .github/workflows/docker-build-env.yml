@@ -6,62 +6,147 @@ name: Docker environment images
 
 on:
   # Uncomment the below to trigger 'docker build' on push
-  # push:
-  #  branches:
-  #    - "**"
+  push:
+    branches:
+      - "**"
   schedule:
     # '*' is a special character in YAML, so string must be quoted
-    - cron: "0 1 * * MON"
+    - cron: "0 22 * * SUN"
   workflow_dispatch: ~
 
 jobs:
+  start_runner:
+    name: Start self-hosted EC2 runner
+    runs-on: ubuntu-latest
+    outputs:
+      label: ${{ steps.start-ec2-runner.outputs.label }}
+      ec2-instance-id: ${{ steps.start-ec2-runner.outputs.ec2-instance-id }}
+    #if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/main' }}
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+      - name: Start EC2 runner
+        id: start-ec2-runner
+        uses: jhale/ec2-github-runner@main
+        with:
+          mode: start
+          github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
+          ec2-image-id: ami-011694240268da883
+          ec2-instance-type: c6g.large
+          subnet-id: subnet-dc2151b7
+          security-group-id: sg-03fc69ee7a6ba8bc4
+          label: ubuntu-arm64-aws
+
   build_test_env_openmpi:
-    name: Build fenicsproject/test-env:openmpi image
-    if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/main' }}
-    runs-on: ubuntu-20.04
+    name: Build fenicsproject/test-env:openmpi image (${{ matrix.os }})
+    #if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/main' }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, ubuntu-arm64-aws]
+    runs-on: ${{ matrix.os }}
+    needs: start_runner
     env:
       PETSC_SLEPC_OPTFLAGS: "-O2 -g"
       PETSC_SLEPC_DEBUGGING: "yes"
       MPI: "openmpi"
     steps:
       - uses: actions/checkout@v2
+      - name: set architecture tag
+        run: |
+          if [[ ${{matrix.os}} == 'ubuntu-latest' ]]; then
+            echo "ARCH_TAG=amd64" >> $GITHUB_ENV
+          elif [[ ${{matrix.os}} == 'ubuntu-arm64-aws' ]]; then
+            echo "ARCH_TAG=arm64" >> $GITHUB_ENV
+          fi
       - name: build the docker image
-        run: docker buildx build --build-arg PETSC_SLEPC_OPTFLAGS --build-arg PETSC_SLEPC_DEBUGGING --build-arg MPI --file docker/Dockerfile --target dev-env --tag fenicsproject/test-env:${MPI} docker/
+        run: docker buildx build --build-arg PETSC_SLEPC_OPTFLAGS --build-arg PETSC_SLEPC_DEBUGGING --build-arg MPI --file docker/Dockerfile --target dev-env --tag fenicsproject/test-env:${MPI}-${env.ARCH_TAG} docker/
       - name: log into the dockerhub registry
         run: echo ${{ secrets.dockerhub_token }} | docker login -u ${{ secrets.dockerhub_username }} --password-stdin
       - name: push to the dockerhub registry
-        run: docker push fenicsproject/test-env:${MPI}
+        run: docker push fenicsproject/test-env:${MPI}-${env.ARCH_TAG}
 
   build_test_env_mpich:
-    name: Build fenicsproject/test-env:mpich image
-    if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/main' }}
-    runs-on: ubuntu-20.04
+    name: Build fenicsproject/test-env:mpich image (${{ matrix.os }})
+    #if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/main' }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, ubuntu-arm64-aws]
+    runs-on: ${{ matrix.os }}
+    needs: start_runner
     env:
       PETSC_SLEPC_OPTFLAGS: "-O2 -g"
       PETSC_SLEPC_DEBUGGING: "yes"
       MPI: "mpich"
     steps:
       - uses: actions/checkout@v2
+      - name: set architecture tag
+        run: |
+          if [[ ${{matrix.os}} == 'ubuntu-latest' ]]; then
+            echo "ARCH_TAG=amd64" >> $GITHUB_ENV
+          elif [[ ${{matrix.os}} == 'ubuntu-arm64-aws' ]]; then
+            echo "ARCH_TAG=arm64" >> $GITHUB_ENV
+          fi
       - name: build the docker image
-        run: docker buildx build --build-arg PETSC_SLEPC_OPTFLAGS --build-arg PETSC_SLEPC_DEBUGGING --build-arg MPI --file docker/Dockerfile --target dev-env --tag fenicsproject/test-env:${MPI} docker/
+        run: docker buildx build --build-arg PETSC_SLEPC_OPTFLAGS --build-arg PETSC_SLEPC_DEBUGGING --build-arg MPI --file docker/Dockerfile --target dev-env --tag fenicsproject/test-env:${MPI}-${env.ARCH_TAG} docker/
       - name: log into the dockerhub registry
         run: echo ${{ secrets.dockerhub_token }} | docker login -u ${{ secrets.dockerhub_username }} --password-stdin
       - name: push to the dockerhub registry
-        run: docker push fenicsproject/test-env:${MPI}
+        run: docker push fenicsproject/test-env:${MPI}-${env.ARCH_TAG}
 
   build_dev_env:
-    name: Build dolfinx/dev-env image
-    if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/main' }}
-    runs-on: ubuntu-20.04
+    name: Build dolfinx/dev-env image (${{ matrix.os }})
+    #if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/main' }}
+    needs: start_runner
+    strategy:
+      matrix:
+        os: [ubuntu-latest, ubuntu-arm64-aws]
+    runs-on: ${{ matrix.os }}
+    needs: start_runner
     env:
-      PETSC_SLEPC_OPTFLAGS: "-O2 -march=sandybridge"
+      # TODO: march based on matrix.os
+      PETSC_SLEPC_OPTFLAGS: "-O2"
       PETSC_SLEPC_DEBUGGING: "no"
       MPI: "mpich"
     steps:
       - uses: actions/checkout@v2
+      - name: set architecture tag
+        run: |
+          if [[ ${{matrix.os}} == 'ubuntu-latest' ]]; then
+            echo "ARCH_TAG=amd64" >> $GITHUB_ENV
+          elif [[ ${{matrix.os}} == 'ubuntu-arm64-aws' ]]; then
+            echo "ARCH_TAG=arm64" >> $GITHUB_ENV
+          fi
       - name: Build the Docker image
-        run: docker buildx build --build-arg PETSC_SLEPC_OPTFLAGS --build-arg PETSC_SLEPC_DEBUGGING --build-arg MPI --file docker/Dockerfile --target dev-env --tag dolfinx/dev-env docker/
+        run: docker buildx build --build-arg PETSC_SLEPC_OPTFLAGS --build-arg PETSC_SLEPC_DEBUGGING --build-arg MPI --file docker/Dockerfile --target dev-env --tag dolfinx/dev-env-${env.ARCH_TAG} docker/
       - name: Log into the DockerHub registry
         run: echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
       - name: Push to the DockerHub registry
-        run: docker push dolfinx/dev-env
+        run: docker push dolfinx/dev-env-${env.ARCH_TAG}
+
+  stop-runner:
+    name: Stop self-hosted EC2 runner
+    needs:
+      - start_runner # required to get output from the start-runner job
+      - build_test_env_openmpi # required to wait when the main job is done
+      - build_test_env_mpich
+      - build_dev_env
+    runs-on: ubuntu-latest
+    if: ${{ always() }} # required to stop the runner even if the error happened in the previous jobs
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+      - name: Stop EC2 runner
+        uses: jhale/ec2-github-runner@main
+        with:
+          mode: stop
+          github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
+          label: ubuntu-arm64-aws
+          ec2-instance-id: ${{ needs.start_runner.outputs.ec2-instance-id }}
