@@ -126,14 +126,12 @@ void CoordinateElement::compute_reference_geometry(
   assert(detJ.size() == num_points);
   assert(K.size() == num_points * gdim * tdim);
 
-  xt::xtensor<double, 4> tabulated_data({tdim + 1, 1, d, 1});
-
   xt::xtensor<double, 4> dphi({tdim, num_points, d, 1});
   if (_is_affine)
   {
     // Tabulate shape function and first derivative at the origin
-    xt::xtensor<double, 2> X0({1, tdim});
-    tabulated_data = _element->tabulate(1, X0);
+    xt::xtensor<double, 2> X0 = xt::zeros<double>({std::size_t(1), tdim});
+    xt::xtensor<double, 4> tabulated_data = _element->tabulate(1, X0);
     dphi = xt::view(tabulated_data, xt::range(1, tdim + 1), xt::all(),
                     xt::all(), xt::all());
 
@@ -161,10 +159,11 @@ void CoordinateElement::compute_reference_geometry(
       int k;
       for (k = 0; k < non_affine_max_its; ++k)
       {
-        tabulated_data = _element->tabulate(1, Xk);
+        xt::xtensor<double, 4> tabulated_data = _element->tabulate(1, Xk);
         dphi = xt::view(tabulated_data, xt::range(1, tdim + 1), xt::all(),
                         xt::all(), xt::all());
 
+        // cell_geometry * phi(0)
         auto phi0 = xt::view(tabulated_data, 0, 0, xt::all(), 0);
         auto xk = xt::linalg::dot(xt::transpose(cell_geometry), phi0);
 
