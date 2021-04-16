@@ -243,7 +243,7 @@ void CoordinateElement::compute_jacobian(
 
   if (_is_affine)
   {
-    dphi0 = xt::view(dphi, xt::range(1, tdim + 1), 0, xt::all(), 0);
+    dphi0 = xt::view(dphi, xt::all(), 0, xt::all(), 0);
     auto J0 = xt::linalg::dot(xt::transpose(cell_geom), xt::transpose(dphi0));
     J = xt::broadcast(J0, J.shape());
   }
