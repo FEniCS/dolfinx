@@ -190,12 +190,16 @@ void assemble_cells(
   const int ndim0 = bs0 * num_dofs0;
   const int ndim1 = bs1 * num_dofs1;
   std::vector<T> Ae(ndim0 * ndim1);
-  xt::xtensor<double, 2> coordinate_dofs({num_dofs_g, gdim});
+  std::vector<double> coordinate_dofs(num_dofs_g * gdim);
   for (std::int32_t c : active_cells)
   {
     // Get cell coordinates/geometry
     auto x_dofs = x_dofmap.links(c);
-    coordinate_dofs = xt::view(x_g, xt::keep(x_dofs), xt::range(0, gdim));
+    for (std::size_t i = 0; i < x_dofs.size(); ++i)
+    {
+      std::copy_n(xt::row(x_g, x_dofs[i]).begin(), gdim,
+                  std::next(coordinate_dofs.begin(), i * gdim));
+    }
 
     // Tabulate tensor
     std::fill(Ae.begin(), Ae.end(), 0);
@@ -267,7 +271,7 @@ void assemble_exterior_facets(
   const xt::xtensor<double, 2>& x_g = mesh.geometry().x();
 
   // Data structures used in assembly
-  xt::xtensor<double, 2> coordinate_dofs({num_dofs_g, gdim});
+  std::vector<double> coordinate_dofs(num_dofs_g * gdim);
   const int num_dofs0 = dofmap0.links(0).size();
   const int num_dofs1 = dofmap1.links(0).size();
   const int ndim0 = bs0 * num_dofs0;
@@ -292,7 +296,11 @@ void assemble_exterior_facets(
 
     // Get cell coordinates/geometry
     auto x_dofs = x_dofmap.links(cells[0]);
-    coordinate_dofs = xt::view(x_g, xt::keep(x_dofs), xt::range(0, gdim));
+    for (std::size_t i = 0; i < x_dofs.size(); ++i)
+    {
+      std::copy_n(xt::row(x_g, x_dofs[i]).begin(), gdim,
+                  std::next(coordinate_dofs.begin(), i * gdim));
+    }
 
     // Tabulate tensor
     std::fill(Ae.begin(), Ae.end(), 0);
@@ -398,11 +406,17 @@ void assemble_interior_facets(
 
     // Get cell geometry
     auto x_dofs0 = x_dofmap.links(cells[0]);
-    xt::view(coordinate_dofs, 0, xt::all(), xt::all())
-        = xt::view(x_g, xt::keep(x_dofs0), xt::range(0, gdim));
+    for (std::size_t i = 0; i < x_dofs0.size(); ++i)
+    {
+      std::copy_n(xt::view(x_g, x_dofs0[i]).begin(), gdim,
+                  xt::view(coordinate_dofs, 0, i, xt::all()).begin());
+    }
     auto x_dofs1 = x_dofmap.links(cells[1]);
-    xt::view(coordinate_dofs, 1, xt::all(), xt::all())
-        = xt::view(x_g, xt::keep(x_dofs1), xt::range(0, gdim));
+    for (std::size_t i = 0; i < x_dofs1.size(); ++i)
+    {
+      std::copy_n(xt::view(x_g, x_dofs1[i]).begin(), gdim,
+                  xt::view(coordinate_dofs, 1, i, xt::all()).begin());
+    }
 
     // Get dof maps for cells and pack
     xtl::span<const std::int32_t> dmap0_cell0 = dofmap0.cell_dofs(cells[0]);

@@ -152,7 +152,7 @@ T assemble_cells(
   const xt::xtensor<double, 2>& x_g = geometry.x();
 
   // Create data structures used in assembly
-  xt::xtensor<double, 2> coordinate_dofs({num_dofs_g, gdim});
+  std::vector<double> coordinate_dofs(num_dofs_g * gdim);
 
   // Iterate over all cells
   T value(0);
@@ -160,7 +160,11 @@ T assemble_cells(
   {
     // Get cell coordinates/geometry
     auto x_dofs = x_dofmap.links(c);
-    coordinate_dofs = xt::view(x_g, xt::keep(x_dofs), xt::range(0, gdim));
+    for (std::size_t i = 0; i < x_dofs.size(); ++i)
+    {
+      std::copy_n(xt::row(x_g, x_dofs[i]).begin(), gdim,
+                  std::next(coordinate_dofs.begin(), i * gdim));
+    }
 
     auto coeff_cell = coeffs.row(c);
     fn(&value, coeff_cell.data(), constant_values.data(),
@@ -190,7 +194,7 @@ T assemble_exterior_facets(
   const xt::xtensor<double, 2>& x_g = mesh.geometry().x();
 
   // Creat data structures used in assembly
-  xt::xtensor<double, 2> coordinate_dofs({num_dofs_g, gdim});
+  std::vector<double> coordinate_dofs(num_dofs_g * gdim);
 
   auto f_to_c = mesh.topology().connectivity(tdim - 1, tdim);
   assert(f_to_c);
@@ -213,7 +217,11 @@ T assemble_exterior_facets(
 
     // Get cell coordinates/geometry
     auto x_dofs = x_dofmap.links(cell);
-    coordinate_dofs = xt::view(x_g, xt::keep(x_dofs), xt::range(0, gdim));
+    for (std::size_t i = 0; i < x_dofs.size(); ++i)
+    {
+      std::copy_n(xt::row(x_g, x_dofs[i]).begin(), gdim,
+                  std::next(coordinate_dofs.begin(), i * gdim));
+    }
 
     auto coeff_cell = coeffs.row(cell);
     fn(&value, coeff_cell.data(), constant_values.data(),
@@ -276,11 +284,17 @@ T assemble_interior_facets(
 
     // Get cell geometry
     auto x_dofs0 = x_dofmap.links(cells[0]);
+    for (std::size_t i = 0; i < x_dofs0.size(); ++i)
+    {
+      std::copy_n(xt::view(x_g, x_dofs0[i]).begin(), gdim,
+                  xt::view(coordinate_dofs, 0, i, xt::all()).begin());
+    }
     auto x_dofs1 = x_dofmap.links(cells[1]);
-    xt::view(coordinate_dofs, 0, xt::all(), xt::all())
-        = xt::view(x_g, xt::keep(x_dofs0), xt::range(0, gdim));
-    xt::view(coordinate_dofs, 1, xt::all(), xt::all())
-        = xt::view(x_g, xt::keep(x_dofs1), xt::range(0, gdim));
+    for (std::size_t i = 0; i < x_dofs1.size(); ++i)
+    {
+      std::copy_n(xt::view(x_g, x_dofs1[i]).begin(), gdim,
+                  xt::view(coordinate_dofs, 1, i, xt::all()).begin());
+    }
 
     // Layout for the restricted coefficients is flattened
     // w[coefficient][restriction][dof]

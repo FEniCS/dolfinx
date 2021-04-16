@@ -116,6 +116,8 @@ if (DOLFINX_ENABLE_KAHIP AND KAHIP_FOUND)
   target_include_directories(dolfinx SYSTEM PRIVATE ${KAHIP_INCLUDE_DIRS})
 endif()
 
+target_compile_options(dolfinx PRIVATE -march=native)
+
 #------------------------------------------------------------------------------
 # Install dolfinx library and header files
 
