@@ -62,12 +62,12 @@ void eval(array2d<T>& values, const fem::Expression<T>& e,
   std::vector<T> values_e(e.num_points() * e.value_size(), 0);
   for (std::size_t c = 0; c < active_cells.size(); ++c)
   {
-    const std::int32_t cell = active_cells[i];
+    const std::int32_t cell = active_cells[c];
 
     auto x_dofs = x_dofmap.links(c);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
-      std::copy_n(xt::row(x_g, x_dofs[i]).begin(), gdim,
+      std::copy_n(xt::row(x_g, x_dofs[i]).cbegin(), gdim,
                   std::next(coordinate_dofs.begin(), i * gdim));
     }
 
