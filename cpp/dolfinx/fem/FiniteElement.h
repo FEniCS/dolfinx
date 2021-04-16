@@ -6,15 +6,14 @@
 
 #pragma once
 
-#include <dolfinx/common/span.hpp>
 #include <dolfinx/common/types.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <functional>
 #include <memory>
 #include <numeric>
 #include <vector>
+#include <xtl/xspan.hpp>
 
-struct ufc_coordinate_mapping;
 struct ufc_finite_element;
 
 namespace dolfinx::fem
@@ -99,14 +98,14 @@ public:
                                  const std::vector<double>& reference_values,
                                  const array2d<double>& X,
                                  const std::vector<double>& J,
-                                 const tcb::span<const double>& detJ,
+                                 const xtl::span<const double>& detJ,
                                  const std::vector<double>& K) const;
 
   /// Push basis function (derivatives) forward to physical element
   void transform_reference_basis_derivatives(
       std::vector<double>& values, std::size_t order,
       const std::vector<double>& reference_values, const array2d<double>& X,
-      const std::vector<double>& J, const tcb::span<const double>& detJ,
+      const std::vector<double>& J, const xtl::span<const double>& detJ,
       const std::vector<double>& K) const;
 
   /// Get the number of sub elements (for a mixed element)
@@ -154,8 +153,7 @@ public:
   /// @param[out] dofs The element degrees of freedom (interpolants) of
   /// the expression. The call must allocate the space. Is has
   template <typename T>
-  constexpr void interpolate(const array2d<T>& values,
-                             tcb::span<T> dofs) const
+  constexpr void interpolate(const array2d<T>& values, xtl::span<T> dofs) const
   {
     const std::size_t rows = _space_dim / _bs;
     assert(_space_dim % _bs == 0);

@@ -8,7 +8,7 @@
 #include "assembler.h"
 #include "sparsitybuild.h"
 #include <dolfinx/common/IndexMap.h>
-#include <dolfinx/common/span.hpp>
+#include <xtl/xspan.hpp>
 #include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/la/PETScMatrix.h>
 #include <dolfinx/la/PETScVector.h>
@@ -279,7 +279,7 @@ void fem::assemble_vector_petsc(Vec b, const Form<PetscScalar>& L)
   VecGetSize(b_local, &n);
   PetscScalar* array = nullptr;
   VecGetArray(b_local, &array);
-  tcb::span _b(array, n);
+  xtl::span<PetscScalar> _b(array, n);
   fem::assemble_vector<PetscScalar>(_b, L);
   VecRestoreArray(b_local, &array);
   VecGhostRestoreLocalForm(b, &b_local);
@@ -297,13 +297,13 @@ void fem::apply_lifting_petsc(
   VecGetSize(b_local, &n);
   PetscScalar* array = nullptr;
   VecGetArray(b_local, &array);
-  tcb::span _b(array, n);
+  xtl::span<PetscScalar> _b(array, n);
 
   if (x0.empty())
     fem::apply_lifting<PetscScalar>(_b, a, bcs1, {}, scale);
   else
   {
-    std::vector<tcb::span<const PetscScalar>> x0_ref;
+    std::vector<xtl::span<const PetscScalar>> x0_ref;
     std::vector<Vec> x0_local(a.size());
     std::vector<const PetscScalar*> x0_array(a.size());
     for (std::size_t i = 0; i < a.size(); ++i)
@@ -339,7 +339,7 @@ void fem::set_bc_petsc(
   VecGetLocalSize(b, &n);
   PetscScalar* array = nullptr;
   VecGetArray(b, &array);
-  tcb::span _b(array, n);
+  xtl::span<PetscScalar> _b(array, n);
   if (x0)
   {
     Vec x0_local;
@@ -348,7 +348,7 @@ void fem::set_bc_petsc(
     VecGetSize(x0_local, &n);
     const PetscScalar* array = nullptr;
     VecGetArrayRead(x0_local, &array);
-    tcb::span _x0(array, n);
+    xtl::span<const PetscScalar> _x0(array, n);
     fem::set_bc<PetscScalar>(_b, bcs, _x0, scale);
     VecRestoreArrayRead(x0_local, &array);
     VecGhostRestoreLocalForm(x0, &x0_local);
