@@ -108,14 +108,12 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
   // assumption
 
   // Create UFC subdofmaps and compute offset
-  std::vector<std::shared_ptr<ufc_dofmap>> ufc_sub_dofmaps;
   std::vector<int> offsets(1, 0);
+  std::vector<std::shared_ptr<const fem::ElementDofLayout>> sub_dofmaps;
 
   for (int i = 0; i < dofmap.num_sub_dofmaps; ++i)
   {
-    auto ufc_sub_dofmap
-        = std::shared_ptr<ufc_dofmap>(dofmap.create_sub_dofmap(i), std::free);
-    ufc_sub_dofmaps.push_back(ufc_sub_dofmap);
+    ufc_dofmap* ufc_sub_dofmap = dofmap.sub_dofmaps[i];
     if (element_block_size == 1)
     {
       offsets.push_back(offsets.back()
@@ -124,20 +122,14 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
     }
     else
       offsets.push_back(offsets.back() + 1);
-  }
 
-  std::vector<std::shared_ptr<const fem::ElementDofLayout>> sub_dofmaps;
-  for (std::size_t i = 0; i < ufc_sub_dofmaps.size(); ++i)
-  {
-    auto ufc_sub_dofmap = ufc_sub_dofmaps[i];
-    assert(ufc_sub_dofmap);
     std::vector<int> parent_map_sub(ufc_sub_dofmap->num_element_support_dofs
                                     * ufc_sub_dofmap->block_size);
     for (std::size_t j = 0; j < parent_map_sub.size(); ++j)
       parent_map_sub[j] = offsets[i] + element_block_size * j;
     sub_dofmaps.push_back(
         std::make_shared<fem::ElementDofLayout>(create_element_dof_layout(
-            *ufc_sub_dofmaps[i], cell_type, parent_map_sub)));
+            *ufc_sub_dofmap, cell_type, parent_map_sub)));
   }
 
   // Check for "block structure". This should ultimately be replaced,
@@ -194,67 +186,19 @@ std::vector<std::string> fem::get_constant_names(const ufc_form& ufc_form)
   return constants;
 }
 //-----------------------------------------------------------------------------
-fem::CoordinateElement
-fem::create_coordinate_map(const ufc_coordinate_mapping& ufc_cmap)
-{
-  static const std::map<ufc_shape, mesh::CellType> ufc_to_cell
-      = {{vertex, mesh::CellType::point},
-         {interval, mesh::CellType::interval},
-         {triangle, mesh::CellType::triangle},
-         {tetrahedron, mesh::CellType::tetrahedron},
-         {quadrilateral, mesh::CellType::quadrilateral},
-         {hexahedron, mesh::CellType::hexahedron}};
-
-  // Get cell type
-  const mesh::CellType cell_type = ufc_to_cell.at(ufc_cmap.cell_shape);
-  assert(ufc_cmap.topological_dimension == mesh::cell_dim(cell_type));
-
-  // Get scalar dof layout for geometry
-  ufc_dofmap* dmap = ufc_cmap.create_scalar_dofmap();
-  assert(dmap);
-  ElementDofLayout dof_layout = create_element_dof_layout(*dmap, cell_type);
-  std::free(dmap);
-
-  static const std::map<ufc_shape, std::string> ufc_to_string
-      = {{vertex, "no point"},
-         {interval, "interval"},
-         {triangle, "triangle"},
-         {tetrahedron, "tetrahedron"},
-         {quadrilateral, "quadrilateral"},
-         {hexahedron, "hexahedron"}};
-  const std::string cell_name = ufc_to_string.at(ufc_cmap.cell_shape);
-
-  auto basix_element
-      = std::make_shared<basix::FiniteElement>(basix::create_element(
-          ufc_cmap.element_family, cell_name.c_str(), ufc_cmap.element_degree));
-  return fem::CoordinateElement(basix_element, ufc_cmap.geometric_dimension,
-                                ufc_cmap.signature, dof_layout);
-}
-//-----------------------------------------------------------------------------
-fem::CoordinateElement
-fem::create_coordinate_map(ufc_coordinate_mapping* (*fptr)())
-{
-  ufc_coordinate_mapping* cmap = fptr();
-  fem::CoordinateElement element = create_coordinate_map(*cmap);
-  std::free(cmap);
-  return element;
-}
-//-----------------------------------------------------------------------------
 std::shared_ptr<fem::FunctionSpace>
 fem::create_functionspace(ufc_function_space* (*fptr)(const char*),
                           const std::string function_name,
                           std::shared_ptr<mesh::Mesh> mesh)
 {
   ufc_function_space* space = fptr(function_name.c_str());
-  ufc_dofmap* ufc_map = space->create_dofmap();
-  ufc_finite_element* ufc_element = space->create_element();
+  ufc_dofmap* ufc_map = space->dofmap;
+  ufc_finite_element* ufc_element = space->finite_element;
   auto V = std::make_shared<fem::FunctionSpace>(
       mesh, std::make_shared<fem::FiniteElement>(*ufc_element),
       std::make_shared<fem::DofMap>(
           fem::create_dofmap(mesh->mpi_comm(), *ufc_map, mesh->topology())));
-  std::free(ufc_element);
-  std::free(ufc_map);
-  std::free(space);
+
   return V;
 }
 //-----------------------------------------------------------------------------

@@ -7,7 +7,6 @@
 #pragma once
 
 #include <cstddef>
-#include <dolfinx/common/span.hpp>
 #include <functional>
 #include <map>
 #include <memory>

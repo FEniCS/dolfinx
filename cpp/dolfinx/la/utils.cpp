@@ -10,8 +10,8 @@
 template <typename T>
 void dolfinx::la::scatter_fwd(dolfinx::la::Vector<T>& v)
 {
-  tcb::span<const T> xlocal(v.array().data(), v.map()->size_local() * v.bs());
-  tcb::span<T> xremote(v.mutable_array().data()
+  xtl::span<const T> xlocal(v.array().data(), v.map()->size_local() * v.bs());
+  xtl::span<T> xremote(v.mutable_array().data()
                            + v.map()->size_local() * v.bs(),
                        v.map()->num_ghosts() * v.bs());
   v.map()->scatter_fwd(xlocal, xremote, v.bs());
@@ -21,8 +21,8 @@ template <typename T>
 void dolfinx::la::scatter_rev(dolfinx::la::Vector<T>& v,
                               dolfinx::common::IndexMap::Mode op)
 {
-  tcb::span<T> xlocal(v.mutable_array().data(), v.map()->size_local() * v.bs());
-  tcb::span<const T> xremote(v.array().data() + v.map()->size_local() * v.bs(),
+  xtl::span<T> xlocal(v.mutable_array().data(), v.map()->size_local() * v.bs());
+  xtl::span<const T> xremote(v.array().data() + v.map()->size_local() * v.bs(),
                              v.map()->num_ghosts() * v.bs());
   v.map()->scatter_rev(xlocal, xremote, v.bs(), op);
 }

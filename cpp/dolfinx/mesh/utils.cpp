@@ -19,6 +19,12 @@
 #include <dolfinx/graph/partition.h>
 #include <stdexcept>
 #include <unordered_set>
+#include <xtensor-blas/xlinalg.hpp>
+#include <xtensor/xadapt.hpp>
+#include <xtensor/xbuilder.hpp>
+#include <xtensor/xfixed.hpp>
+#include <xtensor/xnorm.hpp>
+#include <xtensor/xview.hpp>
 
 using namespace dolfinx;
 
@@ -52,7 +58,7 @@ mesh::extract_topology(const CellType& cell_type,
 }
 //-----------------------------------------------------------------------------
 std::vector<double> mesh::h(const Mesh& mesh,
-                            const tcb::span<const std::int32_t>& entities,
+                            const xtl::span<const std::int32_t>& entities,
                             int dim)
 {
   if (dim != mesh.topology().dim())
@@ -69,20 +75,24 @@ std::vector<double> mesh::h(const Mesh& mesh,
   const array2d<double>& geom_dofs = geometry.x();
   std::vector<double> h_cells(entities.size(), 0);
   assert(num_vertices <= 8);
-  std::array<Eigen::Vector3d, 8> points;
+  xt::xtensor_fixed<double, xt::xshape<8, 3>> points;
   for (std::size_t e = 0; e < entities.size(); ++e)
   {
     // Get the coordinates  of the vertices
     auto dofs = x_dofs.links(entities[e]);
     for (int i = 0; i < num_vertices; ++i)
       for (int j = 0; j < 3; ++j)
-        points[i][j] = geom_dofs(dofs[i], j);
+        points(i, j) = geom_dofs(dofs[i], j);
 
     // Get maximum edge length
     for (int i = 0; i < num_vertices; ++i)
     {
       for (int j = i + 1; j < num_vertices; ++j)
-        h_cells[e] = std::max(h_cells[e], (points[i] - points[j]).norm());
+      {
+        auto p0 = xt::row(points, i);
+        auto p1 = xt::row(points, j);
+        h_cells[e] = std::max(h_cells[e], xt::norm_l2(p0 - p1)());
+      }
     }
   }
 
@@ -91,17 +101,16 @@ std::vector<double> mesh::h(const Mesh& mesh,
 //-----------------------------------------------------------------------------
 array2d<double>
 mesh::cell_normals(const mesh::Mesh& mesh, int dim,
-                   const tcb::span<const std::int32_t>& entities)
+                   const xtl::span<const std::int32_t>& entities)
 {
   const int gdim = mesh.geometry().dim();
   const mesh::CellType type
       = mesh::cell_entity_type(mesh.topology().cell_type(), dim);
 
   // Find geometry nodes for topology entities
-  // FIXME: Use eigen map for now.
-  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
-      geom_dofs(mesh.geometry().x().data(), mesh.geometry().x().shape[0],
-                mesh.geometry().x().shape[1]);
+  auto geom_dofs
+      = xt::adapt(mesh.geometry().x().data(), mesh.geometry().x().size(),
+                  xt::no_ownership(), mesh.geometry().x().shape);
 
   // Orient cells if they are tetrahedron
   bool orient = false;
@@ -112,12 +121,10 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
 
   const std::int32_t num_entities = entities.size();
   array2d<double> _n(num_entities, 3);
-
-  Eigen::Map<Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>> n(
-      _n.data(), _n.shape[0], _n.shape[1]);
+  auto n = xt::adapt(_n.data(), _n.size(), xt::no_ownership(), _n.shape);
   switch (type)
   {
-  case (mesh::CellType::interval):
+  case mesh::CellType::interval:
   {
     if (gdim > 2)
       throw std::invalid_argument("Interval cell normal undefined in 3D");
@@ -125,42 +132,51 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
     {
       // Get the two vertices as points
       auto vertices = geometry_entities.row(i);
-      Eigen::Vector3d p0 = geom_dofs.row(vertices[0]);
-      Eigen::Vector3d p1 = geom_dofs.row(vertices[1]);
+      auto p0 = xt::row(geom_dofs, vertices[0]);
+      auto p1 = xt::row(geom_dofs, vertices[1]);
+
       // Define normal by rotating tangent counter-clockwise
-      Eigen::Vector3d t = p1 - p0;
-      n.row(i) = Eigen::Vector3d(-t[1], t[0], 0.0).normalized();
+      auto t = p1 - p0;
+      auto ni = xt::row(n, i);
+      ni[0] = -t[1];
+      ni[1] = t[0];
+      ni[2] = 0.0;
+      ni /= xt::norm_l2(ni);
     }
     return _n;
   }
-  case (mesh::CellType::triangle):
+  case mesh::CellType::triangle:
   {
     for (int i = 0; i < num_entities; ++i)
     {
       // Get the three vertices as points
       auto vertices = geometry_entities.row(i);
-      const Eigen::Vector3d p0 = geom_dofs.row(vertices[0]);
-      const Eigen::Vector3d p1 = geom_dofs.row(vertices[1]);
-      const Eigen::Vector3d p2 = geom_dofs.row(vertices[2]);
+      auto p0 = xt::row(geom_dofs, vertices[0]);
+      auto p1 = xt::row(geom_dofs, vertices[1]);
+      auto p2 = xt::row(geom_dofs, vertices[2]);
 
       // Define cell normal via cross product of first two edges
-      n.row(i) = ((p1 - p0).cross(p2 - p0)).normalized();
+      auto ni = xt::row(n, i);
+      ni = xt::linalg::cross((p1 - p0), (p2 - p0));
+      ni /= xt::norm_l2(ni);
     }
     return _n;
   }
-  case (mesh::CellType::quadrilateral):
+  case mesh::CellType::quadrilateral:
   {
     // TODO: check
     for (int i = 0; i < num_entities; ++i)
     {
       // Get three vertices as points
       auto vertices = geometry_entities.row(i);
-      const Eigen::Vector3d p0 = geom_dofs.row(vertices[0]);
-      const Eigen::Vector3d p1 = geom_dofs.row(vertices[1]);
-      const Eigen::Vector3d p2 = geom_dofs.row(vertices[2]);
+      auto p0 = xt::row(geom_dofs, vertices[0]);
+      auto p1 = xt::row(geom_dofs, vertices[1]);
+      auto p2 = xt::row(geom_dofs, vertices[2]);
 
-      // Define cell normal via cross product of first two edges
-      n.row(i) = ((p1 - p0).cross(p2 - p0)).normalized();
+      // Defined cell normal via cross product of first two edges:
+      auto ni = xt::row(n, i);
+      ni = xt::linalg::cross((p1 - p0), (p2 - p0));
+      ni /= xt::norm_l2(ni);
     }
     return _n;
   }
@@ -173,14 +189,11 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
 }
 //-----------------------------------------------------------------------------
 array2d<double> mesh::midpoints(const mesh::Mesh& mesh, int dim,
-                                const tcb::span<const std::int32_t>& entities)
+                                const xtl::span<const std::int32_t>& entities)
 {
-  const mesh::Geometry& geometry = mesh.geometry();
-
-  // FIXME: Use eigen map for now.
-  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                Eigen::RowMajor>>
-      x(geometry.x().data(), geometry.x().shape[0], geometry.x().shape[1]);
+  // FIXME: Use eigen map for now
+  auto x = xt::adapt(mesh.geometry().x().data(), mesh.geometry().x().size(),
+                     xt::no_ownership(), mesh.geometry().x().shape);
 
   // Build map from entity -> geometry dof
   // FIXME: This assumes a linear geometry.
@@ -188,16 +201,17 @@ array2d<double> mesh::midpoints(const mesh::Mesh& mesh, int dim,
       = entities_to_geometry(mesh, dim, entities, false);
 
   array2d<double> midpoints(entities.size(), 3);
-  Eigen::Map<Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>> x_mid(
-      midpoints.data(), entities.size(), 3);
+  auto x_mid = xt::adapt(midpoints.data(), midpoints.size(), xt::no_ownership(),
+                         midpoints.shape);
 
   for (std::size_t e = 0; e < entity_to_geometry.shape[0]; ++e)
   {
     auto entity_vertices = entity_to_geometry.row(e);
-    x_mid.row(e) = 0.0;
+    auto x_e = xt::row(x_mid, e);
+    x_e = 0.0;
     for (std::size_t v = 0; v < entity_vertices.size(); ++v)
-      x_mid.row(e) += x.row(entity_vertices[v]);
-    x_mid.row(e) /= entity_vertices.size();
+      x_e += xt::row(x, entity_vertices[v]);
+    x_e /= entity_vertices.size();
   }
 
   return midpoints;
@@ -313,10 +327,9 @@ std::vector<std::int32_t> mesh::locate_entities_boundary(
   // Get geometry data
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
 
-  // FIXME: Use eigen map for now.
-  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
-      x_nodes(mesh.geometry().x().data(), mesh.geometry().x().shape[0],
-              mesh.geometry().x().shape[1]);
+  auto x_nodes
+      = xt::adapt(mesh.geometry().x().data(), mesh.geometry().x().size(),
+                  xt::no_ownership(), mesh.geometry().x().shape);
 
   // Build vector of boundary vertices
   const std::vector<std::int32_t> vertices(boundary_vertices.begin(),
@@ -382,7 +395,7 @@ std::vector<std::int32_t> mesh::locate_entities_boundary(
 //-----------------------------------------------------------------------------
 array2d<std::int32_t>
 mesh::entities_to_geometry(const mesh::Mesh& mesh, int dim,
-                           const tcb::span<const std::int32_t>& entity_list,
+                           const xtl::span<const std::int32_t>& entity_list,
                            bool orient)
 {
   dolfinx::mesh::CellType cell_type = mesh.topology().cell_type();
@@ -430,26 +443,26 @@ mesh::entities_to_geometry(const mesh::Mesh& mesh, int dim,
     if (orient)
     {
       // Compute cell midpoint
-      Eigen::Vector3d midpoint(0.0, 0.0, 0.0);
+      xt::xtensor_fixed<double, xt::xshape<3>> midpoint = {0, 0, 0};
       for (std::int32_t j : xc)
         for (int k = 0; k < 3; ++k)
           midpoint[k] += geom_dofs(j, k);
       midpoint /= xc.size();
 
       // Compute vector triple product of two edges and vector to midpoint
-      Eigen::Vector3d p0, p1, p2;
+      xt::xtensor_fixed<double, xt::xshape<3>> p0, p1, p2;
       std::copy_n(geom_dofs.row(entity_geometry(i, 0)).begin(), 3, p0.data());
       std::copy_n(geom_dofs.row(entity_geometry(i, 1)).begin(), 3, p1.data());
       std::copy_n(geom_dofs.row(entity_geometry(i, 2)).begin(), 3, p2.data());
 
-      Eigen::Matrix3d a;
-      a.row(0) = midpoint - p0;
-      a.row(1) = p1 - p0;
-      a.row(2) = p2 - p0;
+      xt::xtensor_fixed<double, xt::xshape<3, 3>> a;
+      xt::row(a, 0) = midpoint - p0;
+      xt::row(a, 1) = p1 - p0;
+      xt::row(a, 2) = p2 - p0;
 
       // Midpoint direction should be opposite to normal, hence this
       // should be negative. Switch points if not.
-      if (a.determinant() > 0.0)
+      if (xt::linalg::det(a) > 0.0)
         std::swap(entity_geometry(i, 1), entity_geometry(i, 2));
     }
   }

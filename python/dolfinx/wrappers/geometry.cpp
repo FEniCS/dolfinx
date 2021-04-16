@@ -6,7 +6,6 @@
 
 #include "array.h"
 #include "caster_mpi.h"
-#include <dolfinx/common/span.hpp>
 #include <dolfinx/geometry/BoundingBoxTree.h>
 #include <dolfinx/geometry/gjk.h>
 #include <dolfinx/geometry/utils.h>
@@ -16,6 +15,9 @@
 #include <pybind11/operators.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
+#include <xtensor/xbuilder.hpp>
+#include <xtensor/xtensor.hpp>
+#include <xtl/xspan.hpp>
 
 namespace py = pybind11;
 
@@ -41,7 +43,10 @@ void geometry(py::module& m)
         [](const py::array_t<double>& p, const py::array_t<double>& q) {
           const std::size_t p_s0 = p.ndim() == 1 ? 1 : p.shape(0);
           const std::size_t q_s0 = q.ndim() == 1 ? 1 : q.shape(0);
-          dolfinx::array2d<double> _p(p_s0, 3, 0.0), _q(q_s0, 3, 0.0);
+          xt::xtensor<double, 2> _p
+              = xt::zeros<double>({p_s0, static_cast<std::size_t>(3)});
+          xt::xtensor<double, 2> _q
+              = xt::zeros<double>({q_s0, static_cast<std::size_t>(3)});
 
           auto px = p.unchecked();
           if (px.ndim() == 1)
@@ -73,7 +78,9 @@ void geometry(py::module& m)
           else
             throw std::runtime_error("Array has wrong ndim.");
 
-          return dolfinx::geometry::compute_distance_gjk(_p, _q);
+          const xt::xtensor_fixed<double, xt::xshape<3>> d
+              = dolfinx::geometry::compute_distance_gjk(_p, _q);
+          return py::array_t<double>(d.shape(), d.data());
         });
 
   m.def("squared_distance", &dolfinx::geometry::squared_distance);
@@ -82,7 +89,9 @@ void geometry(py::module& m)
            const py::array_t<std::int32_t, py::array::c_style>& candidate_cells,
            const std::array<double, 3>& point, int n) {
           return as_pyarray(dolfinx::geometry::select_colliding_cells(
-              mesh, tcb::span(candidate_cells.data(), candidate_cells.size()),
+              mesh,
+              xtl::span<const std::int32_t>(candidate_cells.data(),
+                                            candidate_cells.size()),
               point, n));
         });
 
@@ -97,7 +106,9 @@ void geometry(py::module& m)
                   const py::array_t<std::int32_t, py::array::c_style>& entities,
                   double padding) {
                  return dolfinx::geometry::BoundingBoxTree(
-                     mesh, tdim, tcb::span(entities.data(), entities.size()),
+                     mesh, tdim,
+                     xtl::span<const std::int32_t>(entities.data(),
+                                                   entities.size()),
                      padding);
                }),
            py::arg("mesh"), py::arg("tdim"), py::arg("entity_indices"),

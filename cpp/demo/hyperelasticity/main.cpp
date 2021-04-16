@@ -57,7 +57,7 @@ public:
   {
     return [&](const Vec x, Vec) {
       // Assemble b and update ghosts
-      tcb::span b(_b.mutable_array());
+      xtl::span<PetscScalar> b(_b.mutable_array());
       std::fill(b.begin(), b.end(), 0.0);
       fem::assemble_vector<PetscScalar>(b, *_l);
       VecGhostUpdateBegin(_b_petsc, ADD_VALUES, SCATTER_REVERSE);
@@ -70,7 +70,7 @@ public:
       VecGetSize(x_local, &n);
       const PetscScalar* array = nullptr;
       VecGetArrayRead(x_local, &array);
-      fem::set_bc<PetscScalar>(b, _bcs, tcb::span(array, n), -1.0);
+      fem::set_bc<PetscScalar>(b, _bcs, xtl::span<const PetscScalar>(array, n), -1.0);
       VecRestoreArrayRead(x, &array);
     };
   }
@@ -125,21 +125,21 @@ int main(int argc, char* argv[])
     // .. code-block:: cpp
 
     // Create mesh and define function space
-    auto cmap
-        = fem::create_coordinate_map(create_coordinate_map_hyperelasticity);
     auto mesh = std::make_shared<mesh::Mesh>(generation::BoxMesh::create(
         MPI_COMM_WORLD, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}}}, {10, 10, 10},
-        cmap, mesh::GhostMode::none));
+        mesh::CellType::tetrahedron, mesh::GhostMode::none));
 
     auto V = fem::create_functionspace(
-        create_functionspace_form_hyperelasticity_F, "u", mesh);
+        functionspace_form_hyperelasticity_F, "u", mesh);
 
     // Define solution function
     auto u = std::make_shared<fem::Function<PetscScalar>>(V);
-    auto a = fem::create_form<PetscScalar>(create_form_hyperelasticity_J,
-                                           {V, V}, {{"u", u}}, {}, {});
-    auto L = fem::create_form<PetscScalar>(create_form_hyperelasticity_F, {V},
-                                           {{"u", u}}, {}, {});
+    auto a = std::make_shared<fem::Form<PetscScalar>>(
+        fem::create_form<PetscScalar>(*form_hyperelasticity_J, {V, V},
+                                      {{"u", u}}, {}, {}));
+    auto L = std::make_shared<fem::Form<PetscScalar>>(
+        fem::create_form<PetscScalar>(*form_hyperelasticity_F, {V}, {{"u", u}},
+                                      {}, {}));
 
     auto u_rotation = std::make_shared<fem::Function<PetscScalar>>(V);
     u_rotation->interpolate([](auto& x) {

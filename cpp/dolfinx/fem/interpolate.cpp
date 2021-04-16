@@ -16,7 +16,7 @@ using namespace dolfinx;
 xt::xtensor<double, 2>
 fem::interpolation_coords(const fem::FiniteElement& element,
                           const mesh::Mesh& mesh,
-                          const tcb::span<const std::int32_t>& cells)
+                          const xtl::span<const std::int32_t>& cells)
 {
   // Get mesh geometry data and the element coordinate map
   const int gdim = mesh.geometry().dim();
