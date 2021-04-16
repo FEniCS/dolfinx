@@ -46,15 +46,15 @@ class NonlinearProblem:
         .. code-block:: python
             problem = LinearProblem(F, u, [bc0, bc1])
         """
-        self.L = fem.form.Form(F, form_compiler_parameters=form_compiler_parameters, jit_parameters=jit_parameters)
+        self._L = fem.form.Form(F, form_compiler_parameters=form_compiler_parameters, jit_parameters=jit_parameters)
         # Create the Jacobian matrix, dF/du
         if J is None:
             V = u.function_space
             du = ufl.TrialFunction(V)
             J = ufl.derivative(F, u, du)
 
-        self.a = fem.form.Form(J, form_compiler_parameters=form_compiler_parameters,
-                               jit_parameters=jit_parameters)
+        self._a = fem.form.Form(J, form_compiler_parameters=form_compiler_parameters,
+                                jit_parameters=jit_parameters)
         self.bcs = bcs
 
     def form(self, x: PETSc.Vec):
@@ -80,9 +80,9 @@ class NonlinearProblem:
         # Reset the residual vector
         with b.localForm() as b_local:
             b_local.set(0.0)
-        fem.assemble_vector(b, self.L)
+        fem.assemble_vector(b, self._L)
         # Apply boundary condition
-        fem.apply_lifting(b, [self.a], [self.bcs], [x], -1.0)
+        fem.apply_lifting(b, [self._a], [self.bcs], [x], -1.0)
         b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
         fem.set_bc(b, self.bcs, x, -1.0)
 
@@ -96,7 +96,7 @@ class NonlinearProblem:
             The matrix to assemble the Jacobian into
         """
         A.zeroEntries()
-        fem.assemble_matrix(A, self.a, self.bcs)
+        fem.assemble_matrix(A, self._a, self.bcs)
         A.assemble()
 
 
@@ -109,9 +109,9 @@ class NewtonSolver(cpp.nls.NewtonSolver):
 
         # Create matrix and vector to be used for assembly
         # of the non-linear problem
-        self.A = fem.create_matrix(problem.a)
+        self.A = fem.create_matrix(problem._a)
         self.setJ(problem.J, self.A)
-        self.L = fem.create_vector(problem.L)
+        self.L = fem.create_vector(problem._L)
         self.setF(problem.F, self.L)
         self.set_form(problem.form)
 
