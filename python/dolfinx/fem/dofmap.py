@@ -30,35 +30,25 @@ class DofMap:
 
     @property
     def bs(self):
-        """
-        Returns the block size of the dofmap
-        """
+        """ Returns the block size of the dofmap """
         return self._cpp_object.bs
 
     @property
     def dof_layout(self):
-        """
-        Returns the layout of dofs on an element
-        """
+        """ Returns the layout of dofs on an element """
         return self._cpp_object.dof_layout
 
     @property
     def index_map(self):
-        """
-        Returns the index map that described the parallel distribution of the dofmap
-        """
+        """ Returns the index map that described the parallel distribution of the dofmap """
         return self._cpp_object.index_map
 
     @property
     def index_map_bs(self):
-        """
-        Returns the block size of the index map
-        """
+        """ Returns the block size of the index map """
         return self._cpp_object.index_map_bs
 
     @property
     def list(self):
-        """
-        Returns the adjacency list with dof indices for each cell
-        """
+        """ Returns the adjacency list with dof indices for each cell """
         return self._cpp_object.list()
