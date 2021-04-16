@@ -354,18 +354,18 @@ std::string xdmf_utils::vtk_cell_type_str(mesh::CellType cell_type,
   return cell_str->second;
 }
 //-----------------------------------------------------------------------------
-std::pair<array2d<std::int32_t>, std::vector<std::int32_t>>
+std::pair<xt::xtensor<std::int32_t, 2>, std::vector<std::int32_t>>
 xdmf_utils::extract_local_entities(const mesh::Mesh& mesh, const int entity_dim,
-                                   const array2d<std::int64_t>& entities,
+                                   const xt::xtensor<std::int64_t, 2>& entities,
                                    const xtl::span<const std::int32_t>& values)
 {
-  if (entities.shape[0] != values.size())
+  if (entities.shape(0) != values.size())
     throw std::runtime_error("Number of entities and values must match");
 
   // Get layout of dofs on 0th entity
   const std::vector<int> entity_layout
       = mesh.geometry().cmap().dof_layout().entity_closure_dofs(entity_dim, 0);
-  assert(entity_layout.size() == entities.shape[1]);
+  assert(entity_layout.size() == entities.shape(1));
 
   auto c_to_v = mesh.topology().connectivity(mesh.topology().dim(), 0);
   if (!c_to_v)
@@ -403,11 +403,11 @@ xdmf_utils::extract_local_entities(const mesh::Mesh& mesh, const int entity_dim,
 
   // Throw away input global indices which do not belong to entity vertices
   // This decreases the amount of data needed in parallel communication
-  array2d<std::int64_t> entities_vertices(entities.shape[0],
-                                          num_vertices_per_entity);
-  for (std::size_t e = 0; e < entities_vertices.shape[0]; ++e)
+  xt::xtensor<std::int64_t, 2> entities_vertices(
+      {entities.shape(0), num_vertices_per_entity});
+  for (std::size_t e = 0; e < entities_vertices.shape(0); ++e)
   {
-    for (std::size_t i = 0; i < entities_vertices.shape[1]; ++i)
+    for (std::size_t i = 0; i < entities_vertices.shape(1); ++i)
       entities_vertices(e, i) = entities(e, entity_vertex_dofs[i]);
   }
 
@@ -453,11 +453,11 @@ xdmf_utils::extract_local_entities(const mesh::Mesh& mesh, const int entity_dim,
   std::vector<std::vector<std::int64_t>> entities_send(comm_size);
   std::vector<std::vector<std::int32_t>> values_send(comm_size);
   std::vector<std::int64_t> entity(num_vertices_per_entity);
-  for (std::size_t e = 0; e < entities_vertices.shape[0]; ++e)
+  for (std::size_t e = 0; e < entities_vertices.shape(0); ++e)
   {
     // Copy vertices for entity and sort
-    std::copy(entities_vertices.row(e).begin(), entities_vertices.row(e).end(),
-              entity.begin());
+    auto ev = xt::row(entities_vertices, e);
+    std::copy(ev.cbegin(), ev.cend(), entity.begin());
     std::sort(entity.begin(), entity.end());
 
     // Determine postmaster based on lowest entity node
@@ -582,9 +582,10 @@ xdmf_utils::extract_local_entities(const mesh::Mesh& mesh, const int entity_dim,
     }
   }
 
-  return {array2d<std::int32_t>({entities_new.size() / num_vertices_per_entity,
-                                 num_vertices_per_entity},
-                                std::move(entities_new)),
-          values_new};
+  std::array<std::size_t, 2> shaoe = {
+      entities_new.size() / num_vertices_per_entity, num_vertices_per_entity};
+  auto e_new = xt::adapt(entities_new.data(), entities_new.size(),
+                         xt::no_ownership(), shape);
+  return {e_new, values_new};
 }
 //-----------------------------------------------------------------------------

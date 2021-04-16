@@ -264,9 +264,9 @@ xt::xtensor<double, 2> xdmf_mesh::read_geometry_data(MPI_Comm comm,
                    xt::no_ownership(), shape);
 }
 //----------------------------------------------------------------------------
-array2d<std::int64_t> xdmf_mesh::read_topology_data(MPI_Comm comm,
-                                                    const hid_t h5_id,
-                                                    const pugi::xml_node& node)
+xt::xtensor<std::int64_t, 2>
+xdmf_mesh::read_topology_data(MPI_Comm comm, const hid_t h5_id,
+                              const pugi::xml_node& node)
 {
   // Get topology node
   pugi::xml_node topology_node = node.child("Topology");
@@ -289,11 +289,13 @@ array2d<std::int64_t> xdmf_mesh::read_topology_data(MPI_Comm comm,
   std::vector<std::int64_t> topology_data
       = xdmf_read::get_dataset<std::int64_t>(comm, topology_data_node, h5_id);
   const std::size_t num_local_cells = topology_data.size() / npoint_per_cell;
-  array2d<std::int64_t> cells_vtk({num_local_cells, npoint_per_cell},
-                                  std::move(topology_data));
+
+  std::array<std::size_t, 2> shape = {num_local_cells, npoint_per_cell};
+  auto cells_vtk = xt::adapt(topology_data.data(), topology_data.size(),
+                             xt::no_ownership(), shape);
 
   //  Permute cells from VTK to DOLFINX ordering
   return io::cells::compute_permutation(
-      cells_vtk, io::cells::perm_vtk(cell_type, cells_vtk.shape[1]));
+      cells_vtk, io::cells::perm_vtk(cell_type, cells_vtk.shape(1)));
 }
 //----------------------------------------------------------------------------

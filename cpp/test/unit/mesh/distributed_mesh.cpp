@@ -59,8 +59,8 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
 
   // read mesh data
   xt::xtensor<double, 2> x({0, 3});
-  dolfinx::array2d<std::int64_t> cells(
-      0, dolfinx::mesh::num_cell_vertices(mesh::CellType::triangle));
+  xt::xtensor<std::int64_t, 2> cells(
+      {0, dolfinx::mesh::num_cell_vertices(mesh::CellType::triangle)});
   graph::AdjacencyList<std::int32_t> dest(0);
   if (subset_comm != MPI_COMM_NULL)
   {

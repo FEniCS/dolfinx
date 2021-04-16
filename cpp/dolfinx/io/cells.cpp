@@ -10,6 +10,7 @@
 #include <dolfinx/mesh/cell_types.h>
 #include <numeric>
 #include <stdexcept>
+#include <xtensor/xview.hpp>
 
 using namespace dolfinx;
 namespace
@@ -349,16 +350,16 @@ io::cells::transpose(const std::vector<std::uint8_t>& map)
   return transpose;
 }
 //-----------------------------------------------------------------------------
-array2d<std::int64_t>
-io::cells::compute_permutation(const array2d<std::int64_t>& cells,
+xt::xtensor<std::int64_t, 2>
+io::cells::compute_permutation(const xt::xtensor<std::int64_t, 2>& cells,
                                const std::vector<std::uint8_t>& p)
 {
-  array2d<std::int64_t> cells_new(cells.shape);
-  for (std::size_t c = 0; c < cells_new.shape[0]; ++c)
+  xt::xtensor<std::int64_t, 2> cells_new(cells.shape());
+  for (std::size_t c = 0; c < cells_new.shape(0); ++c)
   {
-    auto cell = cells.row(c);
-    auto cell_new = cells_new.row(c);
-    for (std::size_t i = 0; i < cell_new.size(); ++i)
+    auto cell = xt::row(cells, c);
+    auto cell_new = xt::row(cells_new, c);
+    for (std::size_t i = 0; i < cell_new.shape(0); ++i)
       cell_new[i] = cell[p[i]];
   }
   return cells_new;

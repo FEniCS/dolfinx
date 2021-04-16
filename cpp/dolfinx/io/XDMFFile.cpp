@@ -226,7 +226,8 @@ mesh::Mesh XDMFFile::read_mesh(const fem::CoordinateElement& element,
                                const std::string xpath) const
 {
   // Read mesh data
-  const array2d<std::int64_t> cells = XDMFFile::read_topology_data(name, xpath);
+  const xt::xtensor<std::int64_t, 2> cells
+      = XDMFFile::read_topology_data(name, xpath);
   const xt::xtensor<double, 2> x = XDMFFile::read_geometry_data(name, xpath);
 
   // Create mesh
@@ -240,7 +241,7 @@ mesh::Mesh XDMFFile::read_mesh(const fem::CoordinateElement& element,
   return mesh;
 }
 //-----------------------------------------------------------------------------
-array2d<std::int64_t>
+xt::xtensor<std::int64_t, 2>
 XDMFFile::read_topology_data(const std::string name,
                              const std::string xpath) const
 {
@@ -323,7 +324,7 @@ XDMFFile::read_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh,
   if (!grid_node)
     throw std::runtime_error("<Grid> with name '" + name + "' not found.");
 
-  const array2d<std::int64_t> entities = read_topology_data(name, xpath);
+  const xt::xtensor<std::int64_t, 2> entities = read_topology_data(name, xpath);
 
   pugi::xml_node values_data_node
       = grid_node.child("Attribute").child("DataItem");
@@ -335,8 +336,8 @@ XDMFFile::read_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh,
   mesh::CellType cell_type = mesh::to_type(cell_type_str.first);
 
   // Permute entities from VTK to DOLFINX ordering
-  array2d<std::int64_t> entities1 = io::cells::compute_permutation(
-      entities, io::cells::perm_vtk(cell_type, entities.shape[1]));
+  xt::xtensor<std::int64_t, 2> entities1 = io::cells::compute_permutation(
+      entities, io::cells::perm_vtk(cell_type, entities.shape(1)));
 
   const auto [entities_local, values_local]
       = xdmf_utils::extract_local_entities(*mesh, mesh::cell_dim(cell_type),
