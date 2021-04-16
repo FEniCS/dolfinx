@@ -45,7 +45,7 @@ void io(py::module& m)
         [](const dolfinx::mesh::Mesh& mesh, int entity_dim,
            const py::array_t<std::int64_t, py::array::c_style>& entities,
            const py::array_t<std::int32_t, py::array::c_style>& values) {
-          assert(entities.ndims() == 2);
+          assert(entities.ndim() == 2);
           std::array<std::size_t, 2> shape
               = {static_cast<std::size_t>(entities.shape(0)),
                  static_cast<std::size_t>(entities.shape(1))};
