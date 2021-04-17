@@ -106,7 +106,7 @@ public:
 
   /// Compute reference coordinates X, and J, detJ and K for physical
   /// coordinates x
-  void compute_pull_back(
+  void pull_back(
       xt::xtensor<double, 2>& X, xt::xtensor<double, 3>& J,
       xt::xtensor<double, 1>& detJ, xt::xtensor<double, 3>& K,
       const xt::xtensor<double, 2>& x,
