@@ -18,7 +18,7 @@ using namespace dolfinx::fem;
 namespace
 {
 // Computes the determinant of rectangular matrices
-// det(AT * A) = det(A) * det(A)
+// det(A^T * A) = det(A) * det(A)
 double compute_determinant(xt::xtensor<double, 2>& A)
 {
   if (A.shape(0) == A.shape(1))
@@ -137,9 +137,7 @@ void CoordinateElement::compute_jacobian_inverse(
   {
     J0 = xt::view(J, 0, xt::all(), xt::all());
     if (gdim == tdim)
-    {
-      K0 = xt::linalg::inv(J0);
-    }
+      linalg::inv(J0, K0);
     else
       K0 = xt::linalg::pinv(J0);
     K = xt::broadcast(K0, K.shape());
@@ -150,7 +148,7 @@ void CoordinateElement::compute_jacobian_inverse(
     {
       J0 = xt::view(J, ip, xt::all(), xt::all());
       if (gdim == tdim)
-        K0 = xt::linalg::inv(J0);
+        linalg::inv(J0, K0);
       else
         K0 = xt::linalg::pinv(J0);
       auto K_ip = xt::view(K, ip, xt::all(), xt::all());

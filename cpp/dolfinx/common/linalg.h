@@ -69,9 +69,10 @@ void inv(const Matrix& A, Matrix& B)
   {
   case 1:
     B(0, 0) = 1 / A(0, 0);
+    break;
   case 2:
   {
-    idet = 1. / compute_determinant(A);
+    idet = 1. / det(A);
     B(0, 0) = idet * A(1, 1);
     B(0, 1) = -idet * A(0, 1);
     B(1, 0) = -idet * A(1, 0);
