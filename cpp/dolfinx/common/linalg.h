@@ -45,7 +45,7 @@ auto det(const Matrix& A)
     value_type w0 = difference_of_products(A(1, 1), A(1, 2), A(2, 1), A(2, 2));
     value_type w1 = difference_of_products(A(1, 0), A(1, 2), A(2, 0), A(2, 2));
     value_type w2 = difference_of_products(A(1, 0), A(1, 1), A(2, 0), A(2, 1));
-    value_type w3 = difference_of_products(A(0, 0), A(0, 2), w1, w0);
+    value_type w3 = difference_of_products(A(0, 0), A(0, 1), w1, w0);
     value_type w4 = std::fma(A(0, 2), w2, w3);
     return w4;
   }
@@ -83,7 +83,7 @@ void inv(const Matrix& A, Matrix& B)
     value_type w0 = difference_of_products(A(1, 1), A(1, 2), A(2, 1), A(2, 2));
     value_type w1 = difference_of_products(A(1, 0), A(1, 2), A(2, 0), A(2, 2));
     value_type w2 = difference_of_products(A(1, 0), A(1, 1), A(2, 0), A(2, 1));
-    value_type w3 = difference_of_products(A(0, 0), A(0, 2), w1, w0);
+    value_type w3 = difference_of_products(A(0, 0), A(0, 1), w1, w0);
     value_type det = std::fma(A(0, 2), w2, w3);
     assert(det != 0.);
     idet = 1 / det;
@@ -114,7 +114,7 @@ void dot(const Matrix& A, const Matrix& B, Matrix& C)
   using value_type = typename Matrix::value_type;
   for (std::size_t i = 0; i < N; i++)
   {
-    for (std::size_t j = 0; j < B.shape(0); j++)
+    for (std::size_t j = 0; j < B.shape(1); j++)
     {
       value_type result = 0;
       for (std::size_t k = 0; k < M; k++)
