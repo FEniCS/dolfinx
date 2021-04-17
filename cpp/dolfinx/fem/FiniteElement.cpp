@@ -110,7 +110,7 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
   // FIXME: Add element 'handle' to UFC and do not use fragile strings
   if (family == "mixed element")
   {
-    // basix does not support mixed elements, so the subelements should be
+    // Basix does not support mixed elements, so the subelements should be
     // handled separately
     // This will cause an error, if actually used
     _basix_element_handle = -1;
@@ -122,18 +122,6 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
 
     _basix_element_handle = basix::register_element(
         family.c_str(), cell_shape.c_str(), ufc_element.degree);
-    std::vector<int> value_shape(basix::value_rank(_basix_element_handle));
-    basix::value_shape(_basix_element_handle, value_shape.data());
-    int basix_value_size = 1;
-    for (int w : value_shape)
-      basix_value_size *= w;
-
-    _interpolation_matrix = std::vector<double>(
-        basix::dim(_basix_element_handle)
-        * basix::interpolation_num_points(_basix_element_handle)
-        * basix_value_size);
-    basix::interpolation_matrix(_basix_element_handle,
-                                _interpolation_matrix.data());
   }
 
   // Fill value dimension

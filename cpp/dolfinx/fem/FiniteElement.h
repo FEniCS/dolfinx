@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <basix/finite-element.h>
 #include <dolfinx/common/types.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <functional>
@@ -15,11 +16,6 @@
 #include <xtl/xspan.hpp>
 
 struct ufc_finite_element;
-
-namespace basix
-{
-class FiniteElement;
-}
 
 namespace dolfinx::fem
 {
@@ -164,20 +160,26 @@ public:
   template <typename T>
   constexpr void interpolate(const array2d<T>& values, xtl::span<T> dofs) const
   {
+    if (!_element)
+    {
+      throw std::runtime_error("No underlying element for interpolation. "
+                               "Cannot interpolate mixed elements directly.");
+    }
+
     const std::size_t rows = _space_dim / _bs;
     assert(_space_dim % _bs == 0);
     assert(dofs.size() == rows);
 
     // Compute dofs = Pi * x (matrix-vector multiply)
-    assert(_interpolation_matrix.size() % rows == 0);
-    const std::size_t cols = _interpolation_matrix.size() / rows;
+    const xt::xtensor<double, 2>& Pi = _element->interpolation_matrix();
+    assert(Pi.size() % rows == 0);
+    const std::size_t cols = Pi.size() / rows;
     for (std::size_t i = 0; i < rows; ++i)
     {
       // Dot product between row i of the matrix and 'values'
-      dofs[i] = std::transform_reduce(
-          std::next(_interpolation_matrix.begin(), i * cols),
-          std::next(_interpolation_matrix.begin(), i * cols + cols),
-          values.data(), T(0.0));
+      dofs[i] = std::transform_reduce(std::next(Pi.data(), i * cols),
+                                      std::next(Pi.data(), i * cols + cols),
+                                      values.data(), T(0.0));
     }
   }
 
@@ -265,11 +267,6 @@ private:
 
   // The basix element identifier
   int _basix_element_handle;
-
-  // The interpolation matrix. It has shape (dim,
-  // num_interpolation_points*basix_value_size). Note that _space_dim =
-  // _bs * dim. Storage is row-major
-  std::vector<double> _interpolation_matrix;
 
   // Basix Element (nullptr for mixed elements)
   std::shared_ptr<basix::FiniteElement> _element;
