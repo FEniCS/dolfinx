@@ -40,27 +40,28 @@ compute_bbox_of_entity(const mesh::Mesh& mesh, int dim, std::int32_t index)
 {
   // Get the geometrical indices for the mesh entity
   const int tdim = mesh.topology().dim();
-  const array2d<double>& geom_dofs = mesh.geometry().x();
+  const xt::xtensor<double, 2>& xg = mesh.geometry().x();
 
   mesh.topology_mutable().create_connectivity(dim, tdim);
 
   // FIXME: return of small dynamic array is expensive
   const std::array<std::int32_t, 1> entity = {index};
-  array2d vertex_indices = mesh::entities_to_geometry(mesh, dim, entity, false);
-  xtl::span<const int> entity_vertex_indices = vertex_indices.row(0);
+  const xt::xtensor<std::int32_t, 2> vertex_indices
+      = mesh::entities_to_geometry(mesh, dim, entity, false);
+  auto entity_vertices = xt::row(vertex_indices, 0);
 
   std::array<std::array<double, 3>, 2> b;
-  std::copy_n(geom_dofs.row(entity_vertex_indices[0]).begin(), 3, b[0].begin());
+  b[0] = {xg(entity_vertices[0], 0), xg(entity_vertices[0], 1),
+          xg(entity_vertices[0], 2)};
   b[1] = b[0];
 
-  // Compute min and max over remaining vertices
-  for (std::size_t i = 1; i < entity_vertex_indices.size(); ++i)
+  // Compute min and max over vertices
+  for (const int local_vertex : entity_vertices)
   {
-    const int local_vertex = entity_vertex_indices[i];
     for (int j = 0; j < 3; ++j)
     {
-      b[0][j] = std::min(b[0][j], geom_dofs(local_vertex, j));
-      b[1][j] = std::max(b[1][j], geom_dofs(local_vertex, j));
+      b[0][j] = std::min(b[0][j], xg(local_vertex, j));
+      b[1][j] = std::max(b[1][j], xg(local_vertex, j));
     }
   }
 
@@ -128,7 +129,8 @@ int _build_from_leaf(
     auto middle = std::next(leaf_bboxes.begin(), leaf_bboxes.size() / 2);
 
     std::nth_element(leaf_bboxes.begin(), middle, leaf_bboxes.end(),
-                     [axis](const auto& p0, const auto& p1) -> bool {
+                     [axis](const auto& p0, const auto& p1) -> bool
+                     {
                        const double x0 = p0.first[0][axis] + p0.first[1][axis];
                        const double x1 = p1.first[0][axis] + p1.first[1][axis];
                        return x0 < x1;
@@ -201,9 +203,8 @@ int _build_from_point(
   std::nth_element(
       points.begin(), middle, points.end(),
       [axis](const std::pair<std::array<double, 3>, std::int32_t>& p0,
-             const std::pair<std::array<double, 3>, std::int32_t>& p1) -> bool {
-        return p0.first[axis] < p1.first[axis];
-      });
+             const std::pair<std::array<double, 3>, std::int32_t>& p1) -> bool
+      { return p0.first[axis] < p1.first[axis]; });
 
   // Split bounding boxes into two groups and call recursively
   std::array bbox{_build_from_point(xtl::span(points.begin(), middle), bboxes,
