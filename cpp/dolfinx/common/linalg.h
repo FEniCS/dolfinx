@@ -107,22 +107,4 @@ void inv(const Matrix& A, Matrix& B)
   }
 }
 
-/// Compute the dot product of two matrices, where the dimensions of the first
-/// matrix are know at compile time.
-template <std::size_t N, std::size_t M, typename Matrix>
-void dot(const Matrix& A, const Matrix& B, Matrix& C)
-{
-  using value_type = typename Matrix::value_type;
-  for (std::size_t i = 0; i < N; i++)
-  {
-    for (std::size_t j = 0; j < B.shape(1); j++)
-    {
-      value_type result = 0;
-      for (std::size_t k = 0; k < M; k++)
-        result += A(i, k) * B(k, j);
-      C(i, j) = result;
-    }
-  }
-}
-
 } // namespace dolfinx::linalg
