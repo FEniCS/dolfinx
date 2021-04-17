@@ -45,7 +45,7 @@ jobs:
           path: ./spack
           repository: spack/spack
 
-      - name: Build DOLFIN-X (C++) via Spack
+      - name: Build DOLFINx (C++) via Spack
         run: |
           . ./spack/share/spack/setup-env.sh
           spack env create cpp
@@ -54,7 +54,7 @@ jobs:
           spack add fenics-dolfinx
           spack -v install
 
-      - name: Get DOLFIN-X code (to access test files)
+      - name: Get DOLFINx code (to access test files)
         uses: actions/checkout@v2
         with:
           path: ./dolfinx-test
@@ -72,7 +72,7 @@ jobs:
           make
           mpirun -np 2 ./demo_poisson
 
-      - name: Build DOLFIN-X (Python) and test dependencies via Spack
+      - name: Build DOLFINx (Python) and test dependencies via Spack
         run: |
           . ./spack/share/spack/setup-env.sh
           spack env create py
@@ -84,7 +84,7 @@ jobs:
 
       # NOTE: numba is installed via pip because the spack package takes
       # an extremely long time to compile
-      - name: Run DOLFIN-X (Python) tests
+      - name: Run DOLFINx (Python) tests
         run: |
           . ./spack/share/spack/setup-env.sh
           spack env activate py

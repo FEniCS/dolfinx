@@ -21,13 +21,6 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
       _value_size(ufc_element.value_size),
       _reference_value_size(ufc_element.reference_value_size),
       _hash(std::hash<std::string>{}(_signature)),
-      _apply_dof_transformation(ufc_element.apply_dof_transformation),
-      _apply_dof_transformation_to_scalar(
-          ufc_element.apply_dof_transformation_to_scalar),
-      _apply_inverse_transpose_dof_transformation(
-          ufc_element.apply_inverse_transpose_dof_transformation),
-      _apply_inverse_transpose_dof_transformation_to_scalar(
-          ufc_element.apply_inverse_transpose_dof_transformation_to_scalar),
       _bs(ufc_element.block_size),
       _interpolation_is_ident(ufc_element.interpolation_is_identity),
       _needs_permutation_data(ufc_element.needs_transformation_data)
@@ -327,5 +320,36 @@ void FiniteElement::map_pull_back(std::complex<double>* physical_data,
   basix::map_pull_back_complex(_basix_element_handle, physical_data,
                                reference_data, J, detJ, K, physical_dim,
                                physical_value_size, nresults, npoints);
+}
+//-----------------------------------------------------------------------------
+void FiniteElement::apply_dof_transformation(double* data,
+                                             std::uint32_t cell_permutation,
+                                             int block_size) const
+{
+  basix::apply_dof_transformation_real(_basix_element_handle, data, block_size,
+                                       cell_permutation);
+}
+//-----------------------------------------------------------------------------
+void FiniteElement::apply_dof_transformation(std::complex<double>* data,
+                                             std::uint32_t cell_permutation,
+                                             int block_size) const
+{
+  basix::apply_dof_transformation_complex(_basix_element_handle, data,
+                                          block_size, cell_permutation);
+}
+//-----------------------------------------------------------------------------
+void FiniteElement::apply_inverse_transpose_dof_transformation(
+    double* data, std::uint32_t cell_permutation, int block_size) const
+{
+  basix::apply_inverse_transpose_dof_transformation_real(
+      _basix_element_handle, data, block_size, cell_permutation);
+}
+//-----------------------------------------------------------------------------
+void FiniteElement::apply_inverse_transpose_dof_transformation(
+    std::complex<double>* data, std::uint32_t cell_permutation,
+    int block_size) const
+{
+  basix::apply_inverse_transpose_dof_transformation_complex(
+      _basix_element_handle, data, block_size, cell_permutation);
 }
 //-----------------------------------------------------------------------------
