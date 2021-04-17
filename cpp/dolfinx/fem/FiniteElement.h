@@ -183,32 +183,35 @@ public:
   /// @param[in,out] data The data to be transformed
   /// @param[in] cell_permutation Permutation data for the cell
   /// @param[in] block_size The block_size of the input data
-  template <typename T>
-  void apply_dof_transformation(T* data, std::uint32_t cell_permutation,
-                                int block_size) const
-  {
-    if constexpr (std::is_same<T, double>::value)
-      _apply_dof_transformation(data, cell_permutation, block_size);
-    else
-      _apply_dof_transformation_to_scalar(data, cell_permutation, block_size);
-  }
+  void apply_dof_transformation(double* data, std::uint32_t cell_permutation,
+                                int block_size) const;
+
+  /// Apply permutation to some data
+  ///
+  /// @param[in,out] data The data to be transformed
+  /// @param[in] cell_permutation Permutation data for the cell
+  /// @param[in] block_size The block_size of the input data
+  void apply_dof_transformation(std::complex<double>* data,
+                                std::uint32_t cell_permutation,
+                                int block_size) const;
 
   /// Apply inverse transpose permutation to some data
   ///
   /// @param[in,out] data The data to be transformed
   /// @param[in] cell_permutation Permutation data for the cell
   /// @param[in] block_size The block_size of the input data
-  template <typename T>
   void apply_inverse_transpose_dof_transformation(
-      T* data, std::uint32_t cell_permutation, int block_size) const
-  {
-    if constexpr (std::is_same<T, double>::value)
-      _apply_inverse_transpose_dof_transformation(data, cell_permutation,
-                                                  block_size);
-    else
-      _apply_inverse_transpose_dof_transformation_to_scalar(
-          data, cell_permutation, block_size);
-  }
+      double* data, std::uint32_t cell_permutation, int block_size) const;
+
+  /// Apply inverse transpose permutation to some data
+  ///
+  /// @param[in,out] data The data to be transformed
+  /// @param[in] cell_permutation Permutation data for the cell
+  /// @param[in] block_size The block_size of the input data
+  void
+  apply_inverse_transpose_dof_transformation(std::complex<double>* data,
+                                             std::uint32_t cell_permutation,
+                                             int block_size) const;
 
   /// Pull physical data back to the reference element.
   /// This passes the inputs directly into Basix's map_pull_back function.
@@ -244,18 +247,6 @@ private:
 
   // Dimension of each value space
   std::vector<int> _value_dimension;
-
-  std::function<int(double*, const std::uint32_t, const int)>
-      _apply_dof_transformation;
-
-  std::function<int(ufc_scalar_t*, const std::uint32_t, const int)>
-      _apply_dof_transformation_to_scalar;
-
-  std::function<int(double*, const std::uint32_t, const int)>
-      _apply_inverse_transpose_dof_transformation;
-
-  std::function<int(ufc_scalar_t*, const std::uint32_t, const int)>
-      _apply_inverse_transpose_dof_transformation_to_scalar;
 
   // Block size for VectorElements and TensorElements. This gives the
   // number of DOFs colocated at each point.

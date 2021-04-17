@@ -1,4 +1,4 @@
-name: DOLFINX CI
+name: DOLFINx CI
 
 on:
   push:
@@ -40,7 +40,7 @@ jobs:
         with:
           path: ./basix
           repository: FEniCS/basix
-          ref: main
+          ref: mscroggs/apply-dof-transformations
 
       - name: Install FEniCS Python components
         run: |
@@ -49,7 +49,7 @@ jobs:
           cmake --install build-dir
           python3 -m pip install ./basix/python
           python3 -m pip install git+https://github.com/FEniCS/ufl.git
-          python3 -m pip install git+https://github.com/FEniCS/ffcx.git
+          python3 -m pip install git+https://github.com/FEniCS/ffcx.git@mscroggs/apply-dof-transformations
 
       - name: Flake8 checks
         run: |
@@ -91,7 +91,7 @@ jobs:
           cd python/demo && python3 ./generate-demo-files.py
           cd ../doc && make html
 
-      - name: Set default DOLFINX JIT parameters
+      - name: Set default DOLFINx JIT parameters
         run: |
           mkdir -p ~/.config/dolfinx
           echo '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }' > ~/.config/dolfinx/dolfinx_jit_parameters.json
