@@ -205,9 +205,9 @@ void interpolate(
   const int tdim = mesh->topology().dim();
 
   // Get the interpolation points on the reference cells
-  const array2d<double> X = element->interpolation_points();
+  const xt::xtensor<double, 2>& X = element->interpolation_points();
 
-  if (X.shape[0] == 0)
+  if (X.shape(0) == 0)
     throw std::runtime_error(
         "Interpolation into this space is not yet supported.");
 
@@ -232,7 +232,7 @@ void interpolate(
   if (values.shape(0) != element->value_size())
     throw std::runtime_error("Interpolation data has the wrong shape.");
 
-  if (values.shape(1) != cells.size() * X.shape[0])
+  if (values.shape(1) != cells.size() * X.shape(0))
     throw std::runtime_error("Interpolation data has the wrong shape.");
 
   // Get dofmap
@@ -282,20 +282,19 @@ void interpolate(
     const xt::xtensor<double, 2>& x_g = mesh->geometry().x();
 
     // Create data structures for Jacobian info
-    xt::xtensor<double, 3> J = xt::empty<double>({int(X.shape[0]), gdim, tdim});
-    xt::xtensor<double, 3> K = xt::empty<double>({int(X.shape[0]), tdim, gdim});
-    xt::xtensor<double, 1> detJ = xt::empty<double>({X.shape[0]});
+    xt::xtensor<double, 3> J = xt::empty<double>({int(X.shape(0)), gdim, tdim});
+    xt::xtensor<double, 3> K = xt::empty<double>({int(X.shape(0)), tdim, gdim});
+    xt::xtensor<double, 1> detJ = xt::empty<double>({X.shape(0)});
 
     xt::xtensor<double, 2> coordinate_dofs
         = xt::empty<double>({num_dofs_g, gdim});
 
-    array2d<T> reference_data(value_size, X.shape[0]);
-    array2d<T> _vals(value_size, X.shape[0]);
+    array2d<T> reference_data(value_size, X.shape(0));
+    array2d<T> _vals(value_size, X.shape(0));
 
     // Tabulate 1st order derivatives of shape functions at interpolation coords
-    xt::xtensor<double, 2> _X = xt::adapt(X.data(), X.shape);
     xt::xtensor<double, 4> dphi
-        = xt::view(cmap.tabulate(1, _X), xt::range(1, tdim + 1), xt::all(),
+        = xt::view(cmap.tabulate(1, X), xt::range(1, tdim + 1), xt::all(),
                    xt::all(), xt::all());
 
     for (std::int32_t c : cells)
@@ -316,14 +315,14 @@ void interpolate(
         // Extract computed expression values for element block k
         for (int m = 0; m < value_size; ++m)
         {
-          std::copy_n(&values(k * value_size + m, c * X.shape[0]), X.shape[0],
+          std::copy_n(&values(k * value_size + m, c * X.shape(0)), X.shape(0),
                       _vals.row(m).begin());
         }
 
         // Get element degrees of freedom for block
         element->map_pull_back(reference_data.data(), _vals.data(), J.data(),
                                detJ.data(), K.data(), gdim, value_size, 1,
-                               X.shape[0]);
+                               X.shape(0));
 
         element->interpolate(reference_data, tcb::make_span(_coeffs));
         element->apply_inverse_transpose_dof_transformation(_coeffs.data(),

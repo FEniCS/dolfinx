@@ -277,67 +277,20 @@ FiniteElement::extract_sub_element(const std::vector<int>& component) const
   return sub_finite_element;
 }
 //-----------------------------------------------------------------------------
-// std::shared_ptr<const FiniteElement>
-// FiniteElement::extract_sub_element(const FiniteElement& finite_element,
-//                                    const std::vector<int>& component)
-// {
-//   // Check that a sub system has been specified
-//   if (component.empty())
-//   {
-//     throw std::runtime_error("Cannot extract subsystem of finite element. No
-//     "
-//                              "system was specified");
-//   }
-
-//   // Check if there are any sub systems
-//   if (finite_element.num_sub_elements() == 0)
-//   {
-//     throw std::runtime_error("Cannot extract subsystem of finite element. "
-//                              "There are no subsystems.");
-//   }
-
-//   // Check the number of available sub systems
-//   if (component[0] >= finite_element.num_sub_elements())
-//   {
-//     throw std::runtime_error(
-//         "Cannot extract subsystem of finite element. Requested "
-//         "subsystem out of range.");
-//   }
-
-//   // Get sub system
-//   std::shared_ptr<const FiniteElement> sub_element
-//       = finite_element._sub_elements[component[0]];
-//   assert(sub_element);
-
-//   // Return sub system if sub sub system should not be extracted
-//   if (component.size() == 1)
-//     return sub_element;
-
-//   // Otherwise, recursively extract the sub sub system
-//   const std::vector<int> sub_component(component.begin() + 1,
-//   component.end());
-
-//   return extract_sub_element(*sub_element, sub_component);
-// }
-// //-----------------------------------------------------------------------------
 bool FiniteElement::interpolation_ident() const noexcept
 {
   return _interpolation_is_ident;
 }
 //-----------------------------------------------------------------------------
-array2d<double> FiniteElement::interpolation_points() const
+const xt::xtensor<double, 2>& FiniteElement::interpolation_points() const
 {
-  if (_basix_element_handle == -1)
+  if (!_element)
   {
     throw std::runtime_error("Cannot get interpolation points - no basix "
                              "element handle. Maybe this is a mixed element?");
   }
-  const int gdim
-      = basix::cell_geometry_dimension(basix::cell_type(_basix_element_handle));
-  array2d<double> points(basix::interpolation_num_points(_basix_element_handle),
-                         gdim);
-  basix::interpolation_points(_basix_element_handle, points.data());
-  return points;
+
+  return _element->points();
 }
 //-----------------------------------------------------------------------------
 bool FiniteElement::needs_permutation_data() const noexcept
