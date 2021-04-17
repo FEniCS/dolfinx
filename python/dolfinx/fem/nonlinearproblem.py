@@ -119,9 +119,9 @@ class NewtonSolver(cpp.nls.NewtonSolver):
 
         # Create matrix and vector to be used for assembly
         # of the non-linear problem
-        self._A = fem.create_matrix(problem._a)
+        self._A = fem.create_matrix(problem.a)
         self.setJ(problem.J, self._A)
-        self._b = fem.create_vector(problem._L)
+        self._b = fem.create_vector(problem.L)
         self.setF(problem.F, self._b)
         self.set_form(problem.form)
 
