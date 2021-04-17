@@ -16,6 +16,11 @@
 
 struct ufc_finite_element;
 
+namespace basix
+{
+class FiniteElement;
+}
+
 namespace dolfinx::fem
 {
 /// Finite Element, containing the dof layout on a reference element, and
@@ -111,6 +116,10 @@ public:
   /// Get the number of sub elements (for a mixed element)
   /// @return the Number of sub elements
   int num_sub_elements() const noexcept;
+
+  /// Subelements (if any)
+  const std::vector<std::shared_ptr<const FiniteElement>>&
+  sub_elements() const noexcept;
 
   /// Return simple hash of the signature string
   std::size_t hash() const noexcept;
@@ -237,11 +246,6 @@ private:
   // List of sub-elements (if any)
   std::vector<std::shared_ptr<const FiniteElement>> _sub_elements;
 
-  // Recursively extract sub finite element
-  static std::shared_ptr<const FiniteElement>
-  extract_sub_element(const FiniteElement& finite_element,
-                      const std::vector<int>& component);
-
   // Simple hash of the signature string
   std::size_t _hash;
 
@@ -266,5 +270,8 @@ private:
   // num_interpolation_points*basix_value_size). Note that _space_dim =
   // _bs * dim. Storage is row-major
   std::vector<double> _interpolation_matrix;
+
+  // Basix Element (nullptr for mixed elements)
+  std::shared_ptr<basix::FiniteElement> _element;
 };
 } // namespace dolfinx::fem
