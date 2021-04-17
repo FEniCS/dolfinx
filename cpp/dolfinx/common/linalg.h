@@ -11,7 +11,7 @@
 namespace dolfinx::linalg
 {
 
-/// Kahan’s method to compute x = ad − bc with fused multiply-adds
+/// Kahan’s method to compute x = ad − bc with fused multiply-adds.
 /// The absolute error is bounded by 1.5 ulps, units of least precision.
 template <typename T>
 inline T difference_of_products(T a, T b, T c, T d) noexcept
@@ -22,8 +22,8 @@ inline T difference_of_products(T a, T b, T c, T d) noexcept
   return (diff + err);
 }
 
-/// Compute the determinant of a small matrix (1x1, 2x2, or 3x3)
-/// Tailored for use in computations usin the Jacobian
+/// Compute the determinant of a small matrix (1x1, 2x2, or 3x3).
+/// Tailored for use in computations using the Jacobian.
 template <typename Matrix>
 auto det(const Matrix& A)
 {
@@ -50,9 +50,9 @@ auto det(const Matrix& A)
     return w4;
   }
   default:
-    throw std::runtime_error("det is no implement for "
+    throw std::runtime_error("linalg::det is not implement for "
                              + std::to_string(A.shape(0)) + "x"
-                             + std::to_string(A.shape(0)) + " matrices");
+                             + std::to_string(A.shape(1)) + " matrices.");
   }
 }
 
@@ -101,9 +101,9 @@ void inv(const Matrix& A, Matrix& B)
     break;
   }
   default:
-    throw std::runtime_error("det is no implement for "
+    throw std::runtime_error("linalg::inv is not implement for "
                              + std::to_string(A.shape(0)) + "x"
-                             + std::to_string(A.shape(0)) + " matrices");
+                             + std::to_string(A.shape(1)) + " matrices.");
   }
 }
 
