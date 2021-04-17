@@ -100,7 +100,6 @@ jobs:
   build_dev_env:
     name: Build dolfinx/dev-env image (${{ matrix.os }})
     #if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/main' }}
-    needs: start_runner
     strategy:
       matrix:
         os: [ubuntu-latest, ubuntu-arm64-aws]
