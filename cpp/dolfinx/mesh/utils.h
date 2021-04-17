@@ -51,7 +51,7 @@ cell_normals(const Mesh& mesh, int dim,
 xt::xtensor<double, 2> midpoints(const mesh::Mesh& mesh, int dim,
                                  const xtl::span<const std::int32_t>& entities);
 
-/// Compute indicies of all mesh entities that evaluate to true for the
+/// Compute indices of all mesh entities that evaluate to true for the
 /// provided geometric marking function. An entity is considered marked
 /// if the marker function evaluates true for all of its vertices.
 ///
@@ -66,7 +66,7 @@ std::vector<std::int32_t> locate_entities(
     const std::function<xt::xtensor<bool, 1>(const xt::xtensor<double, 2>&)>&
         marker);
 
-/// Compute indicies of all mesh entities that are attached to an owned
+/// Compute indices of all mesh entities that are attached to an owned
 /// boundary facet and evaluate to true for the provided geometric
 /// marking function. An entity is considered marked if the marker
 /// function evaluates true for all of its vertices.
