@@ -57,6 +57,16 @@ class NonlinearProblem:
                                 jit_parameters=jit_parameters)
         self.bcs = bcs
 
+    @property
+    def L(self) -> fem.Form:
+        """Get the compiled linear form (the residual)"""
+        return self._L
+
+    @property
+    def a(self) -> fem.Form:
+        """Get the compiled bilinear form (the Jacobian)"""
+        return self._a
+
     def form(self, x: PETSc.Vec):
         """
         This function is called before the residual or Jacobian is computed.
@@ -109,10 +119,10 @@ class NewtonSolver(cpp.nls.NewtonSolver):
 
         # Create matrix and vector to be used for assembly
         # of the non-linear problem
-        self.A = fem.create_matrix(problem._a)
-        self.setJ(problem.J, self.A)
-        self.L = fem.create_vector(problem._L)
-        self.setF(problem.F, self.L)
+        self._A = fem.create_matrix(problem._a)
+        self.setJ(problem.J, self._A)
+        self._b = fem.create_vector(problem._L)
+        self.setF(problem.F, self._b)
         self.set_form(problem.form)
 
     def solve(self, u: fem.Function):
@@ -123,3 +133,13 @@ class NewtonSolver(cpp.nls.NewtonSolver):
         n, converged = super().solve(u.vector)
         cpp.la.scatter_forward(u.x)
         return n, converged
+
+    @property
+    def A(self) -> PETSc.Mat:
+        """Get the Jacobian matrix"""
+        return self._A
+
+    @property
+    def b(self) -> PETSc.Vec:
+        """Get the residual vector"""
+        return self._b

@@ -283,7 +283,7 @@ if have_pyvista:
 while (t < T):
     t += dt
     r = solver.solve(u)
-    print("Step, num iterations:", int(t / dt), r[0])
+    print(f"Step {int(t/dt)}: num iterations: {r[0]}")
     u.vector.copy(result=u0.vector)
     file.write_function(u.sub(0), t)
 
