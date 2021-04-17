@@ -349,7 +349,7 @@ public:
       _K = xt::adapt(K.data(), {1, tdim, gdim});
       _detJ = xt::adapt(detJ.data(), {1});
 
-      cmap.compute_pull_back(_X, _J, _detJ, _K, xp, coordinate_dofs);
+      cmap.pull_back(_X, _J, _detJ, _K, xp, coordinate_dofs);
 
       std::copy(_X.begin(), _X.end(), X.data());
       std::copy(_J.begin(), _J.end(), J.data());
