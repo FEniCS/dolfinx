@@ -7,6 +7,7 @@
 #include "CoordinateElement.h"
 #include <basix.h>
 #include <basix/finite-element.h>
+#include <dolfinx/common/linalg.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <xtensor-blas/xlinalg.hpp>
 #include <xtensor/xview.hpp>
@@ -21,11 +22,11 @@ namespace
 double compute_determinant(xt::xtensor<double, 2>& A)
 {
   if (A.shape(0) == A.shape(1))
-    return xt::linalg::det(A);
+    return linalg::det(A);
   else
   {
     auto ATA = xt::linalg::dot(xt::transpose(A), A);
-    return std::sqrt(xt::linalg::det(ATA));
+    return std::sqrt(linalg::det(ATA));
   }
 }
 } // namespace
