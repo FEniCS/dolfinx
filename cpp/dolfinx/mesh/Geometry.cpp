@@ -28,9 +28,9 @@ std::shared_ptr<const common::IndexMap> Geometry::index_map() const
   return _index_map;
 }
 //-----------------------------------------------------------------------------
-array2d<double>& Geometry::x() { return _x; }
+xt::xtensor<double, 2>& Geometry::x() { return _x; }
 //-----------------------------------------------------------------------------
-const array2d<double>& Geometry::x() const { return _x; }
+const xt::xtensor<double, 2>& Geometry::x() const { return _x; }
 //-----------------------------------------------------------------------------
 const fem::CoordinateElement& Geometry::cmap() const { return _cmap; }
 //-----------------------------------------------------------------------------
@@ -45,7 +45,7 @@ mesh::Geometry
 mesh::create_geometry(MPI_Comm comm, const Topology& topology,
                       const fem::CoordinateElement& coordinate_element,
                       const graph::AdjacencyList<std::int64_t>& cell_nodes,
-                      const array2d<double>& x)
+                      const xt::xtensor<double, 2>& x)
 {
   // TODO: make sure required entities are initialised, or extend
   // fem::build_dofmap_data
@@ -74,7 +74,7 @@ mesh::create_geometry(MPI_Comm comm, const Topology& topology,
 
   //  Fetch node coordinates by global index from other ranks. Order of
   //  coords matches order of the indices in 'indices'
-  array2d<double> coords
+  xt::xtensor<double, 2> coords
       = graph::build::distribute_data<double>(comm, indices, x);
 
   // Compute local-to-global map from local indices in dofmap to the
@@ -87,18 +87,19 @@ mesh::create_geometry(MPI_Comm comm, const Topology& topology,
   // coords
   std::vector l2l = graph::build::compute_local_to_local(l2g, indices);
 
-  // Build coordinate dof array
-  array2d<double> xg(coords.shape[0], coords.shape[1]);
-
-  // Allocate space for input global indices
-  std::vector<std::int64_t> igi(indices.size());
-
-  for (std::size_t i = 0; i < coords.shape[0]; ++i)
+  // Build coordinate dof array,  copying coordinates to correct
+  // position
+  xt::xtensor<double, 2> xg({coords.shape(0), coords.shape(1)});
+  for (std::size_t i = 0; i < coords.shape(0); ++i)
   {
-    for (std::size_t j = 0; j < coords.shape[1]; ++j)
-      xg(i, j) = coords(l2l[i], j);
-    igi[i] = indices[l2l[i]];
+    auto row = xt::view(coords, l2l[i]);
+    std::copy(row.cbegin(), row.cend(), xt::row(xg, i).begin());
   }
+
+  // Allocate space for input global indices and copy data
+  std::vector<std::int64_t> igi(indices.size());
+  std::transform(l2l.cbegin(), l2l.cend(), igi.begin(),
+                 [&indices](auto index) { return indices[index]; });
 
   // If the mesh has higher order geometry, permute the dofmap
   if (coordinate_element.needs_permutation_data())

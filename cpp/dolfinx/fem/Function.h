@@ -234,18 +234,19 @@ public:
   /// @param[in,out] u The values at the points. Values are not computed
   /// for points with a negative cell index. This argument must be
   /// passed with the correct size.
-  void eval(const array2d<double>& x,
-            const xtl::span<const std::int32_t>& cells, array2d<T>& u) const
+  void eval(const xt::xtensor<double, 2>& x,
+            const xtl::span<const std::int32_t>& cells,
+            xt::xtensor<T, 2>& u) const
   {
     // TODO: This could be easily made more efficient by exploiting points
     // being ordered by the cell to which they belong.
 
-    if (x.shape[0] != cells.size())
+    if (x.shape(0) != cells.size())
     {
       throw std::runtime_error(
           "Number of points and number of cells must be equal.");
     }
-    if (x.shape[0] != u.shape[0])
+    if (x.shape(0) != u.shape(0))
     {
       throw std::runtime_error(
           "Length of array for Function values must be the "
@@ -265,7 +266,7 @@ public:
         = mesh->geometry().dofmap();
     // FIXME: Add proper interface for num coordinate dofs
     const int num_dofs_g = x_dofmap.num_links(0);
-    const array2d<double>& x_g = mesh->geometry().x();
+    const xt::xtensor<double, 2>& x_g = mesh->geometry().x();
 
     // Get coordinate map
     const fem::CoordinateElement& cmap = mesh->geometry().cmap();
@@ -374,7 +375,7 @@ public:
           coefficients[bs_dof * i + k] = _v[bs_dof * dofs[i] + k];
 
       // Compute expansion
-      auto u_row = u.row(p);
+      auto u_row = xt::row(u, p);
       for (int k = 0; k < bs_element; ++k)
       {
         for (int i = 0; i < space_dimension; ++i)
@@ -391,7 +392,7 @@ public:
 
   /// Compute values at all mesh 'nodes'
   /// @return The values at all geometric points
-  array2d<T> compute_point_values() const
+  xt::xtensor<T, 2> compute_point_values() const
   {
     assert(_function_space);
     std::shared_ptr<const mesh::Mesh> mesh = _function_space->mesh();
@@ -399,10 +400,11 @@ public:
     const int tdim = mesh->topology().dim();
 
     // Compute in tensor (one for scalar function, . . .)
-    const int value_size_loc = _function_space->element()->value_size();
+    const std::size_t value_size_loc = _function_space->element()->value_size();
 
     // Resize Array for holding point values
-    array2d<T> point_values(mesh->geometry().x().shape[0], value_size_loc);
+    xt::xtensor<T, 2> point_values(
+        {mesh->geometry().x().shape(0), value_size_loc});
 
     // Prepare cell geometry
     const graph::AdjacencyList<std::int32_t>& x_dofmap
@@ -410,7 +412,7 @@ public:
 
     // FIXME: Add proper interface for num coordinate dofs
     const int num_dofs_g = x_dofmap.num_links(0);
-    const array2d<double>& x_g = mesh->geometry().x();
+    const xt::xtensor<double, 2>& x_g = mesh->geometry().x();
 
     // Interpolate point values on each cell (using last computed value if
     // not continuous, e.g. discontinuous Galerkin methods)
@@ -418,7 +420,7 @@ public:
     assert(map);
     const std::int32_t num_cells = map->size_local() + map->num_ghosts();
 
-    std::vector<std::int32_t> cells(x_g.shape[0]);
+    std::vector<std::int32_t> cells(x_g.shape(0));
     for (std::int32_t c = 0; c < num_cells; ++c)
     {
       // Get coordinates for all points in cell

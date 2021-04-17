@@ -311,8 +311,8 @@ double geometry::squared_distance(const mesh::Mesh& mesh, int dim,
 {
   const int tdim = mesh.topology().dim();
   const mesh::Geometry& geometry = mesh.geometry();
-  const array2d<double>& geom_dofs = geometry.x();
-  assert(geom_dofs.shape[1] == 3);
+  const xt::xtensor<double, 2>& geom_dofs = geometry.x();
+  assert(geom_dofs.shape(1) == 3);
 
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
 

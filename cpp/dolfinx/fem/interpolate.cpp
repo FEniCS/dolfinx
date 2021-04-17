@@ -7,6 +7,7 @@
 #include "interpolate.h"
 #include "FiniteElement.h"
 #include <dolfinx/mesh/Mesh.h>
+#include <xtensor/xbuilder.hpp>
 #include <xtensor/xtensor.hpp>
 #include <xtensor/xview.hpp>
 
@@ -22,7 +23,7 @@ fem::interpolation_coords(const fem::FiniteElement& element,
   const std::size_t gdim = mesh.geometry().dim();
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
   const std::size_t num_dofs_g = x_dofmap.num_links(0);
-  const array2d<double>& x_g = mesh.geometry().x();
+  const xt::xtensor<double, 2>& x_g = mesh.geometry().x();
 
   const fem::CoordinateElement& cmap = mesh.geometry().cmap();
 

@@ -51,33 +51,33 @@ void eval(array2d<T>& values, const fem::Expression<T>& e,
       = mesh->topology().get_cell_permutation_info();
 
   // FIXME: Add proper interface for num coordinate dofs
-  const int num_dofs_g = x_dofmap.num_links(0);
-  const array2d<double>& x_g = mesh->geometry().x();
+  const std::size_t num_dofs_g = x_dofmap.num_links(0);
+  const xt::xtensor<double, 2>& x_g = mesh->geometry().x();
 
   // Create data structures used in evaluation
-  const int gdim = mesh->geometry().dim();
-  array2d<double> coordinate_dofs(num_dofs_g, gdim);
+  const std::size_t gdim = mesh->geometry().dim();
+  std::vector<double> coordinate_dofs(num_dofs_g * gdim);
 
   // Iterate over cells and 'assemble' into values
   std::vector<T> values_e(e.num_points() * e.value_size(), 0);
-  for (std::size_t i = 0; i < active_cells.size(); ++i)
+  for (std::size_t c = 0; c < active_cells.size(); ++c)
   {
-    const std::int32_t c = active_cells[i];
+    const std::int32_t cell = active_cells[c];
+
     auto x_dofs = x_dofmap.links(c);
-    for (int j = 0; j < num_dofs_g; ++j)
+    for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
-      const auto x_dof = x_dofs[j];
-      for (int k = 0; k < gdim; ++k)
-        coordinate_dofs(j, k) = x_g(x_dof, k);
+      std::copy_n(xt::row(x_g, x_dofs[i]).cbegin(), gdim,
+                  std::next(coordinate_dofs.begin(), i * gdim));
     }
 
-    auto coeff_cell = coeffs.row(c);
+    auto coeff_cell = coeffs.row(cell);
     std::fill(values_e.begin(), values_e.end(), 0.0);
     fn(values_e.data(), coeff_cell.data(), constant_values.data(),
        coordinate_dofs.data());
 
     for (std::size_t j = 0; j < values_e.size(); ++j)
-      values(i, j) = values_e[j];
+      values(c, j) = values_e[j];
   }
 }
 
