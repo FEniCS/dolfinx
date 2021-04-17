@@ -22,6 +22,7 @@
 #include <xtensor/xadapt.hpp>
 #include <xtensor/xbuilder.hpp>
 #include <xtensor/xfixed.hpp>
+#include <xtensor/xmath.hpp>
 #include <xtensor/xnorm.hpp>
 #include <xtensor/xview.hpp>
 
@@ -195,12 +196,8 @@ mesh::midpoints(const mesh::Mesh& mesh, int dim,
   xt::xtensor<double, 2> x_mid({entities.size(), 3});
   for (std::size_t e = 0; e < entity_to_geometry.shape(0); ++e)
   {
-    auto entity_vertices = xt::row(entity_to_geometry, e);
-    auto x_e = xt::row(x_mid, e);
-    x_e = 0.0;
-    for (std::size_t v = 0; v < entity_vertices.size(); ++v)
-      x_e += xt::row(x, entity_vertices[v]);
-    x_e /= entity_vertices.size();
+    auto rows = xt::row(entity_to_geometry, e);
+    xt::row(x_mid, e) = xt::mean(xt::view(x, xt::keep(rows)), 0);
   }
 
   return x_mid;
