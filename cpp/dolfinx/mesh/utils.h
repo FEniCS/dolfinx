@@ -51,7 +51,7 @@ array2d<double> cell_normals(const Mesh& mesh, int dim,
 array2d<double> midpoints(const mesh::Mesh& mesh, int dim,
                           const xtl::span<const std::int32_t>& entities);
 
-/// Compute indicies of all mesh entities that evaluate to true for the
+/// Compute indices of all mesh entities that evaluate to true for the
 /// provided geometric marking function. An entity is considered marked
 /// if the marker function evaluates true for all of its vertices.
 ///
@@ -65,7 +65,7 @@ std::vector<std::int32_t> locate_entities(
     const mesh::Mesh& mesh, int dim,
     const std::function<std::vector<bool>(const array2d<double>&)>& marker);
 
-/// Compute indicies of all mesh entities that are attached to an owned
+/// Compute indices of all mesh entities that are attached to an owned
 /// boundary facet and evaluate to true for the provided geometric
 /// marking function. An entity is considered marked if the marker
 /// function evaluates true for all of its vertices.
