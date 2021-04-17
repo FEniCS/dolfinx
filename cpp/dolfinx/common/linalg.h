@@ -70,13 +70,16 @@ void inv(const Matrix& A, Matrix& B)
   case 1:
     B(0, 0) = 1 / A(0, 0);
   case 2:
+  {
     idet = 1. / compute_determinant(A);
     B(0, 0) = idet * A(1, 1);
     B(0, 1) = -idet * A(0, 1);
     B(1, 0) = -idet * A(1, 0);
     B(1, 1) = idet * A(0, 0);
     break;
+  }
   case 3:
+  {
     value_type w0 = difference_of_products(A(1, 1), A(1, 2), A(2, 1), A(2, 2));
     value_type w1 = difference_of_products(A(1, 0), A(1, 2), A(2, 0), A(2, 2));
     value_type w2 = difference_of_products(A(1, 0), A(1, 1), A(2, 0), A(2, 1));
@@ -95,6 +98,7 @@ void inv(const Matrix& A, Matrix& B)
     B(2, 1) = difference_of_products(A(2, 0), A(0, 0), A(2, 1), A(0, 1)) * idet;
     B(2, 2) = difference_of_products(A(0, 0), A(1, 0), A(0, 1), A(1, 1)) * idet;
     break;
+  }
   default:
     throw std::runtime_error("det is no implement for "
                              + std::to_string(A.shape(0)) + "x"
