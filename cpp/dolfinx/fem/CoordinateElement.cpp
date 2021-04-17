@@ -71,6 +71,117 @@ int CoordinateElement::topological_dimension() const
   return basix::cell::topology(_element->cell_type()).size() - 1;
 }
 //-----------------------------------------------------------------------------
+xt::xtensor<double, 4>
+CoordinateElement::tabulate(int n, const xt::xtensor<double, 2>& X) const
+{
+  return _element->tabulate(n, X);
+}
+//--------------------------------------------------------------------------------
+void CoordinateElement::compute_jacobian(
+    const xt::xtensor<double, 4>& dphi, const xt::xtensor<double, 2>& cell_geom,
+    xt::xtensor<double, 3>& J) const
+{
+  // Number of points
+  std::size_t num_points = dphi.shape(1);
+  if (num_points == 0)
+    return;
+
+  // in-argument checks
+  const std::size_t tdim = this->topological_dimension();
+  const std::size_t gdim = cell_geom.shape(1);
+  const std::size_t d = cell_geom.shape(0);
+
+  // In/out size checks
+  assert(J.shape(0) == num_points);
+  assert(J.shape(1) == gdim);
+  assert(J.shape(2) == tdim);
+  assert(dphi.shape(0) == tdim);
+  assert(dphi.shape(1) == num_points);
+  assert(dphi.shape(3) == 1); // Assumes that value size is equal to 1
+
+  xt::xtensor<double, 2> dphi0 = xt::empty<double>({tdim, d});
+
+  if (_is_affine)
+  {
+    dphi0 = xt::view(dphi, xt::all(), 0, xt::all(), 0);
+    auto J0 = xt::linalg::dot(xt::transpose(cell_geom), xt::transpose(dphi0));
+    J = xt::broadcast(J0, J.shape());
+  }
+  else
+  {
+    for (std::size_t ip = 0; ip < num_points; ++ip)
+    {
+      dphi0 = xt::view(dphi, xt::all(), ip, xt::all(), 0);
+      auto J_ip = xt::view(J, ip, xt::all(), xt::all());
+      auto J0 = xt::linalg::dot(xt::transpose(cell_geom), xt::transpose(dphi0));
+      J_ip.assign(J0);
+    }
+  }
+}
+//--------------------------------------------------------------------------------
+void CoordinateElement::compute_jacobian_inverse(
+    const xt::xtensor<double, 3>& J, xt::xtensor<double, 3>& K) const
+{
+  assert(J.shape(0) == K.shape(0));
+  assert(J.shape(1) == K.shape(2));
+  assert(J.shape(2) == K.shape(1));
+
+  int num_points = J.shape(0);
+  const int gdim = J.shape(1);
+  const int tdim = K.shape(1);
+
+  xt::xtensor<double, 2> K0 = xt::empty<double>({tdim, gdim});
+  xt::xtensor<double, 2> J0 = xt::empty<double>({gdim, tdim});
+
+  if (_is_affine)
+  {
+    J0 = xt::view(J, 0, xt::all(), xt::all());
+    if (gdim == tdim)
+    {
+      K0 = xt::linalg::inv(J0);
+    }
+    else
+      K0 = xt::linalg::pinv(J0);
+    K = xt::broadcast(K0, K.shape());
+  }
+  else
+  {
+    for (int ip = 0; ip < num_points; ip++)
+    {
+      J0 = xt::view(J, ip, xt::all(), xt::all());
+      if (gdim == tdim)
+        K0 = xt::linalg::inv(J0);
+      else
+        K0 = xt::linalg::pinv(J0);
+      auto K_ip = xt::view(K, ip, xt::all(), xt::all());
+      K_ip.assign(K0);
+    }
+  }
+}
+//--------------------------------------------------------------------------------
+void CoordinateElement::compute_jacobian_determinant(
+    const xt::xtensor<double, 3>& J, xt::xtensor<double, 1>& Jdet) const
+{
+  assert(J.shape(0) == Jdet.shape(0));
+  int num_points = J.shape(0);
+
+  if (_is_affine)
+  {
+    xt::xtensor<double, 2> J0 = xt::view(J, 0, xt::all(), xt::all());
+    double det = compute_determinant(J0);
+    Jdet.fill(det);
+  }
+  else
+  {
+    for (int ip = 0; ip < num_points; ip++)
+    {
+      xt::xtensor<double, 2> Jip = xt::view(J, ip, xt::all(), xt::all());
+      double det = compute_determinant(Jip);
+      Jdet[ip] = det;
+    }
+  }
+}
+//-----------------------------------------------------------------------------
 ElementDofLayout CoordinateElement::dof_layout() const
 {
   assert(_element);
@@ -103,7 +214,7 @@ void CoordinateElement::push_forward(
         x(i, j) += phi(i, k) * cell_geometry(k, j);
 }
 //-----------------------------------------------------------------------------
-void CoordinateElement::compute_pull_back(
+void CoordinateElement::pull_back(
     xt::xtensor<double, 2>& X, xt::xtensor<double, 3>& J,
     xt::xtensor<double, 1>& detJ, xt::xtensor<double, 3>& K,
     const xt::xtensor<double, 2>& x,
@@ -210,114 +321,3 @@ bool CoordinateElement::needs_permutation_data() const
   return !_element->dof_transformations_are_identity();
 }
 //-----------------------------------------------------------------------------
-xt::xtensor<double, 4>
-CoordinateElement::tabulate(int n, const xt::xtensor<double, 2>& X) const
-{
-  return _element->tabulate(n, X);
-}
-//--------------------------------------------------------------------------------
-void CoordinateElement::compute_jacobian(
-    const xt::xtensor<double, 4>& dphi, const xt::xtensor<double, 2>& cell_geom,
-    xt::xtensor<double, 3>& J) const
-{
-  // Number of points
-  std::size_t num_points = dphi.shape(1);
-  if (num_points == 0)
-    return;
-
-  // in-argument checks
-  const std::size_t tdim = this->topological_dimension();
-  const std::size_t gdim = cell_geom.shape(1);
-  const std::size_t d = cell_geom.shape(0);
-
-  // In/out size checks
-  assert(J.shape(0) == num_points);
-  assert(J.shape(1) == gdim);
-  assert(J.shape(2) == tdim);
-  assert(dphi.shape(0) == tdim);
-  assert(dphi.shape(1) == num_points);
-  assert(dphi.shape(3) == 1); // Assumes that value size is equal to 1
-
-  xt::xtensor<double, 2> dphi0 = xt::empty<double>({tdim, d});
-
-  if (_is_affine)
-  {
-    dphi0 = xt::view(dphi, xt::all(), 0, xt::all(), 0);
-    auto J0 = xt::linalg::dot(xt::transpose(cell_geom), xt::transpose(dphi0));
-    J = xt::broadcast(J0, J.shape());
-  }
-  else
-  {
-    for (std::size_t ip = 0; ip < num_points; ++ip)
-    {
-      dphi0 = xt::view(dphi, xt::all(), ip, xt::all(), 0);
-      auto J_ip = xt::view(J, ip, xt::all(), xt::all());
-      auto J0 = xt::linalg::dot(xt::transpose(cell_geom), xt::transpose(dphi0));
-      J_ip.assign(J0);
-    }
-  }
-}
-//--------------------------------------------------------------------------------
-void CoordinateElement::compute_jacobian_inverse(
-    const xt::xtensor<double, 3>& J, xt::xtensor<double, 3>& K) const
-{
-  assert(J.shape(0) == K.shape(0));
-  assert(J.shape(1) == K.shape(2));
-  assert(J.shape(2) == K.shape(1));
-
-  int num_points = J.shape(0);
-  const int gdim = J.shape(1);
-  const int tdim = K.shape(1);
-
-  xt::xtensor<double, 2> K0 = xt::empty<double>({tdim, gdim});
-  xt::xtensor<double, 2> J0 = xt::empty<double>({gdim, tdim});
-
-  if (_is_affine)
-  {
-    J0 = xt::view(J, 0, xt::all(), xt::all());
-    if (gdim == tdim)
-    {
-      K0 = xt::linalg::inv(J0);
-    }
-    else
-      K0 = xt::linalg::pinv(J0);
-    K = xt::broadcast(K0, K.shape());
-  }
-  else
-  {
-    for (int ip = 0; ip < num_points; ip++)
-    {
-      J0 = xt::view(J, ip, xt::all(), xt::all());
-      if (gdim == tdim)
-        K0 = xt::linalg::inv(J0);
-      else
-        K0 = xt::linalg::pinv(J0);
-      auto K_ip = xt::view(K, ip, xt::all(), xt::all());
-      K_ip.assign(K0);
-    }
-  }
-}
-
-//--------------------------------------------------------------------------------
-void CoordinateElement::compute_jacobian_determinant(
-    const xt::xtensor<double, 3>& J, xt::xtensor<double, 1>& Jdet) const
-{
-  assert(J.shape(0) == Jdet.shape(0));
-  int num_points = J.shape(0);
-
-  if (_is_affine)
-  {
-    xt::xtensor<double, 2> J0 = xt::view(J, 0, xt::all(), xt::all());
-    double det = compute_determinant(J0);
-    Jdet.fill(det);
-  }
-  else
-  {
-    for (int ip = 0; ip < num_points; ip++)
-    {
-      xt::xtensor<double, 2> Jip = xt::view(J, ip, xt::all(), xt::all());
-      double det = compute_determinant(Jip);
-      Jdet[ip] = det;
-    }
-  }
-}
