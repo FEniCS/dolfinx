@@ -137,7 +137,7 @@ public:
   /// `FunctionSpace`.
   ///
   /// @param[in] g The boundary condition value. The boundary condition
-  /// can be applied to a a function on the same space as g.
+  /// can be applied to a function on the same space as g.
   /// @param[in] dofs Degree-of-freedom block indices (@p
   /// std::vector<std::int32_t>) in the space of the boundary value
   /// function applied to V_dofs[i]. The dof block indices must be

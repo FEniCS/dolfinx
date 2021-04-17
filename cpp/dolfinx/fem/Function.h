@@ -159,7 +159,7 @@ public:
   }
 
   /// Return vector of expansion coefficients as a PETSc Vec. Throws an
-  /// exception a PETSc Vec cannot be created due to a type mismatch.
+  /// exception if a PETSc Vec cannot be created due to a type mismatch.
   /// @return The vector of expansion coefficients
   Vec vector() const
   {
