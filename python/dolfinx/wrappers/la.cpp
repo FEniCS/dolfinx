@@ -151,6 +151,7 @@ void la(py::module& m)
         return ret;
       },
       "Gather an (ordered) list of sub vectors from a block vector.");
+
   // NOTE: Enabling the below requires adding a C API for MatNullSpace to
   // petsc4py
   //   m.def("create_nullspace",

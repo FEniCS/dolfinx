@@ -26,6 +26,8 @@
 #include <utility>
 #include <variant>
 #include <vector>
+#include <xtensor/xadapt.hpp>
+#include <xtensor/xio.hpp>
 #include <xtensor/xtensor.hpp>
 #include <xtl/xspan.hpp>
 
@@ -157,7 +159,7 @@ public:
   }
 
   /// Return vector of expansion coefficients as a PETSc Vec. Throws an
-  /// exception a PETSc Vec cannot be created due to a type mismatch.
+  /// exception if a PETSc Vec cannot be created due to a type mismatch.
   /// @return The vector of expansion coefficients
   Vec vector() const
   {
@@ -289,10 +291,16 @@ public:
     }
 
     // Prepare geometry data structures
+    // FIXME: use xtensor in FiniteElement
     std::vector<double> J(gdim * tdim);
-    std::array<double, 1> detJ;
+    std::vector<double> detJ(1);
     std::vector<double> K(tdim * gdim);
     array2d<double> X(1, tdim);
+
+    xt::xtensor<double, 2> _X = xt::zeros<double>(X.shape);
+    xt::xtensor<double, 3> _J = xt::zeros<double>({1, gdim, tdim});
+    xt::xtensor<double, 3> _K = xt::zeros<double>({1, tdim, gdim});
+    xt::xtensor<double, 1> _detJ = xt::zeros<double>({1});
 
     // Prepare basis function data structures
     std::vector<double> basis_reference_values(space_dimension
@@ -310,9 +318,9 @@ public:
     mesh->topology_mutable().create_entity_permutations();
     const std::vector<std::uint32_t>& cell_info
         = mesh->topology().get_cell_permutation_info();
-    array2d<double> coordinate_dofs(num_dofs_g, gdim);
-
-    array2d<double> xp(1, gdim);
+    xt::xtensor<double, 2> coordinate_dofs
+        = xt::zeros<double>({num_dofs_g, gdim});
+    xt::xtensor<double, 2> xp = xt::zeros<double>({1, gdim});
 
     // Loop over points
     std::fill(u.data(), u.data() + u.size(), 0.0);
@@ -335,7 +343,17 @@ public:
         xp(0, j) = x(p, j);
 
       // Compute reference coordinates X, and J, detJ and K
-      cmap.compute_reference_geometry(X, J, detJ, K, xp, coordinate_dofs);
+      _X = xt::adapt(X.data(), X.shape);
+      _J = xt::adapt(J.data(), {1, gdim, tdim});
+      _K = xt::adapt(K.data(), {1, tdim, gdim});
+      _detJ = xt::adapt(detJ.data(), {1});
+
+      cmap.compute_pull_back(_X, _J, _detJ, _K, xp, coordinate_dofs);
+
+      std::copy(_X.begin(), _X.end(), X.data());
+      std::copy(_J.begin(), _J.end(), J.data());
+      std::copy(_K.begin(), _K.end(), K.data());
+      std::copy(_detJ.begin(), _detJ.end(), detJ.data());
 
       // Compute basis on reference element
       element->evaluate_reference_basis(basis_reference_values, X);

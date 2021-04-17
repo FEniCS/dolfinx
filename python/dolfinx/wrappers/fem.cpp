@@ -229,17 +229,22 @@ void fem(py::module& m)
            [](const dolfinx::fem::CoordinateElement& self,
               const py::array_t<double, py::array::c_style>& X,
               const py::array_t<double, py::array::c_style>& cell_geometry) {
-             dolfinx::array2d<double> _X(X.shape()[0], X.shape()[1]),
-                 _cell_geometry(cell_geometry.shape()[0],
-                                cell_geometry.shape()[1]);
+             xt::xtensor<double, 2> _X
+                 = xt::empty<double>({X.shape()[0], X.shape()[1]});
+             xt::xtensor<double, 2> _cell_geometry = xt::empty<double>(
+                 {cell_geometry.shape()[0], cell_geometry.shape()[1]});
+
              std::copy_n(X.data(), X.size(), _X.data());
              std::copy_n(cell_geometry.data(), cell_geometry.size(),
                          _cell_geometry.data());
-             dolfinx::array2d<double> x(_X.shape[0], cell_geometry.shape(1));
+
+             xt::xtensor<double, 2> x = xt::empty<double>(
+                 {_X.shape(0), std::size_t(cell_geometry.shape(1))});
              xt::xtensor<double, 2> phi
                  = xt::view(self.tabulate(0, _X), 0, xt::all(), xt::all(), 0);
+
              self.push_forward(x, _cell_geometry, phi);
-             return as_pyarray2d(std::move(x));
+             return xt_as_pyarray(std::move(x));
            })
       .def_readwrite("non_affine_atol",
                      &dolfinx::fem::CoordinateElement::non_affine_atol)
@@ -309,40 +314,42 @@ void fem(py::module& m)
            const std::vector<std::shared_ptr<
                const dolfinx::fem::DirichletBC<PetscScalar>>>& bcs) {
           dolfinx::fem::assemble_matrix(
-              dolfinx::la::PETScMatrix::add_block_fn(A), a, bcs);
+              dolfinx::la::PETScMatrix::set_block_fn(A, ADD_VALUES), a, bcs);
         });
   m.def("assemble_matrix_petsc",
         [](Mat A, const dolfinx::fem::Form<PetscScalar>& a,
            const std::vector<bool>& rows0, const std::vector<bool>& rows1) {
           dolfinx::fem::assemble_matrix(
-              dolfinx::la::PETScMatrix::add_block_fn(A), a, rows0, rows1);
+              dolfinx::la::PETScMatrix::set_block_fn(A, ADD_VALUES), a, rows0,
+              rows1);
         });
   m.def("assemble_matrix_petsc_unrolled",
         [](Mat A, const dolfinx::fem::Form<PetscScalar>& a,
            const std::vector<std::shared_ptr<
                const dolfinx::fem::DirichletBC<PetscScalar>>>& bcs) {
           dolfinx::fem::assemble_matrix(
-              dolfinx::la::PETScMatrix::add_block_expand_fn(
+              dolfinx::la::PETScMatrix::set_block_expand_fn(
                   A, a.function_spaces()[0]->dofmap()->bs(),
-                  a.function_spaces()[1]->dofmap()->bs()),
+                  a.function_spaces()[1]->dofmap()->bs(), ADD_VALUES),
               a, bcs);
         });
   m.def("assemble_matrix_petsc_unrolled",
         [](Mat A, const dolfinx::fem::Form<PetscScalar>& a,
            const std::vector<bool>& rows0, const std::vector<bool>& rows1) {
           dolfinx::fem::assemble_matrix(
-              dolfinx::la::PETScMatrix::add_block_expand_fn(
+              dolfinx::la::PETScMatrix::set_block_expand_fn(
                   A, a.function_spaces()[0]->dofmap()->bs(),
-                  a.function_spaces()[1]->dofmap()->bs()),
+                  a.function_spaces()[1]->dofmap()->bs(), ADD_VALUES),
               a, rows0, rows1);
         });
-  m.def("add_diagonal",
+  m.def("insert_diagonal",
         [](Mat A, const dolfinx::fem::FunctionSpace& V,
            const std::vector<std::shared_ptr<
                const dolfinx::fem::DirichletBC<PetscScalar>>>& bcs,
            PetscScalar diagonal) {
-          dolfinx::fem::add_diagonal(dolfinx::la::PETScMatrix::add_fn(A), V,
-                                     bcs, diagonal);
+          dolfinx::fem::set_diagonal(
+              dolfinx::la::PETScMatrix::set_fn(A, INSERT_VALUES), V, bcs,
+              diagonal);
         });
   m.def(
       "assemble_matrix",
@@ -415,7 +422,7 @@ void fem(py::module& m)
             = dolfinx::fem::create_sparsity_discrete_gradient(V0, V1);
         Mat A = dolfinx::la::create_petsc_matrix(MPI_COMM_WORLD, sp);
         dolfinx::fem::assemble_discrete_gradient<PetscScalar>(
-            dolfinx::la::PETScMatrix::add_fn(A), V0, V1);
+            dolfinx::la::PETScMatrix::set_fn(A, ADD_VALUES), V0, V1);
         MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
         MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
         return A;
