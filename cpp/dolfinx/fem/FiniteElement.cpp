@@ -203,19 +203,10 @@ void FiniteElement::evaluate_reference_basis(
 void FiniteElement::transform_reference_basis(
     xt::xtensor<double, 3>& values,
     const xt::xtensor<double, 3>& reference_values,
-    const xt::xtensor<double, 2>& X, const std::vector<double>& J,
-    const xtl::span<const double>& detJ, const std::vector<double>& K) const
+    const xt::xtensor<double, 3>& J, const xtl::span<const double>& detJ,
+    const xt::xtensor<double, 3>& K) const
 {
-  const int num_points = X.shape(0);
-  const int scalar_dim = _space_dim / _bs;
-  const int value_size = _value_size / _bs;
-  const int Jsize = J.size() / num_points;
-  const int Jcols = X.shape(1);
-  const int Jrows = Jsize / Jcols;
-
-  basix::map_push_forward_real(
-      _basix_element_handle, values.data(), reference_values.data(), J.data(),
-      detJ.data(), K.data(), Jrows, value_size, scalar_dim, num_points);
+  _element->map_push_forward_m(reference_values, J, detJ, K, values);
 }
 //-----------------------------------------------------------------------------
 int FiniteElement::num_sub_elements() const noexcept

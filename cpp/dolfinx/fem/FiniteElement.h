@@ -98,10 +98,9 @@ public:
   /// Push basis functions forward to physical element
   void transform_reference_basis(xt::xtensor<double, 3>& values,
                                  const xt::xtensor<double, 3>& reference_values,
-                                 const xt::xtensor<double, 2>& X,
-                                 const std::vector<double>& J,
+                                 const xt::xtensor<double, 3>& J,
                                  const xtl::span<const double>& detJ,
-                                 const std::vector<double>& K) const;
+                                 const xt::xtensor<double, 3>& K) const;
 
   /// Push basis function (derivatives) forward to physical element
   void transform_reference_basis_derivatives(

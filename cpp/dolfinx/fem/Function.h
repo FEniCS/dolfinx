@@ -292,18 +292,12 @@ public:
     }
 
     // Prepare geometry data structures
-    // FIXME: use xtensor in FiniteElement
-    std::vector<double> J(gdim * tdim);
-    std::vector<double> detJ(1);
-    std::vector<double> K(tdim * gdim);
     xt::xtensor<double, 2> X({1, tdim});
-
-    // xt::xtensor<double, 2> _X = xt::zeros<double>(X.shape);
-    xt::xtensor<double, 3> _J
+    xt::xtensor<double, 3> J
         = xt::zeros<double>({static_cast<std::size_t>(1), gdim, tdim});
-    xt::xtensor<double, 3> _K
+    xt::xtensor<double, 3> K
         = xt::zeros<double>({static_cast<std::size_t>(1), tdim, gdim});
-    xt::xtensor<double, 1> _detJ = xt::zeros<double>({1});
+    xt::xtensor<double, 1> detJ = xt::zeros<double>({1});
 
     // Prepare basis function data structures
     xt::xtensor<double, 3> basis_reference_values(
@@ -348,17 +342,7 @@ public:
         xp(0, j) = x(p, j);
 
       // Compute reference coordinates X, and J, detJ and K
-      // _X = xt::adapt(X.data(), X.shape);
-      _J = xt::adapt(J.data(), {static_cast<std::size_t>(1), gdim, tdim});
-      _K = xt::adapt(K.data(), {static_cast<std::size_t>(1), tdim, gdim});
-      _detJ = xt::adapt(detJ.data(), {1});
-
-      cmap.pull_back(X, _J, _detJ, _K, xp, coordinate_dofs);
-
-      // std::copy(_X.begin(), _X.end(), X.data());
-      std::copy(_J.begin(), _J.end(), J.data());
-      std::copy(_K.begin(), _K.end(), K.data());
-      std::copy(_detJ.begin(), _detJ.end(), detJ.data());
+      cmap.pull_back(X, J, detJ, K, xp, coordinate_dofs);
 
       // Compute basis on reference element
       element->evaluate_reference_basis(basis_reference_values, X);
@@ -370,7 +354,7 @@ public:
 
       // Push basis forward to physical element
       element->transform_reference_basis(basis_values, basis_reference_values,
-                                         X, J, detJ, K);
+                                         J, detJ, K);
 
       // Get degrees of freedom for current cell
       xtl::span<const std::int32_t> dofs = dofmap->cell_dofs(cell_index);
@@ -386,8 +370,6 @@ public:
         {
           for (std::size_t j = 0; j < value_size; ++j)
           {
-            // u_row[j * bs_element + k] += coefficients[bs_element * i + k]
-            //                              * basis_values[i * value_size + j];
             u_row[j * bs_element + k]
                 += coefficients[bs_element * i + k] * basis_values(0, i, j);
           }
