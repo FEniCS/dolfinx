@@ -195,17 +195,13 @@ public:
   /// @param[in,out] data The data to be transformed
   /// @param[in] cell_permutation Permutation data for the cell
   /// @param[in] block_size The block_size of the input data
-  void apply_dof_transformation(double* data, std::uint32_t cell_permutation,
-                                int block_size) const;
-
-  /// Apply permutation to some data
-  ///
-  /// @param[in,out] data The data to be transformed
-  /// @param[in] cell_permutation Permutation data for the cell
-  /// @param[in] block_size The block_size of the input data
-  void apply_dof_transformation(std::complex<double>* data,
+  template <typename T>
+  void apply_dof_transformation(xtl::span<T> data,
                                 std::uint32_t cell_permutation,
-                                int block_size) const;
+                                int block_size) const
+  {
+    _element->apply_dof_transformation(data, block_size, cell_permutation);
+  }
 
   /// Apply inverse transpose permutation to some data
   ///
@@ -235,18 +231,6 @@ public:
   {
     _element->map_pull_back_m(u, J, detJ, K, U);
   }
-
-  // void map_pull_back(double* physical_data, const double* reference_data,
-  //                    const double* J, const double* detJ, const double* K,
-  //                    const int physical_dim, const int physical_value_size,
-  //                    const int nresults, const int npoints) const;
-
-  // /// Pull physical data back to the reference element.
-  // void map_pull_back(std::complex<double>* physical_data,
-  //                    const std::complex<double>* reference_data,
-  //                    const double* J, const double* detJ, const double* K,
-  //                    const int physical_dim, const int physical_value_size,
-  //                    const int nresults, const int npoints) const;
 
 private:
   std::string _signature, _family;

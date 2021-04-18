@@ -176,8 +176,8 @@ void fem(py::module& m)
            [](const dolfinx::fem::FiniteElement& self,
               py::array_t<double, py::array::c_style>& x,
               std::uint32_t cell_permutation, int dim) {
-             self.apply_dof_transformation(x.mutable_data(), cell_permutation,
-                                           dim);
+             self.apply_dof_transformation(
+                 xtl::span(x.mutable_data(), x.size()), cell_permutation, dim);
            })
       .def("signature", &dolfinx::fem::FiniteElement::signature);
 

@@ -180,12 +180,7 @@ void FiniteElement::evaluate_reference_basis(
     for (std::size_t d = 0; d < basis.shape(2); ++d)
     {
       for (std::size_t v = 0; v < basis.shape(3); ++v)
-      {
         reference_values(p, d, v) = basis(0, p, d, v);
-        // reference_values[p * basis.shape(2) * basis.shape(3)
-        //                  + d * basis.shape(3) + v]
-        //     = basis(0, p, d, v);
-      }
     }
   }
 }
@@ -253,46 +248,6 @@ const xt::xtensor<double, 2>& FiniteElement::interpolation_points() const
 bool FiniteElement::needs_permutation_data() const noexcept
 {
   return _needs_permutation_data;
-}
-//-----------------------------------------------------------------------------
-// void FiniteElement::map_pull_back(double* physical_data,
-//                                   const double* reference_data, const double* J,
-//                                   const double* detJ, const double* K,
-//                                   const int physical_dim,
-//                                   const int physical_value_size,
-//                                   const int nresults, const int npoints) const
-// {
-//   basix::map_pull_back_real(_basix_element_handle, physical_data,
-//                             reference_data, J, detJ, K, physical_dim,
-//                             physical_value_size, nresults, npoints);
-// }
-// //-----------------------------------------------------------------------------
-// void FiniteElement::map_pull_back(std::complex<double>* physical_data,
-//                                   const std::complex<double>* reference_data,
-//                                   const double* J, const double* detJ,
-//                                   const double* K, const int physical_dim,
-//                                   const int physical_value_size,
-//                                   const int nresults, const int npoints) const
-// {
-//   basix::map_pull_back_complex(_basix_element_handle, physical_data,
-//                                reference_data, J, detJ, K, physical_dim,
-//                                physical_value_size, nresults, npoints);
-// }
-//-----------------------------------------------------------------------------
-void FiniteElement::apply_dof_transformation(double* data,
-                                             std::uint32_t cell_permutation,
-                                             int block_size) const
-{
-  basix::apply_dof_transformation_real(_basix_element_handle, data, block_size,
-                                       cell_permutation);
-}
-//-----------------------------------------------------------------------------
-void FiniteElement::apply_dof_transformation(std::complex<double>* data,
-                                             std::uint32_t cell_permutation,
-                                             int block_size) const
-{
-  basix::apply_dof_transformation_complex(_basix_element_handle, data,
-                                          block_size, cell_permutation);
 }
 //-----------------------------------------------------------------------------
 void FiniteElement::apply_inverse_transpose_dof_transformation(

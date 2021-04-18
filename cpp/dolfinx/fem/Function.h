@@ -348,9 +348,10 @@ public:
       element->evaluate_reference_basis(basis_reference_values, X);
 
       // Permute the reference values to account for the cell's orientation
-      element->apply_dof_transformation(basis_reference_values.data(),
-                                        cell_info[cell_index],
-                                        reference_value_size);
+      element->apply_dof_transformation(
+          xtl::span(basis_reference_values.data(),
+                    basis_reference_values.size()),
+          cell_info[cell_index], reference_value_size);
 
       // Push basis forward to physical element
       element->transform_reference_basis(basis_values, basis_reference_values,
