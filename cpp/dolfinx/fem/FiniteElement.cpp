@@ -5,7 +5,6 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "FiniteElement.h"
-#include <basix.h>
 #include <basix/finite-element.h>
 #include <dolfinx/common/log.h>
 #include <functional>
