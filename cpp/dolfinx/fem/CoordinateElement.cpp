@@ -7,7 +7,7 @@
 #include "CoordinateElement.h"
 #include <basix.h>
 #include <basix/finite-element.h>
-#include <dolfinx/common/linalg.h>
+#include <dolfinx/common/math.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <xtensor-blas/xlinalg.hpp>
 #include <xtensor/xview.hpp>
@@ -22,11 +22,11 @@ namespace
 double compute_determinant(xt::xtensor<double, 2>& A)
 {
   if (A.shape(0) == A.shape(1))
-    return linalg::det(A);
+    return math::det(A);
   else
   {
     auto ATA = xt::linalg::dot(xt::transpose(A), A);
-    return std::sqrt(linalg::det(ATA));
+    return std::sqrt(math::det(ATA));
   }
 }
 } // namespace
@@ -137,7 +137,7 @@ void CoordinateElement::compute_jacobian_inverse(
   {
     J0 = xt::view(J, 0, xt::all(), xt::all());
     if (gdim == tdim)
-      linalg::inv(J0, K0);
+      math::inv(J0, K0);
     else
       K0 = xt::linalg::pinv(J0);
     K = xt::broadcast(K0, K.shape());
@@ -148,7 +148,7 @@ void CoordinateElement::compute_jacobian_inverse(
     {
       J0 = xt::view(J, ip, xt::all(), xt::all());
       if (gdim == tdim)
-        linalg::inv(J0, K0);
+        math::inv(J0, K0);
       else
         K0 = xt::linalg::pinv(J0);
       auto K_ip = xt::view(K, ip, xt::all(), xt::all());
