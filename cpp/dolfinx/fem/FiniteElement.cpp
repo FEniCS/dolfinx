@@ -170,29 +170,19 @@ int FiniteElement::value_dimension(int i) const
 std::string FiniteElement::family() const noexcept { return _family; }
 //-----------------------------------------------------------------------------
 void FiniteElement::evaluate_reference_basis(
-    std::vector<double>& reference_values, const array2d<double>& X) const
+    std::vector<double>& reference_values,
+    const xt::xtensor<double, 2>& X) const
 {
-  const int scalar_reference_value_size = _reference_value_size / _bs;
-  array2d<double> basix_data(X.shape[0], basix::dim(_basix_element_handle)
-                                             * scalar_reference_value_size);
-  basix::tabulate(_basix_element_handle, basix_data.data(), 0, X.data(),
-                  X.shape[0]);
-
-  assert(basix_data.shape[1] % scalar_reference_value_size == 0);
-  const int scalar_dofs = basix_data.shape[1] / scalar_reference_value_size;
-
-  assert(reference_values.size()
-         == X.shape[0] * scalar_dofs * scalar_reference_value_size);
-
-  for (std::size_t p = 0; p < X.shape[0]; ++p)
+  xt::xtensor<double, 4> basis = _element->tabulate(0, X);
+  assert(basis.shape(1) == X.shape(0));
+  for (std::size_t p = 0; p < basis.shape(1); ++p)
   {
-    for (int d = 0; d < scalar_dofs; ++d)
+    for (std::size_t d = 0; d < basis.shape(2); ++d)
     {
-      for (int v = 0; v < scalar_reference_value_size; ++v)
+      for (std::size_t v = 0; v < basis.shape(3); ++v)
       {
-        reference_values[(p * scalar_dofs + d) * scalar_reference_value_size
-                         + v]
-            = basix_data(p, d + scalar_dofs * v);
+        reference_values[(p * basis.shape(2) + d) * basis.shape(3) + v]
+            = basis(0, p, d, v);
       }
     }
   }
@@ -237,14 +227,14 @@ void FiniteElement::evaluate_reference_basis_derivatives(
 //-----------------------------------------------------------------------------
 void FiniteElement::transform_reference_basis(
     std::vector<double>& values, const std::vector<double>& reference_values,
-    const array2d<double>& X, const std::vector<double>& J,
+    const xt::xtensor<double, 2>& X, const std::vector<double>& J,
     const xtl::span<const double>& detJ, const std::vector<double>& K) const
 {
-  const int num_points = X.shape[0];
+  const int num_points = X.shape(0);
   const int scalar_dim = _space_dim / _bs;
   const int value_size = _value_size / _bs;
   const int Jsize = J.size() / num_points;
-  const int Jcols = X.shape[1];
+  const int Jcols = X.shape(1);
   const int Jrows = Jsize / Jcols;
 
   basix::map_push_forward_real(

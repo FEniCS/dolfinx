@@ -257,15 +257,15 @@ public:
     assert(_function_space);
     std::shared_ptr<const mesh::Mesh> mesh = _function_space->mesh();
     assert(mesh);
-    const int gdim = mesh->geometry().dim();
-    const int tdim = mesh->topology().dim();
+    const std::size_t gdim = mesh->geometry().dim();
+    const std::size_t tdim = mesh->topology().dim();
     auto map = mesh->topology().index_map(tdim);
 
     // Get geometry data
     const graph::AdjacencyList<std::int32_t>& x_dofmap
         = mesh->geometry().dofmap();
     // FIXME: Add proper interface for num coordinate dofs
-    const int num_dofs_g = x_dofmap.num_links(0);
+    const std::size_t num_dofs_g = x_dofmap.num_links(0);
     const xt::xtensor<double, 2>& x_g = mesh->geometry().x();
 
     // Get coordinate map
@@ -296,11 +296,13 @@ public:
     std::vector<double> J(gdim * tdim);
     std::vector<double> detJ(1);
     std::vector<double> K(tdim * gdim);
-    array2d<double> X(1, tdim);
+    xt::xtensor<double, 2> X({1, tdim});
 
-    xt::xtensor<double, 2> _X = xt::zeros<double>(X.shape);
-    xt::xtensor<double, 3> _J = xt::zeros<double>({1, gdim, tdim});
-    xt::xtensor<double, 3> _K = xt::zeros<double>({1, tdim, gdim});
+    // xt::xtensor<double, 2> _X = xt::zeros<double>(X.shape);
+    xt::xtensor<double, 3> _J
+        = xt::zeros<double>({static_cast<std::size_t>(1), gdim, tdim});
+    xt::xtensor<double, 3> _K
+        = xt::zeros<double>({static_cast<std::size_t>(1), tdim, gdim});
     xt::xtensor<double, 1> _detJ = xt::zeros<double>({1});
 
     // Prepare basis function data structures
@@ -321,7 +323,8 @@ public:
         = mesh->topology().get_cell_permutation_info();
     xt::xtensor<double, 2> coordinate_dofs
         = xt::zeros<double>({num_dofs_g, gdim});
-    xt::xtensor<double, 2> xp = xt::zeros<double>({1, gdim});
+    xt::xtensor<double, 2> xp
+        = xt::zeros<double>({static_cast<std::size_t>(1), gdim});
 
     // Loop over points
     std::fill(u.data(), u.data() + u.size(), 0.0);
@@ -336,22 +339,22 @@ public:
 
       // Get cell geometry (coordinate dofs)
       auto x_dofs = x_dofmap.links(cell_index);
-      for (int i = 0; i < num_dofs_g; ++i)
-        for (int j = 0; j < gdim; ++j)
+      for (std::size_t  i = 0; i < num_dofs_g; ++i)
+        for (std::size_t j = 0; j < gdim; ++j)
           coordinate_dofs(i, j) = x_g(x_dofs[i], j);
 
-      for (int j = 0; j < gdim; ++j)
+      for (std::size_t j = 0; j < gdim; ++j)
         xp(0, j) = x(p, j);
 
       // Compute reference coordinates X, and J, detJ and K
-      _X = xt::adapt(X.data(), X.shape);
-      _J = xt::adapt(J.data(), {1, gdim, tdim});
-      _K = xt::adapt(K.data(), {1, tdim, gdim});
+      // _X = xt::adapt(X.data(), X.shape);
+      _J = xt::adapt(J.data(), {static_cast<std::size_t>(1), gdim, tdim});
+      _K = xt::adapt(K.data(), {static_cast<std::size_t>(1), tdim, gdim});
       _detJ = xt::adapt(detJ.data(), {1});
 
-      cmap.pull_back(_X, _J, _detJ, _K, xp, coordinate_dofs);
+      cmap.pull_back(X, _J, _detJ, _K, xp, coordinate_dofs);
 
-      std::copy(_X.begin(), _X.end(), X.data());
+      // std::copy(_X.begin(), _X.end(), X.data());
       std::copy(_J.begin(), _J.end(), J.data());
       std::copy(_K.begin(), _K.end(), K.data());
       std::copy(_detJ.begin(), _detJ.end(), detJ.data());
