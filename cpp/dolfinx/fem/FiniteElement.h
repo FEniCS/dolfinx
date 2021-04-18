@@ -200,6 +200,7 @@ public:
                                 std::uint32_t cell_permutation,
                                 int block_size) const
   {
+    assert(_element);
     _element->apply_dof_transformation(data, block_size, cell_permutation);
   }
 
@@ -208,18 +209,14 @@ public:
   /// @param[in,out] data The data to be transformed
   /// @param[in] cell_permutation Permutation data for the cell
   /// @param[in] block_size The block_size of the input data
+  template <typename T>
   void apply_inverse_transpose_dof_transformation(
-      double* data, std::uint32_t cell_permutation, int block_size) const;
-
-  /// Apply inverse transpose permutation to some data
-  ///
-  /// @param[in,out] data The data to be transformed
-  /// @param[in] cell_permutation Permutation data for the cell
-  /// @param[in] block_size The block_size of the input data
-  void
-  apply_inverse_transpose_dof_transformation(std::complex<double>* data,
-                                             std::uint32_t cell_permutation,
-                                             int block_size) const;
+      xtl::span<T> data, std::uint32_t cell_permutation, int block_size) const
+  {
+    assert(_element);
+    _element->apply_inverse_transpose_dof_transformation(data, block_size,
+                                                         cell_permutation);
+  }
 
   /// Pull physical data back to the reference element.
   /// This passes the inputs directly into Basix's map_pull_back function.
@@ -229,6 +226,7 @@ public:
                 const xtl::span<const double>& detJ,
                 const xt::xtensor<double, 3>& K, xt::xtensor<T, 3>& U) const
   {
+    assert(_element);
     _element->map_pull_back_m(u, J, detJ, K, U);
   }
 
@@ -252,15 +250,8 @@ private:
   // number of DOFs colocated at each point.
   int _bs;
 
-  // True if interpolation is indentity, i.e. call to
-  // _interpolate_into_cell is not required
-  bool _interpolation_is_ident;
-
   // True if element needs dof permutation
   bool _needs_permutation_data;
-
-  // The basix element identifier
-  int _basix_element_handle;
 
   // Basix Element (nullptr for mixed elements)
   std::shared_ptr<basix::FiniteElement> _element;

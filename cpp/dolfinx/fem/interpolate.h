@@ -219,7 +219,6 @@ void interpolate(
   // number of rows equal to the number of components of the function,
   // and the number of columns is equal to the number of evaluation
   // points.
-
   xt::xarray<T> values = f(x);
 
   if (values.dimension() == 1)
@@ -258,8 +257,8 @@ void interpolate(
       {
         for (int i = 0; i < num_scalar_dofs; ++i)
           _coeffs[i] = values(k, c * num_scalar_dofs + i);
-        element->apply_inverse_transpose_dof_transformation(_coeffs.data(),
-                                                            cell_info[c], 1);
+        element->apply_inverse_transpose_dof_transformation(
+            tcb::make_span(_coeffs), cell_info[c], 1);
         for (int i = 0; i < num_scalar_dofs; ++i)
         {
           const int dof = i * element_bs + k;
@@ -325,8 +324,8 @@ void interpolate(
         xt::xtensor<T, 2> ref_data
             = xt::transpose(xt::view(reference_data, xt::all(), 0, xt::all()));
         element->interpolate(ref_data, tcb::make_span(_coeffs));
-        element->apply_inverse_transpose_dof_transformation(_coeffs.data(),
-                                                            cell_info[c], 1);
+        element->apply_inverse_transpose_dof_transformation(
+            tcb::make_span(_coeffs), cell_info[c], 1);
 
         assert(_coeffs.size() == num_scalar_dofs);
 

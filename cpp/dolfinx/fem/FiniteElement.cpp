@@ -69,7 +69,6 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
       _value_size(ufc_element.value_size),
       _reference_value_size(ufc_element.reference_value_size),
       _hash(std::hash<std::string>{}(_signature)), _bs(ufc_element.block_size),
-      _interpolation_is_ident(ufc_element.interpolation_is_identity),
       _needs_permutation_data(ufc_element.needs_transformation_data)
 {
   const ufc_shape _shape = ufc_element.cell_shape;
@@ -105,23 +104,12 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
          {hexahedron, "hexahedron"}};
   const std::string cell_shape = ufc_to_cell.at(ufc_element.cell_shape);
 
-  const std::string family = ufc_element.family;
-
   // FIXME: Add element 'handle' to UFC and do not use fragile strings
-  if (family == "mixed element")
-  {
-    // Basix does not support mixed elements, so the subelements should be
-    // handled separately
-    // This will cause an error, if actually used
-    _basix_element_handle = -1;
-  }
-  else
+  const std::string family = ufc_element.family;
+  if (family != "mixed element")
   {
     _element = std::make_shared<basix::FiniteElement>(basix::create_element(
         family.c_str(), cell_shape.c_str(), ufc_element.degree));
-
-    _basix_element_handle = basix::register_element(
-        family.c_str(), cell_shape.c_str(), ufc_element.degree);
   }
 
   // Fill value dimension
@@ -173,6 +161,7 @@ void FiniteElement::evaluate_reference_basis(
     xt::xtensor<double, 3>& reference_values,
     const xt::xtensor<double, 2>& X) const
 {
+  assert(_element);
   xt::xtensor<double, 4> basis = _element->tabulate(0, X);
   assert(basis.shape(1) == X.shape(0));
   for (std::size_t p = 0; p < basis.shape(1); ++p)
@@ -201,6 +190,7 @@ void FiniteElement::transform_reference_basis(
     const xt::xtensor<double, 3>& J, const xtl::span<const double>& detJ,
     const xt::xtensor<double, 3>& K) const
 {
+  assert(_element);
   _element->map_push_forward_m(reference_values, J, detJ, K, values);
 }
 //-----------------------------------------------------------------------------
@@ -231,15 +221,17 @@ FiniteElement::extract_sub_element(const std::vector<int>& component) const
 //-----------------------------------------------------------------------------
 bool FiniteElement::interpolation_ident() const noexcept
 {
-  return _interpolation_is_ident;
+  assert(_element);
+  return _element->map_type == basix::maps::type::identity;
 }
 //-----------------------------------------------------------------------------
 const xt::xtensor<double, 2>& FiniteElement::interpolation_points() const
 {
   if (!_element)
   {
-    throw std::runtime_error("Cannot get interpolation points - no basix "
-                             "element handle. Maybe this is a mixed element?");
+    throw std::runtime_error(
+        "Cannot get interpolation points - no Basix element available. Maybe "
+        "this is a mixed element?");
   }
 
   return _element->points();
@@ -248,20 +240,5 @@ const xt::xtensor<double, 2>& FiniteElement::interpolation_points() const
 bool FiniteElement::needs_permutation_data() const noexcept
 {
   return _needs_permutation_data;
-}
-//-----------------------------------------------------------------------------
-void FiniteElement::apply_inverse_transpose_dof_transformation(
-    double* data, std::uint32_t cell_permutation, int block_size) const
-{
-  basix::apply_inverse_transpose_dof_transformation_real(
-      _basix_element_handle, data, block_size, cell_permutation);
-}
-//-----------------------------------------------------------------------------
-void FiniteElement::apply_inverse_transpose_dof_transformation(
-    std::complex<double>* data, std::uint32_t cell_permutation,
-    int block_size) const
-{
-  basix::apply_inverse_transpose_dof_transformation_complex(
-      _basix_element_handle, data, block_size, cell_permutation);
 }
 //-----------------------------------------------------------------------------
