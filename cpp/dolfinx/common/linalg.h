@@ -50,7 +50,7 @@ auto det(const Matrix& A)
     return w4;
   }
   default:
-    throw std::runtime_error("linalg::det is not implement for "
+    throw std::runtime_error("linalg::det is not implemented for "
                              + std::to_string(A.shape(0)) + "x"
                              + std::to_string(A.shape(1)) + " matrices.");
   }
@@ -101,7 +101,7 @@ void inv(const Matrix& A, Matrix& B)
     break;
   }
   default:
-    throw std::runtime_error("linalg::inv is not implement for "
+    throw std::runtime_error("linalg::inv is not implemented for "
                              + std::to_string(A.shape(0)) + "x"
                              + std::to_string(A.shape(1)) + " matrices.");
   }
