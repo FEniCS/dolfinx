@@ -29,7 +29,7 @@ public:
   explicit FiniteElement(const ufc_finite_element& ufc_element);
 
   /// Copy constructor
-  FiniteElement(const FiniteElement& element) = default;
+  FiniteElement(const FiniteElement& element) = delete;
 
   /// Move constructor
   FiniteElement(FiniteElement&& element) = default;
@@ -38,7 +38,7 @@ public:
   virtual ~FiniteElement() = default;
 
   /// Copy assignment
-  FiniteElement& operator=(const FiniteElement& element) = default;
+  FiniteElement& operator=(const FiniteElement& element) = delete;
 
   /// Move assignment
   FiniteElement& operator=(FiniteElement&& element) = default;
@@ -254,6 +254,6 @@ private:
   bool _needs_permutation_data;
 
   // Basix Element (nullptr for mixed elements)
-  std::shared_ptr<basix::FiniteElement> _element;
+  std::unique_ptr<basix::FiniteElement> _element;
 };
 } // namespace dolfinx::fem
