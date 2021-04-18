@@ -2,9 +2,9 @@ name: Test visualisation demos
 
 on:
   # Uncomment the below to trigger tests on push
-  # push:
-  #   branches:
-  #     - "**"
+  push:
+    branches:
+      - "**"
   schedule:
     # '*' is a special character in YAML, so string must be quoted
     - cron: "0 1 * * *"
@@ -31,6 +31,9 @@ jobs:
       OMPI_MCA_mpi_yield_when_idle: 1
       OMPI_MCA_hwloc_base_binding_policy: none
 
+      PATH: /usr/local/gmsh-4.8.3-Linux64-sdk/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+      PYTHONPATH: /usr/local/gmsh-4.8.3-Linux64-sdk/lib
+
     strategy:
       matrix:
         petsc_arch: [real, complex]
@@ -44,6 +47,13 @@ jobs:
           path: ./basix
           repository: FEniCS/basix
           ref: main
+
+      - name: Install new version of GMSH
+        run: |
+          cd /usr/local
+          wget -nc --quiet http://gmsh.info/bin/Linux/gmsh-4.8.3-Linux64-sdk.tgz
+          tar -xf gmsh-4.8.3-Linux64-sdk.tgz
+          rm gmsh-4.8.3-Linux64-sdk.tgz
 
       - name: Install FEniCS Python components
         run: |

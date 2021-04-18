@@ -1,6 +1,9 @@
 name: Intel compilers
 
 on:
+  push:
+    branches:
+      - "**"
   schedule:
     # '*' is a special character in YAML, so string must be quoted
     - cron: "0 2 * * TUE"
@@ -19,6 +22,8 @@ jobs:
       CC: ${{ matrix.c_compiler }}
       CXX: ${{ matrix.cxx_compiler }}
       PETSC_ARCH: linux-gnu-real-32
+      PATH: /usr/local/gmsh-4.8.3-Linux64-sdk/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+      PYTHONPATH: /usr/local/gmsh-4.8.3-Linux64-sdk/lib
 
     strategy:
       matrix:
@@ -41,6 +46,13 @@ jobs:
           apt update
           # apt install -y intel-hpckit
           apt install -y intel-oneapi-common-vars intel-oneapi-compiler-dpcpp-cpp-and-cpp-classic
+
+      - name: Install new version of GMSH
+        run: |
+          cd /usr/local
+          wget -nc --quiet http://gmsh.info/bin/Linux/gmsh-4.8.3-Linux64-sdk.tgz
+          tar -xf gmsh-4.8.3-Linux64-sdk.tgz
+          rm gmsh-4.8.3-Linux64-sdk.tgz
 
       - name: Get Basix and install
         uses: actions/checkout@v2

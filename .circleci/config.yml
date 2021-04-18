@@ -104,6 +104,14 @@ unit-tests-python-mpi: &unit-tests-python-mpi
     cd python/test/unit
     mpirun -np 3 python3 -m pytest .
 
+download-gmsh: &download-gmsh
+  name: Install new version of GMSH
+  command: |
+    cd /usr/local
+    wget -nc --quiet http://gmsh.info/bin/Linux/gmsh-4.8.3-Linux64-sdk.tgz
+    tar -xf gmsh-4.8.3-Linux64-sdk.tgz
+    rm gmsh-4.8.3-Linux64-sdk.tgz
+
 jobs:
   build-real:
     docker:
@@ -111,6 +119,9 @@ jobs:
     environment:
       DEBIAN_FRONTEND: "noninteractive"
       PETSC_ARCH: "linux-gnu-real-32"
+      PATH: /usr/local/gmsh-4.8.3-Linux64-sdk/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+      PYTHONPATH: /usr/local/gmsh-4.8.3-Linux64-sdk/lib
+
     steps:
       - checkout
       - run: *install-python-components
@@ -118,6 +129,7 @@ jobs:
       - run: *build-documentation-cpp
       - run: *configure-cpp
       - run: *build-install-cpp
+      - run: *download-gmsh
 
       - run: *unit-tests-cpp
       - run: *regression-tests-cpp
@@ -147,6 +159,9 @@ jobs:
     environment:
       DEBIAN_FRONTEND: "noninteractive"
       PETSC_ARCH: "linux-gnu-complex-32"
+      PATH: /usr/local/gmsh-4.8.3-Linux64-sdk/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+      PYTHONPATH: /usr/local/dolfinx-complex/lib/python3.8/dist-packages:/usr/local/gmsh-4.8.3-Linux64-sdk/lib
+
     steps:
       - checkout
       - run: *install-python-components
@@ -154,6 +169,7 @@ jobs:
       - run: *build-documentation-cpp
       - run: *configure-cpp
       - run: *build-install-cpp
+      - run: *download-gmsh
 
       - run: *unit-tests-cpp
       - run: *regression-tests-cpp
