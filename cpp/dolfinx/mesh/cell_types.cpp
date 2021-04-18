@@ -7,7 +7,7 @@
 #include "cell_types.h"
 #include "Geometry.h"
 #include <algorithm>
-#include <basix.h>
+#include <basix/cell.h>
 #include <cfloat>
 #include <cstdlib>
 #include <numeric>
@@ -108,8 +108,11 @@ mesh::CellType mesh::cell_facet_type(mesh::CellType type)
 graph::AdjacencyList<int> mesh::get_entity_vertices(mesh::CellType type,
                                                     int dim)
 {
+  // const std::vector<std::vector<int>> topology
+  //     = basix::topology(to_string(type).c_str())[dim];
+
   const std::vector<std::vector<int>> topology
-      = basix::topology(to_string(type).c_str())[dim];
+      = basix::cell::topology(basix::cell::str_to_type(to_string(type)))[dim];
 
   return graph::AdjacencyList<int>(topology);
 }
