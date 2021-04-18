@@ -89,10 +89,10 @@ public:
   /// Evaluate all basis function derivatives of given order at given points in
   /// reference cell
   // reference_value_derivatives[num_points][num_dofs][reference_value_size][num_derivatives]
-  void
-  evaluate_reference_basis_derivatives(std::vector<double>& reference_values,
-                                       int order,
-                                       const array2d<double>& X) const;
+  // void
+  // evaluate_reference_basis_derivatives(std::vector<double>& reference_values,
+  //                                      int order,
+  //                                      const xt::xtensor<double, 2>& X) const;
 
   /// Push basis functions forward to physical element
   void transform_reference_basis(std::vector<double>& values,

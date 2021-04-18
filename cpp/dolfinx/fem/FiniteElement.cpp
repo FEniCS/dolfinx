@@ -181,49 +181,22 @@ void FiniteElement::evaluate_reference_basis(
     {
       for (std::size_t v = 0; v < basis.shape(3); ++v)
       {
-        reference_values[(p * basis.shape(2) + d) * basis.shape(3) + v]
+        reference_values[p * basis.shape(2) * basis.shape(3)
+                         + d * basis.shape(3) + v]
             = basis(0, p, d, v);
       }
     }
   }
 }
 //-----------------------------------------------------------------------------
-void FiniteElement::evaluate_reference_basis_derivatives(
-    std::vector<double>& values, int order, const array2d<double>& X) const
-{
-  // TODO: fix this for order > 1
-  if (order != 1)
-  {
-    throw std::runtime_error(
-        "FiniteElement::evaluate_reference_basis_derivatives only supports "
-        "order 1 at the moment.");
-  }
-
-  // nd = tdim + 1;
-  // FIXME
-  const int nd = 4;
-  array2d<double> basix_data(nd * X.shape[0],
-                             basix::dim(_basix_element_handle));
-  basix::tabulate(_basix_element_handle, basix_data.data(), 1, X.data(),
-                  X.shape[0]);
-  for (std::size_t p = 0; p < X.shape[0]; ++p)
-  {
-    for (std::size_t d = 0; d < basix_data.shape[1] / _reference_value_size;
-         ++d)
-    {
-      for (int v = 0; v < _reference_value_size; ++v)
-      {
-        for (std::size_t deriv = 0; deriv < nd; ++deriv)
-        {
-          values[(p * basix_data.shape[1] + d * _reference_value_size + v)
-                     * (basix_data.size() - 1)
-                 + deriv]
-              = basix_data(p, d * _reference_value_size + v);
-        }
-      }
-    }
-  }
-}
+// void FiniteElement::evaluate_reference_basis_derivatives(
+//     std::vector<double>& /*values*/, int /*order*/,
+//     const xt::xtensor<double, 2>& /*X*/) const
+// {
+//   // NOTE: This function is untested. Add tests and re-active
+//   throw std::runtime_error(
+//       "FiniteElement::evaluate_reference_basis_derivatives required updating");
+// }
 //-----------------------------------------------------------------------------
 void FiniteElement::transform_reference_basis(
     std::vector<double>& values, const std::vector<double>& reference_values,
