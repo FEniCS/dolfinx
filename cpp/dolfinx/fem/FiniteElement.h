@@ -83,7 +83,7 @@ public:
 
   /// Evaluate all basis functions at given points in reference cell
   // reference_values[num_points][num_dofs][reference_value_size]
-  void evaluate_reference_basis(std::vector<double>& values,
+  void evaluate_reference_basis(xt::xtensor<double, 3>& values,
                                 const xt::xtensor<double, 2>& X) const;
 
   /// Evaluate all basis function derivatives of given order at given points in
@@ -92,11 +92,12 @@ public:
   // void
   // evaluate_reference_basis_derivatives(std::vector<double>& reference_values,
   //                                      int order,
-  //                                      const xt::xtensor<double, 2>& X) const;
+  //                                      const xt::xtensor<double, 2>& X)
+  //                                      const;
 
   /// Push basis functions forward to physical element
   void transform_reference_basis(std::vector<double>& values,
-                                 const std::vector<double>& reference_values,
+                                 const xt::xtensor<double, 3>& reference_values,
                                  const xt::xtensor<double, 2>& X,
                                  const std::vector<double>& J,
                                  const xtl::span<const double>& detJ,

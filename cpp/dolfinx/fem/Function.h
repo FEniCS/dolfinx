@@ -277,10 +277,10 @@ public:
         = _function_space->element();
     assert(element);
     const int bs_element = element->block_size();
-    const int reference_value_size
+    const std::size_t reference_value_size
         = element->reference_value_size() / bs_element;
     const int value_size = element->value_size() / bs_element;
-    const int space_dimension = element->space_dimension() / bs_element;
+    const std::size_t space_dimension = element->space_dimension() / bs_element;
 
     // If the space has sub elements, concatenate the evaluations on the sub
     // elements
@@ -306,8 +306,8 @@ public:
     xt::xtensor<double, 1> _detJ = xt::zeros<double>({1});
 
     // Prepare basis function data structures
-    std::vector<double> basis_reference_values(space_dimension
-                                               * reference_value_size);
+    xt::xtensor<double, 3> basis_reference_values(
+        {1, space_dimension, reference_value_size});
     std::vector<double> basis_values(space_dimension * value_size);
 
     // Create work vector for expansion coefficients
@@ -381,7 +381,7 @@ public:
       auto u_row = xt::row(u, p);
       for (int k = 0; k < bs_element; ++k)
       {
-        for (int i = 0; i < space_dimension; ++i)
+        for (std::size_t i = 0; i < space_dimension; ++i)
         {
           for (int j = 0; j < value_size; ++j)
           {
