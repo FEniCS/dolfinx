@@ -6,8 +6,6 @@
 [![Actions Docker image builds](https://github.com/FEniCS/dolfinx/workflows/Docker%20end-user%20images/badge.svg)](https://github.com/FEniCS/dolfinx/actions?query=workflow%3A%22Docker+end-user+images%22)
 [![Actions Spack build](https://github.com/FEniCS/dolfinx/workflows/Spack%20build/badge.svg)](https://github.com/FEniCS/dolfinx/actions?query=workflow%3A%22Spack+build%22)
 
-
-
 DOLFINx is a new version of DOLFIN. It is being actively developed and
 features may come and go as development proceeds.
 
