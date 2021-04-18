@@ -96,7 +96,7 @@ public:
   //                                      const;
 
   /// Push basis functions forward to physical element
-  void transform_reference_basis(std::vector<double>& values,
+  void transform_reference_basis(xt::xtensor<double, 3>& values,
                                  const xt::xtensor<double, 3>& reference_values,
                                  const xt::xtensor<double, 2>& X,
                                  const std::vector<double>& J,

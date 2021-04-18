@@ -279,7 +279,7 @@ public:
     const int bs_element = element->block_size();
     const std::size_t reference_value_size
         = element->reference_value_size() / bs_element;
-    const int value_size = element->value_size() / bs_element;
+    const std::size_t value_size = element->value_size() / bs_element;
     const std::size_t space_dimension = element->space_dimension() / bs_element;
 
     // If the space has sub elements, concatenate the evaluations on the sub
@@ -308,7 +308,8 @@ public:
     // Prepare basis function data structures
     xt::xtensor<double, 3> basis_reference_values(
         {1, space_dimension, reference_value_size});
-    std::vector<double> basis_values(space_dimension * value_size);
+    xt::xtensor<double, 3> basis_values(
+        {static_cast<std::size_t>(1), space_dimension, value_size});
 
     // Create work vector for expansion coefficients
     std::vector<T> coefficients(space_dimension * bs_element);
@@ -383,10 +384,12 @@ public:
       {
         for (std::size_t i = 0; i < space_dimension; ++i)
         {
-          for (int j = 0; j < value_size; ++j)
+          for (std::size_t j = 0; j < value_size; ++j)
           {
-            u_row[j * bs_element + k] += coefficients[bs_element * i + k]
-                                         * basis_values[i * value_size + j];
+            // u_row[j * bs_element + k] += coefficients[bs_element * i + k]
+            //                              * basis_values[i * value_size + j];
+            u_row[j * bs_element + k]
+                += coefficients[bs_element * i + k] * basis_values(0, i, j);
           }
         }
       }

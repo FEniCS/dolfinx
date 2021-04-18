@@ -201,7 +201,8 @@ void FiniteElement::evaluate_reference_basis(
 // }
 //-----------------------------------------------------------------------------
 void FiniteElement::transform_reference_basis(
-    std::vector<double>& values, const xt::xtensor<double, 3>& reference_values,
+    xt::xtensor<double, 3>& values,
+    const xt::xtensor<double, 3>& reference_values,
     const xt::xtensor<double, 2>& X, const std::vector<double>& J,
     const xtl::span<const double>& detJ, const std::vector<double>& K) const
 {
