@@ -228,11 +228,10 @@ public:
   /// Pull physical data back to the reference element.
   /// This passes the inputs directly into Basix's map_pull_back function.
   template <typename T>
-  void map_pull_back(const xt::xtensor<T, 3>& u,
-                     const xt::xtensor<double, 3>& J,
-                     const xtl::span<const double>& detJ,
-                     const xt::xtensor<double, 3>& K,
-                     xt::xtensor<double, 3>& U) const
+  void
+  map_pull_back(const xt::xtensor<T, 3>& u, const xt::xtensor<double, 3>& J,
+                const xtl::span<const double>& detJ,
+                const xt::xtensor<double, 3>& K, xt::xtensor<T, 3>& U) const
   {
     _element->map_pull_back_m(u, J, detJ, K, U);
   }
