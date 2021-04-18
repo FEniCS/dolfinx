@@ -289,8 +289,8 @@ void interpolate(
     xt::xtensor<double, 2> coordinate_dofs
         = xt::empty<double>({num_dofs_g, gdim});
 
-    array2d<T> reference_data(value_size, X.shape(0));
-    array2d<T> _vals(value_size, X.shape(0));
+    xt::xtensor<T, 3> reference_data({X.shape(0), 1, value_size});
+    xt::xtensor<T, 3> _vals({X.shape(0), 1, value_size});
 
     // Tabulate 1st order derivatives of shape functions at interpolation coords
     xt::xtensor<double, 4> dphi
@@ -316,15 +316,15 @@ void interpolate(
         for (int m = 0; m < value_size; ++m)
         {
           std::copy_n(&values(k * value_size + m, c * X.shape(0)), X.shape(0),
-                      _vals.row(m).begin());
+                      xt::view(_vals, xt::all(), 0, m).begin());
         }
 
         // Get element degrees of freedom for block
-        element->map_pull_back(reference_data.data(), _vals.data(), J.data(),
-                               detJ.data(), K.data(), gdim, value_size, 1,
-                               X.shape(0));
+        element->map_pull_back(_vals, J, detJ, K, reference_data);
 
-        element->interpolate(reference_data, tcb::make_span(_coeffs));
+        xt::xtensor<T, 2> ref_data
+            = xt::transpose(xt::view(reference_data, xt::all(), 0, xt::all()));
+        element->interpolate(ref_data, tcb::make_span(_coeffs));
         element->apply_inverse_transpose_dof_transformation(_coeffs.data(),
                                                             cell_info[c], 1);
 

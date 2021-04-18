@@ -158,7 +158,8 @@ public:
   /// @param[out] dofs The element degrees of freedom (interpolants) of
   /// the expression. The call must allocate the space. Is has
   template <typename T>
-  constexpr void interpolate(const array2d<T>& values, xtl::span<T> dofs) const
+  constexpr void interpolate(const xt::xtensor<T, 2>& values,
+                             xtl::span<T> dofs) const
   {
     if (!_element)
     {
@@ -226,17 +227,27 @@ public:
 
   /// Pull physical data back to the reference element.
   /// This passes the inputs directly into Basix's map_pull_back function.
-  void map_pull_back(double* physical_data, const double* reference_data,
-                     const double* J, const double* detJ, const double* K,
-                     const int physical_dim, const int physical_value_size,
-                     const int nresults, const int npoints) const;
+  template <typename T>
+  void map_pull_back(const xt::xtensor<T, 3>& u,
+                     const xt::xtensor<double, 3>& J,
+                     const xtl::span<const double>& detJ,
+                     const xt::xtensor<double, 3>& K,
+                     xt::xtensor<double, 3>& U) const
+  {
+    _element->map_pull_back_m(u, J, detJ, K, U);
+  }
 
-  /// Pull physical data back to the reference element.
-  void map_pull_back(std::complex<double>* physical_data,
-                     const std::complex<double>* reference_data,
-                     const double* J, const double* detJ, const double* K,
-                     const int physical_dim, const int physical_value_size,
-                     const int nresults, const int npoints) const;
+  // void map_pull_back(double* physical_data, const double* reference_data,
+  //                    const double* J, const double* detJ, const double* K,
+  //                    const int physical_dim, const int physical_value_size,
+  //                    const int nresults, const int npoints) const;
+
+  // /// Pull physical data back to the reference element.
+  // void map_pull_back(std::complex<double>* physical_data,
+  //                    const std::complex<double>* reference_data,
+  //                    const double* J, const double* detJ, const double* K,
+  //                    const int physical_dim, const int physical_value_size,
+  //                    const int nresults, const int npoints) const;
 
 private:
   std::string _signature, _family;

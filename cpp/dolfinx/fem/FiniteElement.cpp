@@ -255,29 +255,29 @@ bool FiniteElement::needs_permutation_data() const noexcept
   return _needs_permutation_data;
 }
 //-----------------------------------------------------------------------------
-void FiniteElement::map_pull_back(double* physical_data,
-                                  const double* reference_data, const double* J,
-                                  const double* detJ, const double* K,
-                                  const int physical_dim,
-                                  const int physical_value_size,
-                                  const int nresults, const int npoints) const
-{
-  basix::map_pull_back_real(_basix_element_handle, physical_data,
-                            reference_data, J, detJ, K, physical_dim,
-                            physical_value_size, nresults, npoints);
-}
-//-----------------------------------------------------------------------------
-void FiniteElement::map_pull_back(std::complex<double>* physical_data,
-                                  const std::complex<double>* reference_data,
-                                  const double* J, const double* detJ,
-                                  const double* K, const int physical_dim,
-                                  const int physical_value_size,
-                                  const int nresults, const int npoints) const
-{
-  basix::map_pull_back_complex(_basix_element_handle, physical_data,
-                               reference_data, J, detJ, K, physical_dim,
-                               physical_value_size, nresults, npoints);
-}
+// void FiniteElement::map_pull_back(double* physical_data,
+//                                   const double* reference_data, const double* J,
+//                                   const double* detJ, const double* K,
+//                                   const int physical_dim,
+//                                   const int physical_value_size,
+//                                   const int nresults, const int npoints) const
+// {
+//   basix::map_pull_back_real(_basix_element_handle, physical_data,
+//                             reference_data, J, detJ, K, physical_dim,
+//                             physical_value_size, nresults, npoints);
+// }
+// //-----------------------------------------------------------------------------
+// void FiniteElement::map_pull_back(std::complex<double>* physical_data,
+//                                   const std::complex<double>* reference_data,
+//                                   const double* J, const double* detJ,
+//                                   const double* K, const int physical_dim,
+//                                   const int physical_value_size,
+//                                   const int nresults, const int npoints) const
+// {
+//   basix::map_pull_back_complex(_basix_element_handle, physical_data,
+//                                reference_data, J, detJ, K, physical_dim,
+//                                physical_value_size, nresults, npoints);
+// }
 //-----------------------------------------------------------------------------
 void FiniteElement::apply_dof_transformation(double* data,
                                              std::uint32_t cell_permutation,
