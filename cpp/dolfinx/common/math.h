@@ -16,9 +16,9 @@ namespace dolfinx::math
 template <typename T>
 inline T difference_of_products(T a, T b, T c, T d) noexcept
 {
-  double w = b * c;
-  double err = std::fma(-b, c, w);
-  double diff = std::fma(a, d, -w);
+  T w = b * c;
+  T err = std::fma(-b, c, w);
+  T diff = std::fma(a, d, -w);
   return (diff + err);
 }
 
@@ -50,7 +50,7 @@ auto det(const Matrix& A)
     return w4;
   }
   default:
-    throw std::runtime_error("linalg::det is not implemented for "
+    throw std::runtime_error("math::det is not implemented for "
                              + std::to_string(A.shape(0)) + "x"
                              + std::to_string(A.shape(1)) + " matrices.");
   }
@@ -59,11 +59,10 @@ auto det(const Matrix& A)
 /// Compute the inverse of a square matrix A and assign the result to a
 /// preallocated matrix B.
 /// @warning This function does not check if A is invertible!
-template <typename Matrix>
-void inv(const Matrix& A, Matrix& B)
+template <typename U, typename V>
+void inv(const U& A, V& B)
 {
-  using value_type = typename Matrix::value_type;
-  value_type idet = 0;
+  using value_type = typename U::value_type;
   const int nrows = A.shape(0);
   switch (nrows)
   {
@@ -72,7 +71,7 @@ void inv(const Matrix& A, Matrix& B)
     break;
   case 2:
   {
-    idet = 1. / det(A);
+    value_type idet = 1. / det(A);
     B(0, 0) = idet * A(1, 1);
     B(0, 1) = -idet * A(0, 1);
     B(1, 0) = -idet * A(1, 0);
@@ -87,7 +86,7 @@ void inv(const Matrix& A, Matrix& B)
     value_type w3 = difference_of_products(A(0, 0), A(0, 1), w1, w0);
     value_type det = std::fma(A(0, 2), w2, w3);
     assert(det != 0.);
-    idet = 1 / det;
+    value_type idet = 1 / det;
 
     B(0, 0) = w0 * idet;
     B(1, 0) = -w1 * idet;
@@ -101,7 +100,7 @@ void inv(const Matrix& A, Matrix& B)
     break;
   }
   default:
-    throw std::runtime_error("linalg::inv is not implemented for "
+    throw std::runtime_error("math::inv is not implemented for "
                              + std::to_string(A.shape(0)) + "x"
                              + std::to_string(A.shape(1)) + " matrices.");
   }
