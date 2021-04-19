@@ -42,11 +42,11 @@ jobs:
           label: ubuntu-arm64-aws
 
   build_test_env_openmpi:
-    name: Build fenicsproject/test-env:openmpi image (${{ matrix.os }})
+    name: Build fenicsproject/test-env:openmpi image
     #if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/main' }}
     strategy:
       matrix:
-        os: [ubuntu-latest, ubuntu-arm64-aws]
+        os: [ubuntu-latest, arm]
     runs-on: ${{ matrix.os }}
     needs: start_runner
     env:
@@ -59,7 +59,7 @@ jobs:
         run: |
           if [[ ${{matrix.os}} == 'ubuntu-latest' ]]; then
             echo "ARCH_TAG=amd64" >> $GITHUB_ENV
-          elif [[ ${{matrix.os}} == 'ubuntu-arm64-aws' ]]; then
+          elif [[ ${{matrix.os}} == 'arm' ]]; then
             echo "ARCH_TAG=arm64" >> $GITHUB_ENV
           fi
       - name: build the docker image
@@ -70,11 +70,11 @@ jobs:
         run: docker push fenicsproject/test-env:${MPI}-${env.ARCH_TAG}
 
   build_test_env_mpich:
-    name: Build fenicsproject/test-env:mpich image (${{ matrix.os }})
+    name: Build fenicsproject/test-env:mpich image
     #if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/main' }}
     strategy:
       matrix:
-        os: [ubuntu-latest, ubuntu-arm64-aws]
+        os: [ubuntu-latest, arm]
     runs-on: ${{ matrix.os }}
     needs: start_runner
     env:
@@ -87,7 +87,7 @@ jobs:
         run: |
           if [[ ${{matrix.os}} == 'ubuntu-latest' ]]; then
             echo "ARCH_TAG=amd64" >> $GITHUB_ENV
-          elif [[ ${{matrix.os}} == 'ubuntu-arm64-aws' ]]; then
+          elif [[ ${{matrix.os}} == 'arm' ]]; then
             echo "ARCH_TAG=arm64" >> $GITHUB_ENV
           fi
       - name: build the docker image
@@ -98,11 +98,11 @@ jobs:
         run: docker push fenicsproject/test-env:${MPI}-${env.ARCH_TAG}
 
   build_dev_env:
-    name: Build dolfinx/dev-env image (${{ matrix.os }})
+    name: Build dolfinx/dev-env image
     #if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/main' }}
     strategy:
       matrix:
-        os: [ubuntu-latest, ubuntu-arm64-aws]
+        os: [ubuntu-latest, arm]
     runs-on: ${{ matrix.os }}
     needs: start_runner
     env:
@@ -116,15 +116,15 @@ jobs:
         run: |
           if [[ ${{matrix.os}} == 'ubuntu-latest' ]]; then
             echo "ARCH_TAG=amd64" >> $GITHUB_ENV
-          elif [[ ${{matrix.os}} == 'ubuntu-arm64-aws' ]]; then
+          elif [[ ${{matrix.os}} == 'arm' ]]; then
             echo "ARCH_TAG=arm64" >> $GITHUB_ENV
           fi
       - name: Build the Docker image
-        run: docker buildx build --build-arg PETSC_SLEPC_OPTFLAGS --build-arg PETSC_SLEPC_DEBUGGING --build-arg MPI --file docker/Dockerfile --target dev-env --tag dolfinx/dev-env-${env.ARCH_TAG} docker/
+        run: docker buildx build --build-arg PETSC_SLEPC_OPTFLAGS --build-arg PETSC_SLEPC_DEBUGGING --build-arg MPI --file docker/Dockerfile --target dev-env --tag dolfinx/dev-env:${env.ARCH_TAG} docker/
       - name: Log into the DockerHub registry
         run: echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
       - name: Push to the DockerHub registry
-        run: docker push dolfinx/dev-env-${env.ARCH_TAG}
+        run: docker push dolfinx/dev-env:${env.ARCH_TAG}
 
   stop-runner:
     name: Stop self-hosted EC2 runner
@@ -147,5 +147,5 @@ jobs:
         with:
           mode: stop
           github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
-          label: ubuntu-arm64-aws
+          label: ${{ needs.start_runner.outputs.label }}
           ec2-instance-id: ${{ needs.start_runner.outputs.ec2-instance-id }}
