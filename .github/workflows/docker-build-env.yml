@@ -39,7 +39,6 @@ jobs:
           ec2-instance-type: c6g.large
           subnet-id: subnet-dc2151b7
           security-group-id: sg-03fc69ee7a6ba8bc4
-          label: ubuntu-arm64-aws
 
   build_test_env_openmpi:
     name: Build fenicsproject/test-env:openmpi image
