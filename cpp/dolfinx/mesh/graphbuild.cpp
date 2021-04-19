@@ -13,6 +13,7 @@
 #include <dolfinx/mesh/cell_types.h>
 #include <utility>
 #include <vector>
+#include <xtensor/xview.hpp>
 
 using namespace dolfinx;
 
@@ -268,10 +269,12 @@ compute_nonlocal_dual_graph(
   std::int64_t local_min = std::numeric_limits<std::int64_t>::max();
   std::int64_t local_max = 0;
 
-  for (std::size_t i = 0; i < facet_cell_map.shape()[0]; ++i)
+  if (facet_cell_map.shape()[0] > 0)
   {
-    local_min = std::min(local_min, facet_cell_map(i, 0));
-    local_max = std::max(local_max, facet_cell_map(i, 0));
+    xt::xarray<std::array<std::int64_t, 2>> p
+        = xt::minmax(xt::col(facet_cell_map, 0));
+    local_min = p[0][0];
+    local_max = p[0][1];
   }
 
   std::int64_t global_min, global_max;
