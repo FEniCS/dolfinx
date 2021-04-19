@@ -251,7 +251,7 @@ compute_nonlocal_dual_graph(
   }
 
   // Some processes may have empty map, so get max across all
-  const std::int32_t num_vertices_local = facet_cell_map.shape()[1] - 1;
+  const std::int32_t num_vertices_local = facet_cell_map.shape(1) - 1;
   std::int32_t num_vertices_per_facet;
   MPI_Allreduce(&num_vertices_local, &num_vertices_per_facet, 1, MPI_INT32_T,
                 MPI_MAX, comm);
@@ -268,12 +268,11 @@ compute_nonlocal_dual_graph(
   std::int64_t local_min = std::numeric_limits<std::int64_t>::max();
   std::int64_t local_max = 0;
 
-  if (facet_cell_map.shape()[0] > 0)
+  if (facet_cell_map.shape(0) > 0)
   {
-    xt::xtensor<std::array<std::int64_t, 2>, 0> p
-        = xt::minmax(xt::col(facet_cell_map, 0));
-    local_min = p[0][0];
-    local_max = p[0][1];
+    std::array<std::int64_t, 2> p = xt::minmax(xt::col(facet_cell_map, 0))[0];
+    local_min = p[0];
+    local_max = p[1];
   }
 
   std::int64_t global_min, global_max;
@@ -289,7 +288,7 @@ compute_nonlocal_dual_graph(
 
   // Count number of item to send to each rank
   std::vector<int> p_count(num_processes, 0);
-  for (std::size_t i = 0; i < facet_cell_map.shape()[0]; ++i)
+  for (std::size_t i = 0; i < facet_cell_map.shape(0); ++i)
   {
     // Use first vertex of facet to partition into blocks
     const int dest_proc = dolfinx::MPI::index_owner(
@@ -306,7 +305,7 @@ compute_nonlocal_dual_graph(
 
   // Pack map data and send to match-maker process
   std::vector<int> pos(send_buffer.num_nodes(), 0);
-  for (std::size_t i = 0; i < facet_cell_map.shape()[0]; ++i)
+  for (std::size_t i = 0; i < facet_cell_map.shape(0); ++i)
   {
     const int dest_proc = dolfinx::MPI::index_owner(
         num_processes, facet_cell_map(i, 0) - global_min, global_range);
