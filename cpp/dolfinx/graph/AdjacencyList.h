@@ -24,25 +24,6 @@ namespace dolfinx::graph
 /// matrix(i, j) is the jth neighbor of the ith node
 /// @return Adjacency list data and offset array
 template <typename T>
-auto create_adjacency_data(const array2d<T>& array)
-{
-  std::vector<T> data(array.size());
-  std::vector<std::int32_t> offset(array.shape[0] + 1, 0);
-  for (std::size_t i = 0; i < array.shape[0]; ++i)
-  {
-    for (std::size_t j = 0; j < array.shape[1]; ++j)
-      data[i * array.shape[1] + j] = array(i, j);
-    offset[i + 1] = offset[i] + array.shape[1];
-  }
-  return std::pair(std::move(data), std::move(offset));
-}
-
-/// Construct adjacency list data for a problem with a fixed number of
-/// links (edges) for each node
-/// @param [in] array Two-dimensional array of adjacency data where
-/// matrix(i, j) is the jth neighbor of the ith node
-/// @return Adjacency list data and offset array
-template <typename T>
 auto create_adjacency_data(const xt::xtensor<T, 2>& array)
 {
   std::vector<T> data(array.shape(0) * array.shape(1));
