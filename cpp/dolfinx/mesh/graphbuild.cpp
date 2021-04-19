@@ -268,7 +268,7 @@ compute_nonlocal_dual_graph(
   {
     std::array<std::int64_t, 2> p = xt::minmax(xt::col(facet_cell_map, 0))();
     local_min = p[0];
-    local_min = p[1];
+    local_max = p[1];
   }
 
   std::int64_t global_min, global_max;
