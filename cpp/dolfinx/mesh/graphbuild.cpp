@@ -22,7 +22,7 @@ namespace
 //-----------------------------------------------------------------------------
 // Compute local part of the dual graph, and return return (local_graph,
 // facet_cell_map, number of local edges in the graph (undirected)
-std::pair<graph::AdjacencyList<std::int32_t>, dolfinx::array2d<std::int64_t>>
+std::pair<graph::AdjacencyList<std::int32_t>, xt::xarray<std::int64_t>>
 compute_local_dual_graph_keyed(
     const graph::AdjacencyList<std::int64_t>& cell_vertices, int tdim)
 {
@@ -32,7 +32,7 @@ compute_local_dual_graph_keyed(
   if (num_local_cells == 0)
   {
     // Empty mesh on this process
-    dolfinx::array2d<std::int64_t> m(0, 0);
+    xt::xarray<std::int64_t> m({0, 0});
     return {graph::AdjacencyList<std::int32_t>(0), m};
   }
 
@@ -180,14 +180,14 @@ compute_local_dual_graph_keyed(
   if (eq_count == 0)
     unmatched_facets.push_back(facets.size() - 1);
 
-  dolfinx::array2d<std::int64_t> facet_cell_map(unmatched_facets.size(),
-                                                num_facet_vertices + 1);
+  xt::xarray<std::int64_t> facet_cell_map(
+      {(int)unmatched_facets.size(), num_facet_vertices + 1});
   int c = 0;
   for (std::int32_t j : unmatched_facets)
   {
-    std::copy(facets[j].begin(), facets[j].begin() + num_facet_vertices,
-              facet_cell_map.row(c).begin());
-    facet_cell_map.row(c).back() = facets[j].back();
+    for (int k = 0; k < num_facet_vertices; ++k)
+      facet_cell_map(c, k) = facets[j][k];
+    facet_cell_map(c, num_facet_vertices) = facets[j].back();
     ++c;
   }
 
@@ -229,7 +229,7 @@ compute_local_dual_graph_keyed(
 std::pair<graph::AdjacencyList<std::int64_t>, std::int32_t>
 compute_nonlocal_dual_graph(
     const MPI_Comm comm, std::int32_t num_local_cells,
-    const dolfinx::array2d<std::int64_t>& facet_cell_map,
+    const xt::xarray<std::int64_t>& facet_cell_map,
     const graph::AdjacencyList<std::int32_t>& local_graph)
 {
   LOG(INFO) << "Build nonlocal part of mesh dual graph";
@@ -248,7 +248,7 @@ compute_nonlocal_dual_graph(
   }
 
   // Some processes may have empty map, so get max across all
-  const std::int32_t num_vertices_local = facet_cell_map.shape[1] - 1;
+  const std::int32_t num_vertices_local = facet_cell_map.shape()[1] - 1;
   std::int32_t num_vertices_per_facet;
   MPI_Allreduce(&num_vertices_local, &num_vertices_per_facet, 1, MPI_INT32_T,
                 MPI_MAX, comm);
@@ -266,7 +266,7 @@ compute_nonlocal_dual_graph(
   std::int64_t local_min = std::numeric_limits<std::int64_t>::max();
   std::int64_t local_max = 0;
 
-  for (std::size_t i = 0; i < facet_cell_map.shape[0]; ++i)
+  for (std::size_t i = 0; i < facet_cell_map.shape()[0]; ++i)
   {
     local_min = std::min(local_min, facet_cell_map(i, 0));
     local_max = std::max(local_max, facet_cell_map(i, 0));
@@ -285,7 +285,7 @@ compute_nonlocal_dual_graph(
 
   // Count number of item to send to each rank
   std::vector<int> p_count(num_processes, 0);
-  for (std::size_t i = 0; i < facet_cell_map.shape[0]; ++i)
+  for (std::size_t i = 0; i < facet_cell_map.shape()[0]; ++i)
   {
     // Use first vertex of facet to partition into blocks
     const int dest_proc = dolfinx::MPI::index_owner(
@@ -302,16 +302,17 @@ compute_nonlocal_dual_graph(
 
   // Pack map data and send to match-maker process
   std::vector<int> pos(send_buffer.num_nodes(), 0);
-  for (std::size_t i = 0; i < facet_cell_map.shape[0]; ++i)
+  for (std::size_t i = 0; i < facet_cell_map.shape()[0]; ++i)
   {
-    xtl::span<const std::int64_t> facet = facet_cell_map.row(i);
     const int dest_proc = dolfinx::MPI::index_owner(
-        num_processes, facet[0] - global_min, global_range);
+        num_processes, facet_cell_map(i, 0) - global_min, global_range);
     xtl::span<std::int64_t> buffer = send_buffer.links(dest_proc);
-    std::copy(facet.begin(), facet.end(),
-              std::next(buffer.begin(), pos[dest_proc]));
+
+    for (int j = 0; j < (num_vertices_per_facet + 1); ++j)
+      buffer[pos[dest_proc] + j] = facet_cell_map(i, j);
     buffer[pos[dest_proc] + num_vertices_per_facet] += cell_offset;
-    pos[dest_proc] += facet.size();
+
+    pos[dest_proc] += num_vertices_per_facet + 1;
   }
 
   // Send data
@@ -493,7 +494,7 @@ mesh::build_dual_graph(const MPI_Comm mpi_comm,
   return {std::move(graph), {num_ghost_nodes, local_graph.offsets().back()}};
 }
 //-----------------------------------------------------------------------------
-std::pair<graph::AdjacencyList<std::int32_t>, dolfinx::array2d<std::int64_t>>
+std::pair<graph::AdjacencyList<std::int32_t>, xt::xarray<std::int64_t>>
 mesh::build_local_dual_graph(
     const graph::AdjacencyList<std::int64_t>& cell_vertices, int tdim)
 {
