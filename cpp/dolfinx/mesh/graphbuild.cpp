@@ -138,8 +138,7 @@ compute_local_dual_graph_keyed(
   assert(counter == (int)facets.size());
 
   auto cmp = [num_facet_vertices](const std::array<std::int64_t, 5>& fa,
-                                  const std::array<std::int64_t, 5>& fb)
-  {
+                                  const std::array<std::int64_t, 5>& fb) {
     return std::lexicographical_compare(
         fa.begin(), fa.begin() + num_facet_vertices, fb.begin(),
         fb.begin() + num_facet_vertices);
@@ -269,7 +268,7 @@ compute_nonlocal_dual_graph(
   {
     std::array<std::int64_t, 2> p = xt::minmax(xt::col(facet_cell_map, 0))();
     local_min = p[0];
-    local_min = p[1];
+    local_max = p[1];
   }
 
   std::int64_t global_min, global_max;
@@ -347,15 +346,11 @@ compute_nonlocal_dual_graph(
   // Get permutation that takes facets into sorted order
   std::vector<int> perm(num_facets);
   std::iota(perm.begin(), perm.end(), 0);
-  std::sort(perm.begin(), perm.end(),
-            [&recvd_buffer](int a, int b)
-            {
-              return std::lexicographical_compare(
-                  recvd_buffer.links(a).begin(),
-                  std::prev(recvd_buffer.links(a).end()),
-                  recvd_buffer.links(b).begin(),
-                  std::prev(recvd_buffer.links(b).end()));
-            });
+  std::sort(perm.begin(), perm.end(), [&recvd_buffer](int a, int b) {
+    return std::lexicographical_compare(
+        recvd_buffer.links(a).begin(), std::prev(recvd_buffer.links(a).end()),
+        recvd_buffer.links(b).begin(), std::prev(recvd_buffer.links(b).end()));
+  });
 
   // Count data items to send to each rank
   p_count.assign(num_processes, 0);
