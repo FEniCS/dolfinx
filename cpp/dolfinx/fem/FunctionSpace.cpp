@@ -109,13 +109,10 @@ FunctionSpace::tabulate_dof_coordinates(bool transpose) const
         "Cannot tabulate coordinates for a FunctionSpace that is a subspace.");
   }
 
-  // This function tabulates the DOF coordinates, with each coordinated
-  // repeated the given number of times
-
   // Geometric dimension
   assert(_mesh);
   assert(_element);
-  const int gdim = _mesh->geometry().dim();
+  const std::size_t gdim = _mesh->geometry().dim();
   const int tdim = _mesh->topology().dim();
 
   // Get dofmap local size
@@ -126,7 +123,8 @@ FunctionSpace::tabulate_dof_coordinates(bool transpose) const
   assert(index_map);
 
   const int element_block_size = _element->block_size();
-  const int scalar_dofs = _element->space_dimension() / element_block_size;
+  const std::size_t scalar_dofs
+      = _element->space_dimension() / element_block_size;
   const std::int32_t num_dofs
       = index_map_bs * (index_map->size_local() + index_map->num_ghosts())
         / dofmap_bs;
@@ -147,7 +145,7 @@ FunctionSpace::tabulate_dof_coordinates(bool transpose) const
       = _mesh->geometry().dofmap();
   // FIXME: Add proper interface for num coordinate dofs
   const xt::xtensor<double, 2>& x_g = _mesh->geometry().x();
-  const int num_dofs_g = x_dofmap.num_links(0);
+  const std::size_t num_dofs_g = x_dofmap.num_links(0);
 
   // Array to hold coordinates to return
   const std::size_t shape_c0 = transpose ? 3 : num_dofs;
@@ -156,8 +154,7 @@ FunctionSpace::tabulate_dof_coordinates(bool transpose) const
 
   // Loop over cells and tabulate dofs
   xt::xtensor<double, 2> x = xt::zeros<double>({scalar_dofs, gdim});
-  xt::xtensor<double, 2> coordinate_dofs
-      = xt::zeros<double>({num_dofs_g, gdim});
+  xt::xtensor<double, 2> coordinate_dofs({num_dofs_g, gdim});
 
   auto map = _mesh->topology().index_map(tdim);
   assert(map);
@@ -177,13 +174,14 @@ FunctionSpace::tabulate_dof_coordinates(bool transpose) const
   {
     // Extract cell geometry
     auto x_dofs = x_dofmap.links(c);
-    for (int i = 0; i < num_dofs_g; ++i)
-      for (int j = 0; j < gdim; ++j)
-        coordinate_dofs(i, j) = x_g(x_dofs[i], j);
+    for (std::size_t i = 0; i < x_dofs.size(); ++i)
+    {
+      std::copy_n(xt::row(x_g, x_dofs[i]).begin(), gdim,
+                  std::next(coordinate_dofs.begin(), i * gdim));
+    }
 
     // Tabulate dof coordinates on cell
     cmap.push_forward(x, coordinate_dofs, phi);
-
     _element->apply_dof_transformation(xtl::span(x.data(), x.size()),
                                        cell_info[c], x.shape(1));
 
