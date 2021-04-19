@@ -522,7 +522,7 @@ compute_from_transpose(const graph::AdjacencyList<std::int32_t>& c_d1_d0,
                        const int num_entities_d0, int d0, int d1)
 {
   LOG(INFO) << "Computing mesh connectivity " << d0 << " - " << d1
-            << "from transpose.";
+            << " from transpose.";
 
   // Compute number of connections for each e0
   std::vector<std::int32_t> num_connections(num_entities_d0, 0);
@@ -575,7 +575,7 @@ compute_from_map(const graph::AdjacencyList<std::int32_t>& c_d0_0,
   std::vector<std::int32_t> key(num_verts_d1);
   for (int e = 0; e < c_d1_0.num_nodes(); ++e)
   {
-    tcb::span<const std::int32_t> v = c_d1_0.links(e);
+    xtl::span<const std::int32_t> v = c_d1_0.links(e);
     assert(v.size() == key.size());
     std::partial_sort_copy(v.begin(), v.end(), key.begin(), key.end());
     entity_to_index.insert({key, e});

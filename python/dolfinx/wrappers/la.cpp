@@ -8,7 +8,6 @@
 #include "caster_mpi.h"
 #include "caster_petsc.h"
 #include <dolfinx/common/IndexMap.h>
-#include <dolfinx/common/span.hpp>
 #include <dolfinx/la/PETScMatrix.h>
 #include <dolfinx/la/PETScVector.h>
 #include <dolfinx/la/SparsityPattern.h>
@@ -22,6 +21,7 @@
 #include <pybind11/operators.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
+#include <xtl/xspan.hpp>
 
 namespace py = pybind11;
 
@@ -130,7 +130,7 @@ void la(py::module& m)
          const std::vector<std::pair<
              std::reference_wrapper<const dolfinx::common::IndexMap>, int>>&
              maps) {
-        std::vector<tcb::span<const PetscScalar>> _x_b;
+        std::vector<xtl::span<const PetscScalar>> _x_b;
         for (auto& array : x_b)
           _x_b.emplace_back(array.data(), array.size());
         dolfinx::la::scatter_local_vectors(x, _x_b, maps);
@@ -151,6 +151,7 @@ void la(py::module& m)
         return ret;
       },
       "Gather an (ordered) list of sub vectors from a block vector.");
+
   // NOTE: Enabling the below requires adding a C API for MatNullSpace to
   // petsc4py
   //   m.def("create_nullspace",

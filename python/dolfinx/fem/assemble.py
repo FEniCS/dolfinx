@@ -225,7 +225,9 @@ def _(A: PETSc.Mat,
     _a = _create_cpp_form(a)
     cpp.fem.assemble_matrix_petsc(A, _a, bcs)
     if _a.function_spaces[0].id == _a.function_spaces[1].id:
-        cpp.fem.add_diagonal(A, _a.function_spaces[0], bcs, diagonal)
+        A.assemblyBegin(PETSc.Mat.AssemblyType.FLUSH)
+        A.assemblyEnd(PETSc.Mat.AssemblyType.FLUSH)
+        cpp.fem.insert_diagonal(A, _a.function_spaces[0], bcs, diagonal)
     return A
 
 
@@ -305,14 +307,27 @@ def _(A: PETSc.Mat,
     V = _extract_function_spaces(_a)
     is_rows = cpp.la.create_petsc_index_sets([(Vsub.dofmap.index_map, Vsub.dofmap.index_map_bs) for Vsub in V[0]])
     is_cols = cpp.la.create_petsc_index_sets([(Vsub.dofmap.index_map, Vsub.dofmap.index_map_bs) for Vsub in V[1]])
+
+    # Assemble form
     for i, a_row in enumerate(_a):
         for j, a_sub in enumerate(a_row):
             if a_sub is not None:
                 Asub = A.getLocalSubMatrix(is_rows[i], is_cols[j])
                 cpp.fem.assemble_matrix_petsc_unrolled(Asub, a_sub, bcs)
-                if a_sub.function_spaces[0].id == a_sub.function_spaces[1].id:
-                    cpp.fem.add_diagonal(Asub, a_sub.function_spaces[0], bcs, diagonal)
                 A.restoreLocalSubMatrix(is_rows[i], is_cols[j], Asub)
+
+    # Flush to enable switch from add to set in the matrix
+    A.assemble(PETSc.Mat.AssemblyType.FLUSH)
+
+    # Set diagonal
+    for i, a_row in enumerate(_a):
+        for j, a_sub in enumerate(a_row):
+            if a_sub is not None:
+                Asub = A.getLocalSubMatrix(is_rows[i], is_cols[j])
+                if a_sub.function_spaces[0].id == a_sub.function_spaces[1].id:
+                    cpp.fem.insert_diagonal(Asub, a_sub.function_spaces[0], bcs, diagonal)
+                A.restoreLocalSubMatrix(is_rows[i], is_cols[j], Asub)
+
     return A
 
 

@@ -1,4 +1,4 @@
-name: DOLFINX CI
+name: DOLFINx CI
 
 on:
   push:
@@ -91,7 +91,7 @@ jobs:
           cd python/demo && python3 ./generate-demo-files.py
           cd ../doc && make html
 
-      - name: Set default DOLFINX JIT parameters
+      - name: Set default DOLFINx JIT parameters
         run: |
           mkdir -p ~/.config/dolfinx
           echo '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }' > ~/.config/dolfinx/dolfinx_jit_parameters.json

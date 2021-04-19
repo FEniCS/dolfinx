@@ -92,7 +92,7 @@ jobs:
         run: |
           . /opt/intel/oneapi/setvars.sh
           python3 -m pip -v install python/
-      - name: Set default DOLFINX JIT parameters
+      - name: Set default DOLFINx JIT parameters
         run: |
           mkdir -p ~/.config/dolfinx
           echo '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }' > ~/.config/dolfinx/dolfinx_jit_parameters.json
