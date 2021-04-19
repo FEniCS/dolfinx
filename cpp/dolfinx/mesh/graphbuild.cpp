@@ -32,7 +32,7 @@ compute_local_dual_graph_keyed(
   if (num_local_cells == 0)
   {
     // Empty mesh on this process
-    xt::xarray<std::int64_t> m({0, 0});
+    xt::xarray<std::int64_t> m(std::vector<std::size_t>{0, 0});
     return {graph::AdjacencyList<std::int32_t>(0), m};
   }
 
