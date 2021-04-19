@@ -266,7 +266,11 @@ compute_nonlocal_dual_graph(
   std::int64_t local_min = std::numeric_limits<std::int64_t>::max();
   std::int64_t local_max = 0;
   if (facet_cell_map.shape(0) > 0)
-    std::tie(local_min, local_max) = xt::minmax(xt::col(facet_cell_map, 0))();
+  {
+    std::array<std::int64_t, 2> p = xt::minmax(xt::col(facet_cell_map, 0))();
+    local_min = p[0];
+    local_min = p[1];
+  }
 
   std::int64_t global_min, global_max;
   MPI_Allreduce(&local_min, &global_min, 1, MPI_INT64_T, MPI_MIN, comm);
