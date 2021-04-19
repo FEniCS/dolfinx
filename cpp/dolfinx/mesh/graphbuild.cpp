@@ -180,8 +180,11 @@ compute_local_dual_graph_keyed(
   if (eq_count == 0)
     unmatched_facets.push_back(facets.size() - 1);
 
-  xt::xarray<std::int64_t> facet_cell_map(
-      {(int)unmatched_facets.size(), num_facet_vertices + 1});
+  std::vector<std::size_t> shape
+      = {unmatched_facets.size(),
+         static_cast<std::size_t>(num_facet_vertices + 1)};
+  xt::xarray<std::int64_t> facet_cell_map(shape);
+
   int c = 0;
   for (std::int32_t j : unmatched_facets)
   {
@@ -252,7 +255,6 @@ compute_nonlocal_dual_graph(
   std::int32_t num_vertices_per_facet;
   MPI_Allreduce(&num_vertices_local, &num_vertices_per_facet, 1, MPI_INT32_T,
                 MPI_MAX, comm);
-
   LOG(INFO) << "nv per facet=" << num_vertices_per_facet << "\n";
 
   // At this stage facet_cell map only contains facets->cells with edge
