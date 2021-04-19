@@ -270,7 +270,7 @@ compute_nonlocal_dual_graph(
 
   if (facet_cell_map.shape(0) > 0)
   {
-    std::array<std::int64_t, 2> p = xt::minmax(xt::col(facet_cell_map, 0))[0];
+    std::array<std::int64_t, 2> p = xt::minmax(xt::col(facet_cell_map, 0))();
     local_min = p[0];
     local_max = p[1];
   }
