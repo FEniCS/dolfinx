@@ -19,7 +19,6 @@ using namespace dolfinx;
 
 namespace
 {
-
 //-----------------------------------------------------------------------------
 // Compute local part of the dual graph, and return return (local_graph,
 // facet_cell_map, number of local edges in the graph (undirected)
@@ -33,8 +32,8 @@ compute_local_dual_graph_keyed(
   if (num_local_cells == 0)
   {
     // Empty mesh on this process
-    xt::xtensor<std::int64_t, 2> m({0, 0});
-    return {graph::AdjacencyList<std::int32_t>(0), m};
+    return {graph::AdjacencyList<std::int32_t>(0),
+            xt::xtensor<std::int64_t, 2>()};
   }
 
   // Count number of cells of each type, based on
@@ -138,8 +137,9 @@ compute_local_dual_graph_keyed(
   }
   assert(counter == (int)facets.size());
 
-  auto cmp = [&num_facet_vertices](const std::array<std::int64_t, 5>& fa,
-                                   const std::array<std::int64_t, 5>& fb) {
+  auto cmp = [num_facet_vertices](const std::array<std::int64_t, 5>& fa,
+                                  const std::array<std::int64_t, 5>& fb)
+  {
     return std::lexicographical_compare(
         fa.begin(), fa.begin() + num_facet_vertices, fb.begin(),
         fb.begin() + num_facet_vertices);
@@ -184,14 +184,12 @@ compute_local_dual_graph_keyed(
   xt::xtensor<std::int64_t, 2> facet_cell_map(
       {unmatched_facets.size(),
        static_cast<std::size_t>(num_facet_vertices + 1)});
-
-  int c = 0;
-  for (std::int32_t j : unmatched_facets)
+  for (std::size_t c = 0; c < unmatched_facets.size(); ++c)
   {
-    for (int k = 0; k < num_facet_vertices; ++k)
-      facet_cell_map(c, k) = facets[j][k];
-    facet_cell_map(c, num_facet_vertices) = facets[j].back();
-    ++c;
+    std::int32_t j = unmatched_facets[c];
+    auto facetmap = xt::row(facet_cell_map, c);
+    std::copy_n(facets[j].cbegin(), num_facet_vertices, facetmap.begin());
+    facetmap(num_facet_vertices) = facets[j].back();
   }
 
   // Get connection counts for each cell
@@ -267,12 +265,11 @@ compute_nonlocal_dual_graph(
   // processes which do the matching, and using a neighbor comm?
   std::int64_t local_min = std::numeric_limits<std::int64_t>::max();
   std::int64_t local_max = 0;
-
   if (facet_cell_map.shape(0) > 0)
   {
     std::array<std::int64_t, 2> p = xt::minmax(xt::col(facet_cell_map, 0))();
     local_min = p[0];
-    local_max = p[1];
+    local_min = p[1];
   }
 
   std::int64_t global_min, global_max;
@@ -350,11 +347,15 @@ compute_nonlocal_dual_graph(
   // Get permutation that takes facets into sorted order
   std::vector<int> perm(num_facets);
   std::iota(perm.begin(), perm.end(), 0);
-  std::sort(perm.begin(), perm.end(), [&recvd_buffer](int a, int b) {
-    return std::lexicographical_compare(
-        recvd_buffer.links(a).begin(), std::prev(recvd_buffer.links(a).end()),
-        recvd_buffer.links(b).begin(), std::prev(recvd_buffer.links(b).end()));
-  });
+  std::sort(perm.begin(), perm.end(),
+            [&recvd_buffer](int a, int b)
+            {
+              return std::lexicographical_compare(
+                  recvd_buffer.links(a).begin(),
+                  std::prev(recvd_buffer.links(a).end()),
+                  recvd_buffer.links(b).begin(),
+                  std::prev(recvd_buffer.links(b).end()));
+            });
 
   // Count data items to send to each rank
   p_count.assign(num_processes, 0);
