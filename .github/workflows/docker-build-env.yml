@@ -46,7 +46,7 @@ jobs:
     #if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/main' }}
     strategy:
       matrix:
-        os: [ubuntu-latest, arm]
+        os: [ubuntu-latest, ARM64]
     runs-on: ${{ matrix.os }}
     needs: start_runner
     env:
@@ -59,7 +59,7 @@ jobs:
         run: |
           if [[ ${{matrix.os}} == 'ubuntu-latest' ]]; then
             echo "ARCH_TAG=amd64" >> $GITHUB_ENV
-          elif [[ ${{matrix.os}} == 'arm' ]]; then
+          elif [[ ${{matrix.os}} == 'ARM64' ]]; then
             echo "ARCH_TAG=arm64" >> $GITHUB_ENV
           fi
       - name: build the docker image
@@ -74,7 +74,7 @@ jobs:
     #if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/main' }}
     strategy:
       matrix:
-        os: [ubuntu-latest, arm]
+        os: [ubuntu-latest, ARM64]
     runs-on: ${{ matrix.os }}
     needs: start_runner
     env:
@@ -87,7 +87,7 @@ jobs:
         run: |
           if [[ ${{matrix.os}} == 'ubuntu-latest' ]]; then
             echo "ARCH_TAG=amd64" >> $GITHUB_ENV
-          elif [[ ${{matrix.os}} == 'arm' ]]; then
+          elif [[ ${{matrix.os}} == 'ARM64' ]]; then
             echo "ARCH_TAG=arm64" >> $GITHUB_ENV
           fi
       - name: build the docker image
@@ -102,7 +102,7 @@ jobs:
     #if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/main' }}
     strategy:
       matrix:
-        os: [ubuntu-latest, arm]
+        os: [ubuntu-latest, ARM64]
     runs-on: ${{ matrix.os }}
     needs: start_runner
     env:
@@ -116,7 +116,7 @@ jobs:
         run: |
           if [[ ${{matrix.os}} == 'ubuntu-latest' ]]; then
             echo "ARCH_TAG=amd64" >> $GITHUB_ENV
-          elif [[ ${{matrix.os}} == 'arm' ]]; then
+          elif [[ ${{matrix.os}} == 'ARM64' ]]; then
             echo "ARCH_TAG=arm64" >> $GITHUB_ENV
           fi
       - name: Build the Docker image
