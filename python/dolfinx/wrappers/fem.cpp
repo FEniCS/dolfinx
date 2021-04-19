@@ -159,7 +159,12 @@ void fem(py::module& m)
       .def("num_sub_elements", &dolfinx::fem::FiniteElement::num_sub_elements)
       .def("interpolation_points",
            [](const dolfinx::fem::FiniteElement& self) {
-             return as_pyarray2d(self.interpolation_points());
+             const xt::xtensor<double, 2>& x = self.interpolation_points();
+
+             // FIXME: Set read-only flag and return wrapper
+             return py::array_t<double>(x.shape(), x.data());
+             //  return py::array_t<double>(x.shape(), x.data(),
+             //  py::cast(self));
            })
       .def_property_readonly("interpolation_ident",
                              &dolfinx::fem::FiniteElement::interpolation_ident)
@@ -171,8 +176,8 @@ void fem(py::module& m)
            [](const dolfinx::fem::FiniteElement& self,
               py::array_t<double, py::array::c_style>& x,
               std::uint32_t cell_permutation, int dim) {
-             self.apply_dof_transformation(x.mutable_data(), cell_permutation,
-                                           dim);
+             self.apply_dof_transformation(
+                 xtl::span(x.mutable_data(), x.size()), cell_permutation, dim);
            })
       .def("signature", &dolfinx::fem::FiniteElement::signature);
 
@@ -227,23 +232,24 @@ void fem(py::module& m)
                              &dolfinx::fem::CoordinateElement::dof_layout)
       .def("push_forward",
            [](const dolfinx::fem::CoordinateElement& self,
-              const py::array_t<double, py::array::c_style>& X,
+              const py::array_t<const double, py::array::c_style>& X,
               const py::array_t<double, py::array::c_style>& cell_geometry) {
-             xt::xtensor<double, 2> _X
-                 = xt::empty<double>({X.shape()[0], X.shape()[1]});
-             xt::xtensor<double, 2> _cell_geometry = xt::empty<double>(
-                 {cell_geometry.shape()[0], cell_geometry.shape()[1]});
-
-             std::copy_n(X.data(), X.size(), _X.data());
-             std::copy_n(cell_geometry.data(), cell_geometry.size(),
-                         _cell_geometry.data());
+             std::array<std::size_t, 2> s_x
+                 = {static_cast<std::size_t>(X.shape(0)),
+                    static_cast<std::size_t>(X.shape(1))};
+             auto _X = xt::adapt(X.data(), X.size(), xt::no_ownership(), s_x);
+             std::array<std::size_t, 2> s_g
+                 = {static_cast<std::size_t>(cell_geometry.shape(0)),
+                    static_cast<std::size_t>(cell_geometry.shape(1))};
+             auto g = xt::adapt(cell_geometry.data(), cell_geometry.size(),
+                                xt::no_ownership(), s_g);
 
              xt::xtensor<double, 2> x = xt::empty<double>(
                  {_X.shape(0), std::size_t(cell_geometry.shape(1))});
-             xt::xtensor<double, 2> phi
+             const xt::xtensor<double, 2> phi
                  = xt::view(self.tabulate(0, _X), 0, xt::all(), xt::all(), 0);
 
-             self.push_forward(x, _cell_geometry, phi);
+             self.push_forward(x, g, phi);
              return xt_as_pyarray(std::move(x));
            })
       .def_readwrite("non_affine_atol",

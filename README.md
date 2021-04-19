@@ -1,6 +1,6 @@
 # DOLFINx
 
-[![Actions CI tests](https://github.com/FEniCS/dolfinx/workflows/DOLFINx%20CI%20tests/badge.svg)](https://github.com/FEniCS/dolfinx/actions?query=workflow%3A%22DOLFINx+CI%22)
+[![DOLFINx CI](https://github.com/FEniCS/dolfinx/actions/workflows/ccpp.yml/badge.svg)](https://github.com/FEniCS/dolfinx/actions/workflows/ccpp.yml)
 [![CircleCI](https://circleci.com/gh/FEniCS/dolfinx.svg?style=shield)](https://circleci.com/gh/FEniCS/dolfinx)
 [![Actions Docker environment images](https://github.com/FEniCS/dolfinx/workflows/Docker%20environment%20images/badge.svg)](https://github.com/FEniCS/dolfinx/actions?query=workflow%3A%22Docker+environment+images%22)
 [![Actions Docker image builds](https://github.com/FEniCS/dolfinx/workflows/Docker%20end-user%20images/badge.svg)](https://github.com/FEniCS/dolfinx/actions?query=workflow%3A%22Docker+end-user+images%22)

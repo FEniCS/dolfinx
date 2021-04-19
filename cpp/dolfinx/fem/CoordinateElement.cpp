@@ -5,7 +5,6 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "CoordinateElement.h"
-#include <basix.h>
 #include <basix/finite-element.h>
 #include <dolfinx/common/math.h>
 #include <dolfinx/mesh/cell_types.h>
