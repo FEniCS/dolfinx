@@ -23,7 +23,7 @@ namespace
 //-----------------------------------------------------------------------------
 // Compute local part of the dual graph, and return return (local_graph,
 // facet_cell_map, number of local edges in the graph (undirected)
-std::pair<graph::AdjacencyList<std::int32_t>, xt::xarray<std::int64_t>>
+std::pair<graph::AdjacencyList<std::int32_t>, xt::xtensor<std::int64_t, 2>>
 compute_local_dual_graph_keyed(
     const graph::AdjacencyList<std::int64_t>& cell_vertices, int tdim)
 {
@@ -33,7 +33,7 @@ compute_local_dual_graph_keyed(
   if (num_local_cells == 0)
   {
     // Empty mesh on this process
-    xt::xarray<std::int64_t> m(std::vector<std::size_t>{0, 0});
+    xt::xtensor<std::int64_t, 2> m({0, 0});
     return {graph::AdjacencyList<std::int32_t>(0), m};
   }
 
@@ -181,10 +181,9 @@ compute_local_dual_graph_keyed(
   if (eq_count == 0)
     unmatched_facets.push_back(facets.size() - 1);
 
-  std::vector<std::size_t> shape
-      = {unmatched_facets.size(),
-         static_cast<std::size_t>(num_facet_vertices + 1)};
-  xt::xarray<std::int64_t> facet_cell_map(shape);
+  xt::xtensor<std::int64_t, 2> facet_cell_map(
+      {unmatched_facets.size(),
+       static_cast<std::size_t>(num_facet_vertices + 1)});
 
   int c = 0;
   for (std::int32_t j : unmatched_facets)
@@ -233,7 +232,7 @@ compute_local_dual_graph_keyed(
 std::pair<graph::AdjacencyList<std::int64_t>, std::int32_t>
 compute_nonlocal_dual_graph(
     const MPI_Comm comm, std::int32_t num_local_cells,
-    const xt::xarray<std::int64_t>& facet_cell_map,
+    const xt::xtensor<std::int64_t, 2>& facet_cell_map,
     const graph::AdjacencyList<std::int32_t>& local_graph)
 {
   LOG(INFO) << "Build nonlocal part of mesh dual graph";
@@ -271,7 +270,7 @@ compute_nonlocal_dual_graph(
 
   if (facet_cell_map.shape()[0] > 0)
   {
-    xt::xarray<std::array<std::int64_t, 2>> p
+    xt::xtensor<std::array<std::int64_t, 2>, 0> p
         = xt::minmax(xt::col(facet_cell_map, 0));
     local_min = p[0][0];
     local_max = p[0][1];
@@ -499,7 +498,7 @@ mesh::build_dual_graph(const MPI_Comm mpi_comm,
   return {std::move(graph), {num_ghost_nodes, local_graph.offsets().back()}};
 }
 //-----------------------------------------------------------------------------
-std::pair<graph::AdjacencyList<std::int32_t>, xt::xarray<std::int64_t>>
+std::pair<graph::AdjacencyList<std::int32_t>, xt::xtensor<std::int64_t, 2>>
 mesh::build_local_dual_graph(
     const graph::AdjacencyList<std::int64_t>& cell_vertices, int tdim)
 {

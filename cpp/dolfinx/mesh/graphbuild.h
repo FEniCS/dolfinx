@@ -29,7 +29,7 @@ build_dual_graph(const MPI_Comm comm,
 
 /// Compute local part of the dual graph, and return (local_graph,
 /// facet_cell_map, number of local edges in the graph (undirected)
-std::pair<graph::AdjacencyList<std::int32_t>, xt::xarray<std::int64_t>>
+std::pair<graph::AdjacencyList<std::int32_t>, xt::xtensor<std::int64_t, 2>>
 build_local_dual_graph(const graph::AdjacencyList<std::int64_t>& cell_vertices,
                        int tdim);
 
