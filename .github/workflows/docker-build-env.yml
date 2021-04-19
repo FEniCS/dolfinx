@@ -62,11 +62,11 @@ jobs:
             echo "ARCH_TAG=arm64" >> $GITHUB_ENV
           fi
       - name: build the docker image
-        run: docker buildx build --build-arg PETSC_SLEPC_OPTFLAGS --build-arg PETSC_SLEPC_DEBUGGING --build-arg MPI --file docker/Dockerfile --target dev-env --tag fenicsproject/test-env:${MPI}-${env.ARCH_TAG} docker/
+        run: docker buildx build --build-arg PETSC_SLEPC_OPTFLAGS --build-arg PETSC_SLEPC_DEBUGGING --build-arg MPI --file docker/Dockerfile --target dev-env --tag fenicsproject/test-env:${MPI}-${ARCH_TAG} docker/
       - name: log into the dockerhub registry
         run: echo ${{ secrets.dockerhub_token }} | docker login -u ${{ secrets.dockerhub_username }} --password-stdin
       - name: push to the dockerhub registry
-        run: docker push fenicsproject/test-env:${MPI}-${env.ARCH_TAG}
+        run: docker push fenicsproject/test-env:${MPI}-${ARCH_TAG}
 
   build_test_env_mpich:
     name: Build fenicsproject/test-env:mpich image
@@ -90,11 +90,11 @@ jobs:
             echo "ARCH_TAG=arm64" >> $GITHUB_ENV
           fi
       - name: build the docker image
-        run: docker buildx build --build-arg PETSC_SLEPC_OPTFLAGS --build-arg PETSC_SLEPC_DEBUGGING --build-arg MPI --file docker/Dockerfile --target dev-env --tag fenicsproject/test-env:${MPI}-${env.ARCH_TAG} docker/
+        run: docker buildx build --build-arg PETSC_SLEPC_OPTFLAGS --build-arg PETSC_SLEPC_DEBUGGING --build-arg MPI --file docker/Dockerfile --target dev-env --tag fenicsproject/test-env:${MPI}-${ARCH_TAG} docker/
       - name: log into the dockerhub registry
         run: echo ${{ secrets.dockerhub_token }} | docker login -u ${{ secrets.dockerhub_username }} --password-stdin
       - name: push to the dockerhub registry
-        run: docker push fenicsproject/test-env:${MPI}-${env.ARCH_TAG}
+        run: docker push fenicsproject/test-env:${MPI}-${ARCH_TAG}
 
   build_dev_env:
     name: Build dolfinx/dev-env image
@@ -119,11 +119,11 @@ jobs:
             echo "ARCH_TAG=arm64" >> $GITHUB_ENV
           fi
       - name: Build the Docker image
-        run: docker buildx build --build-arg PETSC_SLEPC_OPTFLAGS --build-arg PETSC_SLEPC_DEBUGGING --build-arg MPI --file docker/Dockerfile --target dev-env --tag dolfinx/dev-env:${env.ARCH_TAG} docker/
+        run: docker buildx build --build-arg PETSC_SLEPC_OPTFLAGS --build-arg PETSC_SLEPC_DEBUGGING --build-arg MPI --file docker/Dockerfile --target dev-env --tag dolfinx/dev-env:${ARCH_TAG} docker/
       - name: Log into the DockerHub registry
         run: echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
       - name: Push to the DockerHub registry
-        run: docker push dolfinx/dev-env:${env.ARCH_TAG}
+        run: docker push dolfinx/dev-env:${ARCH_TAG}
 
   stop-runner:
     name: Stop self-hosted EC2 runner
