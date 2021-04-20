@@ -6,9 +6,9 @@ name: Docker environment images
 
 on:
   # Uncomment the below to trigger 'docker build' on push
-  #push:
-  #  branches:
-  #    - "**"
+  push:
+    branches:
+      - "**"
   schedule:
     # '*' is a special character in YAML, so string must be quoted
     - cron: "0 22 * * SUN"
@@ -63,12 +63,10 @@ jobs:
           elif [[ ${{matrix.os}} == 'ARM64' ]]; then
             echo "ARCH_TAG=arm64" >> $GITHUB_ENV
           fi
-      - name: Build the Docker image
-        run: docker buildx build ${DOCKER_BUILD_ARGS} --file docker/Dockerfile --target dev-env --tag fenicsproject/test-env:${MPI}-${ARCH_TAG} docker/
       - name: Log into the Dockerhub registry
         run: echo ${{ secrets.dockerhub_token }} | docker login -u ${{ secrets.dockerhub_username }} --password-stdin
-      - name: Push to the DockerHub registry
-        run: docker push fenicsproject/test-env:${MPI}-${ARCH_TAG}
+      - name: Build the Docker image
+        run: docker buildx build ${DOCKER_BUILD_ARGS} --push --cache-from=type=registry,ref=fenicsproject/test-env:${MPI}-${ARCH_TAG} --cache-to=type=inline --file docker/Dockerfile --target dev-env --tag fenicsproject/test-env:${MPI}-${ARCH_TAG} docker/
       - name: Cleanup
         run: docker rmi fenicsproject/test-env:${MPI}-${ARCH_TAG}
 
@@ -94,12 +92,10 @@ jobs:
           elif [[ ${{matrix.os}} == 'ARM64' ]]; then
             echo "ARCH_TAG=arm64" >> $GITHUB_ENV
           fi
-      - name: Build the Docker image
-        run: docker buildx build ${DOCKER_BUILD_ARGS} --file docker/Dockerfile --target dev-env --tag fenicsproject/test-env:${MPI}-${ARCH_TAG} docker/
       - name: Log into the DockerHub registry
         run: echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
-      - name: Push to the DockerHub registry
-        run: docker push fenicsproject/test-env:${MPI}-${ARCH_TAG}
+      - name: Build the Docker image
+        run: docker buildx build ${DOCKER_BUILD_ARGS} --push --cache-from=type=registry,ref=fenicsproject/test-env:${MPI}-${ARCH_TAG} --cache-to=type=inline --file docker/Dockerfile --target dev-env --tag fenicsproject/test-env:${MPI}-${ARCH_TAG} docker/
       - name: Cleanup
         run: docker rmi fenicsproject/test-env:${MPI}-${ARCH_TAG}
 
@@ -126,12 +122,10 @@ jobs:
           elif [[ ${{matrix.os}} == 'ARM64' ]]; then
             echo "ARCH_TAG=arm64" >> $GITHUB_ENV
           fi
-      - name: Build the Docker image
-        run: docker buildx build ${DOCKER_BUILD_ARGS} --file docker/Dockerfile --target dev-env --tag dolfinx/dev-env:${ARCH_TAG} docker/
       - name: Log into the DockerHub registry
         run: echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
-      - name: Push to the DockerHub registry
-        run: docker push dolfinx/dev-env:${ARCH_TAG}
+      - name: Build the Docker image
+        run: docker buildx build ${DOCKER_BUILD_ARGS} --push --cache-from=type=registry,ref=dolfinx/dev-env:${ARCH_TAG} --cache-to=type=inline --file docker/Dockerfile --target dev-env --tag dolfinx/dev-env:${ARCH_TAG} docker/
       - name: Cleanup
         run: docker rmi dolfinx/dev-env:${ARCH_TAG}
 
