@@ -59,13 +59,11 @@ jobs:
         run: |
           if [[ ${{matrix.os}} == 'ubuntu-latest' ]]; then
             echo "ARCH_TAG=amd64" >> $GITHUB_ENV
-            echo "PETSC_SLEPC_MAKE_NP=2" >> $GITHUB_ENV
           elif [[ ${{matrix.os}} == 'ARM64' ]]; then
             echo "ARCH_TAG=arm64" >> $GITHUB_ENV
-            echo "PETSC_SLEPC_MAKE_NP=4" >> $GITHUB_ENV
           fi
       - name: Build the Docker image
-        run: docker buildx build --build-arg PETSC_SLEPC_OPTFLAGS --build-arg PETSC_SLEPC_DEBUGGING --build-arg MPI --build-arg PETSC_SLEPC_MAKE_NP --file docker/Dockerfile --target dev-env --tag fenicsproject/test-env:${MPI}-${ARCH_TAG} docker/
+        run: docker buildx build --build-arg PETSC_SLEPC_OPTFLAGS --build-arg PETSC_SLEPC_DEBUGGING --build-arg MPI --file docker/Dockerfile --target dev-env --tag fenicsproject/test-env:${MPI}-${ARCH_TAG} docker/
       - name: Log into the Dockerhub registry
         run: echo ${{ secrets.dockerhub_token }} | docker login -u ${{ secrets.dockerhub_username }} --password-stdin
       - name: Push to the DockerHub registry
@@ -91,13 +89,11 @@ jobs:
         run: |
           if [[ ${{matrix.os}} == 'ubuntu-latest' ]]; then
             echo "ARCH_TAG=amd64" >> $GITHUB_ENV
-            echo "PETSC_SLEPC_MAKE_NP=2" >> $GITHUB_ENV
           elif [[ ${{matrix.os}} == 'ARM64' ]]; then
             echo "ARCH_TAG=arm64" >> $GITHUB_ENV
-            echo "PETSC_SLEPC_MAKE_NP=4" >> $GITHUB_ENV
           fi
       - name: Build the Docker image
-        run: docker buildx build --build-arg PETSC_SLEPC_OPTFLAGS --build-arg PETSC_SLEPC_DEBUGGING --build-arg MPI --build-arg PETSC_SLEPC_MAKE_NP --file docker/Dockerfile --target dev-env --tag fenicsproject/test-env:${MPI}-${ARCH_TAG} docker/
+        run: docker buildx build --build-arg PETSC_SLEPC_OPTFLAGS --build-arg PETSC_SLEPC_DEBUGGING --build-arg MPI --file docker/Dockerfile --target dev-env --tag fenicsproject/test-env:${MPI}-${ARCH_TAG} docker/
       - name: Log into the DockerHub registry
         run: echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
       - name: Push to the DockerHub registry
@@ -124,13 +120,11 @@ jobs:
         run: |
           if [[ ${{matrix.os}} == 'ubuntu-latest' ]]; then
             echo "ARCH_TAG=amd64" >> $GITHUB_ENV
-            echo "PETSC_SLEPC_MAKE_NP=2" >> $GITHUB_ENV
           elif [[ ${{matrix.os}} == 'ARM64' ]]; then
             echo "ARCH_TAG=arm64" >> $GITHUB_ENV
-            echo "PETSC_SLEPC_MAKE_NP=4" >> $GITHUB_ENV
           fi
       - name: Build the Docker image
-        run: docker buildx build --build-arg PETSC_SLEPC_OPTFLAGS --build-arg PETSC_SLEPC_DEBUGGING --build-arg MPI --build-arg PETSC_SLEPC_MAKE_NP --file docker/Dockerfile --target dev-env --tag dolfinx/dev-env:${ARCH_TAG} docker/
+        run: docker buildx build --build-arg PETSC_SLEPC_OPTFLAGS --build-arg PETSC_SLEPC_DEBUGGING --build-arg MPI --file docker/Dockerfile --target dev-env --tag dolfinx/dev-env:${ARCH_TAG} docker/
       - name: Log into the DockerHub registry
         run: echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
       - name: Push to the DockerHub registry
