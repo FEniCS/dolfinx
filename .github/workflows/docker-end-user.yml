@@ -97,13 +97,13 @@ jobs:
             --target intermediate --cache-from dolfinx/dolfinx-onbuild \
             --cache-from dolfinx/dev-env --tag intermediate .
       - name: Build dolfinx/dolfinx
-      - run: |
+        run: |
           docker buildx build --file dolfinx/docker/Dockerfile ${DOCKER_BUILD_ARGS} \
             --target dolfinx --cache-from intermediate \
             --cache-from dolfinx/dolfinx-onbuild \
             --cache-from dolfinx/dev-env --tag dolfinx/dolfinx .
       - name: Build dolfinx/lab
-      - run: |
+        run: |
           docker buildx build --file dolfinx/docker/Dockerfile ${DOCKER_BUILD_ARGS} \
             --target lab --cache-from dolfinx/dolfinx \
             --cache-from intermediate --cache-from dolfinx/dolfinx-onbuild \
