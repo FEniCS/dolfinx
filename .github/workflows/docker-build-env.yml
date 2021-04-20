@@ -43,9 +43,10 @@ jobs:
   build_test_env_openmpi:
     name: Build fenicsproject/test-env:openmpi image
     #if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/main' }}
+    # NOTE: ARM64 build currently fails, see https://github.com/FEniCS/dolfinx/runs/2380975354?check_suite_focus=true#step:4:7472
     strategy:
       matrix:
-        os: [ubuntu-latest, ARM64]
+        os: [ubuntu-latest]
     runs-on: ${{ matrix.os }}
     needs: start_runner
     env:
@@ -61,12 +62,14 @@ jobs:
           elif [[ ${{matrix.os}} == 'ARM64' ]]; then
             echo "ARCH_TAG=arm64" >> $GITHUB_ENV
           fi
-      - name: build the docker image
+      - name: Build the Docker image
         run: docker buildx build --build-arg PETSC_SLEPC_OPTFLAGS --build-arg PETSC_SLEPC_DEBUGGING --build-arg MPI --file docker/Dockerfile --target dev-env --tag fenicsproject/test-env:${MPI}-${ARCH_TAG} docker/
-      - name: log into the dockerhub registry
+      - name: Log into the Dockerhub registry
         run: echo ${{ secrets.dockerhub_token }} | docker login -u ${{ secrets.dockerhub_username }} --password-stdin
-      - name: push to the dockerhub registry
+      - name: Push to the DockerHub registry
         run: docker push fenicsproject/test-env:${MPI}-${ARCH_TAG}
+      - name: Cleanup
+        run: docker rmi fenicsproject/test-env:${MPI}-${ARCH_TAG}
 
   build_test_env_mpich:
     name: Build fenicsproject/test-env:mpich image
@@ -89,12 +92,14 @@ jobs:
           elif [[ ${{matrix.os}} == 'ARM64' ]]; then
             echo "ARCH_TAG=arm64" >> $GITHUB_ENV
           fi
-      - name: build the docker image
+      - name: Build the Docker image
         run: docker buildx build --build-arg PETSC_SLEPC_OPTFLAGS --build-arg PETSC_SLEPC_DEBUGGING --build-arg MPI --file docker/Dockerfile --target dev-env --tag fenicsproject/test-env:${MPI}-${ARCH_TAG} docker/
-      - name: log into the dockerhub registry
-        run: echo ${{ secrets.dockerhub_token }} | docker login -u ${{ secrets.dockerhub_username }} --password-stdin
-      - name: push to the dockerhub registry
+      - name: Log into the DockerHub registry
+        run: echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
+      - name: Push to the DockerHub registry
         run: docker push fenicsproject/test-env:${MPI}-${ARCH_TAG}
+      - name: Cleanup
+        run: docker rmi fenicsproject/test-env:${MPI}-${ARCH_TAG}
 
   build_dev_env:
     name: Build dolfinx/dev-env image
@@ -124,6 +129,24 @@ jobs:
         run: echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
       - name: Push to the DockerHub registry
         run: docker push dolfinx/dev-env:${ARCH_TAG}
+      - name: Cleanup
+        run: docker rmi dolfinx/dev-env:${ARCH_TAG}
+
+  push_multiarch_images:
+      name: Push multiarch images
+      runs-on: ubuntu-latest
+      needs:
+        - build_test_env_openmpi
+        - build_test_env_mpich
+        - build_dev_env
+      steps:
+        - name: Log into the DockerHub registry
+          run: echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
+        - name: Push multiarch images
+        - run: |
+            docker buildx imagetools create -t fenicsproject/test-env:mpich fenicsproject/test-env:mpich-amd64 fenicsproject/test-env:mpich-arm64
+            docker buildx imagetools create -t fenicsproject/test-env:openmpi fenicsproject/test-env:openmpi-amd64 fenicsproject/test-env:openmpi-arm64
+            docker buildx imagetools create -t dolfinx/dev-env:latest dolfinx/dev-env:amd64 dolfinx/dev-env:arm64
 
   stop-runner:
     name: Stop self-hosted EC2 runner
