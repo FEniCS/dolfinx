@@ -43,7 +43,7 @@ jobs:
   build_test_env_openmpi:
     name: Build fenicsproject/test-env:openmpi image
     #if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/main' }}
-    # NOTE: ARM64 build currently fails, see https://github.com/FEniCS/dolfinx/runs/2380975354?check_suite_focus=true#step:4:7472
+    # NOTE: OpenMPI ARM64 build currently fails, see https://github.com/FEniCS/dolfinx/runs/2380975354?check_suite_focus=true#step:4:7472
     strategy:
       matrix:
         os: [ubuntu-latest]
@@ -142,10 +142,11 @@ jobs:
       steps:
         - name: Log into the DockerHub registry
           run: echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
+        # NOTE: OpenMPI ARM64 build currently fails, see https://github.com/FEniCS/dolfinx/runs/2380975354?check_suite_focus=true#step:4:7472
         - name: Push multiarch images
           run: |
             docker buildx imagetools create -t fenicsproject/test-env:mpich fenicsproject/test-env:mpich-amd64 fenicsproject/test-env:mpich-arm64
-            docker buildx imagetools create -t fenicsproject/test-env:openmpi fenicsproject/test-env:openmpi-amd64 fenicsproject/test-env:openmpi-arm64
+            docker buildx imagetools create -t fenicsproject/test-env:openmpi fenicsproject/test-env:openmpi-amd64
             docker buildx imagetools create -t dolfinx/dev-env:latest dolfinx/dev-env:amd64 dolfinx/dev-env:arm64
 
   stop-runner:
