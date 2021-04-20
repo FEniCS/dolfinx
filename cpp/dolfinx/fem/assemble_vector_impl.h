@@ -21,6 +21,8 @@
 #include <functional>
 #include <memory>
 #include <vector>
+#include <xtensor/xbuilder.hpp>
+#include <xtensor/xtensor.hpp>
 
 namespace dolfinx::fem::impl
 {
@@ -125,12 +127,12 @@ void _lift_bc_cells(
     const xtl::span<const T>& x0, double scale)
 {
   // Prepare cell geometry
-  const int gdim = geometry.dim();
+  const std::size_t gdim = geometry.dim();
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
 
   // FIXME: Add proper interface for num coordinate dofs
-  const int num_dofs_g = x_dofmap.num_links(0);
-  const array2d<double>& x_g = geometry.x();
+  const std::size_t num_dofs_g = x_dofmap.num_links(0);
+  const xt::xtensor<double, 2>& x_g = geometry.x();
 
   // Data structures used in bc application
   std::vector<double> coordinate_dofs(num_dofs_g * gdim);
@@ -163,7 +165,7 @@ void _lift_bc_cells(
     auto x_dofs = x_dofmap.links(c);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
-      std::copy_n(x_g.row(x_dofs[i]).data(), gdim,
+      std::copy_n(xt::row(x_g, x_dofs[i]).begin(), gdim,
                   std::next(coordinate_dofs.begin(), i * gdim));
     }
 
@@ -219,15 +221,15 @@ void _lift_bc_exterior_facets(
     const xtl::span<const T>& bc_values1, const std::vector<bool>& bc_markers1,
     const xtl::span<const T>& x0, double scale)
 {
-  const int gdim = mesh.geometry().dim();
+  const std::size_t gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
 
   // FIXME: Add proper interface for num coordinate dofs
-  const int num_dofs_g = x_dofmap.num_links(0);
-  const array2d<double>& x_g = mesh.geometry().x();
+  const std::size_t num_dofs_g = x_dofmap.num_links(0);
+  const xt::xtensor<double, 2>& x_g = mesh.geometry().x();
 
   // Data structures used in bc application
   std::vector<double> coordinate_dofs(num_dofs_g * gdim);
@@ -278,7 +280,7 @@ void _lift_bc_exterior_facets(
     auto x_dofs = x_dofmap.links(cell);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
-      std::copy_n(x_g.row(x_dofs[i]).data(), gdim,
+      std::copy_n(xt::row(x_g, x_dofs[i]).begin(), gdim,
                   std::next(coordinate_dofs.begin(), i * gdim));
     }
 
@@ -336,18 +338,18 @@ void _lift_bc_interior_facets(
     const xtl::span<const T>& bc_values1, const std::vector<bool>& bc_markers1,
     const xtl::span<const T>& x0, double scale)
 {
-  const int gdim = mesh.geometry().dim();
+  const std::size_t gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
 
   // FIXME: Add proper interface for num coordinate dofs
-  const int num_dofs_g = x_dofmap.num_links(0);
-  const array2d<double>& x_g = mesh.geometry().x();
+  const std::size_t num_dofs_g = x_dofmap.num_links(0);
+  const xt::xtensor<double, 2>& x_g = mesh.geometry().x();
 
   // Data structures used in assembly
-  std::vector<double> coordinate_dofs(2 * num_dofs_g * gdim);
+  xt::xtensor<double, 3> coordinate_dofs({2, num_dofs_g, gdim});
   std::vector<T> coeff_array(2 * offsets.back());
   assert(offsets.back() == int(coeffs.shape[1]));
   std::vector<T> Ae, be;
@@ -365,7 +367,6 @@ void _lift_bc_interior_facets(
   auto map = topology.index_map(tdim - 1);
   assert(map);
 
-  const int offset_g = gdim * num_dofs_g;
   for (std::int32_t f : active_facets)
   {
     // Create attached cells
@@ -386,14 +387,16 @@ void _lift_bc_interior_facets(
 
     // Get cell geometry
     auto x_dofs0 = x_dofmap.links(cells[0]);
-    auto x_dofs1 = x_dofmap.links(cells[1]);
-    for (int i = 0; i < num_dofs_g; ++i)
+    for (std::size_t i = 0; i < x_dofs0.size(); ++i)
     {
-      for (int j = 0; j < gdim; ++j)
-      {
-        coordinate_dofs[i * gdim + j] = x_g(x_dofs0[i], j);
-        coordinate_dofs[offset_g + i * gdim + j] = x_g(x_dofs1[i], j);
-      }
+      std::copy_n(xt::view(x_g, x_dofs0[i]).begin(), gdim,
+                  xt::view(coordinate_dofs, 0, i, xt::all()).begin());
+    }
+    auto x_dofs1 = x_dofmap.links(cells[1]);
+    for (std::size_t i = 0; i < x_dofs1.size(); ++i)
+    {
+      std::copy_n(xt::view(x_g, x_dofs1[i]).begin(), gdim,
+                  xt::view(coordinate_dofs, 1, i, xt::all()).begin());
     }
 
     // Get dof maps for cells and pack
@@ -603,14 +606,14 @@ void assemble_cells(
     const array2d<T>& coeffs, const std::vector<T>& constant_values,
     const std::vector<std::uint32_t>& cell_info)
 {
-  const int gdim = geometry.dim();
+  const std::size_t gdim = geometry.dim();
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
 
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = x_dofmap.num_links(0);
-  const array2d<double>& x_g = geometry.x();
+  const xt::xtensor<double, 2>& x_g = geometry.x();
 
   // FIXME: Add proper interface for num_dofs
   // Create data structures used in assembly
@@ -625,7 +628,7 @@ void assemble_cells(
     auto x_dofs = x_dofmap.links(c);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
-      std::copy_n(x_g.row(x_dofs[i]).begin(), gdim,
+      std::copy_n(xt::row(x_g, x_dofs[i]).begin(), gdim,
                   std::next(coordinate_dofs.begin(), i * gdim));
     }
 
@@ -653,15 +656,15 @@ void assemble_exterior_facets(
     const std::vector<std::uint32_t>& cell_info,
     const std::vector<std::uint8_t>& perms)
 {
-  const int gdim = mesh.geometry().dim();
+  const std::size_t gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
 
   // FIXME: Add proper interface for num coordinate dofs
-  const int num_dofs_g = x_dofmap.num_links(0);
-  const array2d<double>& x_g = mesh.geometry().x();
+  const std::size_t num_dofs_g = x_dofmap.num_links(0);
+  const xt::xtensor<double, 2>& x_g = mesh.geometry().x();
 
   // FIXME: Add proper interface for num_dofs
   // Create data structures used in assembly
@@ -689,7 +692,7 @@ void assemble_exterior_facets(
     auto x_dofs = x_dofmap.links(cell);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
-      std::copy_n(x_g.row(x_dofs[i]).begin(), gdim,
+      std::copy_n(xt::row(x_g, x_dofs[i]).begin(), gdim,
                   std::next(coordinate_dofs.begin(), i * gdim));
     }
 
@@ -718,18 +721,18 @@ void assemble_interior_facets(
     const std::vector<std::uint32_t>& cell_info,
     const std::vector<std::uint8_t>& perms)
 {
-  const int gdim = mesh.geometry().dim();
+  const std::size_t gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
 
   // FIXME: Add proper interface for num coordinate dofs
-  const int num_dofs_g = x_dofmap.num_links(0);
-  const array2d<double>& x_g = mesh.geometry().x();
+  const std::size_t num_dofs_g = x_dofmap.num_links(0);
+  const xt::xtensor<double, 2>& x_g = mesh.geometry().x();
 
   // Create data structures used in assembly
-  std::vector<double> coordinate_dofs(2 * num_dofs_g * gdim);
+  xt::xtensor<double, 3> coordinate_dofs({2, num_dofs_g, gdim});
   std::vector<T> be;
   std::vector<T> coeff_array(2 * offsets.back());
   assert(offsets.back() == int(coeffs.shape[1]));
@@ -739,7 +742,6 @@ void assemble_interior_facets(
   assert(f_to_c);
   auto c_to_f = mesh.topology().connectivity(tdim, tdim - 1);
   assert(c_to_f);
-  const int offset_g = gdim * num_dofs_g;
   for (std::int32_t f : active_facets)
   {
     // Get attached cell indices
@@ -760,14 +762,16 @@ void assemble_interior_facets(
 
     // Get cell geometry
     auto x_dofs0 = x_dofmap.links(cells[0]);
-    auto x_dofs1 = x_dofmap.links(cells[1]);
-    for (int i = 0; i < num_dofs_g; ++i)
+    for (std::size_t i = 0; i < x_dofs0.size(); ++i)
     {
-      for (int j = 0; j < gdim; ++j)
-      {
-        coordinate_dofs[i * gdim + j] = x_g(x_dofs0[i], j);
-        coordinate_dofs[offset_g + i * gdim + j] = x_g(x_dofs1[i], j);
-      }
+      std::copy_n(xt::view(x_g, x_dofs0[i]).begin(), gdim,
+                  xt::view(coordinate_dofs, 0, i, xt::all()).begin());
+    }
+    auto x_dofs1 = x_dofmap.links(cells[1]);
+    for (std::size_t i = 0; i < x_dofs1.size(); ++i)
+    {
+      std::copy_n(xt::view(x_g, x_dofs1[i]).begin(), gdim,
+                  xt::view(coordinate_dofs, 1, i, xt::all()).begin());
     }
 
     // Layout for the restricted coefficients is flattened

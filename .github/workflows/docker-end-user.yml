@@ -1,6 +1,6 @@
 name: Docker end-user images
 
-# Builds images with dolfinx and all of the required FEniCS Project
+# Builds images with DOLFINx and all of the required FEniCS Project
 # components nightly.
 
 on:
@@ -40,7 +40,7 @@ jobs:
           security-group-id: sg-03fc69ee7a6ba8bc4
 
   build_end_user_images:
-    name: Build dolfinx end-user images
+    name: Build DOLFINx end-user images
     #if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/main' }}
     strategy:
       matrix:
@@ -83,7 +83,7 @@ jobs:
       - name: Set default FFCX parameters
         run: |
           echo '{ }' > dolfinx/docker/ffcx_parameters.json
-      - name: Set default DOLFINX JIT parameters
+      - name: Set default DOLFINx JIT parameters
         run: |
           echo '{ "cffi_extra_compile_args" : ["-O2"]} ' > dolfinx/docker/dolfinx_jit_parameters.json
       - name: Build dolfinx/dolfinx-onbuild
