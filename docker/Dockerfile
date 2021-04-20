@@ -446,9 +446,13 @@ RUN apt-get -qq update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Pyvista dependencies from pip
+# pyvista dependencies from pip. Only compatible with x86-64 (amd64).
 # matplotlib improves plotting quality with better color maps and properly rendering colorbars.
-RUN pip3 install --no-cache-dir pyvista matplotlib
+RUN dpkgArch="$(dpkg --print-architecture)"; \
+    case "$dpkgArch" in amd64) \
+      pip3 install --no-cache-dir pyvista ;; \
+    esac; \
+    pip3 install --no-cache-dir matplotlib
 
 EXPOSE 8888/tcp
 ENV SHELL /bin/bash
