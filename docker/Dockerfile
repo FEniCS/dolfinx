@@ -78,6 +78,8 @@ ARG XTL_VERSION
 # They are safe defaults. They can be overridden by the user.
 # Compiler optimisation flags for SLEPc and PETSc, all languages.
 ARG PETSC_SLEPC_OPTFLAGS="-O2"
+# PETSc and SLEPc number of make processes (--with-make-np)
+ARG PETSC_SLEPC_MAKE_NP=2
 # Turn on PETSc and SLEPc debugging. "yes" or "no".
 ARG PETSC_SLEPC_DEBUGGING="no"
 # Ubuntu MPI variant. "mpich" or "openmpi".
@@ -220,6 +222,7 @@ RUN apt-get -qq update && \
     --COPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
     --CXXOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
     --FOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
+    --with-make-np=${PETSC_SLEPC_MAKE_NP} \
     --with-64-bit-indices=no \
     --with-debugging=${PETSC_SLEPC_DEBUGGING} \
     --with-fortran-bindings=no \
@@ -241,6 +244,7 @@ RUN apt-get -qq update && \
     --COPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
     --CXXOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
     --FOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
+    --with-make-np=${PETSC_SLEPC_MAKE_NP} \
     --with-64-bit-indices=no \
     --with-debugging=${PETSC_SLEPC_DEBUGGING} \
     --with-fortran-bindings=no \
@@ -261,6 +265,7 @@ RUN apt-get -qq update && \
     --COPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
     --CXXOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
     --FOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
+    --with-make-np=${PETSC_SLEPC_MAKE_NP} \
     --with-64-bit-indices=yes \
     --with-debugging=${PETSC_SLEPC_DEBUGGING} \
     --with-fortran-bindings=no \
@@ -279,6 +284,7 @@ RUN apt-get -qq update && \
     --COPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
     --CXXOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
     --FOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
+    --with-make-np=${PETSC_SLEPC_MAKE_NP} \
     --with-64-bit-indices=yes \
     --with-debugging=${PETSC_SLEPC_DEBUGGING} \
     --with-fortran-bindings=no \
