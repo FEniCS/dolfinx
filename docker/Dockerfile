@@ -53,7 +53,7 @@ ARG SLEPC4PY_VERSION=3.15.0
 ARG ADIOS2_VERSION=2.7.1
 # Todo: Update KaHIP version upon a release.
 ARG KAHIP_VERSION=623decb
-ARG XTENSOR_VERSION=0.23.6
+ARG XTENSOR_VERSION=0.23.4
 ARG XTENSOR_BLAS_VERSION=master
 ARG XTL_VERSION=0.7.2
 
@@ -108,6 +108,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     libboost-dev \
     libboost-filesystem-dev \
     libboost-timer-dev \
+    libeigen3-dev \
     libhdf5-${MPI}-dev \
     liblapack-dev \
     lib${MPI}-dev \
