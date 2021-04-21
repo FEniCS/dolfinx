@@ -34,7 +34,6 @@ fem::interpolation_coords(const fem::FiniteElement& element,
 
   // Push reference coordinates (X) forward to the physical coordinates
   // (x) for each cell
-  xt::xtensor<double, 2> x_cell = xt::zeros<double>({X.shape(0), gdim});
   xt::xtensor<double, 2> coordinate_dofs
       = xt::zeros<double>({num_dofs_g, gdim});
   std::array<std::size_t, 2> shape = {3, cells.size() * X.shape(0)};
@@ -48,12 +47,12 @@ fem::interpolation_coords(const fem::FiniteElement& element,
         coordinate_dofs(i, j) = x_g(x_dofs[i], j);
 
     // Push forward coordinates (X -> x)
-    for (std::size_t i = 0; i < x_cell.shape(0); ++i)
+    for (std::size_t i = 0; i < X.shape(0); ++i)
     {
-      for (std::size_t j = 0; j < x_cell.shape(1); ++j)
+      for (std::size_t j = 0; j < gdim; ++j)
       {
         double acc = 0;
-        for (std::size_t k = 0; k < coordinate_dofs.shape(0); ++k)
+        for (std::size_t k = 0; k < num_dofs_g; ++k)
           acc += phi(i, k) * coordinate_dofs(k, j);
         x(j, c * X.shape(0) + i) = acc;
       }
