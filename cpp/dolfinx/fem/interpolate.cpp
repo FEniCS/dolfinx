@@ -48,10 +48,16 @@ fem::interpolation_coords(const fem::FiniteElement& element,
         coordinate_dofs(i, j) = x_g(x_dofs[i], j);
 
     // Push forward coordinates (X -> x)
-    cmap.push_forward(x_cell, coordinate_dofs, phi);
     for (std::size_t i = 0; i < x_cell.shape(0); ++i)
+    {
       for (std::size_t j = 0; j < x_cell.shape(1); ++j)
-        x(j, c * X.shape(0) + i) = x_cell(i, j);
+      {
+        double acc = 0;
+        for (std::size_t k = 0; k < coordinate_dofs.shape(0); ++k)
+          acc += phi(i, k) * coordinate_dofs(k, j);
+        x(j, c * X.shape(0) + i) += acc;
+      }
+    }
   }
 
   return x;
