@@ -225,8 +225,8 @@ void _write_lagrange_function(adios2::IO& io, adios2::Engine& engine,
   auto mesh = u.function_space()->mesh();
   std::string family = V->element()->family();
 
-  array2d<double> geometry = V->tabulate_dof_coordinates(false);
-  const std::uint32_t num_dofs = geometry.shape[0];
+  xt::xtensor<double, 2> geometry = V->tabulate_dof_coordinates(false);
+  const std::uint32_t num_dofs = geometry.shape(0);
   const std::uint32_t num_elements
       = mesh->topology().index_map(mesh->topology().dim())->size_local();
 
@@ -284,7 +284,7 @@ void _write_lagrange_function(adios2::IO& io, adios2::Engine& engine,
   const std::vector<Scalar>& function_data = function_vector->array();
   const int rank = u.function_space()->element()->value_rank();
   const std::uint32_t num_components = std::pow(3, rank);
-  const std::uint32_t local_size = geometry.shape[0];
+  const std::uint32_t local_size = geometry.shape(0);
   const std::uint32_t block_size = dofmap->index_map_bs();
   std::vector<double> out_data(num_components * local_size);
 
@@ -370,8 +370,8 @@ void _write_function_at_nodes(
 
     // NOTE: Currently CG-1 interpolation of data.
     auto function_data = u_.get().compute_point_values();
-    std::uint32_t local_size = function_data.shape[0];
-    std::uint32_t block_size = function_data.shape[1];
+    std::uint32_t local_size = function_data.shape(0);
+    std::uint32_t block_size = function_data.shape(1);
     // Extract real and imaginary parts
     std::vector<std::string> parts = {""};
     if constexpr (!std::is_scalar<Scalar>::value)
@@ -392,17 +392,16 @@ void _write_function_at_nodes(
       // Loop over components of each real and imaginary part
       for (size_t i = 0; i < local_size; ++i)
       {
+        auto data_row = xt::row(function_data, i);
         for (size_t j = 0; j < block_size; ++j)
         {
           if (part == "imag")
           {
-            out_data[i * num_components + j]
-                = std::imag(function_data.row(i)[j]);
+            out_data[i * num_components + j] = std::imag(data_row[j]);
           }
           else
           {
-            out_data[i * num_components + j]
-                = std::real(function_data.row(i)[j]);
+            out_data[i * num_components + j] = std::real(data_row[j]);
           }
         }
 
@@ -485,7 +484,7 @@ void ADIOS2File::write_meshtags(const mesh::MeshTags<std::int32_t>& meshtag)
   const int dim = meshtag.dim();
   auto mesh = meshtag.mesh();
 
-  array2d<std::int32_t> geometry_entities
+  xt::xtensor<std::int32_t, 2> geometry_entities
       = entities_to_geometry(*mesh, dim, meshtag.indices(), false);
   auto x_map = mesh->geometry().index_map();
   const std::uint32_t num_elements = meshtag.indices().size();
@@ -498,7 +497,7 @@ void ADIOS2File::write_meshtags(const mesh::MeshTags<std::int32_t>& meshtag)
 
   std::vector<int32_t> cells(num_elements);
   std::iota(cells.begin(), cells.end(), 0);
-  const std::uint32_t num_nodes = geometry_entities.shape[1];
+  const std::uint32_t num_nodes = geometry_entities.shape(1);
   adios2::Variable<double> local_geometry
       = DefineVariable<double>(*_io, "geometry", {}, {}, {num_vertices, 3});
   mesh::CellType cell_type
@@ -518,9 +517,9 @@ void ADIOS2File::write_meshtags(const mesh::MeshTags<std::int32_t>& meshtag)
                                       {num_elements, num_nodes + 1});
   std::vector<std::uint64_t> vtk_topology(num_elements * (num_nodes + 1));
   int topology_offset = 0;
-  for (size_t c = 0; c < geometry_entities.shape[0]; ++c)
+  for (size_t c = 0; c < geometry_entities.shape(0); ++c)
   {
-    auto x_dofs = geometry_entities.row(c);
+    auto x_dofs = xt::row(geometry_entities, c);
     vtk_topology[topology_offset++] = x_dofs.size();
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
       vtk_topology[topology_offset++] = x_dofs[map[i]];
