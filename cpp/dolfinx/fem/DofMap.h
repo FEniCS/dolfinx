@@ -12,6 +12,7 @@
 #include <memory>
 #include <utility>
 #include <vector>
+#include <xtl/xspan.hpp>
 
 namespace dolfinx::common
 {
@@ -107,7 +108,7 @@ public:
   /// @param[in] cell The cell index
   /// @return Local-global dof map for the cell (using process-local
   /// indices)
-  tcb::span<const std::int32_t> cell_dofs(int cell) const
+  xtl::span<const std::int32_t> cell_dofs(int cell) const
   {
     return _dofmap.links(cell);
   }
@@ -135,10 +136,10 @@ public:
   /// Layout of dofs on an element
   std::shared_ptr<const ElementDofLayout> element_dof_layout;
 
-  /// Index map that described the parallel distribution of the dofmap
+  /// Index map that describes the parallel distribution of the dofmap
   std::shared_ptr<const common::IndexMap> index_map;
 
-  /// Index map that described the parallel distribution of the dofmap
+  /// Block size associated with the index_map
   int index_map_bs() const;
 
 private:

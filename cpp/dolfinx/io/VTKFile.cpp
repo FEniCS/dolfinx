@@ -165,7 +165,7 @@ std::string init(const mesh::Mesh& mesh, const std::string filename,
       = mesh.topology().index_map(cell_dim)->size_local();
 
   // Number of points in mesh (can be more than the number of vertices)
-  const int num_nodes = mesh.geometry().x().shape[0];
+  const int num_nodes = mesh.geometry().x().shape(0);
 
   // Write headers
   vtk_header_open(num_nodes, num_cells, vtu_filename);
@@ -312,7 +312,7 @@ void write_point_data(const fem::Function<Scalar>& u, const mesh::Mesh& mesh,
   fp.precision(16);
 
   // Get function values at vertices
-  const array2d<Scalar> values = u.compute_point_values();
+  const xt::xtensor<Scalar, 2> values = u.compute_point_values();
 
   if (rank == 0)
   {
@@ -352,9 +352,9 @@ void write_point_data(const fem::Function<Scalar>& u, const mesh::Mesh& mesh,
   ss << std::scientific;
   ss << std::setprecision(16);
 
-  const array2d<double>& points = mesh.geometry().x();
+  const xt::xtensor<double, 2>& points = mesh.geometry().x();
 
-  for (std::size_t i = 0; i < points.shape[0]; ++i)
+  for (std::size_t i = 0; i < points.shape(0); ++i)
   {
     if (rank == 1 and dim == 2)
     {

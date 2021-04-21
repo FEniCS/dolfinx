@@ -15,13 +15,11 @@ from dolfinx.fem.assemble import (apply_lifting, apply_lifting_nest,
                                   create_matrix_block, create_matrix_nest,
                                   create_vector, create_vector_block,
                                   create_vector_nest, set_bc, set_bc_nest)
-from dolfinx.fem.coordinatemap import create_coordinate_map
 from dolfinx.fem.dirichletbc import (DirichletBC, locate_dofs_geometrical,
                                      locate_dofs_topological)
 from dolfinx.fem.dofmap import DofMap
 from dolfinx.fem.form import Form
-from dolfinx.fem.formmanipulations import (adjoint, derivative, increase_order,
-                                           tear)
+from dolfinx.fem.formmanipulations import adjoint
 from dolfinx.fem.function import (Constant, Expression, Function,
                                   FunctionSpace, TensorFunctionSpace,
                                   VectorFunctionSpace)
@@ -36,8 +34,7 @@ __all__ = [
     "apply_lifting", "apply_lifting_nest", "assemble_scalar", "assemble_vector",
     "assemble_vector_block", "assemble_vector_nest",
     "assemble_matrix_block", "assemble_matrix_nest",
-    "assemble_matrix", "set_bc", "set_bc_nest", "create_coordinate_map",
+    "assemble_matrix", "set_bc", "set_bc_nest",
     "DirichletBC", "DofMap", "Form", "IntegralType",
-    "derivative", "adjoint", "increase_order",
-    "tear", "LinearProblem", "locate_dofs_geometrical", "locate_dofs_topological"
+    "adjoint", "LinearProblem", "locate_dofs_geometrical", "locate_dofs_topological"
 ]

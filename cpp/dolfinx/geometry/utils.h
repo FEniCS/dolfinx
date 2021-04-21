@@ -7,9 +7,9 @@
 #pragma once
 
 #include <array>
-#include <dolfinx/common/span.hpp>
 #include <utility>
 #include <vector>
+#include <xtl/xspan.hpp>
 
 namespace dolfinx
 {
@@ -92,7 +92,7 @@ double squared_distance(const mesh::Mesh& mesh, int dim, std::int32_t index,
 /// @return List of cells which collide with point
 std::vector<std::int32_t>
 select_colliding_cells(const dolfinx::mesh::Mesh& mesh,
-                       const tcb::span<const std::int32_t>& candidate_cells,
+                       const xtl::span<const std::int32_t>& candidate_cells,
                        const std::array<double, 3>& p, int n);
 } // namespace geometry
 } // namespace dolfinx

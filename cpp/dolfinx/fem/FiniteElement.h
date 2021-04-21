@@ -6,15 +6,15 @@
 
 #pragma once
 
-#include <dolfinx/common/span.hpp>
+#include <basix/finite-element.h>
 #include <dolfinx/common/types.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <functional>
 #include <memory>
 #include <numeric>
 #include <vector>
+#include <xtl/xspan.hpp>
 
-struct ufc_coordinate_mapping;
 struct ufc_finite_element;
 
 namespace dolfinx::fem
@@ -29,7 +29,7 @@ public:
   explicit FiniteElement(const ufc_finite_element& ufc_element);
 
   /// Copy constructor
-  FiniteElement(const FiniteElement& element) = default;
+  FiniteElement(const FiniteElement& element) = delete;
 
   /// Move constructor
   FiniteElement(FiniteElement&& element) = default;
@@ -38,7 +38,7 @@ public:
   virtual ~FiniteElement() = default;
 
   /// Copy assignment
-  FiniteElement& operator=(const FiniteElement& element) = default;
+  FiniteElement& operator=(const FiniteElement& element) = delete;
 
   /// Move assignment
   FiniteElement& operator=(FiniteElement&& element) = default;
@@ -83,35 +83,39 @@ public:
 
   /// Evaluate all basis functions at given points in reference cell
   // reference_values[num_points][num_dofs][reference_value_size]
-  void evaluate_reference_basis(std::vector<double>& values,
-                                const array2d<double>& X) const;
+  void evaluate_reference_basis(xt::xtensor<double, 3>& values,
+                                const xt::xtensor<double, 2>& X) const;
 
   /// Evaluate all basis function derivatives of given order at given points in
   /// reference cell
   // reference_value_derivatives[num_points][num_dofs][reference_value_size][num_derivatives]
-  void
-  evaluate_reference_basis_derivatives(std::vector<double>& reference_values,
-                                       int order,
-                                       const array2d<double>& X) const;
+  // void
+  // evaluate_reference_basis_derivatives(std::vector<double>& reference_values,
+  //                                      int order,
+  //                                      const xt::xtensor<double, 2>& X)
+  //                                      const;
 
   /// Push basis functions forward to physical element
-  void transform_reference_basis(std::vector<double>& values,
-                                 const std::vector<double>& reference_values,
-                                 const array2d<double>& X,
-                                 const std::vector<double>& J,
-                                 const tcb::span<const double>& detJ,
-                                 const std::vector<double>& K) const;
+  void transform_reference_basis(xt::xtensor<double, 3>& values,
+                                 const xt::xtensor<double, 3>& reference_values,
+                                 const xt::xtensor<double, 3>& J,
+                                 const xtl::span<const double>& detJ,
+                                 const xt::xtensor<double, 3>& K) const;
 
   /// Push basis function (derivatives) forward to physical element
   void transform_reference_basis_derivatives(
       std::vector<double>& values, std::size_t order,
       const std::vector<double>& reference_values, const array2d<double>& X,
-      const std::vector<double>& J, const tcb::span<const double>& detJ,
+      const std::vector<double>& J, const xtl::span<const double>& detJ,
       const std::vector<double>& K) const;
 
   /// Get the number of sub elements (for a mixed element)
   /// @return the Number of sub elements
   int num_sub_elements() const noexcept;
+
+  /// Subelements (if any)
+  const std::vector<std::shared_ptr<const FiniteElement>>&
+  sub_elements() const noexcept;
 
   /// Return simple hash of the signature string
   std::size_t hash() const noexcept;
@@ -134,7 +138,7 @@ public:
   /// nodal positions. For other elements the points will typically be
   /// the quadrature points used to evaluate moment degrees of freedom.
   /// @return Points on the reference cell. Shape is (num_points, tdim).
-  array2d<double> interpolation_points() const;
+  const xt::xtensor<double, 2>& interpolation_points() const;
 
   /// @todo Document shape/layout of @p values
   /// @todo Make the interpolating dofs in/out argument for efficiency
@@ -154,23 +158,29 @@ public:
   /// @param[out] dofs The element degrees of freedom (interpolants) of
   /// the expression. The call must allocate the space. Is has
   template <typename T>
-  constexpr void interpolate(const array2d<T>& values,
-                             tcb::span<T> dofs) const
+  constexpr void interpolate(const xt::xtensor<T, 2>& values,
+                             xtl::span<T> dofs) const
   {
+    if (!_element)
+    {
+      throw std::runtime_error("No underlying element for interpolation. "
+                               "Cannot interpolate mixed elements directly.");
+    }
+
     const std::size_t rows = _space_dim / _bs;
     assert(_space_dim % _bs == 0);
     assert(dofs.size() == rows);
 
     // Compute dofs = Pi * x (matrix-vector multiply)
-    assert(_interpolation_matrix.size() % rows == 0);
-    const std::size_t cols = _interpolation_matrix.size() / rows;
+    const xt::xtensor<double, 2>& Pi = _element->interpolation_matrix();
+    assert(Pi.size() % rows == 0);
+    const std::size_t cols = Pi.size() / rows;
     for (std::size_t i = 0; i < rows; ++i)
     {
       // Dot product between row i of the matrix and 'values'
-      dofs[i] = std::transform_reduce(
-          std::next(_interpolation_matrix.begin(), i * cols),
-          std::next(_interpolation_matrix.begin(), i * cols + cols),
-          values.data(), T(0.0));
+      dofs[i] = std::transform_reduce(std::next(Pi.data(), i * cols),
+                                      std::next(Pi.data(), i * cols + cols),
+                                      values.data(), T(0.0));
     }
   }
 
@@ -186,13 +196,12 @@ public:
   /// @param[in] cell_permutation Permutation data for the cell
   /// @param[in] block_size The block_size of the input data
   template <typename T>
-  void apply_dof_transformation(T* data, std::uint32_t cell_permutation,
+  void apply_dof_transformation(xtl::span<T> data,
+                                std::uint32_t cell_permutation,
                                 int block_size) const
   {
-    if constexpr (std::is_same<T, double>::value)
-      _apply_dof_transformation(data, cell_permutation, block_size);
-    else
-      _apply_dof_transformation_to_scalar(data, cell_permutation, block_size);
+    assert(_element);
+    _element->apply_dof_transformation(data, block_size, cell_permutation);
   }
 
   /// Apply inverse transpose permutation to some data
@@ -202,29 +211,24 @@ public:
   /// @param[in] block_size The block_size of the input data
   template <typename T>
   void apply_inverse_transpose_dof_transformation(
-      T* data, std::uint32_t cell_permutation, int block_size) const
+      xtl::span<T> data, std::uint32_t cell_permutation, int block_size) const
   {
-    if constexpr (std::is_same<T, double>::value)
-      _apply_inverse_transpose_dof_transformation(data, cell_permutation,
-                                                  block_size);
-    else
-      _apply_inverse_transpose_dof_transformation_to_scalar(
-          data, cell_permutation, block_size);
+    assert(_element);
+    _element->apply_inverse_transpose_dof_transformation(data, block_size,
+                                                         cell_permutation);
   }
 
   /// Pull physical data back to the reference element.
   /// This passes the inputs directly into Basix's map_pull_back function.
-  void map_pull_back(double* physical_data, const double* reference_data,
-                     const double* J, const double* detJ, const double* K,
-                     const int physical_dim, const int physical_value_size,
-                     const int nresults, const int npoints) const;
-
-  /// Pull physical data back to the reference element.
-  void map_pull_back(std::complex<double>* physical_data,
-                     const std::complex<double>* reference_data,
-                     const double* J, const double* detJ, const double* K,
-                     const int physical_dim, const int physical_value_size,
-                     const int nresults, const int npoints) const;
+  template <typename T>
+  void
+  map_pull_back(const xt::xtensor<T, 3>& u, const xt::xtensor<double, 3>& J,
+                const xtl::span<const double>& detJ,
+                const xt::xtensor<double, 3>& K, xt::xtensor<T, 3>& U) const
+  {
+    assert(_element);
+    _element->map_pull_back_m(u, J, detJ, K, U);
+  }
 
 private:
   std::string _signature, _family;
@@ -236,46 +240,20 @@ private:
   // List of sub-elements (if any)
   std::vector<std::shared_ptr<const FiniteElement>> _sub_elements;
 
-  // Recursively extract sub finite element
-  static std::shared_ptr<const FiniteElement>
-  extract_sub_element(const FiniteElement& finite_element,
-                      const std::vector<int>& component);
-
   // Simple hash of the signature string
   std::size_t _hash;
 
   // Dimension of each value space
   std::vector<int> _value_dimension;
 
-  std::function<int(double*, const std::uint32_t, const int)>
-      _apply_dof_transformation;
-
-  std::function<int(ufc_scalar_t*, const std::uint32_t, const int)>
-      _apply_dof_transformation_to_scalar;
-
-  std::function<int(double*, const std::uint32_t, const int)>
-      _apply_inverse_transpose_dof_transformation;
-
-  std::function<int(ufc_scalar_t*, const std::uint32_t, const int)>
-      _apply_inverse_transpose_dof_transformation_to_scalar;
-
   // Block size for VectorElements and TensorElements. This gives the
   // number of DOFs colocated at each point.
   int _bs;
 
-  // True if interpolation is indentity, i.e. call to
-  // _interpolate_into_cell is not required
-  bool _interpolation_is_ident;
-
   // True if element needs dof permutation
   bool _needs_permutation_data;
 
-  // The basix element identifier
-  int _basix_element_handle;
-
-  // The interpolation matrix. It has shape (dim,
-  // num_interpolation_points*basix_value_size). Note that _space_dim =
-  // _bs * dim. Storage is row-major
-  std::vector<double> _interpolation_matrix;
+  // Basix Element (nullptr for mixed elements)
+  std::unique_ptr<basix::FiniteElement> _element;
 };
 } // namespace dolfinx::fem
