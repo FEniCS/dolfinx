@@ -3,9 +3,15 @@ cmake_minimum_required(VERSION 3.10)
 PROJECT(dolfinx_pybind11)
 
 find_package(xtensor REQUIRED)
-find_package(xtensor-blas REQUIRED)
 find_package(Basix REQUIRED)
 find_package(DOLFINX REQUIRED)
+
+# Check if the Basix C++ library was compiled with xtensor SIMD
+get_target_property(BASIX_DEFN Basix::basix INTERFACE_COMPILE_DEFINITIONS)
+get_target_property(DOLFINX_DEFN dolfinx INTERFACE_COMPILE_DEFINITIONS)
+if("XTENSOR_USE_XSIMD" IN_LIST BASIX_DEFN OR "XTENSOR_USE_XSIMD" IN_LIST DOLFINX_DEFN)
+  find_package(xsimd REQUIRED)
+endif()
 
 # Set C++ standard before finding pybind11
 set(CMAKE_CXX_STANDARD 17)
@@ -45,6 +51,11 @@ endif()
 
 # Add DOLFINX libraries and other config
 target_link_libraries(cpp PRIVATE pybind11::module dolfinx)
+
+# Add xsimd if the Basix C++ interface was compiled with it
+if("XTENSOR_USE_XSIMD" IN_LIST BASIX_DEFN OR "XTENSOR_USE_XSIMD" IN_LIST DOLFINX_DEFN)
+  target_link_libraries(cpp PRIVATE xsimd)
+endif()
 
 # Add to CMake search path
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)

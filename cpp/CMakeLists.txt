@@ -67,6 +67,14 @@ add_feature_info(DOLFINX_SKIP_BUILD_TESTS DOLFINX_SKIP_BUILD_TESTS "Skip build t
 option(CMAKE_INSTALL_RPATH_USE_LINK_PATH "Add paths to linker search and installed rpath." ON)
 add_feature_info(CMAKE_INSTALL_RPATH_USE_LINK_PATH CMAKE_INSTALL_RPATH_USE_LINK_PATH "Add paths to linker search and installed rpath.")
 
+# Enable SIMD with xtensor
+option(XTENSOR_USE_XSIMD "Enable SIMD with xtensor." OFF)
+add_feature_info(XTENSOR_USE_XSIMD XTENSOR_USE_XSIMD "Enable SIMD with xtensor (xsimd).")
+
+# Enable xtensor with target-specific optimization, i.e. -march=native
+option(XTENSOR_OPTIMIZE "Enable xtensor target-specific optimization" OFF)
+add_feature_info(XTENSOR_OPTIMIZE XTENSOR_OPTIMIZE "Enable architecture-specific optimizations as defined by xtensor.")
+
 #------------------------------------------------------------------------------
 # Enable or disable optional packages
 
@@ -180,13 +188,17 @@ set_package_properties(UFC PROPERTIES TYPE REQUIRED
   DESCRIPTION "Unified language for form-compilers (part of FFC-X)"
   URL "https://github.com/fenics/ffcx")
 
-# find_package(xtl REQUIRED)
 find_package(Basix 0.0.1 REQUIRED)
 set_package_properties(basix PROPERTIES TYPE REQUIRED
   DESCRIPTION "FEniCS tabulation library"
   URL "https://github.com/fenics/basix")
 
-#------------------------------------------------------------------------------
+  get_target_property(BASIX_DEFN Basix::basix INTERFACE_COMPILE_DEFINITIONS)
+  if("XTENSOR_USE_XSIMD" IN_LIST BASIX_DEFN)
+    find_package(xsimd REQUIRED)
+  endif()
+
+  #------------------------------------------------------------------------------
 # Run tests to find optional packages
 
 # Check for SLEPc

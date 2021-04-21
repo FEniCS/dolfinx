@@ -13,7 +13,6 @@
 #include <functional>
 #include <memory>
 #include <string>
-#include <xtensor-blas/xlinalg.hpp>
 #include <xtensor/xtensor.hpp>
 #include <xtensor/xview.hpp>
 #include <xtl/xspan.hpp>
