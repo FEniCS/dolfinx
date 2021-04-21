@@ -232,7 +232,7 @@ void fem(py::module& m)
                              &dolfinx::fem::CoordinateElement::dof_layout)
       .def("push_forward",
            [](const dolfinx::fem::CoordinateElement& self,
-              const py::array_t<const double, py::array::c_style>& X,
+              const py::array_t<double, py::array::c_style>& X,
               const py::array_t<double, py::array::c_style>& cell_geometry) {
              std::array<std::size_t, 2> s_x
                  = {static_cast<std::size_t>(X.shape(0)),
