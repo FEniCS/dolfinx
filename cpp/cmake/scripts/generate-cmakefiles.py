@@ -21,7 +21,14 @@ project(${{PROJECT_NAME}})
 # DOLFINX_CMAKE_CONFIG_PATH)
 if (NOT TARGET dolfinx)
   find_package(DOLFINX REQUIRED)
+  find_package(xtl REQUIRED)
+  find_package(xtensor Basix REQUIRED)
   find_package(Basix REQUIRED)
+
+  if("XTENSOR_USE_XSIMD" IN_LIST BASIX_DEFN)
+    find_package(xsimd REQUIRED)
+    target_link_libraries(${{PROJECT_NAME}} xsimd)
+  endif()
 endif()
 
 # Executable
