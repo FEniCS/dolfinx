@@ -6,9 +6,9 @@ name: Docker environment images
 
 on:
   # Uncomment the below to trigger 'docker build' on push
-  push:
-    branches:
-      - "**"
+  #push:
+  #  branches:
+  #    - "**"
   schedule:
     # '*' is a special character in YAML, so string must be quoted
     - cron: "0 22 * * SUN"
@@ -17,7 +17,7 @@ on:
 jobs:
   start_runner:
     name: Start self-hosted EC2 runner
-    #if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/main' }}
+    if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     outputs:
       label: ${{ steps.start-ec2-runner.outputs.label }}
@@ -42,7 +42,7 @@ jobs:
 
   build_test_env_openmpi:
     name: Build fenicsproject/test-env:openmpi image
-    #if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/main' }}
+    if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/main' }}
     # NOTE: OpenMPI ARM64 build currently fails, see https://github.com/FEniCS/dolfinx/runs/2380975354?check_suite_focus=true#step:4:7472
     strategy:
       matrix:
@@ -72,7 +72,7 @@ jobs:
 
   build_test_env_mpich:
     name: Build fenicsproject/test-env:mpich image
-    #if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/main' }}
+    if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/main' }}
     strategy:
       matrix:
         os: [ubuntu-latest, ARM64]
@@ -101,7 +101,7 @@ jobs:
 
   build_dev_env:
     name: Build dolfinx/dev-env image
-    #if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/main' }}
+    if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/main' }}
     strategy:
       matrix:
         os: [ubuntu-latest, ARM64]
@@ -131,7 +131,7 @@ jobs:
 
   push_multiarch_images:
     name: Push multiarch images
-    #if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/main' }}
+    if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     needs:
       - build_test_env_openmpi

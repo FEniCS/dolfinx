@@ -35,10 +35,6 @@
 #    echo '{ "cffi_extra_compile_args" : ["-O2", "-march=native" ] }' > dolfinx/docker/dolfinx_jit_parameters.json
 #    docker build --target dolfinx --file dolfinx/docker/Dockerfile --build-arg PETSC_SLEPC_OPTFLAGS="-O2 -march=native" --build-arg DOLFINX_CMAKE_CXX_FLAGS="-march=native" .
 #
-# The dolfinx/dolfinx image on Dockerhub is currently optimised for Intel Sandy
-# Bridge architectures and will run on all modern x86-64 chips with AVX
-# instructions (>~2012).
-#
 # You can build an optimised version of the FEniCS development environment
 # (without the FEniCS components) for your platform using the command:
 #
@@ -51,9 +47,9 @@ ARG PETSC_VERSION=3.15.0
 ARG SLEPC_VERSION=3.15.0
 ARG SLEPC4PY_VERSION=3.15.0
 ARG ADIOS2_VERSION=2.7.1
-# Todo: Update KaHIP version upon a release.
+# TODO: Update KaHIP version upon a release.
 ARG KAHIP_VERSION=623decb
-ARG XTENSOR_VERSION=0.23.4
+ARG XTENSOR_VERSION=0.23.6
 ARG XTENSOR_BLAS_VERSION=master
 ARG XTL_VERSION=0.7.2
 
@@ -108,7 +104,6 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     libboost-dev \
     libboost-filesystem-dev \
     libboost-timer-dev \
-    libeigen3-dev \
     libhdf5-${MPI}-dev \
     liblapack-dev \
     lib${MPI}-dev \

@@ -5,9 +5,9 @@ name: Docker end-user images
 
 on:
   # Uncomment the below to trigger 'docker build' on push
-  push:
-    branches:
-      - "**"
+  #push:
+  #  branches:
+  #    - "**"
   schedule:
     # '*' is a special character in YAML, so string must be quoted
     - cron: "0 5 * * *"
@@ -16,7 +16,7 @@ on:
 jobs:
   start_runner:
     name: Start self-hosted EC2 runner
-    #if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/main' }}
+    if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     outputs:
       label: ${{ steps.start-ec2-runner.outputs.label }}
@@ -41,7 +41,7 @@ jobs:
 
   build_end_user_images:
     name: Build DOLFINx end-user images
-    #if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/main' }}
+    if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/main' }}
     strategy:
       matrix:
         os: [ubuntu-latest, ARM64]
@@ -115,7 +115,7 @@ jobs:
 
   push_multiarch_images:
     name: Push multiarch image
-    #if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/main' }}
+    if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     needs:
       - build_end_user_images
