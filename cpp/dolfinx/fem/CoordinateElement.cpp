@@ -200,7 +200,7 @@ void CoordinateElement::push_forward(
     xt::xtensor<double, 2>& x, const xt::xtensor<double, 2>& cell_geometry,
     const xt::xtensor<double, 2>& phi) const
 {
-  assert(phi.shape(2) == cell_geometry.shape(0));
+  assert(phi.shape(1) == cell_geometry.shape(0));
 
   // Compute physical coordinates
   // x = phi * cell_geometry;
