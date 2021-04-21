@@ -136,13 +136,16 @@ set_package_properties(Boost PROPERTIES TYPE REQUIRED
   DESCRIPTION "Boost C++ libraries"
   URL "http://www.boost.org")
 
+# Enable SIMD with xtensor
+option(XTENSOR_USE_XSIMD "Enable xsimd with xtensor (xsimd package required)" OFF)
+
 # Check for required package xtensor
 find_package(xtensor REQUIRED)
 set_package_properties(xtensor PROPERTIES TYPE REQUIRED
   DESCRIPTION "C++ library for numerical analysis with multi-dimensional array expressions."
   URL "https://xtensor.readthedocs.io/")
 
-# Check for required package xtensor
+# Check for required package xtensor-blas
 find_package(xtensor-blas REQUIRED)
 set_package_properties(xtensor-blas PROPERTIES TYPE REQUIRED
   DESCRIPTION "BLAS extenssion to xtensor."

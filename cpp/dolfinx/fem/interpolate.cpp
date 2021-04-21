@@ -28,9 +28,15 @@ fem::interpolation_coords(const fem::FiniteElement& element,
   const fem::CoordinateElement& cmap = mesh.geometry().cmap();
 
   // Get the interpolation points on the reference cells
-  const xt::xtensor<double, 2>& X = element.interpolation_points();
+  const xt::xtensor<double, 2>& X
+      = element.interpolation_points();
   const xt::xtensor<double, 2> phi
       = xt::view(cmap.tabulate(0, X), 0, xt::all(), xt::all(), 0);
+  // std::cout << "P-------" << std::endl;
+  // std::cout << phi << std::endl;
+  // std::cout << "X-------" << std::endl;
+  // std::cout << X << std::endl;
+  // std::cout << "--------" << std::endl;
 
   // Push reference coordinates (X) forward to the physical coordinates
   // (x) for each cell
@@ -43,9 +49,11 @@ fem::interpolation_coords(const fem::FiniteElement& element,
   {
     // Get geometry data for current cell
     auto x_dofs = x_dofmap.links(cells[c]);
-    for (std::size_t i = 0; i < num_dofs_g; ++i)
-      for (std::size_t j = 0; j < gdim; ++j)
-        coordinate_dofs(i, j) = x_g(x_dofs[i], j);
+    for (std::size_t i = 0; i < x_dofs.size(); ++i)
+    {
+      std::copy_n(xt::row(x_g, x_dofs[i]).begin(), gdim,
+                  std::next(coordinate_dofs.begin(), i * gdim));
+    }
 
     // Push forward coordinates (X -> x)
     cmap.push_forward(x_cell, coordinate_dofs, phi);

@@ -63,10 +63,18 @@ target_include_directories(dolfinx SYSTEM PUBLIC ${UFC_INCLUDE_DIRS})
 target_link_libraries(dolfinx PUBLIC Basix::basix)
 
 # xtensor
-target_include_directories(dolfinx SYSTEM PUBLIC ${xtensor_INCLUDE_DIRS})
-target_include_directories(dolfinx SYSTEM PRIVATE ${xtensor_blas_INCLUDE_DIR})
-target_link_libraries(dolfinx PRIVATE ${xtensor_blas_LIBRARY})
-target_link_libraries(dolfinx PRIVATE ${LAPACK_LIBRARIES})
+# target_include_directories(dolfinx SYSTEM PUBLIC ${xtensor_INCLUDE_DIRS})
+target_link_libraries(dolfinx PRIVATE xtl)
+target_link_libraries(dolfinx PUBLIC xtensor)
+target_link_libraries(dolfinx PRIVATE xtensor-blas)
+
+# target_include_directories(dolfinx SYSTEM PRIVATE ${xtensor_blas_INCLUDE_DIR})
+# target_link_libraries(dolfinx PRIVATE ${xtensor_blas_LIBRARY})
+# target_link_libraries(dolfinx PRIVATE ${LAPACK_LIBRARIES})
+
+# target_link_libraries(dolfinx PRIVATE xtensor xtensor::optimize)
+# target_compile_options(dolfinx PRIVATE -march=native -ffast-math)
+
 
 # Boost
 target_link_libraries(dolfinx PUBLIC Boost::headers)
