@@ -27,6 +27,11 @@ find_dependency(xtensor)
 
 find_dependency(Basix)
 
+# Add xsimd if the C++ interface was compiled with it
+if(@xsimd_FOUND@)
+  find_dependency(xsimd)
+endif()
+
 if (NOT TARGET PETSC::petsc)
   set(DOLFINX_SKIP_BUILD_TESTS TRUE)
   list(APPEND CMAKE_MODULE_PATH "@CMAKE_INSTALL_PREFIX@/@CMAKE_INSTALL_LIBDIR@/cmake/dolfinx")
