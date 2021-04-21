@@ -55,7 +55,7 @@ fem::interpolation_coords(const fem::FiniteElement& element,
         double acc = 0;
         for (std::size_t k = 0; k < coordinate_dofs.shape(0); ++k)
           acc += phi(i, k) * coordinate_dofs(k, j);
-        x(j, c * X.shape(0) + i) += acc;
+        x(j, c * X.shape(0) + i) = acc;
       }
     }
   }
