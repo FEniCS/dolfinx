@@ -63,6 +63,7 @@ comprehensive instructions.
 
 ## Docker images
 
+
 A Docker image with DOLFINx built nightly:
 ```
 docker run -ti dolfinx/dolfinx
@@ -84,6 +85,8 @@ to build DOLFINx:
 ```
 docker run -ti dolfinx/dev-env
 ```
+
+All Docker images support arm64 and amd64 architectures.
 
 For more information, see https://hub.docker.com/u/dolfinx
 
