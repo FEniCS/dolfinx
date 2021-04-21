@@ -6,6 +6,7 @@
 # FIXME: Check that naming conforms to CMake standards
 
 @PACKAGE_INIT@
+include(CMakeFindDependencyMacro)
 
 # Compilers
 set_and_check(DOLFINX_CXX_COMPILER "@CMAKE_CXX_COMPILER@")
@@ -20,6 +21,11 @@ endif()
 set(Boost_USE_MULTITHREADED $ENV{BOOST_USE_MULTITHREADED})
 set(Boost_VERBOSE TRUE)
 find_package(Boost 1.70 REQUIRED COMPONENTS timer filesystem)
+
+# xtensor
+find_dependency(xtensor)
+
+find_dependency(Basix)
 
 if (NOT TARGET PETSC::petsc)
   set(DOLFINX_SKIP_BUILD_TESTS TRUE)

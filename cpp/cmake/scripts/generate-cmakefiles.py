@@ -12,7 +12,7 @@ cmakelists_str = \
 #
 #     cmake/scripts/generate-cmakefiles
 #
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.12)
 
 set(PROJECT_NAME {project_name})
 project(${{PROJECT_NAME}})
@@ -21,14 +21,6 @@ project(${{PROJECT_NAME}})
 # DOLFINX_CMAKE_CONFIG_PATH)
 if (NOT TARGET dolfinx)
   find_package(DOLFINX REQUIRED)
-  find_package(xtl REQUIRED)
-  find_package(xtensor Basix REQUIRED)
-  find_package(Basix REQUIRED)
-
-  if("XTENSOR_USE_XSIMD" IN_LIST BASIX_DEFN)
-    find_package(xsimd REQUIRED)
-    target_link_libraries(${{PROJECT_NAME}} xsimd)
-  endif()
 endif()
 
 # Executable
