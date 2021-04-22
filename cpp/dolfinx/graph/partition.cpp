@@ -68,11 +68,10 @@ build::distribute(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& list,
   std::vector<std::int64_t> data_send(disp_send.back());
   for (int i = 0; i < list.num_nodes(); ++i)
   {
+    auto links = list.links(i);
     auto dests = destinations.links(i);
-    for (std::int32_t j = 0; j < destinations.num_links(i); ++j)
+    for (auto dest : dests)
     {
-      std::int32_t dest = dests[j];
-      auto links = list.links(i);
       data_send[offset[dest]++] = dests[0];
       data_send[offset[dest]++] = i + offset_global;
       data_send[offset[dest]++] = links.size();
