@@ -124,7 +124,7 @@ compute_local_dual_graph_keyed(
 
       // Get list of facet vertices
       auto f_to_v = f.links(j);
-      assert(v.size() < 5);
+      assert(f_to_v.size() < 5);
       for (std::size_t k = 0; k < f_to_v.size(); ++k)
         facet[k] = vertices[f_to_v[k]];
 

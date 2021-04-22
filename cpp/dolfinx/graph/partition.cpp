@@ -42,7 +42,7 @@ build::distribute(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& list,
   std::vector<int> num_per_dest_send(size, 0);
   for (int i = 0; i < destinations.num_nodes(); ++i)
   {
-    auto list_num_links = list.num_links(i) + 3;
+    int list_num_links = list.num_links(i) + 3;
     auto dests = destinations.links(i);
     for (std::int32_t d : dests)
       num_per_dest_send[d] += list_num_links;
@@ -202,7 +202,7 @@ build::compute_ghost_indices(MPI_Comm comm,
                                  MPI_INFO_NULL, false, &neighbor_comm);
 
   std::vector<int> send_offsets = {0};
-  for (auto index_count : ghost_index_count)
+  for (int index_count : ghost_index_count)
     send_offsets.push_back(send_offsets.back() + index_count);
   std::vector<std::int64_t> send_data(send_offsets.back());
 
