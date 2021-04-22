@@ -42,9 +42,10 @@ build::distribute(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& list,
   std::vector<int> num_per_dest_send(size, 0);
   for (int i = 0; i < destinations.num_nodes(); ++i)
   {
-    const auto& dests = destinations.links(i);
-    for (int j = 0; j < destinations.num_links(i); ++j)
-      num_per_dest_send[dests[j]] += list.num_links(i) + 3;
+    auto list_num_links = list.num_links(i) + 3;
+    auto dests = destinations.links(i);
+    for (std::int32_t d : dests)
+      num_per_dest_send[d] += list_num_links;
   }
 
   // Compute send array displacements
@@ -67,7 +68,7 @@ build::distribute(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& list,
   std::vector<std::int64_t> data_send(disp_send.back());
   for (int i = 0; i < list.num_nodes(); ++i)
   {
-    const auto& dests = destinations.links(i);
+    auto dests = destinations.links(i);
     for (std::int32_t j = 0; j < destinations.num_links(i); ++j)
     {
       std::int32_t dest = dests[j];
@@ -114,8 +115,9 @@ build::distribute(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& list,
         i++; // index_owner.push_back(data_recv[i++]);
         global_indices.push_back(data_recv[i++]);
         const std::int64_t num_links = data_recv[i++];
-        for (int j = 0; j < num_links; ++j)
-          array.push_back(data_recv[i++]);
+        array.insert(array.end(), std::next(data_recv.begin(), i),
+                     std::next(data_recv.begin(), i + num_links));
+        i += num_links;
         list_offset.push_back(list_offset.back() + num_links);
       }
       else
@@ -124,8 +126,9 @@ build::distribute(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& list,
         ghost_index_owner.push_back(data_recv[i++]);
         ghost_global_indices.push_back(data_recv[i++]);
         const std::int64_t num_links = data_recv[i++];
-        for (int j = 0; j < num_links; ++j)
-          ghost_array.push_back(data_recv[i++]);
+        ghost_array.insert(ghost_array.end(), std::next(data_recv.begin(), i),
+                           std::next(data_recv.begin(), i + num_links));
+        i += num_links;
         ghost_list_offset.push_back(ghost_list_offset.back() + num_links);
       }
     }
@@ -138,8 +141,8 @@ build::distribute(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& list,
   array.insert(array.end(), ghost_array.begin(), ghost_array.end());
   int ghost_offset = list_offset.back();
   list_offset.pop_back();
-  for (int& offset : ghost_list_offset)
-    offset += ghost_offset;
+  std::for_each(ghost_list_offset.begin(), ghost_list_offset.end(),
+                [ghost_offset](auto& offset) { offset += ghost_offset; });
   list_offset.insert(list_offset.end(), ghost_list_offset.begin(),
                      ghost_list_offset.end());
 
@@ -200,8 +203,8 @@ build::compute_ghost_indices(MPI_Comm comm,
                                  MPI_INFO_NULL, false, &neighbor_comm);
 
   std::vector<int> send_offsets = {0};
-  for (std::size_t i = 0; i < ghost_index_count.size(); ++i)
-    send_offsets.push_back(send_offsets.back() + ghost_index_count[i]);
+  for (auto index_count : ghost_index_count)
+    send_offsets.push_back(send_offsets.back() + index_count);
   std::vector<std::int64_t> send_data(send_offsets.back());
 
   // Copy offsets to help fill array
