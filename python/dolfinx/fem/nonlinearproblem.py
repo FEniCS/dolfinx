@@ -6,6 +6,7 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 from typing import List
+import types
 import ufl
 from petsc4py import PETSc
 from dolfinx import fem, cpp
@@ -143,3 +144,15 @@ class NewtonSolver(cpp.nls.NewtonSolver):
     def b(self) -> PETSc.Vec:
         """Get the residual vector"""
         return self._b
+
+    def setP(self, P: types.FunctionType, Pmat: PETSc.Mat):
+        """
+        Set the function for computing the preconditioner matrix
+        Parameters
+        -----------
+        P
+          Function to compute the preconditioner matrix b (x, P)
+        Pmat
+          The matrix to assemble the preconditioner into
+        """
+        super().setP(P, Pmat)

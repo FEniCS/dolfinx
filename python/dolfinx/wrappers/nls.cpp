@@ -27,49 +27,11 @@ void nls(py::module& m)
       .def(py::init([](const MPICommWrapper comm) {
         return std::make_unique<dolfinx::nls::NewtonSolver>(comm.get());
       }))
-      .def("setF", &dolfinx::nls::NewtonSolver::setF,
-           R"mydelimiter(
-        Set the function for computing the residual and the vector to the assemble the residual into
-        Parameters
-        -----------
-        F
-          Function to compute the residual vector b (x, b)
-        b
-          The vector to assemble to residual into)mydelimiter")
-      .def("setJ", &dolfinx::nls::NewtonSolver::setJ,
-           R"mydelimiter(
-        Set the function for computing the Jacobian (dF/dx) and the matrix to assemble the residual into
-        Parameters
-        -----------
-        J
-          Function to compute the Jacobian matrix b (x, A)
-        Jmat
-          The matrix to assemble the Jacobian into)mydelimiter")
-      .def("setP", &dolfinx::nls::NewtonSolver::setP,
-           R"mydelimiter(
-        Set the function for computing the preconditioner matrix (optional)
-        Parameters
-        -----------
-        P
-          Function to compute the preconditioner matrix b (x, P)
-        Pmat
-          The matrix to assemble the preconditioner into)mydelimiter")
-      .def("set_form", &dolfinx::nls::NewtonSolver::set_form,
-           R"mydelimiter(
-        Set the function that is called before the residual or Jacobian are computed. It is commonly used to update ghost values.
-        Parameters
-        -----------
-        form
-          The function to call. It takes the latest solution
-        vector @p x as an argument.)mydelimiter")
-      .def("solve", &dolfinx::nls::NewtonSolver::solve,
-           R"mydelimiter(
-        Solve the nonlinear problem \f$`F(x) = 0\f$ for given \f$F\f$ and Jacobian \f$\dfrac{\partial F}{\partial x}\f$.
-        Returns the number of Newton iterations and whether iteration converged)
-        Parameters
-        -----------
-        x
-          The vector)mydelimiter")
+      .def("setF", &dolfinx::nls::NewtonSolver::setF)
+      .def("setJ", &dolfinx::nls::NewtonSolver::setJ)
+      .def("setP", &dolfinx::nls::NewtonSolver::setP)
+      .def("set_form", &dolfinx::nls::NewtonSolver::set_form)
+      .def("solve", &dolfinx::nls::NewtonSolver::solve)
       .def_readwrite("atol", &dolfinx::nls::NewtonSolver::atol,
                      "Absolute tolerance")
       .def_readwrite("rtol", &dolfinx::nls::NewtonSolver::rtol,
