@@ -35,10 +35,6 @@
 #    echo '{ "cffi_extra_compile_args" : ["-O2", "-march=native" ] }' > dolfinx/docker/dolfinx_jit_parameters.json
 #    docker build --target dolfinx --file dolfinx/docker/Dockerfile --build-arg PETSC_SLEPC_OPTFLAGS="-O2 -march=native" --build-arg DOLFINX_CMAKE_CXX_FLAGS="-march=native" .
 #
-# The dolfinx/dolfinx image on Dockerhub is currently optimised for Intel Sandy
-# Bridge architectures and will run on all modern x86-64 chips with AVX
-# instructions (>~2012).
-#
 # You can build an optimised version of the FEniCS development environment
 # (without the FEniCS components) for your platform using the command:
 #
@@ -51,9 +47,9 @@ ARG PETSC_VERSION=3.15.0
 ARG SLEPC_VERSION=3.15.0
 ARG SLEPC4PY_VERSION=3.15.0
 ARG ADIOS2_VERSION=2.7.1
-# Todo: Update KaHIP version upon a release.
+# TODO: Update KaHIP version upon a release.
 ARG KAHIP_VERSION=623decb
-ARG XTENSOR_VERSION=0.23.4
+ARG XTENSOR_VERSION=0.23.6
 ARG XTENSOR_BLAS_VERSION=master
 ARG XTL_VERSION=0.7.2
 
@@ -78,6 +74,8 @@ ARG XTL_VERSION
 # They are safe defaults. They can be overridden by the user.
 # Compiler optimisation flags for SLEPc and PETSc, all languages.
 ARG PETSC_SLEPC_OPTFLAGS="-O2"
+# PETSc and SLEPc number of make processes (--with-make-np)
+ARG PETSC_SLEPC_MAKE_NP=2
 # Turn on PETSc and SLEPc debugging. "yes" or "no".
 ARG PETSC_SLEPC_DEBUGGING="no"
 # Ubuntu MPI variant. "mpich" or "openmpi".
@@ -106,7 +104,6 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     libboost-dev \
     libboost-filesystem-dev \
     libboost-timer-dev \
-    libeigen3-dev \
     libhdf5-${MPI}-dev \
     liblapack-dev \
     lib${MPI}-dev \
@@ -140,7 +137,8 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
 # - First set of packages are required to build and run DOLFINX Python.
 # - Second set of packages are recommended and/or required to build
 #   documentation or run tests.
-RUN pip3 install --no-cache-dir mpi4py numba && \
+# LLVM_CONFIG required on aarch64, should be removed long-term.
+RUN LLVM_CONFIG=/usr/bin/llvm-config-10 pip3 install --no-cache-dir mpi4py numba && \
     pip3 install --no-cache-dir cffi cppimport flake8 pytest pytest-xdist sphinx sphinx_rtd_theme
 
 # Upgrade numpy via pip. Exclude binaries to avoid conflicts with libblas
@@ -193,11 +191,15 @@ RUN wget -nc --quiet https://github.com/ornladios/ADIOS2/archive/v${ADIOS2_VERSI
     cmake --install build-dir && \
     rm -rf /tmp/*
 
-# Download Install Gmsh SDK
-RUN cd /usr/local && \
-    wget -nc --quiet http://gmsh.info/bin/Linux/gmsh-${GMSH_VERSION}-Linux64-sdk.tgz && \
-    tar -xf gmsh-${GMSH_VERSION}-Linux64-sdk.tgz && \
-    rm gmsh-${GMSH_VERSION}-Linux64-sdk.tgz
+# Download Install gmsh SDK
+# Only compatible with x86-64 (amd64)
+RUN dpkgArch="$(dpkg --print-architecture)"; \
+    case "$dpkgArch" in amd64) \
+      cd /usr/local && \
+      wget -nc --quiet http://gmsh.info/bin/Linux/gmsh-${GMSH_VERSION}-Linux64-sdk.tgz && \
+      tar -xf gmsh-${GMSH_VERSION}-Linux64-sdk.tgz && \
+      rm gmsh-${GMSH_VERSION}-Linux64-sdk.tgz ;; \
+    esac;
 
 ENV PATH=/usr/local/gmsh-${GMSH_VERSION}-Linux64-sdk/bin:$PATH \
     PYTHONPATH=/usr/local/gmsh-${GMSH_VERSION}-Linux64-sdk/lib:$PYTHONPATH
@@ -215,6 +217,7 @@ RUN apt-get -qq update && \
     --COPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
     --CXXOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
     --FOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
+    --with-make-np=${PETSC_SLEPC_MAKE_NP} \
     --with-64-bit-indices=no \
     --with-debugging=${PETSC_SLEPC_DEBUGGING} \
     --with-fortran-bindings=no \
@@ -236,6 +239,7 @@ RUN apt-get -qq update && \
     --COPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
     --CXXOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
     --FOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
+    --with-make-np=${PETSC_SLEPC_MAKE_NP} \
     --with-64-bit-indices=no \
     --with-debugging=${PETSC_SLEPC_DEBUGGING} \
     --with-fortran-bindings=no \
@@ -256,6 +260,7 @@ RUN apt-get -qq update && \
     --COPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
     --CXXOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
     --FOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
+    --with-make-np=${PETSC_SLEPC_MAKE_NP} \
     --with-64-bit-indices=yes \
     --with-debugging=${PETSC_SLEPC_DEBUGGING} \
     --with-fortran-bindings=no \
@@ -274,6 +279,7 @@ RUN apt-get -qq update && \
     --COPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
     --CXXOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
     --FOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
+    --with-make-np=${PETSC_SLEPC_MAKE_NP} \
     --with-64-bit-indices=yes \
     --with-debugging=${PETSC_SLEPC_DEBUGGING} \
     --with-fortran-bindings=no \
@@ -435,9 +441,13 @@ RUN apt-get -qq update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Pyvista dependencies from pip
+# pyvista dependencies from pip. Only compatible with x86-64 (amd64).
 # matplotlib improves plotting quality with better color maps and properly rendering colorbars.
-RUN pip3 install --no-cache-dir pyvista matplotlib
+RUN dpkgArch="$(dpkg --print-architecture)"; \
+    case "$dpkgArch" in amd64) \
+      pip3 install --no-cache-dir pyvista ;; \
+    esac; \
+    pip3 install --no-cache-dir matplotlib
 
 EXPOSE 8888/tcp
 ENV SHELL /bin/bash
