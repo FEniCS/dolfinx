@@ -63,10 +63,15 @@ target_include_directories(dolfinx SYSTEM PUBLIC ${UFC_INCLUDE_DIRS})
 target_link_libraries(dolfinx PUBLIC Basix::basix)
 
 # xtensor
-target_include_directories(dolfinx SYSTEM PUBLIC ${xtensor_INCLUDE_DIRS})
-target_include_directories(dolfinx SYSTEM PRIVATE ${xtensor_blas_INCLUDE_DIR})
-target_link_libraries(dolfinx PRIVATE ${xtensor_blas_LIBRARY})
-target_link_libraries(dolfinx PRIVATE ${LAPACK_LIBRARIES})
+target_link_libraries(dolfinx PUBLIC xtl)
+target_link_libraries(dolfinx PUBLIC xtensor)
+target_link_libraries(dolfinx PRIVATE xtensor-blas)
+if("XTENSOR_USE_XSIMD" IN_LIST BASIX_DEFN)
+  target_link_libraries(dolfinx PUBLIC xsimd)
+endif()
+if(XTENSOR_OPTIMIZE)
+  target_link_libraries(dolfinx PUBLIC xtensor::optimize)
+endif()
 
 # Boost
 target_link_libraries(dolfinx PUBLIC Boost::headers)
@@ -219,6 +224,14 @@ endforeach()
 get_target_property(PKG_DOLFINX_DEFINITIONS dolfinx INTERFACE_COMPILE_DEFINITIONS)
 set(PKG_DEFINITIONS)
 foreach(_def ${PKG_DOLFINX_DEFINITIONS})
+  set(PKG_DEFINITIONS "${PKG_DEFINITIONS} -D${_def}")
+endforeach()
+
+# Get basix definitions (this is required to propagate Basix definition
+# to the pkg-config file, in the future Basix should create its own
+# basix.pc file, see https://github.com/FEniCS/basix/issues/204)
+get_target_property(PKG_BASIX_DEFINITIONS Basix::basix INTERFACE_COMPILE_DEFINITIONS)
+foreach(_def ${PKG_BASIX_DEFINITIONS})
   set(PKG_DEFINITIONS "${PKG_DEFINITIONS} -D${_def}")
 endforeach()
 

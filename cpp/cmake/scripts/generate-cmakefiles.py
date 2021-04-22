@@ -12,7 +12,11 @@ cmakelists_str = \
 #
 #     cmake/scripts/generate-cmakefiles
 #
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.12)
+
+# Set C++17 standard
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(PROJECT_NAME {project_name})
 project(${{PROJECT_NAME}})
@@ -21,14 +25,10 @@ project(${{PROJECT_NAME}})
 # DOLFINX_CMAKE_CONFIG_PATH)
 if (NOT TARGET dolfinx)
   find_package(DOLFINX REQUIRED)
-  find_package(Basix REQUIRED)
 endif()
 
 # Executable
 add_executable(${{PROJECT_NAME}} {src_files})
-
-# Set C++17 standard
-target_compile_features(${{PROJECT_NAME}} PRIVATE cxx_std_17)
 
 # Target libraries
 target_link_libraries(${{PROJECT_NAME}} dolfinx)
