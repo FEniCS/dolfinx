@@ -9,7 +9,7 @@ import types
 
 import numpy
 import ufl
-from dolfinx import cpp, fem
+from dolfinx import cpp
 from dolfinx.cpp.mesh import create_meshtags
 
 __all__ = [
@@ -80,6 +80,14 @@ def locate_entities_boundary(mesh: cpp.mesh.Mesh,
     return cpp.mesh.locate_entities_boundary(mesh, dim, marker)
 
 
+_uflcell_to_dolfinxcell = {
+    "interval": cpp.mesh.CellType.interval,
+    "triangle": cpp.mesh.CellType.triangle,
+    "quadrilateral": cpp.mesh.CellType.quadrilateral,
+    "tetrahedron": cpp.mesh.CellType.tetrahedron,
+    "hexahedron": cpp.mesh.CellType.hexahedron
+}
+
 _meshtags_types = {
     numpy.int8: cpp.mesh.MeshTags_int8,
     numpy.int32: cpp.mesh.MeshTags_int32,
@@ -94,6 +102,7 @@ def refine(mesh, cell_markers=None, redistribute=True):
         mesh_refined = cpp.refinement.refine(mesh, redistribute)
     else:
         mesh_refined = cpp.refinement.refine(mesh, cell_markers, redistribute)
+
     domain = mesh._ufl_domain
     domain._ufl_cargo = mesh_refined
     mesh_refined._ufl_domain = domain
@@ -113,7 +122,10 @@ def create_mesh(comm, cells, x, domain,
                 ghost_mode=cpp.mesh.GhostMode.shared_facet,
                 partitioner=cpp.mesh.partition_cells_graph):
     """Create a mesh from topology and geometry data"""
-    cmap = fem.create_coordinate_map(comm, domain)
+    ufl_element = domain.ufl_coordinate_element()
+    cell_shape = ufl_element.cell().cellname()
+    cell_degree = ufl_element.degree()
+    cmap = cpp.fem.CoordinateElement(_uflcell_to_dolfinxcell[cell_shape], cell_degree)
     try:
         mesh = cpp.mesh.create_mesh(comm, cells, cmap, x, ghost_mode, partitioner)
     except TypeError:

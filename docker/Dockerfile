@@ -1,4 +1,4 @@
-# Dockerfile describing development builds of FEniCS-X
+# Dockerfile describing development builds of FEniCSx
 #
 # Authors:
 # Jack S. Hale <jack.hale@uni.lu>
@@ -18,7 +18,7 @@
 #
 #    docker run --init -p 8888:8888 -v "$(pwd)":/root/shared dolfinx/lab
 #
-# To build from source, first checkout the DOLFINX, FFCX, Basix and UFL
+# To build from source, first checkout the DOLFINx, FFCx, Basix and UFL
 # repositories into the working directory, e.g.:
 #
 # $ ls $(pwd)
@@ -35,10 +35,6 @@
 #    echo '{ "cffi_extra_compile_args" : ["-O2", "-march=native" ] }' > dolfinx/docker/dolfinx_jit_parameters.json
 #    docker build --target dolfinx --file dolfinx/docker/Dockerfile --build-arg PETSC_SLEPC_OPTFLAGS="-O2 -march=native" --build-arg DOLFINX_CMAKE_CXX_FLAGS="-march=native" .
 #
-# The dolfinx/dolfinx image on Dockerhub is currently optimised for Intel Sandy
-# Bridge architectures and will run on all modern x86-64 chips with AVX
-# instructions (>~2012).
-#
 # You can build an optimised version of the FEniCS development environment
 # (without the FEniCS components) for your platform using the command:
 #
@@ -47,12 +43,15 @@
 
 ARG GMSH_VERSION=4.6.0
 ARG PYBIND11_VERSION=2.6.2
-ARG PETSC_VERSION=3.14.3
-ARG SLEPC_VERSION=3.14.1
-ARG SLEPC4PY_VERSION=3.14.0
+ARG PETSC_VERSION=3.15.0
+ARG SLEPC_VERSION=3.15.0
+ARG SLEPC4PY_VERSION=3.15.0
 ARG ADIOS2_VERSION=2.7.1
-# Todo: Update KaHIP version upon a release.
+# TODO: Update KaHIP version upon a release.
 ARG KAHIP_VERSION=623decb
+ARG XTENSOR_VERSION=0.23.6
+ARG XTENSOR_BLAS_VERSION=master
+ARG XTL_VERSION=0.7.2
 
 ########################################
 
@@ -66,11 +65,17 @@ ARG PETSC_VERSION
 ARG SLEPC_VERSION
 ARG SLEPC4PY_VERSION
 ARG ADIOS2_VERSION
+ARG KAHIP_VERSION
+ARG XTENSOR_VERSION
+ARG XTENSOR_BLAS_VERSION
+ARG XTL_VERSION
 
 # The following ARGS are used in the dev-env layer.
 # They are safe defaults. They can be overridden by the user.
 # Compiler optimisation flags for SLEPc and PETSc, all languages.
 ARG PETSC_SLEPC_OPTFLAGS="-O2"
+# PETSc and SLEPc number of make processes (--with-make-np)
+ARG PETSC_SLEPC_MAKE_NP=2
 # Turn on PETSc and SLEPc debugging. "yes" or "no".
 ARG PETSC_SLEPC_DEBUGGING="no"
 # Ubuntu MPI variant. "mpich" or "openmpi".
@@ -99,7 +104,6 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     libboost-dev \
     libboost-filesystem-dev \
     libboost-timer-dev \
-    libeigen3-dev \
     libhdf5-${MPI}-dev \
     liblapack-dev \
     lib${MPI}-dev \
@@ -133,12 +137,30 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
 # - First set of packages are required to build and run DOLFINX Python.
 # - Second set of packages are recommended and/or required to build
 #   documentation or run tests.
-RUN pip3 install --no-cache-dir mpi4py numba && \
+# LLVM_CONFIG required on aarch64, should be removed long-term.
+RUN LLVM_CONFIG=/usr/bin/llvm-config-10 pip3 install --no-cache-dir mpi4py numba && \
     pip3 install --no-cache-dir cffi cppimport flake8 pytest pytest-xdist sphinx sphinx_rtd_theme
 
 # Upgrade numpy via pip. Exclude binaries to avoid conflicts with libblas
 # (See issue #126 and #1305)
 RUN pip3 install --no-binary="numpy" numpy --upgrade
+
+# Install xtl, xtensor, xtensor-blas.
+RUN git clone -b ${XTL_VERSION} --single-branch https://github.com/xtensor-stack/xtl.git && \
+    cd xtl && \
+    cmake -G Ninja . && \
+    ninja install && \
+    cd ../ && \
+    git clone -b ${XTENSOR_VERSION} --single-branch https://github.com/xtensor-stack/xtensor.git && \
+    cd xtensor && \
+    cmake -G Ninja . && \
+    ninja install && \
+    cd ../ && \
+    git clone -b ${XTENSOR_BLAS_VERSION} --single-branch https://github.com/xtensor-stack/xtensor-blas.git && \
+    cd xtensor-blas && \
+    cmake -G Ninja . && \
+    ninja install && \
+    rm -rf xtl xtensor xtensor-blas
 
 # Install pybind11
 RUN wget -nc --quiet https://github.com/pybind/pybind11/archive/v${PYBIND11_VERSION}.tar.gz && \
@@ -161,7 +183,6 @@ RUN cd /usr/local && \
     ninja install
 
 # Install ADIOS2
-WORKDIR /tmp
 RUN wget -nc --quiet https://github.com/ornladios/ADIOS2/archive/v${ADIOS2_VERSION}.tar.gz -O adios2-v${ADIOS2_VERSION}.tar.gz && \
     mkdir -p adios2-v${ADIOS2_VERSION} && \
     tar -xf adios2-v${ADIOS2_VERSION}.tar.gz -C adios2-v${ADIOS2_VERSION} --strip-components 1 && \
@@ -170,18 +191,21 @@ RUN wget -nc --quiet https://github.com/ornladios/ADIOS2/archive/v${ADIOS2_VERSI
     cmake --install build-dir && \
     rm -rf /tmp/*
 
-# Download Install Gmsh SDK
-RUN cd /usr/local && \
-    wget -nc --quiet http://gmsh.info/bin/Linux/gmsh-${GMSH_VERSION}-Linux64-sdk.tgz && \
-    tar -xf gmsh-${GMSH_VERSION}-Linux64-sdk.tgz && \
-    rm gmsh-${GMSH_VERSION}-Linux64-sdk.tgz
+# Download Install gmsh SDK
+# Only compatible with x86-64 (amd64)
+RUN dpkgArch="$(dpkg --print-architecture)"; \
+    case "$dpkgArch" in amd64) \
+      cd /usr/local && \
+      wget -nc --quiet http://gmsh.info/bin/Linux/gmsh-${GMSH_VERSION}-Linux64-sdk.tgz && \
+      tar -xf gmsh-${GMSH_VERSION}-Linux64-sdk.tgz && \
+      rm gmsh-${GMSH_VERSION}-Linux64-sdk.tgz ;; \
+    esac;
 
 ENV PATH=/usr/local/gmsh-${GMSH_VERSION}-Linux64-sdk/bin:$PATH \
     PYTHONPATH=/usr/local/gmsh-${GMSH_VERSION}-Linux64-sdk/lib:$PYTHONPATH
 
 # Install PETSc and petsc4py with real and complex types
 ENV PETSC_DIR=/usr/local/petsc SLEPC_DIR=/usr/local/slepc
-WORKDIR /tmp
 RUN apt-get -qq update && \
     apt-get -y install bison flex && \
     wget -nc --quiet http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-${PETSC_VERSION}.tar.gz -O petsc-${PETSC_VERSION}.tar.gz && \
@@ -193,6 +217,7 @@ RUN apt-get -qq update && \
     --COPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
     --CXXOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
     --FOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
+    --with-make-np=${PETSC_SLEPC_MAKE_NP} \
     --with-64-bit-indices=no \
     --with-debugging=${PETSC_SLEPC_DEBUGGING} \
     --with-fortran-bindings=no \
@@ -214,6 +239,7 @@ RUN apt-get -qq update && \
     --COPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
     --CXXOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
     --FOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
+    --with-make-np=${PETSC_SLEPC_MAKE_NP} \
     --with-64-bit-indices=no \
     --with-debugging=${PETSC_SLEPC_DEBUGGING} \
     --with-fortran-bindings=no \
@@ -234,6 +260,7 @@ RUN apt-get -qq update && \
     --COPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
     --CXXOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
     --FOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
+    --with-make-np=${PETSC_SLEPC_MAKE_NP} \
     --with-64-bit-indices=yes \
     --with-debugging=${PETSC_SLEPC_DEBUGGING} \
     --with-fortran-bindings=no \
@@ -252,6 +279,7 @@ RUN apt-get -qq update && \
     --COPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
     --CXXOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
     --FOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
+    --with-make-np=${PETSC_SLEPC_MAKE_NP} \
     --with-64-bit-indices=yes \
     --with-debugging=${PETSC_SLEPC_DEBUGGING} \
     --with-fortran-bindings=no \
@@ -285,7 +313,6 @@ RUN apt-get -qq update && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Install SLEPc
-WORKDIR /tmp
 RUN wget -nc --quiet https://slepc.upv.es/download/distrib/slepc-${SLEPC_VERSION}.tar.gz -O slepc-${SLEPC_VERSION}.tar.gz && \
     mkdir -p ${SLEPC_DIR} && tar -xf slepc-${SLEPC_VERSION}.tar.gz -C ${SLEPC_DIR} --strip-components 1 && \
     cd ${SLEPC_DIR} && \
@@ -301,11 +328,11 @@ RUN wget -nc --quiet https://slepc.upv.es/download/distrib/slepc-${SLEPC_VERSION
     export PETSC_ARCH=linux-gnu-complex-64 && \
     python3 ./configure && \
     make && \
+    # Install slepc4py
+    cd src/binding/slepc4py && \
+    PETSC_ARCH=linux-gnu-real-32:linux-gnu-complex-32:linux-gnu-real-64:linux-gnu-complex-64 pip3 install --no-cache-dir . && \
     rm -rf ${SLEPC_DIR}/CTAGS ${SLEPC_DIR}/TAGS ${SLEPC_DIR}/docs ${SLEPC_DIR}/src/ ${SLEPC_DIR}/**/obj/ ${SLEPC_DIR}/**/test/ && \
     rm -rf /tmp/*
-
-# Install slepc4py with real and complex types
-RUN PETSC_ARCH=linux-gnu-real-32:linux-gnu-complex-32:linux-gnu-real-64:linux-gnu-complex-64 pip3 install --no-cache-dir slepc4py==${SLEPC4PY_VERSION}
 
 WORKDIR /root
 
@@ -408,16 +435,19 @@ WORKDIR /root
 
 RUN pip3 install --upgrade --no-cache-dir jupyter jupyterlab
 
-# Pyvista dependecies from apt
+# pyvista dependencies from apt
 RUN apt-get -qq update && \
-    apt-get -y install libgl1-mesa-dev \
-    xvfb && \
+    apt-get -y install libgl1-mesa-dev xvfb && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Pyvista dependencies from pip
+# pyvista dependencies from pip. Only compatible with x86-64 (amd64).
 # matplotlib improves plotting quality with better color maps and properly rendering colorbars.
-RUN pip3 install --no-cache-dir pyvista matplotlib
+RUN dpkgArch="$(dpkg --print-architecture)"; \
+    case "$dpkgArch" in amd64) \
+      pip3 install --no-cache-dir pyvista ;; \
+    esac; \
+    pip3 install --no-cache-dir matplotlib
 
 EXPOSE 8888/tcp
 ENV SHELL /bin/bash

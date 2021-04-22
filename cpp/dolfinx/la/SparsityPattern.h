@@ -7,10 +7,10 @@
 #pragma once
 
 #include <dolfinx/common/MPI.h>
-#include <dolfinx/common/span.hpp>
 #include <memory>
 #include <utility>
 #include <vector>
+#include <xtl/xspan.hpp>
 
 namespace dolfinx
 {
@@ -91,8 +91,8 @@ public:
   int block_size(int dim) const;
 
   /// Insert non-zero locations using local (process-wise) indices
-  void insert(const tcb::span<const std::int32_t>& rows,
-              const tcb::span<const std::int32_t>& cols);
+  void insert(const xtl::span<const std::int32_t>& rows,
+              const xtl::span<const std::int32_t>& cols);
 
   /// Insert non-zero locations on the diagonal
   /// @param[in] rows The rows in local (process-wise) indices. The

@@ -135,14 +135,6 @@ void fem(py::module& m)
       },
       "Create Form from a pointer to ufc_form.");
   m.def(
-      "create_coordinate_map",
-      [](std::uintptr_t cmap) {
-        const ufc_coordinate_mapping* p
-            = reinterpret_cast<const ufc_coordinate_mapping*>(cmap);
-        return dolfinx::fem::create_coordinate_map(*p);
-      },
-      "Create CoordinateElement from a pointer to ufc_coordinate_map.");
-  m.def(
       "build_dofmap",
       [](const MPICommWrapper comm, const dolfinx::mesh::Topology& topology,
          const dolfinx::fem::ElementDofLayout& element_dof_layout) {
@@ -167,7 +159,12 @@ void fem(py::module& m)
       .def("num_sub_elements", &dolfinx::fem::FiniteElement::num_sub_elements)
       .def("interpolation_points",
            [](const dolfinx::fem::FiniteElement& self) {
-             return as_pyarray2d(self.interpolation_points());
+             const xt::xtensor<double, 2>& x = self.interpolation_points();
+
+             // FIXME: Set read-only flag and return wrapper
+             return py::array_t<double>(x.shape(), x.data());
+             //  return py::array_t<double>(x.shape(), x.data(),
+             //  py::cast(self));
            })
       .def_property_readonly("interpolation_ident",
                              &dolfinx::fem::FiniteElement::interpolation_ident)
@@ -179,8 +176,8 @@ void fem(py::module& m)
            [](const dolfinx::fem::FiniteElement& self,
               py::array_t<double, py::array::c_style>& x,
               std::uint32_t cell_permutation, int dim) {
-             self.apply_dof_transformation(x.mutable_data(), cell_permutation,
-                                           dim);
+             self.apply_dof_transformation(
+                 xtl::span(x.mutable_data(), x.size()), cell_permutation, dim);
            })
       .def("signature", &dolfinx::fem::FiniteElement::signature);
 
@@ -217,7 +214,7 @@ void fem(py::module& m)
       .def_readonly("dof_layout", &dolfinx::fem::DofMap::element_dof_layout)
       .def("cell_dofs",
            [](const dolfinx::fem::DofMap& self, int cell) {
-             tcb::span<const std::int32_t> dofs = self.cell_dofs(cell);
+             xtl::span<const std::int32_t> dofs = self.cell_dofs(cell);
              return py::array_t<std::int32_t>(dofs.size(), dofs.data(),
                                               py::cast(self));
            })
@@ -229,24 +226,31 @@ void fem(py::module& m)
   py::class_<dolfinx::fem::CoordinateElement,
              std::shared_ptr<dolfinx::fem::CoordinateElement>>(
       m, "CoordinateElement", "Coordinate map element")
+      .def(py::init<dolfinx::mesh::CellType, int>(), py::arg("celltype"),
+           py::arg("degree"))
       .def_property_readonly("dof_layout",
                              &dolfinx::fem::CoordinateElement::dof_layout)
       .def("push_forward",
            [](const dolfinx::fem::CoordinateElement& self,
               const py::array_t<double, py::array::c_style>& X,
               const py::array_t<double, py::array::c_style>& cell_geometry) {
-             dolfinx::array2d<double> _X(X.shape()[0], X.shape()[1]),
-                 _cell_geometry(cell_geometry.shape()[0],
-                                cell_geometry.shape()[1]);
-             std::copy_n(X.data(), X.size(), _X.data());
-             std::copy_n(cell_geometry.data(), cell_geometry.size(),
-                         _cell_geometry.data());
-             dolfinx::array2d<double> x(_X.shape[0],
-                                        self.geometric_dimension());
-             xt::xtensor<double, 2> phi
+             std::array<std::size_t, 2> s_x
+                 = {static_cast<std::size_t>(X.shape(0)),
+                    static_cast<std::size_t>(X.shape(1))};
+             auto _X = xt::adapt(X.data(), X.size(), xt::no_ownership(), s_x);
+             std::array<std::size_t, 2> s_g
+                 = {static_cast<std::size_t>(cell_geometry.shape(0)),
+                    static_cast<std::size_t>(cell_geometry.shape(1))};
+             auto g = xt::adapt(cell_geometry.data(), cell_geometry.size(),
+                                xt::no_ownership(), s_g);
+
+             xt::xtensor<double, 2> x = xt::empty<double>(
+                 {_X.shape(0), std::size_t(cell_geometry.shape(1))});
+             const xt::xtensor<double, 2> phi
                  = xt::view(self.tabulate(0, _X), 0, xt::all(), xt::all(), 0);
-             self.push_forward(x, _cell_geometry, phi);
-             return as_pyarray2d(std::move(x));
+
+             self.push_forward(x, g, phi);
+             return xt_as_pyarray(std::move(x));
            })
       .def_readwrite("non_affine_atol",
                      &dolfinx::fem::CoordinateElement::non_affine_atol)
@@ -306,7 +310,7 @@ void fem(py::module& m)
       [](py::array_t<PetscScalar, py::array::c_style> b,
          const dolfinx::fem::Form<PetscScalar>& L) {
         dolfinx::fem::assemble_vector<PetscScalar>(
-            tcb::span(b.mutable_data(), b.size()), L);
+            xtl::span(b.mutable_data(), b.size()), L);
       },
       py::arg("b"), py::arg("L"),
       "Assemble linear form into an existing vector");
@@ -316,40 +320,42 @@ void fem(py::module& m)
            const std::vector<std::shared_ptr<
                const dolfinx::fem::DirichletBC<PetscScalar>>>& bcs) {
           dolfinx::fem::assemble_matrix(
-              dolfinx::la::PETScMatrix::add_block_fn(A), a, bcs);
+              dolfinx::la::PETScMatrix::set_block_fn(A, ADD_VALUES), a, bcs);
         });
   m.def("assemble_matrix_petsc",
         [](Mat A, const dolfinx::fem::Form<PetscScalar>& a,
            const std::vector<bool>& rows0, const std::vector<bool>& rows1) {
           dolfinx::fem::assemble_matrix(
-              dolfinx::la::PETScMatrix::add_block_fn(A), a, rows0, rows1);
+              dolfinx::la::PETScMatrix::set_block_fn(A, ADD_VALUES), a, rows0,
+              rows1);
         });
   m.def("assemble_matrix_petsc_unrolled",
         [](Mat A, const dolfinx::fem::Form<PetscScalar>& a,
            const std::vector<std::shared_ptr<
                const dolfinx::fem::DirichletBC<PetscScalar>>>& bcs) {
           dolfinx::fem::assemble_matrix(
-              dolfinx::la::PETScMatrix::add_block_expand_fn(
+              dolfinx::la::PETScMatrix::set_block_expand_fn(
                   A, a.function_spaces()[0]->dofmap()->bs(),
-                  a.function_spaces()[1]->dofmap()->bs()),
+                  a.function_spaces()[1]->dofmap()->bs(), ADD_VALUES),
               a, bcs);
         });
   m.def("assemble_matrix_petsc_unrolled",
         [](Mat A, const dolfinx::fem::Form<PetscScalar>& a,
            const std::vector<bool>& rows0, const std::vector<bool>& rows1) {
           dolfinx::fem::assemble_matrix(
-              dolfinx::la::PETScMatrix::add_block_expand_fn(
+              dolfinx::la::PETScMatrix::set_block_expand_fn(
                   A, a.function_spaces()[0]->dofmap()->bs(),
-                  a.function_spaces()[1]->dofmap()->bs()),
+                  a.function_spaces()[1]->dofmap()->bs(), ADD_VALUES),
               a, rows0, rows1);
         });
-  m.def("add_diagonal",
+  m.def("insert_diagonal",
         [](Mat A, const dolfinx::fem::FunctionSpace& V,
            const std::vector<std::shared_ptr<
                const dolfinx::fem::DirichletBC<PetscScalar>>>& bcs,
            PetscScalar diagonal) {
-          dolfinx::fem::add_diagonal(dolfinx::la::PETScMatrix::add_fn(A), V,
-                                     bcs, diagonal);
+          dolfinx::fem::set_diagonal(
+              dolfinx::la::PETScMatrix::set_fn(A, INSERT_VALUES), V, bcs,
+              diagonal);
         });
   m.def(
       "assemble_matrix",
@@ -381,11 +387,11 @@ void fem(py::module& m)
              const dolfinx::fem::DirichletBC<PetscScalar>>>>& bcs1,
          const std::vector<py::array_t<PetscScalar, py::array::c_style>>& x0,
          double scale) {
-        std::vector<tcb::span<const PetscScalar>> _x0;
+        std::vector<xtl::span<const PetscScalar>> _x0;
         for (const auto& x : x0)
           _x0.emplace_back(x.data(), x.size());
         dolfinx::fem::apply_lifting<PetscScalar>(
-            tcb::span(b.mutable_data(), b.size()), a, bcs1, _x0, scale);
+            xtl::span(b.mutable_data(), b.size()), a, bcs1, _x0, scale);
       },
       "Modify vector for lifted boundary conditions");
   m.def(
@@ -397,13 +403,13 @@ void fem(py::module& m)
         if (x0.ndim() == 0)
         {
           dolfinx::fem::set_bc<PetscScalar>(
-              tcb::span(b.mutable_data(), b.size()), bcs, scale);
+              xtl::span(b.mutable_data(), b.size()), bcs, scale);
         }
         else if (x0.ndim() == 1)
         {
           dolfinx::fem::set_bc<PetscScalar>(
-              tcb::span(b.mutable_data(), b.size()), bcs,
-              tcb::span(x0.data(), x0.shape(0)), scale);
+              xtl::span(b.mutable_data(), b.size()), bcs,
+              xtl::span(x0.data(), x0.shape(0)), scale);
         }
         else
           throw std::runtime_error("Wrong array dimension.");
@@ -422,7 +428,7 @@ void fem(py::module& m)
             = dolfinx::fem::create_sparsity_discrete_gradient(V0, V1);
         Mat A = dolfinx::la::create_petsc_matrix(MPI_COMM_WORLD, sp);
         dolfinx::fem::assemble_discrete_gradient<PetscScalar>(
-            dolfinx::la::PETScMatrix::add_fn(A), V0, V1);
+            dolfinx::la::PETScMatrix::set_fn(A, ADD_VALUES), V0, V1);
         MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
         MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
         return A;
@@ -512,7 +518,7 @@ void fem(py::module& m)
           throw std::runtime_error("Expected two function spaces.");
         std::array<std::vector<std::int32_t>, 2> dofs
             = dolfinx::fem::locate_dofs_topological(
-                {V[0], V[1]}, dim, tcb::span(entities.data(), entities.size()),
+                {V[0], V[1]}, dim, xtl::span(entities.data(), entities.size()),
                 remote);
         return {as_pyarray(std::move(dofs[0])), as_pyarray(std::move(dofs[1]))};
       },
@@ -524,7 +530,7 @@ void fem(py::module& m)
          const py::array_t<std::int32_t, py::array::c_style>& entities,
          bool remote) {
         return as_pyarray(dolfinx::fem::locate_dofs_topological(
-            V, dim, tcb::span(entities.data(), entities.size()), remote));
+            V, dim, xtl::span(entities.data(), entities.size()), remote));
       },
       py::arg("V"), py::arg("dim"), py::arg("entities"),
       py::arg("remote") = true);
@@ -656,10 +662,19 @@ void fem(py::module& m)
              const py::array_t<std::int32_t, py::array::c_style>& cells,
              py::array_t<PetscScalar, py::array::c_style>& u) {
             // TODO: handle 1d case
-            dolfinx::array2d<double> _x(x.shape()[0], x.shape()[1]);
-            std::copy_n(x.data(), x.size(), _x.data());
-            dolfinx::array2d<PetscScalar> _u(u.shape()[0], u.shape()[1]);
-            self.eval(_x, tcb::span(cells.data(), cells.size()), _u);
+
+            std::array<std::size_t, 2> shape_x
+                = {static_cast<std::size_t>(x.shape(0)),
+                   static_cast<std::size_t>(x.shape(1))};
+            auto _x
+                = xt::adapt(x.data(), x.size(), xt::no_ownership(), shape_x);
+
+            std::array<std::size_t, 2> shape_u
+                = {static_cast<std::size_t>(u.shape(0)),
+                   static_cast<std::size_t>(u.shape(1))};
+            xt::xtensor<PetscScalar, 2> _u = xt::adapt(
+                u.mutable_data(), u.size(), xt::no_ownership(), shape_u);
+            self.eval(_x, xtl::span(cells.data(), cells.size()), _u);
             std::copy_n(_u.data(), _u.size(), u.mutable_data());
           },
           py::arg("x"), py::arg("cells"), py::arg("values"),
@@ -667,7 +682,7 @@ void fem(py::module& m)
       .def(
           "compute_point_values",
           [](const dolfinx::fem::Function<PetscScalar>& self) {
-            return as_pyarray2d(self.compute_point_values());
+            return xt_as_pyarray(self.compute_point_values());
           },
           "Compute values at all mesh points")
       .def_property_readonly(
@@ -738,7 +753,7 @@ void fem(py::module& m)
              dolfinx::array2d<PetscScalar> _values(active_cells.shape()[0],
                                                    self.num_points()
                                                        * self.value_size());
-             self.eval(tcb::span(active_cells.data(), active_cells.size()),
+             self.eval(xtl::span(active_cells.data(), active_cells.size()),
                        _values);
              assert(values.ndim() == 2);
              assert(values.shape()[0] == (py::ssize_t)_values.shape[0]);
