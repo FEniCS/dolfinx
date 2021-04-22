@@ -192,7 +192,7 @@ FunctionSpace::tabulate_dof_coordinates(bool transpose) const
     if (!transpose)
     {
       for (std::size_t i = 0; i < dofs.size(); ++i)
-        for (std::size_t j = 0; j < gdim; ++j)
+        for (std::size_t j= 0; j < gdim; ++j)
           coords(dofs[i], j) = x(i, j);
     }
     else

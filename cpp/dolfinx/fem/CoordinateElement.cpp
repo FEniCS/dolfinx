@@ -196,20 +196,20 @@ ElementDofLayout CoordinateElement::dof_layout() const
   return ElementDofLayout(1, entity_dofs, {}, {}, this->cell_shape());
 }
 //-----------------------------------------------------------------------------
-// void CoordinateElement::push_forward(
-//     xt::xtensor<double, 2>& x, const xt::xtensor<double, 2>& cell_geometry,
-//     const xt::xtensor<double, 2>& phi) const
-// {
-//   assert(phi.shape(2) == cell_geometry.shape(0));
+void CoordinateElement::push_forward(
+    xt::xtensor<double, 2>& x, const xt::xtensor<double, 2>& cell_geometry,
+    const xt::xtensor<double, 2>& phi) const
+{
+  assert(phi.shape(1) == cell_geometry.shape(0));
 
-//   // Compute physical coordinates
-//   // x = phi * cell_geometry;
-//   std::fill(x.data(), x.data() + x.size(), 0.0);
-//   for (std::size_t i = 0; i < x.shape(0); ++i)
-//     for (std::size_t j = 0; j < x.shape(1); ++j)
-//       for (std::size_t k = 0; k < cell_geometry.shape(0); ++k)
-//         x(i, j) += phi(i, k) * cell_geometry(k, j);
-// }
+  // Compute physical coordinates
+  // x = phi * cell_geometry;
+  std::fill(x.data(), x.data() + x.size(), 0.0);
+  for (std::size_t i = 0; i < x.shape(0); ++i)
+    for (std::size_t j = 0; j < x.shape(1); ++j)
+      for (std::size_t k = 0; k < cell_geometry.shape(0); ++k)
+        x(i, j) += phi(i, k) * cell_geometry(k, j);
+}
 //-----------------------------------------------------------------------------
 void CoordinateElement::pull_back(
     xt::xtensor<double, 2>& X, xt::xtensor<double, 3>& J,

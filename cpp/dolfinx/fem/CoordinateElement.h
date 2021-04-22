@@ -14,7 +14,6 @@
 #include <memory>
 #include <string>
 #include <xtensor/xtensor.hpp>
-#include <xtensor/xview.hpp>
 #include <xtl/xspan.hpp>
 
 namespace basix
@@ -101,29 +100,17 @@ public:
   /// @param[in,out] x The physical coordinates of the reference points X
   /// @param[in] cell_geometry The cell node coordinates (physical)
   /// @param[in] phi Tabulated basis functions at reference points X
-  // void push_forward(xt::xtensor<double, 2>& x,
-  //                   const xt::xtensor<double, 2>& cell_geometry,
-  //                   const xt::xtensor<double, 2>& phi) const;
-  template <typename U, typename V, typename W>
-  void push_forward(U& x, const V& cell_geometry, const W& phi) const
-  {
-    assert(phi.shape(2) == cell_geometry.shape(0));
-
-    // Compute physical coordinates
-    // x = phi * cell_geometry;
-    x.fill(0);
-    for (std::size_t i = 0; i < x.shape(0); ++i)
-      for (std::size_t j = 0; j < x.shape(1); ++j)
-        for (std::size_t k = 0; k < cell_geometry.shape(0); ++k)
-          x(i, j) += phi(i, k) * cell_geometry(k, j);
-  }
+  void push_forward(xt::xtensor<double, 2>& x,
+                    const xt::xtensor<double, 2>& cell_geometry,
+                    const xt::xtensor<double, 2>& phi) const;
 
   /// Compute reference coordinates X, and J, detJ and K for physical
   /// coordinates x
-  void pull_back(xt::xtensor<double, 2>& X, xt::xtensor<double, 3>& J,
-                 xt::xtensor<double, 1>& detJ, xt::xtensor<double, 3>& K,
-                 const xt::xtensor<double, 2>& x,
-                 const xt::xtensor<double, 2>& cell_geometry) const;
+  void pull_back(
+      xt::xtensor<double, 2>& X, xt::xtensor<double, 3>& J,
+      xt::xtensor<double, 1>& detJ, xt::xtensor<double, 3>& K,
+      const xt::xtensor<double, 2>& x,
+      const xt::xtensor<double, 2>& cell_geometry) const;
 
   /// Permutes a list of DOF numbers on a cell
   void permute_dofs(xtl::span<std::int32_t> dofs,
