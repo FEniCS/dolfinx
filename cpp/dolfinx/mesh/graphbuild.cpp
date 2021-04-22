@@ -105,38 +105,34 @@ compute_local_dual_graph_keyed(
   std::vector<std::array<std::int64_t, 5>> facets(num_facets);
 
   int counter = 0;
+  for (std::int32_t i = 0; i < num_local_cells; ++i)
   {
-    boost::timer::auto_cpu_timer t;
-
-    for (std::int32_t i = 0; i < num_local_cells; ++i)
+    // Iterate over facets of cell
+    auto vertices = cell_vertices.links(i);
+    const int nv = vertices.size();
+    const graph::AdjacencyList<int>& f = nv_to_facets[nv];
+    const int num_facets_per_cell = f.num_nodes();
+    for (int j = 0; j < num_facets_per_cell; ++j)
     {
-      // Iterate over facets of cell
-      auto vertices = cell_vertices.links(i);
-      const int nv = vertices.size();
-      const graph::AdjacencyList<int>& f = nv_to_facets[nv];
-      const int num_facets_per_cell = f.num_nodes();
-      for (int j = 0; j < num_facets_per_cell; ++j)
-      {
-        std::array<std::int64_t, 5>& facet = facets[counter];
-        facet[4] = i; // cell counter
+      std::array<std::int64_t, 5>& facet = facets[counter];
+      facet[4] = i; // cell counter
 
-        // fill last entry with max_int64: for mixed 3D, when
-        // some facets may be triangle adds an extra dummy vertex which will
-        // sort to last position
-        facet[3] = std::numeric_limits<std::int64_t>::max();
+      // fill last entry with max_int64: for mixed 3D, when
+      // some facets may be triangle adds an extra dummy vertex which will
+      // sort to last position
+      facet[3] = std::numeric_limits<std::int64_t>::max();
 
-        // Get list of facet vertices
-        auto f_to_v = f.links(j);
-        assert(v.size() < 5);
-        for (std::size_t k = 0; k < f_to_v.size(); ++k)
-          facet[k] = vertices[f_to_v[k]];
+      // Get list of facet vertices
+      auto f_to_v = f.links(j);
+      assert(v.size() < 5);
+      for (std::size_t k = 0; k < f_to_v.size(); ++k)
+        facet[k] = vertices[f_to_v[k]];
 
-        // Sort facet vertices
-        std::sort(facet.begin(), std::next(facet.begin(), f_to_v.size()));
+      // Sort facet vertices
+      std::sort(facet.begin(), std::next(facet.begin(), f_to_v.size()));
 
-        // Increment facet counter
-        counter++;
-      }
+      // Increment facet counter
+      counter++;
     }
   }
   assert(counter == (int)facets.size());
