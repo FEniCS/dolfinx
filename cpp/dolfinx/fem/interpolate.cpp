@@ -38,23 +38,27 @@ fem::interpolation_coords(const fem::FiniteElement& element,
       = xt::zeros<double>({num_dofs_g, gdim});
   std::array<std::size_t, 2> shape = {3, cells.size() * X.shape(0)};
   xt::xtensor<double, 2> x = xt::zeros<double>(shape);
+  auto _x = xt::reshape_view(
+      x, {static_cast<std::size_t>(3), cells.size(), X.shape(0)});
   for (std::size_t c = 0; c < cells.size(); ++c)
   {
     // Get geometry data for current cell
     auto x_dofs = x_dofmap.links(cells[c]);
-    for (std::size_t i = 0; i < num_dofs_g; ++i)
-      for (std::size_t j = 0; j < gdim; ++j)
-        coordinate_dofs(i, j) = x_g(x_dofs[i], j);
+    for (std::size_t i = 0; i < x_dofs.size(); ++i)
+    {
+      std::copy_n(xt::row(x_g, x_dofs[i]).begin(), gdim,
+                  std::next(coordinate_dofs.begin(), i * gdim));
+    }
 
     // Push forward coordinates (X -> x)
-    for (std::size_t i = 0; i < X.shape(0); ++i)
+    for (std::size_t p = 0; p < X.shape(0); ++p)
     {
       for (std::size_t j = 0; j < gdim; ++j)
       {
         double acc = 0;
         for (std::size_t k = 0; k < num_dofs_g; ++k)
-          acc += phi(i, k) * coordinate_dofs(k, j);
-        x(j, c * X.shape(0) + i) = acc;
+          acc += phi(p, k) * coordinate_dofs(k, j);
+        _x(j, c, p) = acc;
       }
     }
   }
