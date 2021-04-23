@@ -178,9 +178,9 @@ public:
     for (std::size_t i = 0; i < rows; ++i)
     {
       // Dot product between row i of the matrix and 'values'
-      dofs[i] = std::transform_reduce(std::next(Pi.data(), i * cols),
-                                      std::next(Pi.data(), i * cols + cols),
-                                      values.data(), T(0.0));
+      dofs[i] = std::inner_product(std::next(Pi.data(), i * cols),
+                                   std::next(Pi.data(), i * cols + cols),
+                                   values.data(), T(0.0));
     }
   }
 
