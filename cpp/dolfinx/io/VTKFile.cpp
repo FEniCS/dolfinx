@@ -181,9 +181,9 @@ void _add_data(const fem::Function<Scalar>& u,
         field_node.append_attribute("NumberOfComponents") = 3;
         if (dim == 2)
         {
-          assert(values_comp.cols() == 2);
+          assert(values_comp.shape(1) == 2);
           std::stringstream ss;
-          for (int i = 0; i < values_comp.shape(0); ++i)
+          for (std::size_t i = 0; i < values_comp.shape(0); ++i)
           {
             for (int j = 0; j < 2; ++j)
               ss << values_comp(i, j) << " ";
@@ -194,7 +194,7 @@ void _add_data(const fem::Function<Scalar>& u,
         }
         else
         {
-          assert(values_comp.cols() == 3);
+          assert(values_comp.shape(2) == 3);
           field_node.append_child(pugi::node_pcdata)
               .set_value(xt_to_string(values_comp, 16).c_str());
         }
@@ -206,7 +206,7 @@ void _add_data(const fem::Function<Scalar>& u,
         {
           // Pad 2D tensors with 0.0 to make them 3D
           std::stringstream ss;
-          for (int i = 0; i < values_comp.shape(0); ++i)
+          for (std::size_t i = 0; i < values_comp.shape(0); ++i)
           {
             for (int j = 0; j < 2; ++j)
             {
@@ -245,7 +245,7 @@ void _add_data(const fem::Function<Scalar>& u,
         field_node.append_attribute("NumberOfComponents") = 3;
         if (dim == 2)
         {
-          assert(values.shape[1] == 2);
+          assert(values.shape(1) == 2);
           std::stringstream ss;
           for (size_t i = 0; i < values.shape(0); ++i)
           {
@@ -258,7 +258,7 @@ void _add_data(const fem::Function<Scalar>& u,
         }
         else
         {
-          assert(values.shape[1] == 3);
+          assert(values.shape(1) == 3);
           field_node.append_child(pugi::node_pcdata)
               .set_value(xt_to_string(values, 16).c_str());
         }
@@ -486,9 +486,9 @@ void write_function(
       assert(values.size() % value_size == 0);
       xt::xtensor<Scalar, 2> _values({values.size() / value_size, value_size});
       // FIXME: Avoid copies by writing directly a compound data
-      for (size_t i = 0; i < _values.shape(0); ++i)
+      for (std::size_t i = 0; i < _values.shape(0); ++i)
       {
-        for (int j = 0; j < value_size; ++j)
+        for (std::size_t j = 0; j < value_size; ++j)
         {
           _values(i, j) = values[i * value_size + j];
         }
