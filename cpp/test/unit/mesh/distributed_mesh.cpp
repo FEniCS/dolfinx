@@ -6,7 +6,7 @@
 //
 // Unit tests for Distributed Meshes
 
-#include "cmap.h"
+#include <basix/finite-element.h>
 #include <catch.hpp>
 #include <dolfinx.h>
 #include <dolfinx/common/MPI.h>
@@ -24,10 +24,9 @@ namespace
 void create_mesh_file()
 {
   // Create mesh using all processes and save xdmf
-  auto cmap = fem::create_coordinate_map(create_coordinate_map_cmap);
   auto mesh = std::make_shared<mesh::Mesh>(generation::RectangleMesh::create(
-      MPI_COMM_WORLD, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 0.0}}}, {32, 32}, cmap,
-      mesh::GhostMode::shared_facet));
+      MPI_COMM_WORLD, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 0.0}}}, {32, 32},
+      mesh::CellType::triangle, mesh::GhostMode::shared_facet));
 
   // Save mesh in XDMF format
   io::XDMFFile file(MPI_COMM_WORLD, "mesh.xdmf", "w");
@@ -54,12 +53,15 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
   MPI_Comm_create_group(MPI_COMM_WORLD, new_group, 0, &subset_comm);
 
   // Create coordinate map
-  auto cmap = fem::create_coordinate_map(create_coordinate_map_cmap);
+  auto e = std::make_shared<basix::FiniteElement>(
+      basix::create_element("Lagrange", "triangle", 1));
+  fem::CoordinateElement cmap(e);
 
   // read mesh data
-  dolfinx::common::array2d<double> x(0, 3);
-  dolfinx::common::array2d<std::int64_t> cells(
-      0, dolfinx::mesh::num_cell_vertices(cmap.cell_shape()));
+  xt::xtensor<double, 2> x({0, 3});
+  xt::xtensor<std::int64_t, 2> cells(
+      {0, static_cast<std::size_t>(
+              dolfinx::mesh::num_cell_vertices(mesh::CellType::triangle))});
   graph::AdjacencyList<std::int32_t> dest(0);
   if (subset_comm != MPI_COMM_NULL)
   {
@@ -68,8 +70,9 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
     cells = infile.read_topology_data("mesh");
     x = infile.read_geometry_data("mesh");
     auto [data, offsets] = graph::create_adjacency_data(cells);
+    const int tdim = mesh::cell_dim(mesh::CellType::triangle);
     dest = partitioner(
-        subset_comm, nparts, cmap.cell_shape(),
+        subset_comm, nparts, tdim,
         graph::AdjacencyList<std::int64_t>(std::move(data), std::move(offsets)),
         mesh::GhostMode::shared_facet);
   }
@@ -98,7 +101,7 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
   CHECK(mesh->topology().index_map(0)->size_global() == 1089);
   CHECK(mesh->topology().index_map(0)->size_local() > 0);
 
-  CHECK(mesh->geometry().x().shape[0]
+  CHECK(mesh->geometry().x().shape(0)
         == mesh->topology().index_map(0)->size_local()
                + mesh->topology().index_map(0)->num_ghosts());
 }
@@ -112,24 +115,22 @@ TEST_CASE("Distributed Mesh", "[distributed_mesh]")
   {
     CHECK_NOTHROW(test_distributed_mesh(
         static_cast<graph::AdjacencyList<std::int32_t> (*)(
-            MPI_Comm, int, const mesh::CellType,
-            const graph::AdjacencyList<std::int64_t>&, mesh::GhostMode)>(
-            &mesh::partition_cells_graph)));
+            MPI_Comm, int, int, const graph::AdjacencyList<std::int64_t>&,
+            mesh::GhostMode)>(&mesh::partition_cells_graph)));
   }
 
 #ifdef HASKIP
   SECTION("KAHIP with Lambda")
   {
-    auto kahip
-        = [](MPI_Comm mpi_comm, int nparts, const mesh::CellType cell_type,
-             const graph::AdjacencyList<std::int64_t>& cells,
-             mesh::GhostMode ghost_mode) {
-            const auto [dual_graph, graph_info]
-                = mesh::build_dual_graph(mpi_comm, cells, cell_type);
-            bool ghosting = (ghost_mode != mesh::GhostMode::none);
-            return graph::kahip::partition(mpi_comm, nparts, dual_graph, -1,
-                                           ghosting);
-          };
+    auto kahip = [](MPI_Comm mpi_comm, int nparts, int tdim,
+                    const graph::AdjacencyList<std::int64_t>& cells,
+                    mesh::GhostMode ghost_mode) {
+      const auto [dual_graph, graph_info]
+          = mesh::build_dual_graph(mpi_comm, cells, tdim);
+      bool ghosting = (ghost_mode != mesh::GhostMode::none);
+      return graph::kahip::partition(mpi_comm, nparts, dual_graph, -1,
+                                     ghosting);
+    };
     CHECK_NOTHROW(test_distributed_mesh(kahip));
   }
 #endif

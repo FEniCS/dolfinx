@@ -9,9 +9,9 @@
 #include "assemble_matrix_impl.h"
 #include "assemble_scalar_impl.h"
 #include "assemble_vector_impl.h"
-#include <dolfinx/common/span.hpp>
 #include <memory>
 #include <vector>
+#include <xtl/xspan.hpp>
 
 namespace dolfinx::fem
 {
@@ -42,7 +42,7 @@ T assemble_scalar(const Form<T>& M)
 /// before assembly.
 /// @param[in] L The linear forms to assemble into b
 template <typename T>
-void assemble_vector(tcb::span<T> b, const Form<T>& L)
+void assemble_vector(xtl::span<T> b, const Form<T>& L)
 {
   fem::impl::assemble_vector(b, L);
 }
@@ -67,9 +67,9 @@ void assemble_vector(tcb::span<T> b, const Form<T>& L)
 /// is responsible for calling VecGhostUpdateBegin/End.
 template <typename T>
 void apply_lifting(
-    tcb::span<T> b, const std::vector<std::shared_ptr<const Form<T>>>& a,
+    xtl::span<T> b, const std::vector<std::shared_ptr<const Form<T>>>& a,
     const std::vector<std::vector<std::shared_ptr<const DirichletBC<T>>>>& bcs1,
-    const std::vector<tcb::span<const T>>& x0, double scale)
+    const std::vector<xtl::span<const T>>& x0, double scale)
 {
   fem::impl::apply_lifting(b, a, bcs1, x0, scale);
 }
@@ -143,30 +143,30 @@ void assemble_matrix(
   impl::assemble_matrix(mat_add, a, dof_marker0, dof_marker1);
 }
 
-/// Adds a value to the diagonal of a matrix for specified rows. It is
+/// Sets a value to the diagonal of a matrix for specified rows. It is
 /// typically called after assembly. The assembly function zeroes
 /// Dirichlet rows and columns. For block matrices, this function should
 /// normally be called only on the diagonal blocks, i.e. blocks for
 /// which the test and trial spaces are the same.
-/// @param[in] mat_add The function for adding values to a matrix
+/// @param[in] set_fn The function for setting values to a matrix
 /// @param[in] rows The row blocks, in local indices, for which to add a
 /// value to the diagonal
 /// @param[in] diagonal The value to add to the diagonal for the
 ///   specified rows
 template <typename T>
-void add_diagonal(
+void set_diagonal(
     const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
-                            const std::int32_t*, const T*)>& mat_add,
-    const tcb::span<const std::int32_t>& rows, T diagonal = 1.0)
+                            const std::int32_t*, const T*)>& set_fn,
+    const xtl::span<const std::int32_t>& rows, T diagonal = 1.0)
 {
   for (std::size_t i = 0; i < rows.size(); ++i)
   {
     const std::int32_t row = rows[i];
-    mat_add(1, &row, 1, &row, &diagonal);
+    set_fn(1, &row, 1, &row, &diagonal);
   }
 }
 
-/// Adds a value to the diagonal of the matrix for rows with a Dirichlet
+/// Sets a value to the diagonal of the matrix for rows with a Dirichlet
 /// boundary conditions applied. This function is typically called after
 /// assembly. The assembly function zeroes Dirichlet rows and columns.
 /// This function adds the value only to rows that are locally owned,
@@ -174,7 +174,7 @@ void add_diagonal(
 /// block matrices, this function should normally be called only on the
 /// diagonal blocks, i.e. blocks for which the test and trial spaces are
 /// the same.
-/// @param[in] mat_add The function for adding values to a matrix
+/// @param[in] set_fn The function for setting values to a matrix
 /// @param[in] V The function space for the rows and columns of the
 ///   matrix. It is used to extract only the Dirichlet boundary conditions
 ///   that are define on V or subspaces of V.
@@ -182,9 +182,9 @@ void add_diagonal(
 /// @param[in] diagonal The value to add to the diagonal for rows with a
 ///   boundary condition applied
 template <typename T>
-void add_diagonal(
+void set_diagonal(
     const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
-                            const std::int32_t*, const T*)>& mat_add,
+                            const std::int32_t*, const T*)>& set_fn,
     const fem::FunctionSpace& V,
     const std::vector<std::shared_ptr<const DirichletBC<T>>>& bcs,
     T diagonal = 1.0)
@@ -195,7 +195,7 @@ void add_diagonal(
     if (V.contains(*bc->function_space()))
     {
       const auto [dofs, range] = bc->dof_indices();
-      add_diagonal<T>(mat_add, dofs.first(range), diagonal);
+      set_diagonal<T>(set_fn, dofs.first(range), diagonal);
     }
   }
 }
@@ -211,9 +211,9 @@ void add_diagonal(
 /// 'scale'. The vectors b and x0 must have the same local size. The bcs
 /// should be on (sub-)spaces of the form L that b represents.
 template <typename T>
-void set_bc(tcb::span<T> b,
+void set_bc(xtl::span<T> b,
             const std::vector<std::shared_ptr<const DirichletBC<T>>>& bcs,
-            const tcb::span<const T>& x0, double scale = 1.0)
+            const xtl::span<const T>& x0, double scale = 1.0)
 {
   if (b.size() > x0.size())
     throw std::runtime_error("Size mismatch between b and x0 vectors.");
@@ -228,7 +228,7 @@ void set_bc(tcb::span<T> b,
 /// 'scale'. The bcs should be on (sub-)spaces of the form L that b
 /// represents.
 template <typename T>
-void set_bc(tcb::span<T> b,
+void set_bc(xtl::span<T> b,
             const std::vector<std::shared_ptr<const DirichletBC<T>>>& bcs,
             double scale = 1.0)
 {

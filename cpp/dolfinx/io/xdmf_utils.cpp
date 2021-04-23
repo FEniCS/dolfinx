@@ -22,6 +22,9 @@
 #include <dolfinx/mesh/cell_types.h>
 #include <dolfinx/mesh/utils.h>
 #include <map>
+#include <xtensor/xadapt.hpp>
+#include <xtensor/xtensor.hpp>
+#include <xtensor/xview.hpp>
 
 using namespace dolfinx;
 using namespace dolfinx::io;
@@ -48,12 +51,13 @@ std::vector<Scalar> _get_point_data_values(const fem::Function<Scalar>& u)
 {
   std::shared_ptr<const mesh::Mesh> mesh = u.function_space()->mesh();
   assert(mesh);
-  const common::array2d <Scalar > data_values = u.compute_point_values();
+  const xt::xtensor<Scalar, 2> data_values = u.compute_point_values();
 
   const int width = get_padded_width(*u.function_space()->element());
   assert(mesh->geometry().index_map());
-  const int num_local_points = mesh->geometry().index_map()->size_local();
-  assert((int)data_values.shape[0] >= num_local_points);
+  const std::size_t num_local_points
+      = mesh->geometry().index_map()->size_local();
+  assert(data_values.shape(0) >= num_local_points);
 
   // FIXME: Unpick the below code for the new layout of data from
   //        GenericFunction::compute_vertex_values
@@ -63,7 +67,7 @@ std::vector<Scalar> _get_point_data_values(const fem::Function<Scalar>& u)
   {
     // Transpose vector/tensor data arrays
     const int value_size = u.function_space()->element()->value_size();
-    for (int i = 0; i < num_local_points; i++)
+    for (std::size_t i = 0; i < num_local_points; i++)
     {
       for (int j = 0; j < value_size; j++)
       {
@@ -77,7 +81,7 @@ std::vector<Scalar> _get_point_data_values(const fem::Function<Scalar>& u)
   {
     _data_values = std::vector<Scalar>(
         data_values.data(),
-        data_values.data() + num_local_points * data_values.shape[1]);
+        data_values.data() + num_local_points * data_values.shape(1));
   }
 
   return _data_values;
@@ -103,14 +107,18 @@ std::vector<Scalar> _get_cell_data_values(const fem::Function<Scalar>& u)
   const auto dofmap = u.function_space()->dofmap();
   assert(dofmap->element_dof_layout);
   const int ndofs = dofmap->element_dof_layout->num_dofs();
+  const int bs = dofmap->bs();
+  assert(ndofs * bs == value_size);
 
   for (int cell = 0; cell < num_local_cells; ++cell)
   {
     // Tabulate dofs
     auto dofs = dofmap->cell_dofs(cell);
-    assert(ndofs == value_size);
     for (int i = 0; i < ndofs; ++i)
-      dof_set.push_back(dofs[i]);
+    {
+      for (int j = 0; j < bs; ++j)
+        dof_set.push_back(bs * dofs[i] + j);
+    }
   }
 
   // Get values
@@ -346,19 +354,18 @@ std::string xdmf_utils::vtk_cell_type_str(mesh::CellType cell_type,
   return cell_str->second;
 }
 //-----------------------------------------------------------------------------
-std::pair<common::array2d<std::int32_t>, std::vector<std::int32_t>>
-xdmf_utils::extract_local_entities(
-    const mesh::Mesh& mesh, const int entity_dim,
-    const common::array2d<std::int64_t>& entities,
-    const tcb::span<const std::int32_t>& values)
+std::pair<xt::xtensor<std::int32_t, 2>, std::vector<std::int32_t>>
+xdmf_utils::extract_local_entities(const mesh::Mesh& mesh, const int entity_dim,
+                                   const xt::xtensor<std::int64_t, 2>& entities,
+                                   const xtl::span<const std::int32_t>& values)
 {
-  if (entities.shape[0] != values.size())
+  if (entities.shape(0) != values.size())
     throw std::runtime_error("Number of entities and values must match");
 
   // Get layout of dofs on 0th entity
   const std::vector<int> entity_layout
       = mesh.geometry().cmap().dof_layout().entity_closure_dofs(entity_dim, 0);
-  assert(entity_layout.size() == entities.shape[1]);
+  assert(entity_layout.size() == entities.shape(1));
 
   auto c_to_v = mesh.topology().connectivity(mesh.topology().dim(), 0);
   if (!c_to_v)
@@ -396,11 +403,11 @@ xdmf_utils::extract_local_entities(
 
   // Throw away input global indices which do not belong to entity vertices
   // This decreases the amount of data needed in parallel communication
-  common::array2d<std::int64_t> entities_vertices(entities.shape[0],
-                                                  num_vertices_per_entity);
-  for (std::size_t e = 0; e < entities_vertices.shape[0]; ++e)
+  xt::xtensor<std::int64_t, 2> entities_vertices(
+      {entities.shape(0), num_vertices_per_entity});
+  for (std::size_t e = 0; e < entities_vertices.shape(0); ++e)
   {
-    for (std::size_t i = 0; i < entities_vertices.shape[1]; ++i)
+    for (std::size_t i = 0; i < entities_vertices.shape(1); ++i)
       entities_vertices(e, i) = entities(e, entity_vertex_dofs[i]);
   }
 
@@ -446,11 +453,11 @@ xdmf_utils::extract_local_entities(
   std::vector<std::vector<std::int64_t>> entities_send(comm_size);
   std::vector<std::vector<std::int32_t>> values_send(comm_size);
   std::vector<std::int64_t> entity(num_vertices_per_entity);
-  for (std::size_t e = 0; e < entities_vertices.shape[0]; ++e)
+  for (std::size_t e = 0; e < entities_vertices.shape(0); ++e)
   {
     // Copy vertices for entity and sort
-    std::copy(entities_vertices.row(e).begin(), entities_vertices.row(e).end(),
-              entity.begin());
+    auto ev = xt::row(entities_vertices, e);
+    std::copy(ev.cbegin(), ev.cend(), entity.begin());
     std::sort(entity.begin(), entity.end());
 
     // Determine postmaster based on lowest entity node
@@ -489,23 +496,26 @@ xdmf_utils::extract_local_entities(
   // Figure out which processes are owners of received nodes
   std::vector<std::vector<std::int64_t>> send_nodes_owned(comm_size);
   std::vector<std::vector<std::int32_t>> send_vals_owned(comm_size);
-  const Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic,
-                                      Eigen::Dynamic, Eigen::RowMajor>>
-      _entities_recv(entities_recv.array().data(),
-                     entities_recv.array().size() / num_vertices_per_entity,
-                     num_vertices_per_entity);
+  std::array<std::size_t, 2> shape
+      = {entities_recv.array().size() / num_vertices_per_entity,
+         num_vertices_per_entity};
+  auto _entities_recv
+      = xt::adapt(entities_recv.array().data(), entities_recv.array().size(),
+                  xt::no_ownership(), shape);
+
   const std::vector<std::int32_t>& _values_recv = values_recv.array();
-  assert((int)_values_recv.size() == _entities_recv.rows());
-  for (int e = 0; e < _entities_recv.rows(); ++e)
+  assert(_values_recv.size() == _entities_recv.shape(0));
+  for (std::size_t e = 0; e < _entities_recv.shape(0); ++e)
   {
+    auto e_recv = xt::row(_entities_recv, e);
+
     // Find ranks that have node0
-    auto [it0, it1] = node_to_rank.equal_range(_entities_recv(e, 0));
+    auto [it0, it1] = node_to_rank.equal_range(e_recv[0]);
     for (auto it = it0; it != it1; ++it)
     {
       const int p1 = it->second;
-      send_nodes_owned[p1].insert(
-          send_nodes_owned[p1].end(), _entities_recv.row(e).data(),
-          _entities_recv.row(e).data() + _entities_recv.cols());
+      send_nodes_owned[p1].insert(send_nodes_owned[p1].end(), e_recv.begin(),
+                                  e_recv.end());
       send_vals_owned[p1].push_back(_values_recv[e]);
     }
   }
@@ -521,7 +531,7 @@ xdmf_utils::extract_local_entities(
   //    (entities) are on this process.
 
   // TODO: Rather than using std::map<std::vector<std::int64_t>,
-  //       std::int32_t>, use a rectangular Eigen::Array to avoid the
+  //       std::int32_t>, use a rectangular array to avoid the
   //       cost of std::vector<std::int64_t> allocations, and sort the
   //       Array by row.
   //
@@ -572,10 +582,10 @@ xdmf_utils::extract_local_entities(
     }
   }
 
-  return {common::array2d<std::int32_t>(
-              {entities_new.size() / num_vertices_per_entity,
-               num_vertices_per_entity},
-              std::move(entities_new)),
-          values_new};
+  std::array<std::size_t, 2> shape_r = {
+      entities_new.size() / num_vertices_per_entity, num_vertices_per_entity};
+  auto e_new = xt::adapt(entities_new.data(), entities_new.size(),
+                         xt::no_ownership(), shape_r);
+  return {e_new, values_new};
 }
 //-----------------------------------------------------------------------------

@@ -17,6 +17,7 @@
 #include <map>
 #include <numeric>
 #include <utility>
+#include <xtensor/xtensor.hpp>
 
 using namespace dolfinx;
 using namespace dolfinx::fem;
@@ -54,7 +55,7 @@ get_remote_bcs1(const common::IndexMap& map,
   // NOTE: we could consider only dofs that we know are shared
   // Build array of global indices of dofs
   std::vector<std::int64_t> dofs_global(dofs_local.size());
-  map.local_to_global(dofs_local.data(), dofs_local.size(), dofs_global.data());
+  map.local_to_global(dofs_local, dofs_global);
 
   // Compute displacements for data to receive. Last entry has total
   // number of received items.
@@ -139,7 +140,7 @@ get_remote_bcs2(const common::IndexMap& map0, int bs0,
 
   // NOTE: we consider only dofs that we know are shared
   // Build array of global indices of dofs
-  common::array2d<std::int64_t> dofs_global(dofs_local.size(), 2);
+  xt::xtensor<std::int64_t, 2> dofs_global({dofs_local.size(), 2});
 
   // This is messy to handle block sizes
   {
@@ -159,9 +160,7 @@ get_remote_bcs2(const common::IndexMap& map0, int bs0,
 
       // Get global index of each block
       std::vector<std::int64_t> dofs_global_block(dofs_local_block.size());
-      maps[i].get().local_to_global(dofs_local_block.data(),
-                                    dofs_local_block.size(),
-                                    dofs_global_block.data());
+      maps[i].get().local_to_global(dofs_local_block, dofs_global_block);
 
       // Convert from block to actual index
       for (std::size_t j = 0; j < dofs_local.size(); ++j)
@@ -183,7 +182,8 @@ get_remote_bcs2(const common::IndexMap& map0, int bs0,
 
   // Send/receive global index of dofs with bcs to all neighbors
   assert(disp.back() % 2 == 0);
-  common::array2d<std::int64_t> dofs_received(disp.back() / 2, 2);
+  xt::xtensor<std::int64_t, 2> dofs_received(
+      {static_cast<std::size_t>(disp.back() / 2), 2});
   MPI_Neighbor_allgatherv(dofs_global.data(), dofs_global.size(), MPI_INT64_T,
                           dofs_received.data(), num_dofs_recv.data(),
                           disp.data(), MPI_INT64_T, comm0);
@@ -209,7 +209,7 @@ get_remote_bcs2(const common::IndexMap& map0, int bs0,
         global_local_ghosts.begin(), global_local_ghosts.end());
 
     std::vector<std::int32_t>& dofs = dofs_array[b];
-    for (std::size_t i = 0; i < dofs_received.shape[0]; ++i)
+    for (std::size_t i = 0; i < dofs_received.shape(0); ++i)
     {
       if (dofs_received(i, b) >= bs[b] * range[0]
           and dofs_received(i, b) < bs[b] * range[1])
@@ -243,7 +243,7 @@ get_remote_bcs2(const common::IndexMap& map0, int bs0,
 //-----------------------------------------------------------------------------
 std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
     const std::array<std::reference_wrapper<const fem::FunctionSpace>, 2>& V,
-    const int dim, const tcb::span<const std::int32_t>& entities, bool remote)
+    const int dim, const xtl::span<const std::int32_t>& entities, bool remote)
 {
   const fem::FunctionSpace& V0 = V.at(0).get();
   const fem::FunctionSpace& V1 = V.at(1).get();
@@ -312,8 +312,8 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
     const int entity_local_index = std::distance(entities_d.begin(), it);
 
     // Get cell dofmap
-    tcb::span<const std::int32_t> cell_dofs0 = dofmap0->cell_dofs(cell);
-    tcb::span<const std::int32_t> cell_dofs1 = dofmap1->cell_dofs(cell);
+    xtl::span<const std::int32_t> cell_dofs0 = dofmap0->cell_dofs(cell);
+    xtl::span<const std::int32_t> cell_dofs1 = dofmap1->cell_dofs(cell);
     assert(bs0 * cell_dofs0.size() == bs1 * cell_dofs1.size());
 
     // Loop over facet dofs and 'unpack' blocked dofs
@@ -369,7 +369,7 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t>
 fem::locate_dofs_topological(const fem::FunctionSpace& V, const int dim,
-                             const tcb::span<const std::int32_t>& entities,
+                             const xtl::span<const std::int32_t>& entities,
                              bool remote)
 {
   assert(V.dofmap());
@@ -449,7 +449,7 @@ fem::locate_dofs_topological(const fem::FunctionSpace& V, const int dim,
 //-----------------------------------------------------------------------------
 std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_geometrical(
     const std::array<std::reference_wrapper<const fem::FunctionSpace>, 2>& V,
-    const std::function<std::vector<bool>(const common::array2d<double>&)>&
+    const std::function<xt::xtensor<bool, 1>(const xt::xtensor<double, 2>&)>&
         marker_fn)
 {
   // FIXME: Calling V.tabulate_dof_coordinates() is very expensive,
@@ -474,11 +474,12 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_geometrical(
     throw std::runtime_error("Function spaces must have the same element.");
 
   // Compute dof coordinates
-  const common::array2d dof_coordinates = V1.tabulate_dof_coordinates(true);
-  assert(dof_coordinates.shape[0] == 3);
+  const xt::xtensor<double, 2> dof_coordinates
+      = V1.tabulate_dof_coordinates(true);
+  assert(dof_coordinates.shape(0) == 3);
 
   // Evaluate marker for each dof coordinate
-  const std::vector<bool> marked_dofs = marker_fn(dof_coordinates);
+  const xt::xtensor<bool, 1> marked_dofs = marker_fn(dof_coordinates);
 
   // Get dofmaps
   std::shared_ptr<const fem::DofMap> dofmap0 = V0.dofmap();
@@ -540,7 +541,7 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_geometrical(
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t> fem::locate_dofs_geometrical(
     const fem::FunctionSpace& V,
-    const std::function<std::vector<bool>(const common::array2d<double>&)>&
+    const std::function<xt::xtensor<bool, 1>(const xt::xtensor<double, 2>&)>&
         marker_fn)
 {
   // FIXME: Calling V.tabulate_dof_coordinates() is very expensive,
@@ -548,11 +549,12 @@ std::vector<std::int32_t> fem::locate_dofs_geometrical(
   // interface that computes dofs coordinates only for specified cell.
 
   // Compute dof coordinates
-  const common::array2d dof_coordinates = V.tabulate_dof_coordinates(true);
-  assert(dof_coordinates.shape[0] == 3);
+  const xt::xtensor<double, 2> dof_coordinates
+      = V.tabulate_dof_coordinates(true);
+  assert(dof_coordinates.shape(0) == 3);
 
   // Compute marker for each dof coordinate
-  const std::vector<bool> marked_dofs = marker_fn(dof_coordinates);
+  const xt::xtensor<bool, 1> marked_dofs = marker_fn(dof_coordinates);
 
   std::vector<std::int32_t> dofs;
   dofs.reserve(std::count(marked_dofs.begin(), marked_dofs.end(), true));

@@ -53,8 +53,8 @@ class Form:
         # Prepare coefficients data. For every coefficient in form take
         # its C++ object.
         original_coefficients = form.coefficients()
-        coeffs = [original_coefficients[ufc_form.original_coefficient_position(
-            i)]._cpp_object for i in range(ufc_form.num_coefficients)]
+        coeffs = [original_coefficients[ufc_form.original_coefficient_position[
+            i]]._cpp_object for i in range(ufc_form.num_coefficients)]
 
         # Create dictionary of of subdomain markers (possible None for
         # some dimensions
@@ -65,6 +65,6 @@ class Form:
 
         # Prepare dolfinx.cpp.fem.Form and hold it as a member
         ffi = cffi.FFI()
-        self._cpp_object = cpp.fem.create_form(ffi.cast("uintptr_t", ufc_form),
+        self._cpp_object = cpp.fem.create_form(ffi.cast("uintptr_t", ffi.addressof(ufc_form)),
                                                function_spaces, coeffs,
                                                [c._cpp_object for c in form.constants()], subdomains, mesh)

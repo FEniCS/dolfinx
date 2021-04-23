@@ -12,6 +12,7 @@
 #include <dolfinx/graph/AdjacencyList.h>
 #include <utility>
 #include <vector>
+#include <xtensor/xarray.hpp>
 
 namespace dolfinx::mesh
 {
@@ -24,12 +25,12 @@ enum class CellType;
 std::pair<graph::AdjacencyList<std::int64_t>, std::array<std::int32_t, 2>>
 build_dual_graph(const MPI_Comm comm,
                  const graph::AdjacencyList<std::int64_t>& cell_vertices,
-                 const mesh::CellType& cell_type);
+                 int tdim);
 
 /// Compute local part of the dual graph, and return (local_graph,
 /// facet_cell_map, number of local edges in the graph (undirected)
-std::pair<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>>
+std::pair<graph::AdjacencyList<std::int32_t>, xt::xtensor<std::int64_t, 2>>
 build_local_dual_graph(const graph::AdjacencyList<std::int64_t>& cell_vertices,
-                       const mesh::CellType& cell_type);
+                       int tdim);
 
 } // namespace dolfinx::mesh

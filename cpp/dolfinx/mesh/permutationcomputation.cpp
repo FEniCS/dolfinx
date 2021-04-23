@@ -11,7 +11,10 @@
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Topology.h>
 
-#define _BITSETSIZE 32
+namespace
+{
+constexpr int _BITSETSIZE = 32;
+} // namespace
 
 using namespace dolfinx;
 
@@ -31,16 +34,14 @@ std::vector<std::bitset<BITSETSIZE>> compute_face_permutations_simplex(
   for (int c = 0; c < num_cells; ++c)
   {
     cell_vertices.resize(c_to_v.links(c).size());
-    im.local_to_global(c_to_v.links(c).data(), cell_vertices.size(),
-                       cell_vertices.data());
+    im.local_to_global(c_to_v.links(c), cell_vertices);
     auto cell_faces = c_to_f.links(c);
     for (int i = 0; i < faces_per_cell; ++i)
     {
       // Get the face
       const int face = cell_faces[i];
       vertices.resize(f_to_v.links(face).size());
-      im.local_to_global(f_to_v.links(face).data(), vertices.size(),
-                         vertices.data());
+      im.local_to_global(f_to_v.links(face), vertices);
 
       // Orient that triangle so the the lowest numbered vertex is the
       // origin, and the next vertex anticlockwise from the lowest has a
@@ -114,8 +115,7 @@ compute_face_permutations_tp(const graph::AdjacencyList<std::int32_t>& c_to_v,
   for (int c = 0; c < num_cells; ++c)
   {
     cell_vertices.resize(c_to_v.links(c).size());
-    im.local_to_global(c_to_v.links(c).data(), cell_vertices.size(),
-                       cell_vertices.data());
+    im.local_to_global(c_to_v.links(c), cell_vertices);
 
     auto cell_faces = c_to_f.links(c);
     for (int i = 0; i < faces_per_cell; ++i)
@@ -123,8 +123,7 @@ compute_face_permutations_tp(const graph::AdjacencyList<std::int32_t>& c_to_v,
       // Get the face
       const int face = cell_faces[i];
       vertices.resize(f_to_v.links(face).size());
-      im.local_to_global(f_to_v.links(face).data(), vertices.size(),
-                         vertices.data());
+      im.local_to_global(f_to_v.links(face), vertices);
 
       // Orient that triangle so the the lowest numbered vertex is the
       // origin, and the next vertex anticlockwise from the lowest has a
@@ -251,14 +250,12 @@ compute_edge_reflections(const mesh::Topology& topology)
   for (int c = 0; c < c_to_v->num_nodes(); ++c)
   {
     cell_vertices.resize(c_to_v->links(c).size());
-    im->local_to_global(c_to_v->links(c).data(), cell_vertices.size(),
-                        cell_vertices.data());
+    im->local_to_global(c_to_v->links(c), cell_vertices);
     auto cell_edges = c_to_e->links(c);
     for (int i = 0; i < edges_per_cell; ++i)
     {
       vertices.resize(e_to_v->links(cell_edges[i]).size());
-      im->local_to_global(e_to_v->links(cell_edges[i]).data(), vertices.size(),
-                          vertices.data());
+      im->local_to_global(e_to_v->links(cell_edges[i]), vertices);
 
       // If the entity is an interval, it should be oriented pointing
       // from the lowest numbered vertex to the highest numbered vertex.
@@ -343,7 +340,6 @@ mesh::compute_entity_permutations(const mesh::Topology& topology)
       {
         facet_permutations[c * facets_per_cell + i]
             = (cell_permutation_info[c] >> (3 * i)) & 7;
-        // facet_permutations(i, c) = (cell_permutation_info[c] >> (3 * i)) & 7;
       }
     }
   }
@@ -361,10 +357,7 @@ mesh::compute_entity_permutations(const mesh::Topology& topology)
       for (int c = 0; c < num_cells; ++c)
       {
         for (int i = 0; i < facets_per_cell; ++i)
-        {
           facet_permutations[c * facets_per_cell + i] = edge_perm[c][i];
-          // facet_permutations(i, c) = edge_perm[c][i];
-        }
       }
     }
   }

@@ -226,23 +226,22 @@ mesh::Mesh XDMFFile::read_mesh(const fem::CoordinateElement& element,
                                const std::string xpath) const
 {
   // Read mesh data
-  const common::array2d<std::int64_t> cells
+  const xt::xtensor<std::int64_t, 2> cells
       = XDMFFile::read_topology_data(name, xpath);
-  const auto x = XDMFFile::read_geometry_data(name, xpath);
+  const xt::xtensor<double, 2> x = XDMFFile::read_geometry_data(name, xpath);
 
   // Create mesh
   auto [data, offset] = graph::create_adjacency_data(cells);
   graph::AdjacencyList<std::int64_t> cells_adj(std::move(data),
                                                std::move(offset));
 
-  common::array2d<double> x_vec(x);
   mesh::Mesh mesh
-      = mesh::create_mesh(_mpi_comm.comm(), cells_adj, element, x_vec, mode);
+      = mesh::create_mesh(_mpi_comm.comm(), cells_adj, element, x, mode);
   mesh.name = name;
   return mesh;
 }
 //-----------------------------------------------------------------------------
-common::array2d<std::int64_t>
+xt::xtensor<std::int64_t, 2>
 XDMFFile::read_topology_data(const std::string name,
                              const std::string xpath) const
 {
@@ -259,7 +258,7 @@ XDMFFile::read_topology_data(const std::string name,
   return xdmf_mesh::read_topology_data(_mpi_comm.comm(), _h5_id, grid_node);
 }
 //-----------------------------------------------------------------------------
-common::array2d<double>
+xt::xtensor<double, 2>
 XDMFFile::read_geometry_data(const std::string name,
                              const std::string xpath) const
 {
@@ -325,8 +324,7 @@ XDMFFile::read_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh,
   if (!grid_node)
     throw std::runtime_error("<Grid> with name '" + name + "' not found.");
 
-  const common::array2d<std::int64_t> entities
-      = read_topology_data(name, xpath);
+  const xt::xtensor<std::int64_t, 2> entities = read_topology_data(name, xpath);
 
   pugi::xml_node values_data_node
       = grid_node.child("Attribute").child("DataItem");
@@ -338,8 +336,8 @@ XDMFFile::read_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh,
   mesh::CellType cell_type = mesh::to_type(cell_type_str.first);
 
   // Permute entities from VTK to DOLFINX ordering
-  common::array2d<std::int64_t> entities1 = io::cells::compute_permutation(
-      entities, io::cells::perm_vtk(cell_type, entities.shape[1]));
+  xt::xtensor<std::int64_t, 2> entities1 = io::cells::compute_permutation(
+      entities, io::cells::perm_vtk(cell_type, entities.shape(1)));
 
   const auto [entities_local, values_local]
       = xdmf_utils::extract_local_entities(*mesh, mesh::cell_dim(cell_type),
@@ -349,7 +347,7 @@ XDMFFile::read_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh,
   graph::AdjacencyList<std::int32_t> entities_adj(std::move(data),
                                                   std::move(offset));
   mesh::MeshTags meshtags = mesh::create_meshtags(
-      mesh, mesh::cell_dim(cell_type), entities_adj, tcb::span(values_local));
+      mesh, mesh::cell_dim(cell_type), entities_adj, xtl::span(values_local));
   meshtags.name = name;
 
   return meshtags;

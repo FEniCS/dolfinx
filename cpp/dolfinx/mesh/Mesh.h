@@ -12,7 +12,6 @@
 #include "utils.h"
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/UniqueIdGenerator.h>
-#include <dolfinx/common/array2d.h>
 #include <string>
 #include <utility>
 
@@ -39,7 +38,7 @@ namespace mesh
 /// compute the destination rank for cells currently on this rank.
 using CellPartitionFunction
     = std::function<const dolfinx::graph::AdjacencyList<std::int32_t>(
-        MPI_Comm comm, int nparts, const dolfinx::mesh::CellType cell_type,
+        MPI_Comm comm, int nparts, int tdim,
         const dolfinx::graph::AdjacencyList<std::int64_t>& cells,
         dolfinx::mesh::GhostMode ghost_mode)>;
 
@@ -156,12 +155,12 @@ private:
 /// @return A distributed Mesh.
 Mesh create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
                  const fem::CoordinateElement& element,
-                 const common::array2d<double>& x, GhostMode ghost_mode);
+                 const xt::xtensor<double, 2>& x, GhostMode ghost_mode);
 
 /// Create a mesh using a provided mesh partitioning function
 Mesh create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
                  const fem::CoordinateElement& element,
-                 const common::array2d<double>& x, GhostMode ghost_mode,
+                 const xt::xtensor<double, 2>& x, GhostMode ghost_mode,
                  const CellPartitionFunction& cell_partitioner);
 
 } // namespace mesh

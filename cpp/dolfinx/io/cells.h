@@ -7,9 +7,9 @@
 #pragma once
 
 #include <cstdint>
-#include <dolfinx/common/array2d.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <vector>
+#include <xtensor/xtensor.hpp>
 
 namespace dolfinx::mesh
 {
@@ -116,8 +116,8 @@ std::vector<std::uint8_t> transpose(const std::vector<std::uint8_t>& map);
 ///   where `a_p` is the permuted array
 /// @return Permuted cell topology, where for a cell `v_new[i] =
 ///   v_old[map[i]]`
-common::array2d<std::int64_t>
-compute_permutation(const common::array2d<std::int64_t>& cells,
+xt::xtensor<std::int64_t, 2>
+compute_permutation(const xt::xtensor<std::int64_t, 2>& cells,
                     const std::vector<std::uint8_t>& p);
 
 /// Get VTK cell identifier

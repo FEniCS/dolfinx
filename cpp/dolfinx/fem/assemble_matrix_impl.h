@@ -47,7 +47,7 @@ void assemble_cells(
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& kernel,
-    const common::array2d<T>& coeffs, const std::vector<T>& constants,
+    const array2d<T>& coeffs, const std::vector<T>& constants,
     const std::vector<std::uint32_t>& cell_info);
 
 /// Execute kernel over exterior facets and  accumulate result in Mat
@@ -61,7 +61,7 @@ void assemble_exterior_facets(
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& fn,
-    const common::array2d<T>& coeffs, const std::vector<T>& constants,
+    const array2d<T>& coeffs, const std::vector<T>& constants,
     const std::vector<std::uint32_t>& cell_info,
     const std::vector<std::uint8_t>& perms);
 
@@ -75,7 +75,7 @@ void assemble_interior_facets(
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& kernel,
-    const common::array2d<T>& coeffs, const std::vector<int>& offsets,
+    const array2d<T>& coeffs, const std::vector<int>& offsets,
     const std::vector<T>& constants,
     const std::vector<std::uint32_t>& cell_info,
     const std::vector<std::uint8_t>& perms);
@@ -110,7 +110,7 @@ void assemble_matrix(
   const std::vector<T> constants = pack_constants(a);
 
   // Prepare coefficients
-  const common::array2d<T> coeffs = pack_coefficients(a);
+  const array2d<T> coeffs = pack_coefficients(a);
 
   const bool needs_permutation_data = a.needs_permutation_data();
   if (needs_permutation_data)
@@ -172,17 +172,17 @@ void assemble_cells(
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& kernel,
-    const common::array2d<T>& coeffs, const std::vector<T>& constants,
+    const array2d<T>& coeffs, const std::vector<T>& constants,
     const std::vector<std::uint32_t>& cell_info)
 {
-  const int gdim = geometry.dim();
+  const std::size_t gdim = geometry.dim();
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
 
   // FIXME: Add proper interface for num coordinate dofs
-  const int num_dofs_g = x_dofmap.num_links(0);
-  const common::array2d<double>& x_g = geometry.x();
+  const std::size_t num_dofs_g = x_dofmap.num_links(0);
+  const xt::xtensor<double, 2>& x_g = geometry.x();
 
   // Iterate over active cells
   const int num_dofs0 = dofmap0.links(0).size();
@@ -197,7 +197,7 @@ void assemble_cells(
     auto x_dofs = x_dofmap.links(c);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
-      std::copy_n(x_g.row(x_dofs[i]).begin(), gdim,
+      std::copy_n(xt::row(x_g, x_dofs[i]).begin(), gdim,
                   std::next(coordinate_dofs.begin(), i * gdim));
     }
 
@@ -256,19 +256,19 @@ void assemble_exterior_facets(
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& kernel,
-    const common::array2d<T>& coeffs, const std::vector<T>& constants,
+    const array2d<T>& coeffs, const std::vector<T>& constants,
     const std::vector<std::uint32_t>& cell_info,
     const std::vector<std::uint8_t>& perms)
 {
-  const int gdim = mesh.geometry().dim();
+  const std::size_t gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
 
   // FIXME: Add proper interface for num coordinate dofs
-  const int num_dofs_g = x_dofmap.num_links(0);
-  const common::array2d<double>& x_g = mesh.geometry().x();
+  const std::size_t num_dofs_g = x_dofmap.num_links(0);
+  const xt::xtensor<double, 2>& x_g = mesh.geometry().x();
 
   // Data structures used in assembly
   std::vector<double> coordinate_dofs(num_dofs_g * gdim);
@@ -298,7 +298,7 @@ void assemble_exterior_facets(
     auto x_dofs = x_dofmap.links(cells[0]);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
-      std::copy_n(x_g.row(x_dofs[i]).data(), gdim,
+      std::copy_n(xt::row(x_g, x_dofs[i]).begin(), gdim,
                   std::next(coordinate_dofs.begin(), i * gdim));
     }
 
@@ -357,23 +357,23 @@ void assemble_interior_facets(
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& fn,
-    const common::array2d<T>& coeffs, const std::vector<int>& offsets,
+    const array2d<T>& coeffs, const std::vector<int>& offsets,
     const std::vector<T>& constants,
     const std::vector<std::uint32_t>& cell_info,
     const std::vector<std::uint8_t>& perms)
 {
-  const int gdim = mesh.geometry().dim();
+  const std::size_t gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
 
   // FIXME: Add proper interface for num coordinate dofs
-  const int num_dofs_g = x_dofmap.num_links(0);
-  const common::array2d<double>& x_g = mesh.geometry().x();
+  const std::size_t num_dofs_g = x_dofmap.num_links(0);
+  const xt::xtensor<double, 2>& x_g = mesh.geometry().x();
 
   // Data structures used in assembly
-  std::vector<double> coordinate_dofs(2 * num_dofs_g * gdim);
+  xt::xtensor<double, 3> coordinate_dofs({2, num_dofs_g, gdim});
   std::vector<T> Ae, be;
   std::vector<T> coeff_array(2 * offsets.back());
   assert(offsets.back() == coeffs.shape[1]);
@@ -386,7 +386,6 @@ void assemble_interior_facets(
   assert(c);
   auto c_to_f = mesh.topology().connectivity(tdim, tdim - 1);
   assert(c_to_f);
-  const int offset_g = gdim * num_dofs_g;
   for (std::int32_t facet_index : active_facets)
   {
     // Create attached cells
@@ -407,26 +406,28 @@ void assemble_interior_facets(
 
     // Get cell geometry
     auto x_dofs0 = x_dofmap.links(cells[0]);
-    auto x_dofs1 = x_dofmap.links(cells[1]);
-    for (int i = 0; i < num_dofs_g; ++i)
+    for (std::size_t i = 0; i < x_dofs0.size(); ++i)
     {
-      for (int j = 0; j < gdim; ++j)
-      {
-        coordinate_dofs[i * gdim + j] = x_g(x_dofs0[i], j);
-        coordinate_dofs[offset_g + i * gdim + j] = x_g(x_dofs1[i], j);
-      }
+      std::copy_n(xt::view(x_g, x_dofs0[i]).begin(), gdim,
+                  xt::view(coordinate_dofs, 0, i, xt::all()).begin());
+    }
+    auto x_dofs1 = x_dofmap.links(cells[1]);
+    for (std::size_t i = 0; i < x_dofs1.size(); ++i)
+    {
+      std::copy_n(xt::view(x_g, x_dofs1[i]).begin(), gdim,
+                  xt::view(coordinate_dofs, 1, i, xt::all()).begin());
     }
 
     // Get dof maps for cells and pack
-    tcb::span<const std::int32_t> dmap0_cell0 = dofmap0.cell_dofs(cells[0]);
-    tcb::span<const std::int32_t> dmap0_cell1 = dofmap0.cell_dofs(cells[1]);
+    xtl::span<const std::int32_t> dmap0_cell0 = dofmap0.cell_dofs(cells[0]);
+    xtl::span<const std::int32_t> dmap0_cell1 = dofmap0.cell_dofs(cells[1]);
     dmapjoint0.resize(dmap0_cell0.size() + dmap0_cell1.size());
     std::copy(dmap0_cell0.begin(), dmap0_cell0.end(), dmapjoint0.begin());
     std::copy(dmap0_cell1.begin(), dmap0_cell1.end(),
               std::next(dmapjoint0.begin(), dmap0_cell0.size()));
 
-    tcb::span<const std::int32_t> dmap1_cell0 = dofmap1.cell_dofs(cells[0]);
-    tcb::span<const std::int32_t> dmap1_cell1 = dofmap1.cell_dofs(cells[1]);
+    xtl::span<const std::int32_t> dmap1_cell0 = dofmap1.cell_dofs(cells[0]);
+    xtl::span<const std::int32_t> dmap1_cell1 = dofmap1.cell_dofs(cells[1]);
     dmapjoint1.resize(dmap1_cell0.size() + dmap1_cell1.size());
     std::copy(dmap1_cell0.begin(), dmap1_cell0.end(), dmapjoint1.begin());
     std::copy(dmap1_cell1.begin(), dmap1_cell1.end(),

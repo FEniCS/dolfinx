@@ -26,6 +26,10 @@
 #include <utility>
 #include <variant>
 #include <vector>
+#include <xtensor/xadapt.hpp>
+#include <xtensor/xio.hpp>
+#include <xtensor/xtensor.hpp>
+#include <xtl/xspan.hpp>
 
 namespace dolfinx::fem
 {
@@ -155,7 +159,7 @@ public:
   }
 
   /// Return vector of expansion coefficients as a PETSc Vec. Throws an
-  /// exception a PETSc Vec cannot be created due to a type mismatch.
+  /// exception if a PETSc Vec cannot be created due to a type mismatch.
   /// @return The vector of expansion coefficients
   Vec vector() const
   {
@@ -202,8 +206,7 @@ public:
   /// Interpolate an expression
   /// @param[in] f The expression to be interpolated
   void interpolate(
-      const std::function<std::variant<std::vector<T>, common::array2d<T>>(
-          const common::array2d<double>&)>& f)
+      const std::function<xt::xarray<T>(const xt::xtensor<double, 2>&)>& f)
   {
     assert(_function_space);
     assert(_function_space->element());
@@ -214,7 +217,9 @@ public:
     const int num_cells = cell_map->size_local() + cell_map->num_ghosts();
     std::vector<std::int32_t> cells(num_cells, 0);
     std::iota(cells.begin(), cells.end(), 0);
-    const common::array2d<double> x = fem::interpolation_coords(
+    // FIXME: Remove interpolation coords as it should be done internally in
+    // fem::interpolate
+    const xt::xtensor<double, 2> x = fem::interpolation_coords(
         *_function_space->element(), *_function_space->mesh(), cells);
     fem::interpolate(*this, f, x, cells);
   }
@@ -229,19 +234,19 @@ public:
   /// @param[in,out] u The values at the points. Values are not computed
   /// for points with a negative cell index. This argument must be
   /// passed with the correct size.
-  void eval(const common::array2d<double>& x,
-            const tcb::span<const std::int32_t>& cells,
-            common::array2d<T>& u) const
+  void eval(const xt::xtensor<double, 2>& x,
+            const xtl::span<const std::int32_t>& cells,
+            xt::xtensor<T, 2>& u) const
   {
     // TODO: This could be easily made more efficient by exploiting points
     // being ordered by the cell to which they belong.
 
-    if (x.shape[0] != cells.size())
+    if (x.shape(0) != cells.size())
     {
       throw std::runtime_error(
           "Number of points and number of cells must be equal.");
     }
-    if (x.shape[0] != u.shape[0])
+    if (x.shape(0) != u.shape(0))
     {
       throw std::runtime_error(
           "Length of array for Function values must be the "
@@ -252,16 +257,16 @@ public:
     assert(_function_space);
     std::shared_ptr<const mesh::Mesh> mesh = _function_space->mesh();
     assert(mesh);
-    const int gdim = mesh->geometry().dim();
-    const int tdim = mesh->topology().dim();
+    const std::size_t gdim = mesh->geometry().dim();
+    const std::size_t tdim = mesh->topology().dim();
     auto map = mesh->topology().index_map(tdim);
 
     // Get geometry data
     const graph::AdjacencyList<std::int32_t>& x_dofmap
         = mesh->geometry().dofmap();
     // FIXME: Add proper interface for num coordinate dofs
-    const int num_dofs_g = x_dofmap.num_links(0);
-    const common::array2d<double>& x_g = mesh->geometry().x();
+    const std::size_t num_dofs_g = x_dofmap.num_links(0);
+    const xt::xtensor<double, 2>& x_g = mesh->geometry().x();
 
     // Get coordinate map
     const fem::CoordinateElement& cmap = mesh->geometry().cmap();
@@ -272,10 +277,10 @@ public:
         = _function_space->element();
     assert(element);
     const int bs_element = element->block_size();
-    const int reference_value_size
+    const std::size_t reference_value_size
         = element->reference_value_size() / bs_element;
-    const int value_size = element->value_size() / bs_element;
-    const int space_dimension = element->space_dimension() / bs_element;
+    const std::size_t value_size = element->value_size() / bs_element;
+    const std::size_t space_dimension = element->space_dimension() / bs_element;
 
     // If the space has sub elements, concatenate the evaluations on the sub
     // elements
@@ -287,15 +292,18 @@ public:
     }
 
     // Prepare geometry data structures
-    std::vector<double> J(gdim * tdim);
-    std::array<double, 1> detJ;
-    std::vector<double> K(tdim * gdim);
-    common::array2d<double> X(1, tdim);
+    xt::xtensor<double, 2> X({1, tdim});
+    xt::xtensor<double, 3> J
+        = xt::zeros<double>({static_cast<std::size_t>(1), gdim, tdim});
+    xt::xtensor<double, 3> K
+        = xt::zeros<double>({static_cast<std::size_t>(1), tdim, gdim});
+    xt::xtensor<double, 1> detJ = xt::zeros<double>({1});
 
     // Prepare basis function data structures
-    std::vector<double> basis_reference_values(space_dimension
-                                               * reference_value_size);
-    std::vector<double> basis_values(space_dimension * value_size);
+    xt::xtensor<double, 3> basis_reference_values(
+        {1, space_dimension, reference_value_size});
+    xt::xtensor<double, 3> basis_values(
+        {static_cast<std::size_t>(1), space_dimension, value_size});
 
     // Create work vector for expansion coefficients
     std::vector<T> coefficients(space_dimension * bs_element);
@@ -308,9 +316,10 @@ public:
     mesh->topology_mutable().create_entity_permutations();
     const std::vector<std::uint32_t>& cell_info
         = mesh->topology().get_cell_permutation_info();
-    common::array2d<double> coordinate_dofs(num_dofs_g, gdim);
-
-    common::array2d<double> xp(1, gdim);
+    xt::xtensor<double, 2> coordinate_dofs
+        = xt::zeros<double>({num_dofs_g, gdim});
+    xt::xtensor<double, 2> xp
+        = xt::zeros<double>({static_cast<std::size_t>(1), gdim});
 
     // Loop over points
     std::fill(u.data(), u.data() + u.size(), 0.0);
@@ -325,44 +334,45 @@ public:
 
       // Get cell geometry (coordinate dofs)
       auto x_dofs = x_dofmap.links(cell_index);
-      for (int i = 0; i < num_dofs_g; ++i)
-        for (int j = 0; j < gdim; ++j)
+      for (std::size_t i = 0; i < num_dofs_g; ++i)
+        for (std::size_t j = 0; j < gdim; ++j)
           coordinate_dofs(i, j) = x_g(x_dofs[i], j);
 
-      for (int j = 0; j < gdim; ++j)
+      for (std::size_t j = 0; j < gdim; ++j)
         xp(0, j) = x(p, j);
 
       // Compute reference coordinates X, and J, detJ and K
-      cmap.compute_reference_geometry(X, J, detJ, K, xp, coordinate_dofs);
+      cmap.pull_back(X, J, detJ, K, xp, coordinate_dofs);
 
       // Compute basis on reference element
       element->evaluate_reference_basis(basis_reference_values, X);
 
       // Permute the reference values to account for the cell's orientation
-      element->apply_dof_transformation(basis_reference_values.data(),
-                                        cell_info[cell_index],
-                                        reference_value_size);
+      element->apply_dof_transformation(
+          xtl::span(basis_reference_values.data(),
+                    basis_reference_values.size()),
+          cell_info[cell_index], reference_value_size);
 
       // Push basis forward to physical element
       element->transform_reference_basis(basis_values, basis_reference_values,
-                                         X, J, detJ, K);
+                                         J, detJ, K);
 
       // Get degrees of freedom for current cell
-      tcb::span<const std::int32_t> dofs = dofmap->cell_dofs(cell_index);
+      xtl::span<const std::int32_t> dofs = dofmap->cell_dofs(cell_index);
       for (std::size_t i = 0; i < dofs.size(); ++i)
         for (int k = 0; k < bs_dof; ++k)
           coefficients[bs_dof * i + k] = _v[bs_dof * dofs[i] + k];
 
       // Compute expansion
-      auto u_row = u.row(p);
+      auto u_row = xt::row(u, p);
       for (int k = 0; k < bs_element; ++k)
       {
-        for (int i = 0; i < space_dimension; ++i)
+        for (std::size_t i = 0; i < space_dimension; ++i)
         {
-          for (int j = 0; j < value_size; ++j)
+          for (std::size_t j = 0; j < value_size; ++j)
           {
-            u_row[j * bs_element + k] += coefficients[bs_element * i + k]
-                                         * basis_values[i * value_size + j];
+            u_row[j * bs_element + k]
+                += coefficients[bs_element * i + k] * basis_values(0, i, j);
           }
         }
       }
@@ -371,7 +381,7 @@ public:
 
   /// Compute values at all mesh 'nodes'
   /// @return The values at all geometric points
-  common::array2d<T> compute_point_values() const
+  xt::xtensor<T, 2> compute_point_values() const
   {
     assert(_function_space);
     std::shared_ptr<const mesh::Mesh> mesh = _function_space->mesh();
@@ -379,11 +389,11 @@ public:
     const int tdim = mesh->topology().dim();
 
     // Compute in tensor (one for scalar function, . . .)
-    const int value_size_loc = _function_space->element()->value_size();
+    const std::size_t value_size_loc = _function_space->element()->value_size();
 
     // Resize Array for holding point values
-    common::array2d<T> point_values(mesh->geometry().x().shape[0],
-                                    value_size_loc);
+    xt::xtensor<T, 2> point_values(
+        {mesh->geometry().x().shape(0), value_size_loc});
 
     // Prepare cell geometry
     const graph::AdjacencyList<std::int32_t>& x_dofmap
@@ -391,7 +401,7 @@ public:
 
     // FIXME: Add proper interface for num coordinate dofs
     const int num_dofs_g = x_dofmap.num_links(0);
-    const common::array2d<double>& x_g = mesh->geometry().x();
+    const xt::xtensor<double, 2>& x_g = mesh->geometry().x();
 
     // Interpolate point values on each cell (using last computed value if
     // not continuous, e.g. discontinuous Galerkin methods)
@@ -399,11 +409,11 @@ public:
     assert(map);
     const std::int32_t num_cells = map->size_local() + map->num_ghosts();
 
-    std::vector<std::int32_t> cells(x_g.shape[0]);
+    std::vector<std::int32_t> cells(x_g.shape(0));
     for (std::int32_t c = 0; c < num_cells; ++c)
     {
       // Get coordinates for all points in cell
-      tcb::span<const std::int32_t> dofs = x_dofmap.links(c);
+      xtl::span<const std::int32_t> dofs = x_dofmap.links(c);
       for (int i = 0; i < num_dofs_g; ++i)
         cells[dofs[i]] = c;
     }

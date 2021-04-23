@@ -46,16 +46,16 @@ class XDMFFile(cpp.io.XDMFFile):
 
     def read_mesh(self, ghost_mode=cpp.mesh.GhostMode.shared_facet, name="mesh", xpath="/Xdmf/Domain"):
         # Read mesh data from file
-        cell_type = super().read_cell_type(name, xpath)
+        cell_shape, cell_degree = super().read_cell_type(name, xpath)
         cells = super().read_topology_data(name, xpath)
         x = super().read_geometry_data(name, xpath)
 
         # Construct the geometry map
-        cell = ufl.Cell(cpp.mesh.to_string(cell_type[0]), geometric_dimension=x.shape[1])
-        domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell, cell_type[1]))
-        cmap = fem.create_coordinate_map(self.comm(), domain)
+        cell = ufl.Cell(cpp.mesh.to_string(cell_shape), geometric_dimension=x.shape[1])
+        domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell, cell_degree))
 
         # Build the mesh
+        cmap = cpp.fem.CoordinateElement(cell_shape, cell_degree)
         mesh = cpp.mesh.create_mesh(self.comm(), cpp.graph.AdjacencyList_int64(cells),
                                     cmap, x, ghost_mode, cpp.mesh.partition_cells_graph)
         mesh.name = name

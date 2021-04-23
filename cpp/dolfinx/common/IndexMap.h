@@ -9,10 +9,13 @@
 #include <array>
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
+#include <dolfinx/graph/AdjacencyList.h>
 #include <map>
+#include <memory>
 #include <tuple>
 #include <utility>
 #include <vector>
+#include <xtl/xspan.hpp>
 
 namespace dolfinx::common
 {
@@ -126,17 +129,16 @@ public:
 
   /// Compute global indices for array of local indices
   /// @param[in] local Local indices
-  /// @param[in] n Number of indices
   /// @param[out] global The global indices
-  void local_to_global(const std::int32_t* local, int n,
-                       std::int64_t* global) const;
+  void local_to_global(const xtl::span<const std::int32_t>& local,
+                       const xtl::span<std::int64_t>& global) const;
 
   /// Compute local indices for array of global indices
-  /// @param[in] indices Global indices
-  /// @return The local of the corresponding global index in indices.
-  ///   Returns -1 if the local index does not exist on this process.
-  std::vector<std::int32_t>
-  global_to_local(const std::vector<std::int64_t>& indices) const;
+  /// @param[in] global Global indices
+  /// @param[out] local The local of the corresponding global index in 'global'.
+  /// Returns -1 if the local index does not exist on this process.
+  void global_to_local(const xtl::span<const std::int64_t>& global,
+                       const xtl::span<std::int32_t>& local) const;
 
   /// Global indices
   /// @return The global index for all local indices (0, 1, 2, ...) on
@@ -145,9 +147,11 @@ public:
 
   /// @todo Reconsider name
   /// Local (owned) indices shared with neighbor processes, i.e. are
-  /// ghosts on other processes
+  /// ghosts on other processes, grouped by sharing (neighbor)
+  /// process(destination ranks in forward communicator and source ranks in the
+  /// reverse communicator)
   /// @return List of indices that are ghosted on other processes
-  const std::vector<std::int32_t>& shared_indices() const noexcept;
+  const graph::AdjacencyList<std::int32_t>& shared_indices() const noexcept;
 
   /// Owner rank (on global communicator) of each ghost entry
   std::vector<int> ghost_owner_rank() const;
@@ -170,46 +174,9 @@ public:
   /// @param[in,out] remote_data Ghost data on this process received
   ///   from the owning process. Size will be n * num_ghosts().
   /// @param[in] n Number of data items per index
-  void scatter_fwd(const std::vector<std::int64_t>& local_data,
-                   std::vector<std::int64_t>& remote_data, int n) const;
-
-  /// Send n values for each index that is owned to processes that have
-  /// the index as a ghost. The size of the input array local_data must
-  /// be the same as n * size_local().
-  ///
-  /// @param[in] local_data Local data associated with each owned local
-  ///   index to be sent to process where the data is ghosted. Size must
-  ///   be n * size_local().
-  /// @param[in,out] remote_data Ghost data on this process received
-  ///   from the owning process. Size will be n * num_ghosts().
-  /// @param[in] n Number of data items per index
-  void scatter_fwd(const std::vector<std::int32_t>& local_data,
-                   std::vector<std::int32_t>& remote_data, int n) const;
-
-  /// Send n values for each index that is owned to processes that have
-  /// the index as a ghost. The size of the input array local_data must
-  /// be the same as n * size_local().
-  ///
-  /// @param[in] local_data Local data associated with each owned local
-  ///   index to be sent to process where the data is ghosted. Size must
-  ///   be n * size_local().
-  /// @param[in] n Number of data items per index
-  /// @return Ghost data on this process received from the owning
-  ///   process. Size will be n * num_ghosts().
-  std::vector<std::int64_t>
-  scatter_fwd(const std::vector<std::int64_t>& local_data, int n) const;
-
-  /// Send n values for each index that is owned to processes that have
-  /// the index as a ghost
-  ///
-  /// @param[in] local_data Local data associated with each owned local
-  ///   index to be sent to process where the data is ghosted. Size must
-  ///   be n * size_local().
-  /// @param[in] n Number of data items per index
-  /// @return Ghost data on this process received from the owning
-  ///   process. Size will be n * num_ghosts().
-  std::vector<std::int32_t>
-  scatter_fwd(const std::vector<std::int32_t>& local_data, int n) const;
+  template <typename T>
+  void scatter_fwd(xtl::span<const T> local_data, xtl::span<T> remote_data,
+                   int n) const;
 
   /// Send n values for each ghost index to owning to the process
   ///
@@ -220,22 +187,9 @@ public:
   ///   the owning process. Size will be n * num_ghosts().
   /// @param[in] n Number of data items per index
   /// @param[in] op Sum or set received values in local_data
-  void scatter_rev(std::vector<std::int64_t>& local_data,
-                   const std::vector<std::int64_t>& remote_data, int n,
-                   IndexMap::Mode op) const;
-
-  /// Send n values for each ghost index to owning to the process
-  ///
-  /// @param[in,out] local_data Local data associated with each owned
-  ///   local index to be sent to process where the data is ghosted.
-  ///   Size must be n * size_local().
-  /// @param[in] remote_data Ghost data on this process received from
-  ///   the owning process. Size will be n * num_ghosts().
-  /// @param[in] n Number of data items per index
-  /// @param[in] op Sum or set received values in local_data
-  void scatter_rev(std::vector<std::int32_t>& local_data,
-                   const std::vector<std::int32_t>& remote_data, int n,
-                   IndexMap::Mode op) const;
+  template <typename T>
+  void scatter_rev(xtl::span<T> local_data, xtl::span<const T> remote_data,
+                   int n, IndexMap::Mode op) const;
 
 private:
   // Range of indices (global) owned by this process
@@ -270,32 +224,10 @@ private:
   // communicator for each ghost index
   std::vector<std::int32_t> _ghost_owners;
 
-  // TODO: replace _shared_disp and _shared_disp by an AdjacencyList
-
-  // TODO: _shared_indices are received on _comm_ghost_to_owner, and
-  // _shared_indices is the recv_disp on _comm_ghost_to_owner. Check for
-  // corect use on _comm_owner_to_ghost. Can guarantee that
-  // _comm_owner_to_ghost and _comm_ghost_to_owner are the transpose of
-  // each other?
-
-  // Owned local indices that are in the halo (ghost) region on other
-  // ranks
-  std::vector<std::int32_t> _shared_indices;
-
-  // FIXME: explain better the ranks
-  // Displacement vector for _shared_indices. _shared_indices[i] is the
-  // starting postion in _shared_indices for data that is ghosted on
-  // rank i, where i is the ith outgoing edge on _comm_owner_to_ghost.
-  std::vector<std::int32_t> _shared_disp;
-
-  template <typename T>
-  void scatter_fwd_impl(const std::vector<T>& local_data,
-                        std::vector<T>& remote_data, int n) const;
-  template <typename T>
-  void scatter_rev_impl(std::vector<T>& local_data,
-                        const std::vector<T>& remote_data, int n,
-                        Mode op) const;
+  // List of owned local indices that are in the halo (ghost) region on other
+  // ranks, grouped by rank in the neighbor communicator (destination ranks in
+  // forward communicator and source ranks in the reverse communicator).
+  std::unique_ptr<graph::AdjacencyList<std::int32_t>> _shared_indices;
 };
 
 } // namespace dolfinx::common
- 

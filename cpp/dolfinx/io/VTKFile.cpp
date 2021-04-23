@@ -11,7 +11,6 @@
 #include <boost/filesystem.hpp>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
-#include <dolfinx/common/span.hpp>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/fem/Function.h>
@@ -22,6 +21,8 @@
 #include <dolfinx/mesh/Topology.h>
 #include <sstream>
 #include <string>
+#include <xtensor/xcomplex.hpp>
+#include <xtl/xspan.hpp>
 
 using namespace dolfinx;
 
@@ -102,12 +103,12 @@ std::int8_t get_vtk_cell_type(mesh::CellType cell, int dim)
 
 /// Convert and Eigen array/matrix to a std::string
 template <typename T>
-std::string eigen_to_string(const T& x, int precision)
+std::string xt_to_string(const T& x, int precision)
 {
   std::stringstream s;
   s.precision(precision);
   for (std::uint32_t i = 0; i < x.size(); ++i)
-    s << x.data()[i] << " ";
+    s << x[i] << " ";
   return s.str();
 }
 
@@ -122,7 +123,7 @@ void add_pvtu_mesh(pugi::xml_node& node)
 /// At data to a pugixml node
 template <typename Scalar>
 void _add_data(const fem::Function<Scalar>& u,
-               const common::array2d<Scalar>& values, pugi::xml_node& data_node)
+               const xt::xtensor<Scalar, 2>& values, pugi::xml_node& data_node)
 {
   const int rank = u.function_space()->element()->value_rank();
   const int dim = u.function_space()->element()->value_size();
@@ -163,18 +164,16 @@ void _add_data(const fem::Function<Scalar>& u,
       field_node.append_attribute("type") = "Float64";
       field_node.append_attribute("Name") = (component + "_" + u.name).c_str();
       field_node.append_attribute("format") = "ascii";
-      Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic> values_comp;
-      Eigen::Map<const Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic>>
-          val_eigen(values.data(), values.shape[0], values.shape[1]);
+      xt::xtensor<Scalar, 1> values_comp;
 
       if (component == "real")
-        values_comp = val_eigen.real();
+        values_comp = xt::real(values);
       else if (component == "imag")
-        values_comp = val_eigen.imag();
+        values_comp = xt::imag(values);
       if (rank == 0)
       {
         field_node.append_child(pugi::node_pcdata)
-            .set_value(eigen_to_string(values_comp, 16).c_str());
+            .set_value(xt_to_string(values_comp, 16).c_str());
       }
 
       else if (rank == 1)
@@ -184,7 +183,7 @@ void _add_data(const fem::Function<Scalar>& u,
         {
           assert(values_comp.cols() == 2);
           std::stringstream ss;
-          for (int i = 0; i < values_comp.rows(); ++i)
+          for (int i = 0; i < values_comp.shape(0); ++i)
           {
             for (int j = 0; j < 2; ++j)
               ss << values_comp(i, j) << " ";
@@ -197,7 +196,7 @@ void _add_data(const fem::Function<Scalar>& u,
         {
           assert(values_comp.cols() == 3);
           field_node.append_child(pugi::node_pcdata)
-              .set_value(eigen_to_string(values_comp, 16).c_str());
+              .set_value(xt_to_string(values_comp, 16).c_str());
         }
       }
       else if (rank == 2)
@@ -207,7 +206,7 @@ void _add_data(const fem::Function<Scalar>& u,
         {
           // Pad 2D tensors with 0.0 to make them 3D
           std::stringstream ss;
-          for (int i = 0; i < values_comp.rows(); ++i)
+          for (int i = 0; i < values_comp.shape(0); ++i)
           {
             for (int j = 0; j < 2; ++j)
             {
@@ -225,7 +224,7 @@ void _add_data(const fem::Function<Scalar>& u,
         else
         {
           field_node.append_child(pugi::node_pcdata)
-              .set_value(eigen_to_string(values_comp, 16).c_str());
+              .set_value(xt_to_string(values_comp, 16).c_str());
         }
       }
     }
@@ -239,7 +238,7 @@ void _add_data(const fem::Function<Scalar>& u,
       if (rank == 0)
       {
         field_node.append_child(pugi::node_pcdata)
-            .set_value(eigen_to_string(values, 16).c_str());
+            .set_value(xt_to_string(values, 16).c_str());
       }
       else if (rank == 1)
       {
@@ -248,7 +247,7 @@ void _add_data(const fem::Function<Scalar>& u,
         {
           assert(values.shape[1] == 2);
           std::stringstream ss;
-          for (size_t i = 0; i < values.shape[0]; ++i)
+          for (size_t i = 0; i < values.shape(0); ++i)
           {
             for (int j = 0; j < 2; ++j)
               ss << values(i, j) << " ";
@@ -261,7 +260,7 @@ void _add_data(const fem::Function<Scalar>& u,
         {
           assert(values.shape[1] == 3);
           field_node.append_child(pugi::node_pcdata)
-              .set_value(eigen_to_string(values, 16).c_str());
+              .set_value(xt_to_string(values, 16).c_str());
         }
       }
       else if (rank == 2)
@@ -271,7 +270,7 @@ void _add_data(const fem::Function<Scalar>& u,
         {
           // Pad 2D tensors with 0.0 to make them 3D
           std::stringstream ss;
-          for (size_t i = 0; i < values.shape[0]; ++i)
+          for (size_t i = 0; i < values.shape(0); ++i)
           {
             for (int j = 0; j < 2; ++j)
             {
@@ -289,7 +288,7 @@ void _add_data(const fem::Function<Scalar>& u,
         else
         {
           field_node.append_child(pugi::node_pcdata)
-              .set_value(eigen_to_string(values, 16).c_str());
+              .set_value(xt_to_string(values, 16).c_str());
         }
       }
     }
@@ -297,13 +296,13 @@ void _add_data(const fem::Function<Scalar>& u,
 }
 //----------------------------------------------------------------------------
 void add_data(const fem::Function<double>& u,
-              const common::array2d<double>& values, pugi::xml_node& data_node)
+              const xt::xtensor<double, 2>& values, pugi::xml_node& data_node)
 {
   _add_data(u, values, data_node);
 }
 //----------------------------------------------------------------------------
 void add_data(const fem::Function<std::complex<double>>& u,
-              const common::array2d<std::complex<double>>& values,
+              const xt::xtensor<std::complex<double>, 2>& values,
               pugi::xml_node& data_node)
 {
   _add_data(u, values, data_node);
@@ -326,9 +325,8 @@ void add_mesh(const mesh::Mesh& mesh, pugi::xml_node& piece_node)
   x_node.append_attribute("type") = "Float64";
   x_node.append_attribute("NumberOfComponents") = "3";
   x_node.append_attribute("format") = "ascii";
-  const common::array2d<double>& x = geometry.x();
-  x_node.append_child(pugi::node_pcdata)
-      .set_value(eigen_to_string(x, 16).c_str());
+  auto x = geometry.x();
+  x_node.append_child(pugi::node_pcdata).set_value(xt_to_string(x, 16).c_str());
 
   // Add topology(cells)
 
@@ -356,7 +354,7 @@ void add_mesh(const mesh::Mesh& mesh, pugi::xml_node& piece_node)
   std::stringstream ss;
   for (int c = 0; c < x_dofmap.num_nodes(); ++c)
   {
-    tcb::span<const std::int32_t> cell = x_dofmap.links(c);
+    xtl::span<const std::int32_t> cell = x_dofmap.links(c);
     const int num_cell_dofs = cell.size();
     for (int i = 0; i < num_cell_dofs; ++i)
       ss << cell[map[i]] << " ";
@@ -483,11 +481,12 @@ void write_function(
     {
       const std::vector<Scalar> values
           = io::xdmf_utils::get_cell_data_values(_u);
-      const int value_size = _u.get().function_space()->element()->value_size();
+      const size_t value_size
+          = _u.get().function_space()->element()->value_size();
       assert(values.size() % value_size == 0);
-      common::array2d<Scalar> _values(values.size() / value_size, value_size);
+      xt::xtensor<Scalar, 2> _values({values.size() / value_size, value_size});
       // FIXME: Avoid copies by writing directly a compound data
-      for (size_t i = 0; i < _values.shape[0]; ++i)
+      for (size_t i = 0; i < _values.shape(0); ++i)
       {
         for (int j = 0; j < value_size; ++j)
         {
@@ -515,7 +514,7 @@ void write_function(
         const std::vector<Scalar>& func_values = _u.get().x()->array();
 
         // Compute in tensor (one for scalar function, . . .)
-        const int value_size_loc = element->value_size();
+        const size_t value_size_loc = element->value_size();
 
         // FIXME: Add proper interface for num coordinate dofs
         const graph::AdjacencyList<std::int32_t>& x_dofmap
@@ -527,8 +526,8 @@ void write_function(
         const std::int32_t num_cells = map->size_local();
 
         // Resize array for holding point values
-        common::array2d<Scalar> point_values(mesh->geometry().x().shape[0],
-                                             value_size_loc);
+        xt::xtensor<Scalar, 2> point_values(
+            {mesh->geometry().x().shape(0), value_size_loc});
 
         // If scalar function space
         if (element->num_sub_elements() == 0)
@@ -616,7 +615,7 @@ void write_function(
       {
         LOG(WARNING) << "Output data is interpolated into a first order "
                         "Lagrange space.";
-        common::array2d<Scalar> point_values = _u.get().compute_point_values();
+        xt::xtensor<Scalar, 2> point_values = _u.get().compute_point_values();
         pugi::xml_node data_node = piece_node.child("PointData");
         assert(!data_node.empty());
         add_data(_u, point_values, data_node);

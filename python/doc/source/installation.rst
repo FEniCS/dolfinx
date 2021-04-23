@@ -23,7 +23,7 @@ C++ core
   - timer
 
 - CMake (https://cmake.org) [build dependency]
-- Eigen3 (http://eigen.tuxfamily.org)
+- xtensor (https://xtensor.readthedocs.io/) and xtensor-blas (https://xtensor-blas.readthedocs.io/)
 - pkg-config (https://www.freedesktop.org/wiki/Software/pkg-config/)
 - Python 3 [build dependency]
 - FFCX [build dependency, for ``ufc.h`` and ``ufc_geometry.h`` headers]
