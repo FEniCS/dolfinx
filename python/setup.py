@@ -13,7 +13,7 @@ if sys.version_info < (3, 6):
     sys.exit(1)
 
 VERSION = "2019.2.0.dev0"
-RESTRICT_REQUIREMENTS = ">=2019.2.0.dev0,<2019.3"
+RESTRICT_REQUIREMENTS = ">=2019.2.0.dev0,<2021.2"
 
 REQUIREMENTS = [
     "numpy",
