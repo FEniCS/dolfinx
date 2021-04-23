@@ -31,7 +31,7 @@ mesh::Mesh build_tri(MPI_Comm comm,
   // Receive mesh if not rank 0
   if (dolfinx::MPI::rank(comm) != 0)
   {
-    array2d<double> geom(0, 2);
+    xt::xtensor<double, 2> geom({0, 2});
     xt::xtensor<std::int64_t, 2> cells({0, 3});
     auto [data, offset] = graph::create_adjacency_data(cells);
     return mesh::create_mesh(
@@ -92,7 +92,7 @@ mesh::Mesh build_tri(MPI_Comm comm,
     nc = 2 * nx * ny;
   }
 
-  array2d<double> geom(nv, 2);
+  xt::xtensor<double, 2> geom({nv, 2});
   xt::xtensor<std::int64_t, 2> cells({nc, 3});
 
   // Create main vertices
@@ -214,7 +214,7 @@ mesh::Mesh build_quad(MPI_Comm comm,
   // Receive mesh if not rank 0
   if (dolfinx::MPI::rank(comm) != 0)
   {
-    array2d<double> geom(0, 2);
+    xt::xtensor<double, 2> geom({0, 2});
     xt::xtensor<std::int64_t, 2> cells({0, 4});
     auto [data, offset] = graph::create_adjacency_data(cells);
     return mesh::create_mesh(
@@ -235,7 +235,7 @@ mesh::Mesh build_quad(MPI_Comm comm,
   const double cd = (d - c) / static_cast<double>(ny);
 
   // Create vertices
-  array2d<double> geom((nx + 1) * (ny + 1), 2);
+  xt::xtensor<double, 2> geom({(nx + 1) * (ny + 1), 2});
   std::size_t vertex = 0;
   for (std::size_t ix = 0; ix <= nx; ix++)
   {
