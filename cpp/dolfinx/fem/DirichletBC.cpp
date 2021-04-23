@@ -17,6 +17,7 @@
 #include <map>
 #include <numeric>
 #include <utility>
+#include <xtensor/xtensor.hpp>
 
 using namespace dolfinx;
 using namespace dolfinx::fem;
@@ -139,7 +140,7 @@ get_remote_bcs2(const common::IndexMap& map0, int bs0,
 
   // NOTE: we consider only dofs that we know are shared
   // Build array of global indices of dofs
-  array2d<std::int64_t> dofs_global(dofs_local.size(), 2);
+  xt::xtensor<std::int64_t, 2> dofs_global({dofs_local.size(), 2});
 
   // This is messy to handle block sizes
   {
@@ -181,7 +182,8 @@ get_remote_bcs2(const common::IndexMap& map0, int bs0,
 
   // Send/receive global index of dofs with bcs to all neighbors
   assert(disp.back() % 2 == 0);
-  array2d<std::int64_t> dofs_received(disp.back() / 2, 2);
+  xt::xtensor<std::int64_t, 2> dofs_received(
+      {static_cast<std::size_t>(disp.back() / 2), 2});
   MPI_Neighbor_allgatherv(dofs_global.data(), dofs_global.size(), MPI_INT64_T,
                           dofs_received.data(), num_dofs_recv.data(),
                           disp.data(), MPI_INT64_T, comm0);
@@ -207,7 +209,7 @@ get_remote_bcs2(const common::IndexMap& map0, int bs0,
         global_local_ghosts.begin(), global_local_ghosts.end());
 
     std::vector<std::int32_t>& dofs = dofs_array[b];
-    for (std::size_t i = 0; i < dofs_received.shape[0]; ++i)
+    for (std::size_t i = 0; i < dofs_received.shape(0); ++i)
     {
       if (dofs_received(i, b) >= bs[b] * range[0]
           and dofs_received(i, b) < bs[b] * range[1])

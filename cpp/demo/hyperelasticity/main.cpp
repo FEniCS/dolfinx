@@ -80,9 +80,12 @@ public:
   {
     return [&](const Vec, Mat A) {
       MatZeroEntries(A);
-      fem::assemble_matrix(la::PETScMatrix::add_block_fn(A), *_j, _bcs);
-      fem::add_diagonal(la::PETScMatrix::add_fn(A), *_j->function_spaces()[0],
-                        _bcs);
+      fem::assemble_matrix(la::PETScMatrix::set_block_fn(A, ADD_VALUES), *_j,
+                           _bcs);
+      MatAssemblyBegin(A, MAT_FLUSH_ASSEMBLY);
+      MatAssemblyEnd(A, MAT_FLUSH_ASSEMBLY);
+      fem::set_diagonal(la::PETScMatrix::set_fn(A, INSERT_VALUES),
+                        *_j->function_spaces()[0], _bcs);
       MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
       MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
     };

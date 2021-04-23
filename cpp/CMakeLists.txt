@@ -67,6 +67,14 @@ add_feature_info(DOLFINX_SKIP_BUILD_TESTS DOLFINX_SKIP_BUILD_TESTS "Skip build t
 option(CMAKE_INSTALL_RPATH_USE_LINK_PATH "Add paths to linker search and installed rpath." ON)
 add_feature_info(CMAKE_INSTALL_RPATH_USE_LINK_PATH CMAKE_INSTALL_RPATH_USE_LINK_PATH "Add paths to linker search and installed rpath.")
 
+# Enable SIMD with xtensor
+option(XTENSOR_USE_XSIMD "Enable SIMD with xtensor." OFF)
+add_feature_info(XTENSOR_USE_XSIMD XTENSOR_USE_XSIMD "Enable SIMD with xtensor (xsimd).")
+
+# Enable xtensor with target-specific optimization, i.e. -march=native
+option(XTENSOR_OPTIMIZE "Enable xtensor target-specific optimization" OFF)
+add_feature_info(XTENSOR_OPTIMIZE XTENSOR_OPTIMIZE "Enable architecture-specific optimizations as defined by xtensor.")
+
 #------------------------------------------------------------------------------
 # Enable or disable optional packages
 
@@ -136,11 +144,8 @@ set_package_properties(Boost PROPERTIES TYPE REQUIRED
   DESCRIPTION "Boost C++ libraries"
   URL "http://www.boost.org")
 
-# Check for required package Eigen3
-find_package(Eigen3 3.2.90 REQUIRED)
-set_package_properties(Eigen3 PROPERTIES TYPE REQUIRED
-  DESCRIPTION "Lightweight C++ template library for linear algebra"
-  URL "http://eigen.tuxfamily.org")
+# Enable SIMD with xtensor
+option(XTENSOR_USE_XSIMD "Enable xsimd with xtensor (xsimd package required)" OFF)
 
 # Check for required package xtensor
 find_package(xtensor REQUIRED)
@@ -148,10 +153,10 @@ set_package_properties(xtensor PROPERTIES TYPE REQUIRED
   DESCRIPTION "C++ library for numerical analysis with multi-dimensional array expressions."
   URL "https://xtensor.readthedocs.io/")
 
-# Check for required package xtensor
+# Check for required package xtensor-blas
 find_package(xtensor-blas REQUIRED)
-set_package_properties(xtensor PROPERTIES TYPE REQUIRED
-  DESCRIPTION "C++ library for numerical analysis with multi-dimensional array expressions."
+set_package_properties(xtensor-blas PROPERTIES TYPE REQUIRED
+  DESCRIPTION "BLAS extenssion to xtensor."
   URL "https://xtensor-blas.readthedocs.io/")
 
   find_package(PETSc 3.10)
@@ -183,13 +188,17 @@ set_package_properties(UFC PROPERTIES TYPE REQUIRED
   DESCRIPTION "Unified language for form-compilers (part of FFC-X)"
   URL "https://github.com/fenics/ffcx")
 
-# find_package(xtl REQUIRED)
 find_package(Basix 0.0.1 REQUIRED)
 set_package_properties(basix PROPERTIES TYPE REQUIRED
   DESCRIPTION "FEniCS tabulation library"
   URL "https://github.com/fenics/basix")
 
-#------------------------------------------------------------------------------
+  get_target_property(BASIX_DEFN Basix::basix INTERFACE_COMPILE_DEFINITIONS)
+  if("XTENSOR_USE_XSIMD" IN_LIST BASIX_DEFN)
+    find_package(xsimd REQUIRED)
+  endif()
+
+  #------------------------------------------------------------------------------
 # Run tests to find optional packages
 
 # Check for SLEPc

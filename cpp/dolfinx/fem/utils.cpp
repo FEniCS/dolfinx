@@ -6,7 +6,6 @@
 
 #include "utils.h"
 #include <array>
-#include <basix.h>
 #include <basix/finite-element.h>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Timer.h>

@@ -136,10 +136,10 @@ public:
   /// Layout of dofs on an element
   std::shared_ptr<const ElementDofLayout> element_dof_layout;
 
-  /// Index map that described the parallel distribution of the dofmap
+  /// Index map that describes the parallel distribution of the dofmap
   std::shared_ptr<const common::IndexMap> index_map;
 
-  /// Index map that described the parallel distribution of the dofmap
+  /// Block size associated with the index_map
   int index_map_bs() const;
 
 private:

@@ -9,7 +9,6 @@
 #include <cmath>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
-#include <dolfinx/common/array2d.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <xtensor/xfixed.hpp>
 #include <xtensor/xtensor.hpp>
@@ -21,9 +20,9 @@ using namespace dolfinx::generation;
 namespace
 {
 //-----------------------------------------------------------------------------
-array2d<double> create_geom(MPI_Comm comm,
-                            const std::array<std::array<double, 3>, 2>& p,
-                            std::array<std::size_t, 3> n)
+xt::xtensor<double, 2>
+create_geom(MPI_Comm comm, const std::array<std::array<double, 3>, 2>& p,
+            std::array<std::size_t, 3> n)
 {
   // Extract data
   const std::array<double, 3>& p0 = p[0];
@@ -68,8 +67,8 @@ array2d<double> create_geom(MPI_Comm comm,
         "BoxMesh has non-positive number of vertices in some dimension");
   }
 
-  array2d<double> geom(range_p[1] - range_p[0], 3);
-
+  xt::xtensor<double, 2> geom(
+      {static_cast<std::size_t>(range_p[1] - range_p[0]), 3});
   const std::int64_t sqxy = (nx + 1) * (ny + 1);
   std::array<double, 3> point;
   for (std::int64_t v = range_p[0]; v < range_p[1]; ++v)
@@ -97,7 +96,7 @@ mesh::Mesh build_tet(MPI_Comm comm,
 {
   common::Timer timer("Build BoxMesh");
 
-  array2d<double> geom = create_geom(comm, p, n);
+  xt::xtensor<double, 2> geom = create_geom(comm, p, n);
 
   const std::int64_t nx = n[0];
   const std::int64_t ny = n[1];
@@ -147,7 +146,7 @@ mesh::Mesh build_hex(MPI_Comm comm,
                      const mesh::GhostMode ghost_mode,
                      const mesh::CellPartitionFunction& partitioner)
 {
-  array2d<double> geom = create_geom(comm, p, n);
+  xt::xtensor<double, 2> geom = create_geom(comm, p, n);
 
   const std::int64_t nx = n[0];
   const std::int64_t ny = n[1];
