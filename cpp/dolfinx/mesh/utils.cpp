@@ -871,9 +871,9 @@ mesh::Mesh mesh::add_ghost_layer(const mesh::Mesh& mesh)
 
   // Copy over existing mesh vertices
   const std::int32_t num_vertices = map_v->size_local();
-  const array2d<double>& x_g = geometry.x();
+  const auto& x_g = geometry.x();
   int gdim = geometry.dim();
-  array2d<double> x(num_vertices, gdim);
+  xt::xtensor<double, 2> x = xt::empty<double>({num_vertices, gdim});
   for (int v = 0; v < num_vertices; ++v)
     for (int j = 0; j < gdim; ++j)
       x(v, j) = x_g(vertex_to_x[v], j);
