@@ -48,7 +48,7 @@ class VTKFile
 public:
   /// Create VTK file
   VTKFile(MPI_Comm comm, const std::string filename,
-             const std::string file_mode);
+          const std::string file_mode);
 
   /// Destructor
   ~VTKFile();
