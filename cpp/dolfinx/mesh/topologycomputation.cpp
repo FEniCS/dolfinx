@@ -13,7 +13,6 @@
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
-#include <dolfinx/common/array2d.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/utils.h>
 #include <dolfinx/graph/AdjacencyList.h>
@@ -25,6 +24,8 @@
 #include <unordered_map>
 #include <utility>
 #include <vector>
+#include <xtensor/xtensor.hpp>
+#include <xtensor/xview.hpp>
 
 using namespace dolfinx;
 
@@ -55,14 +56,14 @@ int get_ownership(std::set<int>& processes, std::vector<std::int64_t>& vertices)
 /// ascending order
 /// @pre Each row of @p array must be sorted
 template <typename T>
-std::vector<std::int32_t> sort_by_perm(const dolfinx::array2d<T>& array)
+std::vector<std::int32_t> sort_by_perm(const xt::xtensor<T, 2>& array)
 {
-  std::vector<int> index(array.shape[0]);
+  std::vector<int> index(array.shape(0));
   std::iota(index.begin(), index.end(), 0);
   std::sort(index.begin(), index.end(), [&array](int a, int b) {
     return std::lexicographical_compare(
-        array.row(a).begin(), array.row(a).end(), array.row(b).begin(),
-        array.row(b).end());
+        xt::row(array, a).begin(), xt::row(array, a).end(),
+        xt::row(array, b).begin(), xt::row(array, b).end());
   });
 
   return index;
@@ -87,7 +88,7 @@ std::tuple<std::vector<int>, std::shared_ptr<common::IndexMap>>
 get_local_indexing(
     MPI_Comm comm, const std::shared_ptr<const common::IndexMap>& cell_indexmap,
     const std::shared_ptr<const common::IndexMap>& vertex_indexmap,
-    const dolfinx::array2d<std::int32_t>& entity_list,
+    const xt::xtensor<std::int32_t, 2>& entity_list,
     const std::vector<std::int32_t>& entity_index)
 {
   // entity_list contains all the entities for all the cells,
@@ -120,9 +121,9 @@ get_local_indexing(
     {
       const std::int32_t num_cells
           = cell_indexmap->size_local() + cell_indexmap->num_ghosts();
-      assert(entity_list.shape[0] % num_cells == 0);
+      assert(entity_list.shape(0) % num_cells == 0);
       const std::int32_t num_entities_per_cell
-          = entity_list.shape[0] / num_cells;
+          = entity_list.shape(0) / num_cells;
       const std::int32_t ghost_offset
           = cell_indexmap->size_local() * num_entities_per_cell;
 
@@ -134,7 +135,7 @@ get_local_indexing(
       }
 
       // Set entities in ghost cells to 2 (purely ghost) or 3 (border)
-      for (std::size_t i = ghost_offset; i < entity_list.shape[0]; ++i)
+      for (std::size_t i = ghost_offset; i < entity_list.shape(0); ++i)
       {
         const std::int32_t idx = entity_index[i];
         ghost_status[idx] = ghost_status[idx] | 2;
@@ -175,16 +176,16 @@ get_local_indexing(
   // Set of sharing procs for each entity, counting vertex hits
   // Get a list of unique entities
   std::vector<std::int32_t> unique_row(entity_count);
-  for (std::size_t i = 0; i < entity_list.shape[0]; ++i)
+  for (std::size_t i = 0; i < entity_list.shape(0); ++i)
   {
     unique_row[entity_index[i]] = i;
   }
-  const int num_vertices_per_e = entity_list.shape[1];
+  const int num_vertices_per_e = entity_list.shape(1);
   std::unordered_map<int, int> procs;
   std::vector<std::int64_t> vglobal(num_vertices_per_e);
   for (int i : unique_row)
   {
-    auto entity_list_i = entity_list.row(i);
+    auto entity_list_i = xt::row(entity_list, i);
 
     procs.clear();
     for (int j = 0; j < num_vertices_per_e; ++j)
@@ -422,53 +423,53 @@ compute_entities_by_key_matching(
   // Initialize local array of entities
   const std::int8_t num_entities_per_cell
       = mesh::cell_num_entities(cell_type, dim);
-  const int num_vertices_per_entity
+  const std::size_t num_vertices_per_entity
       = mesh::num_cell_vertices(mesh::cell_entity_type(cell_type, dim));
 
   // Create map from cell vertices to entity vertices
   auto e_vertices = mesh::get_entity_vertices(cell_type, dim);
 
-  const int num_cells = cells.num_nodes();
+  const std::size_t num_cells = cells.num_nodes();
 
   // List of vertices for each entity in each cell
-  dolfinx::array2d<std::int32_t> entity_list(num_cells * num_entities_per_cell,
-                                             num_vertices_per_entity);
+  xt::xtensor<std::int32_t, 2> entity_list(
+      {num_cells * num_entities_per_cell, num_vertices_per_entity});
 
   int k = 0;
-  for (int c = 0; c < num_cells; ++c)
+  for (std::size_t c = 0; c < num_cells; ++c)
   {
     // Get vertices from cell
     auto vertices = cells.links(c);
     for (int i = 0; i < num_entities_per_cell; ++i)
     {
       // Get entity vertices
-      assert(e_vertices.num_links(i) == num_vertices_per_entity);
-      for (int j = 0; j < num_vertices_per_entity; ++j)
+      assert(e_vertices.num_links(i) == (int)num_vertices_per_entity);
+      for (std::size_t j = 0; j < num_vertices_per_entity; ++j)
         entity_list(k, j) = vertices[e_vertices.links(i)[j]];
       ++k;
     }
   }
 
   // Copy list and sort vertices of each entity into order
-  dolfinx::array2d<std::int32_t> entity_list_sorted = entity_list;
-  for (std::size_t i = 0; i < entity_list_sorted.shape[0]; ++i)
+  xt::xtensor<std::int32_t, 2> entity_list_sorted = entity_list;
+  for (std::size_t i = 0; i < entity_list_sorted.shape(0); ++i)
   {
-    std::sort(entity_list_sorted.row(i).begin(),
-              entity_list_sorted.row(i).end());
+    std::sort(xt::row(entity_list_sorted, i).begin(),
+              xt::row(entity_list_sorted, i).end());
   }
 
   // Sort the list and label uniquely
   const std::vector<std::int32_t> sort_order
       = sort_by_perm<std::int32_t>(entity_list_sorted);
-  std::vector<std::int32_t> entity_index(entity_list.shape[0], 0);
+  std::vector<std::int32_t> entity_index(entity_list.shape(0), 0);
   std::int32_t entity_count = 0;
   std::int32_t last = sort_order[0];
   for (std::size_t i = 1; i < sort_order.size(); ++i)
   {
     std::int32_t j = sort_order[i];
-    if (!std::equal(entity_list_sorted.row(j).begin(),
-                    entity_list_sorted.row(j).end(),
-                    entity_list_sorted.row(last).begin()))
+    if (!std::equal(xt::row(entity_list_sorted, j).begin(),
+                    xt::row(entity_list_sorted, j).end(),
+                    xt::row(entity_list_sorted, last).begin()))
     {
       ++entity_count;
     }
@@ -489,9 +490,9 @@ compute_entities_by_key_matching(
     offsets_ev[i + 1] = offsets_ev[i] + num_vertices_per_entity;
   auto ev = std::make_shared<graph::AdjacencyList<std::int32_t>>(
       std::vector<std::int32_t>(offsets_ev.back()), std::move(offsets_ev));
-  for (std::size_t i = 0; i < entity_list.shape[0]; ++i)
+  for (std::size_t i = 0; i < entity_list.shape(0); ++i)
   {
-    std::copy(entity_list.row(i).begin(), entity_list.row(i).end(),
+    std::copy(xt::row(entity_list, i).begin(), xt::row(entity_list, i).end(),
               ev->links(local_index[i]).begin());
   }
 
