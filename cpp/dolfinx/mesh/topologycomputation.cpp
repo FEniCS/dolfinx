@@ -183,10 +183,10 @@ get_local_indexing(
   const int num_vertices_per_e = entity_list.shape(1);
   std::unordered_map<int, int> procs;
   std::vector<std::int64_t> vglobal(num_vertices_per_e);
+  xt::xtensor<std::int32_t, 1> entity_list_i({num_vertices_per_e});
   for (int i : unique_row)
   {
-    auto entity_list_i = xt::row(entity_list, i);
-
+    entity_list_i = xt::row(entity_list, i);
     procs.clear();
     for (int j = 0; j < num_vertices_per_e; ++j)
     {
