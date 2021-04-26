@@ -123,8 +123,7 @@ int main(int argc, char* argv[])
         MPI_COMM_WORLD, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 0.0}}}, {32, 32},
         mesh::CellType::triangle, mesh::GhostMode::none));
 
-    auto V = fem::create_functionspace(functionspace_form_poisson_a, "u",
-                                       mesh);
+    auto V = fem::create_functionspace(functionspace_form_poisson_a, "u", mesh);
 
     // Next, we define the variational formulation by initializing the
     // bilinear and linear forms (:math:`a`, :math:`L`) using the previously
@@ -195,7 +194,7 @@ int main(int argc, char* argv[])
     // .. code-block:: cpp
 
     // Compute solution
-    auto u  = std::make_shared<fem::Function<PetscScalar>>(V);
+    fem::Function<PetscScalar> u(V);
     la::PETScMatrix A = la::PETScMatrix(fem::create_matrix(*a), false);
     la::PETScVector b(*L->function_spaces()[0]->dofmap()->index_map,
                       L->function_spaces()[0]->dofmap()->index_map_bs());
@@ -224,7 +223,7 @@ int main(int argc, char* argv[])
     lu.set_from_options();
 
     lu.set_operator(A.mat());
-    lu.solve(u->vector(), b.vec());
+    lu.solve(u.vector(), b.vec());
 
     // The function ``u`` will be modified during the call to solve. A
     // :cpp:class:`Function` can be saved to a file. Here, we output the
@@ -235,7 +234,7 @@ int main(int argc, char* argv[])
 
     // Save solution in VTK format
     io::VTKFile file(MPI_COMM_WORLD, "u.pvd", "w");
-    file.write({*u}, 0.0);
+    file.write({u}, 0.0);
   }
 
   common::subsystem::finalize_petsc();
