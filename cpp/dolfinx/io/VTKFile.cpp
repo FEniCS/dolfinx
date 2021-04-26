@@ -164,7 +164,7 @@ void _add_data(const fem::Function<Scalar>& u,
       field_node.append_attribute("type") = "Float64";
       field_node.append_attribute("Name") = (component + "_" + u.name).c_str();
       field_node.append_attribute("format") = "ascii";
-      xt::xtensor<Scalar, 1> values_comp;
+      xt::xtensor<double, 2> values_comp;
 
       if (component == "real")
         values_comp = xt::real(values);
@@ -664,7 +664,7 @@ void write_function(
     // Add field data
     std::vector<std::string> components = {""};
     if constexpr (!std::is_scalar<Scalar>::value)
-      const std::vector<std::string> components = {"real", "imag"};
+      components = {"real", "imag"};
 
     for (auto _u : u)
     {
