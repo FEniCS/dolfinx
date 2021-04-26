@@ -167,8 +167,8 @@ std::vector<std::int64_t> SparsityPattern::column_indices() const
 //-----------------------------------------------------------------------------
 int SparsityPattern::block_size(int dim) const { return _bs[dim]; }
 //-----------------------------------------------------------------------------
-void SparsityPattern::insert(const tcb::span<const std::int32_t>& rows,
-                             const tcb::span<const std::int32_t>& cols)
+void SparsityPattern::insert(const xtl::span<const std::int32_t>& rows,
+                             const xtl::span<const std::int32_t>& cols)
 {
   if (_diagonal)
   {

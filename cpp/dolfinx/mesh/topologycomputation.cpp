@@ -202,8 +202,7 @@ get_local_indexing(
       // If any process shares all vertices, then add to list
       if (q.second == num_vertices_per_e)
       {
-        vertex_indexmap->local_to_global(entity_list_i.data(),
-                                         num_vertices_per_e, vglobal.data());
+        vertex_indexmap->local_to_global(entity_list_i, vglobal);
         std::sort(vglobal.begin(), vglobal.end());
 
         global_entity_to_entity_index.insert({vglobal, entity_index[i]});
@@ -443,8 +442,9 @@ compute_entities_by_key_matching(
     for (int i = 0; i < num_entities_per_cell; ++i)
     {
       // Get entity vertices
+      assert(e_vertices.num_links(i) == num_vertices_per_entity);
       for (int j = 0; j < num_vertices_per_entity; ++j)
-        entity_list(k, j) = vertices[e_vertices(i, j)];
+        entity_list(k, j) = vertices[e_vertices.links(i)[j]];
       ++k;
     }
   }
@@ -521,7 +521,7 @@ compute_from_transpose(const graph::AdjacencyList<std::int32_t>& c_d1_d0,
                        const int num_entities_d0, int d0, int d1)
 {
   LOG(INFO) << "Computing mesh connectivity " << d0 << " - " << d1
-            << "from transpose.";
+            << " from transpose.";
 
   // Compute number of connections for each e0
   std::vector<std::int32_t> num_connections(num_entities_d0, 0);
@@ -574,7 +574,7 @@ compute_from_map(const graph::AdjacencyList<std::int32_t>& c_d0_0,
   std::vector<std::int32_t> key(num_verts_d1);
   for (int e = 0; e < c_d1_0.num_nodes(); ++e)
   {
-    tcb::span<const std::int32_t> v = c_d1_0.links(e);
+    xtl::span<const std::int32_t> v = c_d1_0.links(e);
     assert(v.size() == key.size());
     std::partial_sort_copy(v.begin(), v.end(), key.begin(), key.end());
     entity_to_index.insert({key, e});
@@ -587,26 +587,32 @@ compute_from_map(const graph::AdjacencyList<std::int32_t>& c_d0_0,
 
   // Search for d1 entities of d0 in map, and recover index
   const auto e_vertices_ref = mesh::get_entity_vertices(cell_type_d0, d1);
-  std::vector<int> keys(e_vertices_ref.size());
+  std::vector<int> keys(e_vertices_ref.array().size());
   for (int e = 0; e < c_d0_0.num_nodes(); ++e)
   {
     auto e0 = c_d0_0.links(e);
-    for (std::size_t i = 0; i < e_vertices_ref.shape[0]; ++i)
-      for (std::size_t j = 0; j < e_vertices_ref.shape[1]; ++j)
-        keys[i * e_vertices_ref.shape[1] + j] = e0[e_vertices_ref(i, j)];
-
-    for (std::size_t i = 0; i < e_vertices_ref.shape[0]; ++i)
+    for (int i = 0; i < e_vertices_ref.num_nodes(); ++i)
     {
-      auto keys_begin = std::next(keys.cbegin(), i * e_vertices_ref.shape[1]);
+      for (int j = 0; j < e_vertices_ref.num_links(i); ++j)
+      {
+        keys[i * e_vertices_ref.num_links(i) + j]
+            = e0[e_vertices_ref.links(i)[j]];
+      }
+    }
+
+    for (int i = 0; i < e_vertices_ref.num_nodes(); ++i)
+    {
+      auto keys_begin
+          = std::next(keys.cbegin(), i * e_vertices_ref.num_links(i));
       auto keys_end
-          = std::next(keys.cbegin(), (i + 1) * e_vertices_ref.shape[1]);
+          = std::next(keys.cbegin(), (i + 1) * e_vertices_ref.num_links(i));
       std::partial_sort_copy(keys_begin, keys_end, key.begin(), key.end());
       const auto it = entity_to_index.find(key);
       assert(it != entity_to_index.end());
       connections.push_back(it->second);
     }
 
-    offsets[e + 1] = offsets[e] + e_vertices_ref.shape[0];
+    offsets[e + 1] = offsets[e] + e_vertices_ref.num_nodes();
   }
 
   connections.shrink_to_fit();

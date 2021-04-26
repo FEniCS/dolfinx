@@ -25,20 +25,21 @@ using namespace dolfinx::mesh;
 Mesh mesh::create_mesh(MPI_Comm comm,
                        const graph::AdjacencyList<std::int64_t>& cells,
                        const fem::CoordinateElement& element,
-                       const array2d<double>& x, mesh::GhostMode ghost_mode)
+                       const xt::xtensor<double, 2>& x,
+                       mesh::GhostMode ghost_mode)
 {
   return create_mesh(
       comm, cells, element, x, ghost_mode,
       static_cast<graph::AdjacencyList<std::int32_t> (*)(
-          MPI_Comm, int, const mesh::CellType,
-          const graph::AdjacencyList<std::int64_t>&, mesh::GhostMode)>(
-          &mesh::partition_cells_graph));
+          MPI_Comm, int, int, const graph::AdjacencyList<std::int64_t>&,
+          mesh::GhostMode)>(&mesh::partition_cells_graph));
 }
 //-----------------------------------------------------------------------------
 Mesh mesh::create_mesh(MPI_Comm comm,
                        const graph::AdjacencyList<std::int64_t>& cells,
                        const fem::CoordinateElement& element,
-                       const array2d<double>& x, mesh::GhostMode ghost_mode,
+                       const xt::xtensor<double, 2>& x,
+                       mesh::GhostMode ghost_mode,
                        const mesh::CellPartitionFunction& cell_partitioner)
 {
   if (ghost_mode == mesh::GhostMode::shared_vertex)
@@ -58,9 +59,9 @@ Mesh mesh::create_mesh(MPI_Comm comm,
   // partitioning. Always get the ghost cells via facet, though these
   // may be discarded later.
   const int size = dolfinx::MPI::size(comm);
-  const graph::AdjacencyList<std::int32_t> dest
-      = cell_partitioner(comm, size, element.cell_shape(), cells_topology,
-                         GhostMode::shared_facet);
+  const int tdim = mesh::cell_dim(element.cell_shape());
+  const graph::AdjacencyList<std::int32_t> dest = cell_partitioner(
+      comm, size, tdim, cells_topology, GhostMode::shared_facet);
 
   // Distribute cells to destination rank
   const auto [cell_nodes, src, original_cell_index, ghost_owners]
@@ -77,7 +78,6 @@ Mesh mesh::create_mesh(MPI_Comm comm,
 
   // Create connectivity required to compute the Geometry (extra
   // connectivities for higher-order geometries)
-  const int tdim = topology.dim();
   for (int e = 1; e < tdim; ++e)
   {
     if (element.dof_layout().num_entity_dofs(e) > 0)

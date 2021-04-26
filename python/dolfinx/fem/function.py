@@ -373,13 +373,14 @@ class FunctionSpace(ufl.FunctionSpace):
             super().__init__(mesh.ufl_domain(), ufl_element)
 
         # Compile dofmap and element and create DOLFIN objects
-        ufc_element, ufc_dofmap_ptr = jit.ffcx_jit(
+        ufc_element, ufc_dofmap = jit.ffcx_jit(
             mesh.mpi_comm(), self.ufl_element(), form_compiler_parameters=form_compiler_parameters,
             jit_parameters=jit_parameters)
 
         ffi = cffi.FFI()
-        cpp_element = cpp.fem.FiniteElement(ffi.cast("uintptr_t", ufc_element))
-        cpp_dofmap = cpp.fem.create_dofmap(mesh.mpi_comm(), ffi.cast("uintptr_t", ufc_dofmap_ptr), mesh.topology)
+        cpp_element = cpp.fem.FiniteElement(ffi.cast("uintptr_t", ffi.addressof(ufc_element)))
+        cpp_dofmap = cpp.fem.create_dofmap(mesh.mpi_comm(), ffi.cast(
+            "uintptr_t", ffi.addressof(ufc_dofmap)), mesh.topology)
 
         # Initialize the cpp.FunctionSpace
         self._cpp_object = cpp.fem.FunctionSpace(mesh, cpp_element, cpp_dofmap)

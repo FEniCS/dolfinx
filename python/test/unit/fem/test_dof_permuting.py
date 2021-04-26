@@ -128,8 +128,8 @@ def test_dof_positions(cell_type, space_type):
     # for each global dof number
     coord_dofs = mesh.geometry.dofmap
     x_g = mesh.geometry.x
+    cmap = mesh.geometry.cmap
     tdim = mesh.topology.dim
-    cmap = fem.create_coordinate_map(mesh.mpi_comm(), mesh.ufl_domain())
 
     mesh.topology.create_entity_permutations()
     perms = mesh.topology.get_cell_permutation_info()

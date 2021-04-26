@@ -10,6 +10,7 @@
 #include <cstddef>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Mesh.h>
+#include <dolfinx/mesh/cell_types.h>
 #include <mpi.h>
 
 namespace dolfinx
@@ -34,19 +35,18 @@ namespace generation::BoxMesh
 /// @param[in] comm MPI communicator to build mesh on
 /// @param[in] p Points of box
 /// @param[in] n Number of cells in each direction.
-/// @param[in] element Element that describes the geometry of a cell
+/// @param[in] celltype Cell shape
 /// @param[in] ghost_mode Ghost mode
 /// @param[in] partitioner Partitioning function to use for
 /// determining the parallel distribution of cells across MPI ranks
 /// @return Mesh
 mesh::Mesh
 create(MPI_Comm comm, const std::array<std::array<double, 3>, 2>& p,
-       std::array<std::size_t, 3> n, const fem::CoordinateElement& element,
+       std::array<std::size_t, 3> n, mesh::CellType celltype,
        const mesh::GhostMode ghost_mode,
        const mesh::CellPartitionFunction& partitioner
        = static_cast<graph::AdjacencyList<std::int32_t> (*)(
-           MPI_Comm, int, const mesh::CellType,
-           const graph::AdjacencyList<std::int64_t>&, mesh::GhostMode)>(
-           &mesh::partition_cells_graph));
+           MPI_Comm, int, int, const graph::AdjacencyList<std::int64_t>&,
+           mesh::GhostMode)>(&mesh::partition_cells_graph));
 } // namespace generation::BoxMesh
 } // namespace dolfinx

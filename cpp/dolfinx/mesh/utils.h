@@ -7,11 +7,10 @@
 #pragma once
 
 #include <dolfinx/common/MPI.h>
-#include <dolfinx/common/array2d.h>
-#include <dolfinx/common/span.hpp>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/partition.h>
 #include <functional>
+#include <xtl/xspan.hpp>
 
 namespace dolfinx
 {
@@ -41,17 +40,18 @@ extract_topology(const CellType& cell_type, const fem::ElementDofLayout& layout,
 
 /// Compute greatest distance between any two vertices
 std::vector<double> h(const Mesh& mesh,
-                      const tcb::span<const std::int32_t>& entities, int dim);
+                      const xtl::span<const std::int32_t>& entities, int dim);
 
 /// Compute normal to given cell (viewed as embedded in 3D)
-array2d<double> cell_normals(const Mesh& mesh, int dim,
-                             const tcb::span<const std::int32_t>& entities);
+xt::xtensor<double, 2>
+cell_normals(const Mesh& mesh, int dim,
+             const xtl::span<const std::int32_t>& entities);
 
 /// Compute midpoints or mesh entities of a given dimension
-array2d<double> midpoints(const mesh::Mesh& mesh, int dim,
-                          const tcb::span<const std::int32_t>& entities);
+xt::xtensor<double, 2> midpoints(const mesh::Mesh& mesh, int dim,
+                                 const xtl::span<const std::int32_t>& entities);
 
-/// Compute indicies of all mesh entities that evaluate to true for the
+/// Compute indices of all mesh entities that evaluate to true for the
 /// provided geometric marking function. An entity is considered marked
 /// if the marker function evaluates true for all of its vertices.
 ///
@@ -63,9 +63,10 @@ array2d<double> midpoints(const mesh::Mesh& mesh, int dim,
 ///   (indices local to the process)
 std::vector<std::int32_t> locate_entities(
     const mesh::Mesh& mesh, int dim,
-    const std::function<std::vector<bool>(const array2d<double>&)>& marker);
+    const std::function<xt::xtensor<bool, 1>(const xt::xtensor<double, 2>&)>&
+        marker);
 
-/// Compute indicies of all mesh entities that are attached to an owned
+/// Compute indices of all mesh entities that are attached to an owned
 /// boundary facet and evaluate to true for the provided geometric
 /// marking function. An entity is considered marked if the marker
 /// function evaluates true for all of its vertices.
@@ -87,7 +88,8 @@ std::vector<std::int32_t> locate_entities(
 /// process)
 std::vector<std::int32_t> locate_entities_boundary(
     const mesh::Mesh& mesh, int dim,
-    const std::function<std::vector<bool>(const array2d<double>&)>& marker);
+    const std::function<xt::xtensor<bool, 1>(const xt::xtensor<double, 2>&)>&
+        marker);
 
 /// Compute the indices the geometry data for the vertices of the given
 /// mesh entities
@@ -100,9 +102,9 @@ std::vector<std::int32_t> locate_entities_boundary(
 /// @return Indices in the geometry array for the mesh entity vertices, i.e.
 /// indices(i, j) is the position in the geometry array of the j-th vertex of
 /// the entity entity_list[i].
-array2d<std::int32_t>
+xt::xtensor<std::int32_t, 2>
 entities_to_geometry(const mesh::Mesh& mesh, int dim,
-                     const tcb::span<const std::int32_t>& entity_list,
+                     const xtl::span<const std::int32_t>& entity_list,
                      bool orient);
 
 /// Compute the indices (local) of all exterior facets. An exterior facet
@@ -117,7 +119,7 @@ std::vector<std::int32_t> exterior_facet_indices(const Mesh& mesh);
 ///
 /// @param[in] comm MPI Communicator
 /// @param[in] n Number of partitions
-/// @param[in] cell_type Cell type
+/// @param[in] tdim Topological dimension
 /// @param[in] cells Cells on this process. The ith entry in list
 /// contains the global indices for the cell vertices. Each cell can
 /// appear only once across all processes. The cell vertex indices are
@@ -128,14 +130,14 @@ std::vector<std::int32_t> exterior_facet_indices(const Mesh& mesh);
 /// shared_facet or shared_vertex
 /// @return Destination rank for each cell on this process
 graph::AdjacencyList<std::int32_t>
-partition_cells_graph(MPI_Comm comm, int n, const mesh::CellType cell_type,
+partition_cells_graph(MPI_Comm comm, int n, int tdim,
                       const graph::AdjacencyList<std::int64_t>& cells,
                       mesh::GhostMode ghost_mode);
 
 /// Compute destination rank for mesh cells on this rank by applying the
 /// a provided graph partitioner to the dual graph of the mesh
 graph::AdjacencyList<std::int32_t>
-partition_cells_graph(MPI_Comm comm, int n, const mesh::CellType cell_type,
+partition_cells_graph(MPI_Comm comm, int n, int tdim,
                       const graph::AdjacencyList<std::int64_t>& cells,
                       mesh::GhostMode ghost_mode,
                       const graph::partition_fn& partfn);

@@ -7,11 +7,13 @@
 #include "cell_types.h"
 #include "Geometry.h"
 #include <algorithm>
-#include <basix.h>
+#include <basix/cell.h>
 #include <cfloat>
 #include <cstdlib>
 #include <numeric>
 #include <stdexcept>
+#include <xtensor/xbuilder.hpp>
+#include <xtensor/xfixed.hpp>
 
 using namespace dolfinx;
 
@@ -30,6 +32,10 @@ std::string mesh::to_string(mesh::CellType type)
     return "tetrahedron";
   case mesh::CellType::quadrilateral:
     return "quadrilateral";
+  case mesh::CellType::pyramid:
+    return "pyramid";
+  case mesh::CellType::prism:
+    return "prism";
   case mesh::CellType::hexahedron:
     return "hexahedron";
   default:
@@ -50,6 +56,10 @@ mesh::CellType mesh::to_type(const std::string& cell)
     return mesh::CellType::tetrahedron;
   else if (cell == "quadrilateral")
     return mesh::CellType::quadrilateral;
+  else if (cell == "pyramid")
+    return mesh::CellType::pyramid;
+  else if (cell == "prism")
+    return mesh::CellType::prism;
   else if (cell == "hexahedron")
     return mesh::CellType::hexahedron;
   else
@@ -65,8 +75,8 @@ mesh::CellType mesh::cell_entity_type(mesh::CellType type, int d)
     return CellType::interval;
   else if (d == (dim - 1))
     return mesh::cell_facet_type(type);
-
-  return CellType::point;
+  else
+    return CellType::point;
 }
 //-----------------------------------------------------------------------------
 mesh::CellType mesh::cell_facet_type(mesh::CellType type)
@@ -83,6 +93,10 @@ mesh::CellType mesh::cell_facet_type(mesh::CellType type)
     return mesh::CellType::triangle;
   case mesh::CellType::quadrilateral:
     return mesh::CellType::interval;
+  case mesh::CellType::pyramid:
+    throw std::runtime_error("TODO: pyramid");
+  case mesh::CellType::prism:
+    throw std::runtime_error("TODO: prism");
   case mesh::CellType::hexahedron:
     return mesh::CellType::quadrilateral;
   default:
@@ -91,20 +105,16 @@ mesh::CellType mesh::cell_facet_type(mesh::CellType type)
   }
 }
 //-----------------------------------------------------------------------------
-dolfinx::array2d<int> mesh::get_entity_vertices(mesh::CellType type, int dim)
+graph::AdjacencyList<int> mesh::get_entity_vertices(mesh::CellType type,
+                                                    int dim)
 {
   const std::vector<std::vector<int>> topology
-      = basix::topology(to_string(type).c_str())[dim];
+      = basix::cell::topology(basix::cell::str_to_type(to_string(type)))[dim];
 
-  dolfinx::array2d<int> e(topology.size(), topology[0].size());
-  for (std::size_t i = 0; i < topology.size(); ++i)
-    for (std::size_t j = 0; j < topology[0].size(); ++j)
-      e(i, j) = topology[i][j];
-
-  return e;
+  return graph::AdjacencyList<int>(topology);
 }
 //-----------------------------------------------------------------------------
-dolfinx::array2d<int> mesh::get_sub_entities(CellType type, int dim0, int dim1)
+xt::xtensor<int, 2> mesh::get_sub_entities(CellType type, int dim0, int dim1)
 {
   if (dim0 != 2)
   {
@@ -116,23 +126,22 @@ dolfinx::array2d<int> mesh::get_sub_entities(CellType type, int dim0, int dim1)
     throw std::runtime_error(
         "mesh::get_sub_entities supports getting edges (d=1) at present.");
   }
+
   // TODO: get this data from basix
-  dolfinx::array2d<int> triangle({{0, 1, 2}});
-  dolfinx::array2d<int> quadrilateral({{0, 1, 2, 3}});
-  dolfinx::array2d<int> tetrahedron(
-      {{0, 1, 2}, {0, 3, 4}, {1, 3, 5}, {2, 4, 5}});
-  dolfinx::array2d<int> hexahedron({{0, 1, 3, 5},
-                                    {0, 2, 4, 8},
-                                    {1, 2, 6, 9},
-                                    {3, 4, 7, 10},
-                                    {5, 6, 7, 11},
-                                    {8, 9, 10, 11}});
+  static const xt::xtensor_fixed<int, xt::xshape<1, 3>> triangle = {{0, 1, 2}};
+  static const xt::xtensor_fixed<int, xt::xshape<1, 4>> quadrilateral
+      = {{0, 1, 2, 3}};
+  static const xt::xtensor_fixed<int, xt::xshape<4, 3>> tetrahedron
+      = {{0, 1, 2}, {0, 3, 4}, {1, 3, 5}, {2, 4, 5}};
+  static const xt::xtensor_fixed<int, xt::xshape<6, 4>> hexahedron
+      = {{0, 1, 3, 5},  {0, 2, 4, 8},  {1, 2, 6, 9},
+         {3, 4, 7, 10}, {5, 6, 7, 11}, {8, 9, 10, 11}};
   switch (type)
   {
   case mesh::CellType::interval:
-    return dolfinx::array2d<int>(0, 0);
+    return xt::empty<int>({0, 0});
   case mesh::CellType::point:
-    return dolfinx::array2d<int>(0, 0);
+    return xt::empty<int>({0, 0});
   case mesh::CellType::triangle:
     return triangle;
   case mesh::CellType::tetrahedron:
@@ -143,18 +152,7 @@ dolfinx::array2d<int> mesh::get_sub_entities(CellType type, int dim0, int dim1)
     return hexahedron;
   default:
     throw std::runtime_error("Unsupported cell type.");
-    return dolfinx::array2d<int>(0, 0);
   }
-
-  // static const int triangle[][4] = {
-  //     {0, 1, 2, -1},
-  // };
-  // static const int tetrahedron[][4]
-  //     = {{0, 1, 2, -1}, {0, 3, 4, -1}, {1, 3, 5, -1}, {2, 4, 5, -1}};
-  // static const int quadrilateral[][4] = {{0, 3, 1, 2}};
-  // static const int hexahedron[][4]
-  //     = {{0, 1, 4, 5},   {2, 3, 6, 7},  {0, 2, 8, 9},
-  //        {1, 3, 10, 11}, {4, 6, 8, 10}, {5, 7, 9, 11}};
 }
 //-----------------------------------------------------------------------------
 int mesh::cell_dim(mesh::CellType type)
@@ -171,23 +169,28 @@ int mesh::cell_dim(mesh::CellType type)
     return 3;
   case mesh::CellType::quadrilateral:
     return 2;
+  case mesh::CellType::pyramid:
+    return 3;
+  case mesh::CellType::prism:
+    return 3;
   case mesh::CellType::hexahedron:
     return 3;
   default:
     throw std::runtime_error("Unknown cell type.");
-    return -1;
   }
 }
 //-----------------------------------------------------------------------------
 int mesh::cell_num_entities(mesh::CellType type, int dim)
 {
   assert(dim <= 3);
-  static const int point[4] = {1, 0, 0, 0};
-  static const int interval[4] = {2, 1, 0, 0};
-  static const int triangle[4] = {3, 3, 1, 0};
-  static const int quadrilateral[4] = {4, 4, 1, 0};
-  static const int tetrahedron[4] = {4, 6, 4, 1};
-  static const int hexahedron[4] = {8, 12, 6, 1};
+  constexpr std::array<int, 4> point = {1, 0, 0, 0};
+  constexpr std::array<int, 4> interval = {2, 1, 0, 0};
+  constexpr std::array<int, 4> triangle = {3, 3, 1, 0};
+  constexpr std::array<int, 4> quadrilateral = {4, 4, 1, 0};
+  constexpr std::array<int, 4> tetrahedron = {4, 6, 4, 1};
+  constexpr std::array<int, 4> pyramid = {5, 8, 5, 1};
+  constexpr std::array<int, 4> prism = {6, 9, 5, 1};
+  constexpr std::array<int, 4> hexahedron = {8, 12, 6, 1};
   switch (type)
   {
   case mesh::CellType::point:
@@ -200,11 +203,14 @@ int mesh::cell_num_entities(mesh::CellType type, int dim)
     return tetrahedron[dim];
   case mesh::CellType::quadrilateral:
     return quadrilateral[dim];
+  case mesh::CellType::pyramid:
+    return pyramid[dim];
+  case mesh::CellType::prism:
+    return prism[dim];
   case mesh::CellType::hexahedron:
     return hexahedron[dim];
   default:
     throw std::runtime_error("Unknown cell type.");
-    return -1;
   }
 }
 //-----------------------------------------------------------------------------
@@ -226,7 +232,8 @@ mesh::cell_entity_closure(mesh::CellType cell_type)
   for (int i = 0; i <= cell_dim; ++i)
     num_entities[i] = mesh::cell_num_entities(cell_type, i);
 
-  const auto edge_v = mesh::get_entity_vertices(cell_type, 1);
+  const graph::AdjacencyList<int> edge_v
+      = mesh::get_entity_vertices(cell_type, 1);
   const auto face_e = mesh::get_sub_entities(cell_type, 2, 1);
 
   std::map<std::array<int, 2>, std::vector<std::set<int>>> entity_closure;
@@ -261,15 +268,16 @@ mesh::cell_entity_closure(mesh::CellType cell_type)
           for (int v = 0; v < 2; ++v)
           {
             // Add vertex connected to edge
-            entity_closure[{{dim, entity}}][0].insert(edge_v(edge_index, v));
+            entity_closure[{{dim, entity}}][0].insert(
+                edge_v.links(edge_index)[v]);
           }
         }
       }
 
       if (dim == 1)
       {
-        entity_closure[{{dim, entity}}][0].insert(edge_v(entity, 0));
-        entity_closure[{{dim, entity}}][0].insert(edge_v(entity, 1));
+        entity_closure[{{dim, entity}}][0].insert(edge_v.links(entity)[0]);
+        entity_closure[{{dim, entity}}][0].insert(edge_v.links(entity)[1]);
       }
     }
   }

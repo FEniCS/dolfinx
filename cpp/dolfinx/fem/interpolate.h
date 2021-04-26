@@ -7,13 +7,15 @@
 #pragma once
 
 #include "FunctionSpace.h"
-#include <Eigen/Core>
-#include <dolfinx/common/span.hpp>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <functional>
 #include <variant>
+#include <xtensor/xadapt.hpp>
+#include <xtensor/xtensor.hpp>
+#include <xtensor/xview.hpp>
+#include <xtl/xspan.hpp>
 
 namespace dolfinx::fem
 {
@@ -31,9 +33,9 @@ class Function;
 /// interpolation coordinates for
 /// @return The coordinates in the physical space at which to evaluate
 /// an expression
-array2d<double>
+xt::xtensor<double, 2>
 interpolation_coords(const fem::FiniteElement& element, const mesh::Mesh& mesh,
-                     const tcb::span<const std::int32_t>& cells);
+                     const xtl::span<const std::int32_t>& cells);
 
 /// Interpolate a finite element Function (on possibly non-matching
 /// meshes) in another finite element space
@@ -54,11 +56,11 @@ void interpolate(Function<T>& u, const Function<T>& v);
 /// interpolate. Should be the same as the list used when calling
 /// fem::interpolation_coords.
 template <typename T>
-void interpolate(Function<T>& u,
-                 const std::function<std::variant<std::vector<T>, array2d<T>>(
-                     const array2d<double>&)>& f,
-                 const array2d<double>& x,
-                 const tcb::span<const std::int32_t>& cells);
+void interpolate(
+    Function<T>& u,
+    const std::function<xt::xarray<T>(const xt::xtensor<double, 2>&)>& f,
+    const xt::xtensor<double, 2>& x,
+    const xtl::span<const std::int32_t>& cells);
 
 /// Interpolate an expression f(x)
 ///
@@ -79,8 +81,9 @@ void interpolate(Function<T>& u,
 template <typename T>
 void interpolate_c(
     Function<T>& u,
-    const std::function<void(array2d<T>&, const array2d<double>&)>& f,
-    const array2d<double>& x, const tcb::span<const std::int32_t>& cells);
+    const std::function<void(xt::xarray<T>&, const xt::xtensor<double, 2>&)>& f,
+    const xt::xtensor<double, 2>& x,
+    const xtl::span<const std::int32_t>& cells);
 
 namespace detail
 {
@@ -124,8 +127,8 @@ void interpolate_from_any(Function<T>& u, const Function<T>& v)
   assert(bs == dofmap_u->bs());
   for (int c = 0; c < num_cells; ++c)
   {
-    tcb::span<const std::int32_t> dofs_v = dofmap_v->cell_dofs(c);
-    tcb::span<const std::int32_t> cell_dofs = dofmap_u->cell_dofs(c);
+    xtl::span<const std::int32_t> dofs_v = dofmap_v->cell_dofs(c);
+    xtl::span<const std::int32_t> cell_dofs = dofmap_u->cell_dofs(c);
     assert(dofs_v.size() == cell_dofs.size());
     for (std::size_t i = 0; i < dofs_v.size(); ++i)
     {
@@ -142,7 +145,8 @@ template <typename T>
 void interpolate(Function<T>& u, const Function<T>& v)
 {
   assert(u.function_space());
-  const auto element = u.function_space()->element();
+  const std::shared_ptr<const FiniteElement> element
+      = u.function_space()->element();
   assert(element);
 
   // Check that function ranks match
@@ -176,13 +180,13 @@ void interpolate(Function<T>& u, const Function<T>& v)
 }
 //----------------------------------------------------------------------------
 template <typename T>
-void interpolate(Function<T>& u,
-                 const std::function<std::variant<std::vector<T>, array2d<T>>(
-                     const array2d<double>&)>& f,
-                 const array2d<double>& x,
-                 const tcb::span<const std::int32_t>& cells)
+void interpolate(
+    Function<T>& u,
+    const std::function<xt::xarray<T>(const xt::xtensor<double, 2>&)>& f,
+    const xt::xtensor<double, 2>& x, const xtl::span<const std::int32_t>& cells)
 {
-  const auto element = u.function_space()->element();
+  const std::shared_ptr<const FiniteElement> element
+      = u.function_space()->element();
   assert(element);
   const int element_bs = element->block_size();
   if (int num_sub = element->num_sub_elements();
@@ -201,9 +205,9 @@ void interpolate(Function<T>& u,
   const int tdim = mesh->topology().dim();
 
   // Get the interpolation points on the reference cells
-  const array2d<double> X = element->interpolation_points();
+  const xt::xtensor<double, 2>& X = element->interpolation_points();
 
-  if (X.shape[0] == 0)
+  if (X.shape(0) == 0)
     throw std::runtime_error(
         "Interpolation into this space is not yet supported.");
 
@@ -215,26 +219,19 @@ void interpolate(Function<T>& u,
   // number of rows equal to the number of components of the function,
   // and the number of columns is equal to the number of evaluation
   // points.
+  xt::xarray<T> values = f(x);
 
-  // TODO: Copies and memory allocation could be avoided with a 'span2d'
-  // class, or by just pointing to the data
-  array2d<T> values(element->value_size(), x.shape[1]);
-  std::variant<std::vector<T>, array2d<T>> values_v = f(x);
-  if (std::holds_alternative<array2d<T>>(values_v))
-  {
-    values = std::get<1>(values_v);
-    if (values.shape[0] != element->value_size())
-      throw std::runtime_error("Interpolation data has the wrong shape.");
-  }
-  else
+  if (values.dimension() == 1)
   {
     if (element->value_size() != 1)
       throw std::runtime_error("Interpolation data has the wrong shape.");
-    std::copy(std::get<0>(values_v).begin(), std::get<0>(values_v).end(),
-              values.data());
+    values.reshape({element->value_size(), x.shape(1)});
   }
 
-  if (values.shape[1] != cells.size() * X.shape[0])
+  if (values.shape(0) != element->value_size())
+    throw std::runtime_error("Interpolation data has the wrong shape.");
+
+  if (values.shape(1) != cells.size() * X.shape(0))
     throw std::runtime_error("Interpolation data has the wrong shape.");
 
   // Get dofmap
@@ -242,74 +239,103 @@ void interpolate(Function<T>& u,
   assert(dofmap);
   const int dofmap_bs = dofmap->bs();
 
-  // Get coordinate map
-  const fem::CoordinateElement& cmap = mesh->geometry().cmap();
-
-  // Get geometry data
-  const graph::AdjacencyList<std::int32_t>& x_dofmap
-      = mesh->geometry().dofmap();
-  // FIXME: Add proper interface for num coordinate dofs
-  const int num_dofs_g = x_dofmap.num_links(0);
-  const array2d<double>& x_g = mesh->geometry().x();
-
-  // NOTE: The below loop over cells could be skipped for some elements,
-  // e.g. Lagrange, where the interpolation is just the identity
-
   // Loop over cells and compute interpolation dofs
   const int num_scalar_dofs = element->space_dimension() / element_bs;
   const int value_size = element->value_size() / element_bs;
 
-  array2d<double> x_cell(X.shape[0], gdim);
-  std::vector<double> J(X.shape[0] * gdim * tdim);
-  std::vector<double> detJ(X.shape[0]);
-  std::vector<double> K(X.shape[0] * tdim * gdim);
-  array2d<double> X_ref(X.shape[0], tdim);
-
-  array2d<double> coordinate_dofs(num_dofs_g, gdim);
-
-  array2d<T> reference_data(value_size, X.shape[0]);
-
   std::vector<T>& coeffs = u.x()->mutable_array();
   std::vector<T> _coeffs(num_scalar_dofs);
-  array2d<T> _vals(value_size, X.shape[0]);
-  for (std::int32_t c : cells)
+
+  // This assumes that any element with an identity interpolation matrix is a
+  // point evaluation
+  if (element->interpolation_ident())
   {
-    auto x_dofs = x_dofmap.links(c);
-    for (int i = 0; i < num_dofs_g; ++i)
-      for (int j = 0; j < gdim; ++j)
-        coordinate_dofs(i, j) = x_g(x_dofs[i], j);
-    cmap.push_forward(x_cell, X, coordinate_dofs);
-
-    cmap.compute_reference_geometry(X_ref, J, detJ, K, x_cell, coordinate_dofs);
-
-    auto dofs = dofmap->cell_dofs(c);
-
-    for (int k = 0; k < element_bs; ++k)
+    for (std::int32_t c : cells)
     {
-      // Extract computed expression values for element block k
-      for (int m = 0; m < value_size; ++m)
+      xtl::span<const std::int32_t> dofs = dofmap->cell_dofs(c);
+      for (int k = 0; k < element_bs; ++k)
       {
-        std::copy_n(&values(k * value_size + m, c * X.shape[0]), X.shape[0],
-                    _vals.row(m).begin());
+        for (int i = 0; i < num_scalar_dofs; ++i)
+          _coeffs[i] = values(k, c * num_scalar_dofs + i);
+        element->apply_inverse_transpose_dof_transformation(
+            tcb::make_span(_coeffs), cell_info[c], 1);
+        for (int i = 0; i < num_scalar_dofs; ++i)
+        {
+          const int dof = i * element_bs + k;
+          std::div_t pos = std::div(dof, dofmap_bs);
+          coeffs[dofmap_bs * dofs[pos.quot] + pos.rem] = _coeffs[i];
+        }
       }
+    }
+  }
+  else
+  {
+    // Get coordinate map
+    const fem::CoordinateElement& cmap = mesh->geometry().cmap();
 
-      // Get element degrees of freedom for block
-      element->map_pull_back(reference_data.data(), _vals.data(), J.data(),
-                             detJ.data(), K.data(), gdim, value_size, 1,
-                             X.shape[0]);
+    // Get geometry data
+    const graph::AdjacencyList<std::int32_t>& x_dofmap
+        = mesh->geometry().dofmap();
+    // FIXME: Add proper interface for num coordinate dofs
+    const int num_dofs_g = x_dofmap.num_links(0);
+    const xt::xtensor<double, 2>& x_g = mesh->geometry().x();
 
-      element->interpolate(reference_data, tcb::make_span(_coeffs));
-      element->apply_inverse_transpose_dof_transformation(_coeffs.data(),
-                                                          cell_info[c], 1);
+    // Create data structures for Jacobian info
+    xt::xtensor<double, 3> J = xt::empty<double>({int(X.shape(0)), gdim, tdim});
+    xt::xtensor<double, 3> K = xt::empty<double>({int(X.shape(0)), tdim, gdim});
+    xt::xtensor<double, 1> detJ = xt::empty<double>({X.shape(0)});
 
-      assert(_coeffs.size() == num_scalar_dofs);
+    xt::xtensor<double, 2> coordinate_dofs
+        = xt::empty<double>({num_dofs_g, gdim});
 
-      // Copy interpolation dofs into coefficient vector
-      for (int i = 0; i < num_scalar_dofs; ++i)
+    xt::xtensor<T, 3> reference_data({X.shape(0), 1, value_size});
+    xt::xtensor<T, 3> _vals({X.shape(0), 1, value_size});
+
+    // Tabulate 1st order derivatives of shape functions at interpolation coords
+    xt::xtensor<double, 4> dphi
+        = xt::view(cmap.tabulate(1, X), xt::range(1, tdim + 1), xt::all(),
+                   xt::all(), xt::all());
+
+    for (std::int32_t c : cells)
+    {
+      auto x_dofs = x_dofmap.links(c);
+      for (int i = 0; i < num_dofs_g; ++i)
+        for (int j = 0; j < gdim; ++j)
+          coordinate_dofs(i, j) = x_g(x_dofs[i], j);
+
+      // Compute J, detJ and K
+      cmap.compute_jacobian(dphi, coordinate_dofs, J);
+      cmap.compute_jacobian_inverse(J, K);
+      cmap.compute_jacobian_determinant(J, detJ);
+
+      xtl::span<const std::int32_t> dofs = dofmap->cell_dofs(c);
+      for (int k = 0; k < element_bs; ++k)
       {
-        const int dof = i * element_bs + k;
-        std::div_t pos = std::div(dof, dofmap_bs);
-        coeffs[dofmap_bs * dofs[pos.quot] + pos.rem] = _coeffs[i];
+        // Extract computed expression values for element block k
+        for (int m = 0; m < value_size; ++m)
+        {
+          std::copy_n(&values(k * value_size + m, c * X.shape(0)), X.shape(0),
+                      xt::view(_vals, xt::all(), 0, m).begin());
+        }
+
+        // Get element degrees of freedom for block
+        element->map_pull_back(_vals, J, detJ, K, reference_data);
+
+        xt::xtensor<T, 2> ref_data
+            = xt::transpose(xt::view(reference_data, xt::all(), 0, xt::all()));
+        element->interpolate(ref_data, tcb::make_span(_coeffs));
+        element->apply_inverse_transpose_dof_transformation(
+            tcb::make_span(_coeffs), cell_info[c], 1);
+
+        assert(_coeffs.size() == num_scalar_dofs);
+
+        // Copy interpolation dofs into coefficient vector
+        for (int i = 0; i < num_scalar_dofs; ++i)
+        {
+          const int dof = i * element_bs + k;
+          std::div_t pos = std::div(dof, dofmap_bs);
+          coeffs[dofmap_bs * dofs[pos.quot] + pos.rem] = _coeffs[i];
+        }
       }
     }
   }
@@ -318,19 +344,20 @@ void interpolate(Function<T>& u,
 template <typename T>
 void interpolate_c(
     Function<T>& u,
-    const std::function<void(array2d<T>&, const array2d<double>&)>& f,
-    const array2d<double>& x, const tcb::span<const std::int32_t>& cells)
+    const std::function<void(xt::xarray<T>&, const xt::xtensor<double, 2>&)>& f,
+    const xt::xtensor<double, 2>& x, const xtl::span<const std::int32_t>& cells)
 {
-  const auto element = u.function_space()->element();
+  const std::shared_ptr<const FiniteElement> element
+      = u.function_space()->element();
   assert(element);
   std::vector<int> vshape(element->value_rank(), 1);
   for (std::size_t i = 0; i < vshape.size(); ++i)
     vshape[i] = element->value_dimension(i);
-  const int value_size = std::accumulate(std::begin(vshape), std::end(vshape),
-                                         1, std::multiplies<>());
+  const std::size_t value_size = std::accumulate(
+      std::begin(vshape), std::end(vshape), 1, std::multiplies<>());
 
-  auto fn = [value_size, &f](const array2d<double>& x) {
-    array2d<T> values(value_size, x.shape[1]);
+  auto fn = [value_size, &f](const xt::xtensor<double, 2>& x) {
+    xt::xarray<T> values = xt::empty<T>({value_size, x.shape(1)});
     f(values, x);
     return values;
   };

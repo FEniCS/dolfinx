@@ -5,7 +5,6 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "dofmapbuilder.h"
-#include "CoordinateElement.h"
 #include "ElementDofLayout.h"
 #include <algorithm>
 #include <cstdlib>
@@ -383,7 +382,8 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
     if (map)
     {
       shared_entity[d] = std::vector<bool>(map->size_local(), false);
-      const std::vector<std::int32_t>& forward_indices = map->shared_indices();
+      const std::vector<std::int32_t>& forward_indices
+          = map->shared_indices().array();
       for (auto entity : forward_indices)
         shared_entity[d][entity] = true;
     }

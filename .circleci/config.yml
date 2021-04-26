@@ -3,10 +3,14 @@ version: 2.1
 install-python-components: &install-python-components
   name: Install FEniCS Python components
   command: |
-    pip3 install git+https://github.com/FEniCS/basix.git
+    git clone https://github.com/FEniCS/basix.git --branch main --single-branch
+    cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -B build-dir -S ./basix
+    cmake --build build-dir --parallel 3
+    cmake --install build-dir
+    pip3 install ./basix/python
+    # pip3 install git+https://github.com/FEniCS/basix.git
     pip3 install git+https://github.com/FEniCS/ufl.git
     pip3 install git+https://github.com/FEniCS/ffcx.git
-    pip3 install sphinx==3.4.3
 
 flake8-python-code: &flake8-python-code
   name: Flake8 checks on Python code
@@ -82,7 +86,7 @@ demos-python-mpi: &demos-python-mpi
     python3 -m pytest -n=2 -v -m mpi test.py --num-proc=3
 
 set-jit-defaults: &set-jit-defaults
-  name: Set default DOLFINX JIT parameters
+  name: Set default DOLFINx JIT parameters
   command: |
     mkdir -p ~/.config/dolfinx
     echo '{ "cffi_extra_compile_args" : ["-g0", "-O0" ] }' > ~/.config/dolfinx/dolfinx_jit_parameters.json
