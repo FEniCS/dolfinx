@@ -34,7 +34,6 @@ fem::interpolation_coords(const fem::FiniteElement& element,
 
   // Push reference coordinates (X) forward to the physical coordinates
   // (x) for each cell
-  xt::xtensor<double, 2> x_cell = xt::zeros<double>({X.shape(0), gdim});
   xt::xtensor<double, 2> coordinate_dofs
       = xt::zeros<double>({num_dofs_g, gdim});
   std::array<std::size_t, 2> shape = {3, cells.size() * X.shape(0)};
@@ -43,15 +42,23 @@ fem::interpolation_coords(const fem::FiniteElement& element,
   {
     // Get geometry data for current cell
     auto x_dofs = x_dofmap.links(cells[c]);
-    for (std::size_t i = 0; i < num_dofs_g; ++i)
-      for (std::size_t j = 0; j < gdim; ++j)
-        coordinate_dofs(i, j) = x_g(x_dofs[i], j);
+    for (std::size_t i = 0; i < x_dofs.size(); ++i)
+    {
+      std::copy_n(xt::row(x_g, x_dofs[i]).begin(), gdim,
+                  std::next(coordinate_dofs.begin(), i * gdim));
+    }
 
     // Push forward coordinates (X -> x)
-    cmap.push_forward(x_cell, coordinate_dofs, phi);
-    for (std::size_t i = 0; i < x_cell.shape(0); ++i)
-      for (std::size_t j = 0; j < x_cell.shape(1); ++j)
-        x(j, c * X.shape(0) + i) = x_cell(i, j);
+    for (std::size_t p = 0; p < X.shape(0); ++p)
+    {
+      for (std::size_t j = 0; j < gdim; ++j)
+      {
+        double acc = 0;
+        for (std::size_t k = 0; k < num_dofs_g; ++k)
+          acc += phi(p, k) * coordinate_dofs(k, j);
+        x(j, c * X.shape(0) + p) = acc;
+      }
+    }
   }
 
   return x;
