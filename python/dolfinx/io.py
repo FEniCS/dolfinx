@@ -1,4 +1,4 @@
-# Copyright (C) 2017-2020 Chris N. Richardson, Garth N. Wells, Michal Habera
+# Copyright (C) 2017-2021 Chris N. Richardson, Garth N. Wells, Michal Habera
 # and Jørgen S. Dokken
 #
 # This file is part of DOLFINX (https://www.fenicsproject.org)
@@ -10,10 +10,11 @@
 import numpy
 import ufl
 
-from dolfinx import cpp
+from dolfinx import cpp, fem
+import typing
 
 
-class VTKFile:
+class VTKFile(cpp.io.VTKFile):
     """Interface to VTK files
     VTK supports arbitrary order Lagrangian finite elements for the
     geometry description. XDMF is the preferred format for geometry
@@ -21,22 +22,21 @@ class VTKFile:
 
     """
 
-    def __init__(self, filename: str):
-        """Open VTK file
-        Parameters
-        ----------
-        filename
-            Name of the file
-        """
-        self._cpp_object = cpp.io.VTKFile(filename)
+    def write_mesh(self, mesh: cpp.mesh.Mesh, t: float = 0.0) -> None:
+        """Write mesh to file for a given time (default 0.0)"""
+        self.write(mesh, t)
 
-    def write(self, o, t=None) -> None:
-        """Write object to file"""
-        o_cpp = getattr(o, "_cpp_object", o)
-        if t is None:
-            self._cpp_object.write(o_cpp)
+    def write_function(self, u: typing.Union[typing.List[fem.Function], fem.Function], t: float = 0.0) -> None:
+        """
+        Write a single function or a list of functions to file for a given time (default 0.0)
+        """
+        cpp_list = None
+        if isinstance(u, list):
+            cpp_list = [getattr(u_, "_cpp_object", u_) for u_ in u]
         else:
-            self._cpp_object.write(o_cpp, t)
+            cpp_list = [getattr(u, "_cpp_object", u)
+                        ]
+        super().write(cpp_list, t)
 
 
 class XDMFFile(cpp.io.XDMFFile):
