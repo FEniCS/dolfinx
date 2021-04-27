@@ -123,8 +123,7 @@ int main(int argc, char* argv[])
         MPI_COMM_WORLD, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 0.0}}}, {32, 32},
         mesh::CellType::triangle, mesh::GhostMode::none));
 
-    auto V = fem::create_functionspace(functionspace_form_poisson_a, "u",
-                                       mesh);
+    auto V = fem::create_functionspace(functionspace_form_poisson_a, "u", mesh);
 
     // Next, we define the variational formulation by initializing the
     // bilinear and linear forms (:math:`a`, :math:`L`) using the previously
@@ -234,8 +233,8 @@ int main(int argc, char* argv[])
     // .. code-block:: cpp
 
     // Save solution in VTK format
-    io::VTKFile file("u.pvd");
-    file.write(u);
+    io::VTKFile file(MPI_COMM_WORLD, "u.pvd", "w");
+    file.write({u}, 0.0);
   }
 
   common::subsystem::finalize_petsc();
