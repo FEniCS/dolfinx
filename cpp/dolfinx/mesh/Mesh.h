@@ -171,6 +171,7 @@ private:
 /// geometric mapping for cells
 /// @param[in] x The coordinates of mesh nodes
 /// @param[in] ghost_mode The requested type of cell ghosting/overlap
+/// @param[in] parent_map The parent map (for a refined mesh)
 /// @return A distributed Mesh.
 Mesh create_mesh(
     MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
