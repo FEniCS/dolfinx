@@ -8,6 +8,7 @@ import dolfinx
 import numpy as np
 import pytest
 import ufl
+from dolfinx_utils.test.skips import skip_in_parallel
 from dolfinx import FunctionSpace, UnitCubeMesh, UnitSquareMesh
 from dolfinx.cpp.mesh import GhostMode
 from dolfinx.mesh import refine
@@ -74,6 +75,7 @@ def xtest_refinement_gdim():
     assert mesh.geometry.dim == mesh2.geometry.dim
 
 
+@skip_in_parallel
 @pytest.mark.parametrize("tdim", [2, 3])
 @pytest.mark.parametrize("mesh_size", [2, 4])
 def test_parent_map(tdim, mesh_size):
