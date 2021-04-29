@@ -22,25 +22,26 @@ using namespace dolfinx;
 using namespace dolfinx::mesh;
 
 //-----------------------------------------------------------------------------
-Mesh mesh::create_mesh(MPI_Comm comm,
-                       const graph::AdjacencyList<std::int64_t>& cells,
-                       const fem::CoordinateElement& element,
-                       const xt::xtensor<double, 2>& x,
-                       mesh::GhostMode ghost_mode)
+Mesh mesh::create_mesh(
+    MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
+    const fem::CoordinateElement& element, const xt::xtensor<double, 2>& x,
+    mesh::GhostMode ghost_mode,
+    std::map<std::int32_t, std::pair<std::int8_t, std::int64_t>> parent_map)
 {
   return create_mesh(
       comm, cells, element, x, ghost_mode,
       static_cast<graph::AdjacencyList<std::int32_t> (*)(
           MPI_Comm, int, int, const graph::AdjacencyList<std::int64_t>&,
-          mesh::GhostMode)>(&mesh::partition_cells_graph));
+          mesh::GhostMode)>(&mesh::partition_cells_graph),
+      parent_map);
 }
 //-----------------------------------------------------------------------------
-Mesh mesh::create_mesh(MPI_Comm comm,
-                       const graph::AdjacencyList<std::int64_t>& cells,
-                       const fem::CoordinateElement& element,
-                       const xt::xtensor<double, 2>& x,
-                       mesh::GhostMode ghost_mode,
-                       const mesh::CellPartitionFunction& cell_partitioner)
+Mesh mesh::create_mesh(
+    MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
+    const fem::CoordinateElement& element, const xt::xtensor<double, 2>& x,
+    mesh::GhostMode ghost_mode,
+    const mesh::CellPartitionFunction& cell_partitioner,
+    std::map<std::int32_t, std::pair<std::int8_t, std::int64_t>> parent_map)
 {
   if (ghost_mode == mesh::GhostMode::shared_vertex)
     throw std::runtime_error("Ghost mode via vertex currently disabled.");
@@ -110,7 +111,7 @@ Mesh mesh::create_mesh(MPI_Comm comm,
   Geometry geometry
       = mesh::create_geometry(comm, topology, element, cell_nodes_2, x);
 
-  return Mesh(comm, std::move(topology), std::move(geometry));
+  return Mesh(comm, std::move(topology), std::move(geometry), parent_map);
 }
 //-----------------------------------------------------------------------------
 
@@ -126,4 +127,10 @@ Geometry& Mesh::geometry() { return _geometry; }
 const Geometry& Mesh::geometry() const { return _geometry; }
 //-----------------------------------------------------------------------------
 MPI_Comm Mesh::mpi_comm() const { return _mpi_comm.comm(); }
+//-----------------------------------------------------------------------------
+std::map<std::int32_t, std::pair<std::int8_t, std::int64_t>>
+Mesh::parent_map() const
+{
+  return _parent_map;
+}
 //-----------------------------------------------------------------------------

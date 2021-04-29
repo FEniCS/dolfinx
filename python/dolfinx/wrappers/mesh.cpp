@@ -276,7 +276,7 @@ void mesh(py::module& m)
       .def(py::init([](const MPICommWrapper comm,
                        const dolfinx::mesh::Topology& topology,
                        dolfinx::mesh::Geometry& geometry) {
-        return dolfinx::mesh::Mesh(comm.get(), topology, geometry);
+        return dolfinx::mesh::Mesh(comm.get(), topology, geometry, {});
       }))
       .def_property_readonly(
           "geometry", py::overload_cast<>(&dolfinx::mesh::Mesh::geometry),
@@ -288,6 +288,8 @@ void mesh(py::module& m)
       .def_property_readonly(
           "topology", py::overload_cast<>(&dolfinx::mesh::Mesh::topology),
           "Mesh topology", py::return_value_policy::reference_internal)
+      .def_property_readonly("parent_map", &dolfinx::mesh::Mesh::parent_map,
+                             "Mesh parent map")
       .def("ufl_id", &dolfinx::mesh::Mesh::id)
       .def_property_readonly("id", &dolfinx::mesh::Mesh::id)
       .def_readwrite("name", &dolfinx::mesh::Mesh::name);

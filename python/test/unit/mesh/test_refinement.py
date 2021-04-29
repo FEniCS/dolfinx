@@ -5,6 +5,8 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import dolfinx
+import numpy as np
+import pytest
 import ufl
 from dolfinx import FunctionSpace, UnitCubeMesh, UnitSquareMesh
 from dolfinx.cpp.mesh import GhostMode
@@ -70,3 +72,43 @@ def xtest_refinement_gdim():
     mesh = UnitSquareMesh(MPI.COMM_WORLD, 3, 4, ghost_mode=GhostMode.none)
     mesh2 = refine(mesh, redistribute=True)
     assert mesh.geometry.dim == mesh2.geometry.dim
+
+
+@pytest.mark.parametrize("tdim", [2, 3])
+@pytest.mark.parametrize("mesh_size", [2, 4])
+def test_parent_map(tdim, mesh_size):
+    if tdim == 2:
+        mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, mesh_size, mesh_size)
+    elif tdim == 3:
+        mesh = dolfinx.UnitCubeMesh(MPI.COMM_WORLD, mesh_size, mesh_size, mesh_size)
+
+    mesh.topology.create_entities(1)
+    mesh_refined = dolfinx.cpp.refinement.refine(mesh)
+
+    x = mesh.geometry.x
+    x_refined = mesh_refined.geometry.x
+
+    t_to_g = {}
+    con = mesh.topology.connectivity(tdim, 0)
+    for cell in range(con.num_nodes):
+        tdofs = con.links(cell)
+        gdofs = mesh.geometry.dofmap.links(cell)
+        for i, j in zip(tdofs, gdofs):
+            t_to_g[i] = j
+    t_to_g_refined = {}
+    con = mesh_refined.topology.connectivity(tdim, 0)
+    for cell in range(con.num_nodes):
+        tdofs = con.links(cell)
+        gdofs = mesh_refined.geometry.dofmap.links(cell)
+        for i, j in zip(tdofs, gdofs):
+            t_to_g_refined[i] = j
+
+    e_to_v = mesh.topology.connectivity(1, 0)
+
+    for i, (dim, n) in mesh_refined.parent_map.items():
+        if dim == 0:
+            assert np.allclose(x_refined[t_to_g_refined[i]], x[t_to_g[n]])
+        if dim == 1:
+            e0, e1 = e_to_v.links(n)
+            midpoint = (x[t_to_g[e0]] + x[t_to_g[e1]]) / 2
+            assert np.allclose(x_refined[t_to_g_refined[i]], midpoint)

@@ -57,20 +57,20 @@ mesh::Mesh refine(const mesh::Mesh& mesh,
 /// @param[in] refinement_marker MeshTags listing which mesh entities
 /// should be split by this refinement. The values are ignored.
 /// redistribute after refinement
-/// @return New mesh data: cell topology, vertex coordinates and parent cell
-/// index
+/// @return New mesh data: cell topology, vertex coordinates, parent cell
+/// index, and the map from edges to new cells
 std::tuple<graph::AdjacencyList<std::int64_t>, xt::xtensor<double, 2>,
-           std::vector<std::int32_t>>
+           std::vector<std::int32_t>, std::map<std::int32_t, std::int64_t>>
 compute_refinement_data(const mesh::Mesh& mesh,
                         const mesh::MeshTags<std::int8_t>& refinement_marker);
 
 /// Refine mesh returning new mesh data
 ///
 /// @param[in] mesh Input mesh to be refined
-/// @return New mesh data: cell topology, vertex coordinates and parent cell
-/// index
+/// @return New mesh data: cell topology, vertex coordinates, parent cell
+/// index, and the map from edges to new cells
 std::tuple<graph::AdjacencyList<std::int64_t>, xt::xtensor<double, 2>,
-           std::vector<std::int32_t>>
+           std::vector<std::int32_t>, std::map<std::int32_t, std::int64_t>>
 compute_refinement_data(const mesh::Mesh& mesh);
 
 } // namespace plaza

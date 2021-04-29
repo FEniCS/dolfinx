@@ -383,7 +383,7 @@ face_long_edge(const mesh::Mesh& mesh)
 //-----------------------------------------------------------------------------
 // Convenient interface for both uniform and marker refinement
 std::tuple<graph::AdjacencyList<std::int64_t>, xt::xtensor<double, 2>,
-           std::vector<std::int32_t>>
+           std::vector<std::int32_t>, std::map<std::int32_t, std::int64_t>>
 compute_refinement(
     const MPI_Comm& neighbor_comm, const std::vector<bool>& marked_edges,
     const std::map<std::int32_t, std::vector<std::int32_t>> shared_edges,
@@ -505,7 +505,7 @@ compute_refinement(
                                               std::move(offsets));
 
   return {std::move(cell_adj), std::move(new_vertex_coordinates),
-          std::move(parent_cell)};
+          std::move(parent_cell), std::move(new_vertex_map)};
 }
 //-----------------------------------------------------------------------------
 } // namespace
@@ -513,13 +513,20 @@ compute_refinement(
 //-----------------------------------------------------------------------------
 mesh::Mesh plaza::refine(const mesh::Mesh& mesh, bool redistribute)
 {
-  auto [cell_adj, new_vertex_coordinates, parent_cell]
+  auto [cell_adj, new_vertex_coordinates, parent_cell, new_vertex_map]
       = plaza::compute_refinement_data(mesh);
 
   if (dolfinx::MPI::size(mesh.mpi_comm()) == 1)
   {
+    std::map<std::int32_t, std::pair<std::int8_t, std::int64_t>> parent_map;
+    const std::int32_t num_vertices = mesh.geometry().x().shape(0);
+    for (std::int32_t i = 0; i < num_vertices; ++i)
+      parent_map.insert({i, {0, i}});
+    for (auto it = new_vertex_map.begin(); it != new_vertex_map.end(); ++it)
+      parent_map.insert({it->second, {1, it->first}});
     return mesh::create_mesh(mesh.mpi_comm(), cell_adj, mesh.geometry().cmap(),
-                             new_vertex_coordinates, mesh::GhostMode::none);
+                             new_vertex_coordinates, mesh::GhostMode::none,
+                             parent_map);
   }
 
   const std::shared_ptr<const common::IndexMap> map_c
@@ -544,13 +551,20 @@ mesh::Mesh plaza::refine(const mesh::Mesh& mesh,
                          const mesh::MeshTags<std::int8_t>& refinement_marker,
                          bool redistribute)
 {
-  auto [cell_adj, new_vertex_coordinates, parent_cell]
+  auto [cell_adj, new_vertex_coordinates, parent_cell, new_vertex_map]
       = plaza::compute_refinement_data(mesh, refinement_marker);
 
   if (dolfinx::MPI::size(mesh.mpi_comm()) == 1)
   {
+    std::map<std::int32_t, std::pair<std::int8_t, std::int64_t>> parent_map;
+    const std::int32_t num_vertices = mesh.geometry().x().shape(0);
+    for (std::int32_t i = 0; i < num_vertices; ++i)
+      parent_map.insert({i, {0, i}});
+    for (auto it = new_vertex_map.begin(); it != new_vertex_map.end(); ++it)
+      parent_map.insert({it->second, {1, it->first}});
     return mesh::create_mesh(mesh.mpi_comm(), cell_adj, mesh.geometry().cmap(),
-                             new_vertex_coordinates, mesh::GhostMode::none);
+                             new_vertex_coordinates, mesh::GhostMode::none,
+                             parent_map);
   }
 
   const std::shared_ptr<const common::IndexMap> map_c
@@ -572,7 +586,7 @@ mesh::Mesh plaza::refine(const mesh::Mesh& mesh,
 }
 //------------------------------------------------------------------------------
 std::tuple<graph::AdjacencyList<std::int64_t>, xt::xtensor<double, 2>,
-           std::vector<std::int32_t>>
+           std::vector<std::int32_t>, std::map<std::int32_t, std::int64_t>>
 plaza::compute_refinement_data(const mesh::Mesh& mesh)
 {
 
@@ -592,17 +606,17 @@ plaza::compute_refinement_data(const mesh::Mesh& mesh)
                                  true);
 
   const auto [long_edge, edge_ratio_ok] = face_long_edge(mesh);
-  auto [cell_adj, new_vertex_coordinates, parent_cell]
+  auto [cell_adj, new_vertex_coordinates, parent_cell, new_vertex_map]
       = compute_refinement(neighbor_comm, marked_edges, shared_edges, mesh,
                            long_edge, edge_ratio_ok);
   MPI_Comm_free(&neighbor_comm);
 
   return {std::move(cell_adj), std::move(new_vertex_coordinates),
-          std::move(parent_cell)};
+          std::move(parent_cell), std::move(new_vertex_map)};
 }
 //------------------------------------------------------------------------------
 std::tuple<graph::AdjacencyList<std::int64_t>, xt::xtensor<double, 2>,
-           std::vector<std::int32_t>>
+           std::vector<std::int32_t>, std::map<std::int32_t, std::int64_t>>
 plaza::compute_refinement_data(
     const mesh::Mesh& mesh,
     const mesh::MeshTags<std::int8_t>& refinement_marker)
@@ -670,11 +684,11 @@ plaza::compute_refinement_data(
   const auto [long_edge, edge_ratio_ok] = face_long_edge(mesh);
   enforce_rules(neighbor_comm, shared_edges, marked_edges, mesh, long_edge);
 
-  auto [cell_adj, new_vertex_coordinates, parent_cell]
+  auto [cell_adj, new_vertex_coordinates, parent_cell, new_vertex_map]
       = compute_refinement(neighbor_comm, marked_edges, shared_edges, mesh,
                            long_edge, edge_ratio_ok);
   MPI_Comm_free(&neighbor_comm);
   return {std::move(cell_adj), std::move(new_vertex_coordinates),
-          std::move(parent_cell)};
+          std::move(parent_cell), std::move(new_vertex_map)};
 }
 //-----------------------------------------------------------------------------
