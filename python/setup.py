@@ -3,7 +3,6 @@ import platform
 import re
 import subprocess
 import sys
-from distutils.version import LooseVersion
 
 from setuptools import Extension, setup
 from setuptools.command.build_ext import build_ext
