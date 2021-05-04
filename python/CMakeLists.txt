@@ -49,7 +49,7 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
   target_compile_options(cpp PRIVATE "-fvisibility=default")
 endif()
 
-# Add DOLFINX libraries and other config
+# Add DOLFINx libraries and other config
 target_link_libraries(cpp PRIVATE pybind11::module dolfinx)
 
 # Add xsimd if the Basix C++ interface was compiled with it

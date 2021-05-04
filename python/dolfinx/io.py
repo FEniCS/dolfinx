@@ -1,7 +1,7 @@
 # Copyright (C) 2017-2021 Chris N. Richardson, Garth N. Wells, Michal Habera
 # and Jørgen S. Dokken
 #
-# This file is part of DOLFINX (https://www.fenicsproject.org)
+# This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -136,7 +136,7 @@ def extract_gmsh_geometry(gmsh_model, model_name=None):
     return points[perm_sort]
 
 
-# Map from Gmsh int to DOLFIN cell type and degree
+# Map from Gmsh int to DOLFINx cell type and degree
 # http://gmsh.info//doc/texinfo/gmsh.html#MSH-file-format
 _gmsh_to_cells = {1: ("interval", 1), 2: ("triangle", 1),
                   3: ("quadrilateral", 1), 4: ("tetrahedron", 1),

@@ -1,4 +1,4 @@
-.. DOLFIN developer documentation
+.. DOLFINx developer documentation
 
 Developer resources
 ===================
