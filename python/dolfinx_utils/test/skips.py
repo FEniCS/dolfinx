@@ -1,9 +1,9 @@
 # Copyright (C) 2014-2014 Aslak Wigdahl Bergersen
 #
-# This file is part of DOLFINX (https://www.fenicsproject.org)
+# This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Shared skips for unit tests involving dolfinx."""
+"""Shared skips for unit tests involving DOLFINx."""
 
 from mpi4py import MPI
 import pytest

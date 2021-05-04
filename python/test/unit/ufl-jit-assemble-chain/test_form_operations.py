@@ -1,8 +1,8 @@
-"""Tests for DOLFIN integration of various form operations"""
+"""Tests for DOLFINx integration of various form operations"""
 
 # Copyright (C) 2011 Marie E. Rognes
 #
-# This file is part of DOLFINX (https://www.fenicsproject.org)
+# This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -16,7 +16,7 @@ from ufl import TestFunction, TrialFunction, dx, grad, inner, lhs, rhs, system
 
 @pytest.mark.skip
 def test_lhs_rhs_simple():
-    """Test taking lhs/rhs of DOLFINX specific forms (constants
+    """Test taking lhs/rhs of DOLFINx specific forms (constants
     without cell). """
 
     mesh = RectangleMesh(MPI.COMM_WORLD, [numpy.array([0.0, 0.0, 0.0]),
