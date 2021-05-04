@@ -16,7 +16,7 @@ from dolfinx import BoxMesh, DirichletBC, Function, VectorFunctionSpace, cpp
 from dolfinx.cpp.mesh import CellType
 from dolfinx.fem import (apply_lifting, assemble_matrix, assemble_vector,
                          locate_dofs_geometrical, set_bc)
-from dolfinx.io import XDMFFile
+from dolfinx.io import XDMFFile, VTKFile
 from dolfinx.cpp.io import has_adios2
 from dolfinx.la import VectorSpaceBasis
 from mpi4py import MPI
@@ -178,9 +178,9 @@ if has_adios2():
     from dolfinx.cpp.io import ADIOS2File
     with ADIOS2File(MPI.COMM_WORLD, "elasticity.bp", "w") as file:
         file.write_function([u._cpp_object], 0.0)
-if True:
-    from dolfinx.io import VTKFile
-    VTKFile("elasticity.pvd").write(u)
+
+with VTKFile(MPI.COMM_WORLD, "elasticity.pvd", "w") as pvd:
+    pvd.write_function([u._cpp_object])
 
 unorm = u.vector.norm()
 if mesh.mpi_comm().rank == 0:
