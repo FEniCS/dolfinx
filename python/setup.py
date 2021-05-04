@@ -75,7 +75,7 @@ class CMakeBuild(build_ext):
 setup(name='fenics-dolfinx',
       version=VERSION,
       author='FEniCS Project',
-      description='DOLFIN Python interface',
+      description='DOLFINx Python interface',
       long_description='',
       packages=["dolfinx",
                 "dolfinx.fem",

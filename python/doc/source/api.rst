@@ -25,7 +25,7 @@ Public user interface
 pybind11 wrapped interface
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-These are interfaces to the C++ component of DOLFIN, and are low-level
+These are interfaces to the C++ component of DOLFINx, and are low-level
 and subject to change. They are not intended for application-level
 use.
 
