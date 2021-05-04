@@ -432,9 +432,8 @@ compute_entities_by_key_matching(
   // Create map from cell vertices to entity vertices
   auto e_vertices = mesh::get_entity_vertices(cell_type, dim);
 
-  const std::size_t num_cells = cells.num_nodes();
-
   // List of vertices for each entity in each cell
+  const std::size_t num_cells = cells.num_nodes();
   xt::xtensor<std::int32_t, 2> entity_list(
       {num_cells * num_entities_per_cell, num_vertices_per_entity});
   for (std::size_t c = 0; c < num_cells; ++c)
@@ -443,13 +442,13 @@ compute_entities_by_key_matching(
     auto vertices = cells.links(c);
     for (int i = 0; i < num_entities_per_cell; ++i)
     {
+      const std::int32_t idx = c * num_entities_per_cell + i;
+      auto ev = e_vertices.links(i);
+
       // Get entity vertices
       assert(e_vertices.num_links(i) == (int)num_vertices_per_entity);
       for (std::size_t j = 0; j < num_vertices_per_entity; ++j)
-      {
-        entity_list(c * num_entities_per_cell + i, j)
-            = vertices[e_vertices.links(i)[j]];
-      }
+        entity_list(idx, j) = vertices[ev[j]];
     }
   }
 
