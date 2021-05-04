@@ -281,7 +281,7 @@ a = derivative(L, u, du)
 # .. index::
 #    single: Newton solver; (in Cahn-Hilliard demo)
 #
-# The DOLFINX Newton solver requires a
+# The DOLFINx Newton solver requires a
 # :py:class:`NonlinearProblem<dolfinx.cpp.NonlinearProblem>` object to
 # solve a system of nonlinear equations. Here, we are using the class
 # ``CahnHilliardEquation``, which was declared at the beginning of the
