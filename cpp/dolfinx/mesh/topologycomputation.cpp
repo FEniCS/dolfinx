@@ -60,11 +60,13 @@ std::vector<std::int32_t> sort_by_perm(const xt::xtensor<T, 2>& array)
 {
   std::vector<int> index(array.shape(0));
   std::iota(index.begin(), index.end(), 0);
-  std::sort(index.begin(), index.end(), [&array](int a, int b) {
-    return std::lexicographical_compare(
-        xt::row(array, a).begin(), xt::row(array, a).end(),
-        xt::row(array, b).begin(), xt::row(array, b).end());
-  });
+  std::sort(index.begin(), index.end(),
+            [&array](int a, int b)
+            {
+              return std::lexicographical_compare(
+                  xt::row(array, a).begin(), xt::row(array, a).end(),
+                  xt::row(array, b).begin(), xt::row(array, b).end());
+            });
 
   return index;
 }
@@ -103,9 +105,11 @@ get_local_indexing(
 
   // Find the maximum entity index, hence the number of entities
   std::int32_t entity_count = 0;
-  auto mx = std::max_element(entity_index.begin(), entity_index.end());
-  if (mx != entity_index.end())
+  if (auto mx = std::max_element(entity_index.begin(), entity_index.end());
+      mx != entity_index.end())
+  {
     entity_count = *mx + 1;
+  }
 
   //---------
   // Set ghost status array values
@@ -177,21 +181,18 @@ get_local_indexing(
   // Get a list of unique entities
   std::vector<std::int32_t> unique_row(entity_count);
   for (std::size_t i = 0; i < entity_list.shape(0); ++i)
-  {
     unique_row[entity_index[i]] = i;
-  }
   const int num_vertices_per_e = entity_list.shape(1);
   std::unordered_map<int, int> procs;
   std::vector<std::int64_t> vglobal(num_vertices_per_e);
-  xt::xtensor<std::int32_t, 1> entity_list_i({num_vertices_per_e});
   for (int i : unique_row)
   {
-    entity_list_i = xt::row(entity_list, i);
+    auto entity_list_i = xt::row(entity_list, i);
     procs.clear();
     for (int j = 0; j < num_vertices_per_e; ++j)
     {
-      auto it = shared_vertices.find(entity_list_i[j]);
-      if (it != shared_vertices.end())
+      if (auto it = shared_vertices.find(entity_list_i[j]);
+          it != shared_vertices.end())
       {
         for (std::int32_t p : it->second)
           ++procs[p];
@@ -245,7 +246,6 @@ get_local_indexing(
   std::unordered_map<std::int32_t, std::set<std::int32_t>> shared_entities;
   for (int np = 0; np < neighbor_size; ++np)
   {
-    const int p = neighbors[np];
     for (int j = recv_offsets[np]; j < recv_offsets[np + 1];
          j += num_vertices_per_e)
     {
@@ -255,6 +255,7 @@ get_local_indexing(
       if (auto it = global_entity_to_entity_index.find(recv_vec);
           it != global_entity_to_entity_index.end())
       {
+        const int p = neighbors[np];
         shared_entities[it->second].insert(p);
         shared_entity_to_global_vertices.insert({it->second, recv_vec});
         recv_index.push_back(it->second);
@@ -340,12 +341,11 @@ get_local_indexing(
         const std::int64_t gi = (local_index[index] < num_local)
                                     ? (local_offset + local_index[index])
                                     : -1;
-
         send_global_index_data.push_back(gi);
       }
-
       send_global_index_offsets.push_back(send_global_index_data.size());
     }
+
     const graph::AdjacencyList<std::int64_t> recv_data
         = dolfinx::MPI::neighbor_all_to_all(
             neighbor_comm,
@@ -365,7 +365,7 @@ get_local_indexing(
       {
         assert(local_index[idx] >= num_local);
         ghost_indices[local_index[idx] - num_local] = gi;
-        const auto pos
+        auto pos
             = std::upper_bound(recv_offsets.begin(), recv_offsets.end(), j);
         const int owner = std::distance(recv_offsets.begin(), pos) - 1;
         ghost_owners[local_index[idx] - num_local] = neighbors[owner];
@@ -540,10 +540,8 @@ compute_from_transpose(const graph::AdjacencyList<std::int32_t>& c_d1_d0,
   std::vector<std::int32_t> counter(num_connections.size(), 0);
   std::vector<std::int32_t> connections(offsets[offsets.size() - 1]);
   for (int e1 = 0; e1 < c_d1_d0.num_nodes(); ++e1)
-  {
     for (std::int32_t e0 : c_d1_d0.links(e1))
       connections[offsets[e0] + counter[e0]++] = e1;
-  }
 
   return graph::AdjacencyList<std::int32_t>(std::move(connections),
                                             std::move(offsets));
