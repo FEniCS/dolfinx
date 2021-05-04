@@ -19,7 +19,7 @@ def test_RefineUnitSquareMesh():
     """Refine mesh of unit square."""
     mesh = UnitSquareMesh(MPI.COMM_WORLD, 5, 7, ghost_mode=GhostMode.none)
     mesh.topology.create_entities(1)
-    mesh = refine(mesh, redistribute=False)
+    mesh, parent_info = refine(mesh, redistribute=False)
     assert mesh.topology.index_map(0).size_global == 165
     assert mesh.topology.index_map(2).size_global == 280
 
@@ -28,13 +28,13 @@ def test_RefineUnitCubeMesh_repartition():
     """Refine mesh of unit cube."""
     mesh = UnitCubeMesh(MPI.COMM_WORLD, 5, 7, 9, ghost_mode=GhostMode.none)
     mesh.topology.create_entities(1)
-    mesh = refine(mesh, redistribute=True)
+    mesh, parent_info = refine(mesh, redistribute=True)
     assert mesh.topology.index_map(0).size_global == 3135
     assert mesh.topology.index_map(3).size_global == 15120
 
     mesh = UnitCubeMesh(MPI.COMM_WORLD, 5, 7, 9, ghost_mode=GhostMode.shared_facet)
     mesh.topology.create_entities(1)
-    mesh = refine(mesh, redistribute=True)
+    mesh, parent_info = refine(mesh, redistribute=True)
     assert mesh.topology.index_map(0).size_global == 3135
     assert mesh.topology.index_map(3).size_global == 15120
 
@@ -46,7 +46,7 @@ def test_RefineUnitCubeMesh_keep_partition():
     """Refine mesh of unit cube."""
     mesh = UnitCubeMesh(MPI.COMM_WORLD, 5, 7, 9, ghost_mode=GhostMode.none)
     mesh.topology.create_entities(1)
-    mesh = refine(mesh, redistribute=False)
+    mesh, parent_info = refine(mesh, redistribute=False)
     assert mesh.topology.index_map(0).size_global == 3135
     assert mesh.topology.index_map(3).size_global == 15120
     Q = FunctionSpace(mesh, ("CG", 1))
@@ -57,7 +57,7 @@ def test_refine_create_form():
     """Check that forms can be assembled on refined mesh"""
     mesh = dolfinx.UnitCubeMesh(MPI.COMM_WORLD, 3, 3, 3)
     mesh.topology.create_entities(1)
-    mesh = refine(mesh, redistribute=True)
+    mesh, parent_info = refine(mesh, redistribute=True)
 
     V = dolfinx.FunctionSpace(mesh, ("CG", 1))
 
@@ -71,7 +71,7 @@ def test_refine_create_form():
 def xtest_refinement_gdim():
     """Test that 2D refinement is still 2D"""
     mesh = UnitSquareMesh(MPI.COMM_WORLD, 3, 4, ghost_mode=GhostMode.none)
-    mesh2 = refine(mesh, redistribute=True)
+    mesh2, parent_info = refine(mesh, redistribute=True)
     assert mesh.geometry.dim == mesh2.geometry.dim
 
 
@@ -85,7 +85,7 @@ def test_parent_map(tdim, mesh_size):
         mesh = dolfinx.UnitCubeMesh(MPI.COMM_WORLD, mesh_size, mesh_size, mesh_size)
 
     mesh.topology.create_entities(1)
-    mesh_refined = dolfinx.cpp.refinement.refine(mesh)
+    mesh_refined, parent_info = dolfinx.cpp.refinement.refine(mesh)
 
     x = mesh.geometry.x
     x_refined = mesh_refined.geometry.x
@@ -107,7 +107,7 @@ def test_parent_map(tdim, mesh_size):
 
     e_to_v = mesh.topology.connectivity(1, 0)
 
-    for i, (dim, n) in mesh_refined.parent_map.items():
+    for i, (dim, n) in enumerate(parent_info.parent_map):
         if dim == 0:
             assert np.allclose(x_refined[t_to_g_refined[i]], x[t_to_g[n]])
         if dim == 1:

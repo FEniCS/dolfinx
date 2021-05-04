@@ -59,14 +59,10 @@ public:
   /// @param[in] comm MPI Communicator
   /// @param[in] topology Mesh topology
   /// @param[in] geometry Mesh geometry
-  /// @param[in] parent_map The parent map (for a refined mesh)
   template <typename Topology, typename Geometry>
-  Mesh(MPI_Comm comm, Topology&& topology, Geometry&& geometry,
-       std::map<std::int32_t, std::pair<std::int8_t, std::int64_t>> parent_map
-       = {})
+  Mesh(MPI_Comm comm, Topology&& topology, Geometry&& geometry)
       : _topology(std::forward<Topology>(topology)),
-        _geometry(std::forward<Geometry>(geometry)), _mpi_comm(comm),
-        _parent_map(parent_map)
+        _geometry(std::forward<Geometry>(geometry)), _mpi_comm(comm)
   {
     // Do nothing
   }
@@ -123,16 +119,6 @@ public:
   /// Name
   std::string name = "mesh";
 
-  /// Get the parent map of a refined mesh.
-  /// For each vertex in the mesh, the parent map contains the pair (dim,
-  /// number) giving the entity of the parent mesh that the vertex is at the
-  /// midpoint. For example, (0, 5) tells us that the vertex in the refined mesh
-  /// is at vertex 5 of the parent mesh; (1, 3) tells us that the vertex in the
-  /// refined mesh is the midpoint of edge 3 of the parent mesh.
-  /// @return The parent map
-  std::map<std::int32_t, std::pair<std::int8_t, std::int64_t>>
-  parent_map() const;
-
 private:
   // Mesh topology:
   // TODO: This is mutable because of the current memory management within
@@ -149,11 +135,6 @@ private:
 
   // Unique identifier
   std::size_t _unique_id = common::UniqueIdGenerator::id();
-
-  // The parent map for a refined mesh. For each vertex in the refined mesh,
-  // this stores the pair (dim, number) of the entity of the parent mesh
-  // that the vertex is the midpoint of
-  std::map<std::int32_t, std::pair<std::int8_t, std::int64_t>> _parent_map;
 };
 
 /// Create a mesh using the default partitioner. This function takes
@@ -171,22 +152,16 @@ private:
 /// geometric mapping for cells
 /// @param[in] x The coordinates of mesh nodes
 /// @param[in] ghost_mode The requested type of cell ghosting/overlap
-/// @param[in] parent_map The parent map (for a refined mesh)
 /// @return A distributed Mesh.
-Mesh create_mesh(
-    MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
-    const fem::CoordinateElement& element, const xt::xtensor<double, 2>& x,
-    GhostMode ghost_mode,
-    std::map<std::int32_t, std::pair<std::int8_t, std::int64_t>> parent_map
-    = {});
+Mesh create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
+                 const fem::CoordinateElement& element,
+                 const xt::xtensor<double, 2>& x, GhostMode ghost_mode);
 
 /// Create a mesh using a provided mesh partitioning function
-Mesh create_mesh(
-    MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
-    const fem::CoordinateElement& element, const xt::xtensor<double, 2>& x,
-    GhostMode ghost_mode, const CellPartitionFunction& cell_partitioner,
-    std::map<std::int32_t, std::pair<std::int8_t, std::int64_t>> parent_map
-    = {});
+Mesh create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
+                 const fem::CoordinateElement& element,
+                 const xt::xtensor<double, 2>& x, GhostMode ghost_mode,
+                 const CellPartitionFunction& cell_partitioner);
 
 } // namespace mesh
 } // namespace dolfinx

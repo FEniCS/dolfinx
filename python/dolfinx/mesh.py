@@ -98,14 +98,14 @@ _meshtags_types = {
 def refine(mesh, cell_markers=None, redistribute=True):
     """Refine a mesh"""
     if cell_markers is None:
-        mesh_refined = cpp.refinement.refine(mesh, redistribute)
+        mesh_refined, parent_info = cpp.refinement.refine(mesh, redistribute)
     else:
-        mesh_refined = cpp.refinement.refine(mesh, cell_markers, redistribute)
+        mesh_refined, parent_info = cpp.refinement.refine(mesh, cell_markers, redistribute)
 
     domain = mesh._ufl_domain
     domain._ufl_cargo = mesh_refined
     mesh_refined._ufl_domain = domain
-    return mesh_refined
+    return mesh_refined, parent_info
 
 
 def create_mesh(comm, cells, x, domain,

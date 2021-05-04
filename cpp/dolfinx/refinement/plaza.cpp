@@ -511,22 +511,26 @@ compute_refinement(
 } // namespace
 
 //-----------------------------------------------------------------------------
-mesh::Mesh plaza::refine(const mesh::Mesh& mesh, bool redistribute)
+std::pair<mesh::Mesh, ParentRelationshipInfo>
+plaza::refine(const mesh::Mesh& mesh, bool redistribute)
 {
   auto [cell_adj, new_vertex_coordinates, parent_cell, new_vertex_map]
       = plaza::compute_refinement_data(mesh);
 
   if (dolfinx::MPI::size(mesh.mpi_comm()) == 1)
   {
-    std::map<std::int32_t, std::pair<std::int8_t, std::int64_t>> parent_map;
     const std::int32_t num_vertices = mesh.geometry().x().shape(0);
+
+    std::vector<std::pair<std::int8_t, std::int64_t>> parent_map(
+        num_vertices + new_vertex_map.size());
     for (std::int32_t i = 0; i < num_vertices; ++i)
-      parent_map.insert({i, {0, i}});
+      parent_map[i] = {0, i};
     for (auto it = new_vertex_map.begin(); it != new_vertex_map.end(); ++it)
-      parent_map.insert({it->second, {1, it->first}});
-    return mesh::create_mesh(mesh.mpi_comm(), cell_adj, mesh.geometry().cmap(),
-                             new_vertex_coordinates, mesh::GhostMode::none,
-                             parent_map);
+      parent_map[it->second] = {1, it->first};
+    return std::make_pair(
+        mesh::create_mesh(mesh.mpi_comm(), cell_adj, mesh.geometry().cmap(),
+                          new_vertex_coordinates, mesh::GhostMode::none),
+        ParentRelationshipInfo(parent_map));
   }
 
   const std::shared_ptr<const common::IndexMap> map_c
@@ -543,28 +547,34 @@ mesh::Mesh plaza::refine(const mesh::Mesh& mesh, bool redistribute)
                                          ? mesh::GhostMode::none
                                          : mesh::GhostMode::shared_facet;
 
-  return refinement::partition(mesh, cell_adj, new_vertex_coordinates,
-                               redistribute, ghost_mode);
+  return std::make_pair(refinement::partition(mesh, cell_adj,
+                                              new_vertex_coordinates,
+                                              redistribute, ghost_mode),
+                        ParentRelationshipInfo({}));
 }
 //-----------------------------------------------------------------------------
-mesh::Mesh plaza::refine(const mesh::Mesh& mesh,
-                         const mesh::MeshTags<std::int8_t>& refinement_marker,
-                         bool redistribute)
+std::pair<mesh::Mesh, ParentRelationshipInfo>
+plaza::refine(const mesh::Mesh& mesh,
+              const mesh::MeshTags<std::int8_t>& refinement_marker,
+              bool redistribute)
 {
   auto [cell_adj, new_vertex_coordinates, parent_cell, new_vertex_map]
       = plaza::compute_refinement_data(mesh, refinement_marker);
 
   if (dolfinx::MPI::size(mesh.mpi_comm()) == 1)
   {
-    std::map<std::int32_t, std::pair<std::int8_t, std::int64_t>> parent_map;
     const std::int32_t num_vertices = mesh.geometry().x().shape(0);
+
+    std::vector<std::pair<std::int8_t, std::int64_t>> parent_map(
+        num_vertices + new_vertex_map.size());
     for (std::int32_t i = 0; i < num_vertices; ++i)
-      parent_map.insert({i, {0, i}});
+      parent_map[i] = {0, i};
     for (auto it = new_vertex_map.begin(); it != new_vertex_map.end(); ++it)
-      parent_map.insert({it->second, {1, it->first}});
-    return mesh::create_mesh(mesh.mpi_comm(), cell_adj, mesh.geometry().cmap(),
-                             new_vertex_coordinates, mesh::GhostMode::none,
-                             parent_map);
+      parent_map[it->second] = {1, it->first};
+    return std::make_pair(
+        mesh::create_mesh(mesh.mpi_comm(), cell_adj, mesh.geometry().cmap(),
+                          new_vertex_coordinates, mesh::GhostMode::none),
+        ParentRelationshipInfo(parent_map));
   }
 
   const std::shared_ptr<const common::IndexMap> map_c
@@ -581,8 +591,10 @@ mesh::Mesh plaza::refine(const mesh::Mesh& mesh,
                                          ? mesh::GhostMode::none
                                          : mesh::GhostMode::shared_facet;
 
-  return refinement::partition(mesh, cell_adj, new_vertex_coordinates,
-                               redistribute, ghost_mode);
+  return std::make_pair(refinement::partition(mesh, cell_adj,
+                                              new_vertex_coordinates,
+                                              redistribute, ghost_mode),
+                        ParentRelationshipInfo({}));
 }
 //------------------------------------------------------------------------------
 std::tuple<graph::AdjacencyList<std::int64_t>, xt::xtensor<double, 2>,

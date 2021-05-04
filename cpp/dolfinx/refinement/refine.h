@@ -6,7 +6,10 @@
 
 #pragma once
 
+#include "parent_map.h"
 #include <cstdint>
+#include <utility>
+#include <vector>
 
 namespace dolfinx
 {
@@ -28,7 +31,8 @@ namespace refinement
 /// @param[in] redistribute Optional argument to redistribute the
 ///     refined mesh if mesh is a distributed mesh.
 /// @return A refined mesh
-mesh::Mesh refine(const mesh::Mesh& mesh, bool redistribute = true);
+std::pair<mesh::Mesh, ParentRelationshipInfo> refine(const mesh::Mesh& mesh,
+                                                     bool redistribute = true);
 
 /// Create locally refined mesh
 ///
@@ -39,9 +43,9 @@ mesh::Mesh refine(const mesh::Mesh& mesh, bool redistribute = true);
 /// @param[in] redistribute Optional argument to redistribute the
 ///     refined mesh if mesh is a distributed mesh.
 /// @return A locally refined mesh
-mesh::Mesh refine(const mesh::Mesh& mesh,
-                  const mesh::MeshTags<std::int8_t>& cell_markers,
-                  bool redistribute = true);
+std::pair<mesh::Mesh, ParentRelationshipInfo>
+refine(const mesh::Mesh& mesh, const mesh::MeshTags<std::int8_t>& cell_markers,
+       bool redistribute = true);
 
 } // namespace refinement
 } // namespace dolfinx
