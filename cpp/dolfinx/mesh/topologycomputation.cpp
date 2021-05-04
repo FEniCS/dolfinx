@@ -309,7 +309,7 @@ get_local_indexing(
     }
     num_local = c;
 
-    for (int i = 0; i < entity_count; ++i)
+    for (std::size_t i = 0; i < local_index.size(); ++i)
     {
       // Unmapped global index (ghost)
       if (local_index[i] == -1)
@@ -437,8 +437,6 @@ compute_entities_by_key_matching(
   // List of vertices for each entity in each cell
   xt::xtensor<std::int32_t, 2> entity_list(
       {num_cells * num_entities_per_cell, num_vertices_per_entity});
-
-  int k = 0;
   for (std::size_t c = 0; c < num_cells; ++c)
   {
     // Get vertices from cell
@@ -448,8 +446,10 @@ compute_entities_by_key_matching(
       // Get entity vertices
       assert(e_vertices.num_links(i) == (int)num_vertices_per_entity);
       for (std::size_t j = 0; j < num_vertices_per_entity; ++j)
-        entity_list(k, j) = vertices[e_vertices.links(i)[j]];
-      ++k;
+      {
+        entity_list(c * num_entities_per_cell + i, j)
+            = vertices[e_vertices.links(i)[j]];
+      }
     }
   }
 
