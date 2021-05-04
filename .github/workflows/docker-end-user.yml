@@ -75,7 +75,7 @@ jobs:
         with:
           repository: "FEniCS/ufl"
           path: "ufl"
-      - name: Set default FFCX parameters
+      - name: Set default FFCx parameters
         run: |
           echo '{ }' > dolfinx/docker/ffcx_parameters.json
       - name: Set default DOLFINx JIT parameters

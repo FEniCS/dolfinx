@@ -1,6 +1,6 @@
 // Copyright (C) 2012-2020 Chris N. Richardson, Garth N. Wells and Michal Habera
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -335,7 +335,7 @@ XDMFFile::read_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh,
       = xdmf_utils::get_cell_type(grid_node.child("Topology"));
   mesh::CellType cell_type = mesh::to_type(cell_type_str.first);
 
-  // Permute entities from VTK to DOLFINX ordering
+  // Permute entities from VTK to DOLFINx ordering
   xt::xtensor<std::int64_t, 2> entities1 = io::cells::compute_permutation(
       entities, io::cells::perm_vtk(cell_type, entities.shape(1)));
 
