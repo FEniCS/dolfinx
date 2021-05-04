@@ -185,9 +185,11 @@ get_local_indexing(
   const int num_vertices_per_e = entity_list.shape(1);
   std::unordered_map<int, int> procs;
   std::vector<std::int64_t> vglobal(num_vertices_per_e);
+  std::vector<std::int32_t> entity_list_i(num_vertices_per_e);
   for (int i : unique_row)
   {
-    auto entity_list_i = xt::row(entity_list, i);
+    std::copy_n(xt::row(entity_list, i).begin(), num_vertices_per_e,
+                entity_list_i.begin());
     procs.clear();
     for (int j = 0; j < num_vertices_per_e; ++j)
     {
@@ -341,11 +343,12 @@ get_local_indexing(
         const std::int64_t gi = (local_index[index] < num_local)
                                     ? (local_offset + local_index[index])
                                     : -1;
+
         send_global_index_data.push_back(gi);
       }
+
       send_global_index_offsets.push_back(send_global_index_data.size());
     }
-
     const graph::AdjacencyList<std::int64_t> recv_data
         = dolfinx::MPI::neighbor_all_to_all(
             neighbor_comm,
