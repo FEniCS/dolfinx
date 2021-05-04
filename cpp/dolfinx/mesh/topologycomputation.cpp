@@ -269,8 +269,8 @@ get_local_indexing(
 
   // Add this rank to the list of sharing processes
   const int mpi_rank = dolfinx::MPI::rank(comm);
-  for (auto& q : shared_entities)
-    q.second.insert(mpi_rank);
+  std::for_each(shared_entities.begin(), shared_entities.end(),
+                [mpi_rank](auto& q) { q.second.insert(mpi_rank); });
 
   //---------
   // Determine ownership
