@@ -1,10 +1,10 @@
-.. DOLFIN installation docs
+.. DOLFINx installation docs
 
 ============
 Installation
 ============
 
-Installation of DOLFINX requires installation of the C++ core. Most
+Installation of DOLFINx requires installation of the C++ core. Most
 users will also want the Python interface.
 
 Dependencies
