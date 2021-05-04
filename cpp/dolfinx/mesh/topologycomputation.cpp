@@ -469,12 +469,8 @@ compute_entities_by_key_matching(
   for (std::size_t i = 1; i < sort_order.size(); ++i)
   {
     std::int32_t j = sort_order[i];
-    if (!std::equal(xt::row(entity_list_sorted, j).begin(),
-                    xt::row(entity_list_sorted, j).end(),
-                    xt::row(entity_list_sorted, last).begin()))
-    {
+    if (xt::row(entity_list_sorted, j) != xt::row(entity_list_sorted, last))
       ++entity_count;
-    }
     entity_index[j] = entity_count;
     last = j;
   }
