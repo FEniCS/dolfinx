@@ -1,5 +1,5 @@
 DOLFINx Python interface
-=======================
+========================
 
 Building the DOLFINx Python interface uses pybind11.
 
