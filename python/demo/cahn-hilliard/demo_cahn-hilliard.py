@@ -236,6 +236,7 @@ F = F0 + F1
 # :py:class:`NonlinearProblem<dolfinx.fem.NonlinearProblem>` object to
 # solve a system of nonlinear equations
 
+
 # Create nonlinear problem and Newton solver
 problem = NonlinearProblem(F, u)
 solver = NewtonSolver(MPI.COMM_WORLD, problem)
