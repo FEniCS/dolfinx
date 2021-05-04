@@ -239,6 +239,9 @@ int main(int argc, char* argv[])
     dolfinx::io::ADIOS2File adios(MPI_COMM_WORLD, "poisson.bp", "w");
     adios.write_function({u, *f, *g}, 0.0);
 #endif
+    // Save solution in VTK format
+    dolfinx::io::VTKFile file(MPI_COMM_WORLD, "u.pvd", "w");
+    file.write({u}, 0.0);
   }
 
   common::subsystem::finalize_petsc();

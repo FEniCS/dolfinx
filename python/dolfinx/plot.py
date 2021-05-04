@@ -1,6 +1,6 @@
 # Copyright (C) 2021 Jørgen S. Dokken and Garth N. Wells
 #
-# This file is part of DOLFINX (https://www.fenicsproject.org)
+# This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Support functions for plotting"""
@@ -10,6 +10,19 @@ import warnings
 import numpy as np
 
 from dolfinx import cpp, fem
+
+# Permutation for DOLFINx DG layout to VTK
+# Note that third order tetrahedrons has a special ordering:
+# https://gitlab.kitware.com/vtk/vtk/-/issues/17746
+_perm_dg = {cpp.mesh.CellType.triangle: {1: [0, 1, 2], 2: [0, 2, 5, 1, 4, 3], 3: [0, 3, 9, 1, 2, 6, 8, 7, 4, 5],
+                                         4: [0, 4, 14, 1, 2, 3, 8, 11, 13, 12, 9, 5, 6, 7, 10]},
+            cpp.mesh.CellType.tetrahedron: {1: [0, 1, 2, 3], 2: [0, 2, 5, 9, 1, 4, 5, 6, 7, 8],
+                                            3: [0, 3, 9, 19, 1, 2, 6, 8, 7, 4, 10, 16, 12, 17, 15, 18, 11, 14, 13, 5]}}
+_perm_dq = {cpp.mesh.CellType.quadrilateral: {1: [0, 1, 3, 2], 2: [0, 2, 8, 6, 1, 5, 7, 3, 4],
+                                              3: [0, 3, 15, 12, 1, 2, 7, 11, 13, 14, 4, 8, 5, 6, 9, 10]},
+            cpp.mesh.CellType.hexahedron: {1: [0, 1, 3, 2, 4, 5, 7, 6],
+                                           2: [0, 2, 8, 6, 18, 20, 26, 24, 1, 5, 7, 3, 19,
+                                               23, 25, 21, 9, 11, 17, 15, 12, 14, 10, 16, 4, 22, 14]}}
 
 # NOTE: Edge visualization of higher order elements are sketchy, see:
 # https://github.com/pyvista/pyvista/issues/947
@@ -68,7 +81,7 @@ def create_vtk_topology(mesh: cpp.mesh.Mesh, dim: int, entities=None):
         warnings.warn("Plotting of higher order mesh topologies is experimental.")
         cell_types = np.full(num_cells, cpp.io.get_vtk_cell_type(mesh, dim))
 
-    # Get cell data and the DOLFINX -> VTK permutation array
+    # Get cell data and the DOLFINx -> VTK permutation array
     num_vertices_per_cell = geometry_entities.shape[1]
     map_vtk = np.argsort(cpp.io.perm_vtk(e_type, num_vertices_per_cell))
 

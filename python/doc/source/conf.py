@@ -46,7 +46,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = 'DOLFINX'
+project = 'DOLFINx'
 copyright = '2020, FEniCS Project'
 author = 'FEniCS Project'
 
@@ -126,7 +126,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'DOLFIN.tex', 'DOLFIN Documentation',
+    (master_doc, 'DOLFIN.tex', 'DOLFINx Documentation',
      'FEniCS Project', 'manual'),
 ]
 
@@ -136,7 +136,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'dolfinx', 'DOLFIN Documentation',
+    (master_doc, 'dolfinx', 'DOLFINx Documentation',
      [author], 1)
 ]
 

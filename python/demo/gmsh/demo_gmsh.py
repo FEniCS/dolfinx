@@ -15,7 +15,7 @@ from mpi4py import MPI
 
 import gmsh
 
-# Generate a mesh on each rank with the gmsh API, and create a DOLFIN-X mesh
+# Generate a mesh on each rank with the gmsh API, and create a DOLFINx mesh
 # on each rank. ::
 
 gmsh.initialize()
@@ -59,7 +59,7 @@ if MPI.COMM_WORLD.rank == 0:
     model.occ.synchronize()
 
     # Add physical tag 1 for exterior surfaces
-    boundary = model.getBoundary((3, model_dim_tags[0][0][1]))
+    boundary = model.getBoundary(model_dim_tags[0])
     boundary_ids = [b[1] for b in boundary]
     model.addPhysicalGroup(2, boundary_ids, tag=1)
     model.setPhysicalName(2, 1, "Sphere surface")
@@ -145,7 +145,7 @@ else:
     cells, x = np.empty([0, num_nodes]), np.empty([0, 3])
     marked_facets, facet_values = np.empty((0, 6)).astype(np.int64), np.empty((0,)).astype(np.int32)
 
-# Permute the topology from GMSH to DOLFIN-X ordering
+# Permute the topology from GMSH to DOLFINx ordering
 domain = ufl_mesh_from_gmsh(gmsh_cell_id, 3)
 
 gmsh_tetra10 = perm_gmsh(cpp.mesh.CellType.tetrahedron, 10)
@@ -224,7 +224,7 @@ else:
     marked_facets, facet_values = np.empty((0, 6)).astype(np.int64), np.empty((0,)).astype(np.int32)
 
 
-# Permute the mesh topology from GMSH ordering to DOLFIN-X ordering
+# Permute the mesh topology from GMSH ordering to DOLFINx ordering
 domain = ufl_mesh_from_gmsh(gmsh_cell_id, 3)
 gmsh_hex27 = perm_gmsh(cpp.mesh.CellType.hexahedron, 27)
 cells = cells[:, gmsh_hex27]
