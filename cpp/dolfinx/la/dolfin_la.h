@@ -9,7 +9,7 @@ namespace dolfinx
 */
 }
 
-// DOLFINX la interface
+// DOLFINx la interface
 
 #include <dolfinx/la/PETScKrylovSolver.h>
 #include <dolfinx/la/PETScMatrix.h>

@@ -45,9 +45,14 @@ jobs:
     if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/main' }}
     # NOTE: OpenMPI ARM64 build currently fails, see https://github.com/FEniCS/dolfinx/runs/2380975354?check_suite_focus=true#step:4:7472
     strategy:
+      fail-fast: False
       matrix:
-        os: [ubuntu-latest]
+        include:
+          - arch_tag: amd64
+            os: ubuntu-latest
+            experimental: false
     runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.experimental }}
     needs: start_runner
     env:
       PETSC_SLEPC_OPTFLAGS: "-O2 -g"
@@ -56,27 +61,28 @@ jobs:
       DOCKER_BUILD_ARGS: "--build-arg PETSC_SLEPC_OPTFLAGS --build-arg PETSC_SLEPC_DEBUGGING --build-arg MPI"
     steps:
       - uses: actions/checkout@v2
-      - name: Set architecture tag
-        run: |
-          if [[ ${{matrix.os}} == 'ubuntu-latest' ]]; then
-            echo "ARCH_TAG=amd64" >> $GITHUB_ENV
-          elif [[ ${{matrix.os}} == 'ARM64' ]]; then
-            echo "ARCH_TAG=arm64" >> $GITHUB_ENV
-          fi
       - name: Log into the Dockerhub registry
         run: echo ${{ secrets.dockerhub_token }} | docker login -u ${{ secrets.dockerhub_username }} --password-stdin
       - name: Build the Docker image
-        run: docker buildx build ${DOCKER_BUILD_ARGS} --push --cache-from=type=registry,ref=fenicsproject/test-env:${MPI}-${ARCH_TAG} --cache-to=type=inline --file docker/Dockerfile --target dev-env --tag fenicsproject/test-env:${MPI}-${ARCH_TAG} docker/
+        run: docker buildx build ${DOCKER_BUILD_ARGS} --push --cache-from=type=registry,ref=fenicsproject/test-env:${MPI}-${arch_tag} --cache-to=type=inline --file docker/Dockerfile --target dev-env --tag fenicsproject/test-env:${MPI}-${arch_tag} docker/
       - name: Cleanup
-        run: docker rmi fenicsproject/test-env:${MPI}-${ARCH_TAG}
+        run: docker rmi fenicsproject/test-env:${MPI}-${arch_tag}
 
   build_test_env_mpich:
     name: Build fenicsproject/test-env:mpich image
     if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/main' }}
     strategy:
+      fail-fast: False
       matrix:
-        os: [ubuntu-latest, ARM64]
+        include:
+          - arch_tag: amd64
+            os: ubuntu-latest
+            experimental: false
+          - arch_tag: arm64
+            os: ARM64
+            experimental: true
     runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.experimental }}
     needs: start_runner
     env:
       PETSC_SLEPC_OPTFLAGS: "-O2 -g"
@@ -85,27 +91,28 @@ jobs:
       DOCKER_BUILD_ARGS: "--build-arg PETSC_SLEPC_OPTFLAGS --build-arg PETSC_SLEPC_DEBUGGING --build-arg MPI"
     steps:
       - uses: actions/checkout@v2
-      - name: Set architecture tag
-        run: |
-          if [[ ${{matrix.os}} == 'ubuntu-latest' ]]; then
-            echo "ARCH_TAG=amd64" >> $GITHUB_ENV
-          elif [[ ${{matrix.os}} == 'ARM64' ]]; then
-            echo "ARCH_TAG=arm64" >> $GITHUB_ENV
-          fi
       - name: Log into the DockerHub registry
         run: echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
       - name: Build the Docker image
-        run: docker buildx build ${DOCKER_BUILD_ARGS} --push --cache-from=type=registry,ref=fenicsproject/test-env:${MPI}-${ARCH_TAG} --cache-to=type=inline --file docker/Dockerfile --target dev-env --tag fenicsproject/test-env:${MPI}-${ARCH_TAG} docker/
+        run: docker buildx build ${DOCKER_BUILD_ARGS} --push --cache-from=type=registry,ref=fenicsproject/test-env:${MPI}-${arch_tag} --cache-to=type=inline --file docker/Dockerfile --target dev-env --tag fenicsproject/test-env:${MPI}-${arch_tag} docker/
       - name: Cleanup
-        run: docker rmi fenicsproject/test-env:${MPI}-${ARCH_TAG}
+        run: docker rmi fenicsproject/test-env:${MPI}-${arch_tag}
 
   build_dev_env:
     name: Build dolfinx/dev-env image
     if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/main' }}
     strategy:
+      fail-fast: False
       matrix:
-        os: [ubuntu-latest, ARM64]
+        include:
+          - arch_tag: amd64
+            os: ubuntu-latest
+            experimental: false
+          - arch_tag: arm64
+            os: ARM64
+            experimental: true
     runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.experimental }}
     needs: start_runner
     env:
       # TODO: march based on matrix.os
@@ -115,19 +122,12 @@ jobs:
       DOCKER_BUILD_ARGS: "--build-arg PETSC_SLEPC_OPTFLAGS --build-arg PETSC_SLEPC_DEBUGGING --build-arg MPI"
     steps:
       - uses: actions/checkout@v2
-      - name: Set architecture tag
-        run: |
-          if [[ ${{matrix.os}} == 'ubuntu-latest' ]]; then
-            echo "ARCH_TAG=amd64" >> $GITHUB_ENV
-          elif [[ ${{matrix.os}} == 'ARM64' ]]; then
-            echo "ARCH_TAG=arm64" >> $GITHUB_ENV
-          fi
       - name: Log into the DockerHub registry
         run: echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
       - name: Build the Docker image
-        run: docker buildx build ${DOCKER_BUILD_ARGS} --push --cache-from=type=registry,ref=dolfinx/dev-env:${ARCH_TAG} --cache-to=type=inline --file docker/Dockerfile --target dev-env --tag dolfinx/dev-env:${ARCH_TAG} docker/
+        run: docker buildx build ${DOCKER_BUILD_ARGS} --push --cache-from=type=registry,ref=dolfinx/dev-env:${arch_tag} --cache-to=type=inline --file docker/Dockerfile --target dev-env --tag dolfinx/dev-env:${arch_tag} docker/
       - name: Cleanup
-        run: docker rmi dolfinx/dev-env:${ARCH_TAG}
+        run: docker rmi dolfinx/dev-env:${arch_tag}
 
   push_multiarch_images:
     name: Push multiarch images

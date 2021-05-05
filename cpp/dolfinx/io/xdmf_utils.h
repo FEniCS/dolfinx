@@ -1,6 +1,6 @@
 // Copyright (C) 2012 Chris N. Richardson
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -44,8 +44,8 @@ class Mesh;
 namespace io::xdmf_utils
 {
 
-// Get DOLFINX cell type string from XML topology node
-// @return DOLFINX cell type and polynomial degree
+// Get DOLFINx cell type string from XML topology node
+// @return DOLFINx cell type and polynomial degree
 std::pair<std::string, int> get_cell_type(const pugi::xml_node& topology_node);
 
 // Return (0) HDF5 filename and (1) path in HDF5 file from a DataItem
