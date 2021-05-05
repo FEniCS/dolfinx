@@ -1,6 +1,6 @@
 install(CODE "MESSAGE(
 \"----------------------------------------------------------------------------
-DOLFINX has now been installed in
+DOLFINx has now been installed in
 
     ${CMAKE_INSTALL_PREFIX}
 

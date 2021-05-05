@@ -26,7 +26,7 @@ C++ core
 - xtensor (https://xtensor.readthedocs.io/) and xtensor-blas (https://xtensor-blas.readthedocs.io/)
 - pkg-config (https://www.freedesktop.org/wiki/Software/pkg-config/)
 - Python 3 [build dependency]
-- FFCX [build dependency, for ``ufc.h`` and ``ufc_geometry.h`` headers]
+- FFCx [build dependency, for ``ufc.h`` and ``ufc_geometry.h`` headers]
 - MPI
 - HDF5 (with MPI support enabled)
 - PETSc [2]_
@@ -47,7 +47,7 @@ Below are additional requirements for the Python interface.
 .. rubric:: Required
 
 - Python
-- FFCX, UFL and Basix (http://github.com/FEniCS/).
+- FFCx, UFL and Basix (http://github.com/FEniCS/).
 - pybind11 (https://github.com/pybind/pybind11)
 - NumPy (http://www.numpy.org)
 - mpi4py

@@ -25,7 +25,7 @@ class Form:
 
         Note
         ----
-        This wrapper for UFL form is responsible for the actual FFCX compilation
+        This wrapper for UFL form is responsible for the actual FFCx compilation
         and attaching coefficients and domains specific data to the underlying
         C++ Form.
         """
