@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 project(dolfinx-tests)
 
-# Find DOLFINX config file
+# Find DOLFINx config file
 find_package(Basix REQUIRED)
 find_package(DOLFINX REQUIRED)
 

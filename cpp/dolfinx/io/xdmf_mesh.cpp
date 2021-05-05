@@ -1,6 +1,6 @@
 // Copyright (C) 2012-2016 Chris N. Richardson and Garth N. Wells
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -293,7 +293,7 @@ xdmf_mesh::read_topology_data(MPI_Comm comm, const hid_t h5_id,
   auto cells_vtk = xt::adapt(topology_data.data(), topology_data.size(),
                              xt::no_ownership(), shape);
 
-  //  Permute cells from VTK to DOLFINX ordering
+  //  Permute cells from VTK to DOLFINx ordering
   return io::cells::compute_permutation(
       cells_vtk, io::cells::perm_vtk(cell_type, cells_vtk.shape(1)));
 }

@@ -1,9 +1,9 @@
-Documenting DOLFIN demos
-========================
+Documenting DOLFINx demos
+=========================
 
-The documentation for the DOLFIN demos is written by hand and located
-together with the demos in the DOLFIN source tree. To document a (new)
-DOLFIN demo located in the directory foo (for instance pde/poisson),
+The documentation for the DOLFINx demos is written by hand and located
+together with the demos in the DOLFINx source tree. To document a (new)
+DOLFINx demo located in the directory foo (for instance pde/poisson),
 follow the two steps below. In general, the simplest way is probably
 to look at one of the documented demos for instance
 (demo/pde/poisson/) and follow the same setup.
@@ -32,14 +32,14 @@ to look at one of the documented demos for instance
 Note
 
    The demo documentation is automatically included in the complete
-   DOLFIN documentation when running make doc after building
-   DOLFIN. While documenting a demo, it may be handy to only run
+   DOLFINx documentation when running make doc after building
+   DOLFINx. While documenting a demo, it may be handy to only run
    make doc_demo and then make doc_html_[python|cpp].
 
 Note
 
    Tests for the validity of the code snippets used in the demo
-   documentation are included in the standard DOLFIN tests.
+   documentation are included in the standard DOLFINx tests.
 
 C++ and Python specific contents
 ================================
@@ -52,7 +52,7 @@ The C++ and Python documentation reST source files should
 * Include links to the API documentation using the :cpp:class: and
   :py:class: directives. Note that for the Python classes, the
   full module path is required (for instance
-  py:class:dolfin.cpp.NewtonSolver)
+  py:class:dolfinx.cpp.NewtonSolver)
 
 * Include the complete set of files needed to run the demo using the
   include directive.

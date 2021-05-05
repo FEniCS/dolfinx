@@ -38,7 +38,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #=============================================================================
 
-# Two paths: Set UFC_INCLUDE_DIR manually, or ask Python/FFCX for location
+# Two paths: Set UFC_INCLUDE_DIR manually, or ask Python/FFCx for location
 # of UFC headers.
 
 if (DEFINED ENV{UFC_INCLUDE_DIR})
@@ -56,7 +56,7 @@ if (DEFINED ENV{UFC_INCLUDE_DIR})
        MESSAGE(STATUS "Could not find UFC header.")
    endif()
 else()
-  MESSAGE(STATUS "Asking Python module FFCX for location of UFC... (${Python_EXECUTABLE})")
+  MESSAGE(STATUS "Asking Python module FFCx for location of UFC... (${Python_EXECUTABLE})")
   execute_process(
     COMMAND ${Python3_EXECUTABLE} -c "import ffcx.codegeneration, sys; sys.stdout.write(ffcx.codegeneration.get_include_path())"
     OUTPUT_VARIABLE UFC_INCLUDE_DIR
