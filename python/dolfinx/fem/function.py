@@ -65,14 +65,14 @@ class Expression:
             Array of points of shape (num_points, tdim) on the reference
             element.
         form_compiler_parameters
-            Parameters used in FFCX compilation of this Expression. Run `ffcx
+            Parameters used in FFCx compilation of this Expression. Run `ffcx
             --help` in the commandline to see all available options.
         jit_parameters
             Parameters controlling JIT compilation of C code.
 
         Note
         ----
-        This wrapper is responsible for the FFCX compilation of the UFL Expr
+        This wrapper is responsible for the FFCx compilation of the UFL Expr
         and attaching the correct data to the underlying C++ Expression.
         """
         assert x.ndim < 3
