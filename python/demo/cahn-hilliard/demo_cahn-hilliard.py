@@ -240,10 +240,8 @@ F = F0 + F1
 # Create nonlinear problem and Newton solver
 problem = NonlinearProblem(F, u)
 solver = NewtonSolver(MPI.COMM_WORLD, problem)
-krylov_solver = solver.get_krylov_solver()
 solver.convergence_criterion = "incremental"
 solver.rtol = 1e-6
-exit()
 
 # The setting of ``convergence_criterion`` to ``"incremental"`` specifies
 # that the Newton solver should compute a norm of the solution increment
