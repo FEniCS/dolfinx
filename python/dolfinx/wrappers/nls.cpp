@@ -29,8 +29,10 @@ void nls(py::module& m)
       }))
       .def("get_krylov_solver",
            [](const dolfinx::nls::NewtonSolver& self) {
-             return self.get_krylov_solver().ksp();
-           })
+             KSP ksp = self.get_krylov_solver().ksp();
+             return ksp;
+           },
+           py::return_value_policy::reference_internal)
       .def("setF", &dolfinx::nls::NewtonSolver::setF)
       .def("setJ", &dolfinx::nls::NewtonSolver::setJ)
       .def("setP", &dolfinx::nls::NewtonSolver::setP)

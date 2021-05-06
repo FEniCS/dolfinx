@@ -36,6 +36,9 @@ public:
   /// Create solver wrapper of a PETSc KSP object
   explicit PETScKrylovSolver(KSP ksp, bool inc_ref_count = true);
 
+  /// Copy constructor
+  PETScKrylovSolver(const PETScKrylovSolver& other);
+
   /// Destructor
   virtual ~PETScKrylovSolver();
 
