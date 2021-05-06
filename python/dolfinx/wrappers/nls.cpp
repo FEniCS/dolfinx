@@ -27,6 +27,10 @@ void nls(py::module& m)
       .def(py::init([](const MPICommWrapper comm) {
         return std::make_unique<dolfinx::nls::NewtonSolver>(comm.get());
       }))
+      .def("get_krylov_solver",
+           [](const dolfinx::nls::NewtonSolver& self) {
+             return self.get_krylov_solver().ksp();
+           })
       .def("setF", &dolfinx::nls::NewtonSolver::setF)
       .def("setJ", &dolfinx::nls::NewtonSolver::setJ)
       .def("setP", &dolfinx::nls::NewtonSolver::setP)

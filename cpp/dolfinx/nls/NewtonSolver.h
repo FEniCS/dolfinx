@@ -54,6 +54,12 @@ public:
   /// @param[in] P Function to compute the preconditioner matrix b (x, P)
   /// @param[in] Pmat The matrix to assemble the preconditioner into
   void setP(const std::function<void(const Vec, Mat)>& P, Mat Pmat);
+  
+  /// Set the function that is called before the residual or Jacobian
+  /// are computed. It is commonly used to update ghost values.
+  /// @param[in] form The function to call. It takes the latest solution
+  /// vector @p x as an argument
+  la::PETScKrylovSolver get_krylov_solver() const;
 
   /// Set the function that is called before the residual or Jacobian
   /// are computed. It is commonly used to update ghost values.
