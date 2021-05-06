@@ -40,6 +40,7 @@ PETScKrylovSolver::PETScKrylovSolver(const PETScKrylovSolver& other)
     : _ksp(nullptr)
 {
   _ksp = other.ksp();
+  assert(_ksp);
   PetscErrorCode ierr = PetscObjectReference((PetscObject)_ksp);
   if (ierr != 0)
     petsc_error(ierr, __FILE__, "PetscObjectReference");
