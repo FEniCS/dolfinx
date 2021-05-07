@@ -31,7 +31,7 @@ public:
   explicit SLEPcEigenSolver(MPI_Comm comm);
 
   /// Create eigenvalue solver from EPS object
-  explicit SLEPcEigenSolver(EPS eps, bool inc_ref_count = true);
+  SLEPcEigenSolver(EPS eps, bool inc_ref_count);
 
   /// Destructor
   ~SLEPcEigenSolver();
