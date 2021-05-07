@@ -1,6 +1,6 @@
 # Copyright (C) 2017-2018 Chris N. Richardson and Garth N. Wells
 #
-# This file is part of DOLFINX (https://www.fenicsproject.org)
+# This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -21,7 +21,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(PROJECT_NAME {project_name})
 project(${{PROJECT_NAME}})
 
-# Get DOLFINX configuration data (DOLFINXConfig.cmake must be in
+# Get DOLFINx configuration data (DOLFINXConfig.cmake must be in
 # DOLFINX_CMAKE_CONFIG_PATH)
 if (NOT TARGET dolfinx)
   find_package(DOLFINX REQUIRED)

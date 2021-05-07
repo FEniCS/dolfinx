@@ -9,7 +9,7 @@ namespace dolfinx
 */
 }
 
-// DOLFINX io interface
+// DOLFINx io interface
 
 #include <dolfinx/io/ADIOS2File.h>
 #include <dolfinx/io/VTKFile.h>

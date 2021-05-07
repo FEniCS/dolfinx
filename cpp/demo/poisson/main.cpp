@@ -81,9 +81,9 @@
 //
 // The main solver is implemented in the :download:`main.cpp` file.
 //
-// At the top we include the DOLFIN header file and the generated header
+// At the top we include the DOLFINx header file and the generated header
 // file "Poisson.h" containing the variational forms for the Poisson
-// equation.  For convenience we also include the DOLFIN namespace.
+// equation.  For convenience we also include the DOLFINx namespace.
 //
 // .. code-block:: cpp
 
@@ -99,7 +99,7 @@ using namespace dolfinx;
 
 // Then follows the definition of the coefficient functions (for
 // :math:`f` and :math:`g`), which are derived from the
-// :cpp:class:`Expression` class in DOLFIN
+// :cpp:class:`Expression` class in DOLFINx
 //
 // .. code-block:: cpp
 
