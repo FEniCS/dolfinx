@@ -31,10 +31,22 @@ public:
   explicit SLEPcEigenSolver(MPI_Comm comm);
 
   /// Create eigenvalue solver from EPS object
-  explicit SLEPcEigenSolver(EPS eps, bool inc_ref_count = true);
+  SLEPcEigenSolver(EPS eps, bool inc_ref_count);
+
+  // Delete copy constructor
+  SLEPcEigenSolver(const SLEPcEigenSolver&) = delete;
+
+  /// Move constructor
+  SLEPcEigenSolver(SLEPcEigenSolver&& solver);
 
   /// Destructor
   ~SLEPcEigenSolver();
+
+  // Assignment operator (disabled)
+  SLEPcEigenSolver& operator=(const SLEPcEigenSolver&) = delete;
+
+  /// Move assignment
+  SLEPcEigenSolver& operator=(SLEPcEigenSolver&& solver);
 
   /// Set opeartors (B may be nullptr for regular eigenvalues
   /// problems)
@@ -63,8 +75,8 @@ public:
   /// database
   void set_options_prefix(std::string options_prefix);
 
-  /// Returns the prefix used by PETSc when searching the PETSc
-  /// options database
+  /// Returns the prefix used by PETSc when searching the PETSc options
+  /// database
   std::string get_options_prefix() const;
 
   /// Set options from PETSc options database

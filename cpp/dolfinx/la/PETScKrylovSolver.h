@@ -6,21 +6,18 @@
 
 #pragma once
 
-#include "PETScVector.h"
 #include <dolfinx/common/MPI.h>
 #include <petscksp.h>
 #include <petscmat.h>
 #include <petscvec.h>
 #include <string>
 
-namespace dolfinx
-{
-namespace fem
+namespace dolfinx::fem
 {
 class PETScDMCollection;
 }
 
-namespace la
+namespace dolfinx::la
 {
 
 /// This class implements Krylov methods for linear systems of the form
@@ -34,10 +31,24 @@ public:
   explicit PETScKrylovSolver(MPI_Comm comm);
 
   /// Create solver wrapper of a PETSc KSP object
-  explicit PETScKrylovSolver(KSP ksp, bool inc_ref_count = true);
+  /// @param[in] ksp The PETSc KSP object. It should already have been created
+  /// @param[in] inc_ref_count Increment the reference count on `ksp` if true
+  PETScKrylovSolver(KSP ksp, bool inc_ref_count);
+
+  // Delete copy constructor
+  PETScKrylovSolver(const PETScKrylovSolver&) = delete;
+
+  /// Move constructor
+  PETScKrylovSolver(PETScKrylovSolver&& solver);
 
   /// Destructor
   virtual ~PETScKrylovSolver();
+
+  // Assignment operator (disabled)
+  PETScKrylovSolver& operator=(const PETScKrylovSolver&) = delete;
+
+  /// Move assignment
+  PETScKrylovSolver& operator=(PETScKrylovSolver&& solver);
 
   /// Set operator (Mat)
   void set_operator(const Mat A);
@@ -73,5 +84,4 @@ private:
   // PETSc solver pointer
   KSP _ksp;
 };
-} // namespace la
-} // namespace dolfinx
+} // namespace dolfinx::la
