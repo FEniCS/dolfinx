@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - "**"
+    tags:
+      - "*.*.*.*"
+      - "*.*.*"
   pull_request:
     branches:
       - main
@@ -125,23 +128,32 @@ jobs:
           if-no-files-found: error
 
       - name: Checkout FEniCS/docs
+        if: ${{ github.repository == 'FEniCS/dolfinx' && ( github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/') ) && runner.os == 'Linux' }}
         uses: actions/checkout@v2
         with:
           repository: "FEniCS/docs"
           path: "docs"
           ssh-key: "${{ secrets.SSH_GITHUB_DOCS_PRIVATE_KEY }}"
-      - name: Push documentation to repository FEniCS/docs
-        if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/main' && matrix.petsc_arch == 'real' && matrix.petsc_int_type == 32}}
+      - name: Set version name
+        if: ${{ github.repository == 'FEniCS/dolfinx' && ( github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/') ) && runner.os == 'Linux' }}
+        run: |
+          echo "VERSION_NAME=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+      - name: Copy documentation into repository
+        if: ${{ github.repository == 'FEniCS/dolfinx' && ( github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/') ) && runner.os == 'Linux' }}
+        run: |
+          cd docs
+          git rm -r --ignore-unmatch dolfinx/${{ env.VERSION_NAME }}/cpp
+          git rm -r --ignore-unmatch dolfinx/${{ env.VERSION_NAME }}/python
+          mkdir -p dolfinx/${{ env.VERSION_NAME }}/cpp
+          mkdir -p dolfinx/${{ env.VERSION_NAME }}/python
+          cp -r ../cpp/doc/html/* dolfinx/${{ env.VERSION_NAME }}/cpp
+          cp -r ../python/doc/build/html/* dolfinx/${{ env.VERSION_NAME }}/python
+      - name: Commit and push documentation to FEniCS/docs
+        if: ${{ github.repository == 'FEniCS/dolfinx' && ( github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/') ) && runner.os == 'Linux' }}
         run: |
           cd docs
           git config --global user.email "fenics@github.com"
           git config --global user.name "FEniCS GitHub Actions"
-          git rm -r dolfinx/main/cpp/*
-          git rm -r dolfinx/main/python/*
-          mkdir -p dolfinx/main/cpp
-          mkdir -p dolfinx/main/python
-          cp -r ../cpp/doc/html/* dolfinx/main/cpp
-          cp -r ../python/doc/build/html/* dolfinx/main/python
           git add --all
-          git commit --allow-empty -m "C++ and Python FEniCS/dolfinx@${{ github.sha }}"
+          git commit --allow-empty -m "C++ FEniCS/dolfinx@${{ github.sha }}"
           git push
