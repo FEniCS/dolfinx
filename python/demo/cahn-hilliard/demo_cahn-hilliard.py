@@ -240,7 +240,6 @@ F = F0 + F1
 # Create nonlinear problem and Newton solver
 problem = NonlinearProblem(F, u)
 solver = NewtonSolver(MPI.COMM_WORLD, problem)
-ksp = solver.get_krylov_solver()
 solver.convergence_criterion = "incremental"
 solver.rtol = 1e-6
 
