@@ -28,8 +28,10 @@ void nls(py::module& m)
         return std::make_unique<dolfinx::nls::NewtonSolver>(comm.get());
       }))
       .def("get_krylov_solver",
-           [](const dolfinx::nls::NewtonSolver& self) {	     
-             KSP ksp = self.get_krylov_solver().ksp();
+           [](const dolfinx::nls::NewtonSolver& self) {
+             const dolfinx::la::PETScKrylovSolver& krylov_solver
+                 = self.get_krylov_solver();
+             KSP ksp = krylov_solver.ksp();
              return ksp;
            })
       .def("setF", &dolfinx::nls::NewtonSolver::setF)

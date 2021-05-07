@@ -36,17 +36,6 @@ PETScKrylovSolver::PETScKrylovSolver(KSP ksp, bool inc_ref_count) : _ksp(ksp)
   }
 }
 //-----------------------------------------------------------------------------
-PETScKrylovSolver::PETScKrylovSolver(const PETScKrylovSolver& other)
-    : _ksp(nullptr)
-{
-  assert(other.ksp());
-  _ksp = other.ksp();
-  assert(_ksp);
-  PetscErrorCode ierr = PetscObjectReference((PetscObject)_ksp);
-  if (ierr != 0)
-    petsc_error(ierr, __FILE__, "PetscObjectReference");
-}
-//-----------------------------------------------------------------------------
 PETScKrylovSolver::PETScKrylovSolver(PETScKrylovSolver&& solver)
     : _ksp(std::exchange(solver._ksp, nullptr))
 {
@@ -77,7 +66,7 @@ void PETScKrylovSolver::set_operators(const Mat A, const Mat P)
     petsc_error(ierr, __FILE__, "KSPSetOperators");
 }
 //-----------------------------------------------------------------------------
-int PETScKrylovSolver::solve(Vec x, const Vec b, bool transpose)
+int PETScKrylovSolver::solve(Vec x, const Vec b, bool transpose) const
 {
   common::Timer timer("PETSc Krylov solver");
   assert(x);

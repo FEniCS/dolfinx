@@ -66,11 +66,18 @@ public:
   /// @param[in] P Function to compute the preconditioner matrix b (x, P)
   /// @param[in] Pmat The matrix to assemble the preconditioner into
   void setP(const std::function<void(const Vec, Mat)>& P, Mat Pmat);
-  
+
   /// Get the internal Krylov solver used to solve for the Newton updates
-  /// The Krylov solver prefix is nls_solve_ 
+  /// const version
+  /// The Krylov solver prefix is nls_solve_
   /// @return The Krylov solver
-  la::PETScKrylovSolver get_krylov_solver() const;
+  const la::PETScKrylovSolver& get_krylov_solver() const;
+
+  /// Get the internal Krylov solver used to solve for the Newton updates
+  /// non-const version
+  /// The Krylov solver prefix is nls_solve_
+  /// @return The Krylov solver
+  la::PETScKrylovSolver& get_krylov_solver();
 
   /// Set the function that is called before the residual or Jacobian
   /// are computed. It is commonly used to update ghost values.
