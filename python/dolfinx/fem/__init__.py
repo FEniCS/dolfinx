@@ -23,8 +23,7 @@ from dolfinx.fem.formmanipulations import adjoint
 from dolfinx.fem.function import (Constant, Expression, Function,
                                   FunctionSpace, TensorFunctionSpace,
                                   VectorFunctionSpace)
-from dolfinx.fem.linearproblem import LinearProblem
-from dolfinx.fem.nonlinearproblem import NonlinearProblem
+from dolfinx.fem.problem import LinearProblem, NonlinearProblem
 
 __all__ = [
     "Constant", "Expression", "Function",
