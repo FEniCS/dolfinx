@@ -111,14 +111,15 @@
 import os
 
 import numpy as np
-from dolfinx import Function, FunctionSpace, UnitSquareMesh, log, plot
+from dolfinx import (Function, FunctionSpace, NewtonSolver, UnitSquareMesh,
+                     log, plot)
 from dolfinx.cpp.la import scatter_forward
 from dolfinx.cpp.mesh import CellType
-from dolfinx.fem import NewtonSolver, NonlinearProblem
+from dolfinx.fem import NonlinearProblem
 from dolfinx.io import XDMFFile
 from mpi4py import MPI
-from ufl import (FiniteElement, TestFunctions, diff, dx, grad,
-                 inner, split, variable)
+from ufl import (FiniteElement, TestFunctions, diff, dx, grad, inner, split,
+                 variable)
 
 try:
     import pyvista as pv

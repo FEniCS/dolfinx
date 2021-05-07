@@ -48,6 +48,7 @@ from .fem import (FunctionSpace, VectorFunctionSpace,
                   TensorFunctionSpace, Constant, Expression, Function)
 
 from .mesh import MeshTags
+from .nls import NewtonSolver
 
 # Initialise logging
 from dolfinx import cpp
