@@ -59,14 +59,15 @@ jobs:
       PETSC_SLEPC_DEBUGGING: "yes"
       MPI: "openmpi"
       DOCKER_BUILD_ARGS: "--build-arg PETSC_SLEPC_OPTFLAGS --build-arg PETSC_SLEPC_DEBUGGING --build-arg MPI"
+      ARCH_TAG: ${{ matrix.arch_tag }}
     steps:
       - uses: actions/checkout@v2
       - name: Log into the Dockerhub registry
         run: echo ${{ secrets.dockerhub_token }} | docker login -u ${{ secrets.dockerhub_username }} --password-stdin
       - name: Build the Docker image
-        run: docker buildx build ${DOCKER_BUILD_ARGS} --push --cache-from=type=registry,ref=fenicsproject/test-env:${MPI}-${arch_tag} --cache-to=type=inline --file docker/Dockerfile --target dev-env --tag fenicsproject/test-env:${MPI}-${arch_tag} docker/
+        run: docker buildx build ${DOCKER_BUILD_ARGS} --push --cache-from=type=registry,ref=fenicsproject/test-env:${MPI}-${ARCH_TAG} --cache-to=type=inline --file docker/Dockerfile --target dev-env --tag fenicsproject/test-env:${MPI}-${ARCH_TAG} docker/
       - name: Cleanup
-        run: docker rmi fenicsproject/test-env:${MPI}-${arch_tag}
+        run: docker rmi fenicsproject/test-env:${MPI}-${ARCH_TAG}
 
   build_test_env_mpich:
     name: Build fenicsproject/test-env:mpich image
@@ -89,14 +90,15 @@ jobs:
       PETSC_SLEPC_DEBUGGING: "yes"
       MPI: "mpich"
       DOCKER_BUILD_ARGS: "--build-arg PETSC_SLEPC_OPTFLAGS --build-arg PETSC_SLEPC_DEBUGGING --build-arg MPI"
+      ARCH_TAG: ${{ matrix.arch_tag }}
     steps:
       - uses: actions/checkout@v2
       - name: Log into the DockerHub registry
         run: echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
       - name: Build the Docker image
-        run: docker buildx build ${DOCKER_BUILD_ARGS} --push --cache-from=type=registry,ref=fenicsproject/test-env:${MPI}-${arch_tag} --cache-to=type=inline --file docker/Dockerfile --target dev-env --tag fenicsproject/test-env:${MPI}-${arch_tag} docker/
+        run: docker buildx build ${DOCKER_BUILD_ARGS} --push --cache-from=type=registry,ref=fenicsproject/test-env:${MPI}-${ARCH_TAG} --cache-to=type=inline --file docker/Dockerfile --target dev-env --tag fenicsproject/test-env:${MPI}-${ARCH_TAG} docker/
       - name: Cleanup
-        run: docker rmi fenicsproject/test-env:${MPI}-${arch_tag}
+        run: docker rmi fenicsproject/test-env:${MPI}-${ARCH_TAG}
 
   build_dev_env:
     name: Build dolfinx/dev-env image
@@ -120,14 +122,15 @@ jobs:
       PETSC_SLEPC_DEBUGGING: "no"
       MPI: "mpich"
       DOCKER_BUILD_ARGS: "--build-arg PETSC_SLEPC_OPTFLAGS --build-arg PETSC_SLEPC_DEBUGGING --build-arg MPI"
+      ARCH_TAG: ${{ matrix.arch_tag }}
     steps:
       - uses: actions/checkout@v2
       - name: Log into the DockerHub registry
         run: echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
       - name: Build the Docker image
-        run: docker buildx build ${DOCKER_BUILD_ARGS} --push --cache-from=type=registry,ref=dolfinx/dev-env:${arch_tag} --cache-to=type=inline --file docker/Dockerfile --target dev-env --tag dolfinx/dev-env:${arch_tag} docker/
+        run: docker buildx build ${DOCKER_BUILD_ARGS} --push --cache-from=type=registry,ref=dolfinx/dev-env:${ARCH_TAG} --cache-to=type=inline --file docker/Dockerfile --target dev-env --tag dolfinx/dev-env:${ARCH_TAG} docker/
       - name: Cleanup
-        run: docker rmi dolfinx/dev-env:${arch_tag}
+        run: docker rmi dolfinx/dev-env:${ARCH_TAG}
 
   push_multiarch_images:
     name: Push multiarch images
