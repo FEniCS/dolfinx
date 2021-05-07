@@ -140,8 +140,8 @@ class NonlinearProblem:
 
     """
 
-    def __init__(self, F: ufl.form.Form, u: fem.Function, bcs: typing.List[fem.DirichletBC] = [], J: ufl.form.Form = None,
-                 form_compiler_parameters={}, jit_parameters={}):
+    def __init__(self, F: ufl.form.Form, u: fem.Function, bcs: typing.List[fem.DirichletBC] = [],
+                 J: ufl.form.Form = None, form_compiler_parameters={}, jit_parameters={}):
         """Initialize class that sets up structures for solving the non-linear problem using Newton's method,
         dF/du(u) du = -F(u)
 

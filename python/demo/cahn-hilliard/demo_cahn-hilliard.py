@@ -118,6 +118,7 @@ from dolfinx.cpp.mesh import CellType
 from dolfinx.fem import NonlinearProblem
 from dolfinx.io import XDMFFile
 from mpi4py import MPI
+from petsc4py import PETSc
 from ufl import (FiniteElement, TestFunctions, diff, dx, grad, inner, split,
                  variable)
 
@@ -243,6 +244,16 @@ problem = NonlinearProblem(F, u)
 solver = NewtonSolver(MPI.COMM_WORLD, problem)
 solver.convergence_criterion = "incremental"
 solver.rtol = 1e-6
+
+# We can customize the linear solver used inside the NewtonSolver by modifying the
+# PETSc options
+ksp = solver.krylov_solver
+opts = PETSc.Options()
+option_prefix = ksp.getOptionsPrefix()
+opts[f"{option_prefix}ksp_type"] = "preonly"
+opts[f"{option_prefix}pc_type"] = "lu"
+opts[f"{option_prefix}_pc_factor_mat_solver_type"] = "mumps"
+ksp.setFromOptions()
 
 # The setting of ``convergence_criterion`` to ``"incremental"`` specifies
 # that the Newton solver should compute a norm of the solution increment
