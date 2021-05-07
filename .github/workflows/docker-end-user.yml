@@ -59,6 +59,7 @@ jobs:
       DOLFINX_CMAKE_BUILD_TYPE: "RelWithDebInfo"
       DOLFINX_CMAKE_CXX_FLAGS: "-O2"
       DOCKER_BUILD_ARGS: "--build-arg DOLFINX_CMAKE_BUILD_TYPE --build-arg DOLFINX_CMAKE_CXX_FLAGS"
+      ARCH_TAG: ${{ matrix.arch_tag }}
     steps:
       - uses: actions/checkout@v2
         with:
@@ -107,12 +108,12 @@ jobs:
         run: echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
       - name: Push to the DockerHub registry
         run: |
-          docker tag dolfinx/dolfinx-onbuild dolfinx/dolfinx-onbuild:${arch_tag}
-          docker push dolfinx/dolfinx-onbuild:${arch_tag}
-          docker tag dolfinx/dolfinx dolfinx/dolfinx:${arch_tag}
-          docker push dolfinx/dolfinx:${arch_tag}
-          docker tag dolfinx/lab dolfinx/lab:${arch_tag}
-          docker push dolfinx/lab:${arch_tag}
+          docker tag dolfinx/dolfinx-onbuild dolfinx/dolfinx-onbuild:${ARCH_TAG}
+          docker push dolfinx/dolfinx-onbuild:${ARCH_TAG}
+          docker tag dolfinx/dolfinx dolfinx/dolfinx:${ARCH_TAG}
+          docker push dolfinx/dolfinx:${ARCH_TAG}
+          docker tag dolfinx/lab dolfinx/lab:${ARCH_TAG}
+          docker push dolfinx/lab:${ARCH_TAG}
 
   push_multiarch_images:
     name: Push multiarch image
