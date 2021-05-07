@@ -5,7 +5,6 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Methods for solving nonlinear equations."""
 
-from typing import List
 import types
 from petsc4py import PETSc
 from dolfinx import fem, cpp
