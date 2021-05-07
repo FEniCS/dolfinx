@@ -6,9 +6,7 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import typing
-
 import ufl
-from typing import List
 from dolfinx import fem
 from petsc4py import PETSc
 
@@ -142,7 +140,7 @@ class NonlinearProblem:
 
     """
 
-    def __init__(self, F: ufl.form.Form, u: fem.Function, bcs: List[fem.DirichletBC] = [], J: ufl.form.Form = None,
+    def __init__(self, F: ufl.form.Form, u: fem.Function, bcs: typing.List[fem.DirichletBC] = [], J: ufl.form.Form = None,
                  form_compiler_parameters={}, jit_parameters={}):
         """Initialize class that sets up structures for solving the non-linear problem using Newton's method,
         dF/du(u) du = -F(u)
