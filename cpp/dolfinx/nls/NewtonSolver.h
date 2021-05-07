@@ -35,8 +35,20 @@ public:
   /// @param[in] comm The MPI communicator for the solver
   explicit NewtonSolver(MPI_Comm comm);
 
+  /// Move constructor (deleted)
+  NewtonSolver(NewtonSolver&& solver) = delete;
+
+  /// Copy constructor (deleted)
+  NewtonSolver(const NewtonSolver& solver) = delete;
+
+  /// Assignment operator (deleted)
+  NewtonSolver& operator=(const NewtonSolver& solver) = delete;
+
+  /// Move assignment constructor (deleted)
+  NewtonSolver& operator=(const NewtonSolver&& solver) = delete;
+
   /// Destructor
-  virtual ~NewtonSolver();
+  ~NewtonSolver();
 
   /// Set the function for computing the residual and the vector to the
   /// assemble the residual into

@@ -33,6 +33,19 @@ public:
   /// Create eigenvalue solver from EPS object
   explicit SLEPcEigenSolver(EPS eps, bool inc_ref_count = true);
 
+  /// Move constructor
+  SLEPcEigenSolver(SLEPcEigenSolver&& solver);
+
+  /// Copy constructor
+  /// Performs shallow copy, underlying SLEPc EPS pointer is the same.
+  SLEPcEigenSolver(const SLEPcEigenSolver& solver);
+
+  /// Assignment operator (deleted)
+  SLEPcEigenSolver& operator=(const SLEPcEigenSolver& solver) = delete;
+
+  /// Move assignment constructor (deleted)
+  SLEPcEigenSolver& operator=(const SLEPcEigenSolver&& solver) = delete;
+
   /// Destructor
   ~SLEPcEigenSolver();
 

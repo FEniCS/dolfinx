@@ -36,11 +36,21 @@ public:
   /// Create solver wrapper of a PETSc KSP object
   explicit PETScKrylovSolver(KSP ksp, bool inc_ref_count = true);
 
+  /// Move constructor
+  PETScKrylovSolver(PETScKrylovSolver&& solver);
+
   /// Copy constructor
-  PETScKrylovSolver(const PETScKrylovSolver& other);
+  /// Performs shallow copy, underlying PETSc KSP pointer is the same.
+  PETScKrylovSolver(const PETScKrylovSolver& solver);
+
+  /// Assignment operator (deleted)
+  PETScKrylovSolver& operator=(const PETScKrylovSolver& A) = delete;
+
+  /// Move assignment operator (deleted)
+  PETScKrylovSolver& operator=(const PETScKrylovSolver&& A) = delete;
 
   /// Destructor
-  virtual ~PETScKrylovSolver();
+  ~PETScKrylovSolver();
 
   /// Set operator (Mat)
   void set_operator(const Mat A);

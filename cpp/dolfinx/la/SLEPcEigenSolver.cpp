@@ -35,6 +35,22 @@ SLEPcEigenSolver::SLEPcEigenSolver(EPS eps, bool inc_ref_count) : _eps(eps)
   }
 }
 //-----------------------------------------------------------------------------
+SLEPcEigenSolver::SLEPcEigenSolver(SLEPcEigenSolver&& solver)
+    : _eps(std::exchange(solver._eps, nullptr))
+{
+}
+//-----------------------------------------------------------------------------
+SLEPcEigenSolver::SLEPcEigenSolver(const SLEPcEigenSolver& solver)
+    : _eps(nullptr)
+{
+  assert(solver.eps());
+  _eps = solver.eps();
+  assert(_eps);
+  PetscErrorCode ierr = PetscObjectReference((PetscObject)_eps);
+  if (ierr != 0)
+    petsc_error(ierr, __FILE__, "PetscObjectReference");
+}
+//-----------------------------------------------------------------------------
 SLEPcEigenSolver::~SLEPcEigenSolver()
 {
   if (_eps)

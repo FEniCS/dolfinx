@@ -36,11 +36,16 @@ PETScKrylovSolver::PETScKrylovSolver(KSP ksp, bool inc_ref_count) : _ksp(ksp)
   }
 }
 //-----------------------------------------------------------------------------
-PETScKrylovSolver::PETScKrylovSolver(const PETScKrylovSolver& other)
+PETScKrylovSolver::PETScKrylovSolver(PETScKrylovSolver&& solver)
+    : _ksp(std::exchange(solver._ksp, nullptr))
+{
+}
+//-----------------------------------------------------------------------------
+PETScKrylovSolver::PETScKrylovSolver(const PETScKrylovSolver& solver)
     : _ksp(nullptr)
 {
-  assert(other.ksp());
-  _ksp = other.ksp();
+  assert(solver.ksp());
+  _ksp = solver.ksp();
   assert(_ksp);
   PetscErrorCode ierr = PetscObjectReference((PetscObject)_ksp);
   if (ierr != 0)
