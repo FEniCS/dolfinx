@@ -3,7 +3,6 @@ import platform
 import re
 import subprocess
 import sys
-from distutils.version import LooseVersion
 
 from setuptools import Extension, setup
 from setuptools.command.build_ext import build_ext
@@ -12,15 +11,14 @@ if sys.version_info < (3, 7):
     print("Python 3.7 or higher required, please upgrade.")
     sys.exit(1)
 
-VERSION = "2019.2.0.dev0"
-RESTRICT_REQUIREMENTS = ">=2019.2.0.dev0,<2021.2"
+VERSION = "0.1.0"
 
 REQUIREMENTS = [
     "numpy",
     "mpi4py",
     "petsc4py",
-    "fenics-ffcx",
-    "fenics-ufl{}".format(RESTRICT_REQUIREMENTS),
+    "fenics-ffcx>=0.1.0,<0.2.0",
+    "fenics-ufl>=2021.1.0,<2021.2.0"
 ]
 
 
