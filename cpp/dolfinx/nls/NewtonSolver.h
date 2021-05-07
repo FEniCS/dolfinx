@@ -35,16 +35,16 @@ public:
   /// @param[in] comm The MPI communicator for the solver
   explicit NewtonSolver(MPI_Comm comm);
 
-  /// Move constructor (deleted)
+  // Move constructor (deleted)
   NewtonSolver(NewtonSolver&& solver) = delete;
 
-  /// Copy constructor (deleted)
+  // Copy constructor (deleted)
   NewtonSolver(const NewtonSolver& solver) = delete;
 
-  /// Assignment operator (deleted)
+  // Assignment operator (deleted)
   NewtonSolver& operator=(const NewtonSolver& solver) = delete;
 
-  /// Move assignment constructor (deleted)
+  // Move assignment constructor (deleted)
   NewtonSolver& operator=(const NewtonSolver&& solver) = delete;
 
   /// Destructor

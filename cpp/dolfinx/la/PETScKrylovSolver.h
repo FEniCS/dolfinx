@@ -35,7 +35,7 @@ public:
   /// @param[in] inc_ref_count Increment the reference count on `ksp` if true
   PETScKrylovSolver(KSP ksp, bool inc_ref_count);
 
-  /// Copy constructor (deleted)
+  // Copy constructor (deleted)
   PETScKrylovSolver(const PETScKrylovSolver& solver) = delete;
 
   /// Move constructor
