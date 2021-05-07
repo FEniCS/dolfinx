@@ -35,15 +35,26 @@ SLEPcEigenSolver::SLEPcEigenSolver(EPS eps, bool inc_ref_count) : _eps(eps)
   }
 }
 //-----------------------------------------------------------------------------
+SLEPcEigenSolver::SLEPcEigenSolver(SLEPcEigenSolver&& solver)
+    : _eps(std::exchange(solver._eps, nullptr))
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
 SLEPcEigenSolver::~SLEPcEigenSolver()
 {
   if (_eps)
     EPSDestroy(&_eps);
 }
 //-----------------------------------------------------------------------------
+SLEPcEigenSolver& SLEPcEigenSolver::operator=(SLEPcEigenSolver&& solver)
+{
+  std::swap(_eps, solver._eps);
+  return *this;
+}
+//-----------------------------------------------------------------------------
 void SLEPcEigenSolver::set_operators(const Mat A, const Mat B)
 {
-  // Set operators
   assert(_eps);
   EPSSetOperators(_eps, A, B);
 }
