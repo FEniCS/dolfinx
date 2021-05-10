@@ -22,7 +22,7 @@ from dolfinx_utils.test.skips import skip_in_parallel
     (ufl.VectorElement, "Lagrange"),
     (ufl.FiniteElement, "N1curl")
 ])
-def test_mixed_nedelec(ElementType, space, cell, order):
+def test_mixed_element(ElementType, space, cell, order):
     if cell == ufl.triangle:
         mesh = UnitSquareMesh(MPI.COMM_WORLD, 1, 1, CellType.triangle,
                               dolfinx.cpp.mesh.GhostMode.shared_facet)
@@ -30,29 +30,25 @@ def test_mixed_nedelec(ElementType, space, cell, order):
         mesh = UnitCubeMesh(MPI.COMM_WORLD, 1, 1, 1, CellType.tetrahedron,
                             dolfinx.cpp.mesh.GhostMode.shared_facet)
 
-    U_el = ElementType(space, cell, order)
-    U = FunctionSpace(mesh, U_el)
+    norms = []
+    U_el = ufl.FiniteElement(space, cell, order)
+    for i in range(3):
+        U = FunctionSpace(mesh, U_el)
 
-    u = ufl.TrialFunction(U)
-    v = ufl.TestFunction(U)
+        u = ufl.TrialFunction(U)
+        v = ufl.TestFunction(U)
 
-    a = ufl.inner(u, v) * ufl.dx
+        a = ufl.inner(u, v) * ufl.dx
 
-    A = dolfinx.fem.assemble_matrix(a)
-    A.assemble()
-    norm1 = A.norm()
+        A = dolfinx.fem.assemble_matrix(a)
+        A.assemble()
+        norms.append(A.norm())
 
-    U_el_mixed = ufl.MixedElement([ElementType(space, cell, order)])
-    U = FunctionSpace(mesh, U_el_mixed)
+        # TODO: remove these lines once MixedElement(MixedElement(Nedelec)) is fixed
+        if space == "N1curl" and i == 1:
+            break
 
-    u = ufl.TrialFunction(U)
-    v = ufl.TestFunction(U)
+        U_el = ufl.MixedElement(U_el)
 
-    a = ufl.inner(u, v) * ufl.dx
-
-    A = dolfinx.fem.assemble_matrix(a)
-    A.assemble()
-
-    norm2 = A.norm()
-
-    assert np.isclose(norm1, norm2)
+    for i in norms[1:]:
+        assert np.isclose(norms[0], i)
