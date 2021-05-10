@@ -49,8 +49,8 @@ ARG SLEPC4PY_VERSION=3.15.0
 ARG ADIOS2_VERSION=2.7.1
 # TODO: Update KaHIP version upon a release.
 ARG KAHIP_VERSION=623decb
-ARG XTENSOR_VERSION=0.23.6
-ARG XTENSOR_BLAS_VERSION=master
+ARG XTENSOR_VERSION=0.23.9
+ARG XTENSOR_BLAS_VERSION=0.19.1
 ARG XTL_VERSION=0.7.2
 
 ########################################
@@ -134,7 +134,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
 
 
 # Install Python packages (via pip)
-# - First set of packages are required to build and run DOLFINX Python.
+# - First set of packages are required to build and run DOLFINx Python.
 # - Second set of packages are recommended and/or required to build
 #   documentation or run tests.
 # LLVM_CONFIG required on aarch64, should be removed long-term.
@@ -339,7 +339,7 @@ WORKDIR /root
 ########################################
 
 FROM dev-env as dolfinx-onbuild
-LABEL description="DOLFIN-X in 32-bit real and complex modes (onbuild)"
+LABEL description="DOLFINx in 32-bit real and complex modes (onbuild)"
 
 ADD dolfinx/docker/dolfinx-real-mode /usr/local/bin/dolfinx-real-mode
 ADD dolfinx/docker/dolfinx-complex-mode /usr/local/bin/dolfinx-complex-mode
@@ -348,7 +348,7 @@ RUN chmod +x /usr/local/bin/dolfinx-*-mode
 ONBUILD WORKDIR /src
 
 # This leaves the sources inside the container. This is a limitation of Docker.
-# There is some trickery in the intermediate and dolfinx containers that can be
+# There is some trickery in the intermediate and DOLFINx containers that can be
 # used to remove this source if needed, see below.
 ONBUILD ADD basix/ /src/basix/
 ONBUILD ADD ufl/ /src/ufl/
@@ -360,11 +360,11 @@ ONBUILD ADD dolfinx/ /src/dolfinx/
 ONBUILD ADD dolfinx/docker/dolfinx_jit_parameters.json /root/.config/dolfinx/dolfinx_jit_parameters.json
 ONBUILD ADD dolfinx/docker/ffcx_parameters.json /root/.config/ffcx/ffcx_parameters.json
 
-# The following ARGS are used in the dolfinx layer.
+# The following ARGS are used in the DOLFINx layer.
 # They are safe defaults.
-# CMake build type for DOLFINX C++ build. See CMake documentation.
+# CMake build type for DOLFINx C++ build. See CMake documentation.
 ONBUILD ARG DOLFINX_CMAKE_BUILD_TYPE="RelWithDebInfo"
-# Extra CMake C++ compiler flags for DOLFINX C++ build.
+# Extra CMake C++ compiler flags for DOLFINx C++ build.
 ONBUILD ARG DOLFINX_CMAKE_CXX_FLAGS
 
 # The dolfinx-onbuild container expects to have folders basix/ ufl/ ffcx/ and
@@ -408,7 +408,7 @@ FROM dolfinx-onbuild as intermediate
 ########################################
 
 FROM dev-env as dolfinx
-LABEL description="DOLFIN-X in 32-bit real and complex modes"
+LABEL description="DOLFINx in 32-bit real and complex modes"
 
 # This layer manually copies the build artifacts from intermediate into dev-env
 # to make the final image. This is a workaround for a well known limitation of
@@ -429,7 +429,7 @@ ENV PKG_CONFIG_PATH=/usr/local/dolfinx-real/lib/pkgconfig:$PKG_CONFIG_PATH \
 ########################################
 
 FROM dolfinx as lab
-LABEL description="DOLFIN-X Jupyter Lab"
+LABEL description="DOLFINx Jupyter Lab"
 
 WORKDIR /root
 

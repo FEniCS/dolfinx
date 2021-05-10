@@ -9,6 +9,6 @@ namespace dolfinx
 */
 }
 
-// DOLFINX nonlinear solver
+// DOLFINx nonlinear solver
 
 #include <dolfinx/nls/NewtonSolver.h>

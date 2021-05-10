@@ -43,22 +43,24 @@ jobs:
     name: Build DOLFINx end-user images
     if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/main' }}
     strategy:
+      fail-fast: False
       matrix:
-        os: [ubuntu-latest, ARM64]
+        include:
+          - arch_tag: amd64
+            os: ubuntu-latest
+            experimental: false
+          - arch_tag: arm64
+            os: ARM64
+            experimental: true
     runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.experimental }}
     needs: start_runner
     env:
       DOLFINX_CMAKE_BUILD_TYPE: "RelWithDebInfo"
       DOLFINX_CMAKE_CXX_FLAGS: "-O2"
       DOCKER_BUILD_ARGS: "--build-arg DOLFINX_CMAKE_BUILD_TYPE --build-arg DOLFINX_CMAKE_CXX_FLAGS"
+      ARCH_TAG: ${{ matrix.arch_tag }}
     steps:
-      - name: set architecture tag
-        run: |
-          if [[ ${{ matrix.os }} == 'ubuntu-latest' ]]; then
-            echo "ARCH_TAG=amd64" >> $GITHUB_ENV
-          elif [[ ${{ matrix.os }} == 'ARM64' ]]; then
-            echo "ARCH_TAG=arm64" >> $GITHUB_ENV
-          fi
       - uses: actions/checkout@v2
         with:
           repository: "FEniCS/dolfinx"
@@ -75,7 +77,7 @@ jobs:
         with:
           repository: "FEniCS/ufl"
           path: "ufl"
-      - name: Set default FFCX parameters
+      - name: Set default FFCx parameters
         run: |
           echo '{ }' > dolfinx/docker/ffcx_parameters.json
       - name: Set default DOLFINx JIT parameters
