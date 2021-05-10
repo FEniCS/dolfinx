@@ -1,6 +1,6 @@
 # Copyright (C) 2009-2019 Chris N. Richardson, Garth N. Wells and Michal Habera
 #
-# This file is part of DOLFINX (https://www.fenicsproject.org)
+# This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Collection of functions and function spaces"""
@@ -23,7 +23,7 @@ class Constant(ufl.Constant):
 
         Parameters
         ----------
-        domain : DOLFIN or UFL mesh
+        domain : DOLFINx or UFL mesh
         c
             Value of the constant.
         """
@@ -46,7 +46,7 @@ class Expression:
                  ufl_expression: ufl.core.expr.Expr,
                  x: np.ndarray,
                  form_compiler_parameters: dict = {}, jit_parameters: dict = {}):
-        """Create dolfinx Expression.
+        """Create DOLFINx Expression.
 
         Represents a mathematical expression evaluated at a pre-defined set of
         points on the reference cell. This class closely follows the concept of a
@@ -65,14 +65,14 @@ class Expression:
             Array of points of shape (num_points, tdim) on the reference
             element.
         form_compiler_parameters
-            Parameters used in FFCX compilation of this Expression. Run `ffcx
+            Parameters used in FFCx compilation of this Expression. Run `ffcx
             --help` in the commandline to see all available options.
         jit_parameters
             Parameters controlling JIT compilation of C code.
 
         Note
         ----
-        This wrapper is responsible for the FFCX compilation of the UFL Expr
+        This wrapper is responsible for the FFCx compilation of the UFL Expr
         and attaching the correct data to the underlying C++ Expression.
         """
         assert x.ndim < 3
@@ -193,7 +193,7 @@ class Function(ufl.Coefficient):
         else:
             self.name = name
 
-        # Store DOLFIN FunctionSpace object
+        # Store DOLFINx FunctionSpace object
         self._V = V
 
     @property
@@ -372,7 +372,7 @@ class FunctionSpace(ufl.FunctionSpace):
             ufl_element = ufl.FiniteElement(e.family, mesh.ufl_cell(), e.degree, form_degree=e.form_degree)
             super().__init__(mesh.ufl_domain(), ufl_element)
 
-        # Compile dofmap and element and create DOLFIN objects
+        # Compile dofmap and element and create DOLFINx objects
         ufc_element, ufc_dofmap = jit.ffcx_jit(
             mesh.mpi_comm(), self.ufl_element(), form_compiler_parameters=form_compiler_parameters,
             jit_parameters=jit_parameters)
@@ -403,7 +403,7 @@ class FunctionSpace(ufl.FunctionSpace):
         return FunctionSpace(None, self.ufl_element(), Vcpp)
 
     def dolfin_element(self):
-        """Return the DOLFIN element."""
+        """Return the DOLFINx element."""
         return self._cpp_object.element
 
     def num_sub_spaces(self) -> int:

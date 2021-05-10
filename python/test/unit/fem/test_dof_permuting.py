@@ -1,6 +1,6 @@
 # Copyright (C) 2009-2020 Garth N. Wells, Matthew W. Scroggs and Jorgen S. Dokken
 #
-# This file is part of DOLFINX (https://www.fenicsproject.org)
+# This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for dofmap construction"""
@@ -280,7 +280,7 @@ def test_evaluation(cell_type, space_type, space_order):
 )
 @pytest.mark.parametrize('space_order', range(1, 4))
 def test_integral(cell_type, space_type, space_order):
-    # TODO: Fix jump integrals in FFC by passing in full info for both cells, then re-enable these tests
+    # TODO: Fix jump integrals in FFCx by passing in full info for both cells, then re-enable these tests
     pytest.xfail()
 
     random.seed(4)

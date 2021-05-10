@@ -1,6 +1,6 @@
 // Copyright (C) 2017 Chris N. Richardson and Garth N. Wells
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -29,7 +29,7 @@ void refinement(py::module& m);
 PYBIND11_MODULE(cpp, m)
 {
   // Create module for C++ wrappers
-  m.doc() = "DOLFIN Python interface";
+  m.doc() = "DOLFINx Python interface";
   m.attr("__version__") = DOLFINX_VERSION;
 
   // Create common submodule [common]

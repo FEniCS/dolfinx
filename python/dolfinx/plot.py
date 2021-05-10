@@ -1,6 +1,6 @@
 # Copyright (C) 2021 Jørgen S. Dokken and Garth N. Wells
 #
-# This file is part of DOLFINX (https://www.fenicsproject.org)
+# This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Support functions for plotting"""
@@ -11,7 +11,7 @@ import numpy as np
 
 from dolfinx import cpp, fem
 
-# Permutation for Dolfinx DG layout to VTK
+# Permutation for DOLFINx DG layout to VTK
 # Note that third order tetrahedrons has a special ordering:
 # https://gitlab.kitware.com/vtk/vtk/-/issues/17746
 _perm_dg = {cpp.mesh.CellType.triangle: {1: [0, 1, 2], 2: [0, 2, 5, 1, 4, 3], 3: [0, 3, 9, 1, 2, 6, 8, 7, 4, 5],
@@ -83,7 +83,7 @@ def create_vtk_topology(mesh: cpp.mesh.Mesh, dim: int, entities=None):
         warnings.warn("Plotting of higher order mesh topologies is experimental.")
         cell_types = np.full(num_cells, cpp.io.get_vtk_cell_type(mesh, dim))
 
-    # Get cell data and the DOLFINX -> VTK permutation array
+    # Get cell data and the DOLFINx -> VTK permutation array
     num_vertices_per_cell = geometry_entities.shape[1]
     map_vtk = np.argsort(cpp.io.perm_vtk(e_type, num_vertices_per_cell))
 
