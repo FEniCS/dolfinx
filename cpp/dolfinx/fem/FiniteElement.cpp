@@ -130,7 +130,7 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
     for (int i = 0; i < ufc_element.num_sub_elements; ++i)
     {
       const std::string sub_family = ufc_element.sub_elements[i]->family;
-      if (family == "mixed element")
+      if (sub_family == "mixed element")
       {
         for (int j = 0; j < ufc_element.sub_elements[i]->num_sub_elements; ++j)
         {
