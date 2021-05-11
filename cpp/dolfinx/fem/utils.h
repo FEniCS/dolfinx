@@ -1,6 +1,6 @@
 // Copyright (C) 2013-2020 Johan Hake, Jan Blechta and Garth N. Wells
 //
-// This file is part of DOLFINx (https://www.fenicsproject.org)
+// This file is part of DOLFINX (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -373,7 +373,7 @@ create_functionspace(ufc_function_space* (*fptr)(const char*),
 // NOTE: This is subject to change
 /// Pack coefficients of u of generic type U ready for assembly
 template <typename U>
-array2d<typename U::scalar_type> pack_coefficients(const U& u)
+xt::xtensor<typename U::scalar_type, 2> pack_coefficients(const U& u)
 {
   using T = typename U::scalar_type;
 
@@ -401,7 +401,7 @@ array2d<typename U::scalar_type> pack_coefficients(const U& u)
         + mesh->topology().index_map(tdim)->num_ghosts();
 
   // Copy data into coefficient array
-  array2d<T> c(num_cells, offsets.back());
+  xt::xtensor<T, 2> c = xt::empty<double>({num_cells, offsets.back()});
   if (!coefficients.empty())
   {
     for (int cell = 0; cell < num_cells; ++cell)

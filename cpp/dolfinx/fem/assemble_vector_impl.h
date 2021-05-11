@@ -1,6 +1,6 @@
 // Copyright (C) 2018-2019 Garth N. Wells
 //
-// This file is part of DOLFINx (https://www.fenicsproject.org)
+// This file is part of DOLFINX (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -44,7 +44,7 @@ void assemble_cells(
     const graph::AdjacencyList<std::int32_t>& dofmap, const int bs,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& kernel,
-    const array2d<T>& coeffs, const std::vector<T>& constant_values,
+    const xt::xtensor<T, 2>& coeffs, const std::vector<T>& constant_values,
     const std::vector<std::uint32_t>& cell_info);
 
 /// Execute kernel over cells and accumulate result in vector
@@ -55,7 +55,7 @@ void assemble_exterior_facets(
     const graph::AdjacencyList<std::int32_t>& dofmap, const int bs,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& fn,
-    const array2d<T>& coeffs, const std::vector<T>& constant_values,
+    const xt::xtensor<T, 2>& coeffs, const std::vector<T>& constant_values,
     const std::vector<std::uint32_t>& cell_info,
     const std::vector<std::uint8_t>& perms);
 
@@ -66,7 +66,7 @@ void assemble_interior_facets(
     const std::vector<std::int32_t>& active_facets, const fem::DofMap& dofmap,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& fn,
-    const array2d<T>& coeffs, const std::vector<int>& offsets,
+    const xt::xtensor<T, 2>& coeffs, const std::vector<int>& offsets,
     const std::vector<T>& constant_values,
     const std::vector<std::uint32_t>& cell_info,
     const std::vector<std::uint8_t>& perms);
@@ -121,7 +121,7 @@ void _lift_bc_cells(
     const std::vector<std::int32_t>& active_cells,
     const graph::AdjacencyList<std::int32_t>& dofmap0, int bs0,
     const graph::AdjacencyList<std::int32_t>& dofmap1, int bs1,
-    const array2d<T>& coeffs, const std::vector<T>& constant_values,
+    const xt::xtensor<T, 2>& coeffs, const std::vector<T>& constant_values,
     const std::vector<std::uint32_t>& cell_info,
     const xtl::span<const T>& bc_values1, const std::vector<bool>& bc_markers1,
     const xtl::span<const T>& x0, double scale)
@@ -175,7 +175,7 @@ void _lift_bc_cells(
     const int num_rows = bs0 * dmap0.size();
     const int num_cols = bs1 * dmap1.size();
 
-    auto coeff_array = coeffs.row(c);
+    auto coeff_array = xt::row(coeffs, c);
     Ae.resize(num_rows * num_cols);
     std::fill(Ae.begin(), Ae.end(), 0);
     kernel(Ae.data(), coeff_array.data(), constant_values.data(),
@@ -215,7 +215,7 @@ void _lift_bc_exterior_facets(
     const std::vector<std::int32_t>& active_facets,
     const graph::AdjacencyList<std::int32_t>& dofmap0, int bs0,
     const graph::AdjacencyList<std::int32_t>& dofmap1, int bs1,
-    const array2d<T>& coeffs, const std::vector<T>& constant_values,
+    const xt::xtensor<T, 2>& coeffs, const std::vector<T>& constant_values,
     const std::vector<std::uint32_t>& cell_info,
     const std::vector<std::uint8_t>& perms,
     const xtl::span<const T>& bc_values1, const std::vector<bool>& bc_markers1,
@@ -290,7 +290,7 @@ void _lift_bc_exterior_facets(
     const int num_rows = bs0 * dmap0.size();
     const int num_cols = bs1 * dmap1.size();
 
-    auto coeff_array = coeffs.row(cell);
+    auto coeff_array = xt::row(coeffs, cell);
     Ae.resize(num_rows * num_cols);
     std::fill(Ae.begin(), Ae.end(), 0);
     kernel(Ae.data(), coeff_array.data(), constant_values.data(),
@@ -331,7 +331,7 @@ void _lift_bc_interior_facets(
     const std::vector<std::int32_t>& active_facets,
     const graph::AdjacencyList<std::int32_t>& dofmap0, int bs0,
     const graph::AdjacencyList<std::int32_t>& dofmap1, int bs1,
-    const array2d<T>& coeffs, const std::vector<int>& offsets,
+    const xt::xtensor<T, 2>& coeffs, const std::vector<int>& offsets,
     const std::vector<T>& constant_values,
     const std::vector<std::uint32_t>& cell_info,
     const std::vector<std::uint8_t>& perms,
@@ -351,7 +351,7 @@ void _lift_bc_interior_facets(
   // Data structures used in assembly
   xt::xtensor<double, 3> coordinate_dofs({2, num_dofs_g, gdim});
   std::vector<T> coeff_array(2 * offsets.back());
-  assert(offsets.back() == int(coeffs.shape[1]));
+  assert(offsets.back() == int(coeffs.shape(1)));
   std::vector<T> Ae, be;
 
   // Temporaries for joint dofmaps
@@ -446,8 +446,8 @@ void _lift_bc_interior_facets(
 
     // Layout for the restricted coefficients is flattened
     // w[coefficient][restriction][dof]
-    const auto coeff_cell0 = coeffs.row(cells[0]);
-    const auto coeff_cell1 = coeffs.row(cells[1]);
+    const xt::xtensor<T, 1> coeff_cell0 = xt::row(coeffs, cells[0]);
+    const xt::xtensor<T, 1> coeff_cell1 = xt::row(coeffs, cells[1]);
 
     // Loop over coefficients
     for (std::size_t i = 0; i < offsets.size() - 1; ++i)
@@ -545,7 +545,7 @@ void assemble_vector(xtl::span<T> b, const Form<T>& L)
   const std::vector<T> constant_values = pack_constants(L);
 
   // Prepare coefficients
-  const array2d<T> coeffs = pack_coefficients(L);
+  const xt::xtensor<T, 2> coeffs = pack_coefficients(L);
 
   const bool needs_permutation_data = L.needs_permutation_data();
   if (needs_permutation_data)
@@ -603,7 +603,7 @@ void assemble_cells(
     const graph::AdjacencyList<std::int32_t>& dofmap, const int bs,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& kernel,
-    const array2d<T>& coeffs, const std::vector<T>& constant_values,
+    const xt::xtensor<T, 2>& coeffs, const std::vector<T>& constant_values,
     const std::vector<std::uint32_t>& cell_info)
 {
   const std::size_t gdim = geometry.dim();
@@ -633,8 +633,9 @@ void assemble_cells(
     }
 
     // Tabulate vector for cell
+    auto coeff_array = xt::row(coeffs, c);
     std::fill(be.begin(), be.end(), 0);
-    kernel(be.data(), coeffs.row(c).data(), constant_values.data(),
+    kernel(be.data(), coeff_array.data(), constant_values.data(),
            coordinate_dofs.data(), nullptr, nullptr, cell_info[c]);
 
     // Scatter cell vector to 'global' vector array
@@ -652,7 +653,7 @@ void assemble_exterior_facets(
     const graph::AdjacencyList<std::int32_t>& dofmap, const int bs,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& fn,
-    const array2d<T>& coeffs, const std::vector<T>& constant_values,
+    const xt::xtensor<T, 2>& coeffs, const std::vector<T>& constant_values,
     const std::vector<std::uint32_t>& cell_info,
     const std::vector<std::uint8_t>& perms)
 {
@@ -697,8 +698,9 @@ void assemble_exterior_facets(
     }
 
     // Tabulate element vector
+    auto coeff_array = xt::row(coeffs, cell);
     std::fill(be.begin(), be.end(), 0);
-    fn(be.data(), coeffs.row(cell).data(), constant_values.data(),
+    fn(be.data(), coeff_array.data(), constant_values.data(),
        coordinate_dofs.data(), &local_facet,
        &perms[cell * facets.size() + local_facet], cell_info[cell]);
 
@@ -716,7 +718,7 @@ void assemble_interior_facets(
     const std::vector<std::int32_t>& active_facets, const fem::DofMap& dofmap,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& fn,
-    const array2d<T>& coeffs, const std::vector<int>& offsets,
+    const xt::xtensor<T, 2>& coeffs, const std::vector<int>& offsets,
     const std::vector<T>& constant_values,
     const std::vector<std::uint32_t>& cell_info,
     const std::vector<std::uint8_t>& perms)
@@ -735,7 +737,7 @@ void assemble_interior_facets(
   xt::xtensor<double, 3> coordinate_dofs({2, num_dofs_g, gdim});
   std::vector<T> be;
   std::vector<T> coeff_array(2 * offsets.back());
-  assert(offsets.back() == int(coeffs.shape[1]));
+  assert(offsets.back() == int(coeffs.shape(1)));
 
   const int bs = dofmap.bs();
   auto f_to_c = mesh.topology().connectivity(tdim - 1, tdim);
@@ -776,8 +778,8 @@ void assemble_interior_facets(
 
     // Layout for the restricted coefficients is flattened
     // w[coefficient][restriction][dof]
-    auto coeff_cell0 = coeffs.row(cells[0]);
-    auto coeff_cell1 = coeffs.row(cells[1]);
+    auto coeff_cell0 = xt::row(coeffs, cells[0]);
+    auto coeff_cell1 = xt::row(coeffs, cells[1]);
 
     // Loop over coefficients
     for (std::size_t i = 0; i < offsets.size() - 1; ++i)
@@ -889,7 +891,7 @@ void lift_bc(xtl::span<T> b, const Form<T>& a,
   const std::vector<T> constant_values = pack_constants(a);
 
   // Prepare coefficients
-  const array2d<T> coeffs = pack_coefficients(a);
+  const xt::xtensor<T, 2> coeffs = pack_coefficients(a);
 
   const bool needs_permutation_data = a.needs_permutation_data();
   if (needs_permutation_data)

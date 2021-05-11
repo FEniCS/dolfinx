@@ -1,6 +1,6 @@
 // Copyright (C) 2018-2019 Garth N. Wells
 //
-// This file is part of DOLFINx (https://www.fenicsproject.org)
+// This file is part of DOLFINX (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -47,7 +47,7 @@ void assemble_cells(
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& kernel,
-    const array2d<T>& coeffs, const std::vector<T>& constants,
+    const xt::xtensor<T, 2>& coeffs, const std::vector<T>& constants,
     const std::vector<std::uint32_t>& cell_info);
 
 /// Execute kernel over exterior facets and  accumulate result in Mat
@@ -61,7 +61,7 @@ void assemble_exterior_facets(
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& fn,
-    const array2d<T>& coeffs, const std::vector<T>& constants,
+    const xt::xtensor<T, 2>& coeffs, const std::vector<T>& constants,
     const std::vector<std::uint32_t>& cell_info,
     const std::vector<std::uint8_t>& perms);
 
@@ -75,7 +75,7 @@ void assemble_interior_facets(
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& kernel,
-    const array2d<T>& coeffs, const std::vector<int>& offsets,
+    const xt::xtensor<T, 2>& coeffs, const std::vector<int>& offsets,
     const std::vector<T>& constants,
     const std::vector<std::uint32_t>& cell_info,
     const std::vector<std::uint8_t>& perms);
@@ -110,7 +110,7 @@ void assemble_matrix(
   const std::vector<T> constants = pack_constants(a);
 
   // Prepare coefficients
-  const array2d<T> coeffs = pack_coefficients(a);
+  const xt::xtensor<T, 2> coeffs = pack_coefficients(a);
 
   const bool needs_permutation_data = a.needs_permutation_data();
   if (needs_permutation_data)
@@ -172,7 +172,7 @@ void assemble_cells(
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& kernel,
-    const array2d<T>& coeffs, const std::vector<T>& constants,
+    const xt::xtensor<T, 2>& coeffs, const std::vector<T>& constants,
     const std::vector<std::uint32_t>& cell_info)
 {
   const std::size_t gdim = geometry.dim();
@@ -202,8 +202,9 @@ void assemble_cells(
     }
 
     // Tabulate tensor
+    auto coeff_array = xt::row(coeffs, c);
     std::fill(Ae.begin(), Ae.end(), 0);
-    kernel(Ae.data(), coeffs.row(c).data(), constants.data(),
+    kernel(Ae.data(), coeff_array.data(), constants.data(),
            coordinate_dofs.data(), nullptr, nullptr, cell_info[c]);
 
     // Zero rows/columns for essential bcs
@@ -256,7 +257,7 @@ void assemble_exterior_facets(
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& kernel,
-    const array2d<T>& coeffs, const std::vector<T>& constants,
+    const xt::xtensor<T, 2>& coeffs, const std::vector<T>& constants,
     const std::vector<std::uint32_t>& cell_info,
     const std::vector<std::uint8_t>& perms)
 {
@@ -303,8 +304,9 @@ void assemble_exterior_facets(
     }
 
     // Tabulate tensor
+    auto coeff_array = xt::row(coeffs, c);
     std::fill(Ae.begin(), Ae.end(), 0);
-    kernel(Ae.data(), coeffs.row(cells[0]).data(), constants.data(),
+    kernel(Ae.data(), coeff_array.data(), constants.data(),
            coordinate_dofs.data(), &local_facet,
            &perms[cells[0] * facets.size() + local_facet], cell_info[cells[0]]);
 
@@ -357,7 +359,7 @@ void assemble_interior_facets(
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& fn,
-    const array2d<T>& coeffs, const std::vector<int>& offsets,
+    const xt::xtensor<T, 2>& coeffs, const std::vector<int>& offsets,
     const std::vector<T>& constants,
     const std::vector<std::uint32_t>& cell_info,
     const std::vector<std::uint8_t>& perms)
@@ -435,8 +437,8 @@ void assemble_interior_facets(
 
     // Layout for the restricted coefficients is flattened
     // w[coefficient][restriction][dof]
-    auto coeff_cell0 = coeffs.row(cells[0]);
-    auto coeff_cell1 = coeffs.row(cells[1]);
+    auto coeff_cell0 = xt::row(coeffs, cells[0]);
+    auto coeff_cell1 = xt::row(coeffs, cells[1]);
 
     // Loop over coefficients
     for (std::size_t i = 0; i < offsets.size() - 1; ++i)

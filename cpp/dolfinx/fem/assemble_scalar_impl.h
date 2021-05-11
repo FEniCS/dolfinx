@@ -1,6 +1,6 @@
 // Copyright (C) 2019-2020 Garth N. Wells
 //
-// This file is part of DOLFINx (https://www.fenicsproject.org)
+// This file is part of DOLFINX (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -32,7 +32,7 @@ T assemble_cells(
     const std::vector<std::int32_t>& active_cells,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& fn,
-    const array2d<T>& coeffs, const std::vector<T>& constant_values,
+    const xt::xtensor<T, 2>& coeffs, const std::vector<T>& constant_values,
     const std::vector<std::uint32_t>& cell_info);
 
 /// Execute kernel over exterior facets and accumulate result
@@ -41,7 +41,7 @@ T assemble_exterior_facets(
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_cells,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& fn,
-    const array2d<T>& coeffs, const std::vector<T>& constant_values,
+    const xt::xtensor<T, 2>& coeffs, const std::vector<T>& constant_values,
     const std::vector<std::uint32_t>& cell_info,
     const std::vector<std::uint8_t>& perms);
 
@@ -51,7 +51,7 @@ T assemble_interior_facets(
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_cells,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& fn,
-    const array2d<T>& coeffs, const std::vector<int>& offsets,
+    const xt::xtensor<T, 2>& coeffs, const std::vector<int>& offsets,
     const std::vector<T>& constant_values,
     const std::vector<std::uint32_t>& cell_info,
     const std::vector<std::uint8_t>& perms);
@@ -79,7 +79,7 @@ T assemble_scalar(const fem::Form<T>& M)
   }
 
   // Prepare coefficients
-  const array2d<T> coeffs = pack_coefficients(M);
+  const xt::xtensor<T, 2> coeffs = pack_coefficients(M);
 
   const bool needs_permutation_data = M.needs_permutation_data();
   if (needs_permutation_data)
@@ -139,7 +139,7 @@ T assemble_cells(
     const std::vector<std::int32_t>& active_cells,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& fn,
-    const array2d<T>& coeffs, const std::vector<T>& constant_values,
+    const xt::xtensor<T, 2>& coeffs, const std::vector<T>& constant_values,
     const std::vector<std::uint32_t>& cell_info)
 {
   const std::size_t gdim = geometry.dim();
@@ -166,7 +166,7 @@ T assemble_cells(
                   std::next(coordinate_dofs.begin(), i * gdim));
     }
 
-    auto coeff_cell = coeffs.row(c);
+    auto coeff_cell = xt::row(coeffs, c);
     fn(&value, coeff_cell.data(), constant_values.data(),
        coordinate_dofs.data(), nullptr, nullptr, cell_info[c]);
   }
@@ -179,7 +179,7 @@ T assemble_exterior_facets(
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_facets,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& fn,
-    const array2d<T>& coeffs, const std::vector<T>& constant_values,
+    const xt::xtensor<T, 2>& coeffs, const std::vector<T>& constant_values,
     const std::vector<std::uint32_t>& cell_info,
     const std::vector<std::uint8_t>& perms)
 {
@@ -223,7 +223,7 @@ T assemble_exterior_facets(
                   std::next(coordinate_dofs.begin(), i * gdim));
     }
 
-    auto coeff_cell = coeffs.row(cell);
+    auto coeff_cell = xt::row(coeffs, cell);
     fn(&value, coeff_cell.data(), constant_values.data(),
        coordinate_dofs.data(), &local_facet,
        &perms[cell * facets.size() + local_facet], cell_info[cell]);
@@ -237,7 +237,7 @@ T assemble_interior_facets(
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_facets,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& fn,
-    const array2d<T>& coeffs, const std::vector<int>& offsets,
+    const xt::xtensor<T, 2>& coeffs, const std::vector<int>& offsets,
     const std::vector<T>& constant_values,
     const std::vector<std::uint32_t>& cell_info,
     const std::vector<std::uint8_t>& perms)
@@ -255,7 +255,7 @@ T assemble_interior_facets(
   // Creat data structures used in assembly
   xt::xtensor<double, 3> coordinate_dofs({2, num_dofs_g, gdim});
   std::vector<T> coeff_array(2 * offsets.back());
-  assert(offsets.back() == coeffs.shape[1]);
+  assert(offsets.back() == coeffs.shape(1));
 
   auto f_to_c = mesh.topology().connectivity(tdim - 1, tdim);
   assert(f_to_c);
@@ -298,8 +298,8 @@ T assemble_interior_facets(
 
     // Layout for the restricted coefficients is flattened
     // w[coefficient][restriction][dof]
-    auto coeff_cell0 = coeffs.row(cells[0]);
-    auto coeff_cell1 = coeffs.row(cells[1]);
+    auto coeff_cell0 = xt::row(coeffs, cells[0]);
+    auto coeff_cell1 = xt::row(coeffs, cells[1]);
 
     // Loop over coefficients
     for (std::size_t i = 0; i < offsets.size() - 1; ++i)

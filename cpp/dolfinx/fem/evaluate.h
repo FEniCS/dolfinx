@@ -1,6 +1,6 @@
 // Copyright (C) 2020 Jack S. Hale
 //
-// This file is part of DOLFINx (https://www.fenicsproject.org)
+// This file is part of DOLFINX (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 //
@@ -33,7 +33,7 @@ void eval(array2d<T>& values, const fem::Expression<T>& e,
   assert(mesh);
 
   // Prepare coefficients
-  const array2d<T> coeffs = dolfinx::fem::pack_coefficients(e);
+  const xt::xtensor<T, 2> coeffs = dolfinx::fem::pack_coefficients(e);
 
   // Prepare constants
   const std::vector<T> constant_values = dolfinx::fem::pack_constants(e);
@@ -71,7 +71,7 @@ void eval(array2d<T>& values, const fem::Expression<T>& e,
                   std::next(coordinate_dofs.begin(), i * gdim));
     }
 
-    auto coeff_cell = coeffs.row(cell);
+    auto coeff_cell = xt::row(coeffs, cell);
     std::fill(values_e.begin(), values_e.end(), 0.0);
     fn(values_e.data(), coeff_cell.data(), constant_values.data(),
        coordinate_dofs.data());
