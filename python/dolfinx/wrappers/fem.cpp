@@ -67,13 +67,13 @@ void fem(py::module& m)
   m.def(
       "pack_coefficients",
       [](dolfinx::fem::Form<PetscScalar>& form) {
-        return as_pyarray2d(dolfinx::fem::pack_coefficients(form));
+        return xt_as_pyarray(dolfinx::fem::pack_coefficients(form));
       },
       "Pack coefficients for a Form.");
   m.def(
       "pack_coefficients",
       [](dolfinx::fem::Expression<PetscScalar>& expr) {
-        return as_pyarray2d(dolfinx::fem::pack_coefficients(expr));
+        return xt_as_pyarray(dolfinx::fem::pack_coefficients(expr));
       },
       "Pack coefficients for an Expression.");
   m.def(

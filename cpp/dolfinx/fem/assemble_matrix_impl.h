@@ -378,7 +378,7 @@ void assemble_interior_facets(
   xt::xtensor<double, 3> coordinate_dofs({2, num_dofs_g, gdim});
   std::vector<T> Ae, be;
   std::vector<T> coeff_array(2 * offsets.back());
-  assert(offsets.back() == coeffs.shape[1]);
+  assert(offsets.back() == coeffs.shape(1));
 
   // Temporaries for joint dofmaps
   std::vector<std::int32_t> dmapjoint0, dmapjoint1;
