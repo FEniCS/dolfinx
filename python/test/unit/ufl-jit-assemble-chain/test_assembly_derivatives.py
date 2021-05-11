@@ -2,7 +2,7 @@
 
 # Copyright (C) 2011 Martin S. Alnaes
 #
-# This file is part of DOLFINX (https://www.fenicsproject.org)
+# This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -129,7 +129,7 @@ def test_diff_then_integrate():
             print(x)
             print(f)
 
-        # Apply integration with DOLFINX
+        # Apply integration with DOLFINx
         # (also passes through form compilation and jit)
         M = f * dx
         f_integral = assemble_scalar(M)  # noqa

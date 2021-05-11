@@ -1,6 +1,6 @@
 // Copyright (C) 2019 Jorgen S. Dokken
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -16,7 +16,7 @@ namespace dolfinx::mesh
 class Mesh;
 }
 
-/// Functions for the re-ordering of input mesh topology to the DOLFINX
+/// Functions for the re-ordering of input mesh topology to the DOLFINx
 /// ordering, and transpose orderings for file output.
 namespace dolfinx::io::cells
 {
@@ -82,22 +82,22 @@ namespace dolfinx::io::cells
 
 */
 
-/// Permutation array to map from VTK to DOLFINX node ordering
+/// Permutation array to map from VTK to DOLFINx node ordering
 ///
 /// @param[in] type The cell shape
 /// @param[in] num_nodes The number of cell 'nodes'
 /// @return Permutation array @p for permuting from VTK ordering to
-///   DOLFIN ordering, i.e. `a_dolfin[i] = a_vtk[p[i]]
+///   DOLFINx ordering, i.e. `a_dolfin[i] = a_vtk[p[i]]
 /// @details If `p = [0, 2, 1, 3]` and `a = [10, 3, 4, 7]`, then `a_p =[a[p[0]],
 ///   a[p[1]], a[p[2]], a[p[3]]] = [10, 4, 3, 7]`
 std::vector<std::uint8_t> perm_vtk(mesh::CellType type, int num_nodes);
 
-/// Permutation array to map from Gmsh to DOLFINX node ordering
+/// Permutation array to map from Gmsh to DOLFINx node ordering
 ///
 /// @param[in] type The cell shape
 /// @param[in] num_nodes
 /// @return Permutation array @p for permuting from Gmsh ordering to
-///   DOLFIN ordering, i.e. `a_dolfin[i] = a_gmsh[p[i]]
+///   DOLFINx ordering, i.e. `a_dolfin[i] = a_gmsh[p[i]]
 /// @details If `p = [0, 2, 1, 3]` and `a = [10, 3, 4, 7]`, then `a_p
 ///   =[a[p[0]], a[p[1]], a[p[2]], a[p[3]]] = [10, 4, 3, 7]`
 std::vector<std::uint8_t> perm_gmsh(mesh::CellType type, int num_nodes);

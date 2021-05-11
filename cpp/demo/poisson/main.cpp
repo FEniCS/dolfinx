@@ -81,9 +81,9 @@
 //
 // The main solver is implemented in the :download:`main.cpp` file.
 //
-// At the top we include the DOLFIN header file and the generated header
+// At the top we include the DOLFINx header file and the generated header
 // file "Poisson.h" containing the variational forms for the Poisson
-// equation.  For convenience we also include the DOLFIN namespace.
+// equation.  For convenience we also include the DOLFINx namespace.
 //
 // .. code-block:: cpp
 
@@ -99,7 +99,7 @@ using namespace dolfinx;
 
 // Then follows the definition of the coefficient functions (for
 // :math:`f` and :math:`g`), which are derived from the
-// :cpp:class:`Expression` class in DOLFIN
+// :cpp:class:`Expression` class in DOLFINx
 //
 // .. code-block:: cpp
 
@@ -123,8 +123,7 @@ int main(int argc, char* argv[])
         MPI_COMM_WORLD, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 0.0}}}, {32, 32},
         mesh::CellType::triangle, mesh::GhostMode::none));
 
-    auto V = fem::create_functionspace(functionspace_form_poisson_a, "u",
-                                       mesh);
+    auto V = fem::create_functionspace(functionspace_form_poisson_a, "u", mesh);
 
     // Next, we define the variational formulation by initializing the
     // bilinear and linear forms (:math:`a`, :math:`L`) using the previously
@@ -234,8 +233,8 @@ int main(int argc, char* argv[])
     // .. code-block:: cpp
 
     // Save solution in VTK format
-    io::VTKFile file("u.pvd");
-    file.write(u);
+    io::VTKFile file(MPI_COMM_WORLD, "u.pvd", "w");
+    file.write({u}, 0.0);
   }
 
   common::subsystem::finalize_petsc();

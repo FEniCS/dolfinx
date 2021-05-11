@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) 2017-2018 Chris N. Richardson, Garth N. Wells and Michal Habera
 #
-# This file is part of DOLFINX (https://www.fenicsproject.org)
+# This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -12,7 +12,7 @@ from dolfinx import cpp, jit
 
 class Form:
     def __init__(self, form: ufl.Form, form_compiler_parameters: dict = {}, jit_parameters: dict = {}):
-        """Create dolfinx Form
+        """Create DOLFINx Form
 
         Parameters
         ----------
@@ -25,7 +25,7 @@ class Form:
 
         Note
         ----
-        This wrapper for UFL form is responsible for the actual FFCX compilation
+        This wrapper for UFL form is responsible for the actual FFCx compilation
         and attaching coefficients and domains specific data to the underlying
         C++ Form.
         """

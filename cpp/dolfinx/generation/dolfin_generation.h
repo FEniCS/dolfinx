@@ -9,7 +9,7 @@ namespace dolfinx
 */
 }
 
-// DOLFINX mesh generation interface
+// DOLFINx mesh generation interface
 
 #include <dolfinx/generation/BoxMesh.h>
 #include <dolfinx/generation/IntervalMesh.h>

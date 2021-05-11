@@ -1,17 +1,17 @@
 // Copyright (C) 2014 Johan Jansson and Garth N. Wells
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "PETScKrylovSolver.h"
 #include "PETScOperator.h"
+#include "PETScOptions.h"
 #include "VectorSpaceBasis.h"
 #include "utils.h"
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
 
-using namespace dolfinx;
 using namespace dolfinx::la;
 
 //-----------------------------------------------------------------------------
@@ -36,10 +36,22 @@ PETScKrylovSolver::PETScKrylovSolver(KSP ksp, bool inc_ref_count) : _ksp(ksp)
   }
 }
 //-----------------------------------------------------------------------------
+PETScKrylovSolver::PETScKrylovSolver(PETScKrylovSolver&& solver)
+    : _ksp(std::exchange(solver._ksp, nullptr))
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
 PETScKrylovSolver::~PETScKrylovSolver()
 {
   if (_ksp)
     KSPDestroy(&_ksp);
+}
+//-----------------------------------------------------------------------------
+PETScKrylovSolver& PETScKrylovSolver::operator=(PETScKrylovSolver&& solver)
+{
+  std::swap(_ksp, solver._ksp);
+  return *this;
 }
 //-----------------------------------------------------------------------------
 void PETScKrylovSolver::set_operator(const Mat A) { set_operators(A, A); }

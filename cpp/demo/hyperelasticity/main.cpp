@@ -198,8 +198,8 @@ int main(int argc, char* argv[])
     newton_solver.solve(u->vector());
 
     // Save solution in VTK format
-    io::VTKFile file("u.pvd");
-    file.write(*u);
+    io::VTKFile file(MPI_COMM_WORLD, "u.pvd", "w");
+    file.write({*u}, 0.0);
   }
 
   common::subsystem::finalize_petsc();
