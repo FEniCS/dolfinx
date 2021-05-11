@@ -39,5 +39,8 @@ void nls(py::module& m)
       .def_readwrite("max_it", &dolfinx::nls::NewtonSolver::max_it)
       .def_readwrite("convergence_criterion",
                      &dolfinx::nls::NewtonSolver::convergence_criterion);
+      .def_readwrite("error_on_nonconvergence", 
+                     &dolfinx::nls::NewtonSolver::error_on_nonconvergence)
+      .def_readwrite("record", &dolfinx::nls::NewtonSolver::record)
 }
 } // namespace dolfinx_wrappers
