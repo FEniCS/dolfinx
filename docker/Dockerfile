@@ -47,6 +47,7 @@ ARG PETSC_VERSION=3.15.0
 ARG SLEPC_VERSION=3.15.0
 ARG SLEPC4PY_VERSION=3.15.0
 ARG ADIOS2_VERSION=2.7.1
+ARG PYVISTA_VERSION=0.29.1
 # TODO: Update KaHIP version upon a release.
 ARG KAHIP_VERSION=623decb
 ARG XTENSOR_VERSION=0.23.9
@@ -445,7 +446,7 @@ RUN apt-get -qq update && \
 # matplotlib improves plotting quality with better color maps and properly rendering colorbars.
 RUN dpkgArch="$(dpkg --print-architecture)"; \
     case "$dpkgArch" in amd64) \
-      pip3 install --no-cache-dir pyvista ;; \
+      pip3 install --no-cache-dir pyvista==${PYVISTA_VERSION} ;; \
     esac; \
     pip3 install --no-cache-dir matplotlib
 
