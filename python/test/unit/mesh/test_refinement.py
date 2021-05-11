@@ -85,7 +85,7 @@ def test_parent_map(tdim, mesh_size):
         mesh = dolfinx.UnitCubeMesh(MPI.COMM_WORLD, mesh_size, mesh_size, mesh_size)
 
     mesh.topology.create_entities(1)
-    mesh_refined, parent_info = dolfinx.cpp.refinement.refine(mesh)
+    mesh_refined, parent_info = dolfinx.mesh.refine(mesh)
 
     x = mesh.geometry.x
     x_refined = mesh_refined.geometry.x
