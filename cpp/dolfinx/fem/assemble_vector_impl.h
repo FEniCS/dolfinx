@@ -37,11 +37,11 @@ template <typename T>
 void assemble_vector(xtl::span<T> b, const Form<T>& L);
 
 /// Execute kernel over cells and accumulate result in vector
-template <typename T>
+template <typename T, int _bs = -1>
 void assemble_cells(
     xtl::span<T> b, const mesh::Geometry& geometry,
     const std::vector<std::int32_t>& active_cells,
-    const graph::AdjacencyList<std::int32_t>& dofmap, const int bs,
+    const graph::AdjacencyList<std::int32_t>& dofmap, int bs,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& kernel,
     const array2d<T>& coeffs, const std::vector<T>& constant_values,
@@ -559,8 +559,23 @@ void assemble_vector(xtl::span<T> b, const Form<T>& L)
     const auto& fn = L.kernel(IntegralType::cell, i);
     const std::vector<std::int32_t>& active_cells
         = L.domains(IntegralType::cell, i);
-    fem::impl::assemble_cells(b, mesh->geometry(), active_cells, dofs, bs, fn,
-                              coeffs, constant_values, cell_info);
+    if (bs == 1)
+    {
+      fem::impl::assemble_cells<T, 1>(b, mesh->geometry(), active_cells, dofs,
+                                      bs, fn, coeffs, constant_values,
+                                      cell_info);
+    }
+    else if (bs == 3)
+    {
+      fem::impl::assemble_cells<T, 3>(b, mesh->geometry(), active_cells, dofs,
+                                      bs, fn, coeffs, constant_values,
+                                      cell_info);
+    }
+    else
+    {
+      fem::impl::assemble_cells(b, mesh->geometry(), active_cells, dofs, bs, fn,
+                                coeffs, constant_values, cell_info);
+    }
   }
 
   if (L.num_integrals(IntegralType::exterior_facet) > 0
@@ -596,11 +611,11 @@ void assemble_vector(xtl::span<T> b, const Form<T>& L)
   }
 }
 //-----------------------------------------------------------------------------
-template <typename T>
+template <typename T, int _bs>
 void assemble_cells(
     xtl::span<T> b, const mesh::Geometry& geometry,
     const std::vector<std::int32_t>& active_cells,
-    const graph::AdjacencyList<std::int32_t>& dofmap, const int bs,
+    const graph::AdjacencyList<std::int32_t>& dofmap, int bs,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& kernel,
     const array2d<T>& coeffs, const std::vector<T>& constant_values,
@@ -640,8 +655,18 @@ void assemble_cells(
     // Scatter cell vector to 'global' vector array
     auto dofs = dofmap.links(c);
     for (int i = 0; i < num_dofs; ++i)
-      for (int k = 0; k < bs; ++k)
-        b[bs * dofs[i] + k] += be[bs * i + k];
+    {
+      if constexpr (_bs > 0)
+      {
+        for (int k = 0; k < _bs; ++k)
+          b[_bs * dofs[i] + k] += be[_bs * i + k];
+      }
+      else
+      {
+        for (int k = 0; k < bs; ++k)
+          b[bs * dofs[i] + k] += be[bs * i + k];
+      }
+    }
   }
 }
 //-----------------------------------------------------------------------------
