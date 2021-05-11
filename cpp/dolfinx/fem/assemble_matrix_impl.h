@@ -304,7 +304,7 @@ void assemble_exterior_facets(
     }
 
     // Tabulate tensor
-    auto coeff_array = xt::row(coeffs, f);
+    auto coeff_array = xt::row(coeffs, cells[0]);
     std::fill(Ae.begin(), Ae.end(), 0);
     kernel(Ae.data(), coeff_array.data(), constants.data(),
            coordinate_dofs.data(), &local_facet,
