@@ -105,6 +105,7 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
 
   // FIXME: Add element 'handle' to UFC and do not use fragile strings
   const std::string family = ufc_element.family;
+
   if (family != "mixed element")
   {
     _element = std::make_unique<basix::FiniteElement>(basix::create_element(
@@ -120,6 +121,28 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
   {
     ufc_finite_element* ufc_sub_element = ufc_element.sub_elements[i];
     _sub_elements.push_back(std::make_shared<FiniteElement>(*ufc_sub_element));
+  }
+
+  // Raise error if asking for a mixed element containing a mixed element
+  // TODO: remove this in future
+  if (family == "mixed element")
+  {
+    for (int i = 0; i < ufc_element.num_sub_elements; ++i)
+    {
+      const std::string sub_family = ufc_element.sub_elements[i]->family;
+      if (sub_family == "mixed element")
+      {
+        for (int j = 0; j < ufc_element.sub_elements[i]->num_sub_elements; ++j)
+        {
+          ufc_finite_element* sub_sub_element
+              = ufc_element.sub_elements[i]->sub_elements[j];
+          if (sub_sub_element->block_size != sub_sub_element->value_size)
+            throw std::runtime_error(
+                "MixedElements containing MixedElements containing H(div) and "
+                "H(curl) spaces are currently unsupported");
+        }
+      }
+    }
   }
 }
 //-----------------------------------------------------------------------------
