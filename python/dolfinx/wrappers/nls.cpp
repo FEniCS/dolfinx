@@ -36,7 +36,7 @@ void nls(py::module& m)
       .def_readwrite("rtol", &dolfinx::nls::NewtonSolver::rtol)
       .def_readwrite("error_on_nonconvergence", 
                      &dolfinx::nls::NewtonSolver::error_on_nonconvergence)
-      .def_readwrite("record", &dolfinx::nls::NewtonSolver::record)
+      .def_readwrite("report", &dolfinx::nls::NewtonSolver::report)
       .def_readwrite("relaxation_parameter",
                      &dolfinx::nls::NewtonSolver::relaxation_parameter)
       .def_readwrite("max_it", &dolfinx::nls::NewtonSolver::max_it)
