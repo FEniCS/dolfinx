@@ -47,7 +47,7 @@ ARG PETSC_VERSION=3.15.0
 ARG SLEPC_VERSION=3.15.0
 ARG SLEPC4PY_VERSION=3.15.0
 ARG ADIOS2_VERSION=2.7.1
-ARG PYVISTA_VERSION=0.29.1
+ARG PYVISTA_VERSION=0.30.0
 # TODO: Update KaHIP version upon a release.
 ARG KAHIP_VERSION=623decb
 ARG XTENSOR_VERSION=0.23.9
@@ -196,10 +196,10 @@ RUN wget -nc --quiet https://github.com/ornladios/ADIOS2/archive/v${ADIOS2_VERSI
 # Only compatible with x86-64 (amd64)
 RUN dpkgArch="$(dpkg --print-architecture)"; \
     case "$dpkgArch" in amd64) \
-      cd /usr/local && \
-      wget -nc --quiet http://gmsh.info/bin/Linux/gmsh-${GMSH_VERSION}-Linux64-sdk.tgz && \
-      tar -xf gmsh-${GMSH_VERSION}-Linux64-sdk.tgz && \
-      rm gmsh-${GMSH_VERSION}-Linux64-sdk.tgz ;; \
+    cd /usr/local && \
+    wget -nc --quiet http://gmsh.info/bin/Linux/gmsh-${GMSH_VERSION}-Linux64-sdk.tgz && \
+    tar -xf gmsh-${GMSH_VERSION}-Linux64-sdk.tgz && \
+    rm gmsh-${GMSH_VERSION}-Linux64-sdk.tgz ;; \
     esac;
 
 ENV PATH=/usr/local/gmsh-${GMSH_VERSION}-Linux64-sdk/bin:$PATH \
@@ -446,7 +446,7 @@ RUN apt-get -qq update && \
 # matplotlib improves plotting quality with better color maps and properly rendering colorbars.
 RUN dpkgArch="$(dpkg --print-architecture)"; \
     case "$dpkgArch" in amd64) \
-      pip3 install --no-cache-dir pyvista==${PYVISTA_VERSION} ;; \
+    pip3 install --no-cache-dir pyvista==${PYVISTA_VERSION} ;; \
     esac; \
     pip3 install --no-cache-dir matplotlib
 
