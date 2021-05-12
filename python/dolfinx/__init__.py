@@ -59,9 +59,9 @@ del sys
 def get_include(user=False):
     import os
     d = os.path.dirname(__file__)
-    if os.path.exists(os.path.join(d, "include")):
+    if os.path.exists(os.path.join(d, "wrappers")):
         # Package is installed
-        return os.path.join(d, "include")
+        return os.path.join(d, "wrappers")
     else:
         # Package is from a source directory
         return os.path.join(os.path.dirname(d), "src")
