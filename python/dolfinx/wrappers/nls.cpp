@@ -34,13 +34,13 @@ void nls(py::module& m)
       .def("solve", &dolfinx::nls::NewtonSolver::solve)
       .def_readwrite("atol", &dolfinx::nls::NewtonSolver::atol)
       .def_readwrite("rtol", &dolfinx::nls::NewtonSolver::rtol)
+      .def_readwrite("error_on_nonconvergence", 
+                     &dolfinx::nls::NewtonSolver::error_on_nonconvergence)
+      .def_readwrite("record", &dolfinx::nls::NewtonSolver::record)
       .def_readwrite("relaxation_parameter",
                      &dolfinx::nls::NewtonSolver::relaxation_parameter)
       .def_readwrite("max_it", &dolfinx::nls::NewtonSolver::max_it)
       .def_readwrite("convergence_criterion",
                      &dolfinx::nls::NewtonSolver::convergence_criterion);
-      .def_readwrite("error_on_nonconvergence", 
-                     &dolfinx::nls::NewtonSolver::error_on_nonconvergence)
-      .def_readwrite("record", &dolfinx::nls::NewtonSolver::record)
 }
 } // namespace dolfinx_wrappers
