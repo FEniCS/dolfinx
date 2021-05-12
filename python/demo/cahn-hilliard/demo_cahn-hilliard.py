@@ -9,7 +9,7 @@
 # a nonlinear time-dependent fourth-order PDE.
 #
 # * The built-in Newton solver
-# * Advanced use of the base class ``NonlinearProblem``
+# * Use of the base class ``NonlinearProblem``
 # * Automatic linearisation
 # * A mixed finite element method
 # * The :math:`\theta`-method for time-dependent equations
@@ -111,22 +111,23 @@
 import os
 
 import numpy as np
-from dolfinx import (Form, Function, FunctionSpace, NewtonSolver,
-                     UnitSquareMesh, fem, log, plot)
+from dolfinx import (Function, FunctionSpace, NewtonSolver, UnitSquareMesh,
+                     log, plot)
+from dolfinx.cpp.la import scatter_forward
 from dolfinx.cpp.mesh import CellType
-from dolfinx.fem.assemble import assemble_matrix, assemble_vector
+from dolfinx.fem import NonlinearProblem
 from dolfinx.io import XDMFFile
 from mpi4py import MPI
 from petsc4py import PETSc
-from ufl import (FiniteElement, TestFunctions, TrialFunction, derivative, diff,
-                 dx, grad, inner, split, variable)
+from ufl import (FiniteElement, TestFunctions, diff, dx, grad, inner, split,
+                 variable)
 
 try:
     import pyvista as pv
     import pyvistaqt as pvqt
     have_pyvista = True
     if pv.OFF_SCREEN:
-        pv.start_xvfb(wait=0)
+        pv.start_xvfb(wait=0.5)
 
 except ModuleNotFoundError:
     print("pyvista is required to visualise the solution")
@@ -135,45 +136,6 @@ except ModuleNotFoundError:
 # Save all logging to file
 log.set_output_file("log.txt")
 
-# .. index::
-#    single: NonlinearProblem; (in Cahn-Hilliard demo)
-#
-# A class which will represent the Cahn-Hilliard in an abstract from for
-# use in the Newton solver is now defined. It is a subclass of
-# :py:class:`NonlinearProblem <dolfinx.cpp.NonlinearProblem>`.::
-
-
-class CahnHilliardEquation:
-    def __init__(self, a, L):
-        self.L, self.a = Form(L), Form(a)
-
-    def form(self, x):
-        x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-
-    def F(self, x, b):
-        with b.localForm() as f_local:
-            f_local.set(0.0)
-        assemble_vector(b, self.L)
-        b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-
-    def J(self, x, A):
-        A.zeroEntries()
-        assemble_matrix(A, self.a)
-        A.assemble()
-
-    def matrix(self):
-        return fem.create_matrix(self.a)
-
-    def vector(self):
-        return fem.create_vector(self.L)
-
-# The constructor (``__init__``) stores references to the bilinear (``a``)
-# and linear (``L``) forms. These will used to compute the Jacobian matrix
-# and the residual vector, respectively, for use in a Newton solver.  The
-# function ``F`` and ``J`` are virtual member functions of
-# :py:class:`NonlinearProblem <dolfinx.cpp.NonlinearProblem>`. The function
-# ``F`` computes the residual vector ``b``, and the function ``J``
-# computes the Jacobian matrix ``A``.
 #
 # Next, various model parameters are defined::
 
@@ -195,19 +157,17 @@ ME = FunctionSpace(mesh, P1 * P1)
 
 # Trial and test functions of the space ``ME`` are now defined::
 
-# Define trial and test functions
-du = TrialFunction(ME)
+# Define test functions
 q, v = TestFunctions(ME)
 
 # .. index:: split functions
 #
 # For the test functions,
-# :py:func:`TestFunctions<dolfinx.functions.fem.TestFunctions>` (note
+# :py:func:`TestFunctions<function ufl.argument.TestFunctions>` (note
 # the 's' at the end) is used to define the scalar test functions ``q``
-# and ``v``. The
-# :py:class:`TrialFunction<dolfinx.functions.fem.TrialFunction>`
-# ``du`` has dimension two. Some mixed objects of the
-# :py:class:`Function<dolfinx.functions.fem.Function>` class on ``ME``
+# and ``v``.
+# Some mixed objects of the
+# :py:class:`Function<dolfinx.fem.function.Function>` class on ``ME``
 # are defined to represent :math:`u = (c_{n+1}, \mu_{n+1})` and :math:`u0
 # = (c_{n}, \mu_{n})`, and these are then split into sub-functions::
 
@@ -216,7 +176,6 @@ u = Function(ME)  # current solution
 u0 = Function(ME)  # solution from previous converged step
 
 # Split mixed functions
-dc, dmu = split(du)
 c, mu = split(u)
 c0, mu0 = split(u0)
 
@@ -265,39 +224,36 @@ mu_mid = (1.0 - theta) * mu0 + theta * mu
 # which is then used in the definition of the variational forms::
 
 # Weak statement of the equations
-L0 = inner(c, q) * dx - inner(c0, q) * dx + dt * inner(grad(mu_mid), grad(q)) * dx
-L1 = inner(mu, v) * dx - inner(dfdc, v) * dx - lmbda * inner(grad(c), grad(v)) * dx
-L = L0 + L1
+F0 = inner(c, q) * dx - inner(c0, q) * dx + dt * inner(grad(mu_mid), grad(q)) * dx
+F1 = inner(mu, v) * dx - inner(dfdc, v) * dx - lmbda * inner(grad(c), grad(v)) * dx
+F = F0 + F1
 
 # This is a statement of the time-discrete equations presented as part of
-# the problem statement, using UFL syntax. The linear forms for the two
-# equations can be summed into one form ``L``, and then the directional
-# derivative of ``L`` can be computed to form the bilinear form which
-# represents the Jacobian matrix::
-
-# Compute directional derivative about u in the direction of du (Jacobian)
-a = derivative(L, u, du)
+# the problem statement, using UFL syntax.
 
 # .. index::
 #    single: Newton solver; (in Cahn-Hilliard demo)
 #
-# The DOLFINx Newton solver requires a
-# :py:class:`NonlinearProblem<dolfinx.cpp.NonlinearProblem>` object to
-# solve a system of nonlinear equations. Here, we are using the class
-# ``CahnHilliardEquation``, which was declared at the beginning of the
-# file, and which is a sub-class of
-# :py:class:`NonlinearProblem<dolfinx.cpp.NonlinearProblem>`. We need to
-# instantiate objects of both ``CahnHilliardEquation`` and
-# :py:class:`NewtonSolver <dolfinx.cpp.NewtonSolver>`::
+# The DOLFINX Newton solver requires a
+# :py:class:`NonlinearProblem<dolfinx.fem.NonlinearProblem>` object to
+# solve a system of nonlinear equations
+
 
 # Create nonlinear problem and Newton solver
-problem = CahnHilliardEquation(a, L)
-solver = NewtonSolver(MPI.COMM_WORLD)
-solver.setF(problem.F, problem.vector())
-solver.setJ(problem.J, problem.matrix())
-solver.set_form(problem.form)
+problem = NonlinearProblem(F, u)
+solver = NewtonSolver(MPI.COMM_WORLD, problem)
 solver.convergence_criterion = "incremental"
 solver.rtol = 1e-6
+
+# We can customize the linear solver used inside the NewtonSolver by modifying the
+# PETSc options
+ksp = solver.krylov_solver
+opts = PETSc.Options()
+option_prefix = ksp.getOptionsPrefix()
+opts[f"{option_prefix}ksp_type"] = "preonly"
+opts[f"{option_prefix}pc_type"] = "lu"
+opts[f"{option_prefix}pc_factor_mat_solver_type"] = "mumps"
+ksp.setFromOptions()
 
 # The setting of ``convergence_criterion`` to ``"incremental"`` specifies
 # that the Newton solver should compute a norm of the solution increment
@@ -323,7 +279,7 @@ else:
     T = 50 * dt
 
 u.vector.copy(result=u0.vector)
-u0.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+scatter_forward(u.x)
 
 
 # Prepare viewer for plotting solution during the computation
@@ -339,8 +295,8 @@ if have_pyvista:
 
 while (t < T):
     t += dt
-    r = solver.solve(u.vector)
-    print("Step, num iterations:", int(t / dt), r[0])
+    r = solver.solve(u)
+    print(f"Step {int(t/dt)}: num iterations: {r[0]}")
     u.vector.copy(result=u0.vector)
     file.write_function(u.sub(0), t)
 
@@ -361,7 +317,7 @@ file.close()
 
 # Update ghost entries and plot
 if have_pyvista:
-    u.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+    scatter_forward(u.x)
     grid.point_arrays["u"] = u.sub(0).compute_point_values().real
     screenshot = None
     if pv.OFF_SCREEN:
