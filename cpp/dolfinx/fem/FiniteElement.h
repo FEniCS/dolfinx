@@ -177,10 +177,11 @@ public:
     const std::size_t cols = Pi.size() / rows;
     for (std::size_t i = 0; i < rows; ++i)
     {
+      // Can be replaced with std::transform_reduce once GCC 8 series dies.
       // Dot product between row i of the matrix and 'values'
-      dofs[i] = std::transform_reduce(std::next(Pi.data(), i * cols),
-                                      std::next(Pi.data(), i * cols + cols),
-                                      values.data(), T(0.0));
+      dofs[i] = std::inner_product(std::next(Pi.data(), i * cols),
+                                   std::next(Pi.data(), i * cols + cols),
+                                   values.data(), T(0.0));
     }
   }
 

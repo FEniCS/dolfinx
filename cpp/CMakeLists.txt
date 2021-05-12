@@ -144,9 +144,6 @@ set_package_properties(Boost PROPERTIES TYPE REQUIRED
   DESCRIPTION "Boost C++ libraries"
   URL "http://www.boost.org")
 
-# Enable SIMD with xtensor
-option(XTENSOR_USE_XSIMD "Enable xsimd with xtensor (xsimd package required)" OFF)
-
 # Check for required package xtensor
 find_package(xtensor REQUIRED)
 set_package_properties(xtensor PROPERTIES TYPE REQUIRED
