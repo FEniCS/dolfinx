@@ -35,16 +35,16 @@ public:
   /// @param[in] inc_ref_count Increment the reference count on `ksp` if true
   PETScKrylovSolver(KSP ksp, bool inc_ref_count);
 
-  // Delete copy constructor
-  PETScKrylovSolver(const PETScKrylovSolver&) = delete;
+  // Copy constructor (deleted)
+  PETScKrylovSolver(const PETScKrylovSolver& solver) = delete;
 
   /// Move constructor
   PETScKrylovSolver(PETScKrylovSolver&& solver);
 
   /// Destructor
-  virtual ~PETScKrylovSolver();
+  ~PETScKrylovSolver();
 
-  // Assignment operator (disabled)
+  // Assignment operator (deleted)
   PETScKrylovSolver& operator=(const PETScKrylovSolver&) = delete;
 
   /// Move assignment
@@ -58,7 +58,7 @@ public:
 
   /// Solve linear system Ax = b and return number of iterations (A^t x
   /// = b if transpose is true)
-  int solve(Vec x, const Vec b, bool transpose = false);
+  int solve(Vec x, const Vec b, bool transpose = false) const;
 
   /// Sets the prefix used by PETSc when searching the PETSc options
   /// database
