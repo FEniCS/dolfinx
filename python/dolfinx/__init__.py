@@ -42,14 +42,13 @@ from dolfinx.generation import (IntervalMesh, BoxMesh, RectangleMesh,
 
 from .cpp.mesh import Topology, Geometry
 
-from .cpp.nls import NewtonSolver
-
 from .fem.form import Form
 from .fem.dirichletbc import DirichletBC
 from .fem import (FunctionSpace, VectorFunctionSpace,
                   TensorFunctionSpace, Constant, Expression, Function)
 
 from .mesh import MeshTags
+from .nls import NewtonSolver
 
 # Initialise logging
 from dolfinx import cpp
@@ -60,9 +59,9 @@ del sys
 def get_include(user=False):
     import os
     d = os.path.dirname(__file__)
-    if os.path.exists(os.path.join(d, "include")):
+    if os.path.exists(os.path.join(d, "wrappers")):
         # Package is installed
-        return os.path.join(d, "include")
+        return os.path.join(d, "wrappers")
     else:
         # Package is from a source directory
         return os.path.join(os.path.dirname(d), "src")
