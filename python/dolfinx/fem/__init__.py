@@ -23,7 +23,7 @@ from dolfinx.fem.formmanipulations import adjoint
 from dolfinx.fem.function import (Constant, Expression, Function,
                                   FunctionSpace, TensorFunctionSpace,
                                   VectorFunctionSpace)
-from dolfinx.fem.linearproblem import LinearProblem
+from dolfinx.fem.problem import LinearProblem, NonlinearProblem
 
 __all__ = [
     "Constant", "Expression", "Function",
@@ -36,5 +36,5 @@ __all__ = [
     "assemble_matrix_block", "assemble_matrix_nest",
     "assemble_matrix", "set_bc", "set_bc_nest",
     "DirichletBC", "DofMap", "Form", "IntegralType",
-    "adjoint", "LinearProblem", "locate_dofs_geometrical", "locate_dofs_topological"
-]
+    "adjoint", "LinearProblem", "locate_dofs_geometrical", "locate_dofs_topological",
+    "NonlinearProblem"]
