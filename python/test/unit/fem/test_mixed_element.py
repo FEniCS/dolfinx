@@ -44,10 +44,6 @@ def test_mixed_element(ElementType, space, cell, order):
         A.assemble()
         norms.append(A.norm())
 
-        # TODO: remove these lines once MixedElement(MixedElement(Nedelec)) is fixed
-        if space == "N1curl" and i == 1:
-            break
-
         U_el = ufl.MixedElement(U_el)
 
     for i in norms[1:]:
