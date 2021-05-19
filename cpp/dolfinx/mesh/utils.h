@@ -142,5 +142,11 @@ partition_cells_graph(MPI_Comm comm, int n, int tdim,
                       mesh::GhostMode ghost_mode,
                       const graph::partition_fn& partfn);
 
+/// Update mesh with ghost information
+/// @param[in] mesh The mesh
+/// @param[in] dest Destination rank for mesh cells on this rank
+/// @return Mesh with new ghosts
+mesh::Mesh add_ghosts(const mesh::Mesh& mesh, graph::AdjacencyList<std::int32_t>& dest);
+
 } // namespace mesh
 } // namespace dolfinx

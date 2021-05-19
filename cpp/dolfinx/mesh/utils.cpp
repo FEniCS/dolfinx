@@ -524,3 +524,62 @@ mesh::partition_cells_graph(MPI_Comm comm, int n, int tdim,
   return partfn(comm, n, dual_graph, num_ghost_nodes, ghosting);
 }
 //-----------------------------------------------------------------------------
+mesh::Mesh mesh::add_ghosts(const mesh::Mesh& mesh,
+                            graph::AdjacencyList<std::int32_t>& dest)
+{
+
+  // Get topology information
+  const mesh::Topology& topology = mesh.topology();
+  int tdim = topology.dim();
+  auto&& cell_map = topology.index_map(tdim);
+  auto&& vert_map = topology.index_map(0);
+  auto&& cv = topology.connectivity(tdim, 0);
+
+  std::int32_t num_local_cells = cell_map->size_local();
+  std::int32_t num_cells = num_local_cells + cell_map->num_ghosts();
+
+  // Get geometry information
+  const auto& geometry = mesh.geometry();
+
+  std::vector<std::int32_t> vertex_to_x(vert_map->size_local()
+                                        + vert_map->num_ghosts());
+  for (int c = 0; c < num_cells; ++c)
+  {
+    auto vertices = cv->links(c);
+    auto dofs = geometry.dofmap().links(c);
+    for (std::size_t i = 0; i < vertices.size(); ++i)
+      vertex_to_x[vertices[i]] = dofs[i];
+  }
+
+  // FIXME: Allocate data to avoid insert/push_back
+  std::vector<std::int64_t> topology_array;
+  std::vector<int> counter(num_local_cells);
+  for (std::int32_t i = 0; i < num_local_cells; i++)
+  {
+    std::vector<int64_t> global_inds(cv->num_links(i));
+    vert_map->local_to_global(cv->links(i), global_inds);
+    topology_array.insert(topology_array.end(), global_inds.begin(),
+                          global_inds.end());
+    counter[i] += global_inds.size();
+  }
+
+  std::vector<std::int32_t> offsets(counter.size() + 1, 0);
+  std::partial_sum(counter.begin(), counter.end(), offsets.begin() + 1);
+  graph::AdjacencyList<std::int64_t> cell_vertices(topology_array, offsets);
+
+  // Copy over existing mesh vertices
+  const std::int32_t num_vertices = vert_map->size_local();
+  const auto& x_g = geometry.x();
+  int gdim = geometry.dim();
+  xt::xtensor<double, 2> x = xt::empty<double>({num_vertices, gdim});
+  for (int v = 0; v < num_vertices; ++v)
+    for (int j = 0; j < gdim; ++j)
+      x(v, j) = x_g(vertex_to_x[v], j);
+
+  auto partitioner = [&dest](...) { return dest; };
+
+  return mesh::create_mesh(mesh.mpi_comm(), cell_vertices, geometry.cmap(), x,
+                           mesh::GhostMode::shared_facet, partitioner);
+}
+
+//----------------------------------------------------------------------------
