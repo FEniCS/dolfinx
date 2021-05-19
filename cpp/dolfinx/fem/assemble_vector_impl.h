@@ -48,7 +48,7 @@ void assemble_cells(
     const std::vector<std::uint32_t>& cell_info);
 
 /// Execute kernel over cells and accumulate result in vector
-template <typename T>
+template <typename T, int _bs = -1>
 void assemble_exterior_facets(
     xtl::span<T> b, const mesh::Mesh& mesh,
     const std::vector<std::int32_t>& active_facets,
@@ -60,7 +60,7 @@ void assemble_exterior_facets(
     const std::vector<std::uint8_t>& perms);
 
 /// Assemble linear form interior facet integrals into an vector
-template <typename T>
+template <typename T, int _bs = -1>
 void assemble_interior_facets(
     xtl::span<T> b, const mesh::Mesh& mesh,
     const std::vector<std::int32_t>& active_facets, const fem::DofMap& dofmap,
@@ -113,7 +113,7 @@ void lift_bc(xtl::span<T> b, const Form<T>& a,
              double scale);
 
 // Implementation of bc application
-template <typename T>
+template <typename T, int _bs0 = -1, int _bs1 = -1>
 void _lift_bc_cells(
     xtl::span<T> b, const mesh::Geometry& geometry,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
@@ -137,7 +137,6 @@ void _lift_bc_cells(
   // Data structures used in bc application
   std::vector<double> coordinate_dofs(num_dofs_g * gdim);
   std::vector<T> Ae, be;
-
   for (std::int32_t c : active_cells)
   {
     // Get dof maps for cell
@@ -147,13 +146,28 @@ void _lift_bc_cells(
     bool has_bc = false;
     for (std::size_t j = 0; j < dmap1.size(); ++j)
     {
-      for (int k = 0; k < bs1; ++k)
+      if constexpr (_bs1 > 0)
       {
-        assert(bs1 * dmap1[j] + k < (int)bc_markers1.size());
-        if (bc_markers1[bs1 * dmap1[j] + k])
+        for (int k = 0; k < _bs1; ++k)
         {
-          has_bc = true;
-          break;
+          assert(_bs1 * dmap1[j] + k < (int)bc_markers1.size());
+          if (bc_markers1[_bs1 * dmap1[j] + k])
+          {
+            has_bc = true;
+            break;
+          }
+        }
+      }
+      else
+      {
+        for (int k = 0; k < bs1; ++k)
+        {
+          assert(bs1 * dmap1[j] + k < (int)bc_markers1.size());
+          if (bc_markers1[bs1 * dmap1[j] + k])
+          {
+            has_bc = true;
+            break;
+          }
         }
       }
     }
@@ -202,12 +216,22 @@ void _lift_bc_cells(
     }
 
     for (std::size_t i = 0; i < dmap0.size(); ++i)
-      for (int k = 0; k < bs0; ++k)
-        b[bs0 * dmap0[i] + k] += be[bs0 * i + k];
+    {
+      if constexpr (_bs0 > 0)
+      {
+        for (int k = 0; k < _bs0; ++k)
+          b[_bs0 * dmap0[i] + k] += be[_bs0 * i + k];
+      }
+      else
+      {
+        for (int k = 0; k < bs0; ++k)
+          b[bs0 * dmap0[i] + k] += be[bs0 * i + k];
+      }
+    }
   }
 }
 //----------------------------------------------------------------------------
-template <typename T>
+template <typename T, int _bs = -1>
 void _lift_bc_exterior_facets(
     xtl::span<T> b, const mesh::Mesh& mesh,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
@@ -323,7 +347,7 @@ void _lift_bc_exterior_facets(
   }
 }
 //----------------------------------------------------------------------------
-template <typename T>
+template <typename T, int _bs = -1>
 void _lift_bc_interior_facets(
     xtl::span<T> b, const mesh::Mesh& mesh,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
@@ -593,9 +617,24 @@ void assemble_vector(xtl::span<T> b, const Form<T>& L)
       const auto& fn = L.kernel(IntegralType::exterior_facet, i);
       const std::vector<std::int32_t>& active_facets
           = L.domains(IntegralType::exterior_facet, i);
-      fem::impl::assemble_exterior_facets(b, *mesh, active_facets, dofs, bs, fn,
-                                          coeffs, constant_values, cell_info,
-                                          perms);
+      if (bs == 1)
+      {
+        fem::impl::assemble_exterior_facets<T, 1>(
+            b, *mesh, active_facets, dofs, bs, fn, coeffs, constant_values,
+            cell_info, perms);
+      }
+      else if (bs == 3)
+      {
+        fem::impl::assemble_exterior_facets<T, 3>(
+            b, *mesh, active_facets, dofs, bs, fn, coeffs, constant_values,
+            cell_info, perms);
+      }
+      else
+      {
+        fem::impl::assemble_exterior_facets(b, *mesh, active_facets, dofs, bs,
+                                            fn, coeffs, constant_values,
+                                            cell_info, perms);
+      }
     }
 
     const std::vector<int> c_offsets = L.coefficient_offsets();
@@ -604,9 +643,24 @@ void assemble_vector(xtl::span<T> b, const Form<T>& L)
       const auto& fn = L.kernel(IntegralType::interior_facet, i);
       const std::vector<std::int32_t>& active_facets
           = L.domains(IntegralType::interior_facet, i);
-      fem::impl::assemble_interior_facets(b, *mesh, active_facets, *dofmap, fn,
-                                          coeffs, c_offsets, constant_values,
-                                          cell_info, perms);
+      if (bs == 1)
+      {
+        fem::impl::assemble_interior_facets<T, 1>(
+            b, *mesh, active_facets, *dofmap, fn, coeffs, c_offsets,
+            constant_values, cell_info, perms);
+      }
+      else if (bs == 3)
+      {
+        fem::impl::assemble_interior_facets<T, 3>(
+            b, *mesh, active_facets, *dofmap, fn, coeffs, c_offsets,
+            constant_values, cell_info, perms);
+      }
+      else
+      {
+        fem::impl::assemble_interior_facets(b, *mesh, active_facets, *dofmap,
+                                            fn, coeffs, c_offsets,
+                                            constant_values, cell_info, perms);
+      }
     }
   }
 }
@@ -621,6 +675,8 @@ void assemble_cells(
     const array2d<T>& coeffs, const std::vector<T>& constant_values,
     const std::vector<std::uint32_t>& cell_info)
 {
+  assert(_bs < 0 or _bs == bs);
+
   const std::size_t gdim = geometry.dim();
 
   // Prepare cell geometry
@@ -637,6 +693,7 @@ void assemble_cells(
   std::vector<T> be(bs * num_dofs);
 
   // Iterate over active cells
+  boost::timer::auto_cpu_timer t;
   for (std::int32_t c : active_cells)
   {
     // Get cell coordinates/geometry
@@ -670,7 +727,7 @@ void assemble_cells(
   }
 }
 //-----------------------------------------------------------------------------
-template <typename T>
+template <typename T, int _bs>
 void assemble_exterior_facets(
     xtl::span<T> b, const mesh::Mesh& mesh,
     const std::vector<std::int32_t>& active_facets,
@@ -681,6 +738,8 @@ void assemble_exterior_facets(
     const std::vector<std::uint32_t>& cell_info,
     const std::vector<std::uint8_t>& perms)
 {
+  assert(_bs < 0 or _bs == bs);
+
   const std::size_t gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();
 
@@ -730,12 +789,22 @@ void assemble_exterior_facets(
     // Add element vector to global vector
     auto dofs = dofmap.links(cell);
     for (int i = 0; i < num_dofs; ++i)
-      for (int k = 0; k < bs; ++k)
-        b[bs * dofs[i] + k] += be[bs * i + k];
+    {
+      if constexpr (_bs > 0)
+      {
+        for (int k = 0; k < _bs; ++k)
+          b[_bs * dofs[i] + k] += be[_bs * i + k];
+      }
+      else
+      {
+        for (int k = 0; k < bs; ++k)
+          b[bs * dofs[i] + k] += be[bs * i + k];
+      }
+    }
   }
 }
 //-----------------------------------------------------------------------------
-template <typename T>
+template <typename T, int _bs>
 void assemble_interior_facets(
     xtl::span<T> b, const mesh::Mesh& mesh,
     const std::vector<std::int32_t>& active_facets, const fem::DofMap& dofmap,
@@ -763,6 +832,7 @@ void assemble_interior_facets(
   assert(offsets.back() == int(coeffs.shape[1]));
 
   const int bs = dofmap.bs();
+  assert(_bs < 0 or _bs == bs);
   auto f_to_c = mesh.topology().connectivity(tdim - 1, tdim);
   assert(f_to_c);
   auto c_to_f = mesh.topology().connectivity(tdim, tdim - 1);
@@ -829,12 +899,24 @@ void assemble_interior_facets(
        cell_info[cells[0]]);
 
     // Add element vector to global vector
-    for (std::size_t i = 0; i < dmap0.size(); ++i)
-      for (int k = 0; k < bs; ++k)
-        b[bs * dmap0[i] + k] += be[bs * i + k];
-    for (std::size_t i = 0; i < dmap1.size(); ++i)
-      for (int k = 0; k < bs; ++k)
-        b[bs * dmap1[i] + k] += be[bs * (i + dmap0.size()) + k];
+    if constexpr (_bs > 0)
+    {
+      for (std::size_t i = 0; i < dmap0.size(); ++i)
+        for (int k = 0; k < _bs; ++k)
+          b[_bs * dmap0[i] + k] += be[_bs * i + k];
+      for (std::size_t i = 0; i < dmap1.size(); ++i)
+        for (int k = 0; k < _bs; ++k)
+          b[_bs * dmap1[i] + k] += be[+bs * (i + dmap0.size()) + k];
+    }
+    else
+    {
+      for (std::size_t i = 0; i < dmap0.size(); ++i)
+        for (int k = 0; k < bs; ++k)
+          b[bs * dmap0[i] + k] += be[bs * i + k];
+      for (std::size_t i = 0; i < dmap1.size(); ++i)
+        for (int k = 0; k < bs; ++k)
+          b[bs * dmap1[i] + k] += be[bs * (i + dmap0.size()) + k];
+    }
   }
 }
 //-----------------------------------------------------------------------------
