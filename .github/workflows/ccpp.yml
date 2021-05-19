@@ -62,15 +62,22 @@ jobs:
           python3 -m flake8 demo
           python3 -m flake8 test
 
-      - name: Build C++ interface documentation
-        run: cd cpp/doc && doxygen
-
       - name: Configure C++
         run: cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build -S cpp/
+
       - name: Build and install C++ library
         run: |
           cmake --build build
           cmake --install build
+
+      - name: Build C++ interface documentation
+        run: |
+          INCLUDE_DIR=`cmake -L build | grep CMAKE_INSTALL_PREFIX | cut -f2 -d "="`/include
+	  echo $INCLUDE_DIR
+	  export DOLFINX_VERSION=`gcc -E -dM $INCLUDE_DIR/dolfinx/common/version.h | grep VERSION_STRING | xargs | cut -f 3 -d " "`
+	  echo $DOLFINX_VERSION
+          cd cpp/doc
+          doxygen
 
       - name: Build and run C++ unit tests (serial and MPI)
         run: |
