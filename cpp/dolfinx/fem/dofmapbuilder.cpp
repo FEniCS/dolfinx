@@ -398,6 +398,7 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
   {
     // Topological dimension of mesh entity that dof is associated with
     const int d = dof_entity[i].first;
+    global[d].reserve(4); // Ensure global[d] has allocation
 
     // Index of mesh entity that dof is associated with
     const int entity = dof_entity[i].second;
