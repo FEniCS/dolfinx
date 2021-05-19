@@ -1,7 +1,7 @@
 // Copyright (C) 2006-2021 Chris N. Richardson, Anders Logg, Garth N. Wells and
 // Jørgen S. Dokken
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -207,7 +207,7 @@ void _compute_collisions_tree(const geometry::BoundingBoxTree& A,
 //-----------------------------------------------------------------------------
 geometry::BoundingBoxTree
 geometry::create_midpoint_tree(const mesh::Mesh& mesh, int tdim,
-                               const std::vector<std::int32_t>& entities)
+                               const xtl::span<const std::int32_t>& entities)
 {
   LOG(INFO) << "Building point search tree to accelerate distance queries for "
                "a given topological dimension and subset of entities.";

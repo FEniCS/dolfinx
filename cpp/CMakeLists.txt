@@ -1,11 +1,11 @@
 #------------------------------------------------------------------------------
-# Top level CMakeLists.txt file for DOLFIN
+# Top level CMakeLists.txt file for DOLFINx
 cmake_minimum_required(VERSION 3.12)
 
 #------------------------------------------------------------------------------
 # Set project name and version number
 
-project(DOLFINX VERSION 2019.2.9.99)
+project(DOLFINX VERSION 0.1.0)
 
 #------------------------------------------------------------------------------
 # Set CMake options, see `cmake --help-policy CMP000x`
@@ -57,8 +57,8 @@ set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${CMAKE_CURRENT_BINARY_DIR}/dolfinx)
 
 include(FeatureSummary)
 
-option(BUILD_SHARED_LIBS "Build DOLFIN with shared libraries." ON)
-add_feature_info(BUILD_SHARED_LIBS BUILD_SHARED_LIBS "Build DOLFIN with shared libraries.")
+option(BUILD_SHARED_LIBS "Build DOLFINx with shared libraries." ON)
+add_feature_info(BUILD_SHARED_LIBS BUILD_SHARED_LIBS "Build DOLFINx with shared libraries.")
 
 option(DOLFINX_SKIP_BUILD_TESTS "Skip build tests for testing usability of dependency packages." OFF)
 add_feature_info(DOLFINX_SKIP_BUILD_TESTS DOLFINX_SKIP_BUILD_TESTS "Skip build tests for testing usability of dependency packages.")
@@ -144,9 +144,6 @@ set_package_properties(Boost PROPERTIES TYPE REQUIRED
   DESCRIPTION "Boost C++ libraries"
   URL "http://www.boost.org")
 
-# Enable SIMD with xtensor
-option(XTENSOR_USE_XSIMD "Enable xsimd with xtensor (xsimd package required)" OFF)
-
 # Check for required package xtensor
 find_package(xtensor REQUIRED)
 set_package_properties(xtensor PROPERTIES TYPE REQUIRED
@@ -185,7 +182,7 @@ set_package_properties(SCOTCH PROPERTIES TYPE REQUIRED
 find_package(Python3 COMPONENTS Interpreter REQUIRED)
 find_package(UFC MODULE ${DOLFINX_VERSION_MAJOR}.${DOLFINX_VERSION_MINOR})
 set_package_properties(UFC PROPERTIES TYPE REQUIRED
-  DESCRIPTION "Unified language for form-compilers (part of FFC-X)"
+  DESCRIPTION "Unified language for form-compilers (part of FFCx)"
   URL "https://github.com/fenics/ffcx")
 
 find_package(Basix 0.0.1 REQUIRED)
@@ -234,7 +231,7 @@ endif()
 feature_summary(WHAT ALL)
 
 #------------------------------------------------------------------------------
-# Installation of DOLFIN library
+# Installation of DOLFINx library
 
 add_subdirectory(dolfinx)
 
@@ -320,7 +317,7 @@ if (GENERATE_DEMO_TEST_DATA)
     ERROR_VARIABLE CMAKE_GENERATION_OUTPUT
     )
   if (CMAKE_GENERATION_RESULT)
-    # Cleanup so FFCX rebuild is triggered next time we run cmake
+    # Cleanup so FFCx rebuild is triggered next time we run cmake
     file(REMOVE_RECURSE ${CMAKE_CURRENT_BINARY_DIR}/demo ${CMAKE_CURRENT_BINARY_DIR}/test)
     message(FATAL_ERROR "Generation of CMakeLists.txt files in build directory failed: \n${CMAKE_GENERATION_OUTPUT}")
   else()

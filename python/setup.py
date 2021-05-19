@@ -3,24 +3,22 @@ import platform
 import re
 import subprocess
 import sys
-from distutils.version import LooseVersion
 
 from setuptools import Extension, setup
 from setuptools.command.build_ext import build_ext
 
-if sys.version_info < (3, 6):
-    print("Python 3.6 or higher required, please upgrade.")
+if sys.version_info < (3, 7):
+    print("Python 3.7 or higher required, please upgrade.")
     sys.exit(1)
 
-VERSION = "2019.2.0.dev0"
-RESTRICT_REQUIREMENTS = ">=2019.2.0.dev0,<2021.2"
+VERSION = "0.1.0"
 
 REQUIREMENTS = [
     "numpy",
     "mpi4py",
     "petsc4py",
-    "fenics-ffcx",
-    "fenics-ufl{}".format(RESTRICT_REQUIREMENTS),
+    "fenics-ffcx>=0.1.0,<0.2.0",
+    "fenics-ufl>=2021.1.0,<2021.2.0"
 ]
 
 
@@ -38,11 +36,6 @@ class CMakeBuild(build_ext):
             raise RuntimeError("CMake must be installed to build the following extensions: "
                                + ", ".join(e.name for e in self.extensions))
 
-        if platform.system() == "Windows":
-            cmake_version = LooseVersion(re.search(r'version\s*([\d.]+)', out.decode()).group(1))
-            if cmake_version < '3.1.0':
-                raise RuntimeError("CMake >= 3.1.0 is required on Windows")
-
         for ext in self.extensions:
             self.build_extension(ext)
 
@@ -54,18 +47,15 @@ class CMakeBuild(build_ext):
         cfg = 'Debug' if self.debug else 'Release'
         build_args = ['--config', cfg]
 
-        if platform.system() == "Windows":
-            cmake_args += ['-DCMAKE_LIBRARY_OUTPUT_DIRECTORY_{}={}'.format(cfg.upper(), extdir)]
-            if sys.maxsize > 2**32:
-                cmake_args += ['-A', 'x64']
-            build_args += ['--', '/m']
-        else:
-            cmake_args += ['-DCMAKE_BUILD_TYPE=' + cfg]
-            build_args += ['--', '-j3']
+        cmake_args += ['-DCMAKE_BUILD_TYPE=' + cfg]
+        build_args += ['--', '-j3']
 
         env = os.environ.copy()
+        import pybind11
+        env['pybind11_DIR'] = pybind11.get_cmake_dir()
         env['CXXFLAGS'] = '{} -DVERSION_INFO=\\"{}\\"'.format(env.get('CXXFLAGS', ''),
                                                               self.distribution.get_version())
+
         if not os.path.exists(self.build_temp):
             os.makedirs(self.build_temp)
         subprocess.check_call(['cmake', ext.sourcedir] + cmake_args, cwd=self.build_temp, env=env)
@@ -75,7 +65,7 @@ class CMakeBuild(build_ext):
 setup(name='fenics-dolfinx',
       version=VERSION,
       author='FEniCS Project',
-      description='DOLFIN Python interface',
+      description='DOLFINx Python interface',
       long_description='',
       packages=["dolfinx",
                 "dolfinx.fem",
@@ -85,4 +75,5 @@ setup(name='fenics-dolfinx',
       ext_modules=[CMakeExtension('dolfinx.cpp')],
       cmdclass=dict(build_ext=CMakeBuild),
       install_requires=REQUIREMENTS,
+      setup_requires=["pybind11"],
       zip_safe=False)

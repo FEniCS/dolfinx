@@ -9,6 +9,6 @@ namespace dolfinx
 */
 }
 
-// DOLFINX io interface
+// DOLFINx io interface
 
 #include <dolfinx/io/VTKFile.h>
