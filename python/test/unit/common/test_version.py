@@ -7,6 +7,7 @@
 import pkg_resources
 import dolfinx
 
+
 def test_version():
     """Test that installed Python version matches c++ version"""
     version = pkg_resources.get_distribution("fenics-dolfinx").version
