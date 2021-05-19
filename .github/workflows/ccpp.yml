@@ -72,9 +72,7 @@ jobs:
 
       - name: Build C++ interface documentation
         run: |
-          INCLUDE_DIR=`cmake -L build | grep CMAKE_INSTALL_PREFIX | cut -f2 -d "="`/include
-          echo $INCLUDE_DIR
-          export DOLFINX_VERSION=`gcc -E -dM $INCLUDE_DIR/dolfinx/common/version.h | grep VERSION_STRING | xargs | cut -f 3 -d " "`
+          export DOLFINX_VERSION=`cmake -L build | grep DOXYGEN_DOLFINX_VERSION | cut -f2 -d "="`
           echo $DOLFINX_VERSION
           cd cpp/doc
           doxygen
