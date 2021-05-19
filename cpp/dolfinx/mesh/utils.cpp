@@ -527,19 +527,21 @@ mesh::partition_cells_graph(MPI_Comm comm, int n, int tdim,
 mesh::Mesh mesh::add_ghosts(const mesh::Mesh& mesh,
                             graph::AdjacencyList<std::int32_t>& dest)
 {
-
   // Get topology information
   const mesh::Topology& topology = mesh.topology();
   int tdim = topology.dim();
-  auto&& cell_map = topology.index_map(tdim);
-  auto&& vert_map = topology.index_map(0);
-  auto&& cv = topology.connectivity(tdim, 0);
+  std::shared_ptr<const common::IndexMap> cell_map = topology.index_map(tdim);
+  std::shared_ptr<const common::IndexMap> vert_map = topology.index_map(0);
+  std::shared_ptr<const graph::AdjacencyList<std::int32_t>> cv
+      = topology.connectivity(tdim, 0);
 
   std::int32_t num_local_cells = cell_map->size_local();
   std::int32_t num_cells = num_local_cells + cell_map->num_ghosts();
 
   // Get geometry information
-  const auto& geometry = mesh.geometry();
+  const mesh::Geometry& geometry = mesh.geometry();
+  int gdim = geometry.dim();
+  const xt::xtensor<double, 2>& x_g = geometry.x();
 
   std::vector<std::int32_t> vertex_to_x(vert_map->size_local()
                                         + vert_map->num_ghosts());
@@ -551,7 +553,6 @@ mesh::Mesh mesh::add_ghosts(const mesh::Mesh& mesh,
       vertex_to_x[vertices[i]] = dofs[i];
   }
 
-  // FIXME: Allocate data to avoid insert/push_back
   std::vector<std::int64_t> topology_array;
   std::vector<int> counter(num_local_cells);
   for (std::int32_t i = 0; i < num_local_cells; i++)
@@ -569,8 +570,6 @@ mesh::Mesh mesh::add_ghosts(const mesh::Mesh& mesh,
 
   // Copy over existing mesh vertices
   const std::int32_t num_vertices = vert_map->size_local();
-  const auto& x_g = geometry.x();
-  int gdim = geometry.dim();
   xt::xtensor<double, 2> x = xt::empty<double>({num_vertices, gdim});
   for (int v = 0; v < num_vertices; ++v)
     for (int j = 0; j < gdim; ++j)
