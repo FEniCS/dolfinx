@@ -107,6 +107,7 @@ def refine(mesh, cell_markers=None, redistribute=True):
     mesh_refined._ufl_domain = domain
     return mesh_refined
 
+
 def add_ghosts(mesh, dest):
     """Add ghost layer to the mesh"""
     new_mesh = cpp.mesh.add_ghosts(mesh, dest)
