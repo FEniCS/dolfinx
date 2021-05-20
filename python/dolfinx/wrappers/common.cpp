@@ -86,7 +86,8 @@ void common(py::module& m)
                  local,
                  xtl::span<std::int64_t>(global.mutable_data(), global.size()));
              return global;
-           });
+           })
+      .def("shared_indices", &dolfinx::common::IndexMap::shared_indices);
 
   // dolfinx::common::Timer
   py::class_<dolfinx::common::Timer, std::shared_ptr<dolfinx::common::Timer>>(
