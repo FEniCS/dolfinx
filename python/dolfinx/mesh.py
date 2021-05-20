@@ -107,6 +107,14 @@ def refine(mesh, cell_markers=None, redistribute=True):
     mesh_refined._ufl_domain = domain
     return mesh_refined
 
+def add_ghosts(mesh):
+    """Add ghost layer to the mesh"""
+    new_mesh = cpp.mesh.add_ghosts(mesh)
+    domain = mesh._ufl_domain
+    domain._ufl_cargo = new_mesh
+    new_mesh._ufl_domain = domain
+    return new_mesh
+
 
 def create_mesh(comm, cells, x, domain,
                 ghost_mode=cpp.mesh.GhostMode.shared_facet,
