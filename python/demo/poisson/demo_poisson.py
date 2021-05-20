@@ -96,7 +96,7 @@ from ufl import ds, dx, grad, inner
 # Create mesh and define function space
 mesh = BoxMesh(
     MPI.COMM_WORLD,
-    [np.array([0, 0, 0]), np.array([1, 1, 1])], [1, 1, 1],
+    [np.array([0, 0, 0]), np.array([1, 1, 1])], [12, 12, 12],
     CellType.prism, dolfinx.cpp.mesh.GhostMode.none)
 
 V = FunctionSpace(mesh, ("Lagrange", 1))
@@ -163,7 +163,7 @@ x = ufl.SpatialCoordinate(mesh)
 f = 10 * ufl.exp(-((x[0] - 0.5)**2 + (x[1] - 0.5)**2) / 0.02)
 g = ufl.sin(5 * x[0])
 a = inner(grad(u), grad(v)) * dx
-L = inner(f, v) * dx + inner(g, v) * ds
+L = inner(f, v) * dx  # + inner(g, v) * ds
 
 # Now, we have specified the variational forms and can consider the
 # solution of the variational problem. First, we need to define a

@@ -164,6 +164,17 @@ std::vector<std::uint8_t> vtk_tetrahedron(int num_nodes)
   }
 }
 //-----------------------------------------------------------------------------
+std::vector<std::uint8_t> vtk_wedge(int num_nodes)
+{
+  switch (num_nodes)
+  {
+  case 6:
+    return {0, 1, 2, 3, 4, 5};
+  default:
+    throw std::runtime_error("Unknown wedge layout");
+  }
+}
+//-----------------------------------------------------------------------------
 std::vector<std::uint8_t> vtk_quadrilateral(int num_nodes)
 {
   // Check that num_nodes is a square integer (since quadrilaterals are
@@ -298,6 +309,9 @@ std::vector<std::uint8_t> io::cells::perm_vtk(mesh::CellType type,
     break;
   case mesh::CellType::quadrilateral:
     map = vtk_quadrilateral(num_nodes);
+    break;
+  case mesh::CellType::prism:
+    map = vtk_wedge(num_nodes);
     break;
   case mesh::CellType::hexahedron:
     map = vtk_hexahedron(num_nodes);
