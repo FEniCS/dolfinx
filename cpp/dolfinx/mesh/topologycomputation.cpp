@@ -16,6 +16,7 @@
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/utils.h>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <limits>
 #include <memory>
 #include <numeric>
 #include <random>
@@ -60,13 +61,11 @@ std::vector<std::int32_t> sort_by_perm(const xt::xtensor<T, 2>& array)
 {
   std::vector<int> index(array.shape(0));
   std::iota(index.begin(), index.end(), 0);
-  std::sort(index.begin(), index.end(),
-            [&array](int a, int b)
-            {
-              return std::lexicographical_compare(
-                  xt::row(array, a).begin(), xt::row(array, a).end(),
-                  xt::row(array, b).begin(), xt::row(array, b).end());
-            });
+  std::sort(index.begin(), index.end(), [&array](int a, int b) {
+    return std::lexicographical_compare(
+        xt::row(array, a).begin(), xt::row(array, a).end(),
+        xt::row(array, b).begin(), xt::row(array, b).end());
+  });
 
   return index;
 }
@@ -426,8 +425,10 @@ compute_entities_by_key_matching(
   // Initialize local array of entities
   const std::int8_t num_entities_per_cell
       = mesh::cell_num_entities(cell_type, dim);
+  // NB for prism cell, this could be 3 or 4, for facet. By choosing entity 1,
+  // we will get width 4, and backfill with -1 for triangle facets.
   const std::size_t num_vertices_per_entity
-      = mesh::num_cell_vertices(mesh::cell_entity_type(cell_type, dim));
+      = mesh::num_cell_vertices(mesh::cell_entity_type(cell_type, dim, 1));
 
   // Create map from cell vertices to entity vertices
   auto e_vertices = mesh::get_entity_vertices(cell_type, dim);
@@ -440,16 +441,26 @@ compute_entities_by_key_matching(
   {
     // Get vertices from cell
     auto vertices = cells.links(c);
+
     for (int i = 0; i < num_entities_per_cell; ++i)
     {
       const std::int32_t idx = c * num_entities_per_cell + i;
       auto ev = e_vertices.links(i);
 
       // Get entity vertices
-      assert(e_vertices.num_links(i) == (int)num_vertices_per_entity);
-      for (std::size_t j = 0; j < num_vertices_per_entity; ++j)
+      // assert(e_vertices.num_links(i) == (int)num_vertices_per_entity);
+      entity_list(idx, num_vertices_per_entity - 1)
+          = std::numeric_limits<std::int32_t>::max();
+      for (int j = 0; j < e_vertices.num_links(i); ++j)
         entity_list(idx, j) = vertices[ev[j]];
     }
+  }
+
+  for (std::size_t i = 0; i < entity_list.shape(0); ++i)
+  {
+    for (std::size_t j = 0; j < num_vertices_per_entity; ++j)
+      std::cout << entity_list(i, j) << " ";
+    std::cout << "\n";
   }
 
   // Copy list and sort vertices of each entity into order
@@ -476,6 +487,13 @@ compute_entities_by_key_matching(
   }
   ++entity_count;
 
+  for (std::size_t i = 0; i < entity_list.shape(0); ++i)
+  {
+    for (std::size_t j = 0; j < num_vertices_per_entity; ++j)
+      std::cout << entity_list(i, j) << " ";
+    std::cout << "\n";
+  }
+
   // Communicate with other processes to find out which entities are
   // ghosted and shared. Remap the numbering so that ghosts are at the
   // end.
@@ -484,14 +502,30 @@ compute_entities_by_key_matching(
 
   // Entity-vertex connectivity
   std::vector<std::int32_t> offsets_ev(entity_count + 1, 0);
-  for (std::size_t i = 0; i < offsets_ev.size() - 1; ++i)
-    offsets_ev[i + 1] = offsets_ev[i] + num_vertices_per_entity;
+  std::vector<int> size_ev(entity_count);
+  for (std::size_t i = 0; i < entity_count; ++i)
+  {
+    size_ev[local_index[i]] = (entity_list(i, num_vertices_per_entity - 1)
+                               == std::numeric_limits<std::int32_t>::max())
+                                  ? (num_vertices_per_entity - 1)
+                                  : num_vertices_per_entity;
+    offsets_ev[i + 1] = offsets_ev[i] + nv;
+  }
+
   auto ev = std::make_shared<graph::AdjacencyList<std::int32_t>>(
       std::vector<std::int32_t>(offsets_ev.back()), std::move(offsets_ev));
   for (std::size_t i = 0; i < entity_list.shape(0); ++i)
   {
-    std::copy(xt::row(entity_list, i).begin(), xt::row(entity_list, i).end(),
+    const int nv = (entity_list(i, num_vertices_per_entity - 1)
+                    == std::numeric_limits<std::int32_t>::max())
+                       ? (num_vertices_per_entity - 1)
+                       : num_vertices_per_entity;
+    std::copy(xt::row(entity_list, i).begin(),
+              xt::row(entity_list, i).begin() + nv,
               ev->links(local_index[i]).begin());
+    for (int w = 0; w < ev->num_links(local_index[i]); ++w)
+      std::cout << ev->links(local_index[i])[w] << " - ";
+    std::cout << "\n";
   }
 
   // NOTE: Cell-entity connectivity comes after ev creation because
@@ -567,7 +601,7 @@ compute_from_map(const graph::AdjacencyList<std::int32_t>& c_d0_0,
   entity_to_index.reserve(c_d1_0.num_nodes());
 
   const std::size_t num_verts_d1
-      = mesh::num_cell_vertices(mesh::cell_entity_type(cell_type_d0, d1));
+      = mesh::num_cell_vertices(mesh::cell_entity_type(cell_type_d0, d1, 0));
   std::vector<std::int32_t> key(num_verts_d1);
   for (int e = 0; e < c_d1_0.num_nodes(); ++e)
   {
@@ -707,8 +741,8 @@ mesh::compute_connectivity(const Topology& topology, int d0, int d1)
     {
       auto c_d1_d0 = std::make_shared<graph::AdjacencyList<std::int32_t>>(
           compute_from_map(*c_d1_0, *c_d0_0,
-                           mesh::cell_entity_type(topology.cell_type(), d1), d1,
-                           d0));
+                           mesh::cell_entity_type(topology.cell_type(), d1, 0),
+                           d1, d0));
       auto c_d0_d1 = std::make_shared<graph::AdjacencyList<std::int32_t>>(
           compute_from_transpose(*c_d1_d0, c_d0_0->num_nodes(), d0, d1));
       return {c_d0_d1, c_d1_d0};
@@ -729,8 +763,8 @@ mesh::compute_connectivity(const Topology& topology, int d0, int d1)
     // those of a higher dimension entity
     auto c_d0_d1
         = std::make_shared<graph::AdjacencyList<std::int32_t>>(compute_from_map(
-            *c_d0_0, *c_d1_0, mesh::cell_entity_type(topology.cell_type(), d0),
-            d0, d1));
+            *c_d0_0, *c_d1_0,
+            mesh::cell_entity_type(topology.cell_type(), d0, 0), d0, d1));
     return {c_d0_d1, nullptr};
   }
   else

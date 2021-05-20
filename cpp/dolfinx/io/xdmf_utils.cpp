@@ -396,7 +396,7 @@ xdmf_utils::extract_local_entities(const mesh::Mesh& mesh, const int entity_dim,
   }
 
   const mesh::CellType entity_type
-      = mesh::cell_entity_type(mesh.topology().cell_type(), entity_dim);
+      = mesh::cell_entity_type(mesh.topology().cell_type(), entity_dim, 0);
   const std::size_t num_vertices_per_entity
       = mesh::cell_num_entities(entity_type, 0);
   assert(entity_vertex_dofs.size() == num_vertices_per_entity);

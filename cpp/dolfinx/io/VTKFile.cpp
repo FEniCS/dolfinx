@@ -78,7 +78,7 @@ std::string get_counter(const pugi::xml_node& node, const std::string& name)
 std::int8_t get_vtk_cell_type(mesh::CellType cell, int dim)
 {
   // Get cell type
-  mesh::CellType cell_type = mesh::cell_entity_type(cell, dim);
+  mesh::CellType cell_type = mesh::cell_entity_type(cell, dim, 0);
 
   // Determine VTK cell type (arbitrary Lagrange elements)
   // https://vtk.org/doc/nightly/html/vtkCellType_8h_source.html

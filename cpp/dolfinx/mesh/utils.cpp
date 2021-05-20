@@ -66,7 +66,7 @@ std::vector<double> mesh::h(const Mesh& mesh,
 
   // Get number of cell vertices
   const mesh::CellType type
-      = cell_entity_type(mesh.topology().cell_type(), dim);
+      = cell_entity_type(mesh.topology().cell_type(), dim, 0);
   const int num_vertices = num_cell_vertices(type);
 
   // Get geometry dofmap and dofs
@@ -104,7 +104,7 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
 {
   const int gdim = mesh.geometry().dim();
   const mesh::CellType type
-      = mesh::cell_entity_type(mesh.topology().cell_type(), dim);
+      = mesh::cell_entity_type(mesh.topology().cell_type(), dim, 0);
 
   // Find geometry nodes for topology entities
   const xt::xtensor<double, 2>& xg = mesh.geometry().x();
@@ -383,9 +383,13 @@ mesh::entities_to_geometry(const mesh::Mesh& mesh, int dim,
                            const xtl::span<const std::int32_t>& entity_list,
                            bool orient)
 {
-  dolfinx::mesh::CellType cell_type = mesh.topology().cell_type();
+  mesh::CellType cell_type = mesh.topology().cell_type();
+
+  if (cell_type == mesh::CellType::prism)
+    throw std::runtime_error("More work needed for prism cells");
+
   const std::size_t num_entity_vertices
-      = mesh::num_cell_vertices(mesh::cell_entity_type(cell_type, dim));
+      = mesh::num_cell_vertices(mesh::cell_entity_type(cell_type, dim, 0));
   xt::xtensor<std::int32_t, 2> entity_geometry(
       {entity_list.size(), num_entity_vertices});
 

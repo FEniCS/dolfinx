@@ -58,6 +58,7 @@ mesh::CellType CoordinateElement::cell_shape() const
       = {{"interval", mesh::CellType::interval},
          {"triangle", mesh::CellType::triangle},
          {"quadrilateral", mesh::CellType::quadrilateral},
+         {"prism", mesh::CellType::prism},
          {"tetrahedron", mesh::CellType::tetrahedron},
          {"hexahedron", mesh::CellType::hexahedron}};
 

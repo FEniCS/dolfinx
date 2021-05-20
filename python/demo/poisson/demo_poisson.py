@@ -76,7 +76,7 @@
 import dolfinx
 import numpy as np
 import ufl
-from dolfinx import (DirichletBC, Function, FunctionSpace, RectangleMesh, fem,
+from dolfinx import (DirichletBC, Function, FunctionSpace, BoxMesh, fem,
                      plot)
 from dolfinx.cpp.mesh import CellType
 from dolfinx.fem import locate_dofs_topological
@@ -94,10 +94,10 @@ from ufl import ds, dx, grad, inner
 # divided into two triangles, we do as follows ::
 
 # Create mesh and define function space
-mesh = RectangleMesh(
+mesh = BoxMesh(
     MPI.COMM_WORLD,
-    [np.array([0, 0, 0]), np.array([1, 1, 0])], [32, 32],
-    CellType.triangle, dolfinx.cpp.mesh.GhostMode.none)
+    [np.array([0, 0, 0]), np.array([1, 1, 1])], [1, 1, 1],
+    CellType.prism, dolfinx.cpp.mesh.GhostMode.none)
 
 V = FunctionSpace(mesh, ("Lagrange", 1))
 

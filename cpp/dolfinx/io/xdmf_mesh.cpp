@@ -28,7 +28,7 @@ void xdmf_mesh::add_topology_data(
 
   // Get entity 'cell' type
   const mesh::CellType entity_cell_type
-      = mesh::cell_entity_type(topology.cell_type(), dim);
+      = mesh::cell_entity_type(topology.cell_type(), dim, 0);
 
   // Get number of nodes per entity
   const int num_nodes_per_entity

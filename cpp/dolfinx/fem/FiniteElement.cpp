@@ -85,6 +85,9 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
   case tetrahedron:
     _cell_shape = mesh::CellType::tetrahedron;
     break;
+  case prism:
+    _cell_shape = mesh::CellType::prism;
+    break;
   case hexahedron:
     _cell_shape = mesh::CellType::hexahedron;
     break;
@@ -95,11 +98,9 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
   assert(mesh::cell_dim(_cell_shape) == _tdim);
 
   static const std::map<ufc_shape, std::string> ufc_to_cell
-      = {{vertex, "point"},
-         {interval, "interval"},
-         {triangle, "triangle"},
-         {tetrahedron, "tetrahedron"},
-         {quadrilateral, "quadrilateral"},
+      = {{vertex, "point"},         {interval, "interval"},
+         {triangle, "triangle"},    {tetrahedron, "tetrahedron"},
+         {prism, "prism"},          {quadrilateral, "quadrilateral"},
          {hexahedron, "hexahedron"}};
   const std::string cell_shape = ufc_to_cell.at(ufc_element.cell_shape);
 
@@ -121,7 +122,6 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
     ufc_finite_element* ufc_sub_element = ufc_element.sub_elements[i];
     _sub_elements.push_back(std::make_shared<FiniteElement>(*ufc_sub_element));
   }
-
 }
 //-----------------------------------------------------------------------------
 std::string FiniteElement::signature() const noexcept { return _signature; }
