@@ -156,7 +156,6 @@ void apply_lifting(
 
 // -- Matrices ---------------------------------------------------------------
 
-// Experimental
 /// Assemble bilinear form into a matrix
 /// @param[in] mat_add The function for adding values into the matrix
 /// @param[in] a The bilinear from to assemble
@@ -206,7 +205,6 @@ void assemble_matrix(
                         dof_marker1);
 }
 
-// Experimental
 /// Assemble bilinear form into a matrix
 /// @param[in] mat_add The function for adding values into the matrix
 /// @param[in] a The bilinear from to assemble
