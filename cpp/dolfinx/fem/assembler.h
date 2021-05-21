@@ -145,8 +145,13 @@ void assemble_matrix(
     }
   }
 
+  // Prepare constants and coefficients
+  const std::vector<T> constants = pack_constants(a);
+  const array2d<T> coeffs = pack_coefficients(a);
+
   // Assemble
-  impl::assemble_matrix(mat_add, a, dof_marker0, dof_marker1);
+  impl::assemble_matrix(mat_add, a, tcb::make_span(constants), coeffs,
+                        dof_marker0, dof_marker1);
 }
 
 /// Assemble bilinear form into a matrix. Matrix must already be
@@ -167,7 +172,13 @@ void assemble_matrix(
     const std::vector<bool>& dof_marker1)
 
 {
-  impl::assemble_matrix(mat_add, a, dof_marker0, dof_marker1);
+  // Prepare constants and coefficients
+  const std::vector<T> constants = pack_constants(a);
+  const array2d<T> coeffs = pack_coefficients(a);
+
+  // Assemble
+  impl::assemble_matrix(mat_add, a, tcb::make_span(constants), coeffs,
+                        dof_marker0, dof_marker1);
 }
 
 /// Sets a value to the diagonal of a matrix for specified rows. It is
