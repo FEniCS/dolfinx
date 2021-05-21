@@ -56,7 +56,7 @@ template <typename T>
 void assemble_exterior_facets(
     const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                             const std::int32_t*, const T*)>& mat_set_values,
-    const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_facets,
+    const mesh::Mesh& mesh, const xtl::span<const std::int32_t>& active_facets,
     const graph::AdjacencyList<std::int32_t>& dofmap0, int bs0,
     const graph::AdjacencyList<std::int32_t>& dofmap1, int bs1,
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
@@ -71,7 +71,7 @@ template <typename T>
 void assemble_interior_facets(
     const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                             const std::int32_t*, const T*)>& mat_set_values,
-    const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_facets,
+    const mesh::Mesh& mesh, const xtl::span<const std::int32_t>& active_facets,
     const DofMap& dofmap0, int bs0, const DofMap& dofmap1, int bs1,
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(T*, const T*, const T*, const double*, const int*,

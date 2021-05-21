@@ -32,7 +32,9 @@ class FunctionSpace;
 template <typename T>
 T assemble_scalar(const Form<T>& M)
 {
-  return fem::impl::assemble_scalar(M);
+  const std::vector<T> constants = pack_constants(M);
+  const array2d<T> coeffs = pack_coefficients(M);
+  return fem::impl::assemble_scalar(M, tcb::make_span(constants), coeffs);
 }
 
 // -- Vectors ----------------------------------------------------------------
