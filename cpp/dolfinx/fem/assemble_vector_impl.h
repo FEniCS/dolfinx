@@ -88,8 +88,8 @@ void assemble_interior_facets(
 /// @param[in,out] b The vector to be modified
 /// @param[in] a The bilinear forms, where a[j] is the form that
 /// generates A_j
-/// @param[in] coeffs Coefficients that appear in `a`
 /// @param[in] constants Constants that appear in `a`
+/// @param[in] coeffs Coefficients that appear in `a`
 /// @param[in] bcs1 List of boundary conditions for each block, i.e.
 /// bcs1[2] are the boundary conditions applied to the columns of a[2] /
 /// x0[2] block

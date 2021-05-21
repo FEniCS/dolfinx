@@ -104,6 +104,29 @@ void assemble_vector(xtl::span<T> b, const Form<T>& L)
 template <typename T>
 void apply_lifting(
     xtl::span<T> b, const std::vector<std::shared_ptr<const Form<T>>>& a,
+    const std::vector<xtl::span<const T>>& constants,
+    const std::vector<const array2d<T>*>& coeffs,
+    const std::vector<std::vector<std::shared_ptr<const DirichletBC<T>>>>& bcs1,
+    const std::vector<xtl::span<const T>>& x0, double scale)
+{
+  fem::impl::apply_lifting(b, a, constants, coeffs, bcs1, x0, scale);
+}
+
+/// Modify b such that:
+///
+///   b <- b - scale * A_j (g_j - x0_j)
+///
+/// where j is a block (nest) index. For a non-blocked problem j = 0. The
+/// boundary conditions bcs1 are on the trial spaces V_j. The forms in
+/// [a] must have the same test space as L (from which b was built), but the
+/// trial space may differ. If x0 is not supplied, then it is treated as
+/// zero.
+///
+/// Ghost contributions are not accumulated (not sent to owner). Caller
+/// is responsible for calling VecGhostUpdateBegin/End.
+template <typename T>
+void apply_lifting(
+    xtl::span<T> b, const std::vector<std::shared_ptr<const Form<T>>>& a,
     const std::vector<std::vector<std::shared_ptr<const DirichletBC<T>>>>& bcs1,
     const std::vector<xtl::span<const T>>& x0, double scale)
 {
@@ -128,8 +151,7 @@ void apply_lifting(
                 [&_coeffs](const auto& c) { _coeffs.push_back(c.get()); });
   std::vector<xtl::span<const T>> _constants(constants.begin(),
                                              constants.end());
-
-  fem::impl::apply_lifting(b, a, _constants, _coeffs, bcs1, x0, scale);
+  apply_lifting(b, a, _constants, _coeffs, bcs1, x0, scale);
 }
 
 // -- Matrices ---------------------------------------------------------------
@@ -138,13 +160,16 @@ void apply_lifting(
 /// Assemble bilinear form into a matrix
 /// @param[in] mat_add The function for adding values into the matrix
 /// @param[in] a The bilinear from to assemble
+/// @param[in] constants Constants that appear in `a`
+/// @param[in] coeffs Coefficients that appear in `a`
 /// @param[in] bcs Boundary conditions to apply. For boundary condition
 ///  dofs the row and column are zeroed. The diagonal  entry is not set.
 template <typename T>
 void assemble_matrix(
     const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                             const std::int32_t*, const T*)>& mat_add,
-    const Form<T>& a,
+    const Form<T>& a, const xtl::span<const T>& constants,
+    const array2d<T>& coeffs,
     const std::vector<std::shared_ptr<const DirichletBC<T>>>& bcs)
 {
   // Index maps for dof ranges
@@ -176,13 +201,55 @@ void assemble_matrix(
     }
   }
 
+  // Assemble
+  impl::assemble_matrix(mat_add, a, constants, coeffs, dof_marker0,
+                        dof_marker1);
+}
+
+// Experimental
+/// Assemble bilinear form into a matrix
+/// @param[in] mat_add The function for adding values into the matrix
+/// @param[in] a The bilinear from to assemble
+/// @param[in] bcs Boundary conditions to apply. For boundary condition
+///  dofs the row and column are zeroed. The diagonal  entry is not set.
+template <typename T>
+void assemble_matrix(
+    const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
+                            const std::int32_t*, const T*)>& mat_add,
+    const Form<T>& a,
+    const std::vector<std::shared_ptr<const DirichletBC<T>>>& bcs)
+{
   // Prepare constants and coefficients
   const std::vector<T> constants = pack_constants(a);
   const array2d<T> coeffs = pack_coefficients(a);
 
   // Assemble
-  impl::assemble_matrix(mat_add, a, tcb::make_span(constants), coeffs,
-                        dof_marker0, dof_marker1);
+  assemble_matrix(mat_add, a, tcb::make_span(constants), coeffs, bcs);
+}
+
+/// Assemble bilinear form into a matrix. Matrix must already be
+/// initialised. Does not zero or finalise the matrix.
+/// @param[in] mat_add The function for adding values into the matrix
+/// @param[in] a The bilinear form to assemble
+/// @param[in] constants Constants that appear in `a`
+/// @param[in] coeffs Coefficients that appear in `a`
+/// @param[in] dof_marker0 Boundary condition markers for the rows. If
+/// bc[i] is true then rows i in A will be zeroed. The index i is a
+/// local index.
+/// @param[in] dof_marker1 Boundary condition markers for the columns.
+/// If bc[i] is true then rows i in A will be zeroed. The index i is a
+/// local index.
+template <typename T>
+void assemble_matrix(
+    const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
+                            const std::int32_t*, const T*)>& mat_add,
+    const Form<T>& a, const xtl::span<const T>& constants,
+    const array2d<T>& coeffs, const std::vector<bool>& dof_marker0,
+    const std::vector<bool>& dof_marker1)
+
+{
+  impl::assemble_matrix(mat_add, a, constants, coeffs, dof_marker0,
+                        dof_marker1);
 }
 
 /// Assemble bilinear form into a matrix. Matrix must already be
@@ -208,8 +275,8 @@ void assemble_matrix(
   const array2d<T> coeffs = pack_coefficients(a);
 
   // Assemble
-  impl::assemble_matrix(mat_add, a, tcb::make_span(constants), coeffs,
-                        dof_marker0, dof_marker1);
+  assemble_matrix(mat_add, a, tcb::make_span(constants), coeffs, dof_marker0,
+                  dof_marker1);
 }
 
 /// Sets a value to the diagonal of a matrix for specified rows. It is
