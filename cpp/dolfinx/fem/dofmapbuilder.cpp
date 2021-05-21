@@ -427,7 +427,8 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
 
       // Number and values to send and receive
       const int num_indices = global[d].size();
-      std::vector<int> num_indices_recv(indegree);
+      // NB add 1 for OpenMPI to ensure vector is allocated when indegree = 0
+      std::vector<int> num_indices_recv(indegree + 1);
       MPI_Neighbor_allgather(&num_indices, 1, MPI_INT, num_indices_recv.data(),
                              1, MPI_INT, comm[d]);
 
@@ -435,8 +436,8 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
       // number of received items.
       std::vector<int>& disp = recv_offsets[d];
       disp.resize(indegree + 1);
-      std::partial_sum(num_indices_recv.begin(), num_indices_recv.end(),
-                       disp.begin() + 1);
+      std::partial_sum(num_indices_recv.begin(),
+                       num_indices_recv.begin() + indegree, disp.begin() + 1);
 
       // TODO: use MPI_Ineighbor_alltoallv
       // Send global index of dofs with bcs to all neighbors
