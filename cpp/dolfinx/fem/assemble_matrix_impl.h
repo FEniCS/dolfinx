@@ -32,7 +32,8 @@ template <typename T>
 void assemble_matrix(
     const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                             const std::int32_t*, const T*)>& mat_set_values,
-    const Form<T>& a, const std::vector<bool>& bc0,
+    const Form<T>& a, const xtl::span<const T>& constants,
+    const array2d<T>& coeffs, const std::vector<bool>& bc0,
     const std::vector<bool>& bc1);
 
 /// Execute kernel over cells and accumulate result in matrix
@@ -41,51 +42,52 @@ void assemble_cells(
     const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                             const std::int32_t*, const T*)>& mat_set_values,
     const mesh::Geometry& geometry,
-    const std::vector<std::int32_t>& active_cells,
+    const xtl::span<const std::int32_t>& active_cells,
     const graph::AdjacencyList<std::int32_t>& dofmap0, const int bs0,
     const graph::AdjacencyList<std::int32_t>& dofmap1, const int bs1,
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& kernel,
-    const array2d<T>& coeffs, const std::vector<T>& constants,
-    const std::vector<std::uint32_t>& cell_info);
+    const array2d<T>& coeffs, const xtl::span<const T>& constants,
+    const xtl::span<const std::uint32_t>& cell_info);
 
 /// Execute kernel over exterior facets and  accumulate result in Mat
 template <typename T>
 void assemble_exterior_facets(
     const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                             const std::int32_t*, const T*)>& mat_set_values,
-    const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_facets,
+    const mesh::Mesh& mesh, const xtl::span<const std::int32_t>& active_facets,
     const graph::AdjacencyList<std::int32_t>& dofmap0, int bs0,
     const graph::AdjacencyList<std::int32_t>& dofmap1, int bs1,
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& fn,
-    const array2d<T>& coeffs, const std::vector<T>& constants,
-    const std::vector<std::uint32_t>& cell_info,
-    const std::vector<std::uint8_t>& perms);
+    const array2d<T>& coeffs, const xtl::span<const T>& constants,
+    const xtl::span<const std::uint32_t>& cell_info,
+    const xtl::span<const std::uint8_t>& perms);
 
 /// Execute kernel over interior facets and  accumulate result in Mat
 template <typename T>
 void assemble_interior_facets(
     const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                             const std::int32_t*, const T*)>& mat_set_values,
-    const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_facets,
+    const mesh::Mesh& mesh, const xtl::span<const std::int32_t>& active_facets,
     const DofMap& dofmap0, int bs0, const DofMap& dofmap1, int bs1,
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& kernel,
-    const array2d<T>& coeffs, const std::vector<int>& offsets,
-    const std::vector<T>& constants,
-    const std::vector<std::uint32_t>& cell_info,
-    const std::vector<std::uint8_t>& perms);
+    const array2d<T>& coeffs, const xtl::span<const int>& offsets,
+    const xtl::span<const T>& constants,
+    const xtl::span<const std::uint32_t>& cell_info,
+    const xtl::span<const std::uint8_t>& perms);
 
 //-----------------------------------------------------------------------------
 template <typename T>
 void assemble_matrix(
     const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                             const std::int32_t*, const T*)>& mat_set_values,
-    const Form<T>& a, const std::vector<bool>& bc0,
+    const Form<T>& a, const xtl::span<const T>& constants,
+    const array2d<T>& coeffs, const std::vector<bool>& bc0,
     const std::vector<bool>& bc1)
 {
   std::shared_ptr<const mesh::Mesh> mesh = a.mesh();
@@ -105,12 +107,6 @@ void assemble_matrix(
   const int bs0 = dofmap0->bs();
   const graph::AdjacencyList<std::int32_t>& dofs1 = dofmap1->list();
   const int bs1 = dofmap1->bs();
-
-  // Prepare constants
-  const std::vector<T> constants = pack_constants(a);
-
-  // Prepare coefficients
-  const array2d<T> coeffs = pack_coefficients(a);
 
   const bool needs_permutation_data = a.needs_permutation_data();
   if (needs_permutation_data)
@@ -166,14 +162,14 @@ void assemble_cells(
     const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                             const std::int32_t*, const T*)>& mat_set,
     const mesh::Geometry& geometry,
-    const std::vector<std::int32_t>& active_cells,
+    const xtl::span<const std::int32_t>& active_cells,
     const graph::AdjacencyList<std::int32_t>& dofmap0, const int bs0,
     const graph::AdjacencyList<std::int32_t>& dofmap1, const int bs1,
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& kernel,
-    const array2d<T>& coeffs, const std::vector<T>& constants,
-    const std::vector<std::uint32_t>& cell_info)
+    const array2d<T>& coeffs, const xtl::span<const T>& constants,
+    const xtl::span<const std::uint32_t>& cell_info)
 {
   const std::size_t gdim = geometry.dim();
 
@@ -250,15 +246,15 @@ template <typename T>
 void assemble_exterior_facets(
     const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                             const std::int32_t*, const T*)>& mat_set_values,
-    const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_facets,
+    const mesh::Mesh& mesh, const xtl::span<const std::int32_t>& active_facets,
     const graph::AdjacencyList<std::int32_t>& dofmap0, int bs0,
     const graph::AdjacencyList<std::int32_t>& dofmap1, int bs1,
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& kernel,
-    const array2d<T>& coeffs, const std::vector<T>& constants,
-    const std::vector<std::uint32_t>& cell_info,
-    const std::vector<std::uint8_t>& perms)
+    const array2d<T>& coeffs, const xtl::span<const T>& constants,
+    const xtl::span<const std::uint32_t>& cell_info,
+    const xtl::span<const std::uint8_t>& perms)
 {
   const std::size_t gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();
@@ -352,15 +348,15 @@ template <typename T>
 void assemble_interior_facets(
     const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                             const std::int32_t*, const T*)>& mat_set_values,
-    const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_facets,
+    const mesh::Mesh& mesh, const xtl::span<const std::int32_t>& active_facets,
     const DofMap& dofmap0, int bs0, const DofMap& dofmap1, int bs1,
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& fn,
-    const array2d<T>& coeffs, const std::vector<int>& offsets,
-    const std::vector<T>& constants,
-    const std::vector<std::uint32_t>& cell_info,
-    const std::vector<std::uint8_t>& perms)
+    const array2d<T>& coeffs, const xtl::span<const int>& offsets,
+    const xtl::span<const T>& constants,
+    const xtl::span<const std::uint32_t>& cell_info,
+    const xtl::span<const std::uint8_t>& perms)
 {
   const std::size_t gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();
@@ -402,7 +398,7 @@ void assemble_interior_facets(
     assert(it1 != facets1.end());
     const int local_facet1 = std::distance(facets1.begin(), it1);
 
-    const std::array local_facet{local_facet0, local_facet1};
+    const std::array local_facet = {local_facet0, local_facet1};
 
     // Get cell geometry
     auto x_dofs0 = x_dofmap.links(cells[0]);
