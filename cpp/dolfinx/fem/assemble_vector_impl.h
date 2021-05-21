@@ -126,6 +126,9 @@ void _lift_bc_cells(
     const xtl::span<const T>& bc_values1, const std::vector<bool>& bc_markers1,
     const xtl::span<const T>& x0, double scale)
 {
+  assert(_bs0 < 0 or _bs0 == bs0);
+  assert(_bs1 < 0 or _bs1 == bs1);
+
   // Prepare cell geometry
   const std::size_t gdim = geometry.dim();
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
@@ -711,18 +714,17 @@ void assemble_cells(
 
     // Scatter cell vector to 'global' vector array
     auto dofs = dofmap.links(c);
-    for (int i = 0; i < num_dofs; ++i)
+    if constexpr (_bs > 0)
     {
-      if constexpr (_bs > 0)
-      {
+      for (int i = 0; i < num_dofs; ++i)
         for (int k = 0; k < _bs; ++k)
           b[_bs * dofs[i] + k] += be[_bs * i + k];
-      }
-      else
-      {
+    }
+    else
+    {
+      for (int i = 0; i < num_dofs; ++i)
         for (int k = 0; k < bs; ++k)
           b[bs * dofs[i] + k] += be[bs * i + k];
-      }
     }
   }
 }
@@ -788,18 +790,17 @@ void assemble_exterior_facets(
 
     // Add element vector to global vector
     auto dofs = dofmap.links(cell);
-    for (int i = 0; i < num_dofs; ++i)
+    if constexpr (_bs > 0)
     {
-      if constexpr (_bs > 0)
-      {
+      for (int i = 0; i < num_dofs; ++i)
         for (int k = 0; k < _bs; ++k)
           b[_bs * dofs[i] + k] += be[_bs * i + k];
-      }
-      else
-      {
+    }
+    else
+    {
+      for (int i = 0; i < num_dofs; ++i)
         for (int k = 0; k < bs; ++k)
           b[bs * dofs[i] + k] += be[bs * i + k];
-      }
     }
   }
 }
