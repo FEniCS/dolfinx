@@ -44,7 +44,12 @@ T assemble_scalar(const Form<T>& M)
 template <typename T>
 void assemble_vector(xtl::span<T> b, const Form<T>& L)
 {
-  fem::impl::assemble_vector(b, L);
+  // Prepare constants and coefficients
+  const std::vector<T> constants = pack_constants(L);
+  const array2d<T> coeffs = pack_coefficients(L);
+
+  // Assemble
+  fem::impl::assemble_vector(b, L, tcb::make_span(constants), coeffs);
 }
 
 // FIXME: clarify how x0 is used
@@ -71,7 +76,29 @@ void apply_lifting(
     const std::vector<std::vector<std::shared_ptr<const DirichletBC<T>>>>& bcs1,
     const std::vector<xtl::span<const T>>& x0, double scale)
 {
-  fem::impl::apply_lifting(b, a, bcs1, x0, scale);
+  std::vector<std::unique_ptr<array2d<T>>> coeffs;
+  std::vector<std::vector<T>> constants;
+  for (auto _a : a)
+  {
+    if (_a)
+    {
+      coeffs.push_back(std::make_unique<array2d<T>>(pack_coefficients(*_a)));
+      constants.push_back(pack_constants(*_a));
+    }
+    else
+    {
+      coeffs.push_back(nullptr);
+      constants.push_back({});
+    }
+  }
+
+  std::vector<const array2d<T>*> _coeffs;
+  std::for_each(coeffs.begin(), coeffs.end(),
+                [&_coeffs](const auto& c) { _coeffs.push_back(c.get()); });
+  std::vector<xtl::span<const T>> _constants(constants.begin(),
+                                             constants.end());
+
+  fem::impl::apply_lifting(b, a, _constants, _coeffs, bcs1, x0, scale);
 }
 
 // -- Matrices ---------------------------------------------------------------
