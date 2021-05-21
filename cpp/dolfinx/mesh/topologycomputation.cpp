@@ -424,11 +424,15 @@ compute_entities_by_key_matching(
   // Initialize local array of entities
   const std::int8_t num_entities_per_cell
       = mesh::cell_num_entities(cell_type, dim);
-  // NB for prism cell, this could be 3 or 4, for facet. By choosing entity 1,
-  // we will get width 4, and backfill with -1 for triangle
-  // facets.
-  const std::size_t num_vertices_per_entity
-      = mesh::num_cell_vertices(mesh::cell_entity_type(cell_type, dim, 1));
+
+  // For some cells, the num_vertices varies per facet (3 or 4)
+  int max_vertices_per_entity = 0;
+  for (int i = 0; i < num_entities_per_cell; ++i)
+  {
+    max_vertices_per_entity = std::max(
+        max_vertices_per_entity,
+        mesh::num_cell_vertices(mesh::cell_entity_type(cell_type, dim, i)));
+  }
 
   // Create map from cell vertices to entity vertices
   auto e_vertices = mesh::get_entity_vertices(cell_type, dim);
@@ -436,7 +440,8 @@ compute_entities_by_key_matching(
   // List of vertices for each entity in each cell
   const std::size_t num_cells = cells.num_nodes();
   xt::xtensor<std::int32_t, 2> entity_list(
-      {num_cells * num_entities_per_cell, num_vertices_per_entity});
+      {num_cells * num_entities_per_cell,
+       (std::size_t)max_vertices_per_entity});
   for (std::size_t c = 0; c < num_cells; ++c)
   {
     // Get vertices from cell
@@ -447,9 +452,9 @@ compute_entities_by_key_matching(
       const std::int32_t idx = c * num_entities_per_cell + i;
       auto ev = e_vertices.links(i);
 
-      // Get entity vertices
-      // assert(e_vertices.num_links(i) == (int)num_vertices_per_entity);
-      entity_list(idx, num_vertices_per_entity - 1) = -1;
+      // Get entity vertices padding with -1 if fewer than
+      // max_vertices_per_entity
+      entity_list(idx, max_vertices_per_entity - 1) = -1;
       for (int j = 0; j < e_vertices.num_links(i); ++j)
         entity_list(idx, j) = vertices[ev[j]];
     }
@@ -491,9 +496,9 @@ compute_entities_by_key_matching(
   for (std::size_t i = 0; i < entity_list.shape(0); ++i)
   {
     size_ev[local_index[i]]
-        = (entity_list(i, num_vertices_per_entity - 1) == -1)
-              ? (num_vertices_per_entity - 1)
-              : num_vertices_per_entity;
+        = (entity_list(i, max_vertices_per_entity - 1) == -1)
+              ? (max_vertices_per_entity - 1)
+              : max_vertices_per_entity;
   }
   for (int i = 0; i < entity_count; ++i)
     offsets_ev[i + 1] = offsets_ev[i] + size_ev[i];

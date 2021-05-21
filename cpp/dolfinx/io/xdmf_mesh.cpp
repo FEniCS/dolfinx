@@ -26,6 +26,9 @@ void xdmf_mesh::add_topology_data(
 
   const int tdim = topology.dim();
 
+  if (tdim == 2 and topology.cell_type() == mesh::CellType::prism)
+    throw std::runtime_error("More work needed for prism cell");
+
   // Get entity 'cell' type
   const mesh::CellType entity_cell_type
       = mesh::cell_entity_type(topology.cell_type(), dim, 0);

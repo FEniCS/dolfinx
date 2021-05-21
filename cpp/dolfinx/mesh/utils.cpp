@@ -64,6 +64,9 @@ std::vector<double> mesh::h(const Mesh& mesh,
   if (dim != mesh.topology().dim())
     throw std::runtime_error("Cell size when dim ne tdim  requires updating.");
 
+  if (mesh.topology().cell_type() == mesh::CellType::prism and dim == 2)
+    throw std::runtime_error("More work needed for prism cell");
+
   // Get number of cell vertices
   const mesh::CellType type
       = cell_entity_type(mesh.topology().cell_type(), dim, 0);
@@ -102,6 +105,9 @@ xt::xtensor<double, 2>
 mesh::cell_normals(const mesh::Mesh& mesh, int dim,
                    const xtl::span<const std::int32_t>& entities)
 {
+  if (mesh.topology().cell_type() == mesh::CellType::prism and dim == 2)
+    throw std::runtime_error("More work needed for prism cell");
+
   const int gdim = mesh.geometry().dim();
   const mesh::CellType type
       = mesh::cell_entity_type(mesh.topology().cell_type(), dim, 0);
@@ -385,7 +391,7 @@ mesh::entities_to_geometry(const mesh::Mesh& mesh, int dim,
 {
   mesh::CellType cell_type = mesh.topology().cell_type();
 
-  if (cell_type == mesh::CellType::prism)
+  if (cell_type == mesh::CellType::prism and dim == 2)
     throw std::runtime_error("More work needed for prism cells");
 
   const std::size_t num_entity_vertices

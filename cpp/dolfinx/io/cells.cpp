@@ -382,6 +382,9 @@ io::cells::compute_permutation(const xt::xtensor<std::int64_t, 2>& cells,
 std::int8_t io::cells::get_vtk_cell_type(const dolfinx::mesh::Mesh& mesh,
                                          int dim)
 {
+  if (mesh.topology().cell_type() == mesh::CellType::prism)
+    throw std::runtime_error("More work needed for prism cell");
+
   // Get cell type
   mesh::CellType cell_type
       = mesh::cell_entity_type(mesh.topology().cell_type(), dim, 0);

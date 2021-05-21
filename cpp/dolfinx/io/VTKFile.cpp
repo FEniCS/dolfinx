@@ -77,6 +77,9 @@ std::string get_counter(const pugi::xml_node& node, const std::string& name)
 /// Get the VTK cell type integer
 std::int8_t get_vtk_cell_type(mesh::CellType cell, int dim)
 {
+  if (cell == mesh::CellType::prism and dim == 2)
+    throw std::runtime_error("More work needed for prism cell");
+
   // Get cell type
   mesh::CellType cell_type = mesh::cell_entity_type(cell, dim, 0);
 
