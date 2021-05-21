@@ -48,7 +48,7 @@ void assemble_cells(
     const graph::AdjacencyList<std::int32_t>& dofmap, const int bs,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& kernel,
-    const array2d<T>& coeffs, const xtl::span<const T>& constant_values,
+    const xtl::span<const T>& constants, const array2d<T>& coeffs,
     const xtl::span<const std::uint32_t>& cell_info);
 
 /// Execute kernel over cells and accumulate result in vector
@@ -59,7 +59,7 @@ void assemble_exterior_facets(
     const graph::AdjacencyList<std::int32_t>& dofmap, const int bs,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& fn,
-    const array2d<T>& coeffs, const xtl::span<const T>& constant_values,
+    const xtl::span<const T>& constants, const array2d<T>& coeffs,
     const xtl::span<const std::uint32_t>& cell_info,
     const xtl::span<const std::uint8_t>& perms);
 
@@ -71,8 +71,8 @@ void assemble_interior_facets(
     const fem::DofMap& dofmap,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& fn,
-    const array2d<T>& coeffs, const xtl::span<const int>& offsets,
-    const xtl::span<const T>& constant_values,
+    const xtl::span<const T>& constants, const array2d<T>& coeffs,
+    const xtl::span<const int>& offsets,
     const xtl::span<const std::uint32_t>& cell_info,
     const xtl::span<const std::uint8_t>& perms);
 
@@ -109,8 +109,8 @@ void apply_lifting(
 ////
 /// @param[in,out] b The vector to be modified
 /// @param[in] a The bilinear form that generates A
-/// @param[in] coeffs Coefficients that appear in `a`
 /// @param[in] constants Constants that appear in `a`
+/// @param[in] coeffs Coefficients that appear in `a`
 /// @param[in] bc_values1 The boundary condition 'values'
 /// @param[in] bc_markers1 The indices (columns of A, rows of x) to
 /// which bcs belong
@@ -133,7 +133,7 @@ void _lift_bc_cells(
     const xtl::span<const std::int32_t>& active_cells,
     const graph::AdjacencyList<std::int32_t>& dofmap0, int bs0,
     const graph::AdjacencyList<std::int32_t>& dofmap1, int bs1,
-    const array2d<T>& coeffs, const xtl::span<const T>& constant_values,
+    const xtl::span<const T>& constants, const array2d<T>& coeffs,
     const xtl::span<const std::uint32_t>& cell_info,
     const xtl::span<const T>& bc_values1, const std::vector<bool>& bc_markers1,
     const xtl::span<const T>& x0, double scale)
@@ -190,7 +190,7 @@ void _lift_bc_cells(
     auto coeff_array = coeffs.row(c);
     Ae.resize(num_rows * num_cols);
     std::fill(Ae.begin(), Ae.end(), 0);
-    kernel(Ae.data(), coeff_array.data(), constant_values.data(),
+    kernel(Ae.data(), coeff_array.data(), constants.data(),
            coordinate_dofs.data(), nullptr, nullptr, cell_info[c]);
 
     // Size data structure for assembly
@@ -227,7 +227,7 @@ void _lift_bc_exterior_facets(
     const xtl::span<const std::int32_t>& active_facets,
     const graph::AdjacencyList<std::int32_t>& dofmap0, int bs0,
     const graph::AdjacencyList<std::int32_t>& dofmap1, int bs1,
-    const array2d<T>& coeffs, const xtl::span<const T>& constant_values,
+    const xtl::span<const T>& constants, const array2d<T>& coeffs,
     const xtl::span<const std::uint32_t>& cell_info,
     const xtl::span<const std::uint8_t>& perms,
     const xtl::span<const T>& bc_values1, const std::vector<bool>& bc_markers1,
@@ -305,7 +305,7 @@ void _lift_bc_exterior_facets(
     auto coeff_array = coeffs.row(cell);
     Ae.resize(num_rows * num_cols);
     std::fill(Ae.begin(), Ae.end(), 0);
-    kernel(Ae.data(), coeff_array.data(), constant_values.data(),
+    kernel(Ae.data(), coeff_array.data(), constants.data(),
            coordinate_dofs.data(), &local_facet,
            &perms[cell * facets.size() + local_facet], cell_info[cell]);
 
@@ -343,8 +343,8 @@ void _lift_bc_interior_facets(
     const xtl::span<const std::int32_t>& active_facets,
     const graph::AdjacencyList<std::int32_t>& dofmap0, int bs0,
     const graph::AdjacencyList<std::int32_t>& dofmap1, int bs1,
-    const array2d<T>& coeffs, const std::vector<int>& offsets,
-    const xtl::span<const T>& constant_values,
+    const xtl::span<const T>& constants, const array2d<T>& coeffs,
+    const std::vector<int>& offsets,
     const xtl::span<const std::uint32_t>& cell_info,
     const xtl::span<const std::uint8_t>& perms,
     const xtl::span<const T>& bc_values1, const std::vector<bool>& bc_markers1,
@@ -481,7 +481,7 @@ void _lift_bc_interior_facets(
     const int facets_per_cell = facets0.size();
     const std::array perm{perms[cells[0] * facets_per_cell + local_facet[0]],
                           perms[cells[1] * facets_per_cell + local_facet[1]]};
-    kernel(Ae.data(), coeff_array.data(), constant_values.data(),
+    kernel(Ae.data(), coeff_array.data(), constants.data(),
            coordinate_dofs.data(), local_facet.data(), perm.data(),
            cell_info[cells[0]]);
 
@@ -568,7 +568,7 @@ void assemble_vector(xtl::span<T> b, const Form<T>& L,
     const std::vector<std::int32_t>& active_cells
         = L.domains(IntegralType::cell, i);
     fem::impl::assemble_cells(b, mesh->geometry(), active_cells, dofs, bs, fn,
-                              coeffs, constants, cell_info);
+                              constants, coeffs, cell_info);
   }
 
   if (L.num_integrals(IntegralType::exterior_facet) > 0
@@ -587,7 +587,7 @@ void assemble_vector(xtl::span<T> b, const Form<T>& L,
       const std::vector<std::int32_t>& active_facets
           = L.domains(IntegralType::exterior_facet, i);
       fem::impl::assemble_exterior_facets(b, *mesh, active_facets, dofs, bs, fn,
-                                          coeffs, constants, cell_info, perms);
+                                          constants, coeffs, cell_info, perms);
     }
 
     const std::vector<int> c_offsets = L.coefficient_offsets();
@@ -597,7 +597,7 @@ void assemble_vector(xtl::span<T> b, const Form<T>& L,
       const std::vector<std::int32_t>& active_facets
           = L.domains(IntegralType::interior_facet, i);
       fem::impl::assemble_interior_facets(b, *mesh, active_facets, *dofmap, fn,
-                                          coeffs, c_offsets, constants,
+                                          constants, coeffs, c_offsets,
                                           cell_info, perms);
     }
   }
@@ -610,7 +610,7 @@ void assemble_cells(
     const graph::AdjacencyList<std::int32_t>& dofmap, const int bs,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& kernel,
-    const array2d<T>& coeffs, const xtl::span<const T>& constant_values,
+    const xtl::span<const T>& constants, const array2d<T>& coeffs,
     const xtl::span<const std::uint32_t>& cell_info)
 {
   const std::size_t gdim = geometry.dim();
@@ -641,7 +641,7 @@ void assemble_cells(
 
     // Tabulate vector for cell
     std::fill(be.begin(), be.end(), 0);
-    kernel(be.data(), coeffs.row(c).data(), constant_values.data(),
+    kernel(be.data(), coeffs.row(c).data(), constants.data(),
            coordinate_dofs.data(), nullptr, nullptr, cell_info[c]);
 
     // Scatter cell vector to 'global' vector array
@@ -659,7 +659,7 @@ void assemble_exterior_facets(
     const graph::AdjacencyList<std::int32_t>& dofmap, const int bs,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& fn,
-    const array2d<T>& coeffs, const xtl::span<const T>& constant_values,
+    const xtl::span<const T>& constants, const array2d<T>& coeffs,
     const xtl::span<const std::uint32_t>& cell_info,
     const xtl::span<const std::uint8_t>& perms)
 {
@@ -705,7 +705,7 @@ void assemble_exterior_facets(
 
     // Tabulate element vector
     std::fill(be.begin(), be.end(), 0);
-    fn(be.data(), coeffs.row(cell).data(), constant_values.data(),
+    fn(be.data(), coeffs.row(cell).data(), constants.data(),
        coordinate_dofs.data(), &local_facet,
        &perms[cell * facets.size() + local_facet], cell_info[cell]);
 
@@ -724,8 +724,8 @@ void assemble_interior_facets(
     const fem::DofMap& dofmap,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& fn,
-    const array2d<T>& coeffs, const xtl::span<const int>& offsets,
-    const xtl::span<const T>& constant_values,
+    const xtl::span<const T>& constants, const array2d<T>& coeffs,
+    const xtl::span<const int>& offsets,
     const xtl::span<const std::uint32_t>& cell_info,
     const xtl::span<const std::uint8_t>& perms)
 {
@@ -807,9 +807,8 @@ void assemble_interior_facets(
     std::fill(be.begin(), be.end(), 0);
     const std::array perm{perms[cells[0] * facets_per_cell + local_facet[0]],
                           perms[cells[1] * facets_per_cell + local_facet[1]]};
-    fn(be.data(), coeff_array.data(), constant_values.data(),
-       coordinate_dofs.data(), local_facet.data(), perm.data(),
-       cell_info[cells[0]]);
+    fn(be.data(), coeff_array.data(), constants.data(), coordinate_dofs.data(),
+       local_facet.data(), perm.data(), cell_info[cells[0]]);
 
     // Add element vector to global vector
     for (std::size_t i = 0; i < dmap0.size(); ++i)
@@ -913,7 +912,7 @@ void lift_bc(xtl::span<T> b, const Form<T>& a,
     const std::vector<std::int32_t>& active_cells
         = a.domains(IntegralType::cell, i);
     _lift_bc_cells(b, mesh->geometry(), kernel, active_cells, dofmap0, bs0,
-                   dofmap1, bs1, coeffs, constants, cell_info, bc_values1,
+                   dofmap1, bs1, constants, coeffs, cell_info, bc_values1,
                    bc_markers1, x0, scale);
   }
 
@@ -933,7 +932,7 @@ void lift_bc(xtl::span<T> b, const Form<T>& a,
       const std::vector<std::int32_t>& active_facets
           = a.domains(IntegralType::exterior_facet, i);
       _lift_bc_exterior_facets(b, *mesh, kernel, active_facets, dofmap0, bs0,
-                               dofmap1, bs1, coeffs, constants, cell_info,
+                               dofmap1, bs1, constants, coeffs, cell_info,
                                perms, bc_values1, bc_markers1, x0, scale);
     }
 
@@ -944,7 +943,7 @@ void lift_bc(xtl::span<T> b, const Form<T>& a,
       const std::vector<std::int32_t>& active_facets
           = a.domains(IntegralType::interior_facet, i);
       _lift_bc_interior_facets(b, *mesh, kernel, active_facets, dofmap0, bs0,
-                               dofmap1, bs1, coeffs, c_offsets, constants,
+                               dofmap1, bs1, constants, coeffs, c_offsets,
                                cell_info, perms, bc_values1, bc_markers1, x0,
                                scale);
     }
