@@ -96,7 +96,7 @@ from ufl import dx, grad, inner
 # Create mesh and define function space
 mesh = BoxMesh(
     MPI.COMM_WORLD,
-    [np.array([0, 0, 0]), np.array([1, 1, 1])], [12, 12, 12],
+    [np.array([0, 0, 0]), np.array([1, 1, .3])], [15, 15, 5],
     CellType.prism, dolfinx.cpp.mesh.GhostMode.none)
 
 V = FunctionSpace(mesh, ("Lagrange", 1))

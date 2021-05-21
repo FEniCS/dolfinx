@@ -16,7 +16,6 @@
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/utils.h>
 #include <dolfinx/graph/AdjacencyList.h>
-#include <limits>
 #include <memory>
 #include <numeric>
 #include <random>
@@ -426,7 +425,8 @@ compute_entities_by_key_matching(
   const std::int8_t num_entities_per_cell
       = mesh::cell_num_entities(cell_type, dim);
   // NB for prism cell, this could be 3 or 4, for facet. By choosing entity 1,
-  // we will get width 4, and backfill with -1 for triangle facets.
+  // we will get width 4, and backfill with -1 for triangle
+  // facets.
   const std::size_t num_vertices_per_entity
       = mesh::num_cell_vertices(mesh::cell_entity_type(cell_type, dim, 1));
 
@@ -449,19 +449,18 @@ compute_entities_by_key_matching(
 
       // Get entity vertices
       // assert(e_vertices.num_links(i) == (int)num_vertices_per_entity);
-      entity_list(idx, num_vertices_per_entity - 1)
-          = std::numeric_limits<std::int32_t>::max();
+      entity_list(idx, num_vertices_per_entity - 1) = -1;
       for (int j = 0; j < e_vertices.num_links(i); ++j)
         entity_list(idx, j) = vertices[ev[j]];
     }
   }
 
-  // Copy list and sort vertices of each entity into order
+  // Copy list and sort vertices of each entity into (reverse) order
   xt::xtensor<std::int32_t, 2> entity_list_sorted = entity_list;
   for (std::size_t i = 0; i < entity_list_sorted.shape(0); ++i)
   {
     std::sort(xt::row(entity_list_sorted, i).begin(),
-              xt::row(entity_list_sorted, i).end());
+              xt::row(entity_list_sorted, i).end(), std::greater<>());
   }
 
   // Sort the list and label uniquely
@@ -491,10 +490,10 @@ compute_entities_by_key_matching(
   std::vector<int> size_ev(entity_count);
   for (std::size_t i = 0; i < entity_list.shape(0); ++i)
   {
-    size_ev[local_index[i]] = (entity_list(i, num_vertices_per_entity - 1)
-                               == std::numeric_limits<std::int32_t>::max())
-                                  ? (num_vertices_per_entity - 1)
-                                  : num_vertices_per_entity;
+    size_ev[local_index[i]]
+        = (entity_list(i, num_vertices_per_entity - 1) == -1)
+              ? (num_vertices_per_entity - 1)
+              : num_vertices_per_entity;
   }
   for (int i = 0; i < entity_count; ++i)
     offsets_ev[i + 1] = offsets_ev[i] + size_ev[i];
@@ -572,23 +571,20 @@ compute_from_map(const graph::AdjacencyList<std::int32_t>& c_d0_0,
                  const graph::AdjacencyList<std::int32_t>& c_d1_0, int d0,
                  int d1)
 {
-  // Only possible case
-  assert(d0 == 2);
-  assert(d1 == 1);
+  // Only possible case is facet->edge
+  assert(d0 == 2 and d1 == 1);
 
-  // Make a map from the sorted d1 entity vertices to the d1 entity
-  // index
-  boost::unordered_map<std::vector<std::int32_t>, std::int32_t> entity_to_index;
-  entity_to_index.reserve(c_d1_0.num_nodes());
+  // Make a map from the sorted edge vertices to the edge index
+  boost::unordered_map<std::array<std::int32_t, 2>, std::int32_t> edge_to_index;
+  edge_to_index.reserve(c_d1_0.num_nodes());
 
-  const std::size_t num_verts_d1 = 2;
-  std::vector<std::int32_t> key(num_verts_d1);
+  std::array<std::int32_t, 2> key;
   for (int e = 0; e < c_d1_0.num_nodes(); ++e)
   {
     xtl::span<const std::int32_t> v = c_d1_0.links(e);
     assert(v.size() == key.size());
     std::partial_sort_copy(v.begin(), v.end(), key.begin(), key.end());
-    entity_to_index.insert({key, e});
+    edge_to_index.insert({key, e});
   }
 
   // Number of edges for a tri/quad is the same as number of vertices
@@ -597,7 +593,7 @@ compute_from_map(const graph::AdjacencyList<std::int32_t>& c_d0_0,
   connections.reserve(c_d0_0.array().size());
   std::vector<std::int32_t> offsets(c_d0_0.offsets());
 
-  // Search for d1 entities of d0 in map, and recover index
+  // Search for edges of facet in map, and recover index
   const auto tri_vertices_ref
       = mesh::get_entity_vertices(mesh::CellType::triangle, 1);
   const auto quad_vertices_ref
@@ -606,29 +602,15 @@ compute_from_map(const graph::AdjacencyList<std::int32_t>& c_d0_0,
   for (int e = 0; e < c_d0_0.num_nodes(); ++e)
   {
     auto e0 = c_d0_0.links(e);
-    if (e0.size() == 3)
+    auto vref = (e0.size() == 3) ? &tri_vertices_ref : &quad_vertices_ref;
+    for (std::size_t i = 0; i < e0.size(); ++i)
     {
-      for (int i = 0; i < 3; ++i)
-      {
-        for (int j = 0; j < 2; ++j)
-          key[j] = e0[tri_vertices_ref.links(i)[j]];
-        std::sort(key.begin(), key.end());
-        const auto it = entity_to_index.find(key);
-        assert(it != entity_to_index.end());
-        connections.push_back(it->second);
-      }
-    }
-    else
-    {
-      for (int i = 0; i < 4; ++i)
-      {
-        for (int j = 0; j < 2; ++j)
-          key[j] = e0[quad_vertices_ref.links(i)[j]];
-        std::sort(key.begin(), key.end());
-        const auto it = entity_to_index.find(key);
-        assert(it != entity_to_index.end());
-        connections.push_back(it->second);
-      }
+      for (int j = 0; j < 2; ++j)
+        key[j] = e0[vref->links(i)[j]];
+      std::sort(key.begin(), key.end());
+      const auto it = edge_to_index.find(key);
+      assert(it != edge_to_index.end());
+      connections.push_back(it->second);
     }
   }
 
