@@ -6,10 +6,12 @@
 
 #pragma once
 
+#include <dolfinx/common/array2d.h>
 #include <memory>
 #include <petscmat.h>
 #include <petscvec.h>
 #include <vector>
+#include <xtl/xspan.hpp>
 
 namespace dolfinx::common
 {
@@ -72,11 +74,52 @@ Vec create_vector_nest(
 /// responsible for calling VecGhostUpdateBegin/End.
 ///
 /// @param[in,out] b The PETsc vector to assemble the form into. The
-///   vector must already be initialised with the correct size. The
-///   process-local contribution of the form is assembled into this
-///   vector. It is not zeroed before assembly.
+/// vector must already be initialised with the correct size. The
+/// process-local contribution of the form is assembled into this
+/// vector. It is not zeroed before assembly.
+/// @param[in] L The linear form to assemble
+/// @param[in] constants The constants that appear in `L`
+/// @param[in] coeffs The coefficients that appear in `L`
+void assemble_vector_petsc(Vec b, const Form<PetscScalar>& L,
+                           const xtl::span<const PetscScalar>& constants,
+                           const array2d<PetscScalar>& coeffs);
+
+/// Assemble linear form into an already allocated PETSc vector. Ghost
+/// contributions are not accumulated (not sent to owner). Caller is
+/// responsible for calling VecGhostUpdateBegin/End.
+///
+/// @param[in,out] b The PETsc vector to assemble the form into. The
+/// vector must already be initialised with the correct size. The
+/// process-local contribution of the form is assembled into this
+/// vector. It is not zeroed before assembly.
 /// @param[in] L The linear form to assemble
 void assemble_vector_petsc(Vec b, const Form<PetscScalar>& L);
+
+// FIXME: clarify how x0 is used
+// FIXME: if bcs entries are set
+
+// FIXME: need to pass an array of Vec for x0?
+// FIXME: clarify zeroing of vector
+
+/// Modify b such that:
+///
+///   b <- b - scale * A_j (g_j - x0_j)
+///
+/// where j is a block (nest) index. For a non-blocked problem j = 0. The
+/// boundary conditions bcs1 are on the trial spaces V_j. The forms in
+/// [a] must have the same test space as L (from which b was built), but the
+/// trial space may differ. If x0 is not supplied, then it is treated as
+/// zero.
+///
+/// Ghost contributions are not accumulated (not sent to owner). Caller
+/// is responsible for calling VecGhostUpdateBegin/End.
+void apply_lifting_petsc(
+    Vec b, const std::vector<std::shared_ptr<const Form<PetscScalar>>>& a,
+    const std::vector<xtl::span<const PetscScalar>>& constants,
+    const std::vector<const array2d<PetscScalar>*>& coeffs,
+    const std::vector<
+        std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>>& bcs1,
+    const std::vector<Vec>& x0, double scale);
 
 // FIXME: clarify how x0 is used
 // FIXME: if bcs entries are set
