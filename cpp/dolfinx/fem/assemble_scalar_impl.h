@@ -82,7 +82,7 @@ T assemble_scalar(const fem::Form<T>& M, const xtl::span<const T>& constants,
     const std::vector<std::int32_t>& active_cells
         = M.domains(IntegralType::cell, i);
     value += fem::impl::assemble_cells(mesh->geometry(), active_cells, fn,
-                                       coeffs, constants, cell_info);
+                                       constants, coeffs, cell_info);
   }
 
   if (M.num_integrals(IntegralType::exterior_facet) > 0
@@ -102,7 +102,7 @@ T assemble_scalar(const fem::Form<T>& M, const xtl::span<const T>& constants,
       const std::vector<std::int32_t>& active_facets
           = M.domains(IntegralType::exterior_facet, i);
       value += fem::impl::assemble_exterior_facets(
-          *mesh, active_facets, fn, coeffs, constants, cell_info, perms);
+          *mesh, active_facets, fn, constants, coeffs, cell_info, perms);
     }
 
     const std::vector<int> c_offsets = M.coefficient_offsets();
@@ -112,7 +112,7 @@ T assemble_scalar(const fem::Form<T>& M, const xtl::span<const T>& constants,
       const std::vector<std::int32_t>& active_facets
           = M.domains(IntegralType::interior_facet, i);
       value += fem::impl::assemble_interior_facets(*mesh, active_facets, fn,
-                                                   coeffs, c_offsets, constants,
+                                                   constants, coeffs, c_offsets,
                                                    cell_info, perms);
     }
   }

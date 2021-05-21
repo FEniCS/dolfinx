@@ -24,8 +24,24 @@ class FunctionSpace;
 
 // -- Scalar ----------------------------------------------------------------
 
-/// Assemble functional into scalar. Caller is responsible for
-/// accumulation across processes.
+/// Assemble functional into scalar. The caller supplies the form
+/// constants and coefficients for this version, which has efficiency
+/// benefits if the data can be re-used for multiple calls.
+/// @note Caller is responsible for accumulation across processes.
+/// @param[in] M The form (functional) to assemble
+/// @param[in] constants The constants that appear in `M`
+/// @param[in] coeffs The coefficients that appear in `M`
+/// @return The contribution to the form (functional) from the local
+/// process
+template <typename T>
+T assemble_scalar(const Form<T>& M, const xtl::span<const T>& constants,
+                  const array2d<T>& coeffs)
+{
+  return fem::impl::assemble_scalar(M, constants, coeffs);
+}
+
+/// Assemble functional into scalar
+/// @note Caller is responsible for accumulation across processes.
 /// @param[in] M The form (functional) to assemble
 /// @return The contribution to the form (functional) from the local
 ///   process
@@ -34,10 +50,26 @@ T assemble_scalar(const Form<T>& M)
 {
   const std::vector<T> constants = pack_constants(M);
   const array2d<T> coeffs = pack_coefficients(M);
-  return fem::impl::assemble_scalar(M, tcb::make_span(constants), coeffs);
+  return assemble_scalar(M, tcb::make_span(constants), coeffs);
 }
 
 // -- Vectors ----------------------------------------------------------------
+
+/// Assemble linear form into a vector, The caller supplies the form
+/// constants and coefficients for this version, which has efficiency
+/// benefits if the data can be re-used for multiple calls.
+/// @param[in,out] b The vector to be assembled. It will not be zeroed
+/// before assembly.
+/// @param[in] L The linear forms to assemble into b
+/// @param[in] constants The constants that appear in `L`
+/// @param[in] coeffs The coefficients that appear in `L`
+template <typename T>
+void assemble_vector(xtl::span<T> b, const Form<T>& L,
+                     const xtl::span<const T>& constants,
+                     const array2d<T>& coeffs)
+{
+  fem::impl::assemble_vector(b, L, constants, coeffs);
+}
 
 /// Assemble linear form into a vector
 /// @param[in,out] b The vector to be assembled. It will not be zeroed
@@ -46,12 +78,9 @@ T assemble_scalar(const Form<T>& M)
 template <typename T>
 void assemble_vector(xtl::span<T> b, const Form<T>& L)
 {
-  // Prepare constants and coefficients
   const std::vector<T> constants = pack_constants(L);
   const array2d<T> coeffs = pack_coefficients(L);
-
-  // Assemble
-  fem::impl::assemble_vector(b, L, tcb::make_span(constants), coeffs);
+  assemble_vector(b, L, tcb::make_span(constants), coeffs);
 }
 
 // FIXME: clarify how x0 is used
