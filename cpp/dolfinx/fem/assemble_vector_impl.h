@@ -567,8 +567,8 @@ void assemble_vector(xtl::span<T> b, const Form<T>& L,
     const auto& fn = L.kernel(IntegralType::cell, i);
     const std::vector<std::int32_t>& active_cells
         = L.domains(IntegralType::cell, i);
-    fem::impl::assemble_cells(b, mesh->geometry(), active_cells, dofs, bs, fn,
-                              constants, coeffs, cell_info);
+    impl::assemble_cells(b, mesh->geometry(), active_cells, dofs, bs, fn,
+                         constants, coeffs, cell_info);
   }
 
   if (L.num_integrals(IntegralType::exterior_facet) > 0
@@ -586,8 +586,8 @@ void assemble_vector(xtl::span<T> b, const Form<T>& L,
       const auto& fn = L.kernel(IntegralType::exterior_facet, i);
       const std::vector<std::int32_t>& active_facets
           = L.domains(IntegralType::exterior_facet, i);
-      fem::impl::assemble_exterior_facets(b, *mesh, active_facets, dofs, bs, fn,
-                                          constants, coeffs, cell_info, perms);
+      impl::assemble_exterior_facets(b, *mesh, active_facets, dofs, bs, fn,
+                                     constants, coeffs, cell_info, perms);
     }
 
     const std::vector<int> c_offsets = L.coefficient_offsets();
@@ -596,9 +596,9 @@ void assemble_vector(xtl::span<T> b, const Form<T>& L,
       const auto& fn = L.kernel(IntegralType::interior_facet, i);
       const std::vector<std::int32_t>& active_facets
           = L.domains(IntegralType::interior_facet, i);
-      fem::impl::assemble_interior_facets(b, *mesh, active_facets, *dofmap, fn,
-                                          constants, coeffs, c_offsets,
-                                          cell_info, perms);
+      impl::assemble_interior_facets(b, *mesh, active_facets, *dofmap, fn,
+                                     constants, coeffs, c_offsets, cell_info,
+                                     perms);
     }
   }
 }

@@ -37,7 +37,7 @@ template <typename T>
 T assemble_scalar(const Form<T>& M, const xtl::span<const T>& constants,
                   const array2d<T>& coeffs)
 {
-  return fem::impl::assemble_scalar(M, constants, coeffs);
+  return impl::assemble_scalar(M, constants, coeffs);
 }
 
 /// Assemble functional into scalar
@@ -68,7 +68,7 @@ void assemble_vector(xtl::span<T> b, const Form<T>& L,
                      const xtl::span<const T>& constants,
                      const array2d<T>& coeffs)
 {
-  fem::impl::assemble_vector(b, L, constants, coeffs);
+  impl::assemble_vector(b, L, constants, coeffs);
 }
 
 /// Assemble linear form into a vector
@@ -109,7 +109,7 @@ void apply_lifting(
     const std::vector<std::vector<std::shared_ptr<const DirichletBC<T>>>>& bcs1,
     const std::vector<xtl::span<const T>>& x0, double scale)
 {
-  fem::impl::apply_lifting(b, a, constants, coeffs, bcs1, x0, scale);
+  impl::apply_lifting(b, a, constants, coeffs, bcs1, x0, scale);
 }
 
 /// Modify b such that:
