@@ -1,7 +1,7 @@
-DOLFIN-X documentation
-======================
+DOLFINx documentation
+=====================
 
-DOLFIN-X is the experimental new problem solving interface of the
+DOLFINx is the experimental new problem solving interface of the
 `FEniCS Project <https://fenicsproject.org/>`_. It is being developed at
 https://github.com/FEniCS/dolfinx.
 

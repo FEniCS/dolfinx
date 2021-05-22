@@ -8,7 +8,6 @@ install-python-components: &install-python-components
     cmake --build build-dir --parallel 3
     cmake --install build-dir
     pip3 install ./basix/python
-    # pip3 install git+https://github.com/FEniCS/basix.git
     pip3 install git+https://github.com/FEniCS/ufl.git
     pip3 install git+https://github.com/FEniCS/ffcx.git@michal/jit-return-code-string
 

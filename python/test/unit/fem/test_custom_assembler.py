@@ -1,6 +1,6 @@
 # Copyright (C) 2019-2020 Garth N. Wells
 #
-# This file is part of DOLFINX (https://www.fenicsproject.org)
+# This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Tests for custom Python assemblers"""
@@ -201,7 +201,7 @@ def assemble_vector_parallel(b, v, x, dofmap_t_data, dofmap_t_offsets, num_cells
 
 @numba.njit(fastmath=True)
 def assemble_vector_ufc(b, kernel, mesh, dofmap, num_cells):
-    """Assemble provided FFCX/UFC kernel over a mesh into the array b"""
+    """Assemble provided FFCx/UFC kernel over a mesh into the array b"""
     v, x = mesh
     entity_local_index = np.array([0], dtype=np.intc)
     perm = np.array([0], dtype=np.uint8)

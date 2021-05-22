@@ -1,6 +1,6 @@
 // Copyright (C) 2017 Chris N. Richardson and Garth N. Wells
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -25,7 +25,15 @@ namespace dolfinx_wrappers
 {
 void geometry(py::module& m)
 {
-  m.def("create_midpoint_tree", &dolfinx::geometry::create_midpoint_tree);
+  m.def("create_midpoint_tree",
+        [](const dolfinx::mesh::Mesh& mesh, int tdim,
+           const py::array_t<std::int32_t, py::array::c_style>& entities)
+        {
+          return dolfinx::geometry::create_midpoint_tree(
+              mesh, tdim,
+              xtl::span<const std::int32_t>(entities.data(), entities.size()));
+        });
+
   m.def("compute_closest_entity", &dolfinx::geometry::compute_closest_entity,
         py::arg("tree"), py::arg("p"), py::arg("mesh"), py::arg("R") = -1);
 

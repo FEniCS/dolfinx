@@ -1,6 +1,6 @@
 // Copyright (C) 2010-2021 Garth N. Wells
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -110,26 +110,26 @@ compute_local_dual_graph_keyed(
     // Iterate over facets of cell
     auto vertices = cell_vertices.links(i);
     const int nv = vertices.size();
-    const graph::AdjacencyList<int>& f = nv_to_facets.at(nv);
+    const graph::AdjacencyList<int>& f = nv_to_facets[nv];
     const int num_facets_per_cell = f.num_nodes();
-
     for (int j = 0; j < num_facets_per_cell; ++j)
     {
       std::array<std::int64_t, 5>& facet = facets[counter];
       facet[4] = i; // cell counter
 
       // fill last entry with max_int64: for mixed 3D, when
-      // some facets may be triangle adds an extra dummy vertex which will sort
-      // to last position
+      // some facets may be triangle adds an extra dummy vertex which will
+      // sort to last position
       facet[3] = std::numeric_limits<std::int64_t>::max();
 
-      assert(f.num_links(j) < 5);
       // Get list of facet vertices
-      for (int k = 0; k < f.num_links(j); ++k)
-        facet[k] = vertices[f.links(j)[k]];
+      auto f_to_v = f.links(j);
+      assert(f_to_v.size() < 5);
+      for (std::size_t k = 0; k < f_to_v.size(); ++k)
+        facet[k] = vertices[f_to_v[k]];
 
       // Sort facet vertices
-      std::sort(facet.begin(), facet.begin() + f.num_links(j));
+      std::sort(facet.begin(), std::next(facet.begin(), f_to_v.size()));
 
       // Increment facet counter
       counter++;
@@ -137,18 +137,17 @@ compute_local_dual_graph_keyed(
   }
   assert(counter == (int)facets.size());
 
-  auto cmp = [num_facet_vertices](const std::array<std::int64_t, 5>& fa,
-                                  const std::array<std::int64_t, 5>& fb) {
-    return std::lexicographical_compare(
-        fa.begin(), fa.begin() + num_facet_vertices, fb.begin(),
-        fb.begin() + num_facet_vertices);
-  };
-
   // Sort facet indices
-  std::sort(facets.begin(), facets.end(), cmp);
+  std::sort(facets.begin(), facets.end(),
+            [num_facet_vertices](const std::array<std::int64_t, 5>& fa,
+                                 const std::array<std::int64_t, 5>& fb) {
+              return std::lexicographical_compare(
+                  fa.begin(), fa.begin() + num_facet_vertices, fb.begin(),
+                  fb.begin() + num_facet_vertices);
+            });
 
-  // Stack up cells joined by facet as pairs in local_graph, and record any
-  // non-matching
+  // Stack up cells joined by facet as pairs in local_graph, and record
+  // any non-matching
   std::vector<std::int32_t> local_graph;
   std::vector<std::int32_t> unmatched_facets;
   local_graph.reserve(num_local_cells * 2);
@@ -157,13 +156,15 @@ compute_local_dual_graph_keyed(
   int eq_count = 0;
   for (std::size_t j = 1; j < facets.size(); ++j)
   {
-    if (std::equal(facets[j].begin(), facets[j].begin() + num_facet_vertices,
+    if (std::equal(facets[j].begin(),
+                   std::next(facets[j].begin(), num_facet_vertices),
                    facets[j - 1].begin()))
     {
       ++eq_count;
       // join cells at cell_index[j] <-> cell_index[jlast]
       local_graph.push_back(facets[j].back());
       local_graph.push_back(facets[j - 1].back());
+
       // FIXME: This may not strictly be an error if tdim != gdim
       if (eq_count == 2)
         throw std::runtime_error("Same facet in more than two cells");
@@ -188,7 +189,7 @@ compute_local_dual_graph_keyed(
     std::int32_t j = unmatched_facets[c];
     auto facetmap = xt::row(facet_cell_map, c);
     std::copy_n(facets[j].cbegin(), num_facet_vertices, facetmap.begin());
-    facetmap(num_facet_vertices) = facets[j].back();
+    facetmap[num_facet_vertices] = facets[j].back();
   }
 
   // Get connection counts for each cell

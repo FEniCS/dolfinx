@@ -1,6 +1,6 @@
 // Copyright (C) 2021 Garth N. Wells, Jørgen S. Dokken, Igor A. Baratta
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -38,8 +38,6 @@ fem::interpolation_coords(const fem::FiniteElement& element,
       = xt::zeros<double>({num_dofs_g, gdim});
   std::array<std::size_t, 2> shape = {3, cells.size() * X.shape(0)};
   xt::xtensor<double, 2> x = xt::zeros<double>(shape);
-  auto _x = xt::reshape_view(
-      x, {static_cast<std::size_t>(3), cells.size(), X.shape(0)});
   for (std::size_t c = 0; c < cells.size(); ++c)
   {
     // Get geometry data for current cell
@@ -58,7 +56,7 @@ fem::interpolation_coords(const fem::FiniteElement& element,
         double acc = 0;
         for (std::size_t k = 0; k < num_dofs_g; ++k)
           acc += phi(p, k) * coordinate_dofs(k, j);
-        _x(j, c, p) = acc;
+        x(j, c * X.shape(0) + p) = acc;
       }
     }
   }
