@@ -50,7 +50,7 @@ def test_rank0():
     @numba.njit
     def assemble_expression(b, kernel, mesh, dofmap, coeff, coeff_dofmap):
         pos, x_dofmap, x = mesh
-        geometry = np.zeros((3, 2))
+        geometry = np.zeros((3, 3))
         w = np.zeros(6, dtype=PETSc.ScalarType)
         constants = np.zeros(1, dtype=PETSc.ScalarType)
         b_local = np.zeros(6, dtype=PETSc.ScalarType)
