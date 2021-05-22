@@ -53,8 +53,7 @@ void eval(array2d<T>& values, const fem::Expression<T>& e,
   const xt::xtensor<double, 2>& x_g = mesh->geometry().x();
 
   // Create data structures used in evaluation
-  const std::size_t gdim = mesh->geometry().dim();
-  std::vector<double> coordinate_dofs(num_dofs_g * gdim);
+  std::vector<double> coordinate_dofs(3 * num_dofs_g);
 
   // Iterate over cells and 'assemble' into values
   std::vector<T> values_e(e.num_points() * e.value_size(), 0);
@@ -65,8 +64,8 @@ void eval(array2d<T>& values, const fem::Expression<T>& e,
     auto x_dofs = x_dofmap.links(c);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
-      std::copy_n(xt::row(x_g, x_dofs[i]).cbegin(), gdim,
-                  std::next(coordinate_dofs.begin(), i * gdim));
+      std::copy_n(xt::row(x_g, x_dofs[i]).cbegin(), 3,
+                  std::next(coordinate_dofs.begin(), 3 * i));
     }
 
     auto coeff_cell = coeffs.row(cell);

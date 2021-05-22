@@ -129,8 +129,6 @@ T assemble_cells(
     const xtl::span<const T>& constants, const array2d<T>& coeffs,
     const xtl::span<const std::uint32_t>& cell_info)
 {
-  const std::size_t gdim = geometry.dim();
-
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
 
@@ -139,7 +137,7 @@ T assemble_cells(
   const xt::xtensor<double, 2>& x_g = geometry.x();
 
   // Create data structures used in assembly
-  std::vector<double> coordinate_dofs(num_dofs_g * gdim);
+  std::vector<double> coordinate_dofs(3 * num_dofs_g);
 
   // Iterate over all cells
   T value(0);
@@ -149,8 +147,8 @@ T assemble_cells(
     auto x_dofs = x_dofmap.links(c);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
-      std::copy_n(xt::row(x_g, x_dofs[i]).begin(), gdim,
-                  std::next(coordinate_dofs.begin(), i * gdim));
+      std::copy_n(xt::row(x_g, x_dofs[i]).begin(), 3,
+                  std::next(coordinate_dofs.begin(), 3 * i));
     }
 
     auto coeff_cell = coeffs.row(c);
@@ -170,7 +168,6 @@ T assemble_exterior_facets(
     const xtl::span<const std::uint32_t>& cell_info,
     const xtl::span<const std::uint8_t>& perms)
 {
-  const std::size_t gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();
 
   // Prepare cell geometry
@@ -181,7 +178,7 @@ T assemble_exterior_facets(
   const xt::xtensor<double, 2>& x_g = mesh.geometry().x();
 
   // Creat data structures used in assembly
-  std::vector<double> coordinate_dofs(num_dofs_g * gdim);
+  std::vector<double> coordinate_dofs(3 * num_dofs_g);
 
   auto f_to_c = mesh.topology().connectivity(tdim - 1, tdim);
   assert(f_to_c);
@@ -206,8 +203,8 @@ T assemble_exterior_facets(
     auto x_dofs = x_dofmap.links(cell);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
-      std::copy_n(xt::row(x_g, x_dofs[i]).begin(), gdim,
-                  std::next(coordinate_dofs.begin(), i * gdim));
+      std::copy_n(xt::row(x_g, x_dofs[i]).begin(), 3,
+                  std::next(coordinate_dofs.begin(), 3 * i));
     }
 
     auto coeff_cell = coeffs.row(cell);
@@ -229,7 +226,6 @@ T assemble_interior_facets(
     const xtl::span<const std::uint32_t>& cell_info,
     const xtl::span<const std::uint8_t>& perms)
 {
-  const std::size_t gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();
 
   // Prepare cell geometry
@@ -240,7 +236,7 @@ T assemble_interior_facets(
   const xt::xtensor<double, 2>& x_g = mesh.geometry().x();
 
   // Creat data structures used in assembly
-  xt::xtensor<double, 3> coordinate_dofs({2, num_dofs_g, gdim});
+  xt::xtensor<double, 3> coordinate_dofs({2, num_dofs_g, 3});
   std::vector<T> coeff_array(2 * offsets.back());
   assert(offsets.back() == coeffs.shape[1]);
 
@@ -273,13 +269,13 @@ T assemble_interior_facets(
     auto x_dofs0 = x_dofmap.links(cells[0]);
     for (std::size_t i = 0; i < x_dofs0.size(); ++i)
     {
-      std::copy_n(xt::view(x_g, x_dofs0[i]).begin(), gdim,
+      std::copy_n(xt::view(x_g, x_dofs0[i]).begin(), 3,
                   xt::view(coordinate_dofs, 0, i, xt::all()).begin());
     }
     auto x_dofs1 = x_dofmap.links(cells[1]);
     for (std::size_t i = 0; i < x_dofs1.size(); ++i)
     {
-      std::copy_n(xt::view(x_g, x_dofs1[i]).begin(), gdim,
+      std::copy_n(xt::view(x_g, x_dofs1[i]).begin(), 3,
                   xt::view(coordinate_dofs, 1, i, xt::all()).begin());
     }
 
