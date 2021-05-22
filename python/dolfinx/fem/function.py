@@ -83,8 +83,8 @@ class Expression:
 
         # Compile UFL expression with JIT
         self._ufc_expression, module, self._code = jit.ffcx_jit(mesh.mpi_comm(), (ufl_expression, x),
-                                                              form_compiler_parameters=form_compiler_parameters,
-                                                              jit_parameters=jit_parameters)
+                                                                form_compiler_parameters=form_compiler_parameters,
+                                                                jit_parameters=jit_parameters)
         self._ufl_expression = ufl_expression
 
         # Setup data (evaluation points, coefficients, constants, mesh, value_size).
