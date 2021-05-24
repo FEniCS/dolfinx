@@ -117,8 +117,8 @@ graph::AdjacencyList<int> mesh::get_entity_vertices(mesh::CellType type,
   return graph::AdjacencyList<int>(topology);
 }
 //-----------------------------------------------------------------------------
-std::vector<std::vector<int>> mesh::get_sub_entities(CellType type, int dim0,
-                                                     int dim1)
+graph::AdjacencyList<int> mesh::get_sub_entities(CellType type, int dim0,
+                                                 int dim1)
 {
   if (dim0 != 2)
   {
@@ -144,19 +144,19 @@ std::vector<std::vector<int>> mesh::get_sub_entities(CellType type, int dim0,
   switch (type)
   {
   case mesh::CellType::interval:
-    return std::vector<std::vector<int>>();
+    return graph::AdjacencyList<int>(0);
   case mesh::CellType::point:
-    return std::vector<std::vector<int>>();
+    return graph::AdjacencyList<int>(0);
   case mesh::CellType::triangle:
-    return triangle;
+    return graph::AdjacencyList<int>(triangle);
   case mesh::CellType::tetrahedron:
-    return tetrahedron;
+    return graph::AdjacencyList<int>(tetrahedron);
   case mesh::CellType::prism:
-    return prism;
+    return graph::AdjacencyList<int>(prism);
   case mesh::CellType::quadrilateral:
-    return quadrilateral;
+    return graph::AdjacencyList<int>(quadrilateral);
   case mesh::CellType::hexahedron:
-    return hexahedron;
+    return graph::AdjacencyList<int>(hexahedron);
   default:
     throw std::runtime_error("Unsupported cell type.");
   }
@@ -270,7 +270,7 @@ mesh::cell_entity_closure(mesh::CellType cell_type)
         for (int e = 0; e < num_edges; ++e)
         {
           // Add edge
-          const int edge_index = face_e[entity][e];
+          const int edge_index = face_e.links(entity)[e];
           entity_closure[{{dim, entity}}][1].insert(edge_index);
           for (int v = 0; v < 2; ++v)
           {

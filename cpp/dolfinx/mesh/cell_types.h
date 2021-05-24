@@ -58,8 +58,7 @@ graph::AdjacencyList<int> get_entity_vertices(CellType type, int dim);
 
 /// Get entities of dimension dim1 and that make up entities of dimension
 /// dim0
-std::vector<std::vector<int>> get_sub_entities(CellType type, int dim0,
-                                               int dim1);
+graph::AdjacencyList<int> get_sub_entities(CellType type, int dim0, int dim1);
 
 /// Return topological dimension of cell type
 int cell_dim(CellType type);
