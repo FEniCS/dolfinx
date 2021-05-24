@@ -44,10 +44,10 @@
 if (DEFINED ENV{UFC_INCLUDE_DIR})
   MESSAGE(STATUS "Looking for UFC in $ENV{UFC_INCLUDE_DIR}...")
 
-  if (EXISTS "$ENV{UFC_INCLUDE_DIR}/ufc.h" AND EXISTS "$ENV{UFC_INCLUDE_DIR}/ufc_geometry.h")
-    set(UFC_INCLUDE_DIRS $ENV{UFC_INCLUDE_DIR} CACHE STRING "Where to find ufc.h and ufc_geometry.h")
+  if (EXISTS "$ENV{UFC_INCLUDE_DIR}/ufc.h")
+    set(UFC_INCLUDE_DIRS $ENV{UFC_INCLUDE_DIR} CACHE STRING "Where to find ufc.h")
     execute_process(
-      COMMAND /bin/bash -c "cat $ENV{UFC_INCLUDE_DIR}/ufc.h $ENV{UFC_INCLUDE_DIR}/ufc_geometry.h | sha1sum | cut -c 1-40"
+      COMMAND /bin/bash -c "cat $ENV{UFC_INCLUDE_DIR}/ufc.h | sha1sum | cut -c 1-40"
       OUTPUT_VARIABLE UFC_SIGNATURE OUTPUT_STRIP_TRAILING_WHITESPACE)
     # Assume user knows what they are doing.
     set(UFC_VERSION ${UFC_FIND_VERSION})
@@ -63,7 +63,7 @@ else()
     )
 
   if (UFC_INCLUDE_DIR)
-    set(UFC_INCLUDE_DIRS ${UFC_INCLUDE_DIR} CACHE STRING "Where to find ufc.h and ufc_geometry.h")
+    set(UFC_INCLUDE_DIRS ${UFC_INCLUDE_DIR} CACHE STRING "Where to find ufc.h")
 
     execute_process(
       COMMAND ${Python3_EXECUTABLE} -c "import ffcx, sys; sys.stdout.write(ffcx.__version__)"
