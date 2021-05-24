@@ -95,13 +95,13 @@ f = ufl.as_vector([0.0, 1.0 / 16])
 b1 = - ufl.inner(f, v) * ds(1)
 
 # JIT compile individual blocks tabulation kernels
-ufc_form00 = dolfinx.jit.ffcx_jit(mesh.mpi_comm(), a00)
+ufc_form00, _, _ = dolfinx.jit.ffcx_jit(mesh.mpi_comm(), a00)
 kernel00 = ufc_form00.integrals(0)[0].tabulate_tensor
 
-ufc_form01 = dolfinx.jit.ffcx_jit(mesh.mpi_comm(), a01)
+ufc_form01, _, _ = dolfinx.jit.ffcx_jit(mesh.mpi_comm(), a01)
 kernel01 = ufc_form01.integrals(0)[0].tabulate_tensor
 
-ufc_form10 = dolfinx.jit.ffcx_jit(mesh.mpi_comm(), a10)
+ufc_form10, _, _ = dolfinx.jit.ffcx_jit(mesh.mpi_comm(), a10)
 kernel10 = ufc_form10.integrals(0)[0].tabulate_tensor
 
 ffi = cffi.FFI()
