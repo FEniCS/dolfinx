@@ -43,14 +43,14 @@ def test_rank0():
     ufl_expr = ufl.grad(f)
     points = np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0]])
 
-    compiled_expr = dolfinx.jit.ffcx_jit(mesh.mpi_comm(), (ufl_expr, points))
+    compiled_expr, module, code = dolfinx.jit.ffcx_jit(mesh.mpi_comm(), (ufl_expr, points))
 
     ffi = cffi.FFI()
 
     @numba.njit
     def assemble_expression(b, kernel, mesh, dofmap, coeff, coeff_dofmap):
         pos, x_dofmap, x = mesh
-        geometry = np.zeros((3, 2))
+        geometry = np.zeros((3, 3))
         w = np.zeros(6, dtype=PETSc.ScalarType)
         constants = np.zeros(1, dtype=PETSc.ScalarType)
         b_local = np.zeros(6, dtype=PETSc.ScalarType)
