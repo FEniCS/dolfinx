@@ -123,7 +123,7 @@ public:
   /// passing in (for higher order geometries)
   bool needs_permutation_data() const;
 
-  /// Return shared pointer to Basix
+  /// Return shared pointer to Basix element
   std::shared_ptr<basix::FiniteElement> element() const;
 
   /// Absolute increment stopping criterium for non-affine Newton solver
