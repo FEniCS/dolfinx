@@ -11,5 +11,8 @@ import dolfinx
 def test_version():
     """Test that installed Python version matches c++ version"""
     version = pkg_resources.get_distribution("fenics-dolfinx").version
-    if version != dolfinx.__version__:
+    # Change any final '.dev0' to '.0'
+    version = version.replace('dev', '')
+    cpp_version = dolfinx.__version__
+    if version != cpp_version:
         raise RuntimeError("Incorrect installed version")
