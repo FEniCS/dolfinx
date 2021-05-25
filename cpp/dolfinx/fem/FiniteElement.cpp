@@ -172,7 +172,7 @@ void FiniteElement::evaluate_reference_basis_derivatives(
 {
   assert(_element);
   xt::xtensor<double, 4> basis = _element->tabulate(order, X);
-  assert(basis.shape == values.shape);
+  assert(basis.shape() == values.shape());
   reference_values = basis;
 }
 //-----------------------------------------------------------------------------
