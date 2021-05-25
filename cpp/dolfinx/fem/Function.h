@@ -300,8 +300,6 @@ public:
     xt::xtensor<double, 1> detJ = xt::zeros<double>({1});
 
     // Prepare basis function data structures
-    xt::xtensor<double, 3> basis_reference_values(
-        {1, space_dimension, reference_value_size});
     xt::xtensor<double, 3> basis_values(
         {static_cast<std::size_t>(1), space_dimension, value_size});
 
@@ -345,7 +343,8 @@ public:
       cmap.pull_back(X, J, detJ, K, xp, coordinate_dofs);
 
       // Compute basis on reference element
-      element->evaluate_reference_basis(basis_reference_values, X);
+      xt::xtensor<double, 3> basis_reference_values
+          = element->evaluate_reference_basis(X);
 
       // Permute the reference values to account for the cell's orientation
       element->apply_dof_transformation(

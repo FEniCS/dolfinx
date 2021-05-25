@@ -156,24 +156,19 @@ int FiniteElement::value_dimension(int i) const
 //-----------------------------------------------------------------------------
 std::string FiniteElement::family() const noexcept { return _family; }
 //-----------------------------------------------------------------------------
-void FiniteElement::evaluate_reference_basis(
-    xt::xtensor<double, 3>& reference_values,
-    const xt::xtensor<double, 2>& X) const
+xt::xtensor<double, 3>
+FiniteElement::evaluate_reference_basis(const xt::xtensor<double, 2>& X) const
 {
   assert(_element);
   xt::xtensor<double, 4> basis = _element->tabulate(0, X);
-  assert(basis.shape(1) == X.shape(0));
-  reference_values = xt::view(basis, 0, xt::all(), xt::all(), xt::all());
+  return xt::view(basis, 0, xt::all(), xt::all(), xt::all());
 }
 //-----------------------------------------------------------------------------
-void FiniteElement::evaluate_reference_basis_derivatives(
-    xt::xtensor<double, 4>& reference_values, int order,
-    const xt::xtensor<double, 2>& X) const
+xt::xtensor<double, 4> FiniteElement::evaluate_reference_basis_derivatives(
+    int order, const xt::xtensor<double, 2>& X) const
 {
   assert(_element);
-  xt::xtensor<double, 4> basis = _element->tabulate(order, X);
-  assert(basis.shape() == reference_values.shape());
-  reference_values = basis;
+  return _element->tabulate(order, X);
 }
 //-----------------------------------------------------------------------------
 void FiniteElement::transform_reference_basis(
