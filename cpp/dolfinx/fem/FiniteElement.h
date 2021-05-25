@@ -86,14 +86,12 @@ public:
   void evaluate_reference_basis(xt::xtensor<double, 3>& values,
                                 const xt::xtensor<double, 2>& X) const;
 
-  /// Evaluate all basis function derivatives of given order at given points in
-  /// reference cell
-  // reference_value_derivatives[num_points][num_dofs][reference_value_size][num_derivatives]
-  // void
-  // evaluate_reference_basis_derivatives(std::vector<double>& reference_values,
-  //                                      int order,
-  //                                      const xt::xtensor<double, 2>& X)
-  //                                      const;
+  /// Evaluate all basis function derivatives up to (and including) given order
+  /// at given points in reference cell
+  void
+  evaluate_reference_basis_derivatives(xt::xtensor<double, 4>& reference_values,
+                                       int order,
+                                       const xt::xtensor<double, 2>& X) const;
 
   /// Push basis functions forward to physical element
   void transform_reference_basis(xt::xtensor<double, 3>& values,

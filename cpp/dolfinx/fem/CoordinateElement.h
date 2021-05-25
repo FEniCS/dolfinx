@@ -123,6 +123,9 @@ public:
   /// passing in (for higher order geometries)
   bool needs_permutation_data() const;
 
+  /// Return shared pointer to Basix
+  std::shared_ptr<basix::FiniteElement> element() const;
+
   /// Absolute increment stopping criterium for non-affine Newton solver
   double non_affine_atol = 1.0e-8;
 

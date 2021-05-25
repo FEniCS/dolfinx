@@ -316,3 +316,10 @@ bool CoordinateElement::needs_permutation_data() const
   return !_element->dof_transformations_are_identity();
 }
 //-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+std::shared_ptr<basix::FiniteElement> CoordinateElement::element() const
+{
+  assert(_element);
+  return _element;
+}
