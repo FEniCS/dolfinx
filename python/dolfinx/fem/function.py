@@ -82,16 +82,15 @@ class Expression:
         mesh = ufl_expression.ufl_domain().ufl_cargo()
 
         # Compile UFL expression with JIT
-        ufc_expression = jit.ffcx_jit(mesh.mpi_comm(), (ufl_expression, x),
-                                      form_compiler_parameters=form_compiler_parameters,
-                                      jit_parameters=jit_parameters)
+        self._ufc_expression, module, self._code = jit.ffcx_jit(mesh.mpi_comm(), (ufl_expression, x),
+                                                                form_compiler_parameters=form_compiler_parameters,
+                                                                jit_parameters=jit_parameters)
         self._ufl_expression = ufl_expression
-        self._ufc_expression = ufc_expression
 
         # Setup data (evaluation points, coefficients, constants, mesh, value_size).
         # Tabulation function.
         ffi = cffi.FFI()
-        fn = ffi.cast("uintptr_t", ufc_expression.tabulate_expression)
+        fn = ffi.cast("uintptr_t", self.ufc_expression.tabulate_expression)
 
         value_size = ufl.product(self.ufl_expression.ufl_shape)
 
@@ -163,6 +162,16 @@ class Expression:
     def value_size(self):
         """Return the value size of the expression"""
         return self._cpp_object.value_size
+
+    @property
+    def ufc_expression(self):
+        """Return the compiled ufc_expression object"""
+        return self._ufc_expression
+
+    @property
+    def code(self):
+        """Return C code strings"""
+        return self._code
 
 
 class Function(ufl.Coefficient):
@@ -372,15 +381,15 @@ class FunctionSpace(ufl.FunctionSpace):
             ufl_element = ufl.FiniteElement(e.family, mesh.ufl_cell(), e.degree, form_degree=e.form_degree)
             super().__init__(mesh.ufl_domain(), ufl_element)
 
-        # Compile dofmap and element and create DOLFINx objects
-        ufc_element, ufc_dofmap = jit.ffcx_jit(
+        # Compile dofmap and element and create DOLFIN objects
+        (self._ufc_element, self._ufc_dofmap), module, code = jit.ffcx_jit(
             mesh.mpi_comm(), self.ufl_element(), form_compiler_parameters=form_compiler_parameters,
             jit_parameters=jit_parameters)
 
         ffi = cffi.FFI()
-        cpp_element = cpp.fem.FiniteElement(ffi.cast("uintptr_t", ffi.addressof(ufc_element)))
+        cpp_element = cpp.fem.FiniteElement(ffi.cast("uintptr_t", ffi.addressof(self._ufc_element)))
         cpp_dofmap = cpp.fem.create_dofmap(mesh.mpi_comm(), ffi.cast(
-            "uintptr_t", ffi.addressof(ufc_dofmap)), mesh.topology)
+            "uintptr_t", ffi.addressof(self._ufc_dofmap)), mesh.topology)
 
         # Initialize the cpp.FunctionSpace
         self._cpp_object = cpp.fem.FunctionSpace(mesh, cpp_element, cpp_dofmap)
