@@ -205,7 +205,7 @@ def assemble_vector_ufc(b, kernel, mesh, dofmap, num_cells):
     v, x = mesh
     entity_local_index = np.array([0], dtype=np.intc)
     perm = np.array([0], dtype=np.uint8)
-    geometry = np.zeros((3, 2))
+    geometry = np.zeros((3, 3))
     coeffs = np.zeros(1, dtype=PETSc.ScalarType)
     constants = np.zeros(1, dtype=PETSc.ScalarType)
 
@@ -213,7 +213,7 @@ def assemble_vector_ufc(b, kernel, mesh, dofmap, num_cells):
     for cell in range(num_cells):
         # FIXME: This assumes a particular geometry dof layout
         for j in range(3):
-            geometry[j] = x[v[cell, j], 0:2]
+            geometry[j] = x[v[cell, j], :]
         b_local.fill(0.0)
         kernel(ffi.from_buffer(b_local), ffi.from_buffer(coeffs),
                ffi.from_buffer(constants),
@@ -341,7 +341,7 @@ def test_custom_mesh_loop_rank1():
 
     # Assemble using generated tabulate_tensor kernel and Numba assembler
     b3 = dolfinx.Function(V)
-    ufc_form = dolfinx.jit.ffcx_jit(mesh.mpi_comm(), L)
+    ufc_form, module, code = dolfinx.jit.ffcx_jit(mesh.mpi_comm(), L)
 
     # First 0 for "cell" integrals, second 0 for the first one, i.e. default domain
     kernel = ufc_form.integrals(0)[0].tabulate_tensor
