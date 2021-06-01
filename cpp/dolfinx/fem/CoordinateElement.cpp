@@ -1,6 +1,6 @@
 // Copyright (C) 2018-2021 Garth N. Wells, Jørgen S. Dokken, Igor A. Baratta
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -9,6 +9,7 @@
 #include <dolfinx/common/math.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <xtensor-blas/xlinalg.hpp>
+#include <xtensor/xnoalias.hpp>
 #include <xtensor/xview.hpp>
 
 using namespace dolfinx;
@@ -18,7 +19,8 @@ namespace
 {
 // Computes the determinant of rectangular matrices
 // det(A^T * A) = det(A) * det(A)
-double compute_determinant(xt::xtensor<double, 2>& A)
+template <typename Matrix>
+double compute_determinant(Matrix& A)
 {
   if (A.shape(0) == A.shape(1))
     return math::det(A);
@@ -99,19 +101,18 @@ void CoordinateElement::compute_jacobian(
   assert(dphi.shape(3) == 1); // Assumes that value size is equal to 1
 
   xt::xtensor<double, 2> dphi0 = xt::empty<double>({tdim, d});
-
   if (_is_affine)
   {
-    dphi0 = xt::view(dphi, xt::all(), 0, xt::all(), 0);
+    xt::noalias(dphi0) = xt::view(dphi, xt::all(), 0, xt::all(), 0);
     auto J0 = xt::linalg::dot(xt::transpose(cell_geom), xt::transpose(dphi0));
     J = xt::broadcast(J0, J.shape());
   }
   else
   {
-    for (std::size_t ip = 0; ip < num_points; ++ip)
+    for (std::size_t p = 0; p < num_points; ++p)
     {
-      dphi0 = xt::view(dphi, xt::all(), ip, xt::all(), 0);
-      auto J_ip = xt::view(J, ip, xt::all(), xt::all());
+      xt::noalias(dphi0) = xt::view(dphi, xt::all(), p, xt::all(), 0);
+      auto J_ip = xt::view(J, p, xt::all(), xt::all());
       auto J0 = xt::linalg::dot(xt::transpose(cell_geom), xt::transpose(dphi0));
       J_ip.assign(J0);
     }
@@ -125,7 +126,6 @@ void CoordinateElement::compute_jacobian_inverse(
   assert(J.shape(1) == K.shape(2));
   assert(J.shape(2) == K.shape(1));
 
-  int num_points = J.shape(0);
   const int gdim = J.shape(1);
   const int tdim = K.shape(1);
 
@@ -143,14 +143,14 @@ void CoordinateElement::compute_jacobian_inverse(
   }
   else
   {
-    for (int ip = 0; ip < num_points; ip++)
+    for (std::size_t p = 0; p < J.shape(0); ++p)
     {
-      J0 = xt::view(J, ip, xt::all(), xt::all());
+      J0 = xt::view(J, p, xt::all(), xt::all());
       if (gdim == tdim)
         math::inv(J0, K0);
       else
         K0 = xt::linalg::pinv(J0);
-      auto K_ip = xt::view(K, ip, xt::all(), xt::all());
+      auto K_ip = xt::view(K, p, xt::all(), xt::all());
       K_ip.assign(K0);
     }
   }
@@ -160,21 +160,19 @@ void CoordinateElement::compute_jacobian_determinant(
     const xt::xtensor<double, 3>& J, xt::xtensor<double, 1>& Jdet) const
 {
   assert(J.shape(0) == Jdet.shape(0));
-  int num_points = J.shape(0);
-
   if (_is_affine)
   {
-    xt::xtensor<double, 2> J0 = xt::view(J, 0, xt::all(), xt::all());
+    auto J0 = xt::view(J, 0, xt::all(), xt::all());
     double det = compute_determinant(J0);
     Jdet.fill(det);
   }
   else
   {
-    for (int ip = 0; ip < num_points; ip++)
+    for (std::size_t p = 0; p < J.shape(0); ++p)
     {
-      xt::xtensor<double, 2> Jip = xt::view(J, ip, xt::all(), xt::all());
-      double det = compute_determinant(Jip);
-      Jdet[ip] = det;
+      auto Jp = xt::view(J, p, xt::all(), xt::all());
+      double det = compute_determinant(Jp);
+      Jdet[p] = det;
     }
   }
 }
@@ -198,13 +196,13 @@ ElementDofLayout CoordinateElement::dof_layout() const
 //-----------------------------------------------------------------------------
 void CoordinateElement::push_forward(
     xt::xtensor<double, 2>& x, const xt::xtensor<double, 2>& cell_geometry,
-    const xt::xtensor<double, 2>& phi) const
+    const xt::xtensor<double, 2>& phi)
 {
   assert(phi.shape(1) == cell_geometry.shape(0));
 
   // Compute physical coordinates
   // x = phi * cell_geometry;
-  std::fill(x.data(), x.data() + x.size(), 0.0);
+  x.fill(0);
   for (std::size_t i = 0; i < x.shape(0); ++i)
     for (std::size_t j = 0; j < x.shape(1); ++j)
       for (std::size_t k = 0; k < cell_geometry.shape(0); ++k)

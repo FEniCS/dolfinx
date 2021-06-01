@@ -1,6 +1,6 @@
 // Copyright (C) 2020 Jack S. Hale
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 //
@@ -19,7 +19,7 @@ namespace dolfinx::fem
 template <typename T>
 class Expression;
 
-/// Evaluate a UFC expression.
+/// Evaluate a UFC expression
 /// @param[out] values An array to evaluate the expression into
 /// @param[in] e The expression to evaluate
 /// @param[in] active_cells The cells on which to evaluate the
@@ -32,11 +32,9 @@ void eval(array2d<T>& values, const fem::Expression<T>& e,
   auto mesh = e.mesh();
   assert(mesh);
 
-  // Prepare coefficients
-  const array2d<T> coeffs = dolfinx::fem::pack_coefficients(e);
-
-  // Prepare constants
-  const std::vector<T> constant_values = dolfinx::fem::pack_constants(e);
+  // Prepare coefficients and constants
+  const array2d<T> coeffs = pack_coefficients(e);
+  const std::vector<T> constant_values = pack_constants(e);
 
   const auto& fn = e.get_tabulate_expression();
 
@@ -55,8 +53,7 @@ void eval(array2d<T>& values, const fem::Expression<T>& e,
   const xt::xtensor<double, 2>& x_g = mesh->geometry().x();
 
   // Create data structures used in evaluation
-  const std::size_t gdim = mesh->geometry().dim();
-  std::vector<double> coordinate_dofs(num_dofs_g * gdim);
+  std::vector<double> coordinate_dofs(3 * num_dofs_g);
 
   // Iterate over cells and 'assemble' into values
   std::vector<T> values_e(e.num_points() * e.value_size(), 0);
@@ -67,8 +64,8 @@ void eval(array2d<T>& values, const fem::Expression<T>& e,
     auto x_dofs = x_dofmap.links(c);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
-      std::copy_n(xt::row(x_g, x_dofs[i]).cbegin(), gdim,
-                  std::next(coordinate_dofs.begin(), i * gdim));
+      std::copy_n(xt::row(x_g, x_dofs[i]).cbegin(), 3,
+                  std::next(coordinate_dofs.begin(), 3 * i));
     }
 
     auto coeff_cell = coeffs.row(cell);
