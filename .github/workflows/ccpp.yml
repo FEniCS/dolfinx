@@ -60,7 +60,7 @@ jobs:
           cd gmsh
           mkdir build && cd build
           cmake -DCMAKE_BUILD_TYPE=Release -DENABLE_BUILD_DYNAMIC=1  -DENABLE_OPENMP=1  ..
-          make -j4 shared && make -j4 install
+          make install
           cd .. && rm -rf gmsh
 
       - name: Install FEniCS Python components

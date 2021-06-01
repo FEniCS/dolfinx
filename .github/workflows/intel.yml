@@ -1,9 +1,6 @@
 name: Intel compilers
 
 on:
-  push:
-    branches:
-      - "**"
   schedule:
     # '*' is a special character in YAML, so string must be quoted
     - cron: "0 2 * * TUE"
@@ -22,8 +19,6 @@ jobs:
       CC: ${{ matrix.c_compiler }}
       CXX: ${{ matrix.cxx_compiler }}
       PETSC_ARCH: linux-gnu-real-32
-      PATH: /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-      PYTHONPATH: /usr/local/lib
 
     strategy:
       matrix:
@@ -46,23 +41,6 @@ jobs:
           apt update
           # apt install -y intel-hpckit
           apt install -y intel-oneapi-common-vars intel-oneapi-compiler-dpcpp-cpp-and-cpp-classic
-
-      - name: Install new version of GMSH
-        run: |
-          . /opt/intel/oneapi/setvars.sh
-          export DEBIAN_FRONTEND=noninteractive
-          apt-get -qq update
-          apt-get -yq --with-new-pkgs -o Dpkg::Options::="--force-confold" upgrade
-          apt-get -y install libfltk1.3-dev libfreetype6-dev libgl1-mesa-dev libocct-foundation-dev libocct-data-exchange-dev
-          apt-get clean
-          rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-          cd /usr/local
-          git clone https://gitlab.onelab.info/gmsh/gmsh.git
-          cd gmsh
-          mkdir build && cd build
-          cmake -DCMAKE_BUILD_TYPE=Release -DENABLE_BUILD_DYNAMIC=1  -DENABLE_OPENMP=1  ..
-          make -j4 shared && make -j4 install
-          cd .. && rm -rf gmsh
 
       - name: Get Basix and install
         uses: actions/checkout@v2
