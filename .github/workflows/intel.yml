@@ -49,6 +49,7 @@ jobs:
 
       - name: Install new version of GMSH
         run: |
+          . /opt/intel/oneapi/setvars.sh
           export DEBIAN_FRONTEND=noninteractive
           apt-get -qq update
           apt-get -yq --with-new-pkgs -o Dpkg::Options::="--force-confold" upgrade
