@@ -22,8 +22,8 @@ jobs:
       CC: ${{ matrix.c_compiler }}
       CXX: ${{ matrix.cxx_compiler }}
       PETSC_ARCH: linux-gnu-real-32
-      PATH: /usr/local/gmsh-4.8.3-Linux64-sdk/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-      PYTHONPATH: /usr/local/gmsh-4.8.3-Linux64-sdk/lib
+      PATH: /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+      PYTHONPATH: /usr/local/lib
 
     strategy:
       matrix:
@@ -49,10 +49,19 @@ jobs:
 
       - name: Install new version of GMSH
         run: |
+          export DEBIAN_FRONTEND=noninteractive
+          apt-get -qq update
+          apt-get -yq --with-new-pkgs -o Dpkg::Options::="--force-confold" upgrade
+          apt-get -y install libfltk1.3-dev libfreetype6-dev libgl1-mesa-dev libocct-foundation-dev libocct-data-exchange-dev
+          apt-get clean
+          rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
           cd /usr/local
-          wget -nc --quiet http://gmsh.info/bin/Linux/gmsh-4.8.3-Linux64-sdk.tgz
-          tar -xf gmsh-4.8.3-Linux64-sdk.tgz
-          rm gmsh-4.8.3-Linux64-sdk.tgz
+          git clone https://gitlab.onelab.info/gmsh/gmsh.git
+          cd gmsh
+          mkdir build && cd build
+          cmake -DCMAKE_BUILD_TYPE=Release -DENABLE_BUILD_DYNAMIC=1  -DENABLE_OPENMP=1  ..
+          make -j4 shared && make -j4 install
+          cd .. && rm -rf gmsh
 
       - name: Get Basix and install
         uses: actions/checkout@v2
