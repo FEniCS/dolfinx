@@ -1,6 +1,6 @@
 // Copyright (C) 2008-2020 Anders Logg and Garth N. Wells
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -105,7 +105,7 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
 
   // FIXME: Add element 'handle' to UFC and do not use fragile strings
   const std::string family = ufc_element.family;
-  if (family != "mixed element")
+  if (family != "mixed element" and family != "Quadrature")
   {
     _element = std::make_unique<basix::FiniteElement>(basix::create_element(
         family.c_str(), cell_shape.c_str(), ufc_element.degree));
@@ -121,6 +121,7 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
     ufc_finite_element* ufc_sub_element = ufc_element.sub_elements[i];
     _sub_elements.push_back(std::make_shared<FiniteElement>(*ufc_sub_element));
   }
+
 }
 //-----------------------------------------------------------------------------
 std::string FiniteElement::signature() const noexcept { return _signature; }

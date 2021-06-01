@@ -1,6 +1,6 @@
 // Copyright (C) 2019-2021 Garth N. Wells and Jørgen S. Dokken
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -30,7 +30,7 @@ class BoundingBoxTree;
 /// @return Bounding box tree for midpoints of mesh entities
 BoundingBoxTree
 create_midpoint_tree(const mesh::Mesh& mesh, int tdim,
-                     const std::vector<std::int32_t>& entity_indices);
+                     const xtl::span<const std::int32_t>& entity_indices);
 
 /// Compute all collisions between two BoundingBoxTrees (local to process).
 /// @param[in] tree0 First BoundingBoxTree
