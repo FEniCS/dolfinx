@@ -237,17 +237,37 @@ void _lift_bc_cells(
     std::fill(be.begin(), be.end(), 0);
     for (std::size_t j = 0; j < dmap1.size(); ++j)
     {
-      for (int k = 0; k < bs1; ++k)
+      if constexpr (_bs1 > 0)
       {
-        const std::int32_t jj = bs1 * dmap1[j] + k;
-        assert(jj < (int)bc_markers1.size());
-        if (bc_markers1[jj])
+        for (int k = 0; k < _bs1; ++k)
         {
-          const T bc = bc_values1[jj];
-          const T _x0 = x0.empty() ? 0.0 : x0[jj];
-          // be -= Ae.col(bs1 * j + k) * scale * (bc - _x0);
-          for (int m = 0; m < num_rows; ++m)
-            be[m] -= Ae[m * num_cols + bs1 * j + k] * scale * (bc - _x0);
+          const std::int32_t jj = _bs1 * dmap1[j] + k;
+          assert(jj < (int)bc_markers1.size());
+          if (bc_markers1[jj])
+          {
+            const T bc = bc_values1[jj];
+            const T _x0 = x0.empty() ? 0.0 : x0[jj];
+            // const T _x0 = 0.0;
+            // be -= Ae.col(bs1 * j + k) * scale * (bc - _x0);
+            for (int m = 0; m < num_rows; ++m)
+              be[m] -= Ae[m * num_cols + _bs1 * j + k] * scale * (bc - _x0);
+          }
+        }
+      }
+      else
+      {
+        for (int k = 0; k < bs1; ++k)
+        {
+          const std::int32_t jj = bs1 * dmap1[j] + k;
+          assert(jj < (int)bc_markers1.size());
+          if (bc_markers1[jj])
+          {
+            const T bc = bc_values1[jj];
+            const T _x0 = x0.empty() ? 0.0 : x0[jj];
+            // be -= Ae.col(bs1 * j + k) * scale * (bc - _x0);
+            for (int m = 0; m < num_rows; ++m)
+              be[m] -= Ae[m * num_cols + bs1 * j + k] * scale * (bc - _x0);
+          }
         }
       }
     }
@@ -373,7 +393,6 @@ void _lift_bc_exterior_facets(
         const std::int32_t jj = bs1 * dmap1[j] + k;
         if (bc_markers1[jj])
         {
-
           const T bc = bc_values1[jj];
           const T _x0 = x0.empty() ? 0.0 : x0[jj];
           // be -= Ae.col(bs1 * j + k) * scale * (bc - _x0);
@@ -1044,9 +1063,18 @@ void lift_bc(xtl::span<T> b, const Form<T>& a,
     const auto& kernel = a.kernel(IntegralType::cell, i);
     const std::vector<std::int32_t>& active_cells
         = a.domains(IntegralType::cell, i);
-    _lift_bc_cells(b, mesh->geometry(), kernel, active_cells, dofmap0, bs0,
-                   dofmap1, bs1, constants, coeffs, cell_info, bc_values1,
-                   bc_markers1, x0, scale);
+    if (bs0 == 1 and bs1 == 1)
+    {
+      _lift_bc_cells<T, 1, 1>(b, mesh->geometry(), kernel, active_cells,
+                              dofmap0, bs0, dofmap1, bs1, constants, coeffs,
+                              cell_info, bc_values1, bc_markers1, x0, scale);
+    }
+    else if (bs0 == 3 and bs1 == 3)
+    {
+      _lift_bc_cells<T, 3, 3>(b, mesh->geometry(), kernel, active_cells,
+                              dofmap0, bs0, dofmap1, bs1, constants, coeffs,
+                              cell_info, bc_values1, bc_markers1, x0, scale);
+    }
   }
 
   if (a.num_integrals(IntegralType::exterior_facet) > 0
