@@ -7,6 +7,7 @@
 #pragma once
 
 #include <dolfinx/common/array2d.h>
+#include <dolfinx/mesh/Mesh.h>
 #include <functional>
 #include <utility>
 #include <vector>
@@ -15,11 +16,6 @@
 
 namespace dolfinx
 {
-
-namespace mesh
-{
-class Mesh;
-}
 
 namespace fem
 {
@@ -104,7 +100,7 @@ public:
 
     // Prepare coefficients and constants
     const array2d<T> coeffs = pack_coefficients(*this);
-    const std::vector<T> constants = pack_constants(*this);
+    const std::vector<T> constant_data = pack_constants(*this);
 
     const auto& fn = this->get_tabulate_expression();
 
@@ -140,7 +136,7 @@ public:
 
       auto coeff_cell = coeffs.row(cell);
       std::fill(values_e.begin(), values_e.end(), 0.0);
-      fn(values_e.data(), coeff_cell.data(), constants.data(),
+      fn(values_e.data(), coeff_cell.data(), constant_data.data(),
          coordinate_dofs.data());
 
       for (std::size_t j = 0; j < values_e.size(); ++j)
