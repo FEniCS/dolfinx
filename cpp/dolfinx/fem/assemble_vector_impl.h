@@ -1075,6 +1075,12 @@ void lift_bc(xtl::span<T> b, const Form<T>& a,
                               dofmap0, bs0, dofmap1, bs1, constants, coeffs,
                               cell_info, bc_values1, bc_markers1, x0, scale);
     }
+    else
+    {
+      _lift_bc_cells(b, mesh->geometry(), kernel, active_cells, dofmap0, bs0,
+                     dofmap1, bs1, constants, coeffs, cell_info, bc_values1,
+                     bc_markers1, x0, scale);
+    }
   }
 
   if (a.num_integrals(IntegralType::exterior_facet) > 0
