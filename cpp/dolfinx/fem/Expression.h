@@ -7,19 +7,15 @@
 #pragma once
 
 #include <dolfinx/common/array2d.h>
-#include <dolfinx/fem/evaluate.h>
+#include <dolfinx/mesh/Mesh.h>
 #include <functional>
 #include <utility>
 #include <vector>
+#include <xtensor/xarray.hpp>
 #include <xtl/xspan.hpp>
 
 namespace dolfinx
 {
-
-namespace mesh
-{
-class Mesh;
-}
 
 namespace fem
 {
@@ -39,7 +35,7 @@ template <typename T>
 class Expression
 {
 public:
-  /// Create Expression
+  /// Create an Expression
   ///
   /// @param[in] coefficients Coefficients in the Expression
   /// @param[in] constants Constants in the Expression
@@ -90,13 +86,62 @@ public:
 
   /// Evaluate the expression on cells
   /// @param[in] active_cells Cells on which to evaluate the Expression
-  /// @param[out] values To store the result. Caller responsible for
-  /// correct sizing which should be num_cells rows by
-  /// num_points*value_size columns.
-  void eval(const xtl::span<const std::int32_t>& active_cells,
-            array2d<T>& values) const
+  /// @param[out] values A 2D array to store the result. Caller
+  /// responsible for correct sizing which should be (num_cells,
+  /// num_points * value_size columns).
+  template <typename U>
+  void eval(const xtl::span<const std::int32_t>& active_cells, U& values) const
   {
-    fem::eval(values, *this, active_cells);
+    static_assert(std::is_same<T, typename U::value_type>::value,
+                  "Expression and array types must be the same");
+
+    // Extract data from Expression
+    assert(_mesh);
+
+    // Prepare coefficients and constants
+    const array2d<T> coeffs = pack_coefficients(*this);
+    const std::vector<T> constant_data = pack_constants(*this);
+
+    const auto& fn = this->get_tabulate_expression();
+
+    // Prepare cell geometry
+    const graph::AdjacencyList<std::int32_t>& x_dofmap
+        = _mesh->geometry().dofmap();
+    const fem::CoordinateElement& cmap = _mesh->geometry().cmap();
+
+    // Prepate cell permutation info
+    _mesh->topology_mutable().create_entity_permutations();
+    const std::vector<std::uint32_t>& cell_info
+        = _mesh->topology().get_cell_permutation_info();
+
+    // FIXME: Add proper interface for num coordinate dofs
+    const std::size_t num_dofs_g = x_dofmap.num_links(0);
+    const xt::xtensor<double, 2>& x_g = _mesh->geometry().x();
+
+    // Create data structures used in evaluation
+    std::vector<double> coordinate_dofs(3 * num_dofs_g);
+
+    // Iterate over cells and 'assemble' into values
+    std::vector<T> values_e(this->num_points() * this->value_size(), 0);
+    for (std::size_t c = 0; c < active_cells.size(); ++c)
+    {
+      const std::int32_t cell = active_cells[c];
+
+      auto x_dofs = x_dofmap.links(cell);
+      for (std::size_t i = 0; i < x_dofs.size(); ++i)
+      {
+        std::copy_n(xt::row(x_g, x_dofs[i]).cbegin(), 3,
+                    std::next(coordinate_dofs.begin(), 3 * i));
+      }
+
+      auto coeff_cell = coeffs.row(cell);
+      std::fill(values_e.begin(), values_e.end(), 0.0);
+      fn(values_e.data(), coeff_cell.data(), constant_data.data(),
+         coordinate_dofs.data());
+
+      for (std::size_t j = 0; j < values_e.size(); ++j)
+        values(c, j) = values_e[j];
+    }
   }
 
   /// Get function for tabulate_expression.
