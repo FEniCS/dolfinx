@@ -191,7 +191,7 @@ public:
   /// @return True if cell permutation data is required
   bool needs_permutation_data() const noexcept;
 
-  /// Apply permutation to some data
+  /// Apply transformation to some data
   ///
   /// @param[in,out] data The data to be transformed
   /// @param[in] cell_permutation Permutation data for the cell
@@ -201,11 +201,18 @@ public:
                                 std::uint32_t cell_permutation,
                                 int block_size) const
   {
+    // TODO: Get if out of this function, as it is known when this object
+    // is created which branch should be taken here
+    if (_bs == 1 and _sub_elements.size())
+    {
+      // Mixed element
+      return;
+    }
     assert(_element);
     _element->apply_dof_transformation(data, block_size, cell_permutation);
   }
 
-  /// Apply inverse transpose permutation to some data
+  /// Apply inverse transpose transformation to some data
   ///
   /// @param[in,out] data The data to be transformed
   /// @param[in] cell_permutation Permutation data for the cell
@@ -214,6 +221,13 @@ public:
   void apply_inverse_transpose_dof_transformation(
       xtl::span<T> data, std::uint32_t cell_permutation, int block_size) const
   {
+    // TODO: Get if out of this function, as it is known when this object
+    // is created which branch should be taken here
+    if (_bs == 1 and _sub_elements.size())
+    {
+      // Mixed element
+      return;
+    }
     assert(_element);
     _element->apply_inverse_transpose_dof_transformation(data, block_size,
                                                          cell_permutation);
