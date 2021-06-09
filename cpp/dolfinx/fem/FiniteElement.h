@@ -211,9 +211,12 @@ public:
       else
         apply_vector_element_dof_transformation(data, cell_permutation,
                                                 block_size);
-      return;
     }
-    apply_scalar_element_dof_transformation(data, cell_permutation, block_size);
+    else
+    {
+      apply_scalar_element_dof_transformation(data, cell_permutation,
+                                              block_size);
+    }
   }
 
   /// Apply transformation for vector element to some data.
@@ -227,7 +230,7 @@ public:
                                                int block_size) const
   {
     assert(_sub_elements.size() != 0 and _bs > 1);
-    // Vector element
+
     std::vector<T> temp_data(data.size() / _bs);
     for (int block = 0; block < _bs; ++block)
     {
@@ -257,7 +260,7 @@ public:
                                               int block_size) const
   {
     assert(_sub_elements.size() != 0 and _bs == 1);
-    // Mixed element
+
     std::size_t start = 0;
     for (std::size_t e = 0; e < _sub_elements.size(); ++e)
     {

@@ -103,14 +103,6 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
          {hexahedron, "hexahedron"}};
   const std::string cell_shape = ufc_to_cell.at(ufc_element.cell_shape);
 
-  // FIXME: Add element 'handle' to UFC and do not use fragile strings
-  const std::string family = ufc_element.family;
-  if (family != "mixed element" and family != "Quadrature")
-  {
-    _element = std::make_unique<basix::FiniteElement>(basix::create_element(
-        family.c_str(), cell_shape.c_str(), ufc_element.degree));
-  }
-
   // Fill value dimension
   for (int i = 0; i < ufc_element.value_rank; ++i)
     _value_dimension.push_back(ufc_element.value_shape[i]);
@@ -122,6 +114,13 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
     _sub_elements.push_back(std::make_shared<FiniteElement>(*ufc_sub_element));
   }
 
+  // FIXME: Add element 'handle' to UFC and do not use fragile strings
+  const std::string family = ufc_element.family;
+  if (family != "Quadrature" and (_sub_elements.size() == 0 or _bs > 1))
+  {
+    _element = std::make_unique<basix::FiniteElement>(basix::create_element(
+        family.c_str(), cell_shape.c_str(), ufc_element.degree));
+  }
 }
 //-----------------------------------------------------------------------------
 std::string FiniteElement::signature() const noexcept { return _signature; }
