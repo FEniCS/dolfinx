@@ -327,6 +327,19 @@ void fem(py::module& m)
       },
       py::arg("b"), py::arg("L"),
       "Assemble linear form into an existing vector");
+  m.def("assemble_vector",
+        [](py::array_t<PetscScalar, py::array::c_style> b,
+           const dolfinx::fem::Form<PetscScalar>& L,
+           const py::array_t<PetscScalar, py::array::c_style>& constants,
+           const py::array_t<PetscScalar, py::array::c_style>& coeffs)
+        {
+          dolfinx::array2d<PetscScalar> _coeffs(coeffs.shape()[0],
+                                                coeffs.shape()[1]);
+          std::copy_n(coeffs.data(), coeffs.size(), _coeffs.data());
+          dolfinx::fem::assemble_vector<PetscScalar>(
+              xtl::span(b.mutable_data(), b.size()), L,
+              xtl::span(constants.data(), constants.shape(0)), _coeffs);
+        });
   // Matrices
   m.def("assemble_matrix_petsc",
         [](Mat A, const dolfinx::fem::Form<PetscScalar>& a,
@@ -344,6 +357,22 @@ void fem(py::module& m)
               dolfinx::la::PETScMatrix::set_block_fn(A, ADD_VALUES), a, rows0,
               rows1);
         });
+  m.def("assemble_matrix_petsc",
+        [](Mat A, const dolfinx::fem::Form<PetscScalar>& a,
+           const py::array_t<PetscScalar, py::array::c_style>& constants,
+           const py::array_t<PetscScalar, py::array::c_style>& coeffs,
+           const std::vector<std::shared_ptr<
+               const dolfinx::fem::DirichletBC<PetscScalar>>>& bcs)
+        {
+          dolfinx::array2d<PetscScalar> _coeffs(coeffs.shape()[0],
+                                                coeffs.shape()[1]);
+          std::copy_n(coeffs.data(), coeffs.size(), _coeffs.data());
+
+          dolfinx::fem::assemble_matrix(
+              dolfinx::la::PETScMatrix::set_block_fn(A, ADD_VALUES), a,
+              xtl::span(constants.data(), constants.shape(0)), _coeffs, bcs);
+        });
+
   m.def("assemble_matrix_petsc_unrolled",
         [](Mat A, const dolfinx::fem::Form<PetscScalar>& a,
            const std::vector<std::shared_ptr<
