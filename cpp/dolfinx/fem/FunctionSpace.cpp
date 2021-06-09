@@ -182,8 +182,8 @@ FunctionSpace::tabulate_dof_coordinates(bool transpose) const
 
     // Tabulate dof coordinates on cell
     cmap.push_forward(x, coordinate_dofs, phi);
-    _element->apply_dof_transformation(xtl::span(x.data(), x.size()),
-                                       cell_info[c], x.shape(1));
+    _element->apply_scalar_element_dof_transformation(
+        xtl::span(x.data(), x.size()), cell_info[c], x.shape(1));
 
     // Get cell dofmap
     auto dofs = _dofmap->cell_dofs(c);
