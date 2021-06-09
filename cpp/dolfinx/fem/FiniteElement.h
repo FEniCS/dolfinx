@@ -215,6 +215,10 @@ public:
   {
     // TODO: Get if out of this function, as it is known when this object
     // is created which branch should be taken here
+    if (!needs_permutation_data())
+    {
+      apply_no_transformation(data, cell_permutation, block_size);
+    }
     if (_sub_elements.size() != 0)
     {
       if (_bs == 1)
