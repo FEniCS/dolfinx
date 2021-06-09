@@ -197,9 +197,7 @@ public:
   /// @param[in] cell_permutation Permutation data for the cell
   /// @param[in] block_size The block_size of the input data
   template <typename T>
-  void apply_no_transformation(xtl::span<T> data,
-                               std::uint32_t cell_permutation,
-                               int block_size) const
+  void apply_no_transformation(xtl::span<T>, std::uint32_t, int) const
   {
   }
 
