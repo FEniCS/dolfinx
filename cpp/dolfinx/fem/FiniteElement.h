@@ -220,7 +220,7 @@ public:
           // TODO: check this for block_size != 1
           for (std::size_t i = 0; i * _bs < data.size(); ++i)
             temp_data[i] = data[i * _bs + block];
-          _sub_elements[0].apply_dof_transformation(
+          _sub_elements[0]->apply_dof_transformation(
               tcb::make_span(temp_data), cell_permutation, block_size);
           for (std::size_t i = 0; i * _bs < data.size(); ++i)
             data[i * _bs + block] = temp_data[i];
