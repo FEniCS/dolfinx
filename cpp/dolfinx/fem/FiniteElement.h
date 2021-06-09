@@ -203,9 +203,29 @@ public:
   {
     // TODO: Get if out of this function, as it is known when this object
     // is created which branch should be taken here
-    if (_bs == 1 and _sub_elements.size())
+    if (_sub_elements.size() != 0)
     {
-      // Mixed element
+      if (_bs == 1)
+      {
+        // Mixed element
+        // TODO
+      }
+      else
+      {
+        // Vector element
+        std::vector<T> temp_data(data.size() / _bs);
+        for (int block = 0; block < _bs; ++block)
+        {
+          // TODO: remove this copy, use strided span instead?
+          // TODO: check this for block_size != 1
+          for (std::size_t i = 0; i * _bs < data.size(); ++i)
+            temp_data[i] = data[i * _bs + block];
+          _sub_elements[0].apply_dof_transformation(
+              tcb::make_span(temp_data), cell_permutation, block_size);
+          for (std::size_t i = 0; i * _bs < data.size(); ++i)
+            data[i * _bs + block] = temp_data[i];
+        }
+      }
       return;
     }
     assert(_element);
@@ -223,7 +243,7 @@ public:
   {
     // TODO: Get if out of this function, as it is known when this object
     // is created which branch should be taken here
-    if (_bs == 1 and _sub_elements.size())
+    if (_bs == 1 and _sub_elements.size() != 0)
     {
       // Mixed element
       return;
