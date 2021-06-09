@@ -191,6 +191,18 @@ public:
   /// @return True if cell permutation data is required
   bool needs_permutation_data() const noexcept;
 
+  /// Does nothing. Can be used when no permutation data is needed
+  ///
+  /// @param[in,out] data The data to be transformed
+  /// @param[in] cell_permutation Permutation data for the cell
+  /// @param[in] block_size The block_size of the input data
+  template <typename T>
+  void apply_no_transformation(xtl::span<T> data,
+                               std::uint32_t cell_permutation,
+                               int block_size) const
+  {
+  }
+
   /// Apply transformation to some data
   ///
   /// @param[in,out] data The data to be transformed

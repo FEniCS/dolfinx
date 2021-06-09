@@ -116,7 +116,8 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
 
   // FIXME: Add element 'handle' to UFC and do not use fragile strings
   const std::string family = ufc_element.family;
-  if (family != "Quadrature" and (_sub_elements.size() == 0 or _bs > 1))
+  if (family != "Quadrature"
+      and (_sub_elements.size() == 0 or _bs == (int)_sub_elements.size()))
   {
     _element = std::make_unique<basix::FiniteElement>(basix::create_element(
         family.c_str(), cell_shape.c_str(), ufc_element.degree));
