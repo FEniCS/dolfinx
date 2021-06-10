@@ -81,9 +81,9 @@
 //
 // The main solver is implemented in the :download:`main.cpp` file.
 //
-// At the top we include the DOLFIN header file and the generated header
+// At the top we include the DOLFINx header file and the generated header
 // file "Poisson.h" containing the variational forms for the Poisson
-// equation.  For convenience we also include the DOLFIN namespace.
+// equation.  For convenience we also include the DOLFINx namespace.
 //
 // .. code-block:: cpp
 
@@ -99,7 +99,7 @@ using namespace dolfinx;
 
 // Then follows the definition of the coefficient functions (for
 // :math:`f` and :math:`g`), which are derived from the
-// :cpp:class:`Expression` class in DOLFIN
+// :cpp:class:`Expression` class in DOLFINx
 //
 // .. code-block:: cpp
 
@@ -119,13 +119,11 @@ int main(int argc, char* argv[])
 
   {
     // Create mesh and function space
-    auto cmap = fem::create_coordinate_map(create_coordinate_map_poisson);
     auto mesh = std::make_shared<mesh::Mesh>(generation::RectangleMesh::create(
-        MPI_COMM_WORLD, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 0.0}}}, {32, 32}, cmap,
-        mesh::GhostMode::none));
+        MPI_COMM_WORLD, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 0.0}}}, {32, 32},
+        mesh::CellType::triangle, mesh::GhostMode::none));
 
-    auto V = fem::create_functionspace(create_functionspace_form_poisson_a, "u",
-                                       mesh);
+    auto V = fem::create_functionspace(functionspace_form_poisson_a, "u", mesh);
 
     // Next, we define the variational formulation by initializing the
     // bilinear and linear forms (:math:`a`, :math:`L`) using the previously
@@ -141,10 +139,12 @@ int main(int argc, char* argv[])
     auto g = std::make_shared<fem::Function<PetscScalar>>(V);
 
     // Define variational forms
-    auto a = fem::create_form<PetscScalar>(create_form_poisson_a, {V, V}, {},
-                                           {{"kappa", kappa}}, {});
-    auto L = fem::create_form<PetscScalar>(create_form_poisson_L, {V},
-                                           {{"f", f}, {"g", g}}, {}, {});
+    auto a = std::make_shared<fem::Form<PetscScalar>>(
+        fem::create_form<PetscScalar>(*form_poisson_a, {V, V}, {},
+                                      {{"kappa", kappa}}, {}));
+    auto L = std::make_shared<fem::Form<PetscScalar>>(
+        fem::create_form<PetscScalar>(*form_poisson_L, {V},
+                                      {{"f", f}, {"g", g}}, {}, {}));
 
     // Now, the Dirichlet boundary condition (:math:`u = 0`) can be created
     // using the class :cpp:class:`DirichletBC`. A :cpp:class:`DirichletBC`
@@ -200,8 +200,11 @@ int main(int argc, char* argv[])
                       L->function_spaces()[0]->dofmap()->index_map_bs());
 
     MatZeroEntries(A.mat());
-    fem::assemble_matrix(la::PETScMatrix::add_block_fn(A.mat()), *a, bc);
-    fem::add_diagonal(la::PETScMatrix::add_fn(A.mat()), *V, bc);
+    fem::assemble_matrix(la::PETScMatrix::set_block_fn(A.mat(), ADD_VALUES), *a,
+                         bc);
+    MatAssemblyBegin(A.mat(), MAT_FLUSH_ASSEMBLY);
+    MatAssemblyEnd(A.mat(), MAT_FLUSH_ASSEMBLY);
+    fem::set_diagonal(la::PETScMatrix::set_fn(A.mat(), INSERT_VALUES), *V, bc);
     MatAssemblyBegin(A.mat(), MAT_FINAL_ASSEMBLY);
     MatAssemblyEnd(A.mat(), MAT_FINAL_ASSEMBLY);
 
@@ -230,8 +233,8 @@ int main(int argc, char* argv[])
     // .. code-block:: cpp
 
     // Save solution in VTK format
-    io::VTKFile file("u.pvd");
-    file.write(u);
+    io::VTKFile file(MPI_COMM_WORLD, "u.pvd", "w");
+    file.write({u}, 0.0);
   }
 
   common::subsystem::finalize_petsc();

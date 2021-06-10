@@ -1,6 +1,6 @@
 // Copyright (C) 2017-2019 Chris N. Richardson Garth N. Wells
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -23,6 +23,7 @@
 #include <pybind11/stl.h>
 #include <string>
 #include <vector>
+#include <xtensor/xadapt.hpp>
 
 namespace py = pybind11;
 
@@ -44,15 +45,17 @@ void io(py::module& m)
         [](const dolfinx::mesh::Mesh& mesh, int entity_dim,
            const py::array_t<std::int64_t, py::array::c_style>& entities,
            const py::array_t<std::int32_t, py::array::c_style>& values) {
-          dolfinx::array2d<std::int64_t> _entities(entities.shape()[0],
-                                                           entities.shape()[1]);
-          std::copy_n(entities.data(), entities.size(), _entities.data());
-          std::pair<dolfinx::array2d<std::int32_t>,
-                    std::vector<std::int32_t>>
-              e = dolfinx::io::xdmf_utils::extract_local_entities(
+          assert(entities.ndim() == 2);
+          std::array<std::size_t, 2> shape
+              = {static_cast<std::size_t>(entities.shape(0)),
+                 static_cast<std::size_t>(entities.shape(1))};
+          auto _entities = xt::adapt(entities.data(), entities.size(),
+                                     xt::no_ownership(), shape);
+          std::pair<xt::xtensor<std::int32_t, 2>, std::vector<std::int32_t>> e
+              = dolfinx::io::xdmf_utils::extract_local_entities(
                   mesh, entity_dim, _entities,
-                  tcb::span(values.data(), values.size()));
-          return std::pair(as_pyarray2d(std::move(e.first)),
+                  xtl::span(values.data(), values.size()));
+          return std::pair(xt_as_pyarray(std::move(e.first)),
                            as_pyarray(std::move(e.second)));
         });
 
@@ -89,14 +92,14 @@ void io(py::module& m)
           "read_topology_data",
           [](dolfinx::io::XDMFFile& self, const std::string& name,
              const std::string& xpath) {
-            return as_pyarray2d(self.read_topology_data(name, xpath));
+            return xt_as_pyarray(self.read_topology_data(name, xpath));
           },
           py::arg("name") = "mesh", py::arg("xpath") = "/Xdmf/Domain")
       .def(
           "read_geometry_data",
           [](dolfinx::io::XDMFFile& self, const std::string& name,
              const std::string& xpath) {
-            return as_pyarray2d(self.read_geometry_data(name, xpath));
+            return xt_as_pyarray(self.read_geometry_data(name, xpath));
           },
           py::arg("name") = "mesh", py::arg("xpath") = "/Xdmf/Domain")
       .def("read_geometry_data", &dolfinx::io::XDMFFile::read_geometry_data,
@@ -129,35 +132,35 @@ void io(py::module& m)
       });
 
   // dolfinx::io::VTKFile
-  py::class_<dolfinx::io::VTKFile, std::shared_ptr<dolfinx::io::VTKFile>>
-      vtk_file(m, "VTKFile");
-
-  vtk_file
-      .def(py::init([](std::string filename) {
-             return std::make_unique<dolfinx::io::VTKFile>(filename);
+  py::class_<dolfinx::io::VTKFile, std::shared_ptr<dolfinx::io::VTKFile>>(
+      m, "VTKFile")
+      .def(py::init([](const MPICommWrapper comm, const std::string& filename,
+                       const std::string& mode) {
+             return std::make_unique<dolfinx::io::VTKFile>(comm.get(),
+                                                              filename, mode);
            }),
-           py::arg("filename"))
+           py::arg("comm"), py::arg("filename"), py::arg("mode"))
+      .def("__enter__",
+           [](std::shared_ptr<dolfinx::io::VTKFile>& self) { return self; })
+      .def("__exit__",
+           [](dolfinx::io::VTKFile& self, py::object exc_type,
+              py::object exc_value, py::object traceback) { self.close(); })
+      .def("close", &dolfinx::io::VTKFile::close)
       .def("write",
-           py::overload_cast<const dolfinx::fem::Function<double>&>(
-               &dolfinx::io::VTKFile::write),
-           py::arg("u"))
+           py::overload_cast<const std::vector<std::reference_wrapper<
+                                 const dolfinx::fem::Function<double>>>&,
+                             double>(&dolfinx::io::VTKFile::write),
+           py::arg("u"), py::arg("t") = 0.0)
       .def("write",
            py::overload_cast<
-               const dolfinx::fem::Function<std::complex<double>>&>(
-               &dolfinx::io::VTKFile::write),
-           py::arg("u"))
+               const std::vector<std::reference_wrapper<
+                   const dolfinx::fem::Function<std::complex<double>>>>&,
+               double>(&dolfinx::io::VTKFile::write),
+           py::arg("u"), py::arg("t") = 0.0)
+
       .def("write",
-           py::overload_cast<const dolfinx::fem::Function<double>&, double>(
+           py::overload_cast<const dolfinx::mesh::Mesh&, double>(
                &dolfinx::io::VTKFile::write),
-           py::arg("u"), py::arg("t"))
-      .def(
-          "write",
-          py::overload_cast<const dolfinx::fem::Function<std::complex<double>>&,
-                            double>(&dolfinx::io::VTKFile::write),
-          py::arg("u"), py::arg("t"))
-      .def("write",
-           py::overload_cast<const dolfinx::mesh::Mesh&>(
-               &dolfinx::io::VTKFile::write),
-           py::arg("mesh"));
+           py::arg("mesh"), py::arg("t") = 0.0);
 }
 } // namespace dolfinx_wrappers

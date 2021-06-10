@@ -1,6 +1,6 @@
 // Copyright (C) 2010-2021 Garth N. Wells
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -12,6 +12,7 @@
 #include <dolfinx/graph/AdjacencyList.h>
 #include <utility>
 #include <vector>
+#include <xtensor/xarray.hpp>
 
 namespace dolfinx::mesh
 {
@@ -28,7 +29,7 @@ build_dual_graph(const MPI_Comm comm,
 
 /// Compute local part of the dual graph, and return (local_graph,
 /// facet_cell_map, number of local edges in the graph (undirected)
-std::pair<graph::AdjacencyList<std::int32_t>, dolfinx::array2d<std::int64_t>>
+std::pair<graph::AdjacencyList<std::int32_t>, xt::xtensor<std::int64_t, 2>>
 build_local_dual_graph(const graph::AdjacencyList<std::int64_t>& cell_vertices,
                        int tdim);
 

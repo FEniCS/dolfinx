@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) 2017-2018 Chris N. Richardson, Garth N. Wells and Michal Habera
 #
-# This file is part of DOLFINX (https://www.fenicsproject.org)
+# This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -12,7 +12,7 @@ from dolfinx import cpp, jit
 
 class Form:
     def __init__(self, form: ufl.Form, form_compiler_parameters: dict = {}, jit_parameters: dict = {}):
-        """Create dolfinx Form
+        """Create DOLFINx Form
 
         Parameters
         ----------
@@ -25,7 +25,7 @@ class Form:
 
         Note
         ----
-        This wrapper for UFL form is responsible for the actual FFCX compilation
+        This wrapper for UFL form is responsible for the actual FFCx compilation
         and attaching coefficients and domains specific data to the underlying
         C++ Form.
         """
@@ -39,7 +39,7 @@ class Form:
             raise RuntimeError("Expecting to find a Mesh in the form.")
 
         # Compile UFL form with JIT
-        ufc_form = jit.ffcx_jit(
+        self._ufc_form, module, self._code = jit.ffcx_jit(
             mesh.mpi_comm(),
             form,
             form_compiler_parameters=form_compiler_parameters,
@@ -53,8 +53,8 @@ class Form:
         # Prepare coefficients data. For every coefficient in form take
         # its C++ object.
         original_coefficients = form.coefficients()
-        coeffs = [original_coefficients[ufc_form.original_coefficient_position(
-            i)]._cpp_object for i in range(ufc_form.num_coefficients)]
+        coeffs = [original_coefficients[self._ufc_form.original_coefficient_position[
+            i]]._cpp_object for i in range(self._ufc_form.num_coefficients)]
 
         # Create dictionary of of subdomain markers (possible None for
         # some dimensions
@@ -65,6 +65,16 @@ class Form:
 
         # Prepare dolfinx.cpp.fem.Form and hold it as a member
         ffi = cffi.FFI()
-        self._cpp_object = cpp.fem.create_form(ffi.cast("uintptr_t", ufc_form),
+        self._cpp_object = cpp.fem.create_form(ffi.cast("uintptr_t", ffi.addressof(self._ufc_form)),
                                                function_spaces, coeffs,
                                                [c._cpp_object for c in form.constants()], subdomains, mesh)
+
+    @property
+    def ufc_form(self):
+        """Return the compiled ufc_form object"""
+        return self._ufc_form
+
+    @property
+    def code(self):
+        """Return C code strings"""
+        return self._code

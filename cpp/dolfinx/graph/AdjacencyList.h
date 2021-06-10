@@ -1,6 +1,6 @@
 // Copyright (C) 2006-2019 Anders Logg and Garth N. Wells
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -8,11 +8,12 @@
 
 #include <cassert>
 #include <dolfinx/common/array2d.h>
-#include <dolfinx/common/span.hpp>
 #include <numeric>
 #include <sstream>
 #include <utility>
 #include <vector>
+#include <xtensor/xtensor.hpp>
+#include <xtl/xspan.hpp>
 
 namespace dolfinx::graph
 {
@@ -23,37 +24,15 @@ namespace dolfinx::graph
 /// matrix(i, j) is the jth neighbor of the ith node
 /// @return Adjacency list data and offset array
 template <typename T>
-auto create_adjacency_data(const array2d<T>& array)
+auto create_adjacency_data(const xt::xtensor<T, 2>& array)
 {
-  std::vector<T> data(array.size());
-  std::vector<std::int32_t> offset(array.shape[0] + 1, 0);
-  for (std::size_t i = 0; i < array.shape[0]; ++i)
+  std::vector<T> data(array.shape(0) * array.shape(1));
+  std::vector<std::int32_t> offset(array.shape(0) + 1, 0);
+  for (std::size_t i = 0; i < array.shape(0); ++i)
   {
-    for (std::size_t j = 0; j < array.shape[1]; ++j)
-      data[i * array.shape[1] + j] = array(i, j);
-    offset[i + 1] = offset[i] + array.shape[1];
-  }
-  return std::pair(std::move(data), std::move(offset));
-}
-
-/// Construct adjacency list data for a problem with a fixed number of
-/// links (edges) for each node
-/// @param [in] matrix Two-dimensional array of adjacency data where
-/// matrix(i, j) is the jth neighbor of the ith node
-/// @return Adjacency list data and offset array
-template <typename Container>
-auto create_adjacency_data(const Container& matrix)
-{
-  using T = typename Container::value_type;
-
-  std::vector<T> data(matrix.size());
-  std::vector<std::int32_t> offset(matrix.rows() + 1, 0);
-
-  for (std::size_t i = 0; i < std::size_t(matrix.rows()); ++i)
-  {
-    for (std::size_t j = 0; j < std::size_t(matrix.cols()); ++j)
-      data[i * matrix.cols() + j] = matrix(i, j);
-    offset[i + 1] = offset[i] + matrix.cols();
+    for (std::size_t j = 0; j < array.shape(1); ++j)
+      data[i * array.shape(1) + j] = array(i, j);
+    offset[i + 1] = offset[i] + array.shape(1);
   }
   return std::pair(std::move(data), std::move(offset));
 }
@@ -148,20 +127,20 @@ public:
   /// @param [in] node Node index
   /// @return Array of outgoing links for the node. The length will be
   /// AdjacencyList:num_links(node).
-  tcb::span<T> links(int node)
+  xtl::span<T> links(int node)
   {
-    return tcb::span(_array.data() + _offsets[node],
-                     _offsets[node + 1] - _offsets[node]);
+    return xtl::span<T>(_array.data() + _offsets[node],
+                        _offsets[node + 1] - _offsets[node]);
   }
 
   /// Get the links (edges) for given node (const version)
   /// @param [in] node Node index
   /// @return Array of outgoing links for the node. The length will be
   /// AdjacencyList:num_links(node).
-  tcb::span<const T> links(int node) const
+  xtl::span<const T> links(int node) const
   {
-    return tcb::span(_array.data() + _offsets[node],
-                     _offsets[node + 1] - _offsets[node]);
+    return xtl::span<const T>(_array.data() + _offsets[node],
+                              _offsets[node + 1] - _offsets[node]);
   }
 
   /// Return contiguous array of links for all nodes (const version)

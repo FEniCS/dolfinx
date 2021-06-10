@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2019 Chris Richardson, Garth N. Wells and Igor Baratta
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -449,8 +449,8 @@ const std::vector<std::int64_t>& IndexMap::ghosts() const noexcept
   return _ghosts;
 }
 //-----------------------------------------------------------------------------
-void IndexMap::local_to_global(const tcb::span<const std::int32_t>& local,
-                               const tcb::span<std::int64_t>& global) const
+void IndexMap::local_to_global(const xtl::span<const std::int32_t>& local,
+                               const xtl::span<std::int64_t>& global) const
 {
   assert(local.size() <= global.size());
   const std::int32_t local_size = _local_range[1] - _local_range[0];
@@ -466,8 +466,8 @@ void IndexMap::local_to_global(const tcb::span<const std::int32_t>& local,
   }
 }
 //-----------------------------------------------------------------------------
-void IndexMap::global_to_local(const tcb::span<const std::int64_t>& global,
-                               const tcb::span<std::int32_t>& local) const
+void IndexMap::global_to_local(const xtl::span<const std::int64_t>& global,
+                               const xtl::span<std::int32_t>& local) const
 {
   const std::int32_t local_size = _local_range[1] - _local_range[0];
 
@@ -656,8 +656,8 @@ std::map<std::int32_t, std::set<int>> IndexMap::compute_shared_indices() const
 }
 //-----------------------------------------------------------------------------
 template <typename T>
-void IndexMap::scatter_fwd(tcb::span<const T> local_data,
-                           tcb::span<T> remote_data, int n) const
+void IndexMap::scatter_fwd(xtl::span<const T> local_data,
+                           xtl::span<T> remote_data, int n) const
 {
 
   // Get number of neighbors
@@ -723,24 +723,24 @@ void IndexMap::scatter_fwd(tcb::span<const T> local_data,
 //-----------------------------------------------------------------------------
 // \cond turn off doxygen
 template void
-IndexMap::scatter_fwd<std::int64_t>(tcb::span<const std::int64_t> local_data,
-                                    tcb::span<std::int64_t> remote_data,
+IndexMap::scatter_fwd<std::int64_t>(xtl::span<const std::int64_t> local_data,
+                                    xtl::span<std::int64_t> remote_data,
                                     int n) const;
 template void
-IndexMap::scatter_fwd<std::int32_t>(tcb::span<const std::int32_t> local_data,
-                                    tcb::span<std::int32_t> remote_data,
+IndexMap::scatter_fwd<std::int32_t>(xtl::span<const std::int32_t> local_data,
+                                    xtl::span<std::int32_t> remote_data,
                                     int n) const;
-template void IndexMap::scatter_fwd<double>(tcb::span<const double> local_data,
-                                            tcb::span<double> remote_data,
+template void IndexMap::scatter_fwd<double>(xtl::span<const double> local_data,
+                                            xtl::span<double> remote_data,
                                             int n) const;
 template void IndexMap::scatter_fwd<std::complex<double>>(
-    tcb::span<const std::complex<double>> local_data,
-    tcb::span<std::complex<double>> remote_data, int n) const;
+    xtl::span<const std::complex<double>> local_data,
+    xtl::span<std::complex<double>> remote_data, int n) const;
 // \endcond
 //-----------------------------------------------------------------------------
 template <typename T>
-void IndexMap::scatter_rev(tcb::span<T> local_data,
-                           tcb::span<const T> remote_data, int n,
+void IndexMap::scatter_rev(xtl::span<T> local_data,
+                           xtl::span<const T> remote_data, int n,
                            IndexMap::Mode op) const
 {
   if ((int)remote_data.size() != n * num_ghosts())
@@ -820,21 +820,21 @@ void IndexMap::scatter_rev(tcb::span<T> local_data,
 //-----------------------------------------------------------------------------
 // \cond turn off doxygen
 template void
-IndexMap::scatter_rev<std::int64_t>(tcb::span<std::int64_t> local_data,
-                                    tcb::span<const std::int64_t> remote_data,
+IndexMap::scatter_rev<std::int64_t>(xtl::span<std::int64_t> local_data,
+                                    xtl::span<const std::int64_t> remote_data,
                                     int n, IndexMap::Mode op) const;
 
 template void
-IndexMap::scatter_rev<std::int32_t>(tcb::span<std::int32_t> local_data,
-                                    tcb::span<const std::int32_t> remote_data,
+IndexMap::scatter_rev<std::int32_t>(xtl::span<std::int32_t> local_data,
+                                    xtl::span<const std::int32_t> remote_data,
                                     int n, IndexMap::Mode op) const;
 
-template void IndexMap::scatter_rev<double>(tcb::span<double> local_data,
-                                            tcb::span<const double> remote_data,
+template void IndexMap::scatter_rev<double>(xtl::span<double> local_data,
+                                            xtl::span<const double> remote_data,
                                             int n, IndexMap::Mode op) const;
 
 template void IndexMap::scatter_rev<std::complex<double>>(
-    tcb::span<std::complex<double>> local_data,
-    tcb::span<const std::complex<double>> remote_data, int n,
+    xtl::span<std::complex<double>> local_data,
+    xtl::span<const std::complex<double>> remote_data, int n,
     IndexMap::Mode op) const;
 // \endcond

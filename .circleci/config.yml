@@ -8,7 +8,6 @@ install-python-components: &install-python-components
     cmake --build build-dir --parallel 3
     cmake --install build-dir
     pip3 install ./basix/python
-    # pip3 install git+https://github.com/FEniCS/basix.git
     pip3 install git+https://github.com/FEniCS/ufl.git
     pip3 install git+https://github.com/FEniCS/ffcx.git
 
@@ -86,7 +85,7 @@ demos-python-mpi: &demos-python-mpi
     python3 -m pytest -n=2 -v -m mpi test.py --num-proc=3
 
 set-jit-defaults: &set-jit-defaults
-  name: Set default DOLFINX JIT parameters
+  name: Set default DOLFINx JIT parameters
   command: |
     mkdir -p ~/.config/dolfinx
     echo '{ "cffi_extra_compile_args" : ["-g0", "-O0" ] }' > ~/.config/dolfinx/dolfinx_jit_parameters.json

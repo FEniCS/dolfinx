@@ -1,9 +1,12 @@
-name: DOLFINX CI
+name: DOLFINx CI
 
 on:
   push:
     branches:
       - "**"
+    tags:
+      - "*.*.*.*"
+      - "*.*.*"
   pull_request:
     branches:
       - main
@@ -50,6 +53,7 @@ jobs:
           python3 -m pip install ./basix/python
           python3 -m pip install git+https://github.com/FEniCS/ufl.git
           python3 -m pip install git+https://github.com/FEniCS/ffcx.git
+
       - name: Flake8 checks
         run: |
           cd python/
@@ -58,15 +62,20 @@ jobs:
           python3 -m flake8 demo
           python3 -m flake8 test
 
-      - name: Build C++ interface documentation
-        run: cd cpp/doc && doxygen
-
       - name: Configure C++
         run: cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build -S cpp/
+
       - name: Build and install C++ library
         run: |
           cmake --build build
           cmake --install build
+
+      - name: Build C++ interface documentation
+        run: |
+          export DOLFINX_VERSION=`cmake -L build | grep DOXYGEN_DOLFINX_VERSION | cut -f2 -d "="`
+          echo $DOLFINX_VERSION
+          cd cpp/doc
+          doxygen
 
       - name: Build and run C++ unit tests (serial and MPI)
         run: |
@@ -90,7 +99,7 @@ jobs:
           cd python/demo && python3 ./generate-demo-files.py
           cd ../doc && make html
 
-      - name: Set default DOLFINX JIT parameters
+      - name: Set default DOLFINx JIT parameters
         run: |
           mkdir -p ~/.config/dolfinx
           echo '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }' > ~/.config/dolfinx/dolfinx_jit_parameters.json
@@ -124,23 +133,32 @@ jobs:
           if-no-files-found: error
 
       - name: Checkout FEniCS/docs
+        if: ${{ github.repository == 'FEniCS/dolfinx' && ( github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/') ) && runner.os == 'Linux' }}
         uses: actions/checkout@v2
         with:
           repository: "FEniCS/docs"
           path: "docs"
           ssh-key: "${{ secrets.SSH_GITHUB_DOCS_PRIVATE_KEY }}"
-      - name: Push documentation to repository FEniCS/docs
-        if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/main' && matrix.petsc_arch == 'real' && matrix.petsc_int_type == 32}}
+      - name: Set version name
+        if: ${{ github.repository == 'FEniCS/dolfinx' && ( github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/') ) && runner.os == 'Linux' }}
+        run: |
+          echo "VERSION_NAME=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+      - name: Copy documentation into repository
+        if: ${{ github.repository == 'FEniCS/dolfinx' && ( github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/') ) && runner.os == 'Linux' }}
+        run: |
+          cd docs
+          git rm -r --ignore-unmatch dolfinx/${{ env.VERSION_NAME }}/cpp
+          git rm -r --ignore-unmatch dolfinx/${{ env.VERSION_NAME }}/python
+          mkdir -p dolfinx/${{ env.VERSION_NAME }}/cpp
+          mkdir -p dolfinx/${{ env.VERSION_NAME }}/python
+          cp -r ../cpp/doc/html/* dolfinx/${{ env.VERSION_NAME }}/cpp
+          cp -r ../python/doc/build/html/* dolfinx/${{ env.VERSION_NAME }}/python
+      - name: Commit and push documentation to FEniCS/docs
+        if: ${{ github.repository == 'FEniCS/dolfinx' && ( github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/') ) && runner.os == 'Linux' }}
         run: |
           cd docs
           git config --global user.email "fenics@github.com"
           git config --global user.name "FEniCS GitHub Actions"
-          git rm -r dolfinx/main/cpp/*
-          git rm -r dolfinx/main/python/*
-          mkdir -p dolfinx/main/cpp
-          mkdir -p dolfinx/main/python
-          cp -r ../cpp/doc/html/* dolfinx/main/cpp
-          cp -r ../python/doc/build/html/* dolfinx/main/python
           git add --all
-          git commit --allow-empty -m "C++ and Python FEniCS/dolfinx@${{ github.sha }}"
+          git commit --allow-empty -m "C++ FEniCS/dolfinx@${{ github.sha }}"
           git push

@@ -1,6 +1,6 @@
 // Copyright (C) 2005-2017 Anders Logg and Garth N. Wells
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -9,6 +9,7 @@
 #include <array>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/mesh/Mesh.h>
+#include <dolfinx/mesh/cell_types.h>
 #include <string>
 
 namespace dolfinx
@@ -32,14 +33,13 @@ namespace generation::RectangleMesh
 /// @param[in] comm MPI communicator to build the mesh on
 /// @param[in] p Two corner points
 /// @param[in] n Number of cells in each direction
-/// @param[in] element Element that describes the geometry of a cell
+/// @param[in] celltype Cell shape
 /// @param[in] ghost_mode Mesh ghosting mode
 /// @param[in] diagonal Direction of diagonals: "left", "right",
 /// "left/right", "crossed"
 /// @return Mesh
 mesh::Mesh create(MPI_Comm comm, const std::array<std::array<double, 3>, 2>& p,
-                  std::array<std::size_t, 2> n,
-                  const fem::CoordinateElement& element,
+                  std::array<std::size_t, 2> n, mesh::CellType celltype,
                   const mesh::GhostMode ghost_mode,
                   const std::string& diagonal = "right");
 
@@ -53,7 +53,7 @@ mesh::Mesh create(MPI_Comm comm, const std::array<std::array<double, 3>, 2>& p,
 /// @param[in] comm MPI communicator to build the mesh on
 /// @param[in] p Two corner points
 /// @param[in] n Number of cells in each direction
-/// @param[in] element Element that describes the geometry of a cell
+/// @param[in] celltype Cell shape
 /// @param[in] ghost_mode Mesh ghosting mode
 /// @param[in] partitioner Partitioning function to use for
 /// determining the parallel distribution of cells across MPI ranks
@@ -61,8 +61,7 @@ mesh::Mesh create(MPI_Comm comm, const std::array<std::array<double, 3>, 2>& p,
 /// "left/right", "crossed"
 /// @return Mesh
 mesh::Mesh create(MPI_Comm comm, const std::array<std::array<double, 3>, 2>& p,
-                  std::array<std::size_t, 2> n,
-                  const fem::CoordinateElement& element,
+                  std::array<std::size_t, 2> n, mesh::CellType celltype,
                   const mesh::GhostMode ghost_mode,
                   const mesh::CellPartitionFunction& partitioner,
                   const std::string& diagonal = "right");

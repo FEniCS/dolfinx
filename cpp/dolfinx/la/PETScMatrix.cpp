@@ -1,7 +1,7 @@
 // Copyright (C) 2004-2018 Johan Hoffman, Johan Jansson, Anders Logg and Garth
 // N. Wells
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -186,20 +186,20 @@ MatNullSpace la::create_petsc_nullspace(MPI_Comm comm,
 //-----------------------------------------------------------------------------
 std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                   const std::int32_t*, const PetscScalar*)>
-PETScMatrix::add_fn(Mat A)
+PETScMatrix::set_fn(Mat A, InsertMode mode)
 {
-  return [A, cache = std::vector<PetscInt>()](
+  return [A, mode, cache = std::vector<PetscInt>()](
              std::int32_t m, const std::int32_t* rows, std::int32_t n,
              const std::int32_t* cols, const PetscScalar* vals) mutable {
     PetscErrorCode ierr;
 #ifdef PETSC_USE_64BIT_INDICES
     cache.resize(m + n);
     std::copy_n(rows, m, cache.begin());
-    std::copy_n(cols, n, cache.begin() + m);
+    std::copy_n(cols, n, std::next(cache.begin(), m));
     const PetscInt *_rows = cache.data(), *_cols = _rows + m;
-    ierr = MatSetValuesLocal(A, m, _rows, n, _cols, vals, ADD_VALUES);
+    ierr = MatSetValuesLocal(A, m, _rows, n, _cols, vals, mode);
 #else
-    ierr = MatSetValuesLocal(A, m, rows, n, cols, vals, ADD_VALUES);
+    ierr = MatSetValuesLocal(A, m, rows, n, cols, vals, mode);
 #endif
 
 #ifdef DEBUG
@@ -212,20 +212,20 @@ PETScMatrix::add_fn(Mat A)
 //-----------------------------------------------------------------------------
 std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                   const std::int32_t*, const PetscScalar*)>
-PETScMatrix::add_block_fn(Mat A)
+PETScMatrix::set_block_fn(Mat A, InsertMode mode)
 {
-  return [A, cache = std::vector<PetscInt>()](
+  return [A, mode, cache = std::vector<PetscInt>()](
              std::int32_t m, const std::int32_t* rows, std::int32_t n,
              const std::int32_t* cols, const PetscScalar* vals) mutable {
     PetscErrorCode ierr;
 #ifdef PETSC_USE_64BIT_INDICES
     cache.resize(m + n);
     std::copy_n(rows, m, cache.begin());
-    std::copy_n(cols, n, cache.begin() + m);
+    std::copy_n(cols, n, std::next(cache.begin(), m));
     const PetscInt *_rows = cache.data(), *_cols = _rows + m;
-    ierr = MatSetValuesBlockedLocal(A, m, _rows, n, _cols, vals, ADD_VALUES);
+    ierr = MatSetValuesBlockedLocal(A, m, _rows, n, _cols, vals, mode);
 #else
-    ierr = MatSetValuesBlockedLocal(A, m, rows, n, cols, vals, ADD_VALUES);
+    ierr = MatSetValuesBlockedLocal(A, m, rows, n, cols, vals, mode);
 #endif
 
 #ifdef DEBUG
@@ -238,12 +238,12 @@ PETScMatrix::add_block_fn(Mat A)
 //-----------------------------------------------------------------------------
 std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                   const std::int32_t*, const PetscScalar*)>
-PETScMatrix::add_block_expand_fn(Mat A, int bs0, int bs1)
+PETScMatrix::set_block_expand_fn(Mat A, int bs0, int bs1, InsertMode mode)
 {
   if (bs0 == 1 and bs1 == 1)
-    return add_fn(A);
+    return set_fn(A, mode);
 
-  return [A, bs0, bs1, cache0 = std::vector<PetscInt>(),
+  return [A, bs0, bs1, mode, cache0 = std::vector<PetscInt>(),
           cache1 = std::vector<PetscInt>()](
              std::int32_t m, const std::int32_t* rows, std::int32_t n,
              const std::int32_t* cols, const PetscScalar* vals) mutable {
@@ -258,7 +258,7 @@ PETScMatrix::add_block_expand_fn(Mat A, int bs0, int bs1)
         cache1[bs1 * i + k] = bs1 * cols[i] + k;
 
     ierr = MatSetValuesLocal(A, cache0.size(), cache0.data(), cache1.size(),
-                             cache1.data(), vals, ADD_VALUES);
+                             cache1.data(), vals, mode);
 
 #ifdef DEBUG
     if (ierr != 0)

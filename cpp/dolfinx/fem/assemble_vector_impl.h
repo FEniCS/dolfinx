@@ -1,6 +1,6 @@
 // Copyright (C) 2018-2019 Garth N. Wells
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -21,6 +21,8 @@
 #include <functional>
 #include <memory>
 #include <vector>
+#include <xtensor/xbuilder.hpp>
+#include <xtensor/xtensor.hpp>
 
 namespace dolfinx::fem::impl
 {
@@ -31,43 +33,48 @@ namespace dolfinx::fem::impl
 /// @param[in,out] b The vector to be assembled. It will not be zeroed
 /// before assembly.
 /// @param[in] L The linear forms to assemble into b
+/// @param[in] constants Packed constants that appear in `L`
+/// @param[in] coeffs Packed coefficients that appear in `L`
 template <typename T>
-void assemble_vector(tcb::span<T> b, const Form<T>& L);
+void assemble_vector(xtl::span<T> b, const Form<T>& L,
+                     const xtl::span<const T>& constants,
+                     const array2d<T>& coeffs);
 
 /// Execute kernel over cells and accumulate result in vector
 template <typename T>
 void assemble_cells(
-    tcb::span<T> b, const mesh::Geometry& geometry,
-    const std::vector<std::int32_t>& active_cells,
+    xtl::span<T> b, const mesh::Geometry& geometry,
+    const xtl::span<const std::int32_t>& active_cells,
     const graph::AdjacencyList<std::int32_t>& dofmap, const int bs,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& kernel,
-    const array2d<T>& coeffs, const std::vector<T>& constant_values,
-    const std::vector<std::uint32_t>& cell_info);
+    const xtl::span<const T>& constants, const array2d<T>& coeffs,
+    const xtl::span<const std::uint32_t>& cell_info);
 
 /// Execute kernel over cells and accumulate result in vector
 template <typename T>
 void assemble_exterior_facets(
-    tcb::span<T> b, const mesh::Mesh& mesh,
-    const std::vector<std::int32_t>& active_facets,
+    xtl::span<T> b, const mesh::Mesh& mesh,
+    const xtl::span<const std::int32_t>& active_facets,
     const graph::AdjacencyList<std::int32_t>& dofmap, const int bs,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& fn,
-    const array2d<T>& coeffs, const std::vector<T>& constant_values,
-    const std::vector<std::uint32_t>& cell_info,
-    const std::vector<std::uint8_t>& perms);
+    const xtl::span<const T>& constants, const array2d<T>& coeffs,
+    const xtl::span<const std::uint32_t>& cell_info,
+    const xtl::span<const std::uint8_t>& perms);
 
 /// Assemble linear form interior facet integrals into an vector
 template <typename T>
 void assemble_interior_facets(
-    tcb::span<T> b, const mesh::Mesh& mesh,
-    const std::vector<std::int32_t>& active_facets, const fem::DofMap& dofmap,
+    xtl::span<T> b, const mesh::Mesh& mesh,
+    const xtl::span<const std::int32_t>& active_facets,
+    const fem::DofMap& dofmap,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& fn,
-    const array2d<T>& coeffs, const std::vector<int>& offsets,
-    const std::vector<T>& constant_values,
-    const std::vector<std::uint32_t>& cell_info,
-    const std::vector<std::uint8_t>& perms);
+    const xtl::span<const T>& constants, const array2d<T>& coeffs,
+    const xtl::span<const int>& offsets,
+    const xtl::span<const std::uint32_t>& cell_info,
+    const xtl::span<const std::uint8_t>& perms);
 
 /// Modify b such that:
 ///
@@ -81,6 +88,8 @@ void assemble_interior_facets(
 /// @param[in,out] b The vector to be modified
 /// @param[in] a The bilinear forms, where a[j] is the form that
 /// generates A_j
+/// @param[in] constants Constants that appear in `a`
+/// @param[in] coeffs Coefficients that appear in `a`
 /// @param[in] bcs1 List of boundary conditions for each block, i.e.
 /// bcs1[2] are the boundary conditions applied to the columns of a[2] /
 /// x0[2] block
@@ -88,9 +97,11 @@ void assemble_interior_facets(
 /// @param[in] scale Scaling to apply
 template <typename T>
 void apply_lifting(
-    tcb::span<T> b, const std::vector<std::shared_ptr<const Form<T>>> a,
+    xtl::span<T> b, const std::vector<std::shared_ptr<const Form<T>>> a,
+    const std::vector<xtl::span<const T>>& constants,
+    const std::vector<const array2d<T>*>& coeffs,
     const std::vector<std::vector<std::shared_ptr<const DirichletBC<T>>>>& bcs1,
-    const tcb::span<const T>& x0, double scale);
+    const xtl::span<const T>& x0, double scale);
 
 /// Modify RHS vector to account for boundary condition such that: b <-
 ////
@@ -98,6 +109,8 @@ void apply_lifting(
 ////
 /// @param[in,out] b The vector to be modified
 /// @param[in] a The bilinear form that generates A
+/// @param[in] constants Constants that appear in `a`
+/// @param[in] coeffs Coefficients that appear in `a`
 /// @param[in] bc_values1 The boundary condition 'values'
 /// @param[in] bc_markers1 The indices (columns of A, rows of x) to
 /// which bcs belong
@@ -105,35 +118,35 @@ void apply_lifting(
 /// solution' in a Newton method
 /// @param[in] scale Scaling to apply
 template <typename T>
-void lift_bc(tcb::span<T> b, const Form<T>& a,
-             const tcb::span<const T>& bc_values1,
-             const std::vector<bool>& bc_markers1, const tcb::span<const T>& x0,
+void lift_bc(xtl::span<T> b, const Form<T>& a,
+             const xtl::span<const T>& constants, const array2d<T>& coeffs,
+             const xtl::span<const T>& bc_values1,
+             const std::vector<bool>& bc_markers1, const xtl::span<const T>& x0,
              double scale);
 
 // Implementation of bc application
 template <typename T>
 void _lift_bc_cells(
-    tcb::span<T> b, const mesh::Geometry& geometry,
+    xtl::span<T> b, const mesh::Geometry& geometry,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& kernel,
-    const std::vector<std::int32_t>& active_cells,
+    const xtl::span<const std::int32_t>& active_cells,
     const graph::AdjacencyList<std::int32_t>& dofmap0, int bs0,
     const graph::AdjacencyList<std::int32_t>& dofmap1, int bs1,
-    const array2d<T>& coeffs, const std::vector<T>& constant_values,
-    const std::vector<std::uint32_t>& cell_info,
-    const tcb::span<const T>& bc_values1, const std::vector<bool>& bc_markers1,
-    const tcb::span<const T>& x0, double scale)
+    const xtl::span<const T>& constants, const array2d<T>& coeffs,
+    const xtl::span<const std::uint32_t>& cell_info,
+    const xtl::span<const T>& bc_values1, const std::vector<bool>& bc_markers1,
+    const xtl::span<const T>& x0, double scale)
 {
   // Prepare cell geometry
-  const int gdim = geometry.dim();
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
 
   // FIXME: Add proper interface for num coordinate dofs
-  const int num_dofs_g = x_dofmap.num_links(0);
-  const array2d<double>& x_g = geometry.x();
+  const std::size_t num_dofs_g = x_dofmap.num_links(0);
+  const xt::xtensor<double, 2>& x_g = geometry.x();
 
   // Data structures used in bc application
-  std::vector<double> coordinate_dofs(num_dofs_g * gdim);
+  std::vector<double> coordinate_dofs(3 * num_dofs_g);
   std::vector<T> Ae, be;
 
   for (std::int32_t c : active_cells)
@@ -163,8 +176,8 @@ void _lift_bc_cells(
     auto x_dofs = x_dofmap.links(c);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
-      std::copy_n(x_g.row(x_dofs[i]).data(), gdim,
-                  std::next(coordinate_dofs.begin(), i * gdim));
+      std::copy_n(xt::row(x_g, x_dofs[i]).begin(), 3,
+                  std::next(coordinate_dofs.begin(), i * 3));
     }
 
     // Size data structure for assembly
@@ -176,7 +189,7 @@ void _lift_bc_cells(
     auto coeff_array = coeffs.row(c);
     Ae.resize(num_rows * num_cols);
     std::fill(Ae.begin(), Ae.end(), 0);
-    kernel(Ae.data(), coeff_array.data(), constant_values.data(),
+    kernel(Ae.data(), coeff_array.data(), constants.data(),
            coordinate_dofs.data(), nullptr, nullptr, cell_info[c]);
 
     // Size data structure for assembly
@@ -207,30 +220,29 @@ void _lift_bc_cells(
 //----------------------------------------------------------------------------
 template <typename T>
 void _lift_bc_exterior_facets(
-    tcb::span<T> b, const mesh::Mesh& mesh,
+    xtl::span<T> b, const mesh::Mesh& mesh,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& kernel,
-    const std::vector<std::int32_t>& active_facets,
+    const xtl::span<const std::int32_t>& active_facets,
     const graph::AdjacencyList<std::int32_t>& dofmap0, int bs0,
     const graph::AdjacencyList<std::int32_t>& dofmap1, int bs1,
-    const array2d<T>& coeffs, const std::vector<T>& constant_values,
-    const std::vector<std::uint32_t>& cell_info,
-    const std::vector<std::uint8_t>& perms,
-    const tcb::span<const T>& bc_values1, const std::vector<bool>& bc_markers1,
-    const tcb::span<const T>& x0, double scale)
+    const xtl::span<const T>& constants, const array2d<T>& coeffs,
+    const xtl::span<const std::uint32_t>& cell_info,
+    const xtl::span<const std::uint8_t>& perms,
+    const xtl::span<const T>& bc_values1, const std::vector<bool>& bc_markers1,
+    const xtl::span<const T>& x0, double scale)
 {
-  const int gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
 
   // FIXME: Add proper interface for num coordinate dofs
-  const int num_dofs_g = x_dofmap.num_links(0);
-  const array2d<double>& x_g = mesh.geometry().x();
+  const std::size_t num_dofs_g = x_dofmap.num_links(0);
+  const xt::xtensor<double, 2>& x_g = mesh.geometry().x();
 
   // Data structures used in bc application
-  std::vector<double> coordinate_dofs(num_dofs_g * gdim);
+  std::vector<double> coordinate_dofs(3 * num_dofs_g);
   std::vector<T> Ae, be;
 
   // Iterate over owned facets
@@ -278,8 +290,8 @@ void _lift_bc_exterior_facets(
     auto x_dofs = x_dofmap.links(cell);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
-      std::copy_n(x_g.row(x_dofs[i]).data(), gdim,
-                  std::next(coordinate_dofs.begin(), i * gdim));
+      std::copy_n(xt::row(x_g, x_dofs[i]).begin(), 3,
+                  std::next(coordinate_dofs.begin(), 3 * i));
     }
 
     // Size data structure for assembly
@@ -291,7 +303,7 @@ void _lift_bc_exterior_facets(
     auto coeff_array = coeffs.row(cell);
     Ae.resize(num_rows * num_cols);
     std::fill(Ae.begin(), Ae.end(), 0);
-    kernel(Ae.data(), coeff_array.data(), constant_values.data(),
+    kernel(Ae.data(), coeff_array.data(), constants.data(),
            coordinate_dofs.data(), &local_facet,
            &perms[cell * facets.size() + local_facet], cell_info[cell]);
 
@@ -323,31 +335,30 @@ void _lift_bc_exterior_facets(
 //----------------------------------------------------------------------------
 template <typename T>
 void _lift_bc_interior_facets(
-    tcb::span<T> b, const mesh::Mesh& mesh,
+    xtl::span<T> b, const mesh::Mesh& mesh,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& kernel,
-    const std::vector<std::int32_t>& active_facets,
+    const xtl::span<const std::int32_t>& active_facets,
     const graph::AdjacencyList<std::int32_t>& dofmap0, int bs0,
     const graph::AdjacencyList<std::int32_t>& dofmap1, int bs1,
-    const array2d<T>& coeffs, const std::vector<int>& offsets,
-    const std::vector<T>& constant_values,
-    const std::vector<std::uint32_t>& cell_info,
-    const std::vector<std::uint8_t>& perms,
-    const tcb::span<const T>& bc_values1, const std::vector<bool>& bc_markers1,
-    const tcb::span<const T>& x0, double scale)
+    const xtl::span<const T>& constants, const array2d<T>& coeffs,
+    const std::vector<int>& offsets,
+    const xtl::span<const std::uint32_t>& cell_info,
+    const xtl::span<const std::uint8_t>& perms,
+    const xtl::span<const T>& bc_values1, const std::vector<bool>& bc_markers1,
+    const xtl::span<const T>& x0, double scale)
 {
-  const int gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
 
   // FIXME: Add proper interface for num coordinate dofs
-  const int num_dofs_g = x_dofmap.num_links(0);
-  const array2d<double>& x_g = mesh.geometry().x();
+  const std::size_t num_dofs_g = x_dofmap.num_links(0);
+  const xt::xtensor<double, 2>& x_g = mesh.geometry().x();
 
   // Data structures used in assembly
-  std::vector<double> coordinate_dofs(2 * num_dofs_g * gdim);
+  xt::xtensor<double, 3> coordinate_dofs({2, num_dofs_g, 3});
   std::vector<T> coeff_array(2 * offsets.back());
   assert(offsets.back() == int(coeffs.shape[1]));
   std::vector<T> Ae, be;
@@ -365,7 +376,6 @@ void _lift_bc_interior_facets(
   auto map = topology.index_map(tdim - 1);
   assert(map);
 
-  const int offset_g = gdim * num_dofs_g;
   for (std::int32_t f : active_facets)
   {
     // Create attached cells
@@ -386,26 +396,28 @@ void _lift_bc_interior_facets(
 
     // Get cell geometry
     auto x_dofs0 = x_dofmap.links(cells[0]);
-    auto x_dofs1 = x_dofmap.links(cells[1]);
-    for (int i = 0; i < num_dofs_g; ++i)
+    for (std::size_t i = 0; i < x_dofs0.size(); ++i)
     {
-      for (int j = 0; j < gdim; ++j)
-      {
-        coordinate_dofs[i * gdim + j] = x_g(x_dofs0[i], j);
-        coordinate_dofs[offset_g + i * gdim + j] = x_g(x_dofs1[i], j);
-      }
+      std::copy_n(xt::view(x_g, x_dofs0[i]).begin(), 3,
+                  xt::view(coordinate_dofs, 0, i, xt::all()).begin());
+    }
+    auto x_dofs1 = x_dofmap.links(cells[1]);
+    for (std::size_t i = 0; i < x_dofs1.size(); ++i)
+    {
+      std::copy_n(xt::view(x_g, x_dofs1[i]).begin(), 3,
+                  xt::view(coordinate_dofs, 1, i, xt::all()).begin());
     }
 
     // Get dof maps for cells and pack
-    const tcb::span<const std::int32_t> dmap0_cell0 = dofmap0.links(cells[0]);
-    const tcb::span<const std::int32_t> dmap0_cell1 = dofmap0.links(cells[1]);
+    const xtl::span<const std::int32_t> dmap0_cell0 = dofmap0.links(cells[0]);
+    const xtl::span<const std::int32_t> dmap0_cell1 = dofmap0.links(cells[1]);
     dmapjoint0.resize(dmap0_cell0.size() + dmap0_cell1.size());
     std::copy(dmap0_cell0.begin(), dmap0_cell0.end(), dmapjoint0.begin());
     std::copy(dmap0_cell1.begin(), dmap0_cell1.end(),
               std::next(dmapjoint0.begin(), dmap0_cell0.size()));
 
-    const tcb::span<const std::int32_t> dmap1_cell0 = dofmap1.links(cells[0]);
-    const tcb::span<const std::int32_t> dmap1_cell1 = dofmap1.links(cells[1]);
+    const xtl::span<const std::int32_t> dmap1_cell0 = dofmap1.links(cells[0]);
+    const xtl::span<const std::int32_t> dmap1_cell1 = dofmap1.links(cells[1]);
     dmapjoint1.resize(dmap1_cell0.size() + dmap1_cell1.size());
     std::copy(dmap1_cell0.begin(), dmap1_cell0.end(), dmapjoint1.begin());
     std::copy(dmap1_cell1.begin(), dmap1_cell1.end(),
@@ -466,7 +478,7 @@ void _lift_bc_interior_facets(
     const int facets_per_cell = facets0.size();
     const std::array perm{perms[cells[0] * facets_per_cell + local_facet[0]],
                           perms[cells[1] * facets_per_cell + local_facet[1]]};
-    kernel(Ae.data(), coeff_array.data(), constant_values.data(),
+    kernel(Ae.data(), coeff_array.data(), constants.data(),
            coordinate_dofs.data(), local_facet.data(), perm.data(),
            cell_info[cells[0]]);
 
@@ -522,7 +534,9 @@ void _lift_bc_interior_facets(
 }
 //-----------------------------------------------------------------------------
 template <typename T>
-void assemble_vector(tcb::span<T> b, const Form<T>& L)
+void assemble_vector(xtl::span<T> b, const Form<T>& L,
+                     const xtl::span<const T>& constants,
+                     const array2d<T>& coeffs)
 {
   std::shared_ptr<const mesh::Mesh> mesh = L.mesh();
   assert(mesh);
@@ -538,12 +552,6 @@ void assemble_vector(tcb::span<T> b, const Form<T>& L)
   const graph::AdjacencyList<std::int32_t>& dofs = dofmap->list();
   const int bs = dofmap->bs();
 
-  // Prepare constants
-  const std::vector<T> constant_values = pack_constants(L);
-
-  // Prepare coefficients
-  const array2d<T> coeffs = pack_coefficients(L);
-
   const bool needs_permutation_data = L.needs_permutation_data();
   if (needs_permutation_data)
     mesh->topology_mutable().create_entity_permutations();
@@ -556,8 +564,8 @@ void assemble_vector(tcb::span<T> b, const Form<T>& L)
     const auto& fn = L.kernel(IntegralType::cell, i);
     const std::vector<std::int32_t>& active_cells
         = L.domains(IntegralType::cell, i);
-    fem::impl::assemble_cells(b, mesh->geometry(), active_cells, dofs, bs, fn,
-                              coeffs, constant_values, cell_info);
+    impl::assemble_cells(b, mesh->geometry(), active_cells, dofs, bs, fn,
+                         constants, coeffs, cell_info);
   }
 
   if (L.num_integrals(IntegralType::exterior_facet) > 0
@@ -575,9 +583,8 @@ void assemble_vector(tcb::span<T> b, const Form<T>& L)
       const auto& fn = L.kernel(IntegralType::exterior_facet, i);
       const std::vector<std::int32_t>& active_facets
           = L.domains(IntegralType::exterior_facet, i);
-      fem::impl::assemble_exterior_facets(b, *mesh, active_facets, dofs, bs, fn,
-                                          coeffs, constant_values, cell_info,
-                                          perms);
+      impl::assemble_exterior_facets(b, *mesh, active_facets, dofs, bs, fn,
+                                     constants, coeffs, cell_info, perms);
     }
 
     const std::vector<int> c_offsets = L.coefficient_offsets();
@@ -586,36 +593,34 @@ void assemble_vector(tcb::span<T> b, const Form<T>& L)
       const auto& fn = L.kernel(IntegralType::interior_facet, i);
       const std::vector<std::int32_t>& active_facets
           = L.domains(IntegralType::interior_facet, i);
-      fem::impl::assemble_interior_facets(b, *mesh, active_facets, *dofmap, fn,
-                                          coeffs, c_offsets, constant_values,
-                                          cell_info, perms);
+      impl::assemble_interior_facets(b, *mesh, active_facets, *dofmap, fn,
+                                     constants, coeffs, c_offsets, cell_info,
+                                     perms);
     }
   }
 }
 //-----------------------------------------------------------------------------
 template <typename T>
 void assemble_cells(
-    tcb::span<T> b, const mesh::Geometry& geometry,
-    const std::vector<std::int32_t>& active_cells,
+    xtl::span<T> b, const mesh::Geometry& geometry,
+    const xtl::span<const std::int32_t>& active_cells,
     const graph::AdjacencyList<std::int32_t>& dofmap, const int bs,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& kernel,
-    const array2d<T>& coeffs, const std::vector<T>& constant_values,
-    const std::vector<std::uint32_t>& cell_info)
+    const xtl::span<const T>& constants, const array2d<T>& coeffs,
+    const xtl::span<const std::uint32_t>& cell_info)
 {
-  const int gdim = geometry.dim();
-
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
 
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = x_dofmap.num_links(0);
-  const array2d<double>& x_g = geometry.x();
+  const xt::xtensor<double, 2>& x_g = geometry.x();
 
   // FIXME: Add proper interface for num_dofs
   // Create data structures used in assembly
   const int num_dofs = dofmap.links(0).size();
-  std::vector<double> coordinate_dofs(num_dofs_g * gdim);
+  std::vector<double> coordinate_dofs(3 * num_dofs_g);
   std::vector<T> be(bs * num_dofs);
 
   // Iterate over active cells
@@ -625,13 +630,13 @@ void assemble_cells(
     auto x_dofs = x_dofmap.links(c);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
-      std::copy_n(x_g.row(x_dofs[i]).begin(), gdim,
-                  std::next(coordinate_dofs.begin(), i * gdim));
+      std::copy_n(xt::row(x_g, x_dofs[i]).begin(), 3,
+                  std::next(coordinate_dofs.begin(), 3 * i));
     }
 
     // Tabulate vector for cell
     std::fill(be.begin(), be.end(), 0);
-    kernel(be.data(), coeffs.row(c).data(), constant_values.data(),
+    kernel(be.data(), coeffs.row(c).data(), constants.data(),
            coordinate_dofs.data(), nullptr, nullptr, cell_info[c]);
 
     // Scatter cell vector to 'global' vector array
@@ -644,29 +649,28 @@ void assemble_cells(
 //-----------------------------------------------------------------------------
 template <typename T>
 void assemble_exterior_facets(
-    tcb::span<T> b, const mesh::Mesh& mesh,
-    const std::vector<std::int32_t>& active_facets,
+    xtl::span<T> b, const mesh::Mesh& mesh,
+    const xtl::span<const std::int32_t>& active_facets,
     const graph::AdjacencyList<std::int32_t>& dofmap, const int bs,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& fn,
-    const array2d<T>& coeffs, const std::vector<T>& constant_values,
-    const std::vector<std::uint32_t>& cell_info,
-    const std::vector<std::uint8_t>& perms)
+    const xtl::span<const T>& constants, const array2d<T>& coeffs,
+    const xtl::span<const std::uint32_t>& cell_info,
+    const xtl::span<const std::uint8_t>& perms)
 {
-  const int gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
 
   // FIXME: Add proper interface for num coordinate dofs
-  const int num_dofs_g = x_dofmap.num_links(0);
-  const array2d<double>& x_g = mesh.geometry().x();
+  const std::size_t num_dofs_g = x_dofmap.num_links(0);
+  const xt::xtensor<double, 2>& x_g = mesh.geometry().x();
 
   // FIXME: Add proper interface for num_dofs
   // Create data structures used in assembly
   const int num_dofs = dofmap.links(0).size();
-  std::vector<double> coordinate_dofs(num_dofs_g * gdim);
+  std::vector<double> coordinate_dofs(3 * num_dofs_g);
   std::vector<T> be(bs * num_dofs);
 
   auto f_to_c = mesh.topology().connectivity(tdim - 1, tdim);
@@ -689,13 +693,13 @@ void assemble_exterior_facets(
     auto x_dofs = x_dofmap.links(cell);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
-      std::copy_n(x_g.row(x_dofs[i]).begin(), gdim,
-                  std::next(coordinate_dofs.begin(), i * gdim));
+      std::copy_n(xt::row(x_g, x_dofs[i]).begin(), 3,
+                  std::next(coordinate_dofs.begin(), 3 * i));
     }
 
     // Tabulate element vector
     std::fill(be.begin(), be.end(), 0);
-    fn(be.data(), coeffs.row(cell).data(), constant_values.data(),
+    fn(be.data(), coeffs.row(cell).data(), constants.data(),
        coordinate_dofs.data(), &local_facet,
        &perms[cell * facets.size() + local_facet], cell_info[cell]);
 
@@ -709,27 +713,27 @@ void assemble_exterior_facets(
 //-----------------------------------------------------------------------------
 template <typename T>
 void assemble_interior_facets(
-    tcb::span<T> b, const mesh::Mesh& mesh,
-    const std::vector<std::int32_t>& active_facets, const fem::DofMap& dofmap,
+    xtl::span<T> b, const mesh::Mesh& mesh,
+    const xtl::span<const std::int32_t>& active_facets,
+    const fem::DofMap& dofmap,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& fn,
-    const array2d<T>& coeffs, const std::vector<int>& offsets,
-    const std::vector<T>& constant_values,
-    const std::vector<std::uint32_t>& cell_info,
-    const std::vector<std::uint8_t>& perms)
+    const xtl::span<const T>& constants, const array2d<T>& coeffs,
+    const xtl::span<const int>& offsets,
+    const xtl::span<const std::uint32_t>& cell_info,
+    const xtl::span<const std::uint8_t>& perms)
 {
-  const int gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
 
   // FIXME: Add proper interface for num coordinate dofs
-  const int num_dofs_g = x_dofmap.num_links(0);
-  const array2d<double>& x_g = mesh.geometry().x();
+  const std::size_t num_dofs_g = x_dofmap.num_links(0);
+  const xt::xtensor<double, 2>& x_g = mesh.geometry().x();
 
   // Create data structures used in assembly
-  std::vector<double> coordinate_dofs(2 * num_dofs_g * gdim);
+  xt::xtensor<double, 3> coordinate_dofs({2, num_dofs_g, 3});
   std::vector<T> be;
   std::vector<T> coeff_array(2 * offsets.back());
   assert(offsets.back() == int(coeffs.shape[1]));
@@ -739,7 +743,6 @@ void assemble_interior_facets(
   assert(f_to_c);
   auto c_to_f = mesh.topology().connectivity(tdim, tdim - 1);
   assert(c_to_f);
-  const int offset_g = gdim * num_dofs_g;
   for (std::int32_t f : active_facets)
   {
     // Get attached cell indices
@@ -760,14 +763,16 @@ void assemble_interior_facets(
 
     // Get cell geometry
     auto x_dofs0 = x_dofmap.links(cells[0]);
-    auto x_dofs1 = x_dofmap.links(cells[1]);
-    for (int i = 0; i < num_dofs_g; ++i)
+    for (std::size_t i = 0; i < x_dofs0.size(); ++i)
     {
-      for (int j = 0; j < gdim; ++j)
-      {
-        coordinate_dofs[i * gdim + j] = x_g(x_dofs0[i], j);
-        coordinate_dofs[offset_g + i * gdim + j] = x_g(x_dofs1[i], j);
-      }
+      std::copy_n(xt::view(x_g, x_dofs0[i]).begin(), 3,
+                  xt::view(coordinate_dofs, 0, i, xt::all()).begin());
+    }
+    auto x_dofs1 = x_dofmap.links(cells[1]);
+    for (std::size_t i = 0; i < x_dofs1.size(); ++i)
+    {
+      std::copy_n(xt::view(x_g, x_dofs1[i]).begin(), 3,
+                  xt::view(coordinate_dofs, 1, i, xt::all()).begin());
     }
 
     // Layout for the restricted coefficients is flattened
@@ -787,17 +792,16 @@ void assemble_interior_facets(
     }
 
     // Get dofmaps for cells
-    tcb::span<const std::int32_t> dmap0 = dofmap.cell_dofs(cells[0]);
-    tcb::span<const std::int32_t> dmap1 = dofmap.cell_dofs(cells[1]);
+    xtl::span<const std::int32_t> dmap0 = dofmap.cell_dofs(cells[0]);
+    xtl::span<const std::int32_t> dmap1 = dofmap.cell_dofs(cells[1]);
 
     // Tabulate element vector
     be.resize(bs * (dmap0.size() + dmap1.size()));
     std::fill(be.begin(), be.end(), 0);
     const std::array perm{perms[cells[0] * facets_per_cell + local_facet[0]],
                           perms[cells[1] * facets_per_cell + local_facet[1]]};
-    fn(be.data(), coeff_array.data(), constant_values.data(),
-       coordinate_dofs.data(), local_facet.data(), perm.data(),
-       cell_info[cells[0]]);
+    fn(be.data(), coeff_array.data(), constants.data(), coordinate_dofs.data(),
+       local_facet.data(), perm.data(), cell_info[cells[0]]);
 
     // Add element vector to global vector
     for (std::size_t i = 0; i < dmap0.size(); ++i)
@@ -811,9 +815,11 @@ void assemble_interior_facets(
 //-----------------------------------------------------------------------------
 template <typename T>
 void apply_lifting(
-    tcb::span<T> b, const std::vector<std::shared_ptr<const Form<T>>> a,
+    xtl::span<T> b, const std::vector<std::shared_ptr<const Form<T>>> a,
+    const std::vector<xtl::span<const T>>& constants,
+    const std::vector<const array2d<T>*>& coeffs,
     const std::vector<std::vector<std::shared_ptr<const DirichletBC<T>>>>& bcs1,
-    const std::vector<tcb::span<const T>>& x0, double scale)
+    const std::vector<xtl::span<const T>>& x0, double scale)
 {
   // FIXME: make changes to reactivate this check
   if (!x0.empty() and x0.size() != a.size())
@@ -848,21 +854,26 @@ void apply_lifting(
         bc->dof_values(bc_values1);
       }
 
+      assert(coeffs[j]);
       if (!x0.empty())
-        lift_bc<T>(b, *a[j], bc_values1, bc_markers1, x0[j], scale);
+      {
+        lift_bc<T>(b, *a[j], constants[j], *coeffs[j], bc_values1, bc_markers1,
+                   x0[j], scale);
+      }
       else
       {
-        lift_bc<T>(b, *a[j], bc_values1, bc_markers1, tcb::span<const T>(),
-                   scale);
+        lift_bc<T>(b, *a[j], constants[j], *coeffs[j], bc_values1, bc_markers1,
+                   xtl::span<const T>(), scale);
       }
     }
   }
 }
 //-----------------------------------------------------------------------------
 template <typename T>
-void lift_bc(tcb::span<T> b, const Form<T>& a,
-             const tcb::span<const T>& bc_values1,
-             const std::vector<bool>& bc_markers1, const tcb::span<const T>& x0,
+void lift_bc(xtl::span<T> b, const Form<T>& a,
+             const xtl::span<const T>& constants, const array2d<T>& coeffs,
+             const xtl::span<const T>& bc_values1,
+             const std::vector<bool>& bc_markers1, const xtl::span<const T>& x0,
              double scale)
 {
   std::shared_ptr<const mesh::Mesh> mesh = a.mesh();
@@ -881,12 +892,6 @@ void lift_bc(tcb::span<T> b, const Form<T>& a,
       = a.function_spaces()[1]->dofmap()->list();
   const int bs1 = a.function_spaces()[1]->dofmap()->bs();
 
-  // Prepare constants
-  const std::vector<T> constant_values = pack_constants(a);
-
-  // Prepare coefficients
-  const array2d<T> coeffs = pack_coefficients(a);
-
   const bool needs_permutation_data = a.needs_permutation_data();
   if (needs_permutation_data)
     mesh->topology_mutable().create_entity_permutations();
@@ -900,7 +905,7 @@ void lift_bc(tcb::span<T> b, const Form<T>& a,
     const std::vector<std::int32_t>& active_cells
         = a.domains(IntegralType::cell, i);
     _lift_bc_cells(b, mesh->geometry(), kernel, active_cells, dofmap0, bs0,
-                   dofmap1, bs1, coeffs, constant_values, cell_info, bc_values1,
+                   dofmap1, bs1, constants, coeffs, cell_info, bc_values1,
                    bc_markers1, x0, scale);
   }
 
@@ -920,7 +925,7 @@ void lift_bc(tcb::span<T> b, const Form<T>& a,
       const std::vector<std::int32_t>& active_facets
           = a.domains(IntegralType::exterior_facet, i);
       _lift_bc_exterior_facets(b, *mesh, kernel, active_facets, dofmap0, bs0,
-                               dofmap1, bs1, coeffs, constant_values, cell_info,
+                               dofmap1, bs1, constants, coeffs, cell_info,
                                perms, bc_values1, bc_markers1, x0, scale);
     }
 
@@ -931,7 +936,7 @@ void lift_bc(tcb::span<T> b, const Form<T>& a,
       const std::vector<std::int32_t>& active_facets
           = a.domains(IntegralType::interior_facet, i);
       _lift_bc_interior_facets(b, *mesh, kernel, active_facets, dofmap0, bs0,
-                               dofmap1, bs1, coeffs, c_offsets, constant_values,
+                               dofmap1, bs1, constants, coeffs, c_offsets,
                                cell_info, perms, bc_values1, bc_markers1, x0,
                                scale);
     }

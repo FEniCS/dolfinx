@@ -1,7 +1,7 @@
 // Copyright (C) 2006-2020 Anders Logg, Chris Richardson, Jorgen S.
 // Dokken and Garth N. Wells
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -25,7 +25,8 @@ using namespace dolfinx::mesh;
 Mesh mesh::create_mesh(MPI_Comm comm,
                        const graph::AdjacencyList<std::int64_t>& cells,
                        const fem::CoordinateElement& element,
-                       const array2d<double>& x, mesh::GhostMode ghost_mode)
+                       const xt::xtensor<double, 2>& x,
+                       mesh::GhostMode ghost_mode)
 {
   return create_mesh(
       comm, cells, element, x, ghost_mode,
@@ -37,7 +38,8 @@ Mesh mesh::create_mesh(MPI_Comm comm,
 Mesh mesh::create_mesh(MPI_Comm comm,
                        const graph::AdjacencyList<std::int64_t>& cells,
                        const fem::CoordinateElement& element,
-                       const array2d<double>& x, mesh::GhostMode ghost_mode,
+                       const xt::xtensor<double, 2>& x,
+                       mesh::GhostMode ghost_mode,
                        const mesh::CellPartitionFunction& cell_partitioner)
 {
   if (ghost_mode == mesh::GhostMode::shared_vertex)

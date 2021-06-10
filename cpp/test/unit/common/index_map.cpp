@@ -1,6 +1,6 @@
 // Copyright (C) 2018 Chris Richardson
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -46,8 +46,8 @@ void test_scatter_fwd()
   std::vector<std::int64_t> data_ghost(n * num_ghosts, -1);
 
   // Scatter values to ghost and check value is correctly received
-  idx_map.scatter_fwd(tcb::span<const std::int64_t>(data_local),
-                      tcb::span<std::int64_t>(data_ghost), n);
+  idx_map.scatter_fwd(xtl::span<const std::int64_t>(data_local),
+                      xtl::span<std::int64_t>(data_ghost), n);
   CHECK(data_ghost.size() == n * num_ghosts);
   CHECK(std::all_of(data_ghost.begin(), data_ghost.end(), [=](auto i) {
     return i == val * ((mpi_rank + 1) % mpi_size);
@@ -83,8 +83,8 @@ void test_scatter_rev()
   std::int64_t value = 15;
   std::vector<std::int64_t> data_local(n * size_local, 0);
   std::vector<std::int64_t> data_ghost(n * num_ghosts, value);
-  idx_map.scatter_rev(tcb::span<std::int64_t>(data_local),
-                      tcb::span<const std::int64_t>(data_ghost), n,
+  idx_map.scatter_rev(xtl::span<std::int64_t>(data_local),
+                      xtl::span<const std::int64_t>(data_ghost), n,
                       common::IndexMap::Mode::add);
 
   std::int64_t sum;
@@ -92,14 +92,14 @@ void test_scatter_rev()
   sum = std::accumulate(data_local.begin(), data_local.end(), 0);
   CHECK(sum == n * value * num_ghosts);
 
-  idx_map.scatter_rev(tcb::span<std::int64_t>(data_local),
-                      tcb::span<const std::int64_t>(data_ghost), n,
+  idx_map.scatter_rev(xtl::span<std::int64_t>(data_local),
+                      xtl::span<const std::int64_t>(data_ghost), n,
                       common::IndexMap::Mode::insert);
   sum = std::accumulate(data_local.begin(), data_local.end(), 0);
   CHECK(sum == n * value * num_ghosts);
 
-  idx_map.scatter_rev(tcb::span<std::int64_t>(data_local),
-                      tcb::span<const std::int64_t>(data_ghost), n,
+  idx_map.scatter_rev(xtl::span<std::int64_t>(data_local),
+                      xtl::span<const std::int64_t>(data_ghost), n,
                       common::IndexMap::Mode::add);
   sum = std::accumulate(data_local.begin(), data_local.end(), 0);
   CHECK(sum == 2 * n * value * num_ghosts);

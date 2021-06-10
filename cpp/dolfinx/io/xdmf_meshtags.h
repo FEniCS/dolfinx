@@ -1,6 +1,6 @@
 // Copyright (C) 2020 Michal Habera
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -10,11 +10,11 @@
 #include "xdmf_mesh.h"
 #include "xdmf_utils.h"
 #include <dolfinx/common/MPI.h>
-#include <dolfinx/common/span.hpp>
 #include <dolfinx/mesh/MeshTags.h>
 #include <hdf5.h>
 #include <string>
 #include <vector>
+#include <xtl/xspan.hpp>
 
 namespace dolfinx
 {
@@ -46,7 +46,9 @@ void add_meshtags(MPI_Comm comm, const mesh::MeshTags<T>& meshtags,
   const std::string path_prefix = "/MeshTags/" + name;
   xdmf_mesh::add_topology_data(
       comm, xml_node, h5_id, path_prefix, mesh->topology(), mesh->geometry(),
-      dim, tcb::span(meshtags.indices().data(), num_active_entities));
+      dim,
+      xtl::span<const std::int32_t>(meshtags.indices().data(),
+                                    num_active_entities));
 
   // Add attribute node with values
   pugi::xml_node attribute_node = xml_node.append_child("Attribute");
@@ -65,7 +67,7 @@ void add_meshtags(MPI_Comm comm, const mesh::MeshTags<T>& meshtags,
 
   xdmf_utils::add_data_item(
       attribute_node, h5_id, path_prefix + "/Values",
-      tcb::span<const T>(meshtags.values().data(), num_active_entities), offset,
+      xtl::span<const T>(meshtags.values().data(), num_active_entities), offset,
       {global_num_values, 1}, "", use_mpi_io);
 }
 

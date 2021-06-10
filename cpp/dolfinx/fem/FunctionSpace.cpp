@@ -1,6 +1,6 @@
 // Copyright (C) 2008-2020 Anders Logg and Garth N. Wells
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -15,6 +15,7 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
 #include <vector>
+#include <xtensor/xadapt.hpp>
 #include <xtensor/xtensor.hpp>
 #include <xtensor/xview.hpp>
 
@@ -108,13 +109,10 @@ FunctionSpace::tabulate_dof_coordinates(bool transpose) const
         "Cannot tabulate coordinates for a FunctionSpace that is a subspace.");
   }
 
-  // This function tabulates the DOF coordinates, with each coordinated
-  // repeated the given number of times
-
   // Geometric dimension
   assert(_mesh);
   assert(_element);
-  const int gdim = _mesh->geometry().dim();
+  const std::size_t gdim = _mesh->geometry().dim();
   const int tdim = _mesh->topology().dim();
 
   // Get dofmap local size
@@ -125,7 +123,8 @@ FunctionSpace::tabulate_dof_coordinates(bool transpose) const
   assert(index_map);
 
   const int element_block_size = _element->block_size();
-  const int scalar_dofs = _element->space_dimension() / element_block_size;
+  const std::size_t scalar_dofs
+      = _element->space_dimension() / element_block_size;
   const std::int32_t num_dofs
       = index_map_bs * (index_map->size_local() + index_map->num_ghosts())
         / dofmap_bs;
@@ -136,7 +135,7 @@ FunctionSpace::tabulate_dof_coordinates(bool transpose) const
     throw std::runtime_error("Cannot evaluate dof coordinates - this element "
                              "does not have pointwise evaluation.");
   }
-  const array2d<double> X = _element->interpolation_points();
+  const xt::xtensor<double, 2>& X = _element->interpolation_points();
 
   // Get coordinate map
   const fem::CoordinateElement& cmap = _mesh->geometry().cmap();
@@ -145,8 +144,8 @@ FunctionSpace::tabulate_dof_coordinates(bool transpose) const
   const graph::AdjacencyList<std::int32_t>& x_dofmap
       = _mesh->geometry().dofmap();
   // FIXME: Add proper interface for num coordinate dofs
-  const array2d<double>& x_g = _mesh->geometry().x();
-  const int num_dofs_g = x_dofmap.num_links(0);
+  const xt::xtensor<double, 2>& x_g = _mesh->geometry().x();
+  const std::size_t num_dofs_g = x_dofmap.num_links(0);
 
   // Array to hold coordinates to return
   const std::size_t shape_c0 = transpose ? 3 : num_dofs;
@@ -154,8 +153,8 @@ FunctionSpace::tabulate_dof_coordinates(bool transpose) const
   xt::xtensor<double, 2> coords = xt::zeros<double>({shape_c0, shape_c1});
 
   // Loop over cells and tabulate dofs
-  array2d<double> x(scalar_dofs, gdim);
-  array2d<double> coordinate_dofs(num_dofs_g, gdim);
+  xt::xtensor<double, 2> x = xt::zeros<double>({scalar_dofs, gdim});
+  xt::xtensor<double, 2> coordinate_dofs({num_dofs_g, gdim});
 
   auto map = _mesh->topology().index_map(tdim);
   assert(map);
@@ -175,14 +174,16 @@ FunctionSpace::tabulate_dof_coordinates(bool transpose) const
   {
     // Extract cell geometry
     auto x_dofs = x_dofmap.links(c);
-    for (int i = 0; i < num_dofs_g; ++i)
-      for (int j = 0; j < gdim; ++j)
-        coordinate_dofs(i, j) = x_g(x_dofs[i], j);
+    for (std::size_t i = 0; i < x_dofs.size(); ++i)
+    {
+      std::copy_n(xt::row(x_g, x_dofs[i]).begin(), gdim,
+                  std::next(coordinate_dofs.begin(), i * gdim));
+    }
 
     // Tabulate dof coordinates on cell
     cmap.push_forward(x, coordinate_dofs, phi);
-
-    _element->apply_dof_transformation(x.data(), cell_info[c], x.shape[1]);
+    _element->apply_dof_transformation(xtl::span(x.data(), x.size()),
+                                       cell_info[c], x.shape(1));
 
     // Get cell dofmap
     auto dofs = _dofmap->cell_dofs(c);
@@ -191,13 +192,13 @@ FunctionSpace::tabulate_dof_coordinates(bool transpose) const
     if (!transpose)
     {
       for (std::size_t i = 0; i < dofs.size(); ++i)
-        for (int j = 0; j < gdim; ++j)
+        for (std::size_t j= 0; j < gdim; ++j)
           coords(dofs[i], j) = x(i, j);
     }
     else
     {
       for (std::size_t i = 0; i < dofs.size(); ++i)
-        for (int j = 0; j < gdim; ++j)
+        for (std::size_t j = 0; j < gdim; ++j)
           coords(j, dofs[i]) = x(i, j);
     }
   }

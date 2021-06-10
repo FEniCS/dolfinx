@@ -1,17 +1,19 @@
 // Copyright (C) 2006-2019 Anders Logg and Garth N. Wells
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "cell_types.h"
 #include "Geometry.h"
 #include <algorithm>
-#include <basix.h>
+#include <basix/cell.h>
 #include <cfloat>
 #include <cstdlib>
 #include <numeric>
 #include <stdexcept>
+#include <xtensor/xbuilder.hpp>
+#include <xtensor/xfixed.hpp>
 
 using namespace dolfinx;
 
@@ -73,8 +75,8 @@ mesh::CellType mesh::cell_entity_type(mesh::CellType type, int d)
     return CellType::interval;
   else if (d == (dim - 1))
     return mesh::cell_facet_type(type);
-
-  return CellType::point;
+  else
+    return CellType::point;
 }
 //-----------------------------------------------------------------------------
 mesh::CellType mesh::cell_facet_type(mesh::CellType type)
@@ -107,12 +109,12 @@ graph::AdjacencyList<int> mesh::get_entity_vertices(mesh::CellType type,
                                                     int dim)
 {
   const std::vector<std::vector<int>> topology
-      = basix::topology(to_string(type).c_str())[dim];
+      = basix::cell::topology(basix::cell::str_to_type(to_string(type)))[dim];
 
   return graph::AdjacencyList<int>(topology);
 }
 //-----------------------------------------------------------------------------
-dolfinx::array2d<int> mesh::get_sub_entities(CellType type, int dim0, int dim1)
+xt::xtensor<int, 2> mesh::get_sub_entities(CellType type, int dim0, int dim1)
 {
   if (dim0 != 2)
   {
@@ -124,23 +126,22 @@ dolfinx::array2d<int> mesh::get_sub_entities(CellType type, int dim0, int dim1)
     throw std::runtime_error(
         "mesh::get_sub_entities supports getting edges (d=1) at present.");
   }
+
   // TODO: get this data from basix
-  dolfinx::array2d<int> triangle({{0, 1, 2}});
-  dolfinx::array2d<int> quadrilateral({{0, 1, 2, 3}});
-  dolfinx::array2d<int> tetrahedron(
-      {{0, 1, 2}, {0, 3, 4}, {1, 3, 5}, {2, 4, 5}});
-  dolfinx::array2d<int> hexahedron({{0, 1, 3, 5},
-                                    {0, 2, 4, 8},
-                                    {1, 2, 6, 9},
-                                    {3, 4, 7, 10},
-                                    {5, 6, 7, 11},
-                                    {8, 9, 10, 11}});
+  static const xt::xtensor_fixed<int, xt::xshape<1, 3>> triangle = {{0, 1, 2}};
+  static const xt::xtensor_fixed<int, xt::xshape<1, 4>> quadrilateral
+      = {{0, 1, 2, 3}};
+  static const xt::xtensor_fixed<int, xt::xshape<4, 3>> tetrahedron
+      = {{0, 1, 2}, {0, 3, 4}, {1, 3, 5}, {2, 4, 5}};
+  static const xt::xtensor_fixed<int, xt::xshape<6, 4>> hexahedron
+      = {{0, 1, 3, 5},  {0, 2, 4, 8},  {1, 2, 6, 9},
+         {3, 4, 7, 10}, {5, 6, 7, 11}, {8, 9, 10, 11}};
   switch (type)
   {
   case mesh::CellType::interval:
-    return dolfinx::array2d<int>(0, 0);
+    return xt::empty<int>({0, 0});
   case mesh::CellType::point:
-    return dolfinx::array2d<int>(0, 0);
+    return xt::empty<int>({0, 0});
   case mesh::CellType::triangle:
     return triangle;
   case mesh::CellType::tetrahedron:
@@ -151,18 +152,7 @@ dolfinx::array2d<int> mesh::get_sub_entities(CellType type, int dim0, int dim1)
     return hexahedron;
   default:
     throw std::runtime_error("Unsupported cell type.");
-    return dolfinx::array2d<int>(0, 0);
   }
-
-  // static const int triangle[][4] = {
-  //     {0, 1, 2, -1},
-  // };
-  // static const int tetrahedron[][4]
-  //     = {{0, 1, 2, -1}, {0, 3, 4, -1}, {1, 3, 5, -1}, {2, 4, 5, -1}};
-  // static const int quadrilateral[][4] = {{0, 3, 1, 2}};
-  // static const int hexahedron[][4]
-  //     = {{0, 1, 4, 5},   {2, 3, 6, 7},  {0, 2, 8, 9},
-  //        {1, 3, 10, 11}, {4, 6, 8, 10}, {5, 7, 9, 11}};
 }
 //-----------------------------------------------------------------------------
 int mesh::cell_dim(mesh::CellType type)
@@ -187,21 +177,20 @@ int mesh::cell_dim(mesh::CellType type)
     return 3;
   default:
     throw std::runtime_error("Unknown cell type.");
-    return -1;
   }
 }
 //-----------------------------------------------------------------------------
 int mesh::cell_num_entities(mesh::CellType type, int dim)
 {
   assert(dim <= 3);
-  static const int point[4] = {1, 0, 0, 0};
-  static const int interval[4] = {2, 1, 0, 0};
-  static const int triangle[4] = {3, 3, 1, 0};
-  static const int quadrilateral[4] = {4, 4, 1, 0};
-  static const int tetrahedron[4] = {4, 6, 4, 1};
-  static const int pyramid[4] = {5, 8, 5, 1};
-  static const int prism[4] = {6, 9, 5, 1};
-  static const int hexahedron[4] = {8, 12, 6, 1};
+  constexpr std::array<int, 4> point = {1, 0, 0, 0};
+  constexpr std::array<int, 4> interval = {2, 1, 0, 0};
+  constexpr std::array<int, 4> triangle = {3, 3, 1, 0};
+  constexpr std::array<int, 4> quadrilateral = {4, 4, 1, 0};
+  constexpr std::array<int, 4> tetrahedron = {4, 6, 4, 1};
+  constexpr std::array<int, 4> pyramid = {5, 8, 5, 1};
+  constexpr std::array<int, 4> prism = {6, 9, 5, 1};
+  constexpr std::array<int, 4> hexahedron = {8, 12, 6, 1};
   switch (type)
   {
   case mesh::CellType::point:
@@ -222,7 +211,6 @@ int mesh::cell_num_entities(mesh::CellType type, int dim)
     return hexahedron[dim];
   default:
     throw std::runtime_error("Unknown cell type.");
-    return -1;
   }
 }
 //-----------------------------------------------------------------------------

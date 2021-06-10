@@ -1,6 +1,6 @@
 // Copyright (C) 2020 Garth N. Wells
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -62,7 +62,7 @@ public:
   std::shared_ptr<const common::IndexMap> map() const { return _map; }
 
   /// Get block size
-  int bs() const { return _bs; }
+  constexpr int bs() const { return _bs; }
 
   /// Get local part of the vector (const version)
   const std::vector<T>& array() const { return _x; }

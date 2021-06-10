@@ -1,6 +1,6 @@
 // Copyright (C) 2014-2020 Chris Richardson
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -16,6 +16,7 @@
 #include <limits>
 #include <map>
 #include <vector>
+#include <xtensor/xnorm.hpp>
 
 using namespace dolfinx;
 using namespace dolfinx::refinement;
@@ -308,7 +309,7 @@ face_long_edge(const mesh::Mesh& mesh)
   auto map_e = mesh.topology().index_map(1);
   assert(map_e);
   std::vector<double> edge_length(map_e->size_local() + map_e->num_ghosts());
-  const array2d<double>& x = mesh.geometry().x();
+  const xt::xtensor<double, 2>& x = mesh.geometry().x();
   for (std::size_t e = 0; e < edge_length.size(); ++e)
   {
     // Get first attached cell
@@ -328,11 +329,9 @@ face_long_edge(const mesh::Mesh& mesh)
     const std::size_t local1 = std::distance(cell_vertices.begin(), it1);
 
     auto x_dofs = x_dofmap.links(c);
-    auto x0 = x.row(x_dofs[local0]);
-    auto x1 = x.row(x_dofs[local1]);
-    edge_length[e] = std::sqrt(std::transform_reduce(
-        x0.begin(), x0.end(), x1.begin(), 0.0, std::plus<>(),
-        [](double x, double y) { return (x - y) * (x - y); }));
+    auto x0 = xt::row(x, x_dofs[local0]);
+    auto x1 = xt::row(x, x_dofs[local1]);
+    edge_length[e] = xt::norm_l2(x0 - x1)();
   }
 
   // Get longest edge of each face
@@ -383,7 +382,7 @@ face_long_edge(const mesh::Mesh& mesh)
 }
 //-----------------------------------------------------------------------------
 // Convenient interface for both uniform and marker refinement
-std::tuple<graph::AdjacencyList<std::int64_t>, array2d<double>,
+std::tuple<graph::AdjacencyList<std::int64_t>, xt::xtensor<double, 2>,
            std::vector<std::int32_t>>
 compute_refinement(
     const MPI_Comm& neighbor_comm, const std::vector<bool>& marked_edges,
@@ -519,9 +518,8 @@ mesh::Mesh plaza::refine(const mesh::Mesh& mesh, bool redistribute)
 
   if (dolfinx::MPI::size(mesh.mpi_comm()) == 1)
   {
-    array2d<double> coords(new_vertex_coordinates);
     return mesh::create_mesh(mesh.mpi_comm(), cell_adj, mesh.geometry().cmap(),
-                             coords, mesh::GhostMode::none);
+                             new_vertex_coordinates, mesh::GhostMode::none);
   }
 
   const std::shared_ptr<const common::IndexMap> map_c
@@ -551,9 +549,8 @@ mesh::Mesh plaza::refine(const mesh::Mesh& mesh,
 
   if (dolfinx::MPI::size(mesh.mpi_comm()) == 1)
   {
-    array2d<double> coords(new_vertex_coordinates);
     return mesh::create_mesh(mesh.mpi_comm(), cell_adj, mesh.geometry().cmap(),
-                             coords, mesh::GhostMode::none);
+                             new_vertex_coordinates, mesh::GhostMode::none);
   }
 
   const std::shared_ptr<const common::IndexMap> map_c
@@ -574,7 +571,7 @@ mesh::Mesh plaza::refine(const mesh::Mesh& mesh,
                                redistribute, ghost_mode);
 }
 //------------------------------------------------------------------------------
-std::tuple<graph::AdjacencyList<std::int64_t>, array2d<double>,
+std::tuple<graph::AdjacencyList<std::int64_t>, xt::xtensor<double, 2>,
            std::vector<std::int32_t>>
 plaza::compute_refinement_data(const mesh::Mesh& mesh)
 {
@@ -604,7 +601,7 @@ plaza::compute_refinement_data(const mesh::Mesh& mesh)
           std::move(parent_cell)};
 }
 //------------------------------------------------------------------------------
-std::tuple<graph::AdjacencyList<std::int64_t>, array2d<double>,
+std::tuple<graph::AdjacencyList<std::int64_t>, xt::xtensor<double, 2>,
            std::vector<std::int32_t>>
 plaza::compute_refinement_data(
     const mesh::Mesh& mesh,
