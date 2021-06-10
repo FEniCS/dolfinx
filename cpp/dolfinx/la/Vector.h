@@ -99,6 +99,10 @@ public:
   /// do a global reduction with MPI_MAX
   T max()
   {
+    static_assert(!std::is_same<T, std::complex<double>>::value
+                      and !std::is_same<T, std::complex<float>>::value,
+                  "max cannot be used with complex.");
+
     const std::int32_t size_local = _map->size_local();
 
     T result = std::reduce(_x.data(), _x.data() + size_local, 0.0,
