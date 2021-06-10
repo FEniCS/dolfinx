@@ -121,7 +121,6 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
     ufc_finite_element* ufc_sub_element = ufc_element.sub_elements[i];
     _sub_elements.push_back(std::make_shared<FiniteElement>(*ufc_sub_element));
   }
-
 }
 //-----------------------------------------------------------------------------
 std::string FiniteElement::signature() const noexcept { return _signature; }
@@ -157,32 +156,12 @@ int FiniteElement::value_dimension(int i) const
 //-----------------------------------------------------------------------------
 std::string FiniteElement::family() const noexcept { return _family; }
 //-----------------------------------------------------------------------------
-void FiniteElement::evaluate_reference_basis(
-    xt::xtensor<double, 3>& reference_values,
-    const xt::xtensor<double, 2>& X) const
+void FiniteElement::tabulate(xt::xtensor<double, 4>& reference_values,
+                             const xt::xtensor<double, 2>& X, int order) const
 {
   assert(_element);
-  xt::xtensor<double, 4> basis = _element->tabulate(0, X);
-  assert(basis.shape(1) == X.shape(0));
-  for (std::size_t p = 0; p < basis.shape(1); ++p)
-  {
-    for (std::size_t d = 0; d < basis.shape(2); ++d)
-    {
-      for (std::size_t v = 0; v < basis.shape(3); ++v)
-        reference_values(p, d, v) = basis(0, p, d, v);
-    }
-  }
+  _element->tabulate(order, X);
 }
-//-----------------------------------------------------------------------------
-// void FiniteElement::evaluate_reference_basis_derivatives(
-//     std::vector<double>& /*values*/, int /*order*/,
-//     const xt::xtensor<double, 2>& /*X*/) const
-// {
-//   // NOTE: This function is untested. Add tests and re-active
-//   throw std::runtime_error(
-//       "FiniteElement::evaluate_reference_basis_derivatives required
-//       updating");
-// }
 //-----------------------------------------------------------------------------
 void FiniteElement::transform_reference_basis(
     xt::xtensor<double, 3>& values,
