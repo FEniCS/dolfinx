@@ -160,7 +160,7 @@ void FiniteElement::tabulate(xt::xtensor<double, 4>& reference_values,
                              const xt::xtensor<double, 2>& X, int order) const
 {
   assert(_element);
-  _element->tabulate(order, X);
+  reference_values = _element->tabulate(order, X);
 }
 //-----------------------------------------------------------------------------
 void FiniteElement::transform_reference_basis(
