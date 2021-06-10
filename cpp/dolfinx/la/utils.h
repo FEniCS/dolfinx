@@ -20,24 +20,4 @@ enum class Norm
   frobenius
 };
 
-/// Scatter la::Vector local data to ghost values.
-/// @param[in, out] v la::Vector to update
-template <typename T>
-void scatter_fwd(Vector<T>& v);
-
-/// Scatter la::Vector ghost data to owner. This process will result in multiple
-/// incoming values, which can be summed or inserted into the local vector.
-/// @param[in, out] v la::Vector to update
-/// @param op IndexMap operation (add or insert)
-template <typename T>
-void scatter_rev(Vector<T>& v, dolfinx::common::IndexMap::Mode op);
-
-/// L2 Norm of distributed vector
-template <typename T>
-T norm(const la::Vector<T>& v);
-
-/// Maximum value of distributed vector
-template <typename T>
-T max(const la::Vector<T>& v);
-
 } // namespace dolfinx::la
