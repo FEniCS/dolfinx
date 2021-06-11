@@ -42,11 +42,9 @@ void test_vector()
   std::fill(v.mutable_array().begin(), v.mutable_array().end(), 1.0);
 
   const double norm2 = v.squared_norm();
-
   CHECK(norm2 == mpi_size * size_local);
 
-  std::fill(v.mutable_array().begin(), v.mutable_array().end(),
-            (PetscScalar)mpi_rank);
+  std::fill(v.mutable_array().begin(), v.mutable_array().end(), mpi_rank);
 
   const double sumn2
       = size_local * (mpi_size - 1) * mpi_size * (2 * mpi_size - 1) / 6;
@@ -54,9 +52,9 @@ void test_vector()
   CHECK(v.norm(la::Norm::l2) == std::sqrt(sumn2));
   CHECK(la::inner_product(v, v) == sumn2);
 
-  // Skip this check for complex values, it will fail to compile
+  // Skip this check for complex values only valid for reals
   if constexpr (std::is_same<PetscScalar, double>::value)
-    CHECK(v.max() == (PetscScalar)mpi_rank);
+    CHECK(v.max() == static_cast<PetscScalar>(mpi_size - 1));
 }
 
 } // namespace
