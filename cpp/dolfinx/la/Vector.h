@@ -9,6 +9,7 @@
 #include "utils.h"
 #include <complex>
 #include <dolfinx/common/IndexMap.h>
+#include <limits>
 #include <memory>
 #include <numeric>
 #include <vector>
@@ -48,7 +49,8 @@ public:
   /// Move Assignment operator
   Vector& operator=(Vector&& x) = default;
 
-  /// Scatter local data to ghost values
+  /// Scatter local data to ghost positions on other ranks
+  /// @note Collective MPI operation
   void scatter_fwd()
   {
     const std::int32_t local_size = _bs * _map->size_local();
@@ -57,10 +59,11 @@ public:
     _map->scatter_fwd(xlocal, xremote, _bs);
   }
 
-  /// Scatter ghost data to owner. This process will result in multiple
-  /// incoming values, which can be summed or inserted into the local
-  /// vector.
+  /// Scatter ghost data to owner. This process may receive data from
+  /// more than one process, and the received data can be summed or
+  /// inserted into the local portion of the vector.
   /// @param op IndexMap operation (add or insert)
+  /// @note Collective MPI operation
   void scatter_rev(dolfinx::common::IndexMap::Mode op)
   {
     const std::int32_t local_size = _bs * _map->size_local();
@@ -72,7 +75,7 @@ public:
 
   /// Compute the norm of the vector
   /// @note Collective MPI operation
-  T norm(la::Norm type = la::Norm::l2)
+  T norm(la::Norm type = la::Norm::l2) const
   {
     switch (type)
     {
@@ -85,7 +88,7 @@ public:
 
   /// Compute the squared L2 norm of vector
   /// @note Collective MPI operation
-  double squared_norm()
+  double squared_norm() const
   {
     const std::int32_t size_local = _map->size_local();
     double result = std::transform_reduce(_x.data(), _x.data() + size_local,
@@ -96,18 +99,21 @@ public:
     return norm2;
   }
 
-  /// Maximum value of the local part of the vector. To get the global maximum
-  /// do a global reduction with MPI_MAX
-  T max()
+  /// Find the value of the maximum entry in the vector
+  /// @note Collective MPI operation
+  T max() const
   {
     static_assert(!std::is_same<T, std::complex<double>>::value
                       and !std::is_same<T, std::complex<float>>::value,
                   "max cannot be used with complex.");
-    const std::int32_t size_local = _map->size_local();
-    if (size_local == 0)
-      throw std::runtime_error("Cannot get max of zero size vector");
-    T result = *std::max_element(_x.begin(), _x.begin() + size_local);
-    return result;
+    T result = std::numeric_limits<T>::min();
+    if (const std::int32_t size_local = _map->size_local(); size_local > 0)
+      result = *std::max_element(_x.begin(), _x.begin() + size_local);
+
+    T max;
+    MPI_Allreduce(&result, &max, 1, dolfinx::MPI::mpi_type<T>(), MPI_MAX,
+                  _map->comm());
+    return max;
   }
 
   /// Get IndexMap
