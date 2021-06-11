@@ -74,7 +74,7 @@ public:
     switch (type)
     {
     case la::Norm::l2:
-      return std::sqrt(this->squared_norm);
+      return std::sqrt(this->squared_norm());
     default:
       throw std::runtime_error("Norm type not supported");
     }
