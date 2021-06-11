@@ -156,7 +156,15 @@ T inner_product(const Vector<T>& a, const Vector<T>& b)
 
   const T local = std::transform_reduce(
       x_a.begin(), x_a.begin() + local_size, x_b.begin(), static_cast<T>(0),
-      std::plus<T>(), [](T a, T b) { return std::conj(a) * b; });
+      std::plus<T>(),
+      [](T a, T b) -> T
+      {
+        if constexpr (std::is_same<T, std::complex<double>>::value
+                      or std::is_same<T, std::complex<float>>::value)
+          return std::conj(a) * b;
+        else
+          return a * b;
+      });
 
   T result;
   MPI_Allreduce(&local, &result, 1, dolfinx::MPI::mpi_type<T>(), MPI_SUM,
