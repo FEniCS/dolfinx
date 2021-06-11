@@ -8,6 +8,7 @@
 
 #include "utils.h"
 #include <dolfinx/common/IndexMap.h>
+#include <limits>
 #include <memory>
 
 namespace dolfinx::la
@@ -100,8 +101,9 @@ public:
                       and !std::is_same<T, std::complex<float>>::value,
                   "max cannot be used with complex.");
     const std::int32_t size_local = _map->size_local();
-    T result = std::reduce(_x.data(), _x.data() + size_local, 0.0,
-                           [](T a, T b) { return std::max(a, b); });
+    if (size_local == 0)
+      throw std::runtime_error("Cannot get max of zero size vector");
+    T result = *std::max_element(_x.begin(), _x.begin() + size_local);
     return result;
   }
 
