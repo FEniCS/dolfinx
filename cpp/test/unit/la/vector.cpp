@@ -51,8 +51,12 @@ void test_vector()
   const double sumn2
       = size_local * (mpi_size - 1) * mpi_size * (2 * mpi_size - 1) / 6;
   CHECK(v.squared_norm() == sumn2);
+  CHECK(v.norm(la::Norm::l2) == std::sqrt(sumn2));
   CHECK(la::inner_product(v, v) == sumn2);
-  CHECK(v.max() == (PetscScalar)mpi_rank);
+
+  // Skip this check for complex values, it will fail to compile
+  if constexpr (std::is_same<PetscScalar, double>::value)
+    CHECK(v.max() == (PetscScalar)mpi_rank);
 }
 
 } // namespace

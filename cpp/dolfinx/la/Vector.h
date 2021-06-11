@@ -82,7 +82,7 @@ public:
 
   /// Compute the squared L2 norm of vector
   /// @note Collective MPI operation
-  T squared_norm()
+  double squared_norm()
   {
     const std::int32_t size_local = _map->size_local();
     double result = std::transform_reduce(_x.data(), _x.data() + size_local,
