@@ -144,12 +144,24 @@ T inner_product(const Vector<T>& a, const Vector<T>& b)
     throw std::runtime_error("Incompatible vector sizes");
   const std::vector<T>& x_a = a.array();
   const std::vector<T>& x_b = b.array();
-  T local
-      = std::transform_reduce(a.begin(), a.begin() + local_size, b.begin(), 0.0,
-                              [](T a, T b) { return std::conj(a) * b; });
-  double result;
+
+  T local;
+  if constexpr (std::is_same<T, std::complex<double>>::value
+                or std::is_same<T, std::complex<float>>::value)
+  {
+    local = std::transform_reduce(
+        x_a.begin(), x_a.begin() + local_size, x_b.begin(), 0.0, std::plus<T>(),
+        [](const T& a, const T& b) { return (std::conj(a) * b); });
+  }
+  else
+  {
+    local = std::transform_reduce(x_a.begin(), x_a.begin() + local_size,
+                                  x_b.begin(), 0.0);
+  }
+
+  T result;
   MPI_Allreduce(&local, &result, 1, dolfinx::MPI::mpi_type<T>(), MPI_SUM,
-                a->map().comm());
+                a.map()->comm());
   return result;
 }
 
