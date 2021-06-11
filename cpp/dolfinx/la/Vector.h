@@ -150,8 +150,9 @@ T inner_product(const Vector<T>& a, const Vector<T>& b)
                 or std::is_same<T, std::complex<float>>::value)
   {
     local = std::transform_reduce(
-        x_a.begin(), x_a.begin() + local_size, x_b.begin(), 0.0, std::plus<T>(),
-        [](const T& a, const T& b) { return (std::conj(a) * b); });
+        x_a.begin(), x_a.begin() + local_size, x_b.begin(), (T)0.0,
+        std::plus<T>(),
+        [](const T& a, const T& b) { return std::conj(a) * b; });
   }
   else
   {
