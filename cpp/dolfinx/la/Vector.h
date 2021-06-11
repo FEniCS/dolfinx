@@ -154,20 +154,9 @@ T inner_product(const Vector<T>& a, const Vector<T>& b)
   const std::vector<T>& x_a = a.array();
   const std::vector<T>& x_b = b.array();
 
-  T local;
-  if constexpr (std::is_same<T, std::complex<double>>::value
-                or std::is_same<T, std::complex<float>>::value)
-  {
-    local = std::transform_reduce(x_a.begin(), x_a.begin() + local_size,
-                                  x_b.begin(), (T)0.0, std::plus<T>(),
-                                  [](const T& a, const T& b)
-                                  { return std::conj(a) * b; });
-  }
-  else
-  {
-    local = std::transform_reduce(x_a.begin(), x_a.begin() + local_size,
-                                  x_b.begin(), 0.0);
-  }
+  const T local = std::transform_reduce(
+      x_a.begin(), x_a.begin() + local_size, x_b.begin(), static_cast<T>(0),
+      std::plus<T>(), [](T a, T b) { return std::conj(a) * b; });
 
   T result;
   MPI_Allreduce(&local, &result, 1, dolfinx::MPI::mpi_type<T>(), MPI_SUM,
