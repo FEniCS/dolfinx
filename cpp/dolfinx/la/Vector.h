@@ -7,8 +7,12 @@
 #pragma once
 
 #include "utils.h"
+#include <complex>
 #include <dolfinx/common/IndexMap.h>
 #include <memory>
+#include <numeric>
+#include <vector>
+#include <xtl/xspan.hpp>
 
 namespace dolfinx::la
 {
@@ -148,10 +152,10 @@ T inner_product(const Vector<T>& a, const Vector<T>& b)
   if constexpr (std::is_same<T, std::complex<double>>::value
                 or std::is_same<T, std::complex<float>>::value)
   {
-    local = std::transform_reduce(
-        x_a.begin(), x_a.begin() + local_size, x_b.begin(), (T)0.0,
-        std::plus<T>(),
-        [](const T& a, const T& b) { return std::conj(a) * b; });
+    local = std::transform_reduce(x_a.begin(), x_a.begin() + local_size,
+                                  x_b.begin(), (T)0.0, std::plus<T>(),
+                                  [](const T& a, const T& b)
+                                  { return std::conj(a) * b; });
   }
   else
   {
