@@ -29,6 +29,7 @@ T assemble_scalar(const fem::Form<T>& M, const xtl::span<const T>& constants,
 /// Assemble functional over cells
 template <typename T>
 T assemble_cells(
+//    std::shared_ptr<const fem::FiniteElement> element,
     const mesh::Geometry& geometry,
     const xtl::span<const std::int32_t>& active_cells,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
@@ -68,6 +69,9 @@ T assemble_scalar(const fem::Form<T>& M, const xtl::span<const T>& constants,
   const std::int32_t num_cells
       = mesh->topology().connectivity(tdim, 0)->num_nodes();
 
+  // std::shared_ptr<const fem::FiniteElement> element
+  //    = M.function_spaces().at(0)->element();
+
   const bool needs_permutation_data = M.needs_permutation_data();
   if (needs_permutation_data)
     mesh->topology_mutable().create_entity_permutations();
@@ -81,8 +85,10 @@ T assemble_scalar(const fem::Form<T>& M, const xtl::span<const T>& constants,
     const auto& fn = M.kernel(IntegralType::cell, i);
     const std::vector<std::int32_t>& active_cells
         = M.domains(IntegralType::cell, i);
-    value += impl::assemble_cells(mesh->geometry(), active_cells, fn, constants,
-                                  coeffs, cell_info);
+    value += impl::assemble_cells(
+        //element,
+        mesh->geometry(), active_cells, fn, constants,
+        coeffs, cell_info);
   }
 
   if (M.num_integrals(IntegralType::exterior_facet) > 0
@@ -122,6 +128,7 @@ T assemble_scalar(const fem::Form<T>& M, const xtl::span<const T>& constants,
 //-----------------------------------------------------------------------------
 template <typename T>
 T assemble_cells(
+//    std::shared_ptr<const fem::FiniteElement> element,
     const mesh::Geometry& geometry,
     const xtl::span<const std::int32_t>& active_cells,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
@@ -129,6 +136,8 @@ T assemble_cells(
     const xtl::span<const T>& constants, const array2d<T>& coeffs,
     const xtl::span<const std::uint32_t>& cell_info)
 {
+  std::cout << "<assemble_cells>\n";
+//  std::cout << element->space_dimension() << "\n";
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
 
@@ -141,6 +150,7 @@ T assemble_cells(
 
   // Iterate over all cells
   T value(0);
+
   for (std::int32_t c : active_cells)
   {
     // Get cell coordinates/geometry
@@ -152,10 +162,14 @@ T assemble_cells(
     }
 
     auto coeff_cell = coeffs.row(c);
+
     fn(&value, coeff_cell.data(), constants.data(), coordinate_dofs.data(),
        nullptr, nullptr, cell_info[c]);
+
+    std::cout << "  value = " << value << "\n";
   }
 
+  std::cout << "</assemble_cells>\n";
   return value;
 }
 //-----------------------------------------------------------------------------

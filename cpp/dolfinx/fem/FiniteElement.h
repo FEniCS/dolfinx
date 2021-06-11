@@ -361,8 +361,9 @@ public:
   /// @param[in] cell_permutation Permutation data for the cell
   /// @param[in] block_size The block_size of the input data
   template <typename T>
-  void apply_mixed_element_dof_transformation_to_transpose(
-      xtl::span<T> data, std::uint32_t cell_permutation, int block_size) const
+  void apply_mixed_element_dof_transformation_to_transpose(xtl::span<T> data,
+                                              std::uint32_t cell_permutation,
+                                              int block_size) const
   {
     assert(_sub_elements.size() != 0 and _bs == 1);
 
@@ -371,8 +372,8 @@ public:
     {
       const std::size_t width
           = _sub_elements[e]->space_dimension() * block_size;
-      _sub_elements[e]->apply_dof_transformation_to_transpose(
-          data.subspan(start, width), cell_permutation, block_size);
+      _sub_elements[e]->apply_dof_transformation_to_transpose(data.subspan(start, width),
+                                                 cell_permutation, block_size);
       start += width;
     }
   }
