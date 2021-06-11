@@ -52,6 +52,7 @@ void test_vector()
       = size_local * (mpi_size - 1) * mpi_size * (2 * mpi_size - 1) / 6;
   CHECK(v.squared_norm() == sumn2);
   CHECK(la::inner_product(v, v) == sumn2);
+  CHECK(v.max() == (PetscScalar)mpi_rank);
 }
 
 } // namespace
