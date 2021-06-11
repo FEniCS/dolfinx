@@ -8,7 +8,6 @@
 
 #include "utils.h"
 #include <dolfinx/common/IndexMap.h>
-#include <limits>
 #include <memory>
 
 namespace dolfinx::la
