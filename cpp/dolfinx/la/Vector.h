@@ -19,7 +19,7 @@ template <typename T>
 class Vector
 {
 public:
-  /// Create vector
+  /// Create a distributed vector
   Vector(const std::shared_ptr<const common::IndexMap>& map, int bs)
       : _map(map), _bs(bs)
   {
