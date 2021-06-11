@@ -4,13 +4,10 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <dolfinx/common/IndexMap.h>
-#include <dolfinx/la/Vector.h>
 #pragma once
 
 namespace dolfinx::la
 {
-
 /// Norm types
 enum class Norm
 {
