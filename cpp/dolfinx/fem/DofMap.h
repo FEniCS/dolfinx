@@ -127,6 +127,8 @@ public:
   /// @param[in] comm MPI Communicator
   /// @param[in] topology The mesh topology that the dofmap is defined
   /// on
+  /// @param[in] reorder_fn The graph re-ordering function to apply to
+  /// the dof data
   /// @return The collapsed dofmap
   std::pair<std::unique_ptr<DofMap>, std::vector<std::int32_t>> collapse(
       MPI_Comm comm, const mesh::Topology& topology,
