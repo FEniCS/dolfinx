@@ -85,12 +85,15 @@ public:
     case la::Norm::linf:
     {
       const std::int32_t size_local = _map->size_local();
-      double result = std::reduce(_x.data(), _x.data() + size_local, 0.0,
-                                  [](const double& a, const T& b) -> double {
-                                    return std::max(a, std::norm(b));
-                                  });
+      double result
+          = std::reduce(_x.begin(), std::next(_x.begin(), size_local), 0.0,
+                        [](const double& a, const T& b) -> double
+                        { return std::max(a, std::norm(b)); });
       double linf;
       MPI_Allreduce(&result, &linf, 1, MPI_DOUBLE, MPI_SUM, _map->comm());
+
+      // Note: std::norm computes the 'absolute square', hence we need
+      // std::sqrt here
       return std::sqrt(linf);
     }
     default:
@@ -103,29 +106,12 @@ public:
   double squared_norm() const
   {
     const std::int32_t size_local = _map->size_local();
-    double result = std::transform_reduce(_x.data(), _x.data() + size_local,
-                                          0.0, std::plus<double>(),
-                                          [](T val) { return std::norm(val); });
+    double result = std::transform_reduce(
+        _x.begin(), std::next(_x.begin(), size_local), 0.0, std::plus<double>(),
+        [](T val) { return std::norm(val); });
     double norm2;
     MPI_Allreduce(&result, &norm2, 1, MPI_DOUBLE, MPI_SUM, _map->comm());
     return norm2;
-  }
-
-  /// Find the value of the maximum entry in the vector
-  /// @note Collective MPI operation
-  T max() const
-  {
-    static_assert(!std::is_same<T, std::complex<double>>::value
-                      and !std::is_same<T, std::complex<float>>::value,
-                  "max cannot be used with complex.");
-    T result = std::numeric_limits<T>::min();
-    if (const std::int32_t size_local = _map->size_local(); size_local > 0)
-      result = *std::max_element(_x.begin(), _x.begin() + size_local);
-
-    T max;
-    MPI_Allreduce(&result, &max, 1, dolfinx::MPI::mpi_type<T>(), MPI_MAX,
-                  _map->comm());
-    return max;
   }
 
   /// Get IndexMap
@@ -168,7 +154,9 @@ T inner_product(const Vector<T>& a, const Vector<T>& b)
 
   const T local = std::transform_reduce(
       x_a.begin(), x_a.begin() + local_size, x_b.begin(), static_cast<T>(0),
-      std::plus<T>(), [](T a, T b) -> T {
+      std::plus<T>(),
+      [](T a, T b) -> T
+      {
         if constexpr (std::is_same<T, std::complex<double>>::value
                       or std::is_same<T, std::complex<float>>::value)
           return std::conj(a) * b;

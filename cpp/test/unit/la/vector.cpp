@@ -20,7 +20,7 @@ void test_vector()
 {
   const int mpi_size = dolfinx::MPI::size(MPI_COMM_WORLD);
   const int mpi_rank = dolfinx::MPI::rank(MPI_COMM_WORLD);
-  const int size_local = 100;
+  constexpr int size_local = 100;
 
   // Create some ghost entries on next process
   int num_ghosts = (mpi_size - 1) * 3;
@@ -28,10 +28,11 @@ void test_vector()
   for (int i = 0; i < num_ghosts; ++i)
     ghosts[i] = (mpi_rank + 1) % mpi_size * size_local + i;
 
-  std::vector<int> global_ghost_owner(ghosts.size(), (mpi_rank + 1) % mpi_size);
+  const std::vector<int> global_ghost_owner(ghosts.size(),
+                                            (mpi_rank + 1) % mpi_size);
 
   // Create an IndexMap
-  auto index_map = std::make_shared<common::IndexMap>(
+  const auto index_map = std::make_shared<common::IndexMap>(
       MPI_COMM_WORLD, size_local,
       dolfinx::MPI::compute_graph_edges(
           MPI_COMM_WORLD,
@@ -51,11 +52,6 @@ void test_vector()
   CHECK(v.squared_norm() == sumn2);
   CHECK(v.norm(la::Norm::l2) == std::sqrt(sumn2));
   CHECK(la::inner_product(v, v) == sumn2);
-
-  // Skip this check for complex values only valid for reals
-  if constexpr (std::is_same<PetscScalar, double>::value)
-    CHECK(v.max() == static_cast<PetscScalar>(mpi_size - 1));
-
   CHECK(v.norm(la::Norm::linf) == static_cast<PetscScalar>(mpi_size - 1));
 }
 
