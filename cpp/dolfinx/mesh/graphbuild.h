@@ -32,7 +32,7 @@ build_dual_graph(const MPI_Comm comm,
 /// @todo Fix return description - it's unclear
 ///
 /// @param[in] cell_vertices The vertices of the cells
-/// @param[in] dim The topological dimension if the cells
+/// @param[in] tdim The topological dimension if the cells
 /// @return (local_graph, facet_cell_map, number of local edges in the
 /// graph (undirected)
 std::pair<graph::AdjacencyList<std::int32_t>, xt::xtensor<std::int64_t, 2>>
