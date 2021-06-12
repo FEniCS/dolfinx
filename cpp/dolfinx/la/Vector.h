@@ -75,12 +75,24 @@ public:
 
   /// Compute the norm of the vector
   /// @note Collective MPI operation
+  /// @param type Norm type (supported types are \f$L^2\f$ and \f$L^\infty\f$)
   T norm(la::Norm type = la::Norm::l2) const
   {
     switch (type)
     {
     case la::Norm::l2:
       return std::sqrt(this->squared_norm());
+    case la::Norm::linf:
+    {
+      const std::int32_t size_local = _map->size_local();
+      double result = std::reduce(_x.data(), _x.data() + size_local, 0.0,
+                                  [](const double& a, const T& b) -> double {
+                                    return std::max(a, std::norm(b));
+                                  });
+      double linf;
+      MPI_Allreduce(&result, &linf, 1, MPI_DOUBLE, MPI_SUM, _map->comm());
+      return std::sqrt(linf);
+    }
     default:
       throw std::runtime_error("Norm type not supported");
     }
@@ -156,9 +168,7 @@ T inner_product(const Vector<T>& a, const Vector<T>& b)
 
   const T local = std::transform_reduce(
       x_a.begin(), x_a.begin() + local_size, x_b.begin(), static_cast<T>(0),
-      std::plus<T>(),
-      [](T a, T b) -> T
-      {
+      std::plus<T>(), [](T a, T b) -> T {
         if constexpr (std::is_same<T, std::complex<double>>::value
                       or std::is_same<T, std::complex<float>>::value)
           return std::conj(a) * b;

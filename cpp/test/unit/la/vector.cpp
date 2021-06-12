@@ -55,6 +55,8 @@ void test_vector()
   // Skip this check for complex values only valid for reals
   if constexpr (std::is_same<PetscScalar, double>::value)
     CHECK(v.max() == static_cast<PetscScalar>(mpi_size - 1));
+
+  CHECK(v.norm(la::Norm::linf) == static_cast<PetscScalar>(mpi_size - 1));
 }
 
 } // namespace
