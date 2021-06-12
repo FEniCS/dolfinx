@@ -24,11 +24,31 @@
 #include <vector>
 
 using namespace dolfinx;
-using namespace dolfinx::fem;
 
 namespace
 {
 //-----------------------------------------------------------------------------
+
+/// Reorder graph using the SCOTCH GPS implementation
+[[maybe_unused]] std::vector<int>
+scotch_reorder(const graph::AdjacencyList<std::int32_t>& graph)
+{
+  return graph::scotch::compute_gps(graph, 2).first;
+}
+
+/// Random graph reordering
+/// @note: Randomised dof ordering should only be used for
+/// testing/benchmarking
+[[maybe_unused]] std::vector<int>
+random_reorder(const graph::AdjacencyList<std::int32_t>& graph)
+{
+  std::vector<int> node_remap(graph.num_nodes());
+  std::iota(node_remap.begin(), node_remap.end(), 0);
+  std::random_device rd;
+  std::default_random_engine g(rd());
+  std::shuffle(node_remap.begin(), node_remap.end(), g);
+  return node_remap;
+}
 
 /// Build a simple dofmap from ElementDofmap based on mesh entity
 /// indices (local and global)
@@ -42,7 +62,7 @@ namespace
 std::tuple<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>,
            std::vector<std::pair<std::int8_t, std::int32_t>>>
 build_basic_dofmap(const mesh::Topology& topology,
-                   const ElementDofLayout& element_dof_layout)
+                   const fem::ElementDofLayout& element_dof_layout)
 {
   // Start timer for dofmap initialization
   common::Timer t0("Init dofmap from element dofmap");
@@ -201,13 +221,20 @@ build_basic_dofmap(const mesh::Topology& topology,
 /// number of dofs on this process.
 ///
 /// @param [in] dofmap The basic dofmap data
+/// @param [in] dof_entity Map from dof index to (dim, entity_index),
+/// where entity_index is the process-wise mesh entity index
 /// @param [in] topology The mesh topology
+/// @param [in] reorder_fn Graph reordering function that is applied for
+/// dof re-ordering
 /// @return The pair (old-to-new local index map, M), where M is the
 /// number of dofs owned by this process
 std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
     const graph::AdjacencyList<std::int32_t>& dofmap,
     const std::vector<std::pair<std::int8_t, std::int32_t>>& dof_entity,
-    const mesh::Topology& topology)
+    const mesh::Topology& topology,
+    const std::function<
+        std::vector<int>(const graph::AdjacencyList<std::int32_t>)>& reorder_fn
+    = random_reorder)
 {
   common::Timer t0("Compute dof reordering map");
 
@@ -303,33 +330,10 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
     }
   }
 
-  std::vector<int> node_remap;
-  {
-    const graph::AdjacencyList<std::int32_t> graph(std::move(graph_data),
-                                                   std::move(graph_offsets));
-
-    // Reorder owned nodes
-    const std::string ordering_library = "SCOTCH";
-    if (ordering_library == "Boost")
-      node_remap = graph::compute_cuthill_mckee(graph, true);
-    else if (ordering_library == "SCOTCH")
-      std::tie(node_remap, std::ignore) = graph::scotch::compute_gps(graph);
-    else if (ordering_library == "random")
-    {
-      // NOTE: Randomised dof ordering should only be used for
-      // testing/benchmarking
-      node_remap.resize(graph.num_nodes());
-      std::iota(node_remap.begin(), node_remap.end(), 0);
-      std::random_device rd;
-      std::default_random_engine g(rd());
-      std::shuffle(node_remap.begin(), node_remap.end(), g);
-    }
-    else
-    {
-      throw std::runtime_error("Requested library '" + ordering_library
-                               + "' is unknown");
-    }
-  }
+  // Re-order graph
+  const graph::AdjacencyList<std::int32_t> graph(std::move(graph_data),
+                                                 std::move(graph_offsets));
+  const std::vector<int> node_remap = reorder_fn(graph);
 
   // Reconstruct remapped nodes, and place un-owned nodes at the end
   std::vector<int> old_to_new(dof_entity.size(), -1);
@@ -353,15 +357,15 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
 /// @param [in] topology The mesh topology
 /// @param [in] num_owned The number of nodes owned by this process
 /// @param [in] process_offset The node offset for this process, i.e.
-///   the global index of owned node i is i + process_offset
+/// the global index of owned node i is i + process_offset
 /// @param [in] global_indices_old The old global index of the old local
-///   node i
+/// node i
 /// @param [in] old_to_new The old local index to new local index map
 /// @param [in] dof_entity The ith entry gives (topological dim, local
-///   index) of the mesh entity to which node i (old local index) is
-///   associated
-/// @returns The (0) global indices for unowned dofs, (1) owner rank of each
-///   unowned dof
+/// index) of the mesh entity to which node i (old local index) is
+/// associated
+/// @returns The (0) global indices for unowned dofs, (1) owner rank of
+/// each unowned dof
 std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
     const mesh::Topology& topology, const std::int32_t num_owned,
     const std::int64_t process_offset,
@@ -427,7 +431,8 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
 
       // Number and values to send and receive
       const int num_indices = global[d].size();
-      // NB add 1 for OpenMPI to ensure vector is allocated when indegree = 0
+      // NB add 1 for OpenMPI to ensure vector is allocated when indegree =
+      // 0
       std::vector<int> num_indices_recv(indegree + 1);
       MPI_Neighbor_allgather(&num_indices, 1, MPI_INT, num_indices_recv.data(),
                              1, MPI_INT, comm[d]);
