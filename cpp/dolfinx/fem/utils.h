@@ -14,6 +14,7 @@
 #include <dolfinx/fem/Function.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/mesh/cell_types.h>
+#include <functional>
 #include <memory>
 #include <set>
 #include <string>
@@ -123,12 +124,18 @@ ElementDofLayout create_element_dof_layout(const ufc_dofmap& dofmap,
                                            const std::vector<int>& parent_map
                                            = {});
 
-/// Create dof map on mesh from a ufc_dofmap
+/// Create a dof map on mesh from a ufc_dofmap
 /// @param[in] comm MPI communicator
 /// @param[in] dofmap The ufc_dofmap
 /// @param[in] topology The mesh topology
-DofMap create_dofmap(MPI_Comm comm, const ufc_dofmap& dofmap,
-                     mesh::Topology& topology);
+/// @param[in] reorder_fn The graph reordering function called on the
+/// geometry dofmap
+DofMap create_dofmap(
+    MPI_Comm comm, const ufc_dofmap& dofmap, mesh::Topology& topology,
+    const std::function<
+        std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>& reorder_fn
+    = [](const graph::AdjacencyList<std::int32_t>& g)
+    { return graph::scotch::compute_gps(g, 2).first; });
 
 /// Get the name of each coefficient in a UFC form
 /// @param[in] ufc_form The UFC form

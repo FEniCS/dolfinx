@@ -9,6 +9,8 @@
 #include <cstdlib>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <dolfinx/graph/scotch.h>
+#include <functional>
 #include <memory>
 #include <utility>
 #include <vector>
@@ -126,8 +128,12 @@ public:
   /// @param[in] topology The mesh topology that the dofmap is defined
   /// on
   /// @return The collapsed dofmap
-  std::pair<std::unique_ptr<DofMap>, std::vector<std::int32_t>>
-  collapse(MPI_Comm comm, const mesh::Topology& topology) const;
+  std::pair<std::unique_ptr<DofMap>, std::vector<std::int32_t>> collapse(
+      MPI_Comm comm, const mesh::Topology& topology,
+      const std::function<std::vector<int>(
+          const graph::AdjacencyList<std::int32_t>&)>& reorder_fn
+      = [](const graph::AdjacencyList<std::int32_t>& g)
+      { return graph::scotch::compute_gps(g, 2).first; }) const;
 
   /// Get dofmap data
   /// @return The adjacency list with dof indices for each cell

@@ -41,18 +41,20 @@ const std::vector<std::int64_t>& Geometry::input_global_indices() const
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-mesh::Geometry
-mesh::create_geometry(MPI_Comm comm, const Topology& topology,
-                      const fem::CoordinateElement& coordinate_element,
-                      const graph::AdjacencyList<std::int64_t>& cell_nodes,
-                      const xt::xtensor<double, 2>& x)
+mesh::Geometry mesh::create_geometry(
+    MPI_Comm comm, const Topology& topology,
+    const fem::CoordinateElement& coordinate_element,
+    const graph::AdjacencyList<std::int64_t>& cell_nodes,
+    const xt::xtensor<double, 2>& x,
+    const std::function<std::vector<int>(
+        const graph::AdjacencyList<std::int32_t>&)>& reorder_fn)
 {
   // TODO: make sure required entities are initialised, or extend
   // fem::build_dofmap_data
 
   //  Build 'geometry' dofmap on the topology
-  auto [dof_index_map, bs, dofmap]
-      = fem::build_dofmap_data(comm, topology, coordinate_element.dof_layout());
+  auto [dof_index_map, bs, dofmap] = fem::build_dofmap_data(
+      comm, topology, coordinate_element.dof_layout(), reorder_fn);
 
   // If the mesh has higher order geometry, permute the dofmap
   if (coordinate_element.needs_permutation_data())

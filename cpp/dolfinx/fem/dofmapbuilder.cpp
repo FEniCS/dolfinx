@@ -211,8 +211,8 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
     const graph::AdjacencyList<std::int32_t>& dofmap,
     const std::vector<std::pair<std::int8_t, std::int32_t>>& dof_entity,
     const mesh::Topology& topology,
-    const std::function<
-        std::vector<int>(const graph::AdjacencyList<std::int32_t>)>& reorder_fn)
+    const std::function<std::vector<int>(
+        const graph::AdjacencyList<std::int32_t>&)>& reorder_fn)
 {
   common::Timer t0("Compute dof reordering map");
 
@@ -497,8 +497,8 @@ std::tuple<std::shared_ptr<common::IndexMap>, int,
 fem::build_dofmap_data(
     MPI_Comm comm, const mesh::Topology& topology,
     const ElementDofLayout& element_dof_layout,
-    const std::function<
-        std::vector<int>(const graph::AdjacencyList<std::int32_t>)>& reorder_fn)
+    const std::function<std::vector<int>(
+        const graph::AdjacencyList<std::int32_t>&)>& reorder_fn)
 {
   common::Timer t0("Build dofmap data");
 
