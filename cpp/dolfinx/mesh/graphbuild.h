@@ -27,8 +27,15 @@ build_dual_graph(const MPI_Comm comm,
                  const graph::AdjacencyList<std::int64_t>& cell_vertices,
                  int tdim);
 
-/// Compute local part of the dual graph, and return (local_graph,
-/// facet_cell_map, number of local edges in the graph (undirected)
+/// Compute local part of the dual graph (cell-cell connections via
+/// facets)
+///
+/// @todo Fix return description - it's unclear
+///
+/// @param[in] cell_vertices The vertices of the cells
+/// @param[in] dim The topological dimension if the cells
+/// @return (local_graph, facet_cell_map, number of local edges in the
+/// graph (undirected)
 std::pair<graph::AdjacencyList<std::int32_t>, xt::xtensor<std::int64_t, 2>>
 build_local_dual_graph(const graph::AdjacencyList<std::int64_t>& cell_vertices,
                        int tdim);

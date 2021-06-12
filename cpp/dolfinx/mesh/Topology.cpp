@@ -363,7 +363,7 @@ mesh::create_topology(MPI_Comm comm,
 
   int mpi_rank = MPI::rank(comm);
 
-  // Make a list of all vertex indices whose ownership needs determining
+  // Create a list of all vertex indices whose ownership needs determining
   std::unordered_map<std::int64_t, std::vector<int>> global_to_procs
       = compute_index_sharing(comm, unknown_indices);
 

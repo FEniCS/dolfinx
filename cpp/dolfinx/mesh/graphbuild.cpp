@@ -36,9 +36,8 @@ compute_local_dual_graph_keyed(
             xt::xtensor<std::int64_t, 2>({0, 0})};
   }
 
-  // Count number of cells of each type, based on
-  // the number of vertices in each cell,
-  // covering interval(2) through to hex(8)
+  // Count number of cells of each type, based on the number of vertices
+  // in each cell, covering interval(2) through to hex(8)
   std::vector<int> count(9, 0);
   for (int i = 0; i < num_local_cells; ++i)
   {
@@ -50,13 +49,14 @@ compute_local_dual_graph_keyed(
   int num_facets = 0;
   int num_facet_vertices = 0;
 
-  // For each topological dimension, there is a limited set of allowed cell
-  // types. In 1D, interval; 2D: tri or quad, 3D: tet, prism, pyramid or hex.
+  // For each topological dimension, there is a limited set of allowed
+  // cell types. In 1D, interval; 2D: tri or quad, 3D: tet, prism,
+  // pyramid or hex.
   //
-  // To quickly look up the facets on a given cell, create a lookup table, which
-  // maps from number of cell vertices->facet vertex list. This is unique for
-  // each dimension 1D (interval: 2 vertices)) 2D (triangle: 3, quad: 4) 3D
-  // (tet: 4, pyramid: 5, prism: 6, hex: 8)
+  // To quickly look up the facets on a given cell, create a lookup
+  // table, which maps from number of cell vertices->facet vertex list.
+  // This is unique for each dimension 1D (interval: 2 vertices)) 2D
+  // (triangle: 3, quad: 4) 3D (tet: 4, pyramid: 5, prism: 6, hex: 8)
   std::vector<graph::AdjacencyList<int>> nv_to_facets(
       9, graph::AdjacencyList<int>(0));
 
@@ -69,7 +69,6 @@ compute_local_dual_graph_keyed(
     num_facets = count[2] * 2;
     num_facet_vertices = 1;
     break;
-
   case 2:
     if ((count[3] + count[4]) != num_local_cells)
       throw std::runtime_error("Invalid cells in 2D mesh");
@@ -79,7 +78,6 @@ compute_local_dual_graph_keyed(
     num_facet_vertices = 2;
     num_facets = count[3] * 3 + count[4] * 4;
     break;
-
   case 3:
     if ((count[4] + count[5] + count[6] + count[8]) != num_local_cells)
       throw std::runtime_error("Invalid cells in 3D mesh");
@@ -91,7 +89,6 @@ compute_local_dual_graph_keyed(
       num_facet_vertices = 3;
 
     num_facets = count[4] * 4 + count[5] * 5 + count[6] * 5 + count[8] * 6;
-
     nv_to_facets[4] = mesh::get_entity_vertices(mesh::CellType::tetrahedron, 2);
     nv_to_facets[5] = mesh::get_entity_vertices(mesh::CellType::pyramid, 2);
     nv_to_facets[6] = mesh::get_entity_vertices(mesh::CellType::prism, 2);
@@ -103,7 +100,6 @@ compute_local_dual_graph_keyed(
 
   // List of facets and associated cells
   std::vector<std::array<std::int64_t, 5>> facets(num_facets);
-
   int counter = 0;
   for (std::int32_t i = 0; i < num_local_cells; ++i)
   {
@@ -117,9 +113,9 @@ compute_local_dual_graph_keyed(
       std::array<std::int64_t, 5>& facet = facets[counter];
       facet[4] = i; // cell counter
 
-      // fill last entry with max_int64: for mixed 3D, when
-      // some facets may be triangle adds an extra dummy vertex which will
-      // sort to last position
+      // Fill last entry with max_int64: for mixed 3D, when some facets
+      // may be triangle adds an extra dummy vertex which will sort to
+      // last position
       facet[3] = std::numeric_limits<std::int64_t>::max();
 
       // Get list of facet vertices
@@ -140,7 +136,8 @@ compute_local_dual_graph_keyed(
   // Sort facet indices
   std::sort(facets.begin(), facets.end(),
             [num_facet_vertices](const std::array<std::int64_t, 5>& fa,
-                                 const std::array<std::int64_t, 5>& fb) {
+                                 const std::array<std::int64_t, 5>& fb)
+            {
               return std::lexicographical_compare(
                   fa.begin(), fa.begin() + num_facet_vertices, fb.begin(),
                   fb.begin() + num_facet_vertices);
@@ -347,11 +344,15 @@ compute_nonlocal_dual_graph(
   // Get permutation that takes facets into sorted order
   std::vector<int> perm(num_facets);
   std::iota(perm.begin(), perm.end(), 0);
-  std::sort(perm.begin(), perm.end(), [&recvd_buffer](int a, int b) {
-    return std::lexicographical_compare(
-        recvd_buffer.links(a).begin(), std::prev(recvd_buffer.links(a).end()),
-        recvd_buffer.links(b).begin(), std::prev(recvd_buffer.links(b).end()));
-  });
+  std::sort(perm.begin(), perm.end(),
+            [&recvd_buffer](int a, int b)
+            {
+              return std::lexicographical_compare(
+                  recvd_buffer.links(a).begin(),
+                  std::prev(recvd_buffer.links(a).end()),
+                  recvd_buffer.links(b).begin(),
+                  std::prev(recvd_buffer.links(b).end()));
+            });
 
   // Count data items to send to each rank
   p_count.assign(num_processes, 0);
