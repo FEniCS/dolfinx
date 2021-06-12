@@ -85,16 +85,18 @@ public:
     case la::Norm::linf:
     {
       const std::int32_t size_local = _map->size_local();
-      double result
-          = std::reduce(_x.begin(), std::next(_x.begin(), size_local), 0.0,
-                        [](const double& a, const T& b) -> double
-                        { return std::max(a, std::norm(b)); });
-      double linf;
-      MPI_Allreduce(&result, &linf, 1, MPI_DOUBLE, MPI_SUM, _map->comm());
+      double local_linf = 0.0;
+      if (size_local > 0)
+      {
+        auto local_max_entry = std::max_element(
+            _x.begin(), std::next(_x.begin(), size_local),
+            [](T a, T b) { return std::norm(a) < std::norm(b); });
+        local_linf = std::abs(*local_max_entry);
+      }
 
-      // Note: std::norm computes the 'absolute square', hence we need
-      // std::sqrt here
-      return std::sqrt(linf);
+      double linf = 0.0;
+      MPI_Allreduce(&local_linf, &linf, 1, MPI_DOUBLE, MPI_SUM, _map->comm());
+      return linf;
     }
     default:
       throw std::runtime_error("Norm type not supported");
