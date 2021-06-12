@@ -29,27 +29,6 @@ namespace
 {
 //-----------------------------------------------------------------------------
 
-/// Reorder graph using the SCOTCH GPS implementation
-[[maybe_unused]] std::vector<int>
-scotch_reorder(const graph::AdjacencyList<std::int32_t>& graph)
-{
-  return graph::scotch::compute_gps(graph, 2).first;
-}
-
-/// Random graph reordering
-/// @note: Randomised dof ordering should only be used for
-/// testing/benchmarking
-[[maybe_unused]] std::vector<int>
-random_reorder(const graph::AdjacencyList<std::int32_t>& graph)
-{
-  std::vector<int> node_remap(graph.num_nodes());
-  std::iota(node_remap.begin(), node_remap.end(), 0);
-  std::random_device rd;
-  std::default_random_engine g(rd());
-  std::shuffle(node_remap.begin(), node_remap.end(), g);
-  return node_remap;
-}
-
 /// Build a simple dofmap from ElementDofmap based on mesh entity
 /// indices (local and global)
 ///
@@ -233,8 +212,7 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
     const std::vector<std::pair<std::int8_t, std::int32_t>>& dof_entity,
     const mesh::Topology& topology,
     const std::function<
-        std::vector<int>(const graph::AdjacencyList<std::int32_t>)>& reorder_fn
-    = random_reorder)
+        std::vector<int>(const graph::AdjacencyList<std::int32_t>)>& reorder_fn)
 {
   common::Timer t0("Compute dof reordering map");
 
@@ -516,8 +494,11 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
 //-----------------------------------------------------------------------------
 std::tuple<std::shared_ptr<common::IndexMap>, int,
            graph::AdjacencyList<std::int32_t>>
-fem::build_dofmap_data(MPI_Comm comm, const mesh::Topology& topology,
-                       const ElementDofLayout& element_dof_layout)
+fem::build_dofmap_data(
+    MPI_Comm comm, const mesh::Topology& topology,
+    const ElementDofLayout& element_dof_layout,
+    const std::function<
+        std::vector<int>(const graph::AdjacencyList<std::int32_t>)>& reorder_fn)
 {
   common::Timer t0("Build dofmap data");
 
@@ -545,7 +526,7 @@ fem::build_dofmap_data(MPI_Comm comm, const mesh::Topology& topology,
   // Build re-ordering map for data locality and get number of owned
   // nodes
   const auto [old_to_new, num_owned]
-      = compute_reordering_map(node_graph0, dof_entity0, topology);
+      = compute_reordering_map(node_graph0, dof_entity0, topology, reorder_fn);
 
   // Compute process offset for owned nodes
   const std::int64_t process_offset
