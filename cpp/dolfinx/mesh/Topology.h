@@ -184,7 +184,7 @@ private:
 /// @param[in] original_cell_index The original global index associated
 /// with each cell
 /// @param[in] ghost_owners The ownership of the ghost cells (ghost
-/// cells are always at the end of the list of cells, above)
+/// cells are always at the end of the list of @p cells)
 /// @param[in] cell_type The cell shape
 /// @param[in] ghost_mode How to partition the cell overlap: none,
 /// shared_facet or shared_vertex

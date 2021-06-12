@@ -11,7 +11,6 @@
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <utility>
-#include <vector>
 #include <xtensor/xarray.hpp>
 
 namespace dolfinx::mesh
