@@ -95,7 +95,7 @@ public:
       }
 
       double linf = 0.0;
-      MPI_Allreduce(&local_linf, &linf, 1, MPI_DOUBLE, MPI_SUM, _map->comm());
+      MPI_Allreduce(&local_linf, &linf, 1, MPI_DOUBLE, MPI_MAX, _map->comm());
       return linf;
     }
     default:
