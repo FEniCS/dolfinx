@@ -32,7 +32,7 @@ class NewtonSolver(cpp.nls.NewtonSolver):
         Returns the number of iterations and if the solver converged
         """
         n, converged = super().solve(u.vector)
-        cpp.la.scatter_forward(u.x)
+        u.x.scatter_forward()
         return n, converged
 
     @property
