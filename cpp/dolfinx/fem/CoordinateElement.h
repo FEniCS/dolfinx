@@ -111,18 +111,6 @@ public:
                  const xt::xtensor<double, 2>& x,
                  const xt::xtensor<double, 2>& cell_geometry) const;
 
-  /// Permutes a list of DOF numbers on a cell
-  void permute_dofs(xtl::span<std::int32_t> dofs,
-                    const std::uint32_t cell_perm) const;
-
-  /// Reverses a DOF permutation
-  void unpermute_dofs(xtl::span<std::int32_t> dofs,
-                      const std::uint32_t cell_perm) const;
-
-  /// Indicates whether the coordinate map needs permutation data
-  /// passing in (for higher order geometries)
-  bool needs_permutation_data() const;
-
   /// Absolute increment stopping criterium for non-affine Newton solver
   double non_affine_atol = 1.0e-8;
 
