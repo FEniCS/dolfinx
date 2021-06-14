@@ -319,13 +319,6 @@ mesh::create_topology(MPI_Comm comm,
         + std::to_string(mesh::num_cell_vertices(cell_type)) + ".");
   }
 
-  // --- reorder dualgraph
-  const int tdim_new = mesh::cell_dim(cell_type);
-  const auto [g, m] = mesh::build_local_dual_graph(cells, tdim_new);
-  std::vector<int> remap = graph::scotch::compute_gps(g, 2).first;
-
-  // ---
-
   // Create cell IndexMap
   const int num_local_cells = cells.num_nodes() - ghost_owners.size();
   std::shared_ptr<common::IndexMap> index_map_c;
