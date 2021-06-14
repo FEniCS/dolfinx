@@ -7,12 +7,11 @@
 #pragma once
 
 #include <dolfinx/graph/AdjacencyList.h>
+#include <dolfinx/graph/scotch.h>
 #include <functional>
 #include <memory>
 #include <mpi.h>
 #include <tuple>
-
-#include <dolfinx/graph/scotch.h>
 
 namespace dolfinx
 {

@@ -20,8 +20,6 @@
 #include <random>
 #include <unordered_map>
 
-#include "graphbuild.h"
-
 using namespace dolfinx;
 using namespace dolfinx::mesh;
 
@@ -442,7 +440,7 @@ mesh::create_topology(MPI_Comm comm,
       assert(it->second != -1);
 
       // Owned and shared with these processes
-      // NB starting from 1. 0 is self.
+      // Note: starting from 1, 0 is self
       for (std::size_t j = 1; j < procs.size(); ++j)
       {
         int np = proc_to_neighbors[procs[j]];
@@ -611,7 +609,7 @@ mesh::create_topology(MPI_Comm comm,
   Topology topology(comm, cell_type);
   const int tdim = topology.dim();
 
-  // Creat vertex index map
+  // Create vertex index map
   auto index_map_v = std::make_shared<common::IndexMap>(
       comm, nlocal,
       dolfinx::MPI::compute_graph_edges(
