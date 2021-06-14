@@ -403,7 +403,7 @@ mesh::create_topology(MPI_Comm comm,
     const auto it = global_vertex_to_ranks.find(global_index);
     assert(it != global_vertex_to_ranks.end());
 
-    // Vertex is shared and locally owned of first owning rank is my
+    // Vertex is shared and locally owned if first owning rank is my
     // rank
     if (it->second[0] == mpi_rank)
     {
@@ -422,10 +422,10 @@ mesh::create_topology(MPI_Comm comm,
 
   // ----
 
-  // // Re-order vertices by cell
+  // // Re-order vertices by looping through cells in order
   // std::vector<std::int32_t> node_remap(nlocal, -1);
   // std::size_t counter = 0;
-  // for (std::size_t c = 0; c < cells.num_nodes(); ++c)
+  // for (std::int32_t c = 0; c < cells.num_nodes(); ++c)
   // {
   //   auto vertices_global = cells.links(c);
   //   for (auto v : vertices_global)

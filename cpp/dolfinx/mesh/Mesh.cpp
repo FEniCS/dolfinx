@@ -74,21 +74,21 @@ Mesh mesh::create_mesh(MPI_Comm comm,
       = mesh::extract_topology(element.cell_shape(), element.dof_layout(),
                                cell_nodes0);
 
-  // // Build local dual graph for owned cells to apply re-ordering to
-  // const std::int32_t num_owned_cells
-  //     = cells_extracted0.num_nodes() - ghost_owners.size();
-  // const auto [g, m] = mesh::build_local_dual_graph(
-  //     xtl::span<const std::int64_t>(
-  //         cells_extracted0.array().data(),
-  //         cells_extracted0.offsets()[num_owned_cells + 1]),
-  //     xtl::span<const std::int32_t>(cells_extracted0.offsets().data(),
-  //                                   num_owned_cells + 1),
-  //     tdim);
+  // Build local dual graph for owned cells to apply re-ordering to
+  const std::int32_t num_owned_cells
+      = cells_extracted0.num_nodes() - ghost_owners.size();
+  const auto [g, m] = mesh::build_local_dual_graph(
+      xtl::span<const std::int64_t>(
+          cells_extracted0.array().data(),
+          cells_extracted0.offsets()[num_owned_cells + 1]),
+      xtl::span<const std::int32_t>(cells_extracted0.offsets().data(),
+                                    num_owned_cells + 1),
+      tdim);
 
-  // // Compute re-ordering of local dual graph
-  // const std::vector<int> remap = graph::scotch::compute_gps(g, 20).first;
+  // Compute re-ordering of local dual graph
+  const std::vector<int> remap = graph::scotch::compute_gps(g, 20).first;
 
-  // // Create re-ordered cell lists
+  // Create re-ordered cell lists
   // std::vector<std::int64_t> original_cell_index(original_cell_index0.size());
   // for (std::size_t i = 0; i < remap.size(); ++i)
   //   original_cell_index[remap[i]] = original_cell_index0[i];
