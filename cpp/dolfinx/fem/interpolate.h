@@ -257,7 +257,7 @@ void interpolate(
       {
         for (int i = 0; i < num_scalar_dofs; ++i)
           _coeffs[i] = values(k, c * num_scalar_dofs + i);
-        element->apply_inverse_transpose_dof_transformation(
+        element->apply_scalar_element_inverse_transpose_dof_transformation(
             tcb::make_span(_coeffs), cell_info[c], 1);
         for (int i = 0; i < num_scalar_dofs; ++i)
         {
