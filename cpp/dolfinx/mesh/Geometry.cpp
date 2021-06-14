@@ -101,18 +101,6 @@ mesh::create_geometry(MPI_Comm comm, const Topology& topology,
   std::transform(l2l.cbegin(), l2l.cend(), igi.begin(),
                  [&indices](auto index) { return indices[index]; });
 
-  // If the mesh has higher order geometry, permute the dofmap
-  if (coordinate_element.needs_permutation_data())
-  {
-    const int D = topology.dim();
-    const int num_cells = topology.connectivity(D, 0)->num_nodes();
-    const std::vector<std::uint32_t>& cell_info
-        = topology.get_cell_permutation_info();
-
-    for (std::int32_t cell = 0; cell < num_cells; ++cell)
-      coordinate_element.permute_dofs(dofmap.links(cell), cell_info[cell]);
-  }
-
   return Geometry(dof_index_map, std::move(dofmap), coordinate_element,
                   std::move(xg), std::move(igi));
 }
