@@ -43,7 +43,9 @@ void _lift_bc_cells(
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& kernel,
     const xtl::span<const std::int32_t>& active_cells,
+    std::shared_ptr<const fem::FiniteElement> element0,
     const graph::AdjacencyList<std::int32_t>& dofmap0, int bs0,
+    std::shared_ptr<const fem::FiniteElement> element1,
     const graph::AdjacencyList<std::int32_t>& dofmap1, int bs1,
     const xtl::span<const T>& constants, const array2d<T>& coeffs,
     const xtl::span<const std::uint32_t>& cell_info,
@@ -119,7 +121,11 @@ void _lift_bc_cells(
     Ae.resize(num_rows * num_cols);
     std::fill(Ae.begin(), Ae.end(), 0);
     kernel(Ae.data(), coeff_array.data(), constants.data(),
-           coordinate_dofs.data(), nullptr, nullptr, cell_info[c]);
+           coordinate_dofs.data(), nullptr, nullptr, 0);
+    element0->apply_dof_transformation(tcb::make_span(Ae), cell_info[c],
+                                       num_cols);
+    element1->apply_dof_transformation_to_transpose(tcb::make_span(Ae),
+                                                    cell_info[c], num_rows);
 
     // Size data structure for assembly
     be.resize(num_rows);
@@ -190,7 +196,9 @@ void _lift_bc_exterior_facets(
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& kernel,
     const xtl::span<const std::int32_t>& active_facets,
+    std::shared_ptr<const fem::FiniteElement> element0,
     const graph::AdjacencyList<std::int32_t>& dofmap0, int bs0,
+    std::shared_ptr<const fem::FiniteElement> element1,
     const graph::AdjacencyList<std::int32_t>& dofmap1, int bs1,
     const xtl::span<const T>& constants, const array2d<T>& coeffs,
     const xtl::span<const std::uint32_t>& cell_info,
@@ -271,7 +279,11 @@ void _lift_bc_exterior_facets(
     std::fill(Ae.begin(), Ae.end(), 0);
     kernel(Ae.data(), coeff_array.data(), constants.data(),
            coordinate_dofs.data(), &local_facet,
-           &perms[cell * facets.size() + local_facet], cell_info[cell]);
+           &perms[cell * facets.size() + local_facet], 0);
+    element0->apply_dof_transformation(tcb::make_span(Ae), cell_info[cell],
+                                       num_cols);
+    element1->apply_dof_transformation_to_transpose(tcb::make_span(Ae),
+                                                    cell_info[cell], num_rows);
 
     // Size data structure for assembly
     be.resize(num_rows);
@@ -311,7 +323,9 @@ void _lift_bc_interior_facets(
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& kernel,
     const xtl::span<const std::int32_t>& active_facets,
+    std::shared_ptr<const fem::FiniteElement> element0,
     const graph::AdjacencyList<std::int32_t>& dofmap0, int bs0,
+    std::shared_ptr<const fem::FiniteElement> element1,
     const graph::AdjacencyList<std::int32_t>& dofmap1, int bs1,
     const xtl::span<const T>& constants, const array2d<T>& coeffs,
     const std::vector<int>& offsets,
@@ -451,8 +465,11 @@ void _lift_bc_interior_facets(
     const std::array perm{perms[cells[0] * facets_per_cell + local_facet[0]],
                           perms[cells[1] * facets_per_cell + local_facet[1]]};
     kernel(Ae.data(), coeff_array.data(), constants.data(),
-           coordinate_dofs.data(), local_facet.data(), perm.data(),
-           cell_info[cells[0]]);
+           coordinate_dofs.data(), local_facet.data(), perm.data(), 0);
+    element0->apply_dof_transformation(tcb::make_span(Ae), cell_info[cells[0]],
+                                       num_cols);
+    element1->apply_dof_transformation_to_transpose(
+        tcb::make_span(Ae), cell_info[cells[0]], num_rows);
 
     be.resize(num_rows);
     std::fill(be.begin(), be.end(), 0);
@@ -810,9 +827,13 @@ void lift_bc(std::shared_ptr<const fem::FiniteElement> element, xtl::span<T> b,
   const graph::AdjacencyList<std::int32_t>& dofmap0
       = a.function_spaces()[0]->dofmap()->list();
   const int bs0 = a.function_spaces()[0]->dofmap()->bs();
+  std::shared_ptr<const fem::FiniteElement> element0
+      = a.function_spaces()[0]->element();
   const graph::AdjacencyList<std::int32_t>& dofmap1
       = a.function_spaces()[1]->dofmap()->list();
   const int bs1 = a.function_spaces()[1]->dofmap()->bs();
+  std::shared_ptr<const fem::FiniteElement> element1
+      = a.function_spaces()[1]->element();
 
   const bool needs_permutation_data = a.needs_permutation_data();
   if (needs_permutation_data)
@@ -829,22 +850,22 @@ void lift_bc(std::shared_ptr<const fem::FiniteElement> element, xtl::span<T> b,
     if (bs0 == 1 and bs1 == 1)
     {
       _lift_bc_cells<T, 1, 1>(element, b, mesh->geometry(), kernel,
-                              active_cells, dofmap0, bs0, dofmap1, bs1,
-                              constants, coeffs, cell_info, bc_values1,
-                              bc_markers1, x0, scale);
+                              active_cells, element0, dofmap0, bs0, element1,
+                              dofmap1, bs1, constants, coeffs, cell_info,
+                              bc_values1, bc_markers1, x0, scale);
     }
     else if (bs0 == 3 and bs1 == 3)
     {
       _lift_bc_cells<T, 3, 3>(element, b, mesh->geometry(), kernel,
-                              active_cells, dofmap0, bs0, dofmap1, bs1,
-                              constants, coeffs, cell_info, bc_values1,
-                              bc_markers1, x0, scale);
+                              active_cells, element0, dofmap0, bs0, element1,
+                              dofmap1, bs1, constants, coeffs, cell_info,
+                              bc_values1, bc_markers1, x0, scale);
     }
     else
     {
       _lift_bc_cells(element, b, mesh->geometry(), kernel, active_cells,
-                     dofmap0, bs0, dofmap1, bs1, constants, coeffs, cell_info,
-                     bc_values1, bc_markers1, x0, scale);
+                     element0, dofmap0, bs0, element1, dofmap1, bs1, constants,
+                     coeffs, cell_info, bc_values1, bc_markers1, x0, scale);
     }
   }
 
@@ -864,9 +885,9 @@ void lift_bc(std::shared_ptr<const fem::FiniteElement> element, xtl::span<T> b,
       const std::vector<std::int32_t>& active_facets
           = a.domains(IntegralType::exterior_facet, i);
       _lift_bc_exterior_facets(element, b, *mesh, kernel, active_facets,
-                               dofmap0, bs0, dofmap1, bs1, constants, coeffs,
-                               cell_info, perms, bc_values1, bc_markers1, x0,
-                               scale);
+                               element0, dofmap0, bs0, element1, dofmap1, bs1,
+                               constants, coeffs, cell_info, perms, bc_values1,
+                               bc_markers1, x0, scale);
     }
 
     const std::vector<int> c_offsets = a.coefficient_offsets();
@@ -876,9 +897,9 @@ void lift_bc(std::shared_ptr<const fem::FiniteElement> element, xtl::span<T> b,
       const std::vector<std::int32_t>& active_facets
           = a.domains(IntegralType::interior_facet, i);
       _lift_bc_interior_facets(element, b, *mesh, kernel, active_facets,
-                               dofmap0, bs0, dofmap1, bs1, constants, coeffs,
-                               c_offsets, cell_info, perms, bc_values1,
-                               bc_markers1, x0, scale);
+                               element0, dofmap0, bs0, element1, dofmap1, bs1,
+                               constants, coeffs, c_offsets, cell_info, perms,
+                               bc_values1, bc_markers1, x0, scale);
     }
   }
 }
