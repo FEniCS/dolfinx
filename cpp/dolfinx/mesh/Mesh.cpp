@@ -18,6 +18,8 @@
 #include <dolfinx/mesh/cell_types.h>
 #include <memory>
 
+#include "graphbuild.h"
+
 using namespace dolfinx;
 using namespace dolfinx::mesh;
 
@@ -64,17 +66,48 @@ Mesh mesh::create_mesh(MPI_Comm comm,
       comm, size, tdim, cells_topology, GhostMode::shared_facet);
 
   // Distribute cells to destination rank
-  const auto [cell_nodes, src, original_cell_index, ghost_owners]
+  const auto [_cell_nodes, src, _original_cell_index, ghost_owners]
       = graph::build::distribute(comm, cells, dest);
 
   // Create cells and vertices with the ghosting requested. Input
   // topology includes cells shared via facet, but output will remove
   // these, if not required by ghost_mode.
-  Topology topology = mesh::create_topology(
-      comm,
-      mesh::extract_topology(element.cell_shape(), element.dof_layout(),
-                             cell_nodes),
-      original_cell_index, ghost_owners, element.cell_shape(), ghost_mode);
+  const graph::AdjacencyList<std::int64_t> _cells_extracted
+      = mesh::extract_topology(element.cell_shape(), element.dof_layout(),
+                               _cell_nodes);
+
+  // -----
+
+  const auto [g, m] = mesh::build_local_dual_graph(_cells_extracted, tdim);
+  const std::vector<int> remap = graph::scotch::compute_gps(g, 20).first;
+
+  std::vector<std::int64_t> original_cell_index(_original_cell_index.size());
+  for (std::size_t i = 0; i < remap.size(); ++i)
+  {
+    original_cell_index[remap[i]] = _original_cell_index[i];
+    // std::cout << remap[i] << std::endl;
+  }
+  const graph::AdjacencyList<std::int64_t> cells_extracted
+      = graph::reorder(_cells_extracted, remap);
+  const graph::AdjacencyList<std::int64_t> cell_nodes
+      = graph::reorder(_cell_nodes, remap);
+
+  // const std::vector<std::int64_t>& original_cell_index =
+  // _original_cell_index; const graph::AdjacencyList<std::int64_t> cell_nodes =
+  // _cell_nodes; const graph::AdjacencyList<std::int64_t> cells_extracted =
+  // _cells_extracted;
+
+  // -----
+
+  Topology topology
+      = mesh::create_topology(comm, cells_extracted, original_cell_index,
+                              ghost_owners, element.cell_shape(), ghost_mode);
+
+  // Topology topology = mesh::create_topology(
+  //     comm,
+  //     mesh::extract_topology(element.cell_shape(), element.dof_layout(),
+  //                            cell_nodes),
+  //     original_cell_index, ghost_owners, element.cell_shape(), ghost_mode);
 
   // Create connectivity required to compute the Geometry (extra
   // connectivities for higher-order geometries)

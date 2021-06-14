@@ -534,6 +534,7 @@ void assemble_cells(
   std::vector<T> be(bs * num_dofs);
 
   // Iterate over active cells
+  boost::timer::auto_cpu_timer t;
   for (std::int32_t c : active_cells)
   {
     // Get cell coordinates/geometry
@@ -544,10 +545,10 @@ void assemble_cells(
                   std::next(coordinate_dofs.begin(), 3 * i));
     }
 
-    // Tabulate vector for cell
-    std::fill(be.begin(), be.end(), 0);
-    kernel(be.data(), coeffs.row(c).data(), constants.data(),
-           coordinate_dofs.data(), nullptr, nullptr, cell_info[c]);
+    // // Tabulate vector for cell
+    // std::fill(be.begin(), be.end(), 0);
+    // kernel(be.data(), coeffs.row(c).data(), constants.data(),
+    //        coordinate_dofs.data(), nullptr, nullptr, cell_info[c]);
 
     // Scatter cell vector to 'global' vector array
     auto dofs = dofmap.links(c);

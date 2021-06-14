@@ -373,12 +373,30 @@ mesh::create_topology(MPI_Comm comm,
 
   int mpi_rank = MPI::rank(comm);
 
-  // Create a list of all vertex indices whose ownership needs determining
+  // Create a list of all vertex indices whose ownership needs
+  // determining
   std::unordered_map<std::int64_t, std::vector<int>> global_to_procs
       = compute_index_sharing(comm, unknown_indices_set);
 
   // Number all vertex indices which this process now owns
-  std::int32_t c = 0;
+  std::int32_t v = 0;
+  // std::vector<bool> index_set(local_vertices_set.size(), false);
+  // for (std::int32_t cell = 0; cell < cells.num_nodes(); ++cell)
+  // {
+  //   auto vertices = cells.links(cell);
+  //   for (auto vg : vertices)
+  //   {
+  //     const auto it = global_to_procs.find(vg);
+  //   }
+
+  //   if (it == global_to_procs.end())
+  //   {
+  //     auto [it_ignore, insert]
+  //         = global_to_local_index.insert({global_index, v++});
+  //     assert(insert);
+  //   }
+  // }
+
   for (std::int64_t global_index : local_vertices_set)
   {
     // Locally owned
@@ -386,7 +404,7 @@ mesh::create_topology(MPI_Comm comm,
     if (it == global_to_procs.end())
     {
       auto [it_ignore, insert]
-          = global_to_local_index.insert({global_index, c++});
+          = global_to_local_index.insert({global_index, v++});
       assert(insert);
     }
   }
@@ -403,10 +421,10 @@ mesh::create_topology(MPI_Comm comm,
       auto it_gi = global_to_local_index.find(global_index);
       assert(it_gi != global_to_local_index.end());
       assert(it_gi->second == -1);
-      it_gi->second = c++;
+      it_gi->second = v++;
     }
   }
-  const std::int32_t nlocal = c;
+  const std::int32_t nlocal = v;
 
   t0.stop();
 
@@ -416,7 +434,7 @@ mesh::create_topology(MPI_Comm comm,
 
   // Find all vertex-sharing neighbors, and process-to-neighbor map
   std::set<int> vertex_neighbors;
-  for (auto q : global_to_procs)
+  for (const auto& q : global_to_procs)
     vertex_neighbors.insert(q.second.begin(), q.second.end());
   vertex_neighbors.erase(mpi_rank);
   std::vector<int> neighbors(vertex_neighbors.begin(), vertex_neighbors.end());
@@ -473,7 +491,7 @@ mesh::create_topology(MPI_Comm comm,
     const auto it = global_to_local_index.find(gi);
     assert(it != global_to_local_index.end());
     assert(it->second == -1);
-    it->second = c++;
+    it->second = v++;
     ghost_vertices.push_back(recv_pairs[i + 1]);
   }
 
@@ -546,7 +564,7 @@ mesh::create_topology(MPI_Comm comm,
       assert(it != global_to_local_index.end());
       if (it->second == -1)
       {
-        it->second = c++;
+        it->second = v++;
         ghost_vertices.push_back(recv_pairs[i + 1]);
       }
     }
@@ -591,9 +609,11 @@ mesh::create_topology(MPI_Comm comm,
     std::vector<std::int32_t> local_offsets(
         cells.offsets().begin(),
         std::next(cells.offsets().begin(), num_local_cells + 1));
+
     std::vector<std::int32_t> my_local_cells_array(local_offsets.back());
     for (std::size_t i = 0; i < my_local_cells_array.size(); ++i)
       my_local_cells_array[i] = global_to_local_index[cells_array[i]];
+
     my_local_cells = std::make_shared<graph::AdjacencyList<std::int32_t>>(
         std::move(my_local_cells_array), std::move(local_offsets));
   }
@@ -603,7 +623,7 @@ mesh::create_topology(MPI_Comm comm,
     // indexing)
     std::vector<std::int32_t> my_local_cells_array(cells_array.size());
     for (std::size_t i = 0; i < my_local_cells_array.size(); ++i)
-      my_local_cells_array[i] = global_to_local_index[cells_array[i]];
+      my_local_cells_array[i] = global_to_local_index.at(cells_array[i]);
     my_local_cells = std::make_shared<graph::AdjacencyList<std::int32_t>>(
         std::move(my_local_cells_array), cells.offsets());
   }
