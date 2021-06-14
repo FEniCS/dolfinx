@@ -24,11 +24,12 @@ namespace
 // facet_cell_map, number of local edges in the graph (undirected)
 std::pair<graph::AdjacencyList<std::int32_t>, xt::xtensor<std::int64_t, 2>>
 compute_local_dual_graph_keyed(
-    const graph::AdjacencyList<std::int64_t>& cell_vertices, int tdim)
+    const xtl::span<const std::int64_t>& cell_vertices,
+    const xtl::span<const std::int32_t>& cell_offsets, int tdim)
 {
   common::Timer timer("Compute local part of mesh dual graph");
 
-  const std::int32_t num_local_cells = cell_vertices.num_nodes();
+  const std::int32_t num_local_cells = cell_offsets.size() - 1;
   if (num_local_cells == 0)
   {
     // Empty mesh on this process
@@ -38,11 +39,12 @@ compute_local_dual_graph_keyed(
 
   // Count number of cells of each type, based on the number of vertices
   // in each cell, covering interval(2) through to hex(8)
-  std::vector<int> count(9, 0);
+  std::array<int, 9> count;
+  std::fill(count.begin(), count.end(), 0);
   for (int i = 0; i < num_local_cells; ++i)
   {
-    const int num_cell_vertices = cell_vertices.num_links(i);
-    assert(num_cell_vertices < 9);
+    const std::size_t num_cell_vertices = cell_offsets[i + 1] - cell_offsets[i];
+    assert(num_cell_vertices < count.size());
     ++count[num_cell_vertices];
   }
 
@@ -104,7 +106,9 @@ compute_local_dual_graph_keyed(
   for (std::int32_t i = 0; i < num_local_cells; ++i)
   {
     // Iterate over facets of cell
-    auto vertices = cell_vertices.links(i);
+    xtl::span<const std::int64_t> vertices(
+        std::next(cell_vertices.begin(), cell_offsets[i]),
+        cell_offsets[i + 1] - cell_offsets[i]);
     const int nv = vertices.size();
     const graph::AdjacencyList<int>& f = nv_to_facets[nv];
     const int num_facets_per_cell = f.num_nodes();
@@ -481,8 +485,10 @@ mesh::build_dual_graph(const MPI_Comm mpi_comm,
   LOG(INFO) << "Build mesh dual graph";
 
   // Compute local part of dual graph
-  auto [local_graph, facet_cell_map]
-      = mesh::build_local_dual_graph(cell_vertices, tdim);
+  std::cout << "Build dual graph" << std::endl;
+  auto [local_graph, facet_cell_map] = mesh::build_local_dual_graph(
+      cell_vertices.array(), cell_vertices.offsets(), tdim);
+  std::cout << "End Build dual graph" << std::endl;
 
   // Compute nonlocal part
   auto [graph, num_ghost_nodes] = compute_nonlocal_dual_graph(
@@ -496,10 +502,11 @@ mesh::build_dual_graph(const MPI_Comm mpi_comm,
 }
 //-----------------------------------------------------------------------------
 std::pair<graph::AdjacencyList<std::int32_t>, xt::xtensor<std::int64_t, 2>>
-mesh::build_local_dual_graph(
-    const graph::AdjacencyList<std::int64_t>& cell_vertices, int tdim)
+mesh::build_local_dual_graph(const xtl::span<const std::int64_t>& cell_vertices,
+                             const xtl::span<const std::int32_t>& offsets,
+                             int tdim)
 {
   LOG(INFO) << "Build local part of mesh dual graph";
-  return compute_local_dual_graph_keyed(cell_vertices, tdim);
+  return compute_local_dual_graph_keyed(cell_vertices, offsets, tdim);
 }
 //-----------------------------------------------------------------------------

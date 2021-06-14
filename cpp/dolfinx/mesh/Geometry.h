@@ -127,8 +127,17 @@ mesh::Geometry create_geometry(
     const xt::xtensor<double, 2>& x,
     const std::function<
         std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>& reorder_fn
-    = [](const graph::AdjacencyList<std::int32_t>& g)
-    { return graph::scotch::compute_gps(g, 2).first; });
+    =
+        [](const graph::AdjacencyList<std::int32_t>& g)
+    {
+      std::vector<int> remap(g.num_nodes());
+      std::iota(remap.begin(), remap.end(), 0);
+      return remap;
+    });
+// const std::function<
+//     std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>& reorder_fn
+// = [](const graph::AdjacencyList<std::int32_t>& g)
+// { return graph::scotch::compute_gps(g, 2).first; });
 
 } // namespace mesh
 } // namespace dolfinx

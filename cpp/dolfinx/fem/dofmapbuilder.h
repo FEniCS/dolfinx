@@ -7,27 +7,23 @@
 #pragma once
 
 #include <dolfinx/graph/AdjacencyList.h>
+#include <dolfinx/graph/scotch.h>
 #include <functional>
 #include <memory>
 #include <mpi.h>
 #include <tuple>
 
-#include <dolfinx/graph/scotch.h>
-
-namespace dolfinx
-{
-
-namespace common
+namespace dolfinx::common
 {
 class IndexMap;
 }
 
-namespace mesh
+namespace dolfinx::mesh
 {
 class Topology;
-} // namespace mesh
+}
 
-namespace fem
+namespace dolfinx::fem
 {
 class ElementDofLayout;
 class CoordinateElement;
@@ -47,5 +43,4 @@ build_dofmap_data(MPI_Comm comm, const mesh::Topology& topology,
                   const std::function<std::vector<int>(
                       const graph::AdjacencyList<std::int32_t>&)>& reorder_fn);
 
-} // namespace fem
-} // namespace dolfinx
+} // namespace dolfinx::fem

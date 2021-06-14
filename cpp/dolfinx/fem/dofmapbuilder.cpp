@@ -409,8 +409,8 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
 
       // Number and values to send and receive
       const int num_indices = global[d].size();
-      // NB add 1 for OpenMPI to ensure vector is allocated when indegree =
-      // 0
+      // Note: add 1 for OpenMPI to ensure vector is allocated when
+      // indegree = 0
       std::vector<int> num_indices_recv(indegree + 1);
       MPI_Neighbor_allgather(&num_indices, 1, MPI_INT, num_indices_recv.data(),
                              1, MPI_INT, comm[d]);

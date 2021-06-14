@@ -545,10 +545,10 @@ void assemble_cells(
                   std::next(coordinate_dofs.begin(), 3 * i));
     }
 
-    // // Tabulate vector for cell
-    // std::fill(be.begin(), be.end(), 0);
-    // kernel(be.data(), coeffs.row(c).data(), constants.data(),
-    //        coordinate_dofs.data(), nullptr, nullptr, cell_info[c]);
+    // Tabulate vector for cell
+    std::fill(be.begin(), be.end(), 0);
+    kernel(be.data(), coeffs.row(c).data(), constants.data(),
+           coordinate_dofs.data(), nullptr, nullptr, cell_info[c]);
 
     // Scatter cell vector to 'global' vector array
     auto dofs = dofmap.links(c);
