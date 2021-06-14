@@ -84,6 +84,9 @@ public:
     return n;
   }
 
+  /// Testing
+  bool needs_permutation_data() const { return false; }
+
   /// Evaluate the expression on cells
   /// @param[in] active_cells Cells on which to evaluate the Expression
   /// @param[out] values A 2D array to store the result. Caller

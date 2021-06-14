@@ -69,9 +69,6 @@ T assemble_scalar(const fem::Form<T>& M, const xtl::span<const T>& constants,
   const std::int32_t num_cells
       = mesh->topology().connectivity(tdim, 0)->num_nodes();
 
-  // std::shared_ptr<const fem::FiniteElement> element
-  //    = M.function_spaces().at(0)->element();
-
   const bool needs_permutation_data = M.needs_permutation_data();
   if (needs_permutation_data)
     mesh->topology_mutable().create_entity_permutations();
@@ -136,8 +133,6 @@ T assemble_cells(
     const xtl::span<const T>& constants, const array2d<T>& coeffs,
     const xtl::span<const std::uint32_t>& cell_info)
 {
-  std::cout << "<assemble_cells>\n";
-//  std::cout << element->space_dimension() << "\n";
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
 
@@ -151,6 +146,7 @@ T assemble_cells(
   // Iterate over all cells
   T value(0);
 
+  // std::vector<T> coeff_cell(coeffs.shape[1]);
   for (std::int32_t c : active_cells)
   {
     // Get cell coordinates/geometry
@@ -161,15 +157,14 @@ T assemble_cells(
                   std::next(coordinate_dofs.begin(), 3 * i));
     }
 
+    // std::copy(coeffs.row(c).begin(), coeffs.row(c).end().
+    // coeff_cell.begin());
     auto coeff_cell = coeffs.row(c);
 
     fn(&value, coeff_cell.data(), constants.data(), coordinate_dofs.data(),
-       nullptr, nullptr, cell_info[c]);
-
-    std::cout << "  value = " << value << "\n";
+       nullptr, nullptr, 0);
   }
 
-  std::cout << "</assemble_cells>\n";
   return value;
 }
 //-----------------------------------------------------------------------------
@@ -224,7 +219,7 @@ T assemble_exterior_facets(
     auto coeff_cell = coeffs.row(cell);
     fn(&value, coeff_cell.data(), constants.data(), coordinate_dofs.data(),
        &local_facet, &perms[cell * facets.size() + local_facet],
-       cell_info[cell]);
+       0); // cell_info[cell]);
   }
 
   return value;
@@ -312,7 +307,7 @@ T assemble_interior_facets(
     const std::array perm{perms[cells[0] * facets_per_cell + local_facet[0]],
                           perms[cells[1] * facets_per_cell + local_facet[1]]};
     fn(&value, coeff_array.data(), constants.data(), coordinate_dofs.data(),
-       local_facet.data(), perm.data(), cell_info[cells[0]]);
+       local_facet.data(), perm.data(), 0); // cell_info[cells[0]]);
   }
 
   return value;

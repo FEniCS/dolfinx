@@ -382,11 +382,13 @@ array2d<typename U::scalar_type> pack_coefficients(const U& u)
       = u.coefficients();
   const std::vector<int> offsets = u.coefficient_offsets();
   std::vector<const fem::DofMap*> dofmaps(coefficients.size());
+  std::vector<const fem::FiniteElement*> elements(coefficients.size());
   std::vector<int> bs(coefficients.size());
   std::vector<std::reference_wrapper<const std::vector<T>>> v;
   v.reserve(coefficients.size());
   for (std::size_t i = 0; i < coefficients.size(); ++i)
   {
+    elements[i] = coefficients[i]->function_space()->element().get();
     dofmaps[i] = coefficients[i]->function_space()->dofmap().get();
     bs[i] = dofmaps[i]->bs();
     v.push_back(coefficients[i]->x()->array());
@@ -404,6 +406,12 @@ array2d<typename U::scalar_type> pack_coefficients(const U& u)
   array2d<T> c(num_cells, offsets.back());
   if (!coefficients.empty())
   {
+    const bool needs_permutation_data = u.needs_permutation_data();
+    if (needs_permutation_data)
+      mesh->topology_mutable().create_entity_permutations();
+    const std::vector<std::uint32_t>& cell_info
+        = needs_permutation_data ? mesh->topology().get_cell_permutation_info()
+                                 : std::vector<std::uint32_t>(num_cells);
     for (int cell = 0; cell < num_cells; ++cell)
     {
       for (std::size_t coeff = 0; coeff < dofmaps.size(); ++coeff)
@@ -417,6 +425,13 @@ array2d<typename U::scalar_type> pack_coefficients(const U& u)
             c(cell, bs[coeff] * i + k + offsets[coeff])
                 = _v[bs[coeff] * dofs[i] + k];
           }
+        }
+        for (int k = 0; k < bs[coeff]; ++k)
+        {
+          elements[coeff]->apply_transpose_dof_transformation(
+              tcb::make_span(c.row(cell))
+                  .subspan(offsets[coeff], elements[coeff]->space_dimension()),
+              cell_info[cell], 1);
         }
       }
     }

@@ -410,14 +410,289 @@ public:
   {
     // TODO: Get if out of this function, as it is known when this object
     // is created which branch should be taken here
-    if (_bs == 1 and _sub_elements.size() != 0)
+    if (!needs_permutation_data())
     {
-      // Mixed element
-      return;
+      apply_no_transformation(data, cell_permutation, block_size);
     }
+    if (_sub_elements.size() != 0)
+    {
+      if (_bs == 1)
+        apply_mixed_element_inverse_transpose_dof_transformation(
+            data, cell_permutation, block_size);
+      else
+        apply_vector_element_inverse_transpose_dof_transformation(
+            data, cell_permutation, block_size);
+    }
+    else
+    {
+      apply_scalar_element_inverse_transpose_dof_transformation(
+          data, cell_permutation, block_size);
+    }
+  }
+
+  /// Apply inverse transpose transformation for vector element to some data.
+  ///
+  /// @param[in,out] data The data to be transformed
+  /// @param[in] cell_permutation Permutation data for the cell
+  /// @param[in] block_size The block_size of the input data
+  template <typename T>
+  void apply_vector_element_inverse_transpose_dof_transformation(
+      xtl::span<T> data, std::uint32_t cell_permutation, int block_size) const
+  {
+    assert(_sub_elements.size() != 0 and _bs > 1);
+
+    std::vector<T> temp_data(data.size() / _bs);
+    for (int block = 0; block < _bs; ++block)
+    {
+      // TODO: remove this copy, use strided span instead?
+      // TODO: check this for block_size != 1
+      for (std::size_t i = 0; i * _bs * block_size < data.size(); ++i)
+        for (int j = 0; j < block_size; ++j)
+          temp_data[i * block_size + j]
+              = data[(i * _bs + block) * block_size + j];
+      _sub_elements[0]->apply_inverse_transpose_dof_transformation(
+          tcb::make_span(temp_data), cell_permutation, block_size);
+      for (std::size_t i = 0; i * _bs * block_size < data.size(); ++i)
+        for (int j = 0; j < block_size; ++j)
+          data[(i * _bs + block) * block_size + j]
+              = temp_data[i * block_size + j];
+    }
+  }
+
+  /// Apply inverse transpose transformation for mixed element to some data.
+  ///
+  /// @param[in,out] data The data to be transformed
+  /// @param[in] cell_permutation Permutation data for the cell
+  /// @param[in] block_size The block_size of the input data
+  template <typename T>
+  void apply_mixed_element_inverse_transpose_dof_transformation(
+      xtl::span<T> data, std::uint32_t cell_permutation, int block_size) const
+  {
+    assert(_sub_elements.size() != 0 and _bs == 1);
+
+    std::size_t start = 0;
+    for (std::size_t e = 0; e < _sub_elements.size(); ++e)
+    {
+      const std::size_t width
+          = _sub_elements[e]->space_dimension() * block_size;
+      _sub_elements[e]->apply_inverse_transpose_dof_transformation(
+          data.subspan(start, width), cell_permutation, block_size);
+      start += width;
+    }
+  }
+
+  /// Apply inverse transpose transformation to some data.
+  /// For VectorElements, this applies the transformations for the scalar
+  /// subelement
+  ///
+  /// @param[in,out] data The data to be transformed
+  /// @param[in] cell_permutation Permutation data for the cell
+  /// @param[in] block_size The block_size of the input data
+  template <typename T>
+  void apply_scalar_element_inverse_transpose_dof_transformation(
+      xtl::span<T> data, std::uint32_t cell_permutation, int block_size) const
+  {
     assert(_element);
     _element->apply_inverse_transpose_dof_transformation(data, block_size,
                                                          cell_permutation);
+  }
+
+  /// Apply transpose transformation to some data
+  ///
+  /// @param[in,out] data The data to be transformed
+  /// @param[in] cell_permutation Permutation data for the cell
+  /// @param[in] block_size The block_size of the input data
+  template <typename T>
+  void apply_transpose_dof_transformation(xtl::span<T> data,
+                                          std::uint32_t cell_permutation,
+                                          int block_size) const
+  {
+    // TODO: Get if out of this function, as it is known when this object
+    // is created which branch should be taken here
+    if (!needs_permutation_data())
+    {
+      apply_no_transformation(data, cell_permutation, block_size);
+    }
+    if (_sub_elements.size() != 0)
+    {
+      if (_bs == 1)
+        apply_mixed_element_transpose_dof_transformation(data, cell_permutation,
+                                                         block_size);
+      else
+        apply_vector_element_transpose_dof_transformation(
+            data, cell_permutation, block_size);
+    }
+    else
+    {
+      apply_scalar_element_transpose_dof_transformation(data, cell_permutation,
+                                                        block_size);
+    }
+  }
+
+  /// Apply transpose transformation for vector element to some data.
+  ///
+  /// @param[in,out] data The data to be transformed
+  /// @param[in] cell_permutation Permutation data for the cell
+  /// @param[in] block_size The block_size of the input data
+  template <typename T>
+  void apply_vector_element_transpose_dof_transformation(
+      xtl::span<T> data, std::uint32_t cell_permutation, int block_size) const
+  {
+    assert(_sub_elements.size() != 0 and _bs > 1);
+
+    std::vector<T> temp_data(data.size() / _bs);
+    for (int block = 0; block < _bs; ++block)
+    {
+      // TODO: remove this copy, use strided span instead?
+      // TODO: check this for block_size != 1
+      for (std::size_t i = 0; i * _bs * block_size < data.size(); ++i)
+        for (int j = 0; j < block_size; ++j)
+          temp_data[i * block_size + j]
+              = data[(i * _bs + block) * block_size + j];
+      _sub_elements[0]->apply_transpose_dof_transformation(
+          tcb::make_span(temp_data), cell_permutation, block_size);
+      for (std::size_t i = 0; i * _bs * block_size < data.size(); ++i)
+        for (int j = 0; j < block_size; ++j)
+          data[(i * _bs + block) * block_size + j]
+              = temp_data[i * block_size + j];
+    }
+  }
+
+  /// Apply transpose transformation for mixed element to some data.
+  ///
+  /// @param[in,out] data The data to be transformed
+  /// @param[in] cell_permutation Permutation data for the cell
+  /// @param[in] block_size The block_size of the input data
+  template <typename T>
+  void apply_mixed_element_transpose_dof_transformation(
+      xtl::span<T> data, std::uint32_t cell_permutation, int block_size) const
+  {
+    assert(_sub_elements.size() != 0 and _bs == 1);
+
+    std::size_t start = 0;
+    for (std::size_t e = 0; e < _sub_elements.size(); ++e)
+    {
+      const std::size_t width
+          = _sub_elements[e]->space_dimension() * block_size;
+      _sub_elements[e]->apply_transpose_dof_transformation(
+          data.subspan(start, width), cell_permutation, block_size);
+      start += width;
+    }
+  }
+
+  /// Apply transpose transformation to some data.
+  /// For VectorElements, this applies the transformations for the scalar
+  /// subelement
+  ///
+  /// @param[in,out] data The data to be transformed
+  /// @param[in] cell_permutation Permutation data for the cell
+  /// @param[in] block_size The block_size of the input data
+  template <typename T>
+  void apply_scalar_element_transpose_dof_transformation(
+      xtl::span<T> data, std::uint32_t cell_permutation, int block_size) const
+  {
+    assert(_element);
+    _element->apply_transpose_dof_transformation(data, block_size,
+                                                 cell_permutation);
+  }
+
+  /// Apply inverse transformation to some data
+  ///
+  /// @param[in,out] data The data to be transformed
+  /// @param[in] cell_permutation Permutation data for the cell
+  /// @param[in] block_size The block_size of the input data
+  template <typename T>
+  void apply_inverse_dof_transformation(xtl::span<T> data,
+                                        std::uint32_t cell_permutation,
+                                        int block_size) const
+  {
+    // TODO: Get if out of this function, as it is known when this object
+    // is created which branch should be taken here
+    if (!needs_permutation_data())
+    {
+      apply_no_transformation(data, cell_permutation, block_size);
+    }
+    if (_sub_elements.size() != 0)
+    {
+      if (_bs == 1)
+        apply_mixed_element_inverse_dof_transformation(data, cell_permutation,
+                                                       block_size);
+      else
+        apply_vector_element_inverse_dof_transformation(data, cell_permutation,
+                                                        block_size);
+    }
+    else
+    {
+      apply_scalar_element_inverse_dof_transformation(data, cell_permutation,
+                                                      block_size);
+    }
+  }
+
+  /// Apply inverse transformation for vector element to some data.
+  ///
+  /// @param[in,out] data The data to be transformed
+  /// @param[in] cell_permutation Permutation data for the cell
+  /// @param[in] block_size The block_size of the input data
+  template <typename T>
+  void apply_vector_element_inverse_dof_transformation(
+      xtl::span<T> data, std::uint32_t cell_permutation, int block_size) const
+  {
+    assert(_sub_elements.size() != 0 and _bs > 1);
+
+    std::vector<T> temp_data(data.size() / _bs);
+    for (int block = 0; block < _bs; ++block)
+    {
+      // TODO: remove this copy, use strided span instead?
+      // TODO: check this for block_size != 1
+      for (std::size_t i = 0; i * _bs * block_size < data.size(); ++i)
+        for (int j = 0; j < block_size; ++j)
+          temp_data[i * block_size + j]
+              = data[(i * _bs + block) * block_size + j];
+      _sub_elements[0]->apply_inverse_dof_transformation(
+          tcb::make_span(temp_data), cell_permutation, block_size);
+      for (std::size_t i = 0; i * _bs * block_size < data.size(); ++i)
+        for (int j = 0; j < block_size; ++j)
+          data[(i * _bs + block) * block_size + j]
+              = temp_data[i * block_size + j];
+    }
+  }
+
+  /// Apply inverse transformation for mixed element to some data.
+  ///
+  /// @param[in,out] data The data to be transformed
+  /// @param[in] cell_permutation Permutation data for the cell
+  /// @param[in] block_size The block_size of the input data
+  template <typename T>
+  void apply_mixed_element_inverse_dof_transformation(
+      xtl::span<T> data, std::uint32_t cell_permutation, int block_size) const
+  {
+    assert(_sub_elements.size() != 0 and _bs == 1);
+
+    std::size_t start = 0;
+    for (std::size_t e = 0; e < _sub_elements.size(); ++e)
+    {
+      const std::size_t width
+          = _sub_elements[e]->space_dimension() * block_size;
+      _sub_elements[e]->apply_inverse_dof_transformation(
+          data.subspan(start, width), cell_permutation, block_size);
+      start += width;
+    }
+  }
+
+  /// Apply inverse transformation to some data.
+  /// For VectorElements, this applies the transformations for the scalar
+  /// subelement
+  ///
+  /// @param[in,out] data The data to be transformed
+  /// @param[in] cell_permutation Permutation data for the cell
+  /// @param[in] block_size The block_size of the input data
+  template <typename T>
+  void apply_scalar_element_inverse_dof_transformation(
+      xtl::span<T> data, std::uint32_t cell_permutation, int block_size) const
+  {
+    assert(_element);
+    _element->apply_inverse_dof_transformation(data, block_size,
+                                               cell_permutation);
   }
 
   /// Pull physical data back to the reference element.
