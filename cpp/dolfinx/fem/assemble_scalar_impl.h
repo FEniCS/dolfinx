@@ -63,8 +63,6 @@ T assemble_scalar(const fem::Form<T>& M, const xtl::span<const T>& constants,
   std::shared_ptr<const mesh::Mesh> mesh = M.mesh();
   assert(mesh);
   const int tdim = mesh->topology().dim();
-  const std::int32_t num_cells
-      = mesh->topology().connectivity(tdim, 0)->num_nodes();
 
   T value(0);
   for (int i : M.integral_ids(IntegralType::cell))
