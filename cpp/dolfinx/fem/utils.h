@@ -426,13 +426,10 @@ array2d<typename U::scalar_type> pack_coefficients(const U& u)
                 = _v[bs[coeff] * dofs[i] + k];
           }
         }
-        for (int k = 0; k < bs[coeff]; ++k)
-        {
-          elements[coeff]->apply_transpose_dof_transformation(
-              tcb::make_span(c.row(cell))
-                  .subspan(offsets[coeff], elements[coeff]->space_dimension()),
-              cell_info[cell], 1);
-        }
+        elements[coeff]->apply_transpose_dof_transformation(
+            tcb::make_span(c.row(cell))
+                .subspan(offsets[coeff], elements[coeff]->space_dimension()),
+            cell_info[cell], 1);
       }
     }
   }
