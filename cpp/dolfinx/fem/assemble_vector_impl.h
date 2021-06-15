@@ -553,6 +553,10 @@ void assemble_cells(
   std::vector<double> coordinate_dofs(3 * num_dofs_g);
   std::vector<T> be(bs * num_dofs);
 
+  std::function<void(std::shared_ptr<const fem::FiniteElement>, xtl::span<T>,
+                     std::uint32_t, int)>
+      apply_dof_transformation = element->get_transformation_function<T>();
+
   // Iterate over active cells
   for (std::int32_t c : active_cells)
   {
@@ -568,7 +572,7 @@ void assemble_cells(
     std::fill(be.begin(), be.end(), 0);
     kernel(be.data(), coeffs.row(c).data(), constants.data(),
            coordinate_dofs.data(), nullptr, nullptr);
-    element->apply_dof_transformation(tcb::make_span(be), cell_info[c], 1);
+    apply_dof_transformation(element, tcb::make_span(be), cell_info[c], 1);
 
     // Scatter cell vector to 'global' vector array
     auto dofs = dofmap.links(c);

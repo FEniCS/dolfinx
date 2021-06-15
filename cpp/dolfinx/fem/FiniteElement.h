@@ -191,10 +191,43 @@ public:
   /// @return True if cell permutation data is required
   bool needs_permutation_data() const noexcept;
 
-  /// Does nothing. Can be used when no permutation data is needed
   template <typename T>
-  void apply_no_transformation(xtl::span<T>, std::uint32_t, int) const
+  std::function<void(std::shared_ptr<const fem::FiniteElement>, xtl::span<T>,
+                     std::uint32_t, int)>
+  get_transformation_function() const
   {
+    if (!needs_permutation_data())
+    {
+      return [](std::shared_ptr<const fem::FiniteElement>, xtl::span<T>,
+                std::uint32_t, int) {};
+    }
+    if (_sub_elements.size() != 0)
+    {
+      if (_bs == 1)
+      {
+        return [](std::shared_ptr<const fem::FiniteElement> element,
+                  xtl::span<T> data, std::uint32_t cell_permutation,
+                  int block_size) {
+          element->apply_mixed_element_dof_transformation(
+              data, cell_permutation, block_size);
+        };
+      }
+      else
+      {
+        return [](std::shared_ptr<const fem::FiniteElement> element,
+                  xtl::span<T> data, std::uint32_t cell_permutation,
+                  int block_size) {
+          element->apply_vector_element_dof_transformation(
+              data, cell_permutation, block_size);
+        };
+      }
+    }
+    return [](std::shared_ptr<const fem::FiniteElement> element,
+              xtl::span<T> data, std::uint32_t cell_permutation,
+              int block_size) {
+      element->apply_scalar_element_dof_transformation(data, cell_permutation,
+                                                       block_size);
+    };
   }
 
   /// Apply transformation to some data
@@ -211,7 +244,7 @@ public:
     // is created which branch should be taken here
     if (!needs_permutation_data())
     {
-      apply_no_transformation(data, cell_permutation, block_size);
+      return;
     }
     if (_sub_elements.size() != 0)
     {
@@ -312,7 +345,7 @@ public:
     // is created which branch should be taken here
     if (!needs_permutation_data())
     {
-      apply_no_transformation(data, cell_permutation, block_size);
+      return;
     }
     if (_sub_elements.size() != 0)
     {
@@ -412,7 +445,7 @@ public:
     // is created which branch should be taken here
     if (!needs_permutation_data())
     {
-      apply_no_transformation(data, cell_permutation, block_size);
+      return;
     }
     if (_sub_elements.size() != 0)
     {
@@ -511,7 +544,7 @@ public:
     // is created which branch should be taken here
     if (!needs_permutation_data())
     {
-      apply_no_transformation(data, cell_permutation, block_size);
+      return;
     }
     if (_sub_elements.size() != 0)
     {
@@ -610,7 +643,7 @@ public:
     // is created which branch should be taken here
     if (!needs_permutation_data())
     {
-      apply_no_transformation(data, cell_permutation, block_size);
+      return;
     }
     if (_sub_elements.size() != 0)
     {
