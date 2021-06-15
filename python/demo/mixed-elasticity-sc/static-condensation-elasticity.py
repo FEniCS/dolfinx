@@ -119,8 +119,7 @@ c_signature = numba.types.void(
 
 
 @numba.cfunc(c_signature, nopython=True)
-def tabulate_condensed_tensor_A(A_, w_, c_, coords_, entity_local_index, permutation=ffi.NULL,
-                                cell_permutation_info=0):
+def tabulate_condensed_tensor_A(A_, w_, c_, coords_, entity_local_index, permutation=ffi.NULL):
     # Prepare target condensed local elem tensor
     A = numba.carray(A_, (Usize, Usize), dtype=PETSc.ScalarType)
 
