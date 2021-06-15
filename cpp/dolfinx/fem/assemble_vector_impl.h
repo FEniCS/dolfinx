@@ -41,7 +41,7 @@ void _lift_bc_cells(
     std::shared_ptr<const fem::FiniteElement>, xtl::span<T> b,
     const mesh::Geometry& geometry,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
-                             const std::uint8_t*, const std::uint32_t)>& kernel,
+                             const std::uint8_t*)>& kernel,
     const xtl::span<const std::int32_t>& active_cells,
     std::shared_ptr<const fem::FiniteElement> element0,
     const graph::AdjacencyList<std::int32_t>& dofmap0, int bs0,
@@ -121,7 +121,7 @@ void _lift_bc_cells(
     Ae.resize(num_rows * num_cols);
     std::fill(Ae.begin(), Ae.end(), 0);
     kernel(Ae.data(), coeff_array.data(), constants.data(),
-           coordinate_dofs.data(), nullptr, nullptr, 0);
+           coordinate_dofs.data(), nullptr, nullptr);
     element0->apply_dof_transformation(tcb::make_span(Ae), cell_info[c],
                                        num_cols);
     element1->apply_dof_transformation_to_transpose(tcb::make_span(Ae),
@@ -194,7 +194,7 @@ void _lift_bc_exterior_facets(
     std::shared_ptr<const fem::FiniteElement>, xtl::span<T> b,
     const mesh::Mesh& mesh,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
-                             const std::uint8_t*, const std::uint32_t)>& kernel,
+                             const std::uint8_t*)>& kernel,
     const xtl::span<const std::int32_t>& active_facets,
     std::shared_ptr<const fem::FiniteElement> element0,
     const graph::AdjacencyList<std::int32_t>& dofmap0, int bs0,
@@ -279,7 +279,7 @@ void _lift_bc_exterior_facets(
     std::fill(Ae.begin(), Ae.end(), 0);
     kernel(Ae.data(), coeff_array.data(), constants.data(),
            coordinate_dofs.data(), &local_facet,
-           &perms[cell * facets.size() + local_facet], 0);
+           &perms[cell * facets.size() + local_facet]);
     element0->apply_dof_transformation(tcb::make_span(Ae), cell_info[cell],
                                        num_cols);
     element1->apply_dof_transformation_to_transpose(tcb::make_span(Ae),
@@ -321,7 +321,7 @@ void _lift_bc_interior_facets(
     std::shared_ptr<const fem::FiniteElement>, xtl::span<T> b,
     const mesh::Mesh& mesh,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
-                             const std::uint8_t*, const std::uint32_t)>& kernel,
+                             const std::uint8_t*)>& kernel,
     const xtl::span<const std::int32_t>& active_facets,
     std::shared_ptr<const fem::FiniteElement> element0,
     const graph::AdjacencyList<std::int32_t>& dofmap0, int bs0,
@@ -465,7 +465,7 @@ void _lift_bc_interior_facets(
     const std::array perm{perms[cells[0] * facets_per_cell + local_facet[0]],
                           perms[cells[1] * facets_per_cell + local_facet[1]]};
     kernel(Ae.data(), coeff_array.data(), constants.data(),
-           coordinate_dofs.data(), local_facet.data(), perm.data(), 0);
+           coordinate_dofs.data(), local_facet.data(), perm.data());
     element0->apply_dof_transformation(tcb::make_span(Ae), cell_info[cells[0]],
                                        num_cols);
     element1->apply_dof_transformation_to_transpose(
@@ -534,7 +534,7 @@ void assemble_cells(
     const xtl::span<const std::int32_t>& active_cells,
     const graph::AdjacencyList<std::int32_t>& dofmap, int bs,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
-                             const std::uint8_t*, const std::uint32_t)>& kernel,
+                             const std::uint8_t*)>& kernel,
     const xtl::span<const T>& constants, const array2d<T>& coeffs,
     const xtl::span<const std::uint32_t>& cell_info)
 {
@@ -567,7 +567,7 @@ void assemble_cells(
     // Tabulate vector for cell
     std::fill(be.begin(), be.end(), 0);
     kernel(be.data(), coeffs.row(c).data(), constants.data(),
-           coordinate_dofs.data(), nullptr, nullptr, 0);
+           coordinate_dofs.data(), nullptr, nullptr);
     element->apply_dof_transformation(tcb::make_span(be), cell_info[c], 1);
 
     // Scatter cell vector to 'global' vector array
@@ -599,7 +599,7 @@ void assemble_exterior_facets(
     const mesh::Mesh& mesh, const xtl::span<const std::int32_t>& active_facets,
     const graph::AdjacencyList<std::int32_t>& dofmap, const int bs,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
-                             const std::uint8_t*, const std::uint32_t)>& fn,
+                             const std::uint8_t*)>& fn,
     const xtl::span<const T>& constants, const array2d<T>& coeffs,
     const xtl::span<const std::uint32_t>& cell_info,
     const xtl::span<const std::uint8_t>& perms)
@@ -649,7 +649,7 @@ void assemble_exterior_facets(
     std::fill(be.begin(), be.end(), 0);
     fn(be.data(), coeffs.row(cell).data(), constants.data(),
        coordinate_dofs.data(), &local_facet,
-       &perms[cell * facets.size() + local_facet], 0);
+       &perms[cell * facets.size() + local_facet]);
 
     element->apply_dof_transformation(tcb::make_span(be), cell_info[cell], 1);
 
@@ -682,7 +682,7 @@ void assemble_interior_facets(
     const mesh::Mesh& mesh, const xtl::span<const std::int32_t>& active_facets,
     const fem::DofMap& dofmap,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
-                             const std::uint8_t*, const std::uint32_t)>& fn,
+                             const std::uint8_t*)>& fn,
     const xtl::span<const T>& constants, const array2d<T>& coeffs,
     const xtl::span<const int>& offsets,
     const xtl::span<const std::uint32_t>& cell_info,
@@ -767,7 +767,7 @@ void assemble_interior_facets(
     const std::array perm{perms[cells[0] * facets_per_cell + local_facet[0]],
                           perms[cells[1] * facets_per_cell + local_facet[1]]};
     fn(be.data(), coeff_array.data(), constants.data(), coordinate_dofs.data(),
-       local_facet.data(), perm.data(), 0);
+       local_facet.data(), perm.data());
 
     element->apply_dof_transformation(tcb::make_span(be), cell_info[cells[0]],
                                       1);

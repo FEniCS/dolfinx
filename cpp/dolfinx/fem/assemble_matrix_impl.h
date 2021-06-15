@@ -49,7 +49,7 @@ void assemble_cells(
     const graph::AdjacencyList<std::int32_t>& dofmap1, const int bs1,
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
-                             const std::uint8_t*, const std::uint32_t)>& kernel,
+                             const std::uint8_t*)>& kernel,
     const array2d<T>& coeffs, const xtl::span<const T>& constants,
     const xtl::span<const std::uint32_t>& cell_info);
 
@@ -65,7 +65,7 @@ void assemble_exterior_facets(
     const graph::AdjacencyList<std::int32_t>& dofmap1, int bs1,
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
-                             const std::uint8_t*, const std::uint32_t)>& fn,
+                             const std::uint8_t*)>& fn,
     const array2d<T>& coeffs, const xtl::span<const T>& constants,
     const xtl::span<const std::uint32_t>& cell_info,
     const xtl::span<const std::uint8_t>& perms);
@@ -81,7 +81,7 @@ void assemble_interior_facets(
     const DofMap& dofmap1, int bs1, const std::vector<bool>& bc0,
     const std::vector<bool>& bc1,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
-                             const std::uint8_t*, const std::uint32_t)>& kernel,
+                             const std::uint8_t*)>& kernel,
     const array2d<T>& coeffs, const xtl::span<const int>& offsets,
     const xtl::span<const T>& constants,
     const xtl::span<const std::uint32_t>& cell_info,
@@ -180,7 +180,7 @@ void assemble_cells(
     const graph::AdjacencyList<std::int32_t>& dofmap1, const int bs1,
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
-                             const std::uint8_t*, const std::uint32_t)>& kernel,
+                             const std::uint8_t*)>& kernel,
     const array2d<T>& coeffs, const xtl::span<const T>& constants,
     const xtl::span<const std::uint32_t>& cell_info)
 {
@@ -211,7 +211,7 @@ void assemble_cells(
     // Tabulate tensor
     std::fill(Ae.begin(), Ae.end(), 0);
     kernel(Ae.data(), coeffs.row(c).data(), constants.data(),
-           coordinate_dofs.data(), nullptr, nullptr, 0);
+           coordinate_dofs.data(), nullptr, nullptr);
 
     element0->apply_dof_transformation(tcb::make_span(Ae), cell_info[c], ndim1);
     element1->apply_dof_transformation_to_transpose(tcb::make_span(Ae),
@@ -268,7 +268,7 @@ void assemble_exterior_facets(
     const graph::AdjacencyList<std::int32_t>& dofmap1, int bs1,
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
-                             const std::uint8_t*, const std::uint32_t)>& kernel,
+                             const std::uint8_t*)>& kernel,
     const array2d<T>& coeffs, const xtl::span<const T>& constants,
     const xtl::span<const std::uint32_t>& cell_info,
     const xtl::span<const std::uint8_t>& perms)
@@ -318,7 +318,7 @@ void assemble_exterior_facets(
     std::fill(Ae.begin(), Ae.end(), 0);
     kernel(Ae.data(), coeffs.row(cells[0]).data(), constants.data(),
            coordinate_dofs.data(), &local_facet,
-           &perms[cells[0] * facets.size() + local_facet], 0);
+           &perms[cells[0] * facets.size() + local_facet]);
 
     element0->apply_dof_transformation(tcb::make_span(Ae), cell_info[cells[0]],
                                        ndim1);
@@ -375,7 +375,7 @@ void assemble_interior_facets(
     const DofMap& dofmap1, int bs1, const std::vector<bool>& bc0,
     const std::vector<bool>& bc1,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
-                             const std::uint8_t*, const std::uint32_t)>& fn,
+                             const std::uint8_t*)>& fn,
     const array2d<T>& coeffs, const xtl::span<const int>& offsets,
     const xtl::span<const T>& constants,
     const xtl::span<const std::uint32_t>& cell_info,
@@ -478,7 +478,7 @@ void assemble_interior_facets(
     const std::array perm{perms[cells[0] * facets_per_cell + local_facet[0]],
                           perms[cells[1] * facets_per_cell + local_facet[1]]};
     fn(Ae.data(), coeff_array.data(), constants.data(), coordinate_dofs.data(),
-       local_facet.data(), perm.data(), 0);
+       local_facet.data(), perm.data());
 
     element0->apply_dof_transformation(tcb::make_span(Ae), cell_info[cells[0]],
                                        num_cols);

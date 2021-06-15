@@ -484,8 +484,7 @@ void fem(py::module& m)
                  const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh) {
                 using kern = std::function<void(
                     PetscScalar*, const PetscScalar*, const PetscScalar*,
-                    const double*, const int*, const std::uint8_t*,
-                    const std::uint32_t)>;
+                    const double*, const int*, const std::uint8_t*)>;
                 std::map<dolfinx::fem::IntegralType,
                          std::pair<std::vector<std::pair<int, kern>>,
                                    const dolfinx::mesh::MeshTags<int>*>>
@@ -503,8 +502,7 @@ void fem(py::module& m)
                     auto tabulate_tensor_ptr
                         = (void (*)(PetscScalar*, const PetscScalar*,
                                     const PetscScalar*, const double*,
-                                    const int*, const std::uint8_t*,
-                                    const std::uint32_t))
+                                    const int*, const std::uint8_t*))
                               kernel.second.cast<std::uintptr_t>();
                     _integrals[kernel_type.first].first.push_back(
                         {kernel.first, tabulate_tensor_ptr});

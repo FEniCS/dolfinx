@@ -29,11 +29,10 @@ T assemble_scalar(const fem::Form<T>& M, const xtl::span<const T>& constants,
 /// Assemble functional over cells
 template <typename T>
 T assemble_cells(
-//    std::shared_ptr<const fem::FiniteElement> element,
     const mesh::Geometry& geometry,
     const xtl::span<const std::int32_t>& active_cells,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
-                             const std::uint8_t*, const std::uint32_t)>& fn,
+                             const std::uint8_t*)>& fn,
     const xtl::span<const T>& constants, const array2d<T>& coeffs);
 
 /// Execute kernel over exterior facets and accumulate result
@@ -41,7 +40,7 @@ template <typename T>
 T assemble_exterior_facets(
     const mesh::Mesh& mesh, const xtl::span<const std::int32_t>& active_cells,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
-                             const std::uint8_t*, const std::uint32_t)>& fn,
+                             const std::uint8_t*)>& fn,
     const xtl::span<const T>& constants, const array2d<T>& coeffs,
     const xtl::span<const std::uint8_t>& perms);
 
@@ -50,7 +49,7 @@ template <typename T>
 T assemble_interior_facets(
     const mesh::Mesh& mesh, const xtl::span<const std::int32_t>& active_cells,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
-                             const std::uint8_t*, const std::uint32_t)>& fn,
+                             const std::uint8_t*)>& fn,
     const xtl::span<const T>& constants, const array2d<T>& coeffs,
     const xtl::span<const int>& offsets,
     const xtl::span<const std::uint8_t>& perms);
@@ -71,7 +70,6 @@ T assemble_scalar(const fem::Form<T>& M, const xtl::span<const T>& constants,
     const std::vector<std::int32_t>& active_cells
         = M.domains(IntegralType::cell, i);
     value += impl::assemble_cells(
-        //element,
         mesh->geometry(), active_cells, fn, constants,
         coeffs);
   }
@@ -113,11 +111,10 @@ T assemble_scalar(const fem::Form<T>& M, const xtl::span<const T>& constants,
 //-----------------------------------------------------------------------------
 template <typename T>
 T assemble_cells(
-//    std::shared_ptr<const fem::FiniteElement> element,
     const mesh::Geometry& geometry,
     const xtl::span<const std::int32_t>& active_cells,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
-                             const std::uint8_t*, const std::uint32_t)>& fn,
+                             const std::uint8_t*)>& fn,
     const xtl::span<const T>& constants, const array2d<T>& coeffs)
 {
   // Prepare cell geometry
@@ -149,7 +146,7 @@ T assemble_cells(
     auto coeff_cell = coeffs.row(c);
 
     fn(&value, coeff_cell.data(), constants.data(), coordinate_dofs.data(),
-       nullptr, nullptr, 0);
+       nullptr, nullptr);
   }
 
   return value;
@@ -159,7 +156,7 @@ template <typename T>
 T assemble_exterior_facets(
     const mesh::Mesh& mesh, const xtl::span<const std::int32_t>& active_facets,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
-                             const std::uint8_t*, const std::uint32_t)>& fn,
+                             const std::uint8_t*)>& fn,
     const xtl::span<const T>& constants, const array2d<T>& coeffs,
     const xtl::span<const std::uint8_t>& perms)
 {
@@ -204,8 +201,7 @@ T assemble_exterior_facets(
 
     auto coeff_cell = coeffs.row(cell);
     fn(&value, coeff_cell.data(), constants.data(), coordinate_dofs.data(),
-       &local_facet, &perms[cell * facets.size() + local_facet],
-       0);
+       &local_facet, &perms[cell * facets.size() + local_facet]);
   }
 
   return value;
@@ -215,7 +211,7 @@ template <typename T>
 T assemble_interior_facets(
     const mesh::Mesh& mesh, const xtl::span<const std::int32_t>& active_facets,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
-                             const std::uint8_t*, const std::uint32_t)>& fn,
+                             const std::uint8_t*)>& fn,
     const xtl::span<const T>& constants, const array2d<T>& coeffs,
     const xtl::span<const int>& offsets,
     const xtl::span<const std::uint8_t>& perms)
@@ -292,7 +288,7 @@ T assemble_interior_facets(
     const std::array perm{perms[cells[0] * facets_per_cell + local_facet[0]],
                           perms[cells[1] * facets_per_cell + local_facet[1]]};
     fn(&value, coeff_array.data(), constants.data(), coordinate_dofs.data(),
-       local_facet.data(), perm.data(), 0);
+       local_facet.data(), perm.data());
   }
 
   return value;

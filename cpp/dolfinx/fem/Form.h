@@ -72,20 +72,20 @@ public:
   /// @param[in] mesh The mesh of the domain. This is required when
   /// there are not argument functions from which the mesh can be
   /// extracted, e.g. for functionals
-  Form(const std::vector<std::shared_ptr<const fem::FunctionSpace>>&
-           function_spaces,
-       const std::map<
-           IntegralType,
-           std::pair<
-               std::vector<std::pair<
-                   int, std::function<void(
-                            T*, const T*, const T*, const double*, const int*,
-                            const std::uint8_t*, const std::uint32_t)>>>,
-               const mesh::MeshTags<int>*>>& integrals,
-       const std::vector<std::shared_ptr<const fem::Function<T>>>& coefficients,
-       const std::vector<std::shared_ptr<const fem::Constant<T>>>& constants,
-       bool needs_permutation_data,
-       const std::shared_ptr<const mesh::Mesh>& mesh = nullptr)
+  Form(
+      const std::vector<std::shared_ptr<const fem::FunctionSpace>>&
+          function_spaces,
+      const std::map<
+          IntegralType,
+          std::pair<
+              std::vector<std::pair<
+                  int, std::function<void(T*, const T*, const T*, const double*,
+                                          const int*, const std::uint8_t*)>>>,
+              const mesh::MeshTags<int>*>>& integrals,
+      const std::vector<std::shared_ptr<const fem::Function<T>>>& coefficients,
+      const std::vector<std::shared_ptr<const fem::Constant<T>>>& constants,
+      bool needs_permutation_data,
+      const std::shared_ptr<const mesh::Mesh>& mesh = nullptr)
       : _function_spaces(function_spaces), _coefficients(coefficients),
         _constants(constants), _mesh(mesh),
         _needs_permutation_data(needs_permutation_data)
@@ -157,7 +157,7 @@ public:
   /// @param[in] i Domain index
   /// @return Function to call for tabulate_tensor
   const std::function<void(T*, const T*, const T*, const double*, const int*,
-                           const std::uint8_t*, const std::uint32_t)>&
+                           const std::uint8_t*)>&
   kernel(IntegralType type, int i) const
   {
     auto it0 = _integrals.find(type);
@@ -455,9 +455,8 @@ private:
   // The mesh
   std::shared_ptr<const mesh::Mesh> _mesh;
 
-  using kern
-      = std::function<void(T*, const T*, const T*, const double*, const int*,
-                           const std::uint8_t*, const std::uint32_t)>;
+  using kern = std::function<void(T*, const T*, const T*, const double*,
+                                  const int*, const std::uint8_t*)>;
   std::map<IntegralType,
            std::map<int, std::pair<kern, std::vector<std::int32_t>>>>
       _integrals;
