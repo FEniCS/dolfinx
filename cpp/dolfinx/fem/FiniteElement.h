@@ -191,42 +191,91 @@ public:
   /// @return True if cell permutation data is required
   bool needs_permutation_data() const noexcept;
 
+  /// Return a function that applies DOF transformation to some data
   template <typename T>
-  std::function<void(std::shared_ptr<const fem::FiniteElement>, xtl::span<T>,
-                     std::uint32_t, int)>
-  get_transformation_function() const
+  std::function<void(xtl::span<T>, std::uint32_t, int)>
+  get_dof_transformation_function(bool inverse = false,
+                                  bool transpose = false) const
   {
     if (!needs_permutation_data())
     {
-      return [](std::shared_ptr<const fem::FiniteElement>, xtl::span<T>,
-                std::uint32_t, int) {};
+      // If no permutation needed, return function that does nothing
+      return [](xtl::span<T>, std::uint32_t, int) {};
     }
     if (_sub_elements.size() != 0)
     {
       if (_bs == 1)
       {
-        return [](std::shared_ptr<const fem::FiniteElement> element,
-                  xtl::span<T> data, std::uint32_t cell_permutation,
+        // Mixed element
+        std::vector<std::function<void(xtl::span<T>, std::uint32_t, int)>>
+            sub_element_functions;
+        for (std::size_t i = 0; i < _sub_elements.size(); ++i)
+          sub_element_functions.push_back(
+              _sub_elements[i]->get_dof_transformation_function<T>(inverse,
+                                                                   transpose));
+
+        return [this, sub_element_functions](xtl::span<T> data,
+                                             std::uint32_t cell_permutation,
+                                             int block_size) {
+          std::size_t start = 0;
+          for (std::size_t e = 0; e < sub_element_functions.size(); ++e)
+          {
+            const std::size_t width
+                = sub_elements()[e]->space_dimension() * block_size;
+            sub_element_functions[e](data.subspan(start, width),
+                                     cell_permutation, block_size);
+            start += width;
+          }
+        };
+      }
+      else
+      {
+        return [this](xtl::span<T> data, std::uint32_t cell_permutation,
+                      int block_size) {
+          apply_vector_element_dof_transformation(data, cell_permutation,
+                                                  block_size);
+        };
+      }
+    }
+    return [this](xtl::span<T> data, std::uint32_t cell_permutation,
                   int block_size) {
-          element->apply_mixed_element_dof_transformation(
+      apply_scalar_element_dof_transformation(data, cell_permutation,
+                                              block_size);
+    };
+  }
+
+  /// Return a function that applies DOF transformation to some transposed data
+  template <typename T>
+  std::function<void(xtl::span<T>, std::uint32_t, int)>
+  get_dof_transformation_to_transpose_function() const
+  {
+    if (!needs_permutation_data())
+    {
+      return [](xtl::span<T>, std::uint32_t, int) {};
+    }
+    if (_sub_elements.size() != 0)
+    {
+      if (_bs == 1)
+      {
+        return [this](xtl::span<T> data, std::uint32_t cell_permutation,
+                      int block_size) {
+          apply_mixed_element_dof_transformation_to_transpose(
               data, cell_permutation, block_size);
         };
       }
       else
       {
-        return [](std::shared_ptr<const fem::FiniteElement> element,
-                  xtl::span<T> data, std::uint32_t cell_permutation,
-                  int block_size) {
-          element->apply_vector_element_dof_transformation(
+        return [this](xtl::span<T> data, std::uint32_t cell_permutation,
+                      int block_size) {
+          apply_vector_element_dof_transformation_to_transpose(
               data, cell_permutation, block_size);
         };
       }
     }
-    return [](std::shared_ptr<const fem::FiniteElement> element,
-              xtl::span<T> data, std::uint32_t cell_permutation,
-              int block_size) {
-      element->apply_scalar_element_dof_transformation(data, cell_permutation,
-                                                       block_size);
+    return [this](xtl::span<T> data, std::uint32_t cell_permutation,
+                  int block_size) {
+      apply_scalar_element_dof_transformation_to_transpose(
+          data, cell_permutation, block_size);
     };
   }
 

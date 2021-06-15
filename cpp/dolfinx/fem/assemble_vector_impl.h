@@ -62,6 +62,12 @@ void _lift_bc_cells(
   const std::size_t num_dofs_g = x_dofmap.num_links(0);
   const xt::xtensor<double, 2>& x_g = geometry.x();
 
+  std::function<void(xtl::span<T>, std::uint32_t, int)> apply_dof_transformation
+      = element0->get_dof_transformation_function<T>();
+  std::function<void(xtl::span<T>, std::uint32_t, int)>
+      apply_dof_transformation_to_transpose
+      = element1->get_dof_transformation_to_transpose_function<T>();
+
   // Data structures used in bc application
   std::vector<double> coordinate_dofs(3 * num_dofs_g);
   std::vector<T> Ae, be;
@@ -122,10 +128,9 @@ void _lift_bc_cells(
     std::fill(Ae.begin(), Ae.end(), 0);
     kernel(Ae.data(), coeff_array.data(), constants.data(),
            coordinate_dofs.data(), nullptr, nullptr);
-    element0->apply_dof_transformation(tcb::make_span(Ae), cell_info[c],
-                                       num_cols);
-    element1->apply_dof_transformation_to_transpose(tcb::make_span(Ae),
-                                                    cell_info[c], num_rows);
+    apply_dof_transformation(tcb::make_span(Ae), cell_info[c], num_cols);
+    apply_dof_transformation_to_transpose(tcb::make_span(Ae), cell_info[c],
+                                          num_rows);
 
     // Size data structure for assembly
     be.resize(num_rows);
@@ -228,6 +233,12 @@ void _lift_bc_exterior_facets(
   auto map = topology.index_map(tdim - 1);
   assert(map);
 
+  std::function<void(xtl::span<T>, std::uint32_t, int)> apply_dof_transformation
+      = element0->get_dof_transformation_function<T>();
+  std::function<void(xtl::span<T>, std::uint32_t, int)>
+      apply_dof_transformation_to_transpose
+      = element1->get_dof_transformation_to_transpose_function<T>();
+
   for (std::int32_t f : active_facets)
   {
     // Create attached cell
@@ -280,10 +291,9 @@ void _lift_bc_exterior_facets(
     kernel(Ae.data(), coeff_array.data(), constants.data(),
            coordinate_dofs.data(), &local_facet,
            &perms[cell * facets.size() + local_facet]);
-    element0->apply_dof_transformation(tcb::make_span(Ae), cell_info[cell],
-                                       num_cols);
-    element1->apply_dof_transformation_to_transpose(tcb::make_span(Ae),
-                                                    cell_info[cell], num_rows);
+    apply_dof_transformation(tcb::make_span(Ae), cell_info[cell], num_cols);
+    apply_dof_transformation_to_transpose(tcb::make_span(Ae), cell_info[cell],
+                                          num_rows);
 
     // Size data structure for assembly
     be.resize(num_rows);
@@ -361,6 +371,12 @@ void _lift_bc_interior_facets(
   assert(f_to_c);
   auto map = topology.index_map(tdim - 1);
   assert(map);
+
+  std::function<void(xtl::span<T>, std::uint32_t, int)> apply_dof_transformation
+      = element0->get_dof_transformation_function<T>();
+  std::function<void(xtl::span<T>, std::uint32_t, int)>
+      apply_dof_transformation_to_transpose
+      = element1->get_dof_transformation_to_transpose_function<T>();
 
   for (std::int32_t f : active_facets)
   {
@@ -466,10 +482,9 @@ void _lift_bc_interior_facets(
                           perms[cells[1] * facets_per_cell + local_facet[1]]};
     kernel(Ae.data(), coeff_array.data(), constants.data(),
            coordinate_dofs.data(), local_facet.data(), perm.data());
-    element0->apply_dof_transformation(tcb::make_span(Ae), cell_info[cells[0]],
-                                       num_cols);
-    element1->apply_dof_transformation_to_transpose(
-        tcb::make_span(Ae), cell_info[cells[0]], num_rows);
+    apply_dof_transformation(tcb::make_span(Ae), cell_info[cells[0]], num_cols);
+    apply_dof_transformation_to_transpose(tcb::make_span(Ae),
+                                          cell_info[cells[0]], num_rows);
 
     be.resize(num_rows);
     std::fill(be.begin(), be.end(), 0);
@@ -553,9 +568,8 @@ void assemble_cells(
   std::vector<double> coordinate_dofs(3 * num_dofs_g);
   std::vector<T> be(bs * num_dofs);
 
-  std::function<void(std::shared_ptr<const fem::FiniteElement>, xtl::span<T>,
-                     std::uint32_t, int)>
-      apply_dof_transformation = element->get_transformation_function<T>();
+  std::function<void(xtl::span<T>, std::uint32_t, int)> apply_dof_transformation
+      = element->get_dof_transformation_function<T>();
 
   // Iterate over active cells
   for (std::int32_t c : active_cells)
@@ -572,7 +586,7 @@ void assemble_cells(
     std::fill(be.begin(), be.end(), 0);
     kernel(be.data(), coeffs.row(c).data(), constants.data(),
            coordinate_dofs.data(), nullptr, nullptr);
-    apply_dof_transformation(element, tcb::make_span(be), cell_info[c], 1);
+    apply_dof_transformation(tcb::make_span(be), cell_info[c], 1);
 
     // Scatter cell vector to 'global' vector array
     auto dofs = dofmap.links(c);
@@ -625,6 +639,9 @@ void assemble_exterior_facets(
   std::vector<double> coordinate_dofs(3 * num_dofs_g);
   std::vector<T> be(bs * num_dofs);
 
+  std::function<void(xtl::span<T>, std::uint32_t, int)> apply_dof_transformation
+      = element->get_dof_transformation_function<T>();
+
   auto f_to_c = mesh.topology().connectivity(tdim - 1, tdim);
   assert(f_to_c);
   auto c_to_f = mesh.topology().connectivity(tdim, tdim - 1);
@@ -655,7 +672,7 @@ void assemble_exterior_facets(
        coordinate_dofs.data(), &local_facet,
        &perms[cell * facets.size() + local_facet]);
 
-    element->apply_dof_transformation(tcb::make_span(be), cell_info[cell], 1);
+    apply_dof_transformation(tcb::make_span(be), cell_info[cell], 1);
 
     // Add element vector to global vector
     auto dofs = dofmap.links(cell);
@@ -706,6 +723,9 @@ void assemble_interior_facets(
   std::vector<T> be;
   std::vector<T> coeff_array(2 * offsets.back());
   assert(offsets.back() == int(coeffs.shape[1]));
+
+  std::function<void(xtl::span<T>, std::uint32_t, int)> apply_dof_transformation
+      = element->get_dof_transformation_function<T>();
 
   const int bs = dofmap.bs();
   assert(_bs < 0 or _bs == bs);
@@ -773,8 +793,7 @@ void assemble_interior_facets(
     fn(be.data(), coeff_array.data(), constants.data(), coordinate_dofs.data(),
        local_facet.data(), perm.data());
 
-    element->apply_dof_transformation(tcb::make_span(be), cell_info[cells[0]],
-                                      1);
+    apply_dof_transformation(tcb::make_span(be), cell_info[cells[0]], 1);
 
     // Add element vector to global vector
     if constexpr (_bs > 0)

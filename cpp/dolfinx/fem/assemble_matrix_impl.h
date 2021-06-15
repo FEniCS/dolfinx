@@ -198,6 +198,13 @@ void assemble_cells(
   const int ndim1 = bs1 * num_dofs1;
   std::vector<T> Ae(ndim0 * ndim1);
   std::vector<double> coordinate_dofs(3 * num_dofs_g);
+
+  std::function<void(xtl::span<T>, std::uint32_t, int)> apply_dof_transformation
+      = element0->get_dof_transformation_function<T>();
+  std::function<void(xtl::span<T>, std::uint32_t, int)>
+      apply_dof_transformation_to_transpose
+      = element1->get_dof_transformation_to_transpose_function<T>();
+
   for (std::int32_t c : active_cells)
   {
     // Get cell coordinates/geometry
@@ -213,9 +220,9 @@ void assemble_cells(
     kernel(Ae.data(), coeffs.row(c).data(), constants.data(),
            coordinate_dofs.data(), nullptr, nullptr);
 
-    element0->apply_dof_transformation(tcb::make_span(Ae), cell_info[c], ndim1);
-    element1->apply_dof_transformation_to_transpose(tcb::make_span(Ae),
-                                                    cell_info[c], ndim0);
+    apply_dof_transformation(tcb::make_span(Ae), cell_info[c], ndim1);
+    apply_dof_transformation_to_transpose(tcb::make_span(Ae), cell_info[c],
+                                          ndim0);
 
     // Zero rows/columns for essential bcs
     auto dofs0 = dofmap0.links(c);
@@ -295,6 +302,12 @@ void assemble_exterior_facets(
   assert(f_to_c);
   auto c_to_f = mesh.topology().connectivity(tdim, tdim - 1);
   assert(c_to_f);
+  std::function<void(xtl::span<T>, std::uint32_t, int)> apply_dof_transformation
+      = element0->get_dof_transformation_function<T>();
+  std::function<void(xtl::span<T>, std::uint32_t, int)>
+      apply_dof_transformation_to_transpose
+      = element1->get_dof_transformation_to_transpose_function<T>();
+
   for (std::int32_t f : active_facets)
   {
     auto cells = f_to_c->links(f);
@@ -320,10 +333,9 @@ void assemble_exterior_facets(
            coordinate_dofs.data(), &local_facet,
            &perms[cells[0] * facets.size() + local_facet]);
 
-    element0->apply_dof_transformation(tcb::make_span(Ae), cell_info[cells[0]],
-                                       ndim1);
-    element1->apply_dof_transformation_to_transpose(tcb::make_span(Ae),
-                                                    cell_info[cells[0]], ndim0);
+    apply_dof_transformation(tcb::make_span(Ae), cell_info[cells[0]], ndim1);
+    apply_dof_transformation_to_transpose(tcb::make_span(Ae),
+                                          cell_info[cells[0]], ndim0);
 
     // Zero rows/columns for essential bcs
     auto dofs0 = dofmap0.links(cells[0]);
@@ -404,6 +416,13 @@ void assemble_interior_facets(
   assert(c);
   auto c_to_f = mesh.topology().connectivity(tdim, tdim - 1);
   assert(c_to_f);
+
+  std::function<void(xtl::span<T>, std::uint32_t, int)> apply_dof_transformation
+      = element0->get_dof_transformation_function<T>();
+  std::function<void(xtl::span<T>, std::uint32_t, int)>
+      apply_dof_transformation_to_transpose
+      = element1->get_dof_transformation_to_transpose_function<T>();
+
   for (std::int32_t facet_index : active_facets)
   {
     // Create attached cells
@@ -480,10 +499,9 @@ void assemble_interior_facets(
     fn(Ae.data(), coeff_array.data(), constants.data(), coordinate_dofs.data(),
        local_facet.data(), perm.data());
 
-    element0->apply_dof_transformation(tcb::make_span(Ae), cell_info[cells[0]],
-                                       num_cols);
-    element1->apply_dof_transformation_to_transpose(
-        tcb::make_span(Ae), cell_info[cells[0]], num_rows);
+    apply_dof_transformation(tcb::make_span(Ae), cell_info[cells[0]], num_cols);
+    apply_dof_transformation_to_transpose(tcb::make_span(Ae),
+                                          cell_info[cells[0]], num_rows);
 
     // Zero rows/columns for essential bcs
     if (!bc0.empty())
