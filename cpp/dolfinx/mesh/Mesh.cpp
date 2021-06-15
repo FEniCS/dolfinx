@@ -97,12 +97,6 @@ Mesh mesh::create_mesh(MPI_Comm comm,
   const graph::AdjacencyList<std::int64_t> cell_nodes
       = graph::reorder(cell_nodes0, remap);
 
-  // const std::vector<std::int64_t>& original_cell_index = original_cell_index0;
-  // const graph::AdjacencyList<std::int64_t> cell_nodes = cell_nodes0;
-  // const graph::AdjacencyList<std::int64_t> cells_extracted = cells_extracted0;
-
-  // -----
-
   // Create cells and vertices with the ghosting requested. Input
   // topology includes cells shared via facet, but ghosts will be
   // removed later if not required by ghost_mode.

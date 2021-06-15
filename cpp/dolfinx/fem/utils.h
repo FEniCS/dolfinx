@@ -130,12 +130,27 @@ ElementDofLayout create_element_dof_layout(const ufc_dofmap& dofmap,
 /// @param[in] topology The mesh topology
 /// @param[in] reorder_fn The graph reordering function called on the
 /// geometry dofmap
-DofMap create_dofmap(
-    MPI_Comm comm, const ufc_dofmap& dofmap, mesh::Topology& topology,
-    const std::function<
-        std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>& reorder_fn
-    = [](const graph::AdjacencyList<std::int32_t>& g)
-    { return graph::scotch::compute_gps(g, 2).first; });
+DofMap create_dofmap(MPI_Comm comm, const ufc_dofmap& dofmap,
+                     mesh::Topology& topology,
+                     const std::function<std::vector<int>(
+                         const graph::AdjacencyList<std::int32_t>&)>& reorder_fn
+                     = nullptr
+                     // const std::function<
+                     //     std::vector<int>(const
+                     //     graph::AdjacencyList<std::int32_t>&)>& reorder_fn
+                     // =
+                     //     [](const graph::AdjacencyList<std::int32_t>& g)
+                     // {
+                     //   std::vector<int> remap(g.num_nodes());
+                     //   std::iota(remap.begin(), remap.end(), 0);
+                     //   return remap;
+                     // }
+                     // const std::function<
+                     //     std::vector<int>(const
+                     //     graph::AdjacencyList<std::int32_t>&)>& reorder_fn
+                     // = [](const graph::AdjacencyList<std::int32_t>& g)
+                     // { return graph::scotch::compute_gps(g, 5).first; }
+);
 
 /// Get the name of each coefficient in a UFC form
 /// @param[in] ufc_form The UFC form
