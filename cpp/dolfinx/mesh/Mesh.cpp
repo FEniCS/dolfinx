@@ -86,7 +86,7 @@ Mesh mesh::create_mesh(MPI_Comm comm,
       tdim);
 
   // Compute re-ordering of local dual graph
-  const std::vector<int> remap = graph::scotch::compute_gps(g, 1).first;
+  const std::vector<int> remap = graph::scotch::compute_gps(g, 5).first;
 
   // Create re-ordered cell lists
   std::vector<std::int64_t> original_cell_index(original_cell_index0);
