@@ -218,11 +218,11 @@ template <typename T>
 AdjacencyList<T> reorder(const AdjacencyList<T>& list,
                          const xtl::span<const std::int32_t>& nodemap)
 {
-  if (nodemap.size() != static_cast<std::size_t>(list.num_nodes()))
-    throw std::runtime_error("Cannot reorderAdjacencyList. map has wrong size");
+  // if (nodemap.size() != static_cast<std::size_t>(list.num_nodes()))
+  //   throw std::runtime_error("Cannot reorderAdjacencyList. map has wrong size");
 
-  std::vector<T> data(list.array().size());
-  std::vector<std::int32_t> offsets(list.offsets().size(), 0);
+  std::vector<T> data(list.array());
+  std::vector<std::int32_t> offsets(list.offsets());
 
   // Compute new offsets
   for (std::size_t n = 0; n < nodemap.size(); ++n)

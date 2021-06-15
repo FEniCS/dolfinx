@@ -422,22 +422,22 @@ mesh::create_topology(MPI_Comm comm,
 
   // ----
 
-  // // Re-order vertices by looping through cells in order
-  // std::vector<std::int32_t> node_remap(nlocal, -1);
-  // std::size_t counter = 0;
-  // for (std::int32_t c = 0; c < cells.num_nodes(); ++c)
-  // {
-  //   auto vertices_global = cells.links(c);
-  //   for (auto v : vertices_global)
-  //   {
-  //     auto it = global_to_local_vertices.find(v);
-  //     if (node_remap[it->second] == -1)
-  //       node_remap[it->second] = counter++;
-  //   }
-  // }
+  // Re-order vertices by looping through cells in order
+  std::vector<std::int32_t> node_remap(nlocal, -1);
+  std::size_t counter = 0;
+  for (std::int32_t c = 0; c < cells.num_nodes(); ++c)
+  {
+    auto vertices_global = cells.links(c);
+    for (auto v : vertices_global)
+    {
+      auto it = global_to_local_vertices.find(v);
+      if (node_remap[it->second] == -1)
+        node_remap[it->second] = counter++;
+    }
+  }
 
-  // for (auto& map : global_to_local_vertices)
-  //   map.second = node_remap[map.second];
+  for (auto& map : global_to_local_vertices)
+    map.second = node_remap[map.second];
 
   // ----
 

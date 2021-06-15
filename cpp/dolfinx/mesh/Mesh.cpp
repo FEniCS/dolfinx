@@ -86,20 +86,20 @@ Mesh mesh::create_mesh(MPI_Comm comm,
       tdim);
 
   // Compute re-ordering of local dual graph
-  const std::vector<int> remap = graph::scotch::compute_gps(g, 20).first;
+  const std::vector<int> remap = graph::scotch::compute_gps(g, 1).first;
 
   // Create re-ordered cell lists
-  // std::vector<std::int64_t> original_cell_index(original_cell_index0.size());
-  // for (std::size_t i = 0; i < remap.size(); ++i)
-  //   original_cell_index[remap[i]] = original_cell_index0[i];
-  // const graph::AdjacencyList<std::int64_t> cells_extracted
-  //     = graph::reorder(cells_extracted0, remap);
-  // const graph::AdjacencyList<std::int64_t> cell_nodes
-  //     = graph::reorder(cell_nodes0, remap);
+  std::vector<std::int64_t> original_cell_index(original_cell_index0);
+  for (std::size_t i = 0; i < remap.size(); ++i)
+    original_cell_index[remap[i]] = original_cell_index0[i];
+  const graph::AdjacencyList<std::int64_t> cells_extracted
+      = graph::reorder(cells_extracted0, remap);
+  const graph::AdjacencyList<std::int64_t> cell_nodes
+      = graph::reorder(cell_nodes0, remap);
 
-  const std::vector<std::int64_t>& original_cell_index = original_cell_index0;
-  const graph::AdjacencyList<std::int64_t> cell_nodes = cell_nodes0;
-  const graph::AdjacencyList<std::int64_t> cells_extracted = cells_extracted0;
+  // const std::vector<std::int64_t>& original_cell_index = original_cell_index0;
+  // const graph::AdjacencyList<std::int64_t> cell_nodes = cell_nodes0;
+  // const graph::AdjacencyList<std::int64_t> cells_extracted = cells_extracted0;
 
   // -----
 
