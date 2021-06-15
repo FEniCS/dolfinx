@@ -230,18 +230,74 @@ public:
       }
       else
       {
+        // Vector element
+        std::function<void(xtl::span<T>, std::uint32_t, int)> sub_function
+            = _sub_elements[0]->get_dof_transformation_function<T>(inverse,
+                                                                   transpose);
+        return [this, sub_function](xtl::span<T> data,
+                                    std::uint32_t cell_permutation,
+                                    int data_block_size) {
+          const int ebs = block_size();
+          // TODO: get rid of temporory data assignment
+          std::vector<T> temp_data(data.size() / ebs);
+          for (int block = 0; block < ebs; ++block)
+          {
+            // TODO: remove this copy, use strided span instead?
+            // TODO: check this for data_block_size != 1
+            for (std::size_t i = 0; i * ebs * data_block_size < data.size();
+                 ++i)
+              for (int j = 0; j < data_block_size; ++j)
+                temp_data[i * data_block_size + j]
+                    = data[(i * ebs + block) * data_block_size + j];
+            sub_function(tcb::make_span(temp_data), cell_permutation,
+                         data_block_size);
+            for (std::size_t i = 0; i * ebs * data_block_size < data.size();
+                 ++i)
+              for (int j = 0; j < data_block_size; ++j)
+                data[(i * ebs + block) * data_block_size + j]
+                    = temp_data[i * data_block_size + j];
+          }
+        };
+      }
+    }
+    if (transpose)
+    {
+      if (inverse)
+      {
         return [this](xtl::span<T> data, std::uint32_t cell_permutation,
                       int block_size) {
-          apply_vector_element_dof_transformation(data, cell_permutation,
+          apply_scalar_element_inverse_transpose_dof_transformation(
+              data, cell_permutation, block_size);
+        };
+      }
+      else
+      {
+        return [this](xtl::span<T> data, std::uint32_t cell_permutation,
+                      int block_size) {
+          apply_scalar_element_transpose_dof_transformation(
+              data, cell_permutation, block_size);
+        };
+      }
+    }
+    else
+    {
+      if (inverse)
+      {
+        return [this](xtl::span<T> data, std::uint32_t cell_permutation,
+                      int block_size) {
+          apply_scalar_element_inverse_dof_transformation(
+              data, cell_permutation, block_size);
+        };
+      }
+      else
+      {
+        return [this](xtl::span<T> data, std::uint32_t cell_permutation,
+                      int block_size) {
+          apply_scalar_element_dof_transformation(data, cell_permutation,
                                                   block_size);
         };
       }
     }
-    return [this](xtl::span<T> data, std::uint32_t cell_permutation,
-                  int block_size) {
-      apply_scalar_element_dof_transformation(data, cell_permutation,
-                                              block_size);
-    };
   }
 
   /// Return a function that applies DOF transformation to some transposed data
