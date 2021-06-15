@@ -534,7 +534,8 @@ void assemble_cells(
   std::vector<T> be(bs * num_dofs);
 
   // Iterate over active cells
-  boost::timer::auto_cpu_timer t;
+  // boost::timer::auto_cpu_timer t;
+  // std::cout << "Start cell loop" << std::endl;
   for (std::int32_t c : active_cells)
   {
     // Get cell coordinates/geometry

@@ -320,6 +320,8 @@ mesh::create_topology(MPI_Comm comm,
         + std::to_string(mesh::num_cell_vertices(cell_type)) + ".");
   }
 
+  const int mpi_rank = dolfinx::MPI::rank(comm);
+
   // Create index map for cells
   const std::int32_t num_local_cells = cells.num_nodes() - ghost_owners.size();
   std::shared_ptr<common::IndexMap> index_map_c;
@@ -372,8 +374,6 @@ mesh::create_topology(MPI_Comm comm,
   // determine ownership
   for (std::int64_t idx : ghost_vertices_set)
     global_to_local_vertices.insert({idx, -1});
-
-  int mpi_rank = MPI::rank(comm);
 
   // For each vertex whose ownership needs determining, compute list of
   // sharing process ranks
@@ -431,13 +431,20 @@ mesh::create_topology(MPI_Comm comm,
     for (auto v : vertices_global)
     {
       auto it = global_to_local_vertices.find(v);
+      assert(it != global_to_local_vertices.end());
       if (node_remap[it->second] == -1)
         node_remap[it->second] = counter++;
     }
   }
 
+  assert(std::find(node_remap.begin(), node_remap.end(), -1)
+         == node_remap.end());
   for (auto& map : global_to_local_vertices)
-    map.second = node_remap[map.second];
+  {
+    assert(map.second < static_cast<std::int32_t>(node_remap.size()));
+    if (map.second >= 0)
+      map.second = node_remap[map.second];
+  }
 
   // ----
 

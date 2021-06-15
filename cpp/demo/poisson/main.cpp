@@ -120,7 +120,7 @@ int main(int argc, char* argv[])
   {
     // Create mesh and function space
     auto mesh = std::make_shared<mesh::Mesh>(generation::RectangleMesh::create(
-        MPI_COMM_WORLD, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 0.0}}}, {32, 32},
+        MPI_COMM_WORLD, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 0.0}}}, {2, 2},
         mesh::CellType::triangle, mesh::GhostMode::none));
 
     auto V = fem::create_functionspace(functionspace_form_poisson_a, "u", mesh);
