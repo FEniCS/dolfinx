@@ -418,9 +418,12 @@ array2d<typename U::scalar_type> pack_coefficients(const U& u)
     const std::vector<std::uint32_t>& cell_info
         = needs_permutation_data ? mesh->topology().get_cell_permutation_info()
                                  : std::vector<std::uint32_t>(num_cells);
-    for (int cell = 0; cell < num_cells; ++cell)
+    for (std::size_t coeff = 0; coeff < dofmaps.size(); ++coeff)
     {
-      for (std::size_t coeff = 0; coeff < dofmaps.size(); ++coeff)
+      std::function<void(xtl::span<T>, std::uint32_t, int)>
+          apply_transpose_dof_transformation
+          = elements[coeff]->get_dof_transformation_function<T>(false, true);
+      for (int cell = 0; cell < num_cells; ++cell)
       {
         xtl::span<const std::int32_t> dofs = dofmaps[coeff]->cell_dofs(cell);
         const std::vector<T>& _v = v[coeff];
@@ -432,7 +435,7 @@ array2d<typename U::scalar_type> pack_coefficients(const U& u)
                 = _v[bs[coeff] * dofs[i] + k];
           }
         }
-        elements[coeff]->apply_transpose_dof_transformation(
+        apply_transpose_dof_transformation(
             tcb::make_span(c.row(cell))
                 .subspan(offsets[coeff], elements[coeff]->space_dimension()),
             cell_info[cell], 1);

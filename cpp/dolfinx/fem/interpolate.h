@@ -257,7 +257,7 @@ void interpolate(
       {
         for (int i = 0; i < num_scalar_dofs; ++i)
           _coeffs[i] = values(k, c * num_scalar_dofs + i);
-        element->apply_scalar_element_inverse_transpose_dof_transformation(
+        element->apply_inverse_transpose_dof_transformation(
             tcb::make_span(_coeffs), cell_info[c], 1);
         for (int i = 0; i < num_scalar_dofs; ++i)
         {
@@ -296,6 +296,10 @@ void interpolate(
         = xt::view(cmap.tabulate(1, X), xt::range(1, tdim + 1), xt::all(),
                    xt::all(), xt::all());
 
+    std::function<void(xtl::span<T>, std::uint32_t, int)>
+        apply_inverse_transpose_dof_transformation
+        = element->get_dof_transformation_function<T>(true, true);
+
     for (std::int32_t c : cells)
     {
       auto x_dofs = x_dofmap.links(c);
@@ -324,8 +328,8 @@ void interpolate(
         xt::xtensor<T, 2> ref_data
             = xt::transpose(xt::view(reference_data, xt::all(), 0, xt::all()));
         element->interpolate(ref_data, tcb::make_span(_coeffs));
-        element->apply_inverse_transpose_dof_transformation(
-            tcb::make_span(_coeffs), cell_info[c], 1);
+        apply_inverse_transpose_dof_transformation(tcb::make_span(_coeffs),
+                                                   cell_info[c], 1);
 
         assert(_coeffs.size() == num_scalar_dofs);
 
