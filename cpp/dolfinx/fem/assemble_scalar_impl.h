@@ -169,7 +169,7 @@ T assemble_exterior_facets(
   const std::size_t num_dofs_g = x_dofmap.num_links(0);
   const xt::xtensor<double, 2>& x_g = mesh.geometry().x();
 
-  // Creat data structures used in assembly
+  // Create data structures used in assembly
   std::vector<double> coordinate_dofs(3 * num_dofs_g);
 
   auto f_to_c = mesh.topology().connectivity(tdim - 1, tdim);
@@ -225,7 +225,7 @@ T assemble_interior_facets(
   const std::size_t num_dofs_g = x_dofmap.num_links(0);
   const xt::xtensor<double, 2>& x_g = mesh.geometry().x();
 
-  // Creat data structures used in assembly
+  // Create data structures used in assembly
   xt::xtensor<double, 3> coordinate_dofs({2, num_dofs_g, 3});
   std::vector<T> coeff_array(2 * offsets.back());
   assert(offsets.back() == coeffs.shape[1]);

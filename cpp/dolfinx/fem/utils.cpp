@@ -126,9 +126,8 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
                                     * ufc_sub_dofmap->block_size);
     for (std::size_t j = 0; j < parent_map_sub.size(); ++j)
       parent_map_sub[j] = offsets[i] + element_block_size * j;
-    sub_dofmaps.push_back(
-        std::make_shared<fem::ElementDofLayout>(create_element_dof_layout(
-            *ufc_sub_dofmap, cell_type, parent_map_sub)));
+    sub_dofmaps.push_back(std::make_shared<fem::ElementDofLayout>(
+        create_element_dof_layout(*ufc_sub_dofmap, cell_type, parent_map_sub)));
   }
 
   // Check for "block structure". This should ultimately be replaced,
@@ -137,8 +136,11 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
                                sub_dofmaps, cell_type);
 }
 //-----------------------------------------------------------------------------
-fem::DofMap fem::create_dofmap(MPI_Comm comm, const ufc_dofmap& ufc_dofmap,
-                               mesh::Topology& topology)
+fem::DofMap
+fem::create_dofmap(MPI_Comm comm, const ufc_dofmap& ufc_dofmap,
+                   mesh::Topology& topology,
+                   const std::function<std::vector<int>(
+                       const graph::AdjacencyList<std::int32_t>&)>& reorder_fn)
 {
   auto element_dof_layout = std::make_shared<ElementDofLayout>(
       create_element_dof_layout(ufc_dofmap, topology.cell_type()));
@@ -163,7 +165,7 @@ fem::DofMap fem::create_dofmap(MPI_Comm comm, const ufc_dofmap& ufc_dofmap,
   }
 
   auto [index_map, bs, dofmap]
-      = fem::build_dofmap_data(comm, topology, *element_dof_layout);
+      = fem::build_dofmap_data(comm, topology, *element_dof_layout, reorder_fn);
   return DofMap(element_dof_layout, index_map, bs, std::move(dofmap), bs);
 }
 //-----------------------------------------------------------------------------
