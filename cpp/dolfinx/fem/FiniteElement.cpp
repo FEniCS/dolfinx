@@ -67,8 +67,7 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
       _space_dim(ufc_element.space_dimension),
       _value_size(ufc_element.value_size),
       _reference_value_size(ufc_element.reference_value_size),
-      _hash(std::hash<std::string>{}(_signature)), _bs(ufc_element.block_size),
-      _needs_permutation_data(ufc_element.needs_transformation_data)
+      _hash(std::hash<std::string>{}(_signature)), _bs(ufc_element.block_size)
 {
   const ufc_shape _shape = ufc_element.cell_shape;
   switch (_shape)
@@ -107,11 +106,14 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
   for (int i = 0; i < ufc_element.value_rank; ++i)
     _value_dimension.push_back(ufc_element.value_shape[i]);
 
+  _needs_permutation_data = false;
   // Create all sub-elements
   for (int i = 0; i < ufc_element.num_sub_elements; ++i)
   {
     ufc_finite_element* ufc_sub_element = ufc_element.sub_elements[i];
     _sub_elements.push_back(std::make_shared<FiniteElement>(*ufc_sub_element));
+    if (_sub_elements[i]->needs_permutation_data())
+      _needs_permutation_data = true;
   }
 
   // FIXME: Add element 'handle' to UFC and do not use fragile strings
@@ -120,6 +122,7 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
   {
     _element = std::make_unique<basix::FiniteElement>(basix::create_element(
         family.c_str(), cell_shape.c_str(), ufc_element.degree));
+    _needs_permutation_data = !_element->dof_transformations_are_identity();
   }
 }
 //-----------------------------------------------------------------------------
