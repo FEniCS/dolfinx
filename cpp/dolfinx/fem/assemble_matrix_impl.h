@@ -43,9 +43,11 @@ void assemble_cells(
                             const std::int32_t*, const T*)>& mat_set_values,
     const mesh::Geometry& geometry,
     const xtl::span<const std::int32_t>& active_cells,
-    std::shared_ptr<const fem::FiniteElement> element0,
+    std::function<void(xtl::span<T>, std::uint32_t, int)>
+        apply_dof_transformation,
     const graph::AdjacencyList<std::int32_t>& dofmap0, const int bs0,
-    std::shared_ptr<const fem::FiniteElement> element1,
+    std::function<void(xtl::span<T>, std::uint32_t, int)>
+        apply_dof_transformation_to_transpose,
     const graph::AdjacencyList<std::int32_t>& dofmap1, const int bs1,
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
@@ -59,9 +61,11 @@ void assemble_exterior_facets(
     const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                             const std::int32_t*, const T*)>& mat_set_values,
     const mesh::Mesh& mesh, const xtl::span<const std::int32_t>& active_facets,
-    std::shared_ptr<const fem::FiniteElement> element0,
+    std::function<void(xtl::span<T>, std::uint32_t, int)>
+        apply_dof_transformation,
     const graph::AdjacencyList<std::int32_t>& dofmap0, int bs0,
-    std::shared_ptr<const fem::FiniteElement> element1,
+    std::function<void(xtl::span<T>, std::uint32_t, int)>
+        apply_dof_transformation_to_transpose,
     const graph::AdjacencyList<std::int32_t>& dofmap1, int bs1,
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
@@ -76,8 +80,11 @@ void assemble_interior_facets(
     const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                             const std::int32_t*, const T*)>& mat_set_values,
     const mesh::Mesh& mesh, const xtl::span<const std::int32_t>& active_facets,
-    std::shared_ptr<const fem::FiniteElement> element0, const DofMap& dofmap0,
-    int bs0, std::shared_ptr<const fem::FiniteElement> element1,
+    std::function<void(xtl::span<T>, std::uint32_t, int)>
+        apply_dof_transformation,
+    const DofMap& dofmap0, int bs0,
+    std::function<void(xtl::span<T>, std::uint32_t, int)>
+        apply_dof_transformation_to_transpose,
     const DofMap& dofmap1, int bs1, const std::vector<bool>& bc0,
     const std::vector<bool>& bc1,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
@@ -109,14 +116,20 @@ void assemble_matrix(
       = a.function_spaces().at(1)->dofmap();
   assert(dofmap0);
   assert(dofmap1);
-  std::shared_ptr<const fem::FiniteElement> element0
-      = a.function_spaces().at(0)->element();
-  std::shared_ptr<const fem::FiniteElement> element1
-      = a.function_spaces().at(1)->element();
   const graph::AdjacencyList<std::int32_t>& dofs0 = dofmap0->list();
   const int bs0 = dofmap0->bs();
   const graph::AdjacencyList<std::int32_t>& dofs1 = dofmap1->list();
   const int bs1 = dofmap1->bs();
+
+  std::shared_ptr<const fem::FiniteElement> element0
+      = a.function_spaces().at(0)->element();
+  std::shared_ptr<const fem::FiniteElement> element1
+      = a.function_spaces().at(1)->element();
+  std::function<void(xtl::span<T>, std::uint32_t, int)> apply_dof_transformation
+      = element0->get_dof_transformation_function<T>();
+  std::function<void(xtl::span<T>, std::uint32_t, int)>
+      apply_dof_transformation_to_transpose
+      = element1->get_dof_transformation_to_transpose_function<T>();
 
   const bool needs_permutation_data = a.needs_permutation_data();
   if (needs_permutation_data)
@@ -131,8 +144,9 @@ void assemble_matrix(
     const std::vector<std::int32_t>& active_cells
         = a.domains(IntegralType::cell, i);
     impl::assemble_cells<T>(mat_set_values, mesh->geometry(), active_cells,
-                            element0, dofs0, bs0, element1, dofs1, bs1, bc0,
-                            bc1, fn, coeffs, constants, cell_info);
+                            apply_dof_transformation, dofs0, bs0,
+                            apply_dof_transformation_to_transpose, dofs1, bs1,
+                            bc0, bc1, fn, coeffs, constants, cell_info);
   }
 
   if (a.num_integrals(IntegralType::exterior_facet) > 0
@@ -150,8 +164,9 @@ void assemble_matrix(
       const std::vector<std::int32_t>& active_facets
           = a.domains(IntegralType::exterior_facet, i);
       impl::assemble_exterior_facets<T>(
-          mat_set_values, *mesh, active_facets, element0, dofs0, bs0, element1,
-          dofs1, bs1, bc0, bc1, fn, coeffs, constants, cell_info, perms);
+          mat_set_values, *mesh, active_facets, apply_dof_transformation, dofs0,
+          bs0, apply_dof_transformation_to_transpose, dofs1, bs1, bc0, bc1, fn,
+          coeffs, constants, cell_info, perms);
     }
 
     const std::vector<int> c_offsets = a.coefficient_offsets();
@@ -160,10 +175,10 @@ void assemble_matrix(
       const auto& fn = a.kernel(IntegralType::interior_facet, i);
       const std::vector<std::int32_t>& active_facets
           = a.domains(IntegralType::interior_facet, i);
-      impl::assemble_interior_facets<T>(mat_set_values, *mesh, active_facets,
-                                        element0, *dofmap0, bs0, element1,
-                                        *dofmap1, bs1, bc0, bc1, fn, coeffs,
-                                        c_offsets, constants, cell_info, perms);
+      impl::assemble_interior_facets<T>(
+          mat_set_values, *mesh, active_facets, apply_dof_transformation,
+          *dofmap0, bs0, apply_dof_transformation_to_transpose, *dofmap1, bs1,
+          bc0, bc1, fn, coeffs, c_offsets, constants, cell_info, perms);
     }
   }
 }
@@ -174,9 +189,11 @@ void assemble_cells(
                             const std::int32_t*, const T*)>& mat_set,
     const mesh::Geometry& geometry,
     const xtl::span<const std::int32_t>& active_cells,
-    std::shared_ptr<const fem::FiniteElement> element0,
+    std::function<void(xtl::span<T>, std::uint32_t, int)>
+        apply_dof_transformation,
     const graph::AdjacencyList<std::int32_t>& dofmap0, const int bs0,
-    std::shared_ptr<const fem::FiniteElement> element1,
+    std::function<void(xtl::span<T>, std::uint32_t, int)>
+        apply_dof_transformation_to_transpose,
     const graph::AdjacencyList<std::int32_t>& dofmap1, const int bs1,
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
@@ -198,12 +215,6 @@ void assemble_cells(
   const int ndim1 = bs1 * num_dofs1;
   std::vector<T> Ae(ndim0 * ndim1);
   std::vector<double> coordinate_dofs(3 * num_dofs_g);
-
-  std::function<void(xtl::span<T>, std::uint32_t, int)> apply_dof_transformation
-      = element0->get_dof_transformation_function<T>();
-  std::function<void(xtl::span<T>, std::uint32_t, int)>
-      apply_dof_transformation_to_transpose
-      = element1->get_dof_transformation_to_transpose_function<T>();
 
   for (std::int32_t c : active_cells)
   {
@@ -269,9 +280,11 @@ void assemble_exterior_facets(
     const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                             const std::int32_t*, const T*)>& mat_set_values,
     const mesh::Mesh& mesh, const xtl::span<const std::int32_t>& active_facets,
-    std::shared_ptr<const fem::FiniteElement> element0,
+    std::function<void(xtl::span<T>, std::uint32_t, int)>
+        apply_dof_transformation,
     const graph::AdjacencyList<std::int32_t>& dofmap0, int bs0,
-    std::shared_ptr<const fem::FiniteElement> element1,
+    std::function<void(xtl::span<T>, std::uint32_t, int)>
+        apply_dof_transformation_to_transpose,
     const graph::AdjacencyList<std::int32_t>& dofmap1, int bs1,
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
@@ -302,11 +315,6 @@ void assemble_exterior_facets(
   assert(f_to_c);
   auto c_to_f = mesh.topology().connectivity(tdim, tdim - 1);
   assert(c_to_f);
-  std::function<void(xtl::span<T>, std::uint32_t, int)> apply_dof_transformation
-      = element0->get_dof_transformation_function<T>();
-  std::function<void(xtl::span<T>, std::uint32_t, int)>
-      apply_dof_transformation_to_transpose
-      = element1->get_dof_transformation_to_transpose_function<T>();
 
   for (std::int32_t f : active_facets)
   {
@@ -382,8 +390,11 @@ void assemble_interior_facets(
     const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                             const std::int32_t*, const T*)>& mat_set_values,
     const mesh::Mesh& mesh, const xtl::span<const std::int32_t>& active_facets,
-    std::shared_ptr<const fem::FiniteElement> element0, const DofMap& dofmap0,
-    int bs0, std::shared_ptr<const fem::FiniteElement> element1,
+    std::function<void(xtl::span<T>, std::uint32_t, int)>
+        apply_dof_transformation,
+    const DofMap& dofmap0, int bs0,
+    std::function<void(xtl::span<T>, std::uint32_t, int)>
+        apply_dof_transformation_to_transpose,
     const DofMap& dofmap1, int bs1, const std::vector<bool>& bc0,
     const std::vector<bool>& bc1,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
@@ -416,12 +427,6 @@ void assemble_interior_facets(
   assert(c);
   auto c_to_f = mesh.topology().connectivity(tdim, tdim - 1);
   assert(c_to_f);
-
-  std::function<void(xtl::span<T>, std::uint32_t, int)> apply_dof_transformation
-      = element0->get_dof_transformation_function<T>();
-  std::function<void(xtl::span<T>, std::uint32_t, int)>
-      apply_dof_transformation_to_transpose
-      = element1->get_dof_transformation_to_transpose_function<T>();
 
   for (std::int32_t facet_index : active_facets)
   {
