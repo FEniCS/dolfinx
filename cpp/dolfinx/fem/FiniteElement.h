@@ -214,19 +214,22 @@ public:
         // Mixed element
         std::vector<std::function<void(xtl::span<T>, std::uint32_t, int)>>
             sub_element_functions;
+        std::vector<int> dims;
         for (std::size_t i = 0; i < _sub_elements.size(); ++i)
+        {
           sub_element_functions.push_back(
               _sub_elements[i]->get_dof_transformation_function<T>(inverse,
                                                                    transpose));
+          dims.push_back(_sub_elements[i]->space_dimension());
+        }
 
-        return [this, sub_element_functions](xtl::span<T> data,
+        return [dims, sub_element_functions](xtl::span<T> data,
                                              std::uint32_t cell_permutation,
                                              int block_size) {
           std::size_t start = 0;
           for (std::size_t e = 0; e < sub_element_functions.size(); ++e)
           {
-            const std::size_t width
-                = sub_elements()[e]->space_dimension() * block_size;
+            const std::size_t width = dims[e] * block_size;
             sub_element_functions[e](data.subspan(start, width),
                                      cell_permutation, block_size);
             start += width;
@@ -239,10 +242,10 @@ public:
         std::function<void(xtl::span<T>, std::uint32_t, int)> sub_function
             = _sub_elements[0]->get_dof_transformation_function<T>(inverse,
                                                                    transpose);
-        return [this, sub_function](xtl::span<T> data,
-                                    std::uint32_t cell_permutation,
-                                    int data_block_size) {
-          const int ebs = block_size();
+        const int ebs = _bs;
+        return [ebs, sub_function](xtl::span<T> data,
+                                   std::uint32_t cell_permutation,
+                                   int data_block_size) {
           sub_function(data, cell_permutation, ebs * data_block_size);
         };
       }
