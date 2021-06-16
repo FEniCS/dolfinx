@@ -497,6 +497,10 @@ public:
   }
 
   /// Apply inverse of DOF transformation to some transposed data.
+  ///
+  /// @param[in,out] data The data to be transformed
+  /// @param[in] cell_permutation Permutation data for the cell
+  /// @param[in] block_size The block_size of the input data
   template <typename T>
   void apply_inverse_dof_transformation_to_transpose(xtl::span<T>,
                                                      std::uint32_t, int) const
@@ -505,6 +509,10 @@ public:
   }
 
   /// Apply transpose of transformation to some transposed data.
+  ///
+  /// @param[in,out] data The data to be transformed
+  /// @param[in] cell_permutation Permutation data for the cell
+  /// @param[in] block_size The block_size of the input data
   template <typename T>
   void apply_transpose_dof_transformation_to_transpose(xtl::span<T>,
                                                        std::uint32_t, int) const
@@ -513,6 +521,10 @@ public:
   }
 
   /// Apply inverse transpose transformation to some transposed data
+  ///
+  /// @param[in,out] data The data to be transformed
+  /// @param[in] cell_permutation Permutation data for the cell
+  /// @param[in] block_size The block_size of the input data
   template <typename T>
   void apply_inverse_transpose_dof_transformation_to_transpose(xtl::span<T>,
                                                                std::uint32_t,
