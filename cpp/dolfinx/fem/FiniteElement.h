@@ -331,31 +331,16 @@ public:
       {
         // Vector element
         std::function<void(xtl::span<T>, std::uint32_t, int)> sub_function
-            = _sub_elements[0]->get_dof_transformation_to_transpose_function<T>(
-                inverse, transpose);
+            = _sub_elements[0]->get_dof_transformation_function<T>(inverse,
+                                                                   transpose);
         return [this, sub_function](xtl::span<T> data,
                                     std::uint32_t cell_permutation,
                                     int data_block_size) {
           const int ebs = block_size();
-
-          // TODO: get rid of temporory data assignment
-          std::vector<T> temp_data(data.size() / ebs);
-          const std::size_t scalar_dim = data.size() / ebs / data_block_size;
-          for (int block = 0; block < ebs; ++block)
-          {
-            // TODO: remove this copy, use strided span instead?
-            // TODO: check this for block_size != 1
-            for (std::size_t i = 0; i < scalar_dim; ++i)
-              for (int j = 0; j < data_block_size; ++j)
-                temp_data[i + j * scalar_dim]
-                    = data[i * ebs + block + j * scalar_dim * ebs];
-            sub_function(tcb::make_span(temp_data), cell_permutation,
-                         data_block_size);
-            for (std::size_t i = 0; i < scalar_dim; ++i)
-              for (int j = 0; j < data_block_size; ++j)
-                data[i * ebs + block + j * scalar_dim * ebs]
-                    = temp_data[i + j * scalar_dim];
-          }
+          const std::size_t dof_count = data.size() / data_block_size;
+          for (int block = 0; block < data_block_size; ++block)
+            sub_function(data.subspan(block * dof_count, dof_count),
+                         cell_permutation, ebs);
         };
       }
     }
