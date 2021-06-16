@@ -91,13 +91,26 @@ def test_empty_tree():
 
 @skip_in_parallel
 def test_compute_collisions_point_1d():
-    reference = {1: set([4])}
+    N = 16
     p = numpy.array([0.3, 0, 0])
-    mesh = UnitIntervalMesh(MPI.COMM_WORLD, 16)
-    for dim in range(1, 2):
-        tree = BoundingBoxTree(mesh, mesh.topology.dim)
-        entities = compute_collisions_point(tree, p)
-        assert set(entities) == reference[dim]
+    mesh = UnitIntervalMesh(MPI.COMM_WORLD, N)
+    dx = 1 / N
+    cell_index = int(p[0] // dx)
+    # Vertices of cell we should collide with
+    vertices = numpy.array([[dx * cell_index, 0, 0], [dx * (cell_index + 1), 0, 0]])
+
+    # Compute collision
+    tdim = mesh.topology.dim
+    tree = BoundingBoxTree(mesh, tdim)
+    entities = list(set(compute_collisions_point(tree, p)))
+    assert len(entities) == 1
+
+    # Get the vertices of the geometry
+    geom_entities = cpp.mesh.entities_to_geometry(mesh, tdim, entities, False)[0]
+    x = mesh.geometry.x
+    cell_vertices = x[geom_entities]
+    # Check that we get the cell with correct vertices
+    assert numpy.allclose(cell_vertices, vertices)
 
 
 @skip_in_parallel
