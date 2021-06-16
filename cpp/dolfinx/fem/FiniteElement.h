@@ -502,10 +502,12 @@ public:
   /// @param[in] cell_permutation Permutation data for the cell
   /// @param[in] block_size The block_size of the input data
   template <typename T>
-  void apply_inverse_dof_transformation_to_transpose(xtl::span<T>,
-                                                     std::uint32_t, int) const
+  void apply_inverse_dof_transformation_to_transpose(
+      xtl::span<T> data, std::uint32_t cell_permutation, int block_size) const
   {
-    throw std::runtime_error("Not implemented yet.");
+    assert(_element);
+    _element->apply_inverse_dof_transformation_to_transpose(data, block_size,
+                                                            cell_permutation);
   }
 
   /// Apply transpose of transformation to some transposed data.
@@ -514,10 +516,12 @@ public:
   /// @param[in] cell_permutation Permutation data for the cell
   /// @param[in] block_size The block_size of the input data
   template <typename T>
-  void apply_transpose_dof_transformation_to_transpose(xtl::span<T>,
-                                                       std::uint32_t, int) const
+  void apply_transpose_dof_transformation_to_transpose(
+      xtl::span<T> data, std::uint32_t cell_permutation, int block_size) const
   {
-    throw std::runtime_error("Not implemented yet.");
+    assert(_element);
+    _element->apply_transpose_dof_transformation_to_transpose(data, block_size,
+                                                              cell_permutation);
   }
 
   /// Apply inverse transpose transformation to some transposed data
@@ -526,11 +530,12 @@ public:
   /// @param[in] cell_permutation Permutation data for the cell
   /// @param[in] block_size The block_size of the input data
   template <typename T>
-  void apply_inverse_transpose_dof_transformation_to_transpose(xtl::span<T>,
-                                                               std::uint32_t,
-                                                               int) const
+  void apply_inverse_transpose_dof_transformation_to_transpose(
+      xtl::span<T> data, std::uint32_t cell_permutation, int block_size) const
   {
-    throw std::runtime_error("Not implemented yet.");
+    assert(_element);
+    _element->apply_inverse_transpose_dof_transformation_to_transpose(
+        data, block_size, cell_permutation);
   }
 
   /// Pull physical data back to the reference element.
