@@ -43,7 +43,7 @@ jobs:
         with:
           path: ./basix
           repository: FEniCS/basix
-          ref: mscroggs/more-transformations
+          ref: main
 
       - name: Install FEniCS Python components
         run: |
