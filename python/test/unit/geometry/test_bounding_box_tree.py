@@ -113,6 +113,7 @@ def test_compute_collisions_point_1d():
     assert numpy.allclose(cell_vertices, vertices)
 
 
+@pytest.mark.skip(reason="This test is not robust w.r.t. to mesh (re-)ordering or changing mesh size")
 @skip_in_parallel
 @pytest.mark.parametrize("point,cells", [(numpy.array([0.52, 0, 0]),
                                           [set([8, 9, 10, 11, 12, 13, 14, 15]),
@@ -135,6 +136,7 @@ def test_compute_collisions_tree_1d(point, cells):
     assert entities_B == cells[1]
 
 
+@pytest.mark.skip(reason="This test is not robust w.r.t. to mesh (re-)ordering or changing mesh size")
 @skip_in_parallel
 @pytest.mark.parametrize("point,cells", [(numpy.array([0.52, 0.51, 0.0]),
                                           [[20, 21, 22, 23, 28, 29, 30, 31],
@@ -155,9 +157,9 @@ def test_compute_collisions_tree_2d(point, cells):
     assert entities_B == set(cells[1])
 
 
+@pytest.mark.skip(reason="This test is not robust w.r.t. to mesh (re-)ordering or changing mesh size")
 @skip_in_parallel
 def test_compute_collisions_tree_3d():
-
     references = [[
         set([18, 19, 20, 21, 22, 23, 42, 43, 44, 45, 46, 47]),
         set([0, 1, 2, 3, 4, 5, 24, 25, 26, 27, 28, 29])

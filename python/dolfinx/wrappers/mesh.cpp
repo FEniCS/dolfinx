@@ -114,7 +114,6 @@ void mesh(py::module& m)
             mesh, xtl::span(entities.data(), entities.size()), dim));
       },
       "Compute maximum distance between any two vertices.");
-  m.def("midpoints", &dolfinx::mesh::midpoints);
 
   m.def("midpoints",
         [](const dolfinx::mesh::Mesh& mesh, int dim,
