@@ -172,27 +172,17 @@ fem::create_dofmap(MPI_Comm comm, const ufc_dofmap& ufc_dofmap,
   // numbering on each cell
   if (element->needs_dof_permutations())
   {
-    std::cout << "Permuting DOF numbering\n";
     const int D = topology.dim();
     const int num_cells = topology.connectivity(D, 0)->num_nodes();
     topology.create_entity_permutations();
     const std::vector<std::uint32_t>& cell_info
         = topology.get_cell_permutation_info();
 
+    std::function<void(xtl::span<std::int32_t>, std::uint32_t)> unpermute_dofs
+        = element->get_dof_permutation_function(true, true);
+
     for (std::int32_t cell = 0; cell < num_cells; ++cell)
-    {
-      std::cout << cell << "[" << cell_info[cell] << "] -> { ";
-      for (int i = 0; i < element->space_dimension() / element->block_size();
-           ++i)
-        std::cout << dofmap.links(cell)[i] << " ";
-      std::cout << "}\n";
-      element->unpermute_dofs(dofmap.links(cell), cell_info[cell]);
-      std::cout << cell << "[" << cell_info[cell] << "] -> { ";
-      for (int i = 0; i < element->space_dimension() / element->block_size();
-           ++i)
-        std::cout << dofmap.links(cell)[i] << " ";
-      std::cout << "}\n";
-    }
+      unpermute_dofs(dofmap.links(cell), cell_info[cell]);
   }
 
   return DofMap(element_dof_layout, index_map, bs, std::move(dofmap), bs);

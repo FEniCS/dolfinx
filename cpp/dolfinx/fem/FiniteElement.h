@@ -553,8 +553,14 @@ public:
   /// - [in,out] data The data to be transformed
   /// - [in] cell_permutation Permutation data for the cell
   /// - [in] block_size The block_size of the input data
+  ///
+  /// @param[in] inverse Indicates whether the inverse transformations should be
+  /// returned
+  /// @param[in] scalar_element Indicated whether the scalar transformations
+  /// should be returned for a vector element
   std::function<void(xtl::span<std::int32_t>, std::uint32_t)>
-  get_dof_permutation_function(bool inverse = false) const;
+  get_dof_permutation_function(bool inverse = false,
+                               bool scalar_element = false) const;
 
 private:
   std::string _signature, _family;
