@@ -121,23 +121,27 @@ def test_compute_collisions_tree_1d(point):
 
     def locator_A(x):
         return x[0] >= point[0]
+    # Locate all vertices of mesh A that should collide
     vertices_A = cpp.mesh.locate_entities(mesh_A, 0, locator_A)
     mesh_A.topology.create_connectivity_all()
     v_to_c = mesh_A.topology.connectivity(0, mesh_A.topology.dim)
+    # Find all cells connected to vertex in the collision bounding box
     cells_A = numpy.sort(numpy.unique(numpy.hstack([v_to_c.links(vertex) for vertex in vertices_A])))
 
     mesh_B = UnitIntervalMesh(MPI.COMM_WORLD, 16)
-
     bgeom = mesh_B.geometry.x
     bgeom += point
 
     def locator_B(x):
         return x[0] <= 1
+    # Locate all vertices of mesh B that should collide
     vertices_B = cpp.mesh.locate_entities(mesh_B, 0, locator_B)
     mesh_B.topology.create_connectivity_all()
     v_to_c = mesh_B.topology.connectivity(0, mesh_B.topology.dim)
+    # Find all cells connected to vertex in the collision bounding box
     cells_B = numpy.sort(numpy.unique(numpy.hstack([v_to_c.links(vertex) for vertex in vertices_B])))
 
+    # Find colliding entities using bounding box trees
     tree_A = BoundingBoxTree(mesh_A, mesh_A.topology.dim)
     tree_B = BoundingBoxTree(mesh_B, mesh_B.topology.dim)
     entities = compute_collisions(tree_A, tree_B)
