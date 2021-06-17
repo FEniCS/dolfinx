@@ -15,6 +15,19 @@ using namespace dolfinx::fem;
 
 namespace
 {
+// Check if an element is a basix element (or a blocked element containing a
+// Basix element)
+bool is_basix_element(const ufc_finite_element& element)
+{
+  if (element.element_type == ufc_basix_element)
+    return true;
+  if (element.element_type == ufc_blocked_element)
+    // TODO: what should happen if the element is a blocked element containing a
+    // blocked element containing a Basix element?
+    return element.sub_elements[0]->element_type == ufc_basix_element;
+  return false;
+}
+
 // Recursively extract sub finite element
 std::shared_ptr<const FiniteElement>
 _extract_sub_element(const FiniteElement& finite_element,
@@ -123,12 +136,11 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
     }
   }
 
-  // FIXME: Add element 'handle' to UFC and do not use fragile strings
-  const std::string family = ufc_element.family;
-  if (family != "Quadrature" and family != "mixed element")
+  if (is_basix_element(ufc_element))
   {
+    // FIXME: Find a better way than strings to initialise this Basix element
     _element = std::make_unique<basix::FiniteElement>(basix::create_element(
-        family.c_str(), cell_shape.c_str(), ufc_element.degree));
+        _family.c_str(), cell_shape.c_str(), ufc_element.degree));
     _needs_dof_transformations
         = !_element->dof_transformations_are_identity()
           && !_element->dof_transformations_are_permutations();
