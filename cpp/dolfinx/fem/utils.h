@@ -128,14 +128,17 @@ ElementDofLayout create_element_dof_layout(const ufc_dofmap& dofmap,
 /// @param[in] comm MPI communicator
 /// @param[in] dofmap The ufc_dofmap
 /// @param[in] topology The mesh topology
+/// @param[in] element The finite element
 /// @param[in] reorder_fn The graph reordering function called on the
 /// geometry dofmap
 DofMap create_dofmap(
     MPI_Comm comm, const ufc_dofmap& dofmap, mesh::Topology& topology,
+    std::shared_ptr<const dolfinx::fem::FiniteElement> element,
     const std::function<
         std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>& reorder_fn
-    = [](const graph::AdjacencyList<std::int32_t>& g)
-    { return graph::scotch::compute_gps(g, 2).first; });
+    = [](const graph::AdjacencyList<std::int32_t>& g) {
+        return graph::scotch::compute_gps(g, 2).first;
+      });
 
 /// Get the name of each coefficient in a UFC form
 /// @param[in] ufc_form The UFC form
@@ -200,7 +203,7 @@ Form<T> create_form(
                                    const mesh::MeshTags<int>*>>
       integral_data;
 
-  bool needs_permutation_data = false;
+  bool needs_facet_permutations = false;
 
   // Attach cell kernels
   std::vector<int> cell_integral_ids(ufc_form.integral_ids(cell),
@@ -210,8 +213,6 @@ Form<T> create_form(
   {
     ufc_integral* integral = ufc_form.integrals(cell)[i];
     assert(integral);
-    if (integral->needs_transformation_data)
-      needs_permutation_data = true;
     integral_data[IntegralType::cell].first.emplace_back(
         cell_integral_ids[i], integral->tabulate_tensor);
   }
@@ -229,6 +230,7 @@ Form<T> create_form(
   if (ufc_form.num_integrals(exterior_facet) > 0
       or ufc_form.num_integrals(interior_facet) > 0)
   {
+    needs_facet_permutations = true;
     if (!spaces.empty())
     {
       auto mesh = spaces[0]->mesh();
@@ -246,8 +248,6 @@ Form<T> create_form(
   {
     ufc_integral* integral = ufc_form.integrals(exterior_facet)[i];
     assert(integral);
-    if (integral->needs_transformation_data)
-      needs_permutation_data = true;
     integral_data[IntegralType::exterior_facet].first.emplace_back(
         exterior_facet_integral_ids[i], integral->tabulate_tensor);
   }
@@ -268,8 +268,6 @@ Form<T> create_form(
   {
     ufc_integral* integral = ufc_form.integrals(interior_facet)[i];
     assert(integral);
-    if (integral->needs_transformation_data)
-      needs_permutation_data = true;
     integral_data[IntegralType::interior_facet].first.emplace_back(
         interior_facet_integral_ids[i], integral->tabulate_tensor);
   }
@@ -282,7 +280,7 @@ Form<T> create_form(
   }
 
   return fem::Form(spaces, integral_data, coefficients, constants,
-                   needs_permutation_data, mesh);
+                   needs_facet_permutations, mesh);
 }
 
 /// Create a Form from UFC input
@@ -412,12 +410,19 @@ array2d<typename U::scalar_type> pack_coefficients(const U& u)
   array2d<T> c(num_cells, offsets.back());
   if (!coefficients.empty())
   {
-    const bool needs_permutation_data = u.needs_permutation_data();
-    if (needs_permutation_data)
-      mesh->topology_mutable().create_entity_permutations();
+    bool needs_dof_transformations = false;
+    for (std::size_t coeff = 0; coeff < dofmaps.size(); ++coeff)
+    {
+      if (elements[coeff]->needs_dof_transformations())
+      {
+        needs_dof_transformations = true;
+        mesh->topology_mutable().create_entity_permutations();
+      }
+    }
     const std::vector<std::uint32_t>& cell_info
-        = needs_permutation_data ? mesh->topology().get_cell_permutation_info()
-                                 : std::vector<std::uint32_t>(num_cells);
+        = needs_dof_transformations
+              ? mesh->topology().get_cell_permutation_info()
+              : std::vector<std::uint32_t>(num_cells);
     for (std::size_t coeff = 0; coeff < dofmaps.size(); ++coeff)
     {
       std::function<void(xtl::span<T>, std::uint32_t, int)>

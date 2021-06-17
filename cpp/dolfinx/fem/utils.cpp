@@ -139,6 +139,7 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
 fem::DofMap
 fem::create_dofmap(MPI_Comm comm, const ufc_dofmap& ufc_dofmap,
                    mesh::Topology& topology,
+                   std::shared_ptr<const dolfinx::fem::FiniteElement> element,
                    const std::function<std::vector<int>(
                        const graph::AdjacencyList<std::int32_t>&)>& reorder_fn)
 {
@@ -166,6 +167,34 @@ fem::create_dofmap(MPI_Comm comm, const ufc_dofmap& ufc_dofmap,
 
   auto [index_map, bs, dofmap]
       = fem::build_dofmap_data(comm, topology, *element_dof_layout, reorder_fn);
+
+  // If the element's DOF transformations are permutations, permute the DOF
+  // numbering on each cell
+  if (element->needs_dof_permutations())
+  {
+    std::cout << "Permuting DOF numbering\n";
+    const int D = topology.dim();
+    const int num_cells = topology.connectivity(D, 0)->num_nodes();
+    topology.create_entity_permutations();
+    const std::vector<std::uint32_t>& cell_info
+        = topology.get_cell_permutation_info();
+
+    for (std::int32_t cell = 0; cell < num_cells; ++cell)
+    {
+      std::cout << cell << "[" << cell_info[cell] << "] -> { ";
+      for (int i = 0; i < element->space_dimension() / element->block_size();
+           ++i)
+        std::cout << dofmap.links(cell)[i] << " ";
+      std::cout << "}\n";
+      element->unpermute_dofs(dofmap.links(cell), cell_info[cell]);
+      std::cout << cell << "[" << cell_info[cell] << "] -> { ";
+      for (int i = 0; i < element->space_dimension() / element->block_size();
+           ++i)
+        std::cout << dofmap.links(cell)[i] << " ";
+      std::cout << "}\n";
+    }
+  }
+
   return DofMap(element_dof_layout, index_map, bs, std::move(dofmap), bs);
 }
 //-----------------------------------------------------------------------------
@@ -195,10 +224,15 @@ fem::create_functionspace(ufc_function_space* (*fptr)(const char*),
   ufc_function_space* space = fptr(function_name.c_str());
   ufc_dofmap* ufc_map = space->dofmap;
   ufc_finite_element* ufc_element = space->finite_element;
-  auto V = std::make_shared<fem::FunctionSpace>(
-      mesh, std::make_shared<fem::FiniteElement>(*ufc_element),
-      std::make_shared<fem::DofMap>(
-          fem::create_dofmap(mesh->mpi_comm(), *ufc_map, mesh->topology())));
+
+  std::shared_ptr<const fem::FiniteElement> element
+      = std::make_shared<fem::FiniteElement>(*ufc_element);
+
+  std::shared_ptr<const fem::DofMap> dofmap
+      = std::make_shared<fem::DofMap>(fem::create_dofmap(
+          mesh->mpi_comm(), *ufc_map, mesh->topology(), element));
+
+  auto V = std::make_shared<fem::FunctionSpace>(mesh, element, dofmap);
 
   return V;
 }

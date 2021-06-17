@@ -106,14 +106,21 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
   for (int i = 0; i < ufc_element.value_rank; ++i)
     _value_dimension.push_back(ufc_element.value_shape[i]);
 
-  _needs_permutation_data = false;
+  _needs_dof_transformations = false;
+  _needs_dof_permutations = false;
   // Create all sub-elements
   for (int i = 0; i < ufc_element.num_sub_elements; ++i)
   {
     ufc_finite_element* ufc_sub_element = ufc_element.sub_elements[i];
     _sub_elements.push_back(std::make_shared<FiniteElement>(*ufc_sub_element));
-    if (_sub_elements[i]->needs_permutation_data())
-      _needs_permutation_data = true;
+    if (_sub_elements[i]->needs_dof_permutations()
+        && !_needs_dof_transformations)
+      _needs_dof_permutations = true;
+    if (_sub_elements[i]->needs_dof_transformations())
+    {
+      _needs_dof_permutations = false;
+      _needs_dof_transformations = true;
+    }
   }
 
   // FIXME: Add element 'handle' to UFC and do not use fragile strings
@@ -122,7 +129,12 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
   {
     _element = std::make_unique<basix::FiniteElement>(basix::create_element(
         family.c_str(), cell_shape.c_str(), ufc_element.degree));
-    _needs_permutation_data = !_element->dof_transformations_are_identity();
+    _needs_dof_transformations
+        = !_element->dof_transformations_are_identity()
+          && !_element->dof_transformations_are_permutations();
+    _needs_dof_permutations
+        = !_element->dof_transformations_are_identity()
+          && _element->dof_transformations_are_permutations();
   }
 }
 //-----------------------------------------------------------------------------
@@ -239,8 +251,53 @@ const xt::xtensor<double, 2>& FiniteElement::interpolation_points() const
   return _element->points();
 }
 //-----------------------------------------------------------------------------
-bool FiniteElement::needs_permutation_data() const noexcept
+bool FiniteElement::needs_dof_transformations() const noexcept
 {
-  return _needs_permutation_data;
+  return _needs_dof_transformations;
+}
+//-----------------------------------------------------------------------------
+bool FiniteElement::needs_dof_permutations() const noexcept
+{
+  return _needs_dof_permutations;
+}
+//-----------------------------------------------------------------------------
+void FiniteElement::permute_dofs(xtl::span<std::int32_t> doflist,
+                                 std::uint32_t cell_permutation) const
+{
+  _element->permute_dofs(doflist, cell_permutation);
+}
+//-----------------------------------------------------------------------------
+void FiniteElement::unpermute_dofs(xtl::span<std::int32_t> doflist,
+                                   std::uint32_t cell_permutation) const
+{
+  _element->unpermute_dofs(doflist, cell_permutation);
+}
+//-----------------------------------------------------------------------------
+std::function<void(xtl::span<std::int32_t>, std::uint32_t)>
+FiniteElement::get_dof_permutation_function(bool inverse) const
+{
+
+  if (!needs_dof_permutations())
+  {
+    return [this](xtl::span<std::int32_t>, std::uint32_t) {
+      throw std::runtime_error(
+          "Permutations should not be applied for this element.");
+    };
+  }
+
+  if (inverse)
+  {
+    return [this](xtl::span<std::int32_t> doflist,
+                  std::uint32_t cell_permutation) {
+      unpermute_dofs(doflist, cell_permutation);
+    };
+  }
+  else
+  {
+    return [this](xtl::span<std::int32_t> doflist,
+                  std::uint32_t cell_permutation) {
+      permute_dofs(doflist, cell_permutation);
+    };
+  }
 }
 //-----------------------------------------------------------------------------
