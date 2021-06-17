@@ -325,7 +325,7 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
       [&offset](std::int32_t a, auto& b)
       { return b.second < offset[b.first] ? a + 1 : a; });
 
-  // Re-order cell-wise
+  // Re-order dofs, increasing local dof index by iterating over cells
 
   // Create map from old index to new contiguous numbering for locally
   // owned dofs. Set to -1 for unowned dofs.
@@ -347,35 +347,19 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
     }
   }
 
-  if (!reorder_fn)
-    return {std::move(original_to_contiguous), owned_size};
-  else
+  if (reorder_fn)
   {
     // Re-order using graph ordering
 
     // Apply graph reordering to owned dofs
     const std::vector<int> node_remap
         = reorder_owned(dofmap, owned_size, original_to_contiguous, reorder_fn);
-
-    // Reconstruct remapped nodes, and place un-owned nodes at the end
-    std::vector<int> old_to_new(dof_entity.size(), -1);
-    assert(old_to_new.size() == original_to_contiguous.size());
-    std::int32_t unowned_pos = owned_size;
-    for (std::size_t i = 0; i < original_to_contiguous.size(); ++i)
-    {
-      // Put nodes that are not owned at the end, otherwise re-number
-      if (const std::int32_t index = original_to_contiguous[i];
-          index < owned_size)
-      {
-        old_to_new[i] = node_remap[index];
-      }
-      else
-        old_to_new[i] = unowned_pos++;
-      // old_to_new[i] = original_to_contiguous[index];
-    }
-
-    return {std::move(old_to_new), owned_size};
+    std::for_each(original_to_contiguous.begin(), original_to_contiguous.end(),
+                  [&remap = std::as_const(node_remap), owned_size](auto index)
+                  { return index < owned_size ? remap[index] : index; });
   }
+
+  return {std::move(original_to_contiguous), owned_size};
 }
 //-----------------------------------------------------------------------------
 
