@@ -121,7 +121,7 @@ public:
 
   /// Indicates whether the coordinate map needs permutation data
   /// passing in (for higher order geometries)
-  bool needs_permutation_data() const;
+  bool needs_dof_permutations() const;
 
   /// Absolute increment stopping criterium for non-affine Newton solver
   double non_affine_atol = 1.0e-8;

@@ -57,7 +57,7 @@ mesh::Geometry mesh::create_geometry(
       comm, topology, coordinate_element.dof_layout(), reorder_fn);
 
   // If the mesh has higher order geometry, permute the dofmap
-  if (coordinate_element.needs_permutation_data())
+  if (coordinate_element.needs_dof_permutations())
   {
     const int D = topology.dim();
     const int num_cells = topology.connectivity(D, 0)->num_nodes();

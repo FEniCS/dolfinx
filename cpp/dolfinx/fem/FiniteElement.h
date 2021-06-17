@@ -185,16 +185,34 @@ public:
     }
   }
 
-  /// @todo Expand on when permutation data might be required
+  /// Check if DOF transformations are needed for this element.
   ///
-  /// Check if cell permutation data is required for this element
-  /// @return True if cell permutation data is required
+  /// DOF transformations will be needed for elements which might not be
+  /// continuous when two neighbouring cells disagree on the orientation of
+  /// a shared subentity, and when this cannot be corrected for by permuting the
+  /// DOF numbering in the dofmap.
+  ///
+  /// For example, Raviart-Thomas elements will need DOF transformations,
+  /// as the neighbouring cells may disagree on the orientation of a basis
+  /// function, and this orientation cannot be corrected for by permuting the
+  /// DOF numbers on each cell.
+  ///
+  /// @return True if DOF transformations are required
   bool needs_dof_transformations() const noexcept;
 
-  /// @todo Expand on when permutation data might be required
+  /// Check if DOF permutations are needed for this element.
   ///
-  /// Check if cell permutation data is required for this element
-  /// @return True if cell permutation data is required
+  /// DOF permutations will be needed for elements which might not be
+  /// continuous when two neighbouring cells disagree on the orientation of
+  /// a shared subentity, and when this can be corrected for by permuting the
+  /// DOF numbering in the dofmap.
+  ///
+  /// For example, higher order Lagrange elements will need DOF permutations,
+  /// as the arrangement of DOFs on a shared subentity may be different from the
+  /// point of view of neighbouring cells, and this can be corrected for by
+  /// permuting the DOF numbers on each cell.
+  ///
+  /// @return True if DOF transformations are required
   bool needs_dof_permutations() const noexcept;
 
   /// Return a function that applies DOF transformation to some data.

@@ -105,7 +105,7 @@ Mesh mesh::create_mesh(MPI_Comm comm,
       std::next(cell_nodes.array().begin(), off1[n_cells_local]));
   graph::AdjacencyList<std::int64_t> cell_nodes_2(std::move(data1),
                                                   std::move(off1));
-  if (element.needs_permutation_data())
+  if (element.needs_dof_permutations())
     topology.create_entity_permutations();
   Geometry geometry
       = mesh::create_geometry(comm, topology, element, cell_nodes_2, x);
