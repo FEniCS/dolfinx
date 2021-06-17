@@ -83,7 +83,13 @@ public:
 
   /// Evaluate all derivatives of the basis functions up to given order at given
   /// points in reference cell
-  // reference_values[num_derivatives][num_points][num_dofs][reference_value_size]
+  /// @param[in,out] values Four dimensional xtensor that will be filled with
+  /// the tabulated values. Should be of shape {num_derivatives, num_points,
+  /// num_dofs, reference_value_size}
+  /// @param[in] X Two dimensional xtensor of shape [num_points, geometric
+  /// dimension] containing the points at the reference element
+  /// @param[in] order The number of derivatives (up to and including this
+  /// order) to tabulate for.
   void tabulate(xt::xtensor<double, 4>& values, const xt::xtensor<double, 2>& X,
                 int order) const;
 
