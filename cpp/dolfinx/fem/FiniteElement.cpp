@@ -279,7 +279,7 @@ FiniteElement::get_dof_permutation_function(bool inverse) const
 
   if (!needs_dof_permutations())
   {
-    return [this](xtl::span<std::int32_t>, std::uint32_t) {
+    return [](xtl::span<std::int32_t>, std::uint32_t) {
       throw std::runtime_error(
           "Permutations should not be applied for this element.");
     };
