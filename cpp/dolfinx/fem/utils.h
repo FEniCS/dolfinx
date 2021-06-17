@@ -129,13 +129,11 @@ ElementDofLayout create_element_dof_layout(const ufc_dofmap& dofmap,
 /// @param[in] dofmap The ufc_dofmap
 /// @param[in] topology The mesh topology
 /// @param[in] reorder_fn The graph reordering function called on the
-/// geometry dofmap
-DofMap create_dofmap(
-    MPI_Comm comm, const ufc_dofmap& dofmap, mesh::Topology& topology,
-    const std::function<
-        std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>& reorder_fn
-    = [](const graph::AdjacencyList<std::int32_t>& g)
-    { return graph::scotch::compute_gps(g, 2).first; });
+/// dofmap
+DofMap
+create_dofmap(MPI_Comm comm, const ufc_dofmap& dofmap, mesh::Topology& topology,
+              const std::function<std::vector<int>(
+                  const graph::AdjacencyList<std::int32_t>&)>& reorder_fn);
 
 /// Get the name of each coefficient in a UFC form
 /// @param[in] ufc_form The UFC form
@@ -365,17 +363,22 @@ std::shared_ptr<Form<T>> create_form(
 
 /// Create FunctionSpace from UFC
 /// @param[in] fptr Function Pointer to a ufc_function_space_create
-///   function
+/// function
 /// @param[in] function_name Name of a function whose function space to
-///   create. Function name is the name of Python variable for
-///   ufl.Coefficient, ufl.TrialFunction or ufl.TestFunction as defined
-///   in the UFL file.
+/// create. Function name is the name of Python variable for
+/// ufl.Coefficient, ufl.TrialFunction or ufl.TestFunction as defined in
+/// the UFL file.
 /// @param[in] mesh Mesh
+/// @param[in] reorder_fn The graph reordering function called on the
+/// dofmap
 /// @return The created FunctionSpace
-std::shared_ptr<fem::FunctionSpace>
-create_functionspace(ufc_function_space* (*fptr)(const char*),
-                     const std::string function_name,
-                     std::shared_ptr<mesh::Mesh> mesh);
+std::shared_ptr<fem::FunctionSpace> create_functionspace(
+    ufc_function_space* (*fptr)(const char*), const std::string function_name,
+    std::shared_ptr<mesh::Mesh> mesh,
+    const std::function<
+        std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>& reorder_fn
+    = [](const graph::AdjacencyList<std::int32_t>& g)
+    { return graph::scotch::compute_gps(g, 2).first; });
 
 // NOTE: This is subject to change
 /// Pack coefficients of u of generic type U ready for assembly
