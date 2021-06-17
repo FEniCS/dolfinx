@@ -351,20 +351,25 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
     }
   }
 
-  if (reorder_fn)
+  if (!reorder_fn)
+  {
+    return {std::move(original_to_contiguous), owned_size};
+  }
+  else
   {
     // Re-order using graph ordering
 
-    std::vector<int> original_to_contiguous(dof_entity.size(), -1);
-    std::int32_t owned_size = 0;
-    for (std::size_t i = 0; i < dof_entity.size(); ++i)
-    {
-      // Create map from old index to new contiguous numbering for locally
-      // owned dofs. Set to -1 for unowned dofs.
-      const std::pair<std::int8_t, std::int32_t>& e = dof_entity[i];
-      if (e.second < offset[e.first]) // True if entity 'owned' by this process
-        original_to_contiguous[i] = owned_size++;
-    }
+    // std::vector<int> original_to_contiguous(dof_entity.size(), -1);
+    // std::int32_t owned_size = 0;
+    // for (std::size_t i = 0; i < dof_entity.size(); ++i)
+    // {
+    //   // Create map from old index to new contiguous numbering for locally
+    //   // owned dofs. Set to -1 for unowned dofs.
+    //   const std::pair<std::int8_t, std::int32_t>& e = dof_entity[i];
+    //   if (e.second < offset[e.first]) // True if entity 'owned' by this
+    //   process
+    //     original_to_contiguous[i] = owned_size++;
+    // }
 
     // Apply graph reordering to owned dofs
     const std::vector<int> node_remap
@@ -377,47 +382,16 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
     for (std::size_t i = 0; i < original_to_contiguous.size(); ++i)
     {
       // Put nodes that are not owned at the end, otherwise re-number
-      if (const std::int32_t index = original_to_contiguous[i]; index >= 0)
+      if (const std::int32_t index = original_to_contiguous[i];
+          index < owned_size)
+      {
         old_to_new[i] = node_remap[index];
+      }
       else
         old_to_new[i] = unowned_pos++;
     }
 
     return {std::move(old_to_new), owned_size};
-  }
-  else
-  {
-    // // Re-order cell-wise
-
-    // std::int32_t owned_size = 0;
-    // for (auto& dof : dof_entity)
-    // {
-    //   // True if entity 'owned' by this process
-    //   if (dof.second < offset[dof.first])
-    //     owned_size++;
-    // }
-
-    // // Create map from old index to new contiguous numbering for locally
-    // // owned dofs. Set to -1 for unowned dofs.
-    // std::vector<int> original_to_contiguous(dof_entity.size(), -1);
-    // std::int32_t counter_owned(0), counter_unowned(owned_size);
-    // for (std::int32_t cell = 0; cell < dofmap.num_nodes(); ++cell)
-    // {
-    //   auto dofs = dofmap.links(cell);
-    //   for (std::int32_t i = 0; i < dofs.size(); ++i)
-    //   {
-    //     if (original_to_contiguous[dofs[i]] == -1)
-    //     {
-    //       const std::pair<std::int8_t, std::int32_t>& e =
-    //       dof_entity[dofs[i]]; if (e.second < offset[e.first])
-    //         original_to_contiguous[dofs[i]] = counter_owned++;
-    //       else
-    //         original_to_contiguous[dofs[i]] = counter_unowned++;
-    //     }
-    //   }
-    // }
-
-    return {std::move(original_to_contiguous), owned_size};
   }
 }
 //-----------------------------------------------------------------------------

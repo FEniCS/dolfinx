@@ -185,6 +185,7 @@ void assemble_cells(
   const int ndim1 = bs1 * num_dofs1;
   std::vector<T> Ae(ndim0 * ndim1);
   std::vector<double> coordinate_dofs(3 * num_dofs_g);
+  boost::timer::auto_cpu_timer t;
   for (std::int32_t c : active_cells)
   {
     // Get cell coordinates/geometry

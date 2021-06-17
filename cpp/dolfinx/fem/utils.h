@@ -361,7 +361,7 @@ std::shared_ptr<Form<T>> create_form(
   return L;
 }
 
-/// Create FunctionSpace from UFC
+/// Create a FunctionSpace from UFC data
 /// @param[in] fptr Function Pointer to a ufc_function_space_create
 /// function
 /// @param[in] function_name Name of a function whose function space to
@@ -371,7 +371,7 @@ std::shared_ptr<Form<T>> create_form(
 /// @param[in] mesh Mesh
 /// @param[in] reorder_fn The graph reordering function called on the
 /// dofmap
-/// @return The created FunctionSpace
+/// @return The created function space
 std::shared_ptr<fem::FunctionSpace> create_functionspace(
     ufc_function_space* (*fptr)(const char*), const std::string function_name,
     std::shared_ptr<mesh::Mesh> mesh,
