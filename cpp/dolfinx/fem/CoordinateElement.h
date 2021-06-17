@@ -119,8 +119,10 @@ public:
   void unpermute_dofs(xtl::span<std::int32_t> dofs,
                       const std::uint32_t cell_perm) const;
 
-  /// Indicates whether the coordinate map needs permutation data
-  /// passing in (for higher order geometries)
+  /// Indicates whether the geometry DOF numbers on each cell need permuting
+  ///
+  /// For higher order geometries (where there is more than one DOF on a
+  /// subentity of the cell), this will be true.
   bool needs_dof_permutations() const;
 
   /// Absolute increment stopping criterium for non-affine Newton solver
