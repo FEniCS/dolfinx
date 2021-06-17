@@ -175,20 +175,20 @@ private:
 /// Create distributed topology
 ///
 /// @param[in] comm MPI communicator across which the topology is
-///   distributed
+/// distributed
 /// @param[in] cells The cell topology (list of cell vertices) using
-///   global indices for the vertices. It contains cells that have been
-///   distributed to this rank, e.g. via a graph partitioner. It must
-///   also contain all ghost cells via facet, i.e. cells which are on a
-///   neighboring process and share a facet with a local cell.
+/// global indices for the vertices. It contains cells that have been
+/// distributed to this rank, e.g. via a graph partitioner. It must also
+/// contain all ghost cells via facet, i.e. cells that are on a
+/// neighboring process and share a facet with a local cell.
 /// @param[in] original_cell_index The original global index associated
-///   with each cell.
+/// with each cell
 /// @param[in] ghost_owners The ownership of the ghost cells (ghost
-///   cells are always at the end of the list of cells, above)
+/// cells are always at the end of the list of @p cells)
 /// @param[in] cell_type The cell shape
 /// @param[in] ghost_mode How to partition the cell overlap: none,
-/// shared_facet or shared_vertex.
-/// @return A distributed Topology.
+/// shared_facet or shared_vertex
+/// @return A distributed Topology
 Topology create_topology(MPI_Comm comm,
                          const graph::AdjacencyList<std::int64_t>& cells,
                          const std::vector<std::int64_t>& original_cell_index,
