@@ -99,7 +99,7 @@ reorder_owned(const graph::AdjacencyList<std::int32_t>& dofmap,
     {
       std::sort(std::next(edges.begin(), current_offset),
                 std::next(edges.begin(), current_offset + num_edges[i]));
-      auto it = std::unique(
+      const auto it = std::unique(
           std::next(edges.begin(), current_offset),
           std::next(edges.begin(), current_offset + num_edges[i]));
       graph_data.insert(graph_data.end(),
@@ -110,10 +110,10 @@ reorder_owned(const graph::AdjacencyList<std::int32_t>& dofmap,
       current_offset += num_edges[i];
     }
   }
-
-  // Re-order graph
   const graph::AdjacencyList<std::int32_t> graph(std::move(graph_data),
                                                  std::move(graph_offsets));
+
+  // Re-order graph and return re-odering
   return reorder_fn(graph);
 }
 

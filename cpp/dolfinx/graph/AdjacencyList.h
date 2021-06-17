@@ -213,31 +213,4 @@ AdjacencyList<T> build_adjacency_list(U&& data, int degree)
   return AdjacencyList<T>(std::forward<U>(data), std::move(offsets));
 }
 
-/// Re-order an adjacency list
-template <typename T>
-AdjacencyList<T> reorder(const AdjacencyList<T>& list,
-                         const xtl::span<const std::int32_t>& nodemap)
-{
-  // if (nodemap.size() != static_cast<std::size_t>(list.num_nodes()))
-  //   throw std::runtime_error("Cannot reorderAdjacencyList. map has wrong size");
-
-  std::vector<T> data(list.array());
-  std::vector<std::int32_t> offsets(list.offsets());
-
-  // Compute new offsets
-  for (std::size_t n = 0; n < nodemap.size(); ++n)
-    offsets[n + 1] = offsets[n] + list.num_links(nodemap[n]);
-  AdjacencyList<T> list_new(std::move(data), std::move(offsets));
-
-  for (std::size_t n = 0; n < nodemap.size(); ++n)
-  {
-    auto links_old = list.links(n);
-    auto links_new = list_new.links(nodemap[n]);
-    assert(links_old.size() == links_new.size());
-    std::copy(links_old.begin(), links_old.end(), links_new.begin());
-  }
-
-  return list_new;
-}
-
 } // namespace dolfinx::graph

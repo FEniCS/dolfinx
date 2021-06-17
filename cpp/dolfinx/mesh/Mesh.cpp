@@ -23,6 +23,34 @@
 using namespace dolfinx;
 using namespace dolfinx::mesh;
 
+namespace
+{
+/// Re-order an adjacency list
+template <typename T>
+graph::AdjacencyList<T>
+reorder_list(const graph::AdjacencyList<T>& list,
+             const xtl::span<const std::int32_t>& nodemap)
+{
+  std::vector<T> data(list.array());
+  std::vector<std::int32_t> offsets(list.offsets());
+
+  // Compute new offsets
+  for (std::size_t n = 0; n < nodemap.size(); ++n)
+    offsets[n + 1] = offsets[n] + list.num_links(nodemap[n]);
+  graph::AdjacencyList<T> list_new(std::move(data), std::move(offsets));
+
+  for (std::size_t n = 0; n < nodemap.size(); ++n)
+  {
+    auto links_old = list.links(n);
+    auto links_new = list_new.links(nodemap[n]);
+    assert(links_old.size() == links_new.size());
+    std::copy(links_old.begin(), links_old.end(), links_new.begin());
+  }
+
+  return list_new;
+}
+} // namespace
+
 //-----------------------------------------------------------------------------
 Mesh mesh::create_mesh(MPI_Comm comm,
                        const graph::AdjacencyList<std::int64_t>& cells,
@@ -95,13 +123,14 @@ Mesh mesh::create_mesh(MPI_Comm comm,
   for (std::size_t i = 0; i < remap.size(); ++i)
     original_cell_index[remap[i]] = original_cell_index0[i];
   const graph::AdjacencyList<std::int64_t> cells_extracted
-      = graph::reorder(cells_extracted0, remap);
+      = reorder_list(cells_extracted0, remap);
   const graph::AdjacencyList<std::int64_t> cell_nodes
-      = graph::reorder(cell_nodes0, remap);
+      = reorder_list(cell_nodes0, remap);
 
-  // const std::vector<std::int64_t>& original_cell_index = original_cell_index0;
-  // const graph::AdjacencyList<std::int64_t> cell_nodes = cell_nodes0;
-  // const graph::AdjacencyList<std::int64_t> cells_extracted = cells_extracted0;
+  // const std::vector<std::int64_t>& original_cell_index =
+  // original_cell_index0; const graph::AdjacencyList<std::int64_t> cell_nodes =
+  // cell_nodes0; const graph::AdjacencyList<std::int64_t> cells_extracted =
+  // cells_extracted0;
 
   // -----
 
@@ -129,8 +158,8 @@ Mesh mesh::create_mesh(MPI_Comm comm,
     }
   }
 
-  int n_cells_local = topology.index_map(tdim)->size_local()
-                      + topology.index_map(tdim)->num_ghosts();
+  const int n_cells_local = topology.index_map(tdim)->size_local()
+                            + topology.index_map(tdim)->num_ghosts();
 
   // Remove ghost cells from geometry data, if not required
   std::vector<std::int32_t> off1(
