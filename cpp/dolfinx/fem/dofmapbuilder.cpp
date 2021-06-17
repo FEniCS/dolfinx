@@ -271,9 +271,6 @@ build_basic_dofmap(const mesh::Topology& topology,
           local_to_global[dof]
               = offset_global + num_entity_dofs * e_index_global + count;
           dof_entity[dof] = {d, e_index_local};
-          // std::cout << "Testing: " << dof << ", " << d << ", " <<
-          // e_index_local
-          //           << std::endl;
         }
       }
       offset_local += entity_dofs[d][0].size() * num_mesh_entities_local[d];

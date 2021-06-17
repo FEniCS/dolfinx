@@ -102,8 +102,6 @@ Mesh mesh::create_mesh(MPI_Comm comm,
       = mesh::extract_topology(element.cell_shape(), element.dof_layout(),
                                cell_nodes0);
 
-  // ---
-
   // Build local dual graph for owned cells to apply re-ordering to
   const std::int32_t num_owned_cells
       = cells_extracted0.num_nodes() - ghost_owners.size();
@@ -126,13 +124,6 @@ Mesh mesh::create_mesh(MPI_Comm comm,
       = reorder_list(cells_extracted0, remap);
   const graph::AdjacencyList<std::int64_t> cell_nodes
       = reorder_list(cell_nodes0, remap);
-
-  // const std::vector<std::int64_t>& original_cell_index =
-  // original_cell_index0; const graph::AdjacencyList<std::int64_t> cell_nodes =
-  // cell_nodes0; const graph::AdjacencyList<std::int64_t> cells_extracted =
-  // cells_extracted0;
-
-  // -----
 
   // Create cells and vertices with the ghosting requested. Input
   // topology includes cells shared via facet, but ghosts will be

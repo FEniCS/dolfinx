@@ -419,9 +419,8 @@ mesh::create_topology(MPI_Comm comm,
 
   t0.stop();
 
-  // ----
-
   // Re-order vertices by looping through cells in order
+
   std::vector<std::int32_t> node_remap(nlocal, -1);
   std::size_t counter = 0;
   for (std::int32_t c = 0; c < cells.num_nodes(); ++c)
@@ -438,14 +437,13 @@ mesh::create_topology(MPI_Comm comm,
 
   assert(std::find(node_remap.begin(), node_remap.end(), -1)
          == node_remap.end());
-  for (auto& map : global_to_local_vertices)
-  {
-    assert(map.second < static_cast<std::int32_t>(node_remap.size()));
-    if (map.second >= 0)
-      map.second = node_remap[map.second];
-  }
-
-  // ----
+  std::for_each(global_to_local_vertices.begin(),
+                global_to_local_vertices.end(),
+                [&remap = std::as_const(node_remap)](auto& v)
+                {
+                  if (v.second >= 0)
+                    v.second = remap[v.second];
+                });
 
   // Compute the global offset for local vertex indices
   const std::int64_t global_offset
