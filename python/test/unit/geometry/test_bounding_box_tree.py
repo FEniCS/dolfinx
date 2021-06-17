@@ -11,7 +11,8 @@ from dolfinx import (BoxMesh, UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh,
                      cpp)
 from dolfinx.geometry import (BoundingBoxTree, compute_closest_entity,
                               compute_collisions, compute_collisions_point,
-                              create_midpoint_tree, select_colliding_cells)
+                              create_midpoint_tree, select_colliding_cells,
+                              compute_distance_gjk)
 from dolfinx.mesh import locate_entities, locate_entities_boundary
 from dolfinx_utils.test.skips import skip_in_parallel
 from mpi4py import MPI
@@ -30,6 +31,48 @@ def extract_geometricial_data(mesh, dim, entities):
             nodes[j] = geom.x[entity]
         mesh_nodes.append(nodes)
     return mesh_nodes
+
+
+def expand_bbox(bbox):
+    """
+    Expand min max bbox to convex hull
+    """
+    return numpy.array([[bbox[0][0], bbox[0][1], bbox[0][2]],
+                        [bbox[0][0], bbox[0][1], bbox[1][2]],
+                        [bbox[0][0], bbox[1][1], bbox[0][2]],
+                        [bbox[1][0], bbox[0][1], bbox[0][2]],
+                        [bbox[1][0], bbox[0][1], bbox[1][2]],
+                        [bbox[1][0], bbox[1][1], bbox[0][2]],
+                        [bbox[0][0], bbox[1][1], bbox[1][2]],
+                        [bbox[1][0], bbox[1][1], bbox[1][2]]])
+
+
+def find_colliding_cells(mesh, bbox):
+    """
+    Given a mesh and a bounding box((xmin, ymin, zmin), (xmax, ymax, zmax))
+    find all colliding cells
+    """
+
+    # Find actual cells using known bounding box tree
+    colliding_cells = []
+    num_cells = mesh.topology.index_map(mesh.topology.dim).size_local
+    x_indices = cpp.mesh.entities_to_geometry(
+        mesh, mesh.topology.dim, numpy.arange(num_cells, dtype=numpy.int32), False)
+    points = mesh.geometry.x
+    bounding_box = expand_bbox(bbox)
+    for cell in range(num_cells):
+        vertex_coords = points[x_indices[cell]]
+        bbox_cell = numpy.array([vertex_coords[0], vertex_coords[0]])
+        # Create bounding box for cell
+        for i in range(1, vertex_coords.shape[0]):
+            for j in range(3):
+                bbox_cell[0, j] = min(bbox_cell[0, j], vertex_coords[i, j])
+                bbox_cell[1, j] = max(bbox_cell[1, j], vertex_coords[i, j])
+        distance = compute_distance_gjk(expand_bbox(bbox_cell), bounding_box)
+        if numpy.dot(distance, distance) < 1e-16:
+            colliding_cells.append(cell)
+
+    return colliding_cells
 
 
 @pytest.mark.parametrize("padding", [True, False])
@@ -153,56 +196,50 @@ def test_compute_collisions_tree_1d(point):
     assert numpy.allclose(entities_B, cells_B)
 
 
-@pytest.mark.skip(reason="This test is not robust w.r.t. to mesh (re-)ordering or changing mesh size")
 @skip_in_parallel
-@pytest.mark.parametrize("point,cells", [(numpy.array([0.52, 0.51, 0.0]),
-                                          [[20, 21, 22, 23, 28, 29, 30, 31],
-                                           [0, 1, 2, 3, 8, 9, 10, 11]]),
-                                         (numpy.array([0.9, -0.9, 0.0]), [[6, 7], [24, 25]])])
-def test_compute_collisions_tree_2d(point, cells):
-    mesh_A = UnitSquareMesh(MPI.COMM_WORLD, 4, 4)
-    mesh_B = UnitSquareMesh(MPI.COMM_WORLD, 4, 4)
+@pytest.mark.parametrize("point", [numpy.array([0.52, 0.51, 0.0]),
+                                   numpy.array([0.9, -0.9, 0.0])])
+def test_compute_collisions_tree_2d(point):
+    mesh_A = UnitSquareMesh(MPI.COMM_WORLD, 3, 3)
+    mesh_B = UnitSquareMesh(MPI.COMM_WORLD, 5, 5)
     bgeom = mesh_B.geometry.x
     bgeom += point
     tree_A = BoundingBoxTree(mesh_A, mesh_A.topology.dim)
     tree_B = BoundingBoxTree(mesh_B, mesh_B.topology.dim)
     entities = compute_collisions(tree_A, tree_B)
 
-    entities_A = set([q[0] for q in entities])
-    entities_B = set([q[1] for q in entities])
-    assert entities_A == set(cells[0])
-    assert entities_B == set(cells[1])
+    entities_A = numpy.sort(numpy.unique([q[0] for q in entities]))
+    entities_B = numpy.sort(numpy.unique([q[1] for q in entities]))
+
+    cells_A = find_colliding_cells(mesh_A, tree_B.get_bbox(tree_B.num_bboxes - 1))
+    cells_B = find_colliding_cells(mesh_B, tree_A.get_bbox(tree_A.num_bboxes - 1))
+
+    assert numpy.allclose(entities_A, cells_A)
+    assert numpy.allclose(entities_B, cells_B)
 
 
-@pytest.mark.skip(reason="This test is not robust w.r.t. to mesh (re-)ordering or changing mesh size")
 @skip_in_parallel
-def test_compute_collisions_tree_3d():
-    references = [[
-        set([18, 19, 20, 21, 22, 23, 42, 43, 44, 45, 46, 47]),
-        set([0, 1, 2, 3, 4, 5, 24, 25, 26, 27, 28, 29])
-    ], [
-        set([6, 7, 8, 9, 10, 11, 30, 31, 32, 33, 34, 35]),
-        set([12, 13, 14, 15, 16, 17, 36, 37, 38, 39, 40, 41])
-    ]]
+@pytest.mark.parametrize("point", [numpy.array([0.52, 0.51, 0.3]),
+                                   numpy.array([0.9, -0.9, 0.3])])
+def test_compute_collisions_tree_3d(point):
+    mesh_A = UnitCubeMesh(MPI.COMM_WORLD, 2, 2, 2)
+    mesh_B = UnitCubeMesh(MPI.COMM_WORLD, 2, 2, 2)
 
-    points = [numpy.array([0.52, 0.51, 0.3]),
-              numpy.array([0.9, -0.9, 0.3])]
-    for i, point in enumerate(points):
+    bgeom = mesh_B.geometry.x
+    bgeom += point
 
-        mesh_A = UnitCubeMesh(MPI.COMM_WORLD, 2, 2, 2)
-        mesh_B = UnitCubeMesh(MPI.COMM_WORLD, 2, 2, 2)
+    tree_A = BoundingBoxTree(mesh_A, mesh_A.topology.dim)
+    tree_B = BoundingBoxTree(mesh_B, mesh_B.topology.dim)
+    entities = compute_collisions(tree_A, tree_B)
 
-        bgeom = mesh_B.geometry.x
-        bgeom += point
+    entities_A = numpy.sort(numpy.unique([q[0] for q in entities]))
+    entities_B = numpy.sort(numpy.unique([q[1] for q in entities]))
 
-        tree_A = BoundingBoxTree(mesh_A, mesh_A.topology.dim)
-        tree_B = BoundingBoxTree(mesh_B, mesh_B.topology.dim)
-        entities = compute_collisions(tree_A, tree_B)
+    cells_A = find_colliding_cells(mesh_A, tree_B.get_bbox(tree_B.num_bboxes - 1))
+    cells_B = find_colliding_cells(mesh_B, tree_A.get_bbox(tree_A.num_bboxes - 1))
 
-        entities_A = set([q[0] for q in entities])
-        entities_B = set([q[1] for q in entities])
-        assert entities_A == references[i][0]
-        assert entities_B == references[i][1]
+    assert numpy.allclose(entities_A, cells_A)
+    assert numpy.allclose(entities_B, cells_B)
 
 
 @pytest.mark.parametrize("dim", [0, 1])
@@ -363,7 +400,7 @@ def test_midpoint_entities():
 
 
 def test_surface_bbtree():
-    """Test creation of BBTree on subset of entities (surface cells)"""
+    """Test creation of BBTree on subset of entities(surface cells)"""
     mesh = UnitCubeMesh(MPI.COMM_WORLD, 8, 8, 8)
     sf = cpp.mesh.exterior_facet_indices(mesh)
     tdim = mesh.topology.dim
