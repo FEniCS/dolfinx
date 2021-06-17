@@ -377,8 +377,7 @@ std::shared_ptr<fem::FunctionSpace> create_functionspace(
     std::shared_ptr<mesh::Mesh> mesh,
     const std::function<
         std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>& reorder_fn
-    = [](const graph::AdjacencyList<std::int32_t>& g)
-    { return graph::scotch::compute_gps(g, 2).first; });
+    = nullptr);
 
 // NOTE: This is subject to change
 /// Pack coefficients of u of generic type U ready for assembly
