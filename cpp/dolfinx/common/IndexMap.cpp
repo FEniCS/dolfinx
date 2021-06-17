@@ -354,8 +354,8 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
       _comm_symmetric(MPI_COMM_NULL), _ghosts(ghosts.begin(), ghosts.end())
 {
   assert(size_t(ghosts.size()) == src_ranks.size());
-  // assert(std::equal(src_ranks.begin(), src_ranks.end(),
-  // get_ghost_ranks(mpi_comm, local_size, _ghosts).begin());
+  assert(std::equal(src_ranks.begin(), src_ranks.end(),
+                    get_ghost_ranks(mpi_comm, local_size, _ghosts).begin()));
 
   // Get global offset (index), using partial exclusive reduction
   std::int64_t offset = 0;
@@ -422,8 +422,7 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
   std::vector<std::int32_t> local_shared_ind(shared_ind.size());
   std::transform(shared_ind.begin(), shared_ind.end(), local_shared_ind.begin(),
                  [offset](std::int64_t x) -> std::int32_t
-                 {
-    return x - offset; });
+                 { return x - offset; });
 
   _shared_indices = std::make_unique<graph::AdjacencyList<std::int32_t>>(
       std::move(local_shared_ind), std::move(shared_disp));
