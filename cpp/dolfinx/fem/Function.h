@@ -324,6 +324,11 @@ public:
     // Loop over points
     std::fill(u.data(), u.data() + u.size(), 0.0);
     const std::vector<T>& _v = _x->mutable_array();
+
+    std::function<void(xtl::span<double>, std::uint32_t, int)>
+        apply_dof_transformation
+        = element->get_dof_transformation_function<double>();
+
     for (std::size_t p = 0; p < cells.size(); ++p)
     {
       const int cell_index = cells[p];
@@ -348,10 +353,9 @@ public:
       element->evaluate_reference_basis(basis_reference_values, X);
 
       // Permute the reference values to account for the cell's orientation
-      element->apply_dof_transformation(
-          xtl::span(basis_reference_values.data(),
-                    basis_reference_values.size()),
-          cell_info[cell_index], reference_value_size);
+      apply_dof_transformation(xtl::span(basis_reference_values.data(),
+                                         basis_reference_values.size()),
+                               cell_info[cell_index], reference_value_size);
 
       // Push basis forward to physical element
       element->transform_reference_basis(basis_values, basis_reference_values,

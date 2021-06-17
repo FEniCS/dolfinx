@@ -160,12 +160,17 @@ FunctionSpace::tabulate_dof_coordinates(bool transpose) const
   assert(map);
   const int num_cells = map->size_local() + map->num_ghosts();
 
-  const bool needs_permutation_data = _element->needs_permutation_data();
-  if (needs_permutation_data)
+  const bool needs_dof_transformations = _element->needs_dof_transformations();
+  if (needs_dof_transformations)
     _mesh->topology_mutable().create_entity_permutations();
   const std::vector<std::uint32_t>& cell_info
-      = needs_permutation_data ? _mesh->topology().get_cell_permutation_info()
-                               : std::vector<std::uint32_t>(num_cells);
+      = needs_dof_transformations
+            ? _mesh->topology().get_cell_permutation_info()
+            : std::vector<std::uint32_t>(num_cells);
+
+  std::function<void(xtl::span<double>, std::uint32_t, int)>
+      apply_dof_transformation
+      = _element->get_dof_transformation_function<double>();
 
   const xt::xtensor<double, 2> phi
       = xt::view(cmap.tabulate(0, X), 0, xt::all(), xt::all(), 0);
@@ -182,8 +187,8 @@ FunctionSpace::tabulate_dof_coordinates(bool transpose) const
 
     // Tabulate dof coordinates on cell
     cmap.push_forward(x, coordinate_dofs, phi);
-    _element->apply_dof_transformation(xtl::span(x.data(), x.size()),
-                                       cell_info[c], x.shape(1));
+    apply_dof_transformation(xtl::span(x.data(), x.size()), cell_info[c],
+                             x.shape(1));
 
     // Get cell dofmap
     auto dofs = _dofmap->cell_dofs(c);

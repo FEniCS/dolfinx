@@ -839,12 +839,15 @@ void lift_bc(xtl::span<T> b, const Form<T>& a,
   std::shared_ptr<const fem::FiniteElement> element1
       = a.function_spaces()[1]->element();
 
-  const bool needs_permutation_data = a.needs_permutation_data();
-  if (needs_permutation_data)
+  const bool needs_transformation_data
+      = element0->needs_dof_transformations()
+        || element1->needs_dof_transformations()
+        || a.needs_facet_permutations();
+  if (needs_transformation_data)
     mesh->topology_mutable().create_entity_permutations();
   const std::vector<std::uint32_t>& cell_info
-      = needs_permutation_data ? mesh->topology().get_cell_permutation_info()
-                               : std::vector<std::uint32_t>(num_cells);
+      = needs_transformation_data ? mesh->topology().get_cell_permutation_info()
+                                  : std::vector<std::uint32_t>(num_cells);
 
   std::function<void(xtl::span<T>, std::uint32_t, int)> apply_dof_transformation
       = element0->get_dof_transformation_function<T>();
@@ -1023,12 +1026,13 @@ void assemble_vector(xtl::span<T> b, const Form<T>& L,
   std::function<void(xtl::span<T>, std::uint32_t, int)> apply_dof_transformation
       = element->get_dof_transformation_function<T>();
 
-  const bool needs_permutation_data = L.needs_permutation_data();
-  if (needs_permutation_data)
+  const bool needs_transformation_data
+      = element->needs_dof_transformations() || L.needs_facet_permutations();
+  if (needs_transformation_data)
     mesh->topology_mutable().create_entity_permutations();
   const std::vector<std::uint32_t>& cell_info
-      = needs_permutation_data ? mesh->topology().get_cell_permutation_info()
-                               : std::vector<std::uint32_t>(num_cells);
+      = needs_transformation_data ? mesh->topology().get_cell_permutation_info()
+                                  : std::vector<std::uint32_t>(num_cells);
 
   for (int i : L.integral_ids(IntegralType::cell))
   {

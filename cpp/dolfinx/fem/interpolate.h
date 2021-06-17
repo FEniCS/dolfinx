@@ -246,6 +246,10 @@ void interpolate(
   std::vector<T>& coeffs = u.x()->mutable_array();
   std::vector<T> _coeffs(num_scalar_dofs);
 
+  std::function<void(xtl::span<T>, std::uint32_t, int)>
+      apply_inverse_transpose_dof_transformation
+      = element->get_dof_transformation_function<T>(true, true, true);
+
   // This assumes that any element with an identity interpolation matrix is a
   // point evaluation
   if (element->interpolation_ident())
@@ -257,8 +261,8 @@ void interpolate(
       {
         for (int i = 0; i < num_scalar_dofs; ++i)
           _coeffs[i] = values(k, c * num_scalar_dofs + i);
-        element->apply_inverse_transpose_dof_transformation(
-            tcb::make_span(_coeffs), cell_info[c], 1);
+        apply_inverse_transpose_dof_transformation(tcb::make_span(_coeffs),
+                                                   cell_info[c], 1);
         for (int i = 0; i < num_scalar_dofs; ++i)
         {
           const int dof = i * element_bs + k;

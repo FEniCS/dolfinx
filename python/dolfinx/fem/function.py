@@ -389,7 +389,7 @@ class FunctionSpace(ufl.FunctionSpace):
         ffi = cffi.FFI()
         cpp_element = cpp.fem.FiniteElement(ffi.cast("uintptr_t", ffi.addressof(self._ufc_element)))
         cpp_dofmap = cpp.fem.create_dofmap(mesh.mpi_comm(), ffi.cast(
-            "uintptr_t", ffi.addressof(self._ufc_dofmap)), mesh.topology)
+            "uintptr_t", ffi.addressof(self._ufc_dofmap)), mesh.topology, cpp_element)
 
         # Initialize the cpp.FunctionSpace
         self._cpp_object = cpp.fem.FunctionSpace(mesh, cpp_element, cpp_dofmap)

@@ -131,12 +131,15 @@ void assemble_matrix(
       apply_dof_transformation_to_transpose
       = element1->get_dof_transformation_to_transpose_function<T>();
 
-  const bool needs_permutation_data = a.needs_permutation_data();
-  if (needs_permutation_data)
+  const bool needs_transformation_data
+      = element0->needs_dof_transformations()
+        || element1->needs_dof_transformations()
+        || a.needs_facet_permutations();
+  if (needs_transformation_data)
     mesh->topology_mutable().create_entity_permutations();
   const std::vector<std::uint32_t>& cell_info
-      = needs_permutation_data ? mesh->topology().get_cell_permutation_info()
-                               : std::vector<std::uint32_t>(num_cells);
+      = needs_transformation_data ? mesh->topology().get_cell_permutation_info()
+                                  : std::vector<std::uint32_t>(num_cells);
 
   for (int i : a.integral_ids(IntegralType::cell))
   {

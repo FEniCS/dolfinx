@@ -189,7 +189,13 @@ public:
   ///
   /// Check if cell permutation data is required for this element
   /// @return True if cell permutation data is required
-  bool needs_permutation_data() const noexcept;
+  bool needs_dof_transformations() const noexcept;
+
+  /// @todo Expand on when permutation data might be required
+  ///
+  /// Check if cell permutation data is required for this element
+  /// @return True if cell permutation data is required
+  bool needs_dof_permutations() const noexcept;
 
   /// Return a function that applies DOF transformation to some data.
   ///
@@ -197,12 +203,19 @@ public:
   /// - [in,out] data The data to be transformed
   /// - [in] cell_permutation Permutation data for the cell
   /// - [in] block_size The block_size of the input data
+  ///
+  /// @param[in] inverse Indicates whether the inverse transformations should be
+  /// returned
+  /// @param[in] transpose Indicates whether the transpose transformations
+  /// should be returned
+  /// @param[in] scalar_element Indicated whether the scalar transformations
+  /// should be returned for a vector element
   template <typename T>
   std::function<void(xtl::span<T>, std::uint32_t, int)>
-  get_dof_transformation_function(bool inverse = false,
-                                  bool transpose = false) const
+  get_dof_transformation_function(bool inverse = false, bool transpose = false,
+                                  bool scalar_element = false) const
   {
-    if (!needs_permutation_data())
+    if (!needs_dof_transformations())
     {
       // If no permutation needed, return function that does nothing
       return [](xtl::span<T>, std::uint32_t, int) {};
@@ -236,7 +249,7 @@ public:
           }
         };
       }
-      else
+      else if (!scalar_element)
       {
         // Vector element
         std::function<void(xtl::span<T>, std::uint32_t, int)> sub_function
@@ -299,7 +312,7 @@ public:
   get_dof_transformation_to_transpose_function(bool inverse = false,
                                                bool transpose = false) const
   {
-    if (!needs_permutation_data())
+    if (!needs_dof_transformations())
     {
       // If no permutation needed, return function that does nothing
       return [](xtl::span<T>, std::uint32_t, int) {};
@@ -520,6 +533,35 @@ public:
     _element->map_pull_back_m(u, J, detJ, K, U);
   }
 
+  /// Permute the DOFs of the element
+  ///
+  /// @param[in,out] doflist The numbers of the DOFs
+  /// @param[in] cell_permutation Permutation data for the cell
+  void permute_dofs(xtl::span<std::int32_t> doflist,
+                    std::uint32_t cell_permutation) const;
+
+  /// Unpermute the DOFs of the element
+  ///
+  /// @param[in,out] doflist The numbers of the DOFs
+  /// @param[in] cell_permutation Permutation data for the cell
+  void unpermute_dofs(xtl::span<std::int32_t> doflist,
+                      std::uint32_t cell_permutation) const;
+
+  /// Return a function that applies DOF transformation to some data.
+  ///
+  /// The returned function will take three inputs:
+  /// - [in,out] data The data to be transformed
+  /// - [in] cell_permutation Permutation data for the cell
+  /// - [in] block_size The block_size of the input data
+  ///
+  /// @param[in] inverse Indicates whether the inverse transformations should be
+  /// returned
+  /// @param[in] scalar_element Indicated whether the scalar transformations
+  /// should be returned for a vector element
+  std::function<void(xtl::span<std::int32_t>, std::uint32_t)>
+  get_dof_permutation_function(bool inverse = false,
+                               bool scalar_element = false) const;
+
 private:
   std::string _signature, _family;
 
@@ -540,8 +582,9 @@ private:
   // number of DOFs colocated at each point.
   int _bs;
 
-  // True if element needs dof permutation
-  bool _needs_permutation_data;
+  // Indicate whether the element needs permutations or transformations
+  bool _needs_dof_permutations;
+  bool _needs_dof_transformations;
 
   // Basix Element (nullptr for mixed elements)
   std::unique_ptr<basix::FiniteElement> _element;
