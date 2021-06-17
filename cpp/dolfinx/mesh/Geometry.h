@@ -119,24 +119,15 @@ private:
 };
 
 /// Build Geometry
-/// FIXME: document
-mesh::Geometry create_geometry(
-    MPI_Comm comm, const Topology& topology,
-    const fem::CoordinateElement& coordinate_element,
-    const graph::AdjacencyList<std::int64_t>& cells,
-    const xt::xtensor<double, 2>& x,
-    // const std::function<std::vector<int>(
-    //     const graph::AdjacencyList<std::int32_t>&)>& reorder_fn
-    // = nullptr
-    const std::function<
-        std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>& reorder_fn
-    =
-        [](const graph::AdjacencyList<std::int32_t>& g)
-    {
-      std::vector<int> remap(g.num_nodes());
-      std::iota(remap.begin(), remap.end(), 0);
-      return remap;
-    });
+/// @todo document
+mesh::Geometry
+create_geometry(MPI_Comm comm, const Topology& topology,
+                const fem::CoordinateElement& coordinate_element,
+                const graph::AdjacencyList<std::int64_t>& cells,
+                const xt::xtensor<double, 2>& x,
+                const std::function<std::vector<int>(
+                    const graph::AdjacencyList<std::int32_t>&)>& reorder_fn
+                = nullptr);
 
 } // namespace mesh
 } // namespace dolfinx
