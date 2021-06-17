@@ -20,8 +20,6 @@
 #include <random>
 #include <unordered_map>
 
-#include "graphbuild.h"
-
 using namespace dolfinx;
 using namespace dolfinx::mesh;
 
@@ -436,10 +434,6 @@ mesh::create_topology(MPI_Comm comm,
         node_remap[it->second] = counter++;
     }
   }
-
-  std::cout << "Remap" << std::endl;
-  for (auto m : node_remap)
-    std::cout << m << std::endl;
 
   assert(std::find(node_remap.begin(), node_remap.end(), -1)
          == node_remap.end());
