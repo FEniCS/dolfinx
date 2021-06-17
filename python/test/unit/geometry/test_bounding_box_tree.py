@@ -113,27 +113,44 @@ def test_compute_collisions_point_1d():
     assert numpy.allclose(cell_vertices, vertices)
 
 
-@pytest.mark.skip(reason="This test is not robust w.r.t. to mesh (re-)ordering or changing mesh size")
 @skip_in_parallel
-@pytest.mark.parametrize("point,cells", [(numpy.array([0.52, 0, 0]),
-                                          [set([8, 9, 10, 11, 12, 13, 14, 15]),
-                                           set([0, 1, 2, 3, 4, 5, 6, 7])]),
-                                         (numpy.array([0.9, 0, 0]), [set([14, 15]), set([0, 1])])])
-def test_compute_collisions_tree_1d(point, cells):
+@pytest.mark.parametrize("point", [numpy.array([0.52, 0, 0]),
+                                   numpy.array([0.9, 0, 0])])
+def test_compute_collisions_tree_1d(point):
     mesh_A = UnitIntervalMesh(MPI.COMM_WORLD, 16)
-    mesh_B = UnitIntervalMesh(MPI.COMM_WORLD, 16)
 
+    def locator_A(x):
+        return x[0] >= point[0]
+    # Locate all vertices of mesh A that should collide
+    vertices_A = cpp.mesh.locate_entities(mesh_A, 0, locator_A)
+    mesh_A.topology.create_connectivity_all()
+    v_to_c = mesh_A.topology.connectivity(0, mesh_A.topology.dim)
+    # Find all cells connected to vertex in the collision bounding box
+    cells_A = numpy.sort(numpy.unique(numpy.hstack([v_to_c.links(vertex) for vertex in vertices_A])))
+
+    mesh_B = UnitIntervalMesh(MPI.COMM_WORLD, 16)
     bgeom = mesh_B.geometry.x
     bgeom += point
 
+    def locator_B(x):
+        return x[0] <= 1
+    # Locate all vertices of mesh B that should collide
+    vertices_B = cpp.mesh.locate_entities(mesh_B, 0, locator_B)
+    mesh_B.topology.create_connectivity_all()
+    v_to_c = mesh_B.topology.connectivity(0, mesh_B.topology.dim)
+    # Find all cells connected to vertex in the collision bounding box
+    cells_B = numpy.sort(numpy.unique(numpy.hstack([v_to_c.links(vertex) for vertex in vertices_B])))
+
+    # Find colliding entities using bounding box trees
     tree_A = BoundingBoxTree(mesh_A, mesh_A.topology.dim)
     tree_B = BoundingBoxTree(mesh_B, mesh_B.topology.dim)
     entities = compute_collisions(tree_A, tree_B)
 
-    entities_A = set([q[0] for q in entities])
-    entities_B = set([q[1] for q in entities])
-    assert entities_A == cells[0]
-    assert entities_B == cells[1]
+    entities_A = numpy.sort(numpy.unique([q[0] for q in entities]))
+    entities_B = numpy.sort(numpy.unique([q[1] for q in entities]))
+
+    assert numpy.allclose(entities_A, cells_A)
+    assert numpy.allclose(entities_B, cells_B)
 
 
 @pytest.mark.skip(reason="This test is not robust w.r.t. to mesh (re-)ordering or changing mesh size")
