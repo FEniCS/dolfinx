@@ -136,8 +136,6 @@ build_basic_dofmap(const mesh::Topology& topology,
   // Start timer for dofmap initialization
   common::Timer t0("Init dofmap from element dofmap");
 
-  std::cout << "Build BASIC: " << std::endl;
-
   // Topological dimension
   const int D = topology.dim();
 
@@ -321,15 +319,13 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
       offset[d] = map->size_local();
   }
 
-  // Re-order cell-wise
+  // Compute the number of dofs 'owned' by this process
+  const std::int32_t owned_size = std::reduce(
+      dof_entity.begin(), dof_entity.end(), static_cast<std::int32_t>(0),
+      [&offset](std::int32_t a, auto& b)
+      { return b.second < offset[b.first] ? a + 1 : a; });
 
-  std::int32_t owned_size = 0;
-  for (auto& dof : dof_entity)
-  {
-    // True if entity 'owned' by this process
-    if (dof.second < offset[dof.first])
-      owned_size++;
-  }
+  // Re-order cell-wise
 
   // Create map from old index to new contiguous numbering for locally
   // owned dofs. Set to -1 for unowned dofs.
@@ -352,24 +348,10 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
   }
 
   if (!reorder_fn)
-  {
     return {std::move(original_to_contiguous), owned_size};
-  }
   else
   {
     // Re-order using graph ordering
-
-    // std::vector<int> original_to_contiguous(dof_entity.size(), -1);
-    // std::int32_t owned_size = 0;
-    // for (std::size_t i = 0; i < dof_entity.size(); ++i)
-    // {
-    //   // Create map from old index to new contiguous numbering for locally
-    //   // owned dofs. Set to -1 for unowned dofs.
-    //   const std::pair<std::int8_t, std::int32_t>& e = dof_entity[i];
-    //   if (e.second < offset[e.first]) // True if entity 'owned' by this
-    //   process
-    //     original_to_contiguous[i] = owned_size++;
-    // }
 
     // Apply graph reordering to owned dofs
     const std::vector<int> node_remap
@@ -377,8 +359,8 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
 
     // Reconstruct remapped nodes, and place un-owned nodes at the end
     std::vector<int> old_to_new(dof_entity.size(), -1);
-    std::int32_t unowned_pos = owned_size;
     assert(old_to_new.size() == original_to_contiguous.size());
+    std::int32_t unowned_pos = owned_size;
     for (std::size_t i = 0; i < original_to_contiguous.size(); ++i)
     {
       // Put nodes that are not owned at the end, otherwise re-number
@@ -389,6 +371,7 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
       }
       else
         old_to_new[i] = unowned_pos++;
+      // old_to_new[i] = original_to_contiguous[index];
     }
 
     return {std::move(old_to_new), owned_size};
