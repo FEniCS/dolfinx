@@ -485,10 +485,8 @@ mesh::build_dual_graph(const MPI_Comm mpi_comm,
   LOG(INFO) << "Build mesh dual graph";
 
   // Compute local part of dual graph
-  std::cout << "Build dual graph" << std::endl;
   auto [local_graph, facet_cell_map] = mesh::build_local_dual_graph(
       cell_vertices.array(), cell_vertices.offsets(), tdim);
-  std::cout << "End Build dual graph" << std::endl;
 
   // Compute nonlocal part
   auto [graph, num_ghost_nodes] = compute_nonlocal_dual_graph(

@@ -437,6 +437,10 @@ mesh::create_topology(MPI_Comm comm,
     }
   }
 
+  std::cout << "Remap" << std::endl;
+  for (auto m : node_remap)
+    std::cout << m << std::endl;
+
   assert(std::find(node_remap.begin(), node_remap.end(), -1)
          == node_remap.end());
   for (auto& map : global_to_local_vertices)
