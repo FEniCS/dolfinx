@@ -443,7 +443,6 @@ def test_curl(space_type, order):
 
     # Set data for first space
     V0 = spaces[0]
-    result0 = results[0]
     c10_0 = V.mesh.topology.connectivity(1, 0)
 
     # Check that all DOFs on edges agree
