@@ -308,9 +308,9 @@ std::vector<std::int64_t> build::compute_local_to_global_links(
   return local_to_global_list;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::int32_t>
-build::compute_local_to_local(const std::vector<std::int64_t>& local0_to_global,
-                              const std::vector<std::int64_t>& local1_to_global)
+std::vector<std::int32_t> build::compute_local_to_local(
+    const xtl::span<const std::int64_t>& local0_to_global,
+    const xtl::span<const std::int64_t>& local1_to_global)
 {
   common::Timer timer("Compute local-to-local map");
   assert(local0_to_global.size() == local1_to_global.size());
