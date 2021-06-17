@@ -19,6 +19,7 @@
 #include <numeric>
 #include <random>
 #include <unordered_map>
+#include <xtl/xspan.hpp>
 
 using namespace dolfinx;
 using namespace dolfinx::mesh;
@@ -304,8 +305,8 @@ MPI_Comm Topology::mpi_comm() const { return _mpi_comm.comm(); }
 Topology
 mesh::create_topology(MPI_Comm comm,
                       const graph::AdjacencyList<std::int64_t>& cells,
-                      const std::vector<std::int64_t>& original_cell_index,
-                      const std::vector<int>& ghost_owners,
+                      const xtl::span<const std::int64_t>& original_cell_index,
+                      const xtl::span<const int>& ghost_owners,
                       const CellType& cell_type, mesh::GhostMode ghost_mode)
 {
   LOG(INFO) << "Create topology";

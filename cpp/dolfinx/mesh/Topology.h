@@ -12,6 +12,7 @@
 #include <dolfinx/common/MPI.h>
 #include <memory>
 #include <vector>
+#include <xtl/xspan.hpp>
 
 namespace dolfinx
 {
@@ -189,10 +190,10 @@ private:
 /// @param[in] ghost_mode How to partition the cell overlap: none,
 /// shared_facet or shared_vertex
 /// @return A distributed Topology
-Topology create_topology(MPI_Comm comm,
-                         const graph::AdjacencyList<std::int64_t>& cells,
-                         const std::vector<std::int64_t>& original_cell_index,
-                         const std::vector<int>& ghost_owners,
-                         const CellType& cell_type, mesh::GhostMode ghost_mode);
+Topology
+create_topology(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
+                const xtl::span<const std::int64_t>& original_cell_index,
+                const xtl::span<const int>& ghost_owners,
+                const CellType& cell_type, mesh::GhostMode ghost_mode);
 } // namespace mesh
 } // namespace dolfinx

@@ -15,6 +15,7 @@
 #include <mpi.h>
 #include <utility>
 #include <vector>
+#include <xtl/xspan.hpp>
 
 namespace dolfinx::graph
 {
@@ -80,8 +81,8 @@ distribute(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& list,
 /// @return Indexing of ghosts in a global space starting from 0 on process 0
 std::vector<std::int64_t>
 compute_ghost_indices(MPI_Comm comm,
-                      const std::vector<std::int64_t>& global_indices,
-                      const std::vector<int>& ghost_owners);
+                      const xtl::span<const std::int64_t>& global_indices,
+                      const xtl::span<const int>& ghost_owners);
 
 /// Distribute data to process ranks where it it required
 ///

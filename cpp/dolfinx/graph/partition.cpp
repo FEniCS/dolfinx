@@ -156,10 +156,9 @@ build::distribute(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& list,
           std::move(ghost_index_owner)};
 }
 //-----------------------------------------------------------------------------
-std::vector<std::int64_t>
-build::compute_ghost_indices(MPI_Comm comm,
-                             const std::vector<std::int64_t>& global_indices,
-                             const std::vector<int>& ghost_owners)
+std::vector<std::int64_t> build::compute_ghost_indices(
+    MPI_Comm comm, const xtl::span<const std::int64_t>& global_indices,
+    const xtl::span<const int>& ghost_owners)
 {
   LOG(INFO) << "Compute ghost indices";
 
