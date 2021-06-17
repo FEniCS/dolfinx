@@ -338,7 +338,7 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
   for (std::int32_t cell = 0; cell < dofmap.num_nodes(); ++cell)
   {
     auto dofs = dofmap.links(cell);
-    for (std::int32_t i = 0; i < dofs.size(); ++i)
+    for (std::size_t i = 0; i < dofs.size(); ++i)
     {
       if (original_to_contiguous[dofs[i]] == -1)
       {
