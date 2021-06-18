@@ -125,9 +125,8 @@ void _lift_bc_cells(
     std::fill(Ae.begin(), Ae.end(), 0);
     kernel(Ae.data(), coeff_array.data(), constants.data(),
            coordinate_dofs.data(), nullptr, nullptr);
-    apply_dof_transformation(tcb::make_span(Ae), cell_info, c, num_cols);
-    apply_dof_transformation_to_transpose(tcb::make_span(Ae), cell_info, c,
-                                          num_rows);
+    apply_dof_transformation(Ae, cell_info, c, num_cols);
+    apply_dof_transformation_to_transpose(Ae, cell_info, c, num_rows);
 
     // Size data structure for assembly
     be.resize(num_rows);
@@ -285,9 +284,8 @@ void _lift_bc_exterior_facets(
     kernel(Ae.data(), coeff_array.data(), constants.data(),
            coordinate_dofs.data(), &local_facet,
            &perms[cell * facets.size() + local_facet]);
-    apply_dof_transformation(tcb::make_span(Ae), cell_info, cell, num_cols);
-    apply_dof_transformation_to_transpose(tcb::make_span(Ae), cell_info, cell,
-                                          num_rows);
+    apply_dof_transformation(Ae, cell_info, cell, num_cols);
+    apply_dof_transformation_to_transpose(Ae, cell_info, cell, num_rows);
 
     // Size data structure for assembly
     be.resize(num_rows);
@@ -473,9 +471,8 @@ void _lift_bc_interior_facets(
                           perms[cells[1] * facets_per_cell + local_facet[1]]};
     kernel(Ae.data(), coeff_array.data(), constants.data(),
            coordinate_dofs.data(), local_facet.data(), perm.data());
-    apply_dof_transformation(tcb::make_span(Ae), cell_info, cells[0], num_cols);
-    apply_dof_transformation_to_transpose(tcb::make_span(Ae), cell_info,
-                                          cells[0], num_rows);
+    apply_dof_transformation(Ae, cell_info, cells[0], num_cols);
+    apply_dof_transformation_to_transpose(Ae, cell_info, cells[0], num_rows);
 
     be.resize(num_rows);
     std::fill(be.begin(), be.end(), 0);
@@ -662,7 +659,7 @@ void assemble_exterior_facets(
        coordinate_dofs.data(), &local_facet,
        &perms[cell * facets.size() + local_facet]);
 
-    apply_dof_transformation(tcb::make_span(be), cell_info, cell, 1);
+    apply_dof_transformation(be, cell_info, cell, 1);
 
     // Add element vector to global vector
     auto dofs = dofmap.links(cell);
@@ -783,7 +780,7 @@ void assemble_interior_facets(
     fn(be.data(), coeff_array.data(), constants.data(), coordinate_dofs.data(),
        local_facet.data(), perm.data());
 
-    apply_dof_transformation(tcb::make_span(be), cell_info, cells[0], 1);
+    apply_dof_transformation(be, cell_info, cells[0], 1);
 
     // Add element vector to global vector
     if constexpr (_bs > 0)

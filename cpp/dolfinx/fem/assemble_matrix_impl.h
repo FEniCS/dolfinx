@@ -245,9 +245,8 @@ void assemble_cells(
     kernel(Ae.data(), coeffs.row(c).data(), constants.data(),
            coordinate_dofs.data(), nullptr, nullptr);
 
-    apply_dof_transformation(tcb::make_span(Ae), cell_info, c, ndim1);
-    apply_dof_transformation_to_transpose(tcb::make_span(Ae), cell_info, c,
-                                          ndim0);
+    apply_dof_transformation(Ae, cell_info, c, ndim1);
+    apply_dof_transformation_to_transpose(Ae, cell_info, c, ndim0);
 
     // Zero rows/columns for essential bcs
     auto dofs0 = dofmap0.links(c);
@@ -357,9 +356,8 @@ void assemble_exterior_facets(
            coordinate_dofs.data(), &local_facet,
            &perms[cells[0] * facets.size() + local_facet]);
 
-    apply_dof_transformation(tcb::make_span(Ae), cell_info, cells[0], ndim1);
-    apply_dof_transformation_to_transpose(tcb::make_span(Ae), cell_info,
-                                          cells[0], ndim0);
+    apply_dof_transformation(Ae, cell_info, cells[0], ndim1);
+    apply_dof_transformation_to_transpose(Ae, cell_info, cells[0], ndim0);
 
     // Zero rows/columns for essential bcs
     auto dofs0 = dofmap0.links(cells[0]);
@@ -522,9 +520,8 @@ void assemble_interior_facets(
     fn(Ae.data(), coeff_array.data(), constants.data(), coordinate_dofs.data(),
        local_facet.data(), perm.data());
 
-    apply_dof_transformation(tcb::make_span(Ae), cell_info, cells[0], num_cols);
-    apply_dof_transformation_to_transpose(tcb::make_span(Ae), cell_info,
-                                          cells[0], num_rows);
+    apply_dof_transformation(Ae, cell_info, cells[0], num_cols);
+    apply_dof_transformation_to_transpose(Ae, cell_info, cells[0], num_rows);
 
     // Zero rows/columns for essential bcs
     if (!bc0.empty())
