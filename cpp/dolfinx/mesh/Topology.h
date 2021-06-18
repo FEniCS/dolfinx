@@ -14,25 +14,23 @@
 #include <vector>
 #include <xtl/xspan.hpp>
 
-namespace dolfinx
-{
-namespace common
+namespace dolfinx::common
 {
 class IndexMap;
 }
 
-namespace fem
+namespace dolfinx::fem
 {
 class ElementDofLayout;
 }
 
-namespace graph
+namespace dolfinx::graph
 {
 template <typename T>
 class AdjacencyList;
 }
 
-namespace mesh
+namespace dolfinx::mesh
 {
 enum class GhostMode : int;
 
@@ -195,5 +193,4 @@ create_topology(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
                 const xtl::span<const std::int64_t>& original_cell_index,
                 const xtl::span<const int>& ghost_owners,
                 const CellType& cell_type, mesh::GhostMode ghost_mode);
-} // namespace mesh
-} // namespace dolfinx
+} // namespace dolfinx::mesh

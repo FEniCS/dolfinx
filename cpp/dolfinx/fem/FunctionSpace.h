@@ -13,15 +13,12 @@
 #include <vector>
 #include <xtensor/xtensor.hpp>
 
-namespace dolfinx
-{
-
-namespace mesh
+namespace dolfinx::mesh
 {
 class Mesh;
 }
 
-namespace fem
+namespace dolfinx::fem
 {
 class DofMap;
 class FiniteElement;
@@ -143,5 +140,4 @@ std::array<std::vector<std::shared_ptr<const FunctionSpace>>, 2>
 common_function_spaces(
     const std::vector<
         std::vector<std::array<std::shared_ptr<const FunctionSpace>, 2>>>& V);
-} // namespace fem
-} // namespace dolfinx
+} // namespace dolfinx::fem

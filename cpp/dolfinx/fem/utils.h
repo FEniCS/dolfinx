@@ -22,22 +22,19 @@
 #include <utility>
 #include <vector>
 
-namespace dolfinx
-{
-namespace common
+namespace dolfinx::common
 {
 class IndexMap;
 }
 
-namespace mesh
+namespace dolfinx::mesh
 {
 class Mesh;
 class Topology;
-} // namespace mesh
+} // namespace dolfinx::mesh
 
-namespace fem
+namespace dolfinx::fem
 {
-
 template <typename T>
 class Constant;
 template <typename T>
@@ -462,5 +459,4 @@ std::vector<typename U::scalar_type> pack_constants(const U& u)
   return constant_values;
 }
 
-} // namespace fem
-} // namespace dolfinx
+} // namespace dolfinx::fem

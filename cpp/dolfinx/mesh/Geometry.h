@@ -17,19 +17,17 @@
 #include <xtensor/xtensor.hpp>
 #include <xtensor/xview.hpp>
 
-namespace dolfinx
-{
-namespace common
+namespace dolfinx::common
 {
 class IndexMap;
 }
 
-namespace fem
+namespace dolfinx::fem
 {
 class CoordinateElement;
-} // namespace fem
+}
 
-namespace mesh
+namespace dolfinx::mesh
 {
 class Topology;
 
@@ -129,5 +127,4 @@ create_geometry(MPI_Comm comm, const Topology& topology,
                     const graph::AdjacencyList<std::int32_t>&)>& reorder_fn
                 = nullptr);
 
-} // namespace mesh
-} // namespace dolfinx
+} // namespace dolfinx::mesh

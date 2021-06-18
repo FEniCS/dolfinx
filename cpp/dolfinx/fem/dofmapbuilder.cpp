@@ -47,75 +47,73 @@ reorder_owned(const graph::AdjacencyList<std::int32_t>& dofmap,
                   const graph::AdjacencyList<std::int32_t>&)>& reorder_fn)
 {
   std::vector<std::int32_t> graph_data, graph_offsets;
+
+  // Compute maximum number of graph out edges edges per dof
+  std::vector<int> num_edges(owned_size);
+  for (std::int32_t cell = 0; cell < dofmap.num_nodes(); ++cell)
   {
-    // Compute maximum number of graph out edges edges per dof
-    std::vector<int> num_edges(owned_size);
-    for (std::int32_t cell = 0; cell < dofmap.num_nodes(); ++cell)
+    auto nodes = dofmap.links(cell);
+    for (std::size_t i = 0; i < nodes.size(); ++i)
     {
-      auto nodes = dofmap.links(cell);
-      for (std::size_t i = 0; i < nodes.size(); ++i)
+      const std::int32_t node_i = original_to_contiguous[nodes[i]];
+
+      // Skip unowned node
+      if (node_i >= owned_size)
+        continue;
+      for (std::size_t j = 0; j < nodes.size(); ++j)
       {
-        const std::int32_t node_i = original_to_contiguous[nodes[i]];
-
-        // Skip unowned node
-        if (node_i >= owned_size)
-          continue;
-
-        for (std::size_t j = 0; j < nodes.size(); ++j)
-        {
-          if (i != j and original_to_contiguous[nodes[j]] < owned_size)
-            ++num_edges[node_i];
-        }
+        if (i != j and original_to_contiguous[nodes[j]] < owned_size)
+          ++num_edges[node_i];
       }
-    }
-
-    // Compute adjacency list with duplicate edges
-    std::vector<std::int32_t> offsets(num_edges.size() + 1, 0);
-    std::partial_sum(num_edges.begin(), num_edges.end(),
-                     std::next(offsets.begin(), 1));
-    std::vector<std::int32_t> edges(offsets.back());
-    for (std::int32_t cell = 0; cell < dofmap.num_nodes(); ++cell)
-    {
-      auto nodes = dofmap.links(cell);
-      for (std::size_t i = 0; i < nodes.size(); ++i)
-      {
-        const std::int32_t node_i = original_to_contiguous[nodes[i]];
-        if (node_i >= owned_size)
-          continue;
-        for (std::size_t j = 0; j < nodes.size(); ++j)
-        {
-          if (const std::int32_t node_j = original_to_contiguous[nodes[j]];
-              i != j and node_j < owned_size)
-          {
-            edges[offsets[node_i]++] = node_j;
-          }
-        }
-      }
-    }
-
-    // Eliminate duplicate edges and create AdjacencyList
-    graph_offsets.resize(num_edges.size() + 1, 0);
-    std::int32_t current_offset = 0;
-    for (std::size_t i = 0; i < num_edges.size(); ++i)
-    {
-      std::sort(std::next(edges.begin(), current_offset),
-                std::next(edges.begin(), current_offset + num_edges[i]));
-      const auto it = std::unique(
-          std::next(edges.begin(), current_offset),
-          std::next(edges.begin(), current_offset + num_edges[i]));
-      graph_data.insert(graph_data.end(),
-                        std::next(edges.begin(), current_offset), it);
-      graph_offsets[i + 1]
-          = graph_offsets[i]
-            + std::distance(std::next(edges.begin(), current_offset), it);
-      current_offset += num_edges[i];
     }
   }
-  const graph::AdjacencyList<std::int32_t> graph(std::move(graph_data),
-                                                 std::move(graph_offsets));
+
+  // Compute adjacency list with duplicate edges
+  std::vector<std::int32_t> offsets(num_edges.size() + 1, 0);
+  std::partial_sum(num_edges.begin(), num_edges.end(),
+                   std::next(offsets.begin(), 1));
+  std::vector<std::int32_t> edges(offsets.back());
+  for (std::int32_t cell = 0; cell < dofmap.num_nodes(); ++cell)
+  {
+    auto nodes = dofmap.links(cell);
+    for (std::size_t i = 0; i < nodes.size(); ++i)
+    {
+      const std::int32_t node_i = original_to_contiguous[nodes[i]];
+      if (node_i >= owned_size)
+        continue;
+      for (std::size_t j = 0; j < nodes.size(); ++j)
+      {
+        if (const std::int32_t node_j = original_to_contiguous[nodes[j]];
+            i != j and node_j < owned_size)
+        {
+          edges[offsets[node_i]++] = node_j;
+        }
+      }
+    }
+  }
+
+  // Eliminate duplicate edges and create AdjacencyList
+  graph_offsets.resize(num_edges.size() + 1, 0);
+  std::int32_t current_offset = 0;
+  for (std::size_t i = 0; i < num_edges.size(); ++i)
+  {
+    std::sort(std::next(edges.begin(), current_offset),
+              std::next(edges.begin(), current_offset + num_edges[i]));
+    const auto it
+        = std::unique(std::next(edges.begin(), current_offset),
+                      std::next(edges.begin(), current_offset + num_edges[i]));
+    graph_data.insert(graph_data.end(),
+                      std::next(edges.begin(), current_offset), it);
+    graph_offsets[i + 1]
+        = graph_offsets[i]
+          + std::distance(std::next(edges.begin(), current_offset), it);
+    current_offset += num_edges[i];
+  }
 
   // Re-order graph and return re-odering
-  return reorder_fn(graph);
+  assert(reorder_fn);
+  return reorder_fn(graph::AdjacencyList<std::int32_t>(
+      std::move(graph_data), std::move(graph_offsets)));
 }
 
 //-----------------------------------------------------------------------------

@@ -16,15 +16,12 @@
 #include <xtensor/xtensor.hpp>
 #include <xtl/xspan.hpp>
 
-namespace dolfinx
-{
-
-namespace mesh
+namespace dolfinx::mesh
 {
 class Mesh;
-} // namespace mesh
+}
 
-namespace fem
+namespace dolfinx::fem
 {
 
 /// Find degrees-of-freedom which belong to the provided mesh entities
@@ -336,5 +333,4 @@ private:
   int _owned_indices0 = -1;
   int _owned_indices1 = -1;
 };
-} // namespace fem
-} // namespace dolfinx
+} // namespace dolfinx::fem
