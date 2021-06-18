@@ -576,7 +576,7 @@ void assemble_cells(
     std::fill(be.begin(), be.end(), 0);
     kernel(be.data(), coeffs.row(c).data(), constants.data(),
            coordinate_dofs.data(), nullptr, nullptr);
-    apply_dof_transformation(tcb::make_span(be), cell_info, c, 1);
+    apply_dof_transformation(be, cell_info, c, 1);
 
     // Scatter cell vector to 'global' vector array
     auto dofs = dofmap.links(c);
