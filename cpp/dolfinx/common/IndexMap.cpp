@@ -420,9 +420,9 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
   // Convert owned global indices that are ghosts on another rank to
   // local indexing
   std::vector<std::int32_t> local_shared_ind(shared_ind.size());
-  std::transform(shared_ind.begin(), shared_ind.end(), local_shared_ind.begin(),
-                 [offset](std::int64_t x) -> std::int32_t
-                 { return x - offset; });
+  std::transform(
+      shared_ind.begin(), shared_ind.end(), local_shared_ind.begin(),
+      [offset](std::int64_t x) -> std::int32_t { return x - offset; });
 
   _shared_indices = std::make_unique<graph::AdjacencyList<std::int32_t>>(
       std::move(local_shared_ind), std::move(shared_disp));

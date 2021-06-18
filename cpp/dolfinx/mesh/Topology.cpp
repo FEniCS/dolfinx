@@ -439,8 +439,7 @@ mesh::create_topology(MPI_Comm comm,
          == node_remap.end());
   std::for_each(global_to_local_vertices.begin(),
                 global_to_local_vertices.end(),
-                [&remap = std::as_const(node_remap)](auto& v)
-                {
+                [&remap = std::as_const(node_remap)](auto& v) {
                   if (v.second >= 0)
                     v.second = remap[v.second];
                 });

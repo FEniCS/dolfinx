@@ -109,10 +109,11 @@ void fem(py::module& m)
   m.def(
       "create_dofmap",
       [](const MPICommWrapper comm, const std::uintptr_t dofmap,
-         dolfinx::mesh::Topology& topology)
-      {
+         dolfinx::mesh::Topology& topology,
+         std::shared_ptr<dolfinx::fem::FiniteElement> element) {
         const ufc_dofmap* p = reinterpret_cast<const ufc_dofmap*>(dofmap);
-        return dolfinx::fem::create_dofmap(comm.get(), *p, topology, nullptr);
+        return dolfinx::fem::create_dofmap(comm.get(), *p, topology, nullptr,
+                                           element);
       },
       "Create DofMap object from a pointer to ufc_dofmap.");
   m.def(
@@ -486,8 +487,7 @@ void fem(py::module& m)
                  const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh) {
                 using kern = std::function<void(
                     PetscScalar*, const PetscScalar*, const PetscScalar*,
-                    const double*, const int*, const std::uint8_t*,
-                    const std::uint32_t)>;
+                    const double*, const int*, const std::uint8_t*)>;
                 std::map<dolfinx::fem::IntegralType,
                          std::pair<std::vector<std::pair<int, kern>>,
                                    const dolfinx::mesh::MeshTags<int>*>>
@@ -505,8 +505,7 @@ void fem(py::module& m)
                     auto tabulate_tensor_ptr
                         = (void (*)(PetscScalar*, const PetscScalar*,
                                     const PetscScalar*, const double*,
-                                    const int*, const std::uint8_t*,
-                                    const std::uint32_t))
+                                    const int*, const std::uint8_t*))
                               kernel.second.cast<std::uintptr_t>();
                     _integrals[kernel_type.first].first.push_back(
                         {kernel.first, tabulate_tensor_ptr});

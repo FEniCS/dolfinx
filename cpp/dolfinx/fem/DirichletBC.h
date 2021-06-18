@@ -239,7 +239,7 @@ public:
   /// `dofs[:pos]` are owned and entries `dofs[pos:]` are ghosts.
   std::pair<xtl::span<const std::int32_t>, std::int32_t> dof_indices() const
   {
-    return {tcb::make_span(_dofs0), _owned_indices0};
+    return {_dofs0, _owned_indices0};
   }
 
   /// Set bc entries in `x` to `scale * x_bc`
