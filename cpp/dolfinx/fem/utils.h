@@ -423,7 +423,8 @@ array2d<typename U::scalar_type> pack_coefficients(const U& u)
               : std::vector<std::uint32_t>(num_cells);
     for (std::size_t coeff = 0; coeff < dofmaps.size(); ++coeff)
     {
-      std::function<void(xtl::span<T>, std::uint32_t, int)>
+      std::function<void(xtl::span<T>, const xtl::span<const std::uint32_t>,
+                         const std::int32_t, const int)>
           apply_transpose_dof_transformation
           = elements[coeff]->get_dof_transformation_function<T>(false, true);
       for (int cell = 0; cell < num_cells; ++cell)
@@ -441,7 +442,7 @@ array2d<typename U::scalar_type> pack_coefficients(const U& u)
         apply_transpose_dof_transformation(
             c.row(cell).subspan(offsets[coeff],
                                 elements[coeff]->space_dimension()),
-            cell_info[cell], 1);
+            cell_info, cell, 1);
       }
     }
   }
