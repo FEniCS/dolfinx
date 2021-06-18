@@ -362,20 +362,22 @@ public:
                                        const std::int32_t, const int)>>
             sub_element_functions;
         for (std::size_t i = 0; i < _sub_elements.size(); ++i)
+        {
           sub_element_functions.push_back(
               _sub_elements[i]->get_dof_transformation_to_transpose_function<T>(
                   inverse, transpose));
+        }
 
         return [this, sub_element_functions](
                    xtl::span<T> data,
-                   const xtl::span<const std::uint32_t> cell_info,
+                   const xtl::span<const std::uint32_t>& cell_info,
                    const std::int32_t cell, const int block_size)
         {
           std::size_t start = 0;
           for (std::size_t e = 0; e < sub_element_functions.size(); ++e)
           {
             const std::size_t width
-                = sub_elements()[e]->space_dimension() * block_size;
+                = _sub_elements[e]->space_dimension() * block_size;
             sub_element_functions[e](data.subspan(start, width), cell_info,
                                      cell, block_size);
             start += width;
@@ -389,17 +391,18 @@ public:
                            const std::int32_t, const int)>
             sub_function = _sub_elements[0]->get_dof_transformation_function<T>(
                 inverse, transpose);
-        return
-            [this, sub_function](xtl::span<T> data,
-                                 const xtl::span<const std::uint32_t> cell_info,
-                                 const std::int32_t cell,
-                                 const int data_block_size)
+        return [this, sub_function](
+                   xtl::span<T> data,
+                   const xtl::span<const std::uint32_t>& cell_info,
+                   const std::int32_t cell, const int data_block_size)
         {
           const int ebs = block_size();
           const std::size_t dof_count = data.size() / data_block_size;
           for (int block = 0; block < data_block_size; ++block)
+          {
             sub_function(data.subspan(block * dof_count, dof_count), cell_info,
                          cell, ebs);
+          }
         };
       }
     }
