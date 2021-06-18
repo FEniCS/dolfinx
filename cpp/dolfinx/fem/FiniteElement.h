@@ -19,8 +19,8 @@ struct ufc_finite_element;
 
 namespace dolfinx::fem
 {
-/// Finite Element, containing the dof layout on a reference element, and
-/// various methods for evaluating and transforming the basis.
+/// Finite Element, containing the dof layout on a reference element,
+/// and various methods for evaluating and transforming the basis.
 class FiniteElement
 {
 public:
@@ -55,9 +55,9 @@ public:
   /// @return Dimension of the finite element space
   int space_dimension() const noexcept;
 
-  /// Block size of the finite element function space. For VectorElements and
-  /// TensorElements, this is the number of DOFs colocated at each DOF point.
-  /// For other elements, this is always 1.
+  /// Block size of the finite element function space. For
+  /// VectorElements and TensorElements, this is the number of DOFs
+  /// colocated at each DOF point. For other elements, this is always 1.
   /// @return Block size of the finite element space
   int block_size() const noexcept;
 
@@ -82,18 +82,9 @@ public:
   std::string family() const noexcept;
 
   /// Evaluate all basis functions at given points in reference cell
-  // reference_values[num_points][num_dofs][reference_value_size]
+  /// reference_values[num_points][num_dofs][reference_value_size]
   void evaluate_reference_basis(xt::xtensor<double, 3>& values,
                                 const xt::xtensor<double, 2>& X) const;
-
-  /// Evaluate all basis function derivatives of given order at given points in
-  /// reference cell
-  // reference_value_derivatives[num_points][num_dofs][reference_value_size][num_derivatives]
-  // void
-  // evaluate_reference_basis_derivatives(std::vector<double>& reference_values,
-  //                                      int order,
-  //                                      const xt::xtensor<double, 2>& X)
-  //                                      const;
 
   /// Push basis functions forward to physical element
   void transform_reference_basis(xt::xtensor<double, 3>& values,
