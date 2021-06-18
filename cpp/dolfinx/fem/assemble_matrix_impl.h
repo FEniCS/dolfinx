@@ -133,8 +133,8 @@ void assemble_matrix(
 
   const bool needs_transformation_data
       = element0->needs_dof_transformations()
-        || element1->needs_dof_transformations()
-        || a.needs_facet_permutations();
+        or element1->needs_dof_transformations()
+        or a.needs_facet_permutations();
   if (needs_transformation_data)
     mesh->topology_mutable().create_entity_permutations();
   const std::vector<std::uint32_t>& cell_info

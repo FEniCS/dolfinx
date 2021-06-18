@@ -15,17 +15,20 @@ using namespace dolfinx::fem;
 
 namespace
 {
-// Check if an element is a basix element (or a blocked element containing a
-// Basix element)
+// Check if an element is a basix element (or a blocked element
+// containing a Basix element)
 bool is_basix_element(const ufc_finite_element& element)
 {
   if (element.element_type == ufc_basix_element)
     return true;
-  if (element.element_type == ufc_blocked_element)
-    // TODO: what should happen if the element is a blocked element containing a
-    // blocked element containing a Basix element?
+  else if (element.element_type == ufc_blocked_element)
+  {
+    // TODO: what should happen if the element is a blocked element
+    // containing a blocked element containing a Basix element?
     return element.sub_elements[0]->element_type == ufc_basix_element;
-  return false;
+  }
+  else
+    return false;
 }
 
 // Recursively extract sub finite element
@@ -127,8 +130,10 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
     ufc_finite_element* ufc_sub_element = ufc_element.sub_elements[i];
     _sub_elements.push_back(std::make_shared<FiniteElement>(*ufc_sub_element));
     if (_sub_elements[i]->needs_dof_permutations()
-        && !_needs_dof_transformations)
+        and !_needs_dof_transformations)
+    {
       _needs_dof_permutations = true;
+    }
     if (_sub_elements[i]->needs_dof_transformations())
     {
       _needs_dof_permutations = false;
@@ -141,12 +146,14 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
     // FIXME: Find a better way than strings to initialise this Basix element
     _element = std::make_unique<basix::FiniteElement>(basix::create_element(
         _family.c_str(), cell_shape.c_str(), ufc_element.degree));
+
     _needs_dof_transformations
         = !_element->dof_transformations_are_identity()
-          && !_element->dof_transformations_are_permutations();
+          and !_element->dof_transformations_are_permutations();
+
     _needs_dof_permutations
         = !_element->dof_transformations_are_identity()
-          && _element->dof_transformations_are_permutations();
+          and _element->dof_transformations_are_permutations();
   }
 }
 //-----------------------------------------------------------------------------
@@ -199,16 +206,6 @@ void FiniteElement::evaluate_reference_basis(
     }
   }
 }
-//-----------------------------------------------------------------------------
-// void FiniteElement::evaluate_reference_basis_derivatives(
-//     std::vector<double>& /*values*/, int /*order*/,
-//     const xt::xtensor<double, 2>& /*X*/) const
-// {
-//   // NOTE: This function is untested. Add tests and re-active
-//   throw std::runtime_error(
-//       "FiniteElement::evaluate_reference_basis_derivatives required
-//       updating");
-// }
 //-----------------------------------------------------------------------------
 void FiniteElement::transform_reference_basis(
     xt::xtensor<double, 3>& values,
@@ -291,9 +288,10 @@ FiniteElement::get_dof_permutation_function(bool inverse,
 {
   if (!needs_dof_permutations())
   {
-    // If this element shouldn't be permuted, return a function that throws an
-    // error
-    return [](xtl::span<std::int32_t>, std::uint32_t) {
+    // If this element shouldn't be permuted, return a function that
+    // throws an error
+    return [](xtl::span<std::int32_t>, std::uint32_t)
+    {
       throw std::runtime_error(
           "Permutations should not be applied for this element.");
     };
@@ -315,7 +313,8 @@ FiniteElement::get_dof_permutation_function(bool inverse,
       }
 
       return [dims, sub_element_functions](xtl::span<std::int32_t> doflist,
-                                           std::uint32_t cell_permutation) {
+                                           std::uint32_t cell_permutation)
+      {
         std::size_t start = 0;
         for (std::size_t e = 0; e < sub_element_functions.size(); ++e)
         {
@@ -334,17 +333,15 @@ FiniteElement::get_dof_permutation_function(bool inverse,
 
   if (inverse)
   {
-    return [this](xtl::span<std::int32_t> doflist,
-                  std::uint32_t cell_permutation) {
-      unpermute_dofs(doflist, cell_permutation);
-    };
+    return
+        [this](xtl::span<std::int32_t> doflist, std::uint32_t cell_permutation)
+    { unpermute_dofs(doflist, cell_permutation); };
   }
   else
   {
-    return [this](xtl::span<std::int32_t> doflist,
-                  std::uint32_t cell_permutation) {
-      permute_dofs(doflist, cell_permutation);
-    };
+    return
+        [this](xtl::span<std::int32_t> doflist, std::uint32_t cell_permutation)
+    { permute_dofs(doflist, cell_permutation); };
   }
 }
 //-----------------------------------------------------------------------------

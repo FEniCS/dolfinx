@@ -28,12 +28,11 @@ T assemble_scalar(const fem::Form<T>& M, const xtl::span<const T>& constants,
 
 /// Assemble functional over cells
 template <typename T>
-T assemble_cells(
-    const mesh::Geometry& geometry,
-    const xtl::span<const std::int32_t>& active_cells,
-    const std::function<void(T*, const T*, const T*, const double*, const int*,
-                             const std::uint8_t*)>& fn,
-    const xtl::span<const T>& constants, const array2d<T>& coeffs);
+T assemble_cells(const mesh::Geometry& geometry,
+                 const xtl::span<const std::int32_t>& active_cells,
+                 const std::function<void(T*, const T*, const T*, const double*,
+                                          const int*, const std::uint8_t*)>& fn,
+                 const xtl::span<const T>& constants, const array2d<T>& coeffs);
 
 /// Execute kernel over exterior facets and accumulate result
 template <typename T>
@@ -69,9 +68,8 @@ T assemble_scalar(const fem::Form<T>& M, const xtl::span<const T>& constants,
     const auto& fn = M.kernel(IntegralType::cell, i);
     const std::vector<std::int32_t>& active_cells
         = M.domains(IntegralType::cell, i);
-    value += impl::assemble_cells(
-        mesh->geometry(), active_cells, fn, constants,
-        coeffs);
+    value += impl::assemble_cells(mesh->geometry(), active_cells, fn, constants,
+                                  coeffs);
   }
 
   if (M.num_integrals(IntegralType::exterior_facet) > 0
@@ -90,8 +88,8 @@ T assemble_scalar(const fem::Form<T>& M, const xtl::span<const T>& constants,
       const auto& fn = M.kernel(IntegralType::exterior_facet, i);
       const std::vector<std::int32_t>& active_facets
           = M.domains(IntegralType::exterior_facet, i);
-      value += impl::assemble_exterior_facets(
-          *mesh, active_facets, fn, constants, coeffs, perms);
+      value += impl::assemble_exterior_facets(*mesh, active_facets, fn,
+                                              constants, coeffs, perms);
     }
 
     const std::vector<int> c_offsets = M.coefficient_offsets();
@@ -100,9 +98,8 @@ T assemble_scalar(const fem::Form<T>& M, const xtl::span<const T>& constants,
       const auto& fn = M.kernel(IntegralType::interior_facet, i);
       const std::vector<std::int32_t>& active_facets
           = M.domains(IntegralType::interior_facet, i);
-      value += impl::assemble_interior_facets(*mesh, active_facets, fn,
-                                              constants, coeffs, c_offsets,
-                                              perms);
+      value += impl::assemble_interior_facets(
+          *mesh, active_facets, fn, constants, coeffs, c_offsets, perms);
     }
   }
 
@@ -110,12 +107,11 @@ T assemble_scalar(const fem::Form<T>& M, const xtl::span<const T>& constants,
 }
 //-----------------------------------------------------------------------------
 template <typename T>
-T assemble_cells(
-    const mesh::Geometry& geometry,
-    const xtl::span<const std::int32_t>& active_cells,
-    const std::function<void(T*, const T*, const T*, const double*, const int*,
-                             const std::uint8_t*)>& fn,
-    const xtl::span<const T>& constants, const array2d<T>& coeffs)
+T assemble_cells(const mesh::Geometry& geometry,
+                 const xtl::span<const std::int32_t>& active_cells,
+                 const std::function<void(T*, const T*, const T*, const double*,
+                                          const int*, const std::uint8_t*)>& fn,
+                 const xtl::span<const T>& constants, const array2d<T>& coeffs)
 {
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
@@ -129,8 +125,6 @@ T assemble_cells(
 
   // Iterate over all cells
   T value(0);
-
-  // std::vector<T> coeff_cell(coeffs.shape[1]);
   for (std::int32_t c : active_cells)
   {
     // Get cell coordinates/geometry
@@ -141,10 +135,7 @@ T assemble_cells(
                   std::next(coordinate_dofs.begin(), 3 * i));
     }
 
-    // std::copy(coeffs.row(c).begin(), coeffs.row(c).end().
-    // coeff_cell.begin());
     auto coeff_cell = coeffs.row(c);
-
     fn(&value, coeff_cell.data(), constants.data(), coordinate_dofs.data(),
        nullptr, nullptr);
   }

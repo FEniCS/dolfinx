@@ -439,8 +439,8 @@ array2d<typename U::scalar_type> pack_coefficients(const U& u)
           }
         }
         apply_transpose_dof_transformation(
-            tcb::make_span(c.row(cell))
-                .subspan(offsets[coeff], elements[coeff]->space_dimension()),
+            c.row(cell).subspan(offsets[coeff],
+                                elements[coeff]->space_dimension()),
             cell_info[cell], 1);
       }
     }
@@ -459,11 +459,9 @@ std::vector<typename U::scalar_type> pack_constants(const U& u)
       = u.constants();
 
   // Calculate size of array needed to store packed constants
-  std::int32_t size
-      = std::accumulate(constants.begin(), constants.end(), 0,
-                        [](std::int32_t sum, const auto& constant) {
-                          return sum + constant->value.size();
-                        });
+  std::int32_t size = std::accumulate(constants.begin(), constants.end(), 0,
+                                      [](std::int32_t sum, const auto& constant)
+                                      { return sum + constant->value.size(); });
 
   // Pack constants
   std::vector<T> constant_values(size);
