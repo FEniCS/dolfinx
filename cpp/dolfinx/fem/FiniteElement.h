@@ -349,7 +349,7 @@ public:
     if (!needs_dof_transformations())
     {
       // If no permutation needed, return function that does nothing
-      return [](xtl::span<T>, const xtl::span<const std::uint32_t>,
+      return [](xtl::span<T>, const xtl::span<const std::uint32_t>&,
                 const std::int32_t, const int) {};
     }
     else if (_sub_elements.size() != 0)
