@@ -15,7 +15,6 @@
 
 namespace dolfinx::fem
 {
-
 template <typename T>
 class DirichletBC;
 template <typename T>

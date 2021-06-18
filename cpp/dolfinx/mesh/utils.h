@@ -12,14 +12,12 @@
 #include <functional>
 #include <xtl/xspan.hpp>
 
-namespace dolfinx
-{
-namespace fem
+namespace dolfinx::fem
 {
 class ElementDofLayout;
 }
 
-namespace mesh
+namespace dolfinx::mesh
 {
 enum class CellType;
 enum class GhostMode : int;
@@ -142,5 +140,4 @@ partition_cells_graph(MPI_Comm comm, int n, int tdim,
                       mesh::GhostMode ghost_mode,
                       const graph::partition_fn& partfn);
 
-} // namespace mesh
-} // namespace dolfinx
+} // namespace dolfinx::mesh

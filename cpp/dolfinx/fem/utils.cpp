@@ -187,18 +187,19 @@ std::vector<std::string> fem::get_constant_names(const ufc_form& ufc_form)
   return constants;
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<fem::FunctionSpace>
-fem::create_functionspace(ufc_function_space* (*fptr)(const char*),
-                          const std::string function_name,
-                          std::shared_ptr<mesh::Mesh> mesh)
+std::shared_ptr<fem::FunctionSpace> fem::create_functionspace(
+    ufc_function_space* (*fptr)(const char*), const std::string function_name,
+    std::shared_ptr<mesh::Mesh> mesh,
+    const std::function<std::vector<int>(
+        const graph::AdjacencyList<std::int32_t>&)>& reorder_fn)
 {
   ufc_function_space* space = fptr(function_name.c_str());
   ufc_dofmap* ufc_map = space->dofmap;
   ufc_finite_element* ufc_element = space->finite_element;
   auto V = std::make_shared<fem::FunctionSpace>(
       mesh, std::make_shared<fem::FiniteElement>(*ufc_element),
-      std::make_shared<fem::DofMap>(
-          fem::create_dofmap(mesh->mpi_comm(), *ufc_map, mesh->topology())));
+      std::make_shared<fem::DofMap>(fem::create_dofmap(
+          mesh->mpi_comm(), *ufc_map, mesh->topology(), reorder_fn)));
 
   return V;
 }

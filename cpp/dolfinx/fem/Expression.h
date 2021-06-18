@@ -14,10 +14,7 @@
 #include <xtensor/xarray.hpp>
 #include <xtl/xspan.hpp>
 
-namespace dolfinx
-{
-
-namespace fem
+namespace dolfinx::fem
 {
 template <typename T>
 class Constant;
@@ -199,5 +196,4 @@ private:
   // Evaluation size
   std::size_t _value_size;
 };
-} // namespace fem
-} // namespace dolfinx
+} // namespace dolfinx::fem

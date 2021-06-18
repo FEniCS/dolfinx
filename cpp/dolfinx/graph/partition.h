@@ -15,6 +15,7 @@
 #include <mpi.h>
 #include <utility>
 #include <vector>
+#include <xtl/xspan.hpp>
 
 namespace dolfinx::graph
 {
@@ -80,8 +81,8 @@ distribute(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& list,
 /// @return Indexing of ghosts in a global space starting from 0 on process 0
 std::vector<std::int64_t>
 compute_ghost_indices(MPI_Comm comm,
-                      const std::vector<std::int64_t>& global_indices,
-                      const std::vector<int>& ghost_owners);
+                      const xtl::span<const std::int64_t>& global_indices,
+                      const xtl::span<const int>& ghost_owners);
 
 /// Distribute data to process ranks where it it required
 ///
@@ -94,7 +95,7 @@ compute_ghost_indices(MPI_Comm comm,
 /// @return The data for each index in @p indices
 template <typename T>
 xt::xtensor<T, 2> distribute_data(MPI_Comm comm,
-                                  const std::vector<std::int64_t>& indices,
+                                  const xtl::span<const std::int64_t>& indices,
                                   const xt::xtensor<T, 2>& x);
 
 /// Given an adjacency list with global, possibly non-contiguous, link
@@ -121,8 +122,8 @@ compute_local_to_global_links(const graph::AdjacencyList<std::int64_t>& global,
 ///   indices
 /// @return Map from local0 indices to local1 indices
 std::vector<std::int32_t>
-compute_local_to_local(const std::vector<std::int64_t>& local0_to_global,
-                       const std::vector<std::int64_t>& local1_to_global);
+compute_local_to_local(const xtl::span<const std::int64_t>& local0_to_global,
+                       const xtl::span<const std::int64_t>& local1_to_global);
 } // namespace build
 
 //---------------------------------------------------------------------------
@@ -130,7 +131,8 @@ compute_local_to_local(const std::vector<std::int64_t>& local0_to_global,
 //---------------------------------------------------------------------------
 template <typename T>
 xt::xtensor<T, 2>
-build::distribute_data(MPI_Comm comm, const std::vector<std::int64_t>& indices,
+build::distribute_data(MPI_Comm comm,
+                       const xtl::span<const std::int64_t>& indices,
                        const xt::xtensor<T, 2>& x)
 {
   common::Timer timer("Fetch float data from remote processes");

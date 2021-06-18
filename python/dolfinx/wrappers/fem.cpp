@@ -112,7 +112,7 @@ void fem(py::module& m)
          dolfinx::mesh::Topology& topology)
       {
         const ufc_dofmap* p = reinterpret_cast<const ufc_dofmap*>(dofmap);
-        return dolfinx::fem::create_dofmap(comm.get(), *p, topology);
+        return dolfinx::fem::create_dofmap(comm.get(), *p, topology, nullptr);
       },
       "Create DofMap object from a pointer to ufc_dofmap.");
   m.def(
