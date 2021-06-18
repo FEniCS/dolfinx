@@ -166,9 +166,9 @@ FunctionSpace::tabulate_dof_coordinates(bool transpose) const
   const std::vector<std::uint32_t>& cell_info
       = needs_dof_transformations
             ? _mesh->topology().get_cell_permutation_info()
-            : std::vector<std::uint32_t>(num_cells);
+            : std::vector<std::uint32_t>(0);
 
-  std::function<void(xtl::span<double>, std::uint32_t, int)>
+  std::function<void(xtl::span<double>, xtl::span<std::uint32_t>, int, int)>
       apply_dof_transformation
       = _element->get_dof_transformation_function<double>();
 
@@ -187,7 +187,7 @@ FunctionSpace::tabulate_dof_coordinates(bool transpose) const
 
     // Tabulate dof coordinates on cell
     cmap.push_forward(x, coordinate_dofs, phi);
-    apply_dof_transformation(xtl::span(x.data(), x.size()), cell_info[c],
+    apply_dof_transformation(xtl::span(x.data(), x.size()), cell_info, c,
                              x.shape(1));
 
     // Get cell dofmap
