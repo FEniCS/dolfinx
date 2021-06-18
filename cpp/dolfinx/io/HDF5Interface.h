@@ -16,10 +16,7 @@
 #include <string>
 #include <vector>
 
-namespace dolfinx
-{
-
-namespace io
+namespace dolfinx::io
 {
 
 /// This class provides an interface to some HDF5 functionality
@@ -363,5 +360,4 @@ HDF5Interface::read_dataset(const hid_t file_handle,
 }
 //---------------------------------------------------------------------------
 /// @endcond
-} // namespace io
-} // namespace dolfinx
+} // namespace dolfinx::io

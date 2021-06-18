@@ -139,9 +139,9 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
 fem::DofMap
 fem::create_dofmap(MPI_Comm comm, const ufc_dofmap& ufc_dofmap,
                    mesh::Topology& topology,
-                   std::shared_ptr<const dolfinx::fem::FiniteElement> element,
                    const std::function<std::vector<int>(
-                       const graph::AdjacencyList<std::int32_t>&)>& reorder_fn)
+                       const graph::AdjacencyList<std::int32_t>&)>& reorder_fn,
+                   std::shared_ptr<const dolfinx::fem::FiniteElement> element)
 {
   auto element_dof_layout = std::make_shared<ElementDofLayout>(
       create_element_dof_layout(ufc_dofmap, topology.cell_type()));
@@ -206,10 +206,11 @@ std::vector<std::string> fem::get_constant_names(const ufc_form& ufc_form)
   return constants;
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<fem::FunctionSpace>
-fem::create_functionspace(ufc_function_space* (*fptr)(const char*),
-                          const std::string function_name,
-                          std::shared_ptr<mesh::Mesh> mesh)
+std::shared_ptr<fem::FunctionSpace> fem::create_functionspace(
+    ufc_function_space* (*fptr)(const char*), const std::string function_name,
+    std::shared_ptr<mesh::Mesh> mesh,
+    const std::function<std::vector<int>(
+        const graph::AdjacencyList<std::int32_t>&)>& reorder_fn)
 {
   ufc_function_space* space = fptr(function_name.c_str());
   ufc_dofmap* ufc_map = space->dofmap;
@@ -218,11 +219,10 @@ fem::create_functionspace(ufc_function_space* (*fptr)(const char*),
   std::shared_ptr<const fem::FiniteElement> element
       = std::make_shared<fem::FiniteElement>(*ufc_element);
 
-  std::shared_ptr<const fem::DofMap> dofmap
-      = std::make_shared<fem::DofMap>(fem::create_dofmap(
-          mesh->mpi_comm(), *ufc_map, mesh->topology(), element));
-
-  auto V = std::make_shared<fem::FunctionSpace>(mesh, element, dofmap);
+  auto V = std::make_shared<fem::FunctionSpace>(
+      mesh, element,
+      std::make_shared<fem::DofMap>(fem::create_dofmap(
+          mesh->mpi_comm(), *ufc_map, mesh->topology(), reorder_fn, element)));
 
   return V;
 }

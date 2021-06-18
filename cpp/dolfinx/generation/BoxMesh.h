@@ -13,16 +13,13 @@
 #include <dolfinx/mesh/cell_types.h>
 #include <mpi.h>
 
-namespace dolfinx
-{
-
-namespace fem
+namespace dolfinx::fem
 {
 class CoordinateElement;
 }
 
 /// Right cuboid mesh creation
-namespace generation::BoxMesh
+namespace dolfinx::generation::BoxMesh
 {
 
 /// Create a uniform mesh::Mesh over the rectangular prism spanned by the
@@ -48,5 +45,4 @@ create(MPI_Comm comm, const std::array<std::array<double, 3>, 2>& p,
        = static_cast<graph::AdjacencyList<std::int32_t> (*)(
            MPI_Comm, int, int, const graph::AdjacencyList<std::int64_t>&,
            mesh::GhostMode)>(&mesh::partition_cells_graph));
-} // namespace generation::BoxMesh
-} // namespace dolfinx
+} // namespace dolfinx::generation::BoxMesh
