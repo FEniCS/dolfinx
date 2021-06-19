@@ -178,8 +178,8 @@ fem::create_dofmap(MPI_Comm comm, const ufc_dofmap& ufc_dofmap,
     const std::vector<std::uint32_t>& cell_info
         = topology.get_cell_permutation_info();
 
-    std::function<void(xtl::span<std::int32_t>, std::uint32_t)> unpermute_dofs
-        = element->get_dof_permutation_function(true, true);
+    const std::function<void(const xtl::span<std::int32_t>&, std::uint32_t)>
+        unpermute_dofs = element->get_dof_permutation_function(true, true);
     for (std::int32_t cell = 0; cell < num_cells; ++cell)
       unpermute_dofs(dofmap.links(cell), cell_info[cell]);
   }
