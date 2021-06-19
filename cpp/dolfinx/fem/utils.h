@@ -437,13 +437,14 @@ array2d<typename U::scalar_type> pack_coefficients(const U& u)
       for (int cell = 0; cell < num_cells; ++cell)
       {
         auto dofs = dofmaps[coeff]->cell_dofs(cell);
+        auto cell_coeff = c.row(cell).subspan(offset, space_dim);
         for (std::size_t i = 0; i < dofs.size(); ++i)
         {
+          const int pos = _bs * dofs[i];
           for (int k = 0; k < _bs; ++k)
-            c(cell, _bs * i + k + offset) = _v[_bs * dofs[i] + k];
+            cell_coeff[_bs * i + k] = _v[pos + k];
         }
-        apply_transpose_dof_transformation(
-            c.row(cell).subspan(offset, space_dim), cell_info, cell, 1);
+        apply_transpose_dof_transformation(cell_coeff, cell_info, cell, 1);
       }
     }
   }
