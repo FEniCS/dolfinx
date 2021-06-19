@@ -851,9 +851,10 @@ void lift_bc(xtl::span<T> b, const Form<T>& a,
         || a.needs_facet_permutations();
   if (needs_transformation_data)
     mesh->topology_mutable().create_entity_permutations();
-  const std::vector<std::uint32_t>& cell_info
+  const std::vector<std::uint32_t>& _cell_info
       = needs_transformation_data ? mesh->topology().get_cell_permutation_info()
                                   : std::vector<std::uint32_t>(0);
+  const xtl::span cell_info(_cell_info.data(), _cell_info.size());
 
   std::function<void(const xtl::span<T>&, const xtl::span<const std::uint32_t>&,
                      std::int32_t, int)>
