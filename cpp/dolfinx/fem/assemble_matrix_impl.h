@@ -435,11 +435,13 @@ void assemble_matrix(
       = a.function_spaces().at(0)->element();
   std::shared_ptr<const fem::FiniteElement> element1
       = a.function_spaces().at(1)->element();
-  std::function<void(const xtl::span<T>&, const xtl::span<const std::uint32_t>&,
-                     std::int32_t, int)>
+  const std::function<void(const xtl::span<T>&,
+                           const xtl::span<const std::uint32_t>&, std::int32_t,
+                           int)>
       apply_dof_transformation = element0->get_dof_transformation_function<T>();
-  std::function<void(const xtl::span<T>&, const xtl::span<const std::uint32_t>&,
-                     std::int32_t, int)>
+  const std::function<void(const xtl::span<T>&,
+                           const xtl::span<const std::uint32_t>&, std::int32_t,
+                           int)>
       apply_dof_transformation_to_transpose
       = element1->get_dof_transformation_to_transpose_function<T>();
 

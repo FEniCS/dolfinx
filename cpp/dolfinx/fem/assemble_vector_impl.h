@@ -856,11 +856,13 @@ void lift_bc(xtl::span<T> b, const Form<T>& a,
                                   : std::vector<std::uint32_t>(0);
   const xtl::span cell_info(_cell_info.data(), _cell_info.size());
 
-  std::function<void(const xtl::span<T>&, const xtl::span<const std::uint32_t>&,
-                     std::int32_t, int)>
+  const std::function<void(const xtl::span<T>&,
+                           const xtl::span<const std::uint32_t>&, std::int32_t,
+                           int)>
       apply_dof_transformation = element0->get_dof_transformation_function<T>();
-  std::function<void(const xtl::span<T>&, const xtl::span<const std::uint32_t>&,
-                     std::int32_t, int)>
+  const std::function<void(const xtl::span<T>&,
+                           const xtl::span<const std::uint32_t>&, std::int32_t,
+                           int)>
       apply_dof_transformation_to_transpose
       = element1->get_dof_transformation_to_transpose_function<T>();
 
@@ -1030,8 +1032,9 @@ void assemble_vector(xtl::span<T> b, const Form<T>& L,
   const graph::AdjacencyList<std::int32_t>& dofs = dofmap->list();
   const int bs = dofmap->bs();
 
-  std::function<void(const xtl::span<T>&, const xtl::span<const std::uint32_t>&,
-                     std::int32_t, int)>
+  const std::function<void(const xtl::span<T>&,
+                           const xtl::span<const std::uint32_t>&, std::int32_t,
+                           int)>
       apply_dof_transformation = element->get_dof_transformation_function<T>();
 
   const bool needs_transformation_data

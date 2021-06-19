@@ -272,9 +272,9 @@ public:
       else if (!scalar_element)
       {
         // Vector element
-        std::function<void(const xtl::span<T>&,
-                           const xtl::span<const std::uint32_t>&, std::int32_t,
-                           int)>
+        const std::function<void(const xtl::span<T>&,
+                                 const xtl::span<const std::uint32_t>&,
+                                 std::int32_t, int)>
             sub_function = _sub_elements[0]->get_dof_transformation_function<T>(
                 inverse, transpose);
         const int ebs = _bs;
@@ -393,9 +393,9 @@ public:
       else if (!scalar_element)
       {
         // Vector element
-        std::function<void(const xtl::span<T>&,
-                           const xtl::span<const std::uint32_t>&, std::int32_t,
-                           int)>
+        const std::function<void(const xtl::span<T>&,
+                                 const xtl::span<const std::uint32_t>&,
+                                 std::int32_t, int)>
             sub_function = _sub_elements[0]->get_dof_transformation_function<T>(
                 inverse, transpose);
         return [this,

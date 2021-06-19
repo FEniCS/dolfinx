@@ -168,8 +168,9 @@ FunctionSpace::tabulate_dof_coordinates(bool transpose) const
             ? _mesh->topology().get_cell_permutation_info()
             : std::vector<std::uint32_t>(0);
 
-  std::function<void(const xtl::span<double>&,
-                     const xtl::span<const std::uint32_t>&, std::int32_t, int)>
+  const std::function<void(const xtl::span<double>&,
+                           const xtl::span<const std::uint32_t>&, std::int32_t,
+                           int)>
       apply_dof_transformation
       = _element->get_dof_transformation_function<double>();
 
