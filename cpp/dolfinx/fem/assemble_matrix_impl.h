@@ -449,11 +449,12 @@ void assemble_matrix(
       = element0->needs_dof_transformations()
         or element1->needs_dof_transformations()
         or a.needs_facet_permutations();
+  xtl::span<const std::uint32_t> cell_info;
   if (needs_transformation_data)
+  {
     mesh->topology_mutable().create_entity_permutations();
-  const std::vector<std::uint32_t>& cell_info
-      = needs_transformation_data ? mesh->topology().get_cell_permutation_info()
-                                  : std::vector<std::uint32_t>(0);
+    cell_info = xtl::span(mesh->topology().get_cell_permutation_info());
+  }
 
   for (int i : a.integral_ids(IntegralType::cell))
   {

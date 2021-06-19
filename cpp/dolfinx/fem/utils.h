@@ -418,11 +418,9 @@ array2d<typename U::scalar_type> pack_coefficients(const U& u)
       }
     }
 
-    const std::vector<std::uint32_t>& _cell_info
-        = needs_dof_transformations
-              ? mesh->topology().get_cell_permutation_info()
-              : std::vector<std::uint32_t>(0);
-    const xtl::span cell_info(_cell_info);
+    xtl::span<const std::uint32_t> cell_info;
+    if (needs_dof_transformations)
+      cell_info = xtl::span(mesh->topology().get_cell_permutation_info());
     for (std::size_t coeff = 0; coeff < dofmaps.size(); ++coeff)
     {
       const std::function<void(const xtl::span<T>&,
