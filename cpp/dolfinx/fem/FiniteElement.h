@@ -253,7 +253,7 @@ public:
 
         return [dims, sub_element_functions](
                    xtl::span<T> data,
-                   const xtl::span<const std::uint32_t> cell_info,
+                   const xtl::span<const std::uint32_t>& cell_info,
                    const std::int32_t cell, const int block_size)
         {
           std::size_t start = 0;
@@ -276,7 +276,7 @@ public:
         const int ebs = _bs;
         return
             [ebs, sub_function](xtl::span<T> data,
-                                const xtl::span<const std::uint32_t> cell_info,
+                                const xtl::span<const std::uint32_t>& cell_info,
                                 const std::int32_t cell,
                                 const int data_block_size)
         { sub_function(data, cell_info, cell, ebs * data_block_size); };

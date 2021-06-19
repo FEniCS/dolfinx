@@ -42,13 +42,13 @@ void _lift_bc_cells(
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*)>& kernel,
     const xtl::span<const std::int32_t>& active_cells,
-    std::function<void(xtl::span<T>, const xtl::span<const std::uint32_t>,
-                       const std::int32_t, const int)>
-        apply_dof_transformation,
+    const std::function<
+        void(xtl::span<T>, const xtl::span<const std::uint32_t>&,
+             const std::int32_t, const int)>& apply_dof_transformation,
     const graph::AdjacencyList<std::int32_t>& dofmap0, int bs0,
-    std::function<void(xtl::span<T>, const xtl::span<const std::uint32_t>,
-                       const std::int32_t, const int)>
-        apply_dof_transformation_to_transpose,
+    const std::function<void(
+        xtl::span<T>, const xtl::span<const std::uint32_t>&, const std::int32_t,
+        const int)>& apply_dof_transformation_to_transpose,
     const graph::AdjacencyList<std::int32_t>& dofmap1, int bs1,
     const xtl::span<const T>& constants, const array2d<T>& coeffs,
     const xtl::span<const std::uint32_t>& cell_info,
@@ -196,13 +196,13 @@ void _lift_bc_exterior_facets(
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*)>& kernel,
     const xtl::span<const std::int32_t>& active_facets,
-    std::function<void(xtl::span<T>, const xtl::span<const std::uint32_t>,
-                       const std::int32_t, const int)>
-        apply_dof_transformation,
+    const std::function<
+        void(xtl::span<T>, const xtl::span<const std::uint32_t>&,
+             const std::int32_t, const int)>& apply_dof_transformation,
     const graph::AdjacencyList<std::int32_t>& dofmap0, int bs0,
-    std::function<void(xtl::span<T>, const xtl::span<const std::uint32_t>,
-                       const std::int32_t, const int)>
-        apply_dof_transformation_to_transpose,
+    const std::function<void(
+        xtl::span<T>, const xtl::span<const std::uint32_t>&, const std::int32_t,
+        const int)>& apply_dof_transformation_to_transpose,
     const graph::AdjacencyList<std::int32_t>& dofmap1, int bs1,
     const xtl::span<const T>& constants, const array2d<T>& coeffs,
     const xtl::span<const std::uint32_t>& cell_info,
@@ -324,13 +324,13 @@ void _lift_bc_interior_facets(
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*)>& kernel,
     const xtl::span<const std::int32_t>& active_facets,
-    std::function<void(xtl::span<T>, const xtl::span<const std::uint32_t>,
-                       const std::int32_t, const int)>
-        apply_dof_transformation,
+    const std::function<
+        void(xtl::span<T>, const xtl::span<const std::uint32_t>&,
+             const std::int32_t, const int)>& apply_dof_transformation,
     const graph::AdjacencyList<std::int32_t>& dofmap0, int bs0,
-    std::function<void(xtl::span<T>, const xtl::span<const std::uint32_t>,
-                       const std::int32_t, const int)>
-        apply_dof_transformation_to_transpose,
+    const std::function<void(
+        xtl::span<T>, const xtl::span<const std::uint32_t>&, const std::int32_t,
+        const int)>& apply_dof_transformation_to_transpose,
     const graph::AdjacencyList<std::int32_t>& dofmap1, int bs1,
     const xtl::span<const T>& constants, const array2d<T>& coeffs,
     const std::vector<int>& offsets,
@@ -532,9 +532,9 @@ void _lift_bc_interior_facets(
 /// has performance benefits.
 template <typename T, int _bs = -1>
 void assemble_cells(
-    std::function<void(xtl::span<T>, const xtl::span<const std::uint32_t>,
-                       const std::int32_t, const int)>
-        apply_dof_transformation,
+    const std::function<
+        void(xtl::span<T>, const xtl::span<const std::uint32_t>&,
+             const std::int32_t, const int)>& apply_dof_transformation,
     xtl::span<T> b, const mesh::Geometry& geometry,
     const xtl::span<const std::int32_t>& active_cells,
     const graph::AdjacencyList<std::int32_t>& dofmap, int bs,
@@ -557,6 +557,7 @@ void assemble_cells(
   const int num_dofs = dofmap.links(0).size();
   std::vector<double> coordinate_dofs(3 * num_dofs_g);
   std::vector<T> be(bs * num_dofs);
+  xtl::span<T> _be(be);
 
   // Iterate over active cells
   for (std::int32_t c : active_cells)
@@ -573,7 +574,7 @@ void assemble_cells(
     std::fill(be.begin(), be.end(), 0);
     kernel(be.data(), coeffs.row(c).data(), constants.data(),
            coordinate_dofs.data(), nullptr, nullptr);
-    apply_dof_transformation(be, cell_info, c, 1);
+    apply_dof_transformation(_be, cell_info, c, 1);
 
     // Scatter cell vector to 'global' vector array
     auto dofs = dofmap.links(c);
@@ -600,9 +601,9 @@ void assemble_cells(
 /// has performance benefits.
 template <typename T, int _bs = -1>
 void assemble_exterior_facets(
-    std::function<void(xtl::span<T>, const xtl::span<const std::uint32_t>,
-                       const std::int32_t, const int)>
-        apply_dof_transformation,
+    const std::function<
+        void(xtl::span<T>, const xtl::span<const std::uint32_t>&,
+             const std::int32_t, const int)>& apply_dof_transformation,
     xtl::span<T> b, const mesh::Mesh& mesh,
     const xtl::span<const std::int32_t>& active_facets,
     const graph::AdjacencyList<std::int32_t>& dofmap, const int bs,
@@ -686,9 +687,9 @@ void assemble_exterior_facets(
 /// has performance benefits.
 template <typename T, int _bs = -1>
 void assemble_interior_facets(
-    std::function<void(xtl::span<T>, const xtl::span<const std::uint32_t>,
-                       const std::int32_t, const int)>
-        apply_dof_transformation,
+    const std::function<
+        void(xtl::span<T>, const xtl::span<const std::uint32_t>&,
+             const std::int32_t, const int)>& apply_dof_transformation,
     xtl::span<T> b, const mesh::Mesh& mesh,
     const xtl::span<const std::int32_t>& active_facets,
     const fem::DofMap& dofmap,
@@ -853,10 +854,10 @@ void lift_bc(xtl::span<T> b, const Form<T>& a,
       = needs_transformation_data ? mesh->topology().get_cell_permutation_info()
                                   : std::vector<std::uint32_t>(0);
 
-  std::function<void(xtl::span<T>, const xtl::span<const std::uint32_t>,
+  std::function<void(xtl::span<T>, const xtl::span<const std::uint32_t>&,
                      const std::int32_t, const int)>
       apply_dof_transformation = element0->get_dof_transformation_function<T>();
-  std::function<void(xtl::span<T>, const xtl::span<const std::uint32_t>,
+  std::function<void(xtl::span<T>, const xtl::span<const std::uint32_t>&,
                      const std::int32_t, const int)>
       apply_dof_transformation_to_transpose
       = element1->get_dof_transformation_to_transpose_function<T>();
@@ -1031,7 +1032,7 @@ void assemble_vector(xtl::span<T> b, const Form<T>& L,
   const graph::AdjacencyList<std::int32_t>& dofs = dofmap->list();
   const int bs = dofmap->bs();
 
-  std::function<void(xtl::span<T>, const xtl::span<const std::uint32_t>,
+  std::function<void(xtl::span<T>, const xtl::span<const std::uint32_t>&,
                      const std::int32_t, const int)>
       apply_dof_transformation = element->get_dof_transformation_function<T>();
 

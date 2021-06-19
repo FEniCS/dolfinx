@@ -63,13 +63,13 @@ void assemble_exterior_facets(
     const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                             const std::int32_t*, const T*)>& mat_set_values,
     const mesh::Mesh& mesh, const xtl::span<const std::int32_t>& active_facets,
-    std::function<void(xtl::span<T>, const xtl::span<const std::uint32_t>,
-                       const std::int32_t, const int)>
-        apply_dof_transformation,
+    const std::function<
+        void(xtl::span<T>, const xtl::span<const std::uint32_t>&,
+             const std::int32_t, const int)>& apply_dof_transformation,
     const graph::AdjacencyList<std::int32_t>& dofmap0, int bs0,
-    std::function<void(xtl::span<T>, const xtl::span<const std::uint32_t>,
-                       const std::int32_t, const int)>
-        apply_dof_transformation_to_transpose,
+    const std::function<void(
+        xtl::span<T>, const xtl::span<const std::uint32_t>&, const std::int32_t,
+        const int)>& apply_dof_transformation_to_transpose,
     const graph::AdjacencyList<std::int32_t>& dofmap1, int bs1,
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
@@ -84,13 +84,13 @@ void assemble_interior_facets(
     const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                             const std::int32_t*, const T*)>& mat_set_values,
     const mesh::Mesh& mesh, const xtl::span<const std::int32_t>& active_facets,
-    std::function<void(xtl::span<T>, const xtl::span<const std::uint32_t>,
-                       const std::int32_t, const int)>
-        apply_dof_transformation,
+    const std::function<
+        void(xtl::span<T>, const xtl::span<const std::uint32_t>&,
+             const std::int32_t, const int)>& apply_dof_transformation,
     const DofMap& dofmap0, int bs0,
-    std::function<void(xtl::span<T>, const xtl::span<const std::uint32_t>,
-                       const std::int32_t, const int)>
-        apply_dof_transformation_to_transpose,
+    const std::function<void(
+        xtl::span<T>, const xtl::span<const std::uint32_t>&, const std::int32_t,
+        const int)>& apply_dof_transformation_to_transpose,
     const DofMap& dofmap1, int bs1, const std::vector<bool>& bc0,
     const std::vector<bool>& bc1,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
@@ -129,10 +129,10 @@ void assemble_matrix(
       = a.function_spaces().at(0)->element();
   std::shared_ptr<const fem::FiniteElement> element1
       = a.function_spaces().at(1)->element();
-  std::function<void(xtl::span<T>, const xtl::span<const std::uint32_t>,
+  std::function<void(xtl::span<T>, const xtl::span<const std::uint32_t>&,
                      const std::int32_t, const int)>
       apply_dof_transformation = element0->get_dof_transformation_function<T>();
-  std::function<void(xtl::span<T>, const xtl::span<const std::uint32_t>,
+  std::function<void(xtl::span<T>, const xtl::span<const std::uint32_t>&,
                      const std::int32_t, const int)>
       apply_dof_transformation_to_transpose
       = element1->get_dof_transformation_to_transpose_function<T>();
@@ -201,13 +201,13 @@ void assemble_cells(
                             const std::int32_t*, const T*)>& mat_set,
     const mesh::Geometry& geometry,
     const xtl::span<const std::int32_t>& active_cells,
-    std::function<void(xtl::span<T>, const xtl::span<const std::uint32_t>,
-                       const std::int32_t, const int)>
-        apply_dof_transformation,
+    const std::function<
+        void(xtl::span<T>, const xtl::span<const std::uint32_t>&,
+             const std::int32_t, const int)>& apply_dof_transformation,
     const graph::AdjacencyList<std::int32_t>& dofmap0, const int bs0,
-    std::function<void(xtl::span<T>, const xtl::span<const std::uint32_t>,
-                       const std::int32_t, const int)>
-        apply_dof_transformation_to_transpose,
+    const std::function<void(
+        xtl::span<T>, const xtl::span<const std::uint32_t>&, const std::int32_t,
+        const int)>& apply_dof_transformation_to_transpose,
     const graph::AdjacencyList<std::int32_t>& dofmap1, const int bs1,
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
@@ -293,13 +293,13 @@ void assemble_exterior_facets(
     const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                             const std::int32_t*, const T*)>& mat_set_values,
     const mesh::Mesh& mesh, const xtl::span<const std::int32_t>& active_facets,
-    std::function<void(xtl::span<T>, const xtl::span<const std::uint32_t>,
-                       const std::int32_t, const int)>
-        apply_dof_transformation,
+    const std::function<
+        void(xtl::span<T>, const xtl::span<const std::uint32_t>&,
+             const std::int32_t, const int)>* apply_dof_transformation,
     const graph::AdjacencyList<std::int32_t>& dofmap0, int bs0,
-    std::function<void(xtl::span<T>, const xtl::span<const std::uint32_t>,
-                       const std::int32_t, const int)>
-        apply_dof_transformation_to_transpose,
+    const std::function<void(
+        xtl::span<T>, const xtl::span<const std::uint32_t>&, const std::int32_t,
+        const int)>& apply_dof_transformation_to_transpose,
     const graph::AdjacencyList<std::int32_t>& dofmap1, int bs1,
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
@@ -404,13 +404,13 @@ void assemble_interior_facets(
     const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                             const std::int32_t*, const T*)>& mat_set_values,
     const mesh::Mesh& mesh, const xtl::span<const std::int32_t>& active_facets,
-    std::function<void(xtl::span<T>, const xtl::span<const std::uint32_t>,
-                       const std::int32_t, const int)>
-        apply_dof_transformation,
+    const std::function<
+        void(xtl::span<T>, const xtl::span<const std::uint32_t>&,
+             const std::int32_t, const int)>& apply_dof_transformation,
     const DofMap& dofmap0, int bs0,
-    std::function<void(xtl::span<T>, const xtl::span<const std::uint32_t>,
-                       const std::int32_t, const int)>
-        apply_dof_transformation_to_transpose,
+    const std::function<void(
+        xtl::span<T>, const xtl::span<const std::uint32_t>&, const std::int32_t,
+        const int)>& apply_dof_transformation_to_transpose,
     const DofMap& dofmap1, int bs1, const std::vector<bool>& bc0,
     const std::vector<bool>& bc1,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
