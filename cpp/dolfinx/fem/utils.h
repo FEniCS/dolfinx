@@ -394,15 +394,17 @@ void pack_coefficient(
     {
       if constexpr (_bs < 0)
       {
-        const int pos = bs * dofs[i];
+        const int pos_c = bs * i;
+        const int pos_v = bs * dofs[i];
         for (int k = 0; k < bs; ++k)
-          cell_coeff[bs * i + k] = v[pos + k];
+          cell_coeff[pos_c + k] = v[pos_v + k];
       }
       else
       {
-        int pos = _bs * dofs[i];
+        const int pos_c = _bs * i;
+        const int pos_v = _bs * dofs[i];
         for (int k = 0; k < _bs; ++k)
-          cell_coeff[_bs * i + k] = v[pos + k];
+          cell_coeff[pos_c + k] = v[pos_v + k];
       }
     }
     transform(cell_coeff, cell_info, cell, 1);
