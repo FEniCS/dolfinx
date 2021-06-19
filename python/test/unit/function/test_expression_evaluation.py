@@ -9,7 +9,6 @@ import cffi
 import dolfinx
 import numba
 import numpy as np
-import pytest
 import ufl
 from mpi4py import MPI
 from petsc4py import PETSc
@@ -44,14 +43,14 @@ def test_rank0():
     ufl_expr = ufl.grad(f)
     points = np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0]])
 
-    compiled_expr = dolfinx.jit.ffcx_jit(mesh.mpi_comm(), (ufl_expr, points))
+    compiled_expr, module, code = dolfinx.jit.ffcx_jit(mesh.mpi_comm(), (ufl_expr, points))
 
     ffi = cffi.FFI()
 
     @numba.njit
     def assemble_expression(b, kernel, mesh, dofmap, coeff, coeff_dofmap):
         pos, x_dofmap, x = mesh
-        geometry = np.zeros((3, 2))
+        geometry = np.zeros((3, 3))
         w = np.zeros(6, dtype=PETSc.ScalarType)
         constants = np.zeros(1, dtype=PETSc.ScalarType)
         b_local = np.zeros(6, dtype=PETSc.ScalarType)
@@ -171,7 +170,6 @@ def test_simple_evaluation():
     assert np.allclose(grad_f_evaluated, grad_f_exact)
 
 
-@pytest.mark.skip("Quadrature elements not yet supported.")
 def test_assembly_into_quadrature_function():
     """Test assembly into a Quadrature function.
 
@@ -201,7 +199,7 @@ def test_assembly_into_quadrature_function():
     mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, 3, 6)
 
     quadrature_degree = 2
-    quadrature_points = basix.make_quadrature(basix.CellType.triangle, quadrature_degree)
+    quadrature_points, wts = basix.make_quadrature("default", basix.CellType.triangle, quadrature_degree)
     Q_element = ufl.VectorElement("Quadrature", ufl.triangle, quadrature_degree, quad_scheme="default")
     Q = dolfinx.FunctionSpace(mesh, Q_element)
 
@@ -242,7 +240,25 @@ def test_assembly_into_quadrature_function():
         e = B.value * K**2 * grad_T
         return e
 
-    e_exact_Q = dolfinx.Function(Q)
-    e_exact_Q.interpolate(e_exact)
+    # FIXME: Below is only for testing purposes,
+    # never to be used in user code!
+    #
+    # Replace when interpolation into Quadrature element works.
+    coord_dofs = mesh.geometry.dofmap
+    x_g = mesh.geometry.x
+    tdim = mesh.topology.dim
+    Q_dofs = Q.dofmap.list.array.reshape(num_cells, quadrature_points.shape[0])
+    bs = Q.dofmap.bs
 
-    assert np.isclose((e_exact_Q.vector - e_Q.vector).norm(), 0.0)
+    Q_dofs_unrolled = bs * np.repeat(Q_dofs, bs).reshape(-1, bs) + np.arange(bs)
+    Q_dofs_unrolled = Q_dofs_unrolled.reshape(-1, bs * quadrature_points.shape[0]).astype(Q_dofs.dtype)
+
+    with e_Q.vector.localForm() as local:
+        e_exact_eval = np.zeros_like(local.array)
+
+        for cell in range(num_cells):
+            xg = x_g[coord_dofs.links(cell), :tdim]
+            x = mesh.geometry.cmap.push_forward(quadrature_points, xg)
+            e_exact_eval[Q_dofs_unrolled[cell]] = e_exact(x.T).T.flatten()
+
+        assert np.allclose(local.array, e_exact_eval)

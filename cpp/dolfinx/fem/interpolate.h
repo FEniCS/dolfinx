@@ -246,6 +246,11 @@ void interpolate(
   std::vector<T>& coeffs = u.x()->mutable_array();
   std::vector<T> _coeffs(num_scalar_dofs);
 
+  std::function<void(xtl::span<T>, const xtl::span<const std::uint32_t>,
+                     const std::int32_t, const int)>
+      apply_inverse_transpose_dof_transformation
+      = element->get_dof_transformation_function<T>(true, true, true);
+
   // This assumes that any element with an identity interpolation matrix is a
   // point evaluation
   if (element->interpolation_ident())
@@ -257,8 +262,7 @@ void interpolate(
       {
         for (int i = 0; i < num_scalar_dofs; ++i)
           _coeffs[i] = values(k, c * num_scalar_dofs + i);
-        element->apply_inverse_transpose_dof_transformation(
-            tcb::make_span(_coeffs), cell_info[c], 1);
+        apply_inverse_transpose_dof_transformation(_coeffs, cell_info, c, 1);
         for (int i = 0; i < num_scalar_dofs; ++i)
         {
           const int dof = i * element_bs + k;
@@ -296,6 +300,11 @@ void interpolate(
         = xt::view(cmap.tabulate(1, X), xt::range(1, tdim + 1), xt::all(),
                    xt::all(), xt::all());
 
+    std::function<void(xtl::span<T>, const xtl::span<const std::uint32_t>,
+                       const std::int32_t, const int)>
+        apply_inverse_transpose_dof_transformation
+        = element->get_dof_transformation_function<T>(true, true);
+
     for (std::int32_t c : cells)
     {
       auto x_dofs = x_dofmap.links(c);
@@ -324,8 +333,7 @@ void interpolate(
         xt::xtensor<T, 2> ref_data
             = xt::transpose(xt::view(reference_data, xt::all(), 0, xt::all()));
         element->interpolate(ref_data, tcb::make_span(_coeffs));
-        element->apply_inverse_transpose_dof_transformation(
-            tcb::make_span(_coeffs), cell_info[c], 1);
+        apply_inverse_transpose_dof_transformation(_coeffs, cell_info, c, 1);
 
         assert(_coeffs.size() == num_scalar_dofs);
 
@@ -356,7 +364,8 @@ void interpolate_c(
   const std::size_t value_size = std::accumulate(
       std::begin(vshape), std::end(vshape), 1, std::multiplies<>());
 
-  auto fn = [value_size, &f](const xt::xtensor<double, 2>& x) {
+  auto fn = [value_size, &f](const xt::xtensor<double, 2>& x)
+  {
     xt::xarray<T> values = xt::empty<T>({value_size, x.shape(1)});
     f(values, x);
     return values;

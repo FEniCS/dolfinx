@@ -12,15 +12,13 @@
 #include <dolfinx/mesh/cell_types.h>
 #include <string>
 
-namespace dolfinx
-{
-namespace fem
+namespace dolfinx::fem
 {
 class CoordinateElement;
 }
 
 /// Rectangle mesh creation
-namespace generation::RectangleMesh
+namespace dolfinx::generation::RectangleMesh
 {
 
 /// Create a uniform mesh::Mesh over the rectangle spanned by the two
@@ -65,5 +63,4 @@ mesh::Mesh create(MPI_Comm comm, const std::array<std::array<double, 3>, 2>& p,
                   const mesh::GhostMode ghost_mode,
                   const mesh::CellPartitionFunction& partitioner,
                   const std::string& diagonal = "right");
-} // namespace generation::RectangleMesh
-} // namespace dolfinx
+} // namespace dolfinx::generation::RectangleMesh

@@ -13,14 +13,12 @@
 #include <ufc.h>
 #include <vector>
 
-namespace dolfinx
-{
-namespace mesh
+namespace dolfinx::mesh
 {
 enum class CellType;
 }
 
-namespace fem
+namespace dolfinx::fem
 {
 
 /// The class represents the degree-of-freedom (dofs) for an element.
@@ -153,5 +151,4 @@ private:
   std::vector<std::shared_ptr<const ElementDofLayout>> _sub_dofmaps;
 };
 
-} // namespace fem
-} // namespace dolfinx
+} // namespace dolfinx::fem

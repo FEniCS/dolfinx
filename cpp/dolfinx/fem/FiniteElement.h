@@ -19,8 +19,8 @@ struct ufc_finite_element;
 
 namespace dolfinx::fem
 {
-/// Finite Element, containing the dof layout on a reference element, and
-/// various methods for evaluating and transforming the basis.
+/// Finite Element, containing the dof layout on a reference element,
+/// and various methods for evaluating and transforming the basis.
 class FiniteElement
 {
 public:
@@ -55,9 +55,9 @@ public:
   /// @return Dimension of the finite element space
   int space_dimension() const noexcept;
 
-  /// Block size of the finite element function space. For VectorElements and
-  /// TensorElements, this is the number of DOFs colocated at each DOF point.
-  /// For other elements, this is always 1.
+  /// Block size of the finite element function space. For
+  /// VectorElements and TensorElements, this is the number of DOFs
+  /// colocated at each DOF point. For other elements, this is always 1.
   /// @return Block size of the finite element space
   int block_size() const noexcept;
 
@@ -82,18 +82,9 @@ public:
   std::string family() const noexcept;
 
   /// Evaluate all basis functions at given points in reference cell
-  // reference_values[num_points][num_dofs][reference_value_size]
+  /// reference_values[num_points][num_dofs][reference_value_size]
   void evaluate_reference_basis(xt::xtensor<double, 3>& values,
                                 const xt::xtensor<double, 2>& X) const;
-
-  /// Evaluate all basis function derivatives of given order at given points in
-  /// reference cell
-  // reference_value_derivatives[num_points][num_dofs][reference_value_size][num_derivatives]
-  // void
-  // evaluate_reference_basis_derivatives(std::vector<double>& reference_values,
-  //                                      int order,
-  //                                      const xt::xtensor<double, 2>& X)
-  //                                      const;
 
   /// Push basis functions forward to physical element
   void transform_reference_basis(xt::xtensor<double, 3>& values,
@@ -185,19 +176,295 @@ public:
     }
   }
 
-  /// @todo Expand on when permutation data might be required
+  /// Check if DOF transformations are needed for this element.
   ///
-  /// Check if cell permutation data is required for this element
-  /// @return True if cell permutation data is required
-  bool needs_permutation_data() const noexcept;
+  /// DOF transformations will be needed for elements which might not be
+  /// continuous when two neighbouring cells disagree on the orientation of
+  /// a shared subentity, and when this cannot be corrected for by permuting the
+  /// DOF numbering in the dofmap.
+  ///
+  /// For example, Raviart-Thomas elements will need DOF transformations,
+  /// as the neighbouring cells may disagree on the orientation of a basis
+  /// function, and this orientation cannot be corrected for by permuting the
+  /// DOF numbers on each cell.
+  ///
+  /// @return True if DOF transformations are required
+  bool needs_dof_transformations() const noexcept;
 
-  /// Apply permutation to some data
+  /// Check if DOF permutations are needed for this element.
+  ///
+  /// DOF permutations will be needed for elements which might not be
+  /// continuous when two neighbouring cells disagree on the orientation of
+  /// a shared subentity, and when this can be corrected for by permuting the
+  /// DOF numbering in the dofmap.
+  ///
+  /// For example, higher order Lagrange elements will need DOF permutations,
+  /// as the arrangement of DOFs on a shared subentity may be different from the
+  /// point of view of neighbouring cells, and this can be corrected for by
+  /// permuting the DOF numbers on each cell.
+  ///
+  /// @return True if DOF transformations are required
+  bool needs_dof_permutations() const noexcept;
+
+  /// Return a function that applies DOF transformation to some data.
+  ///
+  /// The returned function will take three inputs:
+  /// - [in,out] data The data to be transformed
+  /// - [in] cell_info Permutation data for the cell
+  /// - [in] cell The cell number
+  /// - [in] block_size The block_size of the input data
+  ///
+  /// @param[in] inverse Indicates whether the inverse transformations should be
+  /// returned
+  /// @param[in] transpose Indicates whether the transpose transformations
+  /// should be returned
+  /// @param[in] scalar_element Indicated whether the scalar transformations
+  /// should be returned for a vector element
+  template <typename T>
+  std::function<void(xtl::span<T>, const xtl::span<const std::uint32_t>&,
+                     const std::int32_t, const int)>
+  get_dof_transformation_function(bool inverse = false, bool transpose = false,
+                                  bool scalar_element = false) const
+  {
+    if (!needs_dof_transformations())
+    {
+      // If no permutation needed, return function that does nothing
+      return [](xtl::span<T>, const xtl::span<const std::uint32_t>&,
+                const std::int32_t, const int) {};
+    }
+
+    if (_sub_elements.size() != 0)
+    {
+      if (_bs == 1)
+      {
+        // Mixed element
+        std::vector<std::function<void(xtl::span<T>,
+                                       const xtl::span<const std::uint32_t>&,
+                                       const std::int32_t, const int)>>
+            sub_element_functions;
+        std::vector<int> dims;
+        for (std::size_t i = 0; i < _sub_elements.size(); ++i)
+        {
+          sub_element_functions.push_back(
+              _sub_elements[i]->get_dof_transformation_function<T>(inverse,
+                                                                   transpose));
+          dims.push_back(_sub_elements[i]->space_dimension());
+        }
+
+        return [dims, sub_element_functions](
+                   xtl::span<T> data,
+                   const xtl::span<const std::uint32_t>& cell_info,
+                   const std::int32_t cell, const int block_size)
+        {
+          std::size_t start = 0;
+          for (std::size_t e = 0; e < sub_element_functions.size(); ++e)
+          {
+            const std::size_t width = dims[e] * block_size;
+            sub_element_functions[e](data.subspan(start, width), cell_info,
+                                     cell, block_size);
+            start += width;
+          }
+        };
+      }
+      else if (!scalar_element)
+      {
+        // Vector element
+        std::function<void(xtl::span<T>, const xtl::span<const std::uint32_t>&,
+                           const std::int32_t, const int)>
+            sub_function = _sub_elements[0]->get_dof_transformation_function<T>(
+                inverse, transpose);
+        const int ebs = _bs;
+        return
+            [ebs, sub_function](xtl::span<T> data,
+                                const xtl::span<const std::uint32_t>& cell_info,
+                                const std::int32_t cell,
+                                const int data_block_size)
+        { sub_function(data, cell_info, cell, ebs * data_block_size); };
+      }
+    }
+    if (transpose)
+    {
+      if (inverse)
+      {
+        return [this](xtl::span<T> data,
+                      const xtl::span<const std::uint32_t>& cell_info,
+                      const std::int32_t cell, const int block_size)
+        {
+          apply_inverse_transpose_dof_transformation(data, cell_info[cell],
+                                                     block_size);
+        };
+      }
+      else
+      {
+        return [this](xtl::span<T> data,
+                      const xtl::span<const std::uint32_t>& cell_info,
+                      const std::int32_t cell, const int block_size) {
+          apply_transpose_dof_transformation(data, cell_info[cell], block_size);
+        };
+      }
+    }
+    else
+    {
+      if (inverse)
+      {
+        return [this](xtl::span<T> data,
+                      const xtl::span<const std::uint32_t>& cell_info,
+                      const std::int32_t cell, const int block_size) {
+          apply_inverse_dof_transformation(data, cell_info[cell], block_size);
+        };
+      }
+      else
+      {
+        return [this](xtl::span<T> data,
+                      const xtl::span<const std::uint32_t>& cell_info,
+                      const std::int32_t cell, const int block_size)
+        { apply_dof_transformation(data, cell_info[cell], block_size); };
+      }
+    }
+  }
+
+  /// Return a function that applies DOF transformation to some
+  /// transposed data
+  ///
+  /// The returned function will take three inputs:
+  /// - [in,out] data The data to be transformed
+  /// - [in] cell_info Permutation data for the cell
+  /// - [in] cell The cell number
+  /// - [in] block_size The block_size of the input data
+  ///
+  /// @param[in] inverse Indicates whether the inverse transformations
+  /// should be returned
+  /// @param[in] transpose Indicates whether the transpose
+  /// transformations should be returned
+  /// @param[in] scalar_element Indicated whether the scalar
+  /// transformations should be returned for a vector element
+  template <typename T>
+  std::function<void(const xtl::span<T>&, const xtl::span<const std::uint32_t>&,
+                     std::int32_t, int)>
+  get_dof_transformation_to_transpose_function(bool inverse = false,
+                                               bool transpose = false,
+                                               bool scalar_element
+                                               = false) const
+  {
+    if (!needs_dof_transformations())
+    {
+      // If no permutation needed, return function that does nothing
+      return [](const xtl::span<T>&, const xtl::span<const std::uint32_t>&,
+                std::int32_t, int)
+      {
+        // Do nothing
+      };
+    }
+    else if (_sub_elements.size() != 0)
+    {
+      if (_bs == 1)
+      {
+        // Mixed element
+        std::vector<std::function<void(const xtl::span<T>&,
+                                       const xtl::span<const std::uint32_t>&,
+                                       std::int32_t, int)>>
+            sub_element_functions;
+        for (std::size_t i = 0; i < _sub_elements.size(); ++i)
+        {
+          sub_element_functions.push_back(
+              _sub_elements[i]->get_dof_transformation_to_transpose_function<T>(
+                  inverse, transpose));
+        }
+
+        return [this, sub_element_functions](
+                   const xtl::span<T>& data,
+                   const xtl::span<const std::uint32_t>& cell_info,
+                   std::int32_t cell, int block_size)
+        {
+          std::size_t start = 0;
+          for (std::size_t e = 0; e < sub_element_functions.size(); ++e)
+          {
+            const std::size_t width
+                = _sub_elements[e]->space_dimension() * block_size;
+            sub_element_functions[e](data.subspan(start, width), cell_info,
+                                     cell, block_size);
+            start += width;
+          }
+        };
+      }
+      else if (!scalar_element)
+      {
+        // Vector element
+        std::function<void(const xtl::span<T>&,
+                           const xtl::span<const std::uint32_t>&, std::int32_t,
+                           int)>
+            sub_function = _sub_elements[0]->get_dof_transformation_function<T>(
+                inverse, transpose);
+        return [this,
+                sub_function](const xtl::span<T>& data,
+                              const xtl::span<const std::uint32_t>& cell_info,
+                              std::int32_t cell, int data_block_size)
+        {
+          const int ebs = block_size();
+          const std::size_t dof_count = data.size() / data_block_size;
+          for (int block = 0; block < data_block_size; ++block)
+          {
+            sub_function(data.subspan(block * dof_count, dof_count), cell_info,
+                         cell, ebs);
+          }
+        };
+      }
+    }
+
+    if (transpose)
+    {
+      if (inverse)
+      {
+        return [this](const xtl::span<T>& data,
+                      const xtl::span<const std::uint32_t>& cell_info,
+                      std::int32_t cell, int block_size)
+        {
+          apply_inverse_transpose_dof_transformation_to_transpose(
+              data, cell_info[cell], block_size);
+        };
+      }
+      else
+      {
+        return [this](const xtl::span<T>& data,
+                      const xtl::span<const std::uint32_t>& cell_info,
+                      std::int32_t cell, int block_size)
+        {
+          apply_transpose_dof_transformation_to_transpose(data, cell_info[cell],
+                                                          block_size);
+        };
+      }
+    }
+    else
+    {
+      if (inverse)
+      {
+        return [this](const xtl::span<T>& data,
+                      const xtl::span<const std::uint32_t>& cell_info,
+                      std::int32_t cell, int block_size)
+        {
+          apply_inverse_dof_transformation_to_transpose(data, cell_info[cell],
+                                                        block_size);
+        };
+      }
+      else
+      {
+        return [this](const xtl::span<T>& data,
+                      const xtl::span<const std::uint32_t>& cell_info,
+                      std::int32_t cell, int block_size) {
+          apply_dof_transformation_to_transpose(data, cell_info[cell],
+                                                block_size);
+        };
+      }
+    }
+  }
+
+  /// Apply DOF transformation to some data.
   ///
   /// @param[in,out] data The data to be transformed
   /// @param[in] cell_permutation Permutation data for the cell
   /// @param[in] block_size The block_size of the input data
   template <typename T>
-  void apply_dof_transformation(xtl::span<T> data,
+  void apply_dof_transformation(const xtl::span<T>& data,
                                 std::uint32_t cell_permutation,
                                 int block_size) const
   {
@@ -205,18 +472,117 @@ public:
     _element->apply_dof_transformation(data, block_size, cell_permutation);
   }
 
-  /// Apply inverse transpose permutation to some data
+  /// Apply inverse transpose transformation to some data.
+  /// For VectorElements, this applies the transformations for the scalar
+  /// subelement
   ///
   /// @param[in,out] data The data to be transformed
   /// @param[in] cell_permutation Permutation data for the cell
   /// @param[in] block_size The block_size of the input data
   template <typename T>
-  void apply_inverse_transpose_dof_transformation(
-      xtl::span<T> data, std::uint32_t cell_permutation, int block_size) const
+  void
+  apply_inverse_transpose_dof_transformation(const xtl::span<T>& data,
+                                             std::uint32_t cell_permutation,
+                                             int block_size) const
   {
     assert(_element);
     _element->apply_inverse_transpose_dof_transformation(data, block_size,
                                                          cell_permutation);
+  }
+
+  /// Apply transpose transformation to some data.
+  /// For VectorElements, this applies the transformations for the scalar
+  /// subelement
+  ///
+  /// @param[in,out] data The data to be transformed
+  /// @param[in] cell_permutation Permutation data for the cell
+  /// @param[in] block_size The block_size of the input data
+  template <typename T>
+  void apply_transpose_dof_transformation(const xtl::span<T>& data,
+                                          std::uint32_t cell_permutation,
+                                          int block_size) const
+  {
+    assert(_element);
+    _element->apply_transpose_dof_transformation(data, block_size,
+                                                 cell_permutation);
+  }
+
+  /// Apply inverse transformation to some data.
+  /// For VectorElements, this applies the transformations for the scalar
+  /// subelement
+  ///
+  /// @param[in,out] data The data to be transformed
+  /// @param[in] cell_permutation Permutation data for the cell
+  /// @param[in] block_size The block_size of the input data
+  template <typename T>
+  void apply_inverse_dof_transformation(const xtl::span<T>& data,
+                                        std::uint32_t cell_permutation,
+                                        int block_size) const
+  {
+    assert(_element);
+    _element->apply_inverse_dof_transformation(data, block_size,
+                                               cell_permutation);
+  }
+
+  /// Apply DOF transformation to some tranposed data.
+  ///
+  /// @param[in,out] data The data to be transformed
+  /// @param[in] cell_permutation Permutation data for the cell
+  /// @param[in] block_size The block_size of the input data
+  template <typename T>
+  void apply_dof_transformation_to_transpose(const xtl::span<T>& data,
+                                             std::uint32_t cell_permutation,
+                                             int block_size) const
+  {
+    assert(_element);
+    _element->apply_dof_transformation_to_transpose(data, block_size,
+                                                    cell_permutation);
+  }
+
+  /// Apply inverse of DOF transformation to some transposed data.
+  ///
+  /// @param[in,out] data The data to be transformed
+  /// @param[in] cell_permutation Permutation data for the cell
+  /// @param[in] block_size The block_size of the input data
+  template <typename T>
+  void
+  apply_inverse_dof_transformation_to_transpose(const xtl::span<T>& data,
+                                                std::uint32_t cell_permutation,
+                                                int block_size) const
+  {
+    assert(_element);
+    _element->apply_inverse_dof_transformation_to_transpose(data, block_size,
+                                                            cell_permutation);
+  }
+
+  /// Apply transpose of transformation to some transposed data.
+  ///
+  /// @param[in,out] data The data to be transformed
+  /// @param[in] cell_permutation Permutation data for the cell
+  /// @param[in] block_size The block_size of the input data
+  template <typename T>
+  void apply_transpose_dof_transformation_to_transpose(
+      const xtl::span<T>& data, std::uint32_t cell_permutation,
+      int block_size) const
+  {
+    assert(_element);
+    _element->apply_transpose_dof_transformation_to_transpose(data, block_size,
+                                                              cell_permutation);
+  }
+
+  /// Apply inverse transpose transformation to some transposed data
+  ///
+  /// @param[in,out] data The data to be transformed
+  /// @param[in] cell_permutation Permutation data for the cell
+  /// @param[in] block_size The block_size of the input data
+  template <typename T>
+  void apply_inverse_transpose_dof_transformation_to_transpose(
+      const xtl::span<T>& data, std::uint32_t cell_permutation,
+      int block_size) const
+  {
+    assert(_element);
+    _element->apply_inverse_transpose_dof_transformation_to_transpose(
+        data, block_size, cell_permutation);
   }
 
   /// Pull physical data back to the reference element.
@@ -230,6 +596,35 @@ public:
     assert(_element);
     _element->map_pull_back_m(u, J, detJ, K, U);
   }
+
+  /// Permute the DOFs of the element
+  ///
+  /// @param[in,out] doflist The numbers of the DOFs
+  /// @param[in] cell_permutation Permutation data for the cell
+  void permute_dofs(const xtl::span<std::int32_t>& doflist,
+                    std::uint32_t cell_permutation) const;
+
+  /// Unpermute the DOFs of the element
+  ///
+  /// @param[in,out] doflist The numbers of the DOFs
+  /// @param[in] cell_permutation Permutation data for the cell
+  void unpermute_dofs(const xtl::span<std::int32_t>& doflist,
+                      std::uint32_t cell_permutation) const;
+
+  /// Return a function that applies DOF transformation to some data.
+  ///
+  /// The returned function will take three inputs:
+  /// - [in,out] data The data to be transformed
+  /// - [in] cell_permutation Permutation data for the cell
+  /// - [in] block_size The block_size of the input data
+  ///
+  /// @param[in] inverse Indicates whether the inverse transformations should be
+  /// returned
+  /// @param[in] scalar_element Indicated whether the scalar transformations
+  /// should be returned for a vector element
+  std::function<void(const xtl::span<std::int32_t>&, std::uint32_t)>
+  get_dof_permutation_function(bool inverse = false,
+                               bool scalar_element = false) const;
 
 private:
   std::string _signature, _family;
@@ -251,8 +646,9 @@ private:
   // number of DOFs colocated at each point.
   int _bs;
 
-  // True if element needs dof permutation
-  bool _needs_permutation_data;
+  // Indicate whether the element needs permutations or transformations
+  bool _needs_dof_permutations;
+  bool _needs_dof_transformations;
 
   // Basix Element (nullptr for mixed elements)
   std::unique_ptr<basix::FiniteElement> _element;

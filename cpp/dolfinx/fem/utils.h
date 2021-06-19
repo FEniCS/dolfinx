@@ -14,6 +14,7 @@
 #include <dolfinx/fem/Function.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/mesh/cell_types.h>
+#include <functional>
 #include <memory>
 #include <set>
 #include <string>
@@ -21,22 +22,19 @@
 #include <utility>
 #include <vector>
 
-namespace dolfinx
-{
-namespace common
+namespace dolfinx::common
 {
 class IndexMap;
 }
 
-namespace mesh
+namespace dolfinx::mesh
 {
 class Mesh;
 class Topology;
-} // namespace mesh
+} // namespace dolfinx::mesh
 
-namespace fem
+namespace dolfinx::fem
 {
-
 template <typename T>
 class Constant;
 template <typename T>
@@ -123,12 +121,18 @@ ElementDofLayout create_element_dof_layout(const ufc_dofmap& dofmap,
                                            const std::vector<int>& parent_map
                                            = {});
 
-/// Create dof map on mesh from a ufc_dofmap
+/// Create a dof map on mesh from a ufc_dofmap
 /// @param[in] comm MPI communicator
 /// @param[in] dofmap The ufc_dofmap
 /// @param[in] topology The mesh topology
-DofMap create_dofmap(MPI_Comm comm, const ufc_dofmap& dofmap,
-                     mesh::Topology& topology);
+/// @param[in] element The finite element
+/// @param[in] reorder_fn The graph reordering function called on the
+/// dofmap
+DofMap
+create_dofmap(MPI_Comm comm, const ufc_dofmap& dofmap, mesh::Topology& topology,
+              const std::function<std::vector<int>(
+                  const graph::AdjacencyList<std::int32_t>&)>& reorder_fn,
+              std::shared_ptr<const dolfinx::fem::FiniteElement> element);
 
 /// Get the name of each coefficient in a UFC form
 /// @param[in] ufc_form The UFC form
@@ -187,14 +191,13 @@ Form<T> create_form(
 
   // Get list of integral IDs, and load tabulate tensor into memory for
   // each
-  using kern
-      = std::function<void(T*, const T*, const T*, const double*, const int*,
-                           const std::uint8_t*, const std::uint32_t)>;
+  using kern = std::function<void(T*, const T*, const T*, const double*,
+                                  const int*, const std::uint8_t*)>;
   std::map<IntegralType, std::pair<std::vector<std::pair<int, kern>>,
                                    const mesh::MeshTags<int>*>>
       integral_data;
 
-  bool needs_permutation_data = false;
+  bool needs_facet_permutations = false;
 
   // Attach cell kernels
   std::vector<int> cell_integral_ids(ufc_form.integral_ids(cell),
@@ -204,8 +207,6 @@ Form<T> create_form(
   {
     ufc_integral* integral = ufc_form.integrals(cell)[i];
     assert(integral);
-    if (integral->needs_transformation_data)
-      needs_permutation_data = true;
     integral_data[IntegralType::cell].first.emplace_back(
         cell_integral_ids[i], integral->tabulate_tensor);
   }
@@ -223,6 +224,7 @@ Form<T> create_form(
   if (ufc_form.num_integrals(exterior_facet) > 0
       or ufc_form.num_integrals(interior_facet) > 0)
   {
+    needs_facet_permutations = true;
     if (!spaces.empty())
     {
       auto mesh = spaces[0]->mesh();
@@ -240,8 +242,6 @@ Form<T> create_form(
   {
     ufc_integral* integral = ufc_form.integrals(exterior_facet)[i];
     assert(integral);
-    if (integral->needs_transformation_data)
-      needs_permutation_data = true;
     integral_data[IntegralType::exterior_facet].first.emplace_back(
         exterior_facet_integral_ids[i], integral->tabulate_tensor);
   }
@@ -262,8 +262,6 @@ Form<T> create_form(
   {
     ufc_integral* integral = ufc_form.integrals(interior_facet)[i];
     assert(integral);
-    if (integral->needs_transformation_data)
-      needs_permutation_data = true;
     integral_data[IntegralType::interior_facet].first.emplace_back(
         interior_facet_integral_ids[i], integral->tabulate_tensor);
   }
@@ -276,7 +274,7 @@ Form<T> create_form(
   }
 
   return fem::Form(spaces, integral_data, coefficients, constants,
-                   needs_permutation_data, mesh);
+                   needs_facet_permutations, mesh);
 }
 
 /// Create a Form from UFC input
@@ -356,19 +354,23 @@ std::shared_ptr<Form<T>> create_form(
   return L;
 }
 
-/// Create FunctionSpace from UFC
+/// Create a FunctionSpace from UFC data
 /// @param[in] fptr Function Pointer to a ufc_function_space_create
-///   function
+/// function
 /// @param[in] function_name Name of a function whose function space to
-///   create. Function name is the name of Python variable for
-///   ufl.Coefficient, ufl.TrialFunction or ufl.TestFunction as defined
-///   in the UFL file.
+/// create. Function name is the name of Python variable for
+/// ufl.Coefficient, ufl.TrialFunction or ufl.TestFunction as defined in
+/// the UFL file.
 /// @param[in] mesh Mesh
-/// @return The created FunctionSpace
-std::shared_ptr<fem::FunctionSpace>
-create_functionspace(ufc_function_space* (*fptr)(const char*),
-                     const std::string function_name,
-                     std::shared_ptr<mesh::Mesh> mesh);
+/// @param[in] reorder_fn The graph reordering function called on the
+/// dofmap
+/// @return The created function space
+std::shared_ptr<fem::FunctionSpace> create_functionspace(
+    ufc_function_space* (*fptr)(const char*), const std::string function_name,
+    std::shared_ptr<mesh::Mesh> mesh,
+    const std::function<
+        std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>& reorder_fn
+    = nullptr);
 
 // NOTE: This is subject to change
 /// Pack coefficients of u of generic type U ready for assembly
@@ -382,11 +384,13 @@ array2d<typename U::scalar_type> pack_coefficients(const U& u)
       = u.coefficients();
   const std::vector<int> offsets = u.coefficient_offsets();
   std::vector<const fem::DofMap*> dofmaps(coefficients.size());
+  std::vector<const fem::FiniteElement*> elements(coefficients.size());
   std::vector<int> bs(coefficients.size());
   std::vector<std::reference_wrapper<const std::vector<T>>> v;
   v.reserve(coefficients.size());
   for (std::size_t i = 0; i < coefficients.size(); ++i)
   {
+    elements[i] = coefficients[i]->function_space()->element().get();
     dofmaps[i] = coefficients[i]->function_space()->dofmap().get();
     bs[i] = dofmaps[i]->bs();
     v.push_back(coefficients[i]->x()->array());
@@ -404,9 +408,26 @@ array2d<typename U::scalar_type> pack_coefficients(const U& u)
   array2d<T> c(num_cells, offsets.back());
   if (!coefficients.empty())
   {
-    for (int cell = 0; cell < num_cells; ++cell)
+    bool needs_dof_transformations = false;
+    for (std::size_t coeff = 0; coeff < dofmaps.size(); ++coeff)
     {
-      for (std::size_t coeff = 0; coeff < dofmaps.size(); ++coeff)
+      if (elements[coeff]->needs_dof_transformations())
+      {
+        needs_dof_transformations = true;
+        mesh->topology_mutable().create_entity_permutations();
+      }
+    }
+    const std::vector<std::uint32_t>& cell_info
+        = needs_dof_transformations
+              ? mesh->topology().get_cell_permutation_info()
+              : std::vector<std::uint32_t>(num_cells);
+    for (std::size_t coeff = 0; coeff < dofmaps.size(); ++coeff)
+    {
+      std::function<void(xtl::span<T>, const xtl::span<const std::uint32_t>,
+                         const std::int32_t, const int)>
+          apply_transpose_dof_transformation
+          = elements[coeff]->get_dof_transformation_function<T>(false, true);
+      for (int cell = 0; cell < num_cells; ++cell)
       {
         xtl::span<const std::int32_t> dofs = dofmaps[coeff]->cell_dofs(cell);
         const std::vector<T>& _v = v[coeff];
@@ -418,6 +439,10 @@ array2d<typename U::scalar_type> pack_coefficients(const U& u)
                 = _v[bs[coeff] * dofs[i] + k];
           }
         }
+        apply_transpose_dof_transformation(
+            c.row(cell).subspan(offsets[coeff],
+                                elements[coeff]->space_dimension()),
+            cell_info, cell, 1);
       }
     }
   }
@@ -435,11 +460,9 @@ std::vector<typename U::scalar_type> pack_constants(const U& u)
       = u.constants();
 
   // Calculate size of array needed to store packed constants
-  std::int32_t size
-      = std::accumulate(constants.begin(), constants.end(), 0,
-                        [](std::int32_t sum, const auto& constant) {
-                          return sum + constant->value.size();
-                        });
+  std::int32_t size = std::accumulate(constants.begin(), constants.end(), 0,
+                                      [](std::int32_t sum, const auto& constant)
+                                      { return sum + constant->value.size(); });
 
   // Pack constants
   std::vector<T> constant_values(size);
@@ -455,5 +478,4 @@ std::vector<typename U::scalar_type> pack_constants(const U& u)
   return constant_values;
 }
 
-} // namespace fem
-} // namespace dolfinx
+} // namespace dolfinx::fem

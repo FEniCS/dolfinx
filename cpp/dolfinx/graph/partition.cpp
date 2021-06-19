@@ -14,7 +14,6 @@
 #include <unordered_map>
 
 using namespace dolfinx;
-using namespace dolfinx::graph;
 
 //-----------------------------------------------------------------------------
 graph::AdjacencyList<std::int32_t>
@@ -28,8 +27,9 @@ graph::partition_graph(const MPI_Comm comm, int nparts,
 //-----------------------------------------------------------------------------
 std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<int>,
            std::vector<std::int64_t>, std::vector<int>>
-build::distribute(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& list,
-                  const graph::AdjacencyList<std::int32_t>& destinations)
+graph::build::distribute(MPI_Comm comm,
+                         const graph::AdjacencyList<std::int64_t>& list,
+                         const graph::AdjacencyList<std::int32_t>& destinations)
 {
   common::Timer timer("Distribute in graph creation AdjacencyList");
 
@@ -156,10 +156,9 @@ build::distribute(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& list,
           std::move(ghost_index_owner)};
 }
 //-----------------------------------------------------------------------------
-std::vector<std::int64_t>
-build::compute_ghost_indices(MPI_Comm comm,
-                             const std::vector<std::int64_t>& global_indices,
-                             const std::vector<int>& ghost_owners)
+std::vector<std::int64_t> graph::build::compute_ghost_indices(
+    MPI_Comm comm, const xtl::span<const std::int64_t>& global_indices,
+    const xtl::span<const int>& ghost_owners)
 {
   LOG(INFO) << "Compute ghost indices";
 
@@ -273,7 +272,7 @@ build::compute_ghost_indices(MPI_Comm comm,
   return ghost_global_indices;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::int64_t> build::compute_local_to_global_links(
+std::vector<std::int64_t> graph::build::compute_local_to_global_links(
     const graph::AdjacencyList<std::int64_t>& global,
     const graph::AdjacencyList<std::int32_t>& local)
 {
@@ -309,9 +308,9 @@ std::vector<std::int64_t> build::compute_local_to_global_links(
   return local_to_global_list;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::int32_t>
-build::compute_local_to_local(const std::vector<std::int64_t>& local0_to_global,
-                              const std::vector<std::int64_t>& local1_to_global)
+std::vector<std::int32_t> graph::build::compute_local_to_local(
+    const xtl::span<const std::int64_t>& local0_to_global,
+    const xtl::span<const std::int64_t>& local1_to_global)
 {
   common::Timer timer("Compute local-to-local map");
   assert(local0_to_global.size() == local1_to_global.size());

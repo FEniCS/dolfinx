@@ -35,8 +35,20 @@ public:
   /// @param[in] comm The MPI communicator for the solver
   explicit NewtonSolver(MPI_Comm comm);
 
+  // Move constructor (deleted)
+  NewtonSolver(NewtonSolver&& solver) = delete;
+
+  // Copy constructor (deleted)
+  NewtonSolver(const NewtonSolver& solver) = delete;
+
+  // Assignment operator (deleted)
+  NewtonSolver& operator=(const NewtonSolver& solver) = delete;
+
+  // Move assignment constructor (deleted)
+  NewtonSolver& operator=(const NewtonSolver&& solver) = delete;
+
   /// Destructor
-  virtual ~NewtonSolver();
+  ~NewtonSolver();
 
   /// Set the function for computing the residual and the vector to the
   /// assemble the residual into
@@ -54,6 +66,18 @@ public:
   /// @param[in] P Function to compute the preconditioner matrix b (x, P)
   /// @param[in] Pmat The matrix to assemble the preconditioner into
   void setP(const std::function<void(const Vec, Mat)>& P, Mat Pmat);
+
+  /// Get the internal Krylov solver used to solve for the Newton updates
+  /// const version
+  /// The Krylov solver prefix is nls_solve_
+  /// @return The Krylov solver
+  const la::PETScKrylovSolver& get_krylov_solver() const;
+
+  /// Get the internal Krylov solver used to solve for the Newton updates
+  /// non-const version
+  /// The Krylov solver prefix is nls_solve_
+  /// @return The Krylov solver
+  la::PETScKrylovSolver& get_krylov_solver();
 
   /// Set the function that is called before the residual or Jacobian
   /// are computed. It is commonly used to update ghost values.
