@@ -246,8 +246,8 @@ void interpolate(
   std::vector<T>& coeffs = u.x()->mutable_array();
   std::vector<T> _coeffs(num_scalar_dofs);
 
-  std::function<void(xtl::span<T>, const xtl::span<const std::uint32_t>,
-                     const std::int32_t, const int)>
+  std::function<void(const xtl::span<T>&, const xtl::span<const std::uint32_t>&,
+                     std::int32_t, int)>
       apply_inverse_transpose_dof_transformation
       = element->get_dof_transformation_function<T>(true, true, true);
 
@@ -300,8 +300,9 @@ void interpolate(
         = xt::view(cmap.tabulate(1, X), xt::range(1, tdim + 1), xt::all(),
                    xt::all(), xt::all());
 
-    std::function<void(xtl::span<T>, const xtl::span<const std::uint32_t>,
-                       const std::int32_t, const int)>
+    std::function<void(const xtl::span<T>&,
+                       const xtl::span<const std::uint32_t>&, std::int32_t,
+                       int)>
         apply_inverse_transpose_dof_transformation
         = element->get_dof_transformation_function<T>(true, true);
 

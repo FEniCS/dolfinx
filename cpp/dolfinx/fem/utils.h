@@ -417,32 +417,33 @@ array2d<typename U::scalar_type> pack_coefficients(const U& u)
         mesh->topology_mutable().create_entity_permutations();
       }
     }
-    const std::vector<std::uint32_t>& cell_info
+
+    const std::vector<std::uint32_t>& _cell_info
         = needs_dof_transformations
               ? mesh->topology().get_cell_permutation_info()
-              : std::vector<std::uint32_t>(num_cells);
+              : std::vector<std::uint32_t>(0);
+    const xtl::span cell_info(_cell_info);
     for (std::size_t coeff = 0; coeff < dofmaps.size(); ++coeff)
     {
-      std::function<void(xtl::span<T>, const xtl::span<const std::uint32_t>,
-                         const std::int32_t, const int)>
+      const std::function<void(const xtl::span<T>&,
+                               const xtl::span<const std::uint32_t>&,
+                               std::int32_t, int)>
           apply_transpose_dof_transformation
           = elements[coeff]->get_dof_transformation_function<T>(false, true);
+      const int offset = offsets[coeff];
+      const int _bs = bs[coeff];
+      const int space_dim = elements[coeff]->space_dimension();
+      const std::vector<T>& _v = v[coeff];
       for (int cell = 0; cell < num_cells; ++cell)
       {
-        xtl::span<const std::int32_t> dofs = dofmaps[coeff]->cell_dofs(cell);
-        const std::vector<T>& _v = v[coeff];
+        auto dofs = dofmaps[coeff]->cell_dofs(cell);
         for (std::size_t i = 0; i < dofs.size(); ++i)
         {
-          for (int k = 0; k < bs[coeff]; ++k)
-          {
-            c(cell, bs[coeff] * i + k + offsets[coeff])
-                = _v[bs[coeff] * dofs[i] + k];
-          }
+          for (int k = 0; k < _bs; ++k)
+            c(cell, _bs * i + k + offset) = _v[_bs * dofs[i] + k];
         }
         apply_transpose_dof_transformation(
-            c.row(cell).subspan(offsets[coeff],
-                                elements[coeff]->space_dimension()),
-            cell_info, cell, 1);
+            c.row(cell).subspan(offset, space_dim), cell_info, cell, 1);
       }
     }
   }

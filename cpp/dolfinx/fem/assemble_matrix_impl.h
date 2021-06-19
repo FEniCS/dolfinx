@@ -44,13 +44,13 @@ void assemble_cells(
     const mesh::Geometry& geometry,
     const xtl::span<const std::int32_t>& active_cells,
     const std::function<void(const xtl::span<T>&,
-                             const xtl::span<const std::uint32_t>, std::int32_t,
-                             int)>
+                             const xtl::span<const std::uint32_t>&,
+                             std::int32_t, int)>
         apply_dof_transformation,
     const graph::AdjacencyList<std::int32_t>& dofmap0, const int bs0,
     const std::function<void(const xtl::span<T>&,
-                             const xtl::span<const std::uint32_t>, std::int32_t,
-                             int)>
+                             const xtl::span<const std::uint32_t>&,
+                             std::int32_t, int)>
         apply_dof_transformation_to_transpose,
     const graph::AdjacencyList<std::int32_t>& dofmap1, const int bs1,
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
