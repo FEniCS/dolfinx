@@ -557,7 +557,7 @@ void assemble_cells(
   const int num_dofs = dofmap.links(0).size();
   std::vector<double> coordinate_dofs(3 * num_dofs_g);
   std::vector<T> be(bs * num_dofs);
-  xtl::span<T> _be(be);
+  const xtl::span<T> _be(be);
 
   // Iterate over active cells
   for (std::int32_t c : active_cells)
@@ -629,6 +629,7 @@ void assemble_exterior_facets(
   const int num_dofs = dofmap.links(0).size();
   std::vector<double> coordinate_dofs(3 * num_dofs_g);
   std::vector<T> be(bs * num_dofs);
+  const xtl::span<T> _be(be);
 
   auto f_to_c = mesh.topology().connectivity(tdim - 1, tdim);
   assert(f_to_c);
@@ -660,7 +661,7 @@ void assemble_exterior_facets(
        coordinate_dofs.data(), &local_facet,
        &perms[cell * facets.size() + local_facet]);
 
-    apply_dof_transformation(be, cell_info, cell, 1);
+    apply_dof_transformation(_be, cell_info, cell, 1);
 
     // Add element vector to global vector
     auto dofs = dofmap.links(cell);

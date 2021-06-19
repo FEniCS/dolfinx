@@ -225,6 +225,7 @@ void assemble_cells(
   const int ndim0 = bs0 * num_dofs0;
   const int ndim1 = bs1 * num_dofs1;
   std::vector<T> Ae(ndim0 * ndim1);
+  const xtl::span<T> _Ae(Ae);
   std::vector<double> coordinate_dofs(3 * num_dofs_g);
 
   for (std::int32_t c : active_cells)
@@ -242,8 +243,8 @@ void assemble_cells(
     kernel(Ae.data(), coeffs.row(c).data(), constants.data(),
            coordinate_dofs.data(), nullptr, nullptr);
 
-    apply_dof_transformation(Ae, cell_info, c, ndim1);
-    apply_dof_transformation_to_transpose(Ae, cell_info, c, ndim0);
+    apply_dof_transformation(_Ae, cell_info, c, ndim1);
+    apply_dof_transformation_to_transpose(_Ae, cell_info, c, ndim0);
 
     // Zero rows/columns for essential bcs
     auto dofs0 = dofmap0.links(c);
@@ -321,6 +322,7 @@ void assemble_exterior_facets(
   const int ndim0 = bs0 * num_dofs0;
   const int ndim1 = bs1 * num_dofs1;
   std::vector<T> Ae(ndim0 * ndim1);
+  const xtl::span<T> _Ae(Ae);
 
   // Iterate over all facets
   auto f_to_c = mesh.topology().connectivity(tdim - 1, tdim);
@@ -353,8 +355,8 @@ void assemble_exterior_facets(
            coordinate_dofs.data(), &local_facet,
            &perms[cells[0] * facets.size() + local_facet]);
 
-    apply_dof_transformation(Ae, cell_info, cells[0], ndim1);
-    apply_dof_transformation_to_transpose(Ae, cell_info, cells[0], ndim0);
+    apply_dof_transformation(_Ae, cell_info, cells[0], ndim1);
+    apply_dof_transformation_to_transpose(_Ae, cell_info, cells[0], ndim0);
 
     // Zero rows/columns for essential bcs
     auto dofs0 = dofmap0.links(cells[0]);
