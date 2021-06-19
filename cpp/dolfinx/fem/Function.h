@@ -325,8 +325,9 @@ public:
     std::fill(u.data(), u.data() + u.size(), 0.0);
     const std::vector<T>& _v = _x->mutable_array();
 
-    std::function<void(xtl::span<double>, const xtl::span<const std::uint32_t>,
-                       const std::int32_t, const int)>
+    const std::function<void(const xtl::span<double>&,
+                             const xtl::span<const std::uint32_t>&,
+                             std::int32_t, int)>
         apply_dof_transformation
         = element->get_dof_transformation_function<double>();
 

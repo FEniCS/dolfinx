@@ -847,20 +847,23 @@ void lift_bc(xtl::span<T> b, const Form<T>& a,
 
   const bool needs_transformation_data
       = element0->needs_dof_transformations()
-        || element1->needs_dof_transformations()
-        || a.needs_facet_permutations();
-  if (needs_transformation_data)
-    mesh->topology_mutable().create_entity_permutations();
-  const std::vector<std::uint32_t>& _cell_info
-      = needs_transformation_data ? mesh->topology().get_cell_permutation_info()
-                                  : std::vector<std::uint32_t>(0);
-  const xtl::span cell_info(_cell_info.data(), _cell_info.size());
+        or element1->needs_dof_transformations()
+        or a.needs_facet_permutations();
 
-  std::function<void(const xtl::span<T>&, const xtl::span<const std::uint32_t>&,
-                     std::int32_t, int)>
+  xtl::span<const std::uint32_t> cell_info;
+  if (needs_transformation_data)
+  {
+    mesh->topology_mutable().create_entity_permutations();
+    cell_info = xtl::span(mesh->topology().get_cell_permutation_info());
+  }
+
+  const std::function<void(const xtl::span<T>&,
+                           const xtl::span<const std::uint32_t>&, std::int32_t,
+                           int)>
       apply_dof_transformation = element0->get_dof_transformation_function<T>();
-  std::function<void(const xtl::span<T>&, const xtl::span<const std::uint32_t>&,
-                     std::int32_t, int)>
+  const std::function<void(const xtl::span<T>&,
+                           const xtl::span<const std::uint32_t>&, std::int32_t,
+                           int)>
       apply_dof_transformation_to_transpose
       = element1->get_dof_transformation_to_transpose_function<T>();
 
@@ -1030,17 +1033,19 @@ void assemble_vector(xtl::span<T> b, const Form<T>& L,
   const graph::AdjacencyList<std::int32_t>& dofs = dofmap->list();
   const int bs = dofmap->bs();
 
-  std::function<void(const xtl::span<T>&, const xtl::span<const std::uint32_t>&,
-                     std::int32_t, int)>
+  const std::function<void(const xtl::span<T>&,
+                           const xtl::span<const std::uint32_t>&, std::int32_t,
+                           int)>
       apply_dof_transformation = element->get_dof_transformation_function<T>();
 
   const bool needs_transformation_data
-      = element->needs_dof_transformations() || L.needs_facet_permutations();
+      = element->needs_dof_transformations() or L.needs_facet_permutations();
+  xtl::span<const std::uint32_t> cell_info;
   if (needs_transformation_data)
+  {
     mesh->topology_mutable().create_entity_permutations();
-  const std::vector<std::uint32_t>& cell_info
-      = needs_transformation_data ? mesh->topology().get_cell_permutation_info()
-                                  : std::vector<std::uint32_t>(0);
+    cell_info = xtl::span(mesh->topology().get_cell_permutation_info());
+  }
 
   for (int i : L.integral_ids(IntegralType::cell))
   {

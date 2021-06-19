@@ -221,16 +221,19 @@ public:
   /// @param[in] scalar_element Indicated whether the scalar transformations
   /// should be returned for a vector element
   template <typename T>
-  std::function<void(xtl::span<T>, const xtl::span<const std::uint32_t>&,
-                     const std::int32_t, const int)>
+  std::function<void(const xtl::span<T>&, const xtl::span<const std::uint32_t>&,
+                     std::int32_t, int)>
   get_dof_transformation_function(bool inverse = false, bool transpose = false,
                                   bool scalar_element = false) const
   {
     if (!needs_dof_transformations())
     {
       // If no permutation needed, return function that does nothing
-      return [](xtl::span<T>, const xtl::span<const std::uint32_t>&,
-                const std::int32_t, const int) {};
+      return [](const xtl::span<T>&, const xtl::span<const std::uint32_t>&,
+                std::int32_t, int)
+      {
+        // Do nothing
+      };
     }
 
     if (_sub_elements.size() != 0)
@@ -238,9 +241,9 @@ public:
       if (_bs == 1)
       {
         // Mixed element
-        std::vector<std::function<void(xtl::span<T>,
+        std::vector<std::function<void(const xtl::span<T>&,
                                        const xtl::span<const std::uint32_t>&,
-                                       const std::int32_t, const int)>>
+                                       std::int32_t, int)>>
             sub_element_functions;
         std::vector<int> dims;
         for (std::size_t i = 0; i < _sub_elements.size(); ++i)
@@ -252,9 +255,9 @@ public:
         }
 
         return [dims, sub_element_functions](
-                   xtl::span<T> data,
+                   const xtl::span<T>& data,
                    const xtl::span<const std::uint32_t>& cell_info,
-                   const std::int32_t cell, const int block_size)
+                   std::int32_t cell, int block_size)
         {
           std::size_t start = 0;
           for (std::size_t e = 0; e < sub_element_functions.size(); ++e)
@@ -269,16 +272,16 @@ public:
       else if (!scalar_element)
       {
         // Vector element
-        std::function<void(xtl::span<T>, const xtl::span<const std::uint32_t>&,
-                           const std::int32_t, const int)>
+        const std::function<void(const xtl::span<T>&,
+                                 const xtl::span<const std::uint32_t>&,
+                                 std::int32_t, int)>
             sub_function = _sub_elements[0]->get_dof_transformation_function<T>(
                 inverse, transpose);
         const int ebs = _bs;
         return
-            [ebs, sub_function](xtl::span<T> data,
+            [ebs, sub_function](const xtl::span<T>& data,
                                 const xtl::span<const std::uint32_t>& cell_info,
-                                const std::int32_t cell,
-                                const int data_block_size)
+                                std::int32_t cell, int data_block_size)
         { sub_function(data, cell_info, cell, ebs * data_block_size); };
       }
     }
@@ -286,9 +289,9 @@ public:
     {
       if (inverse)
       {
-        return [this](xtl::span<T> data,
+        return [this](const xtl::span<T>& data,
                       const xtl::span<const std::uint32_t>& cell_info,
-                      const std::int32_t cell, const int block_size)
+                      std::int32_t cell, int block_size)
         {
           apply_inverse_transpose_dof_transformation(data, cell_info[cell],
                                                      block_size);
@@ -296,9 +299,9 @@ public:
       }
       else
       {
-        return [this](xtl::span<T> data,
+        return [this](const xtl::span<T>& data,
                       const xtl::span<const std::uint32_t>& cell_info,
-                      const std::int32_t cell, const int block_size) {
+                      std::int32_t cell, int block_size) {
           apply_transpose_dof_transformation(data, cell_info[cell], block_size);
         };
       }
@@ -307,17 +310,17 @@ public:
     {
       if (inverse)
       {
-        return [this](xtl::span<T> data,
+        return [this](const xtl::span<T>& data,
                       const xtl::span<const std::uint32_t>& cell_info,
-                      const std::int32_t cell, const int block_size) {
+                      std::int32_t cell, int block_size) {
           apply_inverse_dof_transformation(data, cell_info[cell], block_size);
         };
       }
       else
       {
-        return [this](xtl::span<T> data,
+        return [this](const xtl::span<T>& data,
                       const xtl::span<const std::uint32_t>& cell_info,
-                      const std::int32_t cell, const int block_size)
+                      std::int32_t cell, int block_size)
         { apply_dof_transformation(data, cell_info[cell], block_size); };
       }
     }
@@ -390,9 +393,9 @@ public:
       else if (!scalar_element)
       {
         // Vector element
-        std::function<void(const xtl::span<T>&,
-                           const xtl::span<const std::uint32_t>&, std::int32_t,
-                           int)>
+        const std::function<void(const xtl::span<T>&,
+                                 const xtl::span<const std::uint32_t>&,
+                                 std::int32_t, int)>
             sub_function = _sub_elements[0]->get_dof_transformation_function<T>(
                 inverse, transpose);
         return [this,
