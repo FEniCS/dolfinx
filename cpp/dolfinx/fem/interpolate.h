@@ -13,6 +13,7 @@
 #include <functional>
 #include <variant>
 #include <xtensor/xadapt.hpp>
+#include <xtensor/xarray.hpp>
 #include <xtensor/xtensor.hpp>
 #include <xtensor/xview.hpp>
 #include <xtl/xspan.hpp>
@@ -208,8 +209,10 @@ void interpolate(
   const xt::xtensor<double, 2>& X = element->interpolation_points();
 
   if (X.shape(0) == 0)
+  {
     throw std::runtime_error(
         "Interpolation into this space is not yet supported.");
+  }
 
   mesh->topology_mutable().create_entity_permutations();
   const std::vector<std::uint32_t>& cell_info
@@ -225,7 +228,8 @@ void interpolate(
   {
     if (element->value_size() != 1)
       throw std::runtime_error("Interpolation data has the wrong shape.");
-    values.reshape({element->value_size(), x.shape(1)});
+    values.reshape(
+        {static_cast<std::size_t>(element->value_size()), x.shape(1)});
   }
 
   if (values.shape(0) != element->value_size())
