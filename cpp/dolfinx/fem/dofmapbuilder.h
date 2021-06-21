@@ -7,24 +7,23 @@
 #pragma once
 
 #include <dolfinx/graph/AdjacencyList.h>
+#include <dolfinx/graph/scotch.h>
+#include <functional>
 #include <memory>
 #include <mpi.h>
 #include <tuple>
 
-namespace dolfinx
-{
-
-namespace common
+namespace dolfinx::common
 {
 class IndexMap;
 }
 
-namespace mesh
+namespace dolfinx::mesh
 {
 class Topology;
-} // namespace mesh
+}
 
-namespace fem
+namespace dolfinx::fem
 {
 class ElementDofLayout;
 class CoordinateElement;
@@ -32,13 +31,16 @@ class CoordinateElement;
 /// Build dofmap data for an element on a mesh topology
 /// @param[in] comm MPI communicator
 /// @param[in] topology The mesh topology
-/// @param[in] element_dof_layout The element dof layout for the function
-/// space
-/// @return The index map and local to global DOF data for the DOF map.
+/// @param[in] element_dof_layout The element dof layout for the
+/// function space
+/// @param[in] reorder_fn Graph reordering function that is applied to
+/// the dofmap
+/// @return The index map and local to global DOF data for the DOF map
 std::tuple<std::shared_ptr<common::IndexMap>, int,
            graph::AdjacencyList<std::int32_t>>
 build_dofmap_data(MPI_Comm comm, const mesh::Topology& topology,
-                  const ElementDofLayout& element_dof_layout);
+                  const ElementDofLayout& element_dof_layout,
+                  const std::function<std::vector<int>(
+                      const graph::AdjacencyList<std::int32_t>&)>& reorder_fn);
 
-} // namespace fem
-} // namespace dolfinx
+} // namespace dolfinx::fem

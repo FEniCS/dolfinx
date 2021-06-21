@@ -41,21 +41,23 @@ const std::vector<std::int64_t>& Geometry::input_global_indices() const
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-mesh::Geometry
-mesh::create_geometry(MPI_Comm comm, const Topology& topology,
-                      const fem::CoordinateElement& coordinate_element,
-                      const graph::AdjacencyList<std::int64_t>& cell_nodes,
-                      const xt::xtensor<double, 2>& x)
+mesh::Geometry mesh::create_geometry(
+    MPI_Comm comm, const Topology& topology,
+    const fem::CoordinateElement& coordinate_element,
+    const graph::AdjacencyList<std::int64_t>& cell_nodes,
+    const xt::xtensor<double, 2>& x,
+    const std::function<std::vector<int>(
+        const graph::AdjacencyList<std::int32_t>&)>& reorder_fn)
 {
   // TODO: make sure required entities are initialised, or extend
   // fem::build_dofmap_data
 
   //  Build 'geometry' dofmap on the topology
-  auto [dof_index_map, bs, dofmap]
-      = fem::build_dofmap_data(comm, topology, coordinate_element.dof_layout());
+  auto [dof_index_map, bs, dofmap] = fem::build_dofmap_data(
+      comm, topology, coordinate_element.dof_layout(), reorder_fn);
 
   // If the mesh has higher order geometry, permute the dofmap
-  if (coordinate_element.needs_permutation_data())
+  if (coordinate_element.needs_dof_permutations())
   {
     const int D = topology.dim();
     const int num_cells = topology.connectivity(D, 0)->num_nodes();
@@ -100,18 +102,6 @@ mesh::create_geometry(MPI_Comm comm, const Topology& topology,
   std::vector<std::int64_t> igi(indices.size());
   std::transform(l2l.cbegin(), l2l.cend(), igi.begin(),
                  [&indices](auto index) { return indices[index]; });
-
-  // If the mesh has higher order geometry, permute the dofmap
-  if (coordinate_element.needs_permutation_data())
-  {
-    const int D = topology.dim();
-    const int num_cells = topology.connectivity(D, 0)->num_nodes();
-    const std::vector<std::uint32_t>& cell_info
-        = topology.get_cell_permutation_info();
-
-    for (std::int32_t cell = 0; cell < num_cells; ++cell)
-      coordinate_element.permute_dofs(dofmap.links(cell), cell_info[cell]);
-  }
 
   return Geometry(dof_index_map, std::move(dofmap), coordinate_element,
                   std::move(xg), std::move(igi));

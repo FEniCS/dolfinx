@@ -77,7 +77,7 @@ source /usr/local/bin/dolfinx-real-mode
 
 A Jupyter Lab environment with DOLFINx built nightly:
 ```
-docker run -ti -p 8888:8888 dolfinx/lab # Access at http://localhost:8888
+docker run --init -ti -p 8888:8888 dolfinx/lab # Access at http://localhost:8888
 ```
 
 A development image with all of the dependencies required

@@ -15,9 +15,7 @@
 #include <slepceps.h>
 #include <string>
 
-namespace dolfinx
-{
-namespace la
+namespace dolfinx::la
 {
 class VectorSpaceBasis;
 
@@ -92,6 +90,5 @@ private:
   // SLEPc solver pointer
   EPS _eps;
 };
-} // namespace la
-} // namespace dolfinx
+} // namespace dolfinx::la
 #endif

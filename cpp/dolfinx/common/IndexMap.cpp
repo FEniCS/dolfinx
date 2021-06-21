@@ -19,7 +19,7 @@ namespace
 
 /// Compute the owning rank of ghost indices
 std::vector<int> get_ghost_ranks(MPI_Comm comm, std::int32_t local_size,
-                                 const std::vector<std::int64_t>& ghosts)
+                                 const xtl::span<const std::int64_t>& ghosts)
 {
   int mpi_size = -1;
   MPI_Comm_size(comm, &mpi_size);
@@ -62,8 +62,8 @@ std::vector<int> get_ghost_ranks(MPI_Comm comm, std::int32_t local_size,
 ///   a list of my global indices that are ghost on the rank and (ii)
 ///   displacement vector for each rank
 std::tuple<std::vector<std::int64_t>, std::vector<std::int32_t>>
-compute_owned_shared(MPI_Comm comm, const std::vector<std::int64_t>& ghosts,
-                     const std::vector<std::int32_t>& ghost_src_ranks)
+compute_owned_shared(MPI_Comm comm, const xtl::span<const std::int64_t>& ghosts,
+                     const xtl::span<const std::int32_t>& ghost_src_ranks)
 {
   assert(ghosts.size() == ghost_src_ranks.size());
 
@@ -132,8 +132,8 @@ compute_owned_shared(MPI_Comm comm, const std::vector<std::int64_t>& ghosts,
 ///   calling process own in their halo (ghost region)
 std::array<MPI_Comm, 3>
 compute_asymmetric_communicators(MPI_Comm comm,
-                                 const std::vector<int>& halo_src_ranks,
-                                 const std::vector<int>& halo_dest_ranks)
+                                 const xtl::span<const int>& halo_src_ranks,
+                                 const xtl::span<const int>& halo_dest_ranks)
 {
   std::array comms{MPI_COMM_NULL, MPI_COMM_NULL, MPI_COMM_NULL};
 
@@ -347,14 +347,15 @@ IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size)
 }
 //-----------------------------------------------------------------------------
 IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
-                   const std::vector<int>& dest_ranks,
-                   const std::vector<std::int64_t>& ghosts,
-                   const std::vector<int>& src_ranks)
+                   const xtl::span<const int>& dest_ranks,
+                   const xtl::span<const std::int64_t>& ghosts,
+                   const xtl::span<const int>& src_ranks)
     : _comm_owner_to_ghost(MPI_COMM_NULL), _comm_ghost_to_owner(MPI_COMM_NULL),
-      _comm_symmetric(MPI_COMM_NULL), _ghosts(ghosts)
+      _comm_symmetric(MPI_COMM_NULL), _ghosts(ghosts.begin(), ghosts.end())
 {
   assert(size_t(ghosts.size()) == src_ranks.size());
-  assert(src_ranks == get_ghost_ranks(mpi_comm, local_size, _ghosts));
+  assert(std::equal(src_ranks.begin(), src_ranks.end(),
+                    get_ghost_ranks(mpi_comm, local_size, _ghosts).begin()));
 
   // Get global offset (index), using partial exclusive reduction
   std::int64_t offset = 0;
@@ -370,7 +371,7 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
 
   // Build vector of src ranks for ghosts, i.e. the ranks that own the
   // callers ghosts
-  std::vector<std::int32_t> halo_src_ranks = src_ranks;
+  std::vector<std::int32_t> halo_src_ranks(src_ranks.begin(), src_ranks.end());
   std::sort(halo_src_ranks.begin(), halo_src_ranks.end());
   halo_src_ranks.erase(
       std::unique(halo_src_ranks.begin(), halo_src_ranks.end()),

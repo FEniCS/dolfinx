@@ -174,6 +174,10 @@ def ffcx_jit(ufl_object, form_compiler_parameters={}, jit_parameters={}):
         See `python/dolfinx/jit.py` for all available
         parameters. Takes priority over all other parameter values.
 
+    Returns
+    -------
+      (compiled object, module, (header code, implementation code))
+
     Notes
     -----
       Priority ordering of parameters controlling DOLFINx JIT \
@@ -219,4 +223,4 @@ def ffcx_jit(ufl_object, form_compiler_parameters={}, jit_parameters={}):
     else:
         raise TypeError(type(ufl_object))
 
-    return r[0][0]
+    return (r[0][0], r[1], r[2])

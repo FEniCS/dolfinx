@@ -5,7 +5,9 @@ cmake_minimum_required(VERSION 3.12)
 #------------------------------------------------------------------------------
 # Set project name and version number
 
-project(DOLFINX VERSION 0.1.0)
+project(DOLFINX VERSION "0.1.1.0")
+
+set(DOXYGEN_DOLFINX_VERSION ${DOLFINX_VERSION} CACHE STRING "Version for Doxygen" FORCE)
 
 #------------------------------------------------------------------------------
 # Set CMake options, see `cmake --help-policy CMP000x`
@@ -143,9 +145,6 @@ find_package(Boost 1.70 REQUIRED timer filesystem)
 set_package_properties(Boost PROPERTIES TYPE REQUIRED
   DESCRIPTION "Boost C++ libraries"
   URL "http://www.boost.org")
-
-# Enable SIMD with xtensor
-option(XTENSOR_USE_XSIMD "Enable xsimd with xtensor (xsimd package required)" OFF)
 
 # Check for required package xtensor
 find_package(xtensor REQUIRED)

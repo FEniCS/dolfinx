@@ -8,19 +8,15 @@
 
 #include <array>
 #include <dolfinx/common/MPI.h>
-#include <xtl/xspan.hpp>
 #include <vector>
+#include <xtl/xspan.hpp>
 
-namespace dolfinx
-{
-
-// Forward declarations
-namespace mesh
+namespace dolfinx::mesh
 {
 class Mesh;
-} // namespace mesh
+}
 
-namespace geometry
+namespace dolfinx::geometry
 {
 
 /// Axis-Aligned bounding box binary tree. It is used to find entities
@@ -122,5 +118,4 @@ private:
   // List of bounding box coordinates
   std::vector<double> _bbox_coordinates;
 };
-} // namespace geometry
-} // namespace dolfinx
+} // namespace dolfinx::geometry

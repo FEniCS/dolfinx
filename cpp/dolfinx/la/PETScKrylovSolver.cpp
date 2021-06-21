@@ -66,7 +66,7 @@ void PETScKrylovSolver::set_operators(const Mat A, const Mat P)
     petsc_error(ierr, __FILE__, "KSPSetOperators");
 }
 //-----------------------------------------------------------------------------
-int PETScKrylovSolver::solve(Vec x, const Vec b, bool transpose)
+int PETScKrylovSolver::solve(Vec x, const Vec b, bool transpose) const
 {
   common::Timer timer("PETSc Krylov solver");
   assert(x);

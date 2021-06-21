@@ -9,25 +9,25 @@
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <dolfinx/graph/scotch.h>
+#include <functional>
 #include <memory>
 #include <vector>
 #include <xtensor/xbuilder.hpp>
 #include <xtensor/xtensor.hpp>
 #include <xtensor/xview.hpp>
 
-namespace dolfinx
-{
-namespace common
+namespace dolfinx::common
 {
 class IndexMap;
 }
 
-namespace fem
+namespace dolfinx::fem
 {
 class CoordinateElement;
-} // namespace fem
+}
 
-namespace mesh
+namespace dolfinx::mesh
 {
 class Topology;
 
@@ -117,11 +117,14 @@ private:
 };
 
 /// Build Geometry
-/// FIXME: document
-mesh::Geometry create_geometry(MPI_Comm comm, const Topology& topology,
-                               const fem::CoordinateElement& coordinate_element,
-                               const graph::AdjacencyList<std::int64_t>& cells,
-                               const xt::xtensor<double, 2>& x);
+/// @todo document
+mesh::Geometry
+create_geometry(MPI_Comm comm, const Topology& topology,
+                const fem::CoordinateElement& coordinate_element,
+                const graph::AdjacencyList<std::int64_t>& cells,
+                const xt::xtensor<double, 2>& x,
+                const std::function<std::vector<int>(
+                    const graph::AdjacencyList<std::int32_t>&)>& reorder_fn
+                = nullptr);
 
-} // namespace mesh
-} // namespace dolfinx
+} // namespace dolfinx::mesh

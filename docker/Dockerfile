@@ -41,15 +41,16 @@
 #    docker build --target dev-env --file dolfinx/docker/Dockerfile --build-arg PETSC_SLEPC_OPTFLAGS="-O2 -march=native" .
 #
 
-ARG GMSH_VERSION=4.6.0
+
+ARG GMSH_VERSION=4_8_4
 ARG PYBIND11_VERSION=2.6.2
-ARG PETSC_VERSION=3.15.0
-ARG SLEPC_VERSION=3.15.0
-ARG SLEPC4PY_VERSION=3.15.0
+ARG PETSC_VERSION=3.15.1
+ARG SLEPC_VERSION=3.15.1
 ARG ADIOS2_VERSION=2.7.1
+ARG PYVISTA_VERSION=0.31.1
 # TODO: Update KaHIP version upon a release.
 ARG KAHIP_VERSION=623decb
-ARG XTENSOR_VERSION=0.23.9
+ARG XTENSOR_VERSION=0.23.10
 ARG XTENSOR_BLAS_VERSION=0.19.1
 ARG XTL_VERSION=0.7.2
 
@@ -63,7 +64,6 @@ ARG GMSH_VERSION
 ARG PYBIND11_VERSION
 ARG PETSC_VERSION
 ARG SLEPC_VERSION
-ARG SLEPC4PY_VERSION
 ARG ADIOS2_VERSION
 ARG KAHIP_VERSION
 ARG XTENSOR_VERSION
@@ -127,7 +127,12 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     libglu1 \
     libxcursor-dev \
     libxft2 \
-    libxinerama1 && \
+    libxinerama1 \
+    libfltk1.3-dev \
+    libfreetype6-dev  \
+    libgl1-mesa-dev \
+    libocct-foundation-dev \
+    libocct-data-exchange-dev && \
     #
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
@@ -191,18 +196,15 @@ RUN wget -nc --quiet https://github.com/ornladios/ADIOS2/archive/v${ADIOS2_VERSI
     cmake --install build-dir && \
     rm -rf /tmp/*
 
-# Download Install gmsh SDK
-# Only compatible with x86-64 (amd64)
-RUN dpkgArch="$(dpkg --print-architecture)"; \
-    case "$dpkgArch" in amd64) \
-      cd /usr/local && \
-      wget -nc --quiet http://gmsh.info/bin/Linux/gmsh-${GMSH_VERSION}-Linux64-sdk.tgz && \
-      tar -xf gmsh-${GMSH_VERSION}-Linux64-sdk.tgz && \
-      rm gmsh-${GMSH_VERSION}-Linux64-sdk.tgz ;; \
-    esac;
+# Install GMSH
+RUN cd /usr/local && \
+    git clone -b gmsh_${GMSH_VERSION} --single-branch https://gitlab.onelab.info/gmsh/gmsh.git && \
+    cd gmsh && \
+    mkdir build && cd build && \
+    cmake -DCMAKE_BUILD_TYPE=Release -DENABLE_BUILD_DYNAMIC=1  -DENABLE_OPENMP=1  .. && \
+    make install
 
-ENV PATH=/usr/local/gmsh-${GMSH_VERSION}-Linux64-sdk/bin:$PATH \
-    PYTHONPATH=/usr/local/gmsh-${GMSH_VERSION}-Linux64-sdk/lib:$PYTHONPATH
+ENV PYTHONPATH=/usr/local/lib:$PYTHONPATH
 
 # Install PETSc and petsc4py with real and complex types
 ENV PETSC_DIR=/usr/local/petsc SLEPC_DIR=/usr/local/slepc
@@ -445,7 +447,7 @@ RUN apt-get -qq update && \
 # matplotlib improves plotting quality with better color maps and properly rendering colorbars.
 RUN dpkgArch="$(dpkg --print-architecture)"; \
     case "$dpkgArch" in amd64) \
-      pip3 install --no-cache-dir pyvista ;; \
+    pip3 install --no-cache-dir pyvista==${PYVISTA_VERSION} ;; \
     esac; \
     pip3 install --no-cache-dir matplotlib
 

@@ -11,18 +11,14 @@
 #include <utility>
 #include <vector>
 
-namespace dolfinx
+namespace dolfinx::mesh
 {
-
-namespace mesh
-{
-// Forward declarations
 class Mesh;
 template <typename T>
 class MeshTags;
-} // namespace mesh
+} // namespace dolfinx::mesh
 
-namespace refinement
+namespace dolfinx::refinement
 {
 
 /// Create uniformly refined mesh
@@ -47,5 +43,4 @@ std::pair<mesh::Mesh, ParentRelationshipInfo>
 refine(const mesh::Mesh& mesh, const mesh::MeshTags<std::int8_t>& cell_markers,
        bool redistribute = true);
 
-} // namespace refinement
-} // namespace dolfinx
+} // namespace dolfinx::refinement
