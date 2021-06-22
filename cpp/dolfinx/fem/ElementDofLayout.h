@@ -43,9 +43,9 @@ public:
   ElementDofLayout(
       int block_size,
       const std::vector<std::vector<std::set<int>>>& entity_dofs,
+      const std::vector<std::vector<std::set<int>>>& entity_closure_dofs,
       const std::vector<int>& parent_map,
-      const std::vector<std::shared_ptr<const ElementDofLayout>>& sub_dofmaps,
-      const mesh::CellType cell_type);
+      const std::vector<std::shared_ptr<const ElementDofLayout>>& sub_dofmaps);
 
   /// Copy the DOF layout, discarding any parent information
   ElementDofLayout copy() const;

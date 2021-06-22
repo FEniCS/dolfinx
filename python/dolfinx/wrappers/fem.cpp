@@ -193,10 +193,10 @@ void fem(py::module& m)
              std::shared_ptr<dolfinx::fem::ElementDofLayout>>(
       m, "ElementDofLayout", "Object describing the layout of dofs on a cell")
       .def(py::init<int, const std::vector<std::vector<std::set<int>>>&,
+                    const std::vector<std::vector<std::set<int>>>&,
                     const std::vector<int>&,
-                    const std::vector<
-                        std::shared_ptr<const dolfinx::fem::ElementDofLayout>>,
-                    const dolfinx::mesh::CellType>())
+                    const std::vector<std::shared_ptr<
+                        const dolfinx::fem::ElementDofLayout>>>())
       .def_property_readonly("num_dofs",
                              &dolfinx::fem::ElementDofLayout::num_dofs)
       .def("num_entity_dofs", &dolfinx::fem::ElementDofLayout::num_entity_dofs)
