@@ -116,10 +116,10 @@ la::SparsityPattern create_sparsity_pattern(
     const std::set<IntegralType>& integrals);
 
 /// Create an ElementDofLayout from a ufc_dofmap
-ElementDofLayout create_element_dof_layout(const ufc_dofmap& dofmap,
-                                           const mesh::CellType cell_type,
-                                           const std::vector<int>& parent_map
-                                           = {});
+ElementDofLayout create_element_dof_layout(
+    const ufc_dofmap& dofmap, const mesh::CellType cell_type,
+    std::shared_ptr<const dolfinx::fem::FiniteElement> element,
+    const std::vector<int>& parent_map = {});
 
 /// Create a dof map on mesh from a ufc_dofmap
 /// @param[in] comm MPI communicator

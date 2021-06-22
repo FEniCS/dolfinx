@@ -218,7 +218,7 @@ public:
   /// returned
   /// @param[in] transpose Indicates whether the transpose transformations
   /// should be returned
-  /// @param[in] scalar_element Indicated whether the scalar transformations
+  /// @param[in] scalar_element Indicates whether the scalar transformations
   /// should be returned for a vector element
   template <typename T>
   std::function<void(const xtl::span<T>&, const xtl::span<const std::uint32_t>&,
@@ -339,7 +339,7 @@ public:
   /// should be returned
   /// @param[in] transpose Indicates whether the transpose
   /// transformations should be returned
-  /// @param[in] scalar_element Indicated whether the scalar
+  /// @param[in] scalar_element Indicates whether the scalar
   /// transformations should be returned for a vector element
   template <typename T>
   std::function<void(const xtl::span<T>&, const xtl::span<const std::uint32_t>&,
@@ -623,11 +623,39 @@ public:
   ///
   /// @param[in] inverse Indicates whether the inverse transformations should be
   /// returned
-  /// @param[in] scalar_element Indicated whether the scalar transformations
+  /// @param[in] scalar_element Indicates whether the scalar transformations
   /// should be returned for a vector element
   std::function<void(const xtl::span<std::int32_t>&, std::uint32_t)>
   get_dof_permutation_function(bool inverse = false,
                                bool scalar_element = false) const;
+
+  /// Return the DOFs on each entity
+  ///
+  /// @param[in] scalar_element Indicates whether the information for the scalar
+  /// element should be returned for a vector element
+  std::vector<std::vector<std::set<int>>> entity_dofs(bool scalar_element
+                                                      = false) const;
+
+  /// Return the DOFs on the closure of each entity
+  ///
+  /// @param[in] scalar_element Indicates whether the information for the scalar
+  /// element should be returned for a vector element
+  std::vector<std::vector<std::set<int>>>
+  entity_closure_dofs(bool scalar_element = false) const;
+
+  /// Return number of DOFs on each entity
+  ///
+  /// @param[in] scalar_element Indicates whether the information for the scalar
+  /// element should be returned for a vector element
+  std::vector<std::vector<int>> num_entity_dofs(bool scalar_element
+                                                = false) const;
+
+  /// Return number of DOFs on the closure of each entity
+  ///
+  /// @param[in] scalar_element Indicates whether the information for the scalar
+  /// element should be returned for a vector element
+  std::vector<std::vector<int>> num_entity_closure_dofs(bool scalar_element
+                                                        = false) const;
 
 private:
   std::string _signature, _family;
