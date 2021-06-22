@@ -85,9 +85,9 @@ public:
   /// @param[in] src_ranks Owner rank (on global communicator) of each
   ///   entry in @p ghosts
   IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
-           const std::vector<int>& dest_ranks,
-           const std::vector<std::int64_t>& ghosts,
-           const std::vector<int>& src_ranks);
+           const xtl::span<const int>& dest_ranks,
+           const xtl::span<const std::int64_t>& ghosts,
+           const xtl::span<const int>& src_ranks);
 
   // Copy constructor
   IndexMap(const IndexMap& map) = delete;

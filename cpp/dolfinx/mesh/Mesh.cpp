@@ -18,8 +18,38 @@
 #include <dolfinx/mesh/cell_types.h>
 #include <memory>
 
+#include "graphbuild.h"
+
 using namespace dolfinx;
 using namespace dolfinx::mesh;
+
+namespace
+{
+/// Re-order an adjacency list
+template <typename T>
+graph::AdjacencyList<T>
+reorder_list(const graph::AdjacencyList<T>& list,
+             const xtl::span<const std::int32_t>& nodemap)
+{
+  std::vector<T> data(list.array());
+  std::vector<std::int32_t> offsets(list.offsets());
+
+  // Compute new offsets
+  for (std::size_t n = 0; n < nodemap.size(); ++n)
+    offsets[n + 1] = offsets[n] + list.num_links(nodemap[n]);
+  graph::AdjacencyList<T> list_new(std::move(data), std::move(offsets));
+
+  for (std::size_t n = 0; n < nodemap.size(); ++n)
+  {
+    auto links_old = list.links(n);
+    auto links_new = list_new.links(nodemap[n]);
+    assert(links_old.size() == links_new.size());
+    std::copy(links_old.begin(), links_old.end(), links_new.begin());
+  }
+
+  return list_new;
+}
+} // namespace
 
 //-----------------------------------------------------------------------------
 Mesh mesh::create_mesh(MPI_Comm comm,
@@ -64,17 +94,43 @@ Mesh mesh::create_mesh(MPI_Comm comm,
       comm, size, tdim, cells_topology, GhostMode::shared_facet);
 
   // Distribute cells to destination rank
-  const auto [cell_nodes, src, original_cell_index, ghost_owners]
+  const auto [cell_nodes0, src, original_cell_index0, ghost_owners]
       = graph::build::distribute(comm, cells, dest);
 
+  // Extract cell 'topology', i.e. the vertices for each cell
+  const graph::AdjacencyList<std::int64_t> cells_extracted0
+      = mesh::extract_topology(element.cell_shape(), element.dof_layout(),
+                               cell_nodes0);
+
+  // Build local dual graph for owned cells to apply re-ordering to
+  const std::int32_t num_owned_cells
+      = cells_extracted0.num_nodes() - ghost_owners.size();
+  auto [g, m] = mesh::build_local_dual_graph(
+      xtl::span<const std::int64_t>(
+          cells_extracted0.array().data(),
+          cells_extracted0.offsets()[num_owned_cells + 1]),
+      xtl::span<const std::int32_t>(cells_extracted0.offsets().data(),
+                                    num_owned_cells + 1),
+      tdim);
+
+  // Compute re-ordering of local dual graph
+  const std::vector<int> remap = graph::scotch::compute_gps(g, 25).first;
+
+  // Create re-ordered cell lists
+  std::vector<std::int64_t> original_cell_index(original_cell_index0);
+  for (std::size_t i = 0; i < remap.size(); ++i)
+    original_cell_index[remap[i]] = original_cell_index0[i];
+  const graph::AdjacencyList<std::int64_t> cells_extracted
+      = reorder_list(cells_extracted0, remap);
+  const graph::AdjacencyList<std::int64_t> cell_nodes
+      = reorder_list(cell_nodes0, remap);
+
   // Create cells and vertices with the ghosting requested. Input
-  // topology includes cells shared via facet, but output will remove
-  // these, if not required by ghost_mode.
-  Topology topology = mesh::create_topology(
-      comm,
-      mesh::extract_topology(element.cell_shape(), element.dof_layout(),
-                             cell_nodes),
-      original_cell_index, ghost_owners, element.cell_shape(), ghost_mode);
+  // topology includes cells shared via facet, but ghosts will be
+  // removed later if not required by ghost_mode.
+  Topology topology
+      = mesh::create_topology(comm, cells_extracted, original_cell_index,
+                              ghost_owners, element.cell_shape(), ghost_mode);
 
   // Create connectivity required to compute the Geometry (extra
   // connectivities for higher-order geometries)
@@ -93,22 +149,22 @@ Mesh mesh::create_mesh(MPI_Comm comm,
     }
   }
 
-  int n_cells_local = topology.index_map(tdim)->size_local()
-                      + topology.index_map(tdim)->num_ghosts();
+  const int n_cells_local = topology.index_map(tdim)->size_local()
+                            + topology.index_map(tdim)->num_ghosts();
 
-  // Remove ghost cells from geometry data, if not required.
+  // Remove ghost cells from geometry data, if not required
   std::vector<std::int32_t> off1(
       cell_nodes.offsets().begin(),
       std::next(cell_nodes.offsets().begin(), n_cells_local + 1));
   std::vector<std::int64_t> data1(
       cell_nodes.array().begin(),
       std::next(cell_nodes.array().begin(), off1[n_cells_local]));
-  graph::AdjacencyList<std::int64_t> cell_nodes_2(std::move(data1),
-                                                  std::move(off1));
-  if (element.needs_permutation_data())
+  graph::AdjacencyList<std::int64_t> cell_nodes1(std::move(data1),
+                                                 std::move(off1));
+  if (element.needs_dof_permutations())
     topology.create_entity_permutations();
   Geometry geometry
-      = mesh::create_geometry(comm, topology, element, cell_nodes_2, x);
+      = mesh::create_geometry(comm, topology, element, cell_nodes1, x);
 
   return Mesh(comm, std::move(topology), std::move(geometry));
 }

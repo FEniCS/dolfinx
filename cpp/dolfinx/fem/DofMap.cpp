@@ -228,8 +228,10 @@ DofMap DofMap::extract_sub_dofmap(const std::vector<int>& component) const
                 1);
 }
 //-----------------------------------------------------------------------------
-std::pair<std::unique_ptr<DofMap>, std::vector<std::int32_t>>
-DofMap::collapse(MPI_Comm comm, const mesh::Topology& topology) const
+std::pair<std::unique_ptr<DofMap>, std::vector<std::int32_t>> DofMap::collapse(
+    MPI_Comm comm, const mesh::Topology& topology,
+    const std::function<std::vector<int>(
+        const graph::AdjacencyList<std::int32_t>&)>& reorder_fn) const
 {
   assert(element_dof_layout);
   assert(index_map);
@@ -248,8 +250,8 @@ DofMap::collapse(MPI_Comm comm, const mesh::Topology& topology) const
 
     // Parent does not have block structure but sub-map does, so build
     // new submap to get block structure for collapsed dofmap.
-    auto [index_map, bs, dofmap]
-        = fem::build_dofmap_data(comm, topology, *collapsed_dof_layout);
+    auto [index_map, bs, dofmap] = fem::build_dofmap_data(
+        comm, topology, *collapsed_dof_layout, reorder_fn);
     dofmap_new = std::make_unique<DofMap>(element_dof_layout, index_map, bs,
                                           std::move(dofmap), bs);
   }

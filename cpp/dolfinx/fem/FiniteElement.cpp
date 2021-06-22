@@ -15,6 +15,22 @@ using namespace dolfinx::fem;
 
 namespace
 {
+// Check if an element is a basix element (or a blocked element
+// containing a Basix element)
+bool is_basix_element(const ufc_finite_element& element)
+{
+  if (element.element_type == ufc_basix_element)
+    return true;
+  else if (element.element_type == ufc_blocked_element)
+  {
+    // TODO: what should happen if the element is a blocked element
+    // containing a blocked element containing a Basix element?
+    return element.sub_elements[0]->element_type == ufc_basix_element;
+  }
+  else
+    return false;
+}
+
 // Recursively extract sub finite element
 std::shared_ptr<const FiniteElement>
 _extract_sub_element(const FiniteElement& finite_element,
@@ -67,8 +83,7 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
       _space_dim(ufc_element.space_dimension),
       _value_size(ufc_element.value_size),
       _reference_value_size(ufc_element.reference_value_size),
-      _hash(std::hash<std::string>{}(_signature)), _bs(ufc_element.block_size),
-      _needs_permutation_data(ufc_element.needs_transformation_data)
+      _hash(std::hash<std::string>{}(_signature)), _bs(ufc_element.block_size)
 {
   const ufc_shape _shape = ufc_element.cell_shape;
   switch (_shape)
@@ -103,25 +118,43 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
          {hexahedron, "hexahedron"}};
   const std::string cell_shape = ufc_to_cell.at(ufc_element.cell_shape);
 
-  // FIXME: Add element 'handle' to UFC and do not use fragile strings
-  const std::string family = ufc_element.family;
-  if (family != "mixed element" and family != "Quadrature")
-  {
-    _element = std::make_unique<basix::FiniteElement>(basix::create_element(
-        family.c_str(), cell_shape.c_str(), ufc_element.degree));
-  }
-
   // Fill value dimension
   for (int i = 0; i < ufc_element.value_rank; ++i)
     _value_dimension.push_back(ufc_element.value_shape[i]);
 
+  _needs_dof_transformations = false;
+  _needs_dof_permutations = false;
   // Create all sub-elements
   for (int i = 0; i < ufc_element.num_sub_elements; ++i)
   {
     ufc_finite_element* ufc_sub_element = ufc_element.sub_elements[i];
     _sub_elements.push_back(std::make_shared<FiniteElement>(*ufc_sub_element));
+    if (_sub_elements[i]->needs_dof_permutations()
+        and !_needs_dof_transformations)
+    {
+      _needs_dof_permutations = true;
+    }
+    if (_sub_elements[i]->needs_dof_transformations())
+    {
+      _needs_dof_permutations = false;
+      _needs_dof_transformations = true;
+    }
   }
 
+  if (is_basix_element(ufc_element))
+  {
+    // FIXME: Find a better way than strings to initialise this Basix element
+    _element = std::make_unique<basix::FiniteElement>(basix::create_element(
+        _family.c_str(), cell_shape.c_str(), ufc_element.degree));
+
+    _needs_dof_transformations
+        = !_element->dof_transformations_are_identity()
+          and !_element->dof_transformations_are_permutations();
+
+    _needs_dof_permutations
+        = !_element->dof_transformations_are_identity()
+          and _element->dof_transformations_are_permutations();
+  }
 }
 //-----------------------------------------------------------------------------
 std::string FiniteElement::signature() const noexcept { return _signature; }
@@ -173,16 +206,6 @@ void FiniteElement::evaluate_reference_basis(
     }
   }
 }
-//-----------------------------------------------------------------------------
-// void FiniteElement::evaluate_reference_basis_derivatives(
-//     std::vector<double>& /*values*/, int /*order*/,
-//     const xt::xtensor<double, 2>& /*X*/) const
-// {
-//   // NOTE: This function is untested. Add tests and re-active
-//   throw std::runtime_error(
-//       "FiniteElement::evaluate_reference_basis_derivatives required
-//       updating");
-// }
 //-----------------------------------------------------------------------------
 void FiniteElement::transform_reference_basis(
     xt::xtensor<double, 3>& values,
@@ -237,8 +260,90 @@ const xt::xtensor<double, 2>& FiniteElement::interpolation_points() const
   return _element->points();
 }
 //-----------------------------------------------------------------------------
-bool FiniteElement::needs_permutation_data() const noexcept
+bool FiniteElement::needs_dof_transformations() const noexcept
 {
-  return _needs_permutation_data;
+  return _needs_dof_transformations;
+}
+//-----------------------------------------------------------------------------
+bool FiniteElement::needs_dof_permutations() const noexcept
+{
+  return _needs_dof_permutations;
+}
+//-----------------------------------------------------------------------------
+void FiniteElement::permute_dofs(const xtl::span<std::int32_t>& doflist,
+                                 std::uint32_t cell_permutation) const
+{
+  _element->permute_dofs(doflist, cell_permutation);
+}
+//-----------------------------------------------------------------------------
+void FiniteElement::unpermute_dofs(const xtl::span<std::int32_t>& doflist,
+                                   std::uint32_t cell_permutation) const
+{
+  _element->unpermute_dofs(doflist, cell_permutation);
+}
+//-----------------------------------------------------------------------------
+std::function<void(const xtl::span<std::int32_t>&, std::uint32_t)>
+FiniteElement::get_dof_permutation_function(bool inverse,
+                                            bool scalar_element) const
+{
+  if (!needs_dof_permutations())
+  {
+    // If this element shouldn't be permuted, return a function that
+    // throws an error
+    return [](const xtl::span<std::int32_t>&, std::uint32_t)
+    {
+      throw std::runtime_error(
+          "Permutations should not be applied for this element.");
+    };
+  }
+
+  if (_sub_elements.size() != 0)
+  {
+    if (_bs == 1)
+    {
+      // Mixed element
+      std::vector<
+          std::function<void(const xtl::span<std::int32_t>&, std::uint32_t)>>
+          sub_element_functions;
+      std::vector<int> dims;
+      for (std::size_t i = 0; i < _sub_elements.size(); ++i)
+      {
+        sub_element_functions.push_back(
+            _sub_elements[i]->get_dof_permutation_function(inverse));
+        dims.push_back(_sub_elements[i]->space_dimension());
+      }
+
+      return
+          [dims, sub_element_functions](const xtl::span<std::int32_t>& doflist,
+                                        std::uint32_t cell_permutation)
+      {
+        std::size_t start = 0;
+        for (std::size_t e = 0; e < sub_element_functions.size(); ++e)
+        {
+          sub_element_functions[e](doflist.subspan(start, dims[e]),
+                                   cell_permutation);
+          start += dims[e];
+        }
+      };
+    }
+    else if (!scalar_element)
+    {
+      throw std::runtime_error(
+          "Permuting DOFs for vector elements not implemented.");
+    }
+  }
+
+  if (inverse)
+  {
+    return [this](const xtl::span<std::int32_t>& doflist,
+                  std::uint32_t cell_permutation)
+    { unpermute_dofs(doflist, cell_permutation); };
+  }
+  else
+  {
+    return [this](const xtl::span<std::int32_t>& doflist,
+                  std::uint32_t cell_permutation)
+    { permute_dofs(doflist, cell_permutation); };
+  }
 }
 //-----------------------------------------------------------------------------

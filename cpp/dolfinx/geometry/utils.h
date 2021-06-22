@@ -11,14 +11,12 @@
 #include <vector>
 #include <xtl/xspan.hpp>
 
-namespace dolfinx
-{
-namespace mesh
+namespace dolfinx::mesh
 {
 class Mesh;
-} // namespace mesh
+}
 
-namespace geometry
+namespace dolfinx::geometry
 {
 class BoundingBoxTree;
 
@@ -94,5 +92,4 @@ std::vector<std::int32_t>
 select_colliding_cells(const dolfinx::mesh::Mesh& mesh,
                        const xtl::span<const std::int32_t>& candidate_cells,
                        const std::array<double, 3>& p, int n);
-} // namespace geometry
-} // namespace dolfinx
+} // namespace dolfinx::geometry
