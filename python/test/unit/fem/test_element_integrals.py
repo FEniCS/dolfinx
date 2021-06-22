@@ -5,8 +5,8 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for the fem interface"""
 
+import random
 from itertools import combinations, product
-from random import shuffle
 
 import numpy as np
 import pytest
@@ -53,7 +53,7 @@ def unit_cell(cell_type, random_order=True):
     # Randomly number the points and create the mesh
     order = list(range(num_points))
     if random_order:
-        shuffle(order)
+        random.shuffle(order)
     ordered_points = np.zeros(points.shape)
     for i, j in enumerate(order):
         ordered_points[j] = points[i]
@@ -114,7 +114,7 @@ def two_unit_cells(cell_type, agree=False, random_order=True, return_order=False
     # Randomly number the points and create the mesh
     order = list(range(num_points))
     if random_order:
-        shuffle(order)
+        random.shuffle(order)
     ordered_points = np.zeros(points.shape)
     for i, j in enumerate(order):
         ordered_points[j] = points[i]
@@ -409,6 +409,7 @@ def test_plus_minus_matrix(cell_type, pm1, pm2):
                 assert np.isclose(results[0][a, c], result[b, d])
 
 
+@pytest.mark.skip(reason="This test relies on the mesh constructor not re-ordering the mesh points. Needs replacing.")
 @skip_in_parallel
 @pytest.mark.parametrize('order', [1, 2])
 @pytest.mark.parametrize('space_type', ["N1curl", "N2curl"])
@@ -421,9 +422,11 @@ def test_curl(space_type, order):
     spaces = []
     results = []
     cell = list(range(len(points)))
+    random.seed(2)
+
     # Assemble vector on 5 randomly numbered cells
     for i in range(5):
-        shuffle(cell)
+        random.shuffle(cell)
 
         domain = ufl.Mesh(ufl.VectorElement("Lagrange", cpp.mesh.to_string(CellType.tetrahedron), 1))
         mesh = create_mesh(MPI.COMM_WORLD, [cell], points, domain)
@@ -438,20 +441,30 @@ def test_curl(space_type, order):
         spaces.append(V)
         results.append(result.array)
 
-    # Check that all DOFs on edges agree
-    V = spaces[0]
-    result = results[0]
-    connectivity = V.mesh.topology.connectivity(1, 0)
-    for i, edge in enumerate(V.mesh.topology.connectivity(tdim, 1).links(0)):
-        vertices = connectivity.links(edge)
-        values = sorted([result[V.dofmap.cell_dofs(0)[a]] for a in V.dofmap.dof_layout.entity_dofs(1, i)])
+    # Set data for first space
+    V0 = spaces[0]
+    c10_0 = V.mesh.topology.connectivity(1, 0)
 
-        for s, r in zip(spaces[1:], results[1:]):
-            c = s.mesh.topology.connectivity(1, 0)
-            for j, e in enumerate(s.mesh.topology.connectivity(tdim, 1).links(0)):
-                if sorted(c.links(e)) == sorted(vertices):
-                    v = sorted([r[s.dofmap.cell_dofs(0)[a]] for a in s.dofmap.dof_layout.entity_dofs(1, j)])
-                    assert np.allclose(values, v)
+    # Check that all DOFs on edges agree
+
+    # Loop over cell edges
+    for i, edge in enumerate(V0.mesh.topology.connectivity(tdim, 1).links(0)):
+
+        # Get the edge vertices
+        vertices0 = c10_0.links(edge)  # Need to map back
+
+        # Get assembled values on edge
+        values0 = sorted([result[V0.dofmap.cell_dofs(0)[a]] for a in V0.dofmap.dof_layout.entity_dofs(1, i)])
+
+        for V, result in zip(spaces[1:], results[1:]):
+            # Get edge->vertex connectivity
+            c10 = V.mesh.topology.connectivity(1, 0)
+
+            # Loop over cell edges
+            for j, e in enumerate(V.mesh.topology.connectivity(tdim, 1).links(0)):
+                if sorted(c10.links(e)) == sorted(vertices0):  # need to map back c.links(e)
+                    values = sorted([result[V.dofmap.cell_dofs(0)[a]] for a in V.dofmap.dof_layout.entity_dofs(1, j)])
+                    assert np.allclose(values0, values)
                     break
             else:
                 continue

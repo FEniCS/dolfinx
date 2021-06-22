@@ -8,11 +8,9 @@
 
 #include "ElementDofLayout.h"
 #include <cstdint>
-#include <dolfinx/common/array2d.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <functional>
 #include <memory>
-#include <string>
 #include <xtensor/xtensor.hpp>
 #include <xtl/xspan.hpp>
 
@@ -60,13 +58,13 @@ public:
 
   /// Compute Jacobian for a cell with given geometry using the
   /// basis functions and first order derivatives.
-  /// @param[in] dphi Pre-computed first order derivatives of basis functions at
-  /// set of points.
-  /// The shape of dphi is (tdim, number of points, number of basis fn, 1).
+  /// @param[in] dphi Pre-computed first order derivatives of basis
+  /// functions at set of points. The shape of dphi is (tdim, number of
+  /// points, number of basis fn, 1).
   /// @param[in] cell_geometry Coordinates/geometry
   /// @param[in,out] J The Jacobian
-  /// The shape of J is (number of points, geometric dimension, topological
-  /// dimenson).
+  /// The shape of J is (number of points, geometric dimension,
+  /// topological dimenson).
   void compute_jacobian(const xt::xtensor<double, 4>& dphi,
                         const xt::xtensor<double, 2>& cell_geometry,
                         xt::xtensor<double, 3>& J) const;
@@ -74,21 +72,19 @@ public:
   /// Compute the inverse of the Jacobian. If the coordinate element is
   /// affine, it computes the inverse at only one point.
   /// @param[in] J The Jacobian
-  /// The shape of J is (number of points, geometric dimension, topological
-  /// dimenson).
-  /// @param[in,out] K The inverse of the Jacobian
-  /// The shape of J is (number of points, tpological dimension, geometrical
-  /// dimenson).
+  /// The shape of J is (number of points, geometric dimension,
+  /// topological dimenson).
+  /// @param[in,out] K The inverse of the Jacobian. The shape of J is
+  /// (number of points, tpological dimension, geometrical dimenson).
   void compute_jacobian_inverse(const xt::xtensor<double, 3>& J,
                                 xt::xtensor<double, 3>& K) const;
 
-  /// Compute the determinant of the Jacobian. If the coordinate element is
-  /// affine, it computes the determinant at only one point.
-  /// @param[in] J Polynomial degree of the map
-  /// The shape of J is (number of points, geometric dimension, topological
-  /// dimenson).
-  /// @param[in,out] detJ Jacobian
-  /// The shape of detJ is (number of points)
+  /// Compute the determinant of the Jacobian. If the coordinate element
+  /// is affine, it computes the determinant at only one point.
+  /// @param[in] J Polynomial degree of the map. The shape of J is
+  /// (number of points, geometric dimension, topological dimenson).
+  /// @param[in,out] detJ The Jacobians. The shape of detJ is (number of
+  /// points).
   void compute_jacobian_determinant(const xt::xtensor<double, 3>& J,
                                     xt::xtensor<double, 1>& detJ) const;
 
@@ -119,9 +115,12 @@ public:
   void unpermute_dofs(xtl::span<std::int32_t> dofs,
                       const std::uint32_t cell_perm) const;
 
-  /// Indicates whether the coordinate map needs permutation data
-  /// passing in (for higher order geometries)
-  bool needs_permutation_data() const;
+  /// Indicates whether the geometry DOF numbers on each cell need
+  /// permuting
+  ///
+  /// For higher order geometries (where there is more than one DOF on a
+  /// subentity of the cell), this will be true.
+  bool needs_dof_permutations() const;
 
   /// Absolute increment stopping criterium for non-affine Newton solver
   double non_affine_atol = 1.0e-8;

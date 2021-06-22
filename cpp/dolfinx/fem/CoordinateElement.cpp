@@ -310,9 +310,10 @@ void CoordinateElement::unpermute_dofs(xtl::span<std::int32_t> dofs,
   _element->unpermute_dofs(dofs, cell_perm);
 }
 //-----------------------------------------------------------------------------
-bool CoordinateElement::needs_permutation_data() const
+bool CoordinateElement::needs_dof_permutations() const
 {
   assert(_element);
+  assert(_element->dof_transformations_are_permutations());
   return !_element->dof_transformations_are_identity();
 }
 //-----------------------------------------------------------------------------

@@ -22,9 +22,7 @@
 #include <vector>
 #include <xtl/xspan.hpp>
 
-namespace dolfinx
-{
-namespace mesh
+namespace dolfinx::mesh
 {
 
 /// A MeshTags are used to associate mesh entities with values. The
@@ -196,5 +194,4 @@ create_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh, const int dim,
   return mesh::MeshTags<T>(mesh, dim, std::move(indices_sorted),
                            std::move(values_sorted));
 }
-} // namespace mesh
-} // namespace dolfinx
+} // namespace dolfinx::mesh
