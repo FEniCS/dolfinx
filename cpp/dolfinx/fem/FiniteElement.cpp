@@ -393,7 +393,9 @@ FiniteElement::entity_dofs(bool scalar_element) const
       return ed;
     }
   }
-  return _element->entity_dofs();
+  if (_element)
+    return _element->entity_dofs();
+  return {};
 }
 //-----------------------------------------------------------------------------
 std::vector<std::vector<std::set<int>>>
@@ -442,50 +444,42 @@ FiniteElement::entity_closure_dofs(bool scalar_element) const
       return ed;
     }
   }
-  return _element->entity_closure_dofs();
+  if (_element)
+    return _element->entity_closure_dofs();
+  return {};
 }
 //-----------------------------------------------------------------------------
 std::vector<std::vector<int>>
 FiniteElement::num_entity_dofs(bool scalar_element) const
 {
-  if (_sub_elements.size() != 0)
+  std::vector<std::vector<std::set<int>>> ed
+      = FiniteElement::entity_dofs(scalar_element);
+  std::vector<std::vector<int>> num_ed(ed.size());
+  for (std::size_t i = 0; i < ed.size(); ++i)
   {
-    // Mixed or blocked element
-    std::vector<std::vector<std::set<int>>> ed
-        = FiniteElement::entity_dofs(scalar_element);
-    std::vector<std::vector<int>> num_ed(ed.size());
-    for (std::size_t i = 0; i < ed.size(); ++i)
+    num_ed[i].resize(ed[i].size());
+    for (std::size_t j = 0; j < ed[i].size(); ++j)
     {
-      num_ed[i].resize(ed[i].size());
-      for (std::size_t j = 0; j < ed[i].size(); ++j)
-      {
-        num_ed[i][j] = ed[i][j].size();
-      }
+      num_ed[i][j] = ed[i][j].size();
     }
-    return num_ed;
   }
-  return _element->num_entity_closure_dofs();
+  return num_ed;
 }
 //-----------------------------------------------------------------------------
 std::vector<std::vector<int>>
 FiniteElement::num_entity_closure_dofs(bool scalar_element) const
 {
-  if (_sub_elements.size() != 0)
+  std::vector<std::vector<std::set<int>>> ed
+      = FiniteElement::entity_closure_dofs(scalar_element);
+  std::vector<std::vector<int>> num_ed(ed.size());
+  for (std::size_t i = 0; i < ed.size(); ++i)
   {
-    // Mixed or blocked element
-    std::vector<std::vector<std::set<int>>> ed
-        = FiniteElement::entity_closure_dofs(scalar_element);
-    std::vector<std::vector<int>> num_ed(ed.size());
-    for (std::size_t i = 0; i < ed.size(); ++i)
+    num_ed[i].resize(ed[i].size());
+    for (std::size_t j = 0; j < ed[i].size(); ++j)
     {
-      num_ed[i].resize(ed[i].size());
-      for (std::size_t j = 0; j < ed[i].size(); ++j)
-      {
-        num_ed[i][j] = ed[i][j].size();
-      }
+      num_ed[i][j] = ed[i][j].size();
     }
-    return num_ed;
   }
-  return _element->num_entity_closure_dofs();
+  return num_ed;
 }
 //-----------------------------------------------------------------------------
