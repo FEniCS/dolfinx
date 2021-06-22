@@ -304,7 +304,6 @@ public:
         {1, 1, space_dimension, reference_value_size});
     auto basis_reference_values = xt::view(basis_derivatives_reference_values,
                                            0, xt::all(), xt::all(), xt::all());
-
     xt::xtensor<double, 3> basis_values(
         {static_cast<std::size_t>(1), space_dimension, value_size});
 
@@ -344,9 +343,11 @@ public:
 
       // Get cell geometry (coordinate dofs)
       auto x_dofs = x_dofmap.links(cell_index);
-      for (std::size_t i = 0; i < num_dofs_g; ++i)
-        for (std::size_t j = 0; j < gdim; ++j)
-          coordinate_dofs(i, j) = x_g(x_dofs[i], j);
+      for (std::size_t i = 0; i < x_dofs.size(); ++i)
+      {
+        std::copy_n(xt::row(x_g, x_dofs[i]).begin(), 3,
+                    std::next(coordinate_dofs.begin(), 3 * i));
+      }
 
       for (std::size_t j = 0; j < gdim; ++j)
         xp(0, j) = x(p, j);

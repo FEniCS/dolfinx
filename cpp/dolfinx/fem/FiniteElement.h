@@ -100,13 +100,6 @@ public:
                                  const xtl::span<const double>& detJ,
                                  const xt::xtensor<double, 3>& K) const;
 
-  /// Push basis function (derivatives) forward to physical element
-  void transform_reference_basis_derivatives(
-      std::vector<double>& values, std::size_t order,
-      const std::vector<double>& reference_values, const array2d<double>& X,
-      const std::vector<double>& J, const xtl::span<const double>& detJ,
-      const std::vector<double>& K) const;
-
   /// Get the number of sub elements (for a mixed element)
   /// @return the Number of sub elements
   int num_sub_elements() const noexcept;
