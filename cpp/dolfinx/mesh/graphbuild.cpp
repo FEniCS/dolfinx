@@ -140,8 +140,7 @@ compute_local_dual_graph_keyed(
   // Sort facet indices
   std::sort(facets.begin(), facets.end(),
             [num_facet_vertices](const std::array<std::int64_t, 5>& fa,
-                                 const std::array<std::int64_t, 5>& fb)
-            {
+                                 const std::array<std::int64_t, 5>& fb) {
               return std::lexicographical_compare(
                   fa.begin(), fa.begin() + num_facet_vertices, fb.begin(),
                   fb.begin() + num_facet_vertices);
@@ -166,9 +165,8 @@ compute_local_dual_graph_keyed(
       local_graph.push_back(facets[j].back());
       local_graph.push_back(facets[j - 1].back());
 
-      // FIXME: This may not strictly be an error if tdim != gdim
-      if (eq_count == 2)
-        throw std::runtime_error("Same facet in more than two cells");
+      if (eq_count > 1)
+        LOG(WARNING) << "Same facet in more than two cells";
     }
     else
     {
@@ -348,15 +346,11 @@ compute_nonlocal_dual_graph(
   // Get permutation that takes facets into sorted order
   std::vector<int> perm(num_facets);
   std::iota(perm.begin(), perm.end(), 0);
-  std::sort(perm.begin(), perm.end(),
-            [&recvd_buffer](int a, int b)
-            {
-              return std::lexicographical_compare(
-                  recvd_buffer.links(a).begin(),
-                  std::prev(recvd_buffer.links(a).end()),
-                  recvd_buffer.links(b).begin(),
-                  std::prev(recvd_buffer.links(b).end()));
-            });
+  std::sort(perm.begin(), perm.end(), [&recvd_buffer](int a, int b) {
+    return std::lexicographical_compare(
+        recvd_buffer.links(a).begin(), std::prev(recvd_buffer.links(a).end()),
+        recvd_buffer.links(b).begin(), std::prev(recvd_buffer.links(b).end()));
+  });
 
   // Count data items to send to each rank
   p_count.assign(num_processes, 0);
