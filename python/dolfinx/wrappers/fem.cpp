@@ -186,6 +186,9 @@ void fem(py::module& m)
              self.apply_dof_transformation(
                  xtl::span(x.mutable_data(), x.size()), cell_permutation, dim);
            })
+      .def_property_readonly(
+          "needs_dof_transformations",
+          &dolfinx::fem::FiniteElement::needs_dof_transformations)
       .def("signature", &dolfinx::fem::FiniteElement::signature);
 
   // dolfinx::fem::ElementDofLayout
@@ -525,6 +528,7 @@ void fem(py::module& m)
       .def_property_readonly("function_spaces",
                              &dolfinx::fem::Form<PetscScalar>::function_spaces)
       .def("integral_ids", &dolfinx::fem::Form<PetscScalar>::integral_ids)
+      .def_property_readonly("needs_facet_permutations", &dolfinx::fem::Form<PetscScalar>::needs_facet_permutations)
       .def("domains", [](const dolfinx::fem::Form<PetscScalar>& self,
                          dolfinx::fem::IntegralType type, int i) {
         const std::vector<std::int32_t>& domains = self.domains(type, i);
