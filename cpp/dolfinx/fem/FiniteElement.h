@@ -683,5 +683,11 @@ private:
 
   // Basix Element (nullptr for mixed elements)
   std::unique_ptr<basix::FiniteElement> _element;
+
+  // Entity DOFs
+  std::vector<std::vector<std::set<int>>> _edofs;
+
+  // Entity closure DOFs
+  std::vector<std::vector<std::set<int>>> _e_closure_dofs;
 };
 } // namespace dolfinx::fem

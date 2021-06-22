@@ -155,6 +155,37 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
         = !_element->dof_transformations_are_identity()
           and _element->dof_transformations_are_permutations();
   }
+
+  if (ufc_element.element_type == ufc_quadrature_element)
+  {
+    std::array<int, 4> num_entity_dofs;
+    std::copy_n(ufc_element.num_entity_dofs, 4, num_entity_dofs.data());
+    std::array<int, 4> num_entity_closure_dofs;
+    std::copy_n(ufc_element.num_entity_closure_dofs, 4,
+                num_entity_closure_dofs.data());
+
+    _edofs.resize(_tdim + 1);
+    _e_closure_dofs.resize(_tdim + 1);
+    // Fill entity dof indices
+    std::vector<int> work_array;
+    for (int dim = 0; dim <= _tdim; ++dim)
+    {
+      const int num_entities = mesh::cell_num_entities(_cell_shape, dim);
+      _edofs[dim].resize(num_entities);
+      _e_closure_dofs[dim].resize(num_entities);
+      for (int i = 0; i < num_entities; ++i)
+      {
+        work_array.resize(num_entity_dofs[dim]);
+        ufc_element.tabulate_entity_dofs(work_array.data(), dim, i);
+        _edofs[dim][i] = std::set<int>(work_array.begin(), work_array.end());
+
+        work_array.resize(num_entity_closure_dofs[dim]);
+        ufc_element.tabulate_entity_closure_dofs(work_array.data(), dim, i);
+        _e_closure_dofs[dim][i]
+            = std::set<int>(work_array.begin(), work_array.end());
+      }
+    }
+  }
 }
 //-----------------------------------------------------------------------------
 std::string FiniteElement::signature() const noexcept { return _signature; }
@@ -350,6 +381,9 @@ FiniteElement::get_dof_permutation_function(bool inverse,
 std::vector<std::vector<std::set<int>>>
 FiniteElement::entity_dofs(bool scalar_element) const
 {
+  if (_edofs.size() != 0)
+    return _edofs;
+
   if (_sub_elements.size() != 0)
   {
     if (_bs == 1)
@@ -376,11 +410,14 @@ FiniteElement::entity_dofs(bool scalar_element) const
       }
       return ed;
     }
-    else if (!scalar_element)
+    else
     {
       // Blocked element
       std::vector<std::vector<std::set<int>>> sub_ed
           = _sub_elements[0]->entity_dofs();
+      if (scalar_element)
+        return sub_ed;
+
       std::vector<std::vector<std::set<int>>> ed(sub_ed.size());
       for (std::size_t d = 0; d < ed.size(); ++d)
       {
@@ -393,14 +430,14 @@ FiniteElement::entity_dofs(bool scalar_element) const
       return ed;
     }
   }
-  if (_element)
-    return _element->entity_dofs();
-  return {};
+  return _element->entity_dofs();
 }
 //-----------------------------------------------------------------------------
 std::vector<std::vector<std::set<int>>>
 FiniteElement::entity_closure_dofs(bool scalar_element) const
 {
+  if (_e_closure_dofs.size() != 0)
+    return _e_closure_dofs;
   if (_sub_elements.size() != 0)
   {
     if (_bs == 1)
@@ -427,11 +464,14 @@ FiniteElement::entity_closure_dofs(bool scalar_element) const
       }
       return ed;
     }
-    else if (!scalar_element)
+    else
     {
       // Blocked element
       std::vector<std::vector<std::set<int>>> sub_ed
           = _sub_elements[0]->entity_closure_dofs();
+      if (scalar_element)
+        return sub_ed;
+
       std::vector<std::vector<std::set<int>>> ed(sub_ed.size());
       for (std::size_t d = 0; d < ed.size(); ++d)
       {
@@ -444,9 +484,7 @@ FiniteElement::entity_closure_dofs(bool scalar_element) const
       return ed;
     }
   }
-  if (_element)
-    return _element->entity_closure_dofs();
-  return {};
+  return _element->entity_closure_dofs();
 }
 //-----------------------------------------------------------------------------
 std::vector<std::vector<int>>
