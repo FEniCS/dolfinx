@@ -71,35 +71,16 @@ la::SparsityPattern fem::create_sparsity_pattern(
   return pattern;
 }
 //-----------------------------------------------------------------------------
-fem::ElementDofLayout
-fem::create_element_dof_layout(const ufc_dofmap& dofmap,
-                               const mesh::CellType cell_type,
-                               const std::vector<int>& parent_map)
+fem::ElementDofLayout fem::create_element_dof_layout(
+    const ufc_dofmap& dofmap, const mesh::CellType cell_type,
+    std::shared_ptr<const fem::FiniteElement> element,
+    const std::vector<int>& parent_map)
 {
   const int element_block_size = dofmap.block_size;
 
-  // Copy over number of dofs per entity type
-  std::array<int, 4> num_entity_dofs;
-  std::copy_n(dofmap.num_entity_dofs, 4, num_entity_dofs.data());
-
-  int dof_count = 0;
-
-  // Fill entity dof indices
-  const int tdim = mesh::cell_dim(cell_type);
-  std::vector<std::vector<std::set<int>>> entity_dofs(tdim + 1);
-  std::vector<int> work_array;
-  for (int dim = 0; dim <= tdim; ++dim)
-  {
-    const int num_entities = mesh::cell_num_entities(cell_type, dim);
-    entity_dofs[dim].resize(num_entities);
-    for (int i = 0; i < num_entities; ++i)
-    {
-      work_array.resize(num_entity_dofs[dim]);
-      dofmap.tabulate_entity_dofs(work_array.data(), dim, i);
-      entity_dofs[dim][i] = std::set<int>(work_array.begin(), work_array.end());
-      dof_count += num_entity_dofs[dim];
-    }
-  }
+  std::vector<std::vector<std::set<int>>> entity_dofs = element->entity_dofs();
+  std::vector<std::vector<std::set<int>>> entity_closure_dofs
+      = element->entity_closure_dofs();
 
   // TODO: UFC dofmaps just use simple offset for each field but this
   // could be different for custom dofmaps This data should come
@@ -127,36 +108,8 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
     for (std::size_t j = 0; j < parent_map_sub.size(); ++j)
       parent_map_sub[j] = offsets[i] + element_block_size * j;
     sub_dofmaps.push_back(std::make_shared<fem::ElementDofLayout>(
-        create_element_dof_layout(*ufc_sub_dofmap, cell_type, parent_map_sub)));
-  }
-
-  // TODO: Can we get these from Basix instead of recomputing?
-
-  // Compute closure entities
-  // [dim, entity] -> closure{sub_dim, (sub_entities)}
-  std::map<std::array<int, 2>, std::vector<std::set<int>>> entity_closure
-      = mesh::cell_entity_closure(cell_type);
-
-  std::vector<std::vector<std::set<int>>> entity_closure_dofs = entity_dofs;
-  for (const auto& entity : entity_closure)
-  {
-    const int dim = entity.first[0];
-    const int index = entity.first[1];
-    assert(dim < (int)entity_dofs.size());
-    assert(index < (int)entity_dofs[dim].size());
-    int subdim = 0;
-    for (const auto& sub_entity : entity.second)
-    {
-      assert(subdim < (int)entity_dofs.size());
-      for (auto sub_index : sub_entity)
-      {
-        assert(sub_index < (int)entity_dofs[subdim].size());
-        entity_closure_dofs[dim][index].insert(
-            entity_dofs[subdim][sub_index].begin(),
-            entity_dofs[subdim][sub_index].end());
-      }
-      ++subdim;
-    }
+        create_element_dof_layout(*ufc_sub_dofmap, cell_type,
+                                  element->sub_elements()[i], parent_map_sub)));
   }
 
   // Check for "block structure". This should ultimately be replaced,
@@ -173,7 +126,7 @@ fem::create_dofmap(MPI_Comm comm, const ufc_dofmap& ufc_dofmap,
                    std::shared_ptr<const dolfinx::fem::FiniteElement> element)
 {
   auto element_dof_layout = std::make_shared<ElementDofLayout>(
-      create_element_dof_layout(ufc_dofmap, topology.cell_type()));
+      create_element_dof_layout(ufc_dofmap, topology.cell_type(), element));
   assert(element_dof_layout);
 
   // Create required mesh entities
