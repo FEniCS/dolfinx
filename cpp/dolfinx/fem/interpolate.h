@@ -318,10 +318,11 @@ void interpolate(
         for (int j = 0; j < gdim; ++j)
           coordinate_dofs(i, j) = x_g(x_dofs[i], j);
 
-      // Compute J, detJ and K
+      // Compute J, 1/detJ and K
       cmap.compute_jacobian(dphi, coordinate_dofs, J);
       cmap.compute_jacobian_inverse(J, K);
-      cmap.compute_jacobian_determinant(J, detJ);
+      cmap.compute_jacobian_determinant(J, inv_detJ);
+      inv_detJ = 1 / inv_detJ;
 
       xtl::span<const std::int32_t> dofs = dofmap->cell_dofs(c);
       for (int k = 0; k < element_bs; ++k)
@@ -334,7 +335,7 @@ void interpolate(
         }
 
         // Get element degrees of freedom for block
-        element->map_pull_back(_vals, J, detJ, K, reference_data);
+        element->map_pull_back(_vals, J, inv_detJ, K, reference_data);
 
         xt::xtensor<T, 2> ref_data
             = xt::transpose(xt::view(reference_data, xt::all(), 0, xt::all()));

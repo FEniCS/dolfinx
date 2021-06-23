@@ -593,11 +593,11 @@ public:
   template <typename T>
   void
   map_pull_back(const xt::xtensor<T, 3>& u, const xt::xtensor<double, 3>& J,
-                const xtl::span<const double>& detJ,
+                const xtl::span<const double>& inv_detJ,
                 const xt::xtensor<double, 3>& K, xt::xtensor<T, 3>& U) const
   {
     assert(_element);
-    _element->map_pull_back_m(u, J, detJ, K, U);
+    _element->map_pull_back_m(u, J, inv_detJ, K, U);
   }
 
   /// Permute the DOFs of the element

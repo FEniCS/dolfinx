@@ -43,7 +43,7 @@ jobs:
         with:
           path: ./basix
           repository: FEniCS/basix
-          ref: main
+          ref: garth/generalise-geometric-maps
 
       - name: Install FEniCS Python components
         run: |
