@@ -18,43 +18,15 @@ using namespace dolfinx::fem;
 //-----------------------------------------------------------------------------
 ElementDofLayout::ElementDofLayout(
     int block_size, const std::vector<std::vector<std::set<int>>>& entity_dofs,
+    const std::vector<std::vector<std::set<int>>>& entity_closure_dofs,
     const std::vector<int>& parent_map,
-    const std::vector<std::shared_ptr<const ElementDofLayout>>& sub_dofmaps,
-    const mesh::CellType cell_type)
+    const std::vector<std::shared_ptr<const ElementDofLayout>>& sub_dofmaps)
     : _block_size(block_size), _parent_map(parent_map), _num_dofs(0),
-      _entity_dofs(entity_dofs), _sub_dofmaps(sub_dofmaps)
+      _entity_dofs(entity_dofs), _entity_closure_dofs(entity_closure_dofs),
+      _sub_dofmaps(sub_dofmaps)
 {
   // TODO: Handle global support dofs
 
-  // Compute closure entities
-  // [dim, entity] -> closure{sub_dim, (sub_entities)}
-  std::map<std::array<int, 2>, std::vector<std::set<int>>> entity_closure
-      = mesh::cell_entity_closure(cell_type);
-
-  // dof = _entity_dofs[dim][entity_index][i]
-  _entity_closure_dofs = entity_dofs;
-  for (const auto& entity : entity_closure)
-  {
-    const int dim = entity.first[0];
-    const int index = entity.first[1];
-    assert(dim < (int)entity_dofs.size());
-    assert(index < (int)entity_dofs[dim].size());
-    int subdim = 0;
-    for (const auto& sub_entity : entity.second)
-    {
-      assert(subdim < (int)entity_dofs.size());
-      for (auto sub_index : sub_entity)
-      {
-        assert(sub_index < (int)entity_dofs[subdim].size());
-        _entity_closure_dofs[dim][index].insert(
-            entity_dofs[subdim][sub_index].begin(),
-            entity_dofs[subdim][sub_index].end());
-      }
-      ++subdim;
-    }
-  }
-
-  // dof = _entity_dofs[dim][entity_index][i]
   _num_entity_dofs.fill(0);
   _num_entity_closure_dofs.fill(0);
   assert(entity_dofs.size() == _entity_closure_dofs.size());

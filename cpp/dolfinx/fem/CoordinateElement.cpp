@@ -180,18 +180,11 @@ void CoordinateElement::compute_jacobian_determinant(
 ElementDofLayout CoordinateElement::dof_layout() const
 {
   assert(_element);
-  int counter = 0;
-  const std::vector<std::vector<int>>& edofs = _element->entity_dofs();
-  std::vector<std::vector<std::set<int>>> entity_dofs(edofs.size());
-  for (std::size_t d = 0; d < edofs.size(); ++d)
-  {
-    entity_dofs[d].resize(edofs[d].size());
-    for (std::size_t e = 0; e < edofs[d].size(); ++e)
-      for (int i = 0; i < edofs[d][e]; ++i)
-        entity_dofs[d][e].insert(counter++);
-  }
+  std::vector<std::vector<std::set<int>>> entity_dofs = _element->entity_dofs();
+  std::vector<std::vector<std::set<int>>> entity_closure_dofs
+      = _element->entity_closure_dofs();
 
-  return ElementDofLayout(1, entity_dofs, {}, {}, this->cell_shape());
+  return ElementDofLayout(1, entity_dofs, entity_closure_dofs, {}, {});
 }
 //-----------------------------------------------------------------------------
 void CoordinateElement::push_forward(
