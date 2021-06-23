@@ -629,6 +629,34 @@ public:
   get_dof_permutation_function(bool inverse = false,
                                bool scalar_element = false) const;
 
+  /// Return the DOFs on each entity
+  ///
+  /// @param[in] scalar_element Indicates whether the information for the scalar
+  /// element should be returned for a vector element
+  std::vector<std::vector<std::set<int>>> entity_dofs(bool scalar_element
+                                                      = false) const;
+
+  /// Return the DOFs on the closure of each entity
+  ///
+  /// @param[in] scalar_element Indicates whether the information for the scalar
+  /// element should be returned for a vector element
+  std::vector<std::vector<std::set<int>>>
+  entity_closure_dofs(bool scalar_element = false) const;
+
+  /// Return number of DOFs on each entity
+  ///
+  /// @param[in] scalar_element Indicates whether the information for the scalar
+  /// element should be returned for a vector element
+  std::vector<std::vector<int>> num_entity_dofs(bool scalar_element
+                                                = false) const;
+
+  /// Return number of DOFs on the closure of each entity
+  ///
+  /// @param[in] scalar_element Indicates whether the information for the scalar
+  /// element should be returned for a vector element
+  std::vector<std::vector<int>> num_entity_closure_dofs(bool scalar_element
+                                                        = false) const;
+
 private:
   std::string _signature, _family;
 
