@@ -292,7 +292,7 @@ void interpolate(
     // Create data structures for Jacobian info
     xt::xtensor<double, 3> J = xt::empty<double>({int(X.shape(0)), gdim, tdim});
     xt::xtensor<double, 3> K = xt::empty<double>({int(X.shape(0)), tdim, gdim});
-    xt::xtensor<double, 1> detJ = xt::empty<double>({X.shape(0)});
+    xt::xtensor<double, 1> inv_detJ = xt::empty<double>({X.shape(0)});
 
     xt::xtensor<double, 2> coordinate_dofs
         = xt::empty<double>({num_dofs_g, gdim});
