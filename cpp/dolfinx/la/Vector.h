@@ -20,18 +20,17 @@ namespace dolfinx::la
 
 /// Distributed vector
 
-template <typename T>
+template <typename T, class Allocator = std::allocator<T>>
 class Vector
 {
 public:
   /// Create a distributed vector
-  Vector(const std::shared_ptr<const common::IndexMap>& map, int bs)
-      : _map(map), _bs(bs)
+  Vector(const std::shared_ptr<const common::IndexMap>& map, int bs,
+         const Allocator& alloc = Allocator())
+      : _map(map), _bs(bs),
+        _x(bs * (map->size_local() + map->num_ghosts()), alloc)
   {
     assert(map);
-    const std::int32_t local_size
-        = bs * (map->size_local() + map->num_ghosts());
-    _x.resize(local_size);
   }
 
   /// Copy constructor
@@ -123,10 +122,10 @@ public:
   constexpr int bs() const { return _bs; }
 
   /// Get local part of the vector (const version)
-  const std::vector<T>& array() const { return _x; }
+  const std::vector<T, Allocator>& array() const { return _x; }
 
   /// Get local part of the vector
-  std::vector<T>& mutable_array() { return _x; }
+  std::vector<T, Allocator>& mutable_array() { return _x; }
 
 private:
   // Map describing the data layout
@@ -136,7 +135,7 @@ private:
   int _bs;
 
   // Data
-  std::vector<T> _x;
+  std::vector<T, Allocator> _x;
 };
 
 /// Compute the inner product of two vectors. The two vectors must have
@@ -145,8 +144,8 @@ private:
 /// @param a A vector
 /// @param b A vector
 /// @return Returns `a^{H} b` (`a^{T} b` if `a` and `b` are real)
-template <typename T>
-T inner_product(const Vector<T>& a, const Vector<T>& b)
+template <typename T, class Allocator = std::allocator<T>>
+T inner_product(const Vector<T, Allocator>& a, const Vector<T, Allocator>& b)
 {
   const std::int32_t local_size = a.bs() * a.map()->size_local();
   if (local_size != b.bs() * b.map()->size_local())
