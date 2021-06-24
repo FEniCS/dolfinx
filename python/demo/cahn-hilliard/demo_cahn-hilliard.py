@@ -113,7 +113,6 @@ import os
 import numpy as np
 from dolfinx import (Function, FunctionSpace, NewtonSolver, UnitSquareMesh,
                      log, plot)
-from dolfinx.cpp.la import scatter_forward
 from dolfinx.cpp.mesh import CellType
 from dolfinx.fem import NonlinearProblem
 from dolfinx.io import XDMFFile
@@ -279,7 +278,7 @@ else:
     T = 50 * dt
 
 u.vector.copy(result=u0.vector)
-scatter_forward(u.x)
+u.x.scatter_forward()
 
 
 # Prepare viewer for plotting solution during the computation
@@ -317,7 +316,7 @@ file.close()
 
 # Update ghost entries and plot
 if have_pyvista:
-    scatter_forward(u.x)
+    u.x.scatter_forward()
     grid.point_arrays["u"] = u.sub(0).compute_point_values().real
     screenshot = None
     if pv.OFF_SCREEN:

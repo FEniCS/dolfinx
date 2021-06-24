@@ -16,15 +16,12 @@
 #include <xtensor/xtensor.hpp>
 #include <xtl/xspan.hpp>
 
-namespace dolfinx
-{
-
-namespace mesh
+namespace dolfinx::mesh
 {
 class Mesh;
-} // namespace mesh
+}
 
-namespace fem
+namespace dolfinx::fem
 {
 
 /// Find degrees-of-freedom which belong to the provided mesh entities
@@ -242,7 +239,7 @@ public:
   /// `dofs[:pos]` are owned and entries `dofs[pos:]` are ghosts.
   std::pair<xtl::span<const std::int32_t>, std::int32_t> dof_indices() const
   {
-    return {tcb::make_span(_dofs0), _owned_indices0};
+    return {_dofs0, _owned_indices0};
   }
 
   /// Set bc entries in `x` to `scale * x_bc`
@@ -336,5 +333,4 @@ private:
   int _owned_indices0 = -1;
   int _owned_indices1 = -1;
 };
-} // namespace fem
-} // namespace dolfinx
+} // namespace dolfinx::fem

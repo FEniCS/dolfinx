@@ -47,14 +47,14 @@ For detailed instructions, see the file INSTALL.
 
 ### Spack
 
-To build using [Spack](https://spack.readthedocs.io/) (assuming a bash shell):
+To build from source using [Spack](https://spack.readthedocs.io/) (assuming a bash shell):
 ```
 git clone https://github.com/spack/spack.git
 . ./spack/share/spack/setup-env.sh
 spack env create fenicsx-env
 spack env activate fenicsx-env
 echo "  concretization: together" >> ./spack/var/spack/environments/fenicsx-env/spack.yaml
-spack add py-fenics-dolfinx ^petsc+mumps+hypre cflags="-O3" fflags="-O3"
+spack add py-fenics-dolfinx@main ^petsc+mumps+hypre cflags="-O3" fflags="-O3"
 spack install
 ```
 See the Spack [documentation](https://spack.readthedocs.io/) for
@@ -77,7 +77,7 @@ source /usr/local/bin/dolfinx-real-mode
 
 A Jupyter Lab environment with DOLFINx built nightly:
 ```
-docker run -ti -p 8888:8888 dolfinx/lab # Access at http://localhost:8888
+docker run --init -ti -p 8888:8888 dolfinx/lab # Access at http://localhost:8888
 ```
 
 A development image with all of the dependencies required

@@ -11,17 +11,14 @@
 
 #pragma once
 
-namespace dolfinx
-{
-
-namespace mesh
+namespace dolfinx::mesh
 {
 class Mesh;
 template <typename T>
 class MeshTags;
-} // namespace mesh
+} // namespace dolfinx::mesh
 
-namespace refinement
+namespace dolfinx::refinement
 {
 
 /// Implementation of the refinement method described in Plaza and Carey
@@ -74,5 +71,4 @@ std::tuple<graph::AdjacencyList<std::int64_t>, xt::xtensor<double, 2>,
 compute_refinement_data(const mesh::Mesh& mesh);
 
 } // namespace plaza
-} // namespace refinement
-} // namespace dolfinx
+} // namespace dolfinx::refinement

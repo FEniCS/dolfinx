@@ -23,9 +23,9 @@ jobs:
     strategy:
       matrix:
         include:
-          # - compiler: "Classic"
-          #   c_compiler: icc
-          #   cxx_compiler: icpc
+          - compiler: "Classic"
+            c_compiler: icc
+            cxx_compiler: icpc
           - compiler: "LLVM-based"
             c_compiler: icx
             cxx_compiler: icpx

@@ -9,19 +9,17 @@
 #include <array>
 #include <functional>
 
-namespace dolfinx
-{
-namespace la
+namespace dolfinx::la
 {
 class SparsityPattern;
 }
 
-namespace mesh
+namespace dolfinx::mesh
 {
 class Topology;
 }
 
-namespace fem
+namespace dolfinx::fem
 {
 class DofMap;
 
@@ -48,5 +46,4 @@ void exterior_facets(
         dofmaps);
 
 } // namespace sparsitybuild
-} // namespace fem
-} // namespace dolfinx
+} // namespace dolfinx::fem
