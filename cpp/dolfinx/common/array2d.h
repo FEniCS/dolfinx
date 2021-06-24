@@ -37,9 +37,8 @@ public:
   /// @param[in] alloc The memory allocator for the data storage
   array2d(std::array<size_type, 2> shape, value_type value = T(),
           const Allocator& alloc = Allocator())
-      : shape(shape)
+      : shape(shape), _storage(shape[0] * shape[1], value, alloc)
   {
-    _storage = std::vector<T, Allocator>(shape[0] * shape[1], value, alloc);
   }
 
   /// Construct a two dimensional array
@@ -49,9 +48,8 @@ public:
   /// @param[in] alloc The memory allocator for the data storage
   array2d(size_type rows, size_type cols, value_type value = T(),
           const Allocator& alloc = Allocator())
-      : shape({rows, cols})
+      : shape({rows, cols}), _storage(shape[0] * shape[1], value, alloc)
   {
-    _storage = std::vector<T, Allocator>(shape[0] * shape[1], value, alloc);
   }
 
   /// @todo Use suitable std::enable_if to make this more general (and correct)
