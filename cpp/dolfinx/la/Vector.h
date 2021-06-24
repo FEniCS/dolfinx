@@ -20,18 +20,20 @@ namespace dolfinx::la
 
 /// Distributed vector
 
-template <typename T>
+template <typename T, class Allocator = std::allocator<T>>
 class Vector
 {
 public:
   /// Create a distributed vector
-  Vector(const std::shared_ptr<const common::IndexMap>& map, int bs)
+  Vector(const std::shared_ptr<const common::IndexMap>& map, int bs,
+         const Allocator& alloc = Allocator())
       : _map(map), _bs(bs)
   {
     assert(map);
     const std::int32_t local_size
         = bs * (map->size_local() + map->num_ghosts());
-    _x.resize(local_size);
+    // _x.resize(local_size);
+    _x = std::vector<T, Allocator>(local_size, T(), alloc);
   }
 
   /// Copy constructor
@@ -136,7 +138,7 @@ private:
   int _bs;
 
   // Data
-  std::vector<T> _x;
+  std::vector<T, Allocator> _x;
 };
 
 /// Compute the inner product of two vectors. The two vectors must have
