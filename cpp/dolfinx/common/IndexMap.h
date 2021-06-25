@@ -208,6 +208,9 @@ private:
   // - out-edges (dest) go to ranks that 'ghost' my owned indices
   dolfinx::MPI::Comm _comm_owner_to_ghost;
 
+  // Buffers
+  std::vector<std::int32_t> _sizes_recv_fwd, _sizes_send_fwd, _displs_recv_fwd;
+
   // Communicator where the source ranks have ghost indices that are
   // owned by the caller, and the destination ranks are the owners of
   // indices in the callers halo region. I.e.,
@@ -218,11 +221,6 @@ private:
   // TODO: remove
   dolfinx::MPI::Comm _comm_symmetric;
 
-  // MPI neigbours on _comm_owner_to_ghost
-  std::vector<int> _neighbors_in_fwd, _neighbors_out_fwd;
-
-
-
   // Local-to-global map for ghost indices
   std::vector<std::int64_t> _ghosts;
 
@@ -230,9 +228,11 @@ private:
   // communicator for each ghost index
   std::vector<std::int32_t> _ghost_owners;
 
-  // List of owned local indices that are in the halo (ghost) region on other
-  // ranks, grouped by rank in the neighbor communicator (destination ranks in
-  // forward communicator and source ranks in the reverse communicator).
+  // List of owned local indices that are in the halo (ghost) region on
+  // other ranks, grouped by rank in the neighbor communicator
+  // (destination ranks in forward communicator and source ranks in the
+  // reverse communicator), i.e. `_shared_indices.num_nodes() ==
+  // size(_comm_owner_to_ghost)`.
   std::unique_ptr<graph::AdjacencyList<std::int32_t>> _shared_indices;
 };
 

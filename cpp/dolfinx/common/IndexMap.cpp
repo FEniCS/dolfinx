@@ -351,11 +351,11 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
                    const xtl::span<const std::int64_t>& ghosts,
                    const xtl::span<const int>& src_ranks)
     : _comm_owner_to_ghost(MPI_COMM_NULL), _comm_ghost_to_owner(MPI_COMM_NULL),
-      _comm_symmetric(MPI_COMM_NULL), _ghosts(ghosts.begin(), ghosts.end())
+      _comm_symmetric(MPI_COMM_NULL)
 {
   assert(size_t(ghosts.size()) == src_ranks.size());
   assert(std::equal(src_ranks.begin(), src_ranks.end(),
-                    get_ghost_ranks(mpi_comm, local_size, _ghosts).begin()));
+                    get_ghost_ranks(mpi_comm, local_size, ghosts).begin()));
 
   // Get global offset (index), using partial exclusive reduction
   std::int64_t offset = 0;
@@ -380,8 +380,8 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
   // Map ghost owner rank to the rank on neighborhood communicator
   int myrank = -1;
   MPI_Comm_rank(mpi_comm, &myrank);
-  _ghost_owners.resize(ghosts.size());
-  for (std::size_t j = 0; j < _ghosts.size(); ++j)
+  std::vector<std::pair<int, std::int64_t>> owners_ghost(ghosts.size());
+  for (std::size_t j = 0; j < ghosts.size(); ++j)
   {
     // Get rank of owner on the neighborhood communicator (rank of out
     // edge on _comm_owner_to_ghost)
@@ -397,7 +397,17 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
     }
 
     // Store owner neighborhood rank for each ghost
-    _ghost_owners[j] = p_neighbor;
+    owners_ghost[j] = {p_neighbor, ghosts[j]};
+  }
+
+  // Sort by neighbourhood rank
+  // std::sort(owners_ghost.begin(), owners_ghost.end());
+  _ghosts.reserve(ghosts.size());
+  _ghost_owners.reserve(ghosts.size());
+  for (auto p : owners_ghost)
+  {
+    _ghost_owners.push_back(p.first);
+    _ghosts.push_back(p.second);
   }
 
   // Create communicators with directional edges:
@@ -429,24 +439,26 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
   // Wait for the MPI_Iallreduce to complete
   MPI_Wait(&request, MPI_STATUS_IGNORE);
 
-  // TODO: move and refactor below
+  // ------
+
   {
     // Get number of neighbors
     int indegree(-1), outdegree(-2), weighted(-1);
-    MPI_Dist_graph_neighbors_count(_comm_owner_to_ghost.comm(), &indegree,
+    MPI_Dist_graph_neighbors_count(_comm_ghost_to_owner.comm(), &indegree,
                                    &outdegree, &weighted);
 
-    // Get neighbor processes
-    std::vector<int> neighbors_in(indegree), neighbors_out(outdegree);
-    MPI_Dist_graph_neighbors(_comm_owner_to_ghost.comm(), indegree,
-                             neighbors_in.data(), MPI_UNWEIGHTED, outdegree,
-                             neighbors_out.data(), MPI_UNWEIGHTED);
-    // Get neighbor processes
-    _neighbors_in_fwd.resize(indegree);
-    _neighbors_out_fwd.resize(outdegree);
-    MPI_Dist_graph_neighbors(
-        _comm_owner_to_ghost.comm(), indegree, _neighbors_in_fwd.data(),
-        MPI_UNWEIGHTED, outdegree, _neighbors_out_fwd.data(), MPI_UNWEIGHTED);
+    // Create displacement vectors fwd scatter
+    _sizes_recv_fwd.resize(indegree, 0);
+    for (std::size_t i = 0; i < _ghosts.size(); ++i)
+      _sizes_recv_fwd[_ghost_owners[i]] += 1;
+
+    const std::vector<int32_t>& displs_send = _shared_indices->offsets();
+    _sizes_send_fwd.resize(outdegree, 0);
+    std::adjacent_difference(displs_send.begin() + 1, displs_send.end(),
+                             _sizes_send_fwd.begin());
+    _displs_recv_fwd.resize(indegree + 1, 0);
+    std::partial_sum(_sizes_send_fwd.begin(), _sizes_send_fwd.end(),
+                     _displs_recv_fwd.begin() + 1);
   }
 }
 //-----------------------------------------------------------------------------
@@ -685,21 +697,7 @@ void IndexMap::scatter_fwd(const xtl::span<const T>& local_data,
   if (remote_data.size() != n * _ghosts.size())
     throw std::runtime_error("Invalid remote size in scatter_fwd");
 
-  const int indegree = _neighbors_in_fwd.size();
-  const int outdegree = _neighbors_out_fwd.size();
-
-  // Create displacement vectors
-  std::vector<std::int32_t> sizes_recv(indegree, 0);
-  for (std::size_t i = 0; i < _ghosts.size(); ++i)
-    sizes_recv[_ghost_owners[i]] += 1;
-
   const std::vector<int32_t>& displs_send = _shared_indices->offsets();
-  std::vector<std::int32_t> sizes_send(outdegree, 0);
-  std::adjacent_difference(displs_send.begin() + 1, displs_send.end(),
-                           sizes_send.begin());
-  std::vector<std::int32_t> displs_recv(indegree + 1, 0);
-  std::partial_sum(sizes_recv.begin(), sizes_recv.end(),
-                   displs_recv.begin() + 1);
 
   // Copy into sending buffer
   std::vector<T> data_to_send(n * displs_send.back());
@@ -707,38 +705,40 @@ void IndexMap::scatter_fwd(const xtl::span<const T>& local_data,
   for (std::size_t i = 0; i < indices.size(); ++i)
   {
     const std::int32_t index = indices[i];
-    for (int j = 0; j < n; ++j)
-      data_to_send[i * n + j] = local_data[index * n + j];
+    std::copy_n(std::next(local_data.cbegin(), index * n), n,
+                std::next(data_to_send.begin(), i * n));
   }
 
   // Send/receive data
-  std::vector<T> data_to_recv(n * displs_recv.back());
+  std::vector<T> data_to_recv(n * _displs_recv_fwd.back());
   switch (n)
   {
   case 1:
-    MPI_Neighbor_alltoallv(
-        data_to_send.data(), sizes_send.data(), displs_send.data(),
-        MPI::mpi_type<T>(), data_to_recv.data(), sizes_recv.data(),
-        displs_recv.data(), MPI::mpi_type<T>(), _comm_owner_to_ghost.comm());
+    MPI_Neighbor_alltoallv(data_to_send.data(), _sizes_send_fwd.data(),
+                           displs_send.data(), MPI::mpi_type<T>(),
+                           data_to_recv.data(), _sizes_recv_fwd.data(),
+                           _displs_recv_fwd.data(), MPI::mpi_type<T>(),
+                           _comm_owner_to_ghost.comm());
     break;
   default:
     MPI_Datatype compound_type;
     MPI_Type_contiguous(n, dolfinx::MPI::mpi_type<T>(), &compound_type);
     MPI_Type_commit(&compound_type);
     MPI_Neighbor_alltoallv(
-        data_to_send.data(), sizes_send.data(), displs_send.data(),
-        compound_type, data_to_recv.data(), sizes_recv.data(),
-        displs_recv.data(), compound_type, _comm_owner_to_ghost.comm());
+        data_to_send.data(), _sizes_send_fwd.data(), displs_send.data(),
+        compound_type, data_to_recv.data(), _sizes_recv_fwd.data(),
+        _displs_recv_fwd.data(), compound_type, _comm_owner_to_ghost.comm());
     MPI_Type_free(&compound_type);
   }
 
   // Copy into ghost area ("remote_data")
+  std::vector<std::int32_t> displs(_displs_recv_fwd);
   for (std::size_t i = 0; i < _ghosts.size(); ++i)
   {
     const int np = _ghost_owners[i];
     for (int j = 0; j < n; ++j)
-      remote_data[i * n + j] = data_to_recv[displs_recv[np] + j];
-    displs_recv[np] += n;
+      remote_data[i * n + j] = data_to_recv[displs[np] + j];
+    displs[np] += n;
   }
 }
 //-----------------------------------------------------------------------------
@@ -764,7 +764,6 @@ void IndexMap::scatter_rev(xtl::span<T> local_data,
 {
   if ((int)remote_data.size() != n * num_ghosts())
     throw std::runtime_error("Invalid remote size in scatter_rev");
-
   if ((int)local_data.size() != n * size_local())
     throw std::runtime_error("Invalid local size in scatter_rev");
 
@@ -772,12 +771,6 @@ void IndexMap::scatter_rev(xtl::span<T> local_data,
   int indegree(-1), outdegree(-2), weighted(-1);
   MPI_Dist_graph_neighbors_count(_comm_ghost_to_owner.comm(), &indegree,
                                  &outdegree, &weighted);
-
-  // Get neighbor processes
-  std::vector<int> neighbors_in(indegree), neighbors_out(outdegree);
-  MPI_Dist_graph_neighbors(_comm_ghost_to_owner.comm(), indegree,
-                           neighbors_in.data(), MPI_UNWEIGHTED, outdegree,
-                           neighbors_out.data(), MPI_UNWEIGHTED);
 
   // Compute number of items to send to each process
   std::vector<std::int32_t> send_sizes(outdegree, 0);
@@ -817,17 +810,17 @@ void IndexMap::scatter_rev(xtl::span<T> local_data,
 
   const std::vector<std::int32_t>& shared_indices = _shared_indices->array();
   // Copy or accumulate into "local_data"
-  if (op == Mode::insert)
+  switch (op)
   {
+  case Mode::insert:
     for (std::size_t i = 0; i < shared_indices.size(); ++i)
     {
       const std::int32_t index = shared_indices[i];
       for (int j = 0; j < n; ++j)
         local_data[index * n + j] = recv_data[i * n + j];
     }
-  }
-  else if (op == Mode::add)
-  {
+    break;
+  case Mode::add:
     for (std::size_t i = 0; i < shared_indices.size(); ++i)
     {
       const std::int32_t index = shared_indices[i];
