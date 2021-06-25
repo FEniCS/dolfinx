@@ -209,7 +209,7 @@ private:
   dolfinx::MPI::Comm _comm_owner_to_ghost;
 
   // Buffers
-  std::vector<std::int32_t> _sizes_recv_fwd, _sizes_send_fwd, _displs_recv_fwd;
+  // std::vector<std::int32_t> _sizes_recv_fwd, _sizes_send_fwd, _displs_recv_fwd;
 
   // Communicator where the source ranks have ghost indices that are
   // owned by the caller, and the destination ranks are the owners of
