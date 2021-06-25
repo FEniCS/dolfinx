@@ -713,6 +713,7 @@ void IndexMap::scatter_fwd(const xtl::span<const T>& local_data,
         compound_type, data_to_recv.data(), sizes_recv.data(),
         displs_recv.data(), compound_type, _comm_owner_to_ghost.comm());
     MPI_Type_free(&compound_type);
+    break;
   }
 
   // Copy into ghost area ("remote_data")
@@ -721,8 +722,8 @@ void IndexMap::scatter_fwd(const xtl::span<const T>& local_data,
   {
     const int np = _ghost_owners[i];
     for (int j = 0; j < n; ++j)
-      remote_data[i * n + j] = data_to_recv[displs[np] + j];
-    displs[np] += n;
+      remote_data[i * n + j] = data_to_recv[n * displs[np] + j];
+    displs[np] += 1;
   }
 }
 //-----------------------------------------------------------------------------
