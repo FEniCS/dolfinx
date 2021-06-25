@@ -77,13 +77,13 @@ public:
   /// @note Collective
   /// @param[in] mpi_comm The MPI communicator
   /// @param[in] local_size Local size of the IndexMap, i.e. the number
-  ///   of owned entries
+  /// of owned entries
   /// @param[in] dest_ranks Ranks that 'ghost' indices that are owned by
-  ///   the calling rank. I.e., ranks that the caller will send data to
-  ///   when updating ghost values.
+  /// the calling rank. I.e., ranks that the caller will send data to
+  /// when updating ghost values.
   /// @param[in] ghosts The global indices of ghost entries
   /// @param[in] src_ranks Owner rank (on global communicator) of each
-  ///   entry in @p ghosts
+  /// entry in @p ghosts
   IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
            const xtl::span<const int>& dest_ranks,
            const xtl::span<const std::int64_t>& ghosts,
@@ -175,8 +175,8 @@ public:
   ///   from the owning process. Size will be n * num_ghosts().
   /// @param[in] n Number of data items per index
   template <typename T>
-  void scatter_fwd(xtl::span<const T> local_data, xtl::span<T> remote_data,
-                   int n) const;
+  void scatter_fwd(const xtl::span<const T>& local_data,
+                   xtl::span<T> remote_data, int n) const;
 
   /// Send n values for each ghost index to owning to the process
   ///
@@ -188,8 +188,9 @@ public:
   /// @param[in] n Number of data items per index
   /// @param[in] op Sum or set received values in local_data
   template <typename T>
-  void scatter_rev(xtl::span<T> local_data, xtl::span<const T> remote_data,
-                   int n, IndexMap::Mode op) const;
+  void scatter_rev(xtl::span<T> local_data,
+                   const xtl::span<const T>& remote_data, int n,
+                   IndexMap::Mode op) const;
 
 private:
   // Range of indices (global) owned by this process
@@ -216,6 +217,11 @@ private:
 
   // TODO: remove
   dolfinx::MPI::Comm _comm_symmetric;
+
+  // MPI neigbours on _comm_owner_to_ghost
+  std::vector<int> _neighbors_in_fwd, _neighbors_out_fwd;
+
+
 
   // Local-to-global map for ghost indices
   std::vector<std::int64_t> _ghosts;
