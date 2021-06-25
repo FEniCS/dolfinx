@@ -696,25 +696,20 @@ void IndexMap::scatter_fwd(const xtl::span<const T>& local_data,
 
   // Send/receive data
   std::vector<T> data_to_recv(n * displs_recv.back());
-  switch (n)
+  MPI_Datatype mpi_type;
+  if (n == 1)
+    mpi_type = MPI::mpi_type<T>();
+  else
   {
-  case 1:
-    MPI_Neighbor_alltoallv(
-        data_to_send.data(), sizes_send.data(), displs_send.data(),
-        MPI::mpi_type<T>(), data_to_recv.data(), sizes_recv.data(),
-        displs_recv.data(), MPI::mpi_type<T>(), _comm_owner_to_ghost.comm());
-    break;
-  default:
-    MPI_Datatype compound_type;
-    MPI_Type_contiguous(n, dolfinx::MPI::mpi_type<T>(), &compound_type);
-    MPI_Type_commit(&compound_type);
-    MPI_Neighbor_alltoallv(
-        data_to_send.data(), sizes_send.data(), displs_send.data(),
-        compound_type, data_to_recv.data(), sizes_recv.data(),
-        displs_recv.data(), compound_type, _comm_owner_to_ghost.comm());
-    MPI_Type_free(&compound_type);
-    break;
+    MPI_Type_contiguous(n, dolfinx::MPI::mpi_type<T>(), &mpi_type);
+    MPI_Type_commit(&mpi_type);
   }
+  MPI_Neighbor_alltoallv(data_to_send.data(), sizes_send.data(),
+                         displs_send.data(), mpi_type, data_to_recv.data(),
+                         sizes_recv.data(), displs_recv.data(), mpi_type,
+                         _comm_owner_to_ghost.comm());
+  if (n != 1)
+    MPI_Type_free(&mpi_type);
 
   // Copy into ghost area ("remote_data")
   std::vector<std::int32_t> displs(displs_recv);
