@@ -685,7 +685,7 @@ void IndexMap::scatter_fwd(const xtl::span<const T>& local_data,
                    displs_recv.begin() + 1);
 
   // Copy into sending buffer
-  std::vector<T> data_to_send(displs_send.back());
+  std::vector<T> data_to_send(n * displs_send.back());
   const std::vector<std::int32_t>& indices = _shared_indices->array();
   for (std::size_t i = 0; i < indices.size(); ++i)
   {
@@ -752,7 +752,6 @@ void IndexMap::scatter_rev(xtl::span<T> local_data,
 {
   if ((int)remote_data.size() != n * num_ghosts())
     throw std::runtime_error("Invalid remote size in scatter_rev");
-
   if ((int)local_data.size() != n * size_local())
     throw std::runtime_error("Invalid local size in scatter_rev");
 
@@ -799,23 +798,24 @@ void IndexMap::scatter_rev(xtl::span<T> local_data,
 
   const std::vector<std::int32_t>& shared_indices = _shared_indices->array();
   // Copy or accumulate into "local_data"
-  if (op == Mode::insert)
+  switch (op)
   {
+  case Mode::insert:
     for (std::size_t i = 0; i < shared_indices.size(); ++i)
     {
       const std::int32_t index = shared_indices[i];
       for (int j = 0; j < n; ++j)
         local_data[index * n + j] = recv_data[i * n + j];
     }
-  }
-  else if (op == Mode::add)
-  {
+    break;
+  case Mode::add:
     for (std::size_t i = 0; i < shared_indices.size(); ++i)
     {
       const std::int32_t index = shared_indices[i];
       for (int j = 0; j < n; ++j)
         local_data[index * n + j] += recv_data[i * n + j];
     }
+    break;
   }
 }
 //-----------------------------------------------------------------------------
