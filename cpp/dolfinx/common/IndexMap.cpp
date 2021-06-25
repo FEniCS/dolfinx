@@ -671,21 +671,12 @@ void IndexMap::scatter_fwd(const xtl::span<const T>& local_data,
   MPI_Dist_graph_neighbors_count(_comm_owner_to_ghost.comm(), &indegree,
                                  &outdegree, &weighted);
 
-  // Get neighbor processes
-  std::vector<int> neighbors_in(indegree), neighbors_out(outdegree);
-  MPI_Dist_graph_neighbors(_comm_owner_to_ghost.comm(), indegree,
-                           neighbors_in.data(), MPI_UNWEIGHTED, outdegree,
-                           neighbors_out.data(), MPI_UNWEIGHTED);
-
   // Create displacement vectors
   std::vector<std::int32_t> sizes_recv(indegree, 0);
   for (std::size_t i = 0; i < _ghosts.size(); ++i)
-    sizes_recv[_ghost_owners[i]] += n;
+    sizes_recv[_ghost_owners[i]] += 1;
 
-  const std::vector<int32_t>& shared_disp = _shared_indices->offsets();
-  std::vector<std::int32_t> displs_send(shared_disp.size());
-  std::transform(shared_disp.begin(), shared_disp.end(), displs_send.begin(),
-                 [n](auto x) { return x * n; });
+  const std::vector<int32_t>& displs_send = _shared_indices->offsets();
   std::vector<std::int32_t> sizes_send(outdegree, 0);
   std::adjacent_difference(displs_send.begin() + 1, displs_send.end(),
                            sizes_send.begin());
