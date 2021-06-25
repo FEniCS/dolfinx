@@ -54,13 +54,13 @@ std::vector<int> get_ghost_ranks(MPI_Comm comm, std::int32_t local_size,
 /// Compute (owned) global indices shared with neighbor processes
 ///
 /// @param[in] comm MPI communicator where the neighborhood sources are
-/// the owning ranks of the callers ghosts (comm_ghost_to_owner)
+///   the owning ranks of the callers ghosts (comm_ghost_to_owner)
 /// @param[in] ghosts Global index of ghosts indices on the caller
 /// @param[in] ghost_src_ranks The src rank on @p comm for each ghost on
-/// the caller
+///   the caller
 /// @return  (i) For each neighborhood rank (destination ranks on comm)
-/// a list of my global indices that are ghost on the rank and (ii)
-/// displacement vector for each rank
+///   a list of my global indices that are ghost on the rank and (ii)
+///   displacement vector for each rank
 std::tuple<std::vector<std::int64_t>, std::vector<std::int32_t>>
 compute_owned_shared(MPI_Comm comm, const xtl::span<const std::int64_t>& ghosts,
                      const xtl::span<const std::int32_t>& ghost_src_ranks)
@@ -423,7 +423,6 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
   std::transform(shared_ind.begin(), shared_ind.end(), local_shared_ind.begin(),
                  [offset](std::int64_t x) -> std::int32_t
                  { return x - offset; });
-
   _shared_indices = std::make_unique<graph::AdjacencyList<std::int32_t>>(
       std::move(local_shared_ind), std::move(shared_disp));
 
@@ -680,25 +679,21 @@ template <typename T>
 void IndexMap::scatter_fwd(const xtl::span<const T>& local_data,
                            xtl::span<T> remote_data, int n) const
 {
-  const std::int32_t _size_local = this->size_local();
+  const std::int32_t _size_local = size_local();
   if ((int)local_data.size() != n * _size_local)
     throw std::runtime_error("Invalid local size in scatter_fwd");
   if (remote_data.size() != n * _ghosts.size())
     throw std::runtime_error("Invalid remote size in scatter_fwd");
 
-  const std::size_t indegree = _neighbors_in_fwd.size();
-  const std::size_t outdegree = _neighbors_out_fwd.size();
+  const int indegree = _neighbors_in_fwd.size();
+  const int outdegree = _neighbors_out_fwd.size();
 
   // Create displacement vectors
   std::vector<std::int32_t> sizes_recv(indegree, 0);
   for (std::size_t i = 0; i < _ghosts.size(); ++i)
-    sizes_recv[_ghost_owners[i]] += n;
+    sizes_recv[_ghost_owners[i]] += 1;
 
   const std::vector<int32_t>& displs_send = _shared_indices->offsets();
-  // const std::vector<int32_t>& shared_disp = _shared_indices->offsets();
-  // std::vector<std::int32_t> displs_send(shared_disp.size());
-  // std::transform(shared_disp.begin(), shared_disp.end(), displs_send.begin(),
-  //                [n](auto x) { return x * n; });
   std::vector<std::int32_t> sizes_send(outdegree, 0);
   std::adjacent_difference(displs_send.begin() + 1, displs_send.end(),
                            sizes_send.begin());
@@ -708,9 +703,10 @@ void IndexMap::scatter_fwd(const xtl::span<const T>& local_data,
 
   // Copy into sending buffer
   std::vector<T> data_to_send(n * displs_send.back());
-  for (std::size_t i = 0; i < displs_send.size(); ++i)
+  const std::vector<std::int32_t>& indices = _shared_indices->array();
+  for (std::size_t i = 0; i < indices.size(); ++i)
   {
-    const std::int32_t index = displs_send[i];
+    const std::int32_t index = indices[i];
     for (int j = 0; j < n; ++j)
       data_to_send[i * n + j] = local_data[index * n + j];
   }
@@ -737,13 +733,12 @@ void IndexMap::scatter_fwd(const xtl::span<const T>& local_data,
   }
 
   // Copy into ghost area ("remote_data")
-  std::vector<std::int32_t> displs(displs_recv);
   for (std::size_t i = 0; i < _ghosts.size(); ++i)
   {
     const int np = _ghost_owners[i];
     for (int j = 0; j < n; ++j)
-      remote_data[i * n + j] = data_to_recv[displs[np] + j];
-    displs[np] += n;
+      remote_data[i * n + j] = data_to_recv[displs_recv[np] + j];
+    displs_recv[np] += n;
   }
 }
 //-----------------------------------------------------------------------------
