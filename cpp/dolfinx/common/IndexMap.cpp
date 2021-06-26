@@ -782,13 +782,10 @@ void IndexMap::scatter_rev(xtl::span<T> local_data,
   //   send_sizes[_ghost_owners[i]] += 1;
 
   // Create displacement vectors
-  std::vector<std::int32_t> displs_recv(indegree + 1, 0);
   std::vector<std::int32_t> recv_sizes(indegree, 0);
+  const std::vector<int32_t>& displs_recv = _shared_indices->offsets();
   for (int i = 0; i < indegree; ++i)
-  {
     recv_sizes[i] = _shared_indices->num_links(i);
-    displs_recv[i + 1] = displs_recv[i] + recv_sizes[i];
-  }
 
   std::vector<std::int32_t> displs_send(outdegree + 1, 0);
   for (int i = 0; i < outdegree; ++i)
