@@ -688,10 +688,10 @@ void IndexMap::scatter_fwd(const xtl::span<const T>& local_data,
   if (remote_data.size() != n * _ghosts.size())
     throw std::runtime_error("Invalid remote size in scatter_fwd");
 
-  // Get number of neighbors
-  int indegree(-1), outdegree(-2), weighted(-1);
-  MPI_Dist_graph_neighbors_count(_comm_owner_to_ghost.comm(), &indegree,
-                                 &outdegree, &weighted);
+  // // Get number of neighbors
+  // int indegree(-1), outdegree(-2), weighted(-1);
+  // MPI_Dist_graph_neighbors_count(_comm_owner_to_ghost.comm(), &indegree,
+  //                                &outdegree, &weighted);
 
   // Create displacement vectors
   // std::vector<std::int32_t> sizes_recv(indegree, 0);
@@ -699,9 +699,11 @@ void IndexMap::scatter_fwd(const xtl::span<const T>& local_data,
   //   sizes_recv[_ghost_owners[i]] += 1;
 
   const std::vector<int32_t>& displs_send = _shared_indices->offsets();
-  std::vector<std::int32_t> sizes_send(outdegree, 0);
-  std::adjacent_difference(displs_send.begin() + 1, displs_send.end(),
-                           sizes_send.begin());
+
+  // std::vector<std::int32_t> sizes_send(outdegree, 0);
+  // std::adjacent_difference(displs_send.begin() + 1, displs_send.end(),
+  //                          sizes_send.begin());
+
   // std::vector<std::int32_t> displs_recv(indegree + 1, 0);
   // std::partial_sum(_sizes_recv_fwd.begin(), _sizes_recv_fwd.end(),
   //                  displs_recv.begin() + 1);
@@ -726,7 +728,7 @@ void IndexMap::scatter_fwd(const xtl::span<const T>& local_data,
     MPI_Type_contiguous(n, dolfinx::MPI::mpi_type<T>(), &mpi_type);
     MPI_Type_commit(&mpi_type);
   }
-  MPI_Neighbor_alltoallv(data_to_send.data(), sizes_send.data(),
+  MPI_Neighbor_alltoallv(data_to_send.data(), _sizes_send_fwd.data(),
                          displs_send.data(), mpi_type, data_to_recv.data(),
                          _sizes_recv_fwd.data(), _displs_recv_fwd.data(), mpi_type,
                          _comm_owner_to_ghost.comm());
