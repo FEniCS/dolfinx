@@ -433,6 +433,8 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
   // ------
 
   {
+    // --- fwd
+
     // Get number of neighbors
     int indegree(-1), outdegree(-2), weighted(-1);
     MPI_Dist_graph_neighbors_count(_comm_owner_to_ghost.comm(), &indegree,
@@ -450,6 +452,16 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
     _sizes_send_fwd.resize(outdegree, 0);
     std::adjacent_difference(displs_send.begin() + 1, displs_send.end(),
                              _sizes_send_fwd.begin());
+
+    // --- rev
+
+    MPI_Dist_graph_neighbors_count(_comm_ghost_to_owner.comm(), &indegree,
+                                   &outdegree, &weighted);
+
+    // Compute number of items to send to each process
+    _send_sizes_rev.resize(outdegree, 0);
+    for (std::size_t i = 0; i < _ghosts.size(); ++i)
+      _send_sizes_rev[_ghost_owners[i]] += 1;
   }
 }
 //-----------------------------------------------------------------------------
@@ -765,22 +777,22 @@ void IndexMap::scatter_rev(xtl::span<T> local_data,
                                  &outdegree, &weighted);
 
   // Compute number of items to send to each process
-  std::vector<std::int32_t> send_sizes(outdegree, 0);
-  std::vector<std::int32_t> recv_sizes(indegree, 0);
-  for (std::size_t i = 0; i < _ghosts.size(); ++i)
-    send_sizes[_ghost_owners[i]] += 1;
+  // std::vector<std::int32_t> send_sizes(outdegree, 0);
+  // for (std::size_t i = 0; i < _ghosts.size(); ++i)
+  //   send_sizes[_ghost_owners[i]] += 1;
 
   // Create displacement vectors
-  std::vector<std::int32_t> displs_send(outdegree + 1, 0);
   std::vector<std::int32_t> displs_recv(indegree + 1, 0);
+  std::vector<std::int32_t> recv_sizes(indegree, 0);
   for (int i = 0; i < indegree; ++i)
   {
     recv_sizes[i] = _shared_indices->num_links(i);
     displs_recv[i + 1] = displs_recv[i] + recv_sizes[i];
   }
 
+  std::vector<std::int32_t> displs_send(outdegree + 1, 0);
   for (int i = 0; i < outdegree; ++i)
-    displs_send[i + 1] = displs_send[i] + send_sizes[i];
+    displs_send[i + 1] = displs_send[i] + _send_sizes_rev[i];
 
   // Fill sending data
   std::vector<T> send_data(n * displs_send.back());
@@ -803,7 +815,7 @@ void IndexMap::scatter_rev(xtl::span<T> local_data,
     MPI_Type_contiguous(n, dolfinx::MPI::mpi_type<T>(), &mpi_type);
     MPI_Type_commit(&mpi_type);
   }
-  MPI_Neighbor_alltoallv(send_data.data(), send_sizes.data(),
+  MPI_Neighbor_alltoallv(send_data.data(), _send_sizes_rev.data(),
                          displs_send.data(), mpi_type, recv_data.data(),
                          recv_sizes.data(), displs_recv.data(), mpi_type,
                          _comm_ghost_to_owner.comm());

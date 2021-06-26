@@ -218,6 +218,9 @@ private:
   // - out-edges (dest) are to the owning ranks of my ghost indices
   dolfinx::MPI::Comm _comm_ghost_to_owner;
 
+  // Buffers
+  std::vector<std::int32_t> _send_sizes_rev;
+
   // TODO: remove
   dolfinx::MPI::Comm _comm_symmetric;
 
