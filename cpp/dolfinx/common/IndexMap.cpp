@@ -768,14 +768,14 @@ void IndexMap::scatter_rev(xtl::span<T> local_data,
   std::vector<std::int32_t> send_sizes(outdegree, 0);
   std::vector<std::int32_t> recv_sizes(indegree, 0);
   for (std::size_t i = 0; i < _ghosts.size(); ++i)
-    send_sizes[_ghost_owners[i]] += n;
+    send_sizes[_ghost_owners[i]] += 1;
 
   // Create displacement vectors
   std::vector<std::int32_t> displs_send(outdegree + 1, 0);
   std::vector<std::int32_t> displs_recv(indegree + 1, 0);
   for (int i = 0; i < indegree; ++i)
   {
-    recv_sizes[i] = _shared_indices->num_links(i) * n;
+    recv_sizes[i] = _shared_indices->num_links(i);
     displs_recv[i + 1] = displs_recv[i] + recv_sizes[i];
   }
 
@@ -783,25 +783,35 @@ void IndexMap::scatter_rev(xtl::span<T> local_data,
     displs_send[i + 1] = displs_send[i] + send_sizes[i];
 
   // Fill sending data
-  std::vector<T> send_data(displs_send.back());
+  std::vector<T> send_data(n * displs_send.back());
   std::vector<std::int32_t> displs(displs_send);
   for (std::size_t i = 0; i < _ghosts.size(); ++i)
   {
     const int np = _ghost_owners[i];
     for (int j = 0; j < n; ++j)
-      send_data[displs[np] + j] = remote_data[i * n + j];
-    displs[np] += n;
+      send_data[n * displs[np] + j] = remote_data[i * n + j];
+    displs[np] += 1;
   }
 
   // Send and receive data
-  std::vector<T> recv_data(displs_recv.back());
-  MPI_Neighbor_alltoallv(
-      send_data.data(), send_sizes.data(), displs_send.data(),
-      MPI::mpi_type<T>(), recv_data.data(), recv_sizes.data(),
-      displs_recv.data(), MPI::mpi_type<T>(), _comm_ghost_to_owner.comm());
+  std::vector<T> recv_data(n * displs_recv.back());
+  MPI_Datatype mpi_type;
+  if (n == 1)
+    mpi_type = MPI::mpi_type<T>();
+  else
+  {
+    MPI_Type_contiguous(n, dolfinx::MPI::mpi_type<T>(), &mpi_type);
+    MPI_Type_commit(&mpi_type);
+  }
+  MPI_Neighbor_alltoallv(send_data.data(), send_sizes.data(),
+                         displs_send.data(), mpi_type, recv_data.data(),
+                         recv_sizes.data(), displs_recv.data(), mpi_type,
+                         _comm_ghost_to_owner.comm());
+  if (n != 1)
+    MPI_Type_free(&mpi_type);
 
-  const std::vector<std::int32_t>& shared_indices = _shared_indices->array();
   // Copy or accumulate into "local_data"
+  const std::vector<std::int32_t>& shared_indices = _shared_indices->array();
   switch (op)
   {
   case Mode::insert:
