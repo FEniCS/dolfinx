@@ -780,20 +780,8 @@ void IndexMap::scatter_rev(xtl::span<T> local_data,
   if ((int)local_data.size() != n * size_local())
     throw std::runtime_error("Invalid local size in scatter_rev");
 
-  // Get number of neighbors
-  int indegree(-1), outdegree(-2), weighted(-1);
-  MPI_Dist_graph_neighbors_count(_comm_ghost_to_owner.comm(), &indegree,
-                                 &outdegree, &weighted);
-
   // Create displacement vectors
   const std::vector<int32_t>& displs_recv = _shared_indices->offsets();
-  // std::vector<std::int32_t> recv_sizes(indegree, 0);
-  // std::adjacent_difference(displs_recv.cbegin() + 1, displs_recv.cend(),
-  //                          recv_sizes.begin());
-
-  // std::vector<std::int32_t> displs_send(outdegree + 1, 0);
-  // std::partial_sum(_send_sizes_rev.cbegin(), _send_sizes_rev.cend(),
-  //                  displs_send.begin() + 1);
 
   // Fill sending data
   std::vector<T> send_data(n * _displs_send_rev.back());
@@ -801,8 +789,8 @@ void IndexMap::scatter_rev(xtl::span<T> local_data,
   for (std::size_t i = 0; i < _ghosts.size(); ++i)
   {
     const int np = _ghost_owners[i];
-    for (int j = 0; j < n; ++j)
-      send_data[n * displs[np] + j] = remote_data[i * n + j];
+    std::copy_n(std::next(remote_data.cbegin(), n * i), n,
+                std::next(send_data.begin(), n * displs[np]));
     displs[np] += 1;
   }
 
@@ -831,8 +819,8 @@ void IndexMap::scatter_rev(xtl::span<T> local_data,
     for (std::size_t i = 0; i < shared_indices.size(); ++i)
     {
       const std::int32_t index = shared_indices[i];
-      for (int j = 0; j < n; ++j)
-        local_data[index * n + j] = recv_data[i * n + j];
+      std::copy_n(std::next(recv_data.cbegin(), n * i), n,
+                  std::next(local_data.begin(), n * index));
     }
     break;
   case Mode::add:
