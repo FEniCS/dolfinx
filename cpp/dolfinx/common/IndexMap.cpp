@@ -453,27 +453,6 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
     _sizes_send_fwd.resize(outdegree, 0);
     std::adjacent_difference(displs_send.begin() + 1, displs_send.end(),
                              _sizes_send_fwd.begin());
-
-    // --- rev
-
-    // MPI_Dist_graph_neighbors_count(_comm_ghost_to_owner.comm(), &indegree,
-    //                                &outdegree, &weighted);
-
-    // Compute number of items to send to each process
-    // _send_sizes_rev.resize(outdegree, 0);
-    // for (std::size_t i = 0; i < _ghosts.size(); ++i)
-    //   _send_sizes_rev[_ghost_owners[i]] += 1;
-
-    // const std::vector<int32_t>& displs_recv = _shared_indices->offsets();
-    // _sizes_recv_rev.resize(indegree, 0);
-    // std::adjacent_difference(displs_recv.cbegin() + 1, displs_recv.cend(),
-    //                          _sizes_recv_rev.begin());
-
-    // _displs_send_rev.resize(outdegree + 1, 0);
-    // std::partial_sum(_sizes_recv_fwd.cbegin(), _sizes_recv_fwd.cend(),
-    //                  _displs_send_rev.begin() + 1);
-    // std::partial_sum(_send_sizes_rev.cbegin(), _send_sizes_rev.cend(),
-    //                  _displs_send_rev.begin() + 1);
   }
 }
 //-----------------------------------------------------------------------------

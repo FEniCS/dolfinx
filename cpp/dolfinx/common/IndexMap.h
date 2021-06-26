@@ -208,9 +208,6 @@ private:
   // - out-edges (dest) go to ranks that 'ghost' my owned indices
   dolfinx::MPI::Comm _comm_owner_to_ghost;
 
-  // Buffers
-  std::vector<std::int32_t> _sizes_recv_fwd, _sizes_send_fwd, _displs_recv_fwd;
-
   // Communicator where the source ranks have ghost indices that are
   // owned by the caller, and the destination ranks are the owners of
   // indices in the callers halo region. I.e.,
@@ -218,9 +215,8 @@ private:
   // - out-edges (dest) are to the owning ranks of my ghost indices
   dolfinx::MPI::Comm _comm_ghost_to_owner;
 
-  // Buffers
-  // std::vector<std::int32_t> /*_send_sizes_rev,*/ /*_sizes_recv_rev, */
-  //     _displs_send_rev;
+  // MPI sizes and displacements
+  std::vector<std::int32_t> _sizes_recv_fwd, _sizes_send_fwd, _displs_recv_fwd;
 
   // TODO: remove
   dolfinx::MPI::Comm _comm_symmetric;
