@@ -467,6 +467,10 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
     _sizes_recv_rev.resize(indegree, 0);
     std::adjacent_difference(displs_recv.cbegin() + 1, displs_recv.cend(),
                              _sizes_recv_rev.begin());
+
+    _displs_send_rev.resize(outdegree + 1, 0);
+    std::partial_sum(_send_sizes_rev.cbegin(), _send_sizes_rev.cend(),
+                     _displs_send_rev.begin() + 1);
   }
 }
 //-----------------------------------------------------------------------------
@@ -787,13 +791,13 @@ void IndexMap::scatter_rev(xtl::span<T> local_data,
   // std::adjacent_difference(displs_recv.cbegin() + 1, displs_recv.cend(),
   //                          recv_sizes.begin());
 
-  std::vector<std::int32_t> displs_send(outdegree + 1, 0);
-  std::partial_sum(_send_sizes_rev.cbegin(), _send_sizes_rev.cend(),
-                   displs_send.begin() + 1);
+  // std::vector<std::int32_t> displs_send(outdegree + 1, 0);
+  // std::partial_sum(_send_sizes_rev.cbegin(), _send_sizes_rev.cend(),
+  //                  displs_send.begin() + 1);
 
   // Fill sending data
-  std::vector<T> send_data(n * displs_send.back());
-  std::vector<std::int32_t> displs(displs_send);
+  std::vector<T> send_data(n * _displs_send_rev.back());
+  std::vector<std::int32_t> displs(_displs_send_rev);
   for (std::size_t i = 0; i < _ghosts.size(); ++i)
   {
     const int np = _ghost_owners[i];
@@ -813,7 +817,7 @@ void IndexMap::scatter_rev(xtl::span<T> local_data,
     MPI_Type_commit(&mpi_type);
   }
   MPI_Neighbor_alltoallv(send_data.data(), _send_sizes_rev.data(),
-                         displs_send.data(), mpi_type, recv_data.data(),
+                         _displs_send_rev.data(), mpi_type, recv_data.data(),
                          _sizes_recv_rev.data(), displs_recv.data(), mpi_type,
                          _comm_ghost_to_owner.comm());
   if (n != 1)
