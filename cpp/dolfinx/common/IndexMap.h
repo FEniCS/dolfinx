@@ -219,7 +219,7 @@ private:
   dolfinx::MPI::Comm _comm_ghost_to_owner;
 
   // Buffers
-  std::vector<std::int32_t> _send_sizes_rev, _sizes_recv_rev, _displs_send_rev;
+  std::vector<std::int32_t> /*_send_sizes_rev,*/ _sizes_recv_rev, _displs_send_rev;
 
   // TODO: remove
   dolfinx::MPI::Comm _comm_symmetric;

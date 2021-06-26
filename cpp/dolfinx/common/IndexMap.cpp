@@ -444,6 +444,7 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
     _sizes_recv_fwd.resize(indegree, 0);
     for (std::size_t i = 0; i < _ghosts.size(); ++i)
       _sizes_recv_fwd[_ghost_owners[i]] += 1;
+
     _displs_recv_fwd.resize(indegree + 1, 0);
     std::partial_sum(_sizes_recv_fwd.begin(), _sizes_recv_fwd.end(),
                      _displs_recv_fwd.begin() + 1);
@@ -459,9 +460,9 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
                                    &outdegree, &weighted);
 
     // Compute number of items to send to each process
-    _send_sizes_rev.resize(outdegree, 0);
-    for (std::size_t i = 0; i < _ghosts.size(); ++i)
-      _send_sizes_rev[_ghost_owners[i]] += 1;
+    // _send_sizes_rev.resize(outdegree, 0);
+    // for (std::size_t i = 0; i < _ghosts.size(); ++i)
+    //   _send_sizes_rev[_ghost_owners[i]] += 1;
 
     const std::vector<int32_t>& displs_recv = _shared_indices->offsets();
     _sizes_recv_rev.resize(indegree, 0);
@@ -469,8 +470,10 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
                              _sizes_recv_rev.begin());
 
     _displs_send_rev.resize(outdegree + 1, 0);
-    std::partial_sum(_send_sizes_rev.cbegin(), _send_sizes_rev.cend(),
+    std::partial_sum(_sizes_recv_fwd.cbegin(), _sizes_recv_fwd.cend(),
                      _displs_send_rev.begin() + 1);
+    // std::partial_sum(_send_sizes_rev.cbegin(), _send_sizes_rev.cend(),
+    //                  _displs_send_rev.begin() + 1);
   }
 }
 //-----------------------------------------------------------------------------
@@ -804,7 +807,7 @@ void IndexMap::scatter_rev(xtl::span<T> local_data,
     MPI_Type_contiguous(n, dolfinx::MPI::mpi_type<T>(), &mpi_type);
     MPI_Type_commit(&mpi_type);
   }
-  MPI_Neighbor_alltoallv(send_data.data(), _send_sizes_rev.data(),
+  MPI_Neighbor_alltoallv(send_data.data(), _sizes_recv_fwd.data(),
                          _displs_send_rev.data(), mpi_type, recv_data.data(),
                          _sizes_recv_rev.data(), displs_recv.data(), mpi_type,
                          _comm_ghost_to_owner.comm());
