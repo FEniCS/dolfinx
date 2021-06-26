@@ -776,20 +776,15 @@ void IndexMap::scatter_rev(xtl::span<T> local_data,
   MPI_Dist_graph_neighbors_count(_comm_ghost_to_owner.comm(), &indegree,
                                  &outdegree, &weighted);
 
-  // Compute number of items to send to each process
-  // std::vector<std::int32_t> send_sizes(outdegree, 0);
-  // for (std::size_t i = 0; i < _ghosts.size(); ++i)
-  //   send_sizes[_ghost_owners[i]] += 1;
-
   // Create displacement vectors
-  std::vector<std::int32_t> recv_sizes(indegree, 0);
   const std::vector<int32_t>& displs_recv = _shared_indices->offsets();
-  for (int i = 0; i < indegree; ++i)
-    recv_sizes[i] = _shared_indices->num_links(i);
+  std::vector<std::int32_t> recv_sizes(indegree, 0);
+  std::adjacent_difference(displs_recv.cbegin() + 1, displs_recv.cend(),
+                           recv_sizes.begin());
 
   std::vector<std::int32_t> displs_send(outdegree + 1, 0);
-  for (int i = 0; i < outdegree; ++i)
-    displs_send[i + 1] = displs_send[i] + _send_sizes_rev[i];
+  std::partial_sum(_send_sizes_rev.cbegin(), _send_sizes_rev.cend(),
+                   displs_send.begin() + 1);
 
   // Fill sending data
   std::vector<T> send_data(n * displs_send.back());
