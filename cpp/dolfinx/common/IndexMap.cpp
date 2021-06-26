@@ -456,22 +456,22 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
 
     // --- rev
 
-    MPI_Dist_graph_neighbors_count(_comm_ghost_to_owner.comm(), &indegree,
-                                   &outdegree, &weighted);
+    // MPI_Dist_graph_neighbors_count(_comm_ghost_to_owner.comm(), &indegree,
+    //                                &outdegree, &weighted);
 
     // Compute number of items to send to each process
     // _send_sizes_rev.resize(outdegree, 0);
     // for (std::size_t i = 0; i < _ghosts.size(); ++i)
     //   _send_sizes_rev[_ghost_owners[i]] += 1;
 
-    const std::vector<int32_t>& displs_recv = _shared_indices->offsets();
-    _sizes_recv_rev.resize(indegree, 0);
-    std::adjacent_difference(displs_recv.cbegin() + 1, displs_recv.cend(),
-                             _sizes_recv_rev.begin());
+    // const std::vector<int32_t>& displs_recv = _shared_indices->offsets();
+    // _sizes_recv_rev.resize(indegree, 0);
+    // std::adjacent_difference(displs_recv.cbegin() + 1, displs_recv.cend(),
+    //                          _sizes_recv_rev.begin());
 
-    _displs_send_rev.resize(outdegree + 1, 0);
-    std::partial_sum(_sizes_recv_fwd.cbegin(), _sizes_recv_fwd.cend(),
-                     _displs_send_rev.begin() + 1);
+    // _displs_send_rev.resize(outdegree + 1, 0);
+    // std::partial_sum(_sizes_recv_fwd.cbegin(), _sizes_recv_fwd.cend(),
+    //                  _displs_send_rev.begin() + 1);
     // std::partial_sum(_send_sizes_rev.cbegin(), _send_sizes_rev.cend(),
     //                  _displs_send_rev.begin() + 1);
   }
@@ -787,8 +787,8 @@ void IndexMap::scatter_rev(xtl::span<T> local_data,
   const std::vector<int32_t>& displs_recv = _shared_indices->offsets();
 
   // Fill sending data
-  std::vector<T> send_data(n * _displs_send_rev.back());
-  std::vector<std::int32_t> displs(_displs_send_rev);
+  std::vector<T> send_data(n * _displs_recv_fwd.back());
+  std::vector<std::int32_t> displs(_displs_recv_fwd);
   for (std::size_t i = 0; i < _ghosts.size(); ++i)
   {
     const int np = _ghost_owners[i];
@@ -808,8 +808,8 @@ void IndexMap::scatter_rev(xtl::span<T> local_data,
     MPI_Type_commit(&mpi_type);
   }
   MPI_Neighbor_alltoallv(send_data.data(), _sizes_recv_fwd.data(),
-                         _displs_send_rev.data(), mpi_type, recv_data.data(),
-                         _sizes_recv_rev.data(), displs_recv.data(), mpi_type,
+                         _displs_recv_fwd.data(), mpi_type, recv_data.data(),
+                         _sizes_send_fwd.data(), displs_recv.data(), mpi_type,
                          _comm_ghost_to_owner.comm());
   if (n != 1)
     MPI_Type_free(&mpi_type);
