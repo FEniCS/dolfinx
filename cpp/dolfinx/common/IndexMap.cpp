@@ -462,6 +462,11 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
     _send_sizes_rev.resize(outdegree, 0);
     for (std::size_t i = 0; i < _ghosts.size(); ++i)
       _send_sizes_rev[_ghost_owners[i]] += 1;
+
+    const std::vector<int32_t>& displs_recv = _shared_indices->offsets();
+    _sizes_recv_rev.resize(indegree, 0);
+    std::adjacent_difference(displs_recv.cbegin() + 1, displs_recv.cend(),
+                             _sizes_recv_rev.begin());
   }
 }
 //-----------------------------------------------------------------------------
@@ -778,9 +783,9 @@ void IndexMap::scatter_rev(xtl::span<T> local_data,
 
   // Create displacement vectors
   const std::vector<int32_t>& displs_recv = _shared_indices->offsets();
-  std::vector<std::int32_t> recv_sizes(indegree, 0);
-  std::adjacent_difference(displs_recv.cbegin() + 1, displs_recv.cend(),
-                           recv_sizes.begin());
+  // std::vector<std::int32_t> recv_sizes(indegree, 0);
+  // std::adjacent_difference(displs_recv.cbegin() + 1, displs_recv.cend(),
+  //                          recv_sizes.begin());
 
   std::vector<std::int32_t> displs_send(outdegree + 1, 0);
   std::partial_sum(_send_sizes_rev.cbegin(), _send_sizes_rev.cend(),
@@ -809,7 +814,7 @@ void IndexMap::scatter_rev(xtl::span<T> local_data,
   }
   MPI_Neighbor_alltoallv(send_data.data(), _send_sizes_rev.data(),
                          displs_send.data(), mpi_type, recv_data.data(),
-                         recv_sizes.data(), displs_recv.data(), mpi_type,
+                         _sizes_recv_rev.data(), displs_recv.data(), mpi_type,
                          _comm_ghost_to_owner.comm());
   if (n != 1)
     MPI_Type_free(&mpi_type);
