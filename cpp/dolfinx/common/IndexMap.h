@@ -193,15 +193,18 @@ public:
     {
       throw std::runtime_error("Invalid remote size in scatter_fwd");
     }
-    const int n = static_cast<std::int32_t>(local_data.size()) / size_local();
 
     std::cout << "Scatter fwd  1" << std::endl;
-#ifdef DEBUG
-    int data_size;
-    MPI_Type_size(data_type, &data_size);
-    if (n != data_size / sizeof(T))
-      throw std::runtime_error("Invalid block sized in scatter");
-#endif
+    // #ifdef DEBUG
+    int n;
+    MPI_Type_size(data_type, &n);
+    n /= sizeof(T);
+    if (size_local() > 0
+        and n != static_cast<int>(local_data.size() / size_local()))
+    {
+
+      throw std::runtime_error("Inconsistent block size.");
+    }
 
     std::cout << "Scatter fwd  2" << std::endl;
 
