@@ -15,11 +15,8 @@ using namespace dolfinx;
 
 namespace
 {
-void test_scatter_fwd()
+void test_scatter_fwd(int n)
 {
-  // Block size
-  auto n = GENERATE(1, 5, 10);
-
   const int mpi_size = dolfinx::MPI::size(MPI_COMM_WORLD);
   const int mpi_rank = dolfinx::MPI::rank(MPI_COMM_WORLD);
   const int size_local = 100;
@@ -49,9 +46,9 @@ void test_scatter_fwd()
   idx_map.scatter_fwd(xtl::span<const std::int64_t>(data_local),
                       xtl::span<std::int64_t>(data_ghost), n);
   CHECK(data_ghost.size() == n * num_ghosts);
-  CHECK(std::all_of(data_ghost.begin(), data_ghost.end(), [=](auto i) {
-    return i == val * ((mpi_rank + 1) % mpi_size);
-  }));
+  CHECK(std::all_of(data_ghost.begin(), data_ghost.end(),
+                    [=](auto i)
+                    { return i == val * ((mpi_rank + 1) % mpi_size); }));
 }
 
 void test_scatter_rev()
@@ -108,7 +105,8 @@ void test_scatter_rev()
 
 TEST_CASE("Scatter forward using IndexMap", "[index_map_scatter_fwd]")
 {
-  CHECK_NOTHROW(test_scatter_fwd());
+  auto n = GENERATE(1, 5, 10);
+  CHECK_NOTHROW(test_scatter_fwd(n));
 }
 
 TEST_CASE("Scatter reverse using IndexMap", "[index_map_scatter_rev]")
