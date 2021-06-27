@@ -210,13 +210,16 @@ public:
       MPI_Type_contiguous(n, dolfinx::MPI::mpi_type<T>(), &_mpi_type);
       MPI_Type_commit(&_mpi_type);
     }
-    MPI_Request request;
-    MPI_Ineighbor_alltoallv(send_buffer.data(), _sizes_send_fwd.data(),
+    MPI_Neighbor_alltoallv(send_buffer.data(), _sizes_send_fwd.data(),
                             displs_send.data(), _mpi_type, recv_buffer.data(),
                             _sizes_recv_fwd.data(), _displs_recv_fwd.data(),
-                            _mpi_type, _comm_owner_to_ghost.comm(), &request);
-
-    MPI_Wait(&request, MPI_STATUS_IGNORE);
+                            _mpi_type, _comm_owner_to_ghost.comm());
+    // MPI_Request request;
+    // MPI_Ineighbor_alltoallv(send_buffer.data(), _sizes_send_fwd.data(),
+    //                         displs_send.data(), _mpi_type, recv_buffer.data(),
+    //                         _sizes_recv_fwd.data(), _displs_recv_fwd.data(),
+    //                         _mpi_type, _comm_owner_to_ghost.comm(), &request);
+    // MPI_Wait(&request, MPI_STATUS_IGNORE);
 
     // Copy into ghost area ("remote_data")
     std::vector<std::int32_t> displs = _displs_recv_fwd;
