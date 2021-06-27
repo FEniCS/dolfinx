@@ -103,11 +103,11 @@ void test_scatter_rev()
 }
 } // namespace
 
-// TEST_CASE("Scatter forward using IndexMap", "[index_map_scatter_fwd]")
-// {
-//   auto n = GENERATE(1, 5, 10);
-//   CHECK_NOTHROW(test_scatter_fwd(n));
-// }
+TEST_CASE("Scatter forward using IndexMap", "[index_map_scatter_fwd]")
+{
+  auto n = GENERATE(1, 5, 10);
+  CHECK_NOTHROW(test_scatter_fwd(n));
+}
 
 TEST_CASE("Scatter reverse using IndexMap", "[index_map_scatter_rev]")
 {

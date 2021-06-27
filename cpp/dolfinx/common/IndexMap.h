@@ -181,9 +181,7 @@ public:
                    xtl::span<T> remote_data, int n, std::vector<T>& send_buffer,
                    std::vector<T>& recv_buffer) const
   {
-    assert(n > 0);
-    const std::int32_t _size_local = size_local();
-    if ((int)local_data.size() != n * _size_local)
+    if (static_cast<std::int32_t>(local_data.size()) != n * this->size_local())
       throw std::runtime_error("Invalid local size in scatter_fwd");
     if (remote_data.size() != n * _ghosts.size())
       throw std::runtime_error("Invalid remote size in scatter_fwd");
@@ -191,8 +189,9 @@ public:
     // Send displacements
     const std::vector<int32_t>& displs_send = _shared_indices->offsets();
 
-    // Copy into sending buffer
+    // Copy data into send buffer
     send_buffer.resize(n * displs_send.back() + 1); // Add '1' for OpenMPI bug
+    std::cout << "Send buffer size: " << send_buffer.size() << std::endl;
     const std::vector<std::int32_t>& indices = _shared_indices->array();
     for (std::size_t i = 0; i < indices.size(); ++i)
     {
@@ -202,8 +201,7 @@ public:
     }
 
     // Send/receive data
-    recv_buffer.resize(n * _displs_recv_fwd.back()
-                       + 1); // Add '1' for OpenMPI bug
+    recv_buffer.resize(n * _displs_recv_fwd.back());
     if (n == 1)
       _mpi_type = MPI::mpi_type<T>();
     else
