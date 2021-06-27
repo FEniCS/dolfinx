@@ -209,7 +209,7 @@ public:
     }
 
     // Start send/receive
-    recv_buffer.resize(n * _displs_recv_fwd.back());
+    recv_buffer.resize(n * _displs_recv_fwd.back() + 1); // Add '1' for OpenMPI bug
     MPI_Ineighbor_alltoallv(send_buffer.data(), _sizes_send_fwd.data(),
                             displs_send.data(), data_type, recv_buffer.data(),
                             _sizes_recv_fwd.data(), _displs_recv_fwd.data(),
