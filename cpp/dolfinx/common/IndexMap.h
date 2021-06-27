@@ -176,7 +176,73 @@ public:
   /// @param[in] n Number of data items per index
   template <typename T>
   void scatter_fwd(const xtl::span<const T>& local_data,
-                   xtl::span<T> remote_data, int n) const;
+                   xtl::span<T> remote_data, int n, std::vector<T>& send_buffer,
+                   std::vector<T>& recv_buffer) const
+  {
+    assert(n > 0);
+    const std::int32_t _size_local = size_local();
+    if ((int)local_data.size() != n * _size_local)
+      throw std::runtime_error("Invalid local size in scatter_fwd");
+    if (remote_data.size() != n * _ghosts.size())
+      throw std::runtime_error("Invalid remote size in scatter_fwd");
+
+    // Send displacements
+    const std::vector<int32_t>& displs_send = _shared_indices->offsets();
+
+    // Copy into sending buffer
+    send_buffer.resize(n * displs_send.back());
+    const std::vector<std::int32_t>& indices = _shared_indices->array();
+    for (std::size_t i = 0; i < indices.size(); ++i)
+    {
+      const std::int32_t index = indices[i];
+      for (int j = 0; j < n; ++j)
+        send_buffer[i * n + j] = local_data[index * n + j];
+    }
+
+    // Send/receive data
+    recv_buffer.resize(n * _displs_recv_fwd.back());
+    if (n == 1)
+      _mpi_type = MPI::mpi_type<T>();
+    else
+    {
+      MPI_Type_contiguous(n, dolfinx::MPI::mpi_type<T>(), &_mpi_type);
+      MPI_Type_commit(&_mpi_type);
+    }
+    MPI_Neighbor_alltoallv(send_buffer.data(), _sizes_send_fwd.data(),
+                           displs_send.data(), _mpi_type, recv_buffer.data(),
+                           _sizes_recv_fwd.data(), _displs_recv_fwd.data(),
+                           _mpi_type, _comm_owner_to_ghost.comm());
+    if (n != 1)
+      MPI_Type_free(&_mpi_type);
+
+    // Copy into ghost area ("remote_data")
+    std::vector<std::int32_t> displs(_displs_recv_fwd);
+    for (std::size_t i = 0; i < _ghosts.size(); ++i)
+    {
+      const int np = _ghost_owners[i];
+      for (int j = 0; j < n; ++j)
+        remote_data[i * n + j] = recv_buffer[n * displs[np] + j];
+      displs[np] += 1;
+    }
+  }
+
+  /// Send n values for each index that is owned to processes that have
+  /// the index as a ghost. The size of the input array local_data must
+  /// be the same as n * size_local().
+  ///
+  /// @param[in] local_data Local data associated with each owned local
+  ///   index to be sent to process where the data is ghosted. Size must
+  ///   be n * size_local().
+  /// @param[in,out] remote_data Ghost data on this process received
+  ///   from the owning process. Size will be n * num_ghosts().
+  /// @param[in] n Number of data items per index
+  template <typename T>
+  void scatter_fwd(const xtl::span<const T>& local_data,
+                   xtl::span<T> remote_data, int n) const
+  {
+    std::vector<T> buffer0, buffer1;
+    scatter_fwd(local_data, remote_data, n, buffer0, buffer1);
+  }
 
   /// Send n values for each ghost index to owning to the process
   ///
@@ -215,8 +281,10 @@ private:
   // - out-edges (dest) are to the owning ranks of my ghost indices
   dolfinx::MPI::Comm _comm_ghost_to_owner;
 
-  // MPI sizes and displacements
+  // MPI sizes and displacements for ghost update/scatter
   std::vector<std::int32_t> _sizes_recv_fwd, _sizes_send_fwd, _displs_recv_fwd;
+
+  mutable MPI_Datatype _mpi_type;
 
   // TODO: remove
   dolfinx::MPI::Comm _comm_symmetric;
