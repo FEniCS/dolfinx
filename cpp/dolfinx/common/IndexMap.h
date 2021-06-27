@@ -210,15 +210,16 @@ public:
       MPI_Type_contiguous(n, dolfinx::MPI::mpi_type<T>(), &_mpi_type);
       MPI_Type_commit(&_mpi_type);
     }
-    MPI_Neighbor_alltoallv(send_buffer.data(), _sizes_send_fwd.data(),
-                           displs_send.data(), _mpi_type, recv_buffer.data(),
-                           _sizes_recv_fwd.data(), _displs_recv_fwd.data(),
-                           _mpi_type, _comm_owner_to_ghost.comm());
-    if (n != 1)
-      MPI_Type_free(&_mpi_type);
+    MPI_Request request;
+    MPI_Ineighbor_alltoallv(send_buffer.data(), _sizes_send_fwd.data(),
+                            displs_send.data(), _mpi_type, recv_buffer.data(),
+                            _sizes_recv_fwd.data(), _displs_recv_fwd.data(),
+                            _mpi_type, _comm_owner_to_ghost.comm(), &request);
+
+    MPI_Wait(&request, MPI_STATUS_IGNORE);
 
     // Copy into ghost area ("remote_data")
-    std::vector<std::int32_t> displs(_displs_recv_fwd);
+    std::vector<std::int32_t> displs = _displs_recv_fwd;
     for (std::size_t i = 0; i < _ghosts.size(); ++i)
     {
       const int np = _ghost_owners[i];
@@ -226,6 +227,9 @@ public:
         remote_data[i * n + j] = recv_buffer[n * displs[np] + j];
       displs[np] += 1;
     }
+
+    if (n != 1)
+      MPI_Type_free(&_mpi_type);
   }
 
   /// Send n values for each index that is owned to processes that have
