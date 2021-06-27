@@ -171,9 +171,6 @@ public:
   /// @param[in] local_data Local data associated with each owned local
   /// index to be sent to process where the data is ghosted. Size must
   /// be n * size_local().
-  /// @param[in,out] remote_data Ghost data on this process received
-  /// from the owning process. Size will be n * num_ghosts().
-  /// @param[in] n Number of data items per index
   /// @param data_type
   /// @param request
   /// @param send_buffer
