@@ -179,13 +179,24 @@ public:
   /// @param send_buffer
   /// @param recv_buffer
   template <typename T>
-  void scatter_fwd_begin(const xtl::span<const T>& local_data, int n,
+  void scatter_fwd_begin(const xtl::span<const T>& local_data,
                          MPI_Datatype& data_type, MPI_Request& request,
                          std::vector<T>& send_buffer,
                          std::vector<T>& recv_buffer) const
   {
-    if (static_cast<std::int32_t>(local_data.size()) != n * this->size_local())
-      throw std::runtime_error("Invalid local size in scatter_fwd");
+    if (static_cast<std::int32_t>(local_data.size()) < size_local()
+        and local_data.size() % size_local() != 0)
+    {
+      throw std::runtime_error("Invalid remote size in scatter_fwd");
+    }
+    const int n = static_cast<std::int32_t>(local_data.size()) / size_local();
+
+#ifdef DEBUG
+    int data_size;
+    MPI_Type_size(data_type, &data_size);
+    if (n != data_size / sizeof(T))
+      throw std::runtime_error("Invalid block sized in scatter");
+#endif
 
     // Send displacements
     const std::vector<int32_t>& displs_send = _shared_indices->offsets();
@@ -210,12 +221,16 @@ public:
 
   /// Complete forward scatter
   template <typename T>
-  void scatter_fwd_end(const xtl::span<T>& remote_data, int n,
-                       MPI_Request& request,
+  void scatter_fwd_end(const xtl::span<T>& remote_data, MPI_Request& request,
                        const xtl::span<const T>& recv_buffer) const
   {
-    if (remote_data.size() != n * _ghosts.size())
+    if (remote_data.size() < _ghosts.size()
+        and remote_data.size() % _ghosts.size() != 0)
+    {
       throw std::runtime_error("Invalid remote size in scatter_fwd");
+    }
+
+    const int n = remote_data.size() / _ghosts.size();
 
     // Wait for communication to complete
     MPI_Wait(&request, MPI_STATUS_IGNORE);
@@ -256,9 +271,8 @@ public:
 
     MPI_Request request;
     std::vector<T> buffer_send, buffer_recv;
-    scatter_fwd_begin(local_data, n, data_type, request, buffer_send,
-                      buffer_recv);
-    scatter_fwd_end(remote_data, n, request, xtl::span<const T>(buffer_recv));
+    scatter_fwd_begin(local_data, data_type, request, buffer_send, buffer_recv);
+    scatter_fwd_end(remote_data, request, xtl::span<const T>(buffer_recv));
 
     if (n != 1)
       MPI_Type_free(&data_type);
