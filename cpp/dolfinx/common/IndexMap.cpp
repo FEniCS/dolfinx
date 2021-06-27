@@ -445,7 +445,7 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
     for (std::size_t i = 0; i < _ghosts.size(); ++i)
       _sizes_recv_fwd[_ghost_owners[i]] += 1;
 
-    _displs_recv_fwd.resize(indegree, 0);
+    _displs_recv_fwd.resize(indegree + 1, 0);
     std::partial_sum(_sizes_recv_fwd.begin(), _sizes_recv_fwd.end(),
                      _displs_recv_fwd.begin() + 1);
 

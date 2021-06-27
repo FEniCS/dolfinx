@@ -181,6 +181,7 @@ public:
                          std::vector<T>& send_buffer,
                          std::vector<T>& recv_buffer) const
   {
+    std::cout << "Scatter fwd  0" << std::endl;
     if (static_cast<std::int32_t>(local_data.size()) < size_local()
         and local_data.size() % size_local() != 0)
     {
@@ -188,12 +189,15 @@ public:
     }
     const int n = static_cast<std::int32_t>(local_data.size()) / size_local();
 
+    std::cout << "Scatter fwd  1" << std::endl;
 #ifdef DEBUG
     int data_size;
     MPI_Type_size(data_type, &data_size);
     if (n != data_size / sizeof(T))
       throw std::runtime_error("Invalid block sized in scatter");
 #endif
+
+    std::cout << "Scatter fwd  2" << std::endl;
 
     // Send displacements
     const std::vector<int32_t>& displs_send = _shared_indices->offsets();
@@ -208,12 +212,26 @@ public:
         send_buffer[i * n + j] = local_data[index * n + j];
     }
 
+    std::cout << "Scatter fwd  3" << std::endl;
+
+    std::cout << "Sizes: " << n << std::endl;
+    std::cout << send_buffer.size() << std::endl;
+    std::cout << _sizes_send_fwd.size() << std::endl;
+    std::cout << displs_send.size() << std::endl;
+    std::cout << recv_buffer.size() << std::endl;
+    std::cout << _sizes_recv_fwd.size() << std::endl;
+    std::cout << _displs_recv_fwd.size() << std::endl;
+    std::cout << "End sizes: " << std::endl;
+
     // Start send/receive
-    recv_buffer.resize(n * _displs_recv_fwd.back() + 1); // Add '1' for OpenMPI bug
+    recv_buffer.resize(n * _displs_recv_fwd.back()
+                       + 1); // Add '1' for OpenMPI bug
     MPI_Ineighbor_alltoallv(send_buffer.data(), _sizes_send_fwd.data(),
                             displs_send.data(), data_type, recv_buffer.data(),
                             _sizes_recv_fwd.data(), _displs_recv_fwd.data(),
                             data_type, _comm_owner_to_ghost.comm(), &request);
+    std::cout << "Scatter fwd  4" << std::endl;
+
   }
 
   /// Complete forward scatter
@@ -257,6 +275,7 @@ public:
   void scatter_fwd(const xtl::span<const T>& local_data,
                    xtl::span<T> remote_data, int n) const
   {
+    std::cout << "Scatter pre 0" << std::endl;
     MPI_Datatype data_type;
     if (n == 1)
       data_type = MPI::mpi_type<T>();
@@ -266,13 +285,17 @@ public:
       MPI_Type_commit(&data_type);
     }
 
+    std::cout << "Scatter pre 1" << std::endl;
     MPI_Request request;
     std::vector<T> buffer_send, buffer_recv;
     scatter_fwd_begin(local_data, data_type, request, buffer_send, buffer_recv);
+    std::cout << "Scatter pre 2" << std::endl;
     scatter_fwd_end(remote_data, request, xtl::span<const T>(buffer_recv));
 
+    std::cout << "Scatter pre 3" << std::endl;
     if (n != 1)
       MPI_Type_free(&data_type);
+    std::cout << "Scatter pre 4" << std::endl;
   }
 
   /// Send n values for each ghost index to owning to the process
