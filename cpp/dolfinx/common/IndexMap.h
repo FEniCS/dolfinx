@@ -192,7 +192,7 @@ public:
     const std::vector<int32_t>& displs_send = _shared_indices->offsets();
 
     // Copy into sending buffer
-    send_buffer.resize(n * displs_send.back() + 1);
+    send_buffer.resize(n * displs_send.back() + 1); // Add '1' for OpenMPI bug
     const std::vector<std::int32_t>& indices = _shared_indices->array();
     for (std::size_t i = 0; i < indices.size(); ++i)
     {
@@ -202,7 +202,8 @@ public:
     }
 
     // Send/receive data
-    recv_buffer.resize(n * _displs_recv_fwd.back() + 1);
+    recv_buffer.resize(n * _displs_recv_fwd.back()
+                       + 1); // Add '1' for OpenMPI bug
     if (n == 1)
       _mpi_type = MPI::mpi_type<T>();
     else
@@ -210,11 +211,6 @@ public:
       MPI_Type_contiguous(n, dolfinx::MPI::mpi_type<T>(), &_mpi_type);
       MPI_Type_commit(&_mpi_type);
     }
-    // MPI_Neighbor_alltoallv(send_buffer.data(), _sizes_send_fwd.data(),
-    //                         displs_send.data(), _mpi_type,
-    //                         recv_buffer.data(), _sizes_recv_fwd.data(),
-    //                         _displs_recv_fwd.data(), _mpi_type,
-    //                         _comm_owner_to_ghost.comm());
     MPI_Request request;
     MPI_Ineighbor_alltoallv(send_buffer.data(), _sizes_send_fwd.data(),
                             displs_send.data(), _mpi_type, recv_buffer.data(),
