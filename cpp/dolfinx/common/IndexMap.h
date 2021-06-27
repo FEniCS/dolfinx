@@ -192,7 +192,7 @@ public:
     const std::vector<int32_t>& displs_send = _shared_indices->offsets();
 
     // Copy into sending buffer
-    send_buffer.resize(n * displs_send.back());
+    send_buffer.resize(n * displs_send.back() + 1);
     const std::vector<std::int32_t>& indices = _shared_indices->array();
     for (std::size_t i = 0; i < indices.size(); ++i)
     {
@@ -202,7 +202,7 @@ public:
     }
 
     // Send/receive data
-    recv_buffer.resize(n * _displs_recv_fwd.back());
+    recv_buffer.resize(n * _displs_recv_fwd.back() + 1);
     if (n == 1)
       _mpi_type = MPI::mpi_type<T>();
     else
