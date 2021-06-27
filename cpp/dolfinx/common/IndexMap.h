@@ -195,7 +195,7 @@ public:
     }
     const int n = static_cast<std::int32_t>(local_data.size()) / size_local();
 
-    // std::cout << "Scatter fwd  1" << std::endl;
+    std::cout << "Scatter fwd  1" << std::endl;
 #ifdef DEBUG
     int data_size;
     MPI_Type_size(data_type, &data_size);
@@ -203,7 +203,7 @@ public:
       throw std::runtime_error("Invalid block sized in scatter");
 #endif
 
-    // std::cout << "Scatter fwd  2" << std::endl;
+    std::cout << "Scatter fwd  2" << std::endl;
 
     // Copy data into send buffer
     send_buffer.resize(n * displs_send.back() + 1); // Add '1' for OpenMPI bug
@@ -215,24 +215,24 @@ public:
         send_buffer[i * n + j] = local_data[index * n + j];
     }
 
-    // std::cout << "Scatter fwd  3K: " << _displs_recv_fwd.back() << std::endl;
+    std::cout << "Scatter fwd  3K: " << _displs_recv_fwd.back() << std::endl;
 
     // Start send/receive
     recv_buffer.resize(n * _displs_recv_fwd.back()
                        + 1); // Add '1' for OpenMPI bug
-    // std::cout << "Sizes: " << n << std::endl;
-    // std::cout << send_buffer.size() << std::endl;
-    // std::cout << _sizes_send_fwd.size() << std::endl; //
-    // std::cout << displs_send.size() << std::endl;
-    // std::cout << recv_buffer.size() << std::endl;     //
-    // std::cout << _sizes_recv_fwd.size() << std::endl; //
-    // std::cout << _displs_recv_fwd.size() << std::endl;
-    // std::cout << "End sizes: " << std::endl;
+    std::cout << "Sizes: " << n << std::endl;
+    std::cout << send_buffer.size() << std::endl;
+    std::cout << _sizes_send_fwd.size() << std::endl; //
+    std::cout << displs_send.size() << std::endl;
+    std::cout << recv_buffer.size() << std::endl;     //
+    std::cout << _sizes_recv_fwd.size() << std::endl; //
+    std::cout << _displs_recv_fwd.size() << std::endl;
+    std::cout << "End sizes: " << std::endl;
     MPI_Ineighbor_alltoallv(send_buffer.data(), _sizes_send_fwd.data(),
                             displs_send.data(), data_type, recv_buffer.data(),
                             _sizes_recv_fwd.data(), _displs_recv_fwd.data(),
                             data_type, _comm_owner_to_ghost.comm(), &request);
-    // std::cout << "Scatter fwd  4" << std::endl;
+    std::cout << "Scatter fwd  4" << std::endl;
   }
 
   /// Complete forward scatter
@@ -244,18 +244,18 @@ public:
     // if (_displs_recv_fwd.size() == 1 and displs_send.size() == 1)
     //   return;
 
-    // std::cout << "fwd_end 3x" << std::endl;
+    std::cout << "fwd_end 3xx" << std::endl;
 
     // Wait for communication to complete
     MPI_Wait(&request, MPI_STATUS_IGNORE);
 
-    // std::cout << "fwd_end 4x" << std::endl;
+    std::cout << "fwd_end 4xx" << std::endl;
 
     // Copy into ghost area ("remote_data")
     if (!remote_data.empty())
     {
       assert(remote_data.size() >= _ghosts.size());
-      assert(remote_data.size() % _ghosts.size() != 0);
+      assert(remote_data.size() % _ghosts.size() == 0);
       const int n = remote_data.size() / _ghosts.size();
       std::vector<std::int32_t> displs = _displs_recv_fwd;
       for (std::size_t i = 0; i < _ghosts.size(); ++i)
@@ -266,6 +266,7 @@ public:
         displs[np] += 1;
       }
     }
+    std::cout << "fwd_end 5x" << std::endl;
   }
 
   /// Send n values for each index that is owned to processes that have
