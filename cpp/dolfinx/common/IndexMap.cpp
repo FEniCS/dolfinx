@@ -441,7 +441,7 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
                                    &outdegree, &weighted);
 
     // Create displacement vectors fwd scatter
-    _sizes_recv_fwd.resize(indegree + 1, 0); // Add '1' for OpenMPI bug
+    _sizes_recv_fwd.resize(indegree, 0);
     for (std::size_t i = 0; i < _ghosts.size(); ++i)
       _sizes_recv_fwd[_ghost_owners[i]] += 1;
 
@@ -449,10 +449,18 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
     std::partial_sum(_sizes_recv_fwd.begin(), _sizes_recv_fwd.end(),
                      _displs_recv_fwd.begin() + 1);
 
+    // Add '1' for OpenMPI bug
+    if (_sizes_recv_fwd.empty())
+      _sizes_recv_fwd.push_back(0);
+
     const std::vector<int32_t>& displs_send = _shared_indices->offsets();
-    _sizes_send_fwd.resize(outdegree + 1, 0); // Add '1' for OpenMPI bug
+    _sizes_send_fwd.resize(outdegree, 0);
     std::adjacent_difference(displs_send.begin() + 1, displs_send.end(),
                              _sizes_send_fwd.begin());
+
+    // Add '1' for OpenMPI bug
+    if (_sizes_send_fwd.empty())
+      _sizes_send_fwd.push_back(0);
   }
 }
 //-----------------------------------------------------------------------------
