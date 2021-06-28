@@ -301,7 +301,7 @@ public:
       MPI_Type_free(&data_type);
   }
 
-  // Begin reverse scatter
+  /// Begin reverse scatter
   template <typename T>
   void scatter_rev_begin(const xtl::span<const T>& remote_data,
                          MPI_Datatype& data_type, MPI_Request& request,
@@ -345,7 +345,7 @@ public:
         displs_recv.data(), data_type, _comm_ghost_to_owner.comm(), &request);
   }
 
-  // End reverse scatter
+  /// End reverse scatter
   template <typename T>
   void scatter_rev_end(const xtl::span<T>& local_data, MPI_Request& request,
                        const xtl::span<const T>& recv_buffer,
