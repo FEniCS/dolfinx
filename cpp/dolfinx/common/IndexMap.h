@@ -189,10 +189,10 @@ public:
                          std::vector<T>& recv_buffer) const
   {
     // Send displacements
-    const std::vector<int32_t>& displs_send = _shared_indices->offsets();
+    const std::vector<int32_t>& displs_send_fwd = _shared_indices->offsets();
 
     // Return early if there are no incoming or outgoing edges
-    if (_displs_recv_fwd.size() == 1 and displs_send.size() == 1)
+    if (_displs_recv_fwd.size() == 1 and displs_send_fwd.size() == 1)
       return;
 
     // Get block size
@@ -203,7 +203,8 @@ public:
       throw std::runtime_error("Inconsistent data size.");
 
     // Copy data into send buffer
-    send_buffer.resize(n * displs_send.back() + 1); // Add '1' for OpenMPI bug
+    send_buffer.resize(n * displs_send_fwd.back()
+                       + 1); // Add '1' for OpenMPI bug
     const std::vector<std::int32_t>& indices = _shared_indices->array();
     for (std::size_t i = 0; i < indices.size(); ++i)
     {
@@ -215,9 +216,10 @@ public:
     recv_buffer.resize(n * _displs_recv_fwd.back()
                        + 1); // Add '1' for OpenMPI bug
     MPI_Ineighbor_alltoallv(send_buffer.data(), _sizes_send_fwd.data(),
-                            displs_send.data(), data_type, recv_buffer.data(),
-                            _sizes_recv_fwd.data(), _displs_recv_fwd.data(),
-                            data_type, _comm_owner_to_ghost.comm(), &request);
+                            displs_send_fwd.data(), data_type,
+                            recv_buffer.data(), _sizes_recv_fwd.data(),
+                            _displs_recv_fwd.data(), data_type,
+                            _comm_owner_to_ghost.comm(), &request);
   }
 
   /// Complete a non-blocking send from the local owner of to process
@@ -235,8 +237,8 @@ public:
                        const xtl::span<const T>& recv_buffer) const
   {
     // Return early if there are no incoming or outgoing edges
-    const std::vector<int32_t>& displs_send = _shared_indices->offsets();
-    if (_displs_recv_fwd.size() == 1 and displs_send.size() == 1)
+    const std::vector<int32_t>& displs_send_fwd = _shared_indices->offsets();
+    if (_displs_recv_fwd.size() == 1 and displs_send_fwd.size() == 1)
       return;
 
     // Wait for communication to complete
@@ -315,7 +317,7 @@ public:
                          std::vector<T>& recv_buffer) const
   {
     // Get displacement vectors
-    const std::vector<int32_t>& displs_recv = _shared_indices->offsets();
+    const std::vector<int32_t>& displs_send_fwd = _shared_indices->offsets();
 
     // Get block size
     int n;
@@ -336,11 +338,12 @@ public:
     }
 
     // Send and receive data
-    recv_buffer.resize(n * displs_recv.back());
-    MPI_Ineighbor_alltoallv(
-        send_buffer.data(), _sizes_recv_fwd.data(), _displs_recv_fwd.data(),
-        data_type, recv_buffer.data(), _sizes_send_fwd.data(),
-        displs_recv.data(), data_type, _comm_ghost_to_owner.comm(), &request);
+    recv_buffer.resize(n * displs_send_fwd.back());
+    MPI_Ineighbor_alltoallv(send_buffer.data(), _sizes_recv_fwd.data(),
+                            _displs_recv_fwd.data(), data_type,
+                            recv_buffer.data(), _sizes_send_fwd.data(),
+                            displs_send_fwd.data(), data_type,
+                            _comm_ghost_to_owner.comm(), &request);
   }
 
   /// Complete a non-blocking send of ghost values to the owning rank.
@@ -359,6 +362,9 @@ public:
                        const xtl::span<const T>& recv_buffer,
                        IndexMap::Mode op) const
   {
+    // Get displacement vectors
+    // const std::vector<int32_t>& displs_send_fwd = _shared_indices->offsets();
+
     // Wait for communication to complete
     MPI_Wait(&request, MPI_STATUS_IGNORE);
 
@@ -368,7 +374,6 @@ public:
       assert(local_data.size() >= size);
       assert(local_data.size() % size == 0);
       const int n = local_data.size() / size;
-
       const std::vector<std::int32_t>& shared_indices
           = _shared_indices->array();
       switch (op)
@@ -396,10 +401,10 @@ public:
   /// Send n values for each ghost index to owning to the process
   ///
   /// @param[in,out] local_data Local data associated with each owned
-  ///   local index to be sent to process where the data is ghosted.
-  ///   Size must be n * size_local().
+  /// local index to be sent to process where the data is ghosted. Size
+  /// must be n * size_local().
   /// @param[in] remote_data Ghost data on this process received from
-  ///   the owning process. Size will be n * num_ghosts().
+  /// the owning process. Size will be n * num_ghosts().
   /// @param[in] n Number of data items per index
   /// @param[in] op Sum or set received values in local_data
   template <typename T>
