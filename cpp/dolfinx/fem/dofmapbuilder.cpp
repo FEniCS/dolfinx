@@ -28,6 +28,34 @@ using namespace dolfinx;
 
 namespace
 {
+
+/// Create a symmetric MPI neighbourhood communciator from an
+/// input neighbourhood communicator
+dolfinx::MPI::Comm create_symmetric_comm(MPI_Comm comm)
+{
+  int indegree(-1), outdegree(-2), weighted(-1);
+  MPI_Dist_graph_neighbors_count(comm, &indegree, &outdegree, &weighted);
+
+  std::vector<int> neighbors(indegree + outdegree);
+  MPI_Dist_graph_neighbors(comm, indegree, neighbors.data(), MPI_UNWEIGHTED,
+                           outdegree, neighbors.data() + indegree,
+                           MPI_UNWEIGHTED);
+
+  std::sort(neighbors.begin(), neighbors.end());
+  neighbors.erase(std::unique(neighbors.begin(), neighbors.end()),
+                  neighbors.end());
+
+  MPI_Comm comm_sym;
+  std::vector<int> sourceweights(neighbors.size(), 1);
+  std::vector<int> destweights(neighbors.size(), 1);
+  MPI_Dist_graph_create_adjacent(comm, neighbors.size(), neighbors.data(),
+                                 sourceweights.data(), neighbors.size(),
+                                 neighbors.data(), destweights.data(),
+                                 MPI_INFO_NULL, false, &comm_sym);
+
+  return dolfinx::MPI::Comm(comm, false);
+}
+
 //-----------------------------------------------------------------------------
 
 /// Build a graph for owned dofs and apply graph reordering function
@@ -318,9 +346,8 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
   // Compute the number of dofs 'owned' by this process
   const std::int32_t owned_size = std::accumulate(
       dof_entity.begin(), dof_entity.end(), static_cast<std::int32_t>(0),
-      [&offset = std::as_const(offset)](std::int32_t a, auto b) {
-        return b.second < offset[b.first] ? a + 1 : a;
-      });
+      [&offset = std::as_const(offset)](std::int32_t a, auto b)
+      { return b.second < offset[b.first] ? a + 1 : a; });
 
   // Re-order dofs, increasing local dof index by iterating over cells
 
@@ -352,9 +379,8 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
     const std::vector<int> node_remap
         = reorder_owned(dofmap, owned_size, original_to_contiguous, reorder_fn);
     std::for_each(original_to_contiguous.begin(), original_to_contiguous.end(),
-                  [&node_remap, owned_size](auto index) {
-                    return index < owned_size ? node_remap[index] : index;
-                  });
+                  [&node_remap, owned_size](auto index)
+                  { return index < owned_size ? node_remap[index] : index; });
   }
 
   return {std::move(original_to_contiguous), owned_size};
@@ -422,7 +448,7 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
 
   std::vector<int> requests_dim;
   std::vector<MPI_Request> requests(D + 1);
-  std::vector<MPI_Comm> comm(D + 1, MPI_COMM_NULL);
+  std::vector<dolfinx::MPI::Comm> comm(D + 1, dolfinx::MPI::Comm(MPI_COMM_NULL));
   std::vector<std::vector<std::int64_t>> all_dofs_received(D + 1);
   std::vector<std::vector<int>> recv_offsets(D + 1);
   for (int d = 0; d <= D; ++d)
@@ -431,11 +457,13 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
     auto map = topology.index_map(d);
     if (map)
     {
-      comm[d] = map->comm(common::IndexMap::Direction::symmetric);
+      comm[d] = create_symmetric_comm(
+          map->comm(common::IndexMap::Direction::forward));
 
       // Get number of neighbors
       int indegree(-1), outdegree(-2), weighted(-1);
-      MPI_Dist_graph_neighbors_count(comm[d], &indegree, &outdegree, &weighted);
+      MPI_Dist_graph_neighbors_count(comm[d].comm(), &indegree, &outdegree,
+                                     &weighted);
 
       // Number and values to send and receive
       const int num_indices = global[d].size();
@@ -443,7 +471,7 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
       // indegree = 0
       std::vector<int> num_indices_recv(indegree + 1);
       MPI_Neighbor_allgather(&num_indices, 1, MPI_INT, num_indices_recv.data(),
-                             1, MPI_INT, comm[d]);
+                             1, MPI_INT, comm[d].comm());
 
       // Compute displacements for data to receive. Last entry has total
       // number of received items.
@@ -458,7 +486,7 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
       dofs_received.resize(disp.back());
       MPI_Ineighbor_allgatherv(global[d].data(), global[d].size(), MPI_INT64_T,
                                dofs_received.data(), num_indices_recv.data(),
-                               disp.data(), MPI_INT64_T, comm[d],
+                               disp.data(), MPI_INT64_T, comm[d].comm(),
                                &requests[requests_dim.size()]);
       requests_dim.push_back(d);
     }
@@ -486,9 +514,7 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
     MPI_Waitany(requests_dim.size(), requests.data(), &idx, MPI_STATUS_IGNORE);
     d = requests_dim[idx];
 
-    MPI_Comm neighbor_comm
-        = topology.index_map(d)->comm(common::IndexMap::Direction::symmetric);
-    auto [neighbors, neighbors1] = dolfinx::MPI::neighbors(neighbor_comm);
+    auto [neighbors, neighbors1] = dolfinx::MPI::neighbors(comm[d].comm());
     assert(neighbors == neighbors1);
 
     // Build (global old, global new) map for dofs of dimension d
