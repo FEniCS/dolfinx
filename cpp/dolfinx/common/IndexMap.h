@@ -164,17 +164,22 @@ public:
   /// @return shared indices
   std::map<std::int32_t, std::set<int>> compute_shared_indices() const;
 
-  /// Send n values for each index that is owned to processes that have
-  /// the index as a ghost. The size of the input array local_data must
-  /// be the same as n * size_local().
+  /// Start a non-blocking send from the local owner of to process ranks
+  /// that have the index as a ghost. The non-blocking communication is
+  /// completed by calling IndexMap::scatter_fwd_end.
   ///
   /// @param[in] local_data Local data associated with each owned local
   /// index to be sent to process where the data is ghosted. Size must
-  /// be n * size_local().
-  /// @param data_type
-  /// @param request
-  /// @param send_buffer
-  /// @param recv_buffer
+  /// be `n * size_local()`, where `n` is the block size of the data to
+  /// send.
+  /// @param data_type The MPI data type. To send data with a block size
+  /// use `MPI_Type_contiguous` with size `n`
+  /// @param request The MPI request handle for tracking the status of
+  /// the send
+  /// @param send_buffer A buffer used to pack the send data. It must
+  /// not be changed until after a call to IndexMap::scatter_fwd_end
+  /// @param recv_buffer  A buffer used for the received data. It must
+  /// not be changed until after a call to IndexMap::scatter_fwd_end
   template <typename T>
   void scatter_fwd_begin(const xtl::span<const T>& local_data,
                          MPI_Datatype& data_type, MPI_Request& request,
@@ -194,8 +199,6 @@ public:
       throw std::runtime_error("Invalid remote size in scatter_fwd");
     }
 
-    std::cout << "Scatter fwd  1" << std::endl;
-    // #ifdef DEBUG
     int n;
     MPI_Type_size(data_type, &n);
     n /= sizeof(T);
@@ -205,8 +208,6 @@ public:
 
       throw std::runtime_error("Inconsistent block size.");
     }
-
-    std::cout << "Scatter fwd  2" << std::endl;
 
     // Copy data into send buffer
     send_buffer.resize(n * displs_send.back() + 1); // Add '1' for OpenMPI bug
@@ -218,27 +219,25 @@ public:
         send_buffer[i * n + j] = local_data[index * n + j];
     }
 
-    std::cout << "Scatter fwd  3K: " << _displs_recv_fwd.back() << std::endl;
-
     // Start send/receive
     recv_buffer.resize(n * _displs_recv_fwd.back()
                        + 1); // Add '1' for OpenMPI bug
-    std::cout << "Sizes: " << n << std::endl;
-    std::cout << send_buffer.size() << std::endl;
-    std::cout << _sizes_send_fwd.size() << std::endl; //
-    std::cout << displs_send.size() << std::endl;
-    std::cout << recv_buffer.size() << std::endl;     //
-    std::cout << _sizes_recv_fwd.size() << std::endl; //
-    std::cout << _displs_recv_fwd.size() << std::endl;
-    std::cout << "End sizes: " << std::endl;
     MPI_Ineighbor_alltoallv(send_buffer.data(), _sizes_send_fwd.data(),
                             displs_send.data(), data_type, recv_buffer.data(),
                             _sizes_recv_fwd.data(), _displs_recv_fwd.data(),
                             data_type, _comm_owner_to_ghost.comm(), &request);
-    std::cout << "Scatter fwd  4" << std::endl;
   }
 
-  /// Complete forward scatter
+  /// Complete a non-blocking send from the local owner of to process
+  /// ranks that have the index as a ghost. This function complete the
+  /// communication started ny IndexMap::scatter_fwd_begin.
+  ///
+  /// @param[in] remote_data The data array (ghost region) to fill with
+  /// the received data
+  /// @param[in] request The MPI request handle for tracking the status
+  /// of the send
+  /// @param[in] recv_buffer The receive buffer. It must be the same as
+  /// the buffer passed to IndexMap::scatter_fwd_begin.
   template <typename T>
   void scatter_fwd_end(const xtl::span<T>& remote_data, MPI_Request& request,
                        const xtl::span<const T>& recv_buffer) const
@@ -247,12 +246,8 @@ public:
     // if (_displs_recv_fwd.size() == 1 and displs_send.size() == 1)
     //   return;
 
-    std::cout << "fwd_end 3xx" << std::endl;
-
     // Wait for communication to complete
     MPI_Wait(&request, MPI_STATUS_IGNORE);
-
-    std::cout << "fwd_end 4xx" << std::endl;
 
     // Copy into ghost area ("remote_data")
     if (!remote_data.empty())
@@ -269,7 +264,6 @@ public:
         displs[np] += 1;
       }
     }
-    std::cout << "fwd_end 5x" << std::endl;
   }
 
   /// Send n values for each index that is owned to processes that have
@@ -286,7 +280,6 @@ public:
   void scatter_fwd(const xtl::span<const T>& local_data,
                    xtl::span<T> remote_data, int n) const
   {
-    std::cout << "Scatter pre 0" << std::endl;
     MPI_Datatype data_type;
     if (n == 1)
       data_type = MPI::mpi_type<T>();
@@ -296,17 +289,13 @@ public:
       MPI_Type_commit(&data_type);
     }
 
-    std::cout << "Scatter pre 1" << std::endl;
     MPI_Request request;
     std::vector<T> buffer_send, buffer_recv;
     scatter_fwd_begin(local_data, data_type, request, buffer_send, buffer_recv);
-    std::cout << "Scatter pre 2n" << std::endl;
     scatter_fwd_end(remote_data, request, xtl::span<const T>(buffer_recv));
 
-    std::cout << "Scatter pre 3" << std::endl;
     if (n != 1)
       MPI_Type_free(&data_type);
-    std::cout << "Scatter pre 4" << std::endl;
   }
 
   /// Send n values for each ghost index to owning to the process
