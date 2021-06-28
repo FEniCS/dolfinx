@@ -160,11 +160,9 @@ int main(int argc, char* argv[])
           constexpr double theta = 1.04719755;
           xt::xarray<double> values = xt::zeros_like(x);
 
-          auto x0 = xt::row(x, 0);
+          // New coordinates
           auto x1 = xt::row(x, 1);
           auto x2 = xt::row(x, 2);
-
-          // New coordinates
           xt::row(values, 1) = scale
                                * (x1_c + (x1 - x1_c) * std::cos(theta)
                                   - (x2 - x2_c) * std::sin(theta) - x1);
