@@ -301,6 +301,93 @@ public:
       MPI_Type_free(&data_type);
   }
 
+  // Begin reverse scatter
+  template <typename T>
+  void scatter_rev_begin(const xtl::span<const T>& remote_data,
+                         MPI_Datatype& data_type, MPI_Request& request,
+                         std::vector<T>& send_buffer,
+                         std::vector<T>& recv_buffer) const
+  {
+    // if ((int)remote_data.size() != n * num_ghosts())
+    //   throw std::runtime_error("Invalid remote size in scatter_rev");
+    // if ((int)local_data.size() != n * size_local())
+    //   throw std::runtime_error("Invalid local size in scatter_rev");
+
+    // Get displacement vectors
+    const std::vector<int32_t>& displs_recv = _shared_indices->offsets();
+
+    int n;
+    MPI_Type_size(data_type, &n);
+    n /= sizeof(T);
+    // if (size_local() > 0
+    //     and n != static_cast<int>(local_data.size() / size_local()))
+    // {
+
+    //   throw std::runtime_error("Inconsistent block size.");
+    // }
+
+    // Pack send buffer
+    send_buffer.resize(n * _displs_recv_fwd.back());
+    std::vector<std::int32_t> displs(_displs_recv_fwd);
+    for (std::size_t i = 0; i < _ghosts.size(); ++i)
+    {
+      const int p = _ghost_owners[i];
+      std::copy_n(std::next(remote_data.cbegin(), n * i), n,
+                  std::next(send_buffer.begin(), n * displs[p]));
+      displs[p] += 1;
+    }
+
+    // Send and receive data
+    recv_buffer.resize(n * displs_recv.back());
+    MPI_Ineighbor_alltoallv(
+        send_buffer.data(), _sizes_recv_fwd.data(), _displs_recv_fwd.data(),
+        data_type, recv_buffer.data(), _sizes_send_fwd.data(),
+        displs_recv.data(), data_type, _comm_ghost_to_owner.comm(), &request);
+  }
+
+  // End reverse scatter
+  template <typename T>
+  void scatter_rev_end(const xtl::span<T>& local_data, MPI_Request& request,
+                       const xtl::span<const T>& recv_buffer,
+                       IndexMap::Mode op) const
+  {
+    // Wait for communication to complete
+    MPI_Wait(&request, MPI_STATUS_IGNORE);
+
+    // Create displacement vectors
+    // const std::vector<int32_t>& displs_recv = _shared_indices->offsets();
+
+    // Copy or accumulate into "local_data"
+    if (std::int32_t size = this->size_local(); size > 0)
+    {
+      assert(local_data.size() >= size);
+      assert(local_data.size() % size == 0);
+      const int n = local_data.size() / size;
+
+      const std::vector<std::int32_t>& shared_indices
+          = _shared_indices->array();
+      switch (op)
+      {
+      case Mode::insert:
+        for (std::size_t i = 0; i < shared_indices.size(); ++i)
+        {
+          const std::int32_t index = shared_indices[i];
+          std::copy_n(std::next(recv_buffer.cbegin(), n * i), n,
+                      std::next(local_data.begin(), n * index));
+        }
+        break;
+      case Mode::add:
+        for (std::size_t i = 0; i < shared_indices.size(); ++i)
+        {
+          const std::int32_t index = shared_indices[i];
+          for (int j = 0; j < n; ++j)
+            local_data[index * n + j] += recv_buffer[i * n + j];
+        }
+        break;
+      }
+    }
+  }
+
   /// Send n values for each ghost index to owning to the process
   ///
   /// @param[in,out] local_data Local data associated with each owned
@@ -313,7 +400,26 @@ public:
   template <typename T>
   void scatter_rev(xtl::span<T> local_data,
                    const xtl::span<const T>& remote_data, int n,
-                   IndexMap::Mode op) const;
+                   IndexMap::Mode op) const
+  {
+    MPI_Datatype data_type;
+    if (n == 1)
+      data_type = MPI::mpi_type<T>();
+    else
+    {
+      MPI_Type_contiguous(n, dolfinx::MPI::mpi_type<T>(), &data_type);
+      MPI_Type_commit(&data_type);
+    }
+
+    MPI_Request request;
+    std::vector<T> buffer_send, buffer_recv;
+    scatter_rev_begin(remote_data, data_type, request, buffer_send,
+                      buffer_recv);
+    scatter_rev_end(local_data, request, xtl::span<const T>(buffer_recv), op);
+
+    if (n != 1)
+      MPI_Type_free(&data_type);
+  }
 
 private:
   // Range of indices (global) owned by this process

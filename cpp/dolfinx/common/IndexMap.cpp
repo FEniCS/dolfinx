@@ -644,8 +644,10 @@ std::map<std::int32_t, std::set<int>> IndexMap::compute_shared_indices() const
   std::vector<std::int64_t> recv_data(recv_offsets.back());
 
   // Work-around for OpenMPI
-  send_sizes.reserve(1);
-  recv_sizes.reserve(1);
+  if (send_sizes.empty())
+    send_sizes.push_back(0);
+  if (recv_sizes.empty())
+    recv_sizes.push_back(0);
 
   // Start data exchange
   MPI_Request request;
@@ -688,88 +690,88 @@ std::map<std::int32_t, std::set<int>> IndexMap::compute_shared_indices() const
   return shared_indices;
 }
 //-----------------------------------------------------------------------------
-template <typename T>
-void IndexMap::scatter_rev(xtl::span<T> local_data,
-                           const xtl::span<const T>& remote_data, int n,
-                           IndexMap::Mode op) const
-{
-  if ((int)remote_data.size() != n * num_ghosts())
-    throw std::runtime_error("Invalid remote size in scatter_rev");
-  if ((int)local_data.size() != n * size_local())
-    throw std::runtime_error("Invalid local size in scatter_rev");
+// template <typename T>
+// void IndexMap::scatter_rev(xtl::span<T> local_data,
+//                            const xtl::span<const T>& remote_data, int n,
+//                            IndexMap::Mode op) const
+// {
+//   if ((int)remote_data.size() != n * num_ghosts())
+//     throw std::runtime_error("Invalid remote size in scatter_rev");
+//   if ((int)local_data.size() != n * size_local())
+//     throw std::runtime_error("Invalid local size in scatter_rev");
 
-  // Create displacement vectors
-  const std::vector<int32_t>& displs_recv = _shared_indices->offsets();
+//   // Create displacement vectors
+//   const std::vector<int32_t>& displs_recv = _shared_indices->offsets();
 
-  // Fill sending data
-  std::vector<T> send_data(n * _displs_recv_fwd.back());
-  std::vector<std::int32_t> displs(_displs_recv_fwd);
-  for (std::size_t i = 0; i < _ghosts.size(); ++i)
-  {
-    const int np = _ghost_owners[i];
-    std::copy_n(std::next(remote_data.cbegin(), n * i), n,
-                std::next(send_data.begin(), n * displs[np]));
-    displs[np] += 1;
-  }
+//   // Fill sending data
+//   std::vector<T> send_data(n * _displs_recv_fwd.back());
+//   std::vector<std::int32_t> displs(_displs_recv_fwd);
+//   for (std::size_t i = 0; i < _ghosts.size(); ++i)
+//   {
+//     const int np = _ghost_owners[i];
+//     std::copy_n(std::next(remote_data.cbegin(), n * i), n,
+//                 std::next(send_data.begin(), n * displs[np]));
+//     displs[np] += 1;
+//   }
 
-  // Send and receive data
-  std::vector<T> recv_data(n * displs_recv.back());
-  MPI_Datatype mpi_type;
-  if (n == 1)
-    mpi_type = MPI::mpi_type<T>();
-  else
-  {
-    MPI_Type_contiguous(n, dolfinx::MPI::mpi_type<T>(), &mpi_type);
-    MPI_Type_commit(&mpi_type);
-  }
-  MPI_Neighbor_alltoallv(send_data.data(), _sizes_recv_fwd.data(),
-                         _displs_recv_fwd.data(), mpi_type, recv_data.data(),
-                         _sizes_send_fwd.data(), displs_recv.data(), mpi_type,
-                         _comm_ghost_to_owner.comm());
-  if (n != 1)
-    MPI_Type_free(&mpi_type);
+//   // Send and receive data
+//   std::vector<T> recv_data(n * displs_recv.back());
+//   MPI_Datatype mpi_type;
+//   if (n == 1)
+//     mpi_type = MPI::mpi_type<T>();
+//   else
+//   {
+//     MPI_Type_contiguous(n, dolfinx::MPI::mpi_type<T>(), &mpi_type);
+//     MPI_Type_commit(&mpi_type);
+//   }
+//   MPI_Neighbor_alltoallv(send_data.data(), _sizes_recv_fwd.data(),
+//                          _displs_recv_fwd.data(), mpi_type, recv_data.data(),
+//                          _sizes_send_fwd.data(), displs_recv.data(), mpi_type,
+//                          _comm_ghost_to_owner.comm());
+//   if (n != 1)
+//     MPI_Type_free(&mpi_type);
 
-  // Copy or accumulate into "local_data"
-  const std::vector<std::int32_t>& shared_indices = _shared_indices->array();
-  switch (op)
-  {
-  case Mode::insert:
-    for (std::size_t i = 0; i < shared_indices.size(); ++i)
-    {
-      const std::int32_t index = shared_indices[i];
-      std::copy_n(std::next(recv_data.cbegin(), n * i), n,
-                  std::next(local_data.begin(), n * index));
-    }
-    break;
-  case Mode::add:
-    for (std::size_t i = 0; i < shared_indices.size(); ++i)
-    {
-      const std::int32_t index = shared_indices[i];
-      for (int j = 0; j < n; ++j)
-        local_data[index * n + j] += recv_data[i * n + j];
-    }
-    break;
-  }
-}
+//   // Copy or accumulate into "local_data"
+//   const std::vector<std::int32_t>& shared_indices = _shared_indices->array();
+//   switch (op)
+//   {
+//   case Mode::insert:
+//     for (std::size_t i = 0; i < shared_indices.size(); ++i)
+//     {
+//       const std::int32_t index = shared_indices[i];
+//       std::copy_n(std::next(recv_data.cbegin(), n * i), n,
+//                   std::next(local_data.begin(), n * index));
+//     }
+//     break;
+//   case Mode::add:
+//     for (std::size_t i = 0; i < shared_indices.size(); ++i)
+//     {
+//       const std::int32_t index = shared_indices[i];
+//       for (int j = 0; j < n; ++j)
+//         local_data[index * n + j] += recv_data[i * n + j];
+//     }
+//     break;
+//   }
+// }
 //-----------------------------------------------------------------------------
 // \cond turn off doxygen
-template void IndexMap::scatter_rev<std::int64_t>(
-    xtl::span<std::int64_t> local_data,
-    const xtl::span<const std::int64_t>& remote_data, int n,
-    IndexMap::Mode op) const;
+// template void IndexMap::scatter_rev<std::int64_t>(
+//     xtl::span<std::int64_t> local_data,
+//     const xtl::span<const std::int64_t>& remote_data, int n,
+//     IndexMap::Mode op) const;
 
-template void IndexMap::scatter_rev<std::int32_t>(
-    xtl::span<std::int32_t> local_data,
-    const xtl::span<const std::int32_t>& remote_data, int n,
-    IndexMap::Mode op) const;
+// template void IndexMap::scatter_rev<std::int32_t>(
+//     xtl::span<std::int32_t> local_data,
+//     const xtl::span<const std::int32_t>& remote_data, int n,
+//     IndexMap::Mode op) const;
 
-template void
-IndexMap::scatter_rev<double>(xtl::span<double> local_data,
-                              const xtl::span<const double>& remote_data, int n,
-                              IndexMap::Mode op) const;
+// template void
+// IndexMap::scatter_rev<double>(xtl::span<double> local_data,
+//                               const xtl::span<const double>& remote_data, int n,
+//                               IndexMap::Mode op) const;
 
-template void IndexMap::scatter_rev<std::complex<double>>(
-    xtl::span<std::complex<double>> local_data,
-    const xtl::span<const std::complex<double>>& remote_data, int n,
-    IndexMap::Mode op) const;
+// template void IndexMap::scatter_rev<std::complex<double>>(
+//     xtl::span<std::complex<double>> local_data,
+//     const xtl::span<const std::complex<double>>& remote_data, int n,
+//     IndexMap::Mode op) const;
 // \endcond
