@@ -88,6 +88,30 @@ public:
     this->scatter_fwd_end();
   }
 
+  /// Start scatter of  ghost data to owner
+  /// @note Collective MPI operation
+  void scatter_rev_begin()
+  {
+    const std::int32_t local_size = _bs * _map->size_local();
+    xtl::span<const T> xremote(_x.data() + local_size,
+                               _map->num_ghosts() * _bs);
+    _map->scatter_rev_begin(xremote, _datatype, _request, _buffer_recv_fwd,
+                            _buffer_send_fwd);
+  }
+
+  /// End scatter of ghost data to owner. This process may receive data from
+  /// more than one process, and the received data can be summed or
+  /// inserted into the local portion of the vector.
+  /// @param op The operation to perform when adding/setting received
+  /// values (add or insert)
+  /// @note Collective MPI operation
+  void scatter_rev_end(dolfinx::common::IndexMap::Mode op)
+  {
+    const std::int32_t local_size = _bs * _map->size_local();
+    xtl::span xlocal(_x.data(), local_size);
+    _map->scatter_rev_end(xlocal, _request, _buffer_send_fwd, op);
+  }
+
   /// Scatter ghost data to owner. This process may receive data from
   /// more than one process, and the received data can be summed or
   /// inserted into the local portion of the vector.
@@ -95,11 +119,8 @@ public:
   /// @note Collective MPI operation
   void scatter_rev(dolfinx::common::IndexMap::Mode op)
   {
-    const std::int32_t local_size = _bs * _map->size_local();
-    xtl::span xlocal(_x.data(), local_size);
-    xtl::span<const T> xremote(_x.data() + local_size,
-                               _map->num_ghosts() * _bs);
-    _map->scatter_rev(xlocal, xremote, _bs, op);
+    this->scatter_rev_begin();
+    this->scatter_rev_end(op);
   }
 
   /// Compute the norm of the vector
