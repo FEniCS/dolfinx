@@ -203,8 +203,7 @@ public:
       throw std::runtime_error("Inconsistent data size.");
 
     // Copy data into send buffer
-    send_buffer.resize(n * displs_send_fwd.back()
-                       + 1); // Add '1' for OpenMPI bug
+    send_buffer.resize(n * displs_send_fwd.back());
     const std::vector<std::int32_t>& indices = _shared_indices->array();
     for (std::size_t i = 0; i < indices.size(); ++i)
     {
@@ -213,8 +212,7 @@ public:
     }
 
     // Start send/receive
-    recv_buffer.resize(n * _displs_recv_fwd.back()
-                       + 1); // Add '1' for OpenMPI bug
+    recv_buffer.resize(n * _displs_recv_fwd.back());
     MPI_Ineighbor_alltoallv(send_buffer.data(), _sizes_send_fwd.data(),
                             displs_send_fwd.data(), data_type,
                             recv_buffer.data(), _sizes_recv_fwd.data(),
