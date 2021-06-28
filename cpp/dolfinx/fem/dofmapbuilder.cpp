@@ -33,6 +33,7 @@ namespace
 /// input neighbourhood communicator
 dolfinx::MPI::Comm create_symmetric_comm(MPI_Comm comm)
 {
+  // assert(comm != MPI_COMM_NULL);
   int indegree(-1), outdegree(-2), weighted(-1);
   MPI_Dist_graph_neighbors_count(comm, &indegree, &outdegree, &weighted);
 
@@ -53,7 +54,7 @@ dolfinx::MPI::Comm create_symmetric_comm(MPI_Comm comm)
                                  neighbors.data(), destweights.data(),
                                  MPI_INFO_NULL, false, &comm_sym);
 
-  return dolfinx::MPI::Comm(comm, false);
+  return dolfinx::MPI::Comm(comm_sym, false);
 }
 
 //-----------------------------------------------------------------------------
@@ -448,7 +449,8 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
 
   std::vector<int> requests_dim;
   std::vector<MPI_Request> requests(D + 1);
-  std::vector<dolfinx::MPI::Comm> comm(D + 1, dolfinx::MPI::Comm(MPI_COMM_NULL));
+  std::vector<dolfinx::MPI::Comm> comm(D + 1,
+                                       dolfinx::MPI::Comm(MPI_COMM_NULL));
   std::vector<std::vector<std::int64_t>> all_dofs_received(D + 1);
   std::vector<std::vector<int>> recv_offsets(D + 1);
   for (int d = 0; d <= D; ++d)
