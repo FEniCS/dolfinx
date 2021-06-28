@@ -109,7 +109,8 @@ public:
   {
     const std::int32_t local_size = _bs * _map->size_local();
     xtl::span xlocal(_x.data(), local_size);
-    _map->scatter_rev_end(xlocal, _request, _buffer_send_fwd, op);
+    _map->scatter_rev_end(xlocal, _request,
+                          xtl::span<const T>(_buffer_send_fwd), op);
   }
 
   /// Scatter ghost data to owner. This process may receive data from
