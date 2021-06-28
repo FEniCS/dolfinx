@@ -27,34 +27,6 @@ using namespace dolfinx;
 namespace
 {
 
-/// Create a symmetric MPI neighbourhood communciator from an
-/// input neighbourhood communicator
-// dolfinx::MPI::Comm create_symmetric_comm(MPI_Comm comm)
-// {
-//   // assert(comm != MPI_COMM_NULL);
-//   int indegree(-1), outdegree(-2), weighted(-1);
-//   MPI_Dist_graph_neighbors_count(comm, &indegree, &outdegree, &weighted);
-
-//   std::vector<int> neighbors(indegree + outdegree);
-//   MPI_Dist_graph_neighbors(comm, indegree, neighbors.data(), MPI_UNWEIGHTED,
-//                            outdegree, neighbors.data() + indegree,
-//                            MPI_UNWEIGHTED);
-
-//   std::sort(neighbors.begin(), neighbors.end());
-//   neighbors.erase(std::unique(neighbors.begin(), neighbors.end()),
-//                   neighbors.end());
-
-//   MPI_Comm comm_sym;
-//   std::vector<int> sourceweights(neighbors.size(), 1);
-//   std::vector<int> destweights(neighbors.size(), 1);
-//   MPI_Dist_graph_create_adjacent(comm, neighbors.size(), neighbors.data(),
-//                                  sourceweights.data(), neighbors.size(),
-//                                  neighbors.data(), destweights.data(),
-//                                  MPI_INFO_NULL, false, &comm_sym);
-
-//   return dolfinx::MPI::Comm(comm_sym, false);
-// }
-
 //-----------------------------------------------------------------------------
 
 /// Build a graph for owned dofs and apply graph reordering function
@@ -449,15 +421,13 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
   std::vector<MPI_Request> requests(D + 1);
   std::vector<MPI_Comm> comm(D + 1, MPI_COMM_NULL);
   std::vector<std::vector<std::int64_t>> all_dofs_received(D + 1);
-  std::vector<std::vector<int>> recv_offsets(D + 1);
+  std::vector<std::vector<int>> disp_recv(D + 1);
   for (int d = 0; d <= D; ++d)
   {
     // FIXME: This should check which dimension are needed by the dofmap
     auto map = topology.index_map(d);
     if (map)
     {
-      // comm[d] = create_symmetric_comm(
-      //     map->comm(common::IndexMap::Direction::forward));
       comm[d] = map->comm(common::IndexMap::Direction::forward);
 
       // Get number of neighbors
@@ -467,24 +437,22 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
       // Number and values to send and receive
       const int num_indices = global[d].size();
       // Note: add 1 for OpenMPI bug when indegree = 0
-      std::vector<int> num_indices_recv(indegree + 1);
-      MPI_Neighbor_allgather(&num_indices, 1, MPI_INT, num_indices_recv.data(),
-                             1, MPI_INT, comm[d]);
+      std::vector<int> size_recv(indegree + 1);
+      MPI_Neighbor_allgather(&num_indices, 1, MPI_INT, size_recv.data(), 1,
+                             MPI_INT, comm[d]);
 
       // Compute displacements for data to receive. Last entry has total
       // number of received items.
-      std::vector<int>& disp = recv_offsets[d];
-      disp.resize(indegree + 1);
-      std::partial_sum(num_indices_recv.begin(),
-                       num_indices_recv.begin() + indegree, disp.begin() + 1);
+      disp_recv[d].resize(indegree + 1);
+      std::partial_sum(size_recv.begin(), size_recv.begin() + indegree,
+                       disp_recv[d].begin() + 1);
 
       // TODO: use MPI_Ineighbor_alltoallv
       // Send global index of dofs to neighbors
-      std::vector<std::int64_t>& dofs_received = all_dofs_received[d];
-      dofs_received.resize(disp.back());
+      all_dofs_received[d].resize(disp_recv[d].back());
       MPI_Ineighbor_allgatherv(global[d].data(), global[d].size(), MPI_INT64_T,
-                               dofs_received.data(), num_indices_recv.data(),
-                               disp.data(), MPI_INT64_T, comm[d],
+                               all_dofs_received[d].data(), size_recv.data(),
+                               disp_recv[d].data(), MPI_INT64_T, comm[d],
                                &requests[requests_dim.size()]);
       requests_dim.push_back(d);
     }
@@ -496,7 +464,7 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
   for (std::size_t i = 0; i < global_indices_old.size(); ++i)
   {
     const int d = dof_entity[i].first;
-    std::int32_t local_new = old_to_new[i] - num_owned;
+    const std::int32_t local_new = old_to_new[i] - num_owned;
     if (local_new >= 0)
     {
       local_new_to_global_old[d].push_back(global_indices_old[i]);
@@ -513,29 +481,25 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
     d = requests_dim[idx];
 
     auto [neighbors, _] = dolfinx::MPI::neighbors(comm[d]);
-    // assert(neighbors == neighbors1);
 
     // Build (global old, global new) map for dofs of dimension d
     std::unordered_map<std::int64_t, std::pair<int64_t, int>> global_old_new;
-    std::vector<std::int64_t>& dofs_received = all_dofs_received[d];
-    std::vector<int>& offsets = recv_offsets[d];
-    for (std::size_t j = 0; j < dofs_received.size(); j += 2)
+    for (std::size_t j = 0; j < all_dofs_received[d].size(); j += 2)
     {
-      const auto pos = std::upper_bound(offsets.begin(), offsets.end(), j);
-      const int owner = std::distance(offsets.begin(), pos) - 1;
-      global_old_new.insert(
-          {dofs_received[j], {dofs_received[j + 1], neighbors[owner]}});
+      const auto pos
+          = std::upper_bound(disp_recv[d].begin(), disp_recv[d].end(), j);
+      const int owner = std::distance(disp_recv[d].begin(), pos) - 1;
+      global_old_new.insert({all_dofs_received[d][j],
+                             {all_dofs_received[d][j + 1], neighbors[owner]}});
     }
 
     // Build the dimension d part of local_to_global_new vector
-    std::vector<std::int64_t>& local_new_to_global_old_d
-        = local_new_to_global_old[d];
-    for (std::size_t i = 0; i < local_new_to_global_old_d.size(); i += 2)
+    for (std::size_t i = 0; i < local_new_to_global_old[d].size(); i += 2)
     {
-      auto it = global_old_new.find(local_new_to_global_old_d[i]);
+      auto it = global_old_new.find(local_new_to_global_old[d][i]);
       assert(it != global_old_new.end());
-      local_to_global_new[local_new_to_global_old_d[i + 1]] = it->second.first;
-      local_to_global_new_owner[local_new_to_global_old_d[i + 1]]
+      local_to_global_new[local_new_to_global_old[d][i + 1]] = it->second.first;
+      local_to_global_new_owner[local_new_to_global_old[d][i + 1]]
           = it->second.second;
     }
   }
