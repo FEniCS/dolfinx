@@ -146,7 +146,8 @@ public:
       }
 
       double linf = 0.0;
-      MPI_Allreduce(&local_linf, &linf, 1, MPI_DOUBLE, MPI_MAX, _map->comm());
+      MPI_Allreduce(&local_linf, &linf, 1, MPI_DOUBLE, MPI_MAX,
+                    _map->comm(common::IndexMap::Direction::forward));
       return linf;
     }
     default:
@@ -163,7 +164,8 @@ public:
         _x.begin(), std::next(_x.begin(), size_local), 0.0, std::plus<double>(),
         [](T val) { return std::norm(val); });
     double norm2;
-    MPI_Allreduce(&result, &norm2, 1, MPI_DOUBLE, MPI_SUM, _map->comm());
+    MPI_Allreduce(&result, &norm2, 1, MPI_DOUBLE, MPI_SUM,
+                  _map->comm(common::IndexMap::Direction::forward));
     return norm2;
   }
 
@@ -224,7 +226,7 @@ T inner_product(const Vector<T, Allocator>& a, const Vector<T, Allocator>& b)
 
   T result;
   MPI_Allreduce(&local, &result, 1, dolfinx::MPI::mpi_type<T>(), MPI_SUM,
-                a.map()->comm());
+                a.map()->comm(common::IndexMap::Direction::forward));
   return result;
 }
 
