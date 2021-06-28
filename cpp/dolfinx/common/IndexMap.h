@@ -188,7 +188,7 @@ public:
                          std::vector<T>& send_buffer,
                          std::vector<T>& recv_buffer) const
   {
-    // Send displacements
+    // Send displacement
     const std::vector<int32_t>& displs_send_fwd = _shared_indices->offsets();
 
     // Return early if there are no incoming or outgoing edges
@@ -316,8 +316,12 @@ public:
                          std::vector<T>& send_buffer,
                          std::vector<T>& recv_buffer) const
   {
-    // Get displacement vectors
+    // Get displacement vector
     const std::vector<int32_t>& displs_send_fwd = _shared_indices->offsets();
+
+    // Return early if there are no incoming or outgoing edges
+    if (_displs_recv_fwd.size() == 1 and displs_send_fwd.size() == 1)
+      return;
 
     // Get block size
     int n;
@@ -362,8 +366,12 @@ public:
                        const xtl::span<const T>& recv_buffer,
                        IndexMap::Mode op) const
   {
-    // Get displacement vectors
-    // const std::vector<int32_t>& displs_send_fwd = _shared_indices->offsets();
+    // Get displacement vector
+    const std::vector<int32_t>& displs_send_fwd = _shared_indices->offsets();
+
+    // Return early if there are no incoming or outgoing edges
+    if (_displs_recv_fwd.size() == 1 and displs_send_fwd.size() == 1)
+      return;
 
     // Wait for communication to complete
     MPI_Wait(&request, MPI_STATUS_IGNORE);
