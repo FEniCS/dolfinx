@@ -284,11 +284,11 @@ std::vector<std::int64_t> refinement::adjust_indices(
   // of "index_map", and adjust existing indices to match.
 
   // Get number of new indices on all processes
-  int mpi_size = dolfinx::MPI::size(index_map->comm());
-  int mpi_rank = dolfinx::MPI::rank(index_map->comm());
+  MPI_Comm comm = index_map->comm(common::IndexMap::Direction::forward);
+  int mpi_size = dolfinx::MPI::size(comm);
+  int mpi_rank = dolfinx::MPI::rank(comm);
   std::vector<std::int32_t> recvn(mpi_size);
-  MPI_Allgather(&n, 1, MPI_INT32_T, recvn.data(), 1, MPI_INT32_T,
-                index_map->comm());
+  MPI_Allgather(&n, 1, MPI_INT32_T, recvn.data(), 1, MPI_INT32_T, comm);
   std::vector<std::int64_t> global_offsets = {0};
   for (std::int32_t r : recvn)
     global_offsets.push_back(global_offsets.back() + r);
@@ -321,7 +321,8 @@ refinement::partition(const mesh::Mesh& old_mesh,
 
   auto partitioner = [](MPI_Comm mpi_comm, int, int tdim,
                         const graph::AdjacencyList<std::int64_t>& cell_topology,
-                        mesh::GhostMode) {
+                        mesh::GhostMode)
+  {
     // Find out the ghosting information
     auto [graph, info] = mesh::build_dual_graph(mpi_comm, cell_topology, tdim);
 

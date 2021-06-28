@@ -58,9 +58,8 @@ public:
   /// Edge directions of neighborhood communicator
   enum class Direction
   {
-    reverse,  // Ghost to owner
-    forward,  // Owner to ghost
-    symmetric // Symmetric. NOTE: To be removed
+    reverse, // Ghost to owner
+    forward, // Owner to ghost
   };
 
   /// Create an non-overlapping index map with local_size owned on this
@@ -122,10 +121,9 @@ public:
 
   /// Return a MPI communicator with attached distributed graph topology
   /// information
-  /// @param[in] dir Edge direction of communicator (forward, reverse,
-  /// symmetric)
+  /// @param[in] dir Edge direction of communicator (forward, reverse)
   /// @return A neighborhood communicator for the specified edge direction
-  MPI_Comm comm(Direction dir = Direction::symmetric) const;
+  MPI_Comm comm(Direction dir) const;
 
   /// Compute global indices for array of local indices
   /// @param[in] local Local indices
@@ -462,9 +460,6 @@ private:
 
   // MPI sizes and displacements for forward (owner -> ghost) scatter
   std::vector<int> _sizes_recv_fwd, _sizes_send_fwd, _displs_recv_fwd;
-
-  // TODO: remove
-  dolfinx::MPI::Comm _comm_symmetric;
 
   // Local-to-global map for ghost indices
   std::vector<std::int64_t> _ghosts;
