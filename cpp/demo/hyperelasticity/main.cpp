@@ -32,9 +32,10 @@ public:
 
     std::vector<PetscInt> ghosts(map->ghosts().begin(), map->ghosts().end());
     std::int64_t size_global = bs * map->size_global();
-    VecCreateGhostBlockWithArray(map->comm(common::IndexMap::Direction::forward),
-                                 bs, size_local, size_global, ghosts.size(),
-                                 ghosts.data(), _b.array().data(), &_b_petsc);
+    VecCreateGhostBlockWithArray(
+        map->comm(common::IndexMap::Direction::forward), bs, size_local,
+        size_global, ghosts.size(), ghosts.data(), _b.array().data(),
+        &_b_petsc);
   }
 
   /// Destructor
@@ -152,25 +153,24 @@ int main(int argc, char* argv[])
           constexpr double scale = 0.005;
 
           // Center of rotation
-          constexpr double y0 = 0.5;
-          constexpr double z0 = 0.5;
+          constexpr double x1_c = 0.5;
+          constexpr double x2_c = 0.5;
 
           // Large angle of rotation (60 degrees)
           constexpr double theta = 1.04719755;
           xt::xarray<double> values = xt::zeros_like(x);
-          for (std::size_t i = 0; i < x.shape(1); ++i)
-          {
-            // New coordinates
-            double y = y0 + (x(1, i) - y0) * std::cos(theta)
-                       - (x(2, i) - z0) * std::sin(theta);
-            double z = z0 + (x(1, i) - y0) * std::sin(theta)
-                       + (x(2, i) - z0) * std::cos(theta);
 
-            // Rotate at right end
-            values(1, i) = scale * (y - x(1, i));
-            values(2, i) = scale * (z - x(2, i));
-          }
+          auto x0 = xt::row(x, 0);
+          auto x1 = xt::row(x, 1);
+          auto x2 = xt::row(x, 2);
 
+          // New coordinates
+          xt::row(values, 1) = scale
+                               * (x1_c + (x1 - x1_c) * std::cos(theta)
+                                  - (x2 - x2_c) * std::sin(theta) - x1);
+          xt::row(values, 2) = scale
+                               * (x2_c + (x1 - x1_c) * std::sin(theta)
+                                  - (x2 - x2_c) * std::cos(theta) - x2);
           return values;
         });
 
