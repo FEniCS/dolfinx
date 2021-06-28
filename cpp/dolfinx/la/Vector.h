@@ -65,8 +65,8 @@ public:
     assert(_map);
     const std::int32_t local_size = _bs * _map->size_local();
     xtl::span<const T> xlocal(_x.data(), local_size);
-    _map->scatter_fwd_begin(xlocal, _datatype, _request, _buffer_send,
-                            _buffer_recv);
+    _map->scatter_fwd_begin(xlocal, _datatype, _request, _buffer_send_fwd,
+                            _buffer_recv_fwd);
   }
 
   /// End scatter of local data from owner to ghosts on other ranks
@@ -76,7 +76,8 @@ public:
     assert(_map);
     const std::int32_t local_size = _bs * _map->size_local();
     xtl::span xremote(_x.data() + local_size, _map->num_ghosts() * _bs);
-    _map->scatter_fwd_end(xremote, _request, xtl::span<const T>(_buffer_recv));
+    _map->scatter_fwd_end(xremote, _request,
+                          xtl::span<const T>(_buffer_recv_fwd));
   }
 
   /// Scatter local data to ghost positions on other ranks
@@ -166,7 +167,7 @@ private:
   // Data type and buffers for ghost scatters
   MPI_Datatype _datatype = MPI_DATATYPE_NULL;
   MPI_Request _request = MPI_REQUEST_NULL;
-  std::vector<T> _buffer_send, _buffer_recv;
+  std::vector<T> _buffer_send_fwd, _buffer_recv_fwd;
 
   // Data
   std::vector<T, Allocator> _x;

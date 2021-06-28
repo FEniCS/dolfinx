@@ -195,22 +195,12 @@ public:
     if (_displs_recv_fwd.size() == 1 and displs_send.size() == 1)
       return;
 
-    // std::cout << "Scatter fwd  0" << std::endl;
-    if (static_cast<std::int32_t>(local_data.size()) < size_local()
-        and local_data.size() % size_local() != 0)
-    {
-      throw std::runtime_error("Invalid remote size in scatter_fwd");
-    }
-
+    // Get block size
     int n;
     MPI_Type_size(data_type, &n);
     n /= sizeof(T);
-    if (size_local() > 0
-        and n != static_cast<int>(local_data.size() / size_local()))
-    {
-
-      throw std::runtime_error("Inconsistent block size.");
-    }
+    if (static_cast<int>(local_data.size()) != n * size_local())
+      throw std::runtime_error("Inconsistent data size.");
 
     // Copy data into send buffer
     send_buffer.resize(n * displs_send.back() + 1); // Add '1' for OpenMPI bug
@@ -232,7 +222,7 @@ public:
 
   /// Complete a non-blocking send from the local owner of to process
   /// ranks that have the index as a ghost. This function complete the
-  /// communication started ny IndexMap::scatter_fwd_begin.
+  /// communication started by IndexMap::scatter_fwd_begin.
   ///
   /// @param[in] remote_data The data array (ghost region) to fill with
   /// the received data
@@ -301,30 +291,38 @@ public:
       MPI_Type_free(&data_type);
   }
 
-  /// Begin reverse scatter
+  /// Start a non-blocking send of ghost values to the owning rank. The
+  /// non-blocking communication is completed by calling
+  /// IndexMap::scatter_rev_end.
+  ///
+  /// @param[in] remote_data Ghost data on this  process to be sent to
+  /// the owner. Size must be `n * num_ghosts()`, where `n` is the block
+  /// size of the data to send.
+  /// @param data_type The MPI data type. To send data with a block size
+  /// use `MPI_Type_contiguous` with size `n`
+  /// @param request The MPI request handle for tracking the status of
+  /// the send
+  /// @param send_buffer A buffer used to pack the send data. It must
+  /// not be changed until after a call to IndexMap::scatter_rev_end. It
+  /// will be resized as required.
+  /// @param recv_buffer  A buffer used for the received data. It must
+  /// not be changed until after a call to IndexMap::scatter_rev_end. It
+  /// will be resized as required.
   template <typename T>
   void scatter_rev_begin(const xtl::span<const T>& remote_data,
                          MPI_Datatype& data_type, MPI_Request& request,
                          std::vector<T>& send_buffer,
                          std::vector<T>& recv_buffer) const
   {
-    // if ((int)remote_data.size() != n * num_ghosts())
-    //   throw std::runtime_error("Invalid remote size in scatter_rev");
-    // if ((int)local_data.size() != n * size_local())
-    //   throw std::runtime_error("Invalid local size in scatter_rev");
-
     // Get displacement vectors
     const std::vector<int32_t>& displs_recv = _shared_indices->offsets();
 
+    // Get block size
     int n;
     MPI_Type_size(data_type, &n);
     n /= sizeof(T);
-    // if (size_local() > 0
-    //     and n != static_cast<int>(local_data.size() / size_local()))
-    // {
-
-    //   throw std::runtime_error("Inconsistent block size.");
-    // }
+    if (static_cast<int>(remote_data.size()) != n * _ghosts.size())
+      throw std::runtime_error("Inconsistent data size.");
 
     // Pack send buffer
     send_buffer.resize(n * _displs_recv_fwd.back());
@@ -345,7 +343,17 @@ public:
         displs_recv.data(), data_type, _comm_ghost_to_owner.comm(), &request);
   }
 
-  /// End reverse scatter
+  /// Complete a non-blocking send of ghost values to the owning rank.
+  /// This function complete the communication started by
+  /// IndexMap::scatter_rev_begin.
+  ///
+  /// @param[in,out] local_data The data array (owned region) to sum/set
+  /// with the received ghost data
+  /// @param[in] request The MPI request handle for tracking the status
+  /// of the send
+  /// @param[in] recv_buffer The receive buffer. It must be the same as
+  /// the buffer passed to IndexMap::scatter_rev_begin.
+  /// @param[in] op The accumulation options
   template <typename T>
   void scatter_rev_end(const xtl::span<T>& local_data, MPI_Request& request,
                        const xtl::span<const T>& recv_buffer,
@@ -353,9 +361,6 @@ public:
   {
     // Wait for communication to complete
     MPI_Wait(&request, MPI_STATUS_IGNORE);
-
-    // Create displacement vectors
-    // const std::vector<int32_t>& displs_recv = _shared_indices->offsets();
 
     // Copy or accumulate into "local_data"
     if (std::int32_t size = this->size_local(); size > 0)
