@@ -177,9 +177,11 @@ public:
   /// @param request The MPI request handle for tracking the status of
   /// the send
   /// @param send_buffer A buffer used to pack the send data. It must
-  /// not be changed until after a call to IndexMap::scatter_fwd_end
+  /// not be changed until after a call to IndexMap::scatter_fwd_end. It
+  /// will be resized as required.
   /// @param recv_buffer  A buffer used for the received data. It must
-  /// not be changed until after a call to IndexMap::scatter_fwd_end
+  /// not be changed until after a call to IndexMap::scatter_fwd_end. It
+  /// will be resized as required.
   template <typename T>
   void scatter_fwd_begin(const xtl::span<const T>& local_data,
                          MPI_Datatype& data_type, MPI_Request& request,
@@ -189,8 +191,9 @@ public:
     // Send displacements
     const std::vector<int32_t>& displs_send = _shared_indices->offsets();
 
-    // if (_displs_recv_fwd.size() == 1 and displs_send.size() == 1)
-    //   return;
+    // Return early if there are no incoming or outgoing edges
+    if (_displs_recv_fwd.size() == 1 and displs_send.size() == 1)
+      return;
 
     // std::cout << "Scatter fwd  0" << std::endl;
     if (static_cast<std::int32_t>(local_data.size()) < size_local()
@@ -214,9 +217,8 @@ public:
     const std::vector<std::int32_t>& indices = _shared_indices->array();
     for (std::size_t i = 0; i < indices.size(); ++i)
     {
-      const std::int32_t index = indices[i];
-      for (int j = 0; j < n; ++j)
-        send_buffer[i * n + j] = local_data[index * n + j];
+      std::copy_n(std::next(local_data.cbegin(), n * indices[i]), n,
+                  std::next(send_buffer.begin(), n * i));
     }
 
     // Start send/receive
@@ -242,9 +244,10 @@ public:
   void scatter_fwd_end(const xtl::span<T>& remote_data, MPI_Request& request,
                        const xtl::span<const T>& recv_buffer) const
   {
-    // const std::vector<int32_t>& displs_send = _shared_indices->offsets();
-    // if (_displs_recv_fwd.size() == 1 and displs_send.size() == 1)
-    //   return;
+    // Return early if there are no incoming or outgoing edges
+    const std::vector<int32_t>& displs_send = _shared_indices->offsets();
+    if (_displs_recv_fwd.size() == 1 and displs_send.size() == 1)
+      return;
 
     // Wait for communication to complete
     MPI_Wait(&request, MPI_STATUS_IGNORE);
@@ -258,10 +261,10 @@ public:
       std::vector<std::int32_t> displs = _displs_recv_fwd;
       for (std::size_t i = 0; i < _ghosts.size(); ++i)
       {
-        const int np = _ghost_owners[i];
-        for (int j = 0; j < n; ++j)
-          remote_data[i * n + j] = recv_buffer[n * displs[np] + j];
-        displs[np] += 1;
+        const int p = _ghost_owners[i];
+        std::copy_n(std::next(recv_buffer.cbegin(), n * displs[p]), n,
+                    std::next(remote_data.begin(), n * i));
+        displs[p] += 1;
       }
     }
   }
@@ -335,8 +338,8 @@ private:
   // - out-edges (dest) are to the owning ranks of my ghost indices
   dolfinx::MPI::Comm _comm_ghost_to_owner;
 
-  // MPI sizes and displacements for ghost update/scatter
-  std::vector<std::int32_t> _sizes_recv_fwd, _sizes_send_fwd, _displs_recv_fwd;
+  // MPI sizes and displacements for forward (owner -> ghost) scatter
+  std::vector<int> _sizes_recv_fwd, _sizes_send_fwd, _displs_recv_fwd;
 
   // TODO: remove
   dolfinx::MPI::Comm _comm_symmetric;

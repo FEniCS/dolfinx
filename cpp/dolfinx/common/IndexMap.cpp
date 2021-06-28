@@ -430,38 +430,37 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
   // Wait for the MPI_Iallreduce to complete
   MPI_Wait(&request, MPI_STATUS_IGNORE);
 
-  // ------
+  // --- Prepare send and receive size and displacement arrays for
+  // scatters. The data is for a forward (owner data -> ghosts)
+  // scatters. The reverse (ghosts -> owner) scatter use the transpose
+  // of these array.
 
-  {
-    // --- fwd (rev data is the transpose)
+  // Get number of neighbors
+  int indegree(-1), outdegree(-2), weighted(-1);
+  MPI_Dist_graph_neighbors_count(_comm_owner_to_ghost.comm(), &indegree,
+                                 &outdegree, &weighted);
 
-    // Get number of neighbors
-    int indegree(-1), outdegree(-2), weighted(-1);
-    MPI_Dist_graph_neighbors_count(_comm_owner_to_ghost.comm(), &indegree,
-                                   &outdegree, &weighted);
+  // Create displacement vectors fwd scatter
+  _sizes_recv_fwd.resize(indegree, 0);
+  for (std::size_t i = 0; i < _ghosts.size(); ++i)
+    _sizes_recv_fwd[_ghost_owners[i]] += 1;
 
-    // Create displacement vectors fwd scatter
-    _sizes_recv_fwd.resize(indegree, 0);
-    for (std::size_t i = 0; i < _ghosts.size(); ++i)
-      _sizes_recv_fwd[_ghost_owners[i]] += 1;
+  _displs_recv_fwd.resize(indegree + 1, 0);
+  std::partial_sum(_sizes_recv_fwd.begin(), _sizes_recv_fwd.end(),
+                   _displs_recv_fwd.begin() + 1);
 
-    _displs_recv_fwd.resize(indegree + 1, 0);
-    std::partial_sum(_sizes_recv_fwd.begin(), _sizes_recv_fwd.end(),
-                     _displs_recv_fwd.begin() + 1);
+  const std::vector<int32_t>& displs_send = _shared_indices->offsets();
+  _sizes_send_fwd.resize(outdegree, 0);
+  std::adjacent_difference(displs_send.begin() + 1, displs_send.end(),
+                           _sizes_send_fwd.begin());
 
-    const std::vector<int32_t>& displs_send = _shared_indices->offsets();
-    _sizes_send_fwd.resize(outdegree, 0);
-    std::adjacent_difference(displs_send.begin() + 1, displs_send.end(),
-                             _sizes_send_fwd.begin());
+  // Add '1' for OpenMPI bug
+  if (_sizes_recv_fwd.empty())
+    _sizes_recv_fwd.push_back(0);
 
-    // Add '1' for OpenMPI bug
-    if (_sizes_recv_fwd.empty())
-      _sizes_recv_fwd.push_back(0);
-
-    // Add '1' for OpenMPI bug
-    if (_sizes_send_fwd.empty())
-      _sizes_send_fwd.push_back(0);
-  }
+  // Add '1' for OpenMPI bug
+  if (_sizes_send_fwd.empty())
+    _sizes_send_fwd.push_back(0);
 }
 //-----------------------------------------------------------------------------
 std::array<std::int64_t, 2> IndexMap::local_range() const noexcept
