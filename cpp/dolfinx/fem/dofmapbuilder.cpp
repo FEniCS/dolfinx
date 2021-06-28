@@ -13,8 +13,6 @@
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/utils.h>
 #include <dolfinx/graph/AdjacencyList.h>
-#include <dolfinx/graph/boostordering.h>
-#include <dolfinx/graph/scotch.h>
 #include <dolfinx/mesh/Topology.h>
 #include <iterator>
 #include <memory>
@@ -449,8 +447,7 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
 
   std::vector<int> requests_dim;
   std::vector<MPI_Request> requests(D + 1);
-  std::vector<dolfinx::MPI::Comm> comm(D + 1,
-                                       dolfinx::MPI::Comm(MPI_COMM_NULL));
+  std::vector<MPI_Comm> comm(D + 1, MPI_COMM_NULL);
   std::vector<std::vector<std::int64_t>> all_dofs_received(D + 1);
   std::vector<std::vector<int>> recv_offsets(D + 1);
   for (int d = 0; d <= D; ++d)
@@ -461,20 +458,18 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
     {
       // comm[d] = create_symmetric_comm(
       //     map->comm(common::IndexMap::Direction::forward));
-      comm[d] = dolfinx::MPI::Comm(
-          map->comm(common::IndexMap::Direction::forward), true);
+      comm[d] = map->comm(common::IndexMap::Direction::forward);
 
       // Get number of neighbors
       int indegree(-1), outdegree(-2), weighted(-1);
-      MPI_Dist_graph_neighbors_count(comm[d].comm(), &indegree, &outdegree,
-                                     &weighted);
+      MPI_Dist_graph_neighbors_count(comm[d], &indegree, &outdegree, &weighted);
 
       // Number and values to send and receive
       const int num_indices = global[d].size();
       // Note: add 1 for OpenMPI bug when indegree = 0
       std::vector<int> num_indices_recv(indegree + 1);
       MPI_Neighbor_allgather(&num_indices, 1, MPI_INT, num_indices_recv.data(),
-                             1, MPI_INT, comm[d].comm());
+                             1, MPI_INT, comm[d]);
 
       // Compute displacements for data to receive. Last entry has total
       // number of received items.
@@ -489,7 +484,7 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
       dofs_received.resize(disp.back());
       MPI_Ineighbor_allgatherv(global[d].data(), global[d].size(), MPI_INT64_T,
                                dofs_received.data(), num_indices_recv.data(),
-                               disp.data(), MPI_INT64_T, comm[d].comm(),
+                               disp.data(), MPI_INT64_T, comm[d],
                                &requests[requests_dim.size()]);
       requests_dim.push_back(d);
     }
@@ -517,8 +512,8 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
     MPI_Waitany(requests_dim.size(), requests.data(), &idx, MPI_STATUS_IGNORE);
     d = requests_dim[idx];
 
-    auto [neighbors, neighbors1] = dolfinx::MPI::neighbors(comm[d].comm());
-    assert(neighbors == neighbors1);
+    auto [neighbors, _] = dolfinx::MPI::neighbors(comm[d]);
+    // assert(neighbors == neighbors1);
 
     // Build (global old, global new) map for dofs of dimension d
     std::unordered_map<std::int64_t, std::pair<int64_t, int>> global_old_new;
