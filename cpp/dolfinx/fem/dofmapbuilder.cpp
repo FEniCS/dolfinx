@@ -31,31 +31,31 @@ namespace
 
 /// Create a symmetric MPI neighbourhood communciator from an
 /// input neighbourhood communicator
-dolfinx::MPI::Comm create_symmetric_comm(MPI_Comm comm)
-{
-  // assert(comm != MPI_COMM_NULL);
-  int indegree(-1), outdegree(-2), weighted(-1);
-  MPI_Dist_graph_neighbors_count(comm, &indegree, &outdegree, &weighted);
+// dolfinx::MPI::Comm create_symmetric_comm(MPI_Comm comm)
+// {
+//   // assert(comm != MPI_COMM_NULL);
+//   int indegree(-1), outdegree(-2), weighted(-1);
+//   MPI_Dist_graph_neighbors_count(comm, &indegree, &outdegree, &weighted);
 
-  std::vector<int> neighbors(indegree + outdegree);
-  MPI_Dist_graph_neighbors(comm, indegree, neighbors.data(), MPI_UNWEIGHTED,
-                           outdegree, neighbors.data() + indegree,
-                           MPI_UNWEIGHTED);
+//   std::vector<int> neighbors(indegree + outdegree);
+//   MPI_Dist_graph_neighbors(comm, indegree, neighbors.data(), MPI_UNWEIGHTED,
+//                            outdegree, neighbors.data() + indegree,
+//                            MPI_UNWEIGHTED);
 
-  std::sort(neighbors.begin(), neighbors.end());
-  neighbors.erase(std::unique(neighbors.begin(), neighbors.end()),
-                  neighbors.end());
+//   std::sort(neighbors.begin(), neighbors.end());
+//   neighbors.erase(std::unique(neighbors.begin(), neighbors.end()),
+//                   neighbors.end());
 
-  MPI_Comm comm_sym;
-  std::vector<int> sourceweights(neighbors.size(), 1);
-  std::vector<int> destweights(neighbors.size(), 1);
-  MPI_Dist_graph_create_adjacent(comm, neighbors.size(), neighbors.data(),
-                                 sourceweights.data(), neighbors.size(),
-                                 neighbors.data(), destweights.data(),
-                                 MPI_INFO_NULL, false, &comm_sym);
+//   MPI_Comm comm_sym;
+//   std::vector<int> sourceweights(neighbors.size(), 1);
+//   std::vector<int> destweights(neighbors.size(), 1);
+//   MPI_Dist_graph_create_adjacent(comm, neighbors.size(), neighbors.data(),
+//                                  sourceweights.data(), neighbors.size(),
+//                                  neighbors.data(), destweights.data(),
+//                                  MPI_INFO_NULL, false, &comm_sym);
 
-  return dolfinx::MPI::Comm(comm_sym, false);
-}
+//   return dolfinx::MPI::Comm(comm_sym, false);
+// }
 
 //-----------------------------------------------------------------------------
 
@@ -459,8 +459,10 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
     auto map = topology.index_map(d);
     if (map)
     {
-      comm[d] = create_symmetric_comm(
-          map->comm(common::IndexMap::Direction::forward));
+      // comm[d] = create_symmetric_comm(
+      //     map->comm(common::IndexMap::Direction::forward));
+      comm[d] = dolfinx::MPI::Comm(
+          map->comm(common::IndexMap::Direction::forward), true);
 
       // Get number of neighbors
       int indegree(-1), outdegree(-2), weighted(-1);
