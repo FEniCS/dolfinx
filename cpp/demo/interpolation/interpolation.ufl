@@ -1,0 +1,16 @@
+# Function spaces
+element = FiniteElement("Lagrange", tetrahedron, 1)
+coord_element = VectorElement("Lagrange", tetrahedron, 1)
+mesh = Mesh(coord_element)
+
+V = FunctionSpace(mesh, element)
+
+u = TrialFunction(V)
+v = TestFunction(V)
+
+f = Constant(mesh)
+
+a = inner(grad(u), grad(v)) * dx
+L = f * v * dx
+
+forms = [a, L]
