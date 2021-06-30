@@ -108,7 +108,7 @@ Mesh mesh::create_mesh(MPI_Comm comm,
   auto [g, m] = mesh::build_local_dual_graph(
       xtl::span<const std::int64_t>(
           cells_extracted0.array().data(),
-          cells_extracted0.offsets()[num_owned_cells + 1]),
+          cells_extracted0.offsets()[num_owned_cells]),
       xtl::span<const std::int32_t>(cells_extracted0.offsets().data(),
                                     num_owned_cells + 1),
       tdim);
