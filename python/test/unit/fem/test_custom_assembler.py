@@ -218,7 +218,7 @@ def assemble_vector_ufc(b, kernel, mesh, dofmap, num_cells):
         kernel(ffi.from_buffer(b_local), ffi.from_buffer(coeffs),
                ffi.from_buffer(constants),
                ffi.from_buffer(geometry), ffi.from_buffer(entity_local_index),
-               ffi.from_buffer(perm), 0)
+               ffi.from_buffer(perm))
         for j in range(3):
             b[dofmap[cell, j]] += b_local[j]
 

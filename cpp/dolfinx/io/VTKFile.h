@@ -17,20 +17,18 @@ namespace pugi
 class xml_document;
 }
 
-namespace dolfinx
-{
-namespace function
+namespace dolfinx::function
 {
 template <typename T>
 class Function;
 }
 
-namespace mesh
+namespace dolfinx::mesh
 {
 class Mesh;
-} // namespace mesh
+}
 
-namespace io
+namespace dolfinx::io
 {
 
 /// Output of meshes and functions in VTK/ParaView format. Isoparametric
@@ -88,5 +86,4 @@ private:
   // MPI communicator
   dolfinx::MPI::Comm _comm;
 };
-} // namespace io
-} // namespace dolfinx
+} // namespace dolfinx::io

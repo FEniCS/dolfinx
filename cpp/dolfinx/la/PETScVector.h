@@ -15,13 +15,11 @@
 #include <vector>
 #include <xtl/xspan.hpp>
 
-namespace dolfinx
-{
-namespace common
+namespace dolfinx::common
 {
 class IndexMap;
 }
-namespace la
+namespace dolfinx::la
 {
 
 /// Create a PETSc Vec that wraps the data in an array
@@ -173,5 +171,4 @@ private:
   // PETSc Vec pointer
   Vec _x;
 };
-} // namespace la
-} // namespace dolfinx
+} // namespace dolfinx::la

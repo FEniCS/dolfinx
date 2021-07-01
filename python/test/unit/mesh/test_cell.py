@@ -24,22 +24,37 @@ def test_distance_interval():
 
 @skip_in_parallel
 def test_distance_triangle():
-    mesh = UnitSquareMesh(MPI.COMM_SELF, 1, 1)
-    assert cpp.geometry.squared_distance(mesh, mesh.topology.dim, 1,
+    gdim = 2
+    shape = "triangle"
+    degree = 1
+    cell = ufl.Cell(shape, geometric_dimension=gdim)
+    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell, degree))
+
+    x = numpy.array([[0., 0., 0.], [0., 1., 0.], [1., 1., 0.]])
+    cells = numpy.array([[0, 1, 2]], dtype=numpy.int64)
+    mesh = create_mesh(MPI.COMM_WORLD, cells, x, domain)
+    assert cpp.geometry.squared_distance(mesh, mesh.topology.dim, 0,
                                          numpy.array([-1.0, -1.0, 0.0])) == pytest.approx(2.0)
-    assert cpp.geometry.squared_distance(mesh, mesh.topology.dim, 1,
+    assert cpp.geometry.squared_distance(mesh, mesh.topology.dim, 0,
                                          numpy.array([-1.0, 0.5, 0.0])) == pytest.approx(1.0)
-    assert cpp.geometry.squared_distance(mesh, mesh.topology.dim, 1, numpy.array([0.5, 0.5, 0.0])) == pytest.approx(0.0)
+    assert cpp.geometry.squared_distance(mesh, mesh.topology.dim, 0, numpy.array([0.5, 0.5, 0.0])) == pytest.approx(0.0)
 
 
 @skip_in_parallel
 def test_distance_tetrahedron():
-    mesh = UnitCubeMesh(MPI.COMM_SELF, 1, 1, 1)
-    assert cpp.geometry.squared_distance(mesh, mesh.topology.dim, 5,
+    gdim = 3
+    shape = "tetrahedron"
+    degree = 1
+    cell = ufl.Cell(shape, geometric_dimension=gdim)
+    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell, degree))
+    x = numpy.array([[0., 0., 0.], [0., 1., 0.], [0., 1., 1.], [1, 1., 1]])
+    cells = numpy.array([[0, 1, 2, 3]], dtype=numpy.int32)
+    mesh = create_mesh(MPI.COMM_WORLD, cells, x, domain)
+    assert cpp.geometry.squared_distance(mesh, mesh.topology.dim, 0,
                                          numpy.array([-1.0, -1.0, -1.0])) == pytest.approx(3.0)
-    assert cpp.geometry.squared_distance(mesh, mesh.topology.dim, 5,
+    assert cpp.geometry.squared_distance(mesh, mesh.topology.dim, 0,
                                          numpy.array([-1.0, 0.5, 0.5])) == pytest.approx(1.0)
-    assert cpp.geometry.squared_distance(mesh, mesh.topology.dim, 5, numpy.array([0.5, 0.5, 0.5])) == pytest.approx(0.0)
+    assert cpp.geometry.squared_distance(mesh, mesh.topology.dim, 0, numpy.array([0.5, 0.5, 0.5])) == pytest.approx(0.0)
 
 
 @pytest.mark.skip("volume_entities needs fixing")

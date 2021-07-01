@@ -82,6 +82,14 @@ void xdmf_mesh::add_topology_data(
     if (!c_to_e)
       throw std::runtime_error("Mesh is missing cell-entity connectivity.");
 
+    // Tabulate geometry dofs for local entities
+    std::vector<std::vector<int>> entity_dofs;
+    for (int e = 0; e < mesh::cell_num_entities(topology.cell_type(), dim); ++e)
+    {
+      entity_dofs.push_back(
+          geometry.cmap().dof_layout().entity_closure_dofs(dim, e));
+    }
+
     for (std::int32_t e : active_entities)
     {
       // Get first attached cell
@@ -93,16 +101,13 @@ void xdmf_mesh::add_topology_data(
       assert(it0 != cell_entities.end());
       const int local_cell_entity = std::distance(cell_entities.begin(), it0);
 
-      // FIXME: Move dynamic  allocation outside of loop
-      // Tabulate geometry dofs for the entity
-      const std::vector<int> entity_dofs
-          = geometry.cmap().dof_layout().entity_closure_dofs(dim,
-                                                             local_cell_entity);
+      // Get geometry dofs for the entity
+      const std::vector<int>& entity_dofs_e = entity_dofs[local_cell_entity];
 
       auto nodes = cells_g.links(c);
-      for (std::size_t i = 0; i < entity_dofs.size(); ++i)
+      for (std::size_t i = 0; i < entity_dofs_e.size(); ++i)
       {
-        std::int64_t global_index = nodes[entity_dofs[vtk_map[i]]];
+        std::int64_t global_index = nodes[entity_dofs_e[vtk_map[i]]];
         if (global_index < map_g->size_local())
           global_index += offset_g;
         else
@@ -162,7 +167,7 @@ void xdmf_mesh::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
   geometry_node.append_attribute("GeometryType") = geometry_type.c_str();
 
   // Increase 1D to 2D because XDMF has no "X" geometry, use "XY"
-  int width = (gdim == 1) ? 2 : gdim;
+  const int width = (gdim == 1) ? 2 : gdim;
 
   const xt::xtensor<double, 2>& _x = geometry.x();
 
@@ -173,10 +178,8 @@ void xdmf_mesh::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
   else
   {
     for (int i = 0; i < num_points_local; ++i)
-    {
       for (int j = 0; j < gdim; ++j)
         x[width * i + j] = _x(i, j);
-    }
   }
 
   // Add geometry DataItem node

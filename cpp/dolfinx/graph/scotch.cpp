@@ -29,7 +29,7 @@ graph::scotch::compute_gps(const AdjacencyList<std::int32_t>& graph,
                            std::size_t num_passes)
 {
   // Create strategy string for Gibbs-Poole-Stockmeyer ordering
-  std::string strategy = "g{pass= " + std::to_string(num_passes) + "}";
+  std::string strategy = "g{pass=" + std::to_string(num_passes) + "}";
   return compute_reordering(graph, strategy);
 }
 //-----------------------------------------------------------------------------
@@ -113,16 +113,17 @@ graph::scotch::compute_reordering(const AdjacencyList<std::int32_t>& graph,
   std::copy(inverse_permutation_indices.begin(),
             inverse_permutation_indices.end(), inverse_permutation.begin());
 
-  return std::pair(std::move(permutation), std::move(inverse_permutation));
+  return {std::move(permutation), std::move(inverse_permutation)};
 }
 //-----------------------------------------------------------------------------
 graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
                                                double imbalance, int seed)
 {
-  return [imbalance, strategy, seed](const MPI_Comm mpi_comm, int nparts,
-                                     const AdjacencyList<std::int64_t>& graph,
-                                     std::int32_t num_ghost_nodes,
-                                     bool ghosting) {
+  return
+      [imbalance, strategy, seed](const MPI_Comm mpi_comm, int nparts,
+                                  const AdjacencyList<std::int64_t>& graph,
+                                  std::int32_t num_ghost_nodes, bool ghosting)
+  {
     LOG(INFO) << "Compute graph partition using PT-SCOTCH";
     common::Timer timer("Compute graph partition (SCOTCH)");
 

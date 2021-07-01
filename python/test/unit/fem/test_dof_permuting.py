@@ -131,15 +131,11 @@ def test_dof_positions(cell_type, space_type):
     cmap = mesh.geometry.cmap
     tdim = mesh.topology.dim
 
-    mesh.topology.create_entity_permutations()
-    perms = mesh.topology.get_cell_permutation_info()
-
     V = FunctionSpace(mesh, space_type)
     entities = {i: {} for i in range(1, tdim)}
     for cell in range(coord_dofs.num_nodes):
         # Push coordinates forward
         X = V.element.interpolation_points()
-        V.element.apply_dof_transformation(X, perms[cell], tdim)
         xg = x_g[coord_dofs.links(cell), :tdim]
         x = cmap.push_forward(X, xg)
 

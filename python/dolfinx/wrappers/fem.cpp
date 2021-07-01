@@ -109,10 +109,11 @@ void fem(py::module& m)
   m.def(
       "create_dofmap",
       [](const MPICommWrapper comm, const std::uintptr_t dofmap,
-         dolfinx::mesh::Topology& topology)
-      {
+         dolfinx::mesh::Topology& topology,
+         std::shared_ptr<dolfinx::fem::FiniteElement> element) {
         const ufc_dofmap* p = reinterpret_cast<const ufc_dofmap*>(dofmap);
-        return dolfinx::fem::create_dofmap(comm.get(), *p, topology);
+        return dolfinx::fem::create_dofmap(comm.get(), *p, topology, nullptr,
+                                           element);
       },
       "Create DofMap object from a pointer to ufc_dofmap.");
   m.def(
@@ -139,7 +140,9 @@ void fem(py::module& m)
          const dolfinx::fem::ElementDofLayout& element_dof_layout)
       {
         auto [map, bs, dofmap] = dolfinx::fem::build_dofmap_data(
-            comm.get(), topology, element_dof_layout);
+            comm.get(), topology, element_dof_layout,
+            [](const dolfinx::graph::AdjacencyList<std::int32_t>& g)
+            { return dolfinx::graph::scotch::compute_gps(g, 2).first; });
         return std::tuple(map, bs, std::move(dofmap));
       },
       "Build and dofmap on a mesh.");
@@ -183,6 +186,9 @@ void fem(py::module& m)
              self.apply_dof_transformation(
                  xtl::span(x.mutable_data(), x.size()), cell_permutation, dim);
            })
+      .def_property_readonly(
+          "needs_dof_transformations",
+          &dolfinx::fem::FiniteElement::needs_dof_transformations)
       .def("signature", &dolfinx::fem::FiniteElement::signature);
 
   // dolfinx::fem::ElementDofLayout
@@ -190,10 +196,10 @@ void fem(py::module& m)
              std::shared_ptr<dolfinx::fem::ElementDofLayout>>(
       m, "ElementDofLayout", "Object describing the layout of dofs on a cell")
       .def(py::init<int, const std::vector<std::vector<std::set<int>>>&,
+                    const std::vector<std::vector<std::set<int>>>&,
                     const std::vector<int>&,
-                    const std::vector<
-                        std::shared_ptr<const dolfinx::fem::ElementDofLayout>>,
-                    const dolfinx::mesh::CellType>())
+                    const std::vector<std::shared_ptr<
+                        const dolfinx::fem::ElementDofLayout>>>())
       .def_property_readonly("num_dofs",
                              &dolfinx::fem::ElementDofLayout::num_dofs)
       .def("num_entity_dofs", &dolfinx::fem::ElementDofLayout::num_entity_dofs)
@@ -484,8 +490,7 @@ void fem(py::module& m)
                  const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh) {
                 using kern = std::function<void(
                     PetscScalar*, const PetscScalar*, const PetscScalar*,
-                    const double*, const int*, const std::uint8_t*,
-                    const std::uint32_t)>;
+                    const double*, const int*, const std::uint8_t*)>;
                 std::map<dolfinx::fem::IntegralType,
                          std::pair<std::vector<std::pair<int, kern>>,
                                    const dolfinx::mesh::MeshTags<int>*>>
@@ -503,8 +508,7 @@ void fem(py::module& m)
                     auto tabulate_tensor_ptr
                         = (void (*)(PetscScalar*, const PetscScalar*,
                                     const PetscScalar*, const double*,
-                                    const int*, const std::uint8_t*,
-                                    const std::uint32_t))
+                                    const int*, const std::uint8_t*))
                               kernel.second.cast<std::uintptr_t>();
                     _integrals[kernel_type.first].first.push_back(
                         {kernel.first, tabulate_tensor_ptr});
@@ -524,6 +528,7 @@ void fem(py::module& m)
       .def_property_readonly("function_spaces",
                              &dolfinx::fem::Form<PetscScalar>::function_spaces)
       .def("integral_ids", &dolfinx::fem::Form<PetscScalar>::integral_ids)
+      .def_property_readonly("needs_facet_permutations", &dolfinx::fem::Form<PetscScalar>::needs_facet_permutations)
       .def("domains", [](const dolfinx::fem::Form<PetscScalar>& self,
                          dolfinx::fem::IntegralType type, int i) {
         const std::vector<std::int32_t>& domains = self.domains(type, i);
