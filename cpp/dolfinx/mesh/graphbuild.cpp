@@ -48,9 +48,6 @@ compute_local_dual_graph_keyed(
     ++count[num_cell_vertices];
   }
 
-  int num_facets = 0;
-  int num_facet_vertices = 0;
-
   // For each topological dimension, there is a limited set of allowed
   // cell types. In 1D, interval; 2D: tri or quad, 3D: tet, prism,
   // pyramid or hex.
@@ -62,6 +59,8 @@ compute_local_dual_graph_keyed(
   std::vector<graph::AdjacencyList<int>> nv_to_facets(
       9, graph::AdjacencyList<int>(0));
 
+  int num_facets = 0;
+  int num_facet_vertices = 0;
   switch (tdim)
   {
   case 1:
@@ -140,7 +139,8 @@ compute_local_dual_graph_keyed(
   // Sort facet indices
   std::sort(facets.begin(), facets.end(),
             [num_facet_vertices](const std::array<std::int64_t, 5>& fa,
-                                 const std::array<std::int64_t, 5>& fb) {
+                                 const std::array<std::int64_t, 5>& fb)
+            {
               return std::lexicographical_compare(
                   fa.begin(), fa.begin() + num_facet_vertices, fb.begin(),
                   fb.begin() + num_facet_vertices);
@@ -346,11 +346,15 @@ compute_nonlocal_dual_graph(
   // Get permutation that takes facets into sorted order
   std::vector<int> perm(num_facets);
   std::iota(perm.begin(), perm.end(), 0);
-  std::sort(perm.begin(), perm.end(), [&recvd_buffer](int a, int b) {
-    return std::lexicographical_compare(
-        recvd_buffer.links(a).begin(), std::prev(recvd_buffer.links(a).end()),
-        recvd_buffer.links(b).begin(), std::prev(recvd_buffer.links(b).end()));
-  });
+  std::sort(perm.begin(), perm.end(),
+            [&recvd_buffer](int a, int b)
+            {
+              return std::lexicographical_compare(
+                  recvd_buffer.links(a).begin(),
+                  std::prev(recvd_buffer.links(a).end()),
+                  recvd_buffer.links(b).begin(),
+                  std::prev(recvd_buffer.links(b).end()));
+            });
 
   // Count data items to send to each rank
   p_count.assign(num_processes, 0);

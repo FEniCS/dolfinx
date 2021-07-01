@@ -105,7 +105,7 @@ Mesh mesh::create_mesh(MPI_Comm comm,
   // Build local dual graph for owned cells to apply re-ordering to
   const std::int32_t num_owned_cells
       = cells_extracted0.num_nodes() - ghost_owners.size();
-  auto [g, m] = mesh::build_local_dual_graph(
+  const auto [g, m] = mesh::build_local_dual_graph(
       xtl::span<const std::int64_t>(
           cells_extracted0.array().data(),
           cells_extracted0.offsets()[num_owned_cells]),
