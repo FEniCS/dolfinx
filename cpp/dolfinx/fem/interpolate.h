@@ -410,7 +410,7 @@ void interpolate(Function<T>& u, xt::xarray<double>& values,
         {static_cast<std::size_t>(element->value_size()), x.shape(1)});
   }
 
-  if (values.shape(0) != element->value_size())
+  if (values.shape(0) != static_cast<std::size_t>(element->value_size()))
     throw std::runtime_error("Interpolation data has the wrong shape.");
 
   if (values.shape(1) != cells.size() * X.shape(0))
