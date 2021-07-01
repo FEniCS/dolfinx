@@ -262,7 +262,7 @@ void interpolate_from_any(Function<T>& u, const Function<T>& v)
     xt::xtensor<T, 2> u_vals(
         xt::shape({globalX.shape(0),
                    static_cast<decltype(globalX.shape(0))>(
-                       u.function_space()->element()->value_rank())}),
+                       /*u.function_space()->element()->value_rank()*/ 1)}),
         0);
     v.eval(globalX, evaluationCells, u_vals);
 
