@@ -11,6 +11,6 @@ v = TestFunction(V)
 f = Constant(mesh)
 
 a = inner(grad(u), grad(v)) * dx
-L = f * v * dx
+L = inner(f, v) * dx
 
 forms = [a, L]
