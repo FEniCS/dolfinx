@@ -30,10 +30,6 @@ class Function;
 // This should be hidden somewhere
 template <typename T>
 const MPI_Datatype MPI_TYPE = MPI_DOUBLE;
-template <>
-const decltype(MPI_DOUBLE) MPI_TYPE<double> = MPI_DOUBLE;
-template <>
-const decltype(MPI_DOUBLE) MPI_TYPE<std::complex<double>> = MPI_DOUBLE_COMPLEX;
 
 /// This function is used to define a custom MPI reduction operator and
 /// it conforms to the MPI standard's specifications,
