@@ -282,12 +282,12 @@ void interpolate_from_any(Function<T>& u, const Function<T>& v)
     // Now that each process has all the values, each process can extract
     // the portion that it needs
     std::vector<size_t> shape = {x.shape(1), static_cast<std::size_t>(1)};
-    xt::xarray<double> myU(shape);
+    xt::xarray<T> myU(shape);
     std::copy_n(finalU.cbegin() + displacements[mpi_rank] / 3,
                 nPoints[mpi_rank], myU.begin());
 
     // This transposition is a quick and dirty solution and should be avoided
-    xt::xarray<double> myU_t = xt::zeros_like(xt::transpose(myU));
+    xt::xarray<T> myU_t = xt::zeros_like(xt::transpose(myU));
     for (decltype(myU.shape(1)) i = 0; i < myU.shape(1); ++i)
     {
       for (decltype(myU.shape(0)) j = 0; j < myU.shape(0); ++j)
