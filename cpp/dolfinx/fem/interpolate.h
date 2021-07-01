@@ -27,7 +27,7 @@ namespace dolfinx::fem
 template <typename T>
 class Function;
 
-// This should be hidden somewhere
+/// This should be hidden somewhere
 template <typename T>
 const MPI_Datatype MPI_TYPE = MPI_DOUBLE;
 

@@ -64,12 +64,11 @@ fem::interpolation_coords(const fem::FiniteElement& element,
   return x;
 }
 //-----------------------------------------------------------------------------
-// This should be hidden somewhere
+/// This should be hidden somewhere
 template <>
-const decltype(MPI_DOUBLE) fem::MPI_TYPE<double> = MPI_DOUBLE;
+const MPI_Datatype fem::MPI_TYPE<double> = MPI_DOUBLE;
 template <>
-const decltype(
-    MPI_DOUBLE) fem::MPI_TYPE<std::complex<double>> = MPI_DOUBLE_COMPLEX;
+const MPI_Datatype fem::MPI_TYPE<std::complex<double>> = MPI_DOUBLE_COMPLEX;
 
 void fem::SINGLESUM(void* invec, void* inoutvec, int* len, MPI_Datatype*)
 {
