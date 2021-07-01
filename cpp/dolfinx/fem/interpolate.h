@@ -27,6 +27,14 @@ namespace dolfinx::fem
 template <typename T>
 class Function;
 
+// This should be hidden somewhere
+template <typename T>
+const MPI_Datatype MPI_TYPE = MPI_DOUBLE;
+template <>
+const decltype(MPI_DOUBLE) MPI_TYPE<double> = MPI_DOUBLE;
+template <>
+const decltype(MPI_DOUBLE) MPI_TYPE<std::complex<double>> = MPI_DOUBLE_COMPLEX;
+
 /// This function is used to define a custom MPI reduction operator and
 /// it conforms to the MPI standard's specifications,
 /// see https://www.mpi-forum.org/docs/mpi-3.1/mpi31-report/node115.htm
@@ -93,7 +101,7 @@ void interpolate(
 /// interpolate. Should be the same as the list used when calling
 /// fem::interpolation_coords.
 template <typename T>
-void interpolate(Function<T>& u, xt::xarray<double>& values,
+void interpolate(Function<T>& u, xt::xarray<T>& values,
                  const xt::xtensor<double, 2>& x,
                  const xtl::span<const std::int32_t>& cells);
 
@@ -255,8 +263,11 @@ void interpolate_from_any(Function<T>& u, const Function<T>& v)
     }
 
     // We now evaluate the interpolating function at all points
-    xt::xtensor<double, 2> u_vals(
-        xt::shape({globalX.shape(0), static_cast<std::size_t>(1)}), 0);
+    xt::xtensor<T, 2> u_vals(
+        xt::shape({globalX.shape(0),
+                   static_cast<decltype(globalX.shape(0))>(
+                       u.function_space()->element()->value_rank())}),
+        0);
     v.eval(globalX, evaluationCells, u_vals);
 
     // We need [do we?] a separate variable to store the reduced values
@@ -269,7 +280,7 @@ void interpolate_from_any(Function<T>& u, const Function<T>& v)
     MPI_Op MPI_SINGLESUM;
     MPI_Op_create(&SINGLESUM, true, &MPI_SINGLESUM);
 
-    MPI_Allreduce(u_vals.data(), finalU.data(), u_vals.size(), MPI_DOUBLE,
+    MPI_Allreduce(u_vals.data(), finalU.data(), u_vals.size(), MPI_TYPE<T>,
                   MPI_SINGLESUM, MPI_COMM_WORLD);
 
     // Now that each process has all the values, each process can extract
@@ -366,7 +377,7 @@ void interpolate(Function<T>& u, const Function<T>& v)
 }
 //----------------------------------------------------------------------------
 template <typename T>
-void interpolate(Function<T>& u, xt::xarray<double>& values,
+void interpolate(Function<T>& u, xt::xarray<T>& values,
                  const xt::xtensor<double, 2>& x,
                  const xtl::span<const std::int32_t>& cells)
 {

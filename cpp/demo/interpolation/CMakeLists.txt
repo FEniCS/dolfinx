@@ -40,7 +40,7 @@ preprocess_ufl(ufl2cpp_files
 
 # Executable
 add_executable(${PROJECT_NAME}
-                interpolation.cpp
+                main.cpp
                 ${ufl2cpp_files}
                 )
 
