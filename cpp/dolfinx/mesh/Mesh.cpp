@@ -114,7 +114,7 @@ Mesh mesh::create_mesh(MPI_Comm comm,
       tdim);
 
   // Compute re-ordering of local dual graph
-  const std::vector<int> remap = graph::scotch::compute_gps(g, 25).first;
+  const std::vector<int> remap = graph::scotch::compute_gps(g, 2).first;
 
   // Create re-ordered cell lists
   std::vector<std::int64_t> original_cell_index(original_cell_index0);
@@ -163,10 +163,9 @@ Mesh mesh::create_mesh(MPI_Comm comm,
                                                  std::move(off1));
   if (element.needs_dof_permutations())
     topology.create_entity_permutations();
-  Geometry geometry
-      = mesh::create_geometry(comm, topology, element, cell_nodes1, x);
 
-  return Mesh(comm, std::move(topology), std::move(geometry));
+  return Mesh(comm, std::move(topology),
+              mesh::create_geometry(comm, topology, element, cell_nodes1, x));
 }
 //-----------------------------------------------------------------------------
 
