@@ -39,7 +39,7 @@ public:
     explicit Comm(MPI_Comm comm, bool duplicate = true);
 
     /// Copy constructor
-    Comm(const Comm& comm);
+    Comm(const Comm& comm) noexcept;
 
     /// Move constructor
     Comm(Comm&& comm) noexcept;
@@ -54,7 +54,7 @@ public:
     ~Comm();
 
     /// Return the underlying MPI_Comm object
-    MPI_Comm comm() const;
+    MPI_Comm comm() const noexcept;
 
   private:
     // MPI communicator

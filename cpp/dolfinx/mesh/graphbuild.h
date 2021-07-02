@@ -19,8 +19,8 @@ namespace dolfinx::mesh
 enum class CellType;
 
 /// Build distributed dual graph (cell-cell connections) from minimal
-/// mesh data, and return (graph, ghost_vertices, [num local edges,
-/// num non-local edges])
+/// mesh data, and return (graph, ghost_vertices, [num local edges, num
+/// non-local edges])
 std::pair<graph::AdjacencyList<std::int64_t>, std::array<std::int32_t, 2>>
 build_dual_graph(const MPI_Comm comm,
                  const graph::AdjacencyList<std::int64_t>& cell_vertices,
@@ -35,8 +35,7 @@ build_dual_graph(const MPI_Comm comm,
 /// @param[in] offsets Index of the first entry of cell `i` in
 /// `cell_vertices` `is offsets[i]`
 /// @param[in] tdim The topological dimension if the cells
-/// @return (local_graph, facet_cell_map, number of local edges in the
-/// graph (undirected)
+/// @return (local_graph, facet-to-cell)
 std::pair<graph::AdjacencyList<std::int32_t>, xt::xtensor<std::int64_t, 2>>
 build_local_dual_graph(const xtl::span<const std::int64_t>& cell_vertices,
                        const xtl::span<const std::int32_t>& offsets, int tdim);
