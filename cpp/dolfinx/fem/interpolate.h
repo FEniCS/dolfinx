@@ -262,7 +262,7 @@ void interpolate_from_any(Function<T>& u, const Function<T>& v)
     xt::xtensor<T, 2> u_vals(
         xt::shape({globalX.shape(0),
                    static_cast<decltype(globalX.shape(0))>(
-                       /*u.function_space()->element()->value_rank()*/ 1)}),
+                       u.function_space()->element()->value_size())}),
         0);
     v.eval(globalX, evaluationCells, u_vals);
 
@@ -272,7 +272,8 @@ void interpolate_from_any(Function<T>& u, const Function<T>& v)
     // Since some points appear more than once in globalX, we cannot simply
     // reduce with a sum as the values at those points would be doubled.
     // Here we define a custom reduction operator that, given two values,
-    // returns their sum if at least one is zero, and otherwise does nothing
+    // returns their sum if at least one of them is zero, and does nothing
+    // otherwise
     MPI_Op MPI_SINGLESUM;
     MPI_Op_create(&SINGLESUM, true, &MPI_SINGLESUM);
 
@@ -281,10 +282,15 @@ void interpolate_from_any(Function<T>& u, const Function<T>& v)
 
     // Now that each process has all the values, each process can extract
     // the portion that it needs
-    std::vector<size_t> shape = {x.shape(1), static_cast<std::size_t>(1)};
+    std::vector<std::size_t> shape
+        = {x.shape(1), static_cast<decltype(globalX.shape(0))>(
+                           u.function_space()->element()->value_size())};
     xt::xarray<T> myU(shape);
-    std::copy_n(finalU.cbegin() + displacements[mpi_rank] / 3,
-                nPoints[mpi_rank], myU.begin());
+    std::copy_n(finalU.cbegin()
+                    + displacements[mpi_rank] / tdim
+                          * u.function_space()->element()->value_size(),
+                nPoints[mpi_rank] * u.function_space()->element()->value_size(),
+                myU.begin());
 
     // This transposition is a quick and dirty solution and should be avoided
     xt::xarray<T> myU_t = xt::zeros_like(xt::transpose(myU));
