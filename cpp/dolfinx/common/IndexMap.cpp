@@ -123,13 +123,14 @@ compute_owned_shared(MPI_Comm comm, const xtl::span<const std::int64_t>& ghosts,
   return {recv_indices, recv_disp};
 }
 //-----------------------------------------------------------------------------
+
 /// Create neighborhood communicators
 /// @param[in] comm Communicator create communicators with neighborhood
-///   topology from
+/// topology from
 /// @param[in] halo_src_ranks Ranks that own indices in the halo (ghost
-///   region) of the calling rank
+/// region) of the calling rank
 /// @param[in] halo_dest_ranks Ranks that have indices owned by the
-///   calling process own in their halo (ghost region)
+/// calling process own in their halo (ghost region)
 std::array<MPI_Comm, 2>
 compute_asymmetric_communicators(MPI_Comm comm,
                                  const xtl::span<const int>& halo_src_ranks,
@@ -139,25 +140,17 @@ compute_asymmetric_communicators(MPI_Comm comm,
 
   // Create communicator with edges owner (sources) -> ghost
   // (destinations)
-  {
-    std::vector<int> sourceweights(halo_src_ranks.size(), 1);
-    std::vector<int> destweights(halo_dest_ranks.size(), 1);
-    MPI_Dist_graph_create_adjacent(
-        comm, halo_src_ranks.size(), halo_src_ranks.data(),
-        sourceweights.data(), halo_dest_ranks.size(), halo_dest_ranks.data(),
-        destweights.data(), MPI_INFO_NULL, false, &comms[0]);
-  }
+  MPI_Dist_graph_create_adjacent(
+      comm, halo_src_ranks.size(), halo_src_ranks.data(), MPI_UNWEIGHTED,
+      halo_dest_ranks.size(), halo_dest_ranks.data(), MPI_UNWEIGHTED,
+      MPI_INFO_NULL, true, &comms[0]);
 
   // Create communicator with edges ghost (sources) -> owner
   // (destinations)
-  {
-    std::vector<int> sourceweights(halo_dest_ranks.size(), 1);
-    std::vector<int> destweights(halo_src_ranks.size(), 1);
-    MPI_Dist_graph_create_adjacent(
-        comm, halo_dest_ranks.size(), halo_dest_ranks.data(),
-        sourceweights.data(), halo_src_ranks.size(), halo_src_ranks.data(),
-        destweights.data(), MPI_INFO_NULL, false, &comms[1]);
-  }
+  MPI_Dist_graph_create_adjacent(
+      comm, halo_dest_ranks.size(), halo_dest_ranks.data(), MPI_UNWEIGHTED,
+      halo_src_ranks.size(), halo_src_ranks.data(), MPI_UNWEIGHTED,
+      MPI_INFO_NULL, true, &comms[1]);
 
   return comms;
 }
@@ -314,10 +307,10 @@ IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size)
   std::vector<int> weights(ranks.size(), 1);
   MPI_Dist_graph_create_adjacent(comm, ranks.size(), ranks.data(),
                                  weights.data(), ranks.size(), ranks.data(),
-                                 weights.data(), MPI_INFO_NULL, false, &comm0);
+                                 weights.data(), MPI_INFO_NULL, true, &comm0);
   MPI_Dist_graph_create_adjacent(comm, ranks.size(), ranks.data(),
                                  weights.data(), ranks.size(), ranks.data(),
-                                 weights.data(), MPI_INFO_NULL, false, &comm1);
+                                 weights.data(), MPI_INFO_NULL, true, &comm1);
   _comm_owner_to_ghost = dolfinx::MPI::Comm(comm0, false);
   _comm_ghost_to_owner = dolfinx::MPI::Comm(comm1, false);
   _shared_indices = std::make_unique<graph::AdjacencyList<std::int32_t>>(0);
