@@ -20,18 +20,23 @@ namespace dolfinx::la
 
 /// Distributed vector
 
-template <typename T>
+template <typename T, class Allocator = std::allocator<T>>
 class Vector
 {
 public:
   /// Create a distributed vector
-  Vector(const std::shared_ptr<const common::IndexMap>& map, int bs)
-      : _map(map), _bs(bs)
+  Vector(const std::shared_ptr<const common::IndexMap>& map, int bs,
+         const Allocator& alloc = Allocator())
+      : _map(map), _bs(bs),
+        _x(bs * (map->size_local() + map->num_ghosts()), alloc)
   {
-    assert(map);
-    const std::int32_t local_size
-        = bs * (map->size_local() + map->num_ghosts());
-    _x.resize(local_size);
+    if (bs == 1)
+      _datatype = MPI::mpi_type<T>();
+    else
+    {
+      MPI_Type_contiguous(bs, dolfinx::MPI::mpi_type<T>(), &_datatype);
+      MPI_Type_commit(&_datatype);
+    }
   }
 
   /// Copy constructor
@@ -41,7 +46,11 @@ public:
   Vector(Vector&& x) noexcept = default;
 
   /// Destructor
-  ~Vector() = default;
+  ~Vector()
+  {
+    if (_datatype and _datatype != MPI::mpi_type<T>())
+      MPI_Type_free(&_datatype);
+  }
 
   // Assignment operator (disabled)
   Vector& operator=(const Vector& x) = delete;
@@ -49,14 +58,59 @@ public:
   /// Move Assignment operator
   Vector& operator=(Vector&& x) = default;
 
+  /// Begin scatter of local data from owner to ghosts on other ranks
+  /// @note Collective MPI operation
+  void scatter_fwd_begin()
+  {
+    assert(_map);
+    const std::int32_t local_size = _bs * _map->size_local();
+    xtl::span<const T> xlocal(_x.data(), local_size);
+    _map->scatter_fwd_begin(xlocal, _datatype, _request, _buffer_send_fwd,
+                            _buffer_recv_fwd);
+  }
+
+  /// End scatter of local data from owner to ghosts on other ranks
+  /// @note Collective MPI operation
+  void scatter_fwd_end()
+  {
+    assert(_map);
+    const std::int32_t local_size = _bs * _map->size_local();
+    xtl::span xremote(_x.data() + local_size, _map->num_ghosts() * _bs);
+    _map->scatter_fwd_end(xremote, _request,
+                          xtl::span<const T>(_buffer_recv_fwd));
+  }
+
   /// Scatter local data to ghost positions on other ranks
   /// @note Collective MPI operation
   void scatter_fwd()
   {
+    this->scatter_fwd_begin();
+    this->scatter_fwd_end();
+  }
+
+  /// Start scatter of  ghost data to owner
+  /// @note Collective MPI operation
+  void scatter_rev_begin()
+  {
     const std::int32_t local_size = _bs * _map->size_local();
-    xtl::span<const T> xlocal(_x.data(), local_size);
-    xtl::span xremote(_x.data() + local_size, _map->num_ghosts() * _bs);
-    _map->scatter_fwd(xlocal, xremote, _bs);
+    xtl::span<const T> xremote(_x.data() + local_size,
+                               _map->num_ghosts() * _bs);
+    _map->scatter_rev_begin(xremote, _datatype, _request, _buffer_recv_fwd,
+                            _buffer_send_fwd);
+  }
+
+  /// End scatter of ghost data to owner. This process may receive data from
+  /// more than one process, and the received data can be summed or
+  /// inserted into the local portion of the vector.
+  /// @param op The operation to perform when adding/setting received
+  /// values (add or insert)
+  /// @note Collective MPI operation
+  void scatter_rev_end(dolfinx::common::IndexMap::Mode op)
+  {
+    const std::int32_t local_size = _bs * _map->size_local();
+    xtl::span xlocal(_x.data(), local_size);
+    _map->scatter_rev_end(xlocal, _request,
+                          xtl::span<const T>(_buffer_send_fwd), op);
   }
 
   /// Scatter ghost data to owner. This process may receive data from
@@ -66,11 +120,8 @@ public:
   /// @note Collective MPI operation
   void scatter_rev(dolfinx::common::IndexMap::Mode op)
   {
-    const std::int32_t local_size = _bs * _map->size_local();
-    xtl::span xlocal(_x.data(), local_size);
-    xtl::span<const T> xremote(_x.data() + local_size,
-                               _map->num_ghosts() * _bs);
-    _map->scatter_rev(xlocal, xremote, _bs, op);
+    this->scatter_rev_begin();
+    this->scatter_rev_end(op);
   }
 
   /// Compute the norm of the vector
@@ -95,7 +146,8 @@ public:
       }
 
       double linf = 0.0;
-      MPI_Allreduce(&local_linf, &linf, 1, MPI_DOUBLE, MPI_MAX, _map->comm());
+      MPI_Allreduce(&local_linf, &linf, 1, MPI_DOUBLE, MPI_MAX,
+                    _map->comm(common::IndexMap::Direction::forward));
       return linf;
     }
     default:
@@ -112,7 +164,8 @@ public:
         _x.begin(), std::next(_x.begin(), size_local), 0.0, std::plus<double>(),
         [](T val) { return std::norm(val); });
     double norm2;
-    MPI_Allreduce(&result, &norm2, 1, MPI_DOUBLE, MPI_SUM, _map->comm());
+    MPI_Allreduce(&result, &norm2, 1, MPI_DOUBLE, MPI_SUM,
+                  _map->comm(common::IndexMap::Direction::forward));
     return norm2;
   }
 
@@ -123,10 +176,10 @@ public:
   constexpr int bs() const { return _bs; }
 
   /// Get local part of the vector (const version)
-  const std::vector<T>& array() const { return _x; }
+  const std::vector<T, Allocator>& array() const { return _x; }
 
   /// Get local part of the vector
-  std::vector<T>& mutable_array() { return _x; }
+  std::vector<T, Allocator>& mutable_array() { return _x; }
 
 private:
   // Map describing the data layout
@@ -135,8 +188,13 @@ private:
   // Block size
   int _bs;
 
+  // Data type and buffers for ghost scatters
+  MPI_Datatype _datatype = MPI_DATATYPE_NULL;
+  MPI_Request _request = MPI_REQUEST_NULL;
+  std::vector<T> _buffer_send_fwd, _buffer_recv_fwd;
+
   // Data
-  std::vector<T> _x;
+  std::vector<T, Allocator> _x;
 };
 
 /// Compute the inner product of two vectors. The two vectors must have
@@ -145,8 +203,8 @@ private:
 /// @param a A vector
 /// @param b A vector
 /// @return Returns `a^{H} b` (`a^{T} b` if `a` and `b` are real)
-template <typename T>
-T inner_product(const Vector<T>& a, const Vector<T>& b)
+template <typename T, class Allocator = std::allocator<T>>
+T inner_product(const Vector<T, Allocator>& a, const Vector<T, Allocator>& b)
 {
   const std::int32_t local_size = a.bs() * a.map()->size_local();
   if (local_size != b.bs() * b.map()->size_local())
@@ -168,7 +226,7 @@ T inner_product(const Vector<T>& a, const Vector<T>& b)
 
   T result;
   MPI_Allreduce(&local, &result, 1, dolfinx::MPI::mpi_type<T>(), MPI_SUM,
-                a.map()->comm());
+                a.map()->comm(common::IndexMap::Direction::forward));
   return result;
 }
 

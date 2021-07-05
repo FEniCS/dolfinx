@@ -221,6 +221,7 @@ build::distribute_data(MPI_Comm comm,
                 disp_index_recv.data(), compound_type, my_x.data(),
                 number_index_send.data(), disp_index_send.data(), compound_type,
                 comm);
+  MPI_Type_free(&compound_type);
 
   return my_x;
 }

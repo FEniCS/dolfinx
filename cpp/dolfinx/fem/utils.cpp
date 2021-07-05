@@ -46,8 +46,9 @@ la::SparsityPattern fem::create_sparsity_pattern(
 
   // Create and build sparsity pattern
   assert(dofmaps[0].get().index_map);
-  la::SparsityPattern pattern(dofmaps[0].get().index_map->comm(), index_maps,
-                              bs);
+  la::SparsityPattern pattern(
+      dofmaps[0].get().index_map->comm(common::IndexMap::Direction::forward),
+      index_maps, bs);
   for (auto type : integrals)
   {
     if (type == fem::IntegralType::cell)
@@ -130,10 +131,39 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
         create_element_dof_layout(*ufc_sub_dofmap, cell_type, parent_map_sub)));
   }
 
+  // TODO: Can we get these from Basix instead of recomputing?
+
+  // Compute closure entities
+  // [dim, entity] -> closure{sub_dim, (sub_entities)}
+  std::map<std::array<int, 2>, std::vector<std::set<int>>> entity_closure
+      = mesh::cell_entity_closure(cell_type);
+
+  std::vector<std::vector<std::set<int>>> entity_closure_dofs = entity_dofs;
+  for (const auto& entity : entity_closure)
+  {
+    const int dim = entity.first[0];
+    const int index = entity.first[1];
+    assert(dim < (int)entity_dofs.size());
+    assert(index < (int)entity_dofs[dim].size());
+    int subdim = 0;
+    for (const auto& sub_entity : entity.second)
+    {
+      assert(subdim < (int)entity_dofs.size());
+      for (auto sub_index : sub_entity)
+      {
+        assert(sub_index < (int)entity_dofs[subdim].size());
+        entity_closure_dofs[dim][index].insert(
+            entity_dofs[subdim][sub_index].begin(),
+            entity_dofs[subdim][sub_index].end());
+      }
+      ++subdim;
+    }
+  }
+
   // Check for "block structure". This should ultimately be replaced,
   // but keep for now to mimic existing code
-  return fem::ElementDofLayout(element_block_size, entity_dofs, parent_map,
-                               sub_dofmaps, cell_type);
+  return fem::ElementDofLayout(element_block_size, entity_dofs,
+                               entity_closure_dofs, parent_map, sub_dofmaps);
 }
 //-----------------------------------------------------------------------------
 fem::DofMap
@@ -178,8 +208,8 @@ fem::create_dofmap(MPI_Comm comm, const ufc_dofmap& ufc_dofmap,
     const std::vector<std::uint32_t>& cell_info
         = topology.get_cell_permutation_info();
 
-    std::function<void(xtl::span<std::int32_t>, std::uint32_t)> unpermute_dofs
-        = element->get_dof_permutation_function(true, true);
+    const std::function<void(const xtl::span<std::int32_t>&, std::uint32_t)>
+        unpermute_dofs = element->get_dof_permutation_function(true, true);
     for (std::int32_t cell = 0; cell < num_cells; ++cell)
       unpermute_dofs(dofmap.links(cell), cell_info[cell]);
   }

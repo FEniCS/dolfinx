@@ -81,10 +81,17 @@ public:
   /// @return The string of the finite element family
   std::string family() const noexcept;
 
-  /// Evaluate all basis functions at given points in reference cell
-  /// reference_values[num_points][num_dofs][reference_value_size]
-  void evaluate_reference_basis(xt::xtensor<double, 3>& values,
-                                const xt::xtensor<double, 2>& X) const;
+  /// Evaluate all derivatives of the basis functions up to given order at given
+  /// points in reference cell
+  /// @param[in,out] values Four dimensional xtensor that will be filled with
+  /// the tabulated values. Should be of shape {num_derivatives, num_points,
+  /// num_dofs, reference_value_size}
+  /// @param[in] X Two dimensional xtensor of shape [num_points, geometric
+  /// dimension] containing the points at the reference element
+  /// @param[in] order The number of derivatives (up to and including this
+  /// order) to tabulate for.
+  void tabulate(xt::xtensor<double, 4>& values, const xt::xtensor<double, 2>& X,
+                int order) const;
 
   /// Push basis functions forward to physical element
   void transform_reference_basis(xt::xtensor<double, 3>& values,
@@ -92,13 +99,6 @@ public:
                                  const xt::xtensor<double, 3>& J,
                                  const xtl::span<const double>& detJ,
                                  const xt::xtensor<double, 3>& K) const;
-
-  /// Push basis function (derivatives) forward to physical element
-  void transform_reference_basis_derivatives(
-      std::vector<double>& values, std::size_t order,
-      const std::vector<double>& reference_values, const array2d<double>& X,
-      const std::vector<double>& J, const xtl::span<const double>& detJ,
-      const std::vector<double>& K) const;
 
   /// Get the number of sub elements (for a mixed element)
   /// @return the Number of sub elements
@@ -221,16 +221,19 @@ public:
   /// @param[in] scalar_element Indicated whether the scalar transformations
   /// should be returned for a vector element
   template <typename T>
-  std::function<void(xtl::span<T>, const xtl::span<const std::uint32_t>&,
-                     const std::int32_t, const int)>
+  std::function<void(const xtl::span<T>&, const xtl::span<const std::uint32_t>&,
+                     std::int32_t, int)>
   get_dof_transformation_function(bool inverse = false, bool transpose = false,
                                   bool scalar_element = false) const
   {
     if (!needs_dof_transformations())
     {
       // If no permutation needed, return function that does nothing
-      return [](xtl::span<T>, const xtl::span<const std::uint32_t>&,
-                const std::int32_t, const int) {};
+      return [](const xtl::span<T>&, const xtl::span<const std::uint32_t>&,
+                std::int32_t, int)
+      {
+        // Do nothing
+      };
     }
 
     if (_sub_elements.size() != 0)
@@ -238,9 +241,9 @@ public:
       if (_bs == 1)
       {
         // Mixed element
-        std::vector<std::function<void(xtl::span<T>,
+        std::vector<std::function<void(const xtl::span<T>&,
                                        const xtl::span<const std::uint32_t>&,
-                                       const std::int32_t, const int)>>
+                                       std::int32_t, int)>>
             sub_element_functions;
         std::vector<int> dims;
         for (std::size_t i = 0; i < _sub_elements.size(); ++i)
@@ -252,9 +255,9 @@ public:
         }
 
         return [dims, sub_element_functions](
-                   xtl::span<T> data,
+                   const xtl::span<T>& data,
                    const xtl::span<const std::uint32_t>& cell_info,
-                   const std::int32_t cell, const int block_size)
+                   std::int32_t cell, int block_size)
         {
           std::size_t start = 0;
           for (std::size_t e = 0; e < sub_element_functions.size(); ++e)
@@ -269,16 +272,16 @@ public:
       else if (!scalar_element)
       {
         // Vector element
-        std::function<void(xtl::span<T>, const xtl::span<const std::uint32_t>&,
-                           const std::int32_t, const int)>
+        const std::function<void(const xtl::span<T>&,
+                                 const xtl::span<const std::uint32_t>&,
+                                 std::int32_t, int)>
             sub_function = _sub_elements[0]->get_dof_transformation_function<T>(
                 inverse, transpose);
         const int ebs = _bs;
         return
-            [ebs, sub_function](xtl::span<T> data,
+            [ebs, sub_function](const xtl::span<T>& data,
                                 const xtl::span<const std::uint32_t>& cell_info,
-                                const std::int32_t cell,
-                                const int data_block_size)
+                                std::int32_t cell, int data_block_size)
         { sub_function(data, cell_info, cell, ebs * data_block_size); };
       }
     }
@@ -286,9 +289,9 @@ public:
     {
       if (inverse)
       {
-        return [this](xtl::span<T> data,
+        return [this](const xtl::span<T>& data,
                       const xtl::span<const std::uint32_t>& cell_info,
-                      const std::int32_t cell, const int block_size)
+                      std::int32_t cell, int block_size)
         {
           apply_inverse_transpose_dof_transformation(data, cell_info[cell],
                                                      block_size);
@@ -296,9 +299,9 @@ public:
       }
       else
       {
-        return [this](xtl::span<T> data,
+        return [this](const xtl::span<T>& data,
                       const xtl::span<const std::uint32_t>& cell_info,
-                      const std::int32_t cell, const int block_size) {
+                      std::int32_t cell, int block_size) {
           apply_transpose_dof_transformation(data, cell_info[cell], block_size);
         };
       }
@@ -307,17 +310,17 @@ public:
     {
       if (inverse)
       {
-        return [this](xtl::span<T> data,
+        return [this](const xtl::span<T>& data,
                       const xtl::span<const std::uint32_t>& cell_info,
-                      const std::int32_t cell, const int block_size) {
+                      std::int32_t cell, int block_size) {
           apply_inverse_dof_transformation(data, cell_info[cell], block_size);
         };
       }
       else
       {
-        return [this](xtl::span<T> data,
+        return [this](const xtl::span<T>& data,
                       const xtl::span<const std::uint32_t>& cell_info,
-                      const std::int32_t cell, const int block_size)
+                      std::int32_t cell, int block_size)
         { apply_dof_transformation(data, cell_info[cell], block_size); };
       }
     }
@@ -390,9 +393,9 @@ public:
       else if (!scalar_element)
       {
         // Vector element
-        std::function<void(const xtl::span<T>&,
-                           const xtl::span<const std::uint32_t>&, std::int32_t,
-                           int)>
+        const std::function<void(const xtl::span<T>&,
+                                 const xtl::span<const std::uint32_t>&,
+                                 std::int32_t, int)>
             sub_function = _sub_elements[0]->get_dof_transformation_function<T>(
                 inverse, transpose);
         return [this,
@@ -472,9 +475,9 @@ public:
     _element->apply_dof_transformation(data, block_size, cell_permutation);
   }
 
-  /// Apply inverse transpose transformation to some data.
-  /// For VectorElements, this applies the transformations for the scalar
-  /// subelement
+  /// Apply inverse transpose transformation to some data. For
+  /// VectorElements, this applies the transformations for the scalar
+  /// subelement.
   ///
   /// @param[in,out] data The data to be transformed
   /// @param[in] cell_permutation Permutation data for the cell
@@ -490,9 +493,8 @@ public:
                                                          cell_permutation);
   }
 
-  /// Apply transpose transformation to some data.
-  /// For VectorElements, this applies the transformations for the scalar
-  /// subelement
+  /// Apply transpose transformation to some data. For VectorElements,
+  /// this applies the transformations for the scalar subelement.
   ///
   /// @param[in,out] data The data to be transformed
   /// @param[in] cell_permutation Permutation data for the cell
@@ -507,9 +509,8 @@ public:
                                                  cell_permutation);
   }
 
-  /// Apply inverse transformation to some data.
-  /// For VectorElements, this applies the transformations for the scalar
-  /// subelement
+  /// Apply inverse transformation to some data. For VectorElements,
+  /// this applies the transformations for the scalar subelement.
   ///
   /// @param[in,out] data The data to be transformed
   /// @param[in] cell_permutation Permutation data for the cell
@@ -524,7 +525,7 @@ public:
                                                cell_permutation);
   }
 
-  /// Apply DOF transformation to some tranposed data.
+  /// Apply DOF transformation to some tranposed data
   ///
   /// @param[in,out] data The data to be transformed
   /// @param[in] cell_permutation Permutation data for the cell
@@ -585,13 +586,27 @@ public:
         data, block_size, cell_permutation);
   }
 
-  /// Pull physical data back to the reference element.
-  /// This passes the inputs directly into Basix's map_pull_back function.
-  template <typename T>
-  void
-  map_pull_back(const xt::xtensor<T, 3>& u, const xt::xtensor<double, 3>& J,
-                const xtl::span<const double>& detJ,
-                const xt::xtensor<double, 3>& K, xt::xtensor<T, 3>& U) const
+  /// Pull back data from the physical element to the reference element.
+  /// It can process batches of points that share the same geometric
+  /// map. @note This passes the inputs directly into the Basix
+  /// `map_pull_back` function
+  ///
+  /// @param[in] u Data defined on the physical element. It must have
+  /// dimension 3. The first index is for the geometric/map data, the
+  /// second is the point index for points that share map data, and the
+  /// third index is (vector) component, e.g. `u[i,:,:]` are points that
+  /// are mapped by `J[i,:,:]`.
+  /// @param[in] J The Jacobians. It must have dimension 3. The first
+  /// index is for the ith Jacobian, i.e. J[i,:,:] is the ith Jacobian.
+  /// @param[in] detJ The determinant of J. `detJ[i]` is
+  /// `det(J[i,:,:])`. It must have dimension 1.
+  /// @param[in] K The inverse of J, `K[i,:,:] = J[i,:,:]^-1`. It must
+  /// have dimension 3.
+  /// @param[out] U The input `u` mapped to the reference element. It
+  /// must have dimension 3.
+  template <typename O, typename P, typename Q, typename T, typename S>
+  void map_pull_back(const O& u, const P& J, const Q& detJ, const T& K,
+                     S&& U) const
   {
     assert(_element);
     _element->map_pull_back_m(u, J, detJ, K, U);
@@ -611,17 +626,17 @@ public:
   void unpermute_dofs(const xtl::span<std::int32_t>& doflist,
                       std::uint32_t cell_permutation) const;
 
-  /// Return a function that applies DOF transformation to some data.
+  /// Return a function that applies DOF transformation to some data
   ///
   /// The returned function will take three inputs:
   /// - [in,out] data The data to be transformed
   /// - [in] cell_permutation Permutation data for the cell
   /// - [in] block_size The block_size of the input data
   ///
-  /// @param[in] inverse Indicates whether the inverse transformations should be
-  /// returned
-  /// @param[in] scalar_element Indicated whether the scalar transformations
-  /// should be returned for a vector element
+  /// @param[in] inverse Indicates whether the inverse transformations
+  /// should be returned
+  /// @param[in] scalar_element Indicated whether the scalar
+  /// transformations should be returned for a vector element
   std::function<void(const xtl::span<std::int32_t>&, std::uint32_t)>
   get_dof_permutation_function(bool inverse = false,
                                bool scalar_element = false) const;

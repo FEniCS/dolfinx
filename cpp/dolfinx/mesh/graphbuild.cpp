@@ -48,9 +48,6 @@ compute_local_dual_graph_keyed(
     ++count[num_cell_vertices];
   }
 
-  int num_facets = 0;
-  int num_facet_vertices = 0;
-
   // For each topological dimension, there is a limited set of allowed
   // cell types. In 1D, interval; 2D: tri or quad, 3D: tet, prism,
   // pyramid or hex.
@@ -62,6 +59,8 @@ compute_local_dual_graph_keyed(
   std::vector<graph::AdjacencyList<int>> nv_to_facets(
       9, graph::AdjacencyList<int>(0));
 
+  int num_facets = 0;
+  int num_facet_vertices = 0;
   switch (tdim)
   {
   case 1:
@@ -166,9 +165,8 @@ compute_local_dual_graph_keyed(
       local_graph.push_back(facets[j].back());
       local_graph.push_back(facets[j - 1].back());
 
-      // FIXME: This may not strictly be an error if tdim != gdim
-      if (eq_count == 2)
-        throw std::runtime_error("Same facet in more than two cells");
+      if (eq_count > 1)
+        LOG(WARNING) << "Same facet in more than two cells";
     }
     else
     {

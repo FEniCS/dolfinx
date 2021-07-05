@@ -37,15 +37,17 @@ public:
   /// @param[in] block_size The number of dofs co-located at each point.
   /// @param[in] entity_dofs The dofs on each entity, in the format:
   ///   entity_dofs[entity_dim][entity_number] = [dof0, dof1, ...]
+  /// @param[in] entity_closure_dofs The dofs on the closure of each entity, in
+  /// the format:
+  ///   entity_closure_dofs[entity_dim][entity_number] = [dof0, dof1, ...]
   /// @param[in] parent_map TODO
   /// @param[in] sub_dofmaps TODO
-  /// @param[in] cell_type The cell type of the mesh.
   ElementDofLayout(
       int block_size,
       const std::vector<std::vector<std::set<int>>>& entity_dofs,
+      const std::vector<std::vector<std::set<int>>>& entity_closure_dofs,
       const std::vector<int>& parent_map,
-      const std::vector<std::shared_ptr<const ElementDofLayout>>& sub_dofmaps,
-      const mesh::CellType cell_type);
+      const std::vector<std::shared_ptr<const ElementDofLayout>>& sub_dofmaps);
 
   /// Copy the DOF layout, discarding any parent information
   ElementDofLayout copy() const;

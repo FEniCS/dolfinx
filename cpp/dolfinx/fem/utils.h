@@ -372,6 +372,46 @@ std::shared_ptr<fem::FunctionSpace> create_functionspace(
         std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>& reorder_fn
     = nullptr);
 
+namespace impl
+{
+// Pack a single coefficient
+template <typename T, int _bs = -1>
+void pack_coefficient(
+    array2d<T>& c, const std::vector<T>& v,
+    const xtl::span<const std::uint32_t>& cell_info, const fem::DofMap& dofmap,
+    std::int32_t num_cells, std::int32_t offset, int space_dim,
+    const std::function<void(const xtl::span<T>&,
+                             const xtl::span<const std::uint32_t>&,
+                             std::int32_t, int)>& transform)
+{
+  const int bs = dofmap.bs();
+  assert(_bs < 0 or _bs == bs);
+  for (std::int32_t cell = 0; cell < num_cells; ++cell)
+  {
+    auto dofs = dofmap.cell_dofs(cell);
+    auto cell_coeff = c.row(cell).subspan(offset, space_dim);
+    for (std::size_t i = 0; i < dofs.size(); ++i)
+    {
+      if constexpr (_bs < 0)
+      {
+        const int pos_c = bs * i;
+        const int pos_v = bs * dofs[i];
+        for (int k = 0; k < bs; ++k)
+          cell_coeff[pos_c + k] = v[pos_v + k];
+      }
+      else
+      {
+        const int pos_c = _bs * i;
+        const int pos_v = _bs * dofs[i];
+        for (int k = 0; k < _bs; ++k)
+          cell_coeff[pos_c + k] = v[pos_v + k];
+      }
+    }
+    transform(cell_coeff, cell_info, cell, 1);
+  }
+}
+} // namespace impl
+
 // NOTE: This is subject to change
 /// Pack coefficients of u of generic type U ready for assembly
 template <typename U>
@@ -385,14 +425,12 @@ array2d<typename U::scalar_type> pack_coefficients(const U& u)
   const std::vector<int> offsets = u.coefficient_offsets();
   std::vector<const fem::DofMap*> dofmaps(coefficients.size());
   std::vector<const fem::FiniteElement*> elements(coefficients.size());
-  std::vector<int> bs(coefficients.size());
   std::vector<std::reference_wrapper<const std::vector<T>>> v;
   v.reserve(coefficients.size());
   for (std::size_t i = 0; i < coefficients.size(); ++i)
   {
     elements[i] = coefficients[i]->function_space()->element().get();
     dofmaps[i] = coefficients[i]->function_space()->dofmap().get();
-    bs[i] = dofmaps[i]->bs();
     v.push_back(coefficients[i]->x()->array());
   }
 
@@ -417,32 +455,41 @@ array2d<typename U::scalar_type> pack_coefficients(const U& u)
         mesh->topology_mutable().create_entity_permutations();
       }
     }
-    const std::vector<std::uint32_t>& cell_info
-        = needs_dof_transformations
-              ? mesh->topology().get_cell_permutation_info()
-              : std::vector<std::uint32_t>(num_cells);
+
+    // Iterate over coefficients
+    xtl::span<const std::uint32_t> cell_info;
+    if (needs_dof_transformations)
+      cell_info = xtl::span(mesh->topology().get_cell_permutation_info());
     for (std::size_t coeff = 0; coeff < dofmaps.size(); ++coeff)
     {
-      std::function<void(xtl::span<T>, const xtl::span<const std::uint32_t>,
-                         const std::int32_t, const int)>
-          apply_transpose_dof_transformation
+      const std::function<void(const xtl::span<T>&,
+                               const xtl::span<const std::uint32_t>&,
+                               std::int32_t, int)>
+          transformation
           = elements[coeff]->get_dof_transformation_function<T>(false, true);
-      for (int cell = 0; cell < num_cells; ++cell)
+      if (int bs = dofmaps[coeff]->bs(); bs == 1)
       {
-        xtl::span<const std::int32_t> dofs = dofmaps[coeff]->cell_dofs(cell);
-        const std::vector<T>& _v = v[coeff];
-        for (std::size_t i = 0; i < dofs.size(); ++i)
-        {
-          for (int k = 0; k < bs[coeff]; ++k)
-          {
-            c(cell, bs[coeff] * i + k + offsets[coeff])
-                = _v[bs[coeff] * dofs[i] + k];
-          }
-        }
-        apply_transpose_dof_transformation(
-            c.row(cell).subspan(offsets[coeff],
-                                elements[coeff]->space_dimension()),
-            cell_info, cell, 1);
+        impl::pack_coefficient<T, 1>(
+            c, v[coeff], cell_info, *dofmaps[coeff], num_cells, offsets[coeff],
+            elements[coeff]->space_dimension(), transformation);
+      }
+      else if (bs == 2)
+      {
+        impl::pack_coefficient<T, 2>(
+            c, v[coeff], cell_info, *dofmaps[coeff], num_cells, offsets[coeff],
+            elements[coeff]->space_dimension(), transformation);
+      }
+      else if (bs == 3)
+      {
+        impl::pack_coefficient<T, 3>(
+            c, v[coeff], cell_info, *dofmaps[coeff], num_cells, offsets[coeff],
+            elements[coeff]->space_dimension(), transformation);
+      }
+      else
+      {
+        impl::pack_coefficient<T>(
+            c, v[coeff], cell_info, *dofmaps[coeff], num_cells, offsets[coeff],
+            elements[coeff]->space_dimension(), transformation);
       }
     }
   }

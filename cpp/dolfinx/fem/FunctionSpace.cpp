@@ -161,15 +161,16 @@ FunctionSpace::tabulate_dof_coordinates(bool transpose) const
   const int num_cells = map->size_local() + map->num_ghosts();
 
   const bool needs_dof_transformations = _element->needs_dof_transformations();
+  xtl::span<const std::uint32_t> cell_info;
   if (needs_dof_transformations)
+  {
     _mesh->topology_mutable().create_entity_permutations();
-  const std::vector<std::uint32_t>& cell_info
-      = needs_dof_transformations
-            ? _mesh->topology().get_cell_permutation_info()
-            : std::vector<std::uint32_t>(0);
+    cell_info = xtl::span(_mesh->topology().get_cell_permutation_info());
+  }
 
-  std::function<void(xtl::span<double>, const xtl::span<const std::uint32_t>,
-                     const std::int32_t, const int)>
+  const std::function<void(const xtl::span<double>&,
+                           const xtl::span<const std::uint32_t>&, std::int32_t,
+                           int)>
       apply_dof_transformation
       = _element->get_dof_transformation_function<double>();
 
@@ -199,7 +200,7 @@ FunctionSpace::tabulate_dof_coordinates(bool transpose) const
     if (!transpose)
     {
       for (std::size_t i = 0; i < dofs.size(); ++i)
-        for (std::size_t j= 0; j < gdim; ++j)
+        for (std::size_t j = 0; j < gdim; ++j)
           coords(dofs[i], j) = x(i, j);
     }
     else
