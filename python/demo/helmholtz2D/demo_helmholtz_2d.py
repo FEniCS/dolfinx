@@ -47,18 +47,18 @@ u = TrialFunction(V)
 v = TestFunction(V)
 f = Function(V)
 f.interpolate(lambda x: A * k0**2 * np.cos(k0 * x[0]) * np.cos(k0 * x[1]))
+f.x.scatter_forward()
 a = inner(grad(u), grad(v)) * dx - k0**2 * inner(u, v) * dx
 L = inner(f, v) * dx
 
 # Compute solution
 uh = fem.Function(V)
 uh.name = "u"
-problem = fem.LinearProblem(a, L, u=uh)
+problem = fem.LinearProblem(a, L, u=uh, petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
 problem.solve()
 
 # Save solution in XDMF format (to be viewed in Paraview, for example)
-with XDMFFile(MPI.COMM_WORLD, "plane_wave.xdmf", "w",
-              encoding=XDMFFile.Encoding.HDF5) as file:
+with XDMFFile(MPI.COMM_WORLD, "plane_wave.xdmf", "w", encoding=XDMFFile.Encoding.HDF5) as file:
     file.write_mesh(mesh)
     file.write_function(uh)
 
@@ -67,15 +67,11 @@ with XDMFFile(MPI.COMM_WORLD, "plane_wave.xdmf", "w",
 # are evident for high wavenumbers. ::
 
 
-# "Exact" solution expression
-def solution(values, x):
-    values[:, 0] = A * np.cos(k0 * x[:, 0]) * np.cos(k0 * x[:, 1])
-
-
 # Function space for exact solution - need it to be higher than deg
 V_exact = FunctionSpace(mesh, ("Lagrange", deg + 3))
 u_exact = Function(V_exact)
 u_exact.interpolate(lambda x: A * np.cos(k0 * x[0]) * np.cos(k0 * x[1]))
+u_exact.x.scatter_forward()
 
 # H1 errors
 diff = uh - u_exact
