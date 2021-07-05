@@ -415,6 +415,13 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
   std::adjacent_difference(displs_send.begin() + 1, displs_send.end(),
                            _sizes_send_fwd.begin());
 
+  // Build array that maps ghost indicies to a position in the recv
+  // (forward scatter) and send (reverse scatter) buffers
+  std::vector<std::int32_t> tmp_displs = _displs_recv_fwd;
+  _ghost_pos_recv_fwd.resize(_ghost_owners.size());
+  for (std::size_t i = 0; i < _ghost_owners.size(); ++i)
+    _ghost_pos_recv_fwd[i] = tmp_displs[_ghost_owners[i]]++;
+
   // Add '1' for OpenMPI bug
   if (_sizes_recv_fwd.empty())
     _sizes_recv_fwd.push_back(0);

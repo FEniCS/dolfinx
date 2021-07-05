@@ -246,13 +246,12 @@ public:
       assert(remote_data.size() >= _ghosts.size());
       assert(remote_data.size() % _ghosts.size() == 0);
       const int n = remote_data.size() / _ghosts.size();
-      std::vector<std::int32_t> displs = _displs_recv_fwd;
+      // std::vector<std::int32_t> displs = _displs_recv_fwd;
       for (std::size_t i = 0; i < _ghosts.size(); ++i)
       {
-        const int p = _ghost_owners[i];
-        std::copy_n(std::next(recv_buffer.cbegin(), n * displs[p]), n,
+        const int pos = _ghost_pos_recv_fwd[i];
+        std::copy_n(std::next(recv_buffer.cbegin(), n * pos), n,
                     std::next(remote_data.begin(), n * i));
-        displs[p] += 1;
       }
     }
   }
@@ -331,10 +330,9 @@ public:
     std::vector<std::int32_t> displs(_displs_recv_fwd);
     for (std::size_t i = 0; i < _ghosts.size(); ++i)
     {
-      const int p = _ghost_owners[i];
+      const int pos = _ghost_pos_recv_fwd[i];
       std::copy_n(std::next(remote_data.cbegin(), n * i), n,
-                  std::next(send_buffer.begin(), n * displs[p]));
-      displs[p] += 1;
+                  std::next(send_buffer.begin(), n * pos));
     }
 
     // Send and receive data
@@ -460,6 +458,10 @@ private:
 
   // MPI sizes and displacements for forward (owner -> ghost) scatter
   std::vector<int> _sizes_recv_fwd, _sizes_send_fwd, _displs_recv_fwd;
+
+  // Position in the recv buffer for a forward scatter for the _ghost[i]
+  // entry
+  std::vector<int> _ghost_pos_recv_fwd;
 
   // Local-to-global map for ghost indices
   std::vector<std::int64_t> _ghosts;
