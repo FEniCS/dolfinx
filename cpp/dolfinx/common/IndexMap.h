@@ -466,10 +466,6 @@ private:
   // Local-to-global map for ghost indices
   std::vector<std::int64_t> _ghosts;
 
-  // Owning neighborhood rank (out edge) on '_comm_owner_to_ghost'
-  // communicator for each ghost index
-  std::vector<std::int32_t> _ghost_owners;
-
   // List of owned local indices that are in the halo (ghost) region on
   // other ranks, grouped by rank in the neighbor communicator
   // (destination ranks in forward communicator and source ranks in the
