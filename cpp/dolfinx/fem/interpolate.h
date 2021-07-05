@@ -180,7 +180,7 @@ void interpolate_from_any(Function<T>& u, const Function<T>& v)
     // their number, which is tdim times the number of points
     std::vector<int> nCoords(nPoints.size());
     std::transform(nPoints.cbegin(), nPoints.cend(), nCoords.begin(),
-                   [tdim](const auto& i) { return tdim * i; });
+                   [](const auto& i) { return 3 * i; });
 
     // The destination offsets of the upcoming allgatherv operation
     // are the partial sum of the number of coordinates
@@ -208,61 +208,115 @@ void interpolate_from_any(Function<T>& u, const Function<T>& v)
     dolfinx::geometry::BoundingBoxTree bbt(*v.function_space()->mesh(), tdim);
 
     auto xv = v.function_space()->mesh()->geometry().x();
-    // For each point at which the source function needs to be evaluated
-    for (decltype(globalX.shape(0)) i = 0; i < globalX.shape(0); ++i)
+
+    if (tdim == 3)
     {
-      // Get its coordinates
-      double xp = globalX(i, 0);
-      double yp = globalX(i, 1);
-      double zp = globalX(i, 2);
-
-      // For each cell that might contain that point
-      for (const auto& j :
-           dolfinx::geometry::compute_collisions(bbt, {xp, yp, zp}))
+      // For each point at which the source function needs to be evaluated
+      for (decltype(globalX.shape(0)) i = 0; i < globalX.shape(0); ++i)
       {
-        // Get the vertexes that belong to that cell
-        auto vtx = connectivity.links(j);
+        // Get its coordinates
+        double xp = globalX(i, 0);
+        double yp = globalX(i, 1);
+        double zp = globalX(i, 2);
 
-        auto x1 = xv[3 * vtx[0]];
-        auto y1 = xv[3 * vtx[0] + 1];
-        auto z1 = xv[3 * vtx[0] + 2];
-        auto x2 = xv[3 * vtx[1]];
-        auto y2 = xv[3 * vtx[1] + 1];
-        auto z2 = xv[3 * vtx[1] + 2];
-        auto x3 = xv[3 * vtx[2]];
-        auto y3 = xv[3 * vtx[2] + 1];
-        auto z3 = xv[3 * vtx[2] + 2];
-        auto x4 = xv[3 * vtx[3]];
-        auto y4 = xv[3 * vtx[3] + 1];
-        auto z4 = xv[3 * vtx[3] + 2];
-
-        // We compute the barycentric coordinates of the given point
-        // in the cell at hand
-        xt::xarray<double> A = {{x1 - x4, x2 - x4, x3 - x4},
-                                {y1 - y4, y2 - y4, y3 - y4},
-                                {z1 - z4, z2 - z4, z3 - z4}};
-        xt::xarray<double> b = {xp - x4, yp - y4, zp - z4};
-
-        xt::xarray<double> l = xt::linalg::solve(A, b);
-
-        // The point belongs to the cell only if all its barycentric
-        // coordinates are positive. In this case
-        if (l[0] >= 0 and l[1] >= 0 and l[2] >= 0
-            and 1 - l[0] - l[1] - l[2] >= 0)
+        // For each cell that might contain that point
+        for (const auto& j :
+             dolfinx::geometry::compute_collisions(bbt, {xp, yp, zp}))
         {
-          // Note that the cell can be used for interpolation
-          evaluationCells[i] = j;
-          // Do not look any further
-          break;
+          // Get the vertexes that belong to that cell
+          auto vtx = connectivity.links(j);
+
+          auto x1 = xv[3 * vtx[0]];
+          auto y1 = xv[3 * vtx[0] + 1];
+          auto z1 = xv[3 * vtx[0] + 2];
+          auto x2 = xv[3 * vtx[1]];
+          auto y2 = xv[3 * vtx[1] + 1];
+          auto z2 = xv[3 * vtx[1] + 2];
+          auto x3 = xv[3 * vtx[2]];
+          auto y3 = xv[3 * vtx[2] + 1];
+          auto z3 = xv[3 * vtx[2] + 2];
+          auto x4 = xv[3 * vtx[3]];
+          auto y4 = xv[3 * vtx[3] + 1];
+          auto z4 = xv[3 * vtx[3] + 2];
+
+          // We compute the barycentric coordinates of the given point
+          // in the cell at hand
+          xt::xarray<double> A = {{x1 - x4, x2 - x4, x3 - x4},
+                                  {y1 - y4, y2 - y4, y3 - y4},
+                                  {z1 - z4, z2 - z4, z3 - z4}};
+          xt::xarray<double> b = {xp - x4, yp - y4, zp - z4};
+
+          xt::xarray<double> l = xt::linalg::solve(A, b);
+
+          // The point belongs to the cell only if all its barycentric
+          // coordinates are positive. In this case
+          if (l[0] >= 0 and l[1] >= 0 and l[2] >= 0
+              and 1 - l[0] - l[1] - l[2] >= 0)
+          {
+            // Note that the cell can be used for interpolation
+            evaluationCells[i] = j;
+            // Do not look any further
+            break;
+          }
         }
       }
     }
+    else if (tdim == 2)
+    {
+      // For each point at which the source function needs to be evaluated
+      for (decltype(globalX.shape(0)) i = 0; i < globalX.shape(0); ++i)
+      {
+        // Get its coordinates
+        double xp = globalX(i, 0);
+        double yp = globalX(i, 1);
+
+        // For each cell that might contain that point
+        for (const auto& j :
+             dolfinx::geometry::compute_collisions(bbt, {xp, yp, 0}))
+        {
+          // Get the vertexes that belong to that cell
+          auto vtx = connectivity.links(j);
+
+          auto x1 = xv[3 * vtx[0]];
+          auto y1 = xv[3 * vtx[0] + 1];
+          auto x2 = xv[3 * vtx[1]];
+          auto y2 = xv[3 * vtx[1] + 1];
+          auto x3 = xv[3 * vtx[2]];
+          auto y3 = xv[3 * vtx[2] + 1];
+
+          // We compute the barycentric coordinates of the given point
+          // in the cell at hand
+          const auto detT = (y2 - y3) * (x1 - x3) + (x3 - x2) * (y1 - y3);
+          const auto lambda1
+              = ((y2 - y3) * (xp - x3) + (x3 - x2) * (yp - y3)) / detT;
+          const auto lambda2
+              = ((y3 - y1) * (xp - x3) + (x1 - x3) * (yp - y3)) / detT;
+
+          // The point belongs to the cell only if all its barycentric
+          // coordinates are positive. In this case
+          if (lambda1 >= 0 and lambda2 >= 0 and 1 - lambda1 - lambda2 >= 0)
+          {
+            // Note that the cell can be used for interpolation
+            evaluationCells[i] = j;
+            // Do not look any further
+            break;
+          }
+        }
+      }
+    }
+    else
+    {
+      throw std::runtime_error(
+          "Interpolation not implemented for topological dimension "
+          + std::to_string(tdim));
+    }
+
+    auto value_size = u.function_space()->element()->value_size();
 
     // We now evaluate the interpolating function at all points
     xt::xtensor<T, 2> u_vals(
         xt::shape({globalX.shape(0),
-                   static_cast<decltype(globalX.shape(0))>(
-                       u.function_space()->element()->value_size())}),
+                   static_cast<decltype(globalX.shape(0))>(value_size)}),
         0);
     v.eval(globalX, evaluationCells, u_vals);
 
@@ -283,14 +337,10 @@ void interpolate_from_any(Function<T>& u, const Function<T>& v)
     // Now that each process has all the values, each process can extract
     // the portion that it needs
     std::vector<std::size_t> shape
-        = {x.shape(1), static_cast<decltype(globalX.shape(0))>(
-                           u.function_space()->element()->value_size())};
+        = {x.shape(1), static_cast<decltype(x.shape(0))>(value_size)};
     xt::xarray<T> myU(shape);
-    std::copy_n(finalU.cbegin()
-                    + displacements[mpi_rank] / tdim
-                          * u.function_space()->element()->value_size(),
-                nPoints[mpi_rank] * u.function_space()->element()->value_size(),
-                myU.begin());
+    std::copy_n(finalU.cbegin() + displacements[mpi_rank] / 3 * value_size,
+                nPoints[mpi_rank] * value_size, myU.begin());
 
     // This transposition is a quick and dirty solution and should be avoided
     xt::xarray<T> myU_t = xt::zeros_like(xt::transpose(myU));
