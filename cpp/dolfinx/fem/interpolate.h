@@ -421,7 +421,7 @@ void interpolate(Function<T>& u, const Function<T>& v)
           "Dimension "
           + std::to_string(i) + " of function (" + std::to_string(v_dim)
           + ") does not match dimension " + std::to_string(i)
-          + " of function space(" + std::to_string(element->value_dimension(i))
+          + " of function space (" + std::to_string(element->value_dimension(i))
           + ")");
     }
   }
