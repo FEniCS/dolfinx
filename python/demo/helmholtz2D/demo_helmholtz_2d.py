@@ -47,7 +47,6 @@ u = TrialFunction(V)
 v = TestFunction(V)
 f = Function(V)
 f.interpolate(lambda x: A * k0**2 * np.cos(k0 * x[0]) * np.cos(k0 * x[1]))
-f.x.scatter_forward()
 a = inner(grad(u), grad(v)) * dx - k0**2 * inner(u, v) * dx
 L = inner(f, v) * dx
 
@@ -71,7 +70,6 @@ with XDMFFile(MPI.COMM_WORLD, "plane_wave.xdmf", "w", encoding=XDMFFile.Encoding
 V_exact = FunctionSpace(mesh, ("Lagrange", deg + 3))
 u_exact = Function(V_exact)
 u_exact.interpolate(lambda x: A * np.cos(k0 * x[0]) * np.cos(k0 * x[1]))
-u_exact.x.scatter_forward()
 
 # H1 errors
 diff = uh - u_exact
