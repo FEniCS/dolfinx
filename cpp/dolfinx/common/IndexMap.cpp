@@ -343,7 +343,7 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
         mpi_comm, _dest_ranks.size(), _dest_ranks.data(), MPI_UNWEIGHTED,
         halo_src_ranks.size(), halo_src_ranks.data(), MPI_UNWEIGHTED,
         MPI_INFO_NULL, false, &comm1);
-    _comm_owner_to_ghost = dolfinx::MPI::Comm(comm1, false);
+    _comm_ghost_to_owner = dolfinx::MPI::Comm(comm1, false);
   }
 
   // Map ghost owner rank to the rank on neighborhood communicator
