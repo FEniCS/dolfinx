@@ -29,8 +29,9 @@ std::vector<int> get_ghost_ranks(MPI_Comm comm, std::int32_t local_size,
 
   // NOTE: We do not use std::partial_sum here as it narrows std::int64_t to
   // std::int32_t.
-  // NOTE: Using std::inclusive_scan is possible, but GCC prior to 9.3.0 only
-  // includes the parallel version of this algorithm, requiring e.g. Intel TBB.
+  // NOTE: Using std::inclusive_scan is possible, but GCC prior to 9.3.0
+  // only includes the parallel version of this algorithm, requiring
+  // e.g. Intel TBB.
   std::vector<std::int64_t> all_ranges(mpi_size + 1, 0);
   for (int i = 0; i < mpi_size; ++i)
     all_ranges[i + 1] = all_ranges[i] + local_sizes[i];
@@ -48,19 +49,23 @@ std::vector<int> get_ghost_ranks(MPI_Comm comm, std::int32_t local_size,
 }
 //-----------------------------------------------------------------------------
 
-// FIXME: This functions returns with a special ordering that is not
-// documented. Document properly.
-
+/// @todo This functions returns with a special ordering that is not
+/// documented. Document properly.
+///
 /// Compute (owned) global indices shared with neighbor processes
 ///
 /// @param[in] comm MPI communicator where the neighborhood sources are
-///   the owning ranks of the callers ghosts (comm_ghost_to_owner)
+/// the owning ranks of the callers ghosts (comm_ghost_to_owner)
 /// @param[in] ghosts Global index of ghosts indices on the caller
 /// @param[in] ghost_src_ranks The src rank on @p comm for each ghost on
-///   the caller
+/// the caller
 /// @return  (i) For each neighborhood rank (destination ranks on comm)
-///   a list of my global indices that are ghost on the rank and (ii)
-///   displacement vector for each rank
+/// a list of my (owned) global indices that are ghost on the rank and
+/// (ii) displacement vector for each rank.
+///
+/// Within list of owned global indices, for each rank the order of the
+/// indices are such that the order is the same as the ordering ghosts
+/// on the receiver for a given rank.
 std::tuple<std::vector<std::int64_t>, std::vector<std::int32_t>>
 compute_owned_shared(MPI_Comm comm, const xtl::span<const std::int64_t>& ghosts,
                      const xtl::span<const std::int32_t>& ghost_src_ranks)
@@ -69,7 +74,8 @@ compute_owned_shared(MPI_Comm comm, const xtl::span<const std::int64_t>& ghosts,
 
   // Send global index of my ghost indices to the owning rank
 
-  // src ranks have ghosts, dest ranks hold the index owner
+  // Get src/dest global ranks for the neighbourhood : src ranks have
+  // ghosts, dest ranks hold the index owner
   const auto [src_ranks, dest_ranks] = dolfinx::MPI::neighbors(comm);
 
   // Compute number of ghost indices to send to each owning rank
@@ -77,24 +83,24 @@ compute_owned_shared(MPI_Comm comm, const xtl::span<const std::int64_t>& ghosts,
   for (std::size_t i = 0; i < ghost_src_ranks.size(); ++i)
     out_edges_num[ghost_src_ranks[i]]++;
 
-  // Send number of my ghost indices to each owner, and receive number
-  // of my owned indices that are ghosted on other ranks
+  // Send number of my 'ghost indices' to each owner, and receive number
+  // of my 'owned indices' that are ghosted on other ranks
   std::vector<int> in_edges_num(src_ranks.size());
   MPI_Neighbor_alltoall(out_edges_num.data(), 1, MPI_INT, in_edges_num.data(),
                         1, MPI_INT, comm);
 
   // Prepare communication displacements
-  std::vector<int> send_disp(dest_ranks.size() + 1, 0),
-      recv_disp(src_ranks.size() + 1, 0);
+  std::vector<int> send_disp(dest_ranks.size() + 1, 0);
   std::partial_sum(out_edges_num.begin(), out_edges_num.end(),
                    send_disp.begin() + 1);
+  std::vector<int> recv_disp(src_ranks.size() + 1, 0);
   std::partial_sum(in_edges_num.begin(), in_edges_num.end(),
                    recv_disp.begin() + 1);
 
-  // Pack the ghost indices to send the owning rank
+  // Pack my 'ghost indices' to send the owning rank
   std::vector<std::int64_t> send_indices(send_disp.back());
   {
-    std::vector<int> insert_disp(send_disp);
+    std::vector<int> insert_disp = send_disp;
     for (std::size_t i = 0; i < ghosts.size(); ++i)
     {
       const int owner_rank = ghost_src_ranks[i];
@@ -103,12 +109,12 @@ compute_owned_shared(MPI_Comm comm, const xtl::span<const std::int64_t>& ghosts,
     }
   }
 
-  // A rank in the neighborhood communicator can have no incoming or
-  // outcoming edges. This may cause OpenMPI to crash. Workaround:
+  // Work-around for OpenMPI bug. Some version of OpenMPI crash if
+  // in/out_edges_num array is empty.
   if (in_edges_num.empty())
-    in_edges_num.reserve(1);
+    in_edges_num.resize(1);
   if (out_edges_num.empty())
-    out_edges_num.reserve(1);
+    out_edges_num.resize(1);
 
   // May have repeated shared indices with different processes
   std::vector<std::int64_t> recv_indices(recv_disp.back());
@@ -121,38 +127,6 @@ compute_owned_shared(MPI_Comm comm, const xtl::span<const std::int64_t>& ghosts,
   // indices, and return how many global indices are received from each
   // neighborhood rank
   return {recv_indices, recv_disp};
-}
-//-----------------------------------------------------------------------------
-
-/// Create neighborhood communicators
-/// @param[in] comm Communicator create communicators with neighborhood
-/// topology from
-/// @param[in] halo_src_ranks Ranks that own indices in the halo (ghost
-/// region) of the calling rank
-/// @param[in] halo_dest_ranks Ranks that have indices owned by the
-/// calling process own in their halo (ghost region)
-std::array<MPI_Comm, 2>
-compute_asymmetric_communicators(MPI_Comm comm,
-                                 const xtl::span<const int>& halo_src_ranks,
-                                 const xtl::span<const int>& halo_dest_ranks)
-{
-  std::array comms{MPI_COMM_NULL, MPI_COMM_NULL};
-
-  // Create communicator with edges owner (sources) -> ghost
-  // (destinations)
-  MPI_Dist_graph_create_adjacent(
-      comm, halo_src_ranks.size(), halo_src_ranks.data(), MPI_UNWEIGHTED,
-      halo_dest_ranks.size(), halo_dest_ranks.data(), MPI_UNWEIGHTED,
-      MPI_INFO_NULL, true, &comms[0]);
-
-  // Create communicator with edges ghost (sources) -> owner
-  // (destinations)
-  MPI_Dist_graph_create_adjacent(
-      comm, halo_dest_ranks.size(), halo_dest_ranks.data(), MPI_UNWEIGHTED,
-      halo_src_ranks.size(), halo_src_ranks.data(), MPI_UNWEIGHTED,
-      MPI_INFO_NULL, true, &comms[1]);
-
-  return comms;
 }
 //-----------------------------------------------------------------------------
 } // namespace
@@ -304,13 +278,12 @@ IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size)
   // Create communicators with empty neighborhoods
   MPI_Comm comm0, comm1;
   std::vector<int> ranks(0);
-  std::vector<int> weights(ranks.size(), 1);
   MPI_Dist_graph_create_adjacent(comm, ranks.size(), ranks.data(),
-                                 weights.data(), ranks.size(), ranks.data(),
-                                 weights.data(), MPI_INFO_NULL, true, &comm0);
+                                 MPI_UNWEIGHTED, ranks.size(), ranks.data(),
+                                 MPI_UNWEIGHTED, MPI_INFO_NULL, true, &comm0);
   MPI_Dist_graph_create_adjacent(comm, ranks.size(), ranks.data(),
-                                 weights.data(), ranks.size(), ranks.data(),
-                                 weights.data(), MPI_INFO_NULL, true, &comm1);
+                                 MPI_UNWEIGHTED, ranks.size(), ranks.data(),
+                                 MPI_UNWEIGHTED, MPI_INFO_NULL, true, &comm1);
   _comm_owner_to_ghost = dolfinx::MPI::Comm(comm0, false);
   _comm_ghost_to_owner = dolfinx::MPI::Comm(comm1, false);
   _shared_indices = std::make_unique<graph::AdjacencyList<std::int32_t>>(0);
@@ -347,6 +320,32 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
       std::unique(halo_src_ranks.begin(), halo_src_ranks.end()),
       halo_src_ranks.end());
 
+  // Create communicators with directed edges: (0) owner -> ghost,
+  // (1) ghost -> owner
+  {
+    MPI_Comm comm0;
+    MPI_Dist_graph_create_adjacent(mpi_comm, halo_src_ranks.size(),
+                                   halo_src_ranks.data(), MPI_UNWEIGHTED,
+                                   dest_ranks.size(), dest_ranks.data(),
+                                   MPI_UNWEIGHTED, MPI_INFO_NULL, true, &comm0);
+    _comm_owner_to_ghost = dolfinx::MPI::Comm(comm0, false);
+
+    // Update src/dest rank indices in case
+    // MPI_Dist_graph_create_adjacent has re-ordered for efficiency
+    std::vector<int> _dest_ranks(dest_ranks.size());
+    MPI_Dist_graph_neighbors(_comm_owner_to_ghost.comm(), halo_src_ranks.size(),
+                             halo_src_ranks.data(), MPI_UNWEIGHTED,
+                             _dest_ranks.size(), _dest_ranks.data(),
+                             MPI_UNWEIGHTED);
+
+    MPI_Comm comm1;
+    MPI_Dist_graph_create_adjacent(
+        mpi_comm, _dest_ranks.size(), _dest_ranks.data(), MPI_UNWEIGHTED,
+        halo_src_ranks.size(), halo_src_ranks.data(), MPI_UNWEIGHTED,
+        MPI_INFO_NULL, false, &comm1);
+    _comm_owner_to_ghost = dolfinx::MPI::Comm(comm1, false);
+  }
+
   // Map ghost owner rank to the rank on neighborhood communicator
   int myrank = -1;
   MPI_Comm_rank(mpi_comm, &myrank);
@@ -370,16 +369,9 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
     _ghost_owners[j] = p_neighbor;
   }
 
-  // Create communicators with directional edges:
-  // (0) owner -> ghost, (1) ghost -> owner
-  std::array comm_array
-      = compute_asymmetric_communicators(mpi_comm, halo_src_ranks, dest_ranks);
-  _comm_owner_to_ghost = dolfinx::MPI::Comm(comm_array[0], false);
-  _comm_ghost_to_owner = dolfinx::MPI::Comm(comm_array[1], false);
-
   // Compute owned indices which are ghosted by other ranks, and how
   // many of my indices each neighbor ghosts
-  const auto [shared_ind, shared_disp] = compute_owned_shared(
+  auto [shared_ind, shared_disp] = compute_owned_shared(
       _comm_ghost_to_owner.comm(), _ghosts, _ghost_owners);
 
   // Wait for MPI_Iexscan to complete (get offset)
@@ -389,9 +381,9 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
   // Convert owned global indices that are ghosts on another rank to
   // local indexing
   std::vector<std::int32_t> local_shared_ind(shared_ind.size());
-  std::transform(shared_ind.begin(), shared_ind.end(), local_shared_ind.begin(),
-                 [offset](std::int64_t x) -> std::int32_t
-                 { return x - offset; });
+  std::transform(
+      shared_ind.cbegin(), shared_ind.cend(), local_shared_ind.begin(),
+      [offset](std::int64_t x) -> std::int32_t { return x - offset; });
 
   _shared_indices = std::make_unique<graph::AdjacencyList<std::int32_t>>(
       std::move(local_shared_ind), std::move(shared_disp));
