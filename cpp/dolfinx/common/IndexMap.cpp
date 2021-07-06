@@ -23,11 +23,11 @@ compute_ghost_owners(const std::vector<int>& ghost_pos_recv_fwd,
                      const std::vector<int>& displs_recv_fwd)
 {
   std::vector<int> owners;
-  std::transform(ghost_pos_recv_fwd.cbegin(), ghost_pos_recv_fwd.cbegin(),
+  std::transform(ghost_pos_recv_fwd.cbegin(), ghost_pos_recv_fwd.cend(),
                  std::back_inserter(owners),
                  [&displs_recv_fwd](auto ghost_pos)
                  {
-                   const auto it
+                   auto it
                        = std::upper_bound(displs_recv_fwd.cbegin(),
                                           displs_recv_fwd.cend(), ghost_pos);
                    return std::distance(displs_recv_fwd.cbegin(), it) - 1;
@@ -64,12 +64,6 @@ std::vector<int> get_ghost_ranks(MPI_Comm comm, std::int32_t local_size,
                                               all_ranges.cend(), ghost);
                    return std::distance(all_ranges.cbegin(), it) - 1;
                  });
-
-  // for (std::size_t i = 0; i < ghosts.size(); ++i)
-  // {
-  //   auto it = std::upper_bound(all_ranges.begin(), all_ranges.end(), ghosts[i]);
-  //   ghost_ranks[i] = std::distance(all_ranges.begin(), it) - 1;
-  // }
 
   return ghost_ranks;
 }
