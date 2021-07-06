@@ -40,15 +40,28 @@ public:
   }
 
   /// Copy constructor
-  Vector(const Vector& x) = default;
+  Vector(const Vector& x)
+      : _map(x._map), _bs(x._bs), _request(MPI_REQUEST_NULL),
+        _buffer_send_fwd(x._buffer_send_fwd),
+        _buffer_recv_fwd(x._buffer_recv_fwd), _x(x._x)
+  {
+    MPI_Type_dup(x._datatype, &_datatype);
+  };
 
   /// Move constructor
-  Vector(Vector&& x) noexcept = default;
+  Vector(Vector&& x)
+      : _map(std::move(x._map)), _bs(std::move(x._bs)),
+        _request(std::move(x._request)),
+        _buffer_send_fwd(std::move(x._buffer_send_fwd)),
+        _buffer_recv_fwd(std::move(x._buffer_recv_fwd)), _x(std::move(x._x))
+  {
+    MPI_Type_dup(x._datatype, &_datatype);
+  };
 
   /// Destructor
   ~Vector()
   {
-    if (_datatype and _datatype != MPI::mpi_type<T>())
+    if (_bs != 1)
       MPI_Type_free(&_datatype);
   }
 
@@ -214,9 +227,7 @@ T inner_product(const Vector<T, Allocator>& a, const Vector<T, Allocator>& b)
 
   const T local = std::transform_reduce(
       x_a.begin(), x_a.begin() + local_size, x_b.begin(), static_cast<T>(0),
-      std::plus<T>(),
-      [](T a, T b) -> T
-      {
+      std::plus<T>(), [](T a, T b) -> T {
         if constexpr (std::is_same<T, std::complex<double>>::value
                       or std::is_same<T, std::complex<float>>::value)
           return std::conj(a) * b;
