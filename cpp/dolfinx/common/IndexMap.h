@@ -246,7 +246,6 @@ public:
       assert(remote_data.size() >= _ghosts.size());
       assert(remote_data.size() % _ghosts.size() == 0);
       const int n = remote_data.size() / _ghosts.size();
-      // std::vector<std::int32_t> displs = _displs_recv_fwd;
       for (std::size_t i = 0; i < _ghosts.size(); ++i)
       {
         const int pos = _ghost_pos_recv_fwd[i];
@@ -465,10 +464,6 @@ private:
 
   // Local-to-global map for ghost indices
   std::vector<std::int64_t> _ghosts;
-
-  // Owning neighborhood rank (out edge) on '_comm_owner_to_ghost'
-  // communicator for each ghost index
-  std::vector<std::int32_t> _ghost_owners;
 
   // List of owned local indices that are in the halo (ghost) region on
   // other ranks, grouped by rank in the neighbor communicator
