@@ -53,23 +53,17 @@ L = inner(f, v) * dx
 # Compute solution
 uh = fem.Function(V)
 uh.name = "u"
-problem = fem.LinearProblem(a, L, u=uh)
+problem = fem.LinearProblem(a, L, u=uh, petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
 problem.solve()
 
 # Save solution in XDMF format (to be viewed in Paraview, for example)
-with XDMFFile(MPI.COMM_WORLD, "plane_wave.xdmf", "w",
-              encoding=XDMFFile.Encoding.HDF5) as file:
+with XDMFFile(MPI.COMM_WORLD, "plane_wave.xdmf", "w", encoding=XDMFFile.Encoding.HDF5) as file:
     file.write_mesh(mesh)
     file.write_function(uh)
 
 # Calculate L2 and H1 errors of FEM solution and best approximation.
 # This demonstrates the error bounds given in Ihlenburg. Pollution errors
 # are evident for high wavenumbers. ::
-
-
-# "Exact" solution expression
-def solution(values, x):
-    values[:, 0] = A * np.cos(k0 * x[:, 0]) * np.cos(k0 * x[:, 1])
 
 
 # Function space for exact solution - need it to be higher than deg
