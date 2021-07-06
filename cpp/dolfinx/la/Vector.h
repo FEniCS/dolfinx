@@ -52,7 +52,7 @@ public:
   Vector(Vector&& x)
       : _map(std::move(x._map)), _bs(std::move(x._bs)),
         _datatype(std::exchange(x._datatype, MPI_DATATYPE_NULL)),
-        _request(std::exchange(x._datatype, MPI_REQUEST_NULL)),
+        _request(std::exchange(x._request, MPI_REQUEST_NULL)),
         _buffer_send_fwd(std::move(x._buffer_send_fwd)),
         _buffer_recv_fwd(std::move(x._buffer_recv_fwd)), _x(std::move(x._x))
   {
