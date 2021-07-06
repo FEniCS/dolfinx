@@ -151,7 +151,7 @@ public:
   /// @return List of indices that are ghosted on other processes
   const graph::AdjacencyList<std::int32_t>& shared_indices() const noexcept;
 
-  /// Owner rank (on global communicator) of each ghost entry
+  /// Owner rank on global communicator of each ghost entry
   std::vector<int> ghost_owner_rank() const;
 
   /// @todo Aim to remove this function? If it's kept, should it work
@@ -246,13 +246,12 @@ public:
       assert(remote_data.size() >= _ghosts.size());
       assert(remote_data.size() % _ghosts.size() == 0);
       const int n = remote_data.size() / _ghosts.size();
-      std::vector<std::int32_t> displs = _displs_recv_fwd;
+      // std::vector<std::int32_t> displs = _displs_recv_fwd;
       for (std::size_t i = 0; i < _ghosts.size(); ++i)
       {
-        const int p = _ghost_owners[i];
-        std::copy_n(std::next(recv_buffer.cbegin(), n * displs[p]), n,
+        const int pos = _ghost_pos_recv_fwd[i];
+        std::copy_n(std::next(recv_buffer.cbegin(), n * pos), n,
                     std::next(remote_data.begin(), n * i));
-        displs[p] += 1;
       }
     }
   }
@@ -331,10 +330,9 @@ public:
     std::vector<std::int32_t> displs(_displs_recv_fwd);
     for (std::size_t i = 0; i < _ghosts.size(); ++i)
     {
-      const int p = _ghost_owners[i];
+      const int pos = _ghost_pos_recv_fwd[i];
       std::copy_n(std::next(remote_data.cbegin(), n * i), n,
-                  std::next(send_buffer.begin(), n * displs[p]));
-      displs[p] += 1;
+                  std::next(send_buffer.begin(), n * pos));
     }
 
     // Send and receive data
@@ -461,12 +459,12 @@ private:
   // MPI sizes and displacements for forward (owner -> ghost) scatter
   std::vector<int> _sizes_recv_fwd, _sizes_send_fwd, _displs_recv_fwd;
 
+  // Position in the recv buffer for a forward scatter for the _ghost[i]
+  // entry
+  std::vector<int> _ghost_pos_recv_fwd;
+
   // Local-to-global map for ghost indices
   std::vector<std::int64_t> _ghosts;
-
-  // Owning neighborhood rank (out edge) on '_comm_owner_to_ghost'
-  // communicator for each ghost index
-  std::vector<std::int32_t> _ghost_owners;
 
   // List of owned local indices that are in the halo (ghost) region on
   // other ranks, grouped by rank in the neighbor communicator
