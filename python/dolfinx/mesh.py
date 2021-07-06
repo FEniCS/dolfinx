@@ -102,7 +102,8 @@ def refine(mesh, cell_markers=None, redistribute=True):
     else:
         mesh_refined = cpp.refinement.refine(mesh, cell_markers, redistribute)
 
-    domain = mesh._ufl_domain
+    coordinate_element = mesh._ufl_domain.ufl_coordinate_element()
+    domain = ufl.Mesh(coordinate_element)
     domain._ufl_cargo = mesh_refined
     mesh_refined._ufl_domain = domain
     return mesh_refined
