@@ -151,7 +151,7 @@ public:
   /// @return List of indices that are ghosted on other processes
   const graph::AdjacencyList<std::int32_t>& shared_indices() const noexcept;
 
-  /// Owner rank (on global communicator) of each ghost entry
+  /// Owner rank on global communicator of each ghost entry
   std::vector<int> ghost_owner_rank() const;
 
   /// @todo Aim to remove this function? If it's kept, should it work
@@ -246,6 +246,7 @@ public:
       assert(remote_data.size() >= _ghosts.size());
       assert(remote_data.size() % _ghosts.size() == 0);
       const int n = remote_data.size() / _ghosts.size();
+      // std::vector<std::int32_t> displs = _displs_recv_fwd;
       for (std::size_t i = 0; i < _ghosts.size(); ++i)
       {
         const int pos = _ghost_pos_recv_fwd[i];

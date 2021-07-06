@@ -17,6 +17,26 @@ namespace
 {
 //-----------------------------------------------------------------------------
 
+/// Compute the owner on the neighbourgood communicator of ghost indices
+std::vector<int>
+compute_ghost_owners(const std::vector<std::int64_t>& ghosts,
+                     const std::vector<int>& ghost_pos_recv_fwd,
+                     const std::vector<int>& displs_recv_fwd)
+{
+  std::vector<int> owners(ghosts.size());
+  for (std::size_t i = 0; i < ghosts.size(); ++i)
+  {
+    const int pos = ghost_pos_recv_fwd[i];
+    const auto it = std::upper_bound(displs_recv_fwd.cbegin(),
+                                     displs_recv_fwd.cend(), pos);
+    const int p_neighbour = std::distance(displs_recv_fwd.cbegin(), it) - 1;
+    owners[i] = p_neighbour;
+  }
+
+  return owners;
+}
+//----------------------------------------------------------------------------
+
 /// Compute the owning rank of ghost indices
 std::vector<int> get_ghost_ranks(MPI_Comm comm, std::int32_t local_size,
                                  const xtl::span<const std::int64_t>& ghosts)
@@ -354,7 +374,7 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
   // Map ghost owner rank to the rank on neighborhood communicator
   int myrank = -1;
   MPI_Comm_rank(mpi_comm, &myrank);
-  std::vector<int> ghost_owners(ghosts.size());
+  std::vector<std::int32_t> ghost_owners(ghosts.size());
   for (std::size_t j = 0; j < _ghosts.size(); ++j)
   {
     // Get rank of owner on the neighborhood communicator (rank of out
@@ -504,16 +524,17 @@ std::vector<std::int64_t> IndexMap::global_indices() const
   const std::int32_t num_ghosts = _ghosts.size();
   const std::int64_t global_offset = _local_range[0];
   std::vector<std::int64_t> global(local_size + num_ghosts);
-  std::iota(global.begin(), global.begin() + local_size, global_offset);
-  for (std::size_t i = 0; i < _ghosts.size(); ++i)
-    global[local_size + i] = _ghosts[i];
-
+  std::iota(global.begin(), std::next(global.begin(), local_size),
+            global_offset);
+  std::copy(_ghosts.cbegin(), _ghosts.cend(),
+            std::next(global.begin(), local_size));
   return global;
 }
 //-----------------------------------------------------------------------------
 const graph::AdjacencyList<std::int32_t>&
 IndexMap::shared_indices() const noexcept
 {
+  assert(_shared_indices);
   return *_shared_indices;
 }
 //-----------------------------------------------------------------------------
@@ -527,15 +548,12 @@ std::vector<int> IndexMap::ghost_owner_rank() const
                            neighbors_in.data(), MPI_UNWEIGHTED, outdegree,
                            neighbors_out.data(), MPI_UNWEIGHTED);
 
-  std::vector<int> owners(_ghosts.size());
-  for (std::size_t i = 0; i < _ghosts.size(); ++i)
-  {
-    const int pos = _ghost_pos_recv_fwd[i];
-    const auto it = std::upper_bound(_displs_recv_fwd.cbegin(),
-                                     _displs_recv_fwd.cend(), pos);
-    const int p_neighbour = std::distance(_displs_recv_fwd.cbegin(), it) - 1;
-    owners[i] = neighbors_in[p_neighbour];
-  }
+  // Compute index owner on neighbourhood comm
+  const std::vector<int> ghost_owners
+      = compute_ghost_owners(_ghosts, _ghost_pos_recv_fwd, _displs_recv_fwd);
+  std::vector<std::int32_t> owners(ghost_owners.size());
+  for (std::size_t i = 0; i < owners.size(); ++i)
+    owners[i] = neighbors_in[ghost_owners[i]];
 
   return owners;
 }
@@ -570,7 +588,7 @@ std::map<std::int32_t, std::set<int>> IndexMap::compute_shared_indices() const
   for (std::int32_t p = 0; p < _shared_indices->num_nodes(); ++p)
   {
     const int rank_global = neighbors_out[p];
-    for (const std::int32_t& idx : _shared_indices->links(p))
+    for (std::int32_t idx : _shared_indices->links(p))
       shared_indices[idx].insert(rank_global);
   }
 
@@ -622,9 +640,9 @@ std::map<std::int32_t, std::set<int>> IndexMap::compute_shared_indices() const
 
   // Work-around for OpenMPI
   if (send_sizes.empty())
-    send_sizes.push_back(0);
+    send_sizes.resize(1);
   if (recv_sizes.empty())
-    recv_sizes.push_back(0);
+    recv_sizes.resize(1);
 
   // Start data exchange
   MPI_Request request;
@@ -635,9 +653,9 @@ std::map<std::int32_t, std::set<int>> IndexMap::compute_shared_indices() const
 
   // For my ghosts, add owning rank to list of sharing ranks
   const std::int32_t size_local = this->size_local();
-  const std::vector<int> ghost_owner_rank = this->ghost_owner_rank();
+  const std::vector<int> ghost_owners = this->ghost_owner_rank();
   for (std::size_t i = 0; i < _ghosts.size(); ++i)
-    shared_indices[size_local + i].insert(neighbors_in[ghost_owner_rank[i]]);
+    shared_indices[size_local + i].insert(ghost_owners[i]);
 
   // Build map from global index to local index for ghosts
   std::unordered_map<std::int64_t, std::int32_t> ghosts;
