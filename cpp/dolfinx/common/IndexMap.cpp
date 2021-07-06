@@ -375,24 +375,17 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
   int myrank = -1;
   MPI_Comm_rank(mpi_comm, &myrank);
   std::vector<std::int32_t> ghost_owners(ghosts.size());
-  for (std::size_t j = 0; j < _ghosts.size(); ++j)
-  {
-    // Get rank of owner on the neighborhood communicator (rank of out
-    // edge on _comm_owner_to_ghost)
-    const auto it
-        = std::find(halo_src_ranks.begin(), halo_src_ranks.end(), src_ranks[j]);
-    assert(it != halo_src_ranks.end());
-    const int p_neighbor = std::distance(halo_src_ranks.begin(), it);
-    if (src_ranks[j] == myrank)
-    {
-      throw std::runtime_error("IndexMap Error: Ghost in local range. Rank = "
-                               + std::to_string(myrank)
-                               + ", ghost = " + std::to_string(ghosts[j]));
-    }
-
-    // Store owner neighborhood rank for each ghost
-    ghost_owners[j] = p_neighbor;
-  }
+  std::transform(src_ranks.cbegin(), src_ranks.cend(), ghost_owners.begin(),
+                 [&halo_src_ranks, myrank](auto src)
+                 {
+                   // Get rank of owner on the neighborhood communicator
+                   // (rank of out edge on _comm_owner_to_ghost)
+                   assert(src != myrank);
+                   auto it = std::find(halo_src_ranks.cbegin(),
+                                       halo_src_ranks.cend(), src);
+                   assert(it != halo_src_ranks.end());
+                   return std::distance(halo_src_ranks.cbegin(), it);
+                 });
 
   // Compute owned indices which are ghosted by other ranks, and how
   // many of my indices each neighbor ghosts
