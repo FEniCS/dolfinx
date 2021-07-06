@@ -68,15 +68,16 @@ Vec la::create_ghosted_vector(const common::IndexMap& map, int bs,
   const std::int64_t size_global = bs * map.size_global();
   const std::vector<PetscInt> ghosts(map.ghosts().begin(), map.ghosts().end());
   Vec vec;
-  VecCreateGhostBlockWithArray(map.comm(), bs, size_local, size_global,
-                               ghosts.size(), ghosts.data(), x.data(), &vec);
+  VecCreateGhostBlockWithArray(map.comm(common::IndexMap::Direction::forward),
+                               bs, size_local, size_global, ghosts.size(),
+                               ghosts.data(), x.data(), &vec);
   return vec;
 }
 //-----------------------------------------------------------------------------
 Vec la::create_petsc_vector(const dolfinx::common::IndexMap& map, int bs)
 {
-  return la::create_petsc_vector(map.comm(), map.local_range(), map.ghosts(),
-                                 bs);
+  return la::create_petsc_vector(map.comm(common::IndexMap::Direction::forward),
+                                 map.local_range(), map.ghosts(), bs);
 }
 //-----------------------------------------------------------------------------
 Vec la::create_petsc_vector(MPI_Comm comm, std::array<std::int64_t, 2> range,

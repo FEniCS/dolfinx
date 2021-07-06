@@ -11,8 +11,8 @@
 namespace dolfinx::math
 {
 
-/// Kahan’s method to compute x = ad − bc with fused multiply-adds.
-/// The absolute error is bounded by 1.5 ulps, units of least precision.
+/// Kahan’s method to compute x = ad − bc with fused multiply-adds. The
+/// absolute error is bounded by 1.5 ulps, units of least precision.
 template <typename T>
 inline T difference_of_products(T a, T b, T c, T d) noexcept
 {
@@ -63,7 +63,7 @@ template <typename U, typename V>
 void inv(const U& A, V& B)
 {
   using value_type = typename U::value_type;
-  const int nrows = A.shape(0);
+  const std::size_t nrows = A.shape(0);
   switch (nrows)
   {
   case 1:

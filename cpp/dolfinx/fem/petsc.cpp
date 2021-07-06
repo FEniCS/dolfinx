@@ -243,8 +243,9 @@ Vec fem::create_vector_block(
                    dest_ranks.end());
 
   // Create map for combined problem, and create vector
-  common::IndexMap index_map(maps[0].first.get().comm(), local_size, dest_ranks,
-                             ghosts, ghost_owners);
+  common::IndexMap index_map(
+      maps[0].first.get().comm(common::IndexMap::Direction::forward),
+      local_size, dest_ranks, ghosts, ghost_owners);
 
   return la::create_petsc_vector(index_map, 1);
 }
