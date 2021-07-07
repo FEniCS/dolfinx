@@ -93,16 +93,7 @@ fem::DofMap build_collapsed_dofmap(MPI_Comm comm, const DofMap& dofmap_view,
 
   // Send new global indices for owned dofs to non-owning process, and
   // receive new global indices from owner
-
-    // // Pack send buffer
-  // const graph::AdjacencyList<std::int32_t>& scatter_fwd_indices
-  //     = dofmap_view.index_map->scatter_fwd_indices();
-  // const std::vector<std::int32_t>& indices = scatter_fwd_indices.array();
-  // std::vector<std::int64_t> send_buffer(scatter_fwd_indices.offsets().back());
-  // for (std::size_t i = 0; i < scatter_fwd_indices.array().size(); ++i)
-  //   send_buffer[i] = global_index[indices[i]];
-
-std::vector<std::int64_t> global_index_remote(
+  std::vector<std::int64_t> global_index_remote(
       dofmap_view.index_map->num_ghosts());
   dofmap_view.index_map->scatter_fwd(
       xtl::span<const std::int64_t>(global_index),

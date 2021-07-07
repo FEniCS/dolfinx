@@ -201,19 +201,8 @@ public:
     int n;
     MPI_Type_size(data_type, &n);
     n /= sizeof(T);
-    // if (static_cast<int>(local_data.size()) != n * size_local())
-    //   throw std::runtime_error("Inconsistent data size.");
     if (static_cast<int>(send_buffer.size()) < n * displs_send_fwd.back())
       throw std::runtime_error("Send buffer is too small.");
-
-    // Copy data into send buffer
-    // send_buffer.resize(n * displs_send_fwd.back());
-    // const std::vector<std::int32_t>& indices = _shared_indices->array();
-    // for (std::size_t i = 0; i < indices.size(); ++i)
-    // {
-    //   std::copy_n(std::next(local_data.cbegin(), n * indices[i]), n,
-    //               std::next(send_buffer.begin(), n * i));
-    // }
 
     // Start send/receive
     recv_buffer.resize(n * _displs_recv_fwd.back());
@@ -252,7 +241,6 @@ public:
       assert(remote_data.size() >= _ghosts.size());
       assert(remote_data.size() % _ghosts.size() == 0);
       const int n = remote_data.size() / _ghosts.size();
-      // std::vector<std::int32_t> displs = _displs_recv_fwd;
       for (std::size_t i = 0; i < _ghosts.size(); ++i)
       {
         const int pos = _ghost_pos_recv_fwd[i];
