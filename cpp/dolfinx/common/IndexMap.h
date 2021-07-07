@@ -143,7 +143,6 @@ public:
   ///   this process, including ghosts
   std::vector<std::int64_t> global_indices() const;
 
-  /// @todo Reconsider name
   /// Local (owned) indices shared with neighbor processes, i.e. are
   /// ghosts on other processes, grouped by sharing (neighbor)
   /// process(destination ranks in forward communicator and source ranks in the
@@ -151,14 +150,6 @@ public:
   /// @return List of indices that are ghosted on other processes
   const graph::AdjacencyList<std::int32_t>&
   scatter_fwd_indices() const noexcept;
-
-  /// @todo Reconsider name
-  /// Local (owned) indices shared with neighbor processes, i.e. are
-  /// ghosts on other processes, grouped by sharing (neighbor)
-  /// process(destination ranks in forward communicator and source ranks in the
-  /// reverse communicator)
-  /// @return List of indices that are ghosted on other processes
-  const graph::AdjacencyList<std::int32_t>& shared_indices() const noexcept;
 
   /// Owner rank on global communicator of each ghost entry
   std::vector<int> ghost_owner_rank() const;
