@@ -98,8 +98,21 @@ public:
     assert(_map);
     const std::int32_t local_size = _bs * _map->size_local();
     xtl::span xremote(_x.data() + local_size, _map->num_ghosts() * _bs);
-    _map->scatter_fwd_end(xremote, _request,
-                          xtl::span<const T>(_buffer_recv_fwd));
+    _map->scatter_fwd_end(_request);
+
+    // Copy received data into ghost positions
+    const std::vector<std::int32_t>& scatter_fwd_ghost_pos
+        = _map->scatter_fwd_ghost_positions();
+
+    // assert(xremote.size() >= _ghosts.size());
+    // assert(xremote.size() % _ghosts.size() == 0);
+    // const int n = xremote.size() / _ghosts.size();
+    for (std::size_t i = 0; i < _map->num_ghosts(); ++i)
+    {
+      const int pos = scatter_fwd_ghost_pos[i];
+      std::copy_n(std::next(_buffer_recv_fwd.cbegin(), _bs * pos), _bs,
+                  std::next(xremote.begin(), _bs * i));
+    }
   }
 
   /// Scatter local data to ghost positions on other ranks

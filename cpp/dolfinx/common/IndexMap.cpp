@@ -531,6 +531,12 @@ IndexMap::scatter_fwd_indices() const noexcept
   return *_shared_indices;
 }
 //-----------------------------------------------------------------------------
+const std::vector<std::int32_t>&
+IndexMap::scatter_fwd_ghost_positions() const noexcept
+{
+  return _ghost_pos_recv_fwd;
+}
+//-----------------------------------------------------------------------------
 std::vector<int> IndexMap::ghost_owner_rank() const
 {
   int indegree(-1), outdegree(-2), weighted(-1);
