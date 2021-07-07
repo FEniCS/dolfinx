@@ -76,10 +76,19 @@ public:
   void scatter_fwd_begin()
   {
     assert(_map);
-    const std::int32_t local_size = _bs * _map->size_local();
-    xtl::span<const T> xlocal(_x.data(), local_size);
-    _map->scatter_fwd_begin(xlocal, _datatype, _request, _buffer_send_fwd,
-                            _buffer_recv_fwd);
+
+    // Pack send buffer
+    const std::vector<std::int32_t>& indices
+        = _map->scatter_fwd_indices().array();
+    _buffer_send_fwd.resize(_bs * indices.size());
+    for (std::size_t i = 0; i < indices.size(); ++i)
+    {
+      std::copy_n(std::next(_x.cbegin(), _bs * indices[i]), _bs,
+                  std::next(_buffer_send_fwd.begin(), _bs * i));
+    }
+
+    _map->scatter_fwd_begin(xtl::span<const T>(_buffer_send_fwd), _datatype,
+                            _request, _buffer_recv_fwd);
   }
 
   /// End scatter of local data from owner to ghosts on other ranks
@@ -227,7 +236,9 @@ T inner_product(const Vector<T, Allocator>& a, const Vector<T, Allocator>& b)
 
   const T local = std::transform_reduce(
       x_a.begin(), x_a.begin() + local_size, x_b.begin(), static_cast<T>(0),
-      std::plus<T>(), [](T a, T b) -> T {
+      std::plus<T>(),
+      [](T a, T b) -> T
+      {
         if constexpr (std::is_same<T, std::complex<double>>::value
                       or std::is_same<T, std::complex<float>>::value)
           return std::conj(a) * b;

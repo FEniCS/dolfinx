@@ -525,9 +525,14 @@ std::vector<std::int64_t> IndexMap::global_indices() const
 }
 //-----------------------------------------------------------------------------
 const graph::AdjacencyList<std::int32_t>&
+IndexMap::scatter_fwd_indices() const noexcept
+{
+  return *_shared_indices;
+}
+//-----------------------------------------------------------------------------
+const graph::AdjacencyList<std::int32_t>&
 IndexMap::shared_indices() const noexcept
 {
-  assert(_shared_indices);
   return *_shared_indices;
 }
 //-----------------------------------------------------------------------------

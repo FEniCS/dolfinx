@@ -149,6 +149,15 @@ public:
   /// process(destination ranks in forward communicator and source ranks in the
   /// reverse communicator)
   /// @return List of indices that are ghosted on other processes
+  const graph::AdjacencyList<std::int32_t>&
+  scatter_fwd_indices() const noexcept;
+
+  /// @todo Reconsider name
+  /// Local (owned) indices shared with neighbor processes, i.e. are
+  /// ghosts on other processes, grouped by sharing (neighbor)
+  /// process(destination ranks in forward communicator and source ranks in the
+  /// reverse communicator)
+  /// @return List of indices that are ghosted on other processes
   const graph::AdjacencyList<std::int32_t>& shared_indices() const noexcept;
 
   /// Owner rank on global communicator of each ghost entry
@@ -166,24 +175,19 @@ public:
   /// that have the index as a ghost. The non-blocking communication is
   /// completed by calling IndexMap::scatter_fwd_end.
   ///
-  /// @param[in] local_data Local data associated with each owned local
-  /// index to be sent to process where the data is ghosted. Size must
-  /// be `n * size_local()`, where `n` is the block size of the data to
-  /// send.
+  /// @param[in] send_buffer Local data associated with each owned local
+  /// index to be sent to process where the data is ghosted. It must
+  /// not be changed until after a call to IndexMap::scatter_fwd_end.
   /// @param data_type The MPI data type. To send data with a block size
   /// use `MPI_Type_contiguous` with size `n`
   /// @param request The MPI request handle for tracking the status of
   /// the send
-  /// @param send_buffer A buffer used to pack the send data. It must
-  /// not be changed until after a call to IndexMap::scatter_fwd_end. It
-  /// will be resized as required.
   /// @param recv_buffer  A buffer used for the received data. It must
   /// not be changed until after a call to IndexMap::scatter_fwd_end. It
   /// will be resized as required.
   template <typename T>
-  void scatter_fwd_begin(const xtl::span<const T>& local_data,
+  void scatter_fwd_begin(const xtl::span<const T>& send_buffer,
                          MPI_Datatype& data_type, MPI_Request& request,
-                         std::vector<T>& send_buffer,
                          std::vector<T>& recv_buffer) const
   {
     // Send displacement
@@ -197,17 +201,19 @@ public:
     int n;
     MPI_Type_size(data_type, &n);
     n /= sizeof(T);
-    if (static_cast<int>(local_data.size()) != n * size_local())
-      throw std::runtime_error("Inconsistent data size.");
+    // if (static_cast<int>(local_data.size()) != n * size_local())
+    //   throw std::runtime_error("Inconsistent data size.");
+    if (static_cast<int>(send_buffer.size()) < n * displs_send_fwd.back())
+      throw std::runtime_error("Send buffer is too small.");
 
     // Copy data into send buffer
-    send_buffer.resize(n * displs_send_fwd.back());
-    const std::vector<std::int32_t>& indices = _shared_indices->array();
-    for (std::size_t i = 0; i < indices.size(); ++i)
-    {
-      std::copy_n(std::next(local_data.cbegin(), n * indices[i]), n,
-                  std::next(send_buffer.begin(), n * i));
-    }
+    // send_buffer.resize(n * displs_send_fwd.back());
+    // const std::vector<std::int32_t>& indices = _shared_indices->array();
+    // for (std::size_t i = 0; i < indices.size(); ++i)
+    // {
+    //   std::copy_n(std::next(local_data.cbegin(), n * indices[i]), n,
+    //               std::next(send_buffer.begin(), n * i));
+    // }
 
     // Start send/receive
     recv_buffer.resize(n * _displs_recv_fwd.back());
@@ -279,9 +285,19 @@ public:
       MPI_Type_commit(&data_type);
     }
 
+    const std::vector<int32_t>& displs_send_fwd = _shared_indices->offsets();
+    const std::vector<std::int32_t>& indices = _shared_indices->array();
+    std::vector<T> send_buffer(n * displs_send_fwd.back());
+    for (std::size_t i = 0; i < indices.size(); ++i)
+    {
+      std::copy_n(std::next(local_data.cbegin(), n * indices[i]), n,
+                  std::next(send_buffer.begin(), n * i));
+    }
+
     MPI_Request request;
-    std::vector<T> buffer_send, buffer_recv;
-    scatter_fwd_begin(local_data, data_type, request, buffer_send, buffer_recv);
+    std::vector<T> buffer_recv;
+    scatter_fwd_begin(xtl::span<const T>(send_buffer), data_type, request,
+                      buffer_recv);
     scatter_fwd_end(remote_data, request, xtl::span<const T>(buffer_recv));
 
     if (n != 1)
