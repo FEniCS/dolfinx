@@ -215,12 +215,8 @@ public:
   /// ranks that have the index as a ghost. This function complete the
   /// communication started by IndexMap::scatter_fwd_begin.
   ///
-  /// @param[in] remote_data The data array (ghost region) to fill with
-  /// the received data
   /// @param[in] request The MPI request handle for tracking the status
   /// of the send
-  /// @param[in] recv_buffer The receive buffer. It must be the same as
-  /// the buffer passed to IndexMap::scatter_fwd_begin.
   void scatter_fwd_end(MPI_Request& request) const
   {
     // Return early if there are no incoming or outgoing edges
