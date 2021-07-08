@@ -513,6 +513,7 @@ def assemble_div_vector(k, offset):
     return L[:]
 
 
+@skip_in_parallel
 @pytest.mark.parametrize("k", [0, 1, 2])
 def test_div_general_quads_mat(k):
     """Tests that assembling inner(u, div(w)) * dx, where u is from a
@@ -530,6 +531,7 @@ def test_div_general_quads_mat(k):
     assert np.allclose(A_square, A_trap, atol=1e-8)
 
 
+@skip_in_parallel
 @pytest.mark.parametrize("k", [0, 1, 2])
 def test_div_general_quads_vec(k):
     """Tests that assembling inner(1, div(w)) * dx, where w is from an
