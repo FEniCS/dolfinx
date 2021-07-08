@@ -38,7 +38,7 @@ jobs:
     steps:
 
       - name: Testing real32
-        run: | echo "Hello there!"
+        run: echo "Hello there!"
         if: ${{ matrix.petsc_arch == "real" && matrix.petsc_int_type == "32" }}
 
       - uses: actions/checkout@v2
