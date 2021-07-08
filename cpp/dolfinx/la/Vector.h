@@ -87,8 +87,9 @@ public:
                   std::next(_buffer_send_fwd.begin(), _bs * i));
     }
 
+    _buffer_recv_fwd.resize(_bs * _map->num_ghosts());
     _map->scatter_fwd_begin(xtl::span<const T>(_buffer_send_fwd), _datatype,
-                            _request, _buffer_recv_fwd);
+                            _request, xtl::span<T>(_buffer_recv_fwd));
   }
 
   /// End scatter of local data from owner to ghosts on other ranks
@@ -103,10 +104,6 @@ public:
     // Copy received data into ghost positions
     const std::vector<std::int32_t>& scatter_fwd_ghost_pos
         = _map->scatter_fwd_ghost_positions();
-
-    // assert(xremote.size() >= _ghosts.size());
-    // assert(xremote.size() % _ghosts.size() == 0);
-    // const int n = xremote.size() / _ghosts.size();
     for (std::size_t i = 0; i < _map->num_ghosts(); ++i)
     {
       const int pos = scatter_fwd_ghost_pos[i];

@@ -186,7 +186,7 @@ public:
   template <typename T>
   void scatter_fwd_begin(const xtl::span<const T>& send_buffer,
                          MPI_Datatype& data_type, MPI_Request& request,
-                         std::vector<T>& recv_buffer) const
+                         const xtl::span<T>& recv_buffer) const
   {
     // Send displacement
     const std::vector<int32_t>& displs_send_fwd = _shared_indices->offsets();
@@ -201,9 +201,10 @@ public:
     n /= sizeof(T);
     if (static_cast<int>(send_buffer.size()) < n * displs_send_fwd.back())
       throw std::runtime_error("Send buffer is too small.");
+    if (static_cast<int>(recv_buffer.size()) < n * _displs_recv_fwd.back())
+      throw std::runtime_error("Receive buffer is too small.");
 
     // Start send/receive
-    recv_buffer.resize(n * _displs_recv_fwd.back());
     MPI_Ineighbor_alltoallv(send_buffer.data(), _sizes_send_fwd.data(),
                             displs_send_fwd.data(), data_type,
                             recv_buffer.data(), _sizes_recv_fwd.data(),
@@ -226,20 +227,6 @@ public:
 
     // Wait for communication to complete
     MPI_Wait(&request, MPI_STATUS_IGNORE);
-
-    // Copy into ghost area ("remote_data")
-    // if (!remote_data.empty())
-    // {
-    //   assert(remote_data.size() >= _ghosts.size());
-    //   assert(remote_data.size() % _ghosts.size() == 0);
-    //   const int n = remote_data.size() / _ghosts.size();
-    //   for (std::size_t i = 0; i < _ghosts.size(); ++i)
-    //   {
-    //     const int pos = _ghost_pos_recv_fwd[i];
-    //     std::copy_n(std::next(recv_buffer.cbegin(), n * pos), n,
-    //                 std::next(remote_data.begin(), n * i));
-    //   }
-    // }
   }
 
   /// Send n values for each index that is owned to processes that have
@@ -274,18 +261,18 @@ public:
     }
 
     MPI_Request request;
-    std::vector<T> buffer_recv;
+    std::vector<T> buffer_recv(n * _displs_recv_fwd.back());
     scatter_fwd_begin(xtl::span<const T>(send_buffer), data_type, request,
-                      buffer_recv);
+                      xtl::span<T>(buffer_recv));
     scatter_fwd_end(request);
 
     // Copy into ghost area("remote_data")
     if (!remote_data.empty())
     {
-      assert(remote_data.size() >= _ghosts.size());
-      assert(remote_data.size() % _ghosts.size() == 0);
-      const int n = remote_data.size() / _ghosts.size();
-      for (std::size_t i = 0; i < _ghosts.size(); ++i)
+      assert(remote_data.size() >= _ghost_pos_recv_fwd.size());
+      assert(remote_data.size() % _ghost_pos_recv_fwd.size() == 0);
+      const int n = remote_data.size() / _ghost_pos_recv_fwd.size();
+      for (std::size_t i = 0; i < _ghost_pos_recv_fwd.size(); ++i)
       {
         const int pos = _ghost_pos_recv_fwd[i];
         std::copy_n(std::next(buffer_recv.cbegin(), n * pos), n,
