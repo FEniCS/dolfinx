@@ -139,7 +139,7 @@ public:
     }
 
     _map->scatter_rev_begin(xtl::span<const T>(_buffer_recv_fwd), _datatype,
-                            _request, _buffer_send_fwd);
+                            _request, xtl::span<T>(_buffer_send_fwd));
   }
 
   /// End scatter of ghost data to owner. This process may receive data from
