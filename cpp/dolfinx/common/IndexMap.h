@@ -288,16 +288,13 @@ public:
   /// non-blocking communication is completed by calling
   /// IndexMap::scatter_rev_end.
   ///
-  /// @param[in] remote_data Ghost data on this  process to be sent to
+  /// @param[in] send_buffer Ghost data on this  process to be sent to
   /// the owner. Size must be `n * num_ghosts()`, where `n` is the block
   /// size of the data to send.
   /// @param data_type The MPI data type. To send data with a block size
   /// use `MPI_Type_contiguous` with size `n`
   /// @param request The MPI request handle for tracking the status of
   /// the send
-  /// @param send_buffer A buffer used to pack the send data. It must
-  /// not be changed until after a call to IndexMap::scatter_rev_end. It
-  /// will be resized as required.
   /// @param recv_buffer  A buffer used for the received data. It must
   /// not be changed until after a call to IndexMap::scatter_rev_end. It
   /// will be resized as required.
@@ -343,22 +340,12 @@ public:
   /// This function complete the communication started by
   /// IndexMap::scatter_rev_begin.
   ///
-  /// @param[in,out] local_data The data array (owned region) to sum/set
-  /// with the received ghost data
   /// @param[in] request The MPI request handle for tracking the status
   /// of the send
-  /// @param[in] recv_buffer The receive buffer. It must be the same as
-  /// the buffer passed to IndexMap::scatter_rev_begin.
-  /// @param[in] op The accumulation options
-  template <typename T>
-  void scatter_rev_end(const xtl::span<T>& local_data, MPI_Request& request,
-                       const xtl::span<const T>& recv_buffer,
-                       IndexMap::Mode op) const
+  void scatter_rev_end(MPI_Request& request) const
   {
-    // Get displacement vector
-    const std::vector<int32_t>& displs_send_fwd = _shared_indices->offsets();
-
     // Return early if there are no incoming or outgoing edges
+    const std::vector<int32_t>& displs_send_fwd = _shared_indices->offsets();
     if (_displs_recv_fwd.size() == 1 and displs_send_fwd.size() == 1)
       return;
 
@@ -366,33 +353,33 @@ public:
     MPI_Wait(&request, MPI_STATUS_IGNORE);
 
     // Copy or accumulate into "local_data"
-    if (std::int32_t size = this->size_local(); size > 0)
-    {
-      assert(local_data.size() >= size);
-      assert(local_data.size() % size == 0);
-      const int n = local_data.size() / size;
-      const std::vector<std::int32_t>& shared_indices
-          = _shared_indices->array();
-      switch (op)
-      {
-      case Mode::insert:
-        for (std::size_t i = 0; i < shared_indices.size(); ++i)
-        {
-          const std::int32_t index = shared_indices[i];
-          std::copy_n(std::next(recv_buffer.cbegin(), n * i), n,
-                      std::next(local_data.begin(), n * index));
-        }
-        break;
-      case Mode::add:
-        for (std::size_t i = 0; i < shared_indices.size(); ++i)
-        {
-          const std::int32_t index = shared_indices[i];
-          for (int j = 0; j < n; ++j)
-            local_data[index * n + j] += recv_buffer[i * n + j];
-        }
-        break;
-      }
-    }
+    // if (std::int32_t size = this->size_local(); size > 0)
+    // {
+    //   assert(local_data.size() >= size);
+    //   assert(local_data.size() % size == 0);
+    //   const int n = local_data.size() / size;
+    //   const std::vector<std::int32_t>& shared_indices
+    //       = _shared_indices->array();
+    //   switch (op)
+    //   {
+    //   case Mode::insert:
+    //     for (std::size_t i = 0; i < shared_indices.size(); ++i)
+    //     {
+    //       const std::int32_t index = shared_indices[i];
+    //       std::copy_n(std::next(recv_buffer.cbegin(), n * i), n,
+    //                   std::next(local_data.begin(), n * index));
+    //     }
+    //     break;
+    //   case Mode::add:
+    //     for (std::size_t i = 0; i < shared_indices.size(); ++i)
+    //     {
+    //       const std::int32_t index = shared_indices[i];
+    //       for (int j = 0; j < n; ++j)
+    //         local_data[index * n + j] += recv_buffer[i * n + j];
+    //     }
+    //     break;
+    //   }
+    // }
   }
 
   /// Send n values for each ghost index to owning to the process
@@ -428,10 +415,40 @@ public:
                   std::next(buffer_send.begin(), n * pos));
     }
 
+    // Exchange data
     MPI_Request request;
     std::vector<T> buffer_recv;
     scatter_rev_begin(buffer_send, data_type, request, buffer_recv);
-    scatter_rev_end(local_data, request, xtl::span<const T>(buffer_recv), op);
+    scatter_rev_end(request);
+
+    // Copy or accumulate into "local_data"
+    if (std::int32_t size = this->size_local(); size > 0)
+    {
+      assert(local_data.size() >= size);
+      assert(local_data.size() % size == 0);
+      const int n = local_data.size() / size;
+      const std::vector<std::int32_t>& shared_indices
+          = _shared_indices->array();
+      switch (op)
+      {
+      case Mode::insert:
+        for (std::size_t i = 0; i < shared_indices.size(); ++i)
+        {
+          const std::int32_t index = shared_indices[i];
+          std::copy_n(std::next(buffer_recv.cbegin(), n * i), n,
+                      std::next(local_data.begin(), n * index));
+        }
+        break;
+      case Mode::add:
+        for (std::size_t i = 0; i < shared_indices.size(); ++i)
+        {
+          const std::int32_t index = shared_indices[i];
+          for (int j = 0; j < n; ++j)
+            local_data[index * n + j] += buffer_recv[i * n + j];
+        }
+        break;
+      }
+    }
 
     if (n != 1)
       MPI_Type_free(&data_type);
