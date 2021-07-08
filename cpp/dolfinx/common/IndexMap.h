@@ -301,7 +301,7 @@ public:
   template <typename T>
   void scatter_rev_begin(const xtl::span<const T>& send_buffer,
                          MPI_Datatype& data_type, MPI_Request& request,
-                         std::vector<T>& recv_buffer) const
+                         const xtl::span<T>& recv_buffer) const
   {
     // Get displacement vector
     const std::vector<int32_t>& displs_send_fwd = _shared_indices->offsets();
@@ -317,6 +317,9 @@ public:
     // if (static_cast<int>(remote_data.size()) != n * _ghosts.size())
     //   throw std::runtime_error("Inconsistent data size.");
 
+    if (static_cast<int>(recv_buffer.size()) != n * displs_send_fwd.back())
+      throw std::runtime_error("Inconsistent data size.");
+
     // Pack send buffer
     // send_buffer.resize(n * _displs_recv_fwd.back());
     // std::vector<std::int32_t> displs(_displs_recv_fwd);
@@ -328,7 +331,7 @@ public:
     // }
 
     // Send and receive data
-    recv_buffer.resize(n * displs_send_fwd.back());
+    // recv_buffer.resize(n * displs_send_fwd.back());
     MPI_Ineighbor_alltoallv(send_buffer.data(), _sizes_recv_fwd.data(),
                             _displs_recv_fwd.data(), data_type,
                             recv_buffer.data(), _sizes_send_fwd.data(),
@@ -418,7 +421,8 @@ public:
     // Exchange data
     MPI_Request request;
     std::vector<T> buffer_recv;
-    scatter_rev_begin(buffer_send, data_type, request, buffer_recv);
+    scatter_rev_begin(xtl::span<const T>(buffer_send), data_type, request,
+                      xtl::span<T>(buffer_recv));
     scatter_rev_end(request);
 
     // Copy or accumulate into "local_data"
