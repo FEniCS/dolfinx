@@ -199,10 +199,10 @@ public:
     int n;
     MPI_Type_size(data_type, &n);
     n /= sizeof(T);
-    if (static_cast<int>(send_buffer.size()) < n * displs_send_fwd.back())
-      throw std::runtime_error("Send buffer is too small.");
-    if (static_cast<int>(recv_buffer.size()) < n * _displs_recv_fwd.back())
-      throw std::runtime_error("Receive buffer is too small.");
+    if (static_cast<int>(send_buffer.size()) != n * displs_send_fwd.back())
+      throw std::runtime_error("Incompatible send buffer size.");
+    if (static_cast<int>(recv_buffer.size()) != n * _displs_recv_fwd.back())
+      throw std::runtime_error("Incompatible receive buffer size..");
 
     // Start send/receive
     MPI_Ineighbor_alltoallv(send_buffer.data(), _sizes_send_fwd.data(),
@@ -267,17 +267,12 @@ public:
     scatter_fwd_end(request);
 
     // Copy into ghost area("remote_data")
-    if (!remote_data.empty())
+    assert(remote_data.size() == n * _ghost_pos_recv_fwd.size());
+    for (std::size_t i = 0; i < _ghost_pos_recv_fwd.size(); ++i)
     {
-      assert(remote_data.size() >= _ghost_pos_recv_fwd.size());
-      assert(remote_data.size() % _ghost_pos_recv_fwd.size() == 0);
-      const int n = remote_data.size() / _ghost_pos_recv_fwd.size();
-      for (std::size_t i = 0; i < _ghost_pos_recv_fwd.size(); ++i)
-      {
-        const int pos = _ghost_pos_recv_fwd[i];
-        std::copy_n(std::next(buffer_recv.cbegin(), n * pos), n,
-                    std::next(remote_data.begin(), n * i));
-      }
+      const int pos = _ghost_pos_recv_fwd[i];
+      std::copy_n(std::next(buffer_recv.cbegin(), n * pos), n,
+                  std::next(remote_data.begin(), n * i));
     }
 
     if (n != 1)
@@ -385,32 +380,24 @@ public:
     scatter_rev_end(request);
 
     // Copy or accumulate into "local_data"
-    if (std::int32_t size = this->size_local(); size > 0)
+    assert(local_data.size() == n * this->size_local());
+    const std::vector<std::int32_t>& shared_indices = _shared_indices->array();
+    switch (op)
     {
-      assert(local_data.size() >= size);
-      assert(local_data.size() % size == 0);
-      const int n = local_data.size() / size;
-      const std::vector<std::int32_t>& shared_indices
-          = _shared_indices->array();
-      switch (op)
+    case Mode::insert:
+      for (std::size_t i = 0; i < shared_indices.size(); ++i)
       {
-      case Mode::insert:
-        for (std::size_t i = 0; i < shared_indices.size(); ++i)
-        {
-          const std::int32_t index = shared_indices[i];
-          std::copy_n(std::next(buffer_recv.cbegin(), n * i), n,
-                      std::next(local_data.begin(), n * index));
-        }
-        break;
-      case Mode::add:
-        for (std::size_t i = 0; i < shared_indices.size(); ++i)
-        {
-          const std::int32_t index = shared_indices[i];
-          for (int j = 0; j < n; ++j)
-            local_data[index * n + j] += buffer_recv[i * n + j];
-        }
-        break;
+        std::copy_n(std::next(buffer_recv.cbegin(), n * i), n,
+                    std::next(local_data.begin(), n * shared_indices[i]));
       }
+      break;
+    case Mode::add:
+      for (std::size_t i = 0; i < shared_indices.size(); ++i)
+      {
+        for (int j = 0; j < n; ++j)
+          local_data[shared_indices[i] * n + j] += buffer_recv[i * n + j];
+      }
+      break;
     }
 
     if (n != 1)

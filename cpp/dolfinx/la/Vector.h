@@ -163,18 +163,14 @@ public:
     case common::IndexMap::Mode::insert:
       for (std::size_t i = 0; i < shared_indices.size(); ++i)
       {
-        const std::int32_t index = shared_indices[i];
         std::copy_n(std::next(_buffer_send_fwd.cbegin(), _bs * i), _bs,
-                    std::next(_x.begin(), _bs * index));
+                    std::next(_x.begin(), _bs * shared_indices[i]));
       }
       break;
     case common::IndexMap::Mode::add:
       for (std::size_t i = 0; i < shared_indices.size(); ++i)
-      {
-        const std::int32_t index = shared_indices[i];
         for (int j = 0; j < _bs; ++j)
-          _x[index * _bs + j] += _buffer_send_fwd[i * _bs + j];
-      }
+          _x[shared_indices[i] * _bs + j] += _buffer_send_fwd[i * _bs + j];
       break;
     }
   }
