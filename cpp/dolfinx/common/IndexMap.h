@@ -420,7 +420,7 @@ public:
 
     // Exchange data
     MPI_Request request;
-    std::vector<T> buffer_recv;
+    std::vector<T> buffer_recv(n * _shared_indices->array().size());
     scatter_rev_begin(xtl::span<const T>(buffer_send), data_type, request,
                       xtl::span<T>(buffer_recv));
     scatter_rev_end(request);
