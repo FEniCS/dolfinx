@@ -11,7 +11,8 @@ from itertools import combinations, product
 import numpy as np
 import pytest
 import ufl
-from dolfinx import Function, FunctionSpace, VectorFunctionSpace, cpp, fem
+from dolfinx import (Function, FunctionSpace, VectorFunctionSpace, cpp, fem,
+                     Constant)
 from dolfinx.cpp.mesh import CellType
 from dolfinx.mesh import MeshTags, create_mesh
 from dolfinx_utils.test.skips import skip_in_parallel
@@ -469,3 +470,79 @@ def test_curl(space_type, order):
             else:
                 continue
             break
+
+
+def create_quad_mesh(offset):
+    """Creates a mesh of a single square element if offset = 0, or a
+    trapezium element if |offset| > 0.
+    """
+    x = np.array([[0, 0],
+                  [1, 0],
+                  [0, 0.5 + offset],
+                  [1, 0.5 - offset]])
+    cells = np.array([[0, 1, 2, 3]])
+
+    ufl_mesh = ufl.Mesh(ufl.VectorElement("Lagrange", "quadrilateral", 1))
+    mesh = create_mesh(MPI.COMM_WORLD, cells, x, ufl_mesh)
+    return mesh
+
+
+def assemble_div_matrix(k, offset):
+    mesh = create_quad_mesh(offset)
+
+    V = FunctionSpace(mesh, ("DQ", k))
+    W = FunctionSpace(mesh, ("RTCF", k + 1))
+
+    u = ufl.TrialFunction(V)
+    w = ufl.TestFunction(W)
+
+    form = ufl.inner(u, ufl.div(w)) * ufl.dx
+    A = fem.assemble_matrix(form)
+    A.assemble()
+    return A[:, :]
+
+
+def assemble_div_vector(k, offset):
+    mesh = create_quad_mesh(offset)
+
+    V = FunctionSpace(mesh, ("RTCF", k + 1))
+    v = ufl.TestFunction(V)
+
+    form = ufl.inner(Constant(mesh, 1), ufl.div(v)) * ufl.dx
+    L = fem.assemble_vector(form)
+
+    return L[:]
+
+
+@pytest.mark.parametrize("k", [0, 1, 2])
+def test_div_general_quads_mat(k):
+    """Tests that assembling inner(u, div(w)) * dx, where u is from a
+    "DQ" space and w is from an "RTCF" space, gives the same matrix
+    for square and trapezoidal elements. This should be the case due
+    to the properties of the Piola transform."""
+
+    # Assemble matrix on a mesh of square elements
+    A_square = assemble_div_matrix(k, 0)
+    # Assemble matrix on a mesh of trapezium elements
+    A_trap = assemble_div_matrix(k, 0.25)
+
+    # Due to the properties of the Piola transform, A_square and A_trap
+    # should be equal
+    assert np.allclose(A_square, A_trap, atol=1e-8)
+
+
+@pytest.mark.parametrize("k", [0, 1, 2])
+def test_div_general_quads_vec(k):
+    """Tests that assembling inner(1, div(w)) * dx, where w is from an
+    "RTCF" space, gives the same matrix for square and trapezoidal
+    elements. This should be the case due to the properties of the
+    Piola transform."""
+
+    # Assemble vector on a mesh of square elements
+    L_square = assemble_div_vector(k, 0)
+    # Assemble matrix on a mesh of trapezium elements
+    L_trap = assemble_div_vector(k, 0.25)
+
+    # Due to the properties of the Piola transform, L_square and L_trap
+    # should be equal
+    assert np.allclose(L_square, L_trap, atol=1e-8)
