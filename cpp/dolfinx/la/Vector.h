@@ -124,10 +124,10 @@ public:
   /// @note Collective MPI operation
   void scatter_rev_begin()
   {
+    // Pack send buffer
     const std::int32_t local_size = _bs * _map->size_local();
     xtl::span<const T> xremote(_x.data() + local_size,
                                _map->num_ghosts() * _bs);
-    // Pack send buffer
     const std::vector<std::int32_t>& scatter_fwd_ghost_pos
         = _map->scatter_fwd_ghost_positions();
     _buffer_recv_fwd.resize(_bs * scatter_fwd_ghost_pos.size());
@@ -138,6 +138,8 @@ public:
                   std::next(_buffer_recv_fwd.begin(), _bs * pos));
     }
 
+    // Resize receive buffer and begin scatter
+    _buffer_send_fwd.resize(_bs * _map->scatter_fwd_indices().array().size());
     _map->scatter_rev_begin(xtl::span<const T>(_buffer_recv_fwd), _datatype,
                             _request, xtl::span<T>(_buffer_send_fwd));
   }

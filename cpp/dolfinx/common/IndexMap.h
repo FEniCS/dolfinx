@@ -317,7 +317,7 @@ public:
     // if (static_cast<int>(remote_data.size()) != n * _ghosts.size())
     //   throw std::runtime_error("Inconsistent data size.");
 
-    if (static_cast<int>(recv_buffer.size()) != n * displs_send_fwd.back())
+    if (static_cast<int>(send_buffer.size()) != n * _ghosts.size())
       throw std::runtime_error("Inconsistent data size.");
 
     // Pack send buffer
