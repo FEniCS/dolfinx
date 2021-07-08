@@ -510,7 +510,6 @@ def assemble_div_vector(k, offset):
 
     form = ufl.inner(Constant(mesh, 1), ufl.div(v)) * ufl.dx
     L = fem.assemble_vector(form)
-
     return L[:]
 
 
