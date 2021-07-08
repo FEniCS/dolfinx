@@ -127,8 +127,19 @@ public:
     const std::int32_t local_size = _bs * _map->size_local();
     xtl::span<const T> xremote(_x.data() + local_size,
                                _map->num_ghosts() * _bs);
-    _map->scatter_rev_begin(xremote, _datatype, _request, _buffer_recv_fwd,
-                            _buffer_send_fwd);
+    // Pack send buffer
+    const std::vector<std::int32_t>& scatter_fwd_ghost_pos
+        = _map->scatter_fwd_ghost_positions();
+    _buffer_recv_fwd.resize(_bs * scatter_fwd_ghost_pos.size());
+    for (std::size_t i = 0; i < scatter_fwd_ghost_pos.size(); ++i)
+    {
+      const int pos = scatter_fwd_ghost_pos[i];
+      std::copy_n(std::next(xremote.cbegin(), _bs * i), _bs,
+                  std::next(_buffer_recv_fwd.begin(), _bs * pos));
+    }
+
+    _map->scatter_rev_begin(xtl::span<const T>(_buffer_recv_fwd), _datatype,
+                            _request, _buffer_send_fwd);
   }
 
   /// End scatter of ghost data to owner. This process may receive data from

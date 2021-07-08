@@ -302,9 +302,8 @@ public:
   /// not be changed until after a call to IndexMap::scatter_rev_end. It
   /// will be resized as required.
   template <typename T>
-  void scatter_rev_begin(const xtl::span<const T>& remote_data,
+  void scatter_rev_begin(const xtl::span<const T>& send_buffer,
                          MPI_Datatype& data_type, MPI_Request& request,
-                         std::vector<T>& send_buffer,
                          std::vector<T>& recv_buffer) const
   {
     // Get displacement vector
@@ -318,18 +317,18 @@ public:
     int n;
     MPI_Type_size(data_type, &n);
     n /= sizeof(T);
-    if (static_cast<int>(remote_data.size()) != n * _ghosts.size())
-      throw std::runtime_error("Inconsistent data size.");
+    // if (static_cast<int>(remote_data.size()) != n * _ghosts.size())
+    //   throw std::runtime_error("Inconsistent data size.");
 
     // Pack send buffer
-    send_buffer.resize(n * _displs_recv_fwd.back());
-    std::vector<std::int32_t> displs(_displs_recv_fwd);
-    for (std::size_t i = 0; i < _ghosts.size(); ++i)
-    {
-      const int pos = _ghost_pos_recv_fwd[i];
-      std::copy_n(std::next(remote_data.cbegin(), n * i), n,
-                  std::next(send_buffer.begin(), n * pos));
-    }
+    // send_buffer.resize(n * _displs_recv_fwd.back());
+    // std::vector<std::int32_t> displs(_displs_recv_fwd);
+    // for (std::size_t i = 0; i < _ghosts.size(); ++i)
+    // {
+    //   const int pos = _ghost_pos_recv_fwd[i];
+    //   std::copy_n(std::next(remote_data.cbegin(), n * i), n,
+    //               std::next(send_buffer.begin(), n * pos));
+    // }
 
     // Send and receive data
     recv_buffer.resize(n * displs_send_fwd.back());
@@ -419,10 +418,19 @@ public:
       MPI_Type_commit(&data_type);
     }
 
+    // Pack send buffer
+    std::vector<T> buffer_send;
+    buffer_send.resize(n * _displs_recv_fwd.back());
+    for (std::size_t i = 0; i < _ghost_pos_recv_fwd.size(); ++i)
+    {
+      const int pos = _ghost_pos_recv_fwd[i];
+      std::copy_n(std::next(remote_data.cbegin(), n * i), n,
+                  std::next(buffer_send.begin(), n * pos));
+    }
+
     MPI_Request request;
-    std::vector<T> buffer_send, buffer_recv;
-    scatter_rev_begin(remote_data, data_type, request, buffer_send,
-                      buffer_recv);
+    std::vector<T> buffer_recv;
+    scatter_rev_begin(buffer_send, data_type, request, buffer_recv);
     scatter_rev_end(local_data, request, xtl::span<const T>(buffer_recv), op);
 
     if (n != 1)
