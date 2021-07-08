@@ -144,45 +144,38 @@ public:
                             _request, xtl::span<T>(_buffer_send_fwd));
   }
 
-  /// End scatter of ghost data to owner. This process may receive data from
-  /// more than one process, and the received data can be summed or
+  /// End scatter of ghost data to owner. This process may receive data
+  /// from more than one process, and the received data can be summed or
   /// inserted into the local portion of the vector.
   /// @param op The operation to perform when adding/setting received
   /// values (add or insert)
   /// @note Collective MPI operation
   void scatter_rev_end(common::IndexMap::Mode op)
   {
-    const std::int32_t local_size = _bs * _map->size_local();
-    xtl::span xlocal(_x.data(), local_size);
+    // Complete scatter
     _map->scatter_rev_end(_request);
 
-    // Copy or accumulate into "local_data"
-    if (std::int32_t size = _map->size_local(); size > 0)
+    // Copy/accumulate into owned part of the vector
+    const std::vector<std::int32_t>& shared_indices
+        = _map->scatter_fwd_indices().array();
+    switch (op)
     {
-      // assert(local_data.size() >= size);
-      // assert(local_data.size() % size == 0);
-      // const int n = local_data.size() / size;
-      const std::vector<std::int32_t>& shared_indices
-          = _map->scatter_fwd_indices().array();
-      switch (op)
+    case common::IndexMap::Mode::insert:
+      for (std::size_t i = 0; i < shared_indices.size(); ++i)
       {
-      case common::IndexMap::Mode::insert:
-        for (std::size_t i = 0; i < shared_indices.size(); ++i)
-        {
-          const std::int32_t index = shared_indices[i];
-          std::copy_n(std::next(_buffer_send_fwd.cbegin(), _bs * i), _bs,
-                      std::next(_x.begin(), _bs * index));
-        }
-        break;
-      case common::IndexMap::Mode::add:
-        for (std::size_t i = 0; i < shared_indices.size(); ++i)
-        {
-          const std::int32_t index = shared_indices[i];
-          for (int j = 0; j < _bs; ++j)
-            _x[index * _bs + j] += _buffer_send_fwd[i * _bs + j];
-        }
-        break;
+        const std::int32_t index = shared_indices[i];
+        std::copy_n(std::next(_buffer_send_fwd.cbegin(), _bs * i), _bs,
+                    std::next(_x.begin(), _bs * index));
       }
+      break;
+    case common::IndexMap::Mode::add:
+      for (std::size_t i = 0; i < shared_indices.size(); ++i)
+      {
+        const std::int32_t index = shared_indices[i];
+        for (int j = 0; j < _bs; ++j)
+          _x[index * _bs + j] += _buffer_send_fwd[i * _bs + j];
+      }
+      break;
     }
   }
 

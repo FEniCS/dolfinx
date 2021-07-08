@@ -314,24 +314,12 @@ public:
     int n;
     MPI_Type_size(data_type, &n);
     n /= sizeof(T);
-    // if (static_cast<int>(remote_data.size()) != n * _ghosts.size())
-    //   throw std::runtime_error("Inconsistent data size.");
-
     if (static_cast<int>(send_buffer.size()) != n * _ghosts.size())
-      throw std::runtime_error("Inconsistent data size.");
-
-    // Pack send buffer
-    // send_buffer.resize(n * _displs_recv_fwd.back());
-    // std::vector<std::int32_t> displs(_displs_recv_fwd);
-    // for (std::size_t i = 0; i < _ghosts.size(); ++i)
-    // {
-    //   const int pos = _ghost_pos_recv_fwd[i];
-    //   std::copy_n(std::next(remote_data.cbegin(), n * i), n,
-    //               std::next(send_buffer.begin(), n * pos));
-    // }
+      throw std::runtime_error("Inconsistent send buffer size.");
+    if (static_cast<int>(recv_buffer.size()) != n * displs_send_fwd.back())
+      throw std::runtime_error("Inconsistent receive buffer size.");
 
     // Send and receive data
-    // recv_buffer.resize(n * displs_send_fwd.back());
     MPI_Ineighbor_alltoallv(send_buffer.data(), _sizes_recv_fwd.data(),
                             _displs_recv_fwd.data(), data_type,
                             recv_buffer.data(), _sizes_send_fwd.data(),
@@ -354,35 +342,6 @@ public:
 
     // Wait for communication to complete
     MPI_Wait(&request, MPI_STATUS_IGNORE);
-
-    // Copy or accumulate into "local_data"
-    // if (std::int32_t size = this->size_local(); size > 0)
-    // {
-    //   assert(local_data.size() >= size);
-    //   assert(local_data.size() % size == 0);
-    //   const int n = local_data.size() / size;
-    //   const std::vector<std::int32_t>& shared_indices
-    //       = _shared_indices->array();
-    //   switch (op)
-    //   {
-    //   case Mode::insert:
-    //     for (std::size_t i = 0; i < shared_indices.size(); ++i)
-    //     {
-    //       const std::int32_t index = shared_indices[i];
-    //       std::copy_n(std::next(recv_buffer.cbegin(), n * i), n,
-    //                   std::next(local_data.begin(), n * index));
-    //     }
-    //     break;
-    //   case Mode::add:
-    //     for (std::size_t i = 0; i < shared_indices.size(); ++i)
-    //     {
-    //       const std::int32_t index = shared_indices[i];
-    //       for (int j = 0; j < n; ++j)
-    //         local_data[index * n + j] += recv_buffer[i * n + j];
-    //     }
-    //     break;
-    //   }
-    // }
   }
 
   /// Send n values for each ghost index to owning to the process
