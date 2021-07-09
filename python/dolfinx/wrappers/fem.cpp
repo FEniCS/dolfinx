@@ -264,6 +264,33 @@ void fem(py::module& m)
              self.push_forward(x, g, phi);
              return xt_as_pyarray(std::move(x));
            })
+      .def("pull_back",
+           [](const dolfinx::fem::CoordinateElement& self,
+              const py::array_t<double, py::array::c_style>& x,
+              const py::array_t<double, py::array::c_style>& cell_geometry)
+           {
+             const std::size_t tdim = self.topological_dimension();
+             const std::size_t gdim = x.shape(1);
+             const std::size_t num_points = x.shape(0);
+             xt::xtensor<double, 2> X = xt::empty<double>({num_points, tdim});
+             xt::xtensor<double, 3> J
+                 = xt::empty<double>({num_points, gdim, tdim});
+             xt::xtensor<double, 3> K
+                 = xt::empty<double>({num_points, tdim, gdim});
+             xt::xtensor<double, 1> detJ = xt::empty<double>({num_points});
+             std::array<std::size_t, 2> s_x
+                 = {static_cast<std::size_t>(x.shape(0)),
+                    static_cast<std::size_t>(x.shape(1))};
+             auto _x = xt::adapt(x.data(), x.size(), xt::no_ownership(), s_x);
+
+             std::array<std::size_t, 2> s_g
+                 = {static_cast<std::size_t>(cell_geometry.shape(0)),
+                    static_cast<std::size_t>(cell_geometry.shape(1))};
+             auto g = xt::adapt(cell_geometry.data(), cell_geometry.size(),
+                                xt::no_ownership(), s_g);
+             self.pull_back(X, J, detJ, K, _x, g);
+             return xt_as_pyarray(std::move(X));
+           })
       .def_readwrite("non_affine_atol",
                      &dolfinx::fem::CoordinateElement::non_affine_atol)
       .def_readwrite("non_affine_max_its",
