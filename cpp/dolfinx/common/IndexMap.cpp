@@ -180,7 +180,7 @@ common::stack_index_maps(
   {
     const int bs = maps[f].second;
     const std::vector<std::int32_t>& forward_indices
-        = maps[f].first.get().shared_indices().array();
+        = maps[f].first.get().scatter_fwd_indices().array();
     const std::int64_t offset = bs * maps[f].first.get().local_range()[0];
     for (std::int32_t local_index : forward_indices)
     {
@@ -343,8 +343,9 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
   // Create communicators with directed edges: (0) owner -> ghost,
   // (1) ghost -> owner
   {
-    // Dummy weight to work around an MPICH bug. Would prefer to pass
-    // MPI_UNWEIGHTED.
+    // Dummy weight to work around a bug in older MPICH versions. Issue
+    // appears in MPICH v3.3.2 (Ubuntu 20.04) and not in v3.4 (Ubuntu
+    // 20.10). Would prefer to pass MPI_UNWEIGHTED.
     std::vector<int> weights(std::max(halo_src_ranks.size(), dest_ranks.size()),
                              1);
 
@@ -525,10 +526,16 @@ std::vector<std::int64_t> IndexMap::global_indices() const
 }
 //-----------------------------------------------------------------------------
 const graph::AdjacencyList<std::int32_t>&
-IndexMap::shared_indices() const noexcept
+IndexMap::scatter_fwd_indices() const noexcept
 {
   assert(_shared_indices);
   return *_shared_indices;
+}
+//-----------------------------------------------------------------------------
+const std::vector<std::int32_t>&
+IndexMap::scatter_fwd_ghost_positions() const noexcept
+{
+  return _ghost_pos_recv_fwd;
 }
 //-----------------------------------------------------------------------------
 std::vector<int> IndexMap::ghost_owner_rank() const

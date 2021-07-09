@@ -468,14 +468,14 @@ std::vector<std::int32_t> mesh::exterior_facet_indices(const Mesh& mesh)
   mesh.topology_mutable().create_connectivity(tdim - 1, tdim);
   auto f_to_c = topology.connectivity(tdim - 1, tdim);
   assert(topology.index_map(tdim - 1));
-  std::set<std::int32_t> fwd_shared_facets;
 
   // Only need to consider shared facets when there are no ghost cells
+  std::set<std::int32_t> fwd_shared_facets;
   if (topology.index_map(tdim)->num_ghosts() == 0)
   {
     fwd_shared_facets.insert(
-        topology.index_map(tdim - 1)->shared_indices().array().begin(),
-        topology.index_map(tdim - 1)->shared_indices().array().end());
+        topology.index_map(tdim - 1)->scatter_fwd_indices().array().begin(),
+        topology.index_map(tdim - 1)->scatter_fwd_indices().array().end());
   }
 
   // Find all owned facets (not ghost) with only one attached cell, which are
