@@ -131,8 +131,8 @@ std::vector<bool> mesh::compute_boundary_facets(const Topology& topology)
   if (facets->num_ghosts() == 0)
   {
     fwd_shared_facets
-        = std::set<std::int32_t>(facets->shared_indices().array().begin(),
-                                 facets->shared_indices().array().end());
+        = std::set<std::int32_t>(facets->scatter_fwd_indices().array().begin(),
+                                 facets->scatter_fwd_indices().array().end());
   }
 
   std::shared_ptr<const graph::AdjacencyList<std::int32_t>> fc
@@ -439,7 +439,8 @@ mesh::create_topology(MPI_Comm comm,
          == node_remap.end());
   std::for_each(global_to_local_vertices.begin(),
                 global_to_local_vertices.end(),
-                [&remap = std::as_const(node_remap)](auto& v) {
+                [&remap = std::as_const(node_remap)](auto& v)
+                {
                   if (v.second >= 0)
                     v.second = remap[v.second];
                 });
