@@ -343,22 +343,17 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
   // Create communicators with directed edges: (0) owner -> ghost,
   // (1) ghost -> owner
   {
-    // Dummy weight to work around an MPICH bug. Would prefer to pass
-    // MPI_UNWEIGHTED.
-    // std::vector<int> weights(std::max(halo_src_ranks.size(),
-    // dest_ranks.size()),
-    //                          1);
+    // Dummy weight to work around a bug in older MPICH versions. Issue
+    // appears in MPICH v3.3.2 (Ubuntu 20.04) and not in v3.4 (Ubuntu
+    // 20.10). Would prefer to pass MPI_UNWEIGHTED.
+    std::vector<int> weights(std::max(halo_src_ranks.size(), dest_ranks.size()),
+                             1);
 
     MPI_Comm comm0;
-    // MPI_Dist_graph_create_adjacent(mpi_comm, halo_src_ranks.size(),
-    //                                halo_src_ranks.data(), weights.data(),
-    //                                dest_ranks.size(), dest_ranks.data(),
-    //                                weights.data(), MPI_INFO_NULL, true,
-    //                                &comm0);
     MPI_Dist_graph_create_adjacent(mpi_comm, halo_src_ranks.size(),
-                                   halo_src_ranks.data(), MPI_UNWEIGHTED,
+                                   halo_src_ranks.data(), weights.data(),
                                    dest_ranks.size(), dest_ranks.data(),
-                                   MPI_UNWEIGHTED, MPI_INFO_NULL, true, &comm0);
+                                   weights.data(), MPI_INFO_NULL, true, &comm0);
     _comm_owner_to_ghost = dolfinx::MPI::Comm(comm0, false);
 
     // Update src/dest rank indices in case
@@ -370,13 +365,9 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
                              MPI_UNWEIGHTED);
 
     MPI_Comm comm1;
-    // MPI_Dist_graph_create_adjacent(
-    //     mpi_comm, _dest_ranks.size(), _dest_ranks.data(), weights.data(),
-    //     halo_src_ranks.size(), halo_src_ranks.data(), weights.data(),
-    //     MPI_INFO_NULL, false, &comm1);
     MPI_Dist_graph_create_adjacent(
-        mpi_comm, _dest_ranks.size(), _dest_ranks.data(), MPI_UNWEIGHTED,
-        halo_src_ranks.size(), halo_src_ranks.data(), MPI_UNWEIGHTED,
+        mpi_comm, _dest_ranks.size(), _dest_ranks.data(), weights.data(),
+        halo_src_ranks.size(), halo_src_ranks.data(), weights.data(),
         MPI_INFO_NULL, false, &comm1);
     _comm_ghost_to_owner = dolfinx::MPI::Comm(comm1, false);
   }
