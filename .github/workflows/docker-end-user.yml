@@ -11,7 +11,7 @@ on:
   push:
     # This will run every time a version tag is created
     tags:
-      - 'v*'
+      - '*'
   schedule:
     # '*' is a special character in YAML, so string must be quoted
     - cron: "0 5 * * *"
