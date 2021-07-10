@@ -49,7 +49,7 @@ ARG SLEPC_VERSION=3.15.1
 ARG ADIOS2_VERSION=2.7.1
 ARG PYVISTA_VERSION=0.31.1
 # TODO: Update KaHIP version upon a release.
-ARG KAHIP_VERSION=623decb
+ARG KAHIP_VERSION=3.11
 ARG XTENSOR_VERSION=0.23.10
 ARG XTENSOR_BLAS_VERSION=0.19.1
 ARG XTL_VERSION=0.7.2
@@ -178,17 +178,15 @@ RUN wget -nc --quiet https://github.com/pybind/pybind11/archive/v${PYBIND11_VERS
     rm -rf /tmp/*
 
 # Install KaHIP
-ENV KAHIP_DIR=/usr/local/KaHIP/deploy
-RUN cd /usr/local && \
-    git clone https://github.com/schulzchristian/KaHIP.git && \
-    cd KaHIP/ && \
-    git checkout ${KAHIP_VERSION} && \
-    mkdir build && cd build && \
-    cmake -G Ninja -DCMAKE_INSTALL_PREFIX=${KAHIP_DIR} -DNONATIVEOPTIMIZATIONS=On .. && \
-    ninja install
+RUN wget -nc --quiet https://github.com/kahip/kahip/archive/v${KAHIP_VERSION}.tar.gz && \
+    tar -xf v${KAHIP_VERSION}.tar.gz && \
+    cd KaHIP-${KAHIP_VERSION} && \
+    cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DNONATIVEOPTIMIZATIONS=on -B build-dir -S KaHIP-${KAHIP_VERSION} \
+    cmake --build build-dir \
+    cmake --install build-dir
 
-# Install ADIOS2
-RUN wget -nc --quiet https://github.com/ornladios/ADIOS2/archive/v${ADIOS2_VERSION}.tar.gz -O adios2-v${ADIOS2_VERSION}.tar.gz && \
+    # Install ADIOS2
+    RUN wget -nc --quiet https://github.com/ornladios/ADIOS2/archive/v${ADIOS2_VERSION}.tar.gz -O adios2-v${ADIOS2_VERSION}.tar.gz && \
     mkdir -p adios2-v${ADIOS2_VERSION} && \
     tar -xf adios2-v${ADIOS2_VERSION}.tar.gz -C adios2-v${ADIOS2_VERSION} --strip-components 1 && \
     cmake -DADIOS2_USE_Fortran=Off -DBUILD_TESTING=Off -DADIOS2_BUILD_EXAMPLES=Off -DADIOS2_USE_ZeroMQ=Off  -B build-dir -S ./adios2-v${ADIOS2_VERSION} && \
