@@ -170,20 +170,18 @@ RUN git clone -b ${XTL_VERSION} --single-branch https://github.com/xtensor-stack
 # Install pybind11
 RUN wget -nc --quiet https://github.com/pybind/pybind11/archive/v${PYBIND11_VERSION}.tar.gz && \
     tar -xf v${PYBIND11_VERSION}.tar.gz && \
-    cd pybind11-${PYBIND11_VERSION} && \
-    mkdir build && \
-    cd build && \
-    cmake -DPYBIND11_TEST=False ../ && \
-    make install && \
+    cmake -G Ninja -DCMAKE_BUILD_TYPE=Release  -DPYBIND11_TEST=False -B build-dir -S pybind11-${PYBIND11_VERSION} && \
+    cmake --build build-dir && \
+    cmake --install build-dir && \
     rm -rf /tmp/*
 
 # Install KaHIP
 RUN wget -nc --quiet https://github.com/kahip/kahip/archive/v${KAHIP_VERSION}.tar.gz && \
     tar -xf v${KAHIP_VERSION}.tar.gz && \
-    cd KaHIP-${KAHIP_VERSION} && \
-    cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DNONATIVEOPTIMIZATIONS=on -B build-dir -S KaHIP-${KAHIP_VERSION} \
-    cmake --build build-dir \
-    cmake --install build-dir
+    cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DNONATIVEOPTIMIZATIONS=on -B build-dir -S KaHIP-${KAHIP_VERSION} && \
+    cmake --build build-dir && \
+    cmake --install build-dir && \
+    rm -rf /tmp/*
 
     # Install ADIOS2
     RUN wget -nc --quiet https://github.com/ornladios/ADIOS2/archive/v${ADIOS2_VERSION}.tar.gz -O adios2-v${ADIOS2_VERSION}.tar.gz && \
