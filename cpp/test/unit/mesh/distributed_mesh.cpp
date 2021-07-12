@@ -119,7 +119,7 @@ TEST_CASE("Distributed Mesh", "[distributed_mesh]")
             mesh::GhostMode)>(&mesh::partition_cells_graph)));
   }
 
-#ifdef HASKIP
+#ifdef HAS_KAHIP
   SECTION("KAHIP with Lambda")
   {
     auto partfn = graph::kahip::partitioner();
