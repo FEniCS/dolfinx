@@ -33,6 +33,7 @@ graph::build::distribute(MPI_Comm comm,
 {
   common::Timer timer("Distribute in graph creation AdjacencyList");
 
+  common::Timer t1("[Distribute] Compute sizes");
   assert(list.num_nodes() == (int)destinations.num_nodes());
   const std::int64_t offset_global
       = dolfinx::MPI::global_offset(comm, list.num_nodes(), true);
@@ -57,6 +58,8 @@ graph::build::distribute(MPI_Comm comm,
   std::vector<int> num_per_dest_recv(size, 0);
   MPI_Alltoall(num_per_dest_send.data(), 1, MPI_INT, num_per_dest_recv.data(),
                1, MPI_INT, comm);
+  t1.stop();
+  common::Timer t2("[Distribute] Compute arrays");
 
   // Compute receive array displacements
   std::vector<int> disp_recv(size + 1, 0);
@@ -79,12 +82,17 @@ graph::build::distribute(MPI_Comm comm,
         data_send[offset[dest]++] = links[k];
     }
   }
+  t2.stop();
+  common::Timer t3("[Distribute] Alltoallv");
 
   // Send/receive data
   std::vector<std::int64_t> data_recv(disp_recv.back());
   MPI_Alltoallv(data_send.data(), num_per_dest_send.data(), disp_send.data(),
                 MPI_INT64_T, data_recv.data(), num_per_dest_recv.data(),
                 disp_recv.data(), MPI_INT64_T, comm);
+
+  t3.stop();
+  common::Timer t4("[Distribute] Unpack");
 
   // Force memory to be freed
   std::vector<int>().swap(num_per_dest_send);
