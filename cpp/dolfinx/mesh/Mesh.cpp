@@ -88,10 +88,17 @@ Mesh mesh::create_mesh(MPI_Comm comm,
   // Compute the destination rank for cells on this process via graph
   // partitioning. Always get the ghost cells via facet, though these
   // may be discarded later.
+  common::Timer tp("[Partitioner]");
+  // Put a barrier here for timing purposes.
+  MPI_Barrier(comm);
   const int size = dolfinx::MPI::size(comm);
   const int tdim = mesh::cell_dim(element.cell_shape());
   const graph::AdjacencyList<std::int32_t> dest = cell_partitioner(
       comm, size, tdim, cells_topology, GhostMode::shared_facet);
+
+  // Put a barrier here for timing purposes.
+  MPI_Barrier(comm);
+  tp.stop();
 
   // Distribute cells to destination rank
   const auto [cell_nodes0, src, original_cell_index0, ghost_owners]
