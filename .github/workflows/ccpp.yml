@@ -154,7 +154,7 @@ jobs:
           cp -r ../cpp/doc/html/* dolfinx/${{ env.VERSION_NAME }}/cpp
           cp -r ../python/doc/build/html/* dolfinx/${{ env.VERSION_NAME }}/python
       - name: Commit and push documentation to FEniCS/docs
-        if: ${{ github.repository == 'FEniCS/dolfinx' && ( github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/') ) && runner.os == 'Linux' }}
+        if: ${{ github.repository == 'FEniCS/dolfinx' && ( github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/') ) && runner.os == 'Linux' && matrix.petsc_arch == 'real' && matrix.petsc_int_type == '32' }}
         run: |
           cd docs
           git config --global user.email "fenics@github.com"
