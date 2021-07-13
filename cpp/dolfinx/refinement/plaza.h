@@ -4,10 +4,9 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include "parent_map.h"
 #include <cstdint>
 #include <dolfinx/graph/AdjacencyList.h>
-#include <utility>
-#include <vector>
 
 #pragma once
 
@@ -34,7 +33,8 @@ namespace plaza
 /// @param[in] redistribute Flag to call the mesh partitioner to
 /// redistribute after refinement
 /// @return New mesh
-mesh::Mesh refine(const mesh::Mesh& mesh, bool redistribute);
+std::pair<mesh::Mesh, ParentRelationshipInfo> refine(const mesh::Mesh& mesh,
+                                                     bool redistribute);
 
 /// Refine with markers, optionally redistributing
 ///
@@ -43,10 +43,10 @@ mesh::Mesh refine(const mesh::Mesh& mesh, bool redistribute);
 /// should be split by this refinement. The values are ignored.
 /// @param[in] redistribute Flag to call the Mesh Partitioner to
 /// redistribute after refinement
-/// @return New Mesh
-mesh::Mesh refine(const mesh::Mesh& mesh,
-                  const mesh::MeshTags<std::int8_t>& refinement_marker,
-                  bool redistribute);
+/// @return New Mesh and parent map information
+std::pair<mesh::Mesh, ParentRelationshipInfo>
+refine(const mesh::Mesh& mesh,
+       const mesh::MeshTags<std::int8_t>& refinement_marker, bool redistribute);
 
 /// Refine with markers returning new mesh data
 ///
@@ -54,20 +54,20 @@ mesh::Mesh refine(const mesh::Mesh& mesh,
 /// @param[in] refinement_marker MeshTags listing which mesh entities
 /// should be split by this refinement. The values are ignored.
 /// redistribute after refinement
-/// @return New mesh data: cell topology, vertex coordinates and parent cell
-/// index
+/// @return New mesh data: cell topology, vertex coordinates, parent cell
+/// index, and the map from edges to new cells
 std::tuple<graph::AdjacencyList<std::int64_t>, xt::xtensor<double, 2>,
-           std::vector<std::int32_t>>
+           std::vector<std::int32_t>, std::map<std::int32_t, std::int64_t>>
 compute_refinement_data(const mesh::Mesh& mesh,
                         const mesh::MeshTags<std::int8_t>& refinement_marker);
 
 /// Refine mesh returning new mesh data
 ///
 /// @param[in] mesh Input mesh to be refined
-/// @return New mesh data: cell topology, vertex coordinates and parent cell
-/// index
+/// @return New mesh data: cell topology, vertex coordinates, parent cell
+/// index, and the map from edges to new cells
 std::tuple<graph::AdjacencyList<std::int64_t>, xt::xtensor<double, 2>,
-           std::vector<std::int32_t>>
+           std::vector<std::int32_t>, std::map<std::int32_t, std::int64_t>>
 compute_refinement_data(const mesh::Mesh& mesh);
 
 } // namespace plaza

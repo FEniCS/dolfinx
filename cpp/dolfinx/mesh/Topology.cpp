@@ -435,6 +435,9 @@ mesh::create_topology(MPI_Comm comm,
     }
   }
 
+  // Disable node_remap for now to allow refinement info to work
+  std::iota(node_remap.begin(), node_remap.end(), 0);
+
   assert(std::find(node_remap.begin(), node_remap.end(), -1)
          == node_remap.end());
   std::for_each(global_to_local_vertices.begin(),

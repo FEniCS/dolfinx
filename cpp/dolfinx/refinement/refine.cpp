@@ -14,8 +14,8 @@ using namespace dolfinx;
 using namespace refinement;
 
 //-----------------------------------------------------------------------------
-mesh::Mesh dolfinx::refinement::refine(const mesh::Mesh& mesh,
-                                       bool redistribute)
+std::pair<mesh::Mesh, ParentRelationshipInfo>
+dolfinx::refinement::refine(const mesh::Mesh& mesh, bool redistribute)
 {
   if (mesh.topology().cell_type() != mesh::CellType::triangle
       and mesh.topology().cell_type() != mesh::CellType::tetrahedron)
@@ -23,7 +23,7 @@ mesh::Mesh dolfinx::refinement::refine(const mesh::Mesh& mesh,
     throw std::runtime_error("Refinement only defined for simplices");
   }
 
-  mesh::Mesh refined_mesh = plaza::refine(mesh, redistribute);
+  auto [refined_mesh, parent_map] = plaza::refine(mesh, redistribute);
 
   // Report the number of refined cells
   const int D = mesh.topology().dim();
@@ -33,10 +33,10 @@ mesh::Mesh dolfinx::refinement::refine(const mesh::Mesh& mesh,
             << 100.0 * (static_cast<double>(n1) / static_cast<double>(n0) - 1.0)
             << "%% increase).";
 
-  return refined_mesh;
+  return std::make_pair(refined_mesh, parent_map);
 }
 //-----------------------------------------------------------------------------
-mesh::Mesh
+std::pair<mesh::Mesh, ParentRelationshipInfo>
 dolfinx::refinement::refine(const mesh::Mesh& mesh,
                             const mesh::MeshTags<std::int8_t>& cell_markers,
                             bool redistribute)
@@ -47,7 +47,8 @@ dolfinx::refinement::refine(const mesh::Mesh& mesh,
     throw std::runtime_error("Refinement only defined for simplices");
   }
 
-  mesh::Mesh refined_mesh = plaza::refine(mesh, cell_markers, redistribute);
+  auto [refined_mesh, parent_map]
+      = plaza::refine(mesh, cell_markers, redistribute);
 
   // Report the number of refined cells
   const int D = mesh.topology().dim();
@@ -57,6 +58,6 @@ dolfinx::refinement::refine(const mesh::Mesh& mesh,
             << 100.0 * (static_cast<double>(n1) / static_cast<double>(n0) - 1.0)
             << "%% increase).";
 
-  return refined_mesh;
+  return std::make_pair(refined_mesh, parent_map);
 }
 //-----------------------------------------------------------------------------
