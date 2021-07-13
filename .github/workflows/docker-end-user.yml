@@ -8,6 +8,10 @@ on:
   #push:
   #  branches:
   #    - "**"
+  push:
+    # This will run every time a version tag is created
+    tags:
+      - '*'
   schedule:
     # '*' is a special character in YAML, so string must be quoted
     - cron: "0 5 * * *"
@@ -77,6 +81,15 @@ jobs:
         with:
           repository: "FEniCS/ufl"
           path: "ufl"
+      - name: Get tag name
+        id: tag_name
+        run: |
+          if [[ ${GITHUB_REF#refs/tags/} == v* ]]
+          then
+            echo ::set-output name=TAG_PREFIX::${GITHUB_REF#refs/tags/}-
+          else
+            echo ::set-output name=TAG_PREFIX::
+          fi
       - name: Set default FFCx parameters
         run: |
           echo '{ }' > dolfinx/docker/ffcx_parameters.json
@@ -108,12 +121,12 @@ jobs:
         run: echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
       - name: Push to the DockerHub registry
         run: |
-          docker tag dolfinx/dolfinx-onbuild dolfinx/dolfinx-onbuild:${ARCH_TAG}
-          docker push dolfinx/dolfinx-onbuild:${ARCH_TAG}
-          docker tag dolfinx/dolfinx dolfinx/dolfinx:${ARCH_TAG}
-          docker push dolfinx/dolfinx:${ARCH_TAG}
-          docker tag dolfinx/lab dolfinx/lab:${ARCH_TAG}
-          docker push dolfinx/lab:${ARCH_TAG}
+          docker tag dolfinx/dolfinx-onbuild dolfinx/dolfinx-onbuild:${steps.tag_name.output.TAG_PREFIX}${ARCH_TAG}
+          docker push dolfinx/dolfinx-onbuild:${steps.tag_name.output.TAG_PREFIX}${ARCH_TAG}
+          docker tag dolfinx/dolfinx dolfinx/dolfinx:${steps.tag_name.output.TAG_PREFIX}${ARCH_TAG}
+          docker push dolfinx/dolfinx:${steps.tag_name.output.TAG_PREFIX}${ARCH_TAG}
+          docker tag dolfinx/lab dolfinx/lab:${steps.tag_name.output.TAG_PREFIX}${ARCH_TAG}
+          docker push dolfinx/lab:${steps.tag_name.output.TAG_PREFIX}${ARCH_TAG}
 
   push_multiarch_images:
     name: Push multiarch image

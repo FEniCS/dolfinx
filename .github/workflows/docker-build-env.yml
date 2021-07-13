@@ -9,6 +9,10 @@ on:
   #push:
   #  branches:
   #    - "**"
+  push:
+    # This will run every time a version tag is created
+    tags:
+      - '*'
   schedule:
     # '*' is a special character in YAML, so string must be quoted
     - cron: "0 22 * * SUN"
@@ -141,17 +145,30 @@ jobs:
       - build_test_env_mpich
       - build_dev_env
     steps:
+      - name: Get tag name
+        id: tag_name
+        run: |
+          if [[ ${GITHUB_REF#refs/tags/} == v* ]]
+          then
+            echo ::set-output name=TAG_PREFIX::${GITHUB_REF#refs/tags/}-
+          else
+            echo ::set-output name=TAG_PREFIX::
+          fi
       - name: Log into the DockerHub registry
         run: echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
       # NOTE: OpenMPI ARM64 build currently fails, see https://github.com/FEniCS/dolfinx/runs/2380975354?check_suite_focus=true#step:4:7472
       - name: Push multiarch images
         run: |
           docker buildx imagetools create \
-            -t fenicsproject/test-env:mpich fenicsproject/test-env:mpich-amd64 fenicsproject/test-env:mpich-arm64
+            -t fenicsproject/test-env:${steps.tag_name.output.TAG_PREFIX}mpich \
+            fenicsproject/test-env:${steps.tag_name.output.TAG_PREFIX}mpich-amd64 \
+            fenicsproject/test-env:${steps.tag_name.output.TAG_PREFIX}mpich-arm64
           docker buildx imagetools create \
-            -t fenicsproject/test-env:openmpi fenicsproject/test-env:openmpi-amd64
+            -t fenicsproject/test-env:${steps.tag_name.output.TAG_PREFIX}openmpi \
+            fenicsproject/test-env:${steps.tag_name.output.TAG_PREFIX}openmpi-amd64
           docker buildx imagetools create \
-            -t dolfinx/dev-env:latest dolfinx/dev-env:amd64 dolfinx/dev-env:arm64
+            -t dolfinx/dev-env:latest dolfinx/dev-env:${steps.tag_name.output.TAG_PREFIX}amd64 \
+            dolfinx/dev-env:${steps.tag_name.output.TAG_PREFIX}arm64
 
   stop-runner:
     name: Stop self-hosted EC2 runner
