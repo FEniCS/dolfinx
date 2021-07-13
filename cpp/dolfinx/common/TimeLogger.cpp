@@ -50,6 +50,23 @@ void TimeLogger::list_timings(MPI_Comm mpi_comm, std::set<TimingType> type)
     std::cout << str << std::endl;
 }
 //-----------------------------------------------------------------------------
+void TimeLogger::list_timings_min_max(MPI_Comm mpi_comm)
+{
+  // Format and reduce to rank 0
+  Table timings = this->timings({TimingType::wall});
+  Table timings_min = timings.reduce(mpi_comm, Table::Reduction::min);
+  Table timings_max = timings.reduce(mpi_comm, Table::Reduction::max);
+  const std::string str_max = "\n" + timings_max.str();
+  const std::string str_min = "\n" + timings_min.str();
+
+  // Print just on rank 0
+  if (dolfinx::MPI::rank(mpi_comm) == 0)
+  {
+    std::cout << str_max << std::endl;
+    std::cout << str_min << std::endl;
+  }
+}
+//-----------------------------------------------------------------------------
 Table TimeLogger::timings(std::set<TimingType> type)
 {
   // Generate log::timing table

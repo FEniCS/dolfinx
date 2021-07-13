@@ -6,6 +6,7 @@
 
 #include "Timer.h"
 #include "TimeLogManager.h"
+#include <mpi.h>
 #include <stdexcept>
 
 using namespace dolfinx;

@@ -47,6 +47,8 @@ public:
   /// @param type Set of possible timings: wall, user or system
   void list_timings(MPI_Comm mpi_comm, std::set<TimingType> type);
 
+  void list_timings_min_max(MPI_Comm mpi_comm);
+
   /// Return timing
   /// @param[in] task The task name to retrieve the timing for
   /// @returns Values (count, total wall time, total user time, total
