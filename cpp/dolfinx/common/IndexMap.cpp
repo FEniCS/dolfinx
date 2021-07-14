@@ -52,8 +52,9 @@ std::vector<int> get_ghost_ranks(MPI_Comm comm, std::int32_t local_size,
   // only includes the parallel version of this algorithm, requiring
   // e.g. Intel TBB.
   std::vector<std::int64_t> all_ranges(mpi_size + 1, 0);
-  std::transform(all_ranges.cbegin(), all_ranges.cend(), local_sizes.cbegin(),
-                 std::next(all_ranges.begin()), std::plus<std::int64_t>());
+  std::transform(all_ranges.cbegin(), std::prev(all_ranges.cend()),
+                 local_sizes.cbegin(), std::next(all_ranges.begin()),
+                 std::plus<std::int64_t>());
 
   // Compute rank of ghost owners
   std::vector<int> ghost_ranks(ghosts.size(), -1);
