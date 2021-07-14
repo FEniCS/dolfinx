@@ -503,10 +503,7 @@ void IndexMap::global_to_local(const xtl::span<const std::int64_t>& global,
                    else
                    {
                      auto it = global_to_local.find(index);
-                     if (it != global_to_local.end())
-                       return it->second;
-                     else
-                       return -1;
+                     return it != global_to_local.end() ? it->second : -1;
                    }
                  });
 }

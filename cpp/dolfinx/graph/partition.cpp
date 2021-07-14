@@ -75,8 +75,9 @@ graph::build::distribute(MPI_Comm comm,
       data_send[offset[dest]++] = dests[0];
       data_send[offset[dest]++] = i + offset_global;
       data_send[offset[dest]++] = links.size();
-      for (auto link : links)
-        data_send[offset[dest]++] = link;
+      std::copy(links.cbegin(), links.cend(),
+                std::next(data_send.begin(), offset[dest]));
+      offset[dest] += links.size();
     }
   }
 
