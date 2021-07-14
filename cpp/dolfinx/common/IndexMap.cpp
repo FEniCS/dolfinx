@@ -486,25 +486,28 @@ void IndexMap::global_to_local(const xtl::span<const std::int64_t>& global,
 {
   const std::int32_t local_size = _local_range[1] - _local_range[0];
 
-  std::vector<std::pair<std::int64_t, std::int32_t>> global_local_ghosts;
+  std::vector<std::pair<std::int64_t, std::int32_t>> global_local_ghosts(
+      _ghosts.size());
   for (std::size_t i = 0; i < _ghosts.size(); ++i)
-    global_local_ghosts.emplace_back(_ghosts[i], i + local_size);
-
+    global_local_ghosts[i] = {_ghosts[i], i + local_size};
   std::map<std::int64_t, std::int32_t> global_to_local(
       global_local_ghosts.begin(), global_local_ghosts.end());
-  for (std::size_t i = 0; i < global.size(); i++)
-  {
-    std::int64_t index = global[i];
-    if (index >= _local_range[0] and index < _local_range[1])
-      local[i] = index - _local_range[0];
-    else
-    {
-      if (auto it = global_to_local.find(index); it != global_to_local.end())
-        local[i] = it->second;
-      else
-        local[i] = -1;
-    }
-  }
+
+  std::transform(global.cbegin(), global.cend(), local.begin(),
+                 [range = _local_range,
+                  &global_to_local](std::int64_t index) -> std::int32_t
+                 {
+                   if (index >= range[0] and index < range[1])
+                     return index - range[0];
+                   else
+                   {
+                     auto it = global_to_local.find(index);
+                     if (it != global_to_local.end())
+                       return it->second;
+                     else
+                       return -1;
+                   }
+                 });
 }
 //-----------------------------------------------------------------------------
 std::vector<std::int64_t> IndexMap::global_indices() const
@@ -597,7 +600,7 @@ std::map<std::int32_t, std::set<int>> IndexMap::compute_shared_indices() const
   std::vector<int> fwd_sharing_offsets{0};
   for (std::int32_t p = 0; p < _shared_indices->num_nodes(); ++p)
   {
-    for (const std::int32_t& idx : _shared_indices->links(p))
+    for (std::int32_t idx : _shared_indices->links(p))
     {
       assert(shared_indices.find(idx) != shared_indices.end());
       if (auto it = shared_indices.find(idx); it->second.size() > 1)
