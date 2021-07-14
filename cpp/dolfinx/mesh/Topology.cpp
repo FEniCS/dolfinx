@@ -338,6 +338,7 @@ mesh::create_topology(MPI_Comm comm,
         cell_ghost_indices, ghost_owners);
   }
 
+  LOG(INFO) << "Topology: create sets";
   common::Timer t0("TOPOLOGY: Create sets");
 
   // Build a set of 'local' cell vertices
@@ -364,6 +365,10 @@ mesh::create_topology(MPI_Comm comm,
   std::set_intersection(local_vertices_set.begin(), local_vertices_set.end(),
                         ghost_vertices_set.begin(), ghost_vertices_set.end(),
                         std::back_inserter(unknown_indices_set));
+
+  t0.stop();
+  LOG(INFO) << "Topology: map vertices";
+  common::Timer t1("TOPOLOGY: Map vertices");
 
   // Create map from existing global vertex index to local index,
   // putting ghost indices last
@@ -417,7 +422,9 @@ mesh::create_topology(MPI_Comm comm,
   // Store number of vertices owned by this rank
   const std::int32_t nlocal = v;
 
-  t0.stop();
+  t1.stop();
+  LOG(INFO) << "Topology: reorder vertices";
+  common::Timer t2("TOPOLOGY: Reorder vertices");
 
   // Re-order vertices by looping through cells in order
 
@@ -439,8 +446,7 @@ mesh::create_topology(MPI_Comm comm,
          == node_remap.end());
   std::for_each(global_to_local_vertices.begin(),
                 global_to_local_vertices.end(),
-                [&remap = std::as_const(node_remap)](auto& v)
-                {
+                [&remap = std::as_const(node_remap)](auto& v) {
                   if (v.second >= 0)
                     v.second = remap[v.second];
                 });

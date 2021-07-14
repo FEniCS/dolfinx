@@ -42,8 +42,8 @@ graph::build::distribute(MPI_Comm comm,
       = dolfinx::MPI::global_offset(comm, list.num_nodes(), true);
   const int size = dolfinx::MPI::size(comm);
 
-  std::vector<int> connectivity_data(size * size);
-  std::vector<int> all_connectivity_data(size * size);
+  std::vector<int> connectivity_data(size * size, 0);
+  std::vector<int> all_connectivity_data(size * size, 0);
 
   // Compute number of links to send to each process
   std::vector<int> num_per_dest_send(size, 0);
@@ -56,13 +56,11 @@ graph::build::distribute(MPI_Comm comm,
 
     if (dests.size() > 1)
     {
-      for (std::size_t i = 0; i < dests.size(); ++i)
-        for (std::size_t j = 0; j < i; ++j)
+      for (std::size_t j = 0; j < dests.size(); ++j)
+        for (std::size_t k = 0; k < j; ++k)
         {
-          if (dests[i] > dests[j])
-            connectivity_data[dests[i] * size + dests[j]]++;
-          else
-            connectivity_data[dests[j] * size + dests[i]]++;
+          connectivity_data[dests[j] * size + dests[k]]++;
+          connectivity_data[dests[k] * size + dests[j]]++;
         }
     }
   }

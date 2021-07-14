@@ -119,11 +119,10 @@ graph::scotch::compute_reordering(const AdjacencyList<std::int32_t>& graph,
 graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
                                                double imbalance, int seed)
 {
-  return
-      [imbalance, strategy, seed](const MPI_Comm mpi_comm, int nparts,
-                                  const AdjacencyList<std::int64_t>& graph,
-                                  std::int32_t num_ghost_nodes, bool ghosting)
-  {
+  return [imbalance, strategy, seed](const MPI_Comm mpi_comm, int nparts,
+                                     const AdjacencyList<std::int64_t>& graph,
+                                     std::int32_t num_ghost_nodes,
+                                     bool ghosting) {
     LOG(INFO) << "Compute graph partition using PT-SCOTCH";
     common::Timer timer("Compute graph partition (SCOTCH)");
 
