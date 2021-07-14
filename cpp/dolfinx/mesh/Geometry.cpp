@@ -8,6 +8,7 @@
 #include "Topology.h"
 #include <boost/functional/hash.hpp>
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/sort.h>
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/fem/dofmapbuilder.h>
 #include <dolfinx/graph/partition.h>
@@ -71,7 +72,7 @@ mesh::Geometry mesh::create_geometry(
   // Build list of unique (global) node indices from adjacency list
   // (geometry nodes)
   std::vector<std::int64_t> indices = cell_nodes.array();
-  std::sort(indices.begin(), indices.end());
+  dolfinx::radix_sort(indices);
   indices.erase(std::unique(indices.begin(), indices.end()), indices.end());
 
   //  Fetch node coordinates by global index from other ranks. Order of

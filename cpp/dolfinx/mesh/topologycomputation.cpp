@@ -8,12 +8,14 @@
 #include "Topology.h"
 #include "cell_types.h"
 #include <algorithm>
+#include <boost/multiprecision/cpp_int.hpp>
 #include <boost/unordered_map.hpp>
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
+#include <dolfinx/common/sort.h>
 #include <dolfinx/common/utils.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <memory>
@@ -55,18 +57,32 @@ int get_ownership(std::set<int>& processes, std::vector<std::int64_t>& vertices)
 /// @return The permutation vector that would order the rows in
 /// ascending order
 /// @pre Each row of @p array must be sorted
-template <typename T>
-std::vector<std::int32_t> sort_by_perm(const xt::xtensor<T, 2>& array)
+std::vector<std::int32_t>
+sort_by_perm(const xt::xtensor<std::int32_t, 2>& array)
 {
   std::vector<int> index(array.shape(0));
   std::iota(index.begin(), index.end(), 0);
-  std::sort(index.begin(), index.end(),
-            [&array](int a, int b)
-            {
-              return std::lexicographical_compare(
-                  xt::row(array, a).begin(), xt::row(array, a).end(),
-                  xt::row(array, b).begin(), xt::row(array, b).end());
-            });
+
+  assert(array.shape(1) <= 4);
+  std::vector<__int128_t> array128(array.shape(0));
+  int n = array.shape(1) - 1;
+  for (std::size_t i = 0; i < array.shape(0); i++)
+  {
+    for (std::size_t j = 0; j < array.shape(1); j++)
+    {
+      __int128_t bits = array(i, j);
+      bits <<= 32 * (n - j);
+      array128[i] |= bits;
+    }
+  }
+
+  std::cout << array.shape(1) << std::endl;
+  common::Timer t("~sort_by_perm");
+  std::stable_sort(index.begin(), index.end(), [&array128](int i, int j) {
+    const __int128_t& x = array128[i];
+    const __int128_t& y = array128[j];
+    return x <= y;
+  });
 
   return index;
 }
@@ -207,7 +223,7 @@ get_local_indexing(
       if (q.second == num_vertices_per_e)
       {
         vertex_indexmap->local_to_global(entity_list_i, vglobal);
-        std::sort(vglobal.begin(), vglobal.end());
+        dolfinx::radix_sort(vglobal);
 
         global_entity_to_entity_index.insert({vglobal, entity_index[i]});
 
@@ -461,8 +477,7 @@ compute_entities_by_key_matching(
   }
 
   // Sort the list and label uniquely
-  const std::vector<std::int32_t> sort_order
-      = sort_by_perm<std::int32_t>(entity_list_sorted);
+  const std::vector<std::int32_t> sort_order = sort_by_perm(entity_list_sorted);
   std::vector<std::int32_t> entity_index(entity_list.shape(0), 0);
   std::int32_t entity_count = 0;
   std::int32_t last = sort_order[0];
@@ -654,6 +669,8 @@ mesh::compute_entities(MPI_Comm comm, const Topology& topology, int dim)
   assert(vertex_map);
   auto cell_map = topology.index_map(tdim);
   assert(cell_map);
+
+  common::Timer t0("compute_entities_by_key_matching " + std::to_string(dim));
   std::tuple<std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
              std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
              std::shared_ptr<common::IndexMap>>
