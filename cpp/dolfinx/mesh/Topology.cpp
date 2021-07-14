@@ -99,6 +99,7 @@ compute_index_sharing(MPI_Comm comm, std::vector<std::int64_t>& unknown_indices)
   }
 
   timer2.stop();
+  MPI_Barrier(comm); // to be sure
   common::Timer timer2a("TOPOLOGY: compute_index_sharing (2a)");
 
   // Alltoall is necessary because cells which are shared by vertex are not yet
