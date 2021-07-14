@@ -300,10 +300,10 @@ IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size)
   std::vector<int> ranks(0);
   MPI_Dist_graph_create_adjacent(comm, ranks.size(), ranks.data(),
                                  MPI_UNWEIGHTED, ranks.size(), ranks.data(),
-                                 MPI_UNWEIGHTED, MPI_INFO_NULL, true, &comm0);
+                                 MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm0);
   MPI_Dist_graph_create_adjacent(comm, ranks.size(), ranks.data(),
                                  MPI_UNWEIGHTED, ranks.size(), ranks.data(),
-                                 MPI_UNWEIGHTED, MPI_INFO_NULL, true, &comm1);
+                                 MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm1);
   _comm_owner_to_ghost = dolfinx::MPI::Comm(comm0, false);
   _comm_ghost_to_owner = dolfinx::MPI::Comm(comm1, false);
   _shared_indices = std::make_unique<graph::AdjacencyList<std::int32_t>>(0);
@@ -353,20 +353,12 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
     MPI_Dist_graph_create_adjacent(mpi_comm, halo_src_ranks.size(),
                                    halo_src_ranks.data(), weights.data(),
                                    dest_ranks.size(), dest_ranks.data(),
-                                   weights.data(), MPI_INFO_NULL, true, &comm0);
+                                   weights.data(), MPI_INFO_NULL, false, &comm0);
     _comm_owner_to_ghost = dolfinx::MPI::Comm(comm0, false);
-
-    // Update src/dest rank indices in case
-    // MPI_Dist_graph_create_adjacent has re-ordered for efficiency
-    std::vector<int> _dest_ranks(dest_ranks.size());
-    MPI_Dist_graph_neighbors(_comm_owner_to_ghost.comm(), halo_src_ranks.size(),
-                             halo_src_ranks.data(), MPI_UNWEIGHTED,
-                             _dest_ranks.size(), _dest_ranks.data(),
-                             MPI_UNWEIGHTED);
 
     MPI_Comm comm1;
     MPI_Dist_graph_create_adjacent(
-        mpi_comm, _dest_ranks.size(), _dest_ranks.data(), weights.data(),
+        mpi_comm, dest_ranks.size(), dest_ranks.data(), weights.data(),
         halo_src_ranks.size(), halo_src_ranks.data(), weights.data(),
         MPI_INFO_NULL, false, &comm1);
     _comm_ghost_to_owner = dolfinx::MPI::Comm(comm1, false);
