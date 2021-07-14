@@ -35,6 +35,7 @@ namespace
 std::unordered_map<std::int64_t, std::vector<int>>
 compute_index_sharing(MPI_Comm comm, std::vector<std::int64_t>& unknown_indices)
 {
+  common::Timer timer1("TOPOLOGY: compute_index_sharing (1)");
   const int mpi_size = dolfinx::MPI::size(comm);
 
   // Create a global address space to use with all_to_all post-office
@@ -60,6 +61,9 @@ compute_index_sharing(MPI_Comm comm, std::vector<std::int64_t>& unknown_indices)
   const graph::AdjacencyList<std::int64_t> recv_indices
       = dolfinx::MPI::all_to_all(
           comm, graph::AdjacencyList<std::int64_t>(send_indices));
+
+  timer1.stop();
+  common::Timer timer2("TOPOLOGY: compute_index_sharing (2)");
 
   // Get index sharing - ownership will be first entry (randomised later)
   std::unordered_map<std::int64_t, std::vector<int>> index_to_owner;
@@ -98,6 +102,9 @@ compute_index_sharing(MPI_Comm comm, std::vector<std::int64_t>& unknown_indices)
   // known to this process
   const graph::AdjacencyList<int> recv_owner
       = dolfinx::MPI::all_to_all(comm, graph::AdjacencyList<int>(send_owner));
+
+  timer2.stop();
+  common::Timer timer3("TOPOLOGY: compute_index_sharing (3)");
 
   // Now fill index_to_owner with locally needed indices
   index_to_owner.clear();
