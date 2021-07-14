@@ -98,12 +98,15 @@ compute_index_sharing(MPI_Comm comm, std::vector<std::int64_t>& unknown_indices)
     }
   }
 
+  timer2.stop();
+  common::Timer timer2a("TOPOLOGY: compute_index_sharing (2a)");
+
   // Alltoall is necessary because cells which are shared by vertex are not yet
   // known to this process
   const graph::AdjacencyList<int> recv_owner
       = dolfinx::MPI::all_to_all(comm, graph::AdjacencyList<int>(send_owner));
 
-  timer2.stop();
+  timer2a.stop();
   common::Timer timer3("TOPOLOGY: compute_index_sharing (3)");
 
   // Now fill index_to_owner with locally needed indices
