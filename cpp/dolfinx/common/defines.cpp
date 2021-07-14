@@ -62,3 +62,12 @@ bool dolfinx::has_kahip()
 #endif
 }
 //-------------------------------------------------------------------------
+bool dolfinx::has_adios2()
+{
+#ifdef HAS_ADIOS2
+  return true;
+#else
+  return false;
+#endif
+}
+//-------------------------------------------------------------------------

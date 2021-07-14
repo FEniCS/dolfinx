@@ -26,8 +26,6 @@ _perm_dq = {cpp.mesh.CellType.quadrilateral: {1: [0, 1, 3, 2], 2: [0, 2, 8, 6, 1
 
 # NOTE: Edge visualization of higher order elements are sketchy, see:
 # https://github.com/pyvista/pyvista/issues/947
-
-
 # NOTE: These dictionaries and following function should be replaced by
 # cpp.io.get_vtk_cell_type when plotting module has better support for
 # arbitrary lagrangian elements
@@ -119,10 +117,8 @@ def _(V: fem.FunctionSpace, entities=None):
     num_dofs_per_cell = V.dofmap.dof_layout.num_dofs
     degree = V.ufl_element().degree()
     cell_type = mesh.topology.cell_type
-    if family == "Discontinuous Lagrange":
-        perm = np.array(_perm_dg[cell_type][degree], dtype=np.int32)
-    elif family == "DQ":
-        perm = np.array(_perm_dq[cell_type][degree], dtype=np.int32)
+    if family in ["Discontinuous Lagrange", "DQ"]:
+        perm = np.asarray(cpp.io.perm_discontinuous(cell_type, num_dofs_per_cell), dtype=np.int8)
     else:
         perm = np.argsort(cpp.io.perm_vtk(cell_type, num_dofs_per_cell))
 

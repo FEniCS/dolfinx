@@ -181,11 +181,13 @@ int main(int argc, char* argv[])
                     + xt::square(xt::row(x, 1) - 0.5);
           return 10 * xt::exp(-(dx) / 0.02);
         });
+    f->name = "f";
 
     g->interpolate(
         [](const xt::xtensor<double, 2>& x) -> xt::xarray<PetscScalar> {
           return xt::sin(5 * xt::row(x, 0));
         });
+    g->name = "g";
 
     // Now, we have specified the variational forms and can consider the
     // solution of the variational problem. First, we need to define a
@@ -230,13 +232,18 @@ int main(int argc, char* argv[])
 
     // The function ``u`` will be modified during the call to solve. A
     // :cpp:class:`Function` can be saved to a file. Here, we output the
-    // solution to a ``VTK`` file (specified using the suffix ``.pvd``) for
+    // solution to a ``bp`` file (specified using the suffix ``.bp``) for
     // visualisation in an external program such as Paraview.
     //
     // .. code-block:: cpp
 
+#ifdef HAS_ADIOS2
+    // Save solution in ADIOS format
+    dolfinx::io::ADIOS2File adios(MPI_COMM_WORLD, "poisson.bp", "w");
+    adios.write_function({u, *f, *g}, 0.0);
+#endif
     // Save solution in VTK format
-    io::VTKFile file(MPI_COMM_WORLD, "u.pvd", "w");
+    dolfinx::io::VTKFile file(MPI_COMM_WORLD, "u.pvd", "w");
     file.write({u}, 0.0);
   }
 

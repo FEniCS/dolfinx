@@ -1,4 +1,5 @@
-// Copyright (C) 2017-2019 Chris N. Richardson Garth N. Wells
+// Copyright (C) 2017-2021 Chris N. Richardson, Garth N. Wells and Jørgen S.
+// Dokken
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -8,8 +9,10 @@
 #include "caster_mpi.h"
 #include "caster_petsc.h"
 #include <dolfinx/common/array2d.h>
+#include <dolfinx/common/defines.h>
 #include <dolfinx/fem/Function.h>
 #include <dolfinx/fem/FunctionSpace.h>
+#include <dolfinx/io/ADIOS2File.h>
 #include <dolfinx/io/VTKFile.h>
 #include <dolfinx/io/XDMFFile.h>
 #include <dolfinx/io/cells.h>
@@ -39,6 +42,7 @@ void io(py::module& m)
   // dolfinx::io::cell permutation functions
   m.def("perm_vtk", &dolfinx::io::cells::perm_vtk);
   m.def("perm_gmsh", &dolfinx::io::cells::perm_gmsh);
+  m.def("perm_discontinuous", &dolfinx::io::cells::perm_discontinuous);
 
   // TODO: Template for different values dtypes
   m.def("extract_local_entities",
@@ -59,6 +63,9 @@ void io(py::module& m)
                            as_pyarray(std::move(e.second)));
         });
 
+  // Flag for ADIOS2 installation
+  m.def("has_adios2", &dolfinx::has_adios2);
+
   // dolfinx::io::XDMFFile
   py::class_<dolfinx::io::XDMFFile, std::shared_ptr<dolfinx::io::XDMFFile>>
       xdmf_file(m, "XDMFFile");
@@ -69,8 +76,8 @@ void io(py::module& m)
       .value("ASCII", dolfinx::io::XDMFFile::Encoding::ASCII);
 
   xdmf_file
-      .def(py::init([](const MPICommWrapper comm, const std::string filename,
-                       const std::string file_mode,
+      .def(py::init([](const MPICommWrapper comm, const std::string& filename,
+                       const std::string& file_mode,
                        dolfinx::io::XDMFFile::Encoding encoding) {
              return std::make_unique<dolfinx::io::XDMFFile>(
                  comm.get(), filename, file_mode, encoding);
@@ -130,6 +137,36 @@ void io(py::module& m)
       .def("comm", [](dolfinx::io::XDMFFile& self) {
         return MPICommWrapper(self.comm());
       });
+
+#ifdef HAS_ADIOS2
+  // dolfinx::io::ADIOS2File
+  py::class_<dolfinx::io::ADIOS2File, std::shared_ptr<dolfinx::io::ADIOS2File>>(
+      m, "ADIOS2File")
+      .def(py::init([](const MPICommWrapper comm, const std::string& filename,
+                       const std::string& mode) {
+        return std::make_unique<dolfinx::io::ADIOS2File>(comm.get(), filename,
+                                                         mode);
+      }))
+      .def("__enter__",
+           [](std::shared_ptr<dolfinx::io::ADIOS2File>& self) { return self; })
+      .def("__exit__",
+           [](dolfinx::io::ADIOS2File& self, py::object exc_type,
+              py::object exc_value, py::object traceback) { self.close(); })
+      .def("close", &dolfinx::io::ADIOS2File::close)
+      .def("write_mesh", &dolfinx::io::ADIOS2File::write_mesh)
+      .def("write_meshtags", &dolfinx::io::ADIOS2File::write_meshtags)
+      .def("write_function",
+           py::overload_cast<
+               const std::vector<std::reference_wrapper<
+                   const dolfinx::fem::Function<std::complex<double>>>>&,
+               double>(&dolfinx::io::ADIOS2File::write_function),
+           py::arg("function"), py::arg("t"))
+      .def("write_function",
+           py::overload_cast<const std::vector<std::reference_wrapper<
+                                 const dolfinx::fem::Function<double>>>&,
+                             double>(&dolfinx::io::ADIOS2File::write_function),
+           py::arg("function"), py::arg("t"));
+#endif
 
   // dolfinx::io::VTKFile
   py::class_<dolfinx::io::VTKFile, std::shared_ptr<dolfinx::io::VTKFile>>(

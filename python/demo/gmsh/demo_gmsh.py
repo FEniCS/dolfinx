@@ -7,7 +7,7 @@
 
 import numpy as np
 from dolfinx import cpp
-from dolfinx.cpp.io import extract_local_entities, perm_gmsh
+from dolfinx.cpp.io import extract_local_entities, has_adios2, perm_gmsh
 from dolfinx.io import (XDMFFile, extract_gmsh_geometry,
                         extract_gmsh_topology_and_markers, ufl_mesh_from_gmsh)
 from dolfinx.mesh import create_mesh, create_meshtags
@@ -104,6 +104,11 @@ with XDMFFile(MPI.COMM_WORLD, "mesh.xdmf", "w") as file:
     file.write_mesh(mesh)
     mesh.topology.create_connectivity(2, 3)
     file.write_meshtags(mt, geometry_xpath="/Xdmf/Domain/Grid[@Name='ball_d1']/Geometry")
+
+if has_adios2():
+    from dolfinx.cpp.io import ADIOS2File
+    with ADIOS2File(MPI.COMM_WORLD, "meshtags.bp", "w") as adios:
+        adios.write_meshtags(mt)
 
 # Create a distributed (parallel) mesh with quadratic geometry.
 # Generate mesh on rank 0, then build a distributed mesh. ::
