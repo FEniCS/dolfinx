@@ -21,7 +21,7 @@ void radix_sort(std::vector<T>& array)
 
   // Sort 4 bits at a time
   T mask = 0xF;
-  constexpr int bucket_size = 16;
+  constexpr std::size_t bucket_size = 16;
 
   int passes = 0;
   while (max_value)
@@ -38,29 +38,29 @@ void radix_sort(std::vector<T>& array)
     std::int32_t count[bucket_size] = {0};
     std::int32_t offset[bucket_size + 1];
     if (p % 2 == 0)
-      for (std::int32_t i = 0; i < array.size(); i++)
+      for (std::size_t i = 0; i < array.size(); i++)
         count[(array[i] & mask) >> mask_offset]++;
     else
-      for (std::int32_t i = 0; i < buffer.size(); i++)
+      for (std::size_t i = 0; i < buffer.size(); i++)
         count[(buffer[i] & mask) >> mask_offset]++;
 
     offset[0] = 0;
-    for (std::int32_t i = 0; i < bucket_size; i++)
+    for (std::size_t i = 0; i < bucket_size; i++)
       offset[i + 1] = offset[i] + count[i];
 
     // now for each element in [lo, hi), move it to its offset in the other
     // buffer this branch should be ok because whichBuf is the same on all
     // threads
     if (p % 2 == 0)
-      for (std::int32_t i = 0; i < array.size(); i++)
+      for (std::size_t i = 0; i < array.size(); i++)
       {
         std::int32_t bucket = (array[i] & mask) >> mask_offset;
         std::int32_t pos = offset[bucket + 1] - count[bucket];
-        buffer[offset[bucket + 1] - count[bucket]] = array[i];
+        buffer[pos] = array[i];
         count[bucket]--;
       }
     else
-      for (std::int32_t i = 0; i < buffer.size(); i++)
+      for (std::size_t i = 0; i < buffer.size(); i++)
       {
         std::int32_t bucket = (buffer[i] & mask) >> mask_offset;
         std::int32_t pos = offset[bucket + 1] - count[bucket];
