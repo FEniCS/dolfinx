@@ -5,14 +5,9 @@ name: Docker environment images
 # builds of DOLFINx, respectively.
 
 on:
-  # Uncomment the below to trigger 'docker build' on push
-  #push:
-  #  branches:
-  #    - "**"
   push:
     # This will run every time a version tag is created
-    tags:
-      - '*'
+    - tags: 'v*'
   schedule:
     # '*' is a special character in YAML, so string must be quoted
     - cron: "0 22 * * SUN"
@@ -55,6 +50,9 @@ jobs:
           - arch_tag: amd64
             os: ubuntu-latest
             experimental: false
+          - arch_tag: arm64
+            os: ARM64
+            experimental: false
     runs-on: ${{ matrix.os }}
     continue-on-error: ${{ matrix.experimental }}
     needs: start_runner
@@ -66,12 +64,21 @@ jobs:
       ARCH_TAG: ${{ matrix.arch_tag }}
     steps:
       - uses: actions/checkout@v2
+      - name: Get tag name
+        id: tag_name
+        run: |
+          if [[ ${GITHUB_REF#refs/tags/} == v* ]]
+          then
+            echo "::set-output name=TAG_PREFIX::${GITHUB_REF#refs/tags/}"
+          else
+            echo "::set-output name=TAG_PREFIX::latest"
+          fi
       - name: Log into the Dockerhub registry
         run: echo ${{ secrets.dockerhub_token }} | docker login -u ${{ secrets.dockerhub_username }} --password-stdin
       - name: Build the Docker image
-        run: docker buildx build ${DOCKER_BUILD_ARGS} --push --cache-from=type=registry,ref=fenicsproject/test-env:${MPI}-${ARCH_TAG} --cache-to=type=inline --file docker/Dockerfile --target dev-env --tag fenicsproject/test-env:${MPI}-${ARCH_TAG} docker/
+        run: docker buildx build ${DOCKER_BUILD_ARGS} --push --cache-from=type=registry,ref=fenicsproject/test-env:${MPI}-${ARCH_TAG} --cache-to=type=inline --file docker/Dockerfile --target dev-env --tag fenicsproject/test-env:${{ steps.tag_name.outputs.TAG_PREFIX }}-${MPI}-${ARCH_TAG} docker/
       - name: Cleanup
-        run: docker rmi fenicsproject/test-env:${MPI}-${ARCH_TAG}
+        run: docker rmi fenicsproject/test-env:${{ steps.tag_name.outputs.TAG_PREFIX }}-${MPI}-${ARCH_TAG}
 
   build_test_env_mpich:
     name: Build fenicsproject/test-env:mpich image
@@ -99,10 +106,19 @@ jobs:
       - uses: actions/checkout@v2
       - name: Log into the DockerHub registry
         run: echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
+      - name: Get tag name
+        id: tag_name
+        run: |
+          if [[ ${GITHUB_REF#refs/tags/} == v* ]]
+          then
+            echo "::set-output name=TAG_PREFIX::${GITHUB_REF#refs/tags/}"
+          else
+            echo "::set-output name=TAG_PREFIX::latest"
+          fi
       - name: Build the Docker image
-        run: docker buildx build ${DOCKER_BUILD_ARGS} --push --cache-from=type=registry,ref=fenicsproject/test-env:${MPI}-${ARCH_TAG} --cache-to=type=inline --file docker/Dockerfile --target dev-env --tag fenicsproject/test-env:${MPI}-${ARCH_TAG} docker/
+        run: docker buildx build ${DOCKER_BUILD_ARGS} --push --cache-from=type=registry,ref=fenicsproject/test-env:${MPI}-${ARCH_TAG} --cache-to=type=inline --file docker/Dockerfile --target dev-env --tag fenicsproject/test-env:${{ steps.tag_name.outputs.TAG_PREFIX }}-${MPI}-${ARCH_TAG} docker/
       - name: Cleanup
-        run: docker rmi fenicsproject/test-env:${MPI}-${ARCH_TAG}
+        run: docker rmi fenicsproject/test-env:${{ steps.tag_name.outputs.TAG_PREFIX }}-${MPI}-${ARCH_TAG}
 
   build_dev_env:
     name: Build dolfinx/dev-env image
@@ -129,12 +145,21 @@ jobs:
       ARCH_TAG: ${{ matrix.arch_tag }}
     steps:
       - uses: actions/checkout@v2
+      - name: Get tag name
+        id: tag_name
+        run: |
+          if [[ ${GITHUB_REF#refs/tags/} == v* ]]
+          then
+            echo "::set-output name=TAG_PREFIX::${GITHUB_REF#refs/tags/}"
+          else
+            echo "::set-output name=TAG_PREFIX::latest"
+          fi
       - name: Log into the DockerHub registry
         run: echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
       - name: Build the Docker image
-        run: docker buildx build ${DOCKER_BUILD_ARGS} --push --cache-from=type=registry,ref=dolfinx/dev-env:${ARCH_TAG} --cache-to=type=inline --file docker/Dockerfile --target dev-env --tag dolfinx/dev-env:${ARCH_TAG} docker/
+        run: docker buildx build ${DOCKER_BUILD_ARGS} --push --cache-from=type=registry,ref=dolfinx/dev-env:${ARCH_TAG} --cache-to=type=inline --file docker/Dockerfile --target dev-env --tag dolfinx/dev-env:${{ steps.tag_name.outputs.TAG_PREFIX }}-${ARCH_TAG} docker/
       - name: Cleanup
-        run: docker rmi dolfinx/dev-env:${ARCH_TAG}
+        run: docker rmi dolfinx/dev-env:${{ steps.tag_name.outputs.TAG_PREFIX }}-${ARCH_TAG}
 
   push_multiarch_images:
     name: Push multiarch images
@@ -150,9 +175,9 @@ jobs:
         run: |
           if [[ ${GITHUB_REF#refs/tags/} == v* ]]
           then
-            echo ::set-output name=TAG_PREFIX::${GITHUB_REF#refs/tags/}-
+            echo "::set-output name=TAG_PREFIX::${GITHUB_REF#refs/tags/}"
           else
-            echo ::set-output name=TAG_PREFIX::
+            echo "::set-output name=TAG_PREFIX::latest"
           fi
       - name: Log into the DockerHub registry
         run: echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
@@ -160,15 +185,17 @@ jobs:
       - name: Push multiarch images
         run: |
           docker buildx imagetools create \
-            -t fenicsproject/test-env:${steps.tag_name.output.TAG_PREFIX}mpich \
-            fenicsproject/test-env:${steps.tag_name.output.TAG_PREFIX}mpich-amd64 \
-            fenicsproject/test-env:${steps.tag_name.output.TAG_PREFIX}mpich-arm64
+            -t fenicsproject/test-env:${{ steps.tag_name.outputs.TAG_PREFIX }}-mpich \
+            fenicsproject/test-env:${{ steps.tag_name.outputs.TAG_PREFIX }}-mpich-amd64 \
+            fenicsproject/test-env:${{ steps.tag_name.outputs.TAG_PREFIX }}-mpich-arm64
           docker buildx imagetools create \
-            -t fenicsproject/test-env:${steps.tag_name.output.TAG_PREFIX}openmpi \
-            fenicsproject/test-env:${steps.tag_name.output.TAG_PREFIX}openmpi-amd64
+            -t fenicsproject/test-env:${{ steps.tag_name.outputs.TAG_PREFIX }}-openmpi \
+            fenicsproject/test-env:${{ steps.tag_name.outputs.TAG_PREFIX }}-openmpi-amd64 \
+            fenicsproject/test-env:${{ steps.tag_name.outputs.TAG_PREFIX }}-openmpi-arm64
           docker buildx imagetools create \
-            -t dolfinx/dev-env:latest dolfinx/dev-env:${steps.tag_name.output.TAG_PREFIX}amd64 \
-            dolfinx/dev-env:${steps.tag_name.output.TAG_PREFIX}arm64
+            -t dolfinx/dev-env:${{ steps.tag_name.outputs.TAG_PREFIX }} \
+            dolfinx/dev-env:${{ steps.tag_name.outputs.TAG_PREFIX }}-amd64 \
+            dolfinx/dev-env:${{ steps.tag_name.outputs.TAG_PREFIX }}-arm64
 
   stop-runner:
     name: Stop self-hosted EC2 runner

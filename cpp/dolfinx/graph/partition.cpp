@@ -75,8 +75,9 @@ graph::build::distribute(MPI_Comm comm,
       data_send[offset[dest]++] = dests[0];
       data_send[offset[dest]++] = i + offset_global;
       data_send[offset[dest]++] = links.size();
-      for (std::size_t k = 0; k < links.size(); ++k)
-        data_send[offset[dest]++] = links[k];
+      std::copy(links.cbegin(), links.cend(),
+                std::next(data_send.begin(), offset[dest]));
+      offset[dest] += links.size();
     }
   }
 
@@ -238,13 +239,14 @@ std::vector<std::int64_t> graph::build::compute_ghost_indices(
   for (int i = 0; i < num_local; ++i)
     old_to_new.insert({global_indices[i], offset_local + i});
 
-  for (std::int64_t& r : recv_data)
-  {
-    auto it = old_to_new.find(r);
-    // Must exist on this process!
-    assert(it != old_to_new.end());
-    r = it->second;
-  }
+  std::for_each(recv_data.begin(), recv_data.end(),
+                [&old_to_new](auto& r)
+                {
+                  auto it = old_to_new.find(r);
+                  // Must exist on this process!
+                  assert(it != old_to_new.end());
+                  r = it->second;
+                });
 
   std::vector<std::int64_t> new_recv(send_data.size());
   MPI_Neighbor_alltoallv(recv_data.data(), recv_sizes.data(),
@@ -261,12 +263,13 @@ std::vector<std::int64_t> graph::build::compute_ghost_indices(
     assert(insert);
   }
 
-  for (std::int64_t& q : ghost_global_indices)
-  {
-    const auto it = old_to_new.find(q);
-    assert(it != old_to_new.end());
-    q = it->second;
-  }
+  std::for_each(ghost_global_indices.begin(), ghost_global_indices.end(),
+                [&old_to_new](auto& q)
+                {
+                  const auto it = old_to_new.find(q);
+                  assert(it != old_to_new.end());
+                  q = it->second;
+                });
 
   MPI_Comm_free(&neighbor_comm);
   return ghost_global_indices;
@@ -321,13 +324,15 @@ std::vector<std::int32_t> graph::build::compute_local_to_local(
     global_to_local1.insert({local1_to_global[i], i});
 
   // Compute inverse map for local0_to_local1
-  std::vector<std::int32_t> local0_to_local1(local0_to_global.size());
-  for (std::size_t i = 0; i < local0_to_local1.size(); ++i)
-  {
-    auto it = global_to_local1.find(local0_to_global[i]);
-    assert(it != global_to_local1.end());
-    local0_to_local1[i] = it->second;
-  }
+  std::vector<std::int32_t> local0_to_local1;
+  std::transform(local0_to_global.cbegin(), local0_to_global.cend(),
+                 std::back_inserter(local0_to_local1),
+                 [&global_to_local1](auto l2g)
+                 {
+                   auto it = global_to_local1.find(l2g);
+                   assert(it != global_to_local1.end());
+                   return it->second;
+                 });
 
   return local0_to_local1;
 }
