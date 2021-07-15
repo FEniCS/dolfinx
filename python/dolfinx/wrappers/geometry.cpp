@@ -46,6 +46,10 @@ void geometry(py::module& m)
         py::overload_cast<const dolfinx::geometry::BoundingBoxTree&,
                           const dolfinx::geometry::BoundingBoxTree&>(
             &dolfinx::geometry::compute_collisions));
+  m.def("compute_collisions",
+        py::overload_cast<const dolfinx::geometry::BoundingBoxTree&,
+                          const std::array<double, 3>&>(
+            &dolfinx::geometry::compute_collisions));
 
   m.def("compute_distance_gjk",
         [](const py::array_t<double>& p, const py::array_t<double>& q) {
