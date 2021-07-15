@@ -57,26 +57,28 @@ int get_ownership(std::set<int>& processes, std::vector<std::int64_t>& vertices)
 /// @return The permutation vector that would order the rows in
 /// ascending order
 /// @pre Each row of @p array must be sorted
+template <std::size_t d>
 std::vector<std::int32_t>
 sort_by_perm(const xt::xtensor<std::int32_t, 2>& array)
 {
   common::Timer t("~sort_by_perm");
+  assert(array.shape(1) == d);
 
-  std::vector<std::bitset<128>> array128(array.shape(0));
-  int n = array.shape(1) - 1;
+  constexpr int set_size = 32 * d;
+  std::vector<std::bitset<set_size>> bit_array(array.shape(0));
 
   // Pack into list of "n + 1" ints into a bitset
   for (std::size_t i = 0; i < array.shape(0); i++)
   {
-    for (std::size_t j = 0; j < array.shape(1); j++)
+    for (std::size_t j = 0; j < d; j++)
     {
-      std::bitset<128> bits = array(i, j);
-      bits <<= 32 * (n - j);
-      array128[i] |= bits;
+      std::bitset<set_size> bits = array(i, j);
+      bits <<= 32 * (d - j - 1);
+      bit_array[i] |= bits;
     }
   }
 
-  return dolfinx::argsort_radix<128, 8>(array128);
+  return dolfinx::argsort_radix<set_size, 16>(bit_array);
 }
 //-----------------------------------------------------------------------------
 
@@ -469,7 +471,9 @@ compute_entities_by_key_matching(
   }
 
   // Sort the list and label uniquely
-  const std::vector<std::int32_t> sort_order = sort_by_perm(entity_list_sorted);
+  const std::vector<std::int32_t> sort_order
+      = sort_by_perm<2>(entity_list_sorted);
+
   std::vector<std::int32_t> entity_index(entity_list.shape(0), 0);
   std::int32_t entity_count = 0;
   std::int32_t last = sort_order[0];
