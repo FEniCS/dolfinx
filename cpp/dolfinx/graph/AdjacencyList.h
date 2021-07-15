@@ -46,6 +46,35 @@ template <typename T>
 class AdjacencyList
 {
 public:
+  class iterator
+  {
+  public:
+    iterator(T* data, const std::vector<std::int32_t>& offsets, std::size_t pos)
+        : _data(data), _offsets(offsets), _pos(pos),
+          _links(data + offsets[pos], offsets[pos + 1] - offsets[pos])
+    {
+      // Do nothing
+    }
+    iterator operator++()
+    {
+      ++_pos;
+      _links = xtl::span(_data + _offsets[_pos],
+                         _offsets[_pos + 1] - _offsets[_pos]);
+      return *this;
+    }
+    bool operator!=(const iterator& other) const
+    {
+      return _links.data() != other.data();
+    }
+    const xtl::span<T>& operator*() const { return _links; }
+
+  private:
+    T* _data;
+    const std::vector<std::int32_t>& _offsets;
+    std::size_t _pos;
+    xtl::span<T> _links;
+  };
+
   /// Construct trivial adjacency list where each of the n nodes is
   /// connected to itself
   /// @param [in] n Number of nodes
@@ -141,6 +170,15 @@ public:
   {
     return xtl::span<const T>(_array.data() + _offsets[node],
                               _offsets[node + 1] - _offsets[node]);
+  }
+
+  /// Begin iterator
+  iterator begin() const { return iterator(_array.data(), _offsets, 0); }
+
+  /// End iterator
+  iterator end() const
+  {
+    return iterator(_array.data(), _offsets, _offsets.size() - 1);
   }
 
   /// Return contiguous array of links for all nodes (const version)
