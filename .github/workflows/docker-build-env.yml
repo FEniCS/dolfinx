@@ -76,9 +76,9 @@ jobs:
       - name: Log into the Dockerhub registry
         run: echo ${{ secrets.dockerhub_token }} | docker login -u ${{ secrets.dockerhub_username }} --password-stdin
       - name: Build the Docker image
-        run: docker buildx build ${DOCKER_BUILD_ARGS} --push --cache-from=type=registry,ref=fenicsproject/test-env:${MPI}-${ARCH_TAG} --cache-to=type=inline --file docker/Dockerfile --target dev-env --tag fenicsproject/test-env:${steps.tag_name.output.TAG_PREFIX}-${MPI}-${ARCH_TAG} docker/
+        run: docker buildx build ${DOCKER_BUILD_ARGS} --push --cache-from=type=registry,ref=fenicsproject/test-env:${MPI}-${ARCH_TAG} --cache-to=type=inline --file docker/Dockerfile --target dev-env --tag fenicsproject/test-env:${{ steps.tag_name.output.TAG_PREFIX }}-${MPI}-${ARCH_TAG} docker/
       - name: Cleanup
-        run: docker rmi fenicsproject/test-env:${steps.tag_name.output.TAG_PREFIX}-${MPI}-${ARCH_TAG}
+        run: docker rmi fenicsproject/test-env:${{ steps.tag_name.output.TAG_PREFIX }}-${MPI}-${ARCH_TAG}
 
   build_test_env_mpich:
     name: Build fenicsproject/test-env:mpich image
@@ -116,9 +116,9 @@ jobs:
             echo "::set-output name=TAG_PREFIX::latest"
           fi
       - name: Build the Docker image
-        run: docker buildx build ${DOCKER_BUILD_ARGS} --push --cache-from=type=registry,ref=fenicsproject/test-env:${MPI}-${ARCH_TAG} --cache-to=type=inline --file docker/Dockerfile --target dev-env --tag fenicsproject/test-env:${steps.tag_name.output.TAG_PREFIX}-${MPI}-${ARCH_TAG} docker/
+        run: docker buildx build ${DOCKER_BUILD_ARGS} --push --cache-from=type=registry,ref=fenicsproject/test-env:${MPI}-${ARCH_TAG} --cache-to=type=inline --file docker/Dockerfile --target dev-env --tag fenicsproject/test-env:${{ steps.tag_name.output.TAG_PREFIX }}-${MPI}-${ARCH_TAG} docker/
       - name: Cleanup
-        run: docker rmi fenicsproject/test-env:${steps.tag_name.output.TAG_PREFIX}-${MPI}-${ARCH_TAG}
+        run: docker rmi fenicsproject/test-env:${{ steps.tag_name.output.TAG_PREFIX }}-${MPI}-${ARCH_TAG}
 
   build_dev_env:
     name: Build dolfinx/dev-env image
@@ -157,9 +157,9 @@ jobs:
       - name: Log into the DockerHub registry
         run: echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
       - name: Build the Docker image
-        run: docker buildx build ${DOCKER_BUILD_ARGS} --push --cache-from=type=registry,ref=dolfinx/dev-env:${ARCH_TAG} --cache-to=type=inline --file docker/Dockerfile --target dev-env --tag dolfinx/dev-env:${steps.tag_name.output.TAG_PREFIX}-${ARCH_TAG} docker/
+        run: docker buildx build ${DOCKER_BUILD_ARGS} --push --cache-from=type=registry,ref=dolfinx/dev-env:${ARCH_TAG} --cache-to=type=inline --file docker/Dockerfile --target dev-env --tag dolfinx/dev-env:${{ steps.tag_name.output.TAG_PREFIX }}-${ARCH_TAG} docker/
       - name: Cleanup
-        run: docker rmi dolfinx/dev-env:${steps.tag_name.output.TAG_PREFIX}-${ARCH_TAG}
+        run: docker rmi dolfinx/dev-env:${{ steps.tag_name.output.TAG_PREFIX }}-${ARCH_TAG}
 
   push_multiarch_images:
     name: Push multiarch images
@@ -185,17 +185,17 @@ jobs:
       - name: Push multiarch images
         run: |
           docker buildx imagetools create \
-            -t fenicsproject/test-env:${steps.tag_name.output.TAG_PREFIX}-mpich \
-            fenicsproject/test-env:${steps.tag_name.output.TAG_PREFIX}-mpich-amd64 \
-            fenicsproject/test-env:${steps.tag_name.output.TAG_PREFIX}-mpich-arm64
+            -t fenicsproject/test-env:${{ steps.tag_name.output.TAG_PREFIX }}-mpich \
+            fenicsproject/test-env:${{ steps.tag_name.output.TAG_PREFIX }}-mpich-amd64 \
+            fenicsproject/test-env:${{ steps.tag_name.output.TAG_PREFIX }}-mpich-arm64
           docker buildx imagetools create \
-            -t fenicsproject/test-env:${steps.tag_name.output.TAG_PREFIX}-openmpi \
-            fenicsproject/test-env:${steps.tag_name.output.TAG_PREFIX}-openmpi-amd64 \
-            fenicsproject/test-env:${steps.tag_name.output.TAG_PREFIX}-openmpi-arm64
+            -t fenicsproject/test-env:${{ steps.tag_name.output.TAG_PREFIX }}-openmpi \
+            fenicsproject/test-env:${{ steps.tag_name.output.TAG_PREFIX }}-openmpi-amd64 \
+            fenicsproject/test-env:${{ steps.tag_name.output.TAG_PREFIX }}-openmpi-arm64
           docker buildx imagetools create \
-            -t dolfinx/dev-env:${steps.tag_name.output.TAG_PREFIX} \
-            dolfinx/dev-env:${steps.tag_name.output.TAG_PREFIX}-amd64 \
-            dolfinx/dev-env:${steps.tag_name.output.TAG_PREFIX}-arm64
+            -t dolfinx/dev-env:${{ steps.tag_name.output.TAG_PREFIX }} \
+            dolfinx/dev-env:${{ steps.tag_name.output.TAG_PREFIX }}-amd64 \
+            dolfinx/dev-env:${{ steps.tag_name.output.TAG_PREFIX }}-arm64
 
   stop-runner:
     name: Stop self-hosted EC2 runner
