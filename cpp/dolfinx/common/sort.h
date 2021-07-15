@@ -79,7 +79,7 @@ void radix_sort(std::vector<T>& array)
   }
 
   // Move data back to array
-  if (its % 2 == 0)
+  if (its % 2 != 0)
     std::copy(buffer.begin(), buffer.end(), array.begin());
 }
 
