@@ -4,16 +4,13 @@ name: Docker end-user images
 # components nightly.
 
 on:
-  # Uncomment the below to trigger 'docker build' on push
+  # This will run every time a version tag is pushed
   push:
+    # Uncomment the below to trigger 'docker build' on push
     branches:
       - "**"
-  #push:
-  #  # This will run every time a version tag is created on main
-  #  tags:
-  #    - '*'
-  #  branches:
-  #    - 'main'
+    tags:
+      - '*'
   schedule:
     # '*' is a special character in YAML, so string must be quoted
     - cron: "0 5 * * *"
