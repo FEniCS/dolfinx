@@ -8,7 +8,6 @@
 #include "Topology.h"
 #include "cell_types.h"
 #include <algorithm>
-#include <boost/multiprecision/cpp_int.hpp>
 #include <boost/unordered_map.hpp>
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
@@ -66,17 +65,17 @@ sort_by_perm(const xt::xtensor<std::int32_t, 2>& array)
   constexpr int set_size = 32 * d;
   std::vector<std::bitset<set_size>> bit_array(array.shape(0));
 
-  // Pack into list of "n + 1" ints into a bitset
+  // Pack list of "d" ints into a bitset
   for (std::size_t i = 0; i < array.shape(0); i++)
   {
     for (std::size_t j = 0; j < d; j++)
     {
       std::bitset<set_size> bits = array(i, j);
-      bits <<= 32 * (d - j - 1);
-      bit_array[i] |= bits;
+      bit_array[i] |= bits << (32 * (d - j - 1));
     }
   }
 
+  // This function creates a 2**16 temporary array (buckets)
   return dolfinx::argsort_radix<set_size, 16>(bit_array);
 }
 //-----------------------------------------------------------------------------
