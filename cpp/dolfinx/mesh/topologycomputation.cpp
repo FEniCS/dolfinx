@@ -215,7 +215,7 @@ get_local_indexing(
       if (q.second == num_vertices_per_e)
       {
         vertex_indexmap->local_to_global(entity_list_i, vglobal);
-        dolfinx::radix_sort(vglobal);
+        dolfinx::radix_sort(xtl::span(vglobal));
 
         global_entity_to_entity_index.insert({vglobal, entity_index[i]});
 

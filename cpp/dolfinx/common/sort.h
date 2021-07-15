@@ -13,14 +13,15 @@
 #include <iostream>
 #include <numeric>
 #include <vector>
+#include <xtl/xspan.hpp>
 
 namespace dolfinx
 {
 
-// Sort a vector with radix sorting algorithm.
-// The bucket size is determined by the number of bits to sort at a time.
+// Sort a vector with radix sorting algorithm. The bucket size is
+// determined by the number of bits to sort at a time.
 template <typename T, int BITS = 8>
-void radix_sort(std::vector<T>& array)
+void radix_sort(xtl::span<T> array)
 {
   static_assert(std::is_integral<T>(), "This function only sorts integers.");
 
@@ -33,7 +34,8 @@ void radix_sort(std::vector<T>& array)
   constexpr int bucket_size = 1 << BITS;
   T mask = (T(1) << BITS) - 1;
 
-  // Compute number of iterations, most significant digit (N bits) of maxvalue
+  // Compute number of iterations, most significant digit (N bits) of
+  // maxvalue
   int its = 0;
   while (max_value)
   {
@@ -43,32 +45,29 @@ void radix_sort(std::vector<T>& array)
 
   std::int32_t mask_offset = 0;
   std::vector<T> buffer(array.size());
-
-  std::reference_wrapper<std::vector<T>> current_ref = array;
-  std::reference_wrapper<std::vector<T>> next_ref = buffer;
-
+  xtl::span<T> current_ref = array;
+  xtl::span<T> next_ref = buffer;
   for (int i = 0; i < its; i++)
   {
-    std::vector<T>& current = current_ref.get();
-    std::vector<T>& next = next_ref.get();
+    xtl::span<T> current = current_ref;
+    xtl::span<T> next = next_ref;
 
     // Ajdjacency list for computing insertion position
     std::int32_t counter[bucket_size] = {0};
     std::int32_t offset[bucket_size + 1];
 
-    // Count number of elements per bucket.
-    for (std::size_t j = 0; j < current.size(); j++)
-      counter[(current[j] & mask) >> mask_offset]++;
+    // Count number of elements per bucket
+    for (T c : current)
+      counter[(c & mask) >> mask_offset]++;
 
     // Prefix sum to get the inserting position
     offset[0] = 0;
     std::partial_sum(counter, counter + bucket_size, offset + 1);
-
-    for (std::size_t j = 0; j < current.size(); j++)
+    for (T c : current)
     {
-      std::int32_t bucket = (current[j] & mask) >> mask_offset;
+      std::int32_t bucket = (c & mask) >> mask_offset;
       std::int32_t new_pos = offset[bucket + 1] - counter[bucket];
-      next[new_pos] = current[j];
+      next[new_pos] = c;
       counter[bucket]--;
     }
 
@@ -83,7 +82,8 @@ void radix_sort(std::vector<T>& array)
     std::copy(buffer.begin(), buffer.end(), array.begin());
 }
 
-// Returns the indices that would sort (lexicographic) a vector of bitsets.
+// Returns the indices that would sort (lexicographic) a vector of
+// bitsets
 template <int N, int BITS = 8>
 std::vector<std::int32_t>
 argsort_radix(const std::vector<std::bitset<N>>& array)
@@ -106,11 +106,11 @@ argsort_radix(const std::vector<std::bitset<N>>& array)
 
   for (int i = 0; i < its; i++)
   {
-    // Ajdjacency list for computing insertion position
+    // Adjacency list for computing insertion position
     std::int32_t counter[bucket_size] = {0};
     std::int32_t offset[bucket_size + 1];
 
-    // Count number of elements per bucket.
+    // Count number of elements per bucket
     for (std::size_t j = 0; j < array.size(); j++)
     {
       auto set = (array[current_perm.get()[j]] & mask) >> mask_offset;
