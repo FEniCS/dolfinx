@@ -80,8 +80,7 @@ jobs:
       - name: Get tag name
         id: tag_name
         run: |
-          if [[ ${GITHUB_REF#refs/tags/} == v* ]]
-          then
+          if [[ ${GITHUB_REF#refs/tags/} == v* ]] then
             echo "::set-output name=TAG_PREFIX::${GITHUB_REF#refs/tags/}"
           else
             echo "::set-output name=TAG_PREFIX::latest"
@@ -117,12 +116,12 @@ jobs:
         run: echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
       - name: Push to the DockerHub registry
         run: |
-          docker tag dolfinx/dolfinx-onbuild dolfinx/dolfinx-onbuild:${{ steps.tag_name.output.TAG_PREFIX }}-${ARCH_TAG}
-          docker push dolfinx/dolfinx-onbuild:${{ steps.tag_name.output.TAG_PREFIX }}-${ARCH_TAG}
-          docker tag dolfinx/dolfinx dolfinx/dolfinx:${{ steps.tag_name.output.TAG_PREFIX }}-${ARCH_TAG}
-          docker push dolfinx/dolfinx:${{ steps.tag_name.output.TAG_PREFIX }}-${ARCH_TAG}
-          docker tag dolfinx/lab dolfinx/lab:${{ steps.tag_name.output.TAG_PREFIX }}-${ARCH_TAG}
-          docker push dolfinx/lab:${{ steps.tag_name.output.TAG_PREFIX }}-${ARCH_TAG}
+          docker tag dolfinx/dolfinx-onbuild dolfinx/dolfinx-onbuild:${{ steps.tag_name.outputs.TAG_PREFIX }}-${ARCH_TAG}
+          docker push dolfinx/dolfinx-onbuild:${{ steps.tag_name.outputs.TAG_PREFIX }}-${ARCH_TAG}
+          docker tag dolfinx/dolfinx dolfinx/dolfinx:${{ steps.tag_name.outputs.TAG_PREFIX }}-${ARCH_TAG}
+          docker push dolfinx/dolfinx:${{ steps.tag_name.outputs.TAG_PREFIX }}-${ARCH_TAG}
+          docker tag dolfinx/lab dolfinx/lab:${{ steps.tag_name.outputs.TAG_PREFIX }}-${ARCH_TAG}
+          docker push dolfinx/lab:${{ steps.tag_name.outputs.TAG_PREFIX }}-${ARCH_TAG}
 
   push_multiarch_images:
     name: Push multiarch image
@@ -144,9 +143,9 @@ jobs:
         run: echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
       - name: Push multiarch images
         run: |
-          docker buildx imagetools create -t dolfinx/dolfinx-onbuild:${{ steps.tag_name.output.TAG_PREFIX }} dolfinx/dolfinx-onbuild:${{ steps.tag_name.output.TAG_PREFIX }}${ARCH_TAG}-amd64 dolfinx/dolfinx-onbuild:${{ steps.tag_name.output.TAG_PREFIX }}-arm64
-          docker buildx imagetools create -t dolfinx/dolfinx:${{ steps.tag_name.output.TAG_PREFIX }} dolfinx/dolfinx:${{ steps.tag_name.output.TAG_PREFIX }}-amd64 dolfinx/dolfinx:${steps.tag_name.output.TAG_PREFIX}-arm64
-          docker buildx imagetools create -t dolfinx/lab:${{ steps.tag_name.output.TAG_PREFIX }} dolfinx/lab:${{ steps.tag_name.output.TAG_PREFIX }}-amd64 dolfinx/lab:${{ steps.tag_name.output.TAG_PREFIX }}-arm64
+          docker buildx imagetools create -t dolfinx/dolfinx-onbuild:${{ steps.tag_name.outputs.TAG_PREFIX }} dolfinx/dolfinx-onbuild:${{ steps.tag_name.outputs.TAG_PREFIX }}-amd64 dolfinx/dolfinx-onbuild:${{ steps.tag_name.outputs.TAG_PREFIX }}-arm64
+          docker buildx imagetools create -t dolfinx/dolfinx:${{ steps.tag_name.outputs.TAG_PREFIX }} dolfinx/dolfinx:${{ steps.tag_name.outputs.TAG_PREFIX }}-amd64 dolfinx/dolfinx:${steps.tag_name.outputs.TAG_PREFIX}-arm64
+          docker buildx imagetools create -t dolfinx/lab:${{ steps.tag_name.outputs.TAG_PREFIX }} dolfinx/lab:${{ steps.tag_name.outputs.TAG_PREFIX }}-amd64 dolfinx/lab:${{ steps.tag_name.outputs.TAG_PREFIX }}-arm64
 
   stop-runner:
     name: Stop self-hosted EC2 runner
