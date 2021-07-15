@@ -5,13 +5,15 @@ name: Docker end-user images
 
 on:
   # Uncomment the below to trigger 'docker build' on push
-  #push:
-  #  branches:
-  #    - "**"
+  push:
+    branches:
+      - "**"
   push:
     # This will run every time a version tag is created
     tags:
       - '*'
+    branches:
+      - 'main'
   schedule:
     # '*' is a special character in YAML, so string must be quoted
     - cron: "0 5 * * *"
@@ -84,7 +86,7 @@ jobs:
       - name: Get tag name
         id: tag_name
         run: |
-          if [[ ${GITHUB_REF#refs/tags/} == v* ]]
+          if [[ ${GITHUB_REF#refs/tags/} == * ]]
           then
             echo "::set-output name=TAG_PREFIX::${GITHUB_REF#refs/tags/}"
           else
