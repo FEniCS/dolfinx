@@ -178,13 +178,13 @@ find_package(SCOTCH REQUIRED)
 set_package_properties(SCOTCH PROPERTIES TYPE REQUIRED
   DESCRIPTION "Programs and libraries for graph, mesh and hypergraph partitioning"
   URL "https://www.labri.fr/perso/pelegrin/scotch"
-  PURPOSE "Enables parallel graph partitioning")
+  PURPOSE "Parallel graph partitioning and redordering")
 
 # Check for required packages UFC and basix
 find_package(Python3 COMPONENTS Interpreter REQUIRED)
 find_package(UFC MODULE ${DOLFINX_VERSION_MAJOR}.${DOLFINX_VERSION_MINOR})
 set_package_properties(UFC PROPERTIES TYPE REQUIRED
-  DESCRIPTION "Unified language for form-compilers (part of FFCx)"
+  DESCRIPTION "Unified interface for form-compilers (part of FFCx)"
   URL "https://github.com/fenics/ffcx")
 
 find_package(Basix 0.0.1 REQUIRED)
@@ -215,7 +215,7 @@ if (DOLFINX_ENABLE_PARMETIS)
   set_package_properties(ParMETIS PROPERTIES TYPE OPTIONAL
     DESCRIPTION "Parallel Graph Partitioning and Fill-reducing Matrix Ordering"
     URL "http://glaros.dtc.umn.edu/gkhome/metis/parmetis/overview"
-    PURPOSE "Enables parallel graph partitioning")
+    PURPOSE "Parallel graph partitioning")
 endif()
 
 # Check for KaHIP
@@ -223,8 +223,8 @@ if (DOLFINX_ENABLE_KAHIP)
   find_package(KaHIP)
   set_package_properties(KaHIP PROPERTIES TYPE OPTIONAL
     DESCRIPTION "A family of graph partitioning programs"
-    URL "http://algo2.iti.kit.edu/documents/kahip/index.html"
-    PURPOSE "Enables parallel graph partitioning")
+    URL "https://kahip.github.io/"
+    PURPOSE "Parallel graph partitioning")
 endif()
 
 #------------------------------------------------------------------------------
