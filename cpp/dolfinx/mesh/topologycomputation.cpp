@@ -60,31 +60,23 @@ int get_ownership(std::set<int>& processes, std::vector<std::int64_t>& vertices)
 std::vector<std::int32_t>
 sort_by_perm(const xt::xtensor<std::int32_t, 2>& array)
 {
-  std::vector<int> index(array.shape(0));
-  std::iota(index.begin(), index.end(), 0);
+  common::Timer t("~sort_by_perm");
 
-  assert(array.shape(1) <= 4);
-  std::vector<__int128_t> array128(array.shape(0));
+  std::vector<std::bitset<128>> array128(array.shape(0));
   int n = array.shape(1) - 1;
+
+  // Pack into list of "n + 1" ints into a bitset
   for (std::size_t i = 0; i < array.shape(0); i++)
   {
     for (std::size_t j = 0; j < array.shape(1); j++)
     {
-      __int128_t bits = array(i, j);
+      std::bitset<128> bits = array(i, j);
       bits <<= 32 * (n - j);
       array128[i] |= bits;
     }
   }
 
-  std::cout << array.shape(1) << std::endl;
-  common::Timer t("~sort_by_perm");
-  std::stable_sort(index.begin(), index.end(), [&array128](int i, int j) {
-    const __int128_t& x = array128[i];
-    const __int128_t& y = array128[j];
-    return x <= y;
-  });
-
-  return index;
+  return dolfinx::argsort_radix<128, 8>(array128);
 }
 //-----------------------------------------------------------------------------
 

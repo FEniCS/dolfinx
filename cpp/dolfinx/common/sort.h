@@ -4,75 +4,148 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#pragma once
+
 #include <algorithm>
+#include <bitset>
 #include <cstdint>
+#include <functional>
+#include <iostream>
 #include <numeric>
 #include <vector>
 
 namespace dolfinx
 {
-template <typename T>
+
+// Sort a vector with radix sorting algorithm.
+// The bucket size is determined by the number of bits to sort at a time.
+template <typename T, int BITS = 4>
 void radix_sort(std::vector<T>& array)
 {
+  static_assert(std::is_integral<T>(), "This function only sorts integers.");
+
   if (array.size() <= 1)
     return;
 
   T max_value = *std::max_element(array.begin(), array.end());
 
-  // Sort 4 bits at a time
-  T mask = 0xF;
-  constexpr std::size_t bucket_size = 16;
+  // Sort N bits at a time
+  constexpr int bucket_size = 1 << BITS;
+  T mask = (T(1) << BITS) - 1;
 
-  int passes = 0;
+  // Compute number of iterations, most significant digit (N bits) of maxvalue
+  int its = 0;
   while (max_value)
   {
-    max_value >>= 4;
-    passes++;
+    max_value >>= BITS;
+    its++;
   }
 
   std::int32_t mask_offset = 0;
   std::vector<T> buffer(array.size());
-  for (int p = 0; p < passes; p++)
+
+  for (int i = 0; i < its; i++)
   {
-    // Count the number of elements in each bucket
-    std::int32_t count[bucket_size] = {0};
+    // Ajdjacency list for computing insertion position
+    std::int32_t counter[bucket_size] = {0};
     std::int32_t offset[bucket_size + 1];
-    if (p % 2 == 0)
-      for (std::size_t i = 0; i < array.size(); i++)
-        count[(array[i] & mask) >> mask_offset]++;
-    else
-      for (std::size_t i = 0; i < buffer.size(); i++)
-        count[(buffer[i] & mask) >> mask_offset]++;
 
+    // Count number of elements per bucket.
+    if (i % 2 == 0)
+      for (std::size_t j = 0; j < array.size(); j++)
+        counter[(array[j] & mask) >> mask_offset]++;
+    else
+      for (std::size_t j = 0; j < buffer.size(); j++)
+        counter[(buffer[j] & mask) >> mask_offset]++;
+
+    // Prefix sum to get the inserting position
     offset[0] = 0;
-    for (std::size_t i = 0; i < bucket_size; i++)
-      offset[i + 1] = offset[i] + count[i];
+    std::partial_sum(counter, counter + bucket_size, offset + 1);
 
-    // now for each element in [lo, hi), move it to its offset in the other
-    // buffer this branch should be ok because whichBuf is the same on all
-    // threads
-    if (p % 2 == 0)
-      for (std::size_t i = 0; i < array.size(); i++)
+    if (i % 2 == 0)
+      for (std::size_t j = 0; j < array.size(); j++)
       {
-        std::int32_t bucket = (array[i] & mask) >> mask_offset;
-        std::int32_t pos = offset[bucket + 1] - count[bucket];
-        buffer[pos] = array[i];
-        count[bucket]--;
+        std::int32_t bucket = (array[j] & mask) >> mask_offset;
+        std::int32_t pos = offset[bucket + 1] - counter[bucket];
+        buffer[pos] = array[j];
+        counter[bucket]--;
       }
     else
-      for (std::size_t i = 0; i < buffer.size(); i++)
+      for (std::size_t j = 0; j < buffer.size(); j++)
       {
-        std::int32_t bucket = (buffer[i] & mask) >> mask_offset;
-        std::int32_t pos = offset[bucket + 1] - count[bucket];
-        array[pos] = buffer[i];
-        count[bucket]--;
+        std::int32_t bucket = (buffer[j] & mask) >> mask_offset;
+        std::int32_t pos = offset[bucket + 1] - counter[bucket];
+        array[pos] = buffer[j];
+        counter[bucket]--;
       }
-    mask = mask << 4;
-    mask_offset += 4;
+
+    mask = mask << BITS;
+    mask_offset += BITS;
   }
 
-  // Move data back to array
-  if (passes % 2 != 0)
+  // Move data back to array, if
+  if (its % 2 == 1)
     std::copy(buffer.begin(), buffer.end(), array.begin());
+}
+
+// Returns the indices that would sort lexicographic a vector of bitsets.
+template <int N, int BITS = 8>
+std::vector<std::int32_t>
+argsort_radix(const std::vector<std::bitset<N>>& array)
+{
+
+  std::vector<std::int32_t> perm1(array.size());
+  std::iota(perm1.begin(), perm1.end(), 0);
+  if (array.size() <= 1)
+    return perm1;
+
+  std::vector<std::int32_t> perm2(perm1);
+
+  constexpr int bucket_size = 1 << BITS;
+  constexpr int its = N / BITS;
+  std::bitset<N> mask = (1 << BITS) - 1;
+  std::int32_t mask_offset = 0;
+
+  std::reference_wrapper<std::vector<std::int32_t>> current_perm = perm1;
+  std::reference_wrapper<std::vector<std::int32_t>> next_perm = perm2;
+
+  for (int i = 0; i < its; i++)
+  {
+    // Ajdjacency list for computing insertion position
+    std::int32_t counter[bucket_size] = {0};
+    std::int32_t offset[bucket_size + 1];
+
+    // Count number of elements per bucket.
+    for (std::size_t j = 0; j < array.size(); j++)
+    {
+      auto set = (array[current_perm.get()[j]] & mask) >> mask_offset;
+      std::int32_t bucket = set.to_ulong();
+      counter[bucket]++;
+    }
+
+    // Prefix sum to get the inserting position
+    offset[0] = 0;
+    std::partial_sum(counter, counter + bucket_size, offset + 1);
+
+    // Sort py perutation
+    for (std::size_t j = 0; j < array.size(); j++)
+    {
+      auto set = (array[current_perm.get()[j]] & mask) >> mask_offset;
+      std::int32_t bucket = set.to_ulong();
+      std::int32_t pos = offset[bucket + 1] - counter[bucket];
+      next_perm.get()[pos] = current_perm.get()[j];
+      counter[bucket]--;
+    }
+
+    std::swap(current_perm, next_perm);
+
+    mask = mask << BITS;
+    mask_offset += BITS;
+  }
+
+  if (its % 2 == 0)
+    return perm1;
+  else
+    return perm2;
 }
 } // namespace dolfinx
