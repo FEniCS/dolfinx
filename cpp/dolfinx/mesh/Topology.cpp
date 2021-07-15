@@ -342,7 +342,6 @@ mesh::create_topology(MPI_Comm comm,
 
   common::Timer t0("TOPOLOGY: Create sets");
 
-  common::Timer t1("sort");
   // Build a set of 'local' cell vertices
   std::vector<std::int64_t> local_vertices_set(
       cells.array().begin(),
