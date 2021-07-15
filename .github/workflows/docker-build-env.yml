@@ -5,14 +5,9 @@ name: Docker environment images
 # builds of DOLFINx, respectively.
 
 on:
-  # Uncomment the below to trigger 'docker build' on push
-  #push:
-  #  branches:
-  #    - "**"
   push:
-    # This will run every time a version tag is created on master
-    - tags: '*'
-    - branches: 'main'
+    # This will run every time a version tag is created
+    - tags: 'v*'
   schedule:
     # '*' is a special character in YAML, so string must be quoted
     - cron: "0 22 * * SUN"
@@ -72,7 +67,7 @@ jobs:
       - name: Get tag name
         id: tag_name
         run: |
-          if [[ ${GITHUB_REF#refs/tags/} == * ]]
+          if [[ ${GITHUB_REF#refs/tags/} == v* ]]
           then
             echo "::set-output name=TAG_PREFIX::${GITHUB_REF#refs/tags/}"
           else
@@ -114,7 +109,7 @@ jobs:
       - name: Get tag name
         id: tag_name
         run: |
-          if [[ ${GITHUB_REF#refs/tags/} == * ]]
+          if [[ ${GITHUB_REF#refs/tags/} == v* ]]
           then
             echo "::set-output name=TAG_PREFIX::${GITHUB_REF#refs/tags/}"
           else
@@ -153,7 +148,7 @@ jobs:
       - name: Get tag name
         id: tag_name
         run: |
-          if [[ ${GITHUB_REF#refs/tags/} == * ]]
+          if [[ ${GITHUB_REF#refs/tags/} == v* ]]
           then
             echo "::set-output name=TAG_PREFIX::${GITHUB_REF#refs/tags/}"
           else
