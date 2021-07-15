@@ -46,15 +46,19 @@ template <typename T>
 class AdjacencyList
 {
 public:
+  /// Iterator for adjacency list nodes
   class iterator
   {
   public:
+    /// Constructor
     iterator(T* data, const std::vector<std::int32_t>& offsets, std::size_t pos)
         : _data(data), _offsets(offsets), _pos(pos),
           _links(data + offsets[pos], offsets[pos + 1] - offsets[pos])
     {
       // Do nothing
     }
+
+    /// Increment iterator
     iterator operator++()
     {
       ++_pos;
@@ -62,10 +66,14 @@ public:
                          _offsets[_pos + 1] - _offsets[_pos]);
       return *this;
     }
+
+    /// Check !=
     bool operator!=(const iterator& other) const
     {
       return _links.data() != other.data();
     }
+
+    /// Deference
     const xtl::span<T>& operator*() const { return _links; }
 
   private:
