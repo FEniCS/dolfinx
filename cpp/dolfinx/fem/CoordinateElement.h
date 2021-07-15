@@ -91,6 +91,9 @@ public:
   /// Return the dof layout
   ElementDofLayout dof_layout() const;
 
+  /// Return the degree of the coordinate element
+  int degree() const;
+
   /// Compute physical coordinates x for points X  in the reference
   /// configuration
   /// @param[in,out] x The physical coordinates of the reference points X
