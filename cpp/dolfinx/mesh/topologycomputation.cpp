@@ -61,7 +61,6 @@ template <std::size_t d>
 std::vector<std::int32_t>
 sort_by_perm(const xt::xtensor<std::int32_t, 2>& array)
 {
-  common::Timer t("~sort_by_perm");
   assert(array.shape(1) == d);
 
   constexpr int set_size = 32 * d;
@@ -471,8 +470,22 @@ compute_entities_by_key_matching(
   }
 
   // Sort the list and label uniquely
-  const std::vector<std::int32_t> sort_order
-      = sort_by_perm<2>(entity_list_sorted);
+  std::vector<std::int32_t> sort_order;
+  const int num_vert = entity_list_sorted.shape(1);
+  switch (num_vert)
+  {
+  case 2:
+    sort_order = sort_by_perm<2>(entity_list_sorted);
+    break;
+  case 3:
+    sort_order = sort_by_perm<3>(entity_list_sorted);
+    break;
+  case 4:
+    sort_order = sort_by_perm<4>(entity_list_sorted);
+    break;
+  default:
+    break;
+  }
 
   std::vector<std::int32_t> entity_index(entity_list.shape(0), 0);
   std::int32_t entity_count = 0;
