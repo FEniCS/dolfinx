@@ -19,7 +19,7 @@ namespace dolfinx
 
 // Sort a vector with radix sorting algorithm.
 // The bucket size is determined by the number of bits to sort at a time.
-template <typename T, int BITS = 4>
+template <typename T, int BITS = 8>
 void radix_sort(std::vector<T>& array)
 {
   static_assert(std::is_integral<T>(), "This function only sorts integers.");
@@ -44,51 +44,46 @@ void radix_sort(std::vector<T>& array)
   std::int32_t mask_offset = 0;
   std::vector<T> buffer(array.size());
 
+  std::reference_wrapper<std::vector<T>> current_ref = array;
+  std::reference_wrapper<std::vector<T>> next_ref = buffer;
+
   for (int i = 0; i < its; i++)
   {
+    std::vector<T>& current = current_ref.get();
+    std::vector<T>& next = next_ref.get();
+
     // Ajdjacency list for computing insertion position
     std::int32_t counter[bucket_size] = {0};
     std::int32_t offset[bucket_size + 1];
 
     // Count number of elements per bucket.
-    if (i % 2 == 0)
-      for (std::size_t j = 0; j < array.size(); j++)
-        counter[(array[j] & mask) >> mask_offset]++;
-    else
-      for (std::size_t j = 0; j < buffer.size(); j++)
-        counter[(buffer[j] & mask) >> mask_offset]++;
+    for (std::size_t j = 0; j < current.size(); j++)
+      counter[(current[j] & mask) >> mask_offset]++;
 
     // Prefix sum to get the inserting position
     offset[0] = 0;
     std::partial_sum(counter, counter + bucket_size, offset + 1);
 
-    if (i % 2 == 0)
-      for (std::size_t j = 0; j < array.size(); j++)
-      {
-        std::int32_t bucket = (array[j] & mask) >> mask_offset;
-        std::int32_t pos = offset[bucket + 1] - counter[bucket];
-        buffer[pos] = array[j];
-        counter[bucket]--;
-      }
-    else
-      for (std::size_t j = 0; j < buffer.size(); j++)
-      {
-        std::int32_t bucket = (buffer[j] & mask) >> mask_offset;
-        std::int32_t pos = offset[bucket + 1] - counter[bucket];
-        array[pos] = buffer[j];
-        counter[bucket]--;
-      }
+    for (std::size_t j = 0; j < current.size(); j++)
+    {
+      std::int32_t bucket = (current[j] & mask) >> mask_offset;
+      std::int32_t new_pos = offset[bucket + 1] - counter[bucket];
+      next[new_pos] = current[j];
+      counter[bucket]--;
+    }
 
     mask = mask << BITS;
     mask_offset += BITS;
+
+    std::swap(current_ref, next_ref);
   }
 
-  // Move data back to array, if
-  if (its % 2 == 1)
+  // Move data back to array
+  if (its % 2 == 0)
     std::copy(buffer.begin(), buffer.end(), array.begin());
 }
 
-// Returns the indices that would sort lexicographic a vector of bitsets.
+// Returns the indices that would sort (lexicographic) a vector of bitsets.
 template <int N, int BITS = 8>
 std::vector<std::int32_t>
 argsort_radix(const std::vector<std::bitset<N>>& array)
