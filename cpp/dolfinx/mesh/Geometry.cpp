@@ -72,7 +72,7 @@ mesh::Geometry mesh::create_geometry(
   // Build list of unique (global) node indices from adjacency list
   // (geometry nodes)
   std::vector<std::int64_t> indices = cell_nodes.array();
-  dolfinx::radix_sort(indices);
+  dolfinx::radix_sort(xtl::span(indices));
   indices.erase(std::unique(indices.begin(), indices.end()), indices.end());
 
   //  Fetch node coordinates by global index from other ranks. Order of

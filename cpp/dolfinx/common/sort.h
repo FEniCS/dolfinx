@@ -13,14 +13,15 @@
 #include <iostream>
 #include <numeric>
 #include <vector>
+#include <xtl/xspan.hpp>
 
 namespace dolfinx
 {
 
-// Sort a vector with radix sorting algorithm.
-// The bucket size is determined by the number of bits to sort at a time.
+// Sort a vector with radix sorting algorithm. The bucket size is
+// determined by the number of bits to sort at a time.
 template <typename T, int BITS = 8>
-void radix_sort(std::vector<T>& array)
+void radix_sort(xtl::span<T> array)
 {
   static_assert(std::is_integral<T>(), "This function only sorts integers.");
 
@@ -33,7 +34,8 @@ void radix_sort(std::vector<T>& array)
   constexpr int bucket_size = 1 << BITS;
   T mask = (T(1) << BITS) - 1;
 
-  // Compute number of iterations, most significant digit (N bits) of maxvalue
+  // Compute number of iterations, most significant digit (N bits) of
+  // maxvalue
   int its = 0;
   while (max_value)
   {
@@ -41,94 +43,92 @@ void radix_sort(std::vector<T>& array)
     its++;
   }
 
+  // Adjacency list arrays for computing insertion position
+  std::array<std::int32_t, bucket_size> counter;
+  std::array<std::int32_t, bucket_size + 1> offset;
+
   std::int32_t mask_offset = 0;
   std::vector<T> buffer(array.size());
-
-  std::reference_wrapper<std::vector<T>> current_ref = array;
-  std::reference_wrapper<std::vector<T>> next_ref = buffer;
-
+  xtl::span<T> current_perm = array;
+  xtl::span<T> next_perm = buffer;
   for (int i = 0; i < its; i++)
   {
-    std::vector<T>& current = current_ref.get();
-    std::vector<T>& next = next_ref.get();
+    // Zero counter array
+    std::fill(counter.begin(), counter.end(), 0);
 
-    // Ajdjacency list for computing insertion position
-    std::int32_t counter[bucket_size] = {0};
-    std::int32_t offset[bucket_size + 1];
-
-    // Count number of elements per bucket.
-    for (std::size_t j = 0; j < current.size(); j++)
-      counter[(current[j] & mask) >> mask_offset]++;
+    // Count number of elements per bucket
+    for (T c : current_perm)
+      counter[(c & mask) >> mask_offset]++;
 
     // Prefix sum to get the inserting position
     offset[0] = 0;
-    std::partial_sum(counter, counter + bucket_size, offset + 1);
-
-    for (std::size_t j = 0; j < current.size(); j++)
+    std::partial_sum(counter.begin(), counter.end(), std::next(offset.begin()));
+    for (T c : current_perm)
     {
-      std::int32_t bucket = (current[j] & mask) >> mask_offset;
+      std::int32_t bucket = (c & mask) >> mask_offset;
       std::int32_t new_pos = offset[bucket + 1] - counter[bucket];
-      next[new_pos] = current[j];
+      next_perm[new_pos] = c;
       counter[bucket]--;
     }
 
     mask = mask << BITS;
     mask_offset += BITS;
 
-    std::swap(current_ref, next_ref);
+    std::swap(current_perm, next_perm);
   }
 
-  // Move data back to array
+  // Copy data back to array
   if (its % 2 != 0)
     std::copy(buffer.begin(), buffer.end(), array.begin());
 }
 
-// Returns the indices that would sort (lexicographic) a vector of bitsets.
+// Returns the indices that would sort (lexicographic) a vector of
+// bitsets
 template <int N, int BITS = 8>
 std::vector<std::int32_t>
-argsort_radix(const std::vector<std::bitset<N>>& array)
+argsort_radix(const xtl::span<const std::bitset<N>>& array)
 {
-
   std::vector<std::int32_t> perm1(array.size());
   std::iota(perm1.begin(), perm1.end(), 0);
   if (array.size() <= 1)
     return perm1;
-
-  std::vector<std::int32_t> perm2(perm1);
 
   constexpr int bucket_size = 1 << BITS;
   constexpr int its = N / BITS;
   std::bitset<N> mask = (1 << BITS) - 1;
   std::int32_t mask_offset = 0;
 
-  std::reference_wrapper<std::vector<std::int32_t>> current_perm = perm1;
-  std::reference_wrapper<std::vector<std::int32_t>> next_perm = perm2;
+  // Adjacency list arrays for computing insertion position
+  std::array<std::int32_t, bucket_size> counter;
+  std::array<std::int32_t, bucket_size + 1> offset;
 
+  std::vector<std::int32_t> perm2 = perm1;
+  xtl::span<std::int32_t> current_perm = perm1;
+  xtl::span<std::int32_t> next_perm = perm2;
   for (int i = 0; i < its; i++)
   {
-    // Ajdjacency list for computing insertion position
-    std::int32_t counter[bucket_size] = {0};
-    std::int32_t offset[bucket_size + 1];
+    // Zero counter
+    std::fill(counter.begin(), counter.end(), 0);
 
-    // Count number of elements per bucket.
-    for (std::size_t j = 0; j < array.size(); j++)
+    // Count number of elements per bucket
+    for (auto cp : current_perm)
     {
-      auto set = (array[current_perm.get()[j]] & mask) >> mask_offset;
-      std::int32_t bucket = set.to_ulong();
+      auto set = (array[cp] & mask) >> mask_offset;
+      auto bucket = set.to_ulong();
       counter[bucket]++;
     }
 
     // Prefix sum to get the inserting position
     offset[0] = 0;
-    std::partial_sum(counter, counter + bucket_size, offset + 1);
+    std::partial_sum(counter.begin(), counter.end(), std::next(offset.begin()));
 
-    // Sort py perutation
-    for (std::size_t j = 0; j < array.size(); j++)
+    // Sort py permutation
+    for (auto cp : current_perm)
     {
-      auto set = (array[current_perm.get()[j]] & mask) >> mask_offset;
-      std::int32_t bucket = set.to_ulong();
+      auto set = (array[cp] & mask) >> mask_offset;
+      auto bucket = set.to_ulong();
       std::int32_t pos = offset[bucket + 1] - counter[bucket];
-      next_perm.get()[pos] = current_perm.get()[j];
+      next_perm[pos] = cp;
       counter[bucket]--;
     }
 

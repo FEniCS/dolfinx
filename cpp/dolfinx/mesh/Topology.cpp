@@ -346,7 +346,7 @@ mesh::create_topology(MPI_Comm comm,
   std::vector<std::int64_t> local_vertices_set(
       cells.array().begin(),
       std::next(cells.array().begin(), cells.offsets()[num_local_cells]));
-  dolfinx::radix_sort(local_vertices_set);
+  dolfinx::radix_sort(xtl::span(local_vertices_set));
   local_vertices_set.erase(
       std::unique(local_vertices_set.begin(), local_vertices_set.end()),
       local_vertices_set.end());
@@ -355,7 +355,7 @@ mesh::create_topology(MPI_Comm comm,
   std::vector<std::int64_t> ghost_vertices_set(
       std::next(cells.array().begin(), cells.offsets()[num_local_cells]),
       cells.array().end());
-  dolfinx::radix_sort(ghost_vertices_set);
+  dolfinx::radix_sort(xtl::span(ghost_vertices_set));
   ghost_vertices_set.erase(
       std::unique(ghost_vertices_set.begin(), ghost_vertices_set.end()),
       ghost_vertices_set.end());
