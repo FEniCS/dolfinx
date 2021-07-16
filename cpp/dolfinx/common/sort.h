@@ -53,8 +53,9 @@ void radix_sort(xtl::span<T> array)
     xtl::span<T> next = next_ref;
 
     // Adjacency list for computing insertion position
-    std::int32_t counter[bucket_size] = {0};
-    std::int32_t offset[bucket_size + 1];
+    std::array<std::int32_t, bucket_size> counter;
+    std::fill(counter.begin(), counter.end(), 0);
+    std::array<std::int32_t, bucket_size + 1> offset;
 
     // Count number of elements per bucket
     for (T c : current)
@@ -62,7 +63,7 @@ void radix_sort(xtl::span<T> array)
 
     // Prefix sum to get the inserting position
     offset[0] = 0;
-    std::partial_sum(counter, counter + bucket_size, offset + 1);
+    std::partial_sum(counter.begin(), counter.end(), std::next(offset.begin()));
     for (T c : current)
     {
       std::int32_t bucket = (c & mask) >> mask_offset;
@@ -77,7 +78,7 @@ void radix_sort(xtl::span<T> array)
     std::swap(current_ref, next_ref);
   }
 
-  // Move data back to array
+  // Copy data back to array
   if (its % 2 != 0)
     std::copy(buffer.begin(), buffer.end(), array.begin());
 }
@@ -104,27 +105,28 @@ argsort_radix(const xtl::span<const std::bitset<N>>& array)
   for (int i = 0; i < its; i++)
   {
     // Adjacency list for computing insertion position
-    std::int32_t counter[bucket_size] = {0};
-    std::int32_t offset[bucket_size + 1];
+    std::array<std::int32_t, bucket_size> counter;
+    std::fill(counter.begin(), counter.end(), 0);
+    std::array<std::int32_t, bucket_size + 1> offset;
 
     // Count number of elements per bucket
     for (auto cp : current_perm)
     {
       auto set = (array[cp] & mask) >> mask_offset;
-      std::int32_t bucket = set.to_ulong();
+      const std::int32_t bucket = set.to_ulong();
       counter[bucket]++;
     }
 
     // Prefix sum to get the inserting position
     offset[0] = 0;
-    std::partial_sum(counter, counter + bucket_size, offset + 1);
+    std::partial_sum(counter.begin(), counter.end(), std::next(offset.begin()));
 
     // Sort py permutation
     for (auto cp : current_perm)
     {
       auto set = (array[cp] & mask) >> mask_offset;
-      std::int32_t bucket = set.to_ulong();
-      std::int32_t pos = offset[bucket + 1] - counter[bucket];
+      const std::int32_t bucket = set.to_ulong();
+      const std::int32_t pos = offset[bucket + 1] - counter[bucket];
       next_perm[pos] = cp;
       counter[bucket]--;
     }
