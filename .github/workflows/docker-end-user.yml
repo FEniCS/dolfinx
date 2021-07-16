@@ -145,7 +145,7 @@ jobs:
       - name: Push multiarch images
         run: |
           docker buildx imagetools create -t dolfinx/dolfinx-onbuild:${{ steps.tag_name.outputs.TAG_PREFIX }} dolfinx/dolfinx-onbuild:${{ steps.tag_name.outputs.TAG_PREFIX }}-amd64 dolfinx/dolfinx-onbuild:${{ steps.tag_name.outputs.TAG_PREFIX }}-arm64
-          docker buildx imagetools create -t dolfinx/dolfinx:${{ steps.tag_name.outputs.TAG_PREFIX }} dolfinx/dolfinx:${{ steps.tag_name.outputs.TAG_PREFIX }}-amd64 dolfinx/dolfinx:${steps.tag_name.outputs.TAG_PREFIX}-arm64
+          docker buildx imagetools create -t dolfinx/dolfinx:${{ steps.tag_name.outputs.TAG_PREFIX }} dolfinx/dolfinx:${{ steps.tag_name.outputs.TAG_PREFIX }}-amd64 dolfinx/dolfinx:${{ steps.tag_name.outputs.TAG_PREFIX }}-arm64
           docker buildx imagetools create -t dolfinx/lab:${{ steps.tag_name.outputs.TAG_PREFIX }} dolfinx/lab:${{ steps.tag_name.outputs.TAG_PREFIX }}-amd64 dolfinx/lab:${{ steps.tag_name.outputs.TAG_PREFIX }}-arm64
 
   stop-runner:
