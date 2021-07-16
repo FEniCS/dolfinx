@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Garth N. Wells, Jørgen S. Dokken, Igor A. Baratta
+// Copyright (C) 2021 Garth N. Wells, Jørgen S. Dokken, Igor A. Baratta, Massimiliano Leoni
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -62,5 +62,26 @@ fem::interpolation_coords(const fem::FiniteElement& element,
   }
 
   return x;
+}
+//-----------------------------------------------------------------------------
+/// This should be hidden somewhere
+template <>
+const MPI_Datatype fem::MPI_TYPE<double> = MPI_DOUBLE;
+template <>
+const MPI_Datatype fem::MPI_TYPE<std::complex<double>> = MPI_DOUBLE_COMPLEX;
+
+void fem::SINGLESUM(void* invec, void* inoutvec, int* len, MPI_Datatype*)
+{
+  PetscScalar* in = static_cast<PetscScalar*>(invec);
+  PetscScalar* inout = static_cast<PetscScalar*>(inoutvec);
+  for (int i = 0; i < *len; ++i)
+  {
+    if (*in == 0 or *inout == 0)
+    {
+      *inout += *in;
+    }
+    ++in;
+    ++inout;
+  }
 }
 //-----------------------------------------------------------------------------

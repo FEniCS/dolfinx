@@ -100,7 +100,7 @@ public:
   /// Move assignment
   IndexMap& operator=(IndexMap&& map) = default;
 
-  // Copy assignment
+  /// Copy assignment
   IndexMap& operator=(const IndexMap& map) = delete;
 
   /// Range of indices (global) owned by this process
@@ -109,10 +109,10 @@ public:
   /// Number of ghost indices on this process
   std::int32_t num_ghosts() const noexcept;
 
-  /// Number of indices owned by on this process
+  /// Number of indices owned by this process
   std::int32_t size_local() const noexcept;
 
-  /// Number indices across communicator
+  /// Number of indices across communicator
   std::int64_t size_global() const noexcept;
 
   /// Local-to-global map for ghosts (local indexing beyond end of local

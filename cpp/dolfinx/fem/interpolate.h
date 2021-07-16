@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Garth N. Wells
+// Copyright (C) 2020-2021 Garth N. Wells, Massimiliano Leoni
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -9,9 +9,12 @@
 #include "FunctionSpace.h"
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/fem/FiniteElement.h>
+#include <dolfinx/geometry/BoundingBoxTree.h>
+#include <dolfinx/geometry/utils.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <functional>
 #include <variant>
+#include <xtensor-blas/xlinalg.hpp>
 #include <xtensor/xadapt.hpp>
 #include <xtensor/xarray.hpp>
 #include <xtensor/xtensor.hpp>
@@ -23,6 +26,25 @@ namespace dolfinx::fem
 
 template <typename T>
 class Function;
+
+/// This should be hidden somewhere
+template <typename T>
+const MPI_Datatype MPI_TYPE = MPI_DOUBLE;
+
+/// This function is used to define a custom MPI reduction operator and
+/// it conforms to the MPI standard's specifications,
+/// see https://www.mpi-forum.org/docs/mpi-3.1/mpi31-report/node115.htm
+///
+/// This function gathers values from different processors ignoring duplicates
+///
+/// This function should probably go into a detail namespace
+///
+/// @param[in] invec A vector of operands
+/// @param[out] inoutvec A vector of operands, also used to store
+/// the operation's result
+/// @param[in] len The length of the first two arrays
+/// @param[in] dt Not currently used
+void SINGLESUM(void* invec, void* inoutvec, int* len, MPI_Datatype* dt);
 
 /// Compute the evaluation points in the physical space at which an
 /// expression should be computed to interpolate it in a finite elemenet
@@ -62,6 +84,22 @@ void interpolate(
     const std::function<xt::xarray<T>(const xt::xtensor<double, 2>&)>& f,
     const xt::xtensor<double, 2>& x,
     const xtl::span<const std::int32_t>& cells);
+
+/// Interpolate function values in a finite element space
+///
+/// @param[out] u The function to interpolate into
+/// @param[in] values The values of the interpolated function at points @p x
+/// @param[in] x The points at which the interpolated function was evaluated,
+/// as computed by fem::interpolation_coords. The element used in
+/// fem::interpolation_coords should be the same element as associated
+/// with u.
+/// @param[in] cells Indices of the cells in the mesh on which to
+/// interpolate. Should be the same as the list used when calling
+/// fem::interpolation_coords.
+template <typename T>
+void interpolate(Function<T>& u, xt::xarray<T>& values,
+                 const xt::xtensor<double, 2>& x,
+                 const xtl::span<const std::int32_t>& cells);
 
 /// Interpolate an expression f(x)
 ///
@@ -106,8 +144,219 @@ void interpolate_from_any(Function<T>& u, const Function<T>& v)
   assert(v.function_space()->mesh());
   if (mesh->id() != v.function_space()->mesh()->id())
   {
-    throw std::runtime_error(
-        "Interpolation on different meshes not supported (yet).");
+    const auto mpi_rank = dolfinx::MPI::rank(MPI_COMM_WORLD);
+
+    const int tdim = u.function_space()->mesh()->topology().dim();
+    const auto cell_map
+        = u.function_space()->mesh()->topology().index_map(tdim);
+    const int num_cells = cell_map->size_local() + cell_map->num_ghosts();
+    std::vector<std::int32_t> cells(num_cells, 0);
+    std::iota(cells.begin(), cells.end(), 0);
+
+    // Collect all the points at which values are needed to define the
+    // interpolating function
+    const xt::xtensor<double, 2> x = fem::interpolation_coords(
+        *u.function_space()->element(), *u.function_space()->mesh(), cells);
+
+    // This transposition is a quick and dirty solution and should be avoided
+    auto x_t = xt::zeros_like(xt::transpose(x));
+    for (decltype(x.shape(1)) i = 0; i < x.shape(1); ++i)
+    {
+      for (decltype(x.shape(0)) j = 0; j < x.shape(0); ++j)
+      {
+        x_t(i, j) = x(j, i);
+      }
+    }
+
+    // Gather a vector nProcs whose element i contains the number
+    // of points needed by process i
+    const int nProcs = dolfinx::MPI::size(MPI_COMM_WORLD);
+    std::vector<int> nPoints(nProcs, -1);
+    nPoints[mpi_rank] = x.shape(1);
+
+    MPI_Allgather(nPoints.data() + mpi_rank, 1, MPI_INT, nPoints.data(), 1,
+                  MPI_INT, MPI_COMM_WORLD);
+
+    // In order to receive the coordinates of all the points, we compute
+    // their number, which is tdim times the number of points
+    std::vector<int> nCoords(nPoints.size());
+    std::transform(nPoints.cbegin(), nPoints.cend(), nCoords.begin(),
+                   [](const auto& i) { return 3 * i; });
+
+    // The destination offsets of the upcoming allgatherv operation
+    // are the partial sum of the number of coordinates
+    std::vector<int> displacements(nProcs);
+    displacements[0] = 0;
+    std::partial_sum(nCoords.cbegin(), std::prev(nCoords.cend()),
+                     std::next(displacements.begin()));
+
+    // All the coordinates will be stored in this variable
+    xt::xtensor<double, 2> globalX(
+        xt::shape({std::accumulate(nPoints.cbegin(), nPoints.cend(), 0), 3}),
+        0);
+
+    MPI_Allgatherv(x_t.data(), x_t.size(), MPI_DOUBLE, globalX.data(),
+                   nCoords.data(), displacements.data(), MPI_DOUBLE,
+                   MPI_COMM_WORLD);
+
+    // Each process will now check at which points it can evaluate
+    // the interpolating function, and note that down in evaluationCells
+    std::vector<std::int32_t> evaluationCells(globalX.shape(0), -1);
+
+    const auto connectivity = v.function_space()->mesh()->geometry().dofmap();
+
+    // This BBT is useful for fast lookup of which cell contains a given point
+    dolfinx::geometry::BoundingBoxTree bbt(*v.function_space()->mesh(), tdim);
+
+    const auto xv = v.function_space()->mesh()->geometry().x();
+
+    if (tdim == 3)
+    {
+      // For each point at which the source function needs to be evaluated
+      for (decltype(globalX.shape(0)) i = 0; i < globalX.shape(0); ++i)
+      {
+        // Get its coordinates
+        const double xp = globalX(i, 0);
+        const double yp = globalX(i, 1);
+        const double zp = globalX(i, 2);
+
+        // For each cell that might contain that point
+        for (const auto& j :
+             dolfinx::geometry::compute_collisions(bbt, {xp, yp, zp}))
+        {
+          // Get the vertexes that belong to that cell
+          const auto vtx = connectivity.links(j);
+
+          const auto x1 = xv[3 * vtx[0]];
+          const auto y1 = xv[3 * vtx[0] + 1];
+          const auto z1 = xv[3 * vtx[0] + 2];
+          const auto x2 = xv[3 * vtx[1]];
+          const auto y2 = xv[3 * vtx[1] + 1];
+          const auto z2 = xv[3 * vtx[1] + 2];
+          const auto x3 = xv[3 * vtx[2]];
+          const auto y3 = xv[3 * vtx[2] + 1];
+          const auto z3 = xv[3 * vtx[2] + 2];
+          const auto x4 = xv[3 * vtx[3]];
+          const auto y4 = xv[3 * vtx[3] + 1];
+          const auto z4 = xv[3 * vtx[3] + 2];
+
+          // We compute the barycentric coordinates of the given point
+          // in the cell at hand
+          const xt::xarray<double> A = {{x1 - x4, x2 - x4, x3 - x4},
+                                        {y1 - y4, y2 - y4, y3 - y4},
+                                        {z1 - z4, z2 - z4, z3 - z4}};
+          const xt::xarray<double> b = {xp - x4, yp - y4, zp - z4};
+
+          const xt::xarray<double> l = xt::linalg::solve(A, b);
+
+          // The point belongs to the cell only if all its barycentric
+          // coordinates are positive. In this case
+          if (l[0] >= 0 and l[1] >= 0 and l[2] >= 0
+              and 1 - l[0] - l[1] - l[2] >= 0)
+          {
+            // Note that the cell can be used for interpolation
+            evaluationCells[i] = j;
+            // Do not look any further
+            break;
+          }
+        }
+      }
+    }
+    else if (tdim == 2)
+    {
+      // For each point at which the source function needs to be evaluated
+      for (decltype(globalX.shape(0)) i = 0; i < globalX.shape(0); ++i)
+      {
+        // Get its coordinates
+        const double xp = globalX(i, 0);
+        const double yp = globalX(i, 1);
+
+        // For each cell that might contain that point
+        for (const auto& j :
+             dolfinx::geometry::compute_collisions(bbt, {xp, yp, 0}))
+        {
+          // Get the vertexes that belong to that cell
+          const auto vtx = connectivity.links(j);
+
+          const auto x1 = xv[3 * vtx[0]];
+          const auto y1 = xv[3 * vtx[0] + 1];
+          const auto x2 = xv[3 * vtx[1]];
+          const auto y2 = xv[3 * vtx[1] + 1];
+          const auto x3 = xv[3 * vtx[2]];
+          const auto y3 = xv[3 * vtx[2] + 1];
+
+          // We compute the barycentric coordinates of the given point
+          // in the cell at hand
+          const auto detT = (y2 - y3) * (x1 - x3) + (x3 - x2) * (y1 - y3);
+          const auto lambda1
+              = ((y2 - y3) * (xp - x3) + (x3 - x2) * (yp - y3)) / detT;
+          const auto lambda2
+              = ((y3 - y1) * (xp - x3) + (x1 - x3) * (yp - y3)) / detT;
+
+          // The point belongs to the cell only if all its barycentric
+          // coordinates are positive. In this case
+          if (lambda1 >= 0 and lambda2 >= 0 and 1 - lambda1 - lambda2 >= 0)
+          {
+            // Note that the cell can be used for interpolation
+            evaluationCells[i] = j;
+            // Do not look any further
+            break;
+          }
+        }
+      }
+    }
+    else
+    {
+      throw std::runtime_error(
+          "Interpolation not implemented for topological dimension "
+          + std::to_string(tdim));
+    }
+
+    auto value_size = u.function_space()->element()->value_size();
+
+    // We now evaluate the interpolating function at all points
+    xt::xtensor<T, 2> u_vals(
+        xt::shape({globalX.shape(0),
+                   static_cast<decltype(globalX.shape(0))>(value_size)}),
+        0);
+    v.eval(globalX, evaluationCells, u_vals);
+
+    // We need [do we?] a separate variable to store the reduced values
+    auto finalU = xt::zeros_like(u_vals);
+
+    // Since some points appear more than once in globalX, we cannot simply
+    // reduce with a sum as the values at those points would be doubled.
+    // Here we define a custom reduction operator that, given two values,
+    // returns their sum if at least one of them is zero, and does nothing
+    // otherwise
+    MPI_Op MPI_SINGLESUM;
+    MPI_Op_create(&SINGLESUM, true, &MPI_SINGLESUM);
+
+    MPI_Allreduce(u_vals.data(), finalU.data(), u_vals.size(), MPI_TYPE<T>,
+                  MPI_SINGLESUM, MPI_COMM_WORLD);
+
+    // Now that each process has all the values, each process can extract
+    // the portion that it needs
+    std::vector<std::size_t> shape
+        = {x.shape(1), static_cast<decltype(x.shape(0))>(value_size)};
+    xt::xarray<T> myU(shape);
+    std::copy_n(finalU.cbegin() + displacements[mpi_rank] / 3 * value_size,
+                nPoints[mpi_rank] * value_size, myU.begin());
+
+    // This transposition is a quick and dirty solution and should be avoided
+    xt::xarray<T> myU_t = xt::zeros_like(xt::transpose(myU));
+    for (decltype(myU.shape(1)) i = 0; i < myU.shape(1); ++i)
+    {
+      for (decltype(myU.shape(0)) j = 0; j < myU.shape(0); ++j)
+      {
+        myU_t(i, j) = myU(j, i);
+      }
+    }
+
+    // Finally, interpolate using the computed values
+    fem::interpolate(u, myU_t, x, cells);
+
+    return;
   }
   const int tdim = mesh->topology().dim();
 
@@ -172,7 +421,7 @@ void interpolate(Function<T>& u, const Function<T>& v)
           "Dimension "
           + std::to_string(i) + " of function (" + std::to_string(v_dim)
           + ") does not match dimension " + std::to_string(i)
-          + " of function space(" + std::to_string(element->value_dimension(i))
+          + " of function space (" + std::to_string(element->value_dimension(i))
           + ")");
     }
   }
@@ -181,10 +430,9 @@ void interpolate(Function<T>& u, const Function<T>& v)
 }
 //----------------------------------------------------------------------------
 template <typename T>
-void interpolate(
-    Function<T>& u,
-    const std::function<xt::xarray<T>(const xt::xtensor<double, 2>&)>& f,
-    const xt::xtensor<double, 2>& x, const xtl::span<const std::int32_t>& cells)
+void interpolate(Function<T>& u, xt::xarray<T>& values,
+                 const xt::xtensor<double, 2>& x,
+                 const xtl::span<const std::int32_t>& cells)
 {
   const std::shared_ptr<const FiniteElement> element
       = u.function_space()->element();
@@ -218,12 +466,6 @@ void interpolate(
   const std::vector<std::uint32_t>& cell_info
       = mesh->topology().get_cell_permutation_info();
 
-  // Evaluate function at physical points. The returned array has a
-  // number of rows equal to the number of components of the function,
-  // and the number of columns is equal to the number of evaluation
-  // points.
-  xt::xarray<T> values = f(x);
-
   if (values.dimension() == 1)
   {
     if (element->value_size() != 1)
@@ -232,7 +474,7 @@ void interpolate(
         {static_cast<std::size_t>(element->value_size()), x.shape(1)});
   }
 
-  if (values.shape(0) != element->value_size())
+  if (values.shape(0) != static_cast<std::size_t>(element->value_size()))
     throw std::runtime_error("Interpolation data has the wrong shape.");
 
   if (values.shape(1) != cells.size() * X.shape(0))
@@ -353,6 +595,20 @@ void interpolate(
       }
     }
   }
+}
+//----------------------------------------------------------------------------
+template <typename T>
+void interpolate(
+    Function<T>& u,
+    const std::function<xt::xarray<T>(const xt::xtensor<double, 2>&)>& f,
+    const xt::xtensor<double, 2>& x, const xtl::span<const std::int32_t>& cells)
+{
+  // Evaluate function at physical points. The returned array has a
+  // number of rows equal to the number of components of the function,
+  // and the number of columns is equal to the number of evaluation
+  // points.
+  xt::xarray<T> values = f(x);
+  interpolate(u, values, x, cells);
 }
 //----------------------------------------------------------------------------
 template <typename T>
