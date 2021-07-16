@@ -9,8 +9,6 @@
 #include <algorithm>
 #include <bitset>
 #include <cstdint>
-#include <functional>
-#include <iostream>
 #include <numeric>
 #include <vector>
 #include <xtl/xspan.hpp>
