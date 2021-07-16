@@ -52,7 +52,7 @@ void radix_sort(xtl::span<T> array)
     xtl::span<T> current = current_ref;
     xtl::span<T> next = next_ref;
 
-    // Ajdjacency list for computing insertion position
+    // Adjacency list for computing insertion position
     std::int32_t counter[bucket_size] = {0};
     std::int32_t offset[bucket_size + 1];
 
@@ -86,24 +86,21 @@ void radix_sort(xtl::span<T> array)
 // bitsets
 template <int N, int BITS = 8>
 std::vector<std::int32_t>
-argsort_radix(const std::vector<std::bitset<N>>& array)
+argsort_radix(const xtl::span<const std::bitset<N>>& array)
 {
-
   std::vector<std::int32_t> perm1(array.size());
   std::iota(perm1.begin(), perm1.end(), 0);
   if (array.size() <= 1)
     return perm1;
-
-  std::vector<std::int32_t> perm2(perm1);
 
   constexpr int bucket_size = 1 << BITS;
   constexpr int its = N / BITS;
   std::bitset<N> mask = (1 << BITS) - 1;
   std::int32_t mask_offset = 0;
 
-  std::reference_wrapper<std::vector<std::int32_t>> current_perm = perm1;
-  std::reference_wrapper<std::vector<std::int32_t>> next_perm = perm2;
-
+  std::vector<std::int32_t> perm2 = perm1;
+  xtl::span<std::int32_t> current_perm = perm1;
+  xtl::span<std::int32_t> next_perm = perm2;
   for (int i = 0; i < its; i++)
   {
     // Adjacency list for computing insertion position
@@ -111,9 +108,9 @@ argsort_radix(const std::vector<std::bitset<N>>& array)
     std::int32_t offset[bucket_size + 1];
 
     // Count number of elements per bucket
-    for (std::size_t j = 0; j < array.size(); j++)
+    for (auto cp : current_perm)
     {
-      auto set = (array[current_perm.get()[j]] & mask) >> mask_offset;
+      auto set = (array[cp] & mask) >> mask_offset;
       std::int32_t bucket = set.to_ulong();
       counter[bucket]++;
     }
@@ -122,13 +119,13 @@ argsort_radix(const std::vector<std::bitset<N>>& array)
     offset[0] = 0;
     std::partial_sum(counter, counter + bucket_size, offset + 1);
 
-    // Sort py perutation
-    for (std::size_t j = 0; j < array.size(); j++)
+    // Sort py permutation
+    for (auto cp : current_perm)
     {
-      auto set = (array[current_perm.get()[j]] & mask) >> mask_offset;
+      auto set = (array[cp] & mask) >> mask_offset;
       std::int32_t bucket = set.to_ulong();
       std::int32_t pos = offset[bucket + 1] - counter[bucket];
-      next_perm.get()[pos] = current_perm.get()[j];
+      next_perm[pos] = cp;
       counter[bucket]--;
     }
 
