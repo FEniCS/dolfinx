@@ -80,7 +80,8 @@ jobs:
       - name: Get tag name
         id: tag_name
         run: |
-          if [[ ${GITHUB_REF#refs/tags/} == v* ]] then
+          if [[ ${GITHUB_REF#refs/tags/} == v* ]]
+          then
             echo "::set-output name=TAG_PREFIX::${GITHUB_REF#refs/tags/}"
           else
             echo "::set-output name=TAG_PREFIX::latest"
