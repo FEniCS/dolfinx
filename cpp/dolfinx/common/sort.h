@@ -43,6 +43,10 @@ void radix_sort(xtl::span<T> array)
     its++;
   }
 
+  // Adjacency list arrays for computing insertion position
+  std::array<std::int32_t, bucket_size> counter;
+  std::array<std::int32_t, bucket_size + 1> offset;
+
   std::int32_t mask_offset = 0;
   std::vector<T> buffer(array.size());
   xtl::span<T> current_ref = array;
@@ -52,10 +56,8 @@ void radix_sort(xtl::span<T> array)
     xtl::span<T> current = current_ref;
     xtl::span<T> next = next_ref;
 
-    // Adjacency list for computing insertion position
-    std::array<std::int32_t, bucket_size> counter;
+    // Zero counter array
     std::fill(counter.begin(), counter.end(), 0);
-    std::array<std::int32_t, bucket_size + 1> offset;
 
     // Count number of elements per bucket
     for (T c : current)
@@ -99,15 +101,17 @@ argsort_radix(const xtl::span<const std::bitset<N>>& array)
   std::bitset<N> mask = (1 << BITS) - 1;
   std::int32_t mask_offset = 0;
 
+  // Adjacency list arrays for computing insertion position
+  std::array<std::int32_t, bucket_size> counter;
+  std::array<std::int32_t, bucket_size + 1> offset;
+
   std::vector<std::int32_t> perm2 = perm1;
   xtl::span<std::int32_t> current_perm = perm1;
   xtl::span<std::int32_t> next_perm = perm2;
   for (int i = 0; i < its; i++)
   {
-    // Adjacency list for computing insertion position
-    std::array<std::int32_t, bucket_size> counter;
+    // Zero counter
     std::fill(counter.begin(), counter.end(), 0);
-    std::array<std::int32_t, bucket_size + 1> offset;
 
     // Count number of elements per bucket
     for (auto cp : current_perm)
