@@ -49,6 +49,8 @@ CoordinateElement::CoordinateElement(mesh::CellType celltype, int degree)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
+int CoordinateElement::degree() const { return _element->degree(); }
+//-----------------------------------------------------------------------------
 mesh::CellType CoordinateElement::cell_shape() const
 {
   // TODO
