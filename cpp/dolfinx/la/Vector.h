@@ -40,15 +40,28 @@ public:
   }
 
   /// Copy constructor
-  Vector(const Vector& x) = default;
+  Vector(const Vector& x)
+      : _map(x._map), _bs(x._bs), _request(MPI_REQUEST_NULL),
+        _buffer_send_fwd(x._buffer_send_fwd),
+        _buffer_recv_fwd(x._buffer_recv_fwd), _x(x._x)
+  {
+    MPI_Type_dup(x._datatype, &_datatype);
+  }
 
   /// Move constructor
-  Vector(Vector&& x) noexcept = default;
+  Vector(Vector&& x)
+      : _map(std::move(x._map)), _bs(std::move(x._bs)),
+        _datatype(std::exchange(x._datatype, MPI_DATATYPE_NULL)),
+        _request(std::exchange(x._request, MPI_REQUEST_NULL)),
+        _buffer_send_fwd(std::move(x._buffer_send_fwd)),
+        _buffer_recv_fwd(std::move(x._buffer_recv_fwd)), _x(std::move(x._x))
+  {
+  }
 
   /// Destructor
   ~Vector()
   {
-    if (_datatype and _datatype != MPI::mpi_type<T>())
+    if (_bs != 1)
       MPI_Type_free(&_datatype);
   }
 
@@ -63,10 +76,20 @@ public:
   void scatter_fwd_begin()
   {
     assert(_map);
-    const std::int32_t local_size = _bs * _map->size_local();
-    xtl::span<const T> xlocal(_x.data(), local_size);
-    _map->scatter_fwd_begin(xlocal, _datatype, _request, _buffer_send_fwd,
-                            _buffer_recv_fwd);
+
+    // Pack send buffer
+    const std::vector<std::int32_t>& indices
+        = _map->scatter_fwd_indices().array();
+    _buffer_send_fwd.resize(_bs * indices.size());
+    for (std::size_t i = 0; i < indices.size(); ++i)
+    {
+      std::copy_n(std::next(_x.cbegin(), _bs * indices[i]), _bs,
+                  std::next(_buffer_send_fwd.begin(), _bs * i));
+    }
+
+    _buffer_recv_fwd.resize(_bs * _map->num_ghosts());
+    _map->scatter_fwd_begin(xtl::span<const T>(_buffer_send_fwd), _datatype,
+                            _request, xtl::span<T>(_buffer_recv_fwd));
   }
 
   /// End scatter of local data from owner to ghosts on other ranks
@@ -76,8 +99,17 @@ public:
     assert(_map);
     const std::int32_t local_size = _bs * _map->size_local();
     xtl::span xremote(_x.data() + local_size, _map->num_ghosts() * _bs);
-    _map->scatter_fwd_end(xremote, _request,
-                          xtl::span<const T>(_buffer_recv_fwd));
+    _map->scatter_fwd_end(_request);
+
+    // Copy received data into ghost positions
+    const std::vector<std::int32_t>& scatter_fwd_ghost_pos
+        = _map->scatter_fwd_ghost_positions();
+    for (std::size_t i = 0; i < _map->num_ghosts(); ++i)
+    {
+      const int pos = scatter_fwd_ghost_pos[i];
+      std::copy_n(std::next(_buffer_recv_fwd.cbegin(), _bs * pos), _bs,
+                  std::next(xremote.begin(), _bs * i));
+    }
   }
 
   /// Scatter local data to ghost positions on other ranks
@@ -92,25 +124,55 @@ public:
   /// @note Collective MPI operation
   void scatter_rev_begin()
   {
+    // Pack send buffer
     const std::int32_t local_size = _bs * _map->size_local();
     xtl::span<const T> xremote(_x.data() + local_size,
                                _map->num_ghosts() * _bs);
-    _map->scatter_rev_begin(xremote, _datatype, _request, _buffer_recv_fwd,
-                            _buffer_send_fwd);
+    const std::vector<std::int32_t>& scatter_fwd_ghost_pos
+        = _map->scatter_fwd_ghost_positions();
+    _buffer_recv_fwd.resize(_bs * scatter_fwd_ghost_pos.size());
+    for (std::size_t i = 0; i < scatter_fwd_ghost_pos.size(); ++i)
+    {
+      const int pos = scatter_fwd_ghost_pos[i];
+      std::copy_n(std::next(xremote.cbegin(), _bs * i), _bs,
+                  std::next(_buffer_recv_fwd.begin(), _bs * pos));
+    }
+
+    // Resize receive buffer and begin scatter
+    _buffer_send_fwd.resize(_bs * _map->scatter_fwd_indices().array().size());
+    _map->scatter_rev_begin(xtl::span<const T>(_buffer_recv_fwd), _datatype,
+                            _request, xtl::span<T>(_buffer_send_fwd));
   }
 
-  /// End scatter of ghost data to owner. This process may receive data from
-  /// more than one process, and the received data can be summed or
+  /// End scatter of ghost data to owner. This process may receive data
+  /// from more than one process, and the received data can be summed or
   /// inserted into the local portion of the vector.
   /// @param op The operation to perform when adding/setting received
   /// values (add or insert)
   /// @note Collective MPI operation
-  void scatter_rev_end(dolfinx::common::IndexMap::Mode op)
+  void scatter_rev_end(common::IndexMap::Mode op)
   {
-    const std::int32_t local_size = _bs * _map->size_local();
-    xtl::span xlocal(_x.data(), local_size);
-    _map->scatter_rev_end(xlocal, _request,
-                          xtl::span<const T>(_buffer_send_fwd), op);
+    // Complete scatter
+    _map->scatter_rev_end(_request);
+
+    // Copy/accumulate into owned part of the vector
+    const std::vector<std::int32_t>& shared_indices
+        = _map->scatter_fwd_indices().array();
+    switch (op)
+    {
+    case common::IndexMap::Mode::insert:
+      for (std::size_t i = 0; i < shared_indices.size(); ++i)
+      {
+        std::copy_n(std::next(_buffer_send_fwd.cbegin(), _bs * i), _bs,
+                    std::next(_x.begin(), _bs * shared_indices[i]));
+      }
+      break;
+    case common::IndexMap::Mode::add:
+      for (std::size_t i = 0; i < shared_indices.size(); ++i)
+        for (int j = 0; j < _bs; ++j)
+          _x[shared_indices[i] * _bs + j] += _buffer_send_fwd[i * _bs + j];
+      break;
+    }
   }
 
   /// Scatter ghost data to owner. This process may receive data from

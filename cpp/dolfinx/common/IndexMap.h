@@ -140,18 +140,33 @@ public:
 
   /// Global indices
   /// @return The global index for all local indices (0, 1, 2, ...) on
-  ///   this process, including ghosts
+  /// this process, including ghosts
   std::vector<std::int64_t> global_indices() const;
 
-  /// @todo Reconsider name
   /// Local (owned) indices shared with neighbor processes, i.e. are
-  /// ghosts on other processes, grouped by sharing (neighbor)
-  /// process (destination ranks in forward communicator and source ranks in the
-  /// reverse communicator)
+  /// ghosts on other processes, grouped by sharing (neighbor) process
+  /// (destination ranks in forward communicator and source ranks in the
+  /// reverse communicator). `scatter_fwd_indices().links(p)` gives the
+  /// list of owned indices that needs to be sent to neighbourhood rank
+  /// `p` during a forward scatter.
+  ///
+  /// Entries are ordered such that `scatter_fwd_indices.offsets()` is
+  /// the send displacement array for a forward scatter and
+  /// `scatter_fwd_indices.array()[i]` in the index of the owned index
+  /// that should be placed at position `i` in the send buffer for a
+  /// forward scatter.
   /// @return List of indices that are ghosted on other processes
-  const graph::AdjacencyList<std::int32_t>& shared_indices() const noexcept;
+  const graph::AdjacencyList<std::int32_t>&
+  scatter_fwd_indices() const noexcept;
 
-  /// Owner rank (on global communicator) of each ghost entry
+  /// Position of ghost entries in the receive buffer after a forward
+  /// scatter, e.g. for a receive buffer `b` and a set operation, the
+  /// ghost values should be updated  by `ghost_value[i] =
+  /// b[scatter_fwd_ghost_positions[i]]`.
+  /// @return Position of the ith ghost entry in the received buffer
+  const std::vector<std::int32_t>& scatter_fwd_ghost_positions() const noexcept;
+
+  /// Owner rank on the global communicator of each ghost entry
   std::vector<int> ghost_owner_rank() const;
 
   /// @todo Aim to remove this function? If it's kept, should it work
@@ -162,29 +177,29 @@ public:
   /// @return shared indices
   std::map<std::int32_t, std::set<int>> compute_shared_indices() const;
 
-  /// Start a non-blocking send from the local owner of to process ranks
-  /// that have the index as a ghost. The non-blocking communication is
-  /// completed by calling IndexMap::scatter_fwd_end.
+  /// Start a non-blocking send of owned data to ranks that ghost the
+  /// data. The communication is completed by calling
+  /// IndexMap::scatter_fwd_end. The send and receive buffer should not
+  /// be changed until after IndexMap::scatter_fwd_end has been called.
   ///
-  /// @param[in] local_data Local data associated with each owned local
-  /// index to be sent to process where the data is ghosted. Size must
-  /// be `n * size_local()`, where `n` is the block size of the data to
-  /// send.
+  /// @param[in] send_buffer Local data associated with each owned local
+  /// index to be sent to process where the data is ghosted. It must not
+  /// be changed until after a call to IndexMap::scatter_fwd_end. The
+  /// order of data in the buffer is given by
+  /// IndexMap::scatter_fwd_indices.
   /// @param data_type The MPI data type. To send data with a block size
   /// use `MPI_Type_contiguous` with size `n`
   /// @param request The MPI request handle for tracking the status of
-  /// the send
-  /// @param send_buffer A buffer used to pack the send data. It must
-  /// not be changed until after a call to IndexMap::scatter_fwd_end. It
-  /// will be resized as required.
-  /// @param recv_buffer  A buffer used for the received data. It must
-  /// not be changed until after a call to IndexMap::scatter_fwd_end. It
-  /// will be resized as required.
+  /// the non-blocking communication
+  /// @param recv_buffer A buffer used for the received data. The
+  /// position of ghost entries in the buffer is given by
+  /// IndexMap::scatter_fwd_ghost_positions. The buffer must not be
+  /// accessed or changed until after a call to
+  /// IndexMap::scatter_fwd_end.
   template <typename T>
-  void scatter_fwd_begin(const xtl::span<const T>& local_data,
+  void scatter_fwd_begin(const xtl::span<const T>& send_buffer,
                          MPI_Datatype& data_type, MPI_Request& request,
-                         std::vector<T>& send_buffer,
-                         std::vector<T>& recv_buffer) const
+                         const xtl::span<T>& recv_buffer) const
   {
     // Send displacement
     const std::vector<int32_t>& displs_send_fwd = _shared_indices->offsets();
@@ -197,20 +212,12 @@ public:
     int n;
     MPI_Type_size(data_type, &n);
     n /= sizeof(T);
-    if (static_cast<int>(local_data.size()) != n * size_local())
-      throw std::runtime_error("Inconsistent data size.");
-
-    // Copy data into send buffer
-    send_buffer.resize(n * displs_send_fwd.back());
-    const std::vector<std::int32_t>& indices = _shared_indices->array();
-    for (std::size_t i = 0; i < indices.size(); ++i)
-    {
-      std::copy_n(std::next(local_data.cbegin(), n * indices[i]), n,
-                  std::next(send_buffer.begin(), n * i));
-    }
+    if (static_cast<int>(send_buffer.size()) != n * displs_send_fwd.back())
+      throw std::runtime_error("Incompatible send buffer size.");
+    if (static_cast<int>(recv_buffer.size()) != n * _displs_recv_fwd.back())
+      throw std::runtime_error("Incompatible receive buffer size..");
 
     // Start send/receive
-    recv_buffer.resize(n * _displs_recv_fwd.back());
     MPI_Ineighbor_alltoallv(send_buffer.data(), _sizes_send_fwd.data(),
                             displs_send_fwd.data(), data_type,
                             recv_buffer.data(), _sizes_recv_fwd.data(),
@@ -222,15 +229,9 @@ public:
   /// ranks that have the index as a ghost. This function complete the
   /// communication started by IndexMap::scatter_fwd_begin.
   ///
-  /// @param[in] remote_data The data array (ghost region) to fill with
-  /// the received data
   /// @param[in] request The MPI request handle for tracking the status
   /// of the send
-  /// @param[in] recv_buffer The receive buffer. It must be the same as
-  /// the buffer passed to IndexMap::scatter_fwd_begin.
-  template <typename T>
-  void scatter_fwd_end(const xtl::span<T>& remote_data, MPI_Request& request,
-                       const xtl::span<const T>& recv_buffer) const
+  void scatter_fwd_end(MPI_Request& request) const
   {
     // Return early if there are no incoming or outgoing edges
     const std::vector<int32_t>& displs_send_fwd = _shared_indices->offsets();
@@ -239,22 +240,6 @@ public:
 
     // Wait for communication to complete
     MPI_Wait(&request, MPI_STATUS_IGNORE);
-
-    // Copy into ghost area ("remote_data")
-    if (!remote_data.empty())
-    {
-      assert(remote_data.size() >= _ghosts.size());
-      assert(remote_data.size() % _ghosts.size() == 0);
-      const int n = remote_data.size() / _ghosts.size();
-      std::vector<std::int32_t> displs = _displs_recv_fwd;
-      for (std::size_t i = 0; i < _ghosts.size(); ++i)
-      {
-        const int p = _ghost_owners[i];
-        std::copy_n(std::next(recv_buffer.cbegin(), n * displs[p]), n,
-                    std::next(remote_data.begin(), n * i));
-        displs[p] += 1;
-      }
-    }
   }
 
   /// Send n values for each index that is owned to processes that have
@@ -280,10 +265,27 @@ public:
       MPI_Type_commit(&data_type);
     }
 
+    const std::vector<std::int32_t>& indices = _shared_indices->array();
+    std::vector<T> send_buffer(n * indices.size());
+    for (std::size_t i = 0; i < indices.size(); ++i)
+    {
+      std::copy_n(std::next(local_data.cbegin(), n * indices[i]), n,
+                  std::next(send_buffer.begin(), n * i));
+    }
+
     MPI_Request request;
-    std::vector<T> buffer_send, buffer_recv;
-    scatter_fwd_begin(local_data, data_type, request, buffer_send, buffer_recv);
-    scatter_fwd_end(remote_data, request, xtl::span<const T>(buffer_recv));
+    std::vector<T> buffer_recv(n * _displs_recv_fwd.back());
+    scatter_fwd_begin(xtl::span<const T>(send_buffer), data_type, request,
+                      xtl::span<T>(buffer_recv));
+    scatter_fwd_end(request);
+
+    // Copy into ghost area ("remote_data")
+    assert(remote_data.size() == n * _ghost_pos_recv_fwd.size());
+    for (std::size_t i = 0; i < _ghost_pos_recv_fwd.size(); ++i)
+    {
+      std::copy_n(std::next(buffer_recv.cbegin(), n * _ghost_pos_recv_fwd[i]),
+                  n, std::next(remote_data.begin(), n * i));
+    }
 
     if (n != 1)
       MPI_Type_free(&data_type);
@@ -291,26 +293,28 @@ public:
 
   /// Start a non-blocking send of ghost values to the owning rank. The
   /// non-blocking communication is completed by calling
-  /// IndexMap::scatter_rev_end.
+  /// IndexMap::scatter_rev_end. A reverse scatter is the transpose of
+  /// IndexMap::scatter_fwd_begin.
   ///
-  /// @param[in] remote_data Ghost data on this  process to be sent to
-  /// the owner. Size must be `n * num_ghosts()`, where `n` is the block
-  /// size of the data to send.
+  /// @param[in] send_buffer Send buffer filled with ghost data on this
+  /// process to be sent to the owning rank. The order of the data is
+  /// given by IndexMap::scatter_fwd_ghost_positions, with
+  /// IndexMap::scatter_fwd_ghost_positions()[i] being the index of the
+  /// ghost data that should be placed in position `i` of the buffer.
   /// @param data_type The MPI data type. To send data with a block size
   /// use `MPI_Type_contiguous` with size `n`
   /// @param request The MPI request handle for tracking the status of
   /// the send
-  /// @param send_buffer A buffer used to pack the send data. It must
-  /// not be changed until after a call to IndexMap::scatter_rev_end. It
-  /// will be resized as required.
-  /// @param recv_buffer  A buffer used for the received data. It must
-  /// not be changed until after a call to IndexMap::scatter_rev_end. It
-  /// will be resized as required.
+  /// @param recv_buffer A buffer used for the received data. It must
+  /// not be changed until after a call to IndexMap::scatter_rev_end.
+  /// The ordering of the data is given by
+  /// IndexMap::scatter_fwd_indices, with
+  /// IndexMap::scatter_fwd_indices()[i] being the position in the owned
+  /// data array that corresponds to position `i` in the buffer.
   template <typename T>
-  void scatter_rev_begin(const xtl::span<const T>& remote_data,
+  void scatter_rev_begin(const xtl::span<const T>& send_buffer,
                          MPI_Datatype& data_type, MPI_Request& request,
-                         std::vector<T>& send_buffer,
-                         std::vector<T>& recv_buffer) const
+                         const xtl::span<T>& recv_buffer) const
   {
     // Get displacement vector
     const std::vector<int32_t>& displs_send_fwd = _shared_indices->offsets();
@@ -323,22 +327,12 @@ public:
     int n;
     MPI_Type_size(data_type, &n);
     n /= sizeof(T);
-    if (static_cast<int>(remote_data.size()) != n * _ghosts.size())
-      throw std::runtime_error("Inconsistent data size.");
-
-    // Pack send buffer
-    send_buffer.resize(n * _displs_recv_fwd.back());
-    std::vector<std::int32_t> displs(_displs_recv_fwd);
-    for (std::size_t i = 0; i < _ghosts.size(); ++i)
-    {
-      const int p = _ghost_owners[i];
-      std::copy_n(std::next(remote_data.cbegin(), n * i), n,
-                  std::next(send_buffer.begin(), n * displs[p]));
-      displs[p] += 1;
-    }
+    if (static_cast<int>(send_buffer.size()) != n * _ghosts.size())
+      throw std::runtime_error("Inconsistent send buffer size.");
+    if (static_cast<int>(recv_buffer.size()) != n * displs_send_fwd.back())
+      throw std::runtime_error("Inconsistent receive buffer size.");
 
     // Send and receive data
-    recv_buffer.resize(n * displs_send_fwd.back());
     MPI_Ineighbor_alltoallv(send_buffer.data(), _sizes_recv_fwd.data(),
                             _displs_recv_fwd.data(), data_type,
                             recv_buffer.data(), _sizes_send_fwd.data(),
@@ -350,56 +344,17 @@ public:
   /// This function complete the communication started by
   /// IndexMap::scatter_rev_begin.
   ///
-  /// @param[in,out] local_data The data array (owned region) to sum/set
-  /// with the received ghost data
   /// @param[in] request The MPI request handle for tracking the status
   /// of the send
-  /// @param[in] recv_buffer The receive buffer. It must be the same as
-  /// the buffer passed to IndexMap::scatter_rev_begin.
-  /// @param[in] op The accumulation options
-  template <typename T>
-  void scatter_rev_end(const xtl::span<T>& local_data, MPI_Request& request,
-                       const xtl::span<const T>& recv_buffer,
-                       IndexMap::Mode op) const
+  void scatter_rev_end(MPI_Request& request) const
   {
-    // Get displacement vector
-    const std::vector<int32_t>& displs_send_fwd = _shared_indices->offsets();
-
     // Return early if there are no incoming or outgoing edges
+    const std::vector<int32_t>& displs_send_fwd = _shared_indices->offsets();
     if (_displs_recv_fwd.size() == 1 and displs_send_fwd.size() == 1)
       return;
 
     // Wait for communication to complete
     MPI_Wait(&request, MPI_STATUS_IGNORE);
-
-    // Copy or accumulate into "local_data"
-    if (std::int32_t size = this->size_local(); size > 0)
-    {
-      assert(local_data.size() >= size);
-      assert(local_data.size() % size == 0);
-      const int n = local_data.size() / size;
-      const std::vector<std::int32_t>& shared_indices
-          = _shared_indices->array();
-      switch (op)
-      {
-      case Mode::insert:
-        for (std::size_t i = 0; i < shared_indices.size(); ++i)
-        {
-          const std::int32_t index = shared_indices[i];
-          std::copy_n(std::next(recv_buffer.cbegin(), n * i), n,
-                      std::next(local_data.begin(), n * index));
-        }
-        break;
-      case Mode::add:
-        for (std::size_t i = 0; i < shared_indices.size(); ++i)
-        {
-          const std::int32_t index = shared_indices[i];
-          for (int j = 0; j < n; ++j)
-            local_data[index * n + j] += recv_buffer[i * n + j];
-        }
-        break;
-      }
-    }
   }
 
   /// Send n values for each ghost index to owning to the process
@@ -425,11 +380,42 @@ public:
       MPI_Type_commit(&data_type);
     }
 
+    // Pack send buffer
+    std::vector<T> buffer_send;
+    buffer_send.resize(n * _displs_recv_fwd.back());
+    for (std::size_t i = 0; i < _ghost_pos_recv_fwd.size(); ++i)
+    {
+      std::copy_n(std::next(remote_data.cbegin(), n * i), n,
+                  std::next(buffer_send.begin(), n * _ghost_pos_recv_fwd[i]));
+    }
+
+    // Exchange data
     MPI_Request request;
-    std::vector<T> buffer_send, buffer_recv;
-    scatter_rev_begin(remote_data, data_type, request, buffer_send,
-                      buffer_recv);
-    scatter_rev_end(local_data, request, xtl::span<const T>(buffer_recv), op);
+    std::vector<T> buffer_recv(n * _shared_indices->array().size());
+    scatter_rev_begin(xtl::span<const T>(buffer_send), data_type, request,
+                      xtl::span<T>(buffer_recv));
+    scatter_rev_end(request);
+
+    // Copy or accumulate into "local_data"
+    assert(local_data.size() == n * this->size_local());
+    const std::vector<std::int32_t>& shared_indices = _shared_indices->array();
+    switch (op)
+    {
+    case Mode::insert:
+      for (std::size_t i = 0; i < shared_indices.size(); ++i)
+      {
+        std::copy_n(std::next(buffer_recv.cbegin(), n * i), n,
+                    std::next(local_data.begin(), n * shared_indices[i]));
+      }
+      break;
+    case Mode::add:
+      for (std::size_t i = 0; i < shared_indices.size(); ++i)
+      {
+        for (int j = 0; j < n; ++j)
+          local_data[shared_indices[i] * n + j] += buffer_recv[i * n + j];
+      }
+      break;
+    }
 
     if (n != 1)
       MPI_Type_free(&data_type);
@@ -459,14 +445,14 @@ private:
   dolfinx::MPI::Comm _comm_ghost_to_owner;
 
   // MPI sizes and displacements for forward (owner -> ghost) scatter
-  std::vector<int> _sizes_recv_fwd, _sizes_send_fwd, _displs_recv_fwd;
+  std::vector<std::int32_t> _sizes_recv_fwd, _sizes_send_fwd, _displs_recv_fwd;
+
+  // Position in the recv buffer for a forward scatter for the _ghost[i]
+  // entry
+  std::vector<std::int32_t> _ghost_pos_recv_fwd;
 
   // Local-to-global map for ghost indices
   std::vector<std::int64_t> _ghosts;
-
-  // Owning neighborhood rank (out edge) on '_comm_owner_to_ghost'
-  // communicator for each ghost index
-  std::vector<std::int32_t> _ghost_owners;
 
   // List of owned local indices that are in the halo (ghost) region on
   // other ranks, grouped by rank in the neighbor communicator
