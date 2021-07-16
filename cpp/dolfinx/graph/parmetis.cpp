@@ -165,13 +165,16 @@ graph::partition_fn graph::parmetis::partitioner(std::array<int, 3> options)
     // Note: ParMETIS is not const-correct, so we throw away const-ness
     // and trust ParMETIS to not modify the data.
 
+    // Copy offsets to idx_t
+    std::vector<idx_t> lg_offsets(local_graph.offsets().begin(),
+                                  local_graph.offsets().end());
+
     // Call ParMETIS to partition graph
     common::Timer timer1("ParMETIS: call ParMETIS_V3_PartKway");
     std::vector<idx_t> part(num_local_cells);
     assert(!part.empty());
     int err = ParMETIS_V3_PartKway(
-        const_cast<idx_t*>(node_dist.data()),
-        const_cast<idx_t*>(local_graph.offsets().data()),
+        const_cast<idx_t*>(node_dist.data()), lg_offsets.data(),
         const_cast<idx_t*>(local_graph.array().data()), elmwgt, nullptr,
         &wgtflag, &numflag, &ncon, &nparts, tpwgts.data(), ubvec.data(),
         _options.data(), &edgecut, part.data(), &mpi_comm);

@@ -153,7 +153,7 @@ public:
   const std::vector<std::int32_t>& offsets() const { return _offsets; }
 
   /// Copy of the Adjacency List if the specified type is different from the
-  /// current type, ele return a reference.
+  /// current type, else return a reference.
   template <typename X>
   decltype(auto) as_type() const
   {
