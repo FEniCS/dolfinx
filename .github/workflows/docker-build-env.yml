@@ -7,7 +7,7 @@ name: Docker environment images
 on:
   push:
     # This will run every time a version tag is created
-    - tags:
+    tags:
       - 'v*'
   schedule:
     # '*' is a special character in YAML, so string must be quoted
