@@ -49,35 +49,32 @@ void radix_sort(xtl::span<T> array)
 
   std::int32_t mask_offset = 0;
   std::vector<T> buffer(array.size());
-  xtl::span<T> current_ref = array;
-  xtl::span<T> next_ref = buffer;
+  xtl::span<T> current_perm = array;
+  xtl::span<T> next_perm = buffer;
   for (int i = 0; i < its; i++)
   {
-    xtl::span<T> current = current_ref;
-    xtl::span<T> next = next_ref;
-
     // Zero counter array
     std::fill(counter.begin(), counter.end(), 0);
 
     // Count number of elements per bucket
-    for (T c : current)
+    for (T c : current_perm)
       counter[(c & mask) >> mask_offset]++;
 
     // Prefix sum to get the inserting position
     offset[0] = 0;
     std::partial_sum(counter.begin(), counter.end(), std::next(offset.begin()));
-    for (T c : current)
+    for (T c : current_perm)
     {
       std::int32_t bucket = (c & mask) >> mask_offset;
       std::int32_t new_pos = offset[bucket + 1] - counter[bucket];
-      next[new_pos] = c;
+      next_perm[new_pos] = c;
       counter[bucket]--;
     }
 
     mask = mask << BITS;
     mask_offset += BITS;
 
-    std::swap(current_ref, next_ref);
+    std::swap(current_perm, next_perm);
   }
 
   // Copy data back to array
@@ -117,7 +114,7 @@ argsort_radix(const xtl::span<const std::bitset<N>>& array)
     for (auto cp : current_perm)
     {
       auto set = (array[cp] & mask) >> mask_offset;
-      const std::int32_t bucket = set.to_ulong();
+      auto bucket = set.to_ulong();
       counter[bucket]++;
     }
 
@@ -129,8 +126,8 @@ argsort_radix(const xtl::span<const std::bitset<N>>& array)
     for (auto cp : current_perm)
     {
       auto set = (array[cp] & mask) >> mask_offset;
-      const std::int32_t bucket = set.to_ulong();
-      const std::int32_t pos = offset[bucket + 1] - counter[bucket];
+      auto bucket = set.to_ulong();
+      std::int32_t pos = offset[bucket + 1] - counter[bucket];
       next_perm[pos] = cp;
       counter[bucket]--;
     }
