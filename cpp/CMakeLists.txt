@@ -158,7 +158,7 @@ set_package_properties(xtensor-blas PROPERTIES TYPE REQUIRED
   DESCRIPTION "BLAS extenssion to xtensor."
   URL "https://xtensor-blas.readthedocs.io/")
 
-  find_package(PETSc 3.10)
+find_package(PETSc 3.10)
 set_package_properties(PETSc PROPERTIES TYPE REQUIRED
   DESCRIPTION "Portable, Extensible Toolkit for Scientific Computation (PETSc)"
   URL "https://www.mcs.anl.gov/petsc/"
@@ -166,6 +166,7 @@ set_package_properties(PETSc PROPERTIES TYPE REQUIRED
 
 # Check for HDF5
 set(HDF5_PREFER_PARALLEL TRUE)
+set(HDF5_NO_FIND_PACKAGE_CONFIG_FILE TRUE)
 find_package(HDF5 REQUIRED)
 if (NOT HDF5_IS_PARALLEL)
   message(FATAL_ERROR "Found serial HDF5 build, MPI HDF5 build required, try setting HDF5_DIR")
