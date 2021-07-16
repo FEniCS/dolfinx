@@ -133,7 +133,7 @@ graph::partition_fn graph::parmetis::partitioner(std::array<int, 3> options)
     LOG(INFO) << "Compute graph partition using ParMETIS";
     common::Timer timer("Compute graph partition (ParMETIS)");
 
-    const auto& local_graph = graph.as_type<idx_t>();
+    const graph::AdjacencyList<idx_t>& local_graph = graph.as_type<idx_t>();
 
     std::map<std::int64_t, std::vector<int>> ghost_procs;
     const int rank = dolfinx::MPI::rank(mpi_comm);
