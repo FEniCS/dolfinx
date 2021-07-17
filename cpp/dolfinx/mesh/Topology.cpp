@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/log.h>
+#include <dolfinx/common/sort.h>
 #include <dolfinx/common/utils.h>
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/graph/AdjacencyList.h>
@@ -241,6 +242,7 @@ void Topology::create_entity_permutations()
   // FIXME: Is this always required? Could it be made cheaper by doing a
   // local version? This call does quite a lot of parallel work
   // Create all mesh entities
+
   for (int d = 0; d < tdim; ++d)
     create_entities(d);
 
@@ -344,7 +346,7 @@ mesh::create_topology(MPI_Comm comm,
   std::vector<std::int64_t> local_vertices_set(
       cells.array().begin(),
       std::next(cells.array().begin(), cells.offsets()[num_local_cells]));
-  std::sort(local_vertices_set.begin(), local_vertices_set.end());
+  dolfinx::radix_sort(xtl::span(local_vertices_set));
   local_vertices_set.erase(
       std::unique(local_vertices_set.begin(), local_vertices_set.end()),
       local_vertices_set.end());
@@ -353,7 +355,7 @@ mesh::create_topology(MPI_Comm comm,
   std::vector<std::int64_t> ghost_vertices_set(
       std::next(cells.array().begin(), cells.offsets()[num_local_cells]),
       cells.array().end());
-  std::sort(ghost_vertices_set.begin(), ghost_vertices_set.end());
+  dolfinx::radix_sort(xtl::span(ghost_vertices_set));
   ghost_vertices_set.erase(
       std::unique(ghost_vertices_set.begin(), ghost_vertices_set.end()),
       ghost_vertices_set.end());
