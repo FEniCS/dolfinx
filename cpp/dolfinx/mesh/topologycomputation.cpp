@@ -52,6 +52,7 @@ int get_ownership(std::set<int>& processes, std::vector<std::int64_t>& vertices)
 
 /// Takes an array and computes the sort permutation that would reorder
 /// the rows in ascending order
+/// @tparam The length of each row of @p array
 /// @param[in] array The input array
 /// @return The permutation vector that would order the rows in
 /// ascending order
@@ -61,7 +62,6 @@ std::vector<std::int32_t>
 sort_by_perm(const xt::xtensor<std::int32_t, 2>& array)
 {
   assert(array.shape(1) == d);
-
   constexpr int set_size = 32 * d;
   std::vector<std::bitset<set_size>> bit_array(array.shape(0));
 
@@ -345,16 +345,16 @@ get_local_indexing(
     // data to the indices in recv_index
     for (int np = 0; np < neighbor_size; ++np)
     {
-      for (std::int32_t index : send_index[np])
-      {
-        // If not in our local range, send -1.
-        const std::int64_t gi = (local_index[index] < num_local)
-                                    ? (local_offset + local_index[index])
-                                    : -1;
-
-        send_global_index_data.push_back(gi);
-      }
-
+      std::transform(send_index[np].cbegin(), send_index[np].cend(),
+                     std::back_inserter(send_global_index_data),
+                     [&local_index, num_local,
+                      local_offset](std::int32_t index) -> std::int64_t
+                     {
+                       // If not in our local range, send -1.
+                       return local_index[index] < num_local
+                                  ? local_offset + local_index[index]
+                                  : -1;
+                     });
       send_global_index_offsets.push_back(send_global_index_data.size());
     }
     const graph::AdjacencyList<std::int64_t> recv_data
