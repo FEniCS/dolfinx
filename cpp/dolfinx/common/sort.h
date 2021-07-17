@@ -16,8 +16,11 @@
 namespace dolfinx
 {
 
-// Sort a vector with radix sorting algorithm. The bucket size is
-// determined by the number of bits to sort at a time.
+/// Sort a vector of integers with radix sorting algorithm.The bucket size is
+/// determined by the number of bits to sort at a time (2^BITS).
+/// @tparam T Integral type
+/// @tparam BITS The number of bits to sort at a time.
+/// @param[in, out] array The array to sort.
 template <typename T, int BITS = 8>
 void radix_sort(xtl::span<T> array)
 {
@@ -80,8 +83,13 @@ void radix_sort(xtl::span<T> array)
     std::copy(buffer.begin(), buffer.end(), array.begin());
 }
 
-// Returns the indices that would sort (lexicographic) a vector of
-// bitsets
+/// Returns the indices that would sort (lexicographic) a vector of bitsets.
+/// @tparam N The size of the bitset, which corresponds to the number of bits
+/// necessary to represent a set of integers. For example, N = 96 for mapping
+/// three std::int32_t.
+/// @tparam BITS The number of bits to sort at a time.
+/// @param[in] array The array to sort.
+/// Returns Vector of indices that sort the input array.
 template <int N, int BITS = 8>
 std::vector<std::int32_t>
 argsort_radix(const xtl::span<const std::bitset<N>>& array)
