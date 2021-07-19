@@ -11,6 +11,7 @@
 #include <cstdint>
 #include <numeric>
 #include <vector>
+#include <xtensor/xtensor.hpp>
 #include <xtl/xspan.hpp>
 
 namespace dolfinx
@@ -148,5 +149,34 @@ argsort_radix(const xtl::span<const std::bitset<N>>& array)
     return perm1;
   else
     return perm2;
+}
+
+/// Takes an array and computes the sort permutation that would reorder
+/// the rows in ascending order
+/// @tparam The length of each row of @p array
+/// @param[in] array The input array
+/// @return The permutation vector that would order the rows in
+/// ascending order
+/// @pre Each row of @p array must be sorted
+template <std::size_t d>
+std::vector<std::int32_t>
+sort_by_perm(const xt::xtensor<std::int32_t, 2>& array)
+{
+  assert(array.shape(1) == d);
+  constexpr int set_size = 32 * d;
+  std::vector<std::bitset<set_size>> bit_array(array.shape(0));
+
+  // Pack list of "d" ints into a bitset
+  for (std::size_t i = 0; i < array.shape(0); i++)
+  {
+    for (std::size_t j = 0; j < d; j++)
+    {
+      std::bitset<set_size> bits = array(i, j);
+      bit_array[i] |= bits << (32 * (d - j - 1));
+    }
+  }
+
+  // This function creates a 2**16 temporary array (buckets)
+  return dolfinx::argsort_radix<set_size, 16>(bit_array);
 }
 } // namespace dolfinx
