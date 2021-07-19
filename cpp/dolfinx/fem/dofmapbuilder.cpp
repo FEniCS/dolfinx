@@ -52,17 +52,17 @@ reorder_owned(const graph::AdjacencyList<std::int32_t>& dofmap,
   for (std::int32_t cell = 0; cell < dofmap.num_nodes(); ++cell)
   {
     auto nodes = dofmap.links(cell);
-    for (std::size_t i = 0; i < nodes.size(); ++i)
+    for (auto n0 : nodes)
     {
-      const std::int32_t node_i = original_to_contiguous[nodes[i]];
+      const std::int32_t node_0 = original_to_contiguous[n0];
 
       // Skip unowned node
-      if (node_i >= owned_size)
+      if (node_0 >= owned_size)
         continue;
-      for (std::size_t j = 0; j < nodes.size(); ++j)
+      for (auto n1 : nodes)
       {
-        if (i != j and original_to_contiguous[nodes[j]] < owned_size)
-          ++num_edges[node_i];
+        if (n0 != n1 and original_to_contiguous[n1] < owned_size)
+          ++num_edges[node_0];
       }
     }
   }
@@ -75,17 +75,17 @@ reorder_owned(const graph::AdjacencyList<std::int32_t>& dofmap,
   for (std::int32_t cell = 0; cell < dofmap.num_nodes(); ++cell)
   {
     auto nodes = dofmap.links(cell);
-    for (std::size_t i = 0; i < nodes.size(); ++i)
+    for (auto n0 : nodes)
     {
-      const std::int32_t node_i = original_to_contiguous[nodes[i]];
-      if (node_i >= owned_size)
+      const std::int32_t node_0 = original_to_contiguous[n0];
+      if (node_0 >= owned_size)
         continue;
-      for (std::size_t j = 0; j < nodes.size(); ++j)
+      for (auto n1 : nodes)
       {
-        if (const std::int32_t node_j = original_to_contiguous[nodes[j]];
-            i != j and node_j < owned_size)
+        if (const std::int32_t node_1 = original_to_contiguous[n1];
+            n0 != n1 and node_1 < owned_size)
         {
-          edges[offsets[node_i]++] = node_j;
+          edges[offsets[node_0]++] = node_1;
         }
       }
     }
