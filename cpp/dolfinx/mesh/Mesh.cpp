@@ -49,6 +49,49 @@ reorder_list(const graph::AdjacencyList<T>& list,
 
   return list_new;
 }
+
+graph::AdjacencyList<std::int32_t>
+bw_reduce_destinations(MPI_Comm comm,
+                       const graph::AdjacencyList<std::int32_t>& original_dests)
+{
+  common::Timer t("[Reduce partition bandwidth]");
+  int size = dolfinx::MPI::size(comm);
+
+  std::vector<int> conn(size * size, 0);
+  std::vector<int> conn_all(size * size, 0);
+  // Compute number of links to send to each process
+  for (int i = 0; i < original_dests.num_nodes(); ++i)
+  {
+    auto dests = original_dests.links(i);
+    for (std::size_t j = 0; j < dests.size(); ++j)
+      for (std::size_t k = 0; k < j; ++k)
+      {
+        conn[dests[k] * size + dests[j]]++;
+        conn[dests[j] * size + dests[k]]++;
+      }
+  }
+  MPI_Allreduce(conn.data(), conn_all.data(), size * size, MPI_INT, MPI_SUM,
+                comm);
+  std::vector<int32_t> c, off(1, 0);
+  for (int i = 0; i < size; ++i)
+  {
+    for (int j = 0; j < size; ++j)
+    {
+      if (conn_all[i * size + j] > 0)
+        c.push_back(j);
+    }
+    off.push_back(c.size());
+  }
+  graph::AdjacencyList<std::int32_t> cgraph(c, off);
+  auto reorder = graph::scotch::compute_gps(cgraph);
+
+  std::vector<int> new_dest_array(original_dests.array());
+  for (int& q : new_dest_array)
+    q = reorder.first[q];
+
+  return graph::AdjacencyList<std::int32_t>(new_dest_array,
+                                            original_dests.offsets());
+}
 } // namespace
 
 //-----------------------------------------------------------------------------
@@ -93,8 +136,11 @@ Mesh mesh::create_mesh(MPI_Comm comm,
   common::Timer tp("[Partitioner]");
   const int size = dolfinx::MPI::size(comm);
   const int tdim = mesh::cell_dim(element.cell_shape());
-  const graph::AdjacencyList<std::int32_t> dest = cell_partitioner(
+  const graph::AdjacencyList<std::int32_t> dest0 = cell_partitioner(
       comm, size, tdim, cells_topology, GhostMode::shared_facet);
+
+  const graph::AdjacencyList<std::int32_t> dest
+      = bw_reduce_destinations(comm, dest0);
 
   // Put a barrier here for timing purposes.
   MPI_Barrier(comm);

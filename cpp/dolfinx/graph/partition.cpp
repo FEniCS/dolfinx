@@ -10,7 +10,6 @@
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/graph/AdjacencyList.h>
-#include <fstream>
 #include <memory>
 #include <unordered_map>
 
@@ -42,9 +41,6 @@ graph::build::distribute(MPI_Comm comm,
       = dolfinx::MPI::global_offset(comm, list.num_nodes(), true);
   const int size = dolfinx::MPI::size(comm);
 
-  std::vector<int> connectivity_data(size * size, 0);
-  std::vector<int> all_connectivity_data(size * size, 0);
-
   // Compute number of links to send to each process
   std::vector<int> num_per_dest_send(size, 0);
   for (int i = 0; i < destinations.num_nodes(); ++i)
@@ -53,28 +49,6 @@ graph::build::distribute(MPI_Comm comm,
     auto dests = destinations.links(i);
     for (std::int32_t d : dests)
       num_per_dest_send[d] += list_num_links;
-
-    if (dests.size() > 1)
-    {
-      for (std::size_t j = 0; j < dests.size(); ++j)
-        for (std::size_t k = 0; k < j; ++k)
-        {
-          connectivity_data[dests[j] * size + dests[k]]++;
-          connectivity_data[dests[k] * size + dests[j]]++;
-        }
-    }
-  }
-
-  MPI_Reduce(connectivity_data.data(), all_connectivity_data.data(),
-             connectivity_data.size(), MPI_INT, MPI_SUM, 0, comm);
-
-  // Save matrix to binary file
-  if (dolfinx::MPI::rank(comm) == 0 and counter == 1)
-  {
-    std::ofstream fd("conn.bin", std::ofstream::binary);
-    fd.write((char*)all_connectivity_data.data(),
-             all_connectivity_data.size() * sizeof(int));
-    fd.close();
   }
 
   // Compute send array displacements
