@@ -11,6 +11,7 @@
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
+#include <dolfinx/common/sort.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Topology.h>
 #include <memory>
@@ -55,15 +56,9 @@ fem::DofMap build_collapsed_dofmap(MPI_Comm comm, const DofMap& dofmap_view,
   auto cells = topology.connectivity(tdim, 0);
   assert(cells);
 
-  // TODO: The below is just copying the dofmap adjacency list?
   // Build set of dofs that are in the new dofmap
-  std::vector<std::int32_t> dofs_view;
-  for (int i = 0; i < cells->num_nodes(); ++i)
-  {
-    for (auto dof : dofmap_view.cell_dofs(i))
-      dofs_view.push_back(dof);
-  }
-  std::sort(dofs_view.begin(), dofs_view.end());
+  std::vector<std::int32_t> dofs_view = dofmap_view.list().array();
+  dolfinx::radix_sort(xtl::span(dofs_view));
   dofs_view.erase(std::unique(dofs_view.begin(), dofs_view.end()),
                   dofs_view.end());
 
