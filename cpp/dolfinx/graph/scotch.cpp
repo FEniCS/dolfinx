@@ -120,7 +120,7 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
                                                double imbalance, int seed)
 {
   return
-      [imbalance, strategy, seed](const MPI_Comm mpi_comm, int nparts,
+      [imbalance, strategy, seed](const MPI_Comm comm, int nparts,
                                   const AdjacencyList<std::int64_t>& graph,
                                   std::int32_t num_ghost_nodes, bool ghosting)
   {
@@ -145,7 +145,7 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
 
     // Create SCOTCH graph and initialise
     SCOTCH_Dgraph dgrafdat;
-    if (SCOTCH_dgraphInit(&dgrafdat, mpi_comm) != 0)
+    if (SCOTCH_dgraphInit(&dgrafdat, comm) != 0)
       throw std::runtime_error("Error initializing SCOTCH graph");
 
     // FIXME: If the nodes have weights but this rank has no nodes, then
@@ -244,7 +244,7 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
       SCOTCH_dgraphData(&dgrafdat, nullptr, nullptr, nullptr, nullptr, nullptr,
                         nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
                         nullptr, nullptr, &edge_ghost_tab, nullptr,
-                        (MPI_Comm*)&mpi_comm);
+                        (MPI_Comm*)&comm);
       timer4.stop();
 
       // Iterate through SCOTCH's local compact graph to find partition

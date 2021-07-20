@@ -152,7 +152,7 @@ graph::AdjacencyList<std::int32_t> compute_destination_ranks(
 //-----------------------------------------------------------------------------
 #ifdef HAS_PARMETIS
 template <typename T>
-std::vector<int> adaptive_repartition(MPI_Comm mpi_comm,
+std::vector<int> adaptive_repartition(MPI_Comm comm,
                                       const graph::AdjacencyList<T>& adj_graph,
                                       double weight)
 {
@@ -176,7 +176,7 @@ std::vector<int> adaptive_repartition(MPI_Comm mpi_comm,
   assert(!part.empty());
 
   // Number of partitions (one for each process)
-  idx_t nparts = dolfinx::MPI::size(mpi_comm);
+  idx_t nparts = dolfinx::MPI::size(comm);
 
   // Remaining ParMETIS parameters
   idx_t ncon = 1;
@@ -192,7 +192,7 @@ std::vector<int> adaptive_repartition(MPI_Comm mpi_comm,
       adj_graph.node_distribution().data(), adj_graph.nodes().data(),
       adj_graph.edges().data(), elmwgt, nullptr, vsize.data(), &wgtflag,
       &numflag, &ncon, &nparts, tpwgts.data(), ubvec.data(), &_itr, options,
-      &edgecut, part.data(), &mpi_comm);
+      &edgecut, part.data(), &comm);
   assert(err == METIS_OK);
   timer1.stop();
 
@@ -201,13 +201,12 @@ std::vector<int> adaptive_repartition(MPI_Comm mpi_comm,
 }
 //-----------------------------------------------------------------------------
 template <typename T>
-std::vector<int> refine(MPI_Comm mpi_comm,
-                        const graph::AdjacencyList<T>& adj_graph)
+std::vector<int> refine(MPI_Comm comm, const graph::AdjacencyList<T>& adj_graph)
 {
   common::Timer timer("Compute graph partition (ParMETIS Refine)");
 
   // Get some MPI data
-  const int process_number = dolfinx::MPI::rank(mpi_comm);
+  const int process_number = dolfinx::MPI::rank(comm);
 
   // Options for ParMETIS
   idx_t options[4];
@@ -227,7 +226,7 @@ std::vector<int> refine(MPI_Comm mpi_comm,
   assert(!part.empty());
 
   // Number of partitions (one for each process)
-  idx_t nparts = dolfinx::MPI::size(mpi_comm);
+  idx_t nparts = dolfinx::MPI::size(comm);
   // Remaining ParMETIS parameters
   idx_t ncon = 1;
   idx_t* elmwgt = nullptr;
@@ -243,7 +242,7 @@ std::vector<int> refine(MPI_Comm mpi_comm,
       adj_graph.node_distribution().data(), adj_graph.nodes().data(),
       adj_graph.edges().data(), elmwgt, nullptr, &wgtflag, &numflag, &ncon,
       &nparts, tpwgts.data(), ubvec.data(), options, &edgecut, part.data(),
-      &mpi_comm);
+      &comm);
   assert(err == METIS_OK);
   timer1.stop();
 
@@ -270,7 +269,7 @@ graph::partition_fn graph::parmetis::partitioner(double imbalance,
     {
       throw std::runtime_error(
           "ParMETIS cannot partition a graph where one of the MPI ranks has no "
-          "data. Try PT-SCOTCH of KaHIP instead.");
+          "data. Try PT-SCOTCH or KaHIP instead.");
     }
 
     // Options for ParMETIS
@@ -326,6 +325,7 @@ graph::kahip::partitioner(int mode, int seed, double imbalance,
                            const graph::AdjacencyList<std::int64_t>& graph,
                            std::int32_t, bool ghosting)
   {
+    LOG(INFO) << "Compute graph partition using (parallel) KaHIP";
     common::Timer timer("Compute graph partition (KaHIP)");
 
     // Graph does not have vertex or adjacency weights, so we use null
