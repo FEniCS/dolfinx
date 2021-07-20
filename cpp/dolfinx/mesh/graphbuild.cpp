@@ -422,9 +422,12 @@ mesh::build_local_dual_graph(const xtl::span<const std::int64_t>& cell_vertices,
 
       // Get list of facet vertices
       auto facet_vertices = cell_facets.links(j);
-      assert(facet_vertices.size() <= num_facet_vertices);
-      for (std::size_t k = 0; k < facet_vertices.size(); ++k)
-        facet[k] = local_vertices[cell_offsets[i] + facet_vertices[k]];
+      assert(facet_vertices.size()
+             <= static_cast<std::size_t>(num_facet_vertices));
+      std::transform(facet_vertices.cbegin(), facet_vertices.cend(),
+                     facet.begin(),
+                     [&local_vertices, offset = cell_offsets[i]](auto fv)
+                     { return local_vertices[offset + fv]; });
 
       // Sort facet "indices"
       std::sort(facet.begin(), facet.end());
