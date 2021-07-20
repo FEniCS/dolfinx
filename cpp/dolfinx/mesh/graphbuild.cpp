@@ -314,8 +314,13 @@ mesh::build_local_dual_graph(const xtl::span<const std::int64_t>& cell_vertices,
             xt::xtensor<std::int64_t, 2>({0, 0})};
   }
 
+  std::vector<std::bitset<64>> vertices_in_bits(cell_vertices.size());
+
+  std::copy(cell_vertices.begin(), cell_vertices.end(),
+            vertices_in_bits.begin());
+
   // Give each global vertex a local identifier
-  auto perm = dolfinx::argsort_radix<std::int64_t, 16>(cell_vertices);
+  auto perm = dolfinx::argsort_radix<64, 16>(vertices_in_bits);
   std::vector<std::int32_t> local_vertices(cell_vertices.size());
   std::int32_t id = 0;
   local_vertices[perm[0]] = id;

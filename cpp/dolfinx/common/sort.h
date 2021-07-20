@@ -103,19 +103,19 @@ void radix_sort(xtl::span<T> array)
 /// @tparam BITS The number of bits to sort at a time.
 /// @param[in] array The array to sort.
 /// Returns Vector of indices that sort the input array.
-template <typename T, int BITS = 8>
-std::vector<std::int32_t> argsort_radix(const xtl::span<const T>& array)
+template <int N, int BITS = 8>
+std::vector<std::int32_t>
+argsort_radix(const xtl::span<const std::bitset<N>>& array)
 {
   std::vector<std::int32_t> perm1(array.size());
   std::iota(perm1.begin(), perm1.end(), 0);
   if (array.size() <= 1)
     return perm1;
 
-  constexpr int N = sizeof(T) * 8;
-  constexpr std::size_t bucket_size = std::size_t{1} << BITS;
+  constexpr int bucket_size = 1 << BITS;
   constexpr int its = N / BITS;
-  T mask = (1 << BITS) - 1;
-  int mask_offset = 0;
+  std::bitset<N> mask = (1 << BITS) - 1;
+  std::int32_t mask_offset = 0;
 
   // Adjacency list arrays for computing insertion position
   std::array<std::int32_t, bucket_size> counter;
@@ -132,8 +132,8 @@ std::vector<std::int32_t> argsort_radix(const xtl::span<const T>& array)
     // Count number of elements per bucket
     for (auto cp : current_perm)
     {
-      T set = (array[cp] & mask) >> mask_offset;
-      std::int32_t bucket = to_int(set);
+      auto set = (array[cp] & mask) >> mask_offset;
+      auto bucket = set.to_ulong();
       counter[bucket]++;
     }
 
@@ -144,8 +144,8 @@ std::vector<std::int32_t> argsort_radix(const xtl::span<const T>& array)
     // Sort py permutation
     for (auto cp : current_perm)
     {
-      T set = (array[cp] & mask) >> mask_offset;
-      auto bucket = to_int(set);
+      auto set = (array[cp] & mask) >> mask_offset;
+      auto bucket = set.to_ulong();
       std::int32_t pos = offset[bucket + 1] - counter[bucket];
       next_perm[pos] = cp;
       counter[bucket]--;
@@ -165,12 +165,12 @@ std::vector<std::int32_t> argsort_radix(const xtl::span<const T>& array)
 } // namespace dolfinx
 namespace
 {
-template <typename T, std::size_t d>
-std::vector<std::int32_t> sort_by_perm_impl(const xt::xtensor<T, 2>& array)
+template <std::size_t d>
+std::vector<std::int32_t>
+sort_by_perm_impl(const xt::xtensor<std::int32_t, 2>& array)
 {
   assert(array.shape(1) == d);
-  constexpr int int_size = sizeof(T) * 8;
-  constexpr int set_size = int_size * d;
+  constexpr int set_size = 32 * d;
   std::vector<std::bitset<set_size>> bit_array(array.shape(0));
 
   // Pack list of "d" ints into a bitset
@@ -179,12 +179,12 @@ std::vector<std::int32_t> sort_by_perm_impl(const xt::xtensor<T, 2>& array)
     for (std::size_t j = 0; j < d; j++)
     {
       std::bitset<set_size> bits = array(i, j);
-      bit_array[i] |= bits << (int_size * (d - j - 1));
+      bit_array[i] |= bits << (32 * (d - j - 1));
     }
   }
 
   // This function creates a 2**16 temporary array (buckets)
-  return dolfinx::argsort_radix<std::bitset<set_size>, 16>(bit_array);
+  return dolfinx::argsort_radix<set_size, 16>(bit_array);
 }
 } // namespace
 
@@ -207,13 +207,13 @@ std::vector<std::int32_t> sort_by_perm(const xt::xtensor<T, 2>& array)
   switch (num_vert)
   {
   case 2:
-    return sort_by_perm_impl<T, 2>(array);
+    return sort_by_perm_impl<2>(array);
   case 3:
-    return sort_by_perm_impl<T, 3>(array);
+    return sort_by_perm_impl<3>(array);
   case 4:
-    return sort_by_perm_impl<T, 4>(array);
+    return sort_by_perm_impl<4>(array);
   case 5:
-    return sort_by_perm_impl<T, 5>(array);
+    return sort_by_perm_impl<5>(array);
   default:
     throw std::runtime_error("Not implemented for this shape.");
     break;
