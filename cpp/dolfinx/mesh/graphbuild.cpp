@@ -437,7 +437,7 @@ mesh::build_local_dual_graph(const xtl::span<const std::int64_t>& cell_vertices,
   assert(counter == (int)facets.shape(0));
 
   // Sort facets by lexicographic order of vertices
-  std::vector<std::int32_t> facet_perm = dolfinx::sort_by_perm_new(facets);
+  std::vector<std::int32_t> facet_perm = dolfinx::sort_by_perm(facets);
 
   // Stack up cells joined by facet as pairs in local_graph, and record any
   // non-matching
