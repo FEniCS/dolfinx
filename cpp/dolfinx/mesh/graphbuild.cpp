@@ -314,13 +314,11 @@ mesh::build_local_dual_graph(const xtl::span<const std::int64_t>& cell_vertices,
             xt::xtensor<std::int64_t, 2>({0, 0})};
   }
 
-  std::vector<std::bitset<64>> vertices_in_bits(cell_vertices.size());
-
-  std::copy(cell_vertices.begin(), cell_vertices.end(),
-            vertices_in_bits.begin());
-
+  common::Timer t0("~0 unique identifier");
   // Give each global vertex a local identifier
-  auto perm = dolfinx::argsort_radix<64, 16>(vertices_in_bits);
+  auto perm = dolfinx::argsort_radix<std::int64_t, 16>(cell_vertices);
+  t0.stop();
+
   std::vector<std::int32_t> local_vertices(cell_vertices.size());
   std::int32_t id = 0;
   local_vertices[perm[0]] = id;
@@ -336,6 +334,7 @@ mesh::build_local_dual_graph(const xtl::span<const std::int64_t>& cell_vertices,
   for (std::size_t i = 1; i < local_vertices.size(); i++)
     local_to_global[local_vertices[i]] = cell_vertices[i];
 
+  common::Timer t1("~1 count number of cells");
   // Count number of cells of each type, based on the number of vertices
   // in each cell, covering interval(2) through to hex(8)
   std::array<int, 9> count;
@@ -397,7 +396,9 @@ mesh::build_local_dual_graph(const xtl::span<const std::int64_t>& cell_vertices,
   default:
     throw std::runtime_error("Invalid tdim");
   }
+  t1.stop();
 
+  common::Timer t2("~2 list facets");
   // List of facets and associated cells
   xt::xtensor<std::int32_t, 2> facets
       = xt::empty<std::int32_t>({num_facets, num_facet_vertices});
@@ -434,10 +435,10 @@ mesh::build_local_dual_graph(const xtl::span<const std::int64_t>& cell_vertices,
   }
 
   assert(counter == (int)facets.shape(0));
+  t2.stop();
 
   // Sort facets by lexicographic order of vertices
-  std::vector<std::int32_t> facet_perm = dolfinx::sort_by_perm(facets);
-  auto facets_ordered = xt::view(facets, xt::keep(facet_perm), xt::all());
+  std::vector<std::int32_t> facet_perm = dolfinx::sort_by_perm_new(facets);
 
   // Stack up cells joined by facet as pairs in local_graph, and record any
   // non-matching

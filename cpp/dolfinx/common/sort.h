@@ -12,7 +12,9 @@
 #include <dolfinx/common/Timer.h>
 #include <numeric>
 #include <vector>
+#include <xtensor/xio.hpp>
 #include <xtensor/xtensor.hpp>
+#include <xtensor/xview.hpp>
 #include <xtl/xspan.hpp>
 
 namespace
@@ -94,6 +96,84 @@ void radix_sort(xtl::span<T> array)
   // Copy data back to array
   if (its % 2 != 0)
     std::copy(buffer.begin(), buffer.end(), array.begin());
+}
+
+/// Returns the indices that would sort (lexicographic) a vector of bitsets.
+/// @tparam N The size of the bitset, which corresponds to the number of bits
+/// necessary to represent a set of integers. For example, N = 96 for mapping
+/// three std::int32_t.
+/// @tparam BITS The number of bits to sort at a time.
+/// @param[in] array The array to sort.
+/// Returns Vector of indices that sort the input array.
+template <typename T, int BITS = 8>
+std::vector<std::int32_t> argsort_radix(const xtl::span<const T>& array)
+{
+  std::vector<std::int32_t> perm1(array.size());
+  std::iota(perm1.begin(), perm1.end(), 0);
+  if (array.size() <= 1)
+    return perm1;
+
+  const auto [min, max] = std::minmax_element(array.begin(), array.end());
+  T range = *max - *min + 1;
+
+  // Sort N bits at a time
+  constexpr int bucket_size = 1 << BITS;
+  T mask = (T(1) << BITS) - 1;
+  std::int32_t mask_offset = 0;
+
+  // Compute number of iterations, most significant digit (N bits) of
+  // maxvalue
+  int its = 0;
+  while (range)
+  {
+    range >>= BITS;
+    its++;
+  }
+
+  // Adjacency list arrays for computing insertion position
+  std::array<std::int32_t, bucket_size> counter;
+  std::array<std::int32_t, bucket_size + 1> offset;
+
+  std::vector<std::int32_t> perm2 = perm1;
+  xtl::span<std::int32_t> current_perm = perm1;
+  xtl::span<std::int32_t> next_perm = perm2;
+  for (int i = 0; i < its; i++)
+  {
+    // Zero counter
+    std::fill(counter.begin(), counter.end(), 0);
+
+    // Count number of elements per bucket
+    for (auto cp : current_perm)
+    {
+      T value = array[cp] - *min;
+      std::int32_t bucket = (value & mask) >> mask_offset;
+      counter[bucket]++;
+    }
+
+    // Prefix sum to get the inserting position
+    offset[0] = 0;
+    std::partial_sum(counter.begin(), counter.end(), std::next(offset.begin()));
+
+    // Sort py permutation
+    for (auto cp : current_perm)
+    {
+      T value = array[cp] - *min;
+      std::int32_t bucket = (value & mask) >> mask_offset;
+      std::int32_t pos = offset[bucket + 1] - counter[bucket];
+      next_perm[pos] = cp;
+      counter[bucket]--;
+    }
+
+    std::swap(current_perm, next_perm);
+
+    mask = mask << BITS;
+    mask_offset += BITS;
+  }
+
+  if (its % 2 == 0)
+    return perm1;
+  else
+    return perm2;
 }
 
 /// Returns the indices that would sort (lexicographic) a vector of bitsets.
@@ -219,6 +299,31 @@ std::vector<std::int32_t> sort_by_perm(const xt::xtensor<T, 2>& array)
     break;
   }
   return sort_order;
+}
+
+template <typename T, int BITS = 16>
+std::vector<std::int32_t> sort_by_perm_new(const xt::xtensor<T, 2>& array)
+{
+  // Sort the list and label uniquely
+  const int cols = array.shape(1);
+  const int size = array.shape(0);
+  std::vector<std::int32_t> perm(size);
+  std::vector<std::int32_t> local_perm(size);
+  std::iota(perm.begin(), perm.end(), 0);
+
+  for (int i = 0; i < cols; i++)
+  {
+    int col = cols - 1 - i;
+    xt::xtensor<std::int32_t, 1> column = xt::view(array, xt::keep(perm), col);
+    local_perm = argsort_radix(xtl::span<const std::int32_t>(column));
+
+    // Swap to avoid temp
+    std::swap(perm, local_perm);
+    for (int j = 0; j < size; j++)
+      perm[j] = local_perm[perm[j]];
+  }
+
+  return perm;
 }
 
 } // namespace dolfinx
