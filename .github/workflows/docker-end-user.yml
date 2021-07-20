@@ -30,11 +30,11 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
       - name: Start EC2 runner
         id: start-ec2-runner
-        uses: jhale/ec2-github-runner@main
+        uses: machulav/ec2-github-runner@v2.2.1
         with:
           mode: start
           github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
-          ec2-image-id: ami-011694240268da883
+          ec2-image-id: ami-0b00d5cf966d38180
           ec2-instance-type: c6g.large
           subnet-id: subnet-dc2151b7
           security-group-id: sg-03fc69ee7a6ba8bc4
