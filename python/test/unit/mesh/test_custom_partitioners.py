@@ -1,6 +1,6 @@
 # Copyright (C) 2020 Igor A. Baratta
 #
-# This file is part of DOLFINX (https://www.fenicsproject.org)
+# This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -53,7 +53,7 @@ def test_custom_partitioner(tempdir, Nx, cell_type):
 
     # Read topology data
     with XDMFFile(MPI.COMM_WORLD, filename, "r") as file:
-        cell_type = file.read_cell_type()
+        cell_shape, cell_degree = file.read_cell_type()
         x = file.read_geometry_data()
         topo = file.read_topology_data()
 
@@ -66,8 +66,8 @@ def test_custom_partitioner(tempdir, Nx, cell_type):
     rank = mpi_comm.rank
     assert (np.all(x_global[all_ranges[rank]:all_ranges[rank + 1]] == x))
 
-    cell = ufl.Cell(dolfinx.cpp.mesh.to_string(cell_type[0]))
-    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell, cell_type[1]))
+    cell = ufl.Cell(dolfinx.cpp.mesh.to_string(cell_shape))
+    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell, cell_degree))
 
     # Partition mesh in layers, capture geometrical data and topological
     # data from outer scope

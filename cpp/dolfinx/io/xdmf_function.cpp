@@ -1,6 +1,6 @@
 // Copyright (C) 2012-2020 Chris N. Richardson, Garth N. Wells and Michal Habera
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -56,6 +56,7 @@ bool has_cell_centred_data(const fem::Function<Scalar>& u)
   assert(u.function_space()->dofmap());
   assert(u.function_space()->dofmap()->element_dof_layout);
   return (u.function_space()->dofmap()->element_dof_layout->num_dofs()
+              * u.function_space()->dofmap()->bs()
           == cell_based_dim);
 }
 //-----------------------------------------------------------------------------

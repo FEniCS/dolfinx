@@ -1,6 +1,6 @@
 # Copyright (C) 2009-2019 Garth N. Wells, Matthew W. Scroggs and Jorgen S. Dokken
 #
-# This file is part of DOLFINX (https://www.fenicsproject.org)
+# This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for the fem interface"""
@@ -12,7 +12,7 @@ import numpy as np
 import pytest
 import ufl
 from dolfinx import (FunctionSpace, UnitCubeMesh, UnitIntervalMesh,
-                     UnitSquareMesh, VectorFunctionSpace, cpp, fem)
+                     UnitSquareMesh, VectorFunctionSpace, cpp)
 from dolfinx.cpp.mesh import CellType
 from dolfinx.mesh import create_mesh
 from dolfinx_utils.test.skips import skip_in_parallel
@@ -300,8 +300,8 @@ def test_higher_order_coordinate_map(points, celltype, order):
     X = V.element.interpolation_points()
     coord_dofs = mesh.geometry.dofmap
     x_g = mesh.geometry.x
+    cmap = mesh.geometry.cmap
 
-    cmap = fem.create_coordinate_map(mesh.mpi_comm(), mesh.ufl_domain())
     x_coord_new = np.zeros([len(points), mesh.geometry.dim])
 
     i = 0
@@ -349,7 +349,7 @@ def test_higher_order_tetra_coordinate_map(order):
     coord_dofs = mesh.geometry.dofmap
     x_g = mesh.geometry.x
 
-    cmap = fem.create_coordinate_map(mesh.mpi_comm(), mesh.ufl_domain())
+    cmap = mesh.geometry.cmap
     x_coord_new = np.zeros([len(points), mesh.geometry.dim])
 
     i = 0

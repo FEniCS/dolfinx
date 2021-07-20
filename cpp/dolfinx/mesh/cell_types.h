@@ -1,18 +1,18 @@
 // Copyright (C) 2019-2020 Garth N. Wells
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #pragma once
 
 #include <array>
+#include <dolfinx/graph/AdjacencyList.h>
 #include <map>
 #include <set>
 #include <string>
 #include <vector>
-
-#include "dolfinx/common/array2d.h"
+#include <xtensor/xtensor.hpp>
 
 namespace dolfinx::mesh
 {
@@ -26,6 +26,8 @@ enum class CellType : int
   triangle = 3,
   tetrahedron = 4,
   quadrilateral = -4,
+  pyramid = -5,
+  prism = -6,
   hexahedron = -8
 };
 
@@ -47,15 +49,13 @@ CellType cell_entity_type(CellType type, int d);
 /// @return The type of the cell's facets
 CellType cell_facet_type(CellType type);
 
-/// Return array entities(num entities, num vertices per entity), where
-/// entities(e, k) is the local vertex index for the kth vertex of
-/// entity e of dimension dim
-dolfinx::common::array2d<int> get_entity_vertices(CellType type, int dim);
+/// Return list of entities, where entities(e, k) is the local vertex index for
+/// the kth vertex of entity e of dimension dim
+graph::AdjacencyList<int> get_entity_vertices(CellType type, int dim);
 
 /// Get entities of dimension dim1 and that make up entities of dimension
 /// dim0
-dolfinx::common::array2d<int> get_sub_entities(CellType type, int dim0,
-                                                int dim1);
+xt::xtensor<int, 2> get_sub_entities(CellType type, int dim0, int dim1);
 
 /// Return topological dimension of cell type
 int cell_dim(CellType type);

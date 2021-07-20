@@ -1,6 +1,6 @@
 # Copyright (C) 2009-2019 Chris N. Richardson, Garth N. Wells and Michal Habera
 #
-# This file is part of DOLFINX (https://www.fenicsproject.org)
+# This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Collection of functions and function spaces"""
@@ -23,7 +23,7 @@ class Constant(ufl.Constant):
 
         Parameters
         ----------
-        domain : DOLFIN or UFL mesh
+        domain : DOLFINx or UFL mesh
         c
             Value of the constant.
         """
@@ -46,7 +46,7 @@ class Expression:
                  ufl_expression: ufl.core.expr.Expr,
                  x: np.ndarray,
                  form_compiler_parameters: dict = {}, jit_parameters: dict = {}):
-        """Create dolfinx Expression.
+        """Create DOLFINx Expression.
 
         Represents a mathematical expression evaluated at a pre-defined set of
         points on the reference cell. This class closely follows the concept of a
@@ -65,14 +65,14 @@ class Expression:
             Array of points of shape (num_points, tdim) on the reference
             element.
         form_compiler_parameters
-            Parameters used in FFCX compilation of this Expression. Run `ffcx
+            Parameters used in FFCx compilation of this Expression. Run `ffcx
             --help` in the commandline to see all available options.
         jit_parameters
             Parameters controlling JIT compilation of C code.
 
         Note
         ----
-        This wrapper is responsible for the FFCX compilation of the UFL Expr
+        This wrapper is responsible for the FFCx compilation of the UFL Expr
         and attaching the correct data to the underlying C++ Expression.
         """
         assert x.ndim < 3
@@ -82,16 +82,15 @@ class Expression:
         mesh = ufl_expression.ufl_domain().ufl_cargo()
 
         # Compile UFL expression with JIT
-        ufc_expression = jit.ffcx_jit(mesh.mpi_comm(), (ufl_expression, x),
-                                      form_compiler_parameters=form_compiler_parameters,
-                                      jit_parameters=jit_parameters)
+        self._ufc_expression, module, self._code = jit.ffcx_jit(mesh.mpi_comm(), (ufl_expression, x),
+                                                                form_compiler_parameters=form_compiler_parameters,
+                                                                jit_parameters=jit_parameters)
         self._ufl_expression = ufl_expression
-        self._ufc_expression = ufc_expression
 
         # Setup data (evaluation points, coefficients, constants, mesh, value_size).
         # Tabulation function.
         ffi = cffi.FFI()
-        fn = ffi.cast("uintptr_t", ufc_expression.tabulate_expression)
+        fn = ffi.cast("uintptr_t", self.ufc_expression.tabulate_expression)
 
         value_size = ufl.product(self.ufl_expression.ufl_shape)
 
@@ -164,6 +163,16 @@ class Expression:
         """Return the value size of the expression"""
         return self._cpp_object.value_size
 
+    @property
+    def ufc_expression(self):
+        """Return the compiled ufc_expression object"""
+        return self._ufc_expression
+
+    @property
+    def code(self):
+        """Return C code strings"""
+        return self._code
+
 
 class Function(ufl.Coefficient):
     """A finite element function that is represented by a function
@@ -193,7 +202,7 @@ class Function(ufl.Coefficient):
         else:
             self.name = name
 
-        # Store DOLFIN FunctionSpace object
+        # Store DOLFINx FunctionSpace object
         self._V = V
 
     @property
@@ -373,13 +382,14 @@ class FunctionSpace(ufl.FunctionSpace):
             super().__init__(mesh.ufl_domain(), ufl_element)
 
         # Compile dofmap and element and create DOLFIN objects
-        ufc_element, ufc_dofmap_ptr = jit.ffcx_jit(
+        (self._ufc_element, self._ufc_dofmap), module, code = jit.ffcx_jit(
             mesh.mpi_comm(), self.ufl_element(), form_compiler_parameters=form_compiler_parameters,
             jit_parameters=jit_parameters)
 
         ffi = cffi.FFI()
-        cpp_element = cpp.fem.FiniteElement(ffi.cast("uintptr_t", ufc_element))
-        cpp_dofmap = cpp.fem.create_dofmap(mesh.mpi_comm(), ffi.cast("uintptr_t", ufc_dofmap_ptr), mesh.topology)
+        cpp_element = cpp.fem.FiniteElement(ffi.cast("uintptr_t", ffi.addressof(self._ufc_element)))
+        cpp_dofmap = cpp.fem.create_dofmap(mesh.mpi_comm(), ffi.cast(
+            "uintptr_t", ffi.addressof(self._ufc_dofmap)), mesh.topology, cpp_element)
 
         # Initialize the cpp.FunctionSpace
         self._cpp_object = cpp.fem.FunctionSpace(mesh, cpp_element, cpp_dofmap)
@@ -402,7 +412,7 @@ class FunctionSpace(ufl.FunctionSpace):
         return FunctionSpace(None, self.ufl_element(), Vcpp)
 
     def dolfin_element(self):
-        """Return the DOLFIN element."""
+        """Return the DOLFINx element."""
         return self._cpp_object.element
 
     def num_sub_spaces(self) -> int:

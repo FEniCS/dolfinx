@@ -1,11 +1,13 @@
 #------------------------------------------------------------------------------
-# Top level CMakeLists.txt file for DOLFIN
+# Top level CMakeLists.txt file for DOLFINx
 cmake_minimum_required(VERSION 3.12)
 
 #------------------------------------------------------------------------------
 # Set project name and version number
 
-project(DOLFINX VERSION 2019.2.9.99)
+project(DOLFINX VERSION "0.1.1.0")
+
+set(DOXYGEN_DOLFINX_VERSION ${DOLFINX_VERSION} CACHE STRING "Version for Doxygen" FORCE)
 
 #------------------------------------------------------------------------------
 # Set CMake options, see `cmake --help-policy CMP000x`
@@ -57,8 +59,8 @@ set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${CMAKE_CURRENT_BINARY_DIR}/dolfinx)
 
 include(FeatureSummary)
 
-option(BUILD_SHARED_LIBS "Build DOLFIN with shared libraries." ON)
-add_feature_info(BUILD_SHARED_LIBS BUILD_SHARED_LIBS "Build DOLFIN with shared libraries.")
+option(BUILD_SHARED_LIBS "Build DOLFINx with shared libraries." ON)
+add_feature_info(BUILD_SHARED_LIBS BUILD_SHARED_LIBS "Build DOLFINx with shared libraries.")
 
 option(DOLFINX_SKIP_BUILD_TESTS "Skip build tests for testing usability of dependency packages." OFF)
 add_feature_info(DOLFINX_SKIP_BUILD_TESTS DOLFINX_SKIP_BUILD_TESTS "Skip build tests for testing usability of dependency packages.")
@@ -66,6 +68,14 @@ add_feature_info(DOLFINX_SKIP_BUILD_TESTS DOLFINX_SKIP_BUILD_TESTS "Skip build t
 # Add shared library paths so shared libs in non-system paths are found
 option(CMAKE_INSTALL_RPATH_USE_LINK_PATH "Add paths to linker search and installed rpath." ON)
 add_feature_info(CMAKE_INSTALL_RPATH_USE_LINK_PATH CMAKE_INSTALL_RPATH_USE_LINK_PATH "Add paths to linker search and installed rpath.")
+
+# Enable SIMD with xtensor
+option(XTENSOR_USE_XSIMD "Enable SIMD with xtensor." OFF)
+add_feature_info(XTENSOR_USE_XSIMD XTENSOR_USE_XSIMD "Enable SIMD with xtensor (xsimd).")
+
+# Enable xtensor with target-specific optimization, i.e. -march=native
+option(XTENSOR_OPTIMIZE "Enable xtensor target-specific optimization" OFF)
+add_feature_info(XTENSOR_OPTIMIZE XTENSOR_OPTIMIZE "Enable architecture-specific optimizations as defined by xtensor.")
 
 #------------------------------------------------------------------------------
 # Enable or disable optional packages
@@ -136,11 +146,17 @@ set_package_properties(Boost PROPERTIES TYPE REQUIRED
   DESCRIPTION "Boost C++ libraries"
   URL "http://www.boost.org")
 
-# Check for required package Eigen3
-find_package(Eigen3 3.2.90 REQUIRED)
-set_package_properties(Eigen3 PROPERTIES TYPE REQUIRED
-  DESCRIPTION "Lightweight C++ template library for linear algebra"
-  URL "http://eigen.tuxfamily.org")
+# Check for required package xtensor
+find_package(xtensor REQUIRED)
+set_package_properties(xtensor PROPERTIES TYPE REQUIRED
+  DESCRIPTION "C++ library for numerical analysis with multi-dimensional array expressions."
+  URL "https://xtensor.readthedocs.io/")
+
+# Check for required package xtensor-blas
+find_package(xtensor-blas REQUIRED)
+set_package_properties(xtensor-blas PROPERTIES TYPE REQUIRED
+  DESCRIPTION "BLAS extenssion to xtensor."
+  URL "https://xtensor-blas.readthedocs.io/")
 
 find_package(PETSc 3.10)
 set_package_properties(PETSc PROPERTIES TYPE REQUIRED
@@ -150,7 +166,9 @@ set_package_properties(PETSc PROPERTIES TYPE REQUIRED
 
 # Check for HDF5
 set(HDF5_PREFER_PARALLEL TRUE)
-find_package(HDF5 REQUIRED)
+set(HDF5_NO_FIND_PACKAGE_CONFIG_FILE TRUE)
+set(HDF5_FIND_DEBUG TRUE)
+find_package(HDF5 REQUIRED COMPONENTS C)
 if (NOT HDF5_IS_PARALLEL)
   message(FATAL_ERROR "Found serial HDF5 build, MPI HDF5 build required, try setting HDF5_DIR")
 endif()
@@ -162,21 +180,26 @@ find_package(SCOTCH REQUIRED)
 set_package_properties(SCOTCH PROPERTIES TYPE REQUIRED
   DESCRIPTION "Programs and libraries for graph, mesh and hypergraph partitioning"
   URL "https://www.labri.fr/perso/pelegrin/scotch"
-  PURPOSE "Enables parallel graph partitioning")
+  PURPOSE "Parallel graph partitioning and redordering")
 
 # Check for required packages UFC and basix
 find_package(Python3 COMPONENTS Interpreter REQUIRED)
 find_package(UFC MODULE ${DOLFINX_VERSION_MAJOR}.${DOLFINX_VERSION_MINOR})
 set_package_properties(UFC PROPERTIES TYPE REQUIRED
-  DESCRIPTION "Unified language for form-compilers (part of FFC-X)"
+  DESCRIPTION "Unified interface for form-compilers (part of FFCx)"
   URL "https://github.com/fenics/ffcx")
 
-find_package(basix MODULE 0.0.1)
+find_package(Basix 0.0.1 REQUIRED)
 set_package_properties(basix PROPERTIES TYPE REQUIRED
   DESCRIPTION "FEniCS tabulation library"
   URL "https://github.com/fenics/basix")
 
-#------------------------------------------------------------------------------
+  get_target_property(BASIX_DEFN Basix::basix INTERFACE_COMPILE_DEFINITIONS)
+  if("XTENSOR_USE_XSIMD" IN_LIST BASIX_DEFN)
+    find_package(xsimd REQUIRED)
+  endif()
+
+  #------------------------------------------------------------------------------
 # Run tests to find optional packages
 
 # Check for SLEPc
@@ -194,7 +217,7 @@ if (DOLFINX_ENABLE_PARMETIS)
   set_package_properties(ParMETIS PROPERTIES TYPE OPTIONAL
     DESCRIPTION "Parallel Graph Partitioning and Fill-reducing Matrix Ordering"
     URL "http://glaros.dtc.umn.edu/gkhome/metis/parmetis/overview"
-    PURPOSE "Enables parallel graph partitioning")
+    PURPOSE "Parallel graph partitioning")
 endif()
 
 # Check for KaHIP
@@ -202,8 +225,8 @@ if (DOLFINX_ENABLE_KAHIP)
   find_package(KaHIP)
   set_package_properties(KaHIP PROPERTIES TYPE OPTIONAL
     DESCRIPTION "A family of graph partitioning programs"
-    URL "http://algo2.iti.kit.edu/documents/kahip/index.html"
-    PURPOSE "Enables parallel graph partitioning")
+    URL "https://kahip.github.io/"
+    PURPOSE "Parallel graph partitioning")
 endif()
 
 #------------------------------------------------------------------------------
@@ -212,7 +235,7 @@ endif()
 feature_summary(WHAT ALL)
 
 #------------------------------------------------------------------------------
-# Installation of DOLFIN library
+# Installation of DOLFINx library
 
 add_subdirectory(dolfinx)
 
@@ -298,7 +321,7 @@ if (GENERATE_DEMO_TEST_DATA)
     ERROR_VARIABLE CMAKE_GENERATION_OUTPUT
     )
   if (CMAKE_GENERATION_RESULT)
-    # Cleanup so FFCX rebuild is triggered next time we run cmake
+    # Cleanup so FFCx rebuild is triggered next time we run cmake
     file(REMOVE_RECURSE ${CMAKE_CURRENT_BINARY_DIR}/demo ${CMAKE_CURRENT_BINARY_DIR}/test)
     message(FATAL_ERROR "Generation of CMakeLists.txt files in build directory failed: \n${CMAKE_GENERATION_OUTPUT}")
   else()

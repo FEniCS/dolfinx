@@ -1,6 +1,6 @@
 // Copyright (C) 2020 Garth N. Wells
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -10,12 +10,12 @@
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
-#include <dolfinx/common/array2d.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <functional>
 #include <mpi.h>
 #include <utility>
 #include <vector>
+#include <xtl/xspan.hpp>
 
 namespace dolfinx::graph
 {
@@ -53,7 +53,7 @@ partition_graph(const MPI_Comm comm, int nparts,
 
 /// Tools for distributed graphs
 ///
-/// @todo Add a function that sends data (Eigen arrays) to the 'owner'
+/// @todo Add a function that sends data to the 'owner'
 namespace build
 {
 /// Distribute adjacency list nodes to destination ranks. The global
@@ -81,8 +81,8 @@ distribute(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& list,
 /// @return Indexing of ghosts in a global space starting from 0 on process 0
 std::vector<std::int64_t>
 compute_ghost_indices(MPI_Comm comm,
-                      const std::vector<std::int64_t>& global_indices,
-                      const std::vector<int>& ghost_owners);
+                      const xtl::span<const std::int64_t>& global_indices,
+                      const xtl::span<const int>& ghost_owners);
 
 /// Distribute data to process ranks where it it required
 ///
@@ -94,9 +94,9 @@ compute_ghost_indices(MPI_Comm comm,
 ///   to be the local index plus the offset for this rank
 /// @return The data for each index in @p indices
 template <typename T>
-common::array2d<T> distribute_data(MPI_Comm comm,
-                                   const std::vector<std::int64_t>& indices,
-                                   const common::array2d<T>& x);
+xt::xtensor<T, 2> distribute_data(MPI_Comm comm,
+                                  const xtl::span<const std::int64_t>& indices,
+                                  const xt::xtensor<T, 2>& x);
 
 /// Given an adjacency list with global, possibly non-contiguous, link
 /// indices and a local adjacency list with contiguous link indices
@@ -122,21 +122,22 @@ compute_local_to_global_links(const graph::AdjacencyList<std::int64_t>& global,
 ///   indices
 /// @return Map from local0 indices to local1 indices
 std::vector<std::int32_t>
-compute_local_to_local(const std::vector<std::int64_t>& local0_to_global,
-                       const std::vector<std::int64_t>& local1_to_global);
+compute_local_to_local(const xtl::span<const std::int64_t>& local0_to_global,
+                       const xtl::span<const std::int64_t>& local1_to_global);
 } // namespace build
 
 //---------------------------------------------------------------------------
 // Implementation
 //---------------------------------------------------------------------------
 template <typename T>
-common::array2d<T>
-build::distribute_data(MPI_Comm comm, const std::vector<std::int64_t>& indices,
-                       const common::array2d<T>& x)
+xt::xtensor<T, 2>
+build::distribute_data(MPI_Comm comm,
+                       const xtl::span<const std::int64_t>& indices,
+                       const xt::xtensor<T, 2>& x)
 {
   common::Timer timer("Fetch float data from remote processes");
 
-  const std::int64_t num_points_local = x.shape[0];
+  const std::int64_t num_points_local = x.shape(0);
   const int size = dolfinx::MPI::size(comm);
   const int rank = dolfinx::MPI::rank(comm);
   std::vector<std::int64_t> global_sizes(size);
@@ -195,30 +196,32 @@ build::distribute_data(MPI_Comm comm, const std::vector<std::int64_t>& indices,
                 number_index_recv.data(), disp_index_recv.data(), MPI_INT64_T,
                 comm);
 
-  assert(x.shape[1] != 0);
+  assert(x.shape(1) != 0);
   // Pack point data to send back (transpose)
-  common::array2d<T> x_return(indices_recv.size(), x.shape[1]);
+  xt::xtensor<T, 2> x_return({indices_recv.size(), x.shape(1)});
   for (int p = 0; p < size; ++p)
   {
     for (int i = disp_index_recv[p]; i < disp_index_recv[p + 1]; ++i)
     {
       const std::int32_t index_local = indices_recv[i] - global_offsets[rank];
       assert(index_local >= 0);
-      for (std::size_t j = 0; j < x.shape[1]; ++j)
+      for (std::size_t j = 0; j < x.shape(1); ++j)
         x_return(i, j) = x(index_local, j);
     }
   }
 
   MPI_Datatype compound_type;
-  MPI_Type_contiguous(x.shape[1], dolfinx::MPI::mpi_type<T>(), &compound_type);
+  MPI_Type_contiguous(x.shape(1), dolfinx::MPI::mpi_type<T>(), &compound_type);
   MPI_Type_commit(&compound_type);
 
   // Send back point data
-  common::array2d<T> my_x(disp_index_send.back(), x.shape[1]);
+  xt::xtensor<T, 2> my_x(
+      {static_cast<std::size_t>(disp_index_send.back()), x.shape(1)});
   MPI_Alltoallv(x_return.data(), number_index_recv.data(),
                 disp_index_recv.data(), compound_type, my_x.data(),
                 number_index_send.data(), disp_index_send.data(), compound_type,
                 comm);
+  MPI_Type_free(&compound_type);
 
   return my_x;
 }

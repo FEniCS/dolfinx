@@ -1,32 +1,29 @@
 // Copyright (C) 2007-2020 Garth N. Wells
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #pragma once
 
 #include <dolfinx/common/MPI.h>
-#include <dolfinx/common/span.hpp>
 #include <memory>
 #include <utility>
 #include <vector>
+#include <xtl/xspan.hpp>
 
-namespace dolfinx
-{
-
-namespace graph
+namespace dolfinx::graph
 {
 template <typename T>
 class AdjacencyList;
 }
 
-namespace common
+namespace dolfinx::common
 {
 class IndexMap;
 }
 
-namespace la
+namespace dolfinx::la
 {
 
 /// This class provides a sparsity pattern data structure that can be
@@ -72,15 +69,27 @@ public:
   /// Move assignment
   SparsityPattern& operator=(SparsityPattern&& pattern) = default;
 
-  /// Return index map for dimension dim
+  /// Index map for given dimension dimension. Returns the index map for
+  /// rows and columns that will be set by the current MPI rank.
+  ///
+  /// @param[in] dim The requested map, row (0) or column (1)
+  /// @return The index map
   std::shared_ptr<const common::IndexMap> index_map(int dim) const;
+
+  /// Global indices of non-zero columns on owned rows.
+  /// @note The ghosts are computed only once SparsityPattern::assemble has
+  /// been called.
+  ///
+  /// @return The global index non-zero columns on this process, including
+  /// ghosts
+  std::vector<std::int64_t> column_indices() const;
 
   /// Return index map block size for dimension dim
   int block_size(int dim) const;
 
   /// Insert non-zero locations using local (process-wise) indices
-  void insert(const tcb::span<const std::int32_t>& rows,
-              const tcb::span<const std::int32_t>& cols);
+  void insert(const xtl::span<const std::int32_t>& rows,
+              const xtl::span<const std::int32_t>& cols);
 
   /// Insert non-zero locations on the diagonal
   /// @param[in] rows The rows in local (process-wise) indices. The
@@ -108,9 +117,12 @@ private:
   // MPI communicator
   dolfinx::MPI::Comm _mpi_comm;
 
-  // common::IndexMaps for each dimension
+  // Index maps for each dimension
   std::array<std::shared_ptr<const common::IndexMap>, 2> _index_maps;
   std::array<int, 2> _bs;
+
+  // Non-zero ghost columns in owned rows
+  std::vector<std::int64_t> _col_ghosts;
 
   // Caches for unassembled entries on owned and unowned (ghost) rows
   std::vector<std::vector<std::int32_t>> _cache_owned;
@@ -120,5 +132,4 @@ private:
   std::shared_ptr<graph::AdjacencyList<std::int32_t>> _diagonal;
   std::shared_ptr<graph::AdjacencyList<std::int32_t>> _off_diagonal;
 };
-} // namespace la
-} // namespace dolfinx
+} // namespace dolfinx::la

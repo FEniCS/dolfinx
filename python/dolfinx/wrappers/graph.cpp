@@ -1,6 +1,6 @@
 // Copyright (C) 2017 Chris N. Richardson and Garth N. Wells
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -32,10 +32,19 @@ void declare_adjacency_list(py::module& m, std::string type)
         std::vector<T> data(adj.data(), adj.data() + adj.size());
         return dolfinx::graph::build_adjacency_list<T>(std::move(data), dim);
       }))
+      .def(py::init(
+          [](const py::array_t<T, py::array::c_style>& array,
+             const py::array_t<std::int32_t, py::array::c_style>& displ) {
+            std::vector<T> data(array.data(), array.data() + array.size());
+            std::vector<std::int32_t> offsets(displ.data(),
+                                              displ.data() + displ.size());
+            return dolfinx::graph::AdjacencyList<T>(std::move(data),
+                                                    std::move(offsets));
+          }))
       .def(
           "links",
           [](const dolfinx::graph::AdjacencyList<T>& self, int i) {
-            tcb::span<const T> link = self.links(i);
+            xtl::span<const T> link = self.links(i);
             return py::array_t<T>(link.size(), link.data(), py::cast(self));
           },
           "Links (edges) of a node")

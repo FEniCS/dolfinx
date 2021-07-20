@@ -1,7 +1,7 @@
 // Copyright (C) 2004-2018 Johan Hoffman, Johan Jansson, Anders Logg and Garth
 // N. Wells
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -62,21 +62,22 @@ std::vector<IS> la::create_petsc_index_sets(
 }
 //-----------------------------------------------------------------------------
 Vec la::create_ghosted_vector(const common::IndexMap& map, int bs,
-                              tcb::span<PetscScalar> x)
+                              xtl::span<PetscScalar> x)
 {
   const std::int32_t size_local = bs * map.size_local();
   const std::int64_t size_global = bs * map.size_global();
   const std::vector<PetscInt> ghosts(map.ghosts().begin(), map.ghosts().end());
   Vec vec;
-  VecCreateGhostBlockWithArray(map.comm(), bs, size_local, size_global,
-                               ghosts.size(), ghosts.data(), x.data(), &vec);
+  VecCreateGhostBlockWithArray(map.comm(common::IndexMap::Direction::forward),
+                               bs, size_local, size_global, ghosts.size(),
+                               ghosts.data(), x.data(), &vec);
   return vec;
 }
 //-----------------------------------------------------------------------------
 Vec la::create_petsc_vector(const dolfinx::common::IndexMap& map, int bs)
 {
-  return la::create_petsc_vector(map.comm(), map.local_range(), map.ghosts(),
-                                 bs);
+  return la::create_petsc_vector(map.comm(common::IndexMap::Direction::forward),
+                                 map.local_range(), map.ghosts(), bs);
 }
 //-----------------------------------------------------------------------------
 Vec la::create_petsc_vector(MPI_Comm comm, std::array<std::int64_t, 2> range,
@@ -115,7 +116,7 @@ std::vector<std::vector<PetscScalar>> la::get_local_vectors(
   VecGetSize(x_local, &n);
   const PetscScalar* array = nullptr;
   VecGetArrayRead(x_local, &array);
-  tcb::span _x(array, n);
+  xtl::span _x(array, n);
 
   // Copy PETSc Vec data in to local vectors
   std::vector<std::vector<PetscScalar>> x_b;
@@ -142,7 +143,7 @@ std::vector<std::vector<PetscScalar>> la::get_local_vectors(
 }
 //-----------------------------------------------------------------------------
 void la::scatter_local_vectors(
-    Vec x, const std::vector<tcb::span<const PetscScalar>>& x_b,
+    Vec x, const std::vector<xtl::span<const PetscScalar>>& x_b,
     const std::vector<
         std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps)
 {
@@ -160,7 +161,7 @@ void la::scatter_local_vectors(
   VecGetSize(x_local, &n);
   PetscScalar* array = nullptr;
   VecGetArray(x_local, &array);
-  tcb::span _x(array, n);
+  xtl::span _x(array, n);
 
   // Copy local vectors into PETSc Vec
   int offset = 0;

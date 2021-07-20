@@ -1,6 +1,6 @@
 # Copyright (C) 2019-2020 Garth N. Wells
 #
-# This file is part of DOLFINX (https://www.fenicsproject.org)
+# This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Tests for custom Python assemblers"""
@@ -201,11 +201,11 @@ def assemble_vector_parallel(b, v, x, dofmap_t_data, dofmap_t_offsets, num_cells
 
 @numba.njit(fastmath=True)
 def assemble_vector_ufc(b, kernel, mesh, dofmap, num_cells):
-    """Assemble provided FFCX/UFC kernel over a mesh into the array b"""
+    """Assemble provided FFCx/UFC kernel over a mesh into the array b"""
     v, x = mesh
     entity_local_index = np.array([0], dtype=np.intc)
     perm = np.array([0], dtype=np.uint8)
-    geometry = np.zeros((3, 2))
+    geometry = np.zeros((3, 3))
     coeffs = np.zeros(1, dtype=PETSc.ScalarType)
     constants = np.zeros(1, dtype=PETSc.ScalarType)
 
@@ -213,12 +213,12 @@ def assemble_vector_ufc(b, kernel, mesh, dofmap, num_cells):
     for cell in range(num_cells):
         # FIXME: This assumes a particular geometry dof layout
         for j in range(3):
-            geometry[j] = x[v[cell, j], 0:2]
+            geometry[j] = x[v[cell, j], :]
         b_local.fill(0.0)
         kernel(ffi.from_buffer(b_local), ffi.from_buffer(coeffs),
                ffi.from_buffer(constants),
                ffi.from_buffer(geometry), ffi.from_buffer(entity_local_index),
-               ffi.from_buffer(perm), 0)
+               ffi.from_buffer(perm))
         for j in range(3):
             b[dofmap[cell, j]] += b_local[j]
 
@@ -341,8 +341,10 @@ def test_custom_mesh_loop_rank1():
 
     # Assemble using generated tabulate_tensor kernel and Numba assembler
     b3 = dolfinx.Function(V)
-    ufc_form = dolfinx.jit.ffcx_jit(mesh.mpi_comm(), L)
-    kernel = ufc_form.create_cell_integral(-1).tabulate_tensor
+    ufc_form, module, code = dolfinx.jit.ffcx_jit(mesh.mpi_comm(), L)
+
+    # First 0 for "cell" integrals, second 0 for the first one, i.e. default domain
+    kernel = ufc_form.integrals(0)[0].tabulate_tensor
     for i in range(2):
         with b3.vector.localForm() as b:
             b.set(0.0)

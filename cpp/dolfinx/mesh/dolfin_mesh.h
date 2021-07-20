@@ -9,7 +9,7 @@ namespace dolfinx
 */
 }
 
-// DOLFINX mesh interface
+// DOLFINx mesh interface
 
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Geometry.h>

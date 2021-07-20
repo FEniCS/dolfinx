@@ -1,6 +1,6 @@
 // Copyright (C) 2007 Magnus Vikstrøm
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -27,7 +27,7 @@ dolfinx::MPI::Comm::Comm(MPI_Comm comm, bool duplicate)
     _comm = comm;
 }
 //-----------------------------------------------------------------------------
-dolfinx::MPI::Comm::Comm(const Comm& comm) : Comm(comm._comm)
+dolfinx::MPI::Comm::Comm(const Comm& comm) noexcept : Comm(comm._comm)
 {
   // Do nothing
 }
@@ -72,7 +72,7 @@ dolfinx::MPI::Comm::operator=(dolfinx::MPI::Comm&& comm) noexcept
   return *this;
 }
 //-----------------------------------------------------------------------------
-MPI_Comm dolfinx::MPI::Comm::comm() const { return _comm; }
+MPI_Comm dolfinx::MPI::Comm::comm() const noexcept { return _comm; }
 //-----------------------------------------------------------------------------
 int dolfinx::MPI::rank(const MPI_Comm comm)
 {

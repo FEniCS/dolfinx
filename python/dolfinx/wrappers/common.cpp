@@ -1,6 +1,6 @@
 // Copyright (C) 2017-2019 Chris Richardson and Garth N. Wells
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -25,10 +25,10 @@ namespace py = pybind11;
 
 namespace dolfinx_wrappers
 {
-// Interface for dolfin/common
+// Interface for dolfinx/common
 void common(py::module& m)
 {
-  // From dolfin/common/defines.h
+  // From dolfinx/common/defines.h
   m.attr("has_debug") = dolfinx::has_debug();
   m.attr("has_parmetis") = dolfinx::has_parmetis();
   m.attr("has_kahip") = dolfinx::has_kahip();
@@ -40,6 +40,11 @@ void common(py::module& m)
   m.attr("has_slepc4py") = false;
 #endif
   m.attr("git_commit_hash") = dolfinx::git_commit_hash();
+
+  // dolfinx::common::IndexMap::Mode
+  py::enum_<dolfinx::common::IndexMap::Mode>(m, "ScatterMode")
+      .value("add", dolfinx::common::IndexMap::Mode::add)
+      .value("insert", dolfinx::common::IndexMap::Mode::insert);
 
   // dolfinx::common::IndexMap
   py::class_<dolfinx::common::IndexMap,
@@ -77,8 +82,9 @@ void common(py::module& m)
              if (local.ndim() != 1)
                throw std::runtime_error("Array of local indices must be 1D.");
              py::array_t<std::int64_t> global(local.size());
-             self.local_to_global(local.data(), local.size(),
-                                  global.mutable_data());
+             self.local_to_global(
+                 local,
+                 xtl::span<std::int64_t>(global.mutable_data(), global.size()));
              return global;
            });
 
@@ -98,7 +104,7 @@ void common(py::module& m)
       .value("system", dolfinx::TimingType::system)
       .value("user", dolfinx::TimingType::user);
 
-  // dolfin/common free functions
+  // dolfinx/common free functions
   m.def("timing", &dolfinx::timing);
 
   m.def("list_timings",

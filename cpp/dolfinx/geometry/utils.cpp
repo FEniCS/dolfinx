@@ -1,18 +1,19 @@
 // Copyright (C) 2006-2021 Chris N. Richardson, Anders Logg, Garth N. Wells and
 // Jørgen S. Dokken
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "utils.h"
 #include "BoundingBoxTree.h"
 #include "gjk.h"
-#include <Eigen/Core>
 #include <dolfinx/common/log.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/utils.h>
+#include <xtensor/xfixed.hpp>
+#include <xtensor/xnorm.hpp>
 
 using namespace dolfinx;
 
@@ -29,7 +30,7 @@ constexpr bool is_leaf(const std::array<int, 2>& bbox)
 bool point_in_bbox(const std::array<std::array<double, 3>, 2>& b,
                    const std::array<double, 3>& x)
 {
-  Eigen::Array3d _x, b0, b1;
+  xt::xtensor_fixed<double, xt::xshape<3>> _x, b0, b1;
   for (int i = 0; i < 3; ++i)
   {
     _x[i] = x[i];
@@ -37,15 +38,15 @@ bool point_in_bbox(const std::array<std::array<double, 3>, 2>& b,
     b1[i] = b[1][i];
   }
 
-  const double rtol = 1e-14;
-  const Eigen::Array3d eps0 = rtol * (b1 - b0);
-  return (_x >= (b0 - eps0)).all() and (_x <= (b1 + eps0)).all();
+  constexpr double rtol = 1e-14;
+  auto eps0 = rtol * (b1 - b0);
+  return xt::all(_x >= (b0 - eps0)) and xt::all(_x <= (b1 + eps0));
 }
 //-----------------------------------------------------------------------------
 bool bbox_in_bbox(const std::array<std::array<double, 3>, 2>& a,
                   const std::array<std::array<double, 3>, 2>& b)
 {
-  Eigen::Array3d a0, a1, b0, b1;
+  xt::xtensor_fixed<double, xt::xshape<3>> a0, a1, b0, b1;
   for (int i = 0; i < 3; ++i)
   {
     a0[i] = a[0][i];
@@ -56,7 +57,7 @@ bool bbox_in_bbox(const std::array<std::array<double, 3>, 2>& a,
 
   constexpr double rtol = 1e-14;
   auto eps0 = rtol * (b1 - b0);
-  return (b0 - eps0 <= a1).all() and (b1 + eps0 >= a0).all();
+  return xt::all(b0 - eps0 <= a1) and xt::all(b1 + eps0 >= a0);
 }
 //-----------------------------------------------------------------------------
 // Compute closest entity {closest_entity, R2} (recursive)
@@ -206,7 +207,7 @@ void _compute_collisions_tree(const geometry::BoundingBoxTree& A,
 //-----------------------------------------------------------------------------
 geometry::BoundingBoxTree
 geometry::create_midpoint_tree(const mesh::Mesh& mesh, int tdim,
-                               const std::vector<std::int32_t>& entities)
+                               const xtl::span<const std::int32_t>& entities)
 {
   LOG(INFO) << "Building point search tree to accelerate distance queries for "
                "a given topological dimension and subset of entities.";
@@ -254,15 +255,16 @@ double geometry::compute_squared_distance_bbox(
     const std::array<std::array<double, 3>, 2>& b,
     const std::array<double, 3>& x)
 {
-  Eigen::Array3d d0, d1;
+  xt::xtensor_fixed<double, xt::xshape<3>> d0, d1;
   for (int i = 0; i < 3; ++i)
   {
     d0[i] = x[i] - b[0][i];
     d1[i] = x[i] - b[1][i];
   }
 
-  return (d0 > 0.0).select(0, d0).matrix().squaredNorm()
-         + (d1 < 0.0).select(0, d1).matrix().squaredNorm();
+  auto _d0 = xt::where(d0 > 0.0, 0, d0);
+  auto _d1 = xt::where(d1 < 0.0, 0, d1);
+  return xt::norm_sq(_d0)() + xt::norm_sq(_d1)();
 }
 //-----------------------------------------------------------------------------
 std::pair<int, double>
@@ -309,24 +311,23 @@ double geometry::squared_distance(const mesh::Mesh& mesh, int dim,
 {
   const int tdim = mesh.topology().dim();
   const mesh::Geometry& geometry = mesh.geometry();
-  const common::array2d<double>& geom_dofs = geometry.x();
-  assert(geom_dofs.shape[1] == 3);
+  const xt::xtensor<double, 2>& geom_dofs = geometry.x();
+  assert(geom_dofs.shape(1) == 3);
 
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
 
-  common::array2d<double> _p(1, 3);
+  xt::xtensor_fixed<double, xt::xshape<1, 3>> _p;
   std::copy(p.begin(), p.end(), _p.data());
 
   if (dim == tdim)
   {
     auto dofs = x_dofmap.links(index);
-    common::array2d<double> nodes(dofs.size(), 3);
+    xt::xtensor<double, 2> nodes({dofs.size(), 3});
     for (std::size_t i = 0; i < dofs.size(); ++i)
       for (std::size_t j = 0; j < 3; ++j)
         nodes(i, j) = geom_dofs(dofs[i], j);
 
-    const std::array<double, 3> x = geometry::compute_distance_gjk(_p, nodes);
-    return x[0] * x[0] + x[1] * x[1] + x[2] * x[2];
+    return xt::norm_sq(geometry::compute_distance_gjk(_p, nodes))();
   }
   else
   {
@@ -351,19 +352,18 @@ double geometry::squared_distance(const mesh::Mesh& mesh, int dim,
     const std::vector<int> entity_dofs
         = geometry.cmap().dof_layout().entity_closure_dofs(dim,
                                                            local_cell_entity);
-    common::array2d<double> nodes(entity_dofs.size(), 3);
+    xt::xtensor<double, 2> nodes({entity_dofs.size(), 3});
     for (std::size_t i = 0; i < entity_dofs.size(); i++)
       for (std::size_t j = 0; j < 3; ++j)
         nodes(i, j) = geom_dofs(dofs[entity_dofs[i]], j);
 
-    std::array<double, 3> x = geometry::compute_distance_gjk(_p, nodes);
-    return x[0] * x[0] + x[1] * x[1] + x[2] * x[2];
+    return xt::norm_sq(geometry::compute_distance_gjk(_p, nodes))();
   }
 }
 //-------------------------------------------------------------------------------
 std::vector<std::int32_t> geometry::select_colliding_cells(
     const mesh::Mesh& mesh,
-    const tcb::span<const std::int32_t>& candidate_cells,
+    const xtl::span<const std::int32_t>& candidate_cells,
     const std::array<double, 3>& p, int n)
 {
   const double eps2 = 1e-20;

@@ -1,6 +1,6 @@
 // Copyright (C) 2007-2020 Anders Logg and Garth N. Wells
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -9,9 +9,12 @@
 #include <cstdlib>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <dolfinx/graph/scotch.h>
+#include <functional>
 #include <memory>
 #include <utility>
 #include <vector>
+#include <xtl/xspan.hpp>
 
 namespace dolfinx::common
 {
@@ -107,7 +110,7 @@ public:
   /// @param[in] cell The cell index
   /// @return Local-global dof map for the cell (using process-local
   /// indices)
-  tcb::span<const std::int32_t> cell_dofs(int cell) const
+  xtl::span<const std::int32_t> cell_dofs(int cell) const
   {
     return _dofmap.links(cell);
   }
@@ -124,9 +127,15 @@ public:
   /// @param[in] comm MPI Communicator
   /// @param[in] topology The mesh topology that the dofmap is defined
   /// on
+  /// @param[in] reorder_fn The graph re-ordering function to apply to
+  /// the dof data
   /// @return The collapsed dofmap
-  std::pair<std::unique_ptr<DofMap>, std::vector<std::int32_t>>
-  collapse(MPI_Comm comm, const mesh::Topology& topology) const;
+  std::pair<std::unique_ptr<DofMap>, std::vector<std::int32_t>> collapse(
+      MPI_Comm comm, const mesh::Topology& topology,
+      const std::function<std::vector<int>(
+          const graph::AdjacencyList<std::int32_t>&)>& reorder_fn
+      = [](const graph::AdjacencyList<std::int32_t>& g)
+      { return graph::scotch::compute_gps(g, 2).first; }) const;
 
   /// Get dofmap data
   /// @return The adjacency list with dof indices for each cell
@@ -135,10 +144,10 @@ public:
   /// Layout of dofs on an element
   std::shared_ptr<const ElementDofLayout> element_dof_layout;
 
-  /// Index map that described the parallel distribution of the dofmap
+  /// Index map that describes the parallel distribution of the dofmap
   std::shared_ptr<const common::IndexMap> index_map;
 
-  /// Index map that described the parallel distribution of the dofmap
+  /// Block size associated with the index_map
   int index_map_bs() const;
 
 private:

@@ -1,6 +1,6 @@
 # Copyright (C) 2021 Jørgen S. Dokken
 #
-# This file is part of DOLFINX (https://www.fenicsproject.org)
+# This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 #
@@ -25,8 +25,7 @@ except ModuleNotFoundError:
 # If environment variable PYVISTA_OFF_SCREEN is set to true save a png
 # otherwise create interactive plot
 if pyvista.OFF_SCREEN:
-    from pyvista.utilities.xvfb import start_xvfb
-    start_xvfb(wait=0.1)
+    pyvista.start_xvfb(wait=0.1)
 
 # Set some global options for all plots
 transparent = False
@@ -47,7 +46,7 @@ V = dolfinx.FunctionSpace(mesh, ("CG", 1))
 u = dolfinx.Function(V)
 u.interpolate(int_u)
 
-# Extract mesh data from dolfin-X (only plot cells owned by the
+# Extract mesh data from DOLFINx (only plot cells owned by the
 # processor) and create a pyvista UnstructuredGrid
 num_cells = mesh.topology.index_map(mesh.topology.dim).size_local
 cell_entities = np.arange(num_cells, dtype=np.int32)
@@ -56,7 +55,7 @@ grid = pyvista.UnstructuredGrid(pyvista_cells, cell_types, mesh.geometry.x)
 
 # Compute the function values at the vertices, this is equivalent to a
 # P1 Lagrange interpolation, and can be directly attached to the Pyvista
-# mesh. Discard complex value if running dolfin-X with complex PETSc as
+# mesh. Discard complex value if running DOLFINx with complex PETSc as
 # backend
 vertex_values = u.compute_point_values()
 if np.iscomplexobj(vertex_values):

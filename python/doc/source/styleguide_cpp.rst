@@ -155,13 +155,13 @@ Header files should follow the below template:
 
     // Copyright (C) 2018 Foo Bar
     //
-    // This file is part of DOLFINX (https://www.fenicsproject.org)
+    // This file is part of DOLFINx (https://www.fenicsproject.org)
     //
     // SPDX-License-Identifier:    LGPL-3.0-or-later
 
     #pragma once
 
-    namespace dolfin
+    namespace dolfinx
     {
 
       class Bar; // Forward declarations here
@@ -191,13 +191,13 @@ Implementation files should follow the below template:
 
     // Copyright (C) 2018 Foo Bar
     //
-    // This file is part of DOLFINX (https://www.fenicsproject.org)
+    // This file is part of DOLFINx (https://www.fenicsproject.org)
     //
     // SPDX-License-Identifier:    LGPL-3.0-or-later
 
     #include <dolfinx/Foo.h>
 
-    using namespace dolfin;
+    using namespace dolfinx;
 
     //-----------------------------------------------------------------------------
     Foo::Foo() : // variable initialization here
@@ -216,8 +216,8 @@ Including header files and using forward declarations
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Do not use ``#include <dolfinx.h>`` or ``#include``
-``<dolfinx/dolfin_foo.h>`` inside the DOLFIN source tree. Only include
-the portions of DOLFIN you are actually using.
+``<dolfinx/dolfin_foo.h>`` inside the DOLFINx source tree. Only include
+the portions of DOLFINx you are actually using.
 
 Include as few header files as possible and use forward declarations
 whenever possible (in header files). Put the ``#include`` in the

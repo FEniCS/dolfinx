@@ -1,6 +1,6 @@
 // Copyright (C) 2006-2020 Anders Logg and Garth N. Wells
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -13,21 +13,18 @@
 #include <memory>
 #include <tuple>
 
-namespace dolfinx
-{
-
-namespace common
+namespace dolfinx::common
 {
 class IndexMap;
 }
 
-namespace graph
+namespace dolfinx::graph
 {
 template <typename T>
 class AdjacencyList;
 }
 
-namespace mesh
+namespace dolfinx::mesh
 {
 class Topology;
 
@@ -58,5 +55,4 @@ compute_entities(MPI_Comm comm, const Topology& topology, int dim);
 std::array<std::shared_ptr<graph::AdjacencyList<std::int32_t>>, 2>
 compute_connectivity(const Topology& topology, int d0, int d1);
 
-} // namespace mesh
-} // namespace dolfinx
+} // namespace dolfinx::mesh

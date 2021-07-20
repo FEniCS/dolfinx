@@ -1,17 +1,17 @@
 // Copyright (C) 2021 Igor Baratta
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #pragma once
 
-#include "span.hpp"
 #include <array>
 #include <cassert>
 #include <vector>
+#include <xtl/xspan.hpp>
 
-namespace dolfinx::common
+namespace dolfinx
 {
 
 /// This class provides a dynamic 2-dimensional row-wise array data
@@ -37,9 +37,8 @@ public:
   /// @param[in] alloc The memory allocator for the data storage
   array2d(std::array<size_type, 2> shape, value_type value = T(),
           const Allocator& alloc = Allocator())
-      : shape(shape)
+      : shape(shape), _storage(shape[0] * shape[1], value, alloc)
   {
-    _storage = std::vector<T, Allocator>(shape[0] * shape[1], value, alloc);
   }
 
   /// Construct a two dimensional array
@@ -49,9 +48,8 @@ public:
   /// @param[in] alloc The memory allocator for the data storage
   array2d(size_type rows, size_type cols, value_type value = T(),
           const Allocator& alloc = Allocator())
-      : shape({rows, cols})
+      : shape({rows, cols}), _storage(shape[0] * shape[1], value, alloc)
   {
-    _storage = std::vector<T, Allocator>(shape[0] * shape[1], value, alloc);
   }
 
   /// @todo Use suitable std::enable_if to make this more general (and correct)
@@ -113,18 +111,18 @@ public:
   /// Access a row in the array
   /// @param[in] i Row index
   /// @return Span of the row data
-  constexpr tcb::span<value_type> row(size_type i)
+  constexpr xtl::span<value_type> row(size_type i)
   {
-    return tcb::span<value_type>(std::next(_storage.data(), i * shape[1]),
+    return xtl::span<value_type>(std::next(_storage.data(), i * shape[1]),
                                  shape[1]);
   }
 
   /// Access a row in the array (const version)
   /// @param[in] i Row index
   /// @return Span of the row data
-  constexpr tcb::span<const value_type> row(size_type i) const
+  constexpr xtl::span<const value_type> row(size_type i) const
   {
-    return tcb::span<const value_type>(std::next(_storage.data(), i * shape[1]),
+    return xtl::span<const value_type>(std::next(_storage.data(), i * shape[1]),
                                        shape[1]);
   }
 
@@ -159,4 +157,4 @@ public:
 private:
   std::vector<T, Allocator> _storage;
 };
-} // namespace dolfinx::common
+} // namespace dolfinx

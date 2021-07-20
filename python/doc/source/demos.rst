@@ -1,4 +1,4 @@
-.. DOLFIN demos
+.. DOLFINx demos
 
 Demos
 =====
@@ -7,7 +7,7 @@ Demos
 Introductory demos
 ------------------
 
-These demos illustrate core DOLFIN/FEniCS usage and are a good way to
+These demos illustrate core DOLFINx/FEniCSx usage and are a good way to
 begin learning FEniCS. We recommend that you go through these examples
 in the given order.
 

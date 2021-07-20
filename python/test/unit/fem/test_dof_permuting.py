@@ -1,6 +1,6 @@
 # Copyright (C) 2009-2020 Garth N. Wells, Matthew W. Scroggs and Jorgen S. Dokken
 #
-# This file is part of DOLFINX (https://www.fenicsproject.org)
+# This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for dofmap construction"""
@@ -128,18 +128,14 @@ def test_dof_positions(cell_type, space_type):
     # for each global dof number
     coord_dofs = mesh.geometry.dofmap
     x_g = mesh.geometry.x
+    cmap = mesh.geometry.cmap
     tdim = mesh.topology.dim
-    cmap = fem.create_coordinate_map(mesh.mpi_comm(), mesh.ufl_domain())
-
-    mesh.topology.create_entity_permutations()
-    perms = mesh.topology.get_cell_permutation_info()
 
     V = FunctionSpace(mesh, space_type)
     entities = {i: {} for i in range(1, tdim)}
     for cell in range(coord_dofs.num_nodes):
         # Push coordinates forward
         X = V.element.interpolation_points()
-        V.element.apply_dof_transformation(X, perms[cell], tdim)
         xg = x_g[coord_dofs.links(cell), :tdim]
         x = cmap.push_forward(X, xg)
 
@@ -280,7 +276,7 @@ def test_evaluation(cell_type, space_type, space_order):
 )
 @pytest.mark.parametrize('space_order', range(1, 4))
 def test_integral(cell_type, space_type, space_order):
-    # TODO: Fix jump integrals in FFC by passing in full info for both cells, then re-enable these tests
+    # TODO: Fix jump integrals in FFCx by passing in full info for both cells, then re-enable these tests
     pytest.xfail()
 
     random.seed(4)

@@ -1,7 +1,7 @@
 // Copyright (C) 2004-2018 Johan Hoffman, Johan Jansson, Anders Logg and Garth
 // N. Wells
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -10,18 +10,16 @@
 #include "utils.h"
 #include <array>
 #include <cstdint>
-#include <dolfinx/common/span.hpp>
 #include <functional>
 #include <petscvec.h>
 #include <vector>
+#include <xtl/xspan.hpp>
 
-namespace dolfinx
-{
-namespace common
+namespace dolfinx::common
 {
 class IndexMap;
 }
-namespace la
+namespace dolfinx::la
 {
 
 /// Create a PETSc Vec that wraps the data in an array
@@ -32,7 +30,7 @@ namespace la
 /// @return A PETSc Vec object that shares the data in @p x. The caller
 /// is responsible for destroying the Vec.
 Vec create_ghosted_vector(const common::IndexMap& map, int bs,
-                          tcb::span<PetscScalar> x);
+                          xtl::span<PetscScalar> x);
 
 /// Print error message for PETSc calls that return an error
 void petsc_error(int error_code, std::string filename,
@@ -83,7 +81,7 @@ std::vector<std::vector<PetscScalar>> get_local_vectors(
 
 /// Scatter local vectors to Vec
 void scatter_local_vectors(
-    Vec x, const std::vector<tcb::span<const PetscScalar>>& x_b,
+    Vec x, const std::vector<xtl::span<const PetscScalar>>& x_b,
     const std::vector<
         std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps);
 
@@ -173,5 +171,4 @@ private:
   // PETSc Vec pointer
   Vec _x;
 };
-} // namespace la
-} // namespace dolfinx
+} // namespace dolfinx::la

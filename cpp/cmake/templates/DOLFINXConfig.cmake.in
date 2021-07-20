@@ -1,4 +1,4 @@
-# - Build details for DOLFIN: Dynamic Object-oriented Library for
+# - Build details for DOLFINx: Dynamic Object-oriented Library for
 # - FINite element computation
 #
 # This file has been automatically generated.
@@ -6,9 +6,7 @@
 # FIXME: Check that naming conforms to CMake standards
 
 @PACKAGE_INIT@
-
-# Compilers
-set_and_check(DOLFINX_CXX_COMPILER "@CMAKE_CXX_COMPILER@")
+include(CMakeFindDependencyMacro)
 
 include(CMakeFindDependencyMacro)
 find_dependency(MPI REQUIRED)
@@ -19,7 +17,29 @@ if(DEFINED ENV{BOOST_ROOT} OR DEFINED BOOST_ROOT)
 endif()
 set(Boost_USE_MULTITHREADED $ENV{BOOST_USE_MULTITHREADED})
 set(Boost_VERBOSE TRUE)
-find_package(Boost 1.70 REQUIRED COMPONENTS timer filesystem)
+find_dependency(Boost 1.70 REQUIRED COMPONENTS timer filesystem)
+
+# xtensor
+find_dependency(xtl)
+find_dependency(xtensor)
+
+# Basix
+find_dependency(Basix)
+
+# Add xsimd if the C++ interface was compiled with it
+if(@xsimd_FOUND@)
+  find_dependency(xsimd)
+endif()
+
+# HDF5
+if (NOT TARGET hdf5::hdf5)
+  set(HDF5_PREFER_PARALLEL TRUE)
+  set(HDF5_NO_FIND_PACKAGE_CONFIG_FILE TRUE)
+  find_dependency(HDF5)
+  if (HDF5_FOUND AND NOT HDF5_IS_PARALLEL)
+    message(FATAL_ERROR "Found serial HDF5 build, MPI HDF5 build required")
+  endif()
+endif()
 
 if (NOT TARGET PETSC::petsc)
   set(DOLFINX_SKIP_BUILD_TESTS TRUE)

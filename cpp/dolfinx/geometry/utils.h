@@ -1,24 +1,22 @@
 // Copyright (C) 2019-2021 Garth N. Wells and Jørgen S. Dokken
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #pragma once
 
 #include <array>
-#include <dolfinx/common/span.hpp>
 #include <utility>
 #include <vector>
+#include <xtl/xspan.hpp>
 
-namespace dolfinx
-{
-namespace mesh
+namespace dolfinx::mesh
 {
 class Mesh;
-} // namespace mesh
+}
 
-namespace geometry
+namespace dolfinx::geometry
 {
 class BoundingBoxTree;
 
@@ -30,7 +28,7 @@ class BoundingBoxTree;
 /// @return Bounding box tree for midpoints of mesh entities
 BoundingBoxTree
 create_midpoint_tree(const mesh::Mesh& mesh, int tdim,
-                     const std::vector<std::int32_t>& entity_indices);
+                     const xtl::span<const std::int32_t>& entity_indices);
 
 /// Compute all collisions between two BoundingBoxTrees (local to process).
 /// @param[in] tree0 First BoundingBoxTree
@@ -92,7 +90,6 @@ double squared_distance(const mesh::Mesh& mesh, int dim, std::int32_t index,
 /// @return List of cells which collide with point
 std::vector<std::int32_t>
 select_colliding_cells(const dolfinx::mesh::Mesh& mesh,
-                       const tcb::span<const std::int32_t>& candidate_cells,
+                       const xtl::span<const std::int32_t>& candidate_cells,
                        const std::array<double, 3>& p, int n);
-} // namespace geometry
-} // namespace dolfinx
+} // namespace dolfinx::geometry
