@@ -31,11 +31,11 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
       - name: Start EC2 runner
         id: start-ec2-runner
-        uses: jhale/ec2-github-runner@main
+        uses: machulav/ec2-github-runner@v2.2.1
         with:
           mode: start
           github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
-          ec2-image-id: ami-011694240268da883
+          ec2-image-id: ami-07529ef40e2c81086
           ec2-instance-type: c6g.large
           subnet-id: subnet-dc2151b7
           security-group-id: sg-03fc69ee7a6ba8bc4
@@ -43,7 +43,6 @@ jobs:
   build_test_env_openmpi:
     name: Build fenicsproject/test-env:openmpi image
     if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/main' }}
-    # NOTE: OpenMPI ARM64 build currently fails, see https://github.com/FEniCS/dolfinx/runs/2380975354?check_suite_focus=true#step:4:7472
     strategy:
       fail-fast: False
       matrix:
