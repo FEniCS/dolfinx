@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2016 Niclas Jansson, Ola Skavhaug, Anders Logg,
+// Copyright (C) 2019-2020 Garth N. Wells, Chris Richardson and Igor A. Baratta
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -36,14 +36,12 @@ build_adjacency_data(MPI_Comm comm,
   const int size = dolfinx::MPI::size(comm);
   std::vector<T> node_disp(size + 1, 0);
   const T num_local_nodes = graph.num_nodes();
-  MPI_Allgather(&num_local_nodes, 1, MPI::mpi_type<T>(), node_disp.data() + 1,
-                1, MPI::mpi_type<T>(), comm);
+  MPI_Allgather(&num_local_nodes, 1, dolfinx::MPI::mpi_type<T>(),
+                node_disp.data() + 1, 1, dolfinx::MPI::mpi_type<T>(), comm);
   std::partial_sum(node_disp.begin(), node_disp.end(), node_disp.begin());
-
-  std::vector<T> array(graph.array().begin(), graph.array().end());
-  std::vector<T> offsets(graph.offsets().begin(), graph.offsets().end());
-
-  return {std::move(node_disp), std::move(array), std::move(offsets)};
+  return {std::move(node_disp),
+          std::vector<T>(graph.array().begin(), graph.array().end()),
+          std::vector<T>(graph.offsets().begin(), graph.offsets().end())};
 }
 //-----------------------------------------------------------------------------
 template <typename T>
@@ -56,17 +54,15 @@ graph::AdjacencyList<std::int32_t> compute_destination_ranks(
 
   // Work out halo nodes for current division of graph
   common::Timer timer2("Compute graph halo data (ParMETIS/KaHIP)");
-  std::map<std::int32_t, std::set<std::int32_t>> local_node_to_dests;
-  std::map<std::int32_t, std::set<int>> halo_node_to_remotes;
 
   const int rank = dolfinx::MPI::rank(comm);
   const int size = dolfinx::MPI::size(comm);
-
   const std::int64_t range0 = node_disp[rank];
   const std::int64_t range1 = node_disp[rank + 1];
   assert(static_cast<std::int32_t>(range1 - range0) == graph.num_nodes());
 
   // local indexing "i"
+  std::map<std::int32_t, std::set<int>> halo_node_to_remotes;
   for (int node = 0; node < graph.num_nodes(); ++node)
   {
     for (auto node1 : graph.links(node))
@@ -113,6 +109,7 @@ graph::AdjacencyList<std::int32_t> compute_destination_ranks(
     node_ownership.insert({recv_node_partition[p], recv_node_partition[p + 1]});
 
   // Generate map for where new boundary nodes need to be sent
+  std::map<std::int32_t, std::set<std::int32_t>> local_node_to_dests;
   for (std::int32_t node0 = 0; node0 < graph.num_nodes(); ++node0)
   {
     const std::int32_t node0_rank = part[node0];
@@ -133,8 +130,6 @@ graph::AdjacencyList<std::int32_t> compute_destination_ranks(
         local_node_to_dests[node0].insert(node1_rank);
     }
   }
-
-  // return local_node_to_dests;
 
   // Convert to  AdjacencyList
   std::vector<std::int32_t> dests, offsets(1, 0);
@@ -261,11 +256,12 @@ std::vector<int> refine(MPI_Comm mpi_comm,
 
 //-----------------------------------------------------------------------------
 #ifdef HAS_PARMETIS
-graph::partition_fn graph::parmetis::partitioner(std::array<int, 3> options)
+graph::partition_fn graph::parmetis::partitioner(double imbalance,
+                                                 std::array<int, 3> options)
 {
-  return [options](MPI_Comm comm, idx_t nparts,
-                   const graph::AdjacencyList<std::int64_t>& graph,
-                   std::int32_t, bool ghosting)
+  return [imbalance, options](MPI_Comm comm, idx_t nparts,
+                              const graph::AdjacencyList<std::int64_t>& graph,
+                              std::int32_t, bool ghosting)
   {
     LOG(INFO) << "Compute graph partition using ParMETIS";
     common::Timer timer("Compute graph partition (ParMETIS)");
@@ -280,29 +276,29 @@ graph::partition_fn graph::parmetis::partitioner(std::array<int, 3> options)
     // Options for ParMETIS
     std::array<idx_t, 3> _options = {options[0], options[1], options[2]};
 
-    // Strange weight arrays needed by ParMETIS
+    // Data for  ParMETIS
     idx_t ncon = 1;
-
-    // Prepare remaining arguments for ParMETIS
     idx_t* elmwgt = nullptr;
     idx_t wgtflag(0), edgecut(0), numflag(0);
     std::vector<real_t> tpwgts(ncon * nparts,
                                1.0 / static_cast<real_t>(nparts));
-    std::vector<real_t> ubvec(ncon, 1.05);
+    std::array<real_t, 1> ubvec = {static_cast<real_t>(imbalance)};
 
     // Build adjacency list data
+    common::Timer timer1("ParMETIS: build adjacency data");
     auto [node_disp, array, _offsets]
         = build_adjacency_data<idx_t>(comm, graph);
+    timer1.stop();
 
     // Call ParMETIS to partition graph
-    common::Timer timer1("ParMETIS: call ParMETIS_V3_PartKway");
+    common::Timer timer2("ParMETIS: call ParMETIS_V3_PartKway");
     std::vector<idx_t> part(graph.num_nodes());
     int err = ParMETIS_V3_PartKway(
         node_disp.data(), _offsets.data(), array.data(), elmwgt, nullptr,
         &wgtflag, &numflag, &ncon, &nparts, tpwgts.data(), ubvec.data(),
         _options.data(), &edgecut, part.data(), &comm);
     assert(err == METIS_OK);
-    timer1.stop();
+    timer2.stop();
 
     if (ghosting)
       return compute_destination_ranks(comm, graph, node_disp, part);
@@ -336,21 +332,21 @@ graph::kahip::partitioner(int mode, int seed, double imbalance,
     // pointers as arguments
     unsigned long long *vwgt(nullptr), *adjcwgt(nullptr);
 
-    // Call KaHIP to partition graph
-    common::Timer timer1("KaHIP: call ParHIPPartitionKWay");
-
     // Build adjacency list data
+    common::Timer timer1("KaHIP: build adjacency data");
     auto [node_disp, array, offsets]
         = build_adjacency_data<unsigned long long>(comm, graph);
+    timer1.stop();
 
-    // Partition graph
+    // Call KaHIP to partition graph
+    common::Timer timer2("KaHIP: call ParHIPPartitionKWay");
     std::vector<unsigned long long> part(graph.num_nodes());
     int edgecut = 0;
     double _imbalance = imbalance;
     ParHIPPartitionKWay(node_disp.data(), offsets.data(), array.data(), vwgt,
                         adjcwgt, &nparts, &_imbalance, suppress_output, seed,
                         mode, &edgecut, part.data(), &comm);
-    timer1.stop();
+    timer2.stop();
 
     if (ghosting)
       return compute_destination_ranks(comm, graph, node_disp, part);

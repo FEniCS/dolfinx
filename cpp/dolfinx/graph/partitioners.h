@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Garth N. Wells
+// Copyright (C) 2020 Garth N. Wells and Igor A. Baratta
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -23,7 +23,8 @@ namespace parmetis
 ///
 /// param[in] options The ParMETIS option. See ParMETIS manual for
 /// details.
-graph::partition_fn partitioner(std::array<int, 3> options = {0, 0, 0});
+graph::partition_fn partitioner(double imbalance = 1.02,
+                                std::array<int, 3> options = {0, 0, 0});
 
 #endif
 } // namespace parmetis
