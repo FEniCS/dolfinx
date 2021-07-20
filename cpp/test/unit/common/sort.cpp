@@ -57,6 +57,6 @@ TEST_CASE("Test argsort bitset")
 
   // Requiring equality of permutation vectors is not a good test, because
   // std::sort is not stable, so we compare the effect on the actual array.
-  for (int i = i; i < size; i++)
+  for (int i = i; i < perm.size(); i++)
     REQUIRE((xt::row(arr, perm[i]) == xt::row(arr, index[i])));
 }
