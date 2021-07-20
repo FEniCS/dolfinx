@@ -134,6 +134,13 @@ graph::partition_fn graph::parmetis::partitioner(std::array<int, 3> options)
     LOG(INFO) << "Compute graph partition using ParMETIS";
     common::Timer timer("Compute graph partition (ParMETIS)");
 
+    if (graph.num_nodes() == 0)
+    {
+      throw std::runtime_error(
+          "ParMETIS cannot partition a graph where one of the MPI ranks has no "
+          "data. Try PT-SCOTCH of KaHIP instead.");
+    }
+
     std::map<std::int64_t, std::vector<int>> ghost_procs;
     const int rank = dolfinx::MPI::rank(mpi_comm);
     const int size = dolfinx::MPI::size(mpi_comm);
@@ -154,15 +161,14 @@ graph::partition_fn graph::parmetis::partitioner(std::array<int, 3> options)
 
     // Communicate number of nodes between all processors
     std::vector<idx_t> node_disp(size + 1, 0);
-    const idx_t num_local_cells = graph.num_nodes();
-    MPI_Allgather(&num_local_cells, 1, MPI::mpi_type<idx_t>(),
+    const idx_t num_local_nodes = graph.num_nodes();
+    MPI_Allgather(&num_local_nodes, 1, MPI::mpi_type<idx_t>(),
                   node_disp.data() + 1, 1, MPI::mpi_type<idx_t>(), mpi_comm);
     std::partial_sum(node_disp.begin(), node_disp.end(), node_disp.begin());
 
     // Call ParMETIS to partition graph
     common::Timer timer1("ParMETIS: call ParMETIS_V3_PartKway");
-    std::vector<idx_t> part(num_local_cells);
-    assert(!part.empty());
+    std::vector<idx_t> part(num_local_nodes);
     {
       std::vector<idx_t> _array(graph.array().begin(), graph.array().end()),
           _offsets(graph.offsets().begin(), graph.offsets().end());
@@ -178,94 +184,87 @@ graph::partition_fn graph::parmetis::partitioner(std::array<int, 3> options)
     const idx_t range1 = node_disp[rank + 1];
     assert(range1 - range0 == graph.num_nodes());
 
-    // Create a map of local nodes to their additional destination
-    // processes, due to ghosting. If no ghosting, this will remain
-    // empty.
+    // Create a map from local nodes to their additional destination
+    // ranks, due to ghosting. If no ghosting, this will remain empty.
     std::map<std::int32_t, std::set<std::int32_t>> local_node_to_dests;
 
     if (ghosting)
     {
-      // Work out halo cells for current division of dual graph
+      // Work out halo nodes for current division of graph
       common::Timer timer2("Compute graph halo data (ParMETIS)");
 
-      std::map<unsigned long long, std::set<std::int32_t>> halo_cell_to_remotes;
+      std::map<std::int32_t, std::set<int>> halo_node_to_remotes;
 
       // local indexing "i"
-      for (int i = 0; i < graph.num_nodes(); ++i)
+      for (int node = 0; node < graph.num_nodes(); ++node)
       {
-        const auto edges = graph.links(i);
-        for (int j = 0; j < graph.num_links(i); ++j)
+        for (auto node1 : graph.links(node))
         {
-          const idx_t other_cell = edges[j];
-          if (other_cell < range0 or other_cell >= range1)
+          if (node1 < range0 or node1 >= range1)
           {
-            const int remote = std::upper_bound(node_disp.begin(),
-                                                node_disp.end(), other_cell)
-                               - node_disp.begin() - 1;
-
-            assert(remote < size);
-            if (halo_cell_to_remotes.find(i) == halo_cell_to_remotes.end())
-              halo_cell_to_remotes[i] = std::set<std::int32_t>();
-            halo_cell_to_remotes[i].insert(remote);
+            const int remote_rank
+                = std::distance(node_disp.begin(),
+                                std::upper_bound(node_disp.begin(),
+                                                 node_disp.end(), node1))
+                  - 1;
+            assert(remote_rank < size);
+            halo_node_to_remotes[node].insert(remote_rank);
           }
         }
       }
 
-      // Do halo exchange of cell partition data
-      std::vector<std::vector<std::int64_t>> send_cell_partition(size);
-      for (const auto& hcell : halo_cell_to_remotes)
+      // Do halo exchange of node partition data
+      std::vector<std::vector<std::int64_t>> send_node_partition(size);
+      for (const auto& halo_node : halo_node_to_remotes)
       {
-        const std::int32_t node_index = hcell.first;
+        const std::int32_t node_index = halo_node.first;
         std::for_each(
-            hcell.second.cbegin(), hcell.second.cend(),
-            [&send_cell_partition, &part, node_index, range0](auto proc)
+            halo_node.second.cbegin(), halo_node.second.cend(),
+            [&send_node_partition, &part, node_index, range0](auto proc)
             {
               assert(static_cast<std::size_t>(proc)
-                     < send_cell_partition.size());
-              // (0) global cell number and (1) partitioning
-              send_cell_partition[proc].push_back(node_index + range0);
-              send_cell_partition[proc].push_back(part[node_index]);
+                     < send_node_partition.size());
+              // (0) global node index and (1) partitioning
+              send_node_partition[proc].push_back(node_index + range0);
+              send_node_partition[proc].push_back(part[node_index]);
             });
       }
 
       // Actual halo exchange
-      const std::vector<std::int64_t> recv_cell_partition
+      const std::vector<std::int64_t> recv_node_partition
           = dolfinx::MPI::all_to_all(
                 mpi_comm,
-                graph::AdjacencyList<std::int64_t>(send_cell_partition))
+                graph::AdjacencyList<std::int64_t>(send_node_partition))
                 .array();
 
-      // Construct a map from all currently foreign cells to their new
+      // Construct a map from all currently foreign nodes to their new
       // partition number
-      std::map<std::int64_t, std::int32_t> cell_ownership;
-      for (std::size_t p = 0; p < recv_cell_partition.size(); p += 2)
+      std::map<std::int64_t, std::int32_t> node_ownership;
+      for (std::size_t p = 0; p < recv_node_partition.size(); p += 2)
       {
-        cell_ownership.insert(
-            {recv_cell_partition[p], recv_cell_partition[p + 1]});
+        node_ownership.insert(
+            {recv_node_partition[p], recv_node_partition[p + 1]});
       }
 
-      // Generate map for where new boundary cells need to be sent
-      const std::vector<std::int32_t>& xadj = graph.offsets();
-      const std::vector<std::int64_t>& adjncy = graph.array();
-      for (std::int32_t i = 0; i < graph.num_nodes(); i++)
+      // Generate map for where new boundary nodes need to be sent
+      for (std::int32_t node = 0; node < graph.num_nodes(); ++node)
       {
-        const std::int32_t proc_this = part[i];
-        for (idx_t j = xadj[i]; j < xadj[i + 1]; ++j)
+        const std::int32_t proc_this = part[node];
+        for (auto node1 : graph.links(node))
         {
-          const idx_t other_cell = adjncy[j];
           std::int32_t proc_other;
-          if (other_cell < range0 or other_cell >= range1)
+          if (node1 < range0 or node1 >= range1)
           {
-            const auto find_other_proc = cell_ownership.find(other_cell);
+            const auto find_other_proc = node_ownership.find(node1);
             // remote cell - should be in map
-            assert(find_other_proc != cell_ownership.end());
+            assert(find_other_proc != node_ownership.end());
             proc_other = find_other_proc->second;
           }
           else
-            proc_other = part[other_cell - range0];
+            proc_other = part[node1 - range0];
 
           if (proc_this != proc_other)
-            local_node_to_dests[i].insert(proc_other);
+            local_node_to_dests[node].insert(proc_other);
         }
       }
       timer2.stop();
@@ -275,10 +274,10 @@ graph::partition_fn graph::parmetis::partitioner(std::array<int, 3> options)
     std::vector<std::int32_t> dests, offsets(1, 0);
     dests.reserve(graph.num_nodes());
     offsets.reserve(graph.num_nodes() + 1);
-    for (std::int32_t i = 0; i < graph.num_nodes(); ++i)
+    for (std::int32_t node = 0; node < graph.num_nodes(); ++node)
     {
-      dests.push_back(part[i]);
-      if (const auto it = local_node_to_dests.find(i);
+      dests.push_back(part[node]);
+      if (const auto it = local_node_to_dests.find(node);
           it != local_node_to_dests.end())
       {
         dests.insert(dests.end(), it->second.begin(), it->second.end());

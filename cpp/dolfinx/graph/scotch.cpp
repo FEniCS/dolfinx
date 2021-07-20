@@ -130,22 +130,16 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
     // C-style array indexing
     constexpr SCOTCH_Num baseval = 0;
 
-    // Cast graph to SCOTCH type
-    const auto& local_graph = graph.as_type<SCOTCH_Num>();
-
     // Local data ---------------------------------
-
-    // Number of local graph vertices
-    const SCOTCH_Num vertlocnbr = local_graph.num_nodes();
 
     std::vector<SCOTCH_Num> node_weights;
 
     // Get graph data. vertloctab needs to be copied to match the
     // SCOTCH_Num type.
-    const SCOTCH_Num* edgeloctab = local_graph.array().data();
-    const std::int32_t edgeloctab_size = local_graph.array().size();
-    std::vector<SCOTCH_Num> vertloctab(local_graph.offsets().begin(),
-                                       local_graph.offsets().end());
+    std::vector<SCOTCH_Num> edgeloctab(graph.array().begin(),
+                                       graph.array().end());
+    std::vector<SCOTCH_Num> vertloctab(graph.offsets().begin(),
+                                       graph.offsets().end());
 
     // Global data ---------------------------------
 
@@ -158,7 +152,7 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
     //        SCOTCH may deadlock since vload.data() will be nullptr on
     //        this rank but not null on all other ranks.
 
-    // Handle cell weights (if any)
+    // Handle node weights (if any)
     std::vector<SCOTCH_Num> vload;
     if (!node_weights.empty())
       vload.assign(node_weights.begin(), node_weights.end());
@@ -171,10 +165,11 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
     // Build SCOTCH distributed graph (SCOTCH is not const-correct, so
     // we throw away constness and trust SCOTCH)
     common::Timer timer1("SCOTCH: call SCOTCH_dgraphBuild");
-    if (SCOTCH_dgraphBuild(
-            &dgrafdat, baseval, vertlocnbr, vertlocnbr, vertloctab.data(),
-            nullptr, vload.data(), nullptr, edgeloctab_size, edgeloctab_size,
-            const_cast<SCOTCH_Num*>(edgeloctab), nullptr, nullptr))
+    if (SCOTCH_dgraphBuild(&dgrafdat, baseval, graph.num_nodes(),
+                           graph.num_nodes(), vertloctab.data(), nullptr,
+                           vload.data(), nullptr, edgeloctab.size(),
+                           edgeloctab.size(), edgeloctab.data(), nullptr,
+                           nullptr))
     {
       throw std::runtime_error("Error building SCOTCH graph");
     }
@@ -217,16 +212,16 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
     }
     SCOTCH_stratDgraphMapBuild(&strat, strat_val, nparts, nparts, imbalance);
 
-    // Resize vector to hold cell partition indices with enough extra
-    // space for ghost cell partition information too. When there are no
+    // Resize vector to hold node partition indices with enough extra
+    // space for ghost node partition information too. When there are no
     // nodes, vertgstnbr may be zero, and at least one dummy location must
     // be created.
-    const std::int32_t vertgstnbr = vertlocnbr + num_ghost_nodes;
-    std::vector<SCOTCH_Num> cell_partition(std::max(1, vertgstnbr), 0);
+    const std::int32_t vertgstnbr = graph.num_nodes() + num_ghost_nodes;
+    std::vector<SCOTCH_Num> node_partition(std::max(1, vertgstnbr), 0);
 
     // Partition the graph
     common::Timer timer2("SCOTCH: call SCOTCH_dgraphPart");
-    if (SCOTCH_dgraphPart(&dgrafdat, nparts, &strat, cell_partition.data()))
+    if (SCOTCH_dgraphPart(&dgrafdat, nparts, &strat, node_partition.data()))
       throw std::runtime_error("Error during SCOTCH partitioning");
     timer2.stop();
 
@@ -235,7 +230,7 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
     std::map<std::int32_t, std::set<std::int32_t>> local_node_to_dests;
     if (ghosting)
     {
-      // Exchange halo with cell_partition data for ghosts
+      // Exchange halo with node_partition data for ghosts
       // FIXME: check MPI type compatibility with SCOTCH_Num. Getting this
       //        wrong will cause a SEGV
       // FIXME: is there a better way to do this?
@@ -251,7 +246,7 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
       assert(tsize == sizeof(SCOTCH_Num));
 
       common::Timer timer3("SCOTCH: call SCOTCH_dgraphHalo");
-      if (SCOTCH_dgraphHalo(&dgrafdat, (void*)cell_partition.data(),
+      if (SCOTCH_dgraphHalo(&dgrafdat, (void*)node_partition.data(),
                             MPI_SCOTCH_Num))
       {
         throw std::runtime_error("Error during SCOTCH halo exchange");
@@ -273,17 +268,17 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
 
       // Create a map of local nodes to their additional destination processes,
       // due to ghosting. If no ghosting, this can be skipped.
-      for (SCOTCH_Num i = 0; i < vertlocnbr; ++i)
+      for (std::int32_t node0 = 0; node0 < graph.num_nodes(); ++node0)
       {
-        const std::int32_t proc_this = cell_partition[i];
+        const std::int32_t proc_this = node_partition[node0];
 
-        // Get all edges outward from node i
-        for (SCOTCH_Num j = vertloctab[i]; j < vertloctab[i + 1]; ++j)
+        // Loop over all edges outward from node0
+        for (auto node1 : graph.links(node0))
         {
           // Any edge which connects to a different partition will be a ghost
-          const std::int32_t proc_other = cell_partition[edge_ghost_tab[j]];
+          const std::int32_t proc_other = node_partition[edge_ghost_tab[node1]];
           if (proc_this != proc_other)
-            local_node_to_dests[i].insert(proc_other);
+            local_node_to_dests[node0].insert(proc_other);
         }
       }
 
@@ -291,14 +286,16 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
     }
 
     // Convert to offset format for AdjacencyList
-    std::vector<std::int32_t> dests;
-    std::vector<std::int32_t> offsets(1, 0);
-    for (SCOTCH_Num i = 0; i < vertlocnbr; ++i)
+    std::vector<std::int32_t> dests, offsets(1, 0);
+    offsets.reserve(graph.num_nodes());
+    for (std::int32_t node = 0; node < graph.num_nodes(); ++node)
     {
-      dests.push_back(cell_partition[i]);
-      if (auto it = local_node_to_dests.find(i);
+      dests.push_back(node_partition[node]);
+      if (auto it = local_node_to_dests.find(node);
           it != local_node_to_dests.end())
+      {
         dests.insert(dests.end(), it->second.begin(), it->second.end());
+      }
       offsets.push_back(dests.size());
     }
 
