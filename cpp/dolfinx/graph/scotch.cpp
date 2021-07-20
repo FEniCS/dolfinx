@@ -134,8 +134,8 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
 
     std::vector<SCOTCH_Num> node_weights;
 
-    // Get graph data. vertloctab needs to be copied to match the
-    // SCOTCH_Num type.
+    // Get graph data. Data needs to be copied to match the SCOTCH_Num
+    // type.
     std::vector<SCOTCH_Num> edgeloctab(graph.array().begin(),
                                        graph.array().end());
     std::vector<SCOTCH_Num> vertloctab(graph.offsets().begin(),
@@ -230,24 +230,9 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
     std::map<std::int32_t, std::set<std::int32_t>> local_node_to_dests;
     if (ghosting)
     {
-      // Exchange halo with node_partition data for ghosts
-      // FIXME: check MPI type compatibility with SCOTCH_Num. Getting this
-      //        wrong will cause a SEGV
-      // FIXME: is there a better way to do this?
-      MPI_Datatype MPI_SCOTCH_Num;
-      if (sizeof(SCOTCH_Num) == 4)
-        MPI_SCOTCH_Num = MPI_INT;
-      else if (sizeof(SCOTCH_Num) == 8)
-        MPI_SCOTCH_Num = MPI_LONG_LONG_INT;
-
-      // Double check size is correct
-      int tsize;
-      MPI_Type_size(MPI_SCOTCH_Num, &tsize);
-      assert(tsize == sizeof(SCOTCH_Num));
-
       common::Timer timer3("SCOTCH: call SCOTCH_dgraphHalo");
       if (SCOTCH_dgraphHalo(&dgrafdat, (void*)node_partition.data(),
-                            MPI_SCOTCH_Num))
+                            dolfinx::MPI::mpi_type<SCOTCH_Num>()))
       {
         throw std::runtime_error("Error during SCOTCH halo exchange");
       }
@@ -270,15 +255,14 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
       // due to ghosting. If no ghosting, this can be skipped.
       for (std::int32_t node0 = 0; node0 < graph.num_nodes(); ++node0)
       {
-        const std::int32_t proc_this = node_partition[node0];
-
         // Loop over all edges outward from node0
+        const std::int32_t node0_rank = node_partition[node0];
         for (auto node1 : graph.links(node0))
         {
           // Any edge which connects to a different partition will be a ghost
-          const std::int32_t proc_other = node_partition[edge_ghost_tab[node1]];
-          if (proc_this != proc_other)
-            local_node_to_dests[node0].insert(proc_other);
+          const std::int32_t node1_rank = node_partition[edge_ghost_tab[node1]];
+          if (node0_rank != node1_rank)
+            local_node_to_dests[node0].insert(node1_rank);
         }
       }
 
