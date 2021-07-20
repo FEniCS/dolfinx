@@ -110,9 +110,7 @@ graph::AdjacencyList<std::int32_t> compute_destination_ranks(
   // partition number
   std::map<std::int64_t, std::int32_t> node_ownership;
   for (std::size_t p = 0; p < recv_node_partition.size(); p += 2)
-  {
     node_ownership.insert({recv_node_partition[p], recv_node_partition[p + 1]});
-  }
 
   // Generate map for where new boundary nodes need to be sent
   for (std::int32_t node0 = 0; node0 < graph.num_nodes(); ++node0)

@@ -13,7 +13,7 @@
 #include <memory>
 #include <unordered_map>
 
-// #include "parmetis.h"
+#include "partitioners.h"
 
 using namespace dolfinx;
 
@@ -23,10 +23,10 @@ graph::partition_graph(const MPI_Comm comm, int nparts,
                        const AdjacencyList<std::int64_t>& local_graph,
                        std::int32_t num_ghost_nodes, bool ghosting)
 {
-  // return graph::parmetis::partitioner()(comm, nparts, local_graph,
+  return graph::kahip::partitioner()(comm, nparts, local_graph, num_ghost_nodes,
+                                     ghosting);
+  //   return graph::scotch::partitioner()(comm, nparts, local_graph,
   //                                       num_ghost_nodes, ghosting);
-  return graph::scotch::partitioner()(comm, nparts, local_graph,
-                                      num_ghost_nodes, ghosting);
 }
 //-----------------------------------------------------------------------------
 std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<int>,
