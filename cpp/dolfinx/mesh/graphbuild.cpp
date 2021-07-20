@@ -14,6 +14,8 @@
 #include <dolfinx/mesh/cell_types.h>
 #include <utility>
 #include <vector>
+#include <xtensor/xadapt.hpp>
+#include <xtensor/xio.hpp>
 #include <xtensor/xview.hpp>
 
 using namespace dolfinx;
@@ -312,10 +314,8 @@ mesh::build_local_dual_graph(const xtl::span<const std::int64_t>& cell_vertices,
             xt::xtensor<std::int64_t, 2>({0, 0})};
   }
 
-  // Give each global vertex a local identifier from 0 to M, where M is the
-  // number of unique vertices.
-  std::vector<std::int32_t> perm
-      = dolfinx::argsort_radix<std::int64_t, 16>(cell_vertices);
+  // Give each global vertex a local identifier
+  auto perm = dolfinx::argsort_radix<std::int64_t, 16>(cell_vertices);
   std::vector<std::int32_t> local_vertices(cell_vertices.size());
   std::int32_t id = 0;
   local_vertices[perm[0]] = id;
@@ -325,6 +325,11 @@ mesh::build_local_dual_graph(const xtl::span<const std::int64_t>& cell_vertices,
       id++;
     local_vertices[perm[i]] = id;
   }
+
+  // Compute local to global map
+  std::vector<int32_t> local_to_global(id + 1);
+  for (std::size_t i = 1; i < local_vertices.size(); i++)
+    local_to_global[local_vertices[i]] = cell_vertices[i];
 
   // Count number of cells of each type, based on the number of vertices
   // in each cell, covering interval(2) through to hex(8)
@@ -391,63 +396,63 @@ mesh::build_local_dual_graph(const xtl::span<const std::int64_t>& cell_vertices,
   // List of facets and associated cells
   xt::xtensor<std::int32_t, 2> facets
       = xt::empty<std::int32_t>({num_facets, num_facet_vertices});
-  std::vector<std::int32_t> cells(num_facets);
+  std::vector<std::int32_t> facet_cell(num_facets);
   int counter = 0;
   for (std::int32_t i = 0; i < num_local_cells; ++i)
   {
     const int nv = cell_offsets[i + 1] - cell_offsets[i];
     const graph::AdjacencyList<int>& cell_facets = nv_to_facets[nv];
     const int num_facets_per_cell = cell_facets.num_nodes();
+    // Loop over all facets of a cell
     for (int j = 0; j < num_facets_per_cell; ++j)
     {
       auto facet = xt::row(facets, counter);
-      cells[counter] = i;
+      facet_cell[counter] = i;
+
+      // Fill last entry with max_int32_t: for mixed 3D, when some facets
+      // may be triangle adds an extra dummy vertex which will sort to
+      // last position
+      facet[num_facet_vertices - 1] = std::numeric_limits<std::int32_t>::max();
 
       // Get list of facet vertices
       auto facet_vertices = cell_facets.links(j);
       assert(facet_vertices.size() <= num_facet_vertices);
       for (std::size_t k = 0; k < facet_vertices.size(); ++k)
-        facet[k] = perm[facet_vertices[k] + cell_offsets[i]];
+        facet[k] = local_vertices[cell_offsets[i] + facet_vertices[k]];
 
       // Sort facet "indices"
-      std::sort(facet.begin(), std::next(facet.begin(), facet_vertices.size()));
+      std::sort(facet.begin(), facet.end());
 
       // Increment facet counter
       counter++;
     }
   }
-  assert(counter == (int)facets.size());
 
-  // Get local ID for each vertex
-  xt::xtensor<std::int32_t, 2> facets_local
-      = xt::empty<std::int32_t>({num_facets, num_facet_vertices});
+  assert(counter == (int)facets.shape(0));
 
-  for (int f = 0; f < num_facets; f++)
-    for (int v = 0; v < num_facet_vertices; v++)
-      facets_local(f, v) = local_vertices[facets(f, v)];
+  // Sort facets by lexicographic order of vertices
+  std::vector<std::int32_t> facet_perm = dolfinx::sort_by_perm(facets);
+  auto facets_ordered = xt::view(facets, xt::keep(facet_perm), xt::all());
 
-  // Sort facet indices
-  std::vector<std::int32_t> facet_perm = dolfinx::sort_by_perm(facets_local);
-
-  // Stack up cells joined by facet as pairs in local_graph, and record
-  // any non-matching
+  // Stack up cells joined by facet as pairs in local_graph, and record any
+  // non-matching
   std::vector<std::int32_t> local_graph;
   std::vector<std::int32_t> unmatched_facets;
   local_graph.reserve(num_local_cells * 2);
   unmatched_facets.reserve(num_local_cells);
 
   int eq_count = 0;
-  for (std::size_t j = 1; j < facet_perm.size(); ++j)
+  for (std::size_t j = 1; j < facets.shape(0); ++j)
   {
-    auto current = xt::row(facets_local, facet_perm[j]);
-    auto previous = xt::row(facets_local, facet_perm[j - 1]);
+    auto current = xt::row(facets, facet_perm[j]);
+    auto previous = xt::row(facets, facet_perm[j - 1]);
 
-    if (xt::allclose(current, previous))
+    if (std::equal(current.cbegin(), current.cend(), previous.cbegin()))
     {
       ++eq_count;
       // join cells at cell_index[j] <-> cell_index[jlast]
-      local_graph.push_back(cells[facet_perm[j]]);
-      local_graph.push_back(cells[facet_perm[j - 1]]);
+      local_graph.push_back(facet_cell[facet_perm[j]]);
+      local_graph.push_back(facet_cell[facet_perm[j - 1]]);
 
       if (eq_count > 1)
         LOG(WARNING) << "Same facet in more than two cells";
@@ -462,18 +467,19 @@ mesh::build_local_dual_graph(const xtl::span<const std::int64_t>& cell_vertices,
 
   // save last one, if unmatched...
   if (eq_count == 0)
-    unmatched_facets.push_back(facet_perm[facets.size() - 1]);
+    unmatched_facets.push_back(facet_perm.back());
 
-  xt::xtensor<std::int64_t, 2> facet_cell_map(
+  xt::xtensor<std::int64_t, 2> facet_cell_map = xt::empty<std::int64_t>(
       {unmatched_facets.size(),
        static_cast<std::size_t>(num_facet_vertices + 1)});
+
   for (std::size_t c = 0; c < unmatched_facets.size(); ++c)
   {
     std::int32_t j = unmatched_facets[c];
     auto facetmap = xt::row(facet_cell_map, c);
     for (int i = 0; i < num_facet_vertices; i++)
-      facetmap[i] = cell_vertices[facets(j, i)];
-    facetmap[num_facet_vertices] = cells[j];
+      facetmap[i] = local_to_global[facets(j, i)];
+    facetmap[num_facet_vertices] = facet_cell[j];
   }
 
   // Get connection counts for each cell

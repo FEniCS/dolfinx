@@ -169,7 +169,8 @@ template <typename T, std::size_t d>
 std::vector<std::int32_t> sort_by_perm_impl(const xt::xtensor<T, 2>& array)
 {
   assert(array.shape(1) == d);
-  constexpr int set_size = sizeof(T) * d;
+  constexpr int int_size = sizeof(T) * 8;
+  constexpr int set_size = int_size * d;
   std::vector<std::bitset<set_size>> bit_array(array.shape(0));
 
   // Pack list of "d" ints into a bitset
@@ -178,7 +179,7 @@ std::vector<std::int32_t> sort_by_perm_impl(const xt::xtensor<T, 2>& array)
     for (std::size_t j = 0; j < d; j++)
     {
       std::bitset<set_size> bits = array(i, j);
-      bit_array[i] |= bits << (sizeof(T) * (d - j - 1));
+      bit_array[i] |= bits << (int_size * (d - j - 1));
     }
   }
 
@@ -202,6 +203,7 @@ std::vector<std::int32_t> sort_by_perm(const xt::xtensor<T, 2>& array)
   // Sort the list and label uniquely
   std::vector<std::int32_t> sort_order;
   const int num_vert = array.shape(1);
+
   switch (num_vert)
   {
   case 2:
