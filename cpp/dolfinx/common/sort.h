@@ -12,7 +12,6 @@
 #include <dolfinx/common/Timer.h>
 #include <numeric>
 #include <vector>
-#include <xtensor/xio.hpp>
 #include <xtensor/xtensor.hpp>
 #include <xtensor/xview.hpp>
 #include <xtl/xspan.hpp>

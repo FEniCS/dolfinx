@@ -318,10 +318,9 @@ mesh::build_local_dual_graph(const xtl::span<const std::int64_t>& cell_vertices,
   std::iota(perm.begin(), perm.end(), 0);
   dolfinx::argsort_radix<std::int64_t, 16>(cell_vertices, perm);
 
-  std::vector<std::int32_t> local_vertices(cell_vertices.size());
+  std::vector<std::int32_t> local_vertices(cell_vertices.size(), 0);
   std::int32_t id = 0;
-  local_vertices[perm[0]] = id;
-  for (std::size_t i = 1; i < local_vertices.size(); i++)
+  for (std::size_t i = 1; i < local_vertices.size(); ++i)
   {
     if (cell_vertices[perm[i - 1]] != cell_vertices[perm[i]])
       id++;
