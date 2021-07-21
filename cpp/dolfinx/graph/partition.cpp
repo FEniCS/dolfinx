@@ -23,9 +23,6 @@ graph::partition_graph(MPI_Comm comm, int nparts,
                        const AdjacencyList<std::int64_t>& local_graph,
                        std::int32_t num_ghost_nodes, bool ghosting)
 {
-  // return graph::kahip::partitioner()(comm, nparts, local_graph,
-  // num_ghost_nodes,
-  //                                    ghosting);
   return graph::scotch::partitioner()(comm, nparts, local_graph,
                                       num_ghost_nodes, ghosting);
 }
