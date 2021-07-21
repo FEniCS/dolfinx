@@ -9,8 +9,11 @@
 #include <algorithm>
 #include <bitset>
 #include <cstdint>
+#include <dolfinx/common/Timer.h>
 #include <numeric>
 #include <vector>
+#include <xtensor/xtensor.hpp>
+#include <xtensor/xview.hpp>
 #include <xtl/xspan.hpp>
 
 namespace dolfinx
@@ -90,26 +93,36 @@ void radix_sort(xtl::span<T> array)
 /// @tparam BITS The number of bits to sort at a time.
 /// @param[in] array The array to sort.
 /// Returns Vector of indices that sort the input array.
-template <int N, int BITS = 8>
-std::vector<std::int32_t>
-argsort_radix(const xtl::span<const std::bitset<N>>& array)
+template <typename T, int BITS = 16>
+void argsort_radix(const xtl::span<const T>& array,
+                   xtl::span<std::int32_t> perm)
 {
-  std::vector<std::int32_t> perm1(array.size());
-  std::iota(perm1.begin(), perm1.end(), 0);
   if (array.size() <= 1)
-    return perm1;
+    return;
 
+  const auto [min, max] = std::minmax_element(array.begin(), array.end());
+  T range = *max - *min + 1;
+
+  // Sort N bits at a time
   constexpr int bucket_size = 1 << BITS;
-  constexpr int its = N / BITS;
-  std::bitset<N> mask = (1 << BITS) - 1;
+  T mask = (T(1) << BITS) - 1;
   std::int32_t mask_offset = 0;
+
+  // Compute number of iterations, most significant digit (N bits) of
+  // maxvalue
+  int its = 0;
+  while (range)
+  {
+    range >>= BITS;
+    its++;
+  }
 
   // Adjacency list arrays for computing insertion position
   std::array<std::int32_t, bucket_size> counter;
   std::array<std::int32_t, bucket_size + 1> offset;
 
-  std::vector<std::int32_t> perm2 = perm1;
-  xtl::span<std::int32_t> current_perm = perm1;
+  std::vector<std::int32_t> perm2(perm.size());
+  xtl::span<std::int32_t> current_perm = perm;
   xtl::span<std::int32_t> next_perm = perm2;
   for (int i = 0; i < its; i++)
   {
@@ -119,8 +132,8 @@ argsort_radix(const xtl::span<const std::bitset<N>>& array)
     // Count number of elements per bucket
     for (auto cp : current_perm)
     {
-      auto set = (array[cp] & mask) >> mask_offset;
-      auto bucket = set.to_ulong();
+      T value = array[cp] - *min;
+      std::int32_t bucket = (value & mask) >> mask_offset;
       counter[bucket]++;
     }
 
@@ -131,8 +144,8 @@ argsort_radix(const xtl::span<const std::bitset<N>>& array)
     // Sort py permutation
     for (auto cp : current_perm)
     {
-      auto set = (array[cp] & mask) >> mask_offset;
-      auto bucket = set.to_ulong();
+      T value = array[cp] - *min;
+      std::int32_t bucket = (value & mask) >> mask_offset;
       std::int32_t pos = offset[bucket + 1] - counter[bucket];
       next_perm[pos] = cp;
       counter[bucket]--;
@@ -144,9 +157,30 @@ argsort_radix(const xtl::span<const std::bitset<N>>& array)
     mask_offset += BITS;
   }
 
-  if (its % 2 == 0)
-    return perm1;
-  else
-    return perm2;
+  if (its % 2 == 1)
+    std::copy(perm2.begin(), perm2.end(), perm.begin());
 }
+
+template <typename T, int BITS = 16>
+std::vector<std::int32_t> sort_by_perm(const xt::xtensor<T, 2>& array)
+{
+  // Sort the list and label uniquely
+  const int cols = array.shape(1);
+  const int size = array.shape(0);
+  std::vector<std::int32_t> perm(size);
+  std::iota(perm.begin(), perm.end(), 0);
+
+  // Sort each column at a time from right to left.
+  // Col 0 has the most signficant "digit".
+  for (int i = 0; i < cols; i++)
+  {
+    int col = cols - 1 - i;
+    xt::xtensor<std::int32_t, 1> column = xt::view(array, xt::all(), col);
+    argsort_radix<std::int32_t, BITS>(xtl::span<const std::int32_t>(column),
+                                      perm);
+  }
+
+  return perm;
+}
+
 } // namespace dolfinx

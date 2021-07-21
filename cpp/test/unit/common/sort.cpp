@@ -41,34 +41,22 @@ TEST_CASE("Test argsort bitset")
   auto generator = std::bind(distribution, engine);
   std::generate(arr.begin(), arr.end(), generator);
 
-  // Convert to bitset with 64 bits per element
-  int d = 2;
-  std::vector<std::bitset<64>> bit_array(size);
-
-  // Pack list of "d" ints into a bitset
-  for (std::size_t i = 0; i < arr.shape(0); i++)
-  {
-    for (std::size_t j = 0; j < d; j++)
-    {
-      std::bitset<64> bits = arr(i, j);
-      bit_array[i] |= bits << (32 * (d - j - 1));
-    }
-  }
-  std::vector<std::int32_t> perm
-      = dolfinx::argsort_radix<64, 8>(xtl::span<std::bitset<64>>(bit_array));
-  REQUIRE(perm.size() == bit_array.size());
+  std::vector<std::int32_t> perm = dolfinx::sort_by_perm(arr);
+  REQUIRE(perm.size() == arr.shape(0));
 
   // Sort by perm using to std::lexicographical_compare
   std::vector<int> index(arr.shape(0));
   std::iota(index.begin(), index.end(), 0);
-  std::sort(index.begin(), index.end(), [&arr](int a, int b) {
-    return std::lexicographical_compare(
-        xt::row(arr, a).begin(), xt::row(arr, a).end(), xt::row(arr, b).begin(),
-        xt::row(arr, b).end());
-  });
+  std::sort(index.begin(), index.end(),
+            [&arr](int a, int b)
+            {
+              return std::lexicographical_compare(
+                  xt::row(arr, a).begin(), xt::row(arr, a).end(),
+                  xt::row(arr, b).begin(), xt::row(arr, b).end());
+            });
 
   // Requiring equality of permutation vectors is not a good test, because
   // std::sort is not stable, so we compare the effect on the actual array.
-  for (int i = i; i < size; i++)
+  for (int i = i; i < perm.size(); i++)
     REQUIRE((xt::row(arr, perm[i]) == xt::row(arr, index[i])));
 }

@@ -49,35 +49,6 @@ int get_ownership(std::set<int>& processes, std::vector<std::int64_t>& vertices)
   int owner = p[index];
   return owner;
 }
-
-/// Takes an array and computes the sort permutation that would reorder
-/// the rows in ascending order
-/// @tparam The length of each row of @p array
-/// @param[in] array The input array
-/// @return The permutation vector that would order the rows in
-/// ascending order
-/// @pre Each row of @p array must be sorted
-template <std::size_t d>
-std::vector<std::int32_t>
-sort_by_perm(const xt::xtensor<std::int32_t, 2>& array)
-{
-  assert(array.shape(1) == d);
-  constexpr int set_size = 32 * d;
-  std::vector<std::bitset<set_size>> bit_array(array.shape(0));
-
-  // Pack list of "d" ints into a bitset
-  for (std::size_t i = 0; i < array.shape(0); i++)
-  {
-    for (std::size_t j = 0; j < d; j++)
-    {
-      std::bitset<set_size> bits = array(i, j);
-      bit_array[i] |= bits << (32 * (d - j - 1));
-    }
-  }
-
-  // This function creates a 2**16 temporary array (buckets)
-  return dolfinx::argsort_radix<set_size, 16>(bit_array);
-}
 //-----------------------------------------------------------------------------
 
 /// Communicate with sharing processes to find out which entities are
@@ -469,22 +440,8 @@ compute_entities_by_key_matching(
   }
 
   // Sort the list and label uniquely
-  std::vector<std::int32_t> sort_order;
-  const int num_vert = entity_list_sorted.shape(1);
-  switch (num_vert)
-  {
-  case 2:
-    sort_order = sort_by_perm<2>(entity_list_sorted);
-    break;
-  case 3:
-    sort_order = sort_by_perm<3>(entity_list_sorted);
-    break;
-  case 4:
-    sort_order = sort_by_perm<4>(entity_list_sorted);
-    break;
-  default:
-    break;
-  }
+  const std::vector<std::int32_t> sort_order
+      = dolfinx::sort_by_perm(entity_list_sorted);
 
   std::vector<std::int32_t> entity_index(entity_list.shape(0), 0);
   std::int32_t entity_count = 0;
