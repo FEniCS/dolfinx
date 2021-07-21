@@ -19,7 +19,7 @@ using namespace dolfinx;
 
 //-----------------------------------------------------------------------------
 graph::AdjacencyList<std::int32_t>
-graph::partition_graph(const MPI_Comm comm, int nparts,
+graph::partition_graph(MPI_Comm comm, int nparts,
                        const AdjacencyList<std::int64_t>& local_graph,
                        std::int32_t num_ghost_nodes, bool ghosting)
 {
