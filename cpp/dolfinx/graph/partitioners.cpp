@@ -80,27 +80,41 @@ graph::AdjacencyList<std::int32_t> compute_destination_ranks(
     }
   }
 
-  // Do halo exchange of node partition data
-  std::vector<std::vector<std::int64_t>> send_node_partition(size);
+  // Loop over each halo node and count number of values to be sent to
+  // each rank
+  std::vector<std::int32_t> count(size, 0);
+  for (const auto& halo_node : halo_node_to_remotes)
+  {
+    for (auto rank : halo_node.second)
+      count[rank] += 2;
+  }
+
+  // Compute displacement (offsets)
+  std::vector<std::int32_t> disp(size + 1, 0);
+  std::partial_sum(count.begin(), count.end(), std::next(disp.begin()));
+
+  // Pack send data for exchanging node partition data
+  graph::AdjacencyList<std::int64_t> send_node_partition(
+      std::vector<std::int64_t>(disp.back()), disp);
+  std::vector<std::int32_t> pos(size, 0);
   for (const auto& halo_node : halo_node_to_remotes)
   {
     const std::int32_t node_index = halo_node.first;
-    std::for_each(halo_node.second.cbegin(), halo_node.second.cend(),
-                  [&send_node_partition, &part, node_index, range0](auto proc)
-                  {
-                    assert(static_cast<std::size_t>(proc)
-                           < send_node_partition.size());
-                    // (0) global node index and (1) partitioning
-                    send_node_partition[proc].push_back(node_index + range0);
-                    send_node_partition[proc].push_back(part[node_index]);
-                  });
+    std::for_each(
+        halo_node.second.cbegin(), halo_node.second.cend(),
+        [&send_node_partition, &pos, &part, node_index, range0](auto rank)
+        {
+          assert(rank < send_node_partition.num_nodes());
+          // (0) global node index and (1) partitioning
+          auto dests = send_node_partition.links(rank);
+          dests[pos[rank]++] = node_index + range0;
+          dests[pos[rank]++] = part[node_index];
+        });
   }
 
-  // Actual halo exchange
+  // Do halo exchange
   const std::vector<std::int64_t> recv_node_partition
-      = dolfinx::MPI::all_to_all(
-            comm, graph::AdjacencyList<std::int64_t>(send_node_partition))
-            .array();
+      = dolfinx::MPI::all_to_all(comm, send_node_partition).array();
 
   // Construct a map from all currently foreign nodes to their new
   // partition number
