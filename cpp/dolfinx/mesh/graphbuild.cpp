@@ -276,7 +276,7 @@ compute_nonlocal_dual_graph(
 
 //-----------------------------------------------------------------------------
 std::pair<graph::AdjacencyList<std::int64_t>, std::array<std::int32_t, 2>>
-mesh::build_dual_graph(const MPI_Comm mpi_comm,
+mesh::build_dual_graph(const MPI_Comm comm,
                        const graph::AdjacencyList<std::int64_t>& cell_vertices,
                        int tdim)
 {
@@ -288,7 +288,7 @@ mesh::build_dual_graph(const MPI_Comm mpi_comm,
 
   // Compute nonlocal part
   auto [graph, num_ghost_nodes] = compute_nonlocal_dual_graph(
-      mpi_comm, cell_vertices.num_nodes(), facet_cell_map, local_graph);
+      comm, cell_vertices.num_nodes(), facet_cell_map, local_graph);
 
   LOG(INFO) << "Graph edges (local:" << local_graph.offsets().back()
             << ", non-local:"

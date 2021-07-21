@@ -162,7 +162,7 @@ common::stack_index_maps(
 {
   // Compute process offset
   const std::int64_t process_offset = std::accumulate(
-      maps.cbegin(), maps.cend(), static_cast<std::int64_t>(0),
+      maps.cbegin(), maps.cend(), std::int64_t(0),
       [](std::int64_t c, auto& map) -> std::int64_t
       { return c + map.first.get().local_range()[0] * map.second; });
 

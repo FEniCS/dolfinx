@@ -411,8 +411,8 @@ void write_function(
     }
   }
   // Get MPI comm
-  const MPI_Comm mpi_comm = mesh->mpi_comm();
-  const int mpi_rank = dolfinx::MPI::rank(mpi_comm);
+  const MPI_Comm comm = mesh->mpi_comm();
+  const int mpi_rank = dolfinx::MPI::rank(comm);
   boost::filesystem::path p(filename);
 
   // Get the PVD "Collection" node
@@ -691,7 +691,7 @@ void write_function(
       }
 
       // Add data for each process to the PVTU object
-      const int mpi_size = dolfinx::MPI::size(mpi_comm);
+      const int mpi_size = dolfinx::MPI::size(comm);
       for (int i = 0; i < mpi_size; ++i)
       {
         boost::filesystem::path vtu = p.stem();

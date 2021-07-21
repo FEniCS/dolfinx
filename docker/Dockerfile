@@ -8,15 +8,15 @@
 #
 # To run a nightly build:
 #
-#    docker run -ti dolfinx/dolfinx
+#    docker run -ti dolfinx/dolfinx:latest
 #
 # To run a Jupyter lab session:
 #
-#    docker run --init -p 8888:8888 dolfinx/lab
+#    docker run --init -p 8888:8888 dolfinx/lab:latest
 #
 # To run and share the current host directory with the container:
 #
-#    docker run --init -p 8888:8888 -v "$(pwd)":/root/shared dolfinx/lab
+#    docker run --init -p 8888:8888 -v "$(pwd)":/root/shared dolfinx/lab:latest
 #
 # To build from source, first checkout the DOLFINx, FFCx, Basix and UFL
 # repositories into the working directory, e.g.:
@@ -26,8 +26,8 @@
 #
 # Then run the commands:
 #
-#    docker pull dolfinx/dolfinx-onbuild
-#    echo "FROM dolfinx/dolfinx-onbuild" | docker build -f- .
+#    docker pull dolfinx/dolfinx-onbuild:latest
+#    echo "FROM dolfinx/dolfinx-onbuild:latest" | docker build -f- .
 #
 # You can build an optimised version of the complete FEniCS environment for
 # your platform using the commands:

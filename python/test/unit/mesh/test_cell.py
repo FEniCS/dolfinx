@@ -60,7 +60,7 @@ def test_distance_tetrahedron():
 @pytest.mark.skip("volume_entities needs fixing")
 @pytest.mark.parametrize(
     'mesh', [
-        UnitIntervalMesh(MPI.COMM_WORLD, 8),
+        UnitIntervalMesh(MPI.COMM_WORLD, 18),
         UnitSquareMesh(MPI.COMM_WORLD, 8, 9, CellType.triangle),
         UnitSquareMesh(MPI.COMM_WORLD, 8, 9, CellType.quadrilateral),
         UnitCubeMesh(MPI.COMM_WORLD, 8, 9, 5, CellType.tetrahedron)

@@ -319,25 +319,25 @@ refinement::partition(const mesh::Mesh& old_mesh,
                              old_mesh.geometry().cmap(), new_coords, gm);
   }
 
-  auto partitioner = [](MPI_Comm mpi_comm, int, int tdim,
+  auto partitioner = [](MPI_Comm comm, int, int tdim,
                         const graph::AdjacencyList<std::int64_t>& cell_topology,
                         mesh::GhostMode)
   {
     // Find out the ghosting information
-    auto [graph, info] = mesh::build_dual_graph(mpi_comm, cell_topology, tdim);
+    auto [graph, info] = mesh::build_dual_graph(comm, cell_topology, tdim);
 
     // FIXME: much of this is reverse engineering of data that is already
     // known in the GraphBuilder
 
-    const int mpi_size = MPI::size(mpi_comm);
-    const int mpi_rank = MPI::rank(mpi_comm);
+    const int mpi_size = MPI::size(comm);
+    const int mpi_rank = MPI::rank(comm);
     const std::int32_t local_size = graph.num_nodes();
     std::vector<std::int32_t> local_sizes(mpi_size);
     std::vector<std::int64_t> local_offsets(mpi_size + 1);
 
     // Get the "local range" for all processes
     MPI_Allgather(&local_size, 1, MPI_INT32_T, local_sizes.data(), 1,
-                  MPI_INT32_T, mpi_comm);
+                  MPI_INT32_T, comm);
     for (int i = 0; i < mpi_size; ++i)
       local_offsets[i + 1] = local_offsets[i] + local_sizes[i];
 
