@@ -19,7 +19,7 @@ assert (tempdir)
 
 
 @pytest.mark.parametrize("partitioner", [partition_cells_graph])
-@pytest.mark.parametrize("Nx", [2, 5, 10])
+@pytest.mark.parametrize("Nx", [5, 10])
 @pytest.mark.parametrize("cell_type", [CellType.tetrahedron, CellType.hexahedron])
 def test_partition_box_mesh(partitioner, Nx, cell_type):
     mesh = dolfinx.BoxMesh(MPI.COMM_WORLD, [np.array([0, 0, 0]),

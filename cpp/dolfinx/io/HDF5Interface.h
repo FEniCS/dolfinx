@@ -26,11 +26,11 @@ class HDF5Interface
 #define HDF5_FAIL -1
 public:
   /// Open HDF5 and return file descriptor
-  /// @param[in] mpi_comm MPI communicator
+  /// @param[in] comm MPI communicator
   /// @param[in] filename Name of the HDF5 file to open
   /// @param[in] mode Mode in which to open the file (w, r, a)
   /// @param[in] use_mpi_io True if MPI-IO should be used
-  static hid_t open_file(MPI_Comm mpi_comm, const std::string& filename,
+  static hid_t open_file(MPI_Comm comm, const std::string& filename,
                          const std::string& mode, const bool use_mpi_io);
 
   /// Close HDF5 file
