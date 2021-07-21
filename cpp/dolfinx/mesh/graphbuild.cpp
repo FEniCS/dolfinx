@@ -482,9 +482,14 @@ mesh::build_local_dual_graph(const xtl::span<const std::int64_t>& cell_vertices,
   {
     std::int32_t j = unmatched_facets[c];
     auto facetmap = xt::row(facet_cell_map, c);
-    for (int i = 0; i < num_facet_vertices; i++)
-      facetmap[i] = local_to_global[facets(j, i)];
     facetmap[num_facet_vertices] = facet_cell[j];
+    for (int i = 0; i < num_facet_vertices; i++)
+    {
+      if (facets(j, i) <= id)
+        facetmap[i] = local_to_global[facets(j, i)];
+      else
+        facetmap[i] = std::numeric_limits<std::int64_t>::max();
+    }
   }
 
   // Get connection counts for each cell
