@@ -19,7 +19,6 @@
 #include <xtensor/xview.hpp>
 
 using namespace dolfinx;
-
 namespace
 {
 //-----------------------------------------------------------------------------
@@ -331,7 +330,7 @@ mesh::build_local_dual_graph(const xtl::span<const std::int64_t>& cell_vertices,
 
   // Compute local to global map
   std::vector<int32_t> local_to_global(id + 1);
-  for (std::size_t i = 1; i < local_vertices.size(); i++)
+  for (std::size_t i = 0; i < local_vertices.size(); i++)
     local_to_global[local_vertices[i]] = cell_vertices[i];
 
   // Count number of cells of each type, based on the number of vertices
