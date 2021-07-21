@@ -507,9 +507,9 @@ std::vector<typename U::scalar_type> pack_constants(const U& u)
       = u.constants();
 
   // Calculate size of array needed to store packed constants
-  std::int32_t size = std::reduce(constants.begin(), constants.end(), 0,
-                                  [](std::int32_t sum, const auto& constant)
-                                  { return sum + constant->value.size(); });
+  std::int32_t size = std::accumulate(constants.begin(), constants.end(), 0,
+                                      [](std::int32_t sum, const auto& constant)
+                                      { return sum + constant->value.size(); });
 
   // Pack constants
   std::vector<T> constant_values(size);
