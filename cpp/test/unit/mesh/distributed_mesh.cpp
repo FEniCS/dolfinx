@@ -10,7 +10,7 @@
 #include <catch.hpp>
 #include <dolfinx.h>
 #include <dolfinx/common/MPI.h>
-#include <dolfinx/graph/kahip.h>
+#include <dolfinx/graph/partitioners.h>
 #include <dolfinx/io/XDMFFile.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <dolfinx/mesh/graphbuild.h>
