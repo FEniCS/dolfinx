@@ -230,6 +230,7 @@ def test_GetCoordinates():
     assert len(mesh.geometry.x) == 36
 
 
+@pytest.mark.skip("Needs to be re-implemented")
 @skip_in_parallel
 def test_cell_inradius(c0, c1, c5):
     assert cpp.mesh.inradius(c0[0], [c0[2]]) == pytest.approx((3.0 - math.sqrt(3.0)) / 6.0)
