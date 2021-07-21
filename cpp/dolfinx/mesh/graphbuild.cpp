@@ -15,10 +15,10 @@
 #include <utility>
 #include <vector>
 #include <xtensor/xadapt.hpp>
-#include <xtensor/xio.hpp>
 #include <xtensor/xview.hpp>
 
 using namespace dolfinx;
+
 namespace
 {
 //-----------------------------------------------------------------------------
@@ -418,8 +418,7 @@ mesh::build_local_dual_graph(const xtl::span<const std::int64_t>& cell_vertices,
 
       // Get list of facet vertices
       auto facet_vertices = cell_facets.links(j);
-      assert(facet_vertices.size()
-             <= static_cast<std::size_t>(num_facet_vertices));
+      assert(facet_vertices.size() <= std::size_t(num_facet_vertices));
       std::transform(facet_vertices.cbegin(), facet_vertices.cend(),
                      facet.begin(),
                      [&local_vertices, offset = cell_offsets[i]](auto fv)
