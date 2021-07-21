@@ -254,6 +254,7 @@ def test_cell_h(c0, c1, c5):
         assert cpp.mesh.h(c[0], c[1], [c[2]]) == pytest.approx(math.sqrt(2.0))
 
 
+@pytest.mark.skip("Needs to be re-implemented")
 @skip_in_parallel
 def test_cell_radius_ratio(c0, c1, c5):
     assert cpp.mesh.radius_ratio(c0[0], c0[2]) == pytest.approx(math.sqrt(3.0) - 1.0)
