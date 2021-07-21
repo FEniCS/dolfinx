@@ -99,7 +99,7 @@ std::vector<T> get_dataset(MPI_Comm comm, const pugi::xml_node& dataset_node,
       else if (!shape_xml.empty() and shape_hdf5.size() == 1)
       {
         // Size of dims > 0
-        std::int64_t d = std::accumulate(shape_xml.begin(), shape_xml.end(), 1,
+        std::int64_t d = std::reduce(shape_xml.begin(), shape_xml.end(), 1,
                                          std::multiplies<std::int64_t>());
 
         // Check for data size consistency

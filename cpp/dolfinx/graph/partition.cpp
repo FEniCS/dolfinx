@@ -185,7 +185,6 @@ std::vector<std::int64_t> graph::build::compute_ghost_indices(
   for (int p : ghost_owners)
   {
     assert(p != mpi_rank);
-
     const auto [it, insert] = proc_to_neighbor.insert({p, np});
     if (insert)
     {
@@ -232,8 +231,8 @@ std::vector<std::int64_t> graph::build::compute_ghost_indices(
   std::vector<int> recv_offsets = {0};
   for (int q : recv_sizes)
     recv_offsets.push_back(recv_offsets.back() + q);
-  std::vector<std::int64_t> recv_data(recv_offsets.back());
 
+  std::vector<std::int64_t> recv_data(recv_offsets.back());
   MPI_Neighbor_alltoallv(send_data.data(), ghost_index_count.data(),
                          send_offsets.data(), MPI_INT64_T, recv_data.data(),
                          recv_sizes.data(), recv_offsets.data(), MPI_INT64_T,

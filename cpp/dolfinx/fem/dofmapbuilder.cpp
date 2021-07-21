@@ -315,7 +315,7 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
   }
 
   // Compute the number of dofs 'owned' by this process
-  const std::int32_t owned_size = std::accumulate(
+  const std::int32_t owned_size = std::reduce(
       dof_entity.begin(), dof_entity.end(), static_cast<std::int32_t>(0),
       [&offset = std::as_const(offset)](std::int32_t a, auto b)
       { return b.second < offset[b.first] ? a + 1 : a; });

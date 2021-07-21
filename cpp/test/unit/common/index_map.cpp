@@ -86,19 +86,19 @@ void test_scatter_rev()
 
   std::int64_t sum;
   CHECK(data_local.size() == n * size_local);
-  sum = std::accumulate(data_local.begin(), data_local.end(), 0);
+  sum = std::reduce(data_local.begin(), data_local.end(), 0);
   CHECK(sum == n * value * num_ghosts);
 
   idx_map.scatter_rev(xtl::span<std::int64_t>(data_local),
                       xtl::span<const std::int64_t>(data_ghost), n,
                       common::IndexMap::Mode::insert);
-  sum = std::accumulate(data_local.begin(), data_local.end(), 0);
+  sum = std::reduce(data_local.begin(), data_local.end(), 0);
   CHECK(sum == n * value * num_ghosts);
 
   idx_map.scatter_rev(xtl::span<std::int64_t>(data_local),
                       xtl::span<const std::int64_t>(data_ghost), n,
                       common::IndexMap::Mode::add);
-  sum = std::accumulate(data_local.begin(), data_local.end(), 0);
+  sum = std::reduce(data_local.begin(), data_local.end(), 0);
   CHECK(sum == 2 * n * value * num_ghosts);
 }
 } // namespace

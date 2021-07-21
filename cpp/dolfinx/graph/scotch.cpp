@@ -43,10 +43,10 @@ graph::scotch::compute_reordering(const AdjacencyList<std::int32_t>& graph,
   const SCOTCH_Num vertnbr = graph.num_nodes();
 
   // Copy graph into array with SCOTCH_Num types
-  const std::vector<std::int32_t>& data = graph.array();
-  const std::vector<std::int32_t>& offsets = graph.offsets();
-  const std::vector<SCOTCH_Num> verttab(offsets.begin(), offsets.end());
-  const std::vector<SCOTCH_Num> edgetab(data.begin(), data.end());
+  const std::vector<SCOTCH_Num> verttab(graph.offsets().begin(),
+                                        graph.offsets().end());
+  const std::vector<SCOTCH_Num> edgetab(graph.array().begin(),
+                                        graph.array().end());
 
   // Create SCOTCH graph
   SCOTCH_Graph scotch_graph;
@@ -83,19 +83,16 @@ graph::scotch::compute_reordering(const AdjacencyList<std::int32_t>& graph,
   if (!scotch_strategy.empty())
     SCOTCH_stratGraphOrder(&strat, scotch_strategy.c_str());
 
-  // Vector to hold permutation vectors
-  std::vector<SCOTCH_Num> permutation_indices(vertnbr);
-  std::vector<SCOTCH_Num> inverse_permutation_indices(vertnbr);
-
   // Reset SCOTCH random number generator to produce deterministic
   // partitions
   SCOTCH_randomReset();
 
   // Compute re-ordering
+  std::vector<SCOTCH_Num> perm(vertnbr);
+  std::vector<SCOTCH_Num> inv_perm(vertnbr);
   common::Timer timer2("SCOTCH: call SCOTCH_graphOrder");
-  if (SCOTCH_graphOrder(&scotch_graph, &strat, permutation_indices.data(),
-                        inverse_permutation_indices.data(), nullptr, nullptr,
-                        nullptr))
+  if (SCOTCH_graphOrder(&scotch_graph, &strat, perm.data(), inv_perm.data(),
+                        nullptr, nullptr, nullptr))
   {
     throw std::runtime_error("Error during SCOTCH re-ordering");
   }
@@ -105,15 +102,8 @@ graph::scotch::compute_reordering(const AdjacencyList<std::int32_t>& graph,
   SCOTCH_graphExit(&scotch_graph);
   SCOTCH_stratExit(&strat);
 
-  // Copy permutation vectors
-  std::vector<int> permutation(vertnbr);
-  std::vector<int> inverse_permutation(vertnbr);
-  std::copy(permutation_indices.begin(), permutation_indices.end(),
-            permutation.begin());
-  std::copy(inverse_permutation_indices.begin(),
-            inverse_permutation_indices.end(), inverse_permutation.begin());
-
-  return {std::move(permutation), std::move(inverse_permutation)};
+  return {std::vector<int>(perm.begin(), perm.end()),
+          std::vector<int>(inv_perm.begin(), inv_perm.end())};
 }
 //-----------------------------------------------------------------------------
 graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
