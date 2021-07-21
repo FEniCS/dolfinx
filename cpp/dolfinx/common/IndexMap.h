@@ -74,7 +74,7 @@ public:
   /// Create an index map with local_size owned indiced on this process
   ///
   /// @note Collective
-  /// @param[in] comm The MPI communicator
+  /// @param[in] mpi_comm The MPI communicator
   /// @param[in] local_size Local size of the IndexMap, i.e. the number
   /// of owned entries
   /// @param[in] dest_ranks Ranks that 'ghost' indices that are owned by
@@ -83,7 +83,7 @@ public:
   /// @param[in] ghosts The global indices of ghost entries
   /// @param[in] src_ranks Owner rank (on global communicator) of each
   /// entry in @p ghosts
-  IndexMap(MPI_Comm comm, std::int32_t local_size,
+  IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
            const xtl::span<const int>& dest_ranks,
            const xtl::span<const std::int64_t>& ghosts,
            const xtl::span<const int>& src_ranks);

@@ -42,7 +42,7 @@ namespace kahip
 /// @param[in] suppress_output Suppresses KaHIP output if true
 /// @return A KaHIP graph partitioning function with specified parameter
 /// options
-graph::partition_fn partitioner(int mode = 1, int seed = 0,
+graph::partition_fn partitioner(int mode = 1, int seed = 1,
                                 double imbalance = 0.03,
                                 bool suppress_output = true);
 

@@ -311,7 +311,7 @@ IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size)
   _shared_indices = std::make_unique<graph::AdjacencyList<std::int32_t>>(0);
 }
 //-----------------------------------------------------------------------------
-IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size,
+IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
                    const xtl::span<const int>& dest_ranks,
                    const xtl::span<const std::int64_t>& ghosts,
                    const xtl::span<const int>& src_ranks)
@@ -320,19 +320,19 @@ IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size,
 {
   assert(size_t(ghosts.size()) == src_ranks.size());
   assert(std::equal(src_ranks.begin(), src_ranks.end(),
-                    get_ghost_ranks(comm, local_size, _ghosts).begin()));
+                    get_ghost_ranks(mpi_comm, local_size, _ghosts).begin()));
 
   // Get global offset (index), using partial exclusive reduction
   std::int64_t offset = 0;
   const std::int64_t local_size_tmp = (std::int64_t)local_size;
   MPI_Request request_scan;
-  MPI_Iexscan(&local_size_tmp, &offset, 1, MPI_INT64_T, MPI_SUM, comm,
+  MPI_Iexscan(&local_size_tmp, &offset, 1, MPI_INT64_T, MPI_SUM, mpi_comm,
               &request_scan);
 
   // Send local size to sum reduction to get global size
   MPI_Request request;
-  MPI_Iallreduce(&local_size_tmp, &_size_global, 1, MPI_INT64_T, MPI_SUM, comm,
-                 &request);
+  MPI_Iallreduce(&local_size_tmp, &_size_global, 1, MPI_INT64_T, MPI_SUM,
+                 mpi_comm, &request);
 
   // Build vector of src ranks for ghosts, i.e. the ranks that own the
   // callers ghosts
@@ -353,22 +353,22 @@ IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size,
 
     MPI_Comm comm0;
     MPI_Dist_graph_create_adjacent(
-        comm, halo_src_ranks.size(), halo_src_ranks.data(), weights.data(),
+        mpi_comm, halo_src_ranks.size(), halo_src_ranks.data(), weights.data(),
         dest_ranks.size(), dest_ranks.data(), weights.data(), MPI_INFO_NULL,
         false, &comm0);
     _comm_owner_to_ghost = dolfinx::MPI::Comm(comm0, false);
 
     MPI_Comm comm1;
-    MPI_Dist_graph_create_adjacent(comm, dest_ranks.size(), dest_ranks.data(),
-                                   weights.data(), halo_src_ranks.size(),
-                                   halo_src_ranks.data(), weights.data(),
-                                   MPI_INFO_NULL, false, &comm1);
+    MPI_Dist_graph_create_adjacent(
+        mpi_comm, dest_ranks.size(), dest_ranks.data(), weights.data(),
+        halo_src_ranks.size(), halo_src_ranks.data(), weights.data(),
+        MPI_INFO_NULL, false, &comm1);
     _comm_ghost_to_owner = dolfinx::MPI::Comm(comm1, false);
   }
 
   // Map ghost owner rank to the rank on neighborhood communicator
   int myrank = -1;
-  MPI_Comm_rank(comm, &myrank);
+  MPI_Comm_rank(mpi_comm, &myrank);
   std::vector<std::int32_t> ghost_owners(ghosts.size());
   std::transform(src_ranks.cbegin(), src_ranks.cend(), ghost_owners.begin(),
                  [&halo_src_ranks, myrank](auto src)

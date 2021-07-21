@@ -326,6 +326,7 @@ graph::kahip::partitioner(int mode, int seed, double imbalance,
                            std::int32_t, bool ghosting)
   {
     LOG(INFO) << "Compute graph partition using (parallel) KaHIP";
+
     common::Timer timer("Compute graph partition (KaHIP)");
 
     // Graph does not have vertex or adjacency weights, so we use null
