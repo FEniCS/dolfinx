@@ -223,6 +223,13 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
     const std::int32_t vertgstnbr = vertlocnbr + num_ghost_nodes;
     std::vector<SCOTCH_Num> cell_partition(std::max(1, vertgstnbr), 0);
 
+    if (dolfinx::MPI::rank(mpi_comm) == 0)
+    {
+      std::cout << "SCOTCH Strategy:";
+      SCOTCH_stratSave(&strat, stdout);
+      std::cout << "\n";
+    }
+
     // Partition the graph
     common::Timer timer2("SCOTCH: call SCOTCH_dgraphPart");
     if (SCOTCH_dgraphPart(&dgrafdat, nparts, &strat, cell_partition.data()))
