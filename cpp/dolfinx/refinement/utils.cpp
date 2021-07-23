@@ -99,8 +99,10 @@ xt::xtensor<double, 2> create_new_geometry(
     edges[i++] = e.first;
 
   const xt::xtensor<double, 2> midpoints = mesh::midpoints(mesh, 1, edges);
-  xt::view(new_vertex_coordinates, xt::range(-num_new_vertices, _), xt::all())
-      = midpoints;
+
+  auto _vertex = xt::view(new_vertex_coordinates,
+                          xt::range(-num_new_vertices, _), xt::all());
+  _vertex.assign(midpoints);
 
   const std::size_t gdim = mesh.geometry().dim();
   return xt::view(new_vertex_coordinates, xt::all(), xt::range(0, gdim));

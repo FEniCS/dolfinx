@@ -140,7 +140,9 @@ mesh::Mesh build_tri(MPI_Comm comm,
         xt::xtensor_fixed<std::size_t, xt::xshape<4, 3>> c
             = {{v0, v1, vmid}, {v0, v2, vmid}, {v1, v3, vmid}, {v2, v3, vmid}};
         std::size_t offset = iy * nx + ix;
-        xt::view(cells, xt::range(4 * offset, 4 * offset + 4), xt::all()) = c;
+        auto _cell
+            = xt::view(cells, xt::range(4 * offset, 4 * offset + 4), xt::all());
+        _cell.assign(c);
       }
     }
   }
@@ -178,7 +180,8 @@ mesh::Mesh build_tri(MPI_Comm comm,
         {
           xt::xtensor_fixed<std::size_t, xt::xshape<2, 3>> c
               = {{v0, v1, v2}, {v1, v2, v3}};
-          xt::view(cells, xt::range(2 * offset, 2 * offset + 2)) = c;
+          auto _cell = xt::view(cells, xt::range(2 * offset, 2 * offset + 2));
+          _cell.assign(c);
           if (diagonal == "right/left" || diagonal == "left/right")
             local_diagonal = "right";
         }
@@ -186,7 +189,8 @@ mesh::Mesh build_tri(MPI_Comm comm,
         {
           xt::xtensor_fixed<std::size_t, xt::xshape<2, 3>> c
               = {{v0, v1, v3}, {v0, v2, v3}};
-          xt::view(cells, xt::range(2 * offset, 2 * offset + 2)) = c;
+          auto _cell = xt::view(cells, xt::range(2 * offset, 2 * offset + 2));
+          _cell.assign(c);
           if (diagonal == "right/left" || diagonal == "left/right")
             local_diagonal = "left";
         }
@@ -258,7 +262,8 @@ mesh::Mesh build_quad(MPI_Comm comm,
       std::size_t cell = ix * ny + iy;
       xt::xtensor_fixed<std::size_t, xt::xshape<4>> c
           = {i0 + iy, i0 + iy + 1, i0 + iy + ny + 1, i0 + iy + ny + 2};
-      xt::view(cells, cell, xt::all()) = c;
+      auto _cell = xt::view(cells, cell, xt::all());
+      _cell.assign(c);
     }
   }
 

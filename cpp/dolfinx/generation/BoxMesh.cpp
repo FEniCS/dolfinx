@@ -129,7 +129,8 @@ mesh::Mesh build_tet(MPI_Comm comm,
         = {{v0, v1, v3, v7}, {v0, v1, v7, v5}, {v0, v5, v7, v4},
            {v0, v3, v2, v7}, {v0, v6, v4, v7}, {v0, v2, v6, v7}};
     std::size_t offset = 6 * (i - range_c[0]);
-    xt::view(cells, xt::range(offset, offset + 6), xt::all()) = c;
+    auto _cell = xt::view(cells, xt::range(offset, offset + 6), xt::all());
+    _cell.assign(c);
   }
 
   fem::CoordinateElement element(mesh::CellType::tetrahedron, 1);
@@ -176,7 +177,8 @@ mesh::Mesh build_hex(MPI_Comm comm,
 
     xt::xtensor_fixed<std::int64_t, xt::xshape<8>> cell
         = {v0, v1, v2, v3, v4, v5, v6, v7};
-    xt::view(cells, i - range_c[0], xt::all()) = cell;
+    auto _cell = xt::view(cells, i - range_c[0], xt::all());
+    _cell.assign(cell);
   }
 
   fem::CoordinateElement element(mesh::CellType::hexahedron, 1);
