@@ -1,4 +1,4 @@
-# Copyright (C) 2019 Jorgen Dokken, Matthew Scroggs and Garth N. Wells
+# Copyright (C) 2021 Jorgen Dokken, Jack S. Hale, Matthew Scroggs and Garth N. Wells
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -118,7 +118,7 @@ def run_vector_test(mesh, V, degree):
 
 
 def run_dg_test(mesh, V, degree):
-    """ Manufactured Poisson problem, solving u = x[component]**n, where n is the
+    """Manufactured Poisson problem, solving u = x[component]**n, where n is the
     degree of the Lagrange function space.
     """
     u, v = TrialFunction(V), TestFunction(V)
@@ -186,6 +186,18 @@ def run_dg_test(mesh, V, degree):
 
     error = mesh.mpi_comm().allreduce(assemble_scalar(M), op=MPI.SUM)
     assert np.absolute(error) < 1.0e-14
+
+
+def test_biharmonic():
+    """Manufactured biharmonic problem, solved using Hellan-Herrmann-Johnson
+    (HHJ) mixed finite element method. Solving w(x) = (1 - cos(2*pi*x))*(1 -
+    cos(4*pi*y)) on \Omega = [-1, 1]^2 with w \in H^2_0(\Omega) (clamped)."""
+    mesh = UnitSquareMesh(MPI.COMM_WORLD, 10, 10)
+
+    element = ufl.MixedElement([ufl.FiniteElement("Regge", ufl.triangle, 1),
+                                ufl.FiniteElement("Lagrange", ufl.triangle, 2)])
+
+    V = FunctionSpace(mesh, element)
 
 
 def get_mesh(cell_type, datadir):
