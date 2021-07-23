@@ -194,7 +194,7 @@ def test_biharmonic():
     Solved using rotated Regge mixed finite element method. This is equivalent
     to the Helan-Herrmann-Johnson (HHJ) finite element method in
     two-dimensions. Solving w(x) = (1 - cos(2*pi*x))*(1 - cos(4*pi*y)) on
-    \Omega = [-1, 1]^2 with w \in H^2_0(\Omega)."""
+    Omega = [-1, 1]^2 with w in H^2_0(\Omega)."""
     # TODO: Move and scale domain. Extend to 3D. Boundary conditions. Solve.
     # TODO: Possible to do 'patch test' like other tests here?
     mesh = UnitSquareMesh(MPI.COMM_WORLD, 10, 10)
@@ -215,14 +215,16 @@ def test_biharmonic():
     # problem we require normal-normal continuity H (div div). Theorem 4.2 of
     # Lizao Li's PhD thesis shows that the latter space can be constructed by
     # the former through the action of the operator S:
-    def S(tau): return tau - ufl.Identity(2) * ufl.tr(tau)
+    def S(tau):
+        return tau - ufl.Identity(2) * ufl.tr(tau)
 
     sigma_S = S(sigma)
     tau_S = S(tau)
 
     # Normal-normal component of tensor field
     n = FacetNormal(mesh)
-    def tau_nn(tau_S): return ufl.dot(ufl.dot(tau_S('+'), n('+')), n('+'))
+    def tau_nn(tau_S):
+        return ufl.dot(ufl.dot(tau_S('+'), n('+')), n('+'))
 
     # Discrete duality inner product eq. 4.5 Lizao Li's PhD thesis
     # Exterior facet term dropped due to w \in H_0^2(\Omega).
@@ -234,8 +236,8 @@ def test_biharmonic():
     a = inner(sigma_S, tau_S) * dx - b(tau_S, u) - b(sigma_S, v)
     L = -inner(f, v) * dx
 
-    A = assemble_matrix(a) # noqa: F841
-    b = assemble_vector(L) # noqa: F841
+    A = assemble_matrix(a)  # noqa: F841
+    b = assemble_vector(L)  # noqa: F841
 
 
 def get_mesh(cell_type, datadir):
