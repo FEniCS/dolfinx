@@ -207,7 +207,7 @@ def test_biharmonic():
     tau, v = ufl.TestFunctions(V)
 
     x = ufl.SpatialCoordinate(mesh)
-    w_exact = (1 - ufl.cos(2 * ufl.pi * x[0])) * (1 - ufl.cos(4.0 * ufl.pi * x[1]))
+    w_exact = (1.0 - ufl.cos(2.0 * ufl.pi * x[0])) * (1 - ufl.cos(4.0 * ufl.pi * x[1]))
     f = div(grad(div(grad(w_exact))))
 
     # sigma and tau are tangential-tangential continuous according to the
