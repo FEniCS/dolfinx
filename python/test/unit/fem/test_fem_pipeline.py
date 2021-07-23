@@ -234,8 +234,8 @@ def test_biharmonic():
     a = inner(sigma_S, tau_S) * dx - b(tau_S, u) - b(sigma_S, v)
     L = -inner(f, v) * dx
 
-    A = assemble_matrix(a)
-    b = assemble_vector(L)
+    A = assemble_matrix(a) # noqa: F841
+    b = assemble_vector(L) # noqa: F841
 
 
 def get_mesh(cell_type, datadir):
