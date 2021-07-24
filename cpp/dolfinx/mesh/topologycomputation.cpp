@@ -288,15 +288,16 @@ get_local_indexing(
     }
     num_local = c;
 
-    for (std::size_t i = 0; i < local_index.size(); ++i)
-    {
-      // Unmapped global index (ghost)
-      if (local_index[i] == -1)
-      {
-        local_index[i] = c;
-        ++c;
-      }
-    }
+    std::transform(local_index.cbegin(), local_index.cend(),
+                   local_index.begin(),
+                   [&c](auto index)
+                   {
+                     if (index == -1)
+                       return c++;
+                     else
+                       return index;
+                   });
+
     assert(c == entity_count);
   }
 
@@ -316,9 +317,9 @@ get_local_indexing(
     // Send global indices for same entities that we sent before. This
     // uses the same pattern as before, so we can match up the received
     // data to the indices in recv_index
-    for (int np = 0; np < neighbor_size; ++np)
+    for (auto& indices : send_index)
     {
-      std::transform(send_index[np].cbegin(), send_index[np].cend(),
+      std::transform(indices.cbegin(), indices.cend(),
                      std::back_inserter(send_global_index_data),
                      [&local_index, num_local,
                       local_offset](std::int32_t index) -> std::int64_t
@@ -330,6 +331,7 @@ get_local_indexing(
                      });
       send_global_index_offsets.push_back(send_global_index_data.size());
     }
+
     const graph::AdjacencyList<std::int64_t> recv_data
         = dolfinx::MPI::neighbor_all_to_all(
             neighbor_comm,
@@ -370,8 +372,9 @@ get_local_indexing(
 
   // Map from initial numbering to new local indices
   std::vector<std::int32_t> new_entity_index(entity_index.size());
-  for (std::size_t i = 0; i < entity_index.size(); ++i)
-    new_entity_index[i] = local_index[entity_index[i]];
+  std::transform(entity_index.cbegin(), entity_index.cbegin(),
+                 new_entity_index.begin(),
+                 [&local_index](auto index) { return local_index[index]; });
 
   return {std::move(new_entity_index), index_map};
 }

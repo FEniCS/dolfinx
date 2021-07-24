@@ -89,17 +89,6 @@ int dolfinx::MPI::size(const MPI_Comm comm)
   return size;
 }
 //-----------------------------------------------------------------------------
-std::size_t dolfinx::MPI::global_offset(const MPI_Comm comm, std::size_t range,
-                                        bool exclusive)
-{
-  // Compute inclusive or exclusive partial reduction
-  std::size_t offset = 0;
-  MPI_Scan(&range, &offset, 1, mpi_type<std::size_t>(), MPI_SUM, comm);
-  if (exclusive)
-    offset -= range;
-  return offset;
-}
-//-----------------------------------------------------------------------------
 std::array<std::int64_t, 2> dolfinx::MPI::local_range(int rank, std::int64_t N,
                                                       int size)
 {
@@ -107,7 +96,7 @@ std::array<std::int64_t, 2> dolfinx::MPI::local_range(int rank, std::int64_t N,
   assert(N >= 0);
   assert(size > 0);
 
-  // Compute number of items per process and remainder
+  // Compute number of items per rank and remainder
   const std::int64_t n = N / size;
   const std::int64_t r = N % size;
 
@@ -122,15 +111,15 @@ int dolfinx::MPI::index_owner(int size, std::size_t index, std::size_t N)
 {
   assert(index < N);
 
-  // Compute number of items per process and remainder
+  // Compute number of items per rank and remainder
   const std::size_t n = N / size;
   const std::size_t r = N % size;
 
-  // First r processes own n + 1 indices
+  // First r ranks own n + 1 indices
   if (index < r * (n + 1))
     return index / (n + 1);
 
-  // Remaining processes own n indices
+  // Remaining ranks own n indices
   return r + (index - r * (n + 1)) / n;
 }
 //-----------------------------------------------------------------------------

@@ -105,11 +105,6 @@ public:
   static std::tuple<std::vector<int>, std::vector<int>>
   neighbors(MPI_Comm neighbor_comm);
 
-  /// Find global offset (index) (wrapper for MPI_(Ex)Scan with MPI_SUM
-  /// as reduction op)
-  static std::size_t global_offset(MPI_Comm comm, std::size_t range,
-                                   bool exclusive);
-
   /// Return local range for given process, splitting [0, N - 1] into
   /// size() portions of almost equal size
   /// @param[in] rank MPI rank of the caller
