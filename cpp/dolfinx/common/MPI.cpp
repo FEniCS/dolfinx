@@ -147,8 +147,11 @@ std::vector<int> dolfinx::MPI::compute_graph_edges(MPI_Comm comm,
 
   // Build list of rank that had an edge to me
   std::vector<int> edges1;
-  std::copy_if(in_edge_count.cbegin(), in_edge_count.cend(),
-               std::back_inserter(edges1), [](auto e) { return e > 0; });
+  for (std::size_t i = 0; i < in_edge_count.size(); ++i)
+  {
+    if (in_edge_count[i] > 0)
+      edges1.push_back(i);
+  }
   return edges1;
 }
 //-----------------------------------------------------------------------------
