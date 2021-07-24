@@ -36,8 +36,11 @@ graph::build::distribute(MPI_Comm comm,
   common::Timer timer("Distribute in graph creation AdjacencyList");
 
   assert(list.num_nodes() == (int)destinations.num_nodes());
-  const std::int64_t offset_global
-      = dolfinx::MPI::global_offset(comm, list.num_nodes(), true);
+
+  std::int64_t offset_global = 0;
+  const std::int64_t num_owned = list.num_nodes();
+  MPI_Exscan(&num_owned, &offset_global, 1,
+             dolfinx::MPI::mpi_type<std::int64_t>(), MPI_SUM, comm);
   const int size = dolfinx::MPI::size(comm);
 
   // Compute number of links to send to each process

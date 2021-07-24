@@ -100,10 +100,10 @@ std::size_t dolfinx::MPI::global_offset(const MPI_Comm comm, std::size_t range,
   return offset;
 }
 //-----------------------------------------------------------------------------
-std::array<std::int64_t, 2> dolfinx::MPI::local_range(int process,
-                                                      std::int64_t N, int size)
+std::array<std::int64_t, 2> dolfinx::MPI::local_range(int rank, std::int64_t N,
+                                                      int size)
 {
-  assert(process >= 0);
+  assert(rank >= 0);
   assert(N >= 0);
   assert(size > 0);
 
@@ -112,10 +112,10 @@ std::array<std::int64_t, 2> dolfinx::MPI::local_range(int process,
   const std::int64_t r = N % size;
 
   // Compute local range
-  if (process < r)
-    return {{process * (n + 1), process * (n + 1) + n + 1}};
+  if (rank < r)
+    return {{rank * (n + 1), rank * (n + 1) + n + 1}};
   else
-    return {{process * n + r, process * n + r + n}};
+    return {{rank * n + r, rank * n + r + n}};
 }
 //-----------------------------------------------------------------------------
 int dolfinx::MPI::index_owner(int size, std::size_t index, std::size_t N)

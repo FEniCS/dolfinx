@@ -112,7 +112,11 @@ public:
 
   /// Return local range for given process, splitting [0, N - 1] into
   /// size() portions of almost equal size
-  static std::array<std::int64_t, 2> local_range(int process, std::int64_t N,
+  /// @param[in] rank MPI rank of the caller
+  /// @param[in] N The value to partition
+  /// @param[in] size The number of MPI ranks across which to partition
+  /// `N`
+  static std::array<std::int64_t, 2> local_range(int rank, std::int64_t N,
                                                  int size);
 
   /// Return which process owns index (inverse of local_range)

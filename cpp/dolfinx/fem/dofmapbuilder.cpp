@@ -547,8 +547,10 @@ fem::build_dofmap_data(
       = compute_reordering_map(node_graph0, dof_entity0, topology, reorder_fn);
 
   // Compute process offset for owned nodes
-  const std::int64_t process_offset
-      = dolfinx::MPI::global_offset(comm, num_owned, true);
+  std::int64_t process_offset = 0;
+  const std::int64_t _num_owned = num_owned;
+  MPI_Exscan(&_num_owned, &process_offset, 1,
+             dolfinx::MPI::mpi_type<std::int64_t>(), MPI_SUM, comm);
 
   // Get global indices for unowned dofs
   const auto [local_to_global_unowned, local_to_global_owner]

@@ -73,8 +73,9 @@ fem::DofMap build_collapsed_dofmap(MPI_Comm comm, const DofMap& dofmap_view,
   const std::size_t num_unowned = std::distance(it_unowned0, dofs_view.end());
 
   // Get process offset for new dofmap
-  const std::int64_t process_offset
-      = dolfinx::MPI::global_offset(comm, num_owned, true);
+  std::size_t offset = 0;
+  MPI_Exscan(&num_owned, &offset, 1, dolfinx::MPI::mpi_type<std::size_t>(),
+             MPI_SUM, comm);
 
   // For owned dofs, compute new global index
   std::vector<std::int64_t> global_index(dofmap_view.index_map->size_local(),
@@ -83,7 +84,7 @@ fem::DofMap build_collapsed_dofmap(MPI_Comm comm, const DofMap& dofmap_view,
   {
     const std::size_t block = std::distance(dofs_view.begin(), it);
     const std::int32_t block_parent = *it / bs_view;
-    global_index[block_parent] = block + process_offset;
+    global_index[block_parent] = block + offset;
   }
 
   // Send new global indices for owned dofs to non-owning process, and
