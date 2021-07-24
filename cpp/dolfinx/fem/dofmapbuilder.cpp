@@ -546,6 +546,9 @@ fem::build_dofmap_data(
   const auto [old_to_new, num_owned]
       = compute_reordering_map(node_graph0, dof_entity0, topology, reorder_fn);
 
+  // FIXME: We can avoid the MPI_Exscan by counting the offsets for the
+  // owned mesh entities
+
   // Compute process offset for owned nodes
   std::int64_t process_offset = 0;
   const std::int64_t _num_owned = num_owned;

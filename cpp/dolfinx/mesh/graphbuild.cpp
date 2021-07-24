@@ -22,10 +22,12 @@ using namespace dolfinx;
 namespace
 {
 //-----------------------------------------------------------------------------
-// Build nonlocal part of dual graph for mesh and return number of
-// non-local edges. Note: GraphBuilder::compute_local_dual_graph should
-// be called before this function is called. Returns (ghost vertices,
-// num_nonlocal_edges)
+/// Build nonlocal part of dual graph for mesh and return number of
+/// non-local edges. Note: GraphBuilder::compute_local_dual_graph should
+/// be called before this function is called. Returns (ghost vertices,
+/// num_nonlocal_edges)
+/// @param[in] comm MPI communicator
+/// @param[in] num_local_cells MPI communicator
 std::pair<graph::AdjacencyList<std::int64_t>, std::int32_t>
 compute_nonlocal_dual_graph(
     const MPI_Comm comm, std::int32_t num_local_cells,
@@ -34,6 +36,9 @@ compute_nonlocal_dual_graph(
 {
   LOG(INFO) << "Build nonlocal part of mesh dual graph";
   common::Timer timer("Compute non-local part of mesh dual graph");
+
+  if (num_local_cells != local_graph.num_nodes())
+    throw std::runtime_error("size mismatch");
 
   // Get number of MPI processes, and return if mesh is not distributed
   const int num_processes = dolfinx::MPI::size(comm);
@@ -46,6 +51,15 @@ compute_nonlocal_dual_graph(
                 local_graph.offsets()),
             0};
   }
+
+  // Get cell offset for this process to create global numbering for
+  // cells
+  const std::int64_t num_local = num_local_cells;
+  std::int64_t cell_offset = 0;
+  MPI_Request request_cell_offset;
+  MPI_Iexscan(&num_local, &cell_offset, 1,
+              dolfinx::MPI::mpi_type<std::int64_t>(), MPI_SUM, comm,
+              &request_cell_offset);
 
   // Some processes may have empty map, so get max across all
   const std::int32_t num_vertices_local = facet_cell_map.shape(1) - 1;
@@ -78,12 +92,6 @@ compute_nonlocal_dual_graph(
 
   // Send facet-cell map to intermediary match-making processes
 
-  // Get cell offset for this process to create global numbering for cells
-  const std::int64_t num_local = num_local_cells;
-  std::int64_t cell_offset = 0;
-  MPI_Exscan(&num_local, &cell_offset, 1,
-             dolfinx::MPI::mpi_type<std::int64_t>(), MPI_SUM, comm);
-
   // Count number of item to send to each rank
   std::vector<int> p_count(num_processes, 0);
   for (std::size_t i = 0; i < facet_cell_map.shape(0); ++i)
@@ -100,6 +108,9 @@ compute_nonlocal_dual_graph(
                    std::next(offsets.begin(), 1));
   graph::AdjacencyList<std::int64_t> send_buffer(
       std::vector<std::int64_t>(offsets.back()), std::move(offsets));
+
+  // Wait for the MPI_Iexscan to complete
+  MPI_Wait(&request_cell_offset, MPI_STATUS_IGNORE);
 
   // Pack map data and send to match-maker process
   std::vector<int> pos(send_buffer.num_nodes(), 0);
@@ -123,7 +134,7 @@ compute_nonlocal_dual_graph(
   const int num_facets
       = recvd_buffer.array().size() / (num_vertices_per_facet + 1);
 
-  // Set up vector of owning processes for each received facet
+  // Build vector of owning processes for each received facet
   const std::vector<std::int32_t>& recvd_buffer_offsets
       = recvd_buffer.offsets();
   std::vector<int> proc(num_facets);
@@ -284,11 +295,12 @@ mesh::build_dual_graph(const MPI_Comm comm,
 {
   LOG(INFO) << "Build mesh dual graph";
 
-  // Compute local part of dual graph
+  // Compute local part of dual graph (cells are graph nodes, and edges
+  // are connections by facet)
   auto [local_graph, facet_cell_map] = mesh::build_local_dual_graph(
       cell_vertices.array(), cell_vertices.offsets(), tdim);
 
-  // Compute nonlocal part
+  // Extend with nonlocal edges and convert to global indices
   auto [graph, num_ghost_nodes] = compute_nonlocal_dual_graph(
       comm, cell_vertices.num_nodes(), facet_cell_map, local_graph);
 

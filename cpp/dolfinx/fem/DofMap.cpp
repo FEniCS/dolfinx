@@ -72,6 +72,9 @@ fem::DofMap build_collapsed_dofmap(MPI_Comm comm, const DofMap& dofmap_view,
   const std::size_t num_owned = std::distance(dofs_view.begin(), it_unowned0);
   const std::size_t num_unowned = std::distance(it_unowned0, dofs_view.end());
 
+  // FIXME: We can avoid the MPI_Exscan by counting the offsets for the
+  // owned mesh entities
+
   // Get process offset for new dofmap
   std::size_t offset = 0;
   MPI_Exscan(&num_owned, &offset, 1, dolfinx::MPI::mpi_type<std::size_t>(),
