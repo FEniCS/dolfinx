@@ -39,8 +39,11 @@ graph::build::distribute(MPI_Comm comm,
 
   std::int64_t offset_global = 0;
   const std::int64_t num_owned = list.num_nodes();
-  MPI_Exscan(&num_owned, &offset_global, 1,
-             dolfinx::MPI::mpi_type<std::int64_t>(), MPI_SUM, comm);
+  MPI_Request request_offset_scan;
+  MPI_Iexscan(&num_owned, &offset_global, 1,
+              dolfinx::MPI::mpi_type<std::int64_t>(), MPI_SUM, comm,
+              &request_offset_scan);
+
   const int size = dolfinx::MPI::size(comm);
 
   // Compute number of links to send to each process
@@ -67,6 +70,9 @@ graph::build::distribute(MPI_Comm comm,
   std::vector<int> disp_recv(size + 1, 0);
   std::partial_sum(num_per_dest_recv.begin(), num_per_dest_recv.end(),
                    disp_recv.begin() + 1);
+
+  // Complete global_offset scan
+  MPI_Wait(&request_offset_scan, MPI_STATUS_IGNORE);
 
   // Prepare send buffer
   std::vector<int> offset = disp_send;
@@ -174,8 +180,10 @@ std::vector<std::int64_t> graph::build::compute_ghost_indices(
       global_indices.begin() + num_local, global_indices.end());
 
   std::int64_t offset_local = 0;
-  MPI_Exscan(&num_local, &offset_local, 1,
-             dolfinx::MPI::mpi_type<std::int64_t>(), MPI_SUM, comm);
+  MPI_Request request_offset_scan;
+  MPI_Iexscan(&num_local, &offset_local, 1,
+              dolfinx::MPI::mpi_type<std::int64_t>(), MPI_SUM, comm,
+              &request_offset_scan);
 
   // Find out how many ghosts are on each neighboring process
   std::vector<int> ghost_index_count;
@@ -238,6 +246,9 @@ std::vector<std::int64_t> graph::build::compute_ghost_indices(
                          send_offsets.data(), MPI_INT64_T, recv_data.data(),
                          recv_sizes.data(), recv_offsets.data(), MPI_INT64_T,
                          neighbor_comm);
+
+  // Complete global_offset scan
+  MPI_Wait(&request_offset_scan, MPI_STATUS_IGNORE);
 
   // Replace values in recv_data with new_index and send back
   std::unordered_map<std::int64_t, std::int64_t> old_to_new;
