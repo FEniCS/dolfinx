@@ -372,7 +372,7 @@ get_local_indexing(
 
   // Map from initial numbering to new local indices
   std::vector<std::int32_t> new_entity_index(entity_index.size());
-  std::transform(entity_index.cbegin(), entity_index.cbegin(),
+  std::transform(entity_index.cbegin(), entity_index.cend(),
                  new_entity_index.begin(),
                  [&local_index](auto index) { return local_index[index]; });
 
