@@ -79,8 +79,10 @@ compute_nonlocal_dual_graph(
   // Send facet-cell map to intermediary match-making processes
 
   // Get cell offset for this process to create global numbering for cells
-  const std::int64_t cell_offset
-      = dolfinx::MPI::global_offset(comm, num_local_cells, true);
+  const std::int64_t num_local = num_local_cells;
+  std::int64_t cell_offset = 0;
+  MPI_Exscan(&num_local, &cell_offset, 1,
+             dolfinx::MPI::mpi_type<std::int64_t>(), MPI_SUM, comm);
 
   // Count number of item to send to each rank
   std::vector<int> p_count(num_processes, 0);

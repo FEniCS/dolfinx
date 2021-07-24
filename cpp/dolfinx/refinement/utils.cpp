@@ -211,13 +211,15 @@ refinement::create_new_vertices(
       ++n;
     }
   }
-  const int num_new_vertices = n;
-  const std::size_t global_offset
-      = MPI::global_offset(mesh.mpi_comm(), num_new_vertices, true)
-        + mesh.topology().index_map(0)->local_range()[1];
 
-  for (auto& e : local_edge_to_new_vertex)
-    e.second += global_offset;
+  const std::int64_t num_local = n;
+  std::int64_t global_offset = 0;
+  MPI_Exscan(&num_local, &global_offset, 1,
+             dolfinx::MPI::mpi_type<std::int64_t>(), MPI_SUM, mesh.mpi_comm());
+  global_offset += mesh.topology().index_map(0)->local_range()[1];
+  std::for_each(local_edge_to_new_vertex.begin(),
+                local_edge_to_new_vertex.end(),
+                [global_offset](auto& e) { e.second += global_offset; });
 
   // Create actual points
   xt::xtensor<double, 2> new_vertex_coordinates

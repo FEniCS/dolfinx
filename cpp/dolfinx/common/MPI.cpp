@@ -141,15 +141,14 @@ std::vector<int> dolfinx::MPI::compute_graph_edges(MPI_Comm comm,
   std::vector<std::uint8_t> edge_count(dolfinx::MPI::size(comm), 0);
   std::for_each(edges.cbegin(), edges.cend(),
                 [&edge_count](auto e) { edge_count[e] = 1; });
-  std::vector<std::uint8_t> in_edge_count(dolfinx::MPI::size(comm));
-  MPI_Alltoall(edge_count.data(), 1, MPI_UINT8_T, in_edge_count.data(), 1,
-               MPI_UINT8_T, comm);
+  MPI_Alltoall(MPI_IN_PLACE, 1, MPI_UINT8_T, edge_count.data(), 1, MPI_UINT8_T,
+               comm);
 
   // Build list of rank that had an edge to me
   std::vector<int> edges1;
-  for (std::size_t i = 0; i < in_edge_count.size(); ++i)
+  for (std::size_t i = 0; i < edge_count.size(); ++i)
   {
-    if (in_edge_count[i] > 0)
+    if (edge_count[i] > 0)
       edges1.push_back(i);
   }
   return edges1;

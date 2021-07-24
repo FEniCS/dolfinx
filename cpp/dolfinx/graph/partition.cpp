@@ -169,12 +169,13 @@ std::vector<std::int64_t> graph::build::compute_ghost_indices(
   LOG(INFO) << "Compute ghost indices";
 
   // Get number of local cells and global offset
-  int num_local = global_indices.size() - ghost_owners.size();
+  const std::int64_t num_local = global_indices.size() - ghost_owners.size();
   std::vector<std::int64_t> ghost_global_indices(
       global_indices.begin() + num_local, global_indices.end());
 
-  const std::int64_t offset_local
-      = dolfinx::MPI::global_offset(comm, num_local, true);
+  std::int64_t offset_local = 0;
+  MPI_Exscan(&num_local, &offset_local, 1,
+             dolfinx::MPI::mpi_type<std::int64_t>(), MPI_SUM, comm);
 
   // Find out how many ghosts are on each neighboring process
   std::vector<int> ghost_index_count;

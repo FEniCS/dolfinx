@@ -448,8 +448,10 @@ mesh::create_topology(MPI_Comm comm,
                 });
 
   // Compute the global offset for local vertex indices
-  const std::int64_t global_offset
-      = dolfinx::MPI::global_offset(comm, nlocal, true);
+  const std::int64_t num_local = nlocal;
+  std::int64_t global_offset = 0;
+  MPI_Exscan(&num_local, &global_offset, 1,
+             dolfinx::MPI::mpi_type<std::int64_t>(), MPI_SUM, comm);
 
   // Find all vertex-sharing neighbors, and process-to-neighbor map
 

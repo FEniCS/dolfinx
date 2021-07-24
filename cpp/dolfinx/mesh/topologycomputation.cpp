@@ -305,8 +305,10 @@ get_local_indexing(
   std::vector<int> ghost_owners(entity_count - num_local, -1);
   std::vector<std::int64_t> ghost_indices(entity_count - num_local, -1);
   {
-    const std::int64_t local_offset
-        = dolfinx::MPI::global_offset(comm, num_local, true);
+    const std::int64_t _num_local = num_local;
+    std::int64_t local_offset = 0;
+    MPI_Exscan(&_num_local, &local_offset, 1,
+               dolfinx::MPI::mpi_type<std::int64_t>(), MPI_SUM, comm);
 
     std::vector<std::int64_t> send_global_index_data;
     std::vector<int> send_global_index_offsets = {0};
