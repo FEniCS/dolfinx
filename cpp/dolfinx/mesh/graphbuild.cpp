@@ -73,7 +73,8 @@ compute_nonlocal_dual_graph(
   //
   // Combine into single MPI reduce (MPI_MIN)
   std::array<std::int64_t, 3> buffer_local_min
-      = {std::int64_t(-(unmatched_facets.shape(1) - 1)), 0, 0};
+      = {std::int64_t(-(unmatched_facets.shape(1) - 1)),
+         std::numeric_limits<std::int64_t>::max(), 0};
   if (unmatched_facets.shape(0) > 0)
   {
     auto local_minmax = xt::minmax(xt::col(unmatched_facets, 0))();
@@ -85,6 +86,7 @@ compute_nonlocal_dual_graph(
                 MPI_INT64_T, MPI_MIN, comm);
   const std::int32_t max_num_vertices_per_facet = -buffer_global_min[0];
   LOG(INFO) << "Max. vertices per facet=" << max_num_vertices_per_facet << "\n";
+  assert(buffer_global_min[1] != std::numeric_limits<std::int64_t>::max());
   const std::array<std::int64_t, 2> global_minmax
       = {buffer_global_min[1], -buffer_global_min[2]};
   const std::int64_t global_range = global_minmax[1] - global_minmax[0] + 1;
