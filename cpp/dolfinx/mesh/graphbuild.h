@@ -25,10 +25,9 @@ enum class CellType;
 /// @param[in] cells Collection of cells, defined by the cell vertices
 /// from which to build the dual graph
 /// @param[in] tdim The topological dimension of the cells
-/// @return The (0) dual graph and (1) (num ghost edges, num local
-/// edges)
+/// @return The (0) dual graph and (1) number of  ghost edges
 /// @note Collective function
-std::pair<graph::AdjacencyList<std::int64_t>, std::array<std::int32_t, 2>>
+std::pair<graph::AdjacencyList<std::int64_t>, std::int32_t>
 build_dual_graph(const MPI_Comm comm,
                  const graph::AdjacencyList<std::int64_t>& cells, int tdim);
 
