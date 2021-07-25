@@ -61,10 +61,10 @@ compute_nonlocal_dual_graph(
 
   // Some processes may have empty map, so get max across all
   const std::int32_t max_num_vertices_local = unmatched_facets.shape(1) - 1;
-  std::int32_t num_vertices_per_facet;
-  MPI_Allreduce(&max_num_vertices_local, &num_vertices_per_facet, 1,
+  std::int32_t max_num_vertices_per_facet;
+  MPI_Allreduce(&max_num_vertices_local, &max_num_vertices_per_facet, 1,
                 MPI_INT32_T, MPI_MAX, comm);
-  LOG(INFO) << "nv per facet=" << num_vertices_per_facet << "\n";
+  LOG(INFO) << "Max. vertices per facet=" << max_num_vertices_per_facet << "\n";
 
   // At this stage facet_cell map only contains facets->cells with edge
   // facets either interprocess or external boundaries
@@ -95,7 +95,7 @@ compute_nonlocal_dual_graph(
     // Use first vertex of facet to partition into blocks
     const int dest_proc = dolfinx::MPI::index_owner(
         num_processes, unmatched_facets(i, 0) - global_minmax[0], global_range);
-    p_count[dest_proc] += num_vertices_per_facet + 1;
+    p_count[dest_proc] += max_num_vertices_per_facet + 1;
   }
 
   // Create back adjacency list send buffer
@@ -115,27 +115,26 @@ compute_nonlocal_dual_graph(
         num_processes, unmatched_facets(i, 0) - global_minmax[0], global_range);
     xtl::span<std::int64_t> buffer = send_buffer.links(dest_proc);
 
-    for (int j = 0; j < (num_vertices_per_facet + 1); ++j)
+    for (int j = 0; j < max_num_vertices_per_facet + 1; ++j)
       buffer[pos[dest_proc] + j] = unmatched_facets(i, j);
-    buffer[pos[dest_proc] + num_vertices_per_facet] += cell_offset;
-    pos[dest_proc] += num_vertices_per_facet + 1;
+    buffer[pos[dest_proc] + max_num_vertices_per_facet] += cell_offset;
+    pos[dest_proc] += max_num_vertices_per_facet + 1;
   }
 
   // Send data
   graph::AdjacencyList<std::int64_t> recvd_buffer
       = dolfinx::MPI::all_to_all(comm, send_buffer);
-  assert(recvd_buffer.array().size() % (num_vertices_per_facet + 1) == 0);
+  assert(recvd_buffer.array().size() % (max_num_vertices_per_facet + 1) == 0);
   const int num_facets
-      = recvd_buffer.array().size() / (num_vertices_per_facet + 1);
+      = recvd_buffer.array().size() / (max_num_vertices_per_facet + 1);
 
   // Build vector of owning processes for each received facet
-  const std::vector<std::int32_t>& recvd_buffer_offsets
-      = recvd_buffer.offsets();
+  const std::vector<std::int32_t>& recvd_disp = recvd_buffer.offsets();
   std::vector<int> proc(num_facets);
   for (int p = 0; p < num_processes; ++p)
   {
-    for (int j = recvd_buffer_offsets[p] / (num_vertices_per_facet + 1);
-         j < recvd_buffer_offsets[p + 1] / (num_vertices_per_facet + 1); ++j)
+    for (int j = recvd_disp[p] / (max_num_vertices_per_facet + 1);
+         j < recvd_disp[p + 1] / (max_num_vertices_per_facet + 1); ++j)
     {
       proc[j] = p;
     }
@@ -145,7 +144,7 @@ compute_nonlocal_dual_graph(
   {
     std::vector<std::int32_t> offsets(num_facets + 1, 0);
     for (std::size_t i = 0; i < offsets.size() - 1; ++i)
-      offsets[i + 1] = offsets[i] + (num_vertices_per_facet + 1);
+      offsets[i + 1] = offsets[i] + (max_num_vertices_per_facet + 1);
     recvd_buffer = graph::AdjacencyList<std::int64_t>(
         std::move(recvd_buffer.array()), std::move(offsets));
   }
@@ -209,8 +208,8 @@ compute_nonlocal_dual_graph(
       const auto facet0 = recvd_buffer.links(i0);
       const auto facet1 = recvd_buffer.links(i1);
 
-      const std::int64_t cell0 = facet0[num_vertices_per_facet];
-      const std::int64_t cell1 = facet1[num_vertices_per_facet];
+      const std::int64_t cell0 = facet0[max_num_vertices_per_facet];
+      const std::int64_t cell1 = facet1[max_num_vertices_per_facet];
 
       auto buffer0 = send_buffer.links(proc0);
       buffer0[pos[proc0]++] = cell0;
