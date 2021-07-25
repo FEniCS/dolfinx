@@ -86,13 +86,15 @@ void radix_sort(xtl::span<T> array)
     std::copy(buffer.begin(), buffer.end(), array.begin());
 }
 
-/// Returns the indices that would sort (lexicographic) a vector of bitsets.
-/// @tparam N The size of the bitset, which corresponds to the number of bits
-/// necessary to represent a set of integers. For example, N = 96 for mapping
-/// three std::int32_t.
-/// @tparam BITS The number of bits to sort at a time.
-/// @param[in] array The array to sort.
-/// Returns Vector of indices that sort the input array.
+/// Returns the indices that would sort (lexicographic) a vector of
+/// bitsets.
+/// @tparam N The size of the bitset, which corresponds to the number of
+/// bits necessary to represent a set of integers. For example, N = 96
+/// for mapping three std::int32_t.
+/// @tparam BITS The number of bits to sort at a time
+/// @param[in] array The array to sort
+/// @param[in] perm FIXME
+/// @return Array of indices that sort the input array.
 template <typename T, int BITS = 16>
 void argsort_radix(const xtl::span<const T>& array,
                    xtl::span<std::int32_t> perm)

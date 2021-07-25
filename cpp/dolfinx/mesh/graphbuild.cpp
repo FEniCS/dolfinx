@@ -30,15 +30,11 @@ namespace
 /// @param[in] num_local_cells MPI communicator
 std::pair<graph::AdjacencyList<std::int64_t>, std::int32_t>
 compute_nonlocal_dual_graph(
-    const MPI_Comm comm, std::int32_t num_local_cells,
-    const xt::xtensor<std::int64_t, 2>& facet_cell_map,
+    const MPI_Comm comm, const xt::xtensor<std::int64_t, 2>& facet_cell_map,
     const graph::AdjacencyList<std::int32_t>& local_graph)
 {
   LOG(INFO) << "Build nonlocal part of mesh dual graph";
   common::Timer timer("Compute non-local part of mesh dual graph");
-
-  if (num_local_cells != local_graph.num_nodes())
-    throw std::runtime_error("size mismatch");
 
   // Get number of MPI processes, and return if mesh is not distributed
   const int num_processes = dolfinx::MPI::size(comm);
@@ -54,7 +50,7 @@ compute_nonlocal_dual_graph(
 
   // Get cell offset for this process to create global numbering for
   // cells
-  const std::int64_t num_local = num_local_cells;
+  const std::int64_t num_local = local_graph.num_nodes();
   std::int64_t cell_offset = 0;
   MPI_Request request_cell_offset;
   MPI_Iexscan(&num_local, &cell_offset, 1,
@@ -301,8 +297,8 @@ mesh::build_dual_graph(const MPI_Comm comm,
       cell_vertices.array(), cell_vertices.offsets(), tdim);
 
   // Extend with nonlocal edges and convert to global indices
-  auto [graph, num_ghost_nodes] = compute_nonlocal_dual_graph(
-      comm, cell_vertices.num_nodes(), facet_cell_map, local_graph);
+  auto [graph, num_ghost_nodes]
+      = compute_nonlocal_dual_graph(comm, facet_cell_map, local_graph);
 
   LOG(INFO) << "Graph edges (local:" << local_graph.offsets().back()
             << ", non-local:"
