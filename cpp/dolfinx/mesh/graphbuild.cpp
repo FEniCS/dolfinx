@@ -69,24 +69,22 @@ compute_nonlocal_dual_graph(
   // At this stage facet_cell map only contains facets->cells with edge
   // facets either interprocess or external boundaries
 
-  // Find the global range of the first vertex index of each facet in the list
-  // and use this to divide up the facets between all processes.
-
   // TODO: improve scalability, possibly by limiting the number of
   // processes which do the matching, and using a neighbor comm?
-  std::int64_t local_min = std::numeric_limits<std::int64_t>::max();
-  std::int64_t local_max = 0;
-  if (unmatched_facets.shape(0) > 0)
-  {
-    std::array<std::int64_t, 2> p = xt::minmax(xt::col(unmatched_facets, 0))();
-    local_min = p[0];
-    local_max = p[1];
-  }
 
-  std::int64_t global_min, global_max;
-  MPI_Allreduce(&local_min, &global_min, 1, MPI_INT64_T, MPI_MIN, comm);
-  MPI_Allreduce(&local_max, &global_max, 1, MPI_INT64_T, MPI_MAX, comm);
-  const std::int64_t global_range = global_max - global_min + 1;
+  // Find the global range of the first vertex index of each facet in
+  // the list and use this to divide up the facets between all
+  // processes.
+  std::array<std::int64_t, 2> local_minmax
+      = {std::numeric_limits<std::int64_t>::max(),
+         std::numeric_limits<std::int64_t>::min()};
+  if (unmatched_facets.shape(0) > 0)
+    local_minmax = xt::minmax(xt::col(unmatched_facets, 0))();
+  local_minmax[1] = -local_minmax[1];
+  std::array<std::int64_t, 2> global_minmax;
+  MPI_Allreduce(&local_minmax, &global_minmax, 2, MPI_INT64_T, MPI_MIN, comm);
+  global_minmax[1] = -global_minmax[1];
+  const std::int64_t global_range = global_minmax[1] - global_minmax[0] + 1;
 
   // Send facet-cell map to intermediary match-making processes
 
@@ -96,14 +94,13 @@ compute_nonlocal_dual_graph(
   {
     // Use first vertex of facet to partition into blocks
     const int dest_proc = dolfinx::MPI::index_owner(
-        num_processes, unmatched_facets(i, 0) - global_min, global_range);
+        num_processes, unmatched_facets(i, 0) - global_minmax[0], global_range);
     p_count[dest_proc] += num_vertices_per_facet + 1;
   }
 
   // Create back adjacency list send buffer
   std::vector<std::int32_t> offsets(num_processes + 1, 0);
-  std::partial_sum(p_count.begin(), p_count.end(),
-                   std::next(offsets.begin(), 1));
+  std::partial_sum(p_count.begin(), p_count.end(), std::next(offsets.begin()));
   graph::AdjacencyList<std::int64_t> send_buffer(
       std::vector<std::int64_t>(offsets.back()), std::move(offsets));
 
@@ -115,13 +112,12 @@ compute_nonlocal_dual_graph(
   for (std::size_t i = 0; i < unmatched_facets.shape(0); ++i)
   {
     const int dest_proc = dolfinx::MPI::index_owner(
-        num_processes, unmatched_facets(i, 0) - global_min, global_range);
+        num_processes, unmatched_facets(i, 0) - global_minmax[0], global_range);
     xtl::span<std::int64_t> buffer = send_buffer.links(dest_proc);
 
     for (int j = 0; j < (num_vertices_per_facet + 1); ++j)
       buffer[pos[dest_proc] + j] = unmatched_facets(i, j);
     buffer[pos[dest_proc] + num_vertices_per_facet] += cell_offset;
-
     pos[dest_proc] += num_vertices_per_facet + 1;
   }
 

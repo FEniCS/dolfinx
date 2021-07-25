@@ -89,40 +89,6 @@ int dolfinx::MPI::size(const MPI_Comm comm)
   return size;
 }
 //-----------------------------------------------------------------------------
-std::array<std::int64_t, 2> dolfinx::MPI::local_range(int rank, std::int64_t N,
-                                                      int size)
-{
-  assert(rank >= 0);
-  assert(N >= 0);
-  assert(size > 0);
-
-  // Compute number of items per rank and remainder
-  const std::int64_t n = N / size;
-  const std::int64_t r = N % size;
-
-  // Compute local range
-  if (rank < r)
-    return {{rank * (n + 1), rank * (n + 1) + n + 1}};
-  else
-    return {{rank * n + r, rank * n + r + n}};
-}
-//-----------------------------------------------------------------------------
-int dolfinx::MPI::index_owner(int size, std::size_t index, std::size_t N)
-{
-  assert(index < N);
-
-  // Compute number of items per rank and remainder
-  const std::size_t n = N / size;
-  const std::size_t r = N % size;
-
-  // First r ranks own n + 1 indices
-  if (index < r * (n + 1))
-    return index / (n + 1);
-
-  // Remaining ranks own n indices
-  return r + (index - r * (n + 1)) / n;
-}
-//-----------------------------------------------------------------------------
 std::vector<int> dolfinx::MPI::compute_graph_edges(MPI_Comm comm,
                                                    const std::set<int>& edges)
 {
