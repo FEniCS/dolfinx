@@ -466,8 +466,8 @@ mesh::build_local_dual_graph(const xtl::span<const std::int64_t>& cell_vertices,
   std::vector<std::int32_t> local_graph;
   local_graph.reserve(num_local_cells * 2);
 
-  std::vector<std::int32_t> unmatched_facets;
-  unmatched_facets.reserve(num_local_cells);
+  std::vector<std::int32_t> unshared_facets;
+  unshared_facets.reserve(num_local_cells);
 
   int eq_count = 0;
   for (std::size_t f = 1; f < facets.shape(0); ++f)
@@ -487,28 +487,28 @@ mesh::build_local_dual_graph(const xtl::span<const std::int64_t>& cell_vertices,
     else
     {
       if (eq_count == 0)
-        unmatched_facets.push_back(facet_perm[f - 1]);
+        unshared_facets.push_back(facet_perm[f - 1]);
       eq_count = 0;
     }
   }
 
-  // save last one, if unmatched...
+  // Add last facet if not shared
   if (eq_count == 0)
-    unmatched_facets.push_back(facet_perm.back());
+    unshared_facets.push_back(facet_perm.back());
 
-  xt::xtensor<std::int64_t, 2> facet_cell_map = xt::empty<std::int64_t>(
-      {unmatched_facets.size(), std::size_t(max_num_facet_vertices + 1)});
-  for (std::size_t c = 0; c < unmatched_facets.size(); ++c)
+  xt::xtensor<std::int64_t, 2> facet_cell_map(
+      {unshared_facets.size(), std::size_t(max_num_facet_vertices + 1)},
+      std::numeric_limits<std::int64_t>::max());
+  for (auto f = unshared_facets.begin(); f != unshared_facets.end(); ++f)
   {
-    std::int32_t j = unmatched_facets[c];
-    auto facetmap = xt::row(facet_cell_map, c);
-    // facetmap[max_num_facet_vertices] = facet_to_cell[j];
-    facetmap.back() = facet_to_cell[j];
-    for (int i = 0; i < max_num_facet_vertices; i++)
+    std::size_t pos = std::distance(unshared_facets.begin(), f);
+    auto facet_data = xt::row(facet_cell_map, pos);
+    for (int v = 0; v < max_num_facet_vertices; ++v)
     {
-      if (facets(j, i) < num_vertices)
-        facetmap[i] = local_to_global_v[facets(j, i)];
+      if (facets(*f, v) < num_vertices)
+        facet_data[v] = local_to_global_v[facets(*f, v)];
     }
+    facet_data.back() = facet_to_cell[*f];
   }
 
   // Get connection counts for each cell
