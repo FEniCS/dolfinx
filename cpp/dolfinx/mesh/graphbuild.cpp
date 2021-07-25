@@ -76,9 +76,9 @@ compute_nonlocal_dual_graph(
       = {std::int64_t(-(unmatched_facets.shape(1) - 1)), 0, 0};
   if (unmatched_facets.shape(0) > 0)
   {
-    std::tie(buffer_local_min[1], buffer_local_min[2])
-        = xt::minmax(xt::col(unmatched_facets, 0))();
-    buffer_local_min[2] = -buffer_local_min[2];
+    auto local_minmax = xt::minmax(xt::col(unmatched_facets, 0))();
+    buffer_local_min[1] = local_minmax[0];
+    buffer_local_min[2] = -local_minmax[1];
   }
   std::array<std::int64_t, 3> buffer_global_min;
   MPI_Allreduce(buffer_local_min.data(), buffer_global_min.data(), 3,

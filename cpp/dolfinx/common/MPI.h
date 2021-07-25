@@ -177,6 +177,7 @@ constexpr MPI_Datatype mpi_type()
   else if (std::is_same<T, bool>::value)
     return MPI_C_BOOL;
 }
+
 //---------------------------------------------------------------------------
 template <typename T>
 graph::AdjacencyList<T> all_to_all(MPI_Comm comm,
