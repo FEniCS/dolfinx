@@ -50,31 +50,6 @@ compute_nonlocal_dual_graph(
             0};
   }
 
-  // (0) Some ranks may have empty unmatched_facets, so get max across
-  // all ranks
-  // (1) Find the global range of the first vertex index of each facet
-  // in the list and use this to divide up the facets between all
-  // processes.
-  //
-  // Combine into single MPI reduce (MPI_MIN)
-  // std::array<std::int64_t, 3> buffer_local_min = {0, 0, 0};
-  // if (unmatched_facets.shape(0) > 0)
-  // {
-  //   buffer_local_min[0] = -(unmatched_facets.shape(1) - 1);
-  //   auto local_minmax = xt::minmax(xt::col(unmatched_facets, 0))();
-  //   buffer_local_min[1] = local_minmax[0];
-  //   buffer_local_min[2] = -local_minmax[1];
-  // }
-  // std::array<std::int64_t, 3> buffer_global_min;
-  // MPI_Allreduce(buffer_global_min.data(), buffer_local_min.data(), 3,
-  //               MPI_INT64_T, MPI_MIN, comm);
-  // const std::int32_t max_num_vertices_per_facet = -buffer_global_min[0];
-  // LOG(INFO) << "Max. vertices per facet=" << max_num_vertices_per_facet << "\n";
-  // const std::array<std::int64_t, 2> global_minmax
-  //     = {buffer_global_min[1], -buffer_global_min[2]};
-  // const std::int64_t global_range = global_minmax[1] - global_minmax[0] + 1;
-
-
   // Get cell offset for this process to create global numbering for
   // cells
   const std::int64_t num_local = local_graph.num_nodes();
@@ -84,31 +59,34 @@ compute_nonlocal_dual_graph(
               dolfinx::MPI::mpi_type<std::int64_t>(), MPI_SUM, comm,
               &request_cell_offset);
 
-  // Some processes may have empty map, so get max across all
-  const std::int32_t max_num_vertices_local = unmatched_facets.shape(1) - 1;
-  std::int32_t max_num_vertices_per_facet;
-  MPI_Allreduce(&max_num_vertices_local, &max_num_vertices_per_facet, 1,
-                MPI_INT32_T, MPI_MAX, comm);
-  LOG(INFO) << "Max. vertices per facet=" << max_num_vertices_per_facet << "\n";
-
   // At this stage facet_cell map only contains facets->cells with edge
   // facets either interprocess or external boundaries
 
   // TODO: improve scalability, possibly by limiting the number of
   // processes which do the matching, and using a neighbor comm?
 
-  // Find the global range of the first vertex index of each facet in
-  // the list and use this to divide up the facets between all
+  // (0) Some ranks may have empty unmatched_facets, so get max across
+  // all ranks
+  // (1) Find the global range of the first vertex index of each facet
+  // in the list and use this to divide up the facets between all
   // processes.
-  std::array<std::int64_t, 2> local_minmax
-      = {std::numeric_limits<std::int64_t>::max(),
-         std::numeric_limits<std::int64_t>::min()};
+  //
+  // Combine into single MPI reduce (MPI_MIN)
+  std::array<std::int64_t, 3> buffer_local_min
+      = {std::int64_t(-(unmatched_facets.shape(1) - 1)), 0, 0};
   if (unmatched_facets.shape(0) > 0)
-    local_minmax = xt::minmax(xt::col(unmatched_facets, 0))();
-  local_minmax[1] = -local_minmax[1];
-  std::array<std::int64_t, 2> global_minmax;
-  MPI_Allreduce(&local_minmax, &global_minmax, 2, MPI_INT64_T, MPI_MIN, comm);
-  global_minmax[1] = -global_minmax[1];
+  {
+    std::tie(buffer_local_min[1], buffer_local_min[2])
+        = xt::minmax(xt::col(unmatched_facets, 0))();
+    buffer_local_min[2] = -buffer_local_min[2];
+  }
+  std::array<std::int64_t, 3> buffer_global_min;
+  MPI_Allreduce(buffer_local_min.data(), buffer_global_min.data(), 3,
+                MPI_INT64_T, MPI_MIN, comm);
+  const std::int32_t max_num_vertices_per_facet = -buffer_global_min[0];
+  LOG(INFO) << "Max. vertices per facet=" << max_num_vertices_per_facet << "\n";
+  const std::array<std::int64_t, 2> global_minmax
+      = {buffer_global_min[1], -buffer_global_min[2]};
   const std::int64_t global_range = global_minmax[1] - global_minmax[0] + 1;
 
   // Send facet-to-cell data to intermediary match-making ranks
