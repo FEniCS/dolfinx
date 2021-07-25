@@ -145,76 +145,104 @@ constexpr int index_owner(int size, std::size_t index, std::size_t N)
   return r + (index - r * (n + 1)) / n;
 }
 
-// template <typename T>
-// dependent_false : std::false_type{};
+template <typename T>
+struct dependent_false : std::false_type
+{
+};
 
 /// MPI Type
 template <typename T>
-inline MPI_Datatype mpi_type()
+constexpr MPI_Datatype mpi_type()
 {
-  // static_assert(dependent_false<T>::value, "Unknown MPI type");
-  throw std::runtime_error("MPI data type unknown");
-  return MPI_CHAR;
+  if constexpr (std::is_same<T, float>::value)
+    return MPI_FLOAT;
+  else if (std::is_same<T, double>::value)
+    return MPI_DOUBLE;
+  else if (std::is_same<T, std::complex<double>>::value)
+    return MPI_DOUBLE_COMPLEX;
+  else if (std::is_same<T, short int>::value)
+    return MPI_SHORT;
+  else if (std::is_same<T, int>::value)
+    return MPI_INT;
+  else if (std::is_same<T, unsigned int>::value)
+    return MPI_UNSIGNED;
+  else if (std::is_same<T, long int>::value)
+    return MPI_LONG;
+  else if (std::is_same<T, unsigned long>::value)
+    return MPI_UNSIGNED_LONG;
+  else if (std::is_same<T, long long>::value)
+    return MPI_LONG_LONG;
+  else if (std::is_same<T, unsigned long long>::value)
+    return MPI_UNSIGNED_LONG_LONG;
+  else if (std::is_same<T, bool>::value)
+    return MPI_C_BOOL;
 }
 
-// Turn off doxygen for these template specialisations
-/// @cond
-// Specialisations for MPI_Datatypes
-template <>
-inline MPI_Datatype mpi_type<float>()
-{
-  return MPI_FLOAT;
-}
-template <>
-inline MPI_Datatype mpi_type<double>()
-{
-  return MPI_DOUBLE;
-}
-template <>
-inline MPI_Datatype mpi_type<std::complex<double>>()
-{
-  return MPI_DOUBLE_COMPLEX;
-}
-template <>
-inline MPI_Datatype mpi_type<short int>()
-{
-  return MPI_SHORT;
-}
-template <>
-inline MPI_Datatype mpi_type<int>()
-{
-  return MPI_INT;
-}
-template <>
-inline MPI_Datatype mpi_type<unsigned int>()
-{
-  return MPI_UNSIGNED;
-}
-template <>
-inline MPI_Datatype mpi_type<long int>()
-{
-  return MPI_LONG;
-}
-template <>
-inline MPI_Datatype mpi_type<unsigned long>()
-{
-  return MPI_UNSIGNED_LONG;
-}
-template <>
-inline MPI_Datatype mpi_type<long long>()
-{
-  return MPI_LONG_LONG;
-}
-template <>
-inline MPI_Datatype mpi_type<unsigned long long>()
-{
-  return MPI_UNSIGNED_LONG_LONG;
-}
-template <>
-inline MPI_Datatype mpi_type<bool>()
-{
-  return MPI_C_BOOL;
-}
+// template <typename T>
+// inline MPI_Datatype mpi_type()
+// {
+//   static_assert(dependent_false<T>::value, "Unknown MPI type");
+//   throw std::runtime_error("MPI data type unknown");
+// }
+
+// // Turn off doxygen for these template specialisations
+// /// @cond
+// // Specialisations for MPI_Datatypes
+// template <>
+// inline MPI_Datatype mpi_type<float>()
+// {
+//   return MPI_FLOAT;
+// }
+// template <>
+// inline MPI_Datatype mpi_type<double>()
+// {
+//   return MPI_DOUBLE;
+// }
+// template <>
+// inline MPI_Datatype mpi_type<std::complex<double>>()
+// {
+//   return MPI_DOUBLE_COMPLEX;
+// }
+// template <>
+// inline MPI_Datatype mpi_type<short int>()
+// {
+//   return MPI_SHORT;
+// }
+// template <>
+// inline MPI_Datatype mpi_type<int>()
+// {
+//   return MPI_INT;
+// }
+// template <>
+// inline MPI_Datatype mpi_type<unsigned int>()
+// {
+//   return MPI_UNSIGNED;
+// }
+// template <>
+// inline MPI_Datatype mpi_type<long int>()
+// {
+//   return MPI_LONG;
+// }
+// template <>
+// inline MPI_Datatype mpi_type<unsigned long>()
+// {
+//   return MPI_UNSIGNED_LONG;
+// }
+// template <>
+// inline MPI_Datatype mpi_type<long long>()
+// {
+//   return MPI_LONG_LONG;
+// }
+// template <>
+// inline MPI_Datatype mpi_type<unsigned long long>()
+// {
+//   return MPI_UNSIGNED_LONG_LONG;
+// }
+// template <>
+// inline MPI_Datatype mpi_type<bool>()
+// {
+//   return MPI_C_BOOL;
+// }
 /// @endcond
 //---------------------------------------------------------------------------
 template <typename T>
