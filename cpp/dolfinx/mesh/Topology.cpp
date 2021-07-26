@@ -426,8 +426,7 @@ mesh::create_topology(MPI_Comm comm,
   std::int64_t global_offset_v = 0;
   MPI_Request request_scan_v;
   MPI_Iexscan(&num_local, &global_offset_v, 1,
-              dolfinx::MPI::mpi_type<std::int64_t>(), MPI_SUM, comm,
-              &request_scan_v);
+              dolfinx::MPI::mpi_type<std::int64_t>(), MPI_SUM, comm,);
 
   // Re-order vertices by looping through cells in order
 
@@ -479,7 +478,7 @@ mesh::create_topology(MPI_Comm comm,
 
   // -- Communicate new global vertex index to neighbors
 
-  // Wait for the MPI_Iexscan to complete
+  // Wait for the MPI_Iallreduce to complete
   MPI_Wait(&request_scan_v, MPI_STATUS_IGNORE);
 
   // Pack send data
@@ -572,7 +571,7 @@ mesh::create_topology(MPI_Comm comm,
       assert(it != global_to_local_vertices.end());
       assert(it->second != -1);
       const std::int64_t gi = it->second < nlocal
-                                  ? it->second + global_offset_v
+                                  ? it->second + global_offset
                                   : ghost_vertices[it->second - nlocal];
 
       for (int p : q.second)
@@ -604,7 +603,7 @@ mesh::create_topology(MPI_Comm comm,
   }
 
   // Get global owners of ghost vertices
-  // TODO: Get vertex owner from cell owner? Can use neighborhood
+  // TODO: Get vertice owner from cell owner? Can use neighborhood
   // communication?
   int mpi_size = -1;
   MPI_Comm_size(neighbor_comm, &mpi_size);

@@ -436,8 +436,10 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
 
       // Number and values to send and receive
       const int num_indices = global[d].size();
+      std::vector<int> size_recv(indegree);
       // Note: add 1 for OpenMPI bug when indegree = 0
-      std::vector<int> size_recv(indegree + 1);
+      if (size_recv.empty())
+        size_recv.push_back(0);
       MPI_Neighbor_allgather(&num_indices, 1, MPI_INT, size_recv.data(), 1,
                              MPI_INT, comm[d]);
 
@@ -547,18 +549,18 @@ fem::build_dofmap_data(
       = compute_reordering_map(node_graph0, dof_entity0, topology, reorder_fn);
 
   // FIXME: We can avoid the MPI_Exscan by counting the offsets for the
-  // owned mesh entities
+  // owned mesh entities?
 
   // Compute process offset for owned nodes
-  std::int64_t process_offset = 0;
+  std::int64_t offset = 0;
   const std::int64_t _num_owned = num_owned;
-  MPI_Exscan(&_num_owned, &process_offset, 1,
-             dolfinx::MPI::mpi_type<std::int64_t>(), MPI_SUM, comm);
+  MPI_Exscan(&_num_owned, &offset, 1, dolfinx::MPI::mpi_type<std::int64_t>(),
+             MPI_SUM, comm);
 
   // Get global indices for unowned dofs
   const auto [local_to_global_unowned, local_to_global_owner]
-      = get_global_indices(topology, num_owned, process_offset,
-                           local_to_global0, old_to_new, dof_entity0);
+      = get_global_indices(topology, num_owned, offset, local_to_global0,
+                           old_to_new, dof_entity0);
   assert(local_to_global_unowned.size() == local_to_global_owner.size());
 
   // Create IndexMap for dofs range on this process
@@ -577,7 +579,6 @@ fem::build_dofmap_data(
     // Get dof order on this cell
     auto old_nodes = node_graph0.links(cell);
     const std::int32_t local_dim0 = old_nodes.size();
-
     for (std::int32_t j = 0; j < local_dim0; ++j)
     {
       const std::int32_t old_node = old_nodes[j];
