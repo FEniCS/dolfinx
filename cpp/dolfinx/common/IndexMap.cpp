@@ -161,7 +161,7 @@ common::stack_index_maps(
         std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps)
 {
   // Compute process offset
-  const std::int64_t process_offset = std::accumulate(
+  const std::int64_t offset = std::accumulate(
       maps.cbegin(), maps.cend(), std::int64_t(0),
       [](std::int64_t c, auto& map) -> std::int64_t
       { return c + map.first.get().local_range()[0] * map.second; });
@@ -189,10 +189,10 @@ common::stack_index_maps(
       for (std::int32_t i = 0; i < bs; ++i)
       {
         // Insert field index, global index, composite global index
-        indices.insert(
-            indices.end(),
-            {static_cast<std::int64_t>(f), bs * local_index + i + offset,
-             bs * local_index + i + local_offset[f] + process_offset});
+        indices.insert(indices.end(),
+                       {static_cast<std::int64_t>(f),
+                        bs * local_index + i + offset,
+                        bs * local_index + i + local_offset[f] + offset});
       }
     }
   }
@@ -270,7 +270,7 @@ common::stack_index_maps(
     }
   }
 
-  return {process_offset, std::move(local_offset), std::move(ghosts_new),
+  return {offset, std::move(local_offset), std::move(ghosts_new),
           std::move(ghost_owners_new)};
 }
 //-----------------------------------------------------------------------------
