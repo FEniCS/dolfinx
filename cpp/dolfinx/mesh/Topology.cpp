@@ -426,7 +426,8 @@ mesh::create_topology(MPI_Comm comm,
   std::int64_t global_offset_v = 0;
   MPI_Request request_scan_v;
   MPI_Iexscan(&num_local, &global_offset_v, 1,
-              dolfinx::MPI::mpi_type<std::int64_t>(), MPI_SUM, comm,);
+              dolfinx::MPI::mpi_type<std::int64_t>(), MPI_SUM, comm,
+              &request_scan_v);
 
   // Re-order vertices by looping through cells in order
 
@@ -571,7 +572,7 @@ mesh::create_topology(MPI_Comm comm,
       assert(it != global_to_local_vertices.end());
       assert(it->second != -1);
       const std::int64_t gi = it->second < nlocal
-                                  ? it->second + global_offset
+                                  ? it->second + global_offset_v
                                   : ghost_vertices[it->second - nlocal];
 
       for (int p : q.second)

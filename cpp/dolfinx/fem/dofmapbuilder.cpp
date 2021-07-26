@@ -533,6 +533,7 @@ fem::build_dofmap_data(
 
   // Compute global dofmap dimension
   std::int64_t global_dimension = 0;
+  std::int64_t offset = 0;
   for (int d = 0; d <= D; ++d)
   {
     if (element_dof_layout.num_entity_dofs(d) > 0)
@@ -540,6 +541,8 @@ fem::build_dofmap_data(
       assert(topology.index_map(d));
       const std::int64_t n = topology.index_map(d)->size_global();
       global_dimension += n * element_dof_layout.num_entity_dofs(d);
+      offset += topology.index_map(d)->local_range()[0]
+                * element_dof_layout.num_entity_dofs(d);
     }
   }
 
@@ -552,10 +555,12 @@ fem::build_dofmap_data(
   // owned mesh entities?
 
   // Compute process offset for owned nodes
-  std::int64_t offset = 0;
+  std::int64_t _offset = 0;
   const std::int64_t _num_owned = num_owned;
-  MPI_Exscan(&_num_owned, &offset, 1, dolfinx::MPI::mpi_type<std::int64_t>(),
+  MPI_Exscan(&_num_owned, &_offset, 1, dolfinx::MPI::mpi_type<std::int64_t>(),
              MPI_SUM, comm);
+  if (offset != _offset)
+    throw std::runtime_error("Offset mismatch");
 
   // Get global indices for unowned dofs
   const auto [local_to_global_unowned, local_to_global_owner]
