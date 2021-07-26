@@ -170,7 +170,7 @@ get_remote_bcs2(const common::IndexMap& map0, int bs0,
   std::vector<int> num_dofs_recv(num_neighbors);
   MPI_Request request;
   MPI_Ineighbor_allgather(&num_dofs, 1, MPI_INT, num_dofs_recv.data(), 1,
-                         MPI_INT, comm0.comm(), &request);
+                          MPI_INT, comm0.comm(), &request);
 
   // NOTE: we consider only dofs that we know are shared
   // Build array of global indices of dofs
@@ -207,6 +207,7 @@ get_remote_bcs2(const common::IndexMap& map0, int bs0,
 
   // Compute displacements for data to receive. Last entry has total
   // number of received items.
+  MPI_Wait(&request, MPI_STATUS_IGNORE);
   std::vector<int> disp(num_neighbors + 1, 0);
   std::partial_sum(num_dofs_recv.begin(), num_dofs_recv.end(),
                    std::next(disp.begin()));
