@@ -83,7 +83,7 @@ compute_nonlocal_dual_graph(
   //
   // Combine into single MPI reduce (MPI_MIN)
   std::array<std::int64_t, 3> buffer_local_min
-      = {std::int64_t(-(unmatched_facets.shape(1) - 1)),
+      = {-std::int64_t(unmatched_facets.shape(1) - 1),
          std::numeric_limits<std::int64_t>::max(), 0};
   if (unmatched_facets.shape(0) > 0)
   {
@@ -108,8 +108,8 @@ compute_nonlocal_dual_graph(
   for (std::size_t i = 0; i < unmatched_facets.shape(0); ++i)
   {
     // Use first vertex of facet to partition into blocks
-    const int dest = dolfinx::MPI::index_owner(
-        num_processes, unmatched_facets(i, 0) - global_minmax[0], global_range);
+    std::int64_t v0 = unmatched_facets(i, 0) - global_minmax[0];
+    const int dest = dolfinx::MPI::index_owner(num_processes, v0, global_range);
     p_count[dest] += max_num_vertices_per_facet + 1;
   }
 
@@ -126,11 +126,11 @@ compute_nonlocal_dual_graph(
   std::vector<int> pos(send_buffer.num_nodes(), 0);
   for (std::size_t i = 0; i < unmatched_facets.shape(0); ++i)
   {
-    const int dest = dolfinx::MPI::index_owner(
-        num_processes, unmatched_facets(i, 0) - global_minmax[0], global_range);
-    xtl::span<std::int64_t> buffer = send_buffer.links(dest);
+    std::int64_t v0 = unmatched_facets(i, 0) - global_minmax[0];
+    const int dest = dolfinx::MPI::index_owner(num_processes, v0, global_range);
 
     // Pack facet vertices, and attached cell local index
+    xtl::span<std::int64_t> buffer = send_buffer.links(dest);
     for (int j = 0; j < max_num_vertices_per_facet + 1; ++j)
       buffer[pos[dest] + j] = unmatched_facets(i, j);
 
