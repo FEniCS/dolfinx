@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include <array>
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>
@@ -15,21 +14,6 @@
 
 namespace dolfinx::mesh
 {
-
-enum class CellType;
-
-/// Build distributed dual graph (cell-cell connections) from minimal
-/// mesh data
-///
-/// @param[in] comm The MPI communicator
-/// @param[in] cells Collection of cells, defined by the cell vertices
-/// from which to build the dual graph
-/// @param[in] tdim The topological dimension of the cells
-/// @return The (0) dual graph and (1) number of  ghost edges
-/// @note Collective function
-std::pair<graph::AdjacencyList<std::int64_t>, std::int32_t>
-build_dual_graph(const MPI_Comm comm,
-                 const graph::AdjacencyList<std::int64_t>& cells, int tdim);
 
 /// Compute the local part of the dual graph (cell-cell connections via
 /// facets)
@@ -46,5 +30,18 @@ build_dual_graph(const MPI_Comm comm,
 std::pair<graph::AdjacencyList<std::int32_t>, xt::xtensor<std::int64_t, 2>>
 build_local_dual_graph(const xtl::span<const std::int64_t>& cells,
                        const xtl::span<const std::int32_t>& offsets, int tdim);
+
+/// Build distributed dual graph (cell-cell connections) from minimal
+/// mesh data
+///
+/// @param[in] comm The MPI communicator
+/// @param[in] cells Collection of cells, defined by the cell vertices
+/// from which to build the dual graph
+/// @param[in] tdim The topological dimension of the cells
+/// @return The (0) dual graph and (1) number of  ghost edges
+/// @note Collective function
+std::pair<graph::AdjacencyList<std::int64_t>, std::int32_t>
+build_dual_graph(const MPI_Comm comm,
+                 const graph::AdjacencyList<std::int64_t>& cells, int tdim);
 
 } // namespace dolfinx::mesh
