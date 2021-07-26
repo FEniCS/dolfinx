@@ -345,9 +345,10 @@ mesh::build_local_dual_graph(const xtl::span<const std::int64_t>& cell_vertices,
   // in each cell, covering interval(2) through to hex(8)
   std::array<int, 9> num_cells_of_type;
   std::fill(num_cells_of_type.begin(), num_cells_of_type.end(), 0);
-  for (int i = 0; i < num_local_cells; ++i)
+  for (auto it = cell_offsets.cbegin(); it != std::prev(cell_offsets.cend());
+       ++it)
   {
-    const std::size_t num_cell_vertices = cell_offsets[i + 1] - cell_offsets[i];
+    const std::size_t num_cell_vertices = *std::next(it) - *it;
     assert(num_cell_vertices < num_cells_of_type.size());
     ++num_cells_of_type[num_cell_vertices];
   }
