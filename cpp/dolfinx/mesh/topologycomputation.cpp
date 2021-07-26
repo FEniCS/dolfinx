@@ -290,13 +290,7 @@ get_local_indexing(
 
     std::transform(local_index.cbegin(), local_index.cend(),
                    local_index.begin(),
-                   [&c](auto index)
-                   {
-                     if (index == -1)
-                       return c++;
-                     else
-                       return index;
-                   });
+                   [&c](auto index) { return index == -1 ? c++ : index; });
 
     assert(c == entity_count);
   }
@@ -317,7 +311,7 @@ get_local_indexing(
     // Send global indices for same entities that we sent before. This
     // uses the same pattern as before, so we can match up the received
     // data to the indices in recv_index
-    for (auto& indices : send_index)
+    for (const auto& indices : send_index)
     {
       std::transform(indices.cbegin(), indices.cend(),
                      std::back_inserter(send_global_index_data),

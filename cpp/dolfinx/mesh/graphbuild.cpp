@@ -22,14 +22,24 @@ using namespace dolfinx;
 namespace
 {
 //-----------------------------------------------------------------------------
+
 /// Build nonlocal part of dual graph for mesh and return number of
 /// non-local edges. Note: GraphBuilder::compute_local_dual_graph should
 /// be called before this function is called. Returns (ghost vertices,
 /// num_nonlocal_edges)
 /// @param[in] comm MPI communicator
-/// @param[in] unmatched_facets
-/// @param[in] local_graph
-/// @return ....
+/// @param[in] unmatched_facets Facets on this rank that are shared by
+/// only on cell on this rank. This makes them candidates for possibly
+/// matching to the same facet on another MPI rank. Each row
+/// `unmatched_facets` corresponds to a facet, and the row data has the
+/// form [v0, ..., v_{n-1}, x, x, cell_index], where `v_i` are the
+/// sorted vertex global indices of the facets, `x` is a padding value
+/// for the mixed topology case where facets can have differing number
+/// of vertices, and `cell_index` is the global index of the attached
+/// cell.
+/// @param[in] local_graph The dual graph for cells on this MPI rank
+/// @return (0) Extended dual graph to include ghost edges (edges to
+/// off-rank cells) and (1) the number of ghost edges
 std::pair<graph::AdjacencyList<std::int64_t>, std::int32_t>
 compute_nonlocal_dual_graph(
     const MPI_Comm comm, const xt::xtensor<std::int64_t, 2>& unmatched_facets,
