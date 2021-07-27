@@ -237,7 +237,7 @@ def test_biharmonic():
     L = inner(f_exact, v) * dx
 
     # Strong (Dirichlet) boundary condition
-    boundary_facets = locate_entities_boundary(mesh, mesh.topology.dim - 1, lambda x: np.ones(x.shape[1]))
+    boundary_facets = locate_entities_boundary(mesh, mesh.topology.dim - 1, lambda x: np.ones(x.shape[1], dtype=np.bool))
     boundary_dofs = locate_dofs_topological([V.sub(1), V.sub(1)], mesh.topology.dim - 1, boundary_facets)
 
     V_1 = V.sub(1).collapse()
