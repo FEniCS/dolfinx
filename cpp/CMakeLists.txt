@@ -147,7 +147,7 @@ set_package_properties(Boost PROPERTIES TYPE REQUIRED
   URL "http://www.boost.org")
 
 # Check for required package xtensor
-find_package(xtensor REQUIRED)
+find_package(xtensor 0.23.10 REQUIRED)
 set_package_properties(xtensor PROPERTIES TYPE REQUIRED
   DESCRIPTION "C++ library for numerical analysis with multi-dimensional array expressions."
   URL "https://xtensor.readthedocs.io/")
