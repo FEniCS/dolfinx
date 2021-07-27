@@ -210,7 +210,6 @@ def test_biharmonic():
     x = ufl.SpatialCoordinate(mesh)
     u_exact = (1.0 - ufl.cos(2.0 * ufl.pi * x[0])) * (1 - ufl.cos(4.0 * ufl.pi * x[1]))
     f_exact = div(grad(div(grad(u_exact))))
-    sigma_exact = grad(grad(u_exact))
 
     # sigma and tau are tangential-tangential continuous according to the
     # H(curl curl) continuity of the Regge space. However, for the biharmonic
@@ -285,9 +284,6 @@ def test_biharmonic():
     with XDMFFile(MPI.COMM_WORLD, "u_exact_h.xdmf", "w") as xdmf:
         xdmf.write_mesh(mesh)
         xdmf.write_function(u_exact_h)
-
-    u_exact_h_vertex_values = u_exact_h.compute_point_values()
-    u_h_vertex_values = u_h.compute_point_values()
 
 
 def get_mesh(cell_type, datadir):
