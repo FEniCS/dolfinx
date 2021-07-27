@@ -110,7 +110,8 @@ void fem(py::module& m)
       "create_dofmap",
       [](const MPICommWrapper comm, const std::uintptr_t dofmap,
          dolfinx::mesh::Topology& topology,
-         std::shared_ptr<dolfinx::fem::FiniteElement> element) {
+         std::shared_ptr<dolfinx::fem::FiniteElement> element)
+      {
         const ufc_dofmap* p = reinterpret_cast<const ufc_dofmap*>(dofmap);
         return dolfinx::fem::create_dofmap(comm.get(), *p, topology, nullptr,
                                            element);
@@ -737,8 +738,8 @@ void fem(py::module& m)
             std::array<std::size_t, 2> shape_u
                 = {static_cast<std::size_t>(u.shape(0)),
                    static_cast<std::size_t>(u.shape(1))};
-            xt::xtensor<PetscScalar, 2> _u = xt::adapt(
-                u.mutable_data(), u.size(), xt::no_ownership(), shape_u);
+            xt::xtensor<PetscScalar, 2> _u(shape_u);
+            std::copy_n(u.data(), u.size(), _u.data());
             self.eval(_x, xtl::span(cells.data(), cells.size()), _u);
             std::copy_n(_u.data(), _u.size(), u.mutable_data());
           },
