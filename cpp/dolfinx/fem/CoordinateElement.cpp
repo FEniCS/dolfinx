@@ -26,8 +26,11 @@ double compute_determinant(Matrix& A)
     return math::det(A);
   else
   {
-    auto ATA = xt::linalg::dot(xt::transpose(A), A);
-    return std::sqrt(math::det(ATA));
+    using T = typename Matrix::value_type;
+    xt::xtensor<T, 2> B = xt::transpose(A);
+    xt::xtensor<T, 2> BA = xt::empty<T>({B.shape(0), A.shape(1)});
+    math::dot(B, A, BA);
+    return std::sqrt(math::det(BA));
   }
 }
 } // namespace
@@ -99,21 +102,22 @@ void CoordinateElement::compute_jacobian(
   assert(dphi.shape(0) == tdim);
   assert(dphi.shape(1) == num_points);
   assert(dphi.shape(3) == 1); // Assumes that value size is equal to 1
-
+  xt::xtensor<double, 2> J0({gdim, tdim});
   xt::xtensor<double, 2> dphi0 = xt::empty<double>({tdim, d});
   if (_is_affine)
   {
     xt::noalias(dphi0) = xt::view(dphi, xt::all(), 0, xt::all(), 0);
-    auto J0 = xt::linalg::dot(xt::transpose(cell_geom), xt::transpose(dphi0));
+    math::dot(cell_geom, dphi0, J0, true);
     J = xt::broadcast(J0, J.shape());
   }
   else
   {
     for (std::size_t p = 0; p < num_points; ++p)
     {
+      J0.fill(0);
       xt::noalias(dphi0) = xt::view(dphi, xt::all(), p, xt::all(), 0);
       auto J_ip = xt::view(J, p, xt::all(), xt::all());
-      auto J0 = xt::linalg::dot(xt::transpose(cell_geom), xt::transpose(dphi0));
+      math::dot(cell_geom, dphi0, J0, true);
       J_ip.assign(J0);
     }
   }
