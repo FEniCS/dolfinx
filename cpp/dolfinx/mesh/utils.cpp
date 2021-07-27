@@ -512,16 +512,13 @@ mesh::partition_cells_graph(MPI_Comm comm, int n, int tdim,
   LOG(INFO) << "Compute partition of cells across ranks";
 
   // Compute distributed dual graph (for the cells on this process)
-  const auto [dual_graph, graph_info]
+  const auto [dual_graph, num_ghost_edges]
       = mesh::build_dual_graph(comm, cells, tdim);
-
-  // Extract data from graph_info
-  const auto [num_ghost_nodes, num_local_edges] = graph_info;
 
   // Just flag any kind of ghosting for now
   bool ghosting = (ghost_mode != mesh::GhostMode::none);
 
   // Compute partition
-  return partfn(comm, n, dual_graph, num_ghost_nodes, ghosting);
+  return partfn(comm, n, dual_graph, num_ghost_edges, ghosting);
 }
 //-----------------------------------------------------------------------------
