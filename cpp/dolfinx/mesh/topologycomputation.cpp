@@ -301,9 +301,9 @@ get_local_indexing(
   std::vector<std::int64_t> ghost_indices(entity_count - num_local, -1);
   {
     const std::int64_t _num_local = num_local;
-    std::int64_t offset = 0;
-    MPI_Exscan(&_num_local, &offset, 1, dolfinx::MPI::mpi_type<std::int64_t>(),
-               MPI_SUM, comm);
+    std::int64_t local_offset = 0;
+    MPI_Exscan(&_num_local, &local_offset, 1,
+               dolfinx::MPI::mpi_type<std::int64_t>(), MPI_SUM, comm);
 
     std::vector<std::int64_t> send_global_index_data;
     std::vector<int> send_global_index_offsets = {0};
@@ -313,15 +313,16 @@ get_local_indexing(
     // data to the indices in recv_index
     for (const auto& indices : send_index)
     {
-      std::transform(
-          indices.cbegin(), indices.cend(),
-          std::back_inserter(send_global_index_data),
-          [&local_index, num_local, offset](std::int32_t index) -> std::int64_t
-          {
-            // If not in our local range, send -1.
-            return local_index[index] < num_local ? offset + local_index[index]
-                                                  : -1;
-          });
+      std::transform(indices.cbegin(), indices.cend(),
+                     std::back_inserter(send_global_index_data),
+                     [&local_index, num_local,
+                      local_offset](std::int32_t index) -> std::int64_t
+                     {
+                       // If not in our local range, send -1.
+                       return local_index[index] < num_local
+                                  ? local_offset + local_index[index]
+                                  : -1;
+                     });
       send_global_index_offsets.push_back(send_global_index_data.size());
     }
 

@@ -36,8 +36,8 @@ std::int64_t local_to_global(std::int32_t local_index,
   const std::int32_t local_size = local_range[1] - local_range[0];
   if (local_index < local_size)
   {
-    const std::int64_t offset = local_range[0];
-    return offset + local_index;
+    const std::int64_t global_offset = local_range[0];
+    return global_offset + local_index;
   }
   else
   {
@@ -213,13 +213,13 @@ refinement::create_new_vertices(
   }
 
   const std::int64_t num_local = n;
-  std::int64_t offset = 0;
-  MPI_Exscan(&num_local, &offset, 1, dolfinx::MPI::mpi_type<std::int64_t>(),
-             MPI_SUM, mesh.mpi_comm());
-  offset += mesh.topology().index_map(0)->local_range()[1];
+  std::int64_t global_offset = 0;
+  MPI_Exscan(&num_local, &global_offset, 1,
+             dolfinx::MPI::mpi_type<std::int64_t>(), MPI_SUM, mesh.mpi_comm());
+  global_offset += mesh.topology().index_map(0)->local_range()[1];
   std::for_each(local_edge_to_new_vertex.begin(),
                 local_edge_to_new_vertex.end(),
-                [offset](auto& e) { e.second +=offset; });
+                [global_offset](auto& e) { e.second += global_offset; });
 
   // Create actual points
   xt::xtensor<double, 2> new_vertex_coordinates

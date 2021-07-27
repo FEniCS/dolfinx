@@ -63,10 +63,11 @@ compute_nonlocal_dual_graph(
   // Get cell offset for this process to create global numbering for
   // cells
   const std::int64_t num_local = local_graph.num_nodes();
-  std::int64_t offset = 0;
+  std::int64_t cell_offset = 0;
   MPI_Request request_cell_offset;
-  MPI_Iexscan(&num_local, &offset, 1, dolfinx::MPI::mpi_type<std::int64_t>(),
-              MPI_SUM, comm, &request_cell_offset);
+  MPI_Iexscan(&num_local, &cell_offset, 1,
+              dolfinx::MPI::mpi_type<std::int64_t>(), MPI_SUM, comm,
+              &request_cell_offset);
 
   // At this stage facet_cell map only contains facets->cells with edge
   // facets either interprocess or external boundaries
@@ -134,7 +135,7 @@ compute_nonlocal_dual_graph(
       buffer[pos[dest] + j] = unmatched_facets(i, j);
 
     // Add cell index offset
-    buffer[pos[dest] + max_num_vertices_per_facet] += offset;
+    buffer[pos[dest] + max_num_vertices_per_facet] += cell_offset;
     pos[dest] += max_num_vertices_per_facet + 1;
   }
 
@@ -250,9 +251,9 @@ compute_nonlocal_dual_graph(
     edge_count[i] += local_graph.num_links(i);
   for (std::size_t i = 0; i < cell_list.size(); i += 2)
   {
-    assert(cell_list[i] - offset >= 0);
-    assert(cell_list[i] - offset < std::int64_t(edge_count.size()));
-    edge_count[cell_list[i] - offset] += 1;
+    assert(cell_list[i] - cell_offset >= 0);
+    assert(cell_list[i] - cell_offset < std::int64_t(edge_count.size()));
+    edge_count[cell_list[i] - cell_offset] += 1;
   }
 
   // Build adjacency list
@@ -268,12 +269,12 @@ compute_nonlocal_dual_graph(
     auto local_graph_i = local_graph.links(i);
     auto graph_i = graph.links(i);
     for (std::size_t j = 0; j < local_graph_i.size(); ++j)
-      graph_i[pos[i]++] = local_graph_i[j] + offset;
+      graph_i[pos[i]++] = local_graph_i[j] + cell_offset;
   }
 
   for (std::size_t i = 0; i < cell_list.size(); i += 2)
   {
-    const std::size_t node = cell_list[i] - offset;
+    const std::size_t node = cell_list[i] - cell_offset;
     auto edges = graph.links(node);
 #ifdef DEBUG
     if (auto it_end = std::next(edges.begin(), pos[node]);
