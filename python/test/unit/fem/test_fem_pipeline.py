@@ -8,9 +8,9 @@ import numpy as np
 import pytest
 import ufl
 from dolfinx import (DirichletBC, Function, FunctionSpace,
-                     VectorFunctionSpace, cpp, fem, UnitCubeMesh, UnitSquareMesh)
-from dolfinx.cpp.mesh import CellType
-from dolfinx.fem import (apply_lifting, assemble_matrix, assemble_scalar,
+                     VectorFunctionSpace, RectangleMesh, cpp, fem, UnitCubeMesh, UnitSquareMesh)
+from dolfinx.cpp.mesh import CellType, locate_entities_boundary
+from dolfinx.fem import (LinearProblem, apply_lifting, assemble_matrix, assemble_scalar,
                          assemble_vector, locate_dofs_topological, set_bc)
 from dolfinx.io import XDMFFile
 from dolfinx_utils.test.skips import skip_if_complex
@@ -194,10 +194,11 @@ def test_biharmonic():
     Solved using rotated Regge mixed finite element method. This is equivalent
     to the Helan-Herrmann-Johnson (HHJ) finite element method in
     two-dimensions. Solving w(x) = (1 - cos(2*pi*x))*(1 - cos(4*pi*y)) on
-    Omega = [-1, 1]^2 with w in H^2_0(\Omega)."""
+    Omega = [-1, 1]^2 with w in H^2_0(Omega)."""
     # TODO: Move and scale domain. Extend to 3D. Boundary conditions. Solve.
     # TODO: Possible to do 'patch test' like other tests here?
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 10, 10)
+    mesh = RectangleMesh(MPI.COMM_WORLD, [np.array([-1.0, -1.0, 0.0]),
+                                          np.array([1.0, 1.0, 0.0])], [32, 32], CellType.triangle)
 
     element = ufl.MixedElement([ufl.FiniteElement("Regge", ufl.triangle, 1),
                                 ufl.FiniteElement("Lagrange", ufl.triangle, 2)])
@@ -207,8 +208,9 @@ def test_biharmonic():
     tau, v = ufl.TestFunctions(V)
 
     x = ufl.SpatialCoordinate(mesh)
-    w_exact = (1.0 - ufl.cos(2.0 * ufl.pi * x[0])) * (1 - ufl.cos(4.0 * ufl.pi * x[1]))
-    f = div(grad(div(grad(w_exact))))
+    u_exact = (1.0 - ufl.cos(2.0 * ufl.pi * x[0])) * (1 - ufl.cos(4.0 * ufl.pi * x[1]))
+    f_exact = div(grad(div(grad(u_exact))))
+    sigma_exact = grad(grad(u_exact))
 
     # sigma and tau are tangential-tangential continuous according to the
     # H(curl curl) continuity of the Regge space. However, for the biharmonic
@@ -223,21 +225,69 @@ def test_biharmonic():
 
     # Normal-normal component of tensor field
     n = FacetNormal(mesh)
-    def tau_nn(tau_S):
-        return ufl.dot(ufl.dot(tau_S('+'), n('+')), n('+'))
 
     # Discrete duality inner product eq. 4.5 Lizao Li's PhD thesis
     # Exterior facet term dropped due to w \in H_0^2(\Omega).
     def b(tau_S, v):
         return inner(tau_S, grad(grad(v))) * dx \
-            - tau_nn(tau_S) * jump(grad(v), n) * dS
+            - ufl.dot(ufl.dot(tau_S('+'), n('+')), n('+')) * jump(grad(v), n) * dS \
+            - ufl.dot(ufl.dot(tau_S, n), n) * ufl.dot(grad(v), n) * ds
 
     # Symmetric formulation
-    a = inner(sigma_S, tau_S) * dx - b(tau_S, u) - b(sigma_S, v)
-    L = -inner(f, v) * dx
+    a = inner(sigma_S, tau_S) * dx + b(tau_S, u) - b(sigma_S, v)
+    L = inner(f_exact, v) * dx
 
-    A = assemble_matrix(a)  # noqa: F841
-    b = assemble_vector(L)  # noqa: F841
+    # Strong (Dirichlet) boundary condition
+    boundary_facets = locate_entities_boundary(mesh, mesh.topology.dim - 1, lambda x: np.ones(x.shape[1]))
+    boundary_dofs = locate_dofs_topological([V.sub(1), V.sub(1)], mesh.topology.dim - 1, boundary_facets)
+
+    V_1 = V.sub(1).collapse()
+    zero_u = Function(V_1)
+    with zero_u.vector.localForm() as zero_u_local:
+        zero_u_local.set(0.0)
+
+    bcs = [DirichletBC(zero_u, boundary_dofs, V.sub(1))]
+
+    A = assemble_matrix(a, bcs=bcs)
+    A.assemble()
+    b = assemble_vector(L)
+    apply_lifting(b, [a], [bcs])
+
+    # Solve
+    solver = PETSc.KSP().create(MPI.COMM_WORLD)
+    PETSc.Options()["ksp_type"] = "preonly"
+    PETSc.Options()["ksp_view"] = ""
+    PETSc.Options()["pc_type"] = "lu"
+    PETSc.Options()["pc_factor_mat_solver_type"] = "mumps"
+    solver.setFromOptions()
+    solver.setOperators(A)
+
+    x_h = Function(V)
+    solver.solve(b, x_h.vector)
+    x_h.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT,
+                           mode=PETSc.ScatterMode.FORWARD)
+    sigma_h, u_h = x_h.split()
+
+    with XDMFFile(MPI.COMM_WORLD, "u_h.xdmf", "w") as xdmf:
+        xdmf.write_mesh(mesh)
+        xdmf.write_function(u_h)
+
+    u = ufl.TrialFunction(V_1)
+    v = ufl.TestFunction(V_1)
+
+    a = inner(u, v) * dx
+    L = inner(u_exact, v) * dx
+
+    problem = LinearProblem(a, L, petsc_options={"ksp_type": "preonly",
+                                                 "pc_type": "lu", "pc_factor_mat_solver_type": "mumps"})
+    u_exact_h = problem.solve()
+
+    with XDMFFile(MPI.COMM_WORLD, "u_exact_h.xdmf", "w") as xdmf:
+        xdmf.write_mesh(mesh)
+        xdmf.write_function(u_exact_h)
+
+    u_exact_h_vertex_values = u_exact_h.compute_point_values()
+    u_h_vertex_values = u_h.compute_point_values()
 
 
 def get_mesh(cell_type, datadir):
