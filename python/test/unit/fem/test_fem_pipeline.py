@@ -188,14 +188,14 @@ def run_dg_test(mesh, V, degree):
     assert np.absolute(error) < 1.0e-14
 
 
+@skip_if_complex
 def test_biharmonic():
     """Manufactured biharmonic problem.
 
     Solved using rotated Regge mixed finite element method. This is equivalent
     to the Helan-Herrmann-Johnson (HHJ) finite element method in
     two-dimensions."""
-    # TODO: Move and scale domain. Extend to 3D. Boundary conditions. Solve.
-    # TODO: Possible to do 'patch test' like other tests here?
+    # TODO: Extend to 3D.
     mesh = RectangleMesh(MPI.COMM_WORLD, [np.array([0.0, 0.0, 0.0]),
                                           np.array([1.0, 1.0, 0.0])], [64, 64], CellType.triangle)
 
@@ -232,8 +232,8 @@ def test_biharmonic():
             - ufl.dot(ufl.dot(tau_S, n), n) * ufl.dot(grad(v), n) * ds
 
     # Symmetric formulation
-    a = inner(sigma_S, tau_S) * dx + b(tau_S, u) + b(sigma_S, v)
-    L = -inner(f_exact, v) * dx
+    a = inner(sigma_S, tau_S) * dx - b(tau_S, u) + b(sigma_S, v)
+    L = inner(f_exact, v) * dx
 
     V_1 = V.sub(1).collapse()
     zero_u = Function(V_1)
@@ -247,7 +247,7 @@ def test_biharmonic():
 
     bcs = [DirichletBC(zero_u, boundary_dofs, V.sub(1))]
 
-    A = assemble_matrix(a)
+    A = assemble_matrix(a, bcs=bcs)
     A.assemble()
     b = assemble_vector(L)
     apply_lifting(b, [a], [bcs])
