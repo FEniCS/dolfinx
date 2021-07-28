@@ -222,7 +222,6 @@ def test_biharmonic():
     tau_S = S(tau)
 
     # Discrete duality inner product eq. 4.5 Lizao Li's PhD thesis
-    # Exterior facet term dropped due to w \in H_0^2(\Omega).
     def b(tau_S, v):
         n = FacetNormal(mesh)
         return inner(tau_S, grad(grad(v))) * dx \
