@@ -196,10 +196,10 @@ def test_biharmonic():
     to the Hellan-Herrmann-Johnson (HHJ) finite element method in
     two-dimensions."""
     mesh = RectangleMesh(MPI.COMM_WORLD, [np.array([0.0, 0.0, 0.0]),
-                                          np.array([1.0, 1.0, 0.0])], [16, 16], CellType.triangle)
+                                          np.array([1.0, 1.0, 0.0])], [128, 128], CellType.triangle)
 
-    element = ufl.MixedElement([ufl.FiniteElement("Regge", ufl.triangle, 1),
-                                ufl.FiniteElement("Lagrange", ufl.triangle, 2)])
+    element = ufl.MixedElement([ufl.FiniteElement("Regge", ufl.triangle, 2),
+                                ufl.FiniteElement("Lagrange", ufl.triangle, 3)])
 
     V = FunctionSpace(mesh, element)
     sigma, u = ufl.TrialFunctions(V)
@@ -261,19 +261,15 @@ def test_biharmonic():
     solver.solve(b, x_h.vector)
     x_h.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT,
                            mode=PETSc.ScatterMode.FORWARD)
-    # Compute L^2 norm of solution.
-    x_h_norm = assemble_scalar(inner(x_h, x_h) * dx)
 
-    a = inner(u, v) * dx + inner(sigma_S, tau_S) * dx
-    L = inner(u_exact, v) * dx + inner(S(sigma_exact), tau_S) * dx
+    # Recall that x_h has flattened indices.
+    u_error_numerator = np.sqrt(mesh.mpi_comm().allreduce(assemble_scalar(
+        inner(u_exact - x_h[4], u_exact - x_h[4]) * dx(mesh, metadata={"quadrature_degree": 5})), op=MPI.SUM))
+    u_error_denominator = np.sqrt(mesh.mpi_comm().allreduce(assemble_scalar(
+        inner(u_exact, u_exact) * dx(mesh, metadata={"quadrature_degree": 5})), op=MPI.SUM))
 
-    problem = LinearProblem(a, L, petsc_options={"ksp_type": "preonly",
-                                                 "pc_type": "lu", "pc_factor_mat_solver_type": "mumps"})
-    x_exact_h = problem.solve()
-    # Compute L^2 norm of exact solution in V.
-    x_exact_h_norm = assemble_scalar(inner(x_exact_h, x_exact_h) * dx)
-
-    assert(np.isclose(x_exact_h_norm, x_h_norm, rtol=1E-4))
+    print(u_error_numerator / u_error_denominator)
+    assert(u_error_numerator / u_error_denominator < 0.05)
 
 
 def get_mesh(cell_type, datadir):
