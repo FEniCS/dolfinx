@@ -10,7 +10,7 @@ import ufl
 from dolfinx import (DirichletBC, Function, FunctionSpace,
                      VectorFunctionSpace, RectangleMesh, cpp, fem, UnitCubeMesh, UnitSquareMesh)
 from dolfinx.cpp.mesh import CellType, locate_entities_boundary
-from dolfinx.fem import (LinearProblem, apply_lifting, assemble_matrix, assemble_scalar,
+from dolfinx.fem import (apply_lifting, assemble_matrix, assemble_scalar,
                          assemble_vector, locate_dofs_topological, set_bc)
 from dolfinx.io import XDMFFile
 from dolfinx_utils.test.skips import skip_if_complex
@@ -188,7 +188,6 @@ def run_dg_test(mesh, V, degree):
     assert np.absolute(error) < 1.0e-14
 
 
-@skip_if_complex
 def test_biharmonic():
     """Manufactured biharmonic problem.
 
@@ -196,10 +195,10 @@ def test_biharmonic():
     to the Hellan-Herrmann-Johnson (HHJ) finite element method in
     two-dimensions."""
     mesh = RectangleMesh(MPI.COMM_WORLD, [np.array([0.0, 0.0, 0.0]),
-                                          np.array([1.0, 1.0, 0.0])], [128, 128], CellType.triangle)
+                                          np.array([1.0, 1.0, 0.0])], [32, 32], CellType.triangle)
 
-    element = ufl.MixedElement([ufl.FiniteElement("Regge", ufl.triangle, 2),
-                                ufl.FiniteElement("Lagrange", ufl.triangle, 3)])
+    element = ufl.MixedElement([ufl.FiniteElement("Regge", ufl.triangle, 1),
+                                ufl.FiniteElement("Lagrange", ufl.triangle, 2)])
 
     V = FunctionSpace(mesh, element)
     sigma, u = ufl.TrialFunctions(V)
@@ -228,9 +227,9 @@ def test_biharmonic():
             - ufl.dot(ufl.dot(tau_S('+'), n('+')), n('+')) * jump(grad(v), n) * dS \
             - ufl.dot(ufl.dot(tau_S, n), n) * ufl.dot(grad(v), n) * ds
 
-    # Symmetric formulation
-    a = inner(sigma_S, tau_S) * dx + b(tau_S, u) + b(sigma_S, v)
-    L = -inner(f_exact, v) * dx
+    # Non-symmetric formulation
+    a = inner(sigma_S, tau_S) * dx - b(tau_S, u) + b(sigma_S, v)
+    L = inner(f_exact, v) * dx
 
     V_1 = V.sub(1).collapse()
     zero_u = Function(V_1)
@@ -268,8 +267,17 @@ def test_biharmonic():
     u_error_denominator = np.sqrt(mesh.mpi_comm().allreduce(assemble_scalar(
         inner(u_exact, u_exact) * dx(mesh, metadata={"quadrature_degree": 5})), op=MPI.SUM))
 
-    print(u_error_numerator / u_error_denominator)
-    assert(u_error_numerator / u_error_denominator < 0.05)
+    assert(np.absolute(u_error_numerator / u_error_denominator) < 0.05)
+
+    # Reconstruct tensor from flattened indices.
+    # Apply inverse transform. In 2D we have S^{-1} = S.
+    sigma_h = S(ufl.as_tensor([[x_h[0], x_h[1]], [x_h[2], x_h[3]]]))
+    sigma_error_numerator = np.sqrt(mesh.mpi_comm().allreduce(assemble_scalar(
+        inner(sigma_exact - sigma_h, sigma_exact - sigma_h) * dx(mesh, metadata={"quadrature_degree": 5})), op=MPI.SUM))
+    sigma_error_denominator = np.sqrt(mesh.mpi_comm().allreduce(assemble_scalar(
+        inner(sigma_exact, sigma_exact) * dx(mesh, metadata={"quadrature_degree": 5})), op=MPI.SUM))
+
+    assert(np.absolute(sigma_error_numerator / sigma_error_denominator) < 0.005)
 
 
 def get_mesh(cell_type, datadir):
