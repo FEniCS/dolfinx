@@ -282,28 +282,6 @@ def test_biharmonic():
     assert(np.absolute(sigma_error_numerator / sigma_error_denominator) < 0.005)
 
 
-def test_mwe_hdivdiv():
-    mesh = RectangleMesh(MPI.COMM_WORLD, [np.array([0.0, 0.0, 0.0]),
-                                          np.array([1.0, 1.0, 0.0])], [32, 32], CellType.triangle)
-
-    element = ufl.FiniteElement("Regge", ufl.triangle, 1)
-
-    V = FunctionSpace(mesh, element)
-
-    sigma = ufl.TrialFunctions(V)
-    tau = ufl.TestFunctions(V)
-
-    x = ufl.SpatialCoordinate(mesh)
-    u_exact = ufl.sin(ufl.pi * x[0]) * ufl.sin(ufl.pi * x[0]) * ufl.sin(ufl.pi * x[1]) * ufl.sin(ufl.pi * x[1])
-    sigma_exact = grad(grad(u_exact))
-
-    sigma_L2_norm = np.sqrt(mesh.mpi_comm().allreduce(assemble_scalar(
-        inner(sigma_exact, sigma_exact) * dx(mesh,
-                                             metadata={"quadrature_degree": 5})), op=MPI.SUM))
-
-    print(sigma_L2_norm)
-
-
 def get_mesh(cell_type, datadir):
     # In parallel, use larger meshes
     if cell_type == CellType.triangle:
