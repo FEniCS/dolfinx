@@ -193,7 +193,7 @@ def test_biharmonic():
     """Manufactured biharmonic problem.
 
     Solved using rotated Regge mixed finite element method. This is equivalent
-    to the Helan-Herrmann-Johnson (HHJ) finite element method in
+    to the Hellan-Herrmann-Johnson (HHJ) finite element method in
     two-dimensions."""
     mesh = RectangleMesh(MPI.COMM_WORLD, [np.array([0.0, 0.0, 0.0]),
                                           np.array([1.0, 1.0, 0.0])], [16, 16], CellType.triangle)
@@ -252,7 +252,6 @@ def test_biharmonic():
     # Solve
     solver = PETSc.KSP().create(MPI.COMM_WORLD)
     PETSc.Options()["ksp_type"] = "preonly"
-    PETSc.Options()["ksp_view"] = ""
     PETSc.Options()["pc_type"] = "lu"
     PETSc.Options()["pc_factor_mat_solver_type"] = "mumps"
     solver.setFromOptions()
