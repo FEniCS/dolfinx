@@ -193,12 +193,11 @@ def test_biharmonic():
 
     Solved using rotated Regge mixed finite element method. This is equivalent
     to the Helan-Herrmann-Johnson (HHJ) finite element method in
-    two-dimensions. Solving w(x) = (1 - cos(2*pi*x))*(1 - cos(4*pi*y)) on
-    Omega = [-1, 1]^2 with w in H^2_0(Omega)."""
+    two-dimensions."""
     # TODO: Move and scale domain. Extend to 3D. Boundary conditions. Solve.
     # TODO: Possible to do 'patch test' like other tests here?
-    mesh = RectangleMesh(MPI.COMM_WORLD, [np.array([-1.0, -1.0, 0.0]),
-                                          np.array([1.0, 1.0, 0.0])], [32, 32], CellType.triangle)
+    mesh = RectangleMesh(MPI.COMM_WORLD, [np.array([0.0, 0.0, 0.0]),
+                                          np.array([1.0, 1.0, 0.0])], [64, 64], CellType.triangle)
 
     element = ufl.MixedElement([ufl.FiniteElement("Regge", ufl.triangle, 1),
                                 ufl.FiniteElement("Lagrange", ufl.triangle, 2)])
@@ -208,7 +207,7 @@ def test_biharmonic():
     tau, v = ufl.TestFunctions(V)
 
     x = ufl.SpatialCoordinate(mesh)
-    u_exact = (1.0 - ufl.cos(2.0 * ufl.pi * x[0])) * (1 - ufl.cos(4.0 * ufl.pi * x[1]))
+    u_exact = ufl.sin(ufl.pi * x[0]) * ufl.sin(ufl.pi * x[0]) * ufl.sin(ufl.pi * x[1]) * ufl.sin(ufl.pi * x[1])
     f_exact = div(grad(div(grad(u_exact))))
 
     # sigma and tau are tangential-tangential continuous according to the
@@ -233,21 +232,22 @@ def test_biharmonic():
             - ufl.dot(ufl.dot(tau_S, n), n) * ufl.dot(grad(v), n) * ds
 
     # Symmetric formulation
-    a = inner(sigma_S, tau_S) * dx + b(tau_S, u) - b(sigma_S, v)
-    L = inner(f_exact, v) * dx
-
-    # Strong (Dirichlet) boundary condition
-    boundary_facets = locate_entities_boundary(mesh, mesh.topology.dim - 1, lambda x: np.ones(x.shape[1], dtype=bool))
-    boundary_dofs = locate_dofs_topological([V.sub(1), V.sub(1)], mesh.topology.dim - 1, boundary_facets)
+    a = inner(sigma_S, tau_S) * dx + b(tau_S, u) + b(sigma_S, v)
+    L = -inner(f_exact, v) * dx
 
     V_1 = V.sub(1).collapse()
     zero_u = Function(V_1)
     with zero_u.vector.localForm() as zero_u_local:
         zero_u_local.set(0.0)
 
+    # Strong (Dirichlet) boundary condition
+    boundary_facets = locate_entities_boundary(
+        mesh, mesh.topology.dim - 1, lambda x: np.full(x.shape[1], True, dtype=bool))
+    boundary_dofs = locate_dofs_topological((V.sub(1), V_1), mesh.topology.dim - 1, boundary_facets)
+
     bcs = [DirichletBC(zero_u, boundary_dofs, V.sub(1))]
 
-    A = assemble_matrix(a, bcs=bcs)
+    A = assemble_matrix(a)
     A.assemble()
     b = assemble_vector(L)
     apply_lifting(b, [a], [bcs])
@@ -266,7 +266,6 @@ def test_biharmonic():
     x_h.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT,
                            mode=PETSc.ScatterMode.FORWARD)
     sigma_h, u_h = x_h.split()
-    print(u_h.vector.norm())
 
     with XDMFFile(MPI.COMM_WORLD, "u_h.xdmf", "w") as xdmf:
         xdmf.write_mesh(mesh)
