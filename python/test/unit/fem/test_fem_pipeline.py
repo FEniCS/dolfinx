@@ -195,9 +195,8 @@ def test_biharmonic():
     Solved using rotated Regge mixed finite element method. This is equivalent
     to the Helan-Herrmann-Johnson (HHJ) finite element method in
     two-dimensions."""
-    # TODO: Extend to 3D.
     mesh = RectangleMesh(MPI.COMM_WORLD, [np.array([0.0, 0.0, 0.0]),
-                                          np.array([1.0, 1.0, 0.0])], [64, 64], CellType.triangle)
+                                          np.array([1.0, 1.0, 0.0])], [16, 16], CellType.triangle)
 
     element = ufl.MixedElement([ufl.FiniteElement("Regge", ufl.triangle, 1),
                                 ufl.FiniteElement("Lagrange", ufl.triangle, 2)])
@@ -209,6 +208,7 @@ def test_biharmonic():
     x = ufl.SpatialCoordinate(mesh)
     u_exact = ufl.sin(ufl.pi * x[0]) * ufl.sin(ufl.pi * x[0]) * ufl.sin(ufl.pi * x[1]) * ufl.sin(ufl.pi * x[1])
     f_exact = div(grad(div(grad(u_exact))))
+    sigma_exact = grad(grad(u_exact))
 
     # sigma and tau are tangential-tangential continuous according to the
     # H(curl curl) continuity of the Regge space. However, for the biharmonic
@@ -221,19 +221,17 @@ def test_biharmonic():
     sigma_S = S(sigma)
     tau_S = S(tau)
 
-    # Normal-normal component of tensor field
-    n = FacetNormal(mesh)
-
     # Discrete duality inner product eq. 4.5 Lizao Li's PhD thesis
     # Exterior facet term dropped due to w \in H_0^2(\Omega).
     def b(tau_S, v):
+        n = FacetNormal(mesh)
         return inner(tau_S, grad(grad(v))) * dx \
             - ufl.dot(ufl.dot(tau_S('+'), n('+')), n('+')) * jump(grad(v), n) * dS \
             - ufl.dot(ufl.dot(tau_S, n), n) * ufl.dot(grad(v), n) * ds
 
     # Symmetric formulation
-    a = inner(sigma_S, tau_S) * dx - b(tau_S, u) + b(sigma_S, v)
-    L = inner(f_exact, v) * dx
+    a = inner(sigma_S, tau_S) * dx + b(tau_S, u) + b(sigma_S, v)
+    L = -inner(f_exact, v) * dx
 
     V_1 = V.sub(1).collapse()
     zero_u = Function(V_1)
@@ -265,25 +263,19 @@ def test_biharmonic():
     solver.solve(b, x_h.vector)
     x_h.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT,
                            mode=PETSc.ScatterMode.FORWARD)
-    sigma_h, u_h = x_h.split()
+    # Compute L^2 norm of solution.
+    x_h_norm = assemble_scalar(inner(x_h, x_h) * dx)
 
-    with XDMFFile(MPI.COMM_WORLD, "u_h.xdmf", "w") as xdmf:
-        xdmf.write_mesh(mesh)
-        xdmf.write_function(u_h)
-
-    u = ufl.TrialFunction(V_1)
-    v = ufl.TestFunction(V_1)
-
-    a = inner(u, v) * dx
-    L = inner(u_exact, v) * dx
+    a = inner(u, v) * dx + inner(sigma_S, tau_S) * dx
+    L = inner(u_exact, v) * dx + inner(S(sigma_exact), tau_S) * dx
 
     problem = LinearProblem(a, L, petsc_options={"ksp_type": "preonly",
                                                  "pc_type": "lu", "pc_factor_mat_solver_type": "mumps"})
-    u_exact_h = problem.solve()
+    x_exact_h = problem.solve()
+    # Compute L^2 norm of exact solution in V.
+    x_exact_h_norm = assemble_scalar(inner(x_exact_h, x_exact_h) * dx)
 
-    with XDMFFile(MPI.COMM_WORLD, "u_exact_h.xdmf", "w") as xdmf:
-        xdmf.write_mesh(mesh)
-        xdmf.write_function(u_exact_h)
+    assert(np.isclose(x_exact_h_norm, x_h_norm, rtol=1E-4))
 
 
 def get_mesh(cell_type, datadir):
