@@ -188,6 +188,7 @@ def run_dg_test(mesh, V, degree):
     assert np.absolute(error) < 1.0e-14
 
 
+@skip_if_complex
 def test_biharmonic():
     """Manufactured biharmonic problem.
 
