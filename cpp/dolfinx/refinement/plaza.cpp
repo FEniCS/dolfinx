@@ -532,7 +532,7 @@ mesh::Mesh plaza::refine(const mesh::Mesh& mesh, bool redistribute)
                 mesh.mpi_comm());
 
   // Build mesh
-  const mesh::GhostMode ghost_mode = (max_ghost_cells == 0)
+  const mesh::GhostMode ghost_mode = max_ghost_cells == 0
                                          ? mesh::GhostMode::none
                                          : mesh::GhostMode::shared_facet;
 
@@ -563,7 +563,7 @@ mesh::Mesh plaza::refine(const mesh::Mesh& mesh,
                 mesh.mpi_comm());
 
   // Build mesh
-  const mesh::GhostMode ghost_mode = (max_ghost_cells == 0)
+  const mesh::GhostMode ghost_mode = max_ghost_cells == 0
                                          ? mesh::GhostMode::none
                                          : mesh::GhostMode::shared_facet;
 

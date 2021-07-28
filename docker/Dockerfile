@@ -8,15 +8,15 @@
 #
 # To run a nightly build:
 #
-#    docker run -ti dolfinx/dolfinx
+#    docker run -ti dolfinx/dolfinx:latest
 #
 # To run a Jupyter lab session:
 #
-#    docker run --init -p 8888:8888 dolfinx/lab
+#    docker run --init -p 8888:8888 dolfinx/lab:latest
 #
 # To run and share the current host directory with the container:
 #
-#    docker run --init -p 8888:8888 -v "$(pwd)":/root/shared dolfinx/lab
+#    docker run --init -p 8888:8888 -v "$(pwd)":/root/shared dolfinx/lab:latest
 #
 # To build from source, first checkout the DOLFINx, FFCx, Basix and UFL
 # repositories into the working directory, e.g.:
@@ -26,8 +26,8 @@
 #
 # Then run the commands:
 #
-#    docker pull dolfinx/dolfinx-onbuild
-#    echo "FROM dolfinx/dolfinx-onbuild" | docker build -f- .
+#    docker pull dolfinx/dolfinx-onbuild:latest
+#    echo "FROM dolfinx/dolfinx-onbuild:latest" | docker build -f- .
 #
 # You can build an optimised version of the complete FEniCS environment for
 # your platform using the commands:
@@ -43,11 +43,11 @@
 
 
 ARG GMSH_VERSION=4_8_4
-ARG PYBIND11_VERSION=2.6.2
-ARG PETSC_VERSION=3.15.1
+ARG PYBIND11_VERSION=2.7.0
+ARG PETSC_VERSION=3.15.2
 ARG SLEPC_VERSION=3.15.1
 ARG ADIOS2_VERSION=2.7.1
-ARG PYVISTA_VERSION=0.31.1
+ARG PYVISTA_VERSION=0.31.3
 ARG KAHIP_VERSION=3.11
 ARG XTENSOR_VERSION=0.23.10
 ARG XTENSOR_BLAS_VERSION=0.19.1
@@ -96,7 +96,8 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get -qq update && \
     apt-get -yq --with-new-pkgs -o Dpkg::Options::="--force-confold" upgrade && \
     apt-get -y install \
-    clang-10 \
+    clang \
+    clang-12 \
     cmake \
     g++ \
     gfortran \

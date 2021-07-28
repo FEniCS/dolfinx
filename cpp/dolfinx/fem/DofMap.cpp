@@ -11,6 +11,7 @@
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
+#include <dolfinx/common/sort.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Topology.h>
 #include <memory>
@@ -55,15 +56,9 @@ fem::DofMap build_collapsed_dofmap(MPI_Comm comm, const DofMap& dofmap_view,
   auto cells = topology.connectivity(tdim, 0);
   assert(cells);
 
-  // TODO: The below is just copying the dofmap adjacency list?
   // Build set of dofs that are in the new dofmap
-  std::vector<std::int32_t> dofs_view;
-  for (int i = 0; i < cells->num_nodes(); ++i)
-  {
-    for (auto dof : dofmap_view.cell_dofs(i))
-      dofs_view.push_back(dof);
-  }
-  std::sort(dofs_view.begin(), dofs_view.end());
+  std::vector<std::int32_t> dofs_view = dofmap_view.list().array();
+  dolfinx::radix_sort(xtl::span(dofs_view));
   dofs_view.erase(std::unique(dofs_view.begin(), dofs_view.end()),
                   dofs_view.end());
 
@@ -77,9 +72,13 @@ fem::DofMap build_collapsed_dofmap(MPI_Comm comm, const DofMap& dofmap_view,
   const std::size_t num_owned = std::distance(dofs_view.begin(), it_unowned0);
   const std::size_t num_unowned = std::distance(it_unowned0, dofs_view.end());
 
+  // FIXME: We can avoid the MPI_Exscan by counting the offsets for the
+  // owned mesh entities
+
   // Get process offset for new dofmap
-  const std::int64_t process_offset
-      = dolfinx::MPI::global_offset(comm, num_owned, true);
+  std::size_t offset = 0;
+  MPI_Exscan(&num_owned, &offset, 1, dolfinx::MPI::mpi_type<std::size_t>(),
+             MPI_SUM, comm);
 
   // For owned dofs, compute new global index
   std::vector<std::int64_t> global_index(dofmap_view.index_map->size_local(),
@@ -88,7 +87,7 @@ fem::DofMap build_collapsed_dofmap(MPI_Comm comm, const DofMap& dofmap_view,
   {
     const std::size_t block = std::distance(dofs_view.begin(), it);
     const std::int32_t block_parent = *it / bs_view;
-    global_index[block_parent] = block + process_offset;
+    global_index[block_parent] = block + offset;
   }
 
   // Send new global indices for owned dofs to non-owning process, and

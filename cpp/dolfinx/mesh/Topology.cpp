@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/log.h>
+#include <dolfinx/common/sort.h>
 #include <dolfinx/common/utils.h>
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/graph/AdjacencyList.h>
@@ -241,6 +242,7 @@ void Topology::create_entity_permutations()
   // FIXME: Is this always required? Could it be made cheaper by doing a
   // local version? This call does quite a lot of parallel work
   // Create all mesh entities
+
   for (int d = 0; d < tdim; ++d)
     create_entities(d);
 
@@ -344,7 +346,7 @@ mesh::create_topology(MPI_Comm comm,
   std::vector<std::int64_t> local_vertices_set(
       cells.array().begin(),
       std::next(cells.array().begin(), cells.offsets()[num_local_cells]));
-  std::sort(local_vertices_set.begin(), local_vertices_set.end());
+  dolfinx::radix_sort(xtl::span(local_vertices_set));
   local_vertices_set.erase(
       std::unique(local_vertices_set.begin(), local_vertices_set.end()),
       local_vertices_set.end());
@@ -353,7 +355,7 @@ mesh::create_topology(MPI_Comm comm,
   std::vector<std::int64_t> ghost_vertices_set(
       std::next(cells.array().begin(), cells.offsets()[num_local_cells]),
       cells.array().end());
-  std::sort(ghost_vertices_set.begin(), ghost_vertices_set.end());
+  dolfinx::radix_sort(xtl::span(ghost_vertices_set));
   ghost_vertices_set.erase(
       std::unique(ghost_vertices_set.begin(), ghost_vertices_set.end()),
       ghost_vertices_set.end());
@@ -414,10 +416,18 @@ mesh::create_topology(MPI_Comm comm,
     }
   }
 
+  t0.stop();
+
   // Store number of vertices owned by this rank
   const std::int32_t nlocal = v;
 
-  t0.stop();
+  // Compute the global offset for local vertex indices
+  const std::int64_t num_local = nlocal;
+  std::int64_t global_offset_v = 0;
+  MPI_Request request_scan_v;
+  MPI_Iexscan(&num_local, &global_offset_v, 1,
+              dolfinx::MPI::mpi_type<std::int64_t>(), MPI_SUM, comm,
+              &request_scan_v);
 
   // Re-order vertices by looping through cells in order
 
@@ -445,10 +455,6 @@ mesh::create_topology(MPI_Comm comm,
                     v.second = remap[v.second];
                 });
 
-  // Compute the global offset for local vertex indices
-  const std::int64_t global_offset
-      = dolfinx::MPI::global_offset(comm, nlocal, true);
-
   // Find all vertex-sharing neighbors, and process-to-neighbor map
 
   // Create set of all ranks that share a vertex with this rank
@@ -473,6 +479,9 @@ mesh::create_topology(MPI_Comm comm,
 
   // -- Communicate new global vertex index to neighbors
 
+  // Wait for the MPI_Iallreduce to complete
+  MPI_Wait(&request_scan_v, MPI_STATUS_IGNORE);
+
   // Pack send data
   std::vector<std::vector<std::int64_t>> send_pairs(neighbors.size());
   for (const auto& q : global_vertex_to_ranks)
@@ -490,7 +499,7 @@ mesh::create_topology(MPI_Comm comm,
       {
         int np = proc_to_neighbors[procs[j]];
         send_pairs[np].push_back(it->first);
-        send_pairs[np].push_back(it->second + global_offset);
+        send_pairs[np].push_back(it->second + global_offset_v);
       }
     }
   }
@@ -563,7 +572,7 @@ mesh::create_topology(MPI_Comm comm,
       assert(it != global_to_local_vertices.end());
       assert(it->second != -1);
       const std::int64_t gi = it->second < nlocal
-                                  ? it->second + global_offset
+                                  ? it->second + global_offset_v
                                   : ghost_vertices[it->second - nlocal];
 
       for (int p : q.second)

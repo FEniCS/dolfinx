@@ -147,7 +147,7 @@ set_package_properties(Boost PROPERTIES TYPE REQUIRED
   URL "http://www.boost.org")
 
 # Check for required package xtensor
-find_package(xtensor REQUIRED)
+find_package(xtensor 0.23.10 REQUIRED)
 set_package_properties(xtensor PROPERTIES TYPE REQUIRED
   DESCRIPTION "C++ library for numerical analysis with multi-dimensional array expressions."
   URL "https://xtensor.readthedocs.io/")
@@ -158,7 +158,7 @@ set_package_properties(xtensor-blas PROPERTIES TYPE REQUIRED
   DESCRIPTION "BLAS extenssion to xtensor."
   URL "https://xtensor-blas.readthedocs.io/")
 
-  find_package(PETSc 3.10)
+find_package(PETSc 3.10)
 set_package_properties(PETSc PROPERTIES TYPE REQUIRED
   DESCRIPTION "Portable, Extensible Toolkit for Scientific Computation (PETSc)"
   URL "https://www.mcs.anl.gov/petsc/"
@@ -166,7 +166,9 @@ set_package_properties(PETSc PROPERTIES TYPE REQUIRED
 
 # Check for HDF5
 set(HDF5_PREFER_PARALLEL TRUE)
-find_package(HDF5 REQUIRED)
+set(HDF5_NO_FIND_PACKAGE_CONFIG_FILE TRUE)
+set(HDF5_FIND_DEBUG TRUE)
+find_package(HDF5 REQUIRED COMPONENTS C)
 if (NOT HDF5_IS_PARALLEL)
   message(FATAL_ERROR "Found serial HDF5 build, MPI HDF5 build required, try setting HDF5_DIR")
 endif()
