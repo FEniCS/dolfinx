@@ -263,11 +263,6 @@ def test_biharmonic():
     x_h.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT,
                            mode=PETSc.ScatterMode.FORWARD)
 
-    _, u_h = x_h.split()
-    with XDMFFile(mesh.mpi_comm(), "u_h.xdmf", "w") as xdmf:
-        xdmf.write_mesh(mesh)
-        xdmf.write_function(u_h)
-
     # Recall that x_h has flattened indices.
     u_error_numerator = np.sqrt(mesh.mpi_comm().allreduce(assemble_scalar(
         inner(u_exact - x_h[4], u_exact - x_h[4]) * dx(mesh, metadata={"quadrature_degree": 5})), op=MPI.SUM))
@@ -294,7 +289,7 @@ def test_mwe_hdivdiv():
     element = ufl.FiniteElement("Regge", ufl.triangle, 1)
 
     V = FunctionSpace(mesh, element)
-    
+
     sigma = ufl.TrialFunctions(V)
     tau = ufl.TestFunctions(V)
 
@@ -304,10 +299,10 @@ def test_mwe_hdivdiv():
 
     sigma_L2_norm = np.sqrt(mesh.mpi_comm().allreduce(assemble_scalar(
         inner(sigma_exact, sigma_exact) * dx(mesh,
-            metadata={"quadrature_degree": 5})), op=MPI.SUM))
+                                             metadata={"quadrature_degree": 5})), op=MPI.SUM))
 
     print(sigma_L2_norm)
-    
+
 
 def get_mesh(cell_type, datadir):
     # In parallel, use larger meshes
