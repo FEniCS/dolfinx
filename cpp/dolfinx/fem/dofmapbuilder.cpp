@@ -436,8 +436,10 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
 
       // Number and values to send and receive
       const int num_indices = global[d].size();
+      std::vector<int> size_recv(indegree);
       // Note: add 1 for OpenMPI bug when indegree = 0
-      std::vector<int> size_recv(indegree + 1);
+      if (size_recv.empty())
+        size_recv.push_back(0);
       MPI_Neighbor_allgather(&num_indices, 1, MPI_INT, size_recv.data(), 1,
                              MPI_INT, comm[d]);
 
@@ -530,7 +532,7 @@ fem::build_dofmap_data(
       = build_basic_dofmap(topology, element_dof_layout);
 
   // Compute global dofmap dimension
-  std::int64_t global_dimension = 0;
+  std::int64_t global_dimension(0), offset(0);
   for (int d = 0; d <= D; ++d)
   {
     if (element_dof_layout.num_entity_dofs(d) > 0)
@@ -538,6 +540,8 @@ fem::build_dofmap_data(
       assert(topology.index_map(d));
       const std::int64_t n = topology.index_map(d)->size_global();
       global_dimension += n * element_dof_layout.num_entity_dofs(d);
+      offset += topology.index_map(d)->local_range()[0]
+                * element_dof_layout.num_entity_dofs(d);
     }
   }
 
@@ -546,14 +550,10 @@ fem::build_dofmap_data(
   const auto [old_to_new, num_owned]
       = compute_reordering_map(node_graph0, dof_entity0, topology, reorder_fn);
 
-  // Compute process offset for owned nodes
-  const std::int64_t process_offset
-      = dolfinx::MPI::global_offset(comm, num_owned, true);
-
   // Get global indices for unowned dofs
   const auto [local_to_global_unowned, local_to_global_owner]
-      = get_global_indices(topology, num_owned, process_offset,
-                           local_to_global0, old_to_new, dof_entity0);
+      = get_global_indices(topology, num_owned, offset, local_to_global0,
+                           old_to_new, dof_entity0);
   assert(local_to_global_unowned.size() == local_to_global_owner.size());
 
   // Create IndexMap for dofs range on this process
@@ -572,7 +572,6 @@ fem::build_dofmap_data(
     // Get dof order on this cell
     auto old_nodes = node_graph0.links(cell);
     const std::int32_t local_dim0 = old_nodes.size();
-
     for (std::int32_t j = 0; j < local_dim0; ++j)
     {
       const std::int32_t old_node = old_nodes[j];

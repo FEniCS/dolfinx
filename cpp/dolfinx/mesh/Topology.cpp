@@ -416,10 +416,18 @@ mesh::create_topology(MPI_Comm comm,
     }
   }
 
+  t0.stop();
+
   // Store number of vertices owned by this rank
   const std::int32_t nlocal = v;
 
-  t0.stop();
+  // Compute the global offset for local vertex indices
+  const std::int64_t num_local = nlocal;
+  std::int64_t global_offset_v = 0;
+  MPI_Request request_scan_v;
+  MPI_Iexscan(&num_local, &global_offset_v, 1,
+              dolfinx::MPI::mpi_type<std::int64_t>(), MPI_SUM, comm,
+              &request_scan_v);
 
   // Re-order vertices by looping through cells in order
 
@@ -447,10 +455,6 @@ mesh::create_topology(MPI_Comm comm,
                     v.second = remap[v.second];
                 });
 
-  // Compute the global offset for local vertex indices
-  const std::int64_t global_offset
-      = dolfinx::MPI::global_offset(comm, nlocal, true);
-
   // Find all vertex-sharing neighbors, and process-to-neighbor map
 
   // Create set of all ranks that share a vertex with this rank
@@ -475,6 +479,9 @@ mesh::create_topology(MPI_Comm comm,
 
   // -- Communicate new global vertex index to neighbors
 
+  // Wait for the MPI_Iallreduce to complete
+  MPI_Wait(&request_scan_v, MPI_STATUS_IGNORE);
+
   // Pack send data
   std::vector<std::vector<std::int64_t>> send_pairs(neighbors.size());
   for (const auto& q : global_vertex_to_ranks)
@@ -492,7 +499,7 @@ mesh::create_topology(MPI_Comm comm,
       {
         int np = proc_to_neighbors[procs[j]];
         send_pairs[np].push_back(it->first);
-        send_pairs[np].push_back(it->second + global_offset);
+        send_pairs[np].push_back(it->second + global_offset_v);
       }
     }
   }
@@ -565,7 +572,7 @@ mesh::create_topology(MPI_Comm comm,
       assert(it != global_to_local_vertices.end());
       assert(it->second != -1);
       const std::int64_t gi = it->second < nlocal
-                                  ? it->second + global_offset
+                                  ? it->second + global_offset_v
                                   : ghost_vertices[it->second - nlocal];
 
       for (int p : q.second)
