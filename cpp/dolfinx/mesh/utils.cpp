@@ -80,6 +80,10 @@ std::vector<double> mesh::h(const Mesh& mesh,
   {
     // Get the coordinates  of the vertices
     auto dofs = x_dofs.links(entities[e]);
+
+    // The below should work, but misbehaves with the Intel icpx compiler
+    // xt::view(points, xt::range(0, num_vertices), xt::all())
+    //     = xt::view(geom_dofs, xt::keep(dofs), xt::all());
     auto points_view = xt::view(points, xt::range(0, num_vertices), xt::all());
     points_view.assign(xt::view(geom_dofs, xt::keep(dofs), xt::all()));
 
@@ -197,6 +201,8 @@ mesh::midpoints(const mesh::Mesh& mesh, int dim,
   for (std::size_t e = 0; e < entity_to_geometry.shape(0); ++e)
   {
     auto rows = xt::row(entity_to_geometry, e);
+    // The below should work, but misbehaves with the Intel icpx compiler
+    // xt::row(x_mid, e) = xt::mean(xt::view(x, xt::keep(rows)), 0);
     auto _x = xt::row(x_mid, e);
     _x.assign(xt::mean(xt::view(x, xt::keep(rows)), 0));
   }

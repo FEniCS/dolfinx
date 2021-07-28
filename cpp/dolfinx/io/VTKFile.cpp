@@ -107,9 +107,7 @@ std::string xt_to_string(const T& x, int precision)
 {
   std::stringstream s;
   s.precision(precision);
-
   std::for_each(x.begin(), x.end(), [&s](auto e) { s << e << " "; });
-
   return s.str();
 }
 

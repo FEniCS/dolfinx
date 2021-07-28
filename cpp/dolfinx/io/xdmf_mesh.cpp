@@ -266,10 +266,13 @@ xt::xtensor<double, 2> xdmf_mesh::read_geometry_data(MPI_Comm comm,
   const std::size_t num_local_nodes = geometry_data.size() / gdim;
   std::array<std::size_t, 2> shape = {num_local_nodes, gdim};
 
+  // The below should work, but misbehaves with the Intel icpx compiler
+  // return xt::adapt(geometry_data.data(), geometry_data.size(),
+  //                  xt::no_ownership(), shape);
+
   // Explicitly copy to an xtensor
   xt::xtensor<double, 2> x = xt::empty<double>(shape);
   std::copy(geometry_data.begin(), geometry_data.end(), x.begin());
-
   return x;
 }
 //----------------------------------------------------------------------------
@@ -300,6 +303,10 @@ xdmf_mesh::read_topology_data(MPI_Comm comm, const hid_t h5_id,
   const std::size_t num_local_cells = topology_data.size() / npoint_per_cell;
 
   std::array<std::size_t, 2> shape = {num_local_cells, npoint_per_cell};
+
+  // The below should work, but misbehaves with the Intel icpx compiler
+  // auto cells_vtk = xt::adapt(topology_data.data(), topology_data.size(),
+  //                            xt::no_ownership(), shape);
 
   // Explicitly copy to an xtensor
   xt::xtensor<std::int64_t, 2> cells_vtk = xt::empty<std::int64_t>(shape);

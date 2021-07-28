@@ -50,6 +50,11 @@ void io(py::module& m)
           std::array<std::size_t, 2> shape
               = {static_cast<std::size_t>(entities.shape(0)),
                  static_cast<std::size_t>(entities.shape(1))};
+
+          // The below should work, but misbehaves with the Intel icpx
+          // compiler
+          // auto _entities = xt::adapt(entities.data(), entities.size(),
+          //                            xt::no_ownership(), shape);
           xt::xtensor<std::int64_t, 2> _entities(shape);
           std::copy_n(entities.data(), entities.size(), _entities.data());
 

@@ -586,8 +586,13 @@ xdmf_utils::extract_local_entities(const mesh::Mesh& mesh, const int entity_dim,
 
   std::array<std::size_t, 2> shape_r = {
       entities_new.size() / num_vertices_per_entity, num_vertices_per_entity};
+
+  // The below should work, but misbehaves with the Intel icpx compiler
+  // auto e_new = xt::adapt(entities_new.data(), entities_new.size(),
+  //                        xt::no_ownership(), shape_r);
   xt::xtensor<std::int32_t, 2> e_new(shape_r);
   std::copy_n(entities_new.data(), entities_new.size(), e_new.data());
-  return {e_new, values_new};
+
+  return {std::move(e_new), std::move(values_new)};
 }
 //-----------------------------------------------------------------------------

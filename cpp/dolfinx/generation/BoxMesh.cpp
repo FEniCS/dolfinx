@@ -129,6 +129,10 @@ mesh::Mesh build_tet(MPI_Comm comm,
         = {{v0, v1, v3, v7}, {v0, v1, v7, v5}, {v0, v5, v7, v4},
            {v0, v3, v2, v7}, {v0, v6, v4, v7}, {v0, v2, v6, v7}};
     std::size_t offset = 6 * (i - range_c[0]);
+
+    // Note: we would like to assign to a view, but this does not work
+    // correctly with the Intel icpx compiler
+    // xt::view(cells, xt::range(offset, offset + 6), xt::all()) = c;
     auto _cell = xt::view(cells, xt::range(offset, offset + 6), xt::all());
     _cell.assign(c);
   }
@@ -177,7 +181,10 @@ mesh::Mesh build_hex(MPI_Comm comm,
 
     xt::xtensor_fixed<std::int64_t, xt::xshape<8>> cell
         = {v0, v1, v2, v3, v4, v5, v6, v7};
-    auto _cell = xt::view(cells, i - range_c[0], xt::all());
+    // Note: we would like to assign to a view, but this does not work
+    // correctly with the Intel icpx compiler
+    // _cell = xt::row(cells, i - range_c[0]) = c;
+    auto _cell = xt::row(cells, i - range_c[0]);
     _cell.assign(cell);
   }
 
