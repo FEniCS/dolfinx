@@ -44,19 +44,26 @@ void io(py::module& m)
   m.def("extract_local_entities",
         [](const dolfinx::mesh::Mesh& mesh, int entity_dim,
            const py::array_t<std::int64_t, py::array::c_style>& entities,
-           const py::array_t<std::int32_t, py::array::c_style>& values) {
+           const py::array_t<std::int32_t, py::array::c_style>& values)
+        {
           assert(entities.ndim() == 2);
           std::array<std::size_t, 2> shape
               = {static_cast<std::size_t>(entities.shape(0)),
                  static_cast<std::size_t>(entities.shape(1))};
-          auto _entities = xt::adapt(entities.data(), entities.size(),
-                                     xt::no_ownership(), shape);
-          std::pair<xt::xtensor<std::int32_t, 2>, std::vector<std::int32_t>> e
-              = dolfinx::io::xdmf_utils::extract_local_entities(
-                  mesh, entity_dim, _entities,
-                  xtl::span(values.data(), values.size()));
-          return std::pair(xt_as_pyarray(std::move(e.first)),
-                           as_pyarray(std::move(e.second)));
+
+          // The below should work, but misbehaves with the Intel icpx
+          // compiler
+          // auto _entities = xt::adapt(entities.data(), entities.size(),
+          //                            xt::no_ownership(), shape);
+          xt::xtensor<std::int64_t, 2> _entities(shape);
+          std::copy_n(entities.data(), entities.size(), _entities.data());
+
+          auto [e, v] = dolfinx::io::xdmf_utils::extract_local_entities(
+              mesh, entity_dim, _entities,
+              xtl::span(values.data(), values.size()));
+
+          return std::pair(xt_as_pyarray(std::move(e)),
+                           as_pyarray(std::move(v)));
         });
 
   // dolfinx::io::XDMFFile
@@ -69,12 +76,14 @@ void io(py::module& m)
       .value("ASCII", dolfinx::io::XDMFFile::Encoding::ASCII);
 
   xdmf_file
-      .def(py::init([](const MPICommWrapper comm, const std::string filename,
-                       const std::string file_mode,
-                       dolfinx::io::XDMFFile::Encoding encoding) {
-             return std::make_unique<dolfinx::io::XDMFFile>(
-                 comm.get(), filename, file_mode, encoding);
-           }),
+      .def(py::init(
+               [](const MPICommWrapper comm, const std::string filename,
+                  const std::string file_mode,
+                  dolfinx::io::XDMFFile::Encoding encoding)
+               {
+                 return std::make_unique<dolfinx::io::XDMFFile>(
+                     comm.get(), filename, file_mode, encoding);
+               }),
            py::arg("comm"), py::arg("filename"), py::arg("file_mode"),
            py::arg("encoding") = dolfinx::io::XDMFFile::Encoding::HDF5)
       .def("__enter__",
@@ -91,16 +100,14 @@ void io(py::module& m)
       .def(
           "read_topology_data",
           [](dolfinx::io::XDMFFile& self, const std::string& name,
-             const std::string& xpath) {
-            return xt_as_pyarray(self.read_topology_data(name, xpath));
-          },
+             const std::string& xpath)
+          { return xt_as_pyarray(self.read_topology_data(name, xpath)); },
           py::arg("name") = "mesh", py::arg("xpath") = "/Xdmf/Domain")
       .def(
           "read_geometry_data",
           [](dolfinx::io::XDMFFile& self, const std::string& name,
-             const std::string& xpath) {
-            return xt_as_pyarray(self.read_geometry_data(name, xpath));
-          },
+             const std::string& xpath)
+          { return xt_as_pyarray(self.read_geometry_data(name, xpath)); },
           py::arg("name") = "mesh", py::arg("xpath") = "/Xdmf/Domain")
       .def("read_geometry_data", &dolfinx::io::XDMFFile::read_geometry_data,
            py::arg("name") = "mesh", py::arg("xpath") = "/Xdmf/Domain")
@@ -127,18 +134,18 @@ void io(py::module& m)
            py::arg("name"), py::arg("value"), py::arg("xpath") = "/Xdmf/Domain")
       .def("read_information", &dolfinx::io::XDMFFile::read_information,
            py::arg("name"), py::arg("xpath") = "/Xdmf/Domain")
-      .def("comm", [](dolfinx::io::XDMFFile& self) {
-        return MPICommWrapper(self.comm());
-      });
+      .def("comm", [](dolfinx::io::XDMFFile& self)
+           { return MPICommWrapper(self.comm()); });
 
   // dolfinx::io::VTKFile
   py::class_<dolfinx::io::VTKFile, std::shared_ptr<dolfinx::io::VTKFile>>(
       m, "VTKFile")
-      .def(py::init([](const MPICommWrapper comm, const std::string& filename,
-                       const std::string& mode) {
-             return std::make_unique<dolfinx::io::VTKFile>(comm.get(),
-                                                              filename, mode);
-           }),
+      .def(py::init(
+               [](const MPICommWrapper comm, const std::string& filename,
+                  const std::string& mode) {
+                 return std::make_unique<dolfinx::io::VTKFile>(comm.get(),
+                                                               filename, mode);
+               }),
            py::arg("comm"), py::arg("filename"), py::arg("mode"))
       .def("__enter__",
            [](std::shared_ptr<dolfinx::io::VTKFile>& self) { return self; })
