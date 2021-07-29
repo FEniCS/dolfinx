@@ -162,7 +162,7 @@ common::stack_index_maps(
 {
   // Compute process offset
   const std::int64_t process_offset = std::accumulate(
-      maps.cbegin(), maps.cend(), static_cast<std::int64_t>(0),
+      maps.cbegin(), maps.cend(), std::int64_t(0),
       [](std::int64_t c, auto& map) -> std::int64_t
       { return c + map.first.get().local_range()[0] * map.second; });
 
@@ -280,7 +280,7 @@ IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size)
 {
   // Get global offset (index), using partial exclusive reduction
   std::int64_t offset = 0;
-  const std::int64_t local_size_tmp = (std::int64_t)local_size;
+  const std::int64_t local_size_tmp = local_size;
   MPI_Request request_scan;
   MPI_Iexscan(&local_size_tmp, &offset, 1, MPI_INT64_T, MPI_SUM, comm,
               &request_scan);

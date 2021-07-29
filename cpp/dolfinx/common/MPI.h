@@ -22,185 +22,166 @@
 #define MPICH_IGNORE_CXX_SEEK 1
 #include <mpi.h>
 
-namespace dolfinx
+/// MPI support functionality
+namespace dolfinx::MPI
 {
 
-/// This class provides utility functions for easy communication with
-/// MPI and handles cases when DOLFINx is not configured with MPI.
-class MPI
+/// A duplicate MPI communicator and manage lifetime of the
+/// communicator
+class Comm
 {
 public:
-  /// A duplicate MPI communicator and manage lifetime of the
-  /// communicator
-  class Comm
-  {
-  public:
-    /// Duplicate communicator and wrap duplicate
-    explicit Comm(MPI_Comm comm, bool duplicate = true);
+  /// Duplicate communicator and wrap duplicate
+  explicit Comm(MPI_Comm comm, bool duplicate = true);
 
-    /// Copy constructor
-    Comm(const Comm& comm) noexcept;
+  /// Copy constructor
+  Comm(const Comm& comm) noexcept;
 
-    /// Move constructor
-    Comm(Comm&& comm) noexcept;
+  /// Move constructor
+  Comm(Comm&& comm) noexcept;
 
-    // Disable copy assignment operator
-    Comm& operator=(const Comm& comm) = delete;
+  // Disable copy assignment operator
+  Comm& operator=(const Comm& comm) = delete;
 
-    /// Move assignment operator
-    Comm& operator=(Comm&& comm) noexcept;
+  /// Move assignment operator
+  Comm& operator=(Comm&& comm) noexcept;
 
-    /// Destructor (frees wrapped communicator)
-    ~Comm();
+  /// Destructor (frees wrapped communicator)
+  ~Comm();
 
-    /// Return the underlying MPI_Comm object
-    MPI_Comm comm() const noexcept;
+  /// Return the underlying MPI_Comm object
+  MPI_Comm comm() const noexcept;
 
-  private:
-    // MPI communicator
-    MPI_Comm _comm;
-  };
-
-  /// Return process rank for the communicator
-  static int rank(MPI_Comm comm);
-
-  /// Return size of the group (number of processes) associated with the
-  /// communicator
-  static int size(MPI_Comm comm);
-
-  /// Send in_values[p0] to process p0 and receive values from process
-  /// p1 in out_values[p1]
-  template <typename T>
-  static graph::AdjacencyList<T>
-  all_to_all(MPI_Comm comm, const graph::AdjacencyList<T>& send_data);
-
-  /// @todo Experimental. Maybe be moved or removed.
-  ///
-  /// Compute communication graph edges. The caller provides edges that
-  /// it can define, and will receive edges to it that are defined by
-  /// other ranks.
-  ///
-  /// @note This function involves global communication
-  ///
-  /// @param[in] comm The MPI communicator
-  /// @param[in] edges Communication edges between the caller and the
-  ///   ranks in @p edges.
-  /// @return Ranks that have defined edges from them to this rank
-  static std::vector<int> compute_graph_edges(MPI_Comm comm,
-                                              const std::set<int>& edges);
-
-  /// Neighborhood all-to-all. Send data to neighbors.
-  /// Send in_values[n0] to neighbor process n0 and receive values from neighbor
-  /// process n1 in out_values[n1]
-  template <typename T>
-  static graph::AdjacencyList<T>
-  neighbor_all_to_all(MPI_Comm neighbor_comm,
-                      const graph::AdjacencyList<T>& send_data);
-
-  /// @todo Clarify directions
-  ///
-  /// Return list of neighbors for a neighborhood communicator
-  /// @param[in] neighbor_comm Neighborhood communicator
-  /// @return source ranks, destination ranks
-  static std::tuple<std::vector<int>, std::vector<int>>
-  neighbors(MPI_Comm neighbor_comm);
-
-  /// Find global offset (index) (wrapper for MPI_(Ex)Scan with MPI_SUM
-  /// as reduction op)
-  static std::size_t global_offset(MPI_Comm comm, std::size_t range,
-                                   bool exclusive);
-
-  /// Return local range for given process, splitting [0, N - 1] into
-  /// size() portions of almost equal size
-  static std::array<std::int64_t, 2> local_range(int process, std::int64_t N,
-                                                 int size);
-
-  /// Return which process owns index (inverse of local_range)
-  /// @param[in] size Number of MPI ranks
-  /// @param[in] index The index to determine owning rank
-  /// @param[in] N Total number of indices
-  /// @return The rank of the owning process
-  static int index_owner(int size, std::size_t index, std::size_t N);
-
-  template <typename T>
-  struct dependent_false : std::false_type
-  {
-  };
-
-  /// MPI Type
-  template <typename T>
-  static MPI_Datatype mpi_type()
-  {
-    static_assert(dependent_false<T>::value, "Unknown MPI type");
-    throw std::runtime_error("MPI data type unknown");
-    return MPI_CHAR;
-  }
+private:
+  // MPI communicator
+  MPI_Comm _comm;
 };
 
-// Turn off doxygen for these template specialisations
-/// @cond
-// Specialisations for MPI_Datatypes
-template <>
-inline MPI_Datatype MPI::mpi_type<float>()
-{
-  return MPI_FLOAT;
-}
-template <>
-inline MPI_Datatype MPI::mpi_type<double>()
-{
-  return MPI_DOUBLE;
-}
-template <>
-inline MPI_Datatype MPI::mpi_type<std::complex<double>>()
-{
-  return MPI_DOUBLE_COMPLEX;
-}
-template <>
-inline MPI_Datatype MPI::mpi_type<short int>()
-{
-  return MPI_SHORT;
-}
-template <>
-inline MPI_Datatype MPI::mpi_type<int>()
-{
-  return MPI_INT;
-}
-template <>
-inline MPI_Datatype MPI::mpi_type<unsigned int>()
-{
-  return MPI_UNSIGNED;
-}
-template <>
-inline MPI_Datatype MPI::mpi_type<long int>()
-{
-  return MPI_LONG;
-}
-template <>
-inline MPI_Datatype MPI::mpi_type<unsigned long>()
-{
-  return MPI_UNSIGNED_LONG;
-}
-template <>
-inline MPI_Datatype MPI::mpi_type<long long>()
-{
-  return MPI_LONG_LONG;
-}
-template <>
-inline MPI_Datatype MPI::mpi_type<unsigned long long>()
-{
-  return MPI_UNSIGNED_LONG_LONG;
-}
-template <>
-inline MPI_Datatype MPI::mpi_type<bool>()
-{
-  return MPI_C_BOOL;
-}
-/// @endcond
-//---------------------------------------------------------------------------
+/// Return process rank for the communicator
+int rank(MPI_Comm comm);
+
+/// Return size of the group (number of processes) associated with the
+/// communicator
+int size(MPI_Comm comm);
+
+/// Send in_values[p0] to process p0 and receive values from process
+/// p1 in out_values[p1]
+template <typename T>
+graph::AdjacencyList<T> all_to_all(MPI_Comm comm,
+                                   const graph::AdjacencyList<T>& send_data);
+
+/// @todo Experimental. Maybe be moved or removed.
+///
+/// Compute communication graph edges. The caller provides edges that
+/// it can define, and will receive edges to it that are defined by
+/// other ranks.
+///
+/// @note This function involves global communication
+///
+/// @param[in] comm The MPI communicator
+/// @param[in] edges Communication edges between the caller and the
+///   ranks in @p edges.
+/// @return Ranks that have defined edges from them to this rank
+std::vector<int> compute_graph_edges(MPI_Comm comm, const std::set<int>& edges);
+
+/// Neighborhood all-to-all. Send data to neighbors.
+/// Send in_values[n0] to neighbor process n0 and receive values from neighbor
+/// process n1 in out_values[n1]
 template <typename T>
 graph::AdjacencyList<T>
-dolfinx::MPI::all_to_all(MPI_Comm comm,
-                         const graph::AdjacencyList<T>& send_data)
+neighbor_all_to_all(MPI_Comm neighbor_comm,
+                    const graph::AdjacencyList<T>& send_data);
+
+/// @todo Clarify directions
+///
+/// Return list of neighbors for a neighborhood communicator
+/// @param[in] neighbor_comm Neighborhood communicator
+/// @return source ranks, destination ranks
+std::tuple<std::vector<int>, std::vector<int>>
+neighbors(MPI_Comm neighbor_comm);
+
+/// Return local range for given process, splitting [0, N - 1] into
+/// size() portions of almost equal size
+/// @param[in] rank MPI rank of the caller
+/// @param[in] N The value to partition
+/// @param[in] size The number of MPI ranks across which to partition
+/// `N`
+constexpr std::array<std::int64_t, 2> local_range(int rank, std::int64_t N,
+                                                  int size)
+{
+  assert(rank >= 0);
+  assert(N >= 0);
+  assert(size > 0);
+
+  // Compute number of items per rank and remainder
+  const std::int64_t n = N / size;
+  const std::int64_t r = N % size;
+
+  // Compute local range
+  if (rank < r)
+    return {{rank * (n + 1), rank * (n + 1) + n + 1}};
+  else
+    return {{rank * n + r, rank * n + r + n}};
+}
+
+/// Return which process owns index (inverse of local_range)
+/// @param[in] size Number of MPI ranks
+/// @param[in] index The index to determine owning rank
+/// @param[in] N Total number of indices
+/// @return The rank of the owning process
+constexpr int index_owner(int size, std::size_t index, std::size_t N)
+{
+  assert(index < N);
+
+  // Compute number of items per rank and remainder
+  const std::size_t n = N / size;
+  const std::size_t r = N % size;
+
+  // First r ranks own n + 1 indices
+  if (index < r * (n + 1))
+    return index / (n + 1);
+
+  // Remaining ranks own n indices
+  return r + (index - r * (n + 1)) / n;
+}
+
+template <typename T>
+struct dependent_false : std::false_type
+{
+};
+
+/// MPI Type
+template <typename T>
+constexpr MPI_Datatype mpi_type()
+{
+  if constexpr (std::is_same<T, float>::value)
+    return MPI_FLOAT;
+  else if (std::is_same<T, double>::value)
+    return MPI_DOUBLE;
+  else if (std::is_same<T, std::complex<double>>::value)
+    return MPI_DOUBLE_COMPLEX;
+  else if (std::is_same<T, short int>::value)
+    return MPI_SHORT;
+  else if (std::is_same<T, int>::value)
+    return MPI_INT;
+  else if (std::is_same<T, unsigned int>::value)
+    return MPI_UNSIGNED;
+  else if (std::is_same<T, long int>::value)
+    return MPI_LONG;
+  else if (std::is_same<T, unsigned long>::value)
+    return MPI_UNSIGNED_LONG;
+  else if (std::is_same<T, long long>::value)
+    return MPI_LONG_LONG;
+  else if (std::is_same<T, unsigned long long>::value)
+    return MPI_UNSIGNED_LONG_LONG;
+  else if (std::is_same<T, bool>::value)
+    return MPI_C_BOOL;
+}
+
+//---------------------------------------------------------------------------
+template <typename T>
+graph::AdjacencyList<T> all_to_all(MPI_Comm comm,
+                                   const graph::AdjacencyList<T>& send_data)
 {
   const std::vector<std::int32_t>& send_offsets = send_data.offsets();
   const std::vector<T>& values_in = send_data.array();
@@ -236,8 +217,8 @@ dolfinx::MPI::all_to_all(MPI_Comm comm,
 //-----------------------------------------------------------------------------
 template <typename T>
 graph::AdjacencyList<T>
-dolfinx::MPI::neighbor_all_to_all(MPI_Comm neighbor_comm,
-                                  const graph::AdjacencyList<T>& send_data)
+neighbor_all_to_all(MPI_Comm neighbor_comm,
+                    const graph::AdjacencyList<T>& send_data)
 {
   // Get neighbor processes
   int indegree(-1), outdegree(-2), weighted(-1);
@@ -272,4 +253,4 @@ dolfinx::MPI::neighbor_all_to_all(MPI_Comm neighbor_comm,
 }
 //---------------------------------------------------------------------------
 
-} // namespace dolfinx
+} // namespace dolfinx::MPI

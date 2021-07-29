@@ -86,9 +86,15 @@ target_link_libraries(dolfinx PUBLIC PETSC::petsc)
 target_link_libraries(dolfinx PRIVATE PETSC::petsc_static)
 
 # HDF5
-target_compile_definitions(dolfinx PUBLIC ${HDF5_DEFINITIONS})
-target_link_libraries(dolfinx PUBLIC ${HDF5_C_LIBRARIES})
-target_include_directories(dolfinx SYSTEM PUBLIC ${HDF5_INCLUDE_DIRS})
+if (TARGET hdf5::hdf5)
+  target_link_libraries(dolfinx PUBLIC hdf5::hdf5)
+else()
+  # This is the old-style CMake, remove when no longer supporting older
+  # CMake
+  target_compile_definitions(dolfinx PUBLIC ${HDF5_DEFINITIONS})
+  target_link_libraries(dolfinx PUBLIC ${HDF5_C_LIBRARIES})
+  target_include_directories(dolfinx SYSTEM PUBLIC ${HDF5_INCLUDE_DIRS})
+endif()
 
 # SCOTCH
 target_link_libraries(dolfinx PRIVATE ${SCOTCH_LIBRARIES})
