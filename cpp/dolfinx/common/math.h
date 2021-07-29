@@ -106,15 +106,16 @@ void inv(const U& A, V& B)
   }
 }
 
+/// Compute C = A * B + C
 template <typename U, typename V, typename P>
 void dot(const U& A, const V& B, P& C, bool transpose = false)
 {
   if (transpose)
   {
+    assert(A.shape(1) == B.shape(1));
     const std::size_t m = A.shape(1);
     const std::size_t n = B.shape(0);
     const std::size_t p = A.shape(0);
-    assert(p == B.shape(1));
     for (std::size_t i = 0; i < m; i++)
       for (std::size_t j = 0; j < n; j++)
         for (std::size_t k = 0; k < p; k++)
@@ -122,10 +123,10 @@ void dot(const U& A, const V& B, P& C, bool transpose = false)
   }
   else
   {
+    assert(A.shape(1) == B.shape(0));
     const std::size_t m = A.shape(0);
     const std::size_t n = B.shape(1);
     const std::size_t p = A.shape(1);
-    assert(p == B.shape(0));
     for (std::size_t i = 0; i < m; i++)
       for (std::size_t j = 0; j < n; j++)
         for (std::size_t k = 0; k < p; k++)

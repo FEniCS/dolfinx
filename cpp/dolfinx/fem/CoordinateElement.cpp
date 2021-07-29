@@ -99,7 +99,7 @@ void CoordinateElement::compute_jacobian(
   assert(dphi.shape(0) == tdim);
   assert(dphi.shape(1) == num_points);
   assert(dphi.shape(3) == 1); // Assumes that value size is equal to 1
-  xt::xtensor<double, 2> J0({gdim, tdim});
+  xt::xtensor<double, 2> J0 = xt::zeros<double>({gdim, tdim});
   xt::xtensor<double, 2> dphi0 = xt::empty<double>({tdim, d});
   if (_is_affine)
   {
