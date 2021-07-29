@@ -26,11 +26,8 @@ double compute_determinant(Matrix& A)
     return math::det(A);
   else
   {
-    using T = typename Matrix::value_type;
-    xt::xtensor<T, 2> B = xt::transpose(A);
-    xt::xtensor<T, 2> BA = xt::empty<T>({B.shape(0), A.shape(1)});
-    math::dot(B, A, BA);
-    return std::sqrt(math::det(BA));
+    auto ATA = xt::linalg::dot(xt::transpose(A), A);
+    return std::sqrt(math::det(ATA));
   }
 }
 } // namespace
