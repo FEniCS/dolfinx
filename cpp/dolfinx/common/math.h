@@ -112,7 +112,7 @@ void dot(const U& A, const V& B, P& C, bool transpose = false)
 {
   if (transpose)
   {
-    assert(A.shape(1) == B.shape(1));
+    assert(A.shape(0) == B.shape(1));
     const std::size_t m = A.shape(1);
     const std::size_t n = B.shape(0);
     const std::size_t p = A.shape(0);
