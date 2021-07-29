@@ -46,7 +46,7 @@ jobs:
         with:
           path: ./basix
           repository: FEniCS/basix
-          ref: main
+          ref: mscroggs/lagrange_gll
 
       - name: Install FEniCS Python components
         run: |
@@ -56,7 +56,7 @@ jobs:
           cmake --install build-dir
           pip3 install ./basix/python
           pip3 install git+https://github.com/FEniCS/ufl.git
-          pip3 install git+https://github.com/FEniCS/ffcx.git
+          pip3 install git+https://github.com/FEniCS/ffcx.git@mscroggs/lagrange_gll
 
       - name: Configure C++
         run: |

@@ -44,7 +44,8 @@ CoordinateElement::CoordinateElement(
 //-----------------------------------------------------------------------------
 CoordinateElement::CoordinateElement(mesh::CellType celltype, int degree)
     : CoordinateElement(std::make_shared<basix::FiniteElement>(
-        basix::create_element("Lagrange", mesh::to_string(celltype), degree)))
+        basix::create_element("Lagrange", mesh::to_string(celltype), degree,
+                              basix::lattice::type::equispaced)))
 {
   // Do nothing
 }

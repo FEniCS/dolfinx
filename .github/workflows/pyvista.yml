@@ -45,7 +45,7 @@ jobs:
         with:
           path: ./basix
           repository: FEniCS/basix
-          ref: main
+          ref: mscroggs/lagrange_gll
 
       - name: Install FEniCS Python components
         run: |
@@ -54,7 +54,7 @@ jobs:
           cmake --install build-dir
           python3 -m pip install ./basix/python
           python3 -m pip install git+https://github.com/FEniCS/ufl.git
-          python3 -m pip install git+https://github.com/FEniCS/ffcx.git
+          python3 -m pip install git+https://github.com/FEniCS/ffcx.git@mscroggs/lagrange_gll
           apt-get update
           apt-get install -y --no-install-recommends libgl1-mesa-dev xvfb # pyvista
           apt-get install -y --no-install-recommends python3-pyqt5 libgl1-mesa-glx  # pyvistaqt
