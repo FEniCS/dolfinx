@@ -30,11 +30,11 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
       - name: Start EC2 runner
         id: start-ec2-runner
-        uses: jhale/ec2-github-runner@main
+        uses: machulav/ec2-github-runner@v2.2.1
         with:
           mode: start
           github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
-          ec2-image-id: ami-011694240268da883
+          ec2-image-id: ami-07529ef40e2c81086
           ec2-instance-type: c6g.large
           subnet-id: subnet-dc2151b7
           security-group-id: sg-03fc69ee7a6ba8bc4
@@ -80,7 +80,8 @@ jobs:
       - name: Get tag name
         id: tag_name
         run: |
-          if [[ ${GITHUB_REF#refs/tags/} == v* ]] then
+          if [[ ${GITHUB_REF#refs/tags/} == v* ]]
+          then
             echo "::set-output name=TAG_PREFIX::${GITHUB_REF#refs/tags/}"
           else
             echo "::set-output name=TAG_PREFIX::latest"
@@ -144,7 +145,7 @@ jobs:
       - name: Push multiarch images
         run: |
           docker buildx imagetools create -t dolfinx/dolfinx-onbuild:${{ steps.tag_name.outputs.TAG_PREFIX }} dolfinx/dolfinx-onbuild:${{ steps.tag_name.outputs.TAG_PREFIX }}-amd64 dolfinx/dolfinx-onbuild:${{ steps.tag_name.outputs.TAG_PREFIX }}-arm64
-          docker buildx imagetools create -t dolfinx/dolfinx:${{ steps.tag_name.outputs.TAG_PREFIX }} dolfinx/dolfinx:${{ steps.tag_name.outputs.TAG_PREFIX }}-amd64 dolfinx/dolfinx:${steps.tag_name.outputs.TAG_PREFIX}-arm64
+          docker buildx imagetools create -t dolfinx/dolfinx:${{ steps.tag_name.outputs.TAG_PREFIX }} dolfinx/dolfinx:${{ steps.tag_name.outputs.TAG_PREFIX }}-amd64 dolfinx/dolfinx:${{ steps.tag_name.outputs.TAG_PREFIX }}-arm64
           docker buildx imagetools create -t dolfinx/lab:${{ steps.tag_name.outputs.TAG_PREFIX }} dolfinx/lab:${{ steps.tag_name.outputs.TAG_PREFIX }}-amd64 dolfinx/lab:${{ steps.tag_name.outputs.TAG_PREFIX }}-arm64
 
   stop-runner:
