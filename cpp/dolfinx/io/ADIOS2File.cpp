@@ -7,22 +7,20 @@
 #ifdef HAS_ADIOS2
 
 #include "ADIOS2File.h"
-#include "dolfinx/fem/FiniteElement.h"
-#include "dolfinx/fem/FunctionSpace.h"
-#include "dolfinx/io/cells.h"
-#include "dolfinx/mesh/utils.h"
 #include <adios2.h>
+#include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/fem/Function.h>
+#include <dolfinx/fem/FunctionSpace.h>
+#include <dolfinx/io/cells.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshTags.h>
-#include <xtensor/xio.hpp>
 
 using namespace dolfinx;
 using namespace dolfinx::io;
 
 namespace
 {
-std::string to_fides(mesh::CellType type)
+std::string to_fides_cell(mesh::CellType type)
 {
   switch (type)
   {
@@ -56,8 +54,7 @@ adios2::Attribute<T> DefineAttribute(adios2::IO& io, const std::string& name,
                                      const std::string& var_name = "",
                                      const std::string& separator = "/")
 {
-  adios2::Attribute<T> attr = io.InquireAttribute<T>(name);
-  if (attr)
+  if (adios2::Attribute<T> attr = io.InquireAttribute<T>(name); attr)
     return attr;
   else
     return io.DefineAttribute<T>(name, value, var_name, separator);
@@ -114,7 +111,7 @@ void _write_mesh(adios2::IO& io, adios2::Engine& engine, const mesh::Mesh& mesh)
   DefineAttribute<std::string>(io, "Fides_Connecticity_Variable",
                                "connectivity");
 
-  std::string cell_type = to_fides(mesh.topology().cell_type());
+  std::string cell_type = to_fides_cell(mesh.topology().cell_type());
   DefineAttribute<std::string>(io, "Fides_Cell_Type", cell_type);
 
   std::shared_ptr<const common::IndexMap> x_map = mesh.geometry().index_map();
@@ -169,6 +166,7 @@ void _write_function(adios2::IO& io, adios2::Engine& engine,
       = u.get().function_space()->element()->value_size();
   if (rank > 1)
     throw std::runtime_error("Tensor output not implemented");
+
   // Determine number of components (1 for scalars, 3 for vectors, 9 for
   // tensors)
   const std::uint32_t num_components = std::pow(3, rank);
@@ -223,10 +221,10 @@ void _write_function(adios2::IO& io, adios2::Engine& engine,
 //-----------------------------------------------------------------------------
 ADIOS2File::ADIOS2File(MPI_Comm comm, const std::string& filename,
                        const std::string& mode)
-    : _adios(std::make_unique<adios2::ADIOS>(comm))
+    : _adios(std::make_unique<adios2::ADIOS>(comm)),
+      _io(std::make_unique<adios2::IO>(
+          _adios->DeclareIO("ADIOS2-FIDES DOLFINx IO")))
 {
-  _io = std::make_unique<adios2::IO>(
-      _adios->DeclareIO("ADIOS2-FIDES DOLFINx IO"));
   _io->SetEngine("BPFile");
 
   if (mode == "a")
@@ -251,22 +249,24 @@ void ADIOS2File::close()
   if (*_engine)
   {
     // Write field associations to file
-    adios2::Attribute<std::string> assc
+    if (adios2::Attribute<std::string> assc
         = _io->InquireAttribute<std::string>("Fides_Variable_Associations");
-    if (!assc)
+        !assc)
     {
-      assc = _io->DefineAttribute<std::string>("Fides_Variable_Associations",
-                                               _associations.data(),
-                                               _associations.size());
+      _io->DefineAttribute<std::string>("Fides_Variable_Associations",
+                                        _associations.data(),
+                                        _associations.size());
     }
+
     // Write field pointers to file
-    adios2::Attribute<std::string> fields
+    if (adios2::Attribute<std::string> fields
         = _io->InquireAttribute<std::string>("Fides_Variable_List");
-    if (!fields)
+        !fields)
     {
-      fields = _io->DefineAttribute<std::string>(
-          "Fides_Variable_List", _functions.data(), _functions.size());
+      _io->DefineAttribute<std::string>("Fides_Variable_List",
+                                        _functions.data(), _functions.size());
     }
+
     _engine->Close();
   }
 }
@@ -285,7 +285,7 @@ void ADIOS2File::write_function(
   assert(_engine);
   for (auto _u : u)
   {
-    // FIXME: Determine asociation of fields
+    // FIXME: Determine association of fields
     _associations.push_back("points");
     _functions.push_back(_u.get().name);
     _write_function<double>(*_io, *_engine, _u);

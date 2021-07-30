@@ -209,7 +209,6 @@ int main(int argc, char* argv[])
     adios.write_mesh(*mesh);
     adios.write_function({*u});
     adios.close();
-
 #endif
 
     // Save solution in VTK format
