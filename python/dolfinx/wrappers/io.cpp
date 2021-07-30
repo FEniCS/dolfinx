@@ -34,6 +34,11 @@ namespace dolfinx_wrappers
 
 void io(py::module& m)
 {
+  // dolfinx::io::mode enums
+  py::enum_<dolfinx::io::mode>(m, "mode")
+      .value("read", dolfinx::io::mode::read)
+      .value("write", dolfinx::io::mode::write)
+      .value("append", dolfinx::io::mode::append);
 
   // dolfinx::io::cell vtk cell type converter
   m.def("get_vtk_cell_type", &dolfinx::io::cells::get_vtk_cell_type);
@@ -181,23 +186,21 @@ void io(py::module& m)
       m, "ADIOS2File")
       .def(py::init(
           [](const MPICommWrapper comm, const std::string& filename,
-             const std::string& mode)
+             dolfinx::io::mode mode)
           {
-            return std::make_unique<dolfinx::io::ADIOS2File>(comm.get(),
-                                                             filename, mode);
+    return std::make_unique<dolfinx::io::ADIOS2File>(comm.get(), filename,
+                                                     mode);
           }))
       .def("__enter__",
-           [](std::shared_ptr<dolfinx::io::ADIOS2File>& self) { return self; })
+           [](std::shared_ptr<dolfinx::io::ADIOS2File>& self) {
+    return self; })
       .def("__exit__",
            [](dolfinx::io::ADIOS2File& self, py::object exc_type,
-              py::object exc_value, py::object traceback) { self.close(); })
+              py::object exc_value, py::object traceback) {
+    self.close(); })
       .def("close", &dolfinx::io::ADIOS2File::close)
       .def("write_mesh", &dolfinx::io::ADIOS2File::write_mesh)
-      .def("write_function",
-           py::overload_cast<const std::vector<
-               std::reference_wrapper<const dolfinx::fem::Function<double>>>&>(
-               &dolfinx::io::ADIOS2File::write_function),
-           py::arg("function"));
+      .def("write_function", &dolfinx::io::ADIOS2File::write_function);
 #endif
 }
 } // namespace dolfinx_wrappers

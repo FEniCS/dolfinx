@@ -8,6 +8,7 @@
 
 #ifdef HAS_ADIOS2
 
+#include "utils.h"
 #include <dolfinx/common/MPI.h>
 #include <memory>
 #include <string>
@@ -37,9 +38,8 @@ namespace dolfinx::io
 class ADIOS2File
 {
 public:
-  /// Initialize ADIOS
-  ADIOS2File(MPI_Comm comm, const std::string& filename,
-             const std::string& mode);
+  /// Create and ADIOS file
+  ADIOS2File(MPI_Comm comm, const std::string& filename, io::mode mode);
 
   /// Move constructor
   ADIOS2File(ADIOS2File&& file) = default;
@@ -47,14 +47,15 @@ public:
   /// Destructor
   virtual ~ADIOS2File();
 
+  /// Close the file
   void close();
 
   /// Write mesh to file
   /// @param[in] mesh
   void write_mesh(const mesh::Mesh& mesh);
 
-  /// Write list of functions to file
-  /// @param[in] function
+  /// Write an arrays of Functions to file
+  /// @param[in] u Functions to write
   void write_function(
       const std::vector<std::reference_wrapper<const fem::Function<double>>>&
           u);

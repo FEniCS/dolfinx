@@ -7,7 +7,7 @@
 import os
 
 import pytest
-from dolfinx import Function, VectorFunctionSpace, FunctionSpace
+from dolfinx import Function, FunctionSpace, VectorFunctionSpace, io
 from dolfinx.cpp.io import ADIOS2File, has_adios2
 from dolfinx.cpp.mesh import CellType
 from dolfinx.generation import UnitCubeMesh, UnitSquareMesh
@@ -22,7 +22,7 @@ def test_save_mesh(tempdir):
     filename = os.path.join(tempdir, "mesh.bp")
 
     mesh = UnitSquareMesh(MPI.COMM_WORLD, 5, 5)
-    f = ADIOS2File(mesh.mpi_comm(), filename, "w")
+    f = ADIOS2File(mesh.mpi_comm(), filename, io.mode.write)
     f.write_mesh(mesh)
     f.close()
 
@@ -57,7 +57,7 @@ def test_save_function(tempdir, dim, simplex):
     q = Function(Q)
     q.interpolate(lambda x: (x[0] - 0.5)**2)
     filename = os.path.join(tempdir, "v.bp")
-    f = ADIOS2File(mesh.mpi_comm(), filename, "w")
+    f = ADIOS2File(mesh.mpi_comm(), filename, io.mode.write)
     f.write_mesh(mesh)
     f.write_function([v._cpp_object, q._cpp_object])
     f.close()

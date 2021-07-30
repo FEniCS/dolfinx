@@ -12,6 +12,13 @@
 namespace dolfinx::io
 {
 
+enum class mode
+{
+  read,
+  write,
+  append
+};
+
 /// Get filename from a fully qualified path and filename
 /// @param[in] fullname Full file path and name
 /// @return The filename (without path)

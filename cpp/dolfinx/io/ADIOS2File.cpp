@@ -80,16 +80,17 @@ adios2::Variable<T> DefineVariable(adios2::IO& io, const std::string& name,
   return v;
 }
 //-----------------------------------------------------------------------------
-adios2::Mode string_to_mode(const std::string& mode)
+adios2::Mode string_to_mode(io::mode mode)
 {
-  if (mode == "w")
+  switch (mode)
+  {
+  case io::mode::write:
     return adios2::Mode::Write;
-  else if (mode == "a")
+  case io::mode::append:
     return adios2::Mode::Append;
-  else if (mode == "r")
+  case io::mode::read:
     return adios2::Mode::Read;
-  else
-    throw std::runtime_error("Unknown mode for ADIOS2: " + mode);
+  }
 }
 //-----------------------------------------------------------------------------
 void _write_mesh(adios2::IO& io, adios2::Engine& engine, const mesh::Mesh& mesh)
@@ -193,14 +194,14 @@ void _write_function(adios2::IO& io, adios2::Engine& engine,
 
 //-----------------------------------------------------------------------------
 ADIOS2File::ADIOS2File(MPI_Comm comm, const std::string& filename,
-                       const std::string& mode)
+                       io::mode mode)
     : _adios(std::make_unique<adios2::ADIOS>(comm)),
       _io(std::make_unique<adios2::IO>(
           _adios->DeclareIO("ADIOS2-FIDES DOLFINx IO")))
 {
   _io->SetEngine("BPFile");
 
-  if (mode == "a")
+  if (mode == io::mode::append)
   {
     // FIXME: Remove this when is resolved
     // https://github.com/ornladios/ADIOS2/issues/2482
