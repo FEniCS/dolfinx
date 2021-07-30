@@ -8,6 +8,7 @@
 
 #include "ADIOS2File.h"
 #include <adios2.h>
+#include <algorithm>
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/fem/Function.h>
 #include <dolfinx/fem/FunctionSpace.h>
@@ -42,7 +43,6 @@ std::string to_fides_cell(mesh::CellType type)
     return "hexahedron";
   default:
     throw std::runtime_error("Unknown cell type.");
-    return std::string();
   }
 }
 
@@ -103,11 +103,12 @@ void _write_mesh(adios2::IO& io, adios2::Engine& engine, const mesh::Mesh& mesh)
   //       "Cannot append functions to previously created file.");
   // }
 
-  // NOTE: If we start using mixed element types, we can change data-model to
-  // "unstructured"
+  // NOTE: If we start using mixed element types, we can change
+  // data-model to "unstructured"
   DefineAttribute<std::string>(io, "Fides_Data_Model", "unstructured_single");
-  // Define FIDES attributes pointing to ADIOS2 Variables for geometry and
-  // topology
+
+  // Define FIDES attributes pointing to ADIOS2 Variables for geometry
+  // and topology
   DefineAttribute<std::string>(io, "Fides_Coordinates_Variable", "points");
   DefineAttribute<std::string>(io, "Fides_Connecticity_Variable",
                                "connectivity");
@@ -173,8 +174,7 @@ void _write_function(adios2::IO& io, adios2::Engine& engine,
   const std::uint32_t num_components = std::pow(3, rank);
 
   // Create output array
-  std::shared_ptr<const common::IndexMap> x_map
-      = u.get().function_space()->mesh()->geometry().index_map();
+  auto x_map = u.get().function_space()->mesh()->geometry().index_map();
   const std::uint32_t num_vertices = x_map->size_local() + x_map->num_ghosts();
   std::array<std::size_t, 2> shape = {num_vertices, num_components};
 
@@ -189,9 +189,9 @@ void _write_function(adios2::IO& io, adios2::Engine& engine,
     engine.Put<double>(_u, node_values.data());
     engine.PerformPuts();
   }
-  // Fill output array (complex)
   else
   {
+    // Fill output array (complex)
     std::vector<std::string> parts = {"real", "imag"};
     xt::xtensor<ScalarType, 2> point_values = u.get().compute_point_values();
     for (const auto& part : parts)
@@ -207,6 +207,7 @@ void _write_function(adios2::IO& io, adios2::Engine& engine,
         xt::view(node_values, xt::all(), xt::xrange(std::size_t(0), value_size))
             = xt::imag(point_values);
       }
+
       adios2::Variable<double> _u
           = DefineVariable<double>(io, u.get().name + "_" + part, {}, {},
                                    {num_vertices, num_components});
@@ -230,10 +231,10 @@ ADIOS2File::ADIOS2File(MPI_Comm comm, const std::string& filename,
 {
   _io->SetEngine("BPFile");
 
+  // FIXME: Remove when https://github.com/ornladios/ADIOS2/issues/2482
+  // is resolved
   if (mode == io::mode::append)
   {
-    // FIXME: Remove this when is resolved
-    // https://github.com/ornladios/ADIOS2/issues/2482
     _io->SetParameter("AggregatorRatio", "1");
   }
 }
@@ -245,7 +246,7 @@ void ADIOS2File::close()
   assert(_engine);
 
   // This looks a bit odd because ADIOS2 uses `operator bool()` to test
-  // of the engine is open
+  // if the engine is open
   if (*_engine)
   {
     // Write field associations to file
@@ -253,9 +254,11 @@ void ADIOS2File::close()
         = _io->InquireAttribute<std::string>("Fides_Variable_Associations");
         !assc)
     {
+      std::vector<std::string> u_type;
+      std::transform(_function_data.cbegin(), _function_data.cend(),
+                     std::back_inserter(u_type), [](auto& f) { return f[1]; });
       _io->DefineAttribute<std::string>("Fides_Variable_Associations",
-                                        _associations.data(),
-                                        _associations.size());
+                                        u_type.data(), u_type.size());
     }
 
     // Write field pointers to file
@@ -263,8 +266,11 @@ void ADIOS2File::close()
         = _io->InquireAttribute<std::string>("Fides_Variable_List");
         !fields)
     {
-      _io->DefineAttribute<std::string>("Fides_Variable_List",
-                                        _functions.data(), _functions.size());
+      std::vector<std::string> names;
+      std::transform(_function_data.cbegin(), _function_data.cend(),
+                     std::back_inserter(names), [](auto& f) { return f[0]; });
+      _io->DefineAttribute<std::string>("Fides_Variable_List", names.data(),
+                                        names.size());
     }
 
     _engine->Close();
@@ -283,31 +289,28 @@ void ADIOS2File::write_function(
 {
   assert(_io);
   assert(_engine);
-  for (auto _u : u)
-  {
-    // FIXME: Determine association of fields
-    _associations.push_back("points");
-    _functions.push_back(_u.get().name);
-    _write_function<double>(*_io, *_engine, _u);
-  }
+  std::for_each(u.begin(), u.end(),
+                [&](const fem::Function<double>& u)
+                {
+                  _function_data.push_back({u.name, "points"});
+                  _write_function<double>(*_io, *_engine, u);
+                });
 }
+//-----------------------------------------------------------------------------
 void ADIOS2File::write_function(
     const std::vector<
         std::reference_wrapper<const fem::Function<std::complex<double>>>>& u)
 {
   assert(_io);
   assert(_engine);
-  for (auto _u : u)
-  {
-    // FIXME: Determine asociation of fields
-    _associations.push_back("points");
-    _functions.push_back(_u.get().name + "_real");
-    _associations.push_back("points");
-    _functions.push_back(_u.get().name + "_imag");
-    _write_function<std::complex<double>>(*_io, *_engine, _u);
-  }
+  std::for_each(u.begin(), u.end(),
+                [&](const fem::Function<std::complex<double>>& u)
+                {
+                  _function_data.push_back({u.name + "_real", "points"});
+                  _function_data.push_back({u.name + "_imag", "points"});
+                  _write_function<std::complex<double>>(*_io, *_engine, u);
+                });
 }
-
 //-----------------------------------------------------------------------------
 
 #endif

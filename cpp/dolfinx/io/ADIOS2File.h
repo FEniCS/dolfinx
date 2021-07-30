@@ -70,11 +70,9 @@ private:
   std::unique_ptr<adios2::IO> _io;
   std::unique_ptr<adios2::Engine> _engine;
 
-  // List with names of functions added to file
-  std::vector<std::string> _functions;
-
-  // Corresponding list of association (cell, point)
-  std::vector<std::string> _associations;
+  // Array of function (name, cell association types) for each function added to
+  // the file
+  std::vector<std::array<std::string, 2>> _function_data;
 };
 
 } // namespace dolfinx::io

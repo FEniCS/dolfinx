@@ -188,19 +188,24 @@ void io(py::module& m)
           [](const MPICommWrapper comm, const std::string& filename,
              dolfinx::io::mode mode)
           {
-    return std::make_unique<dolfinx::io::ADIOS2File>(comm.get(), filename,
-                                                     mode);
+            return std::make_unique<dolfinx::io::ADIOS2File>(comm.get(),
+                                                             filename, mode);
           }))
       .def("__enter__",
-           [](std::shared_ptr<dolfinx::io::ADIOS2File>& self) {
-    return self; })
+           [](std::shared_ptr<dolfinx::io::ADIOS2File>& self) { return self; })
       .def("__exit__",
            [](dolfinx::io::ADIOS2File& self, py::object exc_type,
-              py::object exc_value, py::object traceback) {
-    self.close(); })
+              py::object exc_value, py::object traceback) { self.close(); })
       .def("close", &dolfinx::io::ADIOS2File::close)
       .def("write_mesh", &dolfinx::io::ADIOS2File::write_mesh)
-      .def("write_function", &dolfinx::io::ADIOS2File::write_function);
+      .def("write_function",
+           py::overload_cast<const std::vector<
+               std::reference_wrapper<const dolfinx::fem::Function<double>>>&>(
+               &dolfinx::io::ADIOS2File::write_function))
+      .def("write_function",
+           py::overload_cast<const std::vector<std::reference_wrapper<
+               const dolfinx::fem::Function<std::complex<double>>>>&>(
+               &dolfinx::io::ADIOS2File::write_function));
 #endif
 }
 } // namespace dolfinx_wrappers
