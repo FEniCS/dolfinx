@@ -47,13 +47,13 @@ def generate_mesh(dim: int, simplex: bool):
 @pytest.mark.parametrize("simplex", [True, False])
 def test_save_function(tempdir, dim, simplex):
     mesh = generate_mesh(dim, simplex)
-    V = VectorFunctionSpace(mesh, ("CG", 1))
+    V = VectorFunctionSpace(mesh, ("Lagrange", 1))
     v = Function(V)
     if mesh.geometry.dim == 2:
         v.interpolate(lambda x: (x[0], x[1]))
     elif mesh.geometry.dim == 3:
         v.interpolate(lambda x: (x[2], x[0], x[1]))
-    Q = FunctionSpace(mesh, ("CG", 1))
+    Q = FunctionSpace(mesh, ("Lagrange", 1))
     q = Function(Q)
     q.interpolate(lambda x: (x[0] - 0.5)**2)
     filename = os.path.join(tempdir, "v.bp")
