@@ -239,6 +239,8 @@ int main(int argc, char* argv[])
     // Save solution in ADIOS format
     dolfinx::io::ADIOS2File adios(MPI_COMM_WORLD, "poisson.bp", "w");
     adios.write_mesh(*mesh);
+    f->name = "f";
+    adios.write_function({u, *f});
 #endif
 
     // Save solution in VTK format

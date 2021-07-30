@@ -11,7 +11,6 @@
 #include "dolfinx/fem/FunctionSpace.h"
 #include "dolfinx/io/cells.h"
 #include "dolfinx/mesh/utils.h"
-#include "pugixml.hpp"
 #include <adios2.h>
 #include <dolfinx/fem/Function.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -160,6 +159,17 @@ void _write_mesh(adios2::IO& io, adios2::Engine& engine, const mesh::Mesh& mesh)
   engine.PerformPuts();
 }
 //-----------------------------------------------------------------------------
+void _write_function(adios2::IO& io, adios2::Engine& engine,
+                     std::reference_wrapper<const fem::Function<double>> u)
+{
+  xt::xtensor<double, 2> node_values = u.get().compute_point_values();
+  adios2::Variable<double> _u = DefineVariable<double>(
+      io, u.get().name, {}, {}, {node_values.shape(0), node_values.shape(1)});
+  engine.Put<double>(_u, node_values.data());
+  engine.PerformPuts();
+}
+//-----------------------------------------------------------------------------
+
 } // namespace
 
 //-----------------------------------------------------------------------------
@@ -192,6 +202,23 @@ void ADIOS2File::close()
   // of the engine is open
   if (*_engine)
   {
+    // Write field associations to file
+    adios2::Attribute<std::string> assc
+        = _io->InquireAttribute<std::string>("Fides_Variable_Associations");
+    if (!assc)
+    {
+      assc = _io->DefineAttribute<std::string>("Fides_Variable_Associations",
+                                               _associations.data(),
+                                               _associations.size());
+    }
+    // Write field pointers to file
+    adios2::Attribute<std::string> fields
+        = _io->InquireAttribute<std::string>("Fides_Variable_List");
+    if (!fields)
+    {
+      fields = _io->DefineAttribute<std::string>(
+          "Fides_Variable_List", _functions.data(), _functions.size());
+    }
     _engine->Close();
   }
 }
@@ -203,4 +230,19 @@ void ADIOS2File::write_mesh(const mesh::Mesh& mesh)
   _write_mesh(*_io, *_engine, mesh);
 }
 //-----------------------------------------------------------------------------
+void ADIOS2File::write_function(
+    const std::vector<std::reference_wrapper<const fem::Function<double>>>& u)
+{
+  assert(_io);
+  assert(_engine);
+  for (auto _u : u)
+  {
+    // FIXME: Determine asociation of fields
+    _associations.push_back("points");
+    _functions.push_back(_u.get().name);
+    _write_function(*_io, *_engine, _u);
+  }
+}
+//-----------------------------------------------------------------------------
+
 #endif

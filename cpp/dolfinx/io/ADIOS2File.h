@@ -53,10 +53,20 @@ public:
   /// @param[in] mesh
   void write_mesh(const mesh::Mesh& mesh);
 
+  /// Write list of functions to file
+  /// @param[in] function
+  void write_function(
+      const std::vector<std::reference_wrapper<const fem::Function<double>>>&
+          u);
+
 private:
   std::unique_ptr<adios2::ADIOS> _adios;
   std::unique_ptr<adios2::IO> _io;
   std::unique_ptr<adios2::Engine> _engine;
+  std::vector<std::string>
+      _functions; // List with names of functions added to file
+  std::vector<std::string>
+      _associations; // Corresponding list of association (cell, point)
 };
 
 } // namespace dolfinx::io
