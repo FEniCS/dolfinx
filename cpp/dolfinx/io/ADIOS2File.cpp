@@ -80,7 +80,7 @@ adios2::Variable<T> DefineVariable(adios2::IO& io, const std::string& name,
   return v;
 }
 //-----------------------------------------------------------------------------
-adios2::Mode string_to_mode(io::mode mode)
+constexpr adios2::Mode dolfinx_to_adios_mode(io::mode mode)
 {
   switch (mode)
   {
@@ -197,7 +197,9 @@ ADIOS2File::ADIOS2File(MPI_Comm comm, const std::string& filename,
                        io::mode mode)
     : _adios(std::make_unique<adios2::ADIOS>(comm)),
       _io(std::make_unique<adios2::IO>(
-          _adios->DeclareIO("ADIOS2-FIDES DOLFINx IO")))
+          _adios->DeclareIO("ADIOS2-FIDES DOLFINx IO"))),
+      _engine(std::make_unique<adios2::Engine>(
+          _io->Open(filename, dolfinx_to_adios_mode(mode))))
 {
   _io->SetEngine("BPFile");
 
@@ -207,9 +209,6 @@ ADIOS2File::ADIOS2File(MPI_Comm comm, const std::string& filename,
     // https://github.com/ornladios/ADIOS2/issues/2482
     _io->SetParameter("AggregatorRatio", "1");
   }
-
-  adios2::Mode file_mode = string_to_mode(mode);
-  _engine = std::make_unique<adios2::Engine>(_io->Open(filename, file_mode));
 }
 //-----------------------------------------------------------------------------
 ADIOS2File::~ADIOS2File() { close(); }
