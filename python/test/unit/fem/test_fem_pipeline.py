@@ -1,4 +1,4 @@
-# Copyright (C) 2019 Jorgen Dokken, Matthew Scroggs and Garth N. Wells
+# Copyright (C) 2021 Jorgen Dokken, Jack S. Hale, Matthew Scroggs and Garth N. Wells
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -8,8 +8,8 @@ import numpy as np
 import pytest
 import ufl
 from dolfinx import (DirichletBC, Function, FunctionSpace,
-                     VectorFunctionSpace, cpp, fem, UnitCubeMesh, UnitSquareMesh)
-from dolfinx.cpp.mesh import CellType
+                     VectorFunctionSpace, RectangleMesh, cpp, fem, UnitCubeMesh, UnitSquareMesh)
+from dolfinx.cpp.mesh import CellType, locate_entities_boundary
 from dolfinx.fem import (apply_lifting, assemble_matrix, assemble_scalar,
                          assemble_vector, locate_dofs_topological, set_bc)
 from dolfinx.io import XDMFFile
@@ -118,7 +118,7 @@ def run_vector_test(mesh, V, degree):
 
 
 def run_dg_test(mesh, V, degree):
-    """ Manufactured Poisson problem, solving u = x[component]**n, where n is the
+    """Manufactured Poisson problem, solving u = x[component]**n, where n is the
     degree of the Lagrange function space.
     """
     u, v = TrialFunction(V), TestFunction(V)
@@ -186,6 +186,100 @@ def run_dg_test(mesh, V, degree):
 
     error = mesh.mpi_comm().allreduce(assemble_scalar(M), op=MPI.SUM)
     assert np.absolute(error) < 1.0e-14
+
+
+@skip_if_complex
+def test_biharmonic():
+    """Manufactured biharmonic problem.
+
+    Solved using rotated Regge mixed finite element method. This is equivalent
+    to the Hellan-Herrmann-Johnson (HHJ) finite element method in
+    two-dimensions."""
+    mesh = RectangleMesh(MPI.COMM_WORLD, [np.array([0.0, 0.0, 0.0]),
+                                          np.array([1.0, 1.0, 0.0])], [32, 32], CellType.triangle)
+
+    element = ufl.MixedElement([ufl.FiniteElement("Regge", ufl.triangle, 1),
+                                ufl.FiniteElement("Lagrange", ufl.triangle, 2)])
+
+    V = FunctionSpace(mesh, element)
+    sigma, u = ufl.TrialFunctions(V)
+    tau, v = ufl.TestFunctions(V)
+
+    x = ufl.SpatialCoordinate(mesh)
+    u_exact = ufl.sin(ufl.pi * x[0]) * ufl.sin(ufl.pi * x[0]) * ufl.sin(ufl.pi * x[1]) * ufl.sin(ufl.pi * x[1])
+    f_exact = div(grad(div(grad(u_exact))))
+    sigma_exact = grad(grad(u_exact))
+
+    # sigma and tau are tangential-tangential continuous according to the
+    # H(curl curl) continuity of the Regge space. However, for the biharmonic
+    # problem we require normal-normal continuity H (div div). Theorem 4.2 of
+    # Lizao Li's PhD thesis shows that the latter space can be constructed by
+    # the former through the action of the operator S:
+    def S(tau):
+        return tau - ufl.Identity(2) * ufl.tr(tau)
+
+    sigma_S = S(sigma)
+    tau_S = S(tau)
+
+    # Discrete duality inner product eq. 4.5 Lizao Li's PhD thesis
+    def b(tau_S, v):
+        n = FacetNormal(mesh)
+        return inner(tau_S, grad(grad(v))) * dx \
+            - ufl.dot(ufl.dot(tau_S('+'), n('+')), n('+')) * jump(grad(v), n) * dS \
+            - ufl.dot(ufl.dot(tau_S, n), n) * ufl.dot(grad(v), n) * ds
+
+    # Non-symmetric formulation
+    a = inner(sigma_S, tau_S) * dx - b(tau_S, u) + b(sigma_S, v)
+    L = inner(f_exact, v) * dx
+
+    V_1 = V.sub(1).collapse()
+    zero_u = Function(V_1)
+    with zero_u.vector.localForm() as zero_u_local:
+        zero_u_local.set(0.0)
+
+    # Strong (Dirichlet) boundary condition
+    boundary_facets = locate_entities_boundary(
+        mesh, mesh.topology.dim - 1, lambda x: np.full(x.shape[1], True, dtype=bool))
+    boundary_dofs = locate_dofs_topological((V.sub(1), V_1), mesh.topology.dim - 1, boundary_facets)
+
+    bcs = [DirichletBC(zero_u, boundary_dofs, V.sub(1))]
+
+    A = assemble_matrix(a, bcs=bcs)
+    A.assemble()
+    b = assemble_vector(L)
+    apply_lifting(b, [a], [bcs])
+    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+
+    # Solve
+    solver = PETSc.KSP().create(MPI.COMM_WORLD)
+    PETSc.Options()["ksp_type"] = "preonly"
+    PETSc.Options()["pc_type"] = "lu"
+    PETSc.Options()["pc_factor_mat_solver_type"] = "mumps"
+    solver.setFromOptions()
+    solver.setOperators(A)
+
+    x_h = Function(V)
+    solver.solve(b, x_h.vector)
+    x_h.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT,
+                           mode=PETSc.ScatterMode.FORWARD)
+
+    # Recall that x_h has flattened indices.
+    u_error_numerator = np.sqrt(mesh.mpi_comm().allreduce(assemble_scalar(
+        inner(u_exact - x_h[4], u_exact - x_h[4]) * dx(mesh, metadata={"quadrature_degree": 5})), op=MPI.SUM))
+    u_error_denominator = np.sqrt(mesh.mpi_comm().allreduce(assemble_scalar(
+        inner(u_exact, u_exact) * dx(mesh, metadata={"quadrature_degree": 5})), op=MPI.SUM))
+
+    assert(np.absolute(u_error_numerator / u_error_denominator) < 0.05)
+
+    # Reconstruct tensor from flattened indices.
+    # Apply inverse transform. In 2D we have S^{-1} = S.
+    sigma_h = S(ufl.as_tensor([[x_h[0], x_h[1]], [x_h[2], x_h[3]]]))
+    sigma_error_numerator = np.sqrt(mesh.mpi_comm().allreduce(assemble_scalar(
+        inner(sigma_exact - sigma_h, sigma_exact - sigma_h) * dx(mesh, metadata={"quadrature_degree": 5})), op=MPI.SUM))
+    sigma_error_denominator = np.sqrt(mesh.mpi_comm().allreduce(assemble_scalar(
+        inner(sigma_exact, sigma_exact) * dx(mesh, metadata={"quadrature_degree": 5})), op=MPI.SUM))
+
+    assert(np.absolute(sigma_error_numerator / sigma_error_denominator) < 0.005)
 
 
 def get_mesh(cell_type, datadir):
