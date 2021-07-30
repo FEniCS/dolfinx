@@ -140,8 +140,8 @@ void _write_mesh(adios2::IO& io, adios2::Engine& engine, const mesh::Mesh& mesh)
   for (size_t c = 0; c < num_cells; ++c)
   {
     auto x_dofs = x_dofmap.links(c);
-    for (std::size_t i = 0; i < x_dofs.size(); ++i)
-      topology.push_back(x_dofs[map[i]]);
+    std::transform(map.cbegin(), map.cend(), std::back_inserter(topology),
+                   [&x_dofs](auto index) { return x_dofs[index]; });
   }
 
   // Put topology (nodes)
@@ -175,41 +175,51 @@ void _write_function(adios2::IO& io, adios2::Engine& engine,
   // Create output array
   auto x_map = u.get().function_space()->mesh()->geometry().index_map();
   const std::uint32_t num_vertices = x_map->size_local() + x_map->num_ghosts();
-  std::array<std::size_t, 2> shape = {num_vertices, num_components};
 
-  // Fill output array (real)
+  // Compute point values
+  xt::xtensor<ScalarType, 2> values = u.get().compute_point_values();
+
+  // Pad vector data out to 3D if required
+  if (rank == 1 and value_size == 2)
+  {
+    xt::xtensor<ScalarType, 2> values_pad
+        = xt::zeros<ScalarType>({std::size_t(num_vertices), std::size_t(3)});
+    xt::view(values_pad, xt::all(), xt::range(0, 2)) = values;
+    values = values_pad;
+  }
+  else if (rank != 0 or !(rank == 1 and value_size == 3))
+    throw std::runtime_error("Unsupported function type");
+
+  // 'Put' data into ADIOS file
   if constexpr (std::is_scalar<ScalarType>::value)
   {
-    xt::xtensor<double, 2> node_values = xt::zeros<double>(shape);
-    xt::view(node_values, xt::all(), xt::xrange(std::size_t(0), value_size))
-        = u.get().compute_point_values();
-    adios2::Variable<double> _u = DefineVariable<double>(
+    // 'Put' array  (real)
+    adios2::Variable<ScalarType> _u = DefineVariable<ScalarType>(
         io, u.get().name, {}, {}, {num_vertices, num_components});
-    engine.Put<double>(_u, node_values.data());
+    engine.Put<ScalarType>(_u, values.data());
     engine.PerformPuts();
   }
   else
   {
-    // Fill output array (complex)
+    // 'Put' array (imaginary)
+    using T = typename ScalarType::value_type;
     const std::array<std::string, 2> parts = {"real", "imag"};
-    const xt::xtensor<ScalarType, 2> point_values
-        = u.get().compute_point_values();
+    xt::xtensor<T, 2> _values;
     for (auto part : parts)
     {
       // Extract real/imaginary parts
-      xt::xtensor<double, 2> node_values;
       if (part == "real")
-        node_values = xt::real(point_values);
+        _values = xt::real(values);
       else if (part == "imag")
-        node_values = xt::imag(point_values);
+        _values = xt::imag(values);
 
-      adios2::Variable<double> _u
-          = DefineVariable<double>(io, u.get().name + "_" + part, {}, {},
-                                   {num_vertices, num_components});
-      engine.Put<double>(_u, node_values.data());
-      engine.PerformPuts();
+      adios2::Variable<T> _u
+          = DefineVariable<T>(io, u.get().name + "_" + part, {}, {},
+                              {num_vertices, num_components});
+      engine.Put<T>(_u, _values.data());
     }
   }
+  engine.PerformPuts();
 }
 //-----------------------------------------------------------------------------
 
