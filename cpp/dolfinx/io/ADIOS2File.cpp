@@ -162,9 +162,27 @@ void _write_mesh(adios2::IO& io, adios2::Engine& engine, const mesh::Mesh& mesh)
 void _write_function(adios2::IO& io, adios2::Engine& engine,
                      std::reference_wrapper<const fem::Function<double>> u)
 {
-  xt::xtensor<double, 2> node_values = u.get().compute_point_values();
+  const int rank = u.get().function_space()->element()->value_rank();
+  const std::size_t value_size
+      = u.get().function_space()->element()->value_size();
+  if (rank > 1)
+    throw std::runtime_error("Tensor output not implemented");
+  // Determine number of components (1 for scalars, 3 for vectors, 9 for
+  // tensors)
+  const std::uint32_t num_components = std::pow(3, rank);
+
+  // Create output array
+  std::shared_ptr<const common::IndexMap> x_map
+      = u.get().function_space()->mesh()->geometry().index_map();
+  const std::uint32_t num_vertices = x_map->size_local() + x_map->num_ghosts();
+  std::array<std::size_t, 2> shape = {num_vertices, num_components};
+  // Fill output array
+  xt::xtensor<double, 2> node_values = xt::zeros<double>(shape);
+  xt::view(node_values, xt::all(), xt::xrange(std::size_t(0), value_size))
+      = u.get().compute_point_values();
+
   adios2::Variable<double> _u = DefineVariable<double>(
-      io, u.get().name, {}, {}, {node_values.shape(0), node_values.shape(1)});
+      io, u.get().name, {}, {}, {num_vertices, num_components});
   engine.Put<double>(_u, node_values.data());
   engine.PerformPuts();
 }
@@ -181,12 +199,12 @@ ADIOS2File::ADIOS2File(MPI_Comm comm, const std::string& filename,
       _adios->DeclareIO("ADIOS2-FIDES DOLFINx IO"));
   _io->SetEngine("BPFile");
 
-  //   if (mode == "a")
-  //   {
-  //     // FIXME: Remove this when is resolved
-  //     // https://github.com/ornladios/ADIOS2/issues/2482
-  //     _io->SetParameter("AggregatorRatio", "1");
-  //   }
+  if (mode == "a")
+  {
+    // FIXME: Remove this when is resolved
+    // https://github.com/ornladios/ADIOS2/issues/2482
+    _io->SetParameter("AggregatorRatio", "1");
+  }
 
   adios2::Mode file_mode = string_to_mode(mode);
   _engine = std::make_unique<adios2::Engine>(_io->Open(filename, file_mode));

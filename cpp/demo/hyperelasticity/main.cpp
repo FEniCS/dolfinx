@@ -203,6 +203,15 @@ int main(int argc, char* argv[])
     newton_solver.set_form(problem.form());
     newton_solver.solve(u->vector());
 
+#ifdef HAS_ADIOS2
+    // Save solution in ADIOS format
+    dolfinx::io::ADIOS2File adios(MPI_COMM_WORLD, "hyperel.bp", "w");
+    adios.write_mesh(*mesh);
+    adios.write_function({*u});
+    adios.close();
+
+#endif
+
     // Save solution in VTK format
     io::VTKFile file(MPI_COMM_WORLD, "u.pvd", "w");
     file.write({*u}, 0.0);

@@ -8,8 +8,10 @@
 #include "caster_mpi.h"
 #include "caster_petsc.h"
 #include <dolfinx/common/array2d.h>
+#include <dolfinx/common/defines.h>
 #include <dolfinx/fem/Function.h>
 #include <dolfinx/fem/FunctionSpace.h>
+#include <dolfinx/io/ADIOS2File.h>
 #include <dolfinx/io/VTKFile.h>
 #include <dolfinx/io/XDMFFile.h>
 #include <dolfinx/io/cells.h>
@@ -169,5 +171,33 @@ void io(py::module& m)
            py::overload_cast<const dolfinx::mesh::Mesh&, double>(
                &dolfinx::io::VTKFile::write),
            py::arg("mesh"), py::arg("t") = 0.0);
+
+  // Flag for ADIOS2 installation
+  m.def("has_adios2", &dolfinx::has_adios2);
+
+#ifdef HAS_ADIOS2
+  // dolfinx::io::ADIOS2File
+  py::class_<dolfinx::io::ADIOS2File, std::shared_ptr<dolfinx::io::ADIOS2File>>(
+      m, "ADIOS2File")
+      .def(py::init(
+          [](const MPICommWrapper comm, const std::string& filename,
+             const std::string& mode)
+          {
+            return std::make_unique<dolfinx::io::ADIOS2File>(comm.get(),
+                                                             filename, mode);
+          }))
+      .def("__enter__",
+           [](std::shared_ptr<dolfinx::io::ADIOS2File>& self) { return self; })
+      .def("__exit__",
+           [](dolfinx::io::ADIOS2File& self, py::object exc_type,
+              py::object exc_value, py::object traceback) { self.close(); })
+      .def("close", &dolfinx::io::ADIOS2File::close)
+      .def("write_mesh", &dolfinx::io::ADIOS2File::write_mesh)
+      .def("write_function",
+           py::overload_cast<const std::vector<
+               std::reference_wrapper<const dolfinx::fem::Function<double>>>&>(
+               &dolfinx::io::ADIOS2File::write_function),
+           py::arg("function"));
+#endif
 }
 } // namespace dolfinx_wrappers

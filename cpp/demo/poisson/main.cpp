@@ -241,6 +241,9 @@ int main(int argc, char* argv[])
     adios.write_mesh(*mesh);
     f->name = "f";
     adios.write_function({u, *f});
+    adios.write_function({u, *f});
+    adios.close();
+
 #endif
 
     // Save solution in VTK format
