@@ -52,9 +52,9 @@ def test_save_function(tempdir, dim, simplex):
     V = VectorFunctionSpace(mesh, ("Lagrange", 1))
     v = Function(V)
     if mesh.geometry.dim == 2:
-        v.interpolate(lambda x: (x[0], x[1] + x[1] * 1j * has_petsc_complex))
+        v.interpolate(lambda x: (x[0], x[1] + x[1] * 1j))
     elif mesh.geometry.dim == 3:
-        v.interpolate(lambda x: (x[2], x[0] + x[2] * 2j * has_petsc_complex, x[1]))
+        v.interpolate(lambda x: (x[2], x[0] + x[2] * 2j, x[1]))
 
     Q = FunctionSpace(mesh, ("Lagrange", 1))
     q = Function(Q)

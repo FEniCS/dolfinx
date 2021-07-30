@@ -187,7 +187,7 @@ void _write_function(adios2::IO& io, adios2::Engine& engine,
     xt::view(values_pad, xt::all(), xt::range(0, 2)) = values;
     values = values_pad;
   }
-  else if (rank != 0 or !(rank == 1 and value_size == 3))
+  else if (rank != 0 and !(rank == 1 and value_size == 3))
     throw std::runtime_error("Unsupported function type");
 
   // 'Put' data into ADIOS file
