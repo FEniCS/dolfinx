@@ -12,6 +12,7 @@
 namespace dolfinx::io
 {
 
+/// Mode types for IO
 enum class mode
 {
   read,

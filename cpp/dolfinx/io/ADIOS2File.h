@@ -9,6 +9,7 @@
 #ifdef HAS_ADIOS2
 
 #include "utils.h"
+#include <array>
 #include <dolfinx/common/MPI.h>
 #include <memory>
 #include <string>
@@ -30,7 +31,7 @@ class Function;
 namespace dolfinx::mesh
 {
 class Mesh;
-} // namespace dolfinx::mesh
+}
 
 namespace dolfinx::io
 {

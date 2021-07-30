@@ -14,7 +14,6 @@
 #include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/io/cells.h>
 #include <dolfinx/mesh/Mesh.h>
-#include <dolfinx/mesh/MeshTags.h>
 
 using namespace dolfinx;
 using namespace dolfinx::io;
@@ -150,7 +149,7 @@ void _write_mesh(adios2::IO& io, adios2::Engine& engine, const mesh::Mesh& mesh)
       io, "connectivity", {}, {}, {num_cells * num_nodes});
   engine.Put<std::int64_t>(local_topology, topology.data());
 
-  // Start geometry writer
+  // Put geometry
   const std::uint32_t num_vertices = x_map->size_local() + x_map->num_ghosts();
   adios2::Variable<double> local_geometry
       = DefineVariable<double>(io, "points", {}, {}, {num_vertices, 3});
@@ -192,21 +191,17 @@ void _write_function(adios2::IO& io, adios2::Engine& engine,
   else
   {
     // Fill output array (complex)
-    std::vector<std::string> parts = {"real", "imag"};
-    xt::xtensor<ScalarType, 2> point_values = u.get().compute_point_values();
-    for (const auto& part : parts)
+    const std::array<std::string, 2> parts = {"real", "imag"};
+    const xt::xtensor<ScalarType, 2> point_values
+        = u.get().compute_point_values();
+    for (auto part : parts)
     {
-      xt::xtensor<double, 2> node_values = xt::zeros<double>(shape);
+      // Extract real/imaginary parts
+      xt::xtensor<double, 2> node_values;
       if (part == "real")
-      {
-        xt::view(node_values, xt::all(), xt::xrange(std::size_t(0), value_size))
-            = xt::real(point_values);
-      }
+        node_values = xt::real(point_values);
       else if (part == "imag")
-      {
-        xt::view(node_values, xt::all(), xt::xrange(std::size_t(0), value_size))
-            = xt::imag(point_values);
-      }
+        node_values = xt::imag(point_values);
 
       adios2::Variable<double> _u
           = DefineVariable<double>(io, u.get().name + "_" + part, {}, {},
