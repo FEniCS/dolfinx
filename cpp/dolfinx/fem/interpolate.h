@@ -206,7 +206,8 @@ void interpolate_from_any(Function<T>& u, const Function<T>& v)
     const auto connectivity = v.function_space()->mesh()->geometry().dofmap();
 
     // This BBT is useful for fast lookup of which cell contains a given point
-    dolfinx::geometry::BoundingBoxTree bbt(*v.function_space()->mesh(), tdim);
+    dolfinx::geometry::BoundingBoxTree bbt(*v.function_space()->mesh(), tdim,
+                                           0.0001);
 
     const auto xv = v.function_space()->mesh()->geometry().x();
 
@@ -249,10 +250,12 @@ void interpolate_from_any(Function<T>& u, const Function<T>& v)
 
           const xt::xarray<double> l = xt::linalg::solve(A, b);
 
+          auto tol = -0.0001;
+
           // The point belongs to the cell only if all its barycentric
           // coordinates are positive. In this case
-          if (l[0] >= 0 and l[1] >= 0 and l[2] >= 0
-              and 1 - l[0] - l[1] - l[2] >= 0)
+          if (l[0] >= tol and l[1] >= tol and l[2] >= tol
+              and 1 - l[0] - l[1] - l[2] >= tol)
           {
             // Note that the cell can be used for interpolation
             evaluationCells[i] = j;
