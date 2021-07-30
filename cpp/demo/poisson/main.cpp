@@ -235,6 +235,12 @@ int main(int argc, char* argv[])
     //
     // .. code-block:: cpp
 
+#ifdef HAS_ADIOS2
+    // Save solution in ADIOS format
+    dolfinx::io::ADIOS2File adios(MPI_COMM_WORLD, "poisson.bp", "w");
+    adios.write_mesh(*mesh);
+#endif
+
     // Save solution in VTK format
     io::VTKFile file(MPI_COMM_WORLD, "u.pvd", "w");
     file.write({u}, 0.0);

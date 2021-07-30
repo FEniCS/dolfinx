@@ -202,6 +202,12 @@ set_package_properties(basix PROPERTIES TYPE REQUIRED
   #------------------------------------------------------------------------------
 # Run tests to find optional packages
 
+# ADIOS2
+find_package(ADIOS2 2.7.1)
+set_package_properties(ADIOS2 PROPERTIES TYPE OPTIONAL
+  DESCRIPTION "Adaptable Input/Output (I/O) System."
+  URL "https://adios2.readthedocs.io/en/latest/")
+
 # Check for SLEPc
 set(SLEPC_FOUND FALSE)
 if (DOLFINX_ENABLE_SLEPC)
