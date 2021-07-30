@@ -59,6 +59,11 @@ public:
       const std::vector<std::reference_wrapper<const fem::Function<double>>>&
           u);
 
+  /// Write list of functions to file
+  /// @param[in] function
+  void write_function(const std::vector<std::reference_wrapper<
+                          const fem::Function<std::complex<double>>>>& u);
+
 private:
   std::unique_ptr<adios2::ADIOS> _adios;
   std::unique_ptr<adios2::IO> _io;

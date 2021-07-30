@@ -197,6 +197,11 @@ void io(py::module& m)
            py::overload_cast<const std::vector<
                std::reference_wrapper<const dolfinx::fem::Function<double>>>&>(
                &dolfinx::io::ADIOS2File::write_function),
+           py::arg("function"))
+      .def("write_function",
+           py::overload_cast<const std::vector<std::reference_wrapper<
+               const dolfinx::fem::Function<std::complex<double>>>>&>(
+               &dolfinx::io::ADIOS2File::write_function),
            py::arg("function"));
 #endif
 }

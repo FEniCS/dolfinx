@@ -15,6 +15,7 @@
 #include <dolfinx/fem/Function.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshTags.h>
+#include <xtensor/xio.hpp>
 
 using namespace dolfinx;
 using namespace dolfinx::io;
@@ -159,8 +160,9 @@ void _write_mesh(adios2::IO& io, adios2::Engine& engine, const mesh::Mesh& mesh)
   engine.PerformPuts();
 }
 //-----------------------------------------------------------------------------
+template <typename ScalarType>
 void _write_function(adios2::IO& io, adios2::Engine& engine,
-                     std::reference_wrapper<const fem::Function<double>> u)
+                     std::reference_wrapper<const fem::Function<ScalarType>> u)
 {
   const int rank = u.get().function_space()->element()->value_rank();
   const std::size_t value_size
@@ -176,15 +178,43 @@ void _write_function(adios2::IO& io, adios2::Engine& engine,
       = u.get().function_space()->mesh()->geometry().index_map();
   const std::uint32_t num_vertices = x_map->size_local() + x_map->num_ghosts();
   std::array<std::size_t, 2> shape = {num_vertices, num_components};
-  // Fill output array
-  xt::xtensor<double, 2> node_values = xt::zeros<double>(shape);
-  xt::view(node_values, xt::all(), xt::xrange(std::size_t(0), value_size))
-      = u.get().compute_point_values();
 
-  adios2::Variable<double> _u = DefineVariable<double>(
-      io, u.get().name, {}, {}, {num_vertices, num_components});
-  engine.Put<double>(_u, node_values.data());
-  engine.PerformPuts();
+  // Fill output array (real)
+  if constexpr (std::is_scalar<ScalarType>::value)
+  {
+    xt::xtensor<double, 2> node_values = xt::zeros<double>(shape);
+    xt::view(node_values, xt::all(), xt::xrange(std::size_t(0), value_size))
+        = u.get().compute_point_values();
+    adios2::Variable<double> _u = DefineVariable<double>(
+        io, u.get().name, {}, {}, {num_vertices, num_components});
+    engine.Put<double>(_u, node_values.data());
+    engine.PerformPuts();
+  }
+  // Fill output array (complex)
+  else
+  {
+    std::vector<std::string> parts = {"real", "imag"};
+    xt::xtensor<ScalarType, 2> point_values = u.get().compute_point_values();
+    for (const auto& part : parts)
+    {
+      xt::xtensor<double, 2> node_values = xt::zeros<double>(shape);
+      if (part == "real")
+      {
+        xt::view(node_values, xt::all(), xt::xrange(std::size_t(0), value_size))
+            = xt::real(point_values);
+      }
+      else if (part == "imag")
+      {
+        xt::view(node_values, xt::all(), xt::xrange(std::size_t(0), value_size))
+            = xt::imag(point_values);
+      }
+      adios2::Variable<double> _u
+          = DefineVariable<double>(io, u.get().name + "_" + part, {}, {},
+                                   {num_vertices, num_components});
+      engine.Put<double>(_u, node_values.data());
+      engine.PerformPuts();
+    }
+  }
 }
 //-----------------------------------------------------------------------------
 
@@ -258,9 +288,26 @@ void ADIOS2File::write_function(
     // FIXME: Determine asociation of fields
     _associations.push_back("points");
     _functions.push_back(_u.get().name);
-    _write_function(*_io, *_engine, _u);
+    _write_function<double>(*_io, *_engine, _u);
   }
 }
+void ADIOS2File::write_function(
+    const std::vector<
+        std::reference_wrapper<const fem::Function<std::complex<double>>>>& u)
+{
+  assert(_io);
+  assert(_engine);
+  for (auto _u : u)
+  {
+    // FIXME: Determine asociation of fields
+    _associations.push_back("points");
+    _functions.push_back(_u.get().name + "_real");
+    _associations.push_back("points");
+    _functions.push_back(_u.get().name + "_imag");
+    _write_function<std::complex<double>>(*_io, *_engine, _u);
+  }
+}
+
 //-----------------------------------------------------------------------------
 
 #endif
