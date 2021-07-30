@@ -7,6 +7,8 @@
 #pragma once
 
 #include <cmath>
+#include <type_traits>
+#include <xtensor-blas/xlinalg.hpp>
 
 namespace dolfinx::math
 {
@@ -106,9 +108,8 @@ void inv(const U& A, V& B)
   }
 }
 
-/// Compute C = A * B + C
 template <typename U, typename V, typename P>
-void dot(const U& A, const V& B, P& C, bool transpose = false)
+void gemm(const U& A, const V& B, P& C, bool transpose = false)
 {
   if (transpose)
   {
@@ -132,5 +133,34 @@ void dot(const U& A, const V& B, P& C, bool transpose = false)
         for (std::size_t k = 0; k < p; k++)
           C(i, j) += A(i, k) * B(k, j);
   }
+}
+
+template <typename U, typename V, typename P>
+void gemv(const U& A, const V& x, P& y, bool transpose = false)
+{
+  using T = typename U::value_type;
+  std::int32_t m = A.shape(0);
+  std::int32_t n = A.shape(1);
+
+  CBLAS_TRANSPOSE transA = transpose ? CblasTrans : CblasNoTrans;
+  T alpha = static_cast<T>(1);
+  T beta = static_cast<T>(1);
+
+  if constexpr (std::is_same<T, double>())
+    cblas_dgemv(CblasRowMajor, transA, m, n, alpha, A.data(), m, x.data(), 1,
+                beta, y.data(), 1);
+  else if constexpr (std::is_same<T, float>())
+    cblas_dgemv(CblasRowMajor, transA, m, n, alpha, A.data(), m, x.data(), 1,
+                beta, y.data(), 1);
+}
+
+/// Compute C = A * B + C
+template <typename U, typename V, typename P>
+void dot(const U& A, const V& B, P& C, bool transpose = false)
+{
+  if (A.dimension() == 2 || B.dimension() == 2)
+    gemm(A, B, C, transpose);
+  if (A.dimension() == 2 || B.dimension() == 1)
+    gemv(A, B, C, transpose);
 }
 } // namespace dolfinx::math
