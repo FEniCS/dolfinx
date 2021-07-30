@@ -22,6 +22,32 @@ using namespace dolfinx::io;
 
 namespace
 {
+std::string to_fides(mesh::CellType type)
+{
+  switch (type)
+  {
+  case mesh::CellType::point:
+    return "vertex";
+  case mesh::CellType::interval:
+    return "line";
+  case mesh::CellType::triangle:
+    return "triangle";
+  case mesh::CellType::tetrahedron:
+    return "tetrahedron";
+  case mesh::CellType::quadrilateral:
+    return "quad";
+  case mesh::CellType::pyramid:
+    return "pyramid";
+  case mesh::CellType::prism:
+    return "wedge";
+  case mesh::CellType::hexahedron:
+    return "hexahedron";
+  default:
+    throw std::runtime_error("Unknown cell type.");
+    return std::string();
+  }
+}
+
 //-----------------------------------------------------------------------------
 // Safe definition of an attribute (required for time dependent problems)
 template <class T>
@@ -79,28 +105,21 @@ void _write_mesh(adios2::IO& io, adios2::Engine& engine, const mesh::Mesh& mesh)
   //       "Cannot append functions to previously created file.");
   // }
 
+  // NOTE: If we start using mixed element types, we can change data-model to
+  // "unstructured"
+  DefineAttribute<std::string>(io, "Fides_Data_Model", "unstructured_single");
+  // Define FIDES attributes pointing to ADIOS2 Variables for geometry and
+  // topology
+  DefineAttribute<std::string>(io, "Fides_Coordinates_Variable", "points");
+  DefineAttribute<std::string>(io, "Fides_Connecticity_Variable",
+                               "connectivity");
+
+  std::string cell_type = to_fides(mesh.topology().cell_type());
+  DefineAttribute<std::string>(io, "Fides_Cell_Type", cell_type);
+
   std::shared_ptr<const common::IndexMap> x_map = mesh.geometry().index_map();
   const int tdim = mesh.topology().dim();
   const std::uint32_t num_cells = mesh.topology().index_map(tdim)->size_local();
-
-  // Add number of nodes (mesh data is written with local indices we need
-  // the ghost vertices)
-  const std::uint32_t num_vertices = x_map->size_local() + x_map->num_ghosts();
-  adios2::Variable<std::uint32_t> vertices = DefineVariable<std::uint32_t>(
-      io, "NumberOfNodes", {adios2::LocalValueDim});
-  engine.Put<std::uint32_t>(vertices, num_vertices);
-
-  // Add cell metadata
-  // adios2::Variable<std::uint32_t> cell_variable =
-  // DefineVariable<std::uint32_t>(
-  //     io, "NumberOfEntities", {adios2::LocalValueDim});
-  adios2::Variable<std::uint32_t> cell_variable = DefineVariable<std::uint32_t>(
-      io, "NumberOfCells", {adios2::LocalValueDim});
-  engine.Put<std::uint32_t>(cell_variable, num_cells);
-  adios2::Variable<std::uint32_t> celltype_variable
-      = DefineVariable<std::uint32_t>(io, "types");
-  engine.Put<std::uint32_t>(celltype_variable,
-                            cells::get_vtk_cell_type(mesh, tdim));
 
   // Get DOLFINx to VTK permutation
   // FIXME: Use better way to get number of nodes
@@ -118,26 +137,24 @@ void _write_mesh(adios2::IO& io, adios2::Engine& engine, const mesh::Mesh& mesh)
   }
 
   // Extract mesh 'nodes'
-  // Output is written as [N0 v0_0 .... v0_N0 N1 v1_0 .... v1_N1 ....]
-  std::vector<std::uint64_t> topology;
-  topology.reserve(num_cells * (num_nodes + 1));
+  std::vector<std::int64_t> topology;
+  topology.reserve(num_cells * num_nodes);
   for (size_t c = 0; c < num_cells; ++c)
   {
     auto x_dofs = x_dofmap.links(c);
-    topology.push_back(x_dofs.size());
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
       topology.push_back(x_dofs[map[i]]);
   }
 
   // Put topology (nodes)
-  adios2::Variable<std::uint64_t> local_topology
-      = DefineVariable<std::uint64_t>(io, "connectivity", {}, {},
-                                      {num_cells, num_nodes + 1});
-  engine.Put<std::uint64_t>(local_topology, topology.data());
+  adios2::Variable<std::int64_t> local_topology = DefineVariable<std::int64_t>(
+      io, "connectivity", {}, {}, {num_cells * num_nodes});
+  engine.Put<std::int64_t>(local_topology, topology.data());
 
   // Start geometry writer
+  const std::uint32_t num_vertices = x_map->size_local() + x_map->num_ghosts();
   adios2::Variable<double> local_geometry
-      = DefineVariable<double>(io, "geometry", {}, {}, {num_vertices, 3});
+      = DefineVariable<double>(io, "points", {}, {}, {num_vertices, 3});
   engine.Put<double>(local_geometry, mesh.geometry().x().data());
 
   engine.PerformPuts();
@@ -150,15 +167,16 @@ ADIOS2File::ADIOS2File(MPI_Comm comm, const std::string& filename,
                        const std::string& mode)
     : _adios(std::make_unique<adios2::ADIOS>(comm))
 {
-  _io = std::make_unique<adios2::IO>(_adios->DeclareIO("ADIOS2 DOLFINx IO"));
+  _io = std::make_unique<adios2::IO>(
+      _adios->DeclareIO("ADIOS2-FIDES DOLFINx IO"));
   _io->SetEngine("BPFile");
 
-  if (mode == "a")
-  {
-    // FIXME: Remove this when is resolved
-    // https://github.com/ornladios/ADIOS2/issues/2482
-    _io->SetParameter("AggregatorRatio", "1");
-  }
+  //   if (mode == "a")
+  //   {
+  //     // FIXME: Remove this when is resolved
+  //     // https://github.com/ornladios/ADIOS2/issues/2482
+  //     _io->SetParameter("AggregatorRatio", "1");
+  //   }
 
   adios2::Mode file_mode = string_to_mode(mode);
   _engine = std::make_unique<adios2::Engine>(_io->Open(filename, file_mode));
