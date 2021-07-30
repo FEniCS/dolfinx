@@ -7,7 +7,7 @@
 import os
 
 import pytest
-from dolfinx import Function, VectorFunctionSpace
+from dolfinx import Function, VectorFunctionSpace, FunctionSpace
 from dolfinx.cpp.io import ADIOS2File, has_adios2
 from dolfinx.cpp.mesh import CellType
 from dolfinx.generation import UnitCubeMesh, UnitSquareMesh
@@ -53,8 +53,11 @@ def test_save_function(tempdir, dim, simplex):
         v.interpolate(lambda x: (x[0], x[1]))
     elif mesh.geometry.dim == 3:
         v.interpolate(lambda x: (x[2], x[0], x[1]))
+    Q = FunctionSpace(mesh, ("CG", 1))
+    q = Function(Q)
+    q.interpolate(lambda x: (x[0] - 0.5)**2)
     filename = os.path.join(tempdir, "v.bp")
     f = ADIOS2File(mesh.mpi_comm(), filename, "w")
     f.write_mesh(mesh)
-    f.write_function([v._cpp_object])
+    f.write_function([v._cpp_object, q._cpp_object])
     f.close()
