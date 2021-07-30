@@ -195,7 +195,7 @@ def test_curl_curl_eigenvalue():
     See https://www-users.cse.umn.edu/~arnold/papers/icm2002.pdf for details.
     """
     # TODO: Parameterise across H(curl) elements.
-    slepc4py = pytest.importorskip("slepc4py")
+    slepc4py = pytest.importorskip("slepc4py")  # noqa: F841
     from slepc4py import SLEPc
 
     mesh = RectangleMesh(MPI.COMM_WORLD, [np.array([0.0, 0.0, 0.0]),
