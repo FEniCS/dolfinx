@@ -9,9 +9,7 @@ import os
 import pytest
 from dolfinx import Function, FunctionSpace, VectorFunctionSpace, io
 from dolfinx.cpp.io import ADIOS2File, has_adios2
-
 from dolfinx.cpp.mesh import CellType
-from dolfinx.common import has_petsc_complex
 from dolfinx.generation import UnitCubeMesh, UnitSquareMesh
 from dolfinx_utils.test.fixtures import tempdir
 from mpi4py import MPI
