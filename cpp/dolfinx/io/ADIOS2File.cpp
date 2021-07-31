@@ -88,6 +88,8 @@ constexpr adios2::Mode dolfinx_to_adios_mode(io::mode mode)
     return adios2::Mode::Append;
   case io::mode::read:
     return adios2::Mode::Read;
+  default:
+    throw std::runtime_error("Unknown file mode");
   }
 }
 //-----------------------------------------------------------------------------
