@@ -174,7 +174,6 @@ void _add_data(const fem::Function<Scalar>& u,
         field_node.append_child(pugi::node_pcdata)
             .set_value(xt_to_string(values_comp, 16).c_str());
       }
-
       else if (rank == 1)
       {
         field_node.append_attribute("NumberOfComponents") = 3;
