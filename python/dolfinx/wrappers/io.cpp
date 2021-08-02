@@ -11,7 +11,7 @@
 #include <dolfinx/common/defines.h>
 #include <dolfinx/fem/Function.h>
 #include <dolfinx/fem/FunctionSpace.h>
-#include <dolfinx/io/ADIOS2File.h>
+#include <dolfinx/io/FidesWriter.h>
 #include <dolfinx/io/VTKFile.h>
 #include <dolfinx/io/XDMFFile.h>
 #include <dolfinx/io/cells.h>
@@ -181,31 +181,39 @@ void io(py::module& m)
   m.def("has_adios2", &dolfinx::has_adios2);
 
 #ifdef HAS_ADIOS2
-  // dolfinx::io::ADIOS2File
-  py::class_<dolfinx::io::ADIOS2File, std::shared_ptr<dolfinx::io::ADIOS2File>>(
-      m, "ADIOS2File")
+  // dolfinx::io::FidesWriter
+  std::string pyclass_name = std::string("FidesWriter");
+  py::class_<dolfinx::io::FidesWriter,
+             std::shared_ptr<dolfinx::io::FidesWriter>>(m, pyclass_name.c_str(),
+                                                        "FidesWriter object")
       .def(py::init(
           [](const MPICommWrapper comm, const std::string& filename,
-             dolfinx::io::mode mode)
+             dolfinx::io::mode mode,
+             std::shared_ptr<const dolfinx::mesh::Mesh> mesh)
           {
-            return std::make_unique<dolfinx::io::ADIOS2File>(comm.get(),
-                                                             filename, mode);
+            return std::make_unique<dolfinx::io::FidesWriter>(
+                comm.get(), filename, mode, mesh);
           }))
+
+      .def(py::init(
+          [](const MPICommWrapper comm, const std::string& filename,
+             dolfinx::io::mode mode,
+             const std::vector<std::reference_wrapper<
+                 const dolfinx::fem::Function<PetscScalar>>>& functions)
+          {
+            return std::make_unique<dolfinx::io::FidesWriter>(
+                comm.get(), filename, mode, functions);
+          }))
+
       .def("__enter__",
-           [](std::shared_ptr<dolfinx::io::ADIOS2File>& self) { return self; })
+           [](std::shared_ptr<dolfinx::io::FidesWriter>& self) { return self; })
       .def("__exit__",
-           [](dolfinx::io::ADIOS2File& self, py::object exc_type,
+           [](dolfinx::io::FidesWriter& self, py::object exc_type,
               py::object exc_value, py::object traceback) { self.close(); })
-      .def("close", &dolfinx::io::ADIOS2File::close)
-      .def("write_mesh", &dolfinx::io::ADIOS2File::write_mesh)
-      .def("write_function",
-           py::overload_cast<const std::vector<
-               std::reference_wrapper<const dolfinx::fem::Function<double>>>&>(
-               &dolfinx::io::ADIOS2File::write_function))
-      .def("write_function",
-           py::overload_cast<const std::vector<std::reference_wrapper<
-               const dolfinx::fem::Function<std::complex<double>>>>&>(
-               &dolfinx::io::ADIOS2File::write_function));
+      .def("close", [](dolfinx::io::FidesWriter& self) { self.close(); })
+      .def("write",
+           [](dolfinx::io::FidesWriter& self, double t) { self.write(t); });
+
 #endif
 }
 } // namespace dolfinx_wrappers
