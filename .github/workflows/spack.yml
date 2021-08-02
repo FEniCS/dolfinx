@@ -8,6 +8,7 @@ on:
   schedule:
     # '*' is a special character in YAML, so string must be quoted
     - cron: "0 2 * * THU"
+  workflow_dispatch: ~
 
 jobs:
   build:
@@ -79,7 +80,6 @@ jobs:
           spack env activate py
           echo "  concretization: together" >> ./spack/var/spack/environments/py/spack.yaml
           spack add py-fenics-dolfinx@main
-          spack add py-pip py-pytest py-pytest-xdist py-scipy
           spack install
 
       # NOTE: numba is installed via pip because the spack package takes
