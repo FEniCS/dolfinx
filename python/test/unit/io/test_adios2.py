@@ -7,7 +7,7 @@
 import os
 
 import pytest
-from dolfinx import Function, FunctionSpace, VectorFunctionSpace, io
+from dolfinx import Function, FunctionSpace, io  # VectorFunctionSpace,
 from dolfinx.cpp.io import FidesWriter, has_adios2
 from dolfinx.cpp.mesh import CellType
 from dolfinx.generation import UnitCubeMesh, UnitSquareMesh
