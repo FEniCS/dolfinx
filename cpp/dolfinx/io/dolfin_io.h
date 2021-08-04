@@ -13,3 +13,4 @@ namespace dolfinx
 
 #include <dolfinx/io/FidesWriter.h>
 #include <dolfinx/io/VTKFile.h>
+#include <dolfinx/io/VTXWriter.h>

@@ -13,6 +13,7 @@
 #include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/io/FidesWriter.h>
 #include <dolfinx/io/VTKFile.h>
+#include <dolfinx/io/VTXWriter.h>
 #include <dolfinx/io/XDMFFile.h>
 #include <dolfinx/io/cells.h>
 #include <dolfinx/io/xdmf_utils.h>
@@ -213,6 +214,37 @@ void io(py::module& m)
       .def("close", [](dolfinx::io::FidesWriter& self) { self.close(); })
       .def("write",
            [](dolfinx::io::FidesWriter& self, double t) { self.write(t); });
+  // dolfinx::io::VTXWriter
+  pyclass_name = std::string("VTXWriter");
+  py::class_<dolfinx::io::VTXWriter, std::shared_ptr<dolfinx::io::VTXWriter>>(
+      m, pyclass_name.c_str(), "VTXWriter object")
+      .def(py::init(
+          [](const MPICommWrapper comm, const std::string& filename,
+             dolfinx::io::mode mode,
+             std::shared_ptr<const dolfinx::mesh::Mesh> mesh)
+          {
+            return std::make_unique<dolfinx::io::VTXWriter>(
+                comm.get(), filename, mode, mesh);
+          }))
+
+      .def(py::init(
+          [](const MPICommWrapper comm, const std::string& filename,
+             dolfinx::io::mode mode,
+             const std::vector<std::reference_wrapper<
+                 const dolfinx::fem::Function<PetscScalar>>>& functions)
+          {
+            return std::make_unique<dolfinx::io::VTXWriter>(
+                comm.get(), filename, mode, functions);
+          }))
+
+      .def("__enter__",
+           [](std::shared_ptr<dolfinx::io::VTXWriter>& self) { return self; })
+      .def("__exit__",
+           [](dolfinx::io::VTXWriter& self, py::object exc_type,
+              py::object exc_value, py::object traceback) { self.close(); })
+      .def("close", [](dolfinx::io::VTXWriter& self) { self.close(); })
+      .def("write",
+           [](dolfinx::io::VTXWriter& self, double t) { self.write(t); });
 
 #endif
 }
