@@ -214,7 +214,12 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
     default:
       throw("Unknown SCOTCH strategy");
     }
-    SCOTCH_stratDgraphMapBuild(&strat, strat_val, nparts, nparts, imbalance);
+
+    std::cout << "val = " << strat_val << "\n";
+
+    int err = SCOTCH_stratDgraphMapBuild(&strat, strat_val, nparts, nparts,
+                                         imbalance);
+    std::cout << "Err = " << err << "\n";
 
     // Resize vector to hold cell partition indices with enough extra
     // space for ghost cell partition information too. When there are no
