@@ -35,20 +35,23 @@ class Mesh;
 
 namespace dolfinx::io
 {
-
+// Output of meshes and functions compatible with the FIDES Paraview reader
+// https://fides.readthedocs.io/en/latest/paraview/paraview.html
 class FidesWriter
 {
+  
 public:
   /// Create Fides writer for a mesh
   FidesWriter(MPI_Comm comm, const std::string& filename, io::mode mode,
               std::shared_ptr<const mesh::Mesh> mesh);
 
-  /// Create Fides writer for list of functions
+  /// Create Fides writer for list of functions (real)
   FidesWriter(
       MPI_Comm comm, const std::string& filename, io::mode mode,
       const std::vector<std::reference_wrapper<const fem::Function<double>>>&
           functions);
 
+  /// Create Fides writer for list of functions (complex)
   FidesWriter(MPI_Comm comm, const std::string& filename, io::mode mode,
               const std::vector<std::reference_wrapper<
                   const fem::Function<std::complex<double>>>>& functions);
@@ -62,21 +65,7 @@ public:
   /// Close the file
   void close();
 
-  // /// Write mesh to file
-  // /// @param[in] mesh
-  // void write_mesh(const mesh::Mesh& mesh);
-
-  // /// Write an arrays of Functions to file
-  // /// @param[in] u Functions to write
-  // void write_function(
-  //     const std::vector<std::reference_wrapper<const fem::Function<double>>>&
-  //         u);
-
-  // /// Write list of functions to file
-  // /// @param[in] function
-  // void write_function(const std::vector<std::reference_wrapper<
-  //                         const fem::Function<std::complex<double>>>>& u);
-
+  /// Write data to file
   void write(double t);
 
 private:

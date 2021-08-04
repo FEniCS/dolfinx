@@ -9,6 +9,7 @@ set(HEADERS_io
   ${CMAKE_CURRENT_SOURCE_DIR}/VTKFile.h
   ${CMAKE_CURRENT_SOURCE_DIR}/XDMFFile.h
   ${CMAKE_CURRENT_SOURCE_DIR}/xdmf_function.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/adios2_utils.h
   ${CMAKE_CURRENT_SOURCE_DIR}/xdmf_mesh.h
   ${CMAKE_CURRENT_SOURCE_DIR}/xdmf_meshtags.h
   ${CMAKE_CURRENT_SOURCE_DIR}/xdmf_read.h
@@ -26,4 +27,5 @@ target_sources(dolfinx PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/xdmf_function.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/xdmf_mesh.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/xdmf_utils.cpp
-)
+  ${CMAKE_CURRENT_SOURCE_DIR}/adios2_utils.cpp
+  )
