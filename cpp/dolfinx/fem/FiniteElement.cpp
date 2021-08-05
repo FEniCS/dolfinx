@@ -149,7 +149,7 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
       _element = std::make_unique<basix::FiniteElement>(basix::create_element(
           basix::element::str_to_type(_family.c_str()),
           basix::cell::str_to_type(cell_shape.c_str()), ufc_element.degree,
-          basix::lattice::str_to_type(ufc_element.lattice_type)));
+          (basix::lattice::type)ufc_element.lattice_type));
     }
     else
     {
