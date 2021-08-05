@@ -65,7 +65,6 @@ jobs:
         with:
           repository: "FEniCS/dolfinx"
           path: "dolfinx"
-          ref: "main"
       - uses: actions/checkout@v2
         with:
           repository: "FEniCS/ffcx"
