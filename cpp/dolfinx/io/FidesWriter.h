@@ -39,7 +39,7 @@ namespace dolfinx::io
 // https://fides.readthedocs.io/en/latest/paraview/paraview.html
 class FidesWriter
 {
-  
+
 public:
   /// Create Fides writer for a mesh
   FidesWriter(MPI_Comm comm, const std::string& filename, io::mode mode,
@@ -77,7 +77,6 @@ private:
   std::vector<std::reference_wrapper<const fem::Function<double>>> _functions;
   std::vector<std::reference_wrapper<const fem::Function<std::complex<double>>>>
       _complex_functions;
-  bool _mesh_written;
 };
 
 } // namespace dolfinx::io

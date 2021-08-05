@@ -48,18 +48,13 @@ std::string to_fides_cell(mesh::CellType type)
 }
 
 //-----------------------------------------------------------------------------
+//------------------------Put mesh geometry and connectivity for FIDES---------
+// @param[in] io The ADIOS2 IO
+// @param[in] engine The ADIOS2 engine
+// @param[in] mesh The mesh
 void _write_mesh(adios2::IO& io, adios2::Engine& engine,
                  std::shared_ptr<const mesh::Mesh> mesh)
 {
-  // assert(_engine);
-  // // ADIOS should handle mode checks, and if we need to we should get it
-  // // from ADIOS - DOLFINx should not store the state
-  // if (_engine->OpenMode() == adios2::Mode::Append)
-  // {
-  //   throw std::runtime_error(
-  //       "Cannot append functions to previously created file.");
-  // }
-
   // Put geometry
   std::shared_ptr<const common::IndexMap> x_map = mesh->geometry().index_map();
   const std::uint32_t num_vertices = x_map->size_local() + x_map->num_ghosts();
@@ -78,28 +73,10 @@ void _write_mesh(adios2::IO& io, adios2::Engine& engine,
   const graph::AdjacencyList<std::int32_t>& x_dofmap
       = mesh->geometry().dofmap();
   const std::uint32_t num_nodes = x_dofmap.num_links(0);
-  std::vector map = dolfinx::io::cells::transpose(
-      cells::perm_vtk(mesh->topology().cell_type(), num_nodes));
-  // TODO: Remove when when paraview issue 19433 is resolved
-  // (https://gitlab.kitware.com/paraview/paraview/issues/19433)
-  if (mesh->topology().cell_type() == dolfinx::mesh::CellType::hexahedron
-      and num_nodes == 27)
-  {
-    map = {0,  9, 12, 3,  1, 10, 13, 4,  18, 15, 21, 6,  19, 16,
-           22, 7, 2,  11, 5, 14, 8,  17, 20, 23, 24, 25, 26};
-  }
-
-  // Extract mesh 'nodes'
-  std::vector<std::int64_t> topology;
-  topology.reserve(num_cells * num_nodes);
-  for (size_t c = 0; c < num_cells; ++c)
-  {
-    auto x_dofs = x_dofmap.links(c);
-    std::transform(map.cbegin(), map.cend(), std::back_inserter(topology),
-                   [&x_dofs](auto index) { return x_dofs[index]; });
-  }
 
   // Put topology (nodes)
+  xt::xtensor<std::int64_t, 2> topology
+      = adios2_utils::extract_connectivity(mesh);
   adios2::Variable<std::int64_t> local_topology
       = adios2_utils::DefineVariable<std::int64_t>(io, "connectivity", {}, {},
                                                    {num_cells * num_nodes});
@@ -107,70 +84,6 @@ void _write_mesh(adios2::IO& io, adios2::Engine& engine,
   // Perform puts before going out of scope
   engine.PerformPuts();
 }
-//-----------------------------------------------------------------------------
-template <typename T>
-void _write_function(adios2::IO& io, adios2::Engine& engine,
-                     std::reference_wrapper<const fem::Function<T>> u)
-{
-
-  const int rank = u.get().function_space()->element()->value_rank();
-  const std::size_t value_size
-      = u.get().function_space()->element()->value_size();
-  if (rank > 1)
-    throw std::runtime_error("Tensor output not implemented");
-
-  // Determine number of components (1 for scalars, 3 for vectors, 9 for
-  // tensors)
-  const std::uint32_t num_components = std::pow(3, rank);
-
-  // Create output array
-  auto x_map = u.get().function_space()->mesh()->geometry().index_map();
-  const std::uint32_t num_vertices = x_map->size_local() + x_map->num_ghosts();
-
-  // Compute point values
-  xt::xtensor<T, 2> values = u.get().compute_point_values();
-
-  // Pad vector data out to 3D if required
-  if (rank == 1 and value_size == 2)
-  {
-    xt::xtensor<T, 2> values_pad
-        = xt::zeros<T>({std::size_t(num_vertices), std::size_t(3)});
-    xt::view(values_pad, xt::all(), xt::range(0, 2)) = values;
-    values = values_pad;
-  }
-  else if (rank != 0 and !(rank == 1 and value_size == 3))
-    throw std::runtime_error("Unsupported function type");
-
-  // 'Put' data into ADIOS file
-  if constexpr (std::is_scalar<T>::value)
-  {
-    // 'Put' array  (real)
-    adios2::Variable<T> _u = adios2_utils::DefineVariable<T>(
-        io, u.get().name, {}, {}, {num_vertices, num_components});
-    engine.Put<T>(_u, values.data(), adios2::Mode::Sync);
-  }
-  else
-  {
-    // 'Put' array (imaginary)
-    using Q = typename T::value_type;
-    const std::array<std::string, 2> parts = {"real", "imag"};
-    xt::xtensor<Q, 2> _values;
-    for (auto part : parts)
-    {
-      // Extract real/imaginary parts
-      if (part == "real")
-        _values = xt::real(values);
-      else if (part == "imag")
-        _values = xt::imag(values);
-
-      adios2::Variable<Q> _u
-          = adios2_utils::DefineVariable<Q>(io, u.get().name + "_" + part, {},
-                                            {}, {num_vertices, num_components});
-      engine.Put<Q>(_u, _values.data(), adios2::Mode::Sync);
-    }
-  }
-}
-
 //-----------------------------------------------------------------------------
 void _initialize_mesh_attributes(adios2::IO& io,
                                  std::shared_ptr<const mesh::Mesh> mesh)
@@ -252,7 +165,7 @@ FidesWriter::FidesWriter(MPI_Comm comm, const std::string& filename,
       _io(std::make_unique<adios2::IO>(_adios->DeclareIO("Fides mesh writer"))),
       _engine(std::make_unique<adios2::Engine>(
           _io->Open(filename, adios2_utils::dolfinx_to_adios_mode(mode)))),
-      _mesh(mesh), _functions(), _complex_functions(), _mesh_written(false)
+      _mesh(mesh), _functions(), _complex_functions()
 {
   _io->SetEngine("BPFile");
 
@@ -272,7 +185,7 @@ FidesWriter::FidesWriter(
           _adios->DeclareIO("Fides function writer"))),
       _engine(std::make_unique<adios2::Engine>(
           _io->Open(filename, adios2_utils::dolfinx_to_adios_mode(mode)))),
-      _mesh(), _functions(functions), _complex_functions(), _mesh_written(false)
+      _mesh(), _functions(functions), _complex_functions()
 {
   _io->SetEngine("BPFile");
 
@@ -341,21 +254,21 @@ void FidesWriter::write(double t)
       = adios2_utils::DefineVariable<double>(*_io, "step");
   _engine->Put<double>(var_step, t);
   // NOTE: Mesh can only be written to file once
-  if (!_mesh_written)
-  {
-    _write_mesh(*_io, *_engine, _mesh);
-    // _mesh_written = true;
-  }
+  _write_mesh(*_io, *_engine, _mesh);
 
   // Write real valued functions to file
-  std::for_each(_functions.begin(), _functions.end(),
-                [&](const fem::Function<double>& u)
-                { _write_function<double>(*_io, *_engine, u); });
+  std::for_each(
+      _functions.begin(), _functions.end(),
+      [&](const fem::Function<double>& u)
+      { adios2_utils::write_function_at_nodes<double>(*_io, *_engine, u); });
 
   // Write complex valued functions to file
   std::for_each(_complex_functions.begin(), _complex_functions.end(),
                 [&](const fem::Function<std::complex<double>>& u)
-                { _write_function<std::complex<double>>(*_io, *_engine, u); });
+                {
+                  adios2_utils::write_function_at_nodes<std::complex<double>>(
+                      *_io, *_engine, u);
+                });
   _engine->EndStep();
 }
 //-----------------------------------------------------------------------------

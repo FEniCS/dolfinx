@@ -17,6 +17,7 @@
 #include <dolfinx/io/cells.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/utils.h>
+#include <xtensor/xio.hpp>
 using namespace dolfinx;
 using namespace dolfinx::io;
 
@@ -89,24 +90,31 @@ bool is_cellwise_constant(const fem::FiniteElement& element)
 void _write_mesh(adios2::IO& io, adios2::Engine& engine,
                  std::shared_ptr<const mesh::Mesh> mesh)
 {
+  // Put geometry
   std::shared_ptr<const common::IndexMap> x_map = mesh->geometry().index_map();
-  const int tdim = mesh->topology().dim();
-  const std::uint32_t num_cells
-      = mesh->topology().index_map(tdim)->size_local();
-
-  // Add number of nodes (mesh data is written with local indices we need the
-  // ghost vertices)
   const std::uint32_t num_vertices = x_map->size_local() + x_map->num_ghosts();
+  adios2::Variable<double> local_geometry
+      = adios2_utils::DefineVariable<double>(io, "geometry", {}, {},
+                                             {num_vertices, 3});
+  engine.Put<double>(local_geometry, mesh->geometry().x().data());
+
+  // Put number of nodes. The mesh data is written with local indices. Therefore
+  // we need the ghost vertices
   adios2::Variable<std::uint32_t> vertices
       = adios2_utils::DefineVariable<std::uint32_t>(io, "NumberOfNodes",
                                                     {adios2::LocalValueDim});
   engine.Put<std::uint32_t>(vertices, num_vertices);
 
   // Add cell metadata
+  const int tdim = mesh->topology().dim();
+  const std::uint32_t num_cells
+      = mesh->topology().index_map(tdim)->size_local();
   adios2::Variable<std::uint32_t> cell_variable
       = adios2_utils::DefineVariable<std::uint32_t>(io, "NumberOfCells",
                                                     {adios2::LocalValueDim});
   engine.Put<std::uint32_t>(cell_variable, num_cells);
+
+  // Add cell-type
   adios2::Variable<std::uint32_t> celltype_variable
       = adios2_utils::DefineVariable<std::uint32_t>(io, "types");
   engine.Put<std::uint32_t>(celltype_variable,
@@ -117,41 +125,19 @@ void _write_mesh(adios2::IO& io, adios2::Engine& engine,
   const graph::AdjacencyList<std::int32_t>& x_dofmap
       = mesh->geometry().dofmap();
   const std::uint32_t num_nodes = x_dofmap.num_links(0);
-  std::vector map = dolfinx::io::cells::transpose(
-      cells::perm_vtk(mesh->topology().cell_type(), num_nodes));
-  // TODO: Remove when when paraview issue 19433 is resolved
-  // (https://gitlab.kitware.com/paraview/paraview/issues/19433)
-  if (mesh->topology().cell_type() == dolfinx::mesh::CellType::hexahedron
-      and num_nodes == 27)
-  {
-    map = {0,  9, 12, 3,  1, 10, 13, 4,  18, 15, 21, 6,  19, 16,
-           22, 7, 2,  11, 5, 14, 8,  17, 20, 23, 24, 25, 26};
-  }
 
-  // Extract mesh 'nodes'
+  // // Extract mesh 'nodes'
   // Output is written as [N0 v0_0 .... v0_N0 N1 v1_0 .... v1_N1 ....]
-  std::vector<std::uint64_t> topology;
-  topology.reserve(num_cells * (num_nodes + 1));
-  for (size_t c = 0; c < num_cells; ++c)
-  {
-    auto x_dofs = x_dofmap.links(c);
-    topology.push_back(x_dofs.size());
-    for (std::size_t i = 0; i < x_dofs.size(); ++i)
-      topology.push_back(x_dofs[map[i]]);
-  }
+  xt::xtensor<std::uint64_t, 2> topology({num_cells, num_nodes + 1});
+  xt::view(topology, xt::all(), xt::xrange(std::size_t(1), topology.shape(1)))
+      = adios2_utils::extract_connectivity(mesh);
+  xt::view(topology, xt::all(), 0) = num_nodes;
 
   // Put topology (nodes)
   adios2::Variable<std::uint64_t> local_topology
       = adios2_utils::DefineVariable<std::uint64_t>(io, "connectivity", {}, {},
                                                     {num_cells, num_nodes + 1});
   engine.Put<std::uint64_t>(local_topology, topology.data());
-
-  // Start geometry writer
-  adios2::Variable<double> local_geometry
-      = adios2_utils::DefineVariable<double>(io, "geometry", {}, {},
-                                             {num_vertices, 3});
-  engine.Put<double>(local_geometry, mesh->geometry().x().data());
-
   engine.PerformPuts();
 }
 //-----------------------------------------------------------------------------
@@ -262,56 +248,6 @@ void _write_lagrange_function(adios2::IO& io, adios2::Engine& engine,
     engine.Put<double>(local_output, out_data.data(), adios2::Mode::Sync);
   }
 }
-//-----------------------------------------------------------------------------
-template <typename Scalar>
-void _write_function_at_nodes(adios2::IO& io, adios2::Engine& engine,
-                              const fem::Function<Scalar>& u)
-{
-
-  // NOTE: Currently CG-1 interpolation of data.
-  auto function_data = u.compute_point_values();
-  std::uint32_t local_size = function_data.shape(0);
-  std::uint32_t block_size = function_data.shape(1);
-  // Extract real and imaginary parts
-  std::vector<std::string> parts = {""};
-  if constexpr (!std::is_scalar<Scalar>::value)
-    parts = {"real", "imag"};
-
-  // Write each real and imaginary part of the function
-  const int rank = u.function_space()->element()->value_rank();
-  const std::uint32_t num_components = std::pow(3, rank);
-  std::vector<double> out_data(num_components * local_size);
-  for (const auto& part : parts)
-  {
-    std::string function_name = u.name;
-    if (part != "")
-      function_name += "_" + part;
-    adios2::Variable<double> local_output
-        = adios2_utils::DefineVariable<double>(io, function_name, {}, {},
-                                               {local_size, num_components});
-
-    // Loop over components of each real and imaginary part
-    for (size_t i = 0; i < local_size; ++i)
-    {
-      auto data_row = xt::row(function_data, i);
-      for (size_t j = 0; j < block_size; ++j)
-      {
-        if (part == "imag")
-          out_data[i * num_components + j] = std::imag(data_row[j]);
-        else
-          out_data[i * num_components + j] = std::real(data_row[j]);
-      }
-
-      // Pad data to 3D if vector or tensor data
-      for (size_t j = block_size; j < num_components; ++j)
-        out_data[i * num_components + j] = 0;
-    }
-
-    // To reuse out_data, we use sync mode here
-    engine.Put<double>(local_output, out_data.data(), adios2::Mode::Sync);
-  }
-}
-
 //-----------------------------------------------------------------------------
 // Extract name of functions and split into real and imaginary component
 template <typename T>
@@ -501,21 +437,23 @@ void VTXWriter::write(double t)
                 [&](const fem::Function<double>& u)
                 {
                   if (_write_mesh_data)
-                    _write_function_at_nodes<double>(*_io, *_engine, u);
+                    adios2_utils::write_function_at_nodes<double>(*_io,
+                                                                  *_engine, u);
                   else
                     _write_lagrange_function<double>(*_io, *_engine, u);
                 });
 
   // Write complex valued functions to file
-  std::for_each(
-      _complex_functions.begin(), _complex_functions.end(),
-      [&](const fem::Function<std::complex<double>>& u)
-      {
-        if (_write_mesh_data)
-          _write_function_at_nodes<std::complex<double>>(*_io, *_engine, u);
-        else
-          _write_lagrange_function<std::complex<double>>(*_io, *_engine, u);
-      });
+  std::for_each(_complex_functions.begin(), _complex_functions.end(),
+                [&](const fem::Function<std::complex<double>>& u)
+                {
+                  if (_write_mesh_data)
+                    adios2_utils::write_function_at_nodes<std::complex<double>>(
+                        *_io, *_engine, u);
+                  else
+                    _write_lagrange_function<std::complex<double>>(*_io,
+                                                                   *_engine, u);
+                });
   _engine->EndStep();
 }
 //-----------------------------------------------------------------------------

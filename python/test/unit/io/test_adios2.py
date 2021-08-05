@@ -59,23 +59,23 @@ def generate_mesh(dim: int, simplex: bool, N: int = 3):
 @pytest.mark.parametrize("simplex", [True, False])
 def test_save_function(tempdir, dim, simplex):
     mesh = generate_mesh(dim, simplex)
-    # V = VectorFunctionSpace(mesh, ("Lagrange", 1))
-    # v = Function(V)
+    V = VectorFunctionSpace(mesh, ("Lagrange", 1))
+    v = Function(V)
 
     Q = FunctionSpace(mesh, ("Lagrange", 1))
     q = Function(Q)
 
     filename = os.path.join(tempdir, "v.bp")
-    # f = FidesWriter(mesh.mpi_comm(), filename, io.mode.write, [v._cpp_object, q._cpp_object])
-    f = FidesWriter(mesh.mpi_comm(), filename, io.mode.write, [q._cpp_object])
+    f = FidesWriter(mesh.mpi_comm(), filename, io.mode.write, [v._cpp_object, q._cpp_object])
+    #  f  = FidesWriter(mesh.mpi_comm(), filename, io.mode.write, [q._cpp_object])
 
     for t in [0.1, 1]:
         q.interpolate(lambda x: t * (x[0] - 0.5)**2)
         mesh.geometry.x[:, :2] += 0.1
-        # if mesh.geometry.dim == 2:
-        #     v.interpolate(lambda x: (t * x[0], x[1] + x[1] * 1j))
-        # elif mesh.geometry.dim == 3:
-        #     v.interpolate(lambda x: (t * x[2], x[0] + x[2] * 2j, x[1]))
+        if mesh.geometry.dim == 2:
+            v.interpolate(lambda x: (t * x[0], x[1] + x[1] * 1j))
+        elif mesh.geometry.dim == 3:
+            v.interpolate(lambda x: (t * x[2], x[0] + x[2] * 2j, x[1]))
         f.write(t)
     f.close()
 
@@ -92,12 +92,12 @@ def test_save_function_vtx(tempdir, dim, simplex):
     q = Function(Q)
 
     filename = os.path.join(tempdir, "v.bp")
-    #f = VTXWriter(mesh.mpi_comm(), filename, io.mode.write, [v._cpp_object, q._cpp_object])
-    f = VTXWriter(mesh.mpi_comm(), filename, io.mode.write, [v._cpp_object])
+    f = VTXWriter(mesh.mpi_comm(), filename, io.mode.write, [v._cpp_object, q._cpp_object])
+    #  f = VTXWriter(mesh.mpi_comm(), filename, io.mode.write, [v._cpp_object])
     # Q = FunctionSpace(mesh, ("DG", 1))
     # q = Function(Q)
     # q.x.array[0:10] = 1
-    #f = VTXWriter(mesh.mpi_comm(), filename, io.mode.write, [q._cpp_object])
+    #  f = VTXWriter(mesh.mpi_comm(), filename, io.mode.write, [q._cpp_object])
 
     for t in [0.1, 1, 2]:
         q.interpolate(lambda x: t * (x[0] - 0.5)**2)
