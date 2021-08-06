@@ -33,7 +33,8 @@ namespace adios2_utils
 {
 
 //-----------------------------------------------------------------------------
-// Extract the mesh connectivity for all cells of a given mesh
+/// Extract the mesh connectivity for all cells of a given mesh
+/// @param [in] mesh The mesh
 xt::xtensor<std::uint64_t, 2>
 extract_connectivity(std::shared_ptr<const dolfinx::mesh::Mesh> mesh);
 
@@ -90,12 +91,12 @@ constexpr adios2::Mode dolfinx_to_adios_mode(mode mode)
   }
 }
 //-----------------------------------------------------------------------------
-// Write function (real or complex) to to ADIOS2.
-// Data is padded to be three dimensional if vector
-// and 9 dimensional if tensor
-// @param[in] io The ADIOS2 io
-// @param[in] engine The ADIOS2 engine
-// @param[in] u The function
+/// Write function (real or complex) to to ADIOS2.
+/// Data is padded to be three dimensional if vector
+/// and 9 dimensional if tensor
+/// @param[in] io The ADIOS2 io
+/// @param[in] engine The ADIOS2 engine
+/// @param[in] u The function
 template <typename Scalar>
 void write_function_at_nodes(adios2::IO& io, adios2::Engine& engine,
                              const dolfinx::fem::Function<Scalar>& u)

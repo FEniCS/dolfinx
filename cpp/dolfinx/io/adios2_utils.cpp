@@ -14,6 +14,7 @@
 using namespace dolfinx;
 using namespace dolfinx::io;
 
+//-----------------------------------------------------------------------------
 xt::xtensor<std::uint64_t, 2>
 adios2_utils::extract_connectivity(std::shared_ptr<const mesh::Mesh> mesh)
 {
@@ -49,3 +50,4 @@ adios2_utils::extract_connectivity(std::shared_ptr<const mesh::Mesh> mesh)
 
   return topology;
 }
+//-----------------------------------------------------------------------------

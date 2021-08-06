@@ -41,18 +41,28 @@ class VTXWriter
 {
 public:
   /// Create VTX writer for a mesh
+  /// @param[in] comm The MPI communciator
+  /// @param[in] filename Name of output file
+  /// @param[in] mode The file mode (read/write/append)
+  /// @param[in] mesh The mesh
   VTXWriter(MPI_Comm comm, const std::string& filename, io::mode mode,
             std::shared_ptr<const mesh::Mesh> mesh);
 
-  /// Create
-
   /// Create VTX writer for list of functions (real)
+  /// @param[in] comm The MPI communciator
+  /// @param[in] filename Name of output file
+  /// @param[in] mode The file mode (read/write/append)
+  /// @param[in] functions List of functions
   VTXWriter(
       MPI_Comm comm, const std::string& filename, io::mode mode,
       const std::vector<std::reference_wrapper<const fem::Function<double>>>&
           functions);
 
   /// Create VTX writer for list of functions (complex)
+  /// @param[in] comm The MPI communciator
+  /// @param[in] filename Name of output file
+  /// @param[in] mode The file mode (read/write/append)
+  /// @param[in] functions List of functions
   VTXWriter(MPI_Comm comm, const std::string& filename, io::mode mode,
             const std::vector<std::reference_wrapper<
                 const fem::Function<std::complex<double>>>>& functions);
@@ -67,6 +77,7 @@ public:
   void close();
 
   /// Write data to file
+  /// @param[in] t The time step
   void write(double t);
 
 private:
