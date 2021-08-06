@@ -110,8 +110,8 @@ std::vector<std::uint8_t> perm_gmsh(mesh::CellType type, int num_nodes);
 ///   VTK ordering, i.e. `a_vtk[i] = a_dolfin[p[i]]
 /// @details If `p = [0, 2, 1, 3]` and `a = [10, 3, 4, 7]`, then `a_p
 ///   =[a[p[0]], a[p[1]], a[p[2]], a[p[3]]] = [10, 4, 3, 7]`
-std::vector<std::uint8_t> perm_discontinuous(mesh::CellType type,
-                                             int num_nodes);
+std::vector<std::uint8_t> perm_discontinuous_lagrange(mesh::CellType type,
+                                                      int num_nodes);
 
 /// Compute the transpose of a re-ordering map
 ///

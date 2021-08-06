@@ -204,8 +204,8 @@ void _write_lagrange_function(adios2::IO& io, adios2::Engine& engine,
         io::cells::perm_vtk(mesh->topology().cell_type(), num_nodes));
   }
   else
-    map = dolfinx::io::cells::perm_discontinuous(mesh->topology().cell_type(),
-                                                 num_nodes);
+    map = dolfinx::io::cells::perm_discontinuous_lagrange(
+        mesh->topology().cell_type(), num_nodes);
 
   // Extract topology for all local cells as
   // [N0 v0_0 .... v0_N0 N1 v1_0 .... v1_N1 ....]

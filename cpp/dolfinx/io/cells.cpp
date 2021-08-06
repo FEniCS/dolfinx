@@ -276,7 +276,7 @@ std::vector<std::uint8_t> gmsh_quadrilateral(int num_nodes)
   }
 }
 //-----------------------------------------------------------------------------
-std::vector<std::uint8_t> discontinuous_triangle(int num_nodes)
+std::vector<std::uint8_t> dg_triangle(int num_nodes)
 {
   switch (num_nodes)
   {
@@ -290,11 +290,11 @@ std::vector<std::uint8_t> discontinuous_triangle(int num_nodes)
     return {0, 4, 14, 1, 2, 3, 8, 11, 13, 12, 9, 5, 6, 7, 10};
   default:
     throw std::runtime_error(
-        "Higher order discontinuous triangle not supported");
+        "Higher order DG space on triangles is not supported");
   }
 }
 //-----------------------------------------------------------------------------
-std::vector<std::uint8_t> discontinuous_tetrahedron(int num_nodes)
+std::vector<std::uint8_t> dg_tetrahedron(int num_nodes)
 {
   switch (num_nodes)
   {
@@ -309,11 +309,11 @@ std::vector<std::uint8_t> discontinuous_tetrahedron(int num_nodes)
             10, 16, 12, 17, 15, 18, 11, 14, 13, 5};
   default:
     throw std::runtime_error(
-        "Higher order discontinuous tetrahedron not supported");
+        "Higher order DG space on tetrahedra is not supported");
   }
 }
 //-----------------------------------------------------------------------------
-std::vector<std::uint8_t> discontinuous_hexahedron(int num_nodes)
+std::vector<std::uint8_t> dq_hexahedron(int num_nodes)
 {
   switch (num_nodes)
   {
@@ -324,11 +324,11 @@ std::vector<std::uint8_t> discontinuous_hexahedron(int num_nodes)
             25, 21, 9, 11, 17, 15, 12, 14, 10, 16, 4, 22, 14};
   default:
     throw std::runtime_error(
-        "Higher order discontinuous hexahedron not supported");
+        "Higher order DQ space on hexahedra is not supported");
   }
 }
 //-----------------------------------------------------------------------------
-std::vector<std::uint8_t> discontinuous_quadrilateral(int num_nodes)
+std::vector<std::uint8_t> dq_quadrilateral(int num_nodes)
 {
   switch (num_nodes)
   {
@@ -340,7 +340,7 @@ std::vector<std::uint8_t> discontinuous_quadrilateral(int num_nodes)
     return {0, 3, 15, 12, 1, 2, 7, 11, 13, 14, 4, 8, 5, 6, 9, 10};
   default:
     throw std::runtime_error(
-        "Higher order discontinuous quadrilateral not supported");
+        "Higher order DQ space on quadrilaterals is not supported");
   }
 }
 } // namespace
@@ -409,8 +409,8 @@ std::vector<std::uint8_t> io::cells::perm_gmsh(const mesh::CellType type,
   return io::cells::transpose(map);
 }
 //-----------------------------------------------------------------------------
-std::vector<std::uint8_t> io::cells::perm_discontinuous(mesh::CellType type,
-                                                        int num_nodes)
+std::vector<std::uint8_t>
+io::cells::perm_discontinuous_lagrange(mesh::CellType type, int num_nodes)
 {
   std::vector<std::uint8_t> map;
   switch (type)
@@ -419,16 +419,16 @@ std::vector<std::uint8_t> io::cells::perm_discontinuous(mesh::CellType type,
     map = {0};
     break;
   case mesh::CellType::triangle:
-    map = discontinuous_triangle(num_nodes);
+    map = dg_triangle(num_nodes);
     break;
   case mesh::CellType::tetrahedron:
-    map = discontinuous_tetrahedron(num_nodes);
+    map = dg_tetrahedron(num_nodes);
     break;
   case mesh::CellType::quadrilateral:
-    map = discontinuous_quadrilateral(num_nodes);
+    map = dq_quadrilateral(num_nodes);
     break;
   case mesh::CellType::hexahedron:
-    map = discontinuous_hexahedron(num_nodes);
+    map = dq_hexahedron(num_nodes);
     break;
   default:
     throw std::runtime_error("Unknown cell type.");
