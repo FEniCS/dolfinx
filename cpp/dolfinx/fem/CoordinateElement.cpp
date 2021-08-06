@@ -29,7 +29,7 @@ double compute_determinant(Matrix& A)
   {
     using T = typename Matrix::value_type;
     xt::xtensor<T, 2> B = xt::transpose(A);
-    xt::xtensor<T, 2> BA = xt::empty<T>({B.shape(0), A.shape(1)});
+    xt::xtensor<T, 2> BA = xt::zeros<T>({B.shape(0), A.shape(1)});
     math::dot(B, A, BA);
     return std::sqrt(math::det(BA));
   }
@@ -58,7 +58,7 @@ mesh::CellType CoordinateElement::cell_shape() const
   // TODO
   const std::string cell = basix::cell::type_to_str(_element->cell_type());
 
-  const std::map<std::string, mesh::CellType> str_to_type
+  static const std::map<std::string, mesh::CellType> str_to_type
       = {{"interval", mesh::CellType::interval},
          {"triangle", mesh::CellType::triangle},
          {"quadrilateral", mesh::CellType::quadrilateral},
@@ -133,10 +133,8 @@ void CoordinateElement::compute_jacobian_inverse(
 
   const int gdim = J.shape(1);
   const int tdim = K.shape(1);
-
   xt::xtensor<double, 2> K0 = xt::empty<double>({tdim, gdim});
   xt::xtensor<double, 2> J0 = xt::empty<double>({gdim, tdim});
-
   if (_is_affine)
   {
     J0 = xt::view(J, 0, xt::all(), xt::all());
@@ -201,10 +199,7 @@ void CoordinateElement::push_forward(
   // Compute physical coordinates
   // x = phi * cell_geometry;
   x.fill(0);
-  for (std::size_t i = 0; i < x.shape(0); ++i)
-    for (std::size_t j = 0; j < x.shape(1); ++j)
-      for (std::size_t k = 0; k < cell_geometry.shape(0); ++k)
-        x(i, j) += phi(i, k) * cell_geometry(k, j);
+  math::dot(phi, cell_geometry, x);
 }
 //-----------------------------------------------------------------------------
 void CoordinateElement::pull_back(
@@ -254,14 +249,12 @@ void CoordinateElement::pull_back(
 
     // Calculate X for each point
     auto K0 = xt::view(K, 0, xt::all(), xt::all());
+    X.fill(0.0);
     for (std::size_t ip = 0; ip < num_points; ++ip)
     {
-      for (std::size_t i = 0; i < X.shape(1); ++i)
-      {
-        X(ip, i) = 0.0;
-        for (std::size_t j = 0; j < x.shape(1); ++j)
+      for (std::size_t i = 0; i < K0.shape(0); ++i)
+        for (std::size_t j = 0; j < K0.shape(1); ++j)
           X(ip, i) += K0(i, j) * (x(ip, j) - x0[j]);
-      }
     }
   }
   else
@@ -293,8 +286,8 @@ void CoordinateElement::pull_back(
 
         auto K0 = xt::view(K, 0, xt::all(), xt::all());
         dX.fill(0.0);
-        for (std::size_t i = 0; i < dX.shape(0); ++i)
-          for (std::size_t j = 0; j < dX.shape(1); ++j)
+        for (std::size_t i = 0; i < K0.shape(0); ++i)
+          for (std::size_t j = 0; j < K0.shape(1); ++j)
             dX[i] += K0(i, j) * (x(ip, j) - xk[j]);
 
         if (std::sqrt((dX * dX)()) < non_affine_atol)
