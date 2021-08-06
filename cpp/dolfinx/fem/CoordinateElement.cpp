@@ -290,12 +290,8 @@ void CoordinateElement::pull_back(
           for (std::size_t j = 0; j < K0.shape(1); ++j)
             dX[i] += K0(i, j) * (x(ip, j) - xk[j]);
 
-        if (std::sqrt(std::reduce(dX.cbegin(), dX.cend(), 0.0,
-                                  [](double a, double x) { return a + x * x; }))
-            < non_affine_atol)
-        {
+        if (std::sqrt(xt::sum(dX * dX)()) < non_affine_atol)
           break;
-        }
 
         Xk += dX;
       }
