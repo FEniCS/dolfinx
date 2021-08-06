@@ -55,9 +55,8 @@ extract_vtk_connectivity(std::shared_ptr<const mesh::Mesh> mesh)
   for (size_t c = 0; c < num_cells; ++c)
   {
     auto x_dofs = x_dofmap.links(c);
-    auto top_row = xt::row(topology, c);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
-      top_row[i] = x_dofs[map[i]];
+      topology[c, i] = x_dofs[map[i]];
   }
 
   return topology;
