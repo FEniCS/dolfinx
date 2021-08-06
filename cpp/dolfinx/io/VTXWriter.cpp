@@ -278,20 +278,15 @@ std::vector<std::string> extract_function_names(
 } // namespace
 
 //-----------------------------------------------------------------------------
-VTXWriter::VTXWriter(MPI_Comm comm, const std::string& filename, io::mode mode,
+VTXWriter::VTXWriter(MPI_Comm comm, const std::string& filename,
                      std::shared_ptr<const mesh::Mesh> mesh)
     : _adios(std::make_unique<adios2::ADIOS>(comm)),
       _io(std::make_unique<adios2::IO>(_adios->DeclareIO("Fides mesh writer"))),
       _engine(std::make_unique<adios2::Engine>(
-          _io->Open(filename, adios2_utils::dolfinx_to_adios_mode(mode)))),
+          _io->Open(filename, adios2::Mode::Write))),
       _mesh(mesh), _functions(), _complex_functions()
 {
   _io->SetEngine("BPFile");
-
-  // FIXME: Remove when https://github.com/ornladios/ADIOS2/issues/2482
-  // is resolved
-  if (mode == io::mode::append)
-    _io->SetParameter("AggregatorRatio", "1");
 
   // Define VTK scheme attribute for mesh
   std::string vtk_scheme = create_vtk_schema({}, {});
@@ -302,22 +297,17 @@ VTXWriter::VTXWriter(MPI_Comm comm, const std::string& filename, io::mode mode,
 }
 //-----------------------------------------------------------------------------
 VTXWriter::VTXWriter(
-    MPI_Comm comm, const std::string& filename, io::mode mode,
+    MPI_Comm comm, const std::string& filename,
     const std::vector<std::reference_wrapper<const fem::Function<double>>>&
         functions)
     : _adios(std::make_unique<adios2::ADIOS>(comm)),
       _io(std::make_unique<adios2::IO>(
           _adios->DeclareIO("Fides function writer"))),
       _engine(std::make_unique<adios2::Engine>(
-          _io->Open(filename, adios2_utils::dolfinx_to_adios_mode(mode)))),
+          _io->Open(filename, adios2::Mode::Write))),
       _mesh(), _functions(functions), _complex_functions()
 {
   _io->SetEngine("BPFile");
-
-  // FIXME: Remove when https://github.com/ornladios/ADIOS2/issues/2482
-  // is resolved
-  if (mode == io::mode::append)
-    _io->SetParameter("AggregatorRatio", "1");
 
   // Check that mesh is the same for all functions
   assert(functions.size() >= 1);
@@ -354,24 +344,18 @@ VTXWriter::VTXWriter(
   adios2_utils::DefineAttribute<std::string>(*_io, "vtk.xml", vtk_scheme);
 }
 //-----------------------------------------------------------------------------
-VTXWriter::VTXWriter(MPI_Comm comm, const std::string& filename, io::mode mode,
+VTXWriter::VTXWriter(MPI_Comm comm, const std::string& filename,
                      const std::vector<std::reference_wrapper<
                          const fem::Function<std::complex<double>>>>& functions)
     : _adios(std::make_unique<adios2::ADIOS>(comm)),
       _io(std::make_unique<adios2::IO>(
           _adios->DeclareIO("Fides function writer"))),
       _engine(std::make_unique<adios2::Engine>(
-          _io->Open(filename, adios2_utils::dolfinx_to_adios_mode(mode)))),
+          _io->Open(filename, adios2::Mode::Write))),
       _mesh(), _functions(), _complex_functions(functions)
 {
   _io->SetEngine("BPFile");
 
-  // FIXME: Remove when https://github.com/ornladios/ADIOS2/issues/2482
-  // is resolved
-  if (mode == io::mode::append)
-    _io->SetParameter("AggregatorRatio", "1");
-
-  // Check that mesh is the same for all functions
   assert(functions.size() >= 1);
   _mesh = functions[0].get().function_space()->mesh();
   for (std::size_t i = 1; i < functions.size(); i++)

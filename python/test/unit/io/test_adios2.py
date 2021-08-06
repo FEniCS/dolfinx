@@ -7,7 +7,7 @@
 import os
 
 import pytest
-from dolfinx import Function, FunctionSpace, io, VectorFunctionSpace
+from dolfinx import Function, FunctionSpace, VectorFunctionSpace
 from dolfinx.cpp.io import FidesWriter, has_adios2, VTXWriter
 from dolfinx.cpp.mesh import CellType
 from dolfinx.generation import UnitCubeMesh, UnitSquareMesh
@@ -22,7 +22,7 @@ def test_fides_mesh(tempdir):
     filename = os.path.join(tempdir, "mesh_fides.bp")
 
     mesh = UnitSquareMesh(MPI.COMM_WORLD, 5, 5)
-    f = FidesWriter(mesh.mpi_comm(), filename, io.mode.write, mesh)
+    f = FidesWriter(mesh.mpi_comm(), filename, mesh)
     f.write(0.0)
     mesh.geometry.x[:, 1] += 0.1
     f.write(0.1)
@@ -33,7 +33,7 @@ def test_fides_mesh(tempdir):
 def test_vtx_mesh(tempdir):
     filename = os.path.join(tempdir, "mesh_vtx.bp")
     mesh = UnitSquareMesh(MPI.COMM_WORLD, 5, 5)
-    f = VTXWriter(mesh.mpi_comm(), filename, io.mode.write, mesh)
+    f = VTXWriter(mesh.mpi_comm(), filename, mesh)
     f.write(0.0)
     mesh.geometry.x[:, 1] += 0.1
     f.write(0.1)
@@ -67,7 +67,7 @@ def test_fides_function_at_nodes(tempdir, dim, simplex):
     q = Function(Q)
 
     filename = os.path.join(tempdir, "v.bp")
-    f = FidesWriter(mesh.mpi_comm(), filename, io.mode.write, [v._cpp_object, q._cpp_object])
+    f = FidesWriter(mesh.mpi_comm(), filename, [v._cpp_object, q._cpp_object])
     for t in [0.1, 1]:
         q.interpolate(lambda x: t * (x[0] - 0.5)**2)
         mesh.geometry.x[:, :2] += 0.1
@@ -92,7 +92,7 @@ def test_vtx_function_at_nodes(tempdir, dim, simplex):
     q = Function(Q)
 
     filename = os.path.join(tempdir, "v.bp")
-    f = VTXWriter(mesh.mpi_comm(), filename, io.mode.write, [v._cpp_object, q._cpp_object])
+    f = VTXWriter(mesh.mpi_comm(), filename, [v._cpp_object, q._cpp_object])
     for t in [0.1, 1, 2]:
         q.interpolate(lambda x: t * (x[0] - 0.5)**2)
         mesh.geometry.x[:, :2] += 0.1
@@ -113,7 +113,7 @@ def test_vtx_lagrange_function(tempdir, dim, simplex):
     V = FunctionSpace(mesh, ("DG", 2))
     v = Function(V)
     filename = os.path.join(tempdir, "v.bp")
-    f = VTXWriter(mesh.mpi_comm(), filename, io.mode.write, [v._cpp_object])
+    f = VTXWriter(mesh.mpi_comm(), filename, [v._cpp_object])
     v.interpolate(lambda x: x[0] + x[1])
     for c in [0, 1]:
         v.x.array[V.dofmap.cell_dofs(c)] = 0

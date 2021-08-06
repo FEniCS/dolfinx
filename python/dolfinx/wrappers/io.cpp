@@ -189,21 +189,19 @@ void io(py::module& m)
                                                         "FidesWriter object")
       .def(py::init(
           [](const MPICommWrapper comm, const std::string& filename,
-             dolfinx::io::mode mode,
              std::shared_ptr<const dolfinx::mesh::Mesh> mesh)
           {
-            return std::make_unique<dolfinx::io::FidesWriter>(
-                comm.get(), filename, mode, mesh);
+            return std::make_unique<dolfinx::io::FidesWriter>(comm.get(),
+                                                              filename, mesh);
           }))
 
       .def(py::init(
           [](const MPICommWrapper comm, const std::string& filename,
-             dolfinx::io::mode mode,
              const std::vector<std::reference_wrapper<
                  const dolfinx::fem::Function<PetscScalar>>>& functions)
           {
             return std::make_unique<dolfinx::io::FidesWriter>(
-                comm.get(), filename, mode, functions);
+                comm.get(), filename, functions);
           }))
 
       .def("__enter__",
@@ -220,21 +218,19 @@ void io(py::module& m)
       m, pyclass_name.c_str(), "VTXWriter object")
       .def(py::init(
           [](const MPICommWrapper comm, const std::string& filename,
-             dolfinx::io::mode mode,
              std::shared_ptr<const dolfinx::mesh::Mesh> mesh)
           {
-            return std::make_unique<dolfinx::io::VTXWriter>(
-                comm.get(), filename, mode, mesh);
+            return std::make_unique<dolfinx::io::VTXWriter>(comm.get(),
+                                                            filename, mesh);
           }))
 
       .def(py::init(
           [](const MPICommWrapper comm, const std::string& filename,
-             dolfinx::io::mode mode,
              const std::vector<std::reference_wrapper<
                  const dolfinx::fem::Function<PetscScalar>>>& functions)
           {
             return std::make_unique<dolfinx::io::VTXWriter>(
-                comm.get(), filename, mode, functions);
+                comm.get(), filename, functions);
           }))
 
       .def("__enter__",

@@ -74,22 +74,6 @@ adios2::Variable<T> DefineVariable(adios2::IO& io, const std::string& name,
   return v;
 }
 
-// Convert DOLFINx io mode to ADIOS2 mode
-constexpr adios2::Mode dolfinx_to_adios_mode(mode mode)
-{
-  switch (mode)
-  {
-  case mode::write:
-    return adios2::Mode::Write;
-  case mode::append:
-    return adios2::Mode::Append;
-  case mode::read:
-    throw std::runtime_error("Unsupported file mode");
-  //   return adios2::Mode::Read;
-  default:
-    throw std::runtime_error("Unknown file mode");
-  }
-}
 //-----------------------------------------------------------------------------
 /// Write function (real or complex) to to ADIOS2.
 /// Data is padded to be three dimensional if vector

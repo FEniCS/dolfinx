@@ -42,17 +42,26 @@ class FidesWriter
 
 public:
   /// Create Fides writer for a mesh
-  FidesWriter(MPI_Comm comm, const std::string& filename, io::mode mode,
+  /// @param[in] comm The MPI communciator
+  /// @param[in] filename Name of output file
+  /// @param[in] mesh The mesh
+  FidesWriter(MPI_Comm comm, const std::string& filename,
               std::shared_ptr<const mesh::Mesh> mesh);
 
   /// Create Fides writer for list of functions (real)
+  /// @param[in] comm The MPI communciator
+  /// @param[in] filename Name of output file
+  /// @param[in] functions List of functions
   FidesWriter(
-      MPI_Comm comm, const std::string& filename, io::mode mode,
+      MPI_Comm comm, const std::string& filename,
       const std::vector<std::reference_wrapper<const fem::Function<double>>>&
           functions);
 
   /// Create Fides writer for list of functions (complex)
-  FidesWriter(MPI_Comm comm, const std::string& filename, io::mode mode,
+  /// @param[in] comm The MPI communciator
+  /// @param[in] filename Name of output file
+  /// @param[in] functions List of functions
+  FidesWriter(MPI_Comm comm, const std::string& filename,
               const std::vector<std::reference_wrapper<
                   const fem::Function<std::complex<double>>>>& functions);
 

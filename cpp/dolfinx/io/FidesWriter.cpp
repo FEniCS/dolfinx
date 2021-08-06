@@ -160,39 +160,29 @@ void _initialize_function_attributes(
 
 //-----------------------------------------------------------------------------
 FidesWriter::FidesWriter(MPI_Comm comm, const std::string& filename,
-                         io::mode mode, std::shared_ptr<const mesh::Mesh> mesh)
+                         std::shared_ptr<const mesh::Mesh> mesh)
     : _adios(std::make_unique<adios2::ADIOS>(comm)),
       _io(std::make_unique<adios2::IO>(_adios->DeclareIO("Fides mesh writer"))),
       _engine(std::make_unique<adios2::Engine>(
-          _io->Open(filename, adios2_utils::dolfinx_to_adios_mode(mode)))),
+          _io->Open(filename, adios2::Mode::Write))),
       _mesh(mesh), _functions(), _complex_functions()
 {
   _io->SetEngine("BPFile");
-
-  // FIXME: Remove when https://github.com/ornladios/ADIOS2/issues/2482
-  // is resolved
-  if (mode == io::mode::append)
-    _io->SetParameter("AggregatorRatio", "1");
   _initialize_mesh_attributes(*_io, mesh);
 }
 //-----------------------------------------------------------------------------
 FidesWriter::FidesWriter(
-    MPI_Comm comm, const std::string& filename, io::mode mode,
+    MPI_Comm comm, const std::string& filename,
     const std::vector<std::reference_wrapper<const fem::Function<double>>>&
         functions)
     : _adios(std::make_unique<adios2::ADIOS>(comm)),
       _io(std::make_unique<adios2::IO>(
           _adios->DeclareIO("Fides function writer"))),
       _engine(std::make_unique<adios2::Engine>(
-          _io->Open(filename, adios2_utils::dolfinx_to_adios_mode(mode)))),
+          _io->Open(filename, adios2::Mode::Write))),
       _mesh(), _functions(functions), _complex_functions()
 {
   _io->SetEngine("BPFile");
-
-  // FIXME: Remove when https://github.com/ornladios/ADIOS2/issues/2482
-  // is resolved
-  if (mode == io::mode::append)
-    _io->SetParameter("AggregatorRatio", "1");
 
   // Check that mesh is the same for all functions
   assert(functions.size() >= 1);
@@ -204,7 +194,7 @@ FidesWriter::FidesWriter(
 }
 //-----------------------------------------------------------------------------
 FidesWriter::FidesWriter(
-    MPI_Comm comm, const std::string& filename, io::mode mode,
+    MPI_Comm comm, const std::string& filename,
     const std::vector<
         std::reference_wrapper<const fem::Function<std::complex<double>>>>&
         functions)
@@ -212,15 +202,10 @@ FidesWriter::FidesWriter(
       _io(std::make_unique<adios2::IO>(
           _adios->DeclareIO("Fides function writer"))),
       _engine(std::make_unique<adios2::Engine>(
-          _io->Open(filename, adios2_utils::dolfinx_to_adios_mode(mode)))),
+          _io->Open(filename, adios2::Mode::Write))),
       _mesh(), _functions(), _complex_functions(functions)
 {
   _io->SetEngine("BPFile");
-
-  // FIXME: Remove when https://github.com/ornladios/ADIOS2/issues/2482
-  // is resolved
-  if (mode == io::mode::append)
-    _io->SetParameter("AggregatorRatio", "1");
 
   // Check that mesh is the same for all functions
   assert(functions.size() >= 1);
