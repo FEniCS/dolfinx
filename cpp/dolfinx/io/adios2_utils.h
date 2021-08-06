@@ -31,13 +31,6 @@ namespace io
 // Convenience functions for declaring attributes and variables with adios2
 namespace adios2_utils
 {
-
-//-----------------------------------------------------------------------------
-/// Extract the mesh connectivity for all cells of a given mesh
-/// @param [in] mesh The mesh
-xt::xtensor<std::uint64_t, 2>
-extract_connectivity(std::shared_ptr<const dolfinx::mesh::Mesh> mesh);
-
 //-----------------------------------------------------------------------------
 // Safe definition of an attribute. First check if it has already been defined
 // and return it. If not defined create new attribute.

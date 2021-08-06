@@ -23,6 +23,46 @@ using namespace dolfinx::io;
 
 namespace
 {
+
+/// Extract the geometry connectivity (permuted to VTK order) for all cells of a
+/// given mesh.
+/// @param [in] mesh The mesh
+xt::xtensor<std::uint64_t, 2>
+extract_vtk_connectivity(std::shared_ptr<const mesh::Mesh> mesh)
+{
+  // Get DOLFINx to VTK permutation
+  // FIXME: Use better way to get number of nodes
+  const graph::AdjacencyList<std::int32_t>& x_dofmap
+      = mesh->geometry().dofmap();
+  const std::uint32_t num_nodes = x_dofmap.num_links(0);
+  std::vector map = dolfinx::io::cells::transpose(
+      dolfinx::io::cells::perm_vtk(mesh->topology().cell_type(), num_nodes));
+  // TODO: Remove when when paraview issue 19433 is resolved
+  // (https://gitlab.kitware.com/paraview/paraview/issues/19433)
+  if (mesh->topology().cell_type() == dolfinx::mesh::CellType::hexahedron
+      and num_nodes == 27)
+  {
+    map = {0,  9, 12, 3,  1, 10, 13, 4,  18, 15, 21, 6,  19, 16,
+           22, 7, 2,  11, 5, 14, 8,  17, 20, 23, 24, 25, 26};
+  }
+  // Extract mesh 'nodes'
+  const int tdim = mesh->topology().dim();
+  const std::uint32_t num_cells
+      = mesh->topology().index_map(tdim)->size_local();
+
+  // Write mesh connectivity
+  xt::xtensor<std::uint64_t, 2> topology({num_cells, num_nodes});
+  for (size_t c = 0; c < num_cells; ++c)
+  {
+    auto x_dofs = x_dofmap.links(c);
+    auto top_row = xt::row(topology, c);
+    for (std::size_t i = 0; i < x_dofs.size(); ++i)
+      top_row[i] = x_dofs[map[i]];
+  }
+
+  return topology;
+}
+
 /// Create VTK xml scheme to be interpreted by the Paraview VTKWriter
 /// https://adios2.readthedocs.io/en/latest/ecosystem/visualization.html#saving-the-vtk-xml-data-model
 std::string create_vtk_schema(const std::vector<std::string>& point_data,
@@ -130,7 +170,7 @@ void _write_mesh(adios2::IO& io, adios2::Engine& engine,
   // Output is written as [N0 v0_0 .... v0_N0 N1 v1_0 .... v1_N1 ....]
   xt::xtensor<std::uint64_t, 2> topology({num_cells, num_nodes + 1});
   xt::view(topology, xt::all(), xt::xrange(std::size_t(1), topology.shape(1)))
-      = adios2_utils::extract_connectivity(mesh);
+      = extract_vtk_connectivity(mesh);
   xt::view(topology, xt::all(), 0) = num_nodes;
 
   // Put topology (nodes)

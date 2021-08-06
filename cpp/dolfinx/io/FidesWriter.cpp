@@ -22,6 +22,49 @@ using namespace dolfinx::io;
 
 namespace
 {
+
+//-----------------------------------------------------------------------------
+/// Extract the geometry connectivity (permuted to VTK order) for all cells of a
+/// given mesh.
+/// @param [in] mesh The mesh
+xt::xtensor<std::uint64_t, 2>
+extract_vtk_connectivity(std::shared_ptr<const mesh::Mesh> mesh)
+{
+  // Get DOLFINx to VTK permutation
+  // FIXME: Use better way to get number of nodes
+  const graph::AdjacencyList<std::int32_t>& x_dofmap
+      = mesh->geometry().dofmap();
+  const std::uint32_t num_nodes = x_dofmap.num_links(0);
+  std::vector map = dolfinx::io::cells::transpose(
+      dolfinx::io::cells::perm_vtk(mesh->topology().cell_type(), num_nodes));
+  // TODO: Remove when when paraview issue 19433 is resolved
+  // (https://gitlab.kitware.com/paraview/paraview/issues/19433)
+  if (mesh->topology().cell_type() == dolfinx::mesh::CellType::hexahedron
+      and num_nodes == 27)
+  {
+    map = {0,  9, 12, 3,  1, 10, 13, 4,  18, 15, 21, 6,  19, 16,
+           22, 7, 2,  11, 5, 14, 8,  17, 20, 23, 24, 25, 26};
+  }
+  // Extract mesh 'nodes'
+  const int tdim = mesh->topology().dim();
+  const std::uint32_t num_cells
+      = mesh->topology().index_map(tdim)->size_local();
+
+  // Write mesh connectivity
+  xt::xtensor<std::uint64_t, 2> topology({num_cells, num_nodes});
+  for (size_t c = 0; c < num_cells; ++c)
+  {
+    auto x_dofs = x_dofmap.links(c);
+    auto top_row = xt::row(topology, c);
+    for (std::size_t i = 0; i < x_dofs.size(); ++i)
+      top_row[i] = x_dofs[map[i]];
+  }
+
+  return topology;
+}
+//-----------------------------------------------------------------------------
+/// Convert DOLFInx CellType to FIDES CellType
+/// @param[in] type The DOLFInx cell
 std::string to_fides_cell(mesh::CellType type)
 {
   switch (type)
@@ -48,10 +91,10 @@ std::string to_fides_cell(mesh::CellType type)
 }
 
 //-----------------------------------------------------------------------------
-//------------------------Put mesh geometry and connectivity for FIDES---------
-// @param[in] io The ADIOS2 IO
-// @param[in] engine The ADIOS2 engine
-// @param[in] mesh The mesh
+/// Put mesh geometry and connectivity for FIDES
+/// @param[in] io The ADIOS2 IO
+/// @param[in] engine The ADIOS2 engine
+/// @param[in] mesh The mesh
 void _write_mesh(adios2::IO& io, adios2::Engine& engine,
                  std::shared_ptr<const mesh::Mesh> mesh)
 {
@@ -75,8 +118,7 @@ void _write_mesh(adios2::IO& io, adios2::Engine& engine,
   const std::uint32_t num_nodes = x_dofmap.num_links(0);
 
   // Put topology (nodes)
-  xt::xtensor<std::int64_t, 2> topology
-      = adios2_utils::extract_connectivity(mesh);
+  xt::xtensor<std::int64_t, 2> topology = extract_vtk_connectivity(mesh);
   adios2::Variable<std::int64_t> local_topology
       = adios2_utils::DefineVariable<std::int64_t>(io, "connectivity", {}, {},
                                                    {num_cells * num_nodes});
@@ -85,6 +127,9 @@ void _write_mesh(adios2::IO& io, adios2::Engine& engine,
   engine.PerformPuts();
 }
 //-----------------------------------------------------------------------------
+/// Initialize mesh related attributes for the ADIOS2 file used in FIDES
+/// @param[in] io The ADIOS2 IO
+/// @param[in] mesh The mesh
 void _initialize_mesh_attributes(adios2::IO& io,
                                  std::shared_ptr<const mesh::Mesh> mesh)
 {
@@ -104,6 +149,9 @@ void _initialize_mesh_attributes(adios2::IO& io,
   adios2_utils::DefineAttribute<std::string>(io, "Fides_Cell_Type", cell_type);
 }
 //-----------------------------------------------------------------------------
+/// Initialize function related attributes for the ADIOS2 file used in FIDES
+/// @param[in] io The ADIOS2 IO
+/// @param[in] functions The list of functions
 template <typename T>
 void _initialize_function_attributes(
     adios2::IO& io,
@@ -158,6 +206,10 @@ void _initialize_function_attributes(
 } // namespace
 
 //-----------------------------------------------------------------------------
+/// Initialize a FIDES writer for writing a mesh to file
+/// @param[in] comm The MPI communicator
+/// @param[in] filename The filename of the output file
+/// @param[in] mesh The mesh
 FidesWriter::FidesWriter(MPI_Comm comm, const std::string& filename,
                          std::shared_ptr<const mesh::Mesh> mesh)
     : _adios(std::make_unique<adios2::ADIOS>(comm)),
@@ -170,6 +222,10 @@ FidesWriter::FidesWriter(MPI_Comm comm, const std::string& filename,
   _initialize_mesh_attributes(*_io, mesh);
 }
 //-----------------------------------------------------------------------------
+/// Initialize a FIDES writer for writing a list of functions to file
+/// @param[in] comm The MPI communicator
+/// @param[in] filename The filename of the output file
+/// @param[in] functions The list of functions
 FidesWriter::FidesWriter(
     MPI_Comm comm, const std::string& filename,
     const std::vector<std::shared_ptr<const fem::Function<double>>>& functions)
@@ -191,6 +247,10 @@ FidesWriter::FidesWriter(
   _initialize_function_attributes<double>(*_io, _functions);
 }
 //-----------------------------------------------------------------------------
+/// Initialize a FIDES writer for writing a list of functions to file
+/// @param[in] comm The MPI communicator
+/// @param[in] filename The filename of the output file
+/// @param[in] functions The list of functions
 FidesWriter::FidesWriter(
     MPI_Comm comm, const std::string& filename,
     const std::vector<
@@ -227,6 +287,8 @@ void FidesWriter::close()
     _engine->Close();
 }
 //-----------------------------------------------------------------------------
+/// Write the data in the writer to file for a given time step
+/// @param[in] t The time step
 void FidesWriter::write(double t)
 {
   assert(_io);
