@@ -37,11 +37,25 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Get Basix and install
+      - name: Checkout Basix
         uses: actions/checkout@v2
         with:
           path: ./basix
           repository: FEniCS/basix
+          ref: v0.2.0
+
+      - name: Checkout UFL
+        uses: actions/checkout@v2
+        with:
+          path: ./ufl
+          repository: FEniCS/ufl
+          ref: main
+
+      - name: Checkout FFCx
+        uses: actions/checkout@v2
+        with:
+          path: ./ffcx
+          repository: FEniCS/ffcx
           ref: v0.2.0
 
       - name: Install FEniCS Python components
@@ -50,8 +64,8 @@ jobs:
           cmake --build build-dir
           cmake --install build-dir
           python3 -m pip install ./basix/python
-          python3 -m pip install git+https://github.com/FEniCS/ufl.git
-          python3 -m pip install git+https://github.com/FEniCS/ffcx.git@v0.2.0
+          python3 -m pip install ./ufl
+          python3 -m pip install ./ffcx
 
       - name: Flake8 checks
         run: |
