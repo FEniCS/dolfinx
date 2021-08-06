@@ -6,8 +6,11 @@
 
 #pragma once
 
+#include <array>
 #include <cmath>
 #include <type_traits>
+#include <xtensor/xtensor.hpp>
+#include <xtl/xspan.hpp>
 
 namespace dolfinx::math
 {
@@ -71,8 +74,8 @@ auto det(const Matrix& A)
   }
 }
 
-/// Compute the inverse of a square matrix A and assign the result to a
-/// preallocated matrix B.
+/// Compute the inverse of a square matrix A (1x1, 2x2 or 3x3) and
+/// assign the result to a preallocated matrix B.
 /// @warning This function does not check if A is invertible!
 template <typename U, typename V>
 void inv(const U& A, V& B)
@@ -120,6 +123,10 @@ void inv(const U& A, V& B)
                              + std::to_string(A.shape(1)) + " matrices.");
   }
 }
+
+/// Compute the pseudo inverse of A
+void pinv(xtl::span<const double> A, std::array<int, 2> shape,
+          const xtl::span<double> P);
 
 template <typename U, typename V, typename P>
 void gemm(const U& A, const V& B, P& C, bool transpose = false)
