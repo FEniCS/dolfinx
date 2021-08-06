@@ -188,20 +188,21 @@ def run_dg_test(mesh, V, degree):
     assert np.absolute(error) < 1.0e-14
 
 
-def test_curl_curl_eigenvalue():
+@pytest.mark.parametrize("family", ["N1curl", "N2curl"])
+@pytest.mark.parametrize("order", [1, 2, 3])
+def test_curl_curl_eigenvalue(family, order):
     """curl curl eigenvalue problem.
 
     Solved using H(curl)-conforming finite element method.
     See https://www-users.cse.umn.edu/~arnold/papers/icm2002.pdf for details.
     """
-    # TODO: Parameterise across H(curl) elements.
     slepc4py = pytest.importorskip("slepc4py")  # noqa: F841
     from slepc4py import SLEPc
 
     mesh = RectangleMesh(MPI.COMM_WORLD, [np.array([0.0, 0.0, 0.0]),
-                                          np.array([np.pi, np.pi, 0.0])], [32, 32], CellType.triangle)
+                                          np.array([np.pi, np.pi, 0.0])], [24, 24], CellType.triangle)
 
-    element = ufl.FiniteElement("N1curl", ufl.triangle, 1)
+    element = ufl.FiniteElement(family, ufl.triangle, order)
     V = FunctionSpace(mesh, element)
 
     u = ufl.TrialFunction(V)
@@ -233,7 +234,7 @@ def test_curl_curl_eigenvalue():
     PETSc.Options()["eps_target_magnitude"] = ""
     PETSc.Options()["eps_target"] = 5.0
     PETSc.Options()["eps_view"] = ""
-    PETSc.Options()["eps_nev"] = 20
+    PETSc.Options()["eps_nev"] = 12
     eps.setFromOptions()
     eps.solve()
 
@@ -245,9 +246,9 @@ def test_curl_curl_eigenvalue():
 
     assert(np.isclose(np.imag(eigenvalues_unsorted), 0.0).all())
     eigenvalues_sorted = np.sort(np.real(eigenvalues_unsorted))[:-1]
+    eigenvalues_sorted = eigenvalues_sorted[np.logical_not(eigenvalues_sorted < 1E-8)]
 
-    eigenvalues_exact = np.array([1.0, 1.0, 2.0, 4.0, 4.0, 5.0, 5.0, 8.0, 9.0, 9.0])
-    assert(num_converged >= eigenvalues_exact.shape[0])
+    eigenvalues_exact = np.array([1.0, 1.0, 2.0, 4.0, 4.0, 5.0, 5.0, 8.0, 9.0])
     assert(np.isclose(eigenvalues_sorted[0:eigenvalues_exact.shape[0]], eigenvalues_exact, rtol=1E-2).all())
 
 
