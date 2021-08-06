@@ -6,6 +6,7 @@
 
 #include "CoordinateElement.h"
 #include <basix/finite-element.h>
+#include <cmath>
 #include <dolfinx/common/math.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <xtensor-blas/xlinalg.hpp>
@@ -246,16 +247,27 @@ void CoordinateElement::pull_back(
 
     // Compute physical coordinates at X=0 (phi(X) * cell_geom).
     auto phi0 = xt::view(tabulated_data, 0, 0, xt::all(), 0);
-    auto x0 = xt::linalg::dot(xt::transpose(cell_geometry), phi0);
+    std::vector<double> x0(cell_geometry.shape(1), 0.0);
+    for (std::size_t i = 0; i < x.size(); ++i)
+      for (std::size_t j = 0; j < phi0.shape(0); ++j)
+        x0[i] += cell_geometry(j, i) * phi0[j];
 
     // Calculate X for each point
     auto K0 = xt::view(K, 0, xt::all(), xt::all());
     for (std::size_t ip = 0; ip < num_points; ++ip)
-      xt::row(X, ip) = xt::linalg::dot(K0, xt::row(x, ip) - x0);
+    {
+      for (std::size_t i = 0; i < X.shape(1); ++i)
+      {
+        X(ip, i) = 0.0;
+        for (std::size_t j = 0; j < x.shape(1); ++j)
+          X(ip, i) += K0(i, j) * (x(ip, j) - x0[j]);
+      }
+    }
   }
   else
   {
     xt::xtensor<double, 2> Xk({1, tdim});
+    std::vector<double> xk(cell_geometry.shape(1));
     xt::xtensor<double, 1> dX = xt::empty<double>({tdim});
     for (std::size_t ip = 0; ip < num_points; ++ip)
     {
@@ -269,7 +281,10 @@ void CoordinateElement::pull_back(
 
         // cell_geometry * phi(0)
         auto phi0 = xt::view(tabulated_data, 0, 0, xt::all(), 0);
-        auto xk = xt::linalg::dot(xt::transpose(cell_geometry), phi0);
+        std::fill(xk.begin(), xk.end(), 0.0);
+        for (std::size_t i = 0; i < cell_geometry.shape(1); ++i)
+          for (std::size_t j = 0; j < cell_geometry.shape(0); ++j)
+            xk[i] += cell_geometry(j, i) * phi0[j];
 
         // Compute Jacobian, its inverse and determinant
         compute_jacobian(dphi, cell_geometry, J);
@@ -277,10 +292,14 @@ void CoordinateElement::pull_back(
         compute_jacobian_determinant(J, detJ);
 
         auto K0 = xt::view(K, 0, xt::all(), xt::all());
-        dX = xt::linalg::dot(K0, xt::row(x, ip) - xk);
+        dX.fill(0.0);
+        for (std::size_t i = 0; i < dX.shape(0); ++i)
+          for (std::size_t j = 0; j < dX.shape(1); ++j)
+            dX[i] += K0(i, j) * (x(ip, j) - xk[j]);
 
-        if (xt::linalg::norm(dX) < non_affine_atol)
+        if (std::sqrt((dX * dX)()) < non_affine_atol)
           break;
+
         Xk += dX;
       }
       xt::row(X, ip) = xt::row(Xk, 0);

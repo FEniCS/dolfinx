@@ -148,7 +148,7 @@ void gemm(const U& A, const V& B, P& C, bool transpose = false)
   }
 }
 
-/// Compute C = A * B + C
+/// Compute C += A * B
 template <typename U, typename V, typename P>
 void dot(const U& A, const V& B, P& C, bool transpose = false)
 {
