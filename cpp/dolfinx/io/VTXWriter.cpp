@@ -143,10 +143,10 @@ void _write_mesh(adios2::IO& io, adios2::Engine& engine,
 //-----------------------------------------------------------------------------
 template <typename Scalar>
 void _write_lagrange_function(adios2::IO& io, adios2::Engine& engine,
-                              const fem::Function<Scalar>& u)
+                              std::shared_ptr<const fem::Function<Scalar>> u)
 {
-  auto V = u.function_space();
-  auto mesh = u.function_space()->mesh();
+  auto V = u->function_space();
+  auto mesh = u->function_space()->mesh();
   std::string family = V->element()->family();
 
   xt::xtensor<double, 2> geometry = V->tabulate_dof_coordinates(false);
@@ -207,9 +207,9 @@ void _write_lagrange_function(adios2::IO& io, adios2::Engine& engine,
   engine.PerformPuts();
 
   // Get function data array and information about layout
-  std::shared_ptr<const la::Vector<Scalar>> function_vector = u.x();
+  std::shared_ptr<const la::Vector<Scalar>> function_vector = u->x();
   auto function_data = xt::adapt(function_vector->array());
-  const int rank = u.function_space()->element()->value_rank();
+  const int rank = u->function_space()->element()->value_rank();
   const std::uint32_t num_components = std::pow(3, rank);
   const std::uint32_t local_size = geometry.shape(0);
   const std::uint32_t block_size = dofmap->index_map_bs();
@@ -228,7 +228,7 @@ void _write_lagrange_function(adios2::IO& io, adios2::Engine& engine,
     else
       part_data = xt::real(function_data);
 
-    std::string function_name = u.name;
+    std::string function_name = u->name;
     if (part != "")
       function_name += "_" + part;
     for (size_t i = 0; i < local_size; ++i)
@@ -252,25 +252,24 @@ void _write_lagrange_function(adios2::IO& io, adios2::Engine& engine,
 // Extract name of functions and split into real and imaginary component
 template <typename T>
 std::vector<std::string> extract_function_names(
-    const std::vector<std::reference_wrapper<const fem::Function<T>>>&
-        functions)
+    const std::vector<std::shared_ptr<const fem::Function<T>>>& functions)
 {
 
   std::vector<std::string> function_names;
   if constexpr (std::is_scalar<T>::value)
   {
     std::for_each(functions.begin(), functions.end(),
-                  [&](const fem::Function<T>& u)
-                  { function_names.push_back(u.name); });
+                  [&](std::shared_ptr<const fem::Function<T>> u)
+                  { function_names.push_back(u->name); });
   }
   else
   {
     const std::array<std::string, 2> parts = {"real", "imag"};
     std::for_each(functions.begin(), functions.end(),
-                  [&](const fem::Function<T>& u)
+                  [&](std::shared_ptr<const fem::Function<T>> u)
                   {
                     for (auto part : parts)
-                      function_names.push_back(u.name + "_" + part);
+                      function_names.push_back(u->name + "_" + part);
                   });
   }
   return function_names;
@@ -298,8 +297,7 @@ VTXWriter::VTXWriter(MPI_Comm comm, const std::string& filename,
 //-----------------------------------------------------------------------------
 VTXWriter::VTXWriter(
     MPI_Comm comm, const std::string& filename,
-    const std::vector<std::reference_wrapper<const fem::Function<double>>>&
-        functions)
+    const std::vector<std::shared_ptr<const fem::Function<double>>>& functions)
     : _adios(std::make_unique<adios2::ADIOS>(comm)),
       _io(std::make_unique<adios2::IO>(
           _adios->DeclareIO("Fides function writer"))),
@@ -311,9 +309,9 @@ VTXWriter::VTXWriter(
 
   // Check that mesh is the same for all functions
   assert(functions.size() >= 1);
-  _mesh = functions[0].get().function_space()->mesh();
+  _mesh = functions[0]->function_space()->mesh();
   for (std::size_t i = 1; i < functions.size(); i++)
-    assert(_mesh == functions[i].get().function_space()->mesh());
+    assert(_mesh == functions[i]->function_space()->mesh());
 
   // Can only write one mesh to file at the time if using higher order
   // visualization
@@ -325,7 +323,7 @@ VTXWriter::VTXWriter(
   else
   {
     std::shared_ptr<const fem::FiniteElement> element
-        = functions[0].get().function_space()->element();
+        = functions[0]->function_space()->element();
     assert(element);
     if (is_cellwise_constant(*element))
       throw std::runtime_error("Cell-wise constants not currently supported");
@@ -344,9 +342,10 @@ VTXWriter::VTXWriter(
   adios2_utils::DefineAttribute<std::string>(*_io, "vtk.xml", vtk_scheme);
 }
 //-----------------------------------------------------------------------------
-VTXWriter::VTXWriter(MPI_Comm comm, const std::string& filename,
-                     const std::vector<std::reference_wrapper<
-                         const fem::Function<std::complex<double>>>>& functions)
+VTXWriter::VTXWriter(
+    MPI_Comm comm, const std::string& filename,
+    const std::vector<
+        std::shared_ptr<const fem::Function<std::complex<double>>>>& functions)
     : _adios(std::make_unique<adios2::ADIOS>(comm)),
       _io(std::make_unique<adios2::IO>(
           _adios->DeclareIO("Fides function writer"))),
@@ -357,9 +356,9 @@ VTXWriter::VTXWriter(MPI_Comm comm, const std::string& filename,
   _io->SetEngine("BPFile");
 
   assert(functions.size() >= 1);
-  _mesh = functions[0].get().function_space()->mesh();
+  _mesh = functions[0]->function_space()->mesh();
   for (std::size_t i = 1; i < functions.size(); i++)
-    assert(_mesh == functions[i].get().function_space()->mesh());
+    assert(_mesh == functions[i]->function_space()->mesh());
 
   // Can only write one mesh to file at the time if using higher order
   // visualization
@@ -371,7 +370,7 @@ VTXWriter::VTXWriter(MPI_Comm comm, const std::string& filename,
   else
   {
     std::shared_ptr<const fem::FiniteElement> element
-        = functions[0].get().function_space()->element();
+        = functions[0]->function_space()->element();
     assert(element);
     if (is_cellwise_constant(*element))
       throw std::runtime_error("Cell-wise constants not currently supported");
@@ -418,7 +417,7 @@ void VTXWriter::write(double t)
   _engine->Put<double>(var_step, t);
   // Write real valued functions to file
   std::for_each(_functions.begin(), _functions.end(),
-                [&](const fem::Function<double>& u)
+                [&](std::shared_ptr<const fem::Function<double>> u)
                 {
                   if (_write_mesh_data)
                     adios2_utils::write_function_at_nodes<double>(*_io,
@@ -428,16 +427,16 @@ void VTXWriter::write(double t)
                 });
 
   // Write complex valued functions to file
-  std::for_each(_complex_functions.begin(), _complex_functions.end(),
-                [&](const fem::Function<std::complex<double>>& u)
-                {
-                  if (_write_mesh_data)
-                    adios2_utils::write_function_at_nodes<std::complex<double>>(
-                        *_io, *_engine, u);
-                  else
-                    _write_lagrange_function<std::complex<double>>(*_io,
-                                                                   *_engine, u);
-                });
+  std::for_each(
+      _complex_functions.begin(), _complex_functions.end(),
+      [&](std::shared_ptr<const fem::Function<std::complex<double>>> u)
+      {
+        if (_write_mesh_data)
+          adios2_utils::write_function_at_nodes<std::complex<double>>(
+              *_io, *_engine, u);
+        else
+          _write_lagrange_function<std::complex<double>>(*_io, *_engine, u);
+      });
   _engine->EndStep();
 }
 //-----------------------------------------------------------------------------

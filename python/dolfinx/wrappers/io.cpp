@@ -197,7 +197,7 @@ void io(py::module& m)
 
       .def(py::init(
           [](const MPICommWrapper comm, const std::string& filename,
-             const std::vector<std::reference_wrapper<
+             const std::vector<std::shared_ptr<
                  const dolfinx::fem::Function<PetscScalar>>>& functions)
           {
             return std::make_unique<dolfinx::io::FidesWriter>(
@@ -226,7 +226,7 @@ void io(py::module& m)
 
       .def(py::init(
           [](const MPICommWrapper comm, const std::string& filename,
-             const std::vector<std::reference_wrapper<
+             const std::vector<std::shared_ptr<
                  const dolfinx::fem::Function<PetscScalar>>>& functions)
           {
             return std::make_unique<dolfinx::io::VTXWriter>(

@@ -52,18 +52,18 @@ public:
   /// @param[in] comm The MPI communciator
   /// @param[in] filename Name of output file
   /// @param[in] functions List of functions
-  FidesWriter(
-      MPI_Comm comm, const std::string& filename,
-      const std::vector<std::reference_wrapper<const fem::Function<double>>>&
-          functions);
+  FidesWriter(MPI_Comm comm, const std::string& filename,
+              const std::vector<std::shared_ptr<const fem::Function<double>>>&
+                  functions);
 
   /// Create Fides writer for list of functions (complex)
   /// @param[in] comm The MPI communciator
   /// @param[in] filename Name of output file
   /// @param[in] functions List of functions
   FidesWriter(MPI_Comm comm, const std::string& filename,
-              const std::vector<std::reference_wrapper<
-                  const fem::Function<std::complex<double>>>>& functions);
+              const std::vector<
+                  std::shared_ptr<const fem::Function<std::complex<double>>>>&
+                  functions);
 
   /// Move constructor
   FidesWriter(FidesWriter&& file) = default;
@@ -83,8 +83,8 @@ private:
   std::unique_ptr<adios2::Engine> _engine;
 
   std::shared_ptr<const dolfinx::mesh::Mesh> _mesh;
-  std::vector<std::reference_wrapper<const fem::Function<double>>> _functions;
-  std::vector<std::reference_wrapper<const fem::Function<std::complex<double>>>>
+  std::vector<std::shared_ptr<const fem::Function<double>>> _functions;
+  std::vector<std::shared_ptr<const fem::Function<std::complex<double>>>>
       _complex_functions;
 };
 

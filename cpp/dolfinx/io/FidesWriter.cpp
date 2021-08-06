@@ -107,8 +107,7 @@ void _initialize_mesh_attributes(adios2::IO& io,
 template <typename T>
 void _initialize_function_attributes(
     adios2::IO& io,
-    const std::vector<std::reference_wrapper<const fem::Function<T>>>&
-        functions)
+    const std::vector<std::shared_ptr<const fem::Function<T>>>& functions)
 {
   // Array of function (name, cell association types) for each function added to
   // the file
@@ -116,18 +115,18 @@ void _initialize_function_attributes(
   if constexpr (std::is_scalar<T>::value)
   {
     std::for_each(functions.begin(), functions.end(),
-                  [&](const fem::Function<T>& u) {
-                    function_data.push_back({u.name, "points"});
+                  [&](std::shared_ptr<const fem::Function<T>> u) {
+                    function_data.push_back({u->name, "points"});
                   });
   }
   else
   {
     const std::array<std::string, 2> parts = {"real", "imag"};
     std::for_each(functions.begin(), functions.end(),
-                  [&](const fem::Function<T>& u)
+                  [&](std::shared_ptr<const fem::Function<T>> u)
                   {
                     for (auto part : parts)
-                      function_data.push_back({u.name + "_" + part, "points"});
+                      function_data.push_back({u->name + "_" + part, "points"});
                   });
   }
   // Write field associations to file
@@ -173,8 +172,7 @@ FidesWriter::FidesWriter(MPI_Comm comm, const std::string& filename,
 //-----------------------------------------------------------------------------
 FidesWriter::FidesWriter(
     MPI_Comm comm, const std::string& filename,
-    const std::vector<std::reference_wrapper<const fem::Function<double>>>&
-        functions)
+    const std::vector<std::shared_ptr<const fem::Function<double>>>& functions)
     : _adios(std::make_unique<adios2::ADIOS>(comm)),
       _io(std::make_unique<adios2::IO>(
           _adios->DeclareIO("Fides function writer"))),
@@ -186,9 +184,9 @@ FidesWriter::FidesWriter(
 
   // Check that mesh is the same for all functions
   assert(functions.size() >= 1);
-  _mesh = functions[0].get().function_space()->mesh();
+  _mesh = functions[0]->function_space()->mesh();
   for (std::size_t i = 1; i < functions.size(); i++)
-    assert(_mesh == functions[i].get().function_space()->mesh());
+    assert(_mesh == functions[i]->function_space()->mesh());
   _initialize_mesh_attributes(*_io, _mesh);
   _initialize_function_attributes<double>(*_io, _functions);
 }
@@ -196,8 +194,7 @@ FidesWriter::FidesWriter(
 FidesWriter::FidesWriter(
     MPI_Comm comm, const std::string& filename,
     const std::vector<
-        std::reference_wrapper<const fem::Function<std::complex<double>>>>&
-        functions)
+        std::shared_ptr<const fem::Function<std::complex<double>>>>& functions)
     : _adios(std::make_unique<adios2::ADIOS>(comm)),
       _io(std::make_unique<adios2::IO>(
           _adios->DeclareIO("Fides function writer"))),
@@ -209,9 +206,9 @@ FidesWriter::FidesWriter(
 
   // Check that mesh is the same for all functions
   assert(functions.size() >= 1);
-  _mesh = functions[0].get().function_space()->mesh();
+  _mesh = functions[0]->function_space()->mesh();
   for (std::size_t i = 1; i < functions.size(); i++)
-    assert(_mesh == functions[i].get().function_space()->mesh());
+    assert(_mesh == functions[i]->function_space()->mesh());
   _initialize_mesh_attributes(*_io, _mesh);
   _initialize_function_attributes<std::complex<double>>(*_io,
                                                         _complex_functions);
@@ -244,16 +241,17 @@ void FidesWriter::write(double t)
   // Write real valued functions to file
   std::for_each(
       _functions.begin(), _functions.end(),
-      [&](const fem::Function<double>& u)
+      [&](std::shared_ptr<const fem::Function<double>> u)
       { adios2_utils::write_function_at_nodes<double>(*_io, *_engine, u); });
 
   // Write complex valued functions to file
-  std::for_each(_complex_functions.begin(), _complex_functions.end(),
-                [&](const fem::Function<std::complex<double>>& u)
-                {
-                  adios2_utils::write_function_at_nodes<std::complex<double>>(
-                      *_io, *_engine, u);
-                });
+  std::for_each(
+      _complex_functions.begin(), _complex_functions.end(),
+      [&](std::shared_ptr<const fem::Function<std::complex<double>>> u)
+      {
+        adios2_utils::write_function_at_nodes<std::complex<double>>(
+            *_io, *_engine, u);
+      });
   _engine->EndStep();
 }
 //-----------------------------------------------------------------------------

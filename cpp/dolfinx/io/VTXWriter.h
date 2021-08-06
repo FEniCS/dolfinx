@@ -51,18 +51,18 @@ public:
   /// @param[in] comm The MPI communciator
   /// @param[in] filename Name of output file
   /// @param[in] functions List of functions
-  VTXWriter(
-      MPI_Comm comm, const std::string& filename,
-      const std::vector<std::reference_wrapper<const fem::Function<double>>>&
-          functions);
+  VTXWriter(MPI_Comm comm, const std::string& filename,
+            const std::vector<std::shared_ptr<const fem::Function<double>>>&
+                functions);
 
   /// Create VTX writer for list of functions (complex)
   /// @param[in] comm The MPI communciator
   /// @param[in] filename Name of output file
   /// @param[in] functions List of functions
   VTXWriter(MPI_Comm comm, const std::string& filename,
-            const std::vector<std::reference_wrapper<
-                const fem::Function<std::complex<double>>>>& functions);
+            const std::vector<
+                std::shared_ptr<const fem::Function<std::complex<double>>>>&
+                functions);
 
   /// Move constructor
   VTXWriter(VTXWriter&& file) = default;
@@ -83,8 +83,8 @@ private:
   std::unique_ptr<adios2::Engine> _engine;
 
   std::shared_ptr<const dolfinx::mesh::Mesh> _mesh;
-  std::vector<std::reference_wrapper<const fem::Function<double>>> _functions;
-  std::vector<std::reference_wrapper<const fem::Function<std::complex<double>>>>
+  std::vector<std::shared_ptr<const fem::Function<double>>> _functions;
+  std::vector<std::shared_ptr<const fem::Function<std::complex<double>>>>
       _complex_functions;
   // Flag to indicate if mesh should be written, or if mesh is defined through
   // dof coordinates
