@@ -12,6 +12,7 @@
 
 #include "utils.h"
 #include <array>
+#include <cassert>
 #include <memory>
 #include <mpi.h>
 #include <string>
