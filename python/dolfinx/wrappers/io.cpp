@@ -194,16 +194,14 @@ void io(py::module& m)
             return std::make_unique<dolfinx::io::FidesWriter>(comm.get(),
                                                               filename, mesh);
           }))
-
       .def(py::init(
           [](const MPICommWrapper comm, const std::string& filename,
-             const std::vector<std::shared_ptr<
-                 const dolfinx::fem::Function<PetscScalar>>>& functions)
+             const std::vector<
+                 std::shared_ptr<const dolfinx::fem::Function<PetscScalar>>>& u)
           {
-            return std::make_unique<dolfinx::io::FidesWriter>(
-                comm.get(), filename, functions);
+            return std::make_unique<dolfinx::io::FidesWriter>(comm.get(),
+                                                              filename, u);
           }))
-
       .def("__enter__",
            [](std::shared_ptr<dolfinx::io::FidesWriter>& self) { return self; })
       .def("__exit__",
