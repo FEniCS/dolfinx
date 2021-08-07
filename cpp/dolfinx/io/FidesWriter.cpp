@@ -99,8 +99,10 @@ xt::xtensor<std::int64_t, 2> extract_vtk_connectivity(const mesh::Mesh& mesh)
   return topology;
 }
 //-----------------------------------------------------------------------------
-/// Convert DOLFInx CellType to FIDES CellType
+
+/// Convert DOLFINx CellType to FIDES CellType
 /// @param[in] type The DOLFInx cell
+/// @return The Fides cell string
 std::string to_fides_cell(mesh::CellType type)
 {
   switch (type)
@@ -125,8 +127,8 @@ std::string to_fides_cell(mesh::CellType type)
     throw std::runtime_error("Unknown cell type.");
   }
 }
-
 //-----------------------------------------------------------------------------
+
 /// Put mesh geometry and connectivity for FIDES
 /// @param[in] io The ADIOS2 IO
 /// @param[in] engine The ADIOS2 engine
@@ -238,6 +240,47 @@ void initialize_function_attributes(
 } // namespace
 
 //-----------------------------------------------------------------------------
+Adios2Writer::Adios2Writer(MPI_Comm comm, const std::string& filename,
+                           const std::string& tag)
+    : _adios(std::make_unique<adios2::ADIOS>(comm)),
+      _io(std::make_unique<adios2::IO>(_adios->DeclareIO(tag))),
+      _engine(std::make_unique<adios2::Engine>(
+          _io->Open(filename, adios2::Mode::Write)))
+{
+  _io->SetEngine("BPFile");
+}
+
+//-----------------------------------------------------------------------------
+Adios2Writer::Adios2Writer(MPI_Comm comm, const std::string& filename,
+                           const std::string& tag,
+                           std::shared_ptr<const mesh::Mesh> mesh)
+    : Adios2Writer(comm, filename, tag)
+{
+  _mesh = mesh;
+}
+
+//-----------------------------------------------------------------------------
+Adios2Writer::Adios2Writer(
+    MPI_Comm comm, const std::string& filename, const std::string& tag,
+    const std::vector<std::shared_ptr<const fem::Function<double>>>& u)
+    : Adios2Writer(comm, filename, tag)
+{
+  _u = u;
+}
+
+//-----------------------------------------------------------------------------
+Adios2Writer::~Adios2Writer() { close(); }
+//-----------------------------------------------------------------------------
+void Adios2Writer::close()
+{
+  assert(_engine);
+  // This looks a bit odd because ADIOS2 uses `operator bool()` to
+  // test if the engine is open
+  if (*_engine)
+    _engine->Close();
+}
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 FidesWriter::FidesWriter(MPI_Comm comm, const std::string& filename,
                          std::shared_ptr<const mesh::Mesh> mesh)
     : Adios2Writer(comm, filename, "Fides mesh writer", mesh)
@@ -311,7 +354,10 @@ void FidesWriter::write(double t)
   // NOTE: Mesh can only be written to file once
 
   if (_mesh)
+  {
+    assert(_u.empty());
     write_fides_mesh(*_io, *_engine, *_mesh);
+  }
   else
   {
     throw std::runtime_error(
