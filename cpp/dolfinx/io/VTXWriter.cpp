@@ -181,11 +181,11 @@ void _write_mesh(adios2::IO& io, adios2::Engine& engine,
 }
 //-----------------------------------------------------------------------------
 template <typename Scalar>
-void _write_lagrange_function(adios2::IO& io, adios2::Engine& engine,
-                              std::shared_ptr<const fem::Function<Scalar>> u)
+void write_lagrange_function(adios2::IO& io, adios2::Engine& engine,
+                             const fem::Function<Scalar>& u)
 {
-  auto V = u->function_space();
-  auto mesh = u->function_space()->mesh();
+  auto V = u.function_space();
+  auto mesh = u.function_space()->mesh();
   std::string family = V->element()->family();
 
   xt::xtensor<double, 2> geometry = V->tabulate_dof_coordinates(false);
@@ -246,9 +246,9 @@ void _write_lagrange_function(adios2::IO& io, adios2::Engine& engine,
   engine.PerformPuts();
 
   // Get function data array and information about layout
-  std::shared_ptr<const la::Vector<Scalar>> function_vector = u->x();
+  std::shared_ptr<const la::Vector<Scalar>> function_vector = u.x();
   auto function_data = xt::adapt(function_vector->array());
-  const int rank = u->function_space()->element()->value_rank();
+  const int rank = u.function_space()->element()->value_rank();
   const std::uint32_t num_components = std::pow(3, rank);
   const std::uint32_t local_size = geometry.shape(0);
   const std::uint32_t block_size = dofmap->index_map_bs();
@@ -267,7 +267,7 @@ void _write_lagrange_function(adios2::IO& io, adios2::Engine& engine,
     else
       part_data = xt::real(function_data);
 
-    std::string function_name = u->name;
+    std::string function_name = u.name;
     if (part != "")
       function_name += "_" + part;
     for (size_t i = 0; i < local_size; ++i)
@@ -456,26 +456,32 @@ void VTXWriter::write(double t)
   _engine->Put<double>(var_step, t);
   // Write real valued functions to file
   std::for_each(_functions.begin(), _functions.end(),
-                [&](std::shared_ptr<const fem::Function<double>> u)
+                [&](auto& u)
                 {
                   if (_write_mesh_data)
+                  {
                     adios2_utils::write_function_at_nodes<double>(*_io,
-                                                                  *_engine, u);
+                                                                  *_engine, *u);
+                  }
                   else
-                    _write_lagrange_function<double>(*_io, *_engine, u);
+                    write_lagrange_function<double>(*_io, *_engine, *u);
                 });
 
   // Write complex valued functions to file
-  std::for_each(
-      _complex_functions.begin(), _complex_functions.end(),
-      [&](std::shared_ptr<const fem::Function<std::complex<double>>> u)
-      {
-        if (_write_mesh_data)
-          adios2_utils::write_function_at_nodes<std::complex<double>>(
-              *_io, *_engine, u);
-        else
-          _write_lagrange_function<std::complex<double>>(*_io, *_engine, u);
-      });
+  std::for_each(_complex_functions.begin(), _complex_functions.end(),
+                [&](auto& u)
+                {
+                  if (_write_mesh_data)
+                  {
+                    adios2_utils::write_function_at_nodes<std::complex<double>>(
+                        *_io, *_engine, *u);
+                  }
+                  else
+                  {
+                    write_lagrange_function<std::complex<double>>(*_io,
+                                                                  *_engine, *u);
+                  }
+                });
   _engine->EndStep();
 }
 //-----------------------------------------------------------------------------

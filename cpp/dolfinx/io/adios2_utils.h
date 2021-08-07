@@ -75,12 +75,10 @@ adios2::Variable<T> DefineVariable(adios2::IO& io, const std::string& name,
 /// @param[in] engine The ADIOS2 engine
 /// @param[in] u The function
 template <typename Scalar>
-void write_function_at_nodes(
-    adios2::IO& io, adios2::Engine& engine,
-    std::shared_ptr<const dolfinx::fem::Function<Scalar>> u)
+void write_function_at_nodes(adios2::IO& io, adios2::Engine& engine,
+                             const fem::Function<Scalar>& u)
 {
-
-  auto function_data = u->compute_point_values();
+  auto function_data = u.compute_point_values();
   std::uint32_t local_size = function_data.shape(0);
   std::uint32_t block_size = function_data.shape(1);
   // Extract real and imaginary parts
@@ -89,12 +87,12 @@ void write_function_at_nodes(
     parts = {"real", "imag"};
 
   // Write each real and imaginary part of the function
-  const int rank = u->function_space()->element()->value_rank();
+  const int rank = u.function_space()->element()->value_rank();
   const std::uint32_t num_components = std::pow(3, rank);
   std::vector<double> out_data(num_components * local_size);
   for (const auto& part : parts)
   {
-    std::string function_name = u->name;
+    std::string function_name = u.name;
     if (part != "")
       function_name += "_" + part;
     adios2::Variable<double> local_output = DefineVariable<double>(
