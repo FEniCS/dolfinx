@@ -197,7 +197,7 @@ void io(py::module& m)
       .def(py::init(
           [](const MPICommWrapper comm, const std::string& filename,
              const std::vector<
-                 std::shared_ptr<const dolfinx::fem::Function<PetscScalar>>>& u)
+                 std::shared_ptr<const dolfinx::fem::Function<double>>>& u)
           {
             return std::make_unique<dolfinx::io::FidesWriter>(comm.get(),
                                                               filename, u);
