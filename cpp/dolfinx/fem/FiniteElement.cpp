@@ -143,7 +143,7 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
 
   if (is_basix_element(ufc_element))
   {
-    if (ufc_element.needs_lattice_type)
+    if (ufc_element.lattice_type != -1)
     {
       _element = std::make_unique<basix::FiniteElement>(basix::create_element(
           static_cast<basix::element::family>(ufc_element.basix_family),
