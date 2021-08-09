@@ -17,14 +17,14 @@ class MeshView():
 
     def __init__(self, meshtag: dolfinx.MeshTags):
         mesh = meshtag.mesh
-        mesh.topology.create_connemeshtagivity(meshtag.dim, 0)
+        mesh.topology.create_connectivity(meshtag.dim, 0)
         c_to_v = mesh.topology.connectivity(meshtag.dim, 0)
         vertices = []
         for entity in meshtag.indices:
             vertices_e = c_to_v.links(entity)
             [vertices.append(vertex) for vertex in vertices_e]
         unique_vertices = np.unique(vertices)
-
+        print(unique_vertices)
         # Create index map for vertices and cells of MeshView
         # FIXME: The last three arrays needs updating in parallel
         imap = dolfinx.cpp.common.IndexMap(MPI.COMM_WORLD, unique_vertices.size, [], [], [])
@@ -72,7 +72,7 @@ class MeshView():
 mv = MeshView(ct)
 num_cells_local = mv.topology.index_map(mv.dim).size_local
 for cell in range(num_cells_local):
-    print(cell, mv.cell_map[cell], mv.mesh.topology.connectivity(mv.cell_map[cell]))
+    print(cell, mv.cell_map[cell], mv.mesh.topology.connectivity(2, 0).links(mv.cell_map[cell]))
 # embed()
 mesh.topology.create_connectivity(ct.dim, 0)
 c_to_v = mesh.topology.connectivity(ct.dim, 0)
