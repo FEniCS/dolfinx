@@ -45,7 +45,7 @@ jobs:
         with:
           path: ./basix
           repository: FEniCS/basix
-          ref: mscroggs/lagrange_gll
+          ref: main
 
       - name: Checkout UFL
         uses: actions/checkout@v2
@@ -59,7 +59,7 @@ jobs:
         with:
           path: ./ffcx
           repository: FEniCS/ffcx
-          ref: mscroggs/lagrange_gll
+          ref: main
 
       - name: Install FEniCS Python components
         run: |
