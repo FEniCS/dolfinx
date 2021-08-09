@@ -132,8 +132,7 @@ DofMap
 create_dofmap(MPI_Comm comm, const ufc_dofmap& dofmap, mesh::Topology& topology,
               const std::function<std::vector<int>(
                   const graph::AdjacencyList<std::int32_t>&)>& reorder_fn,
-              std::shared_ptr<const dolfinx::fem::FiniteElement> element,
-              xtl::span<std::int32_t> entities);
+              std::shared_ptr<const dolfinx::fem::FiniteElement> element);
 
 /// Get the name of each coefficient in a UFC form
 /// @param[in] ufc_form The UFC form

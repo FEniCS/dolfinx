@@ -146,16 +146,12 @@ fem::create_dofmap(MPI_Comm comm, const ufc_dofmap& ufc_dofmap,
                    mesh::Topology& topology,
                    const std::function<std::vector<int>(
                        const graph::AdjacencyList<std::int32_t>&)>& reorder_fn,
-                   std::shared_ptr<const dolfinx::fem::FiniteElement> element,
-                   xtl::span<std::int32_t> entities)
+                   std::shared_ptr<const dolfinx::fem::FiniteElement> element)
 {
   auto element_dof_layout = std::make_shared<ElementDofLayout>(
       create_element_dof_layout(ufc_dofmap, topology.cell_type()));
   assert(element_dof_layout);
-  for (auto entity : entities)
-  {
-    std::cout << entity << "\n";
-  }
+
   // Create required mesh entities
   const int D = topology.dim();
   for (int d = 0; d < D; ++d)
@@ -225,13 +221,10 @@ std::shared_ptr<fem::FunctionSpace> fem::create_functionspace(
   ufc_finite_element* ufc_element = space->finite_element;
   std::shared_ptr<const fem::FiniteElement> element
       = std::make_shared<fem::FiniteElement>(*ufc_element);
-  const std::int32_t num_cells = mesh->topology().index_map(mesh->topology().dim())->size_local() + mesh->topology().index_map(mesh->topology().dim())->num_ghosts();
-  std::vector<std::int32_t> entities(num_cells);
-  std::iota(std::begin(entities), std::end(entities), 0);
   auto V = std::make_shared<fem::FunctionSpace>(
       mesh, element,
       std::make_shared<fem::DofMap>(fem::create_dofmap(
-          mesh->mpi_comm(), *ufc_map, mesh->topology(), reorder_fn, element, xtl::span(entities.data(), entities.size()))));
+          mesh->mpi_comm(), *ufc_map, mesh->topology(), reorder_fn, element)));
 
   return V;
 }

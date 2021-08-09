@@ -355,28 +355,14 @@ class ElementMetaData(typing.NamedTuple):
 
 class FunctionSpace(ufl.FunctionSpace):
     """A space on which Functions (fields) can be defined."""
+
     def __init__(self,
-                 mesh_object: typing.Union[cpp.mesh.MeshTags_int32, cpp.mesh.Mesh],
+                 mesh: cpp.mesh.Mesh,
                  element: typing.Union[ufl.FiniteElementBase, ElementMetaData],
                  cppV: typing.Optional[cpp.fem.FunctionSpace] = None,
                  form_compiler_parameters: dict = {},
                  jit_parameters: dict = {}):
         """Create a finite element function space."""
-
-        # Check if input is MeshTag, if so find codimension
-        if isinstance(mesh_object, cpp.mesh.MeshTags_int32):
-            codimension = mesh_object.mesh.topology.dim - mesh_object.dim
-            assert(codimension == 0)
-            mesh = mesh_object.mesh
-            # FIXME: change this for different co-dimension
-            if isinstance(element, ufl.FiniteElementBase):
-                super().__init__(mesh.ufl_domain(), element)
-            entities = mesh_object.indices
-        else:
-            mesh = mesh_object
-            imap = mesh.topology.index_map(mesh.topology.dim)
-            num_cells = imap.size_local + imap.num_ghosts
-            entities = np.arange(num_cells)
 
         # Create function space from a UFL element and existing cpp
         # FunctionSpace
@@ -387,15 +373,13 @@ class FunctionSpace(ufl.FunctionSpace):
             self._cpp_object = cppV
             return
 
-
-        else:            
-            # Initialise the ufl.FunctionSpace
-            if isinstance(element, ufl.FiniteElementBase):
-                super().__init__(mesh.ufl_domain(), element)
-            else:
-                e = ElementMetaData(*element)
-                ufl_element = ufl.FiniteElement(e.family, mesh.ufl_cell(), e.degree, form_degree=e.form_degree)
-                super().__init__(mesh.ufl_domain(), ufl_element)
+        # Initialise the ufl.FunctionSpace
+        if isinstance(element, ufl.FiniteElementBase):
+            super().__init__(mesh.ufl_domain(), element)
+        else:
+            e = ElementMetaData(*element)
+            ufl_element = ufl.FiniteElement(e.family, mesh.ufl_cell(), e.degree, form_degree=e.form_degree)
+            super().__init__(mesh.ufl_domain(), ufl_element)
 
         # Compile dofmap and element and create DOLFIN objects
         (self._ufc_element, self._ufc_dofmap), module, code = jit.ffcx_jit(
@@ -405,8 +389,7 @@ class FunctionSpace(ufl.FunctionSpace):
         ffi = cffi.FFI()
         cpp_element = cpp.fem.FiniteElement(ffi.cast("uintptr_t", ffi.addressof(self._ufc_element)))
         cpp_dofmap = cpp.fem.create_dofmap(mesh.mpi_comm(), ffi.cast(
-            "uintptr_t", ffi.addressof(self._ufc_dofmap)), mesh.topology, cpp_element,
-            entities)
+            "uintptr_t", ffi.addressof(self._ufc_dofmap)), mesh.topology, cpp_element)
 
         # Initialize the cpp.FunctionSpace
         self._cpp_object = cpp.fem.FunctionSpace(mesh, cpp_element, cpp_dofmap)
