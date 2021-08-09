@@ -4,6 +4,7 @@ set(HEADERS_mesh
   ${CMAKE_CURRENT_SOURCE_DIR}/Geometry.h
   ${CMAKE_CURRENT_SOURCE_DIR}/Topology.h
   ${CMAKE_CURRENT_SOURCE_DIR}/MeshTags.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/MeshView.h
   ${CMAKE_CURRENT_SOURCE_DIR}/cell_types.h
   ${CMAKE_CURRENT_SOURCE_DIR}/graphbuild.h
   ${CMAKE_CURRENT_SOURCE_DIR}/permutationcomputation.h
@@ -13,6 +14,7 @@ set(HEADERS_mesh
 
 target_sources(dolfinx PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/Mesh.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/MeshView.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/Geometry.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/Topology.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/cell_types.cpp

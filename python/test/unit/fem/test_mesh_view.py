@@ -4,16 +4,18 @@ from mpi4py import MPI
 import numpy as np
 from IPython import embed
 
+
 mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, 2, 1)
 tdim = mesh.topology.dim
 num_cells = mesh.topology.index_map(tdim).size_local
 indices = np.arange(num_cells, dtype=np.int32)
 values = indices
 ct = dolfinx.MeshTags(mesh, tdim, indices[2:], values[2:])
+mv = dolfinx.cpp.mesh.MeshView(ct)
 #V = dolfinx.FunctionSpace(ct, ("CG", 1))
 
 
-class MeshView():
+class MeshViewPy():
 
     def __init__(self, meshtag: dolfinx.MeshTags):
         mesh = meshtag.mesh
@@ -69,14 +71,14 @@ class MeshView():
         self.dim = meshtag.dim
 
 
-mv = MeshView(ct)
-num_cells_local = mv.topology.index_map(mv.dim).size_local
-for cell in range(num_cells_local):
-    print(cell, mv.cell_map[cell], mv.mesh.topology.connectivity(2, 0).links(mv.cell_map[cell]))
-# embed()
-mesh.topology.create_connectivity(ct.dim, 0)
-c_to_v = mesh.topology.connectivity(ct.dim, 0)
-print(c_to_v)
+# mv = MeshViewPy(ct)
+# num_cells_local = mv.topology.index_map(mv.dim).size_local
+# for cell in range(num_cells_local):
+#     print(cell, mv.cell_map[cell], mv.mesh.topology.connectivity(2, 0).links(mv.cell_map[cell]))
+# # embed()
+# mesh.topology.create_connectivity(ct.dim, 0)
+# c_to_v = mesh.topology.connectivity(ct.dim, 0)
+# print(c_to_v)
 
 # new_top.create_connectivity(tdim - 1, 0)
 # new_f_to_v = new_top.connectivity(tdim - 1, 0)

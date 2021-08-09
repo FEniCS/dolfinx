@@ -14,6 +14,7 @@
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshTags.h>
+#include <dolfinx/mesh/MeshView.h>
 #include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <dolfinx/mesh/graphbuild.h>
@@ -358,5 +359,13 @@ void mesh(py::module& m)
               orient));
         });
   m.def("exterior_facet_indices", &dolfinx::mesh::exterior_facet_indices);
+
+    // dolfinx::mesh::MeshView class
+  py::class_<dolfinx::mesh::MeshView, std::shared_ptr<dolfinx::mesh::MeshView>>(
+      m, "MeshView", "MeshView object")
+            .def(py::init(
+          [](const std::shared_ptr<const dolfinx::mesh::MeshTags<std::int32_t>> meshtag)
+          { return dolfinx::mesh::MeshView(meshtag); }));
 }
+
 } // namespace dolfinx_wrappers
