@@ -1,17 +1,20 @@
 import dolfinx
-from dolfinx.mesh import MeshTags
 from mpi4py import MPI
 import numpy as np
 from IPython import embed
 
 
-mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, 2, 1)
+mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, 2, 2)
 tdim = mesh.topology.dim
 num_cells = mesh.topology.index_map(tdim).size_local
 indices = np.arange(num_cells, dtype=np.int32)
-values = indices
-ct = dolfinx.MeshTags(mesh, tdim, indices[2:], values[2:])
+bools = np.zeros(num_cells, dtype=bool)
+bools[1] = True
+bools[3] = True
+values = indices[bools]
+ct = dolfinx.MeshTags(mesh, tdim, values, values)
 mv = dolfinx.cpp.mesh.MeshView(ct)
+assert(False)
 #V = dolfinx.FunctionSpace(ct, ("CG", 1))
 
 
