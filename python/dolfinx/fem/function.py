@@ -355,14 +355,28 @@ class ElementMetaData(typing.NamedTuple):
 
 class FunctionSpace(ufl.FunctionSpace):
     """A space on which Functions (fields) can be defined."""
-    # FIXME: Find better name for mesh, mesh_object?
     def __init__(self,
-                 mesh: typing.Union[cpp.mesh.MeshTags_int32, cpp.mesh.Mesh],
+                 mesh_object: typing.Union[cpp.mesh.MeshTags_int32, cpp.mesh.Mesh],
                  element: typing.Union[ufl.FiniteElementBase, ElementMetaData],
                  cppV: typing.Optional[cpp.fem.FunctionSpace] = None,
                  form_compiler_parameters: dict = {},
                  jit_parameters: dict = {}):
         """Create a finite element function space."""
+
+        # Check if input is MeshTag, if so find codimension
+        if isinstance(mesh_object, cpp.mesh.MeshTags_int32):
+            print("WE have a meshtag")
+            codimension = mesh_object.mesh.topology.dim - mesh_object.dim
+            print(codimension)
+            assert(codimension == 0)
+            mesh = mesh_object.mesh
+            # FIXME: change this for different co-dimension
+            if isinstance(element, ufl.FiniteElementBase):
+                super().__init__(mesh.ufl_domain(), element)
+            assert(False)
+        else:
+            mesh = mesh_object
+
         # Create function space from a UFL element and existing cpp
         # FunctionSpace
         if cppV is not None:
@@ -372,17 +386,6 @@ class FunctionSpace(ufl.FunctionSpace):
             self._cpp_object = cppV
             return
 
-        # Check if input is MeshTag, if so find codimension
-        if isinstance(mesh, cpp.mesh.MeshTags_int32):
-
-            print("WE have a meshtag")
-            codimension = mesh.mesh.topology.dim - mesh.dim
-            print(codimension)
-            assert(codimension == 0)
-            # FIXME: change this for different co-dimension
-            if isinstance(element, ufl.FiniteElementBase):
-                super().__init__(mesh.ufl_domain(), element)
-            assert(False)
 
         else:            
             # Initialise the ufl.FunctionSpace
