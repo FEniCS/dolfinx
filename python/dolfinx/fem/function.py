@@ -365,17 +365,18 @@ class FunctionSpace(ufl.FunctionSpace):
 
         # Check if input is MeshTag, if so find codimension
         if isinstance(mesh_object, cpp.mesh.MeshTags_int32):
-            print("WE have a meshtag")
             codimension = mesh_object.mesh.topology.dim - mesh_object.dim
-            print(codimension)
             assert(codimension == 0)
             mesh = mesh_object.mesh
             # FIXME: change this for different co-dimension
             if isinstance(element, ufl.FiniteElementBase):
                 super().__init__(mesh.ufl_domain(), element)
-            assert(False)
+            entities = mesh_object.indices
         else:
             mesh = mesh_object
+            imap = mesh.topology.index_map(mesh.topology.dim)
+            num_cells = imap.size_local + imap.num_ghosts
+            entities = np.arange(num_cells)
 
         # Create function space from a UFL element and existing cpp
         # FunctionSpace
@@ -404,7 +405,8 @@ class FunctionSpace(ufl.FunctionSpace):
         ffi = cffi.FFI()
         cpp_element = cpp.fem.FiniteElement(ffi.cast("uintptr_t", ffi.addressof(self._ufc_element)))
         cpp_dofmap = cpp.fem.create_dofmap(mesh.mpi_comm(), ffi.cast(
-            "uintptr_t", ffi.addressof(self._ufc_dofmap)), mesh.topology, cpp_element)
+            "uintptr_t", ffi.addressof(self._ufc_dofmap)), mesh.topology, cpp_element,
+            entities)
 
         # Initialize the cpp.FunctionSpace
         self._cpp_object = cpp.fem.FunctionSpace(mesh, cpp_element, cpp_dofmap)
