@@ -16,11 +16,11 @@ ct = dolfinx.MeshTags(mesh, tdim, indices[2:], values[2:])
 class MeshView():
 
     def __init__(self, meshtag: dolfinx.MeshTags):
-        mesh = ct.mesh
-        mesh.topology.create_connectivity(ct.dim, 0)
-        c_to_v = mesh.topology.connectivity(ct.dim, 0)
+        mesh = meshtag.mesh
+        mesh.topology.create_connemeshtagivity(meshtag.dim, 0)
+        c_to_v = mesh.topology.connectivity(meshtag.dim, 0)
         vertices = []
-        for entity in ct.indices:
+        for entity in meshtag.indices:
             vertices_e = c_to_v.links(entity)
             [vertices.append(vertex) for vertex in vertices_e]
         unique_vertices = np.unique(vertices)
@@ -29,7 +29,7 @@ class MeshView():
         # FIXME: The last three arrays needs updating in parallel
         imap = dolfinx.cpp.common.IndexMap(MPI.COMM_WORLD, unique_vertices.size, [], [], [])
         # FIXME: strip ghosts
-        imap_c = dolfinx.cpp.common.IndexMap(MPI.COMM_WORLD, len(ct.indices), [], [], [])
+        imap_c = dolfinx.cpp.common.IndexMap(MPI.COMM_WORLD, len(meshtag.indices), [], [], [])
 
         # Create map from mesh to MeshView for vertices
         l_vertices = np.arange(imap.local_range[0], imap.local_range[1])
@@ -40,7 +40,7 @@ class MeshView():
         # Map vertices of each cell in MeshView to new IndexMap
         new_cell_dofs = np.array([], dtype=np.int32)
         new_cell_dofs_offset = [0]
-        for entity in ct.indices:
+        for entity in meshtag.indices:
             vertices = c_to_v.links(entity)
             view_vertices = np.array([vertex_map_to_view[vertex] for vertex in vertices], dtype=np.int32)
             new_cell_dofs = np.hstack([new_cell_dofs, view_vertices])
@@ -61,18 +61,18 @@ class MeshView():
         new_top.set_index_map(0, imap)
 
         # Set mesh connectivity for cells and index map for cells
-        new_top.set_connectivity(new_connectivity, ct.dim, 0)
-        new_top.set_index_map(ct.dim, imap_c)
+        new_top.set_connectivity(new_connectivity, meshtag.dim, 0)
+        new_top.set_index_map(meshtag.dim, imap_c)
         self.topology = new_top
         self.mesh = mesh
-        self.cell_map = ct.indices
-        self.dim = ct.dim
+        self.cell_map = meshtag.indices
+        self.dim = meshtag.dim
 
 
 mv = MeshView(ct)
 num_cells_local = mv.topology.index_map(mv.dim).size_local
 for cell in range(num_cells_local):
-    print(cell, mv.cell_map[cell], mv.mesh.topology.cell_dofs(mv.cell_map[cell]))
+    print(cell, mv.cell_map[cell], mv.mesh.topology.connectivity(mv.cell_map[cell]))
 # embed()
 mesh.topology.create_connectivity(ct.dim, 0)
 c_to_v = mesh.topology.connectivity(ct.dim, 0)
