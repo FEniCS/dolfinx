@@ -46,7 +46,7 @@ jobs:
         with:
           path: ./basix
           repository: FEniCS/basix
-          ref: main
+          ref: mscroggs/interpolation
 
       - name: Checkout UFL
         uses: actions/checkout@v2
