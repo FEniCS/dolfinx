@@ -15,7 +15,11 @@ namespace dolfinx::mesh
 class MeshView
 {
 public:
+  // MeshView initializer
   MeshView(std::shared_ptr<const MeshTags<std::int32_t>> meshtag);
+
+  // Return the MeshView topology
+  std::shared_ptr<mesh::Topology> topology();
 
 private:
   std::shared_ptr<const Mesh> _mesh;

@@ -76,3 +76,4 @@ MeshView::MeshView(std::shared_ptr<const MeshTags<std::int32_t>> meshtag)
       std::make_shared<graph::AdjacencyList<std::int32_t>>(connectivity), _dim,
       0);
 }
+std::shared_ptr<mesh::Topology> MeshView::topology() { return _topology; }

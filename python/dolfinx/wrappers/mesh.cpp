@@ -360,12 +360,15 @@ void mesh(py::module& m)
         });
   m.def("exterior_facet_indices", &dolfinx::mesh::exterior_facet_indices);
 
-    // dolfinx::mesh::MeshView class
+  // dolfinx::mesh::MeshView class
   py::class_<dolfinx::mesh::MeshView, std::shared_ptr<dolfinx::mesh::MeshView>>(
       m, "MeshView", "MeshView object")
-            .def(py::init(
-          [](const std::shared_ptr<const dolfinx::mesh::MeshTags<std::int32_t>> meshtag)
-          { return dolfinx::mesh::MeshView(meshtag); }));
+      .def(py::init(
+          [](const std::shared_ptr<const dolfinx::mesh::MeshTags<std::int32_t>>
+                 meshtag) { return dolfinx::mesh::MeshView(meshtag); }))
+      .def_property_readonly(
+          "topology", py::overload_cast<>(&dolfinx::mesh::MeshView::topology),
+          "MeshView topology", py::return_value_policy::reference_internal);
 }
 
 } // namespace dolfinx_wrappers
