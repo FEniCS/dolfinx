@@ -14,6 +14,7 @@
 #include <dolfinx/common/defines.h>
 #include <dolfinx/common/subsystem.h>
 #include <dolfinx/common/timing.h>
+#include <dolfinx/common/utils.h>
 #include <memory>
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
@@ -105,6 +106,8 @@ void common(py::module& m)
       .value("user", dolfinx::TimingType::user);
 
   // dolfinx/common free functions
+  m.def("compress_index_map", &dolfinx::common::compress_index_map);
+
   m.def("timing", &dolfinx::timing);
 
   m.def("list_timings",

@@ -24,3 +24,14 @@ std::string dolfinx::common::indent(std::string block)
   return s.str();
 }
 //-----------------------------------------------------------------------------
+std::shared_ptr<const dolfinx::common::IndexMap>
+dolfinx::common::compress_index_map(
+    std::shared_ptr<const dolfinx::common::IndexMap> map,
+    const xtl::span<const std::int32_t>& indices)
+{
+  std::cout << map->size_local() << " " << indices.size() << "\n";
+  return std::make_shared<const dolfinx::common::IndexMap>(
+      map->comm(dolfinx::common::IndexMap::Direction::forward),
+      map->size_local());
+}
+//-----------------------------------------------------------------------------
