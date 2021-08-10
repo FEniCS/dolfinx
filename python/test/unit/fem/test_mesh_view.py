@@ -16,8 +16,8 @@ ct = dolfinx.MeshTags(mesh, tdim, values, values)
 mv = dolfinx.cpp.mesh.MeshView(ct)
 top = mv.topology
 
+V = dolfinx.FunctionSpace(mv, ("CG", 1))
 assert(False)
-#V = dolfinx.FunctionSpace(ct, ("CG", 1))
 
 
 class MeshViewPy():
