@@ -20,6 +20,12 @@ public:
 
   // Return the MeshView topology
   std::shared_ptr<mesh::Topology> topology();
+  // Return the full mesh
+  std::shared_ptr<const Mesh> mesh();
+  // Return dimension of Meshview Entities
+  std::int32_t dim();
+  // Return MeshView entities
+  const std::vector<std::int32_t>& entities();
 
 private:
   std::shared_ptr<const Mesh> _mesh;

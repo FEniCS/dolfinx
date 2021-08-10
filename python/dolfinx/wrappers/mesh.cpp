@@ -368,7 +368,9 @@ void mesh(py::module& m)
                  meshtag) { return dolfinx::mesh::MeshView(meshtag); }))
       .def_property_readonly(
           "topology", py::overload_cast<>(&dolfinx::mesh::MeshView::topology),
-          "MeshView topology", py::return_value_policy::reference_internal);
+          "MeshView topology", py::return_value_policy::reference_internal)
+      .def_property_readonly("dim", &dolfinx::mesh::MeshView::dim)
+      .def_property_readonly("mesh", &dolfinx::mesh::MeshView::mesh)
+      .def_property_readonly("entities", &dolfinx::mesh::MeshView::entities);
 }
-
 } // namespace dolfinx_wrappers
