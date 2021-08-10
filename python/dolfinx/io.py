@@ -157,4 +157,5 @@ def ufl_mesh_from_gmsh(gmsh_cell: int, gdim: int):
     """
     shape, degree = _gmsh_to_cells[gmsh_cell]
     cell = ufl.Cell(shape, geometric_dimension=gdim)
-    return ufl.Mesh(ufl.VectorElement("Lagrange", cell, degree))
+    scalar_element = ufl.FiniteElement("Lagrange", cell, degree, variant="equispaced")
+    return ufl.Mesh(ufl.VectorElement(scalar_element))
