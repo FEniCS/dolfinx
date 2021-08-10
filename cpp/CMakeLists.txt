@@ -1,6 +1,6 @@
 #------------------------------------------------------------------------------
 # Top level CMakeLists.txt file for DOLFINx
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.16)
 
 #------------------------------------------------------------------------------
 # Set project name and version number
@@ -8,17 +8,6 @@ cmake_minimum_required(VERSION 3.12)
 project(DOLFINX VERSION "0.1.1.0")
 
 set(DOXYGEN_DOLFINX_VERSION ${DOLFINX_VERSION} CACHE STRING "Version for Doxygen" FORCE)
-
-#------------------------------------------------------------------------------
-# Set CMake options, see `cmake --help-policy CMP000x`
-
-cmake_policy(VERSION 3.12)
-if (POLICY CMP0074)
-  cmake_policy(SET CMP0074 NEW)
-endif()
-if (POLICY CMP0075)
-  cmake_policy(SET CMP0075 NEW)
-endif()
 
 #------------------------------------------------------------------------------
 # Use C++17
