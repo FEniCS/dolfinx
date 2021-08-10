@@ -53,8 +53,8 @@ MeshView::MeshView(std::shared_ptr<const MeshTags<std::int32_t>> meshtag)
   for (auto entity : _entities)
   {
     auto vertices = e_to_v->links(entity);
-    entity_dofs_view.insert(entity_dofs_view.end(), vertices.begin(),
-                            vertices.end());
+    for (std::size_t i = 0; i < vertices.size(); ++i)
+      entity_dofs_view.push_back(mesh_to_view_vertices[vertices[i]]);
     entity_dofs_offset_view.push_back(entity_dofs_view.size());
   }
   // Create Adjacency lists
@@ -68,6 +68,7 @@ MeshView::MeshView(std::shared_ptr<const MeshTags<std::int32_t>> meshtag)
   // Set index maps (vertex map and cell map)
   _topology->set_index_map(0, vertex_imap);
   _topology->set_index_map(_dim, entity_imap);
+
   // Set connectivities vertex->vertex (identity) and cell->vertex
   auto v_to_v = std::make_shared<graph::AdjacencyList<std::int32_t>>(
       vertex_imap->size_local());
@@ -76,4 +77,5 @@ MeshView::MeshView(std::shared_ptr<const MeshTags<std::int32_t>> meshtag)
       std::make_shared<graph::AdjacencyList<std::int32_t>>(connectivity), _dim,
       0);
 }
+
 std::shared_ptr<mesh::Topology> MeshView::topology() { return _topology; }

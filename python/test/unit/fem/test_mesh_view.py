@@ -14,6 +14,8 @@ bools[3] = True
 values = indices[bools]
 ct = dolfinx.MeshTags(mesh, tdim, values, values)
 mv = dolfinx.cpp.mesh.MeshView(ct)
+top = mv.topology
+
 assert(False)
 #V = dolfinx.FunctionSpace(ct, ("CG", 1))
 
