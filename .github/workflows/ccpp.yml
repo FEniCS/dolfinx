@@ -42,7 +42,7 @@ jobs:
         with:
           path: ./basix
           repository: FEniCS/basix
-          ref: mscroggs/interpolation
+          ref: main
 
       - name: Install FEniCS Python components
         run: |
