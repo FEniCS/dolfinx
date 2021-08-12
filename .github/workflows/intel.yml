@@ -43,7 +43,7 @@ jobs:
         with:
           path: ./basix
           repository: FEniCS/basix
-          ref: main
+          ref: mscroggs/discontinuous_elements
 
       - name: Checkout UFL
         uses: actions/checkout@v2
@@ -57,7 +57,7 @@ jobs:
         with:
           path: ./ffcx
           repository: FEniCS/ffcx
-          ref: main
+          ref: mscroggs/discontinuous_elements
 
       - name: Install FEniCS Python components
         run: |
