@@ -17,5 +17,6 @@ for i in range(num_ghosts):
         entities.append(s_l + i)
 
 entities = np.array(entities, dtype=np.int32)
-print(comm.rank, entities, s_l)
+
+#print(comm.rank, entities, s_l)
 new_map = dolfinx.cpp.common.compress_index_map(vertex_map, entities)
