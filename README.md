@@ -43,7 +43,8 @@ pip install .
 ```
 (you may need to use ``pip3``, depending on your system).
 
-For detailed instructions, see the file INSTALL.
+For detailed instructions, see
+https://fenicsproject.org/docs/dolfinx/dev/python/.
 
 ### Spack
 
