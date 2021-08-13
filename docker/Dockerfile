@@ -55,7 +55,7 @@ ARG XTL_VERSION=0.7.2
 
 ########################################
 
-FROM ubuntu:20.04 as dev-env
+FROM ubuntu:21.04 as dev-env
 LABEL maintainer="fenics-project <fenics-support@googlegroups.org>"
 LABEL description="FEniCS testing and development environment with PETSc real, complex, 32-bit and 64-bit modes"
 
@@ -97,7 +97,6 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get -yq --with-new-pkgs -o Dpkg::Options::="--force-confold" upgrade && \
     apt-get -y install \
     clang \
-    clang-12 \
     cmake \
     g++ \
     gfortran \
