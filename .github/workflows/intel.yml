@@ -22,9 +22,6 @@ jobs:
     strategy:
       matrix:
         include:
-          # - compiler: "Classic"
-          #   c_compiler: icc
-          #   cxx_compiler: icpc
           - compiler: "LLVM-based"
             c_compiler: icx
             cxx_compiler: icpx
@@ -39,7 +36,7 @@ jobs:
           echo "deb https://apt.repos.intel.com/oneapi all main" | tee /etc/apt/sources.list.d/oneAPI.list
           apt update
           # apt install -y intel-hpckit
-          apt install -y intel-oneapi-common-vars intel-oneapi-compiler-dpcpp-cpp-and-cpp-classic
+          apt install -y intel-oneapi-common-vars intel-oneapi-compiler-dpcpp-cpp
 
       - name: Checkout Basix
         uses: actions/checkout@v2

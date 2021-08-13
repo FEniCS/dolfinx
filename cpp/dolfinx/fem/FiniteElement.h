@@ -158,22 +158,7 @@ public:
                                "Cannot interpolate mixed elements directly.");
     }
 
-    const std::size_t rows = _space_dim / _bs;
-    assert(_space_dim % _bs == 0);
-    assert(dofs.size() == rows);
-
-    // Compute dofs = Pi * x (matrix-vector multiply)
-    const xt::xtensor<double, 2>& Pi = _element->interpolation_matrix();
-    assert(Pi.size() % rows == 0);
-    const std::size_t cols = Pi.size() / rows;
-    for (std::size_t i = 0; i < rows; ++i)
-    {
-      // Can be replaced with std::transform_reduce once GCC 8 series dies.
-      // Dot product between row i of the matrix and 'values'
-      dofs[i] = std::inner_product(std::next(Pi.data(), i * cols),
-                                   std::next(Pi.data(), i * cols + cols),
-                                   values.data(), T(0.0));
-    }
+    _element->interpolate(tcb::make_span(dofs), tcb::make_span(values), _bs);
   }
 
   /// Check if DOF transformations are needed for this element.
