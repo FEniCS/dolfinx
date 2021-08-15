@@ -69,14 +69,17 @@ jobs:
         with:
           repository: "FEniCS/ffcx"
           path: "ffcx"
+          ref: "main"
       - uses: actions/checkout@v2
         with:
           repository: "FEniCS/basix"
           path: "basix"
+          ref: "main"
       - uses: actions/checkout@v2
         with:
           repository: "FEniCS/ufl"
           path: "ufl"
+          ref: "main"
       - name: Get tag name
         id: tag_name
         run: |

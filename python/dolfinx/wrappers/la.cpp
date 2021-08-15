@@ -56,7 +56,11 @@ void la(py::module& m)
       .def("index_map", &dolfinx::la::SparsityPattern::index_map)
       .def("assemble", &dolfinx::la::SparsityPattern::assemble)
       .def("num_nonzeros", &dolfinx::la::SparsityPattern::num_nonzeros)
-      .def("insert", &dolfinx::la::SparsityPattern::insert)
+      .def("insert", [](dolfinx::la::SparsityPattern& self,
+                        const py::array_t<std::int32_t, py::array::c_style>& rows,
+                        const py::array_t<std::int32_t, py::array::c_style>& cols) {
+         self.insert(xtl::span(rows.data(), rows.size()),
+                     xtl::span(cols.data(), cols.size()));})
       .def("insert_diagonal", &dolfinx::la::SparsityPattern::insert_diagonal)
       .def_property_readonly("diagonal_pattern",
                              &dolfinx::la::SparsityPattern::diagonal_pattern,
