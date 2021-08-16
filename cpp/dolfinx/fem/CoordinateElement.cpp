@@ -72,7 +72,7 @@ mesh::CellType CoordinateElement::cell_shape() const
 //-----------------------------------------------------------------------------
 int CoordinateElement::topological_dimension() const
 {
-  return basix::cell::topology(_element->cell_type()).size() - 1;
+  return basix::cell::topological_dimension(_element->cell_type());
 }
 //-----------------------------------------------------------------------------
 xt::xtensor<double, 4>
