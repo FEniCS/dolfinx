@@ -107,6 +107,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     liblapack-dev \
     lib${MPI}-dev \
     libopenblas-dev \
+    llvm-9 \
     ninja-build \
     pkg-config \
     python3-dev \
@@ -142,7 +143,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
 # - Second set of packages are recommended and/or required to build
 #   documentation or run tests.
 # LLVM_CONFIG required on aarch64, should be removed long-term.
-RUN LLVM_CONFIG=/usr/bin/llvm-config-12 pip3 install --no-cache-dir mpi4py numba && \
+RUN LLVM_CONFIG=/usr/bin/llvm-config-9 pip3 install --no-cache-dir mpi4py numba && \
     pip3 install --no-cache-dir cffi cppimport flake8 pybind11==${PYBIND11_VERSION} pytest pytest-xdist sphinx sphinx_rtd_theme
 
 # Upgrade numpy via pip. Exclude binaries to avoid conflicts with libblas
