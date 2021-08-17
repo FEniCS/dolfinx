@@ -184,8 +184,8 @@ void XDMFFile::close()
   _h5_id = -1;
 }
 //-----------------------------------------------------------------------------
-void XDMFFile::write_mesh_time(const mesh::Mesh& mesh, const double t,
-                               const std::string xpath)
+void XDMFFile::write_mesh(const mesh::Mesh& mesh, const double t,
+                          const std::string xpath)
 {
   pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
   if (!node)
@@ -208,28 +208,14 @@ void XDMFFile::write_mesh_time(const mesh::Mesh& mesh, const double t,
   assert(timegrid_node);
 
   // Add the mesh Grid to the domain
-  xdmf_mesh::add_mesh_time(_mpi_comm.comm(), timegrid_node, _h5_id, mesh,
-                           mesh.name, t);
+  xdmf_mesh::add_mesh(_mpi_comm.comm(), timegrid_node, _h5_id, mesh, mesh.name,
+                      t);
 
   auto grid_node = timegrid_node.last_child();
   std::string t_str = boost::lexical_cast<std::string>(t);
   pugi::xml_node time_node = grid_node.append_child("Time");
   time_node.append_attribute("Value") = t_str.c_str();
   assert(time_node);
-
-  // Save XML file (on process 0 only)
-  if (MPI::rank(_mpi_comm.comm()) == 0)
-    _xml_doc->save_file(_filename.c_str(), "  ");
-}
-//-----------------------------------------------------------------------------
-void XDMFFile::write_mesh(const mesh::Mesh& mesh, const std::string xpath)
-{
-  pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
-  if (!node)
-    throw std::runtime_error("XML node '" + xpath + "' not found.");
-
-  // Add the mesh Grid to the domain
-  xdmf_mesh::add_mesh(_mpi_comm.comm(), node, _h5_id, mesh, mesh.name);
 
   // Save XML file (on process 0 only)
   if (MPI::rank(_mpi_comm.comm()) == 0)
