@@ -152,7 +152,7 @@ void assemble_exterior_facets(
                              const std::uint8_t*)>& kernel,
     const array2d<T>& coeffs, const xtl::span<const T>& constants,
     const xtl::span<const std::uint32_t>& cell_info,
-    const xtl::span<const std::uint8_t>& perms)
+    const std::function<std::uint8_t(std::size_t)> get_perm)
 {
   const int tdim = mesh.topology().dim();
 
@@ -198,10 +198,10 @@ void assemble_exterior_facets(
     }
 
     // Tabulate tensor
+    std::uint8_t perm = get_perm(cells[0] * facets.size() + local_facet);
     std::fill(Ae.begin(), Ae.end(), 0);
     kernel(Ae.data(), coeffs.row(cells[0]).data(), constants.data(),
-           coordinate_dofs.data(), &local_facet,
-           &perms[cells[0] * facets.size() + local_facet]);
+           coordinate_dofs.data(), &local_facet, &perm);
 
     apply_dof_transformation(_Ae, cell_info, cells[0], ndim1);
     apply_dof_transformation_to_transpose(_Ae, cell_info, cells[0], ndim0);
@@ -265,7 +265,7 @@ void assemble_interior_facets(
     const array2d<T>& coeffs, const xtl::span<const int>& offsets,
     const xtl::span<const T>& constants,
     const xtl::span<const std::uint32_t>& cell_info,
-    const xtl::span<const std::uint8_t>& perms)
+    const std::function<std::uint8_t(std::size_t)> get_perm)
 {
   const int tdim = mesh.topology().dim();
 
@@ -362,8 +362,9 @@ void assemble_interior_facets(
     std::fill(Ae.begin(), Ae.end(), 0);
 
     const int facets_per_cell = facets0.size();
-    const std::array perm{perms[cells[0] * facets_per_cell + local_facet[0]],
-                          perms[cells[1] * facets_per_cell + local_facet[1]]};
+    const std::array perm{
+        get_perm(cells[0] * facets_per_cell + local_facet[0]),
+        get_perm(cells[1] * facets_per_cell + local_facet[1])};
     kernel(Ae.data(), coeff_array.data(), constants.data(),
            coordinate_dofs.data(), local_facet.data(), perm.data());
 
@@ -471,9 +472,18 @@ void assemble_matrix(
       or a.num_integrals(IntegralType::interior_facet) > 0)
   {
     mesh->topology_mutable().create_connectivity(tdim - 1, tdim);
-    mesh->topology_mutable().create_entity_permutations();
-    const std::vector<std::uint8_t>& perms
-        = mesh->topology().get_facet_permutations();
+    std::function<std::uint8_t(const std::size_t)> get_perm;
+    if (a.needs_facet_permutations())
+    {
+      mesh->topology_mutable().create_entity_permutations();
+      const std::vector<std::uint8_t>& perms
+          = mesh->topology().get_facet_permutations();
+      get_perm = [perms](const std::size_t i) { return perms[i]; };
+    }
+    else
+    {
+      get_perm = [](const std::size_t) { return 0; };
+    }
 
     for (int i : a.integral_ids(IntegralType::exterior_facet))
     {
@@ -483,7 +493,7 @@ void assemble_matrix(
       impl::assemble_exterior_facets<T>(
           mat_set, *mesh, active_facets, apply_dof_transformation, dofs0, bs0,
           apply_dof_transformation_to_transpose, dofs1, bs1, bc0, bc1, fn,
-          coeffs, constants, cell_info, perms);
+          coeffs, constants, cell_info, get_perm);
     }
 
     const std::vector<int> c_offsets = a.coefficient_offsets();
@@ -495,7 +505,7 @@ void assemble_matrix(
       impl::assemble_interior_facets<T>(
           mat_set, *mesh, active_facets, apply_dof_transformation, *dofmap0,
           bs0, apply_dof_transformation_to_transpose, *dofmap1, bs1, bc0, bc1,
-          fn, coeffs, c_offsets, constants, cell_info, perms);
+          fn, coeffs, c_offsets, constants, cell_info, get_perm);
     }
   }
 }

@@ -206,7 +206,7 @@ void _lift_bc_exterior_facets(
     const graph::AdjacencyList<std::int32_t>& dofmap1, int bs1,
     const xtl::span<const T>& constants, const array2d<T>& coeffs,
     const xtl::span<const std::uint32_t>& cell_info,
-    const xtl::span<const std::uint8_t>& perms,
+    const std::function<std::uint8_t(std::size_t)> get_perm,
     const xtl::span<const T>& bc_values1, const std::vector<bool>& bc_markers1,
     const xtl::span<const T>& x0, double scale)
 {
@@ -281,9 +281,9 @@ void _lift_bc_exterior_facets(
     auto coeff_array = coeffs.row(cell);
     Ae.resize(num_rows * num_cols);
     std::fill(Ae.begin(), Ae.end(), 0);
+    const std::uint8_t perm = get_perm(cell * facets.size() + local_facet);
     kernel(Ae.data(), coeff_array.data(), constants.data(),
-           coordinate_dofs.data(), &local_facet,
-           &perms[cell * facets.size() + local_facet]);
+           coordinate_dofs.data(), &local_facet, &perm);
     apply_dof_transformation(Ae, cell_info, cell, num_cols);
     apply_dof_transformation_to_transpose(Ae, cell_info, cell, num_rows);
 
@@ -335,7 +335,7 @@ void _lift_bc_interior_facets(
     const xtl::span<const T>& constants, const array2d<T>& coeffs,
     const std::vector<int>& offsets,
     const xtl::span<const std::uint32_t>& cell_info,
-    const xtl::span<const std::uint8_t>& perms,
+    const std::function<std::uint8_t(std::size_t)> get_perm,
     const xtl::span<const T>& bc_values1, const std::vector<bool>& bc_markers1,
     const xtl::span<const T>& x0, double scale)
 {
@@ -467,8 +467,9 @@ void _lift_bc_interior_facets(
     Ae.resize(num_rows * num_cols);
     std::fill(Ae.begin(), Ae.end(), 0);
     const int facets_per_cell = facets0.size();
-    const std::array perm{perms[cells[0] * facets_per_cell + local_facet[0]],
-                          perms[cells[1] * facets_per_cell + local_facet[1]]};
+    const std::array perm{
+        get_perm(cells[0] * facets_per_cell + local_facet[0]),
+        get_perm(cells[1] * facets_per_cell + local_facet[1])};
     kernel(Ae.data(), coeff_array.data(), constants.data(),
            coordinate_dofs.data(), local_facet.data(), perm.data());
     apply_dof_transformation(Ae, cell_info, cells[0], num_cols);
@@ -611,7 +612,7 @@ void assemble_exterior_facets(
                              const std::uint8_t*)>& fn,
     const xtl::span<const T>& constants, const array2d<T>& coeffs,
     const xtl::span<const std::uint32_t>& cell_info,
-    const xtl::span<const std::uint8_t>& perms)
+    const std::function<std::uint8_t(std::size_t)> get_perm)
 {
   assert(_bs < 0 or _bs == bs);
 
@@ -657,9 +658,9 @@ void assemble_exterior_facets(
 
     // Tabulate element vector
     std::fill(be.begin(), be.end(), 0);
+    const std::uint8_t perm = get_perm(cell * facets.size() + local_facet);
     fn(be.data(), coeffs.row(cell).data(), constants.data(),
-       coordinate_dofs.data(), &local_facet,
-       &perms[cell * facets.size() + local_facet]);
+       coordinate_dofs.data(), &local_facet, &perm);
 
     apply_dof_transformation(_be, cell_info, cell, 1);
 
@@ -699,7 +700,7 @@ void assemble_interior_facets(
     const xtl::span<const T>& constants, const array2d<T>& coeffs,
     const xtl::span<const int>& offsets,
     const xtl::span<const std::uint32_t>& cell_info,
-    const xtl::span<const std::uint8_t>& perms)
+    const std::function<std::uint8_t(std::size_t)> get_perm)
 {
   const int tdim = mesh.topology().dim();
 
@@ -777,8 +778,9 @@ void assemble_interior_facets(
     // Tabulate element vector
     be.resize(bs * (dmap0.size() + dmap1.size()));
     std::fill(be.begin(), be.end(), 0);
-    const std::array perm{perms[cells[0] * facets_per_cell + local_facet[0]],
-                          perms[cells[1] * facets_per_cell + local_facet[1]]};
+    const std::array perm{
+        get_perm(cells[0] * facets_per_cell + local_facet[0]),
+        get_perm(cells[1] * facets_per_cell + local_facet[1])};
     fn(be.data(), coeff_array.data(), constants.data(), coordinate_dofs.data(),
        local_facet.data(), perm.data());
 
@@ -901,10 +903,20 @@ void lift_bc(xtl::span<T> b, const Form<T>& a,
     // FIXME: cleanup these calls? Some of the happen internally again.
     mesh->topology_mutable().create_entities(tdim - 1);
     mesh->topology_mutable().create_connectivity(tdim - 1, tdim);
-    mesh->topology_mutable().create_entity_permutations();
 
-    const std::vector<std::uint8_t>& perms
-        = mesh->topology().get_facet_permutations();
+    std::function<std::uint8_t(const std::size_t)> get_perm;
+    if (a.needs_facet_permutations())
+    {
+      mesh->topology_mutable().create_entity_permutations();
+      const std::vector<std::uint8_t>& perms
+          = mesh->topology().get_facet_permutations();
+      get_perm = [perms](const std::size_t i) { return perms[i]; };
+    }
+    else
+    {
+      get_perm = [](const std::size_t) { return 0; };
+    }
+
     for (int i : a.integral_ids(IntegralType::exterior_facet))
     {
       const auto& kernel = a.kernel(IntegralType::exterior_facet, i);
@@ -913,7 +925,7 @@ void lift_bc(xtl::span<T> b, const Form<T>& a,
       _lift_bc_exterior_facets(
           b, *mesh, kernel, active_facets, apply_dof_transformation, dofmap0,
           bs0, apply_dof_transformation_to_transpose, dofmap1, bs1, constants,
-          coeffs, cell_info, perms, bc_values1, bc_markers1, x0, scale);
+          coeffs, cell_info, get_perm, bc_values1, bc_markers1, x0, scale);
     }
 
     const std::vector<int> c_offsets = a.coefficient_offsets();
@@ -926,7 +938,7 @@ void lift_bc(xtl::span<T> b, const Form<T>& a,
                                apply_dof_transformation, dofmap0, bs0,
                                apply_dof_transformation_to_transpose, dofmap1,
                                bs1, constants, coeffs, c_offsets, cell_info,
-                               perms, bc_values1, bc_markers1, x0, scale);
+                               get_perm, bc_values1, bc_markers1, x0, scale);
     }
   }
 }
@@ -1078,10 +1090,19 @@ void assemble_vector(xtl::span<T> b, const Form<T>& L,
     // FIXME: cleanup these calls? Some of the happen internally again.
     mesh->topology_mutable().create_entities(tdim - 1);
     mesh->topology_mutable().create_connectivity(tdim - 1, tdim);
-    mesh->topology_mutable().create_entity_permutations();
+    std::function<std::uint8_t(const std::size_t)> get_perm;
+    if (L.needs_facet_permutations())
+    {
+      mesh->topology_mutable().create_entity_permutations();
+      const std::vector<std::uint8_t>& perms
+          = mesh->topology().get_facet_permutations();
+      get_perm = [perms](const std::size_t i) { return perms[i]; };
+    }
+    else
+    {
+      get_perm = [](const std::size_t) { return 0; };
+    }
 
-    const std::vector<std::uint8_t>& perms
-        = mesh->topology().get_facet_permutations();
     for (int i : L.integral_ids(IntegralType::exterior_facet))
     {
       const auto& fn = L.kernel(IntegralType::exterior_facet, i);
@@ -1091,19 +1112,19 @@ void assemble_vector(xtl::span<T> b, const Form<T>& L,
       {
         impl::assemble_exterior_facets<T, 1>(
             apply_dof_transformation, b, *mesh, active_facets, dofs, bs, fn,
-            constants, coeffs, cell_info, perms);
+            constants, coeffs, cell_info, get_perm);
       }
       else if (bs == 3)
       {
         impl::assemble_exterior_facets<T, 3>(
             apply_dof_transformation, b, *mesh, active_facets, dofs, bs, fn,
-            constants, coeffs, cell_info, perms);
+            constants, coeffs, cell_info, get_perm);
       }
       else
       {
         impl::assemble_exterior_facets(apply_dof_transformation, b, *mesh,
                                        active_facets, dofs, bs, fn, constants,
-                                       coeffs, cell_info, perms);
+                                       coeffs, cell_info, get_perm);
       }
     }
 
@@ -1117,19 +1138,19 @@ void assemble_vector(xtl::span<T> b, const Form<T>& L,
       {
         impl::assemble_interior_facets<T, 1>(
             apply_dof_transformation, b, *mesh, active_facets, *dofmap, fn,
-            constants, coeffs, c_offsets, cell_info, perms);
+            constants, coeffs, c_offsets, cell_info, get_perm);
       }
       else if (bs == 3)
       {
         impl::assemble_interior_facets<T, 3>(
             apply_dof_transformation, b, *mesh, active_facets, *dofmap, fn,
-            constants, coeffs, c_offsets, cell_info, perms);
+            constants, coeffs, c_offsets, cell_info, get_perm);
       }
       else
       {
         impl::assemble_interior_facets(apply_dof_transformation, b, *mesh,
                                        active_facets, *dofmap, fn, constants,
-                                       coeffs, c_offsets, cell_info, perms);
+                                       coeffs, c_offsets, cell_info, get_perm);
       }
     }
   }
