@@ -204,7 +204,7 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
     const std::int32_t vertgstnbr = graph.num_nodes() + num_ghost_nodes;
     std::vector<SCOTCH_Num> node_partition(std::max(1, vertgstnbr), 0);
 
-    if (dolfinx::MPI::rank(mpi_comm) == 0)
+    if (dolfinx::MPI::rank(comm) == 0)
     {
       std::cout << "SCOTCH Strategy:";
       SCOTCH_stratSave(&strat, stdout);

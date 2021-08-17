@@ -701,7 +701,7 @@ mesh::create_topology(MPI_Comm comm,
   return topology;
 }
 //-----------------------------------------------------------------------------
-void Topology::log_mem_diag()
+void Topology::log_mem_diag() const
 {
   LOG(INFO) << "Topology memory usage";
   for (std::size_t i = 0; i < _connectivity.size(); ++i)
