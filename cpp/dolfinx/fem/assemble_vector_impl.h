@@ -1096,7 +1096,7 @@ void assemble_vector(xtl::span<T> b, const Form<T>& L,
       mesh->topology_mutable().create_entity_permutations();
       const std::vector<std::uint8_t>& perms
           = mesh->topology().get_facet_permutations();
-      get_perm = [perms](const std::size_t i) { return perms[i]; };
+      get_perm = [&perms](const std::size_t i) { return perms[i]; };
     }
     else
     {
