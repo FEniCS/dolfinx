@@ -147,6 +147,9 @@ public:
   /// @return The communicator on which the topology is distributed
   MPI_Comm mpi_comm() const;
 
+  /// Print out some memory diagnostics to LOG
+  void log_mem_diag() const;
+
 private:
   // MPI communicator
   dolfinx::MPI::Comm _mpi_comm;

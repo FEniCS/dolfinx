@@ -691,3 +691,22 @@ mesh::create_topology(MPI_Comm comm,
   return topology;
 }
 //-----------------------------------------------------------------------------
+void Topology::log_mem_diag()
+{
+  LOG(INFO) << "Topology memory usage";
+  for (std::size_t i = 0; i < _connectivity.size(); ++i)
+  {
+    for (std::size_t j = 0; j < _connectivity[i].size(); ++j)
+    {
+      std::size_t s
+          = _connectivity[i][j]->array().size() * sizeof(std::int32_t);
+      s += _connectivity[i][j]->offsets().size() * sizeof(std::int32_t);
+      LOG(INFO) << "Usage: connectivity[" << i << "," << j << "]:" << s;
+    }
+  }
+
+  LOG(INFO) << "Usage: cell permutations:  "
+            << _cell_permutations.size() * sizeof(std::uint32_t);
+  LOG(INFO) << "Usage: facet permutations: "
+            << _facet_permutations.size() * sizeof(std::uint8_t);
+}
