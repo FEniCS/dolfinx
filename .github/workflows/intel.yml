@@ -57,7 +57,7 @@ jobs:
         with:
           path: ./ffcx
           repository: FEniCS/ffcx
-          ref: mscroggs/facet_integrals
+          ref: main
 
       - name: Install FEniCS Python components
         run: |
