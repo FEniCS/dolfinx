@@ -40,6 +40,14 @@ namespace io::xdmf_mesh
 void add_mesh(MPI_Comm comm, pugi::xml_node& xml_node, const hid_t h5_id,
               const mesh::Mesh& mesh, const std::string path_prefix);
 
+/// Add Mesh to xml node
+///
+/// Creates new Grid with Topology and Geometry xml nodes for mesh. In
+/// HDF file data is stored under path prefix.
+void add_mesh_time(MPI_Comm comm, pugi::xml_node& xml_node, const hid_t h5_id,
+                   const mesh::Mesh& mesh, const std::string path_prefix,
+                   const double t);
+
 /// Add Topology xml node
 /// @param[in] comm
 /// @param[in] xml_node
@@ -57,10 +65,32 @@ void add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
                        const mesh::Geometry& geometry, const int cell_dim,
                        const xtl::span<const std::int32_t>& active_entities);
 
+/// Add Topology xml node
+/// @param[in] comm
+/// @param[in] xml_node
+/// @param[in] h5_id
+/// @param[in] path_prefix
+/// @param[in] topology
+/// @param[in] geometry
+/// @param[in] cell_dim Dimension of mesh entities to save
+/// @param[in] active_entities Local-to-process indices of mesh entities
+///   whose topology will be saved. This is used to save subsets of
+///   Mesh.
+void add_topology_data_time(
+    MPI_Comm comm, pugi::xml_node& xml_node, const hid_t h5_id,
+    const std::string path_prefix, const mesh::Topology& topology,
+    const mesh::Geometry& geometry, const int cell_dim,
+    const xtl::span<const std::int32_t>& active_entities, const double t);
+
 /// Add Geometry xml node
 void add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
                        const hid_t h5_id, const std::string path_prefix,
                        const mesh::Geometry& geometry);
+
+/// Add Geometry xml node
+void add_geometry_data_time(MPI_Comm comm, pugi::xml_node& xml_node,
+                            const hid_t h5_id, const std::string path_prefix,
+                            const mesh::Geometry& geometry, const double t);
 
 /// Read Geometry data
 /// @returns geometry

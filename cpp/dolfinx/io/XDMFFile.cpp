@@ -184,6 +184,44 @@ void XDMFFile::close()
   _h5_id = -1;
 }
 //-----------------------------------------------------------------------------
+void XDMFFile::write_mesh_time(const mesh::Mesh& mesh, const double t,
+                               const std::string xpath)
+{
+  pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
+  if (!node)
+    throw std::runtime_error("XML node '" + xpath + "' not found.");
+
+  const std::string timegrid_xpath
+      = "/Xdmf/Domain/Grid[@GridType='Collection'][@Name='Grid']";
+  pugi::xml_node timegrid_node
+      = _xml_doc->select_node(timegrid_xpath.c_str()).node();
+
+  if (!timegrid_node)
+  {
+    pugi::xml_node domain_node = _xml_doc->select_node("/Xdmf/Domain").node();
+    timegrid_node = domain_node.append_child("Grid");
+    timegrid_node.append_attribute("Name") = "Grid";
+    timegrid_node.append_attribute("GridType") = "Collection";
+    timegrid_node.append_attribute("CollectionType") = "Temporal";
+  }
+
+  assert(timegrid_node);
+
+  // Add the mesh Grid to the domain
+  xdmf_mesh::add_mesh_time(_mpi_comm.comm(), timegrid_node, _h5_id, mesh,
+                           mesh.name, t);
+
+  auto grid_node = timegrid_node.last_child();
+  std::string t_str = boost::lexical_cast<std::string>(t);
+  pugi::xml_node time_node = grid_node.append_child("Time");
+  time_node.append_attribute("Value") = t_str.c_str();
+  assert(time_node);
+
+  // Save XML file (on process 0 only)
+  if (MPI::rank(_mpi_comm.comm()) == 0)
+    _xml_doc->save_file(_filename.c_str(), "  ");
+}
+//-----------------------------------------------------------------------------
 void XDMFFile::write_mesh(const mesh::Mesh& mesh, const std::string xpath)
 {
   pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
