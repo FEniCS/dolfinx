@@ -182,7 +182,6 @@ public:
             *_function_space->dofmap()->index_map,
             _function_space->dofmap()->index_map_bs(), _x->mutable_array());
       }
-
       return _petsc_vector;
     }
     else
