@@ -209,6 +209,8 @@ Form<T> create_form(
     assert(integral);
     integral_data[IntegralType::cell].first.emplace_back(
         cell_integral_ids[i], integral->tabulate_tensor);
+    if (integral->needs_facet_permutations)
+      needs_facet_permutations = true;
   }
 
   // Attach cell subdomain data
@@ -224,7 +226,6 @@ Form<T> create_form(
   if (ufc_form.num_integrals(exterior_facet) > 0
       or ufc_form.num_integrals(interior_facet) > 0)
   {
-    needs_facet_permutations = true;
     if (!spaces.empty())
     {
       auto mesh = spaces[0]->mesh();
@@ -244,6 +245,8 @@ Form<T> create_form(
     assert(integral);
     integral_data[IntegralType::exterior_facet].first.emplace_back(
         exterior_facet_integral_ids[i], integral->tabulate_tensor);
+    if (integral->needs_facet_permutations)
+      needs_facet_permutations = true;
   }
 
   // Attach exterior facet subdomain data
@@ -264,6 +267,8 @@ Form<T> create_form(
     assert(integral);
     integral_data[IntegralType::interior_facet].first.emplace_back(
         interior_facet_integral_ids[i], integral->tabulate_tensor);
+    if (integral->needs_facet_permutations)
+      needs_facet_permutations = true;
   }
 
   // Attach interior facet subdomain data
