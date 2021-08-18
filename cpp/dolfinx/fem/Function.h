@@ -313,9 +313,13 @@ public:
     assert(dofmap);
     const int bs_dof = dofmap->bs();
 
-    mesh->topology_mutable().create_entity_permutations();
-    const std::vector<std::uint32_t>& cell_info
-        = mesh->topology().get_cell_permutation_info();
+    xtl::span<const std::uint32_t> cell_info;
+    if (element->needs_dof_transformations())
+    {
+      mesh->topology_mutable().create_entity_permutations();
+      cell_info = xtl::span(mesh->topology().get_cell_permutation_info());
+    }
+
     xt::xtensor<double, 2> coordinate_dofs
         = xt::zeros<double>({num_dofs_g, gdim});
     xt::xtensor<double, 2> xp
