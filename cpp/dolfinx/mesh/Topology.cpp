@@ -708,10 +708,13 @@ void Topology::log_mem_diag() const
   {
     for (std::size_t j = 0; j < _connectivity[i].size(); ++j)
     {
-      std::size_t s
-          = _connectivity[i][j]->array().size() * sizeof(std::int32_t);
-      s += _connectivity[i][j]->offsets().size() * sizeof(std::int32_t);
-      LOG(INFO) << "Usage: connectivity[" << i << "," << j << "]:" << s;
+      std::size_t s = 0;
+      if (_connectivity[i][j])
+      {
+        s = _connectivity[i][j]->array().size() * sizeof(std::int32_t)
+            + _connectivity[i][j]->offsets().size() * sizeof(std::int32_t);
+      }
+      LOG(INFO) << "Usage: connectivity[" << i << ", " << j << "]: " << s;
     }
   }
 
