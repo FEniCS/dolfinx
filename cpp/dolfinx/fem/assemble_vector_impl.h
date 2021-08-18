@@ -206,7 +206,7 @@ void _lift_bc_exterior_facets(
     const graph::AdjacencyList<std::int32_t>& dofmap1, int bs1,
     const xtl::span<const T>& constants, const array2d<T>& coeffs,
     const xtl::span<const std::uint32_t>& cell_info,
-    const std::function<std::uint8_t(std::size_t)> get_perm,
+    const std::function<std::uint8_t(std::size_t)>& get_perm,
     const xtl::span<const T>& bc_values1, const std::vector<bool>& bc_markers1,
     const xtl::span<const T>& x0, double scale)
 {
@@ -335,7 +335,7 @@ void _lift_bc_interior_facets(
     const xtl::span<const T>& constants, const array2d<T>& coeffs,
     const std::vector<int>& offsets,
     const xtl::span<const std::uint32_t>& cell_info,
-    const std::function<std::uint8_t(std::size_t)> get_perm,
+    const std::function<std::uint8_t(std::size_t)>& get_perm,
     const xtl::span<const T>& bc_values1, const std::vector<bool>& bc_markers1,
     const xtl::span<const T>& x0, double scale)
 {
@@ -612,7 +612,7 @@ void assemble_exterior_facets(
                              const std::uint8_t*)>& fn,
     const xtl::span<const T>& constants, const array2d<T>& coeffs,
     const xtl::span<const std::uint32_t>& cell_info,
-    const std::function<std::uint8_t(std::size_t)> get_perm)
+    const std::function<std::uint8_t(std::size_t)>& get_perm)
 {
   assert(_bs < 0 or _bs == bs);
 
@@ -700,7 +700,7 @@ void assemble_interior_facets(
     const xtl::span<const T>& constants, const array2d<T>& coeffs,
     const xtl::span<const int>& offsets,
     const xtl::span<const std::uint32_t>& cell_info,
-    const std::function<std::uint8_t(std::size_t)> get_perm)
+    const std::function<std::uint8_t(std::size_t)>& get_perm)
 {
   const int tdim = mesh.topology().dim();
 
@@ -904,18 +904,16 @@ void lift_bc(xtl::span<T> b, const Form<T>& a,
     mesh->topology_mutable().create_entities(tdim - 1);
     mesh->topology_mutable().create_connectivity(tdim - 1, tdim);
 
-    std::function<std::uint8_t(const std::size_t)> get_perm;
+    std::function<std::uint8_t(std::size_t)> get_perm;
     if (a.needs_facet_permutations())
     {
       mesh->topology_mutable().create_entity_permutations();
       const std::vector<std::uint8_t>& perms
           = mesh->topology().get_facet_permutations();
-      get_perm = [&perms](const std::size_t i) { return perms[i]; };
+      get_perm = [&perms](std::size_t i) { return perms[i]; };
     }
     else
-    {
-      get_perm = [](const std::size_t) { return 0; };
-    }
+      get_perm = [](std::size_t) { return 0; };
 
     for (int i : a.integral_ids(IntegralType::exterior_facet))
     {
@@ -1090,18 +1088,16 @@ void assemble_vector(xtl::span<T> b, const Form<T>& L,
     // FIXME: cleanup these calls? Some of the happen internally again.
     mesh->topology_mutable().create_entities(tdim - 1);
     mesh->topology_mutable().create_connectivity(tdim - 1, tdim);
-    std::function<std::uint8_t(const std::size_t)> get_perm;
+    std::function<std::uint8_t(std::size_t)> get_perm;
     if (L.needs_facet_permutations())
     {
       mesh->topology_mutable().create_entity_permutations();
       const std::vector<std::uint8_t>& perms
           = mesh->topology().get_facet_permutations();
-      get_perm = [&perms](const std::size_t i) { return perms[i]; };
+      get_perm = [&perms](std::size_t i) { return perms[i]; };
     }
     else
-    {
-      get_perm = [](const std::size_t) { return 0; };
-    }
+      get_perm = [](std::size_t) { return 0; };
 
     for (int i : L.integral_ids(IntegralType::exterior_facet))
     {
