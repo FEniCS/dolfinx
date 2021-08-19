@@ -67,7 +67,7 @@ jobs:
           ffcx poisson.ufl
           mkdir build-dir-main
           cd build-dir-main
-          cmake .
+          cmake ../
           export VERBOSE=1
           make
           mpirun -np 2 ./demo_poisson
@@ -82,7 +82,7 @@ jobs:
           ffcx poisson.ufl
           mkdir build-dir-release
           cd build-dir-release
-          cmake .
+          cmake ../
           export VERBOSE=1
           make
           mpirun -np 2 ./demo_poisson
@@ -97,7 +97,7 @@ jobs:
 
       # NOTE: numba is installed via pip because the spack package takes
       # an extremely long time to compile
-      - name: Run DOLFINx (Python) tests
+      - name: Run DOLFINx (Python, development) tests
         run: |
           . ./spack/share/spack/setup-env.sh
           spack env activate py-main
