@@ -64,9 +64,9 @@ jobs:
           cd dolfinx-test/cpp/
           python cmake/scripts/generate-cmakefiles.py
           cd demo/poisson
+          ffcx poisson.ufl
           mkdir build-dir-main
           cd build-dir-main
-          ffcx poisson.ufl
           cmake .
           export VERBOSE=1
           make
@@ -79,9 +79,9 @@ jobs:
           cd dolfinx-test/cpp/
           python cmake/scripts/generate-cmakefiles.py
           cd demo/poisson
+          ffcx poisson.ufl
           mkdir build-dir-release
           cd build-dir-release
-          ffcx poisson.ufl
           cmake .
           export VERBOSE=1
           make
