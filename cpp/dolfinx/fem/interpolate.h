@@ -465,9 +465,12 @@ void interpolate(Function<T>& u, xt::xarray<T>& values,
         "Interpolation into this space is not yet supported.");
   }
 
-  mesh->topology_mutable().create_entity_permutations();
-  const std::vector<std::uint32_t>& cell_info
-      = mesh->topology().get_cell_permutation_info();
+  xtl::span<const std::uint32_t> cell_info;
+  if (element->needs_dof_transformations())
+  {
+    mesh->topology_mutable().create_entity_permutations();
+    cell_info = xtl::span(mesh->topology().get_cell_permutation_info());
+  }
 
   if (values.dimension() == 1)
   {

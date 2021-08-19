@@ -45,13 +45,11 @@ void assemble_cells(
     const xtl::span<const std::int32_t>& active_cells,
     const std::function<void(const xtl::span<T>&,
                              const xtl::span<const std::uint32_t>&,
-                             std::int32_t, int)>
-        apply_dof_transformation,
+                             std::int32_t, int)>& dof_transform,
     const graph::AdjacencyList<std::int32_t>& dofmap0, const int bs0,
     const std::function<void(const xtl::span<T>&,
                              const xtl::span<const std::uint32_t>&,
-                             std::int32_t, int)>
-        apply_dof_transformation_to_transpose,
+                             std::int32_t, int)>& dof_transform_to_transpose,
     const graph::AdjacencyList<std::int32_t>& dofmap1, const int bs1,
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
@@ -90,8 +88,8 @@ void assemble_cells(
     kernel(Ae.data(), coeffs.row(c).data(), constants.data(),
            coordinate_dofs.data(), nullptr, nullptr);
 
-    apply_dof_transformation(_Ae, cell_info, c, ndim1);
-    apply_dof_transformation_to_transpose(_Ae, cell_info, c, ndim0);
+    dof_transform(_Ae, cell_info, c, ndim1);
+    dof_transform_to_transpose(_Ae, cell_info, c, ndim0);
 
     // Zero rows/columns for essential bcs
     auto dofs0 = dofmap0.links(c);
@@ -141,18 +139,18 @@ void assemble_exterior_facets(
     const mesh::Mesh& mesh, const xtl::span<const std::int32_t>& active_facets,
     const std::function<void(const xtl::span<T>&,
                              const xtl::span<const std::uint32_t>&,
-                             std::int32_t, int)>& apply_dof_transformation,
+                             std::int32_t, int)>& dof_transform,
     const graph::AdjacencyList<std::int32_t>& dofmap0, int bs0,
-    const std::function<
-        void(const xtl::span<T>&, const xtl::span<const std::uint32_t>&,
-             std::int32_t, int)>& apply_dof_transformation_to_transpose,
+    const std::function<void(const xtl::span<T>&,
+                             const xtl::span<const std::uint32_t>&,
+                             std::int32_t, int)>& dof_transform_to_transpose,
     const graph::AdjacencyList<std::int32_t>& dofmap1, int bs1,
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*)>& kernel,
     const array2d<T>& coeffs, const xtl::span<const T>& constants,
     const xtl::span<const std::uint32_t>& cell_info,
-    const xtl::span<const std::uint8_t>& perms)
+    const std::function<std::uint8_t(std::size_t)>& get_perm)
 {
   const int tdim = mesh.topology().dim();
 
@@ -198,13 +196,13 @@ void assemble_exterior_facets(
     }
 
     // Tabulate tensor
+    std::uint8_t perm = get_perm(cells[0] * facets.size() + local_facet);
     std::fill(Ae.begin(), Ae.end(), 0);
     kernel(Ae.data(), coeffs.row(cells[0]).data(), constants.data(),
-           coordinate_dofs.data(), &local_facet,
-           &perms[cells[0] * facets.size() + local_facet]);
+           coordinate_dofs.data(), &local_facet, &perm);
 
-    apply_dof_transformation(_Ae, cell_info, cells[0], ndim1);
-    apply_dof_transformation_to_transpose(_Ae, cell_info, cells[0], ndim0);
+    dof_transform(_Ae, cell_info, cells[0], ndim1);
+    dof_transform_to_transpose(_Ae, cell_info, cells[0], ndim0);
 
     // Zero rows/columns for essential bcs
     auto dofs0 = dofmap0.links(cells[0]);
@@ -253,11 +251,11 @@ void assemble_interior_facets(
     const mesh::Mesh& mesh, const xtl::span<const std::int32_t>& active_facets,
     const std::function<void(const xtl::span<T>&,
                              const xtl::span<const std::uint32_t>&,
-                             std::int32_t, int)>& apply_dof_transformation,
+                             std::int32_t, int)>& dof_transform,
     const DofMap& dofmap0, int bs0,
-    const std::function<
-        void(const xtl::span<T>&, const xtl::span<const std::uint32_t>&,
-             std::int32_t, int)>& apply_dof_transformation_to_transpose,
+    const std::function<void(const xtl::span<T>&,
+                             const xtl::span<const std::uint32_t>&,
+                             std::int32_t, int)>& dof_transform_to_transpose,
     const DofMap& dofmap1, int bs1, const std::vector<bool>& bc0,
     const std::vector<bool>& bc1,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
@@ -265,7 +263,7 @@ void assemble_interior_facets(
     const array2d<T>& coeffs, const xtl::span<const int>& offsets,
     const xtl::span<const T>& constants,
     const xtl::span<const std::uint32_t>& cell_info,
-    const xtl::span<const std::uint8_t>& perms)
+    const std::function<std::uint8_t(std::size_t)>& get_perm)
 {
   const int tdim = mesh.topology().dim();
 
@@ -362,13 +360,14 @@ void assemble_interior_facets(
     std::fill(Ae.begin(), Ae.end(), 0);
 
     const int facets_per_cell = facets0.size();
-    const std::array perm{perms[cells[0] * facets_per_cell + local_facet[0]],
-                          perms[cells[1] * facets_per_cell + local_facet[1]]};
+    const std::array perm{
+        get_perm(cells[0] * facets_per_cell + local_facet[0]),
+        get_perm(cells[1] * facets_per_cell + local_facet[1])};
     kernel(Ae.data(), coeff_array.data(), constants.data(),
            coordinate_dofs.data(), local_facet.data(), perm.data());
 
-    apply_dof_transformation(Ae, cell_info, cells[0], num_cols);
-    apply_dof_transformation_to_transpose(Ae, cell_info, cells[0], num_rows);
+    dof_transform(Ae, cell_info, cells[0], num_cols);
+    dof_transform_to_transpose(Ae, cell_info, cells[0], num_rows);
 
     // Zero rows/columns for essential bcs
     if (!bc0.empty())
@@ -437,12 +436,11 @@ void assemble_matrix(
       = a.function_spaces().at(1)->element();
   const std::function<void(const xtl::span<T>&,
                            const xtl::span<const std::uint32_t>&, std::int32_t,
-                           int)>
-      apply_dof_transformation = element0->get_dof_transformation_function<T>();
+                           int)>& dof_transform
+      = element0->get_dof_transformation_function<T>();
   const std::function<void(const xtl::span<T>&,
                            const xtl::span<const std::uint32_t>&, std::int32_t,
-                           int)>
-      apply_dof_transformation_to_transpose
+                           int)>& dof_transform_to_transpose
       = element1->get_dof_transformation_to_transpose_function<T>();
 
   const bool needs_transformation_data
@@ -462,18 +460,25 @@ void assemble_matrix(
     const std::vector<std::int32_t>& active_cells
         = a.domains(IntegralType::cell, i);
     impl::assemble_cells<T>(mat_set, mesh->geometry(), active_cells,
-                            apply_dof_transformation, dofs0, bs0,
-                            apply_dof_transformation_to_transpose, dofs1, bs1,
-                            bc0, bc1, fn, coeffs, constants, cell_info);
+                            dof_transform, dofs0, bs0,
+                            dof_transform_to_transpose, dofs1, bs1, bc0, bc1,
+                            fn, coeffs, constants, cell_info);
   }
 
   if (a.num_integrals(IntegralType::exterior_facet) > 0
       or a.num_integrals(IntegralType::interior_facet) > 0)
   {
     mesh->topology_mutable().create_connectivity(tdim - 1, tdim);
-    mesh->topology_mutable().create_entity_permutations();
-    const std::vector<std::uint8_t>& perms
-        = mesh->topology().get_facet_permutations();
+    std::function<std::uint8_t(std::size_t)> get_perm;
+    if (a.needs_facet_permutations())
+    {
+      mesh->topology_mutable().create_entity_permutations();
+      const std::vector<std::uint8_t>& perms
+          = mesh->topology().get_facet_permutations();
+      get_perm = [&perms](std::size_t i) { return perms[i]; };
+    }
+    else
+      get_perm = [](std::size_t) { return 0; };
 
     for (int i : a.integral_ids(IntegralType::exterior_facet))
     {
@@ -481,9 +486,9 @@ void assemble_matrix(
       const std::vector<std::int32_t>& active_facets
           = a.domains(IntegralType::exterior_facet, i);
       impl::assemble_exterior_facets<T>(
-          mat_set, *mesh, active_facets, apply_dof_transformation, dofs0, bs0,
-          apply_dof_transformation_to_transpose, dofs1, bs1, bc0, bc1, fn,
-          coeffs, constants, cell_info, perms);
+          mat_set, *mesh, active_facets, dof_transform, dofs0, bs0,
+          dof_transform_to_transpose, dofs1, bs1, bc0, bc1, fn, coeffs,
+          constants, cell_info, get_perm);
     }
 
     const std::vector<int> c_offsets = a.coefficient_offsets();
@@ -493,9 +498,9 @@ void assemble_matrix(
       const std::vector<std::int32_t>& active_facets
           = a.domains(IntegralType::interior_facet, i);
       impl::assemble_interior_facets<T>(
-          mat_set, *mesh, active_facets, apply_dof_transformation, *dofmap0,
-          bs0, apply_dof_transformation_to_transpose, *dofmap1, bs1, bc0, bc1,
-          fn, coeffs, c_offsets, constants, cell_info, perms);
+          mat_set, *mesh, active_facets, dof_transform, *dofmap0, bs0,
+          dof_transform_to_transpose, *dofmap1, bs1, bc0, bc1, fn, coeffs,
+          c_offsets, constants, cell_info, get_perm);
     }
   }
 }
