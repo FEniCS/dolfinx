@@ -81,6 +81,7 @@ jobs:
         run: |
           . ./spack/share/spack/setup-env.sh
           spack env activate cpp-release
+          spack load cmake
           cd dolfinx-test/cpp/demo/poisson
           ffcx poisson.ufl
           mkdir build-dir-release
