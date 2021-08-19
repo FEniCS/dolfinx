@@ -73,7 +73,7 @@ public:
   /// Assignment
   Topology& operator=(Topology&& topology) = default;
 
-  /// Return topological dimension
+  /// Return the topological dimension of the mesh
   int dim() const;
 
   /// @todo Merge with set_connectivity
@@ -115,6 +115,8 @@ public:
   /// Each column of the returned array represents a cell, and each row
   /// a facet of that cell.
   /// @return The permutation number
+  /// @note An exception i raised if the permutations have not been
+  /// computed
   const std::vector<std::uint8_t>& get_facet_permutations() const;
 
   /// Cell type
@@ -125,11 +127,10 @@ public:
   // Currently, there is no clear caching policy implemented and no way of
   // discarding cached data.
 
-  // creation of entities
   /// Create entities of given topological dimension.
   /// @param[in] dim Topological dimension
   /// @return Number of newly created entities, returns -1 if entities
-  ///   already existed
+  /// already existed
   std::int32_t create_entities(int dim);
 
   /// Create connectivity between given pair of dimensions, d0 -> d1
@@ -139,9 +140,6 @@ public:
 
   /// Compute entity permutations and reflections
   void create_entity_permutations();
-
-  /// Compute all entities and connectivity
-  void create_connectivity_all();
 
   /// Mesh MPI communicator
   /// @return The communicator on which the topology is distributed

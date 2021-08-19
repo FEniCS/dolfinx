@@ -252,18 +252,6 @@ void Topology::create_entity_permutations()
   _cell_permutations = std::move(cell_permutations);
 }
 //-----------------------------------------------------------------------------
-void Topology::create_connectivity_all()
-{
-  // Compute all entities
-  for (int d = 0; d <= dim(); d++)
-    create_entities(d);
-
-  // Compute all connectivity
-  for (int d0 = 0; d0 <= dim(); d0++)
-    for (int d1 = 0; d1 <= dim(); d1++)
-      create_connectivity(d0, d1);
-}
-//-----------------------------------------------------------------------------
 std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
 Topology::connectivity(int d0, int d1) const
 {
