@@ -82,6 +82,7 @@ public:
 
   /// Save Mesh
   /// @param[in] mesh
+  /// @param[in] t The time at which the mesh is being saved (defaults to zero)
   /// @param[in] xpath XPath where Mesh Grid will be written
   void write_mesh(const mesh::Mesh& mesh, const double t = 0,
                   const std::string xpath = "/Xdmf/Domain");

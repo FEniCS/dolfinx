@@ -50,6 +50,7 @@ void add_mesh(MPI_Comm comm, pugi::xml_node& xml_node, const hid_t h5_id,
 /// @param[in] geometry
 /// @param[in] cell_dim Dimension of mesh entities to save
 /// @param[in] active_entities Local-to-process indices of mesh entities
+/// @param[in] t The time at which data is being saved (defaults to zero)
 ///   whose topology will be saved. This is used to save subsets of
 ///   Mesh.
 void add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
