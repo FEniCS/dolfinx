@@ -58,7 +58,7 @@ spack env activate fenicsx-env
 spack add py-fenics-dolfinx ^petsc+mumps cflags="-O3" fflags="-O3"
 spack install
 ```
-To build the development versions:
+To build the development version:
 ```
 git clone https://github.com/spack/spack.git
 . ./spack/share/spack/setup-env.sh
