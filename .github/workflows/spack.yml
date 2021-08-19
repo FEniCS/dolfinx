@@ -57,34 +57,37 @@ jobs:
         with:
           path: ./dolfinx-test
 
-      - name: Run a C++ test (development version) via Spack
+      - name: Create demo CMake files
         run: |
           . ./spack/share/spack/setup-env.sh
           spack env activate cpp-main
           cd dolfinx-test/cpp/
           python cmake/scripts/generate-cmakefiles.py
-          cd demo/poisson
+
+      - name: Run a C++ test (development version) via Spack
+        run: |
+          . ./spack/share/spack/setup-env.sh
+          spack env activate cpp-main
+          cd dolfinx-test/cpp/demo/poisson
           ffcx poisson.ufl
           mkdir build-dir-main
           cd build-dir-main
           cmake ../
           export VERBOSE=1
-          make
+          make -j2
           mpirun -np 2 ./demo_poisson
 
       - name: Run a C++ test (release version) via Spack
         run: |
           . ./spack/share/spack/setup-env.sh
           spack env activate cpp-release
-          cd dolfinx-test/cpp/
-          python cmake/scripts/generate-cmakefiles.py
-          cd demo/poisson
+          cd dolfinx-test/cpp/demo/poisson
           ffcx poisson.ufl
           mkdir build-dir-release
           cd build-dir-release
           cmake ../
           export VERBOSE=1
-          make
+          make -j2
           mpirun -np 2 ./demo_poisson
 
       - name: Build DOLFINx (Python, development) and test dependencies via Spack
