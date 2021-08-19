@@ -174,8 +174,8 @@ def test_facet_normals(cell_type):
     """Test that FacetNormal is outward facing"""
     for count in range(5):
         mesh = unit_cell(cell_type)
-        tdim = mesh.topology.dim        mesh.topology.create_entities(tdim - 1)
-
+        tdim = mesh.topology.dim
+        mesh.topology.create_entities(tdim - 1)
 
         V = VectorFunctionSpace(mesh, ("Lagrange", 1))
         normal = ufl.FacetNormal(mesh)
