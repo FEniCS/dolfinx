@@ -106,11 +106,6 @@ public:
         = _mesh->geometry().dofmap();
     const fem::CoordinateElement& cmap = _mesh->geometry().cmap();
 
-    // Prepate cell permutation info
-    _mesh->topology_mutable().create_entity_permutations();
-    const std::vector<std::uint32_t>& cell_info
-        = _mesh->topology().get_cell_permutation_info();
-
     // FIXME: Add proper interface for num coordinate dofs
     const std::size_t num_dofs_g = x_dofmap.num_links(0);
     const xt::xtensor<double, 2>& x_g = _mesh->geometry().x();

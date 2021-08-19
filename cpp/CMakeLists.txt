@@ -1,6 +1,6 @@
 #------------------------------------------------------------------------------
 # Top level CMakeLists.txt file for DOLFINx
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.16)
 
 #------------------------------------------------------------------------------
 # Set project name and version number
@@ -8,17 +8,6 @@ cmake_minimum_required(VERSION 3.12)
 project(DOLFINX VERSION "0.1.1.0")
 
 set(DOXYGEN_DOLFINX_VERSION ${DOLFINX_VERSION} CACHE STRING "Version for Doxygen" FORCE)
-
-#------------------------------------------------------------------------------
-# Set CMake options, see `cmake --help-policy CMP000x`
-
-cmake_policy(VERSION 3.12)
-if (POLICY CMP0074)
-  cmake_policy(SET CMP0074 NEW)
-endif()
-if (POLICY CMP0075)
-  cmake_policy(SET CMP0075 NEW)
-endif()
 
 #------------------------------------------------------------------------------
 # Use C++17
@@ -166,11 +155,10 @@ set_package_properties(PETSc PROPERTIES TYPE REQUIRED
 
 # Check for HDF5
 set(HDF5_PREFER_PARALLEL TRUE)
-set(HDF5_NO_FIND_PACKAGE_CONFIG_FILE TRUE)
 set(HDF5_FIND_DEBUG TRUE)
 find_package(HDF5 REQUIRED COMPONENTS C)
 if (NOT HDF5_IS_PARALLEL)
-  message(FATAL_ERROR "Found serial HDF5 build, MPI HDF5 build required, try setting HDF5_ROOT")
+  message(FATAL_ERROR "Found serial HDF5 build, MPI HDF5 build required, try setting HDF5_DIR or HDF5_ROOT")
 endif()
 set_package_properties(HDF5 PROPERTIES TYPE REQUIRED
   DESCRIPTION "Hierarchical Data Format 5 (HDF5)"
