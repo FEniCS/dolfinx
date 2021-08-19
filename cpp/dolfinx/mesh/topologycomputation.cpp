@@ -14,6 +14,7 @@
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
+#include <dolfinx/common/sort.h>
 #include <dolfinx/common/utils.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <memory>
@@ -47,28 +48,6 @@ int get_ownership(std::set<int>& processes, std::vector<std::int64_t>& vertices)
   int index = gen() % p.size();
   int owner = p[index];
   return owner;
-}
-
-/// Takes an array and computes the sort permutation that would reorder
-/// the rows in ascending order
-/// @param[in] array The input array
-/// @return The permutation vector that would order the rows in
-/// ascending order
-/// @pre Each row of @p array must be sorted
-template <typename T>
-std::vector<std::int32_t> sort_by_perm(const xt::xtensor<T, 2>& array)
-{
-  std::vector<int> index(array.shape(0));
-  std::iota(index.begin(), index.end(), 0);
-  std::sort(index.begin(), index.end(),
-            [&array](int a, int b)
-            {
-              return std::lexicographical_compare(
-                  xt::row(array, a).begin(), xt::row(array, a).end(),
-                  xt::row(array, b).begin(), xt::row(array, b).end());
-            });
-
-  return index;
 }
 //-----------------------------------------------------------------------------
 
@@ -207,7 +186,7 @@ get_local_indexing(
       if (q.second == num_vertices_per_e)
       {
         vertex_indexmap->local_to_global(entity_list_i, vglobal);
-        std::sort(vglobal.begin(), vglobal.end());
+        dolfinx::radix_sort(xtl::span(vglobal));
 
         global_entity_to_entity_index.insert({vglobal, entity_index[i]});
 
@@ -309,15 +288,10 @@ get_local_indexing(
     }
     num_local = c;
 
-    for (std::size_t i = 0; i < local_index.size(); ++i)
-    {
-      // Unmapped global index (ghost)
-      if (local_index[i] == -1)
-      {
-        local_index[i] = c;
-        ++c;
-      }
-    }
+    std::transform(local_index.cbegin(), local_index.cend(),
+                   local_index.begin(),
+                   [&c](auto index) { return index == -1 ? c++ : index; });
+
     assert(c == entity_count);
   }
 
@@ -326,8 +300,10 @@ get_local_indexing(
   std::vector<int> ghost_owners(entity_count - num_local, -1);
   std::vector<std::int64_t> ghost_indices(entity_count - num_local, -1);
   {
-    const std::int64_t local_offset
-        = dolfinx::MPI::global_offset(comm, num_local, true);
+    const std::int64_t _num_local = num_local;
+    std::int64_t local_offset = 0;
+    MPI_Exscan(&_num_local, &local_offset, 1,
+               dolfinx::MPI::mpi_type<std::int64_t>(), MPI_SUM, comm);
 
     std::vector<std::int64_t> send_global_index_data;
     std::vector<int> send_global_index_offsets = {0};
@@ -335,20 +311,21 @@ get_local_indexing(
     // Send global indices for same entities that we sent before. This
     // uses the same pattern as before, so we can match up the received
     // data to the indices in recv_index
-    for (int np = 0; np < neighbor_size; ++np)
+    for (const auto& indices : send_index)
     {
-      for (std::int32_t index : send_index[np])
-      {
-        // If not in our local range, send -1.
-        const std::int64_t gi = (local_index[index] < num_local)
-                                    ? (local_offset + local_index[index])
-                                    : -1;
-
-        send_global_index_data.push_back(gi);
-      }
-
+      std::transform(indices.cbegin(), indices.cend(),
+                     std::back_inserter(send_global_index_data),
+                     [&local_index, num_local,
+                      local_offset](std::int32_t index) -> std::int64_t
+                     {
+                       // If not in our local range, send -1.
+                       return local_index[index] < num_local
+                                  ? local_offset + local_index[index]
+                                  : -1;
+                     });
       send_global_index_offsets.push_back(send_global_index_data.size());
     }
+
     const graph::AdjacencyList<std::int64_t> recv_data
         = dolfinx::MPI::neighbor_all_to_all(
             neighbor_comm,
@@ -389,8 +366,9 @@ get_local_indexing(
 
   // Map from initial numbering to new local indices
   std::vector<std::int32_t> new_entity_index(entity_index.size());
-  for (std::size_t i = 0; i < entity_index.size(); ++i)
-    new_entity_index[i] = local_index[entity_index[i]];
+  std::transform(entity_index.cbegin(), entity_index.cend(),
+                 new_entity_index.begin(),
+                 [&local_index](auto index) { return local_index[index]; });
 
   return {std::move(new_entity_index), index_map};
 }
@@ -462,7 +440,8 @@ compute_entities_by_key_matching(
 
   // Sort the list and label uniquely
   const std::vector<std::int32_t> sort_order
-      = sort_by_perm<std::int32_t>(entity_list_sorted);
+      = dolfinx::sort_by_perm(entity_list_sorted);
+
   std::vector<std::int32_t> entity_index(entity_list.shape(0), 0);
   std::int32_t entity_count = 0;
   std::int32_t last = sort_order[0];

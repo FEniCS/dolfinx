@@ -10,7 +10,7 @@
 #include <catch.hpp>
 #include <dolfinx.h>
 #include <dolfinx/common/MPI.h>
-#include <dolfinx/graph/kahip.h>
+#include <dolfinx/graph/partitioners.h>
 #include <dolfinx/io/XDMFFile.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <dolfinx/mesh/graphbuild.h>
@@ -21,11 +21,13 @@ using namespace dolfinx::mesh;
 namespace
 {
 
+constexpr int N = 4;
+
 void create_mesh_file()
 {
   // Create mesh using all processes and save xdmf
   auto mesh = std::make_shared<mesh::Mesh>(generation::RectangleMesh::create(
-      MPI_COMM_WORLD, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 0.0}}}, {32, 32},
+      MPI_COMM_WORLD, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 0.0}}}, {N, N},
       mesh::CellType::triangle, mesh::GhostMode::shared_facet));
 
   // Save mesh in XDMF format
@@ -35,11 +37,11 @@ void create_mesh_file()
 
 void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
 {
-  MPI_Comm mpi_comm{MPI_COMM_WORLD};
-  int mpi_size = dolfinx::MPI::size(mpi_comm);
+  MPI_Comm mpi_comm = MPI_COMM_WORLD;
+  const int mpi_size = dolfinx::MPI::size(mpi_comm);
 
   // Create a communicator with subset of the original group of processes
-  int subset_size = (mpi_size > 1) ? ceil(mpi_size / 2) : 1;
+  const int subset_size = (mpi_size > 1) ? ceil(mpi_size / 2) : 1;
   std::vector<int> ranks(subset_size);
   std::iota(ranks.begin(), ranks.end(), 0);
 
@@ -53,8 +55,9 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
   MPI_Comm_create_group(MPI_COMM_WORLD, new_group, 0, &subset_comm);
 
   // Create coordinate map
-  auto e = std::make_shared<basix::FiniteElement>(
-      basix::create_element("Lagrange", "triangle", 1));
+  auto e = std::make_shared<basix::FiniteElement>(basix::create_element(
+      basix::element::family::P, basix::cell::type::triangle, 1,
+      basix::lattice::type::equispaced));
   fem::CoordinateElement cmap(e);
 
   // read mesh data
@@ -65,7 +68,7 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
   graph::AdjacencyList<std::int32_t> dest(0);
   if (subset_comm != MPI_COMM_NULL)
   {
-    int nparts{mpi_size};
+    int nparts = mpi_size;
     io::XDMFFile infile(subset_comm, "mesh.xdmf", "r");
     cells = infile.read_topology_data("mesh");
     x = infile.read_geometry_data("mesh");
@@ -95,15 +98,19 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
   auto mesh = std::make_shared<dolfinx::mesh::Mesh>(
       mpi_comm, std::move(topology), std::move(geometry));
 
-  CHECK(mesh->topology().index_map(tdim)->size_global() == 2048);
+  CHECK(mesh->topology().index_map(tdim)->size_global() == 2 * N * N);
   CHECK(mesh->topology().index_map(tdim)->size_local() > 0);
 
-  CHECK(mesh->topology().index_map(0)->size_global() == 1089);
+  CHECK(mesh->topology().index_map(0)->size_global() == (N + 1) * (N + 1));
   CHECK(mesh->topology().index_map(0)->size_local() > 0);
 
   CHECK(mesh->geometry().x().shape(0)
         == mesh->topology().index_map(0)->size_local()
                + mesh->topology().index_map(0)->num_ghosts());
+
+  MPI_Comm_free(&subset_comm);
+  MPI_Group_free(&new_group);
+  MPI_Group_free(&comm_group);
 }
 } // namespace
 
@@ -127,21 +134,19 @@ TEST_CASE("Distributed Mesh", "[distributed_mesh]")
     CellPartitionFunction kahip
         = [&](MPI_Comm comm, int nparts, int tdim,
               const dolfinx::graph::AdjacencyList<std::int64_t>& cells,
-              dolfinx::mesh::GhostMode ghost_mode) {
-            LOG(INFO) << "Compute partition of cells across ranks (KaHIP).";
-            // Compute distributed dual graph (for the cells on this process)
-            const auto [dual_graph, graph_info]
-                = mesh::build_dual_graph(comm, cells, tdim);
+              dolfinx::mesh::GhostMode ghost_mode)
+    {
+      LOG(INFO) << "Compute partition of cells across ranks (KaHIP).";
+      // Compute distributed dual graph (for the cells on this process)
+      const auto [dual_graph, num_ghost_edges]
+          = mesh::build_dual_graph(comm, cells, tdim);
 
-            // Extract data from graph_info
-            const auto [num_ghost_nodes, num_local_edges] = graph_info;
+      // Just flag any kind of ghosting for now
+      bool ghosting = (ghost_mode != mesh::GhostMode::none);
 
-            // Just flag any kind of ghosting for now
-            bool ghosting = (ghost_mode != mesh::GhostMode::none);
-
-            // Compute partition
-            return partfn(comm, nparts, dual_graph, num_ghost_nodes, ghosting);
-          };
+      // Compute partition
+      return partfn(comm, nparts, dual_graph, num_ghost_edges, ghosting);
+    };
 
     CHECK_NOTHROW(test_distributed_mesh(kahip));
   }
