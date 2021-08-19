@@ -34,9 +34,6 @@ jobs:
       - name: Install compilers
         run: |
           sudo apt-get update
-          sudo apt-get install grub-efi
-          sudo update-grub
-          sudo apt-get upgrade
           sudo apt-get install g++-10 gfortran-10 grub-efi
         if: matrix.os == 'ubuntu-20.04'
 
@@ -46,39 +43,62 @@ jobs:
           path: ./spack
           repository: spack/spack
 
-      - name: Build DOLFINx (C++) via Spack
+      - name: Build DOLFINx (C++) development version via Spack
         run: |
           . ./spack/share/spack/setup-env.sh
-          spack env create cpp
-          spack env activate cpp
-          echo "  concretization: together" >> ./spack/var/spack/environments/cpp/spack.yaml
+          spack env create cpp-main
+          spack env activate cpp-main
           spack add fenics-dolfinx@main
-          spack -v install
+          spack install
+
+      - name: Build DOLFINx (C++) release version via Spack
+        run: |
+          . ./spack/share/spack/setup-env.sh
+          spack env create cpp-release
+          spack env activate cpp-release
+          spack add fenics-dolfinx
+          spack install
 
       - name: Get DOLFINx code (to access test files)
         uses: actions/checkout@v2
         with:
           path: ./dolfinx-test
 
-      - name: Run a C++ test via Spack
+      - name: Run a C++ test (development version) via Spack
         run: |
           . ./spack/share/spack/setup-env.sh
-          spack env activate cpp
+          spack env activate cpp-main
           cd dolfinx-test/cpp/
           python cmake/scripts/generate-cmakefiles.py
           cd demo/poisson
+          mkdir build-dir-main
+          cd build-dir-main
           ffcx poisson.ufl
           cmake .
           export VERBOSE=1
           make
           mpirun -np 2 ./demo_poisson
 
-      - name: Build DOLFINx (Python) and test dependencies via Spack
+      - name: Run a C++ test (release version) via Spack
         run: |
           . ./spack/share/spack/setup-env.sh
-          spack env create py
-          spack env activate py
-          echo "  concretization: together" >> ./spack/var/spack/environments/py/spack.yaml
+          spack env activate cpp-release
+          cd dolfinx-test/cpp/
+          python cmake/scripts/generate-cmakefiles.py
+          cd demo/poisson
+          mkdir build-dir-release
+          cd build-dir-release
+          ffcx poisson.ufl
+          cmake .
+          export VERBOSE=1
+          make
+          mpirun -np 2 ./demo_poisson
+
+      - name: Build DOLFINx (Python, development) and test dependencies via Spack
+        run: |
+          . ./spack/share/spack/setup-env.sh
+          spack env create py-main
+          spack env activate py-main
           spack add py-fenics-dolfinx@main
           spack install
 
@@ -87,6 +107,6 @@ jobs:
       - name: Run DOLFINx (Python) tests
         run: |
           . ./spack/share/spack/setup-env.sh
-          spack env activate py
+          spack env activate py-main
           pip install numba
           mpirun -np 2 python3 ./dolfinx-test/python/demo/stokes-taylor-hood/demo_stokes-taylor-hood.py

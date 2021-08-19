@@ -48,14 +48,23 @@ https://fenicsproject.org/docs/dolfinx/dev/python/.
 
 ### Spack
 
-To build from source using [Spack](https://spack.readthedocs.io/) (assuming a bash shell):
+To build the most recent release using
+[Spack](https://spack.readthedocs.io/) (assuming a bash shell):
 ```
 git clone https://github.com/spack/spack.git
 . ./spack/share/spack/setup-env.sh
 spack env create fenicsx-env
 spack env activate fenicsx-env
-echo "  concretization: together" >> ./spack/var/spack/environments/fenicsx-env/spack.yaml
-spack add py-fenics-dolfinx@main ^petsc+mumps+hypre cflags="-O3" fflags="-O3"
+spack add py-fenics-dolfinx ^petsc+mumps cflags="-O3" fflags="-O3"
+spack install
+```
+To build the development versions:
+```
+git clone https://github.com/spack/spack.git
+. ./spack/share/spack/setup-env.sh
+spack env create fenicsx-env
+spack env activate fenicsx-env
+spack add py-fenics-dolfinx@main ^petsc+mumps cflags="-O3" fflags="-O3"
 spack install
 ```
 See the Spack [documentation](https://spack.readthedocs.io/) for
