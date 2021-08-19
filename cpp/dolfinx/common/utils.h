@@ -109,7 +109,7 @@ std::int64_t hash_global(const MPI_Comm comm, const T& x)
 }
 
 // Create new index map on subset of indices in the original map
-std::shared_ptr<const IndexMap>
+std::pair<std::shared_ptr<const IndexMap>, std::vector<std::int64_t>>
 compress_index_map(std::shared_ptr<const IndexMap> map,
                    const xtl::span<const std::int32_t>& indices);
 

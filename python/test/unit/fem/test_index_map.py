@@ -1,4 +1,3 @@
-from IPython import embed
 import dolfinx
 from mpi4py import MPI
 import numpy as np
@@ -17,4 +16,5 @@ for i in range(num_ghosts):
         entities.append(s_l + i)
 
 entities = np.array(entities, dtype=np.int32)
-new_map = dolfinx.cpp.common.compress_index_map(vertex_map, entities)
+new_map, org_glob = dolfinx.cpp.common.compress_index_map(vertex_map, entities)
+print(MPI.COMM_WORLD.rank, new_map.size_local, vertex_map.size_local, org_glob)

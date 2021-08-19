@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "MPICommWrapper.h"
+#include "array.h"
 #include "caster_mpi.h"
 #include "caster_petsc.h"
 #include <complex>
@@ -21,7 +22,6 @@
 #include <pybind11/stl.h>
 #include <string>
 #include <vector>
-
 namespace py = pybind11;
 
 namespace dolfinx_wrappers
@@ -110,10 +110,16 @@ void common(py::module& m)
       .value("user", dolfinx::TimingType::user);
 
   // dolfinx/common free functions
-  m.def("compress_index_map",
-        [](std::shared_ptr<const dolfinx::common::IndexMap> index_map,
-           const py::array_t<std::int32_t, py::array::c_style>& entities)
-        { return dolfinx::common::compress_index_map(index_map, entities); });
+  m.def(
+      "compress_index_map",
+      [](std::shared_ptr<const dolfinx::common::IndexMap> index_map,
+         const py::array_t<std::int32_t, py::array::c_style>& entities)
+      {
+        std::pair<std::shared_ptr<const dolfinx::common::IndexMap>,
+                  std::vector<std::int64_t>>
+            new_map = dolfinx::common::compress_index_map(index_map, entities);
+        return std::pair(new_map.first, as_pyarray(std::move(new_map.second)));
+      });
 
   m.def("timing", &dolfinx::timing);
 
