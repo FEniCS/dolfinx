@@ -62,7 +62,6 @@ def unit_cell(cell_type, random_order=True):
 
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", cpp.mesh.to_string(cell_type), 1))
     mesh = create_mesh(MPI.COMM_WORLD, cells, ordered_points, domain)
-    mesh.topology.create_connectivity_all()
     return mesh
 
 
@@ -123,7 +122,6 @@ def two_unit_cells(cell_type, agree=False, random_order=True, return_order=False
 
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", cpp.mesh.to_string(cell_type), 1))
     mesh = create_mesh(MPI.COMM_WORLD, ordered_cells, ordered_points, domain)
-    mesh.topology.create_connectivity_all()
     if return_order:
         return mesh, order
     return mesh
@@ -140,6 +138,7 @@ def test_facet_integral(cell_type):
         V = FunctionSpace(mesh, ("Lagrange", 2))
         v = Function(V)
 
+        mesh.topology.create_entities(tdim - 1)
         map_f = mesh.topology.index_map(tdim - 1)
         num_facets = map_f.size_local + map_f.num_ghosts
         indices = np.arange(0, num_facets)
@@ -176,11 +175,13 @@ def test_facet_normals(cell_type):
     for count in range(5):
         mesh = unit_cell(cell_type)
         tdim = mesh.topology.dim
+        mesh.topology.create_entities(tdim - 1)
 
         V = VectorFunctionSpace(mesh, ("Lagrange", 1))
         normal = ufl.FacetNormal(mesh)
         v = Function(V)
 
+        mesh.topology.create_entities(tdim - 1)
         map_f = mesh.topology.index_map(tdim - 1)
         num_facets = map_f.size_local + map_f.num_ghosts
         indices = np.arange(0, num_facets)
@@ -431,7 +432,6 @@ def test_curl(space_type, order):
 
         domain = ufl.Mesh(ufl.VectorElement("Lagrange", cpp.mesh.to_string(CellType.tetrahedron), 1))
         mesh = create_mesh(MPI.COMM_WORLD, [cell], points, domain)
-        mesh.topology.create_connectivity_all()
 
         V = FunctionSpace(mesh, (space_type, order))
         v = ufl.TestFunction(V)
