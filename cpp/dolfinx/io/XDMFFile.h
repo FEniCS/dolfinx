@@ -135,7 +135,8 @@ public:
   /// be inserted
   void write_function(const fem::Function<double>& u, double t,
                       const std::string& mesh_xpath
-                      = "/Xdmf/Domain/Grid[@GridType='Uniform'][1]");
+                      = "/Xdmf/Domain/Grid[@GridType='Collection']/"
+                        "Grid[@GridType='Uniform'][1]");
 
   /// Write Function
   /// @param[in] u The Function to write to file
@@ -144,7 +145,8 @@ public:
   /// be inserted
   void write_function(const fem::Function<std::complex<double>>& u, double t,
                       const std::string& mesh_xpath
-                      = "/Xdmf/Domain/Grid[@GridType='Uniform'][1]");
+                      = "/Xdmf/Domain/Grid[@GridType='Collection']/"
+                        "Grid[@GridType='Uniform'][1]");
 
   /// Write MeshTags
   /// @param[in] meshtags
