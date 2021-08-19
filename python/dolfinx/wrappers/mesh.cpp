@@ -150,7 +150,7 @@ void mesh(py::module& m)
          const dolfinx::fem::CoordinateElement& element,
          const py::array_t<double, py::array::c_style>& x,
          dolfinx::mesh::GhostMode ghost_mode,
-         PythonPartitioningFunction partitioner)
+         const PythonPartitioningFunction& partitioner)
       {
         auto partitioner_wrapper
             = [partitioner](
