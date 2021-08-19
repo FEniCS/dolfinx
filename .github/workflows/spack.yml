@@ -30,13 +30,6 @@ jobs:
 
     steps:
 
-      # grub-efi: https://github.com/actions/virtual-environments/issues/1605
-      - name: Install compilers
-        run: |
-          sudo apt-get update
-          sudo apt-get install g++-10 gfortran-10 grub-efi
-        if: matrix.os == 'ubuntu-20.04'
-
       - name: Get Spack
         uses: actions/checkout@v2
         with:
