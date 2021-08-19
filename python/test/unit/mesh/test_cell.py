@@ -89,7 +89,6 @@ def test_volume_quadrilateralR3(coordinates):
     cells = numpy.array([[0, 1, 2, 3]], dtype=numpy.int32)
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", "quadrilateral", 1))
     mesh = create_mesh(MPI.COMM_SELF, cells, x, domain)
-    mesh.topology.create_connectivity_all()
     assert cpp.mesh.volume_entities(mesh, [0], mesh.topology.dim) == 1.0
 
 
@@ -106,7 +105,6 @@ def test_volume_quadrilateral_coplanarity_check_1(scaling):
         cells = numpy.array([[0, 1, 2, 3]], dtype=numpy.int32)
         domain = ufl.Mesh(ufl.VectorElement("Lagrange", "quadrilateral", 1))
         mesh = create_mesh(MPI.COMM_SELF, cells, x, domain)
-        mesh.topology.create_connectivity_all()
         cpp.mesh.volume_entities(mesh, [0], mesh.topology.dim)
 
     assert "Not coplanar" in str(error.value)
@@ -126,7 +124,6 @@ def test_volume_quadrilateral_coplanarity_check_2(scaling):
         cells = numpy.array([[0, 1, 2, 3]], dtype=numpy.int32)
         domain = ufl.Mesh(ufl.VectorElement("Lagrange", "quadrilateral", 1))
         mesh = create_mesh(MPI.COMM_SELF, cells, x, domain)
-        mesh.topology.create_connectivity_all()
         cpp.mesh.volume_entities(mesh, [0], mesh.topology.dim)
 
     assert "Not coplanar" in str(error.value)
