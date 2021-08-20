@@ -40,7 +40,8 @@ class VTKFile(cpp.io.VTKFile):
 
 
 class XDMFFile(cpp.io.XDMFFile):
-    def write_function(self, u, t=0.0, mesh_xpath="/Xdmf/Domain/Grid[@GridType='Uniform'][1]"):
+    def write_function(self, u, t=0.0, mesh_xpath="/Xdmf/Domain/Grid[@GridType='Collection']/"
+                        "Grid[@GridType='Uniform'][1]"):
         u_cpp = getattr(u, "_cpp_object", u)
         super().write_function(u_cpp, t, mesh_xpath)
 

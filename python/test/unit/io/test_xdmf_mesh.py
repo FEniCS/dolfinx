@@ -53,7 +53,7 @@ def test_save_and_load_1d_mesh(tempdir, encoding):
     with XDMFFile(mesh.mpi_comm(), filename, "w", encoding=encoding) as file:
         file.write_mesh(mesh)
     with XDMFFile(MPI.COMM_WORLD, filename, "r", encoding=encoding) as file:
-        mesh2 = file.read_mesh()
+        mesh2 = file.read_mesh(xpath="/Xdmf/Domain/Grid")
     assert mesh.topology.index_map(0).size_global == mesh2.topology.index_map(0).size_global
     assert mesh.topology.index_map(mesh.topology.dim).size_global == mesh2.topology.index_map(
         mesh.topology.dim).size_global
@@ -70,7 +70,7 @@ def test_save_and_load_2d_mesh(tempdir, encoding, cell_type):
         file.write_mesh(mesh)
 
     with XDMFFile(MPI.COMM_WORLD, filename, "r", encoding=encoding) as file:
-        mesh2 = file.read_mesh(name="square")
+        mesh2 = file.read_mesh(name="square", xpath="/Xdmf/Domain/Grid")
 
     assert mesh2.name == mesh.name
     assert mesh.topology.index_map(0).size_global == mesh2.topology.index_map(0).size_global
@@ -87,7 +87,7 @@ def test_save_and_load_3d_mesh(tempdir, encoding, cell_type):
         file.write_mesh(mesh)
 
     with XDMFFile(MPI.COMM_WORLD, filename, "r", encoding=encoding) as file:
-        mesh2 = file.read_mesh()
+        mesh2 = file.read_mesh(xpath="/Xdmf/Domain/Grid")
 
     assert mesh.topology.index_map(0).size_global == mesh2.topology.index_map(0).size_global
     assert mesh.topology.index_map(mesh.topology.dim).size_global == mesh2.topology.index_map(
@@ -138,7 +138,7 @@ def test_read_write_p2_mesh(tempdir, encoding):
     with XDMFFile(mesh.mpi_comm(), filename, "w", encoding=encoding) as xdmf:
         xdmf.write_mesh(mesh)
     with XDMFFile(mesh.mpi_comm(), filename, "r", encoding=encoding) as xdmf:
-        mesh2 = xdmf.read_mesh()
+        mesh2 = xdmf.read_mesh(xpath="/Xdmf/Domain/Grid")
 
     assert mesh.topology.index_map(0).size_global == mesh2.topology.index_map(0).size_global
     assert mesh.topology.index_map(mesh.topology.dim).size_global == mesh2.topology.index_map(
