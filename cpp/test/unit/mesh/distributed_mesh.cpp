@@ -70,8 +70,8 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
   {
     int nparts = mpi_size;
     io::XDMFFile infile(subset_comm, "mesh.xdmf", "r");
-    cells = infile.read_topology_data("mesh");
-    x = infile.read_geometry_data("mesh");
+    cells = infile.read_topology_data("mesh", "Xdmf/Domain/Grid");
+    x = infile.read_geometry_data("mesh", "Xdmf/Domain/Grid");
     auto [data, offsets] = graph::create_adjacency_data(cells);
     const int tdim = mesh::cell_dim(mesh::CellType::triangle);
     dest = partitioner(
