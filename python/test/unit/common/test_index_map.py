@@ -18,20 +18,14 @@ def test_index_map_compression():
     org_ghost_owners = vertex_map.ghost_owner_rank()
 
     # Create an index map where only every third local index is saved
-    num_owned = 0
-    entities = []
-    for i in range(sl):
-        if i % 4 == 0:
-            entities.append(i)
-            num_owned += 1
-    org_global_entities = vertex_map.local_to_global(entities)
+
+    owned_entities = np.arange(0, sl, 4, dtype=np.int32)
+    org_global_entities = vertex_map.local_to_global(owned_entities)
 
     # Add every fourth ghost
-    sub_ghosts = []
-    for i in range(len(org_ghosts)):
-        if i % 4 == 0:
-            entities.append(sl + i)
-            sub_ghosts.append(org_ghosts[i])
+    ghost_pos = np.arange(0, len(org_ghosts), 4, dtype=np.int32)
+    sub_ghosts = org_ghosts[ghost_pos]
+    entities = np.hstack([owned_entities, ghost_pos + sl])
     sub_ghosts = np.array(sub_ghosts, dtype=np.int64)
 
     # Create compressed index map
@@ -41,7 +35,7 @@ def test_index_map_compression():
     # Check that the new map has at least as many indices as the input
     # Might have more due to owned indices on other processes
     new_sl = new_map.size_local
-    assert num_owned <= new_sl
+    assert len(owned_entities) <= new_sl
 
     # Check that output of compression is sensible
     assert len(org_glob) == new_map.size_local + new_map.num_ghosts
