@@ -44,9 +44,7 @@ common::compress_index_map(std::shared_ptr<const IndexMap> map,
       = map->comm(dolfinx::common::IndexMap::Direction::reverse);
   MPI_Comm forward_comm
       = map->comm(dolfinx::common::IndexMap::Direction::forward);
-  std::tuple<std::vector<std::int32_t>, std::vector<std::int32_t>> neighbours
-      = dolfinx::MPI::neighbors(forward_comm);
-  std::vector<std::int32_t>& source_ranks = std::get<0>(neighbours);
+  auto [source_ranks, dest_ranks] = dolfinx::MPI::neighbors(forward_comm);
 
   // Create inverse map of src ranks
   std::unordered_map<std::int32_t, std::int32_t> rank_glob_to_loc;
@@ -95,7 +93,6 @@ common::compress_index_map(std::shared_ptr<const IndexMap> map,
       = dolfinx::MPI::neighbor_all_to_all(reverse_comm, send_ghosts);
 
   // Compute new destination ranks for received ghosts
-  std::vector<std::int32_t>& dest_ranks = std::get<1>(neighbours);
   std::vector<std::int32_t> new_dest_ranks;
   for (std::int32_t i = 0; i < recv_ghosts.num_nodes(); ++i)
     if (recv_ghosts.num_links(i) > 0)
