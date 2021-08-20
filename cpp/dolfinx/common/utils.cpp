@@ -8,8 +8,6 @@
 #include <numeric>
 #include <sstream>
 #include <unordered_map>
-#include <xtensor/xadapt.hpp>
-#include <xtensor/xio.hpp>
 
 using namespace dolfinx;
 using namespace dolfinx::common;
