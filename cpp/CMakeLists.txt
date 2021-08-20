@@ -155,11 +155,10 @@ set_package_properties(PETSc PROPERTIES TYPE REQUIRED
 
 # Check for HDF5
 set(HDF5_PREFER_PARALLEL TRUE)
-set(HDF5_NO_FIND_PACKAGE_CONFIG_FILE TRUE)
 set(HDF5_FIND_DEBUG TRUE)
 find_package(HDF5 REQUIRED COMPONENTS C)
 if (NOT HDF5_IS_PARALLEL)
-  message(FATAL_ERROR "Found serial HDF5 build, MPI HDF5 build required, try setting HDF5_ROOT")
+  message(FATAL_ERROR "Found serial HDF5 build, MPI HDF5 build required, try setting HDF5_DIR or HDF5_ROOT")
 endif()
 set_package_properties(HDF5 PROPERTIES TYPE REQUIRED
   DESCRIPTION "Hierarchical Data Format 5 (HDF5)"
