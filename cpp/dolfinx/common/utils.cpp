@@ -52,8 +52,17 @@ common::compress_index_map(std::shared_ptr<const IndexMap> map,
   const std::int32_t local_size = map->size_local();
   std::vector<std::int32_t> local_indices;
   std::vector<std::int32_t> ghost_indices;
+  const std::int32_t num_local
+      = std::count_if(indices.begin(), indices.end(),
+                      [local_size](int i) { return i < local_size; });
+  local_indices.reserve(num_local);
+  ghost_indices.reserve(indices.size() - num_local);
+
+  // Counter of number of ghosts per process
   std::vector<std::int32_t> num_ghosts(source_ranks.size());
 
+  // Split input indices into local and ghost entities, and count
+  // how many to send to each owner
   for (std::size_t i = 0; i < indices.size(); ++i)
   {
     if (indices[i] < local_size)
