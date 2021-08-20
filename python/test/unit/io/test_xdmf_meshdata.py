@@ -54,9 +54,9 @@ def test_read_mesh_data(tempdir, tdim, n):
         file.write_mesh(mesh)
 
     with XDMFFile(MPI.COMM_WORLD, filename, "r") as file:
-        cell_shape, cell_degree = file.read_cell_type()
-        cells = file.read_topology_data()
-        x = file.read_geometry_data()
+        cell_shape, cell_degree = file.read_cell_type(xpath="/Xdmf/Domain/Grid")
+        cells = file.read_topology_data(xpath="/Xdmf/Domain/Grid")
+        x = file.read_geometry_data(xpath="/Xdmf/Domain/Grid")
 
     assert cell_shape == mesh.topology.cell_type
     assert cell_degree == 1

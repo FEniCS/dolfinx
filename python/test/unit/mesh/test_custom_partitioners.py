@@ -49,13 +49,13 @@ def test_custom_partitioner(tempdir, Nx, cell_type):
 
     # Read all geometry data on all processes
     with XDMFFile(MPI.COMM_SELF, filename, "r") as file:
-        x_global = file.read_geometry_data()
+        x_global = file.read_geometry_data(xpath="/Xdmf/Domain/Grid")
 
     # Read topology data
     with XDMFFile(MPI.COMM_WORLD, filename, "r") as file:
-        cell_shape, cell_degree = file.read_cell_type()
-        x = file.read_geometry_data()
-        topo = file.read_topology_data()
+        cell_shape, cell_degree = file.read_cell_type(xpath="/Xdmf/Domain/Grid")
+        x = file.read_geometry_data(xpath="/Xdmf/Domain/Grid")
+        topo = file.read_topology_data(xpath="/Xdmf/Domain/Grid")
 
     num_local_coor = x.shape[0]
     all_sizes = mpi_comm.allgather(num_local_coor)

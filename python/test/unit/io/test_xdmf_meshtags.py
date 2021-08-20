@@ -63,7 +63,7 @@ def test_3d(tempdir, cell_type, encoding):
         file.write_information("units", "mm")
 
     with XDMFFile(comm, filename, "r", encoding=encoding) as file:
-        mesh_in = file.read_mesh()
+        mesh_in = file.read_mesh(xpath="/Xdmf/Domain/Grid")
         tdim = mesh_in.topology.dim
         mesh_in.topology.create_connectivity(tdim - 1, tdim)
         mesh_in.topology.create_connectivity(1, tdim)
