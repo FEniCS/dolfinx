@@ -155,7 +155,7 @@ common::compress_index_map(std::shared_ptr<const IndexMap> map,
   {
     const std::int32_t src_rank = source_ranks[i];
     auto ghost_data = new_ghosts_adj.links(i);
-    for (std::int32_t j = 0; j < ghost_data.size() / 2; ++j)
+    for (std::size_t j = 0; j < ghost_data.size() / 2; ++j)
     {
       org_global_indices.push_back(ghost_data[2 * j]);
       new_ghosts.push_back(ghost_data[2 * j + 1]);
