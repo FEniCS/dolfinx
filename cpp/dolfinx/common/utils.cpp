@@ -127,8 +127,8 @@ common::compress_index_map(std::shared_ptr<const IndexMap> map,
 
   // For each received ghost, compute new global index
   const std::vector<std::int64_t>& ghost_array = recv_ghosts.array();
-  std::vector<std::int64_t> new_ghosts(sorted_ghosts.size());
-  for (std::size_t i = 0; i < sorted_ghosts.size(); ++i)
+  std::vector<std::int64_t> new_ghosts(ghost_array.size());
+  for (std::size_t i = 0; i < ghost_array.size(); ++i)
   {
     auto idx_it = std::lower_bound(org_global_indices.begin(),
                                    org_global_indices.end(), ghost_array[i]);
@@ -141,6 +141,10 @@ common::compress_index_map(std::shared_ptr<const IndexMap> map,
       new_ghosts, recv_ghosts.offsets());
   dolfinx::graph::AdjacencyList<std::int64_t> new_ghosts_adj
       = dolfinx::MPI::neighbor_all_to_all(forward_comm, send_new_ghosts);
+
+  // Add previous ghosts to global output array
+  for (auto ghost_index : ghost_indices)
+    org_global_indices.push_back(ghosts[ghost_index]);
 
   // Get src ranks for data
   std::vector<std::int32_t> new_src_ranks(new_ghosts_adj.array().size());

@@ -4,23 +4,9 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-from IPython import embed
 import dolfinx
 from mpi4py import MPI
 import numpy as np
-
-
-mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, 8, 8)
-
-for i in range(5):
-    t0 = dolfinx.common.Timer(f"~Test something {i}")
-    V = dolfinx.FunctionSpace(mesh, ("CG", 1))
-    t0.stop()
-dolfinx.common.list_timings(MPI.COMM_WORLD, [dolfinx.common.TimingType.wall])
-
-output = dolfinx.common.timing("~Test something 0")
-embed()
-exit()
 
 
 # def test_index_map_compression():
@@ -54,7 +40,7 @@ ghost_owners = new_map.ghost_owner_rank()
 ghosts = new_map.ghosts
 new_sl = new_map.size_local
 for i in range(len(ghosts)):
-    print(len(org_glob), new_sl)
+    print(len(org_glob), new_sl, new_sl + i)
     #assert(org_glob[new_sl + i] == ghosts[i])
     # print(len(org_glob), new_sl, i, len(ghosts))
     # index = np.argwhere(org_ghosts == ghosts[i])[0, 0]
