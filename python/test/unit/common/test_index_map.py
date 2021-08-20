@@ -24,6 +24,8 @@ def test_index_map_compression():
         if i % 4 == 0:
             entities.append(i)
             num_owned += 1
+    org_global_entities = vertex_map.local_to_global(entities)
+
     # Add every fourth ghost
     sub_ghosts = []
     for i in range(len(org_ghosts)):
@@ -38,15 +40,21 @@ def test_index_map_compression():
 
     # Check that the new map has at least as many indices as the input
     # Might have more due to owned indices on other processes
-    assert(num_owned <= new_map.size_local)
+    new_sl = new_map.size_local
+    assert num_owned <= new_sl
 
     # Check that output of compression is sensible
-    assert(len(org_glob) == new_map.size_local + new_map.num_ghosts)
-    new_sl = new_map.size_local
+    assert len(org_glob) == new_map.size_local + new_map.num_ghosts
+
+    # Check that all original entities are contained in new index map (might be more local entries due to owned
+    # entries being used on ghost processes
+    assert np.isin(org_global_entities, org_glob[:new_sl]).all()
+    assert len(org_global_entities) <= new_sl
 
     # Check that all original ghosts are in the new index map
     # Not necessarily in the same order, as the initial index map does not
     # sort ghosts per process
+    assert len(sub_ghosts) == new_map.num_ghosts
     new_ghosts = org_glob[new_sl:]
     assert np.isin(new_ghosts, sub_ghosts).all()
 
