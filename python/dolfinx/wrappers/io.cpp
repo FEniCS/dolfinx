@@ -93,7 +93,7 @@ void io(py::module& m)
               py::object exc_value, py::object traceback) { self.close(); })
       .def("close", &dolfinx::io::XDMFFile::close)
       .def("write_mesh", &dolfinx::io::XDMFFile::write_mesh, py::arg("mesh"),
-           py::arg("xpath") = "/Xdmf/Domain")
+           py::arg("t") = 0, py::arg("xpath") = "/Xdmf/Domain")
       .def("write_geometry", &dolfinx::io::XDMFFile::write_geometry,
            py::arg("geometry"), py::arg("name") = "geometry",
            py::arg("xpath") = "/Xdmf/Domain")
