@@ -4,6 +4,7 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
+from IPython import embed
 import dolfinx
 from mpi4py import MPI
 import numpy as np
@@ -31,8 +32,10 @@ class MeshView:
         #     f"[{org_vertex_map.local_range[0]}, {org_vertex_map.local_range[1]})\n"
         # out_str += "Parent ghosts: " + f"{org_vertex_map.ghosts}\n"
         vertex_map, glob_map = dolfinx.cpp.common.compress_index_map(org_vertex_map, view_vertices)
+
         # Get original local indices of new index map
         org_local = org_vertex_map.global_to_local(glob_map)
+
         # out_str += f"Child range: [{vertex_map.local_range[0]}, {vertex_map.local_range[1]})\n"
         # out_str += f"Child ghosts {vertex_map.ghosts} \n"
         # out_str += f"Child local to parent global: {glob_map} \n"
@@ -42,6 +45,7 @@ class MeshView:
         old_offset = np.zeros(org_vertex_map.size_local + org_vertex_map.num_ghosts + 1, dtype=np.int32)
         old_data = np.zeros(org_local.size, dtype=np.int32)
         sort_index = np.argsort(org_local)
+
         for index in org_local:
             old_offset[index + 1:] += 1
         for i, index in enumerate(sort_index):
@@ -89,9 +93,12 @@ dim = mesh.topology.dim
 
 cells = dolfinx.mesh.locate_entities(mesh, dim, lambda x: x[0] <= 0.5)
 
+mv_cpp = dolfinx.cpp.mesh.MeshView(mesh, dim, cells)
+
 mv = MeshView(mesh, dim, cells)
 e_to_v = mesh.topology.connectivity(dim, 0)
 e_to_v_new = mv.topology.connectivity(dim, 0)
+e_to_v_cpp = mv_cpp.topology.connectivity(dim, 0)
 
 out_str = f"---{MPI.COMM_WORLD.rank}----\n"
 out_str += f"Cells: {cells}\n"
@@ -108,3 +115,4 @@ for i in range(e_to_v_new.num_nodes):
 print(out_str)
 for i in range(e_to_v_new.num_nodes):
     assert np.allclose(e_to_v.links(mv.child_entity_map[i]), mv.child_vertex_map[e_to_v_new.links(i)])
+    assert np.allclose(e_to_v.links(mv.child_entity_map[i]), mv_c.child_vertex_map[e_to_v_new.links(i)])

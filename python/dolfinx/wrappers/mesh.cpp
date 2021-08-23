@@ -14,6 +14,7 @@
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshTags.h>
+#include <dolfinx/mesh/MeshView.h>
 #include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <dolfinx/mesh/graphbuild.h>
@@ -292,6 +293,28 @@ void mesh(py::module& m)
       .def("ufl_id", &dolfinx::mesh::Mesh::id)
       .def_property_readonly("id", &dolfinx::mesh::Mesh::id)
       .def_readwrite("name", &dolfinx::mesh::Mesh::name);
+
+  // dolfinx::mesh::MeshView class
+  py::class_<dolfinx::mesh::MeshView, std::shared_ptr<dolfinx::mesh::MeshView>>(
+      m, "MeshView", "MeshView object")
+      .def(py::init(
+          [](const std::shared_ptr<const dolfinx::mesh::Mesh> parent_mesh,
+             int dim, py::array_t<std::int32_t, py::array::c_style>& entities)
+          {
+            return dolfinx::mesh::MeshView(
+                parent_mesh, dim,
+                xtl::span(entities.mutable_data(), entities.size()));
+          }))
+      .def_property_readonly(
+          "topology", py::overload_cast<>(&dolfinx::mesh::MeshView::topology),
+          "MeshView topology", py::return_value_policy::reference_internal)
+      .def_property_readonly("dim", &dolfinx::mesh::MeshView::dim)
+      .def_property_readonly("parent_mesh",
+                             &dolfinx::mesh::MeshView::parent_mesh)
+      .def_property_readonly("parent_entities",
+                             &dolfinx::mesh::MeshView::parent_entities)
+      .def_property_readonly("parent_vertices",
+                             &dolfinx::mesh::MeshView::parent_entities);
 
   // dolfinx::mesh::MeshTags
 
