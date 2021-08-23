@@ -37,7 +37,16 @@ public:
   std::shared_ptr<const Mesh> parent_mesh() { return _parent_mesh; };
 
   /// Return map from child entities to parent mesh entities (local to process)
-  std::vector<std::int32_t>& parent_entities() { return _parent_entity_map; }
+  const std::vector<std::int32_t>& parent_entities()
+  {
+    return _parent_entity_map;
+  }
+
+  /// Return map from child vertices to parent mesh vertices (local to process)
+  const std::vector<std::int32_t>& parent_vertices()
+  {
+    return _parent_vertex_map;
+  }
 
 private:
   std::shared_ptr<const Mesh> _parent_mesh;

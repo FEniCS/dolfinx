@@ -115,4 +115,4 @@ for i in range(e_to_v_new.num_nodes):
 print(out_str)
 for i in range(e_to_v_new.num_nodes):
     assert np.allclose(e_to_v.links(mv.child_entity_map[i]), mv.child_vertex_map[e_to_v_new.links(i)])
-    assert np.allclose(e_to_v.links(mv.child_entity_map[i]), mv_c.child_vertex_map[e_to_v_new.links(i)])
+    assert np.allclose(e_to_v.links(mv.child_entity_map[i]), mv_cpp.parent_vertices[e_to_v_cpp.links(i)])

@@ -312,9 +312,21 @@ void mesh(py::module& m)
       .def_property_readonly("parent_mesh",
                              &dolfinx::mesh::MeshView::parent_mesh)
       .def_property_readonly("parent_entities",
-                             &dolfinx::mesh::MeshView::parent_entities)
+                             [](dolfinx::mesh::MeshView& self)
+                             {
+                               const std::vector<std::int32_t>& _data
+                                   = self.parent_entities();
+                               return py::array_t<std::int32_t>(
+                                   _data.size(), _data.data(), py::cast(self));
+                             })
       .def_property_readonly("parent_vertices",
-                             &dolfinx::mesh::MeshView::parent_entities);
+                             [](dolfinx::mesh::MeshView& self)
+                             {
+                               const std::vector<std::int32_t>& _data
+                                   = self.parent_vertices();
+                               return py::array_t<std::int32_t>(
+                                   _data.size(), _data.data(), py::cast(self));
+                             });
 
   // dolfinx::mesh::MeshTags
 
