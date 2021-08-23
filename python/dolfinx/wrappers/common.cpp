@@ -91,6 +91,18 @@ void common(py::module& m)
                  local,
                  xtl::span<std::int64_t>(global.mutable_data(), global.size()));
              return global;
+           })
+      .def("global_to_local",
+           [](const dolfinx::common::IndexMap& self,
+              const py::array_t<std::int64_t, py::array::c_style>& global)
+           {
+             if (global.ndim() != 1)
+               throw std::runtime_error("Array of global indices must be 1D.");
+             py::array_t<std::int32_t> local(global.size());
+             self.global_to_local(
+                 global,
+                 xtl::span<std::int32_t>(local.mutable_data(), local.size()));
+             return local;
            });
 
   // dolfinx::common::Timer
