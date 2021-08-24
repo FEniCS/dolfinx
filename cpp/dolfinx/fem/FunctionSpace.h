@@ -12,6 +12,7 @@
 #include <memory>
 #include <vector>
 #include <xtensor/xtensor.hpp>
+#include <dolfinx/mesh/MeshView.h>
 
 namespace dolfinx::mesh
 {
@@ -35,6 +36,10 @@ public:
   /// @param[in] element The element
   /// @param[in] dofmap The dofmap
   FunctionSpace(std::shared_ptr<const mesh::Mesh> mesh,
+                std::shared_ptr<const fem::FiniteElement> element,
+                std::shared_ptr<const fem::DofMap> dofmap);
+  
+  FunctionSpace(std::shared_ptr<const mesh::MeshView> meshView,
                 std::shared_ptr<const fem::FiniteElement> element,
                 std::shared_ptr<const fem::DofMap> dofmap);
 
@@ -98,6 +103,9 @@ public:
   /// The mesh
   std::shared_ptr<const mesh::Mesh> mesh() const;
 
+  /// The mesh view
+  std::shared_ptr<const mesh::MeshView> mesh_view() const;
+
   /// The finite element
   std::shared_ptr<const fem::FiniteElement> element() const;
 
@@ -107,6 +115,9 @@ public:
 private:
   // The mesh
   std::shared_ptr<const mesh::Mesh> _mesh;
+
+  // The mesh view
+  std::shared_ptr<const mesh::MeshView> _meshView;
 
   // The finite element
   std::shared_ptr<const fem::FiniteElement> _element;

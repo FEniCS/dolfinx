@@ -766,6 +766,9 @@ void fem(py::module& m)
       .def(py::init<std::shared_ptr<dolfinx::mesh::Mesh>,
                     std::shared_ptr<dolfinx::fem::FiniteElement>,
                     std::shared_ptr<dolfinx::fem::DofMap>>())
+      .def(py::init<std::shared_ptr<dolfinx::mesh::MeshView>,
+                    std::shared_ptr<dolfinx::fem::FiniteElement>,
+                    std::shared_ptr<dolfinx::fem::DofMap>>())
       .def_property_readonly("id", &dolfinx::fem::FunctionSpace::id)
       .def("__hash__", &dolfinx::fem::FunctionSpace::id)
       .def("__eq__", &dolfinx::fem::FunctionSpace::operator==)

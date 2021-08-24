@@ -40,7 +40,7 @@ public:
   std::int32_t dim() { return _dim; };
 
   /// Return a pointer to the parent mesh
-  std::shared_ptr<const Mesh> parent_mesh() { return _parent_mesh; };
+  std::shared_ptr<const Mesh> parent_mesh() const { return _parent_mesh; };
 
   /// Return map from child entities to parent mesh entities (local to process)
   const std::vector<std::int32_t>& parent_entities()

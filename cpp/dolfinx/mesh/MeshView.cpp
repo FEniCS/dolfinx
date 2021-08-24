@@ -163,4 +163,4 @@ MeshView::MeshView(const std::shared_ptr<const Mesh> parent_mesh, int dim,
   }
   _geom_dofmap = std::make_shared<graph::AdjacencyList<std::int32_t>>(
       geom_data, geom_offsets);
-};
+}
