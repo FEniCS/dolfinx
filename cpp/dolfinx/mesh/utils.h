@@ -89,21 +89,31 @@ std::vector<std::int32_t> locate_entities_boundary(
     const std::function<xt::xtensor<bool, 1>(const xt::xtensor<double, 2>&)>&
         marker);
 
-/// Compute the indices the geometry data for the vertices of the given
+/// Compute the indices the geometry data for the closure dofs of the given
 /// mesh entities
 ///
 /// @param[in] mesh Mesh
 /// @param[in] dim Topological dimension of the entities of interest
 /// @param[in] entity_list List of entity indices (local)
-/// @param[in] orient If true, in 3D, reorients facets to have
-/// consistent normal direction
-/// @return Indices in the geometry array for the mesh entity vertices, i.e.
-/// indices(i, j) is the position in the geometry array of the j-th vertex of
-/// the entity entity_list[i].
+/// @return Indices in the geometry array for the mesh entity closure dofs, i.e.
+/// indices(i, j) is the position in the geometry array of the j-th closure dof
+/// of the entity entity_list[i].
 xt::xtensor<std::int32_t, 2>
 entities_to_geometry(const mesh::Mesh& mesh, int dim,
-                     const xtl::span<const std::int32_t>& entity_list,
-                     bool orient);
+                     const xtl::span<const std::int32_t>& entity_list);
+
+/// Given the geometry indices for a set of facets of a first order tetrahedral
+/// mesh, reorient these facets to have consistent normal direction
+/// @param[in] mesh Mesh
+/// @param[in] dim Topological dimension of the entities of interest
+/// @param[in] entity_list List of entity indices (local)
+/// @param[in, out] geometry_entities Indices of the geoemtry array for the mesh
+/// entity closure dofs, i.e. indices(i, j) is the position in the geometry
+/// array of the j-th vertex of the entity entity_list[i].
+void reorient_tetrahedral_facet_geometry(
+    const mesh::Mesh& mesh, int dim,
+    const xtl::span<const std::int32_t>& entity_list,
+    xt::xtensor<std::int32_t, 2>& geometry_entities);
 
 /// Compute the indices (local) of all exterior facets. An exterior facet
 /// (co-dimension 1) is one that is connected globally to only one cell of

@@ -348,12 +348,10 @@ void mesh(py::module& m)
 
   m.def("entities_to_geometry",
         [](const dolfinx::mesh::Mesh& mesh, int dim,
-           py::array_t<std::int32_t, py::array::c_style> entity_list,
-           bool orient)
+           py::array_t<std::int32_t, py::array::c_style> entity_list)
         {
           return xt_as_pyarray(dolfinx::mesh::entities_to_geometry(
-              mesh, dim, xtl::span(entity_list.data(), entity_list.size()),
-              orient));
+              mesh, dim, xtl::span(entity_list.data(), entity_list.size())));
         });
   m.def("exterior_facet_indices", &dolfinx::mesh::exterior_facet_indices);
 }

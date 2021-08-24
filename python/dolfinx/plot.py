@@ -70,9 +70,9 @@ def create_vtk_topology(mesh: cpp.mesh.Mesh, dim: int, entities=None):
     else:
         num_cells = len(entities)
 
-    # Get the indices in the geometry array that correspong to the
+    # Get the indices in the geometry array that corresponding to the
     # topology vertices
-    geometry_entities = cpp.mesh.entities_to_geometry(mesh, dim, entities, False)
+    geometry_entities = cpp.mesh.entities_to_geometry(mesh, dim, entities)
 
     # Array holding the cell type (shape) for each cell
     e_type = cpp.mesh.cell_entity_type(mesh.topology.cell_type, dim)

@@ -46,7 +46,7 @@ compute_bbox_of_entity(const mesh::Mesh& mesh, int dim, std::int32_t index)
   // FIXME: return of small dynamic array is expensive
   const std::array<std::int32_t, 1> entity = {index};
   const xt::xtensor<std::int32_t, 2> vertex_indices
-      = mesh::entities_to_geometry(mesh, dim, entity, false);
+      = mesh::entities_to_geometry(mesh, dim, entity);
   auto entity_vertices = xt::row(vertex_indices, 0);
 
   std::array<std::array<double, 3>, 2> b;
