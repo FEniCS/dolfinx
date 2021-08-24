@@ -375,22 +375,17 @@ class FunctionSpace(ufl.FunctionSpace):
             return
         
         if isinstance(mesh_object, cpp.mesh.MeshView):
-            # TODO Fix for facet spaces
-            ufl_domain = mesh_object.parent_mesh.ufl_domain()
-            ufl_cell = mesh_object.parent_mesh.ufl_cell()
             mpi_comm = mesh_object.parent_mesh.mpi_comm()
         else:
-            ufl_domain = mesh_object.ufl_domain()
-            ufl_cell = mesh_object.ufl_cell()
             mpi_comm = mesh_object.mpi_comm()
 
         # Initialise the ufl.FunctionSpace
         if isinstance(element, ufl.FiniteElementBase):
-            super().__init__(ufl_domain, element)
+            super().__init__(mesh_object.ufl_domain(), element)
         else:
             e = ElementMetaData(*element)
-            ufl_element = ufl.FiniteElement(e.family, ufl_cell, e.degree, form_degree=e.form_degree)
-            super().__init__(ufl_domain, ufl_element)
+            ufl_element = ufl.FiniteElement(e.family, mesh_object.ufl_cell(), e.degree, form_degree=e.form_degree)
+            super().__init__(mesh_object.ufl_domain(), ufl_element)
 
         # Compile dofmap and element and create DOLFIN objects
         (self._ufc_element, self._ufc_dofmap), module, code = jit.ffcx_jit(

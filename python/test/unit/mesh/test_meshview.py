@@ -8,6 +8,7 @@ from IPython import embed
 import dolfinx
 from mpi4py import MPI
 import numpy as np
+import ufl
 
 
 class MeshView:
@@ -119,23 +120,43 @@ def test_meshview():
 
 
 # def test_meshview_facets():
+# mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, 4, 2)
+# dim = mesh.topology.dim - 1
+
+# facets = dolfinx.mesh.locate_entities_boundary(mesh, dim, lambda x: x[0] <= 0.5)
+
+# mv_cpp = dolfinx.cpp.mesh.MeshView(mesh, dim, facets)
+# child_dofmap = mv_cpp.geometry_dofmap
+# parent_facets = mv_cpp.parent_entities
+# e_to_c = mesh.topology.connectivity(dim, mesh.topology.dim)
+# c_to_e = mesh.topology.connectivity(mesh.topology.dim, dim)
+# parent_dofmap = mesh.geometry.dofmap
+# for i, facet in enumerate(parent_facets):
+#     p_cells = e_to_c.links(facet)
+#     cell = p_cells[0]
+#     p_facets = c_to_e.links(cell)
+#     local_index = np.flatnonzero(p_facets == facet)
+#     x_dofs = parent_dofmap.links(cell)
+#     e_dofs = mesh.geometry.cmap.dof_layout.entity_closure_dofs(dim, local_index)
+#     print(i, facet, x_dofs[e_dofs], ":", child_dofmap.links(i))
+
+
+# TODO Add test
 mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, 4, 2)
+
+# dim = mesh.topology.dim
+# entities = dolfinx.mesh.locate_entities(mesh, dim, lambda x: x[0] <= 0.5)
+
 dim = mesh.topology.dim - 1
+entities = dolfinx.mesh.locate_entities_boundary(mesh, dim, lambda x: x[0] <= 0.5)
 
-facets = dolfinx.mesh.locate_entities_boundary(mesh, dim, lambda x: x[0] <= 0.5)
+mv_cpp = dolfinx.cpp.mesh.MeshView(mesh, dim, entities)
 
-mv_cpp = dolfinx.cpp.mesh.MeshView(mesh, dim, facets)
-child_dofmap = mv_cpp.geometry_dofmap
-parent_facets = mv_cpp.parent_entities
-e_to_c = mesh.topology.connectivity(dim, mesh.topology.dim)
-c_to_e = mesh.topology.connectivity(mesh.topology.dim, dim)
-parent_dofmap = mesh.geometry.dofmap
-for i, facet in enumerate(parent_facets):
-    p_cells = e_to_c.links(facet)
-    cell = p_cells[0]
-    p_facets = c_to_e.links(cell)
-    local_index = np.flatnonzero(p_facets == facet)
-    x_dofs = parent_dofmap.links(cell)
-    e_dofs = mesh.geometry.cmap.dof_layout.entity_closure_dofs(dim, local_index)
-    print(i, facet, x_dofs[e_dofs], ":", child_dofmap.links(i))
-embed()
+# TODO Get degree from mesh
+ufl_domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell=dolfinx.cpp.mesh.to_string(mv_cpp.topology.cell_type), degree=1, dim=mesh.geometry.dim))
+ufl_cell = ufl.Cell(mv_cpp.topology.cell_name(), geometric_dimension=mesh.geometry.dim)
+
+# TODO Attach ufl_domain and ufl_cell to mv_cpp
+
+V = dolfinx.FunctionSpace(mv_cpp, ("Lagrange", 1))
+print(V.dofmap.list)
