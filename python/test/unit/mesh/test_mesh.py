@@ -341,9 +341,6 @@ def xtest_mesh_topology_against_basix(mesh_factory, ghost_mode):
     cell_name = cpp.mesh.to_string(mesh.topology.cell_type)
     basix_celltype = getattr(basix.CellType, cell_name)
 
-    # Initialize all mesh entities and connectivities
-    mesh.topology.create_connectivity_all()
-
     map = mesh.topology.index_map(mesh.topology.dim)
     num_cells = map.size_local + map.num_ghosts
     for i in range(num_cells):
