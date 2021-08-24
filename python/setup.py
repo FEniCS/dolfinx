@@ -17,7 +17,7 @@ REQUIREMENTS = [
     "numpy",
     "mpi4py",
     "petsc4py",
-    "fenics-ffcx>=0.1.0,<0.2.0",
+    "fenics-ffcx>=0.3.0,<0.4.0",
     "fenics-ufl>=2021.1.0,<2021.2.0"
 ]
 
