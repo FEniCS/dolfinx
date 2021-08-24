@@ -48,6 +48,7 @@ ARG PETSC_VERSION=3.15.2
 ARG SLEPC_VERSION=3.15.1
 ARG ADIOS2_VERSION=2.7.1
 ARG PYVISTA_VERSION=0.31.3
+ARG NUMPY_VERSION=1.20.3
 ARG KAHIP_VERSION=3.11
 ARG XTENSOR_VERSION=0.23.10
 ARG XTENSOR_BLAS_VERSION=0.19.1
@@ -65,6 +66,7 @@ ARG PETSC_VERSION
 ARG SLEPC_VERSION
 ARG ADIOS2_VERSION
 ARG KAHIP_VERSION
+ARG NUMPY_VERSION
 ARG XTENSOR_VERSION
 ARG XTENSOR_BLAS_VERSION
 ARG XTL_VERSION
@@ -148,7 +150,7 @@ RUN LLVM_CONFIG=/usr/bin/llvm-config-9 pip3 install --no-cache-dir mpi4py numba 
 
 # Upgrade numpy via pip. Exclude binaries to avoid conflicts with libblas
 # (See issue #126 and #1305)
-RUN pip3 install --no-cache-dir --no-binary="numpy" numpy --upgrade
+RUN pip3 install --no-cache-dir --no-binary="numpy" numpy==${NUMPY_VERSION} --upgrade
 
 # Install xtl, xtensor, xtensor-blas.
 RUN git clone -b ${XTL_VERSION} --single-branch https://github.com/xtensor-stack/xtl.git && \
