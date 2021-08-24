@@ -86,33 +86,56 @@ class MeshView:
         self.child_entity_map = local_cells
 
 
-# def test_meshview():
-mesh = dolfinx.UnitCubeMesh(MPI.COMM_WORLD, 4, 2, 3)
-# mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, 4, 2)
-dim = mesh.topology.dim
+def test_meshview():
+    mesh = dolfinx.UnitCubeMesh(MPI.COMM_WORLD, 4, 2, 3)
+    # mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, 4, 2)
+    dim = mesh.topology.dim
 
-cells = dolfinx.mesh.locate_entities(mesh, dim, lambda x: x[0] <= 0.5)
+    cells = dolfinx.mesh.locate_entities(mesh, dim, lambda x: x[0] <= 0.5)
 
-mv_cpp = dolfinx.cpp.mesh.MeshView(mesh, dim, cells)
+    mv_cpp = dolfinx.cpp.mesh.MeshView(mesh, dim, cells)
 
-mv = MeshView(mesh, dim, cells)
-e_to_v = mesh.topology.connectivity(dim, 0)
-e_to_v_new = mv.topology.connectivity(dim, 0)
-e_to_v_cpp = mv_cpp.topology.connectivity(dim, 0)
+    mv = MeshView(mesh, dim, cells)
+    e_to_v = mesh.topology.connectivity(dim, 0)
+    e_to_v_new = mv.topology.connectivity(dim, 0)
+    e_to_v_cpp = mv_cpp.topology.connectivity(dim, 0)
 
-out_str = f"---{MPI.COMM_WORLD.rank}----\n"
-out_str += f"Cells: {cells}\n"
-out_str += f"Child->Parent vertex map {mv.child_vertex_map}"
-out_str += "---Org---\n"
-for cell in range(mesh.topology.index_map(dim).size_local + mesh.topology.index_map(dim).num_ghosts):
-    out_str += f"{cell}, {e_to_v.links(cell)}\n"
-out_str += "---new---\n"
-for i in range(e_to_v_new.num_nodes):
-    out_str += f"{i}, {e_to_v_new.links(i)}\n"
-out_str += "---new mapped---\n"
-for i in range(e_to_v_new.num_nodes):
-    out_str += f"{mv.child_entity_map[i]}, {mv.child_vertex_map[e_to_v_new.links(i)]}\n"
-print(out_str)
-for i in range(e_to_v_new.num_nodes):
-    assert np.allclose(e_to_v.links(mv.child_entity_map[i]), mv.child_vertex_map[e_to_v_new.links(i)])
-    assert np.allclose(e_to_v.links(mv.child_entity_map[i]), mv_cpp.parent_vertices[e_to_v_cpp.links(i)])
+    out_str = f"---{MPI.COMM_WORLD.rank}----\n"
+    out_str += f"Cells: {cells}\n"
+    out_str += f"Child->Parent vertex map {mv.child_vertex_map}"
+    out_str += "---Org---\n"
+    for cell in range(mesh.topology.index_map(dim).size_local + mesh.topology.index_map(dim).num_ghosts):
+        out_str += f"{cell}, {e_to_v.links(cell)}\n"
+    out_str += "---new---\n"
+    for i in range(e_to_v_new.num_nodes):
+        out_str += f"{i}, {e_to_v_new.links(i)}\n"
+    out_str += "---new mapped---\n"
+    for i in range(e_to_v_new.num_nodes):
+        out_str += f"{mv.child_entity_map[i]}, {mv.child_vertex_map[e_to_v_new.links(i)]}\n"
+    print(out_str)
+    for i in range(e_to_v_new.num_nodes):
+        assert np.allclose(e_to_v.links(mv.child_entity_map[i]), mv.child_vertex_map[e_to_v_new.links(i)])
+        assert np.allclose(e_to_v.links(mv.child_entity_map[i]), mv_cpp.parent_vertices[e_to_v_cpp.links(i)])
+
+
+# def test_meshview_facets():
+mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, 4, 2)
+dim = mesh.topology.dim - 1
+
+facets = dolfinx.mesh.locate_entities_boundary(mesh, dim, lambda x: x[0] <= 0.5)
+
+mv_cpp = dolfinx.cpp.mesh.MeshView(mesh, dim, facets)
+child_dofmap = mv_cpp.geometry_dofmap
+parent_facets = mv_cpp.parent_entities
+e_to_c = mesh.topology.connectivity(dim, mesh.topology.dim)
+c_to_e = mesh.topology.connectivity(mesh.topology.dim, dim)
+parent_dofmap = mesh.geometry.dofmap
+for i, facet in enumerate(parent_facets):
+    p_cells = e_to_c.links(facet)
+    cell = p_cells[0]
+    p_facets = c_to_e.links(cell)
+    local_index = np.flatnonzero(p_facets == facet)
+    x_dofs = parent_dofmap.links(cell)
+    e_dofs = mesh.geometry.cmap.dof_layout.entity_closure_dofs(dim, local_index)
+    print(i, facet, x_dofs[e_dofs], ":", child_dofmap.links(i))
+embed()

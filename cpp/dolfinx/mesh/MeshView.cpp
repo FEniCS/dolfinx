@@ -8,7 +8,6 @@
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/sort.h>
 #include <dolfinx/common/utils.h>
-#include <dolfinx/graph/AdjacencyList.h>
 
 using namespace dolfinx;
 using namespace dolfinx::mesh;
@@ -112,4 +111,56 @@ MeshView::MeshView(const std::shared_ptr<const Mesh> parent_mesh, int dim,
   _topology->set_index_map(_dim, entity_map);
   _topology->set_connectivity(v_to_v, 0, 0);
   _topology->set_connectivity(e_to_v_child, _dim, 0);
+
+  // Create geometry dofmap
+  const mesh::Geometry& parent_geom = _parent_mesh->geometry();
+  const graph::AdjacencyList<std::int32_t>& parent_dofmap
+      = parent_geom.dofmap();
+
+  fem::ElementDofLayout layout = parent_geom.cmap().dof_layout();
+  std::vector<std::int32_t> geom_data;
+  geom_data.reserve(entities.size() * layout.num_entity_dofs(dim));
+  std::vector<std::int32_t> geom_offsets = {0};
+  geom_offsets.reserve(entities.size() + 1);
+
+  const int parent_tdim = parent_topology.dim();
+  parent_topology.create_connectivity(dim, parent_tdim);
+  auto e_to_c = parent_topology.connectivity(dim, parent_tdim);
+  auto c_to_e = parent_topology.connectivity(parent_tdim, dim);
+  assert(e_to_c);
+  assert(c_to_e);
+  if (dim == parent_tdim)
+  {
+
+    for (auto entity : _parent_entity_map)
+    {
+      auto x_dofs = parent_dofmap.links(entity);
+      geom_data.insert(geom_data.end(), x_dofs.begin(), x_dofs.end());
+    }
+    geom_offsets.push_back(geom_data.size());
+  }
+  else
+  {
+    // Create geometry pointing to mesh geometry for set of sub-entities
+    for (auto entity : _parent_entity_map)
+    {
+      // Find what local index entity has for parent cell
+      auto parent_cells = e_to_c->links(entity);
+      assert(parent_cells.size() > 0);
+      const std::int32_t cell = parent_cells[0];
+      auto parent_facets = c_to_e->links(cell);
+      auto it = std::find(parent_facets.begin(), parent_facets.end(), entity);
+      assert(it != parent_facets.end());
+      const int local_facet = std::distance(parent_facets.begin(), it);
+
+      auto x_dofs = parent_dofmap.links(cell);
+      std::vector<int32_t> entity_dofs
+          = layout.entity_closure_dofs(dim, local_facet);
+      for (auto e_dof : entity_dofs)
+        geom_data.push_back(x_dofs[e_dof]);
+      geom_offsets.push_back(geom_data.size());
+    }
+  }
+  _geom_dofmap = std::make_shared<graph::AdjacencyList<std::int32_t>>(
+      geom_data, geom_offsets);
 };

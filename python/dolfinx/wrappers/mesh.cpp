@@ -326,7 +326,9 @@ void mesh(py::module& m)
                                    = self.parent_vertices();
                                return py::array_t<std::int32_t>(
                                    _data.size(), _data.data(), py::cast(self));
-                             });
+                             })
+      .def_property_readonly("geometry_dofmap",
+                             &dolfinx::mesh::MeshView::geometry_dofmap);
 
   // dolfinx::mesh::MeshTags
 
