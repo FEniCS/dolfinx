@@ -141,22 +141,33 @@ def test_meshview():
 #     print(i, facet, x_dofs[e_dofs], ":", child_dofmap.links(i))
 
 
-# TODO Add test
+# TODO Add test for cell and facet dofmap
 mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, 4, 2)
 
 # dim = mesh.topology.dim
 # entities = dolfinx.mesh.locate_entities(mesh, dim, lambda x: x[0] <= 0.5)
 
 dim = mesh.topology.dim - 1
-entities = dolfinx.mesh.locate_entities_boundary(mesh, dim, lambda x: x[0] <= 0.5)
+entities = dolfinx.mesh.locate_entities_boundary(mesh, dim,
+                                                 lambda x: x[0] <= 0.5)
+
+
+def ufl_cell(self):
+    return ufl.Cell(self.topology.cell_name(),
+                    geometric_dimension=self.parent_mesh.geometry.dim)
+
+
+def ufl_domain(self):
+    # TODO Get degree from mesh
+    # NOTE dim here is the
+    return ufl.Mesh(ufl.VectorElement("Lagrange", cell=self.ufl_cell(),
+                                      degree=1, dim=mesh.geometry.dim))
+
+
+dolfinx.cpp.mesh.MeshView.ufl_cell = ufl_cell
+dolfinx.cpp.mesh.MeshView.ufl_domain = ufl_domain
 
 mv_cpp = dolfinx.cpp.mesh.MeshView(mesh, dim, entities)
-
-# TODO Get degree from mesh
-ufl_domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell=dolfinx.cpp.mesh.to_string(mv_cpp.topology.cell_type), degree=1, dim=mesh.geometry.dim))
-ufl_cell = ufl.Cell(mv_cpp.topology.cell_name(), geometric_dimension=mesh.geometry.dim)
-
-# TODO Attach ufl_domain and ufl_cell to mv_cpp
 
 V = dolfinx.FunctionSpace(mv_cpp, ("Lagrange", 1))
 print(V.dofmap.list)
