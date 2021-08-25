@@ -7,7 +7,6 @@
 import dolfinx
 from mpi4py import MPI
 import numpy as np
-import ufl
 
 
 def test_meshview():

@@ -1,3 +1,9 @@
+# Copyright (C) 2021 Joseph P. Dean
+#
+# This file is part of DOLFINx (https://www.fenicsproject.org)
+#
+# SPDX-License-Identifier:    LGPL-3.0-or-later
+
 # FIXME This seems a bit of a hack
 import ufl
 import dolfinx
@@ -10,7 +16,6 @@ def ufl_cell(self):
 
 def ufl_domain(self):
     # TODO Get degree from mesh
-    # NOTE dim here is the
     return ufl.Mesh(ufl.VectorElement("Lagrange", cell=self.ufl_cell(),
                                       degree=1,
                                       dim=self.parent_mesh.geometry.dim))
