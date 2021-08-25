@@ -39,6 +39,10 @@ public:
                 std::shared_ptr<const fem::FiniteElement> element,
                 std::shared_ptr<const fem::DofMap> dofmap);
   
+  /// Create function space for given mesh, element and dofmap
+  /// @param[in] mesh_view The mesh view
+  /// @param[in] element The element
+  /// @param[in] dofmap The dofmap
   FunctionSpace(std::shared_ptr<const mesh::MeshView> mesh_view,
                 std::shared_ptr<const fem::FiniteElement> element,
                 std::shared_ptr<const fem::DofMap> dofmap);
