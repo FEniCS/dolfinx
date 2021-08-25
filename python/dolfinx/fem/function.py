@@ -357,7 +357,7 @@ class FunctionSpace(ufl.FunctionSpace):
     """A space on which Functions (fields) can be defined."""
 
     def __init__(self,
-                 mesh: cpp.mesh.Mesh,
+                 mesh_object: typing.Union[cpp.mesh.Mesh, cpp.mesh.MeshView],
                  element: typing.Union[ufl.FiniteElementBase, ElementMetaData],
                  cppV: typing.Optional[cpp.fem.FunctionSpace] = None,
                  form_compiler_parameters: dict = {},
@@ -366,33 +366,39 @@ class FunctionSpace(ufl.FunctionSpace):
 
         # Create function space from a UFL element and existing cpp
         # FunctionSpace
+        # FIXME Probably needs fixing for MeshView
         if cppV is not None:
-            assert mesh is None
+            assert mesh_object is None
             ufl_domain = cppV.mesh.ufl_domain()
             super().__init__(ufl_domain, element)
             self._cpp_object = cppV
             return
 
+        if isinstance(mesh_object, cpp.mesh.MeshView):
+            mpi_comm = mesh_object.parent_mesh.mpi_comm()
+        else:
+            mpi_comm = mesh_object.mpi_comm()
+
         # Initialise the ufl.FunctionSpace
         if isinstance(element, ufl.FiniteElementBase):
-            super().__init__(mesh.ufl_domain(), element)
+            super().__init__(mesh_object.ufl_domain(), element)
         else:
             e = ElementMetaData(*element)
-            ufl_element = ufl.FiniteElement(e.family, mesh.ufl_cell(), e.degree, form_degree=e.form_degree)
-            super().__init__(mesh.ufl_domain(), ufl_element)
+            ufl_element = ufl.FiniteElement(e.family, mesh_object.ufl_cell(), e.degree, form_degree=e.form_degree)
+            super().__init__(mesh_object.ufl_domain(), ufl_element)
 
         # Compile dofmap and element and create DOLFIN objects
         (self._ufc_element, self._ufc_dofmap), module, code = jit.ffcx_jit(
-            mesh.mpi_comm(), self.ufl_element(), form_compiler_parameters=form_compiler_parameters,
+            mpi_comm, self.ufl_element(), form_compiler_parameters=form_compiler_parameters,
             jit_parameters=jit_parameters)
 
         ffi = cffi.FFI()
         cpp_element = cpp.fem.FiniteElement(ffi.cast("uintptr_t", ffi.addressof(self._ufc_element)))
-        cpp_dofmap = cpp.fem.create_dofmap(mesh.mpi_comm(), ffi.cast(
-            "uintptr_t", ffi.addressof(self._ufc_dofmap)), mesh.topology, cpp_element)
+        cpp_dofmap = cpp.fem.create_dofmap(mpi_comm, ffi.cast(
+            "uintptr_t", ffi.addressof(self._ufc_dofmap)), mesh_object.topology, cpp_element)
 
         # Initialize the cpp.FunctionSpace
-        self._cpp_object = cpp.fem.FunctionSpace(mesh, cpp_element, cpp_dofmap)
+        self._cpp_object = cpp.fem.FunctionSpace(mesh_object, cpp_element, cpp_dofmap)
 
     def clone(self) -> "FunctionSpace":
         """Return a new FunctionSpace :math:`W` which shares data with this
