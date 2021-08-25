@@ -136,8 +136,8 @@ MeshView::MeshView(const std::shared_ptr<const Mesh> parent_mesh, int dim,
     {
       auto x_dofs = parent_dofmap.links(entity);
       geom_data.insert(geom_data.end(), x_dofs.begin(), x_dofs.end());
+      geom_offsets.push_back(geom_data.size());
     }
-    geom_offsets.push_back(geom_data.size());
   }
   else
   {
