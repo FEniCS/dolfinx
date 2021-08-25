@@ -117,8 +117,8 @@ entities_to_vertex_geometry(const mesh::Mesh& mesh, int dim,
 /// Given a set of facets on a tetrahedral mesh, return the geometry indices of
 /// each facet with a consistent normal orientation.
 /// @param[in] mesh Mesh
-/// @param[in] entity_list List of facets (local)
-/// @param[in, out] geometry_entities Indices in the geometry array for the mesh
+/// @param[in] facets List of facets (local)
+/// @return Indices in the geometry array for the mesh
 /// entity vertices, i.e. indices(i, j) is the position in the geometry array of
 /// the j-th vertex of the facet facets[i].
 xt::xtensor<std::int32_t, 2> oriented_tetrahedral_facet_vertex_geometry(
