@@ -139,19 +139,3 @@ def test_meshview():
 #     x_dofs = parent_dofmap.links(cell)
 #     e_dofs = mesh.geometry.cmap.dof_layout.entity_closure_dofs(dim, local_index)
 #     print(i, facet, x_dofs[e_dofs], ":", child_dofmap.links(i))
-
-
-# TODO Add test for cell and facet dofmap
-mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, 4, 2)
-
-# dim = mesh.topology.dim
-# entities = dolfinx.mesh.locate_entities(mesh, dim, lambda x: x[0] <= 0.5)
-
-dim = mesh.topology.dim - 1
-entities = dolfinx.mesh.locate_entities_boundary(mesh, dim,
-                                                 lambda x: x[0] <= 0.5)
-
-mv_cpp = dolfinx.cpp.mesh.MeshView(mesh, dim, entities)
-
-V = dolfinx.FunctionSpace(mv_cpp, ("Lagrange", 1))
-print(V.dofmap.list)
