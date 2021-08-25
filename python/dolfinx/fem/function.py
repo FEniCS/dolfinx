@@ -373,7 +373,7 @@ class FunctionSpace(ufl.FunctionSpace):
             super().__init__(ufl_domain, element)
             self._cpp_object = cppV
             return
-        
+
         if isinstance(mesh_object, cpp.mesh.MeshView):
             mpi_comm = mesh_object.parent_mesh.mpi_comm()
         else:
