@@ -535,7 +535,7 @@ xt::xtensor<std::int32_t, 2> mesh::oriented_tetrahedral_facet_vertex_geometry(
       std::swap(entity_geometry(i, 1), entity_geometry(i, 2));
   }
   return entity_geometry;
-};
+}
 //------------------------------------------------------------------------
 std::vector<std::int32_t> mesh::exterior_facet_indices(const Mesh& mesh)
 {
