@@ -438,7 +438,6 @@ xt::xtensor<std::int32_t, 2> mesh::entities_to_vertex_geometry(
       {entity_list.size(), num_entity_vertices});
 
   const mesh::Geometry& geometry = mesh.geometry();
-  const xt::xtensor<double, 2>& geom_dofs = geometry.x();
   const mesh::Topology& topology = mesh.topology();
 
   const int tdim = topology.dim();
