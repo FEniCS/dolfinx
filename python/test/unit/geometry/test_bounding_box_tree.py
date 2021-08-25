@@ -60,13 +60,13 @@ def find_colliding_cells(mesh, bbox):
     points = mesh.geometry.x
     bounding_box = expand_bbox(bbox)
     for cell in range(num_cells):
-        vertex_coords = points[x_indices[cell]]
-        bbox_cell = numpy.array([vertex_coords[0], vertex_coords[0]])
+        node_coords = points[x_indices[cell]]
+        bbox_cell = numpy.array([node_coords[0], node_coords[0]])
         # Create bounding box for cell
-        for i in range(1, vertex_coords.shape[0]):
+        for i in range(1, node_coords.shape[0]):
             for j in range(3):
-                bbox_cell[0, j] = min(bbox_cell[0, j], vertex_coords[i, j])
-                bbox_cell[1, j] = max(bbox_cell[1, j], vertex_coords[i, j])
+                bbox_cell[0, j] = min(bbox_cell[0, j], node_coords[i, j])
+                bbox_cell[1, j] = max(bbox_cell[1, j], node_coords[i, j])
         distance = compute_distance_gjk(expand_bbox(bbox_cell), bounding_box)
         if numpy.dot(distance, distance) < 1e-16:
             colliding_cells.append(cell)
@@ -148,7 +148,7 @@ def test_compute_collisions_point_1d():
     assert len(entities) == 1
 
     # Get the vertices of the geometry
-    geom_entities = cpp.mesh.entities_to_geometry(mesh, tdim, entities)[0]
+    geom_entities = cpp.mesh.entities_to_vertex_geometry(mesh, tdim, entities)[0]
     x = mesh.geometry.x
     cell_vertices = x[geom_entities]
     # Check that we get the cell with correct vertices

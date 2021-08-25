@@ -102,18 +102,27 @@ xt::xtensor<std::int32_t, 2>
 entities_to_geometry(const mesh::Mesh& mesh, int dim,
                      const xtl::span<const std::int32_t>& entity_list);
 
-/// Given the geometry indices for a set of facets of a first order tetrahedral
-/// mesh, reorient these facets to have consistent normal direction
+/// Compute the indices the geometry data for the vertices of the given
+/// mesh entities
 /// @param[in] mesh Mesh
 /// @param[in] dim Topological dimension of the entities of interest
 /// @param[in] entity_list List of entity indices (local)
-/// @param[in, out] geometry_entities Indices of the geoemtry array for the mesh
-/// entity closure dofs, i.e. indices(i, j) is the position in the geometry
-/// array of the j-th vertex of the entity entity_list[i].
-void reorient_tetrahedral_facet_geometry(
-    const mesh::Mesh& mesh, int dim,
-    const xtl::span<const std::int32_t>& entity_list,
-    xt::xtensor<std::int32_t, 2>& geometry_entities);
+/// @return Indices in the geometry array for the mesh entity vertices, i.e.
+/// indices(i, j) is the position in the geometry array of the j-th vertex of
+/// the entity entity_list[i].
+xt::xtensor<std::int32_t, 2>
+entities_to_vertex_geometry(const mesh::Mesh& mesh, int dim,
+                            const xtl::span<const std::int32_t>& entity_list);
+
+/// Given a set of facets on a tetrahedral mesh, return the geometry indices of
+/// each facet with a consistent normal orientation.
+/// @param[in] mesh Mesh
+/// @param[in] entity_list List of facets (local)
+/// @param[in, out] geometry_entities Indices in the geometry array for the mesh
+/// entity vertices, i.e. indices(i, j) is the position in the geometry array of
+/// the j-th vertex of the facet facets[i].
+xt::xtensor<std::int32_t, 2> oriented_tetrahedral_facet_vertex_geometry(
+    const mesh::Mesh& mesh, const xtl::span<const std::int32_t>& facets);
 
 /// Compute the indices (local) of all exterior facets. An exterior facet
 /// (co-dimension 1) is one that is connected globally to only one cell of

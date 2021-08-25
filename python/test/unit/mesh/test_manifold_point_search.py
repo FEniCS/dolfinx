@@ -25,7 +25,7 @@ def test_manifold_point_search():
     cell = cpp.geometry.select_colliding_cells(mesh, cell_candidates, p, 1)
 
     # Extract vertices of cell
-    top_indices = cpp.mesh.entities_to_geometry(mesh, tdim, [cell])
+    top_indices = cpp.mesh.entities_to_vertex_geometry(mesh, tdim, [cell])
     cell_vertices = x[top_indices]
 
     # Compare vertices with input (should be in cell 0)
@@ -37,7 +37,7 @@ def test_manifold_point_search():
     cell = cpp.geometry.select_colliding_cells(mesh, cell_candidates, p, 1)
 
     # Extract vertices of cell
-    top_indices = cpp.mesh.entities_to_geometry(mesh, tdim, [cell])
+    top_indices = cpp.mesh.entities_to_vertex_geometry(mesh, tdim, [cell])
     x = mesh.geometry.x
     cell_vertices = x[top_indices]
 

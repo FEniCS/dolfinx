@@ -353,6 +353,21 @@ void mesh(py::module& m)
           return xt_as_pyarray(dolfinx::mesh::entities_to_geometry(
               mesh, dim, xtl::span(entity_list.data(), entity_list.size())));
         });
+  m.def("entities_to_vertex_geometry",
+        [](const dolfinx::mesh::Mesh& mesh, int dim,
+           py::array_t<std::int32_t, py::array::c_style> entity_list)
+        {
+          return xt_as_pyarray(dolfinx::mesh::entities_to_vertex_geometry(
+              mesh, dim, xtl::span(entity_list.data(), entity_list.size())));
+        });
+  m.def("oriented_tetrahedral_facet_vertex_geometry",
+        [](const dolfinx::mesh::Mesh& mesh,
+           py::array_t<std::int32_t, py::array::c_style> facets)
+        {
+          return xt_as_pyarray(
+              dolfinx::mesh::oriented_tetrahedral_facet_vertex_geometry(
+                  mesh, xtl::span(facets.data(), facets.size())));
+        });
   m.def("exterior_facet_indices", &dolfinx::mesh::exterior_facet_indices);
 }
 } // namespace dolfinx_wrappers

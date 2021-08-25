@@ -45,22 +45,22 @@ compute_bbox_of_entity(const mesh::Mesh& mesh, int dim, std::int32_t index)
 
   // FIXME: return of small dynamic array is expensive
   const std::array<std::int32_t, 1> entity = {index};
-  const xt::xtensor<std::int32_t, 2> vertex_indices
+  const xt::xtensor<std::int32_t, 2> node_indices
       = mesh::entities_to_geometry(mesh, dim, entity);
-  auto entity_vertices = xt::row(vertex_indices, 0);
+  auto entity_nodes = xt::row(node_indices, 0);
 
   std::array<std::array<double, 3>, 2> b;
-  b[0] = {xg(entity_vertices[0], 0), xg(entity_vertices[0], 1),
-          xg(entity_vertices[0], 2)};
+  b[0] = {xg(entity_nodes[0], 0), xg(entity_nodes[0], 1),
+          xg(entity_nodes[0], 2)};
   b[1] = b[0];
 
   // Compute min and max over vertices
-  for (const int local_vertex : entity_vertices)
+  for (const int local_node : entity_nodes)
   {
     for (int j = 0; j < 3; ++j)
     {
-      b[0][j] = std::min(b[0][j], xg(local_vertex, j));
-      b[1][j] = std::max(b[1][j], xg(local_vertex, j));
+      b[0][j] = std::min(b[0][j], xg(local_node, j));
+      b[1][j] = std::max(b[1][j], xg(local_node, j));
     }
   }
 

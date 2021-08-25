@@ -112,15 +112,14 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
 
   // Find geometry nodes for topology entities
   const xt::xtensor<double, 2>& xg = mesh.geometry().x();
+  xt::xtensor<std::int32_t, 2> geometry_entities;
 
   // Orient cells if they are tetrahedron
-  bool orient = false;
-  if (mesh.topology().cell_type() == mesh::CellType::tetrahedron)
-    orient = true;
-  xt::xtensor<std::int32_t, 2> geometry_entities
-      = entities_to_geometry(mesh, dim, entities);
-  if (orient)
-    reorient_tetrahedral_facet_geometry(mesh, dim, entities, geometry_entities);
+  if ((mesh.topology().cell_type() == mesh::CellType::tetrahedron) and dim == 2)
+    geometry_entities
+        = oriented_tetrahedral_facet_vertex_geometry(mesh, entities);
+  else
+    geometry_entities = entities_to_vertex_geometry(mesh, dim, entities);
 
   const std::size_t num_entities = entities.size();
   xt::xtensor<double, 2> n({num_entities, 3});
@@ -428,40 +427,92 @@ mesh::entities_to_geometry(const mesh::Mesh& mesh, int dim,
   return entity_geometry;
 }
 //------------------------------------------------------------------------
-void mesh::reorient_tetrahedral_facet_geometry(
+xt::xtensor<std::int32_t, 2> mesh::entities_to_vertex_geometry(
     const mesh::Mesh& mesh, int dim,
-    const xtl::span<const std::int32_t>& entity_list,
-    xt::xtensor<std::int32_t, 2>& geometry_entities)
+    const xtl::span<const std::int32_t>& entity_list)
 {
   dolfinx::mesh::CellType cell_type = mesh.topology().cell_type();
   const std::size_t num_entity_vertices
       = mesh::num_cell_vertices(mesh::cell_entity_type(cell_type, dim));
+  xt::xtensor<std::int32_t, 2> entity_geometry(
+      {entity_list.size(), num_entity_vertices});
 
   const mesh::Geometry& geometry = mesh.geometry();
-  const fem::ElementDofLayout layout = geometry.cmap().dof_layout();
-  if (cell_type != dolfinx::mesh::CellType::tetrahedron or (dim != 2)
-      or (num_entity_vertices != geometry_entities.shape(1)))
-  {
-    throw std::runtime_error(
-        "Can only orient facets of a first order tetrahedral mesh");
-  }
-
   const xt::xtensor<double, 2>& geom_dofs = geometry.x();
   const mesh::Topology& topology = mesh.topology();
 
   const int tdim = topology.dim();
   mesh.topology_mutable().create_entities(dim);
   mesh.topology_mutable().create_connectivity(dim, tdim);
+  mesh.topology_mutable().create_connectivity(dim, 0);
+  mesh.topology_mutable().create_connectivity(tdim, 0);
 
   const graph::AdjacencyList<std::int32_t>& xdofs = geometry.dofmap();
   const auto e_to_c = topology.connectivity(dim, tdim);
   assert(e_to_c);
+  const auto e_to_v = topology.connectivity(dim, 0);
+  assert(e_to_v);
+  const auto c_to_v = topology.connectivity(tdim, 0);
+  assert(c_to_v);
   for (std::size_t i = 0; i < entity_list.size(); ++i)
   {
     const std::int32_t idx = entity_list[i];
     const std::int32_t cell = e_to_c->links(idx)[0];
+    auto ev = e_to_v->links(idx);
+    assert(ev.size() == num_entity_vertices);
+    const auto cv = c_to_v->links(cell);
     const auto xc = xdofs.links(cell);
+    for (std::size_t j = 0; j < num_entity_vertices; ++j)
+    {
+      int k = std::distance(cv.begin(), std::find(cv.begin(), cv.end(), ev[j]));
+      assert(k < (int)cv.size());
+      entity_geometry(i, j) = xc[k];
+    }
+  }
 
+  return entity_geometry;
+}
+//------------------------------------------------------------------------
+xt::xtensor<std::int32_t, 2> mesh::oriented_tetrahedral_facet_vertex_geometry(
+    const mesh::Mesh& mesh, const xtl::span<const std::int32_t>& facets)
+{
+  dolfinx::mesh::CellType cell_type = mesh.topology().cell_type();
+  const std::size_t num_facet_vertices
+      = mesh::num_cell_vertices(mesh::cell_entity_type(cell_type, 2));
+  xt::xtensor<std::int32_t, 2> entity_geometry(
+      {facets.size(), num_facet_vertices});
+
+  const mesh::Geometry& geometry = mesh.geometry();
+  const xt::xtensor<double, 2>& geom_dofs = geometry.x();
+  const mesh::Topology& topology = mesh.topology();
+
+  const int tdim = topology.dim();
+  mesh.topology_mutable().create_entities(2);
+  mesh.topology_mutable().create_connectivity(2, tdim);
+  mesh.topology_mutable().create_connectivity(2, 0);
+  mesh.topology_mutable().create_connectivity(tdim, 0);
+
+  const graph::AdjacencyList<std::int32_t>& xdofs = geometry.dofmap();
+  const auto e_to_c = topology.connectivity(2, tdim);
+  assert(e_to_c);
+  const auto e_to_v = topology.connectivity(2, 0);
+  assert(e_to_v);
+  const auto c_to_v = topology.connectivity(tdim, 0);
+  assert(c_to_v);
+  for (std::size_t i = 0; i < facets.size(); ++i)
+  {
+    const std::int32_t idx = facets[i];
+    const std::int32_t cell = e_to_c->links(idx)[0];
+    auto ev = e_to_v->links(idx);
+    assert(ev.size() == num_facet_vertices);
+    const auto cv = c_to_v->links(cell);
+    const auto xc = xdofs.links(cell);
+    for (std::size_t j = 0; j < num_facet_vertices; ++j)
+    {
+      int k = std::distance(cv.begin(), std::find(cv.begin(), cv.end(), ev[j]));
+      assert(k < (int)cv.size());
+      entity_geometry(i, j) = xc[k];
+    }
     // Compute cell midpoint
     xt::xtensor_fixed<double, xt::xshape<3>> midpoint = {0, 0, 0};
     for (std::int32_t j : xc)
@@ -470,9 +521,9 @@ void mesh::reorient_tetrahedral_facet_geometry(
     midpoint /= xc.size();
 
     // Compute vector triple product of two edges and vector to midpoint
-    auto p0 = xt::row(geom_dofs, geometry_entities(i, 0));
-    auto p1 = xt::row(geom_dofs, geometry_entities(i, 1));
-    auto p2 = xt::row(geom_dofs, geometry_entities(i, 2));
+    auto p0 = xt::row(geom_dofs, entity_geometry(i, 0));
+    auto p1 = xt::row(geom_dofs, entity_geometry(i, 1));
+    auto p2 = xt::row(geom_dofs, entity_geometry(i, 2));
 
     xt::xtensor_fixed<double, xt::xshape<3, 3>> a;
     xt::row(a, 0) = midpoint - p0;
@@ -482,8 +533,9 @@ void mesh::reorient_tetrahedral_facet_geometry(
     // Midpoint direction should be opposite to normal, hence this
     // should be negative. Switch points if not.
     if (xt::linalg::det(a) > 0.0)
-      std::swap(geometry_entities(i, 1), geometry_entities(i, 2));
+      std::swap(entity_geometry(i, 1), entity_geometry(i, 2));
   }
+  return entity_geometry;
 };
 //------------------------------------------------------------------------
 std::vector<std::int32_t> mesh::exterior_facet_indices(const Mesh& mesh)
