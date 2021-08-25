@@ -26,16 +26,16 @@ using namespace dolfinx::fem;
 FunctionSpace::FunctionSpace(std::shared_ptr<const mesh::Mesh> mesh,
                              std::shared_ptr<const fem::FiniteElement> element,
                              std::shared_ptr<const fem::DofMap> dofmap)
-    : _mesh(mesh), _meshView(), _element(element), _dofmap(dofmap),
+    : _mesh(mesh), _mesh_view(), _element(element), _dofmap(dofmap),
       _id(common::UniqueIdGenerator::id()), _root_space_id(_id)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-FunctionSpace::FunctionSpace(std::shared_ptr<const mesh::MeshView> meshView,
+FunctionSpace::FunctionSpace(std::shared_ptr<const mesh::MeshView> mesh_view,
                              std::shared_ptr<const fem::FiniteElement> element,
                              std::shared_ptr<const fem::DofMap> dofmap)
-    : _mesh(meshView->parent_mesh()), _meshView(meshView), _element(element), _dofmap(dofmap),
+    : _mesh(mesh_view->parent_mesh()), _mesh_view(mesh_view), _element(element), _dofmap(dofmap),
       _id(common::UniqueIdGenerator::id()), _root_space_id(_id)
 {
   // Do nothing
@@ -226,7 +226,7 @@ std::size_t FunctionSpace::id() const { return _id; }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const mesh::Mesh> FunctionSpace::mesh() const { return _mesh; }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const mesh::MeshView> FunctionSpace::mesh_view() const { return _meshView; }
+std::shared_ptr<const mesh::MeshView> FunctionSpace::mesh_view() const { return _mesh_view; }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const fem::FiniteElement> FunctionSpace::element() const
 {

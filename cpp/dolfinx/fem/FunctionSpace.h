@@ -39,7 +39,7 @@ public:
                 std::shared_ptr<const fem::FiniteElement> element,
                 std::shared_ptr<const fem::DofMap> dofmap);
   
-  FunctionSpace(std::shared_ptr<const mesh::MeshView> meshView,
+  FunctionSpace(std::shared_ptr<const mesh::MeshView> mesh_view,
                 std::shared_ptr<const fem::FiniteElement> element,
                 std::shared_ptr<const fem::DofMap> dofmap);
 
@@ -117,7 +117,7 @@ private:
   std::shared_ptr<const mesh::Mesh> _mesh;
 
   // The mesh view
-  std::shared_ptr<const mesh::MeshView> _meshView;
+  std::shared_ptr<const mesh::MeshView> _mesh_view;
 
   // The finite element
   std::shared_ptr<const fem::FiniteElement> _element;
