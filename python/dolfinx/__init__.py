@@ -48,6 +48,7 @@ from .fem import (FunctionSpace, VectorFunctionSpace,
                   TensorFunctionSpace, Constant, Expression, Function)
 
 from .mesh import MeshTags
+from . import mesh_view
 from .nls import NewtonSolver
 
 # Initialise logging
