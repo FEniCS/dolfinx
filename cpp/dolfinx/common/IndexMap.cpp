@@ -687,19 +687,19 @@ std::pair<IndexMap, std::vector<std::int64_t>>
 common::compress_index_map(const IndexMap& map,
                            const xtl::span<const std::int32_t>& indices)
 {
-  // // Compute number of owned indices in the new map
-  // auto it = std::lower_bound(indices.begin(), indices.end(),
-  // map.size_local()); std::int64_t local_size_new =
-  // std::distance(indices.begin(), it);
+  // Compute number of owned indices in the new map
+  auto it = std::lower_bound(indices.begin(), indices.end(),
+  map.size_local()); std::int64_t local_size_new =
+  std::distance(indices.begin(), it);
 
-  // MPI_Comm comm = map.comm(dolfinx::common::IndexMap::Direction::reverse);
+  MPI_Comm comm = map.comm(dolfinx::common::IndexMap::Direction::reverse);
 
-  // // Compute global offset (index), using partial exclusive reduction
-  // std::int64_t offset_new = 0;
-  // MPI_Request request_scan;
-  // MPI_Iexscan(&local_size_new, &offset_new, 1, MPI_INT64_T, MPI_SUM, comm,
-  //             &request_scan);
-  // MPI_Wait(&request_scan, MPI_STATUS_IGNORE);
+  // Compute global offset (index), using partial exclusive reduction
+  std::int64_t offset_new = 0;
+  MPI_Request request_scan;
+  MPI_Iexscan(&local_size_new, &offset_new, 1, MPI_INT64_T, MPI_SUM, comm,
+              &request_scan);
+  MPI_Wait(&request_scan, MPI_STATUS_IGNORE);
 
   // New local range
   // const std::array<std::int64_t, 2> local_range
