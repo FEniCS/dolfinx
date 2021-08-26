@@ -6,13 +6,9 @@
 
 #include "utils.h"
 #include <sstream>
-#include <string>
-
-using namespace dolfinx;
-using namespace dolfinx::common;
 
 //-----------------------------------------------------------------------------
-std::string common::indent(std::string block)
+std::string dolfinx::common::indent(std::string block)
 {
   std::string indentation("  ");
   std::stringstream s;

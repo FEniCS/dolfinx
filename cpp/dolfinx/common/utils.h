@@ -6,12 +6,15 @@
 
 #pragma once
 
-#include "MPI.h"
 #include <boost/functional/hash.hpp>
+#include <cstring>
+#include <dolfinx/common/MPI.h>
+#include <limits>
 #include <mpi.h>
 #include <sstream>
 #include <string>
 #include <utility>
+#include <vector>
 
 namespace dolfinx::common
 {
@@ -103,5 +106,4 @@ std::int64_t hash_global(const MPI_Comm comm, const T& x)
 
   return global_hash;
 }
-
 } // namespace dolfinx::common

@@ -17,22 +17,10 @@
 #include <vector>
 #include <xtl/xspan.hpp>
 
-
 namespace dolfinx::common
 {
 // Forward declaration
 class IndexMap;
-
-/// Create new index map from a subset of indices in another index map
-/// @param[in] map The original index map
-/// @param[in] indices List of local indices in @p map that should
-/// appear in the new index map
-/// @pre `indices` must be sorted
-/// @return A (1) new index map and a vector that maps each local index
-/// in the map to the local index in the input map.
-std::pair<IndexMap, std::vector<std::int64_t>>
-compress_index_map(const IndexMap& map,
-                   const xtl::span<const std::int32_t>& indices);
 
 /// Compute layout data and ghost indices for a stacked (concatenated)
 /// index map, i.e. 'splice' multiple maps into one. Communication is
@@ -473,5 +461,16 @@ private:
   // size(_comm_owner_to_ghost)`.
   std::unique_ptr<graph::AdjacencyList<std::int32_t>> _shared_indices;
 };
+
+/// Create new index map from a subset of indices in another index map
+/// @param[in] map The original index map
+/// @param[in] indices List of local indices in @p map that should
+/// appear in the new index map
+/// @pre `indices` must be sorted
+/// @return A (1) new index map and a vector that maps each local index
+/// in the map to the local index in the input map.
+std::pair<IndexMap, std::vector<std::int64_t>>
+compress_index_map(const IndexMap& map,
+                   const xtl::span<const std::int32_t>& indices);
 
 } // namespace dolfinx::common
