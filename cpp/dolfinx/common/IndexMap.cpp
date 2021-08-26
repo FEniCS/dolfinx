@@ -688,8 +688,8 @@ common::compress_index_map(const IndexMap& map,
                            const xtl::span<const std::int32_t>& indices)
 {
   // Compute number of owned indices in the new map
-  auto it = std::lower_bound(indices.begin(), indices.end(), map.size_local());
-  assert(it != indices.end());
+  const auto it
+      = std::lower_bound(indices.begin(), indices.end(), map.size_local());
   std::int64_t local_size_new = std::distance(indices.begin(), it);
 
   MPI_Comm comm = map.comm(dolfinx::common::IndexMap::Direction::reverse);
@@ -715,22 +715,25 @@ common::compress_index_map(const IndexMap& map,
 
   // Build array of global indices for the owned indices in the new map
   std::vector<std::int64_t> global_indices_new(map.size_local(), -1);
-  for (std::size_t i = 0; i < indices.size(); ++i)
-    global_indices_new[indices[i]] = i + offset_new;
+  for (auto index = indices.begin(); index != it; ++index)
+  {
+    std::size_t pos = std::distance(indices.begin(), index);
+    global_indices_new[*index] = pos + offset_new;
+  }
 
   // // TODO: Use scatter_fwd_begin/end for efficiency
 
-  // // Send my new global index to ranks that ghost my indices, and
-  // // receive back new indices for my ghosts
-  // std::vector<std::int64_t> my_ghosts_indices(map.num_ghosts());
-  // map.scatter_fwd(xtl::span<const std::int64_t>(global_indices_new),
-  //                 xtl::span<std::int64_t>(my_ghosts_indices), 1);
+  // Send my new global index to ranks that ghost my indices, and
+  // receive back new indices for my ghosts
+  std::vector<std::int64_t> my_ghosts_indices(map.num_ghosts());
+  map.scatter_fwd(xtl::span<const std::int64_t>(global_indices_new),
+                  xtl::span<std::int64_t>(my_ghosts_indices), 1);
 
-  // std::size_t num_ghosts_new = std::distance(it, indices.end());
-  // std::vector<std::int64_t> ghosts_new;
-  // ghosts_new.reserve(num_ghosts_new);
-  // for (auto it1 = it; it1 != indices.end(); ++it1)
-  //   ghosts_new.push_back(my_ghosts_indices[*it1]);
+  std::size_t num_ghosts_new = std::distance(it, indices.end());
+  std::vector<std::int64_t> ghosts_new;
+  ghosts_new.reserve(num_ghosts_new);
+  for (auto index = it; index != indices.end(); ++index)
+    ghosts_new.push_back(my_ghosts_indices[*index]);
 
   // TODO: Update communication data and create new index map
 
