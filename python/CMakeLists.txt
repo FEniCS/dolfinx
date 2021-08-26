@@ -57,18 +57,28 @@ if("XTENSOR_USE_XSIMD" IN_LIST BASIX_DEFN OR "XTENSOR_USE_XSIMD" IN_LIST DOLFINX
   target_link_libraries(cpp PRIVATE xsimd)
 endif()
 
-# Add to CMake search path
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
-
 # Check for petsc4py
-find_package(PETSc4py REQUIRED)
-if (PETSC4PY_FOUND)
-  target_include_directories(cpp PRIVATE ${PETSC4PY_INCLUDE_DIRS})
+execute_process(
+  COMMAND ${PYTHON_EXECUTABLE} -c "import petsc4py; print(petsc4py.get_include())"
+  OUTPUT_VARIABLE PETSC4PY_INCLUDE_DIR
+  RESULT_VARIABLE PETSC4PY_COMMAND_RESULT
+  ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
+if(NOT PETSC4PY_COMMAND_RESULT)
+  message(STATUS "Found petsc4py include directory at ${PETSC4PY_INCLUDE_DIR}")
+  target_include_directories(cpp PRIVATE ${PETSC4PY_INCLUDE_DIR})
+else()
+  message(FATAL_ERROR "petsc4y could not be found.")
 endif()
 
 # Check for mpi4py
-find_package(MPI4PY REQUIRED)
-if (MPI4PY_FOUND)
+execute_process(
+  COMMAND "${PYTHON_EXECUTABLE}" "-c" "import mpi4py; print(mpi4py.get_include())"
+  OUTPUT_VARIABLE MPI4PY_INCLUDE_DIR
+  RESULT_VARIABLE MPI4PY_COMMAND_RESULT
+  ERROR_QUIET  OUTPUT_STRIP_TRAILING_WHITESPACE)
+if(NOT MPI4PY_COMMAND_RESULT)
+  message(STATUS "Found mpi4py include directory at ${MPI4PY_INCLUDE_DIR}")
   target_include_directories(cpp PRIVATE ${MPI4PY_INCLUDE_DIR})
-  target_compile_definitions(cpp PRIVATE HAS_PYBIND11_MPI4PY)
+else()
+  message(FATAL_ERROR "petsc4y could not be found.")
 endif()
