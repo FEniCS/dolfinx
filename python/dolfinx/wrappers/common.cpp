@@ -109,16 +109,13 @@ void common(py::module& m)
       .value("system", dolfinx::TimingType::system)
       .value("user", dolfinx::TimingType::user);
 
-  // dolfinx/common free functions
   m.def(
       "compress_index_map",
-      [](std::shared_ptr<const dolfinx::common::IndexMap> index_map,
+      [](const dolfinx::common::IndexMap& map,
          const py::array_t<std::int32_t, py::array::c_style>& entities)
       {
-        std::pair<std::shared_ptr<const dolfinx::common::IndexMap>,
-                  std::vector<std::int64_t>>
-            new_map = dolfinx::common::compress_index_map(index_map, entities);
-        return std::pair(new_map.first, as_pyarray(std::move(new_map.second)));
+        auto new_map = dolfinx::common::compress_index_map(map, entities);
+        return std::pair(std::move(new_map.first), as_pyarray(std::move(new_map.second)));
       });
 
   m.def("timing", &dolfinx::timing);

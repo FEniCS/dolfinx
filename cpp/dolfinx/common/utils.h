@@ -6,16 +6,12 @@
 
 #pragma once
 
-#include "IndexMap.h"
+#include "MPI.h"
 #include <boost/functional/hash.hpp>
-#include <cstring>
-#include <dolfinx/common/MPI.h>
-#include <limits>
 #include <mpi.h>
 #include <sstream>
 #include <string>
 #include <utility>
-#include <vector>
 
 namespace dolfinx::common
 {
@@ -107,15 +103,5 @@ std::int64_t hash_global(const MPI_Comm comm, const T& x)
 
   return global_hash;
 }
-
-/// Create new index map on subset of indices in the original map
-/// @param[in] map The original index map
-/// @param[in] indices List of local indices to use in the new index map
-/// @return The new index map and a vector containing the global
-/// number relating each owned local index to the global index in the original
-/// index map.
-std::pair<std::shared_ptr<const IndexMap>, std::vector<std::int64_t>>
-compress_index_map(std::shared_ptr<const IndexMap> map,
-                   const xtl::span<const std::int32_t>& indices);
 
 } // namespace dolfinx::common
