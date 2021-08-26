@@ -689,11 +689,12 @@ common::compress_index_map(const IndexMap& map,
 {
   // Compute number of owned indices in the new map
   auto it = std::lower_bound(indices.begin(), indices.end(), map.size_local());
+  assert(it != indices.end());
   std::int64_t local_size_new = std::distance(indices.begin(), it);
 
   MPI_Comm comm = map.comm(dolfinx::common::IndexMap::Direction::reverse);
 
-  // Compute global offset (index), using partial exclusive reduction
+  // Compute new global offset using partial exclusive reduction
   std::int64_t offset_new = 0;
   MPI_Request request_scan;
   MPI_Iexscan(&local_size_new, &offset_new, 1, MPI_INT64_T, MPI_SUM, comm,
@@ -712,10 +713,10 @@ common::compress_index_map(const IndexMap& map,
   // Wait for the MPI_Iallreduce to complete
   MPI_Wait(&request, MPI_STATUS_IGNORE);
 
-  // // Build array of global indices for the owned indices in the new map
-  // std::vector<std::int64_t> global_indices_new(map.size_local(), -1);
-  // for (std::size_t i = 0; i < indices.size(); ++i)
-  //   global_indices_new[indices[i]] = i + offset_new;
+  // Build array of global indices for the owned indices in the new map
+  std::vector<std::int64_t> global_indices_new(map.size_local(), -1);
+  for (std::size_t i = 0; i < indices.size(); ++i)
+    global_indices_new[indices[i]] = i + offset_new;
 
   // // TODO: Use scatter_fwd_begin/end for efficiency
 
