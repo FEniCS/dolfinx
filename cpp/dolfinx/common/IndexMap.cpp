@@ -688,9 +688,8 @@ common::compress_index_map(const IndexMap& map,
                            const xtl::span<const std::int32_t>& indices)
 {
   // Compute number of owned indices in the new map
-  auto it = std::lower_bound(indices.begin(), indices.end(),
-  map.size_local()); std::int64_t local_size_new =
-  std::distance(indices.begin(), it);
+  auto it = std::lower_bound(indices.begin(), indices.end(), map.size_local());
+  std::int64_t local_size_new = std::distance(indices.begin(), it);
 
   MPI_Comm comm = map.comm(dolfinx::common::IndexMap::Direction::reverse);
 
@@ -706,13 +705,12 @@ common::compress_index_map(const IndexMap& map,
   //     = {offset_new, offset_new + local_size_new};
 
   // Send local size to sum reduction to get global size
-  // std::int64_t size_global = 0;
-  // MPI_Request request;
-  // MPI_Iallreduce(&local_size_new, &size_global, 1, MPI_INT64_T, MPI_SUM,
-  // comm,
-  //                &request);
-  // // Wait for the MPI_Iallreduce to complete
-  // MPI_Wait(&request, MPI_STATUS_IGNORE);
+  std::int64_t size_global = 0;
+  MPI_Request request;
+  MPI_Iallreduce(&local_size_new, &size_global, 1, MPI_INT64_T, MPI_SUM, comm,
+                 &request);
+  // Wait for the MPI_Iallreduce to complete
+  MPI_Wait(&request, MPI_STATUS_IGNORE);
 
   // // Build array of global indices for the owned indices in the new map
   // std::vector<std::int64_t> global_indices_new(map.size_local(), -1);
