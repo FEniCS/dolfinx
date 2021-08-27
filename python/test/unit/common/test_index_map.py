@@ -1,15 +1,15 @@
-# Copyright (C) 2021 Jørgen S. Dokken
+# Copyright (C) 2021 Jørgen S. Dokken and Garth N. Wells
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import dolfinx
-from mpi4py import MPI
 import numpy as np
+from mpi4py import MPI
 
 
-def test_index_map_compression():
+def test_sub_index_map():
 
     comm = MPI.COMM_WORLD
     myrank = comm.rank
