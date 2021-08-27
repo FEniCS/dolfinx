@@ -91,6 +91,13 @@ void common(py::module& m)
                  local,
                  xtl::span<std::int64_t>(global.mutable_data(), global.size()));
              return global;
+           })
+      .def("create_submap",
+           [](const dolfinx::common::IndexMap& self,
+              const py::array_t<std::int32_t, py::array::c_style>& entities)
+           {
+             auto [map, ghosts] = self.create_submap(entities);
+             return std::pair(std::move(map), as_pyarray(std::move(ghosts)));
            });
 
   // dolfinx::common::Timer
@@ -108,15 +115,6 @@ void common(py::module& m)
       .value("wall", dolfinx::TimingType::wall)
       .value("system", dolfinx::TimingType::system)
       .value("user", dolfinx::TimingType::user);
-
-  m.def(
-      "compress_index_map",
-      [](const dolfinx::common::IndexMap& map,
-         const py::array_t<std::int32_t, py::array::c_style>& entities)
-      {
-        auto new_map = dolfinx::common::compress_index_map(map, entities);
-        return std::pair(std::move(new_map.first), as_pyarray(std::move(new_map.second)));
-      });
 
   m.def("timing", &dolfinx::timing);
 

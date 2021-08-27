@@ -9,7 +9,7 @@ from mpi4py import MPI
 import numpy as np
 
 
-def test_index_map_compression():
+def xtest_index_map_compression():
 
     mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, 8, 8)
     vertex_map = mesh.topology.index_map(0)

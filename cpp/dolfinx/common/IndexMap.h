@@ -88,6 +88,27 @@ public:
            const xtl::span<const std::int64_t>& ghosts,
            const xtl::span<const int>& src_ranks);
 
+private:
+  template <typename U, typename V, typename W, typename X>
+  IndexMap(std::array<std::int64_t, 2> local_range, std::size_t size_global,
+           U&& comm_owner_to_ghost, U&& comm_ghost_to_owner, V&& sizes_send_fwd,
+           V&& sizes_recv_fwd, V&& displs_recv_fwd, V&& ghost_pos_recv_fwd,
+           W&& ghosts, X&& shared_indices)
+      : _local_range(local_range), _size_global(size_global),
+        _comm_owner_to_ghost(std::forward<U>(comm_owner_to_ghost)),
+        _comm_ghost_to_owner(std::forward<U>(comm_ghost_to_owner)),
+        _sizes_send_fwd(std::forward<V>(sizes_send_fwd)),
+        _sizes_recv_fwd(std::forward<V>(sizes_recv_fwd)),
+        _displs_recv_fwd(std::forward<V>(displs_recv_fwd)),
+        _ghost_pos_recv_fwd(std::forward<V>(ghost_pos_recv_fwd)),
+        _ghosts(std::forward<W>(ghosts)),
+        _shared_indices(std::forward<X>(shared_indices))
+  {
+    // _array.reserve(_offsets.back());
+    // assert(_offsets.back() == (std::int32_t)_array.size());
+  }
+
+public:
   // Copy constructor
   IndexMap(const IndexMap& map) = delete;
 
@@ -177,6 +198,17 @@ public:
   /// @return shared indices
   std::map<std::int32_t, std::set<int>> compute_shared_indices() const;
 
+  /// Create new index map from a subset of indices in another index map
+  /// @param[in] map The original index map
+  /// @param[in] indices List of local indices in @p map that should
+  /// appear in the new index map. All indices must be owned, i.e. indices
+  /// must be less than `map.size_local()`.
+  /// @pre `indices` must be sorted and contain no duplicates
+  /// @return A (1) new index map and a vector that maps each local index
+  /// in the map to the local index in the input map.
+  std::pair<IndexMap, std::vector<std::int32_t>>
+  create_submap(const xtl::span<const std::int32_t>& indices) const;
+
   /// Start a non-blocking send of owned data to ranks that ghost the
   /// data. The communication is completed by calling
   /// IndexMap::scatter_fwd_end. The send and receive buffer should not
@@ -258,7 +290,7 @@ public:
   {
     MPI_Datatype data_type;
     if (n == 1)
-      data_type = MPI::mpi_type<T>();
+      data_type = dolfinx::MPI::mpi_type<T>();
     else
     {
       MPI_Type_contiguous(n, dolfinx::MPI::mpi_type<T>(), &data_type);
@@ -445,32 +477,23 @@ private:
   dolfinx::MPI::Comm _comm_ghost_to_owner;
 
   // MPI sizes and displacements for forward (owner -> ghost) scatter
-  std::vector<std::int32_t> _sizes_recv_fwd, _sizes_send_fwd, _displs_recv_fwd;
+  // Note: '_displs_send_fwd' can be got from _shared_indices->offsets()
+  std::vector<std::int32_t> _sizes_send_fwd, _sizes_recv_fwd, _displs_recv_fwd;
 
-  // Position in the recv buffer for a forward scatter for the _ghost[i]
-  // entry
+  // Position in the recv buffer for a forward scatter for the ith ghost
+  // index (_ghost[i]) entry
   std::vector<std::int32_t> _ghost_pos_recv_fwd;
 
   // Local-to-global map for ghost indices
   std::vector<std::int64_t> _ghosts;
 
-  // List of owned local indices that are in the halo (ghost) region on
+  // List of owned local indices that are in the ghost (halo) region on
   // other ranks, grouped by rank in the neighbor communicator
   // (destination ranks in forward communicator and source ranks in the
   // reverse communicator), i.e. `_shared_indices.num_nodes() ==
-  // size(_comm_owner_to_ghost)`.
+  // size(_comm_owner_to_ghost)`. The array _shared_indices.offsets() is
+  // equivalent to 'displs_send_fwd'.
   std::unique_ptr<graph::AdjacencyList<std::int32_t>> _shared_indices;
 };
-
-/// Create new index map from a subset of indices in another index map
-/// @param[in] map The original index map
-/// @param[in] indices List of local indices in @p map that should
-/// appear in the new index map
-/// @pre `indices` must be sorted
-/// @return A (1) new index map and a vector that maps each local index
-/// in the map to the local index in the input map.
-std::pair<IndexMap, std::vector<std::int64_t>>
-compress_index_map(const IndexMap& map,
-                   const xtl::span<const std::int32_t>& indices);
 
 } // namespace dolfinx::common

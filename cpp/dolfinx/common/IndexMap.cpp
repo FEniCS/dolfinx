@@ -683,197 +683,186 @@ std::map<std::int32_t, std::set<int>> IndexMap::compute_shared_indices() const
   return shared_indices;
 }
 //-----------------------------------------------------------------------------
-std::pair<IndexMap, std::vector<std::int64_t>>
-common::compress_index_map(const IndexMap& map,
-                           const xtl::span<const std::int32_t>& indices)
+std::pair<IndexMap, std::vector<std::int32_t>>
+IndexMap::create_submap(const xtl::span<const std::int32_t>& indices) const
 {
-  // Compute number of owned indices in the new map
-  const auto it
-      = std::lower_bound(indices.begin(), indices.end(), map.size_local());
-  std::int64_t local_size_new = std::distance(indices.begin(), it);
+  if (!indices.empty() and indices.back() >= this->size_local())
+  {
+    throw std::runtime_error(
+        "Unowned index detected when creating sub-IndexMap");
+  }
 
-  MPI_Comm comm = map.comm(dolfinx::common::IndexMap::Direction::reverse);
+  MPI_Comm comm = this->comm(Direction::forward);
 
-  // Compute new global offset using partial exclusive reduction
-  std::int64_t offset_new = 0;
+  // Step 1: Compute new offest for this rank and new global size
+
+  std::int64_t local_size = indices.size();
+  std::int64_t offset = 0;
   MPI_Request request_scan;
-  MPI_Iexscan(&local_size_new, &offset_new, 1, MPI_INT64_T, MPI_SUM, comm,
+  MPI_Iexscan(&local_size, &offset, 1, MPI_INT64_T, MPI_SUM, comm,
               &request_scan);
   MPI_Wait(&request_scan, MPI_STATUS_IGNORE);
 
-  // New local range
-  // const std::array<std::int64_t, 2> local_range
-  //     = {offset_new, offset_new + local_size_new};
-
-  // Send local size to sum reduction to get global size
   std::int64_t size_global = 0;
   MPI_Request request;
-  MPI_Iallreduce(&local_size_new, &size_global, 1, MPI_INT64_T, MPI_SUM, comm,
+  MPI_Iallreduce(&local_size, &size_global, 1, MPI_INT64_T, MPI_SUM, comm,
                  &request);
   // Wait for the MPI_Iallreduce to complete
   MPI_Wait(&request, MPI_STATUS_IGNORE);
 
-  // Build array of global indices for the owned indices in the new map
-  std::vector<std::int64_t> global_indices_new(map.size_local(), -1);
-  for (auto index = indices.begin(); index != it; ++index)
-  {
-    std::size_t pos = std::distance(indices.begin(), index);
-    global_indices_new[*index] = pos + offset_new;
-  }
+  // Step 2: Create array from old to new index, setting entries to -1
+  // if they do not appear in the new map
 
-  // // TODO: Use scatter_fwd_begin/end for efficiency
-
-  // Send my new global index to ranks that ghost my indices, and
-  // receive back new indices for my ghosts
-  std::vector<std::int64_t> my_ghosts_indices(map.num_ghosts());
-  map.scatter_fwd(xtl::span<const std::int64_t>(global_indices_new),
-                  xtl::span<std::int64_t>(my_ghosts_indices), 1);
-
-  std::size_t num_ghosts_new = std::distance(it, indices.end());
-  std::vector<std::int64_t> ghosts_new;
-  ghosts_new.reserve(num_ghosts_new);
-  for (auto index = it; index != indices.end(); ++index)
-    ghosts_new.push_back(my_ghosts_indices[*index]);
-
-  // TODO: Update communication data and create new index map
-
-  // ---- old
-
-  const std::vector<std::int64_t>& ghosts = map.ghosts();
-
-  std::vector<int> ghost_owners = map.ghost_owner_rank();
-
-  // Commmunicate ghost indices
-  MPI_Comm reverse_comm
-      = map.comm(dolfinx::common::IndexMap::Direction::reverse);
-  MPI_Comm forward_comm
-      = map.comm(dolfinx::common::IndexMap::Direction::forward);
-  auto [source_ranks, dest_ranks] = dolfinx::MPI::neighbors(forward_comm);
-
-  // Create inverse map of src ranks
-  std::unordered_map<std::int32_t, std::int32_t> rank_glob_to_loc;
-  for (std::size_t i = 0; i < source_ranks.size(); ++i)
-    rank_glob_to_loc.insert({source_ranks[i], i});
-  // Split indices into local and ghost indices
-  const std::int32_t local_size = map.size_local();
-  std::vector<std::int32_t> local_indices, ghost_indices;
-  const std::int32_t num_local
-      = std::count_if(indices.begin(), indices.end(),
-                      [local_size](int i) { return i < local_size; });
-  local_indices.reserve(num_local);
-  ghost_indices.reserve(indices.size() - num_local);
-
-  // Counter of number of ghosts per process
-  std::vector<std::int32_t> num_ghosts(source_ranks.size());
-
-  // Split input indices into local and ghost entities, and count
-  // how many to send to each owner
+  std::vector<std::int32_t> old_to_new_index(this->size_local(), -1);
   for (std::size_t i = 0; i < indices.size(); ++i)
+    old_to_new_index[indices[i]] = i;
+
+  // Step 3: Compute the destination that the new mao with send to (fwd
+  // scatter) and build new shared_indices adjacency list
+
+  // Loop over ranks that ghost data in the original map
+  std::vector<int> ranks_old_to_new_send(_shared_indices->num_nodes(), -1);
+  std::vector<std::int32_t> shared_indices_data, shared_indices_off(1, 0);
+  for (std::int32_t r_old = 0; r_old < _shared_indices->num_nodes(); ++r_old)
   {
-    if (indices[i] < local_size)
-      local_indices.push_back(indices[i]);
-    else
+    auto it0 = shared_indices_data.end();
+
+    // For indices sent to old rank r_old, add the new index
+    for (std::int32_t idx_old : _shared_indices->links(r_old))
     {
-      const std::int32_t ghost_index = indices[i] - local_size;
-      ghost_indices.push_back(ghost_index);
-      const std::int32_t ghost_rank = ghost_owners[ghost_index];
-      num_ghosts[rank_glob_to_loc[ghost_rank]]++;
+      if (auto idx = old_to_new_index[idx_old]; idx >= 0)
+        shared_indices_data.push_back(idx);
+    }
+
+    // Get number of indices to be sent to rank r_old
+    std::size_t num_indices = std::distance(it0, shared_indices_data.end());
+
+    // If indices in the new map will be sent to r_old, update
+    // old-to-new map and update offset array
+    if (num_indices > 0)
+    {
+      ranks_old_to_new_send[r_old] = shared_indices_off.size() - 1;
+      shared_indices_off.push_back(shared_indices_off.back() + num_indices);
     }
   }
 
-  // Compute insertion position in adjacency array
-  std::vector<std::int32_t> ghost_adj_offset(source_ranks.size() + 1, 0);
-  std::partial_sum(num_ghosts.begin(), num_ghosts.end(),
-                   ghost_adj_offset.begin() + 1);
-  std::vector<std::int64_t> ghost_adj(ghost_adj_offset.back());
+  // Create new shared_indices graph
+  auto shared_indices = std::make_unique<graph::AdjacencyList<std::int32_t>>(
+      std::move(shared_indices_data), std::move(shared_indices_off));
+  // graph::AdjacencyList<std::int32_t> shared_indices(
+  //     std::move(shared_indices_data), std::move(shared_indices_off));
+  // assert(shared_indices.num_nodes() == std::int32_t(fwd_ranks.size()));
 
-  std::vector<std::int32_t> inserted_ghosts(source_ranks.size(), 0);
-  for (std::size_t i = 0; i < ghost_indices.size(); ++i)
+  // Step 4: Create sizes_send_fwd array
+
+  const std::vector<int32_t>& displs_send = shared_indices->offsets();
+  std::vector<int32_t> sizes_send_fwd(shared_indices->num_nodes(), 0);
+  std::adjacent_difference(displs_send.begin() + 1, displs_send.end(),
+                           sizes_send_fwd.begin());
+
+  // ------
+
+  // TODO: Can we avoid this step and pack the buffer directly?
+  // Build array of global indices for indices in the new map
+  std::vector<std::int64_t> global_indices_new(this->size_local(), -1);
+  for (std::size_t i = 0; i < indices.size(); ++i)
+    global_indices_new[indices[i]] = i + offset;
+
+  // Step 5: Send new global indices to ranks that ghost indices on this rank
+
+  const std::vector<std::int32_t>& send_indices
+      = this->scatter_fwd_indices().array();
+  std::vector<std::int64_t> buffer_send_fwd(send_indices.size(), -1);
+  for (std::size_t i = 0; i < send_indices.size(); ++i)
+    buffer_send_fwd[i] = global_indices_new[send_indices[i]];
+
+  MPI_Request request1;
+  std::vector<std::int64_t> buffer_recv_fwd(this->num_ghosts());
+  MPI_Datatype data_type = MPI_INT64_T;
+  this->scatter_fwd_begin(xtl::span<const std::int64_t>(buffer_send_fwd),
+                          data_type, request1,
+                          xtl::span<std::int64_t>(buffer_recv_fwd));
+  this->scatter_fwd_end(request1);
+
+  // Step 6: Determine which ranks that send data to this rank will also
+  // send data to the map on this rank
+
+  // Count number of ghost from each rank
+  std::vector<std::int32_t> ranks_old_to_new_recv(_sizes_recv_fwd.size(), -1);
+  std::vector<std::int32_t> sizes_recv_fwd,
+      sizes_recv_fwd_new(_sizes_recv_fwd.size(), 0);
+  for (std::size_t r = 0; r < _sizes_recv_fwd.size(); ++r)
   {
-    const std::int32_t ghost_index = ghost_indices[i];
-    const std::int32_t rank = rank_glob_to_loc[ghost_owners[ghost_index]];
-    const std::int32_t local_pos
-        = ghost_adj_offset[rank] + inserted_ghosts[rank];
-    ghost_adj[local_pos] = ghosts[ghost_index];
-    inserted_ghosts[rank]++;
-  }
-  dolfinx::graph::AdjacencyList<std::int64_t> send_ghosts(ghost_adj,
-                                                          ghost_adj_offset);
-
-  // Send ghosts to owner
-  dolfinx::graph::AdjacencyList<std::int64_t> recv_ghosts
-      = dolfinx::MPI::neighbor_all_to_all(reverse_comm, send_ghosts);
-
-  // Compute new destination ranks for received ghosts
-  std::vector<std::int32_t> new_dest_ranks;
-  for (std::int32_t i = 0; i < recv_ghosts.num_nodes(); ++i)
-    if (recv_ghosts.num_links(i) > 0)
-      new_dest_ranks.push_back(dest_ranks[i]);
-
-  // Convert local input indices to global indices
-  std::vector<std::int64_t> global_indices(local_indices.size());
-  map.local_to_global(local_indices, global_indices);
-
-  // Create a sorted vector of indices owned by the process by merging
-  // input indices with received ghost indices, removing duplicates
-  std::vector<std::int64_t> sorted_ghosts = recv_ghosts.array();
-  std::sort(sorted_ghosts.begin(), sorted_ghosts.end());
-  std::sort(global_indices.begin(), global_indices.end());
-  std::vector<std::int64_t> org_global_indices;
-  org_global_indices.reserve(local_indices.size() + sorted_ghosts.size());
-  std::merge(global_indices.begin(), global_indices.end(),
-             sorted_ghosts.begin(), sorted_ghosts.end(),
-             std::back_inserter(org_global_indices));
-  org_global_indices.erase(
-      std::unique(org_global_indices.begin(), org_global_indices.end()),
-      org_global_indices.end());
-
-  // Compute global indices for new index map
-  std::size_t offset = 0;
-  std::size_t new_num_local = org_global_indices.size();
-  MPI_Exscan(&new_num_local, &offset, 1, dolfinx::MPI::mpi_type<std::size_t>(),
-             MPI_SUM, MPI_COMM_WORLD);
-
-  // For each received ghost, compute new global index
-  const std::vector<std::int64_t>& ghost_array = recv_ghosts.array();
-  std::vector<std::int64_t> ghosts_map(2 * ghost_array.size());
-  for (std::size_t i = 0; i < ghost_array.size(); ++i)
-  {
-    auto idx_it = std::lower_bound(org_global_indices.begin(),
-                                   org_global_indices.end(), ghost_array[i]);
-    std::int32_t index = std::distance(org_global_indices.begin(), idx_it);
-    ghosts_map[2 * i] = ghost_array[i];
-    ghosts_map[2 * i + 1] = index + offset;
-  }
-
-  // Send map of indices
-  std::vector<std::int32_t> send_offsets = recv_ghosts.offsets();
-  for (std::size_t i = 0; i < send_offsets.size(); ++i)
-    send_offsets[i] *= 2;
-  dolfinx::graph::AdjacencyList<std::int64_t> send_new_ghosts(ghosts_map,
-                                                              send_offsets);
-  dolfinx::graph::AdjacencyList<std::int64_t> new_ghosts_adj
-      = dolfinx::MPI::neighbor_all_to_all(forward_comm, send_new_ghosts);
-  // Get new ghosts and src ranks
-  std::vector<std::int64_t> new_ghosts;
-  new_ghosts.reserve(ghost_indices.size());
-  std::vector<std::int32_t> new_src_ranks;
-  new_src_ranks.reserve(ghost_indices.size());
-
-  for (std::int32_t i = 0; i < new_ghosts_adj.num_nodes(); ++i)
-  {
-    const std::int32_t src_rank = source_ranks[i];
-    auto ghost_data = new_ghosts_adj.links(i);
-    for (std::size_t j = 0; j < ghost_data.size() / 2; ++j)
+    // Count number of ghosts owned by rank r
+    sizes_recv_fwd_new[r] = std::count_if(
+        std::next(buffer_recv_fwd.cbegin(), _displs_recv_fwd[r]),
+        std::next(buffer_recv_fwd.cend(), _displs_recv_fwd[r + 1]),
+        [](auto x) { return x >= 0; });
+    if (sizes_recv_fwd_new[r] > 0)
     {
-      org_global_indices.push_back(ghost_data[2 * j]);
-      new_ghosts.push_back(ghost_data[2 * j + 1]);
-      new_src_ranks.push_back(src_rank);
+      ranks_old_to_new_recv[r] = sizes_recv_fwd.size();
+      sizes_recv_fwd.push_back(sizes_recv_fwd_new[r]);
     }
   }
 
-  return {IndexMap(reverse_comm, new_num_local, new_dest_ranks, new_ghosts,
-                   new_src_ranks),
-          std::move(org_global_indices)};
+  // Compute displs_recv_fwd for new map
+  std::vector<std::int32_t> displs_recv_fwd(sizes_recv_fwd.size() + 1, 0);
+  std::partial_sum(sizes_recv_fwd.begin(), sizes_recv_fwd.end(),
+                   displs_recv_fwd.begin() + 1);
+
+  // Step 7: Build ghost_pos_recv_fwd for the new map
+
+  // Build list of ghosts in the new map, and compute the new owning rank
+  std::vector<std::int64_t> ghosts;
+  std::vector<std::int32_t> ghost_owner, new_to_old_ghost;
+  for (std::size_t i = 0; i < _ghosts.size(); ++i)
+  {
+    // Get new index for old _ghosts[i]
+    std::size_t buffer_pos = _ghost_pos_recv_fwd[i];
+    if (auto index = buffer_recv_fwd[buffer_pos]; index >= 0)
+    {
+      // If index is in the new map, add index and compute owning rank
+      // (rank index on new map)
+      ghosts.push_back(index);
+      new_to_old_ghost.push_back(_ghosts[i]);
+      auto it = std::upper_bound(_displs_recv_fwd.cbegin(),
+                                 _displs_recv_fwd.cend(), buffer_pos);
+      const int r_old = std::distance(_displs_recv_fwd.cbegin(), it) - 1;
+      ghost_owner.push_back(ranks_old_to_new_recv[r_old]);
+    }
+  }
+
+  // Compute ghost_pos_recv_fwd
+  std::vector<std::int32_t> tmp_displs = displs_recv_fwd;
+  std::vector<std::int32_t> ghost_pos_recv_fwd(ghost_owner.size());
+  for (std::size_t i = 0; i < ghost_owner.size(); ++i)
+    ghost_pos_recv_fwd[i] = tmp_displs[ghost_owner[i]]++;
+
+  // Create neighbourhood communicators for new map
+
+  // Get src/dest from forward comm (owner-to-ghost) from original map
+  const auto [src_ranks, dest_ranks] = dolfinx::MPI::neighbors(comm);
+  std::vector<int> in_ranks, out_ranks;
+  std::copy_if(ranks_old_to_new_recv.cbegin(), ranks_old_to_new_recv.cend(),
+               std::back_inserter(in_ranks), [](auto idx) { return idx >= 0; });
+  std::copy_if(ranks_old_to_new_send.cbegin(), ranks_old_to_new_send.cend(),
+               std::back_inserter(out_ranks),
+               [](auto idx) { return idx >= 0; });
+
+  MPI_Comm comm0, comm1;
+  MPI_Dist_graph_create_adjacent(
+      comm, in_ranks.size(), in_ranks.data(), MPI_UNWEIGHTED, out_ranks.size(),
+      out_ranks.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm0);
+  MPI_Dist_graph_create_adjacent(
+      comm, out_ranks.size(), out_ranks.data(), MPI_UNWEIGHTED, in_ranks.size(),
+      in_ranks.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm1);
+
+  return {IndexMap({offset, offset + local_size}, size_global,
+                   dolfinx::MPI::Comm(comm0, false),
+                   dolfinx::MPI::Comm(comm1, false), std::move(sizes_send_fwd),
+                   std::move(sizes_recv_fwd), std::move(displs_recv_fwd),
+                   std::move(ghost_pos_recv_fwd), std::move(ghosts),
+                   std::move(shared_indices)),
+          std::move(new_to_old_ghost)};
 }
 //-----------------------------------------------------------------------------
