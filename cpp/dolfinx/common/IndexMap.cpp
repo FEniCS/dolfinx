@@ -132,10 +132,10 @@ compute_owned_shared(MPI_Comm comm, const xtl::span<const std::int64_t>& ghosts,
 
   // Work-around for OpenMPI bug. Some version of OpenMPI crash if
   // in/out_edges_num array is empty.
-  if (in_edges_num.empty())
-    in_edges_num.resize(1);
-  if (out_edges_num.empty())
-    out_edges_num.resize(1);
+  // if (in_edges_num.empty())
+  //   in_edges_num.resize(1);
+  // if (out_edges_num.empty())
+  //   out_edges_num.resize(1);
 
   // May have repeated shared indices with different processes
   std::vector<std::int64_t> recv_indices(recv_disp.back());
@@ -435,13 +435,13 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
   for (std::size_t i = 0; i < ghost_owners.size(); ++i)
     _ghost_pos_recv_fwd[i] = tmp_displs[ghost_owners[i]]++;
 
-  // Add '1' for OpenMPI bug
-  if (_sizes_recv_fwd.empty())
-    _sizes_recv_fwd.push_back(0);
+  // // Add '1' for OpenMPI bug
+  // if (_sizes_recv_fwd.empty())
+  //   _sizes_recv_fwd.push_back(0);
 
-  // Add '1' for OpenMPI bug
-  if (_sizes_send_fwd.empty())
-    _sizes_send_fwd.push_back(0);
+  // // Add '1' for OpenMPI bug
+  // if (_sizes_send_fwd.empty())
+  //   _sizes_send_fwd.push_back(0);
 }
 //-----------------------------------------------------------------------------
 std::array<std::int64_t, 2> IndexMap::local_range() const noexcept
@@ -636,10 +636,10 @@ std::map<std::int32_t, std::set<int>> IndexMap::compute_shared_indices() const
   std::vector<std::int64_t> recv_data(recv_offsets.back());
 
   // Work-around for OpenMPI
-  if (send_sizes.empty())
-    send_sizes.resize(1);
-  if (recv_sizes.empty())
-    recv_sizes.resize(1);
+  // if (send_sizes.empty())
+  //   send_sizes.resize(1);
+  // if (recv_sizes.empty())
+  //   recv_sizes.resize(1);
 
   // Start data exchange
   MPI_Request request;
@@ -696,6 +696,8 @@ IndexMap::create_submap(const xtl::span<const std::int32_t>& indices) const
 
   // Step 1: Compute new offest for this rank and new global size
 
+  std::cout << "Step 1" << std::endl;
+
   std::int64_t local_size = indices.size();
   std::int64_t offset = 0;
   MPI_Request request_scan;
@@ -713,6 +715,8 @@ IndexMap::create_submap(const xtl::span<const std::int32_t>& indices) const
   // Step 2: Create array from old to new index, setting entries to -1
   // if they do not appear in the new map
 
+  std::cout << "Step 2" << std::endl;
+
   std::vector<std::int32_t> old_to_new_index(this->size_local(), -1);
   for (std::size_t i = 0; i < indices.size(); ++i)
     old_to_new_index[indices[i]] = i;
@@ -720,22 +724,23 @@ IndexMap::create_submap(const xtl::span<const std::int32_t>& indices) const
   // Step 3: Compute the destination that the new mao with send to (fwd
   // scatter) and build new shared_indices adjacency list
 
+  std::cout << "Step 3" << std::endl;
+
   // Loop over ranks that ghost data in the original map
   std::vector<int> ranks_old_to_new_send(_shared_indices->num_nodes(), -1);
   std::vector<std::int32_t> shared_indices_data, shared_indices_off(1, 0);
   for (std::int32_t r_old = 0; r_old < _shared_indices->num_nodes(); ++r_old)
   {
-    auto it0 = shared_indices_data.end();
-
     // For indices sent to old rank r_old, add the new index
+    int num_indices = 0;
     for (std::int32_t idx_old : _shared_indices->links(r_old))
     {
       if (auto idx = old_to_new_index[idx_old]; idx >= 0)
+      {
         shared_indices_data.push_back(idx);
+        ++num_indices;
+      }
     }
-
-    // Get number of indices to be sent to rank r_old
-    std::size_t num_indices = std::distance(it0, shared_indices_data.end());
 
     // If indices in the new map will be sent to r_old, update
     // old-to-new map and update offset array
@@ -749,11 +754,10 @@ IndexMap::create_submap(const xtl::span<const std::int32_t>& indices) const
   // Create new shared_indices graph
   auto shared_indices = std::make_unique<graph::AdjacencyList<std::int32_t>>(
       std::move(shared_indices_data), std::move(shared_indices_off));
-  // graph::AdjacencyList<std::int32_t> shared_indices(
-  //     std::move(shared_indices_data), std::move(shared_indices_off));
-  // assert(shared_indices.num_nodes() == std::int32_t(fwd_ranks.size()));
 
   // Step 4: Create sizes_send_fwd array
+
+  std::cout << "Step 4" << std::endl;
 
   const std::vector<int32_t>& displs_send = shared_indices->offsets();
   std::vector<int32_t> sizes_send_fwd(shared_indices->num_nodes(), 0);
@@ -769,6 +773,8 @@ IndexMap::create_submap(const xtl::span<const std::int32_t>& indices) const
     global_indices_new[indices[i]] = i + offset;
 
   // Step 5: Send new global indices to ranks that ghost indices on this rank
+
+  std::cout << "Step 5" << std::endl;
 
   const std::vector<std::int32_t>& send_indices
       = this->scatter_fwd_indices().array();
@@ -787,6 +793,8 @@ IndexMap::create_submap(const xtl::span<const std::int32_t>& indices) const
   // Step 6: Determine which ranks that send data to this rank will also
   // send data to the map on this rank
 
+  std::cout << "Step 6" << std::endl;
+
   // Count number of ghost from each rank
   std::vector<std::int32_t> ranks_old_to_new_recv(_sizes_recv_fwd.size(), -1);
   std::vector<std::int32_t> sizes_recv_fwd,
@@ -794,9 +802,10 @@ IndexMap::create_submap(const xtl::span<const std::int32_t>& indices) const
   for (std::size_t r = 0; r < _sizes_recv_fwd.size(); ++r)
   {
     // Count number of ghosts owned by rank r
+    assert(r + 1 < _displs_recv_fwd.size());
     sizes_recv_fwd_new[r] = std::count_if(
         std::next(buffer_recv_fwd.cbegin(), _displs_recv_fwd[r]),
-        std::next(buffer_recv_fwd.cend(), _displs_recv_fwd[r + 1]),
+        std::next(buffer_recv_fwd.cbegin(), _displs_recv_fwd[r + 1]),
         [](auto x) { return x >= 0; });
     if (sizes_recv_fwd_new[r] > 0)
     {
@@ -805,12 +814,16 @@ IndexMap::create_submap(const xtl::span<const std::int32_t>& indices) const
     }
   }
 
+  std::cout << "Step 6b" << std::endl;
+
   // Compute displs_recv_fwd for new map
   std::vector<std::int32_t> displs_recv_fwd(sizes_recv_fwd.size() + 1, 0);
   std::partial_sum(sizes_recv_fwd.begin(), sizes_recv_fwd.end(),
                    displs_recv_fwd.begin() + 1);
 
   // Step 7: Build ghost_pos_recv_fwd for the new map
+
+  std::cout << "Step 7" << std::endl;
 
   // Build list of ghosts in the new map, and compute the new owning rank
   std::vector<std::int64_t> ghosts;
@@ -838,7 +851,9 @@ IndexMap::create_submap(const xtl::span<const std::int32_t>& indices) const
   for (std::size_t i = 0; i < ghost_owner.size(); ++i)
     ghost_pos_recv_fwd[i] = tmp_displs[ghost_owner[i]]++;
 
-  // Create neighbourhood communicators for new map
+  // Step 8: Create neighbourhood communicators for new map
+
+  std::cout << "Step 8" << std::endl;
 
   // Get src/dest from forward comm (owner-to-ghost) from original map
   const auto [src_ranks, dest_ranks] = dolfinx::MPI::neighbors(comm);
@@ -856,6 +871,8 @@ IndexMap::create_submap(const xtl::span<const std::int32_t>& indices) const
   MPI_Dist_graph_create_adjacent(
       comm, out_ranks.size(), out_ranks.data(), MPI_UNWEIGHTED, in_ranks.size(),
       in_ranks.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm1);
+
+  std::cout << "Step 9" << std::endl;
 
   return {IndexMap({offset, offset + local_size}, size_global,
                    dolfinx::MPI::Comm(comm0, false),
