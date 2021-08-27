@@ -835,7 +835,7 @@ IndexMap::create_submap(const xtl::span<const std::int32_t>& indices) const
       // If index is in the new map, add index and compute owning rank
       // (rank index on new map)
       ghosts.push_back(index);
-      new_to_old_ghost.push_back(_ghosts[i]);
+      new_to_old_ghost.push_back(i);
       auto it = std::upper_bound(_displs_recv_fwd.cbegin(),
                                  _displs_recv_fwd.cend(), buffer_pos);
       const int r_old = std::distance(_displs_recv_fwd.cbegin(), it) - 1;

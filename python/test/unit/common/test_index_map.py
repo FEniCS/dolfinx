@@ -11,18 +11,28 @@ import numpy as np
 
 def test_index_map_compression():
 
-    mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, 8, 8)
-    vertex_map = mesh.topology.index_map(0)
-    # sl = vertex_map.size_local
-    # org_ghosts = vertex_map.ghosts
-    # org_ghost_owners = vertex_map.ghost_owner_rank()
+    comm = MPI.COMM_WORLD
+    myrank = comm.rank
+    if myrank == 0:
+        ghosts = []
+        map = dolfinx.cpp.common.IndexMap(MPI.COMM_WORLD, 50, np.arange(
+            1, comm.size, dtype=np.int32), ghosts, len(ghosts) * [0])
+    else:
+        ghosts = [7, 5, 2, 0, 16]
+        map = dolfinx.cpp.common.IndexMap(MPI.COMM_WORLD, 25, [], ghosts, len(ghosts) * [0])
 
-    # Create an index map where only every third local index is saved
-    entities = np.arange(0, vertex_map.size_local, 3, dtype=np.int32)
-    map, ghosts_idx = vertex_map.create_submap(entities)
+    assert map.size_global == 50 + 25 * (comm.size - 1)
 
-    assert map.size_local == len(entities)
-    assert map.size_global == mesh.mpi_comm().allreduce(len(entities), op=MPI.SUM)
+    # Create an index map where only every second (even) local index is
+    # extracted
+    entities = np.arange(0, map.size_local, 2, dtype=np.int32)
+    submap, ghosts_pos = map.create_submap(entities)
+
+    for pos, global_idx in zip(ghosts_pos, ghosts[::2]):
+        assert ghosts[pos] % 2 == 0
+
+    # assert submap.size_local == len(entities)
+    # assert submap.size_global == mesh.mpi_comm().allreduce(len(entities), op=MPI.SUM)
 
     # org_global_entities = vertex_map.local_to_global(owned_entities)
 
