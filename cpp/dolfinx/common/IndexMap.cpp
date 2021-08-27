@@ -749,6 +749,8 @@ IndexMap::create_submap(const xtl::span<const std::int32_t>& indices) const
   }
 
   // Create new shared_indices graph
+  shared_indices_data.shrink_to_fit();
+  shared_indices_off.shrink_to_fit();
   auto shared_indices = std::make_unique<graph::AdjacencyList<std::int32_t>>(
       std::move(shared_indices_data), std::move(shared_indices_off));
 
@@ -757,12 +759,6 @@ IndexMap::create_submap(const xtl::span<const std::int32_t>& indices) const
   std::cout << "Step 4" << std::endl;
 
   MPI_Wait(&request_offset, MPI_STATUS_IGNORE);
-  const std::vector<int32_t>& displs_send = shared_indices->offsets();
-  std::vector<int32_t> sizes_send_fwd(shared_indices->num_nodes(), 0);
-  std::adjacent_difference(displs_send.begin() + 1, displs_send.end(),
-                           sizes_send_fwd.begin());
-
-  // ------
 
   // TODO: Can we avoid this step and pack the buffer directly?
   // Build array of global indices for indices in the new map
@@ -795,29 +791,23 @@ IndexMap::create_submap(const xtl::span<const std::int32_t>& indices) const
 
   // Count number of ghost from each rank
   std::vector<std::int32_t> ranks_old_to_new_recv(_sizes_recv_fwd.size(), -1);
-  std::vector<std::int32_t> sizes_recv_fwd,
+  std::vector<std::int32_t> displs_recv_fwd(1, 0),
       sizes_recv_fwd_new(_sizes_recv_fwd.size(), 0);
-  for (std::size_t r = 0; r < _sizes_recv_fwd.size(); ++r)
+  for (std::size_t r_old = 0; r_old < _sizes_recv_fwd.size(); ++r_old)
   {
     // Count number of ghosts owned by rank r
-    assert(r + 1 < _displs_recv_fwd.size());
-    sizes_recv_fwd_new[r] = std::count_if(
-        std::next(buffer_recv_fwd.cbegin(), _displs_recv_fwd[r]),
-        std::next(buffer_recv_fwd.cbegin(), _displs_recv_fwd[r + 1]),
+    assert(r_old + 1 < _displs_recv_fwd.size());
+    sizes_recv_fwd_new[r_old] = std::count_if(
+        std::next(buffer_recv_fwd.cbegin(), _displs_recv_fwd[r_old]),
+        std::next(buffer_recv_fwd.cbegin(), _displs_recv_fwd[r_old + 1]),
         [](auto x) { return x >= 0; });
-    if (sizes_recv_fwd_new[r] > 0)
+    if (sizes_recv_fwd_new[r_old] > 0)
     {
-      ranks_old_to_new_recv[r] = sizes_recv_fwd.size();
-      sizes_recv_fwd.push_back(sizes_recv_fwd_new[r]);
+      ranks_old_to_new_recv[r_old] = displs_recv_fwd.size() - 1;
+      displs_recv_fwd.push_back(displs_recv_fwd.back()
+                                + sizes_recv_fwd_new[r_old]);
     }
   }
-
-  std::cout << "Step 6b" << std::endl;
-
-  // Compute displs_recv_fwd for new map
-  std::vector<std::int32_t> displs_recv_fwd(sizes_recv_fwd.size() + 1, 0);
-  std::partial_sum(sizes_recv_fwd.begin(), sizes_recv_fwd.end(),
-                   displs_recv_fwd.begin() + 1);
 
   // Step 7: Build ghost_pos_recv_fwd for the new map
 
@@ -875,10 +865,12 @@ IndexMap::create_submap(const xtl::span<const std::int32_t>& indices) const
   // Wait for the MPI_Iallreduce to complete
   MPI_Wait(&request_size, MPI_STATUS_IGNORE);
 
+  displs_recv_fwd.shrink_to_fit();
+  ghosts.shrink_to_fit();
+  new_to_old_ghost.shrink_to_fit();
   return {IndexMap({offset, offset + local_size}, size_global,
                    dolfinx::MPI::Comm(comm0, false),
-                   dolfinx::MPI::Comm(comm1, false), std::move(sizes_send_fwd),
-                   std::move(sizes_recv_fwd), std::move(displs_recv_fwd),
+                   dolfinx::MPI::Comm(comm1, false), std::move(displs_recv_fwd),
                    std::move(ghost_pos_recv_fwd), std::move(ghosts),
                    std::move(shared_indices)),
           std::move(new_to_old_ghost)};

@@ -91,21 +91,25 @@ public:
 private:
   template <typename U, typename V, typename W, typename X>
   IndexMap(std::array<std::int64_t, 2> local_range, std::size_t size_global,
-           U&& comm_owner_to_ghost, U&& comm_ghost_to_owner, V&& sizes_send_fwd,
-           V&& sizes_recv_fwd, V&& displs_recv_fwd, V&& ghost_pos_recv_fwd,
-           W&& ghosts, X&& shared_indices)
+           U&& comm_owner_to_ghost, U&& comm_ghost_to_owner,
+           V&& displs_recv_fwd, V&& ghost_pos_recv_fwd, W&& ghosts,
+           X&& shared_indices)
       : _local_range(local_range), _size_global(size_global),
         _comm_owner_to_ghost(std::forward<U>(comm_owner_to_ghost)),
         _comm_ghost_to_owner(std::forward<U>(comm_ghost_to_owner)),
-        _sizes_send_fwd(std::forward<V>(sizes_send_fwd)),
-        _sizes_recv_fwd(std::forward<V>(sizes_recv_fwd)),
         _displs_recv_fwd(std::forward<V>(displs_recv_fwd)),
         _ghost_pos_recv_fwd(std::forward<V>(ghost_pos_recv_fwd)),
         _ghosts(std::forward<W>(ghosts)),
         _shared_indices(std::forward<X>(shared_indices))
   {
-    // _array.reserve(_offsets.back());
-    // assert(_offsets.back() == (std::int32_t)_array.size());
+    _sizes_recv_fwd.resize(_displs_recv_fwd.size() - 1, 0);
+    std::adjacent_difference(_displs_recv_fwd.cbegin() + 1,
+                             _displs_recv_fwd.cend(), _sizes_recv_fwd.begin());
+
+    const std::vector<int32_t>& displs_send = _shared_indices->offsets();
+    _sizes_send_fwd.resize(_shared_indices->num_nodes(), 0);
+    std::adjacent_difference(displs_send.cbegin() + 1, displs_send.cend(),
+                             _sizes_send_fwd.begin());
   }
 
 public:
