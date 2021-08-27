@@ -199,10 +199,9 @@ public:
   std::map<std::int32_t, std::set<int>> compute_shared_indices() const;
 
   /// Create new index map from a subset of indices in another index map
-  /// @param[in] map The original index map
-  /// @param[in] indices List of local indices in @p map that should
-  /// appear in the new index map. All indices must be owned, i.e. indices
-  /// must be less than `map.size_local()`.
+  /// @param[in] indices List of local indices in the map that should
+  /// appear in the new index map. All indices must be owned, i.e.
+  /// indices must be less than `map.size_local()`.
   /// @pre `indices` must be sorted and contain no duplicates
   /// @return A (1) new index map and a vector that maps each local index
   /// in the map to the local index in the input map.
