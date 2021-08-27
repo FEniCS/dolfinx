@@ -700,17 +700,14 @@ IndexMap::create_submap(const xtl::span<const std::int32_t>& indices) const
 
   std::int64_t local_size = indices.size();
   std::int64_t offset = 0;
-  MPI_Request request_scan;
+  MPI_Request request_offset;
   MPI_Iexscan(&local_size, &offset, 1, MPI_INT64_T, MPI_SUM, comm,
-              &request_scan);
-  MPI_Wait(&request_scan, MPI_STATUS_IGNORE);
+              &request_offset);
 
   std::int64_t size_global = 0;
-  MPI_Request request;
+  MPI_Request request_size;
   MPI_Iallreduce(&local_size, &size_global, 1, MPI_INT64_T, MPI_SUM, comm,
-                 &request);
-  // Wait for the MPI_Iallreduce to complete
-  MPI_Wait(&request, MPI_STATUS_IGNORE);
+                 &request_size);
 
   // Step 2: Create array from old to new index, setting entries to -1
   // if they do not appear in the new map
@@ -721,7 +718,7 @@ IndexMap::create_submap(const xtl::span<const std::int32_t>& indices) const
   for (std::size_t i = 0; i < indices.size(); ++i)
     old_to_new_index[indices[i]] = i;
 
-  // Step 3: Compute the destination that the new mao with send to (fwd
+  // Step 3: Compute the destination that the new map will send to (fwd
   // scatter) and build new shared_indices adjacency list
 
   std::cout << "Step 3" << std::endl;
@@ -759,6 +756,7 @@ IndexMap::create_submap(const xtl::span<const std::int32_t>& indices) const
 
   std::cout << "Step 4" << std::endl;
 
+  MPI_Wait(&request_offset, MPI_STATUS_IGNORE);
   const std::vector<int32_t>& displs_send = shared_indices->offsets();
   std::vector<int32_t> sizes_send_fwd(shared_indices->num_nodes(), 0);
   std::adjacent_difference(displs_send.begin() + 1, displs_send.end(),
@@ -873,6 +871,9 @@ IndexMap::create_submap(const xtl::span<const std::int32_t>& indices) const
       in_ranks.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm1);
 
   std::cout << "Step 9" << std::endl;
+
+  // Wait for the MPI_Iallreduce to complete
+  MPI_Wait(&request_size, MPI_STATUS_IGNORE);
 
   return {IndexMap({offset, offset + local_size}, size_global,
                    dolfinx::MPI::Comm(comm0, false),
