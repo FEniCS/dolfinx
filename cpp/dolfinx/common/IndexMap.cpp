@@ -130,13 +130,6 @@ compute_owned_shared(MPI_Comm comm, const xtl::span<const std::int64_t>& ghosts,
     }
   }
 
-  // Work-around for OpenMPI bug. Some version of OpenMPI crash if
-  // in/out_edges_num array is empty.
-  // if (in_edges_num.empty())
-  //   in_edges_num.resize(1);
-  // if (out_edges_num.empty())
-  //   out_edges_num.resize(1);
-
   // May have repeated shared indices with different processes
   std::vector<std::int64_t> recv_indices(recv_disp.back());
   MPI_Neighbor_alltoallv(send_indices.data(), out_edges_num.data(),
@@ -434,14 +427,6 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
   _ghost_pos_recv_fwd.resize(ghost_owners.size());
   for (std::size_t i = 0; i < ghost_owners.size(); ++i)
     _ghost_pos_recv_fwd[i] = tmp_displs[ghost_owners[i]]++;
-
-  // // Add '1' for OpenMPI bug
-  // if (_sizes_recv_fwd.empty())
-  //   _sizes_recv_fwd.push_back(0);
-
-  // // Add '1' for OpenMPI bug
-  // if (_sizes_send_fwd.empty())
-  //   _sizes_send_fwd.push_back(0);
 }
 //-----------------------------------------------------------------------------
 std::array<std::int64_t, 2> IndexMap::local_range() const noexcept
@@ -634,12 +619,6 @@ std::map<std::int32_t, std::set<int>> IndexMap::compute_shared_indices() const
   std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
                    recv_offsets.begin() + 1);
   std::vector<std::int64_t> recv_data(recv_offsets.back());
-
-  // Work-around for OpenMPI
-  // if (send_sizes.empty())
-  //   send_sizes.resize(1);
-  // if (recv_sizes.empty())
-  //   recv_sizes.resize(1);
 
   // Start data exchange
   MPI_Request request;
