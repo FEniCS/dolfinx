@@ -93,8 +93,8 @@ Docker container
 
 A Docker container is available at
 https://hub.docker.com/r/dolfinx/dolfinx. The `Dockerfile
-<https://github.com/FEniCS/dolfinx/blob/master/Dockerfile>`_
-provides a definitive build recipe.
+<https://github.com/FEniCS/dolfinx/blob/master/Dockerfile>`_ provides a
+definitive build recipe.
 
 
 .. rubric:: Footnotes
