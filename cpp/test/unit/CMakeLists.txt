@@ -3,7 +3,6 @@ project(dolfinx-tests)
 
 # Find DOLFINx config file
 find_package(DOLFINX REQUIRED)
-find_package(Basix REQUIRED)
 
 # Make test executable
 set(TEST_SOURCES
