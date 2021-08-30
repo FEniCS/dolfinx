@@ -5,8 +5,8 @@ PROJECT(dolfinx_pybind11)
 find_package(pybind11 REQUIRED CONFIG HINTS ${PYBIND11_DIR} ${PYBIND11_ROOT}
   $ENV{PYBIND11_DIR} $ENV{PYBIND11_ROOT})
 
-find_package(DOLFINX REQUIRED)
-find_package(Basix REQUIRED)
+find_package(DOLFINX REQUIRED CONFIG)
+find_package(Basix REQUIRED CONFIG)
 find_package(xtensor REQUIRED)
 
 # Check if the Basix C++ library was compiled with xtensor SIMD

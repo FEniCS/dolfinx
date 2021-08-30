@@ -34,7 +34,7 @@ endif()
 if (BASIX_PY_DIR)
   message(STATUS "Adding ${BASIX_PY_DIR} to Basix search hints")
 endif()
-find_dependency(Basix HINTS ${BASIX_PY_DIR})
+find_dependency(Basix CONFIG HINTS ${BASIX_PY_DIR})
 
 # Add xsimd if the C++ interface was compiled with it
 if(@xsimd_FOUND@)
