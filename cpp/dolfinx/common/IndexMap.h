@@ -202,13 +202,16 @@ public:
   /// @return shared indices
   std::map<std::int32_t, std::set<int>> compute_shared_indices() const;
 
-  /// Create new index map from a subset of indices in another index map
-  /// @param[in] indices List of local indices in the map that should
-  /// appear in the new index map. All indices must be owned, i.e.
-  /// indices must be less than `map.size_local()`.
+  /// Create new index map from a subset of indices in this index map.
+  /// The order of the indices is preserved, with new map effectively a
+  /// 'compressed' map.
+  /// @param[in] indices Local indices in the map that should appear in
+  /// the new index map. All indices must be owned, i.e. indices must be
+  /// less than `this->size_local()`.
   /// @pre `indices` must be sorted and contain no duplicates
-  /// @return A (1) new index map and a vector that maps each local index
-  /// in the map to the local index in the input map.
+  /// @return The (i) new index map and (ii) a map from the ghost
+  /// position in the new map to the ghost position in the original
+  /// (this) map
   std::pair<IndexMap, std::vector<std::int32_t>>
   create_submap(const xtl::span<const std::int32_t>& indices) const;
 

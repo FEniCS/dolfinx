@@ -688,8 +688,8 @@ IndexMap::create_submap(const xtl::span<const std::int32_t>& indices) const
   MPI_Iallreduce(&local_size, &size_global, 1, MPI_INT64_T, MPI_SUM, comm,
                  &request_size);
 
-  // Step 2: Create array from old to new index, setting entries to -1
-  // if they do not appear in the new map
+  // Step 2: Create array from old to new index for owned indices,
+  // setting entries to -1 if they are not in the new map
 
   std::cout << "Step 2" << std::endl;
 
@@ -698,7 +698,7 @@ IndexMap::create_submap(const xtl::span<const std::int32_t>& indices) const
     old_to_new_index[indices[i]] = i;
 
   // Step 3: Compute the destination that the new map will send to (fwd
-  // scatter) and build new shared_indices adjacency list
+  // scatter) and build the new shared_indices adjacency list
 
   std::cout << "Step 3" << std::endl;
 
@@ -745,15 +745,17 @@ IndexMap::create_submap(const xtl::span<const std::int32_t>& indices) const
   for (std::size_t i = 0; i < indices.size(); ++i)
     global_indices_new[indices[i]] = i + offset;
 
-  // Step 5: Send new global indices to ranks that ghost indices on this rank
+  // Step 5: Send new global indices to ranks that ghost indices on this
+  // rank
 
   std::cout << "Step 5" << std::endl;
 
   const std::vector<std::int32_t>& send_indices
       = this->scatter_fwd_indices().array();
   std::vector<std::int64_t> buffer_send_fwd(send_indices.size(), -1);
-  for (std::size_t i = 0; i < send_indices.size(); ++i)
-    buffer_send_fwd[i] = global_indices_new[send_indices[i]];
+  std::transform(
+      send_indices.cbegin(), send_indices.cend(), buffer_send_fwd.begin(),
+      [&global_indices_new](auto idx) { return global_indices_new[idx]; });
 
   MPI_Request request1;
   std::vector<std::int64_t> buffer_recv_fwd(this->num_ghosts());
@@ -763,15 +765,14 @@ IndexMap::create_submap(const xtl::span<const std::int32_t>& indices) const
                           xtl::span<std::int64_t>(buffer_recv_fwd));
   this->scatter_fwd_end(request1);
 
-  // Step 6: Determine which ranks that send data to this rank will also
-  // send data to the map on this rank
+  // Step 6: Determine which ranks that send data to this rank for *this
+  // will also send data to the new map on this rank
 
   std::cout << "Step 6" << std::endl;
 
   // Count number of ghost from each rank
-  std::vector<std::int32_t> ranks_old_to_new_recv(_sizes_recv_fwd.size(), -1);
-  std::vector<std::int32_t> displs_recv_fwd(1, 0),
-      sizes_recv_fwd_new(_sizes_recv_fwd.size(), 0);
+  std::vector<std::int32_t> ranks_old_to_new_recv(_sizes_recv_fwd.size(), -1),
+      displs_recv_fwd(1, 0), sizes_recv_fwd_new(_sizes_recv_fwd.size(), 0);
   for (std::size_t r_old = 0; r_old < _sizes_recv_fwd.size(); ++r_old)
   {
     // Count number of ghosts owned by rank r
@@ -818,7 +819,7 @@ IndexMap::create_submap(const xtl::span<const std::int32_t>& indices) const
   for (std::size_t i = 0; i < ghost_owner.size(); ++i)
     ghost_pos_recv_fwd[i] = tmp_displs[ghost_owner[i]]++;
 
-  // Step 8: Create neighbourhood communicators for new map
+  // Step 8: Create neighbourhood communicators for thw new map
 
   std::cout << "Step 8" << std::endl;
 
