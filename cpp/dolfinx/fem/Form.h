@@ -315,9 +315,9 @@ private:
         std::set<std::int32_t> fwd_shared;
         if (topology.index_map(tdim)->num_ghosts() == 0)
         {
-          fwd_shared.insert(
-              topology.index_map(tdim - 1)->shared_indices().array().begin(),
-              topology.index_map(tdim - 1)->shared_indices().array().end());
+          const std::vector<std::int32_t>& fwd_indices
+              = topology.index_map(tdim - 1)->scatter_fwd_indices().array();
+          fwd_shared.insert(fwd_indices.begin(), fwd_indices.end());
         }
 
         for (auto f = tagged_entities.begin(); f != entity_end; ++f)
@@ -401,9 +401,9 @@ private:
         // Only need to consider shared facets when there are no ghost cells
         if (topology.index_map(tdim)->num_ghosts() == 0)
         {
-          fwd_shared_facets.insert(
-              topology.index_map(tdim - 1)->shared_indices().array().begin(),
-              topology.index_map(tdim - 1)->shared_indices().array().end());
+          const std::vector<std::int32_t>& fwd_indices
+              = topology.index_map(tdim - 1)->scatter_fwd_indices().array();
+          fwd_shared_facets.insert(fwd_indices.begin(), fwd_indices.end());
         }
 
         const int num_facets = topology.index_map(tdim - 1)->size_local();

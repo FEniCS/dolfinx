@@ -160,9 +160,8 @@ FunctionSpace::tabulate_dof_coordinates(bool transpose) const
   assert(map);
   const int num_cells = map->size_local() + map->num_ghosts();
 
-  const bool needs_dof_transformations = _element->needs_dof_transformations();
   xtl::span<const std::uint32_t> cell_info;
-  if (needs_dof_transformations)
+  if (_element->needs_dof_transformations())
   {
     _mesh->topology_mutable().create_entity_permutations();
     cell_info = xtl::span(_mesh->topology().get_cell_permutation_info());

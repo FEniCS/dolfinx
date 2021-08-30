@@ -43,8 +43,11 @@ CoordinateElement::CoordinateElement(
 }
 //-----------------------------------------------------------------------------
 CoordinateElement::CoordinateElement(mesh::CellType celltype, int degree)
-    : CoordinateElement(std::make_shared<basix::FiniteElement>(
-        basix::create_element("Lagrange", mesh::to_string(celltype), degree)))
+    : CoordinateElement(
+        std::make_shared<basix::FiniteElement>(basix::create_element(
+            basix::element::family::P,
+            basix::cell::str_to_type(mesh::to_string(celltype)), degree,
+            basix::lattice::type::equispaced)))
 {
   // Do nothing
 }
@@ -69,7 +72,7 @@ mesh::CellType CoordinateElement::cell_shape() const
 //-----------------------------------------------------------------------------
 int CoordinateElement::topological_dimension() const
 {
-  return basix::cell::topology(_element->cell_type()).size() - 1;
+  return basix::cell::topological_dimension(_element->cell_type());
 }
 //-----------------------------------------------------------------------------
 xt::xtensor<double, 4>

@@ -43,7 +43,8 @@ pip install .
 ```
 (you may need to use ``pip3``, depending on your system).
 
-For detailed instructions, see the file INSTALL.
+For detailed instructions, see
+https://fenicsproject.org/docs/dolfinx/dev/python/.
 
 ### Spack
 
@@ -66,7 +67,7 @@ comprehensive instructions.
 
 A Docker image with DOLFINx built nightly:
 ```
-docker run -ti dolfinx/dolfinx
+docker run -ti dolfinx/dolfinx:latest
 ```
 
 To switch between real and complex builds of DOLFINx.
@@ -77,13 +78,13 @@ source /usr/local/bin/dolfinx-real-mode
 
 A Jupyter Lab environment with DOLFINx built nightly:
 ```
-docker run --init -ti -p 8888:8888 dolfinx/lab # Access at http://localhost:8888
+docker run --init -ti -p 8888:8888 dolfinx/lab:latest # Access at http://localhost:8888
 ```
 
 A development image with all of the dependencies required
 to build DOLFINx:
 ```
-docker run -ti dolfinx/dev-env
+docker run -ti dolfinx/dev-env:latest
 ```
 
 All Docker images support arm64 and amd64 architectures.

@@ -27,7 +27,6 @@
 #include <variant>
 #include <vector>
 #include <xtensor/xadapt.hpp>
-#include <xtensor/xio.hpp>
 #include <xtensor/xtensor.hpp>
 #include <xtl/xspan.hpp>
 
@@ -183,7 +182,6 @@ public:
             *_function_space->dofmap()->index_map,
             _function_space->dofmap()->index_map_bs(), _x->mutable_array());
       }
-
       return _petsc_vector;
     }
     else
@@ -315,9 +313,13 @@ public:
     assert(dofmap);
     const int bs_dof = dofmap->bs();
 
-    mesh->topology_mutable().create_entity_permutations();
-    const std::vector<std::uint32_t>& cell_info
-        = mesh->topology().get_cell_permutation_info();
+    xtl::span<const std::uint32_t> cell_info;
+    if (element->needs_dof_transformations())
+    {
+      mesh->topology_mutable().create_entity_permutations();
+      cell_info = xtl::span(mesh->topology().get_cell_permutation_info());
+    }
+
     xt::xtensor<double, 2> coordinate_dofs
         = xt::zeros<double>({num_dofs_g, gdim});
     xt::xtensor<double, 2> xp

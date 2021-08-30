@@ -11,13 +11,13 @@ if sys.version_info < (3, 7):
     print("Python 3.7 or higher required, please upgrade.")
     sys.exit(1)
 
-VERSION = "0.1.1.dev0"
+VERSION = "0.3.1.dev0"
 
 REQUIREMENTS = [
     "numpy",
     "mpi4py",
     "petsc4py",
-    "fenics-ffcx>=0.1.0,<0.2.0",
+    "fenics-ffcx>=0.3.0,<0.4.0",
     "fenics-ufl>=2021.1.0,<2021.2.0"
 ]
 

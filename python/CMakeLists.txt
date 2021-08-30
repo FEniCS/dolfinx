@@ -1,10 +1,13 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.16)
 
 PROJECT(dolfinx_pybind11)
 
+find_package(pybind11 REQUIRED CONFIG HINTS ${PYBIND11_DIR} ${PYBIND11_ROOT}
+  $ENV{PYBIND11_DIR} $ENV{PYBIND11_ROOT})
+
+find_package(DOLFINX REQUIRED CONFIG)
+find_package(Basix REQUIRED CONFIG)
 find_package(xtensor REQUIRED)
-find_package(Basix REQUIRED)
-find_package(DOLFINX REQUIRED)
 
 # Check if the Basix C++ library was compiled with xtensor SIMD
 get_target_property(BASIX_DEFN Basix::basix INTERFACE_COMPILE_DEFINITIONS)
@@ -17,9 +20,6 @@ endif()
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-
-find_package(pybind11 REQUIRED CONFIG HINTS ${PYBIND11_DIR} ${PYBIND11_ROOT}
-  $ENV{PYBIND11_DIR} $ENV{PYBIND11_ROOT})
 
 # Create the binding library
 pybind11_add_module(cpp SHARED

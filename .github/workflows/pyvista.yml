@@ -8,15 +8,17 @@ on:
   schedule:
     # '*' is a special character in YAML, so string must be quoted
     - cron: "0 1 * * *"
+  workflow_dispatch: ~
+
 jobs:
   build:
     if: "!(contains(github.event.head_commit.message, '[ci skip]') || contains(github.event.head_commit.message, '[skip ci]'))"
     runs-on: ubuntu-20.04
-    container: fenicsproject/test-env:openmpi
+    container: fenicsproject/test-env:latest-openmpi
 
     env:
-      CC: clang-10
-      CXX: clang++-10
+      CC: clang
+      CXX: clang++
 
       # For pyvista/pyvistaqt
       DISPLAY: ":99.0"
@@ -40,11 +42,25 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Get Basix and install
+      - name: Checkout Basix
         uses: actions/checkout@v2
         with:
           path: ./basix
           repository: FEniCS/basix
+          ref: main
+
+      - name: Checkout UFL
+        uses: actions/checkout@v2
+        with:
+          path: ./ufl
+          repository: FEniCS/ufl
+          ref: main
+
+      - name: Checkout FFCx
+        uses: actions/checkout@v2
+        with:
+          path: ./ffcx
+          repository: FEniCS/ffcx
           ref: main
 
       - name: Install FEniCS Python components
@@ -53,8 +69,8 @@ jobs:
           cmake --build build-dir
           cmake --install build-dir
           python3 -m pip install ./basix/python
-          python3 -m pip install git+https://github.com/FEniCS/ufl.git
-          python3 -m pip install git+https://github.com/FEniCS/ffcx.git
+          python3 -m pip install ./ufl
+          python3 -m pip install ./ffcx
           apt-get update
           apt-get install -y --no-install-recommends libgl1-mesa-dev xvfb # pyvista
           apt-get install -y --no-install-recommends python3-pyqt5 libgl1-mesa-glx  # pyvistaqt

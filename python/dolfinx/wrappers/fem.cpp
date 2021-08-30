@@ -110,7 +110,8 @@ void fem(py::module& m)
       "create_dofmap",
       [](const MPICommWrapper comm, const std::uintptr_t dofmap,
          dolfinx::mesh::Topology& topology,
-         std::shared_ptr<dolfinx::fem::FiniteElement> element) {
+         std::shared_ptr<dolfinx::fem::FiniteElement> element)
+      {
         const ufc_dofmap* p = reinterpret_cast<const ufc_dofmap*>(dofmap);
         return dolfinx::fem::create_dofmap(comm.get(), *p, topology, nullptr,
                                            element);
@@ -263,6 +264,33 @@ void fem(py::module& m)
 
              self.push_forward(x, g, phi);
              return xt_as_pyarray(std::move(x));
+           })
+      .def("pull_back",
+           [](const dolfinx::fem::CoordinateElement& self,
+              const py::array_t<double, py::array::c_style>& x,
+              const py::array_t<double, py::array::c_style>& cell_geometry)
+           {
+             const std::size_t tdim = self.topological_dimension();
+             const std::size_t gdim = x.shape(1);
+             const std::size_t num_points = x.shape(0);
+             xt::xtensor<double, 2> X = xt::empty<double>({num_points, tdim});
+             xt::xtensor<double, 3> J
+                 = xt::empty<double>({num_points, gdim, tdim});
+             xt::xtensor<double, 3> K
+                 = xt::empty<double>({num_points, tdim, gdim});
+             xt::xtensor<double, 1> detJ = xt::empty<double>({num_points});
+             std::array<std::size_t, 2> s_x
+                 = {static_cast<std::size_t>(x.shape(0)),
+                    static_cast<std::size_t>(x.shape(1))};
+             auto _x = xt::adapt(x.data(), x.size(), xt::no_ownership(), s_x);
+
+             std::array<std::size_t, 2> s_g
+                 = {static_cast<std::size_t>(cell_geometry.shape(0)),
+                    static_cast<std::size_t>(cell_geometry.shape(1))};
+             auto g = xt::adapt(cell_geometry.data(), cell_geometry.size(),
+                                xt::no_ownership(), s_g);
+             self.pull_back(X, J, detJ, K, _x, g);
+             return xt_as_pyarray(std::move(X));
            })
       .def_readwrite("non_affine_atol",
                      &dolfinx::fem::CoordinateElement::non_affine_atol)
@@ -710,8 +738,14 @@ void fem(py::module& m)
             std::array<std::size_t, 2> shape_u
                 = {static_cast<std::size_t>(u.shape(0)),
                    static_cast<std::size_t>(u.shape(1))};
-            xt::xtensor<PetscScalar, 2> _u = xt::adapt(
-                u.mutable_data(), u.size(), xt::no_ownership(), shape_u);
+
+            // The below should work, but misbehaves with the Intel icpx
+            // compiler
+            // xt::xtensor<PetscScalar, 2> _u = xt::adapt(
+            //     u.mutable_data(), u.size(), xt::no_ownership(), shape_u);
+            xt::xtensor<PetscScalar, 2> _u(shape_u);
+            std::copy_n(u.data(), u.size(), _u.data());
+
             self.eval(_x, xtl::span(cells.data(), cells.size()), _u);
             std::copy_n(_u.data(), _u.size(), u.mutable_data());
           },

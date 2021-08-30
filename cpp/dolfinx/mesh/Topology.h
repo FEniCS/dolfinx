@@ -73,8 +73,8 @@ public:
   /// Assignment
   Topology& operator=(Topology&& topology) = default;
 
-  /// Return topological dimension
-  int dim() const;
+  /// Return the topological dimension of the mesh
+  int dim() const noexcept;
 
   /// @todo Merge with set_connectivity
   ///
@@ -86,7 +86,8 @@ public:
   /// Get the IndexMap that described the parallel distribution of the
   /// mesh entities
   /// @param[in] dim Topological dimension
-  /// @return Index map for the entities of dimension @p dim
+  /// @return Index map for the entities of dimension @p dim. Returns
+  /// `nullptr` if index map has not been set.
   std::shared_ptr<const common::IndexMap> index_map(int dim) const;
 
   /// Return connectivity from entities of dimension d0 to entities of
@@ -94,7 +95,8 @@ public:
   /// @param[in] d0
   /// @param[in] d1
   /// @return The adjacency list that for each entity of dimension d0
-  ///   gives the list of incident entities of dimension d1
+  /// gives the list of incident entities of dimension d1. Returns
+  /// `nullptr` if connectivity has not been computed.
   std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
   connectivity(int d0, int d1) const;
 
@@ -115,21 +117,22 @@ public:
   /// Each column of the returned array represents a cell, and each row
   /// a facet of that cell.
   /// @return The permutation number
+  /// @note An exception is raised if the permutations have not been
+  /// computed
   const std::vector<std::uint8_t>& get_facet_permutations() const;
 
   /// Cell type
   /// @return Cell type that the topology is for
-  mesh::CellType cell_type() const;
+  mesh::CellType cell_type() const noexcept;
 
   // TODO: Rework memory management and associated API
   // Currently, there is no clear caching policy implemented and no way of
   // discarding cached data.
 
-  // creation of entities
   /// Create entities of given topological dimension.
   /// @param[in] dim Topological dimension
   /// @return Number of newly created entities, returns -1 if entities
-  ///   already existed
+  /// already existed
   std::int32_t create_entities(int dim);
 
   /// Create connectivity between given pair of dimensions, d0 -> d1
@@ -139,9 +142,6 @@ public:
 
   /// Compute entity permutations and reflections
   void create_entity_permutations();
-
-  /// Compute all entities and connectivity
-  void create_connectivity_all();
 
   /// Mesh MPI communicator
   /// @return The communicator on which the topology is distributed
@@ -154,10 +154,10 @@ private:
   // Cell type
   mesh::CellType _cell_type;
 
-  // IndexMap to store ghosting for each entity dimension
+  // Parallel layout of entities for each dimension
   std::array<std::shared_ptr<const common::IndexMap>, 4> _index_map;
 
-  // AdjacencyList for pairs of topological dimensions
+  // AdjacencyList for pairs [d0][d1] == d0 -> d1 connectivity
   std::vector<std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>>>
       _connectivity;
 
@@ -175,10 +175,10 @@ private:
 ///
 /// @param[in] comm MPI communicator across which the topology is
 /// distributed
-/// @param[in] cells The cell topology (list of cell vertices) using
-/// global indices for the vertices. It contains cells that have been
-/// distributed to this rank, e.g. via a graph partitioner. It must also
-/// contain all ghost cells via facet, i.e. cells that are on a
+/// @param[in] cells The cell topology (list of vertices for each cell)
+/// using global indices for the vertices. It contains cells that have
+/// been distributed to this rank, e.g. via a graph partitioner. It must
+/// also contain all ghost cells via facet, i.e. cells that are on a
 /// neighboring process and share a facet with a local cell.
 /// @param[in] original_cell_index The original global index associated
 /// with each cell

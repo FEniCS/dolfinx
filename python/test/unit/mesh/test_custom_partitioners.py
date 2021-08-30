@@ -19,7 +19,7 @@ assert (tempdir)
 
 
 @pytest.mark.parametrize("partitioner", [partition_cells_graph])
-@pytest.mark.parametrize("Nx", [2, 5, 10])
+@pytest.mark.parametrize("Nx", [5, 10])
 @pytest.mark.parametrize("cell_type", [CellType.tetrahedron, CellType.hexahedron])
 def test_partition_box_mesh(partitioner, Nx, cell_type):
     mesh = dolfinx.BoxMesh(MPI.COMM_WORLD, [np.array([0, 0, 0]),
@@ -78,7 +78,6 @@ def test_custom_partitioner(tempdir, Nx, cell_type):
 
     ghost_mode = GhostMode.none
     new_mesh = dolfinx.mesh.create_mesh(mpi_comm, topo, x, domain, ghost_mode, partitioner)
-    new_mesh.topology.create_connectivity_all()
 
     tdim = new_mesh.topology.dim
     assert mesh.topology.index_map(tdim).size_global == new_mesh.topology.index_map(tdim).size_global
