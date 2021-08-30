@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 3.16)
 #------------------------------------------------------------------------------
 # Set project name and version number
 
-project(DOLFINX VERSION "0.1.1.0")
+project(DOLFINX VERSION "0.3.1.0")
 
 set(DOXYGEN_DOLFINX_VERSION ${DOLFINX_VERSION} CACHE STRING "Version for Doxygen" FORCE)
 
@@ -170,14 +170,27 @@ set_package_properties(SCOTCH PROPERTIES TYPE REQUIRED
   URL "https://www.labri.fr/perso/pelegrin/scotch"
   PURPOSE "Parallel graph partitioning and redordering")
 
-# Check for required packages UFC and basix
+# Use Python for detecting UFC and Basix
 find_package(Python3 COMPONENTS Interpreter REQUIRED)
+
+# Check for UFC
 find_package(UFC MODULE ${DOLFINX_VERSION_MAJOR}.${DOLFINX_VERSION_MINOR})
 set_package_properties(UFC PROPERTIES TYPE REQUIRED
   DESCRIPTION "Unified interface for form-compilers (part of FFCx)"
   URL "https://github.com/fenics/ffcx")
 
-find_package(Basix 0.0.1 REQUIRED)
+# Check for Basix
+# Note: Basix may be installed as a standalone C++ library, or in the
+# Basix Python module tre
+execute_process(
+  COMMAND ${Python3_EXECUTABLE} -c "import basix, os, sys; sys.stdout.write(os.path.dirname(basix.__file__))"
+  OUTPUT_VARIABLE BASIX_PY_DIR
+  RESULT_VARIABLE BASIX_PY_COMMAND_RESULT
+  ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
+if (BASIX_PY_DIR)
+  message(STATUS "Adding ${BASIX_PY_DIR} to Basix search hints")
+endif()
+find_package(Basix REQUIRED CONFIG HINTS ${BASIX_PY_DIR})
 set_package_properties(basix PROPERTIES TYPE REQUIRED
   DESCRIPTION "FEniCS tabulation library"
   URL "https://github.com/fenics/basix")
