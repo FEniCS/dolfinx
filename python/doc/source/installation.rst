@@ -26,7 +26,7 @@ C++ core
 - xtensor (https://xtensor.readthedocs.io/) and xtensor-blas (https://xtensor-blas.readthedocs.io/)
 - pkg-config (https://www.freedesktop.org/wiki/Software/pkg-config/)
 - Python 3 [build dependency]
-- FFCx [build dependency, for ``ufc.h`` and ``ufc_geometry.h`` headers]
+- FFCx [build dependency, for ``ufc.h`` header]
 - MPI
 - HDF5 (with MPI support enabled)
 - PETSc [2]_
@@ -85,7 +85,7 @@ Python
 After installation of the C++ core, from the ``python/`` directory the
 Python interface can be installed using::
 
-    pip3 install .
+    pip install .
 
 
 Docker container
@@ -93,8 +93,8 @@ Docker container
 
 A Docker container is available at
 https://hub.docker.com/r/dolfinx/dolfinx. The `Dockerfile
-<https://github.com/FEniCS/dolfinx/blob/master/Dockerfile>`_
-provides a definitive build recipe.
+<https://github.com/FEniCS/dolfinx/blob/master/Dockerfile>`_ provides a
+definitive build recipe.
 
 
 .. rubric:: Footnotes

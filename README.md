@@ -44,18 +44,18 @@ pip install .
 (you may need to use ``pip3``, depending on your system).
 
 For detailed instructions, see
-https://fenicsproject.org/docs/dolfinx/dev/python/.
+https://docs.fenicsproject.org/dolfinx/main/python/installation.
 
 ### Spack
 
-To build from source using [Spack](https://spack.readthedocs.io/) (assuming a bash shell):
+To build the most recent release using
+[Spack](https://spack.readthedocs.io/) (assuming a bash shell):
 ```
 git clone https://github.com/spack/spack.git
 . ./spack/share/spack/setup-env.sh
 spack env create fenicsx-env
 spack env activate fenicsx-env
-echo "  concretization: together" >> ./spack/var/spack/environments/fenicsx-env/spack.yaml
-spack add py-fenics-dolfinx@main ^petsc+mumps+hypre cflags="-O3" fflags="-O3"
+spack add py-fenics-dolfinx ^petsc+mumps cflags="-O3" fflags="-O3"
 spack install
 ```
 See the Spack [documentation](https://spack.readthedocs.io/) for
