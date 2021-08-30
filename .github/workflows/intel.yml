@@ -38,36 +38,12 @@ jobs:
           # apt install -y intel-hpckit
           apt install -y intel-oneapi-common-vars intel-oneapi-compiler-dpcpp-cpp
 
-      - name: Checkout Basix
-        uses: actions/checkout@v2
-        with:
-          path: ./basix
-          repository: FEniCS/basix
-          ref: main
-
-      - name: Checkout UFL
-        uses: actions/checkout@v2
-        with:
-          path: ./ufl
-          repository: FEniCS/ufl
-          ref: main
-
-      - name: Checkout FFCx
-        uses: actions/checkout@v2
-        with:
-          path: ./ffcx
-          repository: FEniCS/ffcx
-          ref: main
-
       - name: Install FEniCS Python components
         run: |
           . /opt/intel/oneapi/setvars.sh
-          cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -B build-dir -S ./basix
-          cmake --build build-dir
-          cmake --install build-dir
-          pip3 install ./basix/python
-          pip3 install ./ufl
-          pip3 install ./ffcx
+          python3 -m pip install git+https://github.com/FEniCS/ufl.git
+          python3 -m pip install git+https://github.com/FEniCS/basix.git
+          python3 -m pip install git+https://github.com/FEniCS/ffcx.git
 
       - name: Configure C++
         run: |
