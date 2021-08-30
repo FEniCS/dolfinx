@@ -12,6 +12,7 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <tuple>
 #include <vector>
 
 namespace dolfinx::fem
@@ -118,6 +119,14 @@ public:
         assert(_mesh == integral_type.second.second->mesh());
         set_domains(type, *integral_type.second.second);
       }
+
+      // TODO Set set_domains for _exterior_facet_integrals
+      if (type == IntegralType::exterior_facet)
+      {
+        // Loop over integrals kernels
+        for (auto& integral : integral_type.second.first)
+          _exterior_facet_integrals.insert({integral.first, {integral.second, {}}});
+      }
     }
 
     // FIXME: do this neatly via a static function
@@ -199,6 +208,7 @@ public:
   /// @return List of IDs for given integral type
   std::vector<int> integral_ids(IntegralType type) const
   {
+    // TODO Update
     std::vector<int> ids;
     if (auto it = _integrals.find(type); it != _integrals.end())
     {
@@ -223,6 +233,16 @@ public:
     if (it1 == it0->second.end())
       throw std::runtime_error("No mesh entities for requested domain index.");
     return it1->second.second;
+  }
+
+  const std::vector<std::tuple<std::int32_t, int>>& exterior_facet_domains(int i) const
+  {
+    if (_exterior_facet_integrals.empty())
+      throw std::runtime_error("No mesh entities for requested type.");
+    auto it = _exterior_facet_integrals.find(i);
+    if (it == _exterior_facet_integrals.end())
+      throw std::runtime_error("No mesh entities for requested domain index.");
+    return it->second.second;
   }
 
   /// Access coefficients
@@ -418,6 +438,52 @@ private:
       }
     }
 
+    for (auto& [domain_id, kernel_active_facets] : _exterior_facet_integrals)
+    {
+      if (domain_id == -1)
+      {
+        std::vector<std::tuple<std::int32_t, int>>& active_facets = kernel_active_facets.second;
+        active_facets.clear(); // This is done above, but why does it need clearing?
+
+        // Get number of facets owned by this process
+        mesh.topology_mutable().create_connectivity(tdim, tdim - 1);
+        auto c_to_f = mesh.topology().connectivity(tdim, tdim - 1);
+        assert(c_to_f);
+        mesh.topology_mutable().create_connectivity(tdim - 1, tdim);
+        auto f_to_c = topology.connectivity(tdim - 1, tdim);
+        assert(f_to_c);
+        assert(topology.index_map(tdim - 1));
+        std::set<std::int32_t> fwd_shared_facets;
+
+        // Only need to consider shared facets when there are no ghost cells
+        if (topology.index_map(tdim)->num_ghosts() == 0)
+        {
+          const std::vector<std::int32_t>& fwd_indices
+              = topology.index_map(tdim - 1)->scatter_fwd_indices().array();
+          fwd_shared_facets.insert(fwd_indices.begin(), fwd_indices.end());
+        }
+
+        const int num_facets = topology.index_map(tdim - 1)->size_local();
+        for (int f = 0; f < num_facets; ++f)
+        {
+          if (f_to_c->num_links(f) == 1
+              and fwd_shared_facets.find(f) == fwd_shared_facets.end())
+          {
+            // Get the cell index
+            const std::int32_t c = f_to_c->links(f)[0];
+
+            // Get local index of facet with respect to the cell
+            auto cell_facets = c_to_f->links(c);
+            auto it = std::find(cell_facets.begin(), cell_facets.end(), f);
+            assert(it != cell_facets.end());
+            const int local_f = std::distance(cell_facets.begin(), it);
+            
+            active_facets.push_back(std::make_tuple(c, local_f));
+          }
+        }
+      }
+    }
+
     // Interior facets. If there is a default integral, define it only on
     // owned interior facets.
     if (auto kernels = _integrals.find(IntegralType::interior_facet);
@@ -460,6 +526,9 @@ private:
   std::map<IntegralType,
            std::map<int, std::pair<kern, std::vector<std::int32_t>>>>
       _integrals;
+
+  std::map<int, std::pair<kern, std::vector<std::tuple<std::int32_t, int>>>>
+      _exterior_facet_integrals;
 
   // True if permutation data needs to be passed into these integrals
   bool _needs_facet_permutations;

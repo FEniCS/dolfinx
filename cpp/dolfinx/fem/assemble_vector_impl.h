@@ -606,7 +606,7 @@ void assemble_exterior_facets(
                              const xtl::span<const std::uint32_t>&,
                              std::int32_t, int)>& dof_transform,
     xtl::span<T> b, const mesh::Mesh& mesh,
-    const xtl::span<const std::int32_t>& active_facets,
+    const std::vector<std::tuple<std::int32_t, int>>& active_facets,
     const graph::AdjacencyList<std::int32_t>& dofmap, const int bs,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*)>& fn,
@@ -632,22 +632,8 @@ void assemble_exterior_facets(
   std::vector<T> be(bs * num_dofs);
   const xtl::span<T> _be(be);
 
-  auto f_to_c = mesh.topology().connectivity(tdim - 1, tdim);
-  assert(f_to_c);
-  auto c_to_f = mesh.topology().connectivity(tdim, tdim - 1);
-  assert(c_to_f);
-  for (std::int32_t f : active_facets)
+  for (auto [cell, local_facet] : active_facets)
   {
-    // Get index of first attached cell
-    assert(f_to_c->num_links(f) > 0);
-    const std::int32_t cell = f_to_c->links(f)[0];
-
-    // Get local index of facet with respect to the cell
-    auto facets = c_to_f->links(cell);
-    auto it = std::find(facets.begin(), facets.end(), f);
-    assert(it != facets.end());
-    const int local_facet = std::distance(facets.begin(), it);
-
     // Get cell coordinates/geometry
     auto x_dofs = x_dofmap.links(cell);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
@@ -658,7 +644,9 @@ void assemble_exterior_facets(
 
     // Tabulate element vector
     std::fill(be.begin(), be.end(), 0);
-    const std::uint8_t perm = get_perm(cell * facets.size() + local_facet);
+    // FIXME How should we get the size of the facets?
+    const int facets_size = 3;
+    const std::uint8_t perm = get_perm(cell * facets_size + local_facet);
     fn(be.data(), coeffs.row(cell).data(), constants.data(),
        coordinate_dofs.data(), &local_facet, &perm);
 
@@ -1100,8 +1088,8 @@ void assemble_vector(xtl::span<T> b, const Form<T>& L,
     for (int i : L.integral_ids(IntegralType::exterior_facet))
     {
       const auto& fn = L.kernel(IntegralType::exterior_facet, i);
-      const std::vector<std::int32_t>& active_facets
-          = L.domains(IntegralType::exterior_facet, i);
+      const std::vector<std::tuple<std::int32_t, int>>& active_facets
+          = L.exterior_facet_domains(i);
       if (bs == 1)
       {
         impl::assemble_exterior_facets<T, 1>(
