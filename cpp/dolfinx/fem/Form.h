@@ -201,14 +201,36 @@ public:
                            const std::uint8_t*)>&
   kernel(IntegralType type, int i) const
   {
-    auto it0 = _integrals.find(type);
-    if (it0 == _integrals.end())
-      throw std::runtime_error("No kernels for requested type.");
-    auto it1 = it0->second.find(i);
-    if (it1 == it0->second.end())
-      throw std::runtime_error("No kernel for requested domain index.");
-
-    return it1->second.first;
+    // TODO Refactor repeated code.
+    // TODO Use switch?
+    if (type == IntegralType::cell)
+    {
+      if (_cell_integrals.empty())
+        throw std::runtime_error("No kernels for requested type.");
+      auto it = _cell_integrals.find(i);
+      if (it == _cell_integrals.end())
+        throw std::runtime_error("No kernel for requested domain index.");
+      return it->second.first;
+    }
+    else if (type == IntegralType::exterior_facet)
+    {
+      if (_exterior_facet_integrals.empty())
+        throw std::runtime_error("No kernels for requested type.");
+      auto it = _exterior_facet_integrals.find(i);
+      if (it == _exterior_facet_integrals.end())
+        throw std::runtime_error("No kernel for requested domain index.");
+      return it->second.first;
+    }
+    else if (type == IntegralType::interior_facet)
+    {
+      if (_interior_facet_integrals.empty())
+        throw std::runtime_error("No kernels for requested type.");
+      auto it = _interior_facet_integrals.find(i);
+      if (it == _interior_facet_integrals.end())
+        throw std::runtime_error("No kernel for requested domain index.");
+      return it->second.first;
+    }
+    throw std::runtime_error("Integral type not recognised.");
   }
 
   /// Get types of integrals in the form
