@@ -120,12 +120,18 @@ public:
         set_domains(type, *integral_type.second.second);
       }
 
-      // TODO Set set_domains for _exterior_facet_integrals
       if (type == IntegralType::exterior_facet)
       {
         // Loop over integrals kernels
         for (auto& integral : integral_type.second.first)
-          _exterior_facet_integrals.insert({integral.first, {integral.second, {}}});
+          _exterior_facet_integrals.insert(
+              {integral.first, {integral.second, {}}});
+
+        if (integral_type.second.second)
+        {
+          assert(_mesh == integral_type.second.second->mesh());
+          set_exterior_facet_domains(*integral_type.second.second);
+        }
       }
     }
 
@@ -235,7 +241,8 @@ public:
     return it1->second.second;
   }
 
-  const std::vector<std::tuple<std::int32_t, int>>& exterior_facet_domains(int i) const
+  const std::vector<std::tuple<std::int32_t, int>>&
+  exterior_facet_domains(int i) const
   {
     if (_exterior_facet_integrals.empty())
       throw std::runtime_error("No mesh entities for requested type.");
@@ -379,6 +386,75 @@ private:
     }
   }
 
+  void set_exterior_facet_domains(const mesh::MeshTags<int>& marker)
+  {
+    // TODO Refactor: Add function to get (cell, local_facet) pair
+    // from facet number. This is used in set_exterior_facet_domains
+    // too. Topology creation could be done there?
+    std::shared_ptr<const mesh::Mesh> mesh = marker.mesh();
+    const mesh::Topology& topology = mesh->topology();
+    const int tdim = topology.dim();
+
+    mesh->topology_mutable().create_connectivity(tdim - 1, tdim);
+
+    if (tdim - 1 != marker.dim())
+    {
+      throw std::runtime_error("Invalid MeshTags dimension:"
+                               + std::to_string(marker.dim()));
+    }
+
+    // Get mesh tag data
+    const std::vector<int>& values = marker.values();
+    const std::vector<std::int32_t>& tagged_entities = marker.indices();
+    assert(topology.index_map(tdim - 1));
+    const auto entity_end
+        = std::lower_bound(tagged_entities.begin(), tagged_entities.end(),
+                           topology.index_map(tdim - 1)->size_local());
+
+    auto f_to_c = topology.connectivity(tdim - 1, tdim);
+    assert(f_to_c);
+
+    mesh->topology_mutable().create_connectivity(tdim, tdim - 1);
+    auto c_to_f = mesh->topology().connectivity(tdim, tdim - 1);
+    assert(c_to_f);
+
+    // Only need to consider shared facets when there are no ghost
+    // cells
+    assert(topology.index_map(tdim));
+    std::set<std::int32_t> fwd_shared;
+    if (topology.index_map(tdim)->num_ghosts() == 0)
+    {
+      const std::vector<std::int32_t>& fwd_indices
+          = topology.index_map(tdim - 1)->scatter_fwd_indices().array();
+      fwd_shared.insert(fwd_indices.begin(), fwd_indices.end());
+    }
+
+    for (auto f = tagged_entities.begin(); f != entity_end; ++f)
+    {
+      // All "owned" facets connected to one cell, that are not
+      // shared, should be external
+      if (f_to_c->num_links(*f) == 1
+          and fwd_shared.find(*f) == fwd_shared.end())
+      {
+        const std::size_t i = std::distance(tagged_entities.cbegin(), f);
+        if (auto it = _exterior_facet_integrals.find(values[i]);
+            it != _exterior_facet_integrals.end())
+        {
+          // Get the cell index
+          const std::int32_t c = f_to_c->links(*f)[0];
+
+          // Get local index of facet with respect to the cell
+          auto cell_facets = c_to_f->links(c);
+          auto facet_it = std::find(cell_facets.begin(), cell_facets.end(), *f);
+          assert(facet_it != cell_facets.end());
+          const int local_f = std::distance(cell_facets.begin(), facet_it);
+
+          it->second.second.push_back(std::make_tuple(c, local_f));
+        }
+      }
+    }
+  }
+
   /// If there exists a default integral of any type, set the list of
   /// entities for those integrals from the mesh topology. For cell
   /// integrals, this is all cells. For facet integrals, it is either
@@ -442,8 +518,10 @@ private:
     {
       if (domain_id == -1)
       {
-        std::vector<std::tuple<std::int32_t, int>>& active_facets = kernel_active_facets.second;
-        active_facets.clear(); // This is done above, but why does it need clearing?
+        std::vector<std::tuple<std::int32_t, int>>& active_facets
+            = kernel_active_facets.second;
+        // This is done above, but why does it need clearing?
+        active_facets.clear();
 
         // Get number of facets owned by this process
         mesh.topology_mutable().create_connectivity(tdim, tdim - 1);
@@ -477,7 +555,7 @@ private:
             auto it = std::find(cell_facets.begin(), cell_facets.end(), f);
             assert(it != cell_facets.end());
             const int local_f = std::distance(cell_facets.begin(), it);
-            
+
             active_facets.push_back(std::make_tuple(c, local_f));
           }
         }
