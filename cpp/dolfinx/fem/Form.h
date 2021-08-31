@@ -256,6 +256,7 @@ public:
     return it1->second.second;
   }
 
+  // TODO Refactor
   const std::vector<std::tuple<std::int32_t, int>>&
   exterior_facet_domains(int i) const
   {
@@ -263,6 +264,17 @@ public:
       throw std::runtime_error("No mesh entities for requested type.");
     auto it = _exterior_facet_integrals.find(i);
     if (it == _exterior_facet_integrals.end())
+      throw std::runtime_error("No mesh entities for requested domain index.");
+    return it->second.second;
+  }
+
+  const std::vector<std::tuple<std::int32_t, int, std::int32_t, int>>&
+  interior_facet_domains(int i) const
+  {
+    if (_interior_facet_integrals.empty())
+      throw std::runtime_error("No mesh entities for requested type.");
+    auto it = _interior_facet_integrals.find(i);
+    if (it == _interior_facet_integrals.end())
       throw std::runtime_error("No mesh entities for requested domain index.");
     return it->second.second;
   }
