@@ -643,6 +643,21 @@ private:
     }
 
     // TODO Refactor
+    // Cells. If there is a default integral, define it on all owned cells
+    for (auto& [domain_id, kernel_active_cells] : _cell_integrals)
+    {
+      if (domain_id == -1)
+      {
+        std::vector<std::int32_t>& active_cells = kernel_active_cells.second;
+        // TODO clear active_cells and reserve?
+        const int num_cells = topology.index_map(tdim)->size_local();
+        active_cells.resize(num_cells);
+        std::iota(active_cells.begin(), active_cells.end(), 0);
+      }
+    }
+
+    // Exterior facets. If there is a default integral, define it only
+    // on owned surface facets.
     for (auto& [domain_id, kernel_active_facets] : _exterior_facet_integrals)
     {
       if (domain_id == -1)
@@ -685,6 +700,8 @@ private:
       }
     }
 
+    // Interior facets. If there is a default integral, define it only on
+    // owned interior facets.
     for (auto& [domain_id, kernel_active_facets] : _interior_facet_integrals)
     {
       if (domain_id == -1)
