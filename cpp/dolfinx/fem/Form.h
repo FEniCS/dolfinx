@@ -121,7 +121,20 @@ public:
       }
 
       // TODO Refactor
-      if (type == IntegralType::exterior_facet)
+      if (type == IntegralType::cell)
+      {
+        // Loop over integrals kernels
+        for (auto& integral : integral_type.second.first)
+          _cell_integrals.insert({integral.first, {integral.second, {}}});
+
+        if (integral_type.second.second)
+        {
+          assert(_mesh == integral_type.second.second->mesh());
+          // TODO Uncomment
+          // set_cell_domains(*integral_type.second.second);
+        }
+      }
+      else if (type == IntegralType::exterior_facet)
       {
         // Loop over integrals kernels
         for (auto& integral : integral_type.second.first)
@@ -144,8 +157,7 @@ public:
         if (integral_type.second.second)
         {
           assert(_mesh == integral_type.second.second->mesh());
-          // TODO Uncomment
-          // set_exterior_facet_domains(*integral_type.second.second);
+          set_interior_facet_domains(*integral_type.second.second);
         }
       }
     }
@@ -439,9 +451,6 @@ private:
 
   void set_exterior_facet_domains(const mesh::MeshTags<int>& marker)
   {
-    // TODO Refactor: Add function to get (cell, local_facet) pair
-    // from facet number. This is used in set_exterior_facet_domains
-    // too. Topology creation could be done there?
     std::shared_ptr<const mesh::Mesh> mesh = marker.mesh();
     const mesh::Topology& topology = mesh->topology();
     const int tdim = topology.dim();
@@ -496,6 +505,55 @@ private:
           auto cell_local_facet_pair
               = get_cell_local_facet_pairs(*f, *f_to_c, *c_to_f)[0];
           it->second.second.push_back(cell_local_facet_pair);
+        }
+      }
+    }
+  }
+
+  void set_interior_facet_domains(const mesh::MeshTags<int>& marker)
+  {
+    std::shared_ptr<const mesh::Mesh> mesh = marker.mesh();
+    const mesh::Topology& topology = mesh->topology();
+    const int tdim = topology.dim();
+
+    if (tdim - 1 != marker.dim())
+    {
+      throw std::runtime_error("Invalid MeshTags dimension:"
+                               + std::to_string(marker.dim()));
+    }
+
+    mesh->topology_mutable().create_connectivity(tdim - 1, tdim);
+    auto f_to_c = topology.connectivity(tdim - 1, tdim);
+    assert(f_to_c);
+
+    mesh->topology_mutable().create_connectivity(tdim, tdim - 1);
+    auto c_to_f = mesh->topology().connectivity(tdim, tdim - 1);
+    assert(c_to_f);
+
+    // Get mesh tag data
+    const std::vector<int>& values = marker.values();
+    const std::vector<std::int32_t>& tagged_entities = marker.indices();
+    assert(topology.index_map(tdim - 1));
+    const auto entity_end
+        = std::lower_bound(tagged_entities.begin(), tagged_entities.end(),
+                           topology.index_map(tdim - 1)->size_local());
+
+    for (auto f = tagged_entities.begin(); f != entity_end; ++f)
+    {
+      if (f_to_c->num_links(*f) == 2)
+      {
+        const std::size_t i = std::distance(tagged_entities.cbegin(), f);
+        if (auto it = _interior_facet_integrals.find(values[i]);
+            it != _interior_facet_integrals.end())
+        {
+          auto cell_local_facet_pairs
+              = get_cell_local_facet_pairs(*f, *f_to_c, *c_to_f);
+
+          // TODO Tidy this
+          auto [cell_0, local_facet_0] = cell_local_facet_pairs[0];
+          auto [cell_1, local_facet_1] = cell_local_facet_pairs[1];
+          it->second.second.push_back(
+              std::make_tuple(cell_0, local_facet_0, cell_1, local_facet_1));
         }
       }
     }
