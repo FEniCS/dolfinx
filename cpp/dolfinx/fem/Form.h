@@ -289,6 +289,26 @@ public:
   using scalar_type = T;
 
 private:
+  // TODO Create Form.cpp for non-templated implementation?
+  std::tuple<std::int32_t, int> get_cell_local_facet_pair(
+      const std::int32_t f,
+      const dolfinx::graph::AdjacencyList<std::int32_t>& f_to_c,
+      const dolfinx::graph::AdjacencyList<std::int32_t>& c_to_f)
+  {
+    // TODO Create f_to_c and c_to_f here, rather than passing?
+
+    // Get the cell index
+    const std::int32_t c = f_to_c.links(f)[0];
+
+    // Get local index of facet with respect to the cell
+    auto cell_facets = c_to_f.links(c);
+    auto facet_it = std::find(cell_facets.begin(), cell_facets.end(), f);
+    assert(facet_it != cell_facets.end());
+    const int local_f = std::distance(cell_facets.begin(), facet_it);
+
+    return std::make_tuple(c, local_f);
+  }
+
   /// Sets the entity indices to assemble over for kernels with a domain ID.
   /// @param[in] type Integral type
   /// @param[in] marker MeshTags with domain ID. Entities with marker
@@ -395,13 +415,19 @@ private:
     const mesh::Topology& topology = mesh->topology();
     const int tdim = topology.dim();
 
-    mesh->topology_mutable().create_connectivity(tdim - 1, tdim);
-
     if (tdim - 1 != marker.dim())
     {
       throw std::runtime_error("Invalid MeshTags dimension:"
                                + std::to_string(marker.dim()));
     }
+
+    mesh->topology_mutable().create_connectivity(tdim - 1, tdim);
+    auto f_to_c = topology.connectivity(tdim - 1, tdim);
+    assert(f_to_c);
+
+    mesh->topology_mutable().create_connectivity(tdim, tdim - 1);
+    auto c_to_f = mesh->topology().connectivity(tdim, tdim - 1);
+    assert(c_to_f);
 
     // Get mesh tag data
     const std::vector<int>& values = marker.values();
@@ -410,13 +436,6 @@ private:
     const auto entity_end
         = std::lower_bound(tagged_entities.begin(), tagged_entities.end(),
                            topology.index_map(tdim - 1)->size_local());
-
-    auto f_to_c = topology.connectivity(tdim - 1, tdim);
-    assert(f_to_c);
-
-    mesh->topology_mutable().create_connectivity(tdim, tdim - 1);
-    auto c_to_f = mesh->topology().connectivity(tdim, tdim - 1);
-    assert(c_to_f);
 
     // Only need to consider shared facets when there are no ghost
     // cells
@@ -433,6 +452,8 @@ private:
     {
       // All "owned" facets connected to one cell, that are not
       // shared, should be external
+      // TODO Consider removing this check and integrating over all tagged
+      // facets. This may be useful in a few cases
       if (f_to_c->num_links(*f) == 1
           and fwd_shared.find(*f) == fwd_shared.end())
       {
@@ -440,16 +461,8 @@ private:
         if (auto it = _exterior_facet_integrals.find(values[i]);
             it != _exterior_facet_integrals.end())
         {
-          // Get the cell index
-          const std::int32_t c = f_to_c->links(*f)[0];
-
-          // Get local index of facet with respect to the cell
-          auto cell_facets = c_to_f->links(c);
-          auto facet_it = std::find(cell_facets.begin(), cell_facets.end(), *f);
-          assert(facet_it != cell_facets.end());
-          const int local_f = std::distance(cell_facets.begin(), facet_it);
-
-          it->second.second.push_back(std::make_tuple(c, local_f));
+          auto cell_local_facet_pair = get_cell_local_facet_pair(*f, *f_to_c, *c_to_f);
+          it->second.second.push_back(cell_local_facet_pair);
         }
       }
     }
@@ -523,16 +536,16 @@ private:
         // This is done above, but why does it need clearing?
         active_facets.clear();
 
-        // Get number of facets owned by this process
-        mesh.topology_mutable().create_connectivity(tdim, tdim - 1);
-        auto c_to_f = mesh.topology().connectivity(tdim, tdim - 1);
-        assert(c_to_f);
         mesh.topology_mutable().create_connectivity(tdim - 1, tdim);
         auto f_to_c = topology.connectivity(tdim - 1, tdim);
         assert(f_to_c);
-        assert(topology.index_map(tdim - 1));
-        std::set<std::int32_t> fwd_shared_facets;
 
+        mesh.topology_mutable().create_connectivity(tdim, tdim - 1);
+        auto c_to_f = mesh.topology().connectivity(tdim, tdim - 1);
+        assert(c_to_f);
+
+        std::set<std::int32_t> fwd_shared_facets;
+        assert(topology.index_map(tdim - 1));
         // Only need to consider shared facets when there are no ghost cells
         if (topology.index_map(tdim)->num_ghosts() == 0)
         {
@@ -547,16 +560,8 @@ private:
           if (f_to_c->num_links(f) == 1
               and fwd_shared_facets.find(f) == fwd_shared_facets.end())
           {
-            // Get the cell index
-            const std::int32_t c = f_to_c->links(f)[0];
-
-            // Get local index of facet with respect to the cell
-            auto cell_facets = c_to_f->links(c);
-            auto it = std::find(cell_facets.begin(), cell_facets.end(), f);
-            assert(it != cell_facets.end());
-            const int local_f = std::distance(cell_facets.begin(), it);
-
-            active_facets.push_back(std::make_tuple(c, local_f));
+            auto cell_local_facet_pair = get_cell_local_facet_pair(f, *f_to_c, *c_to_f);
+            active_facets.push_back(cell_local_facet_pair);
           }
         }
       }
