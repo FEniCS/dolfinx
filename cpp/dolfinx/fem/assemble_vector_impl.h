@@ -1036,7 +1036,7 @@ void assemble_vector(xtl::span<T> b, const Form<T>& L,
   {
     const auto& fn = L.kernel(IntegralType::cell, i);
     const std::vector<std::int32_t>& active_cells
-        = L.domains(IntegralType::cell, i);
+        = L.cell_domains(i);
     if (bs == 1)
     {
       impl::assemble_cells<T, 1>(dof_transform, b, mesh->geometry(),

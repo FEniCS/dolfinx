@@ -269,6 +269,16 @@ public:
   }
 
   // TODO Refactor
+  const std::vector<std::int32_t>& cell_domains(int i) const
+  {
+    if (_cell_integrals.empty())
+      throw std::runtime_error("No mesh entities for requested type.");
+    auto it = _cell_integrals.find(i);
+    if (it == _cell_integrals.end())
+      throw std::runtime_error("No mesh entities for requested domain index.");
+    return it->second.second;
+  }
+
   const std::vector<std::tuple<std::int32_t, int>>&
   exterior_facet_domains(int i) const
   {
