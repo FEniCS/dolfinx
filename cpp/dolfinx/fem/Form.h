@@ -120,6 +120,7 @@ public:
         set_domains(type, *integral_type.second.second);
       }
 
+      // TODO Refactor
       if (type == IntegralType::exterior_facet)
       {
         // Loop over integrals kernels
@@ -131,6 +132,20 @@ public:
         {
           assert(_mesh == integral_type.second.second->mesh());
           set_exterior_facet_domains(*integral_type.second.second);
+        }
+      }
+      else if (type == IntegralType::interior_facet)
+      {
+        // Loop over integrals kernels
+        for (auto& integral : integral_type.second.first)
+          _interior_facet_integrals.insert(
+              {integral.first, {integral.second, {}}});
+
+        if (integral_type.second.second)
+        {
+          assert(_mesh == integral_type.second.second->mesh());
+          // TODO Uncomment
+          // set_exterior_facet_domains(*integral_type.second.second);
         }
       }
     }
@@ -290,23 +305,27 @@ public:
 
 private:
   // TODO Create Form.cpp for non-templated implementation?
-  std::tuple<std::int32_t, int> get_cell_local_facet_pair(
+  std::vector<std::tuple<std::int32_t, int>> get_cell_local_facet_pairs(
       const std::int32_t f,
       const dolfinx::graph::AdjacencyList<std::int32_t>& f_to_c,
       const dolfinx::graph::AdjacencyList<std::int32_t>& c_to_f)
   {
     // TODO Create f_to_c and c_to_f here, rather than passing?
 
-    // Get the cell index
-    const std::int32_t c = f_to_c.links(f)[0];
+    std::vector<std::tuple<std::int32_t, int>> cell_local_facet_pairs = {};
+    // Loop over cells sharing facet
+    for (std::int32_t c : f_to_c.links(f))
+    {
+      // Get local index of facet with respect to the cell
+      auto cell_facets = c_to_f.links(c);
+      auto facet_it = std::find(cell_facets.begin(), cell_facets.end(), f);
+      assert(facet_it != cell_facets.end());
+      const int local_f = std::distance(cell_facets.begin(), facet_it);
 
-    // Get local index of facet with respect to the cell
-    auto cell_facets = c_to_f.links(c);
-    auto facet_it = std::find(cell_facets.begin(), cell_facets.end(), f);
-    assert(facet_it != cell_facets.end());
-    const int local_f = std::distance(cell_facets.begin(), facet_it);
+      cell_local_facet_pairs.push_back(std::make_tuple(c, local_f));
+    }
 
-    return std::make_tuple(c, local_f);
+    return cell_local_facet_pairs;
   }
 
   /// Sets the entity indices to assemble over for kernels with a domain ID.
@@ -461,7 +480,9 @@ private:
         if (auto it = _exterior_facet_integrals.find(values[i]);
             it != _exterior_facet_integrals.end())
         {
-          auto cell_local_facet_pair = get_cell_local_facet_pair(*f, *f_to_c, *c_to_f);
+          // There will only be one pair for an exterior facet integral
+          auto cell_local_facet_pair
+              = get_cell_local_facet_pairs(*f, *f_to_c, *c_to_f)[0];
           it->second.second.push_back(cell_local_facet_pair);
         }
       }
@@ -527,6 +548,31 @@ private:
       }
     }
 
+    // Interior facets. If there is a default integral, define it only on
+    // owned interior facets.
+    if (auto kernels = _integrals.find(IntegralType::interior_facet);
+        kernels != _integrals.end())
+    {
+      if (auto it = kernels->second.find(-1); it != kernels->second.end())
+      {
+        std::vector<std::int32_t>& active_entities = it->second.second;
+
+        // Get number of facets owned by this process
+        mesh.topology_mutable().create_connectivity(tdim - 1, tdim);
+        assert(topology.index_map(tdim - 1));
+        const int num_facets = topology.index_map(tdim - 1)->size_local();
+        auto f_to_c = topology.connectivity(tdim - 1, tdim);
+        active_entities.clear();
+        active_entities.reserve(num_facets);
+        for (int f = 0; f < num_facets; ++f)
+        {
+          if (f_to_c->num_links(f) == 2)
+            active_entities.push_back(f);
+        }
+      }
+    }
+
+    // TODO Refactor
     for (auto& [domain_id, kernel_active_facets] : _exterior_facet_integrals)
     {
       if (domain_id == -1)
@@ -560,33 +606,47 @@ private:
           if (f_to_c->num_links(f) == 1
               and fwd_shared_facets.find(f) == fwd_shared_facets.end())
           {
-            auto cell_local_facet_pair = get_cell_local_facet_pair(f, *f_to_c, *c_to_f);
+          // There will only be one pair for an exterior facet integral
+            auto cell_local_facet_pair
+                = get_cell_local_facet_pairs(f, *f_to_c, *c_to_f)[0];
             active_facets.push_back(cell_local_facet_pair);
           }
         }
       }
     }
 
-    // Interior facets. If there is a default integral, define it only on
-    // owned interior facets.
-    if (auto kernels = _integrals.find(IntegralType::interior_facet);
-        kernels != _integrals.end())
+    for (auto& [domain_id, kernel_active_facets] : _interior_facet_integrals)
     {
-      if (auto it = kernels->second.find(-1); it != kernels->second.end())
+      if (domain_id == -1)
       {
-        std::vector<std::int32_t>& active_entities = it->second.second;
+        std::vector<std::tuple<std::int32_t, int, std::int32_t, int>>& active_facets
+            = kernel_active_facets.second;
+        active_facets.clear();
+
+        mesh.topology_mutable().create_connectivity(tdim - 1, tdim);
+        auto f_to_c = topology.connectivity(tdim - 1, tdim);
+        assert(f_to_c);
+
+        mesh.topology_mutable().create_connectivity(tdim, tdim - 1);
+        auto c_to_f = mesh.topology().connectivity(tdim, tdim - 1);
+        assert(c_to_f);
 
         // Get number of facets owned by this process
-        mesh.topology_mutable().create_connectivity(tdim - 1, tdim);
         assert(topology.index_map(tdim - 1));
         const int num_facets = topology.index_map(tdim - 1)->size_local();
-        auto f_to_c = topology.connectivity(tdim - 1, tdim);
-        active_entities.clear();
-        active_entities.reserve(num_facets);
+        active_facets.reserve(num_facets);
         for (int f = 0; f < num_facets; ++f)
         {
           if (f_to_c->num_links(f) == 2)
-            active_entities.push_back(f);
+          {
+            auto cell_local_facet_pairs
+                = get_cell_local_facet_pairs(f, *f_to_c, *c_to_f);
+            
+            // TODO Tidy this
+            auto [cell_0, local_facet_0] = cell_local_facet_pairs[0];
+            auto [cell_1, local_facet_1] = cell_local_facet_pairs[1];
+            active_facets.push_back(std::make_tuple(cell_0, local_facet_0, cell_1, local_facet_1));
+          }
         }
       }
     }
@@ -612,6 +672,10 @@ private:
 
   std::map<int, std::pair<kern, std::vector<std::tuple<std::int32_t, int>>>>
       _exterior_facet_integrals;
+
+  std::map<int, std::pair<kern, std::vector<std::tuple<std::int32_t, int,
+                                                       std::int32_t, int>>>>
+      _interior_facet_integrals;
 
   // True if permutation data needs to be passed into these integrals
   bool _needs_facet_permutations;
