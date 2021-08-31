@@ -130,8 +130,7 @@ public:
         if (integral_type.second.second)
         {
           assert(_mesh == integral_type.second.second->mesh());
-          // TODO Uncomment
-          // set_cell_domains(*integral_type.second.second);
+          set_cell_domains(*integral_type.second.second);
         }
       }
       else if (type == IntegralType::exterior_facet)
@@ -459,6 +458,38 @@ private:
     }
   }
 
+  // TODO Refactor
+  void set_cell_domains(const mesh::MeshTags<int>& marker)
+  {
+    std::shared_ptr<const mesh::Mesh> mesh = marker.mesh();
+    const mesh::Topology& topology = mesh->topology();
+    const int tdim = topology.dim();
+
+    if (tdim != marker.dim())
+    {
+      throw std::runtime_error("Invalid MeshTags dimension:"
+                               + std::to_string(marker.dim()));
+    }
+
+    // Get mesh tag data
+    const std::vector<int>& values = marker.values();
+    const std::vector<std::int32_t>& tagged_entities = marker.indices();
+    assert(topology.index_map(tdim));
+    const auto entity_end
+        = std::lower_bound(tagged_entities.begin(), tagged_entities.end(),
+                           topology.index_map(tdim)->size_local());
+
+    // For cell integrals use all markers (but not on ghost
+    // entities)
+    for (auto e = tagged_entities.begin(); e != entity_end; ++e)
+    {
+      const std::size_t i = std::distance(tagged_entities.cbegin(), e);
+      if (auto it = _cell_integrals.find(values[i]);
+          it != _cell_integrals.end())
+        it->second.second.push_back(*e);
+    }
+  }
+
   void set_exterior_facet_domains(const mesh::MeshTags<int>& marker)
   {
     std::shared_ptr<const mesh::Mesh> mesh = marker.mesh();
@@ -568,6 +599,8 @@ private:
       }
     }
   }
+
+  // TODO set_vertex_domains
 
   /// If there exists a default integral of any type, set the list of
   /// entities for those integrals from the mesh topology. For cell
