@@ -625,6 +625,9 @@ void assemble_exterior_facets(
   const std::size_t num_dofs_g = x_dofmap.num_links(0);
   const xt::xtensor<double, 2>& x_g = mesh.geometry().x();
 
+  const int num_cell_facets
+      = mesh::cell_num_entities(mesh.topology().cell_type(), tdim - 1);
+
   // FIXME: Add proper interface for num_dofs
   // Create data structures used in assembly
   const int num_dofs = dofmap.links(0).size();
@@ -644,9 +647,7 @@ void assemble_exterior_facets(
 
     // Tabulate element vector
     std::fill(be.begin(), be.end(), 0);
-    // FIXME How should we get the size of the facets?
-    const int facets_size = 3;
-    const std::uint8_t perm = get_perm(cell * facets_size + local_facet);
+    const std::uint8_t perm = get_perm(cell * num_cell_facets + local_facet);
     fn(be.data(), coeffs.row(cell).data(), constants.data(),
        coordinate_dofs.data(), &local_facet, &perm);
 
