@@ -682,7 +682,8 @@ void assemble_interior_facets(
                              const xtl::span<const std::uint32_t>&,
                              std::int32_t, int)>& dof_transform,
     xtl::span<T> b, const mesh::Mesh& mesh,
-    const std::vector<std::tuple<std::int32_t, int, std::int32_t, int>>& active_facets,
+    const std::vector<std::tuple<std::int32_t, int, std::int32_t, int>>&
+        active_facets,
     const fem::DofMap& dofmap,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*)>& fn,
@@ -714,7 +715,7 @@ void assemble_interior_facets(
   for (auto [cell_0, local_facet_0, cell_1, local_facet_1] : active_facets)
   {
     const std::array<int, 2> cells = {cell_0, cell_1};
-    const std::array<int, 2> local_facet ={local_facet_0, local_facet_1};
+    const std::array<int, 2> local_facet = {local_facet_0, local_facet_1};
 
     // Get cell geometry
     auto x_dofs0 = x_dofmap.links(cells[0]);
@@ -1098,7 +1099,8 @@ void assemble_vector(xtl::span<T> b, const Form<T>& L,
     for (int i : L.integral_ids(IntegralType::interior_facet))
     {
       const auto& fn = L.kernel(IntegralType::interior_facet, i);
-      const std::vector<std::tuple<std::int32_t, int, std::int32_t, int>>& active_facets
+      const std::vector<std::tuple<std::int32_t, int, std::int32_t, int>>&
+          active_facets
           = L.interior_facet_domains(i);
       if (bs == 1)
       {

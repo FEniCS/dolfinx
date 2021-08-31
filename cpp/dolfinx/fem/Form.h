@@ -618,7 +618,7 @@ private:
           if (f_to_c->num_links(f) == 1
               and fwd_shared_facets.find(f) == fwd_shared_facets.end())
           {
-          // There will only be one pair for an exterior facet integral
+            // There will only be one pair for an exterior facet integral
             auto cell_local_facet_pair
                 = get_cell_local_facet_pairs(f, *f_to_c, *c_to_f)[0];
             active_facets.push_back(cell_local_facet_pair);
@@ -631,7 +631,8 @@ private:
     {
       if (domain_id == -1)
       {
-        std::vector<std::tuple<std::int32_t, int, std::int32_t, int>>& active_facets
+        std::vector<std::tuple<std::int32_t, int, std::int32_t, int>>&
+            active_facets
             = kernel_active_facets.second;
         active_facets.clear();
 
@@ -653,11 +654,12 @@ private:
           {
             auto cell_local_facet_pairs
                 = get_cell_local_facet_pairs(f, *f_to_c, *c_to_f);
-            
+
             // TODO Tidy this
             auto [cell_0, local_facet_0] = cell_local_facet_pairs[0];
             auto [cell_1, local_facet_1] = cell_local_facet_pairs[1];
-            active_facets.push_back(std::make_tuple(cell_0, local_facet_0, cell_1, local_facet_1));
+            active_facets.push_back(
+                std::make_tuple(cell_0, local_facet_0, cell_1, local_facet_1));
           }
         }
       }
@@ -681,6 +683,8 @@ private:
   std::map<IntegralType,
            std::map<int, std::pair<kern, std::vector<std::int32_t>>>>
       _integrals;
+
+  std::map<int, std::pair<kern, std::vector<std::int32_t>>> _cell_integrals;
 
   std::map<int, std::pair<kern, std::vector<std::tuple<std::int32_t, int>>>>
       _exterior_facet_integrals;
