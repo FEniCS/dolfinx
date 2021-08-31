@@ -240,13 +240,30 @@ public:
   /// @return List of IDs for given integral type
   std::vector<int> integral_ids(IntegralType type) const
   {
-    // TODO Update
     std::vector<int> ids;
-    if (auto it = _integrals.find(type); it != _integrals.end())
+
+    if (type == IntegralType::cell)
     {
-      for (auto& kernel : it->second)
-        ids.push_back(kernel.first);
+      for (auto& integral : _cell_integrals)
+      {
+        ids.push_back(integral.first);
+      }
     }
+    else if (type == IntegralType::exterior_facet)
+    {
+      for (auto& integral : _exterior_facet_integrals)
+      {
+        ids.push_back(integral.first);
+      }
+    }
+    else if (type == IntegralType::interior_facet)
+    {
+      for (auto& integral : _interior_facet_integrals)
+      {
+        ids.push_back(integral.first);
+      }
+    }
+
     return ids;
   }
 
