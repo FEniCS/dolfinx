@@ -305,6 +305,10 @@ public:
   }
 
   // TODO Refactor
+  /// Get the list of cell indices for the ith integral (kernel)
+  /// for the cell domain type
+  /// @param[in] i Integral ID, i.e. (sub)domain index
+  /// @return List of active cell entities for the given integral (kernel)
   const std::vector<std::int32_t>& cell_domains(int i) const
   {
     if (_cell_integrals.empty())
@@ -315,6 +319,11 @@ public:
     return it->second.second;
   }
 
+  /// Get the list of (cell_index, local_facet_index) tuples for the ith
+  /// integral (kernel) for the exterior facet domain type
+  /// @param[in] i Integral ID, i.e. (sub)domain index
+  /// @return List of (cell_index, local_facet_index) tuples for the given
+  /// integral (kernel)
   const std::vector<std::tuple<std::int32_t, int>>&
   exterior_facet_domains(int i) const
   {
@@ -326,6 +335,13 @@ public:
     return it->second.second;
   }
 
+  /// Get the list of
+  /// (cell_index_0, local_facet_index_0, cell_index_1, local_facet_index_1)
+  /// tuples for the ith integral (kernel) for the interior facet domain type,
+  /// @param[in] i Integral ID, i.e. (sub)domain index
+  /// @return List of
+  /// (cell_index_0, local_facet_index_0, cell_index_1, local_facet_index_1) tuples
+  /// for the given integral (kernel)
   const std::vector<std::tuple<std::int32_t, int, std::int32_t, int>>&
   interior_facet_domains(int i) const
   {
@@ -496,6 +512,10 @@ private:
   }
 
   // TODO Refactor
+  /// Sets the cell indices to assemble over for kernels with a domain ID.
+  /// @param[in] marker MeshTags with domain ID. Entities with marker
+  /// 'i' will be assembled over using the kernel with ID 'i'. The
+  /// MeshTags is not stored.
   void set_cell_domains(const mesh::MeshTags<int>& marker)
   {
     std::shared_ptr<const mesh::Mesh> mesh = marker.mesh();
@@ -527,6 +547,12 @@ private:
     }
   }
 
+  /// Sets the facets to assemble over for kernels with a domain ID
+  /// by identifying the facet with a (cell_index, local_facet_index)
+  /// tuple.
+  /// @param[in] marker MeshTags with domain ID. Entities with marker
+  /// 'i' will be assembled over using the kernel with ID 'i'. The
+  /// MeshTags is not stored.
   void set_exterior_facet_domains(const mesh::MeshTags<int>& marker)
   {
     std::shared_ptr<const mesh::Mesh> mesh = marker.mesh();
@@ -588,6 +614,12 @@ private:
     }
   }
 
+  /// Sets the facets to assemble over for kernels with a domain ID by
+  /// identifying the facet with a tuple of the form
+  // (cell_index_0, local_facet_index_0, cell_index_1, local_facet_index_1).
+  /// @param[in] marker MeshTags with domain ID. Entities with marker
+  /// 'i' will be assembled over using the kernel with ID 'i'. The
+  /// MeshTags is not stored.
   void set_interior_facet_domains(const mesh::MeshTags<int>& marker)
   {
     std::shared_ptr<const mesh::Mesh> mesh = marker.mesh();
