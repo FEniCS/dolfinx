@@ -551,79 +551,6 @@ private:
     const mesh::Topology& topology = mesh.topology();
     const int tdim = topology.dim();
 
-    // Cells. If there is a default integral, define it on all owned cells
-    if (auto kernels = _integrals.find(IntegralType::cell);
-        kernels != _integrals.end())
-    {
-      if (auto it = kernels->second.find(-1); it != kernels->second.end())
-      {
-        std::vector<std::int32_t>& active_entities = it->second.second;
-        const int num_cells = topology.index_map(tdim)->size_local();
-        active_entities.resize(num_cells);
-        std::iota(active_entities.begin(), active_entities.end(), 0);
-      }
-    }
-
-    // Exterior facets. If there is a default integral, define it only
-    // on owned surface facets.
-    if (auto kernels = _integrals.find(IntegralType::exterior_facet);
-        kernels != _integrals.end())
-    {
-      if (auto it = kernels->second.find(-1); it != kernels->second.end())
-      {
-        std::vector<std::int32_t>& active_entities = it->second.second;
-        active_entities.clear();
-
-        // Get number of facets owned by this process
-        mesh.topology_mutable().create_connectivity(tdim - 1, tdim);
-        auto f_to_c = topology.connectivity(tdim - 1, tdim);
-        assert(topology.index_map(tdim - 1));
-        std::set<std::int32_t> fwd_shared_facets;
-
-        // Only need to consider shared facets when there are no ghost cells
-        if (topology.index_map(tdim)->num_ghosts() == 0)
-        {
-          const std::vector<std::int32_t>& fwd_indices
-              = topology.index_map(tdim - 1)->scatter_fwd_indices().array();
-          fwd_shared_facets.insert(fwd_indices.begin(), fwd_indices.end());
-        }
-
-        const int num_facets = topology.index_map(tdim - 1)->size_local();
-        for (int f = 0; f < num_facets; ++f)
-        {
-          if (f_to_c->num_links(f) == 1
-              and fwd_shared_facets.find(f) == fwd_shared_facets.end())
-          {
-            active_entities.push_back(f);
-          }
-        }
-      }
-    }
-
-    // Interior facets. If there is a default integral, define it only on
-    // owned interior facets.
-    if (auto kernels = _integrals.find(IntegralType::interior_facet);
-        kernels != _integrals.end())
-    {
-      if (auto it = kernels->second.find(-1); it != kernels->second.end())
-      {
-        std::vector<std::int32_t>& active_entities = it->second.second;
-
-        // Get number of facets owned by this process
-        mesh.topology_mutable().create_connectivity(tdim - 1, tdim);
-        assert(topology.index_map(tdim - 1));
-        const int num_facets = topology.index_map(tdim - 1)->size_local();
-        auto f_to_c = topology.connectivity(tdim - 1, tdim);
-        active_entities.clear();
-        active_entities.reserve(num_facets);
-        for (int f = 0; f < num_facets; ++f)
-        {
-          if (f_to_c->num_links(f) == 2)
-            active_entities.push_back(f);
-        }
-      }
-    }
-
     // TODO Refactor
     // Cells. If there is a default integral, define it on all owned cells
     for (auto& [domain_id, kernel_active_cells] : _cell_integrals)
@@ -737,10 +664,6 @@ private:
 
   using kern = std::function<void(T*, const T*, const T*, const double*,
                                   const int*, const std::uint8_t*)>;
-  std::map<IntegralType,
-           std::map<int, std::pair<kern, std::vector<std::int32_t>>>>
-      _integrals;
-
   std::map<int, std::pair<kern, std::vector<std::int32_t>>> _cell_integrals;
 
   std::map<int, std::pair<kern, std::vector<std::tuple<std::int32_t, int>>>>
