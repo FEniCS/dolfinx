@@ -838,10 +838,6 @@ void lift_bc(xtl::span<T> b, const Form<T>& a,
   if (a.num_integrals(IntegralType::exterior_facet) > 0
       or a.num_integrals(IntegralType::interior_facet) > 0)
   {
-    // FIXME: cleanup these calls? Some of the happen internally again.
-    mesh->topology_mutable().create_entities(tdim - 1);
-    mesh->topology_mutable().create_connectivity(tdim - 1, tdim);
-
     std::function<std::uint8_t(std::size_t)> get_perm;
     if (a.needs_facet_permutations())
     {
@@ -969,7 +965,6 @@ void assemble_vector(xtl::span<T> b, const Form<T>& L,
 {
   std::shared_ptr<const mesh::Mesh> mesh = L.mesh();
   assert(mesh);
-  const int tdim = mesh->topology().dim();
 
   // Get dofmap data
   assert(L.function_spaces().at(0));
