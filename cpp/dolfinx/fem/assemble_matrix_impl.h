@@ -458,7 +458,7 @@ void assemble_matrix(
   {
     const auto& fn = a.kernel(IntegralType::cell, i);
     const std::vector<std::int32_t>& active_cells
-        = a.domains(IntegralType::cell, i);
+        = a.cell_domains(i);
     impl::assemble_cells<T>(mat_set, mesh->geometry(), active_cells,
                             dof_transform, dofs0, bs0,
                             dof_transform_to_transpose, dofs1, bs1, bc0, bc1,
