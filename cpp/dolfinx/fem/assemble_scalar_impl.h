@@ -186,7 +186,6 @@ T assemble_scalar(const fem::Form<T>& M, const xtl::span<const T>& constants,
 {
   std::shared_ptr<const mesh::Mesh> mesh = M.mesh();
   assert(mesh);
-  const int tdim = mesh->topology().dim();
 
   T value(0);
   for (int i : M.integral_ids(IntegralType::cell))
@@ -200,9 +199,6 @@ T assemble_scalar(const fem::Form<T>& M, const xtl::span<const T>& constants,
   if (M.num_integrals(IntegralType::exterior_facet) > 0
       or M.num_integrals(IntegralType::interior_facet) > 0)
   {
-    // FIXME: cleanup these calls? Some of these happen internally again.
-    mesh->topology_mutable().create_entities(tdim - 1);
-    mesh->topology_mutable().create_connectivity(tdim - 1, tdim);
     mesh->topology_mutable().create_entity_permutations();
 
     const std::vector<std::uint8_t>& perms
