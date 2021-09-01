@@ -254,10 +254,14 @@ public:
   /// @return Number of integrals
   int num_integrals(IntegralType type) const
   {
-    if (auto it = _integrals.find(type); it == _integrals.end())
-      return 0;
+    if (type == IntegralType::cell)
+      return _cell_integrals.size();
+    else if (type == IntegralType::exterior_facet)
+      return _exterior_facet_integrals.size();
+    else if (type == IntegralType::interior_facet)
+      return _interior_facet_integrals.size();
     else
-      return it->second.size();
+      throw std::runtime_error("Integral type not recognised.");
   }
 
   /// Get the IDs for integrals (kernels) for given integral type. The
