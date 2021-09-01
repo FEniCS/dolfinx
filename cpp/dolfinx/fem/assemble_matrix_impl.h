@@ -390,7 +390,6 @@ void assemble_matrix(
 {
   std::shared_ptr<const mesh::Mesh> mesh = a.mesh();
   assert(mesh);
-  const int tdim = mesh->topology().dim();
 
   // Get dofmap data
   std::shared_ptr<const fem::DofMap> dofmap0
