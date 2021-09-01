@@ -281,7 +281,9 @@ T inner_product(const Vector<T, Allocator>& a, const Vector<T, Allocator>& b)
       {
         if constexpr (std::is_same<T, std::complex<double>>::value
                       or std::is_same<T, std::complex<float>>::value)
+        {
           return std::conj(a) * b;
+        }
         else
           return a * b;
       });
