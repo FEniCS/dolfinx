@@ -557,12 +557,14 @@ void fem(py::module& m)
                              &dolfinx::fem::Form<PetscScalar>::function_spaces)
       .def("integral_ids", &dolfinx::fem::Form<PetscScalar>::integral_ids)
       .def_property_readonly("needs_facet_permutations", &dolfinx::fem::Form<PetscScalar>::needs_facet_permutations)
-      .def("domains", [](const dolfinx::fem::Form<PetscScalar>& self,
-                         dolfinx::fem::IntegralType type, int i) {
-        const std::vector<std::int32_t>& domains = self.domains(type, i);
-        return py::array_t<std::int32_t>(domains.size(), domains.data(),
-                                         py::cast(self));
-      });
+    // TODO Bind cell_domains, exterior_facet_domains, interior_facet_domains
+    //   .def("domains", [](const dolfinx::fem::Form<PetscScalar>& self,
+    //                      dolfinx::fem::IntegralType type, int i) {
+    //     const std::vector<std::int32_t>& domains = self.domains(type, i);
+    //     return py::array_t<std::int32_t>(domains.size(), domains.data(),
+    //                                      py::cast(self));
+    //   })
+    ;
   m.def(
       "locate_dofs_topological",
       [](const std::vector<
