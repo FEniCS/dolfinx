@@ -107,7 +107,9 @@ T assemble_exterior_facets(
 /// Assemble functional over interior facets
 template <typename T>
 T assemble_interior_facets(
-    const mesh::Mesh& mesh, const xtl::span<const std::int32_t>& active_facets,
+    const mesh::Mesh& mesh,
+    const std::vector<std::tuple<std::int32_t, int, std::int32_t, int>>&
+        active_facets,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*)>& fn,
     const xtl::span<const T>& constants, const array2d<T>& coeffs,
@@ -128,30 +130,15 @@ T assemble_interior_facets(
   std::vector<T> coeff_array(2 * offsets.back());
   assert(offsets.back() == coeffs.shape[1]);
 
-  auto f_to_c = mesh.topology().connectivity(tdim - 1, tdim);
-  assert(f_to_c);
-  auto c_to_f = mesh.topology().connectivity(tdim, tdim - 1);
-  assert(c_to_f);
+  const int num_cell_facets
+      = mesh::cell_num_entities(mesh.topology().cell_type(), tdim - 1);
 
   // Iterate over all facets
   T value = 0;
-  for (std::int32_t f : active_facets)
+  for (auto [cell_0, local_facet_0, cell_1, local_facet_1] : active_facets)
   {
-    // Create attached cell
-    auto cells = f_to_c->links(f);
-    assert(cells.size() == 2);
-
-    const int facets_per_cell = c_to_f->num_links(cells[0]);
-
-    // Get local index of facet with respect to the cell
-    std::array<int, 2> local_facet;
-    for (int i = 0; i < 2; ++i)
-    {
-      auto facets = c_to_f->links(cells[i]);
-      auto it = std::find(facets.begin(), facets.end(), f);
-      assert(it != facets.end());
-      local_facet[i] = std::distance(facets.begin(), it);
-    }
+    const std::array<int, 2> cells = {cell_0, cell_1};
+    const std::array<int, 2> local_facet = {local_facet_0, local_facet_1};
 
     // Get cell geometry
     auto x_dofs0 = x_dofmap.links(cells[0]);
@@ -183,8 +170,8 @@ T assemble_interior_facets(
                   std::next(coeff_array.begin(), offsets[i + 1] + offsets[i]));
     }
 
-    const std::array perm{perms[cells[0] * facets_per_cell + local_facet[0]],
-                          perms[cells[1] * facets_per_cell + local_facet[1]]};
+    const std::array perm{perms[cells[0] * num_cell_facets + local_facet[0]],
+                          perms[cells[1] * num_cell_facets + local_facet[1]]};
     fn(&value, coeff_array.data(), constants.data(), coordinate_dofs.data(),
        local_facet.data(), perm.data());
   }
@@ -205,8 +192,7 @@ T assemble_scalar(const fem::Form<T>& M, const xtl::span<const T>& constants,
   for (int i : M.integral_ids(IntegralType::cell))
   {
     const auto& fn = M.kernel(IntegralType::cell, i);
-    const std::vector<std::int32_t>& active_cells
-        = M.cell_domains(i);
+    const std::vector<std::int32_t>& active_cells = M.cell_domains(i);
     value += impl::assemble_cells(mesh->geometry(), active_cells, fn, constants,
                                   coeffs);
   }
@@ -235,8 +221,9 @@ T assemble_scalar(const fem::Form<T>& M, const xtl::span<const T>& constants,
     for (int i : M.integral_ids(IntegralType::interior_facet))
     {
       const auto& fn = M.kernel(IntegralType::interior_facet, i);
-      const std::vector<std::int32_t>& active_facets
-          = M.domains(IntegralType::interior_facet, i);
+      const std::vector<std::tuple<std::int32_t, int, std::int32_t, int>>&
+          active_facets
+          = M.interior_facet_domains(i);
       value += impl::assemble_interior_facets(
           *mesh, active_facets, fn, constants, coeffs, c_offsets, perms);
     }
