@@ -238,8 +238,14 @@ public:
   std::set<IntegralType> integral_types() const
   {
     std::set<IntegralType> set;
-    for (auto& type : _integrals)
-      set.insert(type.first);
+
+    if (!_cell_integrals.empty())
+      set.insert(IntegralType::cell);
+    if (!_exterior_facet_integrals.empty())
+      set.insert(IntegralType::exterior_facet);
+    if (!_interior_facet_integrals.empty())
+      set.insert(IntegralType::interior_facet);
+
     return set;
   }
 
