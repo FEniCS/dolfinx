@@ -136,7 +136,8 @@ template <typename T>
 void assemble_exterior_facets(
     const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                             const std::int32_t*, const T*)>& mat_set,
-    const mesh::Mesh& mesh, const xtl::span<const std::int32_t>& active_facets,
+    const mesh::Mesh& mesh,
+    const std::vector<std::tuple<std::int32_t, int>>& active_facets,
     const std::function<void(const xtl::span<T>&,
                              const xtl::span<const std::uint32_t>&,
                              std::int32_t, int)>& dof_transform,
@@ -161,6 +162,9 @@ void assemble_exterior_facets(
   const std::size_t num_dofs_g = x_dofmap.num_links(0);
   const xt::xtensor<double, 2>& x_g = mesh.geometry().x();
 
+  const int num_cell_facets
+      = mesh::cell_num_entities(mesh.topology().cell_type(), tdim - 1);
+
   // Data structures used in assembly
   std::vector<double> coordinate_dofs(3 * num_dofs_g);
   const int num_dofs0 = dofmap0.links(0).size();
@@ -170,25 +174,10 @@ void assemble_exterior_facets(
   std::vector<T> Ae(ndim0 * ndim1);
   const xtl::span<T> _Ae(Ae);
 
-  // Iterate over all facets
-  auto f_to_c = mesh.topology().connectivity(tdim - 1, tdim);
-  assert(f_to_c);
-  auto c_to_f = mesh.topology().connectivity(tdim, tdim - 1);
-  assert(c_to_f);
-
-  for (std::int32_t f : active_facets)
+  for (auto [cell, local_facet] : active_facets)
   {
-    auto cells = f_to_c->links(f);
-    assert(cells.size() == 1);
-
-    // Get local index of facet with respect to the cell
-    auto facets = c_to_f->links(cells[0]);
-    auto it = std::find(facets.begin(), facets.end(), f);
-    assert(it != facets.end());
-    const int local_facet = std::distance(facets.begin(), it);
-
     // Get cell coordinates/geometry
-    auto x_dofs = x_dofmap.links(cells[0]);
+    auto x_dofs = x_dofmap.links(cell);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
       std::copy_n(xt::row(x_g, x_dofs[i]).begin(), 3,
@@ -196,17 +185,17 @@ void assemble_exterior_facets(
     }
 
     // Tabulate tensor
-    std::uint8_t perm = get_perm(cells[0] * facets.size() + local_facet);
+    std::uint8_t perm = get_perm(cell * num_cell_facets + local_facet);
     std::fill(Ae.begin(), Ae.end(), 0);
-    kernel(Ae.data(), coeffs.row(cells[0]).data(), constants.data(),
+    kernel(Ae.data(), coeffs.row(cell).data(), constants.data(),
            coordinate_dofs.data(), &local_facet, &perm);
 
-    dof_transform(_Ae, cell_info, cells[0], ndim1);
-    dof_transform_to_transpose(_Ae, cell_info, cells[0], ndim0);
+    dof_transform(_Ae, cell_info, cell, ndim1);
+    dof_transform_to_transpose(_Ae, cell_info, cell, ndim0);
 
     // Zero rows/columns for essential bcs
-    auto dofs0 = dofmap0.links(cells[0]);
-    auto dofs1 = dofmap1.links(cells[0]);
+    auto dofs0 = dofmap0.links(cell);
+    auto dofs1 = dofmap1.links(cell);
     if (!bc0.empty())
     {
       for (int i = 0; i < num_dofs0; ++i)
@@ -483,8 +472,8 @@ void assemble_matrix(
     for (int i : a.integral_ids(IntegralType::exterior_facet))
     {
       const auto& fn = a.kernel(IntegralType::exterior_facet, i);
-      const std::vector<std::int32_t>& active_facets
-          = a.domains(IntegralType::exterior_facet, i);
+      const std::vector<std::tuple<std::int32_t, int>>& active_facets
+          = a.exterior_facet_domains(i);
       impl::assemble_exterior_facets<T>(
           mat_set, *mesh, active_facets, dof_transform, dofs0, bs0,
           dof_transform_to_transpose, dofs1, bs1, bc0, bc1, fn, coeffs,
