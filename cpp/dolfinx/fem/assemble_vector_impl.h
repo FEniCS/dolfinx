@@ -770,7 +770,6 @@ void lift_bc(xtl::span<T> b, const Form<T>& a,
 {
   std::shared_ptr<const mesh::Mesh> mesh = a.mesh();
   assert(mesh);
-  const int tdim = mesh->topology().dim();
 
   // Get dofmap for columns and rows of a
   assert(a.function_spaces().at(0));
