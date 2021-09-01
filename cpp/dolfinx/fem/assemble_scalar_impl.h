@@ -217,7 +217,7 @@ T assemble_scalar(const fem::Form<T>& M, const xtl::span<const T>& constants,
   {
     const auto& fn = M.kernel(IntegralType::cell, i);
     const std::vector<std::int32_t>& active_cells
-        = M.domains(IntegralType::cell, i);
+        = M.cell_domains(i);
     value += impl::assemble_cells(mesh->geometry(), active_cells, fn, constants,
                                   coeffs);
   }
