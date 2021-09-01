@@ -441,7 +441,6 @@ void assemble_matrix(
   if (a.num_integrals(IntegralType::exterior_facet) > 0
       or a.num_integrals(IntegralType::interior_facet) > 0)
   {
-    mesh->topology_mutable().create_connectivity(tdim - 1, tdim);
     std::function<std::uint8_t(std::size_t)> get_perm;
     if (a.needs_facet_permutations())
     {
