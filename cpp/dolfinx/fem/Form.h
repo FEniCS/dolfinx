@@ -189,8 +189,9 @@ public:
   kernel(IntegralType type, int i) const
   {
     // TODO Refactor repeated code.
-    // TODO Use switch?
-    if (type == IntegralType::cell)
+    switch (type)
+    {
+    case IntegralType::cell:
     {
       if (_cell_integrals.empty())
         throw std::runtime_error("No kernels for requested type.");
@@ -199,7 +200,7 @@ public:
         throw std::runtime_error("No kernel for requested domain index.");
       return it->second.first;
     }
-    else if (type == IntegralType::exterior_facet)
+    case IntegralType::exterior_facet:
     {
       if (_exterior_facet_integrals.empty())
         throw std::runtime_error("No kernels for requested type.");
@@ -208,7 +209,7 @@ public:
         throw std::runtime_error("No kernel for requested domain index.");
       return it->second.first;
     }
-    else if (type == IntegralType::interior_facet)
+    case IntegralType::interior_facet:
     {
       if (_interior_facet_integrals.empty())
         throw std::runtime_error("No kernels for requested type.");
@@ -217,7 +218,9 @@ public:
         throw std::runtime_error("No kernel for requested domain index.");
       return it->second.first;
     }
-    throw std::runtime_error("Integral type not recognised.");
+    default:
+      throw std::runtime_error("Integral type not recognised.");
+    }    
   }
 
   /// Get types of integrals in the form
