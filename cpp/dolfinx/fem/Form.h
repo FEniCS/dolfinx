@@ -353,7 +353,6 @@ private:
     return it->second.first;
   }
 
-  // TODO Create Form.cpp for non-templated implementation?
   /// Helper function to get a std::vector of (cell, local_facet) pairs
   /// corresponding to a given facet index.
   /// @param[in] f Facet index
