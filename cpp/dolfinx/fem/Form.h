@@ -360,6 +360,12 @@ private:
   }
 
   // TODO Create Form.cpp for non-templated implementation?
+  /// Helper function to get a std::vector of (cell, local_facet) pairs
+  /// corresponding to a given facet index.
+  /// @param[in] f Facet index
+  /// @param[in] f_to_c Facet to cell connectivity
+  /// @param[in] c_to_f cell to facet connectivity
+  /// @return Function to call for tabulate_tensor
   std::vector<std::pair<std::int32_t, int>> get_cell_local_facet_pairs(
       const std::int32_t f,
       const dolfinx::graph::AdjacencyList<std::int32_t>& f_to_c,
