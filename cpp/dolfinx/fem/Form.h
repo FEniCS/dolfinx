@@ -365,8 +365,6 @@ private:
       const dolfinx::graph::AdjacencyList<std::int32_t>& f_to_c,
       const dolfinx::graph::AdjacencyList<std::int32_t>& c_to_f) const
   {
-    // TODO Create f_to_c and c_to_f here, rather than passing?
-
     std::vector<std::pair<std::int32_t, int>> cell_local_facet_pairs = {};
     // Loop over cells sharing facet
     for (std::int32_t c : f_to_c.links(f))
@@ -383,7 +381,6 @@ private:
     return cell_local_facet_pairs;
   }
 
-  // TODO Refactor
   /// Sets the entity indices to assemble over for kernels with a domain ID.
   /// @param[in] type Integral type
   /// @param[in] marker MeshTags with domain ID. Entities with marker
@@ -391,6 +388,8 @@ private:
   /// MeshTags is not stored.
   void set_domains(const IntegralType type, const mesh::MeshTags<int>& marker)
   {
+  // TODO set vertex domains
+
     std::shared_ptr<const mesh::Mesh> mesh = marker.mesh();
     const mesh::Topology& topology = mesh->topology();
     const int tdim = topology.dim();
@@ -496,8 +495,6 @@ private:
     }
   }
 
-  // TODO set_vertex_domains
-
   /// If there exists a default integral of any type, set the list of
   /// entities for those integrals from the mesh topology. For cell
   /// integrals, this is all cells. For facet integrals, it is either
@@ -508,7 +505,6 @@ private:
     const mesh::Topology& topology = mesh.topology();
     const int tdim = topology.dim();
 
-    // TODO Refactor
     // Cells. If there is a default integral, define it on all owned cells
     for (auto& [domain_id, kernel_active_cells] : _cell_integrals)
     {
@@ -621,11 +617,14 @@ private:
 
   using kern = std::function<void(T*, const T*, const T*, const double*,
                                   const int*, const std::uint8_t*)>;
+  // Cell integrals
   std::map<int, std::pair<kern, std::vector<std::int32_t>>> _cell_integrals;
 
+  // Exterior facet integrals
   std::map<int, std::pair<kern, std::vector<std::pair<std::int32_t, int>>>>
       _exterior_facet_integrals;
 
+  // Interior facet integrals
   std::map<int, std::pair<kern, std::vector<std::tuple<std::int32_t, int,
                                                        std::int32_t, int>>>>
       _interior_facet_integrals;
