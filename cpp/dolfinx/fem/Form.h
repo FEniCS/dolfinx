@@ -104,10 +104,11 @@ public:
     for (auto& integral_type : integrals)
     {
       const IntegralType type = integral_type.first;
-      // TODO Refactor
-      if (type == IntegralType::cell)
+      // Loop over integrals kernels and set domains
+      switch (type)
       {
-        // Loop over integrals kernels
+      case IntegralType::cell:
+      {
         for (auto& integral : integral_type.second.first)
           _cell_integrals.insert({integral.first, {integral.second, {}}});
 
@@ -116,10 +117,10 @@ public:
           assert(_mesh == integral_type.second.second->mesh());
           set_cell_domains(*integral_type.second.second);
         }
+        break;
       }
-      else if (type == IntegralType::exterior_facet)
+      case IntegralType::exterior_facet:
       {
-        // Loop over integrals kernels
         for (auto& integral : integral_type.second.first)
           _exterior_facet_integrals.insert(
               {integral.first, {integral.second, {}}});
@@ -129,10 +130,10 @@ public:
           assert(_mesh == integral_type.second.second->mesh());
           set_exterior_facet_domains(*integral_type.second.second);
         }
+        break;
       }
-      else if (type == IntegralType::interior_facet)
+      case IntegralType::interior_facet:
       {
-        // Loop over integrals kernels
         for (auto& integral : integral_type.second.first)
           _interior_facet_integrals.insert(
               {integral.first, {integral.second, {}}});
@@ -142,6 +143,8 @@ public:
           assert(_mesh == integral_type.second.second->mesh());
           set_interior_facet_domains(*integral_type.second.second);
         }
+        break;
+      }
       }
     }
 
