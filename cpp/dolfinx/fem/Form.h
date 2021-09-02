@@ -307,8 +307,8 @@ public:
   /// tuples for the ith integral (kernel) for the interior facet domain type,
   /// @param[in] i Integral ID, i.e. (sub)domain index
   /// @return List of
-  /// (cell_index_0, local_facet_index_0, cell_index_1, local_facet_index_1) tuples
-  /// for the given integral (kernel)
+  /// (cell_index_0, local_facet_index_0, cell_index_1, local_facet_index_1)
+  /// tuples for the given integral (kernel)
   const std::vector<std::tuple<std::int32_t, int, std::int32_t, int>>&
   interior_facet_domains(int i) const
   {
