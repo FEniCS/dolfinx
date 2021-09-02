@@ -228,15 +228,23 @@ public:
   {
     std::vector<int> ids;
 
-    if (type == IntegralType::cell)
+    switch (type)
+    {
+    case IntegralType::cell:
       for (auto& integral : _cell_integrals)
         ids.push_back(integral.first);
-    else if (type == IntegralType::exterior_facet)
+      break;
+    case IntegralType::exterior_facet:
       for (auto& integral : _exterior_facet_integrals)
         ids.push_back(integral.first);
-    else if (type == IntegralType::interior_facet)
+      break;
+    case IntegralType::interior_facet:
       for (auto& integral : _interior_facet_integrals)
         ids.push_back(integral.first);
+      break;
+    default:
+      throw std::runtime_error("Integral type not recognised.");
+    }
 
     return ids;
   }
