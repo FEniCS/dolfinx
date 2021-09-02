@@ -137,7 +137,7 @@ void assemble_exterior_facets(
     const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                             const std::int32_t*, const T*)>& mat_set,
     const mesh::Mesh& mesh,
-    const std::vector<std::pair<std::int32_t, int>>& active_facets,
+    const xtl::span<const std::pair<std::int32_t, int>>& active_facets,
     const std::function<void(const xtl::span<T>&,
                              const xtl::span<const std::uint32_t>&,
                              std::int32_t, int)>& dof_transform,
@@ -238,7 +238,7 @@ void assemble_interior_facets(
     const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                             const std::int32_t*, const T*)>& mat_set,
     const mesh::Mesh& mesh,
-    const std::vector<std::tuple<std::int32_t, int, std::int32_t, int>>&
+    const xtl::span<const std::tuple<std::int32_t, int, std::int32_t, int>>&
         active_facets,
     const std::function<void(const xtl::span<T>&,
                              const xtl::span<const std::uint32_t>&,

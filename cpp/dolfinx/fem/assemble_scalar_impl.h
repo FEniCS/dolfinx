@@ -63,7 +63,7 @@ T assemble_cells(const mesh::Geometry& geometry,
 template <typename T>
 T assemble_exterior_facets(
     const mesh::Mesh& mesh,
-    const std::vector<std::pair<std::int32_t, int>>& active_facets,
+    const xtl::span<const std::pair<std::int32_t, int>>& active_facets,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*)>& fn,
     const xtl::span<const T>& constants, const array2d<T>& coeffs,
@@ -108,7 +108,7 @@ T assemble_exterior_facets(
 template <typename T>
 T assemble_interior_facets(
     const mesh::Mesh& mesh,
-    const std::vector<std::tuple<std::int32_t, int, std::int32_t, int>>&
+    const xtl::span<const std::tuple<std::int32_t, int, std::int32_t, int>>&
         active_facets,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*)>& fn,
