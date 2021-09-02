@@ -63,7 +63,7 @@ T assemble_cells(const mesh::Geometry& geometry,
 template <typename T>
 T assemble_exterior_facets(
     const mesh::Mesh& mesh,
-    const std::vector<std::tuple<std::int32_t, int>>& active_facets,
+    const std::vector<std::pair<std::int32_t, int>>& active_facets,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*)>& fn,
     const xtl::span<const T>& constants, const array2d<T>& coeffs,
@@ -207,7 +207,7 @@ T assemble_scalar(const fem::Form<T>& M, const xtl::span<const T>& constants,
     for (int i : M.integral_ids(IntegralType::exterior_facet))
     {
       const auto& fn = M.kernel(IntegralType::exterior_facet, i);
-      const std::vector<std::tuple<std::int32_t, int>>& active_facets
+      const std::vector<std::pair<std::int32_t, int>>& active_facets
           = M.exterior_facet_domains(i);
       value += impl::assemble_exterior_facets(*mesh, active_facets, fn,
                                               constants, coeffs, perms);

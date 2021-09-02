@@ -137,7 +137,7 @@ void assemble_exterior_facets(
     const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                             const std::int32_t*, const T*)>& mat_set,
     const mesh::Mesh& mesh,
-    const std::vector<std::tuple<std::int32_t, int>>& active_facets,
+    const std::vector<std::pair<std::int32_t, int>>& active_facets,
     const std::function<void(const xtl::span<T>&,
                              const xtl::span<const std::uint32_t>&,
                              std::int32_t, int)>& dof_transform,
@@ -454,7 +454,7 @@ void assemble_matrix(
     for (int i : a.integral_ids(IntegralType::exterior_facet))
     {
       const auto& fn = a.kernel(IntegralType::exterior_facet, i);
-      const std::vector<std::tuple<std::int32_t, int>>& active_facets
+      const std::vector<std::pair<std::int32_t, int>>& active_facets
           = a.exterior_facet_domains(i);
       impl::assemble_exterior_facets<T>(
           mat_set, *mesh, active_facets, dof_transform, dofs0, bs0,

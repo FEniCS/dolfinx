@@ -195,7 +195,7 @@ void _lift_bc_exterior_facets(
     xtl::span<T> b, const mesh::Mesh& mesh,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*)>& kernel,
-    const std::vector<std::tuple<std::int32_t, int>>& active_facets,
+    const std::vector<std::pair<std::int32_t, int>>& active_facets,
     const std::function<void(const xtl::span<T>&,
                              const xtl::span<const std::uint32_t>&,
                              std::int32_t, int)>& dof_transform,
@@ -569,7 +569,7 @@ void assemble_exterior_facets(
                              const xtl::span<const std::uint32_t>&,
                              std::int32_t, int)>& dof_transform,
     xtl::span<T> b, const mesh::Mesh& mesh,
-    const std::vector<std::tuple<std::int32_t, int>>& active_facets,
+    const std::vector<std::pair<std::int32_t, int>>& active_facets,
     const graph::AdjacencyList<std::int32_t>& dofmap, const int bs,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*)>& fn,
@@ -851,7 +851,7 @@ void lift_bc(xtl::span<T> b, const Form<T>& a,
     for (int i : a.integral_ids(IntegralType::exterior_facet))
     {
       const auto& kernel = a.kernel(IntegralType::exterior_facet, i);
-      const std::vector<std::tuple<std::int32_t, int>>& active_facets
+      const std::vector<std::pair<std::int32_t, int>>& active_facets
           = a.exterior_facet_domains(i);
       _lift_bc_exterior_facets(b, *mesh, kernel, active_facets, dof_transform,
                                dofmap0, bs0, dof_transform_to_transpose,
@@ -1029,7 +1029,7 @@ void assemble_vector(xtl::span<T> b, const Form<T>& L,
     for (int i : L.integral_ids(IntegralType::exterior_facet))
     {
       const auto& fn = L.kernel(IntegralType::exterior_facet, i);
-      const std::vector<std::tuple<std::int32_t, int>>& active_facets
+      const std::vector<std::pair<std::int32_t, int>>& active_facets
           = L.exterior_facet_domains(i);
       if (bs == 1)
       {

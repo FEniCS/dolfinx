@@ -291,7 +291,7 @@ public:
   /// @param[in] i Integral ID, i.e. (sub)domain index
   /// @return List of (cell_index, local_facet_index) tuples for the given
   /// integral (kernel)
-  const std::vector<std::tuple<std::int32_t, int>>&
+  const std::vector<std::pair<std::int32_t, int>>&
   exterior_facet_domains(int i) const
   {
     if (_exterior_facet_integrals.empty())
@@ -358,14 +358,14 @@ public:
 
 private:
   // TODO Create Form.cpp for non-templated implementation?
-  std::vector<std::tuple<std::int32_t, int>> get_cell_local_facet_pairs(
+  std::vector<std::pair<std::int32_t, int>> get_cell_local_facet_pairs(
       const std::int32_t f,
       const dolfinx::graph::AdjacencyList<std::int32_t>& f_to_c,
       const dolfinx::graph::AdjacencyList<std::int32_t>& c_to_f)
   {
     // TODO Create f_to_c and c_to_f here, rather than passing?
 
-    std::vector<std::tuple<std::int32_t, int>> cell_local_facet_pairs = {};
+    std::vector<std::pair<std::int32_t, int>> cell_local_facet_pairs = {};
     // Loop over cells sharing facet
     for (std::int32_t c : f_to_c.links(f))
     {
@@ -375,7 +375,7 @@ private:
       assert(facet_it != cell_facets.end());
       const int local_f = std::distance(cell_facets.begin(), facet_it);
 
-      cell_local_facet_pairs.push_back(std::make_tuple(c, local_f));
+      cell_local_facet_pairs.push_back(std::make_pair(c, local_f));
     }
 
     return cell_local_facet_pairs;
@@ -571,7 +571,7 @@ private:
     {
       if (domain_id == -1)
       {
-        std::vector<std::tuple<std::int32_t, int>>& active_facets
+        std::vector<std::pair<std::int32_t, int>>& active_facets
             = kernel_active_facets.second;
         // This is done above, but why does it need clearing?
         active_facets.clear();
@@ -666,7 +666,7 @@ private:
                                   const int*, const std::uint8_t*)>;
   std::map<int, std::pair<kern, std::vector<std::int32_t>>> _cell_integrals;
 
-  std::map<int, std::pair<kern, std::vector<std::tuple<std::int32_t, int>>>>
+  std::map<int, std::pair<kern, std::vector<std::pair<std::int32_t, int>>>>
       _exterior_facet_integrals;
 
   std::map<int, std::pair<kern, std::vector<std::tuple<std::int32_t, int,
