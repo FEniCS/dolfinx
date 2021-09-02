@@ -188,36 +188,14 @@ public:
                            const std::uint8_t*)>&
   kernel(IntegralType type, int i) const
   {
-    // TODO Refactor repeated code.
     switch (type)
     {
     case IntegralType::cell:
-    {
-      if (_cell_integrals.empty())
-        throw std::runtime_error("No kernels for requested type.");
-      auto it = _cell_integrals.find(i);
-      if (it == _cell_integrals.end())
-        throw std::runtime_error("No kernel for requested domain index.");
-      return it->second.first;
-    }
+      return get_kernel_from_integrals(_cell_integrals, i);
     case IntegralType::exterior_facet:
-    {
-      if (_exterior_facet_integrals.empty())
-        throw std::runtime_error("No kernels for requested type.");
-      auto it = _exterior_facet_integrals.find(i);
-      if (it == _exterior_facet_integrals.end())
-        throw std::runtime_error("No kernel for requested domain index.");
-      return it->second.first;
-    }
+      return get_kernel_from_integrals(_exterior_facet_integrals, i);
     case IntegralType::interior_facet:
-    {
-      if (_interior_facet_integrals.empty())
-        throw std::runtime_error("No kernels for requested type.");
-      auto it = _interior_facet_integrals.find(i);
-      if (it == _interior_facet_integrals.end())
-        throw std::runtime_error("No kernel for requested domain index.");
-      return it->second.first;
-    }
+      return get_kernel_from_integrals(_interior_facet_integrals, i);
     default:
       throw std::runtime_error("Integral type not recognised.");
     }    
@@ -363,11 +341,29 @@ public:
   using scalar_type = T;
 
 private:
+  /// Helper function to get the kernel for integral i from a map
+  /// of integrals i.e. _cell_integrals
+  /// @param[in] integrals Map of integrals
+  /// @param[in] i Domain index
+  /// @return Function to call for tabulate_tensor
+  template <typename U>
+  const std::function<void(T*, const T*, const T*, const double*, const int*,
+                           const std::uint8_t*)>&
+  get_kernel_from_integrals(const U& integrals, const int i) const
+  {
+    if (integrals.empty())
+        throw std::runtime_error("No kernels for requested type.");
+      auto it = integrals.find(i);
+      if (it == integrals.end())
+        throw std::runtime_error("No kernel for requested domain index.");
+      return it->second.first;
+  }
+
   // TODO Create Form.cpp for non-templated implementation?
   std::vector<std::pair<std::int32_t, int>> get_cell_local_facet_pairs(
       const std::int32_t f,
       const dolfinx::graph::AdjacencyList<std::int32_t>& f_to_c,
-      const dolfinx::graph::AdjacencyList<std::int32_t>& c_to_f)
+      const dolfinx::graph::AdjacencyList<std::int32_t>& c_to_f) const
   {
     // TODO Create f_to_c and c_to_f here, rather than passing?
 
