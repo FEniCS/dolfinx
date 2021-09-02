@@ -109,45 +109,25 @@ public:
       switch (type)
       {
       case IntegralType::cell:
-      {
         for (auto& integral : integral_type.second.first)
           _cell_integrals.insert({integral.first, {integral.second, {}}});
-
-        if (integral_type.second.second)
-        {
-          assert(_mesh == integral_type.second.second->mesh());
-          set_domains(IntegralType::cell, *integral_type.second.second);
-        }
         break;
-      }
       case IntegralType::exterior_facet:
-      {
         for (auto& integral : integral_type.second.first)
           _exterior_facet_integrals.insert(
               {integral.first, {integral.second, {}}});
-
-        if (integral_type.second.second)
-        {
-          assert(_mesh == integral_type.second.second->mesh());
-          set_domains(IntegralType::exterior_facet,
-                      *integral_type.second.second);
-        }
         break;
-      }
       case IntegralType::interior_facet:
-      {
         for (auto& integral : integral_type.second.first)
           _interior_facet_integrals.insert(
               {integral.first, {integral.second, {}}});
-
-        if (integral_type.second.second)
-        {
-          assert(_mesh == integral_type.second.second->mesh());
-          set_domains(IntegralType::interior_facet,
-                      *integral_type.second.second);
-        }
         break;
       }
+
+      if (integral_type.second.second)
+      {
+        assert(_mesh == integral_type.second.second->mesh());
+        set_domains(type, *integral_type.second.second);
       }
     }
 
