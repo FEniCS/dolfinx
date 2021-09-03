@@ -174,8 +174,11 @@ void assemble_exterior_facets(
   std::vector<T> Ae(ndim0 * ndim1);
   const xtl::span<T> _Ae(Ae);
 
-  for (auto [cell, local_facet] : active_facets)
+  for (auto cell_local_facet_pair : active_facets)
   {
+    auto cell = cell_local_facet_pair.first;
+    auto local_facet = cell_local_facet_pair.second;
+
     // Get cell coordinates/geometry
     auto x_dofs = x_dofmap.links(cell);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
@@ -277,10 +280,12 @@ void assemble_interior_facets(
   // Temporaries for joint dofmaps
   std::vector<std::int32_t> dmapjoint0, dmapjoint1;
 
-  for (auto [cell_0, local_facet_0, cell_1, local_facet_1] : active_facets)
+  for (auto cell_local_facet_tuple : active_facets)
   {
-    const std::array<int, 2> cells = {cell_0, cell_1};
-    const std::array<int, 2> local_facet = {local_facet_0, local_facet_1};
+    const std::array<int, 2> cells = {std::get<0>(cell_local_facet_tuple),
+                                      std::get<2>(cell_local_facet_tuple)};
+    const std::array<int, 2> local_facet = {std::get<1>(cell_local_facet_tuple),
+                                            std::get<3>(cell_local_facet_tuple)};
 
     // Get cell geometry
     auto x_dofs0 = x_dofmap.links(cells[0]);
