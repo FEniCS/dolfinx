@@ -104,7 +104,6 @@ public:
     for (auto& integral_type : integrals)
     {
       const IntegralType type = integral_type.first;
-      // TODO Refactor
       // Loop over integrals kernels and set domains
       switch (type)
       {
@@ -180,7 +179,7 @@ public:
     case IntegralType::interior_facet:
       return get_kernel_from_integrals(_interior_facet_integrals, i);
     default:
-      throw std::runtime_error("Integral type not recognised.");
+      throw std::runtime_error("Integral type not supported.");
     }
   }
 
@@ -214,7 +213,7 @@ public:
     case IntegralType::interior_facet:
       return _interior_facet_integrals.size();
     default:
-      throw std::runtime_error("Integral type not recognised.");
+      throw std::runtime_error("Integral type not supported.");
     }
   }
 
@@ -243,13 +242,12 @@ public:
         ids.push_back(integral.first);
       break;
     default:
-      throw std::runtime_error("Integral type not recognised.");
+      throw std::runtime_error("Integral type not supported.");
     }
 
     return ids;
   }
 
-  // TODO Refactor
   /// Get the list of cell indices for the ith integral (kernel)
   /// for the cell domain type
   /// @param[in] i Integral ID, i.e. (sub)domain index
@@ -264,11 +262,10 @@ public:
     return it->second.second;
   }
 
-  /// Get the list of (cell_index, local_facet_index) tuples for the ith
+  /// Get the list of (cell_index, local_facet_index) pairs for the ith
   /// integral (kernel) for the exterior facet domain type
   /// @param[in] i Integral ID, i.e. (sub)domain index
-  /// @return List of (cell_index, local_facet_index) tuples for the given
-  /// integral (kernel)
+  /// @return List of (cell_index, local_facet_index) pairs
   const std::vector<std::pair<std::int32_t, int>>&
   exterior_facet_domains(int i) const
   {
@@ -284,9 +281,8 @@ public:
   /// (cell_index_0, local_facet_index_0, cell_index_1, local_facet_index_1)
   /// tuples for the ith integral (kernel) for the interior facet domain type,
   /// @param[in] i Integral ID, i.e. (sub)domain index
-  /// @return List of
+  /// @return List of tuples of the form
   /// (cell_index_0, local_facet_index_0, cell_index_1, local_facet_index_1)
-  /// tuples for the given integral (kernel)
   const std::vector<std::tuple<std::int32_t, int, std::int32_t, int>>&
   interior_facet_domains(int i) const
   {
@@ -336,7 +332,7 @@ public:
 
 private:
   /// Helper function to get the kernel for integral i from a map
-  /// of integrals i.e. _cell_integrals
+  /// of integrals i.e. from _cell_integrals
   /// @param[in] integrals Map of integrals
   /// @param[in] i Domain index
   /// @return Function to call for tabulate_tensor
@@ -357,8 +353,8 @@ private:
   /// corresponding to a given facet index.
   /// @param[in] f Facet index
   /// @param[in] f_to_c Facet to cell connectivity
-  /// @param[in] c_to_f cell to facet connectivity
-  /// @return Function to call for tabulate_tensor
+  /// @param[in] c_to_f Cell to facet connectivity
+  /// @return Vector of (cell, local_facet) pairs
   std::vector<std::pair<std::int32_t, int>> get_cell_local_facet_pairs(
       const std::int32_t f,
       const dolfinx::graph::AdjacencyList<std::int32_t>& f_to_c,
@@ -387,7 +383,7 @@ private:
   /// MeshTags is not stored.
   void set_domains(const IntegralType type, const mesh::MeshTags<int>& marker)
   {
-  // TODO set vertex domains
+    // TODO set vertex domains
 
     std::shared_ptr<const mesh::Mesh> mesh = marker.mesh();
     const mesh::Topology& topology = mesh->topology();
@@ -489,7 +485,7 @@ private:
       }
       else
       {
-        throw std::runtime_error("Integral type not recognised.");
+        throw std::runtime_error("Integral type not supported.");
       }
     }
   }
