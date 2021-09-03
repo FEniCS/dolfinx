@@ -52,8 +52,8 @@ CellType cell_entity_type(CellType type, int d, int index);
 /// @return The type of facet for this cell at this index
 CellType cell_facet_type(CellType type, int index);
 
-/// Return list of entities, where entities(e, k) is the local vertex index for
-/// the kth vertex of entity e of dimension dim
+/// Return list of entities, where entities(e, k) is the local vertex
+/// index for the kth vertex of entity e of dimension dim
 graph::AdjacencyList<int> get_entity_vertices(CellType type, int dim);
 
 /// Get entities of dimension dim1 and that make up entities of dimension

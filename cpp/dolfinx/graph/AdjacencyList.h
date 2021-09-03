@@ -152,26 +152,6 @@ public:
   /// Offset for each node in array() (const version)
   const std::vector<std::int32_t>& offsets() const { return _offsets; }
 
-  /// Copy of the Adjacency List if the specified type is different from the
-  /// current type, ele return a reference.
-  template <typename X>
-  decltype(auto) as_type() const
-  {
-// Workaround for Intel compler bug, see
-// https://community.intel.com/t5/Intel-C-Compiler/quot-if-constexpr-quot-and-quot-missing-return-statement-quot-in/td-p/1154551
-#ifdef __INTEL_COMPILER
-#pragma warning(disable : 1011)
-#endif
-
-    if constexpr (std::is_same<X, T>::value)
-      return *this;
-    else
-    {
-      return graph::AdjacencyList<X>(
-          std::vector<X>(_array.begin(), _array.end()), this->_offsets);
-    }
-  }
-
   /// Return informal string representation (pretty-print)
   std::string str() const
   {
@@ -207,7 +187,7 @@ AdjacencyList<T> build_adjacency_list(U&& data, int degree)
 {
   // using T = typename U::value_type;
   assert(data.size() % degree == 0);
-  std::vector<std::int32_t> offsets(data.size() / degree + 1, 0);
+  std::vector<std::int32_t> offsets((data.size() / degree) + 1, 0);
   for (std::size_t i = 1; i < offsets.size(); ++i)
     offsets[i] = offsets[i - 1] + degree;
   return AdjacencyList<T>(std::forward<U>(data), std::move(offsets));

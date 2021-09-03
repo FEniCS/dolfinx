@@ -105,16 +105,16 @@ Mesh mesh::create_mesh(MPI_Comm comm,
   // Build local dual graph for owned cells to apply re-ordering to
   const std::int32_t num_owned_cells
       = cells_extracted0.num_nodes() - ghost_owners.size();
-  auto [g, m] = mesh::build_local_dual_graph(
+  const auto [g, m] = mesh::build_local_dual_graph(
       xtl::span<const std::int64_t>(
           cells_extracted0.array().data(),
-          cells_extracted0.offsets()[num_owned_cells + 1]),
+          cells_extracted0.offsets()[num_owned_cells]),
       xtl::span<const std::int32_t>(cells_extracted0.offsets().data(),
                                     num_owned_cells + 1),
       tdim);
 
   // Compute re-ordering of local dual graph
-  const std::vector<int> remap = graph::scotch::compute_gps(g, 25).first;
+  const std::vector<int> remap = graph::scotch::compute_gps(g, 2).first;
 
   // Create re-ordered cell lists
   std::vector<std::int64_t> original_cell_index(original_cell_index0);
@@ -163,10 +163,9 @@ Mesh mesh::create_mesh(MPI_Comm comm,
                                                  std::move(off1));
   if (element.needs_dof_permutations())
     topology.create_entity_permutations();
-  Geometry geometry
-      = mesh::create_geometry(comm, topology, element, cell_nodes1, x);
 
-  return Mesh(comm, std::move(topology), std::move(geometry));
+  return Mesh(comm, std::move(topology),
+              mesh::create_geometry(comm, topology, element, cell_nodes1, x));
 }
 //-----------------------------------------------------------------------------
 

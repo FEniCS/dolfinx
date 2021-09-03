@@ -60,7 +60,7 @@ def test_distance_tetrahedron():
 @pytest.mark.skip("volume_entities needs fixing")
 @pytest.mark.parametrize(
     'mesh', [
-        UnitIntervalMesh(MPI.COMM_WORLD, 8),
+        UnitIntervalMesh(MPI.COMM_WORLD, 18),
         UnitSquareMesh(MPI.COMM_WORLD, 8, 9, CellType.triangle),
         UnitSquareMesh(MPI.COMM_WORLD, 8, 9, CellType.quadrilateral),
         UnitCubeMesh(MPI.COMM_WORLD, 8, 9, 5, CellType.tetrahedron)
@@ -89,7 +89,6 @@ def test_volume_quadrilateralR3(coordinates):
     cells = numpy.array([[0, 1, 2, 3]], dtype=numpy.int32)
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", "quadrilateral", 1))
     mesh = create_mesh(MPI.COMM_SELF, cells, x, domain)
-    mesh.topology.create_connectivity_all()
     assert cpp.mesh.volume_entities(mesh, [0], mesh.topology.dim) == 1.0
 
 
@@ -106,7 +105,6 @@ def test_volume_quadrilateral_coplanarity_check_1(scaling):
         cells = numpy.array([[0, 1, 2, 3]], dtype=numpy.int32)
         domain = ufl.Mesh(ufl.VectorElement("Lagrange", "quadrilateral", 1))
         mesh = create_mesh(MPI.COMM_SELF, cells, x, domain)
-        mesh.topology.create_connectivity_all()
         cpp.mesh.volume_entities(mesh, [0], mesh.topology.dim)
 
     assert "Not coplanar" in str(error.value)
@@ -126,7 +124,6 @@ def test_volume_quadrilateral_coplanarity_check_2(scaling):
         cells = numpy.array([[0, 1, 2, 3]], dtype=numpy.int32)
         domain = ufl.Mesh(ufl.VectorElement("Lagrange", "quadrilateral", 1))
         mesh = create_mesh(MPI.COMM_SELF, cells, x, domain)
-        mesh.topology.create_connectivity_all()
         cpp.mesh.volume_entities(mesh, [0], mesh.topology.dim)
 
     assert "Not coplanar" in str(error.value)

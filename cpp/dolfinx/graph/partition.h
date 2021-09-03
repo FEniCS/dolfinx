@@ -47,7 +47,7 @@ using partition_fn = std::function<graph::AdjacencyList<std::int32_t>(
 /// distribution
 /// @return Destination rank for each input node
 AdjacencyList<std::int32_t>
-partition_graph(const MPI_Comm comm, int nparts,
+partition_graph(MPI_Comm comm, int nparts,
                 const AdjacencyList<std::int64_t>& local_graph,
                 std::int32_t num_ghost_nodes, bool ghosting);
 
@@ -221,6 +221,7 @@ build::distribute_data(MPI_Comm comm,
                 disp_index_recv.data(), compound_type, my_x.data(),
                 number_index_send.data(), disp_index_send.data(), compound_type,
                 comm);
+  MPI_Type_free(&compound_type);
 
   return my_x;
 }

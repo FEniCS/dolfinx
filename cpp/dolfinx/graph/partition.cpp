@@ -13,11 +13,13 @@
 #include <memory>
 #include <unordered_map>
 
+#include "partitioners.h"
+
 using namespace dolfinx;
 
 //-----------------------------------------------------------------------------
 graph::AdjacencyList<std::int32_t>
-graph::partition_graph(const MPI_Comm comm, int nparts,
+graph::partition_graph(MPI_Comm comm, int nparts,
                        const AdjacencyList<std::int64_t>& local_graph,
                        std::int32_t num_ghost_nodes, bool ghosting)
 {
@@ -34,8 +36,14 @@ graph::build::distribute(MPI_Comm comm,
   common::Timer timer("Distribute in graph creation AdjacencyList");
 
   assert(list.num_nodes() == (int)destinations.num_nodes());
-  const std::int64_t offset_global
-      = dolfinx::MPI::global_offset(comm, list.num_nodes(), true);
+
+  std::int64_t offset_global = 0;
+  const std::int64_t num_owned = list.num_nodes();
+  MPI_Request request_offset_scan;
+  MPI_Iexscan(&num_owned, &offset_global, 1,
+              dolfinx::MPI::mpi_type<std::int64_t>(), MPI_SUM, comm,
+              &request_offset_scan);
+
   const int size = dolfinx::MPI::size(comm);
 
   // Compute number of links to send to each process
@@ -63,6 +71,9 @@ graph::build::distribute(MPI_Comm comm,
   std::partial_sum(num_per_dest_recv.begin(), num_per_dest_recv.end(),
                    disp_recv.begin() + 1);
 
+  // Complete global_offset scan
+  MPI_Wait(&request_offset_scan, MPI_STATUS_IGNORE);
+
   // Prepare send buffer
   std::vector<int> offset = disp_send;
   std::vector<std::int64_t> data_send(disp_send.back());
@@ -75,8 +86,9 @@ graph::build::distribute(MPI_Comm comm,
       data_send[offset[dest]++] = dests[0];
       data_send[offset[dest]++] = i + offset_global;
       data_send[offset[dest]++] = links.size();
-      for (std::size_t k = 0; k < links.size(); ++k)
-        data_send[offset[dest]++] = links[k];
+      std::copy(links.cbegin(), links.cend(),
+                std::next(data_send.begin(), offset[dest]));
+      offset[dest] += links.size();
     }
   }
 
@@ -163,12 +175,15 @@ std::vector<std::int64_t> graph::build::compute_ghost_indices(
   LOG(INFO) << "Compute ghost indices";
 
   // Get number of local cells and global offset
-  int num_local = global_indices.size() - ghost_owners.size();
+  const std::int64_t num_local = global_indices.size() - ghost_owners.size();
   std::vector<std::int64_t> ghost_global_indices(
       global_indices.begin() + num_local, global_indices.end());
 
-  const std::int64_t offset_local
-      = dolfinx::MPI::global_offset(comm, num_local, true);
+  std::int64_t offset_local = 0;
+  MPI_Request request_offset_scan;
+  MPI_Iexscan(&num_local, &offset_local, 1,
+              dolfinx::MPI::mpi_type<std::int64_t>(), MPI_SUM, comm,
+              &request_offset_scan);
 
   // Find out how many ghosts are on each neighboring process
   std::vector<int> ghost_index_count;
@@ -179,7 +194,6 @@ std::vector<std::int64_t> graph::build::compute_ghost_indices(
   for (int p : ghost_owners)
   {
     assert(p != mpi_rank);
-
     const auto [it, insert] = proc_to_neighbor.insert({p, np});
     if (insert)
     {
@@ -226,25 +240,29 @@ std::vector<std::int64_t> graph::build::compute_ghost_indices(
   std::vector<int> recv_offsets = {0};
   for (int q : recv_sizes)
     recv_offsets.push_back(recv_offsets.back() + q);
-  std::vector<std::int64_t> recv_data(recv_offsets.back());
 
+  std::vector<std::int64_t> recv_data(recv_offsets.back());
   MPI_Neighbor_alltoallv(send_data.data(), ghost_index_count.data(),
                          send_offsets.data(), MPI_INT64_T, recv_data.data(),
                          recv_sizes.data(), recv_offsets.data(), MPI_INT64_T,
                          neighbor_comm);
+
+  // Complete global_offset scan
+  MPI_Wait(&request_offset_scan, MPI_STATUS_IGNORE);
 
   // Replace values in recv_data with new_index and send back
   std::unordered_map<std::int64_t, std::int64_t> old_to_new;
   for (int i = 0; i < num_local; ++i)
     old_to_new.insert({global_indices[i], offset_local + i});
 
-  for (std::int64_t& r : recv_data)
-  {
-    auto it = old_to_new.find(r);
-    // Must exist on this process!
-    assert(it != old_to_new.end());
-    r = it->second;
-  }
+  std::for_each(recv_data.begin(), recv_data.end(),
+                [&old_to_new](auto& r)
+                {
+                  auto it = old_to_new.find(r);
+                  // Must exist on this process!
+                  assert(it != old_to_new.end());
+                  r = it->second;
+                });
 
   std::vector<std::int64_t> new_recv(send_data.size());
   MPI_Neighbor_alltoallv(recv_data.data(), recv_sizes.data(),
@@ -261,12 +279,13 @@ std::vector<std::int64_t> graph::build::compute_ghost_indices(
     assert(insert);
   }
 
-  for (std::int64_t& q : ghost_global_indices)
-  {
-    const auto it = old_to_new.find(q);
-    assert(it != old_to_new.end());
-    q = it->second;
-  }
+  std::for_each(ghost_global_indices.begin(), ghost_global_indices.end(),
+                [&old_to_new](auto& q)
+                {
+                  const auto it = old_to_new.find(q);
+                  assert(it != old_to_new.end());
+                  q = it->second;
+                });
 
   MPI_Comm_free(&neighbor_comm);
   return ghost_global_indices;
@@ -321,13 +340,15 @@ std::vector<std::int32_t> graph::build::compute_local_to_local(
     global_to_local1.insert({local1_to_global[i], i});
 
   // Compute inverse map for local0_to_local1
-  std::vector<std::int32_t> local0_to_local1(local0_to_global.size());
-  for (std::size_t i = 0; i < local0_to_local1.size(); ++i)
-  {
-    auto it = global_to_local1.find(local0_to_global[i]);
-    assert(it != global_to_local1.end());
-    local0_to_local1[i] = it->second;
-  }
+  std::vector<std::int32_t> local0_to_local1;
+  std::transform(local0_to_global.cbegin(), local0_to_global.cend(),
+                 std::back_inserter(local0_to_local1),
+                 [&global_to_local1](auto l2g)
+                 {
+                   auto it = global_to_local1.find(l2g);
+                   assert(it != global_to_local1.end());
+                   return it->second;
+                 });
 
   return local0_to_local1;
 }

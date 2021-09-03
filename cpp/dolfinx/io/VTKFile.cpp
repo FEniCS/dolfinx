@@ -104,14 +104,13 @@ std::int8_t get_vtk_cell_type(mesh::CellType cell, int dim)
   }
 }
 
-/// Convert and Eigen array/matrix to a std::string
+/// Convert an xtensor to a std::string
 template <typename T>
 std::string xt_to_string(const T& x, int precision)
 {
   std::stringstream s;
   s.precision(precision);
-  for (std::uint32_t i = 0; i < x.size(); ++i)
-    s << x[i] << " ";
+  std::for_each(x.begin(), x.end(), [&s](auto e) { s << e << " "; });
   return s.str();
 }
 
@@ -167,7 +166,7 @@ void _add_data(const fem::Function<Scalar>& u,
       field_node.append_attribute("type") = "Float64";
       field_node.append_attribute("Name") = (component + "_" + u.name).c_str();
       field_node.append_attribute("format") = "ascii";
-      xt::xtensor<double, 2> values_comp;
+      xt::xtensor<double, 2> values_comp({values.shape()});
 
       if (component == "real")
         values_comp = xt::real(values);
@@ -414,8 +413,8 @@ void write_function(
     }
   }
   // Get MPI comm
-  const MPI_Comm mpi_comm = mesh->mpi_comm();
-  const int mpi_rank = dolfinx::MPI::rank(mpi_comm);
+  const MPI_Comm comm = mesh->mpi_comm();
+  const int mpi_rank = dolfinx::MPI::rank(comm);
   boost::filesystem::path p(filename);
 
   // Get the PVD "Collection" node
@@ -515,7 +514,6 @@ void write_function(
         auto geometry_layout = cmap.dof_layout();
         // Extract function value
         const std::vector<Scalar>& func_values = _u.get().x()->array();
-
         // Compute in tensor (one for scalar function, . . .)
         const size_t value_size_loc = element->value_size();
 
@@ -529,7 +527,7 @@ void write_function(
         const std::int32_t num_cells = map->size_local();
 
         // Resize array for holding point values
-        xt::xtensor<Scalar, 2> point_values(
+        xt::xtensor<Scalar, 2> point_values = xt::zeros<Scalar>(
             {mesh->geometry().x().shape(0), value_size_loc});
 
         // If scalar function space
@@ -694,7 +692,7 @@ void write_function(
       }
 
       // Add data for each process to the PVTU object
-      const int mpi_size = dolfinx::MPI::size(mpi_comm);
+      const int mpi_size = dolfinx::MPI::size(comm);
       for (int i = 0; i < mpi_size; ++i)
       {
         boost::filesystem::path vtu = p.stem();

@@ -24,6 +24,33 @@ using namespace dolfinx::fem;
 
 namespace
 {
+/// Create a symmetric MPI neighbourhood communciator from an
+/// input neighbourhood communicator
+dolfinx::MPI::Comm create_symmetric_comm(MPI_Comm comm)
+{
+  int indegree(-1), outdegree(-2), weighted(-1);
+  MPI_Dist_graph_neighbors_count(comm, &indegree, &outdegree, &weighted);
+
+  std::vector<int> neighbors(indegree + outdegree);
+  MPI_Dist_graph_neighbors(comm, indegree, neighbors.data(), MPI_UNWEIGHTED,
+                           outdegree, neighbors.data() + indegree,
+                           MPI_UNWEIGHTED);
+
+  std::sort(neighbors.begin(), neighbors.end());
+  neighbors.erase(std::unique(neighbors.begin(), neighbors.end()),
+                  neighbors.end());
+
+  MPI_Comm comm_sym;
+  std::vector<int> sourceweights(neighbors.size(), 1);
+  std::vector<int> destweights(neighbors.size(), 1);
+  MPI_Dist_graph_create_adjacent(comm, neighbors.size(), neighbors.data(),
+                                 sourceweights.data(), neighbors.size(),
+                                 neighbors.data(), destweights.data(),
+                                 MPI_INFO_NULL, false, &comm_sym);
+
+  return dolfinx::MPI::Comm(comm_sym, false);
+}
+
 //-----------------------------------------------------------------------------
 /// Find DOFs on this processes that are constrained by a Dirichlet
 /// condition detected by another process
@@ -36,11 +63,13 @@ std::vector<std::int32_t>
 get_remote_bcs1(const common::IndexMap& map,
                 const std::vector<std::int32_t>& dofs_local)
 {
-  MPI_Comm comm = map.comm(common::IndexMap::Direction::symmetric);
+  dolfinx::MPI::Comm comm
+      = create_symmetric_comm(map.comm(common::IndexMap::Direction::forward));
 
   // Get number of processes in neighborhood
   int num_neighbors(-1), outdegree(-2), weighted(-1);
-  MPI_Dist_graph_neighbors_count(comm, &num_neighbors, &outdegree, &weighted);
+  MPI_Dist_graph_neighbors_count(comm.comm(), &num_neighbors, &outdegree,
+                                 &weighted);
 
   // Return early if there are no neighbors
   if (num_neighbors == 0)
@@ -50,7 +79,7 @@ get_remote_bcs1(const common::IndexMap& map,
   const int num_dofs = dofs_local.size();
   std::vector<int> num_dofs_recv(num_neighbors);
   MPI_Neighbor_allgather(&num_dofs, 1, MPI_INT, num_dofs_recv.data(), 1,
-                         MPI_INT, comm);
+                         MPI_INT, comm.comm());
 
   // NOTE: we could consider only dofs that we know are shared
   // Build array of global indices of dofs
@@ -68,9 +97,10 @@ get_remote_bcs1(const common::IndexMap& map,
 
   // Send/receive global index of dofs with bcs to all neighbors
   std::vector<std::int64_t> dofs_received(disp.back());
-  MPI_Neighbor_allgatherv(dofs_global.data(), dofs_global.size(), MPI_INT64_T,
-                          dofs_received.data(), num_dofs_recv.data(),
-                          disp.data(), MPI_INT64_T, comm);
+  MPI_Request request;
+  MPI_Ineighbor_allgatherv(dofs_global.data(), dofs_global.size(), MPI_INT64_T,
+                           dofs_received.data(), num_dofs_recv.data(),
+                           disp.data(), MPI_INT64_T, comm.comm(), &request);
 
   // FIXME: check that dofs is sorted
   // Build vector of local dof indicies that have been marked by another
@@ -86,6 +116,7 @@ get_remote_bcs1(const common::IndexMap& map,
   std::map<std::int64_t, std::int32_t> global_to_local(
       global_local_ghosts.begin(), global_local_ghosts.end());
 
+  MPI_Wait(&request, MPI_STATUS_IGNORE);
   std::vector<std::int32_t> dofs;
   for (std::size_t i = 0; i < dofs_received.size(); ++i)
   {
@@ -122,10 +153,12 @@ get_remote_bcs2(const common::IndexMap& map0, int bs0,
   // NOTE: assumes that dofs are unrolled, i.e. not blocked. Could it be
   // make more efficient to handle the case of a common block size?
 
-  MPI_Comm comm0 = map0.comm(common::IndexMap::Direction::symmetric);
+  dolfinx::MPI::Comm comm0
+      = create_symmetric_comm(map0.comm(common::IndexMap::Direction::forward));
 
   int num_neighbors(-1), outdegree(-2), weighted(-1);
-  MPI_Dist_graph_neighbors_count(comm0, &num_neighbors, &outdegree, &weighted);
+  MPI_Dist_graph_neighbors_count(comm0.comm(), &num_neighbors, &outdegree,
+                                 &weighted);
   assert(num_neighbors == outdegree);
 
   // Return early if there are no neighbors
@@ -135,8 +168,9 @@ get_remote_bcs2(const common::IndexMap& map0, int bs0,
   // Figure out how many entries to receive from each neighbor
   const int num_dofs = 2 * dofs_local.size();
   std::vector<int> num_dofs_recv(num_neighbors);
-  MPI_Neighbor_allgather(&num_dofs, 1, MPI_INT, num_dofs_recv.data(), 1,
-                         MPI_INT, comm0);
+  MPI_Request request;
+  MPI_Ineighbor_allgather(&num_dofs, 1, MPI_INT, num_dofs_recv.data(), 1,
+                          MPI_INT, comm0.comm(), &request);
 
   // NOTE: we consider only dofs that we know are shared
   // Build array of global indices of dofs
@@ -173,6 +207,7 @@ get_remote_bcs2(const common::IndexMap& map0, int bs0,
 
   // Compute displacements for data to receive. Last entry has total
   // number of received items.
+  MPI_Wait(&request, MPI_STATUS_IGNORE);
   std::vector<int> disp(num_neighbors + 1, 0);
   std::partial_sum(num_dofs_recv.begin(), num_dofs_recv.end(),
                    std::next(disp.begin()));
@@ -186,7 +221,7 @@ get_remote_bcs2(const common::IndexMap& map0, int bs0,
       {static_cast<std::size_t>(disp.back() / 2), 2});
   MPI_Neighbor_allgatherv(dofs_global.data(), dofs_global.size(), MPI_INT64_T,
                           dofs_received.data(), num_dofs_recv.data(),
-                          disp.data(), MPI_INT64_T, comm0);
+                          disp.data(), MPI_INT64_T, comm0.comm());
 
   const std::array<std::reference_wrapper<const common::IndexMap>, 2> maps
       = {map0, map1};

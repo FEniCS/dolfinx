@@ -1,15 +1,14 @@
 name: Intel compilers
 
 on:
-  schedule:
-    # '*' is a special character in YAML, so string must be quoted
-    - cron: "0 2 * * TUE"
-  workflow_dispatch: ~
+  pull_request:
+    branches:
+      - main
 
 jobs:
   build:
     runs-on: ubuntu-20.04
-    container: fenicsproject/test-env:mpich
+    container: fenicsproject/test-env:latest-mpich
 
     defaults:
       run:
@@ -23,9 +22,6 @@ jobs:
     strategy:
       matrix:
         include:
-          - compiler: "Classic"
-            c_compiler: icc
-            cxx_compiler: icpc
           - compiler: "LLVM-based"
             c_compiler: icx
             cxx_compiler: icpx
@@ -40,24 +36,14 @@ jobs:
           echo "deb https://apt.repos.intel.com/oneapi all main" | tee /etc/apt/sources.list.d/oneAPI.list
           apt update
           # apt install -y intel-hpckit
-          apt install -y intel-oneapi-common-vars intel-oneapi-compiler-dpcpp-cpp-and-cpp-classic
-
-      - name: Get Basix and install
-        uses: actions/checkout@v2
-        with:
-          path: ./basix
-          repository: FEniCS/basix
-          ref: main
+          apt install -y intel-oneapi-common-vars intel-oneapi-compiler-dpcpp-cpp
 
       - name: Install FEniCS Python components
         run: |
           . /opt/intel/oneapi/setvars.sh
-          cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -B build-dir -S ./basix
-          cmake --build build-dir
-          cmake --install build-dir
-          pip3 install ./basix/python
-          pip3 install git+https://github.com/FEniCS/ufl.git
-          pip3 install git+https://github.com/FEniCS/ffcx.git
+          python3 -m pip install git+https://github.com/FEniCS/ufl.git
+          python3 -m pip install git+https://github.com/FEniCS/basix.git
+          python3 -m pip install git+https://github.com/FEniCS/ffcx.git
 
       - name: Configure C++
         run: |

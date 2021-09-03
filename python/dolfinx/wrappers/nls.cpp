@@ -37,6 +37,7 @@ void nls(py::module& m)
       .def("setF", &dolfinx::nls::NewtonSolver::setF)
       .def("setJ", &dolfinx::nls::NewtonSolver::setJ)
       .def("setP", &dolfinx::nls::NewtonSolver::setP)
+      .def("set_update", &dolfinx::nls::NewtonSolver::set_update)
       .def("set_form", &dolfinx::nls::NewtonSolver::set_form)
       .def("solve", &dolfinx::nls::NewtonSolver::solve)
       .def_readwrite("atol", &dolfinx::nls::NewtonSolver::atol,

@@ -144,9 +144,22 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
 
   if (is_basix_element(ufc_element))
   {
-    // FIXME: Find a better way than strings to initialise this Basix element
-    _element = std::make_unique<basix::FiniteElement>(basix::create_element(
-        _family.c_str(), cell_shape.c_str(), ufc_element.degree));
+    if (ufc_element.lattice_type != -1)
+    {
+      _element = std::make_unique<basix::FiniteElement>(basix::create_element(
+          static_cast<basix::element::family>(ufc_element.basix_family),
+          static_cast<basix::cell::type>(ufc_element.basix_cell),
+          ufc_element.degree,
+          static_cast<basix::lattice::type>(ufc_element.lattice_type),
+          ufc_element.discontinuous));
+    }
+    else
+    {
+      _element = std::make_unique<basix::FiniteElement>(basix::create_element(
+          static_cast<basix::element::family>(ufc_element.basix_family),
+          static_cast<basix::cell::type>(ufc_element.basix_cell),
+          ufc_element.degree, ufc_element.discontinuous));
+    }
 
     _needs_dof_transformations
         = !_element->dof_transformations_are_identity()
@@ -279,12 +292,22 @@ FiniteElement::get_dof_permutation_function(bool inverse,
 {
   if (!needs_dof_permutations())
   {
-    // If this element shouldn't be permuted, return a function that
-    // throws an error
-    return [](const xtl::span<std::int32_t>&, std::uint32_t) {
-      throw std::runtime_error(
-          "Permutations should not be applied for this element.");
-    };
+    if (!needs_dof_transformations())
+    {
+      // If this element shouldn't be permuted, return a function that
+      // does nothing
+      return [](const xtl::span<std::int32_t>&, std::uint32_t) {};
+    }
+    else
+    {
+      // If this element shouldn't be permuted but needs transformations, return
+      // a function that throws an error
+      return [](const xtl::span<std::int32_t>&, std::uint32_t) {
+        throw std::runtime_error(
+            "Permutations should not be applied for this element.");
+      };
+    }
+
   }
 
   if (_sub_elements.size() != 0)

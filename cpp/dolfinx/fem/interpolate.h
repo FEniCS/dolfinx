@@ -214,9 +214,12 @@ void interpolate(
         "Interpolation into this space is not yet supported.");
   }
 
-  mesh->topology_mutable().create_entity_permutations();
-  const std::vector<std::uint32_t>& cell_info
-      = mesh->topology().get_cell_permutation_info();
+  xtl::span<const std::uint32_t> cell_info;
+  if (element->needs_dof_transformations())
+  {
+    mesh->topology_mutable().create_entity_permutations();
+    cell_info = xtl::span(mesh->topology().get_cell_permutation_info());
+  }
 
   // Evaluate function at physical points. The returned array has a
   // number of rows equal to the number of components of the function,
@@ -367,7 +370,7 @@ void interpolate_c(
   std::vector<int> vshape(element->value_rank(), 1);
   for (std::size_t i = 0; i < vshape.size(); ++i)
     vshape[i] = element->value_dimension(i);
-  const std::size_t value_size = std::accumulate(
+  const std::size_t value_size = std::reduce(
       std::begin(vshape), std::end(vshape), 1, std::multiplies<>());
 
   auto fn = [value_size, &f](const xt::xtensor<double, 2>& x)

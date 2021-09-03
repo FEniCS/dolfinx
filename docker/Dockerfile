@@ -8,15 +8,15 @@
 #
 # To run a nightly build:
 #
-#    docker run -ti dolfinx/dolfinx
+#    docker run -ti dolfinx/dolfinx:latest
 #
 # To run a Jupyter lab session:
 #
-#    docker run --init -p 8888:8888 dolfinx/lab
+#    docker run --init -p 8888:8888 dolfinx/lab:latest
 #
 # To run and share the current host directory with the container:
 #
-#    docker run --init -p 8888:8888 -v "$(pwd)":/root/shared dolfinx/lab
+#    docker run --init -p 8888:8888 -v "$(pwd)":/root/shared dolfinx/lab:latest
 #
 # To build from source, first checkout the DOLFINx, FFCx, Basix and UFL
 # repositories into the working directory, e.g.:
@@ -26,8 +26,8 @@
 #
 # Then run the commands:
 #
-#    docker pull dolfinx/dolfinx-onbuild
-#    echo "FROM dolfinx/dolfinx-onbuild" | docker build -f- .
+#    docker pull dolfinx/dolfinx-onbuild:latest
+#    echo "FROM dolfinx/dolfinx-onbuild:latest" | docker build -f- .
 #
 # You can build an optimised version of the complete FEniCS environment for
 # your platform using the commands:
@@ -43,20 +43,20 @@
 
 
 ARG GMSH_VERSION=4_8_4
-ARG PYBIND11_VERSION=2.6.2
-ARG PETSC_VERSION=3.15.1
+ARG PYBIND11_VERSION=2.7.1
+ARG PETSC_VERSION=3.15.2
 ARG SLEPC_VERSION=3.15.1
 ARG ADIOS2_VERSION=2.7.1
-ARG PYVISTA_VERSION=0.31.1
-# TODO: Update KaHIP version upon a release.
-ARG KAHIP_VERSION=623decb
+ARG PYVISTA_VERSION=0.31.3
+ARG NUMPY_VERSION=1.20.3
+ARG KAHIP_VERSION=3.11
 ARG XTENSOR_VERSION=0.23.10
 ARG XTENSOR_BLAS_VERSION=0.19.1
 ARG XTL_VERSION=0.7.2
 
 ########################################
 
-FROM ubuntu:20.04 as dev-env
+FROM ubuntu:21.04 as dev-env
 LABEL maintainer="fenics-project <fenics-support@googlegroups.org>"
 LABEL description="FEniCS testing and development environment with PETSc real, complex, 32-bit and 64-bit modes"
 
@@ -66,6 +66,7 @@ ARG PETSC_VERSION
 ARG SLEPC_VERSION
 ARG ADIOS2_VERSION
 ARG KAHIP_VERSION
+ARG NUMPY_VERSION
 ARG XTENSOR_VERSION
 ARG XTENSOR_BLAS_VERSION
 ARG XTL_VERSION
@@ -97,7 +98,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get -qq update && \
     apt-get -yq --with-new-pkgs -o Dpkg::Options::="--force-confold" upgrade && \
     apt-get -y install \
-    clang-10 \
+    clang \
     cmake \
     g++ \
     gfortran \
@@ -108,6 +109,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     liblapack-dev \
     lib${MPI}-dev \
     libopenblas-dev \
+    llvm-9 \
     ninja-build \
     pkg-config \
     python3-dev \
@@ -143,12 +145,12 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
 # - Second set of packages are recommended and/or required to build
 #   documentation or run tests.
 # LLVM_CONFIG required on aarch64, should be removed long-term.
-RUN LLVM_CONFIG=/usr/bin/llvm-config-10 pip3 install --no-cache-dir mpi4py numba && \
-    pip3 install --no-cache-dir cffi cppimport flake8 pytest pytest-xdist sphinx sphinx_rtd_theme
+RUN LLVM_CONFIG=/usr/bin/llvm-config-9 pip3 install --no-cache-dir mpi4py numba && \
+    pip3 install --no-cache-dir cffi cppimport flake8 pybind11==${PYBIND11_VERSION} pytest pytest-xdist sphinx sphinx_rtd_theme
 
 # Upgrade numpy via pip. Exclude binaries to avoid conflicts with libblas
 # (See issue #126 and #1305)
-RUN pip3 install --no-binary="numpy" numpy --upgrade
+RUN pip3 install --no-cache-dir --no-binary="numpy" numpy==${NUMPY_VERSION} --upgrade
 
 # Install xtl, xtensor, xtensor-blas.
 RUN git clone -b ${XTL_VERSION} --single-branch https://github.com/xtensor-stack/xtl.git && \
@@ -167,42 +169,29 @@ RUN git clone -b ${XTL_VERSION} --single-branch https://github.com/xtensor-stack
     ninja install && \
     rm -rf xtl xtensor xtensor-blas
 
-# Install pybind11
-RUN wget -nc --quiet https://github.com/pybind/pybind11/archive/v${PYBIND11_VERSION}.tar.gz && \
-    tar -xf v${PYBIND11_VERSION}.tar.gz && \
-    cd pybind11-${PYBIND11_VERSION} && \
-    mkdir build && \
-    cd build && \
-    cmake -DPYBIND11_TEST=False ../ && \
-    make install && \
-    rm -rf /tmp/*
-
 # Install KaHIP
-ENV KAHIP_DIR=/usr/local/KaHIP/deploy
-RUN cd /usr/local && \
-    git clone https://github.com/schulzchristian/KaHIP.git && \
-    cd KaHIP/ && \
-    git checkout ${KAHIP_VERSION} && \
-    mkdir build && cd build && \
-    cmake -G Ninja -DCMAKE_INSTALL_PREFIX=${KAHIP_DIR} -DNONATIVEOPTIMIZATIONS=On .. && \
-    ninja install
+RUN wget -nc --quiet https://github.com/kahip/kahip/archive/v${KAHIP_VERSION}.tar.gz && \
+    tar -xf v${KAHIP_VERSION}.tar.gz && \
+    cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DNONATIVEOPTIMIZATIONS=on -B build-dir -S KaHIP-${KAHIP_VERSION} && \
+    cmake --build build-dir && \
+    cmake --install build-dir && \
+    rm -rf /tmp/*
 
 # Install ADIOS2
 RUN wget -nc --quiet https://github.com/ornladios/ADIOS2/archive/v${ADIOS2_VERSION}.tar.gz -O adios2-v${ADIOS2_VERSION}.tar.gz && \
     mkdir -p adios2-v${ADIOS2_VERSION} && \
     tar -xf adios2-v${ADIOS2_VERSION}.tar.gz -C adios2-v${ADIOS2_VERSION} --strip-components 1 && \
-    cmake -DADIOS2_USE_Fortran=Off -DBUILD_TESTING=Off -DADIOS2_BUILD_EXAMPLES=Off -DADIOS2_USE_ZeroMQ=Off  -B build-dir -S ./adios2-v${ADIOS2_VERSION} && \
+    cmake -G Ninja -DADIOS2_USE_Fortran=off -DBUILD_TESTING=off -DADIOS2_BUILD_EXAMPLES=off -DADIOS2_USE_ZeroMQ=off -B build-dir -S ./adios2-v${ADIOS2_VERSION} && \
     cmake --build build-dir && \
     cmake --install build-dir && \
     rm -rf /tmp/*
 
 # Install GMSH
-RUN cd /usr/local && \
-    git clone -b gmsh_${GMSH_VERSION} --single-branch https://gitlab.onelab.info/gmsh/gmsh.git && \
-    cd gmsh && \
-    mkdir build && cd build && \
-    cmake -DCMAKE_BUILD_TYPE=Release -DENABLE_BUILD_DYNAMIC=1  -DENABLE_OPENMP=1  .. && \
-    make install
+RUN git clone -b gmsh_${GMSH_VERSION} --single-branch https://gitlab.onelab.info/gmsh/gmsh.git && \
+    cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DENABLE_BUILD_DYNAMIC=1  -DENABLE_OPENMP=1 -B build-dir -S gmsh && \
+    cmake --build build-dir && \
+    cmake --install build-dir && \
+    rm -rf /tmp/*
 
 ENV PYTHONPATH=/usr/local/lib:$PYTHONPATH
 
@@ -371,7 +360,7 @@ ONBUILD ARG DOLFINX_CMAKE_CXX_FLAGS
 
 # The dolfinx-onbuild container expects to have folders basix/ ufl/ ffcx/ and
 # dolfinx/ mounted/shared at /src.
-ONBUILD RUN cd basix && cmake -G Ninja -DCMAKE_BUILD_TYPE=${DOLFINX_CMAKE_BUILD_TYPE} -DCMAKE_CXX_FLAGS=${DOLFINX_CMAKE_CXX_FLAGS} -B build-dir -S . && \
+ONBUILD RUN cd basix && cmake -G Ninja -DCMAKE_BUILD_TYPE=${DOLFINX_CMAKE_BUILD_TYPE} -DCMAKE_CXX_FLAGS=${DOLFINX_CMAKE_CXX_FLAGS} -B build-dir -S ./cpp && \
     cmake --build build-dir && \
     cmake --install build-dir && \
     python3 -m pip install ./python && \

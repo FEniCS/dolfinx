@@ -158,22 +158,7 @@ public:
                                "Cannot interpolate mixed elements directly.");
     }
 
-    const std::size_t rows = _space_dim / _bs;
-    assert(_space_dim % _bs == 0);
-    assert(dofs.size() == rows);
-
-    // Compute dofs = Pi * x (matrix-vector multiply)
-    const xt::xtensor<double, 2>& Pi = _element->interpolation_matrix();
-    assert(Pi.size() % rows == 0);
-    const std::size_t cols = Pi.size() / rows;
-    for (std::size_t i = 0; i < rows; ++i)
-    {
-      // Can be replaced with std::transform_reduce once GCC 8 series dies.
-      // Dot product between row i of the matrix and 'values'
-      dofs[i] = std::inner_product(std::next(Pi.data(), i * cols),
-                                   std::next(Pi.data(), i * cols + cols),
-                                   values.data(), T(0.0));
-    }
+    _element->interpolate(tcb::make_span(dofs), tcb::make_span(values), _bs);
   }
 
   /// Check if DOF transformations are needed for this element.
@@ -475,9 +460,9 @@ public:
     _element->apply_dof_transformation(data, block_size, cell_permutation);
   }
 
-  /// Apply inverse transpose transformation to some data.
-  /// For VectorElements, this applies the transformations for the scalar
-  /// subelement
+  /// Apply inverse transpose transformation to some data. For
+  /// VectorElements, this applies the transformations for the scalar
+  /// subelement.
   ///
   /// @param[in,out] data The data to be transformed
   /// @param[in] cell_permutation Permutation data for the cell
@@ -493,9 +478,8 @@ public:
                                                          cell_permutation);
   }
 
-  /// Apply transpose transformation to some data.
-  /// For VectorElements, this applies the transformations for the scalar
-  /// subelement
+  /// Apply transpose transformation to some data. For VectorElements,
+  /// this applies the transformations for the scalar subelement.
   ///
   /// @param[in,out] data The data to be transformed
   /// @param[in] cell_permutation Permutation data for the cell
@@ -510,9 +494,8 @@ public:
                                                  cell_permutation);
   }
 
-  /// Apply inverse transformation to some data.
-  /// For VectorElements, this applies the transformations for the scalar
-  /// subelement
+  /// Apply inverse transformation to some data. For VectorElements,
+  /// this applies the transformations for the scalar subelement.
   ///
   /// @param[in,out] data The data to be transformed
   /// @param[in] cell_permutation Permutation data for the cell
@@ -527,7 +510,7 @@ public:
                                                cell_permutation);
   }
 
-  /// Apply DOF transformation to some tranposed data.
+  /// Apply DOF transformation to some tranposed data
   ///
   /// @param[in,out] data The data to be transformed
   /// @param[in] cell_permutation Permutation data for the cell
@@ -588,13 +571,27 @@ public:
         data, block_size, cell_permutation);
   }
 
-  /// Pull physical data back to the reference element.
-  /// This passes the inputs directly into Basix's map_pull_back function.
-  template <typename T>
-  void
-  map_pull_back(const xt::xtensor<T, 3>& u, const xt::xtensor<double, 3>& J,
-                const xtl::span<const double>& detJ,
-                const xt::xtensor<double, 3>& K, xt::xtensor<T, 3>& U) const
+  /// Pull back data from the physical element to the reference element.
+  /// It can process batches of points that share the same geometric
+  /// map. @note This passes the inputs directly into the Basix
+  /// `map_pull_back` function
+  ///
+  /// @param[in] u Data defined on the physical element. It must have
+  /// dimension 3. The first index is for the geometric/map data, the
+  /// second is the point index for points that share map data, and the
+  /// third index is (vector) component, e.g. `u[i,:,:]` are points that
+  /// are mapped by `J[i,:,:]`.
+  /// @param[in] J The Jacobians. It must have dimension 3. The first
+  /// index is for the ith Jacobian, i.e. J[i,:,:] is the ith Jacobian.
+  /// @param[in] detJ The determinant of J. `detJ[i]` is
+  /// `det(J[i,:,:])`. It must have dimension 1.
+  /// @param[in] K The inverse of J, `K[i,:,:] = J[i,:,:]^-1`. It must
+  /// have dimension 3.
+  /// @param[out] U The input `u` mapped to the reference element. It
+  /// must have dimension 3.
+  template <typename O, typename P, typename Q, typename T, typename S>
+  void map_pull_back(const O& u, const P& J, const Q& detJ, const T& K,
+                     S&& U) const
   {
     assert(_element);
     _element->map_pull_back_m(u, J, detJ, K, U);
@@ -614,17 +611,17 @@ public:
   void unpermute_dofs(const xtl::span<std::int32_t>& doflist,
                       std::uint32_t cell_permutation) const;
 
-  /// Return a function that applies DOF transformation to some data.
+  /// Return a function that applies DOF transformation to some data
   ///
   /// The returned function will take three inputs:
   /// - [in,out] data The data to be transformed
   /// - [in] cell_permutation Permutation data for the cell
   /// - [in] block_size The block_size of the input data
   ///
-  /// @param[in] inverse Indicates whether the inverse transformations should be
-  /// returned
-  /// @param[in] scalar_element Indicated whether the scalar transformations
-  /// should be returned for a vector element
+  /// @param[in] inverse Indicates whether the inverse transformations
+  /// should be returned
+  /// @param[in] scalar_element Indicated whether the scalar
+  /// transformations should be returned for a vector element
   std::function<void(const xtl::span<std::int32_t>&, std::uint32_t)>
   get_dof_permutation_function(bool inverse = false,
                                bool scalar_element = false) const;

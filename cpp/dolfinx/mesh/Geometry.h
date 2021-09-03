@@ -54,7 +54,12 @@ public:
     {
       xt::xtensor<double, 2> c
           = xt::zeros<double>({_x.shape(0), static_cast<std::size_t>(3)});
-      xt::view(c, xt::all(), xt::range(0, _dim)) = _x;
+
+      // The below should work, but misbehaves with the Intel icpx compiler
+      // xt::view(c, xt::all(), xt::range(0, _dim)) = _x;
+      auto x_view = xt::view(c, xt::all(), xt::range(0, _dim));
+      x_view.assign(_x);
+
       std::swap(c, _x);
     }
   }

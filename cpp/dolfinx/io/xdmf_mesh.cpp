@@ -137,9 +137,10 @@ void xdmf_mesh::add_topology_data(
       = {num_entities_global, num_nodes_per_entity};
   const std::string number_type = "Int";
 
-  const std::int64_t offset
-      = dolfinx::MPI::global_offset(comm, num_entities_local, true);
-
+  const std::int64_t num_local = num_entities_local;
+  std::int64_t offset = 0;
+  MPI_Exscan(&num_local, &offset, 1, dolfinx::MPI::mpi_type<std::int64_t>(),
+             MPI_SUM, comm);
   const bool use_mpi_io = (dolfinx::MPI::size(comm) > 1);
   xdmf_utils::add_data_item(topology_node, h5_id, h5_path, topology_data,
                             offset, shape, number_type, use_mpi_io);
@@ -189,8 +190,10 @@ void xdmf_mesh::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
   const std::string h5_path = path_prefix + "/geometry";
   const std::vector<std::int64_t> shape = {num_points, width};
 
-  const std::int64_t offset
-      = dolfinx::MPI::global_offset(comm, num_points_local, true);
+  const std::int64_t num_local = num_points_local;
+  std::int64_t offset = 0;
+  MPI_Exscan(&num_local, &offset, 1, dolfinx::MPI::mpi_type<std::int64_t>(),
+             MPI_SUM, comm);
   const bool use_mpi_io = (dolfinx::MPI::size(comm) > 1);
   xdmf_utils::add_data_item(geometry_node, h5_id, h5_path, x, offset, shape, "",
                             use_mpi_io);
@@ -265,8 +268,15 @@ xt::xtensor<double, 2> xdmf_mesh::read_geometry_data(MPI_Comm comm,
       = xdmf_read::get_dataset<double>(comm, geometry_data_node, h5_id);
   const std::size_t num_local_nodes = geometry_data.size() / gdim;
   std::array<std::size_t, 2> shape = {num_local_nodes, gdim};
-  return xt::adapt(geometry_data.data(), geometry_data.size(),
-                   xt::no_ownership(), shape);
+
+  // The below should work, but misbehaves with the Intel icpx compiler
+  // return xt::adapt(geometry_data.data(), geometry_data.size(),
+  //                  xt::no_ownership(), shape);
+
+  // Explicitly copy to an xtensor
+  xt::xtensor<double, 2> x = xt::empty<double>(shape);
+  std::copy(geometry_data.begin(), geometry_data.end(), x.begin());
+  return x;
 }
 //----------------------------------------------------------------------------
 xt::xtensor<std::int64_t, 2>
@@ -296,8 +306,14 @@ xdmf_mesh::read_topology_data(MPI_Comm comm, const hid_t h5_id,
   const std::size_t num_local_cells = topology_data.size() / npoint_per_cell;
 
   std::array<std::size_t, 2> shape = {num_local_cells, npoint_per_cell};
-  auto cells_vtk = xt::adapt(topology_data.data(), topology_data.size(),
-                             xt::no_ownership(), shape);
+
+  // The below should work, but misbehaves with the Intel icpx compiler
+  // auto cells_vtk = xt::adapt(topology_data.data(), topology_data.size(),
+  //                            xt::no_ownership(), shape);
+
+  // Explicitly copy to an xtensor
+  xt::xtensor<std::int64_t, 2> cells_vtk = xt::empty<std::int64_t>(shape);
+  std::copy(topology_data.begin(), topology_data.end(), cells_vtk.begin());
 
   //  Permute cells from VTK to DOLFINx ordering
   return io::cells::compute_permutation(

@@ -83,8 +83,12 @@ std::vector<double> mesh::h(const Mesh& mesh,
   {
     // Get the coordinates  of the vertices
     auto dofs = x_dofs.links(entities[e]);
-    xt::view(points, xt::range(0, num_vertices), xt::all())
-        = xt::view(geom_dofs, xt::keep(dofs), xt::all());
+
+    // The below should work, but misbehaves with the Intel icpx compiler
+    // xt::view(points, xt::range(0, num_vertices), xt::all())
+    //     = xt::view(geom_dofs, xt::keep(dofs), xt::all());
+    auto points_view = xt::view(points, xt::range(0, num_vertices), xt::all());
+    points_view.assign(xt::view(geom_dofs, xt::keep(dofs), xt::all()));
 
     // Get maximum edge length
     for (int i = 0; i < num_vertices; ++i)
@@ -203,7 +207,10 @@ mesh::midpoints(const mesh::Mesh& mesh, int dim,
   for (std::size_t e = 0; e < entity_to_geometry.shape(0); ++e)
   {
     auto rows = xt::row(entity_to_geometry, e);
-    xt::row(x_mid, e) = xt::mean(xt::view(x, xt::keep(rows)), 0);
+    // The below should work, but misbehaves with the Intel icpx compiler
+    // xt::row(x_mid, e) = xt::mean(xt::view(x, xt::keep(rows)), 0);
+    auto _x = xt::row(x_mid, e);
+    _x.assign(xt::mean(xt::view(x, xt::keep(rows)), 0));
   }
 
   return x_mid;
@@ -478,14 +485,14 @@ std::vector<std::int32_t> mesh::exterior_facet_indices(const Mesh& mesh)
   mesh.topology_mutable().create_connectivity(tdim - 1, tdim);
   auto f_to_c = topology.connectivity(tdim - 1, tdim);
   assert(topology.index_map(tdim - 1));
-  std::set<std::int32_t> fwd_shared_facets;
 
   // Only need to consider shared facets when there are no ghost cells
+  std::set<std::int32_t> fwd_shared_facets;
   if (topology.index_map(tdim)->num_ghosts() == 0)
   {
     fwd_shared_facets.insert(
-        topology.index_map(tdim - 1)->shared_indices().array().begin(),
-        topology.index_map(tdim - 1)->shared_indices().array().end());
+        topology.index_map(tdim - 1)->scatter_fwd_indices().array().begin(),
+        topology.index_map(tdim - 1)->scatter_fwd_indices().array().end());
   }
 
   // Find all owned facets (not ghost) with only one attached cell, which are
@@ -521,16 +528,13 @@ mesh::partition_cells_graph(MPI_Comm comm, int n, int tdim,
   LOG(INFO) << "Compute partition of cells across ranks";
 
   // Compute distributed dual graph (for the cells on this process)
-  const auto [dual_graph, graph_info]
+  const auto [dual_graph, num_ghost_edges]
       = mesh::build_dual_graph(comm, cells, tdim);
-
-  // Extract data from graph_info
-  const auto [num_ghost_nodes, num_local_edges] = graph_info;
 
   // Just flag any kind of ghosting for now
   bool ghosting = (ghost_mode != mesh::GhostMode::none);
 
   // Compute partition
-  return partfn(comm, n, dual_graph, num_ghost_nodes, ghosting);
+  return partfn(comm, n, dual_graph, num_ghost_edges, ghosting);
 }
 //-----------------------------------------------------------------------------
