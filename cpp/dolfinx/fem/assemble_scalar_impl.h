@@ -24,7 +24,7 @@ namespace dolfinx::fem::impl
 /// Assemble functional over cells
 template <typename T>
 T assemble_cells(const mesh::Geometry& geometry,
-                 const xtl::span<const std::int32_t>& active_cells,
+                 const xtl::span<const std::int32_t>& cells,
                  const std::function<void(T*, const T*, const T*, const double*,
                                           const int*, const std::uint8_t*)>& fn,
                  const xtl::span<const T>& constants, const array2d<T>& coeffs)
@@ -41,7 +41,7 @@ T assemble_cells(const mesh::Geometry& geometry,
 
   // Iterate over all cells
   T value(0);
-  for (std::int32_t c : active_cells)
+  for (std::int32_t c : cells)
   {
     // Get cell coordinates/geometry
     auto x_dofs = x_dofmap.links(c);
@@ -63,7 +63,7 @@ T assemble_cells(const mesh::Geometry& geometry,
 template <typename T>
 T assemble_exterior_facets(
     const mesh::Mesh& mesh,
-    const xtl::span<const std::pair<std::int32_t, int>>& active_facets,
+    const xtl::span<const std::pair<std::int32_t, int>>& facets,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*)>& fn,
     const xtl::span<const T>& constants, const array2d<T>& coeffs,
@@ -86,10 +86,10 @@ T assemble_exterior_facets(
 
   // Iterate over all facets
   T value(0);
-  for (auto cell_local_facet_pair : active_facets)
+  for (auto& facet : facets)
   {
-    auto cell = cell_local_facet_pair.first;
-    auto local_facet = cell_local_facet_pair.second;
+    std::int32_t cell = facet.first;
+    int local_facet = facet.second;
 
     // Get cell coordinates/geometry
     auto x_dofs = x_dofmap.links(cell);
@@ -112,7 +112,7 @@ template <typename T>
 T assemble_interior_facets(
     const mesh::Mesh& mesh,
     const xtl::span<const std::tuple<std::int32_t, int, std::int32_t, int>>&
-        active_facets,
+        facets,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*)>& fn,
     const xtl::span<const T>& constants, const array2d<T>& coeffs,
@@ -138,12 +138,12 @@ T assemble_interior_facets(
 
   // Iterate over all facets
   T value = 0;
-  for (auto cell_local_facet_tuple : active_facets)
+  for (auto& facet : facets)
   {
-    const std::array<int, 2> cells = {std::get<0>(cell_local_facet_tuple),
-                                      std::get<2>(cell_local_facet_tuple)};
-    const std::array<int, 2> local_facet = {std::get<1>(cell_local_facet_tuple),
-                                            std::get<3>(cell_local_facet_tuple)};
+    const std::array<std::int32_t, 2> cells
+        = {std::get<0>(facet), std::get<2>(facet)};
+    const std::array<int, 2> local_facet
+        = {std::get<1>(facet), std::get<3>(facet)};
 
     // Get cell geometry
     auto x_dofs0 = x_dofmap.links(cells[0]);
@@ -196,9 +196,9 @@ T assemble_scalar(const fem::Form<T>& M, const xtl::span<const T>& constants,
   for (int i : M.integral_ids(IntegralType::cell))
   {
     const auto& fn = M.kernel(IntegralType::cell, i);
-    const std::vector<std::int32_t>& active_cells = M.cell_domains(i);
-    value += impl::assemble_cells(mesh->geometry(), active_cells, fn, constants,
-                                  coeffs);
+    const std::vector<std::int32_t>& cells = M.cell_domains(i);
+    value
+        += impl::assemble_cells(mesh->geometry(), cells, fn, constants, coeffs);
   }
 
   if (M.num_integrals(IntegralType::exterior_facet) > 0
@@ -212,10 +212,10 @@ T assemble_scalar(const fem::Form<T>& M, const xtl::span<const T>& constants,
     for (int i : M.integral_ids(IntegralType::exterior_facet))
     {
       const auto& fn = M.kernel(IntegralType::exterior_facet, i);
-      const std::vector<std::pair<std::int32_t, int>>& active_facets
+      const std::vector<std::pair<std::int32_t, int>>& facets
           = M.exterior_facet_domains(i);
-      value += impl::assemble_exterior_facets(*mesh, active_facets, fn,
-                                              constants, coeffs, perms);
+      value += impl::assemble_exterior_facets(*mesh, facets, fn, constants,
+                                              coeffs, perms);
     }
 
     const std::vector<int> c_offsets = M.coefficient_offsets();
@@ -223,10 +223,10 @@ T assemble_scalar(const fem::Form<T>& M, const xtl::span<const T>& constants,
     {
       const auto& fn = M.kernel(IntegralType::interior_facet, i);
       const std::vector<std::tuple<std::int32_t, int, std::int32_t, int>>&
-          active_facets
+          facets
           = M.interior_facet_domains(i);
-      value += impl::assemble_interior_facets(
-          *mesh, active_facets, fn, constants, coeffs, c_offsets, perms);
+      value += impl::assemble_interior_facets(*mesh, facets, fn, constants,
+                                              coeffs, c_offsets, perms);
     }
   }
 
