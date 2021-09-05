@@ -359,7 +359,7 @@ private:
   template <int num_cells>
   std::array<std::pair<std::int32_t, int>, num_cells>
   get_cell_local_facet_pairs(
-      std::int32_t f, const xtl::span<std::int32_t>& cells,
+      std::int32_t f, const xtl::span<const std::int32_t>& cells,
       const dolfinx::graph::AdjacencyList<std::int32_t>& c_to_f) const
   {
     // Loop over cells sharing facet
