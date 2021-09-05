@@ -336,6 +336,9 @@ public:
   using scalar_type = T;
 
 private:
+  using kern = std::function<void(T*, const T*, const T*, const double*,
+                                  const int*, const std::uint8_t*)>;
+
   // Helper function to get the kernel for integral i from a map
   // of integrals i.e. from _cell_integrals
   // @param[in] integrals Map of integrals
@@ -359,10 +362,10 @@ private:
   // @param[in] c_to_f Cell to facet connectivity
   // @return Vector of (cell, local_facet) pairs
   template <int num_cells>
-  std::array<std::pair<std::int32_t, int>, num_cells>
+  static std::array<std::pair<std::int32_t, int>, num_cells>
   get_cell_local_facet_pairs(
       std::int32_t f, const xtl::span<const std::int32_t>& cells,
-      const dolfinx::graph::AdjacencyList<std::int32_t>& c_to_f) const
+      const dolfinx::graph::AdjacencyList<std::int32_t>& c_to_f)
   {
     // Loop over cells sharing facet
     assert(cells.size() == num_cells);
@@ -381,6 +384,104 @@ private:
     return cell_local_facet_pairs;
   }
 
+  // Set cell domains
+  template <typename iterator>
+  void set_cell_domains(
+      std::map<int, std::pair<kern, std::vector<std::int32_t>>>& integrals,
+      const iterator& tagged_cells_begin, const iterator& tagged_cells_end,
+      const std::vector<int>& tags)
+  {
+    // For cell integrals use all markers (but not on ghost entities)
+    for (auto c = tagged_cells_begin; c != tagged_cells_end; ++c)
+    {
+      const std::size_t pos = std::distance(tagged_cells_begin, c);
+      if (auto it = integrals.find(tags[pos]); it != integrals.end())
+        it->second.second.push_back(*c);
+    }
+  }
+
+  // Set exterior facet domains
+  template <typename iterator>
+  void set_exterior_facet_domains(
+      const mesh::Topology& topology,
+      std::map<int, std::pair<kern, std::vector<std::pair<std::int32_t, int>>>>&
+          integrals,
+      const iterator& tagged_facets_begin, const iterator& tagged_facets_end,
+      const std::vector<int>& tags)
+  {
+    // When a mesh is not ghosted by cell, it is not straightforward
+    // to distinguish between (i) exterior facets and (ii) interior
+    // facets that are on a partition boundary. If there are no
+    // ghost cells, build a set of owned facts that are ghosted on
+    // another process to help determine if a facet is on an
+    // exterior boundary.
+    int tdim = topology.dim();
+    assert(topology.index_map(tdim));
+    std::set<std::int32_t> fwd_shared_facets;
+    if (topology.index_map(tdim)->num_ghosts() == 0)
+    {
+      const std::vector<std::int32_t>& fwd_indices
+          = topology.index_map(tdim - 1)->scatter_fwd_indices().array();
+      fwd_shared_facets.insert(fwd_indices.begin(), fwd_indices.end());
+    }
+
+    auto f_to_c = topology.connectivity(tdim - 1, tdim);
+    assert(f_to_c);
+    auto c_to_f = topology.connectivity(tdim, tdim - 1);
+    assert(c_to_f);
+    for (auto f = tagged_facets_begin; f != tagged_facets_end; ++f)
+    {
+      // All "owned" facets connected to one cell, that are not
+      // shared, should be external
+      // TODO: Consider removing this check and integrating over all
+      // tagged facets. This may be useful in a few cases.
+      if (f_to_c->num_links(*f) == 1
+          and fwd_shared_facets.find(*f) == fwd_shared_facets.end())
+      {
+        const std::size_t pos = std::distance(tagged_facets_begin, f);
+        if (auto it = integrals.find(tags[pos]); it != integrals.end())
+        {
+          // There will only be one pair for an exterior facet integral
+          std::pair<std::int32_t, int> pair = get_cell_local_facet_pairs<1>(
+              *f, f_to_c->links(*f), *c_to_f)[0];
+          it->second.second.push_back(pair);
+        }
+      }
+    }
+  }
+
+  // Set interior facet domains
+  template <typename iterator>
+  static void set_interior_facet_domains(
+      const mesh::Topology& topology,
+      std::map<int,
+               std::pair<kern, std::vector<std::tuple<std::int32_t, int,
+                                                      std::int32_t, int>>>>&
+          integrals,
+      const iterator& tagged_facets_begin, const iterator& tagged_facets_end,
+      const std::vector<int>& tags)
+  {
+    int tdim = topology.dim();
+    auto f_to_c = topology.connectivity(tdim - 1, tdim);
+    assert(f_to_c);
+    auto c_to_f = topology.connectivity(tdim, tdim - 1);
+    assert(c_to_f);
+    for (auto f = tagged_facets_begin; f != tagged_facets_end; ++f)
+    {
+      if (f_to_c->num_links(*f) == 2)
+      {
+        const std::size_t pos = std::distance(tagged_facets_begin, f);
+        if (auto it = integrals.find(tags[pos]); it != integrals.end())
+        {
+          std::array<std::pair<std::int32_t, int>, 2> pairs
+              = get_cell_local_facet_pairs<2>(*f, f_to_c->links(*f), *c_to_f);
+          it->second.second.emplace_back(pairs[0].first, pairs[0].second,
+                                         pairs[1].first, pairs[1].second);
+        }
+      }
+    }
+  }
+
   // Sets the entity indices to assemble over for kernels with a domain
   // ID
   // @param[in] type Integral type
@@ -389,22 +490,13 @@ private:
   // is not stored.
   void set_domains(IntegralType type, const mesh::MeshTags<int>& marker)
   {
-    // TODO set vertex domains
-
     std::shared_ptr<const mesh::Mesh> mesh = marker.mesh();
     const mesh::Topology& topology = mesh->topology();
     const int tdim = topology.dim();
-
-    int dim = tdim;
-    if (type == IntegralType::exterior_facet
-        or type == IntegralType::interior_facet)
-    {
-      dim = tdim - 1;
-    }
-
+    int dim = type == IntegralType::cell ? tdim : tdim - 1;
     if (dim != marker.dim())
     {
-      throw std::runtime_error("Invalid MeshTags dimension:"
+      throw std::runtime_error("Invalid MeshTags dimension: "
                                + std::to_string(marker.dim()));
     }
 
@@ -415,100 +507,29 @@ private:
     const auto entity_end
         = std::lower_bound(tagged_entities.begin(), tagged_entities.end(),
                            topology.index_map(dim)->size_local());
-
     switch (type)
     {
     case IntegralType::cell:
-    {
-      // For cell integrals use all markers (but not on ghost entities)
-      for (auto c = tagged_entities.begin(); c != entity_end; ++c)
-      {
-        const std::size_t pos = std::distance(tagged_entities.cbegin(), c);
-        if (auto it = _cell_integrals.find(tags[pos]);
-            it != _cell_integrals.end())
-        {
-          it->second.second.push_back(*c);
-        }
-      }
-    }
-    break;
+      set_cell_domains(_cell_integrals, tagged_entities.cbegin(), entity_end,
+                       tags);
+      break;
     default:
-    {
       mesh->topology_mutable().create_connectivity(dim, tdim);
-      auto f_to_c = topology.connectivity(dim, tdim);
-      assert(f_to_c);
       mesh->topology_mutable().create_connectivity(tdim, dim);
-      auto c_to_f = mesh->topology().connectivity(tdim, dim);
-      assert(c_to_f);
       switch (type)
       {
       case IntegralType::exterior_facet:
-      {
-        // When a mesh is not ghosted by cell, it is not straightforward
-        // to distinguish between (i) exterior facets and (ii) interior
-        // facets that are on a partition boundary. If there are no
-        // ghost cells, build a set of owned facts that are ghosted on
-        // another process to help determine if a facet is on an
-        // exterior boundary.
-        assert(topology.index_map(tdim));
-        std::set<std::int32_t> fwd_shared_facets;
-        if (topology.index_map(tdim)->num_ghosts() == 0)
-        {
-          const std::vector<std::int32_t>& fwd_indices
-              = topology.index_map(dim)->scatter_fwd_indices().array();
-          fwd_shared_facets.insert(fwd_indices.begin(), fwd_indices.end());
-        }
-
-        for (auto f = tagged_entities.begin(); f != entity_end; ++f)
-        {
-          // All "owned" facets connected to one cell, that are not
-          // shared, should be external
-          // TODO: Consider removing this check and integrating over all
-          // tagged facets. This may be useful in a few cases.
-          if (f_to_c->num_links(*f) == 1
-              and fwd_shared_facets.find(*f) == fwd_shared_facets.end())
-          {
-            const std::size_t pos = std::distance(tagged_entities.cbegin(), f);
-            if (auto it = _exterior_facet_integrals.find(tags[pos]);
-                it != _exterior_facet_integrals.end())
-            {
-              // There will only be one pair for an exterior facet integral
-              std::pair<std::int32_t, int> cell_local_facet_pair
-                  = get_cell_local_facet_pairs<1>(*f, f_to_c->links(*f),
-                                                  *c_to_f)[0];
-              it->second.second.push_back(cell_local_facet_pair);
-            }
-          }
-        }
-      }
-      break;
+        set_exterior_facet_domains(topology, _exterior_facet_integrals,
+                                   tagged_entities.cbegin(), entity_end, tags);
+        break;
       case IntegralType::interior_facet:
-      {
-        for (auto f = tagged_entities.begin(); f != entity_end; ++f)
-        {
-          if (f_to_c->num_links(*f) == 2)
-          {
-            const std::size_t pos = std::distance(tagged_entities.cbegin(), f);
-            if (auto it = _interior_facet_integrals.find(tags[pos]);
-                it != _interior_facet_integrals.end())
-            {
-              std::array<std::pair<std::int32_t, int>, 2> cell_local_facet_pairs
-                  = get_cell_local_facet_pairs<2>(*f, f_to_c->links(*f),
-                                                  *c_to_f);
-              it->second.second.emplace_back(cell_local_facet_pairs[0].first,
-                                             cell_local_facet_pairs[0].second,
-                                             cell_local_facet_pairs[1].first,
-                                             cell_local_facet_pairs[1].second);
-            }
-          }
-        }
-      }
-      break;
+        set_interior_facet_domains(topology, _interior_facet_integrals,
+                                   tagged_entities.cbegin(), entity_end, tags);
+        break;
       default:
         throw std::runtime_error(
             "Cannot set domains. Integral type not supported.");
       }
-    }
     }
   }
 
@@ -572,10 +593,9 @@ private:
           {
             // There will only be one pair for an exterior facet
             // integral
-            std::pair<std::int32_t, int> cell_local_facet_pair
-                = get_cell_local_facet_pairs<1>(f, f_to_c->links(f),
-                                                *c_to_f)[0];
-            active_facets.push_back(cell_local_facet_pair);
+            std::pair<std::int32_t, int> pair = get_cell_local_facet_pairs<1>(
+                f, f_to_c->links(f), *c_to_f)[0];
+            active_facets.push_back(pair);
           }
         }
       }
@@ -607,12 +627,10 @@ private:
         {
           if (f_to_c->num_links(f) == 2)
           {
-            std::array<std::pair<std::int32_t, int>, 2> cell_local_facet_pairs
+            std::array<std::pair<std::int32_t, int>, 2> pairs
                 = get_cell_local_facet_pairs<2>(f, f_to_c->links(f), *c_to_f);
-            active_facets.emplace_back(cell_local_facet_pairs[0].first,
-                                       cell_local_facet_pairs[0].second,
-                                       cell_local_facet_pairs[1].first,
-                                       cell_local_facet_pairs[1].second);
+            active_facets.emplace_back(pairs[0].first, pairs[0].second,
+                                       pairs[1].first, pairs[1].second);
           }
         }
       }
@@ -631,8 +649,6 @@ private:
   // The mesh
   std::shared_ptr<const mesh::Mesh> _mesh;
 
-  using kern = std::function<void(T*, const T*, const T*, const double*,
-                                  const int*, const std::uint8_t*)>;
   // Cell integrals
   std::map<int, std::pair<kern, std::vector<std::int32_t>>> _cell_integrals;
 
