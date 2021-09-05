@@ -187,7 +187,8 @@ public:
     case IntegralType::interior_facet:
       return get_kernel_from_integrals(_interior_facet_integrals, i);
     default:
-      throw std::runtime_error("Integral type not supported.");
+      throw std::runtime_error(
+          "Cannot access kernel. Integral type not supported.");
     }
   }
 
@@ -251,7 +252,8 @@ public:
                      [](auto& integral) { return integral.first; });
       break;
     default:
-      throw std::runtime_error("Integral type not supported.");
+      throw std::runtime_error(
+          "Cannot return IDs. Integral type not supported.");
     }
 
     return ids;
@@ -479,6 +481,7 @@ private:
           }
         }
       }
+      break;
       case IntegralType::interior_facet:
       {
         for (auto f = tagged_entities.begin(); f != entity_end; ++f)
@@ -500,8 +503,10 @@ private:
           }
         }
       }
+      break;
       default:
-        throw std::runtime_error("Integral type not supported.");
+        throw std::runtime_error(
+            "Cannot set domains. Integral type not supported.");
       }
     }
     }
