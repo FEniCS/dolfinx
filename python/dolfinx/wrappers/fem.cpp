@@ -515,7 +515,8 @@ void fem(py::module& m)
                  const std::vector<std::shared_ptr<
                      const dolfinx::fem::Constant<PetscScalar>>>& constants,
                  bool needs_permutation_data,
-                 const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh) {
+                 const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh)
+              {
                 using kern = std::function<void(
                     PetscScalar*, const PetscScalar*, const PetscScalar*,
                     const double*, const int*, const std::uint8_t*)>;
@@ -556,15 +557,59 @@ void fem(py::module& m)
       .def_property_readonly("function_spaces",
                              &dolfinx::fem::Form<PetscScalar>::function_spaces)
       .def("integral_ids", &dolfinx::fem::Form<PetscScalar>::integral_ids)
-      .def_property_readonly("needs_facet_permutations", &dolfinx::fem::Form<PetscScalar>::needs_facet_permutations)
-    // TODO Bind cell_domains, exterior_facet_domains, interior_facet_domains
-    //   .def("domains", [](const dolfinx::fem::Form<PetscScalar>& self,
-    //                      dolfinx::fem::IntegralType type, int i) {
-    //     const std::vector<std::int32_t>& domains = self.domains(type, i);
-    //     return py::array_t<std::int32_t>(domains.size(), domains.data(),
-    //                                      py::cast(self));
-    //   })
-    ;
+      .def_property_readonly(
+          "needs_facet_permutations",
+          &dolfinx::fem::Form<PetscScalar>::needs_facet_permutations)
+      .def(
+          "domains",
+          [](const dolfinx::fem::Form<PetscScalar>& self,
+             dolfinx::fem::IntegralType type,
+             int i) -> py::array_t<std::int32_t>
+          {
+            switch (type)
+            {
+            case dolfinx::fem::IntegralType::cell:
+            {
+              const std::vector<std::int32_t>& domains = self.cell_domains(i);
+              return py::array_t<std::int32_t>(domains.size(), domains.data(),
+                                               py::cast(self));
+            }
+            case dolfinx::fem::IntegralType::exterior_facet:
+            {
+              const std::vector<std::pair<std::int32_t, int>>& _d
+                  = self.exterior_facet_domains(i);
+              std::array<py::ssize_t, 2> shape = {py::ssize_t(_d.size()), 2};
+              py::array_t<std::int32_t> domains(shape);
+              auto d = domains.mutable_unchecked<2>();
+              for (py::ssize_t i = 0; i < d.shape(0); ++i)
+              {
+                d(i, 0) = _d[i].first;
+                d(i, 1) = _d[i].second;
+              }
+              return domains;
+            }
+            case dolfinx::fem::IntegralType::interior_facet:
+            {
+              const std::vector<
+                  std::tuple<std::int32_t, int, std::int32_t, int>>& _d
+                  = self.interior_facet_domains(i);
+              std::array<py::ssize_t, 3> shape = {py::ssize_t(_d.size()), 2, 2};
+              py::array_t<std::int32_t> domains(shape);
+              auto d = domains.mutable_unchecked<3>();
+              for (py::ssize_t i = 0; i < d.shape(0); ++i)
+              {
+                d(i, 0, 0) = std::get<0>(_d[i]);
+                d(i, 0, 1) = std::get<1>(_d[i]);
+                d(i, 1, 0) = std::get<2>(_d[i]);
+                d(i, 1, 1) = std::get<3>(_d[i]);
+              }
+              return domains;
+            }
+            default:
+              throw ::std::runtime_error("Integral type unsupported.");
+            }
+          });
+
   m.def(
       "locate_dofs_topological",
       [](const std::vector<
