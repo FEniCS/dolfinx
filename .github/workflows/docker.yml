@@ -72,7 +72,7 @@ jobs:
       - name: Log into the Dockerhub registry
         run: echo ${{ secrets.dockerhub_token }} | docker login -u ${{ secrets.dockerhub_username }} --password-stdin
       - name: Build the Docker image
-        run: docker buildx build ${DOCKER_BUILD_ARGS} --push --cache-from=type=registry,ref=fenicsproject/test-env:${MPI}-${ARCH_TAG} --cache-to=type=inline --file docker/Dockerfile --target dev-env --tag fenicsproject/test-env:${{ steps.tag_name.outputs.TAG_PREFIX }}-${MPI}-${ARCH_TAG} docker/
+        run: docker buildx build ${DOCKER_BUILD_ARGS} --push --cache-from=type=registry,ref=fenicsproject/test-env:${{ steps.tag_name.outputs.TAG_PREFIX }}-${MPI}-${ARCH_TAG} --cache-to=type=inline --file docker/Dockerfile --target dev-env --tag fenicsproject/test-env:${{ steps.tag_name.outputs.TAG_PREFIX }}-${MPI}-${ARCH_TAG} docker/
       - name: Cleanup
         run: docker rmi fenicsproject/test-env:${{ steps.tag_name.outputs.TAG_PREFIX }}-${MPI}-${ARCH_TAG}
 
@@ -109,7 +109,7 @@ jobs:
             echo "::set-output name=TAG_PREFIX::latest"
           fi
       - name: Build the Docker image
-        run: docker buildx build ${DOCKER_BUILD_ARGS} --push --cache-from=type=registry,ref=fenicsproject/test-env:${MPI}-${ARCH_TAG} --cache-to=type=inline --file docker/Dockerfile --target dev-env --tag fenicsproject/test-env:${{ steps.tag_name.outputs.TAG_PREFIX }}-${MPI}-${ARCH_TAG} docker/
+        run: docker buildx build ${DOCKER_BUILD_ARGS} --push --cache-from=type=registry,ref=fenicsproject/test-env:${{ steps.tag_name.outputs.TAG_PREFIX }}-${MPI}-${ARCH_TAG} --cache-to=type=inline --file docker/Dockerfile --target dev-env --tag fenicsproject/test-env:${{ steps.tag_name.outputs.TAG_PREFIX }}-${MPI}-${ARCH_TAG} docker/
       - name: Cleanup
         run: docker rmi fenicsproject/test-env:${{ steps.tag_name.outputs.TAG_PREFIX }}-${MPI}-${ARCH_TAG}
 
@@ -146,7 +146,7 @@ jobs:
       - name: Log into the DockerHub registry
         run: echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
       - name: Build the Docker image
-        run: docker buildx build ${DOCKER_BUILD_ARGS} --push --cache-from=type=registry,ref=dolfinx/dev-env:${ARCH_TAG} --cache-to=type=inline --file docker/Dockerfile --target dev-env --tag dolfinx/dev-env:${{ steps.tag_name.outputs.TAG_PREFIX }}-${ARCH_TAG} docker/
+        run: docker buildx build ${DOCKER_BUILD_ARGS} --push --cache-from=type=registry,ref=dolfinx/dev-env:${{ steps.tag_name.outputs.TAG_PREFIX }}-${ARCH_TAG} --cache-to=type=inline --file docker/Dockerfile --target dev-env --tag dolfinx/dev-env:${{ steps.tag_name.outputs.TAG_PREFIX }}-${ARCH_TAG} docker/
       - name: Cleanup
         run: docker rmi dolfinx/dev-env:${{ steps.tag_name.outputs.TAG_PREFIX }}-${ARCH_TAG}
 
@@ -170,7 +170,6 @@ jobs:
           fi
       - name: Log into the DockerHub registry
         run: echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
-      # NOTE: OpenMPI ARM64 build currently fails, see https://github.com/FEniCS/dolfinx/runs/2380975354?check_suite_focus=true#step:4:7472
       - name: Push multiarch images
         run: |
           docker buildx imagetools create \
@@ -243,7 +242,7 @@ jobs:
       - name: Build dolfinx/dolfinx-onbuild
         run: |
           docker buildx build --file dolfinx/docker/Dockerfile ${DOCKER_BUILD_ARGS} \
-            --target dolfinx-onbuild --cache-from=type=registry,ref=dolfinx/dev-env \
+            --target dolfinx-onbuild --cache-from=type=registry,ref=dolfinx/dev-env:${{ steps.tag_name.outputs.TAG_PREFIX }}-${ARCH_TAG} \
             --tag dolfinx/dolfinx-onbuild .
       - name: Build intermediate
         run: |
@@ -292,17 +291,17 @@ jobs:
         run: echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
       - name: Push multiarch images
         run: |
-          docker buildx imagetools create
-            -t dolfinx/dolfinx-onbuild:${{ steps.tag_name.outputs.TAG_PREFIX }}
-            dolfinx/dolfinx-onbuild:${{ steps.tag_name.outputs.TAG_PREFIX }}-amd64
+          docker buildx imagetools create \
+            -t dolfinx/dolfinx-onbuild:${{ steps.tag_name.outputs.TAG_PREFIX }} \
+            dolfinx/dolfinx-onbuild:${{ steps.tag_name.outputs.TAG_PREFIX }}-amd64 \
             dolfinx/dolfinx-onbuild:${{ steps.tag_name.outputs.TAG_PREFIX }}-arm64
-          docker buildx imagetools create
-            -t dolfinx/dolfinx:${{ steps.tag_name.outputs.TAG_PREFIX }}
-            dolfinx/dolfinx:${{ steps.tag_name.outputs.TAG_PREFIX }}-amd64
+          docker buildx imagetools create \
+            -t dolfinx/dolfinx:${{ steps.tag_name.outputs.TAG_PREFIX }} \
+            dolfinx/dolfinx:${{ steps.tag_name.outputs.TAG_PREFIX }}-amd64 \
             dolfinx/dolfinx:${{ steps.tag_name.outputs.TAG_PREFIX }}-arm64
-          docker buildx imagetools create
-            -t dolfinx/lab:${{ steps.tag_name.outputs.TAG_PREFIX }}
-            dolfinx/lab:${{ steps.tag_name.outputs.TAG_PREFIX }}-amd64
+          docker buildx imagetools create \
+            -t dolfinx/lab:${{ steps.tag_name.outputs.TAG_PREFIX }} \
+            dolfinx/lab:${{ steps.tag_name.outputs.TAG_PREFIX }}-amd64 \
             dolfinx/lab:${{ steps.tag_name.outputs.TAG_PREFIX }}-arm64
 
   stop-runner:
