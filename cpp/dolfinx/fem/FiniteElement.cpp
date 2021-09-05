@@ -149,14 +149,15 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
           static_cast<basix::element::family>(ufc_element.basix_family),
           static_cast<basix::cell::type>(ufc_element.basix_cell),
           ufc_element.degree,
-          static_cast<basix::lattice::type>(ufc_element.lattice_type)));
+          static_cast<basix::lattice::type>(ufc_element.lattice_type),
+          ufc_element.discontinuous));
     }
     else
     {
       _element = std::make_unique<basix::FiniteElement>(basix::create_element(
           static_cast<basix::element::family>(ufc_element.basix_family),
           static_cast<basix::cell::type>(ufc_element.basix_cell),
-          ufc_element.degree));
+          ufc_element.degree, ufc_element.discontinuous));
     }
 
     _needs_dof_transformations
