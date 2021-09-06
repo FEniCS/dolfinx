@@ -144,7 +144,7 @@ void CoordinateElement::compute_jacobian_inverse(
     if (gdim == tdim)
       math::inv(J0, K0);
     else
-      K0 = xt::linalg::pinv(J0);
+      math::pinv(J0, K0);
     K = xt::broadcast(K0, K.shape());
   }
   else
@@ -155,7 +155,7 @@ void CoordinateElement::compute_jacobian_inverse(
       if (gdim == tdim)
         math::inv(J0, K0);
       else
-        K0 = xt::linalg::pinv(J0);
+        math::pinv(J0, K0);
       auto K_ip = xt::view(K, p, xt::all(), xt::all());
       K_ip.assign(K0);
     }

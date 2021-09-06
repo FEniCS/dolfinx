@@ -27,7 +27,6 @@ target_sources(dolfinx PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/IndexMap.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/init.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/log.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/math.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/MPI.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/subsystem.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/Table.cpp
