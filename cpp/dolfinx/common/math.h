@@ -124,19 +124,6 @@ void inv(const U& A, V& B)
   }
 }
 
-/// Compute the pseudo inverse of A
-template <typename U, typename V>
-void pinv(const U& A, const V& P)
-{
-  using T = typename U::value_type;
-  xt::xtensor<T, 2> B = xt::transpose(A);
-  xt::xtensor<T, 2> BA = xt::zeros<T>({B.shape(0), A.shape(1)});
-  dot(B, A, BA);
-  xt::xtensor<T, 2> Inv = xt::zeros<T>({A.shape(0), B.shape(1)});
-  inv(BA, Inv);
-  dot(Inv, B, P);
-}
-
 template <typename U, typename V, typename P>
 void gemm(const U& A, const V& B, P& C, bool transpose = false)
 {
@@ -170,4 +157,18 @@ void dot(const U& A, const V& B, P& C, bool transpose = false)
 {
   gemm(A, B, C, transpose);
 }
+
+/// Compute the pseudo inverse of A
+template <typename U, typename V>
+void pinv(const U& A, V& P)
+{
+  using T = typename U::value_type;
+  xt::xtensor<T, 2> B = xt::transpose(A);
+  xt::xtensor<T, 2> BA = xt::zeros<T>({B.shape(0), A.shape(1)});
+  dot(B, A, BA);
+  xt::xtensor<T, 2> Inv = xt::zeros<T>({A.shape(0), B.shape(1)});
+  inv(BA, Inv);
+  dot(Inv, B, P);
+}
+
 } // namespace dolfinx::math
