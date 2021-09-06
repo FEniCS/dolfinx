@@ -1,8 +1,7 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.16)
 project(dolfinx-tests)
 
 # Find DOLFINx config file
-find_package(Basix REQUIRED)
 find_package(DOLFINX REQUIRED)
 
 # Make test executable

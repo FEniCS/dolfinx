@@ -47,8 +47,8 @@ def run_scalar_test(mesh, V, degree):
     u_bc.interpolate(lambda x: x[1]**degree)
 
     # Create Dirichlet boundary condition
-    mesh.topology.create_connectivity_all()
     facetdim = mesh.topology.dim - 1
+    mesh.topology.create_connectivity(facetdim, mesh.topology.dim)
     bndry_facets = np.where(np.array(cpp.mesh.compute_boundary_facets(mesh.topology)) == 1)[0]
     bdofs = locate_dofs_topological(V, facetdim, bndry_facets)
     bc = DirichletBC(u_bc, bdofs)
@@ -254,7 +254,7 @@ def test_biharmonic():
     solver = PETSc.KSP().create(MPI.COMM_WORLD)
     PETSc.Options()["ksp_type"] = "preonly"
     PETSc.Options()["pc_type"] = "lu"
-    PETSc.Options()["pc_factor_mat_solver_type"] = "mumps"
+    # PETSc.Options()["pc_factor_mat_solver_type"] = "mumps"
     solver.setFromOptions()
     solver.setOperators(A)
 
@@ -357,6 +357,17 @@ def test_dP_simplex(family, degree, cell_type, datadir):
 @pytest.mark.parametrize("family", ["RT", "N1curl"])
 @pytest.mark.parametrize("degree", [1, 2, 3, 4])
 def test_RT_N1curl_simplex(family, degree, cell_type, datadir):
+    if cell_type == CellType.tetrahedron and degree == 4:
+        pytest.skip("Skip expensive test on tetrahedron")
+    mesh = get_mesh(cell_type, datadir)
+    V = FunctionSpace(mesh, (family, degree))
+    run_vector_test(mesh, V, degree - 1)
+
+
+@parametrize_cell_types_simplex
+@pytest.mark.parametrize("family", ["Discontinuous Raviart-Thomas"])
+@pytest.mark.parametrize("degree", [1, 2, 3, 4])
+def test_discontinuous_RT(family, degree, cell_type, datadir):
     if cell_type == CellType.tetrahedron and degree == 4:
         pytest.skip("Skip expensive test on tetrahedron")
     mesh = get_mesh(cell_type, datadir)

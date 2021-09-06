@@ -43,11 +43,12 @@
 
 
 ARG GMSH_VERSION=4_8_4
-ARG PYBIND11_VERSION=2.7.0
+ARG PYBIND11_VERSION=2.7.1
 ARG PETSC_VERSION=3.15.2
 ARG SLEPC_VERSION=3.15.1
 ARG ADIOS2_VERSION=2.7.1
 ARG PYVISTA_VERSION=0.31.3
+ARG NUMPY_VERSION=1.20.3
 ARG KAHIP_VERSION=3.11
 ARG XTENSOR_VERSION=0.23.10
 ARG XTENSOR_BLAS_VERSION=0.19.1
@@ -55,7 +56,7 @@ ARG XTL_VERSION=0.7.2
 
 ########################################
 
-FROM ubuntu:20.04 as dev-env
+FROM ubuntu:21.04 as dev-env
 LABEL maintainer="fenics-project <fenics-support@googlegroups.org>"
 LABEL description="FEniCS testing and development environment with PETSc real, complex, 32-bit and 64-bit modes"
 
@@ -65,6 +66,7 @@ ARG PETSC_VERSION
 ARG SLEPC_VERSION
 ARG ADIOS2_VERSION
 ARG KAHIP_VERSION
+ARG NUMPY_VERSION
 ARG XTENSOR_VERSION
 ARG XTENSOR_BLAS_VERSION
 ARG XTL_VERSION
@@ -97,7 +99,6 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get -yq --with-new-pkgs -o Dpkg::Options::="--force-confold" upgrade && \
     apt-get -y install \
     clang \
-    clang-12 \
     cmake \
     g++ \
     gfortran \
@@ -108,6 +109,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     liblapack-dev \
     lib${MPI}-dev \
     libopenblas-dev \
+    llvm-9 \
     ninja-build \
     pkg-config \
     python3-dev \
@@ -143,12 +145,12 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
 # - Second set of packages are recommended and/or required to build
 #   documentation or run tests.
 # LLVM_CONFIG required on aarch64, should be removed long-term.
-RUN LLVM_CONFIG=/usr/bin/llvm-config-10 pip3 install --no-cache-dir mpi4py numba && \
-    pip3 install --no-cache-dir cffi cppimport flake8 pytest pytest-xdist sphinx sphinx_rtd_theme
+RUN LLVM_CONFIG=/usr/bin/llvm-config-9 pip3 install --no-cache-dir mpi4py numba && \
+    pip3 install --no-cache-dir cffi cppimport flake8 pybind11==${PYBIND11_VERSION} pytest pytest-xdist sphinx sphinx_rtd_theme
 
 # Upgrade numpy via pip. Exclude binaries to avoid conflicts with libblas
 # (See issue #126 and #1305)
-RUN pip3 install --no-binary="numpy" numpy --upgrade
+RUN pip3 install --no-cache-dir --no-binary="numpy" numpy==${NUMPY_VERSION} --upgrade
 
 # Install xtl, xtensor, xtensor-blas.
 RUN git clone -b ${XTL_VERSION} --single-branch https://github.com/xtensor-stack/xtl.git && \
@@ -166,14 +168,6 @@ RUN git clone -b ${XTL_VERSION} --single-branch https://github.com/xtensor-stack
     cmake -G Ninja . && \
     ninja install && \
     rm -rf xtl xtensor xtensor-blas
-
-# Install pybind11
-RUN wget -nc --quiet https://github.com/pybind/pybind11/archive/v${PYBIND11_VERSION}.tar.gz && \
-    tar -xf v${PYBIND11_VERSION}.tar.gz && \
-    cmake -G Ninja -DCMAKE_BUILD_TYPE=Release  -DPYBIND11_TEST=False -B build-dir -S pybind11-${PYBIND11_VERSION} && \
-    cmake --build build-dir && \
-    cmake --install build-dir && \
-    rm -rf /tmp/*
 
 # Install KaHIP
 RUN wget -nc --quiet https://github.com/kahip/kahip/archive/v${KAHIP_VERSION}.tar.gz && \
@@ -366,7 +360,7 @@ ONBUILD ARG DOLFINX_CMAKE_CXX_FLAGS
 
 # The dolfinx-onbuild container expects to have folders basix/ ufl/ ffcx/ and
 # dolfinx/ mounted/shared at /src.
-ONBUILD RUN cd basix && cmake -G Ninja -DCMAKE_BUILD_TYPE=${DOLFINX_CMAKE_BUILD_TYPE} -DCMAKE_CXX_FLAGS=${DOLFINX_CMAKE_CXX_FLAGS} -B build-dir -S . && \
+ONBUILD RUN cd basix && cmake -G Ninja -DCMAKE_BUILD_TYPE=${DOLFINX_CMAKE_BUILD_TYPE} -DCMAKE_CXX_FLAGS=${DOLFINX_CMAKE_CXX_FLAGS} -B build-dir -S ./cpp && \
     cmake --build build-dir && \
     cmake --install build-dir && \
     python3 -m pip install ./python && \

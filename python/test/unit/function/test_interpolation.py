@@ -96,10 +96,7 @@ def one_cell_mesh(cell_type):
     cells = np.array([order])
 
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", cpp.mesh.to_string(cell_type), 1))
-    mesh = create_mesh(MPI.COMM_WORLD, cells, ordered_points, domain)
-
-    mesh.topology.create_connectivity_all()
-    return mesh
+    return create_mesh(MPI.COMM_WORLD, cells, ordered_points, domain)
 
 
 def run_scalar_test(V, poly_order):

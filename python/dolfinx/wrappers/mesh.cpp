@@ -150,7 +150,7 @@ void mesh(py::module& m)
          const dolfinx::fem::CoordinateElement& element,
          const py::array_t<double, py::array::c_style>& x,
          dolfinx::mesh::GhostMode ghost_mode,
-         PythonPartitioningFunction partitioner)
+         const PythonPartitioningFunction& partitioner)
       {
         auto partitioner_wrapper
             = [partitioner](
@@ -247,8 +247,6 @@ void mesh(py::module& m)
       .def("create_entity_permutations",
            &dolfinx::mesh::Topology::create_entity_permutations)
       .def("create_connectivity", &dolfinx::mesh::Topology::create_connectivity)
-      .def("create_connectivity_all",
-           &dolfinx::mesh::Topology::create_connectivity_all)
       .def("get_facet_permutations",
            [](const dolfinx::mesh::Topology& self)
            {
