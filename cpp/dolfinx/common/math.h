@@ -124,8 +124,9 @@ void inv(const U& A, V& B)
   }
 }
 
+/// Compute C += A * B
 template <typename U, typename V, typename P>
-void gemm(const U& A, const V& B, P& C, bool transpose = false)
+void dot(const U& A, const V& B, P& C, bool transpose = false)
 {
   if (transpose)
   {
@@ -151,18 +152,13 @@ void gemm(const U& A, const V& B, P& C, bool transpose = false)
   }
 }
 
-/// Compute C += A * B
-template <typename U, typename V, typename P>
-void dot(const U& A, const V& B, P& C, bool transpose = false)
-{
-  gemm(A, B, C, transpose);
-}
-
-/// Compute the pseudo inverse of A
+/// Compute the pseudo inverse of a rectangular matrix A (3x2 or 2x1)
+/// Left inverse pinv(A)*A = I
 template <typename U, typename V>
 void pinv(const U& A, V& P)
 {
-  assert(A.shape(0) == P.shape(1));
+  assert(A.shape(0) > A.shape(1));
+  assert(A.shape(0)) assert(A.shape(0) == P.shape(1));
   assert(A.shape(1) == P.shape(0));
 
   auto s = A.shape();
@@ -170,6 +166,7 @@ void pinv(const U& A, V& P)
   xt::xtensor<double, 2> ATA = xt::zeros<double>({s[1], s[1]});
   xt::xtensor<double, 2> Inv = xt::zeros<double>({s[1], s[1]});
 
+  // pinv(A) = (A^T * A)^-1 * A^T
   AT.assign(xt::transpose(A));
   dot(AT, A, ATA);
   inv(ATA, Inv);
