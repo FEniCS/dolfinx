@@ -158,7 +158,7 @@ template <typename U, typename V>
 void pinv(const U& A, V& P)
 {
   assert(A.shape(0) > A.shape(1));
-  assert(A.shape(0)) assert(A.shape(0) == P.shape(1));
+  assert(A.shape(0) == P.shape(1));
   assert(A.shape(1) == P.shape(0));
 
   auto s = A.shape();
