@@ -162,13 +162,18 @@ void dot(const U& A, const V& B, P& C, bool transpose = false)
 template <typename U, typename V>
 void pinv(const U& A, V& P)
 {
-  using T = typename U::value_type;
-  xt::xtensor<T, 2> B = xt::transpose(A);
-  xt::xtensor<T, 2> BA = xt::zeros<T>({B.shape(0), A.shape(1)});
-  dot(B, A, BA);
-  xt::xtensor<T, 2> Inv = xt::zeros<T>({A.shape(0), B.shape(1)});
-  inv(BA, Inv);
-  dot(Inv, B, P);
+  assert(A.shape(0) == P.shape(1));
+  assert(A.shape(1) == P.shape(0));
+
+  auto s = A.shape();
+  xt::xtensor<double, 2> AT = xt::zeros<double>({s[1], s[0]});
+  xt::xtensor<double, 2> ATA = xt::zeros<double>({s[1], s[1]});
+  xt::xtensor<double, 2> Inv = xt::zeros<double>({s[1], s[1]});
+
+  AT.assign(xt::transpose(A));
+  dot(AT, A, ATA);
+  inv(ATA, Inv);
+  dot(Inv, AT, P);
 }
 
 } // namespace dolfinx::math

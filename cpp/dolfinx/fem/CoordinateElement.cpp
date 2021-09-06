@@ -9,7 +9,6 @@
 #include <cmath>
 #include <dolfinx/common/math.h>
 #include <dolfinx/mesh/cell_types.h>
-#include <xtensor-blas/xlinalg.hpp>
 #include <xtensor/xnoalias.hpp>
 #include <xtensor/xview.hpp>
 
@@ -136,8 +135,8 @@ void CoordinateElement::compute_jacobian_inverse(
 
   const int gdim = J.shape(1);
   const int tdim = K.shape(1);
-  xt::xtensor<double, 2> K0 = xt::empty<double>({tdim, gdim});
-  xt::xtensor<double, 2> J0 = xt::empty<double>({gdim, tdim});
+  xt::xtensor<double, 2> K0 = xt::zeros<double>({tdim, gdim});
+  xt::xtensor<double, 2> J0 = xt::zeros<double>({gdim, tdim});
   if (_is_affine)
   {
     J0 = xt::view(J, 0, xt::all(), xt::all());
@@ -151,6 +150,7 @@ void CoordinateElement::compute_jacobian_inverse(
   {
     for (std::size_t p = 0; p < J.shape(0); ++p)
     {
+      K0.fill(0);
       J0 = xt::view(J, p, xt::all(), xt::all());
       if (gdim == tdim)
         math::inv(J0, K0);
