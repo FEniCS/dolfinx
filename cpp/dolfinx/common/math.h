@@ -10,7 +10,6 @@
 #include <cmath>
 #include <type_traits>
 #include <xtensor/xtensor.hpp>
-#include <xtl/xspan.hpp>
 
 namespace dolfinx::math
 {
