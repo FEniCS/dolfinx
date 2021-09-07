@@ -435,7 +435,7 @@ compute_entities_by_key_matching(
       // Get entity vertices padding with -1 if fewer than
       // max_vertices_per_entity
       entity_list(idx, max_vertices_per_entity - 1) = -1;
-      for (int j = 0; j < e_vertices.num_links(i); ++j)
+      for (std::size_t j = 0; j < ev.size(); ++j)
         entity_list(idx, j) = vertices[ev[j]];
     }
   }
