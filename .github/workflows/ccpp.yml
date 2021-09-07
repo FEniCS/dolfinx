@@ -37,7 +37,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Get Basix and install
+      - name: Get Basix
         uses: actions/checkout@v2
         with:
           path: ./basix
