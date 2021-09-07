@@ -76,7 +76,7 @@
 import dolfinx
 import numpy as np
 import ufl
-from dolfinx import (DirichletBC, Function, FunctionSpace, BoxMesh, fem,
+from dolfinx import (DirichletBC, Function, FunctionSpace, RectangleMesh, fem,
                      plot)
 from dolfinx.cpp.mesh import CellType
 from dolfinx.fem import locate_dofs_topological
@@ -84,7 +84,7 @@ from dolfinx.io import XDMFFile
 from dolfinx.mesh import locate_entities_boundary
 from mpi4py import MPI
 from petsc4py import PETSc
-from ufl import dx, grad, inner
+from ufl import ds, dx, grad, inner
 
 # We begin by defining a mesh of the domain and a finite element
 # function space :math:`V` relative to this mesh. As the unit square is
@@ -94,10 +94,10 @@ from ufl import dx, grad, inner
 # divided into two triangles, we do as follows ::
 
 # Create mesh and define function space
-mesh = BoxMesh(
+mesh = RectangleMesh(
     MPI.COMM_WORLD,
-    [np.array([0, 0, 0]), np.array([1, 1, .3])], [15, 15, 5],
-    CellType.prism, dolfinx.cpp.mesh.GhostMode.none)
+    [np.array([0, 0, 0]), np.array([1, 1, 0])], [32, 32],
+    CellType.triangle, dolfinx.cpp.mesh.GhostMode.none)
 
 V = FunctionSpace(mesh, ("Lagrange", 1))
 
@@ -163,7 +163,7 @@ x = ufl.SpatialCoordinate(mesh)
 f = 10 * ufl.exp(-((x[0] - 0.5)**2 + (x[1] - 0.5)**2) / 0.02)
 g = ufl.sin(5 * x[0])
 a = inner(grad(u), grad(v)) * dx
-L = inner(f, v) * dx  # + inner(g, v) * ds
+L = inner(f, v) * dx + inner(g, v) * ds
 
 # Now, we have specified the variational forms and can consider the
 # solution of the variational problem. First, we need to define a
