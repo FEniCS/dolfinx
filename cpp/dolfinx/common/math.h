@@ -130,23 +130,17 @@ void dot(const U& A, const V& B, P& C, bool transpose = false)
   if (transpose)
   {
     assert(A.shape(0) == B.shape(1));
-    const std::size_t m = A.shape(1);
-    const std::size_t n = B.shape(0);
-    const std::size_t p = A.shape(0);
-    for (std::size_t i = 0; i < m; i++)
-      for (std::size_t j = 0; j < n; j++)
-        for (std::size_t k = 0; k < p; k++)
+    for (std::size_t i = 0; i < A.shape(1); i++)
+      for (std::size_t j = 0; j < B.shape(0); j++)
+        for (std::size_t k = 0; k < A.shape(0); k++)
           C(i, j) += A(k, i) * B(j, k);
   }
   else
   {
     assert(A.shape(1) == B.shape(0));
-    const std::size_t m = A.shape(0);
-    const std::size_t n = B.shape(1);
-    const std::size_t p = A.shape(1);
-    for (std::size_t i = 0; i < m; i++)
-      for (std::size_t j = 0; j < n; j++)
-        for (std::size_t k = 0; k < p; k++)
+    for (std::size_t i = 0; i < A.shape(0); i++)
+      for (std::size_t j = 0; j < B.shape(1); j++)
+        for (std::size_t k = 0; k < A.shape(1); k++)
           C(i, j) += A(i, k) * B(k, j);
   }
 }
