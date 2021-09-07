@@ -14,11 +14,11 @@
 #include <cstdlib>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/log.h>
+#include <dolfinx/common/math.h>
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/graph/partition.h>
 #include <stdexcept>
 #include <unordered_set>
-#include <xtensor-blas/xlinalg.hpp>
 #include <xtensor/xadapt.hpp>
 #include <xtensor/xbuilder.hpp>
 #include <xtensor/xfixed.hpp>
@@ -163,7 +163,7 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
 
       // Define cell normal via cross product of first two edges
       auto ni = xt::row(n, i);
-      ni = xt::linalg::cross((p1 - p0), (p2 - p0));
+      ni = math::cross((p1 - p0), (p2 - p0));
       ni /= xt::norm_l2(ni);
     }
     return n;
@@ -181,7 +181,7 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
 
       // Defined cell normal via cross product of first two edges:
       auto ni = xt::row(n, i);
-      ni = xt::linalg::cross((p1 - p0), (p2 - p0));
+      ni = math::cross((p1 - p0), (p2 - p0));
       ni /= xt::norm_l2(ni);
     }
     return n;
@@ -465,7 +465,7 @@ mesh::entities_to_geometry(const mesh::Mesh& mesh, int dim,
 
       // Midpoint direction should be opposite to normal, hence this
       // should be negative. Switch points if not.
-      if (xt::linalg::det(a) > 0.0)
+      if (math::det(a) > 0.0)
         std::swap(entity_geometry(i, 1), entity_geometry(i, 2));
     }
   }
