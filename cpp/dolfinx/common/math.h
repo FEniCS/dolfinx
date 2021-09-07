@@ -9,6 +9,7 @@
 #include <array>
 #include <cmath>
 #include <type_traits>
+#include <xtensor/xfixed.hpp>
 #include <xtensor/xtensor.hpp>
 
 namespace dolfinx::math
@@ -31,16 +32,18 @@ xt::xtensor_fixed<typename U::value_type, xt::xshape<3>> cross(const U& u,
 /// Kahan’s method to compute x = ad − bc with fused multiply-adds. The
 /// absolute error is bounded by 1.5 ulps, units of least precision.
 template <typename T>
-inline T difference_of_products(T a, T b, T c, T d) noexcept
+T difference_of_products(T a, T b, T c, T d) noexcept
 {
   T w = b * c;
   T err = std::fma(-b, c, w);
   T diff = std::fma(a, d, -w);
-  return (diff + err);
+  return diff + err;
 }
 
-/// Compute the determinant of a small matrix (1x1, 2x2, or 3x3).
-/// Tailored for use in computations using the Jacobian.
+/// Compute the determinant of a small matrix (1x1, 2x2, or 3x3)
+/// @note Tailored for use in computations using the Jacobian
+/// @param[in] A The matrix tp compute the determinant of
+/// @return The determinate of @p A
 template <typename Matrix>
 auto det(const Matrix& A)
 {
@@ -75,7 +78,10 @@ auto det(const Matrix& A)
 
 /// Compute the inverse of a square matrix A (1x1, 2x2 or 3x3) and
 /// assign the result to a preallocated matrix B.
-/// @warning This function does not check if A is invertible!
+/// @param[in] A The matrix to compute the inverse of.
+/// @param[out] B The inverse of A. It must be pre-allocated to be the
+/// same shape as @p A.
+/// @warning This function does not check if A is invertible
 template <typename U, typename V>
 void inv(const U& A, V& B)
 {
@@ -124,6 +130,11 @@ void inv(const U& A, V& B)
 }
 
 /// Compute C += A * B
+/// @param[in] A Input matrix
+/// @param[in] B Input matrix
+/// @param[in, out] C Filled to be C += A * B
+/// @param[in] transpose Computes C += A^T * B^T if false, otherwise
+/// computed C += A^T * B^T
 template <typename U, typename V, typename P>
 void dot(const U& A, const V& B, P& C, bool transpose = false)
 {
@@ -145,14 +156,16 @@ void dot(const U& A, const V& B, P& C, bool transpose = false)
   }
 }
 
-/// Compute the left pseudo inverse of a rectangular matrix A (3x2, 3x1, or
-/// 2x1), such that pinv(A)*A = I
-/// @warning The matrix A should have full column rank.
+/// Compute the left pseudo inverse of a rectangular matrix A (3x2, 3x1,
+/// or 2x1), such that pinv(A) * A = I
+/// @param[in] A The matrix to the compute the pseudo inverse of.
+/// @param[out] P The pseudo inverse of @p A. It must be pre-allocated
+/// with a size which is the transpose of the size of @p A.
+/// @warning The matrix @p A should be full rank
 template <typename U, typename V>
 void pinv(const U& A, V& P)
 {
   auto shape = A.shape();
-
   assert(shape[0] > shape[1]);
   assert(P.shape(1) == shape[0]);
   assert(P.shape(0) == shape[1]);
