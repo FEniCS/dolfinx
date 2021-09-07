@@ -152,25 +152,43 @@ void dot(const U& A, const V& B, P& C, bool transpose = false)
   }
 }
 
-/// Compute the pseudo inverse of a rectangular matrix A (3x2 or 2x1)
-/// Left inverse pinv(A)*A = I
+/// Compute the left pseudo inverse of a rectangular matrix A (3x2, 3x1, or
+/// 2x1), such that pinv(A)*A = I
+/// @warning The matrix A should have full column rank.
 template <typename U, typename V>
 void pinv(const U& A, V& P)
 {
-  assert(A.shape(0) > A.shape(1));
-  assert(A.shape(0) == P.shape(1));
-  assert(A.shape(1) == P.shape(0));
+  auto shape = A.shape();
 
-  auto s = A.shape();
-  xt::xtensor<double, 2> AT = xt::zeros<double>({s[1], s[0]});
-  xt::xtensor<double, 2> ATA = xt::zeros<double>({s[1], s[1]});
-  xt::xtensor<double, 2> Inv = xt::zeros<double>({s[1], s[1]});
+  assert(shape[0] > shape[1]);
+  assert(P.shape(1) == shape[0]);
+  assert(P.shape(0) == shape[1]);
+  using T = typename U::value_type;
+  if (shape[1] == 2)
+  {
+    xt::xtensor_fixed<T, xt::xshape<2, 3>> AT;
+    xt::xtensor_fixed<T, xt::xshape<2, 2>> ATA;
+    xt::xtensor_fixed<T, xt::xshape<2, 2>> Inv;
+    AT = xt::transpose(A);
+    ATA.fill(0);
 
-  // pinv(A) = (A^T * A)^-1 * A^T
-  AT.assign(xt::transpose(A));
-  dot(AT, A, ATA);
-  inv(ATA, Inv);
-  dot(Inv, AT, P);
+    // pinv(A) = (A^T * A)^-1 * A^T
+    dolfinx::math::dot(AT, A, ATA);
+    dolfinx::math::inv(ATA, Inv);
+    dolfinx::math::dot(Inv, AT, P);
+  }
+  else if (shape[1] == 1)
+  {
+    auto res = std::transform_reduce(A.begin(), A.end(), 0., std::plus<T>(),
+                                     [](const auto v) { return v * v; });
+    P = (1 / res) * xt::transpose(A);
+  }
+  else
+  {
+    throw std::runtime_error("math::pinv is not implemented for "
+                             + std::to_string(A.shape(0)) + "x"
+                             + std::to_string(A.shape(1)) + " matrices.");
+  }
 }
 
 } // namespace dolfinx::math
