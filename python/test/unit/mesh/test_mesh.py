@@ -223,6 +223,12 @@ def test_UnitHexMesh():
     assert mesh.mpi_comm().allreduce(mesh.topology.index_map(0).size_local, MPI.SUM) == 480
 
 
+def test_BoxMeshPrism():
+    mesh = BoxMesh(MPI.COMM_WORLD, [[0., 0., 0.], [1., 1., 1.]], [2, 3, 4], CellType.prism, cpp.mesh.GhostMode.none)
+    assert mesh.topology.index_map(0).size_global == 60
+    assert mesh.topology.index_map(3).size_global == 48
+
+
 @skip_in_parallel
 def test_GetCoordinates():
     """Get coordinates of vertices"""

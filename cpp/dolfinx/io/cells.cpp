@@ -164,6 +164,17 @@ std::vector<std::uint8_t> vtk_tetrahedron(int num_nodes)
   }
 }
 //-----------------------------------------------------------------------------
+std::vector<std::uint8_t> vtk_wedge(int num_nodes)
+{
+  switch (num_nodes)
+  {
+  case 6:
+    return {0, 1, 2, 3, 4, 5};
+  default:
+    throw std::runtime_error("Unknown wedge layout");
+  }
+}
+//-----------------------------------------------------------------------------
 std::vector<std::uint8_t> vtk_quadrilateral(int num_nodes)
 {
   // Check that num_nodes is a square integer (since quadrilaterals are
@@ -299,6 +310,9 @@ std::vector<std::uint8_t> io::cells::perm_vtk(mesh::CellType type,
   case mesh::CellType::quadrilateral:
     map = vtk_quadrilateral(num_nodes);
     break;
+  case mesh::CellType::prism:
+    map = vtk_wedge(num_nodes);
+    break;
   case mesh::CellType::hexahedron:
     map = vtk_hexahedron(num_nodes);
     break;
@@ -368,9 +382,12 @@ io::cells::compute_permutation(const xt::xtensor<std::int64_t, 2>& cells,
 std::int8_t io::cells::get_vtk_cell_type(const dolfinx::mesh::Mesh& mesh,
                                          int dim)
 {
+  if (mesh.topology().cell_type() == mesh::CellType::prism)
+    throw std::runtime_error("More work needed for prism cell");
+
   // Get cell type
   mesh::CellType cell_type
-      = mesh::cell_entity_type(mesh.topology().cell_type(), dim);
+      = mesh::cell_entity_type(mesh.topology().cell_type(), dim, 0);
 
   // Determine VTK cell type (Using arbitrary Lagrange elements)
   // https://vtk.org/doc/nightly/html/vtkCellType_8h_source.html
