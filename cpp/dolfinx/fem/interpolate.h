@@ -368,7 +368,7 @@ void interpolate_from_any(Function<T>& u, const Function<T>& v)
     xt::xtensor<T, 2> valuesToRetrieve(
         xt::shape({std::accumulate(nPointsToSend.cbegin(), nPointsToSend.cend(),
                                    static_cast<size_t>(0))
-                       / 3 * value_size,
+                       / 3,
                    static_cast<size_t>(value_size)}),
         0);
 
@@ -405,10 +405,13 @@ void interpolate_from_any(Function<T>& u, const Function<T>& v)
     {
       for (const auto& p : candidates[i])
       {
-        if (myVals(i, 0) == static_cast<T>(0))
+        for (int j = 0; j < value_size; ++j)
         {
-          myVals(i, 0)
-              = valuesToRetrieve(retrievingOffsets[p] + scanningProgress[p], 0);
+          if (myVals(i, j) == static_cast<T>(0))
+          {
+            myVals(i, j) = valuesToRetrieve(
+                retrievingOffsets[p] / value_size + scanningProgress[p], j);
+          }
         }
         ++scanningProgress[p];
       }
