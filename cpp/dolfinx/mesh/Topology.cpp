@@ -453,18 +453,12 @@ mesh::create_topology(MPI_Comm comm,
   // Compute the global offset for local vertex indices
   const std::int64_t nlocal = v;
   std::int64_t global_offset_v = 0;
-  MPI_Request request_scan_v;
-  MPI_Iexscan(&nlocal, &global_offset_v, 1,
-              dolfinx::MPI::mpi_type<std::int64_t>(), MPI_SUM, comm,
-              &request_scan_v);
-
-  auto [neighbor_comm, proc_to_neighbors]
-      = compute_neighbor_comm(comm, mpi_rank, global_vertex_to_ranks);
+  MPI_Exscan(&nlocal, &global_offset_v, 1,
+             dolfinx::MPI::mpi_type<std::int64_t>(), MPI_SUM, comm);
 
   // Communicate new global vertex index to neighbors
-
-  // Wait for the MPI_Iallreduce to complete
-  MPI_Wait(&request_scan_v, MPI_STATUS_IGNORE);
+  auto [neighbor_comm, proc_to_neighbors]
+      = compute_neighbor_comm(comm, mpi_rank, global_vertex_to_ranks);
 
   // Pack send data
   std::vector<std::vector<std::int64_t>> send_pairs(proc_to_neighbors.size());
@@ -486,14 +480,6 @@ mesh::create_topology(MPI_Comm comm,
         send_pairs[np].push_back(it->second + global_offset_v);
       }
     }
-  }
-
-  std::vector<int> qsend_offsets = {0};
-  std::vector<std::int64_t> qsend_data;
-  for (const std::vector<std::int64_t>& q : send_pairs)
-  {
-    qsend_data.insert(qsend_data.end(), q.begin(), q.end());
-    qsend_offsets.push_back(qsend_data.size());
   }
 
   const std::vector<std::int64_t> recv_pairs
