@@ -116,7 +116,7 @@ compute_index_sharing(MPI_Comm comm, std::vector<std::int64_t>& unknown_idx)
   return index_to_owner;
 }
 //-----------------------------------------------------------------------------
-std::tuple<std::unordered_map<std::int64_t, std::int32_t>,
+std::tuple<std::unordered_map<std::int64_t, std::int32_t>, std::int32_t,
            std::vector<std::int64_t>>
 create_sets(const graph::AdjacencyList<std::int64_t>& cells,
             int num_local_cells)
@@ -141,30 +141,35 @@ create_sets(const graph::AdjacencyList<std::int64_t>& cells,
       std::unique(ghost_vertex_set.begin(), ghost_vertex_set.end()),
       ghost_vertex_set.end());
 
+  // Compute the intersection of local cell vertices and ghost cell
+  // vertices
+  std::vector<std::int64_t> unknown_indices_set;
+  std::set_intersection(local_vertex_set.begin(), local_vertex_set.end(),
+                        ghost_vertex_set.begin(), ghost_vertex_set.end(),
+                        std::back_inserter(unknown_indices_set));
+
+  // Number all vertex indices in local_vertex_set which are not shared
   std::unordered_map<std::int64_t, std::int32_t> global_to_local_vertices;
-  // Set any vertices which are in ghost cells to -1
+  // Any vertices which are in ghost cells set to -1
   for (std::int64_t idx : ghost_vertex_set)
     global_to_local_vertices.insert({idx, -1});
 
-  // Intersection of local cell vertices and ghost cell vertices
-  std::vector<std::int64_t> unknown_indices_set;
-
+  std::int32_t v = 0;
   for (std::int64_t global_index : local_vertex_set)
   {
     // Check if already in a ghost cell
     const auto it = global_to_local_vertices.find(global_index);
-    if (it != global_to_local_vertices.end())
-      unknown_indices_set.push_back(global_index);
-    else
+    if (it == global_to_local_vertices.end())
     {
-      // This vertex is not shared, so will number locally (mark with zero)
+      // This vertex is not shared, so number locally
       auto [it_ignore, insert]
-          = global_to_local_vertices.insert({global_index, 0});
+          = global_to_local_vertices.insert({global_index, v++});
       assert(insert);
     }
   }
 
-  return {std::move(global_to_local_vertices), std::move(unknown_indices_set)};
+  return {std::move(global_to_local_vertices), v,
+          std::move(unknown_indices_set)};
 }
 
 } // namespace
@@ -380,7 +385,7 @@ mesh::create_topology(MPI_Comm comm,
   // Number local unshared vertices, returning a global-to-local map (and
   // number of vertices labelled so far) and a list of vertices whose ownership
   // still needs determining.
-  auto [global_to_local_vertices, unknown_indices_set]
+  auto [global_to_local_vertices, v, unknown_indices_set]
       = create_sets(cells, num_local_cells);
 
   // For each vertex whose ownership needs determining, compute list of
@@ -402,12 +407,22 @@ mesh::create_topology(MPI_Comm comm,
       auto it_gi = global_to_local_vertices.find(global_index);
       assert(it_gi != global_to_local_vertices.end());
       assert(it_gi->second == -1);
-      it_gi->second = 0;
+      it_gi->second = v++;
     }
   }
 
-  // Number local vertices in cell order
-  std::int32_t counter = 0;
+  // Compute the global offset for local vertex indices
+  const std::int64_t nlocal = v;
+  std::int64_t global_offset_v = 0;
+  MPI_Request request_scan_v;
+  MPI_Iexscan(&nlocal, &global_offset_v, 1,
+              dolfinx::MPI::mpi_type<std::int64_t>(), MPI_SUM, comm,
+              &request_scan_v);
+
+  // Re-order vertices by iterating over cells in order
+
+  std::vector<std::int32_t> node_remap(nlocal, -1);
+  std::size_t counter = 0;
   for (std::int32_t c = 0; c < cells.num_nodes(); ++c)
   {
     auto vertices_global = cells.links(c);
@@ -415,18 +430,19 @@ mesh::create_topology(MPI_Comm comm,
     {
       auto it = global_to_local_vertices.find(v);
       assert(it != global_to_local_vertices.end());
-      if (it->second == 0)
-        it->second = counter++;
+      if (node_remap[it->second] == -1)
+        node_remap[it->second] = counter++;
     }
   }
 
-  // Compute the global offset for local vertex indices
-  const std::int64_t nlocal = counter;
-  std::int64_t global_offset_v = 0;
-  MPI_Request request_scan_v;
-  MPI_Iexscan(&nlocal, &global_offset_v, 1,
-              dolfinx::MPI::mpi_type<std::int64_t>(), MPI_SUM, comm,
-              &request_scan_v);
+  assert(std::find(node_remap.begin(), node_remap.end(), -1)
+         == node_remap.end());
+  std::for_each(global_to_local_vertices.begin(),
+                global_to_local_vertices.end(),
+                [&remap = std::as_const(node_remap)](auto& v) {
+                  if (v.second >= 0)
+                    v.second = remap[v.second];
+                });
 
   // Find all vertex-sharing neighbors, and process-to-neighbor map
 
@@ -498,7 +514,7 @@ mesh::create_topology(MPI_Comm comm,
     const auto it = global_to_local_vertices.find(gi);
     assert(it != global_to_local_vertices.end());
     assert(it->second == -1);
-    it->second = counter++;
+    it->second = v++;
     ghost_vertices.push_back(recv_pairs[i + 1]);
   }
 
@@ -568,7 +584,7 @@ mesh::create_topology(MPI_Comm comm,
       assert(it != global_to_local_vertices.end());
       if (it->second == -1)
       {
-        it->second = counter++;
+        it->second = v++;
         ghost_vertices.push_back(recv_pairs[i + 1]);
       }
     }
