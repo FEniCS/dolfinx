@@ -168,6 +168,34 @@ create_sets(const graph::AdjacencyList<std::int64_t>& cells,
 
   return {std::move(global_to_local_vertices), std::move(unknown_indices_set)};
 }
+//-----------------------------------------------------------------------------
+std::pair<MPI_Comm, std::map<int, int>>
+compute_neighbor_comm(const MPI_Comm& comm, int mpi_rank,
+                      const std::unordered_map<std::int64_t, std::vector<int>>&
+                          global_vertex_to_ranks)
+{
+  // Create set of all ranks that share a vertex with this rank
+  std::set<int> vertex_neighbor_ranks;
+  for (const auto& q : global_vertex_to_ranks)
+    vertex_neighbor_ranks.insert(q.second.begin(), q.second.end());
+  vertex_neighbor_ranks.erase(mpi_rank); // Remove my rank
+
+  // Build map from neighbor global rank to neighbor local rank
+  std::vector<int> neighbors(vertex_neighbor_ranks.begin(),
+                             vertex_neighbor_ranks.end());
+  std::map<int, int> proc_to_neighbors;
+  for (std::size_t i = 0; i < neighbors.size(); ++i)
+    proc_to_neighbors.insert({neighbors[i], i});
+
+  // Create neighborhood communicator
+  MPI_Comm neighbor_comm;
+  MPI_Dist_graph_create_adjacent(comm, neighbors.size(), neighbors.data(),
+                                 MPI_UNWEIGHTED, neighbors.size(),
+                                 neighbors.data(), MPI_UNWEIGHTED,
+                                 MPI_INFO_NULL, false, &neighbor_comm);
+
+  return {neighbor_comm, proc_to_neighbors};
+}
 
 } // namespace
 
@@ -400,7 +428,7 @@ mesh::create_topology(MPI_Comm comm,
     // rank
     if (it->second[0] == mpi_rank)
     {
-      // Should already be in map, but needs index
+      // Should already be in map
       auto it_gi = global_to_local_vertices.find(global_index);
       assert(it_gi != global_to_local_vertices.end());
       assert(it_gi->second == -1);
@@ -430,35 +458,16 @@ mesh::create_topology(MPI_Comm comm,
               dolfinx::MPI::mpi_type<std::int64_t>(), MPI_SUM, comm,
               &request_scan_v);
 
-  // Find all vertex-sharing neighbors, and process-to-neighbor map
+  auto [neighbor_comm, proc_to_neighbors]
+      = compute_neighbor_comm(comm, mpi_rank, global_vertex_to_ranks);
 
-  // Create set of all ranks that share a vertex with this rank
-  std::set<int> vertex_neighbor_ranks;
-  for (const auto& q : global_vertex_to_ranks)
-    vertex_neighbor_ranks.insert(q.second.begin(), q.second.end());
-  vertex_neighbor_ranks.erase(mpi_rank); // Remove my rank
-
-  // Build map from neighbor global rank to neighbor local rank
-  std::vector<int> neighbors(vertex_neighbor_ranks.begin(),
-                             vertex_neighbor_ranks.end());
-  std::unordered_map<int, int> proc_to_neighbors;
-  for (std::size_t i = 0; i < neighbors.size(); ++i)
-    proc_to_neighbors.insert({neighbors[i], i});
-
-  // Create neighborhood communicator
-  MPI_Comm neighbor_comm;
-  MPI_Dist_graph_create_adjacent(comm, neighbors.size(), neighbors.data(),
-                                 MPI_UNWEIGHTED, neighbors.size(),
-                                 neighbors.data(), MPI_UNWEIGHTED,
-                                 MPI_INFO_NULL, false, &neighbor_comm);
-
-  // -- Communicate new global vertex index to neighbors
+  // Communicate new global vertex index to neighbors
 
   // Wait for the MPI_Iallreduce to complete
   MPI_Wait(&request_scan_v, MPI_STATUS_IGNORE);
 
   // Pack send data
-  std::vector<std::vector<std::int64_t>> send_pairs(neighbors.size());
+  std::vector<std::vector<std::int64_t>> send_pairs(proc_to_neighbors.size());
   for (const auto& q : global_vertex_to_ranks)
   {
     const std::vector<int>& procs = q.second;
@@ -530,7 +539,8 @@ mesh::create_topology(MPI_Comm comm,
     }
 
     // Precompute sizes and offsets
-    std::vector<int> send_sizes(neighbors.size()), sdispl(neighbors.size() + 1);
+    std::vector<int> send_sizes(proc_to_neighbors.size()),
+        sdispl(proc_to_neighbors.size() + 1);
     for (const auto& q : fwd_shared_vertices)
       for (int p : q.second)
         send_sizes[proc_to_neighbors[p]] += 2;
