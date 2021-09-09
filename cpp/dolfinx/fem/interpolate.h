@@ -21,6 +21,8 @@
 #include <xtensor/xview.hpp>
 #include <xtl/xspan.hpp>
 
+#include <dolfinx/common/log.h>
+
 namespace dolfinx::fem
 {
 
@@ -144,6 +146,7 @@ void interpolate_from_any(Function<T>& u, const Function<T>& v)
   assert(v.function_space()->mesh());
   if (mesh->id() != v.function_space()->mesh()->id())
   {
+    const int nProcs = dolfinx::MPI::size(MPI_COMM_WORLD);
     const auto mpi_rank = dolfinx::MPI::rank(MPI_COMM_WORLD);
 
     const int tdim = u.function_space()->mesh()->topology().dim();
@@ -168,40 +171,140 @@ void interpolate_from_any(Function<T>& u, const Function<T>& v)
       }
     }
 
-    // Gather a vector nProcs whose element i contains the number
-    // of points needed by process i
-    const int nProcs = dolfinx::MPI::size(MPI_COMM_WORLD);
-    std::vector<int> nPoints(nProcs, -1);
-    nPoints[mpi_rank] = x.shape(1);
+    dolfinx::geometry::BoundingBoxTree bb(*v.function_space()->mesh(), tdim,
+                                          0.0001);
+    auto globalBB = bb.create_global_tree(MPI_COMM_WORLD);
 
-    MPI_Allgather(nPoints.data() + mpi_rank, 1, MPI_INT, nPoints.data(), 1,
-                  MPI_INT, MPI_COMM_WORLD);
+    std::vector<std::vector<int>> candidates(x_t.shape(0));
+    for (decltype(x_t.shape(0)) i = 0; i < x_t.shape(0); ++i)
+    {
+      const auto xp = x_t(i, 0);
+      const auto yp = x_t(i, 1);
+      const auto zp = x_t(i, 2);
+      candidates[i]
+          = dolfinx::geometry::compute_collisions(globalBB, {xp, yp, zp});
+    }
 
-    // In order to receive the coordinates of all the points, we compute
-    // their number, which is tdim times the number of points
-    std::vector<int> nCoords(nPoints.size());
-    std::transform(nPoints.cbegin(), nPoints.cend(), nCoords.begin(),
-                   [](const auto& i) { return 3 * i; });
+    std::vector<std::vector<double>> pointsToSend(nProcs);
+    for (decltype(candidates.size()) i = 0; i < candidates.size(); ++i)
+    {
+      const auto xp = x_t(i, 0);
+      const auto yp = x_t(i, 1);
+      const auto zp = x_t(i, 2);
 
-    // The destination offsets of the upcoming allgatherv operation
-    // are the partial sum of the number of coordinates
-    std::vector<int> displacements(nProcs);
-    displacements[0] = 0;
-    std::partial_sum(nCoords.cbegin(), std::prev(nCoords.cend()),
-                     std::next(displacements.begin()));
+      for (const auto& p : candidates[i])
+      {
+        pointsToSend[p].push_back(xp);
+        pointsToSend[p].push_back(yp);
+        pointsToSend[p].push_back(zp);
+      }
+    }
 
-    // All the coordinates will be stored in this variable
-    xt::xtensor<double, 2> globalX(
-        xt::shape({std::accumulate(nPoints.cbegin(), nPoints.cend(), 0), 3}),
+    std::vector<std::int32_t> nPointsToSend(nProcs);
+    std::transform(pointsToSend.cbegin(), pointsToSend.cend(),
+                   nPointsToSend.begin(),
+                   [](const auto& el) { return el.size(); });
+
+    std::vector<std::int32_t> allPointsToSend(nProcs * nProcs);
+    MPI_Allgather(nPointsToSend.data(), nProcs, MPI_INT32_T,
+                  allPointsToSend.data(), nProcs, MPI_INT32_T, MPI_COMM_WORLD);
+
+    std::size_t nPointsToReceive = 0;
+    for (int i = 0; i < nProcs; ++i)
+    {
+      nPointsToReceive += allPointsToSend[mpi_rank + i * nProcs];
+    }
+    std::vector<std::int32_t> sendingOffsets(nProcs, 0);
+    for (int i = 0; i < nProcs; ++i)
+    {
+      for (int j = 0; j < mpi_rank; ++j)
+      {
+        sendingOffsets[i] += allPointsToSend[nProcs * j + i];
+      }
+    }
+
+    //    if (mpi_rank == 0)
+    //    {
+    //      for (size_t i = 0; i < 9692 * 3; ++i)
+    //      {
+    //        pointsToSend[0][i] = 1;
+    //      }
+    //      for (size_t i = 0; i < 9659 * 3; ++i)
+    //      {
+    //        pointsToSend[1][i] = 2;
+    //      }
+    //      for (size_t i = 0; i < 9692 * 3; ++i)
+    //      {
+    //        pointsToSend[2][i] = 3;
+    //      }
+    //    }
+    //    if (mpi_rank == 1)
+    //    {
+    //      for (size_t i = 0; i < 9134 * 3; ++i)
+    //      {
+    //        pointsToSend[0][i] = 4;
+    //      }
+    //      for (size_t i = 0; i < 9414 * 3; ++i)
+    //      {
+    //        pointsToSend[1][i] = 5;
+    //      }
+    //      for (size_t i = 0; i < 10136 * 3; ++i)
+    //      {
+    //        pointsToSend[2][i] = 6;
+    //      }
+    //    }
+    //    if (mpi_rank == 2)
+    //    {
+    //      for (size_t i = 0; i < 7984 * 3; ++i)
+    //      {
+    //        pointsToSend[0][i] = 7;
+    //      }
+    //      for (size_t i = 0; i < 8741 * 3; ++i)
+    //      {
+    //        pointsToSend[1][i] = 8;
+    //      }
+    //      for (size_t i = 0; i < 10068 * 3; ++i)
+    //      {
+    //        pointsToSend[2][i] = 9;
+    //      }
+    //    }
+
+    xt::xtensor<double, 2> pointsToReceive(
+        xt::shape(
+            {nPointsToReceive / 3, static_cast<decltype(nPointsToReceive)>(3)}),
         0);
+    MPI_Win window;
+    MPI_Win_create(pointsToReceive.data(), sizeof(double) * nPointsToReceive,
+                   sizeof(double), MPI_INFO_NULL, MPI_COMM_WORLD, &window);
+    MPI_Win_fence(0, window);
 
-    MPI_Allgatherv(x_t.data(), x_t.size(), MPI_DOUBLE, globalX.data(),
-                   nCoords.data(), displacements.data(), MPI_DOUBLE,
-                   MPI_COMM_WORLD);
+    for (size_t i = 0; i < nProcs; ++i)
+    {
+      //      if (i == mpi_rank)
+      //      {
+      //        std::copy(pointsToSend[i].cbegin(), pointsToSend[i].cend(),
+      //                  std::next(pointsToReceive.begin(),
+      //                  sendingOffsets[i]));
+      //      }
+      //      else
+      //      {
+      MPI_Put(pointsToSend[i].data(), pointsToSend[i].size(), MPI_DOUBLE, i,
+              sendingOffsets[i], pointsToSend[i].size(), MPI_DOUBLE, window);
+      //      }
+    }
+
+    //    for (int i = 0; i < pointsToReceive.shape(0); ++i)
+    //    {
+    //      LOG(INFO) << i << "\t\t" << pointsToReceive(i, 0) << "\t"
+    //                << pointsToReceive(i, 1) << "\t" << pointsToReceive(i, 2);
+    //    }
+
+    MPI_Win_fence(0, window);
+    MPI_Win_free(&window);
 
     // Each process will now check at which points it can evaluate
     // the interpolating function, and note that down in evaluationCells
-    std::vector<std::int32_t> evaluationCells(globalX.shape(0), -1);
+    std::vector<std::int32_t> evaluationCells(pointsToReceive.shape(0), -1);
 
     const auto connectivity = v.function_space()->mesh()->geometry().dofmap();
 
@@ -214,12 +317,13 @@ void interpolate_from_any(Function<T>& u, const Function<T>& v)
     if (tdim == 3)
     {
       // For each point at which the source function needs to be evaluated
-      for (decltype(globalX.shape(0)) i = 0; i < globalX.shape(0); ++i)
+      for (decltype(pointsToReceive.shape(0)) i = 0;
+           i < pointsToReceive.shape(0); ++i)
       {
         // Get its coordinates
-        const double xp = globalX(i, 0);
-        const double yp = globalX(i, 1);
-        const double zp = globalX(i, 2);
+        const double xp = pointsToReceive(i, 0);
+        const double yp = pointsToReceive(i, 1);
+        const double zp = pointsToReceive(i, 2);
 
         // For each cell that might contain that point
         for (const auto& j :
@@ -268,11 +372,12 @@ void interpolate_from_any(Function<T>& u, const Function<T>& v)
     else if (tdim == 2)
     {
       // For each point at which the source function needs to be evaluated
-      for (decltype(globalX.shape(0)) i = 0; i < globalX.shape(0); ++i)
+      for (decltype(pointsToReceive.shape(0)) i = 0;
+           i < pointsToReceive.shape(0); ++i)
       {
         // Get its coordinates
-        const double xp = globalX(i, 0);
-        const double yp = globalX(i, 1);
+        const double xp = pointsToReceive(i, 0);
+        const double yp = pointsToReceive(i, 1);
 
         // For each cell that might contain that point
         for (const auto& j :
@@ -316,6 +421,316 @@ void interpolate_from_any(Function<T>& u, const Function<T>& v)
     }
 
     auto value_size = u.function_space()->element()->value_size();
+
+    xt::xtensor<T, 2> values(
+        xt::shape(
+            {pointsToReceive.shape(0),
+             static_cast<decltype(pointsToReceive.shape(0))>(value_size)}),
+        0);
+    v.eval(pointsToReceive, evaluationCells, values);
+
+    //    for (decltype(pointsToReceive.shape(0)) i = 0; i <
+    //    pointsToReceive.shape(0);
+    //         ++i)
+    //    {
+    //      auto xp = pointsToReceive(i, 0);
+    //      auto yp = pointsToReceive(i, 1);
+    //      auto zp = pointsToReceive(i, 2);
+    //      //          values(i, 0) = std::cos(10 * xp) * std::sin(10 * zp);
+    //      values(i, 0) = mpi_rank + 1;
+    //    }
+
+    //    if (mpi_rank == 0)
+    //    {
+    //      for (size_t i = 0; i < 9692; ++i)
+    //      {
+    //        values(i, 0) = 1;
+    //      }
+    //      for (size_t i = 0; i < 9134; ++i)
+    //      {
+    //        values(9692 + i, 0) = 2;
+    //      }
+    //      for (size_t i = 0; i < 7984; ++i)
+    //      {
+    //        values(9692 + 9134 + i, 0) = 3;
+    //      }
+    //    }
+    //    if (mpi_rank == 1)
+    //    {
+    //      for (size_t i = 0; i < 9659; ++i)
+    //      {
+    //        values(i, 0) = 4;
+    //      }
+    //      for (size_t i = 0; i < 9414; ++i)
+    //      {
+    //        values(9659 + i, 0) = 5;
+    //      }
+    //      for (size_t i = 0; i < 8741; ++i)
+    //      {
+    //        values(9659 + 9414 + i, 0) = 6;
+    //      }
+    //    }
+    //    if (mpi_rank == 2)
+    //    {
+    //      for (size_t i = 0; i < 9692; ++i)
+    //      {
+    //        values(i, 0) = 7;
+    //      }
+    //      for (size_t i = 0; i < 10136; ++i)
+    //      {
+    //        values(9692 + i, 0) = 8;
+    //      }
+    //      for (size_t i = 0; i < 10068; ++i)
+    //      {
+    //        values(9692 + 10136 + i, 0) = 9;
+    //      }
+    //    }
+
+    //    for (int i = 0; i < values.shape(0); ++i)
+    //    {
+    //      LOG(INFO) << values(i, 0);
+    //    }
+
+    const size_t sx
+        = std::accumulate(nPointsToSend.cbegin(), nPointsToSend.cend(),
+                          static_cast<size_t>(0))
+          / 3 * value_size;
+    xt::xtensor<T, 2> valuesToRetrieve(
+        xt::shape({sx, static_cast<size_t>(value_size)}), 0);
+
+    std::vector<size_t> retrievingOffsets(nProcs, 0);
+    std::partial_sum(nPointsToSend.cbegin(), std::prev(nPointsToSend.cend()),
+                     std::next(retrievingOffsets.begin()));
+    std::transform(retrievingOffsets.cbegin(), retrievingOffsets.cend(),
+                   retrievingOffsets.begin(),
+                   [&value_size](const auto& el)
+                   { return el / 3 * value_size; });
+
+    MPI_Win_create(values.data(), sizeof(MPI_TYPE<T>) * values.size(),
+                   sizeof(MPI_TYPE<T>), MPI_INFO_NULL, MPI_COMM_WORLD, &window);
+    MPI_Win_fence(0, window);
+
+    for (size_t i = 0; i < nProcs; ++i)
+    {
+      //      if (i == mpi_rank)
+      //      {
+      //        std::copy_n(values.cbegin()+ sendingOffsets[i] / 3,
+      //                    pointsToSend[i].size() / 3 * value_size,
+      //                    valuesToRetrieve.begin() + retrievingOffsets[i] *
+      //                    value_size);
+      //      }
+      //      else
+      //      {
+      MPI_Get(valuesToRetrieve.data() + retrievingOffsets[i],
+              pointsToSend[i].size() / 3 * value_size, MPI_TYPE<T>, i,
+              sendingOffsets[i] / 3 * value_size,
+              pointsToSend[i].size() / 3 * value_size, MPI_TYPE<T>, window);
+      //      }
+    }
+
+    MPI_Win_fence(0, window);
+    MPI_Win_free(&window);
+
+    //    for (int i = 0; i < valuesToRetrieve.shape(0); ++i)
+    //    {
+    //      LOG(INFO) << i << "\t\t" << valuesToRetrieve(i, 0);
+    //    }
+
+    std::vector<std::size_t> s
+        = {x_t.shape(0), static_cast<decltype(x_t.shape(0))>(value_size)};
+    xt::xarray<T> myVals(s, static_cast<T>(0));
+
+    std::vector<size_t> scanningProgress(nProcs, 0);
+
+    for (decltype(candidates.size()) i = 0; i < candidates.size(); ++i)
+    {
+      for (const auto& p : candidates[i])
+      {
+        if (myVals(i, 0) == static_cast<T>(0))
+        {
+          myVals(i, 0)
+              = valuesToRetrieve(retrievingOffsets[p] + scanningProgress[p], 0);
+          //          LOG(INFO) << "myVals(" << i << ", 0) = " << myVals(i, 0);
+        }
+        ++scanningProgress[p];
+      }
+      //      LOG(INFO) << "";
+    }
+
+    // This transposition is a quick and dirty solution and should be avoided
+    xt::xarray<T> myVals_t = xt::zeros_like(xt::transpose(myVals));
+    for (decltype(myVals.shape(1)) i = 0; i < myVals.shape(1); ++i)
+    {
+      for (decltype(myVals.shape(0)) j = 0; j < myVals.shape(0); ++j)
+      {
+        myVals_t(i, j) = myVals(j, i);
+      }
+    }
+
+    // Finally, interpolate using the computed values
+    fem::interpolate(u, myVals_t, x, cells);
+
+    return;
+
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    // Gather a vector nPoints whose element i contains the number
+    // of points needed by process i
+    std::vector<int> nPoints(nProcs, -1);
+    nPoints[mpi_rank] = x.shape(1);
+
+    MPI_Allgather(nPoints.data() + mpi_rank, 1, MPI_INT, nPoints.data(), 1,
+                  MPI_INT, MPI_COMM_WORLD);
+
+    // In order to receive the coordinates of all the points, we compute
+    // their number, which is tdim times the number of points
+    std::vector<int> nCoords(nPoints.size());
+    std::transform(nPoints.cbegin(), nPoints.cend(), nCoords.begin(),
+                   [](const auto& i) { return 3 * i; });
+
+    // The destination offsets of the upcoming allgatherv operation
+    // are the partial sum of the number of coordinates
+    std::vector<int> displacements(nProcs);
+    displacements[0] = 0;
+    std::partial_sum(nCoords.cbegin(), std::prev(nCoords.cend()),
+                     std::next(displacements.begin()));
+
+    // All the coordinates will be stored in this variable
+    xt::xtensor<double, 2> globalX(
+        xt::shape({std::accumulate(nPoints.cbegin(), nPoints.cend(), 0), 3}),
+        0);
+
+    MPI_Allgatherv(x_t.data(), x_t.size(), MPI_DOUBLE, globalX.data(),
+                   nCoords.data(), displacements.data(), MPI_DOUBLE,
+                   MPI_COMM_WORLD);
+
+    //    // Each process will now check at which points it can evaluate
+    //    // the interpolating function, and note that down in evaluationCells
+    //    std::vector<std::int32_t> evaluationCells(globalX.shape(0), -1);
+
+    //    const auto connectivity =
+    //    v.function_space()->mesh()->geometry().dofmap();
+
+    //    // This BBT is useful for fast lookup of which cell contains a given
+    //    point dolfinx::geometry::BoundingBoxTree
+    //    bbt(*v.function_space()->mesh(), tdim,
+    //                                           0.0001);
+
+    //    const auto xv = v.function_space()->mesh()->geometry().x();
+
+    //    if (tdim == 3)
+    //    {
+    //      // For each point at which the source function needs to be evaluated
+    //      for (decltype(globalX.shape(0)) i = 0; i < globalX.shape(0); ++i)
+    //      {
+    //        // Get its coordinates
+    //        const double xp = globalX(i, 0);
+    //        const double yp = globalX(i, 1);
+    //        const double zp = globalX(i, 2);
+
+    //        // For each cell that might contain that point
+    //        for (const auto& j :
+    //             dolfinx::geometry::compute_collisions(bbt, {xp, yp, zp}))
+    //        {
+    //          // Get the vertexes that belong to that cell
+    //          const auto vtx = connectivity.links(j);
+
+    //          const auto x1 = xv[3 * vtx[0]];
+    //          const auto y1 = xv[3 * vtx[0] + 1];
+    //          const auto z1 = xv[3 * vtx[0] + 2];
+    //          const auto x2 = xv[3 * vtx[1]];
+    //          const auto y2 = xv[3 * vtx[1] + 1];
+    //          const auto z2 = xv[3 * vtx[1] + 2];
+    //          const auto x3 = xv[3 * vtx[2]];
+    //          const auto y3 = xv[3 * vtx[2] + 1];
+    //          const auto z3 = xv[3 * vtx[2] + 2];
+    //          const auto x4 = xv[3 * vtx[3]];
+    //          const auto y4 = xv[3 * vtx[3] + 1];
+    //          const auto z4 = xv[3 * vtx[3] + 2];
+
+    //          // We compute the barycentric coordinates of the given point
+    //          // in the cell at hand
+    //          const xt::xarray<double> A = {{x1 - x4, x2 - x4, x3 - x4},
+    //                                        {y1 - y4, y2 - y4, y3 - y4},
+    //                                        {z1 - z4, z2 - z4, z3 - z4}};
+    //          const xt::xarray<double> b = {xp - x4, yp - y4, zp - z4};
+
+    //          const xt::xarray<double> l = xt::linalg::solve(A, b);
+
+    //          auto tol = -0.0001;
+
+    //          // The point belongs to the cell only if all its barycentric
+    //          // coordinates are positive. In this case
+    //          if (l[0] >= tol and l[1] >= tol and l[2] >= tol
+    //              and 1 - l[0] - l[1] - l[2] >= tol)
+    //          {
+    //            // Note that the cell can be used for interpolation
+    //            evaluationCells[i] = j;
+    //            // Do not look any further
+    //            break;
+    //          }
+    //        }
+    //      }
+    //    }
+    //    else if (tdim == 2)
+    //    {
+    //      // For each point at which the source function needs to be evaluated
+    //      for (decltype(globalX.shape(0)) i = 0; i < globalX.shape(0); ++i)
+    //      {
+    //        // Get its coordinates
+    //        const double xp = globalX(i, 0);
+    //        const double yp = globalX(i, 1);
+
+    //        // For each cell that might contain that point
+    //        for (const auto& j :
+    //             dolfinx::geometry::compute_collisions(bbt, {xp, yp, 0}))
+    //        {
+    //          // Get the vertexes that belong to that cell
+    //          const auto vtx = connectivity.links(j);
+
+    //          const auto x1 = xv[3 * vtx[0]];
+    //          const auto y1 = xv[3 * vtx[0] + 1];
+    //          const auto x2 = xv[3 * vtx[1]];
+    //          const auto y2 = xv[3 * vtx[1] + 1];
+    //          const auto x3 = xv[3 * vtx[2]];
+    //          const auto y3 = xv[3 * vtx[2] + 1];
+
+    //          // We compute the barycentric coordinates of the given point
+    //          // in the cell at hand
+    //          const auto detT = (y2 - y3) * (x1 - x3) + (x3 - x2) * (y1 - y3);
+    //          const auto lambda1
+    //              = ((y2 - y3) * (xp - x3) + (x3 - x2) * (yp - y3)) / detT;
+    //          const auto lambda2
+    //              = ((y3 - y1) * (xp - x3) + (x1 - x3) * (yp - y3)) / detT;
+
+    //          // The point belongs to the cell only if all its barycentric
+    //          // coordinates are positive. In this case
+    //          if (lambda1 >= 0 and lambda2 >= 0 and 1 - lambda1 - lambda2 >=
+    //          0)
+    //          {
+    //            // Note that the cell can be used for interpolation
+    //            evaluationCells[i] = j;
+    //            // Do not look any further
+    //            break;
+    //          }
+    //        }
+    //      }
+    //    }
+    //    else
+    //    {
+    //      throw std::runtime_error(
+    //          "Interpolation not implemented for topological dimension "
+    //          + std::to_string(tdim));
+    //    }
+
+    //    auto value_size = u.function_space()->element()->value_size();
 
     // We now evaluate the interpolating function at all points
     xt::xtensor<T, 2> u_vals(
