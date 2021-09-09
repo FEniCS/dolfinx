@@ -187,13 +187,16 @@ void interpolate_from_any(Function<T>& u, const Function<T>& v)
     }
 
     std::vector<std::vector<double>> pointsToSend(nProcs);
+    std::for_each(pointsToSend.begin(), pointsToSend.end(),
+                  [&candidates](auto& el)
+                  { el.reserve(3 * candidates.size()); });
     for (decltype(candidates.size()) i = 0; i < candidates.size(); ++i)
     {
       for (const auto& p : candidates[i])
       {
-        pointsToSend[p].push_back(x_t(i, 0));
-        pointsToSend[p].push_back(x_t(i, 1));
-        pointsToSend[p].push_back(x_t(i, 2));
+        auto point = xt::row(x_t, i);
+        pointsToSend[p].insert(pointsToSend[p].end(), point.begin(),
+                               point.end());
       }
     }
 
