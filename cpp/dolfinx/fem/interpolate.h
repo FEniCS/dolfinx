@@ -34,21 +34,6 @@ class Function;
 template <typename T>
 const MPI_Datatype MPI_TYPE = MPI_DOUBLE;
 
-/// This function is used to define a custom MPI reduction operator and
-/// it conforms to the MPI standard's specifications,
-/// see https://www.mpi-forum.org/docs/mpi-3.1/mpi31-report/node115.htm
-///
-/// This function gathers values from different processors ignoring duplicates
-///
-/// This function should probably go into a detail namespace
-///
-/// @param[in] invec A vector of operands
-/// @param[out] inoutvec A vector of operands, also used to store
-/// the operation's result
-/// @param[in] len The length of the first two arrays
-/// @param[in] dt Not currently used
-void SINGLESUM(void* invec, void* inoutvec, int* len, MPI_Datatype* dt);
-
 /// Compute the evaluation points in the physical space at which an
 /// expression should be computed to interpolate it in a finite elemenet
 /// space.

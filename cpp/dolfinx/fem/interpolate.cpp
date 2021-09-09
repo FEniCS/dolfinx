@@ -69,19 +69,4 @@ template <>
 const MPI_Datatype fem::MPI_TYPE<double> = MPI_DOUBLE;
 template <>
 const MPI_Datatype fem::MPI_TYPE<std::complex<double>> = MPI_DOUBLE_COMPLEX;
-
-void fem::SINGLESUM(void* invec, void* inoutvec, int* len, MPI_Datatype*)
-{
-  PetscScalar* in = static_cast<PetscScalar*>(invec);
-  PetscScalar* inout = static_cast<PetscScalar*>(inoutvec);
-  for (int i = 0; i < *len; ++i)
-  {
-    if (*in == 0 or *inout == 0)
-    {
-      *inout += *in;
-    }
-    ++in;
-    ++inout;
-  }
-}
 //-----------------------------------------------------------------------------
