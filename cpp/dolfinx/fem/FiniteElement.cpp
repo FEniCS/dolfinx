@@ -100,6 +100,9 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
   case tetrahedron:
     _cell_shape = mesh::CellType::tetrahedron;
     break;
+  case prism:
+    _cell_shape = mesh::CellType::prism;
+    break;
   case hexahedron:
     _cell_shape = mesh::CellType::hexahedron;
     break;
@@ -110,11 +113,9 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
   assert(mesh::cell_dim(_cell_shape) == _tdim);
 
   static const std::map<ufc_shape, std::string> ufc_to_cell
-      = {{vertex, "point"},
-         {interval, "interval"},
-         {triangle, "triangle"},
-         {tetrahedron, "tetrahedron"},
-         {quadrilateral, "quadrilateral"},
+      = {{vertex, "point"},         {interval, "interval"},
+         {triangle, "triangle"},    {tetrahedron, "tetrahedron"},
+         {prism, "prism"},          {quadrilateral, "quadrilateral"},
          {hexahedron, "hexahedron"}};
   const std::string cell_shape = ufc_to_cell.at(ufc_element.cell_shape);
 
@@ -149,14 +150,15 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
           static_cast<basix::element::family>(ufc_element.basix_family),
           static_cast<basix::cell::type>(ufc_element.basix_cell),
           ufc_element.degree,
-          static_cast<basix::lattice::type>(ufc_element.lattice_type)));
+          static_cast<basix::lattice::type>(ufc_element.lattice_type),
+          ufc_element.discontinuous));
     }
     else
     {
       _element = std::make_unique<basix::FiniteElement>(basix::create_element(
           static_cast<basix::element::family>(ufc_element.basix_family),
           static_cast<basix::cell::type>(ufc_element.basix_cell),
-          ufc_element.degree));
+          ufc_element.degree, ufc_element.discontinuous));
     }
 
     _needs_dof_transformations
@@ -305,6 +307,7 @@ FiniteElement::get_dof_permutation_function(bool inverse,
             "Permutations should not be applied for this element.");
       };
     }
+
   }
 
   if (_sub_elements.size() != 0)
@@ -325,16 +328,15 @@ FiniteElement::get_dof_permutation_function(bool inverse,
 
       return
           [dims, sub_element_functions](const xtl::span<std::int32_t>& doflist,
-                                        std::uint32_t cell_permutation)
-      {
-        std::size_t start = 0;
-        for (std::size_t e = 0; e < sub_element_functions.size(); ++e)
-        {
-          sub_element_functions[e](doflist.subspan(start, dims[e]),
-                                   cell_permutation);
-          start += dims[e];
-        }
-      };
+                                        std::uint32_t cell_permutation) {
+            std::size_t start = 0;
+            for (std::size_t e = 0; e < sub_element_functions.size(); ++e)
+            {
+              sub_element_functions[e](doflist.subspan(start, dims[e]),
+                                       cell_permutation);
+              start += dims[e];
+            }
+          };
     }
     else if (!scalar_element)
     {
@@ -346,14 +348,16 @@ FiniteElement::get_dof_permutation_function(bool inverse,
   if (inverse)
   {
     return [this](const xtl::span<std::int32_t>& doflist,
-                  std::uint32_t cell_permutation)
-    { unpermute_dofs(doflist, cell_permutation); };
+                  std::uint32_t cell_permutation) {
+      unpermute_dofs(doflist, cell_permutation);
+    };
   }
   else
   {
     return [this](const xtl::span<std::int32_t>& doflist,
-                  std::uint32_t cell_permutation)
-    { permute_dofs(doflist, cell_permutation); };
+                  std::uint32_t cell_permutation) {
+      permute_dofs(doflist, cell_permutation);
+    };
   }
 }
 //-----------------------------------------------------------------------------

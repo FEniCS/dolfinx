@@ -13,6 +13,7 @@
 #include <dolfinx/geometry/utils.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <functional>
+#include <numeric>
 #include <variant>
 #include <xtensor-blas/xlinalg.hpp>
 #include <xtensor/xadapt.hpp>

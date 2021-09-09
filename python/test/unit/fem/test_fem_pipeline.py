@@ -365,6 +365,17 @@ def test_RT_N1curl_simplex(family, degree, cell_type, datadir):
 
 
 @parametrize_cell_types_simplex
+@pytest.mark.parametrize("family", ["Discontinuous Raviart-Thomas"])
+@pytest.mark.parametrize("degree", [1, 2, 3, 4])
+def test_discontinuous_RT(family, degree, cell_type, datadir):
+    if cell_type == CellType.tetrahedron and degree == 4:
+        pytest.skip("Skip expensive test on tetrahedron")
+    mesh = get_mesh(cell_type, datadir)
+    V = FunctionSpace(mesh, (family, degree))
+    run_vector_test(mesh, V, degree - 1)
+
+
+@parametrize_cell_types_simplex
 @pytest.mark.parametrize("family", ["BDM", "N2curl"])
 @pytest.mark.parametrize("degree", [1, 2])
 def test_BDM_N2curl_simplex(family, degree, cell_type, datadir):
