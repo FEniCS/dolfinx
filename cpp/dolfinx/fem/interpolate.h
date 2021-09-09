@@ -224,52 +224,6 @@ void interpolate_from_any(Function<T>& u, const Function<T>& v)
       }
     }
 
-    //    if (mpi_rank == 0)
-    //    {
-    //      for (size_t i = 0; i < 9692 * 3; ++i)
-    //      {
-    //        pointsToSend[0][i] = 1;
-    //      }
-    //      for (size_t i = 0; i < 9659 * 3; ++i)
-    //      {
-    //        pointsToSend[1][i] = 2;
-    //      }
-    //      for (size_t i = 0; i < 9692 * 3; ++i)
-    //      {
-    //        pointsToSend[2][i] = 3;
-    //      }
-    //    }
-    //    if (mpi_rank == 1)
-    //    {
-    //      for (size_t i = 0; i < 9134 * 3; ++i)
-    //      {
-    //        pointsToSend[0][i] = 4;
-    //      }
-    //      for (size_t i = 0; i < 9414 * 3; ++i)
-    //      {
-    //        pointsToSend[1][i] = 5;
-    //      }
-    //      for (size_t i = 0; i < 10136 * 3; ++i)
-    //      {
-    //        pointsToSend[2][i] = 6;
-    //      }
-    //    }
-    //    if (mpi_rank == 2)
-    //    {
-    //      for (size_t i = 0; i < 7984 * 3; ++i)
-    //      {
-    //        pointsToSend[0][i] = 7;
-    //      }
-    //      for (size_t i = 0; i < 8741 * 3; ++i)
-    //      {
-    //        pointsToSend[1][i] = 8;
-    //      }
-    //      for (size_t i = 0; i < 10068 * 3; ++i)
-    //      {
-    //        pointsToSend[2][i] = 9;
-    //      }
-    //    }
-
     xt::xtensor<double, 2> pointsToReceive(
         xt::shape(
             {nPointsToReceive / 3, static_cast<decltype(nPointsToReceive)>(3)}),
@@ -279,26 +233,11 @@ void interpolate_from_any(Function<T>& u, const Function<T>& v)
                    sizeof(double), MPI_INFO_NULL, MPI_COMM_WORLD, &window);
     MPI_Win_fence(0, window);
 
-    for (size_t i = 0; i < nProcs; ++i)
+    for (int i = 0; i < nProcs; ++i)
     {
-      //      if (i == mpi_rank)
-      //      {
-      //        std::copy(pointsToSend[i].cbegin(), pointsToSend[i].cend(),
-      //                  std::next(pointsToReceive.begin(),
-      //                  sendingOffsets[i]));
-      //      }
-      //      else
-      //      {
       MPI_Put(pointsToSend[i].data(), pointsToSend[i].size(), MPI_DOUBLE, i,
               sendingOffsets[i], pointsToSend[i].size(), MPI_DOUBLE, window);
-      //      }
     }
-
-    //    for (int i = 0; i < pointsToReceive.shape(0); ++i)
-    //    {
-    //      LOG(INFO) << i << "\t\t" << pointsToReceive(i, 0) << "\t"
-    //                << pointsToReceive(i, 1) << "\t" << pointsToReceive(i, 2);
-    //    }
 
     MPI_Win_fence(0, window);
     MPI_Win_free(&window);
@@ -430,74 +369,12 @@ void interpolate_from_any(Function<T>& u, const Function<T>& v)
         0);
     v.eval(pointsToReceive, evaluationCells, values);
 
-    //    for (decltype(pointsToReceive.shape(0)) i = 0; i <
-    //    pointsToReceive.shape(0);
-    //         ++i)
-    //    {
-    //      auto xp = pointsToReceive(i, 0);
-    //      auto yp = pointsToReceive(i, 1);
-    //      auto zp = pointsToReceive(i, 2);
-    //      //          values(i, 0) = std::cos(10 * xp) * std::sin(10 * zp);
-    //      values(i, 0) = mpi_rank + 1;
-    //    }
-
-    //    if (mpi_rank == 0)
-    //    {
-    //      for (size_t i = 0; i < 9692; ++i)
-    //      {
-    //        values(i, 0) = 1;
-    //      }
-    //      for (size_t i = 0; i < 9134; ++i)
-    //      {
-    //        values(9692 + i, 0) = 2;
-    //      }
-    //      for (size_t i = 0; i < 7984; ++i)
-    //      {
-    //        values(9692 + 9134 + i, 0) = 3;
-    //      }
-    //    }
-    //    if (mpi_rank == 1)
-    //    {
-    //      for (size_t i = 0; i < 9659; ++i)
-    //      {
-    //        values(i, 0) = 4;
-    //      }
-    //      for (size_t i = 0; i < 9414; ++i)
-    //      {
-    //        values(9659 + i, 0) = 5;
-    //      }
-    //      for (size_t i = 0; i < 8741; ++i)
-    //      {
-    //        values(9659 + 9414 + i, 0) = 6;
-    //      }
-    //    }
-    //    if (mpi_rank == 2)
-    //    {
-    //      for (size_t i = 0; i < 9692; ++i)
-    //      {
-    //        values(i, 0) = 7;
-    //      }
-    //      for (size_t i = 0; i < 10136; ++i)
-    //      {
-    //        values(9692 + i, 0) = 8;
-    //      }
-    //      for (size_t i = 0; i < 10068; ++i)
-    //      {
-    //        values(9692 + 10136 + i, 0) = 9;
-    //      }
-    //    }
-
-    //    for (int i = 0; i < values.shape(0); ++i)
-    //    {
-    //      LOG(INFO) << values(i, 0);
-    //    }
-
-    const size_t sx
-        = std::accumulate(nPointsToSend.cbegin(), nPointsToSend.cend(),
-                          static_cast<size_t>(0))
-          / 3 * value_size;
     xt::xtensor<T, 2> valuesToRetrieve(
-        xt::shape({sx, static_cast<size_t>(value_size)}), 0);
+        xt::shape({std::accumulate(nPointsToSend.cbegin(), nPointsToSend.cend(),
+                                   static_cast<size_t>(0))
+                       / 3 * value_size,
+                   static_cast<size_t>(value_size)}),
+        0);
 
     std::vector<size_t> retrievingOffsets(nProcs, 0);
     std::partial_sum(nPointsToSend.cbegin(), std::prev(nPointsToSend.cend()),
@@ -511,31 +388,16 @@ void interpolate_from_any(Function<T>& u, const Function<T>& v)
                    sizeof(MPI_TYPE<T>), MPI_INFO_NULL, MPI_COMM_WORLD, &window);
     MPI_Win_fence(0, window);
 
-    for (size_t i = 0; i < nProcs; ++i)
+    for (int i = 0; i < nProcs; ++i)
     {
-      //      if (i == mpi_rank)
-      //      {
-      //        std::copy_n(values.cbegin()+ sendingOffsets[i] / 3,
-      //                    pointsToSend[i].size() / 3 * value_size,
-      //                    valuesToRetrieve.begin() + retrievingOffsets[i] *
-      //                    value_size);
-      //      }
-      //      else
-      //      {
       MPI_Get(valuesToRetrieve.data() + retrievingOffsets[i],
               pointsToSend[i].size() / 3 * value_size, MPI_TYPE<T>, i,
               sendingOffsets[i] / 3 * value_size,
               pointsToSend[i].size() / 3 * value_size, MPI_TYPE<T>, window);
-      //      }
     }
 
     MPI_Win_fence(0, window);
     MPI_Win_free(&window);
-
-    //    for (int i = 0; i < valuesToRetrieve.shape(0); ++i)
-    //    {
-    //      LOG(INFO) << i << "\t\t" << valuesToRetrieve(i, 0);
-    //    }
 
     std::vector<std::size_t> s
         = {x_t.shape(0), static_cast<decltype(x_t.shape(0))>(value_size)};
@@ -551,11 +413,9 @@ void interpolate_from_any(Function<T>& u, const Function<T>& v)
         {
           myVals(i, 0)
               = valuesToRetrieve(retrievingOffsets[p] + scanningProgress[p], 0);
-          //          LOG(INFO) << "myVals(" << i << ", 0) = " << myVals(i, 0);
         }
         ++scanningProgress[p];
       }
-      //      LOG(INFO) << "";
     }
 
     // This transposition is a quick and dirty solution and should be avoided
