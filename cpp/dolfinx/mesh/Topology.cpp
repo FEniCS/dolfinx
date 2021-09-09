@@ -115,6 +115,42 @@ compute_index_sharing(MPI_Comm comm, std::vector<std::int64_t>& unknown_idx)
 
   return index_to_owner;
 }
+//-----------------------------------------------------------------------------
+std::array<std::vector<std::int64_t>, 3>
+create_sets(const graph::AdjacencyList<std::int64_t>& cells,
+            int num_local_cells)
+{
+  common::Timer t0("Topology: create sets");
+
+  // Build a set of 'local' cell vertices
+  std::vector<std::int64_t> local_vertex_set(
+      cells.array().begin(),
+      std::next(cells.array().begin(), cells.offsets()[num_local_cells]));
+  dolfinx::radix_sort(xtl::span(local_vertex_set));
+  local_vertex_set.erase(
+      std::unique(local_vertex_set.begin(), local_vertex_set.end()),
+      local_vertex_set.end());
+
+  // Build a set of ghost cell vertices
+  std::vector<std::int64_t> ghost_vertex_set(
+      std::next(cells.array().begin(), cells.offsets()[num_local_cells]),
+      cells.array().end());
+  dolfinx::radix_sort(xtl::span(ghost_vertex_set));
+  ghost_vertex_set.erase(
+      std::unique(ghost_vertex_set.begin(), ghost_vertex_set.end()),
+      ghost_vertex_set.end());
+
+  // Compute the intersection of local cell vertices and ghost cell
+  // vertices
+  std::vector<std::int64_t> unknown_indices_set;
+  std::set_intersection(local_vertex_set.begin(), local_vertex_set.end(),
+                        ghost_vertex_set.begin(), ghost_vertex_set.end(),
+                        std::back_inserter(unknown_indices_set));
+
+  return {std::move(local_vertex_set), std::move(ghost_vertex_set),
+          std::move(unknown_indices_set)};
+}
+
 } // namespace
 
 //-----------------------------------------------------------------------------
@@ -325,32 +361,10 @@ mesh::create_topology(MPI_Comm comm,
         cell_ghost_indices, ghost_owners);
   }
 
-  common::Timer t0("TOPOLOGY: Create sets");
-
-  // Build a set of 'local' cell vertices
-  std::vector<std::int64_t> local_vertex_set(
-      cells.array().begin(),
-      std::next(cells.array().begin(), cells.offsets()[num_local_cells]));
-  dolfinx::radix_sort(xtl::span(local_vertex_set));
-  local_vertex_set.erase(
-      std::unique(local_vertex_set.begin(), local_vertex_set.end()),
-      local_vertex_set.end());
-
-  // Build a set of ghost cell vertices
-  std::vector<std::int64_t> ghost_vertex_set(
-      std::next(cells.array().begin(), cells.offsets()[num_local_cells]),
-      cells.array().end());
-  dolfinx::radix_sort(xtl::span(ghost_vertex_set));
-  ghost_vertex_set.erase(
-      std::unique(ghost_vertex_set.begin(), ghost_vertex_set.end()),
-      ghost_vertex_set.end());
-
-  // Compute the intersection of local cell vertices and ghost cell
-  // vertices
-  std::vector<std::int64_t> unknown_indices_set;
-  std::set_intersection(local_vertex_set.begin(), local_vertex_set.end(),
-                        ghost_vertex_set.begin(), ghost_vertex_set.end(),
-                        std::back_inserter(unknown_indices_set));
+  // Create three sets of vertex indices: those which appear in local cells,
+  // those which appear in ghost cells, and those which appear in both.
+  auto [local_vertex_set, ghost_vertex_set, unknown_indices_set]
+      = create_sets(cells, num_local_cells);
 
   // Create map from existing global vertex index to local index,
   // putting ghost indices last
@@ -434,8 +448,7 @@ mesh::create_topology(MPI_Comm comm,
          == node_remap.end());
   std::for_each(global_to_local_vertices.begin(),
                 global_to_local_vertices.end(),
-                [&remap = std::as_const(node_remap)](auto& v)
-                {
+                [&remap = std::as_const(node_remap)](auto& v) {
                   if (v.second >= 0)
                     v.second = remap[v.second];
                 });
