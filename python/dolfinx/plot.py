@@ -75,7 +75,9 @@ def create_vtk_topology(mesh: cpp.mesh.Mesh, dim: int, entities=None):
     geometry_entities = cpp.mesh.entities_to_geometry(mesh, dim, entities, False)
 
     # Array holding the cell type (shape) for each cell
-    e_type = cpp.mesh.cell_entity_type(mesh.topology.cell_type, dim)
+    if mesh.topology.cell_type == cpp.mesh.CellType.prism:
+        raise RuntimeError("Plotting of prism meshes not supported")
+    e_type = cpp.mesh.cell_entity_type(mesh.topology.cell_type, dim, 0)
     degree = _element_degree(e_type, geometry_entities.shape[1])
     if degree == 1:
         cell_types = np.full(num_cells, _first_order_vtk[e_type])
