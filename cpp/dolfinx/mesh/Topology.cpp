@@ -116,7 +116,7 @@ compute_index_sharing(MPI_Comm comm, std::vector<std::int64_t>& unknown_idx)
   return index_to_owner;
 }
 //-----------------------------------------------------------------------------
-std::tuple<std::unordered_map<std::int64_t, std::int32_t>, std::int32_t,
+std::tuple<std::unordered_map<std::int64_t, std::int32_t>,
            std::vector<std::int64_t>>
 create_sets(const graph::AdjacencyList<std::int64_t>& cells,
             int num_local_cells)
@@ -154,7 +154,6 @@ create_sets(const graph::AdjacencyList<std::int64_t>& cells,
   for (std::int64_t idx : ghost_vertex_set)
     global_to_local_vertices.insert({idx, -1});
 
-  std::int32_t v = 0;
   for (std::int64_t global_index : local_vertex_set)
   {
     // Check if already in a ghost cell
@@ -163,13 +162,12 @@ create_sets(const graph::AdjacencyList<std::int64_t>& cells,
     {
       // This vertex is not shared, so number locally
       auto [it_ignore, insert]
-          = global_to_local_vertices.insert({global_index, v++});
+          = global_to_local_vertices.insert({global_index, 0});
       assert(insert);
     }
   }
 
-  return {std::move(global_to_local_vertices), v,
-          std::move(unknown_indices_set)};
+  return {std::move(global_to_local_vertices), std::move(unknown_indices_set)};
 }
 
 } // namespace
@@ -385,8 +383,14 @@ mesh::create_topology(MPI_Comm comm,
   // Number local unshared vertices, returning a global-to-local map (and
   // number of vertices labelled so far) and a list of vertices whose ownership
   // still needs determining.
-  auto [global_to_local_vertices, v, unknown_indices_set]
+  auto [global_to_local_vertices, unknown_indices_set]
       = create_sets(cells, num_local_cells);
+
+  // Number local vertices
+  std::int32_t v = 0;
+  for (auto& q : global_to_local_vertices)
+    if (q.second == 0)
+      q.second = v++;
 
   // For each vertex whose ownership needs determining, compute list of
   // sharing process ranks
