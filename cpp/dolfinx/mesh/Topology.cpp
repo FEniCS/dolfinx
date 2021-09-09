@@ -116,7 +116,8 @@ compute_index_sharing(MPI_Comm comm, std::vector<std::int64_t>& unknown_idx)
   return index_to_owner;
 }
 //-----------------------------------------------------------------------------
-std::array<std::vector<std::int64_t>, 3>
+std::tuple<std::unordered_map<std::int64_t, std::int32_t>, std::int32_t,
+           std::vector<std::int64_t>>
 create_sets(const graph::AdjacencyList<std::int64_t>& cells,
             int num_local_cells)
 {
@@ -147,7 +148,27 @@ create_sets(const graph::AdjacencyList<std::int64_t>& cells,
                         ghost_vertex_set.begin(), ghost_vertex_set.end(),
                         std::back_inserter(unknown_indices_set));
 
-  return {std::move(local_vertex_set), std::move(ghost_vertex_set),
+  // Number all vertex indices in local_vertex_set which are not shared
+  std::unordered_map<std::int64_t, std::int32_t> global_to_local_vertices;
+  // Any vertices which are in ghost cells set to -1
+  for (std::int64_t idx : ghost_vertex_set)
+    global_to_local_vertices.insert({idx, -1});
+
+  std::int32_t v = 0;
+  for (std::int64_t global_index : local_vertex_set)
+  {
+    // Check if already in a ghost cell
+    const auto it = global_to_local_vertices.find(global_index);
+    if (it == global_to_local_vertices.end())
+    {
+      // This vertex is not shared, so number locally
+      auto [it_ignore, insert]
+          = global_to_local_vertices.insert({global_index, v++});
+      assert(insert);
+    }
+  }
+
+  return {std::move(global_to_local_vertices), v,
           std::move(unknown_indices_set)};
 }
 
@@ -361,43 +382,18 @@ mesh::create_topology(MPI_Comm comm,
         cell_ghost_indices, ghost_owners);
   }
 
-  // Create three sets of vertex indices: those which appear in local cells,
-  // those which appear in ghost cells, and those which appear in both.
-  auto [local_vertex_set, ghost_vertex_set, unknown_indices_set]
+  // Number local unshared vertices, returning a global-to-local map (and
+  // number of vertices labelled so far) and a list of vertices whose ownership
+  // still needs determining.
+  auto [global_to_local_vertices, v, unknown_indices_set]
       = create_sets(cells, num_local_cells);
-
-  // Create map from existing global vertex index to local index,
-  // putting ghost indices last
-  std::unordered_map<std::int64_t, std::int32_t> global_to_local_vertices;
-
-  // Any vertices which are in ghost cells set to -1 since we need to
-  // determine ownership
-  for (std::int64_t idx : ghost_vertex_set)
-    global_to_local_vertices.insert({idx, -1});
 
   // For each vertex whose ownership needs determining, compute list of
   // sharing process ranks
   std::unordered_map<std::int64_t, std::vector<int>> global_vertex_to_ranks
       = compute_index_sharing(comm, unknown_indices_set);
 
-  // Local vertex index counter
-  std::int32_t v = 0;
-
-  // Number all vertex indices which this process now owns
-  for (std::int64_t global_index : local_vertex_set)
-  {
-    // Check if other ranks have this vertex
-    const auto it = global_vertex_to_ranks.find(global_index);
-    if (it == global_vertex_to_ranks.end())
-    {
-      // No other ranks have this vertex, so number locally
-      auto [it_ignore, insert]
-          = global_to_local_vertices.insert({global_index, v++});
-      assert(insert);
-    }
-  }
-
-  // Check all vertices whose ownership is unknown at this point
+  // Check all vertices whose ownership is still unknown at this point
   for (std::int64_t global_index : unknown_indices_set)
   {
     const auto it = global_vertex_to_ranks.find(global_index);
@@ -415,16 +411,11 @@ mesh::create_topology(MPI_Comm comm,
     }
   }
 
-  t0.stop();
-
-  // Store number of vertices owned by this rank
-  const std::int32_t nlocal = v;
-
   // Compute the global offset for local vertex indices
-  const std::int64_t num_local = nlocal;
+  const std::int64_t nlocal = v;
   std::int64_t global_offset_v = 0;
   MPI_Request request_scan_v;
-  MPI_Iexscan(&num_local, &global_offset_v, 1,
+  MPI_Iexscan(&nlocal, &global_offset_v, 1,
               dolfinx::MPI::mpi_type<std::int64_t>(), MPI_SUM, comm,
               &request_scan_v);
 
