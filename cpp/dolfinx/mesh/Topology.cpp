@@ -450,7 +450,9 @@ mesh::create_topology(MPI_Comm comm,
   // Start creating a global-to-local map, labelling local unshared vertices
   // with -2, and other vertices (ghost or unknown owner) with -1. Return list
   // of vertices whose ownership still needs determining.
-  auto [global_to_local_vertices, unknown_indices_set]
+  std::unordered_map<std::int64_t, std::int32_t> global_to_local_vertices;
+  std::vector<std::int64_t> unknown_indices_set;
+  std::tie(global_to_local_vertices, unknown_indices_set)
       = create_sets(cells, num_local_cells);
 
   // For each vertex whose ownership needs determining, compute list of
@@ -632,10 +634,11 @@ mesh::create_topology(MPI_Comm comm,
     local_offsets.assign(cells.offsets().begin(), cells.offsets().end());
 
   // Convert cell topology to local indexing
-  const std::vector<std::int64_t>& cells_array = cells.array();
   std::vector<std::int32_t> cells_array_local(local_offsets.back());
-  for (std::size_t i = 0; i < cells_array_local.size(); ++i)
-    cells_array_local[i] = global_to_local_vertices.at(cells_array[i]);
+  std::transform(
+      cells.array().begin(), cells.array().begin() + cells_array_local.size(),
+      cells_array_local.begin(),
+      [&](std::int64_t i) { return global_to_local_vertices.at(i); });
 
   std::shared_ptr<graph::AdjacencyList<std::int32_t>> my_local_cells
       = std::make_shared<graph::AdjacencyList<std::int32_t>>(
