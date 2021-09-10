@@ -226,6 +226,7 @@ send_vertex_numbering(const MPI_Comm& neighbor_comm,
         const int np = np_it->second;
         send_pairs[np].push_back(it->first);
         send_pairs[np].push_back(it->second + global_offset_v);
+        send_pairs[np].push_back(mpi_rank);
       }
     }
   }
@@ -506,10 +507,12 @@ mesh::create_topology(MPI_Comm comm,
   auto recv_pairs = send_vertex_numbering(
       neighbor_comm, proc_to_neighbors, mpi_rank, global_vertex_to_ranks,
       global_offset_v, global_to_local_vertices);
+  assert(recv_pairs.size() % 3 == 0);
 
   // Unpack received data and make list of ghosts
   std::vector<std::int64_t> ghost_vertices;
-  for (std::size_t i = 0; i < recv_pairs.size(); i += 2)
+  std::vector<int> ghost_vertex_owners;
+  for (std::size_t i = 0; i < recv_pairs.size(); i += 3)
   {
     const std::int64_t gi = recv_pairs[i];
     const auto it = global_to_local_vertices.find(gi);
@@ -517,6 +520,7 @@ mesh::create_topology(MPI_Comm comm,
     assert(it->second == -1);
     it->second = v++;
     ghost_vertices.push_back(recv_pairs[i + 1]);
+    ghost_vertex_owners.push_back(recv_pairs[i + 2]);
   }
 
   if (ghost_mode != mesh::GhostMode::none)
@@ -549,7 +553,7 @@ mesh::create_topology(MPI_Comm comm,
         sdispl(proc_to_neighbors.size() + 1);
     for (const auto& q : fwd_shared_vertices)
       for (int p : q.second)
-        send_sizes[proc_to_neighbors[p]] += 2;
+        send_sizes[proc_to_neighbors[p]] += 3;
     std::partial_sum(send_sizes.begin(), send_sizes.end(), sdispl.begin() + 1);
     std::vector<int> tmp_offsets(sdispl.begin(), sdispl.end());
 
@@ -563,12 +567,16 @@ mesh::create_topology(MPI_Comm comm,
       const std::int64_t gi = it->second < nlocal
                                   ? it->second + global_offset_v
                                   : ghost_vertices[it->second - nlocal];
+      const int owner_rank = it->second < nlocal
+                                 ? mpi_rank
+                                 : ghost_vertex_owners[it->second - nlocal];
 
       for (int p : q.second)
       {
         const int np = proc_to_neighbors[p];
         send_pair_data[tmp_offsets[np]++] = q.first;
         send_pair_data[tmp_offsets[np]++] = gi;
+        send_pair_data[tmp_offsets[np]++] = owner_rank;
       }
     }
 
@@ -579,7 +587,7 @@ mesh::create_topology(MPI_Comm comm,
               .array();
 
     // Unpack received data and add to ghosts
-    for (std::size_t i = 0; i < recv_pairs.size(); i += 2)
+    for (std::size_t i = 0; i < recv_pairs.size(); i += 3)
     {
       const std::int64_t gi = recv_pairs[i];
       const auto it = global_to_local_vertices.find(gi);
@@ -588,39 +596,38 @@ mesh::create_topology(MPI_Comm comm,
       {
         it->second = v++;
         ghost_vertices.push_back(recv_pairs[i + 1]);
+        ghost_vertex_owners.push_back(recv_pairs[i + 2]);
       }
     }
   }
 
-  // Get global owners of ghost vertices
-  // TODO: Get vertex owner from cell owner? Can use neighborhood
-  // communication?
-  int mpi_size = -1;
-  MPI_Comm_size(neighbor_comm, &mpi_size);
-  std::vector<std::int32_t> local_sizes(mpi_size);
-  MPI_Allgather(&nlocal, 1, MPI_INT32_T, local_sizes.data(), 1, MPI_INT32_T,
-                neighbor_comm);
-
-  // NOTE: We do not use std::partial_sum here as it narrows
-  // std::int64_t to std::int32_t.
-  // NOTE: Using std::inclusive scan is possible, but GCC prior
-  // to 9.3.0 only includes the parallel version of this algorithm,
-  // requiring e.g. Intel TBB.
-  std::vector<std::int64_t> all_ranges(mpi_size + 1, 0);
-  for (int i = 0; i < mpi_size; ++i)
-    all_ranges[i + 1] = all_ranges[i] + local_sizes[i];
-
-  // Compute rank of ghost owners
-  std::vector<int> ghost_vertices_owners(ghost_vertices.size(), -1);
-  for (size_t i = 0; i < ghost_vertices.size(); ++i)
-  {
-    auto it = std::upper_bound(all_ranges.begin(), all_ranges.end(),
-                               ghost_vertices[i]);
-    const int p = std::distance(all_ranges.begin(), it) - 1;
-    ghost_vertices_owners[i] = p;
-  }
-
   MPI_Comm_free(&neighbor_comm);
+
+  // // Get global owners of ghost vertices
+  // // TODO: Get vertex owner from cell owner with neighborhood communication?
+  // const int mpi_size = MPI::size(comm);
+  // std::vector<std::int32_t> local_sizes(mpi_size);
+  // MPI_Allgather(&nlocal, 1, MPI_INT32_T, local_sizes.data(), 1, MPI_INT32_T,
+  //               comm);
+
+  // // NOTE: We do not use std::partial_sum here as it narrows
+  // // std::int64_t to std::int32_t.
+  // // NOTE: Using std::inclusive scan is possible, but GCC prior
+  // // to 9.3.0 only includes the parallel version of this algorithm,
+  // // requiring e.g. Intel TBB.
+  // std::vector<std::int64_t> all_ranges(mpi_size + 1, 0);
+  // for (int i = 0; i < mpi_size; ++i)
+  //   all_ranges[i + 1] = all_ranges[i] + local_sizes[i];
+
+  // // Compute rank of ghost owners
+  // std::vector<int> ghost_vertices_owners(ghost_vertices.size(), -1);
+  // for (size_t i = 0; i < ghost_vertices.size(); ++i)
+  // {
+  //   auto it = std::upper_bound(all_ranges.begin(), all_ranges.end(),
+  //                              ghost_vertices[i]);
+  //   const int p = std::distance(all_ranges.begin(), it) - 1;
+  //   ghost_vertices_owners[i] = p;
+  // }
 
   std::vector<std::int32_t> local_offsets;
   if (ghost_mode == mesh::GhostMode::none)
@@ -651,9 +658,9 @@ mesh::create_topology(MPI_Comm comm,
   auto index_map_v = std::make_shared<common::IndexMap>(
       comm, nlocal,
       dolfinx::MPI::compute_graph_edges(
-          comm, std::set<int>(ghost_vertices_owners.begin(),
-                              ghost_vertices_owners.end())),
-      ghost_vertices, ghost_vertices_owners);
+          comm, std::set<int>(ghost_vertex_owners.begin(),
+                              ghost_vertex_owners.end())),
+      ghost_vertices, ghost_vertex_owners);
   topology.set_index_map(0, index_map_v);
   auto c0 = std::make_shared<graph::AdjacencyList<std::int32_t>>(
       index_map_v->size_local() + index_map_v->num_ghosts());
