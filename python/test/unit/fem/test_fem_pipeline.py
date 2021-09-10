@@ -249,6 +249,7 @@ def test_biharmonic():
     b = assemble_vector(L)
     apply_lifting(b, [a], [bcs])
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+    set_bc(b, bcs)
 
     # Solve
     solver = PETSc.KSP().create(MPI.COMM_WORLD)
