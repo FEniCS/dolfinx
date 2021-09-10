@@ -17,6 +17,32 @@
 
 using namespace dolfinx;
 
+namespace
+{
+basix::cell::type cell_type_to_basix_type(mesh::CellType celltype)
+{
+  switch (celltype)
+  {
+  case mesh::CellType::interval:
+    return basix::cell::type::interval;
+  case mesh::CellType::triangle:
+    return basix::cell::type::triangle;
+  case mesh::CellType::tetrahedron:
+    return basix::cell::type::tetrahedron;
+  case mesh::CellType::quadrilateral:
+    return basix::cell::type::quadrilateral;
+  case mesh::CellType::hexahedron:
+    return basix::cell::type::hexahedron;
+  case mesh::CellType::prism:
+    return basix::cell::type::prism;
+  case mesh::CellType::pyramid:
+    return basix::cell::type::pyramid;
+  default:
+    throw std::runtime_error("Unrecognised cell type.");
+  }
+}
+} // namespace
+
 //-----------------------------------------------------------------------------
 std::string mesh::to_string(mesh::CellType type)
 {
@@ -112,7 +138,7 @@ graph::AdjacencyList<int> mesh::get_entity_vertices(mesh::CellType type,
                                                     int dim)
 {
   const std::vector<std::vector<int>> topology
-      = basix::cell::topology(basix::cell::str_to_type(to_string(type)))[dim];
+      = basix::cell::topology(cell_type_to_basix_type(type))[dim];
 
   return graph::AdjacencyList<int>(topology);
 }
