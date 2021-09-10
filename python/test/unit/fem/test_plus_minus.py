@@ -6,6 +6,7 @@
 """Test integral involving + and -."""
 
 from mpi4py import MPI
+import numpy as np
 
 import pytest
 import dolfinx
@@ -18,7 +19,7 @@ from ufl import grad, inner
 
 
 @pytest.mark.parametrize("N", [1, 2, 3])
-def test_plus_minus(N):
+def test_plus_minus_matrix(N):
     mesh = UnitSquareMesh(MPI.COMM_WORLD, N, N, CellType.triangle,
                           dolfinx.cpp.mesh.GhostMode.shared_facet)
 
@@ -43,13 +44,81 @@ def test_plus_minus(N):
     def inner_e2(x, y):
         return inner_e0(x, y) + inner_e1(x, y)
 
-    norms = []
+    results = []
     for inner_e in [inner_e0, inner_e1, inner_e2]:
         a = inner_e(grad(u), q) + inner_e(grad(v), p)
 
         A = dolfinx.fem.assemble_matrix(a)
         A.assemble()
         print(A.norm())
-        norms.append(A.norm())
+        results.append(A)
 
-    assert norms[0] + norms[1] == norms[2]
+    assert (results[0] + results[1]).norm() == results[2].norm()
+
+    for i in range(results[0].size[0]):
+        for j in range(results[0].size[1]):
+            assert np.isclose(results[0][i, j], results[1][i, j])
+
+
+@pytest.mark.parametrize("N", [1, 2, 3])
+def test_plus_minus_vector(N):
+    mesh = UnitSquareMesh(MPI.COMM_WORLD, N, N, CellType.triangle,
+                          dolfinx.cpp.mesh.GhostMode.shared_facet)
+
+    element = FiniteElement("Lagrange", ufl.triangle, 1)
+    space = FunctionSpace(mesh, element)
+
+    v = ufl.TestFunction(space)
+
+    def inner_e0(v):
+        return v("+") * ufl.dS
+
+    def inner_e1(v):
+        return v("-") * ufl.dS
+
+    def inner_e2(v):
+        return inner_e0(v) + inner_e1(v)
+
+    results = []
+    for inner_e in [inner_e0, inner_e1, inner_e2]:
+        a = inner_e(v)
+
+        A = dolfinx.fem.assemble_vector(a)
+        print(A[:])
+        print(A.norm())
+        results.append(A)
+
+    assert np.allclose(results[0] + results[1], results[2])
+    assert np.allclose(results[0], results[1])
+
+
+@pytest.mark.parametrize("N", [1, 2, 3])
+def test_plus_minus_vector2(N):
+    mesh = UnitSquareMesh(MPI.COMM_WORLD, N, N, CellType.triangle,
+                          dolfinx.cpp.mesh.GhostMode.shared_facet)
+
+    element = FiniteElement("Lagrange", ufl.triangle, 1)
+    space = FunctionSpace(mesh, element)
+
+    v = ufl.TestFunction(space)
+
+    def inner_e0(v):
+        return grad(v)[1]("+") * ufl.dS
+
+    def inner_e1(v):
+        return grad(v)[1]("-") * ufl.dS
+
+    def inner_e2(v):
+        return inner_e0(v) + inner_e1(v)
+
+    results = []
+    for inner_e in [inner_e0, inner_e1, inner_e2]:
+        a = inner_e(v)
+
+        A = dolfinx.fem.assemble_vector(a)
+        print(A[:])
+        print(A.norm())
+        results.append(A)
+
+    assert np.allclose(results[0] + results[1], results[2])
+    assert np.allclose(results[0], results[1])
