@@ -157,31 +157,36 @@ void interpolate_from_any(Function<T>& u, const Function<T>& v)
       }
     }
 
+    // Create a global bounding-box tree to quickly look for processes that
+    // might be able to evaluate the interpolating function at a given point
     dolfinx::geometry::BoundingBoxTree bb(*v.function_space()->mesh(), tdim,
                                           0.0001);
     auto globalBB = bb.create_global_tree(MPI_COMM_WORLD);
 
-    std::vector<std::vector<int>> candidates(x_t.shape(0));
+    // For each point that needs to be evaluated, store a list of processes that
+    // might be able to do it
+    std::vector<std::vector<std::int32_t>> candidates(x_t.shape(0));
     for (decltype(x_t.shape(0)) i = 0; i < x_t.shape(0); ++i)
     {
-      const auto xp = x_t(i, 0);
-      const auto yp = x_t(i, 1);
-      const auto zp = x_t(i, 2);
-      candidates[i]
-          = dolfinx::geometry::compute_collisions(globalBB, {xp, yp, zp});
+      candidates[i] = dolfinx::geometry::compute_collisions(
+          globalBB, {x_t(i, 0), x_t(i, 1), x_t(i, 2)});
     }
 
+    // Compute which points need to be sent to which process
     std::vector<std::vector<double>> pointsToSend(nProcs);
+    // Reserve enough space to avoid the need for reallocating
     std::for_each(pointsToSend.begin(), pointsToSend.end(),
                   [&candidates](auto& el)
                   { el.reserve(3 * candidates.size()); });
+    // The coordinates of the points that need to be sent to process p go into
+    // pointsToSend[p]
     for (decltype(candidates.size()) i = 0; i < candidates.size(); ++i)
     {
       for (const auto& p : candidates[i])
       {
-        auto point = xt::row(x_t, i);
-        pointsToSend[p].insert(pointsToSend[p].end(), point.begin(),
-                               point.end());
+        const auto point = xt::row(x_t, i);
+        pointsToSend[p].insert(pointsToSend[p].end(), point.cbegin(),
+                               point.cend());
       }
     }
 
@@ -190,6 +195,8 @@ void interpolate_from_any(Function<T>& u, const Function<T>& v)
                    nPointsToSend.begin(),
                    [](const auto& el) { return el.size(); });
 
+    // Share a matrix where element (i, j) is the number of coordinates that
+    // process i sends to process j
     std::vector<std::int32_t> allPointsToSend(nProcs * nProcs);
     MPI_Allgather(nPointsToSend.data(), nProcs, MPI_INT32_T,
                   allPointsToSend.data(), nProcs, MPI_INT32_T, MPI_COMM_WORLD);
@@ -199,6 +206,9 @@ void interpolate_from_any(Function<T>& u, const Function<T>& v)
     {
       nPointsToReceive += allPointsToSend[mpi_rank + i * nProcs];
     }
+
+    // Compute the offset sendingOffsets[i] at which data will be sent to
+    // process i
     std::vector<std::int32_t> sendingOffsets(nProcs, 0);
     for (int i = 0; i < nProcs; ++i)
     {
@@ -208,21 +218,26 @@ void interpolate_from_any(Function<T>& u, const Function<T>& v)
       }
     }
 
+    // Allocate memory to receive coordinate points from other processes
     xt::xtensor<double, 2> pointsToReceive(
         xt::shape(
             {nPointsToReceive / 3, static_cast<decltype(nPointsToReceive)>(3)}),
         0);
+    // Open a window for other processes to write into, then sync
     MPI_Win window;
     MPI_Win_create(pointsToReceive.data(), sizeof(double) * nPointsToReceive,
                    sizeof(double), MPI_INFO_NULL, MPI_COMM_WORLD, &window);
     MPI_Win_fence(0, window);
 
+    // Send data to each process. It is intended that sending to itself is the
+    // same as just copying
     for (int i = 0; i < nProcs; ++i)
     {
       MPI_Put(pointsToSend[i].data(), pointsToSend[i].size(), MPI_DOUBLE, i,
               sendingOffsets[i], pointsToSend[i].size(), MPI_DOUBLE, window);
     }
 
+    // Sync, then close window
     MPI_Win_fence(0, window);
     MPI_Win_free(&window);
 
@@ -247,11 +262,13 @@ void interpolate_from_any(Function<T>& u, const Function<T>& v)
       const double yp = pointsToReceive(i, 1);
       const double zp = pointsToReceive(i, 2);
 
+      // Check if any cells actually contain that point
       const auto intersectingCells = dolfinx::geometry::select_colliding_cells(
           *v.function_space()->mesh(),
           dolfinx::geometry::compute_collisions(bbt, {xp, yp, zp}),
           {xp, yp, zp}, 1);
 
+      // If there is any -- there should be at most one -- note it down
       if (not intersectingCells.empty())
       {
         evaluationCells[i] = intersectingCells[0];
@@ -260,6 +277,7 @@ void interpolate_from_any(Function<T>& u, const Function<T>& v)
 
     const auto value_size = u.function_space()->element()->value_size();
 
+    // Evaluate the interpolating function where possible
     xt::xtensor<T, 2> values(
         xt::shape(
             {pointsToReceive.shape(0),
@@ -267,14 +285,17 @@ void interpolate_from_any(Function<T>& u, const Function<T>& v)
         0);
     v.eval(pointsToReceive, evaluationCells, values);
 
+    // Allocate memory to store function values fetched from other processes
     xt::xtensor<T, 2> valuesToRetrieve(
         xt::shape({std::accumulate(nPointsToSend.cbegin(), nPointsToSend.cend(),
-                                   static_cast<size_t>(0))
+                                   static_cast<std::size_t>(0))
                        / 3,
-                   static_cast<size_t>(value_size)}),
+                   static_cast<std::size_t>(value_size)}),
         0);
 
-    std::vector<size_t> retrievingOffsets(nProcs, 0);
+    // Compute the offset retrievingOffsets[i] at which data fetched from
+    // process i will be stored
+    std::vector<std::size_t> retrievingOffsets(nProcs, 0);
     std::partial_sum(nPointsToSend.cbegin(), std::prev(nPointsToSend.cend()),
                      std::next(retrievingOffsets.begin()));
     std::transform(retrievingOffsets.cbegin(), retrievingOffsets.cend(),
@@ -282,10 +303,13 @@ void interpolate_from_any(Function<T>& u, const Function<T>& v)
                    [&value_size](const auto& el)
                    { return el / 3 * value_size; });
 
+    // Open a window for other processes to read data from, then sync
     MPI_Win_create(values.data(), sizeof(MPI_TYPE<T>) * values.size(),
                    sizeof(MPI_TYPE<T>), MPI_INFO_NULL, MPI_COMM_WORLD, &window);
     MPI_Win_fence(0, window);
 
+    // Get data from each process. It is intended that fetching from itself is
+    // the same as just copying
     for (int i = 0; i < nProcs; ++i)
     {
       MPI_Get(valuesToRetrieve.data() + retrievingOffsets[i],
@@ -294,6 +318,7 @@ void interpolate_from_any(Function<T>& u, const Function<T>& v)
               pointsToSend[i].size() / 3 * value_size, MPI_TYPE<T>, window);
     }
 
+    // Sync, then close the window
     MPI_Win_fence(0, window);
     MPI_Win_free(&window);
 
@@ -301,20 +326,27 @@ void interpolate_from_any(Function<T>& u, const Function<T>& v)
         {x_t.shape(0), static_cast<decltype(x_t.shape(0))>(value_size)},
         static_cast<T>(0));
 
-    std::vector<size_t> scanningProgress(nProcs, 0);
+    // Auxiliary counters to keep track of which values correspond to which
+    // point
+    std::vector<std::size_t> scanningProgress(nProcs, 0);
 
+    // For every point for which we need a value
     for (decltype(candidates.size()) i = 0; i < candidates.size(); ++i)
     {
+      // For every candidate that might have provided that value
       for (const auto& p : candidates[i])
       {
+        // For every component of the value space
         for (int j = 0; j < value_size; ++j)
         {
+          // If the value is zero, get a value
           if (myVals(i, j) == static_cast<T>(0))
           {
             myVals(i, j) = valuesToRetrieve(
                 retrievingOffsets[p] / value_size + scanningProgress[p], j);
           }
         }
+        // Note down which values we already used
         ++scanningProgress[p];
       }
     }
