@@ -603,31 +603,7 @@ mesh::create_topology(MPI_Comm comm,
 
   MPI_Comm_free(&neighbor_comm);
 
-  // // Get global owners of ghost vertices
-  // // TODO: Get vertex owner from cell owner with neighborhood communication?
-  // const int mpi_size = MPI::size(comm);
-  // std::vector<std::int32_t> local_sizes(mpi_size);
-  // MPI_Allgather(&nlocal, 1, MPI_INT32_T, local_sizes.data(), 1, MPI_INT32_T,
-  //               comm);
-
-  // // NOTE: We do not use std::partial_sum here as it narrows
-  // // std::int64_t to std::int32_t.
-  // // NOTE: Using std::inclusive scan is possible, but GCC prior
-  // // to 9.3.0 only includes the parallel version of this algorithm,
-  // // requiring e.g. Intel TBB.
-  // std::vector<std::int64_t> all_ranges(mpi_size + 1, 0);
-  // for (int i = 0; i < mpi_size; ++i)
-  //   all_ranges[i + 1] = all_ranges[i] + local_sizes[i];
-
-  // // Compute rank of ghost owners
-  // std::vector<int> ghost_vertices_owners(ghost_vertices.size(), -1);
-  // for (size_t i = 0; i < ghost_vertices.size(); ++i)
-  // {
-  //   auto it = std::upper_bound(all_ranges.begin(), all_ranges.end(),
-  //                              ghost_vertices[i]);
-  //   const int p = std::distance(all_ranges.begin(), it) - 1;
-  //   ghost_vertices_owners[i] = p;
-  // }
+  // Convert input cell topology to local indexing
 
   std::vector<std::int32_t> local_offsets;
   if (ghost_mode == mesh::GhostMode::none)
@@ -640,7 +616,6 @@ mesh::create_topology(MPI_Comm comm,
   else
     local_offsets.assign(cells.offsets().begin(), cells.offsets().end());
 
-  // Convert cell topology to local indexing
   std::vector<std::int32_t> cells_array_local(local_offsets.back());
   std::transform(
       cells.array().begin(), cells.array().begin() + cells_array_local.size(),
