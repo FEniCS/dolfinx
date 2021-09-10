@@ -207,7 +207,8 @@ send_vertex_numbering(const MPI_Comm& neighbor_comm,
                           global_to_local_vertices)
 {
   // Pack send data
-  std::vector<std::vector<std::int64_t>> send_pairs(proc_to_neighbors.size());
+  std::vector<std::vector<std::int64_t>> send_triplets(
+      proc_to_neighbors.size());
   for (const auto& q : global_vertex_to_ranks)
   {
     const std::vector<int>& procs = q.second;
@@ -224,18 +225,16 @@ send_vertex_numbering(const MPI_Comm& neighbor_comm,
         auto np_it = proc_to_neighbors.find(procs[j]);
         assert(np_it != proc_to_neighbors.end());
         const int np = np_it->second;
-        send_pairs[np].push_back(it->first);
-        send_pairs[np].push_back(it->second + global_offset_v);
-        send_pairs[np].push_back(mpi_rank);
+        send_triplets[np].push_back(it->first);
+        send_triplets[np].push_back(it->second + global_offset_v);
+        send_triplets[np].push_back(mpi_rank);
       }
     }
   }
 
-  const std::vector<std::int64_t> recv_pairs
-      = dolfinx::MPI::neighbor_all_to_all(
-            neighbor_comm, graph::AdjacencyList<std::int64_t>(send_pairs))
-            .array();
-  return recv_pairs;
+  return dolfinx::MPI::neighbor_all_to_all(
+             neighbor_comm, graph::AdjacencyList<std::int64_t>(send_triplets))
+      .array();
 }
 
 } // namespace
@@ -503,24 +502,25 @@ mesh::create_topology(MPI_Comm comm,
   auto [neighbor_comm, proc_to_neighbors]
       = compute_neighbor_comm(comm, mpi_rank, global_vertex_to_ranks);
 
-  // Receive list of pairs mapping input vertex index to new global index
-  auto recv_pairs = send_vertex_numbering(
+  // Receive list of triplets mapping (input vertex index) -> (new global index,
+  // owner)
+  auto recv_triplets = send_vertex_numbering(
       neighbor_comm, proc_to_neighbors, mpi_rank, global_vertex_to_ranks,
       global_offset_v, global_to_local_vertices);
-  assert(recv_pairs.size() % 3 == 0);
+  assert(recv_triplets.size() % 3 == 0);
 
   // Unpack received data and make list of ghosts
   std::vector<std::int64_t> ghost_vertices;
   std::vector<int> ghost_vertex_owners;
-  for (std::size_t i = 0; i < recv_pairs.size(); i += 3)
+  for (std::size_t i = 0; i < recv_triplets.size(); i += 3)
   {
-    const std::int64_t gi = recv_pairs[i];
+    const std::int64_t gi = recv_triplets[i];
     const auto it = global_to_local_vertices.find(gi);
     assert(it != global_to_local_vertices.end());
     assert(it->second == -1);
     it->second = v++;
-    ghost_vertices.push_back(recv_pairs[i + 1]);
-    ghost_vertex_owners.push_back(recv_pairs[i + 2]);
+    ghost_vertices.push_back(recv_triplets[i + 1]);
+    ghost_vertex_owners.push_back(recv_triplets[i + 2]);
   }
 
   if (ghost_mode != mesh::GhostMode::none)
@@ -558,7 +558,7 @@ mesh::create_topology(MPI_Comm comm,
     std::vector<int> tmp_offsets(sdispl.begin(), sdispl.end());
 
     // Fill data for neighbor alltoall
-    std::vector<std::int64_t> send_pair_data(sdispl.back());
+    std::vector<std::int64_t> send_triplet_data(sdispl.back());
     for (const auto& q : fwd_shared_vertices)
     {
       const auto it = global_to_local_vertices.find(q.first);
@@ -574,29 +574,29 @@ mesh::create_topology(MPI_Comm comm,
       for (int p : q.second)
       {
         const int np = proc_to_neighbors[p];
-        send_pair_data[tmp_offsets[np]++] = q.first;
-        send_pair_data[tmp_offsets[np]++] = gi;
-        send_pair_data[tmp_offsets[np]++] = owner_rank;
+        send_triplet_data[tmp_offsets[np]++] = q.first;
+        send_triplet_data[tmp_offsets[np]++] = gi;
+        send_triplet_data[tmp_offsets[np]++] = owner_rank;
       }
     }
 
-    const std::vector<std::int64_t> recv_pairs
+    const std::vector<std::int64_t> recv_triplets
         = dolfinx::MPI::neighbor_all_to_all(
               neighbor_comm,
-              graph::AdjacencyList<std::int64_t>(send_pair_data, sdispl))
+              graph::AdjacencyList<std::int64_t>(send_triplet_data, sdispl))
               .array();
 
     // Unpack received data and add to ghosts
-    for (std::size_t i = 0; i < recv_pairs.size(); i += 3)
+    for (std::size_t i = 0; i < recv_triplets.size(); i += 3)
     {
-      const std::int64_t gi = recv_pairs[i];
+      const std::int64_t gi = recv_triplets[i];
       const auto it = global_to_local_vertices.find(gi);
       assert(it != global_to_local_vertices.end());
       if (it->second == -1)
       {
         it->second = v++;
-        ghost_vertices.push_back(recv_pairs[i + 1]);
-        ghost_vertex_owners.push_back(recv_pairs[i + 2]);
+        ghost_vertices.push_back(recv_triplets[i + 1]);
+        ghost_vertex_owners.push_back(recv_triplets[i + 2]);
       }
     }
   }
