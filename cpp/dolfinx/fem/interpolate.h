@@ -238,110 +238,24 @@ void interpolate_from_any(Function<T>& u, const Function<T>& v)
 
     const auto xv = v.function_space()->mesh()->geometry().x();
 
-    if (tdim == 3)
+    // For each point at which the source function needs to be evaluated
+    for (decltype(pointsToReceive.shape(0)) i = 0; i < pointsToReceive.shape(0);
+         ++i)
     {
-      // For each point at which the source function needs to be evaluated
-      for (decltype(pointsToReceive.shape(0)) i = 0;
-           i < pointsToReceive.shape(0); ++i)
+      // Get its coordinates
+      const double xp = pointsToReceive(i, 0);
+      const double yp = pointsToReceive(i, 1);
+      const double zp = pointsToReceive(i, 2);
+
+      const auto intersectingCells = dolfinx::geometry::select_colliding_cells(
+          *v.function_space()->mesh(),
+          dolfinx::geometry::compute_collisions(bbt, {xp, yp, zp}),
+          {xp, yp, zp}, 1);
+
+      if (not intersectingCells.empty())
       {
-        // Get its coordinates
-        const double xp = pointsToReceive(i, 0);
-        const double yp = pointsToReceive(i, 1);
-        const double zp = pointsToReceive(i, 2);
-
-        // For each cell that might contain that point
-        for (const auto& j :
-             dolfinx::geometry::compute_collisions(bbt, {xp, yp, zp}))
-        {
-          // Get the vertexes that belong to that cell
-          const auto vtx = connectivity.links(j);
-
-          const auto x1 = xv[3 * vtx[0]];
-          const auto y1 = xv[3 * vtx[0] + 1];
-          const auto z1 = xv[3 * vtx[0] + 2];
-          const auto x2 = xv[3 * vtx[1]];
-          const auto y2 = xv[3 * vtx[1] + 1];
-          const auto z2 = xv[3 * vtx[1] + 2];
-          const auto x3 = xv[3 * vtx[2]];
-          const auto y3 = xv[3 * vtx[2] + 1];
-          const auto z3 = xv[3 * vtx[2] + 2];
-          const auto x4 = xv[3 * vtx[3]];
-          const auto y4 = xv[3 * vtx[3] + 1];
-          const auto z4 = xv[3 * vtx[3] + 2];
-
-          // We compute the barycentric coordinates of the given point
-          // in the cell at hand
-          const xt::xarray<double> A = {{x1 - x4, x2 - x4, x3 - x4},
-                                        {y1 - y4, y2 - y4, y3 - y4},
-                                        {z1 - z4, z2 - z4, z3 - z4}};
-          const xt::xarray<double> b = {xp - x4, yp - y4, zp - z4};
-
-          const xt::xarray<double> l = xt::linalg::solve(A, b);
-
-          auto tol = -0.0001;
-
-          // The point belongs to the cell only if all its barycentric
-          // coordinates are positive. In this case
-          if (l[0] >= tol and l[1] >= tol and l[2] >= tol
-              and 1 - l[0] - l[1] - l[2] >= tol)
-          {
-            // Note that the cell can be used for interpolation
-            evaluationCells[i] = j;
-            // Do not look any further
-            break;
-          }
-        }
+        evaluationCells[i] = intersectingCells[0];
       }
-    }
-    else if (tdim == 2)
-    {
-      // For each point at which the source function needs to be evaluated
-      for (decltype(pointsToReceive.shape(0)) i = 0;
-           i < pointsToReceive.shape(0); ++i)
-      {
-        // Get its coordinates
-        const double xp = pointsToReceive(i, 0);
-        const double yp = pointsToReceive(i, 1);
-
-        // For each cell that might contain that point
-        for (const auto& j :
-             dolfinx::geometry::compute_collisions(bbt, {xp, yp, 0}))
-        {
-          // Get the vertexes that belong to that cell
-          const auto vtx = connectivity.links(j);
-
-          const auto x1 = xv[3 * vtx[0]];
-          const auto y1 = xv[3 * vtx[0] + 1];
-          const auto x2 = xv[3 * vtx[1]];
-          const auto y2 = xv[3 * vtx[1] + 1];
-          const auto x3 = xv[3 * vtx[2]];
-          const auto y3 = xv[3 * vtx[2] + 1];
-
-          // We compute the barycentric coordinates of the given point
-          // in the cell at hand
-          const auto detT = (y2 - y3) * (x1 - x3) + (x3 - x2) * (y1 - y3);
-          const auto lambda1
-              = ((y2 - y3) * (xp - x3) + (x3 - x2) * (yp - y3)) / detT;
-          const auto lambda2
-              = ((y3 - y1) * (xp - x3) + (x1 - x3) * (yp - y3)) / detT;
-
-          // The point belongs to the cell only if all its barycentric
-          // coordinates are positive. In this case
-          if (lambda1 >= 0 and lambda2 >= 0 and 1 - lambda1 - lambda2 >= 0)
-          {
-            // Note that the cell can be used for interpolation
-            evaluationCells[i] = j;
-            // Do not look any further
-            break;
-          }
-        }
-      }
-    }
-    else
-    {
-      throw std::runtime_error(
-          "Interpolation not implemented for topological dimension "
-          + std::to_string(tdim));
     }
 
     const auto value_size = u.function_space()->element()->value_size();
