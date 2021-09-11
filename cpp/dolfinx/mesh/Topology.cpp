@@ -237,6 +237,90 @@ send_vertex_numbering(const MPI_Comm& neighbor_comm,
              neighbor_comm, graph::AdjacencyList<std::int64_t>(send_triplets))
       .array();
 }
+//---------------------------------------------------------------------
+std::vector<std::int64_t> send_ghost_vertex_numbering(
+    MPI_Comm neighbor_comm, int mpi_rank,
+    const std::map<int, int>& proc_to_neighbors,
+    std::shared_ptr<const common::IndexMap> index_map_c,
+    const graph::AdjacencyList<std::int64_t>& cells, int nlocal,
+    std::int64_t global_offset_v,
+    const std::unordered_map<std::int64_t, std::int32_t>&
+        global_to_local_vertices,
+    const std::vector<std::int64_t>& ghost_vertices,
+    const std::vector<int>& ghost_vertex_owners)
+{
+  // Receive index of ghost vertices that are not on the process
+  // boundary from the ghost cell owner. Note: the ghost cell owner
+  // might not be the same as the vertex owner.
+
+  std::map<std::int64_t, std::set<std::int32_t>> fwd_shared_vertices;
+  const graph::AdjacencyList<std::int32_t>& fwd_shared_cells
+      = index_map_c->scatter_fwd_indices();
+
+  std::vector<int> fwd_procs;
+  std::tie(fwd_procs, std::ignore) = dolfinx::MPI::neighbors(
+      index_map_c->comm(common::IndexMap::Direction::forward));
+
+  const int num_local_cells = index_map_c->size_local();
+  for (int p = 0; p < fwd_shared_cells.num_nodes(); ++p)
+  {
+    for (std::int32_t c : fwd_shared_cells.links(p))
+    {
+      if (c < num_local_cells)
+      {
+        // Vertices in local cells that are shared forward
+        for (std::int32_t v : cells.links(c))
+          fwd_shared_vertices[v].insert(fwd_procs[p]);
+      }
+    }
+  }
+
+  // Precompute sizes and offsets
+  std::vector<int> send_sizes(proc_to_neighbors.size()),
+      sdispl(proc_to_neighbors.size() + 1);
+  for (const auto& q : fwd_shared_vertices)
+  {
+    for (int p : q.second)
+    {
+      const auto p_it = proc_to_neighbors.find(p);
+      assert(p_it != proc_to_neighbors.end());
+      send_sizes[p_it->second] += 3;
+    }
+  }
+  std::partial_sum(send_sizes.begin(), send_sizes.end(), sdispl.begin() + 1);
+  std::vector<int> tmp_offsets(sdispl.begin(), sdispl.end());
+
+  // Fill data for neighbor alltoall
+  std::vector<std::int64_t> send_triplet_data(sdispl.back());
+  for (const auto& q : fwd_shared_vertices)
+  {
+    const auto it = global_to_local_vertices.find(q.first);
+    assert(it != global_to_local_vertices.end());
+    assert(it->second != -1);
+    const std::int64_t gi = it->second < nlocal
+                                ? it->second + global_offset_v
+                                : ghost_vertices[it->second - nlocal];
+    const int owner_rank = it->second < nlocal
+                               ? mpi_rank
+                               : ghost_vertex_owners[it->second - nlocal];
+
+    for (int p : q.second)
+    {
+      const auto p_it = proc_to_neighbors.find(p);
+      assert(p_it != proc_to_neighbors.end());
+      const int np = p_it->second;
+      send_triplet_data[tmp_offsets[np]++] = q.first;
+      send_triplet_data[tmp_offsets[np]++] = gi;
+      send_triplet_data[tmp_offsets[np]++] = owner_rank;
+    }
+  }
+
+  return dolfinx::MPI::neighbor_all_to_all(
+             neighbor_comm,
+             graph::AdjacencyList<std::int64_t>(send_triplet_data, sdispl))
+      .array();
+}
+
 //---------------------------------------------------------------------------------
 graph::AdjacencyList<std::int32_t> convert_cells_to_local_indexing(
     mesh::GhostMode ghost_mode, const graph::AdjacencyList<std::int64_t>& cells,
@@ -555,65 +639,10 @@ mesh::create_topology(MPI_Comm comm,
     // Receive index of ghost vertices that are not on the process
     // boundary from the ghost cell owner. Note: the ghost cell owner
     // might not be the same as the vertex owner.
-
-    std::map<std::int64_t, std::set<std::int32_t>> fwd_shared_vertices;
-    const graph::AdjacencyList<std::int32_t>& fwd_shared_cells
-        = index_map_c->scatter_fwd_indices();
-
-    std::vector<int> fwd_procs;
-    std::tie(fwd_procs, std::ignore) = MPI::neighbors(
-        index_map_c->comm(common::IndexMap::Direction::forward));
-
-    for (int p = 0; p < fwd_shared_cells.num_nodes(); ++p)
-    {
-      for (std::int32_t c : fwd_shared_cells.links(p))
-      {
-        if (c < num_local_cells)
-        {
-          // Vertices in local cells that are shared forward
-          for (std::int32_t v : cells.links(c))
-            fwd_shared_vertices[v].insert(fwd_procs[p]);
-        }
-      }
-    }
-
-    // Precompute sizes and offsets
-    std::vector<int> send_sizes(proc_to_neighbors.size()),
-        sdispl(proc_to_neighbors.size() + 1);
-    for (const auto& q : fwd_shared_vertices)
-      for (int p : q.second)
-        send_sizes[proc_to_neighbors[p]] += 3;
-    std::partial_sum(send_sizes.begin(), send_sizes.end(), sdispl.begin() + 1);
-    std::vector<int> tmp_offsets(sdispl.begin(), sdispl.end());
-
-    // Fill data for neighbor alltoall
-    std::vector<std::int64_t> send_triplet_data(sdispl.back());
-    for (const auto& q : fwd_shared_vertices)
-    {
-      const auto it = global_to_local_vertices.find(q.first);
-      assert(it != global_to_local_vertices.end());
-      assert(it->second != -1);
-      const std::int64_t gi = it->second < nlocal
-                                  ? it->second + global_offset_v
-                                  : ghost_vertices[it->second - nlocal];
-      const int owner_rank = it->second < nlocal
-                                 ? mpi_rank
-                                 : ghost_vertex_owners[it->second - nlocal];
-
-      for (int p : q.second)
-      {
-        const int np = proc_to_neighbors[p];
-        send_triplet_data[tmp_offsets[np]++] = q.first;
-        send_triplet_data[tmp_offsets[np]++] = gi;
-        send_triplet_data[tmp_offsets[np]++] = owner_rank;
-      }
-    }
-
-    const std::vector<std::int64_t> recv_triplets
-        = dolfinx::MPI::neighbor_all_to_all(
-              neighbor_comm,
-              graph::AdjacencyList<std::int64_t>(send_triplet_data, sdispl))
-              .array();
+    const std::vector<std::int64_t> recv_triplets = send_ghost_vertex_numbering(
+        neighbor_comm, mpi_rank, proc_to_neighbors, index_map_c, cells, nlocal,
+        global_offset_v, global_to_local_vertices, ghost_vertices,
+        ghost_vertex_owners);
 
     // Unpack received data and add to ghosts
     for (std::size_t i = 0; i < recv_triplets.size(); i += 3)
