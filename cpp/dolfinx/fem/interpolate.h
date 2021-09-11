@@ -11,6 +11,7 @@
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <functional>
+#include <numeric>
 #include <variant>
 #include <xtensor/xadapt.hpp>
 #include <xtensor/xarray.hpp>
