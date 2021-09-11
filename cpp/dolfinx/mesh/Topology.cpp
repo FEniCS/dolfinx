@@ -556,9 +556,6 @@ mesh::create_topology(MPI_Comm comm,
     // boundary from the ghost cell owner. Note: the ghost cell owner
     // might not be the same as the vertex owner.
 
-    // std::map<std::int32_t, std::set<std::int32_t>> shared_cells
-    //    = index_map_c->compute_shared_indices();
-
     std::map<std::int64_t, std::set<std::int32_t>> fwd_shared_vertices;
     const graph::AdjacencyList<std::int32_t>& fwd_shared_cells
         = index_map_c->scatter_fwd_indices();
@@ -569,34 +566,16 @@ mesh::create_topology(MPI_Comm comm,
 
     for (int p = 0; p < fwd_shared_cells.num_nodes(); ++p)
     {
-      // cells to send to process p
       for (std::int32_t c : fwd_shared_cells.links(p))
       {
         if (c < num_local_cells)
         {
+          // Vertices in local cells that are shared forward
           for (std::int32_t v : cells.links(c))
             fwd_shared_vertices[v].insert(fwd_procs[p]);
         }
       }
     }
-
-    // std::map<std::int64_t, std::set<std::int32_t>> fwd_shared_vertices;
-    // for (int i = 0; i < index_map_c->size_local(); ++i)
-    // {
-    //   if (const auto it = shared_cells.find(i); it != shared_cells.end())
-    //   {
-    //     for (std::int32_t v : cells.links(i))
-    //     {
-    //       if (const auto vit = fwd_shared_vertices.find(v);
-    //           vit == fwd_shared_vertices.end())
-    //       {
-    //         fwd_shared_vertices.insert({v, it->second});
-    //       }
-    //       else
-    //         vit->second.insert(it->second.begin(), it->second.end());
-    //     }
-    //   }
-    // }
 
     // Precompute sizes and offsets
     std::vector<int> send_sizes(proc_to_neighbors.size()),
