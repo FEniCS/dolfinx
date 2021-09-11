@@ -174,7 +174,8 @@ compute_neighbor_comm(const MPI_Comm& comm, int mpi_rank,
                       const std::unordered_map<std::int64_t, std::vector<int>>&
                           global_vertex_to_ranks)
 {
-  // Create set of all ranks that share a vertex with this rank
+  // Create set of all ranks that share a vertex with this rank.
+  // Note this can be wider than the neighbor comm of shared cells.
   std::set<int> vertex_neighbor_ranks;
   for (const auto& q : global_vertex_to_ranks)
     vertex_neighbor_ranks.insert(q.second.begin(), q.second.end());
@@ -236,7 +237,33 @@ send_vertex_numbering(const MPI_Comm& neighbor_comm,
              neighbor_comm, graph::AdjacencyList<std::int64_t>(send_triplets))
       .array();
 }
+//---------------------------------------------------------------------------------
+graph::AdjacencyList<std::int32_t> convert_cells_to_local_indexing(
+    mesh::GhostMode ghost_mode, const graph::AdjacencyList<std::int64_t>& cells,
+    std::int32_t num_local_cells,
+    const std::unordered_map<std::int64_t, std::int32_t>
+        global_to_local_vertices)
+{
+  std::vector<std::int32_t> local_offsets;
+  if (ghost_mode == mesh::GhostMode::none)
+  {
+    // Discard ghost cells
+    local_offsets.assign(
+        cells.offsets().begin(),
+        std::next(cells.offsets().begin(), num_local_cells + 1));
+  }
+  else
+    local_offsets.assign(cells.offsets().begin(), cells.offsets().end());
 
+  std::vector<std::int32_t> cells_array_local(local_offsets.back());
+  std::transform(
+      cells.array().begin(), cells.array().begin() + cells_array_local.size(),
+      cells_array_local.begin(),
+      [&](std::int64_t i) { return global_to_local_vertices.at(i); });
+
+  return graph::AdjacencyList<std::int32_t>(std::move(cells_array_local),
+                                            std::move(local_offsets));
+}
 } // namespace
 
 //-----------------------------------------------------------------------------
@@ -528,25 +555,48 @@ mesh::create_topology(MPI_Comm comm,
     // Receive index of ghost vertices that are not on the process
     // boundary from the ghost cell owner. Note: the ghost cell owner
     // might not be the same as the vertex owner.
-    std::map<std::int32_t, std::set<std::int32_t>> shared_cells
-        = index_map_c->compute_shared_indices();
+
+    // std::map<std::int32_t, std::set<std::int32_t>> shared_cells
+    //    = index_map_c->compute_shared_indices();
+
     std::map<std::int64_t, std::set<std::int32_t>> fwd_shared_vertices;
-    for (int i = 0; i < index_map_c->size_local(); ++i)
+    const graph::AdjacencyList<std::int32_t>& fwd_shared_cells
+        = index_map_c->scatter_fwd_indices();
+
+    std::vector<int> fwd_procs;
+    std::tie(fwd_procs, std::ignore) = MPI::neighbors(
+        index_map_c->comm(common::IndexMap::Direction::forward));
+
+    for (int p = 0; p < fwd_shared_cells.num_nodes(); ++p)
     {
-      if (const auto it = shared_cells.find(i); it != shared_cells.end())
+      // cells to send to process p
+      for (std::int32_t c : fwd_shared_cells.links(p))
       {
-        for (std::int32_t v : cells.links(i))
+        if (c < num_local_cells)
         {
-          if (const auto vit = fwd_shared_vertices.find(v);
-              vit == fwd_shared_vertices.end())
-          {
-            fwd_shared_vertices.insert({v, it->second});
-          }
-          else
-            vit->second.insert(it->second.begin(), it->second.end());
+          for (std::int32_t v : cells.links(c))
+            fwd_shared_vertices[v].insert(fwd_procs[p]);
         }
       }
     }
+
+    // std::map<std::int64_t, std::set<std::int32_t>> fwd_shared_vertices;
+    // for (int i = 0; i < index_map_c->size_local(); ++i)
+    // {
+    //   if (const auto it = shared_cells.find(i); it != shared_cells.end())
+    //   {
+    //     for (std::int32_t v : cells.links(i))
+    //     {
+    //       if (const auto vit = fwd_shared_vertices.find(v);
+    //           vit == fwd_shared_vertices.end())
+    //       {
+    //         fwd_shared_vertices.insert({v, it->second});
+    //       }
+    //       else
+    //         vit->second.insert(it->second.begin(), it->second.end());
+    //     }
+    //   }
+    // }
 
     // Precompute sizes and offsets
     std::vector<int> send_sizes(proc_to_neighbors.size()),
@@ -603,28 +653,11 @@ mesh::create_topology(MPI_Comm comm,
 
   MPI_Comm_free(&neighbor_comm);
 
-  // Convert input cell topology to local indexing
-
-  std::vector<std::int32_t> local_offsets;
-  if (ghost_mode == mesh::GhostMode::none)
-  {
-    // Discard ghost cells
-    local_offsets.assign(
-        cells.offsets().begin(),
-        std::next(cells.offsets().begin(), num_local_cells + 1));
-  }
-  else
-    local_offsets.assign(cells.offsets().begin(), cells.offsets().end());
-
-  std::vector<std::int32_t> cells_array_local(local_offsets.back());
-  std::transform(
-      cells.array().begin(), cells.array().begin() + cells_array_local.size(),
-      cells_array_local.begin(),
-      [&](std::int64_t i) { return global_to_local_vertices.at(i); });
-
-  std::shared_ptr<graph::AdjacencyList<std::int32_t>> my_local_cells
+  // Convert input cell topology to local vertex indexing
+  std::shared_ptr<graph::AdjacencyList<std::int32_t>> local_indexed_cells
       = std::make_shared<graph::AdjacencyList<std::int32_t>>(
-          std::move(cells_array_local), std::move(local_offsets));
+          convert_cells_to_local_indexing(ghost_mode, cells, num_local_cells,
+                                          global_to_local_vertices));
 
   Topology topology(comm, cell_type);
   const int tdim = topology.dim();
@@ -643,7 +676,7 @@ mesh::create_topology(MPI_Comm comm,
 
   // Cell IndexMap
   topology.set_index_map(tdim, index_map_c);
-  topology.set_connectivity(my_local_cells, tdim, 0);
+  topology.set_connectivity(local_indexed_cells, tdim, 0);
 
   return topology;
 }
