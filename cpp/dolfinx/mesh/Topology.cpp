@@ -116,8 +116,17 @@ compute_index_sharing(MPI_Comm comm, std::vector<std::int64_t>& unknown_idx)
   return index_to_owner;
 }
 //-----------------------------------------------------------------------------
-std::tuple<std::unordered_map<std::int64_t, std::int32_t>,
-           std::vector<std::int64_t>>
+// Start to create a map from the 64-bit input vertex index to a local index.
+// Finds the set of vertices which are in ghost cells, and maps them to -1.
+// Vertices which only appear in local cells are mapped to -2. They will be
+// receive local indexing later. Vertex indices which are both in local cells,
+// and in ghost cells (ownership yet unknown) are returned as a vector.
+// @param cells Input mesh topology
+// @param num_local_cells Number of local (non-ghost) cells
+// @return std::pair{global_to_local_map, unknown_indices}
+//
+std::pair<std::unordered_map<std::int64_t, std::int32_t>,
+          std::vector<std::int64_t>>
 create_sets(const graph::AdjacencyList<std::int64_t>& cells,
             int num_local_cells)
 {
@@ -169,6 +178,10 @@ create_sets(const graph::AdjacencyList<std::int64_t>& cells,
   return {std::move(global_to_local_vertices), std::move(unknown_indices_set)};
 }
 //-----------------------------------------------------------------------------
+// Compute a neighborhood comm from the values in global_vertex_to_ranks,
+// also returning the map from process number to neighbor number
+// Input params as in mesh::create_topology()
+// @return std::pair{neighbor_comm, proc_to_neighbor}
 std::pair<MPI_Comm, std::map<int, int>>
 compute_neighbor_comm(const MPI_Comm& comm, int mpi_rank,
                       const std::unordered_map<std::int64_t, std::vector<int>>&
@@ -198,6 +211,13 @@ compute_neighbor_comm(const MPI_Comm& comm, int mpi_rank,
   return {neighbor_comm, proc_to_neighbors};
 }
 //-------------------------------------------------------------------------------
+// Send the vertex numbering for owned vertices, to
+// processes that also share them, returning a list of triplets received from
+// other processes. Each triplet consists of {old_global_vertex_index,
+// new_global_vertex_index, owning_rank}. The received vertices will be "ghost"
+// on this process.
+// Input params as in mesh::create_topology()
+// @return list of triplets
 std::vector<std::int64_t>
 send_vertex_numbering(const MPI_Comm& neighbor_comm,
                       const std::map<int, int>& proc_to_neighbors, int mpi_rank,
@@ -238,6 +258,13 @@ send_vertex_numbering(const MPI_Comm& neighbor_comm,
       .array();
 }
 //---------------------------------------------------------------------
+// Send vertex numbering of vertices in ghost cells to neighbours. These include
+// vertices that were numbered remotely and received in a previous round. This
+// is only needed for meshes with shared cells, i.e. ghost_mode=shared_facet.
+// Returns a list of triplets, {old_global_vertex_index,
+// new_global_vertex_index, owner}.
+// Input params as in mesh::create_topology()
+// @return list of triplets
 std::vector<std::int64_t> send_ghost_vertex_numbering(
     MPI_Comm neighbor_comm, int mpi_rank,
     const std::map<int, int>& proc_to_neighbors,
@@ -320,7 +347,6 @@ std::vector<std::int64_t> send_ghost_vertex_numbering(
              graph::AdjacencyList<std::int64_t>(send_triplet_data, sdispl))
       .array();
 }
-
 //---------------------------------------------------------------------------------
 graph::AdjacencyList<std::int32_t> convert_cells_to_local_indexing(
     mesh::GhostMode ghost_mode, const graph::AdjacencyList<std::int64_t>& cells,
