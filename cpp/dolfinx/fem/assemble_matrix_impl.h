@@ -334,8 +334,10 @@ void assemble_interior_facets(
     const int num_cols = bs1 * dmapjoint1.size();
 
     // Tabulate tensor
-    Ae.resize(num_rows * num_cols);
+    Ae.resize(num_rows * num_cols + bs1 * dmap1_cell0.size());
     std::fill(Ae.begin(), Ae.end(), 0);
+
+    const xtl::span<T> _Ae(Ae);
 
     const std::array perm{
         get_perm(cells[0] * num_cell_facets + local_facet[0]),
@@ -343,8 +345,16 @@ void assemble_interior_facets(
     kernel(Ae.data(), coeff_array.data(), constants.data(),
            coordinate_dofs.data(), local_facet.data(), perm.data());
 
-    dof_transform(Ae, cell_info, cells[0], num_cols);
-    dof_transform_to_transpose(Ae, cell_info, cells[0], num_rows);
+    const xtl::span<T> sub_Ae
+        = _Ae.subspan(bs0 * dmap0_cell0.size() * num_cols,
+                      bs0 * dmap0_cell1.size() * num_cols);
+    const xtl::span<T> sub_Ae2
+        = _Ae.subspan(bs1 * dmap1_cell0.size(), _Ae.size());
+
+    dof_transform(_Ae, cell_info, cells[0], num_cols);
+    dof_transform(sub_Ae, cell_info, cells[1], num_cols);
+    dof_transform_to_transpose(_Ae, cell_info, cells[0], num_rows);
+    dof_transform_to_transpose(sub_Ae2, cell_info, cells[1], num_rows);
 
     // Zero rows/columns for essential bcs
     if (!bc0.empty())
