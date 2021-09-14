@@ -34,7 +34,8 @@ namespace
 /// @return a map to sharing processes for each index, with the (random)
 /// owner as the first in the list
 std::unordered_map<std::int64_t, std::vector<int>>
-compute_index_sharing(MPI_Comm comm, std::vector<std::int64_t>& unknown_idx)
+determine_sharing_ranks(MPI_Comm comm,
+                        const std::vector<std::int64_t>& unknown_idx)
 {
   const int mpi_size = dolfinx::MPI::size(comm);
 
@@ -68,8 +69,8 @@ compute_index_sharing(MPI_Comm comm, std::vector<std::int64_t>& unknown_idx)
       index_to_owner[recv_p[j]].push_back(p);
   }
 
-  std::mt19937 g(0);
   // Randomise ownership
+  std::mt19937 g(0);
   for (auto& map_entry : index_to_owner)
   {
     std::vector<int>& procs = map_entry.second;
@@ -116,15 +117,16 @@ compute_index_sharing(MPI_Comm comm, std::vector<std::int64_t>& unknown_idx)
   return index_to_owner;
 }
 //-----------------------------------------------------------------------------
-// Start to create a map from the 64-bit input vertex index to a local index.
-// Finds the set of vertices which are in ghost cells, and maps them to -1.
-// Vertices which only appear in local cells are mapped to -2. They will be
-// receive local indexing later. Vertex indices which are both in local cells,
-// and in ghost cells (ownership yet unknown) are returned as a vector.
-// @param cells Input mesh topology
-// @param num_local_cells Number of local (non-ghost) cells
-// @return std::pair{global_to_local_map, unknown_indices}
-//
+
+/// Start to create a map from the 64-bit input vertex index to a local
+/// index. Finds the set of vertices which are in ghost cells, and maps
+/// them to -1. Vertices which only appear in local cells are mapped to
+/// -2. They will be receive local indexing later. Vertex indices which
+/// are both in local cells, and in ghost cells (ownership yet unknown)
+/// are returned as a vector.
+/// @param cells Input mesh topology
+/// @param num_local_cells Number of local (non-ghost) cells
+/// @return std::pair{global_to_local_map, unknown_indices}
 std::pair<std::unordered_map<std::int64_t, std::int32_t>,
           std::vector<std::int64_t>>
 create_sets(const graph::AdjacencyList<std::int64_t>& cells,
@@ -595,7 +597,7 @@ mesh::create_topology(MPI_Comm comm,
   // For each vertex whose ownership needs determining, compute list of
   // sharing process ranks
   std::unordered_map<std::int64_t, std::vector<int>> global_vertex_to_ranks
-      = compute_index_sharing(comm, unknown_indices_set);
+      = determine_sharing_ranks(comm, unknown_indices_set);
 
   // Take ownership of vertices based on global_vertex_to_ranks
   for (std::int64_t global_index : unknown_indices_set)
