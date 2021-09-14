@@ -118,21 +118,24 @@ determine_sharing_ranks(MPI_Comm comm,
 }
 //-----------------------------------------------------------------------------
 
-/// Start to create a map from the 64-bit input vertex index to a local
-/// index. Finds the set of vertices which are in ghost cells, and maps
-/// them to -1. Vertices which only appear in local cells are mapped to
-/// -2. They will be receive local indexing later. Vertex indices which
-/// are both in local cells, and in ghost cells (ownership yet unknown)
-/// are returned as a vector.
+/// Create a map from the 64-bit input vertex index to an index that
+/// indicates:
+/// - (-1) Vertex is connected to ghost cells only
+/// - (-2) Vertex is connected to local cell only
+///
+/// The index of vertices that are connected to both owned and ghost
+/// cells are added to a vector.
 /// @param cells Input mesh topology
 /// @param num_local_cells Number of local (non-ghost) cells
-/// @return std::pair{global_to_local_map, unknown_indices}
+/// @return (global_index_to_maker for (-1) and (-2) cases, indices for
+/// other vertices)
 std::pair<std::unordered_map<std::int64_t, std::int32_t>,
           std::vector<std::int64_t>>
-create_sets(const graph::AdjacencyList<std::int64_t>& cells,
-            int num_local_cells)
+compute_vertex_markers(const graph::AdjacencyList<std::int64_t>& cells,
+                       int num_local_cells)
 {
-  common::Timer t0("Topology: create sets");
+  common::Timer t0(
+      "Topology: mark vertices by type (owned, possibly owned, ghost)");
 
   // Build a set of 'local' cell vertices
   std::vector<std::int64_t> local_vertex_set(
@@ -154,30 +157,30 @@ create_sets(const graph::AdjacencyList<std::int64_t>& cells,
 
   // Compute the intersection of local cell vertices and ghost cell
   // vertices
-  std::vector<std::int64_t> unknown_indices_set;
-
-  std::unordered_map<std::int64_t, std::int32_t> global_to_local_vertices;
 
   // Any vertices which are in ghost cells set to -1
-  for (std::int64_t idx : ghost_vertex_set)
-    global_to_local_vertices.insert({idx, -1});
+  std::unordered_map<std::int64_t, std::int32_t> global_to_local_v;
+  std::transform(ghost_vertex_set.begin(), ghost_vertex_set.end(),
+                 std::inserter(global_to_local_v, global_to_local_v.end()),
+                 [](auto idx)
+                 { return std::pair<std::int64_t, std::int32_t>(idx, -1); });
 
+  std::vector<std::int64_t> unknown_indices_set;
   for (std::int64_t global_index : local_vertex_set)
   {
     // Check if already in a ghost cell
-    const auto it = global_to_local_vertices.find(global_index);
-    if (it != global_to_local_vertices.end())
+    const auto it = global_to_local_v.find(global_index);
+    if (it != global_to_local_v.end())
       unknown_indices_set.push_back(global_index);
     else
     {
       // This vertex is not shared: set to -2
-      auto [it_ignore, insert]
-          = global_to_local_vertices.insert({global_index, -2});
+      auto [it_ignore, insert] = global_to_local_v.insert({global_index, -2});
       assert(insert);
     }
   }
 
-  return {std::move(global_to_local_vertices), std::move(unknown_indices_set)};
+  return {std::move(global_to_local_v), std::move(unknown_indices_set)};
 }
 //-----------------------------------------------------------------------------
 // Compute a neighborhood comm from the values in global_vertex_to_ranks,
@@ -592,7 +595,7 @@ mesh::create_topology(MPI_Comm comm,
   std::unordered_map<std::int64_t, std::int32_t> global_to_local_vertices;
   std::vector<std::int64_t> unknown_indices_set;
   std::tie(global_to_local_vertices, unknown_indices_set)
-      = create_sets(cells, num_local_cells);
+      = compute_vertex_markers(cells, num_local_cells);
 
   // For each vertex whose ownership needs determining, compute list of
   // sharing process ranks
