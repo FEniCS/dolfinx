@@ -35,7 +35,7 @@ namespace
 /// owner as the first in the list
 std::unordered_map<std::int64_t, std::vector<int>>
 determine_sharing_ranks(MPI_Comm comm,
-                        const std::vector<std::int64_t>& unknown_idx)
+                        const xtl::span<const std::int64_t>& unknown_idx)
 {
   const int mpi_size = dolfinx::MPI::size(comm);
 
@@ -88,8 +88,8 @@ determine_sharing_ranks(MPI_Comm comm,
       assert(it != index_to_owner.end());
       const std::vector<int>& sharing_procs = it->second;
       send_owner[p].push_back(sharing_procs.size());
-      for (int sp : sharing_procs)
-        send_owner[p].push_back(sp);
+      send_owner[p].insert(send_owner[p].end(), sharing_procs.begin(),
+                           sharing_procs.end());
     }
   }
 
@@ -120,7 +120,7 @@ determine_sharing_ranks(MPI_Comm comm,
 
 /// Create a map from the 64-bit input vertex index to an index that
 /// indicates:
-/// - (-1) Vertex is connected to ghost cells only
+/// - (-1) Vertex is connected to a ghost cell
 /// - (-2) Vertex is connected to local cell only
 ///
 /// The index of vertices that are connected to both owned and ghost
@@ -216,7 +216,7 @@ compute_neighbor_comm(const MPI_Comm& comm, int mpi_rank,
   for (std::size_t i = 0; i < neighbors.size(); ++i)
     global_to_neighbor_rank.insert({neighbors[i], i});
 
-  // Create neighborhood communicator
+  // Create symmetric neighborhood communicator
   MPI_Comm neighbor_comm;
   MPI_Dist_graph_create_adjacent(comm, neighbors.size(), neighbors.data(),
                                  MPI_UNWEIGHTED, neighbors.size(),
@@ -301,14 +301,13 @@ std::vector<std::int64_t> exchange_ghost_vertex_numbering(
     std::int64_t global_offset_v,
     const std::unordered_map<std::int64_t, std::int32_t>&
         global_to_local_vertices,
-    const std::vector<std::int64_t>& ghost_vertices,
-    const std::vector<int>& ghost_vertex_owners)
+    const xtl::span<const std::int64_t>& ghost_vertices,
+    const xtl::span<const int>& ghost_vertex_owners)
 {
   // Receive index of ghost vertices that are not on the process
   // boundary from the ghost cell owner. Note: the ghost cell owner
   // might not be the same as the vertex owner.
 
-  std::map<std::int64_t, std::set<std::int32_t>> fwd_shared_vertices;
   const graph::AdjacencyList<std::int32_t>& fwd_shared_cells
       = index_map_c.scatter_fwd_indices();
 
@@ -317,6 +316,7 @@ std::vector<std::int64_t> exchange_ghost_vertex_numbering(
       index_map_c.comm(common::IndexMap::Direction::forward));
 
   const int num_local_cells = index_map_c.size_local();
+  std::map<std::int64_t, std::set<std::int32_t>> fwd_shared_vertices;
   for (int p = 0; p < fwd_shared_cells.num_nodes(); ++p)
   {
     for (std::int32_t c : fwd_shared_cells.links(p))
@@ -394,10 +394,11 @@ graph::AdjacencyList<std::int32_t> convert_cells_to_local_indexing(
     local_offsets.assign(cells.offsets().begin(), cells.offsets().end());
 
   std::vector<std::int32_t> cells_array_local(local_offsets.back());
-  std::transform(
-      cells.array().begin(), cells.array().begin() + cells_array_local.size(),
-      cells_array_local.begin(),
-      [&](std::int64_t i) { return global_to_local_vertices.at(i); });
+  std::transform(cells.array().begin(),
+                 std::next(cells.array().begin(), cells_array_local.size()),
+                 cells_array_local.begin(),
+                 [&global_to_local_vertices](std::int64_t i)
+                 { return global_to_local_vertices.at(i); });
 
   return graph::AdjacencyList<std::int32_t>(std::move(cells_array_local),
                                             std::move(local_offsets));
@@ -408,10 +409,10 @@ graph::AdjacencyList<std::int32_t> convert_cells_to_local_indexing(
 std::vector<bool> mesh::compute_boundary_facets(const Topology& topology)
 {
   const int tdim = topology.dim();
-
   auto facets = topology.index_map(tdim - 1);
   if (!facets)
     throw std::runtime_error("Facets have not been computed.");
+
   std::set<std::int32_t> fwd_shared_facets;
   if (facets->num_ghosts() == 0)
   {
@@ -611,15 +612,15 @@ mesh::create_topology(MPI_Comm comm,
         cell_ghost_indices, ghost_owners);
   }
 
-  // Start creating a global-to-local map, labelling local unshared
-  // vertices with -2, and other vertices (ghost or unknown owner) with
-  // -1. Return list of vertices whose ownership still needs
-  // determining.
+  // Create a map from global index to a label, with labels
+  // * -2 for owned and unshared vertices
+  // * -1 for vertices that are shared by a ghost cell
+  // and a list of vertices whose ownership needs determining
   auto [global_to_local_vertices, unknown_indices_set]
       = compute_vertex_markers(cells, num_local_cells);
 
   // For each vertex whose ownership needs determining, compute list of
-  // sharing process ranks
+  // sharing ranks. The first index in the vector of ranks is the owner.
   std::unordered_map<std::int64_t, std::vector<int>> global_vertex_to_ranks
       = determine_sharing_ranks(comm, unknown_indices_set);
 
