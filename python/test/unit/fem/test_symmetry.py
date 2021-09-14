@@ -10,88 +10,208 @@ import numpy as np
 
 import pytest
 import dolfinx
-from dolfinx import UnitSquareMesh, FunctionSpace
+from dolfinx_utils.test.skips import skip_in_parallel
+from dolfinx import UnitSquareMesh, UnitCubeMesh, FunctionSpace
 from dolfinx.cpp.mesh import CellType
 
 import ufl
-from ufl import FiniteElement, MixedElement
+from ufl import FiniteElement, MixedElement, VectorElement
 from ufl import grad, inner
 
 
-def run_symmetry_test(form):
-    A = dolfinx.fem.assemble_matrix(form)
-    A.assemble()
-
+def check_symmetry(A):
     for i in range(A.size[0]):
-        for j in range(A.size[1]):
+        for j in range(i):
             assert np.isclose(A[i, j], A[j, i])
 
 
-@pytest.mark.parametrize("N", [1, 2, 3])
-@pytest.mark.parametrize("element", ["Lagrange", "N1curl"])
-@pytest.mark.parametrize("order", range(1, 4))
-def test_mass_matrix_dx(N, element, order):
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, N, N, CellType.triangle,
-                          dolfinx.cpp.mesh.GhostMode.shared_facet)
+def run_symmetry_test(cell_type, N, element, form_f):
+    if cell_type == CellType.triangle or cell_type == CellType.quadrilateral:
+        mesh = UnitSquareMesh(MPI.COMM_WORLD, N, N, cell_type)
+    else:
+        mesh = UnitCubeMesh(MPI.COMM_WORLD, N, N, N, cell_type)
 
-    space = FunctionSpace(mesh, (element, order))
-
-    u = ufl.TrialFunction(space)
-    v = ufl.TestFunction(space)
-
-    run_symmetry_test(inner(u, v) * ufl.dx)
-
-
-@pytest.mark.parametrize("N", [1, 2, 3])
-@pytest.mark.parametrize("element", ["Lagrange", "N1curl"])
-@pytest.mark.parametrize("order", range(1, 4))
-def test_mass_matrix_ds(N, element, order):
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, N, N, CellType.triangle,
-                          dolfinx.cpp.mesh.GhostMode.shared_facet)
-
-    space = FunctionSpace(mesh, (element, order))
+    space = FunctionSpace(mesh, element)
 
     u = ufl.TrialFunction(space)
     v = ufl.TestFunction(space)
 
-    run_symmetry_test(inner(u, v) * ufl.ds)
+    form = form_f(u, v)
+
+    A = dolfinx.fem.assemble_matrix(form)
+    A.assemble()
+    check_symmetry(A)
 
 
-@pytest.mark.parametrize("N", [1, 2, 3])
-@pytest.mark.parametrize("element", ["Lagrange", "N1curl"])
+parametrize_elements = pytest.mark.parametrize("cell_type, element", [
+    (CellType.triangle, "Lagrange"), (CellType.triangle, "N1curl"), (CellType.triangle, "RT"),
+    (CellType.quadrilateral, "Lagrange"), (CellType.quadrilateral, "RTCE"), (CellType.quadrilateral, "RTCF"),
+    (CellType.tetrahedron, "Lagrange"), (CellType.tetrahedron, "N1curl"), (CellType.tetrahedron, "RT"),
+    (CellType.hexahedron, "Lagrange"), (CellType.hexahedron, "NCE"), (CellType.hexahedron, "NCF")
+])
+parametrize_lagrange_elements = pytest.mark.parametrize("cell_type, element", [
+    (CellType.triangle, "Lagrange"), (CellType.quadrilateral, "Lagrange"),
+    (CellType.tetrahedron, "Lagrange"), (CellType.hexahedron, "Lagrange")
+])
+
+
+@skip_in_parallel
+@parametrize_elements
+@pytest.mark.parametrize("N", [1, 2])
+@pytest.mark.parametrize("order", range(1, 4))
+def test_mass_matrix_dx(cell_type, N, element, order):
+    run_symmetry_test(cell_type, N, (element, order),
+                      lambda u, v: inner(u, v) * ufl.dx)
+
+
+@skip_in_parallel
+@parametrize_lagrange_elements
+@pytest.mark.parametrize("N", [1, 2])
+@pytest.mark.parametrize("order", range(1, 4))
+def test_stiffness_matrix_dx(cell_type, N, element, order):
+    run_symmetry_test(cell_type, N, (element, order),
+                      lambda u, v: inner(grad(u), grad(v)) * ufl.dx)
+
+
+@skip_in_parallel
+@parametrize_elements
+@pytest.mark.parametrize("N", [1, 2])
+@pytest.mark.parametrize("order", range(1, 4))
+def test_mass_matrix_ds(cell_type, N, element, order):
+    run_symmetry_test(cell_type, N, (element, order),
+                      lambda u, v: inner(u, v) * ufl.ds)
+
+
+@skip_in_parallel
+@parametrize_lagrange_elements
+@pytest.mark.parametrize("N", [1, 2])
+@pytest.mark.parametrize("order", range(1, 4))
+def test_stiffness_matrix_ds(cell_type, N, element, order):
+    run_symmetry_test(cell_type, N, (element, order),
+                      lambda u, v: inner(grad(u), grad(v)) * ufl.ds)
+
+
+@skip_in_parallel
+@parametrize_elements
+@pytest.mark.parametrize("N", [1, 2])
 @pytest.mark.parametrize("order", range(1, 4))
 @pytest.mark.parametrize("sign", ["+", "-"])
-def test_mass_matrix_dS(N, element, order, sign):
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, N, N, CellType.triangle,
-                          dolfinx.cpp.mesh.GhostMode.shared_facet)
-
-    space = FunctionSpace(mesh, (element, order))
-
-    u = ufl.TrialFunction(space)
-    v = ufl.TestFunction(space)
-
-    run_symmetry_test(inner(u, v)(sign) * ufl.dS)
+def test_mass_matrix_dS(cell_type, N, element, order, sign):
+    run_symmetry_test(cell_type, N, (element, order),
+                      lambda u, v: inner(u, v)(sign) * ufl.dS)
 
 
-@pytest.mark.parametrize("N", [1, 2, 3])
+@skip_in_parallel
+@parametrize_lagrange_elements
+@pytest.mark.parametrize("N", [1, 2])
+@pytest.mark.parametrize("order", range(1, 4))
 @pytest.mark.parametrize("sign", ["+", "-"])
-def test_facet_normal(N, sign):
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, N, N, CellType.triangle,
-                          dolfinx.cpp.mesh.GhostMode.shared_facet)
+def test_stiffness_matrix_dS(cell_type, N, element, order, sign):
+    run_symmetry_test(cell_type, N, (element, order),
+                      lambda u, v: inner(grad(u), grad(v))(sign) * ufl.dS)
 
-    U_el = MixedElement([FiniteElement("Lagrange", ufl.triangle, 1),
-                         FiniteElement("N1curl", ufl.triangle, 1)])
+
+@skip_in_parallel
+@pytest.mark.parametrize("cell_type", [CellType.triangle, CellType.quadrilateral,
+                                       CellType.tetrahedron, CellType.hexahedron])
+@pytest.mark.parametrize("N", [1, 2])
+@pytest.mark.parametrize("sign", ["+", "-"])
+@pytest.mark.parametrize("order", range(1, 4))
+def test_mixed_element_form(cell_type, N, sign, order):
+    if cell_type == CellType.triangle or cell_type == CellType.quadrilateral:
+        mesh = UnitSquareMesh(MPI.COMM_WORLD, N, N, cell_type)
+    else:
+        mesh = UnitCubeMesh(MPI.COMM_WORLD, N, N, N, cell_type)
+
+    if cell_type == CellType.triangle:
+        U_el = MixedElement([FiniteElement("Lagrange", ufl.triangle, order),
+                             FiniteElement("N1curl", ufl.triangle, order)])
+    elif cell_type == CellType.quadrilateral:
+        U_el = MixedElement([FiniteElement("Lagrange", ufl.quadrilateral, order),
+                             FiniteElement("RTCE", ufl.quadrilateral, order)])
+    elif cell_type == CellType.tetrahedron:
+        U_el = MixedElement([FiniteElement("Lagrange", ufl.tetrahedron, order),
+                             FiniteElement("N1curl", ufl.tetrahedron, order)])
+    elif cell_type == CellType.hexahedron:
+        U_el = MixedElement([FiniteElement("Lagrange", ufl.hexahedron, order),
+                             FiniteElement("NCE", ufl.hexahedron, order)])
+
     U = FunctionSpace(mesh, U_el)
 
     u, p = ufl.TrialFunctions(U)
     v, q = ufl.TestFunctions(U)
 
-    dSp = ufl.dS
+    form = inner(u, v) * ufl.dx + inner(p, q)(sign) * ufl.dS
+
+    A = dolfinx.fem.assemble_matrix(form)
+    A.assemble()
+    check_symmetry(A)
+
+
+@skip_in_parallel
+@pytest.mark.parametrize("cell_type", [CellType.triangle, CellType.quadrilateral])
+@pytest.mark.parametrize("N", [1, 2])
+@pytest.mark.parametrize("sign", ["+", "-"])
+@pytest.mark.parametrize("order", range(1, 4))
+def test_mixed_element_vector_element_form(cell_type, N, sign, order):
+    if cell_type == CellType.triangle or cell_type == CellType.quadrilateral:
+        mesh = UnitSquareMesh(MPI.COMM_WORLD, N, N, cell_type)
+    else:
+        mesh = UnitCubeMesh(MPI.COMM_WORLD, N, N, N, cell_type)
+
+    if cell_type == CellType.triangle:
+        U_el = MixedElement([VectorElement("Lagrange", ufl.triangle, order),
+                             FiniteElement("N1curl", ufl.triangle, order)])
+    elif cell_type == CellType.quadrilateral:
+        U_el = MixedElement([VectorElement("Lagrange", ufl.quadrilateral, order),
+                             FiniteElement("RTCE", ufl.quadrilateral, order)])
+    elif cell_type == CellType.tetrahedron:
+        U_el = MixedElement([VectorElement("Lagrange", ufl.tetrahedron, order),
+                             FiniteElement("N1curl", ufl.tetrahedron, order)])
+    elif cell_type == CellType.hexahedron:
+        U_el = MixedElement([VectorElement("Lagrange", ufl.hexahedron, order),
+                             FiniteElement("NCE", ufl.hexahedron, order)])
+
+    U = FunctionSpace(mesh, U_el)
+
+    u, p = ufl.TrialFunctions(U)
+    v, q = ufl.TestFunctions(U)
+
+    form = inner(u, v) * ufl.dx + inner(p, q)(sign) * ufl.dS
+
+    A = dolfinx.fem.assemble_matrix(form)
+    A.assemble()
+    check_symmetry(A)
+
+
+@skip_in_parallel
+@pytest.mark.parametrize("cell_type", [CellType.triangle, CellType.quadrilateral])
+@pytest.mark.parametrize("N", [1, 2])
+@pytest.mark.parametrize("sign", ["+", "-"])
+@pytest.mark.parametrize("order", range(1, 4))
+def test_facet_normal_form(cell_type, N, sign, order):
+    mesh = UnitSquareMesh(MPI.COMM_WORLD, N, N, cell_type)
+
+    if cell_type == CellType.triangle:
+        U_el = MixedElement([FiniteElement("Lagrange", ufl.triangle, order),
+                             FiniteElement("N1curl", ufl.triangle, order)])
+    elif cell_type == CellType.quadrilateral:
+        U_el = MixedElement([FiniteElement("Lagrange", ufl.quadrilateral, order),
+                             FiniteElement("RTCE", ufl.quadrilateral, order)])
+
+    U = FunctionSpace(mesh, U_el)
+
+    u, p = ufl.TrialFunctions(U)
+    v, q = ufl.TestFunctions(U)
 
     n = ufl.FacetNormal(mesh)
     t = ufl.as_vector((-n[1], n[0]))
 
     def inner_e(x, y):
-        return (inner(x, t) * inner(y, t))(sign) * dSp
+        return (inner(x, t) * inner(y, t))(sign) * ufl.dS
 
-    run_symmetry_test(inner_e(grad(u), q) + inner_e(grad(v), p))
+    form = inner_e(grad(u), q) + inner_e(grad(v), p)
+
+    A = dolfinx.fem.assemble_matrix(form)
+    A.assemble()
+    check_symmetry(A)

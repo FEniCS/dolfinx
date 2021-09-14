@@ -367,11 +367,13 @@ public:
           std::size_t start = 0;
           for (std::size_t e = 0; e < sub_element_functions.size(); ++e)
           {
-            const std::size_t width
-                = _sub_elements[e]->space_dimension() * block_size;
-            sub_element_functions[e](data.subspan(start, width), cell_info,
-                                     cell, block_size);
-            start += width;
+            // Note: This subspan goes beyond the end of the data array, but
+            // only the data within the original array will be changed. This is
+            // necessary as Basix uses the size of the span to compute the
+            // number of rows/columns
+            sub_element_functions[e](data.subspan(start, data.size()),
+                                     cell_info, cell, block_size);
+            start += _sub_elements[e]->space_dimension();
           }
         };
       }

@@ -334,10 +334,8 @@ void assemble_interior_facets(
     const int num_cols = bs1 * dmapjoint1.size();
 
     // Tabulate tensor
-    Ae.resize(num_rows * num_cols + bs1 * dmap1_cell0.size());
+    Ae.resize(num_rows * num_cols);
     std::fill(Ae.begin(), Ae.end(), 0);
-
-    const xtl::span<T> _Ae(Ae);
 
     const std::array perm{
         get_perm(cells[0] * num_cell_facets + local_facet[0]),
@@ -345,11 +343,16 @@ void assemble_interior_facets(
     kernel(Ae.data(), coeff_array.data(), constants.data(),
            coordinate_dofs.data(), local_facet.data(), perm.data());
 
+    const xtl::span<T> _Ae(Ae);
+
     const xtl::span<T> sub_Ae
         = _Ae.subspan(bs0 * dmap0_cell0.size() * num_cols,
                       bs0 * dmap0_cell1.size() * num_cols);
+    // Note: This subspan may go beyond the end of the data array, but only
+    // the data within the original array will be changed. This is necessary
+    // as Basix uses the size of the span to compute the number of rows/columns
     const xtl::span<T> sub_Ae2
-        = _Ae.subspan(bs1 * dmap1_cell0.size(), _Ae.size());
+        = _Ae.subspan(bs1 * dmap1_cell0.size(), num_rows * num_cols);
 
     dof_transform(_Ae, cell_info, cells[0], num_cols);
     dof_transform(sub_Ae, cell_info, cells[1], num_cols);
