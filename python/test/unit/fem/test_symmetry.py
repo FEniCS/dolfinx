@@ -182,36 +182,3 @@ def test_mixed_element_vector_element_form(cell_type, N, sign, order):
     A = dolfinx.fem.assemble_matrix(form)
     A.assemble()
     check_symmetry(A)
-
-
-@skip_in_parallel
-@pytest.mark.parametrize("cell_type", [CellType.triangle, CellType.quadrilateral])
-@pytest.mark.parametrize("N", [1, 2])
-@pytest.mark.parametrize("sign", ["+", "-"])
-@pytest.mark.parametrize("order", range(1, 4))
-def test_facet_normal_form(cell_type, N, sign, order):
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, N, N, cell_type)
-
-    if cell_type == CellType.triangle:
-        U_el = MixedElement([FiniteElement("Lagrange", ufl.triangle, order),
-                             FiniteElement("N1curl", ufl.triangle, order)])
-    elif cell_type == CellType.quadrilateral:
-        U_el = MixedElement([FiniteElement("Lagrange", ufl.quadrilateral, order),
-                             FiniteElement("RTCE", ufl.quadrilateral, order)])
-
-    U = FunctionSpace(mesh, U_el)
-
-    u, p = ufl.TrialFunctions(U)
-    v, q = ufl.TestFunctions(U)
-
-    n = ufl.FacetNormal(mesh)
-    t = ufl.as_vector((-n[1], n[0]))
-
-    def inner_e(x, y):
-        return (inner(x, t) * inner(y, t))(sign) * ufl.dS
-
-    form = inner_e(grad(u), q) + inner_e(grad(v), p)
-
-    A = dolfinx.fem.assemble_matrix(form)
-    A.assemble()
-    check_symmetry(A)
