@@ -348,11 +348,9 @@ void assemble_interior_facets(
     const xtl::span<T> sub_Ae
         = _Ae.subspan(bs0 * dmap0_cell0.size() * num_cols,
                       bs0 * dmap0_cell1.size() * num_cols);
-    // Note: This subspan may go beyond the end of the data array, but only
-    // the data within the original array will be changed. This is necessary
-    // as Basix uses the size of the span to compute the number of rows/columns
     const xtl::span<T> sub_Ae2
-        = _Ae.subspan(bs1 * dmap1_cell0.size(), num_rows * num_cols);
+        = _Ae.subspan(bs1 * dmap1_cell0.size(),
+                      num_rows * num_cols - bs1 * dmap1_cell0.size());
 
     dof_transform(_Ae, cell_info, cells[0], num_cols);
     dof_transform(sub_Ae, cell_info, cells[1], num_cols);
