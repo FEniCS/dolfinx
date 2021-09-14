@@ -227,16 +227,18 @@ compute_neighbor_comm(const MPI_Comm& comm, int mpi_rank,
 }
 //-------------------------------------------------------------------------------
 
-/// Send the vertex numbering for owned vertices, to processes that also
+/// Send the vertex numbering for owned vertices to processes that also
 /// share them, returning a list of triplets received from other
 /// processes. Each triplet consists of {old_global_vertex_index,
 /// new_global_vertex_index, owning_rank}. The received vertices will be
 /// "ghost" on this process.
 /// Input params as in mesh::create_topology()
+/// @param[in] comm Neighbourhood communicator
 /// @return list of triplets
 std::vector<std::int64_t>
-send_vertex_numbering(const MPI_Comm& neighbor_comm,
-                      const std::map<int, int>& proc_to_neighbors, int mpi_rank,
+send_vertex_numbering(const MPI_Comm& comm,
+                      const std::map<int, int>& global_to_neighbor_rank,
+                      int mpi_rank,
                       const std::unordered_map<std::int64_t, std::vector<int>>&
                           global_vertex_to_ranks,
                       std::int64_t global_offset_v,
@@ -244,43 +246,54 @@ send_vertex_numbering(const MPI_Comm& neighbor_comm,
                           global_to_local_vertices)
 {
   // Pack send data
-  std::vector<std::vector<std::int64_t>> send_triplets(
-      proc_to_neighbors.size());
-  for (const auto& q : global_vertex_to_ranks)
+  std::vector<std::vector<std::int64_t>> send_buffer(
+      global_to_neighbor_rank.size());
+
+  // Iterate over vertices
+  for (const auto& vertex : global_vertex_to_ranks)
   {
-    const std::vector<int>& procs = q.second;
-    if (procs[0] == mpi_rank)
+    // Get (global) ranks that share this vertex
+    const std::vector<int>& vertex_ranks = vertex.second;
+    // FIXME: Document better. Looks like a precondition
+    if (vertex_ranks[0] == mpi_rank)
     {
-      const auto it = global_to_local_vertices.find(q.first);
-      assert(it != global_to_local_vertices.end());
-      assert(it->second != -1);
+      // Get local vertex index
+      auto vlocal_it = global_to_local_vertices.find(vertex.first);
+      assert(vlocal_it != global_to_local_vertices.end());
+      assert(vlocal_it->second != -1);
 
       // Owned and shared with these processes
       // Note: starting from 1, 0 is self
-      for (std::size_t j = 1; j < procs.size(); ++j)
+      for (std::size_t j = 1; j < vertex_ranks.size(); ++j)
       {
-        auto np_it = proc_to_neighbors.find(procs[j]);
-        assert(np_it != proc_to_neighbors.end());
-        const int np = np_it->second;
-        send_triplets[np].push_back(it->first);
-        send_triplets[np].push_back(it->second + global_offset_v);
-        send_triplets[np].push_back(mpi_rank);
+        // Find rank on neighborhood comm
+        auto nrank_it = global_to_neighbor_rank.find(vertex_ranks[j]);
+        assert(nrank_it != global_to_neighbor_rank.end());
+        int rank_neigbor = nrank_it->second;
+
+        // Add (old global vertex index, new  global vertex index, owner
+        // rank (global))
+        send_buffer[rank_neigbor].push_back(vlocal_it->first);
+        send_buffer[rank_neigbor].push_back(vlocal_it->second
+                                            + global_offset_v);
+        send_buffer[rank_neigbor].push_back(mpi_rank);
       }
     }
   }
 
   return dolfinx::MPI::neighbor_all_to_all(
-             neighbor_comm, graph::AdjacencyList<std::int64_t>(send_triplets))
+             comm, graph::AdjacencyList<std::int64_t>(send_buffer))
       .array();
 }
 //---------------------------------------------------------------------
-// Send vertex numbering of vertices in ghost cells to neighbours. These include
-// vertices that were numbered remotely and received in a previous round. This
-// is only needed for meshes with shared cells, i.e. ghost_mode=shared_facet.
-// Returns a list of triplets, {old_global_vertex_index,
-// new_global_vertex_index, owner}.
-// Input params as in mesh::create_topology()
-// @return list of triplets
+
+/// Send vertex numbering of vertices in ghost cells to neighbours.
+/// These include vertices that were numbered remotely and received in a
+/// previous round. This is only needed for meshes with shared cells,
+/// i.e. ghost_mode=shared_facet. Returns a list of triplets,
+/// {old_global_vertex_index, new_global_vertex_index, owner}.
+/// Input params as in mesh::create_topology()
+/// @return list of triplets
 std::vector<std::int64_t> send_ghost_vertex_numbering(
     MPI_Comm neighbor_comm, int mpi_rank,
     const std::map<int, int>& proc_to_neighbors,
