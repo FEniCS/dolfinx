@@ -47,20 +47,21 @@ compute_transpose_rank(MPI_Comm comm,
   std::vector<int> edges;
   std::tie(edges, std::ignore) = dolfinx::MPI::neighbors(comm);
 
-  std::vector<std::uint8_t> buffer(edges.size(), 0);
+  std::vector<std::uint8_t> buffer_send(edges.size(), 0);
   std::for_each(edges0.cbegin(), edges0.cend(),
-                [&buffer, &global_to_neighbor_rank](auto e)
+                [&buffer_send, &global_to_neighbor_rank](auto e)
                 {
                   auto local = global_to_neighbor_rank.at(e);
-                  buffer[local] = 1;
+                  buffer_send[local] = 1;
                 });
-  MPI_Neighbor_alltoall(MPI_IN_PLACE, 1, MPI_UINT8_T, buffer.data(), 1,
-                        MPI_UINT8_T, comm);
+  std::vector<std::uint8_t> buffer_rcvd(edges.size(), 0);
+  MPI_Neighbor_alltoall(buffer_send.data(), 1, MPI_UINT8_T, buffer_rcvd.data(),
+                        1, MPI_UINT8_T, comm);
 
   std::vector<int> edges1;
-  for (std::size_t i = 0; i < buffer.size(); ++i)
+  for (std::size_t i = 0; i < buffer_rcvd.size(); ++i)
   {
-    if (buffer[i] > 0)
+    if (buffer_rcvd[i] > 0)
       edges1.push_back(i);
   }
   std::transform(edges1.cbegin(), edges1.cend(), edges1.begin(),
@@ -802,17 +803,7 @@ mesh::create_topology(MPI_Comm comm,
       comm,
       std::set<int>(ghost_vertex_owners.begin(), ghost_vertex_owners.end()));
   if (out_edges != dest_edges)
-    throw std::runtime_error("booo");
-  // if (mpi_rank == 0)
-  // {
-  //   std::cout << "Old out: " << std::endl;
-  //   for (auto r : dest_edges)
-  //     std::cout << r << std::endl;
-  //   std::cout << "New out: " << std::endl;
-  //   for (auto r : out_edges)
-  //     std::cout << r << std::endl;
-  //   std::cout << "--------" << std::endl;
-  // }
+    throw std::runtime_error("booo " + std::to_string(mpi_rank));
 
   auto index_map_v = std::make_shared<common::IndexMap>(
       comm, nlocal, out_edges, ghost_vertices, ghost_vertex_owners);
