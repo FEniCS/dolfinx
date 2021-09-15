@@ -755,7 +755,7 @@ mesh::create_topology(MPI_Comm comm,
   auto tmp = dolfinx::MPI::compute_graph_edges(
       comm,
       std::set<int>(ghost_vertex_owners.begin(), ghost_vertex_owners.end()));
-  if (mpi_rank == 0)
+  if (mpi_rank == 1)
   {
     std::cout << "Old edges" << std::endl;
     for (auto r : tmp)
