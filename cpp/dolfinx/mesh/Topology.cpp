@@ -653,10 +653,8 @@ mesh::create_topology(MPI_Comm comm,
 
       // Mark as locally owned
       it_gi->second = -2;
-    }
-    else
-    {
-      ghosting_ranks.insert(ghosting_ranks.end(), it->second.begin(),
+
+      ghosting_ranks.insert(ghosting_ranks.end(), std::next(it->second.begin()),
                             it->second.end());
     }
   }
@@ -665,9 +663,6 @@ mesh::create_topology(MPI_Comm comm,
   std::sort(ghosting_ranks.begin(), ghosting_ranks.end());
   ghosting_ranks.erase(
       std::unique(ghosting_ranks.begin(), ghosting_ranks.end()),
-      ghosting_ranks.end());
-  ghosting_ranks.erase(
-      std::remove(ghosting_ranks.begin(), ghosting_ranks.end(), mpi_rank),
       ghosting_ranks.end());
 
   // Number all locally owned vertices, iterating cell-wise
@@ -746,7 +741,7 @@ mesh::create_topology(MPI_Comm comm,
   MPI_Comm_free(&neighbor_comm);
 
   // Convert input cell topology to local vertex indexing
-  std::shared_ptr<graph::AdjacencyList<std::int32_t>> local_indexed_cells
+  std::shared_ptr<graph::AdjacencyList<std::int32_t>> cells_local_idx
       = std::make_shared<graph::AdjacencyList<std::int32_t>>(
           convert_cells_to_local_indexing(ghost_mode, cells, num_local_cells,
                                           global_to_local_vertices));
@@ -759,14 +754,16 @@ mesh::create_topology(MPI_Comm comm,
   // Create vertex index map
   auto index_map_v = std::make_shared<common::IndexMap>(
       comm, nlocal, ghosting_ranks, ghost_vertices, ghost_vertex_owners);
-  topology.set_index_map(0, index_map_v);
   auto c0 = std::make_shared<graph::AdjacencyList<std::int32_t>>(
       index_map_v->size_local() + index_map_v->num_ghosts());
+
+  // Set vertex index map and 'connectivity'
+  topology.set_index_map(0, index_map_v);
   topology.set_connectivity(c0, 0, 0);
 
-  // Cell IndexMap
+  // Set cell index map and connectivity
   topology.set_index_map(tdim, index_map_c);
-  topology.set_connectivity(local_indexed_cells, tdim, 0);
+  topology.set_connectivity(cells_local_idx, tdim, 0);
 
   return topology;
 }
