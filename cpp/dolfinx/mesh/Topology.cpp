@@ -238,6 +238,7 @@ compute_neighbor_comm(const MPI_Comm& comm, int mpi_rank,
 /// new_global_vertex_index, owning_rank}. The received vertices will be
 /// "ghost" on this process.
 /// Input params as in mesh::create_topology()
+/// @note Collective
 /// @param[in] comm Neighbourhood communicator
 /// @return list of triplets
 std::vector<std::int64_t> exchange_vertex_numbering(
@@ -757,11 +758,7 @@ mesh::create_topology(MPI_Comm comm,
 
   // Create vertex index map
   auto index_map_v = std::make_shared<common::IndexMap>(
-      comm, nlocal,
-      dolfinx::MPI::compute_graph_edges(
-          comm, std::set<int>(ghost_vertex_owners.begin(),
-                              ghost_vertex_owners.end())),
-      ghost_vertices, ghost_vertex_owners);
+      comm, nlocal, ghosting_ranks, ghost_vertices, ghost_vertex_owners);
   topology.set_index_map(0, index_map_v);
   auto c0 = std::make_shared<graph::AdjacencyList<std::int32_t>>(
       index_map_v->size_local() + index_map_v->num_ghosts());
