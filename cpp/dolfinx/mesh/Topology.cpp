@@ -300,9 +300,9 @@ std::vector<std::int64_t> exchange_vertex_numbering(
   // Iterate over vertices
   for (const auto& vertex : global_vertex_to_ranks)
   {
-    // Get (global) ranks that share this vertex
+    // Get (global) ranks that share this vertex. Note that first rank
+    // is the owner
     const std::vector<int>& vertex_ranks = vertex.second;
-    // FIXME: Document better. Looks like a precondition
     if (vertex_ranks[0] == mpi_rank)
     {
       // Get local vertex index
