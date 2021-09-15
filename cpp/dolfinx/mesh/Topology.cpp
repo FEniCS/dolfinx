@@ -30,6 +30,7 @@ namespace
 //-----------------------------------------------------------------------------
 
 /// Compute list of processes sharing the same index
+/// @note Collective
 /// @param unknown_idx List of indices on each process
 /// @return a map to sharing processes for each index, with the (random)
 /// owner as the first in the list
@@ -187,10 +188,14 @@ compute_vertex_markers(const graph::AdjacencyList<std::int64_t>& cells,
 //-----------------------------------------------------------------------------
 
 /// Compute a neighborhood comm from the values in
-/// global_vertex_to_ranks, also returning the map from global rank
-/// number to neighborhood rank
-/// Input params as in mesh::create_topology()
-/// @return std::pair{neighbor_comm, global_to_neighbor_rank}
+/// global_vertex_to_ranks, also returning a map from global rank number
+/// to neighborhood rank
+/// @note Collective
+/// @param[in] comm The global communicator
+/// @param[in] mpi_rank Global MPI rank of the caller
+/// @param[in] global_vertex_to_ranks Map from global vertex index to
+/// sharing ranks
+/// @return (neighbor_comm, global_to_neighbor_rank map)
 std::pair<MPI_Comm, std::map<int, int>>
 compute_neighbor_comm(const MPI_Comm& comm, int mpi_rank,
                       const std::unordered_map<std::int64_t, std::vector<int>>&
@@ -613,25 +618,31 @@ mesh::create_topology(MPI_Comm comm,
   }
 
   // Create a map from global index to a label, with labels
+  //
   // * -2 for owned and unshared vertices
   // * -1 for vertices that are shared by a ghost cell
-  // and a list of vertices whose ownership needs determining
+  //
+  // and a list of vertices whose ownership needs determining (vertices
+  // that are attached to both owned and ghost cells)
   auto [global_to_local_vertices, unknown_indices_set]
       = compute_vertex_markers(cells, num_local_cells);
 
-  // For each vertex whose ownership needs determining, compute list of
-  // sharing ranks. The first index in the vector of ranks is the owner.
+  // For each vertex whose ownership needs determining, compute the list
+  // of sharing ranks. The first index in the vector of ranks is the
+  // owner as determined by this function
   std::unordered_map<std::int64_t, std::vector<int>> global_vertex_to_ranks
       = determine_sharing_ranks(comm, unknown_indices_set);
 
-  // Take ownership of vertices based on global_vertex_to_ranks
+  // Set ownership flag for vertices picked as 'owned' by
+  // global_vertex_to_ranks
+  std::vector<int> ghosting_ranks;
   for (std::int64_t global_index : unknown_indices_set)
   {
     const auto it = global_vertex_to_ranks.find(global_index);
     assert(it != global_vertex_to_ranks.end());
 
-    // Vertex is shared and locally owned if first owning rank is my
-    // rank
+    // Vertex is shared and owned by this rank if first owning rank is
+    // my rank
     if (it->second[0] == mpi_rank)
     {
       // Should already be in map
@@ -642,9 +653,23 @@ mesh::create_topology(MPI_Comm comm,
       // Mark as locally owned
       it_gi->second = -2;
     }
+    else
+    {
+      ghosting_ranks.insert(ghosting_ranks.end(), it->second.begin(),
+                            it->second.end());
+    }
   }
 
-  // Number all locally owned vertices, iterating cellwise
+  // Remove duplicates and my rank from ghosting_ranks
+  std::sort(ghosting_ranks.begin(), ghosting_ranks.end());
+  ghosting_ranks.erase(
+      std::unique(ghosting_ranks.begin(), ghosting_ranks.end()),
+      ghosting_ranks.end());
+  ghosting_ranks.erase(
+      std::remove(ghosting_ranks.begin(), ghosting_ranks.end(), mpi_rank),
+      ghosting_ranks.end());
+
+  // Number all locally owned vertices, iterating cell-wise
   std::int32_t v = 0;
   for (std::int32_t c = 0; c < cells.num_nodes(); ++c)
   {
@@ -663,18 +688,20 @@ mesh::create_topology(MPI_Comm comm,
   MPI_Exscan(&nlocal, &global_offset_v, 1,
              dolfinx::MPI::mpi_type<std::int64_t>(), MPI_SUM, comm);
 
-  // Communicate new global vertex index to neighbors
+  // Create neighborhood communicator and a map from MPI rank on comm to
+  // rank on neighbor_comm
   auto [neighbor_comm, global_to_neighbor_rank]
       = compute_neighbor_comm(comm, mpi_rank, global_vertex_to_ranks);
 
-  // Receive list of triplets mapping (input vertex index) -> (new global index,
-  // owner)
+  // Send and receive list of triplets map (input vertex index) -> (new
+  // global index, owner) with neighbours
   auto recv_triplets = exchange_vertex_numbering(
       neighbor_comm, global_to_neighbor_rank, mpi_rank, global_vertex_to_ranks,
       global_offset_v, global_to_local_vertices);
   assert(recv_triplets.size() % 3 == 0);
 
-  // Unpack received data and make list of ghosts
+  // Unpack received data and build array of ghost vertices and owners
+  // of the ghost vertices
   std::vector<std::int64_t> ghost_vertices;
   std::vector<int> ghost_vertex_owners;
   for (std::size_t i = 0; i < recv_triplets.size(); i += 3)
@@ -690,7 +717,7 @@ mesh::create_topology(MPI_Comm comm,
 
   if (ghost_mode != mesh::GhostMode::none)
   {
-    // Receive index of ghost vertices that are not on the process
+    // Receive global index for ghost vertices that are not on the process
     // boundary from the ghost cell owner. Note: the ghost cell owner
     // might not be the same as the vertex owner.
     const std::vector<std::int64_t> recv_triplets
@@ -699,7 +726,8 @@ mesh::create_topology(MPI_Comm comm,
             cells, nlocal, global_offset_v, global_to_local_vertices,
             ghost_vertices, ghost_vertex_owners);
 
-    // Unpack received data and add to ghosts
+    // Unpack received data and add to arrays of ghost indices and ghost
+    // owners
     for (std::size_t i = 0; i < recv_triplets.size(); i += 3)
     {
       const std::int64_t gi = recv_triplets[i];
@@ -721,6 +749,8 @@ mesh::create_topology(MPI_Comm comm,
       = std::make_shared<graph::AdjacencyList<std::int32_t>>(
           convert_cells_to_local_indexing(ghost_mode, cells, num_local_cells,
                                           global_to_local_vertices));
+
+  // Create Topology object
 
   Topology topology(comm, cell_type);
   const int tdim = topology.dim();
