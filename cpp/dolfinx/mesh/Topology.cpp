@@ -752,6 +752,19 @@ mesh::create_topology(MPI_Comm comm,
   const int tdim = topology.dim();
 
   // Create vertex index map
+  auto tmp = dolfinx::MPI::compute_graph_edges(
+      comm,
+      std::set<int>(ghost_vertex_owners.begin(), ghost_vertex_owners.end()));
+  if (mpi_rank == 0)
+  {
+    std::cout << "Old edges" << std::endl;
+    for (auto r : tmp)
+      std::cout << r << std::endl;
+    std::cout << "New edges" << std::endl;
+    for (auto  r : ghosting_ranks)
+      std::cout << r << std::endl;
+  }
+
   auto index_map_v = std::make_shared<common::IndexMap>(
       comm, nlocal, ghosting_ranks, ghost_vertices, ghost_vertex_owners);
   auto c0 = std::make_shared<graph::AdjacencyList<std::int32_t>>(
