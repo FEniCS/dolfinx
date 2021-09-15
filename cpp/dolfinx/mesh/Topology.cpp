@@ -776,9 +776,11 @@ mesh::create_topology(MPI_Comm comm,
 
   // Determine which ranks ghost data on this rank by  sending '1' to
   // ranks that this rank has ghost vertices for
+  std::vector<int> in_edges = ghost_vertex_owners;
+  dolfinx::radix_sort(xtl::span<int>(in_edges));
+  in_edges.erase(std::unique(in_edges.begin(), in_edges.end()), in_edges.end());
   std::vector<int> out_edges = compute_transpose_rank(
-      neighbor_comm, global_to_neighbor_rank,
-      std::set<int>(ghost_vertex_owners.begin(), ghost_vertex_owners.end()));
+      neighbor_comm, global_to_neighbor_rank, in_edges);
 
   MPI_Comm_free(&neighbor_comm);
 
@@ -794,17 +796,6 @@ mesh::create_topology(MPI_Comm comm,
   const int tdim = topology.dim();
 
   // Create vertex index map
-  // Note: we wold like to avoid the global all-to-all behind this call
-  // and use global_vertex_to_ranks and other data, but
-  // global_vertex_to_ranks doesn't have data for owned vertices that
-  // appear in ghost layers on othe ranks. The 'transpose' of what we
-  // need is computed int exchange_ghost_vertex_numbering
-  std::vector<int> dest_edges = dolfinx::MPI::compute_graph_edges(
-      comm,
-      std::set<int>(ghost_vertex_owners.begin(), ghost_vertex_owners.end()));
-  if (out_edges != dest_edges)
-    throw std::runtime_error("booo " + std::to_string(mpi_rank));
-
   auto index_map_v = std::make_shared<common::IndexMap>(
       comm, nlocal, out_edges, ghost_vertices, ghost_vertex_owners);
   auto c0 = std::make_shared<graph::AdjacencyList<std::int32_t>>(
