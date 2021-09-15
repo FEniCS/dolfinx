@@ -231,10 +231,12 @@ void interpolate_from_any(Function<T>& u, const Function<T>& v)
 
     // Send data to each process. It is intended that sending to itself is the
     // same as just copying
-    for (int i = 0; i < nProcs; ++i)
+    for (int i = mpi_rank; i < nProcs + mpi_rank; ++i)
     {
-      MPI_Put(pointsToSend[i].data(), pointsToSend[i].size(), MPI_DOUBLE, i,
-              sendingOffsets[i], pointsToSend[i].size(), MPI_DOUBLE, window);
+      const auto dest = i % nProcs;
+      MPI_Put(pointsToSend[dest].data(), pointsToSend[dest].size(), MPI_DOUBLE,
+              dest, sendingOffsets[dest], pointsToSend[dest].size(), MPI_DOUBLE,
+              window);
     }
 
     // Sync, then close window
@@ -310,12 +312,13 @@ void interpolate_from_any(Function<T>& u, const Function<T>& v)
 
     // Get data from each process. It is intended that fetching from itself is
     // the same as just copying
-    for (int i = 0; i < nProcs; ++i)
+    for (int i = mpi_rank; i < nProcs + mpi_rank; ++i)
     {
-      MPI_Get(valuesToRetrieve.data() + retrievingOffsets[i],
-              pointsToSend[i].size() / 3 * value_size, MPI_TYPE<T>, i,
-              sendingOffsets[i] / 3 * value_size,
-              pointsToSend[i].size() / 3 * value_size, MPI_TYPE<T>, window);
+      const auto dest = i % nProcs;
+      MPI_Get(valuesToRetrieve.data() + retrievingOffsets[dest],
+              pointsToSend[dest].size() / 3 * value_size, MPI_TYPE<T>, dest,
+              sendingOffsets[dest] / 3 * value_size,
+              pointsToSend[dest].size() / 3 * value_size, MPI_TYPE<T>, window);
     }
 
     // Sync, then close the window
