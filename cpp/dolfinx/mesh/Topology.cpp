@@ -777,7 +777,7 @@ mesh::create_topology(MPI_Comm comm,
   // Determine which ranks ghost data on this rank by  sending '1' to
   // ranks that this rank has ghost vertices for
   std::vector<int> in_edges = ghost_vertex_owners;
-  dolfinx::radix_sort(xtl::span<int>(in_edges));
+  dolfinx::radix_sort(in_edges);
   in_edges.erase(std::unique(in_edges.begin(), in_edges.end()), in_edges.end());
   std::vector<int> out_edges = compute_transpose_rank(
       neighbor_comm, global_to_neighbor_rank, in_edges);
