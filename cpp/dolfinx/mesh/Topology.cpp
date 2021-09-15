@@ -29,6 +29,47 @@ namespace
 {
 //-----------------------------------------------------------------------------
 
+/// From the 'out' edges (the ranks that own entities that are ghosts on
+/// this rank), determine the ranks that ghost entities on this rank via
+/// the transpose
+/// @param[in] comm Neighborhood communicator. The neighborhood must be
+/// 'symmetric'
+/// @param[in] global_to_neighbor_rank Map from global to neighborhood ranks
+/// @param[in] edges0 The edges in the communication (using global indices)
+/// @return The transpose of `edges0` using global rank indices, i.e. if
+/// `edges0` are out eddges, the return array are the in edges.
+template <typename T>
+std::vector<int>
+compute_transpose_rank(MPI_Comm comm,
+                       const std::map<int, int>& global_to_neighbor_rank,
+                       const T& edges0)
+{
+  std::vector<int> edges;
+  std::tie(edges, std::ignore) = dolfinx::MPI::neighbors(comm);
+
+  std::vector<std::uint8_t> buffer(edges.size(), 0);
+  std::for_each(edges0.cbegin(), edges0.cend(),
+                [&buffer, &global_to_neighbor_rank](auto e)
+                {
+                  auto local = global_to_neighbor_rank.at(e);
+                  buffer[local] = 1;
+                });
+  MPI_Neighbor_alltoall(MPI_IN_PLACE, 1, MPI_UINT8_T, buffer.data(), 1,
+                        MPI_UINT8_T, comm);
+
+  std::vector<int> edges1;
+  for (std::size_t i = 0; i < buffer.size(); ++i)
+  {
+    if (buffer[i] > 0)
+      edges1.push_back(i);
+  }
+  std::transform(edges1.cbegin(), edges1.cend(), edges1.begin(),
+                 [&edges](auto nrank) { return edges[nrank]; });
+
+  return edges1;
+}
+//-----------------------------------------------------------------------------
+
 /// Compute list of processes sharing the same index
 /// @note Collective
 /// @param unknown_idx List of indices on each process
@@ -298,9 +339,10 @@ std::vector<std::int64_t> exchange_vertex_numbering(
 /// i.e. ghost_mode=shared_facet. Returns a list of triplets,
 /// {old_global_vertex_index, new_global_vertex_index, owner}.
 /// Input params as in mesh::create_topology()
+/// @param[in] comm Neigborhood communicator
 /// @return list of triplets
 std::vector<std::int64_t> exchange_ghost_vertex_numbering(
-    MPI_Comm neighbor_comm, int mpi_rank,
+    MPI_Comm comm, int mpi_rank,
     const std::map<int, int>& global_to_neighbor_rank,
     const common::IndexMap& index_map_c,
     const graph::AdjacencyList<std::int64_t>& cells, int nlocal,
@@ -377,7 +419,7 @@ std::vector<std::int64_t> exchange_ghost_vertex_numbering(
   }
 
   return dolfinx::MPI::neighbor_all_to_all(
-             neighbor_comm,
+             comm,
              graph::AdjacencyList<std::int64_t>(send_triplet_data, sdispl))
       .array();
 }
@@ -731,6 +773,12 @@ mesh::create_topology(MPI_Comm comm,
     }
   }
 
+  // Determine which ranks ghost data on this rank by  sending '1' to
+  // ranks that this rank has ghost vertices for
+  std::vector<int> out_edges = compute_transpose_rank(
+      neighbor_comm, global_to_neighbor_rank,
+      std::set<int>(ghost_vertex_owners.begin(), ghost_vertex_owners.end()));
+
   MPI_Comm_free(&neighbor_comm);
 
   // Convert input cell topology to local vertex indexing
@@ -745,17 +793,8 @@ mesh::create_topology(MPI_Comm comm,
   const int tdim = topology.dim();
 
   // Create vertex index map
-  // Note: we wold like to avoid the global all-to-all behind this call
-  // and use global_vertex_to_ranks and other data, but
-  // global_vertex_to_ranks doesn't have data for owned vertices that
-  // appear in ghost layers on othe ranks. The 'transpose' of what we
-  // need is computed int exchange_ghost_vertex_numbering
-  auto dest_edges = dolfinx::MPI::compute_graph_edges(
-      comm,
-      std::set<int>(ghost_vertex_owners.begin(), ghost_vertex_owners.end()));
-
   auto index_map_v = std::make_shared<common::IndexMap>(
-      comm, nlocal, dest_edges, ghost_vertices, ghost_vertex_owners);
+      comm, nlocal, out_edges, ghost_vertices, ghost_vertex_owners);
   auto c0 = std::make_shared<graph::AdjacencyList<std::int32_t>>(
       index_map_v->size_local() + index_map_v->num_ghosts());
 
