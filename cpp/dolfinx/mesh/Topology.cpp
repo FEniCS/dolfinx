@@ -38,11 +38,10 @@ namespace
 /// @param[in] edges0 The edges in the communication (using global indices)
 /// @return The transpose of `edges0` using global rank indices, i.e. if
 /// `edges0` are out eddges, the return array are the in edges.
-template <typename T>
 std::vector<int>
 compute_transpose_rank(MPI_Comm comm,
                        const std::map<int, int>& global_to_neighbor_rank,
-                       const T& edges0)
+                       const xtl::span<const int>& edges0)
 {
   std::vector<int> edges;
   std::tie(edges, std::ignore) = dolfinx::MPI::neighbors(comm);
@@ -54,7 +53,7 @@ compute_transpose_rank(MPI_Comm comm,
                   auto local = global_to_neighbor_rank.at(e);
                   buffer_send[local] = 1;
                 });
-  std::vector<std::uint8_t> buffer_rcvd(edges.size(), 0);
+  std::vector<std::uint8_t> buffer_rcvd(edges.size());
   MPI_Neighbor_alltoall(buffer_send.data(), 1, MPI_UINT8_T, buffer_rcvd.data(),
                         1, MPI_UINT8_T, comm);
 
@@ -777,9 +776,9 @@ mesh::create_topology(MPI_Comm comm,
   // Determine which ranks ghost data on this rank by  sending '1' to
   // ranks that this rank has ghost vertices for
   std::vector<int> in_edges = ghost_vertex_owners;
-  dolfinx::radix_sort(in_edges);
+  dolfinx::radix_sort(xtl::span(in_edges));
   in_edges.erase(std::unique(in_edges.begin(), in_edges.end()), in_edges.end());
-  std::vector<int> out_edges = compute_transpose_rank(
+  const std::vector<int> out_edges = compute_transpose_rank(
       neighbor_comm, global_to_neighbor_rank, in_edges);
 
   MPI_Comm_free(&neighbor_comm);
