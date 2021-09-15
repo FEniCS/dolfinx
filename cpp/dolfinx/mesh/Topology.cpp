@@ -162,8 +162,8 @@ determine_sharing_ranks(MPI_Comm comm,
 
 /// Create a map from the 64-bit input vertex index to an index that
 /// indicates:
-/// - (-1) Vertex is connected to a ghost cell
-/// - (-2) Vertex is connected to local cell only
+/// * (-1) Vertex is connected to a ghost cell
+/// * (-2) Vertex is connected to local cells only
 ///
 /// The index of vertices that are connected to both owned and ghost
 /// cells are added to a vector.
@@ -228,20 +228,21 @@ compute_vertex_markers(const graph::AdjacencyList<std::int64_t>& cells,
 }
 //-----------------------------------------------------------------------------
 
-/// Compute a neighborhood comm from the values in
+/// Compute a neighborhood comm from the ranks in
 /// global_vertex_to_ranks, also returning a map from global rank number
 /// to neighborhood rank
 /// @note Collective
 /// @param[in] comm The global communicator
-/// @param[in] mpi_rank Global MPI rank of the caller
 /// @param[in] global_vertex_to_ranks Map from global vertex index to
 /// sharing ranks
 /// @return (neighbor_comm, global_to_neighbor_rank map)
 std::pair<MPI_Comm, std::map<int, int>>
-compute_neighbor_comm(const MPI_Comm& comm, int mpi_rank,
+compute_neighbor_comm(const MPI_Comm& comm,
                       const std::unordered_map<std::int64_t, std::vector<int>>&
                           global_vertex_to_ranks)
 {
+  const int mpi_rank = dolfinx::MPI::rank(comm);
+
   // Create set of all ranks that share a vertex with this rank. Note
   // this can be 'wider' than the neighbor comm of shared cells.
   std::vector<int> neighbors;
@@ -284,13 +285,14 @@ compute_neighbor_comm(const MPI_Comm& comm, int mpi_rank,
 /// @return list of triplets
 std::vector<std::int64_t> exchange_vertex_numbering(
     const MPI_Comm& comm, const std::map<int, int>& global_to_neighbor_rank,
-    int mpi_rank,
     const std::unordered_map<std::int64_t, std::vector<int>>&
         global_vertex_to_ranks,
     std::int64_t global_offset_v,
     const std::unordered_map<std::int64_t, std::int32_t>&
         global_to_local_vertices)
 {
+  const int mpi_rank = dolfinx::MPI::rank(comm);
+
   // Pack send data
   std::vector<std::vector<std::int64_t>> send_buffer(
       global_to_neighbor_rank.size());
@@ -342,8 +344,7 @@ std::vector<std::int64_t> exchange_vertex_numbering(
 /// @param[in] comm Neigborhood communicator
 /// @return list of triplets
 std::vector<std::int64_t> exchange_ghost_vertex_numbering(
-    MPI_Comm comm, int mpi_rank,
-    const std::map<int, int>& global_to_neighbor_rank,
+    MPI_Comm comm, const std::map<int, int>& global_to_neighbor_rank,
     const common::IndexMap& index_map_c,
     const graph::AdjacencyList<std::int64_t>& cells, int nlocal,
     std::int64_t global_offset_v,
@@ -355,6 +356,8 @@ std::vector<std::int64_t> exchange_ghost_vertex_numbering(
   // Receive index of ghost vertices that are not on the process
   // ('true') boundary from the ghost cell owner. Note: the ghost cell
   // owner might not be the same as the vertex owner.
+
+  const int mpi_rank = dolfinx::MPI::rank(comm);
 
   const graph::AdjacencyList<std::int32_t>& fwd_shared_cells
       = index_map_c.scatter_fwd_indices();
@@ -641,8 +644,6 @@ mesh::create_topology(MPI_Comm comm,
         + std::to_string(mesh::num_cell_vertices(cell_type)) + ".");
   }
 
-  const int mpi_rank = dolfinx::MPI::rank(comm);
-
   // Create index map for cells
   const std::int32_t num_local_cells = cells.num_nodes() - ghost_owners.size();
   std::shared_ptr<common::IndexMap> index_map_c;
@@ -679,6 +680,7 @@ mesh::create_topology(MPI_Comm comm,
 
   // Iterate over vertices that have 'unknown' ownership, and if flagged
   // as owned by determine_sharing_ranks update ownership status
+  const int mpi_rank = dolfinx::MPI::rank(comm);
   for (std::int64_t global_index : unknown_indices_set)
   {
     const auto it = global_vertex_to_ranks.find(global_index);
@@ -720,13 +722,13 @@ mesh::create_topology(MPI_Comm comm,
   // Create neighborhood communicator for vertices on the 'true'
   // boundary and a map from MPI rank on comm to rank on neighbor_comm
   auto [neighbor_comm, global_to_neighbor_rank]
-      = compute_neighbor_comm(comm, mpi_rank, global_vertex_to_ranks);
+      = compute_neighbor_comm(comm, global_vertex_to_ranks);
 
   // Send and receive list of triplets map (input vertex index) -> (new
   // global index, owner rank) with neighbours (for vertices on 'true
   // domain boundary')
   auto recv_triplets = exchange_vertex_numbering(
-      neighbor_comm, global_to_neighbor_rank, mpi_rank, global_vertex_to_ranks,
+      neighbor_comm, global_to_neighbor_rank, global_vertex_to_ranks,
       global_offset_v, global_to_local_vertices);
   assert(recv_triplets.size() % 3 == 0);
 
@@ -753,9 +755,9 @@ mesh::create_topology(MPI_Comm comm,
     // owner
     const std::vector<std::int64_t> recv_triplets
         = exchange_ghost_vertex_numbering(
-            neighbor_comm, mpi_rank, global_to_neighbor_rank, *index_map_c,
-            cells, nlocal, global_offset_v, global_to_local_vertices,
-            ghost_vertices, ghost_vertex_owners);
+            neighbor_comm, global_to_neighbor_rank, *index_map_c, cells, nlocal,
+            global_offset_v, global_to_local_vertices, ghost_vertices,
+            ghost_vertex_owners);
 
     // Unpack received data and add to arrays of ghost indices and ghost
     // owners
