@@ -337,6 +337,7 @@ std::string xdmf_utils::vtk_cell_type_str(mesh::CellType cell_type,
        {{4, "Quadrilateral"},
         {9, "Quadrilateral_9"},
         {16, "Quadrilateral_16"}}},
+      {mesh::CellType::prism, {{6, "Wedge"}}},
       {mesh::CellType::tetrahedron,
        {{4, "Tetrahedron"}, {10, "Tetrahedron_10"}, {20, "Tetrahedron_20"}}},
       {mesh::CellType::hexahedron, {{8, "Hexahedron"}, {27, "Hexahedron_27"}}}};
@@ -397,7 +398,7 @@ xdmf_utils::extract_local_entities(const mesh::Mesh& mesh, const int entity_dim,
   }
 
   const mesh::CellType entity_type
-      = mesh::cell_entity_type(mesh.topology().cell_type(), entity_dim);
+      = mesh::cell_entity_type(mesh.topology().cell_type(), entity_dim, 0);
   const std::size_t num_vertices_per_entity
       = mesh::cell_num_entities(entity_type, 0);
   assert(entity_vertex_dofs.size() == num_vertices_per_entity);
