@@ -345,17 +345,17 @@ void assemble_interior_facets(
 
     const xtl::span<T> _Ae(Ae);
 
-    const xtl::span<T> sub_Ae
+    const xtl::span<T> sub_Ae0
         = _Ae.subspan(bs0 * dmap0_cell0.size() * num_cols,
                       bs0 * dmap0_cell1.size() * num_cols);
-    const xtl::span<T> sub_Ae2
+    const xtl::span<T> sub_Ae1
         = _Ae.subspan(bs1 * dmap1_cell0.size(),
                       num_rows * num_cols - bs1 * dmap1_cell0.size());
 
     dof_transform(_Ae, cell_info, cells[0], num_cols);
-    dof_transform(sub_Ae, cell_info, cells[1], num_cols);
+    dof_transform(sub_Ae0, cell_info, cells[1], num_cols);
     dof_transform_to_transpose(_Ae, cell_info, cells[0], num_rows);
-    dof_transform_to_transpose(sub_Ae2, cell_info, cells[1], num_rows);
+    dof_transform_to_transpose(sub_Ae1, cell_info, cells[1], num_rows);
 
     // Zero rows/columns for essential bcs
     if (!bc0.empty())
