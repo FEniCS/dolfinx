@@ -352,6 +352,11 @@ void assemble_interior_facets(
         = _Ae.subspan(bs1 * dmap1_cell0.size(),
                       num_rows * num_cols - bs1 * dmap1_cell0.size());
 
+    // Need to apply DOF transformations for parts of the matrix due to cell 0
+    // and cell 1. For example, if the space has 3 DOFs, then Ae will be 6 by 6
+    // (3 rows/columns for each cell). Subspans are used to offset to the right
+    // blocks of the matrix
+
     dof_transform(_Ae, cell_info, cells[0], num_cols);
     dof_transform(sub_Ae0, cell_info, cells[1], num_cols);
     dof_transform_to_transpose(_Ae, cell_info, cells[0], num_rows);
