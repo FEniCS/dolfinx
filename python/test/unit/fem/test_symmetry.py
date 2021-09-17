@@ -6,7 +6,6 @@
 """Test that matrices are symmetric."""
 
 from mpi4py import MPI
-import numpy as np
 
 import pytest
 import dolfinx
@@ -20,9 +19,7 @@ from ufl import grad, inner
 
 
 def check_symmetry(A):
-    for i in range(A.size[0]):
-        for j in range(i):
-            assert np.isclose(A[i, j], A[j, i])
+    assert A.isSymmetric(1e-8)
 
 
 def run_symmetry_test(cell_type, N, element, form_f):
@@ -62,8 +59,6 @@ parametrize_lagrange_elements = pytest.mark.parametrize("cell_type, element", [
 @pytest.mark.parametrize("N", [1, 2])
 @pytest.mark.parametrize("order", range(1, 4))
 def test_mass_matrix_dx(cell_type, N, element, order):
-    if cell_type in [CellType.tetrahedron, CellType.hexahedron] and order > 2:
-        pytest.skip("Skipping slow test")
     run_symmetry_test(cell_type, N, (element, order),
                       lambda u, v: inner(u, v) * ufl.dx)
 
@@ -73,8 +68,6 @@ def test_mass_matrix_dx(cell_type, N, element, order):
 @pytest.mark.parametrize("N", [1, 2])
 @pytest.mark.parametrize("order", range(1, 4))
 def test_stiffness_matrix_dx(cell_type, N, element, order):
-    if cell_type in [CellType.tetrahedron, CellType.hexahedron] and order > 2:
-        pytest.skip("Skipping slow test")
     run_symmetry_test(cell_type, N, (element, order),
                       lambda u, v: inner(grad(u), grad(v)) * ufl.dx)
 
@@ -84,8 +77,6 @@ def test_stiffness_matrix_dx(cell_type, N, element, order):
 @pytest.mark.parametrize("N", [1, 2])
 @pytest.mark.parametrize("order", range(1, 4))
 def test_mass_matrix_ds(cell_type, N, element, order):
-    if cell_type in [CellType.tetrahedron, CellType.hexahedron] and order > 2:
-        pytest.skip("Skipping slow test")
     run_symmetry_test(cell_type, N, (element, order),
                       lambda u, v: inner(u, v) * ufl.ds)
 
@@ -95,8 +86,6 @@ def test_mass_matrix_ds(cell_type, N, element, order):
 @pytest.mark.parametrize("N", [1, 2])
 @pytest.mark.parametrize("order", range(1, 4))
 def test_stiffness_matrix_ds(cell_type, N, element, order):
-    if cell_type in [CellType.tetrahedron, CellType.hexahedron] and order > 2:
-        pytest.skip("Skipping slow test")
     run_symmetry_test(cell_type, N, (element, order),
                       lambda u, v: inner(grad(u), grad(v)) * ufl.ds)
 
@@ -107,8 +96,6 @@ def test_stiffness_matrix_ds(cell_type, N, element, order):
 @pytest.mark.parametrize("order", range(1, 4))
 @pytest.mark.parametrize("sign", ["+", "-"])
 def test_mass_matrix_dS(cell_type, N, element, order, sign):
-    if cell_type in [CellType.tetrahedron, CellType.hexahedron] and order > 2:
-        pytest.skip("Skipping slow test")
     run_symmetry_test(cell_type, N, (element, order),
                       lambda u, v: inner(u, v)(sign) * ufl.dS)
 
@@ -119,8 +106,6 @@ def test_mass_matrix_dS(cell_type, N, element, order, sign):
 @pytest.mark.parametrize("order", range(1, 4))
 @pytest.mark.parametrize("sign", ["+", "-"])
 def test_stiffness_matrix_dS(cell_type, N, element, order, sign):
-    if cell_type in [CellType.tetrahedron, CellType.hexahedron] and order > 2:
-        pytest.skip("Skipping slow test")
     run_symmetry_test(cell_type, N, (element, order),
                       lambda u, v: inner(grad(u), grad(v))(sign) * ufl.dS)
 
@@ -132,8 +117,6 @@ def test_stiffness_matrix_dS(cell_type, N, element, order, sign):
 @pytest.mark.parametrize("sign", ["+", "-"])
 @pytest.mark.parametrize("order", range(1, 4))
 def test_mixed_element_form(cell_type, N, sign, order):
-    if cell_type in [CellType.tetrahedron, CellType.hexahedron] and order > 2:
-        pytest.skip("Skipping slow test")
     if cell_type == CellType.triangle or cell_type == CellType.quadrilateral:
         mesh = UnitSquareMesh(MPI.COMM_WORLD, N, N, cell_type)
     else:
@@ -170,8 +153,6 @@ def test_mixed_element_form(cell_type, N, sign, order):
 @pytest.mark.parametrize("sign", ["+", "-"])
 @pytest.mark.parametrize("order", range(1, 4))
 def test_mixed_element_vector_element_form(cell_type, N, sign, order):
-    if cell_type in [CellType.tetrahedron, CellType.hexahedron] and order > 2:
-        pytest.skip("Skipping slow test")
     if cell_type == CellType.triangle or cell_type == CellType.quadrilateral:
         mesh = UnitSquareMesh(MPI.COMM_WORLD, N, N, cell_type)
     else:
