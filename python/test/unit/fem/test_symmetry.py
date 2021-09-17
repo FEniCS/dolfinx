@@ -45,8 +45,10 @@ def run_symmetry_test(cell_type, N, element, form_f):
 
 parametrize_elements = pytest.mark.parametrize("cell_type, element", [
     (CellType.triangle, "Lagrange"), (CellType.triangle, "N1curl"), (CellType.triangle, "RT"),
+    (CellType.triangle, "Regge"),
     (CellType.quadrilateral, "Lagrange"), (CellType.quadrilateral, "RTCE"), (CellType.quadrilateral, "RTCF"),
     (CellType.tetrahedron, "Lagrange"), (CellType.tetrahedron, "N1curl"), (CellType.tetrahedron, "RT"),
+    (CellType.tetrahedron, "Regge"),
     (CellType.hexahedron, "Lagrange"), (CellType.hexahedron, "NCE"), (CellType.hexahedron, "NCF")
 ])
 parametrize_lagrange_elements = pytest.mark.parametrize("cell_type, element", [
