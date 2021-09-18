@@ -89,7 +89,7 @@ int dolfinx::MPI::size(const MPI_Comm comm)
 std::vector<int> dolfinx::MPI::compute_graph_edges(MPI_Comm comm,
                                                    const std::set<int>& edges)
 {
-  // Send '1' to ranks that I have a edge to
+  // Send '1' to ranks that I have an edge to
   std::vector<std::uint8_t> edge_count(dolfinx::MPI::size(comm), 0);
   std::for_each(edges.cbegin(), edges.cend(),
                 [&edge_count](auto e) { edge_count[e] = 1; });

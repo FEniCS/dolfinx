@@ -441,8 +441,20 @@ void _lift_bc_interior_facets(
         get_perm(cells[1] * num_cell_facets + local_facet[1])};
     kernel(Ae.data(), coeff_array.data(), constants.data(),
            coordinate_dofs.data(), local_facet.data(), perm.data());
-    dof_transform(Ae, cell_info, cells[0], num_cols);
-    dof_transform_to_transpose(Ae, cell_info, cells[0], num_rows);
+
+    const xtl::span<T> _Ae(Ae);
+
+    const xtl::span<T> sub_Ae0
+        = _Ae.subspan(bs0 * dmap0_cell0.size() * num_cols,
+                      bs0 * dmap0_cell1.size() * num_cols);
+    const xtl::span<T> sub_Ae1
+        = _Ae.subspan(bs1 * dmap1_cell0.size(),
+                      num_rows * num_cols - bs1 * dmap1_cell0.size());
+
+    dof_transform(_Ae, cell_info, cells[0], num_cols);
+    dof_transform(sub_Ae0, cell_info, cells[1], num_cols);
+    dof_transform_to_transpose(_Ae, cell_info, cells[0], num_rows);
+    dof_transform_to_transpose(sub_Ae1, cell_info, cells[1], num_rows);
 
     be.resize(num_rows);
     std::fill(be.begin(), be.end(), 0);
@@ -734,7 +746,12 @@ void assemble_interior_facets(
     fn(be.data(), coeff_array.data(), constants.data(), coordinate_dofs.data(),
        local_facet.data(), perm.data());
 
+    const xtl::span<T> _be(be);
+    const xtl::span<T> sub_be
+        = _be.subspan(bs * dmap0.size(), bs * dmap1.size());
+
     dof_transform(be, cell_info, cells[0], 1);
+    dof_transform(sub_be, cell_info, cells[1], 1);
 
     // Add element vector to global vector
     if constexpr (_bs > 0)
