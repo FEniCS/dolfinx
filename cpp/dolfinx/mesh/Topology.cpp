@@ -294,10 +294,10 @@ compute_neighbor_comm(const MPI_Comm& comm,
 //-------------------------------------------------------------------------------
 
 /// Send the vertex numbering for owned vertices to processes that also
-/// share them, returning a list of triplets received from other
-/// processes. Each triplet consists of {old_global_vertex_index,
+/// share them, returning a list of triplets received from other ranks.
+/// Each triplet consists of {old_global_vertex_index,
 /// new_global_vertex_index, owning_rank}. The received vertices will be
-/// "ghost" on this process.
+/// "ghost" on this rank.
 /// Input params as in mesh::create_topology()
 /// @note Collective
 /// @param[in] comm Neighbourhood communicator
@@ -315,12 +315,10 @@ std::vector<std::int64_t> exchange_vertex_numbering(
   // Pack send data
   std::vector<std::vector<std::int64_t>> send_buffer(
       global_to_neighbor_rank.size());
-
-  // Iterate over vertices
   for (const auto& vertex : global_vertex_to_ranks)
   {
     // Get (global) ranks that share this vertex. Note that first rank
-    // is the owner
+    // is the owner.
     const std::vector<int>& vertex_ranks = vertex.second;
     if (vertex_ranks[0] == mpi_rank)
     {
@@ -329,21 +327,19 @@ std::vector<std::int64_t> exchange_vertex_numbering(
       assert(vlocal_it != global_to_local_vertices.end());
       assert(vlocal_it->second != -1);
 
-      // Owned and shared with these processes
-      // Note: starting from 1, 0 is self
+      // Owned and shared with these processes (starting from 1, 0 is self)
       for (std::size_t j = 1; j < vertex_ranks.size(); ++j)
       {
-        // Find rank on neighborhood comm
+        // Find rank on the neighborhood comm
         auto nrank_it = global_to_neighbor_rank.find(vertex_ranks[j]);
         assert(nrank_it != global_to_neighbor_rank.end());
         int rank_neighbor = nrank_it->second;
 
         // Add (old global vertex index, new  global vertex index, owner
         // rank (global))
-        send_buffer[rank_neighbor].push_back(vlocal_it->first);
-        send_buffer[rank_neighbor].push_back(vlocal_it->second
-                                             + global_offset_v);
-        send_buffer[rank_neighbor].push_back(mpi_rank);
+        send_buffer[rank_neighbor].insert(
+            send_buffer[rank_neighbor].end(),
+            {vlocal_it->first, vlocal_it->second + global_offset_v, mpi_rank});
       }
     }
   }
@@ -434,7 +430,6 @@ std::vector<std::int64_t> exchange_ghost_vertex_numbering(
     int owner_rank = it->second < nlocal
                          ? mpi_rank
                          : ghost_vertex_owners[it->second - nlocal];
-
     for (int rank : vertex_ranks.second)
     {
       auto rank_it = global_to_neighbor_rank.find(rank);
@@ -774,7 +769,7 @@ mesh::create_topology(MPI_Comm comm,
 
   if (ghost_mode != mesh::GhostMode::none)
   {
-    // Send and receive global, from the ghost cell owner, indices for
+    // Send and receive global (from the ghost cell owner) indices for
     // ghost vertices that are not on the process boundary
     // Note: the ghost cell owner might not be the same as the vertex
     // owner
@@ -799,7 +794,6 @@ mesh::create_topology(MPI_Comm comm,
       }
     }
   }
-
 
   // TODO: build neighbourhood communictor that is larger than
   // neighbor_comm to capture all ghost owners. This data can come from
