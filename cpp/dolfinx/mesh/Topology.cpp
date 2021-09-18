@@ -734,9 +734,7 @@ mesh::create_topology(MPI_Comm comm,
   MPI_Comm_free(&neighbor_comm);
 
   // TODO: is it possible to build neighbourhood communictor that is
-  // larger than neighbor_comm to capture all ghost owners. This data
-  // can come from exchange_ghost_vertex_numbering. This avoids the
-  // global compute_graph_edges call.
+  // larger than neighbor_comm to capture all ghost owners?
 
   // Determine which ranks ghost data on this rank by  sending '1' to
   // ranks that this rank has ghost vertices for
