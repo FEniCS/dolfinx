@@ -385,19 +385,15 @@ std::vector<std::int64_t> exchange_ghost_vertex_numbering(
 
   // Build map from vertices of owned and shared cells to the global of
   // the ghosts
-  const int num_local_cells = index_map_c.size_local();
   std::map<std::int64_t, std::set<std::int32_t>> fwd_shared_vertices;
   for (int r = 0; r < fwd_shared_cells.num_nodes(); ++r)
   {
     // Iterate over cells that are shared by rank r
     for (std::int32_t c : fwd_shared_cells.links(r))
     {
-      if (c < num_local_cells) // FIXME: Why is this needed?
-      {
-        // Vertices in local cells that are shared forward
-        for (std::int32_t v : cells.links(c))
-          fwd_shared_vertices[v].insert(fwd_ranks[r]);
-      }
+      // Vertices in local cells that are shared forward
+      for (std::int32_t v : cells.links(c))
+        fwd_shared_vertices[v].insert(fwd_ranks[r]);
     }
   }
 
