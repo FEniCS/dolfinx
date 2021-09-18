@@ -174,4 +174,3 @@ def test_mixed_element_vector_element_form(cell_type, sign, order):
     A.assemble()
 
     check_symmetry(A)
-
