@@ -53,6 +53,7 @@ parametrize_lagrange_elements = pytest.mark.parametrize("cell_type, element", [
     (CellType.tetrahedron, "Lagrange"), (CellType.hexahedron, "Lagrange")
 ])
 
+
 @skip_in_parallel
 @parametrize_elements
 @pytest.mark.parametrize("order", range(1, 4))
