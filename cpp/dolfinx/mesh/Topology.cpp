@@ -29,66 +29,6 @@ namespace
 {
 //-----------------------------------------------------------------------------
 
-/// From the 'out' edges (the ranks that own entities that are ghosts on
-/// this rank), determine the ranks that ghost entities on this rank via
-/// the transpose
-/// @param[in] comm Neighborhood communicator. The neighborhood must be
-/// 'symmetric'
-/// @param[in] global_to_neighbor_rank Map from global to neighborhood ranks
-/// @param[in] edges0 The edges in the communication (using global indices)
-/// @return The transpose of `edges0` using global rank indices, i.e. if
-/// `edges0` are out eddges, the return array are the in edges.
-/*
-std::vector<int>
-compute_transpose_rank(MPI_Comm comm,
-                       const std::map<int, int>& global_to_neighbor_rank,
-                       const xtl::span<const int>& edges0)
-{
-  int rank = dolfinx::MPI::rank(comm);
-  MPI_Barrier(comm);
-  std::cout << "TC0: " << rank << std::endl;
-  MPI_Barrier(comm);
-  std::vector<int> edges, _edges;
-  std::tie(edges, _edges) = dolfinx::MPI::neighbors(comm);
-  assert(edges == _edges);
-
-  MPI_Barrier(comm);
-  std::cout << "TC1: " << rank << std::endl;
-  MPI_Barrier(comm);
-  std::vector<int> buffer_send(edges.size(), 0);
-  std::for_each(edges0.cbegin(), edges0.cend(),
-                [&buffer_send, &global_to_neighbor_rank, rank](auto e)
-                {
-                  auto it = global_to_neighbor_rank.find(e);
-                  if (it == global_to_neighbor_rank.end())
-                    std::cout << "ERROR: " << rank << ", " << e << std::endl;
-                  // auto local = global_to_neighbor_rank.at(e);
-                  // buffer_send[local] = 1;
-                });
-  std::vector<std::uint8_t> buffer_rcvd(edges.size());
-  MPI_Barrier(comm);
-  std::cout << "TC2: " << rank << ", " << edges.size() << std::endl;
-  MPI_Barrier(comm);
-  MPI_Neighbor_alltoall(buffer_send.data(), 1, MPI_INT, buffer_rcvd.data(), 1,
-                        MPI_INT, comm);
-  std::cout << "TC3: " << rank << std::endl;
-
-  std::vector<int> edges1;
-  for (std::size_t i = 0; i < buffer_rcvd.size(); ++i)
-  {
-    if (buffer_rcvd[i] > 0)
-      edges1.push_back(i);
-  }
-  std::cout << "TC4: " << rank << std::endl;
-  std::transform(edges1.cbegin(), edges1.cend(), edges1.begin(),
-                 [&edges](auto nrank) { return edges[nrank]; });
-  std::cout << "TC5: " << rank << std::endl;
-
-  return edges1;
-}
-*/
-//-----------------------------------------------------------------------------
-
 /// Compute list of processes sharing the same index
 /// @note Collective
 /// @param unknown_idx List of indices on each process
@@ -791,23 +731,25 @@ mesh::create_topology(MPI_Comm comm,
     }
   }
 
-  // TODO: build neighbourhood communictor that is larger than
-  // neighbor_comm to capture all ghost owners. This data can come from
-  // exchange_ghost_vertex_numbering. This avoids the global
-  // compute_graph_edges call.
+  MPI_Comm_free(&neighbor_comm);
+
+  // TODO: is it possible to build neighbourhood communictor that is
+  // larger than neighbor_comm to capture all ghost owners. This data
+  // can come from exchange_ghost_vertex_numbering. This avoids the
+  // global compute_graph_edges call.
 
   // Determine which ranks ghost data on this rank by  sending '1' to
   // ranks that this rank has ghost vertices for
-  // std::vector<int> in_edges = ghost_vertex_owners;
-  // std::sort(in_edges.begin(), in_edges.end());
-  // in_edges.erase(std::unique(in_edges.begin(), in_edges.end()),
-  // in_edges.end()); const std::vector<int> out_edges = compute_transpose_rank(
-  //     neighbor_comm, global_to_neighbor_rank, in_edges);
-  const std::vector<int> out_edges = dolfinx::MPI::compute_graph_edges(
-      comm,
-      std::set<int>(ghost_vertex_owners.begin(), ghost_vertex_owners.end()));
-
-  MPI_Comm_free(&neighbor_comm);
+  std::vector<int> in_edges = ghost_vertex_owners;
+  std::sort(in_edges.begin(), in_edges.end());
+  in_edges.erase(std::unique(in_edges.begin(), in_edges.end()), in_edges.end());
+  // Send '1' to ranks that I have an edge to
+  std::vector<std::uint8_t> edge_count(dolfinx::MPI::size(comm), 0);
+  std::for_each(in_edges.cbegin(), in_edges.cend(),
+                [&edge_count](auto e) { edge_count[e] = 1; });
+  MPI_Request request;
+  MPI_Ialltoall(MPI_IN_PLACE, 1, MPI_UINT8_T, edge_count.data(), 1, MPI_UINT8_T,
+                comm, &request);
 
   // Convert input cell topology to local vertex indexing
   std::shared_ptr<graph::AdjacencyList<std::int32_t>> cells_local_idx
@@ -821,6 +763,14 @@ mesh::create_topology(MPI_Comm comm,
   const int tdim = topology.dim();
 
   // Create vertex index map
+  MPI_Wait(&request, MPI_STATUS_IGNORE);
+  std::vector<int> out_edges;
+  for (std::size_t i = 0; i < edge_count.size(); ++i)
+  {
+    if (edge_count[i] > 0)
+      out_edges.push_back(i);
+  }
+
   auto index_map_v = std::make_shared<common::IndexMap>(
       comm, nlocal, out_edges, ghost_vertices, ghost_vertex_owners);
   auto c0 = std::make_shared<graph::AdjacencyList<std::int32_t>>(
