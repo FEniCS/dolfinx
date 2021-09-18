@@ -56,7 +56,7 @@ parametrize_lagrange_elements = pytest.mark.parametrize("cell_type, element", [
 
 @skip_in_parallel
 @parametrize_elements
-@pytest.mark.parametrize("order", range(1, 4))
+@pytest.mark.parametrize("order", range(1, 2))
 def test_mass_matrix_dx(cell_type, element, order):
     run_symmetry_test(cell_type, (element, order),
                       lambda u, v: inner(u, v) * ufl.dx)
@@ -64,7 +64,7 @@ def test_mass_matrix_dx(cell_type, element, order):
 
 @skip_in_parallel
 @parametrize_lagrange_elements
-@pytest.mark.parametrize("order", range(1, 4))
+@pytest.mark.parametrize("order", range(1, 2))
 def test_stiffness_matrix_dx(cell_type, element, order):
     run_symmetry_test(cell_type, (element, order),
                       lambda u, v: inner(grad(u), grad(v)) * ufl.dx)
@@ -72,7 +72,7 @@ def test_stiffness_matrix_dx(cell_type, element, order):
 
 @skip_in_parallel
 @parametrize_elements
-@pytest.mark.parametrize("order", range(1, 4))
+@pytest.mark.parametrize("order", range(1, 2))
 def test_mass_matrix_ds(cell_type, element, order):
     run_symmetry_test(cell_type, (element, order),
                       lambda u, v: inner(u, v) * ufl.ds)
@@ -80,7 +80,7 @@ def test_mass_matrix_ds(cell_type, element, order):
 
 @skip_in_parallel
 @parametrize_lagrange_elements
-@pytest.mark.parametrize("order", range(1, 4))
+@pytest.mark.parametrize("order", range(1, 2))
 def test_stiffness_matrix_ds(cell_type, element, order):
     run_symmetry_test(cell_type, (element, order),
                       lambda u, v: inner(grad(u), grad(v)) * ufl.ds)
@@ -88,7 +88,7 @@ def test_stiffness_matrix_ds(cell_type, element, order):
 
 @skip_in_parallel
 @parametrize_elements
-@pytest.mark.parametrize("order", range(1, 4))
+@pytest.mark.parametrize("order", range(1, 2))
 @pytest.mark.parametrize("sign", ["+", "-"])
 def test_mass_matrix_dS(cell_type, element, order, sign):
     run_symmetry_test(cell_type, (element, order),
@@ -97,7 +97,7 @@ def test_mass_matrix_dS(cell_type, element, order, sign):
 
 @skip_in_parallel
 @parametrize_lagrange_elements
-@pytest.mark.parametrize("order", range(1, 4))
+@pytest.mark.parametrize("order", range(1, 2))
 @pytest.mark.parametrize("sign", ["+", "-"])
 def test_stiffness_matrix_dS(cell_type, element, order, sign):
     run_symmetry_test(cell_type, (element, order),
@@ -108,7 +108,7 @@ def test_stiffness_matrix_dS(cell_type, element, order, sign):
 @pytest.mark.parametrize("cell_type", [CellType.triangle, CellType.quadrilateral,
                                        CellType.tetrahedron, CellType.hexahedron])
 @pytest.mark.parametrize("sign", ["+", "-"])
-@pytest.mark.parametrize("order", range(1, 4))
+@pytest.mark.parametrize("order", range(1, 2))
 def test_mixed_element_form(cell_type, sign, order):
     if cell_type == CellType.triangle or cell_type == CellType.quadrilateral:
         mesh = UnitSquareMesh(MPI.COMM_WORLD, 2, 2, cell_type)
@@ -143,7 +143,7 @@ def test_mixed_element_form(cell_type, sign, order):
 @skip_in_parallel
 @pytest.mark.parametrize("cell_type", [CellType.triangle, CellType.quadrilateral])
 @pytest.mark.parametrize("sign", ["+", "-"])
-@pytest.mark.parametrize("order", range(1, 4))
+@pytest.mark.parametrize("order", range(1, 2))
 def test_mixed_element_vector_element_form(cell_type, sign, order):
     if cell_type == CellType.triangle or cell_type == CellType.quadrilateral:
         mesh = UnitSquareMesh(MPI.COMM_WORLD, 2, 2, cell_type)
@@ -174,3 +174,4 @@ def test_mixed_element_vector_element_form(cell_type, sign, order):
     A.assemble()
 
     check_symmetry(A)
+
