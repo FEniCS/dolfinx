@@ -144,13 +144,14 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
 
   if (is_basix_element(ufc_element))
   {
-    if (ufc_element.lattice_type != -1)
+    if (ufc_element.lagrange_variant != -1)
     {
       _element = std::make_unique<basix::FiniteElement>(basix::create_element(
           static_cast<basix::element::family>(ufc_element.basix_family),
           static_cast<basix::cell::type>(ufc_element.basix_cell),
           ufc_element.degree,
-          static_cast<basix::lattice::type>(ufc_element.lattice_type),
+          static_cast<basix::element::lagrange_variant>(
+              ufc_element.lagrange_variant),
           ufc_element.discontinuous));
     }
     else
