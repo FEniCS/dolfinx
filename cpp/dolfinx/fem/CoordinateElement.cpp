@@ -33,29 +33,6 @@ double compute_determinant(Matrix& A)
     return std::sqrt(math::det(BA));
   }
 }
-//-----------------------------------------------------------------------------
-basix::cell::type cell_type_to_basix_type(mesh::CellType celltype)
-{
-  switch (celltype)
-  {
-  case mesh::CellType::interval:
-    return basix::cell::type::interval;
-  case mesh::CellType::triangle:
-    return basix::cell::type::triangle;
-  case mesh::CellType::tetrahedron:
-    return basix::cell::type::tetrahedron;
-  case mesh::CellType::quadrilateral:
-    return basix::cell::type::quadrilateral;
-  case mesh::CellType::hexahedron:
-    return basix::cell::type::hexahedron;
-  case mesh::CellType::prism:
-    return basix::cell::type::prism;
-  case mesh::CellType::pyramid:
-    return basix::cell::type::pyramid;
-  default:
-    throw std::runtime_error("Unrecognised cell type.");
-  }
-}
 } // namespace
 
 //-----------------------------------------------------------------------------
@@ -71,7 +48,7 @@ CoordinateElement::CoordinateElement(
 CoordinateElement::CoordinateElement(mesh::CellType celltype, int degree)
     : CoordinateElement(std::make_shared<basix::FiniteElement>(
         basix::create_element(basix::element::family::P,
-                              cell_type_to_basix_type(celltype), degree,
+                              mesh::cell_type_to_basix_type(celltype), degree,
                               basix::lattice::type::equispaced, false)))
 {
   // Do nothing
@@ -79,25 +56,7 @@ CoordinateElement::CoordinateElement(mesh::CellType celltype, int degree)
 //-----------------------------------------------------------------------------
 mesh::CellType CoordinateElement::cell_shape() const
 {
-  switch (_element->cell_type())
-  {
-  case basix::cell::type::interval:
-    return mesh::CellType::interval;
-  case basix::cell::type::triangle:
-    return mesh::CellType::triangle;
-  case basix::cell::type::tetrahedron:
-    return mesh::CellType::tetrahedron;
-  case basix::cell::type::quadrilateral:
-    return mesh::CellType::quadrilateral;
-  case basix::cell::type::hexahedron:
-    return mesh::CellType::hexahedron;
-  case basix::cell::type::prism:
-    return mesh::CellType::prism;
-  case basix::cell::type::pyramid:
-    return mesh::CellType::pyramid;
-  default:
-    throw std::runtime_error("Unrecognised cell type.");
-  }
+  return mesh::cell_type_from_basix_type(_element->cell_type());
 }
 //-----------------------------------------------------------------------------
 int CoordinateElement::topological_dimension() const

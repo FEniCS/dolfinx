@@ -17,32 +17,6 @@
 
 using namespace dolfinx;
 
-namespace
-{
-basix::cell::type cell_type_to_basix_type(mesh::CellType celltype)
-{
-  switch (celltype)
-  {
-  case mesh::CellType::interval:
-    return basix::cell::type::interval;
-  case mesh::CellType::triangle:
-    return basix::cell::type::triangle;
-  case mesh::CellType::tetrahedron:
-    return basix::cell::type::tetrahedron;
-  case mesh::CellType::quadrilateral:
-    return basix::cell::type::quadrilateral;
-  case mesh::CellType::hexahedron:
-    return basix::cell::type::hexahedron;
-  case mesh::CellType::prism:
-    return basix::cell::type::prism;
-  case mesh::CellType::pyramid:
-    return basix::cell::type::pyramid;
-  default:
-    throw std::runtime_error("Unrecognised cell type.");
-  }
-}
-} // namespace
-
 //-----------------------------------------------------------------------------
 std::string mesh::to_string(mesh::CellType type)
 {
@@ -316,5 +290,51 @@ mesh::cell_entity_closure(mesh::CellType cell_type)
   }
 
   return entity_closure;
+}
+//-----------------------------------------------------------------------------
+basix::cell::type mesh::cell_type_to_basix_type(mesh::CellType celltype)
+{
+  switch (celltype)
+  {
+  case mesh::CellType::interval:
+    return basix::cell::type::interval;
+  case mesh::CellType::triangle:
+    return basix::cell::type::triangle;
+  case mesh::CellType::tetrahedron:
+    return basix::cell::type::tetrahedron;
+  case mesh::CellType::quadrilateral:
+    return basix::cell::type::quadrilateral;
+  case mesh::CellType::hexahedron:
+    return basix::cell::type::hexahedron;
+  case mesh::CellType::prism:
+    return basix::cell::type::prism;
+  case mesh::CellType::pyramid:
+    return basix::cell::type::pyramid;
+  default:
+    throw std::runtime_error("Unrecognised cell type.");
+  }
+}
+//-----------------------------------------------------------------------------
+mesh::CellType mesh::cell_type_from_basix_type(basix::cell::type celltype)
+{
+  switch (celltype)
+  {
+  case basix::cell::type::interval:
+    return mesh::CellType::interval;
+  case basix::cell::type::triangle:
+    return mesh::CellType::triangle;
+  case basix::cell::type::tetrahedron:
+    return mesh::CellType::tetrahedron;
+  case basix::cell::type::quadrilateral:
+    return mesh::CellType::quadrilateral;
+  case basix::cell::type::hexahedron:
+    return mesh::CellType::hexahedron;
+  case basix::cell::type::prism:
+    return mesh::CellType::prism;
+  case basix::cell::type::pyramid:
+    return mesh::CellType::pyramid;
+  default:
+    throw std::runtime_error("Unrecognised cell type.");
+  }
 }
 //-----------------------------------------------------------------------------
