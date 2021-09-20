@@ -244,13 +244,13 @@ public:
                    const xtl::span<const std::uint32_t>& cell_info,
                    std::int32_t cell, int block_size)
         {
-          std::size_t start = 0;
+          std::size_t offset = 0;
           for (std::size_t e = 0; e < sub_element_functions.size(); ++e)
           {
             const std::size_t width = dims[e] * block_size;
-            sub_element_functions[e](data.subspan(start, width), cell_info,
+            sub_element_functions[e](data.subspan(offset, width), cell_info,
                                      cell, block_size);
-            start += width;
+            offset += width;
           }
         };
       }
@@ -364,14 +364,12 @@ public:
                    const xtl::span<const std::uint32_t>& cell_info,
                    std::int32_t cell, int block_size)
         {
-          std::size_t start = 0;
+          std::size_t offset = 0;
           for (std::size_t e = 0; e < sub_element_functions.size(); ++e)
           {
-            const std::size_t width
-                = _sub_elements[e]->space_dimension() * block_size;
-            sub_element_functions[e](data.subspan(start, width), cell_info,
-                                     cell, block_size);
-            start += width;
+            sub_element_functions[e](data.subspan(offset, data.size() - offset),
+                                     cell_info, cell, block_size);
+            offset += _sub_elements[e]->space_dimension();
           }
         };
       }

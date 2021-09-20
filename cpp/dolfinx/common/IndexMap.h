@@ -455,7 +455,7 @@ private:
   std::vector<std::int64_t> _ghosts;
 
   // List of owned local indices that are in the halo (ghost) region on
-  // other ranks, grouped by rank in the neighbor communicator
+  // other ranks, grouped by rank on the neighbor communicator
   // (destination ranks in forward communicator and source ranks in the
   // reverse communicator), i.e. `_shared_indices.num_nodes() ==
   // size(_comm_owner_to_ghost)`.
