@@ -42,7 +42,7 @@ jobs:
         with:
           path: ./basix
           repository: FEniCS/basix
-          ref: main
+          ref: chris/set-to-vector
 
       - name: Install FEniCS Python components
         run: |
