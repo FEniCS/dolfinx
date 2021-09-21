@@ -7,6 +7,7 @@
 #pragma once
 
 #include <array>
+#include <basix/cell.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <map>
 #include <set>
@@ -86,5 +87,11 @@ int num_cell_vertices(CellType type);
 /// closure{sub_dim, (sub_entities)}
 std::map<std::array<int, 2>, std::vector<std::set<int>>>
 cell_entity_closure(mesh::CellType cell_type);
+
+/// Convert a cell type to a Basix cell type
+basix::cell::type cell_type_to_basix_type(CellType celltype);
+
+/// Get a cell type from a Basix cell type
+CellType cell_type_from_basix_type(basix::cell::type celltype);
 
 } // namespace dolfinx::mesh
