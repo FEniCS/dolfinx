@@ -49,7 +49,7 @@ CoordinateElement::CoordinateElement(mesh::CellType celltype, int degree)
     : CoordinateElement(std::make_shared<basix::FiniteElement>(
         basix::create_element(basix::element::family::P,
                               mesh::cell_type_to_basix_type(celltype), degree,
-                              basix::lattice::type::equispaced, false)))
+            basix::element::lagrange_variant::equispaced, false)))
 {
   // Do nothing
 }
@@ -172,8 +172,9 @@ void CoordinateElement::compute_jacobian_determinant(
 ElementDofLayout CoordinateElement::dof_layout() const
 {
   assert(_element);
-  std::vector<std::vector<std::set<int>>> entity_dofs = _element->entity_dofs();
-  std::vector<std::vector<std::set<int>>> entity_closure_dofs
+  std::vector<std::vector<std::vector<int>>> entity_dofs
+      = _element->entity_dofs();
+  std::vector<std::vector<std::vector<int>>> entity_closure_dofs
       = _element->entity_closure_dofs();
 
   return ElementDofLayout(1, entity_dofs, entity_closure_dofs, {}, {});
