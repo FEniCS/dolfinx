@@ -31,12 +31,17 @@ graph::AdjacencyList<T>
 reorder_list(const graph::AdjacencyList<T>& list,
              const xtl::span<const std::int32_t>& nodemap)
 {
+  // Copy existing data to keep ghost values (not reordered)
   std::vector<T> data(list.array());
-  std::vector<std::int32_t> offsets(list.offsets());
+  std::vector<std::int32_t> offsets(list.offsets().size());
 
-  // Compute new offsets
+  // Compute new offsets (owned and ghost)
+  offsets[0] = 0;
   for (std::size_t n = 0; n < nodemap.size(); ++n)
-    offsets[n + 1] = offsets[n] + list.num_links(nodemap[n]);
+    offsets[nodemap[n] + 1] = list.num_links(n);
+  for (std::size_t n = nodemap.size(); n < (std::size_t)list.num_nodes(); ++n)
+    offsets[n + 1] = list.num_links(n);
+  std::partial_sum(offsets.begin(), offsets.end(), offsets.begin());
   graph::AdjacencyList<T> list_new(std::move(data), std::move(offsets));
 
   for (std::size_t n = 0; n < nodemap.size(); ++n)
