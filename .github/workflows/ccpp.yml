@@ -75,13 +75,18 @@ jobs:
           cd cpp/doc
           doxygen
 
-      - name: Build and run C++ unit tests (serial and MPI)
+      - name: Build C++ unit tests
         run: |
           cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/unit/ -S build/test/unit/
           cmake --build build/test/unit
+      - name: Run C++ unit tests (serial)
+        run: |
           cd build/test/unit
           ctest -V --output-on-failure -R unittests
-          mpiexec -np 2 ctest --output-on-failure -R unittests
+      - name: Run C++ unit tests (MPI)
+        run: |
+          cd build/test/unit
+          mpiexec -np 2 ctest -V --output-on-failure -R unittests
       - name: Build and run C++ regression tests (serial and MPI (np=2))
         run: |
           cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/demo/ -S build/demo/

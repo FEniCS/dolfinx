@@ -46,32 +46,17 @@ CoordinateElement::CoordinateElement(
 }
 //-----------------------------------------------------------------------------
 CoordinateElement::CoordinateElement(mesh::CellType celltype, int degree)
-    : CoordinateElement(
-        std::make_shared<basix::FiniteElement>(basix::create_element(
-            basix::element::family::P,
-            basix::cell::str_to_type(mesh::to_string(celltype)), degree,
-            basix::lattice::type::equispaced, false)))
+    : CoordinateElement(std::make_shared<basix::FiniteElement>(
+        basix::create_element(basix::element::family::P,
+                              mesh::cell_type_to_basix_type(celltype), degree,
+                              basix::lattice::type::equispaced, false)))
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 mesh::CellType CoordinateElement::cell_shape() const
 {
-  // TODO
-  const std::string cell = basix::cell::type_to_str(_element->cell_type());
-
-  static const std::map<std::string, mesh::CellType> str_to_type
-      = {{"interval", mesh::CellType::interval},
-         {"triangle", mesh::CellType::triangle},
-         {"quadrilateral", mesh::CellType::quadrilateral},
-         {"prism", mesh::CellType::prism},
-         {"tetrahedron", mesh::CellType::tetrahedron},
-         {"hexahedron", mesh::CellType::hexahedron}};
-
-  auto it = str_to_type.find(cell);
-  if (it == str_to_type.end())
-    throw std::runtime_error("Problem with cell type");
-  return it->second;
+  return mesh::cell_type_from_basix_type(_element->cell_type());
 }
 //-----------------------------------------------------------------------------
 int CoordinateElement::topological_dimension() const
