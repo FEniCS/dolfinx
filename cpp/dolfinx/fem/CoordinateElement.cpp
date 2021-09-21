@@ -172,8 +172,9 @@ void CoordinateElement::compute_jacobian_determinant(
 ElementDofLayout CoordinateElement::dof_layout() const
 {
   assert(_element);
-  std::vector<std::vector<std::set<int>>> entity_dofs = _element->entity_dofs();
-  std::vector<std::vector<std::set<int>>> entity_closure_dofs
+  std::vector<std::vector<std::vector<int>>> entity_dofs
+      = _element->entity_dofs();
+  std::vector<std::vector<std::vector<int>>> entity_closure_dofs
       = _element->entity_closure_dofs();
 
   return ElementDofLayout(1, entity_dofs, entity_closure_dofs, {}, {});
