@@ -675,8 +675,6 @@ IndexMap::create_submap(const xtl::span<const std::int32_t>& indices) const
 
   // Step 1: Compute new offest for this rank and new global size
 
-  std::cout << "Step 1" << std::endl;
-
   std::int64_t local_size = indices.size();
   std::int64_t offset = 0;
   MPI_Request request_offset;
@@ -691,16 +689,12 @@ IndexMap::create_submap(const xtl::span<const std::int32_t>& indices) const
   // Step 2: Create array from old to new index for owned indices,
   // setting entries to -1 if they are not in the new map
 
-  std::cout << "Step 2" << std::endl;
-
   std::vector<std::int32_t> old_to_new_index(this->size_local(), -1);
   for (std::size_t i = 0; i < indices.size(); ++i)
     old_to_new_index[indices[i]] = i;
 
   // Step 3: Compute the destination that the new map will send to (fwd
   // scatter) and build the new shared_indices adjacency list
-
-  std::cout << "Step 3" << std::endl;
 
   // Loop over ranks that ghost data in the original map
   std::vector<int> ranks_old_to_new_send(_shared_indices->num_nodes(), -1);
@@ -735,8 +729,6 @@ IndexMap::create_submap(const xtl::span<const std::int32_t>& indices) const
 
   // Step 4: Create sizes_send_fwd array
 
-  std::cout << "Step 4" << std::endl;
-
   MPI_Wait(&request_offset, MPI_STATUS_IGNORE);
 
   // TODO: Can we avoid this step and pack the buffer directly?
@@ -747,8 +739,6 @@ IndexMap::create_submap(const xtl::span<const std::int32_t>& indices) const
 
   // Step 5: Send new global indices to ranks that ghost indices on this
   // rank
-
-  std::cout << "Step 5" << std::endl;
 
   const std::vector<std::int32_t>& send_indices
       = this->scatter_fwd_indices().array();
@@ -767,8 +757,6 @@ IndexMap::create_submap(const xtl::span<const std::int32_t>& indices) const
 
   // Step 6: Determine which ranks that send data to this rank for *this
   // will also send data to the new map on this rank
-
-  std::cout << "Step 6" << std::endl;
 
   // Count number of ghost from each rank
   std::vector<std::int32_t> ranks_old_to_new_recv(_sizes_recv_fwd.size(), -1),
@@ -790,8 +778,6 @@ IndexMap::create_submap(const xtl::span<const std::int32_t>& indices) const
   }
 
   // Step 7: Build ghost_pos_recv_fwd for the new map
-
-  std::cout << "Step 7" << std::endl;
 
   // Build list of ghosts in the new map, and compute the new owning rank
   std::vector<std::int64_t> ghosts;
@@ -821,8 +807,6 @@ IndexMap::create_submap(const xtl::span<const std::int32_t>& indices) const
 
   // Step 8: Create neighbourhood communicators for the new map
 
-  std::cout << "Step 8" << std::endl;
-
   // Get src/dest from forward comm (owner-to-ghost) from original map
   const auto [src_ranks, dest_ranks] = dolfinx::MPI::neighbors(comm);
   std::vector<int> in_ranks, out_ranks;
@@ -839,8 +823,6 @@ IndexMap::create_submap(const xtl::span<const std::int32_t>& indices) const
   MPI_Dist_graph_create_adjacent(
       comm, out_ranks.size(), out_ranks.data(), MPI_UNWEIGHTED, in_ranks.size(),
       in_ranks.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm1);
-
-  std::cout << "Step 9" << std::endl;
 
   // Wait for the MPI_Iallreduce to complete
   MPI_Wait(&request_size, MPI_STATUS_IGNORE);
