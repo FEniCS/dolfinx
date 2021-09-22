@@ -33,7 +33,7 @@ void assemble_matrix(
     const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                             const std::int32_t*, const T*)>& mat_set_values,
     const Form<T>& a, const xtl::span<const T>& constants,
-    const array2d<T>& coeffs, const std::vector<bool>& bc0,
+    const xtl::span<const T>& coeffs, int ncoeff, const std::vector<bool>& bc0,
     const std::vector<bool>& bc1);
 
 /// Execute kernel over cells and accumulate result in matrix
@@ -53,7 +53,8 @@ void assemble_cells(
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*)>& kernel,
-    const array2d<T>& coeffs, const xtl::span<const T>& constants,
+    const xtl::span<const T>& coeffs, int ncoeff,
+    const xtl::span<const T>& constants,
     const xtl::span<const std::uint32_t>& cell_info)
 {
   // Prepare cell geometry
@@ -83,7 +84,7 @@ void assemble_cells(
 
     // Tabulate tensor
     std::fill(Ae.begin(), Ae.end(), 0);
-    kernel(Ae.data(), coeffs.row(c).data(), constants.data(),
+    kernel(Ae.data(), coeffs.data() + c * ncoeff, constants.data(),
            coordinate_dofs.data(), nullptr, nullptr);
 
     dof_transform(_Ae, cell_info, c, ndim1);
@@ -147,7 +148,8 @@ void assemble_exterior_facets(
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*)>& kernel,
-    const array2d<T>& coeffs, const xtl::span<const T>& constants,
+    const xtl::span<const T>& coeffs, int ncoeff,
+    const xtl::span<const T>& constants,
     const xtl::span<const std::uint32_t>& cell_info,
     const std::function<std::uint8_t(std::size_t)>& get_perm)
 {
@@ -188,7 +190,7 @@ void assemble_exterior_facets(
     // Tabulate tensor
     std::uint8_t perm = get_perm(cell * num_cell_facets + local_facet);
     std::fill(Ae.begin(), Ae.end(), 0);
-    kernel(Ae.data(), coeffs.row(cell).data(), constants.data(),
+    kernel(Ae.data(), coeffs.data() + cell * ncoeff, constants.data(),
            coordinate_dofs.data(), &local_facet, &perm);
 
     dof_transform(_Ae, cell_info, cell, ndim1);
@@ -252,8 +254,8 @@ void assemble_interior_facets(
     const std::vector<bool>& bc1,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*)>& kernel,
-    const array2d<T>& coeffs, const xtl::span<const int>& offsets,
-    const xtl::span<const T>& constants,
+    const xtl::span<const T>& coeffs, int ncoeff,
+    const xtl::span<const int>& offsets, const xtl::span<const T>& constants,
     const xtl::span<const std::uint32_t>& cell_info,
     const std::function<std::uint8_t(std::size_t)>& get_perm)
 {
@@ -270,7 +272,7 @@ void assemble_interior_facets(
   xt::xtensor<double, 3> coordinate_dofs({2, num_dofs_g, 3});
   std::vector<T> Ae, be;
   std::vector<T> coeff_array(2 * offsets.back());
-  assert(offsets.back() == coeffs.shape[1]);
+  assert(offsets.back() == ncoeff);
 
   const int num_cell_facets
       = mesh::cell_num_entities(mesh.topology().cell_type(), tdim - 1);
@@ -316,17 +318,17 @@ void assemble_interior_facets(
 
     // Layout for the restricted coefficients is flattened
     // w[coefficient][restriction][dof]
-    auto coeff_cell0 = coeffs.row(cells[0]);
-    auto coeff_cell1 = coeffs.row(cells[1]);
+    const T* coeff_cell0 = coeffs.data() + cells[0] * ncoeff;
+    const T* coeff_cell1 = coeffs.data() + cells[1] * ncoeff;
 
     // Loop over coefficients
     for (std::size_t i = 0; i < offsets.size() - 1; ++i)
     {
       // Loop over entries for coefficient i
       const int num_entries = offsets[i + 1] - offsets[i];
-      std::copy_n(coeff_cell0.data() + offsets[i], num_entries,
+      std::copy_n(coeff_cell0 + offsets[i], num_entries,
                   std::next(coeff_array.begin(), 2 * offsets[i]));
-      std::copy_n(coeff_cell1.data() + offsets[i], num_entries,
+      std::copy_n(coeff_cell1 + offsets[i], num_entries,
                   std::next(coeff_array.begin(), offsets[i + 1] + offsets[i]));
     }
 
@@ -404,7 +406,7 @@ void assemble_matrix(
     const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                             const std::int32_t*, const T*)>& mat_set,
     const Form<T>& a, const xtl::span<const T>& constants,
-    const array2d<T>& coeffs, const std::vector<bool>& bc0,
+    const xtl::span<const T>& coeffs, int ncoeff, const std::vector<bool>& bc0,
     const std::vector<bool>& bc1)
 {
   std::shared_ptr<const mesh::Mesh> mesh = a.mesh();
@@ -452,7 +454,7 @@ void assemble_matrix(
     const std::vector<std::int32_t>& cells = a.cell_domains(i);
     impl::assemble_cells<T>(mat_set, mesh->geometry(), cells, dof_transform,
                             dofs0, bs0, dof_transform_to_transpose, dofs1, bs1,
-                            bc0, bc1, fn, coeffs, constants, cell_info);
+                            bc0, bc1, fn, coeffs, ncoeff, constants, cell_info);
   }
 
   if (a.num_integrals(IntegralType::exterior_facet) > 0
@@ -477,7 +479,7 @@ void assemble_matrix(
       impl::assemble_exterior_facets<T>(mat_set, *mesh, facets, dof_transform,
                                         dofs0, bs0, dof_transform_to_transpose,
                                         dofs1, bs1, bc0, bc1, fn, coeffs,
-                                        constants, cell_info, get_perm);
+                                        ncoeff, constants, cell_info, get_perm);
     }
 
     const std::vector<int> c_offsets = a.coefficient_offsets();
@@ -490,7 +492,7 @@ void assemble_matrix(
       impl::assemble_interior_facets<T>(
           mat_set, *mesh, facets, dof_transform, *dofmap0, bs0,
           dof_transform_to_transpose, *dofmap1, bs1, bc0, bc1, fn, coeffs,
-          c_offsets, constants, cell_info, get_perm);
+          ncoeff, c_offsets, constants, cell_info, get_perm);
     }
   }
 }

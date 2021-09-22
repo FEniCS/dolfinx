@@ -36,7 +36,9 @@ template <typename T>
 T assemble_scalar(const Form<T>& M, const xtl::span<const T>& constants,
                   const array2d<T>& coeffs)
 {
-  return impl::assemble_scalar(M, constants, coeffs);
+  return impl::assemble_scalar(M, constants,
+                               xtl::span<const T>(coeffs.data(), coeffs.size()),
+                               coeffs.shape[1]);
 }
 
 /// Assemble functional into scalar
@@ -200,8 +202,9 @@ void assemble_matrix(
   }
 
   // Assemble
-  impl::assemble_matrix(mat_add, a, constants, coeffs, dof_marker0,
-                        dof_marker1);
+  impl::assemble_matrix(mat_add, a, constants,
+                        xtl::span<const T>(coeffs.data(), coeffs.size()),
+                        coeffs.shape[1], dof_marker0, dof_marker1);
 }
 
 /// Assemble bilinear form into a matrix
@@ -245,8 +248,9 @@ void assemble_matrix(
     const std::vector<bool>& dof_marker1)
 
 {
-  impl::assemble_matrix(mat_add, a, constants, coeffs, dof_marker0,
-                        dof_marker1);
+  impl::assemble_matrix(mat_add, a, constants,
+                        xtl::span<const T>(coeffs.data(), coeffs.size()),
+                        coeffs.shape[1], dof_marker0, dof_marker1);
 }
 
 /// Assemble bilinear form into a matrix. Matrix must already be
