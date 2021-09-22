@@ -88,8 +88,8 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
 
   // Fill entity dof indices
   const int tdim = mesh::cell_dim(cell_type);
-  std::vector<std::vector<std::set<int>>> entity_dofs(tdim + 1);
-  std::vector<std::vector<std::set<int>>> entity_closure_dofs(tdim + 1);
+  std::vector<std::vector<std::vector<int>>> entity_dofs(tdim + 1);
+  std::vector<std::vector<std::vector<int>>> entity_closure_dofs(tdim + 1);
   for (int dim = 0; dim <= tdim; ++dim)
   {
     const int num_entities = mesh::cell_num_entities(cell_type, dim);
@@ -97,13 +97,12 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
     entity_closure_dofs[dim].resize(num_entities);
     for (int i = 0; i < num_entities; ++i)
     {
-      std::vector<int> tmp0(num_entity_dofs[dim]);
-      dofmap.tabulate_entity_dofs(tmp0.data(), dim, i);
-      entity_dofs[dim][i] = std::set<int>(tmp0.begin(), tmp0.end());
+      entity_dofs[dim][i].resize(num_entity_dofs[dim]);
+      dofmap.tabulate_entity_dofs(entity_dofs[dim][i].data(), dim, i);
 
-      std::vector<int> tmp1(num_entity_closure_dofs[dim]);
-      dofmap.tabulate_entity_closure_dofs(tmp1.data(), dim, i);
-      entity_closure_dofs[dim][i] = std::set<int>(tmp1.begin(), tmp1.end());
+      entity_closure_dofs[dim][i].resize(num_entity_closure_dofs[dim]);
+      dofmap.tabulate_entity_closure_dofs(entity_closure_dofs[dim][i].data(),
+                                          dim, i);
     }
   }
 
