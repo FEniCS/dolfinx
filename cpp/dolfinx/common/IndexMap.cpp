@@ -819,7 +819,7 @@ IndexMap::create_submap(const xtl::span<const std::int32_t>& indices) const
   for (std::size_t i = 0; i < ghost_owner.size(); ++i)
     ghost_pos_recv_fwd[i] = tmp_displs[ghost_owner[i]]++;
 
-  // Step 8: Create neighbourhood communicators for thw new map
+  // Step 8: Create neighbourhood communicators for the new map
 
   std::cout << "Step 8" << std::endl;
 
