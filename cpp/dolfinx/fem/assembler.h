@@ -34,11 +34,9 @@ class FunctionSpace;
 /// process
 template <typename T>
 T assemble_scalar(const Form<T>& M, const xtl::span<const T>& constants,
-                  const array2d<T>& coeffs)
+                  const std::pair<xtl::span<const T>, int>& coeffs)
 {
-  return impl::assemble_scalar(M, constants,
-                               xtl::span<const T>(coeffs.data(), coeffs.size()),
-                               coeffs.shape[1]);
+  return impl::assemble_scalar(M, constants, coeffs.first, coeffs.second);
 }
 
 /// Assemble functional into scalar
@@ -50,8 +48,8 @@ template <typename T>
 T assemble_scalar(const Form<T>& M)
 {
   const std::vector<T> constants = pack_constants(M);
-  const array2d<T> coeffs = pack_coefficients(M);
-  return assemble_scalar(M, tcb::make_span(constants), coeffs);
+  const auto [coeffs, ncoeff] = pack_coefficients(M);
+  return assemble_scalar(M, tcb::make_span(constants), {coeffs, ncoeff});
 }
 
 // -- Vectors ----------------------------------------------------------------
@@ -67,11 +65,9 @@ T assemble_scalar(const Form<T>& M)
 template <typename T>
 void assemble_vector(xtl::span<T> b, const Form<T>& L,
                      const xtl::span<const T>& constants,
-                     const array2d<T>& coeffs)
+                     const std::pair<xtl::span<const T>, int>& coeffs)
 {
-  impl::assemble_vector(b, L, constants,
-                        xtl::span<const T>(coeffs.data(), coeffs.size()),
-                        coeffs.shape[1]);
+  impl::assemble_vector(b, L, constants, coeffs.first, coeffs.second);
 }
 
 /// Assemble linear form into a vector
@@ -82,8 +78,8 @@ template <typename T>
 void assemble_vector(xtl::span<T> b, const Form<T>& L)
 {
   const std::vector<T> constants = pack_constants(L);
-  const array2d<T> coeffs = pack_coefficients(L);
-  assemble_vector(b, L, tcb::make_span(constants), coeffs);
+  const auto [coeffs, ncoeff] = pack_coefficients(L);
+  assemble_vector(b, L, tcb::make_span(constants), {coeffs, ncoeff});
 }
 
 // FIXME: clarify how x0 is used
@@ -133,7 +129,7 @@ void apply_lifting(
     const std::vector<std::vector<std::shared_ptr<const DirichletBC<T>>>>& bcs1,
     const std::vector<xtl::span<const T>>& x0, double scale)
 {
-  std::vector<array2d<T>> coeffs_data;
+  std::vector<std::pair<std::vector<T>, int>> coeffs_data;
   std::vector<std::pair<xtl::span<const T>, int>> coeffs;
   std::vector<std::vector<T>> constants;
   for (auto _a : a)
@@ -141,9 +137,7 @@ void apply_lifting(
     if (_a)
     {
       coeffs_data.push_back(pack_coefficients(*_a));
-      coeffs.emplace_back(xtl::span<const T>(coeffs_data.back().data(),
-                                             coeffs_data.back().size()),
-                          coeffs_data.back().shape[1]);
+      coeffs.emplace_back(coeffs_data.back().first, coeffs_data.back().second);
       constants.push_back(pack_constants(*_a));
     }
     else
@@ -154,9 +148,6 @@ void apply_lifting(
     }
   }
 
-  // std::vector<const array2d<T>*> _coeffs;
-  // std::for_each(coeffs.begin(), coeffs.end(),
-  //               [&_coeffs](const auto& c) { _coeffs.push_back(c.get()); });
   std::vector<xtl::span<const T>> _constants(constants.begin(),
                                              constants.end());
   apply_lifting(b, a, _constants, coeffs, bcs1, x0, scale);
@@ -176,7 +167,7 @@ void assemble_matrix(
     const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                             const std::int32_t*, const T*)>& mat_add,
     const Form<T>& a, const xtl::span<const T>& constants,
-    const array2d<T>& coeffs,
+    const std::pair<xtl::span<const T>, int>& coeffs,
     const std::vector<std::shared_ptr<const DirichletBC<T>>>& bcs)
 {
   // Index maps for dof ranges
@@ -209,9 +200,8 @@ void assemble_matrix(
   }
 
   // Assemble
-  impl::assemble_matrix(mat_add, a, constants,
-                        xtl::span<const T>(coeffs.data(), coeffs.size()),
-                        coeffs.shape[1], dof_marker0, dof_marker1);
+  impl::assemble_matrix(mat_add, a, constants, coeffs.first, coeffs.second,
+                        dof_marker0, dof_marker1);
 }
 
 /// Assemble bilinear form into a matrix
@@ -228,10 +218,11 @@ void assemble_matrix(
 {
   // Prepare constants and coefficients
   const std::vector<T> constants = pack_constants(a);
-  const array2d<T> coeffs = pack_coefficients(a);
+  const auto coeffs = pack_coefficients(a);
 
   // Assemble
-  assemble_matrix(mat_add, a, tcb::make_span(constants), coeffs, bcs);
+  assemble_matrix(mat_add, a, tcb::make_span(constants),
+                  {coeffs.first, coeffs.second}, bcs);
 }
 
 /// Assemble bilinear form into a matrix. Matrix must already be
@@ -251,13 +242,12 @@ void assemble_matrix(
     const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                             const std::int32_t*, const T*)>& mat_add,
     const Form<T>& a, const xtl::span<const T>& constants,
-    const array2d<T>& coeffs, const std::vector<bool>& dof_marker0,
-    const std::vector<bool>& dof_marker1)
+    const std::pair<xtl::span<const T>, int>& coeffs,
+    const std::vector<bool>& dof_marker0, const std::vector<bool>& dof_marker1)
 
 {
-  impl::assemble_matrix(mat_add, a, constants,
-                        xtl::span<const T>(coeffs.data(), coeffs.size()),
-                        coeffs.shape[1], dof_marker0, dof_marker1);
+  impl::assemble_matrix(mat_add, a, constants, coeffs.first, coeffs.second,
+                        dof_marker0, dof_marker1);
 }
 
 /// Assemble bilinear form into a matrix. Matrix must already be
@@ -280,11 +270,11 @@ void assemble_matrix(
 {
   // Prepare constants and coefficients
   const std::vector<T> constants = pack_constants(a);
-  const array2d<T> coeffs = pack_coefficients(a);
+  const auto [coeffs, ncoeff] = pack_coefficients(a);
 
   // Assemble
-  assemble_matrix(mat_add, a, tcb::make_span(constants), coeffs, dof_marker0,
-                  dof_marker1);
+  assemble_matrix(mat_add, a, tcb::make_span(constants), {coeffs, ncoeff},
+                  dof_marker0, dof_marker1);
 }
 
 /// Sets a value to the diagonal of a matrix for specified rows. It is

@@ -272,9 +272,10 @@ Vec fem::create_vector_nest(
   return y;
 }
 //-----------------------------------------------------------------------------
-void fem::assemble_vector_petsc(Vec b, const Form<PetscScalar>& L,
-                                const xtl::span<const PetscScalar>& constants,
-                                const array2d<PetscScalar>& coeffs)
+void fem::assemble_vector_petsc(
+    Vec b, const Form<PetscScalar>& L,
+    const xtl::span<const PetscScalar>& constants,
+    const std::pair<xtl::span<const PetscScalar>, int>& coeffs)
 {
   Vec b_local;
   VecGhostGetLocalForm(b, &b_local);
