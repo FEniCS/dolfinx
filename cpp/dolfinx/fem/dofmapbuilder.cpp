@@ -203,7 +203,7 @@ build_basic_dofmap(const mesh::Topology& topology,
   }
 
   // Entity dofs on cell (dof = entity_dofs[dim][entity][index])
-  const std::vector<std::vector<std::set<int>>>& entity_dofs
+  const std::vector<std::vector<std::vector<int>>>& entity_dofs
       = element_dof_layout.entity_dofs_all();
 
   // Storage for local-to-global map
@@ -317,8 +317,9 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
   // Compute the number of dofs 'owned' by this process
   const std::int32_t owned_size = std::accumulate(
       dof_entity.begin(), dof_entity.end(), std::int32_t(0),
-      [&offset = std::as_const(offset)](std::int32_t a, auto b)
-      { return b.second < offset[b.first] ? a + 1 : a; });
+      [&offset = std::as_const(offset)](std::int32_t a, auto b) {
+        return b.second < offset[b.first] ? a + 1 : a;
+      });
 
   // Re-order dofs, increasing local dof index by iterating over cells
 
@@ -350,8 +351,9 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
     const std::vector<int> node_remap
         = reorder_owned(dofmap, owned_size, original_to_contiguous, reorder_fn);
     std::for_each(original_to_contiguous.begin(), original_to_contiguous.end(),
-                  [&node_remap, owned_size](auto index)
-                  { return index < owned_size ? node_remap[index] : index; });
+                  [&node_remap, owned_size](auto index) {
+                    return index < owned_size ? node_remap[index] : index;
+                  });
   }
 
   return {std::move(original_to_contiguous), owned_size};

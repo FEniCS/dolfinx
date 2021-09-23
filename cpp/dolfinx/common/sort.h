@@ -25,7 +25,7 @@ namespace dolfinx
 /// @tparam BITS The number of bits to sort at a time.
 /// @param[in, out] array The array to sort.
 template <typename T, int BITS = 8>
-void radix_sort(xtl::span<T> array)
+void radix_sort(const xtl::span<T>& array)
 {
   static_assert(std::is_integral<T>(), "This function only sorts integers.");
 

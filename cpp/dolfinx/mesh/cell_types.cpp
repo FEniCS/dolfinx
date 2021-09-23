@@ -66,7 +66,7 @@ mesh::CellType mesh::to_type(const std::string& cell)
     throw std::runtime_error("Unknown cell type (" + cell + ")");
 }
 //-----------------------------------------------------------------------------
-mesh::CellType mesh::cell_entity_type(mesh::CellType type, int d)
+mesh::CellType mesh::cell_entity_type(mesh::CellType type, int d, int index)
 {
   const int dim = mesh::cell_dim(type);
   if (d == dim)
@@ -74,12 +74,12 @@ mesh::CellType mesh::cell_entity_type(mesh::CellType type, int d)
   else if (d == 1)
     return CellType::interval;
   else if (d == (dim - 1))
-    return mesh::cell_facet_type(type);
+    return mesh::cell_facet_type(type, index);
   else
     return CellType::point;
 }
 //-----------------------------------------------------------------------------
-mesh::CellType mesh::cell_facet_type(mesh::CellType type)
+mesh::CellType mesh::cell_facet_type(mesh::CellType type, int index)
 {
   switch (type)
   {
@@ -96,7 +96,10 @@ mesh::CellType mesh::cell_facet_type(mesh::CellType type)
   case mesh::CellType::pyramid:
     throw std::runtime_error("TODO: pyramid");
   case mesh::CellType::prism:
-    throw std::runtime_error("TODO: prism");
+    if (index == 0 or index == 4)
+      return mesh::CellType::triangle;
+    else
+      return mesh::CellType::quadrilateral;
   case mesh::CellType::hexahedron:
     return mesh::CellType::quadrilateral;
   default:
@@ -109,12 +112,13 @@ graph::AdjacencyList<int> mesh::get_entity_vertices(mesh::CellType type,
                                                     int dim)
 {
   const std::vector<std::vector<int>> topology
-      = basix::cell::topology(basix::cell::str_to_type(to_string(type)))[dim];
+      = basix::cell::topology(cell_type_to_basix_type(type))[dim];
 
   return graph::AdjacencyList<int>(topology);
 }
 //-----------------------------------------------------------------------------
-xt::xtensor<int, 2> mesh::get_sub_entities(CellType type, int dim0, int dim1)
+graph::AdjacencyList<int> mesh::get_sub_entities(CellType type, int dim0,
+                                                 int dim1)
 {
   if (dim0 != 2)
   {
@@ -128,28 +132,31 @@ xt::xtensor<int, 2> mesh::get_sub_entities(CellType type, int dim0, int dim1)
   }
 
   // TODO: get this data from basix
-  static const xt::xtensor_fixed<int, xt::xshape<1, 3>> triangle = {{0, 1, 2}};
-  static const xt::xtensor_fixed<int, xt::xshape<1, 4>> quadrilateral
-      = {{0, 1, 2, 3}};
-  static const xt::xtensor_fixed<int, xt::xshape<4, 3>> tetrahedron
+  static const std::vector<std::vector<int>> triangle = {{0, 1, 2}};
+  static const std::vector<std::vector<int>> quadrilateral = {{0, 1, 2, 3}};
+  static const std::vector<std::vector<int>> tetrahedron
       = {{0, 1, 2}, {0, 3, 4}, {1, 3, 5}, {2, 4, 5}};
-  static const xt::xtensor_fixed<int, xt::xshape<6, 4>> hexahedron
+  static const std::vector<std::vector<int>> prism
+      = {{0, 1, 3}, {0, 2, 4, 6}, {1, 2, 5, 7}, {3, 4, 5, 8}, {6, 7, 8}};
+  static const std::vector<std::vector<int>> hexahedron
       = {{0, 1, 3, 5},  {0, 2, 4, 8},  {1, 2, 6, 9},
          {3, 4, 7, 10}, {5, 6, 7, 11}, {8, 9, 10, 11}};
   switch (type)
   {
   case mesh::CellType::interval:
-    return xt::empty<int>({0, 0});
+    return graph::AdjacencyList<int>(0);
   case mesh::CellType::point:
-    return xt::empty<int>({0, 0});
+    return graph::AdjacencyList<int>(0);
   case mesh::CellType::triangle:
-    return triangle;
+    return graph::AdjacencyList<int>(triangle);
   case mesh::CellType::tetrahedron:
-    return tetrahedron;
+    return graph::AdjacencyList<int>(tetrahedron);
+  case mesh::CellType::prism:
+    return graph::AdjacencyList<int>(prism);
   case mesh::CellType::quadrilateral:
-    return quadrilateral;
+    return graph::AdjacencyList<int>(quadrilateral);
   case mesh::CellType::hexahedron:
-    return hexahedron;
+    return graph::AdjacencyList<int>(hexahedron);
   default:
     throw std::runtime_error("Unsupported cell type.");
   }
@@ -258,12 +265,12 @@ mesh::cell_entity_closure(mesh::CellType cell_type)
 
       if (dim == 2)
       {
-        mesh::CellType face_type = mesh::cell_entity_type(cell_type, 2);
+        mesh::CellType face_type = mesh::cell_entity_type(cell_type, 2, entity);
         const int num_edges = mesh::cell_num_entities(face_type, 1);
         for (int e = 0; e < num_edges; ++e)
         {
           // Add edge
-          const int edge_index = face_e(entity, e);
+          const int edge_index = face_e.links(entity)[e];
           entity_closure[{{dim, entity}}][1].insert(edge_index);
           for (int v = 0; v < 2; ++v)
           {
@@ -283,5 +290,51 @@ mesh::cell_entity_closure(mesh::CellType cell_type)
   }
 
   return entity_closure;
+}
+//-----------------------------------------------------------------------------
+basix::cell::type mesh::cell_type_to_basix_type(mesh::CellType celltype)
+{
+  switch (celltype)
+  {
+  case mesh::CellType::interval:
+    return basix::cell::type::interval;
+  case mesh::CellType::triangle:
+    return basix::cell::type::triangle;
+  case mesh::CellType::tetrahedron:
+    return basix::cell::type::tetrahedron;
+  case mesh::CellType::quadrilateral:
+    return basix::cell::type::quadrilateral;
+  case mesh::CellType::hexahedron:
+    return basix::cell::type::hexahedron;
+  case mesh::CellType::prism:
+    return basix::cell::type::prism;
+  case mesh::CellType::pyramid:
+    return basix::cell::type::pyramid;
+  default:
+    throw std::runtime_error("Unrecognised cell type.");
+  }
+}
+//-----------------------------------------------------------------------------
+mesh::CellType mesh::cell_type_from_basix_type(basix::cell::type celltype)
+{
+  switch (celltype)
+  {
+  case basix::cell::type::interval:
+    return mesh::CellType::interval;
+  case basix::cell::type::triangle:
+    return mesh::CellType::triangle;
+  case basix::cell::type::tetrahedron:
+    return mesh::CellType::tetrahedron;
+  case basix::cell::type::quadrilateral:
+    return mesh::CellType::quadrilateral;
+  case basix::cell::type::hexahedron:
+    return mesh::CellType::hexahedron;
+  case basix::cell::type::prism:
+    return mesh::CellType::prism;
+  case basix::cell::type::pyramid:
+    return mesh::CellType::pyramid;
+  default:
+    throw std::runtime_error("Unrecognised cell type.");
+  }
 }
 //-----------------------------------------------------------------------------

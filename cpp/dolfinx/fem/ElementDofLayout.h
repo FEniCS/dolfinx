@@ -44,8 +44,8 @@ public:
   /// @param[in] sub_dofmaps TODO
   ElementDofLayout(
       int block_size,
-      const std::vector<std::vector<std::set<int>>>& entity_dofs,
-      const std::vector<std::vector<std::set<int>>>& entity_closure_dofs,
+      const std::vector<std::vector<std::vector<int>>>& entity_dofs,
+      const std::vector<std::vector<std::vector<int>>>& entity_closure_dofs,
       const std::vector<int>& parent_map,
       const std::vector<std::shared_ptr<const ElementDofLayout>>& sub_dofmaps);
 
@@ -97,11 +97,11 @@ public:
                                        int cell_entity_index) const;
 
   /// Direct access to all entity dofs (dof = _entity_dofs[dim][entity][i])
-  const std::vector<std::vector<std::set<int>>>& entity_dofs_all() const;
+  const std::vector<std::vector<std::vector<int>>>& entity_dofs_all() const;
 
   /// Direct access to all entity closure dofs (dof =
   /// _entity_dofs[dim][entity][i])
-  const std::vector<std::vector<std::set<int>>>&
+  const std::vector<std::vector<std::vector<int>>>&
   entity_closure_dofs_all() const;
 
   /// Get number of sub-dofmaps
@@ -144,10 +144,10 @@ private:
 
   // List of dofs per entity, ordered by dimension.
   // dof = _entity_dofs[dim][entity][i]
-  std::vector<std::vector<std::set<int>>> _entity_dofs;
+  std::vector<std::vector<std::vector<int>>> _entity_dofs;
 
   // List of dofs with connected entities of lower dimension
-  std::vector<std::vector<std::set<int>>> _entity_closure_dofs;
+  std::vector<std::vector<std::vector<int>>> _entity_closure_dofs;
 
   // List of sub dofmaps
   std::vector<std::shared_ptr<const ElementDofLayout>> _sub_dofmaps;
