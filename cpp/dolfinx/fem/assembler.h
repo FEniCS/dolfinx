@@ -69,7 +69,9 @@ void assemble_vector(xtl::span<T> b, const Form<T>& L,
                      const xtl::span<const T>& constants,
                      const array2d<T>& coeffs)
 {
-  impl::assemble_vector(b, L, constants, coeffs);
+  impl::assemble_vector(b, L, constants,
+                        xtl::span<const T>(coeffs.data(), coeffs.size()),
+                        coeffs.shape[1]);
 }
 
 /// Assemble linear form into a vector
@@ -106,7 +108,7 @@ template <typename T>
 void apply_lifting(
     xtl::span<T> b, const std::vector<std::shared_ptr<const Form<T>>>& a,
     const std::vector<xtl::span<const T>>& constants,
-    const std::vector<const array2d<T>*>& coeffs,
+    const std::vector<std::pair<xtl::span<const T>, int>>& coeffs,
     const std::vector<std::vector<std::shared_ptr<const DirichletBC<T>>>>& bcs1,
     const std::vector<xtl::span<const T>>& x0, double scale)
 {
@@ -131,28 +133,33 @@ void apply_lifting(
     const std::vector<std::vector<std::shared_ptr<const DirichletBC<T>>>>& bcs1,
     const std::vector<xtl::span<const T>>& x0, double scale)
 {
-  std::vector<std::unique_ptr<array2d<T>>> coeffs;
+  std::vector<array2d<T>> coeffs_data;
+  std::vector<std::pair<xtl::span<const T>, int>> coeffs;
   std::vector<std::vector<T>> constants;
   for (auto _a : a)
   {
     if (_a)
     {
-      coeffs.push_back(std::make_unique<array2d<T>>(pack_coefficients(*_a)));
+      coeffs_data.push_back(pack_coefficients(*_a));
+      coeffs.emplace_back(xtl::span<const T>(coeffs_data.back().data(),
+                                             coeffs_data.back().size()),
+                          coeffs_data.back().shape[1]);
       constants.push_back(pack_constants(*_a));
     }
     else
     {
-      coeffs.push_back(nullptr);
+      // coeffs.push_back(nullptr);
+      coeffs.emplace_back(xtl::span<const T>(), 0);
       constants.push_back({});
     }
   }
 
-  std::vector<const array2d<T>*> _coeffs;
-  std::for_each(coeffs.begin(), coeffs.end(),
-                [&_coeffs](const auto& c) { _coeffs.push_back(c.get()); });
+  // std::vector<const array2d<T>*> _coeffs;
+  // std::for_each(coeffs.begin(), coeffs.end(),
+  //               [&_coeffs](const auto& c) { _coeffs.push_back(c.get()); });
   std::vector<xtl::span<const T>> _constants(constants.begin(),
                                              constants.end());
-  apply_lifting(b, a, _constants, _coeffs, bcs1, x0, scale);
+  apply_lifting(b, a, _constants, coeffs, bcs1, x0, scale);
 }
 
 // -- Matrices ---------------------------------------------------------------

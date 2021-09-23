@@ -926,7 +926,7 @@ template <typename T>
 void apply_lifting(
     xtl::span<T> b, const std::vector<std::shared_ptr<const Form<T>>> a,
     const std::vector<xtl::span<const T>>& constants,
-    const std::vector<const array2d<T>*>& coeffs,
+    const std::vector<std::pair<xtl::span<const T>, int>>& coeffs,
     const std::vector<std::vector<std::shared_ptr<const DirichletBC<T>>>>& bcs1,
     const std::vector<xtl::span<const T>>& x0, double scale)
 {
@@ -965,19 +965,15 @@ void apply_lifting(
         bc->dof_values(bc_values1);
       }
 
-      assert(coeffs[j]);
       if (!x0.empty())
       {
-        lift_bc<T>(b, *a[j], constants[j],
-                   xtl::span<const T>(coeffs[j]->data(), coeffs[j]->size()),
-                   coeffs[j]->shape[1], bc_values1, bc_markers1, x0[j], scale);
+        lift_bc<T>(b, *a[j], constants[j], coeffs[j].first, coeffs[j].second,
+                   bc_values1, bc_markers1, x0[j], scale);
       }
       else
       {
-        lift_bc<T>(b, *a[j], constants[j],
-                   xtl::span<const T>(coeffs[j]->data(), coeffs[j]->size()),
-                   coeffs[j]->shape[1], bc_values1, bc_markers1,
-                   xtl::span<const T>(), scale);
+        lift_bc<T>(b, *a[j], constants[j], coeffs[j].first, coeffs[j].second,
+                   bc_values1, bc_markers1, xtl::span<const T>(), scale);
       }
     }
   }
@@ -992,7 +988,7 @@ void apply_lifting(
 template <typename T>
 void assemble_vector(xtl::span<T> b, const Form<T>& L,
                      const xtl::span<const T>& constants,
-                     const array2d<T>& coeffs)
+                     const xtl::span<const T>& coeffs, int ncoeff)
 {
   std::shared_ptr<const mesh::Mesh> mesh = L.mesh();
   assert(mesh);
@@ -1027,24 +1023,20 @@ void assemble_vector(xtl::span<T> b, const Form<T>& L,
     const std::vector<std::int32_t>& cells = L.cell_domains(i);
     if (bs == 1)
     {
-      impl::assemble_cells<T, 1>(
-          dof_transform, b, mesh->geometry(), cells, dofs, bs, fn, constants,
-          xtl::span<const T>(coeffs.data(), coeffs.size()), coeffs.shape[1],
-          cell_info);
+      impl::assemble_cells<T, 1>(dof_transform, b, mesh->geometry(), cells,
+                                 dofs, bs, fn, constants, coeffs, ncoeff,
+                                 cell_info);
     }
     else if (bs == 3)
     {
-      impl::assemble_cells<T, 3>(
-          dof_transform, b, mesh->geometry(), cells, dofs, bs, fn, constants,
-          xtl::span<const T>(coeffs.data(), coeffs.size()), coeffs.shape[1],
-          cell_info);
+      impl::assemble_cells<T, 3>(dof_transform, b, mesh->geometry(), cells,
+                                 dofs, bs, fn, constants, coeffs, ncoeff,
+                                 cell_info);
     }
     else
     {
       impl::assemble_cells(dof_transform, b, mesh->geometry(), cells, dofs, bs,
-                           fn, constants,
-                           xtl::span<const T>(coeffs.data(), coeffs.size()),
-                           coeffs.shape[1], cell_info);
+                           fn, constants, coeffs, ncoeff, cell_info);
     }
   }
 
@@ -1069,24 +1061,21 @@ void assemble_vector(xtl::span<T> b, const Form<T>& L,
           = L.exterior_facet_domains(i);
       if (bs == 1)
       {
-        impl::assemble_exterior_facets<T, 1>(
-            dof_transform, b, *mesh, facets, dofs, bs, fn, constants,
-            xtl::span<const T>(coeffs.data(), coeffs.size()), coeffs.shape[1],
-            cell_info, get_perm);
+        impl::assemble_exterior_facets<T, 1>(dof_transform, b, *mesh, facets,
+                                             dofs, bs, fn, constants, coeffs,
+                                             ncoeff, cell_info, get_perm);
       }
       else if (bs == 3)
       {
-        impl::assemble_exterior_facets<T, 3>(
-            dof_transform, b, *mesh, facets, dofs, bs, fn, constants,
-            xtl::span<const T>(coeffs.data(), coeffs.size()), coeffs.shape[1],
-            cell_info, get_perm);
+        impl::assemble_exterior_facets<T, 3>(dof_transform, b, *mesh, facets,
+                                             dofs, bs, fn, constants, coeffs,
+                                             ncoeff, cell_info, get_perm);
       }
       else
       {
-        impl::assemble_exterior_facets(
-            dof_transform, b, *mesh, facets, dofs, bs, fn, constants,
-            xtl::span<const T>(coeffs.data(), coeffs.size()), coeffs.shape[1],
-            cell_info, get_perm);
+        impl::assemble_exterior_facets(dof_transform, b, *mesh, facets, dofs,
+                                       bs, fn, constants, coeffs, ncoeff,
+                                       cell_info, get_perm);
       }
     }
 
@@ -1100,23 +1089,20 @@ void assemble_vector(xtl::span<T> b, const Form<T>& L,
       if (bs == 1)
       {
         impl::assemble_interior_facets<T, 1>(
-            dof_transform, b, *mesh, facets, *dofmap, fn, constants,
-            xtl::span<const T>(coeffs.data(), coeffs.size()), coeffs.shape[1],
-            c_offsets, cell_info, get_perm);
+            dof_transform, b, *mesh, facets, *dofmap, fn, constants, coeffs,
+            ncoeff, c_offsets, cell_info, get_perm);
       }
       else if (bs == 3)
       {
         impl::assemble_interior_facets<T, 3>(
-            dof_transform, b, *mesh, facets, *dofmap, fn, constants,
-            xtl::span<const T>(coeffs.data(), coeffs.size()), coeffs.shape[1],
-            c_offsets, cell_info, get_perm);
+            dof_transform, b, *mesh, facets, *dofmap, fn, constants, coeffs,
+            ncoeff, c_offsets, cell_info, get_perm);
       }
       else
       {
-        impl::assemble_interior_facets(
-            dof_transform, b, *mesh, facets, *dofmap, fn, constants,
-            xtl::span<const T>(coeffs.data(), coeffs.size()), coeffs.shape[1],
-            c_offsets, cell_info, get_perm);
+        impl::assemble_interior_facets(dof_transform, b, *mesh, facets, *dofmap,
+                                       fn, constants, coeffs, ncoeff, c_offsets,
+                                       cell_info, get_perm);
       }
     }
   }
