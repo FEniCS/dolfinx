@@ -35,7 +35,7 @@ public:
   }
 
   /// Create an arbitrary rank constant. Data layout is row-major (C style).
-  Constant(std::vector<int> shape, std::vector<T> value)
+  Constant(const std::vector<int>& shape, const std::vector<T>& value)
       : shape(shape), value(value)
   {
     // Do nothing

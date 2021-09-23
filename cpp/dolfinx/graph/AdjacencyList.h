@@ -7,7 +7,6 @@
 #pragma once
 
 #include <cassert>
-#include <dolfinx/common/array2d.h>
 #include <numeric>
 #include <sstream>
 #include <utility>

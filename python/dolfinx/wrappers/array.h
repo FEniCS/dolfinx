@@ -10,19 +10,20 @@
 #include <memory>
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
+#include <vector>
 
 namespace py = pybind11;
 
 namespace dolfinx_wrappers
 {
 
-/// Create a py::array_t that shares data with a std::vector. The
-/// std::vector owns the data, and the py::array_t object keeps the std::vector
-/// alive.
-// From https://github.com/pybind/pybind11/issues/1042
+/// Create an n-dimensional py::array_t that shares data with a
+/// std::vector. The std::vector owns the data, and the py::array_t
+/// object keeps the std::vector alive.
+/// From https://github.com/pybind/pybind11/issues/1042
 template <typename Sequence>
-inline py::array_t<typename Sequence::value_type>
-as_pyarray(Sequence&& seq, std::array<int, 2> shape)
+py::array_t<typename Sequence::value_type>
+as_pyarray(Sequence&& seq, const std::vector<int>& shape)
 {
   // auto size = seq.size();
   auto data = seq.data();
@@ -40,7 +41,7 @@ as_pyarray(Sequence&& seq, std::array<int, 2> shape)
 /// alive.
 // From https://github.com/pybind/pybind11/issues/1042
 template <typename Sequence>
-inline py::array_t<typename Sequence::value_type> as_pyarray(Sequence&& seq)
+py::array_t<typename Sequence::value_type> as_pyarray(Sequence&& seq)
 {
   auto size = seq.size();
   auto data = seq.data();
@@ -58,7 +59,7 @@ inline py::array_t<typename Sequence::value_type> as_pyarray(Sequence&& seq)
 /// py::array_t object keeps the C++ object alive .
 // From https://github.com/pybind/pybind11/issues/1042
 template <typename T>
-inline py::array_t<T> as_pyarray2d(dolfinx::array2d<T>&& array)
+py::array_t<T> as_pyarray2d(dolfinx::array2d<T>&& array)
 {
   auto shape = array.shape;
   auto strides = array.strides();
