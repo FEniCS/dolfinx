@@ -49,19 +49,19 @@ def test_sub_index_map():
 
     owners_sub = submap.ghost_owner_rank()
     print(owners_sub)
-    # owners = map.ghost_owner_rank()
+    owners = map.ghost_owner_rank()
 
-    # # Running this code on 2 procs gives you that the ghost on process 0
-    # # is owned by process 0
-    # print(comm.rank, "Range", map.local_range, "Local", local_indices,
-    #       "Sub range", submap.local_range, "Sub ghosts", submap.ghosts, "Ghosts", map.ghosts, "Sub owners", owners_sub)
-    # assert np.allclose(dest_ranks, owners)
+    # Running this code on 2 procs gives you that the ghost on process 0
+    # is owned by process 0
+    print(comm.rank, "Range", map.local_range, "Local", local_indices,
+          "Sub range", submap.local_range, "Sub ghosts", submap.ghosts, "Ghosts", map.ghosts, "Sub owners", owners_sub)
+    assert np.allclose(dest_ranks, owners)
 
-    # # First rank has no elements
-    # if comm.rank == 0:
-    #     assert(submap.size_local == 0)
-    # # Check that rank on sub-process ghosts is the same as the parent map
-    # for (owner, pos) in zip(sub_owners, ghosts_pos):
-    #     assert(owners[pos] == owner)
-    # # print(
-    # #     f"{myrank}:, {submap.ghosts}, {sub_owners}, {map.ghosts[ghosts_pos]} {np.array(owners, dtype=np.int32)[ghosts_pos]}")
+    # First rank has no elements
+    if comm.rank == 0:
+        assert(submap.size_local == 0)
+    # Check that rank on sub-process ghosts is the same as the parent map
+    for (owner, pos) in zip(owners_sub, ghosts_pos):
+        assert(owners[pos] == owner)
+    # print(
+    #     f"{myrank}:, {submap.ghosts}, {sub_owners}, {map.ghosts[ghosts_pos]} {np.array(owners, dtype=np.int32)[ghosts_pos]}")
