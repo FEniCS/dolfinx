@@ -20,7 +20,7 @@ def test_sub_index_map():
 
     n = 7
     size_local = np.math.factorial(n)
-    assert comm.size < n +1
+    assert comm.size < n + 1
     local_range = (size_local * myrank, size_local * (myrank + 1))
 
     # Pick on ghost from every other rank
@@ -34,7 +34,7 @@ def test_sub_index_map():
     assert map.size_global == size_local * comm.size
 
     print("\n")
-    print("Ghosts", ghosts,myrank)
+    print("Ghosts", ghosts, myrank)
 
     # Create sub-map with (myrank + myrank % 2) elements
     new_local_size = int((myrank + myrank % 2))
@@ -63,5 +63,5 @@ def test_sub_index_map():
     # Check that rank on sub-process ghosts is the same as the parent map
     for (owner, pos) in zip(owners_sub, ghosts_pos):
         assert(owners[pos] == owner)
-    # print(
-    #     f"{myrank}:, {submap.ghosts}, {sub_owners}, {map.ghosts[ghosts_pos]} {np.array(owners, dtype=np.int32)[ghosts_pos]}")
+    print(f"{myrank}: , {submap.ghosts}, {owners_sub},\
+          {map.ghosts[ghosts_pos]} {np.array(owners, dtype=np.int32)[ghosts_pos]}")
