@@ -48,8 +48,8 @@ template <typename T>
 T assemble_scalar(const Form<T>& M)
 {
   const std::vector<T> constants = pack_constants(M);
-  const auto [coeffs, ncoeff] = pack_coefficients(M);
-  return assemble_scalar(M, tcb::make_span(constants), {coeffs, ncoeff});
+  const auto [coeffs, cstride] = pack_coefficients(M);
+  return assemble_scalar(M, tcb::make_span(constants), {coeffs, cstride});
 }
 
 // -- Vectors ----------------------------------------------------------------
@@ -78,8 +78,8 @@ template <typename T>
 void assemble_vector(xtl::span<T> b, const Form<T>& L)
 {
   const std::vector<T> constants = pack_constants(L);
-  const auto [coeffs, ncoeff] = pack_coefficients(L);
-  assemble_vector(b, L, tcb::make_span(constants), {coeffs, ncoeff});
+  const auto [coeffs, cstride] = pack_coefficients(L);
+  assemble_vector(b, L, tcb::make_span(constants), {coeffs, cstride});
 }
 
 // FIXME: clarify how x0 is used
@@ -269,10 +269,10 @@ void assemble_matrix(
 {
   // Prepare constants and coefficients
   const std::vector<T> constants = pack_constants(a);
-  const auto [coeffs, ncoeff] = pack_coefficients(a);
+  const auto [coeffs, cstride] = pack_coefficients(a);
 
   // Assemble
-  assemble_matrix(mat_add, a, tcb::make_span(constants), {coeffs, ncoeff},
+  assemble_matrix(mat_add, a, tcb::make_span(constants), {coeffs, cstride},
                   dof_marker0, dof_marker1);
 }
 

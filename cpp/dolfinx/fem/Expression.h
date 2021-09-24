@@ -96,7 +96,7 @@ public:
     assert(_mesh);
 
     // Prepare coefficients and constants
-    const auto [coeffs, ncoeff] = pack_coefficients(*this);
+    const auto [coeffs, cstride] = pack_coefficients(*this);
     const std::vector<T> constant_data = pack_constants(*this);
 
     const auto& fn = this->get_tabulate_expression();
@@ -126,7 +126,7 @@ public:
                     std::next(coordinate_dofs.begin(), 3 * i));
       }
 
-      const T* coeff_cell = coeffs.data() + cell * ncoeff;
+      const T* coeff_cell = coeffs.data() + cell * cstride;
       std::fill(values_e.begin(), values_e.end(), 0.0);
       fn(values_e.data(), coeff_cell, constant_data.data(),
          coordinate_dofs.data());

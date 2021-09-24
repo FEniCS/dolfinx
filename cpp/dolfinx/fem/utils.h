@@ -383,7 +383,7 @@ namespace impl
 // Pack a single coefficient
 template <typename T, int _bs = -1>
 void pack_coefficient(
-    const xtl::span<T>& c, int ncoeff, const std::vector<T>& v,
+    const xtl::span<T>& c, int cstride, const std::vector<T>& v,
     const xtl::span<const std::uint32_t>& cell_info, const fem::DofMap& dofmap,
     std::int32_t num_cells, std::int32_t offset, int space_dim,
     const std::function<void(const xtl::span<T>&,
@@ -395,7 +395,7 @@ void pack_coefficient(
   for (std::int32_t cell = 0; cell < num_cells; ++cell)
   {
     auto dofs = dofmap.cell_dofs(cell);
-    auto cell_coeff = c.subspan(cell * ncoeff + offset, space_dim);
+    auto cell_coeff = c.subspan(cell * cstride + offset, space_dim);
     for (std::size_t i = 0; i < dofs.size(); ++i)
     {
       if constexpr (_bs < 0)
@@ -452,7 +452,7 @@ pack_coefficients(const U& u)
 
   // Copy data into coefficient array
   std::vector<T> c(num_cells * offsets.back());
-  const int ncoeff = offsets.back();
+  const int cstride = offsets.back();
   if (!coefficients.empty())
   {
     bool needs_dof_transformations = false;
@@ -479,27 +479,27 @@ pack_coefficients(const U& u)
       if (int bs = dofmaps[coeff]->bs(); bs == 1)
       {
         impl::pack_coefficient<T, 1>(
-            xtl::span<T>(c), ncoeff, v[coeff], cell_info, *dofmaps[coeff],
+            xtl::span<T>(c), cstride, v[coeff], cell_info, *dofmaps[coeff],
             num_cells, offsets[coeff], elements[coeff]->space_dimension(),
             transformation);
       }
       else if (bs == 2)
       {
         impl::pack_coefficient<T, 2>(
-            xtl::span<T>(c), ncoeff, v[coeff], cell_info, *dofmaps[coeff],
+            xtl::span<T>(c), cstride, v[coeff], cell_info, *dofmaps[coeff],
             num_cells, offsets[coeff], elements[coeff]->space_dimension(),
             transformation);
       }
       else if (bs == 3)
       {
         impl::pack_coefficient<T, 3>(
-            xtl::span<T>(c), ncoeff, v[coeff], cell_info, *dofmaps[coeff],
+            xtl::span<T>(c), cstride, v[coeff], cell_info, *dofmaps[coeff],
             num_cells, offsets[coeff], elements[coeff]->space_dimension(),
             transformation);
       }
       else
       {
-        impl::pack_coefficient<T>(xtl::span<T>(c), ncoeff, v[coeff], cell_info,
+        impl::pack_coefficient<T>(xtl::span<T>(c), cstride, v[coeff], cell_info,
                                   *dofmaps[coeff], num_cells, offsets[coeff],
                                   elements[coeff]->space_dimension(),
                                   transformation);
@@ -507,7 +507,7 @@ pack_coefficients(const U& u)
     }
   }
 
-  return {std::move(c), ncoeff};
+  return {std::move(c), cstride};
 }
 
 // NOTE: This is subject to change
