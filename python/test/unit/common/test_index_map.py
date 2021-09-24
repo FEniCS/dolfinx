@@ -13,59 +13,35 @@ def test_sub_index_map():
 
     comm = MPI.COMM_WORLD
     myrank = comm.rank
-    if myrank == 0:
-        ghosts = []
-        map = dolfinx.cpp.common.IndexMap(MPI.COMM_WORLD, 50, np.arange(
-            1, comm.size, dtype=np.int32), ghosts, len(ghosts) * [0])
-    else:
-        ghosts = [7, 5, 2, 0, 16]
-        map = dolfinx.cpp.common.IndexMap(MPI.COMM_WORLD, 25, [], ghosts, len(ghosts) * [0])
 
-    assert map.size_global == 50 + 25 * (comm.size - 1)
+    # Create index map with one ghost from each other process
+    dest_ranks = np.delete(np.arange(0, comm.size, dtype=np.int32), myrank)
+    size_local = np.math.factorial(7)
+    assert comm.size < 8
+    local_range = (size_local * myrank, size_local * (myrank + 1))
+    ghosts = np.array([i % size_local + size_local * dest_ranks[i] for i in range(len(dest_ranks))])
+    src_ranks = dest_ranks
+    map = dolfinx.cpp.common.IndexMap(MPI.COMM_WORLD, size_local, dest_ranks, ghosts, src_ranks)
+    #assert map.size_global == size_local * comm.size
+    # Create sub-map with (myrank + myrank % 2) elements
+    new_local_size = int((myrank + myrank % 2))
+    local_indices = np.arange(new_local_size, dtype=np.int32)
 
-    # Create an index map where only every second (even) local index is
-    # extracted
-    entities = np.arange(0, map.size_local, 2, dtype=np.int32)
-    submap, ghosts_pos = map.create_submap(entities)
+    submap, ghosts_pos = map.create_submap(local_indices)
+    assert submap.size_global == sum([rank + rank % 2 for rank in range(comm.size)])
+    assert submap.size_local == new_local_size
+    sub_owners = submap.ghost_owner_rank()
+    owners = map.ghost_owner_rank()
+    # Running this code on 2 procs gives you that the ghost on process 0 is owned by process 0
+    print(comm.rank, "Parent range", map.local_range, "Parent local", local_indices, "Child range", submap.local_range,
+          "Child ghosts", submap.ghosts, "Parent ghosts", map.ghosts, "Sub owners", sub_owners)
+    assert np.allclose(dest_ranks, owners)
 
-    for pos, global_idx in zip(ghosts_pos, ghosts[::2]):
-        assert ghosts[pos] % 2 == 0
-
-    # assert submap.size_local == len(entities)
-    # assert submap.size_global == mesh.mpi_comm().allreduce(len(entities), op=MPI.SUM)
-
-    # org_global_entities = vertex_map.local_to_global(owned_entities)
-
-    # # Add every fourth ghost
-    # ghost_pos = np.arange(0, len(org_ghosts), 4, dtype=np.int32)
-    # sub_ghosts = org_ghosts[ghost_pos]
-    # entities = np.hstack([owned_entities, ghost_pos + sl])
-    # sub_ghosts = np.array(sub_ghosts, dtype=np.int64)
-
-    # Create sub  index map
-
-    # # Check that the new map has at least as many indices as the input
-    # # Might have more due to owned indices on other processes
-    # new_sl = new_map.size_local
-    # assert len(owned_entities) <= new_sl
-
-    # # Check that output of compression is sensible
-    # assert len(org_glob) == new_map.size_local + new_map.num_ghosts
-
-    # # Check that all original entities are contained in new index map (might be more local entries due to owned
-    # # entries being used on ghost processes
-    # assert np.isin(org_global_entities, org_glob[:new_sl]).all()
-    # assert len(org_global_entities) <= new_sl
-
-    # # Check that all original ghosts are in the new index map
-    # # Not necessarily in the same order, as the initial index map does not
-    # # sort ghosts per process
-    # assert len(sub_ghosts) == new_map.num_ghosts
-    # new_ghosts = org_glob[new_sl:]
-    # assert np.isin(new_ghosts, sub_ghosts).all()
-
-    # # Check that ghost owner is the same for matching global index
-    # new_ghost_owners = new_map.ghost_owner_rank()
-    # for (i, ghost) in enumerate(new_ghosts):
-    #     index = np.flatnonzero(org_ghosts == ghost)[0]
-    #     assert(org_ghost_owners[index] == new_ghost_owners[i])
+    # First rank has no elements
+    if comm.rank == 0:
+        assert(submap.size_local == 0)
+    # Check that rank on sub-process ghosts is the same as the parent map
+    for (owner, pos) in zip(sub_owners, ghosts_pos):
+        assert(owners[pos] == owner)
+    # print(
+    #     f"{myrank}:, {submap.ghosts}, {sub_owners}, {map.ghosts[ghosts_pos]} {np.array(owners, dtype=np.int32)[ghosts_pos]}")
