@@ -327,7 +327,7 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
   MPI_Iallreduce(&local_size_tmp, &_size_global, 1, MPI_INT64_T, MPI_SUM,
                  mpi_comm, &request);
 
-  // Build vector of src ranks for ghosts, i.e. the ranks that own the
+  // Build set of src ranks for ghosts, i.e. the ranks that own the
   // callers ghosts
   std::vector<std::int32_t> halo_src_ranks(src_ranks.begin(), src_ranks.end());
   std::sort(halo_src_ranks.begin(), halo_src_ranks.end());
@@ -529,13 +529,45 @@ std::vector<int> IndexMap::ghost_owner_rank() const
                            neighbors_in.data(), MPI_UNWEIGHTED, outdegree,
                            neighbors_out.data(), MPI_UNWEIGHTED);
 
+  int myrank = dolfinx::MPI::rank(_comm_owner_to_ghost.comm());
+  if (myrank == 0)
+  {
+    std::cout << "Ghost owner rank: " << myrank << std::endl;
+    std::cout << "ghost_pos_recv_fwd" << std::endl;
+    for (auto x : _ghost_pos_recv_fwd)
+      std::cout << x << std::endl;
+    std::cout << "displs_recv_fwd" << std::endl;
+    for (auto x : _displs_recv_fwd)
+      std::cout << x << std::endl;
+
+    std::cout << "neighbors_in" << std::endl;
+    for (auto x : neighbors_in)
+      std::cout << x << std::endl;
+  }
+
   // Compute index owner on neighbourhood comm
   const std::vector<int> ghost_owners
       = compute_ghost_owners(_ghost_pos_recv_fwd, _displs_recv_fwd);
+  if (myrank == 0)
+  {
+    std::cout << "Ghost owners (local): " << myrank << std::endl;
+    for (auto x : ghost_owners)
+      std::cout << x << std::endl;
+    std::cout << "--------" << std::endl;
+  }
+
   std::vector<std::int32_t> owners(ghost_owners.size());
   std::transform(ghost_owners.cbegin(), ghost_owners.cend(), owners.begin(),
                  [&neighbors_in](auto ghost_owner)
                  { return neighbors_in[ghost_owner]; });
+
+  if (myrank == 0)
+  {
+    std::cout << "Ghost owners (global): " << myrank << std::endl;
+    for (auto x : owners)
+      std::cout << x << std::endl;
+    std::cout << "--------" << std::endl;
+  }
 
   return owners;
 }
@@ -673,6 +705,9 @@ IndexMap::create_submap(const xtl::span<const std::int32_t>& indices) const
 
   MPI_Comm comm = this->comm(Direction::forward);
 
+  int myrank = 0;
+  MPI_Comm_rank(comm, &myrank);
+
   // Step 1: Compute new offest for this rank and new global size
 
   std::int64_t local_size = indices.size();
@@ -771,7 +806,13 @@ IndexMap::create_submap(const xtl::span<const std::int32_t>& indices) const
         [](auto x) { return x >= 0; });
     if (sizes_recv_fwd_new[r_old] > 0)
     {
+      if (myrank == 0)
+      {
+        std::cout << "rold: " << r_old << std::endl;
+        std::cout << "rold: " << displs_recv_fwd.size() - 1 << std::endl;
+      }
       ranks_old_to_new_recv[r_old] = displs_recv_fwd.size() - 1;
+
       displs_recv_fwd.push_back(displs_recv_fwd.back()
                                 + sizes_recv_fwd_new[r_old]);
     }
@@ -815,6 +856,10 @@ IndexMap::create_submap(const xtl::span<const std::int32_t>& indices) const
   std::copy_if(ranks_old_to_new_send.cbegin(), ranks_old_to_new_send.cend(),
                std::back_inserter(out_ranks),
                [](auto idx) { return idx >= 0; });
+  for (std::size_t i = 0; i < in_ranks.size(); ++i)
+    in_ranks[i] = src_ranks[in_ranks[i]];
+  for (std::size_t i = 0; i < out_ranks.size(); ++i)
+    out_ranks[i] = dest_ranks[out_ranks[i]];
 
   MPI_Comm comm0, comm1;
   MPI_Dist_graph_create_adjacent(
@@ -824,12 +869,34 @@ IndexMap::create_submap(const xtl::span<const std::int32_t>& indices) const
       comm, out_ranks.size(), out_ranks.data(), MPI_UNWEIGHTED, in_ranks.size(),
       in_ranks.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm1);
 
+  if (myrank == 0)
+  {
+    std::cout << "In-ranks" << std::endl;
+    for (auto x : in_ranks)
+      std::cout << x << std::endl;
+    std::cout << "-------" << std::endl;
+    std::cout << "out-ranks" << std::endl;
+    for (auto x : out_ranks)
+      std::cout << x << std::endl;
+    std::cout << "-------" << std::endl;
+  }
   // Wait for the MPI_Iallreduce to complete
   MPI_Wait(&request_size, MPI_STATUS_IGNORE);
 
   displs_recv_fwd.shrink_to_fit();
   ghosts.shrink_to_fit();
   new_to_old_ghost.shrink_to_fit();
+
+  if (myrank == 0)
+  {
+    std::cout << "C ghost_pos_recv_fwd" << std::endl;
+    for (auto x : ghost_pos_recv_fwd)
+      std::cout << x << std::endl;
+    std::cout << "C displs_recv_fwd" << std::endl;
+    for (auto x : displs_recv_fwd)
+      std::cout << x << std::endl;
+  }
+
   return {IndexMap({offset, offset + local_size}, size_global,
                    dolfinx::MPI::Comm(comm0, false),
                    dolfinx::MPI::Comm(comm1, false), std::move(displs_recv_fwd),
