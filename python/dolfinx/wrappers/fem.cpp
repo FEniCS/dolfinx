@@ -68,18 +68,18 @@ void fem(py::module& m)
       "pack_coefficients",
       [](dolfinx::fem::Form<PetscScalar>& form)
       {
-        auto [coeffs, ncoeff] = dolfinx::fem::pack_coefficients(form);
+        auto [coeffs, cstride] = dolfinx::fem::pack_coefficients(form);
         return as_pyarray(std::move(coeffs),
-                          {int(coeffs.size() / ncoeff), ncoeff});
+                          {int(coeffs.size() / cstride), cstride});
       },
       "Pack coefficients for a Form.");
   m.def(
       "pack_coefficients",
       [](dolfinx::fem::Expression<PetscScalar>& expr)
       {
-        auto [coeffs, ncoeff] = dolfinx::fem::pack_coefficients(expr);
+        auto [coeffs, cstride] = dolfinx::fem::pack_coefficients(expr);
         return as_pyarray(std::move(coeffs),
-                          {int(coeffs.size() / ncoeff), ncoeff});
+                          {int(coeffs.size() / cstride), cstride});
       },
       "Pack coefficients for an Expression.");
   m.def(
@@ -369,15 +369,32 @@ void fem(py::module& m)
       },
       py::arg("b"), py::arg("L"),
       "Assemble linear form into an existing vector");
+  m.def(
+      "assemble_vector",
+      [](py::array_t<PetscScalar, py::array::c_style> b,
+         const dolfinx::fem::Form<PetscScalar>& L,
+         const py::array_t<PetscScalar, py::array::c_style>& constants,
+         const py::array_t<PetscScalar, py::array::c_style>& coeffs)
+      {
+        dolfinx::fem::assemble_vector<PetscScalar>(
+            xtl::span(b.mutable_data(), b.size()), L, constants,
+            {xtl::span<const PetscScalar>(coeffs.data(), coeffs.size()),
+             coeffs.shape(1)});
+      },
+      py::arg("b"), py::arg("L"), py::arg("constants"), py::arg("coeffs"),
+      "Assemble linear form into an existing vector with pre-packed constants "
+      "and coefficients");
   // Matrices
-  m.def("assemble_matrix_petsc",
-        [](Mat A, const dolfinx::fem::Form<PetscScalar>& a,
-           const std::vector<std::shared_ptr<
-               const dolfinx::fem::DirichletBC<PetscScalar>>>& bcs)
-        {
-          dolfinx::fem::assemble_matrix(
-              dolfinx::la::PETScMatrix::set_block_fn(A, ADD_VALUES), a, bcs);
-        });
+  m.def(
+      "assemble_matrix_petsc",
+      [](Mat A, const dolfinx::fem::Form<PetscScalar>& a,
+         const std::vector<std::shared_ptr<
+             const dolfinx::fem::DirichletBC<PetscScalar>>>& bcs)
+      {
+        dolfinx::fem::assemble_matrix(
+            dolfinx::la::PETScMatrix::set_block_fn(A, ADD_VALUES), a, bcs);
+      },
+      "Assemble bilinear form into an existing PETSc matrix");
   m.def("assemble_matrix_petsc",
         [](Mat A, const dolfinx::fem::Form<PetscScalar>& a,
            const std::vector<bool>& rows0, const std::vector<bool>& rows1)
@@ -386,17 +403,20 @@ void fem(py::module& m)
               dolfinx::la::PETScMatrix::set_block_fn(A, ADD_VALUES), a, rows0,
               rows1);
         });
-  m.def("assemble_matrix_petsc_unrolled",
-        [](Mat A, const dolfinx::fem::Form<PetscScalar>& a,
-           const std::vector<std::shared_ptr<
-               const dolfinx::fem::DirichletBC<PetscScalar>>>& bcs)
-        {
-          dolfinx::fem::assemble_matrix(
-              dolfinx::la::PETScMatrix::set_block_expand_fn(
-                  A, a.function_spaces()[0]->dofmap()->bs(),
-                  a.function_spaces()[1]->dofmap()->bs(), ADD_VALUES),
-              a, bcs);
-        });
+  m.def(
+      "assemble_matrix_petsc_unrolled",
+      [](Mat A, const dolfinx::fem::Form<PetscScalar>& a,
+         const std::vector<std::shared_ptr<
+             const dolfinx::fem::DirichletBC<PetscScalar>>>& bcs)
+      {
+        dolfinx::fem::assemble_matrix(
+            dolfinx::la::PETScMatrix::set_block_expand_fn(
+                A, a.function_spaces()[0]->dofmap()->bs(),
+                a.function_spaces()[1]->dofmap()->bs(), ADD_VALUES),
+            a, bcs);
+      },
+      "Assemble bilinear form into an existing PETSc matrix using non-block "
+      "insertion");
   m.def("assemble_matrix_petsc_unrolled",
         [](Mat A, const dolfinx::fem::Form<PetscScalar>& a,
            const std::vector<bool>& rows0, const std::vector<bool>& rows1)
@@ -877,9 +897,9 @@ void fem(py::module& m)
               const py::array_t<std::int32_t, py::array::c_style>& active_cells,
               py::array_t<PetscScalar> values)
            {
-             xt::xtensor<PetscScalar, 2> _values(
-                 {std::size_t(active_cells.shape(0)),
-                  std::size_t(self.num_points() * self.value_size())});
+             dolfinx::array2d<PetscScalar> _values(active_cells.shape()[0],
+                                                   self.num_points()
+                                                       * self.value_size());
              self.eval(xtl::span(active_cells.data(), active_cells.size()),
                        _values);
              assert(values.ndim() == 2);
