@@ -863,7 +863,8 @@ void fem(py::module& m)
                  auto tabulate_expression_ptr = (void (*)(
                      PetscScalar*, const PetscScalar*, const PetscScalar*,
                      const double*))addr.cast<std::uintptr_t>();
-                 dolfinx::array2d<double> _X(X.shape()[0], X.shape()[1]);
+                 xt::xtensor<double, 2> _X(
+                     {std::size_t(X.shape(0)), std::size_t(X.shape(1))});
                  std::copy_n(X.data(), X.size(), _X.data());
                  return dolfinx::fem::Expression<PetscScalar>(
                      coefficients, constants, mesh, _X, tabulate_expression_ptr,
@@ -876,9 +877,9 @@ void fem(py::module& m)
               const py::array_t<std::int32_t, py::array::c_style>& active_cells,
               py::array_t<PetscScalar> values)
            {
-             dolfinx::array2d<PetscScalar> _values(active_cells.shape()[0],
-                                                   self.num_points()
-                                                       * self.value_size());
+             xt::xtensor<PetscScalar, 2> _values(
+                 {std::size_t(active_cells.shape(0)),
+                  std::size_t(self.num_points() * self.value_size())});
              self.eval(xtl::span(active_cells.data(), active_cells.size()),
                        _values);
              assert(values.ndim() == 2);

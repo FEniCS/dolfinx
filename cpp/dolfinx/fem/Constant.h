@@ -6,8 +6,8 @@
 
 #pragma once
 
-#include <dolfinx/common/array2d.h>
 #include <vector>
+#include <xtensor/xtensor.hpp>
 
 namespace dolfinx::fem
 {
@@ -26,11 +26,11 @@ public:
   explicit Constant(const std::vector<T>& c) : shape(1, c.size()), value({c}) {}
 
   /// Create a rank-2 constant
-  explicit Constant(const array2d<T>& c)
-      : shape({(int)c.rows(), (int)c.cols()}), value(c.rows() * c.cols())
+  explicit Constant(const xt::xtensor<T, 2>& c)
+      : shape({c.shape(0), c.shape(1)}), value(c.shape(0) * c.shaoe(1))
   {
-    for (int i = 0; i < c.rows(); ++i)
-      for (int j = 0; j < c.cols(); ++j)
+    for (std::size_t i = 0; i < c.shape(0); ++i)
+      for (std::size_t j = 0; j < c.shape(1); ++j)
         value[i * c.cols() + j] = c(i, j);
   }
 
