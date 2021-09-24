@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2020 Chris N. Richardson and Garth N. Wells
+// Copyright (C) 2017-2021 Chris N. Richardson and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -8,7 +8,6 @@
 #include "caster_mpi.h"
 #include "caster_petsc.h"
 #include <cfloat>
-#include <dolfinx/common/array2d.h>
 #include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/mesh/Geometry.h>
