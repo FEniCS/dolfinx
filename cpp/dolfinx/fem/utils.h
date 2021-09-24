@@ -395,7 +395,6 @@ void pack_coefficient(
   for (std::int32_t cell = 0; cell < num_cells; ++cell)
   {
     auto dofs = dofmap.cell_dofs(cell);
-    // auto cell_coeff = c.row(cell).subspan(offset, space_dim);
     auto cell_coeff = c.subspan(cell * ncoeff + offset, space_dim);
     for (std::size_t i = 0; i < dofs.size(); ++i)
     {

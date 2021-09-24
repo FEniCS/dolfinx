@@ -142,7 +142,6 @@ void apply_lifting(
     }
     else
     {
-      // coeffs.push_back(nullptr);
       coeffs.emplace_back(xtl::span<const T>(), 0);
       constants.push_back({});
     }
