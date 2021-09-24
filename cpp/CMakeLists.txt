@@ -190,6 +190,7 @@ execute_process(
 if (BASIX_PY_DIR)
   message(STATUS "Adding ${BASIX_PY_DIR} to Basix search hints")
 endif()
+# PATHS for manylinux built wheels of basix
 find_package(Basix REQUIRED CONFIG HINTS ${BASIX_PY_DIR} PATHS ${BASIX_PY_DIR}/lib64/cmake/basix)
 set_package_properties(basix PROPERTIES TYPE REQUIRED
   DESCRIPTION "FEniCS tabulation library"
