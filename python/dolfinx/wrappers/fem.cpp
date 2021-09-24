@@ -897,9 +897,9 @@ void fem(py::module& m)
               const py::array_t<std::int32_t, py::array::c_style>& active_cells,
               py::array_t<PetscScalar> values)
            {
-             dolfinx::array2d<PetscScalar> _values(active_cells.shape()[0],
-                                                   self.num_points()
-                                                       * self.value_size());
+             xt::xtensor<PetscScalar, 2> _values(
+                 {std::size_t(active_cells.shape(0)),
+                  std::size_t(self.num_points() * self.value_size())});
              self.eval(xtl::span(active_cells.data(), active_cells.size()),
                        _values);
              assert(values.ndim() == 2);
