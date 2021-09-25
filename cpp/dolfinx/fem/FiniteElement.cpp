@@ -144,13 +144,14 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
 
   if (is_basix_element(ufc_element))
   {
-    if (ufc_element.lattice_type != -1)
+    if (ufc_element.lagrange_variant != -1)
     {
       _element = std::make_unique<basix::FiniteElement>(basix::create_element(
           static_cast<basix::element::family>(ufc_element.basix_family),
           static_cast<basix::cell::type>(ufc_element.basix_cell),
           ufc_element.degree,
-          static_cast<basix::lattice::type>(ufc_element.lattice_type),
+          static_cast<basix::element::lagrange_variant>(
+              ufc_element.lagrange_variant),
           ufc_element.discontinuous));
     }
     else
@@ -302,12 +303,12 @@ FiniteElement::get_dof_permutation_function(bool inverse,
     {
       // If this element shouldn't be permuted but needs transformations, return
       // a function that throws an error
-      return [](const xtl::span<std::int32_t>&, std::uint32_t) {
+      return [](const xtl::span<std::int32_t>&, std::uint32_t)
+      {
         throw std::runtime_error(
             "Permutations should not be applied for this element.");
       };
     }
-
   }
 
   if (_sub_elements.size() != 0)
@@ -328,15 +329,16 @@ FiniteElement::get_dof_permutation_function(bool inverse,
 
       return
           [dims, sub_element_functions](const xtl::span<std::int32_t>& doflist,
-                                        std::uint32_t cell_permutation) {
-            std::size_t start = 0;
-            for (std::size_t e = 0; e < sub_element_functions.size(); ++e)
-            {
-              sub_element_functions[e](doflist.subspan(start, dims[e]),
-                                       cell_permutation);
-              start += dims[e];
-            }
-          };
+                                        std::uint32_t cell_permutation)
+      {
+        std::size_t start = 0;
+        for (std::size_t e = 0; e < sub_element_functions.size(); ++e)
+        {
+          sub_element_functions[e](doflist.subspan(start, dims[e]),
+                                   cell_permutation);
+          start += dims[e];
+        }
+      };
     }
     else if (!scalar_element)
     {
@@ -348,16 +350,14 @@ FiniteElement::get_dof_permutation_function(bool inverse,
   if (inverse)
   {
     return [this](const xtl::span<std::int32_t>& doflist,
-                  std::uint32_t cell_permutation) {
-      unpermute_dofs(doflist, cell_permutation);
-    };
+                  std::uint32_t cell_permutation)
+    { unpermute_dofs(doflist, cell_permutation); };
   }
   else
   {
     return [this](const xtl::span<std::int32_t>& doflist,
-                  std::uint32_t cell_permutation) {
-      permute_dofs(doflist, cell_permutation);
-    };
+                  std::uint32_t cell_permutation)
+    { permute_dofs(doflist, cell_permutation); };
   }
 }
 //-----------------------------------------------------------------------------

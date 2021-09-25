@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2019 Chris Richardson and Garth N. Wells
+// Copyright (C) 2017-2021 Chris Richardson and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -67,12 +67,20 @@ void fem(py::module& m)
   m.def(
       "pack_coefficients",
       [](dolfinx::fem::Form<PetscScalar>& form)
-      { return as_pyarray2d(dolfinx::fem::pack_coefficients(form)); },
+      {
+        auto [coeffs, cstride] = dolfinx::fem::pack_coefficients(form);
+        return as_pyarray(std::move(coeffs),
+                          {int(coeffs.size() / cstride), cstride});
+      },
       "Pack coefficients for a Form.");
   m.def(
       "pack_coefficients",
       [](dolfinx::fem::Expression<PetscScalar>& expr)
-      { return as_pyarray2d(dolfinx::fem::pack_coefficients(expr)); },
+      {
+        auto [coeffs, cstride] = dolfinx::fem::pack_coefficients(expr);
+        return as_pyarray(std::move(coeffs),
+                          {int(coeffs.size() / cstride), cstride});
+      },
       "Pack coefficients for an Expression.");
   m.def(
       "pack_constants",
@@ -196,8 +204,8 @@ void fem(py::module& m)
   py::class_<dolfinx::fem::ElementDofLayout,
              std::shared_ptr<dolfinx::fem::ElementDofLayout>>(
       m, "ElementDofLayout", "Object describing the layout of dofs on a cell")
-      .def(py::init<int, const std::vector<std::vector<std::set<int>>>&,
-                    const std::vector<std::vector<std::set<int>>>&,
+      .def(py::init<int, const std::vector<std::vector<std::vector<int>>>&,
+                    const std::vector<std::vector<std::vector<int>>>&,
                     const std::vector<int>&,
                     const std::vector<std::shared_ptr<
                         const dolfinx::fem::ElementDofLayout>>>())
@@ -247,13 +255,12 @@ void fem(py::module& m)
               const py::array_t<double, py::array::c_style>& X,
               const py::array_t<double, py::array::c_style>& cell_geometry)
            {
-             std::array<std::size_t, 2> s_x
-                 = {static_cast<std::size_t>(X.shape(0)),
-                    static_cast<std::size_t>(X.shape(1))};
+             std::array<std::size_t, 2> s_x;
+             std::copy_n(X.shape(), 2, s_x.begin());
              auto _X = xt::adapt(X.data(), X.size(), xt::no_ownership(), s_x);
-             std::array<std::size_t, 2> s_g
-                 = {static_cast<std::size_t>(cell_geometry.shape(0)),
-                    static_cast<std::size_t>(cell_geometry.shape(1))};
+
+             std::array<std::size_t, 2> s_g;
+             std::copy_n(cell_geometry.shape(), 2, s_g.begin());
              auto g = xt::adapt(cell_geometry.data(), cell_geometry.size(),
                                 xt::no_ownership(), s_g);
 
@@ -279,14 +286,13 @@ void fem(py::module& m)
              xt::xtensor<double, 3> K
                  = xt::empty<double>({num_points, tdim, gdim});
              xt::xtensor<double, 1> detJ = xt::empty<double>({num_points});
-             std::array<std::size_t, 2> s_x
-                 = {static_cast<std::size_t>(x.shape(0)),
-                    static_cast<std::size_t>(x.shape(1))};
+
+             std::array<std::size_t, 2> s_x;
+             std::copy_n(x.shape(), 2, s_x.begin());
              auto _x = xt::adapt(x.data(), x.size(), xt::no_ownership(), s_x);
 
-             std::array<std::size_t, 2> s_g
-                 = {static_cast<std::size_t>(cell_geometry.shape(0)),
-                    static_cast<std::size_t>(cell_geometry.shape(1))};
+             std::array<std::size_t, 2> s_g;
+             std::copy_n(cell_geometry.shape(), 2, s_g.begin());
              auto g = xt::adapt(cell_geometry.data(), cell_geometry.size(),
                                 xt::no_ownership(), s_g);
              self.pull_back(X, J, detJ, K, _x, g);
@@ -361,15 +367,32 @@ void fem(py::module& m)
       },
       py::arg("b"), py::arg("L"),
       "Assemble linear form into an existing vector");
+  m.def(
+      "assemble_vector",
+      [](py::array_t<PetscScalar, py::array::c_style> b,
+         const dolfinx::fem::Form<PetscScalar>& L,
+         const py::array_t<PetscScalar, py::array::c_style>& constants,
+         const py::array_t<PetscScalar, py::array::c_style>& coeffs)
+      {
+        dolfinx::fem::assemble_vector<PetscScalar>(
+            xtl::span(b.mutable_data(), b.size()), L, constants,
+            {xtl::span<const PetscScalar>(coeffs.data(), coeffs.size()),
+             coeffs.shape(1)});
+      },
+      py::arg("b"), py::arg("L"), py::arg("constants"), py::arg("coeffs"),
+      "Assemble linear form into an existing vector with pre-packed constants "
+      "and coefficients");
   // Matrices
-  m.def("assemble_matrix_petsc",
-        [](Mat A, const dolfinx::fem::Form<PetscScalar>& a,
-           const std::vector<std::shared_ptr<
-               const dolfinx::fem::DirichletBC<PetscScalar>>>& bcs)
-        {
-          dolfinx::fem::assemble_matrix(
-              dolfinx::la::PETScMatrix::set_block_fn(A, ADD_VALUES), a, bcs);
-        });
+  m.def(
+      "assemble_matrix_petsc",
+      [](Mat A, const dolfinx::fem::Form<PetscScalar>& a,
+         const std::vector<std::shared_ptr<
+             const dolfinx::fem::DirichletBC<PetscScalar>>>& bcs)
+      {
+        dolfinx::fem::assemble_matrix(
+            dolfinx::la::PETScMatrix::set_block_fn(A, ADD_VALUES), a, bcs);
+      },
+      "Assemble bilinear form into an existing PETSc matrix");
   m.def("assemble_matrix_petsc",
         [](Mat A, const dolfinx::fem::Form<PetscScalar>& a,
            const std::vector<bool>& rows0, const std::vector<bool>& rows1)
@@ -378,17 +401,20 @@ void fem(py::module& m)
               dolfinx::la::PETScMatrix::set_block_fn(A, ADD_VALUES), a, rows0,
               rows1);
         });
-  m.def("assemble_matrix_petsc_unrolled",
-        [](Mat A, const dolfinx::fem::Form<PetscScalar>& a,
-           const std::vector<std::shared_ptr<
-               const dolfinx::fem::DirichletBC<PetscScalar>>>& bcs)
-        {
-          dolfinx::fem::assemble_matrix(
-              dolfinx::la::PETScMatrix::set_block_expand_fn(
-                  A, a.function_spaces()[0]->dofmap()->bs(),
-                  a.function_spaces()[1]->dofmap()->bs(), ADD_VALUES),
-              a, bcs);
-        });
+  m.def(
+      "assemble_matrix_petsc_unrolled",
+      [](Mat A, const dolfinx::fem::Form<PetscScalar>& a,
+         const std::vector<std::shared_ptr<
+             const dolfinx::fem::DirichletBC<PetscScalar>>>& bcs)
+      {
+        dolfinx::fem::assemble_matrix(
+            dolfinx::la::PETScMatrix::set_block_expand_fn(
+                A, a.function_spaces()[0]->dofmap()->bs(),
+                a.function_spaces()[1]->dofmap()->bs(), ADD_VALUES),
+            a, bcs);
+      },
+      "Assemble bilinear form into an existing PETSc matrix using non-block "
+      "insertion");
   m.def("assemble_matrix_petsc_unrolled",
         [](Mat A, const dolfinx::fem::Form<PetscScalar>& a,
            const std::vector<bool>& rows0, const std::vector<bool>& rows1)
@@ -472,6 +498,7 @@ void fem(py::module& m)
       },
       py::arg("b"), py::arg("bcs"), py::arg("x0") = py::none(),
       py::arg("scale") = 1.0);
+
   // Tools
   m.def("bcs_rows", &dolfinx::fem::bcs_rows<PetscScalar>);
   m.def("bcs_cols", &dolfinx::fem::bcs_cols<PetscScalar>);
@@ -570,8 +597,8 @@ void fem(py::module& m)
             {
             case dolfinx::fem::IntegralType::cell:
             {
-              const std::vector<std::int32_t>& domains = self.cell_domains(i);
-              return py::array_t<std::int32_t>(domains.size(), domains.data(),
+              return py::array_t<std::int32_t>(self.cell_domains(i).size(),
+                                               self.cell_domains(i).data(),
                                                py::cast(self));
             }
             case dolfinx::fem::IntegralType::exterior_facet:
@@ -716,8 +743,7 @@ void fem(py::module& m)
               py::array_t _x(x.shape(), strides, x.data(), py::none());
               py::array_t v = f(_x);
               std::vector<std::size_t> shape;
-              for (pybind11::ssize_t i = 0; i < v.ndim(); i++)
-                shape.push_back(v.shape()[i]);
+              std::copy_n(v.shape(), v.ndim(), std::back_inserter(shape));
               return xt::adapt(v.data(), shape);
             };
             self.interpolate(_f);
@@ -776,15 +802,13 @@ void fem(py::module& m)
           {
             // TODO: handle 1d case
 
-            std::array<std::size_t, 2> shape_x
-                = {static_cast<std::size_t>(x.shape(0)),
-                   static_cast<std::size_t>(x.shape(1))};
+            std::array<std::size_t, 2> shape_x;
+            std::copy_n(x.shape(), 2, shape_x.begin());
             auto _x
                 = xt::adapt(x.data(), x.size(), xt::no_ownership(), shape_x);
 
-            std::array<std::size_t, 2> shape_u
-                = {static_cast<std::size_t>(u.shape(0)),
-                   static_cast<std::size_t>(u.shape(1))};
+            std::array<std::size_t, 2> shape_u;
+            std::copy_n(u.shape(), 2, shape_u.begin());
 
             // The below should work, but misbehaves with the Intel icpx
             // compiler
@@ -831,7 +855,14 @@ void fem(py::module& m)
   py::class_<dolfinx::fem::Constant<PetscScalar>,
              std::shared_ptr<dolfinx::fem::Constant<PetscScalar>>>(
       m, "Constant", "A value constant with respect to integration domain")
-      .def(py::init<std::vector<int>, std::vector<PetscScalar>>(),
+      .def(py::init(
+               [](const py::array_t<PetscScalar, py::array::c_style>& c)
+               {
+                 std::vector<std::size_t> s;
+                 std::copy_n(c.shape(), c.ndim(), std::back_inserter(s));
+                 return dolfinx::fem::Constant<PetscScalar>(
+                     xt::adapt(c.data(), c.size(), xt::no_ownership(), s));
+               }),
            "Create a constant from a scalar value array")
       .def(
           "value",
@@ -855,7 +886,8 @@ void fem(py::module& m)
                  auto tabulate_expression_ptr = (void (*)(
                      PetscScalar*, const PetscScalar*, const PetscScalar*,
                      const double*))addr.cast<std::uintptr_t>();
-                 dolfinx::array2d<double> _X(X.shape()[0], X.shape()[1]);
+                 xt::xtensor<double, 2> _X(
+                     {std::size_t(X.shape(0)), std::size_t(X.shape(1))});
                  std::copy_n(X.data(), X.size(), _X.data());
                  return dolfinx::fem::Expression<PetscScalar>(
                      coefficients, constants, mesh, _X, tabulate_expression_ptr,
@@ -868,14 +900,14 @@ void fem(py::module& m)
               const py::array_t<std::int32_t, py::array::c_style>& active_cells,
               py::array_t<PetscScalar> values)
            {
-             dolfinx::array2d<PetscScalar> _values(active_cells.shape()[0],
-                                                   self.num_points()
-                                                       * self.value_size());
+             xt::xtensor<PetscScalar, 2> _values(
+                 {std::size_t(active_cells.shape(0)),
+                  std::size_t(self.num_points() * self.value_size())});
              self.eval(xtl::span(active_cells.data(), active_cells.size()),
                        _values);
              assert(values.ndim() == 2);
-             assert(values.shape()[0] == (py::ssize_t)_values.shape[0]);
-             assert(values.shape()[1] == (py::ssize_t)_values.shape[1]);
+             assert(values.shape(0) == (py::ssize_t)_values.shape(0));
+             assert(values.shape(1) == (py::ssize_t)_values.shape(1));
              auto v = values.mutable_unchecked();
              for (py::ssize_t i = 0; i < v.shape(0); i++)
                for (py::ssize_t j = 0; j < v.shape(1); j++)
