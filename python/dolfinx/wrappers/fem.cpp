@@ -744,8 +744,7 @@ void fem(py::module& m)
               py::array_t _x(x.shape(), strides, x.data(), py::none());
               py::array_t v = f(_x);
               std::vector<std::size_t> shape;
-              for (pybind11::ssize_t i = 0; i < v.ndim(); i++)
-                shape.push_back(v.shape()[i]);
+              std::copy_n(v.shape(), v.ndim(), std::back_inserter(shape));
               return xt::adapt(v.data(), shape);
             };
             self.interpolate(_f);
@@ -859,7 +858,14 @@ void fem(py::module& m)
   py::class_<dolfinx::fem::Constant<PetscScalar>,
              std::shared_ptr<dolfinx::fem::Constant<PetscScalar>>>(
       m, "Constant", "A value constant with respect to integration domain")
-      .def(py::init<std::vector<int>, std::vector<PetscScalar>>(),
+      .def(py::init(
+               [](const py::array_t<PetscScalar, py::array::c_style>& c)
+               {
+                 std::vector<std::size_t> s;
+                 std::copy_n(c.shape(), c.ndim(), std::back_inserter(s));
+                 return dolfinx::fem::Constant<PetscScalar>(
+                     xt::adapt(c.data(), c.size(), xt::no_ownership(), s));
+               }),
            "Create a constant from a scalar value array")
       .def(
           "value",

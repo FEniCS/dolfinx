@@ -7,7 +7,7 @@
 #pragma once
 
 #include <vector>
-#include <xtensor/xtensor.hpp>
+#include <xtensor/xarray.hpp>
 
 namespace dolfinx::fem
 {
@@ -22,23 +22,12 @@ public:
   /// Create a rank-0 (scalar-valued) constant
   explicit Constant(T c) : value({c}) {}
 
-  /// Create a rank-1 (vector-valued) constant
-  explicit Constant(const std::vector<T>& c) : shape(1, c.size()), value({c}) {}
-
-  /// Create a rank-2 constant
-  explicit Constant(const xt::xtensor<T, 2>& c)
-      : shape({c.shape(0), c.shape(1)}), value(c.shape(0) * c.shaoe(1))
+  /// Create a rank-d constant
+  explicit Constant(const xt::xarray<T>& c)
+      : value(c.data(), c.data() + c.size())
   {
-    for (std::size_t i = 0; i < c.shape(0); ++i)
-      for (std::size_t j = 0; j < c.shape(1); ++j)
-        value[i * c.cols() + j] = c(i, j);
-  }
-
-  /// Create an arbitrary rank constant. Data layout is row-major (C style).
-  Constant(const std::vector<int>& shape, const std::vector<T>& value)
-      : shape(shape), value(value)
-  {
-    // Do nothing
+    for (auto d : c.shape())
+      shape.push_back(d);
   }
 
   /// Shape
