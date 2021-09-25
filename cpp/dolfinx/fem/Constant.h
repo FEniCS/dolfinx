@@ -26,8 +26,7 @@ public:
   explicit Constant(const xt::xarray<T>& c)
       : value(c.data(), c.data() + c.size())
   {
-    for (auto d : c.shape())
-      shape.push_back(d);
+    std::copy(c.shape().cbegin(), c.shape().cend(), std::back_inserter(shape));
   }
 
   /// Shape
