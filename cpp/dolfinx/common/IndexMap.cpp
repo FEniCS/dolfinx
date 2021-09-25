@@ -893,7 +893,7 @@ IndexMap::create_submap(const xtl::span<const std::int32_t>& indices) const
       std::cout << x << std::endl;
   }
 
-  return {IndexMap({offset, offset + local_size}, size_global,
+  return {IndexMap({offset, offset + local_size}, size_global, _comm.comm(),
                    dolfinx::MPI::Comm(comm0, false),
                    dolfinx::MPI::Comm(comm1, false), std::move(displs_recv_fwd),
                    std::move(ghost_pos_recv_fwd), std::move(ghosts),
