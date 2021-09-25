@@ -523,45 +523,14 @@ std::vector<int> IndexMap::ghost_owner_rank() const
                            neighbors_in.data(), MPI_UNWEIGHTED, outdegree,
                            neighbors_out.data(), MPI_UNWEIGHTED);
 
-  int myrank = dolfinx::MPI::rank(_comm_owner_to_ghost.comm());
-  if (myrank == 1)
-  {
-    std::cout << "ghost_owner_rank: " << myrank << std::endl;
-    std::cout << "ghost_pos_recv_fwd" << std::endl;
-    for (auto x : _ghost_pos_recv_fwd)
-      std::cout << x << std::endl;
-    std::cout << "displs_recv_fwd" << std::endl;
-    for (auto x : _displs_recv_fwd)
-      std::cout << x << std::endl;
-
-    std::cout << "neighbors_in" << std::endl;
-    for (auto x : neighbors_in)
-      std::cout << x << std::endl;
-  }
-
   // Compute index owner on neighbourhood comm
   const std::vector<int> ghost_owners
       = compute_ghost_owners(_ghost_pos_recv_fwd, _displs_recv_fwd);
-  if (myrank == 1)
-  {
-    std::cout << "Ghost owners (local): " << myrank << std::endl;
-    for (auto x : ghost_owners)
-      std::cout << x << std::endl;
-    std::cout << "--------" << std::endl;
-  }
 
   std::vector<std::int32_t> owners(ghost_owners.size());
   std::transform(ghost_owners.cbegin(), ghost_owners.cend(), owners.begin(),
                  [&neighbors_in](auto ghost_owner)
                  { return neighbors_in[ghost_owner]; });
-
-  if (myrank == 1)
-  {
-    std::cout << "Ghost owners (global): " << myrank << std::endl;
-    for (auto x : owners)
-      std::cout << x << std::endl;
-    std::cout << "--------" << std::endl;
-  }
 
   return owners;
 }
@@ -753,7 +722,7 @@ IndexMap::create_submap(const xtl::span<const std::int32_t>& indices) const
     }
   }
 
-  // Create new shared_indices graph
+  // Create new shared_indices adjacency list
   shared_indices_data.shrink_to_fit();
   shared_indices_off.shrink_to_fit();
   auto shared_indices = std::make_unique<graph::AdjacencyList<std::int32_t>>(
@@ -764,7 +733,7 @@ IndexMap::create_submap(const xtl::span<const std::int32_t>& indices) const
   MPI_Wait(&request_offset, MPI_STATUS_IGNORE);
 
   // TODO: Can we avoid this step and pack the buffer directly?
-  // Build array of global indices for indices in the new map
+  // Build array of new global indices for indices in the new map
   std::vector<std::int64_t> global_indices_new(this->size_local(), -1);
   for (std::size_t i = 0; i < indices.size(); ++i)
     global_indices_new[indices[i]] = i + offset;
@@ -774,7 +743,7 @@ IndexMap::create_submap(const xtl::span<const std::int32_t>& indices) const
 
   const std::vector<std::int32_t>& send_indices
       = this->scatter_fwd_indices().array();
-  std::vector<std::int64_t> buffer_send_fwd(send_indices.size(), -1);
+  std::vector<std::int64_t> buffer_send_fwd(send_indices.size());
   std::transform(
       send_indices.cbegin(), send_indices.cend(), buffer_send_fwd.begin(),
       [&global_indices_new](auto idx) { return global_indices_new[idx]; });
@@ -801,32 +770,14 @@ IndexMap::create_submap(const xtl::span<const std::int32_t>& indices) const
         std::next(buffer_recv_fwd.cbegin(), _displs_recv_fwd[r_old]),
         std::next(buffer_recv_fwd.cbegin(), _displs_recv_fwd[r_old + 1]),
         [](auto x) { return x >= 0; });
-    if (myrank == 1)
-      std::cout << "recv sizes: " << r_old << ", " << sizes_recv_fwd_new[r_old]
-                << std::endl;
 
     if (sizes_recv_fwd_new[r_old] > 0)
     {
       // Will receive data from r_old
-
-      if (myrank == 1)
-      {
-        std::cout << "rold: " << r_old << std::endl;
-        std::cout << "rnew: " << displs_recv_fwd.size() - 1 << std::endl;
-      }
-
       ranks_old_to_new_recv[r_old] = displs_recv_fwd.size() - 1;
       displs_recv_fwd.push_back(displs_recv_fwd.back()
                                 + sizes_recv_fwd_new[r_old]);
     }
-  }
-
-  if (myrank == 1)
-  {
-    std::cout << "ranks_old_to_new_recv" << std::endl;
-    for (auto x : ranks_old_to_new_recv)
-      std::cout << x << std::endl;
-    std::cout << "-------" << std::endl;
   }
 
   // --- Step 7: Build ghost_pos_recv_fwd for the new map
@@ -869,14 +820,6 @@ IndexMap::create_submap(const xtl::span<const std::int32_t>& indices) const
     if (ranks_old_to_new_send[r] >= 0)
       out_ranks.push_back(dest_ranks[r]);
 
-  if (myrank == 1)
-  {
-    std::cout << "Parent in in_ranks" << std::endl;
-    for (auto x : in_ranks)
-      std::cout << x << std::endl;
-    std::cout << "-------" << std::endl;
-  }
-
   MPI_Comm comm0, comm1;
   MPI_Dist_graph_create_adjacent(
       comm, in_ranks.size(), in_ranks.data(), MPI_UNWEIGHTED, out_ranks.size(),
@@ -885,42 +828,12 @@ IndexMap::create_submap(const xtl::span<const std::int32_t>& indices) const
       comm, out_ranks.size(), out_ranks.data(), MPI_UNWEIGHTED, in_ranks.size(),
       in_ranks.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm1);
 
-  if (myrank == 1)
-  {
-    std::cout << "Parent src ranks" << std::endl;
-    for (auto x : src_ranks)
-      std::cout << x << std::endl;
-    std::cout << "-------" << std::endl;
-    std::cout << "Parent dest ranks" << std::endl;
-    for (auto x : dest_ranks)
-      std::cout << x << std::endl;
-    std::cout << "-------" << std::endl;
-
-    std::cout << "In-ranks" << std::endl;
-    for (auto x : in_ranks)
-      std::cout << x << std::endl;
-    std::cout << "-------" << std::endl;
-    std::cout << "out-ranks" << std::endl;
-    for (auto x : out_ranks)
-      std::cout << x << std::endl;
-    std::cout << "-------" << std::endl;
-  }
   // Wait for the MPI_Iallreduce to complete
   MPI_Wait(&request_size, MPI_STATUS_IGNORE);
 
   displs_recv_fwd.shrink_to_fit();
   ghosts.shrink_to_fit();
   new_to_old_ghost.shrink_to_fit();
-
-  if (myrank == 1)
-  {
-    std::cout << "C ghost_pos_recv_fwd" << std::endl;
-    for (auto x : ghost_pos_recv_fwd)
-      std::cout << x << std::endl;
-    std::cout << "C displs_recv_fwd" << std::endl;
-    for (auto x : displs_recv_fwd)
-      std::cout << x << std::endl;
-  }
 
   return {IndexMap({offset, offset + local_size}, size_global, _comm.comm(),
                    dolfinx::MPI::Comm(comm0, false),
