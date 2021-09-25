@@ -59,7 +59,8 @@ def test_sub_index_map():
     # Running this code on 2 procs gives you that the ghost on process 0
     # is owned by process 0
     # print(comm.rank, "Range", map.local_range, "Local", local_indices,
-    #       "Sub range", submap.local_range, "Sub ghosts", submap.ghosts, "Ghosts", map.ghosts, "Sub owners", owners_sub)
+    #       "Sub range", submap.local_range, "Sub ghosts", submap.ghosts,
+    #       "Ghosts", map.ghosts, "Sub owners", owners_sub)
     assert np.allclose(dest_ranks, owners)
 
     # Check that first rank has no elements
