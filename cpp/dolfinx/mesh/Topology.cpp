@@ -319,9 +319,8 @@ std::vector<std::int64_t> exchange_ghost_vertex_numbering(
       = index_map_c.scatter_fwd_indices();
 
   // Get ranks that ghost cells owned by this rank
-  std::vector<int> fwd_ranks;
-  std::tie(fwd_ranks, std::ignore) = dolfinx::MPI::neighbors(
-      index_map_c.comm(common::IndexMap::Direction::forward));
+  const std::vector<int> fwd_ranks = dolfinx::MPI::neighbors(
+      index_map_c.comm(common::IndexMap::Direction::forward))[0];
 
   // Build map from vertices of owned and shared cells to the global of
   // the ghosts

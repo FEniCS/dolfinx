@@ -106,21 +106,18 @@ std::vector<int> dolfinx::MPI::compute_graph_edges(MPI_Comm comm,
   return edges1;
 }
 //-----------------------------------------------------------------------------
-std::tuple<std::vector<int>, std::vector<int>>
-dolfinx::MPI::neighbors(MPI_Comm neighbor_comm)
+std::array<std::vector<int>, 2> dolfinx::MPI::neighbors(MPI_Comm comm)
 {
   int status;
-  MPI_Topo_test(neighbor_comm, &status);
+  MPI_Topo_test(comm, &status);
   assert(status != MPI_UNDEFINED);
 
   // Get list of neighbors
   int indegree(-1), outdegree(-2), weighted(-1);
-  MPI_Dist_graph_neighbors_count(neighbor_comm, &indegree, &outdegree,
-                                 &weighted);
+  MPI_Dist_graph_neighbors_count(comm, &indegree, &outdegree, &weighted);
   std::vector<int> sources(indegree), destinations(outdegree);
-  MPI_Dist_graph_neighbors(neighbor_comm, indegree, sources.data(),
-                           MPI_UNWEIGHTED, outdegree, destinations.data(),
-                           MPI_UNWEIGHTED);
+  MPI_Dist_graph_neighbors(comm, indegree, sources.data(), MPI_UNWEIGHTED,
+                           outdegree, destinations.data(), MPI_UNWEIGHTED);
 
   return {std::move(sources), std::move(destinations)};
 }
