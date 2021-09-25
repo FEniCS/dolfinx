@@ -29,7 +29,7 @@ class Constant(ufl.Constant):
         """
         c_np = np.asarray(c)
         super().__init__(domain, c_np.shape)
-        self._cpp_object = cpp.fem.Constant(c_np.shape, c_np.flatten())
+        self._cpp_object = cpp.fem.Constant(c_np)
 
     @property
     def value(self):

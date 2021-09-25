@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include <dolfinx/common/array2d.h>
 #include <memory>
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
@@ -52,28 +51,6 @@ py::array_t<typename Sequence::value_type> as_pyarray(Sequence&& seq)
       { std::unique_ptr<Sequence>(reinterpret_cast<Sequence*>(p)); });
   seq_ptr.release();
   return py::array(size, data, capsule);
-}
-
-/// Create a py::array_t that shares data with a
-/// dolfinx::array2d. The C++ array2d owns the data, and the
-/// py::array_t object keeps the C++ object alive .
-// From https://github.com/pybind/pybind11/issues/1042
-template <typename T>
-py::array_t<T> as_pyarray2d(dolfinx::array2d<T>&& array)
-{
-  auto shape = array.shape;
-  auto strides = array.strides();
-  auto data = array.data();
-  std::unique_ptr<dolfinx::array2d<T>> array_ptr
-      = std::make_unique<dolfinx::array2d<T>>(std::move(array));
-  auto capsule = py::capsule(array_ptr.get(),
-                             [](void* p)
-                             {
-                               std::unique_ptr<dolfinx::array2d<T>>(
-                                   reinterpret_cast<dolfinx::array2d<T>*>(p));
-                             });
-  array_ptr.release();
-  return py::array(shape, strides, data, capsule);
 }
 
 /// Create a py::array_t that shares data with an
