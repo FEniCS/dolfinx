@@ -417,10 +417,11 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
 
   // Build array that maps ghost indicies to a position in the recv
   // (forward scatter) and send (reverse scatter) buffers
-  std::vector<std::int32_t> tmp_displs = _displs_recv_fwd;
   _ghost_pos_recv_fwd.resize(ghost_owners.size());
-  for (std::size_t i = 0; i < ghost_owners.size(); ++i)
-    _ghost_pos_recv_fwd[i] = tmp_displs[ghost_owners[i]]++;
+  std::transform(ghost_owners.cbegin(), ghost_owners.cend(),
+                 _ghost_pos_recv_fwd.begin(),
+                 [displs = _displs_recv_fwd](auto owner) mutable
+                 { return displs[owner]++; });
 }
 //-----------------------------------------------------------------------------
 std::array<std::int64_t, 2> IndexMap::local_range() const noexcept
@@ -803,10 +804,11 @@ IndexMap::create_submap(const xtl::span<const std::int32_t>& indices) const
   }
 
   // Compute ghost_pos_recv_fwd
-  std::vector<std::int32_t> tmp_displs = displs_recv_fwd;
   std::vector<std::int32_t> ghost_pos_recv_fwd(ghost_owner.size());
-  for (std::size_t i = 0; i < ghost_owner.size(); ++i)
-    ghost_pos_recv_fwd[i] = tmp_displs[ghost_owner[i]]++;
+  std::transform(ghost_owner.cbegin(), ghost_owner.cend(),
+                 ghost_pos_recv_fwd.begin(),
+                 [displs = displs_recv_fwd](auto owner) mutable
+                 { return displs[owner]++; });
 
   // Step 8: Create neighbourhood communicators for the new map
 
