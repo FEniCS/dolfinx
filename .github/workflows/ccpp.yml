@@ -14,8 +14,7 @@ jobs:
   build:
     if: "!(contains(github.event.head_commit.message, '[ci skip]') || contains(github.event.head_commit.message, '[skip ci]'))"
     runs-on: ubuntu-20.04
-    container: fenicsproject/test-env:latest-mpich
-    # container: fenicsproject/test-env:latest-openmpi
+    container: fenicsproject/test-env:latest-openmpi
 
     env:
       CC: clang-12
@@ -84,7 +83,7 @@ jobs:
           cmake --build build/demo
           cd build/demo
           ctest -V -R demo -R serial
-          ctest -V -R demo -R mpi_3
+          ctest -V -R demo -R mpi_2
 
       - name: Build Python interface
         run: python3 -m pip -v install --global-option build --global-option --debug python/
