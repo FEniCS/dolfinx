@@ -208,10 +208,9 @@ common::stack_index_maps(
   // Create neighborhood communicator
   MPI_Comm comm;
   MPI_Dist_graph_create_adjacent(
-      maps.at(0).first.get().comm(IndexMap::Direction::forward),
-      in_neighbors.size(), in_neighbors.data(), MPI_UNWEIGHTED,
-      out_neighbors.size(), out_neighbors.data(), MPI_UNWEIGHTED, MPI_INFO_NULL,
-      false, &comm);
+      maps.at(0).first.get().comm(), in_neighbors.size(), in_neighbors.data(),
+      MPI_UNWEIGHTED, out_neighbors.size(), out_neighbors.data(),
+      MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
 
   int indegree(-1), outdegree(-2), weighted(-1);
   MPI_Dist_graph_neighbors_count(comm, &indegree, &outdegree, &weighted);
@@ -269,7 +268,8 @@ common::stack_index_maps(
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size)
-    : _comm_owner_to_ghost(MPI_COMM_NULL), _comm_ghost_to_owner(MPI_COMM_NULL)
+    : _comm(comm), _comm_owner_to_ghost(MPI_COMM_NULL),
+      _comm_ghost_to_owner(MPI_COMM_NULL)
 {
   // Get global offset (index), using partial exclusive reduction
   std::int64_t offset = 0;
@@ -308,8 +308,8 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
                    const xtl::span<const int>& dest_ranks,
                    const xtl::span<const std::int64_t>& ghosts,
                    const xtl::span<const int>& src_ranks)
-    : _comm_owner_to_ghost(MPI_COMM_NULL), _comm_ghost_to_owner(MPI_COMM_NULL),
-      _ghosts(ghosts.begin(), ghosts.end())
+    : _comm(mpi_comm), _comm_owner_to_ghost(MPI_COMM_NULL),
+      _comm_ghost_to_owner(MPI_COMM_NULL), _ghosts(ghosts.begin(), ghosts.end())
 {
   assert(size_t(ghosts.size()) == src_ranks.size());
   assert(std::equal(src_ranks.begin(), src_ranks.end(),
@@ -338,23 +338,17 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
   // Create communicators with directed edges: (0) owner -> ghost,
   // (1) ghost -> owner
   {
-    // Dummy weight to work around a bug in older MPICH versions. Issue
-    // appears in MPICH v3.3.2 (Ubuntu 20.04) and not in v3.4 (Ubuntu
-    // 20.10). Would prefer to pass MPI_UNWEIGHTED.
-    std::vector<int> weights(std::max(halo_src_ranks.size(), dest_ranks.size()),
-                             1);
-
     MPI_Comm comm0;
     MPI_Dist_graph_create_adjacent(
-        mpi_comm, halo_src_ranks.size(), halo_src_ranks.data(), weights.data(),
-        dest_ranks.size(), dest_ranks.data(), weights.data(), MPI_INFO_NULL,
+        mpi_comm, halo_src_ranks.size(), halo_src_ranks.data(), MPI_UNWEIGHTED,
+        dest_ranks.size(), dest_ranks.data(), MPI_UNWEIGHTED, MPI_INFO_NULL,
         false, &comm0);
     _comm_owner_to_ghost = dolfinx::MPI::Comm(comm0, false);
 
     MPI_Comm comm1;
     MPI_Dist_graph_create_adjacent(
-        mpi_comm, dest_ranks.size(), dest_ranks.data(), weights.data(),
-        halo_src_ranks.size(), halo_src_ranks.data(), weights.data(),
+        mpi_comm, dest_ranks.size(), dest_ranks.data(), MPI_UNWEIGHTED,
+        halo_src_ranks.size(), halo_src_ranks.data(), MPI_UNWEIGHTED,
         MPI_INFO_NULL, false, &comm1);
     _comm_ghost_to_owner = dolfinx::MPI::Comm(comm1, false);
   }
@@ -571,6 +565,8 @@ std::vector<int> IndexMap::ghost_owner_rank() const
 
   return owners;
 }
+//----------------------------------------------------------------------------
+MPI_Comm IndexMap::comm() const { return _comm.comm(); }
 //----------------------------------------------------------------------------
 MPI_Comm IndexMap::comm(Direction dir) const
 {

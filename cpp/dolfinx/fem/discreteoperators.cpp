@@ -131,7 +131,8 @@ fem::create_sparsity_discrete_gradient(const fem::FunctionSpace& V0,
       cols[i] = dofs1[local_v_dofs[0]];
     }
 
-    pattern.insert(xtl::span<const std::int32_t>(&row, 1), tcb::make_span(cols));
+    pattern.insert(xtl::span<const std::int32_t>(&row, 1),
+                   tcb::make_span(cols));
   }
   pattern.assemble();
   return pattern;

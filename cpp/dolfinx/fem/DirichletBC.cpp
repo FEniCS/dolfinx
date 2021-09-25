@@ -41,11 +41,9 @@ dolfinx::MPI::Comm create_symmetric_comm(MPI_Comm comm)
                   neighbors.end());
 
   MPI_Comm comm_sym;
-  std::vector<int> sourceweights(neighbors.size(), 1);
-  std::vector<int> destweights(neighbors.size(), 1);
   MPI_Dist_graph_create_adjacent(comm, neighbors.size(), neighbors.data(),
-                                 sourceweights.data(), neighbors.size(),
-                                 neighbors.data(), destweights.data(),
+                                 MPI_UNWEIGHTED, neighbors.size(),
+                                 neighbors.data(), MPI_UNWEIGHTED,
                                  MPI_INFO_NULL, false, &comm_sym);
 
   return dolfinx::MPI::Comm(comm_sym, false);

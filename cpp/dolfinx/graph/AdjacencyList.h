@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2019 Anders Logg and Garth N. Wells
+// Copyright (C) 2019-2021 Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -7,7 +7,6 @@
 #pragma once
 
 #include <cassert>
-#include <dolfinx/common/array2d.h>
 #include <numeric>
 #include <sstream>
 #include <utility>
