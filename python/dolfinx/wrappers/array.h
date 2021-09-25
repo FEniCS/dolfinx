@@ -20,11 +20,9 @@ namespace dolfinx_wrappers
 /// std::vector. The std::vector owns the data, and the py::array_t
 /// object keeps the std::vector alive.
 /// From https://github.com/pybind/pybind11/issues/1042
-template <typename Sequence>
-py::array_t<typename Sequence::value_type>
-as_pyarray(Sequence&& seq, const std::vector<int>& shape)
+template <typename Sequence, typename U>
+py::array_t<typename Sequence::value_type> as_pyarray(Sequence&& seq, U&& shape)
 {
-  // auto size = seq.size();
   auto data = seq.data();
   std::unique_ptr<Sequence> seq_ptr
       = std::make_unique<Sequence>(std::move(seq));
@@ -42,15 +40,7 @@ as_pyarray(Sequence&& seq, const std::vector<int>& shape)
 template <typename Sequence>
 py::array_t<typename Sequence::value_type> as_pyarray(Sequence&& seq)
 {
-  auto size = seq.size();
-  auto data = seq.data();
-  std::unique_ptr<Sequence> seq_ptr
-      = std::make_unique<Sequence>(std::move(seq));
-  auto capsule = py::capsule(
-      seq_ptr.get(), [](void* p)
-      { std::unique_ptr<Sequence>(reinterpret_cast<Sequence*>(p)); });
-  seq_ptr.release();
-  return py::array(size, data, capsule);
+  return as_pyarray(std::move(seq), std::array{seq.size()});
 }
 
 /// Create a py::array_t that shares data with an
