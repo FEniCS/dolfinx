@@ -45,9 +45,8 @@ la::SparsityPattern fem::create_sparsity_pattern(
 
   // Create and build sparsity pattern
   assert(dofmaps[0].get().index_map);
-  la::SparsityPattern pattern(
-      dofmaps[0].get().index_map->comm(common::IndexMap::Direction::forward),
-      index_maps, bs);
+  la::SparsityPattern pattern(dofmaps[0].get().index_map->comm(), index_maps,
+                              bs);
   for (auto type : integrals)
   {
     switch (type)
