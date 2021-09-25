@@ -255,13 +255,12 @@ void fem(py::module& m)
               const py::array_t<double, py::array::c_style>& X,
               const py::array_t<double, py::array::c_style>& cell_geometry)
            {
-             std::array<std::size_t, 2> s_x
-                 = {static_cast<std::size_t>(X.shape(0)),
-                    static_cast<std::size_t>(X.shape(1))};
+             std::array<std::size_t, 2> s_x;
+             std::copy_n(X.shape(), 2, s_x.begin());
              auto _X = xt::adapt(X.data(), X.size(), xt::no_ownership(), s_x);
-             std::array<std::size_t, 2> s_g
-                 = {static_cast<std::size_t>(cell_geometry.shape(0)),
-                    static_cast<std::size_t>(cell_geometry.shape(1))};
+
+             std::array<std::size_t, 2> s_g;
+             std::copy_n(cell_geometry.shape(), 2, s_g.begin());
              auto g = xt::adapt(cell_geometry.data(), cell_geometry.size(),
                                 xt::no_ownership(), s_g);
 
@@ -287,14 +286,13 @@ void fem(py::module& m)
              xt::xtensor<double, 3> K
                  = xt::empty<double>({num_points, tdim, gdim});
              xt::xtensor<double, 1> detJ = xt::empty<double>({num_points});
-             std::array<std::size_t, 2> s_x
-                 = {static_cast<std::size_t>(x.shape(0)),
-                    static_cast<std::size_t>(x.shape(1))};
+
+             std::array<std::size_t, 2> s_x;
+             std::copy_n(x.shape(), 2, s_x.begin());
              auto _x = xt::adapt(x.data(), x.size(), xt::no_ownership(), s_x);
 
-             std::array<std::size_t, 2> s_g
-                 = {static_cast<std::size_t>(cell_geometry.shape(0)),
-                    static_cast<std::size_t>(cell_geometry.shape(1))};
+             std::array<std::size_t, 2> s_g;
+             std::copy_n(cell_geometry.shape(), 2, s_g.begin());
              auto g = xt::adapt(cell_geometry.data(), cell_geometry.size(),
                                 xt::no_ownership(), s_g);
              self.pull_back(X, J, detJ, K, _x, g);
@@ -500,6 +498,7 @@ void fem(py::module& m)
       },
       py::arg("b"), py::arg("bcs"), py::arg("x0") = py::none(),
       py::arg("scale") = 1.0);
+
   // Tools
   m.def("bcs_rows", &dolfinx::fem::bcs_rows<PetscScalar>);
   m.def("bcs_cols", &dolfinx::fem::bcs_cols<PetscScalar>);
@@ -598,8 +597,8 @@ void fem(py::module& m)
             {
             case dolfinx::fem::IntegralType::cell:
             {
-              const std::vector<std::int32_t>& domains = self.cell_domains(i);
-              return py::array_t<std::int32_t>(domains.size(), domains.data(),
+              return py::array_t<std::int32_t>(self.cell_domains(i).size(),
+                                               self.cell_domains(i).data(),
                                                py::cast(self));
             }
             case dolfinx::fem::IntegralType::exterior_facet:
@@ -803,15 +802,13 @@ void fem(py::module& m)
           {
             // TODO: handle 1d case
 
-            std::array<std::size_t, 2> shape_x
-                = {static_cast<std::size_t>(x.shape(0)),
-                   static_cast<std::size_t>(x.shape(1))};
+            std::array<std::size_t, 2> shape_x;
+            std::copy_n(x.shape(), 2, shape_x.begin());
             auto _x
                 = xt::adapt(x.data(), x.size(), xt::no_ownership(), shape_x);
 
-            std::array<std::size_t, 2> shape_u
-                = {static_cast<std::size_t>(u.shape(0)),
-                   static_cast<std::size_t>(u.shape(1))};
+            std::array<std::size_t, 2> shape_u;
+            std::copy_n(u.shape(), 2, shape_u.begin());
 
             // The below should work, but misbehaves with the Intel icpx
             // compiler
