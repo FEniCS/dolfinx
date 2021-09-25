@@ -84,7 +84,7 @@ jobs:
           cmake --build build/demo
           cd build/demo
           ctest -V -R demo -R serial
-          ctest -V -R demo -R mpi_2
+          ctest -V -R demo -R mpi_3
 
       - name: Build Python interface
         run: python3 -m pip -v install --global-option build --global-option --debug python/
