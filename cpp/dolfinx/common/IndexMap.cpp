@@ -215,10 +215,9 @@ common::stack_index_maps(
   // Create neighborhood communicator
   MPI_Comm comm;
   MPI_Dist_graph_create_adjacent(
-      maps.at(0).first.get().comm(IndexMap::Direction::forward),
-      in_neighbors.size(), in_neighbors.data(), MPI_UNWEIGHTED,
-      out_neighbors.size(), out_neighbors.data(), MPI_UNWEIGHTED, MPI_INFO_NULL,
-      false, &comm);
+      maps.at(0).first.get().comm(), in_neighbors.size(), in_neighbors.data(),
+      MPI_UNWEIGHTED, out_neighbors.size(), out_neighbors.data(),
+      MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
 
   int indegree(-1), outdegree(-2), weighted(-1);
   MPI_Dist_graph_neighbors_count(comm, &indegree, &outdegree, &weighted);
