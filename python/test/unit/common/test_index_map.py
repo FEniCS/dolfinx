@@ -19,7 +19,6 @@ def test_sub_index_map():
     n = 7
     assert comm.size < n + 1
     size_local = np.math.factorial(n)
-    local_range = (size_local * myrank, size_local * (myrank + 1))
 
     # FIXME: document which indices are ghosted
     # Ghost one index from from every other rank

@@ -810,7 +810,8 @@ IndexMap::create_submap(const xtl::span<const std::int32_t>& indices) const
 
   // Step 8: Create neighbourhood communicators for the new map
 
-  // Get src/dest from forward comm (owner-to-ghost) from original map
+  // Get global src/dest from forward comm (owner-to-ghost) from
+  // original map
   const auto [src_ranks, dest_ranks] = dolfinx::MPI::neighbors(comm);
   std::vector<int> in_ranks, out_ranks;
   for (std::size_t r = 0; r < ranks_old_to_new_recv.size(); ++r)
