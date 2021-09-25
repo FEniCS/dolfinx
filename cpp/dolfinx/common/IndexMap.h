@@ -432,8 +432,7 @@ private:
   // Number indices across communicator
   std::int64_t _size_global;
 
-  // MPI neighborhood communicators
-
+  // MPI communicator (duplicated of 'input' communicator)
   dolfinx::MPI::Comm _comm;
 
   // Communicator where the source ranks own the indices in the callers
