@@ -5,16 +5,16 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Assembly functions for variational forms."""
 
+import collections
 import contextlib
 import functools
 import typing
-
-from petsc4py import PETSc
 
 import ufl
 from dolfinx import cpp
 from dolfinx.fem.dirichletbc import DirichletBC
 from dolfinx.fem.form import Form
+from petsc4py import PETSc
 
 
 def _create_cpp_form(form):
@@ -32,7 +32,18 @@ def _create_cpp_form(form):
 
 # -- Packing coefficients ----------------------------------------------------
 
-def pack_constants(form):
+form_type = typing.Union[Form, cpp.fem.Form, ufl.Form,
+                         collections.abc.Sequence[Form],
+                         collections.abc.Sequence[cpp.fem.Form],
+                         collections.abc.Sequence[ufl.Form]]
+
+
+def pack_constants(form: form_type):
+    """Compute form constants. If form is an array of forms, this
+    function returns an array of form constants with the same shape as
+    form.
+
+    """
     def _pack(form):
         if isinstance(form, (tuple, list)):
             return list(map(lambda sub_form: _pack(sub_form), form))
@@ -41,7 +52,12 @@ def pack_constants(form):
     return _pack(_create_cpp_form(form))
 
 
-def pack_coefficients(form):
+def pack_coefficients(form: form_type):
+    """Compute form coefficients. If form is an array of forms, this
+    function returns an array of form coefficients with the same shape
+    as form.
+
+    """
     def _pack(form):
         if isinstance(form, (tuple, list)):
             return list(map(lambda sub_form: _pack(sub_form), form))
@@ -49,8 +65,8 @@ def pack_coefficients(form):
             return cpp.fem.pack_coefficients(form)
     return _pack(_create_cpp_form(form))
 
-# -- Vector instantiation ----------------------------------------------------
 
+# -- Vector instantiation ----------------------------------------------------
 
 def create_vector(L: typing.Union[Form, cpp.fem.Form]) -> PETSc.Vec:
     dofmap = _create_cpp_form(L).function_spaces[0].dofmap
