@@ -88,6 +88,7 @@ class LinearProblem():
         """Solve the problem."""
 
         # Assemble lhs
+        print("Assemnble matrix")
         self._A.zeroEntries()
         fem.assemble_matrix(self._A, self._a, bcs=self.bcs)
         self._A.assemble()
@@ -95,8 +96,10 @@ class LinearProblem():
         # Assemble rhs
         with self._b.localForm() as b_loc:
             b_loc.set(0)
+        print("Assemnble vector")
         fem.assemble_vector(self._b, self._L)
 
+        print("Post Assemnble vector")
         # Apply boundary conditions to the rhs
         fem.apply_lifting(self._b, [self._a], [self.bcs])
         self._b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)

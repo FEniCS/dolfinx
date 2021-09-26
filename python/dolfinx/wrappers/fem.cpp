@@ -69,8 +69,8 @@ void fem(py::module& m)
       [](dolfinx::fem::Form<PetscScalar>& form)
       {
         auto [coeffs, cstride] = dolfinx::fem::pack_coefficients(form);
-        return as_pyarray(std::move(coeffs),
-                          std::array{int(coeffs.size() / cstride), cstride});
+        int shape0 = cstride == 0 ? 0 : coeffs.size() / cstride;
+        return as_pyarray(std::move(coeffs), std::array{shape0, cstride});
       },
       "Pack coefficients for a Form.");
   m.def(
@@ -78,8 +78,8 @@ void fem(py::module& m)
       [](dolfinx::fem::Expression<PetscScalar>& e)
       {
         auto [coeffs, cstride] = dolfinx::fem::pack_coefficients(e);
-        return as_pyarray(std::move(coeffs),
-                          std::array{int(coeffs.size() / cstride), cstride});
+        int shape0 = cstride == 0 ? 0 : coeffs.size() / cstride;
+        return as_pyarray(std::move(coeffs), std::array{shape0, cstride});
       },
       "Pack coefficients for an Expression.");
   m.def(
