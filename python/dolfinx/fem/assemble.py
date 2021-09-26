@@ -30,6 +30,25 @@ def _create_cpp_form(form):
     return form
 
 
+# -- Packing coefficients ----------------------------------------------------
+
+def pack_constants(form):
+    def _pack(form):
+        if isinstance(form, (tuple, list)):
+            return list(map(lambda sub_form: _pack(sub_form), form))
+        else:
+            return cpp.fem.pack_constants(form)
+    return _pack(_create_cpp_form(form))
+
+
+def pack_coefficients(form):
+    def _pack(form):
+        if isinstance(form, (tuple, list)):
+            return list(map(lambda sub_form: _pack(sub_form), form))
+        else:
+            return cpp.fem.pack_coefficients(form)
+    return _pack(_create_cpp_form(form))
+
 # -- Vector instantiation ----------------------------------------------------
 
 
@@ -79,9 +98,9 @@ def assemble_scalar(M: typing.Union[Form, cpp.fem.Form], constants=None,
     """
     _M = _create_cpp_form(M)
     if constants is None:
-        constants = cpp.fem.pack_constants(_M)
+        constants = pack_constants(_M)
     if coefficients is None:
-        coefficients = cpp.fem.pack_coefficients(_M)
+        coefficients = pack_coefficients(_M)
     return cpp.fem.assemble_scalar(_M, constants, coefficients)
 
 # -- Vector assembly ---------------------------------------------------------
@@ -99,9 +118,9 @@ def assemble_vector(L: typing.Union[Form, cpp.fem.Form], constants=None,
     b = cpp.la.create_vector(_L.function_spaces[0].dofmap.index_map,
                              _L.function_spaces[0].dofmap.index_map_bs)
     if constants is None:
-        constants = cpp.fem.pack_constants(_L)
+        constants = pack_constants(_L)
     if coefficients is None:
-        coefficients = cpp.fem.pack_coefficients(_L)
+        coefficients = pack_coefficients(_L)
     with b.localForm() as b_local:
         b_local.set(0.0)
         cpp.fem.assemble_vector(b_local.array_w, _L, constants, coefficients)
@@ -117,15 +136,11 @@ def _(b: PETSc.Vec, L: typing.Union[Form, cpp.fem.Form], constants=None,
 
     """
     _L = _create_cpp_form(L)
-    print("Pack const")
     if constants is None:
-        constants = cpp.fem.pack_constants(_L)
-    print("Pack coeffa")
+        constants = pack_constants(_L)
     if coefficients is None:
-        coefficients = cpp.fem.pack_coefficients(_L)
-    print("Post Pack coeffa")
+        coefficients = pack_coefficients(_L)
     with b.localForm() as b_local:
-        print("Assemble")
         cpp.fem.assemble_vector(b_local.array_w, _L, constants, coefficients)
     return b
 
@@ -153,11 +168,11 @@ def _(b: PETSc.Vec, L: typing.List[typing.Union[Form, cpp.fem.Form]]) -> PETSc.V
     are not accumulated on the owning processes.
 
     """
-    for b_sub, L_sub in zip(b.getNestSubVecs(), _create_cpp_form(L)):
-        constants = cpp.fem.pack_constants(L_sub)
-        coeffs = cpp.fem.pack_coefficients(L_sub)
+    constants = cpp.fem.pack_constants(L)
+    coeffs = cpp.fem.pack_coefficients(L)
+    for b_sub, L_sub, constant, coeff in zip(b.getNestSubVecs(), _create_cpp_form(L), constants, coeffs):
         with b_sub.localForm() as b_local:
-            cpp.fem.assemble_vector(b_local.array_w, L_sub, constants, coeffs)
+            cpp.fem.assemble_vector(b_local.array_w, L_sub, constant, coeff)
     return b
 
 
@@ -201,13 +216,14 @@ def _(b: PETSc.Vec,
         x0_local = []
         x0_sub = [None] * len(maps)
 
+    _L = _create_cpp_form(L)
+    constants_L = pack_constants(_L)
+    coeffs_L = pack_coefficients(_L)
+
     bcs1 = cpp.fem.bcs_cols(_create_cpp_form(a), bcs)
     b_local = cpp.la.get_local_vectors(b, maps)
-    for b_sub, L_sub, a_sub, bc in zip(b_local, L, a, bcs1):
-        _L = _create_cpp_form(L_sub)
-        constants = cpp.fem.pack_constants(_L)
-        coeffs = cpp.fem.pack_coefficients(_L)
-        cpp.fem.assemble_vector(b_sub, _L, constants, coeffs)
+    for b_sub, L_sub, a_sub, bc, constant, coeff in zip(b_local, _L, a, bcs1, constants_L, coeffs_L):
+        cpp.fem.assemble_vector(b_sub, _L, constant, coeff)
         cpp.fem.apply_lifting(b_sub, _create_cpp_form(a_sub), bc, x0_local, scale)
 
     cpp.la.scatter_local_vectors(b, b_local, maps)
