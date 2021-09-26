@@ -146,7 +146,8 @@ def _(b: PETSc.Vec, L: typing.Union[Form, cpp.fem.Form], constants=None,
 
 
 @functools.singledispatch
-def assemble_vector_nest(L: typing.Union[Form, cpp.fem.Form]) -> PETSc.Vec:
+def assemble_vector_nest(L: typing.Union[Form, cpp.fem.Form], constants=None,
+                         coefficients=None) -> PETSc.Vec:
     """Assemble linear forms into a new nested PETSc (VecNest) vector. The
     returned vector is not finalised, i.e. ghost values are not accumulated
     on the owning processes.
@@ -158,19 +159,23 @@ def assemble_vector_nest(L: typing.Union[Form, cpp.fem.Form]) -> PETSc.Vec:
     for b_sub in b.getNestSubVecs():
         with b_sub.localForm() as b_local:
             b_local.set(0.0)
-    return assemble_vector_nest(b, L)
+    return assemble_vector_nest(b, L, constants, coefficients)
 
 
 @assemble_vector_nest.register(PETSc.Vec)
-def _(b: PETSc.Vec, L: typing.List[typing.Union[Form, cpp.fem.Form]]) -> PETSc.Vec:
+def _(b: PETSc.Vec, L: typing.List[typing.Union[Form, cpp.fem.Form]], constants=None,
+      coefficients=None) -> PETSc.Vec:
     """Assemble linear forms into a nested PETSc (VecNest) vector. The vector is not
     zeroed before assembly and it is not finalised, i.e. ghost values
     are not accumulated on the owning processes.
 
     """
-    constants = cpp.fem.pack_constants(L)
-    coeffs = cpp.fem.pack_coefficients(L)
-    for b_sub, L_sub, constant, coeff in zip(b.getNestSubVecs(), _create_cpp_form(L), constants, coeffs):
+    _L = _create_cpp_form(L)
+    if constants is None:
+        constants = pack_constants(_L)
+    if coefficients is None:
+        coefficients = pack_coefficients(_L)
+    for b_sub, L_sub, constant, coeff in zip(b.getNestSubVecs(), _L, constants, coefficients):
         with b_sub.localForm() as b_local:
             cpp.fem.assemble_vector(b_local.array_w, L_sub, constant, coeff)
     return b
@@ -223,7 +228,7 @@ def _(b: PETSc.Vec,
     bcs1 = cpp.fem.bcs_cols(_create_cpp_form(a), bcs)
     b_local = cpp.la.get_local_vectors(b, maps)
     for b_sub, L_sub, a_sub, bc, constant, coeff in zip(b_local, _L, a, bcs1, constants_L, coeffs_L):
-        cpp.fem.assemble_vector(b_sub, _L, constant, coeff)
+        cpp.fem.assemble_vector(b_sub, L_sub, constant, coeff)
         cpp.fem.apply_lifting(b_sub, _create_cpp_form(a_sub), bc, x0_local, scale)
 
     cpp.la.scatter_local_vectors(b, b_local, maps)
