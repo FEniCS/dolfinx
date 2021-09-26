@@ -75,9 +75,9 @@ void fem(py::module& m)
       "Pack coefficients for a Form.");
   m.def(
       "pack_coefficients",
-      [](dolfinx::fem::Expression<PetscScalar>& expr)
+      [](dolfinx::fem::Expression<PetscScalar>& e)
       {
-        auto [coeffs, cstride] = dolfinx::fem::pack_coefficients(expr);
+        auto [coeffs, cstride] = dolfinx::fem::pack_coefficients(e);
         return as_pyarray(std::move(coeffs),
                           std::array{int(coeffs.size() / cstride), cstride});
       },
@@ -89,8 +89,8 @@ void fem(py::module& m)
       "Pack constants for a Form.");
   m.def(
       "pack_constants",
-      [](const dolfinx::fem::Expression<PetscScalar>& expression)
-      { return as_pyarray(dolfinx::fem::pack_constants(expression)); },
+      [](const dolfinx::fem::Expression<PetscScalar>& e)
+      { return as_pyarray(dolfinx::fem::pack_constants(e)); },
       "Pack constants for an Expression.");
   m.def("create_matrix", dolfinx::fem::create_matrix,
         py::return_value_policy::take_ownership, py::arg("a"),
@@ -352,10 +352,18 @@ void fem(py::module& m)
   // dolfinx::fem::assemble
 
   // Functional
-  m.def("assemble_scalar",
-        py::overload_cast<const dolfinx::fem::Form<PetscScalar>&>(
-            &dolfinx::fem::assemble_scalar<PetscScalar>),
-        "Assemble functional over mesh");
+  m.def(
+      "assemble_scalar",
+      [](const dolfinx::fem::Form<PetscScalar>& M,
+         const py::array_t<PetscScalar, py::array::c_style>& constants,
+         const py::array_t<PetscScalar, py::array::c_style>& coeffs)
+      {
+        return dolfinx::fem::assemble_scalar<PetscScalar>(
+            M, constants,
+            {xtl::span<const PetscScalar>(coeffs.data(), coeffs.size()),
+             coeffs.shape(1)});
+      },
+      "Assemble functional over mesh with provided constants and coefficients");
   // Vector
   m.def(
       "assemble_vector",

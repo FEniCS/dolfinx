@@ -9,12 +9,11 @@ import contextlib
 import functools
 import typing
 
-from petsc4py import PETSc
-
 import ufl
 from dolfinx import cpp
 from dolfinx.fem.dirichletbc import DirichletBC
 from dolfinx.fem.form import Form
+from petsc4py import PETSc
 
 
 def _create_cpp_form(form):
@@ -76,7 +75,9 @@ def assemble_scalar(M: typing.Union[Form, cpp.fem.Form]) -> PETSc.ScalarType:
     across processes.
 
     """
-    return cpp.fem.assemble_scalar(_create_cpp_form(M))
+    constants = cpp.fem.pack_constants(M)
+    coeffs = cpp.fem.pack_coefficients(M)
+    return cpp.fem.assemble_scalar(_create_cpp_form(M), constants, coeffs)
 
 # -- Vector assembly ---------------------------------------------------------
 
