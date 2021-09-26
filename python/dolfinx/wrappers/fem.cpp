@@ -368,16 +368,6 @@ void fem(py::module& m)
   m.def(
       "assemble_vector",
       [](py::array_t<PetscScalar, py::array::c_style> b,
-         const dolfinx::fem::Form<PetscScalar>& L)
-      {
-        dolfinx::fem::assemble_vector<PetscScalar>(
-            xtl::span(b.mutable_data(), b.size()), L);
-      },
-      py::arg("b"), py::arg("L"),
-      "Assemble linear form into an existing vector");
-  m.def(
-      "assemble_vector",
-      [](py::array_t<PetscScalar, py::array::c_style> b,
          const dolfinx::fem::Form<PetscScalar>& L,
          const py::array_t<PetscScalar, py::array::c_style>& constants,
          const py::array_t<PetscScalar, py::array::c_style>& coeffs)
