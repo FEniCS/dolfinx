@@ -218,7 +218,8 @@ def _(b: PETSc.Vec,
       a,
       bcs: typing.List[DirichletBC] = [],
       x0: typing.Optional[PETSc.Vec] = None,
-      scale: float = 1.0, coeffs_L=Coefficients(None, None),
+      scale: float = 1.0,
+      coeffs_L=Coefficients(None, None),
       coeffs_a=Coefficients(None, None)) -> PETSc.Vec:
     """Assemble linear forms into a monolithic vector. The vector is not
     zeroed and it is not finalised, i.e. ghost values are not
@@ -321,11 +322,11 @@ def _(A: PETSc.Mat,
     _a = _create_cpp_form(a)
     c = (coeffs[0] if coeffs[0] is not None else pack_constants(_a),
          coeffs[1] if coeffs[1] is not None else pack_coefficients(_a))
-    for i, a_row in enumerate(_a):
-        for j, a_block in enumerate(a_row):
+    for i, (a_row, const_row, coeff_row) in enumerate(zip(_a, c[0], c[1])):
+        for j, (a_block, const, coeff) in enumerate(zip(a_row, const_row, coeff_row)):
             if a_block is not None:
                 Asub = A.getNestSubMatrix(i, j)
-                assemble_matrix(Asub, a_block, bcs, diagonal, (c[0][i][j], c[1][i][j]))
+                assemble_matrix(Asub, a_block, bcs, diagonal, (const, coeff))
     return A
 
 
