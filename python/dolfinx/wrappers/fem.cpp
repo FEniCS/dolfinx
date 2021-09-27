@@ -388,64 +388,58 @@ void fem(py::module& m)
          const py::array_t<PetscScalar, py::array::c_style>& constants,
          const py::array_t<PetscScalar, py::array::c_style>& coeffs,
          const std::vector<std::shared_ptr<
-             const dolfinx::fem::DirichletBC<PetscScalar>>>& bcs)
+             const dolfinx::fem::DirichletBC<PetscScalar>>>& bcs,
+         bool unrolled)
       {
+        std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
+                          const std::int32_t*, const PetscScalar*)>
+            set_fn;
+        if (unrolled)
+        {
+          set_fn = dolfinx::la::PETScMatrix::set_block_expand_fn(
+              A, a.function_spaces()[0]->dofmap()->bs(),
+              a.function_spaces()[1]->dofmap()->bs(), ADD_VALUES);
+        }
+        else
+          set_fn = dolfinx::la::PETScMatrix::set_block_fn(A, ADD_VALUES);
+
         dolfinx::fem::assemble_matrix(
-            dolfinx::la::PETScMatrix::set_block_fn(A, ADD_VALUES), a,
-            xtl::span(constants),
+            set_fn, a, xtl::span(constants),
             {xtl::span<const PetscScalar>(coeffs.data(), coeffs.size()),
              coeffs.shape(1)},
             bcs);
       },
+      py::arg("A"), py::arg("a"), py::arg("constants"), py::arg("coeffs"),
+      py::arg("bcs"), py::arg("unrolled") = false,
       "Assemble bilinear form into an existing PETSc matrix");
-  m.def("assemble_matrix_petsc",
-        [](Mat A, const dolfinx::fem::Form<PetscScalar>& a,
-           const py::array_t<PetscScalar, py::array::c_style>& constants,
-           const py::array_t<PetscScalar, py::array::c_style>& coeffs,
-           const std::vector<bool>& rows0, const std::vector<bool>& rows1)
-        {
-          dolfinx::fem::assemble_matrix(
-              dolfinx::la::PETScMatrix::set_block_fn(A, ADD_VALUES), a,
-              xtl::span(constants),
-              {xtl::span<const PetscScalar>(coeffs.data(), coeffs.size()),
-               coeffs.shape(1)},
-              rows0, rows1);
-        });
   m.def(
-      "assemble_matrix_petsc_unrolled",
+      "assemble_matrix_petsc",
       [](Mat A, const dolfinx::fem::Form<PetscScalar>& a,
          const py::array_t<PetscScalar, py::array::c_style>& constants,
          const py::array_t<PetscScalar, py::array::c_style>& coeffs,
-         const std::vector<std::shared_ptr<
-             const dolfinx::fem::DirichletBC<PetscScalar>>>& bcs)
+         const std::vector<bool>& rows0, const std::vector<bool>& rows1,
+         bool unrolled)
       {
+        std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
+                          const std::int32_t*, const PetscScalar*)>
+            set_fn;
+        if (unrolled)
+        {
+          set_fn = dolfinx::la::PETScMatrix::set_block_expand_fn(
+              A, a.function_spaces()[0]->dofmap()->bs(),
+              a.function_spaces()[1]->dofmap()->bs(), ADD_VALUES);
+        }
+        else
+          set_fn = dolfinx::la::PETScMatrix::set_block_fn(A, ADD_VALUES);
+
         dolfinx::fem::assemble_matrix(
-            dolfinx::la::PETScMatrix::set_block_expand_fn(
-                A, a.function_spaces()[0]->dofmap()->bs(),
-                a.function_spaces()[1]->dofmap()->bs(), ADD_VALUES),
-            a, xtl::span(constants),
+            set_fn, a, xtl::span(constants),
             {xtl::span<const PetscScalar>(coeffs.data(), coeffs.size()),
              coeffs.shape(1)},
-            bcs);
+            rows0, rows1);
       },
-      "Assemble bilinear form into an existing PETSc matrix using "
-      "non-block "
-      "insertion");
-  m.def("assemble_matrix_petsc_unrolled",
-        [](Mat A, const dolfinx::fem::Form<PetscScalar>& a,
-           const py::array_t<PetscScalar, py::array::c_style>& constants,
-           const py::array_t<PetscScalar, py::array::c_style>& coeffs,
-           const std::vector<bool>& rows0, const std::vector<bool>& rows1)
-        {
-          dolfinx::fem::assemble_matrix(
-              dolfinx::la::PETScMatrix::set_block_expand_fn(
-                  A, a.function_spaces()[0]->dofmap()->bs(),
-                  a.function_spaces()[1]->dofmap()->bs(), ADD_VALUES),
-              a, xtl::span(constants),
-              {xtl::span<const PetscScalar>(coeffs.data(), coeffs.size()),
-               coeffs.shape(1)},
-              rows0, rows1);
-        });
+      py::arg("A"), py::arg("a"), py::arg("constants"), py::arg("coeffs"),
+      py::arg("rows0"), py::arg("rows1"), py::arg("unrolled") = false);
   m.def("insert_diagonal",
         [](Mat A, const dolfinx::fem::FunctionSpace& V,
            const std::vector<std::shared_ptr<

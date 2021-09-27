@@ -391,7 +391,7 @@ def _(A: PETSc.Mat,
         for j, a_sub in enumerate(a_row):
             if a_sub is not None:
                 Asub = A.getLocalSubMatrix(is_rows[i], is_cols[j])
-                cpp.fem.assemble_matrix_petsc_unrolled(Asub, a_sub, c[0][i][j], c[1][i][j], bcs)
+                cpp.fem.assemble_matrix_petsc(Asub, a_sub, c[0][i][j], c[1][i][j], bcs, True)
                 A.restoreLocalSubMatrix(is_rows[i], is_cols[j], Asub)
 
     # Flush to enable switch from add to set in the matrix
