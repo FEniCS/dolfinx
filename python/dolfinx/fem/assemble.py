@@ -294,7 +294,9 @@ def _(A: PETSc.Mat,
 
     """
     _a = _create_cpp_form(a)
-    cpp.fem.assemble_matrix_petsc(A, _a, bcs)
+    constants = pack_constants(_a)
+    coefficients = pack_coefficients(_a)
+    cpp.fem.assemble_matrix_petsc(A, _a, constants, coefficients, bcs)
     if _a.function_spaces[0].id == _a.function_spaces[1].id:
         A.assemblyBegin(PETSc.Mat.AssemblyType.FLUSH)
         A.assemblyEnd(PETSc.Mat.AssemblyType.FLUSH)
@@ -375,6 +377,9 @@ def _(A: PETSc.Mat,
       diagonal: float = 1.0) -> PETSc.Mat:
     """Assemble bilinear forms into matrix"""
     _a = _create_cpp_form(a)
+    constants = pack_constants(_a)
+    coefficients = pack_coefficients(_a)
+
     V = _extract_function_spaces(_a)
     is_rows = cpp.la.create_petsc_index_sets([(Vsub.dofmap.index_map, Vsub.dofmap.index_map_bs) for Vsub in V[0]])
     is_cols = cpp.la.create_petsc_index_sets([(Vsub.dofmap.index_map, Vsub.dofmap.index_map_bs) for Vsub in V[1]])
@@ -384,7 +389,7 @@ def _(A: PETSc.Mat,
         for j, a_sub in enumerate(a_row):
             if a_sub is not None:
                 Asub = A.getLocalSubMatrix(is_rows[i], is_cols[j])
-                cpp.fem.assemble_matrix_petsc_unrolled(Asub, a_sub, bcs)
+                cpp.fem.assemble_matrix_petsc_unrolled(Asub, a_sub, constants[i][j], coefficients[i][j], bcs)
                 A.restoreLocalSubMatrix(is_rows[i], is_cols[j], Asub)
 
     # Flush to enable switch from add to set in the matrix
