@@ -101,7 +101,7 @@ class LinearProblem():
 
         print("Post Assemnble vector")
         # Apply boundary conditions to the rhs
-        fem.apply_lifting(self._b, [self._a], [self.bcs])
+        fem.apply_lifting(self._b, [self._a], bcs=[self.bcs])
         self._b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
         fem.set_bc(self._b, self.bcs)
 
@@ -217,7 +217,7 @@ class NonlinearProblem:
             b_local.set(0.0)
         fem.assemble_vector(b, self._L)
         # Apply boundary condition
-        fem.apply_lifting(b, [self._a], [self.bcs], [x], -1.0)
+        fem.apply_lifting(b, [self._a], bcs=[self.bcs], x0=[x], scale=-1.0)
         b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
         fem.set_bc(b, self.bcs, x, -1.0)
 
