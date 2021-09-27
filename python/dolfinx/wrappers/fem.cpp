@@ -461,16 +461,37 @@ void fem(py::module& m)
       [](py::array_t<PetscScalar, py::array::c_style> b,
          const std::vector<
              std::shared_ptr<const dolfinx::fem::Form<PetscScalar>>>& a,
+         const std::vector<py::array_t<PetscScalar, py::array::c_style>>&
+             constants,
+         const std::vector<py::array_t<PetscScalar, py::array::c_style>>&
+             coeffs,
          const std::vector<std::vector<std::shared_ptr<
              const dolfinx::fem::DirichletBC<PetscScalar>>>>& bcs1,
          const std::vector<py::array_t<PetscScalar, py::array::c_style>>& x0,
          double scale)
       {
-        std::vector<xtl::span<const PetscScalar>> _x0;
+        using T = PetscScalar;
+        std::vector<xtl::span<const T>> _x0;
         for (const auto& x : x0)
           _x0.emplace_back(x.data(), x.size());
+
+        std::vector<xtl::span<const T>> _constants;
+        std::transform(constants.cbegin(), constants.cend(),
+                       std::back_inserter(_constants),
+                       [](auto& c) { return c; });
+
+        std::vector<std::pair<xtl::span<const T>, int>> _coeffs;
+        std::transform(
+            coeffs.cbegin(), coeffs.cend(), std::back_inserter(_coeffs),
+            [](auto& c)
+            {
+              int shape1 = c.ndim() == 0 ? 0 : c.shape(1);
+              return std::pair(xtl::span<const T>(c.data(), c.size()), shape1);
+            });
+
         dolfinx::fem::apply_lifting<PetscScalar>(
-            xtl::span(b.mutable_data(), b.size()), a, bcs1, _x0, scale);
+            xtl::span(b.mutable_data(), b.size()), a, _constants, _coeffs, bcs1,
+            _x0, scale);
       },
       "Modify vector for lifted boundary conditions");
   m.def(

@@ -10,6 +10,7 @@ import contextlib
 import functools
 import typing
 
+import numpy as np
 import ufl
 from dolfinx import cpp
 from dolfinx.fem.dirichletbc import DirichletBC
@@ -45,7 +46,9 @@ def pack_constants(form: form_type):
 
     """
     def _pack(form):
-        if isinstance(form, (tuple, list)):
+        if form is None:
+            return None
+        elif isinstance(form, (tuple, list)):
             return list(map(lambda sub_form: _pack(sub_form), form))
         else:
             return cpp.fem.pack_constants(form)
@@ -59,7 +62,9 @@ def pack_coefficients(form: form_type):
 
     """
     def _pack(form):
-        if isinstance(form, (tuple, list)):
+        if form is None:
+            return None
+        elif isinstance(form, (tuple, list)):
             return list(map(lambda sub_form: _pack(sub_form), form))
         else:
             return cpp.fem.pack_coefficients(form)
@@ -241,11 +246,17 @@ def _(b: PETSc.Vec,
     constants_L = pack_constants(_L)
     coeffs_L = pack_coefficients(_L)
 
+    _a = _create_cpp_form(a)
+    constants_a = pack_constants(_a)
+    coeffs_a = pack_coefficients(_a)
+
     bcs1 = cpp.fem.bcs_cols(_create_cpp_form(a), bcs)
     b_local = cpp.la.get_local_vectors(b, maps)
-    for b_sub, L_sub, a_sub, bc, constant, coeff in zip(b_local, _L, a, bcs1, constants_L, coeffs_L):
-        cpp.fem.assemble_vector(b_sub, L_sub, constant, coeff)
-        cpp.fem.apply_lifting(b_sub, _create_cpp_form(a_sub), bc, x0_local, scale)
+    for b_sub, L_sub, a_sub, bc, constant_L, coeff_L, constant_a, coeff_a in zip(b_local, _L, _a, bcs1,
+                                                                                 constants_L, coeffs_L,
+                                                                                 constants_a, coeffs_a):
+        cpp.fem.assemble_vector(b_sub, L_sub, constant_L, coeff_L)
+        cpp.fem.apply_lifting(b_sub, a_sub, constant_a, coeff_a, bc, x0_local, scale)
 
     cpp.la.scatter_local_vectors(b, b_local, maps)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
@@ -399,6 +410,7 @@ def _(A: PETSc.Mat,
 def apply_lifting(b: PETSc.Vec,
                   a: typing.List[typing.Union[Form, cpp.fem.Form]],
                   bcs: typing.List[typing.List[DirichletBC]],
+                  constants=None, coefficients=None,
                   x0: typing.Optional[typing.List[PETSc.Vec]] = [],
                   scale: float = 1.0) -> None:
     """Modify RHS vector b for lifting of Dirichlet boundary conditions.
@@ -415,16 +427,22 @@ def apply_lifting(b: PETSc.Vec,
     Ghost contributions are not accumulated (not sent to owner). Caller
     is responsible for calling VecGhostUpdateBegin/End.
     """
+    _a = _create_cpp_form(a)
+    if constants is None:
+        constants = pack_constants(_a)
+    if coefficients is None:
+        coefficients = pack_coefficients(_a)
     with contextlib.ExitStack() as stack:
         x0 = [stack.enter_context(x.localForm()) for x in x0]
         x0_r = [x.array_r for x in x0]
         b_local = stack.enter_context(b.localForm())
-        cpp.fem.apply_lifting(b_local.array_w, _create_cpp_form(a), bcs, x0_r, scale)
+        cpp.fem.apply_lifting(b_local.array_w, _a, constants, coefficients, bcs, x0_r, scale)
 
 
 def apply_lifting_nest(b: PETSc.Vec,
                        a: typing.List[typing.List[typing.Union[Form, cpp.fem.Form]]],
                        bcs: typing.List[DirichletBC],
+                       constants=None, coefficients=None,
                        x0: typing.Optional[PETSc.Vec] = None,
                        scale: float = 1.0) -> PETSc.Vec:
     """Modify nested vector for lifting of Dirichlet boundary conditions.
@@ -432,9 +450,13 @@ def apply_lifting_nest(b: PETSc.Vec,
     """
     x0 = [] if x0 is None else x0.getNestSubVecs()
     _a = _create_cpp_form(a)
+    if constants is None:
+        constants = pack_constants(_a)
+    if coefficients is None:
+        coefficients = pack_coefficients(_a)
     bcs1 = cpp.fem.bcs_cols(_a, bcs)
-    for b_sub, a_sub, bc1 in zip(b.getNestSubVecs(), _a, bcs1):
-        apply_lifting(b_sub, a_sub, bc1, x0, scale)
+    for b_sub, a_sub, constants, coeffs, bc1 in zip(b.getNestSubVecs(), _a, constants, coefficients, bcs1):
+        apply_lifting(b_sub, a_sub, bc1, constants, coeffs, x0, scale)
     return b
 
 
