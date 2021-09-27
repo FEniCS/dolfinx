@@ -284,7 +284,7 @@ A = dolfinx.fem.assemble_matrix_block(a, bcs)
 A.assemble()
 P = dolfinx.fem.assemble_matrix_block(a_p, bcs)
 P.assemble()
-b = dolfinx.fem.assemble.assemble_vector_block(L, a, bcs)
+b = dolfinx.fem.assemble.assemble_vector_block(L, a, bcs=bcs)
 
 # Set near null space for pressure
 null_vec = A.createVecLeft()

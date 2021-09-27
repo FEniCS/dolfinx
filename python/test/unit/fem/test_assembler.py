@@ -199,11 +199,11 @@ def test_assemble_manifold():
 
     bcdofs = dolfinx.fem.locate_dofs_geometrical(U, lambda x: numpy.isclose(x[0], 0.0))
     bcs = [dolfinx.DirichletBC(w, bcdofs)]
-    A = dolfinx.fem.assemble_matrix(a, bcs)
+    A = dolfinx.fem.assemble_matrix(a, bcs=bcs)
     A.assemble()
 
     b = dolfinx.fem.assemble_vector(L)
-    dolfinx.fem.apply_lifting(b, [a], [bcs])
+    dolfinx.fem.apply_lifting(b, [a], bcs=[bcs])
     dolfinx.fem.set_bc(b, bcs)
 
     assert numpy.isclose(b.norm(), 0.41231)
@@ -260,21 +260,21 @@ def test_matrix_assembly_block(mode):
     L_block = [L0, L1]
 
     # Monolithic blocked
-    A0 = dolfinx.fem.assemble_matrix_block(a_block, [bc])
+    A0 = dolfinx.fem.assemble_matrix_block(a_block, bcs=[bc])
     A0.assemble()
-    b0 = dolfinx.fem.assemble_vector_block(L_block, a_block, [bc])
+    b0 = dolfinx.fem.assemble_vector_block(L_block, a_block, bcs=[bc])
     assert A0.getType() != "nest"
     Anorm0 = A0.norm()
     bnorm0 = b0.norm()
 
     # Nested (MatNest)
-    A1 = dolfinx.fem.assemble_matrix_nest(a_block, [bc], [["baij", "aij"], ["aij", ""]])
+    A1 = dolfinx.fem.assemble_matrix_nest(a_block, bcs=[bc], mat_types=[["baij", "aij"], ["aij", ""]])
     A1.assemble()
     Anorm1 = nest_matrix_norm(A1)
     assert Anorm0 == pytest.approx(Anorm1, 1.0e-12)
 
     b1 = dolfinx.fem.assemble_vector_nest(L_block)
-    dolfinx.fem.apply_lifting_nest(b1, a_block, [bc])
+    dolfinx.fem.apply_lifting_nest(b1, a_block, bcs=[bc])
     for b_sub in b1.getNestSubVecs():
         b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     bcs0 = dolfinx.cpp.fem.bcs_rows(dolfinx.fem.assemble._create_cpp_form(L_block), [bc])
@@ -295,10 +295,10 @@ def test_matrix_assembly_block(mode):
 
     bdofsW_V1 = dolfinx.fem.locate_dofs_topological((W.sub(1), V1), mesh.topology.dim - 1, bndry_facets)
     bc = dolfinx.fem.dirichletbc.DirichletBC(u_bc, bdofsW_V1, W.sub(1))
-    A2 = dolfinx.fem.assemble_matrix(a, [bc])
+    A2 = dolfinx.fem.assemble_matrix(a, bcs=[bc])
     A2.assemble()
     b2 = dolfinx.fem.assemble_vector(L)
-    dolfinx.fem.apply_lifting(b2, [a], [[bc]])
+    dolfinx.fem.apply_lifting(b2, [a], bcs=[[bc]])
     b2.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     dolfinx.fem.set_bc(b2, [bc])
     assert A2.getType() != "nest"
@@ -360,9 +360,9 @@ def test_assembly_solve_block(mode):
         pass
         # print("Norm:", its, rnorm)
 
-    A0 = dolfinx.fem.assemble_matrix_block([[a00, a01], [a10, a11]], bcs)
+    A0 = dolfinx.fem.assemble_matrix_block([[a00, a01], [a10, a11]], bcs=bcs)
     b0 = dolfinx.fem.assemble_vector_block([L0, L1], [[a00, a01], [a10, a11]],
-                                           bcs)
+                                           bcs=bcs)
     A0.assemble()
     A0norm = A0.norm()
     b0norm = b0.norm()
@@ -378,10 +378,10 @@ def test_assembly_solve_block(mode):
     x0norm = x0.norm()
 
     # Nested (MatNest)
-    A1 = dolfinx.fem.assemble_matrix_nest([[a00, a01], [a10, a11]], bcs, diagonal=1.0)
+    A1 = dolfinx.fem.assemble_matrix_nest([[a00, a01], [a10, a11]], bcs=bcs, diagonal=1.0)
     A1.assemble()
     b1 = dolfinx.fem.assemble_vector_nest([L0, L1])
-    dolfinx.fem.apply_lifting_nest(b1, [[a00, a01], [a10, a11]], bcs)
+    dolfinx.fem.apply_lifting_nest(b1, [[a00, a01], [a10, a11]], bcs=bcs)
     for b_sub in b1.getNestSubVecs():
         b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     bcs0 = dolfinx.cpp.fem.bcs_rows(dolfinx.fem.assemble._create_cpp_form([L0, L1]), bcs)
@@ -430,7 +430,7 @@ def test_assembly_solve_block(mode):
         dolfinx.fem.dirichletbc.DirichletBC(u1_bc, bdofsW1_V1, W.sub(1))
     ]
 
-    A2 = dolfinx.fem.assemble_matrix(a, bcs)
+    A2 = dolfinx.fem.assemble_matrix(a, bcs=bcs)
     A2.assemble()
     b2 = dolfinx.fem.assemble_vector(L)
     dolfinx.fem.apply_lifting(b2, [a], [bcs])
@@ -510,9 +510,11 @@ def test_assembly_solve_taylor_hood(mesh):
 
     def nested_solve():
         """Nested solver"""
-        A = dolfinx.fem.assemble_matrix_nest([[a00, a01], [a10, a11]], [bc0, bc1], [["baij", "aij"], ["aij", ""]])
+        A = dolfinx.fem.assemble_matrix_nest([[a00, a01], [a10, a11]], bcs=[bc0, bc1],
+                                             mat_types=[["baij", "aij"], ["aij", ""]])
         A.assemble()
-        P = dolfinx.fem.assemble_matrix_nest([[p00, p01], [p10, p11]], [bc0, bc1], [["aij", "aij"], ["aij", ""]])
+        P = dolfinx.fem.assemble_matrix_nest([[p00, p01], [p10, p11]], bcs=[bc0, bc1],
+                                             mat_types=[["aij", "aij"], ["aij", ""]])
         P.assemble()
         b = dolfinx.fem.assemble_vector_nest([L0, L1])
         dolfinx.fem.apply_lifting_nest(b, [[a00, a01], [a10, a11]], [bc0, bc1])
@@ -549,12 +551,12 @@ def test_assembly_solve_taylor_hood(mesh):
 
     def blocked_solve():
         """Blocked (monolithic) solver"""
-        A = dolfinx.fem.assemble_matrix_block([[a00, a01], [a10, a11]], [bc0, bc1])
+        A = dolfinx.fem.assemble_matrix_block([[a00, a01], [a10, a11]], bcs=[bc0, bc1])
         A.assemble()
-        P = dolfinx.fem.assemble_matrix_block([[p00, p01], [p10, p11]], [bc0, bc1])
+        P = dolfinx.fem.assemble_matrix_block([[p00, p01], [p10, p11]], bcs=[bc0, bc1])
         P.assemble()
         b = dolfinx.fem.assemble_vector_block([L0, L1], [[a00, a01], [a10, a11]],
-                                              [bc0, bc1])
+                                              bcs=[bc0, bc1])
 
         ksp = PETSc.KSP()
         ksp.create(mesh.mpi_comm())
@@ -598,13 +600,13 @@ def test_assembly_solve_taylor_hood(mesh):
         bc0 = dolfinx.DirichletBC(u0, bdofsW0_P2_0, W.sub(0))
         bc1 = dolfinx.DirichletBC(u0, bdofsW0_P2_1, W.sub(0))
 
-        A = dolfinx.fem.assemble_matrix(a, [bc0, bc1])
+        A = dolfinx.fem.assemble_matrix(a, bcs=[bc0, bc1])
         A.assemble()
-        P = dolfinx.fem.assemble_matrix(p_form, [bc0, bc1])
+        P = dolfinx.fem.assemble_matrix(p_form, bcs=[bc0, bc1])
         P.assemble()
 
         b = dolfinx.fem.assemble_vector(L)
-        dolfinx.fem.apply_lifting(b, [a], [[bc0, bc1]])
+        dolfinx.fem.apply_lifting(b, [a], bcs=[[bc0, bc1]])
         b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
         dolfinx.fem.set_bc(b, [bc0, bc1])
 
