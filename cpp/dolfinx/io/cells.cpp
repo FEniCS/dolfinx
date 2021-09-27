@@ -286,74 +286,6 @@ std::vector<std::uint8_t> gmsh_quadrilateral(int num_nodes)
     throw std::runtime_error("Higher order GMSH quadrilateral not supported");
   }
 }
-//-----------------------------------------------------------------------------
-std::vector<std::uint8_t> dg_triangle(int num_nodes)
-{
-  switch (num_nodes)
-  {
-  case 3:
-    return gmsh_triangle(num_nodes);
-  case 6:
-    return {0, 2, 5, 1, 4, 3};
-  case 10:
-    return {0, 3, 9, 1, 2, 6, 8, 7, 4, 5};
-  case 15:
-    return {0, 4, 14, 1, 2, 3, 8, 11, 13, 12, 9, 5, 6, 7, 10};
-  default:
-    throw std::runtime_error(
-        "Higher order DG space on triangles is not supported");
-  }
-}
-//-----------------------------------------------------------------------------
-std::vector<std::uint8_t> dg_tetrahedron(int num_nodes)
-{
-  switch (num_nodes)
-  {
-  case 4:
-    return gmsh_tetrahedron(num_nodes);
-  case 10:
-    return {0, 2, 5, 9, 1, 4, 5, 6, 7, 8};
-  case 20:
-    // Note that third order tetrahedrons has a special ordering:
-    // https://gitlab.kitware.com/vtk/vtk/-/issues/17746
-    return {0,  3,  9,  19, 1,  2,  6,  8,  7,  4,
-            10, 16, 12, 17, 15, 18, 11, 14, 13, 5};
-  default:
-    throw std::runtime_error(
-        "Higher order DG space on tetrahedra is not supported");
-  }
-}
-//-----------------------------------------------------------------------------
-std::vector<std::uint8_t> dq_hexahedron(int num_nodes)
-{
-  switch (num_nodes)
-  {
-  case 8:
-    return gmsh_hexahedron(num_nodes);
-  case 27:
-    return {0,  2,  8, 6,  18, 20, 26, 24, 1,  5,  7, 3,  19, 23,
-            25, 21, 9, 11, 17, 15, 12, 14, 10, 16, 4, 22, 14};
-  default:
-    throw std::runtime_error(
-        "Higher order DQ space on hexahedra is not supported");
-  }
-}
-//-----------------------------------------------------------------------------
-std::vector<std::uint8_t> dq_quadrilateral(int num_nodes)
-{
-  switch (num_nodes)
-  {
-  case 4:
-    return gmsh_quadrilateral(num_nodes);
-  case 9:
-    return {0, 2, 8, 6, 1, 5, 7, 3, 4};
-  case 16:
-    return {0, 3, 15, 12, 1, 2, 7, 11, 13, 14, 4, 8, 5, 6, 9, 10};
-  default:
-    throw std::runtime_error(
-        "Higher order DQ space on quadrilaterals is not supported");
-  }
-}
 } // namespace
 //-----------------------------------------------------------------------------
 std::vector<std::uint8_t> io::cells::perm_vtk(mesh::CellType type,
@@ -421,33 +353,6 @@ std::vector<std::uint8_t> io::cells::perm_gmsh(const mesh::CellType type,
   }
 
   return io::cells::transpose(map);
-}
-//-----------------------------------------------------------------------------
-std::vector<std::uint8_t>
-io::cells::perm_discontinuous_lagrange(mesh::CellType type, int num_nodes)
-{
-  std::vector<std::uint8_t> map;
-  switch (type)
-  {
-  case mesh::CellType::point:
-    map = {0};
-    break;
-  case mesh::CellType::triangle:
-    map = dg_triangle(num_nodes);
-    break;
-  case mesh::CellType::tetrahedron:
-    map = dg_tetrahedron(num_nodes);
-    break;
-  case mesh::CellType::quadrilateral:
-    map = dq_quadrilateral(num_nodes);
-    break;
-  case mesh::CellType::hexahedron:
-    map = dq_hexahedron(num_nodes);
-    break;
-  default:
-    throw std::runtime_error("Unknown cell type.");
-  }
-  return map;
 }
 //-----------------------------------------------------------------------------
 std::vector<std::uint8_t>

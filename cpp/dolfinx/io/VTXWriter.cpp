@@ -196,15 +196,8 @@ void write_lagrange_function(adios2::IO& io, adios2::Engine& engine,
   // Create permutation from DOLFINx dof ordering to VTK
   std::shared_ptr<const fem::DofMap> dofmap = V->dofmap();
   const std::uint32_t num_nodes = dofmap->cell_dofs(0).size();
-  std::vector<std::uint8_t> map;
-  if (family == "Lagrange")
-  {
-    map = dolfinx::io::cells::transpose(
-        io::cells::perm_vtk(mesh->topology().cell_type(), num_nodes));
-  }
-  else
-    map = dolfinx::io::cells::perm_discontinuous_lagrange(
-        mesh->topology().cell_type(), num_nodes);
+  std::vector<std::uint8_t> map = dolfinx::io::cells::transpose(
+      io::cells::perm_vtk(mesh->topology().cell_type(), num_nodes));
 
   // Extract topology for all local cells as
   // [N0 v0_0 .... v0_N0 N1 v1_0 .... v1_N1 ....]
@@ -367,8 +360,8 @@ VTXWriter::VTXWriter(
     if (is_cellwise_constant(*element))
       throw std::runtime_error("Cell-wise constants not currently supported");
 
-    std::array<std::string, 2> elements
-        = {"Lagrange", "Discontinuous Lagrange"};
+    std::array<std::string, 3> elements
+        = {"Lagrange", "Discontinuous Lagrange", "DQ"};
     if (std::find(elements.begin(), elements.end(), element->family())
         == elements.end())
     {
