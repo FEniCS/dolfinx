@@ -35,36 +35,34 @@ namespace adios2_utils
 // Safe definition of an attribute. First check if it has already been defined
 // and return it. If not defined create new attribute.
 template <class T>
-adios2::Attribute<T> DefineAttribute(adios2::IO& io, const std::string& name,
-                                     const T& value,
-                                     const std::string& var_name = "",
-                                     const std::string& separator = "/")
+adios2::Attribute<T> define_attribute(adios2::IO& io, const std::string& name,
+                                      const T& value,
+                                      const std::string& var_name = "",
+                                      const std::string& separator = "/")
 {
   if (adios2::Attribute<T> attr = io.InquireAttribute<T>(name); attr)
     return attr;
   else
     return io.DefineAttribute<T>(name, value, var_name, separator);
 }
-
 //-----------------------------------------------------------------------------
-// Safe definition of a variable. First check if it has already been defined
-// and return it. If not defined create new variable.
+
+/// Safe definition of a variable. First check if it has already been
+/// defined and return it. If not defined create new variable.
 template <class T>
-adios2::Variable<T> DefineVariable(adios2::IO& io, const std::string& name,
-                                   const adios2::Dims& shape = adios2::Dims(),
-                                   const adios2::Dims& start = adios2::Dims(),
-                                   const adios2::Dims& count = adios2::Dims())
+adios2::Variable<T> define_variable(adios2::IO& io, const std::string& name,
+                                    const adios2::Dims& shape = adios2::Dims(),
+                                    const adios2::Dims& start = adios2::Dims(),
+                                    const adios2::Dims& count = adios2::Dims())
 {
-  adios2::Variable<T> v = io.InquireVariable<T>(name);
-  if (v)
+  if (adios2::Variable<T> v = io.InquireVariable<T>(name); v)
   {
     if (v.Count() != count and v.ShapeID() == adios2::ShapeID::LocalArray)
       v.SetSelection({start, count});
+    return v;
   }
   else
-    v = io.DefineVariable<T>(name, shape, start, count);
-
-  return v;
+    return io.DefineVariable<T>(name, shape, start, count);
 }
 
 //-----------------------------------------------------------------------------
@@ -95,8 +93,9 @@ void write_function_at_nodes(adios2::IO& io, adios2::Engine& engine,
     std::string function_name = u.name;
     if (part != "")
       function_name += "_" + part;
-    adios2::Variable<double> local_output = DefineVariable<double>(
-        io, function_name, {}, {}, {local_size, num_components});
+    adios2::Variable<double> local_output
+        = adios2_utils::define_variable<double>(io, function_name, {}, {},
+                                                {local_size, num_components});
 
     // Loop over components of each real and imaginary part
     for (size_t i = 0; i < local_size; ++i)

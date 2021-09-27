@@ -91,6 +91,15 @@ private:
   bool _write_mesh_data;
 };
 
+/// Extract the cell topology (connectivity) in VTK ordering for all
+/// cells the mesh. The VTK 'topology' includes higher-order 'nodes'.
+/// The index of a 'node' corresponds to the DOLFINx geometry 'nodes'.
+/// @param [in] mesh The mesh
+/// @return The cell topology in VTK ordering and in term of the DOLFINx
+/// geometry 'nodes'
+xt::xtensor<std::uint64_t, 2>
+extract_vtk_connectivity(std::shared_ptr<const mesh::Mesh> mesh);
+
 } // namespace dolfinx::io
 
 #endif
