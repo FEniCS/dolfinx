@@ -58,7 +58,7 @@ def generate_mesh(dim: int, simplex: bool, N: int = 3):
 @pytest.mark.skipif(not has_adios2, reason="Requires ADIOS2.")
 @pytest.mark.parametrize("dim", [2, 3])
 @pytest.mark.parametrize("simplex", [True, False])
-def xtest_fides_function_at_nodes(tempdir, dim, simplex):
+def test_fides_function_at_nodes(tempdir, dim, simplex):
     """Test saving function values as mesh nodes"""
     mesh = generate_mesh(dim, simplex)
     V = VectorFunctionSpace(mesh, ("Lagrange", 1))

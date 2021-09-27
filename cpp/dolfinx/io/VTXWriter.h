@@ -8,6 +8,7 @@
 
 #ifdef HAS_ADIOS2
 
+#include "FidesWriter.h"
 #include "utils.h"
 #include <array>
 #include <dolfinx/common/MPI.h>
@@ -37,7 +38,7 @@ namespace dolfinx::io
 {
 // Writer for meshes and functions using ADIOS2 VTX format
 // https://adios2.readthedocs.io/en/latest/ecosystem/visualization.html#using-vtk-and-paraview
-class VTXWriter
+class VTXWriter : public Adios2Writer
 {
 public:
   /// Create VTX writer for a mesh
@@ -68,37 +69,17 @@ public:
   VTXWriter(VTXWriter&& file) = default;
 
   /// Destructor
-  virtual ~VTXWriter();
-
-  /// Close the file
-  void close();
+  ~VTXWriter() = default;
 
   /// Write data to file
   /// @param[in] t The time step
   void write(double t);
 
 private:
-  std::unique_ptr<adios2::ADIOS> _adios;
-  std::unique_ptr<adios2::IO> _io;
-  std::unique_ptr<adios2::Engine> _engine;
-
-  std::shared_ptr<const dolfinx::mesh::Mesh> _mesh;
-  std::vector<std::shared_ptr<const fem::Function<double>>> _functions;
-  std::vector<std::shared_ptr<const fem::Function<std::complex<double>>>>
-      _complex_functions;
   // Flag to indicate if mesh should be written, or if mesh is defined through
   // dof coordinates
   bool _write_mesh_data;
 };
-
-/// Extract the cell topology (connectivity) in VTK ordering for all
-/// cells the mesh. The VTK 'topology' includes higher-order 'nodes'.
-/// The index of a 'node' corresponds to the DOLFINx geometry 'nodes'.
-/// @param [in] mesh The mesh
-/// @return The cell topology in VTK ordering and in term of the DOLFINx
-/// geometry 'nodes'
-xt::xtensor<std::uint64_t, 2>
-extract_vtk_connectivity(std::shared_ptr<const mesh::Mesh> mesh);
 
 } // namespace dolfinx::io
 

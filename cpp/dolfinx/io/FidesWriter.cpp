@@ -7,10 +7,10 @@
 #ifdef HAS_ADIOS2
 
 #include "FidesWriter.h"
-#include "VTXWriter.h"
 #include "adios2_utils.h"
 #include <adios2.h>
 #include <algorithm>
+#include <complex>
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/fem/Function.h>
 #include <dolfinx/fem/FunctionSpace.h>
@@ -195,9 +195,25 @@ Adios2Writer::Adios2Writer(
     const std::vector<std::shared_ptr<const fem::Function<double>>>& u)
     : Adios2Writer(comm, filename, tag)
 {
-  _u = u;
+  _mesh = u[0]->function_space()->mesh();
+  // Check that mesh is the same for all functions
+  for (std::size_t i = 1; i < u.size(); i++)
+    assert(_mesh == u[i]->function_space()->mesh());
+  _functions = u;
 }
-
+//-----------------------------------------------------------------------------
+Adios2Writer::Adios2Writer(
+    MPI_Comm comm, const std::string& filename, const std::string& tag,
+    const std::vector<
+        std::shared_ptr<const fem::Function<std::complex<double>>>>& u)
+    : Adios2Writer(comm, filename, tag)
+{
+  _mesh = u[0]->function_space()->mesh();
+  // Check that mesh is the same for all functions
+  for (std::size_t i = 1; i < u.size(); i++)
+    assert(_mesh == u[i]->function_space()->mesh());
+  _complex_functions = u;
+}
 //-----------------------------------------------------------------------------
 Adios2Writer::~Adios2Writer() { close(); }
 //-----------------------------------------------------------------------------
@@ -210,6 +226,41 @@ void Adios2Writer::close()
     _engine->Close();
 }
 //-----------------------------------------------------------------------------
+xt::xtensor<std::uint64_t, 2>
+io::extract_vtk_connectivity(std::shared_ptr<const mesh::Mesh> mesh)
+{
+  // Get DOLFINx to VTK permutation
+  // FIXME: Use better way to get number of nodes
+  const graph::AdjacencyList<std::int32_t>& x_dofmap
+      = mesh->geometry().dofmap();
+  const std::uint32_t num_nodes = x_dofmap.num_links(0);
+  std::vector map = dolfinx::io::cells::transpose(
+      dolfinx::io::cells::perm_vtk(mesh->topology().cell_type(), num_nodes));
+  // TODO: Remove when when paraview issue 19433 is resolved
+  // (https://gitlab.kitware.com/paraview/paraview/issues/19433)
+  if (mesh->topology().cell_type() == dolfinx::mesh::CellType::hexahedron
+      and num_nodes == 27)
+  {
+    map = {0,  9, 12, 3,  1, 10, 13, 4,  18, 15, 21, 6,  19, 16,
+           22, 7, 2,  11, 5, 14, 8,  17, 20, 23, 24, 25, 26};
+  }
+  // Extract mesh 'nodes'
+  const int tdim = mesh->topology().dim();
+  const std::uint32_t num_cells
+      = mesh->topology().index_map(tdim)->size_local();
+
+  // Write mesh connectivity
+  xt::xtensor<std::uint64_t, 2> topology({num_cells, num_nodes});
+  for (size_t c = 0; c < num_cells; ++c)
+  {
+    auto x_dofs = x_dofmap.links(c);
+    for (std::size_t i = 0; i < x_dofs.size(); ++i)
+      topology(c, i) = x_dofs[map[i]];
+  }
+
+  return topology;
+};
+
 //-----------------------------------------------------------------------------
 FidesWriter::FidesWriter(MPI_Comm comm, const std::string& filename,
                          std::shared_ptr<const mesh::Mesh> mesh)
@@ -230,45 +281,30 @@ FidesWriter::FidesWriter(
     : Adios2Writer(comm, filename, "Fides function writer", u)
 {
   assert(!u.empty());
-  // _mesh = functions[0]->function_space()->mesh();
-
-  // Check that mesh is the same for all functions
-  // for (std::size_t i = 1; i < functions.size(); i++)
-  //   assert(_mesh == functions[i]->function_space()->mesh());
-
   auto mesh = u[0]->function_space()->mesh();
   assert(mesh);
   initialize_mesh_attributes(*_io, *mesh);
   initialize_function_attributes<double>(*_io, u);
 }
 // //-----------------------------------------------------------------------------
-// /// Initialize a FIDES writer for writing a list of functions to file
-// /// @param[in] comm The MPI communicator
-// /// @param[in] filename The filename of the output file
-// /// @param[in] functions The list of functions
-// FidesWriter::FidesWriter(
-//     MPI_Comm comm, const std::string& filename,
-//     const std::vector<
-//         std::shared_ptr<const fem::Function<std::complex<double>>>>&
-//         functions)
-//     : _adios(std::make_unique<adios2::ADIOS>(comm)),
-//       _io(std::make_unique<adios2::IO>(
-//           _adios->DeclareIO("Fides function writer"))),
-//       _engine(std::make_unique<adios2::Engine>(
-//           _io->Open(filename, adios2::Mode::Write))),
-//       _mesh(), _functions(), _complex_functions(functions)
-// {
-//   _io->SetEngine("BPFile");
+/// Initialize a FIDES writer for writing a list of functions to file
+/// @param[in] comm The MPI communicator
+/// @param[in] filename The filename of the output file
+/// @param[in] u The list of functions
+FidesWriter::FidesWriter(
+    MPI_Comm comm, const std::string& filename,
+    const std::vector<
+        std::shared_ptr<const fem::Function<std::complex<double>>>>& u)
+    : Adios2Writer(comm, filename, "Fides function writer", u)
+{
 
-//   // Check that mesh is the same for all functions
-//   assert(functions.size() >= 1);
-//   _mesh = functions[0]->function_space()->mesh();
-//   for (std::size_t i = 1; i < functions.size(); i++)
-//     assert(_mesh == functions[i]->function_space()->mesh());
-//   _initialize_mesh_attributes(*_io, _mesh);
-//   _initialize_function_attributes<std::complex<double>>(*_io,
-//                                                         _complex_functions);
-// }
+  assert(!u.empty());
+  auto mesh = u[0]->function_space()->mesh();
+  assert(mesh);
+  initialize_mesh_attributes(*_io, *mesh);
+  initialize_function_attributes<std::complex<double>>(*_io,
+                                                       _complex_functions);
+}
 
 //-----------------------------------------------------------------------------
 void FidesWriter::write(double t)
@@ -281,35 +317,22 @@ void FidesWriter::write(double t)
       = adios2_utils::define_variable<double>(*_io, "step");
   _engine->Put<double>(var_step, t);
 
-  // TODO: clarify the below 'note'. What impact does it have on code/user?
-  // NOTE: Mesh can only be written to file once
+  write_fides_mesh(*_io, *_engine, _mesh);
 
-  if (_mesh)
-  {
-    assert(_u.empty());
-    write_fides_mesh(*_io, *_engine, _mesh);
-  }
-  else
-  {
-    throw std::runtime_error(
-        "Function output to Fides/ADIOS2 not yet supported.");
-  }
+  // Write real valued functions to file
+  std::for_each(
+      _functions.begin(), _functions.end(),
+      [&](std::shared_ptr<const fem::Function<double>> u)
+      { adios2_utils::write_function_at_nodes<double>(*_io, *_engine, *u); });
 
-  // // Write real valued functions to file
-  // std::for_each(
-  //     _functions.begin(), _functions.end(),
-  //     [&](std::shared_ptr<const fem::Function<double>> u)
-  //     { adios2_utils::write_function_at_nodes<double>(*_io, *_engine, u); });
-
-  // // Write complex valued functions to file
-  // std::for_each(
-  //     _complex_functions.begin(), _complex_functions.end(),
-  //     [&](std::shared_ptr<const fem::Function<std::complex<double>>> u)
-  //     {
-  //       adios2_utils::write_function_at_nodes<std::complex<double>>(
-  //           *_io, *_engine, u);
-  //     });
-
+  // Write complex valued functions to file
+  std::for_each(
+      _complex_functions.begin(), _complex_functions.end(),
+      [&](std::shared_ptr<const fem::Function<std::complex<double>>> u)
+      {
+        adios2_utils::write_function_at_nodes<std::complex<double>>(
+            *_io, *_engine, *u);
+      });
   _engine->EndStep();
 }
 //-----------------------------------------------------------------------------

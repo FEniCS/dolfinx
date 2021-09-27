@@ -18,6 +18,7 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/utils.h>
 #include <xtensor/xio.hpp>
+
 using namespace dolfinx;
 using namespace dolfinx::io;
 
@@ -271,13 +272,8 @@ std::vector<std::string> extract_function_names(
 //-----------------------------------------------------------------------------
 VTXWriter::VTXWriter(MPI_Comm comm, const std::string& filename,
                      std::shared_ptr<const mesh::Mesh> mesh)
-    : _adios(std::make_unique<adios2::ADIOS>(comm)),
-      _io(std::make_unique<adios2::IO>(_adios->DeclareIO("Fides mesh writer"))),
-      _engine(std::make_unique<adios2::Engine>(
-          _io->Open(filename, adios2::Mode::Write))),
-      _mesh(mesh), _functions(), _complex_functions()
+    : Adios2Writer(comm, filename, "VTX mesh writer", mesh)
 {
-  _io->SetEngine("BPFile");
 
   // Define VTK scheme attribute for mesh
   std::string vtk_scheme = create_vtk_schema({}, {});
@@ -290,20 +286,8 @@ VTXWriter::VTXWriter(MPI_Comm comm, const std::string& filename,
 VTXWriter::VTXWriter(
     MPI_Comm comm, const std::string& filename,
     const std::vector<std::shared_ptr<const fem::Function<double>>>& functions)
-    : _adios(std::make_unique<adios2::ADIOS>(comm)),
-      _io(std::make_unique<adios2::IO>(
-          _adios->DeclareIO("Fides function writer"))),
-      _engine(std::make_unique<adios2::Engine>(
-          _io->Open(filename, adios2::Mode::Write))),
-      _mesh(), _functions(functions), _complex_functions()
+    : Adios2Writer(comm, filename, "VTX function writer", functions)
 {
-  _io->SetEngine("BPFile");
-
-  // Check that mesh is the same for all functions
-  assert(functions.size() >= 1);
-  _mesh = functions[0]->function_space()->mesh();
-  for (std::size_t i = 1; i < functions.size(); i++)
-    assert(_mesh == functions[i]->function_space()->mesh());
 
   // Can only write one mesh to file at the time if using higher order
   // visualization
@@ -338,12 +322,7 @@ VTXWriter::VTXWriter(
     MPI_Comm comm, const std::string& filename,
     const std::vector<
         std::shared_ptr<const fem::Function<std::complex<double>>>>& functions)
-    : _adios(std::make_unique<adios2::ADIOS>(comm)),
-      _io(std::make_unique<adios2::IO>(
-          _adios->DeclareIO("Fides function writer"))),
-      _engine(std::make_unique<adios2::Engine>(
-          _io->Open(filename, adios2::Mode::Write))),
-      _mesh(), _functions(), _complex_functions(functions)
+    : Adios2Writer(comm, filename, "VTX function writer", functions)
 {
   _io->SetEngine("BPFile");
 
@@ -381,18 +360,6 @@ VTXWriter::VTXWriter(
       = extract_function_names<std::complex<double>>(functions);
   std::string vtk_scheme = create_vtk_schema(names, {});
   adios2_utils::define_attribute<std::string>(*_io, "vtk.xml", vtk_scheme);
-}
-//-----------------------------------------------------------------------------
-VTXWriter::~VTXWriter() { close(); }
-//-----------------------------------------------------------------------------
-void VTXWriter::close()
-{
-  assert(_engine);
-
-  // This looks a bit odd because ADIOS2 uses `operator bool()` to test
-  // if the engine is open
-  if (*_engine)
-    _engine->Close();
 }
 //-----------------------------------------------------------------------------
 void VTXWriter::write(double t)
@@ -437,40 +404,5 @@ void VTXWriter::write(double t)
                 });
   _engine->EndStep();
 }
-//-----------------------------------------------------------------------------
-xt::xtensor<std::uint64_t, 2>
-io::extract_vtk_connectivity(std::shared_ptr<const mesh::Mesh> mesh)
-{
-  // Get DOLFINx to VTK permutation
-  // FIXME: Use better way to get number of nodes
-  const graph::AdjacencyList<std::int32_t>& x_dofmap
-      = mesh->geometry().dofmap();
-  const std::uint32_t num_nodes = x_dofmap.num_links(0);
-  std::vector map = dolfinx::io::cells::transpose(
-      dolfinx::io::cells::perm_vtk(mesh->topology().cell_type(), num_nodes));
-  // TODO: Remove when when paraview issue 19433 is resolved
-  // (https://gitlab.kitware.com/paraview/paraview/issues/19433)
-  if (mesh->topology().cell_type() == dolfinx::mesh::CellType::hexahedron
-      and num_nodes == 27)
-  {
-    map = {0,  9, 12, 3,  1, 10, 13, 4,  18, 15, 21, 6,  19, 16,
-           22, 7, 2,  11, 5, 14, 8,  17, 20, 23, 24, 25, 26};
-  }
-  // Extract mesh 'nodes'
-  const int tdim = mesh->topology().dim();
-  const std::uint32_t num_cells
-      = mesh->topology().index_map(tdim)->size_local();
-
-  // Write mesh connectivity
-  xt::xtensor<std::uint64_t, 2> topology({num_cells, num_nodes});
-  for (size_t c = 0; c < num_cells; ++c)
-  {
-    auto x_dofs = x_dofmap.links(c);
-    for (std::size_t i = 0; i < x_dofs.size(); ++i)
-      topology(c, i) = x_dofs[map[i]];
-  }
-
-  return topology;
-};
 #endif
 //-----------------------------------------------------------------------------
