@@ -136,7 +136,11 @@ void CoordinateElement::compute_jacobian_inverse(
       math::inv(J0, K0);
     else
       math::pinv(J0, K0);
-    K = xt::broadcast(K0, K.shape());
+    for (std::size_t p = 0; p < J.shape(0); ++p)
+    {
+      auto K_ip = xt::view(K, p, xt::all(), xt::all());
+      K_ip.assign(K0);
+    }
   }
   else
   {
