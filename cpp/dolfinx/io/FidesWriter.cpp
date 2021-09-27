@@ -259,7 +259,7 @@ io::extract_vtk_connectivity(std::shared_ptr<const mesh::Mesh> mesh)
   }
 
   return topology;
-};
+}
 
 //-----------------------------------------------------------------------------
 FidesWriter::FidesWriter(MPI_Comm comm, const std::string& filename,
