@@ -52,8 +52,10 @@ def test_sub_index_map():
 
     # Check that ghost indices are correct in submap
     # NOTE This assumes size_local is the same for all ranks
+    # TODO Consider renaming to something shorter
     submap_global_to_map_global_map = np.concatenate([local_indices[rank] + map_local_size * rank
                                                       for rank in range(comm.size)])
+    # FIXME Do this more elegantly
     submap_ghosts = []
     for map_ghost in map.ghosts:
         submap_ghost = np.where(submap_global_to_map_global_map == map_ghost)[0]
