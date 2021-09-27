@@ -97,7 +97,13 @@ void CoordinateElement::compute_jacobian(
   {
     xt::noalias(dphi0) = xt::view(dphi, xt::all(), 0, xt::all(), 0);
     math::dot(cell_geom, dphi0, J0, true);
-    J = xt::broadcast(J0, J.shape());
+    // NOTE: Should be using xt::broadcast, but it's about 7 times slower than a
+    // plain loop.
+    for (std::size_t p = 0; p < num_points; ++p)
+    {
+      auto J_ip = xt::view(J, p, xt::all(), xt::all());
+      J_ip.assign(J0);
+    }
   }
   else
   {
