@@ -10,7 +10,6 @@ import contextlib
 import functools
 import typing
 
-import numpy as np
 import ufl
 from dolfinx import cpp
 from dolfinx.fem.dirichletbc import DirichletBC
@@ -31,7 +30,7 @@ def _create_cpp_form(form):
     return form
 
 
-# -- Packing coefficients ----------------------------------------------------
+# -- Packing constants and coefficients --------------------------------------
 
 form_type = typing.Union[Form, cpp.fem.Form, ufl.Form,
                          collections.abc.Sequence[Form],
@@ -92,7 +91,6 @@ def create_vector_nest(L: typing.List[typing.Union[Form, cpp.fem.Form]]) -> PETS
 
 # -- Matrix instantiation ----------------------------------------------------
 
-
 def create_matrix(a: typing.Union[Form, cpp.fem.Form], mat_type=None) -> PETSc.Mat:
     if mat_type is not None:
         return cpp.fem.create_matrix(_create_cpp_form(a), mat_type)
@@ -110,7 +108,6 @@ def create_matrix_nest(a: typing.List[typing.List[typing.Union[Form, cpp.fem.For
 
 # -- Scalar assembly ---------------------------------------------------------
 
-
 def assemble_scalar(M: typing.Union[Form, cpp.fem.Form], constants=None,
                     coefficients=None) -> PETSc.ScalarType:
     """Assemble functional. The returned value is local and not accumulated
@@ -124,8 +121,8 @@ def assemble_scalar(M: typing.Union[Form, cpp.fem.Form], constants=None,
         coefficients = pack_coefficients(_M)
     return cpp.fem.assemble_scalar(_M, constants, coefficients)
 
-# -- Vector assembly ---------------------------------------------------------
 
+# -- Vector assembly ---------------------------------------------------------
 
 @functools.singledispatch
 def assemble_vector(L: typing.Union[Form, cpp.fem.Form], constants=None,
