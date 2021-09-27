@@ -10,46 +10,37 @@ from mpi4py import MPI
 
 
 def test_sub_index_map():
-
     comm = MPI.COMM_WORLD
-    myrank = comm.rank
+    my_rank = comm.rank
 
     # Create index map with one ghost from each other process
-
     n = 7
     assert comm.size < n + 1
-    size_local = np.math.factorial(n)
+    map_local_size = np.math.factorial(n)
 
-    # FIXME: document which indices are ghosted
+    # The ghosts added is the ith ghost from the ith process relative to the current rank, i.e.
+    # rank 0 contains the first index of rank 2, second of rank 3 etc.
+    # rank 1 contains the first index of rank 0, the second of rank 2 etc.
     # Ghost one index from from every other rank
-    dest_ranks = np.delete(np.arange(0, comm.size, dtype=np.int32), myrank)
-    ghosts = np.array([size_local * dest_ranks[r] + r % size_local for r in range(len(dest_ranks))])
+    dest_ranks = np.delete(np.arange(0, comm.size, dtype=np.int32), my_rank)
+    map_ghosts = np.array([map_local_size * dest_ranks[r] + r % map_local_size for r in range(len(dest_ranks))])
     src_ranks = dest_ranks
 
     # Create index map
-    map = dolfinx.cpp.common.IndexMap(comm, size_local, dest_ranks, ghosts, src_ranks)
-    assert map.size_global == size_local * comm.size
+    map = dolfinx.cpp.common.IndexMap(comm, map_local_size, dest_ranks, map_ghosts, src_ranks)
+    assert map.size_global == map_local_size * comm.size
 
-    owners = map.ghost_owner_rank()
+    # Build list for each rank of the first (myrank + myrank % 2) local indices
+    submap_local_size = [int((rank + rank % 2)) for rank in range(comm.size)]
+    local_indices = [np.arange(submap_local_size[rank], dtype=np.int32) for rank in range(comm.size)]
 
-    # Build list of the first (myrank + myrank % 2) local indices
-    local_size_sub = int((myrank + myrank % 2))
-    local_indices = np.arange(local_size_sub, dtype=np.int32)
-
-    # Create sub-index map, and map from ghost posittion in new map to
+    # Create sub index map and a map from the ghost position in new map to the
     # position in old map
-    submap, ghosts_pos_sub = map.create_submap(local_indices)
+    submap, ghosts_pos_sub = map.create_submap(local_indices[my_rank])
 
     # Check local and global sizes
-    assert submap.size_local == local_size_sub
+    assert submap.size_local == submap_local_size[my_rank]
     assert submap.size_global == sum([rank + rank % 2 for rank in range(comm.size)])
-
-    # Running this code on 2 procs gives you that the ghost on process 0
-    # is owned by process 0
-    # print(comm.rank, "Range", map.local_range, "Local", local_indices,
-    #       "Sub range", submap.local_range, "Sub ghosts", submap.ghosts,
-    #       "Ghosts", map.ghosts, "Sub owners", owners_sub)
-    assert (dest_ranks == owners).all()
 
     # Check that first rank has no elements
     if comm.rank == 0:
@@ -57,7 +48,19 @@ def test_sub_index_map():
 
     # Check that rank on sub-process ghosts is the same as the parent
     # map
+    owners = map.ghost_owner_rank()
+    assert (dest_ranks == owners).all()
     assert (owners[ghosts_pos_sub] == submap.ghost_owner_rank()).all()
 
-    # print(f"{myrank}: , {submap.ghosts}, {owners_sub},\
-    #       {map.ghosts[ghosts_pos_sub]} {np.array(owners, dtype=np.int32)[ghosts_pos_sub]}")
+    # Check that ghost indices are correct in submap
+    # NOTE This assumes size_local is the same for all ranks
+    # TODO Consider renaming to something shorter
+    submap_global_to_map_global_map = np.concatenate([local_indices[rank] + map_local_size * rank
+                                                      for rank in range(comm.size)])
+    # FIXME Do this more elegantly
+    submap_ghosts = []
+    for map_ghost in map.ghosts:
+        submap_ghost = np.where(submap_global_to_map_global_map == map_ghost)[0]
+        if submap_ghost.size != 0:
+            submap_ghosts.append(submap_ghost[0])
+    assert np.allclose(submap.ghosts, submap_ghosts)
