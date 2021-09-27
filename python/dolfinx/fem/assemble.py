@@ -106,27 +106,28 @@ def create_matrix_nest(a: typing.List[typing.List[typing.Union[Form, cpp.fem.For
     return cpp.fem.create_matrix_nest(_create_cpp_form(a))
 
 
+Coefficients = collections.namedtuple('Coefficients', ['constants', 'coeffs'])
+
 # -- Scalar assembly ---------------------------------------------------------
 
-def assemble_scalar(M: typing.Union[Form, cpp.fem.Form], constants=None,
-                    coefficients=None) -> PETSc.ScalarType:
+
+def assemble_scalar(M: typing.Union[Form, cpp.fem.Form],
+                    coeffs=Coefficients(None, None)) -> PETSc.ScalarType:
     """Assemble functional. The returned value is local and not
     accumulated across processes.
 
     """
     _M = _create_cpp_form(M)
-    if constants is None:
-        constants = pack_constants(_M)
-    if coefficients is None:
-        coefficients = pack_coefficients(_M)
-    return cpp.fem.assemble_scalar(_M, constants, coefficients)
+    c = (coeffs[0] if coeffs[0] is not None else pack_constants(_M),
+         coeffs[1] if coeffs[1] is not None else pack_coefficients(_M))
+    return cpp.fem.assemble_scalar(_M, c[0], c[1])
 
 
 # -- Vector assembly ---------------------------------------------------------
 
 @functools.singledispatch
-def assemble_vector(L: typing.Union[Form, cpp.fem.Form], constants=None,
-                    coefficients=None) -> PETSc.Vec:
+def assemble_vector(L: typing.Union[Form, cpp.fem.Form],
+                    coeffs=Coefficients(None, None)) -> PETSc.Vec:
     """Assemble linear form into a new PETSc vector. The returned vector
     is not finalised, i.e. ghost values are not accumulated on the
     owning processes.
@@ -135,37 +136,31 @@ def assemble_vector(L: typing.Union[Form, cpp.fem.Form], constants=None,
     _L = _create_cpp_form(L)
     b = cpp.la.create_vector(_L.function_spaces[0].dofmap.index_map,
                              _L.function_spaces[0].dofmap.index_map_bs)
-    if constants is None:
-        constants = pack_constants(_L)
-    if coefficients is None:
-        coefficients = pack_coefficients(_L)
+    c = (coeffs[0] if coeffs[0] is not None else pack_constants(_L),
+         coeffs[1] if coeffs[1] is not None else pack_coefficients(_L))
     with b.localForm() as b_local:
         b_local.set(0.0)
-        cpp.fem.assemble_vector(b_local.array_w, _L, constants, coefficients)
+        cpp.fem.assemble_vector(b_local.array_w, _L, c[0], c[1])
     return b
 
 
 @assemble_vector.register(PETSc.Vec)
-def _(b: PETSc.Vec, L: typing.Union[Form, cpp.fem.Form], constants=None,
-      coefficients=None) -> PETSc.Vec:
+def _(b: PETSc.Vec, L: typing.Union[Form, cpp.fem.Form], coeffs=Coefficients(None, None)) -> PETSc.Vec:
     """Assemble linear form into an existing PETSc vector. The vector is
     not zeroed before assembly and it is not finalised, i.e. ghost
     values are not accumulated on the owning processes.
 
     """
     _L = _create_cpp_form(L)
-    if constants is None:
-        constants = pack_constants(_L)
-    if coefficients is None:
-        coefficients = pack_coefficients(_L)
+    c = (coeffs[0] if coeffs[0] is not None else pack_constants(_L),
+         coeffs[1] if coeffs[1] is not None else pack_coefficients(_L))
     with b.localForm() as b_local:
-        cpp.fem.assemble_vector(b_local.array_w, _L, constants, coefficients)
+        cpp.fem.assemble_vector(b_local.array_w, _L, c[0], c[1])
     return b
 
 
 @functools.singledispatch
-def assemble_vector_nest(L: typing.Union[Form, cpp.fem.Form], constants=None,
-                         coefficients=None) -> PETSc.Vec:
+def assemble_vector_nest(L: typing.Union[Form, cpp.fem.Form], coeffs=Coefficients(None, None)) -> PETSc.Vec:
     """Assemble linear forms into a new nested PETSc (VecNest) vector.
     The returned vector is not finalised, i.e. ghost values are not
     accumulated on the owning processes.
@@ -177,23 +172,20 @@ def assemble_vector_nest(L: typing.Union[Form, cpp.fem.Form], constants=None,
     for b_sub in b.getNestSubVecs():
         with b_sub.localForm() as b_local:
             b_local.set(0.0)
-    return assemble_vector_nest(b, L, constants, coefficients)
+    return assemble_vector_nest(b, L, coeffs)
 
 
 @assemble_vector_nest.register(PETSc.Vec)
-def _(b: PETSc.Vec, L: typing.List[typing.Union[Form, cpp.fem.Form]], constants=None,
-      coefficients=None) -> PETSc.Vec:
+def _(b: PETSc.Vec, L: typing.List[typing.Union[Form, cpp.fem.Form]], coeffs=Coefficients(None, None)) -> PETSc.Vec:
     """Assemble linear forms into a nested PETSc (VecNest) vector. The
     vector is not zeroed before assembly and it is not finalised, i.e.
     ghost values are not accumulated on the owning processes.
 
     """
     _L = _create_cpp_form(L)
-    if constants is None:
-        constants = pack_constants(_L)
-    if coefficients is None:
-        coefficients = pack_coefficients(_L)
-    for b_sub, L_sub, constant, coeff in zip(b.getNestSubVecs(), _L, constants, coefficients):
+    c = (coeffs[0] if coeffs[0] is not None else pack_constants(_L),
+         coeffs[1] if coeffs[1] is not None else pack_coefficients(_L))
+    for b_sub, L_sub, constant, coeff in zip(b.getNestSubVecs(), _L, c[0], c[1]):
         with b_sub.localForm() as b_local:
             cpp.fem.assemble_vector(b_local.array_w, L_sub, constant, coeff)
     return b
