@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "MPICommWrapper.h"
+#include "array.h"
 #include "caster_mpi.h"
 #include "caster_petsc.h"
 #include <complex>
@@ -14,13 +15,13 @@
 #include <dolfinx/common/defines.h>
 #include <dolfinx/common/subsystem.h>
 #include <dolfinx/common/timing.h>
+#include <dolfinx/common/utils.h>
 #include <memory>
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <string>
 #include <vector>
-
 namespace py = pybind11;
 
 namespace dolfinx_wrappers
@@ -70,8 +71,11 @@ void common(py::module& m)
       .def_property_readonly("local_range",
                              &dolfinx::common::IndexMap::local_range,
                              "Range of indices owned by this map")
-      .def("ghost_owner_rank", &dolfinx::common::IndexMap::ghost_owner_rank,
-           "Return owning process for each ghost index")
+      .def(
+          "ghost_owner_rank",
+          [](const dolfinx::common::IndexMap& self)
+          { return as_pyarray(self.ghost_owner_rank()); },
+          "Return owning process for each ghost index")
       .def_property_readonly(
           "ghosts",
           [](const dolfinx::common::IndexMap& self)
@@ -93,6 +97,13 @@ void common(py::module& m)
                  local,
                  xtl::span<std::int64_t>(global.mutable_data(), global.size()));
              return global;
+           })
+      .def("create_submap",
+           [](const dolfinx::common::IndexMap& self,
+              const py::array_t<std::int32_t, py::array::c_style>& entities)
+           {
+             auto [map, ghosts] = self.create_submap(entities);
+             return std::pair(std::move(map), as_pyarray(std::move(ghosts)));
            });
 
   // dolfinx::common::Timer
@@ -111,7 +122,6 @@ void common(py::module& m)
       .value("system", dolfinx::TimingType::system)
       .value("user", dolfinx::TimingType::user);
 
-  // dolfinx/common free functions
   m.def("timing", &dolfinx::timing);
 
   m.def("list_timings",
