@@ -1,12 +1,11 @@
 // Copyright (C) 2012-2020 Chris Richardson
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #pragma once
 
-#include <Eigen/Core>
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
 #include <map>
@@ -14,21 +13,18 @@
 #include <set>
 #include <vector>
 
-namespace dolfinx
-{
-
-namespace mesh
+namespace dolfinx::mesh
 {
 class Mesh;
 enum class GhostMode;
-} // namespace mesh
+} // namespace dolfinx::mesh
 
-namespace common
+namespace dolfinx::common
 {
 class IndexMap;
 }
 
-namespace refinement
+namespace dolfinx::refinement
 {
 
 /// Compute the sharing of edges between processes.
@@ -37,7 +33,7 @@ namespace refinement
 /// index to the set of neighbors (within the comm) that share that edge.
 /// @param[in] mesh Mesh
 /// @return pair of comm and map
-std::pair<MPI_Comm, std::map<std::int32_t, std::set<int>>>
+std::pair<MPI_Comm, std::map<std::int32_t, std::vector<int>>>
 compute_edge_sharing(const mesh::Mesh& mesh);
 
 /// Transfer marked edges between processes.
@@ -59,11 +55,10 @@ void update_logical_edgefunction(
 /// @param[in] mesh Existing mesh
 /// @param[in] marked_edges
 /// @return edge_to_new_vertex map and geometry array
-std::pair<std::map<std::int32_t, std::int64_t>,
-          Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
+std::pair<std::map<std::int32_t, std::int64_t>, xt::xtensor<double, 2>>
 create_new_vertices(
     const MPI_Comm& neighbor_comm,
-    const std::map<std::int32_t, std::set<std::int32_t>>& shared_edges,
+    const std::map<std::int32_t, std::vector<std::int32_t>>& shared_edges,
     const mesh::Mesh& mesh, const std::vector<bool>& marked_edges);
 
 /// Use vertex and topology data to partition new mesh across
@@ -74,12 +69,10 @@ create_new_vertices(
 /// @param[in] redistribute Call graph partitioner if true
 /// @param[in] ghost_mode None or shared_facet
 /// @return New mesh
-mesh::Mesh
-partition(const mesh::Mesh& old_mesh,
-          const graph::AdjacencyList<std::int64_t>& cell_topology,
-          const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                             Eigen::RowMajor>& new_vertex_coordinates,
-          bool redistribute, mesh::GhostMode ghost_mode);
+mesh::Mesh partition(const mesh::Mesh& old_mesh,
+                     const graph::AdjacencyList<std::int64_t>& cell_topology,
+                     const xt::xtensor<double, 2>& new_vertex_coordinates,
+                     bool redistribute, mesh::GhostMode ghost_mode);
 
 /// Adjust indices to account for extra n values on each process This
 /// is a utility to help add new topological vertices on each process
@@ -93,5 +86,4 @@ std::vector<std::int64_t>
 adjust_indices(const std::shared_ptr<const common::IndexMap>& index_map,
                std::int32_t n);
 
-} // namespace refinement
-} // namespace dolfinx
+} // namespace dolfinx::refinement

@@ -2,7 +2,7 @@
 Contributing
 ============
 
-This page provides guidance on how to contribute to DOLFIN. For information
+This page provides guidance on how to contribute to DOLFINx. For information
 about how to get involved and how to get in touch with the developers, see
 our `community page <https://fenicsproject.org/community/>`_.
 
@@ -10,11 +10,11 @@ our `community page <https://fenicsproject.org/community/>`_.
 Adding a demo
 =============
 
-The below instructions are for adding a Python demo program to DOLFIN.
-DOLFIN demo programs are written in reStructuredText, and converted to
+The below instructions are for adding a Python demo program to DOLFINx.
+DOLFINx demo programs are written in reStructuredText, and converted to
 Python/C++ code using ``pylit``. The process for C++ demos is similar.
 The documented demo programs are displayed at
-http://fenics-dolfin.readthedocs.io/.
+https://docs.fenicsproject.org/dolfinx/main/python/demos.html.
 
 
 Creating the demo program
@@ -26,7 +26,7 @@ Creating the demo program
    'code blocks' (see other demos for guidance). The demo file should
    be named ``demo_foo-bar.py.rst``.
 3. Convert the rst file to to a Python file using ``pylit`` (pylit is
-   distributed with DOLFIN in ``utils/pylit``)
+   distributed with DOLFINx in ``utils/pylit``)
 
    .. code-block:: ruby
 
@@ -54,6 +54,6 @@ Make a pull request
    indicate that there is no C++ version of the demo.
 3. Make a pull request at
    https://github.com/FEniCS/dolfinx/ for your
-   demo to be considered for addition to DOLFIN. Add the
+   demo to be considered for addition to DOLFINx. Add the
    ``demo_foo-bar.py.rst`` file to the repository, but do not add the
    ``demo_foo-bar.py`` file.

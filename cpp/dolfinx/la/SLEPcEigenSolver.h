@@ -1,6 +1,6 @@
 // Copyright (C) 2005-2018 Garth N. Wells
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -9,16 +9,13 @@
 #ifdef HAS_SLEPC
 
 #include "dolfinx/common/MPI.h"
-#include "dolfinx/common/types.h"
 #include <memory>
 #include <petscmat.h>
 #include <petscvec.h>
 #include <slepceps.h>
 #include <string>
 
-namespace dolfinx
-{
-namespace la
+namespace dolfinx::la
 {
 class VectorSpaceBasis;
 
@@ -32,10 +29,22 @@ public:
   explicit SLEPcEigenSolver(MPI_Comm comm);
 
   /// Create eigenvalue solver from EPS object
-  explicit SLEPcEigenSolver(EPS eps, bool inc_ref_count = true);
+  SLEPcEigenSolver(EPS eps, bool inc_ref_count);
+
+  // Delete copy constructor
+  SLEPcEigenSolver(const SLEPcEigenSolver&) = delete;
+
+  /// Move constructor
+  SLEPcEigenSolver(SLEPcEigenSolver&& solver);
 
   /// Destructor
   ~SLEPcEigenSolver();
+
+  // Assignment operator (disabled)
+  SLEPcEigenSolver& operator=(const SLEPcEigenSolver&) = delete;
+
+  /// Move assignment
+  SLEPcEigenSolver& operator=(SLEPcEigenSolver&& solver);
 
   /// Set opeartors (B may be nullptr for regular eigenvalues
   /// problems)
@@ -64,8 +73,8 @@ public:
   /// database
   void set_options_prefix(std::string options_prefix);
 
-  /// Returns the prefix used by PETSc when searching the PETSc
-  /// options database
+  /// Returns the prefix used by PETSc when searching the PETSc options
+  /// database
   std::string get_options_prefix() const;
 
   /// Set options from PETSc options database
@@ -81,6 +90,5 @@ private:
   // SLEPc solver pointer
   EPS _eps;
 };
-} // namespace la
-} // namespace dolfinx
+} // namespace dolfinx::la
 #endif

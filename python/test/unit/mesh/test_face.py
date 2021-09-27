@@ -1,6 +1,6 @@
 # Copyright (C) 2020 Garth N. Wells, Jørgen S. Dokken
 #
-# This file is part of DOLFINX (https://www.fenicsproject.org)
+# This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -24,6 +24,7 @@ def square():
     return UnitSquareMesh(MPI.COMM_WORLD, 5, 5)
 
 
+@pytest.mark.skip("volume_entities needs fixing")
 @skip_in_parallel
 def test_area(cube, square):
     """Iterate over faces and sum area."""
@@ -48,9 +49,9 @@ def test_normals(cube, square):
     fdim = cube.topology.dim - 1
     facets = locate_entities_boundary(cube, fdim, left_side)
     normals = cell_normals(cube, fdim, facets)
-    assert(numpy.allclose(normals, [-1, 0, 0]))
+    assert numpy.allclose(normals, [-1, 0, 0])
 
     fdim = square.topology.dim - 1
     facets = locate_entities_boundary(square, fdim, left_side)
     normals = cell_normals(square, fdim, facets)
-    assert(numpy.allclose(normals, [-1, 0, 0]))
+    assert numpy.allclose(normals, [-1, 0, 0])

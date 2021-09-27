@@ -1,13 +1,13 @@
 // Copyright (C) 2019 Chris Richardson and Michal Habera
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #pragma once
 
-#include <Eigen/Core>
 #include <vector>
+#include <xtensor/xarray.hpp>
 
 namespace dolfinx::fem
 {
@@ -22,25 +22,11 @@ public:
   /// Create a rank-0 (scalar-valued) constant
   explicit Constant(T c) : value({c}) {}
 
-  /// Create a rank-1 (vector-valued) constant
-  explicit Constant(const std::vector<T>& c) : shape(1, c.size()), value({c}) {}
-
-  /// Create a rank-2 constant
-  explicit Constant(
-      const Eigen::Ref<
-          Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& c)
-      : shape({(int)c.rows(), (int)c.cols()}), value(c.rows() * c.cols())
+  /// Create a rank-d constant
+  explicit Constant(const xt::xarray<T>& c)
+      : value(c.data(), c.data() + c.size())
   {
-    for (int i = 0; i < c.rows(); ++i)
-      for (int j = 0; j < c.cols(); ++j)
-        value[i * c.cols() + j] = c(i, j);
-  }
-
-  /// Create an arbitrary rank constant. Data layout is row-major (C style).
-  Constant(std::vector<int> shape, std::vector<T> value)
-      : shape(shape), value(value)
-  {
-    // Do nothing
+    std::copy(c.shape().cbegin(), c.shape().cend(), std::back_inserter(shape));
   }
 
   /// Shape

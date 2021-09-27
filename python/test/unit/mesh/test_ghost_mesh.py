@@ -1,6 +1,6 @@
 # Copyright (C) 2016 Garth N. Wells
 #
-# This file is part of DOLFINX (https://www.fenicsproject.org)
+# This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -17,9 +17,10 @@ def test_ghost_vertex_1d():
 
 
 def test_ghost_facet_1d():
-    mesh = UnitIntervalMesh(MPI.COMM_WORLD, 20, ghost_mode=cpp.mesh.GhostMode.shared_facet)
-    assert mesh.topology.index_map(0).size_global == 21
-    assert mesh.topology.index_map(1).size_global == 20
+    N = 40
+    mesh = UnitIntervalMesh(MPI.COMM_WORLD, N, ghost_mode=cpp.mesh.GhostMode.shared_facet)
+    assert mesh.topology.index_map(0).size_global == N + 1
+    assert mesh.topology.index_map(1).size_global == N
 
 
 @pytest.mark.parametrize("mode",

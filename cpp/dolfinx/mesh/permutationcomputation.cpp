@@ -1,26 +1,32 @@
 // Copyright (C) 2020 Matthew Scroggs
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "permutationcomputation.h"
+#include <algorithm>
 #include <bitset>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Topology.h>
 
-#define BITSETSIZE 32
+namespace
+{
+constexpr int _BITSETSIZE = 32;
+} // namespace
 
 using namespace dolfinx;
 
 namespace
 {
+//-----------------------------------------------------------------------------
+template <int BITSETSIZE>
 std::vector<std::bitset<BITSETSIZE>> compute_face_permutations_simplex(
     const graph::AdjacencyList<std::int32_t>& c_to_v,
     const graph::AdjacencyList<std::int32_t>& c_to_f,
     const graph::AdjacencyList<std::int32_t>& f_to_v, int faces_per_cell,
-    const std::shared_ptr<const common::IndexMap>& im)
+    const common::IndexMap& im)
 {
   const std::int32_t num_cells = c_to_v.num_nodes();
   std::vector<std::bitset<BITSETSIZE>> face_perm(num_cells, 0);
@@ -28,16 +34,14 @@ std::vector<std::bitset<BITSETSIZE>> compute_face_permutations_simplex(
   for (int c = 0; c < num_cells; ++c)
   {
     cell_vertices.resize(c_to_v.links(c).size());
-    im->local_to_global(c_to_v.links(c).data(), cell_vertices.size(),
-                        cell_vertices.data());
+    im.local_to_global(c_to_v.links(c), cell_vertices);
     auto cell_faces = c_to_f.links(c);
     for (int i = 0; i < faces_per_cell; ++i)
     {
       // Get the face
       const int face = cell_faces[i];
       vertices.resize(f_to_v.links(face).size());
-      im->local_to_global(f_to_v.links(face).data(), vertices.size(),
-                          vertices.data());
+      im.local_to_global(f_to_v.links(face), vertices);
 
       // Orient that triangle so the the lowest numbered vertex is the
       // origin, and the next vertex anticlockwise from the lowest has a
@@ -94,15 +98,16 @@ std::vector<std::bitset<BITSETSIZE>> compute_face_permutations_simplex(
       face_perm[c][3 * i + 2] = rots / 2;
     }
   }
+
   return face_perm;
 }
 //-----------------------------------------------------------------------------
+template <int BITSETSIZE>
 std::vector<std::bitset<BITSETSIZE>>
 compute_face_permutations_tp(const graph::AdjacencyList<std::int32_t>& c_to_v,
                              const graph::AdjacencyList<std::int32_t>& c_to_f,
                              const graph::AdjacencyList<std::int32_t>& f_to_v,
-                             int faces_per_cell,
-                             const std::shared_ptr<const common::IndexMap>& im)
+                             int faces_per_cell, const common::IndexMap& im)
 {
   const std::int32_t num_cells = c_to_v.num_nodes();
   std::vector<std::bitset<BITSETSIZE>> face_perm(num_cells, 0);
@@ -110,8 +115,7 @@ compute_face_permutations_tp(const graph::AdjacencyList<std::int32_t>& c_to_v,
   for (int c = 0; c < num_cells; ++c)
   {
     cell_vertices.resize(c_to_v.links(c).size());
-    im->local_to_global(c_to_v.links(c).data(), cell_vertices.size(),
-                        cell_vertices.data());
+    im.local_to_global(c_to_v.links(c), cell_vertices);
 
     auto cell_faces = c_to_f.links(c);
     for (int i = 0; i < faces_per_cell; ++i)
@@ -119,8 +123,7 @@ compute_face_permutations_tp(const graph::AdjacencyList<std::int32_t>& c_to_v,
       // Get the face
       const int face = cell_faces[i];
       vertices.resize(f_to_v.links(face).size());
-      im->local_to_global(f_to_v.links(face).data(), vertices.size(),
-                          vertices.data());
+      im.local_to_global(f_to_v.links(face), vertices);
 
       // Orient that triangle so the the lowest numbered vertex is the
       // origin, and the next vertex anticlockwise from the lowest has a
@@ -218,9 +221,11 @@ compute_face_permutations_tp(const graph::AdjacencyList<std::int32_t>& c_to_v,
       face_perm[c][3 * i + 2] = rots / 2;
     }
   }
+
   return face_perm;
 }
 //-----------------------------------------------------------------------------
+template <int BITSETSIZE>
 std::vector<std::bitset<BITSETSIZE>>
 compute_edge_reflections(const mesh::Topology& topology)
 {
@@ -245,14 +250,12 @@ compute_edge_reflections(const mesh::Topology& topology)
   for (int c = 0; c < c_to_v->num_nodes(); ++c)
   {
     cell_vertices.resize(c_to_v->links(c).size());
-    im->local_to_global(c_to_v->links(c).data(), cell_vertices.size(),
-                        cell_vertices.data());
+    im->local_to_global(c_to_v->links(c), cell_vertices);
     auto cell_edges = c_to_e->links(c);
     for (int i = 0; i < edges_per_cell; ++i)
     {
       vertices.resize(e_to_v->links(cell_edges[i]).size());
-      im->local_to_global(e_to_v->links(cell_edges[i]).data(), vertices.size(),
-                          vertices.data());
+      im->local_to_global(e_to_v->links(cell_edges[i]), vertices);
 
       // If the entity is an interval, it should be oriented pointing
       // from the lowest numbered vertex to the highest numbered vertex.
@@ -272,6 +275,7 @@ compute_edge_reflections(const mesh::Topology& topology)
   return edge_perm;
 }
 //-----------------------------------------------------------------------------
+template <int BITSETSIZE>
 std::vector<std::bitset<BITSETSIZE>>
 compute_face_permutations(const mesh::Topology& topology)
 {
@@ -295,39 +299,34 @@ compute_face_permutations(const mesh::Topology& topology)
   if (cell_type == mesh::CellType::triangle
       or cell_type == mesh::CellType::tetrahedron)
   {
-    return compute_face_permutations_simplex(*c_to_v, *c_to_f, *f_to_v,
-                                             faces_per_cell, im);
+    return compute_face_permutations_simplex<BITSETSIZE>(
+        *c_to_v, *c_to_f, *f_to_v, faces_per_cell, *im);
   }
   else
   {
-    return compute_face_permutations_tp(*c_to_v, *c_to_f, *f_to_v,
-                                        faces_per_cell, im);
+    return compute_face_permutations_tp<BITSETSIZE>(*c_to_v, *c_to_f, *f_to_v,
+                                                    faces_per_cell, *im);
   }
 }
 //-----------------------------------------------------------------------------
 } // namespace
 
 //-----------------------------------------------------------------------------
-std::pair<Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>,
-          std::vector<std::uint32_t>>
+std::pair<std::vector<std::uint8_t>, std::vector<std::uint32_t>>
 mesh::compute_entity_permutations(const mesh::Topology& topology)
 {
   const int tdim = topology.dim();
   const CellType cell_type = topology.cell_type();
-  // assert(topology.connectivity(tdim, 0));
   const std::int32_t num_cells = topology.connectivity(tdim, 0)->num_nodes();
   const int facets_per_cell = cell_num_entities(cell_type, tdim - 1);
 
   std::vector<std::uint32_t> cell_permutation_info(num_cells, 0);
-  Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic> facet_permutations(
-      facets_per_cell, num_cells);
-
+  std::vector<std::uint8_t> facet_permutations(num_cells * facets_per_cell);
   std::int32_t used_bits = 0;
   if (tdim > 2)
   {
     const int faces_per_cell = cell_num_entities(cell_type, 2);
-    const std::vector<std::bitset<BITSETSIZE>> face_perm
-        = compute_face_permutations(topology);
+    const auto face_perm = compute_face_permutations<_BITSETSIZE>(topology);
     for (int c = 0; c < num_cells; ++c)
       cell_permutation_info[c] = face_perm[c].to_ulong();
 
@@ -338,15 +337,17 @@ mesh::compute_entity_permutations(const mesh::Topology& topology)
     for (int c = 0; c < num_cells; ++c)
     {
       for (int i = 0; i < facets_per_cell; ++i)
-        facet_permutations(i, c) = (cell_permutation_info[c] >> (3 * i)) & 7;
+      {
+        facet_permutations[c * facets_per_cell + i]
+            = (cell_permutation_info[c] >> (3 * i)) & 7;
+      }
     }
   }
 
   if (tdim > 1)
   {
     const int edges_per_cell = cell_num_entities(cell_type, 1);
-    const std::vector<std::bitset<BITSETSIZE>> edge_perm
-        = compute_edge_reflections(topology);
+    const auto edge_perm = compute_edge_reflections<_BITSETSIZE>(topology);
     for (int c = 0; c < num_cells; ++c)
       cell_permutation_info[c] |= edge_perm[c].to_ulong() << used_bits;
 
@@ -354,11 +355,13 @@ mesh::compute_entity_permutations(const mesh::Topology& topology)
     if (tdim == 2)
     {
       for (int c = 0; c < num_cells; ++c)
+      {
         for (int i = 0; i < facets_per_cell; ++i)
-          facet_permutations(i, c) = edge_perm[c][i];
+          facet_permutations[c * facets_per_cell + i] = edge_perm[c][i];
+      }
     }
   }
-  assert(used_bits < BITSETSIZE);
+  assert(used_bits < _BITSETSIZE);
 
   return {std::move(facet_permutations), std::move(cell_permutation_info)};
 }

@@ -1,6 +1,6 @@
 // Copyright (C) 2012 Chris N. Richardson
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -12,10 +12,10 @@
 #include <array>
 #include <dolfinx/common/utils.h>
 #include <dolfinx/mesh/cell_types.h>
-#include <petscsys.h>
 #include <string>
 #include <utility>
 #include <vector>
+#include <xtl/xspan.hpp>
 
 namespace pugi
 {
@@ -44,8 +44,8 @@ class Mesh;
 namespace io::xdmf_utils
 {
 
-// Get DOLFINX cell type string from XML topology node
-// @return DOLFINX cell type and polynomial degree
+// Get DOLFINx cell type string from XML topology node
+// @return DOLFINx cell type and polynomial degree
 std::pair<std::string, int> get_cell_type(const pugi::xml_node& topology_node);
 
 // Return (0) HDF5 filename and (1) path in HDF5 file from a DataItem
@@ -62,42 +62,41 @@ std::int64_t get_num_cells(const pugi::xml_node& topology_node);
 
 /// Get point data values for linear or quadratic mesh into flattened 2D
 /// array
-std::vector<PetscScalar>
-get_point_data_values(const fem::Function<PetscScalar>& u);
+std::vector<double> get_point_data_values(const fem::Function<double>& u);
+std::vector<std::complex<double>>
+get_point_data_values(const fem::Function<std::complex<double>>& u);
 
 /// Get cell data values as a flattened 2D array
-std::vector<PetscScalar>
-get_cell_data_values(const fem::Function<PetscScalar>& u);
+std::vector<double> get_cell_data_values(const fem::Function<double>& u);
+std::vector<std::complex<double>>
+get_cell_data_values(const fem::Function<std::complex<double>>& u);
 
 /// Get the VTK string identifier
 std::string vtk_cell_type_str(mesh::CellType cell_type, int num_nodes);
 
-/// Extract local entities and associated values from global input indices.
+/// Extract local entities and associated values from global input
+/// indices
 ///
 /// @param[in] mesh
 /// @param[in] entity_dim Topological dimension of entities to extract
-/// @param[in] entities Mesh entities defined using global input indices.
-///   Let [v0, v1, v2] be vertices of some triangle. These vertices
-///   have their node numbering via vertex-to-node map, [n0, n1, n2]. Each
-///   node has in addition a persisteng input global index, so this triangle
-///   could be identified with [gi0, gi1, gi2].
+/// @param[in] entities Mesh entities defined using global input
+/// indices. Let [v0, v1, v2] be vertices of some triangle. These
+/// vertices have their node numbering via vertex-to-node map, [n0, n1,
+/// n2]. Each node has in addition a persisteng input global index, so
+/// this triangle could be identified with [gi0, gi1, gi2].
 /// @param[in] values
-/// @return (Cell-vertex connectivity of owned entities, associated values)
-/// @note This function involves parallel distribution and must be called
-/// collectively.
-///   Global input indices for entities which are not owned by current rank
-///   could passed to this function. E.g. rank0 provides global input indices
-///   [gi0, gi1, gi2], but this identifies a triangle which is owned by rank1.
-///   It will be distributed and rank1 will recieve (local) cell-vertex
-///   connectivity for this triangle.
-std::pair<
-    Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>,
-    std::vector<std::int32_t>>
-extract_local_entities(
-    const mesh::Mesh& mesh, const int entity_dim,
-    const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
-                       Eigen::RowMajor>& entities,
-    const std::vector<std::int32_t>& values);
+/// @return (Cell-vertex connectivity of owned entities, associated
+/// values)
+/// @note This function involves parallel distribution and must be
+/// called collectively. Global input indices for entities which are not
+/// owned by current rank could passed to this function. E.g. rank0
+/// provides global input indices [gi0, gi1, gi2], but this identifies a
+/// triangle which is owned by rank1. It will be distributed and rank1
+/// will receive (local) cell-vertex connectivity for this triangle.
+std::pair<xt::xtensor<std::int32_t, 2>, std::vector<std::int32_t>>
+extract_local_entities(const mesh::Mesh& mesh, int entity_dim,
+                       const xt::xtensor<std::int64_t, 2>& entities,
+                       const xtl::span<const std::int32_t>& values);
 
 /// TODO: Document
 template <typename T>

@@ -1,6 +1,6 @@
 // Copyright (C) 2020 Michal Habera
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -20,10 +20,9 @@
 #include <memory>
 #include <utility>
 #include <vector>
+#include <xtl/xspan.hpp>
 
-namespace dolfinx
-{
-namespace mesh
+namespace dolfinx::mesh
 {
 
 /// A MeshTags are used to associate mesh entities with values. The
@@ -80,10 +79,10 @@ public:
   /// Find all entities with a given tag value
   /// @param[in] value The value
   /// @return Indices of tagged entities
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1> find(const T value) const
+  std::vector<std::int32_t> find(const T value) const
   {
     int n = std::count(_values.begin(), _values.end(), value);
-    Eigen::Array<std::int32_t, Eigen::Dynamic, 1> indices(n);
+    std::vector<std::int32_t> indices(n);
     int counter = 0;
     for (std::int32_t i = 0; i < _values.size(); ++i)
     {
@@ -139,7 +138,7 @@ template <typename T>
 mesh::MeshTags<T>
 create_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh, const int dim,
                 const graph::AdjacencyList<std::int32_t>& entities,
-                const std::vector<T>& values)
+                const xtl::span<const T>& values)
 {
   assert(mesh);
   if ((std::size_t)entities.num_nodes() != values.size())
@@ -160,8 +159,9 @@ create_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh, const int dim,
   std::vector<std::int32_t> key(num_vertices_per_entity);
   for (int e = 0; e < num_entities_mesh; ++e)
   {
-    // Prepare a map from ordered local vertex indices to local entity number
-    // This map is used to identify if received entity is owned or ghost
+    // Prepare a map from ordered local vertex indices to local entity
+    // number. This map is used to identify if received entity is owned
+    // or ghost
     auto vertices = e_to_v->links(e);
     std::copy(vertices.begin(), vertices.end(), key.begin());
     std::sort(key.begin(), key.end());
@@ -173,7 +173,7 @@ create_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh, const int dim,
   std::vector<std::int32_t> indices_new;
   std::vector<T> values_new;
   std::vector<std::int32_t> entity(num_vertices_per_entity);
-  for (Eigen::Index e = 0; e < entities.num_nodes(); ++e)
+  for (std::int32_t e = 0; e < entities.num_nodes(); ++e)
   {
     // This would fail for mixed cell type meshes
     assert(num_vertices_per_entity == entities.num_links(e));
@@ -194,5 +194,4 @@ create_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh, const int dim,
   return mesh::MeshTags<T>(mesh, dim, std::move(indices_sorted),
                            std::move(values_sorted));
 }
-} // namespace mesh
-} // namespace dolfinx
+} // namespace dolfinx::mesh

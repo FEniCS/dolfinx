@@ -1,11 +1,10 @@
 // Copyright (C) 2013-2019 Johan Hake, Jan Blechta and Garth N. Wells
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "utils.h"
-#include <Eigen/Core>
 #include <array>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Timer.h>
@@ -29,34 +28,6 @@
 
 using namespace dolfinx;
 
-namespace
-{
-//-----------------------------------------------------------------------------
-int get_num_permutations(const mesh::CellType cell_type)
-{
-  // In general, this will return num_edges + 2*num_faces + 4*num_volumes
-  switch (cell_type)
-  {
-  case (mesh::CellType::point):
-    return 0;
-  case (mesh::CellType::interval):
-    return 0;
-  case (mesh::CellType::triangle):
-    return 3;
-  case (mesh::CellType::tetrahedron):
-    return 14;
-  case (mesh::CellType::quadrilateral):
-    return 4;
-  case (mesh::CellType::hexahedron):
-    return 24;
-  default:
-    LOG(WARNING) << "Dof permutations are not defined for this cell type. High "
-                    "order elements may be incorrect.";
-    return 0;
-  }
-}
-} // namespace
-
 //-----------------------------------------------------------------------------
 la::SparsityPattern fem::create_sparsity_pattern(
     const mesh::Topology& topology,
@@ -78,19 +49,21 @@ la::SparsityPattern fem::create_sparsity_pattern(
                               bs);
   for (auto type : integrals)
   {
-    if (type == fem::IntegralType::cell)
+    switch (type)
     {
+    case fem::IntegralType::cell:
       sparsitybuild::cells(pattern, topology, {{dofmaps[0], dofmaps[1]}});
-    }
-    else if (type == fem::IntegralType::interior_facet)
-    {
+      break;
+    case fem::IntegralType::interior_facet:
       sparsitybuild::interior_facets(pattern, topology,
                                      {{dofmaps[0], dofmaps[1]}});
-    }
-    else if (type == fem::IntegralType::exterior_facet)
-    {
+      break;
+    case fem::IntegralType::exterior_facet:
       sparsitybuild::exterior_facets(pattern, topology,
                                      {{dofmaps[0], dofmaps[1]}});
+      break;
+    default:
+      throw std::runtime_error("Unsupported integral type");
     }
   }
 
@@ -107,25 +80,28 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
   const int element_block_size = dofmap.block_size;
 
   // Copy over number of dofs per entity type
-  std::array<int, 4> num_entity_dofs;
-  std::copy_n(dofmap.num_entity_dofs, 4, num_entity_dofs.data());
-
-  int dof_count = 0;
+  std::array<int, 4> num_entity_dofs, num_entity_closure_dofs;
+  std::copy_n(dofmap.num_entity_dofs, 4, num_entity_dofs.begin());
+  std::copy_n(dofmap.num_entity_closure_dofs, 4,
+              num_entity_closure_dofs.begin());
 
   // Fill entity dof indices
   const int tdim = mesh::cell_dim(cell_type);
-  std::vector<std::vector<std::set<int>>> entity_dofs(tdim + 1);
-  std::vector<int> work_array;
+  std::vector<std::vector<std::vector<int>>> entity_dofs(tdim + 1);
+  std::vector<std::vector<std::vector<int>>> entity_closure_dofs(tdim + 1);
   for (int dim = 0; dim <= tdim; ++dim)
   {
     const int num_entities = mesh::cell_num_entities(cell_type, dim);
     entity_dofs[dim].resize(num_entities);
+    entity_closure_dofs[dim].resize(num_entities);
     for (int i = 0; i < num_entities; ++i)
     {
-      work_array.resize(num_entity_dofs[dim]);
-      dofmap.tabulate_entity_dofs(work_array.data(), dim, i);
-      entity_dofs[dim][i] = std::set<int>(work_array.begin(), work_array.end());
-      dof_count += num_entity_dofs[dim];
+      entity_dofs[dim][i].resize(num_entity_dofs[dim]);
+      dofmap.tabulate_entity_dofs(entity_dofs[dim][i].data(), dim, i);
+
+      entity_closure_dofs[dim][i].resize(num_entity_closure_dofs[dim]);
+      dofmap.tabulate_entity_closure_dofs(entity_closure_dofs[dim][i].data(),
+                                          dim, i);
     }
   }
 
@@ -135,14 +111,11 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
   // assumption
 
   // Create UFC subdofmaps and compute offset
-  std::vector<std::shared_ptr<ufc_dofmap>> ufc_sub_dofmaps;
   std::vector<int> offsets(1, 0);
-
+  std::vector<std::shared_ptr<const fem::ElementDofLayout>> sub_dofmaps;
   for (int i = 0; i < dofmap.num_sub_dofmaps; ++i)
   {
-    auto ufc_sub_dofmap
-        = std::shared_ptr<ufc_dofmap>(dofmap.create_sub_dofmap(i), std::free);
-    ufc_sub_dofmaps.push_back(ufc_sub_dofmap);
+    ufc_dofmap* ufc_sub_dofmap = dofmap.sub_dofmaps[i];
     if (element_block_size == 1)
     {
       offsets.push_back(offsets.back()
@@ -151,35 +124,27 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
     }
     else
       offsets.push_back(offsets.back() + 1);
-  }
 
-  std::vector<std::shared_ptr<const fem::ElementDofLayout>> sub_dofmaps;
-  for (std::size_t i = 0; i < ufc_sub_dofmaps.size(); ++i)
-  {
-    auto ufc_sub_dofmap = ufc_sub_dofmaps[i];
-    assert(ufc_sub_dofmap);
     std::vector<int> parent_map_sub(ufc_sub_dofmap->num_element_support_dofs
                                     * ufc_sub_dofmap->block_size);
     for (std::size_t j = 0; j < parent_map_sub.size(); ++j)
       parent_map_sub[j] = offsets[i] + element_block_size * j;
-    sub_dofmaps.push_back(
-        std::make_shared<fem::ElementDofLayout>(create_element_dof_layout(
-            *ufc_sub_dofmaps[i], cell_type, parent_map_sub)));
+    sub_dofmaps.push_back(std::make_shared<fem::ElementDofLayout>(
+        create_element_dof_layout(*ufc_sub_dofmap, cell_type, parent_map_sub)));
   }
 
   // Check for "block structure". This should ultimately be replaced,
   // but keep for now to mimic existing code
-  const int num_base_permutations = get_num_permutations(cell_type);
-  const Eigen::Map<
-      const Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
-      base_permutations(dofmap.base_permutations, num_base_permutations,
-                        dof_count);
-  return fem::ElementDofLayout(element_block_size, entity_dofs, parent_map,
-                               sub_dofmaps, cell_type, base_permutations);
+  return fem::ElementDofLayout(element_block_size, entity_dofs,
+                               entity_closure_dofs, parent_map, sub_dofmaps);
 }
 //-----------------------------------------------------------------------------
-fem::DofMap fem::create_dofmap(MPI_Comm comm, const ufc_dofmap& ufc_dofmap,
-                               mesh::Topology& topology)
+fem::DofMap
+fem::create_dofmap(MPI_Comm comm, const ufc_dofmap& ufc_dofmap,
+                   mesh::Topology& topology,
+                   const std::function<std::vector<int>(
+                       const graph::AdjacencyList<std::int32_t>&)>& reorder_fn,
+                   std::shared_ptr<const dolfinx::fem::FiniteElement> element)
 {
   auto element_dof_layout = std::make_shared<ElementDofLayout>(
       create_element_dof_layout(ufc_dofmap, topology.cell_type()));
@@ -204,7 +169,24 @@ fem::DofMap fem::create_dofmap(MPI_Comm comm, const ufc_dofmap& ufc_dofmap,
   }
 
   auto [index_map, bs, dofmap]
-      = fem::build_dofmap_data(comm, topology, *element_dof_layout);
+      = fem::build_dofmap_data(comm, topology, *element_dof_layout, reorder_fn);
+
+  // If the element's DOF transformations are permutations, permute the
+  // DOF numbering on each cell
+  if (element->needs_dof_permutations())
+  {
+    const int D = topology.dim();
+    const int num_cells = topology.connectivity(D, 0)->num_nodes();
+    topology.create_entity_permutations();
+    const std::vector<std::uint32_t>& cell_info
+        = topology.get_cell_permutation_info();
+
+    const std::function<void(const xtl::span<std::int32_t>&, std::uint32_t)>
+        unpermute_dofs = element->get_dof_permutation_function(true, true);
+    for (std::int32_t cell = 0; cell < num_cells; ++cell)
+      unpermute_dofs(dofmap.links(cell), cell_info[cell]);
+  }
+
   return DofMap(element_dof_layout, index_map, bs, std::move(dofmap), bs);
 }
 //-----------------------------------------------------------------------------
@@ -226,57 +208,22 @@ std::vector<std::string> fem::get_constant_names(const ufc_form& ufc_form)
   return constants;
 }
 //-----------------------------------------------------------------------------
-fem::CoordinateElement
-fem::create_coordinate_map(const ufc_coordinate_mapping& ufc_cmap)
-{
-  static const std::map<ufc_shape, mesh::CellType> ufc_to_cell
-      = {{vertex, mesh::CellType::point},
-         {interval, mesh::CellType::interval},
-         {triangle, mesh::CellType::triangle},
-         {tetrahedron, mesh::CellType::tetrahedron},
-         {quadrilateral, mesh::CellType::quadrilateral},
-         {hexahedron, mesh::CellType::hexahedron}};
-
-  // Get cell type
-  const mesh::CellType cell_type = ufc_to_cell.at(ufc_cmap.cell_shape);
-  assert(ufc_cmap.topological_dimension == mesh::cell_dim(cell_type));
-
-  // Get scalar dof layout for geometry
-  ufc_dofmap* dmap = ufc_cmap.create_scalar_dofmap();
-  assert(dmap);
-  ElementDofLayout dof_layout = create_element_dof_layout(*dmap, cell_type);
-  std::free(dmap);
-
-  return fem::CoordinateElement(
-      cell_type, ufc_cmap.topological_dimension, ufc_cmap.geometric_dimension,
-      ufc_cmap.signature, dof_layout, ufc_cmap.is_affine,
-      ufc_cmap.evaluate_basis_derivatives);
-}
-//-----------------------------------------------------------------------------
-fem::CoordinateElement
-fem::create_coordinate_map(ufc_coordinate_mapping* (*fptr)())
-{
-  ufc_coordinate_mapping* cmap = fptr();
-  fem::CoordinateElement element = create_coordinate_map(*cmap);
-  std::free(cmap);
-  return element;
-}
-//-----------------------------------------------------------------------------
-std::shared_ptr<fem::FunctionSpace>
-fem::create_functionspace(ufc_function_space* (*fptr)(const char*),
-                          const std::string function_name,
-                          std::shared_ptr<mesh::Mesh> mesh)
+std::shared_ptr<fem::FunctionSpace> fem::create_functionspace(
+    ufc_function_space* (*fptr)(const char*), const std::string function_name,
+    std::shared_ptr<mesh::Mesh> mesh,
+    const std::function<std::vector<int>(
+        const graph::AdjacencyList<std::int32_t>&)>& reorder_fn)
 {
   ufc_function_space* space = fptr(function_name.c_str());
-  ufc_dofmap* ufc_map = space->create_dofmap();
-  ufc_finite_element* ufc_element = space->create_element();
+  ufc_dofmap* ufc_map = space->dofmap;
+  ufc_finite_element* ufc_element = space->finite_element;
+  std::shared_ptr<const fem::FiniteElement> element
+      = std::make_shared<fem::FiniteElement>(*ufc_element);
   auto V = std::make_shared<fem::FunctionSpace>(
-      mesh, std::make_shared<fem::FiniteElement>(*ufc_element),
-      std::make_shared<fem::DofMap>(
-          fem::create_dofmap(mesh->mpi_comm(), *ufc_map, mesh->topology())));
-  std::free(ufc_element);
-  std::free(ufc_map);
-  std::free(space);
+      mesh, element,
+      std::make_shared<fem::DofMap>(fem::create_dofmap(
+          mesh->mpi_comm(), *ufc_map, mesh->topology(), reorder_fn, element)));
+
   return V;
 }
 //-----------------------------------------------------------------------------

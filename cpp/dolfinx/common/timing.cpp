@@ -1,6 +1,6 @@
 // Copyright (C) 2003-2011 Anders Logg
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -24,9 +24,9 @@ Table dolfinx::timings(std::set<TimingType> type)
   return TimeLogManager::logger().timings(type);
 }
 //-----------------------------------------------------------------------------
-void dolfinx::list_timings(MPI_Comm mpi_comm, std::set<TimingType> type)
+void dolfinx::list_timings(MPI_Comm comm, std::set<TimingType> type)
 {
-  TimeLogManager::logger().list_timings(mpi_comm, type);
+  TimeLogManager::logger().list_timings(comm, type);
 }
 //-----------------------------------------------------------------------------
 std::tuple<std::size_t, double, double, double>

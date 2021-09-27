@@ -1,6 +1,6 @@
 // Copyright (C) 2012-2020 Chris N. Richardson, Garth N. Wells and Michal Habera
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -10,7 +10,6 @@
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <memory>
-#include <petscsys.h>
 #include <string>
 
 namespace pugi
@@ -19,29 +18,27 @@ class xml_node;
 class xml_document;
 } // namespace pugi
 
-namespace dolfinx
-{
-namespace fem
+namespace dolfinx::fem
 {
 class CoordinateElement;
 }
 
-namespace fem
+namespace dolfinx::fem
 {
 template <typename T>
 class Function;
-} // namespace fem
+}
 
-namespace mesh
+namespace dolfinx::mesh
 {
 class Geometry;
 enum class GhostMode : int;
 class Mesh;
 template <typename T>
 class MeshTags;
-} // namespace mesh
+} // namespace dolfinx::mesh
 
-namespace io
+namespace dolfinx::io
 {
 
 /// Read and write mesh::Mesh, fem::Function and other objects in
@@ -112,17 +109,17 @@ public:
   /// @param[in] name Name of the mesh (Grid)
   /// @param[in] xpath XPath where Mesh Grid data is located
   /// @return (Cell type, degree), and cells topology (global node indexing)
-  Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-  read_topology_data(const std::string name,
-                     const std::string xpath = "/Xdmf/Domain") const;
+  xt::xtensor<std::int64_t, 2> read_topology_data(const std::string name,
+                                                  const std::string xpath
+                                                  = "/Xdmf/Domain") const;
 
   /// Read Geometry data for Mesh
   /// @param[in] name Name of the mesh (Grid)
   /// @param[in] xpath XPath where Mesh Grid data is located
   /// @return points on each process
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-  read_geometry_data(const std::string name,
-                     const std::string xpath = "/Xdmf/Domain") const;
+  xt::xtensor<double, 2> read_geometry_data(const std::string name,
+                                            const std::string xpath
+                                            = "/Xdmf/Domain") const;
 
   /// Read information about cell type
   /// @param[in] grid_name Name of Grid for which cell type is needed
@@ -132,13 +129,21 @@ public:
                                                 = "/Xdmf/Domain");
 
   /// Write Function
-  /// @param[in] function The Function to write to file
+  /// @param[in] u The Function to write to file
   /// @param[in] t The time stamp to associate with the Function
   /// @param[in] mesh_xpath XPath for a Grid under which Function will
-  ///   be inserted
-  void write_function(const fem::Function<PetscScalar>& function,
-                      const double t,
-                      const std::string mesh_xpath
+  /// be inserted
+  void write_function(const fem::Function<double>& u, double t,
+                      const std::string& mesh_xpath
+                      = "/Xdmf/Domain/Grid[@GridType='Uniform'][1]");
+
+  /// Write Function
+  /// @param[in] u The Function to write to file
+  /// @param[in] t The time stamp to associate with the Function
+  /// @param[in] mesh_xpath XPath for a Grid under which Function will
+  /// be inserted
+  void write_function(const fem::Function<std::complex<double>>& u, double t,
+                      const std::string& mesh_xpath
                       = "/Xdmf/Domain/Grid[@GridType='Uniform'][1]");
 
   /// Write MeshTags
@@ -147,8 +152,8 @@ public:
   ///   in file
   /// @param[in] xpath XPath where MeshTags Grid will be inserted
   void write_meshtags(const mesh::MeshTags<std::int32_t>& meshtags,
-                      const std::string geometry_xpath,
-                      const std::string xpath = "/Xdmf/Domain");
+                      const std::string& geometry_xpath,
+                      const std::string& xpath = "/Xdmf/Domain");
 
   /// Read MeshTags
   /// @param[in] mesh The Mesh that the data is defined on
@@ -196,5 +201,4 @@ private:
   Encoding _encoding;
 };
 
-} // namespace io
-} // namespace dolfinx
+} // namespace dolfinx::io

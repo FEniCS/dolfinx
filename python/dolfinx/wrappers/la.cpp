@@ -1,9 +1,10 @@
 // Copyright (C) 2017-2019 Chris Richardson and Garth N. Wells
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include "array.h"
 #include "caster_mpi.h"
 #include "caster_petsc.h"
 #include <dolfinx/common/IndexMap.h>
@@ -16,11 +17,11 @@
 #include <memory>
 #include <petsc4py/petsc4py.h>
 #include <pybind11/complex.h>
-#include <pybind11/eigen.h>
 #include <pybind11/numpy.h>
 #include <pybind11/operators.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
+#include <xtl/xspan.hpp>
 
 namespace py = pybind11;
 
@@ -55,7 +56,11 @@ void la(py::module& m)
       .def("index_map", &dolfinx::la::SparsityPattern::index_map)
       .def("assemble", &dolfinx::la::SparsityPattern::assemble)
       .def("num_nonzeros", &dolfinx::la::SparsityPattern::num_nonzeros)
-      .def("insert", &dolfinx::la::SparsityPattern::insert)
+      .def("insert", [](dolfinx::la::SparsityPattern& self,
+                        const py::array_t<std::int32_t, py::array::c_style>& rows,
+                        const py::array_t<std::int32_t, py::array::c_style>& cols) {
+         self.insert(xtl::span(rows.data(), rows.size()),
+                     xtl::span(cols.data(), cols.size()));})
       .def("insert_diagonal", &dolfinx::la::SparsityPattern::insert_diagonal)
       .def_property_readonly("diagonal_pattern",
                              &dolfinx::la::SparsityPattern::diagonal_pattern,
@@ -95,28 +100,20 @@ void la(py::module& m)
   // dolfinx::la::Vector
   py::class_<dolfinx::la::Vector<PetscScalar>,
              std::shared_ptr<dolfinx::la::Vector<PetscScalar>>>(m, "Vector")
-      .def("array",
-           py::overload_cast<>(&dolfinx::la::Vector<PetscScalar>::array));
+      .def_property_readonly(
+          "array",
+          [](dolfinx::la::Vector<PetscScalar>& self) {
+            std::vector<PetscScalar>& array = self.mutable_array();
+            return py::array(array.size(), array.data(), py::cast(self));
+          })
+      .def("scatter_forward", &dolfinx::la::Vector<PetscScalar>::scatter_fwd)
+      .def("scatter_reverse", &dolfinx::la::Vector<PetscScalar>::scatter_rev);
 
-  // utils
   m.def("create_vector",
         py::overload_cast<const dolfinx::common::IndexMap&, int>(
             &dolfinx::la::create_petsc_vector),
         py::return_value_policy::take_ownership,
         "Create a ghosted PETSc Vec for index map.");
-  m.def(
-      "create_vector",
-      [](const MPICommWrapper comm, std::array<std::int64_t, 2> range,
-         const py::array_t<std::int32_t, py::array::c_style>& ghost_indices,
-         int bs) {
-        return dolfinx::la::create_petsc_vector(
-            comm.get(), range,
-            std::vector<std::int64_t>(ghost_indices.data(),
-                                      ghost_indices.data()
-                                          + ghost_indices.size()),
-            bs);
-      },
-      py::return_value_policy::take_ownership, "Create a PETSc Vec.");
   m.def(
       "create_matrix",
       [](const MPICommWrapper comm, const dolfinx::la::SparsityPattern& p,
@@ -129,10 +126,35 @@ void la(py::module& m)
   // TODO: check reference counting for index sets
   m.def("create_petsc_index_sets", &dolfinx::la::create_petsc_index_sets,
         py::return_value_policy::take_ownership);
-  m.def("scatter_local_vectors", &dolfinx::la::scatter_local_vectors,
-        "Scatter the (ordered) list of sub vectors into a block vector.");
-  m.def("get_local_vectors", &dolfinx::la::get_local_vectors,
-        "Gather an (ordered) list of sub vectors from a block vector.");
+  m.def(
+      "scatter_local_vectors",
+      [](Vec x,
+         const std::vector<py::array_t<PetscScalar, py::array::c_style>>& x_b,
+         const std::vector<std::pair<
+             std::reference_wrapper<const dolfinx::common::IndexMap>, int>>&
+             maps) {
+        std::vector<xtl::span<const PetscScalar>> _x_b;
+        for (auto& array : x_b)
+          _x_b.emplace_back(array.data(), array.size());
+        dolfinx::la::scatter_local_vectors(x, _x_b, maps);
+      },
+      "Scatter the (ordered) list of sub vectors into a block "
+      "vector.");
+  m.def(
+      "get_local_vectors",
+      [](const Vec x,
+         const std::vector<std::pair<
+             std::reference_wrapper<const dolfinx::common::IndexMap>, int>>&
+             maps) {
+        std::vector<std::vector<PetscScalar>> vecs
+            = dolfinx::la::get_local_vectors(x, maps);
+        std::vector<py::array> ret;
+        for (std::vector<PetscScalar>& v : vecs)
+          ret.push_back(as_pyarray(std::move(v)));
+        return ret;
+      },
+      "Gather an (ordered) list of sub vectors from a block vector.");
+
   // NOTE: Enabling the below requires adding a C API for MatNullSpace to
   // petsc4py
   //   m.def("create_nullspace",

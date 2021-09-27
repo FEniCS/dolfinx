@@ -1,11 +1,12 @@
 // Copyright (C) 2013-2019 Patrick E. Farrell and Garth N. Wells
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "VectorSpaceBasis.h"
 #include "PETScVector.h"
+#include <cassert>
 #include <cmath>
 
 using namespace dolfinx;

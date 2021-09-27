@@ -1,6 +1,6 @@
 // Copyright (C) 2017 Chris Richardson and Garth N. Wells
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -27,6 +27,10 @@ void log(py::module& m)
   m.def("set_output_file", [](std::string filename) {
     loguru::add_file(filename.c_str(), loguru::Truncate,
                      loguru::Verbosity_INFO);
+  });
+
+  m.def("set_thread_name", [](std::string thread_name) {
+    loguru::set_thread_name(thread_name.c_str());
   });
 
   m.def("set_log_level", [](loguru::NamedVerbosity level) {

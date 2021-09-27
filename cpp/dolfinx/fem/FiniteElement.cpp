@@ -1,19 +1,80 @@
 // Copyright (C) 2008-2020 Anders Logg and Garth N. Wells
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "FiniteElement.h"
+#include <basix/finite-element.h>
 #include <dolfinx/common/log.h>
-#include <dolfinx/mesh/utils.h>
 #include <functional>
-#include <iostream>
-#include <memory>
 #include <ufc.h>
 
 using namespace dolfinx;
 using namespace dolfinx::fem;
+
+namespace
+{
+// Check if an element is a basix element (or a blocked element
+// containing a Basix element)
+bool is_basix_element(const ufc_finite_element& element)
+{
+  if (element.element_type == ufc_basix_element)
+    return true;
+  else if (element.element_type == ufc_blocked_element)
+  {
+    // TODO: what should happen if the element is a blocked element
+    // containing a blocked element containing a Basix element?
+    return element.sub_elements[0]->element_type == ufc_basix_element;
+  }
+  else
+    return false;
+}
+
+// Recursively extract sub finite element
+std::shared_ptr<const FiniteElement>
+_extract_sub_element(const FiniteElement& finite_element,
+                     const std::vector<int>& component)
+{
+  // Check that a sub system has been specified
+  if (component.empty())
+  {
+    throw std::runtime_error("Cannot extract subsystem of finite element. No "
+                             "system was specified");
+  }
+
+  // Check if there are any sub systems
+  if (finite_element.num_sub_elements() == 0)
+  {
+    throw std::runtime_error("Cannot extract subsystem of finite element. "
+                             "There are no subsystems.");
+  }
+
+  // Check the number of available sub systems
+  if (component[0] >= finite_element.num_sub_elements())
+  {
+    throw std::runtime_error(
+        "Cannot extract subsystem of finite element. Requested "
+        "subsystem out of range.");
+  }
+
+  // Get sub system
+  std::shared_ptr<const FiniteElement> sub_element
+      = finite_element.sub_elements()[component[0]];
+  assert(sub_element);
+
+  // Return sub system if sub sub system should not be extracted
+  if (component.size() == 1)
+    return sub_element;
+
+  // Otherwise, recursively extract the sub sub system
+  const std::vector<int> sub_component(component.begin() + 1, component.end());
+
+  return _extract_sub_element(*sub_element, sub_component);
+}
+//-----------------------------------------------------------------------------
+
+} // namespace
 
 //-----------------------------------------------------------------------------
 FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
@@ -22,26 +83,8 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
       _space_dim(ufc_element.space_dimension),
       _value_size(ufc_element.value_size),
       _reference_value_size(ufc_element.reference_value_size),
-      _hash(std::hash<std::string>{}(_signature)),
-      _evaluate_reference_basis(ufc_element.evaluate_reference_basis),
-      _evaluate_reference_basis_derivatives(
-          ufc_element.evaluate_reference_basis_derivatives),
-      _transform_reference_basis_derivatives(
-          ufc_element.transform_reference_basis_derivatives),
-      _transform_values(ufc_element.transform_values),
-      _block_size(ufc_element.block_size)
+      _hash(std::hash<std::string>{}(_signature)), _bs(ufc_element.block_size)
 {
-  // Store dof coordinates on reference element if they exist
-  assert(ufc_element.tabulate_reference_dof_coordinates);
-  _refX.resize(_space_dim, _tdim);
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> X(
-      _space_dim, _tdim);
-  if (ufc_element.tabulate_reference_dof_coordinates(X.data()) != -1)
-    _refX = X;
-
-  // FIXME: this should really be fixed in ffcx.
-  _refX.conservativeResize(_space_dim / _block_size, _tdim);
-
   const ufc_shape _shape = ufc_element.cell_shape;
   switch (_shape)
   {
@@ -57,6 +100,9 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
   case tetrahedron:
     _cell_shape = mesh::CellType::tetrahedron;
     break;
+  case prism:
+    _cell_shape = mesh::CellType::prism;
+    break;
   case hexahedron:
     _cell_shape = mesh::CellType::hexahedron;
     break;
@@ -66,201 +112,252 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
   }
   assert(mesh::cell_dim(_cell_shape) == _tdim);
 
+  static const std::map<ufc_shape, std::string> ufc_to_cell
+      = {{vertex, "point"},         {interval, "interval"},
+         {triangle, "triangle"},    {tetrahedron, "tetrahedron"},
+         {prism, "prism"},          {quadrilateral, "quadrilateral"},
+         {hexahedron, "hexahedron"}};
+  const std::string cell_shape = ufc_to_cell.at(ufc_element.cell_shape);
+
   // Fill value dimension
   for (int i = 0; i < ufc_element.value_rank; ++i)
-    _value_dimension.push_back(ufc_element.value_dimension(i));
+    _value_dimension.push_back(ufc_element.value_shape[i]);
 
+  _needs_dof_transformations = false;
+  _needs_dof_permutations = false;
   // Create all sub-elements
   for (int i = 0; i < ufc_element.num_sub_elements; ++i)
   {
-    ufc_finite_element* ufc_sub_element = ufc_element.create_sub_element(i);
+    ufc_finite_element* ufc_sub_element = ufc_element.sub_elements[i];
     _sub_elements.push_back(std::make_shared<FiniteElement>(*ufc_sub_element));
-    std::free(ufc_sub_element);
+    if (_sub_elements[i]->needs_dof_permutations()
+        and !_needs_dof_transformations)
+    {
+      _needs_dof_permutations = true;
+    }
+    if (_sub_elements[i]->needs_dof_transformations())
+    {
+      _needs_dof_permutations = false;
+      _needs_dof_transformations = true;
+    }
+  }
+
+  if (is_basix_element(ufc_element))
+  {
+    if (ufc_element.lagrange_variant != -1)
+    {
+      _element = std::make_unique<basix::FiniteElement>(basix::create_element(
+          static_cast<basix::element::family>(ufc_element.basix_family),
+          static_cast<basix::cell::type>(ufc_element.basix_cell),
+          ufc_element.degree,
+          static_cast<basix::element::lagrange_variant>(
+              ufc_element.lagrange_variant),
+          ufc_element.discontinuous));
+    }
+    else
+    {
+      _element = std::make_unique<basix::FiniteElement>(basix::create_element(
+          static_cast<basix::element::family>(ufc_element.basix_family),
+          static_cast<basix::cell::type>(ufc_element.basix_cell),
+          ufc_element.degree, ufc_element.discontinuous));
+    }
+
+    _needs_dof_transformations
+        = !_element->dof_transformations_are_identity()
+          and !_element->dof_transformations_are_permutations();
+
+    _needs_dof_permutations
+        = !_element->dof_transformations_are_identity()
+          and _element->dof_transformations_are_permutations();
   }
 }
 //-----------------------------------------------------------------------------
-std::string FiniteElement::signature() const { return _signature; }
+std::string FiniteElement::signature() const noexcept { return _signature; }
 //-----------------------------------------------------------------------------
-mesh::CellType FiniteElement::cell_shape() const { return _cell_shape; }
+mesh::CellType FiniteElement::cell_shape() const noexcept
+{
+  return _cell_shape;
+}
 //-----------------------------------------------------------------------------
-int FiniteElement::space_dimension() const { return _space_dim; }
+int FiniteElement::space_dimension() const noexcept { return _space_dim; }
 //-----------------------------------------------------------------------------
-int FiniteElement::value_size() const { return _value_size; }
+int FiniteElement::value_size() const noexcept { return _value_size; }
 //-----------------------------------------------------------------------------
-int FiniteElement::reference_value_size() const
+int FiniteElement::reference_value_size() const noexcept
 {
   return _reference_value_size;
 }
 //-----------------------------------------------------------------------------
-int FiniteElement::value_rank() const { return _value_dimension.size(); }
+int FiniteElement::value_rank() const noexcept
+{
+  return _value_dimension.size();
+}
 //-----------------------------------------------------------------------------
-int FiniteElement::block_size() const { return _block_size; }
+int FiniteElement::block_size() const noexcept { return _bs; }
 //-----------------------------------------------------------------------------
 int FiniteElement::value_dimension(int i) const
 {
   if (i >= (int)_value_dimension.size())
     return 1;
-  return _value_dimension.at(i);
+  else
+    return _value_dimension.at(i);
 }
 //-----------------------------------------------------------------------------
-std::string FiniteElement::family() const { return _family; }
+std::string FiniteElement::family() const noexcept { return _family; }
 //-----------------------------------------------------------------------------
-void FiniteElement::evaluate_reference_basis(
-    Eigen::Tensor<double, 3, Eigen::RowMajor>& reference_values,
-    const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                        Eigen::RowMajor>>& X) const
+void FiniteElement::tabulate(xt::xtensor<double, 4>& reference_values,
+                             const xt::xtensor<double, 2>& X, int order) const
 {
-  assert(_evaluate_reference_basis);
-  const int num_points = X.rows();
-  int ret = _evaluate_reference_basis(reference_values.data(), num_points,
-                                      X.data());
-  if (ret == -1)
-  {
-    throw std::runtime_error("Generated code returned error "
-                             "in evaluate_reference_basis");
-  }
-}
-//-----------------------------------------------------------------------------
-void FiniteElement::evaluate_reference_basis_derivatives(
-    Eigen::Tensor<double, 4, Eigen::RowMajor>& reference_values, int order,
-    const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                        Eigen::RowMajor>>& X) const
-{
-  assert(_evaluate_reference_basis_derivatives);
-  const int num_points = X.rows();
-  int ret = _evaluate_reference_basis_derivatives(reference_values.data(),
-                                                  order, num_points, X.data());
-  if (ret == -1)
-  {
-    throw std::runtime_error("Generated code returned error "
-                             "in evaluate_reference_basis_derivatives");
-  }
+  assert(_element);
+  reference_values = _element->tabulate(order, X);
 }
 //-----------------------------------------------------------------------------
 void FiniteElement::transform_reference_basis(
-    Eigen::Tensor<double, 3, Eigen::RowMajor>& values,
-    const Eigen::Tensor<double, 3, Eigen::RowMajor>& reference_values,
-    const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                        Eigen::RowMajor>>& X,
-    const Eigen::Tensor<double, 3, Eigen::RowMajor>& J,
-    const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 1>>& detJ,
-    const Eigen::Tensor<double, 3, Eigen::RowMajor>& K,
-    const std::uint32_t permutation_info) const
+    xt::xtensor<double, 3>& values,
+    const xt::xtensor<double, 3>& reference_values,
+    const xt::xtensor<double, 3>& J, const xtl::span<const double>& detJ,
+    const xt::xtensor<double, 3>& K) const
 {
-  assert(_transform_reference_basis_derivatives);
-  const int num_points = X.rows();
-  int ret = _transform_reference_basis_derivatives(
-      values.data(), 0, num_points, reference_values.data(), X.data(), J.data(),
-      detJ.data(), K.data(), permutation_info);
-  if (ret == -1)
-  {
-    throw std::runtime_error("Generated code returned error "
-                             "in transform_reference_basis_derivatives");
-  }
+  assert(_element);
+  _element->map_push_forward_m(reference_values, J, detJ, K, values);
 }
 //-----------------------------------------------------------------------------
-void FiniteElement::transform_reference_basis_derivatives(
-    Eigen::Tensor<double, 4, Eigen::RowMajor>& values, std::size_t order,
-    const Eigen::Tensor<double, 4, Eigen::RowMajor>& reference_values,
-    const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                        Eigen::RowMajor>>& X,
-    const Eigen::Tensor<double, 3, Eigen::RowMajor>& J,
-    const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 1>>& detJ,
-    const Eigen::Tensor<double, 3, Eigen::RowMajor>& K,
-    const std::uint32_t permutation_info) const
+int FiniteElement::num_sub_elements() const noexcept
 {
-  assert(_transform_reference_basis_derivatives);
-  const int num_points = X.rows();
-  int ret = _transform_reference_basis_derivatives(
-      values.data(), order, num_points, reference_values.data(), X.data(),
-      J.data(), detJ.data(), K.data(), permutation_info);
-  if (ret == -1)
-  {
-    throw std::runtime_error("Generated code returned error "
-                             "in transform_reference_basis_derivatives");
-  }
+  return _sub_elements.size();
 }
 //-----------------------------------------------------------------------------
-const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
-FiniteElement::dof_reference_coordinates() const
+const std::vector<std::shared_ptr<const FiniteElement>>&
+FiniteElement::sub_elements() const noexcept
 {
-  if (_refX.size() == 0)
-  {
-    throw std::runtime_error(
-        "Dof reference coordinates do not exist for this element.");
-  }
+  return _sub_elements;
+}
+//-----------------------------------------------------------------------------
 
-  return _refX;
-}
-//-----------------------------------------------------------------------------
-void FiniteElement::transform_values(
-    ufc_scalar_t* reference_values,
-    const Eigen::Ref<const Eigen::Array<ufc_scalar_t, Eigen::Dynamic,
-                                        Eigen::Dynamic, Eigen::RowMajor>>&
-        physical_values,
-    const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                        Eigen::RowMajor>>& coordinate_dofs)
-    const
-{
-  assert(_transform_values);
-  _transform_values(reference_values, physical_values.data(),
-                    coordinate_dofs.data(), nullptr);
-}
-
-//-----------------------------------------------------------------------------
-int FiniteElement::num_sub_elements() const { return _sub_elements.size(); }
-//-----------------------------------------------------------------------------
-std::size_t FiniteElement::hash() const { return _hash; }
+std::size_t FiniteElement::hash() const noexcept { return _hash; }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const FiniteElement>
 FiniteElement::extract_sub_element(const std::vector<int>& component) const
 {
   // Recursively extract sub element
   std::shared_ptr<const FiniteElement> sub_finite_element
-      = extract_sub_element(*this, component);
+      = _extract_sub_element(*this, component);
   DLOG(INFO) << "Extracted finite element for sub-system: "
              << sub_finite_element->signature().c_str();
   return sub_finite_element;
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const FiniteElement>
-FiniteElement::extract_sub_element(const FiniteElement& finite_element,
-                                   const std::vector<int>& component)
+bool FiniteElement::interpolation_ident() const noexcept
 {
-  // Check that a sub system has been specified
-  if (component.empty())
+  assert(_element);
+  return _element->map_type == basix::maps::type::identity;
+}
+//-----------------------------------------------------------------------------
+const xt::xtensor<double, 2>& FiniteElement::interpolation_points() const
+{
+  if (!_element)
   {
     throw std::runtime_error(
-        "Cannot extract subsystem of finite element. No system was specified");
+        "Cannot get interpolation points - no Basix element available. Maybe "
+        "this is a mixed element?");
   }
 
-  // Check if there are any sub systems
-  if (finite_element.num_sub_elements() == 0)
+  return _element->points();
+}
+//-----------------------------------------------------------------------------
+bool FiniteElement::needs_dof_transformations() const noexcept
+{
+  return _needs_dof_transformations;
+}
+//-----------------------------------------------------------------------------
+bool FiniteElement::needs_dof_permutations() const noexcept
+{
+  return _needs_dof_permutations;
+}
+//-----------------------------------------------------------------------------
+void FiniteElement::permute_dofs(const xtl::span<std::int32_t>& doflist,
+                                 std::uint32_t cell_permutation) const
+{
+  _element->permute_dofs(doflist, cell_permutation);
+}
+//-----------------------------------------------------------------------------
+void FiniteElement::unpermute_dofs(const xtl::span<std::int32_t>& doflist,
+                                   std::uint32_t cell_permutation) const
+{
+  _element->unpermute_dofs(doflist, cell_permutation);
+}
+//-----------------------------------------------------------------------------
+std::function<void(const xtl::span<std::int32_t>&, std::uint32_t)>
+FiniteElement::get_dof_permutation_function(bool inverse,
+                                            bool scalar_element) const
+{
+  if (!needs_dof_permutations())
   {
-    throw std::runtime_error(
-        "Cannot extract subsystem of finite element. There are no subsystems.");
+    if (!needs_dof_transformations())
+    {
+      // If this element shouldn't be permuted, return a function that
+      // does nothing
+      return [](const xtl::span<std::int32_t>&, std::uint32_t) {};
+    }
+    else
+    {
+      // If this element shouldn't be permuted but needs transformations, return
+      // a function that throws an error
+      return [](const xtl::span<std::int32_t>&, std::uint32_t)
+      {
+        throw std::runtime_error(
+            "Permutations should not be applied for this element.");
+      };
+    }
   }
 
-  // Check the number of available sub systems
-  if (component[0] >= finite_element.num_sub_elements())
+  if (_sub_elements.size() != 0)
   {
-    throw std::runtime_error(
-        "Cannot extract subsystem of finite element. Requested "
-        "subsystem out of range.");
+    if (_bs == 1)
+    {
+      // Mixed element
+      std::vector<
+          std::function<void(const xtl::span<std::int32_t>&, std::uint32_t)>>
+          sub_element_functions;
+      std::vector<int> dims;
+      for (std::size_t i = 0; i < _sub_elements.size(); ++i)
+      {
+        sub_element_functions.push_back(
+            _sub_elements[i]->get_dof_permutation_function(inverse));
+        dims.push_back(_sub_elements[i]->space_dimension());
+      }
+
+      return
+          [dims, sub_element_functions](const xtl::span<std::int32_t>& doflist,
+                                        std::uint32_t cell_permutation)
+      {
+        std::size_t start = 0;
+        for (std::size_t e = 0; e < sub_element_functions.size(); ++e)
+        {
+          sub_element_functions[e](doflist.subspan(start, dims[e]),
+                                   cell_permutation);
+          start += dims[e];
+        }
+      };
+    }
+    else if (!scalar_element)
+    {
+      throw std::runtime_error(
+          "Permuting DOFs for vector elements not implemented.");
+    }
   }
 
-  // Get sub system
-  std::shared_ptr<const FiniteElement> sub_element
-      = finite_element._sub_elements[component[0]];
-  assert(sub_element);
-
-  // Return sub system if sub sub system should not be extracted
-  if (component.size() == 1)
-    return sub_element;
-
-  // Otherwise, recursively extract the sub sub system
-  const std::vector<int> sub_component(component.begin() + 1, component.end());
-
-  return extract_sub_element(*sub_element, sub_component);
+  if (inverse)
+  {
+    return [this](const xtl::span<std::int32_t>& doflist,
+                  std::uint32_t cell_permutation)
+    { unpermute_dofs(doflist, cell_permutation); };
+  }
+  else
+  {
+    return [this](const xtl::span<std::int32_t>& doflist,
+                  std::uint32_t cell_permutation)
+    { permute_dofs(doflist, cell_permutation); };
+  }
 }
 //-----------------------------------------------------------------------------

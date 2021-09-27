@@ -1,14 +1,14 @@
 // Copyright (C) 2012-2018 Chris N. Richardson and Garth N. Wells
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #pragma once
 
+#include <complex>
 #include <hdf5.h>
 #include <mpi.h>
-#include <petscsys.h>
 
 namespace pugi
 {
@@ -30,7 +30,11 @@ namespace xdmf_function
 {
 
 /// TODO
-void add_function(MPI_Comm comm, const fem::Function<PetscScalar>& u,
+void add_function(MPI_Comm comm, const fem::Function<double>& u, const double t,
+                  pugi::xml_node& xml_node, const hid_t h5_id);
+
+/// TODO
+void add_function(MPI_Comm comm, const fem::Function<std::complex<double>>& u,
                   const double t, pugi::xml_node& xml_node, const hid_t h5_id);
 
 } // namespace xdmf_function

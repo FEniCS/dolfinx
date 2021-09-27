@@ -1,205 +1,21 @@
 // Copyright (C) 2006-2019 Anders Logg and Garth N. Wells
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "cell_types.h"
 #include "Geometry.h"
-#include <Eigen/Core>
 #include <algorithm>
+#include <basix/cell.h>
 #include <cfloat>
 #include <cstdlib>
 #include <numeric>
 #include <stdexcept>
+#include <xtensor/xbuilder.hpp>
+#include <xtensor/xfixed.hpp>
 
 using namespace dolfinx;
-
-namespace
-{
-//-----------------------------------------------------------------------------
-Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-get_entity_vertices_interval(int dim)
-{
-  const static Eigen::Array<int, 2, 1> e0
-      = (Eigen::Array<int, 2, 1>() << 0, 1).finished();
-  const static Eigen::Array<int, 1, 2, Eigen::RowMajor> e1
-      = (Eigen::Array<int, 1, 2, Eigen::RowMajor>() << 0, 1).finished();
-  switch (dim)
-  {
-  case 0:
-    return e0;
-  case 1:
-    return e1;
-  default:
-    return Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>();
-  }
-}
-//-----------------------------------------------------------------------------
-Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-get_entity_vertices_triangle(int dim)
-{
-  // We only need to know how to create edges
-  assert(dim == 1);
-
-  // Create the three edges
-  Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> e(3, 2);
-  e(0, 0) = 1;
-  e(0, 1) = 2;
-  e(1, 0) = 0;
-  e(1, 1) = 2;
-  e(2, 0) = 0;
-  e(2, 1) = 1;
-
-  return e;
-}
-//-----------------------------------------------------------------------------
-Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-get_entity_vertices_quadrilateral(int dim)
-{
-  assert(dim == 1);
-
-  // Create the four edges
-  Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> e(4, 2);
-  e(0, 0) = 0;
-  e(0, 1) = 1;
-  e(1, 0) = 2;
-  e(1, 1) = 3;
-  e(2, 0) = 0;
-  e(2, 1) = 2;
-  e(3, 0) = 1;
-  e(3, 1) = 3;
-
-  return e;
-}
-//-----------------------------------------------------------------------------
-Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-get_entity_vertices_tetrahedron(int dim)
-{
-  // We only need to know how to create edges and faces
-  Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> e;
-  switch (dim)
-  {
-  case 1:
-    // Resize data structure
-    e.resize(6, 2);
-
-    // Create the six edges
-    e(0, 0) = 2;
-    e(0, 1) = 3;
-    e(1, 0) = 1;
-    e(1, 1) = 3;
-    e(2, 0) = 1;
-    e(2, 1) = 2;
-    e(3, 0) = 0;
-    e(3, 1) = 3;
-    e(4, 0) = 0;
-    e(4, 1) = 2;
-    e(5, 0) = 0;
-    e(5, 1) = 1;
-    break;
-  case 2:
-    // Resize data structure
-    e.resize(4, 3);
-
-    // Create the four faces
-    e(0, 0) = 1;
-    e(0, 1) = 2;
-    e(0, 2) = 3;
-    e(1, 0) = 0;
-    e(1, 1) = 2;
-    e(1, 2) = 3;
-    e(2, 0) = 0;
-    e(2, 1) = 1;
-    e(2, 2) = 3;
-    e(3, 0) = 0;
-    e(3, 1) = 1;
-    e(3, 2) = 2;
-    break;
-  default:
-    throw std::runtime_error("Illegal topological dimension");
-  }
-
-  return e;
-}
-//-----------------------------------------------------------------------------
-Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-get_entity_vertices_hexahedron(int dim)
-{
-  // We need to know how to create edges and faces
-
-  Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> e;
-  switch (dim)
-  {
-  case 1:
-    // Resize data structure
-    e.resize(12, 2);
-
-    // Create the 12 edges
-    e(0, 0) = 0;
-    e(0, 1) = 1;
-    e(1, 0) = 2;
-    e(1, 1) = 3;
-    e(2, 0) = 4;
-    e(2, 1) = 5;
-    e(3, 0) = 6;
-    e(3, 1) = 7;
-    e(4, 0) = 0;
-    e(4, 1) = 2;
-    e(5, 0) = 1;
-    e(5, 1) = 3;
-    e(6, 0) = 4;
-    e(6, 1) = 6;
-    e(7, 0) = 5;
-    e(7, 1) = 7;
-    e(8, 0) = 0;
-    e(8, 1) = 4;
-    e(9, 0) = 1;
-    e(9, 1) = 5;
-    e(10, 0) = 2;
-    e(10, 1) = 6;
-    e(11, 0) = 3;
-    e(11, 1) = 7;
-    break;
-  case 2:
-    // Resize data structure
-    e.resize(6, 4);
-
-    // Create the 6 faces
-    e(0, 0) = 0;
-    e(0, 1) = 1;
-    e(0, 2) = 2;
-    e(0, 3) = 3;
-    e(1, 0) = 4;
-    e(1, 1) = 5;
-    e(1, 2) = 6;
-    e(1, 3) = 7;
-    e(2, 0) = 0;
-    e(2, 1) = 1;
-    e(2, 2) = 4;
-    e(2, 3) = 5;
-    e(3, 0) = 2;
-    e(3, 1) = 3;
-    e(3, 2) = 6;
-    e(3, 3) = 7;
-    e(4, 0) = 0;
-    e(4, 1) = 2;
-    e(4, 2) = 4;
-    e(4, 3) = 6;
-    e(5, 0) = 1;
-    e(5, 1) = 3;
-    e(5, 2) = 5;
-    e(5, 3) = 7;
-    break;
-  default:
-    throw std::runtime_error("Illegal topological dimension. Must be 1 or 2.");
-  }
-
-  return e;
-}
-//-----------------------------------------------------------------------------
-
-} // namespace
 
 //-----------------------------------------------------------------------------
 std::string mesh::to_string(mesh::CellType type)
@@ -216,6 +32,10 @@ std::string mesh::to_string(mesh::CellType type)
     return "tetrahedron";
   case mesh::CellType::quadrilateral:
     return "quadrilateral";
+  case mesh::CellType::pyramid:
+    return "pyramid";
+  case mesh::CellType::prism:
+    return "prism";
   case mesh::CellType::hexahedron:
     return "hexahedron";
   default:
@@ -236,13 +56,17 @@ mesh::CellType mesh::to_type(const std::string& cell)
     return mesh::CellType::tetrahedron;
   else if (cell == "quadrilateral")
     return mesh::CellType::quadrilateral;
+  else if (cell == "pyramid")
+    return mesh::CellType::pyramid;
+  else if (cell == "prism")
+    return mesh::CellType::prism;
   else if (cell == "hexahedron")
     return mesh::CellType::hexahedron;
   else
     throw std::runtime_error("Unknown cell type (" + cell + ")");
 }
 //-----------------------------------------------------------------------------
-mesh::CellType mesh::cell_entity_type(mesh::CellType type, int d)
+mesh::CellType mesh::cell_entity_type(mesh::CellType type, int d, int index)
 {
   const int dim = mesh::cell_dim(type);
   if (d == dim)
@@ -250,12 +74,12 @@ mesh::CellType mesh::cell_entity_type(mesh::CellType type, int d)
   else if (d == 1)
     return CellType::interval;
   else if (d == (dim - 1))
-    return mesh::cell_facet_type(type);
-
-  return CellType::point;
+    return mesh::cell_facet_type(type, index);
+  else
+    return CellType::point;
 }
 //-----------------------------------------------------------------------------
-mesh::CellType mesh::cell_facet_type(mesh::CellType type)
+mesh::CellType mesh::cell_facet_type(mesh::CellType type, int index)
 {
   switch (type)
   {
@@ -269,6 +93,13 @@ mesh::CellType mesh::cell_facet_type(mesh::CellType type)
     return mesh::CellType::triangle;
   case mesh::CellType::quadrilateral:
     return mesh::CellType::interval;
+  case mesh::CellType::pyramid:
+    throw std::runtime_error("TODO: pyramid");
+  case mesh::CellType::prism:
+    if (index == 0 or index == 4)
+      return mesh::CellType::triangle;
+    else
+      return mesh::CellType::quadrilateral;
   case mesh::CellType::hexahedron:
     return mesh::CellType::quadrilateral;
   default:
@@ -277,31 +108,17 @@ mesh::CellType mesh::cell_facet_type(mesh::CellType type)
   }
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-mesh::get_entity_vertices(mesh::CellType type, int dim)
+graph::AdjacencyList<int> mesh::get_entity_vertices(mesh::CellType type,
+                                                    int dim)
 {
-  switch (type)
-  {
-  // case mesh::CellType::point:
-  //   return create_entities_point(e, v);
-  case mesh::CellType::interval:
-    return get_entity_vertices_interval(dim);
-  case mesh::CellType::triangle:
-    return get_entity_vertices_triangle(dim);
-  case mesh::CellType::tetrahedron:
-    return get_entity_vertices_tetrahedron(dim);
-  case mesh::CellType::quadrilateral:
-    return get_entity_vertices_quadrilateral(dim);
-  case mesh::CellType::hexahedron:
-    return get_entity_vertices_hexahedron(dim);
-  default:
-    throw std::runtime_error("Unsupported cell type.");
-    return Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>();
-  }
+  const std::vector<std::vector<int>> topology
+      = basix::cell::topology(cell_type_to_basix_type(type))[dim];
+
+  return graph::AdjacencyList<int>(topology);
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-mesh::get_sub_entities(CellType type, int dim0, int dim1)
+graph::AdjacencyList<int> mesh::get_sub_entities(CellType type, int dim0,
+                                                 int dim1)
 {
   if (dim0 != 2)
   {
@@ -313,47 +130,36 @@ mesh::get_sub_entities(CellType type, int dim0, int dim1)
     throw std::runtime_error(
         "mesh::get_sub_entities supports getting edges (d=1) at present.");
   }
-  const static Eigen::Array<int, 1, 3, Eigen::RowMajor> triangle
-      = (Eigen::Array<int, 1, 3, Eigen::RowMajor>() << 0, 1, 2).finished();
-  const static Eigen::Array<int, 1, 4, Eigen::RowMajor> quadrilateral
-      = (Eigen::Array<int, 1, 4, Eigen::RowMajor>() << 0, 3, 1, 2).finished();
-  const static Eigen::Array<int, 4, 3, Eigen::RowMajor> tetrahedron
-      = (Eigen::Array<int, 4, 3, Eigen::RowMajor>() << 0, 1, 2, 0, 3, 4, 1, 3,
-         5, 2, 4, 5)
-            .finished();
-  const static Eigen::Array<int, 6, 4, Eigen::RowMajor> hexahedron
-      = (Eigen::Array<int, 6, 4, Eigen::RowMajor>() << 0, 1, 4, 5, 2, 3, 6, 7,
-         0, 2, 8, 9, 1, 3, 10, 11, 4, 6, 8, 10, 5, 7, 9, 11)
-            .finished();
 
+  // TODO: get this data from basix
+  static const std::vector<std::vector<int>> triangle = {{0, 1, 2}};
+  static const std::vector<std::vector<int>> quadrilateral = {{0, 1, 2, 3}};
+  static const std::vector<std::vector<int>> tetrahedron
+      = {{0, 1, 2}, {0, 3, 4}, {1, 3, 5}, {2, 4, 5}};
+  static const std::vector<std::vector<int>> prism
+      = {{0, 1, 3}, {0, 2, 4, 6}, {1, 2, 5, 7}, {3, 4, 5, 8}, {6, 7, 8}};
+  static const std::vector<std::vector<int>> hexahedron
+      = {{0, 1, 3, 5},  {0, 2, 4, 8},  {1, 2, 6, 9},
+         {3, 4, 7, 10}, {5, 6, 7, 11}, {8, 9, 10, 11}};
   switch (type)
   {
   case mesh::CellType::interval:
-    return Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>();
+    return graph::AdjacencyList<int>(0);
   case mesh::CellType::point:
-    return Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>();
+    return graph::AdjacencyList<int>(0);
   case mesh::CellType::triangle:
-    return triangle;
+    return graph::AdjacencyList<int>(triangle);
   case mesh::CellType::tetrahedron:
-    return tetrahedron;
+    return graph::AdjacencyList<int>(tetrahedron);
+  case mesh::CellType::prism:
+    return graph::AdjacencyList<int>(prism);
   case mesh::CellType::quadrilateral:
-    return quadrilateral;
+    return graph::AdjacencyList<int>(quadrilateral);
   case mesh::CellType::hexahedron:
-    return hexahedron;
+    return graph::AdjacencyList<int>(hexahedron);
   default:
     throw std::runtime_error("Unsupported cell type.");
-    return Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>();
   }
-
-  // static const int triangle[][4] = {
-  //     {0, 1, 2, -1},
-  // };
-  // static const int tetrahedron[][4]
-  //     = {{0, 1, 2, -1}, {0, 3, 4, -1}, {1, 3, 5, -1}, {2, 4, 5, -1}};
-  // static const int quadrilateral[][4] = {{0, 3, 1, 2}};
-  // static const int hexahedron[][4]
-  //     = {{0, 1, 4, 5},   {2, 3, 6, 7},  {0, 2, 8, 9},
-  //        {1, 3, 10, 11}, {4, 6, 8, 10}, {5, 7, 9, 11}};
 }
 //-----------------------------------------------------------------------------
 int mesh::cell_dim(mesh::CellType type)
@@ -370,23 +176,28 @@ int mesh::cell_dim(mesh::CellType type)
     return 3;
   case mesh::CellType::quadrilateral:
     return 2;
+  case mesh::CellType::pyramid:
+    return 3;
+  case mesh::CellType::prism:
+    return 3;
   case mesh::CellType::hexahedron:
     return 3;
   default:
     throw std::runtime_error("Unknown cell type.");
-    return -1;
   }
 }
 //-----------------------------------------------------------------------------
 int mesh::cell_num_entities(mesh::CellType type, int dim)
 {
   assert(dim <= 3);
-  static const int point[4] = {1, 0, 0, 0};
-  static const int interval[4] = {2, 1, 0, 0};
-  static const int triangle[4] = {3, 3, 1, 0};
-  static const int quadrilateral[4] = {4, 4, 1, 0};
-  static const int tetrahedron[4] = {4, 6, 4, 1};
-  static const int hexahedron[4] = {8, 12, 6, 1};
+  constexpr std::array<int, 4> point = {1, 0, 0, 0};
+  constexpr std::array<int, 4> interval = {2, 1, 0, 0};
+  constexpr std::array<int, 4> triangle = {3, 3, 1, 0};
+  constexpr std::array<int, 4> quadrilateral = {4, 4, 1, 0};
+  constexpr std::array<int, 4> tetrahedron = {4, 6, 4, 1};
+  constexpr std::array<int, 4> pyramid = {5, 8, 5, 1};
+  constexpr std::array<int, 4> prism = {6, 9, 5, 1};
+  constexpr std::array<int, 4> hexahedron = {8, 12, 6, 1};
   switch (type)
   {
   case mesh::CellType::point:
@@ -399,11 +210,14 @@ int mesh::cell_num_entities(mesh::CellType type, int dim)
     return tetrahedron[dim];
   case mesh::CellType::quadrilateral:
     return quadrilateral[dim];
+  case mesh::CellType::pyramid:
+    return pyramid[dim];
+  case mesh::CellType::prism:
+    return prism[dim];
   case mesh::CellType::hexahedron:
     return hexahedron[dim];
   default:
     throw std::runtime_error("Unknown cell type.");
-    return -1;
   }
 }
 //-----------------------------------------------------------------------------
@@ -425,10 +239,9 @@ mesh::cell_entity_closure(mesh::CellType cell_type)
   for (int i = 0; i <= cell_dim; ++i)
     num_entities[i] = mesh::cell_num_entities(cell_type, i);
 
-  const Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      edge_v = mesh::get_entity_vertices(cell_type, 1);
-  const Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      face_e = mesh::get_sub_entities(cell_type, 2, 1);
+  const graph::AdjacencyList<int> edge_v
+      = mesh::get_entity_vertices(cell_type, 1);
+  const auto face_e = mesh::get_sub_entities(cell_type, 2, 1);
 
   std::map<std::array<int, 2>, std::vector<std::set<int>>> entity_closure;
   for (int dim = 0; dim <= cell_dim; ++dim)
@@ -452,29 +265,76 @@ mesh::cell_entity_closure(mesh::CellType cell_type)
 
       if (dim == 2)
       {
-        mesh::CellType face_type = mesh::cell_entity_type(cell_type, 2);
+        mesh::CellType face_type = mesh::cell_entity_type(cell_type, 2, entity);
         const int num_edges = mesh::cell_num_entities(face_type, 1);
         for (int e = 0; e < num_edges; ++e)
         {
           // Add edge
-          const int edge_index = face_e(entity, e);
+          const int edge_index = face_e.links(entity)[e];
           entity_closure[{{dim, entity}}][1].insert(edge_index);
           for (int v = 0; v < 2; ++v)
           {
             // Add vertex connected to edge
-            entity_closure[{{dim, entity}}][0].insert(edge_v(edge_index, v));
+            entity_closure[{{dim, entity}}][0].insert(
+                edge_v.links(edge_index)[v]);
           }
         }
       }
 
       if (dim == 1)
       {
-        entity_closure[{{dim, entity}}][0].insert(edge_v(entity, 0));
-        entity_closure[{{dim, entity}}][0].insert(edge_v(entity, 1));
+        entity_closure[{{dim, entity}}][0].insert(edge_v.links(entity)[0]);
+        entity_closure[{{dim, entity}}][0].insert(edge_v.links(entity)[1]);
       }
     }
   }
 
   return entity_closure;
+}
+//-----------------------------------------------------------------------------
+basix::cell::type mesh::cell_type_to_basix_type(mesh::CellType celltype)
+{
+  switch (celltype)
+  {
+  case mesh::CellType::interval:
+    return basix::cell::type::interval;
+  case mesh::CellType::triangle:
+    return basix::cell::type::triangle;
+  case mesh::CellType::tetrahedron:
+    return basix::cell::type::tetrahedron;
+  case mesh::CellType::quadrilateral:
+    return basix::cell::type::quadrilateral;
+  case mesh::CellType::hexahedron:
+    return basix::cell::type::hexahedron;
+  case mesh::CellType::prism:
+    return basix::cell::type::prism;
+  case mesh::CellType::pyramid:
+    return basix::cell::type::pyramid;
+  default:
+    throw std::runtime_error("Unrecognised cell type.");
+  }
+}
+//-----------------------------------------------------------------------------
+mesh::CellType mesh::cell_type_from_basix_type(basix::cell::type celltype)
+{
+  switch (celltype)
+  {
+  case basix::cell::type::interval:
+    return mesh::CellType::interval;
+  case basix::cell::type::triangle:
+    return mesh::CellType::triangle;
+  case basix::cell::type::tetrahedron:
+    return mesh::CellType::tetrahedron;
+  case basix::cell::type::quadrilateral:
+    return mesh::CellType::quadrilateral;
+  case basix::cell::type::hexahedron:
+    return mesh::CellType::hexahedron;
+  case basix::cell::type::prism:
+    return mesh::CellType::prism;
+  case basix::cell::type::pyramid:
+    return mesh::CellType::pyramid;
+  default:
+    throw std::runtime_error("Unrecognised cell type.");
+  }
 }
 //-----------------------------------------------------------------------------

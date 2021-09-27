@@ -1,30 +1,27 @@
 // Copyright (C) 2007-2020 Michal Habera, Anders Logg and Garth N. Wells
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #pragma once
 
-#include <Eigen/Core>
 #include <array>
-#include <dolfinx/common/span.hpp>
 #include <dolfinx/fem/Function.h>
 #include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/la/utils.h>
 #include <functional>
 #include <memory>
 #include <vector>
+#include <xtensor/xtensor.hpp>
+#include <xtl/xspan.hpp>
 
-namespace dolfinx
-{
-
-namespace mesh
+namespace dolfinx::mesh
 {
 class Mesh;
-} // namespace mesh
+}
 
-namespace fem
+namespace dolfinx::fem
 {
 
 /// Find degrees-of-freedom which belong to the provided mesh entities
@@ -52,7 +49,7 @@ namespace fem
 /// V[1]. The returned dofs are 'unrolled', i.e. block size = 1.
 std::array<std::vector<std::int32_t>, 2> locate_dofs_topological(
     const std::array<std::reference_wrapper<const fem::FunctionSpace>, 2>& V,
-    const int dim, const Eigen::Ref<const Eigen::ArrayXi>& entities,
+    const int dim, const xtl::span<const std::int32_t>& entities,
     bool remote = true);
 
 /// Find degrees-of-freedom which belong to the provided mesh entities
@@ -78,7 +75,7 @@ std::array<std::vector<std::int32_t>, 2> locate_dofs_topological(
 /// with V.
 std::vector<std::int32_t>
 locate_dofs_topological(const fem::FunctionSpace& V, const int dim,
-                        const Eigen::Ref<const Eigen::ArrayXi>& entities,
+                        const xtl::span<const std::int32_t>& entities,
                         bool remote = true);
 
 /// Finds degrees of freedom whose geometric coordinate is true for the
@@ -96,9 +93,8 @@ locate_dofs_topological(const fem::FunctionSpace& V, const int dim,
 /// V[1]. The returned dofs are 'unrolled', i.e. block size = 1.
 std::array<std::vector<std::int32_t>, 2> locate_dofs_geometrical(
     const std::array<std::reference_wrapper<const fem::FunctionSpace>, 2>& V,
-    const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
-        const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
-                                            Eigen::RowMajor>>&)>& marker_fn);
+    const std::function<xt::xtensor<bool, 1>(const xt::xtensor<double, 2>&)>&
+        marker_fn);
 
 /// Finds degrees of freedom whose geometric coordinate is true for the
 /// provided marking function.
@@ -113,9 +109,8 @@ std::array<std::vector<std::int32_t>, 2> locate_dofs_geometrical(
 /// with V.
 std::vector<std::int32_t> locate_dofs_geometrical(
     const fem::FunctionSpace& V,
-    const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
-        const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
-                                            Eigen::RowMajor>>&)>& marker_fn);
+    const std::function<xt::xtensor<bool, 1>(const xt::xtensor<double, 2>&)>&
+        marker_fn);
 
 /// Interface for setting (strong) Dirichlet boundary conditions
 ///
@@ -139,7 +134,7 @@ public:
   /// `FunctionSpace`.
   ///
   /// @param[in] g The boundary condition value. The boundary condition
-  /// can be applied to a a function on the same space as g.
+  /// can be applied to a function on the same space as g.
   /// @param[in] dofs Degree-of-freedom block indices (@p
   /// std::vector<std::int32_t>) in the space of the boundary value
   /// function applied to V_dofs[i]. The dof block indices must be
@@ -242,10 +237,9 @@ public:
   /// @return Sorted array of dof indices (unrolled) and index to the
   /// first entry in the dof index array that is not owned. Entries
   /// `dofs[:pos]` are owned and entries `dofs[pos:]` are ghosts.
-  std::pair<const tcb::span<const std::int32_t>, std::int32_t>
-  dof_indices() const
+  std::pair<xtl::span<const std::int32_t>, std::int32_t> dof_indices() const
   {
-    return {tcb::make_span(_dofs0), _owned_indices0};
+    return {_dofs0, _owned_indices0};
   }
 
   /// Set bc entries in `x` to `scale * x_bc`
@@ -259,16 +253,15 @@ public:
   /// of the array @p x should be equal to the number of dofs owned by
   /// this rank.
   /// @param[in] scale The scaling value to apply
-  void set(Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> x,
-           double scale = 1.0) const
+  void set(xtl::span<T> x, double scale = 1.0) const
   {
     assert(_g);
-    auto& g = _g->x()->array();
+    const std::vector<T>& g = _g->x()->array();
     for (std::size_t i = 0; i < _dofs0.size(); ++i)
     {
-      if (_dofs0[i] < x.rows())
+      if (_dofs0[i] < (std::int32_t)x.size())
       {
-        assert(_dofs1_g[i] < g.rows());
+        assert(_dofs1_g[i] < (std::int32_t)g.size());
         x[_dofs0[i]] = scale * g[_dofs1_g[i]];
       }
     }
@@ -278,18 +271,17 @@ public:
   /// @param[in] x The array in which to set `scale * (x0 - x_bc)`
   /// @param[in] x0 The array used in compute the value to set
   /// @param[in] scale The scaling value to apply
-  void set(Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> x,
-           const Eigen::Ref<const Eigen::Matrix<T, Eigen::Dynamic, 1>>& x0,
+  void set(xtl::span<T> x, const xtl::span<const T>& x0,
            double scale = 1.0) const
   {
     assert(_g);
-    auto& g = _g->x()->array();
-    assert(x.rows() <= x0.rows());
+    const std::vector<T>& g = _g->x()->array();
+    assert(x.size() <= x0.size());
     for (std::size_t i = 0; i < _dofs0.size(); ++i)
     {
-      if (_dofs0[i] < x.rows())
+      if (_dofs0[i] < (std::int32_t)x.size())
       {
-        assert(_dofs1_g[i] < g.rows());
+        assert(_dofs1_g[i] < (std::int32_t)g.size());
         x[_dofs0[i]] = scale * (g[_dofs1_g[i]] - x0[_dofs0[i]]);
       }
     }
@@ -303,10 +295,10 @@ public:
   /// @param[in,out] values The array in which to set the dof values.
   /// The array must be at least as long as the array associated with V1
   /// (the space of the function that provides the dof values)
-  void dof_values(Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> values) const
+  void dof_values(xtl::span<T> values) const
   {
     assert(_g);
-    auto& g = _g->x()->array();
+    const std::vector<T>& g = _g->x()->array();
     for (std::size_t i = 0; i < _dofs1_g.size(); ++i)
       values[_dofs0[i]] = g[_dofs1_g[i]];
   }
@@ -341,5 +333,4 @@ private:
   int _owned_indices0 = -1;
   int _owned_indices1 = -1;
 };
-} // namespace fem
-} // namespace dolfinx
+} // namespace dolfinx::fem

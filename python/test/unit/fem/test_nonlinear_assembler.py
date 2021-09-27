@@ -1,6 +1,6 @@
 # Copyright (C) 2019 Nathan Sime
 #
-# This file is part of DOLFINX (https://www.fenicsproject.org)
+# This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for assembly"""
@@ -31,7 +31,7 @@ def nest_matrix_norm(A):
     return math.sqrt(norm)
 
 
-def test_matrix_assembly_block():
+def test_matrix_assembly_block_nl():
     """Test assembly of block matrices and vectors into (a) monolithic
     blocked structures, PETSc Nest structures, and monolithic structures
     in the nonlinear setting
@@ -128,7 +128,8 @@ def test_matrix_assembly_block():
     u0, u1 = ufl.split(U)
     v0, v1 = ufl.TestFunctions(W)
 
-    U.interpolate(lambda x: numpy.row_stack((initial_guess_u(x), initial_guess_p(x))))
+    U.sub(0).interpolate(initial_guess_u)
+    U.sub(1).interpolate(initial_guess_p)
 
     F = inner(u0, v0) * dx + inner(u1, v0) * dx + inner(u0, v1) * dx + inner(u1, v1) * dx \
         - inner(f, v0) * ufl.dx - inner(g, v1) * dx
@@ -230,7 +231,7 @@ class NonlinearPDE_SNESProblem():
         F.assemble()
 
     def J_nest(self, snes, x, J, P):
-        assert x.getType() == "nest" and J.getType() == "nest" and P.getType() == "nest"
+        assert J.getType() == "nest" and P.getType() == "nest"
         J.zeroEntries()
         dolfinx.fem.assemble_matrix_nest(J, self.a, self.bcs, diagonal=1.0)
         J.assemble()
@@ -240,7 +241,7 @@ class NonlinearPDE_SNESProblem():
             P.assemble()
 
 
-def test_assembly_solve_block():
+def test_assembly_solve_block_nl():
     """Solve a two-field nonlinear diffusion like problem with block matrix
     approaches and test that solution is the same.
     """
@@ -293,147 +294,132 @@ def test_assembly_solve_block():
     J = [[derivative(F[0], u, du), derivative(F[0], p, dp)],
          [derivative(F[1], u, du), derivative(F[1], p, dp)]]
 
-    # -- Blocked version
-    Jmat0 = dolfinx.fem.create_matrix_block(J)
-    Fvec0 = dolfinx.fem.create_vector_block(F)
+    def blocked_solve():
+        """Blocked version"""
+        Jmat = dolfinx.fem.create_matrix_block(J)
+        Fvec = dolfinx.fem.create_vector_block(F)
 
-    snes = PETSc.SNES().create(MPI.COMM_WORLD)
-    snes.setTolerances(rtol=1.0e-15, max_it=10)
+        snes = PETSc.SNES().create(MPI.COMM_WORLD)
+        snes.setTolerances(rtol=1.0e-15, max_it=10)
+        snes.getKSP().setType("preonly")
+        snes.getKSP().getPC().setType("lu")
 
-    snes.getKSP().setType("preonly")
-    snes.getKSP().getPC().setType("lu")
-    snes.getKSP().getPC().setFactorSolverType("superlu_dist")
+        problem = NonlinearPDE_SNESProblem(F, J, [u, p], bcs)
+        snes.setFunction(problem.F_block, Fvec)
+        snes.setJacobian(problem.J_block, J=Jmat, P=None)
 
-    problem = NonlinearPDE_SNESProblem(F, J, [u, p], bcs)
-    snes.setFunction(problem.F_block, Fvec0)
-    snes.setJacobian(problem.J_block, J=Jmat0, P=None)
+        u.interpolate(initial_guess_u)
+        p.interpolate(initial_guess_p)
 
-    u.interpolate(initial_guess_u)
-    p.interpolate(initial_guess_p)
+        x = dolfinx.fem.create_vector_block(F)
+        dolfinx.cpp.la.scatter_local_vectors(
+            x, [u.vector.array_r, p.vector.array_r],
+            [(u.function_space.dofmap.index_map, u.function_space.dofmap.index_map_bs),
+             (p.function_space.dofmap.index_map, p.function_space.dofmap.index_map_bs)])
+        x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
-    x0 = dolfinx.fem.create_vector_block(F)
-    dolfinx.cpp.la.scatter_local_vectors(
-        x0, [u.vector.array_r, p.vector.array_r],
-        [(u.function_space.dofmap.index_map, u.function_space.dofmap.index_map_bs),
-         (p.function_space.dofmap.index_map, p.function_space.dofmap.index_map_bs)])
-    x0.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+        snes.solve(None, x)
+        assert snes.getKSP().getConvergedReason() > 0
+        assert snes.getConvergedReason() > 0
+        return x.norm()
 
-    snes.solve(None, x0)
+    def nested_solve():
+        """Nested version"""
+        Jmat = dolfinx.fem.create_matrix_nest(J)
+        assert Jmat.getType() == "nest"
+        Fvec = dolfinx.fem.create_vector_nest(F)
+        assert Fvec.getType() == "nest"
 
-    assert snes.getKSP().getConvergedReason() > 0
-    assert snes.getConvergedReason() > 0
+        snes = PETSc.SNES().create(MPI.COMM_WORLD)
+        snes.setTolerances(rtol=1.0e-15, max_it=10)
 
-    J0norm = Jmat0.norm()
-    F0norm = Fvec0.norm()
-    x0norm = x0.norm()
+        nested_IS = Jmat.getNestISs()
 
-    # -- Nested (MatNest)
-    Jmat1 = dolfinx.fem.create_matrix_nest(J)
-    Fvec1 = dolfinx.fem.create_vector_nest(F)
+        snes.getKSP().setType("gmres")
+        snes.getKSP().setTolerances(rtol=1e-12)
+        snes.getKSP().getPC().setType("fieldsplit")
+        snes.getKSP().getPC().setFieldSplitIS(["u", nested_IS[0][0]], ["p", nested_IS[1][1]])
 
-    snes = PETSc.SNES().create(MPI.COMM_WORLD)
-    snes.setTolerances(rtol=1.0e-15, max_it=10)
+        ksp_u, ksp_p = snes.getKSP().getPC().getFieldSplitSubKSP()
+        ksp_u.setType("preonly")
+        ksp_u.getPC().setType('lu')
+        ksp_p.setType("preonly")
+        ksp_p.getPC().setType('lu')
 
-    nested_IS = Jmat1.getNestISs()
+        problem = NonlinearPDE_SNESProblem(F, J, [u, p], bcs)
+        snes.setFunction(problem.F_nest, Fvec)
+        snes.setJacobian(problem.J_nest, J=Jmat, P=None)
 
-    snes.getKSP().setType("fgmres")
-    snes.getKSP().setTolerances(rtol=1e-12)
-    snes.getKSP().getPC().setType("fieldsplit")
-    snes.getKSP().getPC().setFieldSplitIS(["u", nested_IS[0][0]], ["p", nested_IS[1][1]])
+        u.interpolate(initial_guess_u)
+        p.interpolate(initial_guess_p)
 
-    ksp_u, ksp_p = snes.getKSP().getPC().getFieldSplitSubKSP()
-    ksp_u.setType("preonly")
-    ksp_u.getPC().setType('lu')
-    ksp_u.getPC().setFactorSolverType('superlu_dist')
-    ksp_p.setType("preonly")
-    ksp_p.getPC().setType('lu')
-    ksp_p.getPC().setFactorSolverType('superlu_dist')
+        x = dolfinx.fem.create_vector_nest(F)
+        assert x.getType() == "nest"
+        for x_soln_pair in zip(x.getNestSubVecs(), (u, p)):
+            x_sub, soln_sub = x_soln_pair
+            soln_sub.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+            soln_sub.vector.copy(result=x_sub)
+            x_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
-    problem = NonlinearPDE_SNESProblem(F, J, [u, p], bcs)
-    snes.setFunction(problem.F_nest, Fvec1)
-    snes.setJacobian(problem.J_nest, J=Jmat1, P=None)
+        snes.solve(None, x)
+        assert snes.getKSP().getConvergedReason() > 0
+        assert snes.getConvergedReason() > 0
+        return x.norm()
 
-    u.interpolate(initial_guess_u)
-    p.interpolate(initial_guess_p)
+    def monolithic_solve():
+        """Monolithic version"""
+        E = P * P
+        W = dolfinx.fem.FunctionSpace(mesh, E)
+        U = dolfinx.fem.Function(W)
+        dU = ufl.TrialFunction(W)
+        u0, u1 = ufl.split(U)
+        v0, v1 = ufl.TestFunctions(W)
 
-    x1 = dolfinx.fem.create_vector_nest(F)
-    for x1_soln_pair in zip(x1.getNestSubVecs(), (u, p)):
-        x1_sub, soln_sub = x1_soln_pair
-        soln_sub.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-        soln_sub.vector.copy(result=x1_sub)
-        x1_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+        F = inner((u0**2 + 1) * ufl.grad(u0), ufl.grad(v0)) * dx \
+            + inner((u1**2 + 1) * ufl.grad(u1), ufl.grad(v1)) * dx \
+            - inner(f, v0) * ufl.dx - inner(g, v1) * dx
+        J = derivative(F, U, dU)
 
-    snes.solve(None, x1)
+        u0_bc = dolfinx.fem.Function(V0)
+        u0_bc.interpolate(bc_val_0)
+        u1_bc = dolfinx.fem.Function(V1)
+        u1_bc.interpolate(bc_val_1)
 
-    assert snes.getKSP().getConvergedReason() > 0
-    assert snes.getConvergedReason() > 0
-    assert x1.getType() == "nest"
-    assert Jmat1.getType() == "nest"
-    assert Fvec1.getType() == "nest"
+        bdofsW0_V0 = dolfinx.fem.locate_dofs_topological((W.sub(0), V0), facetdim, bndry_facets)
+        bdofsW1_V1 = dolfinx.fem.locate_dofs_topological((W.sub(1), V1), facetdim, bndry_facets)
 
-    J1norm = nest_matrix_norm(Jmat1)
-    F1norm = Fvec1.norm()
-    x1norm = x1.norm()
+        bcs = [dolfinx.fem.dirichletbc.DirichletBC(u0_bc, bdofsW0_V0, W.sub(0)),
+               dolfinx.fem.dirichletbc.DirichletBC(u1_bc, bdofsW1_V1, W.sub(1))]
 
-    assert J1norm == pytest.approx(J0norm, 1.0e-12)
-    assert F1norm == pytest.approx(F0norm, 1.0e-12)
-    assert x1norm == pytest.approx(x0norm, 1.0e-12)
+        Jmat = dolfinx.fem.create_matrix(J)
+        Fvec = dolfinx.fem.create_vector(F)
 
-    # -- Monolithic version
-    E = P * P
-    W = dolfinx.fem.FunctionSpace(mesh, E)
-    U = dolfinx.fem.Function(W)
-    dU = ufl.TrialFunction(W)
-    u0, u1 = ufl.split(U)
-    v0, v1 = ufl.TestFunctions(W)
+        snes = PETSc.SNES().create(MPI.COMM_WORLD)
+        snes.setTolerances(rtol=1.0e-15, max_it=10)
 
-    F = inner((u0**2 + 1) * ufl.grad(u0), ufl.grad(v0)) * dx \
-        + inner((u1**2 + 1) * ufl.grad(u1), ufl.grad(v1)) * dx \
-        - inner(f, v0) * ufl.dx - inner(g, v1) * dx
-    J = derivative(F, U, dU)
+        snes.getKSP().setType("preonly")
+        snes.getKSP().getPC().setType("lu")
 
-    u0_bc = dolfinx.fem.Function(V0)
-    u0_bc.interpolate(bc_val_0)
-    u1_bc = dolfinx.fem.Function(V1)
-    u1_bc.interpolate(bc_val_1)
+        problem = NonlinearPDE_SNESProblem(F, J, U, bcs)
+        snes.setFunction(problem.F_mono, Fvec)
+        snes.setJacobian(problem.J_mono, J=Jmat, P=None)
 
-    bdofsW0_V0 = dolfinx.fem.locate_dofs_topological((W.sub(0), V0), facetdim, bndry_facets)
-    bdofsW1_V1 = dolfinx.fem.locate_dofs_topological((W.sub(1), V1), facetdim, bndry_facets)
+        U.sub(0).interpolate(initial_guess_u)
+        U.sub(1).interpolate(initial_guess_p)
 
-    bcs = [dolfinx.fem.dirichletbc.DirichletBC(u0_bc, bdofsW0_V0, W.sub(0)),
-           dolfinx.fem.dirichletbc.DirichletBC(u1_bc, bdofsW1_V1, W.sub(1))]
+        x = dolfinx.fem.create_vector(F)
+        x.array = U.vector.array_r
 
-    Jmat2 = dolfinx.fem.create_matrix(J)
-    Fvec2 = dolfinx.fem.create_vector(F)
+        snes.solve(None, x)
+        assert snes.getKSP().getConvergedReason() > 0
+        assert snes.getConvergedReason() > 0
+        return x.norm()
 
-    snes = PETSc.SNES().create(MPI.COMM_WORLD)
-    snes.setTolerances(rtol=1.0e-15, max_it=10)
-
-    snes.getKSP().setType("preonly")
-    snes.getKSP().getPC().setType("lu")
-    snes.getKSP().getPC().setFactorSolverType("superlu_dist")
-
-    problem = NonlinearPDE_SNESProblem(F, J, U, bcs)
-    snes.setFunction(problem.F_mono, Fvec2)
-    snes.setJacobian(problem.J_mono, J=Jmat2, P=None)
-
-    U.interpolate(lambda x: numpy.row_stack((initial_guess_u(x), initial_guess_p(x))))
-
-    x2 = dolfinx.fem.create_vector(F)
-    x2.array = U.vector.array_r
-
-    snes.solve(None, x2)
-
-    assert snes.getKSP().getConvergedReason() > 0
-    assert snes.getConvergedReason() > 0
-
-    J2norm = Jmat2.norm()
-    F2norm = Fvec2.norm()
-    x2norm = x2.norm()
-
-    assert J2norm == pytest.approx(J0norm, 1.0e-12)
-    assert F2norm == pytest.approx(F0norm, 1.0e-12)
-    assert x2norm == pytest.approx(x0norm, 1.0e-12)
+    norm0 = blocked_solve()
+    norm1 = nested_solve()
+    norm2 = monolithic_solve()
+    assert norm1 == pytest.approx(norm0, 1.0e-12)
+    assert norm2 == pytest.approx(norm0, 1.0e-12)
 
 
 @pytest.mark.parametrize("mesh", [
@@ -442,7 +428,7 @@ def test_assembly_solve_block():
     dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 12, 11, ghost_mode=dolfinx.cpp.mesh.GhostMode.none),
     dolfinx.generation.UnitCubeMesh(MPI.COMM_WORLD, 3, 5, 4, ghost_mode=dolfinx.cpp.mesh.GhostMode.shared_facet)
 ])
-def test_assembly_solve_taylor_hood(mesh):
+def test_assembly_solve_taylor_hood_nl(mesh):
     """Assemble Stokes problem with Taylor-Hood elements and solve."""
     gdim = mesh.geometry.dim
     P2 = dolfinx.fem.VectorFunctionSpace(mesh, ("Lagrange", 2))
@@ -501,10 +487,8 @@ def test_assembly_solve_taylor_hood(mesh):
 
     snes = PETSc.SNES().create(MPI.COMM_WORLD)
     snes.setTolerances(rtol=1.0e-15, max_it=10)
-
     snes.getKSP().setType("minres")
     snes.getKSP().getPC().setType("lu")
-    snes.getKSP().getPC().setFactorSolverType("superlu_dist")
 
     problem = NonlinearPDE_SNESProblem(F, J, [u, p], bcs, P=P)
     snes.setFunction(problem.F_block, Fvec0)
@@ -544,10 +528,8 @@ def test_assembly_solve_taylor_hood(mesh):
     ksp_u, ksp_p = snes.getKSP().getPC().getFieldSplitSubKSP()
     ksp_u.setType("preonly")
     ksp_u.getPC().setType('lu')
-    ksp_u.getPC().setFactorSolverType('superlu_dist')
     ksp_p.setType("preonly")
     ksp_p.getPC().setType('lu')
-    ksp_p.getPC().setFactorSolverType('superlu_dist')
 
     problem = NonlinearPDE_SNESProblem(F, J, [u, p], bcs, P=P)
     snes.setFunction(problem.F_nest, Fvec1)
@@ -600,16 +582,15 @@ def test_assembly_solve_taylor_hood(mesh):
 
     snes = PETSc.SNES().create(MPI.COMM_WORLD)
     snes.setTolerances(rtol=1.0e-15, max_it=10)
-
     snes.getKSP().setType("minres")
     snes.getKSP().getPC().setType("lu")
-    snes.getKSP().getPC().setFactorSolverType("superlu_dist")
 
     problem = NonlinearPDE_SNESProblem(F, J, U, bcs, P=P)
     snes.setFunction(problem.F_mono, Fvec2)
     snes.setJacobian(problem.J_mono, J=Jmat2, P=Pmat2)
 
-    U.interpolate(lambda x: numpy.row_stack((initial_guess_u(x), initial_guess_p(x))))
+    U.sub(0).interpolate(initial_guess_u)
+    U.sub(1).interpolate(initial_guess_p)
 
     x2 = dolfinx.fem.create_vector(F)
     x2.array = U.vector.array_r

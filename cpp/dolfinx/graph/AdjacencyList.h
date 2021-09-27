@@ -1,37 +1,37 @@
-// Copyright (C) 2006-2019 Anders Logg and Garth N. Wells
+// Copyright (C) 2019-2021 Garth N. Wells
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #pragma once
 
-#include <Eigen/Core>
 #include <cassert>
-#include <dolfinx/common/span.hpp>
 #include <numeric>
 #include <sstream>
 #include <utility>
 #include <vector>
+#include <xtensor/xtensor.hpp>
+#include <xtl/xspan.hpp>
 
 namespace dolfinx::graph
 {
 
 /// Construct adjacency list data for a problem with a fixed number of
 /// links (edges) for each node
-/// @param [in] matrix Two-dimensional array of adjacency data where
+/// @param [in] array Two-dimensional array of adjacency data where
 /// matrix(i, j) is the jth neighbor of the ith node
 /// @return Adjacency list data and offset array
 template <typename T>
-auto create_adjacency_data(const Eigen::DenseBase<T>& matrix)
+auto create_adjacency_data(const xt::xtensor<T, 2>& array)
 {
-  std::vector<typename T::Scalar> data(matrix.rows() * matrix.cols());
-  std::vector<std::int32_t> offset(matrix.rows() + 1, 0);
-  for (Eigen::Index i = 0; i < matrix.rows(); ++i)
+  std::vector<T> data(array.shape(0) * array.shape(1));
+  std::vector<std::int32_t> offset(array.shape(0) + 1, 0);
+  for (std::size_t i = 0; i < array.shape(0); ++i)
   {
-    for (Eigen::Index j = 0; j < matrix.cols(); ++j)
-      data[i * matrix.cols() + j] = matrix(i, j);
-    offset[i + 1] = offset[i] + matrix.cols();
+    for (std::size_t j = 0; j < array.shape(1); ++j)
+      data[i * array.shape(1) + j] = array(i, j);
+    offset[i + 1] = offset[i] + array.shape(1);
   }
   return std::pair(std::move(data), std::move(offset));
 }
@@ -66,6 +66,7 @@ public:
   AdjacencyList(U&& data, V&& offsets)
       : _array(std::forward<U>(data)), _offsets(std::forward<V>(offsets))
   {
+    _array.reserve(_offsets.back());
     assert(_offsets.back() == (std::int32_t)_array.size());
   }
 
@@ -125,20 +126,20 @@ public:
   /// @param [in] node Node index
   /// @return Array of outgoing links for the node. The length will be
   /// AdjacencyList:num_links(node).
-  tcb::span<T> links(int node)
+  xtl::span<T> links(int node)
   {
-    return tcb::span(_array.data() + _offsets[node],
-                     _offsets[node + 1] - _offsets[node]);
+    return xtl::span<T>(_array.data() + _offsets[node],
+                        _offsets[node + 1] - _offsets[node]);
   }
 
   /// Get the links (edges) for given node (const version)
   /// @param [in] node Node index
   /// @return Array of outgoing links for the node. The length will be
   /// AdjacencyList:num_links(node).
-  tcb::span<const T> links(int node) const
+  xtl::span<const T> links(int node) const
   {
-    return tcb::span(_array.data() + _offsets[node],
-                     _offsets[node + 1] - _offsets[node]);
+    return xtl::span<const T>(_array.data() + _offsets[node],
+                              _offsets[node + 1] - _offsets[node]);
   }
 
   /// Return contiguous array of links for all nodes (const version)
@@ -149,26 +150,6 @@ public:
 
   /// Offset for each node in array() (const version)
   const std::vector<std::int32_t>& offsets() const { return _offsets; }
-
-  /// Copy of the Adjacency List if the specified type is different from the
-  /// current type, ele return a reference.
-  template <typename X>
-  decltype(auto) as_type() const
-  {
-// Workaround for Intel compler bug, see
-// https://community.intel.com/t5/Intel-C-Compiler/quot-if-constexpr-quot-and-quot-missing-return-statement-quot-in/td-p/1154551
-#ifdef __INTEL_COMPILER
-#pragma warning(disable : 1011)
-#endif
-
-    if constexpr (std::is_same<X, T>::value)
-      return *this;
-    else
-    {
-      return graph::AdjacencyList<X>(
-          std::vector<X>(_array.begin(), _array.end()), this->_offsets);
-    }
-  }
 
   /// Return informal string representation (pretty-print)
   std::string str() const
@@ -181,7 +162,7 @@ public:
       s << "  " << e << ": [";
       for (auto link : this->links(e))
         s << link << " ";
-      s << "[" << std::endl;
+      s << "]" << std::endl;
     }
     return s.str();
   }
@@ -205,7 +186,7 @@ AdjacencyList<T> build_adjacency_list(U&& data, int degree)
 {
   // using T = typename U::value_type;
   assert(data.size() % degree == 0);
-  std::vector<std::int32_t> offsets(data.size() / degree + 1, 0);
+  std::vector<std::int32_t> offsets((data.size() / degree) + 1, 0);
   for (std::size_t i = 1; i < offsets.size(); ++i)
     offsets[i] = offsets[i - 1] + degree;
   return AdjacencyList<T>(std::forward<U>(data), std::move(offsets));

@@ -3,10 +3,13 @@ version: 2.1
 install-python-components: &install-python-components
   name: Install FEniCS Python components
   command: |
-    pip3 install git+https://github.com/FEniCS/fiat.git --upgrade
-    pip3 install git+https://github.com/FEniCS/ufl.git --upgrade
-    pip3 install git+https://github.com/FEniCS/ffcx.git --upgrade
-    rm -rf /usr/local/include/dolfin /usr/local/include/dolfin.h
+    git clone https://github.com/FEniCS/basix.git --branch main --single-branch
+    cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -B build-dir -S ./basix/cpp
+    cmake --build build-dir --parallel 3
+    cmake --install build-dir
+    pip3 install ./basix/python
+    pip3 install git+https://github.com/FEniCS/ufl.git
+    pip3 install git+https://github.com/FEniCS/ffcx.git
 
 flake8-python-code: &flake8-python-code
   name: Flake8 checks on Python code
@@ -58,7 +61,7 @@ build-python-interface: &build-python-interface
   name: Build Python/pybind11 interface
   command: |
     cd python
-    pip3 -v install . --user
+    pip3 -v install --global-option build --global-option --debug . --user
 
 build-documentation-python: &build-documentation-python
   name: Build documentation (Python)
@@ -82,10 +85,10 @@ demos-python-mpi: &demos-python-mpi
     python3 -m pytest -n=2 -v -m mpi test.py --num-proc=3
 
 set-jit-defaults: &set-jit-defaults
-  name: Set default DOLFINX JIT parameters
+  name: Set default DOLFINx JIT parameters
   command: |
-     mkdir -p ~/.config/dolfinx
-     echo '{ "cffi_extra_compile_args" : ["-g0", "-O0" ] }' > ~/.config/dolfinx/dolfinx_jit_parameters.json
+    mkdir -p ~/.config/dolfinx
+    echo '{ "cffi_extra_compile_args" : ["-g0", "-O0" ] }' > ~/.config/dolfinx/dolfinx_jit_parameters.json
 
 unit-tests-python: &unit-tests-python
   name: Run unit tests (Python, serial)
@@ -103,9 +106,8 @@ unit-tests-python-mpi: &unit-tests-python-mpi
 jobs:
   build-real:
     docker:
-      - image: fenicsproject/test-env:mpich
+      - image: fenicsproject/test-env:latest-mpich
     environment:
-      MPLBACKEND: "agg"
       DEBIAN_FRONTEND: "noninteractive"
       PETSC_ARCH: "linux-gnu-real-32"
     steps:
@@ -140,9 +142,8 @@ jobs:
 
   build-complex:
     docker:
-        - image: fenicsproject/test-env:mpich
+      - image: fenicsproject/test-env:latest-mpich
     environment:
-      MPLBACKEND: "agg"
       DEBIAN_FRONTEND: "noninteractive"
       PETSC_ARCH: "linux-gnu-complex-32"
     steps:

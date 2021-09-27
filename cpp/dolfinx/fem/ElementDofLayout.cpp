@@ -1,12 +1,12 @@
 // Copyright (C) 2019 Chris Richardson and Garth N. Wells
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "ElementDofLayout.h"
 #include <array>
-#include <dolfinx/common/log.h>
+#include <cassert>
 #include <dolfinx/mesh/cell_types.h>
 #include <map>
 #include <numeric>
@@ -17,51 +17,17 @@ using namespace dolfinx::fem;
 
 //-----------------------------------------------------------------------------
 ElementDofLayout::ElementDofLayout(
-    int block_size, const std::vector<std::vector<std::set<int>>>& entity_dofs,
+    int block_size,
+    const std::vector<std::vector<std::vector<int>>>& entity_dofs,
+    const std::vector<std::vector<std::vector<int>>>& entity_closure_dofs,
     const std::vector<int>& parent_map,
-    const std::vector<std::shared_ptr<const ElementDofLayout>>& sub_dofmaps,
-    const mesh::CellType cell_type,
-    const Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
-        base_permutations)
+    const std::vector<std::shared_ptr<const ElementDofLayout>>& sub_dofmaps)
     : _block_size(block_size), _parent_map(parent_map), _num_dofs(0),
-      _entity_dofs(entity_dofs), _sub_dofmaps(sub_dofmaps),
-      _base_permutations(base_permutations)
+      _entity_dofs(entity_dofs), _entity_closure_dofs(entity_closure_dofs),
+      _sub_dofmaps(sub_dofmaps)
 {
-  // TODO: Add size check on base_permutations. Size should be:
-  // number of rows = num_edges + 2*num_faces + 4*num_volumes
-  // number of columns = number of dofs
-
   // TODO: Handle global support dofs
 
-  // Compute closure entities
-  // [dim, entity] -> closure{sub_dim, (sub_entities)}
-  std::map<std::array<int, 2>, std::vector<std::set<int>>> entity_closure
-      = mesh::cell_entity_closure(cell_type);
-
-  // dof = _entity_dofs[dim][entity_index][i]
-  _entity_closure_dofs = entity_dofs;
-  for (const auto& entity : entity_closure)
-  {
-    const int dim = entity.first[0];
-    const int index = entity.first[1];
-    assert(dim < (int)entity_dofs.size());
-    assert(index < (int)entity_dofs[dim].size());
-    int subdim = 0;
-    for (const auto& sub_entity : entity.second)
-    {
-      assert(subdim < (int)entity_dofs.size());
-      for (auto sub_index : sub_entity)
-      {
-        assert(sub_index < (int)entity_dofs[subdim].size());
-        _entity_closure_dofs[dim][index].insert(
-            entity_dofs[subdim][sub_index].begin(),
-            entity_dofs[subdim][sub_index].end());
-      }
-      ++subdim;
-    }
-  }
-
-  // dof = _entity_dofs[dim][entity_index][i]
   _num_entity_dofs.fill(0);
   _num_entity_closure_dofs.fill(0);
   assert(entity_dofs.size() == _entity_closure_dofs.size());
@@ -76,25 +42,6 @@ ElementDofLayout::ElementDofLayout(
     {
       _num_dofs += entity_dofs[dim][entity_index].size();
     }
-  }
-
-  // Check that base_permutations has the correct shape
-  int perm_count = 0;
-  const std::array<int, 4> perms_per_dim = {0, 1, 2, 4};
-  for (std::size_t dim = 0; dim < entity_dofs.size() - 1; ++dim)
-  {
-    assert(dim < perms_per_dim.size());
-    assert(dim < entity_dofs.size());
-    perm_count += perms_per_dim[dim] * entity_dofs[dim].size();
-  }
-  if (base_permutations.rows() != perm_count
-      or _base_permutations.cols() != _num_dofs)
-  {
-    throw std::runtime_error("Permutation array has wrong shape. Expected "
-                             + std::to_string(perm_count) + " x "
-                             + std::to_string(_num_dofs) + " but got "
-                             + std::to_string(_base_permutations.rows()) + " x "
-                             + std::to_string(_base_permutations.cols()) + ".");
   }
 }
 //-----------------------------------------------------------------------------
@@ -120,27 +67,23 @@ int ElementDofLayout::num_entity_closure_dofs(int dim) const
 std::vector<int> ElementDofLayout::entity_dofs(int entity_dim,
                                                int cell_entity_index) const
 {
-  const std::set<int>& edofs
-      = _entity_dofs.at(entity_dim).at(cell_entity_index);
-  return std::vector<int>(edofs.begin(), edofs.end());
+  return _entity_dofs.at(entity_dim).at(cell_entity_index);
 }
 //-----------------------------------------------------------------------------
 std::vector<int>
 ElementDofLayout::entity_closure_dofs(int entity_dim,
                                       int cell_entity_index) const
 {
-  const std::set<int>& edofs
-      = _entity_closure_dofs.at(entity_dim).at(cell_entity_index);
-  return std::vector<int>(edofs.begin(), edofs.end());
+  return _entity_closure_dofs.at(entity_dim).at(cell_entity_index);
 }
 //-----------------------------------------------------------------------------
-const std::vector<std::vector<std::set<int>>>&
+const std::vector<std::vector<std::vector<int>>>&
 ElementDofLayout::entity_dofs_all() const
 {
   return _entity_dofs;
 }
 //-----------------------------------------------------------------------------
-const std::vector<std::vector<std::set<int>>>&
+const std::vector<std::vector<std::vector<int>>>&
 ElementDofLayout::entity_closure_dofs_all() const
 {
   return _entity_closure_dofs;

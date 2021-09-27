@@ -19,14 +19,13 @@ Public user interface
    dolfinx.la
    dolfinx.mesh
    dolfinx.pkgconfig
-   dolfinx.plotting
-   dolfinx.legacy
+   dolfinx.plot
 
 
 pybind11 wrapped interface
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-These are interfaces to the C++ component of DOLFIN, and are low-level
+These are interfaces to the C++ component of DOLFINx, and are low-level
 and subject to change. They are not intended for application-level
 use.
 

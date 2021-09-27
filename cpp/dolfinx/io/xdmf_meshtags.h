@@ -1,6 +1,6 @@
 // Copyright (C) 2020 Michal Habera
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -14,6 +14,7 @@
 #include <hdf5.h>
 #include <string>
 #include <vector>
+#include <xtl/xspan.hpp>
 
 namespace dolfinx
 {
@@ -46,8 +47,8 @@ void add_meshtags(MPI_Comm comm, const mesh::MeshTags<T>& meshtags,
   xdmf_mesh::add_topology_data(
       comm, xml_node, h5_id, path_prefix, mesh->topology(), mesh->geometry(),
       dim,
-      Eigen::Map<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>(
-          meshtags.indices().data(), num_active_entities, 1));
+      xtl::span<const std::int32_t>(meshtags.indices().data(),
+                                    num_active_entities));
 
   // Add attribute node with values
   pugi::xml_node attribute_node = xml_node.append_child("Attribute");
@@ -60,14 +61,15 @@ void add_meshtags(MPI_Comm comm, const mesh::MeshTags<T>& meshtags,
   const std::int64_t local_num_values = num_active_entities;
   MPI_Allreduce(&local_num_values, &global_num_values, 1, MPI_INT64_T, MPI_SUM,
                 comm);
-  const std::int64_t offset
-      = dolfinx::MPI::global_offset(comm, num_active_entities, true);
+  const std::int64_t num_local = num_active_entities;
+  std::int64_t offset = 0;
+  MPI_Exscan(&num_local, &offset, 1, dolfinx::MPI::mpi_type<std::int64_t>(),
+             MPI_SUM, comm);
   const bool use_mpi_io = (dolfinx::MPI::size(comm) > 1);
   xdmf_utils::add_data_item(
       attribute_node, h5_id, path_prefix + "/Values",
-      Eigen::Map<const Eigen::Array<T, Eigen::Dynamic, 1>>(
-          meshtags.values().data(), num_active_entities, 1),
-      offset, {global_num_values, 1}, "", use_mpi_io);
+      xtl::span<const T>(meshtags.values().data(), num_active_entities), offset,
+      {global_num_values, 1}, "", use_mpi_io);
 }
 
 } // namespace xdmf_meshtags

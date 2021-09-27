@@ -1,6 +1,6 @@
 // Copyright (C) 2010 Garth N. Wells
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -8,18 +8,14 @@
 
 #include <cstdint>
 
-namespace dolfinx
+namespace dolfinx::mesh
 {
-
-namespace mesh
-{
-// Forward declarations
 class Mesh;
 template <typename T>
 class MeshTags;
-} // namespace mesh
+} // namespace dolfinx::mesh
 
-namespace refinement
+namespace dolfinx::refinement
 {
 
 /// Create uniformly refined mesh
@@ -43,5 +39,4 @@ mesh::Mesh refine(const mesh::Mesh& mesh,
                   const mesh::MeshTags<std::int8_t>& cell_markers,
                   bool redistribute = true);
 
-} // namespace refinement
-} // namespace dolfinx
+} // namespace dolfinx::refinement

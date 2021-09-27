@@ -1,6 +1,6 @@
 # Copyright (C) 2011 Johan Hake
 #
-# This file is part of DOLFINX (https://www.fenicsproject.org)
+# This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for the FunctionSpace class"""
@@ -109,7 +109,7 @@ def test_sub(Q, W):
     assert W.element.num_sub_elements() == X.element.num_sub_elements()
     assert W.element.space_dimension() == X.element.space_dimension()
     assert W.element.value_rank == X.element.value_rank
-    assert W.element.dof_reference_coordinates().shape == X.element.dof_reference_coordinates().shape
+    assert W.element.interpolation_points().shape == X.element.interpolation_points().shape
     assert W.element.signature() == X.element.signature()
 
 

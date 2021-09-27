@@ -1,20 +1,24 @@
-// Copyright (C) 2018-2020 Garth N. Wells
+// Copyright (C) 2018-2021 Garth N. Wells
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "petsc.h"
 #include "assembler.h"
 #include "sparsitybuild.h"
+#include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/FunctionSpace.h>
+#include <dolfinx/la/PETScMatrix.h>
+#include <dolfinx/la/PETScVector.h>
 #include <dolfinx/la/SparsityPattern.h>
+#include <xtl/xspan.hpp>
 
 using namespace dolfinx;
 
 //-----------------------------------------------------------------------------
-la::PETScMatrix dolfinx::fem::create_matrix(const Form<PetscScalar>& a,
-                                            const std::string& type)
+Mat dolfinx::fem::create_matrix(const Form<PetscScalar>& a,
+                                const std::string& type)
 {
   // Build sparsitypattern
   la::SparsityPattern pattern = fem::create_sparsity_pattern(a);
@@ -22,18 +26,11 @@ la::PETScMatrix dolfinx::fem::create_matrix(const Form<PetscScalar>& a,
   // Finalise communication
   pattern.assemble();
 
-  // Initialize matrix
-  common::Timer t1("Init tensor");
-  la::PETScMatrix A(a.mesh()->mpi_comm(), pattern, type);
-  t1.stop();
-
-  return A;
+  return la::create_petsc_matrix(a.mesh()->mpi_comm(), pattern, type);
 }
 //-----------------------------------------------------------------------------
-la::PETScMatrix fem::create_matrix_block(
-    const Eigen::Ref<
-        const Eigen::Array<const fem::Form<PetscScalar>*, Eigen::Dynamic,
-                           Eigen::Dynamic, Eigen::RowMajor>>& a,
+Mat fem::create_matrix_block(
+    const std::vector<std::vector<const fem::Form<PetscScalar>*>>& a,
     const std::string& type)
 {
   // Extract and check row/column ranges
@@ -61,7 +58,7 @@ la::PETScMatrix fem::create_matrix_block(
           = {{V[0][row]->dofmap()->index_map, V[1][col]->dofmap()->index_map}};
       const std::array bs = {V[0][row]->dofmap()->index_map_bs(),
                              V[1][col]->dofmap()->index_map_bs()};
-      if (a(row, col))
+      if (const fem::Form<PetscScalar>* form = a[row][col]; form)
       {
         // Create sparsity pattern for block
         patterns[row].push_back(std::make_unique<la::SparsityPattern>(
@@ -75,15 +72,14 @@ la::PETScMatrix fem::create_matrix_block(
         assert(patterns[row].back());
         auto& sp = patterns[row].back();
         assert(sp);
-        const fem::Form<PetscScalar>& a_ = *a(row, col);
-        if (a_.num_integrals(IntegralType::cell) > 0)
+        if (form->num_integrals(IntegralType::cell) > 0)
           sparsitybuild::cells(*sp, mesh->topology(), dofmaps);
-        if (a_.num_integrals(IntegralType::interior_facet) > 0)
+        if (form->num_integrals(IntegralType::interior_facet) > 0)
         {
           mesh->topology_mutable().create_entities(tdim - 1);
           sparsitybuild::interior_facets(*sp, mesh->topology(), dofmaps);
         }
-        if (a_.num_integrals(IntegralType::exterior_facet) > 0)
+        if (form->num_integrals(IntegralType::exterior_facet) > 0)
         {
           mesh->topology_mutable().create_entities(tdim - 1);
           sparsitybuild::exterior_facets(*sp, mesh->topology(), dofmaps);
@@ -127,7 +123,7 @@ la::PETScMatrix fem::create_matrix_block(
   // Mat constructor
 
   // Initialise matrix
-  la::PETScMatrix A(mesh->mpi_comm(), pattern, type);
+  Mat A = la::create_petsc_matrix(mesh->mpi_comm(), pattern, type);
 
   // Create row and column local-to-global maps (field0, field1, field2,
   // etc), i.e. ghosts of field0 appear before owned indices of field1
@@ -154,7 +150,7 @@ la::PETScMatrix fem::create_matrix_block(
                                &petsc_local_to_global0);
   if (V[0] == V[1])
   {
-    MatSetLocalToGlobalMapping(A.mat(), petsc_local_to_global0,
+    MatSetLocalToGlobalMapping(A, petsc_local_to_global0,
                                petsc_local_to_global0);
     ISLocalToGlobalMappingDestroy(&petsc_local_to_global0);
   }
@@ -164,9 +160,9 @@ la::PETScMatrix fem::create_matrix_block(
     ISLocalToGlobalMappingCreate(MPI_COMM_SELF, 1, _maps[1].size(),
                                  _maps[1].data(), PETSC_COPY_VALUES,
                                  &petsc_local_to_global1);
-    MatSetLocalToGlobalMapping(A.mat(), petsc_local_to_global0,
+    MatSetLocalToGlobalMapping(A, petsc_local_to_global0,
                                petsc_local_to_global1);
-    MatSetLocalToGlobalMapping(A.mat(), petsc_local_to_global0,
+    MatSetLocalToGlobalMapping(A, petsc_local_to_global0,
                                petsc_local_to_global1);
     ISLocalToGlobalMappingDestroy(&petsc_local_to_global0);
     ISLocalToGlobalMappingDestroy(&petsc_local_to_global1);
@@ -175,53 +171,49 @@ la::PETScMatrix fem::create_matrix_block(
   return A;
 }
 //-----------------------------------------------------------------------------
-la::PETScMatrix fem::create_matrix_nest(
-    const Eigen::Ref<
-        const Eigen::Array<const fem::Form<PetscScalar>*, Eigen::Dynamic,
-                           Eigen::Dynamic, Eigen::RowMajor>>& a,
+Mat fem::create_matrix_nest(
+    const std::vector<std::vector<const fem::Form<PetscScalar>*>>& a,
     const std::vector<std::vector<std::string>>& types)
 {
   // Extract and check row/column ranges
   auto V = fem::common_function_spaces(extract_function_spaces(a));
 
   std::vector<std::vector<std::string>> _types(
-      a.rows(), std::vector<std::string>(a.cols()));
+      a.size(), std::vector<std::string>(a[0].size()));
   if (!types.empty())
     _types = types;
 
   // Loop over each form and create matrix
-  Eigen::Array<std::shared_ptr<la::PETScMatrix>, Eigen::Dynamic, Eigen::Dynamic,
-               Eigen::RowMajor>
-      mats(a.rows(), a.cols());
-  Eigen::Array<Mat, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> petsc_mats(
-      a.rows(), a.cols());
-  for (int i = 0; i < a.rows(); ++i)
+  const int rows = a.size();
+  const int cols = a[0].size();
+  std::vector<Mat> mats(rows * cols, nullptr);
+  for (int i = 0; i < rows; ++i)
   {
-    for (int j = 0; j < a.cols(); ++j)
+    for (int j = 0; j < cols; ++j)
     {
-      if (a(i, j))
-      {
-        mats(i, j) = std::make_shared<la::PETScMatrix>(
-            create_matrix(*a(i, j), _types[i][j]));
-        petsc_mats(i, j) = mats(i, j)->mat();
-      }
-      else
-        petsc_mats(i, j) = nullptr;
+      if (const fem::Form<PetscScalar>* form = a[i][j]; form)
+        mats[i * cols + j] = create_matrix(*form, _types[i][j]);
     }
   }
 
   // Initialise block (MatNest) matrix
-  Mat _A;
-  MatCreate(V[0][0]->mesh()->mpi_comm(), &_A);
-  MatSetType(_A, MATNEST);
-  MatNestSetSubMats(_A, petsc_mats.rows(), nullptr, petsc_mats.cols(), nullptr,
-                    petsc_mats.data());
-  MatSetUp(_A);
+  Mat A;
+  MatCreate(V[0][0]->mesh()->mpi_comm(), &A);
+  MatSetType(A, MATNEST);
+  MatNestSetSubMats(A, rows, nullptr, cols, nullptr, mats.data());
+  MatSetUp(A);
 
-  return la::PETScMatrix(_A);
+  // De-reference Mat objects
+  for (std::size_t i = 0; i < mats.size(); ++i)
+  {
+    if (mats[i])
+      MatDestroy(&mats[i]);
+  }
+
+  return A;
 }
 //-----------------------------------------------------------------------------
-la::PETScVector fem::create_vector_block(
+Vec fem::create_vector_block(
     const std::vector<
         std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps)
 {
@@ -254,10 +246,10 @@ la::PETScVector fem::create_vector_block(
   common::IndexMap index_map(maps[0].first.get().comm(), local_size, dest_ranks,
                              ghosts, ghost_owners);
 
-  return la::PETScVector(index_map, 1);
+  return la::create_petsc_vector(index_map, 1);
 }
 //-----------------------------------------------------------------------------
-la::PETScVector fem::create_vector_nest(
+Vec fem::create_vector_nest(
     const std::vector<
         std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps)
 {
@@ -276,7 +268,24 @@ la::PETScVector fem::create_vector_nest(
   Vec y;
   VecCreateNest(vecs[0]->mpi_comm(), petsc_vecs.size(), nullptr,
                 petsc_vecs.data(), &y);
-  return la::PETScVector(y, false);
+  return y;
+}
+//-----------------------------------------------------------------------------
+void fem::assemble_vector_petsc(
+    Vec b, const Form<PetscScalar>& L,
+    const xtl::span<const PetscScalar>& constants,
+    const std::pair<xtl::span<const PetscScalar>, int>& coeffs)
+{
+  Vec b_local;
+  VecGhostGetLocalForm(b, &b_local);
+  PetscInt n = 0;
+  VecGetSize(b_local, &n);
+  PetscScalar* array = nullptr;
+  VecGetArray(b_local, &array);
+  xtl::span<PetscScalar> _b(array, n);
+  fem::assemble_vector<PetscScalar>(_b, L, constants, coeffs);
+  VecRestoreArray(b_local, &array);
+  VecGhostRestoreLocalForm(b, &b_local);
 }
 //-----------------------------------------------------------------------------
 void fem::assemble_vector_petsc(Vec b, const Form<PetscScalar>& L)
@@ -287,8 +296,56 @@ void fem::assemble_vector_petsc(Vec b, const Form<PetscScalar>& L)
   VecGetSize(b_local, &n);
   PetscScalar* array = nullptr;
   VecGetArray(b_local, &array);
-  Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> _b(array, n);
+  xtl::span<PetscScalar> _b(array, n);
   fem::assemble_vector<PetscScalar>(_b, L);
+  VecRestoreArray(b_local, &array);
+  VecGhostRestoreLocalForm(b, &b_local);
+}
+//-----------------------------------------------------------------------------
+void fem::apply_lifting_petsc(
+    Vec b, const std::vector<std::shared_ptr<const Form<PetscScalar>>>& a,
+    const std::vector<xtl::span<const PetscScalar>>& constants,
+    const std::vector<std::pair<xtl::span<const PetscScalar>, int>>& coeffs,
+    const std::vector<
+        std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>>& bcs1,
+    const std::vector<Vec>& x0, double scale)
+{
+  Vec b_local;
+  VecGhostGetLocalForm(b, &b_local);
+  PetscInt n = 0;
+  VecGetSize(b_local, &n);
+  PetscScalar* array = nullptr;
+  VecGetArray(b_local, &array);
+  xtl::span<PetscScalar> _b(array, n);
+
+  if (x0.empty())
+    fem::apply_lifting<PetscScalar>(_b, a, constants, coeffs, bcs1, {}, scale);
+  else
+  {
+    std::vector<xtl::span<const PetscScalar>> x0_ref;
+    std::vector<Vec> x0_local(a.size());
+    std::vector<const PetscScalar*> x0_array(a.size());
+    for (std::size_t i = 0; i < a.size(); ++i)
+    {
+      assert(x0[i]);
+      VecGhostGetLocalForm(x0[i], &x0_local[i]);
+      PetscInt n = 0;
+      VecGetSize(x0_local[i], &n);
+      VecGetArrayRead(x0_local[i], &x0_array[i]);
+      x0_ref.emplace_back(x0_array[i], n);
+    }
+
+    std::vector x0_tmp(x0_ref.begin(), x0_ref.end());
+    fem::apply_lifting<PetscScalar>(_b, a, constants, coeffs, bcs1, x0_tmp,
+                                    scale);
+
+    for (std::size_t i = 0; i < x0_local.size(); ++i)
+    {
+      VecRestoreArrayRead(x0_local[i], &x0_array[i]);
+      VecGhostRestoreLocalForm(x0[i], &x0_local[i]);
+    }
+  }
+
   VecRestoreArray(b_local, &array);
   VecGhostRestoreLocalForm(b, &b_local);
 }
@@ -305,14 +362,13 @@ void fem::apply_lifting_petsc(
   VecGetSize(b_local, &n);
   PetscScalar* array = nullptr;
   VecGetArray(b_local, &array);
-  Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> _b(array, n);
+  xtl::span<PetscScalar> _b(array, n);
 
   if (x0.empty())
     fem::apply_lifting<PetscScalar>(_b, a, bcs1, {}, scale);
   else
   {
-    std::vector<Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>
-        x0_ref;
+    std::vector<xtl::span<const PetscScalar>> x0_ref;
     std::vector<Vec> x0_local(a.size());
     std::vector<const PetscScalar*> x0_array(a.size());
     for (std::size_t i = 0; i < a.size(); ++i)
@@ -325,8 +381,7 @@ void fem::apply_lifting_petsc(
       x0_ref.emplace_back(x0_array[i], n);
     }
 
-    std::vector<Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>
-        x0_tmp(x0_ref.begin(), x0_ref.end());
+    std::vector x0_tmp(x0_ref.begin(), x0_ref.end());
     fem::apply_lifting<PetscScalar>(_b, a, bcs1, x0_tmp, scale);
 
     for (std::size_t i = 0; i < x0_local.size(); ++i)
@@ -349,8 +404,7 @@ void fem::set_bc_petsc(
   VecGetLocalSize(b, &n);
   PetscScalar* array = nullptr;
   VecGetArray(b, &array);
-  Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> _b(array, n);
-
+  xtl::span<PetscScalar> _b(array, n);
   if (x0)
   {
     Vec x0_local;
@@ -359,8 +413,7 @@ void fem::set_bc_petsc(
     VecGetSize(x0_local, &n);
     const PetscScalar* array = nullptr;
     VecGetArrayRead(x0_local, &array);
-    Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> _x0(array,
-                                                                        n);
+    xtl::span<const PetscScalar> _x0(array, n);
     fem::set_bc<PetscScalar>(_b, bcs, _x0, scale);
     VecRestoreArrayRead(x0_local, &array);
     VecGhostRestoreLocalForm(x0, &x0_local);

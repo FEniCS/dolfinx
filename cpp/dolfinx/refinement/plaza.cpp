@@ -1,6 +1,6 @@
 // Copyright (C) 2014-2020 Chris Richardson
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -16,6 +16,7 @@
 #include <limits>
 #include <map>
 #include <vector>
+#include <xtensor/xnorm.hpp>
 
 using namespace dolfinx;
 using namespace dolfinx::refinement;
@@ -28,7 +29,7 @@ namespace
 // face must be marked, if any edge of face is marked)
 void enforce_rules(
     const MPI_Comm& neighbor_comm,
-    const std::map<std::int32_t, std::set<std::int32_t>>& shared_edges,
+    const std::map<std::int32_t, std::vector<std::int32_t>>& shared_edges,
     std::vector<bool>& marked_edges, const mesh::Mesh& mesh,
     const std::vector<std::int32_t>& long_edge)
 {
@@ -295,8 +296,6 @@ face_long_edge(const mesh::Mesh& mesh)
   if (tdim == 2)
     edge_ratio_ok.resize(num_faces);
 
-  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x
-      = mesh.geometry().x();
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
 
   auto c_to_v = mesh.topology().connectivity(tdim, 0);
@@ -310,6 +309,7 @@ face_long_edge(const mesh::Mesh& mesh)
   auto map_e = mesh.topology().index_map(1);
   assert(map_e);
   std::vector<double> edge_length(map_e->size_local() + map_e->num_ghosts());
+  const xt::xtensor<double, 2>& x = mesh.geometry().x();
   for (std::size_t e = 0; e < edge_length.size(); ++e)
   {
     // Get first attached cell
@@ -322,15 +322,16 @@ face_long_edge(const mesh::Mesh& mesh)
     auto it0 = std::find(cell_vertices.begin(), cell_vertices.end(),
                          edge_vertices[0]);
     assert(it0 != cell_vertices.end());
-    const int local0 = std::distance(cell_vertices.begin(), it0);
+    const std::size_t local0 = std::distance(cell_vertices.begin(), it0);
     auto it1 = std::find(cell_vertices.begin(), cell_vertices.end(),
                          edge_vertices[1]);
     assert(it1 != cell_vertices.end());
-    const int local1 = std::distance(cell_vertices.begin(), it1);
+    const std::size_t local1 = std::distance(cell_vertices.begin(), it1);
 
     auto x_dofs = x_dofmap.links(c);
-    edge_length[e]
-        = (x.row(x_dofs[local0]) - x.row(x_dofs[local1])).matrix().norm();
+    auto x0 = xt::row(x, x_dofs[local0]);
+    auto x1 = xt::row(x, x_dofs[local1]);
+    edge_length[e] = xt::norm_l2(x0 - x1)();
   }
 
   // Get longest edge of each face
@@ -381,11 +382,13 @@ face_long_edge(const mesh::Mesh& mesh)
 }
 //-----------------------------------------------------------------------------
 // Convenient interface for both uniform and marker refinement
-mesh::Mesh compute_refinement(
+std::tuple<graph::AdjacencyList<std::int64_t>, xt::xtensor<double, 2>,
+           std::vector<std::int32_t>>
+compute_refinement(
     const MPI_Comm& neighbor_comm, const std::vector<bool>& marked_edges,
-    const std::map<std::int32_t, std::set<std::int32_t>> shared_edges,
+    const std::map<std::int32_t, std::vector<std::int32_t>> shared_edges,
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& long_edge,
-    const std::vector<bool>& edge_ratio_ok, bool redistribute)
+    const std::vector<bool>& edge_ratio_ok)
 {
   const std::int32_t tdim = mesh.topology().dim();
   const std::int32_t num_cell_edges = tdim * 3 - 3;
@@ -396,7 +399,7 @@ mesh::Mesh compute_refinement(
       = refinement::create_new_vertices(neighbor_comm, shared_edges, mesh,
                                         marked_edges);
 
-  std::vector<std::int64_t> parent_cell;
+  std::vector<std::int32_t> parent_cell;
   std::vector<std::int64_t> indices(num_cell_vertices + num_cell_edges);
   std::vector<int> marked_edge_list;
   std::vector<std::int32_t> simplex_set;
@@ -501,29 +504,8 @@ mesh::Mesh compute_refinement(
   graph::AdjacencyList<std::int64_t> cell_adj(std::move(cell_topology),
                                               std::move(offsets));
 
-  const bool serial = (dolfinx::MPI::size(mesh.mpi_comm()) == 1);
-  if (serial)
-  {
-    return mesh::create_mesh(mesh.mpi_comm(), cell_adj, mesh.geometry().cmap(),
-                             new_vertex_coordinates, mesh::GhostMode::none);
-  }
-  else
-  {
-    const int num_ghost_cells = map_c->num_ghosts();
-    // Check if mesh has ghost cells on any rank
-    // FIXME: this is not a robust test. Should be user option.
-    int max_ghost_cells = 0;
-    MPI_Allreduce(&num_ghost_cells, &max_ghost_cells, 1, MPI_INT, MPI_MAX,
-                  mesh.mpi_comm());
-
-    // Build mesh
-    const mesh::GhostMode ghost_mode = (max_ghost_cells == 0)
-                                           ? mesh::GhostMode::none
-                                           : mesh::GhostMode::shared_facet;
-
-    return refinement::partition(mesh, cell_adj, new_vertex_coordinates,
-                                 redistribute, ghost_mode);
-  }
+  return {std::move(cell_adj), std::move(new_vertex_coordinates),
+          std::move(parent_cell)};
 }
 //-----------------------------------------------------------------------------
 } // namespace
@@ -531,6 +513,69 @@ mesh::Mesh compute_refinement(
 //-----------------------------------------------------------------------------
 mesh::Mesh plaza::refine(const mesh::Mesh& mesh, bool redistribute)
 {
+  auto [cell_adj, new_vertex_coordinates, parent_cell]
+      = plaza::compute_refinement_data(mesh);
+
+  if (dolfinx::MPI::size(mesh.mpi_comm()) == 1)
+  {
+    return mesh::create_mesh(mesh.mpi_comm(), cell_adj, mesh.geometry().cmap(),
+                             new_vertex_coordinates, mesh::GhostMode::none);
+  }
+
+  const std::shared_ptr<const common::IndexMap> map_c
+      = mesh.topology().index_map(mesh.topology().dim());
+  const int num_ghost_cells = map_c->num_ghosts();
+  // Check if mesh has ghost cells on any rank
+  // FIXME: this is not a robust test. Should be user option.
+  int max_ghost_cells = 0;
+  MPI_Allreduce(&num_ghost_cells, &max_ghost_cells, 1, MPI_INT, MPI_MAX,
+                mesh.mpi_comm());
+
+  // Build mesh
+  const mesh::GhostMode ghost_mode = max_ghost_cells == 0
+                                         ? mesh::GhostMode::none
+                                         : mesh::GhostMode::shared_facet;
+
+  return refinement::partition(mesh, cell_adj, new_vertex_coordinates,
+                               redistribute, ghost_mode);
+}
+//-----------------------------------------------------------------------------
+mesh::Mesh plaza::refine(const mesh::Mesh& mesh,
+                         const mesh::MeshTags<std::int8_t>& refinement_marker,
+                         bool redistribute)
+{
+  auto [cell_adj, new_vertex_coordinates, parent_cell]
+      = plaza::compute_refinement_data(mesh, refinement_marker);
+
+  if (dolfinx::MPI::size(mesh.mpi_comm()) == 1)
+  {
+    return mesh::create_mesh(mesh.mpi_comm(), cell_adj, mesh.geometry().cmap(),
+                             new_vertex_coordinates, mesh::GhostMode::none);
+  }
+
+  const std::shared_ptr<const common::IndexMap> map_c
+      = mesh.topology().index_map(mesh.topology().dim());
+  const int num_ghost_cells = map_c->num_ghosts();
+  // Check if mesh has ghost cells on any rank
+  // FIXME: this is not a robust test. Should be user option.
+  int max_ghost_cells = 0;
+  MPI_Allreduce(&num_ghost_cells, &max_ghost_cells, 1, MPI_INT, MPI_MAX,
+                mesh.mpi_comm());
+
+  // Build mesh
+  const mesh::GhostMode ghost_mode = max_ghost_cells == 0
+                                         ? mesh::GhostMode::none
+                                         : mesh::GhostMode::shared_facet;
+
+  return refinement::partition(mesh, cell_adj, new_vertex_coordinates,
+                               redistribute, ghost_mode);
+}
+//------------------------------------------------------------------------------
+std::tuple<graph::AdjacencyList<std::int64_t>, xt::xtensor<double, 2>,
+           std::vector<std::int32_t>>
+plaza::compute_refinement_data(const mesh::Mesh& mesh)
+{
+
   if (mesh.topology().cell_type() != mesh::CellType::triangle
       and mesh.topology().cell_type() != mesh::CellType::tetrahedron)
   {
@@ -547,16 +592,20 @@ mesh::Mesh plaza::refine(const mesh::Mesh& mesh, bool redistribute)
                                  true);
 
   const auto [long_edge, edge_ratio_ok] = face_long_edge(mesh);
-  mesh::Mesh new_mesh
+  auto [cell_adj, new_vertex_coordinates, parent_cell]
       = compute_refinement(neighbor_comm, marked_edges, shared_edges, mesh,
-                           long_edge, edge_ratio_ok, redistribute);
+                           long_edge, edge_ratio_ok);
   MPI_Comm_free(&neighbor_comm);
-  return new_mesh;
+
+  return {std::move(cell_adj), std::move(new_vertex_coordinates),
+          std::move(parent_cell)};
 }
-//-----------------------------------------------------------------------------
-mesh::Mesh plaza::refine(const mesh::Mesh& mesh,
-                         const mesh::MeshTags<std::int8_t>& refinement_marker,
-                         bool redistribute)
+//------------------------------------------------------------------------------
+std::tuple<graph::AdjacencyList<std::int64_t>, xt::xtensor<double, 2>,
+           std::vector<std::int32_t>>
+plaza::compute_refinement_data(
+    const mesh::Mesh& mesh,
+    const mesh::MeshTags<std::int8_t>& refinement_marker)
 {
   if (mesh.topology().cell_type() != mesh::CellType::triangle
       and mesh.topology().cell_type() != mesh::CellType::tetrahedron)
@@ -621,10 +670,11 @@ mesh::Mesh plaza::refine(const mesh::Mesh& mesh,
   const auto [long_edge, edge_ratio_ok] = face_long_edge(mesh);
   enforce_rules(neighbor_comm, shared_edges, marked_edges, mesh, long_edge);
 
-  mesh::Mesh new_mesh
+  auto [cell_adj, new_vertex_coordinates, parent_cell]
       = compute_refinement(neighbor_comm, marked_edges, shared_edges, mesh,
-                           long_edge, edge_ratio_ok, redistribute);
+                           long_edge, edge_ratio_ok);
   MPI_Comm_free(&neighbor_comm);
-  return new_mesh;
+  return {std::move(cell_adj), std::move(new_vertex_coordinates),
+          std::move(parent_cell)};
 }
 //-----------------------------------------------------------------------------

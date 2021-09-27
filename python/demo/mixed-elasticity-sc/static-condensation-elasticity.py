@@ -95,14 +95,14 @@ f = ufl.as_vector([0.0, 1.0 / 16])
 b1 = - ufl.inner(f, v) * ds(1)
 
 # JIT compile individual blocks tabulation kernels
-ufc_form00 = dolfinx.jit.ffcx_jit(mesh.mpi_comm(), a00)
-kernel00 = ufc_form00.create_cell_integral(-1).tabulate_tensor
+ufc_form00, _, _ = dolfinx.jit.ffcx_jit(mesh.mpi_comm(), a00)
+kernel00 = ufc_form00.integrals(0)[0].tabulate_tensor
 
-ufc_form01 = dolfinx.jit.ffcx_jit(mesh.mpi_comm(), a01)
-kernel01 = ufc_form01.create_cell_integral(-1).tabulate_tensor
+ufc_form01, _, _ = dolfinx.jit.ffcx_jit(mesh.mpi_comm(), a01)
+kernel01 = ufc_form01.integrals(0)[0].tabulate_tensor
 
-ufc_form10 = dolfinx.jit.ffcx_jit(mesh.mpi_comm(), a10)
-kernel10 = ufc_form10.create_cell_integral(-1).tabulate_tensor
+ufc_form10, _, _ = dolfinx.jit.ffcx_jit(mesh.mpi_comm(), a10)
+kernel10 = ufc_form10.integrals(0)[0].tabulate_tensor
 
 ffi = cffi.FFI()
 
@@ -115,27 +115,23 @@ c_signature = numba.types.void(
     numba.types.CPointer(numba.typeof(PETSc.ScalarType())),
     numba.types.CPointer(numba.types.double),
     numba.types.CPointer(numba.types.int32),
-    numba.types.CPointer(numba.types.uint8), numba.types.uint32)
+    numba.types.CPointer(numba.types.uint8))
 
 
 @numba.cfunc(c_signature, nopython=True)
-def tabulate_condensed_tensor_A(A_, w_, c_, coords_, entity_local_index, permutation=ffi.NULL,
-                                cell_permutation_info=0):
+def tabulate_condensed_tensor_A(A_, w_, c_, coords_, entity_local_index, permutation=ffi.NULL):
     # Prepare target condensed local elem tensor
     A = numba.carray(A_, (Usize, Usize), dtype=PETSc.ScalarType)
 
     # Tabulate all sub blocks locally
     A00 = numpy.zeros((Ssize, Ssize), dtype=PETSc.ScalarType)
-    kernel00(ffi.from_buffer(A00), w_, c_, coords_, entity_local_index, permutation,
-             cell_permutation_info)
+    kernel00(ffi.from_buffer(A00), w_, c_, coords_, entity_local_index, permutation)
 
     A01 = numpy.zeros((Ssize, Usize), dtype=PETSc.ScalarType)
-    kernel01(ffi.from_buffer(A01), w_, c_, coords_, entity_local_index, permutation,
-             cell_permutation_info)
+    kernel01(ffi.from_buffer(A01), w_, c_, coords_, entity_local_index, permutation)
 
     A10 = numpy.zeros((Usize, Ssize), dtype=PETSc.ScalarType)
-    kernel10(ffi.from_buffer(A10), w_, c_, coords_, entity_local_index, permutation,
-             cell_permutation_info)
+    kernel10(ffi.from_buffer(A10), w_, c_, coords_, entity_local_index, permutation)
 
     # A = - A10 * A00^{-1} * A01
     A[:, :] = - A10 @ numpy.linalg.solve(A00, A01)
@@ -154,7 +150,9 @@ b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 dolfinx.fem.set_bc(b, [bc])
 
 uc = dolfinx.Function(U)
-dolfinx.la.solve(A_cond, uc.vector, b)
+solver = PETSc.KSP().create(A_cond.getComm())
+solver.setOperators(A_cond)
+solver.solve(b, uc.vector)
 
 # Pure displacement based formulation
 a = - ufl.inner(sigma_u(u), ufl.grad(v)) * ufl.dx

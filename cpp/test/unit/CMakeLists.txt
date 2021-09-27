@@ -1,7 +1,7 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.16)
 project(dolfinx-tests)
 
-# Find DOLFINX config file
+# Find DOLFINx config file
 find_package(DOLFINX REQUIRED)
 
 # Make test executable
@@ -9,7 +9,8 @@ set(TEST_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/common/sub_systems_manager.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/common/index_map.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/mesh/cmap.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/common/sort.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/la/vector.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/mesh/distributed_mesh.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/common/CIFailure.cpp
   )

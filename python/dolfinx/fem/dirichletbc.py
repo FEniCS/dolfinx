@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) 2017-2018 Chris N. Richardson and Garth N. Wells
 #
-# This file is part of DOLFINX (https://www.fenicsproject.org)
+# This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Support for representing Dirichlet boundary conditions that are enforced
@@ -9,10 +9,11 @@ via modification of linear systems.
 
 """
 
+import collections.abc
 import types
 import typing
-import collections.abc
 
+import numpy as np
 import ufl
 from dolfinx import cpp
 from dolfinx.fem.function import Function, FunctionSpace
@@ -95,6 +96,7 @@ def locate_dofs_topological(V: typing.Iterable[typing.Union[cpp.fem.FunctionSpac
         first column.
     """
 
+    _entities = np.asarray(entities, dtype=np.int32)
     if isinstance(V, collections.abc.Sequence):
         _V = []
         for space in V:
@@ -102,13 +104,13 @@ def locate_dofs_topological(V: typing.Iterable[typing.Union[cpp.fem.FunctionSpac
                 _V.append(space._cpp_object)
             except AttributeError:
                 _V.append(space)
-        return cpp.fem.locate_dofs_topological(_V, entity_dim, entities, remote)
+        return cpp.fem.locate_dofs_topological(_V, entity_dim, _entities, remote)
     else:
         try:
             _V = V._cpp_object
         except AttributeError:
             _V = V
-        return cpp.fem.locate_dofs_topological(_V, entity_dim, entities, remote)
+        return cpp.fem.locate_dofs_topological(_V, entity_dim, _entities, remote)
 
 
 class DirichletBC(cpp.fem.DirichletBC):

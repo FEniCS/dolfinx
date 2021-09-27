@@ -1,16 +1,22 @@
-// Copyright (C) 2018-2020 Garth N. Wells
+// Copyright (C) 2018-2021 Garth N. Wells
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #pragma once
 
-#include <dolfinx/la/PETScMatrix.h>
-#include <dolfinx/la/PETScVector.h>
 #include <memory>
+#include <petscmat.h>
 #include <petscvec.h>
+#include <utility>
 #include <vector>
+#include <xtl/xspan.hpp>
+
+namespace dolfinx::common
+{
+class IndexMap;
+}
 
 namespace dolfinx::fem
 {
@@ -25,37 +31,39 @@ class FunctionSpace;
 /// @param[in] a A bilinear form
 /// @param[in] type The PETSc matrix type to create
 /// @return A sparse matrix with a layout and sparsity that matches the
-/// bilinear form
-la::PETScMatrix create_matrix(const Form<PetscScalar>& a,
-                              const std::string& type = std::string());
+/// bilinear form. The caller is responsible for destroying the Mat
+/// object.
+Mat create_matrix(const Form<PetscScalar>& a,
+                  const std::string& type = std::string());
 
 /// Initialise a monolithic matrix for an array of bilinear forms
 /// @param[in] a Rectangular array of bilinear forms. The `a(i, j)` form
 /// will correspond to the `(i, j)` block in the returned matrix
 /// @param[in] type The type of PETSc Mat. If empty the PETSc default is
 /// used.
-/// @return A sparse matrix  with a layout and sparsity that
-/// matches the bilinear forms
-la::PETScMatrix create_matrix_block(
-    const Eigen::Ref<
-        const Eigen::Array<const fem::Form<PetscScalar>*, Eigen::Dynamic,
-                           Eigen::Dynamic, Eigen::RowMajor>>& a,
+/// @return A sparse matrix  with a layout and sparsity that matches the
+/// bilinear forms. The caller is responsible for destroying the Mat
+/// object.
+Mat create_matrix_block(
+    const std::vector<std::vector<const fem::Form<PetscScalar>*>>& a,
     const std::string& type = std::string());
 
 /// Create nested (MatNest) matrix
-la::PETScMatrix create_matrix_nest(
-    const Eigen::Ref<
-        const Eigen::Array<const fem::Form<PetscScalar>*, Eigen::Dynamic,
-                           Eigen::Dynamic, Eigen::RowMajor>>& a,
+///
+/// The caller is responsible for destroying the Mat object
+Mat create_matrix_nest(
+    const std::vector<std::vector<const fem::Form<PetscScalar>*>>& a,
     const std::vector<std::vector<std::string>>& types);
 
 /// Initialise monolithic vector. Vector is not zeroed.
-la::PETScVector create_vector_block(
+///
+/// The caller is responsible for destroying the Mat object
+Vec create_vector_block(
     const std::vector<
         std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps);
 
 /// Create nested (VecNest) vector. Vector is not zeroed.
-la::PETScVector create_vector_nest(
+Vec create_vector_nest(
     const std::vector<
         std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps);
 
@@ -66,11 +74,53 @@ la::PETScVector create_vector_nest(
 /// responsible for calling VecGhostUpdateBegin/End.
 ///
 /// @param[in,out] b The PETsc vector to assemble the form into. The
-///   vector must already be initialised with the correct size. The
-///   process-local contribution of the form is assembled into this
-///   vector. It is not zeroed before assembly.
+/// vector must already be initialised with the correct size. The
+/// process-local contribution of the form is assembled into this
+/// vector. It is not zeroed before assembly.
+/// @param[in] L The linear form to assemble
+/// @param[in] constants The constants that appear in `L`
+/// @param[in] coeffs The coefficients that appear in `L`
+void assemble_vector_petsc(
+    Vec b, const Form<PetscScalar>& L,
+    const xtl::span<const PetscScalar>& constants,
+    const std::pair<xtl::span<const PetscScalar>, int>& coeffs);
+
+/// Assemble linear form into an already allocated PETSc vector. Ghost
+/// contributions are not accumulated (not sent to owner). Caller is
+/// responsible for calling VecGhostUpdateBegin/End.
+///
+/// @param[in,out] b The PETsc vector to assemble the form into. The
+/// vector must already be initialised with the correct size. The
+/// process-local contribution of the form is assembled into this
+/// vector. It is not zeroed before assembly.
 /// @param[in] L The linear form to assemble
 void assemble_vector_petsc(Vec b, const Form<PetscScalar>& L);
+
+// FIXME: clarify how x0 is used
+// FIXME: if bcs entries are set
+
+// FIXME: need to pass an array of Vec for x0?
+// FIXME: clarify zeroing of vector
+
+/// Modify b such that:
+///
+///   b <- b - scale * A_j (g_j - x0_j)
+///
+/// where j is a block (nest) index. For a non-blocked problem j = 0. The
+/// boundary conditions bcs1 are on the trial spaces V_j. The forms in
+/// [a] must have the same test space as L (from which b was built), but the
+/// trial space may differ. If x0 is not supplied, then it is treated as
+/// zero.
+///
+/// Ghost contributions are not accumulated (not sent to owner). Caller
+/// is responsible for calling VecGhostUpdateBegin/End.
+void apply_lifting_petsc(
+    Vec b, const std::vector<std::shared_ptr<const Form<PetscScalar>>>& a,
+    const std::vector<xtl::span<const PetscScalar>>& constants,
+    const std::vector<std::pair<xtl::span<const PetscScalar>, int>>& coeffs,
+    const std::vector<
+        std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>>& bcs1,
+    const std::vector<Vec>& x0, double scale);
 
 // FIXME: clarify how x0 is used
 // FIXME: if bcs entries are set
@@ -111,4 +161,4 @@ void set_bc_petsc(
     const std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>& bcs,
     const Vec x0, double scale = 1.0);
 
-}
+} // namespace dolfinx::fem

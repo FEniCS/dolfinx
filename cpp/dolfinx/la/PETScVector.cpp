@@ -1,16 +1,15 @@
 // Copyright (C) 2004-2018 Johan Hoffman, Johan Jansson, Anders Logg and Garth
 // N. Wells
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "PETScVector.h"
 #include "utils.h"
+#include <algorithm>
 #include <cstddef>
-#include <cstring>
 #include <dolfinx/common/IndexMap.h>
-#include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
 
 using namespace dolfinx;
@@ -62,17 +61,15 @@ std::vector<IS> la::create_petsc_index_sets(
   return is;
 }
 //-----------------------------------------------------------------------------
-Vec la::create_ghosted_vector(
-    const common::IndexMap& map, int bs,
-    const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>& x)
+Vec la::create_ghosted_vector(const common::IndexMap& map, int bs,
+                              xtl::span<PetscScalar> x)
 {
   const std::int32_t size_local = bs * map.size_local();
   const std::int64_t size_global = bs * map.size_global();
   const std::vector<PetscInt> ghosts(map.ghosts().begin(), map.ghosts().end());
   Vec vec;
   VecCreateGhostBlockWithArray(map.comm(), bs, size_local, size_global,
-                               ghosts.size(), ghosts.data(), x.array().data(),
-                               &vec);
+                               ghosts.size(), ghosts.data(), x.data(), &vec);
   return vec;
 }
 //-----------------------------------------------------------------------------
@@ -101,8 +98,7 @@ Vec la::create_petsc_vector(MPI_Comm comm, std::array<std::int64_t, 2> range,
   return x;
 }
 //-----------------------------------------------------------------------------
-std::vector<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
-la::get_local_vectors(
+std::vector<std::vector<PetscScalar>> la::get_local_vectors(
     const Vec x,
     const std::vector<
         std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps)
@@ -119,20 +115,21 @@ la::get_local_vectors(
   VecGetSize(x_local, &n);
   const PetscScalar* array = nullptr;
   VecGetArrayRead(x_local, &array);
-  Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> _x(array, n);
+  xtl::span _x(array, n);
 
-  // Copy PETSc Vec data in to Eigen vector
-  std::vector<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x_b;
+  // Copy PETSc Vec data in to local vectors
+  std::vector<std::vector<PetscScalar>> x_b;
   int offset = 0;
   int offset_ghost = offset_owned; // Ghost DoFs start after owned
   for (auto map : maps)
   {
     const std::int32_t size_owned = map.first.get().size_local() * map.second;
     const std::int32_t size_ghost = map.first.get().num_ghosts() * map.second;
-    x_b.emplace_back(
-        Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>(size_owned + size_ghost));
-    x_b.back().head(size_owned) = _x.segment(offset, size_owned);
-    x_b.back().tail(size_ghost) = _x.segment(offset_ghost, size_ghost);
+
+    x_b.emplace_back(size_owned + size_ghost);
+    std::copy_n(std::next(_x.begin(), offset), size_owned, x_b.back().begin());
+    std::copy_n(std::next(_x.begin(), offset_ghost), size_ghost,
+                std::next(x_b.back().begin(), size_owned));
 
     offset += size_owned;
     offset_ghost += size_ghost;
@@ -145,8 +142,7 @@ la::get_local_vectors(
 }
 //-----------------------------------------------------------------------------
 void la::scatter_local_vectors(
-    Vec x,
-    const std::vector<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>& x_b,
+    Vec x, const std::vector<xtl::span<const PetscScalar>>& x_b,
     const std::vector<
         std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps)
 {
@@ -158,15 +154,15 @@ void la::scatter_local_vectors(
   for (auto& map : maps)
     offset_owned += map.first.get().size_local() * map.second;
 
-  // Copy Eigen vectors into PETSc Vec
   Vec x_local;
   VecGhostGetLocalForm(x, &x_local);
   PetscInt n = 0;
   VecGetSize(x_local, &n);
   PetscScalar* array = nullptr;
   VecGetArray(x_local, &array);
-  Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> _x(array, n);
+  xtl::span _x(array, n);
 
+  // Copy local vectors into PETSc Vec
   int offset = 0;
   int offset_ghost = offset_owned; // Ghost DoFs start after owned
   for (std::size_t i = 0; i < maps.size(); ++i)
@@ -175,8 +171,10 @@ void la::scatter_local_vectors(
         = maps[i].first.get().size_local() * maps[i].second;
     const std::int32_t size_ghost
         = maps[i].first.get().num_ghosts() * maps[i].second;
-    _x.segment(offset, size_owned) = x_b[i].head(size_owned);
-    _x.segment(offset_ghost, size_ghost) = x_b[i].tail(size_ghost);
+
+    std::copy_n(x_b[i].begin(), size_owned, std::next(_x.begin(), offset));
+    std::copy_n(std::next(x_b[i].begin(), size_owned), size_ghost,
+                std::next(_x.begin(), offset_ghost));
 
     offset += size_owned;
     offset_ghost += size_ghost;

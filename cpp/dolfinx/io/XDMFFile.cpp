@@ -1,6 +1,6 @@
 // Copyright (C) 2012-2020 Chris N. Richardson, Garth N. Wells and Michal Habera
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -25,6 +25,66 @@
 
 using namespace dolfinx;
 using namespace dolfinx::io;
+
+namespace
+{
+template <typename Scalar>
+void _write_function(dolfinx::MPI::Comm& comm,
+                     const fem::Function<Scalar>& function, const double t,
+                     const std::string& mesh_xpath, pugi::xml_document& xml_doc,
+                     hid_t h5_id, const std::string& filename)
+{
+  const std::string timegrid_xpath
+      = "/Xdmf/Domain/Grid[@GridType='Collection'][@Name='" + function.name
+        + "']";
+  pugi::xml_node timegrid_node
+      = xml_doc.select_node(timegrid_xpath.c_str()).node();
+
+  if (!timegrid_node)
+  {
+    pugi::xml_node domain_node = xml_doc.select_node("/Xdmf/Domain").node();
+    timegrid_node = domain_node.append_child("Grid");
+    timegrid_node.append_attribute("Name") = function.name.c_str();
+    timegrid_node.append_attribute("GridType") = "Collection";
+    timegrid_node.append_attribute("CollectionType") = "Temporal";
+  }
+
+  assert(timegrid_node);
+
+  pugi::xml_node grid_node = timegrid_node.append_child("Grid");
+  assert(grid_node);
+  grid_node.append_attribute("Name") = function.name.c_str();
+  grid_node.append_attribute("GridType") = "Uniform";
+
+  pugi::xml_node mesh_node = xml_doc.select_node(mesh_xpath.c_str()).node();
+  if (!mesh_node)
+  {
+    LOG(WARNING) << "No mesh found at '" << mesh_xpath
+                 << "'. Write mesh before function!";
+  }
+
+  const std::string ref_path
+      = "xpointer(" + mesh_xpath + "/*[self::Topology or self::Geometry])";
+
+  pugi::xml_node topo_geo_ref = grid_node.append_child("xi:include");
+  topo_geo_ref.append_attribute("xpointer") = ref_path.c_str();
+  assert(topo_geo_ref);
+
+  std::string t_str = boost::lexical_cast<std::string>(t);
+  pugi::xml_node time_node = grid_node.append_child("Time");
+  time_node.append_attribute("Value") = t_str.c_str();
+  assert(time_node);
+
+  // Add the mesh Grid to the domain
+  xdmf_function::add_function(comm.comm(), function, t, grid_node, h5_id);
+
+  // Save XML file (on process 0 only)
+  if (dolfinx::MPI::rank(comm.comm()) == 0)
+    xml_doc.save_file(filename.c_str(), "  ");
+}
+//-----------------------------------------------------------------------------
+
+} // namespace
 
 //-----------------------------------------------------------------------------
 XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename,
@@ -166,22 +226,22 @@ mesh::Mesh XDMFFile::read_mesh(const fem::CoordinateElement& element,
                                const std::string xpath) const
 {
   // Read mesh data
-  const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
-                     Eigen::RowMajor>
-      cells = XDMFFile::read_topology_data(name, xpath);
-  const auto x = XDMFFile::read_geometry_data(name, xpath);
+  const xt::xtensor<std::int64_t, 2> cells
+      = XDMFFile::read_topology_data(name, xpath);
+  const xt::xtensor<double, 2> x = XDMFFile::read_geometry_data(name, xpath);
 
   // Create mesh
   auto [data, offset] = graph::create_adjacency_data(cells);
   graph::AdjacencyList<std::int64_t> cells_adj(std::move(data),
                                                std::move(offset));
+
   mesh::Mesh mesh
       = mesh::create_mesh(_mpi_comm.comm(), cells_adj, element, x, mode);
   mesh.name = name;
   return mesh;
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+xt::xtensor<std::int64_t, 2>
 XDMFFile::read_topology_data(const std::string name,
                              const std::string xpath) const
 {
@@ -198,7 +258,7 @@ XDMFFile::read_topology_data(const std::string name,
   return xdmf_mesh::read_topology_data(_mpi_comm.comm(), _h5_id, grid_node);
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+xt::xtensor<double, 2>
 XDMFFile::read_geometry_data(const std::string name,
                              const std::string xpath) const
 {
@@ -215,59 +275,21 @@ XDMFFile::read_geometry_data(const std::string name,
   return xdmf_mesh::read_geometry_data(_mpi_comm.comm(), _h5_id, grid_node);
 }
 //-----------------------------------------------------------------------------
-void XDMFFile::write_function(const fem::Function<PetscScalar>& function,
-                              const double t, const std::string mesh_xpath)
+void XDMFFile::write_function(const fem::Function<double>& u, double t,
+                              const std::string& mesh_xpath)
 {
-  const std::string timegrid_xpath
-      = "/Xdmf/Domain/Grid[@GridType='Collection'][@Name='" + function.name
-        + "']";
-  pugi::xml_node timegrid_node
-      = _xml_doc->select_node(timegrid_xpath.c_str()).node();
-
-  if (!timegrid_node)
-  {
-    pugi::xml_node domain_node = _xml_doc->select_node("/Xdmf/Domain").node();
-    timegrid_node = domain_node.append_child("Grid");
-    timegrid_node.append_attribute("Name") = function.name.c_str();
-    timegrid_node.append_attribute("GridType") = "Collection";
-    timegrid_node.append_attribute("CollectionType") = "Temporal";
-  }
-
-  assert(timegrid_node);
-
-  pugi::xml_node grid_node = timegrid_node.append_child("Grid");
-  assert(grid_node);
-  grid_node.append_attribute("Name") = function.name.c_str();
-  grid_node.append_attribute("GridType") = "Uniform";
-
-  pugi::xml_node mesh_node = _xml_doc->select_node(mesh_xpath.c_str()).node();
-  if (!mesh_node)
-    LOG(WARNING) << "No mesh found at '" << mesh_xpath
-                 << "'. Write mesh before function!";
-
-  const std::string ref_path
-      = "xpointer(" + mesh_xpath + "/*[self::Topology or self::Geometry])";
-
-  pugi::xml_node topo_geo_ref = grid_node.append_child("xi:include");
-  topo_geo_ref.append_attribute("xpointer") = ref_path.c_str();
-  assert(topo_geo_ref);
-
-  std::string t_str = boost::lexical_cast<std::string>(t);
-  pugi::xml_node time_node = grid_node.append_child("Time");
-  time_node.append_attribute("Value") = t_str.c_str();
-  assert(time_node);
-
-  // Add the mesh Grid to the domain
-  xdmf_function::add_function(_mpi_comm.comm(), function, t, grid_node, _h5_id);
-
-  // Save XML file (on process 0 only)
-  if (MPI::rank(_mpi_comm.comm()) == 0)
-    _xml_doc->save_file(_filename.c_str(), "  ");
+  _write_function(_mpi_comm, u, t, mesh_xpath, *_xml_doc, _h5_id, _filename);
+}
+//-----------------------------------------------------------------------------
+void XDMFFile::write_function(const fem::Function<std::complex<double>>& u,
+                              double t, const std::string& mesh_xpath)
+{
+  _write_function(_mpi_comm, u, t, mesh_xpath, *_xml_doc, _h5_id, _filename);
 }
 //-----------------------------------------------------------------------------
 void XDMFFile::write_meshtags(const mesh::MeshTags<std::int32_t>& meshtags,
-                              const std::string geometry_xpath,
-                              const std::string xpath)
+                              const std::string& geometry_xpath,
+                              const std::string& xpath)
 {
   pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
   if (!node)
@@ -302,9 +324,7 @@ XDMFFile::read_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh,
   if (!grid_node)
     throw std::runtime_error("<Grid> with name '" + name + "' not found.");
 
-  const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
-                     Eigen::RowMajor>
-      entities = read_topology_data(name, xpath);
+  const xt::xtensor<std::int64_t, 2> entities = read_topology_data(name, xpath);
 
   pugi::xml_node values_data_node
       = grid_node.child("Attribute").child("DataItem");
@@ -315,10 +335,9 @@ XDMFFile::read_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh,
       = xdmf_utils::get_cell_type(grid_node.child("Topology"));
   mesh::CellType cell_type = mesh::to_type(cell_type_str.first);
 
-  // Permute entities from VTK to DOLFINX ordering
-  Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      entities1 = io::cells::compute_permutation(
-          entities, io::cells::perm_vtk(cell_type, entities.cols()));
+  // Permute entities from VTK to DOLFINx ordering
+  xt::xtensor<std::int64_t, 2> entities1 = io::cells::compute_permutation(
+      entities, io::cells::perm_vtk(cell_type, entities.shape(1)));
 
   const auto [entities_local, values_local]
       = xdmf_utils::extract_local_entities(*mesh, mesh::cell_dim(cell_type),
@@ -328,7 +347,7 @@ XDMFFile::read_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh,
   graph::AdjacencyList<std::int32_t> entities_adj(std::move(data),
                                                   std::move(offset));
   mesh::MeshTags meshtags = mesh::create_meshtags(
-      mesh, mesh::cell_dim(cell_type), entities_adj, std::move(values_local));
+      mesh, mesh::cell_dim(cell_type), entities_adj, xtl::span(values_local));
   meshtags.name = name;
 
   return meshtags;

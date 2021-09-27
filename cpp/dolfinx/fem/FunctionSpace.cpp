@@ -1,106 +1,26 @@
 // Copyright (C) 2008-2020 Anders Logg and Garth N. Wells
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "FunctionSpace.h"
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/UniqueIdGenerator.h>
-#include <dolfinx/common/types.h>
-#include <dolfinx/common/utils.h>
 #include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/graph/AdjacencyList.h>
-#include <dolfinx/la/utils.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
 #include <vector>
+#include <xtensor/xadapt.hpp>
+#include <xtensor/xtensor.hpp>
+#include <xtensor/xview.hpp>
 
 using namespace dolfinx;
 using namespace dolfinx::fem;
-
-namespace
-{
-Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>
-internal_tabulate_dof_coordinates(
-    std::shared_ptr<const mesh::Mesh> mesh,
-    std::shared_ptr<const fem::FiniteElement> element,
-    std::shared_ptr<const fem::DofMap> dofmap)
-{
-  // This function tabulates the DOF coordinates, with each coordinated
-  // repeated the given number of times
-
-  // Geometric dimension
-  assert(mesh);
-  assert(element);
-  const int gdim = mesh->geometry().dim();
-  const int tdim = mesh->topology().dim();
-
-  // Get local size
-  assert(dofmap);
-  std::shared_ptr<const common::IndexMap> index_map = dofmap->index_map;
-  assert(index_map);
-
-  const int element_block_size = element->block_size();
-  std::int32_t local_size = index_map->size_local() + index_map->num_ghosts();
-  const int scalar_dofs = element->space_dimension() / element_block_size;
-
-  // Dof coordinate on reference element
-  const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& X
-      = element->dof_reference_coordinates();
-
-  // Get coordinate map
-  const fem::CoordinateElement& cmap = mesh->geometry().cmap();
-
-  // Prepare cell geometry
-  const graph::AdjacencyList<std::int32_t>& x_dofmap
-      = mesh->geometry().dofmap();
-
-  // FIXME: Add proper interface for num coordinate dofs
-  const int num_dofs_g = x_dofmap.num_links(0);
-  const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
-      x_g
-      = mesh->geometry().x();
-
-  // Array to hold coordinates to return
-  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> x
-      = Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>::Zero(
-          local_size, 3);
-
-  // Loop over cells and tabulate dofs
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      coordinates(scalar_dofs, gdim);
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      coordinate_dofs(num_dofs_g, gdim);
-
-  auto map = mesh->topology().index_map(tdim);
-  assert(map);
-  const int num_cells = map->size_local() + map->num_ghosts();
-
-  for (int c = 0; c < num_cells; ++c)
-  {
-    // Update cell
-    auto x_dofs = x_dofmap.links(c);
-    for (int i = 0; i < num_dofs_g; ++i)
-      coordinate_dofs.row(i) = x_g.row(x_dofs[i]).head(gdim);
-
-    // Get local-to-global map
-    auto dofs = dofmap->cell_dofs(c);
-
-    // Tabulate dof coordinates on cell
-    cmap.push_forward(coordinates, X, coordinate_dofs);
-
-    // Copy dof coordinates into vector
-    for (Eigen::Index i = 0; i < scalar_dofs; ++i)
-      x.row(dofs[i]).head(gdim) = coordinates.row(i);
-  }
-
-  return x;
-}
-} // namespace
 
 //-----------------------------------------------------------------------------
 FunctionSpace::FunctionSpace(std::shared_ptr<const mesh::Mesh> mesh,
@@ -120,20 +40,6 @@ bool FunctionSpace::operator==(const FunctionSpace& V) const
 bool FunctionSpace::operator!=(const FunctionSpace& V) const
 {
   return !(*this == V);
-}
-//-----------------------------------------------------------------------------
-std::int64_t FunctionSpace::dim() const
-{
-  assert(_dofmap);
-  assert(_dofmap->element_dof_layout);
-  if (_dofmap->element_dof_layout->is_view())
-  {
-    throw std::runtime_error("FunctionSpace dimension not supported for "
-                             "sub-functions");
-  }
-
-  assert(_dofmap->index_map);
-  return _dofmap->index_map->size_global() * _dofmap->index_map_bs();
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<FunctionSpace>
@@ -194,8 +100,8 @@ FunctionSpace::collapse() const
 //-----------------------------------------------------------------------------
 std::vector<int> FunctionSpace::component() const { return _component; }
 //-----------------------------------------------------------------------------
-Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>
-FunctionSpace::tabulate_dof_coordinates() const
+xt::xtensor<double, 2>
+FunctionSpace::tabulate_dof_coordinates(bool transpose) const
 {
   if (!_component.empty())
   {
@@ -203,19 +109,108 @@ FunctionSpace::tabulate_dof_coordinates() const
         "Cannot tabulate coordinates for a FunctionSpace that is a subspace.");
   }
 
-  return internal_tabulate_dof_coordinates(_mesh, _element, _dofmap);
-}
-//-----------------------------------------------------------------------------
-Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>
-FunctionSpace::tabulate_scalar_subspace_dof_coordinates() const
-{
-  if (!_component.empty())
+  // Geometric dimension
+  assert(_mesh);
+  assert(_element);
+  const std::size_t gdim = _mesh->geometry().dim();
+  const int tdim = _mesh->topology().dim();
+
+  // Get dofmap local size
+  assert(_dofmap);
+  std::shared_ptr<const common::IndexMap> index_map = _dofmap->index_map;
+  const int index_map_bs = _dofmap->index_map_bs();
+  const int dofmap_bs = _dofmap->bs();
+  assert(index_map);
+
+  const int element_block_size = _element->block_size();
+  const std::size_t scalar_dofs
+      = _element->space_dimension() / element_block_size;
+  const std::int32_t num_dofs
+      = index_map_bs * (index_map->size_local() + index_map->num_ghosts())
+        / dofmap_bs;
+
+  // Get the dof coordinates on the reference element
+  if (!_element->interpolation_ident())
   {
-    throw std::runtime_error(
-        "Cannot tabulate coordinates for a FunctionSpace that is a subspace.");
+    throw std::runtime_error("Cannot evaluate dof coordinates - this element "
+                             "does not have pointwise evaluation.");
+  }
+  const xt::xtensor<double, 2>& X = _element->interpolation_points();
+
+  // Get coordinate map
+  const fem::CoordinateElement& cmap = _mesh->geometry().cmap();
+
+  // Prepare cell geometry
+  const graph::AdjacencyList<std::int32_t>& x_dofmap
+      = _mesh->geometry().dofmap();
+  // FIXME: Add proper interface for num coordinate dofs
+  const xt::xtensor<double, 2>& x_g = _mesh->geometry().x();
+  const std::size_t num_dofs_g = x_dofmap.num_links(0);
+
+  // Array to hold coordinates to return
+  const std::size_t shape_c0 = transpose ? 3 : num_dofs;
+  const std::size_t shape_c1 = transpose ? num_dofs : 3;
+  xt::xtensor<double, 2> coords = xt::zeros<double>({shape_c0, shape_c1});
+
+  // Loop over cells and tabulate dofs
+  xt::xtensor<double, 2> x = xt::zeros<double>({scalar_dofs, gdim});
+  xt::xtensor<double, 2> coordinate_dofs({num_dofs_g, gdim});
+
+  auto map = _mesh->topology().index_map(tdim);
+  assert(map);
+  const int num_cells = map->size_local() + map->num_ghosts();
+
+  xtl::span<const std::uint32_t> cell_info;
+  if (_element->needs_dof_transformations())
+  {
+    _mesh->topology_mutable().create_entity_permutations();
+    cell_info = xtl::span(_mesh->topology().get_cell_permutation_info());
   }
 
-  return internal_tabulate_dof_coordinates(_mesh, _element, _dofmap);
+  const std::function<void(const xtl::span<double>&,
+                           const xtl::span<const std::uint32_t>&, std::int32_t,
+                           int)>
+      apply_dof_transformation
+      = _element->get_dof_transformation_function<double>();
+
+  const xt::xtensor<double, 2> phi
+      = xt::view(cmap.tabulate(0, X), 0, xt::all(), xt::all(), 0);
+
+  for (int c = 0; c < num_cells; ++c)
+  {
+    // Extract cell geometry
+    auto x_dofs = x_dofmap.links(c);
+    for (std::size_t i = 0; i < x_dofs.size(); ++i)
+    {
+      std::copy_n(xt::row(x_g, x_dofs[i]).begin(), gdim,
+                  std::next(coordinate_dofs.begin(), i * gdim));
+    }
+
+    // Tabulate dof coordinates on cell
+    cmap.push_forward(x, coordinate_dofs, phi);
+    apply_dof_transformation(xtl::span(x.data(), x.size()),
+                             xtl::span(cell_info.data(), cell_info.size()), c,
+                             x.shape(1));
+
+    // Get cell dofmap
+    auto dofs = _dofmap->cell_dofs(c);
+
+    // Copy dof coordinates into vector
+    if (!transpose)
+    {
+      for (std::size_t i = 0; i < dofs.size(); ++i)
+        for (std::size_t j = 0; j < gdim; ++j)
+          coords(dofs[i], j) = x(i, j);
+    }
+    else
+    {
+      for (std::size_t i = 0; i < dofs.size(); ++i)
+        for (std::size_t j = 0; j < gdim; ++j)
+          coords(j, dofs[i]) = x(i, j);
+    }
+  }
+
+  return coords;
 }
 //-----------------------------------------------------------------------------
 std::size_t FunctionSpace::id() const { return _id; }

@@ -1,6 +1,6 @@
 // Copyright (C) 2012-2016 Chris N. Richardson and Garth N. Wells
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -22,25 +22,139 @@
 #include <dolfinx/mesh/cell_types.h>
 #include <dolfinx/mesh/utils.h>
 #include <map>
+#include <xtensor/xadapt.hpp>
+#include <xtensor/xtensor.hpp>
+#include <xtensor/xview.hpp>
 
 using namespace dolfinx;
 using namespace dolfinx::io;
 
 namespace
 {
+//-----------------------------------------------------------------------------
 // Get data width - normally the same as u.value_size(), but expand for
 // 2D vector/tensor because XDMF presents everything as 3D
-std::int64_t get_padded_width(const fem::Function<PetscScalar>& u)
+std::int64_t get_padded_width(const fem::FiniteElement& e)
 {
-  const int width = u.function_space()->element()->value_size();
-  const int rank = u.function_space()->element()->value_rank();
-
+  const int width = e.value_size();
+  const int rank = e.value_rank();
   if (rank == 1 and width == 2)
     return 3;
   else if (rank == 2 and width == 4)
     return 9;
   else
     return width;
+}
+//-----------------------------------------------------------------------------
+template <typename Scalar>
+std::vector<Scalar> _get_point_data_values(const fem::Function<Scalar>& u)
+{
+  std::shared_ptr<const mesh::Mesh> mesh = u.function_space()->mesh();
+  assert(mesh);
+  const xt::xtensor<Scalar, 2> data_values = u.compute_point_values();
+
+  const int width = get_padded_width(*u.function_space()->element());
+  assert(mesh->geometry().index_map());
+  const std::size_t num_local_points
+      = mesh->geometry().index_map()->size_local();
+  assert(data_values.shape(0) >= num_local_points);
+
+  // FIXME: Unpick the below code for the new layout of data from
+  //        GenericFunction::compute_vertex_values
+  std::vector<Scalar> _data_values(width * num_local_points, 0.0);
+  const int value_rank = u.function_space()->element()->value_rank();
+  if (value_rank > 0)
+  {
+    // Transpose vector/tensor data arrays
+    const int value_size = u.function_space()->element()->value_size();
+    for (std::size_t i = 0; i < num_local_points; i++)
+    {
+      for (int j = 0; j < value_size; j++)
+      {
+        int tensor_2d_offset
+            = (j > 1 && value_rank == 2 && value_size == 4) ? 1 : 0;
+        _data_values[i * width + j + tensor_2d_offset] = data_values(i, j);
+      }
+    }
+  }
+  else
+  {
+    _data_values = std::vector<Scalar>(
+        data_values.data(),
+        data_values.data() + num_local_points * data_values.shape(1));
+  }
+
+  return _data_values;
+}
+//-----------------------------------------------------------------------------
+template <typename Scalar>
+std::vector<Scalar> _get_cell_data_values(const fem::Function<Scalar>& u)
+{
+  assert(u.function_space()->dofmap());
+  const auto mesh = u.function_space()->mesh();
+  const int value_size = u.function_space()->element()->value_size();
+  const int value_rank = u.function_space()->element()->value_rank();
+
+  // Allocate memory for function values at cell centres
+  const int tdim = mesh->topology().dim();
+  const std::int32_t num_local_cells
+      = mesh->topology().index_map(tdim)->size_local();
+  const std::int32_t local_size = num_local_cells * value_size;
+
+  // Build lists of dofs and create map
+  std::vector<std::int32_t> dof_set;
+  dof_set.reserve(local_size);
+  const auto dofmap = u.function_space()->dofmap();
+  assert(dofmap->element_dof_layout);
+  const int ndofs = dofmap->element_dof_layout->num_dofs();
+  const int bs = dofmap->bs();
+  assert(ndofs * bs == value_size);
+
+  for (int cell = 0; cell < num_local_cells; ++cell)
+  {
+    // Tabulate dofs
+    auto dofs = dofmap->cell_dofs(cell);
+    for (int i = 0; i < ndofs; ++i)
+    {
+      for (int j = 0; j < bs; ++j)
+        dof_set.push_back(bs * dofs[i] + j);
+    }
+  }
+
+  // Get values
+  std::vector<Scalar> values(dof_set.size());
+  const std::vector<Scalar>& _u = u.x()->array();
+  for (std::size_t i = 0; i < dof_set.size(); ++i)
+    values[i] = _u[dof_set[i]];
+
+  // Pad out data for 2D vectors/tensors
+  if (value_rank == 1 and value_size == 2)
+  {
+    values.resize(3 * num_local_cells);
+    for (int j = (num_local_cells - 1); j >= 0; --j)
+    {
+      std::array<Scalar, 3> nd = {values[j * 2], values[j * 2 + 1], 0.0};
+      std::copy(nd.begin(), nd.end(), std::next(values.begin(), 3 * j));
+    }
+  }
+  else if (value_rank == 2 and value_size == 4)
+  {
+    values.resize(9 * num_local_cells);
+    for (int j = (num_local_cells - 1); j >= 0; --j)
+    {
+      std::array<Scalar, 9> nd = {values[j * 4],
+                                  values[j * 4 + 1],
+                                  0.0,
+                                  values[j * 4 + 2],
+                                  values[j * 4 + 3],
+                                  0.0,
+                                  0.0,
+                                  0.0,
+                                  0.0};
+      std::copy(nd.begin(), nd.end(), std::next(values.begin(), 9 * j));
+    }
+  }
+  return values;
 }
 //-----------------------------------------------------------------------------
 
@@ -67,7 +181,7 @@ xdmf_utils::get_cell_type(const pugi::xml_node& topology_node)
          {"quadrilateral_16", {"quadrilateral", 3}},
          {"hexahedron", {"hexahedron", 1}}};
 
-  // Convert XDMF cell type string to DOLFINX cell type string
+  // Convert XDMF cell type string to DOLFINx cell type string
   std::string cell_type = type_attr.as_string();
   std::transform(cell_type.begin(), cell_type.end(), cell_type.begin(),
                  [](unsigned char c) { return std::tolower(c); });
@@ -187,114 +301,28 @@ std::int64_t xdmf_utils::get_num_cells(const pugi::xml_node& topology_node)
   return std::max(num_cells_topology, tdims[0]);
 }
 //----------------------------------------------------------------------------
-std::vector<PetscScalar>
-xdmf_utils::get_point_data_values(const fem::Function<PetscScalar>& u)
+std::vector<double>
+xdmf_utils::get_point_data_values(const fem::Function<double>& u)
 {
-  std::shared_ptr<const mesh::Mesh> mesh = u.function_space()->mesh();
-  assert(mesh);
-  Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      data_values = u.compute_point_values();
-
-  const int width = get_padded_width(u);
-  assert(mesh->geometry().index_map());
-  const int num_local_points = mesh->geometry().index_map()->size_local();
-  assert(data_values.rows() >= num_local_points);
-  data_values.conservativeResize(num_local_points, Eigen::NoChange);
-
-  // FIXME: Unpick the below code for the new layout of data from
-  //        GenericFunction::compute_vertex_values
-  std::vector<PetscScalar> _data_values(width * num_local_points, 0.0);
-  const int value_rank = u.function_space()->element()->value_rank();
-  if (value_rank > 0)
-  {
-    // Transpose vector/tensor data arrays
-    const int value_size = u.function_space()->element()->value_size();
-    for (int i = 0; i < num_local_points; i++)
-    {
-      for (int j = 0; j < value_size; j++)
-      {
-        int tensor_2d_offset
-            = (j > 1 && value_rank == 2 && value_size == 4) ? 1 : 0;
-        _data_values[i * width + j + tensor_2d_offset] = data_values(i, j);
-      }
-    }
-  }
-  else
-  {
-    _data_values = std::vector<PetscScalar>(
-        data_values.data(),
-        data_values.data() + data_values.rows() * data_values.cols());
-  }
-
-  return _data_values;
+  return _get_point_data_values(u);
 }
 //-----------------------------------------------------------------------------
-std::vector<PetscScalar>
-xdmf_utils::get_cell_data_values(const fem::Function<PetscScalar>& u)
+std::vector<std::complex<double>>
+xdmf_utils::get_point_data_values(const fem::Function<std::complex<double>>& u)
 {
-  assert(u.function_space()->dofmap());
-  const auto mesh = u.function_space()->mesh();
-  const int value_size = u.function_space()->element()->value_size();
-  const int value_rank = u.function_space()->element()->value_rank();
-
-  // Allocate memory for function values at cell centres
-  const int tdim = mesh->topology().dim();
-  const std::int32_t num_local_cells
-      = mesh->topology().index_map(tdim)->size_local();
-  const std::int32_t local_size = num_local_cells * value_size;
-
-  // Build lists of dofs and create map
-  std::vector<std::int32_t> dof_set;
-  dof_set.reserve(local_size);
-  const auto dofmap = u.function_space()->dofmap();
-  assert(dofmap->element_dof_layout);
-  const int ndofs = dofmap->element_dof_layout->num_dofs();
-
-  for (int cell = 0; cell < num_local_cells; ++cell)
-  {
-    // Tabulate dofs
-    auto dofs = dofmap->cell_dofs(cell);
-    assert(ndofs == value_size);
-    for (int i = 0; i < ndofs; ++i)
-      dof_set.push_back(dofs[i]);
-  }
-
-  // Get values
-  std::vector<PetscScalar> data_values(dof_set.size());
-  {
-    const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>& x = u.x()->array();
-    for (std::size_t i = 0; i < dof_set.size(); ++i)
-      data_values[i] = x[dof_set[i]];
-  }
-
-  if (value_rank == 1 && value_size == 2)
-  {
-    // Pad out data for 2D vector to 3D
-    data_values.resize(3 * num_local_cells);
-    for (int j = (num_local_cells - 1); j >= 0; --j)
-    {
-      PetscScalar nd[3] = {data_values[j * 2], data_values[j * 2 + 1], 0};
-      std::copy_n(nd, 3, &data_values[j * 3]);
-    }
-  }
-  else if (value_rank == 2 && value_size == 4)
-  {
-    data_values.resize(9 * num_local_cells);
-    for (int j = (num_local_cells - 1); j >= 0; --j)
-    {
-      PetscScalar nd[9] = {data_values[j * 4],
-                           data_values[j * 4 + 1],
-                           0,
-                           data_values[j * 4 + 2],
-                           data_values[j * 4 + 3],
-                           0,
-                           0,
-                           0,
-                           0};
-      std::copy_n(nd, 9, &data_values[j * 9]);
-    }
-  }
-  return data_values;
+  return _get_point_data_values(u);
+}
+//-----------------------------------------------------------------------------
+std::vector<double>
+xdmf_utils::get_cell_data_values(const fem::Function<double>& u)
+{
+  return _get_cell_data_values(u);
+}
+//-----------------------------------------------------------------------------
+std::vector<std::complex<double>>
+xdmf_utils::get_cell_data_values(const fem::Function<std::complex<double>>& u)
+{
+  return _get_cell_data_values(u);
 }
 //-----------------------------------------------------------------------------
 std::string xdmf_utils::vtk_cell_type_str(mesh::CellType cell_type,
@@ -309,6 +337,7 @@ std::string xdmf_utils::vtk_cell_type_str(mesh::CellType cell_type,
        {{4, "Quadrilateral"},
         {9, "Quadrilateral_9"},
         {16, "Quadrilateral_16"}}},
+      {mesh::CellType::prism, {{6, "Wedge"}}},
       {mesh::CellType::tetrahedron,
        {{4, "Tetrahedron"}, {10, "Tetrahedron_10"}, {20, "Tetrahedron_20"}}},
       {mesh::CellType::hexahedron, {{8, "Hexahedron"}, {27, "Hexahedron_27"}}}};
@@ -326,29 +355,26 @@ std::string xdmf_utils::vtk_cell_type_str(mesh::CellType cell_type,
   return cell_str->second;
 }
 //-----------------------------------------------------------------------------
-std::pair<
-    Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>,
-    std::vector<std::int32_t>>
-xdmf_utils::extract_local_entities(
-    const mesh::Mesh& mesh, const int entity_dim,
-    const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
-                       Eigen::RowMajor>& entities,
-    const std::vector<std::int32_t>& values)
+std::pair<xt::xtensor<std::int32_t, 2>, std::vector<std::int32_t>>
+xdmf_utils::extract_local_entities(const mesh::Mesh& mesh, const int entity_dim,
+                                   const xt::xtensor<std::int64_t, 2>& entities,
+                                   const xtl::span<const std::int32_t>& values)
 {
-  if ((std::size_t)entities.rows() != values.size())
+  if (entities.shape(0) != values.size())
     throw std::runtime_error("Number of entities and values must match");
 
   // Get layout of dofs on 0th entity
   const std::vector<int> entity_layout
       = mesh.geometry().cmap().dof_layout().entity_closure_dofs(entity_dim, 0);
-  assert((int)entity_layout.size() == entities.cols());
+  assert(entity_layout.size() == entities.shape(1));
 
   auto c_to_v = mesh.topology().connectivity(mesh.topology().dim(), 0);
   if (!c_to_v)
     throw std::runtime_error("Missing cell-vertex connectivity.");
 
-  // Use ElementDofLayout of the cell to get vertex dof indices (local to a
-  // cell) i.e. find a map from local vertex index to associated local dof index
+  // Use ElementDofLayout of the cell to get vertex dof indices (local
+  // to a cell) i.e. find a map from local vertex index to associated
+  // local dof index
   const int num_vertices_per_cell = c_to_v->num_links(0);
   std::vector<int> cell_vertex_dofs(num_vertices_per_cell);
   for (int i = 0; i < num_vertices_per_cell; ++i)
@@ -359,9 +385,9 @@ xdmf_utils::extract_local_entities(
     cell_vertex_dofs[i] = local_index[0];
   }
 
-  // Find map from entity vertex to local (wrt. dof numbering on the entity) dof
-  // number E.g. if there are dofs on entity [0 3 6 7 9] and dofs 3 and 7 belong
-  // to vertices, then this produces map [1, 3]
+  // Find map from entity vertex to local (wrt. dof numbering on the
+  // entity) dof number E.g. if there are dofs on entity [0 3 6 7 9] and
+  // dofs 3 and 7 belong to vertices, then this produces map [1, 3]
   std::vector<int> entity_vertex_dofs;
   for (std::size_t i = 0; i < cell_vertex_dofs.size(); ++i)
   {
@@ -372,17 +398,19 @@ xdmf_utils::extract_local_entities(
   }
 
   const mesh::CellType entity_type
-      = mesh::cell_entity_type(mesh.topology().cell_type(), entity_dim);
-  const int num_vertices_per_entity = mesh::cell_num_entities(entity_type, 0);
-  assert(entity_vertex_dofs.size() == (std::size_t)num_vertices_per_entity);
+      = mesh::cell_entity_type(mesh.topology().cell_type(), entity_dim, 0);
+  const std::size_t num_vertices_per_entity
+      = mesh::cell_num_entities(entity_type, 0);
+  assert(entity_vertex_dofs.size() == num_vertices_per_entity);
 
-  // Throw away input global indices which do not belong to entity vertices
-  // This decreases the amount of data needed in parallel communication
-  Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      entities_vertices(entities.rows(), num_vertices_per_entity);
-  for (Eigen::Index e = 0; e < entities_vertices.rows(); ++e)
+  // Throw away input global indices which do not belong to entity
+  // vertices This decreases the amount of data needed in parallel
+  // communication
+  xt::xtensor<std::int64_t, 2> entities_vertices(
+      {entities.shape(0), num_vertices_per_entity});
+  for (std::size_t e = 0; e < entities_vertices.shape(0); ++e)
   {
-    for (Eigen::Index i = 0; i < entities_vertices.cols(); ++i)
+    for (std::size_t i = 0; i < entities_vertices.shape(1); ++i)
       entities_vertices(e, i) = entities(e, entity_vertex_dofs[i]);
   }
 
@@ -428,12 +456,11 @@ xdmf_utils::extract_local_entities(
   std::vector<std::vector<std::int64_t>> entities_send(comm_size);
   std::vector<std::vector<std::int32_t>> values_send(comm_size);
   std::vector<std::int64_t> entity(num_vertices_per_entity);
-  for (std::int32_t e = 0; e < entities_vertices.rows(); ++e)
+  for (std::size_t e = 0; e < entities_vertices.shape(0); ++e)
   {
     // Copy vertices for entity and sort
-    std::copy(entities_vertices.row(e).data(),
-              entities_vertices.row(e).data() + entities_vertices.cols(),
-              entity.begin());
+    auto ev = xt::row(entities_vertices, e);
+    std::copy(ev.cbegin(), ev.cend(), entity.begin());
     std::sort(entity.begin(), entity.end());
 
     // Determine postmaster based on lowest entity node
@@ -472,23 +499,26 @@ xdmf_utils::extract_local_entities(
   // Figure out which processes are owners of received nodes
   std::vector<std::vector<std::int64_t>> send_nodes_owned(comm_size);
   std::vector<std::vector<std::int32_t>> send_vals_owned(comm_size);
-  const Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic,
-                                      Eigen::Dynamic, Eigen::RowMajor>>
-      _entities_recv(entities_recv.array().data(),
-                     entities_recv.array().size() / num_vertices_per_entity,
-                     num_vertices_per_entity);
+  std::array<std::size_t, 2> shape
+      = {entities_recv.array().size() / num_vertices_per_entity,
+         num_vertices_per_entity};
+  auto _entities_recv
+      = xt::adapt(entities_recv.array().data(), entities_recv.array().size(),
+                  xt::no_ownership(), shape);
+
   const std::vector<std::int32_t>& _values_recv = values_recv.array();
-  assert((int)_values_recv.size() == _entities_recv.rows());
-  for (int e = 0; e < _entities_recv.rows(); ++e)
+  assert(_values_recv.size() == _entities_recv.shape(0));
+  for (std::size_t e = 0; e < _entities_recv.shape(0); ++e)
   {
+    auto e_recv = xt::row(_entities_recv, e);
+
     // Find ranks that have node0
-    auto [it0, it1] = node_to_rank.equal_range(_entities_recv(e, 0));
+    auto [it0, it1] = node_to_rank.equal_range(e_recv[0]);
     for (auto it = it0; it != it1; ++it)
     {
       const int p1 = it->second;
-      send_nodes_owned[p1].insert(
-          send_nodes_owned[p1].end(), _entities_recv.row(e).data(),
-          _entities_recv.row(e).data() + _entities_recv.cols());
+      send_nodes_owned[p1].insert(send_nodes_owned[p1].end(), e_recv.begin(),
+                                  e_recv.end());
       send_vals_owned[p1].push_back(_values_recv[e]);
     }
   }
@@ -504,7 +534,7 @@ xdmf_utils::extract_local_entities(
   //    (entities) are on this process.
 
   // TODO: Rather than using std::map<std::vector<std::int64_t>,
-  //       std::int32_t>, use a rectangular Eigen::Array to avoid the
+  //       std::int32_t>, use a rectangular array to avoid the
   //       cost of std::vector<std::int64_t> allocations, and sort the
   //       Array by row.
   //
@@ -534,14 +564,14 @@ xdmf_utils::extract_local_entities(
   {
     bool entity_found = true;
     std::vector<std::int32_t> entity(num_vertices_per_entity);
-    for (Eigen::Index i = 0; i < num_vertices_per_entity; ++i)
+    for (std::size_t i = 0; i < num_vertices_per_entity; ++i)
     {
       const auto it = igi_to_vertex.find(
           recv_ents.array()[e * num_vertices_per_entity + i]);
       if (it == igi_to_vertex.end())
       {
-        // As soon as this received index is not in locally owned input global
-        // indices skip the entire entity
+        // As soon as this received index is not in locally owned input
+        // global indices skip the entire entity
         entity_found = false;
         break;
       }
@@ -555,11 +585,15 @@ xdmf_utils::extract_local_entities(
     }
   }
 
-  return {Eigen::Map<Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic,
-                                  Eigen::RowMajor>>(
-              entities_new.data(),
-              entities_new.size() / num_vertices_per_entity,
-              num_vertices_per_entity),
-          values_new};
+  std::array<std::size_t, 2> shape_r = {
+      entities_new.size() / num_vertices_per_entity, num_vertices_per_entity};
+
+  // The below should work, but misbehaves with the Intel icpx compiler
+  // auto e_new = xt::adapt(entities_new.data(), entities_new.size(),
+  //                        xt::no_ownership(), shape_r);
+  xt::xtensor<std::int32_t, 2> e_new(shape_r);
+  std::copy_n(entities_new.data(), entities_new.size(), e_new.data());
+
+  return {std::move(e_new), std::move(values_new)};
 }
 //-----------------------------------------------------------------------------

@@ -1,61 +1,54 @@
 // Copyright (C) 2020 Jack S. Hale
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #pragma once
 
-#include <Eigen/Dense>
-#include <dolfinx/fem/evaluate.h>
+#include <dolfinx/mesh/Mesh.h>
 #include <functional>
 #include <utility>
 #include <vector>
+#include <xtensor/xarray.hpp>
+#include <xtensor/xtensor.hpp>
+#include <xtl/xspan.hpp>
 
-namespace dolfinx
-{
-
-namespace mesh
-{
-class Mesh;
-}
-
-namespace fem
+namespace dolfinx::fem
 {
 template <typename T>
 class Constant;
 
-/// Represents a mathematical expression evaluated at a pre-defined set of
-/// points on the reference cell. This class closely follows the concept of a
-/// UFC Expression.
+/// Represents a mathematical expression evaluated at a pre-defined set
+/// of points on the reference cell. This class closely follows the
+/// concept of a UFC Expression.
 ///
-/// This functionality can be used to evaluate a gradient of a Function at
-/// quadrature points in all cells. This evaluated gradient can then be used as
-/// input in to a non-FEniCS function that calculates a material constitutive
-/// model.
+/// This functionality can be used to evaluate a gradient of a Function
+/// at quadrature points in all cells. This evaluated gradient can then
+/// be used as input in to a non-FEniCS function that calculates a
+/// material constitutive model.
 
 template <typename T>
 class Expression
 {
 public:
-  /// Create Expression.
+  /// Create an Expression
   ///
   /// @param[in] coefficients Coefficients in the Expression
   /// @param[in] constants Constants in the Expression
   /// @param[in] mesh
-  /// @param[in] x points on reference cell, number of points rows
-  ///   and tdim cols
+  /// @param[in] X points on reference cell, number of points rows and
+  /// tdim cols
   /// @param[in] fn function for tabulating expression
   /// @param[in] value_size size of expression evaluated at single point
   Expression(
       const std::vector<std::shared_ptr<const fem::Function<T>>>& coefficients,
       const std::vector<std::shared_ptr<const fem::Constant<T>>>& constants,
       const std::shared_ptr<const mesh::Mesh>& mesh,
-      const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
-                                          Eigen::Dynamic, Eigen::RowMajor>>& x,
+      const xt::xtensor<double, 2>& X,
       const std::function<void(T*, const T*, const T*, const double*)> fn,
       const std::size_t value_size)
-      : _coefficients(coefficients), _constants(constants), _mesh(mesh), _x(x),
+      : _coefficients(coefficients), _constants(constants), _mesh(mesh), _x(X),
         _fn(fn), _value_size(value_size)
   {
     // Do nothing
@@ -91,15 +84,57 @@ public:
 
   /// Evaluate the expression on cells
   /// @param[in] active_cells Cells on which to evaluate the Expression
-  /// @param[in,out] values To store the result. Caller responsible for correct
-  ///   sizing which should be num_cells rows by num_points*value_size columns.
-  void
-  eval(const std::vector<std::int32_t>& active_cells,
-       Eigen::Ref<
-           Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
-           values) const
+  /// @param[out] values A 2D array to store the result. Caller
+  /// responsible for correct sizing which should be (num_cells,
+  /// num_points * value_size columns).
+  template <typename U>
+  void eval(const xtl::span<const std::int32_t>& active_cells, U& values) const
   {
-    fem::eval(values, *this, active_cells);
+    static_assert(std::is_same<T, typename U::value_type>::value,
+                  "Expression and array types must be the same");
+
+    // Extract data from Expression
+    assert(_mesh);
+
+    // Prepare coefficients and constants
+    const auto [coeffs, cstride] = pack_coefficients(*this);
+    const std::vector<T> constant_data = pack_constants(*this);
+
+    const auto& fn = this->get_tabulate_expression();
+
+    // Prepare cell geometry
+    const graph::AdjacencyList<std::int32_t>& x_dofmap
+        = _mesh->geometry().dofmap();
+    const fem::CoordinateElement& cmap = _mesh->geometry().cmap();
+
+    // FIXME: Add proper interface for num coordinate dofs
+    const std::size_t num_dofs_g = x_dofmap.num_links(0);
+    const xt::xtensor<double, 2>& x_g = _mesh->geometry().x();
+
+    // Create data structures used in evaluation
+    std::vector<double> coordinate_dofs(3 * num_dofs_g);
+
+    // Iterate over cells and 'assemble' into values
+    std::vector<T> values_e(this->num_points() * this->value_size(), 0);
+    for (std::size_t c = 0; c < active_cells.size(); ++c)
+    {
+      const std::int32_t cell = active_cells[c];
+
+      auto x_dofs = x_dofmap.links(cell);
+      for (std::size_t i = 0; i < x_dofs.size(); ++i)
+      {
+        std::copy_n(xt::row(x_g, x_dofs[i]).cbegin(), 3,
+                    std::next(coordinate_dofs.begin(), 3 * i));
+      }
+
+      const T* coeff_cell = coeffs.data() + cell * cstride;
+      std::fill(values_e.begin(), values_e.end(), 0.0);
+      fn(values_e.data(), coeff_cell, constant_data.data(),
+         coordinate_dofs.data());
+
+      for (std::size_t j = 0; j < values_e.size(); ++j)
+        values(c, j) = values_e[j];
+    }
   }
 
   /// Get function for tabulate_expression.
@@ -125,11 +160,7 @@ public:
 
   /// Get evaluation points on reference cell
   /// @return Evaluation points
-  const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
-  x() const
-  {
-    return _x;
-  }
+  const xt::xtensor<double, 2>& x() const { return _x; }
 
   /// Get value size
   /// @return value_size
@@ -137,7 +168,7 @@ public:
 
   /// Get number of points
   /// @return number of points
-  const Eigen::Index num_points() const { return _x.rows(); }
+  const std::size_t num_points() const { return _x.shape(0); }
 
   /// Scalar type (T).
   using scalar_type = T;
@@ -153,7 +184,7 @@ private:
   std::function<void(T*, const T*, const T*, const double*)> _fn;
 
   // Evaluation points on reference cell
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> _x;
+  xt::xtensor<double, 2> _x;
 
   // The mesh.
   std::shared_ptr<const mesh::Mesh> _mesh;
@@ -161,5 +192,4 @@ private:
   // Evaluation size
   std::size_t _value_size;
 };
-} // namespace fem
-} // namespace dolfinx
+} // namespace dolfinx::fem

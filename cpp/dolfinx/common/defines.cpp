@@ -1,13 +1,11 @@
 // Copyright (C) 2009-2011 Johan Hake
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "defines.h"
-#include "types.h"
-#include <hdf5.h>
-#include <petscversion.h>
+#include <petscsys.h>
 
 //-------------------------------------------------------------------------
 std::string dolfinx::version() { return std::string(DOLFINX_VERSION); }

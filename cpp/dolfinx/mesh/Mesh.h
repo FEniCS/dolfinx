@@ -1,6 +1,6 @@
 // Copyright (C) 2006-2020 Anders Logg, Chris Richardson and Garth N. Wells
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -10,27 +10,23 @@
 #include "Topology.h"
 #include "cell_types.h"
 #include "utils.h"
-#include <Eigen/Core>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/UniqueIdGenerator.h>
 #include <string>
 #include <utility>
 
-namespace dolfinx
-{
-
-namespace fem
+namespace dolfinx::fem
 {
 class CoordinateElement;
 }
 
-namespace graph
+namespace dolfinx::graph
 {
 template <typename T>
 class AdjacencyList;
 }
 
-namespace mesh
+namespace dolfinx::mesh
 {
 
 /// @todo Document fully
@@ -39,7 +35,7 @@ namespace mesh
 /// compute the destination rank for cells currently on this rank.
 using CellPartitionFunction
     = std::function<const dolfinx::graph::AdjacencyList<std::int32_t>(
-        MPI_Comm comm, int nparts, const dolfinx::mesh::CellType cell_type,
+        MPI_Comm comm, int nparts, int tdim,
         const dolfinx::graph::AdjacencyList<std::int64_t>& cells,
         dolfinx::mesh::GhostMode ghost_mode)>;
 
@@ -109,26 +105,6 @@ public:
   /// @return The geometry object associated with the mesh
   const Geometry& geometry() const;
 
-  /// Compute minimum cell size in mesh, measured greatest distance
-  /// between any two vertices of a cell.
-  /// @return The minimum cell size. The size is computed using
-  ///         Cell::h()
-  double hmin() const;
-
-  /// Compute maximum cell size in mesh, measured greatest distance
-  /// between any two vertices of a cell
-  /// @return The maximum cell size. The size is computed using
-  ///         Cell::h()
-  double hmax() const;
-
-  /// Compute minimum cell inradius
-  /// @return double The minimum of cells' inscribed sphere radii
-  double rmin() const;
-
-  /// Compute maximum cell inradius
-  /// @return The maximum of cells' inscribed sphere radii
-  double rmax() const;
-
   /// Get unique identifier for the mesh
   /// @returns The unique identifier associated with the object
   std::size_t id() const { return _unique_id; }
@@ -170,23 +146,18 @@ private:
 /// vertices. For higher-order cells, other cells 'nodes' will be
 /// included.
 /// @param[in] element The coordinate element that describes the
-/// geometrica mapping for cells
+/// geometric mapping for cells
 /// @param[in] x The coordinates of mesh nodes
 /// @param[in] ghost_mode The requested type of cell ghosting/overlap
 /// @return A distributed Mesh.
 Mesh create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
                  const fem::CoordinateElement& element,
-                 const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                    Eigen::RowMajor>& x,
-                 GhostMode ghost_mode);
+                 const xt::xtensor<double, 2>& x, GhostMode ghost_mode);
 
 /// Create a mesh using a provided mesh partitioning function
 Mesh create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
                  const fem::CoordinateElement& element,
-                 const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                    Eigen::RowMajor>& x,
-                 GhostMode ghost_mode,
+                 const xt::xtensor<double, 2>& x, GhostMode ghost_mode,
                  const CellPartitionFunction& cell_partitioner);
 
-} // namespace mesh
-} // namespace dolfinx
+} // namespace dolfinx::mesh

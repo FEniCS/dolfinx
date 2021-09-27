@@ -1,14 +1,14 @@
 // Copyright (C) 2020 Matthew Scroggs
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #pragma once
 
-#include <Eigen/Core>
 #include <cstdint>
 #include <utility>
+#include <vector>
 
 namespace dolfinx::mesh
 {
@@ -67,8 +67,7 @@ class Topology;
 ///    on permuted facets.
 ///
 /// @return Facet permutation and cells permutations
-std::pair<Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>,
-          std::vector<std::uint32_t>>
+std::pair<std::vector<std::uint8_t>, std::vector<std::uint32_t>>
 compute_entity_permutations(const Topology& topology);
 
 } // namespace dolfinx::mesh

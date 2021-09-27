@@ -1,6 +1,6 @@
 # Copyright (C) 2018 Garth N. Wells
 #
-# This file is part of DOLFINX (https://www.fenicsproject.org)
+# This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for Newton solver assembly"""
@@ -194,9 +194,7 @@ def test_nonlinear_pde_snes():
     snes.setTolerances(rtol=1.0e-9, max_it=10)
     snes.getKSP().setType("preonly")
     snes.getKSP().setTolerances(rtol=1.0e-9)
-
     snes.getKSP().getPC().setType("lu")
-    snes.getKSP().getPC().setFactorSolverType("superlu_dist")
 
     snes.solve(None, u.vector)
     assert snes.getConvergedReason() > 0

@@ -1,18 +1,18 @@
 // Copyright (C) 2012-2018 Chris N. Richardson and Garth N. Wells
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #pragma once
 
-#include <Eigen/Dense>
 #include <dolfinx/mesh/cell_types.h>
 #include <hdf5.h>
 #include <mpi.h>
 #include <string>
 #include <tuple>
 #include <vector>
+#include <xtl/xspan.hpp>
 
 namespace pugi
 {
@@ -51,11 +51,11 @@ void add_mesh(MPI_Comm comm, pugi::xml_node& xml_node, const hid_t h5_id,
 /// @param[in] active_entities Local-to-process indices of mesh entities
 ///   whose topology will be saved. This is used to save subsets of
 ///   Mesh.
-void add_topology_data(
-    MPI_Comm comm, pugi::xml_node& xml_node, const hid_t h5_id,
-    const std::string path_prefix, const mesh::Topology& topology,
-    const mesh::Geometry& geometry, const int cell_dim,
-    const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& active_entities);
+void add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
+                       const hid_t h5_id, const std::string path_prefix,
+                       const mesh::Topology& topology,
+                       const mesh::Geometry& geometry, const int cell_dim,
+                       const xtl::span<const std::int32_t>& active_entities);
 
 /// Add Geometry xml node
 void add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
@@ -64,15 +64,14 @@ void add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
 
 /// Read Geometry data
 /// @returns geometry
-Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-read_geometry_data(MPI_Comm comm, const hid_t h5_id,
-                   const pugi::xml_node& node);
+xt::xtensor<double, 2> read_geometry_data(MPI_Comm comm, const hid_t h5_id,
+                                          const pugi::xml_node& node);
 
 /// Read Topology data
 /// @returns ((cell type, degree), topology)
-Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-read_topology_data(MPI_Comm comm, const hid_t h5_id,
-                   const pugi::xml_node& node);
+xt::xtensor<std::int64_t, 2> read_topology_data(MPI_Comm comm,
+                                                const hid_t h5_id,
+                                                const pugi::xml_node& node);
 
 } // namespace io::xdmf_mesh
 } // namespace dolfinx

@@ -1,27 +1,24 @@
 // Copyright (C) 2008-2019 Anders Logg and Garth N. Wells
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #pragma once
 
-#include <Eigen/Dense>
 #include <cstddef>
 #include <functional>
 #include <map>
 #include <memory>
 #include <vector>
+#include <xtensor/xtensor.hpp>
 
-namespace dolfinx
-{
-
-namespace mesh
+namespace dolfinx::mesh
 {
 class Mesh;
 }
 
-namespace fem
+namespace dolfinx::fem
 {
 class DofMap;
 class FiniteElement;
@@ -64,10 +61,6 @@ public:
   /// @param[in] V Another function space.
   bool operator!=(const FunctionSpace& V) const;
 
-  /// Return global dimension of the function space
-  /// @return The dimension of the function space
-  std::int64_t dim() const;
-
   /// Extract subspace for component
   /// @param[in] component The subspace component
   /// @return The subspace
@@ -80,7 +73,7 @@ public:
 
   /// Collapse a subspace and return a new function space and a map from
   /// new to old dofs
-  /// @return The new function space and a map rom new to old dofs
+  /// @return The new function space and a map from new to old dofs
   std::pair<std::shared_ptr<FunctionSpace>, std::vector<std::int32_t>>
   collapse() const;
 
@@ -89,18 +82,15 @@ public:
   ///         W.sub(1).sub(0) == [1, 0]
   std::vector<int> component() const;
 
+  /// @todo Remove - see function in interpolate.h
   /// Tabulate the physical coordinates of all dofs on this process.
-  /// @return The dof coordinates [([x0, y0, z0], [x1, y1, z1], ...)
-  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>
-  tabulate_dof_coordinates() const;
-
-  /// Tabulate the physical coordinates of all dofs of scalar subspace on this
-  /// process. For a VectorFunctionSpace or TensorFunctionSpace, the scalar
-  /// subspace is the space used for each componenet. Otherwise the scalar
-  /// subspace is the space itself
-  /// @return The dof coordinates [([x0, y0, z0], [x1, y1, z1], ...)
-  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>
-  tabulate_scalar_subspace_dof_coordinates() const;
+  /// @param[in] transpose If false the returned data has shape
+  /// (num_points, gdim), otherwise it is transposed and has shape
+  /// (gdim, num_points)
+  /// @return The dof coordinates [([x0, y0, z0], [x1, y1, z1], ...) if
+  /// @p transpose is false, and otherwise the returned data is
+  /// transposed.
+  xt::xtensor<double, 2> tabulate_dof_coordinates(bool transpose) const;
 
   /// Unique identifier
   std::size_t id() const;
@@ -150,5 +140,4 @@ std::array<std::vector<std::shared_ptr<const FunctionSpace>>, 2>
 common_function_spaces(
     const std::vector<
         std::vector<std::array<std::shared_ptr<const FunctionSpace>, 2>>>& V);
-} // namespace fem
-} // namespace dolfinx
+} // namespace dolfinx::fem

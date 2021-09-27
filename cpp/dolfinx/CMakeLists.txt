@@ -11,7 +11,7 @@ configure_file(${DOLFINX_SOURCE_DIR}/dolfinx/common/version.h.in
 #------------------------------------------------------------------------------
 # Delcare the library (target)
 
-add_library(dolfinx "")  # The "" is needed for older CMake. Remove later.
+add_library(dolfinx)
 
 #------------------------------------------------------------------------------
 # Add source files to the target
@@ -59,31 +59,19 @@ target_compile_definitions(dolfinx PUBLIC DOLFINX_VERSION="${DOLFINX_VERSION}")
 # UFC
 target_include_directories(dolfinx SYSTEM PUBLIC ${UFC_INCLUDE_DIRS})
 
-# DOLFIN uses Eigen data structures for dense linear algebra operations. Eigen
-# performs 'ideal' memory alignment based around the -march flag passed to the
-# compiler.  However, because Python DOLFIN JIT compiles code at runtime, it is
-# possible for the user to build shared objects with incompatible alignment
-# (ABI) if they use a different -march flag than that used to originally build
-# DOLFIN. DOLFINX_EIGEN_MAX_ALIGN_BYTES can be used to force alignment.
-# See: https://eigen.tuxfamily.org/dox/TopicPreprocessorDirectives.html
-# See: https://github.com/FEniCS/dolfinx/pull/143
+# Basix
+target_link_libraries(dolfinx PUBLIC Basix::basix)
 
-# Note: The name EIGEN_MAX_ALIGN_BYTES is confusing. In practice, Eigen
-# computes the ideal alignment based around -march.  If the ideal alignment is
-# greater than EIGEN_MAX_ALIGN_BYTES, the ideal alignment is used. If the ideal
-# alignment is less, then EIGEN_MAX_ALIGN_BYTES is used for alignment.
-set(DOLFINX_EIGEN_MAX_ALIGN_BYTES "32" CACHE STRING "\
-Minimum alignment in bytes used for Eigen data structures. Set to 32 for \
-compatibility with AVX user-compiled code and 64 for AVX-512 user-compiled \
-code. Set to 0 for ideal alignment according to -march. Note that if an architecture \
-flag (e.g. \"-march=skylake-avx512\") is set for DOLFIN, Eigen will use the \
-appropriate ideal alignment instead if it is stricter. Otherwise, the value \
-of this variable will be used by Eigen for the alignment of all data structures.\\
-")
-
-# Eigen3
-target_include_directories(dolfinx SYSTEM PUBLIC ${EIGEN3_INCLUDE_DIR})
-target_compile_definitions(dolfinx PUBLIC "EIGEN_MAX_ALIGN_BYTES=${DOLFINX_EIGEN_MAX_ALIGN_BYTES}")
+# xtensor
+target_link_libraries(dolfinx PUBLIC xtl)
+target_link_libraries(dolfinx PUBLIC xtensor)
+target_link_libraries(dolfinx PRIVATE xtensor-blas)
+if("XTENSOR_USE_XSIMD" IN_LIST BASIX_DEFN)
+  target_link_libraries(dolfinx PUBLIC xsimd)
+endif()
+if(XTENSOR_OPTIMIZE)
+  target_link_libraries(dolfinx PUBLIC xtensor::optimize)
+endif()
 
 # Boost
 target_link_libraries(dolfinx PUBLIC Boost::headers)
@@ -98,9 +86,15 @@ target_link_libraries(dolfinx PUBLIC PETSC::petsc)
 target_link_libraries(dolfinx PRIVATE PETSC::petsc_static)
 
 # HDF5
-target_compile_definitions(dolfinx PUBLIC ${HDF5_DEFINITIONS})
-target_link_libraries(dolfinx PUBLIC ${HDF5_C_LIBRARIES})
-target_include_directories(dolfinx SYSTEM PUBLIC ${HDF5_INCLUDE_DIRS})
+if (TARGET hdf5::hdf5)
+  target_link_libraries(dolfinx PUBLIC hdf5::hdf5)
+else()
+  # This is the old-style CMake (3.18 and earlier), remove when no
+  # longer supporting older CMake
+  target_compile_definitions(dolfinx PUBLIC ${HDF5_DEFINITIONS})
+  target_link_libraries(dolfinx PUBLIC ${HDF5_C_LIBRARIES})
+  target_include_directories(dolfinx SYSTEM PUBLIC ${HDF5_INCLUDE_DIRS})
+endif()
 
 # SCOTCH
 target_link_libraries(dolfinx PRIVATE ${SCOTCH_LIBRARIES})
@@ -141,7 +135,7 @@ install(TARGETS dolfinx
   )
 
 # Generate DOLFINTargets.cmake
-install(EXPORT DOLFINXTargets DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/dolfinx/cmake)
+install(EXPORT DOLFINXTargets DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/dolfinx)
 
 # Install the header files
 foreach(DIR ${DOLFINX_DIRS})
@@ -159,7 +153,7 @@ write_basic_package_version_file(${CMAKE_BINARY_DIR}/dolfinx/DOLFINXConfigVersio
 
 configure_package_config_file(${DOLFINX_SOURCE_DIR}/cmake/templates/DOLFINXConfig.cmake.in
 ${CMAKE_BINARY_DIR}/dolfinx/DOLFINXConfig.cmake
-INSTALL_DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/dolfinx/cmake)
+INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/dolfinx)
 
 # Install CMake helper files
 install(
@@ -168,7 +162,7 @@ install(
   ${CMAKE_SOURCE_DIR}/cmake/modules/FindSLEPc.cmake
   ${CMAKE_BINARY_DIR}/dolfinx/DOLFINXConfig.cmake
   ${CMAKE_BINARY_DIR}/dolfinx/DOLFINXConfigVersion.cmake
-  DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/dolfinx/cmake
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/dolfinx
   COMPONENT Development)
 
 #------------------------------------------------------------------------------
@@ -230,6 +224,14 @@ endforeach()
 get_target_property(PKG_DOLFINX_DEFINITIONS dolfinx INTERFACE_COMPILE_DEFINITIONS)
 set(PKG_DEFINITIONS)
 foreach(_def ${PKG_DOLFINX_DEFINITIONS})
+  set(PKG_DEFINITIONS "${PKG_DEFINITIONS} -D${_def}")
+endforeach()
+
+# Get basix definitions (this is required to propagate Basix definition
+# to the pkg-config file, in the future Basix should create its own
+# basix.pc file, see https://github.com/FEniCS/basix/issues/204)
+get_target_property(PKG_BASIX_DEFINITIONS Basix::basix INTERFACE_COMPILE_DEFINITIONS)
+foreach(_def ${PKG_BASIX_DEFINITIONS})
   set(PKG_DEFINITIONS "${PKG_DEFINITIONS} -D${_def}")
 endforeach()
 
