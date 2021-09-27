@@ -110,8 +110,8 @@ def create_matrix_nest(a: typing.List[typing.List[typing.Union[Form, cpp.fem.For
 
 def assemble_scalar(M: typing.Union[Form, cpp.fem.Form], constants=None,
                     coefficients=None) -> PETSc.ScalarType:
-    """Assemble functional. The returned value is local and not accumulated
-    across processes.
+    """Assemble functional. The returned value is local and not
+    accumulated across processes.
 
     """
     _M = _create_cpp_form(M)
@@ -127,9 +127,9 @@ def assemble_scalar(M: typing.Union[Form, cpp.fem.Form], constants=None,
 @functools.singledispatch
 def assemble_vector(L: typing.Union[Form, cpp.fem.Form], constants=None,
                     coefficients=None) -> PETSc.Vec:
-    """Assemble linear form into a new PETSc vector. The returned vector is
-    not finalised, i.e. ghost values are not accumulated on the owning
-    processes.
+    """Assemble linear form into a new PETSc vector. The returned vector
+    is not finalised, i.e. ghost values are not accumulated on the
+    owning processes.
 
     """
     _L = _create_cpp_form(L)
@@ -148,9 +148,9 @@ def assemble_vector(L: typing.Union[Form, cpp.fem.Form], constants=None,
 @assemble_vector.register(PETSc.Vec)
 def _(b: PETSc.Vec, L: typing.Union[Form, cpp.fem.Form], constants=None,
       coefficients=None) -> PETSc.Vec:
-    """Assemble linear form into an existing PETSc vector. The vector is not
-    zeroed before assembly and it is not finalised, qi.e. ghost values are
-    not accumulated on the owning processes.
+    """Assemble linear form into an existing PETSc vector. The vector is
+    not zeroed before assembly and it is not finalised, i.e. ghost
+    values are not accumulated on the owning processes.
 
     """
     _L = _create_cpp_form(L)
@@ -166,9 +166,9 @@ def _(b: PETSc.Vec, L: typing.Union[Form, cpp.fem.Form], constants=None,
 @functools.singledispatch
 def assemble_vector_nest(L: typing.Union[Form, cpp.fem.Form], constants=None,
                          coefficients=None) -> PETSc.Vec:
-    """Assemble linear forms into a new nested PETSc (VecNest) vector. The
-    returned vector is not finalised, i.e. ghost values are not accumulated
-    on the owning processes.
+    """Assemble linear forms into a new nested PETSc (VecNest) vector.
+    The returned vector is not finalised, i.e. ghost values are not
+    accumulated on the owning processes.
 
     """
     maps = [(form.function_spaces[0].dofmap.index_map, form.function_spaces[0].dofmap.index_map_bs)
@@ -183,9 +183,9 @@ def assemble_vector_nest(L: typing.Union[Form, cpp.fem.Form], constants=None,
 @assemble_vector_nest.register(PETSc.Vec)
 def _(b: PETSc.Vec, L: typing.List[typing.Union[Form, cpp.fem.Form]], constants=None,
       coefficients=None) -> PETSc.Vec:
-    """Assemble linear forms into a nested PETSc (VecNest) vector. The vector is not
-    zeroed before assembly and it is not finalised, i.e. ghost values
-    are not accumulated on the owning processes.
+    """Assemble linear forms into a nested PETSc (VecNest) vector. The
+    vector is not zeroed before assembly and it is not finalised, i.e.
+    ghost values are not accumulated on the owning processes.
 
     """
     _L = _create_cpp_form(L)

@@ -39,7 +39,7 @@ class NonlinearPDEProblem:
     def J(self, x, A):
         """Assemble Jacobian matrix."""
         A.zeroEntries()
-        fem.assemble_matrix(A, self.a, [self.bc])
+        fem.assemble_matrix(A, self.a, bcs=[self.bc])
         A.assemble()
 
     def matrix(self):
@@ -76,7 +76,7 @@ class NonlinearPDE_SNESProblem:
     def J(self, snes, x, J, P):
         """Assemble Jacobian matrix."""
         J.zeroEntries()
-        fem.assemble_matrix(J, self.a, [self.bc])
+        fem.assemble_matrix(J, self.a, bcs=[self.bc])
         J.assemble()
 
 
