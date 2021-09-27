@@ -11,19 +11,6 @@ import numpy as np
 
 from dolfinx import cpp, fem
 
-# Permutation for DOLFINx DG layout to VTK
-# Note that third order tetrahedrons has a special ordering:
-# https://gitlab.kitware.com/vtk/vtk/-/issues/17746
-_perm_dg = {cpp.mesh.CellType.triangle: {1: [0, 1, 2], 2: [0, 2, 5, 1, 4, 3], 3: [0, 3, 9, 1, 2, 6, 8, 7, 4, 5],
-                                         4: [0, 4, 14, 1, 2, 3, 8, 11, 13, 12, 9, 5, 6, 7, 10]},
-            cpp.mesh.CellType.tetrahedron: {1: [0, 1, 2, 3], 2: [0, 2, 5, 9, 1, 4, 5, 6, 7, 8],
-                                            3: [0, 3, 9, 19, 1, 2, 6, 8, 7, 4, 10, 16, 12, 17, 15, 18, 11, 14, 13, 5]}}
-_perm_dq = {cpp.mesh.CellType.quadrilateral: {1: [0, 1, 3, 2], 2: [0, 2, 8, 6, 1, 5, 7, 3, 4],
-                                              3: [0, 3, 15, 12, 1, 2, 7, 11, 13, 14, 4, 8, 5, 6, 9, 10]},
-            cpp.mesh.CellType.hexahedron: {1: [0, 1, 3, 2, 4, 5, 7, 6],
-                                           2: [0, 2, 8, 6, 18, 20, 26, 24, 1, 5, 7, 3, 19,
-                                               23, 25, 21, 9, 11, 17, 15, 12, 14, 10, 16, 4, 22, 14]}}
-
 # NOTE: Edge visualization of higher order elements are sketchy, see:
 # https://github.com/pyvista/pyvista/issues/947
 
@@ -75,7 +62,10 @@ def create_vtk_topology(mesh: cpp.mesh.Mesh, dim: int, entities=None):
     geometry_entities = cpp.mesh.entities_to_geometry(mesh, dim, entities, False)
 
     # Array holding the cell type (shape) for each cell
-    e_type = cpp.mesh.cell_entity_type(mesh.topology.cell_type, dim)
+    if mesh.topology.cell_type == cpp.mesh.CellType.prism:
+        raise RuntimeError("Plotting of prism meshes not supported")
+    e_type = cpp.mesh.cell_entity_type(mesh.topology.cell_type, dim, 0)
+
     degree = _element_degree(e_type, geometry_entities.shape[1])
     if degree == 1:
         cell_types = np.full(num_cells, _first_order_vtk[e_type])
@@ -119,12 +109,7 @@ def _(V: fem.FunctionSpace, entities=None):
     num_dofs_per_cell = V.dofmap.dof_layout.num_dofs
     degree = V.ufl_element().degree()
     cell_type = mesh.topology.cell_type
-    if family == "Discontinuous Lagrange":
-        perm = np.array(_perm_dg[cell_type][degree], dtype=np.int32)
-    elif family == "DQ":
-        perm = np.array(_perm_dq[cell_type][degree], dtype=np.int32)
-    else:
-        perm = np.argsort(cpp.io.perm_vtk(cell_type, num_dofs_per_cell))
+    perm = np.argsort(cpp.io.perm_vtk(cell_type, num_dofs_per_cell))
 
     if degree == 1:
         cell_types = np.full(num_cells, _first_order_vtk[mesh.topology.cell_type])

@@ -252,10 +252,7 @@ void SparsityPattern::assemble()
 
   // Get ghost->owner communicator for rows
   MPI_Comm comm = _index_maps[0]->comm(common::IndexMap::Direction::reverse);
-  int indegree_rev(-1), outdegree_rev(-2), weighted_rev(-1);
-  MPI_Dist_graph_neighbors_count(comm, &indegree_rev, &outdegree_rev,
-                                 &weighted_rev);
-  const auto [src_ranks, dest_ranks] = dolfinx::MPI::neighbors(comm);
+  const auto dest_ranks = dolfinx::MPI::neighbors(comm)[1];
 
   // Global-to-neigbourhood map for destination ranks
   std::map<int, std::int32_t> dest_proc_to_neighbor;
@@ -263,7 +260,7 @@ void SparsityPattern::assemble()
     dest_proc_to_neighbor.insert({dest_ranks[i], i});
 
   // Compute size of data to send to each process
-  std::vector<std::int32_t> data_per_proc(outdegree_rev, 0);
+  std::vector<std::int32_t> data_per_proc(dest_ranks.size(), 0);
   std::vector<int> ghost_to_neighbour_rank(num_ghosts0, -1);
   for (int i = 0; i < num_ghosts0; ++i)
   {
@@ -278,7 +275,7 @@ void SparsityPattern::assemble()
   }
 
   // Compute send displacements
-  std::vector<int> send_disp(outdegree_rev + 1, 0);
+  std::vector<int> send_disp(dest_ranks.size() + 1, 0);
   std::partial_sum(data_per_proc.begin(), data_per_proc.end(),
                    std::next(send_disp.begin(), 1));
 

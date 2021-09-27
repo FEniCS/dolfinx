@@ -119,6 +119,10 @@ public:
   /// range)
   const std::vector<std::int64_t>& ghosts() const noexcept;
 
+  /// Return the MPI communicator used to create the index map
+  /// @return Communicator
+  MPI_Comm comm() const;
+
   /// Return a MPI communicator with attached distributed graph topology
   /// information
   /// @param[in] dir Edge direction of communicator (forward, reverse)
@@ -428,7 +432,8 @@ private:
   // Number indices across communicator
   std::int64_t _size_global;
 
-  // MPI neighborhood communicators
+  // MPI communicator (duplicated of 'input' communicator)
+  dolfinx::MPI::Comm _comm;
 
   // Communicator where the source ranks own the indices in the callers
   // halo, and the destination ranks 'ghost' indices owned by the
@@ -455,7 +460,7 @@ private:
   std::vector<std::int64_t> _ghosts;
 
   // List of owned local indices that are in the halo (ghost) region on
-  // other ranks, grouped by rank in the neighbor communicator
+  // other ranks, grouped by rank on the neighbor communicator
   // (destination ranks in forward communicator and source ranks in the
   // reverse communicator), i.e. `_shared_indices.num_nodes() ==
   // size(_comm_owner_to_ghost)`.

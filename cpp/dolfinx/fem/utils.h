@@ -21,6 +21,7 @@
 #include <ufc.h>
 #include <utility>
 #include <vector>
+#include <xtl/xspan.hpp>
 
 namespace dolfinx::common
 {
@@ -382,19 +383,19 @@ namespace impl
 // Pack a single coefficient
 template <typename T, int _bs = -1>
 void pack_coefficient(
-    array2d<T>& c, const std::vector<T>& v,
+    const xtl::span<T>& c, int cstride, const std::vector<T>& v,
     const xtl::span<const std::uint32_t>& cell_info, const fem::DofMap& dofmap,
     std::int32_t num_cells, std::int32_t offset, int space_dim,
     const std::function<void(const xtl::span<T>&,
                              const xtl::span<const std::uint32_t>&,
-                             std::int32_t, int)>& transform)
+                             std::int32_t, int)>& transformation)
 {
   const int bs = dofmap.bs();
   assert(_bs < 0 or _bs == bs);
   for (std::int32_t cell = 0; cell < num_cells; ++cell)
   {
     auto dofs = dofmap.cell_dofs(cell);
-    auto cell_coeff = c.row(cell).subspan(offset, space_dim);
+    auto cell_coeff = c.subspan(cell * cstride + offset, space_dim);
     for (std::size_t i = 0; i < dofs.size(); ++i)
     {
       if constexpr (_bs < 0)
@@ -412,7 +413,8 @@ void pack_coefficient(
           cell_coeff[pos_c + k] = v[pos_v + k];
       }
     }
-    transform(cell_coeff, cell_info, cell, 1);
+
+    transformation(cell_coeff, cell_info, cell, 1);
   }
 }
 } // namespace impl
@@ -420,7 +422,8 @@ void pack_coefficient(
 // NOTE: This is subject to change
 /// Pack coefficients of u of generic type U ready for assembly
 template <typename U>
-array2d<typename U::scalar_type> pack_coefficients(const U& u)
+std::pair<std::vector<typename U::scalar_type>, int>
+pack_coefficients(const U& u)
 {
   using T = typename U::scalar_type;
 
@@ -448,7 +451,8 @@ array2d<typename U::scalar_type> pack_coefficients(const U& u)
         + mesh->topology().index_map(tdim)->num_ghosts();
 
   // Copy data into coefficient array
-  array2d<T> c(num_cells, offsets.back());
+  std::vector<T> c(num_cells * offsets.back());
+  const int cstride = offsets.back();
   if (!coefficients.empty())
   {
     bool needs_dof_transformations = false;
@@ -475,31 +479,35 @@ array2d<typename U::scalar_type> pack_coefficients(const U& u)
       if (int bs = dofmaps[coeff]->bs(); bs == 1)
       {
         impl::pack_coefficient<T, 1>(
-            c, v[coeff], cell_info, *dofmaps[coeff], num_cells, offsets[coeff],
-            elements[coeff]->space_dimension(), transformation);
+            xtl::span<T>(c), cstride, v[coeff], cell_info, *dofmaps[coeff],
+            num_cells, offsets[coeff], elements[coeff]->space_dimension(),
+            transformation);
       }
       else if (bs == 2)
       {
         impl::pack_coefficient<T, 2>(
-            c, v[coeff], cell_info, *dofmaps[coeff], num_cells, offsets[coeff],
-            elements[coeff]->space_dimension(), transformation);
+            xtl::span<T>(c), cstride, v[coeff], cell_info, *dofmaps[coeff],
+            num_cells, offsets[coeff], elements[coeff]->space_dimension(),
+            transformation);
       }
       else if (bs == 3)
       {
         impl::pack_coefficient<T, 3>(
-            c, v[coeff], cell_info, *dofmaps[coeff], num_cells, offsets[coeff],
-            elements[coeff]->space_dimension(), transformation);
+            xtl::span<T>(c), cstride, v[coeff], cell_info, *dofmaps[coeff],
+            num_cells, offsets[coeff], elements[coeff]->space_dimension(),
+            transformation);
       }
       else
       {
-        impl::pack_coefficient<T>(
-            c, v[coeff], cell_info, *dofmaps[coeff], num_cells, offsets[coeff],
-            elements[coeff]->space_dimension(), transformation);
+        impl::pack_coefficient<T>(xtl::span<T>(c), cstride, v[coeff], cell_info,
+                                  *dofmaps[coeff], num_cells, offsets[coeff],
+                                  elements[coeff]->space_dimension(),
+                                  transformation);
       }
     }
   }
 
-  return c;
+  return {std::move(c), cstride};
 }
 
 // NOTE: This is subject to change

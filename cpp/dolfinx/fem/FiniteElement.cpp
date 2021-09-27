@@ -100,6 +100,9 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
   case tetrahedron:
     _cell_shape = mesh::CellType::tetrahedron;
     break;
+  case prism:
+    _cell_shape = mesh::CellType::prism;
+    break;
   case hexahedron:
     _cell_shape = mesh::CellType::hexahedron;
     break;
@@ -110,11 +113,9 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
   assert(mesh::cell_dim(_cell_shape) == _tdim);
 
   static const std::map<ufc_shape, std::string> ufc_to_cell
-      = {{vertex, "point"},
-         {interval, "interval"},
-         {triangle, "triangle"},
-         {tetrahedron, "tetrahedron"},
-         {quadrilateral, "quadrilateral"},
+      = {{vertex, "point"},         {interval, "interval"},
+         {triangle, "triangle"},    {tetrahedron, "tetrahedron"},
+         {prism, "prism"},          {quadrilateral, "quadrilateral"},
          {hexahedron, "hexahedron"}};
   const std::string cell_shape = ufc_to_cell.at(ufc_element.cell_shape);
 
@@ -143,13 +144,14 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
 
   if (is_basix_element(ufc_element))
   {
-    if (ufc_element.lattice_type != -1)
+    if (ufc_element.lagrange_variant != -1)
     {
       _element = std::make_unique<basix::FiniteElement>(basix::create_element(
           static_cast<basix::element::family>(ufc_element.basix_family),
           static_cast<basix::cell::type>(ufc_element.basix_cell),
           ufc_element.degree,
-          static_cast<basix::lattice::type>(ufc_element.lattice_type),
+          static_cast<basix::element::lagrange_variant>(
+              ufc_element.lagrange_variant),
           ufc_element.discontinuous));
     }
     else
@@ -301,7 +303,8 @@ FiniteElement::get_dof_permutation_function(bool inverse,
     {
       // If this element shouldn't be permuted but needs transformations, return
       // a function that throws an error
-      return [](const xtl::span<std::int32_t>&, std::uint32_t) {
+      return [](const xtl::span<std::int32_t>&, std::uint32_t)
+      {
         throw std::runtime_error(
             "Permutations should not be applied for this element.");
       };

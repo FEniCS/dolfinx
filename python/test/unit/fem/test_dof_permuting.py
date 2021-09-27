@@ -276,9 +276,6 @@ def test_evaluation(cell_type, space_type, space_order):
 )
 @pytest.mark.parametrize('space_order', range(1, 4))
 def test_integral(cell_type, space_type, space_order):
-    # TODO: Fix jump integrals in FFCx by passing in full info for both cells, then re-enable these tests
-    pytest.xfail()
-
     random.seed(4)
     for repeat in range(10):
         mesh = random_evaluation_mesh(cell_type)
@@ -289,7 +286,7 @@ def test_integral(cell_type, space_type, space_order):
 
         for d in dofs:
             v = Function(V)
-            v.vector[:] = [1 if i == d else 0 for i in range(V.dim)]
+            v.vector[:] = [1 if i == d else 0 for i, _ in enumerate(v.vector[:])]
             if space_type in ["RT", "BDM", "RTCF", "NCF"]:
                 # Hdiv
                 def normal(x):
