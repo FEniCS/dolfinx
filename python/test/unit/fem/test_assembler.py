@@ -774,7 +774,7 @@ def test_pack_coefficients():
         for b in [b2, b3, b4]:
             b.assemble()
             with b.localForm() as _b:
-                assert (b - _b0).norm() > 1.0e-8
+                assert (_b - _b0).norm() > 1.0e-8
 
     # Test matrix
     du = ufl.TrialFunction(V)
