@@ -9,8 +9,8 @@ import math
 
 import dolfinx
 import numpy
-import scipy.sparse
 import pytest
+import scipy.sparse
 import ufl
 from dolfinx import fem
 from dolfinx.generation import UnitCubeMesh, UnitSquareMesh
@@ -734,3 +734,70 @@ def test_lambda_assembler():
     v = numpy.ones(mat.shape[1])
     s = MPI.COMM_WORLD.allreduce(mat.dot(v).sum(), MPI.SUM)
     assert numpy.isclose(s, 1.0)
+
+
+def test_pack_coefficients():
+    """Test packing of form coefficients ahead of main assembly call"""
+    mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 12, 15)
+    V = fem.FunctionSpace(mesh, ("Lagrange", 1))
+
+    # Non-blocked
+    u = fem.Function(V)
+    v = ufl.TestFunction(V)
+    c = dolfinx.Constant(mesh, 12.0)
+    F = ufl.inner(c, v) * dx - c * ufl.sqrt(u * u) * ufl.inner(u, v) * dx
+    with u.vector.localForm() as x_local:
+        x_local.set(10.0)
+
+    # Test vector
+    b0 = fem.assemble_vector(F)
+    b0.assemble()
+    constants = fem.assemble.pack_constants(F)
+    coeffs = fem.assemble.pack_coefficients(F)
+    b1 = fem.assemble_vector(F, coeffs=(None, None))
+    b2 = fem.assemble_vector(F, coeffs=(None, coeffs))
+    b3 = fem.assemble_vector(F, coeffs=(constants, None))
+    b4 = fem.assemble_vector(F, coeffs=(constants, coeffs))
+    with b0.localForm() as _b0:
+        for b in [b1, b2, b3, b4]:
+            b.assemble()
+            with b.localForm() as _b:
+                assert (_b0.array_r == _b.array_r).all()
+
+    # Change coefficients
+    constants *= 5.0
+    coeffs *= 5.0
+    b2 = fem.assemble_vector(F, coeffs=(None, coeffs))
+    b3 = fem.assemble_vector(F, coeffs=(constants, None))
+    b4 = fem.assemble_vector(F, coeffs=(constants, coeffs))
+    with b0.localForm() as _b0:
+        for b in [b2, b3, b4]:
+            b.assemble()
+            with b.localForm() as _b:
+                assert (b - _b0).norm() > 1.0e-8
+
+    # Test matrix
+    du = ufl.TrialFunction(V)
+    J = ufl.derivative(F, u, du)
+
+    A0 = fem.assemble_matrix(J)
+    A0.assemble()
+
+    constants = fem.assemble.pack_constants(J)
+    coeffs = fem.assemble.pack_coefficients(J)
+    A1 = fem.assemble_matrix(J, coeffs=(None, None))
+    A2 = fem.assemble_matrix(J, coeffs=(None, coeffs))
+    A3 = fem.assemble_matrix(J, coeffs=(constants, None))
+    A4 = fem.assemble_matrix(J, coeffs=(constants, coeffs))
+    for A in [A1, A2, A3, A4]:
+        A.assemble()
+        assert pytest.approx((A - A0).norm(), 1.0e-12) == 0.0
+
+    constants *= 5.0
+    coeffs *= 5.0
+    A2 = fem.assemble_matrix(J, coeffs=(None, coeffs))
+    A3 = fem.assemble_matrix(J, coeffs=(constants, None))
+    A4 = fem.assemble_matrix(J, coeffs=(constants, coeffs))
+    for A in [A2, A3, A4]:
+        A.assemble()
+        assert (A - A0).norm() > 1.0e-8
