@@ -749,17 +749,14 @@ def test_pack_coefficients():
     with u.vector.localForm() as x_local:
         x_local.set(10.0)
 
-    # Test vector
+    # -- Test vector
     b0 = fem.assemble_vector(F)
     b0.assemble()
     constants = fem.assemble.pack_constants(F)
     coeffs = fem.assemble.pack_coefficients(F)
-    b1 = fem.assemble_vector(F, coeffs=(None, None))
-    b2 = fem.assemble_vector(F, coeffs=(None, coeffs))
-    b3 = fem.assemble_vector(F, coeffs=(constants, None))
-    b4 = fem.assemble_vector(F, coeffs=(constants, coeffs))
     with b0.localForm() as _b0:
-        for b in [b1, b2, b3, b4]:
+        for c in [(None, None), (None, coeffs), (constants, None), (constants, coeffs)]:
+            b = fem.assemble_vector(F, coeffs=c)
             b.assemble()
             with b.localForm() as _b:
                 assert (_b0.array_r == _b.array_r).all()
@@ -767,16 +764,14 @@ def test_pack_coefficients():
     # Change coefficients
     constants *= 5.0
     coeffs *= 5.0
-    b2 = fem.assemble_vector(F, coeffs=(None, coeffs))
-    b3 = fem.assemble_vector(F, coeffs=(constants, None))
-    b4 = fem.assemble_vector(F, coeffs=(constants, coeffs))
     with b0.localForm() as _b0:
-        for b in [b2, b3, b4]:
+        for c in [(None, coeffs), (constants, None), (constants, coeffs)]:
+            b = fem.assemble_vector(F, coeffs=c)
             b.assemble()
             with b.localForm() as _b:
-                assert (_b - _b0).norm() > 1.0e-8
+                assert (_b0 - _b).norm() > 1.0e-5
 
-    # Test matrix
+    # -- Test matrix
     du = ufl.TrialFunction(V)
     J = ufl.derivative(F, u, du)
 
@@ -785,19 +780,15 @@ def test_pack_coefficients():
 
     constants = fem.assemble.pack_constants(J)
     coeffs = fem.assemble.pack_coefficients(J)
-    A1 = fem.assemble_matrix(J, coeffs=(None, None))
-    A2 = fem.assemble_matrix(J, coeffs=(None, coeffs))
-    A3 = fem.assemble_matrix(J, coeffs=(constants, None))
-    A4 = fem.assemble_matrix(J, coeffs=(constants, coeffs))
-    for A in [A1, A2, A3, A4]:
+    for c in [(None, None), (None, coeffs), (constants, None), (constants, coeffs)]:
+        A = fem.assemble_matrix(J, coeffs=c)
         A.assemble()
         assert pytest.approx((A - A0).norm(), 1.0e-12) == 0.0
 
+    # Change coefficients
     constants *= 5.0
     coeffs *= 5.0
-    A2 = fem.assemble_matrix(J, coeffs=(None, coeffs))
-    A3 = fem.assemble_matrix(J, coeffs=(constants, None))
-    A4 = fem.assemble_matrix(J, coeffs=(constants, coeffs))
-    for A in [A2, A3, A4]:
+    for c in [(None, coeffs), (constants, None), (constants, coeffs)]:
+        A = fem.assemble_matrix(J, coeffs=c)
         A.assemble()
-        assert (A - A0).norm() > 1.0e-8
+        assert (A - A0).norm() > 1.0e-5
