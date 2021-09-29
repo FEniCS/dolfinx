@@ -291,7 +291,7 @@ std::vector<std::int64_t> refinement::adjust_indices(
   // of "index_map", and adjust existing indices to match.
 
   // Get number of new indices on all processes
-  MPI_Comm comm = index_map->comm(common::IndexMap::Direction::forward);
+  MPI_Comm comm = index_map->comm();
   int mpi_size = dolfinx::MPI::size(comm);
   int mpi_rank = dolfinx::MPI::rank(comm);
   std::vector<std::int32_t> recvn(mpi_size);

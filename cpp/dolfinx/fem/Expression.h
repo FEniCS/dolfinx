@@ -6,12 +6,12 @@
 
 #pragma once
 
-#include <dolfinx/common/array2d.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <functional>
 #include <utility>
 #include <vector>
 #include <xtensor/xarray.hpp>
+#include <xtensor/xtensor.hpp>
 #include <xtl/xspan.hpp>
 
 namespace dolfinx::fem
@@ -44,7 +44,8 @@ public:
   Expression(
       const std::vector<std::shared_ptr<const fem::Function<T>>>& coefficients,
       const std::vector<std::shared_ptr<const fem::Constant<T>>>& constants,
-      const std::shared_ptr<const mesh::Mesh>& mesh, const array2d<double>& X,
+      const std::shared_ptr<const mesh::Mesh>& mesh,
+      const xt::xtensor<double, 2>& X,
       const std::function<void(T*, const T*, const T*, const double*)> fn,
       const std::size_t value_size)
       : _coefficients(coefficients), _constants(constants), _mesh(mesh), _x(X),
@@ -96,7 +97,7 @@ public:
     assert(_mesh);
 
     // Prepare coefficients and constants
-    const array2d<T> coeffs = pack_coefficients(*this);
+    const auto [coeffs, cstride] = pack_coefficients(*this);
     const std::vector<T> constant_data = pack_constants(*this);
 
     const auto& fn = this->get_tabulate_expression();
@@ -126,9 +127,9 @@ public:
                     std::next(coordinate_dofs.begin(), 3 * i));
       }
 
-      auto coeff_cell = coeffs.row(cell);
+      const T* coeff_cell = coeffs.data() + cell * cstride;
       std::fill(values_e.begin(), values_e.end(), 0.0);
-      fn(values_e.data(), coeff_cell.data(), constant_data.data(),
+      fn(values_e.data(), coeff_cell, constant_data.data(),
          coordinate_dofs.data());
 
       for (std::size_t j = 0; j < values_e.size(); ++j)
@@ -159,7 +160,7 @@ public:
 
   /// Get evaluation points on reference cell
   /// @return Evaluation points
-  const array2d<double>& x() const { return _x; }
+  const xt::xtensor<double, 2>& x() const { return _x; }
 
   /// Get value size
   /// @return value_size
@@ -167,7 +168,7 @@ public:
 
   /// Get number of points
   /// @return number of points
-  const std::size_t num_points() const { return _x.shape[0]; }
+  const std::size_t num_points() const { return _x.shape(0); }
 
   /// Scalar type (T).
   using scalar_type = T;
@@ -183,7 +184,7 @@ private:
   std::function<void(T*, const T*, const T*, const double*)> _fn;
 
   // Evaluation points on reference cell
-  array2d<double> _x;
+  xt::xtensor<double, 2> _x;
 
   // The mesh.
   std::shared_ptr<const mesh::Mesh> _mesh;

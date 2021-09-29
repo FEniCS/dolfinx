@@ -10,7 +10,6 @@
 #include "interpolate.h"
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/UniqueIdGenerator.h>
-#include <dolfinx/common/array2d.h>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/la/PETScVector.h>

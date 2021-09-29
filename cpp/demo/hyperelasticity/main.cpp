@@ -32,10 +32,9 @@ public:
 
     std::vector<PetscInt> ghosts(map->ghosts().begin(), map->ghosts().end());
     std::int64_t size_global = bs * map->size_global();
-    VecCreateGhostBlockWithArray(
-        map->comm(common::IndexMap::Direction::forward), bs, size_local,
-        size_global, ghosts.size(), ghosts.data(), _b.array().data(),
-        &_b_petsc);
+    VecCreateGhostBlockWithArray(map->comm(), bs, size_local, size_global,
+                                 ghosts.size(), ghosts.data(),
+                                 _b.array().data(), &_b_petsc);
   }
 
   /// Destructor

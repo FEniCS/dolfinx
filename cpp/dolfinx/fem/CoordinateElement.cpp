@@ -46,10 +46,10 @@ CoordinateElement::CoordinateElement(
 }
 //-----------------------------------------------------------------------------
 CoordinateElement::CoordinateElement(mesh::CellType celltype, int degree)
-    : CoordinateElement(std::make_shared<basix::FiniteElement>(
-        basix::create_element(basix::element::family::P,
-                              mesh::cell_type_to_basix_type(celltype), degree,
-            basix::element::lagrange_variant::equispaced, false)))
+    : CoordinateElement(
+        std::make_shared<basix::FiniteElement>(basix::create_element(
+            basix::element::family::P, mesh::cell_type_to_basix_type(celltype),
+            degree, basix::element::lagrange_variant::equispaced, false)))
 {
   // Do nothing
 }
@@ -97,7 +97,13 @@ void CoordinateElement::compute_jacobian(
   {
     xt::noalias(dphi0) = xt::view(dphi, xt::all(), 0, xt::all(), 0);
     math::dot(cell_geom, dphi0, J0, true);
-    J = xt::broadcast(J0, J.shape());
+    // NOTE: Should be using xt::broadcast, but it's much slower than a
+    // plain loop.
+    for (std::size_t p = 0; p < num_points; ++p)
+    {
+      auto J_ip = xt::view(J, p, xt::all(), xt::all());
+      J_ip.assign(J0);
+    }
   }
   else
   {
@@ -130,7 +136,11 @@ void CoordinateElement::compute_jacobian_inverse(
       math::inv(J0, K0);
     else
       math::pinv(J0, K0);
-    K = xt::broadcast(K0, K.shape());
+    for (std::size_t p = 0; p < J.shape(0); ++p)
+    {
+      auto K_ip = xt::view(K, p, xt::all(), xt::all());
+      K_ip.assign(K0);
+    }
   }
   else
   {
