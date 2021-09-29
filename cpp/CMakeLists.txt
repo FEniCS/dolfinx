@@ -147,13 +147,12 @@ execute_process(
   RESULT_VARIABLE BASIX_PY_COMMAND_RESULT
   ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
 if (BASIX_PY_DIR)
-  message(STATUS "Adding ${BASIX_PY_DIR} to Basix search hints")
+  message(STATUS "Adding ${BASIX_PY_DIR} to Basix/xtensor/xtl search hints")
   set(xtl_ROOT "${BASIX_PY_DIR};${xtl_ROOT}")
+  set(xsimd "${BASIX_PY_DIR};${xsimd_ROOT}")
   set(xtensor_ROOT "${BASIX_PY_DIR};${xtensor_ROOT}")
   set(xtensor-blas_ROOT "${BASIX_PY_DIR};${xtensor-blas_ROOT}")
 endif()
-message("***** ${xtensor-blas_ROOT}")
-message("BOO ${xtl_DIR}")
 find_package(Basix REQUIRED CONFIG HINTS ${BASIX_PY_DIR})
 set_package_properties(basix PROPERTIES TYPE REQUIRED
   DESCRIPTION "FEniCS tabulation library"
