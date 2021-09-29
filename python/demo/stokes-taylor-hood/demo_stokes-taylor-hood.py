@@ -168,7 +168,7 @@ a_p = [[a[0][0], None],
 # Dirichlet boundary conditions are zeroed and a value of 1 is set on
 # the diagonal.
 
-A = dolfinx.fem.assemble_matrix_nest(a, bcs)
+A = dolfinx.fem.assemble_matrix_nest(a, bcs=bcs)
 A.assemble()
 
 # We create a nested matrix `P` to use as the preconditioner. The
@@ -185,7 +185,7 @@ P.assemble()
 b = dolfinx.fem.assemble.assemble_vector_nest(L)
 
 # Modify ('lift') the RHS for Dirichlet boundary conditions
-dolfinx.fem.assemble.apply_lifting_nest(b, a, bcs)
+dolfinx.fem.assemble.apply_lifting_nest(b, a, bcs=bcs)
 
 # Sum contributions from ghost entries on the owner
 for b_sub in b.getNestSubVecs():
@@ -280,11 +280,11 @@ with XDMFFile(MPI.COMM_WORLD, "pressure.xdmf", "w") as pfile_xdmf:
 # Next, we solve same problem, but now with monolithic (non-nested)
 # matrices and iterative solvers.
 
-A = dolfinx.fem.assemble_matrix_block(a, bcs)
+A = dolfinx.fem.assemble_matrix_block(a, bcs=bcs)
 A.assemble()
-P = dolfinx.fem.assemble_matrix_block(a_p, bcs)
+P = dolfinx.fem.assemble_matrix_block(a_p, bcs=bcs)
 P.assemble()
-b = dolfinx.fem.assemble.assemble_vector_block(L, a, bcs)
+b = dolfinx.fem.assemble.assemble_vector_block(L, a, bcs=bcs)
 
 # Set near null space for pressure
 null_vec = A.createVecLeft()
@@ -433,11 +433,11 @@ a = (inner(grad(u), grad(v)) + inner(p, div(v)) + inner(div(u), q)) * dx
 L = inner(f, v) * dx
 
 # Assemble LHS matrix and RHS vector
-A = dolfinx.fem.assemble_matrix(a, bcs)
+A = dolfinx.fem.assemble_matrix(a, bcs=bcs)
 A.assemble()
 b = dolfinx.fem.assemble.assemble_vector(L)
 
-dolfinx.fem.assemble.apply_lifting(b, [a], [bcs])
+dolfinx.fem.assemble.apply_lifting(b, [a], bcs=[bcs])
 b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
 # Set Dirichlet boundary condition values in the RHS
