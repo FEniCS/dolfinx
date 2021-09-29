@@ -1,4 +1,4 @@
-// Copyright (C) 2018-2020 Garth N. Wells
+// Copyright (C) 2018-2021 Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -243,9 +243,8 @@ Vec fem::create_vector_block(
                    dest_ranks.end());
 
   // Create map for combined problem, and create vector
-  common::IndexMap index_map(
-      maps[0].first.get().comm(common::IndexMap::Direction::forward),
-      local_size, dest_ranks, ghosts, ghost_owners);
+  common::IndexMap index_map(maps[0].first.get().comm(), local_size, dest_ranks,
+                             ghosts, ghost_owners);
 
   return la::create_petsc_vector(index_map, 1);
 }
@@ -272,9 +271,10 @@ Vec fem::create_vector_nest(
   return y;
 }
 //-----------------------------------------------------------------------------
-void fem::assemble_vector_petsc(Vec b, const Form<PetscScalar>& L,
-                                const xtl::span<const PetscScalar>& constants,
-                                const array2d<PetscScalar>& coeffs)
+void fem::assemble_vector_petsc(
+    Vec b, const Form<PetscScalar>& L,
+    const xtl::span<const PetscScalar>& constants,
+    const std::pair<xtl::span<const PetscScalar>, int>& coeffs)
 {
   Vec b_local;
   VecGhostGetLocalForm(b, &b_local);
@@ -305,7 +305,7 @@ void fem::assemble_vector_petsc(Vec b, const Form<PetscScalar>& L)
 void fem::apply_lifting_petsc(
     Vec b, const std::vector<std::shared_ptr<const Form<PetscScalar>>>& a,
     const std::vector<xtl::span<const PetscScalar>>& constants,
-    const std::vector<const array2d<PetscScalar>*>& coeffs,
+    const std::vector<std::pair<xtl::span<const PetscScalar>, int>>& coeffs,
     const std::vector<
         std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>>& bcs1,
     const std::vector<Vec>& x0, double scale)

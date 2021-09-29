@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2019 Chris N. Richardson Garth N. Wells
+// Copyright (C) 2017-2021 Chris N. Richardson Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -7,7 +7,6 @@
 #include "array.h"
 #include "caster_mpi.h"
 #include "caster_petsc.h"
-#include <dolfinx/common/array2d.h>
 #include <dolfinx/fem/Function.h>
 #include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/io/VTKFile.h>

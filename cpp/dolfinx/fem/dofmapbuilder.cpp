@@ -203,7 +203,7 @@ build_basic_dofmap(const mesh::Topology& topology,
   }
 
   // Entity dofs on cell (dof = entity_dofs[dim][entity][index])
-  const std::vector<std::vector<std::set<int>>>& entity_dofs
+  const std::vector<std::vector<std::vector<int>>>& entity_dofs
       = element_dof_layout.entity_dofs_all();
 
   // Storage for local-to-global map

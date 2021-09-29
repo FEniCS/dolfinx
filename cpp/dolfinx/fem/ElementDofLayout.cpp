@@ -17,8 +17,9 @@ using namespace dolfinx::fem;
 
 //-----------------------------------------------------------------------------
 ElementDofLayout::ElementDofLayout(
-    int block_size, const std::vector<std::vector<std::set<int>>>& entity_dofs,
-    const std::vector<std::vector<std::set<int>>>& entity_closure_dofs,
+    int block_size,
+    const std::vector<std::vector<std::vector<int>>>& entity_dofs,
+    const std::vector<std::vector<std::vector<int>>>& entity_closure_dofs,
     const std::vector<int>& parent_map,
     const std::vector<std::shared_ptr<const ElementDofLayout>>& sub_dofmaps)
     : _block_size(block_size), _parent_map(parent_map), _num_dofs(0),
@@ -66,27 +67,23 @@ int ElementDofLayout::num_entity_closure_dofs(int dim) const
 std::vector<int> ElementDofLayout::entity_dofs(int entity_dim,
                                                int cell_entity_index) const
 {
-  const std::set<int>& edofs
-      = _entity_dofs.at(entity_dim).at(cell_entity_index);
-  return std::vector<int>(edofs.begin(), edofs.end());
+  return _entity_dofs.at(entity_dim).at(cell_entity_index);
 }
 //-----------------------------------------------------------------------------
 std::vector<int>
 ElementDofLayout::entity_closure_dofs(int entity_dim,
                                       int cell_entity_index) const
 {
-  const std::set<int>& edofs
-      = _entity_closure_dofs.at(entity_dim).at(cell_entity_index);
-  return std::vector<int>(edofs.begin(), edofs.end());
+  return _entity_closure_dofs.at(entity_dim).at(cell_entity_index);
 }
 //-----------------------------------------------------------------------------
-const std::vector<std::vector<std::set<int>>>&
+const std::vector<std::vector<std::vector<int>>>&
 ElementDofLayout::entity_dofs_all() const
 {
   return _entity_dofs;
 }
 //-----------------------------------------------------------------------------
-const std::vector<std::vector<std::set<int>>>&
+const std::vector<std::vector<std::vector<int>>>&
 ElementDofLayout::entity_closure_dofs_all() const
 {
   return _entity_closure_dofs;
