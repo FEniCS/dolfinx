@@ -141,12 +141,6 @@ set_package_properties(xtensor PROPERTIES TYPE REQUIRED
   DESCRIPTION "C++ library for numerical analysis with multi-dimensional array expressions."
   URL "https://xtensor.readthedocs.io/")
 
-# Check for required package xtensor-blas
-find_package(xtensor-blas REQUIRED)
-set_package_properties(xtensor-blas PROPERTIES TYPE REQUIRED
-  DESCRIPTION "BLAS extenssion to xtensor."
-  URL "https://xtensor-blas.readthedocs.io/")
-
 find_package(PETSc 3.10)
 set_package_properties(PETSc PROPERTIES TYPE REQUIRED
   DESCRIPTION "Portable, Extensible Toolkit for Scientific Computation (PETSc)"
