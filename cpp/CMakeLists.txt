@@ -151,7 +151,6 @@ if (BASIX_PY_DIR)
   set(xtl_ROOT "${BASIX_PY_DIR};${xtl_ROOT}")
   set(xsimd "${BASIX_PY_DIR};${xsimd_ROOT}")
   set(xtensor_ROOT "${BASIX_PY_DIR};${xtensor_ROOT}")
-  set(xtensor-blas_ROOT "${BASIX_PY_DIR};${xtensor-blas_ROOT}")
 endif()
 find_package(Basix REQUIRED CONFIG HINTS ${BASIX_PY_DIR})
 set_package_properties(basix PROPERTIES TYPE REQUIRED
