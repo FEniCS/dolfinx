@@ -92,8 +92,8 @@ def test_matrix_assembly_block_nl():
     x0.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
     # Ghosts are updated inside assemble_vector_block
-    A0 = dolfinx.fem.assemble_matrix_block(a_block, [bc])
-    b0 = dolfinx.fem.assemble_vector_block(L_block, a_block, [bc], x0=x0, scale=-1.0)
+    A0 = dolfinx.fem.assemble_matrix_block(a_block, bcs=[bc])
+    b0 = dolfinx.fem.assemble_vector_block(L_block, a_block, bcs=[bc], x0=x0, scale=-1.0)
     A0.assemble()
     assert A0.getType() != "nest"
     Anorm0 = A0.norm()
@@ -107,9 +107,9 @@ def test_matrix_assembly_block_nl():
         soln_sub.vector.copy(result=x1_sub)
         x1_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
-    A1 = dolfinx.fem.assemble_matrix_nest(a_block, [bc])
+    A1 = dolfinx.fem.assemble_matrix_nest(a_block, bcs=[bc])
     b1 = dolfinx.fem.assemble_vector_nest(L_block)
-    dolfinx.fem.apply_lifting_nest(b1, a_block, [bc], x1, scale=-1.0)
+    dolfinx.fem.apply_lifting_nest(b1, a_block, bcs=[bc], x0=x1, scale=-1.0)
     for b_sub in b1.getNestSubVecs():
         b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     bcs0 = dolfinx.cpp.fem.bcs_rows(dolfinx.fem.assemble._create_cpp_form(L_block), [bc])
@@ -138,7 +138,7 @@ def test_matrix_assembly_block_nl():
     bdofsW_V1 = dolfinx.fem.locate_dofs_topological((W.sub(1), V1), facetdim, bndry_facets)
 
     bc = dolfinx.fem.dirichletbc.DirichletBC(u_bc, bdofsW_V1, W.sub(1))
-    A2 = dolfinx.fem.assemble_matrix(J, [bc])
+    A2 = dolfinx.fem.assemble_matrix(J, bcs=[bc])
     A2.assemble()
     b2 = dolfinx.fem.assemble_vector(F)
     dolfinx.fem.apply_lifting(b2, [J], bcs=[[bc]], x0=[U.vector], scale=-1.0)
@@ -164,17 +164,17 @@ class NonlinearPDE_SNESProblem():
         with F.localForm() as f_local:
             f_local.set(0.0)
         dolfinx.fem.assemble_vector(F, self.L)
-        dolfinx.fem.apply_lifting(F, [self.a], [self.bcs], x0=[x], scale=-1.0)
+        dolfinx.fem.apply_lifting(F, [self.a], bcs=[self.bcs], x0=[x], scale=-1.0)
         F.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
         dolfinx.fem.set_bc(F, self.bcs, x, -1.0)
 
     def J_mono(self, snes, x, J, P):
         J.zeroEntries()
-        dolfinx.fem.assemble_matrix(J, self.a, self.bcs, diagonal=1.0)
+        dolfinx.fem.assemble_matrix(J, self.a, bcs=self.bcs, diagonal=1.0)
         J.assemble()
         if self.a_precon is not None:
             P.zeroEntries()
-            dolfinx.fem.assemble_matrix(P, self.a_precon, self.bcs, diagonal=1.0)
+            dolfinx.fem.assemble_matrix(P, self.a_precon, bcs=self.bcs, diagonal=1.0)
             P.assemble()
 
     def F_block(self, snes, x, F):
@@ -192,16 +192,16 @@ class NonlinearPDE_SNESProblem():
             var.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
             offset += size_local
 
-        dolfinx.fem.assemble_vector_block(F, self.L, self.a, self.bcs, x0=x, scale=-1.0)
+        dolfinx.fem.assemble_vector_block(F, self.L, self.a, bcs=self.bcs, x0=x, scale=-1.0)
 
     def J_block(self, snes, x, J, P):
         assert x.getType() != "nest" and J.getType() != "nest" and P.getType() != "nest"
         J.zeroEntries()
-        dolfinx.fem.assemble_matrix_block(J, self.a, self.bcs, diagonal=1.0)
+        dolfinx.fem.assemble_matrix_block(J, self.a, bcs=self.bcs, diagonal=1.0)
         J.assemble()
         if self.a_precon is not None:
             P.zeroEntries()
-            dolfinx.fem.assemble_matrix_block(P, self.a_precon, self.bcs, diagonal=1.0)
+            dolfinx.fem.assemble_matrix_block(P, self.a_precon, bcs=self.bcs, diagonal=1.0)
             P.assemble()
 
     def F_nest(self, snes, x, F):
@@ -219,7 +219,7 @@ class NonlinearPDE_SNESProblem():
             with F_sub.localForm() as F_sub_local:
                 F_sub_local.set(0.0)
             dolfinx.fem.assemble_vector(F_sub, L)
-            dolfinx.fem.apply_lifting(F_sub, a, bc, x0=x, scale=-1.0)
+            dolfinx.fem.apply_lifting(F_sub, a, bcs=bc, x0=x, scale=-1.0)
             F_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
         # Set bc value in RHS
@@ -233,11 +233,11 @@ class NonlinearPDE_SNESProblem():
     def J_nest(self, snes, x, J, P):
         assert J.getType() == "nest" and P.getType() == "nest"
         J.zeroEntries()
-        dolfinx.fem.assemble_matrix_nest(J, self.a, self.bcs, diagonal=1.0)
+        dolfinx.fem.assemble_matrix_nest(J, self.a, bcs=self.bcs, diagonal=1.0)
         J.assemble()
         if self.a_precon is not None:
             P.zeroEntries()
-            dolfinx.fem.assemble_matrix_nest(P, self.a_precon, self.bcs, diagonal=1.0)
+            dolfinx.fem.assemble_matrix_nest(P, self.a_precon, bcs=self.bcs, diagonal=1.0)
             P.assemble()
 
 

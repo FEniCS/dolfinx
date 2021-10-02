@@ -9,8 +9,8 @@ import math
 
 import dolfinx
 import numpy
-import scipy.sparse
 import pytest
+import scipy.sparse
 import ufl
 from dolfinx import fem
 from dolfinx.generation import UnitCubeMesh, UnitSquareMesh
@@ -199,11 +199,11 @@ def test_assemble_manifold():
 
     bcdofs = dolfinx.fem.locate_dofs_geometrical(U, lambda x: numpy.isclose(x[0], 0.0))
     bcs = [dolfinx.DirichletBC(w, bcdofs)]
-    A = dolfinx.fem.assemble_matrix(a, bcs)
+    A = dolfinx.fem.assemble_matrix(a, bcs=bcs)
     A.assemble()
 
     b = dolfinx.fem.assemble_vector(L)
-    dolfinx.fem.apply_lifting(b, [a], [bcs])
+    dolfinx.fem.apply_lifting(b, [a], bcs=[bcs])
     dolfinx.fem.set_bc(b, bcs)
 
     assert numpy.isclose(b.norm(), 0.41231)
@@ -260,21 +260,21 @@ def test_matrix_assembly_block(mode):
     L_block = [L0, L1]
 
     # Monolithic blocked
-    A0 = dolfinx.fem.assemble_matrix_block(a_block, [bc])
+    A0 = dolfinx.fem.assemble_matrix_block(a_block, bcs=[bc])
     A0.assemble()
-    b0 = dolfinx.fem.assemble_vector_block(L_block, a_block, [bc])
+    b0 = dolfinx.fem.assemble_vector_block(L_block, a_block, bcs=[bc])
     assert A0.getType() != "nest"
     Anorm0 = A0.norm()
     bnorm0 = b0.norm()
 
     # Nested (MatNest)
-    A1 = dolfinx.fem.assemble_matrix_nest(a_block, [bc], [["baij", "aij"], ["aij", ""]])
+    A1 = dolfinx.fem.assemble_matrix_nest(a_block, bcs=[bc], mat_types=[["baij", "aij"], ["aij", ""]])
     A1.assemble()
     Anorm1 = nest_matrix_norm(A1)
     assert Anorm0 == pytest.approx(Anorm1, 1.0e-12)
 
     b1 = dolfinx.fem.assemble_vector_nest(L_block)
-    dolfinx.fem.apply_lifting_nest(b1, a_block, [bc])
+    dolfinx.fem.apply_lifting_nest(b1, a_block, bcs=[bc])
     for b_sub in b1.getNestSubVecs():
         b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     bcs0 = dolfinx.cpp.fem.bcs_rows(dolfinx.fem.assemble._create_cpp_form(L_block), [bc])
@@ -295,10 +295,10 @@ def test_matrix_assembly_block(mode):
 
     bdofsW_V1 = dolfinx.fem.locate_dofs_topological((W.sub(1), V1), mesh.topology.dim - 1, bndry_facets)
     bc = dolfinx.fem.dirichletbc.DirichletBC(u_bc, bdofsW_V1, W.sub(1))
-    A2 = dolfinx.fem.assemble_matrix(a, [bc])
+    A2 = dolfinx.fem.assemble_matrix(a, bcs=[bc])
     A2.assemble()
     b2 = dolfinx.fem.assemble_vector(L)
-    dolfinx.fem.apply_lifting(b2, [a], [[bc]])
+    dolfinx.fem.apply_lifting(b2, [a], bcs=[[bc]])
     b2.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     dolfinx.fem.set_bc(b2, [bc])
     assert A2.getType() != "nest"
@@ -360,9 +360,9 @@ def test_assembly_solve_block(mode):
         pass
         # print("Norm:", its, rnorm)
 
-    A0 = dolfinx.fem.assemble_matrix_block([[a00, a01], [a10, a11]], bcs)
+    A0 = dolfinx.fem.assemble_matrix_block([[a00, a01], [a10, a11]], bcs=bcs)
     b0 = dolfinx.fem.assemble_vector_block([L0, L1], [[a00, a01], [a10, a11]],
-                                           bcs)
+                                           bcs=bcs)
     A0.assemble()
     A0norm = A0.norm()
     b0norm = b0.norm()
@@ -378,10 +378,10 @@ def test_assembly_solve_block(mode):
     x0norm = x0.norm()
 
     # Nested (MatNest)
-    A1 = dolfinx.fem.assemble_matrix_nest([[a00, a01], [a10, a11]], bcs, diagonal=1.0)
+    A1 = dolfinx.fem.assemble_matrix_nest([[a00, a01], [a10, a11]], bcs=bcs, diagonal=1.0)
     A1.assemble()
     b1 = dolfinx.fem.assemble_vector_nest([L0, L1])
-    dolfinx.fem.apply_lifting_nest(b1, [[a00, a01], [a10, a11]], bcs)
+    dolfinx.fem.apply_lifting_nest(b1, [[a00, a01], [a10, a11]], bcs=bcs)
     for b_sub in b1.getNestSubVecs():
         b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     bcs0 = dolfinx.cpp.fem.bcs_rows(dolfinx.fem.assemble._create_cpp_form([L0, L1]), bcs)
@@ -430,7 +430,7 @@ def test_assembly_solve_block(mode):
         dolfinx.fem.dirichletbc.DirichletBC(u1_bc, bdofsW1_V1, W.sub(1))
     ]
 
-    A2 = dolfinx.fem.assemble_matrix(a, bcs)
+    A2 = dolfinx.fem.assemble_matrix(a, bcs=bcs)
     A2.assemble()
     b2 = dolfinx.fem.assemble_vector(L)
     dolfinx.fem.apply_lifting(b2, [a], [bcs])
@@ -510,9 +510,11 @@ def test_assembly_solve_taylor_hood(mesh):
 
     def nested_solve():
         """Nested solver"""
-        A = dolfinx.fem.assemble_matrix_nest([[a00, a01], [a10, a11]], [bc0, bc1], [["baij", "aij"], ["aij", ""]])
+        A = dolfinx.fem.assemble_matrix_nest([[a00, a01], [a10, a11]], bcs=[bc0, bc1],
+                                             mat_types=[["baij", "aij"], ["aij", ""]])
         A.assemble()
-        P = dolfinx.fem.assemble_matrix_nest([[p00, p01], [p10, p11]], [bc0, bc1], [["aij", "aij"], ["aij", ""]])
+        P = dolfinx.fem.assemble_matrix_nest([[p00, p01], [p10, p11]], bcs=[bc0, bc1],
+                                             mat_types=[["aij", "aij"], ["aij", ""]])
         P.assemble()
         b = dolfinx.fem.assemble_vector_nest([L0, L1])
         dolfinx.fem.apply_lifting_nest(b, [[a00, a01], [a10, a11]], [bc0, bc1])
@@ -549,12 +551,12 @@ def test_assembly_solve_taylor_hood(mesh):
 
     def blocked_solve():
         """Blocked (monolithic) solver"""
-        A = dolfinx.fem.assemble_matrix_block([[a00, a01], [a10, a11]], [bc0, bc1])
+        A = dolfinx.fem.assemble_matrix_block([[a00, a01], [a10, a11]], bcs=[bc0, bc1])
         A.assemble()
-        P = dolfinx.fem.assemble_matrix_block([[p00, p01], [p10, p11]], [bc0, bc1])
+        P = dolfinx.fem.assemble_matrix_block([[p00, p01], [p10, p11]], bcs=[bc0, bc1])
         P.assemble()
         b = dolfinx.fem.assemble_vector_block([L0, L1], [[a00, a01], [a10, a11]],
-                                              [bc0, bc1])
+                                              bcs=[bc0, bc1])
 
         ksp = PETSc.KSP()
         ksp.create(mesh.mpi_comm())
@@ -598,13 +600,13 @@ def test_assembly_solve_taylor_hood(mesh):
         bc0 = dolfinx.DirichletBC(u0, bdofsW0_P2_0, W.sub(0))
         bc1 = dolfinx.DirichletBC(u0, bdofsW0_P2_1, W.sub(0))
 
-        A = dolfinx.fem.assemble_matrix(a, [bc0, bc1])
+        A = dolfinx.fem.assemble_matrix(a, bcs=[bc0, bc1])
         A.assemble()
-        P = dolfinx.fem.assemble_matrix(p_form, [bc0, bc1])
+        P = dolfinx.fem.assemble_matrix(p_form, bcs=[bc0, bc1])
         P.assemble()
 
         b = dolfinx.fem.assemble_vector(L)
-        dolfinx.fem.apply_lifting(b, [a], [[bc0, bc1]])
+        dolfinx.fem.apply_lifting(b, [a], bcs=[[bc0, bc1]])
         b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
         dolfinx.fem.set_bc(b, [bc0, bc1])
 
@@ -732,3 +734,61 @@ def test_lambda_assembler():
     v = numpy.ones(mat.shape[1])
     s = MPI.COMM_WORLD.allreduce(mat.dot(v).sum(), MPI.SUM)
     assert numpy.isclose(s, 1.0)
+
+
+def test_pack_coefficients():
+    """Test packing of form coefficients ahead of main assembly call"""
+    mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 12, 15)
+    V = fem.FunctionSpace(mesh, ("Lagrange", 1))
+
+    # Non-blocked
+    u = fem.Function(V)
+    v = ufl.TestFunction(V)
+    c = dolfinx.Constant(mesh, 12.0)
+    F = ufl.inner(c, v) * dx - c * ufl.sqrt(u * u) * ufl.inner(u, v) * dx
+    with u.vector.localForm() as x_local:
+        x_local.set(10.0)
+
+    # -- Test vector
+    b0 = fem.assemble_vector(F)
+    b0.assemble()
+    constants = fem.assemble.pack_constants(F)
+    coeffs = fem.assemble.pack_coefficients(F)
+    with b0.localForm() as _b0:
+        for c in [(None, None), (None, coeffs), (constants, None), (constants, coeffs)]:
+            b = fem.assemble_vector(F, coeffs=c)
+            b.assemble()
+            with b.localForm() as _b:
+                assert (_b0.array_r == _b.array_r).all()
+
+    # Change coefficients
+    constants *= 5.0
+    coeffs *= 5.0
+    with b0.localForm() as _b0:
+        for c in [(None, coeffs), (constants, None), (constants, coeffs)]:
+            b = fem.assemble_vector(F, coeffs=c)
+            b.assemble()
+            with b.localForm() as _b:
+                assert (_b0 - _b).norm() > 1.0e-5
+
+    # -- Test matrix
+    du = ufl.TrialFunction(V)
+    J = ufl.derivative(F, u, du)
+
+    A0 = fem.assemble_matrix(J)
+    A0.assemble()
+
+    constants = fem.assemble.pack_constants(J)
+    coeffs = fem.assemble.pack_coefficients(J)
+    for c in [(None, None), (None, coeffs), (constants, None), (constants, coeffs)]:
+        A = fem.assemble_matrix(J, coeffs=c)
+        A.assemble()
+        assert pytest.approx((A - A0).norm(), 1.0e-12) == 0.0
+
+    # Change coefficients
+    constants *= 5.0
+    coeffs *= 5.0
+    for c in [(None, coeffs), (constants, None), (constants, coeffs)]:
+        A = fem.assemble_matrix(J, coeffs=c)
+        A.assemble()
+        assert (A - A0).norm() > 1.0e-5
