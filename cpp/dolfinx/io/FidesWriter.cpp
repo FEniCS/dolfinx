@@ -226,7 +226,7 @@ void Adios2Writer::close()
     _engine->Close();
 }
 //-----------------------------------------------------------------------------
-xt::xtensor<std::uint64_t, 2>
+xt::xtensor<std::int64_t, 2>
 io::extract_vtk_connectivity(std::shared_ptr<const mesh::Mesh> mesh)
 {
   // Get DOLFINx to VTK permutation
@@ -250,7 +250,7 @@ io::extract_vtk_connectivity(std::shared_ptr<const mesh::Mesh> mesh)
       = mesh->topology().index_map(tdim)->size_local();
 
   // Write mesh connectivity
-  xt::xtensor<std::uint64_t, 2> topology({num_cells, num_nodes});
+  xt::xtensor<std::int64_t, 2> topology({num_cells, num_nodes});
   for (size_t c = 0; c < num_cells; ++c)
   {
     auto x_dofs = x_dofmap.links(c);

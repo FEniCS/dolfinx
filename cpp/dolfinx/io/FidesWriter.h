@@ -103,7 +103,7 @@ protected:
 /// @param [in] mesh The mesh
 /// @return The cell topology in VTK ordering and in term of the DOLFINx
 /// geometry 'nodes'
-xt::xtensor<std::uint64_t, 2>
+xt::xtensor<std::int64_t, 2>
 extract_vtk_connectivity(std::shared_ptr<const mesh::Mesh> mesh);
 
 /// Output of meshes and functions compatible with the FIDES Paraview
