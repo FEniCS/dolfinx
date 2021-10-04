@@ -215,7 +215,7 @@ std::shared_ptr<fem::FunctionSpace> fem::create_functionspace(
         const graph::AdjacencyList<std::int32_t>&)>& reorder_fn)
 {
   ufc_function_space* space = fptr(function_name.c_str());
-  if (!ufc_function_space)
+  if (!space)
   {
     throw std::runtime_error(
         "Could not create UFC function space with function name "
@@ -223,12 +223,12 @@ std::shared_ptr<fem::FunctionSpace> fem::create_functionspace(
   }
 
   ufc_finite_element* ufc_element = space->finite_element;
-  assert(ufc_finite_element);
+  assert(ufc_element);
   std::shared_ptr<const fem::FiniteElement> element
       = std::make_shared<fem::FiniteElement>(*ufc_element);
 
   ufc_dofmap* ufc_map = space->dofmap;
-  assert(ufc_dofmap);
+  assert(ufc_map);
   auto V = std::make_shared<fem::FunctionSpace>(
       mesh, element,
       std::make_shared<fem::DofMap>(fem::create_dofmap(
