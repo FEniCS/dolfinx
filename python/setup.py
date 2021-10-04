@@ -15,6 +15,11 @@ VERSION = "0.3.1.dev0"
 
 REQUIREMENTS = [
     "numpy",
+    "mpi4py",
+    "petsc4py",
+    "typing",
+    "fenics-ffcx>=0.3.0,<0.4.0",
+    "fenics-ufl>=2021.1.0,<2021.2.0"
 ]
 
 
@@ -38,7 +43,7 @@ class CMakeBuild(build_ext):
     def build_extension(self, ext):
         extdir = os.path.abspath(os.path.dirname(self.get_ext_fullpath(ext.name)))
         cmake_args = ['-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=' + extdir,
-                      '-DPython3_EXECUTABLE=' + sys.executable]
+                      '-DPYTHON_EXECUTABLE=' + sys.executable]
 
         cfg = 'Debug' if self.debug else 'Release'
         build_args = ['--config', cfg]
