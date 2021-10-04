@@ -151,6 +151,7 @@ if (BASIX_PY_DIR)
   set(xtl_ROOT "${BASIX_PY_DIR};${xtl_ROOT}")
   set(xsimd "${BASIX_PY_DIR};${xsimd_ROOT}")
   set(xtensor_ROOT "${BASIX_PY_DIR};${xtensor_ROOT}")
+  set(CMAKE_INSTALL_RPATH ${BASIX_PY_DIR}/../fenics_basix.libs)
 endif()
 find_package(Basix REQUIRED CONFIG HINTS ${BASIX_PY_DIR})
 set_package_properties(basix PROPERTIES TYPE REQUIRED
