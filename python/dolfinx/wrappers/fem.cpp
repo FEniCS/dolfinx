@@ -61,9 +61,23 @@ void fem(py::module& m)
         py::return_value_policy::take_ownership,
         "Create nested vector for multiple (stacked) linear forms.");
 
-  m.def("create_sparsity_pattern",
-        &dolfinx::fem::create_sparsity_pattern<PetscScalar>,
-        "Create a sparsity pattern for bilinear form.");
+  m.def(
+      "create_sparsity_pattern",
+      [](const dolfinx::mesh::Topology& topology,
+         const std::vector<std::reference_wrapper<const dolfinx::fem::DofMap>>&
+             dofmaps,
+         const std::set<dolfinx::fem::IntegralType>& types)
+      {
+        if (dofmaps.size() != 2)
+        {
+          throw std::runtime_error(
+              "create_sparsity_pattern requires exactly two dofmaps.");
+        }
+
+        return dolfinx::fem::create_sparsity_pattern(
+            topology, {dofmaps[0], dofmaps[1]}, types);
+      },
+      "Create a sparsity pattern.");
   m.def(
       "pack_coefficients",
       [](dolfinx::fem::Form<PetscScalar>& form)
