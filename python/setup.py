@@ -13,18 +13,10 @@ if sys.version_info < (3, 7):
 
 VERSION = "0.3.1.dev0"
 
-INSTALL_REQUIREMENTS = [
+REQUIREMENTS = [
     "numpy",
     "mpi4py",
     "petsc4py",
-    "fenics-ffcx>=0.3.1.dev0,<0.4.0",
-    "fenics-ufl>=2021.1.0,<2021.2.0"
-]
-
-SETUP_REQUIREMENTS = [
-    "mpi4py",
-    "petsc4py",
-    "pybind11",
     "fenics-ffcx>=0.3.1.dev0,<0.4.0",
     "fenics-ufl>=2021.1.0,<2021.2.0"
 ]
@@ -82,6 +74,6 @@ setup(name='fenics-dolfinx',
       package_data={'dolfinx.wrappers': ['*.h']},
       ext_modules=[CMakeExtension('dolfinx.cpp')],
       cmdclass=dict(build_ext=CMakeBuild),
-      install_requires=INSTALL_REQUIREMENTS,
-      setup_requires=SETUP_REQUIREMENTS,
+      install_requires=REQUIREMENTS,
+      setup_requires=["pybind11"],
       zip_safe=False)
