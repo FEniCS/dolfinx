@@ -232,7 +232,6 @@ def test_interpolation_spaces():
     u.interpolate(lambda x: x)
     v.interpolate(u)
 
-    x = ufl.SpatialCoordinate(mesh)
-    s = dolfinx.fem.assemble_scalar(ufl.inner(u-v,u-v)*ufl.dx)
+    s = dolfinx.fem.assemble_scalar(ufl.inner(u - v, u - v) * ufl.dx)
 
     assert np.isclose(s, 0)
