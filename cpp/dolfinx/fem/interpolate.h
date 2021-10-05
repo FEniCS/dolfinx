@@ -96,8 +96,6 @@ template <typename T>
 void interpolate_from_any(Function<T>& u, const Function<T>& v)
 {
   assert(v.function_space());
-  assert(element);
-
   const auto mesh = u.function_space()->mesh();
   assert(mesh);
   assert(v.function_space()->mesh());
@@ -146,9 +144,6 @@ void interpolate_from_any(Function<T>& u, const Function<T>& v)
   }
   else
   {
-    // Get coordinate map
-    const fem::CoordinateElement& cmap = mesh->geometry().cmap();
-
     mesh->topology_mutable().create_entity_permutations();
     xtl::span<const std::uint32_t> cell_info
         = xtl::span(mesh->topology().get_cell_permutation_info());
