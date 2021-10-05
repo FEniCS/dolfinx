@@ -10,6 +10,7 @@ import random
 import numpy as np
 import pytest
 import ufl
+import dolfinx
 from dolfinx import Function, FunctionSpace, VectorFunctionSpace, cpp
 from dolfinx.cpp.mesh import CellType
 from dolfinx.mesh import create_mesh
@@ -218,3 +219,20 @@ def test_mixed_interpolation():
     v = Function(FunctionSpace(mesh, ufl.MixedElement([A, B])))
     with pytest.raises(RuntimeError):
         v.interpolate(lambda x: (x[1], 2 * x[0], 3 * x[1]))
+
+
+def test_interpolation_spaces():
+    mesh = dolfinx.UnitCubeMesh(MPI.COMM_WORLD, 5, 5, 5)
+    V = dolfinx.FunctionSpace(mesh, ("N1curl", 3))
+    V1 = dolfinx.FunctionSpace(mesh, ("N1curl", 2))
+
+    u = dolfinx.Function(V)
+    v = dolfinx.Function(V1)
+
+    u.interpolate(lambda x: x)
+    v.interpolate(u)
+
+    x = ufl.SpatialCoordinate(mesh)
+    s = dolfinx.fem.assemble_scalar(ufl.inner(u-v,u-v)*ufl.dx)
+
+    assert np.isclose(s, 0)
