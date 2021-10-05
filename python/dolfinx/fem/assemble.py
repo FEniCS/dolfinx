@@ -35,7 +35,7 @@ def _create_cpp_form(form):
 form_type = typing.Union[Form, cpp.fem.Form, ufl.Form,
                          typing.Sequence[Form],
                          typing.Sequence[cpp.fem.Form],
-                         typinh.Sequence[ufl.Form]]
+                         typing.Sequence[ufl.Form]]
 
 
 def pack_constants(form: form_type):
