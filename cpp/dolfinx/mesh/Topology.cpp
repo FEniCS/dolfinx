@@ -741,12 +741,13 @@ mesh::create_topology(MPI_Comm comm,
   std::sort(in_edges.begin(), in_edges.end());
   in_edges.erase(std::unique(in_edges.begin(), in_edges.end()), in_edges.end());
   // Send '1' to ranks that I have an edge to
-  std::vector<std::uint8_t> edge_count(dolfinx::MPI::size(comm), 0);
+  std::vector<std::uint8_t> edge_count_send(dolfinx::MPI::size(comm), 0);
   std::for_each(in_edges.cbegin(), in_edges.cend(),
-                [&edge_count](auto e) { edge_count[e] = 1; });
+                [&edge_count_send](auto e) { edge_count_send[e] = 1; });
   MPI_Request request;
-  MPI_Ialltoall(MPI_IN_PLACE, 1, MPI_UINT8_T, edge_count.data(), 1, MPI_UINT8_T,
-                comm, &request);
+  std::vector<std::uint8_t> edge_count_recv(edge_count_send.size());
+  MPI_Ialltoall(edge_count_send.data(), 1, MPI_UINT8_T, edge_count_recv.data(),
+                1, MPI_UINT8_T, comm, &request);
 
   // Convert input cell topology to local vertex indexing
   std::shared_ptr<graph::AdjacencyList<std::int32_t>> cells_local_idx
@@ -762,9 +763,9 @@ mesh::create_topology(MPI_Comm comm,
   // Create vertex index map
   MPI_Wait(&request, MPI_STATUS_IGNORE);
   std::vector<int> out_edges;
-  for (std::size_t i = 0; i < edge_count.size(); ++i)
+  for (std::size_t i = 0; i < edge_count_recv.size(); ++i)
   {
-    if (edge_count[i] > 0)
+    if (edge_count_recv[i] > 0)
       out_edges.push_back(i);
   }
 
