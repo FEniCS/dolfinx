@@ -13,7 +13,6 @@ from typing import Optional
 
 from mpi4py import MPI
 
-import dolfinx.pkgconfig
 import ffcx
 import ffcx.codegeneration.jit
 import ufl
