@@ -74,6 +74,7 @@ void CoordinateElement::compute_jacobian(
     const xt::xtensor<double, 4>& dphi, const xt::xtensor<double, 2>& cell_geom,
     xt::xtensor<double, 3>& J) const
 {
+
   // Number of points
   std::size_t num_points = dphi.shape(1);
   if (num_points == 0)

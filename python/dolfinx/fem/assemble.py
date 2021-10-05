@@ -32,10 +32,7 @@ def _create_cpp_form(form):
 
 # -- Packing constants and coefficients --------------------------------------
 
-form_type = typing.Union[Form, cpp.fem.Form, ufl.Form,
-                         collections.abc.Sequence[Form],
-                         collections.abc.Sequence[cpp.fem.Form],
-                         collections.abc.Sequence[ufl.Form]]
+form_type = typing.Union[Form, cpp.fem.Form, ufl.Form]
 
 
 def pack_constants(form: form_type):

@@ -7,6 +7,7 @@
 #pragma once
 
 #include "FunctionSpace.h"
+#include <basix/interpolation.h>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -15,6 +16,7 @@
 #include <variant>
 #include <xtensor/xadapt.hpp>
 #include <xtensor/xarray.hpp>
+#include <xtensor/xio.hpp>
 #include <xtensor/xtensor.hpp>
 #include <xtensor/xview.hpp>
 #include <xtl/xspan.hpp>
@@ -94,13 +96,7 @@ template <typename T>
 void interpolate_from_any(Function<T>& u, const Function<T>& v)
 {
   assert(v.function_space());
-  const auto element = u.function_space()->element();
   assert(element);
-  if (v.function_space()->element()->hash() != element->hash())
-  {
-    throw std::runtime_error("Restricting finite elements function in "
-                             "different elements not supported.");
-  }
 
   const auto mesh = u.function_space()->mesh();
   assert(mesh);
@@ -110,32 +106,93 @@ void interpolate_from_any(Function<T>& u, const Function<T>& v)
     throw std::runtime_error(
         "Interpolation on different meshes not supported (yet).");
   }
+
   const int tdim = mesh->topology().dim();
 
-  // Get dofmaps
-  assert(v.function_space());
-  std::shared_ptr<const fem::DofMap> dofmap_v = v.function_space()->dofmap();
-  assert(dofmap_v);
+  const std::shared_ptr<const FiniteElement> element_to
+      = u.function_space()->element();
+  const std::shared_ptr<const FiniteElement> element_from
+      = v.function_space()->element();
+
   auto map = mesh->topology().index_map(tdim);
   assert(map);
 
-  std::vector<T>& coeffs = u.x()->mutable_array();
-
-  // Iterate over mesh and interpolate on each cell
-  const auto dofmap_u = u.function_space()->dofmap();
-  const std::vector<T>& v_array = v.x()->array();
-  const int num_cells = map->size_local() + map->num_ghosts();
-  const int bs = dofmap_v->bs();
-  assert(bs == dofmap_u->bs());
-  for (int c = 0; c < num_cells; ++c)
+  if (element_to->hash() == element_from->hash())
   {
-    xtl::span<const std::int32_t> dofs_v = dofmap_v->cell_dofs(c);
-    xtl::span<const std::int32_t> cell_dofs = dofmap_u->cell_dofs(c);
-    assert(dofs_v.size() == cell_dofs.size());
-    for (std::size_t i = 0; i < dofs_v.size(); ++i)
+    // Get dofmaps
+    assert(v.function_space());
+    std::shared_ptr<const fem::DofMap> dofmap_v = v.function_space()->dofmap();
+    assert(dofmap_v);
+
+    std::vector<T>& coeffs = u.x()->mutable_array();
+
+    // Iterate over mesh and interpolate on each cell
+    const auto dofmap_u = u.function_space()->dofmap();
+    const std::vector<T>& v_array = v.x()->array();
+    const int num_cells = map->size_local() + map->num_ghosts();
+    const int bs = dofmap_v->bs();
+    assert(bs == dofmap_u->bs());
+    for (int c = 0; c < num_cells; ++c)
     {
-      for (int k = 0; k < bs; ++k)
-        coeffs[bs * cell_dofs[i] + k] = v_array[bs * dofs_v[i] + k];
+      xtl::span<const std::int32_t> dofs_v = dofmap_v->cell_dofs(c);
+      xtl::span<const std::int32_t> cell_dofs = dofmap_u->cell_dofs(c);
+      assert(dofs_v.size() == cell_dofs.size());
+      for (std::size_t i = 0; i < dofs_v.size(); ++i)
+      {
+        for (int k = 0; k < bs; ++k)
+          coeffs[bs * cell_dofs[i] + k] = v_array[bs * dofs_v[i] + k];
+      }
+    }
+  }
+  else
+  {
+    // Get coordinate map
+    const fem::CoordinateElement& cmap = mesh->geometry().cmap();
+
+    mesh->topology_mutable().create_entity_permutations();
+    xtl::span<const std::uint32_t> cell_info
+        = xtl::span(mesh->topology().get_cell_permutation_info());
+
+    // Iterate over mesh and interpolate on each cell
+    const auto dofmap_u = u.function_space()->dofmap();
+    const auto dofmap_v = v.function_space()->dofmap();
+
+    const std::vector<T>& v_array = v.x()->array();
+    std::vector<T>& u_array = u.x()->mutable_array();
+
+    // Compute interpolation operator
+    xt::xtensor<double, 2> i_m
+        = element_to->compute_interpolation_operator(*element_from);
+
+    const int num_cells = map->size_local() + map->num_ghosts();
+
+    std::vector<T> v_local(element_from->space_dimension());
+    std::vector<T> u_local(element_to->space_dimension());
+
+    const auto apply_dof_transformation
+        = element_from->get_dof_transformation_function<T>(false, false, false);
+
+    const auto apply_inverse_dof_transform
+        = element_from->get_dof_transformation_function<T>(true, true, false);
+
+    for (int c = 0; c < num_cells; ++c)
+    {
+      xtl::span<const std::int32_t> dofs_v = dofmap_v->cell_dofs(c);
+      xtl::span<const std::int32_t> dofs_u = dofmap_u->cell_dofs(c);
+
+      for (std::size_t i = 0; i < dofs_v.size(); i++)
+        v_local[i] = v_array[dofs_v[i]];
+
+      apply_dof_transformation(v_local, cell_info, c, 1);
+
+      // for (std::size_t i = 0; i < i_m.shape(0); i++)
+      //   for (std::size_t j = 0; j < i_m.shape(1); j++)
+      //     u_local[i] = i_m(i, j) * v_local[j];
+
+      apply_inverse_dof_transform(u_local, cell_info, c, 1);
+
+      for (std::size_t i = 0; i < dofs_v.size(); i++)
+        u_array[dofs_u[i]] = u_local[i];
     }
   }
 }
