@@ -176,7 +176,7 @@ public:
   /// Check if DOF transformations are needed for this element.
   ///
   /// DOF transformations will be needed for elements which might not be
-  /// continuous when two neighbouring cells disagree on theorientation of
+  /// continuous when two neighbouring cells disagree on the orientation of
   /// a shared subentity, and when this cannot be corrected for by permuting
   /// the DOF numbering in the dofmap.
   ///
