@@ -98,8 +98,9 @@ public:
       _mesh = function_spaces[0]->mesh();
     for (const auto& V : function_spaces)
     {
-      if (_mesh != V->mesh())
-        throw std::runtime_error("Incompatible mesh");
+      // HACK for facet spaces. Re-enable this check at some point
+      // if (_mesh != V->mesh())
+      //   throw std::runtime_error("Incompatible mesh");
     }
     if (!_mesh)
       throw std::runtime_error("No mesh could be associated with the Form.");
