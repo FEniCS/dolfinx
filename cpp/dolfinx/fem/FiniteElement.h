@@ -165,7 +165,7 @@ public:
   xt::xtensor<double, 2>
   compute_interpolation_operator(const FiniteElement& from) const
   {
-    return basix::compute_interpolation_operator(*_element, *from._element);
+    return basix::compute_interpolation_operator(*from._element, *_element);
   }
 
   /// Check if DOF transformations are needed for this element.

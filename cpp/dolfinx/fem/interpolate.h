@@ -165,15 +165,14 @@ void interpolate_from_any(Function<T>& u, const Function<T>& v)
         = element_to->compute_interpolation_operator(*element_from);
 
     const int num_cells = map->size_local() + map->num_ghosts();
-
     std::vector<T> v_local(element_from->space_dimension());
     std::vector<T> u_local(element_to->space_dimension());
 
     const auto apply_dof_transformation
-        = element_from->get_dof_transformation_function<T>(false, false, false);
+        = element_from->get_dof_transformation_function<T>(false, true, false);
 
     const auto apply_inverse_dof_transform
-        = element_from->get_dof_transformation_function<T>(true, true, false);
+        = element_to->get_dof_transformation_function<T>(true, true, false);
 
     for (int c = 0; c < num_cells; ++c)
     {
@@ -185,13 +184,16 @@ void interpolate_from_any(Function<T>& u, const Function<T>& v)
 
       apply_dof_transformation(v_local, cell_info, c, 1);
 
-      // for (std::size_t i = 0; i < i_m.shape(0); i++)
-      //   for (std::size_t j = 0; j < i_m.shape(1); j++)
-      //     u_local[i] = i_m(i, j) * v_local[j];
+      std::fill(u_local.begin(), u_local.end(), 0);
+
+      // FIXME: Get compile-time ranges from basix
+      for (std::size_t i = 0; i < i_m.shape(0); i++)
+        for (std::size_t j = 0; j < i_m.shape(1); j++)
+          u_local[i] += i_m(i, j) * v_local[j];
 
       apply_inverse_dof_transform(u_local, cell_info, c, 1);
 
-      for (std::size_t i = 0; i < dofs_v.size(); i++)
+      for (std::size_t i = 0; i < dofs_u.size(); i++)
         u_array[dofs_u[i]] = u_local[i];
     }
   }
