@@ -137,48 +137,6 @@ void declare_assemblers(py::module& m)
       "Experimental assembly with Python insertion function. This will be "
       "slow. Use for testing only.");
 
-  // dolfinx::fem::DirichletBC
-  py::class_<dolfinx::fem::DirichletBC<T>,
-             std::shared_ptr<dolfinx::fem::DirichletBC<T>>>
-      dirichletbc(m, "DirichletBC",
-                  "Object for representing Dirichlet (essential) boundary "
-                  "conditions");
-
-  dirichletbc
-      .def(py::init(
-          [](const std::shared_ptr<const dolfinx::fem::Function<T>>& g,
-             const py::array_t<std::int32_t, py::array::c_style>& dofs)
-          {
-            return dolfinx::fem::DirichletBC<T>(
-                g, std::vector<std::int32_t>(dofs.data(),
-                                             dofs.data() + dofs.size()));
-          }))
-      .def(py::init(
-          [](const std::shared_ptr<const dolfinx::fem::Function<T>>& g,
-             const std::array<py::array_t<std::int32_t, py::array::c_style>, 2>&
-                 V_g_dofs,
-             const std::shared_ptr<const dolfinx::fem::FunctionSpace>& V)
-          {
-            std::array dofs = {std::vector<std::int32_t>(
-                                   V_g_dofs[0].data(),
-                                   V_g_dofs[0].data() + V_g_dofs[0].size()),
-                               std::vector<std::int32_t>(
-                                   V_g_dofs[1].data(),
-                                   V_g_dofs[1].data() + V_g_dofs[1].size())};
-            return dolfinx::fem::DirichletBC(g, std::move(dofs), V);
-          }))
-      .def("dof_indices",
-           [](const dolfinx::fem::DirichletBC<T>& self)
-           {
-             auto [dofs, owned] = self.dof_indices();
-             return std::pair(py::array_t<std::int32_t>(
-                                  dofs.size(), dofs.data(), py::cast(self)),
-                              owned);
-           })
-      .def_property_readonly("function_space",
-                             &dolfinx::fem::DirichletBC<T>::function_space)
-      .def_property_readonly("value", &dolfinx::fem::DirichletBC<T>::value);
-
   // BC modifiers
   m.def(
       "apply_lifting",
@@ -531,7 +489,6 @@ void fem(py::module& m)
   declare_assemblers<std::complex<double>>(m);
 
   declare_dirichletbc<PetscScalar>(m);
-
 
   // PETSc Matrices
   m.def(
