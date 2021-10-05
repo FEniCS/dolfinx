@@ -21,11 +21,6 @@ from dolfinx import common
 
 __all__ = ["ffcx_jit", "get_parameters"]
 
-if dolfinx.pkgconfig.exists("dolfinx"):
-    dolfinx_pc = dolfinx.pkgconfig.parse("dolfinx")
-else:
-    raise RuntimeError("Could not find DOLFINx pkg-config file. Make sure appropriate paths are set.")
-
 DOLFINX_DEFAULT_JIT_PARAMETERS = {
     "cache_dir":
         (Path.joinpath(Path.home(), ".cache", "fenics"), "Path for storing DOLFINx JIT cache"),
