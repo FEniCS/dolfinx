@@ -30,31 +30,58 @@ using namespace dolfinx;
 
 //-----------------------------------------------------------------------------
 graph::AdjacencyList<std::int64_t>
-mesh::extract_topology(const CellType& cell_type,
-                       const fem::ElementDofLayout& layout,
+mesh::extract_topology(const std::vector<std::uint8_t>& cell_element_type,
+                       const std::vector<fem::CoordinateElement>& elements,
                        const graph::AdjacencyList<std::int64_t>& cells)
 {
-  // Use ElementDofLayout to get vertex dof indices (local to a cell)
-  const int num_vertices_per_cell = num_cell_vertices(cell_type);
-  std::vector<int> local_vertices(num_vertices_per_cell);
-  for (int i = 0; i < num_vertices_per_cell; ++i)
+  // Get a vertex list for each input CoordinateElement.
+  std::vector<std::vector<int>> local_vertices;
+  for (const fem::CoordinateElement& e : elements)
   {
-    const std::vector<int> local_index = layout.entity_dofs(0, i);
-    assert(local_index.size() == 1);
-    local_vertices[i] = local_index[0];
+    // Use ElementDofLayout to get vertex dof indices (local to a cell)
+    const int num_vertices_per_cell = num_cell_vertices(e.cell_shape());
+    std::vector<int> celltype_vertices(num_vertices_per_cell);
+    for (int i = 0; i < num_vertices_per_cell; ++i)
+    {
+      const std::vector<int> local_index = e.dof_layout().entity_dofs(0, i);
+      assert(local_index.size() == 1);
+      celltype_vertices[i] = local_index[0];
+    }
+    local_vertices.push_back(celltype_vertices);
   }
 
-  // Extract vertices
-  std::vector<std::int64_t> topology(cells.num_nodes() * num_vertices_per_cell);
+  // Create topology offsets
+  std::vector<std::int32_t> cell_offsets(cells.num_nodes() + 1);
+  cell_offsets[0] = 0;
+  if (cell_element_type.empty())
+  {
+    assert(elements.size() == 1);
+    std::fill(std::next(cell_offsets.begin(), 1), cell_offsets.end(),
+              num_cell_vertices(elements[0].cell_shape()));
+  }
+  else
+  {
+    std::transform(cell_element_type.begin(), cell_element_type.end(),
+                   std::next(cell_offsets.begin(), 1), [&](std::uint8_t t) {
+                     return num_cell_vertices(elements[t].cell_shape());
+                   });
+  }
+  std::partial_sum(cell_offsets.begin(), cell_offsets.end(),
+                   cell_offsets.begin());
+
+  std::vector<std::int64_t> topology;
+  topology.reserve(cell_offsets.back());
   for (int c = 0; c < cells.num_nodes(); ++c)
   {
+    const int t = cell_element_type.empty() ? 0 : cell_element_type[c];
+    const std::vector<int>& cell_vertices = local_vertices[t];
     auto p = cells.links(c);
-    for (int j = 0; j < num_vertices_per_cell; ++j)
-      topology[num_vertices_per_cell * c + j] = p[local_vertices[j]];
+    for (int v : cell_vertices)
+      topology.push_back(p[v]);
   }
 
-  return graph::build_adjacency_list<std::int64_t>(std::move(topology),
-                                                   num_vertices_per_cell);
+  return graph::AdjacencyList<std::int64_t>(std::move(topology),
+                                            std::move(cell_offsets));
 }
 //-----------------------------------------------------------------------------
 std::vector<double> mesh::h(const Mesh& mesh,

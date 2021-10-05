@@ -151,12 +151,12 @@ private:
 /// @param[in] ghost_mode The requested type of cell ghosting/overlap
 /// @return A distributed Mesh.
 Mesh create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
-                 const fem::CoordinateElement& element,
+                 const std::vector<fem::CoordinateElement>& elements,
                  const xt::xtensor<double, 2>& x, GhostMode ghost_mode);
 
 /// Create a mesh using a provided mesh partitioning function
 Mesh create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
-                 const fem::CoordinateElement& element,
+                 const std::vector<fem::CoordinateElement>& elements,
                  const xt::xtensor<double, 2>& x, GhostMode ghost_mode,
                  const CellPartitionFunction& cell_partitioner);
 

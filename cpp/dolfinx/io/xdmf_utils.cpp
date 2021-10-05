@@ -363,9 +363,13 @@ xdmf_utils::extract_local_entities(const mesh::Mesh& mesh, const int entity_dim,
   if (entities.shape(0) != values.size())
     throw std::runtime_error("Number of entities and values must match");
 
+  if (mesh.geometry().cmaps().size() != 1)
+    throw std::runtime_error("Not supported for Mixed Topology Mesh");
+
   // Get layout of dofs on 0th entity
   const std::vector<int> entity_layout
-      = mesh.geometry().cmap().dof_layout().entity_closure_dofs(entity_dim, 0);
+      = mesh.geometry().cmaps()[0].dof_layout().entity_closure_dofs(entity_dim,
+                                                                    0);
   assert(entity_layout.size() == entities.shape(1));
 
   auto c_to_v = mesh.topology().connectivity(mesh.topology().dim(), 0);
@@ -380,7 +384,7 @@ xdmf_utils::extract_local_entities(const mesh::Mesh& mesh, const int entity_dim,
   for (int i = 0; i < num_vertices_per_cell; ++i)
   {
     const std::vector<int> local_index
-        = mesh.geometry().cmap().dof_layout().entity_dofs(0, i);
+        = mesh.geometry().cmaps()[0].dof_layout().entity_dofs(0, i);
     assert(local_index.size() == 1);
     cell_vertex_dofs[i] = local_index[0];
   }

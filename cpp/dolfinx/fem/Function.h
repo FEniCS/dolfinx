@@ -266,7 +266,8 @@ public:
     const xt::xtensor<double, 2>& x_g = mesh->geometry().x();
 
     // Get coordinate map
-    const fem::CoordinateElement& cmap = mesh->geometry().cmap();
+    // FIXME - mixed mesh
+    const fem::CoordinateElement& cmap = mesh->geometry().cmaps()[0];
 
     // Get element
     assert(_function_space->element());

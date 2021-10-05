@@ -284,7 +284,8 @@ void interpolate(
   else
   {
     // Get coordinate map
-    const fem::CoordinateElement& cmap = mesh->geometry().cmap();
+    // FIXME: mixed mesh
+    const fem::CoordinateElement& cmap = mesh->geometry().cmaps()[0];
 
     // Get geometry data
     const graph::AdjacencyList<std::int32_t>& x_dofmap
@@ -374,8 +375,7 @@ void interpolate_c(
   const std::size_t value_size = std::reduce(
       std::begin(vshape), std::end(vshape), 1, std::multiplies<>());
 
-  auto fn = [value_size, &f](const xt::xtensor<double, 2>& x)
-  {
+  auto fn = [value_size, &f](const xt::xtensor<double, 2>& x) {
     xt::xarray<T> values = xt::empty<T>({value_size, x.shape(1)});
     f(values, x);
     return values;

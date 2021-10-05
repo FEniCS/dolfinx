@@ -315,6 +315,9 @@ void add_data(const fem::Function<std::complex<double>>& u,
 /// adds the Points and Cells nodes to the input node/
 void add_mesh(const mesh::Mesh& mesh, pugi::xml_node& piece_node)
 {
+  if (mesh.geometry().cmaps().size() != 1)
+    throw std::runtime_error("Not supported for Mixed Topology Mesh");
+
   const mesh::Topology& topology = mesh.topology();
   const mesh::Geometry& geometry = mesh.geometry();
   const int tdim = topology.dim();
@@ -341,7 +344,7 @@ void add_mesh(const mesh::Mesh& mesh, pugi::xml_node& piece_node)
   connectivity_node.append_attribute("format") = "ascii";
 
   // Get map from VTK index i to DOLFIN index j
-  int num_nodes = geometry.cmap().dof_layout().num_dofs();
+  int num_nodes = geometry.cmaps()[0].dof_layout().num_dofs();
 
   std::vector<std::uint8_t> map = io::cells::transpose(
       io::cells::perm_vtk(topology.cell_type(), num_nodes));
@@ -404,6 +407,9 @@ void write_function(
   std::shared_ptr<const mesh::Mesh> mesh
       = u.front().get().function_space()->mesh();
   assert(mesh);
+  if (mesh->geometry().cmaps().size() != 1)
+    throw std::runtime_error("Not supported for Mixed Topology Mesh");
+
   for (std::size_t i = 1; i < u.size(); ++i)
   {
     if (u[i].get().function_space()->mesh() != mesh)
@@ -510,7 +516,7 @@ void write_function(
       {
         // Extract mesh data
         int tdim = mesh->topology().dim();
-        auto cmap = mesh->geometry().cmap();
+        auto cmap = mesh->geometry().cmaps()[0];
         auto geometry_layout = cmap.dof_layout();
         // Extract function value
         const std::vector<Scalar>& func_values = _u.get().x()->array();

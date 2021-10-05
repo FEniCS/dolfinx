@@ -513,12 +513,16 @@ compute_refinement(
 //-----------------------------------------------------------------------------
 mesh::Mesh plaza::refine(const mesh::Mesh& mesh, bool redistribute)
 {
+  const auto& cmaps = mesh.geometry().cmaps();
+  if (cmaps.size() > 1)
+    throw std::runtime_error("Cannot refine mixed mesh");
+
   auto [cell_adj, new_vertex_coordinates, parent_cell]
       = plaza::compute_refinement_data(mesh);
 
   if (dolfinx::MPI::size(mesh.mpi_comm()) == 1)
   {
-    return mesh::create_mesh(mesh.mpi_comm(), cell_adj, mesh.geometry().cmap(),
+    return mesh::create_mesh(mesh.mpi_comm(), cell_adj, cmaps,
                              new_vertex_coordinates, mesh::GhostMode::none);
   }
 
@@ -544,12 +548,16 @@ mesh::Mesh plaza::refine(const mesh::Mesh& mesh,
                          const mesh::MeshTags<std::int8_t>& refinement_marker,
                          bool redistribute)
 {
+  const auto& cmaps = mesh.geometry().cmaps();
+  if (cmaps.size() > 1)
+    throw std::runtime_error("Cannot refine mixed mesh");
+
   auto [cell_adj, new_vertex_coordinates, parent_cell]
       = plaza::compute_refinement_data(mesh, refinement_marker);
 
   if (dolfinx::MPI::size(mesh.mpi_comm()) == 1)
   {
-    return mesh::create_mesh(mesh.mpi_comm(), cell_adj, mesh.geometry().cmap(),
+    return mesh::create_mesh(mesh.mpi_comm(), cell_adj, cmaps,
                              new_vertex_coordinates, mesh::GhostMode::none);
   }
 

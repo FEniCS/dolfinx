@@ -59,12 +59,12 @@ reorder_list(const graph::AdjacencyList<T>& list,
 //-----------------------------------------------------------------------------
 Mesh mesh::create_mesh(MPI_Comm comm,
                        const graph::AdjacencyList<std::int64_t>& cells,
-                       const fem::CoordinateElement& element,
+                       const std::vector<fem::CoordinateElement>& elements,
                        const xt::xtensor<double, 2>& x,
                        mesh::GhostMode ghost_mode)
 {
   return create_mesh(
-      comm, cells, element, x, ghost_mode,
+      comm, cells, elements, x, ghost_mode,
       static_cast<graph::AdjacencyList<std::int32_t> (*)(
           MPI_Comm, int, int, const graph::AdjacencyList<std::int64_t>&,
           mesh::GhostMode)>(&mesh::partition_cells_graph));
@@ -72,7 +72,7 @@ Mesh mesh::create_mesh(MPI_Comm comm,
 //-----------------------------------------------------------------------------
 Mesh mesh::create_mesh(MPI_Comm comm,
                        const graph::AdjacencyList<std::int64_t>& cells,
-                       const fem::CoordinateElement& element,
+                       const std::vector<fem::CoordinateElement>& elements,
                        const xt::xtensor<double, 2>& x,
                        mesh::GhostMode ghost_mode,
                        const mesh::CellPartitionFunction& cell_partitioner)
@@ -87,14 +87,13 @@ Mesh mesh::create_mesh(MPI_Comm comm,
   // filtered lists may have 'gaps', i.e. the indices might not be
   // contiguous.
   const graph::AdjacencyList<std::int64_t> cells_topology
-      = mesh::extract_topology(element.cell_shape(), element.dof_layout(),
-                               cells);
+      = mesh::extract_topology({}, elements, cells);
 
   // Compute the destination rank for cells on this process via graph
   // partitioning. Always get the ghost cells via facet, though these
   // may be discarded later.
   const int size = dolfinx::MPI::size(comm);
-  const int tdim = mesh::cell_dim(element.cell_shape());
+  const int tdim = mesh::cell_dim(elements[0].cell_shape());
   const graph::AdjacencyList<std::int32_t> dest = cell_partitioner(
       comm, size, tdim, cells_topology, GhostMode::shared_facet);
 
@@ -104,8 +103,7 @@ Mesh mesh::create_mesh(MPI_Comm comm,
 
   // Extract cell 'topology', i.e. the vertices for each cell
   const graph::AdjacencyList<std::int64_t> cells_extracted0
-      = mesh::extract_topology(element.cell_shape(), element.dof_layout(),
-                               cell_nodes0);
+      = mesh::extract_topology({}, elements, cell_nodes0);
 
   // Build local dual graph for owned cells to apply re-ordering to
   const std::int32_t num_owned_cells
@@ -133,15 +131,16 @@ Mesh mesh::create_mesh(MPI_Comm comm,
   // Create cells and vertices with the ghosting requested. Input
   // topology includes cells shared via facet, but ghosts will be
   // removed later if not required by ghost_mode.
-  Topology topology
-      = mesh::create_topology(comm, cells_extracted, original_cell_index,
-                              ghost_owners, element.cell_shape(), ghost_mode);
+  Topology topology = mesh::create_topology(
+      comm, cells_extracted, original_cell_index, ghost_owners,
+      elements[0].cell_shape(), ghost_mode);
 
   // Create connectivity required to compute the Geometry (extra
   // connectivities for higher-order geometries)
+  // FIXME: Mixed mesh
   for (int e = 1; e < tdim; ++e)
   {
-    if (element.dof_layout().num_entity_dofs(e) > 0)
+    if (elements[0].dof_layout().num_entity_dofs(e) > 0)
     {
       auto [cell_entity, entity_vertex, index_map]
           = mesh::compute_entities(comm, topology, e);
@@ -166,11 +165,12 @@ Mesh mesh::create_mesh(MPI_Comm comm,
       std::next(cell_nodes.array().begin(), off1[n_cells_local]));
   graph::AdjacencyList<std::int64_t> cell_nodes1(std::move(data1),
                                                  std::move(off1));
-  if (element.needs_dof_permutations())
+  // FIXME: Mixed mesh
+  if (elements[0].needs_dof_permutations())
     topology.create_entity_permutations();
 
   return Mesh(comm, std::move(topology),
-              mesh::create_geometry(comm, topology, element, cell_nodes1, x));
+              mesh::create_geometry(comm, topology, elements, cell_nodes1, x));
 }
 //-----------------------------------------------------------------------------
 

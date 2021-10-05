@@ -168,8 +168,9 @@ fem::create_dofmap(MPI_Comm comm, const ufc_dofmap& ufc_dofmap,
     }
   }
 
-  auto [index_map, bs, dofmap]
-      = fem::build_dofmap_data(comm, topology, *element_dof_layout, reorder_fn);
+  // FIXME: Mixed mesh
+  auto [index_map, bs, dofmap] = fem::build_dofmap_data(
+      comm, topology, {*element_dof_layout}, reorder_fn);
 
   // If the element's DOF transformations are permutations, permute the
   // DOF numbering on each cell

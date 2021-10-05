@@ -33,7 +33,10 @@ xt::xtensor<double, 2>& Geometry::x() { return _x; }
 //-----------------------------------------------------------------------------
 const xt::xtensor<double, 2>& Geometry::x() const { return _x; }
 //-----------------------------------------------------------------------------
-const fem::CoordinateElement& Geometry::cmap() const { return _cmap; }
+const std::vector<fem::CoordinateElement>& Geometry::cmaps() const
+{
+  return _cmaps;
+}
 //-----------------------------------------------------------------------------
 const std::vector<std::int64_t>& Geometry::input_global_indices() const
 {
@@ -44,7 +47,7 @@ const std::vector<std::int64_t>& Geometry::input_global_indices() const
 //-----------------------------------------------------------------------------
 mesh::Geometry mesh::create_geometry(
     MPI_Comm comm, const Topology& topology,
-    const fem::CoordinateElement& coordinate_element,
+    const std::vector<fem::CoordinateElement>& coordinate_elements,
     const graph::AdjacencyList<std::int64_t>& cell_nodes,
     const xt::xtensor<double, 2>& x,
     const std::function<std::vector<int>(
@@ -53,12 +56,17 @@ mesh::Geometry mesh::create_geometry(
   // TODO: make sure required entities are initialised, or extend
   // fem::build_dofmap_data
 
+  std::vector<fem::ElementDofLayout> layouts;
+  for (const fem::CoordinateElement& el : coordinate_elements)
+    layouts.push_back(el.dof_layout());
+
   //  Build 'geometry' dofmap on the topology
-  auto [dof_index_map, bs, dofmap] = fem::build_dofmap_data(
-      comm, topology, coordinate_element.dof_layout(), reorder_fn);
+  auto [dof_index_map, bs, dofmap]
+      = fem::build_dofmap_data(comm, topology, layouts, reorder_fn);
 
   // If the mesh has higher order geometry, permute the dofmap
-  if (coordinate_element.needs_dof_permutations())
+  // FIXME: will fail for higher order mixed mesh
+  if (coordinate_elements[0].needs_dof_permutations())
   {
     const int D = topology.dim();
     const int num_cells = topology.connectivity(D, 0)->num_nodes();
@@ -66,7 +74,8 @@ mesh::Geometry mesh::create_geometry(
         = topology.get_cell_permutation_info();
 
     for (std::int32_t cell = 0; cell < num_cells; ++cell)
-      coordinate_element.unpermute_dofs(dofmap.links(cell), cell_info[cell]);
+      coordinate_elements[0].unpermute_dofs(dofmap.links(cell),
+                                            cell_info[cell]);
   }
 
   // Build list of unique (global) node indices from adjacency list
@@ -104,7 +113,7 @@ mesh::Geometry mesh::create_geometry(
   std::transform(l2l.cbegin(), l2l.cend(), igi.begin(),
                  [&indices](auto index) { return indices[index]; });
 
-  return Geometry(dof_index_map, std::move(dofmap), coordinate_element,
+  return Geometry(dof_index_map, std::move(dofmap), coordinate_elements,
                   std::move(xg), std::move(igi));
 }
 //-----------------------------------------------------------------------------

@@ -14,8 +14,9 @@
 
 namespace dolfinx::fem
 {
+class CoordinateElement;
 class ElementDofLayout;
-}
+} // namespace dolfinx::fem
 
 namespace dolfinx::mesh
 {
@@ -24,16 +25,17 @@ enum class GhostMode : int;
 class Mesh;
 
 /// Extract topology from cell data, i.e. extract cell vertices
-/// @param[in] cell_type The cell shape
-/// @param[in] layout The layout of geometry 'degrees-of-freedom' on the
-/// reference cell
+/// @param[in] cell_element_type List of integer indices, indicating the
+/// CoordinateElement for each cell. Index into elements, below.
+/// @param[in] elements List of all CoordinateElements in mesh
 /// @param[in] cells List of 'nodes' for each cell using global indices.
 /// The layout must be consistent with \p layout.
 /// @return Cell topology. The global indices will, in general, have
 /// 'gaps' due to mid-side and other higher-order nodes being removed
 /// from the input @p cell.
 graph::AdjacencyList<std::int64_t>
-extract_topology(const CellType& cell_type, const fem::ElementDofLayout& layout,
+extract_topology(const std::vector<std::uint8_t>& cell_element_type,
+                 const std::vector<fem::CoordinateElement>& elements,
                  const graph::AdjacencyList<std::int64_t>& cells);
 
 /// Compute greatest distance between any two vertices

@@ -39,7 +39,7 @@ class CoordinateElement;
 std::tuple<std::shared_ptr<common::IndexMap>, int,
            graph::AdjacencyList<std::int32_t>>
 build_dofmap_data(MPI_Comm comm, const mesh::Topology& topology,
-                  const ElementDofLayout& element_dof_layout,
+                  const std::vector<ElementDofLayout>& element_dof_layout,
                   const std::function<std::vector<int>(
                       const graph::AdjacencyList<std::int32_t>&)>& reorder_fn);
 

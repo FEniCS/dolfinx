@@ -323,13 +323,12 @@ refinement::partition(const mesh::Mesh& old_mesh,
   {
     xt::xtensor<double, 2> new_coords(new_vertex_coordinates);
     return mesh::create_mesh(old_mesh.mpi_comm(), cell_topology,
-                             old_mesh.geometry().cmap(), new_coords, gm);
+                             old_mesh.geometry().cmaps(), new_coords, gm);
   }
 
   auto partitioner = [](MPI_Comm comm, int, int tdim,
                         const graph::AdjacencyList<std::int64_t>& cell_topology,
-                        mesh::GhostMode)
-  {
+                        mesh::GhostMode) {
     // Find out the ghosting information
     auto [graph, _] = mesh::build_dual_graph(comm, cell_topology, tdim);
 
@@ -383,7 +382,7 @@ refinement::partition(const mesh::Mesh& old_mesh,
   };
 
   return mesh::create_mesh(old_mesh.mpi_comm(), cell_topology,
-                           old_mesh.geometry().cmap(), new_vertex_coordinates,
+                           old_mesh.geometry().cmaps(), new_vertex_coordinates,
                            gm, partitioner);
 }
 //-----------------------------------------------------------------------------

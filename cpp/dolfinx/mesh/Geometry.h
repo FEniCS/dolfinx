@@ -39,10 +39,11 @@ public:
   /// Constructor
   template <typename AdjacencyList32, typename Array, typename Vector64>
   Geometry(const std::shared_ptr<const common::IndexMap>& index_map,
-           AdjacencyList32&& dofmap, const fem::CoordinateElement& element,
-           Array&& x, Vector64&& input_global_indices)
+           AdjacencyList32&& dofmap,
+           const std::vector<fem::CoordinateElement>& elements, Array&& x,
+           Vector64&& input_global_indices)
       : _dim(x.shape(1)), _dofmap(std::forward<AdjacencyList32>(dofmap)),
-        _index_map(index_map), _cmap(element), _x(std::forward<Array>(x)),
+        _index_map(index_map), _cmaps(elements), _x(std::forward<Array>(x)),
         _input_global_indices(std::forward<Vector64>(input_global_indices))
   {
     assert(_x.shape(1) > 0 and _x.shape(1) <= 3);
@@ -94,9 +95,9 @@ public:
   /// Geometry degrees-of-freedom
   const xt::xtensor<double, 2>& x() const;
 
-  /// The element that describes the geometry map
-  /// @return The coordinate/geometry element
-  const fem::CoordinateElement& cmap() const;
+  /// The elements that describes the geometry maps used
+  /// @return The coordinate/geometry elements
+  const std::vector<fem::CoordinateElement>& cmaps() const;
 
   /// Global user indices
   const std::vector<std::int64_t>& input_global_indices() const;
@@ -111,8 +112,8 @@ private:
   // IndexMap for geometry 'dofmap'
   std::shared_ptr<const common::IndexMap> _index_map;
 
-  // The coordinate element
-  fem::CoordinateElement _cmap;
+  // The coordinate elements used in this geometry
+  std::vector<fem::CoordinateElement> _cmaps;
 
   // Coordinates for all points stored as a contiguous array
   xt::xtensor<double, 2> _x;
@@ -125,7 +126,7 @@ private:
 /// @todo document
 mesh::Geometry
 create_geometry(MPI_Comm comm, const Topology& topology,
-                const fem::CoordinateElement& coordinate_element,
+                const std::vector<fem::CoordinateElement>& coordinate_element,
                 const graph::AdjacencyList<std::int64_t>& cells,
                 const xt::xtensor<double, 2>& x,
                 const std::function<std::vector<int>(

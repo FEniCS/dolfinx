@@ -37,7 +37,7 @@ mesh::Mesh build_tri(MPI_Comm comm,
     return mesh::create_mesh(
         comm,
         graph::AdjacencyList<std::int64_t>(std::move(data), std::move(offset)),
-        element, geom, ghost_mode, partitioner);
+        {element}, geom, ghost_mode, partitioner);
   }
 
   // Check options
@@ -217,7 +217,7 @@ mesh::Mesh build_tri(MPI_Comm comm,
   return mesh::create_mesh(
       comm,
       graph::AdjacencyList<std::int64_t>(std::move(data), std::move(offset)),
-      element, geom, ghost_mode, partitioner);
+      {element}, geom, ghost_mode, partitioner);
 }
 
 } // namespace
@@ -239,7 +239,7 @@ mesh::Mesh build_quad(MPI_Comm comm,
     return mesh::create_mesh(
         comm,
         graph::AdjacencyList<std::int64_t>(std::move(data), std::move(offset)),
-        element, geom, ghost_mode, partitioner);
+        {element}, geom, ghost_mode, partitioner);
   }
 
   const std::size_t nx = n[0];
@@ -289,7 +289,7 @@ mesh::Mesh build_quad(MPI_Comm comm,
   return mesh::create_mesh(
       comm,
       graph::AdjacencyList<std::int64_t>(std::move(data), std::move(offset)),
-      element, geom, ghost_mode, partitioner);
+      {element}, geom, ghost_mode, partitioner);
 }
 //-----------------------------------------------------------------------------
 mesh::Mesh RectangleMesh::create(MPI_Comm comm,

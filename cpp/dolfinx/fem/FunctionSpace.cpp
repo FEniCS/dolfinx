@@ -138,7 +138,8 @@ FunctionSpace::tabulate_dof_coordinates(bool transpose) const
   const xt::xtensor<double, 2>& X = _element->interpolation_points();
 
   // Get coordinate map
-  const fem::CoordinateElement& cmap = _mesh->geometry().cmap();
+  // FIXME: Mixed mesh
+  const fem::CoordinateElement& cmap = _mesh->geometry().cmaps()[0];
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap

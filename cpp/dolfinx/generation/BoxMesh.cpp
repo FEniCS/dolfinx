@@ -142,7 +142,7 @@ mesh::Mesh build_tet(MPI_Comm comm,
   return mesh::create_mesh(
       comm,
       graph::AdjacencyList<std::int64_t>(std::move(data), std::move(offset)),
-      element, geom, ghost_mode, partitioner);
+      {element}, geom, ghost_mode, partitioner);
 }
 //-----------------------------------------------------------------------------
 mesh::Mesh build_hex(MPI_Comm comm,
@@ -193,14 +193,14 @@ mesh::Mesh build_hex(MPI_Comm comm,
   return mesh::create_mesh(
       comm,
       graph::AdjacencyList<std::int64_t>(std::move(data), std::move(offset)),
-      element, geom, ghost_mode, partitioner);
+      {element}, geom, ghost_mode, partitioner);
 }
 //-----------------------------------------------------------------------------
 mesh::Mesh build_prism(MPI_Comm comm,
-                     const std::array<std::array<double, 3>, 2>& p,
-                     std::array<std::size_t, 3> n,
-                     const mesh::GhostMode ghost_mode,
-                     const mesh::CellPartitionFunction& partitioner)
+                       const std::array<std::array<double, 3>, 2>& p,
+                       std::array<std::size_t, 3> n,
+                       const mesh::GhostMode ghost_mode,
+                       const mesh::CellPartitionFunction& partitioner)
 {
   xt::xtensor<double, 2> geom = create_geom(comm, p, n);
 
@@ -211,7 +211,7 @@ mesh::Mesh build_prism(MPI_Comm comm,
   std::array range_c = dolfinx::MPI::local_range(
       dolfinx::MPI::rank(comm), n_cells, dolfinx::MPI::size(comm));
   const std::size_t cell_range = range_c[1] - range_c[0];
-  xt::xtensor<std::int64_t, 2> cells({cell_range*2, 6});
+  xt::xtensor<std::int64_t, 2> cells({cell_range * 2, 6});
 
   // Create cuboids
   for (std::int64_t i = range_c[0]; i < range_c[1]; ++i)
@@ -234,7 +234,7 @@ mesh::Mesh build_prism(MPI_Comm comm,
         = {v0, v1, v2, v4, v5, v6};
     xt::xtensor_fixed<std::int64_t, xt::xshape<6>> cell1
         = {v1, v2, v3, v5, v6, v7};
-    
+
     xt::view(cells, (i - range_c[0]) * 2, xt::all()) = cell0;
     xt::view(cells, (i - range_c[0]) * 2 + 1, xt::all()) = cell1;
   }
@@ -244,7 +244,7 @@ mesh::Mesh build_prism(MPI_Comm comm,
   return mesh::create_mesh(
       comm,
       graph::AdjacencyList<std::int64_t>(std::move(data), std::move(offset)),
-      element, geom, ghost_mode, partitioner);
+      {element}, geom, ghost_mode, partitioner);
 }
 //-----------------------------------------------------------------------------
 

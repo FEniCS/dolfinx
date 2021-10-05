@@ -24,6 +24,9 @@ void xdmf_mesh::add_topology_data(
 {
   LOG(INFO) << "Adding topology data to node \"" << xml_node.path('/') << "\"";
 
+  if (geometry.cmaps().size() != 1)
+    throw std::runtime_error("Not supported for Mixed Topology Mesh");
+
   const int tdim = topology.dim();
 
   if (tdim == 2 and topology.cell_type() == mesh::CellType::prism)
@@ -35,7 +38,7 @@ void xdmf_mesh::add_topology_data(
 
   // Get number of nodes per entity
   const int num_nodes_per_entity
-      = geometry.cmap().dof_layout().num_entity_closure_dofs(dim);
+      = geometry.cmaps()[0].dof_layout().num_entity_closure_dofs(dim);
 
   // FIXME: sort out degree/cell type
   // Get VTK string for cell type
@@ -90,7 +93,7 @@ void xdmf_mesh::add_topology_data(
     for (int e = 0; e < mesh::cell_num_entities(topology.cell_type(), dim); ++e)
     {
       entity_dofs.push_back(
-          geometry.cmap().dof_layout().entity_closure_dofs(dim, e));
+          geometry.cmaps()[0].dof_layout().entity_closure_dofs(dim, e));
     }
 
     for (std::int32_t e : active_entities)
