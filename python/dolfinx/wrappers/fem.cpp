@@ -49,6 +49,66 @@
 
 namespace py = pybind11;
 
+namespace
+{
+template <typename T>
+void declare_assemblers(py::module& m)
+{
+  // Functional
+  m.def(
+      "assemble_scalar",
+      [](const dolfinx::fem::Form<T>& M,
+         const py::array_t<T, py::array::c_style>& constants,
+         const py::array_t<T, py::array::c_style>& coeffs)
+      {
+        return dolfinx::fem::assemble_scalar<T>(
+            M, constants,
+            {xtl::span<const T>(coeffs.data(), coeffs.size()),
+             coeffs.shape(1)});
+      },
+      "Assemble functional over mesh with provided constants and "
+      "coefficients");
+  // Vector
+  m.def(
+      "assemble_vector",
+      [](py::array_t<T, py::array::c_style> b, const dolfinx::fem::Form<T>& L,
+         const py::array_t<T, py::array::c_style>& constants,
+         const py::array_t<T, py::array::c_style>& coeffs)
+      {
+        dolfinx::fem::assemble_vector<T>(
+            xtl::span(b.mutable_data(), b.size()), L, constants,
+            {xtl::span<const T>(coeffs.data(), coeffs.size()),
+             coeffs.shape(1)});
+      },
+      py::arg("b"), py::arg("L"), py::arg("constants"), py::arg("coeffs"),
+      "Assemble linear form into an existing vector with pre-packed "
+      "constants "
+      "and coefficients");
+  m.def(
+      "assemble_matrix",
+      [](const std::function<int(const py::array_t<std::int32_t>&,
+                                 const py::array_t<std::int32_t>&,
+                                 const py::array_t<T>&)>& fin,
+         const dolfinx::fem::Form<T>& form,
+         const std::vector<std::shared_ptr<const dolfinx::fem::DirichletBC<T>>>&
+             bcs)
+      {
+        std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
+                          const std::int32_t*, const T*)>
+            f = [&fin](int nr, const int* rows, int nc, const int* cols,
+                       const T* data)
+        {
+          return fin(py::array(nr, rows), py::array(nc, cols),
+                     py::array(nr * nc, data));
+        };
+        dolfinx::fem::assemble_matrix<T>(f, form, bcs);
+      },
+      "Experimental assembly with Python insertion function. This will be "
+      "slow. Use for testing only.");
+}
+
+} // namespace
+
 namespace dolfinx_wrappers
 {
 void fem(py::module& m)
@@ -364,38 +424,10 @@ void fem(py::module& m)
                              &dolfinx::fem::DirichletBC<PetscScalar>::value);
 
   // dolfinx::fem::assemble
+  declare_assemblers<double>(m);
+  declare_assemblers<std::complex<double>>(m);
 
-  // Functional
-  m.def(
-      "assemble_scalar",
-      [](const dolfinx::fem::Form<PetscScalar>& M,
-         const py::array_t<PetscScalar, py::array::c_style>& constants,
-         const py::array_t<PetscScalar, py::array::c_style>& coeffs)
-      {
-        return dolfinx::fem::assemble_scalar<PetscScalar>(
-            M, constants,
-            {xtl::span<const PetscScalar>(coeffs.data(), coeffs.size()),
-             coeffs.shape(1)});
-      },
-      "Assemble functional over mesh with provided constants and coefficients");
-  // Vector
-  m.def(
-      "assemble_vector",
-      [](py::array_t<PetscScalar, py::array::c_style> b,
-         const dolfinx::fem::Form<PetscScalar>& L,
-         const py::array_t<PetscScalar, py::array::c_style>& constants,
-         const py::array_t<PetscScalar, py::array::c_style>& coeffs)
-      {
-        dolfinx::fem::assemble_vector<PetscScalar>(
-            xtl::span(b.mutable_data(), b.size()), L, constants,
-            {xtl::span<const PetscScalar>(coeffs.data(), coeffs.size()),
-             coeffs.shape(1)});
-      },
-      py::arg("b"), py::arg("L"), py::arg("constants"), py::arg("coeffs"),
-      "Assemble linear form into an existing vector with pre-packed "
-      "constants "
-      "and coefficients");
-  // Matrices
+  // PETSc Matrices
   m.def(
       "assemble_matrix_petsc",
       [](Mat A, const dolfinx::fem::Form<PetscScalar>& a,
@@ -464,27 +496,6 @@ void fem(py::module& m)
               dolfinx::la::PETScMatrix::set_fn(A, INSERT_VALUES), V, bcs,
               diagonal);
         });
-  m.def(
-      "assemble_matrix",
-      [](const std::function<int(const py::array_t<std::int32_t>&,
-                                 const py::array_t<std::int32_t>&,
-                                 const py::array_t<PetscScalar>&)>& fin,
-         const dolfinx::fem::Form<PetscScalar>& form,
-         const std::vector<std::shared_ptr<
-             const dolfinx::fem::DirichletBC<PetscScalar>>>& bcs)
-      {
-        std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
-                          const std::int32_t*, const PetscScalar*)>
-            f = [&fin](int nr, const int* rows, int nc, const int* cols,
-                       const PetscScalar* data)
-        {
-          return fin(py::array(nr, rows), py::array(nc, cols),
-                     py::array(nr * nc, data));
-        };
-        dolfinx::fem::assemble_matrix<PetscScalar>(f, form, bcs);
-      },
-      "Experimental assembly with Python insertion function. This will be "
-      "slow. Use for testing only.");
 
   // BC modifiers
   m.def(
