@@ -162,6 +162,11 @@ public:
     _element->interpolate(tcb::make_span(dofs), tcb::make_span(values), _bs);
   }
 
+  /// Computes a matrix that represents the interpolation between two
+  /// elements.
+  /// @param[in] from The element to interpolate from
+  /// @return Matrix operator that maps the 'from' degrees-of-freedom to
+  /// the degrees-of-freedom of this element.
   xt::xtensor<double, 2>
   compute_interpolation_operator(const FiniteElement& from) const
   {
