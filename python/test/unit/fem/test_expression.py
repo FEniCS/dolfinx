@@ -56,10 +56,12 @@ def test_expression():
     cell_geometry = numpy.zeros((num_dofs_x, gdim), dtype=numpy.float64)
     points_ref = numpy.zeros((len(local_map), tdim))
 
+    assert len(mesh.geometry.cmaps) == 1
+    cmap = mesh.geometry.cmaps[0]
     # Map cells on process back to reference element
     for i, cell in enumerate(closest_cell):
         cell_geometry[:] = x[x_dofs[cell], :gdim]
-        point_ref = mesh.geometry.cmap.pull_back(points[local_map[i]][:gdim].reshape(1, -1), cell_geometry)
+        point_ref = cmap.pull_back(points[local_map[i]][:gdim].reshape(1, -1), cell_geometry)
         points_ref[i] = point_ref
 
     # Eval using Expression
