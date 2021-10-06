@@ -20,7 +20,6 @@ from mpi4py import MPI
 assert (tempdir)
 
 
-@pytest.mark.xfail(strict=True)
 @pytest.mark.skipif(
     MPI.COMM_WORLD.size > 1,
     reason="This test should only be run in serial.")
@@ -28,7 +27,6 @@ assert (tempdir)
 def test_second_order_fides(tempdir):
     """Check that fides throws error on second order mesh"""
     filename = os.path.join(tempdir, "mesh_fides.bp")
-
     points = np.array([[0, 0, 0],
                        [1, 0, 0],
                        [0.5, 0, 0]], dtype=np.float64)
@@ -40,19 +38,15 @@ def test_second_order_fides(tempdir):
         FidesWriter(mesh.mpi_comm(), filename, mesh)
 
 
-@pytest.mark.xfail(strict=True)
 @pytest.mark.skipif(not has_adios2, reason="Requires ADIOS2.")
 def test_functions_from_different_meshes_fides(tempdir):
     """Check that the underlying ADIOS2Writer catches sending in
-    functions on different meshes
-    """
+    functions on different meshes"""
     filename = os.path.join(tempdir, "mesh_fides.bp")
     mesh0 = UnitSquareMesh(MPI.COMM_WORLD, 5, 5)
     mesh1 = UnitSquareMesh(MPI.COMM_WORLD, 10, 2)
-    V0 = FunctionSpace(mesh0, ("CG", 1))
-    u0 = Function(V0)
-    V1 = FunctionSpace(mesh1, ("CG", 1))
-    u1 = Function(V1)
+    V0, V1 = FunctionSpace(mesh0, ("Lagrange", 1)), FunctionSpace(mesh1, ("Lagrange", 1))
+    u0, u1 = Function(V0), Function(V1)
     with pytest.raises(RuntimeError):
         FidesWriter(mesh0.mpi_comm(), filename, [u0._cpp_object, u1._cpp_object])
 

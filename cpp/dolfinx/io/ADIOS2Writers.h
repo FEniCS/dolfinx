@@ -71,11 +71,20 @@ protected:
   ADIOS2Writer(MPI_Comm comm, const std::string& filename,
                const std::string& tag, const U& u);
 
+  /// Move constructor
+  ADIOS2Writer(ADIOS2Writer&& writer) = default;
+
+  /// Copy constructor
+  ADIOS2Writer(const ADIOS2Writer&) = delete;
+
   /// Destructor
   ~ADIOS2Writer();
 
-  /// Move constructor
-  ADIOS2Writer(ADIOS2Writer&& writer) = default;
+  /// Move assignment
+  ADIOS2Writer& operator=(ADIOS2Writer&& writer) = default;
+
+  // Copy assignment
+  ADIOS2Writer& operator=(const ADIOS2Writer&) = delete;
 
 public:
   /// Close the file
@@ -86,10 +95,10 @@ protected:
   std::unique_ptr<adios2::IO> _io;
   std::unique_ptr<adios2::Engine> _engine;
   std::shared_ptr<const mesh::Mesh> _mesh;
-  const U _u;
+  U _u;
 };
 
-/// Output of meshes and functions compatible with the FIDES Paraview
+/// Output of meshes and functions compatible with the Fides Paraview
 /// reader, see
 /// https://fides.readthedocs.io/en/latest/paraview/paraview.html. /
 class FidesWriter : public ADIOS2Writer
@@ -105,7 +114,6 @@ public:
   FidesWriter(MPI_Comm comm, const std::string& filename,
               std::shared_ptr<const mesh::Mesh> mesh);
 
-  /// TOOD: What 'output' element types are supported?
   /// Create Fides writer for list of functions
   /// @param[in] comm The MPI communicator
   /// @param[in] filename Name of output file
@@ -115,13 +123,22 @@ public:
   FidesWriter(MPI_Comm comm, const std::string& filename,
               const ADIOS2Writer::U& u);
 
+  // Copy constructor
+  FidesWriter(const FidesWriter&) = delete;
+
   /// Move constructor
   FidesWriter(FidesWriter&& file) = default;
 
   /// Destructor
   ~FidesWriter() = default;
 
-  /// Write the data in the writer to file for a given time step
+  /// Move assignment
+  FidesWriter& operator=(FidesWriter&&) = default;
+
+  // Copy assignment
+  FidesWriter& operator=(const FidesWriter&) = delete;
+
+  /// Write data with a given time
   /// @param[in] t The time step
   void write(double t);
 };
@@ -152,13 +169,22 @@ public:
   /// @note This format supports arbitrary degree meshes
   VTXWriter(MPI_Comm comm, const std::string& filename, const U& u);
 
+  // Copy constructor
+  VTXWriter(const VTXWriter&) = delete;
+
   /// Move constructor
   VTXWriter(VTXWriter&& file) = default;
 
   /// Destructor
   ~VTXWriter() = default;
 
-  /// Write data to file
+  /// Move assignment
+  VTXWriter& operator=(VTXWriter&&) = default;
+
+  // Copy assignment
+  VTXWriter& operator=(const VTXWriter&) = delete;
+
+  /// Write data with a given time
   /// @param[in] t The time step
   void write(double t);
 };
