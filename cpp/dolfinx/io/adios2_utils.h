@@ -63,12 +63,11 @@ adios2::Variable<T> define_variable(adios2::IO& io, const std::string& name,
     return io.DefineVariable<T>(name, shape, start, count);
 }
 
-/// Write function (real or complex) to to ADIOS2.
-/// Data is padded to be three dimensional if vector and 9 dimensional
-/// if tensor
-/// @param[in] io The ADIOS2 io
-/// @param[in] engine The ADIOS2 engine
-/// @param[in] u The function
+/// Write function (real or complex) ADIOS2. Data is padded to be three
+/// dimensional if vector and 9 dimensional if tensor
+/// @param[in] io The ADIOS2 io object
+/// @param[in] engine The ADIOS2 engine object
+/// @param[in] u The function to write
 template <typename Scalar>
 void write_function_at_nodes(adios2::IO& io, adios2::Engine& engine,
                              const fem::Function<Scalar>& u)

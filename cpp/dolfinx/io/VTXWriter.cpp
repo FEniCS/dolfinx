@@ -24,6 +24,14 @@ using namespace dolfinx::io;
 
 namespace
 {
+template <class... Ts>
+struct overload : Ts...
+{
+  using Ts::operator()...;
+};
+template <class... Ts>
+overload(Ts...) -> overload<Ts...>; // line not needed in C++20...
+
 // Create VTK xml scheme to be interpreted by the Paraview VTKWriter
 // https://adios2.readthedocs.io/en/latest/ecosystem/visualization.html#saving-the-vtk-xml-data-model
 std::string create_vtk_schema(const std::vector<std::string>& point_data,
@@ -81,23 +89,22 @@ std::string create_vtk_schema(const std::vector<std::string>& point_data,
   return ss.str();
 }
 //-----------------------------------------------------------------------------
-// bool is_cellwise_constant(const fem::FiniteElement& element)
-// {
-//   std::string family = element.family();
-//   int num_nodes_per_dim = element.space_dimension() / element.block_size();
-//   return num_nodes_per_dim == 1;
-// }
+bool is_cellwise_constant(const fem::FiniteElement& element)
+{
+  std::string family = element.family();
+  int num_nodes_per_dim = element.space_dimension() / element.block_size();
+  return num_nodes_per_dim == 1;
+}
 //-----------------------------------------------------------------------------
-void _write_mesh(adios2::IO& io, adios2::Engine& engine,
-                 std::shared_ptr<const mesh::Mesh> mesh)
+void _write_mesh(adios2::IO& io, adios2::Engine& engine, const mesh::Mesh& mesh)
 {
   // Put geometry
-  std::shared_ptr<const common::IndexMap> x_map = mesh->geometry().index_map();
+  std::shared_ptr<const common::IndexMap> x_map = mesh.geometry().index_map();
   const std::uint32_t num_vertices = x_map->size_local() + x_map->num_ghosts();
   adios2::Variable<double> local_geometry
       = adios2_utils::define_variable<double>(io, "geometry", {}, {},
                                               {num_vertices, 3});
-  engine.Put<double>(local_geometry, mesh->geometry().x().data());
+  engine.Put<double>(local_geometry, mesh.geometry().x().data());
 
   // Put number of nodes. The mesh data is written with local indices. Therefore
   // we need the ghost vertices
@@ -107,9 +114,8 @@ void _write_mesh(adios2::IO& io, adios2::Engine& engine,
   engine.Put<std::uint32_t>(vertices, num_vertices);
 
   // Add cell metadata
-  const int tdim = mesh->topology().dim();
-  const std::uint32_t num_cells
-      = mesh->topology().index_map(tdim)->size_local();
+  const int tdim = mesh.topology().dim();
+  const std::uint32_t num_cells = mesh.topology().index_map(tdim)->size_local();
   adios2::Variable<std::uint32_t> cell_variable
       = adios2_utils::define_variable<std::uint32_t>(io, "NumberOfCells",
                                                      {adios2::LocalValueDim});
@@ -119,12 +125,11 @@ void _write_mesh(adios2::IO& io, adios2::Engine& engine,
   adios2::Variable<std::uint32_t> celltype_variable
       = adios2_utils::define_variable<std::uint32_t>(io, "types");
   engine.Put<std::uint32_t>(celltype_variable,
-                            cells::get_vtk_cell_type(*mesh, tdim));
+                            cells::get_vtk_cell_type(mesh, tdim));
 
   // Get DOLFINx to VTK permutation
   // FIXME: Use better way to get number of nodes
-  const graph::AdjacencyList<std::int32_t>& x_dofmap
-      = mesh->geometry().dofmap();
+  const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
   const std::uint32_t num_nodes = x_dofmap.num_links(0);
 
   // // Extract mesh 'nodes'
@@ -243,29 +248,22 @@ void write_lagrange_function(adios2::IO& io, adios2::Engine& engine,
 }
 //-----------------------------------------------------------------------------
 // Extract name of functions and split into real and imaginary component
-template <typename T>
 std::vector<std::string> extract_function_names(
-    const std::vector<std::shared_ptr<const fem::Function<T>>>& functions)
+    const std::vector<std::variant<std::shared_ptr<const ADIOS2Writer::U0>,
+                                   std::shared_ptr<const ADIOS2Writer::U1>>>& u)
 {
+  std::vector<std::string> names;
+  for (auto& v : u)
+  {
+    std::visit(
+        overload{[&names](const std::shared_ptr<const ADIOS2Writer::U0>& u)
+                 { names.push_back(u->name); },
+                 [&names](const std::shared_ptr<const ADIOS2Writer::U1>& u)
+                 { names.push_back(u->name); }},
+        v);
+  };
 
-  std::vector<std::string> function_names;
-  if constexpr (std::is_scalar<T>::value)
-  {
-    std::for_each(functions.begin(), functions.end(),
-                  [&](std::shared_ptr<const fem::Function<T>> u)
-                  { function_names.push_back(u->name); });
-  }
-  else
-  {
-    const std::array<std::string, 2> parts = {"real", "imag"};
-    std::for_each(functions.begin(), functions.end(),
-                  [&](std::shared_ptr<const fem::Function<T>> u)
-                  {
-                    for (auto part : parts)
-                      function_names.push_back(u->name + "_" + part);
-                  });
-  }
-  return function_names;
+  return names;
 }
 } // namespace
 
@@ -290,9 +288,9 @@ VTXWriter::VTXWriter(
         std::shared_ptr<const fem::Function<std::complex<double>>>>>& u)
     : ADIOS2Writer(comm, filename, "VTX function writer", u)
 {
-  /*
   // Can only write one mesh to file at the time if using higher order
   // visualization
+
   // Only Lagrange and discontinuous Lagrange can be written at function space
   // dof coordinates
   _write_mesh_data = false;
@@ -300,12 +298,18 @@ VTXWriter::VTXWriter(
     _write_mesh_data = true;
   else
   {
-    std::shared_ptr<const fem::FiniteElement> element
-        = u[0]->function_space()->element();
+    // Extract element from first function
+    assert(!u.empty());
+    std::shared_ptr<const fem::FiniteElement> element;
+    if (auto v = std::get_if<std::shared_ptr<const U0>>(&u[0]))
+      element = (*v)->function_space()->element();
+    else if (auto v = std::get_if<std::shared_ptr<const U1>>(&u[0]))
+      element = (*v)->function_space()->element();
     assert(element);
     if (is_cellwise_constant(*element))
       throw std::runtime_error("Cell-wise constants not currently supported");
 
+    // FIXME: Should not use string checks
     std::array<std::string, 3> elements
         = {"Lagrange", "Discontinuous Lagrange", "DQ"};
     if (std::find(elements.begin(), elements.end(), element->family())
@@ -316,10 +320,9 @@ VTXWriter::VTXWriter(
   }
 
   // Define VTK scheme attribute for set of functions
-  std::vector<std::string> names = extract_function_names<double>(u);
+  std::vector<std::string> names = extract_function_names(u);
   std::string vtk_scheme = create_vtk_schema(names, {});
   adios2_utils::define_attribute<std::string>(*_io, "vtk.xml", vtk_scheme);
-  */
 }
 //-----------------------------------------------------------------------------
 void VTXWriter::write(double t)
@@ -331,37 +334,39 @@ void VTXWriter::write(double t)
 
   _engine->BeginStep();
   if (_write_mesh_data)
-    _write_mesh(*_io, *_engine, _mesh);
+    _write_mesh(*_io, *_engine, *_mesh);
 
   _engine->Put<double>(var_step, t);
-  // Write real valued functions to file
-  std::for_each(_functions.begin(), _functions.end(),
-                [&](auto& u)
-                {
-                  if (_write_mesh_data)
-                  {
-                    adios2_utils::write_function_at_nodes<double>(*_io,
-                                                                  *_engine, *u);
-                  }
-                  else
-                    write_lagrange_function<double>(*_io, *_engine, *u);
-                });
 
-  // Write complex valued functions to file
-  std::for_each(_complex_functions.begin(), _complex_functions.end(),
-                [&](auto& u)
-                {
-                  if (_write_mesh_data)
-                  {
-                    adios2_utils::write_function_at_nodes<std::complex<double>>(
-                        *_io, *_engine, *u);
-                  }
-                  else
-                  {
-                    write_lagrange_function<std::complex<double>>(*_io,
-                                                                  *_engine, *u);
-                  }
-                });
+  // Write functions to file
+  for (auto& v : _u)
+  {
+    std::visit(
+        overload{
+            [&](const std::shared_ptr<const ADIOS2Writer::U0>& u)
+            {
+              if (_write_mesh_data)
+              {
+                adios2_utils::write_function_at_nodes<double>(*_io, *_engine,
+                                                              *u);
+              }
+              else
+                write_lagrange_function<double>(*_io, *_engine, *u);
+            },
+            [&](const std::shared_ptr<const ADIOS2Writer::U1>& u)
+            {
+              if (_write_mesh_data)
+              {
+                adios2_utils::write_function_at_nodes<std::complex<double>>(
+                    *_io, *_engine, *u);
+              }
+              else
+                write_lagrange_function<std::complex<double>>(*_io, *_engine,
+                                                              *u);
+            }},
+        v);
+  };
+
   _engine->EndStep();
 }
 #endif

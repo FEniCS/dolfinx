@@ -195,16 +195,10 @@ void io(py::module& m)
           }))
       .def(py::init(
           [](const MPICommWrapper comm, const std::string& filename,
-             const std::vector<
-                 std::shared_ptr<const dolfinx::fem::Function<double>>>& u)
-          {
-            return std::make_unique<dolfinx::io::FidesWriter>(comm.get(),
-                                                              filename, u);
-          }))
-      .def(py::init(
-          [](const MPICommWrapper comm, const std::string& filename,
-             const std::vector<std::shared_ptr<
-                 const dolfinx::fem::Function<std::complex<double>>>>& u)
+             const std::vector<std::variant<
+                 std::shared_ptr<const dolfinx::fem::Function<double>>,
+                 std::shared_ptr<
+                     const dolfinx::fem::Function<std::complex<double>>>>>& u)
           {
             return std::make_unique<dolfinx::io::FidesWriter>(comm.get(),
                                                               filename, u);
@@ -217,6 +211,7 @@ void io(py::module& m)
       .def("close", [](dolfinx::io::FidesWriter& self) { self.close(); })
       .def("write",
            [](dolfinx::io::FidesWriter& self, double t) { self.write(t); });
+
   // dolfinx::io::VTXWriter
   pyclass_name = std::string("VTXWriter");
   py::class_<dolfinx::io::VTXWriter, std::shared_ptr<dolfinx::io::VTXWriter>>(
@@ -228,16 +223,15 @@ void io(py::module& m)
             return std::make_unique<dolfinx::io::VTXWriter>(comm.get(),
                                                             filename, mesh);
           }))
-
       .def(py::init(
           [](const MPICommWrapper comm, const std::string& filename,
-             const std::vector<std::shared_ptr<
-                 const dolfinx::fem::Function<PetscScalar>>>& functions)
-          {
-            return std::make_unique<dolfinx::io::VTXWriter>(
-                comm.get(), filename, functions);
+             const std::vector<std::variant<
+                 std::shared_ptr<const dolfinx::fem::Function<double>>,
+                 std::shared_ptr<
+                     const dolfinx::fem::Function<std::complex<double>>>>>& u) {
+            return std::make_unique<dolfinx::io::VTXWriter>(comm.get(),
+                                                            filename, u);
           }))
-
       .def("__enter__",
            [](std::shared_ptr<dolfinx::io::VTXWriter>& self) { return self; })
       .def("__exit__",

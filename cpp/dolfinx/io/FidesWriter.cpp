@@ -23,6 +23,13 @@ using namespace dolfinx::io;
 
 namespace
 {
+template <class... Ts>
+struct overload : Ts...
+{
+  using Ts::operator()...;
+};
+template <class... Ts>
+overload(Ts...) -> overload<Ts...>; // line not needed in C++20...
 
 //-----------------------------------------------------------------------------
 
@@ -60,22 +67,22 @@ std::string to_fides_cell(mesh::CellType type)
 /// @param[in] engine The ADIOS2 engine
 /// @param[in] mesh The mesh
 void write_fides_mesh(adios2::IO& io, adios2::Engine& engine,
-                      std::shared_ptr<const mesh::Mesh> mesh)
+                      const mesh::Mesh& mesh)
 {
   // "Put" geometry data
-  std::shared_ptr<const common::IndexMap> x_map = mesh->geometry().index_map();
+  std::shared_ptr<const common::IndexMap> x_map = mesh.geometry().index_map();
   const std::uint32_t num_vertices = x_map->size_local() + x_map->num_ghosts();
   adios2::Variable<double> local_geometry
       = adios2_utils::define_variable<double>(io, "points", {}, {},
                                               {num_vertices, 3});
-  engine.Put<double>(local_geometry, mesh->geometry().x().data());
+  engine.Put<double>(local_geometry, mesh.geometry().x().data());
 
   // Get topological dimenson, number of cells and number of 'nodes' per
   // cell
   // FIXME: Use better way to get number of nodes
-  const int tdim = mesh->topology().dim();
-  const std::int32_t num_cells = mesh->topology().index_map(tdim)->size_local();
-  const int num_nodes = mesh->geometry().dofmap().num_links(0);
+  const int tdim = mesh.topology().dim();
+  const std::int32_t num_cells = mesh.topology().index_map(tdim)->size_local();
+  const int num_nodes = mesh.geometry().dofmap().num_links(0);
 
   // Compute the mesh 'VTK' connectivity  and "put" result in the ADIOS2
   // file
@@ -186,18 +193,33 @@ ADIOS2Writer::ADIOS2Writer(MPI_Comm comm, const std::string& filename,
 //-----------------------------------------------------------------------------
 ADIOS2Writer::ADIOS2Writer(
     MPI_Comm comm, const std::string& filename, const std::string& tag,
-    const std::vector<std::variant<
-        std::shared_ptr<const fem::Function<double>>,
-        std::shared_ptr<const fem::Function<std::complex<double>>>>>& u)
+    const std::vector<std::variant<std::shared_ptr<const ADIOS2Writer::U0>,
+                                   std::shared_ptr<const ADIOS2Writer::U1>>>& u)
     : ADIOS2Writer(comm, filename, tag)
 {
-  // _mesh = u[0]->function_space()->mesh();
-  // // Check that mesh is the same for all functions
-  // for (std::size_t i = 1; i < u.size(); i++)
-  //   assert(_mesh == u[i]->function_space()->mesh());
-  // _functions = u;
+  // Extract mesh from first function
+  assert(!u.empty());
+  if (auto v = std::get_if<std::shared_ptr<const U0>>(&u[0]))
+    _mesh = (*v)->function_space()->mesh();
+  else if (auto v = std::get_if<std::shared_ptr<const U1>>(&u[0]))
+    _mesh = (*v)->function_space()->mesh();
+
   _u = u;
-  // std::copy(u.begin(), u.end(), std::back_inserter(_u));
+  for (auto& v : u)
+  {
+    if (auto _v = std::get_if<std::shared_ptr<const U0>>(&v))
+    {
+      assert(_mesh == (*_v)->function_space()->mesh());
+      Ur.push_back(**_v);
+    }
+    else if (auto _v = std::get_if<std::shared_ptr<const U1>>(&v))
+    {
+      assert(_mesh == (*_v)->function_space()->mesh());
+      Ur.push_back(**_v);
+    }
+    else
+      throw std::runtime_error("Unsupported function.");
+  }
 }
 //-----------------------------------------------------------------------------
 ADIOS2Writer::~ADIOS2Writer() { close(); }
@@ -212,27 +234,25 @@ void ADIOS2Writer::close()
 }
 //-----------------------------------------------------------------------------
 xt::xtensor<std::int64_t, 2>
-io::extract_vtk_connectivity(std::shared_ptr<const mesh::Mesh> mesh)
+io::extract_vtk_connectivity(const mesh::Mesh& mesh)
 {
   // Get DOLFINx to VTK permutation
   // FIXME: Use better way to get number of nodes
-  const graph::AdjacencyList<std::int32_t>& x_dofmap
-      = mesh->geometry().dofmap();
+  const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
   const std::uint32_t num_nodes = x_dofmap.num_links(0);
   std::vector map = dolfinx::io::cells::transpose(
-      dolfinx::io::cells::perm_vtk(mesh->topology().cell_type(), num_nodes));
+      dolfinx::io::cells::perm_vtk(mesh.topology().cell_type(), num_nodes));
   // TODO: Remove when when paraview issue 19433 is resolved
   // (https://gitlab.kitware.com/paraview/paraview/issues/19433)
-  if (mesh->topology().cell_type() == dolfinx::mesh::CellType::hexahedron
+  if (mesh.topology().cell_type() == dolfinx::mesh::CellType::hexahedron
       and num_nodes == 27)
   {
     map = {0,  9, 12, 3,  1, 10, 13, 4,  18, 15, 21, 6,  19, 16,
            22, 7, 2,  11, 5, 14, 8,  17, 20, 23, 24, 25, 26};
   }
   // Extract mesh 'nodes'
-  const int tdim = mesh->topology().dim();
-  const std::uint32_t num_cells
-      = mesh->topology().index_map(tdim)->size_local();
+  const int tdim = mesh.topology().dim();
+  const std::uint32_t num_cells = mesh.topology().index_map(tdim)->size_local();
 
   // Write mesh connectivity
   xt::xtensor<std::int64_t, 2> topology({num_cells, num_nodes});
@@ -261,14 +281,10 @@ FidesWriter::FidesWriter(MPI_Comm comm, const std::string& filename,
 {
   assert(!u.empty());
   const mesh::Mesh* mesh = nullptr;
-  if (auto v = std::get_if<std::shared_ptr<const fem::Function<double>>>(&u[0]))
+  if (auto v = std::get_if<std::shared_ptr<const ADIOS2Writer::U0>>(&u[0]))
     mesh = (*v)->function_space()->mesh().get();
-  else if (auto v = std::get_if<
-               std::shared_ptr<const fem::Function<std::complex<double>>>>(
-               &u[0]))
-  {
+  else if (auto v = std::get_if<std::shared_ptr<const ADIOS2Writer::U1>>(&u[0]))
     mesh = (*v)->function_space()->mesh().get();
-  }
   else
     throw std::runtime_error("Unsupported function.");
 
@@ -287,22 +303,23 @@ void FidesWriter::write(double t)
       = adios2_utils::define_variable<double>(*_io, "step");
   _engine->Put<double>(var_step, t);
 
-  write_fides_mesh(*_io, *_engine, _mesh);
+  write_fides_mesh(*_io, *_engine, *_mesh);
 
-  // Write real valued functions to file
-  std::for_each(
-      _functions.begin(), _functions.end(),
-      [&](std::shared_ptr<const fem::Function<double>> u)
-      { adios2_utils::write_function_at_nodes<double>(*_io, *_engine, *u); });
+  for (auto& v : _u)
+  {
+    std::visit(
+        overload{[&](const std::shared_ptr<const ADIOS2Writer::U0>& u) {
+                   adios2_utils::write_function_at_nodes<double>(*_io, *_engine,
+                                                                 *u);
+                 },
+                 [&](const std::shared_ptr<const ADIOS2Writer::U1>& u)
+                 {
+                   adios2_utils::write_function_at_nodes<std::complex<double>>(
+                       *_io, *_engine, *u);
+                 }},
+        v);
+  };
 
-  // Write complex valued functions to file
-  std::for_each(
-      _complex_functions.begin(), _complex_functions.end(),
-      [&](std::shared_ptr<const fem::Function<std::complex<double>>> u)
-      {
-        adios2_utils::write_function_at_nodes<std::complex<double>>(
-            *_io, *_engine, *u);
-      });
   _engine->EndStep();
 }
 //-----------------------------------------------------------------------------

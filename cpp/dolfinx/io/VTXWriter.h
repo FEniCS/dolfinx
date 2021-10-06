@@ -42,22 +42,22 @@ namespace dolfinx::io
 class VTXWriter : public ADIOS2Writer
 {
 public:
-  /// Create VTX writer for a mesh
+  /// Createa VTX writer for a mesh
   /// @param[in] comm The MPI communicator
   /// @param[in] filename Name of output file
-  /// @param[in] mesh The mesh
+  /// @param[in] mesh The mesh to write
   VTXWriter(MPI_Comm comm, const std::string& filename,
             std::shared_ptr<const mesh::Mesh> mesh);
 
-  /// Create VTX writer for list of functions
+  /// Create a VTX writer for list of functions
   /// @param[in] comm The MPI communicator
   /// @param[in] filename Name of output file
-  /// @param[in] functions List of functions
+  /// @param[in] functions List of functions to write
   VTXWriter(
       MPI_Comm comm, const std::string& filename,
-      const std::vector<std::variant<
-          std::shared_ptr<const fem::Function<double>>,
-          std::shared_ptr<const fem::Function<std::complex<double>>>>>& u);
+      const std::vector<std::variant<std::shared_ptr<const ADIOS2Writer::U0>,
+                                     std::shared_ptr<const ADIOS2Writer::U1>>>&
+          u);
 
   /// Move constructor
   VTXWriter(VTXWriter&& file) = default;

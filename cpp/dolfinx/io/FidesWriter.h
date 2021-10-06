@@ -43,9 +43,10 @@ namespace dolfinx::io
 class ADIOS2Writer
 {
 public:
+  using U0 = fem::Function<double>;
+  using U1 = fem::Function<std::complex<double>>;
   using U = std::vector<
-      std::variant<std::shared_ptr<const fem::Function<double>>,
-                   std::shared_ptr<const fem::Function<std::complex<double>>>>>;
+      std::variant<std::shared_ptr<const U0>, std::shared_ptr<const U1>>>;
 
 protected:
   /// Create an ADIOS2-based writer
@@ -87,10 +88,11 @@ protected:
   std::unique_ptr<adios2::Engine> _engine;
 
   std::shared_ptr<const mesh::Mesh> _mesh;
-  std::vector<std::shared_ptr<const fem::Function<double>>> _functions;
-  std::vector<std::shared_ptr<const fem::Function<std::complex<double>>>>
-      _complex_functions;
   U _u;
+
+  std::vector<std::variant<std::reference_wrapper<const U0>,
+                           std::reference_wrapper<const U1>>>
+      Ur;
 };
 
 /// Extract the cell topology (connectivity) in VTK ordering for all
@@ -99,8 +101,7 @@ protected:
 /// @param [in] mesh The mesh
 /// @return The cell topology in VTK ordering and in term of the DOLFINx
 /// geometry 'nodes'
-xt::xtensor<std::int64_t, 2>
-extract_vtk_connectivity(std::shared_ptr<const mesh::Mesh> mesh);
+xt::xtensor<std::int64_t, 2> extract_vtk_connectivity(const mesh::Mesh& mesh);
 
 /// Output of meshes and functions compatible with the FIDES Paraview
 /// reader, see
@@ -109,16 +110,17 @@ class FidesWriter : public ADIOS2Writer
 {
 public:
   /// Create Fides writer for a mesh
-  /// @param[in] comm The MPI communciator
+  /// @param[in] comm The MPI communicator
   /// @param[in] filename Name of output file
   /// @param[in] mesh The mesh
   FidesWriter(MPI_Comm comm, const std::string& filename,
               std::shared_ptr<const mesh::Mesh> mesh);
 
   /// Create Fides writer for list of functions (real)
-  /// @param[in] comm The MPI communciator
+  /// @param[in] comm The MPI communicator
   /// @param[in] filename Name of output file
   /// @param[in] u List of functions
+  /// @note All functions in `u` must share the same Mesh
   FidesWriter(MPI_Comm comm, const std::string& filename,
               const ADIOS2Writer::U& u);
 
