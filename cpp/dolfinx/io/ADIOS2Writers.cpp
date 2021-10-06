@@ -45,7 +45,7 @@ xt::xtensor<std::int64_t, 2> extract_vtk_connectivity(const mesh::Mesh& mesh)
   // Get DOLFINx to VTK permutation
   // FIXME: Use better way to get number of nodes
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
-  const std::uint32_t num_nodes = x_dofmap.num_links(0);
+  const std::size_t num_nodes = x_dofmap.num_links(0);
   std::vector map = dolfinx::io::cells::transpose(
       dolfinx::io::cells::perm_vtk(mesh.topology().cell_type(), num_nodes));
   // TODO: Remove when when paraview issue 19433 is resolved
@@ -58,11 +58,11 @@ xt::xtensor<std::int64_t, 2> extract_vtk_connectivity(const mesh::Mesh& mesh)
   }
   // Extract mesh 'nodes'
   const int tdim = mesh.topology().dim();
-  const std::uint32_t num_cells = mesh.topology().index_map(tdim)->size_local();
+  const std::size_t num_cells = mesh.topology().index_map(tdim)->size_local();
 
   // Write mesh connectivity
   xt::xtensor<std::int64_t, 2> topology({num_cells, num_nodes});
-  for (size_t c = 0; c < num_cells; ++c)
+  for (std::size_t c = 0; c < num_cells; ++c)
   {
     auto x_dofs = x_dofmap.links(c);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
@@ -269,13 +269,13 @@ void write_vtx_function_data(adios2::IO& io, adios2::Engine& engine,
     std::string function_name = u.name;
     if (part != "")
       function_name += "_" + part;
-    for (size_t i = 0; i < num_dofs; ++i)
+    for (std::size_t i = 0; i < num_dofs; ++i)
     {
-      for (size_t j = 0; j < index_map_bs; ++j)
+      for (int j = 0; j < index_map_bs; ++j)
         out_data[i * num_components + j] = part_data[i * index_map_bs + j];
 
       // Pad data to 3D if vector or tensor data
-      for (size_t j = index_map_bs; j < num_components; ++j)
+      for (std::size_t j = index_map_bs; j < num_components; ++j)
         out_data[i * num_components + j] = 0;
     }
 
@@ -361,12 +361,12 @@ std::vector<std::string> extract_function_names(const ADIOS2Writer::U& u)
   return names;
 }
 //-----------------------------------------------------------------------------
-bool is_cellwise_constant(const fem::FiniteElement& element)
-{
-  std::string family = element.family();
-  int num_nodes_per_dim = element.space_dimension() / element.block_size();
-  return num_nodes_per_dim == 1;
-}
+// bool is_cellwise_constant(const fem::FiniteElement& element)
+// {
+//   std::string family = element.family();
+//   int num_nodes_per_dim = element.space_dimension() / element.block_size();
+//   return num_nodes_per_dim == 1;
+// }
 //-----------------------------------------------------------------------------
 
 // Create VTK xml scheme to be interpreted by the Paraview VTKWriter
