@@ -45,6 +45,7 @@ template <typename T>
 class Function
 {
 public:
+  /// The field type for the Function, e.g. double
   using value_type = T;
 
   /// Create function on given function space
