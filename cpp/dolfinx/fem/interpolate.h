@@ -162,8 +162,8 @@ void interpolate_from_any(Function<T>& u, const Function<T>& v)
     const int u_bs = element_to->block_size();
     const int v_bs = element_from->block_size();
 
-    std::vector<T> v_local(element_from->space_dimension() * u_bs);
-    std::vector<T> u_local(element_to->space_dimension() * v_bs);
+    std::vector<T> v_local(element_from->space_dimension() * v_bs);
+    std::vector<T> u_local(element_to->space_dimension() * u_bs);
 
     const auto apply_dof_transformation
         = element_from->get_dof_transformation_function<T>(false, true, false);
