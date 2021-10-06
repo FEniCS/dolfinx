@@ -28,12 +28,11 @@ class Function;
 
 namespace io
 {
-// Convenience functions for declaring attributes and variables with adios2
+/// Convenience functions for declaring attributes and variables with adios2
 namespace adios2_utils
 {
-//-----------------------------------------------------------------------------
-// Safe definition of an attribute. First check if it has already been defined
-// and return it. If not defined create new attribute.
+/// Safe definition of an attribute. First check if it has already been
+/// defined and return it. If not defined create new attribute.
 template <class T>
 adios2::Attribute<T> define_attribute(adios2::IO& io, const std::string& name,
                                       const T& value,
@@ -45,7 +44,6 @@ adios2::Attribute<T> define_attribute(adios2::IO& io, const std::string& name,
   else
     return io.DefineAttribute<T>(name, value, var_name, separator);
 }
-//-----------------------------------------------------------------------------
 
 /// Safe definition of a variable. First check if it has already been
 /// defined and return it. If not defined create new variable.
@@ -65,10 +63,9 @@ adios2::Variable<T> define_variable(adios2::IO& io, const std::string& name,
     return io.DefineVariable<T>(name, shape, start, count);
 }
 
-//-----------------------------------------------------------------------------
 /// Write function (real or complex) to to ADIOS2.
-/// Data is padded to be three dimensional if vector
-/// and 9 dimensional if tensor
+/// Data is padded to be three dimensional if vector and 9 dimensional
+/// if tensor
 /// @param[in] io The ADIOS2 io
 /// @param[in] engine The ADIOS2 engine
 /// @param[in] u The function
@@ -79,6 +76,7 @@ void write_function_at_nodes(adios2::IO& io, adios2::Engine& engine,
   auto function_data = u.compute_point_values();
   std::uint32_t local_size = function_data.shape(0);
   std::uint32_t block_size = function_data.shape(1);
+
   // Extract real and imaginary parts
   std::vector<std::string> parts = {""};
   if constexpr (!std::is_scalar<Scalar>::value)
@@ -93,6 +91,7 @@ void write_function_at_nodes(adios2::IO& io, adios2::Engine& engine,
     std::string function_name = u.name;
     if (part != "")
       function_name += "_" + part;
+
     adios2::Variable<double> local_output
         = adios2_utils::define_variable<double>(io, function_name, {}, {},
                                                 {local_size, num_components});

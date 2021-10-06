@@ -14,6 +14,7 @@
 #include <dolfinx/common/MPI.h>
 #include <memory>
 #include <string>
+#include <variant>
 #include <vector>
 
 namespace adios2
@@ -38,32 +39,25 @@ namespace dolfinx::io
 {
 // Writer for meshes and functions using ADIOS2 VTX format
 // https://adios2.readthedocs.io/en/latest/ecosystem/visualization.html#using-vtk-and-paraview
-class VTXWriter : public Adios2Writer
+class VTXWriter : public ADIOS2Writer
 {
 public:
   /// Create VTX writer for a mesh
-  /// @param[in] comm The MPI communciator
+  /// @param[in] comm The MPI communicator
   /// @param[in] filename Name of output file
   /// @param[in] mesh The mesh
   VTXWriter(MPI_Comm comm, const std::string& filename,
             std::shared_ptr<const mesh::Mesh> mesh);
 
-  /// Create VTX writer for list of functions (real)
-  /// @param[in] comm The MPI communciator
+  /// Create VTX writer for list of functions
+  /// @param[in] comm The MPI communicator
   /// @param[in] filename Name of output file
   /// @param[in] functions List of functions
-  VTXWriter(MPI_Comm comm, const std::string& filename,
-            const std::vector<std::shared_ptr<const fem::Function<double>>>&
-                functions);
-
-  /// Create VTX writer for list of functions (complex)
-  /// @param[in] comm The MPI communciator
-  /// @param[in] filename Name of output file
-  /// @param[in] functions List of functions
-  VTXWriter(MPI_Comm comm, const std::string& filename,
-            const std::vector<
-                std::shared_ptr<const fem::Function<std::complex<double>>>>&
-                functions);
+  VTXWriter(
+      MPI_Comm comm, const std::string& filename,
+      const std::vector<std::variant<
+          std::shared_ptr<const fem::Function<double>>,
+          std::shared_ptr<const fem::Function<std::complex<double>>>>>& u);
 
   /// Move constructor
   VTXWriter(VTXWriter&& file) = default;
@@ -76,8 +70,8 @@ public:
   void write(double t);
 
 private:
-  // Flag to indicate if mesh should be written, or if mesh is defined through
-  // dof coordinates
+  // Flag to indicate if mesh should be written, or if mesh is defined
+  // through dof coordinates
   bool _write_mesh_data;
 };
 

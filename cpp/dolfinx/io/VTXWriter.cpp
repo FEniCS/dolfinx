@@ -24,8 +24,8 @@ using namespace dolfinx::io;
 
 namespace
 {
-/// Create VTK xml scheme to be interpreted by the Paraview VTKWriter
-/// https://adios2.readthedocs.io/en/latest/ecosystem/visualization.html#saving-the-vtk-xml-data-model
+// Create VTK xml scheme to be interpreted by the Paraview VTKWriter
+// https://adios2.readthedocs.io/en/latest/ecosystem/visualization.html#saving-the-vtk-xml-data-model
 std::string create_vtk_schema(const std::vector<std::string>& point_data,
                               const std::vector<std::string>& cell_data)
 {
@@ -81,12 +81,12 @@ std::string create_vtk_schema(const std::vector<std::string>& point_data,
   return ss.str();
 }
 //-----------------------------------------------------------------------------
-bool is_cellwise_constant(const fem::FiniteElement& element)
-{
-  std::string family = element.family();
-  int num_nodes_per_dim = element.space_dimension() / element.block_size();
-  return num_nodes_per_dim == 1;
-}
+// bool is_cellwise_constant(const fem::FiniteElement& element)
+// {
+//   std::string family = element.family();
+//   int num_nodes_per_dim = element.space_dimension() / element.block_size();
+//   return num_nodes_per_dim == 1;
+// }
 //-----------------------------------------------------------------------------
 void _write_mesh(adios2::IO& io, adios2::Engine& engine,
                  std::shared_ptr<const mesh::Mesh> mesh)
@@ -272,7 +272,7 @@ std::vector<std::string> extract_function_names(
 //-----------------------------------------------------------------------------
 VTXWriter::VTXWriter(MPI_Comm comm, const std::string& filename,
                      std::shared_ptr<const mesh::Mesh> mesh)
-    : Adios2Writer(comm, filename, "VTX mesh writer", mesh)
+    : ADIOS2Writer(comm, filename, "VTX mesh writer", mesh)
 {
 
   // Define VTK scheme attribute for mesh
@@ -285,21 +285,23 @@ VTXWriter::VTXWriter(MPI_Comm comm, const std::string& filename,
 //-----------------------------------------------------------------------------
 VTXWriter::VTXWriter(
     MPI_Comm comm, const std::string& filename,
-    const std::vector<std::shared_ptr<const fem::Function<double>>>& functions)
-    : Adios2Writer(comm, filename, "VTX function writer", functions)
+    const std::vector<std::variant<
+        std::shared_ptr<const fem::Function<double>>,
+        std::shared_ptr<const fem::Function<std::complex<double>>>>>& u)
+    : ADIOS2Writer(comm, filename, "VTX function writer", u)
 {
-
+  /*
   // Can only write one mesh to file at the time if using higher order
   // visualization
   // Only Lagrange and discontinuous Lagrange can be written at function space
   // dof coordinates
   _write_mesh_data = false;
-  if (functions.size() > 1)
+  if (u.size() > 1)
     _write_mesh_data = true;
   else
   {
     std::shared_ptr<const fem::FiniteElement> element
-        = functions[0]->function_space()->element();
+        = u[0]->function_space()->element();
     assert(element);
     if (is_cellwise_constant(*element))
       throw std::runtime_error("Cell-wise constants not currently supported");
@@ -312,54 +314,12 @@ VTXWriter::VTXWriter(
       _write_mesh_data = true;
     }
   }
-  // Define VTK scheme attribute for set of functions
-  std::vector<std::string> names = extract_function_names<double>(functions);
-  std::string vtk_scheme = create_vtk_schema(names, {});
-  adios2_utils::define_attribute<std::string>(*_io, "vtk.xml", vtk_scheme);
-}
-//-----------------------------------------------------------------------------
-VTXWriter::VTXWriter(
-    MPI_Comm comm, const std::string& filename,
-    const std::vector<
-        std::shared_ptr<const fem::Function<std::complex<double>>>>& functions)
-    : Adios2Writer(comm, filename, "VTX function writer", functions)
-{
-  _io->SetEngine("BPFile");
-
-  assert(functions.size() >= 1);
-  _mesh = functions[0]->function_space()->mesh();
-  for (std::size_t i = 1; i < functions.size(); i++)
-    assert(_mesh == functions[i]->function_space()->mesh());
-
-  // Can only write one mesh to file at the time if using higher order
-  // visualization
-  // Only Lagrange and discontinuous Lagrange can be written at function space
-  // dof coordinates
-  _write_mesh_data = false;
-  if (functions.size() > 1)
-    _write_mesh_data = true;
-  else
-  {
-    std::shared_ptr<const fem::FiniteElement> element
-        = functions[0]->function_space()->element();
-    assert(element);
-    if (is_cellwise_constant(*element))
-      throw std::runtime_error("Cell-wise constants not currently supported");
-
-    std::array<std::string, 2> elements
-        = {"Lagrange", "Discontinuous Lagrange"};
-    if (std::find(elements.begin(), elements.end(), element->family())
-        == elements.end())
-    {
-      _write_mesh_data = true;
-    }
-  }
 
   // Define VTK scheme attribute for set of functions
-  std::vector<std::string> names
-      = extract_function_names<std::complex<double>>(functions);
+  std::vector<std::string> names = extract_function_names<double>(u);
   std::string vtk_scheme = create_vtk_schema(names, {});
   adios2_utils::define_attribute<std::string>(*_io, "vtk.xml", vtk_scheme);
+  */
 }
 //-----------------------------------------------------------------------------
 void VTXWriter::write(double t)

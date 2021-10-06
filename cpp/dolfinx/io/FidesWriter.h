@@ -15,6 +15,7 @@
 #include <memory>
 #include <mpi.h>
 #include <string>
+#include <variant>
 #include <vector>
 #include <xtensor/xtensor.hpp>
 
@@ -39,14 +40,19 @@ class Mesh;
 namespace dolfinx::io
 {
 
-class Adios2Writer
+class ADIOS2Writer
 {
+public:
+  using U = std::vector<
+      std::variant<std::shared_ptr<const fem::Function<double>>,
+                   std::shared_ptr<const fem::Function<std::complex<double>>>>>;
+
 protected:
   /// Create an ADIOS2-based writer
   /// @param[in] comm The MPI communicator
   /// @param[in] filename Name of output file
   /// @param[in] tag The ADIOS2 object name
-  Adios2Writer(MPI_Comm comm, const std::string& filename,
+  ADIOS2Writer(MPI_Comm comm, const std::string& filename,
                const std::string& tag);
 
   /// Create an ADIOS2-based writer for a mesh
@@ -54,33 +60,22 @@ protected:
   /// @param[in] filename Name of output file
   /// @param[in] tag The ADIOS2 object name
   /// @param[in] mesh The mesh
-  Adios2Writer(MPI_Comm comm, const std::string& filename,
+  ADIOS2Writer(MPI_Comm comm, const std::string& filename,
                const std::string& tag, std::shared_ptr<const mesh::Mesh> mesh);
 
-  /// Create an ADIOS2-based writer for a list of complex functions
+  /// Create an ADIOS2-based writer for a list of functions
   /// @param[in] comm The MPI communicator
   /// @param[in] filename Name of output file
   /// @param[in] tag The ADIOS2 object name
   /// @param[in] u List of functions
-  Adios2Writer(
-      MPI_Comm comm, const std::string& filename, const std::string& tag,
-      const std::vector<
-          std::shared_ptr<const fem::Function<std::complex<double>>>>& u);
-
-  /// Create an ADIOS2-based writer for a list of complex functions
-  /// @param[in] comm The MPI communicator
-  /// @param[in] filename Name of output file
-  /// @param[in] tag The ADIOS2 object name
-  /// @param[in] u List of functions
-  Adios2Writer(
-      MPI_Comm comm, const std::string& filename, const std::string& tag,
-      const std::vector<std::shared_ptr<const fem::Function<double>>>& u);
+  ADIOS2Writer(MPI_Comm comm, const std::string& filename,
+               const std::string& tag, const U& u);
 
   /// Destructor
-  ~Adios2Writer();
+  ~ADIOS2Writer();
 
   /// Move constructor
-  Adios2Writer(Adios2Writer&& writer) = default;
+  ADIOS2Writer(ADIOS2Writer&& writer) = default;
 
 public:
   /// Close the file
@@ -95,6 +90,7 @@ protected:
   std::vector<std::shared_ptr<const fem::Function<double>>> _functions;
   std::vector<std::shared_ptr<const fem::Function<std::complex<double>>>>
       _complex_functions;
+  U _u;
 };
 
 /// Extract the cell topology (connectivity) in VTK ordering for all
@@ -109,7 +105,7 @@ extract_vtk_connectivity(std::shared_ptr<const mesh::Mesh> mesh);
 /// Output of meshes and functions compatible with the FIDES Paraview
 /// reader, see
 /// https://fides.readthedocs.io/en/latest/paraview/paraview.html
-class FidesWriter : public Adios2Writer
+class FidesWriter : public ADIOS2Writer
 {
 public:
   /// Create Fides writer for a mesh
@@ -123,18 +119,8 @@ public:
   /// @param[in] comm The MPI communciator
   /// @param[in] filename Name of output file
   /// @param[in] u List of functions
-  FidesWriter(
-      MPI_Comm comm, const std::string& filename,
-      const std::vector<std::shared_ptr<const fem::Function<double>>>& u);
-
-  /// Create Fides writer for list of functions (complex)
-  /// @param[in] comm The MPI communciator
-  /// @param[in] filename Name of output file
-  /// @param[in] u List of functions
-  FidesWriter(
-      MPI_Comm comm, const std::string& filename,
-      const std::vector<
-          std::shared_ptr<const fem::Function<std::complex<double>>>>& u);
+  FidesWriter(MPI_Comm comm, const std::string& filename,
+              const ADIOS2Writer::U& u);
 
   /// Move constructor
   FidesWriter(FidesWriter&& file) = default;

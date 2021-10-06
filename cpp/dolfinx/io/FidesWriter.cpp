@@ -115,30 +115,26 @@ void initialize_mesh_attributes(adios2::IO& io, const mesh::Mesh& mesh)
 /// FIDES
 /// @param[in] io The ADIOS2 IO
 /// @param[in] functions The list of functions
-template <typename T>
-void initialize_function_attributes(
-    adios2::IO& io,
-    const std::vector<std::shared_ptr<const fem::Function<T>>>& u)
+void initialize_function_attributes(adios2::IO& io, const ADIOS2Writer::U& u)
 {
   // Array of function (name, cell association types) for each function added to
   // the file
   std::vector<std::array<std::string, 2>> u_data;
-  if constexpr (std::is_scalar<T>::value)
+  for (auto& _u : u)
   {
-    std::for_each(u.begin(), u.end(),
-                  [&](std::shared_ptr<const fem::Function<T>> u) {
-                    u_data.push_back({u->name, "points"});
-                  });
-  }
-  else
-  {
-    const std::array<std::string, 2> parts = {"real", "imag"};
-    std::for_each(u.begin(), u.end(),
-                  [&](std::shared_ptr<const fem::Function<T>> u)
-                  {
-                    for (auto part : parts)
-                      u_data.push_back({u->name + "_" + part, "points"});
-                  });
+    if (auto v = std::get_if<std::shared_ptr<const fem::Function<double>>>(&_u))
+      u_data.push_back({(*v)->name, "points"});
+    else if (auto v = std::get_if<
+                 std::shared_ptr<const fem::Function<std::complex<double>>>>(
+                 &_u))
+    {
+      for (auto part : {"real", "imag"})
+        u_data.push_back({(*v)->name + "_" + part, "points"});
+    }
+    else
+    {
+      throw std::runtime_error("Unsupported function.");
+    }
   }
 
   // Write field associations to file
@@ -170,7 +166,7 @@ void initialize_function_attributes(
 } // namespace
 
 //-----------------------------------------------------------------------------
-Adios2Writer::Adios2Writer(MPI_Comm comm, const std::string& filename,
+ADIOS2Writer::ADIOS2Writer(MPI_Comm comm, const std::string& filename,
                            const std::string& tag)
     : _adios(std::make_unique<adios2::ADIOS>(comm)),
       _io(std::make_unique<adios2::IO>(_adios->DeclareIO(tag))),
@@ -179,45 +175,34 @@ Adios2Writer::Adios2Writer(MPI_Comm comm, const std::string& filename,
 {
   _io->SetEngine("BPFile");
 }
-
 //-----------------------------------------------------------------------------
-Adios2Writer::Adios2Writer(MPI_Comm comm, const std::string& filename,
+ADIOS2Writer::ADIOS2Writer(MPI_Comm comm, const std::string& filename,
                            const std::string& tag,
                            std::shared_ptr<const mesh::Mesh> mesh)
-    : Adios2Writer(comm, filename, tag)
+    : ADIOS2Writer(comm, filename, tag)
 {
   _mesh = mesh;
 }
-
 //-----------------------------------------------------------------------------
-Adios2Writer::Adios2Writer(
+ADIOS2Writer::ADIOS2Writer(
     MPI_Comm comm, const std::string& filename, const std::string& tag,
-    const std::vector<std::shared_ptr<const fem::Function<double>>>& u)
-    : Adios2Writer(comm, filename, tag)
+    const std::vector<std::variant<
+        std::shared_ptr<const fem::Function<double>>,
+        std::shared_ptr<const fem::Function<std::complex<double>>>>>& u)
+    : ADIOS2Writer(comm, filename, tag)
 {
-  _mesh = u[0]->function_space()->mesh();
-  // Check that mesh is the same for all functions
-  for (std::size_t i = 1; i < u.size(); i++)
-    assert(_mesh == u[i]->function_space()->mesh());
-  _functions = u;
+  // _mesh = u[0]->function_space()->mesh();
+  // // Check that mesh is the same for all functions
+  // for (std::size_t i = 1; i < u.size(); i++)
+  //   assert(_mesh == u[i]->function_space()->mesh());
+  // _functions = u;
+  _u = u;
+  // std::copy(u.begin(), u.end(), std::back_inserter(_u));
 }
 //-----------------------------------------------------------------------------
-Adios2Writer::Adios2Writer(
-    MPI_Comm comm, const std::string& filename, const std::string& tag,
-    const std::vector<
-        std::shared_ptr<const fem::Function<std::complex<double>>>>& u)
-    : Adios2Writer(comm, filename, tag)
-{
-  _mesh = u[0]->function_space()->mesh();
-  // Check that mesh is the same for all functions
-  for (std::size_t i = 1; i < u.size(); i++)
-    assert(_mesh == u[i]->function_space()->mesh());
-  _complex_functions = u;
-}
+ADIOS2Writer::~ADIOS2Writer() { close(); }
 //-----------------------------------------------------------------------------
-Adios2Writer::~Adios2Writer() { close(); }
-//-----------------------------------------------------------------------------
-void Adios2Writer::close()
+void ADIOS2Writer::close()
 {
   assert(_engine);
   // This looks a bit odd because ADIOS2 uses `operator bool()` to
@@ -260,52 +245,37 @@ io::extract_vtk_connectivity(std::shared_ptr<const mesh::Mesh> mesh)
 
   return topology;
 }
-
 //-----------------------------------------------------------------------------
 FidesWriter::FidesWriter(MPI_Comm comm, const std::string& filename,
                          std::shared_ptr<const mesh::Mesh> mesh)
-    : Adios2Writer(comm, filename, "Fides mesh writer", mesh)
+    : ADIOS2Writer(comm, filename, "Fides mesh writer", mesh)
 {
   assert(_io);
   assert(mesh);
   initialize_mesh_attributes(*_io, *mesh);
 }
 //-----------------------------------------------------------------------------
-/// Initialize a FIDES writer for writing a list of functions to file
-/// @param[in] comm The MPI communicator
-/// @param[in] filename The filename of the output file
-/// @param[in] functions The list of functions
-FidesWriter::FidesWriter(
-    MPI_Comm comm, const std::string& filename,
-    const std::vector<std::shared_ptr<const fem::Function<double>>>& u)
-    : Adios2Writer(comm, filename, "Fides function writer", u)
+FidesWriter::FidesWriter(MPI_Comm comm, const std::string& filename,
+                         const ADIOS2Writer::U& u)
+    : ADIOS2Writer(comm, filename, "Fides function writer", u)
 {
   assert(!u.empty());
-  auto mesh = u[0]->function_space()->mesh();
+  const mesh::Mesh* mesh = nullptr;
+  if (auto v = std::get_if<std::shared_ptr<const fem::Function<double>>>(&u[0]))
+    mesh = (*v)->function_space()->mesh().get();
+  else if (auto v = std::get_if<
+               std::shared_ptr<const fem::Function<std::complex<double>>>>(
+               &u[0]))
+  {
+    mesh = (*v)->function_space()->mesh().get();
+  }
+  else
+    throw std::runtime_error("Unsupported function.");
+
   assert(mesh);
   initialize_mesh_attributes(*_io, *mesh);
-  initialize_function_attributes<double>(*_io, u);
+  initialize_function_attributes(*_io, u);
 }
-// //-----------------------------------------------------------------------------
-/// Initialize a FIDES writer for writing a list of functions to file
-/// @param[in] comm The MPI communicator
-/// @param[in] filename The filename of the output file
-/// @param[in] u The list of functions
-FidesWriter::FidesWriter(
-    MPI_Comm comm, const std::string& filename,
-    const std::vector<
-        std::shared_ptr<const fem::Function<std::complex<double>>>>& u)
-    : Adios2Writer(comm, filename, "Fides function writer", u)
-{
-
-  assert(!u.empty());
-  auto mesh = u[0]->function_space()->mesh();
-  assert(mesh);
-  initialize_mesh_attributes(*_io, *mesh);
-  initialize_function_attributes<std::complex<double>>(*_io,
-                                                       _complex_functions);
-}
-
 //-----------------------------------------------------------------------------
 void FidesWriter::write(double t)
 {
