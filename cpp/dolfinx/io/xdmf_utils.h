@@ -143,12 +143,6 @@ void add_data_item(pugi::xml_node& xml_node, const hid_t h5_id,
     const std::string xdmf_path = filename + ":" + h5_path;
     data_item_node.append_child(pugi::node_pcdata).set_value(xdmf_path.c_str());
 
-    // Compute total number of items and check for consistency with shape
-    assert(!shape.empty());
-    std::int64_t num_items_total = 1;
-    for (auto n : shape)
-      num_items_total *= n;
-
     // Compute data offset and range of values
     std::int64_t local_shape0 = x.size();
     for (std::size_t i = 1; i < shape.size(); ++i)
