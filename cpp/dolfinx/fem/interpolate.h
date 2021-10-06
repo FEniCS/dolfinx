@@ -143,12 +143,13 @@ void interpolate_from_any(Function<T>& u, const Function<T>& v)
   else
   {
     xtl::span<const std::uint32_t> cell_info;
-    if (element_to->needs_dof_transformations() or element_from->needs_dof_transformations())
+    if (element_to->needs_dof_transformations()
+        or element_from->needs_dof_transformations())
     {
       mesh->topology_mutable().create_entity_permutations();
       cell_info = xtl::span(mesh->topology().get_cell_permutation_info());
     }
-    
+
     // Iterate over mesh and interpolate on each cell
     const auto dofmap_u = u.function_space()->dofmap();
     const auto dofmap_v = v.function_space()->dofmap();
@@ -157,7 +158,7 @@ void interpolate_from_any(Function<T>& u, const Function<T>& v)
     std::vector<T>& u_array = u.x()->mutable_array();
 
     // Compute interpolation operator
-    xt::xtensor<double, 2> i_m
+    const xt::xtensor<double, 2> i_m
         = element_to->compute_interpolation_operator(*element_from);
 
     const int u_bs = element_to->block_size();
