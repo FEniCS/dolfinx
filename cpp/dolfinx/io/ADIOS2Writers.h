@@ -8,8 +8,6 @@
 
 #ifdef HAS_ADIOS2
 
-#include "utils.h"
-#include <array>
 #include <cassert>
 #include <complex>
 #include <memory>
@@ -17,7 +15,6 @@
 #include <string>
 #include <variant>
 #include <vector>
-#include <xtensor/xtensor.hpp>
 
 namespace adios2
 {
@@ -91,14 +88,6 @@ protected:
   std::shared_ptr<const mesh::Mesh> _mesh;
   U _u;
 };
-
-/// Extract the cell topology (connectivity) in VTK ordering for all
-/// cells the mesh. The VTK 'topology' includes higher-order 'nodes'.
-/// The index of a 'node' corresponds to the DOLFINx geometry 'nodes'.
-/// @param [in] mesh The mesh
-/// @return The cell topology in VTK ordering and in term of the DOLFINx
-/// geometry 'nodes'
-xt::xtensor<std::int64_t, 2> extract_vtk_connectivity(const mesh::Mesh& mesh);
 
 /// Output of meshes and functions compatible with the FIDES Paraview
 /// reader, see

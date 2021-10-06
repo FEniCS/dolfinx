@@ -17,6 +17,7 @@
 #include <dolfinx/io/cells.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/utils.h>
+#include <xtensor/xtensor.hpp>
 
 using namespace dolfinx;
 using namespace dolfinx::io;
@@ -31,6 +32,45 @@ struct overload : Ts...
 template <class... Ts>
 overload(Ts...) -> overload<Ts...>; // line not needed in C++20...
 
+//-----------------------------------------------------------------------------
+
+/// Extract the cell topology (connectivity) in VTK ordering for all
+/// cells the mesh. The VTK 'topology' includes higher-order 'nodes'.
+/// The index of a 'node' corresponds to the DOLFINx geometry 'nodes'.
+/// @param [in] mesh The mesh
+/// @return The cell topology in VTK ordering and in term of the DOLFINx
+/// geometry 'nodes'
+xt::xtensor<std::int64_t, 2> extract_vtk_connectivity(const mesh::Mesh& mesh)
+{
+  // Get DOLFINx to VTK permutation
+  // FIXME: Use better way to get number of nodes
+  const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
+  const std::uint32_t num_nodes = x_dofmap.num_links(0);
+  std::vector map = dolfinx::io::cells::transpose(
+      dolfinx::io::cells::perm_vtk(mesh.topology().cell_type(), num_nodes));
+  // TODO: Remove when when paraview issue 19433 is resolved
+  // (https://gitlab.kitware.com/paraview/paraview/issues/19433)
+  if (mesh.topology().cell_type() == dolfinx::mesh::CellType::hexahedron
+      and num_nodes == 27)
+  {
+    map = {0,  9, 12, 3,  1, 10, 13, 4,  18, 15, 21, 6,  19, 16,
+           22, 7, 2,  11, 5, 14, 8,  17, 20, 23, 24, 25, 26};
+  }
+  // Extract mesh 'nodes'
+  const int tdim = mesh.topology().dim();
+  const std::uint32_t num_cells = mesh.topology().index_map(tdim)->size_local();
+
+  // Write mesh connectivity
+  xt::xtensor<std::int64_t, 2> topology({num_cells, num_nodes});
+  for (size_t c = 0; c < num_cells; ++c)
+  {
+    auto x_dofs = x_dofmap.links(c);
+    for (std::size_t i = 0; i < x_dofs.size(); ++i)
+      topology(c, i) = x_dofs[map[i]];
+  }
+
+  return topology;
+}
 //-----------------------------------------------------------------------------
 
 /// Safe definition of an attribute. First check if it has already been
@@ -252,7 +292,7 @@ void _write_mesh(adios2::IO& io, adios2::Engine& engine, const mesh::Mesh& mesh)
   // Output is written as [N0 v0_0 .... v0_N0 N1 v1_0 .... v1_N1 ....]
   xt::xtensor<std::uint64_t, 2> topology({num_cells, num_nodes + 1});
   xt::view(topology, xt::all(), xt::xrange(std::size_t(1), topology.shape(1)))
-      = io::extract_vtk_connectivity(mesh);
+      = extract_vtk_connectivity(mesh);
   xt::view(topology, xt::all(), 0) = num_nodes;
 
   // Put topology (nodes)
@@ -538,39 +578,6 @@ void ADIOS2Writer::close()
   // test if the engine is open
   if (*_engine)
     _engine->Close();
-}
-//-----------------------------------------------------------------------------
-xt::xtensor<std::int64_t, 2>
-io::extract_vtk_connectivity(const mesh::Mesh& mesh)
-{
-  // Get DOLFINx to VTK permutation
-  // FIXME: Use better way to get number of nodes
-  const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
-  const std::uint32_t num_nodes = x_dofmap.num_links(0);
-  std::vector map = dolfinx::io::cells::transpose(
-      dolfinx::io::cells::perm_vtk(mesh.topology().cell_type(), num_nodes));
-  // TODO: Remove when when paraview issue 19433 is resolved
-  // (https://gitlab.kitware.com/paraview/paraview/issues/19433)
-  if (mesh.topology().cell_type() == dolfinx::mesh::CellType::hexahedron
-      and num_nodes == 27)
-  {
-    map = {0,  9, 12, 3,  1, 10, 13, 4,  18, 15, 21, 6,  19, 16,
-           22, 7, 2,  11, 5, 14, 8,  17, 20, 23, 24, 25, 26};
-  }
-  // Extract mesh 'nodes'
-  const int tdim = mesh.topology().dim();
-  const std::uint32_t num_cells = mesh.topology().index_map(tdim)->size_local();
-
-  // Write mesh connectivity
-  xt::xtensor<std::int64_t, 2> topology({num_cells, num_nodes});
-  for (size_t c = 0; c < num_cells; ++c)
-  {
-    auto x_dofs = x_dofmap.links(c);
-    for (std::size_t i = 0; i < x_dofs.size(); ++i)
-      topology(c, i) = x_dofs[map[i]];
-  }
-
-  return topology;
 }
 //-----------------------------------------------------------------------------
 FidesWriter::FidesWriter(MPI_Comm comm, const std::string& filename,
