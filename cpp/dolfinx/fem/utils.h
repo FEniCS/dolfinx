@@ -278,8 +278,8 @@ Form<T> create_form(
     integral_data[IntegralType::interior_facet].second = it->second;
   }
 
-  return fem::Form(spaces, integral_data, coefficients, constants,
-                   needs_facet_permutations, mesh);
+  return fem::Form<T>(spaces, integral_data, coefficients, constants,
+                      needs_facet_permutations, mesh);
 }
 
 /// Create a Form from UFC input

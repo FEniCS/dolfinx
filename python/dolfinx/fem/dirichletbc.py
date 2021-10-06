@@ -17,6 +17,7 @@ import numpy as np
 import ufl
 from dolfinx import cpp
 from dolfinx.fem.function import Function, FunctionSpace
+from petsc4py import PETSc
 
 
 def locate_dofs_geometrical(V: typing.Iterable[typing.Union[cpp.fem.FunctionSpace, FunctionSpace]],
@@ -113,12 +114,15 @@ def locate_dofs_topological(V: typing.Iterable[typing.Union[cpp.fem.FunctionSpac
         return cpp.fem.locate_dofs_topological(_V, entity_dim, _entities, remote)
 
 
-class DirichletBC(cpp.fem.DirichletBC):
+# class DirichletBC(cpp.fem.DirichletBC):
+class DirichletBC:
     def __init__(
             self,
-            value: typing.Union[ufl.Coefficient, Function, cpp.fem.Function],
+            value,
+            # value: typing.Union[ufl.Coefficient, Function, cpp.fem.Function],
             dofs: typing.List[int],
-            V: typing.Union[FunctionSpace] = None):
+            V: typing.Union[FunctionSpace] = None,
+            dtype=PETSc.ScalarType):
         """Representation of Dirichlet boundary condition which is imposed on
         a linear system.
 
@@ -146,12 +150,30 @@ class DirichletBC(cpp.fem.DirichletBC):
         else:
             raise NotImplementedError
 
+        # Construct bc value
+        if isinstance(value, ufl.Coefficient):
+            _value = value._cpp_object
+        elif isinstance(value, cpp.fem.Function):
+            _value = value
+        elif isinstance(value, Function):
+            _value = value._cpp_object
+        else:
+            raise NotImplementedError
+
+        def dirichletbc_obj(dtype):
+            if dtype == np.float64:
+                return cpp.fem.DirichletBC_float64
+            else:
+                raise NotImplementedError
+
         if V is not None:
             # Extract cpp function space
             try:
                 _V = V._cpp_object
             except AttributeError:
                 _V = V
-            super().__init__(_value, dofs, _V)
+            # super().__init__(_value, dofs, _V)
+            self._cpp_object = dirichletbc_obj(dtype)(_value, dofs, _V)
         else:
-            super().__init__(_value, dofs)
+            # super().__init__(_value, dofs)
+            self._cpp_object = dirichletbc_obj(dtype)(_value, dofs)

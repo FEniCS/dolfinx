@@ -15,6 +15,7 @@ import ufl.algorithms
 import ufl.algorithms.analysis
 from dolfinx import common, cpp, jit
 from dolfinx.fem import dofmap
+from petsc4py import PETSc
 
 
 class Constant(ufl.Constant):
@@ -184,28 +185,39 @@ class Function(ufl.Coefficient):
     def __init__(self,
                  V: "FunctionSpace",
                  x: typing.Optional[cpp.la.Vector] = None,
-                 name: typing.Optional[str] = None):
+                 name: typing.Optional[str] = None,
+                 dtype=PETSc.ScalarType):
         """Initialize finite element Function."""
 
         # Create cpp Function
+        def functiontype(dtype):
+            if dtype == np.float64:
+                return cpp.fem.Function_float64
+            else:
+                raise NotImplementedError
+
         if x is not None:
-            self._cpp_object = cpp.fem.Function(V._cpp_object, x)
+            self._cpp_object=functiontype(dtype)(V._cpp_object, x)
         else:
-            self._cpp_object = cpp.fem.Function(V._cpp_object)
+            self._cpp_object=functiontype(dtype)(V._cpp_object)
+        # if x is not None:
+        #     self._cpp_object=cpp.fem.Function(V._cpp_object, x)
+        # else:
+        #     self._cpp_object=cpp.fem.Function(V._cpp_object)
 
         # Initialize the ufl.FunctionSpace
-        super().__init__(V.ufl_function_space(), count=self._cpp_object.id)
+        super().__init__(V.ufl_function_space(), count = self._cpp_object.id)
 
         # Set name
         if name is None:
-            self.name = "f_{}".format(self.count())
+            self.name="f_{}".format(self.count())
         else:
-            self.name = name
+            self.name=name
 
         # Store DOLFINx FunctionSpace object
-        self._V = V
+        self._V=V
 
-    @property
+    @ property
     def function_space(self) -> "FunctionSpace":
         """Return the FunctionSpace"""
         return self._V
@@ -217,62 +229,62 @@ class Function(ufl.Coefficient):
         assert derivatives == ()  # TODO: Handle derivatives
 
         if component:
-            shape = self.ufl_shape
+            shape=self.ufl_shape
             assert len(shape) == len(component)
-            value_size = ufl.product(shape)
-            index = ufl.utils.indexflattening.flatten_multiindex(
+            value_size=ufl.product(shape)
+            index=ufl.utils.indexflattening.flatten_multiindex(
                 component, ufl.utils.indexflattening.shape_to_strides(shape))
-            values = np.zeros(value_size)
+            values=np.zeros(value_size)
             # FIXME: use a function with a return value
-            self(*x, values=values)
+            self(*x, values = values)
             return values[index]
         else:
             # Scalar evaluation
             return self(*x)
 
-    def eval(self, x: np.ndarray, cells: np.ndarray, u=None) -> np.ndarray:
+    def eval(self, x: np.ndarray, cells: np.ndarray, u = None) -> np.ndarray:
         """Evaluate Function at points x, where x has shape (num_points, 3),
         and cells has shape (num_points,) and cell[i] is the index of the
         cell containing point x[i]. If the cell index is negative the
         point is ignored."""
 
         # Make sure input coordinates are a NumPy array
-        x = np.asarray(x, dtype=np.float64)
+        x=np.asarray(x, dtype = np.float64)
         assert x.ndim < 3
-        num_points = x.shape[0] if x.ndim == 2 else 1
-        x = np.reshape(x, (num_points, -1))
+        num_points=x.shape[0] if x.ndim == 2 else 1
+        x=np.reshape(x, (num_points, -1))
         if x.shape[1] != 3:
             raise ValueError("Coordinate(s) for Function evaluation must have length 3.")
 
         # Make sure cells are a NumPy array
-        cells = np.asarray(cells, dtype=np.int32)
+        cells=np.asarray(cells, dtype = np.int32)
         assert cells.ndim < 2
-        num_points_c = cells.shape[0] if cells.ndim == 1 else 1
-        cells = np.reshape(cells, num_points_c)
+        num_points_c=cells.shape[0] if cells.ndim == 1 else 1
+        cells=np.reshape(cells, num_points_c)
 
         # Allocate memory for return value if not provided
         if u is None:
-            value_size = ufl.product(self.ufl_element().value_shape())
+            value_size=ufl.product(self.ufl_element().value_shape())
             if common.has_petsc_complex:
-                u = np.empty((num_points, value_size), dtype=np.complex128)
+                u=np.empty((num_points, value_size), dtype = np.complex128)
             else:
-                u = np.empty((num_points, value_size))
+                u=np.empty((num_points, value_size))
 
         self._cpp_object.eval(x, cells, u)
         if num_points == 1:
-            u = np.reshape(u, (-1, ))
+            u=np.reshape(u, (-1, ))
         return u
 
     def interpolate(self, u) -> None:
         """Interpolate an expression"""
-        @singledispatch
+        @ singledispatch
         def _interpolate(u):
             try:
                 self._cpp_object.interpolate(u._cpp_object)
             except AttributeError:
                 self._cpp_object.interpolate(u)
 
-        @_interpolate.register(int)
+        @ _interpolate.register(int)
         def _(u_ptr):
             self._cpp_object.interpolate_ptr(u_ptr)
 
@@ -289,26 +301,26 @@ class Function(ufl.Coefficient):
         return Function(self.function_space,
                         self._cpp_object.vector.copy())
 
-    @property
+    @ property
     def vector(self):
         """Return the vector holding Function degrees-of-freedom."""
         return self._cpp_object.vector
 
-    @property
+    @ property
     def x(self):
         """Return the vector holding Function degrees-of-freedom."""
         return self._cpp_object.x
 
-    @property
+    @ property
     def name(self) -> str:
         """Name of the Function."""
         return self._cpp_object.name
 
-    @name.setter
+    @ name.setter
     def name(self, name):
-        self._cpp_object.name = name
+        self._cpp_object.name=name
 
-    @property
+    @ property
     def id(self) -> int:
         """Return object id index."""
         return self._cpp_object.id
@@ -324,7 +336,7 @@ class Function(ufl.Coefficient):
         total number of sub spaces.
 
         """
-        return Function(self._V.sub(i), self.x, name="{}-{}".format(str(self), i))
+        return Function(self._V.sub(i), self.x, name = "{}-{}".format(str(self), i))
 
     def split(self):
         """Extract any sub functions.
@@ -334,14 +346,14 @@ class Function(ufl.Coefficient):
         function resides in the subspace of the mixed space.
 
         """
-        num_sub_spaces = self.function_space.num_sub_spaces()
+        num_sub_spaces=self.function_space.num_sub_spaces()
         if num_sub_spaces == 1:
             raise RuntimeError("No subfunctions to extract")
         return tuple(self.sub(i) for i in range(num_sub_spaces))
 
     def collapse(self):
-        u_collapsed = self._cpp_object.collapse()
-        V_collapsed = FunctionSpace(None, self.ufl_element(),
+        u_collapsed=self._cpp_object.collapse()
+        V_collapsed=FunctionSpace(None, self.ufl_element(),
                                     u_collapsed.function_space)
         return Function(V_collapsed, u_collapsed.x)
 
@@ -350,7 +362,7 @@ class ElementMetaData(typing.NamedTuple):
     """Data for representing a finite element"""
     family: str
     degree: int
-    form_degree: typing.Optional[int] = None  # noqa
+    form_degree: typing.Optional[int]=None  # noqa
 
 
 class FunctionSpace(ufl.FunctionSpace):
