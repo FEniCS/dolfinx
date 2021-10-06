@@ -243,3 +243,40 @@ def test_interpolation_nedelec(order1, order2):
     w.interpolate(u)
 
     assert np.isclose(dolfinx.fem.assemble_scalar(ufl.inner(u - w, u - w) * ufl.dx), 0)
+
+
+@pytest.mark.xfail(strict=True)
+def test_interpolation_cross():
+    mesh = dolfinx.UnitCubeMesh(MPI.COMM_WORLD, 2, 2, 2)
+    V = dolfinx.VectorFunctionSpace(mesh, ("CG", 1))
+    V1 = dolfinx.FunctionSpace(mesh, ("N1curl", 2))
+
+    u = dolfinx.Function(V)
+    v = dolfinx.Function(V1)
+
+    u.interpolate(lambda x: x)
+    v.interpolate(u)
+
+    s = dolfinx.fem.assemble_scalar(ufl.inner(u - v, u - v) * ufl.dx)
+
+    assert np.isclose(s, 0)
+
+
+@pytest.mark.parametrize("order", [1, 2, 3, 4])
+def test_interpolation_cg2cg(order):
+    mesh = dolfinx.UnitCubeMesh(MPI.COMM_WORLD, 2, 2, 2)
+    V = dolfinx.FunctionSpace(mesh, ("CG", order))
+    V1 = dolfinx.FunctionSpace(mesh, ("CG", order + 1))
+
+    u = dolfinx.Function(V)
+    v = dolfinx.Function(V1)
+
+    u.interpolate(lambda x: x[0] ** 2)
+    v.interpolate(u)
+
+    s = dolfinx.fem.assemble_scalar(ufl.inner(u - v, u - v) * ufl.dx)
+    assert np.isclose(s, 0)
+
+    u.interpolate(v)
+    s = dolfinx.fem.assemble_scalar(ufl.inner(u - v, u - v) * ufl.dx)
+    assert np.isclose(s, 0)
