@@ -700,18 +700,14 @@ void VTXWriter::write(double t)
             [&](const std::shared_ptr<const Fdr>& u)
             {
               if (_write_mesh_data)
-              {
                 write_function_at_nodes<Fdr::value_type>(*_io, *_engine, *u);
-              }
               else
                 write_lagrange_function<Fdr::value_type>(*_io, *_engine, *u);
             },
             [&](const std::shared_ptr<const Fdc>& u)
             {
               if (_write_mesh_data)
-              {
                 write_function_at_nodes<Fdc::value_type>(*_io, *_engine, *u);
-              }
               else
                 write_lagrange_function<Fdc::value_type>(*_io, *_engine, *u);
             }},
