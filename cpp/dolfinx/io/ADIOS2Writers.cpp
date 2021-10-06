@@ -265,17 +265,15 @@ void _write_mesh(adios2::IO& io, adios2::Engine& engine, const mesh::Mesh& mesh)
 //-----------------------------------------------------------------------------
 
 // Extract name of functions and split into real and imaginary component
-std::vector<std::string> extract_function_names(
-    const std::vector<std::variant<std::shared_ptr<const ADIOS2Writer::U0>,
-                                   std::shared_ptr<const ADIOS2Writer::U1>>>& u)
+std::vector<std::string> extract_function_names(const ADIOS2Writer::U& u)
 {
   std::vector<std::string> names;
   for (auto& v : u)
   {
     std::visit(
-        overload{[&names](const std::shared_ptr<const ADIOS2Writer::U0>& u)
+        overload{[&names](const std::shared_ptr<const ADIOS2Writer::Fdr>& u)
                  { names.push_back(u->name); },
-                 [&names](const std::shared_ptr<const ADIOS2Writer::U1>& u)
+                 [&names](const std::shared_ptr<const ADIOS2Writer::Fdc>& u)
                  { names.push_back(u->name); }},
         v);
   };
@@ -441,11 +439,10 @@ void initialize_function_attributes(adios2::IO& io, const ADIOS2Writer::U& u)
   std::vector<std::array<std::string, 2>> u_data;
   for (auto& _u : u)
   {
-    if (auto v = std::get_if<std::shared_ptr<const fem::Function<double>>>(&_u))
+    if (auto v = std::get_if<std::shared_ptr<const ADIOS2Writer::Fdr>>(&_u))
       u_data.push_back({(*v)->name, "points"});
-    else if (auto v = std::get_if<
-                 std::shared_ptr<const fem::Function<std::complex<double>>>>(
-                 &_u))
+    else if (auto v
+             = std::get_if<std::shared_ptr<const ADIOS2Writer::Fdc>>(&_u))
     {
       for (auto part : {"real", "imag"})
         u_data.push_back({(*v)->name + "_" + part, "points"});
@@ -505,27 +502,25 @@ ADIOS2Writer::ADIOS2Writer(MPI_Comm comm, const std::string& filename,
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-ADIOS2Writer::ADIOS2Writer(
-    MPI_Comm comm, const std::string& filename, const std::string& tag,
-    const std::vector<std::variant<std::shared_ptr<const ADIOS2Writer::U0>,
-                                   std::shared_ptr<const ADIOS2Writer::U1>>>& u)
+ADIOS2Writer::ADIOS2Writer(MPI_Comm comm, const std::string& filename,
+                           const std::string& tag, const U& u)
     : ADIOS2Writer(comm, filename, tag, nullptr, u)
 {
   // Extract mesh from first function
   assert(!u.empty());
-  if (auto v = std::get_if<std::shared_ptr<const U0>>(&u[0]))
+  if (auto v = std::get_if<std::shared_ptr<const Fdr>>(&u[0]))
     _mesh = (*v)->function_space()->mesh();
-  else if (auto v = std::get_if<std::shared_ptr<const U1>>(&u[0]))
+  else if (auto v = std::get_if<std::shared_ptr<const Fdc>>(&u[0]))
     _mesh = (*v)->function_space()->mesh();
 
   // Check that all functions share the same mesh
   for (auto& v : u)
   {
-    if (auto _v = std::get_if<std::shared_ptr<const U0>>(&v))
+    if (auto _v = std::get_if<std::shared_ptr<const Fdr>>(&v))
     {
       assert(_mesh == (*_v)->function_space()->mesh());
     }
-    else if (auto _v = std::get_if<std::shared_ptr<const U1>>(&v))
+    else if (auto _v = std::get_if<std::shared_ptr<const Fdc>>(&v))
     {
       assert(_mesh == (*_v)->function_space()->mesh());
     }
@@ -593,9 +588,9 @@ FidesWriter::FidesWriter(MPI_Comm comm, const std::string& filename,
 {
   assert(!u.empty());
   const mesh::Mesh* mesh = nullptr;
-  if (auto v = std::get_if<std::shared_ptr<const ADIOS2Writer::U0>>(&u[0]))
+  if (auto v = std::get_if<std::shared_ptr<const Fdr>>(&u[0]))
     mesh = (*v)->function_space()->mesh().get();
-  else if (auto v = std::get_if<std::shared_ptr<const ADIOS2Writer::U1>>(&u[0]))
+  else if (auto v = std::get_if<std::shared_ptr<const Fdc>>(&u[0]))
     mesh = (*v)->function_space()->mesh().get();
   else
     throw std::runtime_error("Unsupported function.");
@@ -618,14 +613,14 @@ void FidesWriter::write(double t)
 
   for (auto& v : _u)
   {
-    std::visit(overload{[&](const std::shared_ptr<const ADIOS2Writer::U0>& u) {
-                          write_function_at_nodes<double>(*_io, *_engine, *u);
-                        },
-                        [&](const std::shared_ptr<const ADIOS2Writer::U1>& u) {
-                          write_function_at_nodes<std::complex<double>>(
-                              *_io, *_engine, *u);
-                        }},
-               v);
+    std::visit(
+        overload{[&](const std::shared_ptr<const Fdr>& u) {
+                   write_function_at_nodes<Fdr::value_type>(*_io, *_engine, *u);
+                 },
+                 [&](const std::shared_ptr<const Fdc>& u) {
+                   write_function_at_nodes<Fdc::value_type>(*_io, *_engine, *u);
+                 }},
+        v);
   };
 
   _engine->EndStep();
@@ -644,11 +639,8 @@ VTXWriter::VTXWriter(MPI_Comm comm, const std::string& filename,
   _write_mesh_data = true;
 }
 //-----------------------------------------------------------------------------
-VTXWriter::VTXWriter(
-    MPI_Comm comm, const std::string& filename,
-    const std::vector<std::variant<
-        std::shared_ptr<const fem::Function<double>>,
-        std::shared_ptr<const fem::Function<std::complex<double>>>>>& u)
+VTXWriter::VTXWriter(MPI_Comm comm, const std::string& filename,
+                     const ADIOS2Writer::U& u)
     : ADIOS2Writer(comm, filename, "VTX function writer", u)
 {
   // Can only write one mesh to file at the time if using higher order
@@ -664,9 +656,9 @@ VTXWriter::VTXWriter(
     // Extract element from first function
     assert(!u.empty());
     std::shared_ptr<const fem::FiniteElement> element;
-    if (auto v = std::get_if<std::shared_ptr<const U0>>(&u[0]))
+    if (auto v = std::get_if<std::shared_ptr<const Fdr>>(&u[0]))
       element = (*v)->function_space()->element();
-    else if (auto v = std::get_if<std::shared_ptr<const U1>>(&u[0]))
+    else if (auto v = std::get_if<std::shared_ptr<const Fdc>>(&u[0]))
       element = (*v)->function_space()->element();
     assert(element);
     if (is_cellwise_constant(*element))
@@ -703,27 +695,27 @@ void VTXWriter::write(double t)
   // Write functions to file
   for (auto& v : _u)
   {
-    std::visit(overload{[&](const std::shared_ptr<const ADIOS2Writer::U0>& u)
-                        {
-                          if (_write_mesh_data)
-                          {
-                            write_function_at_nodes<double>(*_io, *_engine, *u);
-                          }
-                          else
-                            write_lagrange_function<double>(*_io, *_engine, *u);
-                        },
-                        [&](const std::shared_ptr<const ADIOS2Writer::U1>& u)
-                        {
-                          if (_write_mesh_data)
-                          {
-                            write_function_at_nodes<std::complex<double>>(
-                                *_io, *_engine, *u);
-                          }
-                          else
-                            write_lagrange_function<std::complex<double>>(
-                                *_io, *_engine, *u);
-                        }},
-               v);
+    std::visit(
+        overload{
+            [&](const std::shared_ptr<const Fdr>& u)
+            {
+              if (_write_mesh_data)
+              {
+                write_function_at_nodes<Fdr::value_type>(*_io, *_engine, *u);
+              }
+              else
+                write_lagrange_function<Fdr::value_type>(*_io, *_engine, *u);
+            },
+            [&](const std::shared_ptr<const Fdc>& u)
+            {
+              if (_write_mesh_data)
+              {
+                write_function_at_nodes<Fdc::value_type>(*_io, *_engine, *u);
+              }
+              else
+                write_lagrange_function<Fdc::value_type>(*_io, *_engine, *u);
+            }},
+        v);
   };
 
   _engine->EndStep();

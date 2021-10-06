@@ -45,6 +45,8 @@ template <typename T>
 class Function
 {
 public:
+  using value_type = T;
+
   /// Create function on given function space
   /// @param[in] V The function space
   explicit Function(std::shared_ptr<const FunctionSpace> V)

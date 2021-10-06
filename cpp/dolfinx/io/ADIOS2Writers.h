@@ -43,10 +43,10 @@ namespace dolfinx::io
 class ADIOS2Writer
 {
 public:
-  using U0 = fem::Function<double>;
-  using U1 = fem::Function<std::complex<double>>;
+  using Fdr = fem::Function<double>;
+  using Fdc = fem::Function<std::complex<double>>;
   using U = std::vector<
-      std::variant<std::shared_ptr<const U0>, std::shared_ptr<const U1>>>;
+      std::variant<std::shared_ptr<const Fdr>, std::shared_ptr<const Fdc>>>;
 
 private:
   /// Create an ADIOS2-based writer
@@ -148,11 +148,7 @@ public:
   /// @param[in] comm The MPI communicator
   /// @param[in] filename Name of output file
   /// @param[in] functions List of functions to write
-  VTXWriter(
-      MPI_Comm comm, const std::string& filename,
-      const std::vector<std::variant<std::shared_ptr<const ADIOS2Writer::U0>,
-                                     std::shared_ptr<const ADIOS2Writer::U1>>>&
-          u);
+  VTXWriter(MPI_Comm comm, const std::string& filename, const U& u);
 
   /// Move constructor
   VTXWriter(VTXWriter&& file) = default;

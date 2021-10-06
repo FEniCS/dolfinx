@@ -6,7 +6,7 @@
 
 #include <catch.hpp>
 #include <dolfinx/generation/RectangleMesh.h>
-#include <dolfinx/io/FidesWriter.h>
+#include <dolfinx/io/ADIOS2Writers.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <mpi.h>
 
