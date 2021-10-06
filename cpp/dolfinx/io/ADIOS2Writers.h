@@ -86,7 +86,7 @@ protected:
   std::unique_ptr<adios2::IO> _io;
   std::unique_ptr<adios2::Engine> _engine;
   std::shared_ptr<const mesh::Mesh> _mesh;
-  U _u;
+  const U _u;
 };
 
 /// Output of meshes and functions compatible with the FIDES Paraview
