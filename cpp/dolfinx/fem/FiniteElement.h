@@ -167,10 +167,37 @@ public:
   /// @param[in] from The element to interpolate from
   /// @return Matrix operator that maps the 'from' degrees-of-freedom to
   /// the degrees-of-freedom of this element.
+  /// @note Not tailored for use with mixed elements.
   xt::xtensor<double, 2>
   compute_interpolation_operator(const FiniteElement& from) const
   {
-    return basix::compute_interpolation_operator(*from._element, *_element);
+
+    if (_bs == 1 or from._bs == 1)
+      // If one of the elements have bs=1, basix can figure out the size of the
+      // matrix
+      return basix::compute_interpolation_operator(*from._element, *_element);
+    else if (_bs > 1 and from._bs == _bs)
+    {
+      // If bs != 1 for at least one element, then bs1 == bs2, and 
+      xt::xtensor<double, 2> i_m
+          = basix::compute_interpolation_operator(*from._element, *_element);
+      std::array<std::size_t, 2> shape
+          = {i_m.shape(0) * _bs, i_m.shape(1) * _bs};
+      xt::xtensor<double, 2> out = xt::zeros<double>(shape);
+
+      // Alternatively this operation could be implemented during matvec with the
+      // original matrix.
+      for (std::size_t i = 0; i < i_m.shape(0); i++)
+        for (std::size_t j = 0; j < i_m.shape(1); j++)
+          for (int k = 0; k < _bs; k++)
+            out(i * _bs + k, j * _bs + k) = i_m(i, j);
+
+      return out;
+    }
+    else
+    {
+      throw std::runtime_error("Not implemented.");
+    }
   }
 
   /// Check if DOF transformations are needed for this element.

@@ -284,3 +284,27 @@ def test_interpolation_p2p(order1, order2):
 
     s = dolfinx.fem.assemble_scalar(ufl.inner(u - w, u - w) * ufl.dx)
     assert np.isclose(s, 0)
+
+
+@pytest.mark.parametrize("order1", [1, 2, 3])
+@pytest.mark.parametrize("order2", [1, 2])
+def test_interpolation_vector_elements(order1, order2):
+    mesh = dolfinx.UnitCubeMesh(MPI.COMM_WORLD, 2, 2, 2)
+    V = dolfinx.VectorFunctionSpace(mesh, ("CG", order1))
+    V1 = dolfinx.VectorFunctionSpace(mesh, ("CG", order2))
+
+    u = dolfinx.Function(V)
+    v = dolfinx.Function(V1)
+
+    u.interpolate(lambda x: x)
+    v.interpolate(u)
+
+    s = dolfinx.fem.assemble_scalar(ufl.inner(u - v, u - v) * ufl.dx)
+    assert np.isclose(s, 0)
+
+    DG = dolfinx.VectorFunctionSpace(mesh, ("DG", order2))
+    w = dolfinx.Function(DG)
+    w.interpolate(u)
+
+    s = dolfinx.fem.assemble_scalar(ufl.inner(u - w, u - w) * ufl.dx)
+    assert np.isclose(s, 0)

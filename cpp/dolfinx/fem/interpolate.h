@@ -133,21 +133,22 @@ void interpolate_from_any(Function<T>& u, const Function<T>& v)
     for (int c = 0; c < num_cells; ++c)
     {
       xtl::span<const std::int32_t> dofs_v = dofmap_v->cell_dofs(c);
-      xtl::span<const std::int32_t> cell_dofs = dofmap_u->cell_dofs(c);
-      assert(dofs_v.size() == cell_dofs.size());
+      xtl::span<const std::int32_t> dofs_u = dofmap_u->cell_dofs(c);
+      assert(dofs_v.size() == dofs_u.size());
       for (std::size_t i = 0; i < dofs_v.size(); ++i)
-      {
         for (int k = 0; k < bs; ++k)
-          coeffs[bs * cell_dofs[i] + k] = v_array[bs * dofs_v[i] + k];
-      }
+          coeffs[bs * dofs_u[i] + k] = v_array[bs * dofs_v[i] + k];
     }
   }
   else
   {
-    mesh->topology_mutable().create_entity_permutations();
-    xtl::span<const std::uint32_t> cell_info
-        = xtl::span(mesh->topology().get_cell_permutation_info());
-
+    xtl::span<const std::uint32_t> cell_info;
+    if (element_to->needs_dof_transformations() or element_from->needs_dof_transformations())
+    {
+      mesh->topology_mutable().create_entity_permutations();
+      cell_info = xtl::span(mesh->topology().get_cell_permutation_info());
+    }
+    
     // Iterate over mesh and interpolate on each cell
     const auto dofmap_u = u.function_space()->dofmap();
     const auto dofmap_v = v.function_space()->dofmap();
@@ -178,8 +179,8 @@ void interpolate_from_any(Function<T>& u, const Function<T>& v)
       xtl::span<const std::int32_t> dofs_u = dofmap_u->cell_dofs(c);
 
       for (std::size_t i = 0; i < dofs_v.size(); i++)
-        for (int b = 0; b < v_bs; b++)
-          v_local[i * v_bs + b] = v_array[dofs_v[i] * v_bs + b];
+        for (int k = 0; k < v_bs; k++)
+          v_local[v_bs * i + k] = v_array[v_bs * dofs_v[i] + k];
 
       apply_dof_transformation(v_local, cell_info, c, 1);
 
@@ -193,8 +194,8 @@ void interpolate_from_any(Function<T>& u, const Function<T>& v)
       apply_inverse_dof_transform(u_local, cell_info, c, 1);
 
       for (std::size_t i = 0; i < dofs_u.size(); i++)
-        for (int b = 0; b < u_bs; b++)
-          u_array[dofs_u[i] * u_bs + b] = u_local[i * u_bs + b];
+        for (int k = 0; k < u_bs; k++)
+          u_array[u_bs * dofs_u[i] + k] = u_local[u_bs * i + k];
     }
   }
 }
