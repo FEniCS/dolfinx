@@ -221,17 +221,25 @@ def test_mixed_interpolation():
         v.interpolate(lambda x: (x[1], 2 * x[0], 3 * x[1]))
 
 
-def test_interpolation_spaces():
-    mesh = dolfinx.UnitCubeMesh(MPI.COMM_WORLD, 5, 5, 5)
-    V = dolfinx.FunctionSpace(mesh, ("N1curl", 3))
-    V1 = dolfinx.FunctionSpace(mesh, ("N1curl", 2))
+@pytest.mark.parametrize("order1", [2, 3, 4])
+@pytest.mark.parametrize("order2", [2, 3, 4])
+def test_interpolation_nedelec(order1, order2):
+    mesh = dolfinx.UnitCubeMesh(MPI.COMM_WORLD, 2, 2, 2)
+    V = dolfinx.FunctionSpace(mesh, ("N1curl", order1))
+    V1 = dolfinx.FunctionSpace(mesh, ("N1curl", order2))
 
     u = dolfinx.Function(V)
     v = dolfinx.Function(V1)
 
+    # The expression "lambda x: x" is contained in the N1curl fucntion space order>1
     u.interpolate(lambda x: x)
     v.interpolate(u)
 
-    s = dolfinx.fem.assemble_scalar(ufl.inner(u - v, u - v) * ufl.dx)
+    assert np.isclose(dolfinx.fem.assemble_scalar(ufl.inner(u - v, u - v) * ufl.dx), 0)
 
-    assert np.isclose(s, 0)
+    # The target expression is also contained in N2curl space of any order.
+    V2 = dolfinx.FunctionSpace(mesh, ("N2curl", 1))
+    w = dolfinx.Function(V2)
+    w.interpolate(u)
+
+    assert np.isclose(dolfinx.fem.assemble_scalar(ufl.inner(u - w, u - w) * ufl.dx), 0)
