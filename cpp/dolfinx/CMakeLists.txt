@@ -65,7 +65,6 @@ target_link_libraries(dolfinx PUBLIC Basix::basix)
 # xtensor
 target_link_libraries(dolfinx PUBLIC xtl)
 target_link_libraries(dolfinx PUBLIC xtensor)
-target_link_libraries(dolfinx PRIVATE xtensor-blas)
 if("XTENSOR_USE_XSIMD" IN_LIST BASIX_DEFN)
   target_link_libraries(dolfinx PUBLIC xsimd)
 endif()
