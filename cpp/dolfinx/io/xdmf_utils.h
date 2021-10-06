@@ -140,7 +140,11 @@ void add_data_item(pugi::xml_node& xml_node, const hid_t h5_id,
     const std::string filename = dolfinx::io::get_filename(hdf5_filename);
 
     // Add HDF5 filename and HDF5 internal path to XML file
-    const std::string xdmf_path = filename + ":" + h5_path;
+    std::stringstream xdmf_path_builder;
+    xdmf_path_builder << filename.c_str();
+    xdmf_path_builder << ":";
+    xdmf_path_builder << h5_path.c_str();
+    const std::string xdmf_path = xdmf_path_builder.str();
     data_item_node.append_child(pugi::node_pcdata).set_value(xdmf_path.c_str());
 
     // Compute data offset and range of values
