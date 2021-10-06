@@ -104,6 +104,7 @@ adios2::Variable<T> define_variable(adios2::IO& io, const std::string& name,
   else
     return io.DefineVariable<T>(name, shape, start, count);
 }
+//-----------------------------------------------------------------------------
 
 /// Write function (real or complex) ADIOS2. Data is padded to be three
 /// dimensional if vector and 9 dimensional if tensor
@@ -114,6 +115,9 @@ template <typename Scalar>
 void write_function_at_nodes(adios2::IO& io, adios2::Engine& engine,
                              const fem::Function<Scalar>& u)
 {
+  // TODO: not need to use compute_point_values since we require the
+  // functions to be P1.
+
   auto function_data = u.compute_point_values();
   std::uint32_t local_size = function_data.shape(0);
   std::uint32_t block_size = function_data.shape(1);
@@ -254,7 +258,7 @@ void write_lagrange_function(adios2::IO& io, adios2::Engine& engine,
   }
 }
 //-----------------------------------------------------------------------------
-void _write_mesh(adios2::IO& io, adios2::Engine& engine, const mesh::Mesh& mesh)
+void write_mesh(adios2::IO& io, adios2::Engine& engine, const mesh::Mesh& mesh)
 {
   // Put geometry
   std::shared_ptr<const common::IndexMap> x_map = mesh.geometry().index_map();
@@ -314,7 +318,10 @@ std::vector<std::string> extract_function_names(const ADIOS2Writer::U& u)
         overload{[&names](const std::shared_ptr<const ADIOS2Writer::Fdr>& u)
                  { names.push_back(u->name); },
                  [&names](const std::shared_ptr<const ADIOS2Writer::Fdc>& u)
-                 { names.push_back(u->name); }},
+                 {
+                   names.push_back(u->name + "_real");
+                   names.push_back(u->name + "_imag");
+                 }},
         v);
   };
 
@@ -617,7 +624,6 @@ void FidesWriter::write(double t)
   _engine->Put<double>(var_step, t);
 
   write_fides_mesh(*_io, *_engine, *_mesh);
-
   for (auto& v : _u)
   {
     std::visit(
@@ -641,44 +647,33 @@ VTXWriter::VTXWriter(MPI_Comm comm, const std::string& filename,
   // Define VTK scheme attribute for mesh
   std::string vtk_scheme = create_vtk_schema({}, {});
   define_attribute<std::string>(*_io, "vtk.xml", vtk_scheme);
-
-  // Set compute at nodes true since we want to write mesh at each timestep
-  _write_mesh_data = true;
 }
 //-----------------------------------------------------------------------------
 VTXWriter::VTXWriter(MPI_Comm comm, const std::string& filename,
                      const ADIOS2Writer::U& u)
     : ADIOS2Writer(comm, filename, "VTX function writer", u)
 {
-  // Can only write one mesh to file at the time if using higher order
-  // visualization
+  // TODO: check that all functions come from same element family
+  // and have same degree.
 
-  // Only Lagrange and discontinuous Lagrange can be written at function space
-  // dof coordinates
-  _write_mesh_data = false;
-  if (u.size() > 1)
-    _write_mesh_data = true;
-  else
+  // Extract element from first function
+  assert(!u.empty());
+  std::shared_ptr<const fem::FiniteElement> element;
+  if (auto v = std::get_if<std::shared_ptr<const Fdr>>(&u[0]))
+    element = (*v)->function_space()->element();
+  else if (auto v = std::get_if<std::shared_ptr<const Fdc>>(&u[0]))
+    element = (*v)->function_space()->element();
+  assert(element);
+  if (is_cellwise_constant(*element))
+    throw std::runtime_error("Cell-wise constants not currently supported");
+
+  // FIXME: Should not use string checks
+  std::array<std::string, 3> elements
+      = {"Lagrange", "Discontinuous Lagrange", "DQ"};
+  if (std::find(elements.begin(), elements.end(), element->family())
+      == elements.end())
   {
-    // Extract element from first function
-    assert(!u.empty());
-    std::shared_ptr<const fem::FiniteElement> element;
-    if (auto v = std::get_if<std::shared_ptr<const Fdr>>(&u[0]))
-      element = (*v)->function_space()->element();
-    else if (auto v = std::get_if<std::shared_ptr<const Fdc>>(&u[0]))
-      element = (*v)->function_space()->element();
-    assert(element);
-    if (is_cellwise_constant(*element))
-      throw std::runtime_error("Cell-wise constants not currently supported");
-
-    // FIXME: Should not use string checks
-    std::array<std::string, 3> elements
-        = {"Lagrange", "Discontinuous Lagrange", "DQ"};
-    if (std::find(elements.begin(), elements.end(), element->family())
-        == elements.end())
-    {
-      _write_mesh_data = true;
-    }
+    // TODO: throw and error
   }
 
   // Define VTK scheme attribute for set of functions
@@ -694,34 +689,30 @@ void VTXWriter::write(double t)
   adios2::Variable<double> var_step = define_variable<double>(*_io, "step");
 
   _engine->BeginStep();
-  if (_write_mesh_data)
-    _write_mesh(*_io, *_engine, *_mesh);
-
   _engine->Put<double>(var_step, t);
 
-  // Write functions to file
-  for (auto& v : _u)
+  if (_u.empty())
+    write_mesh(*_io, *_engine, *_mesh);
+  else
   {
-    std::visit(
-        overload{
-            [&](const std::shared_ptr<const Fdr>& u)
-            {
-              if (_write_mesh_data)
-                write_function_at_nodes<Fdr::value_type>(*_io, *_engine, *u);
-              else
-                write_lagrange_function<Fdr::value_type>(*_io, *_engine, *u);
-            },
-            [&](const std::shared_ptr<const Fdc>& u)
-            {
-              if (_write_mesh_data)
-                write_function_at_nodes<Fdc::value_type>(*_io, *_engine, *u);
-              else
+    // TODO: write mesh only once and not for every function
+
+    // Write functions to file
+    for (auto& v : _u)
+    {
+      std::visit(
+          overload{
+              [&](const std::shared_ptr<const Fdr>& u)
+              { write_lagrange_function<Fdr::value_type>(*_io, *_engine, *u); },
+              [&](const std::shared_ptr<const Fdc>& u) {
                 write_lagrange_function<Fdc::value_type>(*_io, *_engine, *u);
-            }},
-        v);
-  };
+              }},
+          v);
+    };
+  }
 
   _engine->EndStep();
 }
+//-----------------------------------------------------------------------------
 
 #endif

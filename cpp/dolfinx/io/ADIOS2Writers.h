@@ -91,21 +91,25 @@ protected:
 
 /// Output of meshes and functions compatible with the FIDES Paraview
 /// reader, see
-/// https://fides.readthedocs.io/en/latest/paraview/paraview.html
+/// https://fides.readthedocs.io/en/latest/paraview/paraview.html. /
 class FidesWriter : public ADIOS2Writer
 {
 public:
   /// Create Fides writer for a mesh
   /// @param[in] comm The MPI communicator
   /// @param[in] filename Name of output file
-  /// @param[in] mesh The mesh
+  /// @param[in] mesh The mesh. The mesh must a degree 1 mesh.
+  /// @todo What happens if the mesh changes? What can and can't change?
+  /// @todo Can data be flushed? What happens if program is interrupted?
   FidesWriter(MPI_Comm comm, const std::string& filename,
               std::shared_ptr<const mesh::Mesh> mesh);
 
-  /// Create Fides writer for list of functions (real)
+  /// TOOD: What 'output' element types are supported?
+  /// Create Fides writer for list of functions
   /// @param[in] comm The MPI communicator
   /// @param[in] filename Name of output file
-  /// @param[in] u List of functions
+  /// @param[in] u List of functions. The functions must (1) share the
+  /// same mesh (degree 1) and (2) be degree 1 Lagrange.
   /// @note All functions in `u` must share the same Mesh
   FidesWriter(MPI_Comm comm, const std::string& filename,
               const ADIOS2Writer::U& u);
@@ -121,22 +125,30 @@ public:
   void write(double t);
 };
 
-// Writer for meshes and functions using ADIOS2 VTX format
-// https://adios2.readthedocs.io/en/latest/ecosystem/visualization.html#using-vtk-and-paraview
+/// Writer for meshes and functions using the ADIOS2 VTX format
+/// https://adios2.readthedocs.io/en/latest/ecosystem/visualization.html#using-vtk-and-paraview.
+/// The output files can be visualized using ParaView.
 class VTXWriter : public ADIOS2Writer
 {
 public:
-  /// Createa VTX writer for a mesh
+  /// Create a VTX writer for a mesh. This format supports arbitrary
+  /// degree meshes.
   /// @param[in] comm The MPI communicator
   /// @param[in] filename Name of output file
   /// @param[in] mesh The mesh to write
+  /// @note This format support arbitrary degree meshes
+  /// @todo What happens if the mesh changes? What can and can't change?
+  /// @todo Can data be flushed? What happens if program is interrupted?
   VTXWriter(MPI_Comm comm, const std::string& filename,
             std::shared_ptr<const mesh::Mesh> mesh);
 
   /// Create a VTX writer for list of functions
   /// @param[in] comm The MPI communicator
   /// @param[in] filename Name of output file
-  /// @param[in] functions List of functions to write
+  /// @param[in] u List of functions. The functions must (1) share the
+  /// same mesh and (2) be (discontinuous) Lagrange functions. The
+  /// element family and degree must be the same for all functions.
+  /// @note This format supports arbitrary degree meshes
   VTXWriter(MPI_Comm comm, const std::string& filename, const U& u);
 
   /// Move constructor
@@ -148,11 +160,6 @@ public:
   /// Write data to file
   /// @param[in] t The time step
   void write(double t);
-
-private:
-  // Flag to indicate if mesh should be written, or if mesh is defined
-  // through dof coordinates
-  bool _write_mesh_data;
 };
 
 } // namespace dolfinx::io
