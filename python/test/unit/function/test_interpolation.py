@@ -262,21 +262,18 @@ def test_interpolation_cross():
     assert np.isclose(s, 0)
 
 
-@pytest.mark.parametrize("order", [1, 2, 3, 4])
-def test_interpolation_cg2cg(order):
+@pytest.mark.parametrize("order1", [1, 2, 3, 4, 5])
+@pytest.mark.parametrize("order2", [1, 2, 3])
+def test_interpolation_cg2cg(order1, order2):
     mesh = dolfinx.UnitCubeMesh(MPI.COMM_WORLD, 2, 2, 2)
-    V = dolfinx.FunctionSpace(mesh, ("CG", order))
-    V1 = dolfinx.FunctionSpace(mesh, ("CG", order + 1))
+    V = dolfinx.FunctionSpace(mesh, ("CG", order1))
+    V1 = dolfinx.FunctionSpace(mesh, ("CG", order2))
 
     u = dolfinx.Function(V)
     v = dolfinx.Function(V1)
 
-    u.interpolate(lambda x: x[0] ** 2)
+    u.interpolate(lambda x: x[0])
     v.interpolate(u)
 
-    s = dolfinx.fem.assemble_scalar(ufl.inner(u - v, u - v) * ufl.dx)
-    assert np.isclose(s, 0)
-
-    u.interpolate(v)
     s = dolfinx.fem.assemble_scalar(ufl.inner(u - v, u - v) * ufl.dx)
     assert np.isclose(s, 0)
