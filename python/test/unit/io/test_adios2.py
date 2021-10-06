@@ -6,16 +6,17 @@
 
 import os
 
+import numpy as np
 import pytest
+import ufl
 from dolfinx import Function, FunctionSpace, VectorFunctionSpace
-from dolfinx.mesh import create_mesh
-from dolfinx.cpp.io import FidesWriter, has_adios2, VTXWriter
+from dolfinx.cpp.io import FidesWriter, VTXWriter, has_adios2
 from dolfinx.cpp.mesh import CellType
 from dolfinx.generation import UnitCubeMesh, UnitSquareMesh
+from dolfinx.mesh import create_mesh
 from dolfinx_utils.test.fixtures import tempdir
 from mpi4py import MPI
-import numpy as np
-import ufl
+
 assert (tempdir)
 
 
@@ -35,21 +36,15 @@ def test_second_order_fides(tempdir):
     cell = ufl.Cell("interval", geometric_dimension=points.shape[1])
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell, 2))
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
-
-    try:
-        f = FidesWriter(mesh.mpi_comm(), filename, mesh)
-    except RuntimeError:
-        assert(False)
-    except:
-        assert(True)
+    with pytest.raises(RuntimeError):
+        FidesWriter(mesh.mpi_comm(), filename, mesh)
 
 
 @pytest.mark.xfail(strict=True)
 @pytest.mark.skipif(not has_adios2, reason="Requires ADIOS2.")
 def test_functions_from_different_meshes_fides(tempdir):
-    """
-    Check that the underlying ADIOS2Writer catches sending
-    in functions on different meshes
+    """Check that the underlying ADIOS2Writer catches sending in
+    functions on different meshes
     """
     filename = os.path.join(tempdir, "mesh_fides.bp")
     mesh0 = UnitSquareMesh(MPI.COMM_WORLD, 5, 5)
@@ -58,16 +53,12 @@ def test_functions_from_different_meshes_fides(tempdir):
     u0 = Function(V0)
     V1 = FunctionSpace(mesh1, ("CG", 1))
     u1 = Function(V1)
-    try:
-        f = FidesWriter(mesh0.mpi_comm(), filename, [u0._cpp_object, u1._cpp_object])
-    except RuntimeError:
-        assert(False)
-    except:
-        assert(True)
+    with pytest.raises(RuntimeError):
+        FidesWriter(mesh0.mpi_comm(), filename, [u0._cpp_object, u1._cpp_object])
 
 
 def generate_mesh(dim: int, simplex: bool, N: int = 3):
-    """ Helper function for parametrizing over meshes"""
+    """Helper function for parametrizing over meshes"""
     if dim == 2:
         if simplex:
             return UnitSquareMesh(MPI.COMM_WORLD, N, N)
@@ -112,7 +103,7 @@ def test_fides_function_at_nodes(tempdir, dim, simplex):
     for t in [0.1, 0.5, 1]:
         # Only change one function
         q.interpolate(lambda x: t * (x[0] - 0.5)**2)
-        file.write(t)
+        f.write(t)
 
         mesh.geometry.x[:, :2] += 0.1
         if mesh.geometry.dim == 2:
