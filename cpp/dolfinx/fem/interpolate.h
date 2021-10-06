@@ -296,7 +296,14 @@ void interpolate(Function<T>& u, const Function<T>& v)
 
   auto map = mesh->topology().index_map(tdim);
   assert(map);
-  if (element_to->hash() == element_from->hash())
+  std::vector<T>& u_array = u.x()->mutable_array();
+  const std::vector<T>& v_array = v.x()->array();
+  if (u.function_space() == v.function_space())
+  {
+    // --- Same function spaces
+    std::copy(v_array.begin(), v_array.end(), u_array.begin());
+  }
+  else if (element_to->hash() == element_from->hash())
   {
     // --- Same element
 
@@ -304,12 +311,10 @@ void interpolate(Function<T>& u, const Function<T>& v)
     assert(v.function_space());
     std::shared_ptr<const fem::DofMap> dofmap_v = v.function_space()->dofmap();
     assert(dofmap_v);
-
-    std::vector<T>& coeffs = u.x()->mutable_array();
+    const auto dofmap_u = u.function_space()->dofmap();
+    assert(dofmap_u);
 
     // Iterate over mesh and interpolate on each cell
-    const auto dofmap_u = u.function_space()->dofmap();
-    const std::vector<T>& v_array = v.x()->array();
     const int num_cells = map->size_local() + map->num_ghosts();
     const int bs = dofmap_v->bs();
     assert(bs == dofmap_u->bs());
@@ -320,7 +325,7 @@ void interpolate(Function<T>& u, const Function<T>& v)
       assert(dofs_v.size() == dofs_u.size());
       for (std::size_t i = 0; i < dofs_v.size(); ++i)
         for (int k = 0; k < bs; ++k)
-          coeffs[bs * dofs_u[i] + k] = v_array[bs * dofs_v[i] + k];
+          u_array[bs * dofs_u[i] + k] = v_array[bs * dofs_v[i] + k];
     }
   }
   else
@@ -342,10 +347,6 @@ void interpolate(Function<T>& u, const Function<T>& v)
     // Create interpolation operator
     const xt::xtensor<double, 2> i_m
         = element_to->create_interpolation_operator(*element_from);
-
-    // Get dof data arrays
-    const std::vector<T>& v_array = v.x()->array();
-    std::vector<T>& u_array = u.x()->mutable_array();
 
     // Get block sizes and dof transformation operators
     const int u_bs = element_to->block_size();
