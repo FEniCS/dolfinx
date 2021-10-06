@@ -15,7 +15,6 @@
 #include <functional>
 #include <numeric>
 #include <variant>
-#include <xtensor-blas/xlinalg.hpp>
 #include <xtensor/xadapt.hpp>
 #include <xtensor/xarray.hpp>
 #include <xtensor/xtensor.hpp>
