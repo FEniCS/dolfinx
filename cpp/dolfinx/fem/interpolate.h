@@ -159,9 +159,11 @@ void interpolate_from_any(Function<T>& u, const Function<T>& v)
     xt::xtensor<double, 2> i_m
         = element_to->compute_interpolation_operator(*element_from);
 
-    const int num_cells = map->size_local() + map->num_ghosts();
-    std::vector<T> v_local(element_from->space_dimension());
-    std::vector<T> u_local(element_to->space_dimension());
+    const int u_bs = element_to->block_size();
+    const int v_bs = element_from->block_size();
+
+    std::vector<T> v_local(element_from->space_dimension() * u_bs);
+    std::vector<T> u_local(element_to->space_dimension() * v_bs);
 
     const auto apply_dof_transformation
         = element_from->get_dof_transformation_function<T>(false, true, false);
@@ -169,13 +171,15 @@ void interpolate_from_any(Function<T>& u, const Function<T>& v)
     const auto apply_inverse_dof_transform
         = element_to->get_dof_transformation_function<T>(true, true, false);
 
+    const int num_cells = map->size_local() + map->num_ghosts();
     for (int c = 0; c < num_cells; ++c)
     {
       xtl::span<const std::int32_t> dofs_v = dofmap_v->cell_dofs(c);
       xtl::span<const std::int32_t> dofs_u = dofmap_u->cell_dofs(c);
 
       for (std::size_t i = 0; i < dofs_v.size(); i++)
-        v_local[i] = v_array[dofs_v[i]];
+        for (int b = 0; b < v_bs; b++)
+          v_local[i * v_bs + b] = v_array[dofs_v[i] * v_bs + b];
 
       apply_dof_transformation(v_local, cell_info, c, 1);
 
@@ -189,7 +193,8 @@ void interpolate_from_any(Function<T>& u, const Function<T>& v)
       apply_inverse_dof_transform(u_local, cell_info, c, 1);
 
       for (std::size_t i = 0; i < dofs_u.size(); i++)
-        u_array[dofs_u[i]] = u_local[i];
+        for (int b = 0; b < u_bs; b++)
+          u_array[dofs_u[i] * v_bs + b] = u_local[i * u_bs + b];
     }
   }
 }
