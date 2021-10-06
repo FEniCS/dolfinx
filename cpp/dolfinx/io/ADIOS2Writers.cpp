@@ -106,16 +106,17 @@ adios2::Variable<T> define_variable(adios2::IO& io, const std::string& name,
 }
 //-----------------------------------------------------------------------------
 
-/// Write function (real or complex) ADIOS2. Data is padded to be three
-/// dimensional if vector and 9 dimensional if tensor
+/// Write a first order Lagrange function (real or complex) using ADIOS2 in
+/// Fides format. Data is padded to be three dimensional if vector and 9
+/// dimensional if tensor
 /// @param[in] io The ADIOS2 io object
 /// @param[in] engine The ADIOS2 engine object
 /// @param[in] u The function to write
 template <typename Scalar>
-void write_function_at_nodes(adios2::IO& io, adios2::Engine& engine,
-                             const fem::Function<Scalar>& u)
+void write_fides_function(adios2::IO& io, adios2::Engine& engine,
+                          const fem::Function<Scalar>& u)
 {
-  // TODO: not need to use compute_point_values since we require the
+  // TODO: Replace compute_point_values since we require the
   // functions to be P1.
 
   auto function_data = u.compute_point_values();
@@ -162,14 +163,20 @@ void write_function_at_nodes(adios2::IO& io, adios2::Engine& engine,
   }
 }
 //-----------------------------------------------------------------------------
+/// Given a Function, create a topology and geometry based on the dof
+/// coordinates. Writes the topology and geometry using ADIOS2 in VTX format.
+/// @note Only supports (discontinuous) Lagrange functions
+/// @param[in] io The ADIOS2 io object
+/// @param[in] engine The ADIOS2 engine object
+/// @param[in] u The function
 template <typename Scalar>
-void write_lagrange_function(adios2::IO& io, adios2::Engine& engine,
+void write_vtx_function_mesh(adios2::IO& io, adios2::Engine& engine,
                              const fem::Function<Scalar>& u)
 {
   auto V = u.function_space();
   auto mesh = u.function_space()->mesh();
-  std::string family = V->element()->family();
 
+  // FIXME: This assumes one cell type for the whole mesh
   xt::xtensor<double, 2> geometry = V->tabulate_dof_coordinates(false);
   const std::uint32_t num_dofs = geometry.shape(0);
   const std::uint32_t num_elements
@@ -207,7 +214,7 @@ void write_lagrange_function(adios2::IO& io, adios2::Engine& engine,
   adios2::Variable<std::uint32_t> elements = define_variable<std::uint32_t>(
       io, "NumberOfEntities", {adios2::LocalValueDim});
 
-  // Start writer and insert mesh information
+  // Use the ADIOS engine to write mesh information to file
   engine.Put<std::uint32_t>(vertices, num_dofs);
   engine.Put<std::uint32_t>(elements, num_elements);
   engine.Put<std::uint32_t>(cell_type, dolfinx::io::cells::get_vtk_cell_type(
@@ -215,17 +222,38 @@ void write_lagrange_function(adios2::IO& io, adios2::Engine& engine,
   engine.Put<double>(local_geometry, geometry.data());
   engine.Put<std::uint64_t>(local_topology, vtk_topology.data());
   engine.PerformPuts();
-
+}
+//-----------------------------------------------------------------------------
+/// Given a Function, write the coefficient to file using ADIOS2.
+/// @note Only supports (discontinuous) Lagrange functions.
+/// @note For a complex function, the coefficient is split into a real and
+/// imaginary function.
+/// @note Data is padded to be three dimensional if vector and 9 dimensional
+/// if tensor
+/// @note Only supports (discontinuous) Lagrange functions
+/// @param[in] io The ADIOS2 io object
+/// @param[in] engine The ADIOS2 engine object
+/// @param[in] u The function
+template <typename Scalar>
+void write_vtx_function_data(adios2::IO& io, adios2::Engine& engine,
+                             const fem::Function<Scalar>& u)
+{
   // Get function data array and information about layout
   std::shared_ptr<const la::Vector<Scalar>> function_vector = u.x();
   auto function_data = xt::adapt(function_vector->array());
   const int rank = u.function_space()->element()->value_rank();
   const std::uint32_t num_components = std::pow(3, rank);
-  const std::uint32_t local_size = geometry.shape(0);
-  const std::uint32_t block_size = dofmap->index_map_bs();
-  std::vector<double> out_data(num_components * local_size);
+  std::shared_ptr<const fem::DofMap> dofmap = u.function_space()->dofmap();
+  std::shared_ptr<const common::IndexMap> index_map = dofmap->index_map;
+  assert(index_map);
+  const int index_map_bs = dofmap->index_map_bs();
+  const int dofmap_bs = dofmap->bs();
+  const std::uint32_t num_dofs
+      = index_map_bs * (index_map->size_local() + index_map->num_ghosts())
+        / dofmap_bs;
 
   // Write each real and imaginary part of the function
+  std::vector<double> out_data(num_dofs * num_components);
   std::vector<std::string> parts = {""};
   if constexpr (!std::is_scalar<Scalar>::value)
     parts = {"real", "imag"};
@@ -241,24 +269,29 @@ void write_lagrange_function(adios2::IO& io, adios2::Engine& engine,
     std::string function_name = u.name;
     if (part != "")
       function_name += "_" + part;
-    for (size_t i = 0; i < local_size; ++i)
+    for (size_t i = 0; i < num_dofs; ++i)
     {
-      for (size_t j = 0; j < block_size; ++j)
-        out_data[i * num_components + j] = part_data[i * block_size + j];
+      for (size_t j = 0; j < index_map_bs; ++j)
+        out_data[i * num_components + j] = part_data[i * index_map_bs + j];
 
       // Pad data to 3D if vector or tensor data
-      for (size_t j = block_size; j < num_components; ++j)
+      for (size_t j = index_map_bs; j < num_components; ++j)
         out_data[i * num_components + j] = 0;
     }
 
     // To reuse out_data, we use sync mode here
     adios2::Variable<double> local_output = define_variable<double>(
-        io, function_name, {}, {}, {local_size, num_components});
+        io, function_name, {}, {}, {num_dofs, num_components});
     engine.Put<double>(local_output, out_data.data(), adios2::Mode::Sync);
   }
 }
 //-----------------------------------------------------------------------------
-void write_mesh(adios2::IO& io, adios2::Engine& engine, const mesh::Mesh& mesh)
+/// Write mesh to file using ADIOS2 to VTX compatible structures.
+/// @param[in] io The ADIOS2 io object
+/// @param[in] engine The ADIOS2 engine object
+/// @param[in] mesh The mesh
+void write_vtx_mesh(adios2::IO& io, adios2::Engine& engine,
+                    const mesh::Mesh& mesh)
 {
   // Put geometry
   std::shared_ptr<const common::IndexMap> x_map = mesh.geometry().index_map();
@@ -267,8 +300,8 @@ void write_mesh(adios2::IO& io, adios2::Engine& engine, const mesh::Mesh& mesh)
       = define_variable<double>(io, "geometry", {}, {}, {num_vertices, 3});
   engine.Put<double>(local_geometry, mesh.geometry().x().data());
 
-  // Put number of nodes. The mesh data is written with local indices. Therefore
-  // we need the ghost vertices
+  // Put number of nodes. The mesh data is written with local indices.
+  // Therefore we need the ghost vertices
   adios2::Variable<std::uint32_t> vertices = define_variable<std::uint32_t>(
       io, "NumberOfNodes", {adios2::LocalValueDim});
   engine.Put<std::uint32_t>(vertices, num_vertices);
@@ -395,6 +428,7 @@ std::string create_vtk_schema(const std::vector<std::string>& point_data,
 //-----------------------------------------------------------------------------
 
 /// Convert DOLFINx CellType to FIDES CellType
+/// https://gitlab.kitware.com/vtk/vtk-m/-/blob/master/vtkm/CellShape.h#L30-53
 /// @param[in] type The DOLFInx cell
 /// @return The Fides cell string
 std::string to_fides_cell(mesh::CellType type)
@@ -423,7 +457,7 @@ std::string to_fides_cell(mesh::CellType type)
 }
 //-----------------------------------------------------------------------------
 
-/// Put mesh geometry and connectivity for FIDES
+/// Write mesh geometry and connectivity (topology) for FIDES
 /// @param[in] io The ADIOS2 IO
 /// @param[in] engine The ADIOS2 engine
 /// @param[in] mesh The mesh
@@ -460,6 +494,15 @@ void write_fides_mesh(adios2::IO& io, adios2::Engine& engine,
 /// @param[in] mesh The mesh
 void initialize_mesh_attributes(adios2::IO& io, const mesh::Mesh& mesh)
 {
+  // Check that mesh is first order mesh
+  const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
+  // FIXME: Add proper interface for num coordinate dofs
+  const std::size_t num_dofs_g = x_dofmap.num_links(0);
+  const std::size_t num_vertices_per_cell
+      = mesh::cell_num_entities(mesh.topology().cell_type(), 0);
+  if (num_dofs_g != num_vertices_per_cell)
+    throw std::runtime_error("Fides only supports linear meshes.");
+
   // NOTE: If we start using mixed element types, we can change
   // data-model to "unstructured"
   define_attribute<std::string>(io, "Fides_Data_Model", "unstructured_single");
@@ -481,8 +524,8 @@ void initialize_mesh_attributes(adios2::IO& io, const mesh::Mesh& mesh)
 /// @param[in] functions The list of functions
 void initialize_function_attributes(adios2::IO& io, const ADIOS2Writer::U& u)
 {
-  // Array of function (name, cell association types) for each function added to
-  // the file
+  // Array of function (name, cell association types) for each function added
+  // to the file
   std::vector<std::array<std::string, 2>> u_data;
   for (auto& _u : u)
   {
@@ -565,11 +608,19 @@ ADIOS2Writer::ADIOS2Writer(MPI_Comm comm, const std::string& filename,
   {
     if (auto _v = std::get_if<std::shared_ptr<const Fdr>>(&v))
     {
-      assert(_mesh == (*_v)->function_space()->mesh());
+      if (_mesh != (*_v)->function_space()->mesh())
+      {
+        throw std::runtime_error(
+            "ADIOS2Writer only supports functions sharing the same mesh");
+      }
     }
     else if (auto _v = std::get_if<std::shared_ptr<const Fdc>>(&v))
     {
-      assert(_mesh == (*_v)->function_space()->mesh());
+      if (_mesh != (*_v)->function_space()->mesh())
+      {
+        throw std::runtime_error(
+            "ADIOS2Writer only supports functions sharing the same mesh");
+      }
     }
     else
       throw std::runtime_error("Unsupported function.");
@@ -610,6 +661,9 @@ FidesWriter::FidesWriter(MPI_Comm comm, const std::string& filename,
     throw std::runtime_error("Unsupported function.");
 
   assert(mesh);
+
+  // TODO: Check that all functions are CG-1
+
   initialize_mesh_attributes(*_io, *mesh);
   initialize_function_attributes(*_io, u);
 }
@@ -627,11 +681,10 @@ void FidesWriter::write(double t)
   for (auto& v : _u)
   {
     std::visit(
-        overload{[&](const std::shared_ptr<const Fdr>& u) {
-                   write_function_at_nodes<Fdr::value_type>(*_io, *_engine, *u);
-                 },
+        overload{[&](const std::shared_ptr<const Fdr>& u)
+                 { write_fides_function<Fdr::value_type>(*_io, *_engine, *u); },
                  [&](const std::shared_ptr<const Fdc>& u) {
-                   write_function_at_nodes<Fdc::value_type>(*_io, *_engine, *u);
+                   write_fides_function<Fdc::value_type>(*_io, *_engine, *u);
                  }},
         v);
   };
@@ -658,23 +711,31 @@ VTXWriter::VTXWriter(MPI_Comm comm, const std::string& filename,
 
   // Extract element from first function
   assert(!u.empty());
-  std::shared_ptr<const fem::FiniteElement> element;
-  if (auto v = std::get_if<std::shared_ptr<const Fdr>>(&u[0]))
-    element = (*v)->function_space()->element();
-  else if (auto v = std::get_if<std::shared_ptr<const Fdc>>(&u[0]))
-    element = (*v)->function_space()->element();
-  assert(element);
-  if (is_cellwise_constant(*element))
-    throw std::runtime_error("Cell-wise constants not currently supported");
 
-  // FIXME: Should not use string checks
-  std::array<std::string, 3> elements
-      = {"Lagrange", "Discontinuous Lagrange", "DQ"};
-  if (std::find(elements.begin(), elements.end(), element->family())
-      == elements.end())
-  {
-    // TODO: throw and error
-  }
+  // std::shared_ptr<const fem::FiniteElement> element;
+  // for (auto& v : u)
+  // {
+  //   if (auto w = std::get_if<std::shared_ptr<const Fdr>>(&v))
+  //     element = (*w)->function_space()->element();
+  //   else if (auto w = std::get_if<std::shared_ptr<const Fdc>>(&v))
+  //     element = (*w)->function_space()->element();
+
+  //   assert(element);
+
+  // }
+  // // FIXME: Should not use string checks
+  // // Check if all functions is (discontinuous) Lagrange
+  // std::array<std::string, 3> elements
+  //     = {"Lagrange", "Discontinuous Lagrange", "DQ"};
+  // if (std::find(elements.begin(), elements.end(), element->family())
+  //     == elements.end())
+  // {
+  //   throw std::runtime_error(
+  //       "Cannon't save functions that are not (discontinuous) Lagrange");
+  //   if (is_cellwise_constant(*element))
+  //     throw std::runtime_error("Cell-wise constants not currently
+  //     supported");
+  // }
 
   // Define VTK scheme attribute for set of functions
   std::vector<std::string> names = extract_function_names(u);
@@ -691,21 +752,30 @@ void VTXWriter::write(double t)
   _engine->BeginStep();
   _engine->Put<double>(var_step, t);
 
+  // If we have no functions write the mesh to file
   if (_u.empty())
-    write_mesh(*_io, *_engine, *_mesh);
+    write_vtx_mesh(*_io, *_engine, *_mesh);
   else
   {
-    // TODO: write mesh only once and not for every function
+    // Write a single mesh for functions as they share finite element
+    std::visit(
+        overload{[&](const std::shared_ptr<const Fdr>& u) {
+                   write_vtx_function_mesh<Fdr::value_type>(*_io, *_engine, *u);
+                 },
+                 [&](const std::shared_ptr<const Fdc>& u) {
+                   write_vtx_function_mesh<Fdc::value_type>(*_io, *_engine, *u);
+                 }},
+        _u[0]);
 
-    // Write functions to file
+    // Write function data for each function to file
     for (auto& v : _u)
     {
       std::visit(
           overload{
               [&](const std::shared_ptr<const Fdr>& u)
-              { write_lagrange_function<Fdr::value_type>(*_io, *_engine, *u); },
+              { write_vtx_function_data<Fdr::value_type>(*_io, *_engine, *u); },
               [&](const std::shared_ptr<const Fdc>& u) {
-                write_lagrange_function<Fdc::value_type>(*_io, *_engine, *u);
+                write_vtx_function_data<Fdc::value_type>(*_io, *_engine, *u);
               }},
           v);
     };

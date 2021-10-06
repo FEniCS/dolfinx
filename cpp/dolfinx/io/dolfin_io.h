@@ -11,6 +11,5 @@ namespace dolfinx
 
 // DOLFINx io interface
 
-#include <dolfinx/io/FidesWriter.h>
+#include <dolfinx/io/ADIOS2Writers.h>
 #include <dolfinx/io/VTKFile.h>
-#include <dolfinx/io/VTXWriter.h>

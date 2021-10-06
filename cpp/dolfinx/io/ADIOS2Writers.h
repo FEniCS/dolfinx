@@ -99,7 +99,8 @@ public:
   /// @param[in] comm The MPI communicator
   /// @param[in] filename Name of output file
   /// @param[in] mesh The mesh. The mesh must a degree 1 mesh.
-  /// @todo What happens if the mesh changes? What can and can't change?
+  /// @note The geometry of the mesh can change between writes.
+  /// @note The topology of the mesh cannot change between writes
   /// @todo Can data be flushed? What happens if program is interrupted?
   FidesWriter(MPI_Comm comm, const std::string& filename,
               std::shared_ptr<const mesh::Mesh> mesh);

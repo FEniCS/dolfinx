@@ -8,39 +8,66 @@ import os
 
 import pytest
 from dolfinx import Function, FunctionSpace, VectorFunctionSpace
+from dolfinx.mesh import create_mesh
 from dolfinx.cpp.io import FidesWriter, has_adios2, VTXWriter
 from dolfinx.cpp.mesh import CellType
 from dolfinx.generation import UnitCubeMesh, UnitSquareMesh
 from dolfinx_utils.test.fixtures import tempdir
 from mpi4py import MPI
-
+import numpy as np
+import ufl
 assert (tempdir)
 
 
+@pytest.mark.xfail(strict=True)
+@pytest.mark.skipif(
+    MPI.COMM_WORLD.size > 1,
+    reason="This test should only be run in serial.")
 @pytest.mark.skipif(not has_adios2, reason="Requires ADIOS2.")
-def test_fides_mesh(tempdir):
+def test_second_order_fides(tempdir):
+    """Check that fides throws error on second order mesh"""
     filename = os.path.join(tempdir, "mesh_fides.bp")
 
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 5, 5)
-    f = FidesWriter(mesh.mpi_comm(), filename, mesh)
-    f.write(0.0)
-    mesh.geometry.x[:, 1] += 0.1
-    f.write(0.1)
-    f.close()
+    points = np.array([[0, 0, 0],
+                       [1, 0, 0],
+                       [0.5, 0, 0]], dtype=np.float64)
+    cells = np.array([[0, 1, 2]], dtype=np.int32)
+    cell = ufl.Cell("interval", geometric_dimension=points.shape[1])
+    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell, 2))
+    mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
+
+    try:
+        f = FidesWriter(mesh.mpi_comm(), filename, mesh)
+    except RuntimeError:
+        assert(False)
+    except:
+        assert(True)
 
 
+@pytest.mark.xfail(strict=True)
 @pytest.mark.skipif(not has_adios2, reason="Requires ADIOS2.")
-def test_vtx_mesh(tempdir):
-    filename = os.path.join(tempdir, "mesh_vtx.bp")
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 5, 5)
-    f = VTXWriter(mesh.mpi_comm(), filename, mesh)
-    f.write(0.0)
-    mesh.geometry.x[:, 1] += 0.1
-    f.write(0.1)
-    f.close()
+def test_functions_from_different_meshes_fides(tempdir):
+    """
+    Check that the underlying ADIOS2Writer catches sending
+    in functions on different meshes
+    """
+    filename = os.path.join(tempdir, "mesh_fides.bp")
+    mesh0 = UnitSquareMesh(MPI.COMM_WORLD, 5, 5)
+    mesh1 = UnitSquareMesh(MPI.COMM_WORLD, 10, 2)
+    V0 = FunctionSpace(mesh0, ("CG", 1))
+    u0 = Function(V0)
+    V1 = FunctionSpace(mesh1, ("CG", 1))
+    u1 = Function(V1)
+    try:
+        f = FidesWriter(mesh0.mpi_comm(), filename, [u0._cpp_object, u1._cpp_object])
+    except RuntimeError:
+        assert(False)
+    except:
+        assert(True)
 
 
 def generate_mesh(dim: int, simplex: bool, N: int = 3):
+    """ Helper function for parametrizing over meshes"""
     if dim == 2:
         if simplex:
             return UnitSquareMesh(MPI.COMM_WORLD, N, N)
@@ -58,8 +85,22 @@ def generate_mesh(dim: int, simplex: bool, N: int = 3):
 @pytest.mark.skipif(not has_adios2, reason="Requires ADIOS2.")
 @pytest.mark.parametrize("dim", [2, 3])
 @pytest.mark.parametrize("simplex", [True, False])
+def test_fides_mesh(tempdir, dim, simplex):
+    """ Test writing of a single Fides mesh with changing geometry"""
+    filename = os.path.join(tempdir, "mesh_fides.bp")
+    mesh = generate_mesh(dim, simplex)
+    f = FidesWriter(mesh.mpi_comm(), filename, mesh)
+    f.write(0.0)
+    mesh.geometry.x[:, 1] += 0.1
+    f.write(0.1)
+    f.close()
+
+
+@pytest.mark.skipif(not has_adios2, reason="Requires ADIOS2.")
+@pytest.mark.parametrize("dim", [2, 3])
+@pytest.mark.parametrize("simplex", [True, False])
 def test_fides_function_at_nodes(tempdir, dim, simplex):
-    """Test saving function values as mesh nodes"""
+    """Test saving CG-1 functions with Fides (with changing geometry)"""
     mesh = generate_mesh(dim, simplex)
     V = VectorFunctionSpace(mesh, ("Lagrange", 1))
     v = Function(V)
@@ -68,8 +109,11 @@ def test_fides_function_at_nodes(tempdir, dim, simplex):
 
     filename = os.path.join(tempdir, "v.bp")
     f = FidesWriter(mesh.mpi_comm(), filename, [v._cpp_object, q._cpp_object])
-    for t in [0.1, 1]:
+    for t in [0.1, 0.5, 1]:
+        # Only change one function
         q.interpolate(lambda x: t * (x[0] - 0.5)**2)
+        file.write(t)
+
         mesh.geometry.x[:, :2] += 0.1
         if mesh.geometry.dim == 2:
             v.interpolate(lambda x: (t * x[0], x[1] + x[1] * 1j))
@@ -79,35 +123,43 @@ def test_fides_function_at_nodes(tempdir, dim, simplex):
     f.close()
 
 
+@pytest.mark.skipif(
+    MPI.COMM_WORLD.size > 1,
+    reason="This test should only be run in serial.")
+@pytest.mark.skipif(not has_adios2, reason="Requires ADIOS2.")
+def test_second_order_vtx(tempdir):
+    filename = os.path.join(tempdir, "mesh_fides.bp")
+
+    points = np.array([[0, 0, 0],
+                       [1, 0, 0],
+                       [0.5, 0, 0]], dtype=np.float64)
+    cells = np.array([[0, 1, 2]], dtype=np.int32)
+    cell = ufl.Cell("interval", geometric_dimension=points.shape[1])
+    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell, 2))
+    mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
+
+    f = VTXWriter(mesh.mpi_comm(), filename, mesh)
+    f.write(0.0)
+    f.close()
+
+
 @pytest.mark.skipif(not has_adios2, reason="Requires ADIOS2.")
 @pytest.mark.parametrize("dim", [2, 3])
 @pytest.mark.parametrize("simplex", [True, False])
-def test_vtx_function_at_nodes(tempdir, dim, simplex):
-    "Test saving function values as mesh nodes"
+def test_vtx_mesh(tempdir, dim, simplex):
+    filename = os.path.join(tempdir, "mesh_vtx.bp")
     mesh = generate_mesh(dim, simplex)
-    V = VectorFunctionSpace(mesh, ("Lagrange", 2))
-    v = Function(V)
-
-    Q = FunctionSpace(mesh, ("Lagrange", 2))
-    q = Function(Q)
-
-    filename = os.path.join(tempdir, "v.bp")
-    f = VTXWriter(mesh.mpi_comm(), filename, [v._cpp_object, q._cpp_object])
-    for t in [0.1, 1, 2]:
-        q.interpolate(lambda x: t * (x[0] - 0.5)**2)
-        mesh.geometry.x[:, :2] += 0.1
-        if mesh.geometry.dim == 2:
-            v.interpolate(lambda x: (t * x[0], x[1] + x[1] * 1j))
-        elif mesh.geometry.dim == 3:
-            v.interpolate(lambda x: (t * x[2], x[0] + x[2] * 2j, x[1]))
-        f.write(t)
+    f = VTXWriter(mesh.mpi_comm(), filename, mesh)
+    f.write(0.0)
+    mesh.geometry.x[:, 1] += 0.1
+    f.write(0.1)
     f.close()
 
 
 @pytest.mark.skipif(not has_adios2, reason="Requires ADIOS2.")
 @pytest.mark.parametrize("dim", [2, 3])
 @pytest.mark.parametrize("simplex", [True, False])
-def test_vtx_lagrange_function(tempdir, dim, simplex):
+def test_vtx_functions(tempdir, dim, simplex):
     "Test saving high order Lagrange functions"
     mesh = generate_mesh(dim, simplex)
     V = FunctionSpace(mesh, ("DG", 2))
