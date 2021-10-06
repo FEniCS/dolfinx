@@ -231,7 +231,7 @@ def test_interpolation_nedelec(order1, order2):
     u = dolfinx.Function(V)
     v = dolfinx.Function(V1)
 
-    # The expression "lambda x: x" is contained in the N1curl fucntion space order>1
+    # The expression "lambda x: x" is contained in the N1curl function space order>1
     u.interpolate(lambda x: x)
     v.interpolate(u)
 
