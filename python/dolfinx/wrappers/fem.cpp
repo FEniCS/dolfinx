@@ -799,7 +799,7 @@ void fem(py::module& m)
   declare_assemblers<double>(m);
   declare_assemblers<std::complex<double>>(m);
 
-  declare_dirichletbc<PetscScalar>(m, "float64");
+  declare_dirichletbc<double>(m, "float64");
   declare_dirichletbc<std::complex<double>>(m, "complex64");
 
   // PETSc Matrices

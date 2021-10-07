@@ -29,11 +29,12 @@ namespace dolfinx_wrappers
 {
 
 template <typename T>
-void declare_objects(py::module& m)
+void declare_objects(py::module& m, const std::string& type)
 {
   // dolfinx::la::Vector
+  std::string pyclass_vector_name = std::string("Vector_") + type;
   py::class_<dolfinx::la::Vector<T>, std::shared_ptr<dolfinx::la::Vector<T>>>(
-      m, "Vector")
+      m, pyclass_vector_name.c_str())
       .def_property_readonly("array",
                              [](dolfinx::la::Vector<T>& self)
                              {
@@ -119,7 +120,8 @@ void la(py::module& m)
            { return self[i]->vec(); });
 
   // Declare objects that are templated over type
-  declare_objects<PetscScalar>(m);
+  declare_objects<double>(m, "float64");
+  declare_objects<std::complex<double>>(m, "complex64");
 
   m.def("create_vector",
         py::overload_cast<const dolfinx::common::IndexMap&, int>(

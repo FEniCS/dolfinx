@@ -114,12 +114,10 @@ def locate_dofs_topological(V: typing.Iterable[typing.Union[cpp.fem.FunctionSpac
         return cpp.fem.locate_dofs_topological(_V, entity_dim, _entities, remote)
 
 
-# class DirichletBC(cpp.fem.DirichletBC):
 class DirichletBC:
     def __init__(
             self,
-            value,
-            # value: typing.Union[ufl.Coefficient, Function, cpp.fem.Function],
+            value: typing.Union[ufl.Coefficient, Function],
             dofs: typing.List[int],
             V: typing.Union[FunctionSpace] = None,
             dtype=PETSc.ScalarType):

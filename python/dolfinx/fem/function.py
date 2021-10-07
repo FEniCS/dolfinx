@@ -187,7 +187,7 @@ class Function(ufl.Coefficient):
 
     def __init__(self,
                  V: "FunctionSpace",
-                 x: typing.Optional[cpp.la.Vector] = None,
+                 x: typing.Optional[typing.Union[cpp.la.Vector_float64, cpp.la.Vector_complex64]] = None,
                  name: typing.Optional[str] = None,
                  dtype=PETSc.ScalarType):
         """Initialize finite element Function."""
@@ -220,7 +220,7 @@ class Function(ufl.Coefficient):
         # Store DOLFINx FunctionSpace object
         self._V = V
 
-    @ property
+    @property
     def function_space(self) -> "FunctionSpace":
         """Return the FunctionSpace"""
         return self._V
@@ -280,14 +280,14 @@ class Function(ufl.Coefficient):
 
     def interpolate(self, u) -> None:
         """Interpolate an expression"""
-        @ singledispatch
+        @singledispatch
         def _interpolate(u):
             try:
                 self._cpp_object.interpolate(u._cpp_object)
             except AttributeError:
                 self._cpp_object.interpolate(u)
 
-        @ _interpolate.register(int)
+        @_interpolate.register(int)
         def _(u_ptr):
             self._cpp_object.interpolate_ptr(u_ptr)
 
@@ -304,26 +304,26 @@ class Function(ufl.Coefficient):
         return Function(self.function_space,
                         self._cpp_object.vector.copy())
 
-    @ property
+    @property
     def vector(self):
         """Return the vector holding Function degrees-of-freedom."""
         return self._cpp_object.vector
 
-    @ property
+    @property
     def x(self):
         """Return the vector holding Function degrees-of-freedom."""
         return self._cpp_object.x
 
-    @ property
+    @property
     def name(self) -> str:
         """Name of the Function."""
         return self._cpp_object.name
 
-    @ name.setter
+    @name.setter
     def name(self, name):
         self._cpp_object.name = name
 
-    @ property
+    @property
     def id(self) -> int:
         """Return object id index."""
         return self._cpp_object.id
