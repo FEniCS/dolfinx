@@ -90,17 +90,18 @@ std::vector<int> dolfinx::MPI::compute_graph_edges(MPI_Comm comm,
                                                    const std::set<int>& edges)
 {
   // Send '1' to ranks that I have an edge to
-  std::vector<std::uint8_t> edge_count(dolfinx::MPI::size(comm), 0);
+  std::vector<std::uint8_t> edge_count_send(dolfinx::MPI::size(comm), 0);
   std::for_each(edges.cbegin(), edges.cend(),
-                [&edge_count](auto e) { edge_count[e] = 1; });
-  MPI_Alltoall(MPI_IN_PLACE, 1, MPI_UINT8_T, edge_count.data(), 1, MPI_UINT8_T,
-               comm);
+                [&edge_count_send](auto e) { edge_count_send[e] = 1; });
+  std::vector<std::uint8_t> edge_count_recv(edge_count_send.size());
+  MPI_Alltoall(edge_count_send.data(), 1, MPI_UINT8_T, edge_count_recv.data(),
+               1, MPI_UINT8_T, comm);
 
   // Build list of rank that had an edge to me
   std::vector<int> edges1;
-  for (std::size_t i = 0; i < edge_count.size(); ++i)
+  for (std::size_t i = 0; i < edge_count_recv.size(); ++i)
   {
-    if (edge_count[i] > 0)
+    if (edge_count_recv[i] > 0)
       edges1.push_back(i);
   }
   return edges1;
