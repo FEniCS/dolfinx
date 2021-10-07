@@ -142,7 +142,7 @@ set_package_properties(Boost PROPERTIES TYPE REQUIRED
 # Note: Basix may be installed as a standalone C++ library, or in the
 # Basix Python module tree
 execute_process(
-  COMMAND ${Python3_EXECUTABLE} -c "import basix, sys, os; sys.stdout.write(basix.__path__ + os.path.sep)"
+  COMMAND ${Python3_EXECUTABLE} -c "import basix, os, sys; sys.stdout.write(os.path.dirname(basix.__file__))"
   OUTPUT_VARIABLE BASIX_PY_DIR
   RESULT_VARIABLE BASIX_PY_COMMAND_RESULT
   ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
