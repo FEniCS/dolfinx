@@ -196,6 +196,8 @@ class Function(ufl.Coefficient):
         def functiontype(dtype):
             if dtype == np.float64:
                 return cpp.fem.Function_float64
+            elif dtype == np.complex64:
+                return cpp.fem.Function_complex64
             else:
                 raise NotImplementedError
 
