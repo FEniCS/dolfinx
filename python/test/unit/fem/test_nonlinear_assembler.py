@@ -224,7 +224,8 @@ class NonlinearPDE_SNESProblem():
             F_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
         # Set bc value in RHS
-        bcs0 = dolfinx.cpp.fem.bcs_rows(dolfinx.fem.assemble._create_cpp_form(self.L), self.bcs)
+        bcs0 = dolfinx.cpp.fem.bcs_rows(dolfinx.fem.assemble._create_cpp_form(self.L),
+                                        dolfinx.fem.assemble._cpp_dirichletbc(self.bcs))
         for F_sub, bc, x_sub in zip(F.getNestSubVecs(), bcs0, x):
             dolfinx.fem.set_bc(F_sub, bc, x_sub, -1.0)
 

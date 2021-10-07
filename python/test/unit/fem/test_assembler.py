@@ -68,7 +68,7 @@ def test_assemble_derivatives():
     v = ufl.TestFunction(Q)
     du = ufl.TrialFunction(Q)
     b = dolfinx.Function(Q)
-    c1 = fem.Constant(mesh,  numpy.array([[1.0, 0.0], [3.0, 4.0]], PETSc.ScalarType))
+    c1 = fem.Constant(mesh, numpy.array([[1.0, 0.0], [3.0, 4.0]], PETSc.ScalarType))
     c2 = fem.Constant(mesh, PETSc.ScalarType(2.0))
 
     with b.vector.localForm() as b_local:
