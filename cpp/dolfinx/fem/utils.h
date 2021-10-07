@@ -361,6 +361,7 @@ std::shared_ptr<Form<T>> create_form(
 }
 
 /// Create a FunctionSpace from UFC data
+///
 /// @param[in] fptr Function Pointer to a ufc_function_space_create
 /// function
 /// @param[in] function_name Name of a function whose function space to
@@ -372,7 +373,7 @@ std::shared_ptr<Form<T>> create_form(
 /// dofmap
 /// @return The created function space
 std::shared_ptr<fem::FunctionSpace> create_functionspace(
-    ufc_function_space* (*fptr)(const char*), const std::string function_name,
+    ufc_function_space* (*fptr)(const char*), const std::string& function_name,
     std::shared_ptr<mesh::Mesh> mesh,
     const std::function<
         std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>& reorder_fn
