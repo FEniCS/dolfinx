@@ -86,6 +86,7 @@ adios2::Attribute<T> define_attribute(adios2::IO& io, const std::string& name,
   else
     return io.DefineAttribute<T>(name, value, var_name, separator);
 }
+//-----------------------------------------------------------------------------
 
 /// Safe definition of a variable. First check if it has already been
 /// defined and return it. If not defined create new variable.
@@ -116,46 +117,52 @@ template <typename Scalar>
 void write_fides_function(adios2::IO& io, adios2::Engine& engine,
                           const fem::Function<Scalar>& u)
 {
-  // TODO: Replace compute_point_values since we require the
-  // functions to be P1.
+  // TODO: Replace compute_point_values since we now require the
+  // functions to be P1
 
-  auto function_data = u.compute_point_values();
+  const xt::xtensor<Scalar, 2> function_data = u.compute_point_values();
   std::uint32_t local_size = function_data.shape(0);
   std::uint32_t block_size = function_data.shape(1);
-
-  // Extract real and imaginary parts
-  std::vector<std::string> parts = {""};
-  if constexpr (!std::is_scalar<Scalar>::value)
-    parts = {"real", "imag"};
 
   // Write each real and imaginary part of the function
   const int rank = u.function_space()->element()->value_rank();
   const std::uint32_t num_components = std::pow(3, rank);
-  std::vector<double> out_data(num_components * local_size);
-  for (const auto& part : parts)
+  std::vector<double> out_data(num_components * local_size, 0);
+
+  // --- Real component
   {
     std::string function_name = u.name;
-    if (part != "")
-      function_name += "_" + part;
+    if constexpr (!std::is_scalar<Scalar>::value)
+      function_name += "_real";
 
     adios2::Variable<double> local_output = define_variable<double>(
         io, function_name, {}, {}, {local_size, num_components});
 
-    // Loop over components of each real and imaginary part
     for (size_t i = 0; i < local_size; ++i)
     {
       auto data_row = xt::row(function_data, i);
       for (size_t j = 0; j < block_size; ++j)
-      {
-        if (part == "imag")
-          out_data[i * num_components + j] = std::imag(data_row[j]);
-        else
-          out_data[i * num_components + j] = std::real(data_row[j]);
-      }
+        out_data[i * num_components + j] = std::real(data_row[j]);
+    }
 
-      // Pad data to 3D if vector or tensor data
-      for (size_t j = block_size; j < num_components; ++j)
-        out_data[i * num_components + j] = 0;
+    // To reuse out_data, we use sync mode here
+    engine.Put<double>(local_output, out_data.data(), adios2::Mode::Sync);
+  }
+
+  // --- Complex component
+  if constexpr (!std::is_scalar<Scalar>::value)
+  {
+    const std::string function_name = u.name + "_imag";
+
+    adios2::Variable<double> local_output = define_variable<double>(
+        io, function_name, {}, {}, {local_size, num_components});
+
+    std::fill(out_data.begin(), out_data.end(), 0.0);
+    for (size_t i = 0; i < local_size; ++i)
+    {
+      auto data_row = xt::row(function_data, i);
+      for (size_t j = 0; j < block_size; ++j)
+        out_data[i * num_components + j] = std::imag(data_row[j]);
     }
 
     // To reuse out_data, we use sync mode here
@@ -253,12 +260,14 @@ void write_vtx_function_data(adios2::IO& io, adios2::Engine& engine,
         / dofmap_bs;
 
   // Write each real and imaginary part of the function
-  std::vector<double> out_data(num_dofs * num_components);
   std::vector<std::string> parts = {""};
   if constexpr (!std::is_scalar<Scalar>::value)
     parts = {"real", "imag"};
+  std::vector<double> out_data(num_dofs * num_components);
   for (const auto& part : parts)
   {
+    std::fill(out_data.begin(), out_data.end(), 0);
+
     // Extract real or imaginary part
     xt::xtensor<double, 1> part_data;
     if (part == "imag")
@@ -273,10 +282,6 @@ void write_vtx_function_data(adios2::IO& io, adios2::Engine& engine,
     {
       for (int j = 0; j < index_map_bs; ++j)
         out_data[i * num_components + j] = part_data[i * index_map_bs + j];
-
-      // Pad data to 3D if vector or tensor data
-      for (std::size_t j = index_map_bs; j < num_components; ++j)
-        out_data[i * num_components + j] = 0;
     }
 
     // To reuse out_data, we use sync mode here
@@ -539,9 +544,7 @@ void initialize_function_attributes(adios2::IO& io, const ADIOS2Writer::U& u)
         u_data.push_back({(*v)->name + "_" + part, "points"});
     }
     else
-    {
       throw std::runtime_error("Unsupported function.");
-    }
   }
 
   // Write field associations to file
