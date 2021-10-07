@@ -13,7 +13,6 @@ import numpy
 import ufl
 
 from dolfinx import cpp, fem
-from dolfinx.cpp.io import mode  # noqa: F401
 
 
 class VTKFile(cpp.io.VTKFile):
