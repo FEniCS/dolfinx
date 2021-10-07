@@ -100,12 +100,12 @@ protected:
 
 /// Output of meshes and functions compatible with the Fides Paraview
 /// reader, see
-/// https://fides.readthedocs.io/en/latest/paraview/paraview.html. /
+/// https://fides.readthedocs.io/en/latest/paraview/paraview.html
 class FidesWriter : public ADIOS2Writer
 {
 public:
   /// Create Fides writer for a mesh
-  /// @param[in] comm The MPI communicator
+  /// @param[in] comm The MPI communicator to open the file on
   /// @param[in] filename Name of output file
   /// @param[in] mesh The mesh. The mesh must a degree 1 mesh.
   /// @note The geometry of the mesh can change between writes.
@@ -151,7 +151,7 @@ class VTXWriter : public ADIOS2Writer
 public:
   /// Create a VTX writer for a mesh. This format supports arbitrary
   /// degree meshes.
-  /// @param[in] comm The MPI communicator
+  /// @param[in] comm The MPI communicator to open the file on
   /// @param[in] filename Name of output file
   /// @param[in] mesh The mesh to write
   /// @note This format support arbitrary degree meshes
@@ -161,7 +161,7 @@ public:
             std::shared_ptr<const mesh::Mesh> mesh);
 
   /// Create a VTX writer for list of functions
-  /// @param[in] comm The MPI communicator
+  /// @param[in] comm The MPI communicator to open the file on
   /// @param[in] filename Name of output file
   /// @param[in] u List of functions. The functions must (1) share the
   /// same mesh and (2) be (discontinuous) Lagrange functions. The
