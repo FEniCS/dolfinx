@@ -177,3 +177,4 @@ class DirichletBC:
         else:
             # super().__init__(_value, dofs)
             self._cpp_object = dirichletbc_obj(dtype)(_value, dofs)
+

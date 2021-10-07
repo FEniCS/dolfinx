@@ -30,7 +30,10 @@ class Constant(ufl.Constant):
         """
         c_np = np.asarray(c)
         super().__init__(domain, c_np.shape)
-        self._cpp_object = cpp.fem.Constant(c_np)
+        if np.iscomplexobj(c) is True:
+            self._cpp_object = cpp.fem.Constant_complex64(c_np)
+        else:
+            self._cpp_object = cpp.fem.Constant_float64(c_np)
 
     @property
     def value(self):

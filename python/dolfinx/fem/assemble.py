@@ -402,7 +402,7 @@ def _(A: PETSc.Mat,
         for j, a_sub in enumerate(a_row):
             if a_sub is not None:
                 Asub = A.getLocalSubMatrix(is_rows[i], is_cols[j])
-                cpp.fem.assemble_matrix_petsc(Asub, a_sub, c[0][i][j], c[1][i][j], bcs, True)
+                cpp.fem.assemble_matrix_petsc(Asub, a_sub, c[0][i][j], c[1][i][j], _cpp_dirichletbc(bcs), True)
                 A.restoreLocalSubMatrix(is_rows[i], is_cols[j], Asub)
 
     # Flush to enable switch from add to set in the matrix
@@ -414,7 +414,7 @@ def _(A: PETSc.Mat,
             if a_sub is not None:
                 Asub = A.getLocalSubMatrix(is_rows[i], is_cols[j])
                 if a_sub.function_spaces[0].id == a_sub.function_spaces[1].id:
-                    cpp.fem.insert_diagonal(Asub, a_sub.function_spaces[0], bcs, diagonal)
+                    cpp.fem.insert_diagonal(Asub, a_sub.function_spaces[0], _cpp_dirichletbc(bcs), diagonal)
                 A.restoreLocalSubMatrix(is_rows[i], is_cols[j], Asub)
 
     return A
@@ -465,7 +465,7 @@ def apply_lifting_nest(b: PETSc.Vec,
     _a = _create_cpp_form(a)
     c = (coeffs[0] if coeffs[0] is not None else pack_constants(_a),
          coeffs[1] if coeffs[1] is not None else pack_coefficients(_a))
-    bcs1 = cpp.fem.bcs_cols(_a, bcs)
+    bcs1 = cpp.fem.bcs_cols(_a, _cpp_dirichletbc(bcs))
     for b_sub, a_sub, constants, coeffs, bc1 in zip(b.getNestSubVecs(), _a, c[0], c[1], bcs1):
         apply_lifting(b_sub, a_sub, bc1, x0, scale, (constants, coeffs))
     return b
