@@ -142,7 +142,7 @@ set_package_properties(Boost PROPERTIES TYPE REQUIRED
 # Note: Basix may be installed as a standalone C++ library, or in the
 # Basix Python module tree
 execute_process(
-  COMMAND ${Python3_EXECUTABLE} -c "import basix, os, sys; sys.stdout.write(os.path.dirname(basix.__file__))"
+  COMMAND ${Python3_EXECUTABLE} -c "import basix, sys, os; sys.stdout.write(basix.__path__ + os.path.sep)"
   OUTPUT_VARIABLE BASIX_PY_DIR
   RESULT_VARIABLE BASIX_PY_COMMAND_RESULT
   ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
@@ -151,7 +151,11 @@ if (BASIX_PY_DIR)
   set(xtl_ROOT "${BASIX_PY_DIR};${xtl_ROOT}")
   set(xsimd "${BASIX_PY_DIR};${xsimd_ROOT}")
   set(xtensor_ROOT "${BASIX_PY_DIR};${xtensor_ROOT}")
-  set(CMAKE_INSTALL_RPATH ${BASIX_PY_DIR}/../fenics_basix.libs)
+
+  # Basix installed from manylinux wheel
+  if (IS_DIRECTORY ${BASIX_PY_DIR}/../fenics_basix.libs) 
+    set(CMAKE_INSTALL_RPATH ${BASIX_PY_DIR}/../fenics_basix.libs)
+  endif()
 endif()
 find_package(Basix REQUIRED CONFIG HINTS ${BASIX_PY_DIR})
 set_package_properties(basix PROPERTIES TYPE REQUIRED
