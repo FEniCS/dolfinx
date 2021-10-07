@@ -10,7 +10,8 @@ import pathlib
 
 import numpy
 import petsc4py
-from dolfinx.jit import dolfinx_pc, mpi_jit_decorator
+import dolfinx
+from dolfinx.jit import mpi_jit_decorator
 from dolfinx.wrappers import get_include_path as pybind_inc
 from dolfinx_utils.test.fixtures import tempdir  # noqa: F401
 from mpi4py import MPI
@@ -18,8 +19,12 @@ from petsc4py import PETSc
 import cppimport
 
 
+@pytest.mark.skipif(not dolfinx.pkgconfig.exists("dolfinx"),
+                    reason="This test needs DOLFINx pkg-config.")
 def test_petsc_casters_cppimport(tempdir):  # noqa: F811
     """Test casters of PETSc objects in codes compiled with cppimport"""
+
+    dolfinx_pc = dolfinx.pkgconfig.parse("dolfinx")
 
     @mpi_jit_decorator
     def compile_module():

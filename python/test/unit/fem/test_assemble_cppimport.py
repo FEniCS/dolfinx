@@ -15,7 +15,6 @@ import pytest
 import scipy.sparse.linalg
 import ufl
 from dolfinx.generation import UnitSquareMesh
-from dolfinx.jit import dolfinx_pc
 from dolfinx.wrappers import get_include_path as pybind_inc
 from dolfinx_utils.test.fixtures import tempdir  # noqa: F401
 from dolfinx_utils.test.skips import skip_in_parallel
