@@ -7,6 +7,7 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import pathlib
+import pytest
 
 import numpy
 import petsc4py
