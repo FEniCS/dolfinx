@@ -60,7 +60,7 @@ xt::xtensor<std::int64_t, 2> extract_vtk_connectivity(const mesh::Mesh& mesh)
   const int tdim = mesh.topology().dim();
   const std::size_t num_cells = mesh.topology().index_map(tdim)->size_local();
 
-  // Write mesh connectivity
+  // Build mesh connectivity
   xt::xtensor<std::int64_t, 2> topology({num_cells, num_nodes});
   for (std::size_t c = 0; c < num_cells; ++c)
   {

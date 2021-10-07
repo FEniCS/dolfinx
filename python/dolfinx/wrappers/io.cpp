@@ -33,12 +33,6 @@ namespace dolfinx_wrappers
 
 void io(py::module& m)
 {
-  // dolfinx::io::mode enums
-  py::enum_<dolfinx::io::mode>(m, "mode")
-      .value("read", dolfinx::io::mode::read)
-      .value("write", dolfinx::io::mode::write)
-      .value("append", dolfinx::io::mode::append);
-
   // dolfinx::io::cell vtk cell type converter
   m.def("get_vtk_cell_type", &dolfinx::io::cells::get_vtk_cell_type);
 
