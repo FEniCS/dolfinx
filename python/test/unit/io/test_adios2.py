@@ -83,7 +83,7 @@ def test_fides_mesh(tempdir, dim, simplex):
 @pytest.mark.parametrize("dim", [2, 3])
 @pytest.mark.parametrize("simplex", [True, False])
 def test_mixed_fides_functions(tempdir, dim, simplex):
-    """Test saving CG-2 and CG-1 functions with Fides"""
+    """Test saving P2 and P1 functions with Fides"""
     mesh = generate_mesh(dim, simplex)
     V = VectorFunctionSpace(mesh, ("Lagrange", 2))
     v = Function(V)
@@ -123,7 +123,7 @@ def test_two_fides_functions(tempdir, dim, simplex):
 @pytest.mark.parametrize("dim", [2, 3])
 @pytest.mark.parametrize("simplex", [True, False])
 def test_fides_function_at_nodes(tempdir, dim, simplex):
-    """Test saving CG-1 functions with Fides (with changing geometry)"""
+    """Test saving P1 functions with Fides (with changing geometry)"""
     mesh = generate_mesh(dim, simplex)
     V = VectorFunctionSpace(mesh, ("Lagrange", 1))
     v = Function(V)
@@ -185,10 +185,8 @@ def test_vtx_mesh(tempdir, dim, simplex):
 def test_vtx_functions_fail(tempdir, dim, simplex):
     "Test saving high order Lagrange functions"
     mesh = generate_mesh(dim, simplex)
-    V = VectorFunctionSpace(mesh, ("CG", 2))
-    v = Function(V)
-    W = FunctionSpace(mesh, ("CG", 1))
-    w = Function(W)
+    v = Function(VectorFunctionSpace(mesh, ("Lagrange", 2)))
+    w = Function(FunctionSpace(mesh, ("Lagrange", 1)))
 
     filename = os.path.join(tempdir, "v.bp")
     with pytest.raises(RuntimeError):
@@ -201,11 +199,9 @@ def test_vtx_functions_fail(tempdir, dim, simplex):
 def test_vtx_different_meshes_function(tempdir, dim, simplex):
     "Test saving  first order Lagrange functions"
     mesh = generate_mesh(dim, simplex)
-    V = FunctionSpace(mesh, ("CG", 1))
-    v = Function(V)
+    v = Function(FunctionSpace(mesh, ("Lagrange", 1)))
     mesh2 = generate_mesh(dim, simplex)
-    W = FunctionSpace(mesh2, ("CG", 1))
-    w = Function(W)
+    w = Function(FunctionSpace(mesh2, ("Lagrange", 1)))
     filename = os.path.join(tempdir, "v.bp")
     with pytest.raises(RuntimeError):
         VTXWriter(mesh.mpi_comm(), filename, [v._cpp_object, w._cpp_object])
@@ -242,6 +238,7 @@ def test_vtx_functions(tempdir, dim, simplex):
         w.x.array[W.dofmap.cell_dofs(c)] = 1
     v.x.scatter_forward()
     w.x.scatter_forward()
+
     # Save twice and update geometry
     for t in [0.1, 1]:
         mesh.geometry.x[:, :2] += 0.1
