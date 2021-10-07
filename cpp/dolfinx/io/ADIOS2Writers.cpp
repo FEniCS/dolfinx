@@ -427,7 +427,7 @@ std::string create_vtk_schema(const std::vector<std::string>& point_data,
 }
 //-----------------------------------------------------------------------------
 
-/// Convert DOLFINx CellType to FIDES CellType
+/// Convert DOLFINx CellType to Fides CellType
 /// https://gitlab.kitware.com/vtk/vtk-m/-/blob/master/vtkm/CellShape.h#L30-53
 /// @param[in] type The DOLFInx cell
 /// @return The Fides cell string
@@ -457,7 +457,7 @@ std::string to_fides_cell(mesh::CellType type)
 }
 //-----------------------------------------------------------------------------
 
-/// Write mesh geometry and connectivity (topology) for FIDES
+/// Write mesh geometry and connectivity (topology) for Fides
 /// @param[in] io The ADIOS2 IO
 /// @param[in] engine The ADIOS2 engine
 /// @param[in] mesh The mesh
@@ -489,13 +489,14 @@ void write_fides_mesh(adios2::IO& io, adios2::Engine& engine,
 }
 //-----------------------------------------------------------------------------
 
-/// Initialize mesh related attributes for the ADIOS2 file used in FIDES
+/// Initialize mesh related attributes for the ADIOS2 file used in Fides
 /// @param[in] io The ADIOS2 IO
 /// @param[in] mesh The mesh
 void initialize_mesh_attributes(adios2::IO& io, const mesh::Mesh& mesh)
 {
   // Check that mesh is first order mesh
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
+
   // FIXME: Add proper interface for num coordinate dofs
   const std::size_t num_dofs_g = x_dofmap.num_links(0);
   const std::size_t num_vertices_per_cell
