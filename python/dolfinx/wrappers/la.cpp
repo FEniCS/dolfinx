@@ -25,9 +25,9 @@
 
 namespace py = pybind11;
 
-namespace dolfinx_wrappers
+namespace
 {
-
+// Declare objects that have multiple scalar types
 template <typename T>
 void declare_objects(py::module& m, const std::string& type)
 {
@@ -45,6 +45,11 @@ void declare_objects(py::module& m, const std::string& type)
       .def("scatter_forward", &dolfinx::la::Vector<T>::scatter_fwd)
       .def("scatter_reverse", &dolfinx::la::Vector<T>::scatter_rev);
 }
+
+} // namespace
+
+namespace dolfinx_wrappers
+{
 
 void la(py::module& m)
 {

@@ -51,8 +51,12 @@ namespace py = pybind11;
 
 namespace dolfinx_wrappers
 {
+
+namespace
+{
+// Declare assembler function that have multiple scalar types
 template <typename T>
-void declare_assemblers(py::module& m)
+void declare_functions(py::module& m)
 {
 
   // Coefficient/constant packing
@@ -199,8 +203,9 @@ void declare_assemblers(py::module& m)
   m.def("bcs_cols", &dolfinx::fem::bcs_cols<T>);
 }
 
+// Declare DirichletBC objects for type T
 template <typename T>
-void declare_dirichletbc(py::module& m, const std::string& type)
+void declare_objects(py::module& m, const std::string& type)
 {
   // dolfinx::fem::DirichletBC
   std::string pyclass_name = std::string("DirichletBC_") + type;
@@ -244,146 +249,6 @@ void declare_dirichletbc(py::module& m, const std::string& type)
       .def_property_readonly("function_space",
                              &dolfinx::fem::DirichletBC<T>::function_space)
       .def_property_readonly("value", &dolfinx::fem::DirichletBC<T>::value);
-}
-
-template <typename T>
-void declare_form(py::module& m, const std::string& type)
-{
-  // // dolfinx::fem::Form
-  // std::string pyclass_name_form = std::string("Form") + type;
-  // py::class_<dolfinx::fem::Form<T>, std::shared_ptr<dolfinx::fem::Form<T>>>(
-  //     m, pyclass_name_form.c_str(), "Variational form object")
-  //     .def(
-  //         py::init(
-  //             [](const std::vector<std::shared_ptr<
-  //                    const dolfinx::fem::FunctionSpace>>& spaces,
-  //                const std::map<
-  //                    dolfinx::fem::IntegralType,
-  //                    std::pair<std::vector<std::pair<int, py::object>>,
-  //                              const dolfinx::mesh::MeshTags<int>*>>&
-  //                              integrals,
-  //                const std::vector<std::shared_ptr<
-  //                    const dolfinx::fem::Function<T>>>& coefficients,
-  //                const std::vector<std::shared_ptr<
-  //                    const dolfinx::fem::Constant<T>>>& constants,
-  //                bool needs_permutation_data,
-  //                const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh)
-  //             {
-  //               using kern
-  //                   = std::function<void(T*, const T*, const T*, const
-  //                   double*,
-  //                                        const int*, const std::uint8_t*)>;
-  //               std::map<dolfinx::fem::IntegralType,
-  //                        std::pair<std::vector<std::pair<int, kern>>,
-  //                                  const dolfinx::mesh::MeshTags<int>*>>
-  //                   _integrals;
-
-  //               // Loop over kernel for each entity type
-  //               for (auto& kernel_type : integrals)
-  //               {
-  //                 // Set subdomain markers
-  //                 _integrals[kernel_type.first].second = nullptr;
-
-  //                 // Loop over each domain kernel
-  //                 for (auto& kernel : kernel_type.second.first)
-  //                 {
-  //                   auto tabulate_tensor_ptr
-  //                       = (void (*)(T*, const T*, const T*, const double*,
-  //                                   const int*, const std::uint8_t*))
-  //                             kernel.second.cast<std::uintptr_t>();
-  //                   _integrals[kernel_type.first].first.push_back(
-  //                       {kernel.first, tabulate_tensor_ptr});
-  //                 }
-  //               }
-  //               return dolfinx::fem::Form<T>(spaces, _integrals,
-  //               coefficients,
-  //                                            constants,
-  //                                            needs_permutation_data, mesh);
-  //             }),
-  //         py::arg("spaces"), py::arg("integrals"), py::arg("coefficients"),
-  //         py::arg("constants"), py::arg("need_permutation_data"),
-  //         py::arg("mesh") = py::none())
-  //     .def_property_readonly("coefficients",
-  //                            &dolfinx::fem::Form<T>::coefficients)
-  //     .def_property_readonly("rank", &dolfinx::fem::Form<T>::rank)
-  //     .def_property_readonly("mesh", &dolfinx::fem::Form<T>::mesh)
-  //     .def_property_readonly("function_spaces",
-  //                            &dolfinx::fem::Form<T>::function_spaces)
-  //     .def("integral_ids", &dolfinx::fem::Form<T>::integral_ids)
-  //     .def_property_readonly("needs_facet_permutations",
-  //                            &dolfinx::fem::Form<T>::needs_facet_permutations)
-  //     .def(
-  //         "domains",
-  //         [](const dolfinx::fem::Form<T>& self, dolfinx::fem::IntegralType
-  //         type,
-  //            int i) -> py::array_t<std::int32_t>
-  //         {
-  //           switch (type)
-  //           {
-  //           case dolfinx::fem::IntegralType::cell:
-  //           {
-  //             return py::array_t<std::int32_t>(self.cell_domains(i).size(),
-  //                                              self.cell_domains(i).data(),
-  //                                              py::cast(self));
-  //           }
-  //           case dolfinx::fem::IntegralType::exterior_facet:
-  //           {
-  //             const std::vector<std::pair<std::int32_t, int>>& _d
-  //                 = self.exterior_facet_domains(i);
-  //             std::array<py::ssize_t, 2> shape = {py::ssize_t(_d.size()), 2};
-  //             py::array_t<std::int32_t> domains(shape);
-  //             auto d = domains.mutable_unchecked<2>();
-  //             for (py::ssize_t i = 0; i < d.shape(0); ++i)
-  //             {
-  //               d(i, 0) = _d[i].first;
-  //               d(i, 1) = _d[i].second;
-  //             }
-  //             return domains;
-  //           }
-  //           case dolfinx::fem::IntegralType::interior_facet:
-  //           {
-  //             const std::vector<
-  //                 std::tuple<std::int32_t, int, std::int32_t, int>>& _d
-  //                 = self.interior_facet_domains(i);
-  //             std::array<py::ssize_t, 3> shape = {py::ssize_t(_d.size()), 2,
-  //             2}; py::array_t<std::int32_t> domains(shape); auto d =
-  //             domains.mutable_unchecked<3>(); for (py::ssize_t i = 0; i <
-  //             d.shape(0); ++i)
-  //             {
-  //               d(i, 0, 0) = std::get<0>(_d[i]);
-  //               d(i, 0, 1) = std::get<1>(_d[i]);
-  //               d(i, 1, 0) = std::get<2>(_d[i]);
-  //               d(i, 1, 1) = std::get<3>(_d[i]);
-  //             }
-  //             return domains;
-  //           }
-  //           default:
-  //             throw ::std::runtime_error("Integral type unsupported.");
-  //           }
-  //         });
-
-  // // Form
-  // std::string pymethod_create_form = std::string("create_form_") + type;
-  // m.def(
-  //     pymethod_create_form.c_str(),
-  //     [](const std::uintptr_t form,
-  //        const std::vector<std::shared_ptr<const
-  //        dolfinx::fem::FunctionSpace>>&
-  //            spaces,
-  //        const std::vector<std::shared_ptr<const dolfinx::fem::Function<T>>>&
-  //            coefficients,
-  //        const std::vector<std::shared_ptr<const dolfinx::fem::Constant<T>>>&
-  //            constants,
-  //        const std::map<dolfinx::fem::IntegralType,
-  //                       const dolfinx::mesh::MeshTags<int>*>& subdomains,
-  //        const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh)
-  //     {
-  //       const ufc_form* p = reinterpret_cast<const ufc_form*>(form);
-  //       return dolfinx::fem::create_form<T>(*p, spaces, coefficients,
-  //       constants,
-  //                                           subdomains, mesh);
-  //     },
-  //     "Create Form from a pointer to ufc_form.");
 
   // dolfinx::fem::Function
   std::string pyclass_name_function = std::string("Function_") + type;
@@ -573,6 +438,147 @@ void declare_form(py::module& m, const std::string& type)
                              py::return_value_policy::reference_internal)
       .def_property_readonly("x", &dolfinx::fem::Expression<T>::x,
                              py::return_value_policy::reference_internal);
+}
+} // namespace
+
+template <typename T>
+void declare_form(py::module& m, const std::string& type)
+{
+  // // dolfinx::fem::Form
+  // std::string pyclass_name_form = std::string("Form") + type;
+  // py::class_<dolfinx::fem::Form<T>, std::shared_ptr<dolfinx::fem::Form<T>>>(
+  //     m, pyclass_name_form.c_str(), "Variational form object")
+  //     .def(
+  //         py::init(
+  //             [](const std::vector<std::shared_ptr<
+  //                    const dolfinx::fem::FunctionSpace>>& spaces,
+  //                const std::map<
+  //                    dolfinx::fem::IntegralType,
+  //                    std::pair<std::vector<std::pair<int, py::object>>,
+  //                              const dolfinx::mesh::MeshTags<int>*>>&
+  //                              integrals,
+  //                const std::vector<std::shared_ptr<
+  //                    const dolfinx::fem::Function<T>>>& coefficients,
+  //                const std::vector<std::shared_ptr<
+  //                    const dolfinx::fem::Constant<T>>>& constants,
+  //                bool needs_permutation_data,
+  //                const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh)
+  //             {
+  //               using kern
+  //                   = std::function<void(T*, const T*, const T*, const
+  //                   double*,
+  //                                        const int*, const std::uint8_t*)>;
+  //               std::map<dolfinx::fem::IntegralType,
+  //                        std::pair<std::vector<std::pair<int, kern>>,
+  //                                  const dolfinx::mesh::MeshTags<int>*>>
+  //                   _integrals;
+
+  //               // Loop over kernel for each entity type
+  //               for (auto& kernel_type : integrals)
+  //               {
+  //                 // Set subdomain markers
+  //                 _integrals[kernel_type.first].second = nullptr;
+
+  //                 // Loop over each domain kernel
+  //                 for (auto& kernel : kernel_type.second.first)
+  //                 {
+  //                   auto tabulate_tensor_ptr
+  //                       = (void (*)(T*, const T*, const T*, const double*,
+  //                                   const int*, const std::uint8_t*))
+  //                             kernel.second.cast<std::uintptr_t>();
+  //                   _integrals[kernel_type.first].first.push_back(
+  //                       {kernel.first, tabulate_tensor_ptr});
+  //                 }
+  //               }
+  //               return dolfinx::fem::Form<T>(spaces, _integrals,
+  //               coefficients,
+  //                                            constants,
+  //                                            needs_permutation_data, mesh);
+  //             }),
+  //         py::arg("spaces"), py::arg("integrals"), py::arg("coefficients"),
+  //         py::arg("constants"), py::arg("need_permutation_data"),
+  //         py::arg("mesh") = py::none())
+  //     .def_property_readonly("coefficients",
+  //                            &dolfinx::fem::Form<T>::coefficients)
+  //     .def_property_readonly("rank", &dolfinx::fem::Form<T>::rank)
+  //     .def_property_readonly("mesh", &dolfinx::fem::Form<T>::mesh)
+  //     .def_property_readonly("function_spaces",
+  //                            &dolfinx::fem::Form<T>::function_spaces)
+  //     .def("integral_ids", &dolfinx::fem::Form<T>::integral_ids)
+  //     .def_property_readonly("needs_facet_permutations",
+  //                            &dolfinx::fem::Form<T>::needs_facet_permutations)
+  //     .def(
+  //         "domains",
+  //         [](const dolfinx::fem::Form<T>& self, dolfinx::fem::IntegralType
+  //         type,
+  //            int i) -> py::array_t<std::int32_t>
+  //         {
+  //           switch (type)
+  //           {
+  //           case dolfinx::fem::IntegralType::cell:
+  //           {
+  //             return py::array_t<std::int32_t>(self.cell_domains(i).size(),
+  //                                              self.cell_domains(i).data(),
+  //                                              py::cast(self));
+  //           }
+  //           case dolfinx::fem::IntegralType::exterior_facet:
+  //           {
+  //             const std::vector<std::pair<std::int32_t, int>>& _d
+  //                 = self.exterior_facet_domains(i);
+  //             std::array<py::ssize_t, 2> shape = {py::ssize_t(_d.size()), 2};
+  //             py::array_t<std::int32_t> domains(shape);
+  //             auto d = domains.mutable_unchecked<2>();
+  //             for (py::ssize_t i = 0; i < d.shape(0); ++i)
+  //             {
+  //               d(i, 0) = _d[i].first;
+  //               d(i, 1) = _d[i].second;
+  //             }
+  //             return domains;
+  //           }
+  //           case dolfinx::fem::IntegralType::interior_facet:
+  //           {
+  //             const std::vector<
+  //                 std::tuple<std::int32_t, int, std::int32_t, int>>& _d
+  //                 = self.interior_facet_domains(i);
+  //             std::array<py::ssize_t, 3> shape = {py::ssize_t(_d.size()), 2,
+  //             2}; py::array_t<std::int32_t> domains(shape); auto d =
+  //             domains.mutable_unchecked<3>(); for (py::ssize_t i = 0; i <
+  //             d.shape(0); ++i)
+  //             {
+  //               d(i, 0, 0) = std::get<0>(_d[i]);
+  //               d(i, 0, 1) = std::get<1>(_d[i]);
+  //               d(i, 1, 0) = std::get<2>(_d[i]);
+  //               d(i, 1, 1) = std::get<3>(_d[i]);
+  //             }
+  //             return domains;
+  //           }
+  //           default:
+  //             throw ::std::runtime_error("Integral type unsupported.");
+  //           }
+  //         });
+
+  // // Form
+  // std::string pymethod_create_form = std::string("create_form_") + type;
+  // m.def(
+  //     pymethod_create_form.c_str(),
+  //     [](const std::uintptr_t form,
+  //        const std::vector<std::shared_ptr<const
+  //        dolfinx::fem::FunctionSpace>>&
+  //            spaces,
+  //        const std::vector<std::shared_ptr<const dolfinx::fem::Function<T>>>&
+  //            coefficients,
+  //        const std::vector<std::shared_ptr<const dolfinx::fem::Constant<T>>>&
+  //            constants,
+  //        const std::map<dolfinx::fem::IntegralType,
+  //                       const dolfinx::mesh::MeshTags<int>*>& subdomains,
+  //        const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh)
+  //     {
+  //       const ufc_form* p = reinterpret_cast<const ufc_form*>(form);
+  //       return dolfinx::fem::create_form<T>(*p, spaces, coefficients,
+  //       constants,
+  //                                           subdomains, mesh);
+  //     },
+  //     "Create Form from a pointer to ufc_form.");
 }
 
 void fem(py::module& m)
@@ -796,11 +802,10 @@ void fem(py::module& m)
                      &dolfinx::fem::CoordinateElement::non_affine_max_its);
 
   // dolfinx::fem::assemble
-  declare_assemblers<double>(m);
-  declare_assemblers<std::complex<double>>(m);
-
-  declare_dirichletbc<double>(m, "float64");
-  declare_dirichletbc<std::complex<double>>(m, "complex64");
+  declare_functions<double>(m);
+  declare_functions<std::complex<double>>(m);
+  declare_objects<double>(m, "float64");
+  declare_objects<std::complex<double>>(m, "complex64");
 
   // PETSc Matrices
   m.def(
@@ -893,9 +898,6 @@ void fem(py::module& m)
       .value("exterior_facet", dolfinx::fem::IntegralType::exterior_facet)
       .value("interior_facet", dolfinx::fem::IntegralType::interior_facet)
       .value("vertex", dolfinx::fem::IntegralType::vertex);
-
-  declare_form<double>(m, "float64");
-  declare_form<std::complex<double>>(m, "complex64");
 
   // dolfinx::fem::Form
   using T = PetscScalar;
