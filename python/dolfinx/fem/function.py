@@ -49,7 +49,7 @@ class Expression:
     def __init__(self,
                  ufl_expression: ufl.core.expr.Expr,
                  x: np.ndarray,
-                 form_compiler_parameters: dict = {}, jit_parameters: dict = {}):
+                 form_compiler_parameters: dict = {}, jit_parameters: dict = {}, dtype=PETSc.ScalarType):
         """Create DOLFINx Expression.
 
         Represents a mathematical expression evaluated at a pre-defined set of
@@ -104,7 +104,17 @@ class Expression:
         ufl_constants = ufl.algorithms.analysis.extract_constants(ufl_expression)
         constants = [ufl_constant._cpp_object for ufl_constant in ufl_constants]
 
-        self._cpp_object = cpp.fem.Expression(coefficients, constants, mesh, x, fn, value_size)
+
+        # Getcpp Expression type
+        def expressiontype(dtype):
+            if dtype is np.float64:
+                return cpp.fem.Expression_float64
+            elif dtype is np.complex128:
+                return cpp.fem.Expression_complex128
+            else:
+                raise NotImplementedError(f"Type {dtype} not supported.")
+
+        self._cpp_object = expressiontype(dtype)(coefficients, constants, mesh, x, fn, value_size)
 
     def eval(self, cells: np.ndarray, u: typing.Optional[np.ndarray] = None) -> np.ndarray:
         """Evaluate Expression in cells.

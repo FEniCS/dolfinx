@@ -68,8 +68,8 @@ def test_assemble_derivatives():
     v = ufl.TestFunction(Q)
     du = ufl.TrialFunction(Q)
     b = dolfinx.Function(Q)
-    c1 = fem.Constant(mesh, [[1.0, 0.0], [3.0, 4.0]])
-    c2 = fem.Constant(mesh, 2.0)
+    c1 = fem.Constant(mesh,  numpy.array([[1.0, 0.0], [3.0, 4.0]], PETSc.ScalarType))
+    c2 = fem.Constant(mesh, PETSc.ScalarType(2.0))
 
     with b.vector.localForm() as b_local:
         b_local.set(2.0)
@@ -681,7 +681,7 @@ def test_basic_assembly_constant(mode):
     V = fem.FunctionSpace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 
-    c = fem.Constant(mesh, [[1.0, 2.0], [5.0, 3.0]])
+    c = fem.Constant(mesh, numpy.array([[1.0, 2.0], [5.0, 3.0]], PETSc.ScalarType))
 
     a = inner(c[1, 0] * u, v) * dx + inner(c[1, 0] * u, v) * ds
     L = inner(c[1, 0], v) * dx + inner(c[1, 0], v) * ds
@@ -746,7 +746,7 @@ def test_pack_coefficients():
     # Non-blocked
     u = fem.Function(V)
     v = ufl.TestFunction(V)
-    c = dolfinx.Constant(mesh, 12.0)
+    c = dolfinx.Constant(mesh, PETSc.ScalarType(12.0))
     F = ufl.inner(c, v) * dx - c * ufl.sqrt(u * u) * ufl.inner(u, v) * dx
     with u.vector.localForm() as x_local:
         x_local.set(10.0)

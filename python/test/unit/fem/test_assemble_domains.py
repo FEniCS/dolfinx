@@ -178,7 +178,7 @@ def test_assembly_ds_domains(mode):
 def test_assembly_dS_domains(mode):
     N = 10
     mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, N, N, ghost_mode=mode)
-    one = dolfinx.Constant(mesh, 1)
+    one = dolfinx.Constant(mesh, PETSc.ScalarType(1))
     val = dolfinx.fem.assemble_scalar(one * ufl.dS)
     val = mesh.mpi_comm().allreduce(val, op=MPI.SUM)
     assert val == pytest.approx(2 * (N - 1) + N * numpy.sqrt(2), 1.0e-7)
