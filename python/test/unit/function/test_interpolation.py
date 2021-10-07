@@ -320,8 +320,8 @@ def test_interpolation_non_affine():
                        [0.5, 2, 1.5], [0.5, 1, 3], [0.5, 1, 1.5]], dtype=np.float64)
 
     cells = np.array([range(len(points))], dtype=np.int32)
-    domain = ufl.Mesh(ufl.VectorElement("Lagrange", ufl.Cell("hexahedron"), 2))
-
+    cell_type = dolfinx.cpp.mesh.CellType.hexahedron
+    domain = ufl.Mesh(ufl.VectorElement("Lagrange", dolfinx.cpp.mesh.to_string(cell_type), 2))
     mesh = dolfinx.mesh.create_mesh(MPI.COMM_WORLD, cells, points, domain)
 
     W = dolfinx.FunctionSpace(mesh, ("NCE", 1))
