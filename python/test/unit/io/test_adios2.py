@@ -84,6 +84,47 @@ def test_fides_mesh(tempdir, dim, simplex):
 @pytest.mark.skipif(not has_adios2, reason="Requires ADIOS2.")
 @pytest.mark.parametrize("dim", [2, 3])
 @pytest.mark.parametrize("simplex", [True, False])
+def test_mixed_fides_functions(tempdir, dim, simplex):
+    """Test saving CG-2 and CG-1 functions with Fides"""
+    mesh = generate_mesh(dim, simplex)
+    V = VectorFunctionSpace(mesh, ("Lagrange", 2))
+    v = Function(V)
+    Q = FunctionSpace(mesh, ("Lagrange", 1))
+    q = Function(Q)
+
+    filename = os.path.join(tempdir, "v.bp")
+    with pytest.raises(RuntimeError):
+        f = FidesWriter(mesh.mpi_comm(), filename, [v._cpp_object, q._cpp_object])
+
+
+@pytest.mark.skipif(not has_adios2, reason="Requires ADIOS2.")
+@pytest.mark.parametrize("dim", [2, 3])
+@pytest.mark.parametrize("simplex", [True, False])
+def test_two_fides_functions(tempdir, dim, simplex):
+    """Test saving two functions with Fides"""
+    mesh = generate_mesh(dim, simplex)
+    V = VectorFunctionSpace(mesh, ("Lagrange", 1))
+    v = Function(V)
+    Q = FunctionSpace(mesh, ("Lagrange", 1))
+    q = Function(Q)
+
+    filename = os.path.join(tempdir, "v.bp")
+    f = FidesWriter(mesh.mpi_comm(), filename, [v._cpp_object, q._cpp_object])
+    f.write(0)
+
+    def vel(x):
+        values = np.zeros((dim, x.shape[1]))
+        values[0] = x[1]
+        values[1] = x[0]
+        return values
+    v.interpolate(vel)
+    q.interpolate(lambda x: x[0])
+    f.write(1)
+
+
+@pytest.mark.skipif(not has_adios2, reason="Requires ADIOS2.")
+@pytest.mark.parametrize("dim", [2, 3])
+@pytest.mark.parametrize("simplex", [True, False])
 def test_fides_function_at_nodes(tempdir, dim, simplex):
     """Test saving CG-1 functions with Fides (with changing geometry)"""
     mesh = generate_mesh(dim, simplex)

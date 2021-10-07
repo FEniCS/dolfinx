@@ -662,7 +662,39 @@ FidesWriter::FidesWriter(MPI_Comm comm, const std::string& filename,
 
   assert(mesh);
 
-  // TODO: Check that all functions are CG-1
+  // Check that all functions are first order Lagrange
+  const std::size_t num_vertices_per_cell
+      = mesh::cell_num_entities(mesh->topology().cell_type(), 0);
+  for (auto& v : _u)
+  {
+    std::visit(overload{[&](const std::shared_ptr<const Fdr>& u)
+                        {
+                          auto element = u->function_space()->element();
+                          std::string family = element->family();
+                          int num_dofs = element->space_dimension()
+                                         / element->block_size();
+                          if ((family != "Lagrange" and family != "Q")
+                              or (num_dofs != num_vertices_per_cell))
+                          {
+                            throw std::runtime_error(
+                                "Only first order Lagrange spaces supported");
+                          }
+                        },
+                        [&](const std::shared_ptr<const Fdc>& u)
+                        {
+                          auto element = u->function_space()->element();
+                          std::string family = element->family();
+                          int num_dofs = element->space_dimension()
+                                         / element->block_size();
+                          if ((family != "Lagrange" and family != "Q")
+                              or (num_dofs != num_vertices_per_cell))
+                          {
+                            throw std::runtime_error(
+                                "Only first order Lagrange spaces supported");
+                          }
+                        }},
+               v);
+  }
 
   initialize_mesh_attributes(*_io, *mesh);
   initialize_function_attributes(*_io, u);
