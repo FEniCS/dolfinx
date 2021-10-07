@@ -31,7 +31,7 @@ class Constant(ufl.Constant):
         c_np = np.asarray(c)
         super().__init__(domain, c_np.shape)
         if np.iscomplexobj(c) is True:
-            self._cpp_object = cpp.fem.Constant_complex64(c_np)
+            self._cpp_object = cpp.fem.Constant_complex128(c_np)
         else:
             self._cpp_object = cpp.fem.Constant_float64(c_np)
 
@@ -187,28 +187,24 @@ class Function(ufl.Coefficient):
 
     def __init__(self,
                  V: "FunctionSpace",
-                 x: typing.Optional[typing.Union[cpp.la.Vector_float64, cpp.la.Vector_complex64]] = None,
+                 x: typing.Optional[typing.Union[cpp.la.Vector_float64, cpp.la.Vector_complex128]] = None,
                  name: typing.Optional[str] = None,
                  dtype=PETSc.ScalarType):
         """Initialize finite element Function."""
 
         # Create cpp Function
         def functiontype(dtype):
-            if dtype == np.float64:
+            if dtype is np.float64:
                 return cpp.fem.Function_float64
-            elif dtype == np.complex64:
-                return cpp.fem.Function_complex64
+            elif dtype is np.complex128:
+                return cpp.fem.Function_complex128
             else:
-                raise NotImplementedError
+                raise NotImplementedError(f"Type {dtype} not supported.")
 
         if x is not None:
             self._cpp_object = functiontype(dtype)(V._cpp_object, x)
         else:
             self._cpp_object = functiontype(dtype)(V._cpp_object)
-        # if x is not None:
-        #     self._cpp_object=cpp.fem.Function(V._cpp_object, x)
-        # else:
-        #     self._cpp_object=cpp.fem.Function(V._cpp_object)
 
         # Initialize the ufl.FunctionSpace
         super().__init__(V.ufl_function_space(), count=self._cpp_object.id)

@@ -805,7 +805,7 @@ void fem(py::module& m)
   declare_functions<double>(m);
   declare_functions<std::complex<double>>(m);
   declare_objects<double>(m, "float64");
-  declare_objects<std::complex<double>>(m, "complex64");
+  declare_objects<std::complex<double>>(m, "complex128");
 
   // PETSc Matrices
   m.def(

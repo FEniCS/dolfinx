@@ -126,7 +126,7 @@ void la(py::module& m)
 
   // Declare objects that are templated over type
   declare_objects<double>(m, "float64");
-  declare_objects<std::complex<double>>(m, "complex64");
+  declare_objects<std::complex<double>>(m, "complex128");
 
   m.def("create_vector",
         py::overload_cast<const dolfinx::common::IndexMap&, int>(

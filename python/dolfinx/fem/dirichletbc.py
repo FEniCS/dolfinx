@@ -159,10 +159,12 @@ class DirichletBC:
             raise NotImplementedError
 
         def dirichletbc_obj(dtype):
-            if dtype == np.float64:
+            if dtype is np.float64:
                 return cpp.fem.DirichletBC_float64
+            elif dtype is np.complex128:
+                return cpp.fem.DirichletBC_complex128
             else:
-                raise NotImplementedError
+                raise NotImplementedError(f"Type {dtype} not supported.")
 
         if V is not None:
             # Extract cpp function space
@@ -170,8 +172,6 @@ class DirichletBC:
                 _V = V._cpp_object
             except AttributeError:
                 _V = V
-            # super().__init__(_value, dofs, _V)
             self._cpp_object = dirichletbc_obj(dtype)(_value, dofs, _V)
         else:
-            # super().__init__(_value, dofs)
             self._cpp_object = dirichletbc_obj(dtype)(_value, dofs)
