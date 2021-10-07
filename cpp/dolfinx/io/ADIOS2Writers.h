@@ -154,8 +154,8 @@ public:
   /// @param[in] filename Name of output file
   /// @param[in] mesh The mesh to write
   /// @note This format support arbitrary degree meshes
-  /// @note The mesh geometry can be updated between write steps.
-  /// @note The mesh topology cannot be updated between write steps.
+  /// @note The mesh geometry can be updated between write steps but the
+  /// topology should not be changedbetween write steps
   VTXWriter(MPI_Comm comm, const std::string& filename,
             std::shared_ptr<const mesh::Mesh> mesh);
 

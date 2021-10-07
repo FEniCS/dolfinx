@@ -20,9 +20,7 @@ from mpi4py import MPI
 assert (tempdir)
 
 
-@pytest.mark.skipif(
-    MPI.COMM_WORLD.size > 1,
-    reason="This test should only be run in serial.")
+@pytest.mark.skipif(MPI.COMM_WORLD.size > 1, reason="This test should only be run in serial.")
 @pytest.mark.skipif(not has_adios2, reason="Requires ADIOS2.")
 def test_second_order_fides(tempdir):
     """Check that fides throws error on second order mesh"""
@@ -91,7 +89,6 @@ def test_mixed_fides_functions(tempdir, dim, simplex):
     v = Function(V)
     Q = FunctionSpace(mesh, ("Lagrange", 1))
     q = Function(Q)
-
     filename = os.path.join(tempdir, "v.bp")
     with pytest.raises(RuntimeError):
         FidesWriter(mesh.mpi_comm(), filename, [v._cpp_object, q._cpp_object])
@@ -209,7 +206,6 @@ def test_vtx_different_meshes_function(tempdir, dim, simplex):
     mesh2 = generate_mesh(dim, simplex)
     W = FunctionSpace(mesh2, ("CG", 1))
     w = Function(W)
-
     filename = os.path.join(tempdir, "v.bp")
     with pytest.raises(RuntimeError):
         VTXWriter(mesh.mpi_comm(), filename, [v._cpp_object, w._cpp_object])
