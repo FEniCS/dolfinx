@@ -91,7 +91,6 @@ def test_rank0():
         values = np.empty((2, x.shape[1]))
         values[0] = 2.0 * x[0]
         values[1] = 4.0 * x[1]
-
         return values
 
     b2 = dolfinx.Function(vP1)

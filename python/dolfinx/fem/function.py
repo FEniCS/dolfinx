@@ -49,7 +49,9 @@ class Expression:
     def __init__(self,
                  ufl_expression: ufl.core.expr.Expr,
                  x: np.ndarray,
-                 form_compiler_parameters: dict = {}, jit_parameters: dict = {}, dtype=PETSc.ScalarType):
+                 form_compiler_parameters: dict = {},
+                 jit_parameters: dict = {},
+                 dtype=PETSc.ScalarType):
         """Create DOLFINx Expression.
 
         Represents a mathematical expression evaluated at a pre-defined set of
