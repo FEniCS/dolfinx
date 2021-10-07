@@ -269,6 +269,12 @@ const xt::xtensor<double, 2>& FiniteElement::interpolation_points() const
 xt::xtensor<double, 2>
 FiniteElement::create_interpolation_operator(const FiniteElement& from) const
 {
+  if (_element->mapping_type() != from._element->mapping_type())
+  {
+    throw std::runtime_error(
+        "Interpolation for elements with different maps is not yet supported.");
+  }
+
   if (_bs == 1 or from._bs == 1)
   {
     // If one of the elements have bs=1, Basix can figure out the size of the
