@@ -110,7 +110,6 @@ public:
   /// @param[in] mesh The mesh. The mesh must a degree 1 mesh.
   /// @note The geometry of the mesh can change between writes.
   /// @note The topology of the mesh cannot change between writes
-  /// @todo Can data be flushed? What happens if program is interrupted?
   FidesWriter(MPI_Comm comm, const std::string& filename,
               std::shared_ptr<const mesh::Mesh> mesh);
 
@@ -155,8 +154,8 @@ public:
   /// @param[in] filename Name of output file
   /// @param[in] mesh The mesh to write
   /// @note This format support arbitrary degree meshes
-  /// @todo What happens if the mesh changes? What can and can't change?
-  /// @todo Can data be flushed? What happens if program is interrupted?
+  /// @note The mesh geometry can be updated between write steps.
+  /// @note The mesh topology cannot be updated between write steps.
   VTXWriter(MPI_Comm comm, const std::string& filename,
             std::shared_ptr<const mesh::Mesh> mesh);
 
