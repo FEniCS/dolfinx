@@ -9,6 +9,7 @@ import pathlib
 
 import cppimport
 import dolfinx
+import dolfinx.pkgconfig
 import numpy
 import petsc4py
 import pytest

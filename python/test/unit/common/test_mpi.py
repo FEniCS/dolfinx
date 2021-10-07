@@ -10,10 +10,11 @@ import pytest
 import pathlib
 
 import dolfinx
-import mpi4py
+import dolfinx.pkgconfig
 from dolfinx import wrappers
 from dolfinx.jit import mpi_jit_decorator
 from dolfinx_utils.test.fixtures import tempdir  # noqa: F401
+import mpi4py
 from mpi4py import MPI
 import cppimport
 

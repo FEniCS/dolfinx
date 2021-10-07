@@ -15,6 +15,7 @@ import time
 
 import cffi
 import dolfinx
+import dolfinx.pkgconfig
 import numba
 import numba.core.typing.cffi_utils as cffi_support
 import numpy as np
