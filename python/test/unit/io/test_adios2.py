@@ -185,16 +185,69 @@ def test_vtx_mesh(tempdir, dim, simplex):
 @pytest.mark.skipif(not has_adios2, reason="Requires ADIOS2.")
 @pytest.mark.parametrize("dim", [2, 3])
 @pytest.mark.parametrize("simplex", [True, False])
+def test_vtx_functions_fail(tempdir, dim, simplex):
+    "Test saving high order Lagrange functions"
+    mesh = generate_mesh(dim, simplex)
+    V = VectorFunctionSpace(mesh, ("CG", 2))
+    v = Function(V)
+    W = FunctionSpace(mesh, ("CG", 1))
+    w = Function(W)
+
+    filename = os.path.join(tempdir, "v.bp")
+    with pytest.raises(RuntimeError):
+        VTXWriter(mesh.mpi_comm(), filename, [v._cpp_object, w._cpp_object])
+
+
+@pytest.mark.skipif(not has_adios2, reason="Requires ADIOS2.")
+@pytest.mark.parametrize("dim", [2, 3])
+@pytest.mark.parametrize("simplex", [True, False])
+def test_vtx_different_meshes_function(tempdir, dim, simplex):
+    "Test saving  first order Lagrange functions"
+    mesh = generate_mesh(dim, simplex)
+    V = FunctionSpace(mesh, ("CG", 1))
+    v = Function(V)
+    mesh2 = generate_mesh(dim, simplex)
+    W = FunctionSpace(mesh2, ("CG", 1))
+    w = Function(W)
+
+    filename = os.path.join(tempdir, "v.bp")
+    with pytest.raises(RuntimeError):
+        VTXWriter(mesh.mpi_comm(), filename, [v._cpp_object, w._cpp_object])
+
+
+@pytest.mark.skipif(not has_adios2, reason="Requires ADIOS2.")
+@pytest.mark.parametrize("dim", [2, 3])
+@pytest.mark.parametrize("simplex", [True, False])
 def test_vtx_functions(tempdir, dim, simplex):
     "Test saving high order Lagrange functions"
     mesh = generate_mesh(dim, simplex)
-    V = FunctionSpace(mesh, ("DG", 2))
+    V = VectorFunctionSpace(mesh, ("DG", 2))
     v = Function(V)
+    bs = V.dofmap.index_map_bs
+
+    def vel(x):
+        values = np.zeros((dim, x.shape[1]))
+        values[0] = x[1]
+        values[1] = x[0]
+        return values
+    v.interpolate(vel)
+
+    W = FunctionSpace(mesh, ("DG", 2))
+    w = Function(W)
+    w.interpolate(lambda x: x[0] + x[1])
+
     filename = os.path.join(tempdir, "v.bp")
-    f = VTXWriter(mesh.mpi_comm(), filename, [v._cpp_object])
-    v.interpolate(lambda x: x[0] + x[1])
+    f = VTXWriter(mesh.mpi_comm(), filename, [v._cpp_object, w._cpp_object])
+
+    # Set two cells to 0
     for c in [0, 1]:
-        v.x.array[V.dofmap.cell_dofs(c)] = 0
+        dofs = np.asarray([V.dofmap.cell_dofs(c) * bs + b for b in range(bs)], dtype=np.int32)
+        print(dofs)
+        v.x.array[dofs] = 0
+        w.x.array[W.dofmap.cell_dofs(c)] = 1
+    v.x.scatter_forward()
+    w.x.scatter_forward()
+    # Save twice and update geometry
     for t in [0.1, 1]:
         mesh.geometry.x[:, :2] += 0.1
         f.write(t)

@@ -361,12 +361,12 @@ std::vector<std::string> extract_function_names(const ADIOS2Writer::U& u)
   return names;
 }
 //-----------------------------------------------------------------------------
-// bool is_cellwise_constant(const fem::FiniteElement& element)
-// {
-//   std::string family = element.family();
-//   int num_nodes_per_dim = element.space_dimension() / element.block_size();
-//   return num_nodes_per_dim == 1;
-// }
+bool is_cellwise_constant(const fem::FiniteElement& element)
+{
+  std::string family = element.family();
+  int num_nodes_per_dim = element.space_dimension() / element.block_size();
+  return num_nodes_per_dim == 1;
+}
 //-----------------------------------------------------------------------------
 
 // Create VTK xml scheme to be interpreted by the Paraview VTKWriter
@@ -738,36 +738,64 @@ VTXWriter::VTXWriter(MPI_Comm comm, const std::string& filename,
                      const ADIOS2Writer::U& u)
     : ADIOS2Writer(comm, filename, "VTX function writer", u)
 {
-  // TODO: check that all functions come from same element family
-  // and have same degree.
 
   // Extract element from first function
   assert(!u.empty());
+  const fem::FiniteElement* element = nullptr;
+  if (auto v = std::get_if<std::shared_ptr<const Fdr>>(&u[0]))
+    element = (*v)->function_space()->element().get();
+  else if (auto v = std::get_if<std::shared_ptr<const Fdc>>(&u[0]))
+    element = (*v)->function_space()->element().get();
+  else
+    throw std::runtime_error("Unsupported function.");
+  std::string first_family = element->family();
+  int first_num_dofs = element->space_dimension() / element->block_size();
+  std::array<std::string, 4> supported_families
+      = {"Lagrange", "Q", "Discontinuous Lagrange", "DQ"};
+  if (std::find(supported_families.begin(), supported_families.end(),
+                first_family)
+      == supported_families.end())
+  {
+    throw std::runtime_error(
+        "Only (discontinous) Lagrange functions are supported");
+  }
+  // Check if function is DG 0
+  if (is_cellwise_constant(*element))
+  {
+    throw std::runtime_error("Piecewise constants are not supported");
+  }
 
-  // std::shared_ptr<const fem::FiniteElement> element;
-  // for (auto& v : u)
-  // {
-  //   if (auto w = std::get_if<std::shared_ptr<const Fdr>>(&v))
-  //     element = (*w)->function_space()->element();
-  //   else if (auto w = std::get_if<std::shared_ptr<const Fdc>>(&v))
-  //     element = (*w)->function_space()->element();
-
-  //   assert(element);
-
-  // }
-  // // FIXME: Should not use string checks
-  // // Check if all functions is (discontinuous) Lagrange
-  // std::array<std::string, 3> elements
-  //     = {"Lagrange", "Discontinuous Lagrange", "DQ"};
-  // if (std::find(elements.begin(), elements.end(), element->family())
-  //     == elements.end())
-  // {
-  //   throw std::runtime_error(
-  //       "Cannon't save functions that are not (discontinuous) Lagrange");
-  //   if (is_cellwise_constant(*element))
-  //     throw std::runtime_error("Cell-wise constants not currently
-  //     supported");
-  // }
+  // Check that all functions come from same element family
+  // and have same degree.
+  for (auto& v : _u)
+  {
+    std::visit(
+        overload{[&](const std::shared_ptr<const Fdr>& u)
+                 {
+                   auto element = u->function_space()->element();
+                   std::string family = element->family();
+                   int num_dofs
+                       = element->space_dimension() / element->block_size();
+                   if ((family != first_family) or (num_dofs != first_num_dofs))
+                   {
+                     throw std::runtime_error(
+                         "Only first order Lagrange spaces supported");
+                   }
+                 },
+                 [&](const std::shared_ptr<const Fdc>& u)
+                 {
+                   auto element = u->function_space()->element();
+                   std::string family = element->family();
+                   int num_dofs
+                       = element->space_dimension() / element->block_size();
+                   if ((family != first_family) or (num_dofs != first_num_dofs))
+                   {
+                     throw std::runtime_error(
+                         "Only first order Lagrange spaces supported");
+                   }
+                 }},
+        v);
+  }
 
   // Define VTK scheme attribute for set of functions
   std::vector<std::string> names = extract_function_names(u);
