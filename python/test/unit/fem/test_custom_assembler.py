@@ -21,7 +21,6 @@ import numpy as np
 import petsc4py.lib
 import pytest
 import ufl
-from dolfinx.jit import dolfinx_pc
 from mpi4py import MPI
 from petsc4py import PETSc
 from petsc4py import get_config as PETSc_get_config
@@ -30,7 +29,6 @@ from ufl import dx, inner
 # Get details of PETSc install
 petsc_dir = PETSc_get_config()['PETSC_DIR']
 petsc_arch = petsc4py.lib.getPathArchPETSc()[1]
-
 
 # Get PETSc int and scalar types
 if np.dtype(PETSc.ScalarType).kind == 'c':
@@ -114,6 +112,11 @@ MatSetValues_abi = petsc_lib_cffi.MatSetValuesLocal
 # @pytest.fixture
 def get_matsetvalues_api():
     """Make MatSetValuesLocal from PETSc available via cffi in API mode"""
+    if dolfinx.pkgconfig.exists("dolfinx"):
+        dolfinx_pc = dolfinx.pkgconfig.parse("dolfinx")
+    else:
+        pytest.skip("Could not find DOLFINx pkgconfig file, skipping test...")
+
     worker = os.getenv('PYTEST_XDIST_WORKER', None)
     module_name = "_petsc_cffi_{}".format(worker)
     if MPI.COMM_WORLD.Get_rank() == 0:

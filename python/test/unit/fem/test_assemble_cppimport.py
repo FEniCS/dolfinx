@@ -9,7 +9,6 @@ import pathlib
 
 import cppimport
 import dolfinx
-import dolfinx.pkgconfig
 import numpy
 import petsc4py
 import pytest
@@ -26,9 +25,12 @@ from mpi4py import MPI
 @skip_in_parallel
 @pytest.mark.skipif(not dolfinx.pkgconfig.exists("eigen3"),
                     reason="This test needs eigen3 pkg-config.")
+@pytest.mark.skipif(not dolfinx.pkgconfig.exists("dolfinx"),
+                    reason="This test needs DOLFINx pkg-config.")
 def test_eigen_assembly(tempdir):  # noqa: F811
     """Compare assembly into scipy.CSR matrix with PETSc assembly"""
     def compile_eigen_csr_assembler_module():
+        dolfinx_pc = dolfinx.pkgconfig.parse("dolfinx")
         eigen_dir = dolfinx.pkgconfig.parse("eigen3")["include_dirs"]
         cpp_code_header = f"""
 <%
