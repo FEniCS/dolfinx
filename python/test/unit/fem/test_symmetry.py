@@ -5,17 +5,15 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Test that matrices are symmetric."""
 
-from mpi4py import MPI
-
-import pytest
 import dolfinx
-from dolfinx import UnitSquareMesh, UnitCubeMesh, FunctionSpace
-from dolfinx_utils.test.skips import skip_in_parallel
-from dolfinx.cpp.mesh import CellType
-
+import pytest
 import ufl
-from ufl import FiniteElement, MixedElement, VectorElement
-from ufl import grad, inner
+from dolfinx import FunctionSpace, UnitCubeMesh, UnitSquareMesh
+from dolfinx.cpp.mesh import CellType
+from dolfinx_utils.test.skips import skip_in_parallel
+from mpi4py import MPI
+from petsc4py import PETSc
+from ufl import FiniteElement, MixedElement, VectorElement, grad, inner
 
 
 def check_symmetry(A):
