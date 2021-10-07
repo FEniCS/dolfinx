@@ -34,7 +34,7 @@ parametrize_ghost_mode = pytest.mark.parametrize("mode", [
 ])
 def test_assembly_dx_domains(mode):
     mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 10, 10, ghost_mode=mode)
-    V = dolfinx.FunctionSpace(mesh, ("CG", 1))
+    V = dolfinx.FunctionSpace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 
     # Prepare a marking structures
@@ -94,7 +94,7 @@ def test_assembly_dx_domains(mode):
 @pytest.mark.parametrize("mode", [dolfinx.cpp.mesh.GhostMode.none, dolfinx.cpp.mesh.GhostMode.shared_facet])
 def test_assembly_ds_domains(mode):
     mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 10, 10, ghost_mode=mode)
-    V = dolfinx.FunctionSpace(mesh, ("CG", 1))
+    V = dolfinx.FunctionSpace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 
     def bottom(x):
@@ -187,7 +187,7 @@ def test_assembly_dS_domains(mode):
 @parametrize_ghost_mode
 def test_additivity(mode):
     mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
-    V = dolfinx.FunctionSpace(mesh, ("CG", 1))
+    V = dolfinx.FunctionSpace(mesh, ("Lagrange", 1))
 
     f1 = dolfinx.Function(V)
     f2 = dolfinx.Function(V)
