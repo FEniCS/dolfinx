@@ -752,9 +752,10 @@ VTXWriter::VTXWriter(MPI_Comm comm, const std::string& filename,
     element = (*v)->function_space()->element().get();
   else
     throw std::runtime_error("Unsupported function.");
-  std::string first_family = element->family();
-  int first_num_dofs = element->space_dimension() / element->block_size();
-  std::array<std::string, 4> supported_families
+
+  const std::string first_family = element->family();
+  const int first_num_dofs = element->space_dimension() / element->block_size();
+  const std::array supported_families
       = {"Lagrange", "Q", "Discontinuous Lagrange", "DQ"};
   if (std::find(supported_families.begin(), supported_families.end(),
                 first_family)
@@ -763,14 +764,13 @@ VTXWriter::VTXWriter(MPI_Comm comm, const std::string& filename,
     throw std::runtime_error(
         "Only (discontinous) Lagrange functions are supported");
   }
+
   // Check if function is DG 0
   if (is_cellwise_constant(*element))
-  {
     throw std::runtime_error("Piecewise constants are not supported");
-  }
 
-  // Check that all functions come from same element family
-  // and have same degree.
+  // Check that all functions come from same element family and have
+  // same degree
   for (auto& v : _u)
   {
     std::visit(
