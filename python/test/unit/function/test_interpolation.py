@@ -308,3 +308,31 @@ def test_interpolation_vector_elements(order1, order2):
 
     s = dolfinx.fem.assemble_scalar(ufl.inner(u - w, u - w) * ufl.dx)
     assert np.isclose(s, 0)
+
+
+def test_interpolation_non_affine():
+    points = np.array([[0, 0, 0], [1, 0, 0], [0, 2, 0], [1, 2, 0],
+                       [0, 0, 3], [1, 0, 3], [0, 2, 3], [1, 2, 3],
+                       [0.5, 0, 0], [0, 1, 0], [0, 0, 1.5], [1, 1, 0],
+                       [1, 0, 1.5], [0.5, 2, 0], [0, 2, 1.5], [1, 2, 1.5],
+                       [0.5, 0, 3], [0, 1, 3], [1, 1, 3], [0.5, 2, 3],
+                       [0.5, 1, 0], [0.5, 0, 1.5], [0, 1, 1.5], [1, 1, 1.5],
+                       [0.5, 2, 1.5], [0.5, 1, 3], [0.5, 1, 1.5]])
+    
+    cells = np.array([range(len(points))])
+    cell = ufl.Cell("hexahedron", geometric_dimension=3)
+
+    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell, 2))
+
+    mesh = dolfinx.mesh.create_mesh(MPI.COMM_WORLD, cells, points, domain)
+
+    W = dolfinx.FunctionSpace(mesh, ("NCE", 1))
+    V = dolfinx.FunctionSpace(mesh, ("NCE", 2))
+
+    w = dolfinx.Function(W)
+    v = dolfinx.Function(V)
+
+    w.interpolate(lambda x: x)
+    v.interpolate(w)
+    s = dolfinx.fem.assemble_scalar(ufl.inner(w-v, w-v)*ufl.dx)
+    assert np.isclose(s, 0)
