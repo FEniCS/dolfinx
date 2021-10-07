@@ -136,6 +136,8 @@ class DirichletBC:
             problem is the same of function space of boundary values function.
         V : optional
             Function space of a problem to which boundary conditions are applied.
+        dtype : optional
+            The function scalar type, e.g. ``numpy.float64``.
         """
 
         # Construct bc value
