@@ -663,7 +663,7 @@ FidesWriter::FidesWriter(MPI_Comm comm, const std::string& filename,
   assert(mesh);
 
   // Check that all functions are first order Lagrange
-  const std::size_t num_vertices_per_cell
+  const int num_vertices_per_cell
       = mesh::cell_num_entities(mesh->topology().cell_type(), 0);
   for (auto& v : _u)
   {
