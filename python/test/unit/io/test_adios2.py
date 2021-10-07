@@ -94,7 +94,7 @@ def test_mixed_fides_functions(tempdir, dim, simplex):
 
     filename = os.path.join(tempdir, "v.bp")
     with pytest.raises(RuntimeError):
-        f = FidesWriter(mesh.mpi_comm(), filename, [v._cpp_object, q._cpp_object])
+        FidesWriter(mesh.mpi_comm(), filename, [v._cpp_object, q._cpp_object])
 
 
 @pytest.mark.skipif(not has_adios2, reason="Requires ADIOS2.")
