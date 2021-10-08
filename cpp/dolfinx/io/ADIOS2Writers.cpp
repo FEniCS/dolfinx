@@ -189,7 +189,7 @@ void vtx_write_mesh(adios2::IO& io, adios2::Engine& engine,
   engine.Put<double>(local_geometry, mesh.geometry().x().data());
 
   // Put number of nodes. The mesh data is written with local indices,
-  // Therefore we need the ghost vertices.
+  // therefore we need the ghost vertices.
   adios2::Variable<std::uint32_t> vertices = define_variable<std::uint32_t>(
       io, "NumberOfNodes", {adios2::LocalValueDim});
   engine.Put<std::uint32_t>(vertices, num_vertices);
@@ -387,8 +387,8 @@ std::vector<Scalar> pack_function_data(const fem::Function<Scalar>& u)
 /// @param[in] engine The ADIOS2 engine object
 /// @param[in] u The function to write
 template <typename Scalar>
-void fides_write_function(adios2::IO& io, adios2::Engine& engine,
-                          const fem::Function<Scalar>& u)
+void fides_write_data(adios2::IO& io, adios2::Engine& engine,
+                      const fem::Function<Scalar>& u)
 {
   // FIXME: There is an implicit assumptions that u and the mesh have
   // the same ElementDoflayout
@@ -420,29 +420,27 @@ void fides_write_function(adios2::IO& io, adios2::Engine& engine,
         io, u_name, {}, {}, {num_vertices, num_components});
 
     // To reuse out_data, we use sync mode here
-    engine.Put<double>(local_output, data.data(), adios2::Mode::Sync);
+    engine.Put<double>(local_output, data.data());
   }
   else
   {
     // ---- Complex
-    std::vector<double> data_real(data.size());
+    std::vector<double> data_real(data.size()), data_imag(data.size());
 
-    const std::string u_name_r = u.name + "_real";
     adios2::Variable<double> local_output_r = define_variable<double>(
-        io, u_name_r, {}, {}, {num_vertices, num_components});
+        io, u.name + "_real", {}, {}, {num_vertices, num_components});
     std::transform(data.cbegin(), data.cend(), data_real.begin(),
                    [](auto& x) -> double { return std::real(x); });
-    // To reuse out_data, we use sync mode here
-    engine.Put<double>(local_output_r, data_real.data(), adios2::Mode::Sync);
+    engine.Put<double>(local_output_r, data_real.data());
 
-    const std::string u_name_c = u.name + "_imag";
     adios2::Variable<double> local_output_c = define_variable<double>(
-        io, u_name_c, {}, {}, {num_vertices, num_components});
-    std::transform(data.cbegin(), data.cend(), data_real.begin(),
+        io, u.name + "_imag", {}, {}, {num_vertices, num_components});
+    std::transform(data.cbegin(), data.cend(), data_imag.begin(),
                    [](auto& x) -> double { return std::imag(x); });
-    // To reuse out_data, we use sync mode here
-    engine.Put<double>(local_output_c, data_real.data(), adios2::Mode::Sync);
+    engine.Put<double>(local_output_c, data_imag.data());
   }
+
+  engine.PerformPuts();
 }
 //-----------------------------------------------------------------------------
 
@@ -702,13 +700,13 @@ void FidesWriter::write(double t)
   fides_write_mesh(*_io, *_engine, *_mesh);
   for (auto& v : _u)
   {
-    std::visit(
-        overload{[&](const std::shared_ptr<const Fdr>& u)
-                 { fides_write_function<Fdr::value_type>(*_io, *_engine, *u); },
-                 [&](const std::shared_ptr<const Fdc>& u) {
-                   fides_write_function<Fdc::value_type>(*_io, *_engine, *u);
-                 }},
-        v);
+    std::visit(overload{[&](const std::shared_ptr<const Fdr>& u) {
+                          fides_write_data<Fdr::value_type>(*_io, *_engine, *u);
+                        },
+                        [&](const std::shared_ptr<const Fdc>& u) {
+                          fides_write_data<Fdc::value_type>(*_io, *_engine, *u);
+                        }},
+               v);
   };
 
   _engine->EndStep();
