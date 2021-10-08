@@ -341,7 +341,7 @@ std::string to_fides_cell(mesh::CellType type)
 }
 //-----------------------------------------------------------------------------
 
-/// Pack Function data are vertices. The mesh and the function must both
+/// Pack Function data at vertices. The mesh and the function must both
 /// be 'P1'
 template <typename Scalar>
 std::vector<Scalar> pack_function_data(const fem::Function<Scalar>& u)
@@ -349,6 +349,7 @@ std::vector<Scalar> pack_function_data(const fem::Function<Scalar>& u)
   auto V = u.function_space();
   auto dofmap = V->dofmap();
   auto mesh = V->mesh();
+  assert(*(dofmap->element_dof_layout) == mesh->geometry().cmap().dof_layout());
 
   const int tdim = mesh->topology().dim();
   auto cell_map = mesh->topology().index_map(tdim);
