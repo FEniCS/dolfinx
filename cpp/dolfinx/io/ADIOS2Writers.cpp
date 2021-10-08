@@ -175,6 +175,120 @@ void vtx_write_data(adios2::IO& io, adios2::Engine& engine,
   }
 }
 //-----------------------------------------------------------------------------
+/// Given a Lagrangian function space, tabulate the dof coordinates for every
+/// cell and return them as a (num_dofs, 3) array where the ith row corresponds
+/// to the coordinates of the ith dof (local to process).
+/// @param[in] V The function space
+/// @param[out] coords The tabulated dof coordinates
+xt::xtensor<double, 2> tabulate_lagrange_dof_coordinates(
+    std::shared_ptr<const dolfinx::fem::FunctionSpace> V)
+{
+  // Geometric dimension
+  std::shared_ptr<const mesh::Mesh> mesh = V->mesh();
+  assert(mesh);
+  std::shared_ptr<const fem::FiniteElement> element = V->element();
+  assert(element);
+
+  // Check if element family is supported
+  const std::array supported_families
+      = {"Lagrange", "Q", "Discontinuous Lagrange", "DQ"};
+  if (std::find(supported_families.begin(), supported_families.end(),
+                element->family())
+      == supported_families.end())
+    throw std::runtime_error(
+        "Can only tabulate (discontinous) Lagrange spaces.");
+  const std::size_t gdim = mesh->geometry().dim();
+  const int tdim = mesh->topology().dim();
+
+  // Get dofmap local size
+  std::shared_ptr<const fem::DofMap> dofmap = V->dofmap();
+  assert(dofmap);
+  std::shared_ptr<const common::IndexMap> index_map = dofmap->index_map;
+  const int index_map_bs = dofmap->index_map_bs();
+  const int dofmap_bs = dofmap->bs();
+  assert(index_map);
+
+  const int element_block_size = element->block_size();
+  const std::size_t scalar_dofs
+      = element->space_dimension() / element_block_size;
+  const std::int32_t num_dofs
+      = index_map_bs * (index_map->size_local() + index_map->num_ghosts())
+        / dofmap_bs;
+
+  // Get the dof coordinates on the reference element
+  if (!element->interpolation_ident())
+  {
+    throw std::runtime_error("Cannot evaluate dof coordinates - this element "
+                             "does not have pointwise evaluation.");
+  }
+  const xt::xtensor<double, 2>& X = element->interpolation_points();
+
+  // Get coordinate map
+  const fem::CoordinateElement& cmap = mesh->geometry().cmap();
+
+  // Prepare cell geometry
+  const graph::AdjacencyList<std::int32_t>& x_dofmap
+      = mesh->geometry().dofmap();
+  // FIXME: Add proper interface for num coordinate dofs
+  const xt::xtensor<double, 2>& x_g = mesh->geometry().x();
+  const std::size_t num_dofs_g = x_dofmap.num_links(0);
+
+  // Array to hold coordinates to return
+  const std::size_t shape_c0 = num_dofs;
+  const std::size_t shape_c1 = 3;
+  xt::xtensor<double, 2> coords = xt::zeros<double>({shape_c0, shape_c1});
+
+  // Loop over cells and tabulate dofs
+  xt::xtensor<double, 2> x = xt::zeros<double>({scalar_dofs, gdim});
+  xt::xtensor<double, 2> coordinate_dofs({num_dofs_g, gdim});
+
+  auto map = mesh->topology().index_map(tdim);
+  assert(map);
+  const int num_cells = map->size_local() + map->num_ghosts();
+
+  xtl::span<const std::uint32_t> cell_info;
+  if (element->needs_dof_transformations())
+  {
+    mesh->topology_mutable().create_entity_permutations();
+    cell_info = xtl::span(mesh->topology().get_cell_permutation_info());
+  }
+
+  const std::function<void(const xtl::span<double>&,
+                           const xtl::span<const std::uint32_t>&, std::int32_t,
+                           int)>
+      apply_dof_transformation
+      = element->get_dof_transformation_function<double>();
+
+  const xt::xtensor<double, 2> phi
+      = xt::view(cmap.tabulate(0, X), 0, xt::all(), xt::all(), 0);
+
+  for (int c = 0; c < num_cells; ++c)
+  {
+    // Extract cell geometry
+    auto x_dofs = x_dofmap.links(c);
+    for (std::size_t i = 0; i < x_dofs.size(); ++i)
+    {
+      std::copy_n(xt::row(x_g, x_dofs[i]).begin(), gdim,
+                  std::next(coordinate_dofs.begin(), i * gdim));
+    }
+
+    // Tabulate dof coordinates on cell
+    cmap.push_forward(x, coordinate_dofs, phi);
+    apply_dof_transformation(xtl::span(x.data(), x.size()),
+                             xtl::span(cell_info.data(), cell_info.size()), c,
+                             x.shape(1));
+
+    // Get cell dofmap
+    auto dofs = dofmap->cell_dofs(c);
+
+    // Copy dof coordinates into vector
+    for (std::size_t i = 0; i < dofs.size(); ++i)
+      for (std::size_t j = 0; j < gdim; ++j)
+        coords(dofs[i], j) = x(i, j);
+  }
+
+  return coords;
+}
 
 /// Write mesh to file using VTX format
 /// @param[in] io The ADIOS2 io object
@@ -224,6 +338,67 @@ void vtx_write_mesh(adios2::IO& io, adios2::Engine& engine,
   adios2::Variable<std::int64_t> local_topology = define_variable<std::int64_t>(
       io, "connectivity", {}, {}, {num_cells, num_nodes + 1});
   engine.Put<std::int64_t>(local_topology, topology.data());
+  engine.PerformPuts();
+}
+//-----------------------------------------------------------------------------
+// Given a Function, create a topology and geometry based on the dof
+/// coordinates. Writes the topology and geometry using ADIOS2 in VTX format.
+/// @note Only supports (discontinuous) Lagrange functions
+/// @param[in] io The ADIOS2 io object
+/// @param[in] engine The ADIOS2 engine object
+/// @param[in] u The function
+template <typename Scalar>
+void vtx_write_mesh_from_space(adios2::IO& io, adios2::Engine& engine,
+                               const fem::Function<Scalar>& u)
+{
+  auto V = u.function_space();
+  auto mesh = u.function_space()->mesh();
+
+  // FIXME: This assumes one cell type for the whole mesh
+  xt::xtensor<double, 2> geometry = tabulate_lagrange_dof_coordinates(V);
+  const std::uint32_t num_dofs = geometry.shape(0);
+  const std::uint32_t num_elements
+      = mesh->topology().index_map(mesh->topology().dim())->size_local();
+
+  // Create permutation from DOLFINx dof ordering to VTK
+  std::shared_ptr<const fem::DofMap> dofmap = V->dofmap();
+  const std::uint32_t num_nodes = dofmap->cell_dofs(0).size();
+  std::vector<std::uint8_t> map = dolfinx::io::cells::transpose(
+      io::cells::perm_vtk(mesh->topology().cell_type(), num_nodes));
+
+  // Extract topology for all local cells as
+  // [N0 v0_0 .... v0_N0 N1 v1_0 .... v1_N1 ....]
+  std::vector<std::uint64_t> vtk_topology(num_elements * (num_nodes + 1));
+  int topology_offset = 0;
+  for (size_t c = 0; c < num_elements; ++c)
+  {
+    auto dofs = dofmap->cell_dofs(c);
+    vtk_topology[topology_offset++] = dofs.size();
+    for (std::size_t i = 0; i < dofs.size(); ++i)
+      vtk_topology[topology_offset++] = dofs[map[i]];
+  }
+
+  // Define ADIOS2 variables for geometry, topology, celltypes and
+  // corresponding VTK data
+  adios2::Variable<double> local_geometry
+      = define_variable<double>(io, "geometry", {}, {}, {num_dofs, 3});
+  adios2::Variable<std::uint64_t> local_topology
+      = define_variable<std::uint64_t>(io, "connectivity", {}, {},
+                                       {num_elements, num_nodes + 1});
+  adios2::Variable<std::uint32_t> cell_type
+      = define_variable<std::uint32_t>(io, "types");
+  adios2::Variable<std::uint32_t> vertices = define_variable<std::uint32_t>(
+      io, "NumberOfNodes", {adios2::LocalValueDim});
+  adios2::Variable<std::uint32_t> elements = define_variable<std::uint32_t>(
+      io, "NumberOfEntities", {adios2::LocalValueDim});
+
+  // Use the ADIOS engine to write mesh information to file
+  engine.Put<std::uint32_t>(vertices, num_dofs);
+  engine.Put<std::uint32_t>(elements, num_elements);
+  engine.Put<std::uint32_t>(cell_type, dolfinx::io::cells::get_vtk_cell_type(
+                                           *mesh, mesh->topology().dim()));
+  engine.Put<double>(local_geometry, geometry.data());
+  engine.Put<std::uint64_t>(local_topology, vtk_topology.data());
   engine.PerformPuts();
 }
 //-----------------------------------------------------------------------------
@@ -753,9 +928,9 @@ VTXWriter::VTXWriter(MPI_Comm comm, const std::string& filename,
 
   const std::string first_family = element->family();
   const int first_num_dofs = element->space_dimension() / element->block_size();
-  const std::array supported_families = {"Lagrange", "Q"};
-  // const std::array supported_families
-  //     = {"Lagrange", "Q", "Discontinuous Lagrange", "DQ"};
+
+  const std::array supported_families
+      = {"Lagrange", "Q", "Discontinuous Lagrange", "DQ"};
   if (std::find(supported_families.begin(), supported_families.end(),
                 first_family)
       == supported_families.end())
@@ -822,15 +997,9 @@ void VTXWriter::write(double t)
   {
     // Write a single mesh for functions as they share finite element
     std::visit(overload{[&](const std::shared_ptr<const Fdr>& u)
-                        {
-                          auto mesh = u->function_space()->mesh();
-                          vtx_write_mesh(*_io, *_engine, *mesh);
-                        },
+                        { vtx_write_mesh_from_space(*_io, *_engine, *u); },
                         [&](const std::shared_ptr<const Fdc>& u)
-                        {
-                          auto mesh = u->function_space()->mesh();
-                          vtx_write_mesh(*_io, *_engine, *mesh);
-                        }},
+                        { vtx_write_mesh_from_space(*_io, *_engine, *u); }},
                _u[0]);
 
     // Write function data for each function to file
