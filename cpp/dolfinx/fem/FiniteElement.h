@@ -13,6 +13,7 @@
 #include <memory>
 #include <numeric>
 #include <vector>
+#include <xtensor/xtensor.hpp>
 #include <xtl/xspan.hpp>
 
 struct ufc_finite_element;
@@ -161,17 +162,26 @@ public:
     _element->interpolate(tcb::make_span(dofs), tcb::make_span(values), _bs);
   }
 
+  /// Create a matrix that maps degrees of freedom from one element to
+  /// this element (interpolation)
+  /// @param[in] from The element to interpolate from
+  /// @return Matrix operator that maps the 'from' degrees-of-freedom to
+  /// the degrees-of-freedom of this element.
+  /// @note Does not support mixed elements
+  xt::xtensor<double, 2>
+  create_interpolation_operator(const FiniteElement& from) const;
+
   /// Check if DOF transformations are needed for this element.
   ///
   /// DOF transformations will be needed for elements which might not be
   /// continuous when two neighbouring cells disagree on the orientation of
-  /// a shared subentity, and when this cannot be corrected for by permuting the
-  /// DOF numbering in the dofmap.
+  /// a shared subentity, and when this cannot be corrected for by permuting
+  /// the DOF numbering in the dofmap.
   ///
   /// For example, Raviart-Thomas elements will need DOF transformations,
   /// as the neighbouring cells may disagree on the orientation of a basis
-  /// function, and this orientation cannot be corrected for by permuting the
-  /// DOF numbers on each cell.
+  /// function, and this orientation cannot be corrected for by permuting
+  /// the DOF numbers on each cell.
   ///
   /// @return True if DOF transformations are required
   bool needs_dof_transformations() const noexcept;
@@ -203,7 +213,7 @@ public:
   /// returned
   /// @param[in] transpose Indicates whether the transpose transformations
   /// should be returned
-  /// @param[in] scalar_element Indicated whether the scalar transformations
+  /// @param[in] scalar_element Indicates whether the scalar transformations
   /// should be returned for a vector element
   template <typename T>
   std::function<void(const xtl::span<T>&, const xtl::span<const std::uint32_t>&,
