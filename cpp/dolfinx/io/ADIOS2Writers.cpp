@@ -460,9 +460,12 @@ void fides_write_mesh(adios2::IO& io, adios2::Engine& engine,
       = define_variable<double>(io, "points", {}, {}, {num_vertices, 3});
   engine.Put<double>(local_geometry, mesh.geometry().x().data());
 
+  // TODO: The DOLFINx and VTK topology are the same for some cell types
+  // - no need to repack via extract_vtk_connectivity in these cases
+
+  // FIXME: Use better way to get number of nodes
   // Get topological dimenson, number of cells and number of 'nodes' per
   // cell, and compute 'VTK' connectivity
-  // FIXME: Use better way to get number of nodes
   const int tdim = mesh.topology().dim();
   const std::int32_t num_cells = mesh.topology().index_map(tdim)->size_local();
   const int num_nodes = mesh.geometry().dofmap().num_links(0);
