@@ -370,7 +370,7 @@ std::vector<Scalar> pack_function_data(const fem::Function<Scalar>& u)
   const int bs = dofmap->bs();
   const auto& u_data = u.x()->array();
   auto c_to_v = mesh->topology().connectivity(tdim, 0);
-  std::vector<Scalar> data(num_vertices * num_components);
+  std::vector<Scalar> data(num_vertices * num_components, 0);
   for (std::int32_t c = 0; c < num_cells; ++c)
   {
     auto dofs = dofmap->cell_dofs(c);
@@ -405,10 +405,14 @@ void fides_write_data(adios2::IO& io, adios2::Engine& engine,
   assert(mesh);
   const int gdim = mesh->geometry().dim();
 
-  // Get vertex data. If the mesh and function dofmaps are the same,
-  // then we can work directly with the dof array.
+  // Vectors and tensor need padding in gdim < 3
+  const int rank = u.function_space()->element()->value_rank();
+  const bool need_padding = rank > 0 and gdim != 3 ? true : false;
+
+  // Get vertex data. If the mesh and function dofmaps are the same we
+  // can work directly with the dof array.
   const std::vector<Scalar>& data
-      = mesh->geometry().dofmap() == dofmap->list() and gdim == 3
+      = mesh->geometry().dofmap() == dofmap->list() and !need_padding
             ? u.x()->array()
             : pack_function_data(u);
 
@@ -418,8 +422,8 @@ void fides_write_data(adios2::IO& io, adios2::Engine& engine,
       = vertex_map->size_local() + vertex_map->num_ghosts();
 
   // Write each real and imaginary part of the function
-  const int rank = u.function_space()->element()->value_rank();
   const std::uint32_t num_components = std::pow(3, rank);
+  assert(data.size() % num_components == 0);
   if constexpr (std::is_scalar<Scalar>::value)
   {
     // ---- Real
@@ -663,35 +667,35 @@ FidesWriter::FidesWriter(MPI_Comm comm, const std::string& filename,
       = mesh::cell_num_entities(mesh->topology().cell_type(), 0);
   for (auto& v : _u)
   {
-    std::visit(overload{[&](const std::shared_ptr<const Fdr>& u)
-                        {
-                          auto element = u->function_space()->element();
-                          assert(element);
-                          std::string family = element->family();
-                          int num_dofs = element->space_dimension()
-                                         / element->block_size();
-                          if ((family != "Lagrange" and family != "Q")
-                              or (num_dofs != num_vertices_per_cell))
-                          {
-                            throw std::runtime_error(
-                                "Only first order Lagrange spaces supported");
-                          }
-                        },
-                        [&](const std::shared_ptr<const Fdc>& u)
-                        {
-                          auto element = u->function_space()->element();
-                          assert(element);
-                          std::string family = element->family();
-                          int num_dofs = element->space_dimension()
-                                         / element->block_size();
-                          if ((family != "Lagrange" and family != "Q")
-                              or (num_dofs != num_vertices_per_cell))
-                          {
-                            throw std::runtime_error(
-                                "Only first order Lagrange spaces supported");
-                          }
-                        }},
-               v);
+    std::visit(
+        overload{
+            [&](const std::shared_ptr<const Fdr>& u)
+            {
+              auto element = u->function_space()->element();
+              assert(element);
+              std::string family = element->family();
+              int num_dofs = element->space_dimension() / element->block_size();
+              if ((family != "Lagrange" and family != "Q" and family != "P")
+                  or (num_dofs != num_vertices_per_cell))
+              {
+                throw std::runtime_error(
+                    "Only first order Lagrange spaces supported");
+              }
+            },
+            [&](const std::shared_ptr<const Fdc>& u)
+            {
+              auto element = u->function_space()->element();
+              assert(element);
+              std::string family = element->family();
+              int num_dofs = element->space_dimension() / element->block_size();
+              if ((family != "Lagrange" and family != "Q" and family != "P")
+                  or (num_dofs != num_vertices_per_cell))
+              {
+                throw std::runtime_error(
+                    "Only first order Lagrange spaces supported");
+              }
+            }},
+        v);
   }
 
   fides_initialize_mesh_attributes(*_io, *mesh);
