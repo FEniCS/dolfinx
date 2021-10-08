@@ -67,6 +67,11 @@ public:
   /// Move assignment
   ElementDofLayout& operator=(ElementDofLayout&& dofmap) = default;
 
+  /// Equality operator
+  /// @return Returns true if the layout data is the same. Sub- and
+  /// parent dofmap data is not compared.
+  bool operator==(const ElementDofLayout& layout) const;
+
   /// Return the dimension of the local finite element function space on
   /// a cell (number of dofs on element)
   /// @return Dimension of the local finite element function space.
