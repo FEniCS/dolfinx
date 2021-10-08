@@ -6,13 +6,15 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
+import pytest
 import pathlib
 
 import dolfinx
-import mpi4py
+import dolfinx.pkgconfig
 from dolfinx import wrappers
-from dolfinx.jit import dolfinx_pc, mpi_jit_decorator
+from dolfinx.jit import mpi_jit_decorator
 from dolfinx_utils.test.fixtures import tempdir  # noqa: F401
+import mpi4py
 from mpi4py import MPI
 import cppimport
 
@@ -26,8 +28,12 @@ def test_mpi_comm_wrapper():
     assert isinstance(w2, MPI.Comm)
 
 
+@pytest.mark.skipif(not dolfinx.pkgconfig.exists("dolfinx"),
+                    reason="This test needs DOLFINx pkg-config.")
 def test_mpi_comm_wrapper_cppimport(tempdir):  # noqa: F811
     """Test MPICommWrapper <-> mpi4py.MPI.Comm conversion for code compiled with cppimport"""
+
+    dolfinx_pc = dolfinx.pkgconfig.parse("dolfinx")
 
     @mpi_jit_decorator
     def compile_module():
