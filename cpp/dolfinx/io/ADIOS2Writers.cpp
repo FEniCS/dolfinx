@@ -400,7 +400,8 @@ void fides_write_data(adios2::IO& io, adios2::Engine& engine,
   auto mesh = V->mesh();
   assert(mesh);
 
-  // Get vertex data
+  // Get vertex data. If the mesh and function dofmaps are the same,
+  // then we can work directly with the dof array.
   const std::vector<Scalar>& data = mesh->geometry().dofmap() == dofmap->list()
                                         ? u.x()->array()
                                         : pack_function_data(u);
@@ -453,7 +454,7 @@ void fides_write_mesh(adios2::IO& io, adios2::Engine& engine,
                       const mesh::Mesh& mesh)
 {
   // "Put" geometry data
-  std::shared_ptr<const common::IndexMap> x_map = mesh.geometry().index_map();
+  auto x_map = mesh.geometry().index_map();
   const std::uint32_t num_vertices = x_map->size_local() + x_map->num_ghosts();
   adios2::Variable<double> local_geometry
       = define_variable<double>(io, "points", {}, {}, {num_vertices, 3});
@@ -481,12 +482,11 @@ void fides_write_mesh(adios2::IO& io, adios2::Engine& engine,
 /// @param[in] mesh The mesh
 void fides_initialize_mesh_attributes(adios2::IO& io, const mesh::Mesh& mesh)
 {
-  // Check that mesh is first order mesh
-  const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
-
   // FIXME: Add proper interface for num coordinate dofs
-  const std::size_t num_dofs_g = x_dofmap.num_links(0);
-  const std::size_t num_vertices_per_cell
+  // Check that mesh is first order mesh
+  const graph::AdjacencyList<std::int32_t>& dofmap_x = mesh.geometry().dofmap();
+  const int num_dofs_g = dofmap_x.num_links(0);
+  const int num_vertices_per_cell
       = mesh::cell_num_entities(mesh.topology().cell_type(), 0);
   if (num_dofs_g != num_vertices_per_cell)
     throw std::runtime_error("Fides only supports linear meshes.");
