@@ -76,8 +76,8 @@ adios2::Variable<T> define_variable(adios2::IO& io, const std::string& name,
 /// geometry 'nodes'
 /// @note The indices in the return array correspond to the point
 /// indices in the mesh geometry array
-/// @note Even if the indices are local (int32), both Fides and VTX only
-/// supports int64 as local input
+/// @note Even if the indices are local (int32), both Fides and VTX
+/// require int64 as local input
 xt::xtensor<std::int64_t, 2> extract_vtk_connectivity(const mesh::Mesh& mesh)
 {
   // Get DOLFINx to VTK permutation
@@ -363,11 +363,14 @@ std::vector<Scalar> pack_function_data(const fem::Function<Scalar>& u)
   const std::uint32_t num_vertices
       = vertex_map->size_local() + vertex_map->num_ghosts();
 
-  // Get dof array and pack into array
+  const int rank = u.function_space()->element()->value_rank();
+  const std::uint32_t num_components = std::pow(3, rank);
+
+  // Get dof array and pack into array (padded where appropriate)
   const int bs = dofmap->bs();
   const auto& u_data = u.x()->array();
   auto c_to_v = mesh->topology().connectivity(tdim, 0);
-  std::vector<Scalar> data(bs * num_vertices);
+  std::vector<Scalar> data(num_vertices * num_components);
   for (std::int32_t c = 0; c < num_cells; ++c)
   {
     auto dofs = dofmap->cell_dofs(c);
@@ -375,7 +378,7 @@ std::vector<Scalar> pack_function_data(const fem::Function<Scalar>& u)
     assert(dofs.size() == vertices.size());
     for (std::size_t i = 0; i < dofs.size(); ++i)
       for (int j = 0; j < bs; ++j)
-        data[bs * vertices[i] + j] = u_data[bs * dofs[i] + j];
+        data[num_components * vertices[i] + j] = u_data[bs * dofs[i] + j];
   }
 
   return data;
@@ -400,12 +403,14 @@ void fides_write_data(adios2::IO& io, adios2::Engine& engine,
   assert(dofmap);
   auto mesh = V->mesh();
   assert(mesh);
+  const int gdim = mesh->geometry().dim();
 
   // Get vertex data. If the mesh and function dofmaps are the same,
   // then we can work directly with the dof array.
-  const std::vector<Scalar>& data = mesh->geometry().dofmap() == dofmap->list()
-                                        ? u.x()->array()
-                                        : pack_function_data(u);
+  const std::vector<Scalar>& data
+      = mesh->geometry().dofmap() == dofmap->list() and gdim == 3
+            ? u.x()->array()
+            : pack_function_data(u);
 
   auto vertex_map = mesh->topology().index_map(0);
   assert(vertex_map);
