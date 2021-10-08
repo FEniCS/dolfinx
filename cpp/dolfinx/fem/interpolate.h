@@ -119,11 +119,11 @@ void interpolate_from_any(Function<T>& u, const Function<T>& v)
   auto map = mesh->topology().index_map(tdim);
   assert(map);
 
-  std::vector<T>& coeffs = u.x()->mutable_array();
+  xtl::span<T> coeffs = u.x()->mutable_array();
 
   // Iterate over mesh and interpolate on each cell
   const auto dofmap_u = u.function_space()->dofmap();
-  const std::vector<T>& v_array = v.x()->array();
+  xtl::span<const T> v_array = v.x()->array();
   const int num_cells = map->size_local() + map->num_ghosts();
   const int bs = dofmap_v->bs();
   assert(bs == dofmap_u->bs());
@@ -251,7 +251,7 @@ void interpolate(
   const int num_scalar_dofs = element->space_dimension() / element_bs;
   const int value_size = element->value_size() / element_bs;
 
-  std::vector<T>& coeffs = u.x()->mutable_array();
+  xtl::span<T> coeffs = u.x()->mutable_array();
   std::vector<T> _coeffs(num_scalar_dofs);
 
   const std::function<void(const xtl::span<T>&,

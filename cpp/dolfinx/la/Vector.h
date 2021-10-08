@@ -236,10 +236,10 @@ public:
   constexpr int bs() const { return _bs; }
 
   /// Get local part of the vector (const version)
-  const std::vector<T, Allocator>& array() const { return _x; }
+  xtl::span<const T> array() const { return xtl::span<const T>(_x); }
 
   /// Get local part of the vector
-  std::vector<T, Allocator>& mutable_array() { return _x; }
+  xtl::span<T> mutable_array() { return xtl::span(_x); }
 
 private:
   // Map describing the data layout
