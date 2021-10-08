@@ -141,11 +141,11 @@ def tabulate_condensed_tensor_A(A_, w_, c_, coords_, entity_local_index, permuta
 integrals = {dolfinx.fem.IntegralType.cell: ([(-1, tabulate_condensed_tensor_A.address)], None)}
 a_cond = dolfinx.cpp.fem.Form([U._cpp_object, U._cpp_object], integrals, [], [], False, None)
 
-A_cond = dolfinx.fem.assemble_matrix(a_cond, [bc])
+A_cond = dolfinx.fem.assemble_matrix(a_cond, bcs=[bc])
 A_cond.assemble()
 
 b = dolfinx.fem.assemble_vector(b1)
-dolfinx.fem.apply_lifting(b, [a_cond], [[bc]])
+dolfinx.fem.apply_lifting(b, [a_cond], bcs=[[bc]])
 b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 dolfinx.fem.set_bc(b, [bc])
 
@@ -156,7 +156,7 @@ solver.solve(b, uc.vector)
 
 # Pure displacement based formulation
 a = - ufl.inner(sigma_u(u), ufl.grad(v)) * ufl.dx
-A = dolfinx.fem.assemble_matrix(a, [bc])
+A = dolfinx.fem.assemble_matrix(a, bcs=[bc])
 A.assemble()
 
 # Create bounding box for function evaluation

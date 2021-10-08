@@ -317,9 +317,8 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
   // Compute the number of dofs 'owned' by this process
   const std::int32_t owned_size = std::accumulate(
       dof_entity.begin(), dof_entity.end(), std::int32_t(0),
-      [&offset = std::as_const(offset)](std::int32_t a, auto b) {
-        return b.second < offset[b.first] ? a + 1 : a;
-      });
+      [&offset = std::as_const(offset)](std::int32_t a, auto b)
+      { return b.second < offset[b.first] ? a + 1 : a; });
 
   // Re-order dofs, increasing local dof index by iterating over cells
 
@@ -351,9 +350,8 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
     const std::vector<int> node_remap
         = reorder_owned(dofmap, owned_size, original_to_contiguous, reorder_fn);
     std::for_each(original_to_contiguous.begin(), original_to_contiguous.end(),
-                  [&node_remap, owned_size](auto index) {
-                    return index < owned_size ? node_remap[index] : index;
-                  });
+                  [&node_remap, owned_size](auto index)
+                  { return index < owned_size ? node_remap[index] : index; });
   }
 
   return {std::move(original_to_contiguous), owned_size};
@@ -533,15 +531,13 @@ fem::build_dofmap_data(
   const auto [node_graph0, local_to_global0, dof_entity0]
       = build_basic_dofmap(topology, element_dof_layout);
 
-  // Compute global dofmap dimension
-  std::int64_t global_dimension(0), offset(0);
+  // Compute global dofmap offset
+  std::int64_t offset = 0;
   for (int d = 0; d <= D; ++d)
   {
     if (element_dof_layout.num_entity_dofs(d) > 0)
     {
       assert(topology.index_map(d));
-      const std::int64_t n = topology.index_map(d)->size_global();
-      global_dimension += n * element_dof_layout.num_entity_dofs(d);
       offset += topology.index_map(d)->local_range()[0]
                 * element_dof_layout.num_entity_dofs(d);
     }

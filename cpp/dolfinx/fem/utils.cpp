@@ -45,9 +45,8 @@ la::SparsityPattern fem::create_sparsity_pattern(
 
   // Create and build sparsity pattern
   assert(dofmaps[0].get().index_map);
-  la::SparsityPattern pattern(
-      dofmaps[0].get().index_map->comm(common::IndexMap::Direction::forward),
-      index_maps, bs);
+  la::SparsityPattern pattern(dofmaps[0].get().index_map->comm(), index_maps,
+                              bs);
   for (auto type : integrals)
   {
     switch (type)
@@ -210,16 +209,26 @@ std::vector<std::string> fem::get_constant_names(const ufc_form& ufc_form)
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<fem::FunctionSpace> fem::create_functionspace(
-    ufc_function_space* (*fptr)(const char*), const std::string function_name,
+    ufc_function_space* (*fptr)(const char*), const std::string& function_name,
     std::shared_ptr<mesh::Mesh> mesh,
     const std::function<std::vector<int>(
         const graph::AdjacencyList<std::int32_t>&)>& reorder_fn)
 {
   ufc_function_space* space = fptr(function_name.c_str());
-  ufc_dofmap* ufc_map = space->dofmap;
+  if (!space)
+  {
+    throw std::runtime_error(
+        "Could not create UFC function space with function name "
+        + function_name);
+  }
+
   ufc_finite_element* ufc_element = space->finite_element;
+  assert(ufc_element);
   std::shared_ptr<const fem::FiniteElement> element
       = std::make_shared<fem::FiniteElement>(*ufc_element);
+
+  ufc_dofmap* ufc_map = space->dofmap;
+  assert(ufc_map);
   auto V = std::make_shared<fem::FunctionSpace>(
       mesh, element,
       std::make_shared<fem::DofMap>(fem::create_dofmap(

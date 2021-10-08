@@ -4,11 +4,13 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 import os
+
 import numpy as np
 import pytest
 import ufl
-from dolfinx import (DirichletBC, Function, FunctionSpace,
-                     VectorFunctionSpace, RectangleMesh, cpp, fem, UnitCubeMesh, UnitSquareMesh)
+from dolfinx import (DirichletBC, Function, FunctionSpace, RectangleMesh,
+                     UnitCubeMesh, UnitSquareMesh, VectorFunctionSpace, cpp,
+                     fem)
 from dolfinx.cpp.mesh import CellType, locate_entities_boundary
 from dolfinx.fem import (apply_lifting, assemble_matrix, assemble_scalar,
                          assemble_vector, locate_dofs_topological, set_bc)
@@ -54,12 +56,12 @@ def run_scalar_test(mesh, V, degree):
     bc = DirichletBC(u_bc, bdofs)
 
     b = assemble_vector(L)
-    apply_lifting(b, [a], [[bc]])
+    apply_lifting(b, [a], bcs=[[bc]])
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     set_bc(b, [bc])
 
     a = fem.Form(a)
-    A = assemble_matrix(a, [bc])
+    A = assemble_matrix(a, bcs=[bc])
     A.assemble()
 
     # Create LU linear solver
@@ -247,7 +249,7 @@ def test_biharmonic():
     A = assemble_matrix(a, bcs=bcs)
     A.assemble()
     b = assemble_vector(L)
-    apply_lifting(b, [a], [bcs])
+    apply_lifting(b, [a], bcs=[bcs])
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     set_bc(b, bcs)
 
