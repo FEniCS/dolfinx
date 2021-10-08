@@ -284,7 +284,8 @@ void interpolate(
   else
   {
     // Get coordinate map
-    // FIXME: mixed mesh
+    if (mesh->geometry().cmaps().size() > 1)
+      throw std::runtime_error("Mixed Topology Mesh not supported");
     const fem::CoordinateElement& cmap = mesh->geometry().cmaps()[0];
 
     // Get geometry data

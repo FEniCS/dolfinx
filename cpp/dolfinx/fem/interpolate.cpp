@@ -25,7 +25,8 @@ fem::interpolation_coords(const fem::FiniteElement& element,
   const std::size_t num_dofs_g = x_dofmap.num_links(0);
   const xt::xtensor<double, 2>& x_g = mesh.geometry().x();
 
-  // FIXME: Mixed mesh
+  if (mesh.geometry().cmaps().size() > 1)
+    throw std::runtime_error("Mixed Topology Mesh not supported");
   const fem::CoordinateElement& cmap = mesh.geometry().cmaps()[0];
 
   // Get the interpolation points on the reference cells

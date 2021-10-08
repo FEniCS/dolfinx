@@ -138,7 +138,8 @@ FunctionSpace::tabulate_dof_coordinates(bool transpose) const
   const xt::xtensor<double, 2>& X = _element->interpolation_points();
 
   // Get coordinate map
-  // FIXME: Mixed mesh
+  if (_mesh->geometry().cmaps().size() > 1)
+    throw std::runtime_error("Mixed Topology Mesh not supported");
   const fem::CoordinateElement& cmap = _mesh->geometry().cmaps()[0];
 
   // Prepare cell geometry
