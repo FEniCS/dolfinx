@@ -76,7 +76,9 @@ adios2::Variable<T> define_variable(adios2::IO& io, const std::string& name,
 /// geometry 'nodes'
 /// @note The indices in the return array correspond to the point
 /// indices in the mesh geometry array
-xt::xtensor<std::int32_t, 2> extract_vtk_connectivity(const mesh::Mesh& mesh)
+/// @note Even if the indices are local (int32), both Fides and VTX only
+/// supports int64 as local input
+xt::xtensor<std::int64_t, 2> extract_vtk_connectivity(const mesh::Mesh& mesh)
 {
   // Get DOLFINx to VTK permutation
   // FIXME: Use better way to get number of nodes
@@ -99,7 +101,7 @@ xt::xtensor<std::int32_t, 2> extract_vtk_connectivity(const mesh::Mesh& mesh)
   // Build mesh connectivity
 
   // Loop over cells
-  xt::xtensor<std::int32_t, 2> topology({num_cells, num_nodes});
+  xt::xtensor<std::int64_t, 2> topology({num_cells, num_nodes});
   for (std::size_t c = 0; c < num_cells; ++c)
   {
     // For each cell, get the 'nodes' and place in VTK order
@@ -213,16 +215,15 @@ void vtx_write_mesh(adios2::IO& io, adios2::Engine& engine,
 
   // Extract mesh 'nodes'
   // Output is written as [N0, v0_0,...., v0_N0, N1, v1_0,...., v1_N1,....]
-  xt::xtensor<std::uint32_t, 2> topology({num_cells, num_nodes + 1});
+  xt::xtensor<std::int64_t, 2> topology({num_cells, num_nodes + 1});
   xt::view(topology, xt::all(), xt::xrange(std::size_t(1), topology.shape(1)))
       = extract_vtk_connectivity(mesh);
   xt::view(topology, xt::all(), 0) = num_nodes;
 
   // Put topology (nodes)
-  adios2::Variable<std::uint32_t> local_topology
-      = define_variable<std::uint32_t>(io, "connectivity", {}, {},
-                                       {num_cells, num_nodes + 1});
-  engine.Put<std::uint32_t>(local_topology, topology.data());
+  adios2::Variable<std::int64_t> local_topology = define_variable<std::int64_t>(
+      io, "connectivity", {}, {}, {num_cells, num_nodes + 1});
+  engine.Put<std::int64_t>(local_topology, topology.data());
   engine.PerformPuts();
 }
 //-----------------------------------------------------------------------------
@@ -469,12 +470,12 @@ void fides_write_mesh(adios2::IO& io, adios2::Engine& engine,
   const int tdim = mesh.topology().dim();
   const std::int32_t num_cells = mesh.topology().index_map(tdim)->size_local();
   const int num_nodes = mesh.geometry().dofmap().num_links(0);
-  const xt::xtensor<std::int32_t, 2> topology = extract_vtk_connectivity(mesh);
+  const xt::xtensor<std::int64_t, 2> topology = extract_vtk_connectivity(mesh);
 
   // "Put" topology data in the result in the ADIOS2 file
-  adios2::Variable<std::int32_t> local_topology = define_variable<std::int32_t>(
+  adios2::Variable<std::int64_t> local_topology = define_variable<std::int64_t>(
       io, "connectivity", {}, {}, {std::size_t(num_cells * num_nodes)});
-  engine.Put<std::int32_t>(local_topology, topology.data());
+  engine.Put<std::int64_t>(local_topology, topology.data());
 
   engine.PerformPuts();
 }
