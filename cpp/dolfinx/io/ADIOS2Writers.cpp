@@ -341,22 +341,11 @@ std::string to_fides_cell(mesh::CellType type)
 }
 //-----------------------------------------------------------------------------
 
-/// Write a first order Lagrange function (real or complex) using ADIOS2
-/// in Fides format. Data is padded to be three dimensional if vector
-/// and 9 dimensional if tensor.
-/// @param[in] io The ADIOS2 io object
-/// @param[in] engine The ADIOS2 engine object
-/// @param[in] u The function to write
+/// Pack Function data are vertices. The mesh and the function must both
+/// be 'P1'
 template <typename Scalar>
-void fides_write_function(adios2::IO& io, adios2::Engine& engine,
-                          const fem::Function<Scalar>& u)
+std::vector<Scalar> pack_function_data(const fem::Function<Scalar>& u)
 {
-  // FIXME: There is an implicit assumptions that u and the mesh have
-  // the same ElementDoflayout
-
-  // TODO: If u and its mesh have the same dofmap, then there is not
-  // need to loop over cells
-
   auto V = u.function_space();
   auto dofmap = V->dofmap();
   auto mesh = V->mesh();
@@ -372,9 +361,8 @@ void fides_write_function(adios2::IO& io, adios2::Engine& engine,
   const std::uint32_t num_vertices
       = vertex_map->size_local() + vertex_map->num_ghosts();
 
-  const int bs = dofmap->bs();
-
   // Get dof array and pack into array
+  const int bs = dofmap->bs();
   const auto& u_data = u.x()->array();
   auto c_to_v = mesh->topology().connectivity(tdim, 0);
   std::vector<Scalar> data(bs * num_vertices);
@@ -387,6 +375,39 @@ void fides_write_function(adios2::IO& io, adios2::Engine& engine,
       for (int j = 0; j < bs; ++j)
         data[bs * vertices[i] + j] = u_data[bs * dofs[i] + j];
   }
+
+  return data;
+}
+//-----------------------------------------------------------------------------
+
+/// Write a first order Lagrange function (real or complex) using ADIOS2
+/// in Fides format. Data is padded to be three dimensional if vector
+/// and 9 dimensional if tensor.
+/// @param[in] io The ADIOS2 io object
+/// @param[in] engine The ADIOS2 engine object
+/// @param[in] u The function to write
+template <typename Scalar>
+void fides_write_function(adios2::IO& io, adios2::Engine& engine,
+                          const fem::Function<Scalar>& u)
+{
+  // FIXME: There is an implicit assumptions that u and the mesh have
+  // the same ElementDoflayout
+  auto V = u.function_space();
+  assert(V);
+  auto dofmap = V->dofmap();
+  assert(dofmap);
+  auto mesh = V->mesh();
+  assert(mesh);
+
+  // Get vertex data
+  const std::vector<Scalar>& data = mesh->geometry().dofmap() == dofmap->list()
+                                        ? u.x()->array()
+                                        : pack_function_data(u);
+
+  auto vertex_map = mesh->topology().index_map(0);
+  assert(vertex_map);
+  const std::uint32_t num_vertices
+      = vertex_map->size_local() + vertex_map->num_ghosts();
 
   // Write each real and imaginary part of the function
   const int rank = u.function_space()->element()->value_rank();
