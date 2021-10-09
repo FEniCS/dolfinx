@@ -55,8 +55,6 @@ ElementDofLayout ElementDofLayout::copy() const
 bool ElementDofLayout::operator==(const ElementDofLayout& layout) const
 {
   return
-      // this->_block_size == layout._block_size
-      //        and
       this->_num_dofs == layout._num_dofs
       and this->_num_entity_dofs == layout._num_entity_dofs
       and this->_num_entity_closure_dofs == layout._num_entity_closure_dofs
