@@ -112,7 +112,7 @@ def test_matrix_assembly_block_nl():
     dolfinx.fem.apply_lifting_nest(b1, a_block, bcs=[bc], x0=x1, scale=-1.0)
     for b_sub in b1.getNestSubVecs():
         b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    bcs0 = dolfinx.cpp.fem.bcs_rows(dolfinx.fem.assemble._create_cpp_form(L_block), [bc._cpp_object])
+    bcs0 = dolfinx.fem.assembler.bcs_rows(L_block, [bc])
     dolfinx.fem.set_bc_nest(b1, bcs0, x1, scale=-1.0)
     A1.assemble()
 
@@ -214,8 +214,7 @@ class NonlinearPDE_SNESProblem():
                 _u[:] = _x
 
         # Assemble
-        bcs1 = dolfinx.cpp.fem.bcs_cols(dolfinx.fem.assemble._create_cpp_form(self.a),
-                                        dolfinx.fem.assemble._cpp_dirichletbc(self.bcs))
+        bcs1 = dolfinx.fem.assembler.bcs_cols(self.a, self.bcs)
         for L, F_sub, a, bc in zip(self.L, F.getNestSubVecs(), self.a, bcs1):
             with F_sub.localForm() as F_sub_local:
                 F_sub_local.set(0.0)
@@ -224,8 +223,7 @@ class NonlinearPDE_SNESProblem():
             F_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
         # Set bc value in RHS
-        bcs0 = dolfinx.cpp.fem.bcs_rows(dolfinx.fem.assemble._create_cpp_form(self.L),
-                                        dolfinx.fem.assemble._cpp_dirichletbc(self.bcs))
+        bcs0 = dolfinx.fem.assembler.bcs_rows(self.L, self.bcs)
         for F_sub, bc, x_sub in zip(F.getNestSubVecs(), bcs0, x):
             dolfinx.fem.set_bc(F_sub, bc, x_sub, -1.0)
 

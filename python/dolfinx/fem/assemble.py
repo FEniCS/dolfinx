@@ -250,7 +250,7 @@ def _(b: PETSc.Vec,
     c_a = (coeffs_a[0] if coeffs_a[0] is not None else pack_constants(_a),
            coeffs_a[1] if coeffs_a[1] is not None else pack_coefficients(_a))
 
-    bcs1 = cpp.fem.bcs_cols(_create_cpp_form(a), _cpp_dirichletbc(bcs))
+    bcs1 = cpp.fem.assembler.bcs_cols(a, bcs)
     b_local = cpp.la.get_local_vectors(b, maps)
     for b_sub, L_sub, a_sub, bc, constant_L, coeff_L, constant_a, coeff_a in zip(b_local, _L, _a, bcs1,
                                                                                  c_L[0], c_L[1],
@@ -502,3 +502,7 @@ def set_bc_nest(b: PETSc.Vec,
 
 def bcs_rows(L, bcs):
     return cpp.fem.bcs_rows(_create_cpp_form(L), _cpp_dirichletbc(bcs))
+
+
+def bcs_cols(a, bcs):
+    return cpp.fem.bcs_rows(_create_cpp_form(a), _cpp_dirichletbc(bcs))
