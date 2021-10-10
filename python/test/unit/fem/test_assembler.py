@@ -277,7 +277,7 @@ def test_matrix_assembly_block(mode):
     dolfinx.fem.apply_lifting_nest(b1, a_block, bcs=[bc])
     for b_sub in b1.getNestSubVecs():
         b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    bcs0 = fem.assembler.bcs_rows(L_block, [bc])
+    bcs0 = fem.assemble.bcs_rows(L_block, [bc])
     dolfinx.fem.set_bc_nest(b1, bcs0)
     b1.assemble()
 
@@ -384,7 +384,7 @@ def test_assembly_solve_block(mode):
     dolfinx.fem.apply_lifting_nest(b1, [[a00, a01], [a10, a11]], bcs=bcs)
     for b_sub in b1.getNestSubVecs():
         b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    bcs0 = dolfinx.fem.assembler.bcs_rows([L0, L1], bcs)
+    bcs0 = dolfinx.fem.assemble.bcs_rows([L0, L1], bcs)
     dolfinx.fem.set_bc_nest(b1, bcs0)
     b1.assemble()
 
@@ -520,7 +520,7 @@ def test_assembly_solve_taylor_hood(mesh):
         dolfinx.fem.apply_lifting_nest(b, [[a00, a01], [a10, a11]], [bc0, bc1])
         for b_sub in b.getNestSubVecs():
             b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-        bcs = dolfinx.fem.assembler.bcs_rows([L0, L1], [bc0, bc1])
+        bcs = dolfinx.fem.assemble.bcs_rows([L0, L1], [bc0, bc1])
         dolfinx.fem.set_bc_nest(b, bcs)
         b.assemble()
 
