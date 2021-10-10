@@ -18,14 +18,12 @@ from petsc4py import PETSc
 
 
 def _cpp_dirichletbc(bc):
+    """Unwrap Dirichlet BC objects as cpp objects"""
     if isinstance(bc, DirichletBC):
         return bc._cpp_object
-    # elif isinstance(bc, ufl.Form):
-    #     return Form(form)._cpp_object
     elif isinstance(bc, (tuple, list)):
         return list(map(lambda sub_bc: _cpp_dirichletbc(sub_bc), bc))
     return bc
-    # return [bc._cpp_object for bc in bcs]
 
 
 def _create_cpp_form(form):
@@ -500,3 +498,7 @@ def set_bc_nest(b: PETSc.Vec,
     x0 = len(_b) * [None] if x0 is None else x0.getNestSubVecs()
     for b_sub, bc, x_sub in zip(_b, bcs, x0):
         set_bc(b_sub, bc, x_sub, scale)
+
+
+def bcs_rows(L, bcs):
+    return cpp.fem.bcs_rows(_create_cpp_form(L), _cpp_dirichletbc(bcs))

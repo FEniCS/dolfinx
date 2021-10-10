@@ -379,9 +379,9 @@ void set_bc(xtl::span<T> b,
 /// @param[in] L Linear forms for each block
 /// @param[in] bcs Boundary conditions
 /// @return The boundary conditions collected by block, i.e.
-///   bcs_block[i] is the list of boundary conditions applied to L[i]. The
-///   order within bcs_block[i] preserves the input order of the bcs
-///   array.
+/// bcs_block[i] is the list of boundary conditions applied to L[i]. The
+/// order within bcs_block[i] preserves the input order of the bcs
+/// array.
 template <typename T>
 std::vector<std::vector<std::shared_ptr<const fem::DirichletBC<T>>>>
 bcs_rows(const std::vector<const Form<T>*>& L,
