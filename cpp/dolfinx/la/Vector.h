@@ -269,8 +269,8 @@ T inner_product(const Vector<T, Allocator>& a, const Vector<T, Allocator>& b)
   const std::int32_t local_size = a.bs() * a.map()->size_local();
   if (local_size != b.bs() * b.map()->size_local())
     throw std::runtime_error("Incompatible vector sizes");
-  const std::vector<T>& x_a = a.array();
-  const std::vector<T>& x_b = b.array();
+  xtl::span<const T> x_a = a.array();
+  xtl::span<const T> x_b = b.array();
 
   const T local = std::transform_reduce(
       x_a.begin(), x_a.begin() + local_size, x_b.begin(), static_cast<T>(0),
