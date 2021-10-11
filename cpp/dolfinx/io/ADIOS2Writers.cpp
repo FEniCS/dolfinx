@@ -498,8 +498,14 @@ template <typename Scalar>
 std::vector<Scalar> pack_function_data(const fem::Function<Scalar>& u)
 {
   auto V = u.function_space();
+  assert(V);
   auto dofmap = V->dofmap();
+  assert(dofmap);
   auto mesh = V->mesh();
+  assert(mesh);
+
+  // The Function and the mesh must have identical element_dof_layouts
+  // (up tp the block size)
   assert(*(dofmap->element_dof_layout) == mesh->geometry().cmap().dof_layout());
 
   const int tdim = mesh->topology().dim();
@@ -516,21 +522,20 @@ std::vector<Scalar> pack_function_data(const fem::Function<Scalar>& u)
   const int rank = u.function_space()->element()->value_rank();
   const std::uint32_t num_components = std::pow(3, rank);
 
-  const mesh::Geometry& geometry = mesh->geometry();
-  const graph::AdjacencyList<std::int32_t>& xdofs = geometry.dofmap();
-
   // Get dof array and pack into array (padded where appropriate)
+  const graph::AdjacencyList<std::int32_t>& dofmap_x
+      = mesh->geometry().dofmap();
   const int bs = dofmap->bs();
   const auto& u_data = u.x()->array();
   std::vector<Scalar> data(num_vertices * num_components, 0);
   for (std::int32_t c = 0; c < num_cells; ++c)
   {
     auto dofs = dofmap->cell_dofs(c);
-    const auto xc = xdofs.links(c);
-    assert(dofs.size() == xc.size());
+    auto dofs_x = dofmap_x.links(c);
+    assert(dofs.size() == dofs_x.size());
     for (std::size_t i = 0; i < dofs.size(); ++i)
       for (int j = 0; j < bs; ++j)
-        data[num_components * xc[i] + j] = u_data[bs * dofs[i] + j];
+        data[num_components * dofs_x[i] + j] = u_data[bs * dofs[i] + j];
   }
   return data;
 }
