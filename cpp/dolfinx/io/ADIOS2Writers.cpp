@@ -583,6 +583,7 @@ void fides_write_data(adios2::IO& io, adios2::Engine& engine,
 
     // To reuse out_data, we use sync mode here
     engine.Put<double>(local_output, data.data());
+    engine.PerformPuts();
   }
   else
   {
@@ -600,9 +601,8 @@ void fides_write_data(adios2::IO& io, adios2::Engine& engine,
     std::transform(data.cbegin(), data.cend(), data_imag.begin(),
                    [](auto& x) -> double { return std::imag(x); });
     engine.Put<double>(local_output_c, data_imag.data());
+    engine.PerformPuts();
   }
-
-  engine.PerformPuts();
 }
 //-----------------------------------------------------------------------------
 
