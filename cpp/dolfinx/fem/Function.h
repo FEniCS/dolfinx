@@ -393,7 +393,7 @@ public:
 
   /// Compute values at all mesh 'nodes'
   /// @return The values at all geometric points
-  /// @warning This function will remove soon. User interpolation
+  /// @warning This function will be removed soon. Use interpolation
   /// instead.
   xt::xtensor<T, 2> compute_point_values() const
   {
