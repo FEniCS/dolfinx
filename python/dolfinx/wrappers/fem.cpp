@@ -197,10 +197,6 @@ void declare_functions(py::module& m)
       },
       py::arg("b"), py::arg("bcs"), py::arg("x0") = py::none(),
       py::arg("scale") = 1.0);
-
-  // Tools
-  m.def("bcs_rows", &dolfinx::fem::bcs_rows<T>);
-  m.def("bcs_cols", &dolfinx::fem::bcs_cols<T>);
 }
 
 // Declare DirichletBC objects for type T

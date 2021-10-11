@@ -250,7 +250,7 @@ def _(b: PETSc.Vec,
     c_a = (coeffs_a[0] if coeffs_a[0] is not None else pack_constants(_a),
            coeffs_a[1] if coeffs_a[1] is not None else pack_coefficients(_a))
 
-    bcs1 = cpp.fem.bcs_cols(_create_cpp_form(a), _cpp_dirichletbc(bcs))
+    bcs1 = bcs_cols(_a, _cpp_dirichletbc(bcs))
     b_local = cpp.la.get_local_vectors(b, maps)
     for b_sub, L_sub, a_sub, bc, constant_L, coeff_L, constant_a, coeff_a in zip(b_local, _L, _a, bcs1,
                                                                                  c_L[0], c_L[1],
@@ -261,7 +261,7 @@ def _(b: PETSc.Vec,
     cpp.la.scatter_local_vectors(b, b_local, maps)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
-    bcs0 = cpp.fem.bcs_rows(_create_cpp_form(L), _cpp_dirichletbc(bcs))
+    bcs0 = bcs_rows(_create_cpp_form(L), _cpp_dirichletbc(bcs))
     offset = 0
     b_array = b.getArray(readonly=False)
     for submap, bc, _x0 in zip(maps, bcs0, x0_sub):
@@ -463,7 +463,7 @@ def apply_lifting_nest(b: PETSc.Vec,
     _a = _create_cpp_form(a)
     c = (coeffs[0] if coeffs[0] is not None else pack_constants(_a),
          coeffs[1] if coeffs[1] is not None else pack_coefficients(_a))
-    bcs1 = cpp.fem.bcs_cols(_a, _cpp_dirichletbc(bcs))
+    bcs1 = bcs_cols(_a, _cpp_dirichletbc(bcs))
     for b_sub, a_sub, constants, coeffs, bc1 in zip(b.getNestSubVecs(), _a, c[0], c[1], bcs1):
         apply_lifting(b_sub, a_sub, bc1, x0, scale, (constants, coeffs))
     return b
@@ -500,9 +500,15 @@ def set_bc_nest(b: PETSc.Vec,
         set_bc(b_sub, bc, x_sub, scale)
 
 
-def bcs_rows(L, bcs):
-    return cpp.fem.bcs_rows(_create_cpp_form(L), _cpp_dirichletbc(bcs))
+def _bc_space(V, bcs):
+    "Return list of bcs that have the same space as V"
+    return [bc for bc in bcs if V.contains(bc.function_space)]
+
+
+def bcs_rows(L, bcs, i=0):
+    _L = _create_cpp_form(L)
+    return [_bc_space(form.function_spaces[i], bcs) for form in _L]
 
 
 def bcs_cols(a, bcs):
-    return cpp.fem.bcs_cols(_create_cpp_form(a), _cpp_dirichletbc(bcs))
+    return [bcs_rows(arow, bcs, 1) for arow in a]

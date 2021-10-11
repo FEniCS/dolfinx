@@ -70,6 +70,16 @@ class Form:
                                                [c._cpp_object for c in form.constants()], subdomains, mesh)
 
     @property
+    def function_spaces(self):
+        """The function spaces of the arguments"""
+        return self._cpp_object.function_spaces
+
+    @property
+    def function_space(self):
+        """The rank of the form"""
+        return self._cpp_object.rank
+
+    @property
     def ufc_form(self):
         """Return the compiled ufc_form object"""
         return self._ufc_form
