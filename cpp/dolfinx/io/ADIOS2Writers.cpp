@@ -880,7 +880,6 @@ VTXWriter::VTXWriter(MPI_Comm comm, const std::string& filename,
                      std::shared_ptr<const mesh::Mesh> mesh)
     : ADIOS2Writer(comm, filename, "VTX mesh writer", mesh)
 {
-
   // Define VTK scheme attribute for mesh
   std::string vtk_scheme = create_vtk_schema({}, {});
   define_attribute<std::string>(*_io, "vtk.xml", vtk_scheme);
@@ -890,7 +889,6 @@ VTXWriter::VTXWriter(MPI_Comm comm, const std::string& filename,
                      const ADIOS2Writer::U& u)
     : ADIOS2Writer(comm, filename, "VTX function writer", u)
 {
-
   // Extract element from first function
   assert(!u.empty());
   const fem::FiniteElement* element = nullptr;
