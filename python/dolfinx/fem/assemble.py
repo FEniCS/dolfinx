@@ -464,6 +464,7 @@ def apply_lifting_nest(b: PETSc.Vec,
     c = (coeffs[0] if coeffs[0] is not None else pack_constants(_a),
          coeffs[1] if coeffs[1] is not None else pack_coefficients(_a))
     bcs1 = bcs_cols(_a, _cpp_dirichletbc(bcs))
+
     for b_sub, a_sub, constants, coeffs, bc1 in zip(b.getNestSubVecs(), _a, c[0], c[1], bcs1):
         apply_lifting(b_sub, a_sub, bc1, x0, scale, (constants, coeffs))
     return b
@@ -507,7 +508,7 @@ def _bc_space(V, bcs):
 
 def bcs_rows(L, bcs, i=0):
     _L = _create_cpp_form(L)
-    return [_bc_space(form.function_spaces[i], bcs) for form in _L]
+    return [_bc_space(form.function_spaces[i], bcs) if form is not None else [] for form in _L]
 
 
 def bcs_cols(a, bcs):
