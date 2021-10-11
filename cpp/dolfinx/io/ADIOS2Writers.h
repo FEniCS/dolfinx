@@ -108,8 +108,8 @@ public:
   /// @param[in] comm The MPI communicator to open the file on
   /// @param[in] filename Name of output file
   /// @param[in] mesh The mesh. The mesh must a degree 1 mesh.
-  /// @note The geometry of the mesh can change between writes.
-  /// @note The topology of the mesh cannot change between writes
+  /// @note The mesh geometry can be updated between write steps but the
+  /// topology should not be changed between write steps
   FidesWriter(MPI_Comm comm, const std::string& filename,
               std::shared_ptr<const mesh::Mesh> mesh);
 
@@ -117,8 +117,8 @@ public:
   /// @param[in] comm The MPI communicator
   /// @param[in] filename Name of output file
   /// @param[in] u List of functions. The functions must (1) share the
-  /// same mesh (degree 1) and (2) be degree 1 Lagrange.
-  /// @note All functions in `u` must share the same Mesh
+  /// same mesh (degree 1) and (2) be degree 1 Lagrange. @note All
+  /// functions in `u` must share the same Mesh
   FidesWriter(MPI_Comm comm, const std::string& filename,
               const ADIOS2Writer::U& u);
 
@@ -155,7 +155,7 @@ public:
   /// @param[in] mesh The mesh to write
   /// @note This format support arbitrary degree meshes
   /// @note The mesh geometry can be updated between write steps but the
-  /// topology should not be changedbetween write steps
+  /// topology should not be changed between write steps
   VTXWriter(MPI_Comm comm, const std::string& filename,
             std::shared_ptr<const mesh::Mesh> mesh);
 
