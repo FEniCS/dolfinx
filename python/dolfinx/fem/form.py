@@ -11,7 +11,7 @@ from dolfinx import cpp, jit
 
 
 def extract_function_spaces(forms, index):
-    return [form.fucntion_space[index] for form in forms]
+    return [form.function_space[index] for form in forms]
 
 
 class Form:
