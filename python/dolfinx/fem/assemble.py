@@ -12,8 +12,8 @@ import typing
 
 import ufl
 from dolfinx import cpp
-from dolfinx.fem.dirichletbc import DirichletBC
-from dolfinx.fem.form import Form
+from dolfinx.fem.dirichletbc import DirichletBC, bcs_by_block
+from dolfinx.fem.form import Form, extract_function_spaces
 from petsc4py import PETSc
 
 
@@ -252,7 +252,8 @@ def _(b: PETSc.Vec,
     cpp.la.scatter_local_vectors(b, b_local, maps)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
-    bcs0 = cpp.fem.bcs_rows(_create_cpp_form(L), bcs)
+    # bcs0 = cpp.fem.bcs_rows(_create_cpp_form(L), bcs)
+    bcs0 = bcs_by_block(extract_function_spaces(_create_cpp_form(L), 0), bcs)
     offset = 0
     b_array = b.getArray(readonly=False)
     for submap, bc, _x0 in zip(maps, bcs0, x0_sub):

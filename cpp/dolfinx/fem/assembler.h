@@ -379,21 +379,24 @@ void set_bc(xtl::span<T> b,
 /// @param[in] L Linear forms for each block
 /// @param[in] bcs Boundary conditions
 /// @return The boundary conditions collected by block, i.e.
-///   bcs_block[i] is the list of boundary conditions applied to L[i]. The
-///   order within bcs_block[i] preserves the input order of the bcs
-///   array.
+/// bcs_block[i] is the list of boundary conditions applied to L[i]. The
+/// order within bcs_block[i] preserves the input order of the bcs
+/// array.
 template <typename T>
 std::vector<std::vector<std::shared_ptr<const fem::DirichletBC<T>>>>
-bcs_rows(const std::vector<const Form<T>*>& L,
+bcs_rows(const std::vector<const FunctionSpace*>& V,
          const std::vector<std::shared_ptr<const fem::DirichletBC<T>>>& bcs)
 {
   // Pack DirichletBC pointers for rows
   std::vector<std::vector<std::shared_ptr<const fem::DirichletBC<T>>>> bcs0(
-      L.size());
-  for (std::size_t i = 0; i < L.size(); ++i)
+      V.size());
+  for (std::size_t i = 0; i < V.size(); ++i)
+  {
+    assert(V[i]);
     for (const std::shared_ptr<const DirichletBC<T>>& bc : bcs)
-      if (L[i]->function_spaces()[0]->contains(*bc->function_space()))
+      if (V[i]->contains(*bc->function_space()))
         bcs0[i].push_back(bc);
+  }
   return bcs0;
 }
 

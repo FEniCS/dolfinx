@@ -19,6 +19,15 @@ from dolfinx import cpp
 from dolfinx.fem.function import Function, FunctionSpace
 
 
+def _bc_space(V, bcs):
+    "Return list of bcs that have the same space as V"
+    return [bc for bc in bcs if V.contains(bc.function_space)]
+
+
+def bcs_by_block(spaces, bcs):
+    return [_bc_space(V, bcs) if V is not None else [] for V in spaces]
+
+
 def locate_dofs_geometrical(V: typing.Iterable[typing.Union[cpp.fem.FunctionSpace, FunctionSpace]],
                             marker: types.FunctionType):
     """Locate degrees-of-freedom geometrically using a marker function.

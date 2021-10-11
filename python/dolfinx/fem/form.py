@@ -10,6 +10,10 @@ import ufl
 from dolfinx import cpp, jit
 
 
+def extract_function_spaces(forms, index):
+    return [form.fucntion_space[index] for form in forms]
+
+
 class Form:
     def __init__(self, form: ufl.Form, form_compiler_parameters: dict = {}, jit_parameters: dict = {}):
         """Create DOLFINx Form
