@@ -208,8 +208,13 @@ Form<T> create_form(
   {
     ufc_integral* integral = ufc_form.integrals(cell)[i];
     assert(integral);
-    integral_data[IntegralType::cell].first.emplace_back(
-        cell_integral_ids[i], integral->tabulate_tensor);
+
+    kern k = reinterpret_cast<void (*)(T*, const T*, const T*, const double*,
+                                       const int*, const unsigned char*)>(
+        integral->tabulate_tensor);
+
+    integral_data[IntegralType::cell].first.emplace_back(cell_integral_ids[i],
+                                                         k);
     if (integral->needs_facet_permutations)
       needs_facet_permutations = true;
   }
@@ -244,8 +249,13 @@ Form<T> create_form(
   {
     ufc_integral* integral = ufc_form.integrals(exterior_facet)[i];
     assert(integral);
+
+    kern k = reinterpret_cast<void (*)(T*, const T*, const T*, const double*,
+                                       const int*, const unsigned char*)>(
+        integral->tabulate_tensor);
+
     integral_data[IntegralType::exterior_facet].first.emplace_back(
-        exterior_facet_integral_ids[i], integral->tabulate_tensor);
+        exterior_facet_integral_ids[i], k);
     if (integral->needs_facet_permutations)
       needs_facet_permutations = true;
   }
@@ -266,8 +276,13 @@ Form<T> create_form(
   {
     ufc_integral* integral = ufc_form.integrals(interior_facet)[i];
     assert(integral);
+
+    kern k = reinterpret_cast<void (*)(T*, const T*, const T*, const double*,
+                                       const int*, const unsigned char*)>(
+        integral->tabulate_tensor);
+
     integral_data[IntegralType::interior_facet].first.emplace_back(
-        interior_facet_integral_ids[i], integral->tabulate_tensor);
+        interior_facet_integral_ids[i], k);
     if (integral->needs_facet_permutations)
       needs_facet_permutations = true;
   }
@@ -521,9 +536,11 @@ std::vector<typename U::scalar_type> pack_constants(const U& u)
       = u.constants();
 
   // Calculate size of array needed to store packed constants
-  std::int32_t size = std::accumulate(constants.begin(), constants.end(), 0,
-                                      [](std::int32_t sum, const auto& constant)
-                                      { return sum + constant->value.size(); });
+  std::int32_t size
+      = std::accumulate(constants.begin(), constants.end(), 0,
+                        [](std::int32_t sum, const auto& constant) {
+                          return sum + constant->value.size();
+                        });
 
   // Pack constants
   std::vector<T> constant_values(size);
