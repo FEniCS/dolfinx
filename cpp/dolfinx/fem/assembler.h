@@ -376,7 +376,7 @@ void set_bc(xtl::span<T> b,
 // FIXME: Pass function spaces rather than forms
 
 /// Arrange boundary conditions by block
-/// @param[in] L Linear forms for each block
+/// @param[in] V List of function spaces
 /// @param[in] bcs Boundary conditions
 /// @return The boundary conditions collected by block, i.e.
 /// bcs_block[i] is the list of boundary conditions applied to L[i]. The
