@@ -13,7 +13,8 @@ import numpy
 import pytest
 
 
-@pytest.mark.skipif(dolfinx.has_petsc_complex)
+@pytest.mark.skipif(dolfinx.has_petsc_complex,
+                    reason="Complex expression not implemented in ufc")
 def test_expression():
     """
     Test UFL expression evaluation
