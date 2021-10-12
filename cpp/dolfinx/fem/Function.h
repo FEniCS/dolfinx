@@ -45,6 +45,9 @@ template <typename T>
 class Function
 {
 public:
+  /// The field type for the Function, e.g. double
+  using value_type = T;
+
   /// Create function on given function space
   /// @param[in] V The function space
   explicit Function(std::shared_ptr<const FunctionSpace> V)
@@ -392,6 +395,8 @@ public:
 
   /// Compute values at all mesh 'nodes'
   /// @return The values at all geometric points
+  /// @warning This function will be removed soon. Use interpolation
+  /// instead.
   xt::xtensor<T, 2> compute_point_values() const
   {
     assert(_function_space);

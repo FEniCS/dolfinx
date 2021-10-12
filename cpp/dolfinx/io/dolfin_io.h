@@ -11,4 +11,5 @@ namespace dolfinx
 
 // DOLFINx io interface
 
+#include <dolfinx/io/ADIOS2Writers.h>
 #include <dolfinx/io/VTKFile.h>
