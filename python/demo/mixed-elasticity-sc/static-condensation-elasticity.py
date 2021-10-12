@@ -95,18 +95,17 @@ f = ufl.as_vector([0.0, 1.0 / 16])
 b1 = - ufl.inner(f, v) * ds(1)
 
 # JIT compile individual blocks tabulation kernels
-ffi = cffi.FFI()
-
 np_type = "complex128" if dolfinx.has_petsc_complex else "float64"
-ufc_form00, _, _ = dolfinx.jit.ffcx_jit(mesh.mpi_comm(), a00)
+ufc_form00, module, _ = dolfinx.jit.ffcx_jit(mesh.mpi_comm(), a00)
+ffi = module.ffi
 kernel00 = ffi.cast(f"ufc_tabulate_tensor_{np_type} *",
                     ufc_form00.integrals(0)[0].tabulate_tensor)
 
-ufc_form01, _, _ = dolfinx.jit.ffcx_jit(mesh.mpi_comm(), a01)
+ufc_form01, module, _ = dolfinx.jit.ffcx_jit(mesh.mpi_comm(), a01)
 kernel01 = ffi.cast(f"ufc_tabulate_tensor_{np_type} *",
                     ufc_form01.integrals(0)[0].tabulate_tensor)
 
-ufc_form10, _, _ = dolfinx.jit.ffcx_jit(mesh.mpi_comm(), a10)
+ufc_form10, module, _ = dolfinx.jit.ffcx_jit(mesh.mpi_comm(), a10)
 kernel10 = ffi.cast(f"ufc_tabulate_tensor_{np_type} *",
                     ufc_form10.integrals(0)[0].tabulate_tensor)
 
