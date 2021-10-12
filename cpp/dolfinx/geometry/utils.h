@@ -9,6 +9,8 @@
 #include <array>
 #include <utility>
 #include <vector>
+#include <xtensor/xfixed.hpp>
+#include <xtensor/xshape.hpp>
 #include <xtl/xspan.hpp>
 
 namespace dolfinx::mesh
@@ -42,8 +44,9 @@ compute_collisions(const BoundingBoxTree& tree0, const BoundingBoxTree& tree1);
 /// @param[in] tree The bounding box tree
 /// @param[in] p The point
 /// @return Bounding box leaves (local to process) that contain the point
-std::vector<int> compute_collisions(const BoundingBoxTree& tree,
-                                    const std::array<double, 3>& p);
+std::vector<int>
+compute_collisions(const BoundingBoxTree& tree,
+                   const xt::xtensor_fixed<double, xt::xshape<3>>& p);
 
 /// Compute closest mesh entity (local to process) for the topological distance
 /// of the bounding box tree and distance and a point
@@ -55,14 +58,14 @@ std::vector<int> compute_collisions(const BoundingBoxTree& tree,
 /// @return The local index of the entity and the distance from the point.
 std::pair<std::int32_t, double>
 compute_closest_entity(const BoundingBoxTree& tree,
-                       const std::array<double, 3>& p, const mesh::Mesh& mesh,
-                       double R = -1);
+                       const xt::xtensor_fixed<double, xt::xshape<3>>& p,
+                       const mesh::Mesh& mesh, double R = -1);
 
 /// Compute squared distance between point and bounding box wih index
 /// "node". Returns zero if point is inside box.
-double
-compute_squared_distance_bbox(const std::array<std::array<double, 3>, 2>& b,
-                              const std::array<double, 3>& x);
+double compute_squared_distance_bbox(
+    const xt::xtensor_fixed<double, xt::xshape<2, 3>>& b,
+    const xt::xtensor_fixed<double, xt::xshape<3>>& x);
 
 /// Compute squared distance from a given point to the nearest point on
 /// a cell (only first order convex cells are supported at this stage)
@@ -78,7 +81,7 @@ compute_squared_distance_bbox(const std::array<std::array<double, 3>, 2>& b,
 /// to the mesh to compute the Point
 /// @return shortest squared distance from p to entity
 double squared_distance(const mesh::Mesh& mesh, int dim, std::int32_t index,
-                        const std::array<double, 3>& p);
+                        const xt::xtensor_fixed<double, xt::xshape<1, 3>>& p);
 
 /// From the given Mesh, select up to n cells (local to process) from the list
 /// which actually collide with point p. n may be zero (selects all valid
@@ -91,5 +94,6 @@ double squared_distance(const mesh::Mesh& mesh, int dim, std::int32_t index,
 std::vector<std::int32_t>
 select_colliding_cells(const dolfinx::mesh::Mesh& mesh,
                        const xtl::span<const std::int32_t>& candidate_cells,
-                       const std::array<double, 3>& p, int n);
+                       const xt::xtensor_fixed<double, xt::xshape<1, 3>>& p,
+                       int n);
 } // namespace dolfinx::geometry

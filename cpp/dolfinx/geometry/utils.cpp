@@ -27,43 +27,33 @@ constexpr bool is_leaf(const std::array<int, 2>& bbox)
   return bbox[0] == bbox[1];
 }
 //-----------------------------------------------------------------------------
-bool point_in_bbox(const std::array<std::array<double, 3>, 2>& b,
-                   const std::array<double, 3>& x)
+bool point_in_bbox(const xt::xtensor_fixed<double, xt::xshape<2, 3>>& b,
+                   const xt::xtensor_fixed<double, xt::xshape<3>>& x)
 {
-  xt::xtensor_fixed<double, xt::xshape<3>> _x, b0, b1;
-  for (int i = 0; i < 3; ++i)
-  {
-    _x[i] = x[i];
-    b0[i] = b[0][i];
-    b1[i] = b[1][i];
-  }
-
+  auto b0 = xt::row(b, 0);
+  auto b1 = xt::row(b, 1);
   constexpr double rtol = 1e-14;
   auto eps0 = rtol * (b1 - b0);
-  return xt::all(_x >= (b0 - eps0)) and xt::all(_x <= (b1 + eps0));
+  return xt::all(x >= (b0 - eps0)) and xt::all(x <= (b1 + eps0));
 }
 //-----------------------------------------------------------------------------
-bool bbox_in_bbox(const std::array<std::array<double, 3>, 2>& a,
-                  const std::array<std::array<double, 3>, 2>& b)
+bool bbox_in_bbox(const xt::xtensor_fixed<double, xt::xshape<2, 3>>& a,
+                  const xt::xtensor_fixed<double, xt::xshape<2, 3>>& b)
 {
-  xt::xtensor_fixed<double, xt::xshape<3>> a0, a1, b0, b1;
-  for (int i = 0; i < 3; ++i)
-  {
-    a0[i] = a[0][i];
-    a1[i] = a[1][i];
-    b0[i] = b[0][i];
-    b1[i] = b[1][i];
-  }
-
   constexpr double rtol = 1e-14;
+  auto b0 = xt::row(b, 0);
+  auto b1 = xt::row(b, 1);
+  auto a0 = xt::row(a, 0);
+  auto a1 = xt::row(a, 1);
   auto eps0 = rtol * (b1 - b0);
   return xt::all(b0 - eps0 <= a1) and xt::all(b1 + eps0 >= a0);
 }
 //-----------------------------------------------------------------------------
 // Compute closest entity {closest_entity, R2} (recursive)
 std::pair<std::int32_t, double> _compute_closest_entity(
-    const geometry::BoundingBoxTree& tree, const std::array<double, 3>& point,
-    int node, const mesh::Mesh& mesh, std::int32_t closest_entity, double R2)
+    const geometry::BoundingBoxTree& tree,
+    const xt::xtensor_fixed<double, xt::xshape<1, 3>>& point, int node,
+    const mesh::Mesh& mesh, std::int32_t closest_entity, double R2)
 {
   // Get children of current bounding box node (child_1 denotes entity
   // index for leaves)
@@ -74,10 +64,10 @@ std::pair<std::int32_t, double> _compute_closest_entity(
     // If point cloud tree the exact distance is easy to compute
     if (tree.tdim() == 0)
     {
-      const std::array<double, 3> x = tree.get_bbox(node)[0];
-      r2 = (x[0] - point[0]) * (x[0] - point[0])
-           + (x[1] - point[1]) * (x[1] - point[1])
-           + (x[2] - point[2]) * (x[2] - point[2]);
+      xt::xtensor_fixed<double, xt::xshape<3>> diff
+          = xt::row(tree.get_bbox(node), 0);
+      diff -= xt::row(point, 0);
+      r2 = xt::norm_sq(diff)();
     }
     else
     {
@@ -117,9 +107,10 @@ std::pair<std::int32_t, double> _compute_closest_entity(
 }
 //-----------------------------------------------------------------------------
 // Compute collisions with point (recursive)
-void _compute_collisions_point(const geometry::BoundingBoxTree& tree,
-                               const std::array<double, 3>& p, int node,
-                               std::vector<int>& entities)
+void _compute_collisions_point(
+    const geometry::BoundingBoxTree& tree,
+    const xt::xtensor_fixed<double, xt::xshape<3>>& p, int node,
+    std::vector<int>& entities)
 {
   // Get children of current bounding box node
   const std::array bbox = tree.bbox(node);
@@ -241,36 +232,31 @@ geometry::compute_collisions(const BoundingBoxTree& tree0,
   return entities;
 }
 //-----------------------------------------------------------------------------
-std::vector<int> geometry::compute_collisions(const BoundingBoxTree& tree,
-                                              const std::array<double, 3>& p)
+std::vector<int>
+geometry::compute_collisions(const BoundingBoxTree& tree,
+                             const xt::xtensor_fixed<double, xt::xshape<3>>& p)
 {
   std::vector<int> entities;
   if (tree.num_bboxes() > 0)
     _compute_collisions_point(tree, p, tree.num_bboxes() - 1, entities);
-
   return entities;
 }
 //-----------------------------------------------------------------------------
 double geometry::compute_squared_distance_bbox(
-    const std::array<std::array<double, 3>, 2>& b,
-    const std::array<double, 3>& x)
+    const xt::xtensor_fixed<double, xt::xshape<2, 3>>& b,
+    const xt::xtensor_fixed<double, xt::xshape<3>>& x)
 {
-  xt::xtensor_fixed<double, xt::xshape<3>> d0, d1;
-  for (int i = 0; i < 3; ++i)
-  {
-    d0[i] = x[i] - b[0][i];
-    d1[i] = x[i] - b[1][i];
-  }
-
+  const xt::xtensor_fixed<double, xt::xshape<3>> d0 = x - xt::row(b, 0);
+  const xt::xtensor_fixed<double, xt::xshape<3>> d1 = x - xt::row(b, 1);
   auto _d0 = xt::where(d0 > 0.0, 0, d0);
   auto _d1 = xt::where(d1 < 0.0, 0, d1);
   return xt::norm_sq(_d0)() + xt::norm_sq(_d1)();
 }
 //-----------------------------------------------------------------------------
-std::pair<int, double>
-geometry::compute_closest_entity(const BoundingBoxTree& tree,
-                                 const std::array<double, 3>& p,
-                                 const mesh::Mesh& mesh, double R)
+std::pair<int, double> geometry::compute_closest_entity(
+    const BoundingBoxTree& tree,
+    const xt::xtensor_fixed<double, xt::xshape<3>>& p, const mesh::Mesh& mesh,
+    double R)
 {
   // If bounding box tree is empty (on this processor) end search
   if (tree.num_bboxes() == 0)
@@ -282,9 +268,10 @@ geometry::compute_closest_entity(const BoundingBoxTree& tree,
   std::int32_t initial_guess;
   if (R < 0.0)
   {
-    const std::array<double, 3> x = tree.get_bbox(0)[0];
-    R2 = (x[0] - p[0]) * (x[0] - p[0]) + (x[1] - p[1]) * (x[1] - p[1])
-         + (x[2] - p[2]) * (x[2] - p[2]);
+    xt::xtensor_fixed<double, xt::xshape<3>> diff
+        = xt::row(tree.get_bbox(0), 0);
+    diff -= p;
+    R2 = xt::norm_sq(diff)();
     initial_guess = 0;
   }
   else
@@ -305,9 +292,9 @@ geometry::compute_closest_entity(const BoundingBoxTree& tree,
   return {index, std::sqrt(distance2)};
 }
 //-----------------------------------------------------------------------------
-double geometry::squared_distance(const mesh::Mesh& mesh, int dim,
-                                  std::int32_t index,
-                                  const std::array<double, 3>& p)
+double
+geometry::squared_distance(const mesh::Mesh& mesh, int dim, std::int32_t index,
+                           const xt::xtensor_fixed<double, xt::xshape<1, 3>>& p)
 {
   const int tdim = mesh.topology().dim();
   const mesh::Geometry& geometry = mesh.geometry();
@@ -316,9 +303,6 @@ double geometry::squared_distance(const mesh::Mesh& mesh, int dim,
 
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
 
-  xt::xtensor_fixed<double, xt::xshape<1, 3>> _p;
-  std::copy(p.begin(), p.end(), _p.data());
-
   if (dim == tdim)
   {
     auto dofs = x_dofmap.links(index);
@@ -326,8 +310,7 @@ double geometry::squared_distance(const mesh::Mesh& mesh, int dim,
     for (std::size_t i = 0; i < dofs.size(); ++i)
       for (std::size_t j = 0; j < 3; ++j)
         nodes(i, j) = geom_dofs(dofs[i], j);
-
-    return xt::norm_sq(geometry::compute_distance_gjk(_p, nodes))();
+    return xt::norm_sq(geometry::compute_distance_gjk(p, nodes))();
   }
   else
   {
@@ -357,14 +340,14 @@ double geometry::squared_distance(const mesh::Mesh& mesh, int dim,
       for (std::size_t j = 0; j < 3; ++j)
         nodes(i, j) = geom_dofs(dofs[entity_dofs[i]], j);
 
-    return xt::norm_sq(geometry::compute_distance_gjk(_p, nodes))();
+    return xt::norm_sq(geometry::compute_distance_gjk(p, nodes))();
   }
 }
 //-------------------------------------------------------------------------------
 std::vector<std::int32_t> geometry::select_colliding_cells(
     const mesh::Mesh& mesh,
     const xtl::span<const std::int32_t>& candidate_cells,
-    const std::array<double, 3>& p, int n)
+    const xt::xtensor_fixed<double, xt::xshape<1, 3>>& p, int n)
 {
   const double eps2 = 1e-20;
   const int tdim = mesh.topology().dim();
