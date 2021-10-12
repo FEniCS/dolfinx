@@ -205,6 +205,13 @@ set_package_properties(UFC PROPERTIES TYPE REQUIRED
 #------------------------------------------------------------------------------
 # Run tests to find optional packages
 
+# Check for ADIOS2
+find_package(ADIOS2 2.7.1)
+set_package_properties(ADIOS2 PROPERTIES TYPE OPTIONAL
+  DESCRIPTION "Adaptable Input/Output (I/O) System."
+  URL "https://adios2.readthedocs.io/en/latest/"
+  PURPOSE "IO, including in parallel")
+
 # Check for SLEPc
 set(SLEPC_FOUND FALSE)
 if (DOLFINX_ENABLE_SLEPC)

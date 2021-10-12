@@ -41,4 +41,7 @@ bool has_parmetis();
 /// Return true if DOLFINx is compiled with KaHIP
 bool has_kahip();
 
+/// Return true if DOLFINX is compiled with ADIOS2
+bool has_adios2();
+
 } // namespace dolfinx
