@@ -192,10 +192,11 @@ for b_sub in b.getNestSubVecs():
     b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
 # Set Dirichlet boundary condition values in the RHS
-# dolfinx.fem.form.extract_function_spaces(dolfinx.fem.assemble._create_cpp_form(L))
-dolfinx.fem.form.extract_function_spaces(dolfinx.fem.assemble._create_cpp_form(a))
-exit(0)
-bcs0 = dolfinx.cpp.fem.bcs_rows(dolfinx.fem.assemble._create_cpp_form(L), bcs)
+# bcs0 = dolfinx.cpp.fem.bcs_rows(dolfinx.fem.assemble._create_cpp_form(L), bcs)
+tmp = dolfinx.fem.form.extract_function_spaces(dolfinx.fem.assemble._create_cpp_form(L))
+bcs0 = dolfinx.fem.dirichletbc.bcs_by_block(dolfinx.fem.form.extract_function_spaces(dolfinx.fem.assemble._create_cpp_form(L)), bcs)
+# exit(0)
+# dolfinx.fem.form.extract_function_spaces(dolfinx.fem.assemble._create_cpp_form([a[0][0], a[0][1]]))
 dolfinx.fem.assemble.set_bc_nest(b, bcs0)
 
 # Ths pressure field for this problem is determined only up to a

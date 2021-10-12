@@ -11,35 +11,42 @@ import ufl
 from dolfinx import cpp, jit
 
 
-def _extract_function_spaces(forms, index):
-    return [form.function_spaces[index] if form is not None else None for form in forms]
-
-
 def extract_function_spaces(forms):
+    """Extract common function spaces from an array for forms. If
+    `forms` is a list of linears form, this function returns of list of
+    the the corresponding test functions. If `forms` is a 2D array of
+    bilinear forms, this function returns a pair of arrays where the
+    first array holds the common test function space for each row and
+    the second array holds the common trial function space for each
+    column."""
     _forms = np.array(forms)
-    if _forms.ndim == 1:
-        return _extract_function_spaces(forms, 0)
+    if _forms.ndim == 0:
+        raise RuntimeError("Expected an array for forms, not a single form")
+    elif _forms.ndim == 1:
+        for form in _forms:
+            if form is not None:
+                assert form.rank == 1, "Expected linear form"
+        return [form.function_spaces[0] if form is not None else None for form in forms]
     elif _forms.ndim == 2:
-        def _extract(form, index):
-            return form.function_spaces[index] if form is not None else None
-        vfunc = np.vectorize(_extract)
-        V0 = vfunc(_forms, 0)
-        V1 = vfunc(_forms, 1)
-        def unique_spaces(V):
-            Vcommon = V[:, 0]
-            for col in range(1, V.shape[1]):
-                for v0, v1 in zip(Vcommon, V[:, col]):
-                    if v0 is None and v1 is not None:
-                        v0 = v1
-                    elif  v0 is not None and v1 is not None:
-                        assert v0 == v1, "Cannot extract unique function spaces"
-            return Vcommon
+        extract_spaces = np.vectorize(lambda form, index: form.function_spaces[index] if form is not None else None)
+        V0, V1 = extract_spaces(_forms, 0), extract_spaces(_forms, 1)
 
+        def unique_spaces(V):
+            V0 = V[:, 0]
+            for col in range(1, V.shape[1]):
+                for row in range(V.shape[1]):
+                    if V0[row] is None and V[row, col] is not None:
+                        V0[row] = V[row, col]
+                    elif V0[row] is not None and V[row, col] is not None:
+                        assert V0[row] == V[row, col], "Cannot extract unique function spaces"
+            return V0
         return list(unique_spaces(V0)), list(unique_spaces(V1.transpose()))
+    else:
+        raise RuntimeError("Unsupported array of forms")
 
 
 class Form:
-    def __init__(self, form: ufl.Form, form_compiler_parameters: dict={}, jit_parameters: dict={}):
+    def __init__(self, form: ufl.Form, form_compiler_parameters: dict = {}, jit_parameters: dict = {}):
         """Create DOLFINx Form
 
         Parameters
@@ -96,6 +103,11 @@ class Form:
         self._cpp_object = cpp.fem.create_form(ffi.cast("uintptr_t", ffi.addressof(self._ufc_form)),
                                                function_spaces, coeffs,
                                                [c._cpp_object for c in form.constants()], subdomains, mesh)
+
+    @property
+    def rank(self):
+        """Return the compiled ufc_form object"""
+        return self._cpp_object.rank
 
     @property
     def ufc_form(self):

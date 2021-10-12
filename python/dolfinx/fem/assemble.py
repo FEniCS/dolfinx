@@ -253,7 +253,7 @@ def _(b: PETSc.Vec,
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
     # bcs0 = cpp.fem.bcs_rows(_create_cpp_form(L), bcs)
-    bcs0 = bcs_by_block(extract_function_spaces(_create_cpp_form(L), 0), bcs)
+    bcs0 = bcs_by_block(extract_function_spaces(_create_cpp_form(L)), bcs)
     offset = 0
     b_array = b.getArray(readonly=False)
     for submap, bc, _x0 in zip(maps, bcs0, x0_sub):
@@ -490,3 +490,28 @@ def set_bc_nest(b: PETSc.Vec,
     x0 = len(_b) * [None] if x0 is None else x0.getNestSubVecs()
     for b_sub, bc, x_sub in zip(_b, bcs, x0):
         set_bc(b_sub, bc, x_sub, scale)
+
+
+# def bcs_rows(L, bcs):
+#     _L = _create_cpp_form(L)
+#     V = [form.function_spaces[0] if form is not None else None for form in _L]
+#     bcs0 = [[] for _ in _L]
+#     for Vi, _bcs0 in zip(V, bcs0):
+#         for bc in bcs:
+#             if Vi is not None and Vi.contains(bc.function_space):
+#                 _bcs0.append(bc)
+#     return bcs0
+
+
+#   // Pack DirichletBC pointers for rows
+#   std::vector<std::vector<std::shared_ptr<const fem::DirichletBC<T>>>> bcs0(
+#       V.size());
+#   for (std::size_t i = 0; i < V.size(); ++i)
+#   {
+#     assert(V[i]);
+#     for (const std::shared_ptr<const DirichletBC<T>>& bc : bcs)
+#       if (V[i]->contains(*bc->function_space()))
+#         bcs0[i].push_back(bc);
+#   }
+#   return bcs0;
+# }
