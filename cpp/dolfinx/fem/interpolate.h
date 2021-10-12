@@ -226,6 +226,17 @@ void interpolate(
   }
 }
 //----------------------------------------------------------------------------
+/// Interpolate an expression in a finite element space
+///
+/// @param[out] u The function to interpolate into
+/// @param[in] f The expression to be interpolated
+/// @param[in] The points at which f should be evaluated, as computed
+/// by fem::interpolation_coords. The element used in
+/// fem::interpolation_coords should be the same element as associated
+/// with u.
+/// @param[in] cells Indices of the cells in the mesh on which to
+/// interpolate. Should be the same as the list used when calling
+/// fem::interpolation_coords.
 template <typename T>
 void interpolate(
     Function<T>& u,
