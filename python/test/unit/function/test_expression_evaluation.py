@@ -14,6 +14,7 @@ from mpi4py import MPI
 from petsc4py import PETSc
 import pytest
 
+
 @pytest.mark.skipif(dolfinx.has_petsc_complex,
                     reason="Complex expression not implemented in ufc")
 def test_rank0():
