@@ -10,8 +10,10 @@ import dolfinx
 import dolfinx.geometry
 from mpi4py import MPI
 import numpy
+import pytest
 
 
+@pytest.mark.skipif(dolfinx.has_petsc_complex)
 def test_expression():
     """
     Test UFL expression evaluation
