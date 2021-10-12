@@ -95,21 +95,19 @@ b1 = - ufl.inner(f, v) * ds(1)
 
 # JIT compile individual blocks tabulation kernels
 c_type = "double _Complex" if dolfinx.has_petsc_complex else "double"
-ufc_form00, module, _ = dolfinx.jit.ffcx_jit(mesh.mpi_comm(), a00)
 ffi = cffi.FFI()
 cast = f"""void(*)({c_type}* restrict, const {c_type}* restrict,
              const {c_type}* restrict, const double* restrict,
              const int* restrict, const uint8_t* restrict)"""
 
+ufc_form00, module, _ = dolfinx.jit.ffcx_jit(mesh.mpi_comm(), a00)
 kernel00 = ffi.cast(cast, ufc_form00.integrals(0)[0].tabulate_tensor)
 
 ufc_form01, module, _ = dolfinx.jit.ffcx_jit(mesh.mpi_comm(), a01)
-kernel01 = ffi.cast(cast,
-                    ufc_form01.integrals(0)[0].tabulate_tensor)
+kernel01 = ffi.cast(cast, ufc_form01.integrals(0)[0].tabulate_tensor)
 
 ufc_form10, module, _ = dolfinx.jit.ffcx_jit(mesh.mpi_comm(), a10)
-kernel10 = ffi.cast(cast,
-                    ufc_form10.integrals(0)[0].tabulate_tensor)
+kernel10 = ffi.cast(cast, ufc_form10.integrals(0)[0].tabulate_tensor)
 
 cffi_support.register_type(ffi.typeof('double _Complex'),
                            numba.types.complex128)
