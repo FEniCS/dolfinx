@@ -12,7 +12,6 @@
 
 import os
 
-import cffi
 import dolfinx
 import dolfinx.cpp
 import dolfinx.geometry
