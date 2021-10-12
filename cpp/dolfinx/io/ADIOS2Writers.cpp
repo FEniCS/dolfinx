@@ -215,7 +215,9 @@ tabulate_lagrange_dof_coordinates(const dolfinx::fem::FunctionSpace& V)
   // Get the dof coordinates on the reference element and the  mesh
   // coordinate map
   const xt::xtensor<double, 2>& X = element->interpolation_points();
-  const fem::CoordinateElement& cmap = mesh->geometry().cmap();
+  if (mesh->geometry().cmaps().size() != 1)
+    throw std::runtime_error("Mixed topology mesh not supported");
+  const fem::CoordinateElement& cmap = mesh->geometry().cmaps()[0];
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& dofmap_x
@@ -391,10 +393,10 @@ std::vector<std::string> extract_function_names(const ADIOS2Writer::U& u)
   for (auto& v : u)
   {
     std::visit(
-        overload{[&names](const std::shared_ptr<const ADIOS2Writer::Fdr>& u)
-                 { names.push_back(u->name); },
-                 [&names](const std::shared_ptr<const ADIOS2Writer::Fdc>& u)
-                 {
+        overload{[&names](const std::shared_ptr<const ADIOS2Writer::Fdr>& u) {
+                   names.push_back(u->name);
+                 },
+                 [&names](const std::shared_ptr<const ADIOS2Writer::Fdc>& u) {
                    names.push_back(u->name + "_real");
                    names.push_back(u->name + "_imag");
                  }},
@@ -505,8 +507,9 @@ std::vector<Scalar> pack_function_data(const fem::Function<Scalar>& u)
   assert(mesh);
 
   // The Function and the mesh must have identical element_dof_layouts
-  // (up tp the block size)
-  assert(*(dofmap->element_dof_layout) == mesh->geometry().cmap().dof_layout());
+  // (up to the block size)
+  assert(*(dofmap->element_dof_layout)
+         == mesh->geometry().cmaps()[0].dof_layout());
 
   const int tdim = mesh->topology().dim();
   auto cell_map = mesh->topology().index_map(tdim);
@@ -825,8 +828,7 @@ FidesWriter::FidesWriter(MPI_Comm comm, const std::string& filename,
   {
     std::visit(
         overload{
-            [&](const std::shared_ptr<const Fdr>& u)
-            {
+            [&](const std::shared_ptr<const Fdr>& u) {
               auto element = u->function_space()->element();
               assert(element);
               std::string family = element->family();
@@ -838,8 +840,7 @@ FidesWriter::FidesWriter(MPI_Comm comm, const std::string& filename,
                     "Only first order Lagrange spaces supported");
               }
             },
-            [&](const std::shared_ptr<const Fdc>& u)
-            {
+            [&](const std::shared_ptr<const Fdc>& u) {
               auto element = u->function_space()->element();
               assert(element);
               std::string family = element->family();
@@ -927,8 +928,7 @@ VTXWriter::VTXWriter(MPI_Comm comm, const std::string& filename,
   for (auto& v : _u)
   {
     std::visit(
-        overload{[&](const std::shared_ptr<const Fdr>& u)
-                 {
+        overload{[&](const std::shared_ptr<const Fdr>& u) {
                    auto element = u->function_space()->element();
                    std::string family = element->family();
                    int num_dofs
@@ -939,8 +939,7 @@ VTXWriter::VTXWriter(MPI_Comm comm, const std::string& filename,
                          "Only first order Lagrange spaces supported");
                    }
                  },
-                 [&](const std::shared_ptr<const Fdc>& u)
-                 {
+                 [&](const std::shared_ptr<const Fdc>& u) {
                    auto element = u->function_space()->element();
                    std::string family = element->family();
                    int num_dofs
