@@ -200,7 +200,7 @@ def ffcx_jit(ufl_object, form_compiler_parameters={}, jit_parameters={}):
 """
     # Prepare form compiler parameters with priority parameters
     p_ffcx = ffcx.get_parameters(form_compiler_parameters)
-    p_ffcx["scalar_type"] = "double complex" if common.has_petsc_complex else "double"
+    p_ffcx["scalar_type"] = "double _Complex" if common.has_petsc_complex else "double"
 
     p_jit = get_parameters(jit_parameters)
 
