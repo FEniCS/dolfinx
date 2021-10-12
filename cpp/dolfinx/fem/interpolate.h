@@ -230,7 +230,7 @@ void interpolate(
 ///
 /// @param[out] u The function to interpolate into
 /// @param[in] f The expression to be interpolated
-/// @param[in] The points at which f should be evaluated, as computed
+/// @param[in] x The points at which f should be evaluated, as computed
 /// by fem::interpolation_coords. The element used in
 /// fem::interpolation_coords should be the same element as associated
 /// with u.
