@@ -537,7 +537,7 @@ void fem(py::module& m)
 
   // Tools
 //   m.def("bcs_rows", &dolfinx::fem::bcs_rows<PetscScalar>);
-  m.def("bcs_cols", &dolfinx::fem::bcs_cols<PetscScalar>);
+//   m.def("bcs_cols", &dolfinx::fem::bcs_cols<PetscScalar>);
 
   m.def(
       "create_discrete_gradient",
