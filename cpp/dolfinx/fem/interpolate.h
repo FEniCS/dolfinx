@@ -296,8 +296,8 @@ void interpolate(Function<T>& u, const Function<T>& v)
 
   auto map = mesh->topology().index_map(tdim);
   assert(map);
-  std::vector<T>& u_array = u.x()->mutable_array();
-  const std::vector<T>& v_array = v.x()->array();
+  xtl::span<T> u_array = u.x()->mutable_array();
+  xtl::span<const T> v_array = v.x()->array();
   if (u.function_space() == v.function_space())
   {
     // --- Same function spaces
