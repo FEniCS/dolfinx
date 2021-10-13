@@ -19,15 +19,6 @@ from dolfinx import cpp
 from dolfinx.fem.function import Function, FunctionSpace
 
 
-def _bc_space(V, bcs):
-    "Return list of bcs that have the same space as V"
-    return [bc for bc in bcs if V.contains(bc.function_space)]
-
-
-def bcs_by_block(spaces, bcs):
-    return [_bc_space(V, bcs) if V is not None else [] for V in spaces]
-
-
 def locate_dofs_geometrical(V: typing.Iterable[typing.Union[cpp.fem.FunctionSpace, FunctionSpace]],
                             marker: types.FunctionType):
     """Locate degrees-of-freedom geometrically using a marker function.
@@ -164,3 +155,19 @@ class DirichletBC(cpp.fem.DirichletBC):
             super().__init__(_value, dofs, _V)
         else:
             super().__init__(_value, dofs)
+
+
+def bcs_by_block(spaces: typing.Iterable[FunctionSpace],
+                 bcs: typing.Iterable[DirichletBC]) -> typing.Iterable[typing.Iterable[DirichletBC]]:
+    """This function arranges Dirichlet boundary conditions by the
+    function space that they constrain.
+
+    Given a sequence of function spaces `spaces` and a sequence of
+    DirichletBC objects `bcs`, return a list where the ith entry is the
+    list of DirichletBC objects whose space is contained in
+    `space[i]`."""
+    def _bc_space(V, bcs):
+        "Return list of bcs that have the same space as V"
+        return [bc for bc in bcs if V.contains(bc.function_space)]
+
+    return [_bc_space(V, bcs) if V is not None else [] for V in spaces]

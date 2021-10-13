@@ -18,9 +18,8 @@ from petsc4py import PETSc
 
 
 def _create_cpp_form(form):
-    """Recursively look for ufl.Forms and convert to dolfinx.fem.Form, otherwise
-    return form argument
-    """
+    """Recursively look for ufl.Forms and convert to
+    dolfinx.cpp.fem.Form, otherwise return form argument"""
     if isinstance(form, Form):
         return form._cpp_object
     elif isinstance(form, ufl.Form):
