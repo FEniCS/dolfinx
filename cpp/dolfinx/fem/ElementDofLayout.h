@@ -7,7 +7,6 @@
 #pragma once
 
 #include <array>
-#include <dolfinx/common/types.h>
 #include <memory>
 #include <set>
 #include <ufc.h>
