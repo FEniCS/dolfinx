@@ -242,13 +242,13 @@ def _(b: PETSc.Vec,
            coeffs_a[1] if coeffs_a[1] is not None else pack_coefficients(_a))
 
     # bcs1 = cpp.fem.bcs_cols(_create_cpp_form(a), bcs)
-    _, bcs1 = bcs_by_block(extract_function_spaces(_a), bcs)
+    bcs1 = bcs_by_block(extract_function_spaces(_a)[0], bcs)
     b_local = cpp.la.get_local_vectors(b, maps)
-    for b_sub, L_sub, a_sub, bc, constant_L, coeff_L, constant_a, coeff_a in zip(b_local, _L, _a, bcs1,
-                                                                                 c_L[0], c_L[1],
-                                                                                 c_a[0], c_a[1]):
+    for b_sub, L_sub, a_sub, constant_L, coeff_L, constant_a, coeff_a in zip(b_local, _L, _a,
+                                                                             c_L[0], c_L[1],
+                                                                             c_a[0], c_a[1]):
         cpp.fem.assemble_vector(b_sub, L_sub, constant_L, coeff_L)
-        cpp.fem.apply_lifting(b_sub, a_sub, constant_a, coeff_a, bc, x0_local, scale)
+        cpp.fem.apply_lifting(b_sub, a_sub, constant_a, coeff_a, bcs1, x0_local, scale)
 
     cpp.la.scatter_local_vectors(b, b_local, maps)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
@@ -457,9 +457,12 @@ def apply_lifting_nest(b: PETSc.Vec,
     c = (coeffs[0] if coeffs[0] is not None else pack_constants(_a),
          coeffs[1] if coeffs[1] is not None else pack_coefficients(_a))
     # bcs1 = cpp.fem.bcs_cols(_a, bcs)
-    _, bcs1 = bcs_by_block(extract_function_spaces(_a), bcs)
-    for b_sub, a_sub, constants, coeffs, bc1 in zip(b.getNestSubVecs(), _a, c[0], c[1], bcs1):
-        apply_lifting(b_sub, a_sub, bc1, x0, scale, (constants, coeffs))
+    # _, bcs1 = bcs_by_block(extract_function_spaces(_a), bcs)
+    bcs1 = bcs_by_block(extract_function_spaces(_a)[1], bcs)
+    # print("0*******:", bcs1)
+    for b_sub, a_sub, constants, coeffs in zip(b.getNestSubVecs(), _a, c[0], c[1]):
+        # print("1*******:", bcs1)
+        apply_lifting(b_sub, a_sub, bcs1, x0, scale, (constants, coeffs))
     return b
 
 
