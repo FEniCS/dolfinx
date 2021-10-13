@@ -217,15 +217,14 @@ class NonlinearPDE_SNESProblem():
                 _u[:] = _x
 
         # Assemble
-        bcs1 = dolfinx.cpp.fem.bcs_cols(dolfinx.fem.assemble._create_cpp_form(self.a), self.bcs)
-        _, bcs1 = dolfinx.cpp.fem.dirichlet.bcs_by_block(dolfinx.fem.form.extract_function_spaces(
-            dolfinx.fem.assemble._create_cpp_form(self.a)), self.bcs)
+        bcs1 = dolfinx.fem.dirichletbc.bcs_by_block(dolfinx.fem.form.extract_function_spaces(
+            dolfinx.fem.assemble._create_cpp_form(self.a))[1], self.bcs)
 
-        for L, F_sub, a, bc in zip(self.L, F.getNestSubVecs(), self.a, bcs1):
+        for L, F_sub, a in zip(self.L, F.getNestSubVecs(), self.a):
             with F_sub.localForm() as F_sub_local:
                 F_sub_local.set(0.0)
             dolfinx.fem.assemble_vector(F_sub, L)
-            dolfinx.fem.apply_lifting(F_sub, a, bcs=bc, x0=x, scale=-1.0)
+            dolfinx.fem.apply_lifting(F_sub, a, bcs=bcs1, x0=x, scale=-1.0)
             F_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
         # Set bc value in RHS
