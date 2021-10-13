@@ -112,7 +112,6 @@ def test_matrix_assembly_block_nl():
     dolfinx.fem.apply_lifting_nest(b1, a_block, bcs=[bc], x0=x1, scale=-1.0)
     for b_sub in b1.getNestSubVecs():
         b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    # bcs0 = dolfinx.cpp.fem.bcs_rows(dolfinx.fem.assemble._create_cpp_form(L_block), [bc])
     bcs0 = dolfinx.fem.dirichletbc.bcs_by_block(dolfinx.fem.form.extract_function_spaces(
         dolfinx.fem.assemble._create_cpp_form(L_block)), [bc])
 
@@ -219,7 +218,6 @@ class NonlinearPDE_SNESProblem():
         # Assemble
         bcs1 = dolfinx.fem.dirichletbc.bcs_by_block(dolfinx.fem.form.extract_function_spaces(
             dolfinx.fem.assemble._create_cpp_form(self.a))[1], self.bcs)
-
         for L, F_sub, a in zip(self.L, F.getNestSubVecs(), self.a):
             with F_sub.localForm() as F_sub_local:
                 F_sub_local.set(0.0)

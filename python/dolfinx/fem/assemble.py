@@ -241,7 +241,6 @@ def _(b: PETSc.Vec,
     c_a = (coeffs_a[0] if coeffs_a[0] is not None else pack_constants(_a),
            coeffs_a[1] if coeffs_a[1] is not None else pack_coefficients(_a))
 
-    # bcs1 = cpp.fem.bcs_cols(_create_cpp_form(a), bcs)
     bcs1 = bcs_by_block(extract_function_spaces(_a)[0], bcs)
     b_local = cpp.la.get_local_vectors(b, maps)
     for b_sub, L_sub, a_sub, constant_L, coeff_L, constant_a, coeff_a in zip(b_local, _L, _a,
@@ -253,7 +252,6 @@ def _(b: PETSc.Vec,
     cpp.la.scatter_local_vectors(b, b_local, maps)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
-    # bcs0 = cpp.fem.bcs_rows(_create_cpp_form(L), bcs)
     bcs0 = bcs_by_block(extract_function_spaces(_create_cpp_form(L)), bcs)
     offset = 0
     b_array = b.getArray(readonly=False)
@@ -456,12 +454,8 @@ def apply_lifting_nest(b: PETSc.Vec,
     _a = _create_cpp_form(a)
     c = (coeffs[0] if coeffs[0] is not None else pack_constants(_a),
          coeffs[1] if coeffs[1] is not None else pack_coefficients(_a))
-    # bcs1 = cpp.fem.bcs_cols(_a, bcs)
-    # _, bcs1 = bcs_by_block(extract_function_spaces(_a), bcs)
     bcs1 = bcs_by_block(extract_function_spaces(_a)[1], bcs)
-    # print("0*******:", bcs1)
     for b_sub, a_sub, constants, coeffs in zip(b.getNestSubVecs(), _a, c[0], c[1]):
-        # print("1*******:", bcs1)
         apply_lifting(b_sub, a_sub, bcs1, x0, scale, (constants, coeffs))
     return b
 
@@ -495,28 +489,3 @@ def set_bc_nest(b: PETSc.Vec,
     x0 = len(_b) * [None] if x0 is None else x0.getNestSubVecs()
     for b_sub, bc, x_sub in zip(_b, bcs, x0):
         set_bc(b_sub, bc, x_sub, scale)
-
-
-# def bcs_rows(L, bcs):
-#     _L = _create_cpp_form(L)
-#     V = [form.function_spaces[0] if form is not None else None for form in _L]
-#     bcs0 = [[] for _ in _L]
-#     for Vi, _bcs0 in zip(V, bcs0):
-#         for bc in bcs:
-#             if Vi is not None and Vi.contains(bc.function_space):
-#                 _bcs0.append(bc)
-#     return bcs0
-
-
-#   // Pack DirichletBC pointers for rows
-#   std::vector<std::vector<std::shared_ptr<const fem::DirichletBC<T>>>> bcs0(
-#       V.size());
-#   for (std::size_t i = 0; i < V.size(); ++i)
-#   {
-#     assert(V[i]);
-#     for (const std::shared_ptr<const DirichletBC<T>>& bc : bcs)
-#       if (V[i]->contains(*bc->function_space()))
-#         bcs0[i].push_back(bc);
-#   }
-#   return bcs0;
-# }
