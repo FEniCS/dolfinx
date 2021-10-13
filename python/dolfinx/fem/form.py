@@ -110,6 +110,11 @@ class Form:
         return self._cpp_object.rank
 
     @property
+    def function_spaces(self):
+        """Return the compiled ufc_form object"""
+        return self._cpp_object.function_spaces
+
+    @property
     def ufc_form(self):
         """Return the compiled ufc_form object"""
         return self._ufc_form
