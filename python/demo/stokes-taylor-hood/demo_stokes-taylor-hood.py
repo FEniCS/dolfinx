@@ -75,13 +75,12 @@ import numpy as np
 import ufl
 from dolfinx import DirichletBC, Function, FunctionSpace, RectangleMesh
 from dolfinx.cpp.mesh import CellType
-from dolfinx.fem import locate_dofs_geometrical, locate_dofs_topological
+from dolfinx.fem import Form, locate_dofs_geometrical, locate_dofs_topological
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import locate_entities_boundary
 from mpi4py import MPI
 from petsc4py import PETSc
 from ufl import div, dx, grad, inner
-
 
 # We create a Mesh and attach a coordinate map to the mesh::
 
@@ -147,15 +146,15 @@ bcs = [bc0, bc1]
 (v, q) = ufl.TestFunction(V), ufl.TestFunction(Q)
 f = dolfinx.Constant(mesh, (0, 0))
 
-a = [[inner(grad(u), grad(v)) * dx, inner(p, div(v)) * dx],
-     [inner(div(u), q) * dx, None]]
+a = [[Form(inner(grad(u), grad(v)) * dx), Form(inner(p, div(v)) * dx)],
+     [Form(inner(div(u), q) * dx), None]]
 
-L = [inner(f, v) * dx,
-     inner(dolfinx.Constant(mesh, 0), q) * dx]
+L = [Form(inner(f, v) * dx),
+     Form(inner(dolfinx.Constant(mesh, 0), q) * dx)]
 
 # We will use a block-diagonal preconditioner to solve this problem::
 
-a_p11 = inner(p, q) * dx
+a_p11 = Form(inner(p, q) * dx)
 a_p = [[a[0][0], None],
        [None, a_p11]]
 
@@ -192,8 +191,7 @@ for b_sub in b.getNestSubVecs():
     b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
 # Set Dirichlet boundary condition values in the RHS
-bcs0 = dolfinx.fem.dirichletbc.bcs_by_block(
-    dolfinx.fem.form.extract_function_spaces(dolfinx.fem.assemble._create_cpp_form(L)), bcs)
+bcs0 = dolfinx.fem.dirichletbc.bcs_by_block(dolfinx.fem.form.extract_function_spaces(L), bcs)
 dolfinx.fem.assemble.set_bc_nest(b, bcs0)
 
 # Ths pressure field for this problem is determined only up to a
@@ -430,8 +428,8 @@ bcs = [bc0, bc1, bc2]
 (v, q) = ufl.TestFunctions(W)
 f = Function(W0)
 zero = dolfinx.Constant(mesh, 0.0)
-a = (inner(grad(u), grad(v)) + inner(p, div(v)) + inner(div(u), q)) * dx
-L = inner(f, v) * dx
+a = Form((inner(grad(u), grad(v)) + inner(p, div(v)) + inner(div(u), q)) * dx)
+L = Form(inner(f, v) * dx)
 
 # Assemble LHS matrix and RHS vector
 A = dolfinx.fem.assemble_matrix(a, bcs=bcs)
