@@ -212,7 +212,9 @@ Form<T> create_form(
     if constexpr (std::is_same<T, float>::value)
       k = integral->tabulate_tensor_float32;
     else if constexpr (std::is_same<T, std::complex<float>>::value)
-      k = integral->tabulate_tensor_complex64;
+      k = reinterpret_cast<void (*)(T*, const T*, const T*, const double*,
+                                    const int*, const unsigned char*)>(
+          integral->tabulate_tensor_complex64);
     else if constexpr (std::is_same<T, double>::value)
       k = integral->tabulate_tensor_float64;
     else if constexpr (std::is_same<T, std::complex<double>>::value)
@@ -262,7 +264,9 @@ Form<T> create_form(
     if constexpr (std::is_same<T, float>::value)
       k = integral->tabulate_tensor_float32;
     else if constexpr (std::is_same<T, std::complex<float>>::value)
-      k = integral->tabulate_tensor_complex64;
+      k = reinterpret_cast<void (*)(T*, const T*, const T*, const double*,
+                                    const int*, const unsigned char*)>(
+          integral->tabulate_tensor_complex64);
     else if constexpr (std::is_same<T, double>::value)
       k = integral->tabulate_tensor_float64;
     else if constexpr (std::is_same<T, std::complex<double>>::value)
@@ -298,7 +302,9 @@ Form<T> create_form(
     if constexpr (std::is_same<T, float>::value)
       k = integral->tabulate_tensor_float32;
     else if constexpr (std::is_same<T, std::complex<float>>::value)
-      k = integral->tabulate_tensor_complex64;
+      k = reinterpret_cast<void (*)(T*, const T*, const T*, const double*,
+                                    const int*, const unsigned char*)>(
+          integral->tabulate_tensor_complex64);
     else if constexpr (std::is_same<T, double>::value)
       k = integral->tabulate_tensor_float64;
     else if constexpr (std::is_same<T, std::complex<double>>::value)
