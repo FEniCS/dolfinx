@@ -347,11 +347,9 @@ def test_custom_mesh_loop_rank1():
     b3 = dolfinx.Function(V)
     ufc_form, module, code = dolfinx.jit.ffcx_jit(mesh.mpi_comm(), L)
 
-    c_type = "double _Complex" if dolfinx.has_petsc_complex else "double"
+    nptype = "complex128" if dolfinx.has_petsc_complex else "float64"
     # First 0 for "cell" integrals, second 0 for the first one, i.e. default domain
-    kernel = ffi.cast(f"""void(*)({c_type}*, const {c_type}*, const {c_type}*, const double*,
-                                  const int*, const unsigned char*)""",
-                      ufc_form.integrals(0)[0].tabulate_tensor)
+    kernel = getattr(ufc_form.integrals(0)[0], f"tabulate_tensor_{nptype}")
 
     for i in range(2):
         with b3.vector.localForm() as b:

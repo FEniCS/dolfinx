@@ -209,9 +209,16 @@ Form<T> create_form(
     ufc_integral* integral = ufc_form.integrals(cell)[i];
     assert(integral);
 
-    kern k = reinterpret_cast<void (*)(T*, const T*, const T*, const double*,
-                                       const int*, const unsigned char*)>(
-        integral->tabulate_tensor);
+    kern k;
+    if constexpr (std::is_same<T, float>::value)
+      k = integral->tabulate_tensor_float32;
+    else if constexpr (std::is_same<T, std::complex<float>>::value)
+      k = integral->tabulate_tensor_complex64;
+    else if constexpr (std::is_same<T, double>::value)
+      k = integral->tabulate_tensor_float64;
+    else if constexpr (std::is_same<T, std::complex<double>>::value)
+      k = integral->tabulate_tensor_complex128;
+    assert(k);
 
     integral_data[IntegralType::cell].first.emplace_back(cell_integral_ids[i],
                                                          k);
@@ -250,9 +257,16 @@ Form<T> create_form(
     ufc_integral* integral = ufc_form.integrals(exterior_facet)[i];
     assert(integral);
 
-    kern k = reinterpret_cast<void (*)(T*, const T*, const T*, const double*,
-                                       const int*, const unsigned char*)>(
-        integral->tabulate_tensor);
+    kern k;
+    if constexpr (std::is_same<T, float>::value)
+      k = integral->tabulate_tensor_float32;
+    else if constexpr (std::is_same<T, std::complex<float>>::value)
+      k = integral->tabulate_tensor_complex64;
+    else if constexpr (std::is_same<T, double>::value)
+      k = integral->tabulate_tensor_float64;
+    else if constexpr (std::is_same<T, std::complex<double>>::value)
+      k = integral->tabulate_tensor_complex128;
+    assert(k);
 
     integral_data[IntegralType::exterior_facet].first.emplace_back(
         exterior_facet_integral_ids[i], k);
@@ -277,9 +291,16 @@ Form<T> create_form(
     ufc_integral* integral = ufc_form.integrals(interior_facet)[i];
     assert(integral);
 
-    kern k = reinterpret_cast<void (*)(T*, const T*, const T*, const double*,
-                                       const int*, const unsigned char*)>(
-        integral->tabulate_tensor);
+    kern k;
+    if constexpr (std::is_same<T, float>::value)
+      k = integral->tabulate_tensor_float32;
+    else if constexpr (std::is_same<T, std::complex<float>>::value)
+      k = integral->tabulate_tensor_complex64;
+    else if constexpr (std::is_same<T, double>::value)
+      k = integral->tabulate_tensor_float64;
+    else if constexpr (std::is_same<T, std::complex<double>>::value)
+      k = integral->tabulate_tensor_complex128;
+    assert(k);
 
     integral_data[IntegralType::interior_facet].first.emplace_back(
         interior_facet_integral_ids[i], k);
