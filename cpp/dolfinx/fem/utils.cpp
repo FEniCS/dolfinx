@@ -30,8 +30,7 @@ using namespace dolfinx;
 //-----------------------------------------------------------------------------
 la::SparsityPattern fem::create_sparsity_pattern(
     const mesh::Topology& topology,
-    const std::array<const std::reference_wrapper<const fem::DofMap>, 2>&
-        dofmaps,
+    const std::array<std::reference_wrapper<const fem::DofMap>, 2>& dofmaps,
     const std::set<IntegralType>& integrals)
 {
   common::Timer t0("Build sparsity");

@@ -87,7 +87,7 @@ la::SparsityPattern create_sparsity_pattern(const Form<T>& a)
   }
 
   // Get dof maps and mesh
-  std::array<const std::reference_wrapper<const fem::DofMap>, 2> dofmaps{
+  std::array<std::reference_wrapper<const fem::DofMap>, 2> dofmaps{
       *a.function_spaces().at(0)->dofmap(),
       *a.function_spaces().at(1)->dofmap()};
   std::shared_ptr mesh = a.mesh();
@@ -111,8 +111,7 @@ la::SparsityPattern create_sparsity_pattern(const Form<T>& a)
 /// SparsityPattern::assemble.
 la::SparsityPattern create_sparsity_pattern(
     const mesh::Topology& topology,
-    const std::array<const std::reference_wrapper<const fem::DofMap>, 2>&
-        dofmaps,
+    const std::array<std::reference_wrapper<const fem::DofMap>, 2>& dofmaps,
     const std::set<IntegralType>& integrals);
 
 /// Create an ElementDofLayout from a ufc_dofmap
@@ -326,8 +325,8 @@ Form<T> create_form(
     integral_data[IntegralType::interior_facet].second = it->second;
   }
 
-  return fem::Form(spaces, integral_data, coefficients, constants,
-                   needs_facet_permutations, mesh);
+  return fem::Form<T>(spaces, integral_data, coefficients, constants,
+                      needs_facet_permutations, mesh);
 }
 
 /// Create a Form from UFC input
