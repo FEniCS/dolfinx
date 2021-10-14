@@ -240,7 +240,7 @@ def _(b: PETSc.Vec,
     c_a = (coeffs_a[0] if coeffs_a[0] is not None else pack_constants(_a),
            coeffs_a[1] if coeffs_a[1] is not None else pack_coefficients(_a))
 
-    bcs1 = bcs_by_block(extract_function_spaces(_a)[0], bcs)
+    bcs1 = bcs_by_block(extract_function_spaces(_a, 1), bcs)
     b_local = cpp.la.get_local_vectors(b, maps)
     for b_sub, L_sub, a_sub, constant_L, coeff_L, constant_a, coeff_a in zip(b_local, _L, _a,
                                                                              c_L[0], c_L[1],
@@ -453,7 +453,7 @@ def apply_lifting_nest(b: PETSc.Vec,
     _a = _create_cpp_form(a)
     c = (coeffs[0] if coeffs[0] is not None else pack_constants(_a),
          coeffs[1] if coeffs[1] is not None else pack_coefficients(_a))
-    bcs1 = bcs_by_block(extract_function_spaces(_a)[1], bcs)
+    bcs1 = bcs_by_block(extract_function_spaces(_a, 1), bcs)
     for b_sub, a_sub, constants, coeffs in zip(b.getNestSubVecs(), _a, c[0], c[1]):
         apply_lifting(b_sub, a_sub, bcs1, x0, scale, (constants, coeffs))
     return b

@@ -95,27 +95,28 @@ class Form:
 
 
 _args = typing.Union[typing.Iterable[Form], typing.Iterable[typing.Iterable[Form]]]
-_ret = typing.Union[typing.Iterable[function.FunctionSpace], typing.Iterable[typing.Iterable[function.FunctionSpace]]]
 
 
-def extract_function_spaces(forms: _args) -> _ret:
+def extract_function_spaces(forms: _args, index: int = 0) -> typing.Iterable[function.FunctionSpace]:
     """Extract common function spaces from an array of forms. If `forms`
     is a list of linear form, this function returns of list of the the
     corresponding test functions. If `forms` is a 2D array of bilinear
-    forms, this function returns a pair of arrays where the first array
-    holds the common test function space for each row and the second
-    array holds the common trial function space for each column."""
+    forms, for index=0 the list common test function space for each row
+    is returned, and if index=1 the common trial function spaces for
+    each column are returned."""
     _forms = np.array(forms)
     if _forms.ndim == 0:
         raise RuntimeError("Expected an array for forms, not a single form")
     elif _forms.ndim == 1:
+        assert index == 0
         for form in _forms:
             if form is not None:
                 assert form.rank == 1, "Expected linear form"
         return [form.function_spaces[0] if form is not None else None for form in forms]
     elif _forms.ndim == 2:
-        extract_spaces = np.vectorize(lambda form, index: form.function_spaces[index] if form is not None else None)
-        V0, V1 = extract_spaces(_forms, 0), extract_spaces(_forms, 1)
+        assert index == 0 or index == 1
+        extract_spaces = np.vectorize(lambda form: form.function_spaces[index] if form is not None else None)
+        V = extract_spaces(_forms)
 
         def unique_spaces(V):
             V0 = V[:, 0]
@@ -126,6 +127,10 @@ def extract_function_spaces(forms: _args) -> _ret:
                     elif V0[row] is not None and V[row, col] is not None:
                         assert V0[row] == V[row, col], "Cannot extract unique function spaces"
             return V0
-        return list(unique_spaces(V0)), list(unique_spaces(V1.transpose()))
+
+        if index == 0:
+            return list(unique_spaces(V))
+        elif index == 1:
+            return list(unique_spaces(V.transpose()))
     else:
         raise RuntimeError("Unsupported array of forms")

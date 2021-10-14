@@ -221,7 +221,7 @@ class NonlinearPDE_SNESProblem():
                 _u[:] = _x
 
         # Assemble
-        bcs1 = dolfinx.fem.dirichletbc.bcs_by_block(dolfinx.fem.form.extract_function_spaces(self.a)[1], self.bcs)
+        bcs1 = dolfinx.fem.dirichletbc.bcs_by_block(dolfinx.fem.form.extract_function_spaces(self.a, 1), self.bcs)
         for L, F_sub, a in zip(self.L, F.getNestSubVecs(), self.a):
             with F_sub.localForm() as F_sub_local:
                 F_sub_local.set(0.0)
