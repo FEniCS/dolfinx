@@ -249,7 +249,7 @@ def _(b: PETSc.Vec,
     c_a = (coeffs_a[0] if coeffs_a[0] is not None else pack_constants(_a),
            coeffs_a[1] if coeffs_a[1] is not None else pack_coefficients(_a))
 
-    bcs1 = bcs_by_block(extract_function_spaces(_a, 1), bcs)
+    bcs1 = _cpp_dirichletbc(bcs_by_block(extract_function_spaces(_a, 1), bcs))
     b_local = cpp.la.get_local_vectors(b, maps)
     for b_sub, L_sub, a_sub, constant_L, coeff_L, constant_a, coeff_a in zip(b_local, _L, _a,
                                                                              c_L[0], c_L[1],
@@ -260,7 +260,7 @@ def _(b: PETSc.Vec,
     cpp.la.scatter_local_vectors(b, b_local, maps)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
-    bcs0 = bcs_by_block(extract_function_spaces(_create_cpp_form(L)), bcs)
+    bcs0 = _cpp_dirichletbc(bcs_by_block(extract_function_spaces(_create_cpp_form(L)), bcs))
     offset = 0
     b_array = b.getArray(readonly=False)
     for submap, bc, _x0 in zip(maps, bcs0, x0_sub):
