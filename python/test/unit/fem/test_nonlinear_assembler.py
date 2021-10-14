@@ -112,7 +112,7 @@ def test_matrix_assembly_block_nl():
     dolfinx.fem.apply_lifting_nest(b1, a_block, bcs=[bc], x0=x1, scale=-1.0)
     for b_sub in b1.getNestSubVecs():
         b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    bcs0 = dolfinx.fem.dirichletbc.bcs_by_block(dolfinx.fem.form.extract_function_spaces(L_block), [bc])
+    bcs0 = dolfinx.fem.dirichletbc.bcs_by_block([L.function_spaces[0] for L in L_block], [bc])
 
     dolfinx.fem.set_bc_nest(b1, bcs0, x1, scale=-1.0)
     A1.assemble()
