@@ -177,7 +177,6 @@ void _add_data(const fem::Function<Scalar>& u,
         field_node.append_child(pugi::node_pcdata)
             .set_value(xt_to_string(values_comp, 16).c_str());
       }
-
       else if (rank == 1)
       {
         field_node.append_attribute("NumberOfComponents") = 3;
@@ -513,7 +512,7 @@ void write_function(
         auto cmap = mesh->geometry().cmap();
         auto geometry_layout = cmap.dof_layout();
         // Extract function value
-        const std::vector<Scalar>& func_values = _u.get().x()->array();
+        xtl::span<const Scalar> func_values = _u.get().x()->array();
         // Compute in tensor (one for scalar function, . . .)
         const size_t value_size_loc = element->value_size();
 

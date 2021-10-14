@@ -17,6 +17,7 @@ from dolfinx.cpp.mesh import CellType
 from dolfinx.mesh import MeshTags, create_mesh
 from dolfinx_utils.test.skips import skip_in_parallel
 from mpi4py import MPI
+from petsc4py import PETSc
 
 parametrize_cell_types = pytest.mark.parametrize(
     "cell_type",
@@ -500,7 +501,7 @@ def assemble_div_vector(k, offset):
     mesh = create_quad_mesh(offset)
     V = FunctionSpace(mesh, ("RTCF", k + 1))
     v = ufl.TestFunction(V)
-    form = ufl.inner(Constant(mesh, 1), ufl.div(v)) * ufl.dx
+    form = ufl.inner(Constant(mesh, PETSc.ScalarType(1)), ufl.div(v)) * ufl.dx
     L = fem.assemble_vector(form)
     return L[:]
 

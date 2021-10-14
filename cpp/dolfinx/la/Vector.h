@@ -236,10 +236,10 @@ public:
   constexpr int bs() const { return _bs; }
 
   /// Get local part of the vector (const version)
-  const std::vector<T, Allocator>& array() const { return _x; }
+  xtl::span<const T> array() const { return xtl::span<const T>(_x); }
 
   /// Get local part of the vector
-  std::vector<T, Allocator>& mutable_array() { return _x; }
+  xtl::span<T> mutable_array() { return xtl::span(_x); }
 
 private:
   // Map describing the data layout
@@ -269,8 +269,8 @@ T inner_product(const Vector<T, Allocator>& a, const Vector<T, Allocator>& b)
   const std::int32_t local_size = a.bs() * a.map()->size_local();
   if (local_size != b.bs() * b.map()->size_local())
     throw std::runtime_error("Incompatible vector sizes");
-  const std::vector<T>& x_a = a.array();
-  const std::vector<T>& x_b = b.array();
+  xtl::span<const T> x_a = a.array();
+  xtl::span<const T> x_b = b.array();
 
   const T local = std::transform_reduce(
       x_a.begin(), x_a.begin() + local_size, x_b.begin(), static_cast<T>(0),
