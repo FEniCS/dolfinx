@@ -21,7 +21,7 @@ def test_expression():
     Test UFL expression evaluation
     """
     mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, 10, 10)
-    V = dolfinx.FunctionSpace(mesh, ("CG", 2))
+    V = dolfinx.FunctionSpace(mesh, ("Lagrange", 2))
 
     def f(x):
         return 2 * x[0]**2 + x[1]**2

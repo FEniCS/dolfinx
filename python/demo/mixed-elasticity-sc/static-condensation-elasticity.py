@@ -37,7 +37,7 @@ infile.close()
 
 # Stress (Se) and displacement (Ue) elements
 Se = ufl.TensorElement("DG", mesh.ufl_cell(), 1, symmetry=True)
-Ue = ufl.VectorElement("CG", mesh.ufl_cell(), 2)
+Ue = ufl.VectorElement("Lagrange", mesh.ufl_cell(), 2)
 
 S = dolfinx.FunctionSpace(mesh, Se)
 U = dolfinx.FunctionSpace(mesh, Ue)

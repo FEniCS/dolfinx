@@ -248,7 +248,7 @@ def test_interpolation_nedelec(order1, order2):
 @pytest.mark.xfail(strict=True)
 def test_interpolation_cross():
     mesh = dolfinx.UnitCubeMesh(MPI.COMM_WORLD, 2, 2, 2)
-    V = dolfinx.VectorFunctionSpace(mesh, ("CG", 1))
+    V = dolfinx.VectorFunctionSpace(mesh, ("Lagrange", 1))
     V1 = dolfinx.FunctionSpace(mesh, ("N1curl", 2))
 
     u = dolfinx.Function(V)
@@ -266,8 +266,8 @@ def test_interpolation_cross():
 @pytest.mark.parametrize("order2", [1, 2, 3])
 def test_interpolation_p2p(order1, order2):
     mesh = dolfinx.UnitCubeMesh(MPI.COMM_WORLD, 2, 2, 2)
-    V = dolfinx.FunctionSpace(mesh, ("CG", order1))
-    V1 = dolfinx.FunctionSpace(mesh, ("CG", order2))
+    V = dolfinx.FunctionSpace(mesh, ("Lagrange", order1))
+    V1 = dolfinx.FunctionSpace(mesh, ("Lagrange", order2))
 
     u = dolfinx.Function(V)
     v = dolfinx.Function(V1)
@@ -290,8 +290,8 @@ def test_interpolation_p2p(order1, order2):
 @pytest.mark.parametrize("order2", [1, 2])
 def test_interpolation_vector_elements(order1, order2):
     mesh = dolfinx.UnitCubeMesh(MPI.COMM_WORLD, 2, 2, 2)
-    V = dolfinx.VectorFunctionSpace(mesh, ("CG", order1))
-    V1 = dolfinx.VectorFunctionSpace(mesh, ("CG", order2))
+    V = dolfinx.VectorFunctionSpace(mesh, ("Lagrange", order1))
+    V1 = dolfinx.VectorFunctionSpace(mesh, ("Lagrange", order2))
 
     u = dolfinx.Function(V)
     v = dolfinx.Function(V1)

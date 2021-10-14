@@ -233,7 +233,7 @@ def test_facet_normals(cell_type):
 
 
 @skip_in_parallel
-@pytest.mark.parametrize('space_type', ["CG", "DG"])
+@pytest.mark.parametrize('space_type', ["Lagrange", "DG"])
 @parametrize_cell_types
 def test_plus_minus(cell_type, space_type):
     """Test that ('+') and ('-') give the same value for continuous functions"""

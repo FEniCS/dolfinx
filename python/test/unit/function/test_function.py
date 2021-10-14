@@ -197,7 +197,7 @@ def test_mixed_element_interpolation():
     def f(x):
         return np.ones(2, x.shape[1])
     mesh = UnitCubeMesh(MPI.COMM_WORLD, 3, 3, 3)
-    el = ufl.FiniteElement("CG", mesh.ufl_cell(), 1)
+    el = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
     V = dolfinx.FunctionSpace(mesh, ufl.MixedElement([el, el]))
     u = dolfinx.Function(V)
     with pytest.raises(RuntimeError):

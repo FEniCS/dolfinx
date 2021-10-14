@@ -586,7 +586,7 @@ def test_gmsh_input_2d(order, cell_type):
     #     return values
     # cmap = fem.create_coordinate_map(mesh.mpi_comm(), mesh.ufl_domain())
     # mesh.geometry.coord_mapping = cmap
-    # V = FunctionSpace(mesh, ("CG", order))
+    # V = FunctionSpace(mesh, ("Lagrange", order))
     # u = Function(V)
     # u.interpolate(e2)
     # from dolfinx.io import VTKFile
