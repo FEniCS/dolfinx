@@ -13,6 +13,7 @@ import pytest
 import scipy.sparse
 import ufl
 from dolfinx import fem
+from dolfinx.fem import form
 from dolfinx.generation import UnitCubeMesh, UnitSquareMesh
 from dolfinx.mesh import create_mesh
 from dolfinx_utils.test.skips import skip_in_parallel
@@ -248,13 +249,13 @@ def test_matrix_assembly_block(mode):
     g = -3.0
     zero = dolfinx.Function(V0)
 
-    a00 = inner(u, v) * dx
-    a01 = inner(p, v) * dx
-    a10 = inner(u, q) * dx
-    a11 = inner(p, q) * dx
+    a00 = fem.Form(inner(u, v) * dx)
+    a01 = fem.Form(inner(p, v) * dx)
+    a10 = fem.Form(inner(u, q) * dx)
+    a11 = fem.Form(inner(p, q) * dx)
 
-    L0 = zero * inner(f, v) * dx
-    L1 = inner(g, q) * dx
+    L0 = fem.Form(zero * inner(f, v) * dx)
+    L1 = fem.Form(inner(g, q) * dx)
 
     a_block = [[a00, a01], [a10, a11]]
     L_block = [L0, L1]
@@ -277,7 +278,7 @@ def test_matrix_assembly_block(mode):
     dolfinx.fem.apply_lifting_nest(b1, a_block, bcs=[bc])
     for b_sub in b1.getNestSubVecs():
         b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    bcs0 = dolfinx.cpp.fem.bcs_rows(dolfinx.fem.assemble._create_cpp_form(L_block), [bc])
+    bcs0 = fem.bcs_by_block([L.function_spaces[0] for L in L_block], [bc])
     dolfinx.fem.set_bc_nest(b1, bcs0)
     b1.assemble()
 
@@ -349,12 +350,12 @@ def test_assembly_solve_block(mode):
     g = -3.0
     zero = dolfinx.Function(V0)
 
-    a00 = inner(u, v) * dx
-    a01 = zero * inner(p, v) * dx
-    a10 = zero * inner(u, q) * dx
-    a11 = inner(p, q) * dx
-    L0 = inner(f, v) * dx
-    L1 = inner(g, q) * dx
+    a00 = fem.Form(inner(u, v) * dx)
+    a01 = fem.Form(zero * inner(p, v) * dx)
+    a10 = fem.Form(zero * inner(u, q) * dx)
+    a11 = fem.Form(inner(p, q) * dx)
+    L0 = fem.Form(inner(f, v) * dx)
+    L1 = fem.Form(inner(g, q) * dx)
 
     def monitor(ksp, its, rnorm):
         pass
@@ -384,7 +385,7 @@ def test_assembly_solve_block(mode):
     dolfinx.fem.apply_lifting_nest(b1, [[a00, a01], [a10, a11]], bcs=bcs)
     for b_sub in b1.getNestSubVecs():
         b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    bcs0 = dolfinx.cpp.fem.bcs_rows(dolfinx.fem.assemble._create_cpp_form([L0, L1]), bcs)
+    bcs0 = fem.bcs_by_block([L0.function_spaces[0], L1.function_spaces[0]], bcs)
     dolfinx.fem.set_bc_nest(b1, bcs0)
     b1.assemble()
 
@@ -455,7 +456,7 @@ def test_assembly_solve_block(mode):
     assert x2norm == pytest.approx(x0norm, 1.0e-10)
 
 
-@pytest.mark.parametrize("mesh", [
+@ pytest.mark.parametrize("mesh", [
     UnitSquareMesh(MPI.COMM_WORLD, 12, 11, ghost_mode=dolfinx.cpp.mesh.GhostMode.none),
     UnitSquareMesh(MPI.COMM_WORLD, 12, 11, ghost_mode=dolfinx.cpp.mesh.GhostMode.shared_facet),
     UnitCubeMesh(MPI.COMM_WORLD, 3, 7, 3, ghost_mode=dolfinx.cpp.mesh.GhostMode.none),
@@ -492,9 +493,9 @@ def test_assembly_solve_taylor_hood(mesh):
     u, p = ufl.TrialFunction(P2), ufl.TrialFunction(P1)
     v, q = ufl.TestFunction(P2), ufl.TestFunction(P1)
 
-    a00 = inner(ufl.grad(u), ufl.grad(v)) * dx
-    a01 = ufl.inner(p, ufl.div(v)) * dx
-    a10 = ufl.inner(ufl.div(u), q) * dx
+    a00 = fem.Form(inner(ufl.grad(u), ufl.grad(v)) * dx)
+    a01 = fem.Form(ufl.inner(p, ufl.div(v)) * dx)
+    a10 = fem.Form(ufl.inner(ufl.div(u), q) * dx)
     a11 = None
 
     p00 = a00
@@ -505,8 +506,8 @@ def test_assembly_solve_taylor_hood(mesh):
     # We need zero function for the 'zero' part of L
     p_zero = dolfinx.Function(P1)
     f = dolfinx.Function(P2)
-    L0 = ufl.inner(f, v) * dx
-    L1 = ufl.inner(p_zero, q) * dx
+    L0 = fem.Form(ufl.inner(f, v) * dx)
+    L1 = fem.Form(ufl.inner(p_zero, q) * dx)
 
     def nested_solve():
         """Nested solver"""
@@ -520,7 +521,7 @@ def test_assembly_solve_taylor_hood(mesh):
         dolfinx.fem.apply_lifting_nest(b, [[a00, a01], [a10, a11]], [bc0, bc1])
         for b_sub in b.getNestSubVecs():
             b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-        bcs = dolfinx.cpp.fem.bcs_rows(dolfinx.fem.assemble._create_cpp_form([L0, L1]), [bc0, bc1])
+        bcs = fem.bcs_by_block(form.extract_function_spaces([L0, L1]), [bc0, bc1])
         dolfinx.fem.set_bc_nest(b, bcs)
         b.assemble()
 
