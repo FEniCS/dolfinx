@@ -197,7 +197,7 @@ def ffcx_jit(ufl_object, form_compiler_parameters={}, jit_parameters={}):
       Example `dolfinx_jit_parameters.json` file:
 
           **{ "cffi_extra_compile_args": ["-O2", "-march=native" ],  "cffi_verbose": True }**
-"""
+    """
     # Prepare form compiler parameters with priority parameters
     p_ffcx = ffcx.get_parameters(form_compiler_parameters)
     p_ffcx["scalar_type"] = "double _Complex" if common.has_petsc_complex else "double"
