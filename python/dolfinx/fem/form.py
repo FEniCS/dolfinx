@@ -119,13 +119,19 @@ def extract_function_spaces(forms: _args, index: int = 0) -> typing.Iterable[fun
         V = extract_spaces(_forms)
 
         def unique_spaces(V):
+            # Pick spaces from first column
             V0 = V[:, 0]
+
+            # Iterate over each column
             for col in range(1, V.shape[1]):
-                for row in range(V.shape[1]):
+                # Iterate over entry in column, updating if current
+                # space is None, or where both spaces are not None check
+                # that they are the same
+                for row in range(V.shape[0]):
                     if V0[row] is None and V[row, col] is not None:
                         V0[row] = V[row, col]
                     elif V0[row] is not None and V[row, col] is not None:
-                        assert V0[row] == V[row, col], "Cannot extract unique function spaces"
+                        assert V0[row] is V[row, col], "Cannot extract unique function spaces"
             return V0
 
         if index == 0:
