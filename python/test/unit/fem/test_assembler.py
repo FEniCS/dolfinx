@@ -385,7 +385,7 @@ def test_assembly_solve_block(mode):
     dolfinx.fem.apply_lifting_nest(b1, [[a00, a01], [a10, a11]], bcs=bcs)
     for b_sub in b1.getNestSubVecs():
         b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    bcs0 = fem.bcs_by_block([L0.function_spaces[0], L1.function_spaces[1]], bcs)
+    bcs0 = fem.bcs_by_block([L0.function_spaces[0], L1.function_spaces[0]], bcs)
     dolfinx.fem.set_bc_nest(b1, bcs0)
     b1.assemble()
 
