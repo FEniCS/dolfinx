@@ -19,7 +19,7 @@ def test_extract_forms():
     a block system"""
     mesh = UnitSquareMesh(MPI.COMM_WORLD, 32, 31)
     V0 = FunctionSpace(mesh, ("Lagrange", 1))
-    V1 = FunctionSpace(mesh, ("Lagrange", 1))
+    V1 = FunctionSpace(mesh, ("Lagrange", 2))
     V2 = V0.clone()
     V3 = V1.clone()
 
@@ -28,25 +28,25 @@ def test_extract_forms():
     v2, u2 = TestFunction(V2), TrialFunction(V2)
     v3, u3 = TestFunction(V3), TrialFunction(V3)
 
-    a = [[Form(inner(v0, u0) * dx), Form(inner(v1, u1) * dx)],
-         [Form(inner(v2, u2) * dx), Form(inner(v3, u3) * dx)]]
+    a = [[Form(inner(u0, v0) * dx), Form(inner(u1, v1) * dx)],
+         [Form(inner(u2, v2) * dx), Form(inner(u3, v3) * dx)]]
     with pytest.raises(AssertionError):
         extract_function_spaces(a, 0)
     with pytest.raises(AssertionError):
         extract_function_spaces(a, 1)
 
-    a = [[Form(inner(v0, u0) * dx), Form(inner(v0, u1) * dx)],
-         [Form(inner(v2, u2) * dx), Form(inner(v2, u2) * dx)]]
-    Vr = extract_function_spaces(a, 0)
-    assert Vr[0] is V0._cpp_object
-    assert Vr[1] is V2._cpp_object
+    a = [[Form(inner(u0, v0) * dx), Form(inner(u2, v1) * dx)],
+         [Form(inner(u0, v2) * dx), Form(inner(u2, v2) * dx)]]
     with pytest.raises(AssertionError):
-        extract_function_spaces(a, 1)
-
-    a = [[Form(inner(v0, u0) * dx), Form(inner(v1, u1) * dx)],
-         [Form(inner(v2, u0) * dx), Form(inner(v3, u1) * dx)]]
-    with pytest.raises(AssertionError):
-        extract_function_spaces(a, 0)
+         extract_function_spaces(a, 0)
     Vc = extract_function_spaces(a, 1)
     assert Vc[0] is V0._cpp_object
-    assert Vc[1] is V1._cpp_object
+    assert Vc[1] is V2._cpp_object
+
+    a = [[Form(inner(u0, v0) * dx), Form(inner(u1, v0) * dx)],
+         [Form(inner(u2, v1) * dx), Form(inner(u3, v1) * dx)]]
+    Vr = extract_function_spaces(a, 0)
+    assert Vr[0] is V0._cpp_object
+    assert Vr[1] is V1._cpp_object
+    with pytest.raises(AssertionError):
+        extract_function_spaces(a, 1)
