@@ -13,6 +13,7 @@ import pytest
 import scipy.sparse
 import ufl
 from dolfinx import fem
+from dolfinx.fem import form
 from dolfinx.generation import UnitCubeMesh, UnitSquareMesh
 from dolfinx.mesh import create_mesh
 from dolfinx_utils.test.skips import skip_in_parallel
@@ -277,7 +278,7 @@ def test_matrix_assembly_block(mode):
     dolfinx.fem.apply_lifting_nest(b1, a_block, bcs=[bc])
     for b_sub in b1.getNestSubVecs():
         b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    bcs0 = dolfinx.fem.dirichletbc.bcs_by_block(dolfinx.fem.form.extract_function_spaces(L_block), [bc])
+    bcs0 = fem.bcs_by_block(form.extract_function_spaces(L_block), [bc])
     dolfinx.fem.set_bc_nest(b1, bcs0)
     b1.assemble()
 
@@ -384,7 +385,7 @@ def test_assembly_solve_block(mode):
     dolfinx.fem.apply_lifting_nest(b1, [[a00, a01], [a10, a11]], bcs=bcs)
     for b_sub in b1.getNestSubVecs():
         b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    bcs0 = dolfinx.fem.dirichletbc.bcs_by_block(dolfinx.fem.form.extract_function_spaces([L0, L1]), bcs)
+    bcs0 = fem.bcs_by_block(form.extract_function_spaces([L0, L1]), bcs)
     dolfinx.fem.set_bc_nest(b1, bcs0)
     b1.assemble()
 
@@ -520,7 +521,7 @@ def test_assembly_solve_taylor_hood(mesh):
         dolfinx.fem.apply_lifting_nest(b, [[a00, a01], [a10, a11]], [bc0, bc1])
         for b_sub in b.getNestSubVecs():
             b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-        bcs = dolfinx.fem.dirichletbc.bcs_by_block(dolfinx.fem.form.extract_function_spaces([L0, L1]), [bc0, bc1])
+        bcs = fem.bcs_by_block(form.extract_function_spaces([L0, L1]), [bc0, bc1])
         dolfinx.fem.set_bc_nest(b, bcs)
         b.assemble()
 
