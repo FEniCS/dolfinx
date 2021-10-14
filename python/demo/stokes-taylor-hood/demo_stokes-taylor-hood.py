@@ -147,13 +147,13 @@ bcs = [bc0, bc1]
 # Define variational problem
 (u, p) = ufl.TrialFunction(V), ufl.TrialFunction(Q)
 (v, q) = ufl.TestFunction(V), ufl.TestFunction(Q)
-f = dolfinx.Constant(mesh, (0, 0))
+f = dolfinx.Constant(mesh, (PETSc.ScalarType(0), PETSc.ScalarType(0)))
 
 a = [[Form(inner(grad(u), grad(v)) * dx), Form(inner(p, div(v)) * dx)],
      [Form(inner(div(u), q) * dx), None]]
 
 L = [Form(inner(f, v) * dx),
-     Form(inner(dolfinx.Constant(mesh, 0), q) * dx)]
+     Form(inner(dolfinx.Constant(mesh, PETSc.ScalarType(0)), q) * dx)]
 
 # We will use a block-diagonal preconditioner to solve this problem::
 

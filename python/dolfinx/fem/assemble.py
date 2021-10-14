@@ -17,6 +17,15 @@ from dolfinx.fem.form import Form, extract_function_spaces
 from petsc4py import PETSc
 
 
+def _cpp_dirichletbc(bc):
+    """Unwrap Dirichlet BC objects as cpp objects"""
+    if isinstance(bc, DirichletBC):
+        return bc._cpp_object
+    elif isinstance(bc, (tuple, list)):
+        return list(map(lambda sub_bc: _cpp_dirichletbc(sub_bc), bc))
+    return bc
+
+
 def _create_cpp_form(form):
     """Recursively look for ufl.Forms and convert to
     dolfinx.cpp.fem.Form, otherwise return form argument"""
@@ -240,7 +249,7 @@ def _(b: PETSc.Vec,
     c_a = (coeffs_a[0] if coeffs_a[0] is not None else pack_constants(_a),
            coeffs_a[1] if coeffs_a[1] is not None else pack_coefficients(_a))
 
-    bcs1 = bcs_by_block(extract_function_spaces(_a, 1), bcs)
+    bcs1 = _cpp_dirichletbc(bcs_by_block(extract_function_spaces(_a, 1), bcs))
     b_local = cpp.la.get_local_vectors(b, maps)
     for b_sub, L_sub, a_sub, constant_L, coeff_L, constant_a, coeff_a in zip(b_local, _L, _a,
                                                                              c_L[0], c_L[1],
@@ -251,7 +260,7 @@ def _(b: PETSc.Vec,
     cpp.la.scatter_local_vectors(b, b_local, maps)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
-    bcs0 = bcs_by_block(extract_function_spaces(_create_cpp_form(L)), bcs)
+    bcs0 = _cpp_dirichletbc(bcs_by_block(extract_function_spaces(_create_cpp_form(L)), bcs))
     offset = 0
     b_array = b.getArray(readonly=False)
     for submap, bc, _x0 in zip(maps, bcs0, x0_sub):
@@ -291,11 +300,11 @@ def _(A: PETSc.Mat,
     _a = _create_cpp_form(a)
     c = (coeffs[0] if coeffs[0] is not None else pack_constants(_a),
          coeffs[1] if coeffs[1] is not None else pack_coefficients(_a))
-    cpp.fem.assemble_matrix_petsc(A, _a, c[0], c[1], bcs)
+    cpp.fem.assemble_matrix_petsc(A, _a, c[0], c[1], _cpp_dirichletbc(bcs))
     if _a.function_spaces[0].id == _a.function_spaces[1].id:
         A.assemblyBegin(PETSc.Mat.AssemblyType.FLUSH)
         A.assemblyEnd(PETSc.Mat.AssemblyType.FLUSH)
-        cpp.fem.insert_diagonal(A, _a.function_spaces[0], bcs, diagonal)
+        cpp.fem.insert_diagonal(A, _a.function_spaces[0], _cpp_dirichletbc(bcs), diagonal)
     return A
 
 
@@ -390,7 +399,7 @@ def _(A: PETSc.Mat,
         for j, a_sub in enumerate(a_row):
             if a_sub is not None:
                 Asub = A.getLocalSubMatrix(is_rows[i], is_cols[j])
-                cpp.fem.assemble_matrix_petsc(Asub, a_sub, c[0][i][j], c[1][i][j], bcs, True)
+                cpp.fem.assemble_matrix_petsc(Asub, a_sub, c[0][i][j], c[1][i][j], _cpp_dirichletbc(bcs), True)
                 A.restoreLocalSubMatrix(is_rows[i], is_cols[j], Asub)
 
     # Flush to enable switch from add to set in the matrix
@@ -402,7 +411,7 @@ def _(A: PETSc.Mat,
             if a_sub is not None:
                 Asub = A.getLocalSubMatrix(is_rows[i], is_cols[j])
                 if a_sub.function_spaces[0].id == a_sub.function_spaces[1].id:
-                    cpp.fem.insert_diagonal(Asub, a_sub.function_spaces[0], bcs, diagonal)
+                    cpp.fem.insert_diagonal(Asub, a_sub.function_spaces[0], _cpp_dirichletbc(bcs), diagonal)
                 A.restoreLocalSubMatrix(is_rows[i], is_cols[j], Asub)
 
     return A
@@ -437,7 +446,7 @@ def apply_lifting(b: PETSc.Vec,
         x0 = [stack.enter_context(x.localForm()) for x in x0]
         x0_r = [x.array_r for x in x0]
         b_local = stack.enter_context(b.localForm())
-        cpp.fem.apply_lifting(b_local.array_w, _a, c[0], c[1], bcs, x0_r, scale)
+        cpp.fem.apply_lifting(b_local.array_w, _a, c[0], c[1], _cpp_dirichletbc(bcs), x0_r, scale)
 
 
 def apply_lifting_nest(b: PETSc.Vec,
@@ -471,7 +480,7 @@ def set_bc(b: PETSc.Vec,
     """
     if x0 is not None:
         x0 = x0.array_r
-    cpp.fem.set_bc(b.array_w, bcs, x0, scale)
+    cpp.fem.set_bc(b.array_w, _cpp_dirichletbc(bcs), x0, scale)
 
 
 def set_bc_nest(b: PETSc.Vec,

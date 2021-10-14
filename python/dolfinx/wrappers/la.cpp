@@ -25,6 +25,29 @@
 
 namespace py = pybind11;
 
+namespace
+{
+// Declare objects that have multiple scalar types
+template <typename T>
+void declare_objects(py::module& m, const std::string& type)
+{
+  // dolfinx::la::Vector
+  std::string pyclass_vector_name = std::string("Vector_") + type;
+  py::class_<dolfinx::la::Vector<T>, std::shared_ptr<dolfinx::la::Vector<T>>>(
+      m, pyclass_vector_name.c_str())
+      .def_property_readonly("array",
+                             [](dolfinx::la::Vector<T>& self)
+                             {
+                               xtl::span<T> array = self.mutable_array();
+                               return py::array_t<T>(array.size(), array.data(),
+                                                py::cast(self));
+                             })
+      .def("scatter_forward", &dolfinx::la::Vector<T>::scatter_fwd)
+      .def("scatter_reverse", &dolfinx::la::Vector<T>::scatter_rev);
+}
+
+} // namespace
+
 namespace dolfinx_wrappers
 {
 
@@ -101,18 +124,9 @@ void la(py::module& m)
       .def("__getitem__", [](const dolfinx::la::VectorSpaceBasis& self, int i)
            { return self[i]->vec(); });
 
-  // dolfinx::la::Vector
-  py::class_<dolfinx::la::Vector<PetscScalar>,
-             std::shared_ptr<dolfinx::la::Vector<PetscScalar>>>(m, "Vector")
-      .def_property_readonly(
-          "array",
-          [](dolfinx::la::Vector<PetscScalar>& self)
-          {
-            xtl::span<PetscScalar> array = self.mutable_array();
-            return py::array(array.size(), array.data(), py::cast(self));
-          })
-      .def("scatter_forward", &dolfinx::la::Vector<PetscScalar>::scatter_fwd)
-      .def("scatter_reverse", &dolfinx::la::Vector<PetscScalar>::scatter_rev);
+  // Declare objects that are templated over type
+  declare_objects<double>(m, "float64");
+  declare_objects<std::complex<double>>(m, "complex128");
 
   m.def("create_vector",
         py::overload_cast<const dolfinx::common::IndexMap&, int>(
@@ -130,6 +144,7 @@ void la(py::module& m)
   // TODO: check reference counting for index sets
   m.def("create_petsc_index_sets", &dolfinx::la::create_petsc_index_sets,
         py::return_value_policy::take_ownership);
+
   m.def(
       "scatter_local_vectors",
       [](Vec x,
@@ -162,6 +177,7 @@ void la(py::module& m)
       "Gather an (ordered) list of sub vectors from a block vector.");
 
   // NOTE: Enabling the below requires adding a C API for MatNullSpace to
+
   // petsc4py
   //   m.def("create_nullspace",
   //         [](const MPICommWrapper comm, MPI_Comm comm,
