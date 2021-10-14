@@ -19,7 +19,7 @@ def test_extract_forms():
     a block system"""
     mesh = UnitSquareMesh(MPI.COMM_WORLD, 32, 31)
     V0 = FunctionSpace(mesh, ("Lagrange", 1))
-    V1 = FunctionSpace(mesh, ("Lagrange", 2))
+    V1 = FunctionSpace(mesh, ("Lagrange", 1))
     V2 = V0.clone()
     V3 = V1.clone()
 
