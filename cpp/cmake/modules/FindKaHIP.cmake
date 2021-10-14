@@ -44,10 +44,10 @@ if (MPI_CXX_FOUND)
     DOC "Directory where the KaHIP header files are located.")
 
   find_library(PARHIP_LIBRARY parhip_interface HINTS ${KAHIP_DIR}/lib $ENV{KAHIP_DIR}/lib
-    DOC "Directory where the ParHIP library is located")
+    DOC "Path to the ParHIP library")
 
   find_library(KAHIP_LIBRARY interface HINTS ${KAHIP_DIR}/lib $ENV{KAHIP_DIR}/lib
-    DOC "Directory where the KaHIP library is located")
+    DOC "Path to the KaHIP library")
 
   set(KAHIP_LIBRARIES ${PARHIP_LIBRARY} ${KAHIP_LIBRARY})
   if (KAHIP_LIBRARIES AND KAHIP_LIBRARIES)
