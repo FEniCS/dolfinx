@@ -16,7 +16,8 @@ from petsc4py import PETSc
 
 
 class Form:
-    def __init__(self, form: ufl.Form, dtype: np.dtype = PETSc.ScalarType, form_compiler_parameters: dict = {}, jit_parameters: dict = {}):
+    def __init__(self, form: ufl.Form, dtype: np.dtype = PETSc.ScalarType,
+                 form_compiler_parameters: dict = {}, jit_parameters: dict = {}):
         """Create DOLFINx Form
 
         Parameters
