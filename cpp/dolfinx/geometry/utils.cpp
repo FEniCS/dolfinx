@@ -232,14 +232,26 @@ geometry::compute_collisions(const BoundingBoxTree& tree0,
   return entities;
 }
 //-----------------------------------------------------------------------------
-std::vector<int>
+dolfinx::graph::AdjacencyList<int>
 geometry::compute_collisions(const BoundingBoxTree& tree,
-                             const xt::xtensor_fixed<double, xt::xshape<3>>& p)
+                             const xt::xtensor<double, 2>& points)
 {
+  const std::size_t num_points = points.shape(0);
   std::vector<int> entities;
-  if (tree.num_bboxes() > 0)
-    _compute_collisions_point(tree, p, tree.num_bboxes() - 1, entities);
-  return entities;
+  std::vector<std::int32_t> offsets({0});
+  offsets.reserve(num_points);
+  entities.reserve(num_points);
+  for (std::size_t i = 0; i < num_points; i++)
+  {
+    if (tree.num_bboxes() > 0)
+    {
+      _compute_collisions_point(tree, xt::row(points, i), tree.num_bboxes() - 1,
+                                entities);
+      offsets.push_back(entities.size());
+    }
+  }
+
+  return dolfinx::graph::AdjacencyList<int>(entities, offsets);
 }
 //-----------------------------------------------------------------------------
 double geometry::compute_squared_distance_bbox(
@@ -253,43 +265,56 @@ double geometry::compute_squared_distance_bbox(
   return xt::norm_sq(_d0)() + xt::norm_sq(_d1)();
 }
 //-----------------------------------------------------------------------------
-std::pair<int, double> geometry::compute_closest_entity(
-    const BoundingBoxTree& tree,
-    const xt::xtensor_fixed<double, xt::xshape<3>>& p, const mesh::Mesh& mesh,
-    double R)
+std::vector<std::pair<int, double>> geometry::compute_closest_entity(
+    const BoundingBoxTree& tree, const BoundingBoxTree& midpoint_tree,
+    xt::xtensor<double, 2>& points, const mesh::Mesh& mesh)
 {
-  // If bounding box tree is empty (on this processor) end search
-  if (tree.num_bboxes() == 0)
-    return {-1, -1};
+  assert(points.shape(1) == 3);
 
-  // If initial search radius is 0 we estimate the initial distance to
-  // the point using the first node in the tree
-  double R2 = 0.0;
-  std::int32_t initial_guess;
-  if (R < 0.0)
+  std::vector<std::pair<int, double>> entity_distance;
+  entity_distance.reserve(points.shape(0));
+  const std::size_t num_points = points.shape(0);
+  if (tree.num_bboxes() == 0)
   {
-    xt::xtensor_fixed<double, xt::xshape<3>> diff
-        = xt::row(tree.get_bbox(0), 0);
-    diff -= p;
-    R2 = xt::norm_sq(diff)();
-    initial_guess = 0;
+    for (std::size_t i = 0; i < num_points; i++)
+      entity_distance.push_back({-1, -1});
+    return entity_distance;
   }
   else
   {
-    R2 = R * R;
-    initial_guess = -1;
-  }
+    double R2;
+    const double initial_entity = 0;
+    for (std::size_t i = 0; i < num_points; i++)
+    {
+      // Use midpoint tree to find intial closest entity to the point
+      // Start by using a leaf node as the initial guess for the input entity
+      xt::xtensor_fixed<double, xt::xshape<3>> diff
+          = xt::row(midpoint_tree.get_bbox(initial_entity), 0);
+      diff -= xt::row(points, i);
+      R2 = xt::norm_sq(diff)();
 
-  // Use GJK to find determine the actual closest entity
-  const auto [index, distance2] = _compute_closest_entity(
-      tree, p, tree.num_bboxes() - 1, mesh, initial_guess, R2);
-  if (index < 0)
-  {
-    throw std::runtime_error("No entity found within radius "
-                             + std::to_string(std::sqrt(R2)) + ".");
-  }
+      // Use a recursive search through the bounding box tree
+      // to find determine the entity with the closest midpoint.
+      // As the midpoint tree only consist of points, the distance queries are
+      // lightweight.
+      const auto [m_index, m_distance2] = _compute_closest_entity(
+          midpoint_tree, xt::row(points, i), midpoint_tree.num_bboxes() - 1,
+          mesh, 0, R2);
 
-  return {index, std::sqrt(distance2)};
+      // Use a recursive search through the bounding box tree to determine which
+      // entity is actually closest.
+      // Uses the entity with the closest midpoint as initial guess, and the
+      // distance from the midpoint to the point of interest as the initial
+      // search radius.
+      const auto [index, distance2] = _compute_closest_entity(
+          tree, xt::row(points, i), tree.num_bboxes() - 1, mesh, m_index,
+          m_distance2);
+
+      entity_distance.push_back({index, std::sqrt(distance2)});
+    }
+
+    return entity_distance;
+  }
 }
 //-----------------------------------------------------------------------------
 double

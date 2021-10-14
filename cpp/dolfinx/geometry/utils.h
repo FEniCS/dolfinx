@@ -7,6 +7,7 @@
 #pragma once
 
 #include <array>
+#include <dolfinx/graph/AdjacencyList.h>
 #include <utility>
 #include <vector>
 #include <xtensor/xfixed.hpp>
@@ -40,26 +41,30 @@ create_midpoint_tree(const mesh::Mesh& mesh, int tdim,
 std::vector<std::array<int, 2>>
 compute_collisions(const BoundingBoxTree& tree0, const BoundingBoxTree& tree1);
 
-/// Compute all collisions between bounding boxes and point
+/// Compute all collisions between bounding boxes and for a set of points
 /// @param[in] tree The bounding box tree
-/// @param[in] p The point
-/// @return Bounding box leaves (local to process) that contain the point
-std::vector<int>
+/// @param[in] points The points
+/// @return An adjacency list  where the ith link corresponds to the  bounding
+/// box leaves (local to process) that contains the ith point
+dolfinx::graph::AdjacencyList<int>
 compute_collisions(const BoundingBoxTree& tree,
-                   const xt::xtensor_fixed<double, xt::xshape<3>>& p);
+                   const xt::xtensor<double, 2>& points);
 
 /// Compute closest mesh entity (local to process) for the topological distance
 /// of the bounding box tree and distance and a point
-/// @param[in] tree The bounding box tree
-/// @param[in] p The point
+/// @param[in] tree The bounding box tree for the entities
+/// @param[in] midpoint_tree A bounding box tree with the midpoints of all the
+/// mesh entities.
+/// @param[in] points The set of points
 /// @param[in] mesh The mesh
-/// @param[in] R Radius for search. Supplying a negative radius causes
-/// the function to estimate an initial search radius.
-/// @return The local index of the entity and the distance from the point.
-std::pair<std::int32_t, double>
+/// @return An array with tuples containing the (entity index, distance) for
+/// each point.
+/// @note Returns entity index -1 and distance -1 if no entity is found on the
+/// process.
+std::vector<std::pair<int, double>>
 compute_closest_entity(const BoundingBoxTree& tree,
-                       const xt::xtensor_fixed<double, xt::xshape<3>>& p,
-                       const mesh::Mesh& mesh, double R = -1);
+                       const BoundingBoxTree& midpoint_tree,
+                       xt::xtensor<double, 2>& points, const mesh::Mesh& mesh);
 
 /// Compute squared distance between point and bounding box wih index
 /// "node". Returns zero if point is inside box.

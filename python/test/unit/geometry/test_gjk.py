@@ -171,9 +171,9 @@ def test_collision_2nd_order_triangle():
 
     # Create boundingboxtree
     tree = geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
-    for point in sample_points:
-        cell_candidates = geometry.compute_collisions_point(tree, point)
-        colliding_cell = geometry.select_colliding_cells(mesh, cell_candidates, point, 1)
+    cell_candidates = geometry.compute_collisions(tree, sample_points)
+    for i, point in enumerate(sample_points):
+        colliding_cell = geometry.select_colliding_cells(mesh, cell_candidates.links(i), point, 1)
         assert len(colliding_cell) == 1
 
     # Check if there is a point on the linear approximation of the

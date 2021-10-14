@@ -20,26 +20,13 @@ def test_manifold_point_search():
     bb = BoundingBoxTree(mesh, tdim)
 
     # Find cell colliding with point
-    p = numpy.array([0.5, 0.25, 0.75])
-    cell_candidates = geometry.compute_collisions_point(bb, p)
-    cell = cpp.geometry.select_colliding_cells(mesh, cell_candidates, p, 1)
+    points = numpy.array([[0.5, 0.25, 0.75], [0.25, 0.5, 0.75]])
+    cell_candidates = geometry.compute_collisions(bb, points)
+    cell0 = cpp.geometry.select_colliding_cells(mesh, cell_candidates.links(0), points[0], 1)
+    cell1 = cpp.geometry.select_colliding_cells(mesh, cell_candidates.links(1), points[1], 1)
 
     # Extract vertices of cell
-    top_indices = cpp.mesh.entities_to_geometry(mesh, tdim, [cell], False)
-    cell_vertices = x[top_indices]
-
-    # Compare vertices with input (should be in cell 0)
-    assert numpy.allclose(cell_vertices, vertices[cells[0]])
-
-    # Find cell colliding with point
-    p = numpy.array([0.25, 0.5, 0.75])
-    cell_candidates = geometry.compute_collisions_point(bb, p)
-    cell = cpp.geometry.select_colliding_cells(mesh, cell_candidates, p, 1)
-
-    # Extract vertices of cell
-    top_indices = cpp.mesh.entities_to_geometry(mesh, tdim, [cell], False)
-    x = mesh.geometry.x
-    cell_vertices = x[top_indices]
-
-    # Compare vertices with input (should be in cell 1)
-    assert numpy.allclose(cell_vertices, vertices[cells[1]])
+    indices = cpp.mesh.entities_to_geometry(mesh, tdim, [cell0, cell1], False)
+    cell_vertices = x[indices]
+    # Compare vertices with input
+    assert numpy.allclose(cell_vertices, vertices[cells])

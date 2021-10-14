@@ -40,10 +40,11 @@ def test_expression():
     # Find colliding cells on proc
     closest_cell = []
     local_map = []
+    cells = dolfinx.geometry.compute_collisions(bb, points)
+
     for i, p in enumerate(points):
-        cells = dolfinx.geometry.compute_collisions_point(bb, p)
-        if len(cells) > 0:
-            actual_cells = dolfinx.geometry.select_colliding_cells(mesh, cells, p, 1)
+        if len(cells.links(i)) > 0:
+            actual_cells = dolfinx.geometry.select_colliding_cells(mesh, cells.links(i), p, 1)
             if len(actual_cells) > 0:
                 local_map.append(i)
                 closest_cell.append(actual_cells[0])
