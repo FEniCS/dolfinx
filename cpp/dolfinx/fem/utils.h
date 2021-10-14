@@ -207,19 +207,23 @@ Form<T> create_form(
     ufc_integral* integral = ufc_form.integrals(cell)[i];
     assert(integral);
 
-    kern k;
+    kern k = nullptr;
     if constexpr (std::is_same<T, float>::value)
       k = integral->tabulate_tensor_float32;
     else if constexpr (std::is_same<T, std::complex<float>>::value)
+    {
       k = reinterpret_cast<void (*)(T*, const T*, const T*, const double*,
                                     const int*, const unsigned char*)>(
           integral->tabulate_tensor_complex64);
+    }
     else if constexpr (std::is_same<T, double>::value)
       k = integral->tabulate_tensor_float64;
     else if constexpr (std::is_same<T, std::complex<double>>::value)
+    {
       k = reinterpret_cast<void (*)(T*, const T*, const T*, const double*,
                                     const int*, const unsigned char*)>(
           integral->tabulate_tensor_complex128);
+    }
     assert(k);
 
     integral_data[IntegralType::cell].first.emplace_back(cell_integral_ids[i],
@@ -259,19 +263,23 @@ Form<T> create_form(
     ufc_integral* integral = ufc_form.integrals(exterior_facet)[i];
     assert(integral);
 
-    kern k;
+    kern k = nullptr;
     if constexpr (std::is_same<T, float>::value)
       k = integral->tabulate_tensor_float32;
     else if constexpr (std::is_same<T, std::complex<float>>::value)
+    {
       k = reinterpret_cast<void (*)(T*, const T*, const T*, const double*,
                                     const int*, const unsigned char*)>(
           integral->tabulate_tensor_complex64);
+    }
     else if constexpr (std::is_same<T, double>::value)
       k = integral->tabulate_tensor_float64;
     else if constexpr (std::is_same<T, std::complex<double>>::value)
+    {
       k = reinterpret_cast<void (*)(T*, const T*, const T*, const double*,
                                     const int*, const unsigned char*)>(
           integral->tabulate_tensor_complex128);
+    }
     assert(k);
 
     integral_data[IntegralType::exterior_facet].first.emplace_back(
@@ -297,19 +305,23 @@ Form<T> create_form(
     ufc_integral* integral = ufc_form.integrals(interior_facet)[i];
     assert(integral);
 
-    kern k;
+    kern k = nullptr;
     if constexpr (std::is_same<T, float>::value)
       k = integral->tabulate_tensor_float32;
     else if constexpr (std::is_same<T, std::complex<float>>::value)
+    {
       k = reinterpret_cast<void (*)(T*, const T*, const T*, const double*,
                                     const int*, const unsigned char*)>(
           integral->tabulate_tensor_complex64);
+    }
     else if constexpr (std::is_same<T, double>::value)
       k = integral->tabulate_tensor_float64;
     else if constexpr (std::is_same<T, std::complex<double>>::value)
+    {
       k = reinterpret_cast<void (*)(T*, const T*, const T*, const double*,
                                     const int*, const unsigned char*)>(
           integral->tabulate_tensor_complex128);
+    }
     assert(k);
 
     integral_data[IntegralType::interior_facet].first.emplace_back(
@@ -369,9 +381,7 @@ Form<T> create_form(
     if (auto it = constants.find(name); it != constants.end())
       const_map.push_back(it->second);
     else
-    {
       throw std::runtime_error("Form constant \"" + name + "\" not provided.");
-    }
   }
 
   return create_form(ufc_form, spaces, coeff_map, const_map, subdomains, mesh);
@@ -567,11 +577,9 @@ std::vector<typename U::scalar_type> pack_constants(const U& u)
       = u.constants();
 
   // Calculate size of array needed to store packed constants
-  std::int32_t size
-      = std::accumulate(constants.begin(), constants.end(), 0,
-                        [](std::int32_t sum, const auto& constant) {
-                          return sum + constant->value.size();
-                        });
+  std::int32_t size = std::accumulate(constants.begin(), constants.end(), 0,
+                                      [](std::int32_t sum, const auto& constant)
+                                      { return sum + constant->value.size(); });
 
   // Pack constants
   std::vector<T> constant_values(size);

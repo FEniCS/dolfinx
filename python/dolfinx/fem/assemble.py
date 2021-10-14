@@ -40,9 +40,8 @@ def _create_cpp_form(form):
 
 # -- Packing constants and coefficients --------------------------------------
 
-form_type = typing.Union[Form, cpp.fem.Form, ufl.Form,
+form_type = typing.Union[Form, ufl.Form,
                          typing.Sequence[Form],
-                         typing.Sequence[cpp.fem.Form],
                          typing.Sequence[ufl.Form]]
 
 
@@ -80,18 +79,18 @@ def pack_coefficients(form: form_type):
 
 # -- Vector instantiation ----------------------------------------------------
 
-def create_vector(L: typing.Union[Form, cpp.fem.Form]) -> PETSc.Vec:
+def create_vector(L: Form) -> PETSc.Vec:
     dofmap = _create_cpp_form(L).function_spaces[0].dofmap
     return cpp.la.create_vector(dofmap.index_map, dofmap.index_map_bs)
 
 
-def create_vector_block(L: typing.List[typing.Union[Form, cpp.fem.Form]]) -> PETSc.Vec:
+def create_vector_block(L: typing.List[Form]) -> PETSc.Vec:
     maps = [(form.function_spaces[0].dofmap.index_map, form.function_spaces[0].dofmap.index_map_bs)
             for form in _create_cpp_form(L)]
     return cpp.fem.create_vector_block(maps)
 
 
-def create_vector_nest(L: typing.List[typing.Union[Form, cpp.fem.Form]]) -> PETSc.Vec:
+def create_vector_nest(L: typing.List[Form]) -> PETSc.Vec:
     maps = [(form.function_spaces[0].dofmap.index_map, form.function_spaces[0].dofmap.index_map_bs)
             for form in _create_cpp_form(L)]
     return cpp.fem.create_vector_nest(maps)
@@ -99,18 +98,18 @@ def create_vector_nest(L: typing.List[typing.Union[Form, cpp.fem.Form]]) -> PETS
 
 # -- Matrix instantiation ----------------------------------------------------
 
-def create_matrix(a: typing.Union[Form, cpp.fem.Form], mat_type=None) -> PETSc.Mat:
+def create_matrix(a: Form, mat_type=None) -> PETSc.Mat:
     if mat_type is not None:
         return cpp.fem.create_matrix(_create_cpp_form(a), mat_type)
     else:
         return cpp.fem.create_matrix(_create_cpp_form(a))
 
 
-def create_matrix_block(a: typing.List[typing.List[typing.Union[Form, cpp.fem.Form]]]) -> PETSc.Mat:
+def create_matrix_block(a: typing.List[typing.List[Form]]) -> PETSc.Mat:
     return cpp.fem.create_matrix_block(_create_cpp_form(a))
 
 
-def create_matrix_nest(a: typing.List[typing.List[typing.Union[Form, cpp.fem.Form]]]) -> PETSc.Mat:
+def create_matrix_nest(a: typing.List[typing.List[Form]]) -> PETSc.Mat:
     return cpp.fem.create_matrix_nest(_create_cpp_form(a))
 
 
@@ -119,8 +118,7 @@ Coefficients = collections.namedtuple('Coefficients', ['constants', 'coeffs'])
 # -- Scalar assembly ---------------------------------------------------------
 
 
-def assemble_scalar(M: typing.Union[Form, cpp.fem.Form],
-                    coeffs=Coefficients(None, None)) -> PETSc.ScalarType:
+def assemble_scalar(M: Form, coeffs=Coefficients(None, None)) -> PETSc.ScalarType:
     """Assemble functional. The returned value is local and not
     accumulated across processes.
 
@@ -133,9 +131,8 @@ def assemble_scalar(M: typing.Union[Form, cpp.fem.Form],
 
 # -- Vector assembly ---------------------------------------------------------
 
-@functools.singledispatch
-def assemble_vector(L: typing.Union[Form, cpp.fem.Form],
-                    coeffs=Coefficients(None, None)) -> PETSc.Vec:
+@ functools.singledispatch
+def assemble_vector(L: Form, coeffs=Coefficients(None, None)) -> PETSc.Vec:
     """Assemble linear form into a new PETSc vector. The returned vector
     is not finalised, i.e. ghost values are not accumulated on the
     owning processes.
@@ -152,8 +149,8 @@ def assemble_vector(L: typing.Union[Form, cpp.fem.Form],
     return b
 
 
-@assemble_vector.register(PETSc.Vec)
-def _(b: PETSc.Vec, L: typing.Union[Form, cpp.fem.Form], coeffs=Coefficients(None, None)) -> PETSc.Vec:
+@ assemble_vector.register(PETSc.Vec)
+def _(b: PETSc.Vec, L: Form, coeffs=Coefficients(None, None)) -> PETSc.Vec:
     """Assemble linear form into an existing PETSc vector. The vector is
     not zeroed before assembly and it is not finalised, i.e. ghost
     values are not accumulated on the owning processes.
@@ -167,8 +164,8 @@ def _(b: PETSc.Vec, L: typing.Union[Form, cpp.fem.Form], coeffs=Coefficients(Non
     return b
 
 
-@functools.singledispatch
-def assemble_vector_nest(L: typing.Union[Form, cpp.fem.Form], coeffs=Coefficients(None, None)) -> PETSc.Vec:
+@ functools.singledispatch
+def assemble_vector_nest(L: Form, coeffs=Coefficients(None, None)) -> PETSc.Vec:
     """Assemble linear forms into a new nested PETSc (VecNest) vector.
     The returned vector is not finalised, i.e. ghost values are not
     accumulated on the owning processes.
@@ -183,8 +180,8 @@ def assemble_vector_nest(L: typing.Union[Form, cpp.fem.Form], coeffs=Coefficient
     return assemble_vector_nest(b, L, coeffs)
 
 
-@assemble_vector_nest.register(PETSc.Vec)
-def _(b: PETSc.Vec, L: typing.List[typing.Union[Form, cpp.fem.Form]], coeffs=Coefficients(None, None)) -> PETSc.Vec:
+@ assemble_vector_nest.register(PETSc.Vec)
+def _(b: PETSc.Vec, L: typing.List[Form], coeffs=Coefficients(None, None)) -> PETSc.Vec:
     """Assemble linear forms into a nested PETSc (VecNest) vector. The
     vector is not zeroed before assembly and it is not finalised, i.e.
     ghost values are not accumulated on the owning processes.
@@ -200,9 +197,9 @@ def _(b: PETSc.Vec, L: typing.List[typing.Union[Form, cpp.fem.Form]], coeffs=Coe
 
 
 # FIXME: Revise this interface
-@functools.singledispatch
-def assemble_vector_block(L: typing.List[typing.Union[Form, cpp.fem.Form]],
-                          a: typing.List[typing.List[typing.Union[Form, cpp.fem.Form]]],
+@ functools.singledispatch
+def assemble_vector_block(L: typing.List[Form],
+                          a: typing.List[typing.List[Form]],
                           bcs: typing.List[DirichletBC] = [],
                           x0: typing.Optional[PETSc.Vec] = None,
                           scale: float = 1.0,
@@ -220,9 +217,9 @@ def assemble_vector_block(L: typing.List[typing.Union[Form, cpp.fem.Form]],
     return assemble_vector_block(b, L, a, bcs, x0, scale, coeffs_L, coeffs_a)
 
 
-@assemble_vector_block.register(PETSc.Vec)
+@ assemble_vector_block.register(PETSc.Vec)
 def _(b: PETSc.Vec,
-      L: typing.List[typing.Union[Form, cpp.fem.Form]],
+      L: typing.List[Form],
       a,
       bcs: typing.List[DirichletBC] = [],
       x0: typing.Optional[PETSc.Vec] = None,
@@ -265,7 +262,7 @@ def _(b: PETSc.Vec,
     b_array = b.getArray(readonly=False)
     for submap, bc, _x0 in zip(maps, bcs0, x0_sub):
         size = submap[0].size_local * submap[1]
-        cpp.fem.set_bc(b_array[offset:offset + size], bc, _x0, scale)
+        cpp.fem.set_bc(b_array[offset: offset + size], bc, _x0, scale)
         offset += size
 
     return b
@@ -274,8 +271,8 @@ def _(b: PETSc.Vec,
 # -- Matrix assembly ---------------------------------------------------------
 
 
-@functools.singledispatch
-def assemble_matrix(a: typing.Union[Form, cpp.fem.Form],
+@ functools.singledispatch
+def assemble_matrix(a: Form,
                     bcs: typing.List[DirichletBC] = [],
                     diagonal: float = 1.0,
                     coeffs=Coefficients(None, None)) -> PETSc.Mat:
@@ -287,9 +284,9 @@ def assemble_matrix(a: typing.Union[Form, cpp.fem.Form],
     return assemble_matrix(A, a, bcs, diagonal, coeffs)
 
 
-@assemble_matrix.register(PETSc.Mat)
+@ assemble_matrix.register(PETSc.Mat)
 def _(A: PETSc.Mat,
-      a: typing.Union[Form, cpp.fem.Form],
+      a: Form,
       bcs: typing.List[DirichletBC] = [],
       diagonal: float = 1.0,
       coeffs=Coefficients(None, None)) -> PETSc.Mat:
@@ -309,8 +306,8 @@ def _(A: PETSc.Mat,
 
 
 # FIXME: Revise this interface
-@functools.singledispatch
-def assemble_matrix_nest(a: typing.List[typing.List[typing.Union[Form, cpp.fem.Form]]],
+@ functools.singledispatch
+def assemble_matrix_nest(a: typing.List[typing.List[Form]],
                          bcs: typing.List[DirichletBC] = [], mat_types=[],
                          diagonal: float = 1.0,
                          coeffs=Coefficients(None, None)) -> PETSc.Mat:
@@ -320,9 +317,9 @@ def assemble_matrix_nest(a: typing.List[typing.List[typing.Union[Form, cpp.fem.F
     return A
 
 
-@assemble_matrix_nest.register(PETSc.Mat)
+@ assemble_matrix_nest.register(PETSc.Mat)
 def _(A: PETSc.Mat,
-      a: typing.List[typing.List[typing.Union[Form, cpp.fem.Form]]],
+      a: typing.List[typing.List[Form]],
       bcs: typing.List[DirichletBC] = [],
       diagonal: float = 1.0,
       coeffs=Coefficients(None, None)) -> PETSc.Mat:
@@ -339,8 +336,8 @@ def _(A: PETSc.Mat,
 
 
 # FIXME: Revise this interface
-@functools.singledispatch
-def assemble_matrix_block(a: typing.List[typing.List[typing.Union[Form, cpp.fem.Form]]],
+@ functools.singledispatch
+def assemble_matrix_block(a: typing.List[typing.List[Form]],
                           bcs: typing.List[DirichletBC] = [],
                           diagonal: float = 1.0,
                           coeffs=Coefficients(None, None)) -> PETSc.Mat:
@@ -349,7 +346,7 @@ def assemble_matrix_block(a: typing.List[typing.List[typing.Union[Form, cpp.fem.
     return assemble_matrix_block(A, a, bcs, diagonal, coeffs)
 
 
-def _extract_function_spaces(a: typing.List[typing.List[typing.Union[Form, cpp.fem.Form]]]):
+def _extract_function_spaces(a: typing.List[typing.List[Form]]):
     """From a rectangular array of bilinear forms, extraction the function spaces
     for each block row and block column
 
@@ -379,9 +376,9 @@ def _extract_function_spaces(a: typing.List[typing.List[typing.Union[Form, cpp.f
     return rows, cols
 
 
-@assemble_matrix_block.register(PETSc.Mat)
+@ assemble_matrix_block.register(PETSc.Mat)
 def _(A: PETSc.Mat,
-      a: typing.List[typing.List[typing.Union[Form, cpp.fem.Form]]],
+      a: typing.List[typing.List[Form]],
       bcs: typing.List[DirichletBC] = [],
       diagonal: float = 1.0,
       coeffs=Coefficients(None, None)) -> PETSc.Mat:
@@ -420,7 +417,7 @@ def _(A: PETSc.Mat,
 # -- Modifiers for Dirichlet conditions ---------------------------------------
 
 def apply_lifting(b: PETSc.Vec,
-                  a: typing.List[typing.Union[Form, cpp.fem.Form]],
+                  a: typing.List[Form],
                   bcs: typing.List[typing.List[DirichletBC]],
                   x0: typing.Optional[typing.List[PETSc.Vec]] = [],
                   scale: float = 1.0,
@@ -450,7 +447,7 @@ def apply_lifting(b: PETSc.Vec,
 
 
 def apply_lifting_nest(b: PETSc.Vec,
-                       a: typing.List[typing.List[typing.Union[Form, cpp.fem.Form]]],
+                       a: typing.List[typing.List[Form]],
                        bcs: typing.List[DirichletBC],
                        x0: typing.Optional[PETSc.Vec] = None,
                        scale: float = 1.0,
