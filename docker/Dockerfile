@@ -434,7 +434,7 @@ RUN dpkgArch="$(dpkg --print-architecture)"; \
     pip3 install --no-cache-dir matplotlib
 
 # Jupyter Notebook kernel specification for complex build DOLFINx
-ADD complex-kernel.json /usr/local/share/jupyter/kernels/python3-complex/kernel.json
+ADD dolfinx/docker/complex-kernel.json /usr/local/share/jupyter/kernels/python3-complex/kernel.json
 
 EXPOSE 8888/tcp
 ENV SHELL /bin/bash
