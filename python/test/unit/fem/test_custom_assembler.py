@@ -344,8 +344,10 @@ def test_custom_mesh_loop_rank1():
     assert (b1 - b0.vector).norm() == pytest.approx(0.0)
 
     # Assemble using generated tabulate_tensor kernel and Numba assembler
+    ffcxtype = "double _Complex" if dolfinx.has_petsc_complex else "double"
     b3 = dolfinx.Function(V)
-    ufc_form, module, code = dolfinx.jit.ffcx_jit(mesh.mpi_comm(), L)
+    ufc_form, module, code = dolfinx.jit.ffcx_jit(
+        mesh.mpi_comm(), L, form_compiler_parameters={"scalar_type": ffcxtype})
 
     nptype = "complex128" if dolfinx.has_petsc_complex else "float64"
     # First 0 for "cell" integrals, second 0 for the first one, i.e. default domain
