@@ -440,7 +440,7 @@ template <typename T>
 void declare_form(py::module& m, const std::string& type)
 {
   // dolfinx::fem::Form
-  std::string pyclass_name_form = std::string("Form") + type;
+  std::string pyclass_name_form = std::string("Form_") + type;
   py::class_<dolfinx::fem::Form<T>, std::shared_ptr<dolfinx::fem::Form<T>>>(
       m, pyclass_name_form.c_str(), "Variational form object")
       .def(

@@ -11,6 +11,7 @@
 # is demonstrated. ::
 
 import os
+
 import cffi
 import dolfinx
 import dolfinx.cpp
@@ -19,7 +20,7 @@ import dolfinx.io
 import dolfinx.la
 import numba
 import numba.core.typing.cffi_utils as cffi_support
-import numpy
+import numpy as np
 import ufl
 from dolfinx.fem import locate_dofs_topological
 from dolfinx.mesh import locate_entities_boundary
@@ -51,12 +52,12 @@ u, v = ufl.TrialFunction(U), ufl.TestFunction(U)
 
 def free_end(x):
     """Marks the leftmost points of the cantilever"""
-    return numpy.isclose(x[0], 48.0)
+    return np.isclose(x[0], 48.0)
 
 
 def left(x):
     """Marks left part of boundary, where cantilever is attached to wall"""
-    return numpy.isclose(x[0], 0.0)
+    return np.isclose(x[0], 0.0)
 
 
 # Locate all facets at the free end and assign them value 1
@@ -124,22 +125,24 @@ def tabulate_condensed_tensor_A(A_, w_, c_, coords_, entity_local_index, permuta
     A = numba.carray(A_, (Usize, Usize), dtype=PETSc.ScalarType)
 
     # Tabulate all sub blocks locally
-    A00 = numpy.zeros((Ssize, Ssize), dtype=PETSc.ScalarType)
+    A00 = np.zeros((Ssize, Ssize), dtype=PETSc.ScalarType)
     kernel00(ffi.from_buffer(A00), w_, c_, coords_, entity_local_index, permutation)
 
-    A01 = numpy.zeros((Ssize, Usize), dtype=PETSc.ScalarType)
+    A01 = np.zeros((Ssize, Usize), dtype=PETSc.ScalarType)
     kernel01(ffi.from_buffer(A01), w_, c_, coords_, entity_local_index, permutation)
 
-    A10 = numpy.zeros((Usize, Ssize), dtype=PETSc.ScalarType)
+    A10 = np.zeros((Usize, Ssize), dtype=PETSc.ScalarType)
     kernel10(ffi.from_buffer(A10), w_, c_, coords_, entity_local_index, permutation)
 
     # A = - A10 * A00^{-1} * A01
-    A[:, :] = - A10 @ numpy.linalg.solve(A00, A01)
+    A[:, :] = - A10 @ np.linalg.solve(A00, A01)
 
 
 # Prepare a Form with a condensed tabulation kernel
+Form = dolfinx.cpp.fem.Form_float64 if PETSc.ScalarType == np.float64 else dolfinx.cpp.fem.Form_complex128
+
 integrals = {dolfinx.fem.IntegralType.cell: ([(-1, tabulate_condensed_tensor_A.address)], None)}
-a_cond = dolfinx.cpp.fem.Form([U._cpp_object, U._cpp_object], integrals, [], [], False, None)
+a_cond = Form([U._cpp_object, U._cpp_object], integrals, [], [], False, None)
 
 A_cond = dolfinx.fem.assemble_matrix(a_cond, bcs=[bc])
 A_cond.assemble()
@@ -163,7 +166,7 @@ A.assemble()
 bb_tree = dolfinx.geometry.BoundingBoxTree(mesh, 2)
 
 # Check against standard table value
-p = numpy.array([48.0, 52.0, 0.0], dtype=numpy.float64)
+p = np.array([48.0, 52.0, 0.0], dtype=np.float64)
 cell_candidates = dolfinx.geometry.compute_collisions_point(bb_tree, p)
 cell = dolfinx.cpp.geometry.select_colliding_cells(mesh, cell_candidates, p, 1)
 
@@ -171,8 +174,8 @@ uc.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWA
 if len(cell) > 0:
     value = uc.eval(p, cell)
     print(value[1])
-    assert numpy.isclose(value[1], 23.95, rtol=1.e-2)
+    assert np.isclose(value[1], 23.95, rtol=1.e-2)
 
 # Check the equality of displacement based and mixed condensed global
 # matrices, i.e. check that condensation is exact
-assert numpy.isclose((A - A_cond).norm(), 0.0)
+assert np.isclose((A - A_cond).norm(), 0.0)

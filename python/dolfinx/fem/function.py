@@ -88,6 +88,12 @@ class Expression:
         mesh = ufl_expression.ufl_domain().ufl_cargo()
 
         # Compile UFL expression with JIT
+        if dtype == np.float64:
+            form_compiler_parameters["scalar_type"] = "double"
+        elif dtype == np.complex128:
+            form_compiler_parameters["scalar_type"] = "double _Complex"
+        else:
+            raise RuntimeError(f"Unsupported scalar type {dtype} for Form.")
         self._ufc_expression, module, self._code = jit.ffcx_jit(mesh.mpi_comm(), (ufl_expression, x),
                                                                 form_compiler_parameters=form_compiler_parameters,
                                                                 jit_parameters=jit_parameters)
