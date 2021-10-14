@@ -15,7 +15,7 @@ from petsc4py import PETSc
 import pytest
 
 
-@pytest.mark.skipif(dolfinx.has_petsc_complex,
+@pytest.mark.skipif(np.issubdtype(PETSc.ScalarType, np.complexfloating),
                     reason="Complex expression not implemented in ufc")
 def test_rank0():
     """Test evaluation of UFL expression.

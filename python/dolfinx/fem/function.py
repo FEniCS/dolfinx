@@ -150,7 +150,7 @@ class Expression:
 
         # Allocate memory for result if u was not provided
         if u is None:
-            if common.has_petsc_complex:
+            if np.issubdtype(PETSc.ScalarType, np.complexfloating):
                 u = np.empty((num_cells, self.num_points * self.value_size), dtype=np.complex128)
             else:
                 u = np.empty((num_cells, self.num_points * self.value_size), dtype=np.float64)
@@ -283,7 +283,7 @@ class Function(ufl.Coefficient):
         # Allocate memory for return value if not provided
         if u is None:
             value_size = ufl.product(self.ufl_element().value_shape())
-            if common.has_petsc_complex:
+            if np.issubdtype(PETSc.ScalarType, np.complexfloating):
                 u = np.empty((num_points, value_size), dtype=np.complex128)
             else:
                 u = np.empty((num_points, value_size))

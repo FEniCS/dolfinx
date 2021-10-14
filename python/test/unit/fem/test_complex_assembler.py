@@ -14,7 +14,7 @@ from petsc4py import PETSc
 from ufl import dx, grad, inner
 
 pytestmark = pytest.mark.skipif(
-    not dolfinx.has_petsc_complex, reason="Only works in complex mode.")
+    not np.issubdtype(PETSc.ScalarType, np.complexfloating), reason="Only works in complex mode.")
 
 
 def test_complex_assembly():

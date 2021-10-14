@@ -95,8 +95,8 @@ f = ufl.as_vector([0.0, 1.0 / 16])
 b1 = - ufl.inner(f, v) * ds(1)
 
 # JIT compile individual blocks tabulation kernels
-nptype = "complex128" if dolfinx.has_petsc_complex else "float64"
-ffcxtype = "double _Complex" if dolfinx.has_petsc_complex else "double"
+nptype = "complex128" if np.issubdtype(PETSc.ScalarType, np.complexfloating) else "float64"
+ffcxtype = "double _Complex" if np.issubdtype(PETSc.ScalarType, np.complexfloating) else "double"
 
 ufc_form00, _, _ = dolfinx.jit.ffcx_jit(mesh.mpi_comm(), a00,
                                         form_compiler_parameters={"scalar_type": ffcxtype})
