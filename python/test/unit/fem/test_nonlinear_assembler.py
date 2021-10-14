@@ -81,7 +81,7 @@ def test_matrix_assembly_block_nl():
 
     a_block = [[derivative(F0, u, du), derivative(F0, p, dp)],
                [derivative(F1, u, du), derivative(F1, p, dp)]]
-    L_block = [F0, F1]
+    L_block = [dolfinx.fem.Form(F0), dolfinx.fem.Form(F1)]
 
     # Monolithic blocked
     x0 = dolfinx.fem.create_vector_block(L_block)
@@ -112,7 +112,8 @@ def test_matrix_assembly_block_nl():
     dolfinx.fem.apply_lifting_nest(b1, a_block, bcs=[bc], x0=x1, scale=-1.0)
     for b_sub in b1.getNestSubVecs():
         b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    bcs0 = dolfinx.fem.assemble.bcs_rows(L_block, [bc])
+    bcs0 = dolfinx.fem.dirichletbc.bcs_by_block([L.function_spaces[0] for L in L_block], [bc])
+
     dolfinx.fem.set_bc_nest(b1, bcs0, x1, scale=-1.0)
     A1.assemble()
 
@@ -151,8 +152,14 @@ def test_matrix_assembly_block_nl():
 
 class NonlinearPDE_SNESProblem():
     def __init__(self, F, J, soln_vars, bcs, P=None):
-        self.L = F
-        self.a = J
+        try:
+            self.L = [dolfinx.fem.Form(_F) for _F in F]
+        except TypeError:
+            self.L = dolfinx.fem.Form(F)
+        try:
+            self.a = [[dolfinx.fem.Form(_J) for _J in Jrow] for Jrow in J]
+        except TypeError:
+            self.a = dolfinx.fem.Form(J)
         self.a_precon = P
         self.bcs = bcs
         self.soln_vars = soln_vars
@@ -214,16 +221,16 @@ class NonlinearPDE_SNESProblem():
                 _u[:] = _x
 
         # Assemble
-        bcs1 = dolfinx.fem.assemble.bcs_cols(self.a, self.bcs)
-        for L, F_sub, a, bc in zip(self.L, F.getNestSubVecs(), self.a, bcs1):
+        bcs1 = dolfinx.fem.dirichletbc.bcs_by_block(dolfinx.fem.form.extract_function_spaces(self.a, 1), self.bcs)
+        for L, F_sub, a in zip(self.L, F.getNestSubVecs(), self.a):
             with F_sub.localForm() as F_sub_local:
                 F_sub_local.set(0.0)
             dolfinx.fem.assemble_vector(F_sub, L)
-            dolfinx.fem.apply_lifting(F_sub, a, bcs=bc, x0=x, scale=-1.0)
+            dolfinx.fem.apply_lifting(F_sub, a, bcs=bcs1, x0=x, scale=-1.0)
             F_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
         # Set bc value in RHS
-        bcs0 = dolfinx.fem.assemble.bcs_rows(self.L, self.bcs)
+        bcs0 = dolfinx.fem.dirichletbc.bcs_by_block(dolfinx.fem.form.extract_function_spaces(self.L), self.bcs)
         for F_sub, bc, x_sub in zip(F.getNestSubVecs(), bcs0, x):
             dolfinx.fem.set_bc(F_sub, bc, x_sub, -1.0)
 

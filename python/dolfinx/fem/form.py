@@ -5,9 +5,13 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
+import typing
+
 import cffi
+import numpy as np
 import ufl
 from dolfinx import cpp, jit
+from dolfinx.fem import function
 
 
 class Form:
@@ -70,14 +74,14 @@ class Form:
                                                [c._cpp_object for c in form.constants()], subdomains, mesh)
 
     @property
-    def function_spaces(self):
-        """The function spaces of the arguments"""
-        return self._cpp_object.function_spaces
+    def rank(self):
+        """Return the compiled ufc_form object"""
+        return self._cpp_object.rank
 
     @property
-    def function_space(self):
-        """The rank of the form"""
-        return self._cpp_object.rank
+    def function_spaces(self):
+        """Return the compiled ufc_form object"""
+        return self._cpp_object.function_spaces
 
     @property
     def ufc_form(self):
@@ -88,3 +92,51 @@ class Form:
     def code(self):
         """Return C code strings"""
         return self._code
+
+
+_args = typing.Union[typing.Iterable[Form], typing.Iterable[typing.Iterable[Form]]]
+
+
+def extract_function_spaces(forms: _args, index: int = 0) -> typing.Iterable[function.FunctionSpace]:
+    """Extract common function spaces from an array of forms. If `forms`
+    is a list of linear form, this function returns of list of the the
+    corresponding test functions. If `forms` is a 2D array of bilinear
+    forms, for index=0 the list common test function space for each row
+    is returned, and if index=1 the common trial function spaces for
+    each column are returned."""
+    _forms = np.array(forms)
+    if _forms.ndim == 0:
+        raise RuntimeError("Expected an array for forms, not a single form")
+    elif _forms.ndim == 1:
+        assert index == 0
+        for form in _forms:
+            if form is not None:
+                assert form.rank == 1, "Expected linear form"
+        return [form.function_spaces[0] if form is not None else None for form in forms]
+    elif _forms.ndim == 2:
+        assert index == 0 or index == 1
+        extract_spaces = np.vectorize(lambda form: form.function_spaces[index] if form is not None else None)
+        V = extract_spaces(_forms)
+
+        def unique_spaces(V):
+            # Pick spaces from first column
+            V0 = V[:, 0]
+
+            # Iterate over each column
+            for col in range(1, V.shape[1]):
+                # Iterate over entry in column, updating if current
+                # space is None, or where both spaces are not None check
+                # that they are the same
+                for row in range(V.shape[0]):
+                    if V0[row] is None and V[row, col] is not None:
+                        V0[row] = V[row, col]
+                    elif V0[row] is not None and V[row, col] is not None:
+                        assert V0[row] is V[row, col], "Cannot extract unique function spaces"
+            return V0
+
+        if index == 0:
+            return list(unique_spaces(V))
+        elif index == 1:
+            return list(unique_spaces(V.transpose()))
+    else:
+        raise RuntimeError("Unsupported array of forms")

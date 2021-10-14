@@ -12,8 +12,8 @@ import typing
 
 import ufl
 from dolfinx import cpp
-from dolfinx.fem.dirichletbc import DirichletBC
-from dolfinx.fem.form import Form
+from dolfinx.fem.dirichletbc import DirichletBC, bcs_by_block
+from dolfinx.fem.form import Form, extract_function_spaces
 from petsc4py import PETSc
 
 
@@ -27,9 +27,8 @@ def _cpp_dirichletbc(bc):
 
 
 def _create_cpp_form(form):
-    """Recursively look for ufl.Forms and convert to dolfinx.fem.Form, otherwise
-    return form argument
-    """
+    """Recursively look for ufl.Forms and convert to
+    dolfinx.cpp.fem.Form, otherwise return form argument"""
     if isinstance(form, Form):
         return form._cpp_object
     elif isinstance(form, ufl.Form):
@@ -250,18 +249,18 @@ def _(b: PETSc.Vec,
     c_a = (coeffs_a[0] if coeffs_a[0] is not None else pack_constants(_a),
            coeffs_a[1] if coeffs_a[1] is not None else pack_coefficients(_a))
 
-    bcs1 = bcs_cols(_a, _cpp_dirichletbc(bcs))
+    bcs1 = bcs_by_block(extract_function_spaces(_a, 1), bcs)
     b_local = cpp.la.get_local_vectors(b, maps)
-    for b_sub, L_sub, a_sub, bc, constant_L, coeff_L, constant_a, coeff_a in zip(b_local, _L, _a, bcs1,
-                                                                                 c_L[0], c_L[1],
-                                                                                 c_a[0], c_a[1]):
+    for b_sub, L_sub, a_sub, constant_L, coeff_L, constant_a, coeff_a in zip(b_local, _L, _a,
+                                                                             c_L[0], c_L[1],
+                                                                             c_a[0], c_a[1]):
         cpp.fem.assemble_vector(b_sub, L_sub, constant_L, coeff_L)
-        cpp.fem.apply_lifting(b_sub, a_sub, constant_a, coeff_a, bc, x0_local, scale)
+        cpp.fem.apply_lifting(b_sub, a_sub, constant_a, coeff_a, bcs1, x0_local, scale)
 
     cpp.la.scatter_local_vectors(b, b_local, maps)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
-    bcs0 = bcs_rows(_create_cpp_form(L), _cpp_dirichletbc(bcs))
+    bcs0 = bcs_by_block(extract_function_spaces(_create_cpp_form(L)), bcs)
     offset = 0
     b_array = b.getArray(readonly=False)
     for submap, bc, _x0 in zip(maps, bcs0, x0_sub):
@@ -463,10 +462,9 @@ def apply_lifting_nest(b: PETSc.Vec,
     _a = _create_cpp_form(a)
     c = (coeffs[0] if coeffs[0] is not None else pack_constants(_a),
          coeffs[1] if coeffs[1] is not None else pack_coefficients(_a))
-    bcs1 = bcs_cols(_a, _cpp_dirichletbc(bcs))
-
-    for b_sub, a_sub, constants, coeffs, bc1 in zip(b.getNestSubVecs(), _a, c[0], c[1], bcs1):
-        apply_lifting(b_sub, a_sub, bc1, x0, scale, (constants, coeffs))
+    bcs1 = bcs_by_block(extract_function_spaces(_a, 1), bcs)
+    for b_sub, a_sub, constants, coeffs in zip(b.getNestSubVecs(), _a, c[0], c[1]):
+        apply_lifting(b_sub, a_sub, bcs1, x0, scale, (constants, coeffs))
     return b
 
 
