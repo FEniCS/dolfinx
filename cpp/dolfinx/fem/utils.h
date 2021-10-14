@@ -383,7 +383,7 @@ namespace impl
 // Pack a single coefficient
 template <typename T, int _bs = -1>
 void pack_coefficient(
-    const xtl::span<T>& c, int cstride, const std::vector<T>& v,
+    const xtl::span<T>& c, int cstride, const xtl::span<const T>& v,
     const xtl::span<const std::uint32_t>& cell_info, const fem::DofMap& dofmap,
     std::int32_t num_cells, std::int32_t offset, int space_dim,
     const std::function<void(const xtl::span<T>&,
@@ -433,7 +433,7 @@ pack_coefficients(const U& u)
   const std::vector<int> offsets = u.coefficient_offsets();
   std::vector<const fem::DofMap*> dofmaps(coefficients.size());
   std::vector<const fem::FiniteElement*> elements(coefficients.size());
-  std::vector<std::reference_wrapper<const std::vector<T>>> v;
+  std::vector<xtl::span<const T>> v;
   v.reserve(coefficients.size());
   for (std::size_t i = 0; i < coefficients.size(); ++i)
   {

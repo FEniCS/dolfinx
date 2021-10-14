@@ -38,8 +38,8 @@ void declare_objects(py::module& m, const std::string& type)
       .def_property_readonly("array",
                              [](dolfinx::la::Vector<T>& self)
                              {
-                               std::vector<T>& array = self.mutable_array();
-                               return py::array(array.size(), array.data(),
+                               xtl::span<T> array = self.mutable_array();
+                               return py::array_t<T>(array.size(), array.data(),
                                                 py::cast(self));
                              })
       .def("scatter_forward", &dolfinx::la::Vector<T>::scatter_fwd)

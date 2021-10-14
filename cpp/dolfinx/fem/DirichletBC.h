@@ -256,7 +256,7 @@ public:
   void set(xtl::span<T> x, double scale = 1.0) const
   {
     assert(_g);
-    const std::vector<T>& g = _g->x()->array();
+    xtl::span<const T> g = _g->x()->array();
     for (std::size_t i = 0; i < _dofs0.size(); ++i)
     {
       if (_dofs0[i] < (std::int32_t)x.size())
@@ -275,7 +275,7 @@ public:
            double scale = 1.0) const
   {
     assert(_g);
-    const std::vector<T>& g = _g->x()->array();
+    xtl::span<const T> g = _g->x()->array();
     assert(x.size() <= x0.size());
     for (std::size_t i = 0; i < _dofs0.size(); ++i)
     {
@@ -298,7 +298,7 @@ public:
   void dof_values(xtl::span<T> values) const
   {
     assert(_g);
-    const std::vector<T>& g = _g->x()->array();
+    xtl::span<const T> g = _g->x()->array();
     for (std::size_t i = 0; i < _dofs1_g.size(); ++i)
       values[_dofs0[i]] = g[_dofs1_g[i]];
   }

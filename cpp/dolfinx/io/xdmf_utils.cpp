@@ -123,7 +123,7 @@ std::vector<Scalar> _get_cell_data_values(const fem::Function<Scalar>& u)
 
   // Get values
   std::vector<Scalar> values(dof_set.size());
-  const std::vector<Scalar>& _u = u.x()->array();
+  xtl::span<const Scalar> _u = u.x()->array();
   for (std::size_t i = 0; i < dof_set.size(); ++i)
     values[i] = _u[dof_set[i]];
 
