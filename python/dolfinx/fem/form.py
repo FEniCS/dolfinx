@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) 2017-2018 Chris N. Richardson, Garth N. Wells and Michal Habera
+# Copyright (C) 2017-2021 Chris N. Richardson, Garth N. Wells and Michal Habera
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -60,9 +60,7 @@ class Form:
             jit_parameters=jit_parameters)
 
         # For every argument in form extract its function space
-        function_spaces = [
-            func.ufl_function_space()._cpp_object for func in form.arguments()
-        ]
+        function_spaces = [func.ufl_function_space()._cpp_object for func in form.arguments()]
 
         # Prepare coefficients data. For every coefficient in form take
         # its C++ object.
