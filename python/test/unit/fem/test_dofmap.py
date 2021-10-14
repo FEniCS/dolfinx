@@ -64,18 +64,18 @@ def test_entity_dofs(mesh):
     assert V.dofmap.dof_layout.num_entity_dofs(1) == 0
     assert V.dofmap.dof_layout.num_entity_dofs(2) == 0
 
-    V = VectorFunctionSpace(mesh, ("CG", 1))
+    V = VectorFunctionSpace(mesh, ("Lagrange", 1))
     bs = V.dofmap.dof_layout.block_size()
     assert V.dofmap.dof_layout.num_entity_dofs(0) * bs == 2
     assert V.dofmap.dof_layout.num_entity_dofs(1) * bs == 0
     assert V.dofmap.dof_layout.num_entity_dofs(2) * bs == 0
 
-    V = FunctionSpace(mesh, ("CG", 2))
+    V = FunctionSpace(mesh, ("Lagrange", 2))
     assert V.dofmap.dof_layout.num_entity_dofs(0) == 1
     assert V.dofmap.dof_layout.num_entity_dofs(1) == 1
     assert V.dofmap.dof_layout.num_entity_dofs(2) == 0
 
-    V = FunctionSpace(mesh, ("CG", 3))
+    V = FunctionSpace(mesh, ("Lagrange", 3))
     assert V.dofmap.dof_layout.num_entity_dofs(0) == 1
     assert V.dofmap.dof_layout.num_entity_dofs(1) == 2
     assert V.dofmap.dof_layout.num_entity_dofs(2) == 1

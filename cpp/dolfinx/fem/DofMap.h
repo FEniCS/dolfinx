@@ -106,6 +106,10 @@ public:
   /// Move assignment
   DofMap& operator=(DofMap&& dofmap) = default;
 
+  /// Equality operator
+  /// @return Returns true if the data for the two dofmaps is equal
+  bool operator==(const DofMap& map) const;
+
   /// Local-to-global mapping of dofs on a cell
   /// @param[in] cell The cell index
   /// @return Local-global dof map for the cell (using process-local
