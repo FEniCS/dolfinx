@@ -13,7 +13,7 @@ import numpy as np
 import ufl
 import ufl.algorithms
 import ufl.algorithms.analysis
-from dolfinx import common, cpp, jit
+from dolfinx import cpp, jit
 from dolfinx.fem import dofmap
 from petsc4py import PETSc
 

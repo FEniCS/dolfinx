@@ -15,6 +15,7 @@ from dolfinx.cpp.mesh import CellType
 from dolfinx.io import XDMFFile
 from dolfinx_utils.test.fixtures import tempdir
 from mpi4py import MPI
+from petsc4py import PETSc
 
 assert (tempdir)
 
