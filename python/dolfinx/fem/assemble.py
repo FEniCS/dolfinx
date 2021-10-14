@@ -497,17 +497,3 @@ def set_bc_nest(b: PETSc.Vec,
     x0 = len(_b) * [None] if x0 is None else x0.getNestSubVecs()
     for b_sub, bc, x_sub in zip(_b, bcs, x0):
         set_bc(b_sub, bc, x_sub, scale)
-
-
-def _bc_space(V, bcs):
-    "Return list of bcs that have the same space as V"
-    return [bc for bc in bcs if V.contains(bc.function_space)]
-
-
-def bcs_rows(L, bcs, i=0):
-    _L = _create_cpp_form(L)
-    return [_bc_space(form.function_spaces[i], bcs) if form is not None else [] for form in _L]
-
-
-def bcs_cols(a, bcs):
-    return [bcs_rows(arow, bcs, 1) for arow in a]

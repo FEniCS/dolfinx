@@ -183,7 +183,6 @@ class DirichletBC:
         """The function space to which boundary condition constrains
         will be applied"""
         return self._cpp_object.function_space
-            super().__init__(_value, dofs)
 
 
 def bcs_by_block(spaces: typing.Iterable[FunctionSpace],

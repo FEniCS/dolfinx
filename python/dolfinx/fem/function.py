@@ -107,7 +107,6 @@ class Expression:
         constants = [ufl_constant._cpp_object for ufl_constant in ufl_constants]
 
         # Getcpp Expression type
-
         def expressiontype(dtype):
             if dtype is np.float64:
                 return cpp.fem.Expression_float64
