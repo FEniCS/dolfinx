@@ -183,7 +183,6 @@ def ffcx_jit(ufl_object, form_compiler_parameters={}, jit_parameters={}):
       Priority ordering of parameters controlling FFCx from highest to \
       lowest is:
 
-      -  **scalar_type** of DOLFINx
       -  **form_compiler_parameters** (API)
       -  **$(pwd)/ffcx_parameters.json** (local parameters)
       -  **~/.config/ffcx/ffcx_parameters.json** (user parameters)
