@@ -9,7 +9,6 @@
 #include "Form.h"
 #include "utils.h"
 #include <dolfinx/common/IndexMap.h>
-#include <dolfinx/common/types.h>
 #include <dolfinx/fem/Constant.h>
 #include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/mesh/Geometry.h>

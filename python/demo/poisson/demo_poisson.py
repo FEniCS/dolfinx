@@ -206,7 +206,7 @@ try:
 
     topology, cell_types = plot.create_vtk_topology(mesh, mesh.topology.dim)
     grid = pyvista.UnstructuredGrid(topology, cell_types, mesh.geometry.x)
-    grid.point_arrays["u"] = uh.compute_point_values().real
+    grid.point_data["u"] = uh.compute_point_values().real
     grid.set_active_scalars("u")
 
     plotter = pyvista.Plotter()

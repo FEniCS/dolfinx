@@ -140,8 +140,8 @@ public:
         function_space_new->dofmap()->index_map_bs());
 
     // Copy values into new vector
-    const std::vector<T>& x_old = _x->array();
-    std::vector<T>& x_new = vector_new->mutable_array();
+    xtl::span<const T> x_old = _x->array();
+    xtl::span<T> x_new = vector_new->mutable_array();
     for (std::size_t i = 0; i < collapsed_map.size(); ++i)
     {
       assert((int)i < x_new.size());
@@ -331,7 +331,7 @@ public:
 
     // Loop over points
     std::fill(u.data(), u.data() + u.size(), 0.0);
-    const std::vector<T>& _v = _x->mutable_array();
+    const xtl::span<const T>& _v = _x->array();
 
     const std::function<void(const xtl::span<double>&,
                              const xtl::span<const std::uint32_t>&,
