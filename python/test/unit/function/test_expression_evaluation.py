@@ -12,8 +12,11 @@ import numpy as np
 import ufl
 from mpi4py import MPI
 from petsc4py import PETSc
+import pytest
 
 
+@pytest.mark.skipif(np.issubdtype(PETSc.ScalarType, np.complexfloating),
+                    reason="Complex expression not implemented in ufc")
 def test_rank0():
     """Test evaluation of UFL expression.
 

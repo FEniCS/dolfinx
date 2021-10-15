@@ -22,6 +22,7 @@
 #include <pybind11/stl.h>
 #include <string>
 #include <vector>
+
 namespace py = pybind11;
 
 namespace dolfinx_wrappers
@@ -33,9 +34,7 @@ void common(py::module& m)
   m.attr("has_debug") = dolfinx::has_debug();
   m.attr("has_parmetis") = dolfinx::has_parmetis();
   m.attr("has_kahip") = dolfinx::has_kahip();
-  m.attr("has_petsc_complex") = dolfinx::has_petsc_complex();
   m.attr("has_slepc") = dolfinx::has_slepc();
-  // Flag for ADIOS2 installation
   m.def("has_adios2", &dolfinx::has_adios2);
 
 #ifdef HAS_PYBIND11_SLEPC4PY
