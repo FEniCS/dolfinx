@@ -93,8 +93,8 @@ xt::xtensor<double, 2> distance(const mesh::Mesh& mesh, int dim,
 /// @param[in] mesh Mesh containing the entities
 /// @param[in] dim The topological dimension of the mesh entities
 /// @param[in] entities The indices of the mesh entities (local to process)
-/// @param[in] p The set points from which to computed the shortest distance
-/// between the ith point and ith entity
+/// @param[in] points The set points from which to computed the shortest
+/// distance between the ith point and ith entity
 /// @return Shortest squared distance from points[i] to entities[i]
 xt::xtensor<double, 1>
 squared_distance(const mesh::Mesh& mesh, int dim,
