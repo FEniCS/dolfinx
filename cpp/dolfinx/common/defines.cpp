@@ -26,15 +26,6 @@ bool dolfinx::has_debug()
 #endif
 }
 //-------------------------------------------------------------------------
-bool dolfinx::has_petsc_complex()
-{
-#ifdef PETSC_USE_COMPLEX
-  return true;
-#else
-  return false;
-#endif
-}
-//-------------------------------------------------------------------------
 bool dolfinx::has_slepc()
 {
 #ifdef HAS_SLEPC

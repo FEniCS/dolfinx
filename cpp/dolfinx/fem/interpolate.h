@@ -118,7 +118,7 @@ void interpolate(
   const int num_scalar_dofs = element->space_dimension() / element_bs;
   const int value_size = element->value_size() / element_bs;
 
-  std::vector<T>& coeffs = u.x()->mutable_array();
+  xtl::span<T> coeffs = u.x()->mutable_array();
   std::vector<T> _coeffs(num_scalar_dofs);
 
   const std::function<void(const xtl::span<T>&,
@@ -552,8 +552,8 @@ void interpolate(Function<T>& u, const Function<T>& v)
 
   auto map = mesh->topology().index_map(tdim);
   assert(map);
-  std::vector<T>& u_array = u.x()->mutable_array();
-  const std::vector<T>& v_array = v.x()->array();
+  xtl::span<T> u_array = u.x()->mutable_array();
+  xtl::span<const T> v_array = v.x()->array();
   if (u.function_space() == v.function_space())
   {
     // --- Same function spaces

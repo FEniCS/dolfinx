@@ -7,7 +7,6 @@
 #pragma once
 
 #include <basix/finite-element.h>
-#include <dolfinx/common/types.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <functional>
 #include <memory>
@@ -225,8 +224,7 @@ public:
     {
       // If no permutation needed, return function that does nothing
       return [](const xtl::span<T>&, const xtl::span<const std::uint32_t>&,
-                std::int32_t, int)
-      {
+                std::int32_t, int) {
         // Do nothing
       };
     }
@@ -252,8 +250,7 @@ public:
         return [dims, sub_element_functions](
                    const xtl::span<T>& data,
                    const xtl::span<const std::uint32_t>& cell_info,
-                   std::int32_t cell, int block_size)
-        {
+                   std::int32_t cell, int block_size) {
           std::size_t offset = 0;
           for (std::size_t e = 0; e < sub_element_functions.size(); ++e)
           {
@@ -276,8 +273,9 @@ public:
         return
             [ebs, sub_function](const xtl::span<T>& data,
                                 const xtl::span<const std::uint32_t>& cell_info,
-                                std::int32_t cell, int data_block_size)
-        { sub_function(data, cell_info, cell, ebs * data_block_size); };
+                                std::int32_t cell, int data_block_size) {
+              sub_function(data, cell_info, cell, ebs * data_block_size);
+            };
       }
     }
     if (transpose)
@@ -286,8 +284,7 @@ public:
       {
         return [this](const xtl::span<T>& data,
                       const xtl::span<const std::uint32_t>& cell_info,
-                      std::int32_t cell, int block_size)
-        {
+                      std::int32_t cell, int block_size) {
           apply_inverse_transpose_dof_transformation(data, cell_info[cell],
                                                      block_size);
         };
@@ -315,8 +312,9 @@ public:
       {
         return [this](const xtl::span<T>& data,
                       const xtl::span<const std::uint32_t>& cell_info,
-                      std::int32_t cell, int block_size)
-        { apply_dof_transformation(data, cell_info[cell], block_size); };
+                      std::int32_t cell, int block_size) {
+          apply_dof_transformation(data, cell_info[cell], block_size);
+        };
       }
     }
   }
@@ -348,8 +346,7 @@ public:
     {
       // If no permutation needed, return function that does nothing
       return [](const xtl::span<T>&, const xtl::span<const std::uint32_t>&,
-                std::int32_t, int)
-      {
+                std::int32_t, int) {
         // Do nothing
       };
     }
@@ -372,8 +369,7 @@ public:
         return [this, sub_element_functions](
                    const xtl::span<T>& data,
                    const xtl::span<const std::uint32_t>& cell_info,
-                   std::int32_t cell, int block_size)
-        {
+                   std::int32_t cell, int block_size) {
           std::size_t offset = 0;
           for (std::size_t e = 0; e < sub_element_functions.size(); ++e)
           {
@@ -394,8 +390,7 @@ public:
         return [this,
                 sub_function](const xtl::span<T>& data,
                               const xtl::span<const std::uint32_t>& cell_info,
-                              std::int32_t cell, int data_block_size)
-        {
+                              std::int32_t cell, int data_block_size) {
           const int ebs = block_size();
           const std::size_t dof_count = data.size() / data_block_size;
           for (int block = 0; block < data_block_size; ++block)
@@ -413,8 +408,7 @@ public:
       {
         return [this](const xtl::span<T>& data,
                       const xtl::span<const std::uint32_t>& cell_info,
-                      std::int32_t cell, int block_size)
-        {
+                      std::int32_t cell, int block_size) {
           apply_inverse_transpose_dof_transformation_to_transpose(
               data, cell_info[cell], block_size);
         };
@@ -423,8 +417,7 @@ public:
       {
         return [this](const xtl::span<T>& data,
                       const xtl::span<const std::uint32_t>& cell_info,
-                      std::int32_t cell, int block_size)
-        {
+                      std::int32_t cell, int block_size) {
           apply_transpose_dof_transformation_to_transpose(data, cell_info[cell],
                                                           block_size);
         };
@@ -436,8 +429,7 @@ public:
       {
         return [this](const xtl::span<T>& data,
                       const xtl::span<const std::uint32_t>& cell_info,
-                      std::int32_t cell, int block_size)
-        {
+                      std::int32_t cell, int block_size) {
           apply_inverse_dof_transformation_to_transpose(data, cell_info[cell],
                                                         block_size);
         };

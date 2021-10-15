@@ -130,7 +130,7 @@ void vtx_write_data(adios2::IO& io, adios2::Engine& engine,
 {
   // Get function data array and information about layout
   assert(u.x());
-  auto& u_vector = u.x()->array();
+  xtl::span<const Scalar> u_vector = u.x()->array();
   const int rank = u.function_space()->element()->value_rank();
   const std::uint32_t num_comp = std::pow(3, rank);
   std::shared_ptr<const fem::DofMap> dofmap = u.function_space()->dofmap();
@@ -567,10 +567,15 @@ void fides_write_data(adios2::IO& io, adios2::Engine& engine,
 
   // Get vertex data. If the mesh and function dofmaps are the same we
   // can work directly with the dof array.
-  const std::vector<Scalar>& data
-      = mesh->geometry().dofmap() == dofmap->list() and !need_padding
-            ? u.x()->array()
-            : pack_function_data(u);
+  xtl::span<const Scalar> data;
+  std::vector<Scalar> _data;
+  if (mesh->geometry().dofmap() == dofmap->list() and !need_padding)
+    data = u.x()->array();
+  else
+  {
+    _data = pack_function_data(u);
+    data = xtl::span<const Scalar>(_data);
+  }
 
   auto vertex_map = mesh->topology().index_map(0);
   assert(vertex_map);
