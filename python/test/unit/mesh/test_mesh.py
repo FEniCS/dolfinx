@@ -223,6 +223,12 @@ def test_UnitHexMesh():
     assert mesh.mpi_comm().allreduce(mesh.topology.index_map(0).size_local, MPI.SUM) == 480
 
 
+def test_BoxMeshPrism():
+    mesh = BoxMesh(MPI.COMM_WORLD, [[0., 0., 0.], [1., 1., 1.]], [2, 3, 4], CellType.prism, cpp.mesh.GhostMode.none)
+    assert mesh.topology.index_map(0).size_global == 60
+    assert mesh.topology.index_map(3).size_global == 48
+
+
 @skip_in_parallel
 def test_GetCoordinates():
     """Get coordinates of vertices"""
@@ -340,9 +346,6 @@ def xtest_mesh_topology_against_basix(mesh_factory, ghost_mode):
     # Create basix cell
     cell_name = cpp.mesh.to_string(mesh.topology.cell_type)
     basix_celltype = getattr(basix.CellType, cell_name)
-
-    # Initialize all mesh entities and connectivities
-    mesh.topology.create_connectivity_all()
 
     map = mesh.topology.index_map(mesh.topology.dim)
     num_cells = map.size_local + map.num_ghosts

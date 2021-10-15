@@ -10,6 +10,7 @@ import random
 import numpy as np
 import pytest
 import ufl
+import dolfinx
 from dolfinx import Function, FunctionSpace, VectorFunctionSpace, cpp
 from dolfinx.cpp.mesh import CellType
 from dolfinx.mesh import create_mesh
@@ -96,10 +97,7 @@ def one_cell_mesh(cell_type):
     cells = np.array([order])
 
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", cpp.mesh.to_string(cell_type), 1))
-    mesh = create_mesh(MPI.COMM_WORLD, cells, ordered_points, domain)
-
-    mesh.topology.create_connectivity_all()
-    return mesh
+    return create_mesh(MPI.COMM_WORLD, cells, ordered_points, domain)
 
 
 def run_scalar_test(V, poly_order):
@@ -221,3 +219,119 @@ def test_mixed_interpolation():
     v = Function(FunctionSpace(mesh, ufl.MixedElement([A, B])))
     with pytest.raises(RuntimeError):
         v.interpolate(lambda x: (x[1], 2 * x[0], 3 * x[1]))
+
+
+@pytest.mark.parametrize("order1", [2, 3, 4])
+@pytest.mark.parametrize("order2", [2, 3, 4])
+def test_interpolation_nedelec(order1, order2):
+    mesh = dolfinx.UnitCubeMesh(MPI.COMM_WORLD, 2, 2, 2)
+    V = dolfinx.FunctionSpace(mesh, ("N1curl", order1))
+    V1 = dolfinx.FunctionSpace(mesh, ("N1curl", order2))
+
+    u = dolfinx.Function(V)
+    v = dolfinx.Function(V1)
+
+    # The expression "lambda x: x" is contained in the N1curl function space order>1
+    u.interpolate(lambda x: x)
+    v.interpolate(u)
+
+    assert np.isclose(dolfinx.fem.assemble_scalar(ufl.inner(u - v, u - v) * ufl.dx), 0)
+
+    # The target expression is also contained in N2curl space of any order.
+    V2 = dolfinx.FunctionSpace(mesh, ("N2curl", 1))
+    w = dolfinx.Function(V2)
+    w.interpolate(u)
+
+    assert np.isclose(dolfinx.fem.assemble_scalar(ufl.inner(u - w, u - w) * ufl.dx), 0)
+
+
+@pytest.mark.xfail(strict=True)
+def test_interpolation_cross():
+    mesh = dolfinx.UnitCubeMesh(MPI.COMM_WORLD, 2, 2, 2)
+    V = dolfinx.VectorFunctionSpace(mesh, ("Lagrange", 1))
+    V1 = dolfinx.FunctionSpace(mesh, ("N1curl", 2))
+
+    u = dolfinx.Function(V)
+    v = dolfinx.Function(V1)
+
+    u.interpolate(lambda x: x)
+    v.interpolate(u)
+
+    s = dolfinx.fem.assemble_scalar(ufl.inner(u - v, u - v) * ufl.dx)
+
+    assert np.isclose(s, 0)
+
+
+@pytest.mark.parametrize("order1", [1, 2, 3, 4, 5])
+@pytest.mark.parametrize("order2", [1, 2, 3])
+def test_interpolation_p2p(order1, order2):
+    mesh = dolfinx.UnitCubeMesh(MPI.COMM_WORLD, 2, 2, 2)
+    V = dolfinx.FunctionSpace(mesh, ("Lagrange", order1))
+    V1 = dolfinx.FunctionSpace(mesh, ("Lagrange", order2))
+
+    u = dolfinx.Function(V)
+    v = dolfinx.Function(V1)
+
+    u.interpolate(lambda x: x[0])
+    v.interpolate(u)
+
+    s = dolfinx.fem.assemble_scalar(ufl.inner(u - v, u - v) * ufl.dx)
+    assert np.isclose(s, 0)
+
+    DG = dolfinx.FunctionSpace(mesh, ("DG", order2))
+    w = dolfinx.Function(DG)
+    w.interpolate(u)
+
+    s = dolfinx.fem.assemble_scalar(ufl.inner(u - w, u - w) * ufl.dx)
+    assert np.isclose(s, 0)
+
+
+@pytest.mark.parametrize("order1", [1, 2, 3])
+@pytest.mark.parametrize("order2", [1, 2])
+def test_interpolation_vector_elements(order1, order2):
+    mesh = dolfinx.UnitCubeMesh(MPI.COMM_WORLD, 2, 2, 2)
+    V = dolfinx.VectorFunctionSpace(mesh, ("Lagrange", order1))
+    V1 = dolfinx.VectorFunctionSpace(mesh, ("Lagrange", order2))
+
+    u = dolfinx.Function(V)
+    v = dolfinx.Function(V1)
+
+    u.interpolate(lambda x: x)
+    v.interpolate(u)
+
+    s = dolfinx.fem.assemble_scalar(ufl.inner(u - v, u - v) * ufl.dx)
+    assert np.isclose(s, 0)
+
+    DG = dolfinx.VectorFunctionSpace(mesh, ("DG", order2))
+    w = dolfinx.Function(DG)
+    w.interpolate(u)
+
+    s = dolfinx.fem.assemble_scalar(ufl.inner(u - w, u - w) * ufl.dx)
+    assert np.isclose(s, 0)
+
+
+@skip_in_parallel
+def test_interpolation_non_affine():
+    points = np.array([[0, 0, 0], [1, 0, 0], [0, 2, 0], [1, 2, 0],
+                       [0, 0, 3], [1, 0, 3], [0, 2, 3], [1, 2, 3],
+                       [0.5, 0, 0], [0, 1, 0], [0, 0, 1.5], [1, 1, 0],
+                       [1, 0, 1.5], [0.5, 2, 0], [0, 2, 1.5], [1, 2, 1.5],
+                       [0.5, 0, 3], [0, 1, 3], [1, 1, 3], [0.5, 2, 3],
+                       [0.5, 1, 0], [0.5, 0, 1.5], [0, 1, 1.5], [1, 1, 1.5],
+                       [0.5, 2, 1.5], [0.5, 1, 3], [0.5, 1, 1.5]], dtype=np.float64)
+
+    cells = np.array([range(len(points))], dtype=np.int32)
+    cell_type = dolfinx.cpp.mesh.CellType.hexahedron
+    domain = ufl.Mesh(ufl.VectorElement("Lagrange", dolfinx.cpp.mesh.to_string(cell_type), 2))
+    mesh = dolfinx.mesh.create_mesh(MPI.COMM_WORLD, cells, points, domain)
+
+    W = dolfinx.FunctionSpace(mesh, ("NCE", 1))
+    V = dolfinx.FunctionSpace(mesh, ("NCE", 2))
+
+    w = dolfinx.Function(W)
+    v = dolfinx.Function(V)
+
+    w.interpolate(lambda x: x)
+    v.interpolate(w)
+    s = dolfinx.fem.assemble_scalar(ufl.inner(w - v, w - v) * ufl.dx)
+    assert np.isclose(s, 0)

@@ -26,7 +26,8 @@ def check_cell_volume(points, cell, domain, volume):
 
     point_order = [i for i, _ in enumerate(points)]
     for repeat in range(5):
-        # Shuffle the cell to check that permutations of CoordinateElement are correct
+        # Shuffle the cell to check that permutations of
+        # CoordinateElement are correct
         random.shuffle(point_order)
         ordered_points = np.zeros((len(points), len(points[0])))
         for i, j in enumerate(point_order):
@@ -257,7 +258,8 @@ def test_triangle_mesh_vtk(order):
     def coord_to_vertex(x, y):
         return y * (2 * order + 3 - y) // 2 + x
 
-    # Make the cell, following https://blog.kitware.com/modeling-arbitrary-order-lagrange-finite-elements-in-the-visualization-toolkit/  # noqa: E501
+    # Make the cell, following
+    # https://blog.kitware.com/modeling-arbitrary-order-lagrange-finite-elements-in-the-visualization-toolkit/
     cell = [coord_to_vertex(i, j) for i, j in [(0, 0), (order, 0), (0, order)]]
     if order > 1:
         for i in range(1, order):
@@ -303,7 +305,8 @@ def test_tetrahedron_mesh_vtk(order):
             3 * order ** 2 - 3 * order * z + 12 * order + z ** 2 - 6 * z + 11
         ) // 6 + y * (2 * (order - z) + 3 - y) // 2 + x
 
-    # Make the cell, following https://blog.kitware.com/modeling-arbitrary-order-lagrange-finite-elements-in-the-visualization-toolkit/  # noqa: E501
+    # Make the cell, following
+    # https://blog.kitware.com/modeling-arbitrary-order-lagrange-finite-elements-in-the-visualization-toolkit/
     cell = [coord_to_vertex(x, y, z) for x, y, z in [
         (0, 0, 0), (order, 0, 0), (0, order, 0), (0, 0, order)]]
 
@@ -322,8 +325,8 @@ def test_tetrahedron_mesh_vtk(order):
             cell.append(coord_to_vertex(0, order - i, i))
 
         if order == 3:
-            # The ordering of faces does not match documentation.
-            # See https://gitlab.kitware.com/vtk/vtk/uploads/a0dc0173a41d3cf6b03a9266c0e23688/image.png
+            # The ordering of faces does not match documentation. See
+            # https://gitlab.kitware.com/vtk/vtk/uploads/a0dc0173a41d3cf6b03a9266c0e23688/image.png
             cell.append(coord_to_vertex(1, 0, 1))
             cell.append(coord_to_vertex(1, 1, 1))
             cell.append(coord_to_vertex(0, 1, 1))
@@ -392,7 +395,8 @@ def test_quadrilateral_mesh_vtk(order):
     def coord_to_vertex(x, y):
         return (order + 1) * y + x
 
-    # Make the cell, following https://blog.kitware.com/modeling-arbitrary-order-lagrange-finite-elements-in-the-visualization-toolkit/  # noqa: E501
+    # Make the cell, following
+    # https://blog.kitware.com/modeling-arbitrary-order-lagrange-finite-elements-in-the-visualization-toolkit/
     cell = [coord_to_vertex(i, j)
             for i, j in [(0, 0), (order, 0), (order, order), (0, order)]]
     if order > 1:
@@ -436,7 +440,8 @@ def test_hexahedron_mesh_vtk(order):
     def coord_to_vertex(x, y, z):
         return (order + 1) ** 2 * z + (order + 1) * y + x
 
-    # Make the cell, following https://blog.kitware.com/modeling-arbitrary-order-lagrange-finite-elements-in-the-visualization-toolkit/  # noqa: E501
+    # Make the cell, following
+    # https://blog.kitware.com/modeling-arbitrary-order-lagrange-finite-elements-in-the-visualization-toolkit/
     cell = [coord_to_vertex(x, y, z) for x, y, z in [
         (0, 0, 0), (order, 0, 0), (order, order, 0), (0, order, 0),
         (0, 0, order), (order, 0, order), (order, order, order), (0, order, order)]]
@@ -467,9 +472,10 @@ def test_hexahedron_mesh_vtk(order):
         for i in range(1, order):
             cell.append(coord_to_vertex(0, order, i))
 
-        # The ordering of faces does not match documentation.
-        # See https://gitlab.kitware.com/vtk/vtk/uploads/a0dc0173a41d3cf6b03a9266c0e23688/image.png
-        # The edge flip in this like however has been fixed in VTK so we follow the main documentation link for edges
+        # The ordering of faces does not match documentation. See
+        # https://gitlab.kitware.com/vtk/vtk/uploads/a0dc0173a41d3cf6b03a9266c0e23688/image.png
+        # The edge flip in this like however has been fixed in VTK so we
+        # follow the main documentation link for edges
         for j in range(1, order):
             for i in range(1, order):
                 cell.append(coord_to_vertex(0, i, j))
@@ -580,7 +586,7 @@ def test_gmsh_input_2d(order, cell_type):
     #     return values
     # cmap = fem.create_coordinate_map(mesh.mpi_comm(), mesh.ufl_domain())
     # mesh.geometry.coord_mapping = cmap
-    # V = FunctionSpace(mesh, ("CG", order))
+    # V = FunctionSpace(mesh, ("Lagrange", order))
     # u = Function(V)
     # u.interpolate(e2)
     # from dolfinx.io import VTKFile

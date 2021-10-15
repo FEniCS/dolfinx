@@ -9,7 +9,6 @@
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
-#include <dolfinx/common/types.h>
 #include <dolfinx/fem/Constant.h>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/fem/FiniteElement.h>
@@ -31,8 +30,7 @@ using namespace dolfinx;
 //-----------------------------------------------------------------------------
 la::SparsityPattern fem::create_sparsity_pattern(
     const mesh::Topology& topology,
-    const std::array<const std::reference_wrapper<const fem::DofMap>, 2>&
-        dofmaps,
+    const std::array<std::reference_wrapper<const fem::DofMap>, 2>& dofmaps,
     const std::set<IntegralType>& integrals)
 {
   common::Timer t0("Build sparsity");
@@ -45,9 +43,8 @@ la::SparsityPattern fem::create_sparsity_pattern(
 
   // Create and build sparsity pattern
   assert(dofmaps[0].get().index_map);
-  la::SparsityPattern pattern(
-      dofmaps[0].get().index_map->comm(common::IndexMap::Direction::forward),
-      index_maps, bs);
+  la::SparsityPattern pattern(dofmaps[0].get().index_map->comm(), index_maps,
+                              bs);
   for (auto type : integrals)
   {
     switch (type)
@@ -88,8 +85,8 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
 
   // Fill entity dof indices
   const int tdim = mesh::cell_dim(cell_type);
-  std::vector<std::vector<std::set<int>>> entity_dofs(tdim + 1);
-  std::vector<std::vector<std::set<int>>> entity_closure_dofs(tdim + 1);
+  std::vector<std::vector<std::vector<int>>> entity_dofs(tdim + 1);
+  std::vector<std::vector<std::vector<int>>> entity_closure_dofs(tdim + 1);
   for (int dim = 0; dim <= tdim; ++dim)
   {
     const int num_entities = mesh::cell_num_entities(cell_type, dim);
@@ -97,13 +94,12 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
     entity_closure_dofs[dim].resize(num_entities);
     for (int i = 0; i < num_entities; ++i)
     {
-      std::vector<int> tmp0(num_entity_dofs[dim]);
-      dofmap.tabulate_entity_dofs(tmp0.data(), dim, i);
-      entity_dofs[dim][i] = std::set<int>(tmp0.begin(), tmp0.end());
+      entity_dofs[dim][i].resize(num_entity_dofs[dim]);
+      dofmap.tabulate_entity_dofs(entity_dofs[dim][i].data(), dim, i);
 
-      std::vector<int> tmp1(num_entity_closure_dofs[dim]);
-      dofmap.tabulate_entity_closure_dofs(tmp1.data(), dim, i);
-      entity_closure_dofs[dim][i] = std::set<int>(tmp1.begin(), tmp1.end());
+      entity_closure_dofs[dim][i].resize(num_entity_closure_dofs[dim]);
+      dofmap.tabulate_entity_closure_dofs(entity_closure_dofs[dim][i].data(),
+                                          dim, i);
     }
   }
 
@@ -211,16 +207,26 @@ std::vector<std::string> fem::get_constant_names(const ufc_form& ufc_form)
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<fem::FunctionSpace> fem::create_functionspace(
-    ufc_function_space* (*fptr)(const char*), const std::string function_name,
+    ufc_function_space* (*fptr)(const char*), const std::string& function_name,
     std::shared_ptr<mesh::Mesh> mesh,
     const std::function<std::vector<int>(
         const graph::AdjacencyList<std::int32_t>&)>& reorder_fn)
 {
   ufc_function_space* space = fptr(function_name.c_str());
-  ufc_dofmap* ufc_map = space->dofmap;
+  if (!space)
+  {
+    throw std::runtime_error(
+        "Could not create UFC function space with function name "
+        + function_name);
+  }
+
   ufc_finite_element* ufc_element = space->finite_element;
+  assert(ufc_element);
   std::shared_ptr<const fem::FiniteElement> element
       = std::make_shared<fem::FiniteElement>(*ufc_element);
+
+  ufc_dofmap* ufc_map = space->dofmap;
+  assert(ufc_map);
   auto V = std::make_shared<fem::FunctionSpace>(
       mesh, element,
       std::make_shared<fem::DofMap>(fem::create_dofmap(

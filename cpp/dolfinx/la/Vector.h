@@ -208,8 +208,7 @@ public:
       }
 
       double linf = 0.0;
-      MPI_Allreduce(&local_linf, &linf, 1, MPI_DOUBLE, MPI_MAX,
-                    _map->comm(common::IndexMap::Direction::forward));
+      MPI_Allreduce(&local_linf, &linf, 1, MPI_DOUBLE, MPI_MAX, _map->comm());
       return linf;
     }
     default:
@@ -226,8 +225,7 @@ public:
         _x.begin(), std::next(_x.begin(), size_local), 0.0, std::plus<double>(),
         [](T val) { return std::norm(val); });
     double norm2;
-    MPI_Allreduce(&result, &norm2, 1, MPI_DOUBLE, MPI_SUM,
-                  _map->comm(common::IndexMap::Direction::forward));
+    MPI_Allreduce(&result, &norm2, 1, MPI_DOUBLE, MPI_SUM, _map->comm());
     return norm2;
   }
 
@@ -238,10 +236,10 @@ public:
   constexpr int bs() const { return _bs; }
 
   /// Get local part of the vector (const version)
-  const std::vector<T, Allocator>& array() const { return _x; }
+  xtl::span<const T> array() const { return xtl::span<const T>(_x); }
 
   /// Get local part of the vector
-  std::vector<T, Allocator>& mutable_array() { return _x; }
+  xtl::span<T> mutable_array() { return xtl::span(_x); }
 
 private:
   // Map describing the data layout
@@ -271,8 +269,8 @@ T inner_product(const Vector<T, Allocator>& a, const Vector<T, Allocator>& b)
   const std::int32_t local_size = a.bs() * a.map()->size_local();
   if (local_size != b.bs() * b.map()->size_local())
     throw std::runtime_error("Incompatible vector sizes");
-  const std::vector<T>& x_a = a.array();
-  const std::vector<T>& x_b = b.array();
+  xtl::span<const T> x_a = a.array();
+  xtl::span<const T> x_b = b.array();
 
   const T local = std::transform_reduce(
       x_a.begin(), x_a.begin() + local_size, x_b.begin(), static_cast<T>(0),
@@ -281,14 +279,16 @@ T inner_product(const Vector<T, Allocator>& a, const Vector<T, Allocator>& b)
       {
         if constexpr (std::is_same<T, std::complex<double>>::value
                       or std::is_same<T, std::complex<float>>::value)
+        {
           return std::conj(a) * b;
+        }
         else
           return a * b;
       });
 
   T result;
   MPI_Allreduce(&local, &result, 1, dolfinx::MPI::mpi_type<T>(), MPI_SUM,
-                a.map()->comm(common::IndexMap::Direction::forward));
+                a.map()->comm());
   return result;
 }
 

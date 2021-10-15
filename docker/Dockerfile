@@ -44,13 +44,13 @@
 
 ARG GMSH_VERSION=4_8_4
 ARG PYBIND11_VERSION=2.7.1
-ARG PETSC_VERSION=3.15.2
-ARG SLEPC_VERSION=3.15.1
+ARG PETSC_VERSION=3.16.0
+ARG SLEPC_VERSION=3.16.0
 ARG ADIOS2_VERSION=2.7.1
-ARG PYVISTA_VERSION=0.31.3
+ARG PYVISTA_VERSION=0.32.1
+ARG NUMPY_VERSION=1.20.3
 ARG KAHIP_VERSION=3.11
 ARG XTENSOR_VERSION=0.23.10
-ARG XTENSOR_BLAS_VERSION=0.19.1
 ARG XTL_VERSION=0.7.2
 
 ########################################
@@ -65,8 +65,8 @@ ARG PETSC_VERSION
 ARG SLEPC_VERSION
 ARG ADIOS2_VERSION
 ARG KAHIP_VERSION
+ARG NUMPY_VERSION
 ARG XTENSOR_VERSION
-ARG XTENSOR_BLAS_VERSION
 ARG XTL_VERSION
 
 # The following ARGS are used in the dev-env layer.
@@ -148,9 +148,9 @@ RUN LLVM_CONFIG=/usr/bin/llvm-config-9 pip3 install --no-cache-dir mpi4py numba 
 
 # Upgrade numpy via pip. Exclude binaries to avoid conflicts with libblas
 # (See issue #126 and #1305)
-RUN pip3 install --no-cache-dir --no-binary="numpy" numpy --upgrade
+RUN pip3 install --no-cache-dir --no-binary="numpy" numpy==${NUMPY_VERSION} --upgrade
 
-# Install xtl, xtensor, xtensor-blas.
+# Install xtl, xtensor
 RUN git clone -b ${XTL_VERSION} --single-branch https://github.com/xtensor-stack/xtl.git && \
     cd xtl && \
     cmake -G Ninja . && \
@@ -160,12 +160,7 @@ RUN git clone -b ${XTL_VERSION} --single-branch https://github.com/xtensor-stack
     cd xtensor && \
     cmake -G Ninja . && \
     ninja install && \
-    cd ../ && \
-    git clone -b ${XTENSOR_BLAS_VERSION} --single-branch https://github.com/xtensor-stack/xtensor-blas.git && \
-    cd xtensor-blas && \
-    cmake -G Ninja . && \
-    ninja install && \
-    rm -rf xtl xtensor xtensor-blas
+    rm -rf xtl xtensor
 
 # Install KaHIP
 RUN wget -nc --quiet https://github.com/kahip/kahip/archive/v${KAHIP_VERSION}.tar.gz && \
@@ -358,7 +353,7 @@ ONBUILD ARG DOLFINX_CMAKE_CXX_FLAGS
 
 # The dolfinx-onbuild container expects to have folders basix/ ufl/ ffcx/ and
 # dolfinx/ mounted/shared at /src.
-ONBUILD RUN cd basix && cmake -G Ninja -DCMAKE_BUILD_TYPE=${DOLFINX_CMAKE_BUILD_TYPE} -DCMAKE_CXX_FLAGS=${DOLFINX_CMAKE_CXX_FLAGS} -B build-dir -S . && \
+ONBUILD RUN cd basix && cmake -G Ninja -DCMAKE_BUILD_TYPE=${DOLFINX_CMAKE_BUILD_TYPE} -DCMAKE_CXX_FLAGS=${DOLFINX_CMAKE_CXX_FLAGS} -B build-dir -S ./cpp && \
     cmake --build build-dir && \
     cmake --install build-dir && \
     python3 -m pip install ./python && \
@@ -437,6 +432,9 @@ RUN dpkgArch="$(dpkg --print-architecture)"; \
     pip3 install --no-cache-dir pyvista==${PYVISTA_VERSION} ;; \
     esac; \
     pip3 install --no-cache-dir matplotlib
+
+# Jupyter Notebook kernel specification for complex build DOLFINx
+ADD dolfinx/docker/complex-kernel.json /usr/local/share/jupyter/kernels/python3-complex/kernel.json
 
 EXPOSE 8888/tcp
 ENV SHELL /bin/bash

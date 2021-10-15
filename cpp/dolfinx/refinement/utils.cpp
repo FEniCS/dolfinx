@@ -6,7 +6,6 @@
 
 #include "utils.h"
 #include <dolfinx/common/MPI.h>
-#include <dolfinx/common/types.h>
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -291,7 +290,7 @@ std::vector<std::int64_t> refinement::adjust_indices(
   // of "index_map", and adjust existing indices to match.
 
   // Get number of new indices on all processes
-  MPI_Comm comm = index_map->comm(common::IndexMap::Direction::forward);
+  MPI_Comm comm = index_map->comm();
   int mpi_size = dolfinx::MPI::size(comm);
   int mpi_rank = dolfinx::MPI::rank(comm);
   std::vector<std::int32_t> recvn(mpi_size);
@@ -328,8 +327,7 @@ refinement::partition(const mesh::Mesh& old_mesh,
 
   auto partitioner = [](MPI_Comm comm, int, int tdim,
                         const graph::AdjacencyList<std::int64_t>& cell_topology,
-                        mesh::GhostMode)
-  {
+                        mesh::GhostMode) {
     // Find out the ghosting information
     auto [graph, _] = mesh::build_dual_graph(comm, cell_topology, tdim);
 

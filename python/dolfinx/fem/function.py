@@ -13,8 +13,9 @@ import numpy as np
 import ufl
 import ufl.algorithms
 import ufl.algorithms.analysis
-from dolfinx import common, cpp, jit
+from dolfinx import cpp, jit
 from dolfinx.fem import dofmap
+from petsc4py import PETSc
 
 
 class Constant(ufl.Constant):
@@ -29,7 +30,10 @@ class Constant(ufl.Constant):
         """
         c_np = np.asarray(c)
         super().__init__(domain, c_np.shape)
-        self._cpp_object = cpp.fem.Constant(c_np.shape, c_np.flatten())
+        if np.iscomplexobj(c) is True:
+            self._cpp_object = cpp.fem.Constant_complex128(c_np)
+        else:
+            self._cpp_object = cpp.fem.Constant_float64(c_np)
 
     @property
     def value(self):
@@ -45,7 +49,9 @@ class Expression:
     def __init__(self,
                  ufl_expression: ufl.core.expr.Expr,
                  x: np.ndarray,
-                 form_compiler_parameters: dict = {}, jit_parameters: dict = {}):
+                 form_compiler_parameters: dict = {},
+                 jit_parameters: dict = {},
+                 dtype=PETSc.ScalarType):
         """Create DOLFINx Expression.
 
         Represents a mathematical expression evaluated at a pre-defined set of
@@ -82,6 +88,12 @@ class Expression:
         mesh = ufl_expression.ufl_domain().ufl_cargo()
 
         # Compile UFL expression with JIT
+        if dtype == np.float64:
+            form_compiler_parameters["scalar_type"] = "double"
+        elif dtype == np.complex128:
+            form_compiler_parameters["scalar_type"] = "double _Complex"
+        else:
+            raise RuntimeError(f"Unsupported scalar type {dtype} for Form.")
         self._ufc_expression, module, self._code = jit.ffcx_jit(mesh.mpi_comm(), (ufl_expression, x),
                                                                 form_compiler_parameters=form_compiler_parameters,
                                                                 jit_parameters=jit_parameters)
@@ -100,7 +112,16 @@ class Expression:
         ufl_constants = ufl.algorithms.analysis.extract_constants(ufl_expression)
         constants = [ufl_constant._cpp_object for ufl_constant in ufl_constants]
 
-        self._cpp_object = cpp.fem.Expression(coefficients, constants, mesh, x, fn, value_size)
+        # Getcpp Expression type
+        def expressiontype(dtype):
+            if dtype is np.float64:
+                return cpp.fem.Expression_float64
+            elif dtype is np.complex128:
+                return cpp.fem.Expression_complex128
+            else:
+                raise NotImplementedError(f"Type {dtype} not supported.")
+
+        self._cpp_object = expressiontype(dtype)(coefficients, constants, mesh, x, fn, value_size)
 
     def eval(self, cells: np.ndarray, u: typing.Optional[np.ndarray] = None) -> np.ndarray:
         """Evaluate Expression in cells.
@@ -129,7 +150,7 @@ class Expression:
 
         # Allocate memory for result if u was not provided
         if u is None:
-            if common.has_petsc_complex:
+            if np.issubdtype(PETSc.ScalarType, np.complexfloating):
                 u = np.empty((num_cells, self.num_points * self.value_size), dtype=np.complex128)
             else:
                 u = np.empty((num_cells, self.num_points * self.value_size), dtype=np.float64)
@@ -183,15 +204,24 @@ class Function(ufl.Coefficient):
 
     def __init__(self,
                  V: "FunctionSpace",
-                 x: typing.Optional[cpp.la.Vector] = None,
-                 name: typing.Optional[str] = None):
+                 x: typing.Optional[typing.Union[cpp.la.Vector_float64, cpp.la.Vector_complex128]] = None,
+                 name: typing.Optional[str] = None,
+                 dtype=PETSc.ScalarType):
         """Initialize finite element Function."""
 
         # Create cpp Function
+        def functiontype(dtype):
+            if dtype is np.float64:
+                return cpp.fem.Function_float64
+            elif dtype is np.complex128:
+                return cpp.fem.Function_complex128
+            else:
+                raise NotImplementedError(f"Type {dtype} not supported.")
+
         if x is not None:
-            self._cpp_object = cpp.fem.Function(V._cpp_object, x)
+            self._cpp_object = functiontype(dtype)(V._cpp_object, x)
         else:
-            self._cpp_object = cpp.fem.Function(V._cpp_object)
+            self._cpp_object = functiontype(dtype)(V._cpp_object)
 
         # Initialize the ufl.FunctionSpace
         super().__init__(V.ufl_function_space(), count=self._cpp_object.id)
@@ -253,7 +283,7 @@ class Function(ufl.Coefficient):
         # Allocate memory for return value if not provided
         if u is None:
             value_size = ufl.product(self.ufl_element().value_shape())
-            if common.has_petsc_complex:
+            if np.issubdtype(PETSc.ScalarType, np.complexfloating):
                 u = np.empty((num_points, value_size), dtype=np.complex128)
             else:
                 u = np.empty((num_points, value_size))

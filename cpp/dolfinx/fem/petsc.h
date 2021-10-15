@@ -1,4 +1,4 @@
-// Copyright (C) 2018-2020 Garth N. Wells
+// Copyright (C) 2018-2021 Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -6,10 +6,10 @@
 
 #pragma once
 
-#include <dolfinx/common/array2d.h>
 #include <memory>
 #include <petscmat.h>
 #include <petscvec.h>
+#include <utility>
 #include <vector>
 #include <xtl/xspan.hpp>
 
@@ -80,9 +80,10 @@ Vec create_vector_nest(
 /// @param[in] L The linear form to assemble
 /// @param[in] constants The constants that appear in `L`
 /// @param[in] coeffs The coefficients that appear in `L`
-void assemble_vector_petsc(Vec b, const Form<PetscScalar>& L,
-                           const xtl::span<const PetscScalar>& constants,
-                           const array2d<PetscScalar>& coeffs);
+void assemble_vector_petsc(
+    Vec b, const Form<PetscScalar>& L,
+    const xtl::span<const PetscScalar>& constants,
+    const std::pair<xtl::span<const PetscScalar>, int>& coeffs);
 
 /// Assemble linear form into an already allocated PETSc vector. Ghost
 /// contributions are not accumulated (not sent to owner). Caller is
@@ -116,7 +117,7 @@ void assemble_vector_petsc(Vec b, const Form<PetscScalar>& L);
 void apply_lifting_petsc(
     Vec b, const std::vector<std::shared_ptr<const Form<PetscScalar>>>& a,
     const std::vector<xtl::span<const PetscScalar>>& constants,
-    const std::vector<const array2d<PetscScalar>*>& coeffs,
+    const std::vector<std::pair<xtl::span<const PetscScalar>, int>>& coeffs,
     const std::vector<
         std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>>& bcs1,
     const std::vector<Vec>& x0, double scale);

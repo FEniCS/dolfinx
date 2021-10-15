@@ -10,7 +10,6 @@
 #include "interpolate.h"
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/UniqueIdGenerator.h>
-#include <dolfinx/common/array2d.h>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/la/PETScVector.h>
@@ -46,6 +45,9 @@ template <typename T>
 class Function
 {
 public:
+  /// The field type for the Function, e.g. double
+  using value_type = T;
+
   /// Create function on given function space
   /// @param[in] V The function space
   explicit Function(std::shared_ptr<const FunctionSpace> V)
@@ -138,8 +140,8 @@ public:
         function_space_new->dofmap()->index_map_bs());
 
     // Copy values into new vector
-    const std::vector<T>& x_old = _x->array();
-    std::vector<T>& x_new = vector_new->mutable_array();
+    xtl::span<const T> x_old = _x->array();
+    xtl::span<T> x_new = vector_new->mutable_array();
     for (std::size_t i = 0; i < collapsed_map.size(); ++i)
     {
       assert((int)i < x_new.size());
@@ -182,7 +184,6 @@ public:
             *_function_space->dofmap()->index_map,
             _function_space->dofmap()->index_map_bs(), _x->mutable_array());
       }
-
       return _petsc_vector;
     }
     else
@@ -314,9 +315,13 @@ public:
     assert(dofmap);
     const int bs_dof = dofmap->bs();
 
-    mesh->topology_mutable().create_entity_permutations();
-    const std::vector<std::uint32_t>& cell_info
-        = mesh->topology().get_cell_permutation_info();
+    xtl::span<const std::uint32_t> cell_info;
+    if (element->needs_dof_transformations())
+    {
+      mesh->topology_mutable().create_entity_permutations();
+      cell_info = xtl::span(mesh->topology().get_cell_permutation_info());
+    }
+
     xt::xtensor<double, 2> coordinate_dofs
         = xt::zeros<double>({num_dofs_g, gdim});
     xt::xtensor<double, 2> xp
@@ -324,7 +329,7 @@ public:
 
     // Loop over points
     std::fill(u.data(), u.data() + u.size(), 0.0);
-    const std::vector<T>& _v = _x->mutable_array();
+    const xtl::span<const T>& _v = _x->array();
 
     const std::function<void(const xtl::span<double>&,
                              const xtl::span<const std::uint32_t>&,
@@ -388,6 +393,8 @@ public:
 
   /// Compute values at all mesh 'nodes'
   /// @return The values at all geometric points
+  /// @warning This function will be removed soon. Use interpolation
+  /// instead.
   xt::xtensor<T, 2> compute_point_values() const
   {
     assert(_function_space);

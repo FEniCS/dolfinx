@@ -75,13 +75,15 @@ import numpy as np
 import ufl
 from dolfinx import DirichletBC, Function, FunctionSpace, RectangleMesh
 from dolfinx.cpp.mesh import CellType
-from dolfinx.fem import locate_dofs_geometrical, locate_dofs_topological
+from dolfinx.fem import (Form, locate_dofs_geometrical,
+                         locate_dofs_topological)
+from dolfinx import fem
+from dolfinx.fem import form
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import locate_entities_boundary
 from mpi4py import MPI
 from petsc4py import PETSc
 from ufl import div, dx, grad, inner
-
 
 # We create a Mesh and attach a coordinate map to the mesh::
 
@@ -145,17 +147,17 @@ bcs = [bc0, bc1]
 # Define variational problem
 (u, p) = ufl.TrialFunction(V), ufl.TrialFunction(Q)
 (v, q) = ufl.TestFunction(V), ufl.TestFunction(Q)
-f = dolfinx.Constant(mesh, (0, 0))
+f = dolfinx.Constant(mesh, (PETSc.ScalarType(0), PETSc.ScalarType(0)))
 
-a = [[inner(grad(u), grad(v)) * dx, inner(p, div(v)) * dx],
-     [inner(div(u), q) * dx, None]]
+a = [[Form(inner(grad(u), grad(v)) * dx), Form(inner(p, div(v)) * dx)],
+     [Form(inner(div(u), q) * dx), None]]
 
-L = [inner(f, v) * dx,
-     inner(dolfinx.Constant(mesh, 0), q) * dx]
+L = [Form(inner(f, v) * dx),
+     Form(inner(dolfinx.Constant(mesh, PETSc.ScalarType(0)), q) * dx)]
 
 # We will use a block-diagonal preconditioner to solve this problem::
 
-a_p11 = inner(p, q) * dx
+a_p11 = Form(inner(p, q) * dx)
 a_p = [[a[0][0], None],
        [None, a_p11]]
 
@@ -168,7 +170,7 @@ a_p = [[a[0][0], None],
 # Dirichlet boundary conditions are zeroed and a value of 1 is set on
 # the diagonal.
 
-A = dolfinx.fem.assemble_matrix_nest(a, bcs)
+A = dolfinx.fem.assemble_matrix_nest(a, bcs=bcs)
 A.assemble()
 
 # We create a nested matrix `P` to use as the preconditioner. The
@@ -185,14 +187,14 @@ P.assemble()
 b = dolfinx.fem.assemble.assemble_vector_nest(L)
 
 # Modify ('lift') the RHS for Dirichlet boundary conditions
-dolfinx.fem.assemble.apply_lifting_nest(b, a, bcs)
+dolfinx.fem.assemble.apply_lifting_nest(b, a, bcs=bcs)
 
 # Sum contributions from ghost entries on the owner
 for b_sub in b.getNestSubVecs():
     b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
 # Set Dirichlet boundary condition values in the RHS
-bcs0 = dolfinx.cpp.fem.bcs_rows(dolfinx.fem.assemble._create_cpp_form(L), bcs)
+bcs0 = fem.bcs_by_block(form.extract_function_spaces(L), bcs)
 dolfinx.fem.assemble.set_bc_nest(b, bcs0)
 
 # Ths pressure field for this problem is determined only up to a
@@ -280,11 +282,11 @@ with XDMFFile(MPI.COMM_WORLD, "pressure.xdmf", "w") as pfile_xdmf:
 # Next, we solve same problem, but now with monolithic (non-nested)
 # matrices and iterative solvers.
 
-A = dolfinx.fem.assemble_matrix_block(a, bcs)
+A = dolfinx.fem.assemble_matrix_block(a, bcs=bcs)
 A.assemble()
-P = dolfinx.fem.assemble_matrix_block(a_p, bcs)
+P = dolfinx.fem.assemble_matrix_block(a_p, bcs=bcs)
 P.assemble()
-b = dolfinx.fem.assemble.assemble_vector_block(L, a, bcs)
+b = dolfinx.fem.assemble.assemble_vector_block(L, a, bcs=bcs)
 
 # Set near null space for pressure
 null_vec = A.createVecLeft()
@@ -429,15 +431,15 @@ bcs = [bc0, bc1, bc2]
 (v, q) = ufl.TestFunctions(W)
 f = Function(W0)
 zero = dolfinx.Constant(mesh, 0.0)
-a = (inner(grad(u), grad(v)) + inner(p, div(v)) + inner(div(u), q)) * dx
-L = inner(f, v) * dx
+a = Form((inner(grad(u), grad(v)) + inner(p, div(v)) + inner(div(u), q)) * dx)
+L = Form(inner(f, v) * dx)
 
 # Assemble LHS matrix and RHS vector
-A = dolfinx.fem.assemble_matrix(a, bcs)
+A = dolfinx.fem.assemble_matrix(a, bcs=bcs)
 A.assemble()
 b = dolfinx.fem.assemble.assemble_vector(L)
 
-dolfinx.fem.assemble.apply_lifting(b, [a], [bcs])
+dolfinx.fem.assemble.apply_lifting(b, [a], bcs=[bcs])
 b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
 # Set Dirichlet boundary condition values in the RHS

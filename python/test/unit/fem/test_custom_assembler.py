@@ -15,13 +15,13 @@ import time
 
 import cffi
 import dolfinx
+import dolfinx.pkgconfig
 import numba
 import numba.core.typing.cffi_utils as cffi_support
 import numpy as np
 import petsc4py.lib
 import pytest
 import ufl
-from dolfinx.jit import dolfinx_pc
 from mpi4py import MPI
 from petsc4py import PETSc
 from petsc4py import get_config as PETSc_get_config
@@ -30,7 +30,6 @@ from ufl import dx, inner
 # Get details of PETSc install
 petsc_dir = PETSc_get_config()['PETSC_DIR']
 petsc_arch = petsc4py.lib.getPathArchPETSc()[1]
-
 
 # Get PETSc int and scalar types
 if np.dtype(PETSc.ScalarType).kind == 'c':
@@ -114,6 +113,11 @@ MatSetValues_abi = petsc_lib_cffi.MatSetValuesLocal
 # @pytest.fixture
 def get_matsetvalues_api():
     """Make MatSetValuesLocal from PETSc available via cffi in API mode"""
+    if dolfinx.pkgconfig.exists("dolfinx"):
+        dolfinx_pc = dolfinx.pkgconfig.parse("dolfinx")
+    else:
+        pytest.skip("Could not find DOLFINx pkgconfig file, skipping test...")
+
     worker = os.getenv('PYTEST_XDIST_WORKER', None)
     module_name = "_petsc_cffi_{}".format(worker)
     if MPI.COMM_WORLD.Get_rank() == 0:
@@ -340,11 +344,15 @@ def test_custom_mesh_loop_rank1():
     assert (b1 - b0.vector).norm() == pytest.approx(0.0)
 
     # Assemble using generated tabulate_tensor kernel and Numba assembler
+    ffcxtype = "double _Complex" if np.issubdtype(PETSc.ScalarType, np.complexfloating) else "double"
     b3 = dolfinx.Function(V)
-    ufc_form, module, code = dolfinx.jit.ffcx_jit(mesh.mpi_comm(), L)
+    ufc_form, module, code = dolfinx.jit.ffcx_jit(
+        mesh.mpi_comm(), L, form_compiler_parameters={"scalar_type": ffcxtype})
 
+    nptype = "complex128" if np.issubdtype(PETSc.ScalarType, np.complexfloating) else "float64"
     # First 0 for "cell" integrals, second 0 for the first one, i.e. default domain
-    kernel = ufc_form.integrals(0)[0].tabulate_tensor
+    kernel = getattr(ufc_form.integrals(0)[0], f"tabulate_tensor_{nptype}")
+
     for i in range(2):
         with b3.vector.localForm() as b:
             b.set(0.0)

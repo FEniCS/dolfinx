@@ -5,19 +5,21 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "gjk.h"
+#include <dolfinx/common/math.h>
 #include <stdexcept>
 #include <tuple>
-#include <xtensor-blas/xlinalg.hpp>
 #include <xtensor/xbuilder.hpp>
 #include <xtensor/xfixed.hpp>
 #include <xtensor/xnorm.hpp>
 #include <xtensor/xsort.hpp>
 #include <xtensor/xtensor.hpp>
+#include <xtensor/xview.hpp>
 
 using namespace dolfinx;
 
 namespace
 {
+
 // Find the resulting sub-simplex of the input simplex which is nearest to the
 // origin. Also, return the shortest vector from the origin to the resulting
 // simplex.
@@ -51,8 +53,8 @@ nearest_simplex(const xt::xtensor<double, 2>& s)
     auto s1 = xt::row(s, 1);
     auto s2 = xt::row(s, 2);
     auto s3 = xt::row(s, 3);
-    auto W1 = xt::linalg::cross(s0, s1);
-    auto W2 = xt::linalg::cross(s2, s3);
+    auto W1 = math::cross(s0, s1);
+    auto W2 = math::cross(s2, s3);
 
     xt::xtensor_fixed<double, xt::xshape<4>> B;
     B[0] = xt::sum(s2 * W1)();
@@ -123,7 +125,7 @@ nearest_simplex(const xt::xtensor<double, 2>& s)
   if (lbb >= 0.0 and lcc >= 0.0 and (lbb + lcc) <= 1.0)
   {
     // Calculate intersection more accurately
-    auto v = xt::linalg::cross(c - a, b - a);
+    auto v = math::cross(c - a, b - a);
 
     // Barycentre of triangle
     auto p = (a + b + c) / 3.0;

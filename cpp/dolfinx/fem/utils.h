@@ -9,7 +9,6 @@
 #include "CoordinateElement.h"
 #include "DofMap.h"
 #include "ElementDofLayout.h"
-#include <dolfinx/common/types.h>
 #include <dolfinx/fem/Form.h>
 #include <dolfinx/fem/Function.h>
 #include <dolfinx/la/SparsityPattern.h>
@@ -21,6 +20,7 @@
 #include <ufc.h>
 #include <utility>
 #include <vector>
+#include <xtl/xspan.hpp>
 
 namespace dolfinx::common
 {
@@ -87,7 +87,7 @@ la::SparsityPattern create_sparsity_pattern(const Form<T>& a)
   }
 
   // Get dof maps and mesh
-  std::array<const std::reference_wrapper<const fem::DofMap>, 2> dofmaps{
+  std::array<std::reference_wrapper<const fem::DofMap>, 2> dofmaps{
       *a.function_spaces().at(0)->dofmap(),
       *a.function_spaces().at(1)->dofmap()};
   std::shared_ptr mesh = a.mesh();
@@ -111,8 +111,7 @@ la::SparsityPattern create_sparsity_pattern(const Form<T>& a)
 /// SparsityPattern::assemble.
 la::SparsityPattern create_sparsity_pattern(
     const mesh::Topology& topology,
-    const std::array<const std::reference_wrapper<const fem::DofMap>, 2>&
-        dofmaps,
+    const std::array<std::reference_wrapper<const fem::DofMap>, 2>& dofmaps,
     const std::set<IntegralType>& integrals);
 
 /// Create an ElementDofLayout from a ufc_dofmap
@@ -207,8 +206,30 @@ Form<T> create_form(
   {
     ufc_integral* integral = ufc_form.integrals(cell)[i];
     assert(integral);
-    integral_data[IntegralType::cell].first.emplace_back(
-        cell_integral_ids[i], integral->tabulate_tensor);
+
+    kern k = nullptr;
+    if constexpr (std::is_same<T, float>::value)
+      k = integral->tabulate_tensor_float32;
+    else if constexpr (std::is_same<T, std::complex<float>>::value)
+    {
+      k = reinterpret_cast<void (*)(T*, const T*, const T*, const double*,
+                                    const int*, const unsigned char*)>(
+          integral->tabulate_tensor_complex64);
+    }
+    else if constexpr (std::is_same<T, double>::value)
+      k = integral->tabulate_tensor_float64;
+    else if constexpr (std::is_same<T, std::complex<double>>::value)
+    {
+      k = reinterpret_cast<void (*)(T*, const T*, const T*, const double*,
+                                    const int*, const unsigned char*)>(
+          integral->tabulate_tensor_complex128);
+    }
+    assert(k);
+
+    integral_data[IntegralType::cell].first.emplace_back(cell_integral_ids[i],
+                                                         k);
+    if (integral->needs_facet_permutations)
+      needs_facet_permutations = true;
   }
 
   // Attach cell subdomain data
@@ -224,7 +245,6 @@ Form<T> create_form(
   if (ufc_form.num_integrals(exterior_facet) > 0
       or ufc_form.num_integrals(interior_facet) > 0)
   {
-    needs_facet_permutations = true;
     if (!spaces.empty())
     {
       auto mesh = spaces[0]->mesh();
@@ -242,8 +262,30 @@ Form<T> create_form(
   {
     ufc_integral* integral = ufc_form.integrals(exterior_facet)[i];
     assert(integral);
+
+    kern k = nullptr;
+    if constexpr (std::is_same<T, float>::value)
+      k = integral->tabulate_tensor_float32;
+    else if constexpr (std::is_same<T, std::complex<float>>::value)
+    {
+      k = reinterpret_cast<void (*)(T*, const T*, const T*, const double*,
+                                    const int*, const unsigned char*)>(
+          integral->tabulate_tensor_complex64);
+    }
+    else if constexpr (std::is_same<T, double>::value)
+      k = integral->tabulate_tensor_float64;
+    else if constexpr (std::is_same<T, std::complex<double>>::value)
+    {
+      k = reinterpret_cast<void (*)(T*, const T*, const T*, const double*,
+                                    const int*, const unsigned char*)>(
+          integral->tabulate_tensor_complex128);
+    }
+    assert(k);
+
     integral_data[IntegralType::exterior_facet].first.emplace_back(
-        exterior_facet_integral_ids[i], integral->tabulate_tensor);
+        exterior_facet_integral_ids[i], k);
+    if (integral->needs_facet_permutations)
+      needs_facet_permutations = true;
   }
 
   // Attach exterior facet subdomain data
@@ -262,8 +304,30 @@ Form<T> create_form(
   {
     ufc_integral* integral = ufc_form.integrals(interior_facet)[i];
     assert(integral);
+
+    kern k = nullptr;
+    if constexpr (std::is_same<T, float>::value)
+      k = integral->tabulate_tensor_float32;
+    else if constexpr (std::is_same<T, std::complex<float>>::value)
+    {
+      k = reinterpret_cast<void (*)(T*, const T*, const T*, const double*,
+                                    const int*, const unsigned char*)>(
+          integral->tabulate_tensor_complex64);
+    }
+    else if constexpr (std::is_same<T, double>::value)
+      k = integral->tabulate_tensor_float64;
+    else if constexpr (std::is_same<T, std::complex<double>>::value)
+    {
+      k = reinterpret_cast<void (*)(T*, const T*, const T*, const double*,
+                                    const int*, const unsigned char*)>(
+          integral->tabulate_tensor_complex128);
+    }
+    assert(k);
+
     integral_data[IntegralType::interior_facet].first.emplace_back(
-        interior_facet_integral_ids[i], integral->tabulate_tensor);
+        interior_facet_integral_ids[i], k);
+    if (integral->needs_facet_permutations)
+      needs_facet_permutations = true;
   }
 
   // Attach interior facet subdomain data
@@ -273,8 +337,8 @@ Form<T> create_form(
     integral_data[IntegralType::interior_facet].second = it->second;
   }
 
-  return fem::Form(spaces, integral_data, coefficients, constants,
-                   needs_facet_permutations, mesh);
+  return fem::Form<T>(spaces, integral_data, coefficients, constants,
+                      needs_facet_permutations, mesh);
 }
 
 /// Create a Form from UFC input
@@ -317,9 +381,7 @@ Form<T> create_form(
     if (auto it = constants.find(name); it != constants.end())
       const_map.push_back(it->second);
     else
-    {
       throw std::runtime_error("Form constant \"" + name + "\" not provided.");
-    }
   }
 
   return create_form(ufc_form, spaces, coeff_map, const_map, subdomains, mesh);
@@ -355,6 +417,7 @@ std::shared_ptr<Form<T>> create_form(
 }
 
 /// Create a FunctionSpace from UFC data
+///
 /// @param[in] fptr Function Pointer to a ufc_function_space_create
 /// function
 /// @param[in] function_name Name of a function whose function space to
@@ -366,7 +429,7 @@ std::shared_ptr<Form<T>> create_form(
 /// dofmap
 /// @return The created function space
 std::shared_ptr<fem::FunctionSpace> create_functionspace(
-    ufc_function_space* (*fptr)(const char*), const std::string function_name,
+    ufc_function_space* (*fptr)(const char*), const std::string& function_name,
     std::shared_ptr<mesh::Mesh> mesh,
     const std::function<
         std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>& reorder_fn
@@ -377,19 +440,19 @@ namespace impl
 // Pack a single coefficient
 template <typename T, int _bs = -1>
 void pack_coefficient(
-    array2d<T>& c, const std::vector<T>& v,
+    const xtl::span<T>& c, int cstride, const xtl::span<const T>& v,
     const xtl::span<const std::uint32_t>& cell_info, const fem::DofMap& dofmap,
     std::int32_t num_cells, std::int32_t offset, int space_dim,
     const std::function<void(const xtl::span<T>&,
                              const xtl::span<const std::uint32_t>&,
-                             std::int32_t, int)>& transform)
+                             std::int32_t, int)>& transformation)
 {
   const int bs = dofmap.bs();
   assert(_bs < 0 or _bs == bs);
   for (std::int32_t cell = 0; cell < num_cells; ++cell)
   {
     auto dofs = dofmap.cell_dofs(cell);
-    auto cell_coeff = c.row(cell).subspan(offset, space_dim);
+    auto cell_coeff = c.subspan(cell * cstride + offset, space_dim);
     for (std::size_t i = 0; i < dofs.size(); ++i)
     {
       if constexpr (_bs < 0)
@@ -407,7 +470,8 @@ void pack_coefficient(
           cell_coeff[pos_c + k] = v[pos_v + k];
       }
     }
-    transform(cell_coeff, cell_info, cell, 1);
+
+    transformation(cell_coeff, cell_info, cell, 1);
   }
 }
 } // namespace impl
@@ -415,7 +479,8 @@ void pack_coefficient(
 // NOTE: This is subject to change
 /// Pack coefficients of u of generic type U ready for assembly
 template <typename U>
-array2d<typename U::scalar_type> pack_coefficients(const U& u)
+std::pair<std::vector<typename U::scalar_type>, int>
+pack_coefficients(const U& u)
 {
   using T = typename U::scalar_type;
 
@@ -425,7 +490,7 @@ array2d<typename U::scalar_type> pack_coefficients(const U& u)
   const std::vector<int> offsets = u.coefficient_offsets();
   std::vector<const fem::DofMap*> dofmaps(coefficients.size());
   std::vector<const fem::FiniteElement*> elements(coefficients.size());
-  std::vector<std::reference_wrapper<const std::vector<T>>> v;
+  std::vector<xtl::span<const T>> v;
   v.reserve(coefficients.size());
   for (std::size_t i = 0; i < coefficients.size(); ++i)
   {
@@ -443,7 +508,8 @@ array2d<typename U::scalar_type> pack_coefficients(const U& u)
         + mesh->topology().index_map(tdim)->num_ghosts();
 
   // Copy data into coefficient array
-  array2d<T> c(num_cells, offsets.back());
+  std::vector<T> c(num_cells * offsets.back());
+  const int cstride = offsets.back();
   if (!coefficients.empty())
   {
     bool needs_dof_transformations = false;
@@ -470,31 +536,35 @@ array2d<typename U::scalar_type> pack_coefficients(const U& u)
       if (int bs = dofmaps[coeff]->bs(); bs == 1)
       {
         impl::pack_coefficient<T, 1>(
-            c, v[coeff], cell_info, *dofmaps[coeff], num_cells, offsets[coeff],
-            elements[coeff]->space_dimension(), transformation);
+            xtl::span<T>(c), cstride, v[coeff], cell_info, *dofmaps[coeff],
+            num_cells, offsets[coeff], elements[coeff]->space_dimension(),
+            transformation);
       }
       else if (bs == 2)
       {
         impl::pack_coefficient<T, 2>(
-            c, v[coeff], cell_info, *dofmaps[coeff], num_cells, offsets[coeff],
-            elements[coeff]->space_dimension(), transformation);
+            xtl::span<T>(c), cstride, v[coeff], cell_info, *dofmaps[coeff],
+            num_cells, offsets[coeff], elements[coeff]->space_dimension(),
+            transformation);
       }
       else if (bs == 3)
       {
         impl::pack_coefficient<T, 3>(
-            c, v[coeff], cell_info, *dofmaps[coeff], num_cells, offsets[coeff],
-            elements[coeff]->space_dimension(), transformation);
+            xtl::span<T>(c), cstride, v[coeff], cell_info, *dofmaps[coeff],
+            num_cells, offsets[coeff], elements[coeff]->space_dimension(),
+            transformation);
       }
       else
       {
-        impl::pack_coefficient<T>(
-            c, v[coeff], cell_info, *dofmaps[coeff], num_cells, offsets[coeff],
-            elements[coeff]->space_dimension(), transformation);
+        impl::pack_coefficient<T>(xtl::span<T>(c), cstride, v[coeff], cell_info,
+                                  *dofmaps[coeff], num_cells, offsets[coeff],
+                                  elements[coeff]->space_dimension(),
+                                  transformation);
       }
     }
   }
 
-  return c;
+  return {std::move(c), cstride};
 }
 
 // NOTE: This is subject to change

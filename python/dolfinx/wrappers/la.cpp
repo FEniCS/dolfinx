@@ -25,6 +25,29 @@
 
 namespace py = pybind11;
 
+namespace
+{
+// Declare objects that have multiple scalar types
+template <typename T>
+void declare_objects(py::module& m, const std::string& type)
+{
+  // dolfinx::la::Vector
+  std::string pyclass_vector_name = std::string("Vector_") + type;
+  py::class_<dolfinx::la::Vector<T>, std::shared_ptr<dolfinx::la::Vector<T>>>(
+      m, pyclass_vector_name.c_str())
+      .def_property_readonly("array",
+                             [](dolfinx::la::Vector<T>& self)
+                             {
+                               xtl::span<T> array = self.mutable_array();
+                               return py::array_t<T>(array.size(), array.data(),
+                                                py::cast(self));
+                             })
+      .def("scatter_forward", &dolfinx::la::Vector<T>::scatter_fwd)
+      .def("scatter_reverse", &dolfinx::la::Vector<T>::scatter_rev);
+}
+
+} // namespace
+
 namespace dolfinx_wrappers
 {
 
@@ -38,9 +61,8 @@ void la(py::module& m)
           [](const MPICommWrapper comm,
              const std::array<std::shared_ptr<const dolfinx::common::IndexMap>,
                               2>& maps,
-             const std::array<int, 2>& bs) {
-            return dolfinx::la::SparsityPattern(comm.get(), maps, bs);
-          }))
+             const std::array<int, 2>& bs)
+          { return dolfinx::la::SparsityPattern(comm.get(), maps, bs); }))
       .def(py::init(
           [](const MPICommWrapper comm,
              const std::vector<std::vector<const dolfinx::la::SparsityPattern*>>
@@ -56,11 +78,14 @@ void la(py::module& m)
       .def("index_map", &dolfinx::la::SparsityPattern::index_map)
       .def("assemble", &dolfinx::la::SparsityPattern::assemble)
       .def("num_nonzeros", &dolfinx::la::SparsityPattern::num_nonzeros)
-      .def("insert", [](dolfinx::la::SparsityPattern& self,
-                        const py::array_t<std::int32_t, py::array::c_style>& rows,
-                        const py::array_t<std::int32_t, py::array::c_style>& cols) {
-         self.insert(xtl::span(rows.data(), rows.size()),
-                     xtl::span(cols.data(), cols.size()));})
+      .def("insert",
+           [](dolfinx::la::SparsityPattern& self,
+              const py::array_t<std::int32_t, py::array::c_style>& rows,
+              const py::array_t<std::int32_t, py::array::c_style>& cols)
+           {
+             self.insert(xtl::span(rows.data(), rows.size()),
+                         xtl::span(cols.data(), cols.size()));
+           })
       .def("insert_diagonal", &dolfinx::la::SparsityPattern::insert_diagonal)
       .def_property_readonly("diagonal_pattern",
                              &dolfinx::la::SparsityPattern::diagonal_pattern,
@@ -74,15 +99,18 @@ void la(py::module& m)
   py::class_<dolfinx::la::VectorSpaceBasis,
              std::shared_ptr<dolfinx::la::VectorSpaceBasis>>(m,
                                                              "VectorSpaceBasis")
-      .def(py::init([](const std::vector<Vec> x) {
-        std::vector<std::shared_ptr<dolfinx::la::PETScVector>> _x;
-        for (std::size_t i = 0; i < x.size(); ++i)
-        {
-          assert(x[i]);
-          _x.push_back(std::make_shared<dolfinx::la::PETScVector>(x[i], true));
-        }
-        return dolfinx::la::VectorSpaceBasis(_x);
-      }))
+      .def(py::init(
+          [](const std::vector<Vec> x)
+          {
+            std::vector<std::shared_ptr<dolfinx::la::PETScVector>> _x;
+            for (std::size_t i = 0; i < x.size(); ++i)
+            {
+              assert(x[i]);
+              _x.push_back(
+                  std::make_shared<dolfinx::la::PETScVector>(x[i], true));
+            }
+            return dolfinx::la::VectorSpaceBasis(_x);
+          }))
       .def("is_orthonormal", &dolfinx::la::VectorSpaceBasis::is_orthonormal,
            py::arg("tol") = 1.0e-10)
       .def("is_orthogonal", &dolfinx::la::VectorSpaceBasis::is_orthogonal,
@@ -93,21 +121,12 @@ void la(py::module& m)
       .def("orthonormalize", &dolfinx::la::VectorSpaceBasis::orthonormalize,
            py::arg("tol") = 1.0e-10)
       .def("dim", &dolfinx::la::VectorSpaceBasis::dim)
-      .def("__getitem__", [](const dolfinx::la::VectorSpaceBasis& self, int i) {
-        return self[i]->vec();
-      });
+      .def("__getitem__", [](const dolfinx::la::VectorSpaceBasis& self, int i)
+           { return self[i]->vec(); });
 
-  // dolfinx::la::Vector
-  py::class_<dolfinx::la::Vector<PetscScalar>,
-             std::shared_ptr<dolfinx::la::Vector<PetscScalar>>>(m, "Vector")
-      .def_property_readonly(
-          "array",
-          [](dolfinx::la::Vector<PetscScalar>& self) {
-            std::vector<PetscScalar>& array = self.mutable_array();
-            return py::array(array.size(), array.data(), py::cast(self));
-          })
-      .def("scatter_forward", &dolfinx::la::Vector<PetscScalar>::scatter_fwd)
-      .def("scatter_reverse", &dolfinx::la::Vector<PetscScalar>::scatter_rev);
+  // Declare objects that are templated over type
+  declare_objects<double>(m, "float64");
+  declare_objects<std::complex<double>>(m, "complex128");
 
   m.def("create_vector",
         py::overload_cast<const dolfinx::common::IndexMap&, int>(
@@ -117,22 +136,23 @@ void la(py::module& m)
   m.def(
       "create_matrix",
       [](const MPICommWrapper comm, const dolfinx::la::SparsityPattern& p,
-         const std::string& type) {
-        return dolfinx::la::create_petsc_matrix(comm.get(), p, type);
-      },
+         const std::string& type)
+      { return dolfinx::la::create_petsc_matrix(comm.get(), p, type); },
       py::return_value_policy::take_ownership, py::arg("comm"), py::arg("p"),
       py::arg("type") = std::string(),
       "Create a PETSc Mat from sparsity pattern.");
   // TODO: check reference counting for index sets
   m.def("create_petsc_index_sets", &dolfinx::la::create_petsc_index_sets,
         py::return_value_policy::take_ownership);
+
   m.def(
       "scatter_local_vectors",
       [](Vec x,
          const std::vector<py::array_t<PetscScalar, py::array::c_style>>& x_b,
          const std::vector<std::pair<
              std::reference_wrapper<const dolfinx::common::IndexMap>, int>>&
-             maps) {
+             maps)
+      {
         std::vector<xtl::span<const PetscScalar>> _x_b;
         for (auto& array : x_b)
           _x_b.emplace_back(array.data(), array.size());
@@ -145,7 +165,8 @@ void la(py::module& m)
       [](const Vec x,
          const std::vector<std::pair<
              std::reference_wrapper<const dolfinx::common::IndexMap>, int>>&
-             maps) {
+             maps)
+      {
         std::vector<std::vector<PetscScalar>> vecs
             = dolfinx::la::get_local_vectors(x, maps);
         std::vector<py::array> ret;
@@ -156,6 +177,7 @@ void la(py::module& m)
       "Gather an (ordered) list of sub vectors from a block vector.");
 
   // NOTE: Enabling the below requires adding a C API for MatNullSpace to
+
   // petsc4py
   //   m.def("create_nullspace",
   //         [](const MPICommWrapper comm, MPI_Comm comm,

@@ -17,6 +17,7 @@ from dolfinx.cpp.mesh import CellType
 from dolfinx.mesh import MeshTags, create_mesh
 from dolfinx_utils.test.skips import skip_in_parallel
 from mpi4py import MPI
+from petsc4py import PETSc
 
 parametrize_cell_types = pytest.mark.parametrize(
     "cell_type",
@@ -62,7 +63,6 @@ def unit_cell(cell_type, random_order=True):
 
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", cpp.mesh.to_string(cell_type), 1))
     mesh = create_mesh(MPI.COMM_WORLD, cells, ordered_points, domain)
-    mesh.topology.create_connectivity_all()
     return mesh
 
 
@@ -123,7 +123,6 @@ def two_unit_cells(cell_type, agree=False, random_order=True, return_order=False
 
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", cpp.mesh.to_string(cell_type), 1))
     mesh = create_mesh(MPI.COMM_WORLD, ordered_cells, ordered_points, domain)
-    mesh.topology.create_connectivity_all()
     if return_order:
         return mesh, order
     return mesh
@@ -140,6 +139,7 @@ def test_facet_integral(cell_type):
         V = FunctionSpace(mesh, ("Lagrange", 2))
         v = Function(V)
 
+        mesh.topology.create_entities(tdim - 1)
         map_f = mesh.topology.index_map(tdim - 1)
         num_facets = map_f.size_local + map_f.num_ghosts
         indices = np.arange(0, num_facets)
@@ -176,11 +176,13 @@ def test_facet_normals(cell_type):
     for count in range(5):
         mesh = unit_cell(cell_type)
         tdim = mesh.topology.dim
+        mesh.topology.create_entities(tdim - 1)
 
         V = VectorFunctionSpace(mesh, ("Lagrange", 1))
         normal = ufl.FacetNormal(mesh)
         v = Function(V)
 
+        mesh.topology.create_entities(tdim - 1)
         map_f = mesh.topology.index_map(tdim - 1)
         num_facets = map_f.size_local + map_f.num_ghosts
         indices = np.arange(0, num_facets)
@@ -231,7 +233,7 @@ def test_facet_normals(cell_type):
 
 
 @skip_in_parallel
-@pytest.mark.parametrize('space_type', ["CG", "DG"])
+@pytest.mark.parametrize('space_type', ["Lagrange", "DG"])
 @parametrize_cell_types
 def test_plus_minus(cell_type, space_type):
     """Test that ('+') and ('-') give the same value for continuous functions"""
@@ -431,7 +433,6 @@ def test_curl(space_type, order):
 
         domain = ufl.Mesh(ufl.VectorElement("Lagrange", cpp.mesh.to_string(CellType.tetrahedron), 1))
         mesh = create_mesh(MPI.COMM_WORLD, [cell], points, domain)
-        mesh.topology.create_connectivity_all()
 
         V = FunctionSpace(mesh, (space_type, order))
         v = ufl.TestFunction(V)
@@ -500,7 +501,7 @@ def assemble_div_vector(k, offset):
     mesh = create_quad_mesh(offset)
     V = FunctionSpace(mesh, ("RTCF", k + 1))
     v = ufl.TestFunction(V)
-    form = ufl.inner(Constant(mesh, 1), ufl.div(v)) * ufl.dx
+    form = ufl.inner(Constant(mesh, PETSc.ScalarType(1)), ufl.div(v)) * ufl.dx
     L = fem.assemble_vector(form)
     return L[:]
 
