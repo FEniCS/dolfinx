@@ -15,7 +15,8 @@ from dolfinx import (Function, FunctionSpace, UnitSquareMesh, cpp)
 import ufl
 
 
-@pytest.mark.parametrize("element", [ufl.FiniteElement("CG", "triangle", 1), ufl.VectorElement("CG", "triangle", 1)])
+@pytest.mark.parametrize("element", [ufl.FiniteElement("Lagrange", "triangle", 1),
+                                     ufl.VectorElement("Lagrange", "triangle", 1)])
 def test_scatter_forward(element):
 
     mesh = UnitSquareMesh(MPI.COMM_WORLD, 5, 5)
@@ -43,7 +44,8 @@ def test_scatter_forward(element):
     assert np.allclose(u.x.array[local_size:], ghost_owners)
 
 
-@pytest.mark.parametrize("element", [ufl.FiniteElement("CG", "triangle", 1), ufl.VectorElement("CG", "triangle", 1)])
+@pytest.mark.parametrize("element", [ufl.FiniteElement("Lagrange", "triangle", 1),
+                                     ufl.VectorElement("Lagrange", "triangle", 1)])
 def test_scatter_reverse(element):
 
     comm = MPI.COMM_WORLD

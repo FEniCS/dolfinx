@@ -13,6 +13,7 @@ Public user interface
 
    dolfinx.common
    dolfinx.fem
+   dolfinx.fem.form
    dolfinx.generation
    dolfinx.io
    dolfinx.jit
