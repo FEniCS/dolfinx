@@ -416,11 +416,11 @@ dolfinx::graph::AdjacencyList<int> geometry::select_colliding_cells(
     auto cells = candidate_cells.links(i);
     std::size_t num_cells = candidate_cells.num_links(i);
     xt::xtensor<double, 2> _point({num_cells, static_cast<std::size_t>(3)});
-    for (std::int32_t j = 0; j < num_cells; j++)
+    for (std::size_t j = 0; j < num_cells; j++)
       xt::row(_point, j) = xt::row(points, i);
     xt::xtensor<double, 1> distances_sq
         = geometry::squared_distance(mesh, tdim, cells, _point);
-    for (int j = 0; j < cells.size(); j++)
+    for (std::size_t j = 0; j < cells.size(); j++)
       if (distances_sq[j] < eps2)
         colliding_cells.push_back(cells[j]);
     offsets.push_back(colliding_cells.size());
