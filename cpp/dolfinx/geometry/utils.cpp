@@ -384,11 +384,11 @@ geometry::distance(const mesh::Mesh& mesh, int dim,
       xt::xtensor<double, 2> nodes({entity_dofs.size(), 3});
       for (std::size_t i = 0; i < entity_dofs.size(); i++)
         for (std::size_t j = 0; j < 3; ++j)
-          xt::row(distances, e) = geometry::compute_distance_gjk(
-              xt::reshape_view(
-                  xt::row(points, e),
-                  {static_cast<std::size_t>(1), static_cast<std::size_t>(3)}),
-              nodes);
+          nodes(i, j) = geom_dofs(dofs[entity_dofs[i]], j);
+      xt::row(distances, e) = geometry::compute_distance_gjk(
+          xt::reshape_view(xt::row(points, e), {static_cast<std::size_t>(1),
+                                                static_cast<std::size_t>(3)}),
+          nodes);
     }
   }
   return distances;
