@@ -348,7 +348,8 @@ def test_compute_closest_sub_entity(dim):
     # Refine search by checking for actual collision if the entities are cells
     if dim == mesh.topology.dim:
         colliding_cells = select_colliding_cells(mesh, colliding_entity_bboxes, p_c)
-        assert numpy.isin(closest_entities[0], colliding_cells.links(0))
+        if len(colliding_cells.links(0)) > 0:
+            assert numpy.isin(closest_entities[0], colliding_cells.links(0))
     else:
         if len(colliding_entity_bboxes.links(0)) > 0:
             assert numpy.isin(closest_entities[0], colliding_entity_bboxes.links(0))
