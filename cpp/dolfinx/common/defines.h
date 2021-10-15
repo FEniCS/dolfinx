@@ -25,10 +25,6 @@ std::string git_commit_hash();
 /// i.e., with assertions on
 bool has_debug();
 
-/// Return true if DOLFINx is configured with PETSc compiled
-/// with scalars represented as complex numbers
-bool has_petsc_complex();
-
 /// Return true if DOLFINx is compiled with SLEPc
 bool has_slepc();
 
