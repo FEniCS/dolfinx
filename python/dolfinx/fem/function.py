@@ -13,7 +13,7 @@ import numpy as np
 import ufl
 import ufl.algorithms
 import ufl.algorithms.analysis
-from dolfinx import common, cpp, jit
+from dolfinx import cpp, jit
 from dolfinx.fem import dofmap
 from petsc4py import PETSc
 
@@ -88,6 +88,12 @@ class Expression:
         mesh = ufl_expression.ufl_domain().ufl_cargo()
 
         # Compile UFL expression with JIT
+        if dtype == np.float64:
+            form_compiler_parameters["scalar_type"] = "double"
+        elif dtype == np.complex128:
+            form_compiler_parameters["scalar_type"] = "double _Complex"
+        else:
+            raise RuntimeError(f"Unsupported scalar type {dtype} for Form.")
         self._ufc_expression, module, self._code = jit.ffcx_jit(mesh.mpi_comm(), (ufl_expression, x),
                                                                 form_compiler_parameters=form_compiler_parameters,
                                                                 jit_parameters=jit_parameters)
@@ -144,7 +150,7 @@ class Expression:
 
         # Allocate memory for result if u was not provided
         if u is None:
-            if common.has_petsc_complex:
+            if np.issubdtype(PETSc.ScalarType, np.complexfloating):
                 u = np.empty((num_cells, self.num_points * self.value_size), dtype=np.complex128)
             else:
                 u = np.empty((num_cells, self.num_points * self.value_size), dtype=np.float64)
@@ -277,7 +283,7 @@ class Function(ufl.Coefficient):
         # Allocate memory for return value if not provided
         if u is None:
             value_size = ufl.product(self.ufl_element().value_shape())
-            if common.has_petsc_complex:
+            if np.issubdtype(PETSc.ScalarType, np.complexfloating):
                 u = np.empty((num_points, value_size), dtype=np.complex128)
             else:
                 u = np.empty((num_points, value_size))

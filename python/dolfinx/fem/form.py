@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) 2017-2018 Chris N. Richardson, Garth N. Wells and Michal Habera
+# Copyright (C) 2017-2021 Chris N. Richardson, Garth N. Wells and Michal Habera
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -12,16 +12,20 @@ import numpy as np
 import ufl
 from dolfinx import cpp, jit
 from dolfinx.fem import function
+from petsc4py import PETSc
 
 
 class Form:
-    def __init__(self, form: ufl.Form, form_compiler_parameters: dict = {}, jit_parameters: dict = {}):
+    def __init__(self, form: ufl.Form, dtype: np.dtype = PETSc.ScalarType,
+                 form_compiler_parameters: dict = {}, jit_parameters: dict = {}):
         """Create DOLFINx Form
 
         Parameters
         ----------
         form
             Pure UFL form
+        dtype
+            The scalar type to use for the compiled form
         form_compiler_parameters
             See :py:func:`ffcx_jit <dolfinx.jit.ffcx_jit>`
         jit_parameters
@@ -43,6 +47,12 @@ class Form:
             raise RuntimeError("Expecting to find a Mesh in the form.")
 
         # Compile UFL form with JIT
+        if dtype == np.float64:
+            form_compiler_parameters["scalar_type"] = "double"
+        elif dtype == np.complex128:
+            form_compiler_parameters["scalar_type"] = "double _Complex"
+        else:
+            raise RuntimeError(f"Unsupported scalar type {dtype} for Form.")
         self._ufc_form, module, self._code = jit.ffcx_jit(
             mesh.mpi_comm(),
             form,
@@ -50,9 +60,7 @@ class Form:
             jit_parameters=jit_parameters)
 
         # For every argument in form extract its function space
-        function_spaces = [
-            func.ufl_function_space()._cpp_object for func in form.arguments()
-        ]
+        function_spaces = [func.ufl_function_space()._cpp_object for func in form.arguments()]
 
         # Prepare coefficients data. For every coefficient in form take
         # its C++ object.
@@ -68,10 +76,18 @@ class Form:
                       cpp.fem.IntegralType.vertex: self._subdomains.get("vertex")}
 
         # Prepare dolfinx.cpp.fem.Form and hold it as a member
+        def create_form(dtype):
+            if dtype is np.float64:
+                return cpp.fem.create_form_float64
+            elif dtype is np.complex128:
+                return cpp.fem.create_form_complex128
+            else:
+                raise NotImplementedError(f"Type {dtype} not supported.")
+
         ffi = cffi.FFI()
-        self._cpp_object = cpp.fem.create_form(ffi.cast("uintptr_t", ffi.addressof(self._ufc_form)),
-                                               function_spaces, coeffs,
-                                               [c._cpp_object for c in form.constants()], subdomains, mesh)
+        self._cpp_object = create_form(dtype)(ffi.cast("uintptr_t", ffi.addressof(self._ufc_form)),
+                                              function_spaces, coeffs,
+                                              [c._cpp_object for c in form.constants()], subdomains, mesh)
 
     @property
     def rank(self):

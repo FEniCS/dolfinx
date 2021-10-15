@@ -9,7 +9,6 @@
 #include "CoordinateElement.h"
 #include "DofMap.h"
 #include "ElementDofLayout.h"
-#include <dolfinx/common/types.h>
 #include <dolfinx/fem/Form.h>
 #include <dolfinx/fem/Function.h>
 #include <dolfinx/la/SparsityPattern.h>
@@ -207,8 +206,28 @@ Form<T> create_form(
   {
     ufc_integral* integral = ufc_form.integrals(cell)[i];
     assert(integral);
-    integral_data[IntegralType::cell].first.emplace_back(
-        cell_integral_ids[i], integral->tabulate_tensor);
+
+    kern k = nullptr;
+    if constexpr (std::is_same<T, float>::value)
+      k = integral->tabulate_tensor_float32;
+    else if constexpr (std::is_same<T, std::complex<float>>::value)
+    {
+      k = reinterpret_cast<void (*)(T*, const T*, const T*, const double*,
+                                    const int*, const unsigned char*)>(
+          integral->tabulate_tensor_complex64);
+    }
+    else if constexpr (std::is_same<T, double>::value)
+      k = integral->tabulate_tensor_float64;
+    else if constexpr (std::is_same<T, std::complex<double>>::value)
+    {
+      k = reinterpret_cast<void (*)(T*, const T*, const T*, const double*,
+                                    const int*, const unsigned char*)>(
+          integral->tabulate_tensor_complex128);
+    }
+    assert(k);
+
+    integral_data[IntegralType::cell].first.emplace_back(cell_integral_ids[i],
+                                                         k);
     if (integral->needs_facet_permutations)
       needs_facet_permutations = true;
   }
@@ -243,8 +262,28 @@ Form<T> create_form(
   {
     ufc_integral* integral = ufc_form.integrals(exterior_facet)[i];
     assert(integral);
+
+    kern k = nullptr;
+    if constexpr (std::is_same<T, float>::value)
+      k = integral->tabulate_tensor_float32;
+    else if constexpr (std::is_same<T, std::complex<float>>::value)
+    {
+      k = reinterpret_cast<void (*)(T*, const T*, const T*, const double*,
+                                    const int*, const unsigned char*)>(
+          integral->tabulate_tensor_complex64);
+    }
+    else if constexpr (std::is_same<T, double>::value)
+      k = integral->tabulate_tensor_float64;
+    else if constexpr (std::is_same<T, std::complex<double>>::value)
+    {
+      k = reinterpret_cast<void (*)(T*, const T*, const T*, const double*,
+                                    const int*, const unsigned char*)>(
+          integral->tabulate_tensor_complex128);
+    }
+    assert(k);
+
     integral_data[IntegralType::exterior_facet].first.emplace_back(
-        exterior_facet_integral_ids[i], integral->tabulate_tensor);
+        exterior_facet_integral_ids[i], k);
     if (integral->needs_facet_permutations)
       needs_facet_permutations = true;
   }
@@ -265,8 +304,28 @@ Form<T> create_form(
   {
     ufc_integral* integral = ufc_form.integrals(interior_facet)[i];
     assert(integral);
+
+    kern k = nullptr;
+    if constexpr (std::is_same<T, float>::value)
+      k = integral->tabulate_tensor_float32;
+    else if constexpr (std::is_same<T, std::complex<float>>::value)
+    {
+      k = reinterpret_cast<void (*)(T*, const T*, const T*, const double*,
+                                    const int*, const unsigned char*)>(
+          integral->tabulate_tensor_complex64);
+    }
+    else if constexpr (std::is_same<T, double>::value)
+      k = integral->tabulate_tensor_float64;
+    else if constexpr (std::is_same<T, std::complex<double>>::value)
+    {
+      k = reinterpret_cast<void (*)(T*, const T*, const T*, const double*,
+                                    const int*, const unsigned char*)>(
+          integral->tabulate_tensor_complex128);
+    }
+    assert(k);
+
     integral_data[IntegralType::interior_facet].first.emplace_back(
-        interior_facet_integral_ids[i], integral->tabulate_tensor);
+        interior_facet_integral_ids[i], k);
     if (integral->needs_facet_permutations)
       needs_facet_permutations = true;
   }
@@ -322,9 +381,7 @@ Form<T> create_form(
     if (auto it = constants.find(name); it != constants.end())
       const_map.push_back(it->second);
     else
-    {
       throw std::runtime_error("Form constant \"" + name + "\" not provided.");
-    }
   }
 
   return create_form(ufc_form, spaces, coeff_map, const_map, subdomains, mesh);
