@@ -107,7 +107,7 @@ squared_distance(const mesh::Mesh& mesh, int dim,
 /// @param[in] mesh Mesh
 /// @param[in] candidate_cells Adjacency list where the ith node corresponds to
 /// the possible collidinge entities of the ith point
-/// @param[in] p The points to check for collision
+/// @param[in] points The points to check for collision
 /// @return Adjacency list where the ith node has the list of entities (local to
 /// process) that actually collide with the ith point.
 /// @note There might be nodes with no entries in the adjacency list
