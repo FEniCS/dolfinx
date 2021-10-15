@@ -249,25 +249,31 @@ def test_compute_collisions_tree_3d(point):
 def test_compute_closest_entity_1d(dim):
     ref_distance = 0.75
     N = 16
-    points = numpy.array([[-ref_distance, 0, 0], [2 / N, ref_distance, 0]])
+    points = numpy.array([[-ref_distance, 0, 0], [2 / N, 2 * ref_distance, 0]])
     mesh = UnitIntervalMesh(MPI.COMM_WORLD, N)
     tree = BoundingBoxTree(mesh, dim)
     num_entities_local = mesh.topology.index_map(dim).size_local + mesh.topology.index_map(dim).num_ghosts
     entities = numpy.arange(num_entities_local, dtype=numpy.int32)
     midpoint_tree = create_midpoint_tree(mesh, dim, entities)
     closest_entities = compute_closest_entity(tree, midpoint_tree, points, mesh)
+
     # Find which entity is colliding with known closest point on mesh
     p_c = numpy.array([[0, 0, 0], [2 / N, 0, 0]])
+
     colliding_entity_bboxes = compute_collisions(tree, p_c)
     # Refine search by checking for actual collision if the entities are cells
-
     if dim == mesh.topology.dim:
+
         colliding_cells = select_colliding_cells(mesh, colliding_entity_bboxes, p_c)
         for i in range(points.shape[0]):
-            assert numpy.isin(closest_entities[i], colliding_cells.links(i))
+            # If colliding entity is on process
+            if len(colliding_cells.links(i)) > 0:
+                assert numpy.isin(closest_entities[i], colliding_cells.links(i))
     else:
         for i in range(points.shape[0]):
-            assert numpy.isin(closest_entities[i], colliding_entity_bboxes.links(i))
+            # Only check closest entity if any bounding box on the process intersects with the point
+            if colliding_entity_bboxes.links(i) > 0:
+                assert numpy.isin(closest_entities[i], colliding_entity_bboxes.links(i))
 
 
 @pytest.mark.parametrize("dim", [0, 1, 2])
@@ -288,9 +294,11 @@ def test_compute_closest_entity_2d(dim):
     # Refine search by checking for actual collision if the entities are cells
     if dim == mesh.topology.dim:
         colliding_cells = select_colliding_cells(mesh, colliding_entity_bboxes, p_c)
-        assert numpy.isin(closest_entities[0], colliding_cells.links(0))
+        if len(colliding_cells.links(0)) > 0:
+            assert numpy.isin(closest_entities[0], colliding_cells.links(0))
     else:
-        assert numpy.isin(closest_entities[0], colliding_entity_bboxes.links(0))
+        if len(colliding_entity_bboxes.links(0)) > 0:
+            assert numpy.isin(closest_entities[0], colliding_entity_bboxes.links(0))
 
 
 @pytest.mark.parametrize("dim", [1, 2, 3])
@@ -312,9 +320,11 @@ def test_compute_closest_entity_3d(dim):
     # Refine search by checking for actual collision if the entities are cells
     if dim == mesh.topology.dim:
         colliding_cells = select_colliding_cells(mesh, colliding_entity_bboxes, p_c)
-        assert numpy.isin(closest_entities[0], colliding_cells.links(0))
+        if len(colliding_cells.links(0)) > 0:
+            assert numpy.isin(closest_entities[0], colliding_cells.links(0))
     else:
-        assert numpy.isin(closest_entities[0], colliding_entity_bboxes.links(0))
+        if len(colliding_entity_bboxes.links(0)) > 0:
+            assert numpy.isin(closest_entities[0], colliding_entity_bboxes.links(0))
 
 
 @pytest.mark.parametrize("dim", [1, 2, 3])
@@ -340,7 +350,8 @@ def test_compute_closest_sub_entity(dim):
         colliding_cells = select_colliding_cells(mesh, colliding_entity_bboxes, p_c)
         assert numpy.isin(closest_entities[0], colliding_cells.links(0))
     else:
-        assert numpy.isin(closest_entities[0], colliding_entity_bboxes.links(0))
+        if len(colliding_entity_bboxes.links(0)) > 0:
+            assert numpy.isin(closest_entities[0], colliding_entity_bboxes.links(0))
 
 
 def test_surface_bbtree():
@@ -381,9 +392,9 @@ def test_sub_bbtree():
     # Compute local collisions
     cells = compute_collisions(bbtree, point)
     if MPI.COMM_WORLD.rank in ranks.array:
-        assert len(cells) > 0
+        assert len(cells.links(0)) > 0
     else:
-        assert len(cells) == 0
+        assert len(cells.links(0)) == 0
 
 
 @pytest.mark.parametrize("ct", [cpp.mesh.CellType.hexahedron, cpp.mesh.CellType.tetrahedron])

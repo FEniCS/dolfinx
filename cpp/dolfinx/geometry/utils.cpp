@@ -50,10 +50,11 @@ bool bbox_in_bbox(const xt::xtensor_fixed<double, xt::xshape<2, 3>>& a,
 }
 //-----------------------------------------------------------------------------
 // Compute closest entity {closest_entity, R2} (recursive)
-std::pair<std::int32_t, double> _compute_closest_entity(
-    const geometry::BoundingBoxTree& tree,
-    const xt::xtensor_fixed<double, xt::xshape<1, 3>>& point, int node,
-    const mesh::Mesh& mesh, std::int32_t closest_entity, double R2)
+std::pair<std::int32_t, double>
+_compute_closest_entity(const geometry::BoundingBoxTree& tree,
+                        const xt::xtensor_fixed<double, xt::xshape<3>>& point,
+                        int node, const mesh::Mesh& mesh,
+                        std::int32_t closest_entity, double R2)
 {
   // Get children of current bounding box node (child_1 denotes entity
   // index for leaves)
@@ -66,7 +67,7 @@ std::pair<std::int32_t, double> _compute_closest_entity(
     {
       xt::xtensor_fixed<double, xt::xshape<3>> diff
           = xt::row(tree.get_bbox(node), 0);
-      diff -= xt::row(point, 0);
+      diff -= point;
       r2 = xt::norm_sq(diff)();
     }
     else
@@ -77,7 +78,10 @@ std::pair<std::int32_t, double> _compute_closest_entity(
       if (r2 <= R2)
       {
         const std::array<std::int32_t, 1> index = {bbox[1]};
-        r2 = geometry::squared_distance(mesh, tree.tdim(), index, point)[0];
+        r2 = geometry::squared_distance(
+            mesh, tree.tdim(), index,
+            xt::reshape_view(point, {static_cast<std::size_t>(1),
+                                     static_cast<std::size_t>(3)}))[0];
       }
     }
     // If entity is closer than best result so far, return it
@@ -242,9 +246,9 @@ geometry::compute_collisions(const BoundingBoxTree& tree,
   std::vector<std::int32_t> offsets({0});
   offsets.reserve(num_points);
   entities.reserve(num_points);
-  for (std::size_t i = 0; i < num_points; i++)
+  if (tree.num_bboxes() > 0)
   {
-    if (tree.num_bboxes() > 0)
+    for (std::size_t i = 0; i < num_points; i++)
     {
       _compute_collisions_point(tree, xt::row(points, i), tree.num_bboxes() - 1,
                                 entities);
@@ -421,7 +425,7 @@ dolfinx::graph::AdjacencyList<int> geometry::select_colliding_cells(
   {
 
     auto cells = candidate_cells.links(i);
-    std::size_t num_cells = candidate_cells.num_links(i);
+    std::size_t num_cells = cells.size();
     xt::xtensor<double, 2> _point({num_cells, static_cast<std::size_t>(3)});
     for (std::size_t j = 0; j < num_cells; j++)
       xt::row(_point, j) = xt::row(points, i);
