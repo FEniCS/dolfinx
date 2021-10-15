@@ -8,7 +8,7 @@ import numpy as np
 @pytest.mark.parametrize("degree", range(1, 5))
 def test_dof_coords_2d(degree):
     mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, 10, 10)
-    V = dolfinx.FunctionSpace(mesh, ("CG", degree))
+    V = dolfinx.FunctionSpace(mesh, ("Lagrange", degree))
     u = dolfinx.Function(V)
 
     u.interpolate(lambda x: x[0])
@@ -22,7 +22,7 @@ def test_dof_coords_2d(degree):
 @pytest.mark.parametrize("degree", range(1, 5))
 def test_dof_coords_3d(degree):
     mesh = dolfinx.UnitCubeMesh(MPI.COMM_WORLD, 10, 10, 10)
-    V = dolfinx.FunctionSpace(mesh, ("CG", degree))
+    V = dolfinx.FunctionSpace(mesh, ("Lagrange", degree))
     u = dolfinx.Function(V)
 
     u.interpolate(lambda x: x[0])

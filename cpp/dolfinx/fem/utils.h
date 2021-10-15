@@ -88,7 +88,7 @@ la::SparsityPattern create_sparsity_pattern(const Form<T>& a)
   }
 
   // Get dof maps and mesh
-  std::array<const std::reference_wrapper<const fem::DofMap>, 2> dofmaps{
+  std::array<std::reference_wrapper<const fem::DofMap>, 2> dofmaps{
       *a.function_spaces().at(0)->dofmap(),
       *a.function_spaces().at(1)->dofmap()};
   std::shared_ptr mesh = a.mesh();
@@ -112,8 +112,7 @@ la::SparsityPattern create_sparsity_pattern(const Form<T>& a)
 /// SparsityPattern::assemble.
 la::SparsityPattern create_sparsity_pattern(
     const mesh::Topology& topology,
-    const std::array<const std::reference_wrapper<const fem::DofMap>, 2>&
-        dofmaps,
+    const std::array<std::reference_wrapper<const fem::DofMap>, 2>& dofmaps,
     const std::set<IntegralType>& integrals);
 
 /// Create an ElementDofLayout from a ufc_dofmap
@@ -279,8 +278,8 @@ Form<T> create_form(
     integral_data[IntegralType::interior_facet].second = it->second;
   }
 
-  return fem::Form(spaces, integral_data, coefficients, constants,
-                   needs_facet_permutations, mesh);
+  return fem::Form<T>(spaces, integral_data, coefficients, constants,
+                      needs_facet_permutations, mesh);
 }
 
 /// Create a Form from UFC input
@@ -384,7 +383,7 @@ namespace impl
 // Pack a single coefficient
 template <typename T, int _bs = -1>
 void pack_coefficient(
-    const xtl::span<T>& c, int cstride, const std::vector<T>& v,
+    const xtl::span<T>& c, int cstride, const xtl::span<const T>& v,
     const xtl::span<const std::uint32_t>& cell_info, const fem::DofMap& dofmap,
     std::int32_t num_cells, std::int32_t offset, int space_dim,
     const std::function<void(const xtl::span<T>&,
@@ -434,7 +433,7 @@ pack_coefficients(const U& u)
   const std::vector<int> offsets = u.coefficient_offsets();
   std::vector<const fem::DofMap*> dofmaps(coefficients.size());
   std::vector<const fem::FiniteElement*> elements(coefficients.size());
-  std::vector<std::reference_wrapper<const std::vector<T>>> v;
+  std::vector<xtl::span<const T>> v;
   v.reserve(coefficients.size());
   for (std::size_t i = 0; i < coefficients.size(); ++i)
   {
