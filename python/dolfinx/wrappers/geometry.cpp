@@ -138,28 +138,55 @@ void geometry(py::module& m)
         });
 
   m.def("squared_distance",
-        [](const dolfinx::mesh::Mesh& mesh, int dim, std::int32_t index,
-           const std::array<double, 3>& point)
+        [](const dolfinx::mesh::Mesh& mesh, int dim,
+           std::vector<std::int32_t> indices, const py::array_t<double>& points)
         {
-          xt::xtensor_fixed<double, xt::xshape<1, 3>> _p;
-          for (py::ssize_t i = 0; i < 3; i++)
-            _p(i) = point[i];
-          return dolfinx::geometry::squared_distance(mesh, dim, index, _p);
+          const std::size_t p_s0 = points.ndim() == 1 ? 1 : points.shape(0);
+          xt::xtensor<double, 2> _p
+              = xt::zeros<double>({p_s0, static_cast<std::size_t>(3)});
+          auto px = points.unchecked();
+          if (px.ndim() == 1)
+          {
+            for (py::ssize_t i = 0; i < px.shape(0); i++)
+              _p(0, i) = px(i);
+          }
+          else if (px.ndim() == 2)
+          {
+            for (py::ssize_t i = 0; i < px.shape(0); i++)
+              for (py::ssize_t j = 0; j < px.shape(1); j++)
+                _p(i, j) = px(i, j);
+          }
+          else
+            throw std::runtime_error("Array has wrong ndim.");
+
+          return xt_as_pyarray(
+              dolfinx::geometry::squared_distance(mesh, dim, indices, _p));
         });
   m.def("select_colliding_cells",
         [](const dolfinx::mesh::Mesh& mesh,
-           const py::array_t<std::int32_t, py::array::c_style>& candidate_cells,
-           const std::array<double, 3>& point, int n)
+           const dolfinx::graph::AdjacencyList<int>& candidate_cells,
+           const py::array_t<double>& points)
         {
-          xt::xtensor_fixed<double, xt::xshape<1, 3>> _p;
-          for (py::ssize_t i = 0; i < 3; i++)
-            _p(i) = point[i];
+          const std::size_t p_s0 = points.ndim() == 1 ? 1 : points.shape(0);
+          xt::xtensor<double, 2> _p
+              = xt::zeros<double>({p_s0, static_cast<std::size_t>(3)});
+          auto px = points.unchecked();
+          if (px.ndim() == 1)
+          {
+            for (py::ssize_t i = 0; i < px.shape(0); i++)
+              _p(0, i) = px(i);
+          }
+          else if (px.ndim() == 2)
+          {
+            for (py::ssize_t i = 0; i < px.shape(0); i++)
+              for (py::ssize_t j = 0; j < px.shape(1); j++)
+                _p(i, j) = px(i, j);
+          }
+          else
+            throw std::runtime_error("Array has wrong ndim.");
 
-          return as_pyarray(dolfinx::geometry::select_colliding_cells(
-              mesh,
-              xtl::span<const std::int32_t>(candidate_cells.data(),
-                                            candidate_cells.size()),
-              _p, n));
+          return dolfinx::geometry::select_colliding_cells(mesh,
+                                                           candidate_cells, _p);
         });
 
   // dolfinx::geometry::BoundingBoxTree

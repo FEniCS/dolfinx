@@ -76,7 +76,8 @@ std::pair<std::int32_t, double> _compute_closest_entity(
       // obtain exact distance to the convex hull of the entity
       if (r2 <= R2)
       {
-        r2 = geometry::squared_distance(mesh, tree.tdim(), bbox[1], point);
+        const std::array<std::int32_t, 1> index = {bbox[1]};
+        r2 = geometry::squared_distance(mesh, tree.tdim(), index, point)[0];
       }
     }
     // If entity is closer than best result so far, return it
@@ -265,25 +266,26 @@ double geometry::compute_squared_distance_bbox(
   return xt::norm_sq(_d0)() + xt::norm_sq(_d1)();
 }
 //-----------------------------------------------------------------------------
-std::vector<std::pair<int, double>> geometry::compute_closest_entity(
+std::vector<std::int32_t> geometry::compute_closest_entity(
     const BoundingBoxTree& tree, const BoundingBoxTree& midpoint_tree,
     xt::xtensor<double, 2>& points, const mesh::Mesh& mesh)
 {
   assert(points.shape(1) == 3);
 
-  std::vector<std::pair<int, double>> entity_distance;
-  entity_distance.reserve(points.shape(0));
+  std::vector<std::int32_t> entities;
+  entities.reserve(points.shape(0));
   const std::size_t num_points = points.shape(0);
   if (tree.num_bboxes() == 0)
   {
     for (std::size_t i = 0; i < num_points; i++)
-      entity_distance.push_back({-1, -1});
-    return entity_distance;
+      entities.push_back(-1);
+    return entities;
   }
   else
   {
     double R2;
     const double initial_entity = 0;
+    xt::xtensor_fixed<double, xt::xshape<1, 3>> _point;
     for (std::size_t i = 0; i < num_points; i++)
     {
       // Use midpoint tree to find intial closest entity to the point
@@ -297,9 +299,9 @@ std::vector<std::pair<int, double>> geometry::compute_closest_entity(
       // to find determine the entity with the closest midpoint.
       // As the midpoint tree only consist of points, the distance queries are
       // lightweight.
+      _point = xt::row(points, i);
       const auto [m_index, m_distance2] = _compute_closest_entity(
-          midpoint_tree, xt::row(points, i), midpoint_tree.num_bboxes() - 1,
-          mesh, 0, R2);
+          midpoint_tree, _point, midpoint_tree.num_bboxes() - 1, mesh, 0, R2);
 
       // Use a recursive search through the bounding box tree to determine which
       // entity is actually closest.
@@ -307,20 +309,22 @@ std::vector<std::pair<int, double>> geometry::compute_closest_entity(
       // distance from the midpoint to the point of interest as the initial
       // search radius.
       const auto [index, distance2] = _compute_closest_entity(
-          tree, xt::row(points, i), tree.num_bboxes() - 1, mesh, m_index,
-          m_distance2);
+          tree, _point, tree.num_bboxes() - 1, mesh, m_index, m_distance2);
 
-      entity_distance.push_back({index, std::sqrt(distance2)});
+      entities.push_back(index);
     }
 
-    return entity_distance;
+    return entities;
   }
 }
+
 //-----------------------------------------------------------------------------
-double
-geometry::squared_distance(const mesh::Mesh& mesh, int dim, std::int32_t index,
-                           const xt::xtensor_fixed<double, xt::xshape<1, 3>>& p)
+xt::xtensor<double, 2>
+geometry::distance(const mesh::Mesh& mesh, int dim,
+                   const xtl::span<const std::int32_t>& entities,
+                   const xt::xtensor<double, 2>& points)
 {
+  assert(points.shape(1) == 3);
   const int tdim = mesh.topology().dim();
   const mesh::Geometry& geometry = mesh.geometry();
   const xt::xtensor<double, 2>& geom_dofs = geometry.x();
@@ -328,65 +332,99 @@ geometry::squared_distance(const mesh::Mesh& mesh, int dim, std::int32_t index,
 
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
 
+  xt::xtensor<double, 2> distances(
+      {entities.size(), static_cast<std::size_t>(3)});
+  xt::xtensor_fixed<double, xt::xshape<1, 3>> _point;
   if (dim == tdim)
   {
-    auto dofs = x_dofmap.links(index);
-    xt::xtensor<double, 2> nodes({dofs.size(), 3});
-    for (std::size_t i = 0; i < dofs.size(); ++i)
-      for (std::size_t j = 0; j < 3; ++j)
-        nodes(i, j) = geom_dofs(dofs[i], j);
-    return xt::norm_sq(geometry::compute_distance_gjk(p, nodes))();
+    for (std::size_t e = 0; e < entities.size(); e++)
+    {
+      auto dofs = x_dofmap.links(entities[e]);
+      xt::xtensor<double, 2> nodes({dofs.size(), 3});
+      for (std::size_t i = 0; i < dofs.size(); ++i)
+        for (std::size_t j = 0; j < 3; ++j)
+          nodes(i, j) = geom_dofs(dofs[i], j);
+      _point = xt::row(points, e);
+      xt::row(distances, e) = geometry::compute_distance_gjk(_point, nodes);
+    }
   }
   else
   {
-    // Find attached cell
     mesh.topology_mutable().create_connectivity(dim, tdim);
+    mesh.topology_mutable().create_connectivity(tdim, dim);
     auto e_to_c = mesh.topology().connectivity(dim, tdim);
     assert(e_to_c);
-    assert(e_to_c->num_links(index) > 0);
-    const std::int32_t c = e_to_c->links(index)[0];
-
-    // Find local number of entity wrt cell
-    mesh.topology_mutable().create_connectivity(tdim, dim);
     auto c_to_e = mesh.topology_mutable().connectivity(tdim, dim);
     assert(c_to_e);
-    auto cell_entities = c_to_e->links(c);
-    auto it0 = std::find(cell_entities.begin(), cell_entities.end(), index);
-    assert(it0 != cell_entities.end());
-    const int local_cell_entity = std::distance(cell_entities.begin(), it0);
 
-    // Tabulate geometry dofs for the entity
-    auto dofs = x_dofmap.links(c);
-    const std::vector<int> entity_dofs
-        = geometry.cmap().dof_layout().entity_closure_dofs(dim,
-                                                           local_cell_entity);
-    xt::xtensor<double, 2> nodes({entity_dofs.size(), 3});
-    for (std::size_t i = 0; i < entity_dofs.size(); i++)
-      for (std::size_t j = 0; j < 3; ++j)
-        nodes(i, j) = geom_dofs(dofs[entity_dofs[i]], j);
+    for (std::size_t e = 0; e < entities.size(); e++)
+    {
+      const std::int32_t index = entities[e];
 
-    return xt::norm_sq(geometry::compute_distance_gjk(p, nodes))();
+      // Find attached cell
+      assert(e_to_c->num_links(index) > 0);
+      const std::int32_t c = e_to_c->links(index)[0];
+
+      // Find local number of entity wrt cell
+      auto cell_entities = c_to_e->links(c);
+      auto it0 = std::find(cell_entities.begin(), cell_entities.end(), index);
+      assert(it0 != cell_entities.end());
+      const int local_cell_entity = std::distance(cell_entities.begin(), it0);
+
+      // Tabulate geometry dofs for the entity
+      auto dofs = x_dofmap.links(c);
+      const std::vector<int> entity_dofs
+          = geometry.cmap().dof_layout().entity_closure_dofs(dim,
+                                                             local_cell_entity);
+      xt::xtensor<double, 2> nodes({entity_dofs.size(), 3});
+      for (std::size_t i = 0; i < entity_dofs.size(); i++)
+        for (std::size_t j = 0; j < 3; ++j)
+          nodes(i, j) = geom_dofs(dofs[entity_dofs[i]], j);
+      _point = xt::row(points, e);
+      xt::row(distances, e) = geometry::compute_distance_gjk(_point, nodes);
+    }
   }
+  return distances;
+}
+//-----------------------------------------------------------------------------
+xt::xtensor<double, 1>
+geometry::squared_distance(const mesh::Mesh& mesh, int dim,
+                           const xtl::span<const std::int32_t>& entities,
+                           const xt::xtensor<double, 2>& points)
+{
+  return xt::norm_sq(geometry::distance(mesh, dim, entities, points), {1});
 }
 //-------------------------------------------------------------------------------
-std::vector<std::int32_t> geometry::select_colliding_cells(
+dolfinx::graph::AdjacencyList<int> geometry::select_colliding_cells(
     const mesh::Mesh& mesh,
-    const xtl::span<const std::int32_t>& candidate_cells,
-    const xt::xtensor_fixed<double, xt::xshape<1, 3>>& p, int n)
+    const dolfinx::graph::AdjacencyList<int>& candidate_cells,
+    const xt::xtensor<double, 2>& points)
 {
+
+  const std::int32_t num_nodes = candidate_cells.num_nodes();
+  std::vector<std::int32_t> offsets = {0};
+  offsets.reserve(num_nodes + 1);
+  std::vector<std::int32_t> colliding_cells;
+  colliding_cells.reserve(candidate_cells.offsets().back());
+
   const double eps2 = 1e-20;
   const int tdim = mesh.topology().dim();
   std::vector<std::int32_t> result;
-  for (std::int32_t c : candidate_cells)
+  for (std::int32_t i = 0; i < num_nodes; i++)
   {
-    const double d2 = squared_distance(mesh, tdim, c, p);
-    if (d2 < eps2)
-    {
-      result.push_back(c);
-      if ((int)result.size() == n)
-        return result;
-    }
+
+    auto cells = candidate_cells.links(i);
+    std::size_t num_cells = candidate_cells.num_links(i);
+    xt::xtensor<double, 2> _point({num_cells, static_cast<std::size_t>(3)});
+    for (std::int32_t j = 0; j < num_cells; j++)
+      xt::row(_point, j) = xt::row(points, i);
+    xt::xtensor<double, 1> distances_sq
+        = geometry::squared_distance(mesh, tdim, cells, _point);
+    for (int j = 0; j < cells.size(); j++)
+      if (distances_sq[j] < eps2)
+        colliding_cells.push_back(cells[j]);
+    offsets.push_back(colliding_cells.size());
   }
-  return result;
+  return dolfinx::graph::AdjacencyList<int>(colliding_cells, offsets);
 }
 //-------------------------------------------------------------------------------

@@ -42,12 +42,11 @@ def test_expression():
     local_map = []
     cells = dolfinx.geometry.compute_collisions(bb, points)
 
-    for i, p in enumerate(points):
-        if len(cells.links(i)) > 0:
-            actual_cells = dolfinx.geometry.select_colliding_cells(mesh, cells.links(i), p, 1)
-            if len(actual_cells) > 0:
-                local_map.append(i)
-                closest_cell.append(actual_cells[0])
+    actual_cells = dolfinx.geometry.select_colliding_cells(mesh, cells, points)
+    for i in range(actual_cells.num_nodes):
+        if len(actual_cells.links(i)) > 0:
+            local_map.append(i)
+            closest_cell.append(actual_cells.links(i)[0])
 
     num_dofs_x = mesh.geometry.dofmap.links(0).size  # NOTE: Assumes same cell geometry in whole mesh
     t_imap = mesh.topology.index_map(tdim)

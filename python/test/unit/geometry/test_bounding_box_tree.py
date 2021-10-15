@@ -255,63 +255,47 @@ def test_compute_closest_entity_1d(dim):
     num_entities_local = mesh.topology.index_map(dim).size_local + mesh.topology.index_map(dim).num_ghosts
     entities = numpy.arange(num_entities_local, dtype=numpy.int32)
     midpoint_tree = create_midpoint_tree(mesh, dim, entities)
-    entity_data = compute_closest_entity(tree, midpoint_tree, points, mesh)
-
+    closest_entities = compute_closest_entity(tree, midpoint_tree, points, mesh)
     # Find which entity is colliding with known closest point on mesh
     p_c = numpy.array([[0, 0, 0], [2 / N, 0, 0]])
-    colliding_entities = compute_collisions(tree, p_c)
-    for i in range(points.shape[0]):
-        min_distance = MPI.COMM_WORLD.allreduce(entity_data[i][1], op=MPI.MIN)
-        assert min_distance == pytest.approx(ref_distance, 1.0e-12)
+    colliding_entity_bboxes = compute_collisions(tree, p_c)
+    # Refine search by checking for actual collision if the entities are cells
 
-        # Refine search by checking for actual collision if the entities are
-        # cells
-        # NOTE: Could be done for all entities if we generalize
-        # select_colliding_cells to select_colliding_entities
-        e_i = colliding_entities.links(i)
-        if dim == mesh.topology.dim:
-            e_i = select_colliding_cells(mesh, e_i, p_c[i], len(e_i))
-
-        if len(entities) > 0:
-            assert numpy.isin(entity_data[i][0], e_i)
+    if dim == mesh.topology.dim:
+        colliding_cells = select_colliding_cells(mesh, colliding_entity_bboxes, p_c)
+        for i in range(points.shape[0]):
+            assert numpy.isin(closest_entities[i], colliding_cells.links(i))
+    else:
+        for i in range(points.shape[0]):
+            assert numpy.isin(closest_entities[i], colliding_entity_bboxes.links(i))
 
 
 @pytest.mark.parametrize("dim", [0, 1, 2])
 def test_compute_closest_entity_2d(dim):
-    p = numpy.array([-1.0, -0.01, 0.0])
+    points = numpy.array([-1.0, -0.01, 0.0])
     mesh = UnitSquareMesh(MPI.COMM_WORLD, 15, 15)
     tree = BoundingBoxTree(mesh, dim)
     num_entities_local = mesh.topology.index_map(dim).size_local + mesh.topology.index_map(dim).num_ghosts
     entities = numpy.arange(num_entities_local, dtype=numpy.int32)
     midpoint_tree = create_midpoint_tree(mesh, dim, entities)
-    entity_data = compute_closest_entity(tree, midpoint_tree, p, mesh)
-    min_distance = MPI.COMM_WORLD.allreduce(entity_data[0][1], op=MPI.MIN)
-    ref_distance = numpy.sqrt(p[0]**2 + p[1]**2)
-    assert min_distance == pytest.approx(ref_distance, 1.0e-12)
 
     # Find which entity is colliding with known closest point on mesh
     p_c = numpy.array([0, 0, 0])
-    colliding_entities = compute_collisions(tree, p_c)
+    closest_entities = compute_closest_entity(tree, midpoint_tree, points, mesh)
 
-    min_distance = MPI.COMM_WORLD.allreduce(entity_data[0][1], op=MPI.MIN)
-    assert min_distance == pytest.approx(ref_distance, 1.0e-12)
-
-    # Refine search by checking for actual collision if the entities are
-    # cells
-    # NOTE: Could be done for all entities if we generalize
-    # select_colliding_cells to select_colliding_entities
-    e_i = colliding_entities.links(0)
+    # Find which entity is colliding with known closest point on mesh
+    colliding_entity_bboxes = compute_collisions(tree, p_c)
+    # Refine search by checking for actual collision if the entities are cells
     if dim == mesh.topology.dim:
-        e_i = select_colliding_cells(mesh, e_i, p_c, len(e_i))
-
-    if len(entities) > 0:
-        assert numpy.isin(entity_data[0][0], e_i)
+        colliding_cells = select_colliding_cells(mesh, colliding_entity_bboxes, p_c)
+        assert numpy.isin(closest_entities[0], colliding_cells.links(0))
+    else:
+        assert numpy.isin(closest_entities[0], colliding_entity_bboxes.links(0))
 
 
 @pytest.mark.parametrize("dim", [1, 2, 3])
 def test_compute_closest_entity_3d(dim):
-    ref_distance = 0.135
-    p = numpy.array([0.9, 0, 1 + ref_distance])
+    points = numpy.array([0.9, 0, 1.135])
     mesh = UnitCubeMesh(MPI.COMM_WORLD, 8, 8, 8)
     mesh.topology.create_entities(dim)
 
@@ -319,27 +303,18 @@ def test_compute_closest_entity_3d(dim):
     num_entities_local = mesh.topology.index_map(dim).size_local + mesh.topology.index_map(dim).num_ghosts
     entities = numpy.arange(num_entities_local, dtype=numpy.int32)
     midpoint_tree = create_midpoint_tree(mesh, dim, entities)
-    entity_data = compute_closest_entity(tree, midpoint_tree, p, mesh)
-    min_distance = MPI.COMM_WORLD.allreduce(entity_data[0][1], op=MPI.MIN)
-    assert min_distance == pytest.approx(ref_distance, 1.0e-12)
+
+    closest_entities = compute_closest_entity(tree, midpoint_tree, points, mesh)
 
     # Find which entity is colliding with known closest point on mesh
     p_c = numpy.array([0.9, 0, 1])
-    colliding_entities = compute_collisions(tree, p_c)
-
-    min_distance = MPI.COMM_WORLD.allreduce(entity_data[0][1], op=MPI.MIN)
-    assert min_distance == pytest.approx(ref_distance, 1.0e-12)
-
-    # Refine search by checking for actual collision if the entities are
-    # cells
-    # NOTE: Could be done for all entities if we generalize
-    # select_colliding_cells to select_colliding_entities
-    e_i = colliding_entities.links(0)
+    colliding_entity_bboxes = compute_collisions(tree, p_c)
+    # Refine search by checking for actual collision if the entities are cells
     if dim == mesh.topology.dim:
-        e_i = select_colliding_cells(mesh, e_i, p_c, len(e_i))
-
-    if len(entities) > 0:
-        assert numpy.isin(entity_data[0][0], e_i)
+        colliding_cells = select_colliding_cells(mesh, colliding_entity_bboxes, p_c)
+        assert numpy.isin(closest_entities[0], colliding_cells.links(0))
+    else:
+        assert numpy.isin(closest_entities[0], colliding_entity_bboxes.links(0))
 
 
 @pytest.mark.parametrize("dim", [1, 2, 3])
@@ -348,34 +323,24 @@ def test_compute_closest_sub_entity(dim):
     Compute distance from subset of cells in a mesh to a point inside the mesh
     """
     ref_distance = 0.31
-    p = numpy.array([0.5 + ref_distance, 0.5, 0.5])
+    points = numpy.array([0.5 + ref_distance, 0.5, 0.5])
     mesh = UnitCubeMesh(MPI.COMM_WORLD, 8, 8, 8)
     mesh.topology.create_entities(dim)
 
     left_entities = locate_entities(mesh, dim, lambda x: x[0] <= 0.5)
     tree = BoundingBoxTree(mesh, dim, left_entities)
     midpoint_tree = create_midpoint_tree(mesh, dim, left_entities)
-    closest_entities = compute_closest_entity(tree, midpoint_tree, p, mesh)
-    min_distance = MPI.COMM_WORLD.allreduce(closest_entities[0][1], op=MPI.MIN)
-    assert min_distance == pytest.approx(ref_distance, 1.0e-12)
+    closest_entities = compute_closest_entity(tree, midpoint_tree, points, mesh)
 
     # Find which entity is colliding with known closest point on mesh
     p_c = numpy.array([0.5, 0.5, 0.5])
-    colliding_entities = compute_collisions(tree, p_c)
-
-    min_distance = MPI.COMM_WORLD.allreduce(closest_entities[0][1], op=MPI.MIN)
-    assert min_distance == pytest.approx(ref_distance, 1.0e-12)
-
-    # Refine search by checking for actual collision if the entities are
-    # cells
-    # NOTE: Could be done for all entities if we generalize
-    # select_colliding_cells to select_colliding_entities
-    e_i = colliding_entities.links(0)
+    colliding_entity_bboxes = compute_collisions(tree, p_c)
+    # Refine search by checking for actual collision if the entities are cells
     if dim == mesh.topology.dim:
-        e_i = select_colliding_cells(mesh, e_i, p_c, len(e_i))
-
-    if len(closest_entities) > 0:
-        assert numpy.isin(closest_entities[0][0], e_i)
+        colliding_cells = select_colliding_cells(mesh, colliding_entity_bboxes, p_c)
+        assert numpy.isin(closest_entities[0], colliding_cells.links(0))
+    else:
+        assert numpy.isin(closest_entities[0], colliding_entity_bboxes.links(0))
 
 
 def test_surface_bbtree():

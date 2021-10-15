@@ -172,9 +172,10 @@ def test_collision_2nd_order_triangle():
     # Create boundingboxtree
     tree = geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
     cell_candidates = geometry.compute_collisions(tree, sample_points)
-    for i, point in enumerate(sample_points):
-        colliding_cell = geometry.select_colliding_cells(mesh, cell_candidates.links(i), point, 1)
-        assert len(colliding_cell) == 1
+    colliding_cells = geometry.select_colliding_cells(mesh, cell_candidates, sample_points)
+    # Check for collision
+    for i in range(colliding_cells.num_nodes):
+        assert(len(colliding_cells.links(i)) == 1)
 
     # Check if there is a point on the linear approximation of the
     # curved facet
@@ -185,5 +186,5 @@ def test_collision_2nd_order_triangle():
     # Point inside 2nd order geometry, outside linear approximation
     # Usefull for debugging on a later stage
     # point = np.array([0.25, 0.89320760, 0])
-    distance = cpp.geometry.squared_distance(mesh, mesh.topology.dim - 1, 2, point)
+    distance = cpp.geometry.squared_distance(mesh, mesh.topology.dim - 1, [2], point)
     assert np.isclose(distance, 0)

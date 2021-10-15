@@ -22,11 +22,11 @@ def test_manifold_point_search():
     # Find cell colliding with point
     points = numpy.array([[0.5, 0.25, 0.75], [0.25, 0.5, 0.75]])
     cell_candidates = geometry.compute_collisions(bb, points)
-    cell0 = cpp.geometry.select_colliding_cells(mesh, cell_candidates.links(0), points[0], 1)
-    cell1 = cpp.geometry.select_colliding_cells(mesh, cell_candidates.links(1), points[1], 1)
+    colliding_cells = cpp.geometry.select_colliding_cells(mesh, cell_candidates, points)
 
     # Extract vertices of cell
-    indices = cpp.mesh.entities_to_geometry(mesh, tdim, [cell0, cell1], False)
+    indices = cpp.mesh.entities_to_geometry(
+        mesh, tdim, [colliding_cells.links(0)[0], colliding_cells.links(1)[0]], False)
     cell_vertices = x[indices]
     # Compare vertices with input
     assert numpy.allclose(cell_vertices, vertices[cells])

@@ -57,11 +57,10 @@ compute_collisions(const BoundingBoxTree& tree,
 /// mesh entities.
 /// @param[in] points The set of points
 /// @param[in] mesh The mesh
-/// @return An array with tuples containing the (entity index, distance) for
-/// each point.
-/// @note Returns entity index -1 and distance -1 if no entity is found on the
-/// process.
-std::vector<std::pair<int, double>>
+/// @return List of closest entities (local to process) where the ith entry
+/// corresponds to the ith input point.
+/// @note Returns entity index -1 if the bounding box tree is empty.
+std::vector<std::int32_t>
 compute_closest_entity(const BoundingBoxTree& tree,
                        const BoundingBoxTree& midpoint_tree,
                        xt::xtensor<double, 2>& points, const mesh::Mesh& mesh);
@@ -72,33 +71,48 @@ double compute_squared_distance_bbox(
     const xt::xtensor_fixed<double, xt::xshape<2, 3>>& b,
     const xt::xtensor_fixed<double, xt::xshape<3>>& x);
 
-/// Compute squared distance from a given point to the nearest point on
-/// a cell (only first order convex cells are supported at this stage)
-/// Uses the GJK algorithm, see geometry::compute_distance_gjk for
-/// details.
-///
-/// @note Currently a convex hull approximation of linearized geometry.
-///
-/// @param[in] mesh Mesh containing the mesh entity
+/// Compute the distance vector from a set of points to a set of mesh entities
+/// (local to process). The distance is computed between the ith row in the
+/// input points and the ith entry in the input entities.
+/// @param[in] mesh The mesh
 /// @param[in] dim The topological dimension of the mesh entity
-/// @param[in] index The index of the mesh entity (local to process)
-/// @param[in] p The point from which to compouted the shortest distance
-/// to the mesh to compute the Point
-/// @return shortest squared distance from p to entity
-double squared_distance(const mesh::Mesh& mesh, int dim, std::int32_t index,
-                        const xt::xtensor_fixed<double, xt::xshape<1, 3>>& p);
+/// @param[in] entities The list of entities (local to process)
+/// @param[in] points The set of poitns
+/// @return A two dimensional array of distance vectors, where the ith row
+/// corresponds to the distance between the ith input entry and the ith input
+/// point
+xt::xtensor<double, 2> distance(const mesh::Mesh& mesh, int dim,
+                                const xtl::span<const std::int32_t>& entities,
+                                const xt::xtensor<double, 2>& points);
 
-/// From the given Mesh, select up to n cells (local to process) from the list
-/// which actually collide with point p. n may be zero (selects all valid
-/// cells). Less than n cells may be returned.
+/// Compute the squared distance from a set of points to a set of mesh entities.
+/// The distance is computed between the ith row in the input points and the ith
+/// entry in the input entities
+/// Uses the GJK algorithm, see geometry::compute_distance_gjk for details.
+/// @note Currently a convex hull approximation of linearized geometry.
+/// @param[in] mesh Mesh containing the entities
+/// @param[in] dim The topological dimension of the mesh entities
+/// @param[in] entities The indices of the mesh entities (local to process)
+/// @param[in] p The set points from which to computed the shortest distance
+/// between the ith point and ith entity
+/// @return Shortest squared distance from points[i] to entities[i]
+xt::xtensor<double, 1>
+squared_distance(const mesh::Mesh& mesh, int dim,
+                 const xtl::span<const std::int32_t>& entities,
+                 const xt::xtensor<double, 2>& points);
+
+/// From the given Mesh, find which cells actually collide with a set of points.
+/// For the ith point, we supply a set of candidate cells.
+/// Uses the GJK algorithm, see geometry::compute_distance_gjk for details.
 /// @param[in] mesh Mesh
-/// @param[in] candidate_cells List of cell indices to test
-/// @param[in] p Point to check for collision
-/// @param[in] n Maximum number of positive results to return
-/// @return List of cells which collide with point
-std::vector<std::int32_t>
-select_colliding_cells(const dolfinx::mesh::Mesh& mesh,
-                       const xtl::span<const std::int32_t>& candidate_cells,
-                       const xt::xtensor_fixed<double, xt::xshape<1, 3>>& p,
-                       int n);
+/// @param[in] candidate_cells Adjacency list where the ith node corresponds to
+/// the possible collidinge entities of the ith point
+/// @param[in] p The points to check for collision
+/// @return Adjacency list where the ith node has the list of entities (local to
+/// process) that actually collide with the ith point.
+/// @note There might be nodes with no entries in the adjacency list
+dolfinx::graph::AdjacencyList<int> select_colliding_cells(
+    const dolfinx::mesh::Mesh& mesh,
+    const dolfinx::graph::AdjacencyList<int>& candidate_cells,
+    const xt::xtensor<double, 2>& points);
 } // namespace dolfinx::geometry

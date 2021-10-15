@@ -146,9 +146,9 @@ def test_eval(V, W, Q, mesh):
     x0 = (mesh.geometry.x[0] + mesh.geometry.x[1]) / 2.0
     tree = geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
     cell_candidates = geometry.compute_collisions(tree, x0)
-    cell = dolfinx.cpp.geometry.select_colliding_cells(mesh, cell_candidates.array, x0, 1)
-
-    assert np.allclose(u3.eval(x0, cell)[:3], u2.eval(x0, cell), rtol=1e-15, atol=1e-15)
+    cell = dolfinx.cpp.geometry.select_colliding_cells(mesh, cell_candidates, x0)
+    first_cell = cell.links(0)[0]
+    assert np.allclose(u3.eval(x0, first_cell)[:3], u2.eval(x0, first_cell), rtol=1e-15, atol=1e-15)
 
 
 @skip_in_parallel
