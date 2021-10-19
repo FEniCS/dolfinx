@@ -77,7 +77,7 @@ double compute_squared_distance_bbox(
 /// @param[in] mesh The mesh
 /// @param[in] dim The topological dimension of the mesh entity
 /// @param[in] entities The list of entities (local to process)
-/// @param[in] points The set of poitns
+/// @param[in] points The set of points
 /// @return A two dimensional array of vectors, where the ith row
 /// corresponds to the shortest vector beteen the between the ith entity in
 /// entities and the ith row in points
