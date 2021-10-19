@@ -30,23 +30,19 @@ constexpr bool is_leaf(const std::array<int, 2>& bbox)
 bool point_in_bbox(const xt::xtensor_fixed<double, xt::xshape<2, 3>>& b,
                    const xt::xtensor_fixed<double, xt::xshape<3>>& x)
 {
-  auto b0 = xt::row(b, 0);
-  auto b1 = xt::row(b, 1);
   constexpr double rtol = 1e-14;
-  auto eps0 = rtol * (b1 - b0);
-  return xt::all(x >= (b0 - eps0)) and xt::all(x <= (b1 + eps0));
+  auto eps = rtol * (xt::row(b, 1) - xt::row(b, 0));
+  return xt::all(x >= xt::row(b, 0) - eps)
+         and xt::all(x <= xt::row(b, 1) + eps);
 }
 //-----------------------------------------------------------------------------
 bool bbox_in_bbox(const xt::xtensor_fixed<double, xt::xshape<2, 3>>& a,
                   const xt::xtensor_fixed<double, xt::xshape<2, 3>>& b)
 {
   constexpr double rtol = 1e-14;
-  auto b0 = xt::row(b, 0);
-  auto b1 = xt::row(b, 1);
-  auto a0 = xt::row(a, 0);
-  auto a1 = xt::row(a, 1);
-  auto eps0 = rtol * (b1 - b0);
-  return xt::all(b0 - eps0 <= a1) and xt::all(b1 + eps0 >= a0);
+  auto eps = rtol * (xt::row(b, 1) - xt::row(b, 0));
+  return xt::all(xt::row(b, 0) - eps <= xt::row(a, 1))
+         and xt::all(xt::row(b, 1) + eps >= xt::row(a, 0));
 }
 //-----------------------------------------------------------------------------
 // Compute closest entity {closest_entity, R2} (recursive)
@@ -181,9 +177,9 @@ void _compute_collisions_tree(const geometry::BoundingBoxTree& A,
   else if (node_A > node_B)
   {
     // At this point, we know neither is a leaf so descend the largest
-    // tree first. Note that nodes are added in reverse order with the top
-    // bounding box at the end so the largest tree (the one with the the
-    // most boxes left to traverse) has the largest node number.
+    // tree first. Note that nodes are added in reverse order with the
+    // top bounding box at the end so the largest tree (the one with the
+    // the most boxes left to traverse) has the largest node number.
     _compute_collisions_tree(A, B, bbox_A[0], node_B, entities);
     _compute_collisions_tree(A, B, bbox_A[1], node_B, entities);
   }
@@ -248,9 +244,9 @@ geometry::compute_collisions(const BoundingBoxTree& tree,
   entities.reserve(num_points);
   if (tree.num_bboxes() > 0)
   {
-    for (std::size_t i = 0; i < num_points; i++)
+    for (std::size_t p = 0; p < num_points; ++p)
     {
-      _compute_collisions_point(tree, xt::row(points, i), tree.num_bboxes() - 1,
+      _compute_collisions_point(tree, xt::row(points, p), tree.num_bboxes() - 1,
                                 entities);
       offsets.push_back(entities.size());
     }
@@ -272,10 +268,9 @@ double geometry::compute_squared_distance_bbox(
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t> geometry::compute_closest_entity(
     const BoundingBoxTree& tree, const BoundingBoxTree& midpoint_tree,
-    xt::xtensor<double, 2>& points, const mesh::Mesh& mesh)
+    const xt::xtensor<double, 2>& points, const mesh::Mesh& mesh)
 {
   assert(points.shape(1) == 3);
-
   const std::size_t num_points = points.shape(0);
   if (tree.num_bboxes() == 0)
     return std::vector<std::int32_t>(num_points, -1);
@@ -287,8 +282,9 @@ std::vector<std::int32_t> geometry::compute_closest_entity(
     entities.reserve(points.shape(0));
     for (std::size_t i = 0; i < num_points; i++)
     {
-      // Use midpoint tree to find intial closest entity to the point
-      // Start by using a leaf node as the initial guess for the input entity
+      // Use midpoint tree to find initial closest entity to the point.
+      // Start by using a leaf node as the initial guess for the input
+      // entity
       xt::xtensor_fixed<double, xt::xshape<3>> diff
           = xt::row(midpoint_tree.get_bbox(initial_entity), 0);
       diff -= xt::row(points, i);
@@ -304,11 +300,11 @@ std::vector<std::int32_t> geometry::compute_closest_entity(
                                                 static_cast<std::size_t>(3)}),
           midpoint_tree.num_bboxes() - 1, mesh, 0, R2);
 
-      // Use a recursive search through the bounding box tree to determine which
-      // entity is actually closest.
-      // Uses the entity with the closest midpoint as initial guess, and the
-      // distance from the midpoint to the point of interest as the initial
-      // search radius.
+      // Use a recursive search through the bounding box tree to
+      // determine which entity is actually closest.
+      // Uses the entity with the closest midpoint as initial guess, and
+      // the distance from the midpoint to the point of interest as the
+      // initial search radius.
       const auto [index, distance2] = _compute_closest_entity(
           tree,
           xt::reshape_view(xt::row(points, i), {static_cast<std::size_t>(1),
@@ -347,6 +343,7 @@ geometry::shortest_vector(const mesh::Mesh& mesh, int dim,
       for (std::size_t i = 0; i < dofs.size(); ++i)
         for (std::size_t j = 0; j < 3; ++j)
           nodes(i, j) = geom_dofs(dofs[i], j);
+
       xt::row(distances, e) = geometry::compute_distance_gjk(
           xt::reshape_view(xt::row(points, e), {static_cast<std::size_t>(1),
                                                 static_cast<std::size_t>(3)}),
@@ -385,6 +382,7 @@ geometry::shortest_vector(const mesh::Mesh& mesh, int dim,
       for (std::size_t i = 0; i < entity_dofs.size(); i++)
         for (std::size_t j = 0; j < 3; ++j)
           nodes(i, j) = geom_dofs(dofs[entity_dofs[i]], j);
+
       xt::row(distances, e) = geometry::compute_distance_gjk(
           xt::reshape_view(xt::row(points, e), {static_cast<std::size_t>(1),
                                                 static_cast<std::size_t>(3)}),
@@ -403,36 +401,36 @@ geometry::squared_distance(const mesh::Mesh& mesh, int dim,
                      {1});
 }
 //-------------------------------------------------------------------------------
-dolfinx::graph::AdjacencyList<int> geometry::select_colliding_cells(
+graph::AdjacencyList<std::int32_t> geometry::select_colliding_cells(
     const mesh::Mesh& mesh,
-    const dolfinx::graph::AdjacencyList<int>& candidate_cells,
+    const graph::AdjacencyList<std::int32_t>& candidate_cells,
     const xt::xtensor<double, 2>& points)
 {
-
-  const std::int32_t num_nodes = candidate_cells.num_nodes();
   std::vector<std::int32_t> offsets = {0};
-  offsets.reserve(num_nodes + 1);
+  offsets.reserve(candidate_cells.num_nodes() + 1);
   std::vector<std::int32_t> colliding_cells;
   colliding_cells.reserve(candidate_cells.offsets().back());
 
   const double eps2 = 1e-20;
   const int tdim = mesh.topology().dim();
   std::vector<std::int32_t> result;
-  for (std::int32_t i = 0; i < num_nodes; i++)
+  for (std::int32_t i = 0; i < candidate_cells.num_nodes(); i++)
   {
-
     auto cells = candidate_cells.links(i);
-    std::size_t num_cells = cells.size();
-    xt::xtensor<double, 2> _point({num_cells, static_cast<std::size_t>(3)});
-    for (std::size_t j = 0; j < num_cells; j++)
+    xt::xtensor<double, 2> _point({cells.size(), static_cast<std::size_t>(3)});
+    for (std::size_t j = 0; j < cells.size(); j++)
       xt::row(_point, j) = xt::row(points, i);
+
     xt::xtensor<double, 1> distances_sq
         = geometry::squared_distance(mesh, tdim, cells, _point);
     for (std::size_t j = 0; j < cells.size(); j++)
       if (distances_sq[j] < eps2)
         colliding_cells.push_back(cells[j]);
+
     offsets.push_back(colliding_cells.size());
   }
-  return dolfinx::graph::AdjacencyList<int>(colliding_cells, offsets);
+
+  return graph::AdjacencyList<std::int32_t>(std::move(colliding_cells),
+                                            std::move(offsets));
 }
 //-------------------------------------------------------------------------------

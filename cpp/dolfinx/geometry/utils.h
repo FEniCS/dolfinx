@@ -120,6 +120,6 @@ squared_distance(const mesh::Mesh& mesh, int dim,
 /// @note There may be nodes with no entries in the adjacency list
 dolfinx::graph::AdjacencyList<int> select_colliding_cells(
     const dolfinx::mesh::Mesh& mesh,
-    const dolfinx::graph::AdjacencyList<int>& candidate_cells,
+    const dolfinx::graph::AdjacencyList<std::int32_t>& candidate_cells,
     const xt::xtensor<double, 2>& points);
 } // namespace dolfinx::geometry
