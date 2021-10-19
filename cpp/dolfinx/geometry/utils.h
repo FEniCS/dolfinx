@@ -49,7 +49,7 @@ compute_collisions(const BoundingBoxTree& tree0, const BoundingBoxTree& tree1);
 /// @param[in] points The points (shape=(num_points, 3))
 /// @return An adjacency list where the ith link corresponds to the
 /// bounding box leaves (local to process) that contains the ith point
-dolfinx::graph::AdjacencyList<std::int32_t>
+graph::AdjacencyList<std::int32_t>
 compute_collisions(const BoundingBoxTree& tree,
                    const xt::xtensor<double, 2>& points);
 
@@ -118,8 +118,8 @@ squared_distance(const mesh::Mesh& mesh, int dim,
 /// @return Adjacency list where the ith node is the list of entities
 /// (local to process) that collide with the ith point
 /// @note There may be nodes with no entries in the adjacency list
-dolfinx::graph::AdjacencyList<int> select_colliding_cells(
-    const dolfinx::mesh::Mesh& mesh,
-    const dolfinx::graph::AdjacencyList<std::int32_t>& candidate_cells,
+graph::AdjacencyList<int> select_colliding_cells(
+    const mesh::Mesh& mesh,
+    const graph::AdjacencyList<std::int32_t>& candidate_cells,
     const xt::xtensor<double, 2>& points);
 } // namespace dolfinx::geometry

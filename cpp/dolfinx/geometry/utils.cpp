@@ -252,17 +252,6 @@ geometry::compute_collisions(const BoundingBoxTree& tree,
                                             std::move(offsets));
 }
 //-----------------------------------------------------------------------------
-double geometry::compute_squared_distance_bbox(
-    const xt::xtensor_fixed<double, xt::xshape<2, 3>>& b,
-    const xt::xtensor_fixed<double, xt::xshape<3>>& x)
-{
-  const xt::xtensor_fixed<double, xt::xshape<3>> d0 = x - xt::row(b, 0);
-  const xt::xtensor_fixed<double, xt::xshape<3>> d1 = x - xt::row(b, 1);
-  auto _d0 = xt::where(d0 > 0.0, 0, d0);
-  auto _d1 = xt::where(d1 < 0.0, 0, d1);
-  return xt::norm_sq(_d0)() + xt::norm_sq(_d1)();
-}
-//-----------------------------------------------------------------------------
 std::vector<std::int32_t> geometry::compute_closest_entity(
     const BoundingBoxTree& tree, const BoundingBoxTree& midpoint_tree,
     const xt::xtensor<double, 2>& points, const mesh::Mesh& mesh)
@@ -314,6 +303,17 @@ std::vector<std::int32_t> geometry::compute_closest_entity(
   }
 }
 
+//-----------------------------------------------------------------------------
+double geometry::compute_squared_distance_bbox(
+    const xt::xtensor_fixed<double, xt::xshape<2, 3>>& b,
+    const xt::xtensor_fixed<double, xt::xshape<3>>& x)
+{
+  const xt::xtensor_fixed<double, xt::xshape<3>> d0 = x - xt::row(b, 0);
+  const xt::xtensor_fixed<double, xt::xshape<3>> d1 = x - xt::row(b, 1);
+  auto _d0 = xt::where(d0 > 0.0, 0, d0);
+  auto _d1 = xt::where(d1 < 0.0, 0, d1);
+  return xt::norm_sq(_d0)() + xt::norm_sq(_d1)();
+}
 //-----------------------------------------------------------------------------
 xt::xtensor<double, 2>
 geometry::shortest_vector(const mesh::Mesh& mesh, int dim,
