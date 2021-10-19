@@ -24,14 +24,17 @@ from dolfinx.fem.function import (Constant, Expression, Function,
                                   FunctionSpace, TensorFunctionSpace,
                                   VectorFunctionSpace)
 from dolfinx.fem.problem import LinearProblem, NonlinearProblem
-from dolfinx.cpp.fem import create_sparsity_pattern as _create_sparsity_pattern
+import typing
+from dolfinx.cpp.fem import (create_sparsity_pattern as _create_sparsity_pattern,
+                             Form_complex128 as _FormComplex,
+                             Form_float64 as _FormReal)
 
 
-def create_sparsity_pattern(a):
+def create_sparsity_pattern(a: typing.Union[_FormComplex, _FormReal]):
     """Create a sparsity pattern from a bilinear form"""
     topology = a.mesh.topology
-    dofmap0 = a.function_space[0].dofmap
-    dofmap1 = a.function_space[1].dofmap
+    dofmap0 = a.function_spaces[0].dofmap
+    dofmap1 = a.function_spaces[1].dofmap
     types = a.integral_types
     return _create_sparsity_pattern(topology, [dofmap0, dofmap1], types)
 
