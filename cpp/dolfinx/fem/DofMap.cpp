@@ -187,6 +187,13 @@ fem::transpose_dofmap(const graph::AdjacencyList<std::int32_t>& dofmap,
                                             std::move(index_offsets));
 }
 //-----------------------------------------------------------------------------
+/// Equality operator
+bool DofMap::operator==(const DofMap& map) const
+{
+  return this->_index_map_bs == map._index_map_bs
+         and this->_dofmap == map._dofmap and this->_bs == map._bs;
+}
+//-----------------------------------------------------------------------------
 int DofMap::bs() const noexcept { return _bs; }
 //-----------------------------------------------------------------------------
 DofMap DofMap::extract_sub_dofmap(const std::vector<int>& component) const
