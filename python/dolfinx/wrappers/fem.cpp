@@ -64,8 +64,13 @@ void declare_functions(py::module& m)
       [](dolfinx::fem::Form<T>& form)
       {
         auto [coeffs, cstride] = dolfinx::fem::pack_coefficients(form);
-        int shape0 = cstride == 0 ? 0 : coeffs.size() / cstride;
-        return as_pyarray(std::move(coeffs), std::array{shape0, cstride});
+        std::shared_ptr<const mesh::Mesh> mesh = form.mesh();
+        assert(mesh);
+        const int tdim = mesh->topology().dim();
+        const std::int32_t num_cells
+            = mesh->topology().index_map(tdim)->size_local()
+              + mesh->topology().index_map(tdim)->num_ghosts();
+        return as_pyarray(std::move(coeffs), std::array{num_cells, cstride});
       },
       "Pack coefficients for a Form.");
   m.def(
@@ -73,8 +78,13 @@ void declare_functions(py::module& m)
       [](dolfinx::fem::Expression<T>& e)
       {
         auto [coeffs, cstride] = dolfinx::fem::pack_coefficients(e);
-        int shape0 = cstride == 0 ? 0 : coeffs.size() / cstride;
-        return as_pyarray(std::move(coeffs), std::array{shape0, cstride});
+        std::shared_ptr<const mesh::Mesh> mesh = e.mesh();
+        assert(mesh);
+        const int tdim = mesh->topology().dim();
+        const std::int32_t num_cells
+            = mesh->topology().index_map(tdim)->size_local()
+              + mesh->topology().index_map(tdim)->num_ghosts();
+        return as_pyarray(std::move(coeffs), std::array{num_cells, cstride});
       },
       "Pack coefficients for an Expression.");
   m.def(
