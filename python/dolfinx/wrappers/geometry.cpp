@@ -38,7 +38,8 @@ void geometry(py::module& m)
       "compute_closest_entity",
       [](const dolfinx::geometry::BoundingBoxTree& tree,
          const dolfinx::geometry::BoundingBoxTree& midpoint_tree,
-         const py::array_t<double>& points, const dolfinx::mesh::Mesh& mesh)
+         const py::array_t<double, py::array::c_style>& points,
+         const dolfinx::mesh::Mesh& mesh)
       {
         const std::size_t p_s0 = points.ndim() == 1 ? 1 : points.shape(0);
         xt::xtensor<double, 2> _p
@@ -57,8 +58,9 @@ void geometry(py::module& m)
         }
         else
           throw std::runtime_error("Array has wrong ndim.");
-        return dolfinx::geometry::compute_closest_entity(tree, midpoint_tree,
-                                                         _p, mesh);
+
+        return as_pyarray(dolfinx::geometry::compute_closest_entity(
+            tree, midpoint_tree, _p, mesh));
       },
       py::arg("tree"), py::arg("midpoint_tree"), py::arg("points"),
       py::arg("mesh"));
