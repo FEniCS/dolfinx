@@ -77,13 +77,13 @@ _compute_closest_entity(const geometry::BoundingBoxTree& tree,
       // obtain exact distance to the convex hull of the entity
       if (r2 <= R2)
       {
-        const std::array<std::int32_t, 1> index = {bbox[1]};
         r2 = geometry::squared_distance(
-            mesh, tree.tdim(), index,
+            mesh, tree.tdim(), xtl::span(&bbox[1], 1),
             xt::reshape_view(point, {static_cast<std::size_t>(1),
                                      static_cast<std::size_t>(3)}))[0];
       }
     }
+
     // If entity is closer than best result so far, return it
     if (r2 <= R2)
     {
@@ -276,19 +276,15 @@ std::vector<std::int32_t> geometry::compute_closest_entity(
 {
   assert(points.shape(1) == 3);
 
-  std::vector<std::int32_t> entities;
-  entities.reserve(points.shape(0));
   const std::size_t num_points = points.shape(0);
   if (tree.num_bboxes() == 0)
-  {
-    for (std::size_t i = 0; i < num_points; i++)
-      entities.push_back(-1);
-    return entities;
-  }
+    return std::vector<std::int32_t>(num_points, -1);
   else
   {
     double R2;
     const double initial_entity = 0;
+    std::vector<std::int32_t> entities;
+    entities.reserve(points.shape(0));
     for (std::size_t i = 0; i < num_points; i++)
     {
       // Use midpoint tree to find intial closest entity to the point

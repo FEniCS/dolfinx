@@ -128,7 +128,8 @@ int _build_from_leaf(
     auto middle = std::next(leaf_bboxes.begin(), leaf_bboxes.size() / 2);
 
     std::nth_element(leaf_bboxes.begin(), middle, leaf_bboxes.end(),
-                     [axis](const auto& p0, const auto& p1) -> bool {
+                     [axis](const auto& p0, const auto& p1) -> bool
+                     {
                        const double x0 = p0.first[0][axis] + p0.first[1][axis];
                        const double x1 = p1.first[0][axis] + p1.first[1][axis];
                        return x0 < x1;
@@ -201,9 +202,8 @@ int _build_from_point(
   std::nth_element(
       points.begin(), middle, points.end(),
       [axis](const std::pair<std::array<double, 3>, std::int32_t>& p0,
-             const std::pair<std::array<double, 3>, std::int32_t>& p1) -> bool {
-        return p0.first[axis] < p1.first[axis];
-      });
+             const std::pair<std::array<double, 3>, std::int32_t>& p1) -> bool
+      { return p0.first[axis] < p1.first[axis]; });
 
   // Split bounding boxes into two groups and call recursively
   std::array bbox{_build_from_point(xtl::span(points.begin(), middle), bboxes,
@@ -371,7 +371,7 @@ BoundingBoxTree::get_bbox(std::size_t node) const
   xt::xtensor_fixed<double, xt::xshape<2, 3>> x;
   std::copy_n(std::next(_bbox_coordinates.begin(), 6 * node), 3, x.begin());
   std::copy_n(std::next(_bbox_coordinates.begin(), 6 * node + 3), 3,
-              x.begin() + 3);
+              std::next(x.begin(), 3));
   return x;
 }
 //-----------------------------------------------------------------------------
