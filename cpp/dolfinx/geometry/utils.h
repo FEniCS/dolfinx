@@ -43,7 +43,7 @@ compute_collisions(const BoundingBoxTree& tree0, const BoundingBoxTree& tree1);
 
 /// Compute all collisions between bounding boxes and for a set of points
 /// @param[in] tree The bounding box tree
-/// @param[in] points The points
+/// @param[in] points The points, shape (num_points, 3)
 /// @return An adjacency list  where the ith link corresponds to the  bounding
 /// box leaves (local to process) that contains the ith point
 dolfinx::graph::AdjacencyList<int>
@@ -55,7 +55,7 @@ compute_collisions(const BoundingBoxTree& tree,
 /// @param[in] tree The bounding box tree for the entities
 /// @param[in] midpoint_tree A bounding box tree with the midpoints of all the
 /// mesh entities.
-/// @param[in] points The set of points
+/// @param[in] points The set of points, shape (num_points, 3)
 /// @param[in] mesh The mesh
 /// @return List of closest entities (local to process) where the ith entry
 /// corresponds to the ith input point.
@@ -77,7 +77,7 @@ double compute_squared_distance_bbox(
 /// @param[in] mesh The mesh
 /// @param[in] dim The topological dimension of the mesh entity
 /// @param[in] entities The list of entities (local to process)
-/// @param[in] points The set of points
+/// @param[in] points The set of points, shape (num_points, 3)
 /// @return A two dimensional array of vectors, where the ith row
 /// corresponds to the shortest vector beteen the between the ith entity in
 /// entities and the ith row in points
@@ -95,7 +95,7 @@ shortest_vector(const mesh::Mesh& mesh, int dim,
 /// @param[in] dim The topological dimension of the mesh entities
 /// @param[in] entities The indices of the mesh entities (local to process)
 /// @param[in] points The set points from which to computed the shortest
-/// distance between the ith point and ith entity
+/// distance between the ith point and ith entity, shape (num_points, 3)
 /// @return Shortest squared distance from points[i] to entities[i]
 xt::xtensor<double, 1>
 squared_distance(const mesh::Mesh& mesh, int dim,
@@ -108,7 +108,7 @@ squared_distance(const mesh::Mesh& mesh, int dim,
 /// @param[in] mesh Mesh
 /// @param[in] candidate_cells Adjacency list where the ith node corresponds to
 /// the possible collidinge entities of the ith point
-/// @param[in] points The points to check for collision
+/// @param[in] points The points to check for collision, shape (num_points, 3)
 /// @return Adjacency list where the ith node has the list of entities (local to
 /// process) that actually collide with the ith point.
 /// @note There might be nodes with no entries in the adjacency list
