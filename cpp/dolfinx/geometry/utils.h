@@ -71,19 +71,20 @@ double compute_squared_distance_bbox(
     const xt::xtensor_fixed<double, xt::xshape<2, 3>>& b,
     const xt::xtensor_fixed<double, xt::xshape<3>>& x);
 
-/// Compute the distance vector from a set of points to a set of mesh entities
-/// (local to process). The distance is computed between the ith row in the
-/// input points and the ith entry in the input entities.
+/// Compute the shortest vector from a set of points to a set of mesh entities
+/// (local to process). The shortest vector is computed between the ith row in
+/// the input points and the ith entry in the input entities.
 /// @param[in] mesh The mesh
 /// @param[in] dim The topological dimension of the mesh entity
 /// @param[in] entities The list of entities (local to process)
 /// @param[in] points The set of poitns
-/// @return A two dimensional array of distance vectors, where the ith row
-/// corresponds to the distance between the ith input entry and the ith input
-/// point
-xt::xtensor<double, 2> distance(const mesh::Mesh& mesh, int dim,
-                                const xtl::span<const std::int32_t>& entities,
-                                const xt::xtensor<double, 2>& points);
+/// @return A two dimensional array of vectors, where the ith row
+/// corresponds to the shortest vector beteen the between the ith entity in
+/// entities and the ith row in points
+xt::xtensor<double, 2>
+shortest_vector(const mesh::Mesh& mesh, int dim,
+                const xtl::span<const std::int32_t>& entities,
+                const xt::xtensor<double, 2>& points);
 
 /// Compute the squared distance from a set of points to a set of mesh entities.
 /// The distance is computed between the ith row in the input points and the ith

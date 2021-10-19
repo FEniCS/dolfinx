@@ -324,9 +324,9 @@ std::vector<std::int32_t> geometry::compute_closest_entity(
 
 //-----------------------------------------------------------------------------
 xt::xtensor<double, 2>
-geometry::distance(const mesh::Mesh& mesh, int dim,
-                   const xtl::span<const std::int32_t>& entities,
-                   const xt::xtensor<double, 2>& points)
+geometry::shortest_vector(const mesh::Mesh& mesh, int dim,
+                          const xtl::span<const std::int32_t>& entities,
+                          const xt::xtensor<double, 2>& points)
 {
   assert(points.shape(1) == 3);
   const int tdim = mesh.topology().dim();
@@ -399,7 +399,8 @@ geometry::squared_distance(const mesh::Mesh& mesh, int dim,
                            const xtl::span<const std::int32_t>& entities,
                            const xt::xtensor<double, 2>& points)
 {
-  return xt::norm_sq(geometry::distance(mesh, dim, entities, points), {1});
+  return xt::norm_sq(geometry::shortest_vector(mesh, dim, entities, points),
+                     {1});
 }
 //-------------------------------------------------------------------------------
 dolfinx::graph::AdjacencyList<int> geometry::select_colliding_cells(
