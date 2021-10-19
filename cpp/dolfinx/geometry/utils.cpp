@@ -73,10 +73,9 @@ _compute_closest_entity(const geometry::BoundingBoxTree& tree,
       // obtain exact distance to the convex hull of the entity
       if (r2 <= R2)
       {
-        r2 = geometry::squared_distance(
-            mesh, tree.tdim(), xtl::span(&bbox[1], 1),
-            xt::reshape_view(point, {static_cast<std::size_t>(1),
-                                     static_cast<std::size_t>(3)}))[0];
+        r2 = geometry::squared_distance(mesh, tree.tdim(),
+                                        xtl::span(&bbox[1], 1),
+                                        xt::reshape_view(point, {1, 3}))[0];
       }
     }
 
@@ -280,9 +279,7 @@ std::vector<std::int32_t> geometry::compute_closest_entity(
       // As the midpoint tree only consist of points, the distance queries are
       // lightweight.
       const auto [m_index, m_distance2] = _compute_closest_entity(
-          midpoint_tree,
-          xt::reshape_view(xt::row(points, i), {static_cast<std::size_t>(1),
-                                                static_cast<std::size_t>(3)}),
+          midpoint_tree, xt::reshape_view(xt::row(points, i), {1, 3}),
           midpoint_tree.num_bboxes() - 1, mesh, 0, R2);
 
       // Use a recursive search through the bounding box tree to
@@ -291,9 +288,7 @@ std::vector<std::int32_t> geometry::compute_closest_entity(
       // the distance from the midpoint to the point of interest as the
       // initial search radius.
       const auto [index, distance2] = _compute_closest_entity(
-          tree,
-          xt::reshape_view(xt::row(points, i), {static_cast<std::size_t>(1),
-                                                static_cast<std::size_t>(3)}),
+          tree, xt::reshape_view(xt::row(points, i), {1, 3}),
           tree.num_bboxes() - 1, mesh, m_index, m_distance2);
 
       entities.push_back(index);
@@ -328,8 +323,7 @@ geometry::shortest_vector(const mesh::Mesh& mesh, int dim,
 
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
 
-  xt::xtensor<double, 2> distances(
-      {entities.size(), static_cast<std::size_t>(3)});
+  xt::xtensor<double, 2> distances({entities.size(), 3});
   if (dim == tdim)
   {
     for (std::size_t e = 0; e < entities.size(); e++)
@@ -341,9 +335,7 @@ geometry::shortest_vector(const mesh::Mesh& mesh, int dim,
           nodes(i, j) = geom_dofs(dofs[i], j);
 
       xt::row(distances, e) = geometry::compute_distance_gjk(
-          xt::reshape_view(xt::row(points, e), {static_cast<std::size_t>(1),
-                                                static_cast<std::size_t>(3)}),
-          nodes);
+          xt::reshape_view(xt::row(points, e), {1, 3}), nodes);
     }
   }
   else
@@ -354,7 +346,6 @@ geometry::shortest_vector(const mesh::Mesh& mesh, int dim,
     assert(e_to_c);
     auto c_to_e = mesh.topology_mutable().connectivity(tdim, dim);
     assert(c_to_e);
-
     for (std::size_t e = 0; e < entities.size(); e++)
     {
       const std::int32_t index = entities[e];
