@@ -49,7 +49,7 @@ compute_collisions(const BoundingBoxTree& tree0, const BoundingBoxTree& tree1);
 /// @param[in] points The points (shape=(num_points, 3))
 /// @return An adjacency list where the ith link corresponds to the
 /// bounding box leaves (local to process) that contains the ith point
-dolfinx::graph::AdjacencyList<int>
+dolfinx::graph::AdjacencyList<std::int32_t>
 compute_collisions(const BoundingBoxTree& tree,
                    const xt::xtensor<double, 2>& points);
 

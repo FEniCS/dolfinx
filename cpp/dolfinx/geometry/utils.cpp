@@ -233,18 +233,14 @@ geometry::compute_collisions(const BoundingBoxTree& tree0,
   return entities;
 }
 //-----------------------------------------------------------------------------
-dolfinx::graph::AdjacencyList<int>
+graph::AdjacencyList<std::int32_t>
 geometry::compute_collisions(const BoundingBoxTree& tree,
                              const xt::xtensor<double, 2>& points)
 {
-  const std::size_t num_points = points.shape(0);
-  std::vector<int> entities;
-  std::vector<std::int32_t> offsets({0});
-  offsets.reserve(num_points);
-  entities.reserve(num_points);
+  std::vector<std::int32_t> entities, offsets({0});
   if (tree.num_bboxes() > 0)
   {
-    for (std::size_t p = 0; p < num_points; ++p)
+    for (std::size_t p = 0; p < points.shape(0); ++p)
     {
       _compute_collisions_point(tree, xt::row(points, p), tree.num_bboxes() - 1,
                                 entities);
@@ -252,7 +248,8 @@ geometry::compute_collisions(const BoundingBoxTree& tree,
     }
   }
 
-  return dolfinx::graph::AdjacencyList<int>(entities, offsets);
+  return graph::AdjacencyList<std::int32_t>(std::move(entities),
+                                            std::move(offsets));
 }
 //-----------------------------------------------------------------------------
 double geometry::compute_squared_distance_bbox(
@@ -271,16 +268,15 @@ std::vector<std::int32_t> geometry::compute_closest_entity(
     const xt::xtensor<double, 2>& points, const mesh::Mesh& mesh)
 {
   assert(points.shape(1) == 3);
-  const std::size_t num_points = points.shape(0);
   if (tree.num_bboxes() == 0)
-    return std::vector<std::int32_t>(num_points, -1);
+    return std::vector<std::int32_t>(points.shape(0), -1);
   else
   {
     double R2;
     const double initial_entity = 0;
     std::vector<std::int32_t> entities;
     entities.reserve(points.shape(0));
-    for (std::size_t i = 0; i < num_points; i++)
+    for (std::size_t i = 0; i < points.shape(0); i++)
     {
       // Use midpoint tree to find initial closest entity to the point.
       // Start by using a leaf node as the initial guess for the input
@@ -383,12 +379,11 @@ geometry::shortest_vector(const mesh::Mesh& mesh, int dim,
         for (std::size_t j = 0; j < 3; ++j)
           nodes(i, j) = geom_dofs(dofs[entity_dofs[i]], j);
 
-      xt::row(distances, e) = geometry::compute_distance_gjk(
-          xt::reshape_view(xt::row(points, e), {static_cast<std::size_t>(1),
-                                                static_cast<std::size_t>(3)}),
-          nodes);
+      xt::row(distances, e) = compute_distance_gjk(
+          xt::reshape_view(xt::row(points, e), {1, 3}), nodes);
     }
   }
+
   return distances;
 }
 //-----------------------------------------------------------------------------
@@ -397,8 +392,7 @@ geometry::squared_distance(const mesh::Mesh& mesh, int dim,
                            const xtl::span<const std::int32_t>& entities,
                            const xt::xtensor<double, 2>& points)
 {
-  return xt::norm_sq(geometry::shortest_vector(mesh, dim, entities, points),
-                     {1});
+  return xt::norm_sq(shortest_vector(mesh, dim, entities, points), {1});
 }
 //-------------------------------------------------------------------------------
 graph::AdjacencyList<std::int32_t> geometry::select_colliding_cells(
@@ -409,15 +403,13 @@ graph::AdjacencyList<std::int32_t> geometry::select_colliding_cells(
   std::vector<std::int32_t> offsets = {0};
   offsets.reserve(candidate_cells.num_nodes() + 1);
   std::vector<std::int32_t> colliding_cells;
-  colliding_cells.reserve(candidate_cells.offsets().back());
-
-  const double eps2 = 1e-20;
+  constexpr double eps2 = 1e-20;
   const int tdim = mesh.topology().dim();
   std::vector<std::int32_t> result;
   for (std::int32_t i = 0; i < candidate_cells.num_nodes(); i++)
   {
     auto cells = candidate_cells.links(i);
-    xt::xtensor<double, 2> _point({cells.size(), static_cast<std::size_t>(3)});
+    xt::xtensor<double, 2> _point({cells.size(), 3});
     for (std::size_t j = 0; j < cells.size(); j++)
       xt::row(_point, j) = xt::row(points, i);
 
