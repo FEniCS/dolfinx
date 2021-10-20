@@ -75,13 +75,13 @@ double compute_squared_distance_bbox(
     const xt::xtensor_fixed<double, xt::xshape<2, 3>>& b,
     const xt::xtensor_fixed<double, xt::xshape<3>>& x);
 
-/// Compute the shortest vector from a point a mesh entity
+/// Compute the shortest vector from a mesh entity to a point
 /// @param[in] mesh The mesh
 /// @param[in] dim The topological dimension of the mesh entity
 /// @param[in] entities The list of entities (local to process)
 /// @param[in] points The set of points (shape=(num_points, 3))
 /// @return An array of vectors where the ith row is the shortest vector
-/// between the between the ith entity and the ith point
+/// from the ith entity and the ith point
 xt::xtensor<double, 2>
 shortest_vector(const mesh::Mesh& mesh, int dim,
                 const xtl::span<const std::int32_t>& entities,
