@@ -164,7 +164,7 @@ void geometry(py::module& m)
           return xt_as_pyarray(
               dolfinx::geometry::squared_distance(mesh, dim, indices, _p));
         });
-  m.def("select_colliding_cells",
+  m.def("compute_colliding_cells",
         [](const dolfinx::mesh::Mesh& mesh,
            const dolfinx::graph::AdjacencyList<int>& candidate_cells,
            const py::array_t<double>& points)
