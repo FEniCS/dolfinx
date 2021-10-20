@@ -187,8 +187,8 @@ void geometry(py::module& m)
           else
             throw std::runtime_error("Array has wrong ndim.");
 
-          return dolfinx::geometry::select_colliding_cells(mesh,
-                                                           candidate_cells, _p);
+          return dolfinx::geometry::compute_colliding_cells(
+              mesh, candidate_cells, _p);
         });
 
   // dolfinx::geometry::BoundingBoxTree
