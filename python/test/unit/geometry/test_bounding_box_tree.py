@@ -317,8 +317,8 @@ def test_compute_closest_entity_3d(dim):
     # cells
     if dim == mesh.topology.dim:
         colliding_cells = compute_colliding_cells(mesh, colliding_entity_bboxes, p_c)
-        if len(colliding_cells.links(0)) > 0:
-            assert numpy.isin(closest_entities[0], colliding_cells.links(0))
+        if len(colliding_cells) > 0:
+            assert numpy.isin(closest_entities[0], colliding_cells)
     else:
         if len(colliding_entity_bboxes.links(0)) > 0:
             assert numpy.isin(closest_entities[0], colliding_entity_bboxes.links(0))
