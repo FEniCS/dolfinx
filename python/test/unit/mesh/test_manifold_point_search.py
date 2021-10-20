@@ -22,7 +22,7 @@ def test_manifold_point_search():
     # Find cell colliding with point
     points = numpy.array([[0.5, 0.25, 0.75], [0.25, 0.5, 0.75]])
     cell_candidates = geometry.compute_collisions(bb, points)
-    colliding_cells = cpp.geometry.select_colliding_cells(mesh, cell_candidates, points)
+    colliding_cells = cpp.geometry.compute_colliding_cells(mesh, cell_candidates, points)
 
     # Extract vertices of cell
     indices = cpp.mesh.entities_to_geometry(

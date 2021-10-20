@@ -11,7 +11,7 @@ from dolfinx import (BoxMesh, UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh,
                      cpp)
 from dolfinx.geometry import (BoundingBoxTree, compute_closest_entity,
                               compute_collisions, compute_distance_gjk,
-                              create_midpoint_tree, select_colliding_cells)
+                              create_midpoint_tree, compute_colliding_cells)
 from dolfinx.mesh import locate_entities, locate_entities_boundary
 from dolfinx_utils.test.skips import skip_in_parallel
 from mpi4py import MPI
@@ -249,15 +249,14 @@ def test_compute_closest_entity_1d(dim):
     closest_entities = compute_closest_entity(tree, midpoint_tree, mesh, points)
 
     # Find which entity is colliding with known closest point on mesh
-
+    p_c = numpy.array([[0, 0, 0], [2 / N, 0, 0]])
     colliding_entity_bboxes = compute_collisions(tree, p_c)
 
     # Refine search by checking for actual collision if the entities are
     # cells
-    p_c = numpy.array([[0, 0, 0], [2 / N, 0, 0]])
     if dim == mesh.topology.dim:
 
-        colliding_cells = select_colliding_cells(mesh, colliding_entity_bboxes, p_c)
+        colliding_cells = compute_colliding_cells(mesh, colliding_entity_bboxes, p_c)
         for i in range(points.shape[0]):
             # If colliding entity is on process
             if len(colliding_cells.links(i)) > 0:
@@ -289,7 +288,7 @@ def test_compute_closest_entity_2d(dim):
     # Refine search by checking for actual collision if the entities are
     # cells
     if dim == mesh.topology.dim:
-        colliding_cells = select_colliding_cells(mesh, colliding_entity_bboxes, p_c)
+        colliding_cells = compute_colliding_cells(mesh, colliding_entity_bboxes, p_c)
         if len(colliding_cells.links(0)) > 0:
             assert numpy.isin(closest_entities[0], colliding_cells.links(0))
     else:
@@ -316,7 +315,7 @@ def test_compute_closest_entity_3d(dim):
 
     # Refine search by checking for actual collision if the entities are cells
     if dim == mesh.topology.dim:
-        colliding_cells = select_colliding_cells(mesh, colliding_entity_bboxes, p_c)
+        colliding_cells = compute_colliding_cells(mesh, colliding_entity_bboxes, p_c)
         if len(colliding_cells.links(0)) > 0:
             assert numpy.isin(closest_entities[0], colliding_cells.links(0))
     else:
@@ -344,7 +343,7 @@ def test_compute_closest_sub_entity(dim):
     # Refine search by checking for actual collision if the entities are
     # cells
     if dim == mesh.topology.dim:
-        colliding_cells = select_colliding_cells(mesh, colliding_entity_bboxes, p_c)
+        colliding_cells = compute_colliding_cells(mesh, colliding_entity_bboxes, p_c)
         if len(colliding_cells.links(0)) > 0:
             assert numpy.isin(closest_entities[0], colliding_cells.links(0))
     else:

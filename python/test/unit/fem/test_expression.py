@@ -46,7 +46,7 @@ def test_expression():
     local_map = []
     cells = dolfinx.geometry.compute_collisions(bb, points)
 
-    actual_cells = dolfinx.geometry.select_colliding_cells(mesh, cells, points)
+    actual_cells = dolfinx.geometry.compute_colliding_cells(mesh, cells, points)
     for i in range(actual_cells.num_nodes):
         if len(actual_cells.links(i)) > 0:
             local_map.append(i)

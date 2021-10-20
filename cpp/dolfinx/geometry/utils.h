@@ -114,7 +114,7 @@ squared_distance(const mesh::Mesh& mesh, int dim,
 /// @return Adjacency list where the ith node is the list of entities
 /// that collide with the ith point
 /// @note There may be nodes with no entries in the adjacency list
-graph::AdjacencyList<int> select_colliding_cells(
+graph::AdjacencyList<int> compute_colliding_cells(
     const mesh::Mesh& mesh,
     const graph::AdjacencyList<std::int32_t>& candidate_cells,
     const xt::xtensor<double, 2>& points);

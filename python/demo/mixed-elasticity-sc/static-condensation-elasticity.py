@@ -172,7 +172,7 @@ bb_tree = dolfinx.geometry.BoundingBoxTree(mesh, 2)
 # Check against standard table value
 p = np.array([48.0, 52.0, 0.0], dtype=np.float64)
 cell_candidates = dolfinx.geometry.compute_collisions(bb_tree, p)
-cells = dolfinx.cpp.geometry.select_colliding_cells(mesh, cell_candidates, p).array
+cells = dolfinx.cpp.geometry.compute_colliding_cells(mesh, cell_candidates, p).array
 
 uc.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 if len(cells) > 0:

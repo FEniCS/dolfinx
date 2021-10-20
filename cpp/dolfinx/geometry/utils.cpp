@@ -386,7 +386,7 @@ geometry::squared_distance(const mesh::Mesh& mesh, int dim,
   return xt::norm_sq(shortest_vector(mesh, dim, entities, points), {1});
 }
 //-------------------------------------------------------------------------------
-graph::AdjacencyList<std::int32_t> geometry::select_colliding_cells(
+graph::AdjacencyList<std::int32_t> geometry::compute_colliding_cells(
     const mesh::Mesh& mesh,
     const graph::AdjacencyList<std::int32_t>& candidate_cells,
     const xt::xtensor<double, 2>& points)
