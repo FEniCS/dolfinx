@@ -38,8 +38,7 @@ create_midpoint_tree(const mesh::Mesh& mesh, int tdim,
 /// process)
 /// @param[in] tree0 First BoundingBoxTree
 /// @param[in] tree1 Second BoundingBoxTree
-/// @return List of pairs of intersecting box indices (local to process)
-/// from each tree
+/// @return List of pairs of intersecting box indices from each tree
 std::vector<std::array<int, 2>>
 compute_collisions(const BoundingBoxTree& tree0, const BoundingBoxTree& tree1);
 
@@ -47,8 +46,8 @@ compute_collisions(const BoundingBoxTree& tree0, const BoundingBoxTree& tree1);
 /// points
 /// @param[in] tree The bounding box tree
 /// @param[in] points The points (shape=(num_points, 3))
-/// @return An adjacency list where the ith link corresponds to the
-/// bounding box leaves (local to process) that contains the ith point
+/// @return An adjacency list where the ith node corresponds to the
+/// bounding box leaves that contain the ith point
 graph::AdjacencyList<std::int32_t>
 compute_collisions(const BoundingBoxTree& tree,
                    const xt::xtensor<double, 2>& points);
@@ -62,36 +61,35 @@ compute_collisions(const BoundingBoxTree& tree,
 /// @param[in] mesh The mesh
 /// @return List of closest entities (local to process) where the ith
 /// entry corresponds to the ith input point
-/// @note Returns entity index -1 if the bounding box tree is empty
+/// @note Returns index -1 if the bounding box tree is empty
 std::vector<std::int32_t> compute_closest_entity(
     const BoundingBoxTree& tree, const BoundingBoxTree& midpoint_tree,
     const xt::xtensor<double, 2>& points, const mesh::Mesh& mesh);
 
-/// Compute squared distance between point and bounding box wih index
-/// "node". Returns zero if point is inside box.
+/// Compute squared distance between point and bounding box
+/// @param[in] b Bounding box coordinates
+/// @param[in] x A point
+/// @return The shortest distance between the bounding box `b` and the
+/// point `x`. Returns zero if `x` is inside box.
 double compute_squared_distance_bbox(
     const xt::xtensor_fixed<double, xt::xshape<2, 3>>& b,
     const xt::xtensor_fixed<double, xt::xshape<3>>& x);
 
-/// Compute the shortest vector from a set of points to a set of mesh
-/// entities (local to process). The shortest vector is computed between
-/// the ith row in the input points and the ith entry in the input
-/// entities.
+/// Compute the shortest vector from a point a mesh entity
 /// @param[in] mesh The mesh
 /// @param[in] dim The topological dimension of the mesh entity
 /// @param[in] entities The list of entities (local to process)
-/// @param[in] points The set of points, shape (num_points, 3)
-/// @return A two dimensional array of vectors, where the ith row
-/// corresponds to the shortest vector between the between the ith
-/// entity in entities and the ith row in points
+/// @param[in] points The set of points (shape=(num_points, 3))
+/// @return An array of vectors where the ith row is the shortest vector
+/// between the between the ith entity and the ith point
 xt::xtensor<double, 2>
 shortest_vector(const mesh::Mesh& mesh, int dim,
                 const xtl::span<const std::int32_t>& entities,
                 const xt::xtensor<double, 2>& points);
 
-/// Compute the squared distances from a set of points to a set of mesh
-/// entities. The distance is computed between the ith input points and
-/// the ith input entity.
+/// Compute the squared distance between a point and a mesh entity. The
+/// distance is computed between the ith input points and the ith input
+/// entity.
 /// @note Uses the GJK algorithm, see geometry::compute_distance_gjk for
 /// details.
 /// @note Uses a convex hull approximation of linearized geometry
@@ -99,24 +97,23 @@ shortest_vector(const mesh::Mesh& mesh, int dim,
 /// @param[in] dim The topological dimension of the mesh entities
 /// @param[in] entities The indices of the mesh entities (local to process)
 /// @param[in] points The set points from which to computed the shortest
-/// distance between the ith point and ith entity (shape=(num_points, 3))
-/// @return Squared distances from points[i] to entities[i]
+/// (shape=(num_points, 3))
+/// @return Squared shortest distance from points[i] to entities[i]
 xt::xtensor<double, 1>
 squared_distance(const mesh::Mesh& mesh, int dim,
                  const xtl::span<const std::int32_t>& entities,
                  const xt::xtensor<double, 2>& points);
 
-/// From the given Mesh, find which cells actually collide with a set of
-/// points. For the ith point, we supply a set of candidate cells.
+/// From a Mesh, find which cells collide with a set of points.
 /// @note Uses the GJK algorithm, see geometry::compute_distance_gjk for
-/// details.
-/// @param[in] mesh Mesh
-/// @param[in] candidate_cells Adjacency list where the ith node
-/// corresponds to the possible colliding entities with the ith point
+/// details
+/// @param[in] mesh The mesh
+/// @param[in] candidate_cells List of candidate colliding cells for the
+/// ith point in `points`
 /// @param[in] points The points to check for collision
 /// (shape=(num_points, 3))
 /// @return Adjacency list where the ith node is the list of entities
-/// (local to process) that collide with the ith point
+/// that collide with the ith point
 /// @note There may be nodes with no entries in the adjacency list
 graph::AdjacencyList<int> select_colliding_cells(
     const mesh::Mesh& mesh,
