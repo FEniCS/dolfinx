@@ -10,9 +10,8 @@ import pytest
 from dolfinx import (BoxMesh, UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh,
                      cpp)
 from dolfinx.geometry import (BoundingBoxTree, compute_closest_entity,
-                              compute_collisions,
-                              create_midpoint_tree, select_colliding_cells,
-                              compute_distance_gjk)
+                              compute_collisions, compute_distance_gjk,
+                              create_midpoint_tree, select_colliding_cells)
 from dolfinx.mesh import locate_entities, locate_entities_boundary
 from dolfinx_utils.test.skips import skip_in_parallel
 from mpi4py import MPI
@@ -34,9 +33,7 @@ def extract_geometricial_data(mesh, dim, entities):
 
 
 def expand_bbox(bbox):
-    """
-    Expand min max bbox to convex hull
-    """
+    """Expand min max bbox to convex hull"""
     return numpy.array([[bbox[0][0], bbox[0][1], bbox[0][2]],
                         [bbox[0][0], bbox[0][1], bbox[1][2]],
                         [bbox[0][0], bbox[1][1], bbox[0][2]],
@@ -48,10 +45,8 @@ def expand_bbox(bbox):
 
 
 def find_colliding_cells(mesh, bbox):
-    """
-    Given a mesh and a bounding box((xmin, ymin, zmin), (xmax, ymax, zmax))
-    find all colliding cells
-    """
+    """Given a mesh and a bounding box((xmin, ymin, zmin), (xmax, ymax,
+    zmax)) find all colliding cells"""
 
     # Find actual cells using known bounding box tree
     colliding_cells = []
@@ -79,9 +74,8 @@ def find_colliding_cells(mesh, bbox):
 @skip_in_parallel
 def test_padded_bbox(padding):
     """Test collision between two meshes separated by a distance of
-    epsilon, and check if padding the mesh creates a possible collision
-
-    """
+    epsilon, and check if padding the mesh creates a possible
+    collision"""
     eps = 1e-12
     x0 = numpy.array([0, 0, 0])
     x1 = numpy.array([1, 1, 1 - eps])
@@ -93,6 +87,7 @@ def test_padded_bbox(padding):
         pad = eps
     else:
         pad = 0
+
     bbox_0 = BoundingBoxTree(mesh_0, mesh_0.topology.dim, padding=pad)
     bbox_1 = BoundingBoxTree(mesh_1, mesh_1.topology.dim, padding=pad)
     collisions = compute_collisions(bbox_0, bbox_1)
@@ -191,10 +186,8 @@ def test_compute_collisions_tree_1d(point):
     tree_A = BoundingBoxTree(mesh_A, mesh_A.topology.dim)
     tree_B = BoundingBoxTree(mesh_B, mesh_B.topology.dim)
     entities = compute_collisions(tree_A, tree_B)
-
     entities_A = numpy.sort(numpy.unique([q[0] for q in entities]))
     entities_B = numpy.sort(numpy.unique([q[1] for q in entities]))
-
     assert numpy.allclose(entities_A, cells_A)
     assert numpy.allclose(entities_B, cells_B)
 
@@ -213,10 +206,8 @@ def test_compute_collisions_tree_2d(point):
 
     entities_A = numpy.sort(numpy.unique([q[0] for q in entities]))
     entities_B = numpy.sort(numpy.unique([q[1] for q in entities]))
-
     cells_A = find_colliding_cells(mesh_A, tree_B.get_bbox(tree_B.num_bboxes - 1))
     cells_B = find_colliding_cells(mesh_B, tree_A.get_bbox(tree_A.num_bboxes - 1))
-
     assert numpy.allclose(entities_A, cells_A)
     assert numpy.allclose(entities_B, cells_B)
 
@@ -255,13 +246,15 @@ def test_compute_closest_entity_1d(dim):
     num_entities_local = mesh.topology.index_map(dim).size_local + mesh.topology.index_map(dim).num_ghosts
     entities = numpy.arange(num_entities_local, dtype=numpy.int32)
     midpoint_tree = create_midpoint_tree(mesh, dim, entities)
-    closest_entities = compute_closest_entity(tree, midpoint_tree, points, mesh)
+    closest_entities = compute_closest_entity(tree, midpoint_tree, mesh, points)
 
     # Find which entity is colliding with known closest point on mesh
-    p_c = numpy.array([[0, 0, 0], [2 / N, 0, 0]])
 
     colliding_entity_bboxes = compute_collisions(tree, p_c)
-    # Refine search by checking for actual collision if the entities are cells
+
+    # Refine search by checking for actual collision if the entities are
+    # cells
+    p_c = numpy.array([[0, 0, 0], [2 / N, 0, 0]])
     if dim == mesh.topology.dim:
 
         colliding_cells = select_colliding_cells(mesh, colliding_entity_bboxes, p_c)
@@ -271,7 +264,8 @@ def test_compute_closest_entity_1d(dim):
                 assert numpy.isin(closest_entities[i], colliding_cells.links(i))
     else:
         for i in range(points.shape[0]):
-            # Only check closest entity if any bounding box on the process intersects with the point
+            # Only check closest entity if any bounding box on the
+            # process intersects with the point
             if colliding_entity_bboxes.links(i) > 0:
                 assert numpy.isin(closest_entities[i], colliding_entity_bboxes.links(i))
 
@@ -286,12 +280,14 @@ def test_compute_closest_entity_2d(dim):
     midpoint_tree = create_midpoint_tree(mesh, dim, entities)
 
     # Find which entity is colliding with known closest point on mesh
-    p_c = numpy.array([0, 0, 0])
-    closest_entities = compute_closest_entity(tree, midpoint_tree, points, mesh)
+    closest_entities = compute_closest_entity(tree, midpoint_tree, mesh, points)
 
     # Find which entity is colliding with known closest point on mesh
+    p_c = numpy.array([0, 0, 0])
     colliding_entity_bboxes = compute_collisions(tree, p_c)
-    # Refine search by checking for actual collision if the entities are cells
+
+    # Refine search by checking for actual collision if the entities are
+    # cells
     if dim == mesh.topology.dim:
         colliding_cells = select_colliding_cells(mesh, colliding_entity_bboxes, p_c)
         if len(colliding_cells.links(0)) > 0:
@@ -312,11 +308,12 @@ def test_compute_closest_entity_3d(dim):
     entities = numpy.arange(num_entities_local, dtype=numpy.int32)
     midpoint_tree = create_midpoint_tree(mesh, dim, entities)
 
-    closest_entities = compute_closest_entity(tree, midpoint_tree, points, mesh)
+    closest_entities = compute_closest_entity(tree, midpoint_tree, mesh, points)
 
     # Find which entity is colliding with known closest point on mesh
     p_c = numpy.array([0.9, 0, 1])
     colliding_entity_bboxes = compute_collisions(tree, p_c)
+
     # Refine search by checking for actual collision if the entities are cells
     if dim == mesh.topology.dim:
         colliding_cells = select_colliding_cells(mesh, colliding_entity_bboxes, p_c)
@@ -329,9 +326,7 @@ def test_compute_closest_entity_3d(dim):
 
 @pytest.mark.parametrize("dim", [1, 2, 3])
 def test_compute_closest_sub_entity(dim):
-    """
-    Compute distance from subset of cells in a mesh to a point inside the mesh
-    """
+    """Compute distance from subset of cells in a mesh to a point inside the mesh"""
     ref_distance = 0.31
     points = numpy.array([0.5 + ref_distance, 0.5, 0.5])
     mesh = UnitCubeMesh(MPI.COMM_WORLD, 8, 8, 8)
@@ -340,12 +335,14 @@ def test_compute_closest_sub_entity(dim):
     left_entities = locate_entities(mesh, dim, lambda x: x[0] <= 0.5)
     tree = BoundingBoxTree(mesh, dim, left_entities)
     midpoint_tree = create_midpoint_tree(mesh, dim, left_entities)
-    closest_entities = compute_closest_entity(tree, midpoint_tree, points, mesh)
+    closest_entities = compute_closest_entity(tree, midpoint_tree, mesh, points)
 
     # Find which entity is colliding with known closest point on mesh
     p_c = numpy.array([0.5, 0.5, 0.5])
     colliding_entity_bboxes = compute_collisions(tree, p_c)
-    # Refine search by checking for actual collision if the entities are cells
+
+    # Refine search by checking for actual collision if the entities are
+    # cells
     if dim == mesh.topology.dim:
         colliding_cells = select_colliding_cells(mesh, colliding_entity_bboxes, p_c)
         if len(colliding_cells.links(0)) > 0:
@@ -401,9 +398,7 @@ def test_sub_bbtree():
 @pytest.mark.parametrize("ct", [cpp.mesh.CellType.hexahedron, cpp.mesh.CellType.tetrahedron])
 @pytest.mark.parametrize("N", [7, 13])
 def test_sub_bbtree_box(ct, N):
-    """
-    Test that the bounding box of the stem of the bounding box tree is what we expect
-    """
+    """Test that the bounding box of the stem of the bounding box tree is what we expect"""
     mesh = UnitCubeMesh(MPI.COMM_WORLD, N, N, N, cell_type=ct)
     tdim = mesh.topology.dim
     fdim = tdim - 1

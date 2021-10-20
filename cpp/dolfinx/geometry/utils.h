@@ -52,19 +52,18 @@ graph::AdjacencyList<std::int32_t>
 compute_collisions(const BoundingBoxTree& tree,
                    const xt::xtensor<double, 2>& points);
 
-/// Compute closest mesh entity (local to process) for the topological
-/// distance of the bounding box tree and distance and a point
+/// Compute closest mesh entity to a point
 /// @param[in] tree The bounding box tree for the entities
 /// @param[in] midpoint_tree A bounding box tree with the midpoints of
-/// all the mesh entities
-/// @param[in] points The set of points (shape=(num_points, 3))
+/// all the mesh entities. This is used to accelerate the search
 /// @param[in] mesh The mesh
-/// @return List of closest entities (local to process) where the ith
-/// entry corresponds to the ith input point
+/// @param[in] points The set of points (shape=(num_points, 3))
+/// @return Index of the closest mesh entity to a point. The ith entry
+/// is the index of the closest entity to the ith input point.
 /// @note Returns index -1 if the bounding box tree is empty
 std::vector<std::int32_t> compute_closest_entity(
     const BoundingBoxTree& tree, const BoundingBoxTree& midpoint_tree,
-    const xt::xtensor<double, 2>& points, const mesh::Mesh& mesh);
+    const mesh::Mesh& mesh, const xt::xtensor<double, 2>& points);
 
 /// Compute squared distance between point and bounding box
 /// @param[in] b Bounding box coordinates

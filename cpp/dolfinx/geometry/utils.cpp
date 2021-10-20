@@ -253,7 +253,7 @@ geometry::compute_collisions(const BoundingBoxTree& tree,
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t> geometry::compute_closest_entity(
     const BoundingBoxTree& tree, const BoundingBoxTree& midpoint_tree,
-    const xt::xtensor<double, 2>& points, const mesh::Mesh& mesh)
+    const mesh::Mesh& mesh, const xt::xtensor<double, 2>& points)
 {
   assert(points.shape(1) == 3);
   if (tree.num_bboxes() == 0)
