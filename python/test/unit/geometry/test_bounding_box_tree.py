@@ -289,8 +289,8 @@ def test_compute_closest_entity_2d(dim):
     # cells
     if dim == mesh.topology.dim:
         colliding_cells = compute_colliding_cells(mesh, colliding_entity_bboxes, p_c)
-        if len(colliding_cells.links(0)) > 0:
-            assert numpy.isin(closest_entities[0], colliding_cells.links(0))
+        if len(colliding_cells) > 0:
+            assert numpy.isin(closest_entities[0], colliding_cells)
     else:
         if len(colliding_entity_bboxes.links(0)) > 0:
             assert numpy.isin(closest_entities[0], colliding_entity_bboxes.links(0))
@@ -313,7 +313,8 @@ def test_compute_closest_entity_3d(dim):
     p_c = numpy.array([0.9, 0, 1])
     colliding_entity_bboxes = compute_collisions(tree, p_c)
 
-    # Refine search by checking for actual collision if the entities are cells
+    # Refine search by checking for actual collision if the entities are
+    # cells
     if dim == mesh.topology.dim:
         colliding_cells = compute_colliding_cells(mesh, colliding_entity_bboxes, p_c)
         if len(colliding_cells.links(0)) > 0:
@@ -344,8 +345,8 @@ def test_compute_closest_sub_entity(dim):
     # cells
     if dim == mesh.topology.dim:
         colliding_cells = compute_colliding_cells(mesh, colliding_entity_bboxes, p_c)
-        if len(colliding_cells.links(0)) > 0:
-            assert numpy.isin(closest_entities[0], colliding_cells.links(0))
+        if len(colliding_cells) > 0:
+            assert numpy.isin(closest_entities[0], colliding_cells)
     else:
         if len(colliding_entity_bboxes.links(0)) > 0:
             assert numpy.isin(closest_entities[0], colliding_entity_bboxes.links(0))
