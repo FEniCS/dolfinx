@@ -168,15 +168,29 @@ void geometry(py::module& m)
         [](const dolfinx::mesh::Mesh& mesh,
            const dolfinx::graph::AdjacencyList<int>& candidate_cells,
            const py::array_t<double>& points)
+            -> std::variant<dolfinx::graph::AdjacencyList<std::int32_t>,
+                            py::array_t<std::int32_t>>
         {
-          const std::size_t p_s0 = points.ndim() == 1 ? 1 : points.shape(0);
-          xt::xtensor<double, 2> _p
-              = xt::zeros<double>({p_s0, static_cast<std::size_t>(3)});
+          const int gdim = mesh.geometry().dim();
+          std::size_t p_s0 = points.ndim() == 1 ? 1 : points.shape(0);
+          xt::xtensor<double, 2> _p = xt::zeros<double>({p_s0, std::size_t(3)});
           auto px = points.unchecked();
-          if (px.ndim() == 1)
+          if (gdim > 1 and px.ndim() == 1)
           {
+            // Single point in 2D/3D
+            assert(px.shape(0) <= 3);
             for (py::ssize_t i = 0; i < px.shape(0); i++)
               _p(0, i) = px(i);
+            auto cells = dolfinx::geometry::compute_colliding_cells(
+                mesh, candidate_cells, _p);
+            return py::array_t<std::int32_t>(cells.array().size(),
+                                             cells.array().data());
+          }
+          else if (gdim == 1 and px.ndim() == 1)
+          {
+            // 1D problem
+            for (py::ssize_t i = 0; i < px.shape(0); i++)
+              _p(i, 0) = px(i);
           }
           else if (px.ndim() == 2)
           {
