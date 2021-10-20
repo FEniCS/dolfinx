@@ -64,8 +64,13 @@ void declare_functions(py::module& m)
       [](dolfinx::fem::Form<T>& form)
       {
         auto [coeffs, cstride] = dolfinx::fem::pack_coefficients(form);
-        int shape0 = cstride == 0 ? 0 : coeffs.size() / cstride;
-        return as_pyarray(std::move(coeffs), std::array{shape0, cstride});
+        std::shared_ptr<const mesh::Mesh> mesh = form.mesh();
+        assert(mesh);
+        const int tdim = mesh->topology().dim();
+        const std::int32_t num_cells
+            = mesh->topology().index_map(tdim)->size_local()
+              + mesh->topology().index_map(tdim)->num_ghosts();
+        return as_pyarray(std::move(coeffs), std::array{num_cells, cstride});
       },
       "Pack coefficients for a Form.");
   m.def(
@@ -73,8 +78,13 @@ void declare_functions(py::module& m)
       [](dolfinx::fem::Expression<T>& e)
       {
         auto [coeffs, cstride] = dolfinx::fem::pack_coefficients(e);
-        int shape0 = cstride == 0 ? 0 : coeffs.size() / cstride;
-        return as_pyarray(std::move(coeffs), std::array{shape0, cstride});
+        std::shared_ptr<const mesh::Mesh> mesh = e.mesh();
+        assert(mesh);
+        const int tdim = mesh->topology().dim();
+        const std::int32_t num_cells
+            = mesh->topology().index_map(tdim)->size_local()
+              + mesh->topology().index_map(tdim)->num_ghosts();
+        return as_pyarray(std::move(coeffs), std::array{num_cells, cstride});
       },
       "Pack coefficients for an Expression.");
   m.def(
@@ -497,6 +507,8 @@ void declare_form(py::module& m, const std::string& type)
       .def_property_readonly("function_spaces",
                              &dolfinx::fem::Form<T>::function_spaces)
       .def("integral_ids", &dolfinx::fem::Form<T>::integral_ids)
+      .def_property_readonly("integral_types",
+                             &dolfinx::fem::Form<T>::integral_types)
       .def_property_readonly("needs_facet_permutations",
                              &dolfinx::fem::Form<T>::needs_facet_permutations)
       .def(
