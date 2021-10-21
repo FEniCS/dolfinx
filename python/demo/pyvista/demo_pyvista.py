@@ -42,7 +42,7 @@ def int_u(x):
 
 
 mesh = dolfinx.UnitCubeMesh(MPI.COMM_WORLD, 4, 3, 5, cell_type=dolfinx.cpp.mesh.CellType.tetrahedron)
-V = dolfinx.FunctionSpace(mesh, ("CG", 1))
+V = dolfinx.FunctionSpace(mesh, ("Lagrange", 1))
 u = dolfinx.Function(V)
 u.interpolate(int_u)
 
@@ -287,7 +287,7 @@ def vel(x):
 
 
 mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, 6, 6, dolfinx.cpp.mesh.CellType.triangle)
-V = dolfinx.VectorFunctionSpace(mesh, ("CG", 2))
+V = dolfinx.VectorFunctionSpace(mesh, ("Lagrange", 2))
 uh = dolfinx.Function(V)
 uh.interpolate(vel)
 

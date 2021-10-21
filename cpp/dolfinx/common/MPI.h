@@ -189,8 +189,8 @@ graph::AdjacencyList<T> all_to_all(MPI_Comm comm,
 
   // Data size per destination rank
   std::vector<int> send_size(comm_size);
-  std::adjacent_difference(std::next(send_offsets.begin(), +1),
-                           send_offsets.end(), send_size.begin());
+  std::adjacent_difference(std::next(send_offsets.begin()), send_offsets.end(),
+                           send_size.begin());
 
   // Get received data sizes from each rank
   std::vector<int> recv_size(comm_size);
@@ -198,13 +198,12 @@ graph::AdjacencyList<T> all_to_all(MPI_Comm comm,
                mpi_type<int>(), comm);
 
   // Compute receive offset
-  std::vector<std::int32_t> recv_offset(comm_size + 1);
-  recv_offset[0] = 0;
+  std::vector<std::int32_t> recv_offset(comm_size + 1, 0);
   std::partial_sum(recv_size.begin(), recv_size.end(),
                    std::next(recv_offset.begin()));
 
   // Send/receive data
-  std::vector<T> recv_values(recv_offset[comm_size]);
+  std::vector<T> recv_values(recv_offset.back());
   MPI_Alltoallv(values_in.data(), send_size.data(), send_offsets.data(),
                 mpi_type<T>(), recv_values.data(), recv_size.data(),
                 recv_offset.data(), mpi_type<T>(), comm);

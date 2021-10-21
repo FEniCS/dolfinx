@@ -35,7 +35,7 @@ def test_RefineUnitCubeMesh_repartition():
     assert mesh.topology.index_map(0).size_global == 3135
     assert mesh.topology.index_map(3).size_global == 15120
 
-    Q = FunctionSpace(mesh, ("CG", 1))
+    Q = FunctionSpace(mesh, ("Lagrange", 1))
     assert Q
 
 
@@ -46,7 +46,7 @@ def test_RefineUnitCubeMesh_keep_partition():
     mesh = refine(mesh, redistribute=False)
     assert mesh.topology.index_map(0).size_global == 3135
     assert mesh.topology.index_map(3).size_global == 15120
-    Q = FunctionSpace(mesh, ("CG", 1))
+    Q = FunctionSpace(mesh, ("Lagrange", 1))
     assert Q
 
 
@@ -56,7 +56,7 @@ def test_refine_create_form():
     mesh.topology.create_entities(1)
     mesh = refine(mesh, redistribute=True)
 
-    V = dolfinx.FunctionSpace(mesh, ("CG", 1))
+    V = dolfinx.FunctionSpace(mesh, ("Lagrange", 1))
 
     # Define variational problem
     u = ufl.TrialFunction(V)
