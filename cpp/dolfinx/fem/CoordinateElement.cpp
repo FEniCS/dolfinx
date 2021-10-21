@@ -270,6 +270,9 @@ void CoordinateElement::pull_back(
     xt::xtensor<double, 2> Xk({1, tdim});
     std::vector<double> xk(cell_geometry.shape(1));
     xt::xtensor<double, 1> dX = xt::empty<double>({tdim});
+    xt::xtensor<double, 3> J0 = xt::zeros<double>({std::size_t(1), gdim, tdim});
+    xt::xtensor<double, 3> K0 = xt::zeros<double>({std::size_t(1), tdim, gdim});
+    xt::xtensor<double, 1> detJ0 = xt::zeros<double>({std::size_t(1)});
     for (std::size_t ip = 0; ip < num_points; ++ip)
     {
       Xk.fill(0);
@@ -288,15 +291,17 @@ void CoordinateElement::pull_back(
             xk[i] += cell_geometry(j, i) * phi0[j];
 
         // Compute Jacobian, its inverse and determinant
-        compute_jacobian(dphi, cell_geometry, J);
-        compute_jacobian_inverse(J, K);
-        compute_jacobian_determinant(J, detJ);
+        J0.fill(0);
+        K0.fill(0);
+        detJ0.fill(0);
+        compute_jacobian(dphi, cell_geometry, J0);
+        compute_jacobian_inverse(J0, K0);
+        compute_jacobian_determinant(J0, detJ0);
 
-        auto K0 = xt::view(K, 0, xt::all(), xt::all());
         dX.fill(0.0);
-        for (std::size_t i = 0; i < K0.shape(0); ++i)
-          for (std::size_t j = 0; j < K0.shape(1); ++j)
-            dX[i] += K0(i, j) * (x(ip, j) - xk[j]);
+        for (std::size_t i = 0; i < K0.shape(1); ++i)
+          for (std::size_t j = 0; j < K0.shape(2); ++j)
+            dX[i] += K0(0, i, j) * (x(ip, j) - xk[j]);
 
         if (std::sqrt(xt::sum(dX * dX)()) < non_affine_atol)
           break;
@@ -304,6 +309,15 @@ void CoordinateElement::pull_back(
         Xk += dX;
       }
       xt::row(X, ip) = xt::row(Xk, 0);
+      // Copy J0, K0, detJ0 into J, K, detJ for ip-th point
+      for (std::size_t i = 0; i < K0.shape(1); ++i)
+        for (std::size_t j = 0; j < K0.shape(2); ++j)
+        {
+          K(ip, i, j) = K0(0, i, j);
+          J(ip, j, i) = J0(0, j, i);
+          detJ(ip) = detJ0(0);
+        }
+
       if (k == non_affine_max_its)
       {
         throw std::runtime_error(
