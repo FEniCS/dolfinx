@@ -291,9 +291,6 @@ void CoordinateElement::pull_back(
             xk[i] += cell_geometry(j, i) * phi0[j];
 
         // Compute Jacobian, its inverse and determinant
-        J0.fill(0);
-        K0.fill(0);
-        detJ0.fill(0);
         compute_jacobian(dphi, cell_geometry, J0);
         compute_jacobian_inverse(J0, K0);
         compute_jacobian_determinant(J0, detJ0);
