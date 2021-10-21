@@ -236,9 +236,12 @@ void CoordinateElement::pull_back(
                     xt::all(), xt::all());
 
     // Compute Jacobian, its inverse and determinant
-    compute_jacobian(dphi, cell_geometry, J);
-    compute_jacobian_inverse(J, K);
-    compute_jacobian_determinant(J, detJ);
+    xt::xtensor<double, 3> J0 = xt::zeros<double>({std::size_t(1), gdim, tdim});
+    xt::xtensor<double, 3> K0 = xt::zeros<double>({std::size_t(1), tdim, gdim});
+    xt::xtensor<double, 1> detJ0 = xt::zeros<double>({std::size_t(1)});
+    compute_jacobian(dphi, cell_geometry, J0);
+    compute_jacobian_inverse(J0, K0);
+    compute_jacobian_determinant(J0, detJ0);
 
     // Compute physical coordinates at X=0 (phi(X) * cell_geom).
     auto phi0 = xt::view(tabulated_data, 0, 0, xt::all(), 0);
@@ -247,14 +250,19 @@ void CoordinateElement::pull_back(
       for (std::size_t j = 0; j < phi0.shape(0); ++j)
         x0[i] += cell_geometry(j, i) * phi0[j];
 
-    // Calculate X for each point
-    auto K0 = xt::view(K, 0, xt::all(), xt::all());
+    // Calculate X for each point and fill J, K, detJ with J0, K0, detJ0 at eact
+    // point
     X.fill(0.0);
     for (std::size_t ip = 0; ip < num_points; ++ip)
     {
+      detJ(ip) = detJ0(0);
       for (std::size_t i = 0; i < K0.shape(0); ++i)
         for (std::size_t j = 0; j < K0.shape(1); ++j)
+        {
           X(ip, i) += K0(i, j) * (x(ip, j) - x0[j]);
+          K(ip, i, j) = K0(i, j);
+          J(ip, j, i) = J0(j, i);
+        }
     }
   }
   else
