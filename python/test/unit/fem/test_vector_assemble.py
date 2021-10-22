@@ -13,7 +13,7 @@ from mpi4py import MPI
 
 def test_vector_assemble_matrix_exterior():
     mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, 3, 3)
-    V = dolfinx.VectorFunctionSpace(mesh, ("CG", 1))
+    V = dolfinx.VectorFunctionSpace(mesh, ("Lagrange", 1))
 
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     a = ufl.inner(u, v) * ufl.ds
@@ -23,7 +23,7 @@ def test_vector_assemble_matrix_exterior():
 
 def test_vector_assemble_matrix_interior():
     mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, 3, 3)
-    V = dolfinx.VectorFunctionSpace(mesh, ("CG", 1))
+    V = dolfinx.VectorFunctionSpace(mesh, ("Lagrange", 1))
 
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     a = ufl.inner(ufl.jump(u), ufl.jump(v)) * ufl.dS

@@ -13,12 +13,12 @@
 # solution and source term. ::
 
 import numpy as np
-from dolfinx import (Function, FunctionSpace, UnitSquareMesh, fem,
-                     has_petsc_complex)
+from dolfinx import Function, FunctionSpace, UnitSquareMesh, fem
 from dolfinx.fem.assemble import assemble_scalar
 from dolfinx.io import XDMFFile
 from mpi4py import MPI
 from ufl import FacetNormal, TestFunction, TrialFunction, dx, grad, inner
+from petsc4py import PETSc
 
 # wavenumber
 k0 = 4 * np.pi
@@ -33,11 +33,10 @@ mesh = UnitSquareMesh(MPI.COMM_WORLD, n_elem, n_elem)
 n = FacetNormal(mesh)
 
 # Source amplitude
-if has_petsc_complex:
-    A = 1 + 1j
+if np.issubdtype(PETSc.ScalarType, np.complexfloating):
+    A = PETSc.ScalarType(1 + 1j)
 else:
     A = 1
-
 
 # Test and trial function space
 V = FunctionSpace(mesh, ("Lagrange", deg))

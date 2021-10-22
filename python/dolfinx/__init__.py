@@ -31,7 +31,7 @@ del sys
 from .cpp import __version__
 
 
-from dolfinx.common import (has_debug, has_petsc_complex, has_kahip,
+from dolfinx.common import (has_debug, has_kahip,
                            has_parmetis, git_commit_hash, TimingType, timing,
                            list_timings)
 

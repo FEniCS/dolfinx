@@ -7,7 +7,6 @@
 #pragma once
 
 #include <array>
-#include <dolfinx/common/types.h>
 #include <memory>
 #include <set>
 #include <ufc.h>
@@ -67,6 +66,12 @@ public:
   /// Move assignment
   ElementDofLayout& operator=(ElementDofLayout&& dofmap) = default;
 
+  /// Equality operator
+  /// @return Returns true if the layout data is the same. Sub- and
+  /// parent dofmap data is not compared.
+  /// @note The block sizes of the layouts are not compared
+  bool operator==(const ElementDofLayout& layout) const;
+
   /// Return the dimension of the local finite element function space on
   /// a cell (number of dofs on element)
   /// @return Dimension of the local finite element function space.
@@ -80,7 +85,7 @@ public:
   /// Return the number of closure dofs for a given entity dimension
   /// @param[in] dim Entity dimension
   /// @return Number of dofs associated with closure of given entity
-  ///   dimension
+  /// dimension
   int num_entity_closure_dofs(int dim) const;
 
   /// Local-local mapping of dofs on entity of cell
@@ -120,9 +125,8 @@ public:
   int block_size() const;
 
   /// True iff dof map is a view into another map
-  ///
   /// @returns bool True if the dof map is a sub-dof map (a view into
-  ///   another map).
+  /// another map).
   bool is_view() const;
 
 private:
