@@ -77,20 +77,6 @@ jobs:
           make -j2
           mpirun -np 2 ./demo_poisson
 
-      - name: Run a C++ test (release version) via Spack
-        run: |
-          . ./spack/share/spack/setup-env.sh
-          spack env activate cpp-release
-          spack load cmake
-          cd dolfinx-test/cpp/demo/poisson
-          ffcx poisson.ufl
-          mkdir build-dir-release
-          cd build-dir-release
-          cmake ../
-          export VERBOSE=1
-          make -j2
-          mpirun -np 2 ./demo_poisson
-
       - name: Build DOLFINx (Python, development)
         run: |
           . ./spack/share/spack/setup-env.sh
