@@ -19,4 +19,4 @@ entity_dim = mesh.topology.dim - 1
 entities = dolfinx.mesh.locate_entities_boundary(mesh, entity_dim, boundary)
 
 i = mesh.sub(entity_dim, entities)
-print(i)
+# print(i)

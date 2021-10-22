@@ -181,11 +181,21 @@ int Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
   auto e_to_v = _topology.connectivity(dim, 0);
 
   // TODO Reserve number as in meshview branch
+  // Create vector of unique and ordered vertices
   std::vector<std::int32_t> sub_mesh_vertices;
   for (auto e : entities)
   {
     auto vs = e_to_v->links(e);
     sub_mesh_vertices.insert(sub_mesh_vertices.end(), vs.begin(), vs.end());
+  }
+  std::sort(sub_mesh_vertices.begin(), sub_mesh_vertices.end());
+  sub_mesh_vertices.erase(
+    std::unique(sub_mesh_vertices.begin(), sub_mesh_vertices.end()),
+    sub_mesh_vertices.end());
+  
+  for (auto v : sub_mesh_vertices)
+  {
+    std::cout << v << "\n";
   }
 
   return 0;
