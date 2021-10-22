@@ -173,7 +173,12 @@ Mesh mesh::create_mesh(MPI_Comm comm,
               mesh::create_geometry(comm, topology, element, cell_nodes1, x));
 }
 //-----------------------------------------------------------------------------
-
+int Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
+{
+  std::cout << "Create connectivity\n";
+  _topology.create_connectivity(dim, 0);
+  return 0;
+}
 //-----------------------------------------------------------------------------
 Topology& Mesh::topology() { return _topology; }
 //-----------------------------------------------------------------------------
