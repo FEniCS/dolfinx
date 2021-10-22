@@ -289,11 +289,11 @@ void mesh(py::module& m)
           "topology", py::overload_cast<>(&dolfinx::mesh::Mesh::topology),
           "Mesh topology", py::return_value_policy::reference_internal)
       .def("ufl_id", &dolfinx::mesh::Mesh::id)
-      .def("sub", [](dolfinx::mesh::Mesh& self, const int dim,
-                     py::array_t<std::int32_t, py::array::c_style> entities)
+      .def("sub", [](dolfinx::mesh::Mesh& self, int dim,
+                     const py::array_t<std::int32_t, py::array::c_style> entities)
             {
                 return self.sub(
-                    dim, xtl::span(entities.mutable_data(), entities.size()));
+                    dim, xtl::span(entities.data(), entities.size()));
             })
       .def_property_readonly("id", &dolfinx::mesh::Mesh::id)
       .def_readwrite("name", &dolfinx::mesh::Mesh::name);
