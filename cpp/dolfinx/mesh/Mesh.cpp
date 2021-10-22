@@ -193,10 +193,10 @@ int Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
     std::unique(sub_mesh_vertices.begin(), sub_mesh_vertices.end()),
     sub_mesh_vertices.end());
   
-  for (auto v : sub_mesh_vertices)
-  {
-    std::cout << v << "\n";
-  }
+  // Vertex index map
+  auto vertex_index_map = _topology.index_map(0);
+  auto [sub_mesh_vertex_index_map, global_vertices] =
+    vertex_index_map->create_submap(sub_mesh_vertices);
 
   return 0;
 }
