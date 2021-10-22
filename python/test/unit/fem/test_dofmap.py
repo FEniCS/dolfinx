@@ -59,23 +59,23 @@ def test_tabulate_dofs(mesh_factory):
 
 def test_entity_dofs(mesh):
     """Test that num entity dofs is correctly wrapped to dolfinx::DofMap"""
-    V = FunctionSpace(mesh, ("CG", 1))
+    V = FunctionSpace(mesh, ("Lagrange", 1))
     assert V.dofmap.dof_layout.num_entity_dofs(0) == 1
     assert V.dofmap.dof_layout.num_entity_dofs(1) == 0
     assert V.dofmap.dof_layout.num_entity_dofs(2) == 0
 
-    V = VectorFunctionSpace(mesh, ("CG", 1))
+    V = VectorFunctionSpace(mesh, ("Lagrange", 1))
     bs = V.dofmap.dof_layout.block_size()
     assert V.dofmap.dof_layout.num_entity_dofs(0) * bs == 2
     assert V.dofmap.dof_layout.num_entity_dofs(1) * bs == 0
     assert V.dofmap.dof_layout.num_entity_dofs(2) * bs == 0
 
-    V = FunctionSpace(mesh, ("CG", 2))
+    V = FunctionSpace(mesh, ("Lagrange", 2))
     assert V.dofmap.dof_layout.num_entity_dofs(0) == 1
     assert V.dofmap.dof_layout.num_entity_dofs(1) == 1
     assert V.dofmap.dof_layout.num_entity_dofs(2) == 0
 
-    V = FunctionSpace(mesh, ("CG", 3))
+    V = FunctionSpace(mesh, ("Lagrange", 3))
     assert V.dofmap.dof_layout.num_entity_dofs(0) == 1
     assert V.dofmap.dof_layout.num_entity_dofs(1) == 2
     assert V.dofmap.dof_layout.num_entity_dofs(2) == 1
@@ -90,7 +90,7 @@ def test_entity_dofs(mesh):
     assert V.dofmap.dof_layout.num_entity_dofs(1) == 0
     assert V.dofmap.dof_layout.num_entity_dofs(2) == 3
 
-    V = VectorFunctionSpace(mesh, ("CG", 1))
+    V = VectorFunctionSpace(mesh, ("Lagrange", 1))
     bs = V.dofmap.dof_layout.block_size()
 
     for i, cdofs in enumerate([[0, 1], [2, 3], [4, 5]]):
@@ -111,7 +111,7 @@ def test_entity_closure_dofs(mesh_factory):
     tdim = mesh.topology.dim
 
     for degree in (1, 2, 3):
-        V = FunctionSpace(mesh, ("CG", degree))
+        V = FunctionSpace(mesh, ("Lagrange", degree))
         for d in range(tdim + 1):
             map = mesh.topology.index_map(d)
             num_entities = map.size_local + map.num_ghosts
@@ -144,11 +144,11 @@ def test_entity_closure_dofs(mesh_factory):
 
 @pytest.mark.skip
 def test_clear_sub_map_data_scalar(mesh):
-    V = FunctionSpace(mesh, ("CG", 2))
+    V = FunctionSpace(mesh, ("Lagrange", 2))
     with pytest.raises(ValueError):
         V.sub(1)
 
-    V = VectorFunctionSpace(mesh, ("CG", 2))
+    V = VectorFunctionSpace(mesh, ("Lagrange", 2))
     V1 = V.sub(1)
     assert (V1)
 

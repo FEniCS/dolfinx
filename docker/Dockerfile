@@ -43,19 +43,19 @@
 
 
 ARG GMSH_VERSION=4_8_4
-ARG PYBIND11_VERSION=2.7.1
+ARG PYBIND11_VERSION=2.8.0
 ARG PETSC_VERSION=3.16.0
 ARG SLEPC_VERSION=3.16.0
 ARG ADIOS2_VERSION=2.7.1
 ARG PYVISTA_VERSION=0.32.1
 ARG NUMPY_VERSION=1.20.3
 ARG KAHIP_VERSION=3.11
-ARG XTENSOR_VERSION=0.23.10
-ARG XTL_VERSION=0.7.2
+ARG XTENSOR_VERSION=0.24.0
+ARG XTL_VERSION=0.7.3
 
 ########################################
 
-FROM ubuntu:21.04 as dev-env
+FROM ubuntu:21.10 as dev-env
 LABEL maintainer="fenics-project <fenics-support@googlegroups.org>"
 LABEL description="FEniCS testing and development environment with PETSc real, complex, 32-bit and 64-bit modes"
 
@@ -432,6 +432,9 @@ RUN dpkgArch="$(dpkg --print-architecture)"; \
     pip3 install --no-cache-dir pyvista==${PYVISTA_VERSION} ;; \
     esac; \
     pip3 install --no-cache-dir matplotlib
+
+# Jupyter Notebook kernel specification for complex build DOLFINx
+ADD dolfinx/docker/complex-kernel.json /usr/local/share/jupyter/kernels/python3-complex/kernel.json
 
 EXPOSE 8888/tcp
 ENV SHELL /bin/bash

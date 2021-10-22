@@ -5,25 +5,29 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for dolfinx.cpp.fem.CoordinateMap.pull_back and dolfinx.Expression"""
 
-import ufl
 import dolfinx
 import dolfinx.geometry
+import numpy as np
+import pytest
+import ufl
 from mpi4py import MPI
-import numpy
+from petsc4py import PETSc
 
 
+@pytest.mark.skipif(np.issubdtype(PETSc.ScalarType, np.complexfloating),
+                    reason="Complex expression not implemented in ufc")
 def test_expression():
     """
     Test UFL expression evaluation
     """
     mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, 10, 10)
-    V = dolfinx.FunctionSpace(mesh, ("CG", 2))
+    V = dolfinx.FunctionSpace(mesh, ("Lagrange", 2))
 
     def f(x):
         return 2 * x[0]**2 + x[1]**2
 
     def gradf(x):
-        return numpy.asarray([4 * x[0], 2 * x[1]])
+        return np.asarray([4 * x[0], 2 * x[1]])
 
     u = dolfinx.Function(V)
     u.interpolate(f)
@@ -31,7 +35,7 @@ def test_expression():
 
     grad_u = ufl.grad(u)
 
-    points = numpy.array([[0.15, 0.3, 0], [0.953, 0.81, 0]])
+    points = np.array([[0.15, 0.3, 0], [0.953, 0.81, 0]])
 
     gdim = mesh.geometry.dim
     tdim = mesh.topology.dim
@@ -53,8 +57,8 @@ def test_expression():
     num_cells = t_imap.size_local + t_imap.num_ghosts
     x = mesh.geometry.x
     x_dofs = mesh.geometry.dofmap.array.reshape(num_cells, num_dofs_x)
-    cell_geometry = numpy.zeros((num_dofs_x, gdim), dtype=numpy.float64)
-    points_ref = numpy.zeros((len(local_map), tdim))
+    cell_geometry = np.zeros((num_dofs_x, gdim), dtype=np.float64)
+    points_ref = np.zeros((len(local_map), tdim))
 
     # Map cells on process back to reference element
     for i, cell in enumerate(closest_cell):
@@ -69,4 +73,4 @@ def test_expression():
     # Compare solutions
     for i, cell in enumerate(closest_cell):
         point = points[local_map[i]]
-        assert numpy.allclose(grad_u_at_x[i, i], gradf(point))
+        assert np.allclose(grad_u_at_x[i, i], gradf(point))

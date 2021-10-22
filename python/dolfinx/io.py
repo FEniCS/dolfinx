@@ -7,11 +7,12 @@
 
 """IO module for input data, post-processing and checkpointing"""
 
+import typing
+
 import numpy
 import ufl
 
 from dolfinx import cpp, fem
-import typing
 
 
 class VTKFile(cpp.io.VTKFile):
