@@ -90,7 +90,7 @@ ARG PETSC_SLEPC_MAKE_NP=2
 ARG PETSC_SLEPC_DEBUGGING="no"
 
 # MPI variant. "mpich" or "openmpi".
-ARG MPI="openmpi"
+ARG MPI="mpich"
 ARG MPI_NP=2
 ARG MPICH_CONFIGURE_OPTIONS="--with-device=ch3"
 
