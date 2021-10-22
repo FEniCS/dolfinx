@@ -43,6 +43,8 @@
 
 
 ARG GMSH_VERSION=4_8_4
+ARG HDF5_SERIES=1.12
+ARG HDF5_PATCH=1
 ARG PYBIND11_VERSION=2.8.0
 ARG PETSC_VERSION=3.16.0
 ARG SLEPC_VERSION=3.16.0
@@ -53,6 +55,10 @@ ARG KAHIP_VERSION=3.11
 ARG XTENSOR_VERSION=0.24.0
 ARG XTL_VERSION=0.7.3
 
+ARG MPICH_VERSION=3.4.2
+ARG OPENMPI_SERIES=4.1
+ARG OPENMPI_PATCH=1
+
 ########################################
 
 FROM ubuntu:21.10 as dev-env
@@ -60,6 +66,8 @@ LABEL maintainer="fenics-project <fenics-support@googlegroups.org>"
 LABEL description="FEniCS testing and development environment with PETSc real, complex, 32-bit and 64-bit modes"
 
 ARG GMSH_VERSION
+ARG HDF5_SERIES
+ARG HDF5_PATCH
 ARG PYBIND11_VERSION
 ARG PETSC_VERSION
 ARG SLEPC_VERSION
@@ -68,6 +76,9 @@ ARG KAHIP_VERSION
 ARG NUMPY_VERSION
 ARG XTENSOR_VERSION
 ARG XTL_VERSION
+ARG MPICH_VERSION
+ARG OPENMPI_SERIES
+ARG OPENMPI_PATCH
 
 # The following ARGS are used in the dev-env layer.
 # They are safe defaults. They can be overridden by the user.
@@ -77,8 +88,11 @@ ARG PETSC_SLEPC_OPTFLAGS="-O2"
 ARG PETSC_SLEPC_MAKE_NP=2
 # Turn on PETSc and SLEPc debugging. "yes" or "no".
 ARG PETSC_SLEPC_DEBUGGING="no"
-# Ubuntu MPI variant. "mpich" or "openmpi".
-ARG MPI="mpich"
+
+# MPI variant. "mpich" or "openmpi".
+ARG MPI="openmpi"
+ARG MPI_NP=2
+ARG MPICH_CONFIGURE_OPTIONS="--with-device=ch3"
 
 WORKDIR /tmp
 
@@ -103,9 +117,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     libboost-dev \
     libboost-filesystem-dev \
     libboost-timer-dev \
-    libhdf5-${MPI}-dev \
     liblapack-dev \
-    lib${MPI}-dev \
     libopenblas-dev \
     llvm-9 \
     ninja-build \
@@ -133,10 +145,26 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     libgl1-mesa-dev \
     libocct-foundation-dev \
     libocct-data-exchange-dev && \
-    #
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
+# Install MPI
+RUN if [ "$MPI" = "mpich" ]; then \
+    export FFLAGS=-fallow-argument-mismatch && \
+    wget http://www.mpich.org/static/downloads/${MPICH_VERSION}/mpich-${MPICH_VERSION}.tar.gz && \
+    tar xfz mpich-${MPICH_VERSION}.tar.gz  && \
+    cd mpich-${MPICH_VERSION}  && \
+    ./configure ${MPICH_CONFIGURE_OPTIONS} && \
+    make -j${MPI_NP} install; \
+    else \
+    wget https://download.open-mpi.org/release/open-mpi/v${OPENMPI_SERIES}/openmpi-${OPENMPI_SERIES}.${OPENMPI_PATCH}.tar.gz && \
+    tar xfz openmpi-${OPENMPI_SERIES}.${OPENMPI_PATCH}.tar.gz  && \
+    cd openmpi-${OPENMPI_SERIES}.${OPENMPI_PATCH} && \
+    ./configure  && \
+    make -j${MPI_NP} install; \
+    fi && \
+    ldconfig && \
+    rm -rf /tmp/*
 
 # Install Python packages (via pip)
 # - First set of packages are required to build and run DOLFINx Python.
@@ -170,23 +198,39 @@ RUN wget -nc --quiet https://github.com/kahip/kahip/archive/v${KAHIP_VERSION}.ta
     cmake --install build-dir && \
     rm -rf /tmp/*
 
+# Install HDf5
+RUN wget -nc --quiet https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-${HDF5_SERIES}/hdf5-${HDF5_SERIES}.${HDF5_PATCH}/src/hdf5-${HDF5_SERIES}.${HDF5_PATCH}.tar.gz && \
+    tar xfz hdf5-${HDF5_SERIES}.${HDF5_PATCH}.tar.gz && \
+    cd hdf5-${HDF5_SERIES}.${HDF5_PATCH} && \
+    ./configure --prefix=/usr/local --enable-parallel --enable-shared --enable-static=no && \
+    make -j8 install && \
+    rm -rf /tmp/*
+
+# See https://github.com/HDFGroup/hdf5/pull/1089
+# RUN wget -nc --quiet https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-${HDF5_SERIES}/hdf5-${HDF5_SERIES}.${HDF5_PATCH}/src/hdf5-${HDF5_SERIES}.${HDF5_PATCH}.tar.gz && \
+#    tar xfz hdf5-${HDF5_SERIES}.${HDF5_PATCH}.tar.gz && \
+#     cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -HDF5_ENABLE_PARALLEL=on -B build-dir -S hdf5-${HDF5_SERIES}.${HDF5_PATCH} && \
+#     cmake --build build-dir && \
+#     cmake --install build-dir && \
+#     rm -rf /tmp/*
+
 # Install ADIOS2
 RUN wget -nc --quiet https://github.com/ornladios/ADIOS2/archive/v${ADIOS2_VERSION}.tar.gz -O adios2-v${ADIOS2_VERSION}.tar.gz && \
     mkdir -p adios2-v${ADIOS2_VERSION} && \
     tar -xf adios2-v${ADIOS2_VERSION}.tar.gz -C adios2-v${ADIOS2_VERSION} --strip-components 1 && \
-    cmake -G Ninja -DADIOS2_USE_Fortran=off -DBUILD_TESTING=off -DADIOS2_BUILD_EXAMPLES=off -DADIOS2_USE_ZeroMQ=off -B build-dir -S ./adios2-v${ADIOS2_VERSION} && \
+    cmake -G Ninja -DADIOS2_USE_HDF5=on -DADIOS2_USE_Fortran=off -DBUILD_TESTING=off -DADIOS2_BUILD_EXAMPLES=off -DADIOS2_USE_ZeroMQ=off -B build-dir -S ./adios2-v${ADIOS2_VERSION} && \
     cmake --build build-dir && \
     cmake --install build-dir && \
     rm -rf /tmp/*
 
-# Install GMSH
-RUN git clone -b gmsh_${GMSH_VERSION} --single-branch https://gitlab.onelab.info/gmsh/gmsh.git && \
-    cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DENABLE_BUILD_DYNAMIC=1  -DENABLE_OPENMP=1 -B build-dir -S gmsh && \
-    cmake --build build-dir && \
-    cmake --install build-dir && \
-    rm -rf /tmp/*
+# # Install GMSH
+# RUN git clone -b gmsh_${GMSH_VERSION} --single-branch https://gitlab.onelab.info/gmsh/gmsh.git && \
+#     cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DENABLE_BUILD_DYNAMIC=1  -DENABLE_OPENMP=1 -B build-dir -S gmsh && \
+#     cmake --build build-dir && \
+#     cmake --install build-dir && \
+#     rm -rf /tmp/*
 
-ENV PYTHONPATH=/usr/local/lib:$PYTHONPATH
+# ENV PYTHONPATH=/usr/local/lib:$PYTHONPATHldconfig && \
 
 # Install PETSc and petsc4py with real and complex types
 ENV PETSC_DIR=/usr/local/petsc SLEPC_DIR=/usr/local/slepc
