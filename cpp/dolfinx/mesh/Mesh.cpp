@@ -177,6 +177,17 @@ int Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
 {
   std::cout << "Create connectivity\n";
   _topology.create_connectivity(dim, 0);
+
+  auto e_to_v = _topology.connectivity(dim, 0);
+
+  // TODO Reserve number as in meshview branch
+  std::vector<std::int32_t> sub_mesh_vertices;
+  for (auto e : entities)
+  {
+    auto vs = e_to_v->links(e);
+    sub_mesh_vertices.insert(sub_mesh_vertices.end(), vs.begin(), vs.end());
+  }
+
   return 0;
 }
 //-----------------------------------------------------------------------------
