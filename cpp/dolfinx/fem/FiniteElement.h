@@ -604,6 +604,14 @@ public:
     _element->map_pull_back_m(u, J, detJ, K, U);
   }
 
+  template <typename O, typename P, typename Q, typename R>
+  std::function<void(O&, const P&, const Q&, double, const R&)>
+  map_pull_back_fn() const
+  {
+    assert(_element);
+    _element->map_pull_back<O, P, Q, R>();
+  }
+
   /// Permute the DOFs of the element
   ///
   /// @param[in,out] doflist The numbers of the DOFs

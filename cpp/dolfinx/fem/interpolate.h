@@ -129,8 +129,8 @@ void interpolate(
       apply_inverse_transpose_dof_transformation
       = element->get_dof_transformation_function<T>(true, true, true);
 
-  // This assumes that any element with an identity interpolation matrix is a
-  // point evaluation
+  // This assumes that any element with an identity interpolation matrix
+  // is a point evaluation
   if (element->interpolation_ident())
   {
     for (std::int32_t c : cells)
@@ -196,6 +196,11 @@ void interpolate(
       cmap.compute_jacobian_inverse(J, K);
       cmap.compute_jacobian_determinant(J, detJ);
 
+      using xview_t = xt::xview<decltype(J)&, std::size_t,
+                                xt::xall<std::size_t>, xt::xall<std::size_t>>;
+      auto pull_back_fn
+          = element->map_pull_back_fn<xview_t, xview_t, xview_t, xview_t>();
+
       xtl::span<const std::int32_t> dofs = dofmap->cell_dofs(c);
       for (int k = 0; k < element_bs; ++k)
       {
@@ -207,7 +212,15 @@ void interpolate(
         }
 
         // Get element degrees of freedom for block
-        element->map_pull_back(_vals, J, detJ, K, reference_data);
+        // element->map_pull_back(_vals, J, detJ, K, reference_data);
+        for (std::size_t i = 0; i < X.shape(0); ++i)
+        {
+          auto _K = xt::view(K, i, xt::all(), xt::all());
+          auto _J = xt::view(J, i, xt::all(), xt::all());
+          auto _u = xt::view(_vals, i, xt::all(), xt::all());
+          auto _U = xt::view(reference_data, i, xt::all(), xt::all());
+          pull_back_fn(_U, _u, _K, 1.0 / detJ[i], _J);
+        }
 
         xt::xtensor<T, 2> ref_data
             = xt::transpose(xt::view(reference_data, xt::all(), 0, xt::all()));
