@@ -604,6 +604,7 @@ public:
     _element->map_pull_back_m(u, J, detJ, K, U);
   }
 
+  /// Get function for mapping to data referece space <-> physical space
   template <typename O, typename P, typename Q, typename R>
   std::function<void(O&, const P&, const Q&, double, const R&)>
   map_pull_back_fn() const
