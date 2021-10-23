@@ -12,6 +12,8 @@ on:
 
 jobs:
   build:
+    env:
+      release_version: 0.3.0
     strategy:
       matrix:
         # os: [ubuntu-20.04, macos-10.15]
@@ -19,31 +21,19 @@ jobs:
       fail-fast: false
     runs-on: ${{ matrix.os }}
 
-    env:
-      MPLBACKEND: agg
-      OPENBLAS_NUM_THREADS: 1
-      OMPI_MCA_rmaps_base_oversubscribe: 1
-      OMPI_MCA_plm: isolated
-      OMPI_MCA_btl_vader_single_copy_mechanism: none
-      OMPI_MCA_mpi_yield_when_idle: 1
-      OMPI_MCA_hwloc_base_binding_policy: none
-
     steps:
-
       - name: Get Spack
         uses: actions/checkout@v2
         with:
           path: ./spack
           repository: spack/spack
-
-      # - name: Build DOLFINx (C++) development version via Spack
-      #   run: |
-      #     . ./spack/share/spack/setup-env.sh
-      #     spack env create cpp-main
-      #     spack env activate cpp-main
-      #     spack add fenics-dolfinx@main
-      #     spack install
-
+      - name: Build DOLFINx (C++) development version via Spack
+        run: |
+          . ./spack/share/spack/setup-env.sh
+          spack env create cpp-main
+          spack env activate cpp-main
+          spack add fenics-dolfinx@main
+          spack install
       - name: Build DOLFINx (C++) release version via Spack
         run: |
           . ./spack/share/spack/setup-env.sh
@@ -55,51 +45,46 @@ jobs:
       - name: Get DOLFINx code (to access test files)
         uses: actions/checkout@v2
         with:
-          path: ./dolfinx-test
-
-      - name: Create demo CMake files
+          ref: main
+          path: ./dolfinx-main
+      - name: Run a C++ test (development version)
         run: |
           . ./spack/share/spack/setup-env.sh
           spack env activate cpp-main
-          cd dolfinx-test/cpp/
+          cd dolfinx-main/cpp/
           python cmake/scripts/generate-cmakefiles.py
-
-      # - name: Run a C++ test (development version) via Spack
-      #   run: |
-      #     . ./spack/share/spack/setup-env.sh
-      #     spack env activate cpp-main
-      #     cd dolfinx-test/cpp/demo/poisson
-      #     ffcx poisson.ufl
-      #     mkdir build-dir-main
-      #     cd build-dir-main
-      #     cmake ../
-      #     export VERBOSE=1
-      #     make -j2
-      #     mpirun -np 2 ./demo_poisson
-
-      - name: Run a C++ test (release version) via Spack
+          cd demo/poisson
+          ffcx poisson.ufl
+          cmake .
+          export VERBOSE=1
+          make -j2
+          mpirun -np 2 ./demo_poisson
+      - name: Get DOLFINx code (to access test files)
+        uses: actions/checkout@v2
+        with:
+          ref: v${{ env.release_version }}
+          path: ./dolfinx-release
+      - name: Run a C++ test (release version)
         run: |
           . ./spack/share/spack/setup-env.sh
           spack env activate cpp-release
-          spack load cmake
-          cd dolfinx-test/cpp/demo/poisson
+          cd dolfinx-release/cpp/
+          python cmake/scripts/generate-cmakefiles.py
+          cd demo/poisson
           ffcx poisson.ufl
-          mkdir build-dir-release
-          cd build-dir-release
-          cmake ../
+          cmake .
           export VERBOSE=1
           make -j2
           mpirun -np 2 ./demo_poisson
 
-      # - name: Build DOLFINx (Python, development) via Spack
-      #   run: |
-      #     . ./spack/share/spack/setup-env.sh
-      #     spack env create py-main
-      #     spack env activate py-main
-      #     spack add py-fenics-dolfinx@main
-      #     spack install
-
-      - name: Build DOLFINx (Python, release version) via Spack
+      - name: Build DOLFINx (Python, development)
+        run: |
+          . ./spack/share/spack/setup-env.sh
+          spack env create py-main
+          spack env activate py-main
+          spack add py-fenics-dolfinx@main
+          spack install
+      - name: Build DOLFINx (Python, release version)
         run: |
           . ./spack/share/spack/setup-env.sh
           spack env create py-release
@@ -109,9 +94,15 @@ jobs:
 
       # NOTE: numba is installed via pip because the spack package takes
       # an extremely long time to compile
-      - name: Run DOLFINx (Python, release) tests
+      - name: Run DOLFINx (Python, development) test
+        run: |
+          . ./spack/share/spack/setup-env.sh
+          spack env activate py-main
+          pip install numba
+          mpirun -np 2 python3 ./dolfinx-main/python/demo/stokes-taylor-hood/demo_stokes-taylor-hood.py
+      - name: Run DOLFINx (Python, release) test
         run: |
           . ./spack/share/spack/setup-env.sh
           spack env activate py-release
           pip install numba
-          mpirun -np 2 python3 ./dolfinx-test/python/demo/stokes-taylor-hood/demo_stokes-taylor-hood.py
+          mpirun -np 2 python3 ./dolfinx-release/python/demo/stokes-taylor-hood/demo_stokes-taylor-hood.py
