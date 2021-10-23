@@ -196,10 +196,14 @@ void interpolate(
       cmap.compute_jacobian_inverse(J, K);
       cmap.compute_jacobian_determinant(J, detJ);
 
-      using xview_t = xt::xview<decltype(J)&, std::size_t,
-                                xt::xall<std::size_t>, xt::xall<std::size_t>>;
+      using xview_scalar_t
+          = xt::xview<decltype(reference_data)&, std::size_t,
+                      xt::xall<std::size_t>, xt::xall<std::size_t>>;
+      using xview_x_t = xt::xview<decltype(J)&, std::size_t,
+                                  xt::xall<std::size_t>, xt::xall<std::size_t>>;
       auto pull_back_fn
-          = element->map_pull_back_fn<xview_t, xview_t, xview_t, xview_t>();
+          = element->map_pull_back_fn<xview_scalar_t, xview_scalar_t, xview_x_t,
+                                      xview_x_t>();
 
       xtl::span<const std::int32_t> dofs = dofmap->cell_dofs(c);
       for (int k = 0; k < element_bs; ++k)
@@ -212,7 +216,6 @@ void interpolate(
         }
 
         // Get element degrees of freedom for block
-        // element->map_pull_back(_vals, J, detJ, K, reference_data);
         for (std::size_t i = 0; i < X.shape(0); ++i)
         {
           auto _K = xt::view(K, i, xt::all(), xt::all());
@@ -227,9 +230,8 @@ void interpolate(
         element->interpolate(ref_data, tcb::make_span(_coeffs));
         apply_inverse_transpose_dof_transformation(_coeffs, cell_info, c, 1);
 
-        assert(_coeffs.size() == num_scalar_dofs);
-
         // Copy interpolation dofs into coefficient vector
+        assert(_coeffs.size() == num_scalar_dofs);
         for (int i = 0; i < num_scalar_dofs; ++i)
         {
           const int dof = i * element_bs + k;
