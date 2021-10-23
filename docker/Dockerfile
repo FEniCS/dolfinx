@@ -91,8 +91,10 @@ ARG PETSC_SLEPC_DEBUGGING="no"
 
 # MPI variant. "mpich" or "openmpi".
 ARG MPI="mpich"
-ARG MPI_NP=2
 ARG MPICH_CONFIGURE_OPTIONS="--with-device=ch3"
+
+# Number of build threads to use with make
+ARG BUILD_NP=2
 
 WORKDIR /tmp
 
@@ -155,13 +157,13 @@ RUN if [ "$MPI" = "mpich" ]; then \
     tar xfz mpich-${MPICH_VERSION}.tar.gz  && \
     cd mpich-${MPICH_VERSION}  && \
     ./configure ${MPICH_CONFIGURE_OPTIONS} && \
-    make -j${MPI_NP} install; \
+    make -j${BUILD_NP} install; \
     else \
     wget https://download.open-mpi.org/release/open-mpi/v${OPENMPI_SERIES}/openmpi-${OPENMPI_SERIES}.${OPENMPI_PATCH}.tar.gz && \
     tar xfz openmpi-${OPENMPI_SERIES}.${OPENMPI_PATCH}.tar.gz  && \
     cd openmpi-${OPENMPI_SERIES}.${OPENMPI_PATCH} && \
     ./configure  && \
-    make -j${MPI_NP} install; \
+    make -j${BUILD_NP} install; \
     fi && \
     ldconfig && \
     rm -rf /tmp/*
@@ -203,14 +205,17 @@ RUN wget -nc --quiet https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-${HDF5_
     tar xfz hdf5-${HDF5_SERIES}.${HDF5_PATCH}.tar.gz && \
     cd hdf5-${HDF5_SERIES}.${HDF5_PATCH} && \
     ./configure --prefix=/usr/local --enable-parallel --enable-shared --enable-static=no && \
-    make -j8 install && \
+    make -j${BUILD_NP} install && \
     rm -rf /tmp/*
 
-# See https://github.com/HDFGroup/hdf5/pull/1089
+# HDF5 CMake build broken, see
+# https://github.com/HDFGroup/hdf5/issues/969,
+# https://github.com/HDFGroup/hdf5/pull/1089
 # RUN wget -nc --quiet https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-${HDF5_SERIES}/hdf5-${HDF5_SERIES}.${HDF5_PATCH}/src/hdf5-${HDF5_SERIES}.${HDF5_PATCH}.tar.gz && \
 #    tar xfz hdf5-${HDF5_SERIES}.${HDF5_PATCH}.tar.gz && \
 #     cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -HDF5_ENABLE_PARALLEL=on -B build-dir -S hdf5-${HDF5_SERIES}.${HDF5_PATCH} && \
-#     cmake --build build-dir && \
+#     cmake --build build-dir && \ARG BUILD_NP=2
+
 #     cmake --install build-dir && \
 #     rm -rf /tmp/*
 
@@ -223,14 +228,14 @@ RUN wget -nc --quiet https://github.com/ornladios/ADIOS2/archive/v${ADIOS2_VERSI
     cmake --install build-dir && \
     rm -rf /tmp/*
 
-# # Install GMSH
-# RUN git clone -b gmsh_${GMSH_VERSION} --single-branch https://gitlab.onelab.info/gmsh/gmsh.git && \
-#     cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DENABLE_BUILD_DYNAMIC=1  -DENABLE_OPENMP=1 -B build-dir -S gmsh && \
-#     cmake --build build-dir && \
-#     cmake --install build-dir && \
-#     rm -rf /tmp/*
+# Install GMSH
+RUN git clone -b gmsh_${GMSH_VERSION} --single-branch https://gitlab.onelab.info/gmsh/gmsh.git && \
+    cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DENABLE_BUILD_DYNAMIC=1  -DENABLE_OPENMP=1 -B build-dir -S gmsh && \
+    cmake --build build-dir && \
+    cmake --install build-dir && \
+    rm -rf /tmp/*
 
-# ENV PYTHONPATH=/usr/local/lib:$PYTHONPATHldconfig && \
+ENV PYTHONPATH=/usr/local/lib:$PYTHONPATH
 
 # Install PETSc and petsc4py with real and complex types
 ENV PETSC_DIR=/usr/local/petsc SLEPC_DIR=/usr/local/slepc
@@ -375,9 +380,10 @@ RUN chmod +x /usr/local/bin/dolfinx-*-mode
 
 ONBUILD WORKDIR /src
 
-# This leaves the sources inside the container. This is a limitation of Docker.
-# There is some trickery in the intermediate and DOLFINx containers that can be
-# used to remove this source if needed, see below.
+# This leaves the sources inside the container. This is a limitation of
+# Docker. There is some trickery in the intermediate and DOLFINx
+# containers that can be used to remove this source if needed, see
+# below.
 ONBUILD ADD basix/ /src/basix/
 ONBUILD ADD ufl/ /src/ufl/
 ONBUILD ADD ffcx/ /src/ffcx/
@@ -395,8 +401,8 @@ ONBUILD ARG DOLFINX_CMAKE_BUILD_TYPE="RelWithDebInfo"
 # Extra CMake C++ compiler flags for DOLFINx C++ build.
 ONBUILD ARG DOLFINX_CMAKE_CXX_FLAGS
 
-# The dolfinx-onbuild container expects to have folders basix/ ufl/ ffcx/ and
-# dolfinx/ mounted/shared at /src.
+# The dolfinx-onbuild container expects to have folders basix/ ufl/
+# ffcx/ and dolfinx/ mounted/shared at /src.
 ONBUILD RUN cd basix && cmake -G Ninja -DCMAKE_BUILD_TYPE=${DOLFINX_CMAKE_BUILD_TYPE} -DCMAKE_CXX_FLAGS=${DOLFINX_CMAKE_CXX_FLAGS} -B build-dir -S ./cpp && \
     cmake --build build-dir && \
     cmake --install build-dir && \
@@ -438,11 +444,11 @@ FROM dolfinx-onbuild as intermediate
 FROM dev-env as dolfinx
 LABEL description="DOLFINx in 32-bit real and complex modes"
 
-# This layer manually copies the build artifacts from intermediate into dev-env
-# to make the final image. This is a workaround for a well known limitation of
-# Docker that you cannot cleanup after an ADD operation. This reduces the
-# container size by around 80MB as the /src folder no longer exists in the final
-# image.
+# This layer manually copies the build artifacts from intermediate into
+# dev-env to make the final image. This is a workaround for a well known
+# limitation of Docker that you cannot cleanup after an ADD operation.
+# This reduces the container size by around 80MB as the /src folder no
+# longer exists in the final image.
 COPY --from=intermediate /usr/local /usr/local
 COPY --from=intermediate /root/.config /root/.config
 
