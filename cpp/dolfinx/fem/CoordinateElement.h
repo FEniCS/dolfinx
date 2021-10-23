@@ -64,10 +64,16 @@ public:
   /// @param[in] cell_geometry Coordinates/geometry
   /// @param[in,out] J The Jacobian
   /// The shape of J is (number of points, geometric dimension,
-  /// topological dimenson).
+  /// topological dimension).
   void compute_jacobian(const xt::xtensor<double, 4>& dphi,
                         const xt::xtensor<double, 2>& cell_geometry,
                         xt::xtensor<double, 3>& J) const;
+
+  /// Compute Jacobian for a cell with given geometry using the
+  /// basis functions and first order derivatives.
+  void compute_jacobian(const xt::xtensor<double, 2>& dphi,
+                        const xt::xtensor<double, 2>& cell_geometry,
+                        xt::xtensor<double, 2>& J) const;
 
   /// Compute the inverse of the Jacobian. If the coordinate element is
   /// affine, it computes the inverse at only one point.
@@ -78,6 +84,11 @@ public:
   /// (number of points, tpological dimension, geometrical dimenson).
   void compute_jacobian_inverse(const xt::xtensor<double, 3>& J,
                                 xt::xtensor<double, 3>& K) const;
+
+  /// Compute the inverse of the Jacobian. If the coordinate element is
+  /// affine, it computes the inverse at only one point.
+  void compute_jacobian_inverse(const xt::xtensor<double, 2>& J,
+                                xt::xtensor<double, 2>& K) const;
 
   /// Compute the determinant of the Jacobian. If the coordinate element
   /// is affine, it computes the determinant at only one point.
@@ -99,6 +110,25 @@ public:
   static void push_forward(xt::xtensor<double, 2>& x,
                            const xt::xtensor<double, 2>& cell_geometry,
                            const xt::xtensor<double, 2>& phi);
+
+  /// Compute reference coordinates X for physical coordinates x for an
+  /// affine map. For the affine case, `x = J X + x0`, and this function
+  /// computes `X = K(x -x0)` where `K = J^{-1}`.
+  /// @param[out] X The reference coordinates to compute
+  /// (shape=(num_points, tdim))
+  /// @param[in] K The inverse of the geometry Jacobian (shape=(tdim,
+  /// gdim))
+  /// @param[in] x0 The cell geomphysical coordinates
+  /// @param[in] x The physical coordinates (shape=(num_points, gdim))
+  static void pull_back_affine(xt::xtensor<double, 2>& X,
+                               const xt::xtensor<double, 2>& K,
+                               const std::array<double, 3>& x0,
+                               const xt::xtensor<double, 2>& x);
+
+  /// Compute reference coordinates X, and J, detJ and K for physical
+  /// coordinates x
+  void pull_back(xt::xtensor<double, 2>& X, const xt::xtensor<double, 2>& x,
+                 const xt::xtensor<double, 2>& cell_geometry) const;
 
   /// Compute reference coordinates X, and J, detJ and K for physical
   /// coordinates x
