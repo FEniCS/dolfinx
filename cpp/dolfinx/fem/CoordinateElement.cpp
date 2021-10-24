@@ -70,126 +70,6 @@ CoordinateElement::tabulate(int n, const xt::xtensor<double, 2>& X) const
   return _element->tabulate(n, X);
 }
 //--------------------------------------------------------------------------------
-void CoordinateElement::compute_jacobian(
-    const xt::xtensor<double, 4>& dphi, const xt::xtensor<double, 2>& cell_geom,
-    xt::xtensor<double, 3>& J) const
-{
-  // Number of points
-  std::size_t num_points = dphi.shape(1);
-  if (num_points == 0)
-    return;
-
-  // in-argument checks
-  const std::size_t tdim = this->topological_dimension();
-  const std::size_t gdim = cell_geom.shape(1);
-  const std::size_t d = cell_geom.shape(0);
-
-  // In/out size checks
-  assert(J.shape(0) == num_points);
-  assert(J.shape(1) == gdim);
-  assert(J.shape(2) == tdim);
-  assert(dphi.shape(0) == tdim);
-  assert(dphi.shape(1) == num_points);
-  assert(dphi.shape(3) == 1); // Assumes that value size is equal to 1
-  xt::xtensor<double, 2> J0 = xt::zeros<double>({gdim, tdim});
-  xt::xtensor<double, 2> dphi0 = xt::empty<double>({tdim, d});
-  if (_is_affine)
-  {
-    xt::noalias(dphi0) = xt::view(dphi, xt::all(), 0, xt::all(), 0);
-    math::dot(cell_geom, dphi0, J0, true);
-    // NOTE: Should be using xt::broadcast, but it's much slower than a
-    // plain loop.
-    for (std::size_t p = 0; p < num_points; ++p)
-    {
-      auto J_ip = xt::view(J, p, xt::all(), xt::all());
-      J_ip.assign(J0);
-    }
-  }
-  else
-  {
-    for (std::size_t p = 0; p < num_points; ++p)
-    {
-      J0.fill(0);
-      xt::noalias(dphi0) = xt::view(dphi, xt::all(), p, xt::all(), 0);
-      auto J_ip = xt::view(J, p, xt::all(), xt::all());
-      math::dot(cell_geom, dphi0, J0, true);
-      J_ip.assign(J0);
-    }
-  }
-}
-//--------------------------------------------------------------------------------
-void CoordinateElement::compute_jacobian_inverse(
-    const xt::xtensor<double, 3>& J, xt::xtensor<double, 3>& K) const
-{
-  assert(J.shape(0) == K.shape(0));
-  assert(J.shape(1) == K.shape(2));
-  assert(J.shape(2) == K.shape(1));
-
-  const int gdim = J.shape(1);
-  const int tdim = K.shape(1);
-  xt::xtensor<double, 2> K0 = xt::zeros<double>({tdim, gdim});
-  xt::xtensor<double, 2> J0 = xt::zeros<double>({gdim, tdim});
-  if (_is_affine)
-  {
-    J0 = xt::view(J, 0, xt::all(), xt::all());
-    if (gdim == tdim)
-      math::inv(J0, K0);
-    else
-      math::pinv(J0, K0);
-    for (std::size_t p = 0; p < J.shape(0); ++p)
-    {
-      auto K_ip = xt::view(K, p, xt::all(), xt::all());
-      K_ip.assign(K0);
-    }
-  }
-  else
-  {
-    for (std::size_t p = 0; p < J.shape(0); ++p)
-    {
-      K0.fill(0);
-      J0 = xt::view(J, p, xt::all(), xt::all());
-      if (gdim == tdim)
-        math::inv(J0, K0);
-      else
-        math::pinv(J0, K0);
-      auto K_ip = xt::view(K, p, xt::all(), xt::all());
-      K_ip.assign(K0);
-    }
-  }
-}
-//--------------------------------------------------------------------------------
-void CoordinateElement::compute_jacobian_inverse(
-    const xt::xtensor<double, 2>& J, xt::xtensor<double, 2>& K) const
-{
-  const int gdim = J.shape(1);
-  const int tdim = K.shape(1);
-  if (gdim == tdim)
-    math::inv(J, K);
-  else
-    math::pinv(J, K);
-}
-//--------------------------------------------------------------------------------
-void CoordinateElement::compute_jacobian_determinant(
-    const xt::xtensor<double, 3>& J, xt::xtensor<double, 1>& Jdet) const
-{
-  assert(J.shape(0) == Jdet.shape(0));
-  if (_is_affine)
-  {
-    auto J0 = xt::view(J, 0, xt::all(), xt::all());
-    double det = compute_determinant(J0);
-    Jdet.fill(det);
-  }
-  else
-  {
-    for (std::size_t p = 0; p < J.shape(0); ++p)
-    {
-      auto Jp = xt::view(J, p, xt::all(), xt::all());
-      double det = compute_determinant(Jp);
-      Jdet[p] = det;
-    }
-  }
-}
-//-----------------------------------------------------------------------------
 ElementDofLayout CoordinateElement::dof_layout() const
 {
   assert(_element);
@@ -270,8 +150,8 @@ void CoordinateElement::pull_back_nonaffine(
 
       // Compute Jacobian, its inverse and determinant
       J.fill(0);
-      compute_jacobian_new(dphi, cell_geometry, J);
-      compute_jacobian_inverse_new(J, K);
+      compute_jacobian(dphi, cell_geometry, J);
+      compute_jacobian_inverse(J, K);
 
       dX.fill(0.0);
       for (std::size_t i = 0; i < K.shape(0); ++i)
@@ -322,7 +202,7 @@ void CoordinateElement::pull_back(
     xt::xtensor<double, 2> K = xt::zeros<double>({tdim, gdim});
 
     // Compute Jacobian, its inverse and determinant
-    compute_jacobian_new(dphi, cell_geometry, J);
+    compute_jacobian(dphi, cell_geometry, J);
     compute_jacobian_inverse(J, K);
 
     // Compute physical coordinates at X=0 (phi(X) * cell_geom).

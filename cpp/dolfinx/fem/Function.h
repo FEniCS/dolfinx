@@ -360,10 +360,10 @@ public:
       xt::xtensor<double, 4> phi = cmap.tabulate(1, X);
       dphi = xt::view(phi, xt::range(1, tdim + 1), 0, xt::all(), 0);
       J.fill(0);
-      cmap.compute_jacobian_new(dphi, coordinate_dofs,
-                                xt::view(J, 0, xt::all(), xt::all()));
-      cmap.compute_jacobian_inverse_new(xt::view(J, 0, xt::all(), xt::all()),
-                                        xt::view(K, 0, xt::all(), xt::all()));
+      cmap.compute_jacobian(dphi, coordinate_dofs,
+                            xt::view(J, 0, xt::all(), xt::all()));
+      cmap.compute_jacobian_inverse(xt::view(J, 0, xt::all(), xt::all()),
+                                    xt::view(K, 0, xt::all(), xt::all()));
       detJ[0] = cmap.compute_jacobian_determinant(
           xt::view(J, 0, xt::all(), xt::all()));
 
