@@ -356,11 +356,13 @@ public:
 
       // Compute reference coordinates X, and J, detJ and K
       // cmap.pull_back(X, J, detJ, K, xp, coordinate_dofs);
+      cmap.pull_back(X, xp, coordinate_dofs);
       xt::xtensor<double, 4> phi = cmap.tabulate(1, X);
       auto dphi = xt::view(phi, xt::range(1, tdim + 1), xt::all(), xt::all(),
                            xt::all());
-      cmap.pull_back(X, xp, coordinate_dofs);
       cmap.compute_jacobian(dphi, coordinate_dofs, J);
+      cmap.compute_jacobian_inverse(J, K);
+      cmap.compute_jacobian_determinant(J, detJ);
 
       // Compute basis on reference element
       element->tabulate(basis_derivatives_reference_values, X, 0);
