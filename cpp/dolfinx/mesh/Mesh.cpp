@@ -208,6 +208,10 @@ int Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
 
   // TODO Ghost maps
 
+  auto v_to_v = std::make_shared<graph::AdjacencyList<std::int32_t>>(
+    sub_mesh_vertex_index_map.size_local() +
+    sub_mesh_vertex_index_map.num_ghosts());
+
   return 0;
 }
 //-----------------------------------------------------------------------------
