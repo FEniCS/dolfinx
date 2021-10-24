@@ -239,6 +239,67 @@ void CoordinateElement::pull_back_affine(xt::xtensor<double, 2>& X,
         X(p, i) += K(i, j) * (x(p, j) - x0[j]);
 }
 //-----------------------------------------------------------------------------
+void CoordinateElement::pull_back_nonaffine(
+    xt::xtensor<double, 2>& X, const xt::xtensor<double, 2>& x,
+    const xt::xtensor<double, 2>& cell_geometry, double tol, int maxit) const
+{
+  // Number of points
+  std::size_t num_points = x.shape(0);
+  if (num_points == 0)
+    return;
+
+  const std::size_t tdim = this->topological_dimension();
+  const std::size_t gdim = x.shape(1);
+  const std::size_t num_xnodes = cell_geometry.shape(0);
+  assert(cell_geometry.shape(1) == gdim);
+  assert(X.shape(0) == num_points);
+  assert(X.shape(1) == tdim);
+
+  xt::xtensor<double, 2> dphi({tdim, num_xnodes});
+  xt::xtensor<double, 2> Xk({1, tdim});
+  std::array<double, 3> xk = {0, 0, 0};
+  xt::xtensor<double, 1> dX = xt::empty<double>({tdim});
+  xt::xtensor<double, 2> J({gdim, tdim});
+  xt::xtensor<double, 2> K({tdim, gdim});
+  for (std::size_t p = 0; p < num_points; ++p)
+  {
+    Xk.fill(0);
+    int k;
+    for (k = 0; k < maxit; ++k)
+    {
+      xt::xtensor<double, 4> basis = _element->tabulate(1, Xk);
+      dphi = xt::view(basis, xt::range(1, tdim + 1), 0, xt::all(), 0);
+
+      // x = cell_geometry * phi
+      auto phi = xt::view(basis, 0, 0, xt::all(), 0);
+      std::fill(xk.begin(), xk.end(), 0.0);
+      for (std::size_t i = 0; i < cell_geometry.shape(1); ++i)
+        for (std::size_t j = 0; j < cell_geometry.shape(0); ++j)
+          xk[i] += cell_geometry(j, i) * phi[j];
+
+      // Compute Jacobian, its inverse and determinant
+      J.fill(0);
+      compute_jacobian(dphi, cell_geometry, J);
+      compute_jacobian_inverse(J, K);
+
+      dX.fill(0.0);
+      for (std::size_t i = 0; i < K.shape(0); ++i)
+        for (std::size_t j = 0; j < K.shape(1); ++j)
+          dX[i] += K(i, j) * (x(p, j) - xk[j]);
+
+      Xk += dX;
+      if (std::sqrt(xt::sum(dX * dX)()) < tol)
+        break;
+    }
+    xt::row(X, p) = xt::row(Xk, 0);
+    if (k == maxit)
+    {
+      throw std::runtime_error(
+          "Newton method failed to converge for non-affine geometry");
+    }
+  }
+}
+//-----------------------------------------------------------------------------
 void CoordinateElement::pull_back(
     xt::xtensor<double, 2>& X, const xt::xtensor<double, 2>& x,
     const xt::xtensor<double, 2>& cell_geometry) const
@@ -251,19 +312,16 @@ void CoordinateElement::pull_back(
   // in-argument checks
   const std::size_t tdim = this->topological_dimension();
   const std::size_t gdim = x.shape(1);
-  const std::size_t d = cell_geometry.shape(0);
+  // const std::size_t d = cell_geometry.shape(0);
   assert(cell_geometry.shape(1) == gdim);
 
   // In/out size checks
   assert(X.shape(0) == num_points);
   assert(X.shape(1) == tdim);
-  // assert(J.size() == num_points * gdim * tdim);
-  // assert(detJ.size() == num_points);
-  // assert(K.size() == num_points * gdim * tdim);
 
-  xt::xtensor<double, 4> dphi({tdim, num_points, d, 1});
   if (_is_affine)
   {
+
     // Tabulate shape function and first derivative at the origin
     xt::xtensor<double, 2> X0 = xt::zeros<double>({std::size_t(1), tdim});
     xt::xtensor<double, 4> tabulated_data = _element->tabulate(1, X0);
@@ -286,59 +344,11 @@ void CoordinateElement::pull_back(
 
     // Calculate X for each point
     pull_back_affine(X, K, x0, x);
-    // X.fill(0.0);
-    // for (std::size_t ip = 0; ip < num_points; ++ip)
-    // {
-    //   for (std::size_t i = 0; i < K.shape(0); ++i)
-    //     for (std::size_t j = 0; j < K.shape(1); ++j)
-    //       X(ip, i) += K(i, j) * (x(ip, j) - x0[j]);
-    // }
   }
   else
   {
-    xt::xtensor<double, 2> Xk({1, tdim});
-    std::vector<double> xk(cell_geometry.shape(1));
-    xt::xtensor<double, 1> dX = xt::empty<double>({tdim});
-    for (std::size_t ip = 0; ip < num_points; ++ip)
-    {
-      Xk.fill(0);
-      int k;
-      for (k = 0; k < non_affine_max_its; ++k)
-      {
-        xt::xtensor<double, 4> tabulated_data = _element->tabulate(1, Xk);
-        dphi = xt::view(tabulated_data, xt::range(1, tdim + 1), xt::all(),
-                        xt::all(), xt::all());
-
-        // cell_geometry * phi(0)
-        auto phi0 = xt::view(tabulated_data, 0, 0, xt::all(), 0);
-        std::fill(xk.begin(), xk.end(), 0.0);
-        for (std::size_t i = 0; i < cell_geometry.shape(1); ++i)
-          for (std::size_t j = 0; j < cell_geometry.shape(0); ++j)
-            xk[i] += cell_geometry(j, i) * phi0[j];
-
-        // Compute Jacobian, its inverse and determinant
-        xt::xtensor<double, 3> J({1, gdim, tdim});
-        xt::xtensor<double, 3> K({1, tdim, gdim});
-        compute_jacobian(dphi, cell_geometry, J);
-        compute_jacobian_inverse(J, K);
-
-        dX.fill(0.0);
-        for (std::size_t i = 0; i < K.shape(1); ++i)
-          for (std::size_t j = 0; j < K.shape(2); ++j)
-            dX[i] += K(0, i, j) * (x(ip, j) - xk[j]);
-
-        if (std::sqrt(xt::sum(dX * dX)()) < non_affine_atol)
-          break;
-
-        Xk += dX;
-      }
-      xt::row(X, ip) = xt::row(Xk, 0);
-      if (k == non_affine_max_its)
-      {
-        throw std::runtime_error(
-            "Newton method failed to converge for non-affine geometry");
-      }
-    }
+    pull_back_nonaffine(X, x, cell_geometry, non_affine_atol,
+                        non_affine_max_its);
   }
 }
 //-----------------------------------------------------------------------------
