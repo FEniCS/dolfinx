@@ -337,6 +337,7 @@ public:
         apply_dof_transformation
         = element->get_dof_transformation_function<double>();
 
+    xt::xtensor<double, 2> dphi;
     for (std::size_t p = 0; p < cells.size(); ++p)
     {
       const int cell_index = cells[p];
@@ -355,14 +356,16 @@ public:
         xp(0, j) = x(p, j);
 
       // Compute reference coordinates X, and J, detJ and K
-      // cmap.pull_back(X, J, detJ, K, xp, coordinate_dofs);
       cmap.pull_back(X, xp, coordinate_dofs);
       xt::xtensor<double, 4> phi = cmap.tabulate(1, X);
-      auto dphi = xt::view(phi, xt::range(1, tdim + 1), xt::all(), xt::all(),
-                           xt::all());
-      cmap.compute_jacobian(dphi, coordinate_dofs, J);
-      cmap.compute_jacobian_inverse(J, K);
-      cmap.compute_jacobian_determinant(J, detJ);
+      dphi = xt::view(phi, xt::range(1, tdim + 1), 0, xt::all(), 0);
+      J.fill(0);
+      cmap.compute_jacobian_new(dphi, coordinate_dofs,
+                                xt::view(J, 0, xt::all(), xt::all()));
+      cmap.compute_jacobian_inverse_new(xt::view(J, 0, xt::all(), xt::all()),
+                                        xt::view(K, 0, xt::all(), xt::all()));
+      detJ[0] = cmap.compute_jacobian_determinant(
+          xt::view(J, 0, xt::all(), xt::all()));
 
       // Compute basis on reference element
       element->tabulate(basis_derivatives_reference_values, X, 0);

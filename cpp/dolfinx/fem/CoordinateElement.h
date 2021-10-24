@@ -72,12 +72,6 @@ public:
 
   /// Compute Jacobian for a cell with given geometry using the
   /// basis functions and first order derivatives.
-  void compute_jacobian(const xt::xtensor<double, 2>& dphi,
-                        const xt::xtensor<double, 2>& cell_geometry,
-                        xt::xtensor<double, 2>& J) const;
-
-  /// Compute Jacobian for a cell with given geometry using the
-  /// basis functions and first order derivatives.
   /// @param[in] dphi Derivatives of the basis functions (shape=(tdim,
   /// num geometry nodes))
   /// @param[in] cell_geometry The cell nodes coordinates (shape=(num
@@ -126,6 +120,27 @@ public:
   /// points).
   void compute_jacobian_determinant(const xt::xtensor<double, 3>& J,
                                     xt::xtensor<double, 1>& detJ) const;
+
+  /// Compute the determinant of the Jacobian. If the coordinate element
+  /// is affine, it computes the determinant at only one point.
+  /// @param[in] J Polynomial degree of the map. The shape of J is
+  /// (number of points, geometric dimension, topological dimenson).
+  /// @param[in,out] detJ The Jacobians. The shape of detJ is (number of
+  /// points).
+  template <typename U>
+  double compute_jacobian_determinant(const U& J) const
+  {
+    if (J.shape(0) == J.shape(1))
+      return math::det(J);
+    else
+    {
+      using T = typename U::value_type;
+      auto B = xt::transpose(J);
+      xt::xtensor<T, 2> BA = xt::zeros<T>({B.shape(0), J.shape(1)});
+      math::dot(B, J, BA);
+      return std::sqrt(math::det(BA));
+    }
+  }
 
   /// Return the dof layout
   ElementDofLayout dof_layout() const;

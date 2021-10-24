@@ -12,8 +12,6 @@
 #include <xtensor/xnoalias.hpp>
 #include <xtensor/xview.hpp>
 
-#include <xtensor/xio.hpp>
-
 using namespace dolfinx;
 using namespace dolfinx::fem;
 
@@ -118,13 +116,6 @@ void CoordinateElement::compute_jacobian(
       J_ip.assign(J0);
     }
   }
-}
-//--------------------------------------------------------------------------------
-void CoordinateElement::compute_jacobian(
-    const xt::xtensor<double, 2>& dphi, const xt::xtensor<double, 2>& cell_geom,
-    xt::xtensor<double, 2>& J) const
-{
-  math::dot(cell_geom, dphi, J, true);
 }
 //--------------------------------------------------------------------------------
 void CoordinateElement::compute_jacobian_inverse(
@@ -280,7 +271,7 @@ void CoordinateElement::pull_back_nonaffine(
       // Compute Jacobian, its inverse and determinant
       J.fill(0);
       compute_jacobian_new(dphi, cell_geometry, J);
-      compute_jacobian_inverse(J, K);
+      compute_jacobian_inverse_new(J, K);
 
       dX.fill(0.0);
       for (std::size_t i = 0; i < K.shape(0); ++i)
@@ -323,19 +314,19 @@ void CoordinateElement::pull_back(
   {
     // Tabulate shape function and first derivative at the origin
     xt::xtensor<double, 2> X0 = xt::zeros<double>({std::size_t(1), tdim});
-    xt::xtensor<double, 4> tabulated_data = _element->tabulate(1, X0);
-    auto dphi
-        = xt::view(tabulated_data, xt::range(1, tdim + 1), 0, xt::all(), 0);
+    xt::xtensor<double, 4> data = _element->tabulate(1, X0);
+    xt::xtensor<double, 2> dphi
+        = xt::view(data, xt::range(1, tdim + 1), 0, xt::all(), 0);
 
     xt::xtensor<double, 2> J = xt::zeros<double>({gdim, tdim});
     xt::xtensor<double, 2> K = xt::zeros<double>({tdim, gdim});
 
     // Compute Jacobian, its inverse and determinant
-    compute_jacobian(dphi, cell_geometry, J);
+    compute_jacobian_new(dphi, cell_geometry, J);
     compute_jacobian_inverse(J, K);
 
     // Compute physical coordinates at X=0 (phi(X) * cell_geom).
-    auto phi0 = xt::view(tabulated_data, 0, 0, xt::all(), 0);
+    auto phi0 = xt::view(data, 0, 0, xt::all(), 0);
     std::array<double, 3> x0 = {0, 0, 0};
     for (std::size_t i = 0; i < x.size(); ++i)
       for (std::size_t j = 0; j < phi0.shape(0); ++j)
