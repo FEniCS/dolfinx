@@ -203,7 +203,7 @@ int Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
 
   // Entity index map
   auto entity_index_map = _topology.index_map(dim);
-  auto [sub_mesh_entity_map, global_entities] =
+  auto [sub_mesh_entity_index_map, global_entities] =
     entity_index_map->create_submap(entities);
 
   // TODO Ghost maps
