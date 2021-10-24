@@ -776,14 +776,8 @@ void fem(py::module& m)
               const py::array_t<double, py::array::c_style>& cell_geometry)
            {
              const std::size_t tdim = self.topological_dimension();
-             const std::size_t gdim = x.shape(1);
              const std::size_t num_points = x.shape(0);
              xt::xtensor<double, 2> X = xt::empty<double>({num_points, tdim});
-             xt::xtensor<double, 3> J
-                 = xt::empty<double>({num_points, gdim, tdim});
-             xt::xtensor<double, 3> K
-                 = xt::empty<double>({num_points, tdim, gdim});
-             xt::xtensor<double, 1> detJ = xt::empty<double>({num_points});
 
              std::array<std::size_t, 2> s_x;
              std::copy_n(x.shape(), 2, s_x.begin());
@@ -793,7 +787,7 @@ void fem(py::module& m)
              std::copy_n(cell_geometry.shape(), 2, s_g.begin());
              auto g = xt::adapt(cell_geometry.data(), cell_geometry.size(),
                                 xt::no_ownership(), s_g);
-             self.pull_back(X, J, detJ, K, _x, g);
+             self.pull_back(X, _x, g);
              return xt_as_pyarray(std::move(X));
            })
       .def_readwrite("non_affine_atol",

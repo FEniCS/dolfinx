@@ -130,13 +130,6 @@ public:
   void pull_back(xt::xtensor<double, 2>& X, const xt::xtensor<double, 2>& x,
                  const xt::xtensor<double, 2>& cell_geometry) const;
 
-  /// Compute reference coordinates X, and J, detJ and K for physical
-  /// coordinates x
-  void pull_back(xt::xtensor<double, 2>& X, xt::xtensor<double, 3>& J,
-                 xt::xtensor<double, 1>& detJ, xt::xtensor<double, 3>& K,
-                 const xt::xtensor<double, 2>& x,
-                 const xt::xtensor<double, 2>& cell_geometry) const;
-
   /// Permutes a list of DOF numbers on a cell
   void permute_dofs(const xtl::span<std::int32_t>& dofs,
                     std::uint32_t cell_perm) const;
