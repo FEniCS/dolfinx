@@ -12,6 +12,8 @@
 #include <xtensor/xnoalias.hpp>
 #include <xtensor/xview.hpp>
 
+#include <xtensor/xio.hpp>
+
 using namespace dolfinx;
 using namespace dolfinx::fem;
 
@@ -122,7 +124,7 @@ void CoordinateElement::compute_jacobian(
     const xt::xtensor<double, 2>& dphi, const xt::xtensor<double, 2>& cell_geom,
     xt::xtensor<double, 2>& J) const
 {
-  return math::dot(cell_geom, dphi, J, true);
+  math::dot(cell_geom, dphi, J, true);
 }
 //--------------------------------------------------------------------------------
 void CoordinateElement::compute_jacobian_inverse(
@@ -268,8 +270,8 @@ void CoordinateElement::pull_back(
     auto dphi
         = xt::view(tabulated_data, xt::range(1, tdim + 1), 0, xt::all(), 0);
 
-    xt::xtensor<double, 2> J({gdim, tdim});
-    xt::xtensor<double, 2> K({tdim, gdim});
+    xt::xtensor<double, 2> J = xt::zeros<double>({gdim, tdim});
+    xt::xtensor<double, 2> K = xt::zeros<double>({tdim, gdim});
 
     // Compute Jacobian, its inverse and determinant
     compute_jacobian(dphi, cell_geometry, J);
@@ -284,6 +286,13 @@ void CoordinateElement::pull_back(
 
     // Calculate X for each point
     pull_back_affine(X, K, x0, x);
+    // X.fill(0.0);
+    // for (std::size_t ip = 0; ip < num_points; ++ip)
+    // {
+    //   for (std::size_t i = 0; i < K.shape(0); ++i)
+    //     for (std::size_t j = 0; j < K.shape(1); ++j)
+    //       X(ip, i) += K(i, j) * (x(ip, j) - x0[j]);
+    // }
   }
   else
   {
