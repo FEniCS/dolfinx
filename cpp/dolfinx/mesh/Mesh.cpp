@@ -230,6 +230,11 @@ int Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
   auto sub_mesh_e_to_v = 
     std::make_shared<graph::AdjacencyList<std::int32_t>>(sub_mesh_entities,
                                                          offsets);
+  
+  const CellType entity_type
+      = mesh::cell_entity_type(_topology.cell_type(), dim, 0);
+  auto sub_mesh_topology =
+    std::make_shared<mesh::Topology>(mpi_comm(), entity_type);
 
   return 0;
 }
