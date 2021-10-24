@@ -265,11 +265,11 @@ void CoordinateElement::pull_back(
     // Tabulate shape function and first derivative at the origin
     xt::xtensor<double, 2> X0 = xt::zeros<double>({std::size_t(1), tdim});
     xt::xtensor<double, 4> tabulated_data = _element->tabulate(1, X0);
-    dphi = xt::view(tabulated_data, xt::range(1, tdim + 1), xt::all(),
-                    xt::all(), xt::all());
+    auto dphi
+        = xt::view(tabulated_data, xt::range(1, tdim + 1), 0, xt::all(), 0);
 
-    xt::xtensor<double, 3> J({num_points, gdim, tdim});
-    xt::xtensor<double, 3> K({num_points, tdim, gdim});
+    xt::xtensor<double, 2> J({gdim, tdim});
+    xt::xtensor<double, 2> K({tdim, gdim});
 
     // Compute Jacobian, its inverse and determinant
     compute_jacobian(dphi, cell_geometry, J);
@@ -379,7 +379,14 @@ void CoordinateElement::pull_back(
         x0[i] += cell_geometry(j, i) * phi0[j];
 
     // Calculate X for each point
-    pull_back_affine(X, K, x0, x);
+    auto K0 = xt::view(K, 0, xt::all(), xt::all());
+    X.fill(0.0);
+    for (std::size_t ip = 0; ip < num_points; ++ip)
+    {
+      for (std::size_t i = 0; i < K0.shape(0); ++i)
+        for (std::size_t j = 0; j < K0.shape(1); ++j)
+          X(ip, i) += K0(i, j) * (x(ip, j) - x0[j]);
+    }
   }
   else
   {
