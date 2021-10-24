@@ -198,19 +198,38 @@ int Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
   auto [sub_mesh_vertex_index_map, global_vertices] =
     vertex_index_map->create_submap(sub_mesh_vertices);
 
-  // TODO Ghost maps i.e.
-  // std::vector<std::int32_t> vertex_map(global_vertices);
-
   // Entity index map
   auto entity_index_map = _topology.index_map(dim);
   auto [sub_mesh_entity_index_map, global_entities] =
     entity_index_map->create_submap(entities);
 
-  // TODO Ghost maps
-
+  // Vertex index map
   auto v_to_v = std::make_shared<graph::AdjacencyList<std::int32_t>>(
     sub_mesh_vertex_index_map.size_local() +
     sub_mesh_vertex_index_map.num_ghosts());
+
+  std::vector<std::int32_t> sub_mesh_entities;
+  std::vector<std::int32_t> offsets(1, 0);
+  for (auto entity : entities)
+  {
+    auto vertices = e_to_v->links(entity);
+
+    for (auto vertex : vertices)
+    {
+      auto sub_mesh_vertex_it = std::find(sub_mesh_vertices.begin(),
+                                          sub_mesh_vertices.end(),
+                                          vertex);
+      assert(sub_mesh_vertex_it != sub_mesh_vertices.end());
+      std::int32_t sub_mesh_vertex = std::distance(sub_mesh_vertices.begin(),
+                                                   sub_mesh_vertex_it);
+      sub_mesh_entities.push_back(sub_mesh_vertex);
+    }
+    offsets.push_back(sub_mesh_entities.size());
+  }
+
+  auto sub_mesh_e_to_v = 
+    std::make_shared<graph::AdjacencyList<std::int32_t>>(sub_mesh_entities,
+                                                         offsets);
 
   return 0;
 }
