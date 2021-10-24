@@ -121,12 +121,10 @@ public:
   void compute_jacobian_determinant(const xt::xtensor<double, 3>& J,
                                     xt::xtensor<double, 1>& detJ) const;
 
-  /// Compute the determinant of the Jacobian. If the coordinate element
-  /// is affine, it computes the determinant at only one point.
-  /// @param[in] J Polynomial degree of the map. The shape of J is
-  /// (number of points, geometric dimension, topological dimenson).
-  /// @param[in,out] detJ The Jacobians. The shape of detJ is (number of
-  /// points).
+  /// Compute the determinant of the Jacobian
+  /// @param[in] J Jacobian (shape=(geometric dimension, topological
+  /// dimenson))
+  /// @return Determinant of `J`
   template <typename U>
   double compute_jacobian_determinant(const U& J) const
   {
