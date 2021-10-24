@@ -66,7 +66,7 @@ public:
   /// @param[out] J The Jacobian. It must have shape=(gdim, tdim) and
   /// must initialized to zero
   template <typename U, typename V, typename W>
-  void compute_jacobian(const U& dphi, const V& cell_geometry, W&& J) const
+  static void compute_jacobian(const U& dphi, const V& cell_geometry, W&& J)
   {
     math::dot(cell_geometry, dphi, J, true);
   }
@@ -75,7 +75,7 @@ public:
   /// @param[in] J The Jacobian (shape=(gdim, tdim))
   /// @param[out] K The Jacobian (shape=(tdim, gdim))
   template <typename U, typename V>
-  void compute_jacobian_inverse(const U& J, V&& K) const
+  static void compute_jacobian_inverse(const U& J, V&& K)
   {
     const int gdim = J.shape(1);
     const int tdim = K.shape(1);
@@ -89,7 +89,7 @@ public:
   /// @param[in] J Jacobian (shape=(gdim, tdim))
   /// @return Determinant of `J`
   template <typename U>
-  double compute_jacobian_determinant(const U& J) const
+  static double compute_jacobian_determinant(const U& J)
   {
     if (J.shape(0) == J.shape(1))
       return math::det(J);
@@ -103,7 +103,7 @@ public:
     }
   }
 
-  /// Return the dof layout
+  /// Compute and return the dof layout
   ElementDofLayout dof_layout() const;
 
   /// Compute physical coordinates x for points X  in the reference
