@@ -198,6 +198,16 @@ int Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
   auto [sub_mesh_vertex_index_map, global_vertices] =
     vertex_index_map->create_submap(sub_mesh_vertices);
 
+  // TODO Ghost maps i.e.
+  // std::vector<std::int32_t> vertex_map(global_vertices);
+
+  // Entity index map
+  auto entity_index_map = _topology.index_map(dim);
+  auto [sub_mesh_entity_map, global_entities] =
+    entity_index_map->create_submap(entities);
+
+  // TODO Ghost maps
+
   return 0;
 }
 //-----------------------------------------------------------------------------
