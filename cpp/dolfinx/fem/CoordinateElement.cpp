@@ -279,7 +279,7 @@ void CoordinateElement::pull_back_nonaffine(
 
       // Compute Jacobian, its inverse and determinant
       J.fill(0);
-      compute_jacobian(dphi, cell_geometry, J);
+      compute_jacobian_new(dphi, cell_geometry, J);
       compute_jacobian_inverse(J, K);
 
       dX.fill(0.0);
@@ -321,7 +321,6 @@ void CoordinateElement::pull_back(
 
   if (_is_affine)
   {
-
     // Tabulate shape function and first derivative at the origin
     xt::xtensor<double, 2> X0 = xt::zeros<double>({std::size_t(1), tdim});
     xt::xtensor<double, 4> tabulated_data = _element->tabulate(1, X0);

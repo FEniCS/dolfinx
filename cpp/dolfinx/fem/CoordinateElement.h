@@ -8,6 +8,7 @@
 
 #include "ElementDofLayout.h"
 #include <cstdint>
+#include <dolfinx/common/math.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <functional>
 #include <memory>
@@ -75,6 +76,20 @@ public:
                         const xt::xtensor<double, 2>& cell_geometry,
                         xt::xtensor<double, 2>& J) const;
 
+  /// Compute Jacobian for a cell with given geometry using the
+  /// basis functions and first order derivatives.
+  /// @param[in] dphi Derivatives of the basis functions (shape=(tdim,
+  /// num geometry nodes))
+  /// @param[in] cell_geometry The cell nodes coordinates (shape=(num
+  /// geometry nodes, gdim))
+  /// @param[out] J The Jacobian. It must have shape=(gdim, tdim) and
+  /// must initialized to zero
+  template <typename U, typename V, typename W>
+  void compute_jacobian_new(const U& dphi, const V& cell_geometry, W&& J) const
+  {
+    math::dot(cell_geometry, dphi, J, true);
+  }
+
   /// Compute the inverse of the Jacobian. If the coordinate element is
   /// affine, it computes the inverse at only one point.
   /// @param[in] J The Jacobian
@@ -89,6 +104,19 @@ public:
   /// affine, it computes the inverse at only one point.
   void compute_jacobian_inverse(const xt::xtensor<double, 2>& J,
                                 xt::xtensor<double, 2>& K) const;
+
+  /// Compute the inverse of the Jacobian. If the coordinate element is
+  /// affine, it computes the inverse at only one point.
+  template <typename U, typename V>
+  void compute_jacobian_inverse_new(const U& J, V&& K) const
+  {
+    const int gdim = J.shape(1);
+    const int tdim = K.shape(1);
+    if (gdim == tdim)
+      math::inv(J, K);
+    else
+      math::pinv(J, K);
+  }
 
   /// Compute the determinant of the Jacobian. If the coordinate element
   /// is affine, it computes the determinant at only one point.
