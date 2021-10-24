@@ -15,26 +15,6 @@
 using namespace dolfinx;
 using namespace dolfinx::fem;
 
-namespace
-{
-// Computes the determinant of rectangular matrices
-// det(A^T * A) = det(A) * det(A)
-template <typename Matrix>
-double compute_determinant(Matrix& A)
-{
-  if (A.shape(0) == A.shape(1))
-    return math::det(A);
-  else
-  {
-    using T = typename Matrix::value_type;
-    xt::xtensor<T, 2> B = xt::transpose(A);
-    xt::xtensor<T, 2> BA = xt::zeros<T>({B.shape(0), A.shape(1)});
-    math::dot(B, A, BA);
-    return std::sqrt(math::det(BA));
-  }
-}
-} // namespace
-
 //-----------------------------------------------------------------------------
 CoordinateElement::CoordinateElement(
     std::shared_ptr<basix::FiniteElement> element)
