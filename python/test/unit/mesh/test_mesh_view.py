@@ -18,5 +18,5 @@ mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, n, n)
 entity_dim = mesh.topology.dim - 1
 entities = dolfinx.mesh.locate_entities_boundary(mesh, entity_dim, boundary)
 
-i = mesh.sub(entity_dim, entities)
-# print(i)
+submesh = mesh.sub(entity_dim, entities)
+print(submesh)

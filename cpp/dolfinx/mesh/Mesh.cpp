@@ -17,6 +17,7 @@
 #include <dolfinx/graph/partition.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <memory>
+#include <xtensor/xio.hpp>
 
 #include "graphbuild.h"
 
@@ -173,7 +174,7 @@ Mesh mesh::create_mesh(MPI_Comm comm,
               mesh::create_geometry(comm, topology, element, cell_nodes1, x));
 }
 //-----------------------------------------------------------------------------
-int Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
+Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
 {
   _topology.create_connectivity(dim, 0);
 
@@ -245,7 +246,38 @@ int Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
   submesh_topology->set_connectivity(submesh_v_to_v, 0, 0);
   submesh_topology->set_connectivity(submesh_e_to_v, dim, 0);
 
-  return 0;
+  auto e_to_g = mesh::entities_to_geometry(*this, dim, entities, false);
+
+  std::cout << e_to_g << "\n";
+  std::vector<std::int64_t> submesh_cells;
+  std::vector<std::int32_t> submesh_cells_offsets(1, 0);
+  for (int i = 0; i < e_to_g.shape()[0]; ++i)
+  {
+    for (int j = 0; j < e_to_g.shape()[1]; ++j)
+    {
+      submesh_cells.push_back(e_to_g(i, j));
+    }
+    submesh_cells_offsets.push_back(submesh_cells.size());
+  }
+  graph::AdjacencyList<std::int64_t> submesh_cells_al(std::move(submesh_cells),
+                                                      std::move(submesh_cells_offsets));
+
+  // TODO Don't hardcode!
+  xt::xarray<int> unique_sorted_x_dofs {0, 1, 2, 3};
+
+  // FIXME Don't hardcode number of rows
+  xt::xarray<double> submesh_x = xt::zeros<double>({4, 3});
+  const xt::xtensor<double, 2>& x_g = geometry().x();
+  for (int i = 0; i < 4; ++i)
+  {
+    xt::view(submesh_x, i, xt::all()) = xt::row(x_g, unique_sorted_x_dofs[i]);
+  }
+
+  auto submesh_coord_ele = fem::CoordinateElement(mesh::CellType::interval, 1);
+  auto submesh_geometry =
+    mesh::create_geometry(mpi_comm(), *submesh_topology, submesh_coord_ele, submesh_cells_al, submesh_x);
+
+  return Mesh(mpi_comm(), std::move(*submesh_topology), submesh_geometry);
 }
 //-----------------------------------------------------------------------------
 Topology& Mesh::topology() { return _topology; }

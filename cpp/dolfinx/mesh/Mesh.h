@@ -113,7 +113,7 @@ public:
   /// @return The communicator on which the mesh is distributed
   MPI_Comm mpi_comm() const;
 
-  int sub(int dim, const xtl::span<const std::int32_t>& entities);
+  Mesh sub(int dim, const xtl::span<const std::int32_t>& entities);
 
   /// Name
   std::string name = "mesh";
