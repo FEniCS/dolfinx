@@ -164,11 +164,6 @@ public:
                            const xt::xtensor<double, 2>& cell_geometry,
                            double tol = 1.0e-8, int maxit = 10) const;
 
-  /// Compute reference coordinates X, and J, detJ and K for physical
-  /// coordinates x
-  void pull_back(xt::xtensor<double, 2>& X, const xt::xtensor<double, 2>& x,
-                 const xt::xtensor<double, 2>& cell_geometry) const;
-
   /// Permutes a list of DOF numbers on a cell
   void permute_dofs(const xtl::span<std::int32_t>& dofs,
                     std::uint32_t cell_perm) const;
@@ -187,12 +182,6 @@ public:
   /// Check is geometry map is affine
   /// @return True is geometry map is affine
   bool is_affine() const noexcept { return _is_affine; }
-
-  /// Absolute increment stopping criterium for non-affine Newton solver
-  double non_affine_atol = 1.0e-8;
-
-  /// Maximum number of iterations for non-affine Newton solver
-  int non_affine_max_its = 10;
 
 private:
   // Flag denoting affine map

@@ -378,7 +378,7 @@ public:
       }
       else
       {
-        cmap.pull_back(X, xp, coordinate_dofs);
+        cmap.pull_back_nonaffine(X, xp, coordinate_dofs);
         cmap.tabulate(1, X, phi);
         dphi = xt::view(phi, xt::range(1, tdim + 1), 0, xt::all(), 0);
         J.fill(0);

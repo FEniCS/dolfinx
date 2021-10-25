@@ -775,8 +775,9 @@ void fem(py::module& m)
               const py::array_t<double, py::array::c_style>& x,
               const py::array_t<double, py::array::c_style>& cell_geometry)
            {
-             const std::size_t tdim = self.topological_dimension();
              const std::size_t num_points = x.shape(0);
+             const std::size_t gdim= x.shape(1);
+             const std::size_t tdim = self.topological_dimension();
              xt::xtensor<double, 2> X = xt::empty<double>({num_points, tdim});
 
              std::array<std::size_t, 2> s_x;
@@ -787,13 +788,26 @@ void fem(py::module& m)
              std::copy_n(cell_geometry.shape(), 2, s_g.begin());
              auto g = xt::adapt(cell_geometry.data(), cell_geometry.size(),
                                 xt::no_ownership(), s_g);
-             self.pull_back(X, _x, g);
+
+             if (self.is_affine())
+             {
+               xt::xtensor<double, 2> J = xt::zeros<double>({gdim, tdim});
+               xt::xtensor<double, 2> K = xt::zeros<double>({tdim, gdim});
+               xt::xtensor<double, 4> data(self.tabulate_shape(1, 1));
+               const xt::xtensor<double, 2> X0
+                   = xt::zeros<double>({std::size_t(1), tdim});
+               self.tabulate(1, X0, data);
+               xt::xtensor<double, 2> dphi
+                   = xt::view(data, xt::range(1, tdim + 1), 0, xt::all(), 0);
+               self.compute_jacobian(dphi, g, J);
+               self.compute_jacobian_inverse(J, K);
+               self.pull_back_affine(X, K, self.x0(g), _x);
+             }
+             else
+               self.pull_back_nonaffine(X, _x, g);
+
              return xt_as_pyarray(std::move(X));
-           })
-      .def_readwrite("non_affine_atol",
-                     &dolfinx::fem::CoordinateElement::non_affine_atol)
-      .def_readwrite("non_affine_max_its",
-                     &dolfinx::fem::CoordinateElement::non_affine_max_its);
+           });
 
   // dolfinx::fem::assemble
   declare_functions<double>(m);

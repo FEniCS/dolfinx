@@ -173,56 +173,6 @@ void CoordinateElement::pull_back_nonaffine(
   }
 }
 //-----------------------------------------------------------------------------
-void CoordinateElement::pull_back(
-    xt::xtensor<double, 2>& X, const xt::xtensor<double, 2>& x,
-    const xt::xtensor<double, 2>& cell_geometry) const
-{
-  // Number of points
-  std::size_t num_points = x.shape(0);
-  if (num_points == 0)
-    return;
-
-  // in-argument checks
-  const std::size_t tdim = this->topological_dimension();
-  const std::size_t gdim = x.shape(1);
-  // const std::size_t d = cell_geometry.shape(0);
-  assert(cell_geometry.shape(1) == gdim);
-
-  // In/out size checks
-  assert(X.shape(0) == num_points);
-  assert(X.shape(1) == tdim);
-
-  if (_is_affine)
-  {
-    // Tabulate shape function and first derivative at point in the cell
-    xt::xtensor<double, 2> X0 = xt::zeros<double>({std::size_t(1), tdim});
-    xt::xtensor<double, 4> data = _element->tabulate(1, X0);
-    xt::xtensor<double, 2> dphi
-        = xt::view(data, xt::range(1, tdim + 1), 0, xt::all(), 0);
-
-    // Compute Jacobian, its inverse and determinant
-    xt::xtensor<double, 2> J = xt::zeros<double>({gdim, tdim});
-    xt::xtensor<double, 2> K = xt::zeros<double>({tdim, gdim});
-    compute_jacobian(dphi, cell_geometry, J);
-    compute_jacobian_inverse(J, K);
-
-    // Compute physical coordinates at X=0 (phi(X) * cell_geom).
-    // auto phi0 = xt::view(data, 0, 0, xt::all(), 0);
-    // std::array<double, 3> x0 = {0, 0, 0};
-    // for (std::size_t i = 0; i < x.size(); ++i)
-    //   for (std::size_t j = 0; j < phi0.shape(0); ++j)
-    //     x0[i] += cell_geometry(j, i) * phi0[j];
-
-    // Calculate X for each point
-    pull_back_affine(X, K, x0(cell_geometry), x);
-  }
-  else
-  {
-    pull_back_nonaffine(X, x, cell_geometry, non_affine_atol,
-                        non_affine_max_its);
-  }
-}
-//-----------------------------------------------------------------------------
 void CoordinateElement::permute_dofs(const xtl::span<std::int32_t>& dofs,
                                      std::uint32_t cell_perm) const
 {
