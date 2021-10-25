@@ -140,6 +140,7 @@ public:
   /// 0)
   /// @param[in] cell_geometry The cell geometry
   /// @return Physical coordinate of the X=(0, 0, 0)
+  /// @note Assumes that x0 is given by cell_geometry(0, i)
   static std::array<double, 3> x0(const xt::xtensor<double, 2>& cell_geometry);
 
   /// Compute reference coordinates X for physical coordinates x for an
