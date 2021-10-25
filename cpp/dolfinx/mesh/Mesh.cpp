@@ -195,19 +195,23 @@ int Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
   // Vertex index map
   auto vertex_index_map = _topology.index_map(0);
   std::pair<common::IndexMap, std::vector<int32_t>>
-      submesh_vertex_index_map_pair
-      = vertex_index_map->create_submap(submesh_vertices);
+      submesh_vertex_index_map_pair =
+      vertex_index_map->create_submap(submesh_vertices);
   auto submesh_vertex_index_map = std::make_shared<common::IndexMap>(
       std::move(submesh_vertex_index_map_pair.first));
   auto global_vertices = submesh_vertex_index_map_pair.second;
 
   // Entity index map
   auto entity_index_map = _topology.index_map(dim);
-  auto [submesh_entity_index_map, global_entities]
-      = entity_index_map->create_submap(entities);
+  std::pair<common::IndexMap, std::vector<int32_t>>
+      submesh_entity_index_map_pair =
+      entity_index_map->create_submap(entities);
+  auto submesh_entity_index_map = std::make_shared<common::IndexMap>(
+      std::move(submesh_entity_index_map_pair.first));
+  auto global_entities = submesh_entity_index_map_pair.second;
 
   // Vertex index map
-  auto v_to_v = std::make_shared<graph::AdjacencyList<std::int32_t>>(
+  auto submesh_v_to_v = std::make_shared<graph::AdjacencyList<std::int32_t>>(
       submesh_vertex_index_map->size_local()
       + submesh_vertex_index_map->num_ghosts());
 
@@ -237,6 +241,7 @@ int Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
   auto submesh_topology
       = std::make_shared<mesh::Topology>(mpi_comm(), entity_type);
   submesh_topology->set_index_map(0, submesh_vertex_index_map);
+  submesh_topology->set_index_map(dim, submesh_entity_index_map);
 
   return 0;
 }
