@@ -291,14 +291,6 @@ public:
                                "elements. Extract subspaces.");
     }
 
-    // Prepare geometry data structures
-    xt::xtensor<double, 2> X({1, tdim});
-    xt::xtensor<double, 3> J
-        = xt::zeros<double>({static_cast<std::size_t>(1), gdim, tdim});
-    xt::xtensor<double, 3> K
-        = xt::zeros<double>({static_cast<std::size_t>(1), tdim, gdim});
-    xt::xtensor<double, 1> detJ = xt::zeros<double>({1});
-
     // Prepare basis function data structures
     xt::xtensor<double, 4> basis_derivatives_reference_values(
         {1, 1, space_dimension, reference_value_size});
@@ -324,8 +316,7 @@ public:
 
     xt::xtensor<double, 2> coordinate_dofs
         = xt::zeros<double>({num_dofs_g, gdim});
-    xt::xtensor<double, 2> xp
-        = xt::zeros<double>({static_cast<std::size_t>(1), gdim});
+    xt::xtensor<double, 2> xp = xt::zeros<double>({std::size_t(1), gdim});
 
     // Loop over points
     std::fill(u.data(), u.data() + u.size(), 0.0);
@@ -338,6 +329,11 @@ public:
         = element->get_dof_transformation_function<double>();
 
     xt::xtensor<double, 2> dphi;
+    xt::xtensor<double, 2> X({1, tdim});
+    xt::xtensor<double, 3> J = xt::zeros<double>({std::size_t(1), gdim, tdim});
+    xt::xtensor<double, 3> K = xt::zeros<double>({std::size_t(1), tdim, gdim});
+    xt::xtensor<double, 1> detJ = xt::zeros<double>({1});
+    xt::xtensor<double, 4> phi(cmap.tabulate_shape(1, 1));
     for (std::size_t p = 0; p < cells.size(); ++p)
     {
       const int cell_index = cells[p];
@@ -357,7 +353,7 @@ public:
 
       // Compute reference coordinates X, and J, detJ and K
       cmap.pull_back(X, xp, coordinate_dofs);
-      xt::xtensor<double, 4> phi = cmap.tabulate(1, X);
+      cmap.tabulate(1, X, phi);
       dphi = xt::view(phi, xt::range(1, tdim + 1), 0, xt::all(), 0);
       J.fill(0);
       cmap.compute_jacobian(dphi, coordinate_dofs,

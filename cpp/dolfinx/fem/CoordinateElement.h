@@ -48,14 +48,35 @@ public:
   /// Return the topological dimension of the cell shape
   int topological_dimension() const;
 
-  /// Compute basis values and derivatives at set of points.
-  /// @param[in] n The order of derivatives, up to and including, to
+  /// Shape of array to fill when calling `FiniteElement::tabulate`
+  /// @param[in] nd The order of derivatives, up to and including, to
+  /// compute. Use 0 for the basis functions only
+  /// @param[in] num_points Number of points at which to evaluate the
+  /// basis functions
+  /// @return The shape of the array to be filled by `FiniteElement::tabulate`
+  std::array<std::size_t, 4> tabulate_shape(std::size_t nd,
+                                            std::size_t num_points) const;
+
+  /// Evaluate basis values and derivatives at set of points.
+  /// @param[in] nd The order of derivatives, up to and including, to
   /// compute. Use 0 for the basis functions only.
   /// @param[in] X The points at which to compute the basis functions.
   /// The shape of x is (number of points, geometric dimension).
   /// @return The basis functions (and derivatives). The shape is
   /// (derivative, number point, number of basis fn, value size).
-  xt::xtensor<double, 4> tabulate(int n, const xt::xtensor<double, 2>& X) const;
+  xt::xtensor<double, 4> tabulate(int nd,
+                                  const xt::xtensor<double, 2>& X) const;
+
+  /// Evaluate basis values and derivatives at set of points.
+  /// @param[in] nd The order of derivatives, up to and including, to
+  /// compute. Use 0 for the basis functions only.
+  /// @param[in] X The points at which to compute the basis functions.
+  /// The shape of x is (number of points, geometric dimension).
+  /// @param[out] basis The array to fill with the basis function
+  /// values. The shape can be computed using
+  /// `FiniteElemenet::tabulate_shape`
+  void tabulate(int nd, const xt::xtensor<double, 2>& X,
+                xt::xtensor<double, 4>& basis) const;
 
   /// Compute Jacobian for a cell with given geometry using the
   /// basis functions and first order derivatives.

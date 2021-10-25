@@ -44,10 +44,22 @@ int CoordinateElement::topological_dimension() const
   return basix::cell::topological_dimension(_element->cell_type());
 }
 //-----------------------------------------------------------------------------
+std::array<std::size_t, 4>
+CoordinateElement::tabulate_shape(std::size_t nd, std::size_t num_points) const
+{
+  return _element->tabulate_shape(nd, num_points);
+}
+//-----------------------------------------------------------------------------
 xt::xtensor<double, 4>
 CoordinateElement::tabulate(int n, const xt::xtensor<double, 2>& X) const
 {
   return _element->tabulate(n, X);
+}
+//--------------------------------------------------------------------------------
+void CoordinateElement::tabulate(int n, const xt::xtensor<double, 2>& X,
+                                 xt::xtensor<double, 4>& basis) const
+{
+  _element->tabulate(n, X, basis);
 }
 //--------------------------------------------------------------------------------
 ElementDofLayout CoordinateElement::dof_layout() const
@@ -112,13 +124,14 @@ void CoordinateElement::pull_back_nonaffine(
   xt::xtensor<double, 1> dX = xt::empty<double>({tdim});
   xt::xtensor<double, 2> J({gdim, tdim});
   xt::xtensor<double, 2> K({tdim, gdim});
+  xt::xtensor<double, 4> basis(_element->tabulate_shape(1, 1));
   for (std::size_t p = 0; p < num_points; ++p)
   {
     Xk.fill(0);
     int k;
     for (k = 0; k < maxit; ++k)
     {
-      xt::xtensor<double, 4> basis = _element->tabulate(1, Xk);
+      _element->tabulate(1, Xk, basis);
       dphi = xt::view(basis, xt::range(1, tdim + 1), 0, xt::all(), 0);
 
       // x = cell_geometry * phi
