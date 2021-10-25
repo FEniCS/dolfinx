@@ -234,7 +234,6 @@ FiniteElement::sub_elements() const noexcept
   return _sub_elements;
 }
 //-----------------------------------------------------------------------------
-
 std::size_t FiniteElement::hash() const noexcept { return _hash; }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const FiniteElement>
