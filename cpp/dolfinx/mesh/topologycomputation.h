@@ -35,8 +35,8 @@ class Topology;
 /// @param[in] topology Mesh topology
 /// @param[in] dim The dimension of the entities to create
 /// @return Tuple of (cell-entity connectivity, entity-vertex
-///   connectivity, index map). If the entities already exist, then
-///   {nullptr, nullptr, nullptr} is returned.
+/// connectivity, index map). If the entities already exist, then
+/// {nullptr, nullptr, nullptr} is returned.
 std::tuple<std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
            std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
            std::shared_ptr<common::IndexMap>>
@@ -48,10 +48,10 @@ compute_entities(MPI_Comm comm, const Topology& topology, int dim);
 /// @param[in] d0 The dimension of the nodes in the adjacency list
 /// @param[in] d1 The dimension of the edges in the adjacency list
 /// @returns The connectivities [(d0, d1), (d1, d0)] if they are
-///   computed. If (d0, d1) already exists then a nullptr is returned.
-///   If (d0, d1) is computed and the computation of (d1, d0) was
-///   required as part of computing (d0, d1), the (d1, d0) is returned
-///   as the second entry. The second entry is otherwise nullptr.
+/// computed. If (d0, d1) already exists then a nullptr is returned. If
+/// (d0, d1) is computed and the computation of (d1, d0) was required as
+/// part of computing (d0, d1), the (d1, d0) is returned as the second
+/// entry. The second entry is otherwise nullptr.
 std::array<std::shared_ptr<graph::AdjacencyList<std::int32_t>>, 2>
 compute_connectivity(const Topology& topology, int d0, int d1);
 

@@ -283,34 +283,6 @@ refinement::create_new_vertices(
           std::move(new_vertex_coordinates)};
 }
 //-----------------------------------------------------------------------------
-std::vector<std::int64_t> refinement::adjust_indices(
-    const std::shared_ptr<const common::IndexMap>& index_map, std::int32_t n)
-{
-  // Add in an extra "n" indices at the end of the current local_range
-  // of "index_map", and adjust existing indices to match.
-
-  // Get number of new indices on all processes
-  MPI_Comm comm = index_map->comm();
-  int mpi_size = dolfinx::MPI::size(comm);
-  int mpi_rank = dolfinx::MPI::rank(comm);
-  std::vector<std::int32_t> recvn(mpi_size);
-  MPI_Allgather(&n, 1, MPI_INT32_T, recvn.data(), 1, MPI_INT32_T, comm);
-  std::vector<std::int64_t> global_offsets = {0};
-  for (std::int32_t r : recvn)
-    global_offsets.push_back(global_offsets.back() + r);
-
-  std::vector global_indices = index_map->global_indices();
-
-  const std::vector<int>& ghost_owners = index_map->ghost_owner_rank();
-  int local_size = index_map->size_local();
-  for (int i = 0; i < local_size; ++i)
-    global_indices[i] += global_offsets[mpi_rank];
-  for (std::size_t i = 0; i < ghost_owners.size(); ++i)
-    global_indices[local_size + i] += global_offsets[ghost_owners[i]];
-
-  return global_indices;
-}
-//-----------------------------------------------------------------------------
 mesh::Mesh
 refinement::partition(const mesh::Mesh& old_mesh,
                       const graph::AdjacencyList<std::int64_t>& cell_topology,
@@ -327,7 +299,8 @@ refinement::partition(const mesh::Mesh& old_mesh,
 
   auto partitioner = [](MPI_Comm comm, int, int tdim,
                         const graph::AdjacencyList<std::int64_t>& cell_topology,
-                        mesh::GhostMode) {
+                        mesh::GhostMode)
+  {
     // Find out the ghosting information
     auto [graph, _] = mesh::build_dual_graph(comm, cell_topology, tdim);
 
@@ -383,5 +356,33 @@ refinement::partition(const mesh::Mesh& old_mesh,
   return mesh::create_mesh(old_mesh.mpi_comm(), cell_topology,
                            old_mesh.geometry().cmap(), new_vertex_coordinates,
                            gm, partitioner);
+}
+//-----------------------------------------------------------------------------
+std::vector<std::int64_t>
+refinement::adjust_indices(const common::IndexMap& index_map, std::int32_t n)
+{
+  // Add in an extra "n" indices at the end of the current local_range
+  // of "index_map", and adjust existing indices to match.
+
+  // Get number of new indices on all processes
+  MPI_Comm comm = index_map.comm();
+  int mpi_size = dolfinx::MPI::size(comm);
+  int mpi_rank = dolfinx::MPI::rank(comm);
+  std::vector<std::int32_t> recvn(mpi_size);
+  MPI_Allgather(&n, 1, MPI_INT32_T, recvn.data(), 1, MPI_INT32_T, comm);
+  std::vector<std::int64_t> global_offsets = {0};
+  for (std::int32_t r : recvn)
+    global_offsets.push_back(global_offsets.back() + r);
+
+  std::vector global_indices = index_map.global_indices();
+
+  const std::vector<int>& ghost_owners = index_map.ghost_owner_rank();
+  int local_size = index_map.size_local();
+  for (int i = 0; i < local_size; ++i)
+    global_indices[i] += global_offsets[mpi_rank];
+  for (std::size_t i = 0; i < ghost_owners.size(); ++i)
+    global_indices[local_size + i] += global_offsets[ghost_owners[i]];
+
+  return global_indices;
 }
 //-----------------------------------------------------------------------------
