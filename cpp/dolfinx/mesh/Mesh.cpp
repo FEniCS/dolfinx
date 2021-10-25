@@ -194,8 +194,12 @@ int Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
 
   // Vertex index map
   auto vertex_index_map = _topology.index_map(0);
-  auto [submesh_vertex_index_map, global_vertices]
-      = vertex_index_map->create_submap(submesh_vertices);
+  std::pair<common::IndexMap, std::vector<int32_t>>
+    submesh_vertex_index_map_pair =
+    vertex_index_map->create_submap(submesh_vertices);
+  auto submesh_vertex_index_map = std::make_shared<common::IndexMap>(
+    std::move(submesh_vertex_index_map_pair.first));
+  auto global_vertices = submesh_vertex_index_map_pair.second;
 
   // Entity index map
   auto entity_index_map = _topology.index_map(dim);
@@ -204,8 +208,8 @@ int Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
 
   // Vertex index map
   auto v_to_v = std::make_shared<graph::AdjacencyList<std::int32_t>>(
-      submesh_vertex_index_map.size_local()
-      + submesh_vertex_index_map.num_ghosts());
+      submesh_vertex_index_map->size_local()
+      + submesh_vertex_index_map->num_ghosts());
 
   std::vector<std::int32_t> submesh_entities;
   std::vector<std::int32_t> offsets(1, 0);
@@ -232,7 +236,13 @@ int Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
       = mesh::cell_entity_type(_topology.cell_type(), dim, 0);
   auto submesh_topology
       = std::make_shared<mesh::Topology>(mpi_comm(), entity_type);
-  // submesh_topology->set_index_map(0, &submesh_vertex_index_map);
+  submesh_topology->set_index_map(0, submesh_vertex_index_map);
+
+
+  // std::pair<dolfinx::common::IndexMap, std::vector<int32_t>>
+  //   test_pair = entity_index_map->create_submap(entities);
+  // auto test_submap = std::make_shared<dolfinx::common::IndexMap>(
+  //   std::move(test_pair.first));
 
   return 0;
 }
