@@ -92,9 +92,8 @@ FunctionSpace::collapse() const
       = _dofmap->collapse(_mesh->mpi_comm(), _mesh->topology());
 
   // Create new FunctionSpace and return
-  FunctionSpace collapsed_sub_space(_mesh, _element, collapsed_dofmap);
-
-  return {std::move(collapsed_sub_space), std::move(collapsed_dofs)};
+  return {FunctionSpace(_mesh, _element, collapsed_dofmap),
+          std::move(collapsed_dofs)};
 }
 //-----------------------------------------------------------------------------
 std::vector<int> FunctionSpace::component() const { return _component; }
