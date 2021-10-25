@@ -324,15 +324,15 @@ void CoordinateElement::pull_back(
   }
 }
 //-----------------------------------------------------------------------------
-void CoordinateElement::permute_dofs(xtl::span<std::int32_t> dofs,
-                                     const std::uint32_t cell_perm) const
+void CoordinateElement::permute_dofs(const xtl::span<std::int32_t>& dofs,
+                                     std::uint32_t cell_perm) const
 {
   assert(_element);
   _element->permute_dofs(dofs, cell_perm);
 }
 //-----------------------------------------------------------------------------
-void CoordinateElement::unpermute_dofs(xtl::span<std::int32_t> dofs,
-                                       const std::uint32_t cell_perm) const
+void CoordinateElement::unpermute_dofs(const xtl::span<std::int32_t>& dofs,
+                                       std::uint32_t cell_perm) const
 {
   assert(_element);
   _element->unpermute_dofs(dofs, cell_perm);

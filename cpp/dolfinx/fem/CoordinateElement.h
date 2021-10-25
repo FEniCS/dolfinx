@@ -108,12 +108,12 @@ public:
                  const xt::xtensor<double, 2>& cell_geometry) const;
 
   /// Permutes a list of DOF numbers on a cell
-  void permute_dofs(xtl::span<std::int32_t> dofs,
-                    const std::uint32_t cell_perm) const;
+  void permute_dofs(const xtl::span<std::int32_t>& dofs,
+                    std::uint32_t cell_perm) const;
 
   /// Reverses a DOF permutation
-  void unpermute_dofs(xtl::span<std::int32_t> dofs,
-                      const std::uint32_t cell_perm) const;
+  void unpermute_dofs(const xtl::span<std::int32_t>& dofs,
+                      std::uint32_t cell_perm) const;
 
   /// Indicates whether the geometry DOF numbers on each cell need
   /// permuting
