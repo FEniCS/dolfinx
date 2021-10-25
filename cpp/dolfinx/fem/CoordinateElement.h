@@ -136,6 +136,12 @@ public:
                            const xt::xtensor<double, 2>& cell_geometry,
                            const xt::xtensor<double, 2>& phi);
 
+  /// Compute the physical coordinate of the reference point X=(0 , 0,
+  /// 0)
+  /// @param[in] cell_geometry The cell geometry
+  /// @return Physical coordinate of the X=(0, 0, 0)
+  static std::array<double, 3> x0(const xt::xtensor<double, 2>& cell_geometry);
+
   /// Compute reference coordinates X for physical coordinates x for an
   /// affine map. For the affine case, `x = J X + x0`, and this function
   /// computes `X = K(x -x0)` where `K = J^{-1}`.

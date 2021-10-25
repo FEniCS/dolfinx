@@ -85,6 +85,15 @@ void CoordinateElement::push_forward(
   math::dot(phi, cell_geometry, x);
 }
 //-----------------------------------------------------------------------------
+std::array<double, 3>
+CoordinateElement::x0(const xt::xtensor<double, 2>& cell_geometry)
+{
+  std::array<double, 3> x0 = {0, 0, 0};
+  for (std::size_t i = 0; i < cell_geometry.shape(1); ++i)
+    x0[i] += cell_geometry(0, i);
+  return x0;
+}
+//-----------------------------------------------------------------------------
 void CoordinateElement::pull_back_affine(xt::xtensor<double, 2>& X,
                                          const xt::xtensor<double, 2>& K,
                                          const std::array<double, 3>& x0,
@@ -185,28 +194,27 @@ void CoordinateElement::pull_back(
 
   if (_is_affine)
   {
-    // Tabulate shape function and first derivative at the origin
+    // Tabulate shape function and first derivative at point in the cell
     xt::xtensor<double, 2> X0 = xt::zeros<double>({std::size_t(1), tdim});
     xt::xtensor<double, 4> data = _element->tabulate(1, X0);
     xt::xtensor<double, 2> dphi
         = xt::view(data, xt::range(1, tdim + 1), 0, xt::all(), 0);
 
+    // Compute Jacobian, its inverse and determinant
     xt::xtensor<double, 2> J = xt::zeros<double>({gdim, tdim});
     xt::xtensor<double, 2> K = xt::zeros<double>({tdim, gdim});
-
-    // Compute Jacobian, its inverse and determinant
     compute_jacobian(dphi, cell_geometry, J);
     compute_jacobian_inverse(J, K);
 
     // Compute physical coordinates at X=0 (phi(X) * cell_geom).
-    auto phi0 = xt::view(data, 0, 0, xt::all(), 0);
-    std::array<double, 3> x0 = {0, 0, 0};
-    for (std::size_t i = 0; i < x.size(); ++i)
-      for (std::size_t j = 0; j < phi0.shape(0); ++j)
-        x0[i] += cell_geometry(j, i) * phi0[j];
+    // auto phi0 = xt::view(data, 0, 0, xt::all(), 0);
+    // std::array<double, 3> x0 = {0, 0, 0};
+    // for (std::size_t i = 0; i < x.size(); ++i)
+    //   for (std::size_t j = 0; j < phi0.shape(0); ++j)
+    //     x0[i] += cell_geometry(j, i) * phi0[j];
 
     // Calculate X for each point
-    pull_back_affine(X, K, x0, x);
+    pull_back_affine(X, K, x0(cell_geometry), x);
   }
   else
   {
