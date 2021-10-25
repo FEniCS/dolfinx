@@ -195,10 +195,10 @@ int Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
   // Vertex index map
   auto vertex_index_map = _topology.index_map(0);
   std::pair<common::IndexMap, std::vector<int32_t>>
-    submesh_vertex_index_map_pair =
-    vertex_index_map->create_submap(submesh_vertices);
+      submesh_vertex_index_map_pair
+      = vertex_index_map->create_submap(submesh_vertices);
   auto submesh_vertex_index_map = std::make_shared<common::IndexMap>(
-    std::move(submesh_vertex_index_map_pair.first));
+      std::move(submesh_vertex_index_map_pair.first));
   auto global_vertices = submesh_vertex_index_map_pair.second;
 
   // Entity index map
@@ -237,12 +237,6 @@ int Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
   auto submesh_topology
       = std::make_shared<mesh::Topology>(mpi_comm(), entity_type);
   submesh_topology->set_index_map(0, submesh_vertex_index_map);
-
-
-  // std::pair<dolfinx::common::IndexMap, std::vector<int32_t>>
-  //   test_pair = entity_index_map->create_submap(entities);
-  // auto test_submap = std::make_shared<dolfinx::common::IndexMap>(
-  //   std::move(test_pair.first));
 
   return 0;
 }
