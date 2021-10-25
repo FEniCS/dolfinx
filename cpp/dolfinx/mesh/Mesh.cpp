@@ -175,40 +175,39 @@ Mesh mesh::create_mesh(MPI_Comm comm,
 //-----------------------------------------------------------------------------
 int Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
 {
-  std::cout << "Create connectivity\n";
   _topology.create_connectivity(dim, 0);
 
   auto e_to_v = _topology.connectivity(dim, 0);
 
   // TODO Reserve number as in meshview branch
   // Create vector of unique and ordered vertices
-  std::vector<std::int32_t> sub_mesh_vertices;
+  std::vector<std::int32_t> submesh_vertices;
   for (auto e : entities)
   {
     auto vs = e_to_v->links(e);
-    sub_mesh_vertices.insert(sub_mesh_vertices.end(), vs.begin(), vs.end());
+    submesh_vertices.insert(submesh_vertices.end(), vs.begin(), vs.end());
   }
-  std::sort(sub_mesh_vertices.begin(), sub_mesh_vertices.end());
-  sub_mesh_vertices.erase(
-    std::unique(sub_mesh_vertices.begin(), sub_mesh_vertices.end()),
-    sub_mesh_vertices.end());
-  
+  std::sort(submesh_vertices.begin(), submesh_vertices.end());
+  submesh_vertices.erase(
+      std::unique(submesh_vertices.begin(), submesh_vertices.end()),
+      submesh_vertices.end());
+
   // Vertex index map
   auto vertex_index_map = _topology.index_map(0);
-  auto [sub_mesh_vertex_index_map, global_vertices] =
-    vertex_index_map->create_submap(sub_mesh_vertices);
+  auto [submesh_vertex_index_map, global_vertices]
+      = vertex_index_map->create_submap(submesh_vertices);
 
   // Entity index map
   auto entity_index_map = _topology.index_map(dim);
-  auto [sub_mesh_entity_index_map, global_entities] =
-    entity_index_map->create_submap(entities);
+  auto [submesh_entity_index_map, global_entities]
+      = entity_index_map->create_submap(entities);
 
   // Vertex index map
   auto v_to_v = std::make_shared<graph::AdjacencyList<std::int32_t>>(
-    sub_mesh_vertex_index_map.size_local() +
-    sub_mesh_vertex_index_map.num_ghosts());
+      submesh_vertex_index_map.size_local()
+      + submesh_vertex_index_map.num_ghosts());
 
-  std::vector<std::int32_t> sub_mesh_entities;
+  std::vector<std::int32_t> submesh_entities;
   std::vector<std::int32_t> offsets(1, 0);
   for (auto entity : entities)
   {
@@ -216,25 +215,24 @@ int Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
 
     for (auto vertex : vertices)
     {
-      auto sub_mesh_vertex_it = std::find(sub_mesh_vertices.begin(),
-                                          sub_mesh_vertices.end(),
-                                          vertex);
-      assert(sub_mesh_vertex_it != sub_mesh_vertices.end());
-      std::int32_t sub_mesh_vertex = std::distance(sub_mesh_vertices.begin(),
-                                                   sub_mesh_vertex_it);
-      sub_mesh_entities.push_back(sub_mesh_vertex);
+      auto submesh_vertex_it
+          = std::find(submesh_vertices.begin(), submesh_vertices.end(), vertex);
+      assert(submesh_vertex_it != submesh_vertices.end());
+      std::int32_t submesh_vertex
+          = std::distance(submesh_vertices.begin(), submesh_vertex_it);
+      submesh_entities.push_back(submesh_vertex);
     }
-    offsets.push_back(sub_mesh_entities.size());
+    offsets.push_back(submesh_entities.size());
   }
 
-  auto sub_mesh_e_to_v = 
-    std::make_shared<graph::AdjacencyList<std::int32_t>>(sub_mesh_entities,
-                                                         offsets);
-  
+  auto submesh_e_to_v = std::make_shared<graph::AdjacencyList<std::int32_t>>(
+      submesh_entities, offsets);
+
   const CellType entity_type
       = mesh::cell_entity_type(_topology.cell_type(), dim, 0);
-  auto sub_mesh_topology =
-    std::make_shared<mesh::Topology>(mpi_comm(), entity_type);
+  auto submesh_topology
+      = std::make_shared<mesh::Topology>(mpi_comm(), entity_type);
+  // submesh_topology->set_index_map(0, &submesh_vertex_index_map);
 
   return 0;
 }
