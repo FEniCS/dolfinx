@@ -242,6 +242,8 @@ int Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
       = std::make_shared<mesh::Topology>(mpi_comm(), entity_type);
   submesh_topology->set_index_map(0, submesh_vertex_index_map);
   submesh_topology->set_index_map(dim, submesh_entity_index_map);
+  submesh_topology->set_connectivity(submesh_v_to_v, 0, 0);
+  submesh_topology->set_connectivity(submesh_e_to_v, dim, 0);
 
   return 0;
 }
