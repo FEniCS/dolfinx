@@ -328,6 +328,21 @@ public:
         apply_dof_transformation
         = element->get_dof_transformation_function<double>();
 
+    // -- Lambda function for affine pull-backs
+    const xt::xtensor<double, 2> X0 = xt::zeros<double>({std::size_t(1), tdim});
+    auto pull_back_affine
+        = [&cmap, &X0, tdim](auto&& X, const auto& cell_geometry, auto&& J,
+                             auto&& K, const auto& x)
+    {
+      xt::xtensor<double, 4> data(cmap.tabulate_shape(1, 1));
+      cmap.tabulate(1, X0, data);
+      xt::xtensor<double, 2> dphi
+          = xt::view(data, xt::range(1, tdim + 1), 0, xt::all(), 0);
+      cmap.compute_jacobian(dphi, cell_geometry, J);
+      cmap.compute_jacobian_inverse(J, K);
+      cmap.pull_back_affine(X, K, cmap.x0(cell_geometry), x);
+    };
+
     xt::xtensor<double, 2> dphi;
     xt::xtensor<double, 2> X({1, tdim});
     xt::xtensor<double, 3> J = xt::zeros<double>({std::size_t(1), gdim, tdim});
@@ -352,16 +367,28 @@ public:
         xp(0, j) = x(p, j);
 
       // Compute reference coordinates X, and J, detJ and K
-      cmap.pull_back(X, xp, coordinate_dofs);
-      cmap.tabulate(1, X, phi);
-      dphi = xt::view(phi, xt::range(1, tdim + 1), 0, xt::all(), 0);
-      J.fill(0);
-      cmap.compute_jacobian(dphi, coordinate_dofs,
-                            xt::view(J, 0, xt::all(), xt::all()));
-      cmap.compute_jacobian_inverse(xt::view(J, 0, xt::all(), xt::all()),
-                                    xt::view(K, 0, xt::all(), xt::all()));
-      detJ[0] = cmap.compute_jacobian_determinant(
-          xt::view(J, 0, xt::all(), xt::all()));
+      if (cmap.is_affine())
+      {
+        J.fill(0);
+        pull_back_affine(X, coordinate_dofs,
+                         xt::view(J, 0, xt::all(), xt::all()),
+                         xt::view(K, 0, xt::all(), xt::all()), xp);
+        detJ[0] = cmap.compute_jacobian_determinant(
+            xt::view(J, 0, xt::all(), xt::all()));
+      }
+      else
+      {
+        cmap.pull_back(X, xp, coordinate_dofs);
+        cmap.tabulate(1, X, phi);
+        dphi = xt::view(phi, xt::range(1, tdim + 1), 0, xt::all(), 0);
+        J.fill(0);
+        cmap.compute_jacobian(dphi, coordinate_dofs,
+                              xt::view(J, 0, xt::all(), xt::all()));
+        cmap.compute_jacobian_inverse(xt::view(J, 0, xt::all(), xt::all()),
+                                      xt::view(K, 0, xt::all(), xt::all()));
+        detJ[0] = cmap.compute_jacobian_determinant(
+            xt::view(J, 0, xt::all(), xt::all()));
+      }
 
       // Compute basis on reference element
       element->tabulate(basis_derivatives_reference_values, X, 0);
