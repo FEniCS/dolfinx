@@ -226,7 +226,7 @@ void CoordinateElement::pull_back(
   assert(detJ.size() == num_points);
   assert(K.size() == num_points * gdim * tdim);
 
-  xt::xtensor<double, 4> dphi({tdim, num_points, d, 1});
+  xt::xtensor<double, 4> dphi({tdim, 1, d, 1});
   if (_is_affine)
   {
     // Tabulate shape function and first derivative at the origin
@@ -246,7 +246,7 @@ void CoordinateElement::pull_back(
     // Compute physical coordinates at X=0 (phi(X) * cell_geom).
     auto phi0 = xt::view(tabulated_data, 0, 0, xt::all(), 0);
     std::vector<double> x0(cell_geometry.shape(1), 0.0);
-    for (std::size_t i = 0; i < x.size(); ++i)
+    for (std::size_t i = 0; i < cell_geometry.shape(1); ++i)
       for (std::size_t j = 0; j < phi0.shape(0); ++j)
         x0[i] += cell_geometry(j, i) * phi0[j];
 
