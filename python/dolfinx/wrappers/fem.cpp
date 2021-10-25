@@ -776,7 +776,7 @@ void fem(py::module& m)
               const py::array_t<double, py::array::c_style>& cell_geometry)
            {
              const std::size_t num_points = x.shape(0);
-             const std::size_t gdim= x.shape(1);
+             const std::size_t gdim = x.shape(1);
              const std::size_t tdim = self.topological_dimension();
              xt::xtensor<double, 2> X = xt::empty<double>({num_points, tdim});
 

@@ -383,12 +383,10 @@ public:
         cmap.tabulate(1, X, phi);
         dphi = xt::view(phi, xt::range(1, tdim + 1), 0, xt::all(), 0);
         J.fill(0);
-        cmap.compute_jacobian(dphi, coordinate_dofs,
-                              xt::view(J, 0, xt::all(), xt::all()));
-        cmap.compute_jacobian_inverse(xt::view(J, 0, xt::all(), xt::all()),
-                                      xt::view(K, 0, xt::all(), xt::all()));
-        detJ[0] = cmap.compute_jacobian_determinant(
-            xt::view(J, 0, xt::all(), xt::all()));
+        auto _J = xt::view(J, 0, xt::all(), xt::all());
+        cmap.compute_jacobian(dphi, coordinate_dofs, _J);
+        cmap.compute_jacobian_inverse(_J, xt::view(K, 0, xt::all(), xt::all()));
+        detJ[0] = cmap.compute_jacobian_determinant(_J);
       }
 
       // Compute basis on reference element
