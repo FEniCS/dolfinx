@@ -138,7 +138,8 @@ public:
 
   /// Compute the physical coordinate of the reference point X=(0 , 0,
   /// 0)
-  /// @param[in] cell_geometry The cell geometry
+  /// @param[in] cell_geometry The cell nodes coordinates (shape=(num
+  /// geometry nodes, gdim))
   /// @return Physical coordinate of the X=(0, 0, 0)
   /// @note Assumes that x0 is given by cell_geometry(0, i)
   static std::array<double, 3> x0(const xt::xtensor<double, 2>& cell_geometry);
