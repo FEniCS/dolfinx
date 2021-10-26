@@ -263,17 +263,17 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
   graph::AdjacencyList<std::int64_t> submesh_cells_al(std::move(submesh_cells),
                                                       std::move(submesh_cells_offsets));
 
-  // TODO Don't hardcode!
   xt::xarray<int> unique_sorted_x_dofs = xt::unique(e_to_g);
-
-  // FIXME Don't hardcode number of rows
-  xt::xarray<double> submesh_x = xt::zeros<double>({4, 3});
-  const xt::xtensor<double, 2>& x_g = geometry().x();
-  for (int i = 0; i < 4; ++i)
+  const int submesh_num_x_dofs = unique_sorted_x_dofs.shape()[0];
+  xt::xarray<double> submesh_x = xt::zeros<double>(
+    {submesh_num_x_dofs, 3});
+  const xt::xtensor<double, 2>& x = geometry().x();
+  for (int i = 0; i < submesh_num_x_dofs; ++i)
   {
-    xt::view(submesh_x, i, xt::all()) = xt::row(x_g, unique_sorted_x_dofs[i]);
+    xt::view(submesh_x, i, xt::all()) = xt::row(x, unique_sorted_x_dofs[i]);
   }
 
+  // FIXME Don't hard code
   auto submesh_coord_ele = fem::CoordinateElement(mesh::CellType::interval, 1);
   auto submesh_geometry =
     mesh::create_geometry(mpi_comm(), *submesh_topology, submesh_coord_ele, submesh_cells_al, submesh_x);
