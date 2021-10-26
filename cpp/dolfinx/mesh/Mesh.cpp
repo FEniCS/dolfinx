@@ -177,6 +177,7 @@ Mesh mesh::create_mesh(MPI_Comm comm,
 //-----------------------------------------------------------------------------
 Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
 {
+  std::cout << "Mesh::sub\n";
   _topology.create_connectivity(dim, 0);
 
   auto e_to_v = _topology.connectivity(dim, 0);
@@ -246,6 +247,8 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
   submesh_topology.set_connectivity(submesh_v_to_v, 0, 0);
   submesh_topology.set_connectivity(submesh_e_to_v, dim, 0);
 
+  std::cout << "Created toplogy\n";
+
   auto e_to_g = mesh::entities_to_geometry(*this, dim, entities, false);
 
   std::vector<std::int64_t> submesh_cells;
@@ -277,10 +280,13 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
   // FIXME Currently geometry degree is hardcoded to 1 as there is no way to
   // retrive this from the coordinate element
   auto submesh_coord_ele = fem::CoordinateElement(submesh_coord_cell, 1);
-  return Mesh(mpi_comm(), std::move(submesh_topology),
-              mesh::create_geometry(mpi_comm(), submesh_topology,
-                                    submesh_coord_ele, submesh_cells_al,
-                                    submesh_x));
+  auto submesh_geometry = mesh::create_geometry(
+    mpi_comm(), submesh_topology, submesh_coord_ele, submesh_cells_al,
+    submesh_x);
+  std::cout << "Created geometry\n";
+  return Mesh(mpi_comm(),
+              std::move(submesh_topology),
+              std::move(submesh_geometry));
 }
 //-----------------------------------------------------------------------------
 Topology& Mesh::topology() { return _topology; }
