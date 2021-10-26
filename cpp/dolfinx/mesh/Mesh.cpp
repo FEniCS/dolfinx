@@ -18,6 +18,7 @@
 #include <dolfinx/mesh/cell_types.h>
 #include <memory>
 #include <xtensor/xio.hpp>
+#include <xtensor/xsort.hpp>
 
 #include "graphbuild.h"
 
@@ -263,7 +264,7 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
                                                       std::move(submesh_cells_offsets));
 
   // TODO Don't hardcode!
-  xt::xarray<int> unique_sorted_x_dofs {0, 1, 2, 3};
+  xt::xarray<int> unique_sorted_x_dofs = xt::unique(e_to_g);
 
   // FIXME Don't hardcode number of rows
   xt::xarray<double> submesh_x = xt::zeros<double>({4, 3});
