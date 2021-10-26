@@ -82,8 +82,7 @@ mesh::Mesh partition(const mesh::Mesh& old_mesh,
 /// @param n Number of new entries to be accommodated on this process
 /// @return Global indices as if "n" extra values are appended on each
 ///   process
-std::vector<std::int64_t>
-adjust_indices(const std::shared_ptr<const common::IndexMap>& index_map,
-               std::int32_t n);
+std::vector<std::int64_t> adjust_indices(const common::IndexMap& index_map,
+                                         std::int32_t n);
 
 } // namespace dolfinx::refinement

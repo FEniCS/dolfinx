@@ -650,7 +650,7 @@ void fem(py::module& m)
             comm.get(), topology, element_dof_layout,
             [](const dolfinx::graph::AdjacencyList<std::int32_t>& g)
             { return dolfinx::graph::scotch::compute_gps(g, 2).first; });
-        return std::tuple(map, bs, std::move(dofmap));
+        return std::tuple(std::move(map), bs, std::move(dofmap));
       },
       "Build and dofmap on a mesh.");
   m.def("transpose_dofmap", &dolfinx::fem::transpose_dofmap,
