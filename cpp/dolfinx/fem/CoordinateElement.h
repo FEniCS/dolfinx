@@ -150,7 +150,7 @@ public:
   /// (shape=(num_points, tdim))
   /// @param[in] K The inverse of the geometry Jacobian (shape=(tdim,
   /// gdim))
-  /// @param[in] x0 The cell geomphysical coordinates
+  /// @param[in] x0 The physical coordinate of reference coordinate X0=(0, 0, 0).
   /// @param[in] x The physical coordinates (shape=(num_points, gdim))
   static void pull_back_affine(xt::xtensor<double, 2>& X,
                                const xt::xtensor<double, 2>& K,
