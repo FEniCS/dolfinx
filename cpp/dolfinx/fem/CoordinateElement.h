@@ -71,7 +71,7 @@ public:
   /// @param[in] nd The order of derivatives, up to and including, to
   /// compute. Use 0 for the basis functions only.
   /// @param[in] X The points at which to compute the basis functions.
-  /// The shape of x is (number of points, geometric dimension).
+  /// The shape of X is (number of points, geometric dimension).
   /// @param[out] basis The array to fill with the basis function
   /// values. The shape can be computed using
   /// `FiniteElement::tabulate_shape`
