@@ -240,12 +240,11 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
 
   const CellType entity_type
       = mesh::cell_entity_type(_topology.cell_type(), dim, 0);
-  auto submesh_topology
-      = std::make_shared<mesh::Topology>(mpi_comm(), entity_type);
-  submesh_topology->set_index_map(0, submesh_vertex_index_map);
-  submesh_topology->set_index_map(dim, submesh_entity_index_map);
-  submesh_topology->set_connectivity(submesh_v_to_v, 0, 0);
-  submesh_topology->set_connectivity(submesh_e_to_v, dim, 0);
+  mesh::Topology submesh_topology(mpi_comm(), entity_type);
+  submesh_topology.set_index_map(0, submesh_vertex_index_map);
+  submesh_topology.set_index_map(dim, submesh_entity_index_map);
+  submesh_topology.set_connectivity(submesh_v_to_v, 0, 0);
+  submesh_topology.set_connectivity(submesh_e_to_v, dim, 0);
 
   auto e_to_g = mesh::entities_to_geometry(*this, dim, entities, false);
 
@@ -277,10 +276,10 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
   // FIXME Currently geometry degree is hardcoded to 1 as there is no way to
   // retrive this from the coordinate element
   auto submesh_coord_ele = fem::CoordinateElement(submesh_coord_cell, 1);
-  auto submesh_geometry =
-    mesh::create_geometry(mpi_comm(), *submesh_topology, submesh_coord_ele, submesh_cells_al, submesh_x);
-
-  return Mesh(mpi_comm(), std::move(*submesh_topology), submesh_geometry);
+  return Mesh(mpi_comm(), std::move(submesh_topology),
+              mesh::create_geometry(mpi_comm(), submesh_topology,
+                                    submesh_coord_ele, submesh_cells_al,
+                                    submesh_x));
 }
 //-----------------------------------------------------------------------------
 Topology& Mesh::topology() { return _topology; }
