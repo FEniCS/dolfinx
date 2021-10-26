@@ -177,7 +177,6 @@ Mesh mesh::create_mesh(MPI_Comm comm,
 //-----------------------------------------------------------------------------
 Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
 {
-  std::cout << "Mesh::sub\n";
   _topology.create_connectivity(dim, 0);
 
   auto e_to_v = _topology.connectivity(dim, 0);
@@ -198,8 +197,8 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
   // Vertex index map
   auto vertex_index_map = _topology.index_map(0);
   std::pair<common::IndexMap, std::vector<int32_t>>
-      submesh_vertex_index_map_pair =
-      vertex_index_map->create_submap(submesh_vertices);
+      submesh_vertex_index_map_pair
+      = vertex_index_map->create_submap(submesh_vertices);
   auto submesh_vertex_index_map = std::make_shared<common::IndexMap>(
       std::move(submesh_vertex_index_map_pair.first));
   auto global_vertices = submesh_vertex_index_map_pair.second;
@@ -207,8 +206,7 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
   // Entity index map
   auto entity_index_map = _topology.index_map(dim);
   std::pair<common::IndexMap, std::vector<int32_t>>
-      submesh_entity_index_map_pair =
-      entity_index_map->create_submap(entities);
+      submesh_entity_index_map_pair = entity_index_map->create_submap(entities);
   auto submesh_entity_index_map = std::make_shared<common::IndexMap>(
       std::move(submesh_entity_index_map_pair.first));
   auto global_entities = submesh_entity_index_map_pair.second;
@@ -247,8 +245,6 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
   submesh_topology.set_connectivity(submesh_v_to_v, 0, 0);
   submesh_topology.set_connectivity(submesh_e_to_v, dim, 0);
 
-  std::cout << "Created topology\n";
-
   auto e_to_g = mesh::entities_to_geometry(*this, dim, entities, false);
   xt::xarray<int> unique_sorted_x_dofs = xt::unique(e_to_g);
 
@@ -262,56 +258,38 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
     std::vector<std::int64_t> submesh_entity_x_dofs;
     for (auto x_dof : entity_x_dofs)
     {
-      auto x_dof_it
-          = std::find(unique_sorted_x_dofs.begin(), unique_sorted_x_dofs.end(), x_dof);
+      auto x_dof_it = std::find(unique_sorted_x_dofs.begin(),
+                                unique_sorted_x_dofs.end(), x_dof);
       assert(x_dof_it != unique_sorted_x_dofs.end());
       std::int64_t submesh_x_dof
           = std::distance(unique_sorted_x_dofs.begin(), x_dof_it);
       submesh_entity_x_dofs.push_back(submesh_x_dof);
     }
-    submesh_cells.insert(submesh_cells.end(),
-                         submesh_entity_x_dofs.begin(),
+    submesh_cells.insert(submesh_cells.end(), submesh_entity_x_dofs.begin(),
                          submesh_entity_x_dofs.end());
     submesh_cells_offsets.push_back(submesh_cells.size());
   }
 
-  for (auto submesh_cell : submesh_cells)
-  {
-    std::cout << submesh_cell << "\n";
-  }
-
-  graph::AdjacencyList<std::int64_t> submesh_cells_al(std::move(submesh_cells),
-                                                      std::move(submesh_cells_offsets));
-
-  std::cout << "Created submesh_cells_al\n";
+  graph::AdjacencyList<std::int64_t> submesh_cells_al(
+      std::move(submesh_cells), std::move(submesh_cells_offsets));
 
   const int submesh_num_x_dofs = unique_sorted_x_dofs.shape()[0];
-  xt::xarray<double> submesh_x = xt::zeros<double>(
-    {submesh_num_x_dofs, 3});
+  xt::xarray<double> submesh_x = xt::zeros<double>({submesh_num_x_dofs, 3});
   const xt::xtensor<double, 2>& x = geometry().x();
   for (int i = 0; i < submesh_num_x_dofs; ++i)
   {
     xt::view(submesh_x, i, xt::all()) = xt::row(x, unique_sorted_x_dofs[i]);
   }
 
-  std::cout << "created submesh_x\n";
-
-  // for (auto sx : submesh_x)
-  // {
-  //   std::cout << sx << "\n";
-  // }
-
-  CellType submesh_coord_cell = mesh::cell_entity_type(
-    geometry().cmap().cell_shape(), dim, 0);
+  CellType submesh_coord_cell
+      = mesh::cell_entity_type(geometry().cmap().cell_shape(), dim, 0);
   // FIXME Currently geometry degree is hardcoded to 1 as there is no way to
   // retrive this from the coordinate element
   auto submesh_coord_ele = fem::CoordinateElement(submesh_coord_cell, 1);
-  auto submesh_geometry = mesh::create_geometry(
-    mpi_comm(), submesh_topology, submesh_coord_ele, submesh_cells_al,
-    submesh_x);
-  std::cout << "Created geometry\n";
-  return Mesh(mpi_comm(),
-              std::move(submesh_topology),
+  auto submesh_geometry
+      = mesh::create_geometry(mpi_comm(), submesh_topology, submesh_coord_ele,
+                              submesh_cells_al, submesh_x);
+  return Mesh(mpi_comm(), std::move(submesh_topology),
               std::move(submesh_geometry));
 }
 //-----------------------------------------------------------------------------
