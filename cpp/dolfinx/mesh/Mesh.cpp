@@ -247,7 +247,7 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
   submesh_topology.set_connectivity(submesh_v_to_v, 0, 0);
   submesh_topology.set_connectivity(submesh_e_to_v, dim, 0);
 
-  std::cout << "Created toplogy\n";
+  std::cout << "Created topology\n";
 
   auto e_to_g = mesh::entities_to_geometry(*this, dim, entities, false);
 
