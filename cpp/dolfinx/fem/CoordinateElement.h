@@ -160,6 +160,13 @@ public:
 
   /// Compute reference coordinates X for physical coordinates x for a
   /// non-affine map.
+  /// @param [in,out] X The reference coordinates to compute (shape=(num_points, tdim))
+  /// @param [in] x The physical coordinates (shape=(num_points, gdim))
+  /// @param [in] cell_geometry The cell nodes coordinates (shape=(num
+  /// geometry nodes, gdim))
+  /// @param [in] tol Tolerance for termination of Newton method.
+  /// @param [in] maxit Maximum number of Newton iterations
+  /// @note If convergence is not achieved within maxit, the function throws a run-time error.
   void pull_back_nonaffine(xt::xtensor<double, 2>& X,
                            const xt::xtensor<double, 2>& x,
                            const xt::xtensor<double, 2>& cell_geometry,
