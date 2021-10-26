@@ -7,6 +7,7 @@
 #pragma once
 
 #include "ElementDofLayout.h"
+#include <basix/element-families.h>
 #include <cstdint>
 #include <dolfinx/mesh/cell_types.h>
 #include <functional>
@@ -35,7 +36,11 @@ public:
   /// Create a Lagrage coordinate element
   /// @param[in] celltype The cell shape
   /// @param[in] degree Polynomial degree of the map
-  CoordinateElement(mesh::CellType celltype, int degree);
+  /// @param[in] type The type of Lagrange element (see Basix
+  /// documentation for possible types)
+  CoordinateElement(mesh::CellType celltype, int degree,
+                    basix::element::lagrange_variant type
+                    = basix::element::lagrange_variant::equispaced);
 
   /// Destructor
   virtual ~CoordinateElement() = default;

@@ -45,11 +45,12 @@ CoordinateElement::CoordinateElement(
   _is_affine = mesh::is_simplex(cell) and degree == 1;
 }
 //-----------------------------------------------------------------------------
-CoordinateElement::CoordinateElement(mesh::CellType celltype, int degree)
-    : CoordinateElement(
-        std::make_shared<basix::FiniteElement>(basix::create_element(
-            basix::element::family::P, mesh::cell_type_to_basix_type(celltype),
-            degree, basix::element::lagrange_variant::equispaced, false)))
+CoordinateElement::CoordinateElement(mesh::CellType celltype, int degree,
+                                     basix::element::lagrange_variant type)
+    : CoordinateElement(std::make_shared<basix::FiniteElement>(
+        basix::create_element(basix::element::family::P,
+                              mesh::cell_type_to_basix_type(celltype), degree,
+                              type, false)))
 {
   // Do nothing
 }
