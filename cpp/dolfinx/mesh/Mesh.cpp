@@ -273,8 +273,11 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
     xt::view(submesh_x, i, xt::all()) = xt::row(x, unique_sorted_x_dofs[i]);
   }
 
-  // FIXME Don't hard code
-  auto submesh_coord_ele = fem::CoordinateElement(mesh::CellType::interval, 1);
+  CellType submesh_coord_cell = mesh::cell_entity_type(
+    geometry().cmap().cell_shape(), dim, 0);
+  // FIXME Currently geometry degree is hardcoded to 1 as there is no way to
+  // retrive this from the coordinate element
+  auto submesh_coord_ele = fem::CoordinateElement(submesh_coord_cell, 1);
   auto submesh_geometry =
     mesh::create_geometry(mpi_comm(), *submesh_topology, submesh_coord_ele, submesh_cells_al, submesh_x);
 
