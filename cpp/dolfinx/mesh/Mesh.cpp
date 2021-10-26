@@ -250,6 +250,7 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
   std::cout << "Created topology\n";
 
   auto e_to_g = mesh::entities_to_geometry(*this, dim, entities, false);
+  xt::xarray<int> unique_sorted_x_dofs = xt::unique(e_to_g);
 
   std::vector<std::int64_t> submesh_cells;
   submesh_cells.reserve(e_to_g.shape()[0] * e_to_g.shape()[1]);
@@ -257,15 +258,33 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
   for (int i = 0; i < e_to_g.shape()[0]; ++i)
   {
     auto entity_x_dofs = xt::row(e_to_g, i);
+
+    std::vector<std::int64_t> submesh_entity_x_dofs;
+    for (auto x_dof : entity_x_dofs)
+    {
+      auto x_dof_it
+          = std::find(unique_sorted_x_dofs.begin(), unique_sorted_x_dofs.end(), x_dof);
+      assert(x_dof_it != unique_sorted_x_dofs.end());
+      std::int64_t submesh_x_dof
+          = std::distance(unique_sorted_x_dofs.begin(), x_dof_it);
+      submesh_entity_x_dofs.push_back(submesh_x_dof);
+    }
     submesh_cells.insert(submesh_cells.end(),
-                         entity_x_dofs.begin(),
-                         entity_x_dofs.end());
+                         submesh_entity_x_dofs.begin(),
+                         submesh_entity_x_dofs.end());
     submesh_cells_offsets.push_back(submesh_cells.size());
   }
+
+  for (auto submesh_cell : submesh_cells)
+  {
+    std::cout << submesh_cell << "\n";
+  }
+
   graph::AdjacencyList<std::int64_t> submesh_cells_al(std::move(submesh_cells),
                                                       std::move(submesh_cells_offsets));
 
-  xt::xarray<int> unique_sorted_x_dofs = xt::unique(e_to_g);
+  std::cout << "Created submesh_cells_al\n";
+
   const int submesh_num_x_dofs = unique_sorted_x_dofs.shape()[0];
   xt::xarray<double> submesh_x = xt::zeros<double>(
     {submesh_num_x_dofs, 3});
@@ -274,6 +293,13 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
   {
     xt::view(submesh_x, i, xt::all()) = xt::row(x, unique_sorted_x_dofs[i]);
   }
+
+  std::cout << "created submesh_x\n";
+
+  // for (auto sx : submesh_x)
+  // {
+  //   std::cout << sx << "\n";
+  // }
 
   CellType submesh_coord_cell = mesh::cell_entity_type(
     geometry().cmap().cell_shape(), dim, 0);
