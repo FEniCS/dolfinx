@@ -141,7 +141,6 @@ void CoordinateElement::pull_back_nonaffine(
     for (k = 0; k < maxit; ++k)
     {
       _element->tabulate(1, Xk, basis);
-      dphi = xt::view(basis, xt::range(1, tdim + 1), 0, xt::all(), 0);
 
       // x = cell_geometry * phi
       auto phi = xt::view(basis, 0, 0, xt::all(), 0);
@@ -152,6 +151,7 @@ void CoordinateElement::pull_back_nonaffine(
 
       // Compute Jacobian, its inverse and determinant
       J.fill(0);
+      dphi = xt::view(basis, xt::range(1, tdim + 1), 0, xt::all(), 0);
       compute_jacobian(dphi, cell_geometry, J);
       compute_jacobian_inverse(J, K);
 
