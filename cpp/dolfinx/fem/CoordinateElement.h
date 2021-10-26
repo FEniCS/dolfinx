@@ -74,7 +74,7 @@ public:
   /// The shape of x is (number of points, geometric dimension).
   /// @param[out] basis The array to fill with the basis function
   /// values. The shape can be computed using
-  /// `FiniteElemenet::tabulate_shape`
+  /// `FiniteElement::tabulate_shape`
   void tabulate(int nd, const xt::xtensor<double, 2>& X,
                 xt::xtensor<double, 4>& basis) const;
 
