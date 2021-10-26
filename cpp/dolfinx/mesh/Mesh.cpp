@@ -249,7 +249,6 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
 
   auto e_to_g = mesh::entities_to_geometry(*this, dim, entities, false);
 
-  std::cout << e_to_g << "\n";
   std::vector<std::int64_t> submesh_cells;
   std::vector<std::int32_t> submesh_cells_offsets(1, 0);
   for (int i = 0; i < e_to_g.shape()[0]; ++i)
