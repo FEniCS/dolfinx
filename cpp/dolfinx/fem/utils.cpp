@@ -166,8 +166,9 @@ fem::create_dofmap(MPI_Comm comm, const ufc_dofmap& ufc_dofmap,
     }
   }
 
-  auto [index_map, bs, dofmap]
+  auto [_index_map, bs, dofmap]
       = fem::build_dofmap_data(comm, topology, *element_dof_layout, reorder_fn);
+  auto index_map = std::make_shared<common::IndexMap>(std::move(_index_map));
 
   // If the element's DOF transformations are permutations, permute the
   // DOF numbering on each cell
@@ -206,7 +207,7 @@ std::vector<std::string> fem::get_constant_names(const ufc_form& ufc_form)
   return constants;
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<fem::FunctionSpace> fem::create_functionspace(
+fem::FunctionSpace fem::create_functionspace(
     ufc_function_space* (*fptr)(const char*), const std::string& function_name,
     std::shared_ptr<mesh::Mesh> mesh,
     const std::function<std::vector<int>(
@@ -227,11 +228,9 @@ std::shared_ptr<fem::FunctionSpace> fem::create_functionspace(
 
   ufc_dofmap* ufc_map = space->dofmap;
   assert(ufc_map);
-  auto V = std::make_shared<fem::FunctionSpace>(
+  return fem::FunctionSpace(
       mesh, element,
       std::make_shared<fem::DofMap>(fem::create_dofmap(
           mesh->mpi_comm(), *ufc_map, mesh->topology(), reorder_fn, element)));
-
-  return V;
 }
 //-----------------------------------------------------------------------------

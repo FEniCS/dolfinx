@@ -130,14 +130,12 @@ public:
   Function collapse() const
   {
     // Create new collapsed FunctionSpace
-    const auto [function_space_new, collapsed_map]
-        = _function_space->collapse();
+    auto [function_space_new, collapsed_map] = _function_space->collapse();
 
     // Create new vector
-    assert(function_space_new);
     auto vector_new = std::make_shared<la::Vector<T>>(
-        function_space_new->dofmap()->index_map,
-        function_space_new->dofmap()->index_map_bs());
+        function_space_new.dofmap()->index_map,
+        function_space_new.dofmap()->index_map_bs());
 
     // Copy values into new vector
     xtl::span<const T> x_old = _x->array();
@@ -149,7 +147,9 @@ public:
       x_new[i] = x_old[collapsed_map[i]];
     }
 
-    return Function(function_space_new, vector_new);
+    return Function(
+        std::make_shared<FunctionSpace>(std::move(function_space_new)),
+        vector_new);
   }
 
   /// Return shared pointer to function space
