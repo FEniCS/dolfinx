@@ -29,7 +29,7 @@ ns = [1, 2, 3]
 def test_topology(n, boundary):
     mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, n, n)
     entity_dim = mesh.topology.dim - 1
-    entities = dolfinx.mesh.locate_entities_boundary(mesh, entity_dim, boundary_1)
+    entities = dolfinx.mesh.locate_entities_boundary(mesh, entity_dim, boundary)
 
     submesh = mesh.sub(entity_dim, entities)
 
@@ -61,7 +61,7 @@ def test_topology(n, boundary):
 def test_geometry(n, boundary):
     mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, n, n)
     entity_dim = mesh.topology.dim - 1
-    entities = dolfinx.mesh.locate_entities_boundary(mesh, entity_dim, boundary_1)
+    entities = dolfinx.mesh.locate_entities_boundary(mesh, entity_dim, boundary)
 
     submesh = mesh.sub(entity_dim, entities)
 
