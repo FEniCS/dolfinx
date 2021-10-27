@@ -65,6 +65,8 @@ def test_geometry(n, boundary):
 
     submesh = mesh.sub(entity_dim, entities)
 
+    assert(mesh.geometry.dim == submesh.geometry.dim)
+
     e_to_g = entities_to_geometry(mesh, entity_dim, entities, False)
 
     for submesh_entity in range(len(entities)):
