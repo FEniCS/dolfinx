@@ -251,7 +251,7 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
   std::vector<std::int64_t> submesh_cells;
   submesh_cells.reserve(e_to_g.shape()[0] * e_to_g.shape()[1]);
   std::vector<std::int32_t> submesh_cells_offsets(1, 0);
-  for (int i = 0; i < e_to_g.shape()[0]; ++i)
+  for (std::size_t i = 0; i < e_to_g.shape()[0]; ++i)
   {
     auto entity_x_dofs = xt::row(e_to_g, i);
 
