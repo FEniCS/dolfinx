@@ -156,9 +156,16 @@ def ufl_domain(self):
     return self._ufl_domain
 
 
+def sub(self, dim, entities):
+    submesh = self.sub_without_ufl(dim, entities)
+    return submesh
+
+
 # Extend cpp.mesh.Mesh class, and clean-up
 cpp.mesh.Mesh.ufl_cell = ufl_cell
 cpp.mesh.Mesh.ufl_domain = ufl_domain
+cpp.mesh.Mesh.sub = sub
 
 del ufl_cell
 del ufl_domain
+del sub

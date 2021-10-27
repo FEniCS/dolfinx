@@ -289,7 +289,8 @@ void mesh(py::module& m)
           "topology", py::overload_cast<>(&dolfinx::mesh::Mesh::topology),
           "Mesh topology", py::return_value_policy::reference_internal)
       .def("ufl_id", &dolfinx::mesh::Mesh::id)
-      .def("sub", [](dolfinx::mesh::Mesh& self, int dim,
+    // FIXME How can this be done in a cleaner manner?
+      .def("sub_without_ufl", [](dolfinx::mesh::Mesh& self, int dim,
                      const py::array_t<std::int32_t, py::array::c_style> entities)
             {
                 return self.sub(
