@@ -3,6 +3,7 @@
 import dolfinx
 from mpi4py import MPI
 import numpy as np
+from dolfinx.cpp.mesh import entities_to_geometry
 
 
 def boundary_0(x):
@@ -28,7 +29,8 @@ submesh = mesh.sub(entity_dim, entities)
 # Check topology
 print(f"entities = {entities}")
 # The vertex map that mesh.sub uses is a sorted list of unique vertices, so
-# recreate this here. TODO Could return this from mesh.sub.
+# recreate this here. TODO Could return this from mesh.sub or save as a property
+# etc.
 mesh.topology.create_connectivity(entity_dim, 0)
 mesh_e_to_v = mesh.topology.connectivity(entity_dim, 0)
 vertex_map = []
@@ -47,3 +49,16 @@ for submesh_entity in range(len(entities)):
     
     for i in range(len(submesh_entity_vertices)):
         assert(vertex_map[submesh_entity_vertices[i]] == mesh_entity_vertices[i])
+
+e_to_g = entities_to_geometry(mesh, entity_dim, entities, False)
+
+for submesh_entity in range(len(entities)):
+    submesh_x_dofs = submesh.geometry.dofmap.links(submesh_entity)
+
+    # e_to_g[i] gets the mesh x_dofs of entities[i], which should
+    # correspond to the submesh x_dofs of submesh cell i
+    mesh_x_dofs = e_to_g[submesh_entity]
+
+    for i in range(len(submesh_x_dofs)):
+        assert(np.allclose(mesh.geometry.x[mesh_x_dofs[i]],
+                          submesh.geometry.x[submesh_x_dofs[i]]))
