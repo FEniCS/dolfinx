@@ -157,7 +157,14 @@ def ufl_domain(self):
 
 
 def sub(self, dim, entities):
+    # FIXME Don't hard code degree
     submesh = self.sub_without_ufl(dim, entities)
+    submesh_domain = ufl.Mesh(
+        ufl.VectorElement("Lagrange",
+                          cell=submesh.ufl_cell(),
+                          degree=1))
+    submesh_domain._ufl_cargo = submesh
+    submesh._ufl_domain = submesh_domain
     return submesh
 
 
