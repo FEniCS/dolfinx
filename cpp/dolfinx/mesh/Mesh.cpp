@@ -274,11 +274,13 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
       std::move(submesh_cells), std::move(submesh_cells_offsets));
 
   const int submesh_num_x_dofs = unique_sorted_x_dofs.shape()[0];
-  xt::xarray<double> submesh_x = xt::zeros<double>({submesh_num_x_dofs, 3});
+  const int geom_dim = this->geometry().dim();
+  xt::xarray<double> submesh_x = xt::zeros<double>({submesh_num_x_dofs, geom_dim});
   const xt::xtensor<double, 2>& x = geometry().x();
   for (int i = 0; i < submesh_num_x_dofs; ++i)
   {
-    xt::view(submesh_x, i, xt::all()) = xt::row(x, unique_sorted_x_dofs[i]);
+    xt::view(submesh_x, i, xt::all()) =
+      xt::view(x, unique_sorted_x_dofs[i], xt::range(0, geom_dim));
   }
 
   CellType submesh_coord_cell
