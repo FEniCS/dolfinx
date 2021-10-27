@@ -79,7 +79,7 @@ FunctionSpace::sub(const std::vector<int>& component) const
   return sub_space;
 }
 //-----------------------------------------------------------------------------
-std::pair<std::shared_ptr<FunctionSpace>, std::vector<std::int32_t>>
+std::pair<FunctionSpace, std::vector<std::int32_t>>
 FunctionSpace::collapse() const
 {
   if (_component.empty())
@@ -92,10 +92,8 @@ FunctionSpace::collapse() const
       = _dofmap->collapse(_mesh->mpi_comm(), _mesh->topology());
 
   // Create new FunctionSpace and return
-  auto collapsed_sub_space
-      = std::make_shared<FunctionSpace>(_mesh, _element, collapsed_dofmap);
-
-  return {std::move(collapsed_sub_space), std::move(collapsed_dofs)};
+  return {FunctionSpace(_mesh, _element, collapsed_dofmap),
+          std::move(collapsed_dofs)};
 }
 //-----------------------------------------------------------------------------
 std::vector<int> FunctionSpace::component() const { return _component; }

@@ -130,14 +130,12 @@ public:
   Function collapse() const
   {
     // Create new collapsed FunctionSpace
-    const auto [function_space_new, collapsed_map]
-        = _function_space->collapse();
+    auto [function_space_new, collapsed_map] = _function_space->collapse();
 
     // Create new vector
-    assert(function_space_new);
     auto vector_new = std::make_shared<la::Vector<T>>(
-        function_space_new->dofmap()->index_map,
-        function_space_new->dofmap()->index_map_bs());
+        function_space_new.dofmap()->index_map,
+        function_space_new.dofmap()->index_map_bs());
 
     // Copy values into new vector
     xtl::span<const T> x_old = _x->array();
@@ -149,7 +147,9 @@ public:
       x_new[i] = x_old[collapsed_map[i]];
     }
 
-    return Function(function_space_new, vector_new);
+    return Function(
+        std::make_shared<FunctionSpace>(std::move(function_space_new)),
+        vector_new);
   }
 
   /// Return shared pointer to function space
@@ -217,8 +217,8 @@ public:
     const int num_cells = cell_map->size_local() + cell_map->num_ghosts();
     std::vector<std::int32_t> cells(num_cells, 0);
     std::iota(cells.begin(), cells.end(), 0);
-    // FIXME: Remove interpolation coords as it should be done internally in
-    // fem::interpolate
+    // FIXME: Remove interpolation coords as it should be done
+    // internally in fem::interpolate
     const xt::xtensor<double, 2> x = fem::interpolation_coords(
         *_function_space->element(), *_function_space->mesh(), cells);
     fem::interpolate(*this, f, x, cells);
@@ -291,14 +291,6 @@ public:
                                "elements. Extract subspaces.");
     }
 
-    // Prepare geometry data structures
-    xt::xtensor<double, 2> X({1, tdim});
-    xt::xtensor<double, 3> J
-        = xt::zeros<double>({static_cast<std::size_t>(1), gdim, tdim});
-    xt::xtensor<double, 3> K
-        = xt::zeros<double>({static_cast<std::size_t>(1), tdim, gdim});
-    xt::xtensor<double, 1> detJ = xt::zeros<double>({1});
-
     // Prepare basis function data structures
     xt::xtensor<double, 4> basis_derivatives_reference_values(
         {1, 1, space_dimension, reference_value_size});
@@ -324,8 +316,7 @@ public:
 
     xt::xtensor<double, 2> coordinate_dofs
         = xt::zeros<double>({num_dofs_g, gdim});
-    xt::xtensor<double, 2> xp
-        = xt::zeros<double>({static_cast<std::size_t>(1), gdim});
+    xt::xtensor<double, 2> xp = xt::zeros<double>({std::size_t(1), gdim});
 
     // Loop over points
     std::fill(u.data(), u.data() + u.size(), 0.0);
@@ -337,6 +328,28 @@ public:
         apply_dof_transformation
         = element->get_dof_transformation_function<double>();
 
+    // -- Lambda function for affine pull-backs
+    auto pull_back_affine =
+        [&cmap, tdim,
+         X0 = xt::xtensor<double, 2>(xt::zeros<double>({std::size_t(1), tdim})),
+         data = xt::xtensor<double, 4>(cmap.tabulate_shape(1, 1)),
+         dphi = xt::xtensor<double, 2>({tdim, cmap.tabulate_shape(1, 1)[2]})](
+            auto&& X, const auto& cell_geometry, auto&& J, auto&& K,
+            const auto& x) mutable
+    {
+      cmap.tabulate(1, X0, data);
+      dphi = xt::view(data, xt::range(1, tdim + 1), 0, xt::all(), 0);
+      cmap.compute_jacobian(dphi, cell_geometry, J);
+      cmap.compute_jacobian_inverse(J, K);
+      cmap.pull_back_affine(X, K, cmap.x0(cell_geometry), x);
+    };
+
+    xt::xtensor<double, 2> dphi;
+    xt::xtensor<double, 2> X({1, tdim});
+    xt::xtensor<double, 3> J = xt::zeros<double>({std::size_t(1), gdim, tdim});
+    xt::xtensor<double, 3> K = xt::zeros<double>({std::size_t(1), tdim, gdim});
+    xt::xtensor<double, 1> detJ = xt::zeros<double>({1});
+    xt::xtensor<double, 4> phi(cmap.tabulate_shape(1, 1));
     for (std::size_t p = 0; p < cells.size(); ++p)
     {
       const int cell_index = cells[p];
@@ -355,7 +368,26 @@ public:
         xp(0, j) = x(p, j);
 
       // Compute reference coordinates X, and J, detJ and K
-      cmap.pull_back(X, J, detJ, K, xp, coordinate_dofs);
+      if (cmap.is_affine())
+      {
+        J.fill(0);
+        pull_back_affine(X, coordinate_dofs,
+                         xt::view(J, 0, xt::all(), xt::all()),
+                         xt::view(K, 0, xt::all(), xt::all()), xp);
+        detJ[0] = cmap.compute_jacobian_determinant(
+            xt::view(J, 0, xt::all(), xt::all()));
+      }
+      else
+      {
+        cmap.pull_back_nonaffine(X, xp, coordinate_dofs);
+        cmap.tabulate(1, X, phi);
+        dphi = xt::view(phi, xt::range(1, tdim + 1), 0, xt::all(), 0);
+        J.fill(0);
+        auto _J = xt::view(J, 0, xt::all(), xt::all());
+        cmap.compute_jacobian(dphi, coordinate_dofs, _J);
+        cmap.compute_jacobian_inverse(_J, xt::view(K, 0, xt::all(), xt::all()));
+        detJ[0] = cmap.compute_jacobian_determinant(_J);
+      }
 
       // Compute basis on reference element
       element->tabulate(basis_derivatives_reference_values, X, 0);

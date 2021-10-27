@@ -74,8 +74,7 @@ public:
   /// Collapse a subspace and return a new function space and a map from
   /// new to old dofs
   /// @return The new function space and a map from new to old dofs
-  std::pair<std::shared_ptr<FunctionSpace>, std::vector<std::int32_t>>
-  collapse() const;
+  std::pair<FunctionSpace, std::vector<std::int32_t>> collapse() const;
 
   /// Get the component with respect to the root superspace
   /// @return The component with respect to the root superspace , i.e.

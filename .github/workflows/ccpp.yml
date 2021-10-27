@@ -17,8 +17,8 @@ jobs:
     container: fenicsproject/test-env:latest-openmpi
 
     env:
-      CC: clang-12
-      CXX: clang++-12
+      CC: clang
+      CXX: clang++
 
       PETSC_ARCH: linux-gnu-${{ matrix.petsc_arch }}-${{ matrix.petsc_int_type }}
       OMPI_ALLOW_RUN_AS_ROOT: 1

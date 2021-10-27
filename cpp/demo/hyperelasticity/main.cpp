@@ -133,8 +133,8 @@ int main(int argc, char* argv[])
         MPI_COMM_WORLD, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}}}, {10, 10, 10},
         mesh::CellType::tetrahedron, mesh::GhostMode::none));
 
-    auto V = fem::create_functionspace(functionspace_form_hyperelasticity_F,
-                                       "u", mesh);
+    auto V = std::make_shared<fem::FunctionSpace>(fem::create_functionspace(
+        functionspace_form_hyperelasticity_F, "u", mesh));
 
     // Define solution function
     auto u = std::make_shared<fem::Function<PetscScalar>>(V);
@@ -172,8 +172,8 @@ int main(int argc, char* argv[])
         });
 
     auto u_clamp = std::make_shared<fem::Function<PetscScalar>>(V);
-    u_clamp->interpolate(
-        [](auto& x) -> xt::xarray<double> { return xt::zeros_like(x); });
+    u_clamp->interpolate([](auto& x) -> xt::xarray<double>
+                         { return xt::zeros_like(x); });
 
     // Create Dirichlet boundary conditions
     auto u0 = std::make_shared<fem::Function<PetscScalar>>(V);
