@@ -94,11 +94,21 @@ public:
                 int order) const;
 
   /// Push basis functions forward to physical element
-  void transform_reference_basis(xt::xtensor<double, 3>& values,
-                                 const xt::xtensor<double, 3>& reference_values,
-                                 const xt::xtensor<double, 3>& J,
-                                 const xtl::span<const double>& detJ,
-                                 const xt::xtensor<double, 3>& K) const;
+  /// @param[out] values Basis function values on the physical domain (ndim=3)
+  /// @param[in] reference_values Basis function values on the reference
+  /// cell (ndim=3)
+  /// @param[in] J The Jacobian of the map (shape=(num_points, gdim, tdim))
+  /// @param[in] detJ The determinant of the Jacobian
+  /// @param[in] K The inverse of the Jacobian (shape=(num_points, tdim, gdim))
+  template <typename U, typename V, typename W, typename X>
+  constexpr void
+  transform_reference_basis(U&& values, const V& reference_values, const W& J,
+                            const xtl::span<const double>& detJ,
+                            const X& K) const
+  {
+    assert(_element);
+    _element->map_push_forward_m(reference_values, J, detJ, K, values);
+  }
 
   /// Get the number of sub elements (for a mixed element)
   /// @return the Number of sub elements
@@ -453,7 +463,7 @@ public:
     }
   }
 
-  /// Apply DOF transformation to some data.
+  /// Apply DOF transformation to some data
   ///
   /// @param[in,out] data The data to be transformed
   /// @param[in] cell_permutation Permutation data for the cell

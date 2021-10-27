@@ -172,9 +172,8 @@ void interpolate(
     xt::xtensor<T, 3> _vals({X.shape(0), 1, value_size});
 
     // Tabulate 1st order derivatives of shape functions at interpolation coords
-    xt::xtensor<double, 4> dphi
-        = xt::view(cmap.tabulate(1, X), xt::range(1, tdim + 1), xt::all(),
-                   xt::all(), xt::all());
+    xt::xtensor<double, 3> dphi = xt::view(
+        cmap.tabulate(1, X), xt::range(1, tdim + 1), xt::all(), xt::all(), 0);
 
     const std::function<void(const xtl::span<T>&,
                              const xtl::span<const std::uint32_t>&,
@@ -190,9 +189,17 @@ void interpolate(
           coordinate_dofs(i, j) = x_g(x_dofs[i], j);
 
       // Compute J, detJ and K
-      cmap.compute_jacobian(dphi, coordinate_dofs, J);
-      cmap.compute_jacobian_inverse(J, K);
-      cmap.compute_jacobian_determinant(J, detJ);
+      J.fill(0);
+      for (std::size_t p = 0; p < X.shape(0); ++p)
+      {
+        cmap.compute_jacobian(xt::view(dphi, xt::all(), p, xt::all()),
+                              coordinate_dofs,
+                              xt::view(J, p, xt::all(), xt::all()));
+        cmap.compute_jacobian_inverse(xt::view(J, p, xt::all(), xt::all()),
+                                      xt::view(K, p, xt::all(), xt::all()));
+        detJ[p] = cmap.compute_jacobian_determinant(
+            xt::view(J, p, xt::all(), xt::all()));
+      }
 
       xtl::span<const std::int32_t> dofs = dofmap->cell_dofs(c);
       for (int k = 0; k < element_bs; ++k)
