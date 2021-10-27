@@ -51,7 +51,7 @@ def test_topology(n, boundary):
         submesh_entity_vertices = submesh_e_to_v.links(submesh_entity)
         mesh_entity = entities[submesh_entity]
         mesh_entity_vertices = mesh_e_to_v.links(mesh_entity)
-        
+
         for i in range(len(submesh_entity_vertices)):
             assert(vertex_map[submesh_entity_vertices[i]] == mesh_entity_vertices[i])
 
@@ -64,7 +64,7 @@ def test_geometry(n, boundary):
     entities = dolfinx.mesh.locate_entities_boundary(mesh, entity_dim, boundary_1)
 
     submesh = mesh.sub(entity_dim, entities)
-    
+
     e_to_g = entities_to_geometry(mesh, entity_dim, entities, False)
 
     for submesh_entity in range(len(entities)):
@@ -76,4 +76,4 @@ def test_geometry(n, boundary):
 
         for i in range(len(submesh_x_dofs)):
             assert(np.allclose(mesh.geometry.x[mesh_x_dofs[i]],
-                            submesh.geometry.x[submesh_x_dofs[i]]))
+                               submesh.geometry.x[submesh_x_dofs[i]]))
