@@ -83,7 +83,7 @@ auto det(const Matrix& A)
 /// same shape as @p A.
 /// @warning This function does not check if A is invertible
 template <typename U, typename V>
-void inv(const U& A, V& B)
+void inv(const U& A, V&& B)
 {
   using value_type = typename U::value_type;
   const std::size_t nrows = A.shape(0);
@@ -136,7 +136,7 @@ void inv(const U& A, V& B)
 /// @param[in] transpose Computes C += A^T * B^T if false, otherwise
 /// computed C += A^T * B^T
 template <typename U, typename V, typename P>
-void dot(const U& A, const V& B, P& C, bool transpose = false)
+void dot(const U& A, const V& B, P&& C, bool transpose = false)
 {
   if (transpose)
   {
@@ -163,7 +163,7 @@ void dot(const U& A, const V& B, P& C, bool transpose = false)
 /// with a size which is the transpose of the size of @p A.
 /// @warning The matrix @p A should be full rank
 template <typename U, typename V>
-void pinv(const U& A, V& P)
+void pinv(const U& A, V&& P)
 {
   auto shape = A.shape();
   assert(shape[0] > shape[1]);
