@@ -126,7 +126,7 @@ def test_tetrahedron_mesh(order):
                     cell.append(coord_to_vertex(i, j, k))
 
     domain = ufl.Mesh(ufl.VectorElement(
-        "Lagrange", ufl.Cell("tetrahedron", geometric_dimension=3), order, variant="equispaced"))
+        "Lagrange", ufl.Cell("tetrahedron", geometric_dimension=3), order))
 
     check_cell_volume(points, cell, domain, 1 / 6)
 
