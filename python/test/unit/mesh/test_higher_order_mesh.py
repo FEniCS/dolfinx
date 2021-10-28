@@ -655,6 +655,7 @@ def test_gmsh_input_3d(order, cell_type):
     assert mesh.mpi_comm().allreduce(volume, op=MPI.SUM) == pytest.approx(np.pi, rel=10 ** (-1 - order))
 
 
+@skip_in_parallel
 def test_quadrilateral_cell_order_3():
     points = [
         [0., 0.], [1., 0.], [0., 1.], [1., 1.],
