@@ -114,7 +114,7 @@ void add_data_item(pugi::xml_node& xml_node, const hid_t h5_id,
   // Add dimensions attribute
   std::string dims;
   for (auto d : shape)
-    dims += std::to_string(d) + " ";
+    dims += std::to_string(d) + std::string(" ");
   dims.pop_back();
   data_item_node.append_attribute("Dimensions") = dims.c_str();
 
@@ -140,7 +140,7 @@ void add_data_item(pugi::xml_node& xml_node, const hid_t h5_id,
     const std::string filename = dolfinx::io::get_filename(hdf5_filename);
 
     // Add HDF5 filename and HDF5 internal path to XML file
-    const std::string xdmf_path = filename + ":" + h5_path;
+    const std::string xdmf_path = filename + std::string(":") + h5_path;
     data_item_node.append_child(pugi::node_pcdata).set_value(xdmf_path.c_str());
 
     // Compute data offset and range of values
