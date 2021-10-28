@@ -71,7 +71,7 @@ endif()
 
 # Check for petsc4py
 execute_process(
-  COMMAND ${PYTHON_EXECUTABLE} -c "import petsc4py; print(petsc4py.get_include())"
+  COMMAND ${Python3_EXECUTABLE} -c "import petsc4py; print(petsc4py.get_include())"
   OUTPUT_VARIABLE PETSC4PY_INCLUDE_DIR
   RESULT_VARIABLE PETSC4PY_COMMAND_RESULT
   ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
@@ -84,7 +84,7 @@ endif()
 
 # Check for mpi4py
 execute_process(
-  COMMAND "${PYTHON_EXECUTABLE}" "-c" "import mpi4py; print(mpi4py.get_include())"
+  COMMAND "${Python3_EXECUTABLE}" "-c" "import mpi4py; print(mpi4py.get_include())"
   OUTPUT_VARIABLE MPI4PY_INCLUDE_DIR
   RESULT_VARIABLE MPI4PY_COMMAND_RESULT
   ERROR_QUIET  OUTPUT_STRIP_TRAILING_WHITESPACE)
