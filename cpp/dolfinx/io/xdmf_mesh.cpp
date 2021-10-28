@@ -132,7 +132,7 @@ void xdmf_mesh::add_topology_data(
   topology_node.append_attribute("NodesPerElement") = num_nodes_per_entity;
 
   // Add topology DataItem node
-  const std::string h5_path = path_prefix + "/topology";
+  const std::string h5_path = path_prefix + std::string("/topology");
   const std::vector<std::int64_t> shape
       = {num_entities_global, num_nodes_per_entity};
   const std::string number_type = "Int";
@@ -187,7 +187,7 @@ void xdmf_mesh::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
   }
 
   // Add geometry DataItem node
-  const std::string h5_path = path_prefix + "/geometry";
+  const std::string h5_path = path_prefix + std::string("/geometry");
   const std::vector<std::int64_t> shape = {num_points, width};
 
   const std::int64_t num_local = num_points_local;
