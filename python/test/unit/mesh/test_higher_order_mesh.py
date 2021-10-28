@@ -126,7 +126,7 @@ def test_tetrahedron_mesh(order):
                     cell.append(coord_to_vertex(i, j, k))
 
     domain = ufl.Mesh(ufl.VectorElement(
-        "Lagrange", ufl.Cell("tetrahedron", geometric_dimension=3), order))
+        "Lagrange", ufl.Cell("tetrahedron", geometric_dimension=3), order, variant="equispaced"))
 
     check_cell_volume(points, cell, domain, 1 / 6)
 
@@ -653,3 +653,22 @@ def test_gmsh_input_3d(order, cell_type):
     volume = assemble_scalar(1 * dx(mesh))
 
     assert mesh.mpi_comm().allreduce(volume, op=MPI.SUM) == pytest.approx(np.pi, rel=10 ** (-1 - order))
+
+
+def test_quadrilateral_cell_order_3():
+    points = [
+        [0., 0.], [1., 0.], [0., 1.], [1., 1.],
+        [1 / 3, 2 / 9], [2 / 3, 2 / 9],
+        [0., 1 / 3], [0., 2 / 3],
+        [1., 1 / 3], [1., 2 / 3],
+        [1 / 3, 1.], [2 / 3, 1.],
+        [1 / 3, 13 / 27], [2 / 3, 13 / 27],
+        [1 / 3, 20 / 27], [2 / 3, 20 / 27]
+    ]
+
+    cell = list(range(16))
+
+    domain = ufl.Mesh(ufl.VectorElement(
+        "Lagrange", ufl.Cell("quadrilateral", geometric_dimension=2), 3))
+
+    check_cell_volume(points, cell, domain, 5 / 6)
