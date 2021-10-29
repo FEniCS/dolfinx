@@ -7,7 +7,7 @@
 import numpy as np
 import pytest
 import ufl
-from dolfinx import cpp, geometry
+from dolfinx import geometry
 from dolfinx.geometry import compute_distance_gjk
 from dolfinx.mesh import create_mesh
 from dolfinx_utils.test.skips import skip_in_parallel
