@@ -17,9 +17,7 @@ from petsc4py import PETSc
 @pytest.mark.skipif(np.issubdtype(PETSc.ScalarType, np.complexfloating),
                     reason="Complex expression not implemented in ufc")
 def test_expression():
-    """
-    Test UFL expression evaluation
-    """
+    """Test UFL expression evaluation"""
     mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, 10, 10)
     V = dolfinx.FunctionSpace(mesh, ("Lagrange", 2))
 
@@ -34,12 +32,10 @@ def test_expression():
     u.x.scatter_forward()
 
     grad_u = ufl.grad(u)
-
     points = np.array([[0.15, 0.3, 0], [0.953, 0.81, 0]])
-
     gdim = mesh.geometry.dim
     tdim = mesh.topology.dim
-    bb = dolfinx.geometry.BoundingBoxTree(mesh, mesh.topology.dim)
+    bb = dolfinx.geometry.BoundingBoxTree(mesh, tdim)
 
     # Find colliding cells on proc
     closest_cell = []

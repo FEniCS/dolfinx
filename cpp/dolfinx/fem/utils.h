@@ -399,7 +399,7 @@ Form<T> create_form(
 /// has no arguments, e.g. a functional.
 /// @return A Form
 template <typename T>
-std::shared_ptr<Form<T>> create_form(
+Form<T> create_form(
     ufc_form* (*fptr)(),
     const std::vector<std::shared_ptr<const fem::FunctionSpace>>& spaces,
     const std::map<std::string, std::shared_ptr<const fem::Function<T>>>&
@@ -410,8 +410,8 @@ std::shared_ptr<Form<T>> create_form(
     const std::shared_ptr<const mesh::Mesh>& mesh = nullptr)
 {
   ufc_form* form = fptr();
-  auto L = std::make_shared<fem::Form<T>>(fem::create_form<T>(
-      *form, spaces, coefficients, constants, subdomains, mesh));
+  Form<T> L = fem::create_form<T>(*form, spaces, coefficients, constants,
+                                  subdomains, mesh);
   std::free(form);
   return L;
 }
@@ -428,7 +428,7 @@ std::shared_ptr<Form<T>> create_form(
 /// @param[in] reorder_fn The graph reordering function called on the
 /// dofmap
 /// @return The created function space
-std::shared_ptr<fem::FunctionSpace> create_functionspace(
+fem::FunctionSpace create_functionspace(
     ufc_function_space* (*fptr)(const char*), const std::string& function_name,
     std::shared_ptr<mesh::Mesh> mesh,
     const std::function<
