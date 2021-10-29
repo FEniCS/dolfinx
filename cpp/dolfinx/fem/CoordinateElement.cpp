@@ -28,7 +28,7 @@ CoordinateElement::CoordinateElement(
 CoordinateElement::CoordinateElement(mesh::CellType celltype, int degree)
     : CoordinateElement(
         std::make_shared<basix::FiniteElement>(basix::create_element(
-            basix::element::family::P, mesh::cell_type_to_basix_type(celltype),
+            basix::element::family::p, mesh::cell_type_to_basix_type(celltype),
             degree, basix::element::lagrange_variant::equispaced, false)))
 {
   // Do nothing
