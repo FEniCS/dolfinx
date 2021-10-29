@@ -42,8 +42,8 @@ jobs:
         run: |
           . /opt/intel/oneapi/setvars.sh
           python3 -m pip install git+https://github.com/FEniCS/ufl.git
-          python3 -m pip install git+https://github.com/FEniCS/basix.git
-          python3 -m pip install git+https://github.com/FEniCS/ffcx.git
+          python3 -m pip install git+https://github.com/FEniCS/basix.git@mscroggs/quadrature-enum
+          python3 -m pip install git+https://github.com/FEniCS/ffcx.git@mscroggs/quadrature-enum
 
       - name: Configure C++
         run: |
