@@ -8,7 +8,7 @@ import numpy as np
 import pytest
 import ufl
 from dolfinx import cpp, geometry
-from dolfinx.cpp.geometry import compute_distance_gjk
+from dolfinx.geometry import compute_distance_gjk
 from dolfinx.mesh import create_mesh
 from dolfinx_utils.test.skips import skip_in_parallel
 from mpi4py import MPI
@@ -183,8 +183,9 @@ def test_collision_2nd_order_triangle():
         return lambda x: (p1[1] - p0[1]) / (p1[0] - p0[0]) * (x - p0[0]) + p0[1]
     line_func = line_through_points(points[2], points[3])
     point = np.array([0.2, line_func(0.2), 0])
+
     # Point inside 2nd order geometry, outside linear approximation
     # Usefull for debugging on a later stage
     # point = np.array([0.25, 0.89320760, 0])
-    distance = cpp.geometry.squared_distance(mesh, mesh.topology.dim - 1, [2], point)
+    distance = geometry.squared_distance(mesh, mesh.topology.dim - 1, [2], point)
     assert np.isclose(distance, 0)

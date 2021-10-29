@@ -97,7 +97,7 @@ def test_padded_bbox(padding):
         # 2*epsilon
         element_0 = extract_geometricial_data(mesh_0, mesh_0.topology.dim, [collisions[0][0]])[0]
         element_1 = extract_geometricial_data(mesh_1, mesh_1.topology.dim, [collisions[0][1]])[0]
-        distance = numpy.linalg.norm(cpp.geometry.compute_distance_gjk(element_0, element_1))
+        distance = numpy.linalg.norm(compute_distance_gjk(element_0, element_1))
         assert numpy.isclose(distance, 2 * eps)
     else:
         assert len(collisions) == 0
