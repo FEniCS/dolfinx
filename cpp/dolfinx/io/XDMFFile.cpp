@@ -118,7 +118,8 @@ XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename,
   if (_file_mode == "r")
   {
     // Load XML doc from file
-    pugi::xml_parse_result result = _xml_doc->load_file(_filename.c_str());
+    [[maybe_unused]] pugi::xml_parse_result result
+        = _xml_doc->load_file(_filename.c_str());
     assert(result);
 
     if (_xml_doc->child("Xdmf").empty())
@@ -139,7 +140,8 @@ XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename,
     xdmf_node.append_attribute("Version") = "3.0";
     xdmf_node.append_attribute("xmlns:xi") = "http://www.w3.org/2001/XInclude";
 
-    pugi::xml_node domain_node = xdmf_node.append_child("Domain");
+    [[maybe_unused]] pugi::xml_node domain_node
+        = xdmf_node.append_child("Domain");
     assert(domain_node);
   }
   else if (_file_mode == "a")
@@ -147,7 +149,8 @@ XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename,
     if (boost::filesystem::exists(_filename))
     {
       // Load XML doc from file
-      pugi::xml_parse_result result = _xml_doc->load_file(_filename.c_str());
+      [[maybe_unused]] pugi::xml_parse_result result
+          = _xml_doc->load_file(_filename.c_str());
       assert(result);
 
       if (_xml_doc->child("Xdmf").empty())
@@ -169,7 +172,8 @@ XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename,
       xdmf_node.append_attribute("xmlns:xi")
           = "http://www.w3.org/2001/XInclude";
 
-      pugi::xml_node domain_node = xdmf_node.append_child("Domain");
+      [[maybe_unused]] pugi::xml_node domain_node
+          = xdmf_node.append_child("Domain");
       assert(domain_node);
     }
   }

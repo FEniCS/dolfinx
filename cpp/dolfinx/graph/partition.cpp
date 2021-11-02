@@ -190,7 +190,7 @@ std::vector<std::int64_t> graph::build::compute_ghost_indices(
   std::vector<int> neighbors;
   std::map<int, int> proc_to_neighbor;
   int np = 0;
-  int mpi_rank = MPI::rank(comm);
+  [[maybe_unused]] int mpi_rank = MPI::rank(comm);
   for (int p : ghost_owners)
   {
     assert(p != mpi_rank);
@@ -275,7 +275,7 @@ std::vector<std::int64_t> graph::build::compute_ghost_indices(
   {
     std::int64_t old_idx = send_data[i];
     std::int64_t new_idx = new_recv[i];
-    auto [it, insert] = old_to_new.insert({old_idx, new_idx});
+    [[maybe_unused]] auto [it, insert] = old_to_new.insert({old_idx, new_idx});
     assert(insert);
   }
 

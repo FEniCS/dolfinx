@@ -185,9 +185,6 @@ inline void HDF5Interface::write_dataset(
   // Dataset dimensions
   const std::vector<hsize_t> dimsf(global_size.begin(), global_size.end());
 
-  // Generic status report
-  herr_t status;
-
   // Create a global data space
   const hid_t filespace0 = H5Screate_simple(rank, dimsf.data(), nullptr);
   assert(filespace0 != HDF5_FAIL);
@@ -219,6 +216,9 @@ inline void HDF5Interface::write_dataset(
       = H5Dcreate2(file_handle, dataset_path.c_str(), h5type, filespace0,
                    H5P_DEFAULT, chunking_properties, H5P_DEFAULT);
   assert(dset_id != HDF5_FAIL);
+
+  // Generic status report
+  [[maybe_unused]] herr_t status;
 
   // Close global data space
   status = H5Sclose(filespace0);
@@ -302,7 +302,8 @@ HDF5Interface::read_dataset(const hid_t file_handle,
   std::vector<hsize_t> shape(rank);
 
   // Get size in each dimension
-  const int ndims = H5Sget_simple_extent_dims(dataspace, shape.data(), nullptr);
+  [[maybe_unused]] const int ndims
+      = H5Sget_simple_extent_dims(dataspace, shape.data(), nullptr);
   assert(ndims == rank);
 
   // Hyperslab selection
@@ -318,8 +319,8 @@ HDF5Interface::read_dataset(const hid_t file_handle,
 
   // Select a block in the dataset beginning at offset[], with
   // size=count[]
-  herr_t status = H5Sselect_hyperslab(dataspace, H5S_SELECT_SET, offset.data(),
-                                      nullptr, count.data(), nullptr);
+  [[maybe_unused]] herr_t status = H5Sselect_hyperslab(
+      dataspace, H5S_SELECT_SET, offset.data(), nullptr, count.data(), nullptr);
   assert(status != HDF5_FAIL);
 
   // Create a memory dataspace

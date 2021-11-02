@@ -32,7 +32,8 @@ Mat la::create_petsc_matrix(
     petsc_error(ierr, __FILE__, "MatCreate");
 
   // Get IndexMaps from sparsity patterm, and block size
-  std::array maps = {sparsity_pattern.index_map(0), sparsity_pattern.index_map(1)};
+  std::array maps
+      = {sparsity_pattern.index_map(0), sparsity_pattern.index_map(1)};
   const std::array bs
       = {sparsity_pattern.block_size(0), sparsity_pattern.block_size(1)};
 
@@ -190,8 +191,9 @@ PETScMatrix::set_fn(Mat A, InsertMode mode)
 {
   return [A, mode, cache = std::vector<PetscInt>()](
              std::int32_t m, const std::int32_t* rows, std::int32_t n,
-             const std::int32_t* cols, const PetscScalar* vals) mutable {
-    PetscErrorCode ierr;
+             const std::int32_t* cols, const PetscScalar* vals) mutable
+  {
+    [[maybe_unused]] PetscErrorCode ierr;
 #ifdef PETSC_USE_64BIT_INDICES
     cache.resize(m + n);
     std::copy_n(rows, m, cache.begin());
@@ -216,8 +218,9 @@ PETScMatrix::set_block_fn(Mat A, InsertMode mode)
 {
   return [A, mode, cache = std::vector<PetscInt>()](
              std::int32_t m, const std::int32_t* rows, std::int32_t n,
-             const std::int32_t* cols, const PetscScalar* vals) mutable {
-    PetscErrorCode ierr;
+             const std::int32_t* cols, const PetscScalar* vals) mutable
+  {
+    [[maybe_unused]] PetscErrorCode ierr;
 #ifdef PETSC_USE_64BIT_INDICES
     cache.resize(m + n);
     std::copy_n(rows, m, cache.begin());
@@ -246,8 +249,9 @@ PETScMatrix::set_block_expand_fn(Mat A, int bs0, int bs1, InsertMode mode)
   return [A, bs0, bs1, mode, cache0 = std::vector<PetscInt>(),
           cache1 = std::vector<PetscInt>()](
              std::int32_t m, const std::int32_t* rows, std::int32_t n,
-             const std::int32_t* cols, const PetscScalar* vals) mutable {
-    PetscErrorCode ierr;
+             const std::int32_t* cols, const PetscScalar* vals) mutable
+  {
+    [[maybe_unused]] PetscErrorCode ierr;
     cache0.resize(bs0 * m);
     cache1.resize(bs1 * n);
     for (std::int32_t i = 0; i < m; ++i)

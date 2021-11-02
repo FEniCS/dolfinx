@@ -210,7 +210,7 @@ refinement::create_new_vertices(
   {
     if (marked_edges[local_i] == true)
     {
-      auto it = local_edge_to_new_vertex.insert({local_i, n});
+      [[maybe_unused]] auto it = local_edge_to_new_vertex.insert({local_i, n});
       assert(it.second);
       ++n;
     }
@@ -274,7 +274,7 @@ refinement::create_new_vertices(
   for (std::size_t i = 0; i < received_values.size() / 2; ++i)
   {
     assert(recv_local_edge[i] != -1);
-    auto it = local_edge_to_new_vertex.insert(
+    [[maybe_unused]] auto it = local_edge_to_new_vertex.insert(
         {recv_local_edge[i], received_values[i * 2 + 1]});
     assert(it.second);
   }
