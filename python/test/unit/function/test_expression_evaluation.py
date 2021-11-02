@@ -201,7 +201,7 @@ def test_assembly_into_quadrature_function():
     mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, 3, 6)
 
     quadrature_degree = 2
-    quadrature_points, wts = basix.make_quadrature("default", basix.CellType.triangle, quadrature_degree)
+    quadrature_points, wts = basix.make_quadrature(basix.CellType.triangle, quadrature_degree)
     Q_element = ufl.VectorElement("Quadrature", ufl.triangle, quadrature_degree, quad_scheme="default")
     Q = dolfinx.FunctionSpace(mesh, Q_element)
 
