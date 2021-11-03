@@ -193,7 +193,7 @@ PETScMatrix::set_fn(Mat A, InsertMode mode)
              std::int32_t m, const std::int32_t* rows, std::int32_t n,
              const std::int32_t* cols, const PetscScalar* vals) mutable
   {
-    [[maybe_unused]] PetscErrorCode ierr;
+    PetscErrorCode ierr;
 #ifdef PETSC_USE_64BIT_INDICES
     cache.resize(m + n);
     std::copy_n(rows, m, cache.begin());
@@ -204,10 +204,8 @@ PETScMatrix::set_fn(Mat A, InsertMode mode)
     ierr = MatSetValuesLocal(A, m, rows, n, cols, vals, mode);
 #endif
 
-#ifdef DEBUG
     if (ierr != 0)
       la::petsc_error(ierr, __FILE__, "MatSetValuesLocal");
-#endif
     return 0;
   };
 }

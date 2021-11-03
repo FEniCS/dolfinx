@@ -215,24 +215,29 @@ inline void HDF5Interface::write_dataset(
   const hid_t dset_id
       = H5Dcreate2(file_handle, dataset_path.c_str(), h5type, filespace0,
                    H5P_DEFAULT, chunking_properties, H5P_DEFAULT);
-  assert(dset_id != HDF5_FAIL);
+  if (dset_id == HDF5_FAIL)
+    throw std::runtime_error("Failed to create global dataset.");
 
   // Generic status report
-  [[maybe_unused]] herr_t status;
+  herr_t status;
 
   // Close global data space
   status = H5Sclose(filespace0);
-  assert(status != HDF5_FAIL);
+  if (status == HDF5_FAIL)
+    throw std::runtime_error("Failed to close global data space.");
 
   // Create a local data space
   const hid_t memspace = H5Screate_simple(rank, count.data(), nullptr);
-  assert(memspace != HDF5_FAIL);
+  if (memspace == HDF5_FAIL)
+    throw std::runtime_error("Failed to create local data space.");
 
   // Create a file dataspace within the global space - a hyperslab
   const hid_t filespace1 = H5Dget_space(dset_id);
   status = H5Sselect_hyperslab(filespace1, H5S_SELECT_SET, offset.data(),
                                nullptr, count.data(), nullptr);
-  assert(status != HDF5_FAIL);
+  if (status == HDF5_FAIL)
+    throw std::runtime_error(
+        "Failed to create file dataspace within the global space.");
 
   // Set parallel access
   const hid_t plist_id = H5Pcreate(H5P_DATASET_XFER);
@@ -240,7 +245,9 @@ inline void HDF5Interface::write_dataset(
   {
 #ifdef H5_HAVE_PARALLEL
     status = H5Pset_dxpl_mpio(plist_id, H5FD_MPIO_COLLECTIVE);
-    assert(status != HDF5_FAIL);
+    if (status == HDF5_FAIL)
+      throw std::runtime_error("Failed to set data transfer property list.");
+
 #else
     throw std::runtime_error("HDF5 library has not been configured with MPI");
 #endif
@@ -248,30 +255,36 @@ inline void HDF5Interface::write_dataset(
 
   // Write local dataset into selected hyperslab
   status = H5Dwrite(dset_id, h5type, memspace, filespace1, plist_id, data);
-  assert(status != HDF5_FAIL);
+  if (status == HDF5_FAIL)
+    throw std::runtime_error("Failed to write local dataset into hyperslab.");
 
   if (use_chunking)
   {
     // Close chunking properties
     status = H5Pclose(chunking_properties);
-    assert(status != HDF5_FAIL);
+    if (status == HDF5_FAIL)
+      throw std::runtime_error("Failed to close chunking properties.");
   }
 
   // Close dataset collectively
   status = H5Dclose(dset_id);
-  assert(status != HDF5_FAIL);
+  if (status == HDF5_FAIL)
+    throw std::runtime_error("Failed to close dataset.");
 
   // Close hyperslab
   status = H5Sclose(filespace1);
-  assert(status != HDF5_FAIL);
+  if (status == HDF5_FAIL)
+    throw std::runtime_error("Failed to close hyperslab.");
 
   // Close local dataset
   status = H5Sclose(memspace);
-  assert(status != HDF5_FAIL);
+  if (status == HDF5_FAIL)
+    throw std::runtime_error("Failed to close local dataset.");
 
   // Release file-access template
   status = H5Pclose(plist_id);
-  assert(status != HDF5_FAIL);
+  if (status == HDF5_FAIL)
+    throw std::runtime_error("Failed to release file-access template.");
 }
 //---------------------------------------------------------------------------
 template <typename T>

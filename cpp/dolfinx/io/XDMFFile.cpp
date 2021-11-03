@@ -118,9 +118,9 @@ XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename,
   if (_file_mode == "r")
   {
     // Load XML doc from file
-    [[maybe_unused]] pugi::xml_parse_result result
-        = _xml_doc->load_file(_filename.c_str());
-    assert(result);
+    pugi::xml_parse_result result = _xml_doc->load_file(_filename.c_str());
+    if (!result)
+      throw std::runtime_error("Failed to load xml document from file.");
 
     if (_xml_doc->child("Xdmf").empty())
       throw std::runtime_error("Empty <Xdmf> root node.");
