@@ -140,9 +140,9 @@ XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename,
     xdmf_node.append_attribute("Version") = "3.0";
     xdmf_node.append_attribute("xmlns:xi") = "http://www.w3.org/2001/XInclude";
 
-    [[maybe_unused]] pugi::xml_node domain_node
-        = xdmf_node.append_child("Domain");
-    assert(domain_node);
+    pugi::xml_node domain_node = xdmf_node.append_child("Domain");
+    if (!domain_node)
+      throw std::runtime_error("Failed to append xml/xdmf Domain.");
   }
   else if (_file_mode == "a")
   {
@@ -172,9 +172,9 @@ XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename,
       xdmf_node.append_attribute("xmlns:xi")
           = "http://www.w3.org/2001/XInclude";
 
-      [[maybe_unused]] pugi::xml_node domain_node
-          = xdmf_node.append_child("Domain");
-      assert(domain_node);
+      pugi::xml_node domain_node = xdmf_node.append_child("Domain");
+      if (!domain_node)
+        throw std::runtime_error("Failed to append xml/xdmf Domain.");
     }
   }
 }
