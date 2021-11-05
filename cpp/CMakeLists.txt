@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 3.16)
 #------------------------------------------------------------------------------
 # Set project name and version number
 
-project(DOLFINX VERSION "0.1.1.0")
+project(DOLFINX VERSION "0.3.1.0")
 
 set(DOXYGEN_DOLFINX_VERSION ${DOLFINX_VERSION} CACHE STRING "Version for Doxygen" FORCE)
 
@@ -124,6 +124,9 @@ endif()
 #------------------------------------------------------------------------------
 # Run tests to find required packages
 
+# Use Python for detecting UFC and Basix
+find_package(Python3 COMPONENTS Interpreter REQUIRED)
+
 # Note: When updating Boost version, also update DOLFINXCongif.cmake.in
 if(DEFINED ENV{BOOST_ROOT} OR DEFINED BOOST_ROOT)
   set(Boost_NO_SYSTEM_PATHS on)
@@ -135,17 +138,40 @@ set_package_properties(Boost PROPERTIES TYPE REQUIRED
   DESCRIPTION "Boost C++ libraries"
   URL "http://www.boost.org")
 
-# Check for required package xtensor
+# Check for Basix
+# Note: Basix may be installed as a standalone C++ library, or in the
+# Basix Python module tree
+execute_process(
+  COMMAND ${Python3_EXECUTABLE} -c "import basix, os, sys; sys.stdout.write(os.path.dirname(basix.__file__))"
+  OUTPUT_VARIABLE BASIX_PY_DIR
+  RESULT_VARIABLE BASIX_PY_COMMAND_RESULT
+  ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
+if (BASIX_PY_DIR)
+  message(STATUS "Adding ${BASIX_PY_DIR} to Basix/xtensor/xtl search hints")
+  set(xtl_ROOT "${BASIX_PY_DIR};${xtl_ROOT}")
+  set(xsimd "${BASIX_PY_DIR};${xsimd_ROOT}")
+  set(xtensor_ROOT "${BASIX_PY_DIR};${xtensor_ROOT}")
+  
+  # Basix installed from manylinux wheel
+  if (IS_DIRECTORY ${BASIX_PY_DIR}/../fenics_basix.libs) 
+    set(CMAKE_INSTALL_RPATH ${BASIX_PY_DIR}/../fenics_basix.libs)
+  endif()
+endif()
+find_package(Basix REQUIRED CONFIG HINTS ${BASIX_PY_DIR})
+set_package_properties(basix PROPERTIES TYPE REQUIRED
+  DESCRIPTION "FEniCS tabulation library"
+  URL "https://github.com/fenics/basix")
+
+get_target_property(BASIX_DEFN Basix::basix INTERFACE_COMPILE_DEFINITIONS)
+if("XTENSOR_USE_XSIMD" IN_LIST BASIX_DEFN)
+  find_package(xsimd REQUIRED)
+endif()
+
+  # Check for required package xtensor
 find_package(xtensor 0.23.10 REQUIRED)
 set_package_properties(xtensor PROPERTIES TYPE REQUIRED
   DESCRIPTION "C++ library for numerical analysis with multi-dimensional array expressions."
   URL "https://xtensor.readthedocs.io/")
-
-# Check for required package xtensor-blas
-find_package(xtensor-blas REQUIRED)
-set_package_properties(xtensor-blas PROPERTIES TYPE REQUIRED
-  DESCRIPTION "BLAS extenssion to xtensor."
-  URL "https://xtensor-blas.readthedocs.io/")
 
 find_package(PETSc 3.10)
 set_package_properties(PETSc PROPERTIES TYPE REQUIRED
@@ -170,25 +196,21 @@ set_package_properties(SCOTCH PROPERTIES TYPE REQUIRED
   URL "https://www.labri.fr/perso/pelegrin/scotch"
   PURPOSE "Parallel graph partitioning and redordering")
 
-# Check for required packages UFC and basix
-find_package(Python3 COMPONENTS Interpreter REQUIRED)
+# Check for UFC
 find_package(UFC MODULE ${DOLFINX_VERSION_MAJOR}.${DOLFINX_VERSION_MINOR})
 set_package_properties(UFC PROPERTIES TYPE REQUIRED
   DESCRIPTION "Unified interface for form-compilers (part of FFCx)"
   URL "https://github.com/fenics/ffcx")
 
-find_package(Basix 0.0.1 REQUIRED)
-set_package_properties(basix PROPERTIES TYPE REQUIRED
-  DESCRIPTION "FEniCS tabulation library"
-  URL "https://github.com/fenics/basix")
-
-  get_target_property(BASIX_DEFN Basix::basix INTERFACE_COMPILE_DEFINITIONS)
-  if("XTENSOR_USE_XSIMD" IN_LIST BASIX_DEFN)
-    find_package(xsimd REQUIRED)
-  endif()
-
-  #------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 # Run tests to find optional packages
+
+# Check for ADIOS2
+find_package(ADIOS2 2.7.1)
+set_package_properties(ADIOS2 PROPERTIES TYPE OPTIONAL
+  DESCRIPTION "Adaptable Input/Output (I/O) System."
+  URL "https://adios2.readthedocs.io/en/latest/"
+  PURPOSE "IO, including in parallel")
 
 # Check for SLEPc
 set(SLEPC_FOUND FALSE)

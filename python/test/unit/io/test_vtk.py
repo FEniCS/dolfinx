@@ -58,7 +58,7 @@ def test_save_1d_scalar(tempdir):
     def f(x):
         return x[0]
 
-    u = Function(FunctionSpace(mesh, ("CG", 2)))
+    u = Function(FunctionSpace(mesh, ("Lagrange", 2)))
     u.interpolate(f)
     u.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 

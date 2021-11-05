@@ -124,11 +124,11 @@ bc = DirichletBC(u0, locate_dofs_geometrical(V, boundary))
 # ::
 
 # Assemble system, applying boundary conditions
-A = assemble_matrix(a, [bc])
+A = assemble_matrix(a, bcs=[bc])
 A.assemble()
 
 b = assemble_vector(L)
-apply_lifting(b, [a], [[bc]])
+apply_lifting(b, [a], bcs=[[bc]])
 b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 set_bc(b, [bc])
 

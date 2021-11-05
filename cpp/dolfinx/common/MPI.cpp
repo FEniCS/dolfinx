@@ -89,38 +89,36 @@ int dolfinx::MPI::size(const MPI_Comm comm)
 std::vector<int> dolfinx::MPI::compute_graph_edges(MPI_Comm comm,
                                                    const std::set<int>& edges)
 {
-  // Send '1' to ranks that I have a edge to
-  std::vector<std::uint8_t> edge_count(dolfinx::MPI::size(comm), 0);
+  // Send '1' to ranks that I have an edge to
+  std::vector<std::uint8_t> edge_count_send(dolfinx::MPI::size(comm), 0);
   std::for_each(edges.cbegin(), edges.cend(),
-                [&edge_count](auto e) { edge_count[e] = 1; });
-  MPI_Alltoall(MPI_IN_PLACE, 1, MPI_UINT8_T, edge_count.data(), 1, MPI_UINT8_T,
-               comm);
+                [&edge_count_send](auto e) { edge_count_send[e] = 1; });
+  std::vector<std::uint8_t> edge_count_recv(edge_count_send.size());
+  MPI_Alltoall(edge_count_send.data(), 1, MPI_UINT8_T, edge_count_recv.data(),
+               1, MPI_UINT8_T, comm);
 
   // Build list of rank that had an edge to me
   std::vector<int> edges1;
-  for (std::size_t i = 0; i < edge_count.size(); ++i)
+  for (std::size_t i = 0; i < edge_count_recv.size(); ++i)
   {
-    if (edge_count[i] > 0)
+    if (edge_count_recv[i] > 0)
       edges1.push_back(i);
   }
   return edges1;
 }
 //-----------------------------------------------------------------------------
-std::tuple<std::vector<int>, std::vector<int>>
-dolfinx::MPI::neighbors(MPI_Comm neighbor_comm)
+std::array<std::vector<int>, 2> dolfinx::MPI::neighbors(MPI_Comm comm)
 {
   int status;
-  MPI_Topo_test(neighbor_comm, &status);
+  MPI_Topo_test(comm, &status);
   assert(status != MPI_UNDEFINED);
 
   // Get list of neighbors
   int indegree(-1), outdegree(-2), weighted(-1);
-  MPI_Dist_graph_neighbors_count(neighbor_comm, &indegree, &outdegree,
-                                 &weighted);
+  MPI_Dist_graph_neighbors_count(comm, &indegree, &outdegree, &weighted);
   std::vector<int> sources(indegree), destinations(outdegree);
-  MPI_Dist_graph_neighbors(neighbor_comm, indegree, sources.data(),
-                           MPI_UNWEIGHTED, outdegree, destinations.data(),
-                           MPI_UNWEIGHTED);
+  MPI_Dist_graph_neighbors(comm, indegree, sources.data(), MPI_UNWEIGHTED,
+                           outdegree, destinations.data(), MPI_UNWEIGHTED);
 
   return {std::move(sources), std::move(destinations)};
 }

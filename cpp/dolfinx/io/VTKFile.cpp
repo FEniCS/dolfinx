@@ -77,8 +77,11 @@ std::string get_counter(const pugi::xml_node& node, const std::string& name)
 /// Get the VTK cell type integer
 std::int8_t get_vtk_cell_type(mesh::CellType cell, int dim)
 {
+  if (cell == mesh::CellType::prism and dim == 2)
+    throw std::runtime_error("More work needed for prism cell");
+
   // Get cell type
-  mesh::CellType cell_type = mesh::cell_entity_type(cell, dim);
+  mesh::CellType cell_type = mesh::cell_entity_type(cell, dim, 0);
 
   // Determine VTK cell type (arbitrary Lagrange elements)
   // https://vtk.org/doc/nightly/html/vtkCellType_8h_source.html
@@ -174,7 +177,6 @@ void _add_data(const fem::Function<Scalar>& u,
         field_node.append_child(pugi::node_pcdata)
             .set_value(xt_to_string(values_comp, 16).c_str());
       }
-
       else if (rank == 1)
       {
         field_node.append_attribute("NumberOfComponents") = 3;
@@ -510,7 +512,7 @@ void write_function(
         auto cmap = mesh->geometry().cmap();
         auto geometry_layout = cmap.dof_layout();
         // Extract function value
-        const std::vector<Scalar>& func_values = _u.get().x()->array();
+        xtl::span<const Scalar> func_values = _u.get().x()->array();
         // Compute in tensor (one for scalar function, . . .)
         const size_t value_size_loc = element->value_size();
 

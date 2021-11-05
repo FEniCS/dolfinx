@@ -9,7 +9,7 @@ import functools
 
 from dolfinx import cpp
 from dolfinx.cpp.common import (git_commit_hash, has_debug, has_kahip,  # noqa
-                                has_parmetis, has_petsc_complex)
+                                has_parmetis)
 
 TimingType = cpp.common.TimingType
 
@@ -40,7 +40,9 @@ class Timer:
     ends when exiting it. It is also possible to start and stop a
     timer explicitly by::
 
+        t = Timer(\"Some costly operation\")
         t.start()
+        costly_call()
         t.stop()
 
     and retrieve timing data using::
@@ -51,7 +53,7 @@ class Timer:
     may be printed using functions ``timing``, ``timings``,
     ``list_timings``, ``dump_timings_to_xml``, e.g.::
 
-        list_timings([TimingType.wall, TimingType.user])
+        list_timings(mpi_comm, [TimingType.wall, TimingType.user])
     """
 
     def __init__(self, name: str = None):

@@ -187,6 +187,13 @@ fem::transpose_dofmap(const graph::AdjacencyList<std::int32_t>& dofmap,
                                             std::move(index_offsets));
 }
 //-----------------------------------------------------------------------------
+/// Equality operator
+bool DofMap::operator==(const DofMap& map) const
+{
+  return this->_index_map_bs == map._index_map_bs
+         and this->_dofmap == map._dofmap and this->_bs == map._bs;
+}
+//-----------------------------------------------------------------------------
 int DofMap::bs() const noexcept { return _bs; }
 //-----------------------------------------------------------------------------
 DofMap DofMap::extract_sub_dofmap(const std::vector<int>& component) const
@@ -248,8 +255,9 @@ std::pair<std::unique_ptr<DofMap>, std::vector<std::int32_t>> DofMap::collapse(
 
     // Parent does not have block structure but sub-map does, so build
     // new submap to get block structure for collapsed dofmap.
-    auto [index_map, bs, dofmap] = fem::build_dofmap_data(
+    auto [_index_map, bs, dofmap] = fem::build_dofmap_data(
         comm, topology, *collapsed_dof_layout, reorder_fn);
+    auto index_map = std::make_shared<common::IndexMap>(std::move(_index_map));
     dofmap_new = std::make_unique<DofMap>(element_dof_layout, index_map, bs,
                                           std::move(dofmap), bs);
   }

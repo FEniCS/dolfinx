@@ -26,9 +26,12 @@ void xdmf_mesh::add_topology_data(
 
   const int tdim = topology.dim();
 
+  if (tdim == 2 and topology.cell_type() == mesh::CellType::prism)
+    throw std::runtime_error("More work needed for prism cell");
+
   // Get entity 'cell' type
   const mesh::CellType entity_cell_type
-      = mesh::cell_entity_type(topology.cell_type(), dim);
+      = mesh::cell_entity_type(topology.cell_type(), dim, 0);
 
   // Get number of nodes per entity
   const int num_nodes_per_entity
@@ -129,7 +132,7 @@ void xdmf_mesh::add_topology_data(
   topology_node.append_attribute("NodesPerElement") = num_nodes_per_entity;
 
   // Add topology DataItem node
-  const std::string h5_path = path_prefix + "/topology";
+  const std::string h5_path = path_prefix + std::string("/topology");
   const std::vector<std::int64_t> shape
       = {num_entities_global, num_nodes_per_entity};
   const std::string number_type = "Int";
@@ -184,7 +187,7 @@ void xdmf_mesh::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
   }
 
   // Add geometry DataItem node
-  const std::string h5_path = path_prefix + "/geometry";
+  const std::string h5_path = path_prefix + std::string("/geometry");
   const std::vector<std::int64_t> shape = {num_points, width};
 
   const std::int64_t num_local = num_points_local;

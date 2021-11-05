@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.16)
 project(dolfinx-demos)
 
 # Find DOLFINx config file
-find_package(Basix REQUIRED)
 find_package(DOLFINX REQUIRED)
 
 # Enable testing

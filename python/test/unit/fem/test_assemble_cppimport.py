@@ -15,8 +15,8 @@ import petsc4py
 import pytest
 import scipy.sparse.linalg
 import ufl
+from dolfinx.fem import Form
 from dolfinx.generation import UnitSquareMesh
-from dolfinx.jit import dolfinx_pc
 from dolfinx.wrappers import get_include_path as pybind_inc
 from dolfinx_utils.test.fixtures import tempdir  # noqa: F401
 from dolfinx_utils.test.skips import skip_in_parallel
@@ -26,9 +26,12 @@ from mpi4py import MPI
 @skip_in_parallel
 @pytest.mark.skipif(not dolfinx.pkgconfig.exists("eigen3"),
                     reason="This test needs eigen3 pkg-config.")
+@pytest.mark.skipif(not dolfinx.pkgconfig.exists("dolfinx"),
+                    reason="This test needs DOLFINx pkg-config.")
 def test_eigen_assembly(tempdir):  # noqa: F811
     """Compare assembly into scipy.CSR matrix with PETSc assembly"""
     def compile_eigen_csr_assembler_module():
+        dolfinx_pc = dolfinx.pkgconfig.parse("dolfinx")
         eigen_dir = dolfinx.pkgconfig.parse("eigen3")["include_dirs"]
         cpp_code_header = f"""
 <%
@@ -96,11 +99,10 @@ PYBIND11_MODULE(eigen_csr, m)
     def assemble_csr_matrix(a, bcs):
         """Assemble bilinear form into an SciPy CSR matrix, in serial."""
         module = compile_eigen_csr_assembler_module()
-        _a = dolfinx.fem.assemble._create_cpp_form(a)
-        A = module.assemble_matrix(_a, bcs)
-        if _a.function_spaces[0].id == _a.function_spaces[1].id:
+        A = module.assemble_matrix(a, bcs)
+        if a.function_spaces[0].id == a.function_spaces[1].id:
             for bc in bcs:
-                if _a.function_spaces[0].contains(bc.function_space):
+                if a.function_spaces[0].contains(bc.function_space):
                     bc_dofs, _ = bc.dof_indices()
                     # See https://github.com/numpy/numpy/issues/14132
                     # for why we copy bc_dofs as a work-around
@@ -112,7 +114,7 @@ PYBIND11_MODULE(eigen_csr, m)
     Q = dolfinx.FunctionSpace(mesh, ("Lagrange", 1))
     u = ufl.TrialFunction(Q)
     v = ufl.TestFunction(Q)
-    a = ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx
+    a = Form(ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx)
 
     bdofsQ = dolfinx.fem.locate_dofs_geometrical(Q, lambda x: numpy.logical_or(x[0] < 1.0e-6, x[0] > 1.0 - 1.0e-6))
     u_bc = dolfinx.fem.Function(Q)

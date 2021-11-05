@@ -65,7 +65,6 @@ target_link_libraries(dolfinx PUBLIC Basix::basix)
 # xtensor
 target_link_libraries(dolfinx PUBLIC xtl)
 target_link_libraries(dolfinx PUBLIC xtensor)
-target_link_libraries(dolfinx PRIVATE xtensor-blas)
 if("XTENSOR_USE_XSIMD" IN_LIST BASIX_DEFN)
   target_link_libraries(dolfinx PUBLIC xsimd)
 endif()
@@ -102,6 +101,12 @@ target_include_directories(dolfinx SYSTEM PRIVATE ${SCOTCH_INCLUDE_DIRS})
 
 #------------------------------------------------------------------------------
 # Optional packages
+
+# ADIOS2
+if (ADIOS2_FOUND)
+  target_compile_definitions(dolfinx PUBLIC HAS_ADIOS2)
+  target_link_libraries(dolfinx PRIVATE adios2::cxx11_mpi)
+endif()
 
 # SLEPC
 if (DOLFINX_ENABLE_SLEPC AND SLEPC_FOUND)

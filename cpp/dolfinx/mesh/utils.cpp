@@ -14,11 +14,11 @@
 #include <cstdlib>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/log.h>
+#include <dolfinx/common/math.h>
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/graph/partition.h>
 #include <stdexcept>
 #include <unordered_set>
-#include <xtensor-blas/xlinalg.hpp>
 #include <xtensor/xadapt.hpp>
 #include <xtensor/xbuilder.hpp>
 #include <xtensor/xfixed.hpp>
@@ -64,9 +64,12 @@ std::vector<double> mesh::h(const Mesh& mesh,
   if (dim != mesh.topology().dim())
     throw std::runtime_error("Cell size when dim ne tdim  requires updating.");
 
+  if (mesh.topology().cell_type() == mesh::CellType::prism and dim == 2)
+    throw std::runtime_error("More work needed for prism cell");
+
   // Get number of cell vertices
   const mesh::CellType type
-      = cell_entity_type(mesh.topology().cell_type(), dim);
+      = cell_entity_type(mesh.topology().cell_type(), dim, 0);
   const int num_vertices = num_cell_vertices(type);
 
   // Get geometry dofmap and dofs
@@ -106,9 +109,12 @@ xt::xtensor<double, 2>
 mesh::cell_normals(const mesh::Mesh& mesh, int dim,
                    const xtl::span<const std::int32_t>& entities)
 {
+  if (mesh.topology().cell_type() == mesh::CellType::prism and dim == 2)
+    throw std::runtime_error("More work needed for prism cell");
+
   const int gdim = mesh.geometry().dim();
   const mesh::CellType type
-      = mesh::cell_entity_type(mesh.topology().cell_type(), dim);
+      = mesh::cell_entity_type(mesh.topology().cell_type(), dim, 0);
 
   // Find geometry nodes for topology entities
   const xt::xtensor<double, 2>& xg = mesh.geometry().x();
@@ -158,7 +164,7 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
 
       // Define cell normal via cross product of first two edges
       auto ni = xt::row(n, i);
-      ni = xt::linalg::cross((p1 - p0), (p2 - p0));
+      ni = math::cross((p1 - p0), (p2 - p0));
       ni /= xt::norm_l2(ni);
     }
     return n;
@@ -176,7 +182,7 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
 
       // Defined cell normal via cross product of first two edges:
       auto ni = xt::row(n, i);
-      ni = xt::linalg::cross((p1 - p0), (p2 - p0));
+      ni = math::cross((p1 - p0), (p2 - p0));
       ni /= xt::norm_l2(ni);
     }
     return n;
@@ -431,9 +437,13 @@ xt::xtensor<std::int32_t, 2> mesh::entities_to_vertex_geometry(
     const mesh::Mesh& mesh, int dim,
     const xtl::span<const std::int32_t>& entity_list)
 {
-  dolfinx::mesh::CellType cell_type = mesh.topology().cell_type();
+  mesh::CellType cell_type = mesh.topology().cell_type();
+
+  if (cell_type == mesh::CellType::prism and dim == 2)
+    throw std::runtime_error("More work needed for prism cells");
+
   const std::size_t num_entity_vertices
-      = mesh::num_cell_vertices(mesh::cell_entity_type(cell_type, dim));
+      = mesh::num_cell_vertices(mesh::cell_entity_type(cell_type, dim, 0));
   xt::xtensor<std::int32_t, 2> entity_geometry(
       {entity_list.size(), num_entity_vertices});
 

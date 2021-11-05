@@ -7,12 +7,12 @@
 #pragma once
 
 #include <basix/finite-element.h>
-#include <dolfinx/common/types.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <functional>
 #include <memory>
 #include <numeric>
 #include <vector>
+#include <xtensor/xtensor.hpp>
 #include <xtl/xspan.hpp>
 
 struct ufc_finite_element;
@@ -94,11 +94,21 @@ public:
                 int order) const;
 
   /// Push basis functions forward to physical element
-  void transform_reference_basis(xt::xtensor<double, 3>& values,
-                                 const xt::xtensor<double, 3>& reference_values,
-                                 const xt::xtensor<double, 3>& J,
-                                 const xtl::span<const double>& detJ,
-                                 const xt::xtensor<double, 3>& K) const;
+  /// @param[out] values Basis function values on the physical domain (ndim=3)
+  /// @param[in] reference_values Basis function values on the reference
+  /// cell (ndim=3)
+  /// @param[in] J The Jacobian of the map (shape=(num_points, gdim, tdim))
+  /// @param[in] detJ The determinant of the Jacobian
+  /// @param[in] K The inverse of the Jacobian (shape=(num_points, tdim, gdim))
+  template <typename U, typename V, typename W, typename X>
+  constexpr void
+  transform_reference_basis(U&& values, const V& reference_values, const W& J,
+                            const xtl::span<const double>& detJ,
+                            const X& K) const
+  {
+    assert(_element);
+    _element->map_push_forward_m(reference_values, J, detJ, K, values);
+  }
 
   /// Get the number of sub elements (for a mixed element)
   /// @return the Number of sub elements
@@ -150,7 +160,7 @@ public:
   /// the expression. The call must allocate the space. Is has
   template <typename T>
   constexpr void interpolate(const xt::xtensor<T, 2>& values,
-                             xtl::span<T> dofs) const
+                             const xtl::span<T>& dofs) const
   {
     if (!_element)
     {
@@ -158,20 +168,29 @@ public:
                                "Cannot interpolate mixed elements directly.");
     }
 
-    _element->interpolate(tcb::make_span(dofs), tcb::make_span(values), _bs);
+    _element->interpolate(dofs, tcb::make_span(values), _bs);
   }
+
+  /// Create a matrix that maps degrees of freedom from one element to
+  /// this element (interpolation)
+  /// @param[in] from The element to interpolate from
+  /// @return Matrix operator that maps the 'from' degrees-of-freedom to
+  /// the degrees-of-freedom of this element.
+  /// @note Does not support mixed elements
+  xt::xtensor<double, 2>
+  create_interpolation_operator(const FiniteElement& from) const;
 
   /// Check if DOF transformations are needed for this element.
   ///
   /// DOF transformations will be needed for elements which might not be
   /// continuous when two neighbouring cells disagree on the orientation of
-  /// a shared subentity, and when this cannot be corrected for by permuting the
-  /// DOF numbering in the dofmap.
+  /// a shared subentity, and when this cannot be corrected for by permuting
+  /// the DOF numbering in the dofmap.
   ///
   /// For example, Raviart-Thomas elements will need DOF transformations,
   /// as the neighbouring cells may disagree on the orientation of a basis
-  /// function, and this orientation cannot be corrected for by permuting the
-  /// DOF numbers on each cell.
+  /// function, and this orientation cannot be corrected for by permuting
+  /// the DOF numbers on each cell.
   ///
   /// @return True if DOF transformations are required
   bool needs_dof_transformations() const noexcept;
@@ -203,7 +222,7 @@ public:
   /// returned
   /// @param[in] transpose Indicates whether the transpose transformations
   /// should be returned
-  /// @param[in] scalar_element Indicated whether the scalar transformations
+  /// @param[in] scalar_element Indicates whether the scalar transformations
   /// should be returned for a vector element
   template <typename T>
   std::function<void(const xtl::span<T>&, const xtl::span<const std::uint32_t>&,
@@ -244,13 +263,13 @@ public:
                    const xtl::span<const std::uint32_t>& cell_info,
                    std::int32_t cell, int block_size)
         {
-          std::size_t start = 0;
+          std::size_t offset = 0;
           for (std::size_t e = 0; e < sub_element_functions.size(); ++e)
           {
             const std::size_t width = dims[e] * block_size;
-            sub_element_functions[e](data.subspan(start, width), cell_info,
+            sub_element_functions[e](data.subspan(offset, width), cell_info,
                                      cell, block_size);
-            start += width;
+            offset += width;
           }
         };
       }
@@ -364,14 +383,12 @@ public:
                    const xtl::span<const std::uint32_t>& cell_info,
                    std::int32_t cell, int block_size)
         {
-          std::size_t start = 0;
+          std::size_t offset = 0;
           for (std::size_t e = 0; e < sub_element_functions.size(); ++e)
           {
-            const std::size_t width
-                = _sub_elements[e]->space_dimension() * block_size;
-            sub_element_functions[e](data.subspan(start, width), cell_info,
-                                     cell, block_size);
-            start += width;
+            sub_element_functions[e](data.subspan(offset, data.size() - offset),
+                                     cell_info, cell, block_size);
+            offset += _sub_elements[e]->space_dimension();
           }
         };
       }
@@ -446,7 +463,7 @@ public:
     }
   }
 
-  /// Apply DOF transformation to some data.
+  /// Apply DOF transformation to some data
   ///
   /// @param[in,out] data The data to be transformed
   /// @param[in] cell_permutation Permutation data for the cell

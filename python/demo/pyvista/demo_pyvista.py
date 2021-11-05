@@ -42,7 +42,7 @@ def int_u(x):
 
 
 mesh = dolfinx.UnitCubeMesh(MPI.COMM_WORLD, 4, 3, 5, cell_type=dolfinx.cpp.mesh.CellType.tetrahedron)
-V = dolfinx.FunctionSpace(mesh, ("CG", 1))
+V = dolfinx.FunctionSpace(mesh, ("Lagrange", 1))
 u = dolfinx.Function(V)
 u.interpolate(int_u)
 
@@ -62,7 +62,7 @@ if np.iscomplexobj(vertex_values):
     vertex_values = vertex_values.real
 
 # Create point cloud of vertices, and add the vertex values to the cloud
-grid.point_arrays["u"] = vertex_values
+grid.point_data["u"] = vertex_values
 grid.set_active_scalars("u")
 
 # Create a pyvista plotter which is used to visualize the output
@@ -138,7 +138,7 @@ grid = pyvista.UnstructuredGrid(pyvista_cells, cell_types, mesh.geometry.x)
 point_values = u.compute_point_values()
 if np.iscomplexobj(point_values):
     point_values = point_values.real
-grid.point_arrays["u"] = point_values
+grid.point_data["u"] = point_values
 
 # We set the function "u" as the active scalar for the mesh, and warp
 # the mesh in z-direction by its values
@@ -180,7 +180,7 @@ cell_tags = dolfinx.MeshTags(mesh, mesh.topology.dim, np.arange(num_cells), in_c
 
 # As the dolfinx.MeshTag contains a value for every cell in the
 # geometry, we can attach it directly to the grid
-grid.cell_arrays["Marker"] = cell_tags.values
+grid.cell_data["Marker"] = cell_tags.values
 grid.set_active_scalars("Marker")
 
 # We create a plotter consisting of two windows, and add a plot of the
@@ -245,7 +245,7 @@ values = uh.vector.array.real if np.iscomplexobj(uh.vector.array) else uh.vector
 # We create a pyvista mesh from the topology and geometry, and attach
 # the coefficients of the degrees of freedom
 grid = pyvista.UnstructuredGrid(topology, cell_types, geometry)
-grid.point_arrays["DG"] = values
+grid.point_data["DG"] = values
 grid.set_active_scalars("DG")
 
 # We would also like to visualize the underlying mesh and obtain that as
@@ -287,7 +287,7 @@ def vel(x):
 
 
 mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, 6, 6, dolfinx.cpp.mesh.CellType.triangle)
-V = dolfinx.VectorFunctionSpace(mesh, ("CG", 2))
+V = dolfinx.VectorFunctionSpace(mesh, ("Lagrange", 2))
 uh = dolfinx.Function(V)
 uh.interpolate(vel)
 
