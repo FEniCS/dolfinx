@@ -201,6 +201,12 @@ PETScMatrix::set_fn(Mat A, InsertMode mode)
 #else
     ierr = MatSetValuesLocal(A, m, rows, n, cols, vals, mode);
 #endif
+
+#ifdef DEBUG
+    if (ierr != 0)
+      la::petsc_error(ierr, __FILE__, "MatSetValuesLocal");
+#endif
+
     return ierr;
   };
 }
@@ -223,6 +229,12 @@ PETScMatrix::set_block_fn(Mat A, InsertMode mode)
 #else
     ierr = MatSetValuesBlockedLocal(A, m, rows, n, cols, vals, mode);
 #endif
+
+#ifdef DEBUG
+    if (ierr != 0)
+      la::petsc_error(ierr, __FILE__, "MatSetValuesBlockedLocal");
+#endif
+
     return ierr;
   };
 }
@@ -251,6 +263,10 @@ PETScMatrix::set_block_expand_fn(Mat A, int bs0, int bs1, InsertMode mode)
 
     ierr = MatSetValuesLocal(A, cache0.size(), cache0.data(), cache1.size(),
                              cache1.data(), vals, mode);
+#ifdef DEBUG
+    if (ierr != 0)
+      la::petsc_error(ierr, __FILE__, "MatSetValuesLocal");
+#endif
     return ierr;
   };
 }
