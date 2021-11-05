@@ -119,7 +119,8 @@ XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename,
   {
     // Load XML doc from file
     pugi::xml_parse_result result = _xml_doc->load_file(_filename.c_str());
-    assert(result);
+    if (!result)
+      throw std::runtime_error("Failed to load xml document from file.");
 
     if (_xml_doc->child("Xdmf").empty())
       throw std::runtime_error("Empty <Xdmf> root node.");
@@ -140,14 +141,16 @@ XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename,
     xdmf_node.append_attribute("xmlns:xi") = "http://www.w3.org/2001/XInclude";
 
     pugi::xml_node domain_node = xdmf_node.append_child("Domain");
-    assert(domain_node);
+    if (!domain_node)
+      throw std::runtime_error("Failed to append xml/xdmf Domain.");
   }
   else if (_file_mode == "a")
   {
     if (boost::filesystem::exists(_filename))
     {
       // Load XML doc from file
-      pugi::xml_parse_result result = _xml_doc->load_file(_filename.c_str());
+      [[maybe_unused]] pugi::xml_parse_result result
+          = _xml_doc->load_file(_filename.c_str());
       assert(result);
 
       if (_xml_doc->child("Xdmf").empty())
@@ -170,7 +173,8 @@ XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename,
           = "http://www.w3.org/2001/XInclude";
 
       pugi::xml_node domain_node = xdmf_node.append_child("Domain");
-      assert(domain_node);
+      if (!domain_node)
+        throw std::runtime_error("Failed to append xml/xdmf Domain.");
     }
   }
 }

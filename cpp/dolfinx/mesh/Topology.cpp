@@ -178,7 +178,8 @@ compute_vertex_markers(const graph::AdjacencyList<std::int64_t>& cells,
     else
     {
       // This vertex is not shared: set to -2
-      auto [it_ignore, insert] = global_to_local_v.insert({global_index, -2});
+      [[maybe_unused]] auto [it_ignore, insert]
+          = global_to_local_v.insert({global_index, -2});
       assert(insert);
     }
   }

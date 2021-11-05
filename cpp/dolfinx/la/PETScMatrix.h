@@ -1,5 +1,5 @@
-// Copyright (C) 2004-2018 Johan Hoffman, Johan Jansson, Anders Logg and Garth
-// N. Wells
+// Copyright (C) 2004-2018 Johan Hoffman, Johan Jansson, Anders Logg and
+// Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -20,7 +20,7 @@ class VectorSpaceBasis;
 
 /// Create a PETSc Mat. Caller is responsible for destroying the
 /// returned object.
-Mat create_petsc_matrix(MPI_Comm comm, const SparsityPattern& sparsity_pattern,
+Mat create_petsc_matrix(MPI_Comm comm, const SparsityPattern& sp,
                         const std::string& type = std::string());
 
 /// Create PETSc MatNullSpace. Caller is responsible for destruction
@@ -67,7 +67,7 @@ public:
   set_block_expand_fn(Mat A, int bs0, int bs1, InsertMode mode);
 
   /// Create holder for a PETSc Mat object from a sparsity pattern
-  PETScMatrix(MPI_Comm comm, const SparsityPattern& sparsity_pattern,
+  PETScMatrix(MPI_Comm comm, const SparsityPattern& sp,
               const std::string& type = std::string());
 
   /// Create holder of a PETSc Mat object/pointer. The Mat A object
