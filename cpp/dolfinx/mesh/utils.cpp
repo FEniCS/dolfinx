@@ -122,8 +122,10 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
 
   // Orient cells if they are tetrahedron
   if ((mesh.topology().cell_type() == mesh::CellType::tetrahedron) and dim == 2)
+  {
     geometry_entities
         = oriented_tetrahedral_facet_vertex_geometry(mesh, entities);
+  }
   else
     geometry_entities = entities_to_vertex_geometry(mesh, dim, entities);
 
@@ -135,6 +137,7 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
   {
     if (gdim > 2)
       throw std::invalid_argument("Interval cell normal undefined in 3D");
+
     for (std::size_t i = 0; i < num_entities; ++i)
     {
       // Get the two vertices as points
