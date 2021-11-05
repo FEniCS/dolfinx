@@ -272,7 +272,7 @@ def test_biharmonic():
     u_error_denominator = np.sqrt(mesh.mpi_comm().allreduce(assemble_scalar(
         inner(u_exact, u_exact) * dx(mesh, metadata={"quadrature_degree": 5})), op=MPI.SUM))
 
-    assert(np.absolute(u_error_numerator / u_error_denominator) < 0.05)
+    assert np.absolute(u_error_numerator / u_error_denominator) < 0.05
 
     # Reconstruct tensor from flattened indices.
     # Apply inverse transform. In 2D we have S^{-1} = S.
@@ -282,7 +282,7 @@ def test_biharmonic():
     sigma_error_denominator = np.sqrt(mesh.mpi_comm().allreduce(assemble_scalar(
         inner(sigma_exact, sigma_exact) * dx(mesh, metadata={"quadrature_degree": 5})), op=MPI.SUM))
 
-    assert(np.absolute(sigma_error_numerator / sigma_error_denominator) < 0.005)
+    assert np.absolute(sigma_error_numerator / sigma_error_denominator) < 0.005
 
 
 def get_mesh(cell_type, datadir):
