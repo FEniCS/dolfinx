@@ -533,34 +533,34 @@ pack_coefficients(const U& u)
                                std::int32_t, int)>
           transformation
           = elements[coeff]->get_dof_transformation_function<T>(false, true);
-      if (int bs = dofmaps[coeff]->bs(); bs == 1)
-      {
-        impl::pack_coefficient<T, 1>(
-            xtl::span<T>(c), cstride, v[coeff], cell_info, *dofmaps[coeff],
-            num_cells, offsets[coeff], elements[coeff]->space_dimension(),
-            transformation);
-      }
-      else if (bs == 2)
-      {
-        impl::pack_coefficient<T, 2>(
-            xtl::span<T>(c), cstride, v[coeff], cell_info, *dofmaps[coeff],
-            num_cells, offsets[coeff], elements[coeff]->space_dimension(),
-            transformation);
-      }
-      else if (bs == 3)
-      {
-        impl::pack_coefficient<T, 3>(
-            xtl::span<T>(c), cstride, v[coeff], cell_info, *dofmaps[coeff],
-            num_cells, offsets[coeff], elements[coeff]->space_dimension(),
-            transformation);
-      }
-      else
-      {
+      // if (int bs = dofmaps[coeff]->bs(); bs == 1)
+      // {
+      //   impl::pack_coefficient<T, 1>(
+      //       xtl::span<T>(c), cstride, v[coeff], cell_info, *dofmaps[coeff],
+      //       num_cells, offsets[coeff], elements[coeff]->space_dimension(),
+      //       transformation);
+      // }
+      // else if (bs == 2)
+      // {
+      //   impl::pack_coefficient<T, 2>(
+      //       xtl::span<T>(c), cstride, v[coeff], cell_info, *dofmaps[coeff],
+      //       num_cells, offsets[coeff], elements[coeff]->space_dimension(),
+      //       transformation);
+      // }
+      // else if (bs == 3)
+      // {
+      //   impl::pack_coefficient<T, 3>(
+      //       xtl::span<T>(c), cstride, v[coeff], cell_info, *dofmaps[coeff],
+      //       num_cells, offsets[coeff], elements[coeff]->space_dimension(),
+      //       transformation);
+      // }
+      // else
+      // {
         impl::pack_coefficient<T>(xtl::span<T>(c), cstride, v[coeff], cell_info,
                                   *dofmaps[coeff], num_cells, offsets[coeff],
                                   elements[coeff]->space_dimension(),
                                   transformation);
-      }
+      // }
     }
   }
 
