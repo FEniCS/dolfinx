@@ -985,9 +985,10 @@ void apply_lifting(
 /// @param[in] constants Packed constants that appear in `L`
 /// @param[in] coeffs Packed coefficients that appear in `L`
 template <typename T>
-void assemble_vector(xtl::span<T> b, const Form<T>& L,
-                     const xtl::span<const T>& constants,
-                     const xtl::span<const T>& coeffs, int cstride)
+// void assemble_vector(xtl::span<T> b, const Form<T>& L,
+//                      const xtl::span<const T>& constants,
+//                      const xtl::span<const T>& coeffs, int cstride)
+void assemble_vector(xtl::span<T> b, const Form<T>& L)
 {
   std::shared_ptr<const mesh::Mesh> mesh = L.mesh();
   assert(mesh);
@@ -1016,28 +1017,28 @@ void assemble_vector(xtl::span<T> b, const Form<T>& L,
     cell_info = xtl::span(mesh->topology().get_cell_permutation_info());
   }
 
-  for (int i : L.integral_ids(IntegralType::cell))
-  {
-    const auto& fn = L.kernel(IntegralType::cell, i);
-    const std::vector<std::int32_t>& cells = L.cell_domains(i);
-    if (bs == 1)
-    {
-      impl::assemble_cells<T, 1>(dof_transform, b, mesh->geometry(), cells,
-                                 dofs, bs, fn, constants, coeffs, cstride,
-                                 cell_info);
-    }
-    else if (bs == 3)
-    {
-      impl::assemble_cells<T, 3>(dof_transform, b, mesh->geometry(), cells,
-                                 dofs, bs, fn, constants, coeffs, cstride,
-                                 cell_info);
-    }
-    else
-    {
-      impl::assemble_cells(dof_transform, b, mesh->geometry(), cells, dofs, bs,
-                           fn, constants, coeffs, cstride, cell_info);
-    }
-  }
+  // for (int i : L.integral_ids(IntegralType::cell))
+  // {
+  //   const auto& fn = L.kernel(IntegralType::cell, i);
+  //   const std::vector<std::int32_t>& cells = L.cell_domains(i);
+  //   if (bs == 1)
+  //   {
+  //     impl::assemble_cells<T, 1>(dof_transform, b, mesh->geometry(), cells,
+  //                                dofs, bs, fn, constants, coeffs, cstride,
+  //                                cell_info);
+  //   }
+  //   else if (bs == 3)
+  //   {
+  //     impl::assemble_cells<T, 3>(dof_transform, b, mesh->geometry(), cells,
+  //                                dofs, bs, fn, constants, coeffs, cstride,
+  //                                cell_info);
+  //   }
+  //   else
+  //   {
+  //     impl::assemble_cells(dof_transform, b, mesh->geometry(), cells, dofs, bs,
+  //                          fn, constants, coeffs, cstride, cell_info);
+  //   }
+  // }
 
   if (L.num_integrals(IntegralType::exterior_facet) > 0
       or L.num_integrals(IntegralType::interior_facet) > 0)
@@ -1053,57 +1054,62 @@ void assemble_vector(xtl::span<T> b, const Form<T>& L,
     else
       get_perm = [](std::size_t) { return 0; };
 
+    // FIXME Temporary, need to do this in same way as coeffs
+    const std::vector<T> constants = pack_constants(L);
     for (int i : L.integral_ids(IntegralType::exterior_facet))
     {
       const auto& fn = L.kernel(IntegralType::exterior_facet, i);
+      const auto [coeffs, cstride] =
+        pack_coefficients(L, IntegralType::exterior_facet, i); 
       const std::vector<std::pair<std::int32_t, int>>& facets
           = L.exterior_facet_domains(i);
-      if (bs == 1)
-      {
-        impl::assemble_exterior_facets<T, 1>(dof_transform, b, *mesh, facets,
-                                             dofs, bs, fn, constants, coeffs,
-                                             cstride, cell_info, get_perm);
-      }
-      else if (bs == 3)
-      {
-        impl::assemble_exterior_facets<T, 3>(dof_transform, b, *mesh, facets,
-                                             dofs, bs, fn, constants, coeffs,
-                                             cstride, cell_info, get_perm);
-      }
-      else
-      {
+      // if (bs == 1)
+      // {
+      //   impl::assemble_exterior_facets<T, 1>(dof_transform, b, *mesh, facets,
+      //                                        dofs, bs, fn, tcb::make_span(constants), coeffs,
+      //                                        cstride, cell_info, get_perm);
+      // }
+      // else if (bs == 3)
+      // {
+      //   impl::assemble_exterior_facets<T, 3>(dof_transform, b, *mesh, facets,
+      //                                        dofs, bs, fn, tcb::make_span(constants), coeffs,
+      //                                        cstride, cell_info, get_perm);
+      // }
+      // else
+      // {
         impl::assemble_exterior_facets(dof_transform, b, *mesh, facets, dofs,
-                                       bs, fn, constants, coeffs, cstride,
+                                       bs, fn, tcb::make_span(constants),
+                                       tcb::make_span(coeffs), cstride,
                                        cell_info, get_perm);
-      }
+      // }
     }
 
-    const std::vector<int> c_offsets = L.coefficient_offsets();
-    for (int i : L.integral_ids(IntegralType::interior_facet))
-    {
-      const auto& fn = L.kernel(IntegralType::interior_facet, i);
-      const std::vector<std::tuple<std::int32_t, int, std::int32_t, int>>&
-          facets
-          = L.interior_facet_domains(i);
-      if (bs == 1)
-      {
-        impl::assemble_interior_facets<T, 1>(
-            dof_transform, b, *mesh, facets, *dofmap, fn, constants, coeffs,
-            cstride, c_offsets, cell_info, get_perm);
-      }
-      else if (bs == 3)
-      {
-        impl::assemble_interior_facets<T, 3>(
-            dof_transform, b, *mesh, facets, *dofmap, fn, constants, coeffs,
-            cstride, c_offsets, cell_info, get_perm);
-      }
-      else
-      {
-        impl::assemble_interior_facets(dof_transform, b, *mesh, facets, *dofmap,
-                                       fn, constants, coeffs, cstride,
-                                       c_offsets, cell_info, get_perm);
-      }
-    }
+    // const std::vector<int> c_offsets = L.coefficient_offsets();
+    // for (int i : L.integral_ids(IntegralType::interior_facet))
+    // {
+    //   const auto& fn = L.kernel(IntegralType::interior_facet, i);
+    //   const std::vector<std::tuple<std::int32_t, int, std::int32_t, int>>&
+    //       facets
+    //       = L.interior_facet_domains(i);
+    //   if (bs == 1)
+    //   {
+    //     impl::assemble_interior_facets<T, 1>(
+    //         dof_transform, b, *mesh, facets, *dofmap, fn, constants, coeffs,
+    //         cstride, c_offsets, cell_info, get_perm);
+    //   }
+    //   else if (bs == 3)
+    //   {
+    //     impl::assemble_interior_facets<T, 3>(
+    //         dof_transform, b, *mesh, facets, *dofmap, fn, constants, coeffs,
+    //         cstride, c_offsets, cell_info, get_perm);
+    //   }
+    //   else
+    //   {
+    //     impl::assemble_interior_facets(dof_transform, b, *mesh, facets, *dofmap,
+    //                                    fn, constants, coeffs, cstride,
+    //                                    c_offsets, cell_info, get_perm);
+    //   }
+    // }
   }
 }
 } // namespace dolfinx::fem::impl

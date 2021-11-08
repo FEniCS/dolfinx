@@ -67,7 +67,9 @@ void assemble_vector(xtl::span<T> b, const Form<T>& L,
                      const xtl::span<const T>& constants,
                      const std::pair<xtl::span<const T>, int>& coeffs)
 {
-  impl::assemble_vector(b, L, constants, coeffs.first, coeffs.second);
+  // HACK to test without changing pybinding
+  // impl::assemble_vector(b, L, constants, coeffs.first, coeffs.second);
+  impl::assemble_vector(b, L);
 }
 
 /// Assemble linear form into a vector
