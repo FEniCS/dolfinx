@@ -476,6 +476,80 @@ void pack_coefficient(
 }
 } // namespace impl
 
+template <typename U>
+// std::pair<std::vector<typename U::scalar_type>, int>
+void
+pack_coefficients(const U& u, fem::IntegralType integral_type, const int id)
+{
+  using T = typename U::scalar_type;
+
+  // Get form coefficient offsets and dofmaps
+  const std::vector<std::shared_ptr<const fem::Function<T>>> coefficients
+      = u.coefficients();
+  const std::vector<int> offsets = u.coefficient_offsets();
+  std::vector<const fem::DofMap*> dofmaps(coefficients.size());
+  std::vector<const fem::FiniteElement*> elements(coefficients.size());
+  std::vector<xtl::span<const T>> v;
+  v.reserve(coefficients.size());
+  for (std::size_t i = 0; i < coefficients.size(); ++i)
+  {
+    elements[i] = coefficients[i]->function_space()->element().get();
+    dofmaps[i] = coefficients[i]->function_space()->dofmap().get();
+    v.push_back(coefficients[i]->x()->array());
+  }
+
+  // Get mesh
+  std::shared_ptr<const mesh::Mesh> mesh = u.mesh();
+  assert(mesh);
+  const int tdim = mesh->topology().dim();
+
+  if (integral_type == fem::IntegralType::exterior_facet)
+  {
+    const std::vector<std::pair<std::int32_t, int>>& active_facets
+          = u.exterior_facet_domains(id);
+    
+    // Copy data into coefficient array
+    std::vector<T> c(active_facets.size() * offsets.back());
+    const int cstride = offsets.back();
+
+    if (!coefficients.empty())
+    {
+      bool needs_dof_transformations = false;
+      for (std::size_t coeff = 0; coeff < dofmaps.size(); ++coeff)
+      {
+        if (elements[coeff]->needs_dof_transformations())
+        {
+          needs_dof_transformations = true;
+          mesh->topology_mutable().create_entity_permutations();
+        }
+      }
+
+      // Iterate over coefficients
+      xtl::span<const std::uint32_t> cell_info;
+      if (needs_dof_transformations)
+        cell_info = xtl::span(mesh->topology().get_cell_permutation_info());
+      for (std::size_t coeff = 0; coeff < dofmaps.size(); ++coeff)
+      {
+        const std::function<void(const xtl::span<T>&,
+                                const xtl::span<const std::uint32_t>&,
+                                std::int32_t, int)>
+            transformation
+            = elements[coeff]->get_dof_transformation_function<T>(false, true);
+        // impl::pack_coefficient<T>(xtl::span<T>(c), cstride, v[coeff], cell_info,
+        //                             *dofmaps[coeff], num_cells, offsets[coeff],
+        //                             elements[coeff]->space_dimension(),
+        //                             transformation);
+      }
+    }
+    // TODO RETURN
+    // return {std::move(c), cstride};
+  }
+  else
+  {
+    std::cout << "Not implemented\n";
+  }
+}
+
 // NOTE: This is subject to change
 /// Pack coefficients of u of generic type U ready for assembly
 template <typename U>
@@ -533,34 +607,34 @@ pack_coefficients(const U& u)
                                std::int32_t, int)>
           transformation
           = elements[coeff]->get_dof_transformation_function<T>(false, true);
-      // if (int bs = dofmaps[coeff]->bs(); bs == 1)
-      // {
-      //   impl::pack_coefficient<T, 1>(
-      //       xtl::span<T>(c), cstride, v[coeff], cell_info, *dofmaps[coeff],
-      //       num_cells, offsets[coeff], elements[coeff]->space_dimension(),
-      //       transformation);
-      // }
-      // else if (bs == 2)
-      // {
-      //   impl::pack_coefficient<T, 2>(
-      //       xtl::span<T>(c), cstride, v[coeff], cell_info, *dofmaps[coeff],
-      //       num_cells, offsets[coeff], elements[coeff]->space_dimension(),
-      //       transformation);
-      // }
-      // else if (bs == 3)
-      // {
-      //   impl::pack_coefficient<T, 3>(
-      //       xtl::span<T>(c), cstride, v[coeff], cell_info, *dofmaps[coeff],
-      //       num_cells, offsets[coeff], elements[coeff]->space_dimension(),
-      //       transformation);
-      // }
-      // else
-      // {
+      if (int bs = dofmaps[coeff]->bs(); bs == 1)
+      {
+        impl::pack_coefficient<T, 1>(
+            xtl::span<T>(c), cstride, v[coeff], cell_info, *dofmaps[coeff],
+            num_cells, offsets[coeff], elements[coeff]->space_dimension(),
+            transformation);
+      }
+      else if (bs == 2)
+      {
+        impl::pack_coefficient<T, 2>(
+            xtl::span<T>(c), cstride, v[coeff], cell_info, *dofmaps[coeff],
+            num_cells, offsets[coeff], elements[coeff]->space_dimension(),
+            transformation);
+      }
+      else if (bs == 3)
+      {
+        impl::pack_coefficient<T, 3>(
+            xtl::span<T>(c), cstride, v[coeff], cell_info, *dofmaps[coeff],
+            num_cells, offsets[coeff], elements[coeff]->space_dimension(),
+            transformation);
+      }
+      else
+      {
         impl::pack_coefficient<T>(xtl::span<T>(c), cstride, v[coeff], cell_info,
                                   *dofmaps[coeff], num_cells, offsets[coeff],
                                   elements[coeff]->space_dimension(),
                                   transformation);
-      // }
+      }
     }
   }
 
