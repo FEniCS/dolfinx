@@ -519,8 +519,7 @@ void pack_coefficient_exterior_facet(
 } // namespace impl
 
 template <typename U>
-// std::pair<std::vector<typename U::scalar_type>, int>
-void
+std::pair<std::vector<typename U::scalar_type>, int>
 pack_coefficients(const U& u, fem::IntegralType integral_type, const int id)
 {
   using T = typename U::scalar_type;
@@ -584,12 +583,11 @@ pack_coefficients(const U& u, fem::IntegralType integral_type, const int id)
           transformation);
       }
     }
-    // TODO RETURN
-    // return {std::move(c), cstride};
+    return {std::move(c), cstride};
   }
   else
   {
-    std::cout << "Not implemented\n";
+    throw std::exception();
   }
 }
 

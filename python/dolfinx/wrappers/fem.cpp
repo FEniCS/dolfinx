@@ -78,8 +78,11 @@ void declare_functions(py::module& m)
       [](dolfinx::fem::Form<T>& form, fem::IntegralType integral_type,
          const int id)
       {
-        dolfinx::fem::pack_coefficients(form, integral_type, id);
-        // return as_pyarray(std::move(coeffs), std::array{num_cells, cstride});
+        auto [coeffs, cstride] =
+          dolfinx::fem::pack_coefficients(form, integral_type, id);
+        int num_active_entities = coeffs.size() / cstride;
+        return as_pyarray(std::move(coeffs), std::array{num_active_entities,
+                                                        cstride});
       },
       "Pack coefficients for a Form.");
   m.def(
