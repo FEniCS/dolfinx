@@ -615,10 +615,10 @@ void assemble_exterior_facets(
   std::vector<T> be(bs * num_dofs);
   const xtl::span<T> _be(be);
 
-  for (auto& facet : facets)
+  for (std::int32_t index = 0; index < facets.size(); ++index)
   {
-    std::int32_t cell = facet.first;
-    int local_facet = facet.second;
+    std::int32_t cell = facets[index].first;
+    int local_facet = facets[index].second;
 
     // Get cell coordinates/geometry
     auto x_dofs = x_dofmap.links(cell);
@@ -631,7 +631,7 @@ void assemble_exterior_facets(
     // Tabulate element vector
     std::fill(be.begin(), be.end(), 0);
     const std::uint8_t perm = get_perm(cell * num_cell_facets + local_facet);
-    fn(be.data(), coeffs.data() + cell * cstride, constants.data(),
+    fn(be.data(), coeffs.data() + index * cstride, constants.data(),
        coordinate_dofs.data(), &local_facet, &perm);
 
     dof_transform(_be, cell_info, cell, 1);
