@@ -321,7 +321,9 @@ HDF5Interface::read_dataset(const hid_t file_handle,
   std::vector<hsize_t> shape(rank);
 
   // Get size in each dimension
-  assert(H5Sget_simple_extent_dims(dataspace, shape.data(), nullptr) == rank);
+  const int ndims = H5Sget_simple_extent_dims(dataspace, shape.data(), nullptr);
+  if (ndims != rank)
+    throw std::runtime_error("Failed to get dimensionality of dataspace");
 
   // Hyperslab selection
   std::vector<hsize_t> offset(rank, 0);
