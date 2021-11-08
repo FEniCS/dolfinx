@@ -145,25 +145,10 @@ def test_eval(V, W, Q, mesh):
 
     x0 = (mesh.geometry.x[0] + mesh.geometry.x[1]) / 2.0
     tree = geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
-    cell_candidates = geometry.compute_collisions_point(tree, x0)
-    cell = dolfinx.cpp.geometry.select_colliding_cells(mesh, cell_candidates, x0, 1)
-
-    assert np.allclose(u3.eval(x0, cell)[:3], u2.eval(x0, cell), rtol=1e-15, atol=1e-15)
-
-
-def test_eval_multiple(W):
-    u = Function(W)
-    u.vector.set(1.0)
-    mesh = W.mesh
-    x0 = (mesh.geometry.x[0] + mesh.geometry.x[1]) / 2.0
-    x = np.array([x0, x0 + 1.0e8])
-    tree = geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
-    cell_candidates = [geometry.compute_collisions_point(tree, xi) for xi in x]
-    assert len(cell_candidates[1]) == 0
-    cell_candidates = cell_candidates[0]
-    cell = dolfinx.cpp.geometry.select_colliding_cells(mesh, cell_candidates, x0, 1)
-
-    u.eval(x[0], cell)
+    cell_candidates = geometry.compute_collisions(tree, x0)
+    cell = dolfinx.geometry.compute_colliding_cells(mesh, cell_candidates, x0)
+    first_cell = cell[0]
+    assert np.allclose(u3.eval(x0, first_cell)[:3], u2.eval(x0, first_cell), rtol=1e-15, atol=1e-15)
 
 
 @skip_in_parallel
