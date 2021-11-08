@@ -474,6 +474,48 @@ void pack_coefficient(
     transformation(cell_coeff, cell_info, cell, 1);
   }
 }
+
+// Pack a single coefficient
+template <typename T, int _bs = -1>
+void pack_coefficient_exterior_facet(
+    const xtl::span<T>& c, int cstride, const xtl::span<const T>& v,
+    const xtl::span<const std::uint32_t>& cell_info, const fem::DofMap& dofmap,
+    const std::vector<std::pair<std::int32_t, int>>& active_facets,
+    std::int32_t offset, int space_dim,
+    const std::function<void(const xtl::span<T>&,
+                             const xtl::span<const std::uint32_t>&,
+                             std::int32_t, int)>& transformation)
+{
+  const int bs = dofmap.bs();
+  assert(_bs < 0 or _bs == bs);
+  // TODO Use better name than index
+  for (std::int32_t index = 0; index < active_facets.size(); ++index)
+  {
+    auto cell = active_facets[index].first;
+
+    auto dofs = dofmap.cell_dofs(cell);
+    auto cell_coeff = c.subspan(index * cstride + offset, space_dim);
+    for (std::size_t i = 0; i < dofs.size(); ++i)
+    {
+      if constexpr (_bs < 0)
+      {
+        const int pos_c = bs * i;
+        const int pos_v = bs * dofs[i];
+        for (int k = 0; k < bs; ++k)
+          cell_coeff[pos_c + k] = v[pos_v + k];
+      }
+      else
+      {
+        const int pos_c = _bs * i;
+        const int pos_v = _bs * dofs[i];
+        for (int k = 0; k < _bs; ++k)
+          cell_coeff[pos_c + k] = v[pos_v + k];
+      }
+    }
+
+    transformation(cell_coeff, cell_info, cell, 1);
+  }
+}
 } // namespace impl
 
 template <typename U>
@@ -535,10 +577,11 @@ pack_coefficients(const U& u, fem::IntegralType integral_type, const int id)
                                 std::int32_t, int)>
             transformation
             = elements[coeff]->get_dof_transformation_function<T>(false, true);
-        // impl::pack_coefficient<T>(xtl::span<T>(c), cstride, v[coeff], cell_info,
-        //                             *dofmaps[coeff], num_cells, offsets[coeff],
-        //                             elements[coeff]->space_dimension(),
-        //                             transformation);
+        impl::pack_coefficient_exterior_facet<T>(
+          xtl::span<T>(c), cstride, v[coeff], cell_info,
+          *dofmaps[coeff], active_facets, offsets[coeff],
+          elements[coeff]->space_dimension(),
+          transformation);
       }
     }
     // TODO RETURN
