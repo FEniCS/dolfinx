@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <functional>
 #include <mpi.h>
 #include <tuple>
