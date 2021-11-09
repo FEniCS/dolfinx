@@ -7,7 +7,7 @@
 #pragma once
 
 #include <array>
-#include <dolfinx/common/MPI.h>
+#include <mpi.h>
 #include <vector>
 #include <xtensor/xfixed.hpp>
 #include <xtl/xspan.hpp>

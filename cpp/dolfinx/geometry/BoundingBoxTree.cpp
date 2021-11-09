@@ -8,7 +8,6 @@
 #include "BoundingBoxTree.h"
 #include "utils.h"
 #include <dolfinx/common/IndexMap.h>
-#include <dolfinx/common/MPI.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>

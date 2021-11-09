@@ -11,10 +11,8 @@
 #include <complex>
 #include <cstdint>
 #include <dolfinx/graph/AdjacencyList.h>
-#include <iostream>
 #include <numeric>
 #include <set>
-#include <tuple>
 #include <type_traits>
 #include <utility>
 #include <vector>

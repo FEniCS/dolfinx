@@ -14,7 +14,6 @@
 
 namespace dolfinx
 {
-class TableEntry;
 
 /// This class provides storage and pretty-printing for tables.
 /// Example usage:

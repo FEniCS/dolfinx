@@ -8,8 +8,6 @@
 
 #include <array>
 #include <memory>
-#include <set>
-#include <ufc.h>
 #include <vector>
 
 namespace dolfinx::mesh

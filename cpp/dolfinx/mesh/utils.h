@@ -6,10 +6,10 @@
 
 #pragma once
 
-#include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/partition.h>
 #include <functional>
+#include <mpi.h>
 #include <xtl/xspan.hpp>
 
 namespace dolfinx::fem

@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include "cell_types.h"
 #include <array>
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
@@ -17,11 +16,6 @@
 namespace dolfinx::common
 {
 class IndexMap;
-}
-
-namespace dolfinx::fem
-{
-class ElementDofLayout;
 }
 
 namespace dolfinx::graph
