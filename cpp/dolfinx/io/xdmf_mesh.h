@@ -6,12 +6,10 @@
 
 #pragma once
 
-#include <dolfinx/mesh/cell_types.h>
 #include <hdf5.h>
 #include <mpi.h>
 #include <string>
-#include <tuple>
-#include <vector>
+#include <xtensor/xtensor.hpp>
 #include <xtl/xspan.hpp>
 
 namespace pugi

@@ -15,6 +15,7 @@
 #include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/partition.h>
+#include <dolfinx/graph/scotch.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <memory>
 
