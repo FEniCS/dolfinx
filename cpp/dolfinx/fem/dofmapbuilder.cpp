@@ -7,6 +7,7 @@
 #include "dofmapbuilder.h"
 #include "ElementDofLayout.h"
 #include <algorithm>
+#include <cstdint>
 #include <cstdlib>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
