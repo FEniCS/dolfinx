@@ -11,7 +11,6 @@
 #include <cstdint>
 #include <dolfinx/common/math.h>
 #include <dolfinx/mesh/cell_types.h>
-#include <functional>
 #include <memory>
 #include <xtensor/xtensor.hpp>
 #include <xtl/xspan.hpp>

@@ -6,17 +6,16 @@
 
 #include "utils.h"
 #include "Geometry.h"
-#include "MeshTags.h"
 #include "cell_types.h"
 #include "graphbuild.h"
 #include <algorithm>
-#include <cfloat>
 #include <cstdlib>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/math.h>
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/graph/partition.h>
+#include <dolfinx/mesh/Mesh.h>
 #include <stdexcept>
 #include <unordered_set>
 #include <xtensor/xadapt.hpp>

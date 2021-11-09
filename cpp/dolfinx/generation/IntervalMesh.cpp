@@ -6,9 +6,7 @@
 
 #include "IntervalMesh.h"
 #include <cfloat>
-#include <cmath>
 #include <dolfinx/common/MPI.h>
-#include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <xtensor/xtensor.hpp>
 #include <xtensor/xview.hpp>

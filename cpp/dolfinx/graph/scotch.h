@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include "AdjacencyList.h"
 #include "partition.h"
 #include <cstdint>
 #include <mpi.h>
@@ -15,7 +14,11 @@
 #include <vector>
 
 /// Interface to SCOTCH-PT
-namespace dolfinx::graph::scotch
+namespace dolfinx::graph
+{
+template <typename T>
+class AdjacencyList;
+namespace scotch
 {
 
 /// SCOTCH partitioning strategies
@@ -60,4 +63,5 @@ std::pair<std::vector<int>, std::vector<int>>
 compute_reordering(const AdjacencyList<std::int32_t>& graph,
                    std::string scotch_strategy = "");
 
-} // namespace dolfinx::graph::scotch
+} // namespace scotch
+} // namespace dolfinx::graph

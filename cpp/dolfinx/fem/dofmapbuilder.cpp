@@ -7,6 +7,7 @@
 #include "dofmapbuilder.h"
 #include "ElementDofLayout.h"
 #include <algorithm>
+#include <cstdint>
 #include <cstdlib>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
@@ -14,6 +15,7 @@
 #include <dolfinx/common/utils.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Topology.h>
+#include <dolfinx/mesh/cell_types.h>
 #include <iterator>
 #include <memory>
 #include <numeric>

@@ -7,15 +7,10 @@
 #pragma once
 
 #include <array>
-#include <dolfinx/common/MPI.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/cell_types.h>
+#include <mpi.h>
 #include <string>
-
-namespace dolfinx::fem
-{
-class CoordinateElement;
-}
 
 /// Rectangle mesh creation
 namespace dolfinx::generation::RectangleMesh
