@@ -45,13 +45,18 @@ public:
 
   /// String identifying the finite element
   /// @return Element signature
+  /// @note The function is provided for convenience, but it should not
+  /// be relied upon for determining the element type. Use other
+  /// functions, commonly returning enums, to determine element
+  /// properties.
   std::string signature() const noexcept;
 
   /// Cell shape
   /// @return Element cell shape
   mesh::CellType cell_shape() const noexcept;
 
-  /// Dimension of the finite element function space
+  /// Dimension of the finite element function space (the number of
+  /// degrees-of-freedom for the element)
   /// @return Dimension of the finite element space
   int space_dimension() const noexcept;
 
@@ -151,7 +156,7 @@ public:
   /// @todo Make the interpolating dofs in/out argument for efficiency
   /// as this function is often called from within tight loops
   /// @todo Consider handling block size > 1
-  /// @todo Re-work for fields that require a pull-back, e.g. Piols
+  /// @todo Re-work for fields that require a pull-back, e.g. Piola
   /// mapped elements
   ///
   /// Interpolate a function in the finite element space on a cell.
