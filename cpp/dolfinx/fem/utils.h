@@ -475,8 +475,32 @@ void pack_coefficient(
   }
 }
 
+// TODO Add _bs to template
+template <typename T>
+void pack(
+    const std::uint32_t cell, const int index, const int bs,
+    const xtl::span<T>& c, int cstride, const xtl::span<const T>& v,
+    const xtl::span<const std::uint32_t>& cell_info, const fem::DofMap& dofmap,
+    std::int32_t offset, int space_dim,
+    const std::function<void(const xtl::span<T>&,
+                             const xtl::span<const std::uint32_t>&,
+                             std::int32_t, int)>& transformation)
+{
+  auto dofs = dofmap.cell_dofs(cell);
+  auto cell_coeff = c.subspan(index * cstride + offset, space_dim);
+  for (std::size_t i = 0; i < dofs.size(); ++i)
+  {
+    const int pos_c = bs * i;
+    const int pos_v = bs * dofs[i];
+    for (int k = 0; k < bs; ++k)
+      cell_coeff[pos_c + k] = v[pos_v + k];
+  }
+
+  transformation(cell_coeff, cell_info, cell, 1);
+}
+
 // Pack a single coefficient
-template <typename T, int _bs = -1>
+template <typename T>
 void pack_coefficient_exterior_facet(
     const xtl::span<T>& c, int cstride, const xtl::span<const T>& v,
     const xtl::span<const std::uint32_t>& cell_info, const fem::DofMap& dofmap,
@@ -487,33 +511,13 @@ void pack_coefficient_exterior_facet(
                              std::int32_t, int)>& transformation)
 {
   const int bs = dofmap.bs();
-  assert(_bs < 0 or _bs == bs);
   // TODO Use better name than index
   for (std::int32_t index = 0; index < active_facets.size(); ++index)
   {
     auto cell = active_facets[index].first;
 
-    auto dofs = dofmap.cell_dofs(cell);
-    auto cell_coeff = c.subspan(index * cstride + offset, space_dim);
-    for (std::size_t i = 0; i < dofs.size(); ++i)
-    {
-      if constexpr (_bs < 0)
-      {
-        const int pos_c = bs * i;
-        const int pos_v = bs * dofs[i];
-        for (int k = 0; k < bs; ++k)
-          cell_coeff[pos_c + k] = v[pos_v + k];
-      }
-      else
-      {
-        const int pos_c = _bs * i;
-        const int pos_v = _bs * dofs[i];
-        for (int k = 0; k < _bs; ++k)
-          cell_coeff[pos_c + k] = v[pos_v + k];
-      }
-    }
-
-    transformation(cell_coeff, cell_info, cell, 1);
+    pack<T>(cell, index, bs, c, cstride, v, cell_info, dofmap, offset,
+            space_dim, transformation);
   }
 }
 } // namespace impl
