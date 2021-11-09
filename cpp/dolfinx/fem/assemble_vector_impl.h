@@ -541,8 +541,10 @@ void assemble_cells(
   const xtl::span<T> _be(be);
 
   // Iterate over active cells
-  for (std::int32_t c : cells)
+  for (std::int32_t index = 0; index < cells.size(); ++index)
   {
+    auto c = cells[index];
+
     // Get cell coordinates/geometry
     auto x_dofs = x_dofmap.links(c);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
@@ -553,7 +555,7 @@ void assemble_cells(
 
     // Tabulate vector for cell
     std::fill(be.begin(), be.end(), 0);
-    kernel(be.data(), coeffs.data() + c * cstride, constants.data(),
+    kernel(be.data(), coeffs.data() + index * cstride, constants.data(),
            coordinate_dofs.data(), nullptr, nullptr);
     dof_transform(_be, cell_info, c, 1);
 
@@ -1017,28 +1019,36 @@ void assemble_vector(xtl::span<T> b, const Form<T>& L)
     cell_info = xtl::span(mesh->topology().get_cell_permutation_info());
   }
 
-  // for (int i : L.integral_ids(IntegralType::cell))
-  // {
-  //   const auto& fn = L.kernel(IntegralType::cell, i);
-  //   const std::vector<std::int32_t>& cells = L.cell_domains(i);
-  //   if (bs == 1)
-  //   {
-  //     impl::assemble_cells<T, 1>(dof_transform, b, mesh->geometry(), cells,
-  //                                dofs, bs, fn, constants, coeffs, cstride,
-  //                                cell_info);
-  //   }
-  //   else if (bs == 3)
-  //   {
-  //     impl::assemble_cells<T, 3>(dof_transform, b, mesh->geometry(), cells,
-  //                                dofs, bs, fn, constants, coeffs, cstride,
-  //                                cell_info);
-  //   }
-  //   else
-  //   {
-  //     impl::assemble_cells(dof_transform, b, mesh->geometry(), cells, dofs, bs,
-  //                          fn, constants, coeffs, cstride, cell_info);
-  //   }
-  // }
+  // FIXME Temporary, need to do this in same way as coeffs
+  const std::vector<T> constants = pack_constants(L);
+
+  for (int i : L.integral_ids(IntegralType::cell))
+  {
+    const auto& fn = L.kernel(IntegralType::cell, i);
+    const auto [coeffs, cstride] =
+        pack_coefficients(L, IntegralType::cell, i);
+    const std::vector<std::int32_t>& cells = L.cell_domains(i);
+    if (bs == 1)
+    {
+      impl::assemble_cells<T, 1>(dof_transform, b, mesh->geometry(), cells,
+                                 dofs, bs, fn, tcb::make_span(constants),
+                                 tcb::make_span(coeffs), cstride,
+                                 cell_info);
+    }
+    else if (bs == 3)
+    {
+      impl::assemble_cells<T, 3>(dof_transform, b, mesh->geometry(), cells,
+                                 dofs, bs, fn, tcb::make_span(constants),
+                                 tcb::make_span(coeffs), cstride,
+                                 cell_info);
+    }
+    else
+    {
+      impl::assemble_cells(dof_transform, b, mesh->geometry(), cells, dofs, bs,
+                           fn, tcb::make_span(constants), tcb::make_span(coeffs),
+                           cstride, cell_info);
+    }
+  }
 
   if (L.num_integrals(IntegralType::exterior_facet) > 0
       or L.num_integrals(IntegralType::interior_facet) > 0)
@@ -1054,8 +1064,6 @@ void assemble_vector(xtl::span<T> b, const Form<T>& L)
     else
       get_perm = [](std::size_t) { return 0; };
 
-    // FIXME Temporary, need to do this in same way as coeffs
-    const std::vector<T> constants = pack_constants(L);
     for (int i : L.integral_ids(IntegralType::exterior_facet))
     {
       const auto& fn = L.kernel(IntegralType::exterior_facet, i);
