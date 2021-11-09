@@ -548,31 +548,38 @@ pack_coefficients(const U& u, fem::IntegralType integral_type, const int id)
   assert(mesh);
   const int tdim = mesh->topology().dim();
 
-  if (integral_type == fem::IntegralType::exterior_facet)
-  {
-    const std::vector<std::pair<std::int32_t, int>>& active_facets
-          = u.exterior_facet_domains(id);
-    
-    // Copy data into coefficient array
-    std::vector<T> c(active_facets.size() * offsets.back());
-    const int cstride = offsets.back();
+  const int cstride = offsets.back();
 
-    if (!coefficients.empty())
+  // Copy data into coefficient array
+  std::vector<T> c;
+  if (!coefficients.empty())
+  {
+    bool needs_dof_transformations = false;
+    for (std::size_t coeff = 0; coeff < dofmaps.size(); ++coeff)
     {
-      bool needs_dof_transformations = false;
-      for (std::size_t coeff = 0; coeff < dofmaps.size(); ++coeff)
+      if (elements[coeff]->needs_dof_transformations())
       {
-        if (elements[coeff]->needs_dof_transformations())
-        {
-          needs_dof_transformations = true;
-          mesh->topology_mutable().create_entity_permutations();
-        }
+        needs_dof_transformations = true;
+        mesh->topology_mutable().create_entity_permutations();
       }
+    }
+    xtl::span<const std::uint32_t> cell_info;
+    if (needs_dof_transformations)
+      cell_info = xtl::span(mesh->topology().get_cell_permutation_info());
+
+    // TODO Change to switch
+    if (integral_type == fem::IntegralType::cell)
+    {
+      throw std::exception();
+    }
+    else if (integral_type == fem::IntegralType::exterior_facet)
+    {
+      const std::vector<std::pair<std::int32_t, int>>& active_facets
+            = u.exterior_facet_domains(id);
+
+      c.reserve(active_facets.size() * offsets.back());
 
       // Iterate over coefficients
-      xtl::span<const std::uint32_t> cell_info;
-      if (needs_dof_transformations)
-        cell_info = xtl::span(mesh->topology().get_cell_permutation_info());
       for (std::size_t coeff = 0; coeff < dofmaps.size(); ++coeff)
       {
         const std::function<void(const xtl::span<T>&,
@@ -587,12 +594,16 @@ pack_coefficients(const U& u, fem::IntegralType integral_type, const int id)
           transformation);
       }
     }
-    return {std::move(c), cstride};
+    else if (integral_type == fem::IntegralType::interior_facet)
+    {
+      throw std::exception();
+    }
+    else
+    {
+      throw std::exception();
+    }
   }
-  else
-  {
-    throw std::exception();
-  }
+  return {std::move(c), cstride};
 }
 
 // NOTE: This is subject to change
