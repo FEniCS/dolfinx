@@ -220,7 +220,7 @@ int FiniteElement::num_sub_elements() const noexcept
 //-----------------------------------------------------------------------------
 bool FiniteElement::is_mixed() const noexcept
 {
-  return !_sub_elements.empty() != 0 and _bs == 1;
+  return !_sub_elements.empty() and _bs == 1;
 }
 //-----------------------------------------------------------------------------
 const std::vector<std::shared_ptr<const FiniteElement>>&
