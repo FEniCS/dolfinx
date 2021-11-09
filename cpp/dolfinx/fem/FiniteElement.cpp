@@ -218,6 +218,11 @@ int FiniteElement::num_sub_elements() const noexcept
   return _sub_elements.size();
 }
 //-----------------------------------------------------------------------------
+bool FiniteElement::is_mixed() const noexcept
+{
+  return !_sub_elements.empty() and _bs == 1;
+}
+//-----------------------------------------------------------------------------
 const std::vector<std::shared_ptr<const FiniteElement>>&
 FiniteElement::sub_elements() const noexcept
 {
@@ -341,7 +346,7 @@ FiniteElement::get_dof_permutation_function(bool inverse,
     }
   }
 
-  if (_sub_elements.size() != 0)
+  if (!_sub_elements.empty())
   {
     if (_bs == 1)
     {
