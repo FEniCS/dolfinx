@@ -108,7 +108,7 @@ FunctionSpace::tabulate_dof_coordinates(bool transpose) const
   }
 
   assert(_element);
-  if (_element->num_sub_elements() > 0)
+  if (_element->is_mixed())
   {
     throw std::runtime_error(
         "Cannot tabulate coordinates for a mixed FunctionSpace.");

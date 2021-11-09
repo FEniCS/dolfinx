@@ -110,9 +110,15 @@ public:
     _element->map_push_forward_m(reference_values, J, detJ, K, values);
   }
 
-  /// Get the number of sub elements (for a mixed element)
-  /// @return the Number of sub elements
+  /// Get the number of sub elements (for a mixed or blocked element)
+  /// @return The number of sub elements
   int num_sub_elements() const noexcept;
+
+  /// Check if element is a mixed element, i.e. composed of two or more
+  /// elements of different types. A block element, e.g. a Lagrange
+  /// element with block size > 1 is not considered mixed.
+  /// @return True is element is mixed.
+  bool is_mixed() const noexcept;
 
   /// Subelements (if any)
   const std::vector<std::shared_ptr<const FiniteElement>>&

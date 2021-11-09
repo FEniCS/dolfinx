@@ -582,7 +582,7 @@ std::vector<std::int32_t> fem::locate_dofs_geometrical(
   // interface that computes dofs coordinates only for specified cell.
 
   assert(V.element());
-  if (V.element()->num_sub_elements() > 0)
+  if (V.element()->is_mixed())
   {
     throw std::runtime_error(
         "Cannot locate dofs geometrically for mixed space. Use subspaces.");
