@@ -1063,25 +1063,27 @@ void assemble_vector(xtl::span<T> b, const Form<T>& L)
         pack_coefficients(L, IntegralType::exterior_facet, i); 
       const std::vector<std::pair<std::int32_t, int>>& facets
           = L.exterior_facet_domains(i);
-      // if (bs == 1)
-      // {
-      //   impl::assemble_exterior_facets<T, 1>(dof_transform, b, *mesh, facets,
-      //                                        dofs, bs, fn, tcb::make_span(constants), coeffs,
-      //                                        cstride, cell_info, get_perm);
-      // }
-      // else if (bs == 3)
-      // {
-      //   impl::assemble_exterior_facets<T, 3>(dof_transform, b, *mesh, facets,
-      //                                        dofs, bs, fn, tcb::make_span(constants), coeffs,
-      //                                        cstride, cell_info, get_perm);
-      // }
-      // else
-      // {
+      if (bs == 1)
+      {
+        impl::assemble_exterior_facets<T, 1>(dof_transform, b, *mesh, facets, dofs,
+                                             bs, fn, tcb::make_span(constants),
+                                             tcb::make_span(coeffs), cstride,
+                                             cell_info, get_perm);
+      }
+      else if (bs == 3)
+      {
+        impl::assemble_exterior_facets<T, 3>(dof_transform, b, *mesh, facets, dofs,
+                                             bs, fn, tcb::make_span(constants),
+                                             tcb::make_span(coeffs), cstride,
+                                             cell_info, get_perm);
+      }
+      else
+      {
         impl::assemble_exterior_facets(dof_transform, b, *mesh, facets, dofs,
                                        bs, fn, tcb::make_span(constants),
                                        tcb::make_span(coeffs), cstride,
                                        cell_info, get_perm);
-      // }
+      }
     }
 
     // const std::vector<int> c_offsets = L.coefficient_offsets();
