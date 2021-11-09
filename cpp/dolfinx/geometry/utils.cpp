@@ -246,6 +246,11 @@ geometry::compute_collisions(const BoundingBoxTree& tree,
       offsets.push_back(entities.size());
     }
   }
+  else
+  {
+    offsets.resize(points.shape(0) + 1);
+    std::fill(offsets.begin(), offsets.end(), 0);
+  }
 
   return graph::AdjacencyList<std::int32_t>(std::move(entities),
                                             std::move(offsets));
