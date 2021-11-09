@@ -13,7 +13,6 @@
 #include <set>
 #include <string>
 #include <vector>
-#include <xtensor/xtensor.hpp>
 
 namespace dolfinx::mesh
 {

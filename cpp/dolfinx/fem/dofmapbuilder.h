@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include <dolfinx/graph/AdjacencyList.h>
 #include <functional>
 #include <mpi.h>
 #include <tuple>
@@ -21,10 +20,15 @@ namespace dolfinx::mesh
 class Topology;
 }
 
+namespace dolfinx::graph
+{
+template <typename T>
+class AdjacencyList;
+}
+
 namespace dolfinx::fem
 {
 class ElementDofLayout;
-class CoordinateElement;
 
 /// Build dofmap data for an element on a mesh topology
 /// @param[in] comm MPI communicator

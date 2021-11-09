@@ -7,7 +7,6 @@
 #pragma once
 
 #include <cstddef>
-#include <functional>
 #include <map>
 #include <memory>
 #include <vector>

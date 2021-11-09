@@ -10,11 +10,8 @@
 #include <cstddef>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Mesh.h>
-
-namespace dolfinx::fem
-{
-class CoordinateElement;
-}
+#include <dolfinx/mesh/utils.h>
+#include <mpi.h>
 
 /// Interval mesh creation
 namespace dolfinx::generation::IntervalMesh

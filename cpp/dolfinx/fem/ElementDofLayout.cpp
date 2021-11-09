@@ -7,10 +7,8 @@
 #include "ElementDofLayout.h"
 #include <array>
 #include <cassert>
-#include <dolfinx/mesh/cell_types.h>
-#include <map>
 #include <numeric>
-#include <set>
+#include <stdexcept>
 
 using namespace dolfinx;
 using namespace dolfinx::fem;
@@ -54,12 +52,11 @@ ElementDofLayout ElementDofLayout::copy() const
 //-----------------------------------------------------------------------------
 bool ElementDofLayout::operator==(const ElementDofLayout& layout) const
 {
-  return
-      this->_num_dofs == layout._num_dofs
-      and this->_num_entity_dofs == layout._num_entity_dofs
-      and this->_num_entity_closure_dofs == layout._num_entity_closure_dofs
-      and this->_entity_dofs == layout._entity_dofs
-      and this->_entity_closure_dofs == layout._entity_closure_dofs;
+  return this->_num_dofs == layout._num_dofs
+         and this->_num_entity_dofs == layout._num_entity_dofs
+         and this->_num_entity_closure_dofs == layout._num_entity_closure_dofs
+         and this->_entity_dofs == layout._entity_dofs
+         and this->_entity_closure_dofs == layout._entity_closure_dofs;
 }
 //-----------------------------------------------------------------------------
 int ElementDofLayout::num_dofs() const { return _num_dofs; }

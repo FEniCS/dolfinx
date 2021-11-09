@@ -6,12 +6,12 @@
 
 #include "Geometry.h"
 #include "Topology.h"
-#include <boost/functional/hash.hpp>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/sort.h>
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/fem/dofmapbuilder.h>
 #include <dolfinx/graph/partition.h>
+#include <dolfinx/graph/scotch.h>
 
 using namespace dolfinx;
 using namespace dolfinx::mesh;
