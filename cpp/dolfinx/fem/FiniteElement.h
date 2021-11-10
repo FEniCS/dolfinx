@@ -642,6 +642,9 @@ public:
   get_dof_permutation_function(bool inverse = false,
                                bool scalar_element = false) const;
 
+  /// Get the map type used by the element.
+  basix::maps::type map_type() const;
+
 private:
   std::string _signature, _family;
 

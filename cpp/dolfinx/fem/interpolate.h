@@ -338,9 +338,9 @@ void interpolate(Function<T>& u, const Function<T>& v)
           u_array[bs * dofs_u[i] + k] = v_array[bs * dofs_v[i] + k];
     }
   }
-  else
+  else if (element_to->map_type() == element_from->map_type())
   {
-    // --- Different elements
+    // --- Different elements, same map
 
     xtl::span<const std::uint32_t> cell_info;
     if (element_to->needs_dof_transformations()
@@ -395,6 +395,85 @@ void interpolate(Function<T>& u, const Function<T>& v)
         for (int k = 0; k < u_bs; ++k)
           u_array[u_bs * dofs_u[i] + k] = u_local[u_bs * i + k];
     }
+  }
+  else
+  {
+    std::cout << "B\n";
+
+    // get points from v's element
+    // for each cell:
+    //   push points to cell
+    //   evaluate u at points
+    //   interpolate into v's element
+    //   put values into correct entries in dofmap
+
+    // --- Different elements, different map
+    xtl::span<const std::uint32_t> cell_info;
+    if (element_to->needs_dof_transformations()
+        or element_from->needs_dof_transformations())
+    {
+      mesh->topology_mutable().create_entity_permutations();
+      cell_info = xtl::span(mesh->topology().get_cell_permutation_info());
+    }
+
+    // Get dofmaps
+    const auto dofmap_u = u.function_space()->dofmap();
+    const auto dofmap_v = v.function_space()->dofmap();
+
+    const xt::xtensor<double, 2> points = element_to->interpolation_points();
+
+    // Get block sizes and dof transformation operators
+    const int u_bs = element_to->block_size();
+    const int v_bs = element_from->block_size();
+    const auto apply_dof_transformation
+        = element_from->get_dof_transformation_function<T>(false, true, false);
+    const auto apply_inverse_dof_transform
+        = element_to->get_dof_transformation_function<T>(true, true, false);
+
+    // Creat working array
+    std::vector<T> u_local(element_to->space_dimension());
+    xt::xtensor<T, 2> v_values({points.shape(0), element_to->value_size()});
+    std::vector<int> cells(points.shape(0));
+    std::vector<int> cell(1);
+
+    // Iterate over mesh and interpolate on each cell
+    const int num_cells = map->size_local() + map->num_ghosts();
+    for (int c = 0; c < num_cells; ++c)
+    {
+      std::cout << "A\n";
+      cell[0] = c;
+      std::cout << "B\n";
+      const xt::xtensor<double, 2> X
+          = interpolation_coords(*element_to, *mesh, cell);
+      std::cout << "C\n";
+      for (std::size_t i = 0; i < cells.size(); ++i)
+        cells[i] = c;
+      std::cout << "D\n";
+      v.eval(X, cells, v_values);
+      std::cout << "E\n";
+
+      std::cout << "v_values = {\n";
+      for (std::size_t i = 0; i < v_values.shape(0); ++i)
+      {
+        for (std::size_t j = 0; j < v_values.shape(1); ++j)
+          std::cout << v_values(i, j) << " ";
+        std::cout << "\n";
+      }
+      std::cout << "\n}\n";
+      /*
+            PULL_BACK(v_values);
+
+            u.INTERPOLATE(v_values, u_local);
+
+            apply_inverse_dof_transform(u_local, cell_info, c, 1);
+
+            xtl::span<const std::int32_t> dofs_u = dofmap_u->cell_dofs(c);
+            for (std::size_t i = 0; i < dofs_u.size(); ++i)
+              for (int k = 0; k < u_bs; ++k)
+                u_array[u_bs * dofs_u[i] + k] = u_local[u_bs * i + k];
+      */
+    }
+    throw std::runtime_error("!");
   }
 }
 

@@ -245,11 +245,11 @@ def test_interpolation_nedelec(order1, order2):
     assert np.isclose(dolfinx.fem.assemble_scalar(ufl.inner(u - w, u - w) * ufl.dx), 0)
 
 
-@pytest.mark.xfail(strict=True)
-def test_interpolation_cross():
+@pytest.mark.parametrize("order", [1, 2, 3])
+def test_interpolation_cross(order):
     mesh = dolfinx.UnitCubeMesh(MPI.COMM_WORLD, 2, 2, 2)
-    V = dolfinx.VectorFunctionSpace(mesh, ("Lagrange", 1))
-    V1 = dolfinx.FunctionSpace(mesh, ("N1curl", 2))
+    V = dolfinx.VectorFunctionSpace(mesh, ("Lagrange", order))
+    V1 = dolfinx.FunctionSpace(mesh, ("N1curl", order + 1))
 
     u = dolfinx.Function(V)
     v = dolfinx.Function(V1)

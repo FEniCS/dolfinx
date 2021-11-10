@@ -391,3 +391,8 @@ FiniteElement::get_dof_permutation_function(bool inverse,
   }
 }
 //-----------------------------------------------------------------------------
+basix::maps::type FiniteElement::map_type() const
+{
+  return _element->mapping_type();
+}
+//-----------------------------------------------------------------------------
