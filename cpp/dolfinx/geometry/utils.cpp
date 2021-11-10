@@ -236,24 +236,25 @@ graph::AdjacencyList<std::int32_t>
 geometry::compute_collisions(const BoundingBoxTree& tree,
                              const xt::xtensor<double, 2>& points)
 {
-  std::vector<std::int32_t> entities, offsets({0});
   if (tree.num_bboxes() > 0)
   {
+    std::vector<std::int32_t> entities, offsets({0});
     for (std::size_t p = 0; p < points.shape(0); ++p)
     {
       _compute_collisions_point(tree, xt::row(points, p), tree.num_bboxes() - 1,
                                 entities);
       offsets.push_back(entities.size());
     }
+
+    return graph::AdjacencyList<std::int32_t>(std::move(entities),
+                                              std::move(offsets));
   }
   else
   {
-    offsets.resize(points.shape(0) + 1);
-    std::fill(offsets.begin(), offsets.end(), 0);
+    return graph::AdjacencyList<std::int32_t>(
+        std::vector<std::int32_t>(),
+        std::vector<std::int32_t>(points.shape(0) + 1, 0));
   }
-
-  return graph::AdjacencyList<std::int32_t>(std::move(entities),
-                                            std::move(offsets));
 }
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t> geometry::compute_closest_entity(
