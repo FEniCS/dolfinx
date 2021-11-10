@@ -36,7 +36,9 @@ template <typename T>
 T assemble_scalar(const Form<T>& M, const xtl::span<const T>& constants,
                   const std::pair<xtl::span<const T>, int>& coeffs)
 {
-  return impl::assemble_scalar(M, constants, coeffs.first, coeffs.second);
+  // FIXME HACK UNCOMMENT
+  // return impl::assemble_scalar(M, constants, coeffs.first, coeffs.second);
+  throw std::exception();
 }
 
 /// Assemble functional into scalar
@@ -65,8 +67,10 @@ T assemble_scalar(const Form<T>& M)
 template <typename T>
 void assemble_vector(xtl::span<T> b, const Form<T>& L,
                      const xtl::span<const T>& constants,
-                     const std::pair<xtl::span<const T>, int>& coeffs)
+                     const std::map<std::pair<IntegralType, int>,
+                                    std::pair<std::vector<T>, int>>& coeffs)
 {
+  // FIXME Should the vector in the map be a span?
   // HACK to test without changing pybinding
   // impl::assemble_vector(b, L, constants, coeffs.first, coeffs.second);
   impl::assemble_vector(b, L);
@@ -79,9 +83,11 @@ void assemble_vector(xtl::span<T> b, const Form<T>& L,
 template <typename T>
 void assemble_vector(xtl::span<T> b, const Form<T>& L)
 {
+  const std::map<std::pair<IntegralType, int>,
+                 std::pair<std::vector<T>, int>> coefficients
+    = pack_coefficients(L);
   const std::vector<T> constants = pack_constants(L);
-  const auto [coeffs, cstride] = pack_coefficients(L);
-  assemble_vector(b, L, tcb::make_span(constants), {coeffs, cstride});
+  assemble_vector(b, L, tcb::make_span(constants), coefficients);
 }
 
 // FIXME: clarify how x0 is used
@@ -131,27 +137,29 @@ void apply_lifting(
     const std::vector<std::vector<std::shared_ptr<const DirichletBC<T>>>>& bcs1,
     const std::vector<xtl::span<const T>>& x0, double scale)
 {
-  std::vector<std::pair<std::vector<T>, int>> coeffs_data;
-  std::vector<std::pair<xtl::span<const T>, int>> coeffs;
-  std::vector<std::vector<T>> constants;
-  for (auto _a : a)
-  {
-    if (_a)
-    {
-      coeffs_data.push_back(pack_coefficients(*_a));
-      coeffs.emplace_back(coeffs_data.back().first, coeffs_data.back().second);
-      constants.push_back(pack_constants(*_a));
-    }
-    else
-    {
-      coeffs.emplace_back(xtl::span<const T>(), 0);
-      constants.push_back({});
-    }
-  }
+  // FIXME UNCOMMENT
 
-  std::vector<xtl::span<const T>> _constants(constants.begin(),
-                                             constants.end());
-  apply_lifting(b, a, _constants, coeffs, bcs1, x0, scale);
+  // std::vector<std::pair<std::vector<T>, int>> coeffs_data;
+  // std::vector<std::pair<xtl::span<const T>, int>> coeffs;
+  // std::vector<std::vector<T>> constants;
+  // for (auto _a : a)
+  // {
+  //   if (_a)
+  //   {
+  //     coeffs_data.push_back(pack_coefficients(*_a));
+  //     coeffs.emplace_back(coeffs_data.back().first, coeffs_data.back().second);
+  //     constants.push_back(pack_constants(*_a));
+  //   }
+  //   else
+  //   {
+  //     coeffs.emplace_back(xtl::span<const T>(), 0);
+  //     constants.push_back({});
+  //   }
+  // }
+
+  // std::vector<xtl::span<const T>> _constants(constants.begin(),
+  //                                            constants.end());
+  // apply_lifting(b, a, _constants, coeffs, bcs1, x0, scale);
 }
 
 // -- Matrices ---------------------------------------------------------------
@@ -222,8 +230,9 @@ void assemble_matrix(
   const auto coeffs = pack_coefficients(a);
 
   // Assemble
-  assemble_matrix(mat_add, a, tcb::make_span(constants),
-                  {coeffs.first, coeffs.second}, bcs);
+  // FIXME Uncomment
+  // assemble_matrix(mat_add, a, tcb::make_span(constants),
+  //                 {coeffs.first, coeffs.second}, bcs);
 }
 
 /// Assemble bilinear form into a matrix. Matrix must already be

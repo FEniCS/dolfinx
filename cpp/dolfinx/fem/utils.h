@@ -688,93 +688,34 @@ pack_coefficients(const U& u, fem::IntegralType integral_type, const int id)
 
 // NOTE: This is subject to change
 /// Pack coefficients of u of generic type U ready for assembly
+// TODO Before this treated Form and Expression with the same code
 template <typename U>
-std::pair<std::vector<typename U::scalar_type>, int>
+std::map<std::pair<IntegralType, int>,
+         std::pair<std::vector<typename U::scalar_type>, int>>
 pack_coefficients(const U& u)
 {
   using T = typename U::scalar_type;
 
-  // Get form coefficient offsets and dofmaps
-  const std::vector<std::shared_ptr<const fem::Function<T>>> coefficients
-      = u.coefficients();
-  const std::vector<int> offsets = u.coefficient_offsets();
-  std::vector<const fem::DofMap*> dofmaps(coefficients.size());
-  std::vector<const fem::FiniteElement*> elements(coefficients.size());
-  std::vector<xtl::span<const T>> v;
-  v.reserve(coefficients.size());
-  for (std::size_t i = 0; i < coefficients.size(); ++i)
+  std::map<std::pair<IntegralType, int>,
+           std::pair<std::vector<T>, int>> coefficients;
+
+  // TODO Is there a better way of doing this?
+  // TODO Separate into a pack_coefficient function
+  for (auto integral_type : {IntegralType::cell,
+                             IntegralType::exterior_facet,
+                             IntegralType::interior_facet})
   {
-    elements[i] = coefficients[i]->function_space()->element().get();
-    dofmaps[i] = coefficients[i]->function_space()->dofmap().get();
-    v.push_back(coefficients[i]->x()->array());
-  }
-
-  // Get mesh
-  std::shared_ptr<const mesh::Mesh> mesh = u.mesh();
-  assert(mesh);
-  const int tdim = mesh->topology().dim();
-  const std::int32_t num_cells
-      = mesh->topology().index_map(tdim)->size_local()
-        + mesh->topology().index_map(tdim)->num_ghosts();
-
-  // Copy data into coefficient array
-  std::vector<T> c(num_cells * offsets.back());
-  const int cstride = offsets.back();
-  if (!coefficients.empty())
-  {
-    bool needs_dof_transformations = false;
-    for (std::size_t coeff = 0; coeff < dofmaps.size(); ++coeff)
+    for (int i : u.integral_ids(integral_type))
     {
-      if (elements[coeff]->needs_dof_transformations())
-      {
-        needs_dof_transformations = true;
-        mesh->topology_mutable().create_entity_permutations();
-      }
-    }
-
-    // Iterate over coefficients
-    xtl::span<const std::uint32_t> cell_info;
-    if (needs_dof_transformations)
-      cell_info = xtl::span(mesh->topology().get_cell_permutation_info());
-    for (std::size_t coeff = 0; coeff < dofmaps.size(); ++coeff)
-    {
-      const std::function<void(const xtl::span<T>&,
-                               const xtl::span<const std::uint32_t>&,
-                               std::int32_t, int)>
-          transformation
-          = elements[coeff]->get_dof_transformation_function<T>(false, true);
-      if (int bs = dofmaps[coeff]->bs(); bs == 1)
-      {
-        impl::pack_coefficient<T, 1>(
-            xtl::span<T>(c), cstride, v[coeff], cell_info, *dofmaps[coeff],
-            num_cells, offsets[coeff], elements[coeff]->space_dimension(),
-            transformation);
-      }
-      else if (bs == 2)
-      {
-        impl::pack_coefficient<T, 2>(
-            xtl::span<T>(c), cstride, v[coeff], cell_info, *dofmaps[coeff],
-            num_cells, offsets[coeff], elements[coeff]->space_dimension(),
-            transformation);
-      }
-      else if (bs == 3)
-      {
-        impl::pack_coefficient<T, 3>(
-            xtl::span<T>(c), cstride, v[coeff], cell_info, *dofmaps[coeff],
-            num_cells, offsets[coeff], elements[coeff]->space_dimension(),
-            transformation);
-      }
-      else
-      {
-        impl::pack_coefficient<T>(xtl::span<T>(c), cstride, v[coeff], cell_info,
-                                  *dofmaps[coeff], num_cells, offsets[coeff],
-                                  elements[coeff]->space_dimension(),
-                                  transformation);
-      }
+      // FIXME Make span here instead of vector and change this to return span
+      coefficients[{integral_type, i}] =
+        pack_coefficients(u, integral_type, i);
     }
   }
 
-  return {std::move(c), cstride};
+  std::cout << "Size = " << coefficients[{IntegralType::cell, -1}].first.size() << "\n";
+
+  return coefficients;
 }
 
 // NOTE: This is subject to change

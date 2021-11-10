@@ -90,51 +90,52 @@ public:
   template <typename U>
   void eval(const xtl::span<const std::int32_t>& active_cells, U& values) const
   {
-    static_assert(std::is_same<T, typename U::value_type>::value,
-                  "Expression and array types must be the same");
+    // FIXME UNCOMMENT
+    // static_assert(std::is_same<T, typename U::value_type>::value,
+    //               "Expression and array types must be the same");
 
-    // Extract data from Expression
-    assert(_mesh);
+    // // Extract data from Expression
+    // assert(_mesh);
 
-    // Prepare coefficients and constants
-    const auto [coeffs, cstride] = pack_coefficients(*this);
-    const std::vector<T> constant_data = pack_constants(*this);
+    // // Prepare coefficients and constants
+    // const auto [coeffs, cstride] = pack_coefficients(*this);
+    // const std::vector<T> constant_data = pack_constants(*this);
 
-    const auto& fn = this->get_tabulate_expression();
+    // const auto& fn = this->get_tabulate_expression();
 
-    // Prepare cell geometry
-    const graph::AdjacencyList<std::int32_t>& x_dofmap
-        = _mesh->geometry().dofmap();
-    const fem::CoordinateElement& cmap = _mesh->geometry().cmap();
+    // // Prepare cell geometry
+    // const graph::AdjacencyList<std::int32_t>& x_dofmap
+    //     = _mesh->geometry().dofmap();
+    // const fem::CoordinateElement& cmap = _mesh->geometry().cmap();
 
-    // FIXME: Add proper interface for num coordinate dofs
-    const std::size_t num_dofs_g = x_dofmap.num_links(0);
-    const xt::xtensor<double, 2>& x_g = _mesh->geometry().x();
+    // // FIXME: Add proper interface for num coordinate dofs
+    // const std::size_t num_dofs_g = x_dofmap.num_links(0);
+    // const xt::xtensor<double, 2>& x_g = _mesh->geometry().x();
 
-    // Create data structures used in evaluation
-    std::vector<double> coordinate_dofs(3 * num_dofs_g);
+    // // Create data structures used in evaluation
+    // std::vector<double> coordinate_dofs(3 * num_dofs_g);
 
-    // Iterate over cells and 'assemble' into values
-    std::vector<T> values_e(this->num_points() * this->value_size(), 0);
-    for (std::size_t c = 0; c < active_cells.size(); ++c)
-    {
-      const std::int32_t cell = active_cells[c];
+    // // Iterate over cells and 'assemble' into values
+    // std::vector<T> values_e(this->num_points() * this->value_size(), 0);
+    // for (std::size_t c = 0; c < active_cells.size(); ++c)
+    // {
+    //   const std::int32_t cell = active_cells[c];
 
-      auto x_dofs = x_dofmap.links(cell);
-      for (std::size_t i = 0; i < x_dofs.size(); ++i)
-      {
-        std::copy_n(xt::row(x_g, x_dofs[i]).cbegin(), 3,
-                    std::next(coordinate_dofs.begin(), 3 * i));
-      }
+    //   auto x_dofs = x_dofmap.links(cell);
+    //   for (std::size_t i = 0; i < x_dofs.size(); ++i)
+    //   {
+    //     std::copy_n(xt::row(x_g, x_dofs[i]).cbegin(), 3,
+    //                 std::next(coordinate_dofs.begin(), 3 * i));
+    //   }
 
-      const T* coeff_cell = coeffs.data() + cell * cstride;
-      std::fill(values_e.begin(), values_e.end(), 0.0);
-      fn(values_e.data(), coeff_cell, constant_data.data(),
-         coordinate_dofs.data());
+    //   const T* coeff_cell = coeffs.data() + cell * cstride;
+    //   std::fill(values_e.begin(), values_e.end(), 0.0);
+    //   fn(values_e.data(), coeff_cell, constant_data.data(),
+    //      coordinate_dofs.data());
 
-      for (std::size_t j = 0; j < values_e.size(); ++j)
-        values(c, j) = values_e[j];
-    }
+    //   for (std::size_t j = 0; j < values_e.size(); ++j)
+    //     values(c, j) = values_e[j];
+    // }
   }
 
   /// Get function for tabulate_expression.

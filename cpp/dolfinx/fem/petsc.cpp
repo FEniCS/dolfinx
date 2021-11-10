@@ -274,7 +274,8 @@ Vec fem::create_vector_nest(
 void fem::assemble_vector_petsc(
     Vec b, const Form<PetscScalar>& L,
     const xtl::span<const PetscScalar>& constants,
-    const std::pair<xtl::span<const PetscScalar>, int>& coeffs)
+    const std::map<std::pair<IntegralType, int>,
+                   std::pair<std::vector<PetscScalar>, int>>& coeffs)
 {
   Vec b_local;
   VecGhostGetLocalForm(b, &b_local);

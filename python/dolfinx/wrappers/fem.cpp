@@ -63,14 +63,54 @@ void declare_functions(py::module& m)
       "pack_coefficients",
       [](dolfinx::fem::Form<T>& form)
       {
-        auto [coeffs, cstride] = dolfinx::fem::pack_coefficients(form);
-        std::shared_ptr<const mesh::Mesh> mesh = form.mesh();
-        assert(mesh);
-        const int tdim = mesh->topology().dim();
-        const std::int32_t num_cells
-            = mesh->topology().index_map(tdim)->size_local()
-              + mesh->topology().index_map(tdim)->num_ghosts();
-        return as_pyarray(std::move(coeffs), std::array{num_cells, cstride});
+        // auto [coeffs, cstride] = dolfinx::fem::pack_coefficients(form);
+        // std::shared_ptr<const mesh::Mesh> mesh = form.mesh();
+        // assert(mesh);
+        // const int tdim = mesh->topology().dim();
+        // const std::int32_t num_cells
+        //     = mesh->topology().index_map(tdim)->size_local()
+        //       + mesh->topology().index_map(tdim)->num_ghosts();
+        // return as_pyarray(std::move(coeffs), std::array{num_cells, cstride});
+
+        std::cout << "Packing coeffs\n";
+        std::map<std::pair<dolfinx::fem::IntegralType, int>,
+                 py::array_t<T, py::array::c_style>> test;
+      
+        std::map<std::pair<dolfinx::fem::IntegralType, int>,
+                 std::pair<std::vector<T>, int>> coeffs =
+          dolfinx::fem::pack_coefficients(form);
+
+        for (auto [key, val] : coeffs)
+        {
+          std::cout << "val.second = " << val.second << "\n";
+          // int num_active_entities = 0;
+          // switch (key.first)
+          // {
+          // case dolfinx::fem::IntegralType::cell:
+          //   num_active_entities = form.cell_domains(key.second).size();
+          //   break;
+          // case dolfinx::fem::IntegralType::exterior_facet:
+          //   num_active_entities = form.exterior_facet_domains(key.second).size();
+          //   break;
+          // case dolfinx::fem::IntegralType::interior_facet:
+          //   num_active_entities = form.interior_facet_domains(key.second).size();
+          //   break;
+          // default:
+          //   throw std::exception();
+          // }
+          int num_active_entities = val.first.size() / val.second;
+          std::cout << "num_active_entities = " << num_active_entities << "\n";
+          test[key] =
+            as_pyarray(std::move(val.first), std::array{num_active_entities,
+                                                        val.second});
+            // as_pyarray(std::move(val.first), std::array{num_active_entities,
+            //                                             val.second});
+            // as_pyarray(std::move(val.first), std::array{num_active_entities,
+            //                                             val.second});
+        }
+
+        // return dolfinx::fem::pack_coefficients(form);
+        return test;
       },
       "Pack coefficients for a Form.");
   m.def(
@@ -85,20 +125,21 @@ void declare_functions(py::module& m)
                                                         cstride});
       },
       "Pack coefficients for a Form.");
-  m.def(
-      "pack_coefficients",
-      [](dolfinx::fem::Expression<T>& e)
-      {
-        auto [coeffs, cstride] = dolfinx::fem::pack_coefficients(e);
-        std::shared_ptr<const mesh::Mesh> mesh = e.mesh();
-        assert(mesh);
-        const int tdim = mesh->topology().dim();
-        const std::int32_t num_cells
-            = mesh->topology().index_map(tdim)->size_local()
-              + mesh->topology().index_map(tdim)->num_ghosts();
-        return as_pyarray(std::move(coeffs), std::array{num_cells, cstride});
-      },
-      "Pack coefficients for an Expression.");
+  // FIXME Uncomment
+  // m.def(
+  //     "pack_coefficients",
+  //     [](dolfinx::fem::Expression<T>& e)
+  //     {
+  //       auto [coeffs, cstride] = dolfinx::fem::pack_coefficients(e);
+  //       std::shared_ptr<const mesh::Mesh> mesh = e.mesh();
+  //       assert(mesh);
+  //       const int tdim = mesh->topology().dim();
+  //       const std::int32_t num_cells
+  //           = mesh->topology().index_map(tdim)->size_local()
+  //             + mesh->topology().index_map(tdim)->num_ghosts();
+  //       return as_pyarray(std::move(coeffs), std::array{num_cells, cstride});
+  //     },
+  //     "Pack coefficients for an Expression.");
   m.def(
       "pack_constants",
       [](const dolfinx::fem::Form<T>& form)
@@ -125,16 +166,31 @@ void declare_functions(py::module& m)
       "Assemble functional over mesh with provided constants and "
       "coefficients");
   // Vector
+  // m.def(
+  //     "assemble_vector",
+  //     [](py::array_t<T, py::array::c_style> b, const dolfinx::fem::Form<T>& L,
+  //        const py::array_t<T, py::array::c_style>& constants,
+  //        const py::array_t<T, py::array::c_style>& coeffs)
+  //     {
+  //       dolfinx::fem::assemble_vector<T>(
+  //           xtl::span(b.mutable_data(), b.size()), L, constants,
+  //           {xtl::span<const T>(coeffs.data(), coeffs.size()),
+  //            coeffs.shape(1)});
+  //     },
+  //     py::arg("b"), py::arg("L"), py::arg("constants"), py::arg("coeffs"),
+  //     "Assemble linear form into an existing vector with pre-packed "
+  //     "constants "
+  //     "and coefficients");
   m.def(
       "assemble_vector",
       [](py::array_t<T, py::array::c_style> b, const dolfinx::fem::Form<T>& L,
          const py::array_t<T, py::array::c_style>& constants,
-         const py::array_t<T, py::array::c_style>& coeffs)
+         const std::map<std::pair<dolfinx::fem::IntegralType, int>,
+                                  std::pair<std::vector<T>, int>>& coeffs)
       {
         dolfinx::fem::assemble_vector<T>(
             xtl::span(b.mutable_data(), b.size()), L, constants,
-            {xtl::span<const T>(coeffs.data(), coeffs.size()),
-             coeffs.shape(1)});
+            coeffs);
       },
       py::arg("b"), py::arg("L"), py::arg("constants"), py::arg("coeffs"),
       "Assemble linear form into an existing vector with pre-packed "
