@@ -476,18 +476,18 @@ void pack_coefficient(
 }
 
 // TODO Add _bs to template
+// TODO REMOVE UNUSED VARS
 template <typename T>
 void pack(
-    const std::uint32_t cell, const int index, const int bs,
-    const xtl::span<T>& c, int cstride, const xtl::span<const T>& v,
-    const xtl::span<const std::uint32_t>& cell_info, const fem::DofMap& dofmap,
-    std::int32_t offset, int space_dim,
+    const std::uint32_t cell, const int bs,
+    const xtl::span<T>& cell_coeff, const xtl::span<const T>& v,
+    const xtl::span<const std::uint32_t>& cell_info,
+    const fem::DofMap& dofmap,
     const std::function<void(const xtl::span<T>&,
                              const xtl::span<const std::uint32_t>&,
                              std::int32_t, int)>& transformation)
 {
   auto dofs = dofmap.cell_dofs(cell);
-  auto cell_coeff = c.subspan(index * cstride + offset, space_dim);
   for (std::size_t i = 0; i < dofs.size(); ++i)
   {
     const int pos_c = bs * i;
@@ -515,8 +515,8 @@ void pack_coefficient_cell(
   {
     auto cell = active_cells[index];
 
-    pack<T>(cell, index, bs, c, cstride, v, cell_info, dofmap, offset,
-            space_dim, transformation);
+    auto cell_coeff = c.subspan(index * cstride + offset, space_dim);
+    pack<T>(cell, bs, cell_coeff, v, cell_info, dofmap, transformation);
   }
 }
 
@@ -536,8 +536,8 @@ void pack_coefficient_exterior_facet(
   {
     auto cell = active_facets[index].first;
 
-    pack<T>(cell, index, bs, c, cstride, v, cell_info, dofmap, offset,
-            space_dim, transformation);
+    auto cell_coeff = c.subspan(index * cstride + offset, space_dim);
+    pack<T>(cell, bs, cell_coeff, v, cell_info, dofmap, transformation);
   }
 }
 
