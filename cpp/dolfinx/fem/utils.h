@@ -478,7 +478,7 @@ void pack_coefficient(
 // TODO Add _bs to template
 // TODO REMOVE UNUSED VARS
 template <typename T>
-void pack(
+inline void pack(
     const std::uint32_t cell, const int bs,
     const xtl::span<T>& cell_coeff, const xtl::span<const T>& v,
     const xtl::span<const std::uint32_t>& cell_info,
