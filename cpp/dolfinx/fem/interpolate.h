@@ -297,6 +297,7 @@ void interpolate(Function<T>& u, const Function<T>& v)
   }
 
   const int tdim = mesh->topology().dim();
+  const int gdim = mesh->geometry().dim();
   const std::shared_ptr<const FiniteElement> element_to
       = u.function_space()->element();
   assert(element_to);
@@ -398,8 +399,6 @@ void interpolate(Function<T>& u, const Function<T>& v)
   }
   else
   {
-    std::cout << "B\n";
-
     // get points from v's element
     // for each cell:
     //   push points to cell
@@ -430,50 +429,73 @@ void interpolate(Function<T>& u, const Function<T>& v)
     const auto apply_inverse_dof_transform
         = element_to->get_dof_transformation_function<T>(true, true, false);
 
+    const fem::CoordinateElement& cmap = mesh->geometry().cmap();
+
     // Creat working array
     std::vector<T> u_local(element_to->space_dimension());
-    xt::xtensor<T, 2> v_values({points.shape(0), element_to->value_size()});
+    xt::xtensor<T, 3> v_values({points.shape(0), 1, element_to->value_size()});
+    xt::xtensor<T, 3> v_mapped_values(
+        {points.shape(0), 1, element_to->value_size()});
     std::vector<int> cells(points.shape(0));
     std::vector<int> cell(1);
+    xt::xtensor<double, 4> phi(cmap.tabulate_shape(1, points.shape(0)));
+    xt::xtensor<double, 2> dphi;
+
+    // Get geometry data
+    const graph::AdjacencyList<std::int32_t>& x_dofmap
+        = mesh->geometry().dofmap();
+    // FIXME: Add proper interface for num coordinate dofs
+    const std::size_t num_dofs_g = x_dofmap.num_links(0);
+    const xt::xtensor<double, 2>& x_g = mesh->geometry().x();
+
+    xt::xtensor<double, 2> coordinate_dofs({num_dofs_g, gdim});
 
     // Iterate over mesh and interpolate on each cell
     const int num_cells = map->size_local() + map->num_ghosts();
     for (int c = 0; c < num_cells; ++c)
     {
-      std::cout << "A\n";
+      // Get cell geometry (coordinate dofs)
+      auto x_dofs = x_dofmap.links(c);
+      for (std::size_t i = 0; i < num_dofs_g; ++i)
+        for (std::size_t j = 0; j < gdim; ++j)
+          coordinate_dofs(i, j) = x_g(x_dofs[i], j);
+
       cell[0] = c;
-      std::cout << "B\n";
       const xt::xtensor<double, 2> X
           = interpolation_coords(*element_to, *mesh, cell);
-      std::cout << "C\n";
       for (std::size_t i = 0; i < cells.size(); ++i)
         cells[i] = c;
-      std::cout << "D\n";
-      v.eval(X, cells, v_values);
-      std::cout << "E\n";
+      xt::xtensor<T, 2> _v = xt::view(v_values, xt::all(), 0, xt::all());
+      v.eval(xt::transpose(X), cells, _v);
 
-      std::cout << "v_values = {\n";
-      for (std::size_t i = 0; i < v_values.shape(0); ++i)
+      xt::xtensor<double, 3> J({points.shape(0), gdim, tdim});
+      xt::xtensor<double, 3> K({points.shape(0), tdim, gdim});
+      const std::array<std::size_t, 1> sh = {points.shape(0)};
+      xt::xtensor<double, 1> detJ(sh);
+
+      cmap.tabulate(1, xt::transpose(X), phi);
+      dphi = xt::view(phi, xt::range(1, tdim + 1), 0, xt::all(), 0);
+      for (std::size_t p = 0; p < points.shape(0); ++p)
       {
-        for (std::size_t j = 0; j < v_values.shape(1); ++j)
-          std::cout << v_values(i, j) << " ";
-        std::cout << "\n";
+        auto _J = xt::view(J, p, xt::all(), xt::all());
+        cmap.compute_jacobian(dphi, coordinate_dofs, _J);
+        cmap.compute_jacobian_inverse(_J, xt::view(K, p, xt::all(), xt::all()));
+        detJ[p] = cmap.compute_jacobian_determinant(_J);
       }
-      std::cout << "\n}\n";
-      /*
-            PULL_BACK(v_values);
 
-            u.INTERPOLATE(v_values, u_local);
+      element_to->map_pull_back(v_values, J, detJ, K, v_mapped_values);
 
-            apply_inverse_dof_transform(u_local, cell_info, c, 1);
+      xt::xtensor<T, 2> _vm
+          = xt::view(v_mapped_values, xt::all(), 0, xt::all());
+      element_to->interpolate(_vm, tcb::make_span(u_local));
 
-            xtl::span<const std::int32_t> dofs_u = dofmap_u->cell_dofs(c);
-            for (std::size_t i = 0; i < dofs_u.size(); ++i)
-              for (int k = 0; k < u_bs; ++k)
-                u_array[u_bs * dofs_u[i] + k] = u_local[u_bs * i + k];
-      */
+      apply_inverse_dof_transform(u_local, cell_info, c, 1);
+
+      xtl::span<const std::int32_t> dofs_u = dofmap_u->cell_dofs(c);
+      for (std::size_t i = 0; i < dofs_u.size(); ++i)
+        for (int k = 0; k < u_bs; ++k)
+          u_array[u_bs * dofs_u[i] + k] = u_local[u_bs * i + k];
     }
-    throw std::runtime_error("!");
   }
 }
 

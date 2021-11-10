@@ -246,10 +246,27 @@ def test_interpolation_nedelec(order1, order2):
 
 
 @pytest.mark.parametrize("order", [1, 2, 3])
-def test_interpolation_cross(order):
+def test_interpolation_dg_to_n1curl(order):
     mesh = dolfinx.UnitCubeMesh(MPI.COMM_WORLD, 2, 2, 2)
-    V = dolfinx.VectorFunctionSpace(mesh, ("Lagrange", order))
+    V = dolfinx.VectorFunctionSpace(mesh, ("DG", order))
     V1 = dolfinx.FunctionSpace(mesh, ("N1curl", order + 1))
+
+    u = dolfinx.Function(V)
+    v = dolfinx.Function(V1)
+
+    u.interpolate(lambda x: x)
+    v.interpolate(u)
+
+    s = dolfinx.fem.assemble_scalar(ufl.inner(u - v, u - v) * ufl.dx)
+
+    assert np.isclose(s, 0)
+
+
+@pytest.mark.parametrize("order", [1, 2, 3])
+def test_interpolation_n1curl_to_dg(order):
+    mesh = dolfinx.UnitCubeMesh(MPI.COMM_WORLD, 2, 2, 2)
+    V = dolfinx.FunctionSpace(mesh, ("N1curl", order + 1))
+    V1 = dolfinx.VectorFunctionSpace(mesh, ("DG", order))
 
     u = dolfinx.Function(V)
     v = dolfinx.Function(V1)
