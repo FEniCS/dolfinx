@@ -27,15 +27,28 @@ class AdjacencyList:
             raise RuntimeError("Unsupported dtype")
         return cls(cpp_object)
 
+    @classmethod
+    def from_array(cls, data):
+        if data.dtype == np.int64:
+            cpp_object = _cpp.graph.AdjacencyList_int64(data)
+        elif data.dtype == np.int32:
+            cpp_object = _cpp.graph.AdjacencyList_int32(data)
+        else:
+            raise RuntimeError("Unsupported dtype")
+        return cls(cpp_object)
+
     def links(self, i):
+        """The links (edges) from the ith node"""
         return self._cpp_object.links(i)
 
     @property
     def array(self):
+        """Array holding the adjacncy list links (edges)"""
         return self._cpp_object.array
 
     @property
     def offsets(self):
+        """Offset into array for the links from the ith node"""
         return self._cpp_object.offsets
 
     def __eq__(self, other):
@@ -45,11 +58,11 @@ class AdjacencyList:
         return repr(self._cpp_object)
 
     def __len__(self):
+        """Number of nodes in the adjacencylist"""
         return len(self._cpp_object)
 
 
-def create_adjacencylist(data):
+def create_adjacencylist(data) -> AdjacencyList:
     """Create an AdjacencyList from a two-dimensional array"""
     assert len(data.shape) == 2
-    offset = np.arange(0, data.shape[0] + data.shape[1], data.shape[1], dtype=np.int32)
-    return AdjacencyList.from_data(data, offset)
+    return AdjacencyList.from_array(data)
