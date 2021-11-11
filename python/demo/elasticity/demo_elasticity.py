@@ -10,13 +10,12 @@
 
 from contextlib import ExitStack
 
-import dolfinx
 import numpy as np
 from dolfinx import BoxMesh, DirichletBC, Function, VectorFunctionSpace
 from dolfinx.fem import (apply_lifting, assemble_matrix, assemble_vector, la,
                          locate_dofs_geometrical, set_bc)
 from dolfinx.io import XDMFFile
-from dolfinx.mesh import CellType
+from dolfinx.mesh import CellType, GhostMode
 from mpi4py import MPI
 from petsc4py import PETSc
 from ufl import (Identity, SpatialCoordinate, TestFunction, TrialFunction,

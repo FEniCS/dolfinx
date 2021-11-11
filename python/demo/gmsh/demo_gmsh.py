@@ -7,7 +7,6 @@
 
 import numpy as np
 from dolfinx.cpp.graph import AdjacencyList_int32 as AdjacencyList
-from dolfinx import cpp, mesh
 from dolfinx.cpp.io import extract_local_entities, perm_gmsh
 from dolfinx.io import (XDMFFile, extract_gmsh_geometry,
                         extract_gmsh_topology_and_markers, ufl_mesh_from_gmsh)
