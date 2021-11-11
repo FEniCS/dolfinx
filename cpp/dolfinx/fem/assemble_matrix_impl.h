@@ -33,8 +33,9 @@ void assemble_matrix(
     const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                             const std::int32_t*, const T*)>& mat_set_values,
     const Form<T>& a, const xtl::span<const T>& constants,
-    const xtl::span<const T>& coeffs, int cstride, const std::vector<bool>& bc0,
-    const std::vector<bool>& bc1);
+    const std::map<std::pair<IntegralType, int>,
+                   std::pair<std::vector<T>, int>>& coefficients,
+    const std::vector<bool>& bc0, const std::vector<bool>& bc1);
 
 /// Execute kernel over cells and accumulate result in matrix
 template <typename T>
@@ -406,8 +407,9 @@ void assemble_matrix(
     const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                             const std::int32_t*, const T*)>& mat_set,
     const Form<T>& a, const xtl::span<const T>& constants,
-    const xtl::span<const T>& coeffs, int cstride, const std::vector<bool>& bc0,
-    const std::vector<bool>& bc1)
+    const std::map<std::pair<IntegralType, int>,
+                                    std::pair<std::vector<T>, int>>& coefficients,
+    const std::vector<bool>& bc0, const std::vector<bool>& bc1)
 {
   std::shared_ptr<const mesh::Mesh> mesh = a.mesh();
   assert(mesh);
@@ -451,11 +453,12 @@ void assemble_matrix(
   for (int i : a.integral_ids(IntegralType::cell))
   {
     const auto& fn = a.kernel(IntegralType::cell, i);
+    const auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
     const std::vector<std::int32_t>& cells = a.cell_domains(i);
     impl::assemble_cells<T>(mat_set, mesh->geometry(), cells, dof_transform,
                             dofs0, bs0, dof_transform_to_transpose, dofs1, bs1,
-                            bc0, bc1, fn, coeffs, cstride, constants,
-                            cell_info);
+                            bc0, bc1, fn, tcb::make_span(coeffs), cstride,
+                            constants, cell_info);
   }
 
   if (a.num_integrals(IntegralType::exterior_facet) > 0
@@ -475,11 +478,14 @@ void assemble_matrix(
     for (int i : a.integral_ids(IntegralType::exterior_facet))
     {
       const auto& fn = a.kernel(IntegralType::exterior_facet, i);
+      const auto& [coeffs, cstride]
+          = coefficients.at({IntegralType::exterior_facet, i});
       const std::vector<std::pair<std::int32_t, int>>& facets
           = a.exterior_facet_domains(i);
       impl::assemble_exterior_facets<T>(
           mat_set, *mesh, facets, dof_transform, dofs0, bs0,
-          dof_transform_to_transpose, dofs1, bs1, bc0, bc1, fn, coeffs, cstride,
+          dof_transform_to_transpose, dofs1, bs1, bc0, bc1, fn,
+          tcb::make_span(coeffs), cstride,
           constants, cell_info, get_perm);
     }
 
@@ -487,13 +493,16 @@ void assemble_matrix(
     for (int i : a.integral_ids(IntegralType::interior_facet))
     {
       const auto& fn = a.kernel(IntegralType::interior_facet, i);
+      const auto& [coeffs, cstride]
+          = coefficients.at({IntegralType::interior_facet, i});
       const std::vector<std::tuple<std::int32_t, int, std::int32_t, int>>&
           facets
           = a.interior_facet_domains(i);
       impl::assemble_interior_facets<T>(
           mat_set, *mesh, facets, dof_transform, *dofmap0, bs0,
-          dof_transform_to_transpose, *dofmap1, bs1, bc0, bc1, fn, coeffs,
-          cstride, c_offsets, constants, cell_info, get_perm);
+          dof_transform_to_transpose, *dofmap1, bs1, bc0, bc1, fn,
+          tcb::make_span(coeffs), cstride, c_offsets, constants,
+          cell_info, get_perm);
     }
   }
 }

@@ -893,7 +893,8 @@ void fem(py::module& m)
       "assemble_matrix_petsc",
       [](Mat A, const dolfinx::fem::Form<PetscScalar>& a,
          const py::array_t<PetscScalar, py::array::c_style>& constants,
-         const py::array_t<PetscScalar, py::array::c_style>& coeffs,
+         const std::map<std::pair<dolfinx::fem::IntegralType, int>,
+                                  py::array_t<PetscScalar, py::array::c_style>>& coefficients,
          const std::vector<std::shared_ptr<
              const dolfinx::fem::DirichletBC<PetscScalar>>>& bcs,
          bool unrolled)
@@ -910,11 +911,11 @@ void fem(py::module& m)
         else
           set_fn = dolfinx::la::PETScMatrix::set_block_fn(A, ADD_VALUES);
 
+        auto _coefficients = py_to_cpp_coeffs(coefficients);
+
         dolfinx::fem::assemble_matrix(
             set_fn, a, xtl::span(constants),
-            {xtl::span<const PetscScalar>(coeffs.data(), coeffs.size()),
-             coeffs.shape(1)},
-            bcs);
+            _coefficients, bcs);
       },
       py::arg("A"), py::arg("a"), py::arg("constants"), py::arg("coeffs"),
       py::arg("bcs"), py::arg("unrolled") = false,
@@ -923,7 +924,8 @@ void fem(py::module& m)
       "assemble_matrix_petsc",
       [](Mat A, const dolfinx::fem::Form<PetscScalar>& a,
          const py::array_t<PetscScalar, py::array::c_style>& constants,
-         const py::array_t<PetscScalar, py::array::c_style>& coeffs,
+         const std::map<std::pair<dolfinx::fem::IntegralType, int>,
+                                  py::array_t<PetscScalar, py::array::c_style>>& coefficients,
          const std::vector<bool>& rows0, const std::vector<bool>& rows1,
          bool unrolled)
       {
@@ -939,11 +941,11 @@ void fem(py::module& m)
         else
           set_fn = dolfinx::la::PETScMatrix::set_block_fn(A, ADD_VALUES);
 
+        auto _coefficients = py_to_cpp_coeffs(coefficients);
+
         dolfinx::fem::assemble_matrix(
             set_fn, a, xtl::span(constants),
-            {xtl::span<const PetscScalar>(coeffs.data(), coeffs.size()),
-             coeffs.shape(1)},
-            rows0, rows1);
+            _coefficients, rows0, rows1);
       },
       py::arg("A"), py::arg("a"), py::arg("constants"), py::arg("coeffs"),
       py::arg("rows0"), py::arg("rows1"), py::arg("unrolled") = false);

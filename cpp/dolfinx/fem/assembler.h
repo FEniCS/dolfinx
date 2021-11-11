@@ -174,7 +174,8 @@ void assemble_matrix(
     const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                             const std::int32_t*, const T*)>& mat_add,
     const Form<T>& a, const xtl::span<const T>& constants,
-    const std::pair<xtl::span<const T>, int>& coeffs,
+    const std::map<std::pair<IntegralType, int>,
+                   std::pair<std::vector<T>, int>>& coefficients,
     const std::vector<std::shared_ptr<const DirichletBC<T>>>& bcs)
 {
   // Index maps for dof ranges
@@ -207,7 +208,7 @@ void assemble_matrix(
   }
 
   // Assemble
-  impl::assemble_matrix(mat_add, a, constants, coeffs.first, coeffs.second,
+  impl::assemble_matrix(mat_add, a, constants, coefficients,
                         dof_marker0, dof_marker1);
 }
 
@@ -225,12 +226,11 @@ void assemble_matrix(
 {
   // Prepare constants and coefficients
   const std::vector<T> constants = pack_constants(a);
-  const auto coeffs = pack_coefficients(a);
+  const auto coefficients = pack_coefficients(a);
 
   // Assemble
-  // FIXME Uncomment
-  // assemble_matrix(mat_add, a, tcb::make_span(constants),
-  //                 {coeffs.first, coeffs.second}, bcs);
+  assemble_matrix(mat_add, a, tcb::make_span(constants),
+                  coefficients, bcs);
 }
 
 /// Assemble bilinear form into a matrix. Matrix must already be
@@ -250,11 +250,12 @@ void assemble_matrix(
     const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                             const std::int32_t*, const T*)>& mat_add,
     const Form<T>& a, const xtl::span<const T>& constants,
-    const std::pair<xtl::span<const T>, int>& coeffs,
+    const std::map<std::pair<IntegralType, int>,
+                   std::pair<std::vector<T>, int>>& coefficients,
     const std::vector<bool>& dof_marker0, const std::vector<bool>& dof_marker1)
 
 {
-  impl::assemble_matrix(mat_add, a, constants, coeffs.first, coeffs.second,
+  impl::assemble_matrix(mat_add, a, constants, coefficients,
                         dof_marker0, dof_marker1);
 }
 
@@ -278,10 +279,10 @@ void assemble_matrix(
 {
   // Prepare constants and coefficients
   const std::vector<T> constants = pack_constants(a);
-  const auto [coeffs, cstride] = pack_coefficients(a);
+  const auto coefficients = pack_coefficients(a);
 
   // Assemble
-  assemble_matrix(mat_add, a, tcb::make_span(constants), {coeffs, cstride},
+  assemble_matrix(mat_add, a, tcb::make_span(constants), coefficients,
                   dof_marker0, dof_marker1);
 }
 
