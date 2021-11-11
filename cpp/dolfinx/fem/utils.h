@@ -572,6 +572,7 @@ template <typename U>
 std::pair<std::vector<typename U::scalar_type>, int>
 pack_coefficients(const U& u, fem::IntegralType integral_type, const int id)
 {
+  // FIXME This approach means .size() doesn't work
   using T = typename U::scalar_type;
 
   // Get form coefficient offsets and dofmaps
@@ -712,8 +713,6 @@ pack_coefficients(const U& u)
         pack_coefficients(u, integral_type, i);
     }
   }
-
-  std::cout << "Size = " << coefficients[{IntegralType::cell, -1}].first.size() << "\n";
 
   return coefficients;
 }

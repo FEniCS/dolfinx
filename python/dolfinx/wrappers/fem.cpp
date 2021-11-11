@@ -83,48 +83,43 @@ void declare_functions(py::module& m)
         for (auto [key, val] : coeffs)
         {
           std::cout << "val.second = " << val.second << "\n";
-          // int num_active_entities = 0;
-          // switch (key.first)
-          // {
-          // case dolfinx::fem::IntegralType::cell:
-          //   num_active_entities = form.cell_domains(key.second).size();
-          //   break;
-          // case dolfinx::fem::IntegralType::exterior_facet:
-          //   num_active_entities = form.exterior_facet_domains(key.second).size();
-          //   break;
-          // case dolfinx::fem::IntegralType::interior_facet:
-          //   num_active_entities = form.interior_facet_domains(key.second).size();
-          //   break;
-          // default:
-          //   throw std::exception();
-          // }
-          int num_active_entities = val.first.size() / val.second;
+          int num_active_entities = 0;
+          switch (key.first)
+          {
+          case dolfinx::fem::IntegralType::cell:
+            num_active_entities = form.cell_domains(key.second).size();
+            break;
+          case dolfinx::fem::IntegralType::exterior_facet:
+            num_active_entities = form.exterior_facet_domains(key.second).size();
+            break;
+          case dolfinx::fem::IntegralType::interior_facet:
+            num_active_entities = form.interior_facet_domains(key.second).size();
+            break;
+          default:
+            throw std::exception();
+          }
           std::cout << "num_active_entities = " << num_active_entities << "\n";
           test[key] =
             as_pyarray(std::move(val.first), std::array{num_active_entities,
                                                         val.second});
-            // as_pyarray(std::move(val.first), std::array{num_active_entities,
-            //                                             val.second});
-            // as_pyarray(std::move(val.first), std::array{num_active_entities,
-            //                                             val.second});
         }
 
         // return dolfinx::fem::pack_coefficients(form);
         return test;
       },
       "Pack coefficients for a Form.");
-  m.def(
-      "pack_coefficients",
-      [](dolfinx::fem::Form<T>& form, fem::IntegralType integral_type,
-         const int id)
-      {
-        auto [coeffs, cstride] =
-          dolfinx::fem::pack_coefficients(form, integral_type, id);
-        int num_active_entities = coeffs.size() / cstride;
-        return as_pyarray(std::move(coeffs), std::array{num_active_entities,
-                                                        cstride});
-      },
-      "Pack coefficients for a Form.");
+  // m.def(
+  //     "pack_coefficients_by_type",
+  //     [](dolfinx::fem::Form<T>& form, fem::IntegralType integral_type,
+  //        const int id)
+  //     {
+  //       auto [coeffs, cstride] =
+  //         dolfinx::fem::pack_coefficients(form, integral_type, id);
+  //       int num_active_entities = coeffs.size() / cstride;
+  //       return as_pyarray(std::move(coeffs), std::array{num_active_entities,
+  //                                                       cstride});
+  //     },
+  //     "Pack coefficients for a Form.");
   // FIXME Uncomment
   // m.def(
   //     "pack_coefficients",
