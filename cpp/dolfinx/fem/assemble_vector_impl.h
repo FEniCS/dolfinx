@@ -1083,25 +1083,27 @@ void assemble_vector(xtl::span<T> b, const Form<T>& L,
       const std::vector<std::tuple<std::int32_t, int, std::int32_t, int>>&
           facets
           = L.interior_facet_domains(i);
-      // if (bs == 1)
-      // {
-      //   impl::assemble_interior_facets<T, 1>(
-      //       dof_transform, b, *mesh, facets, *dofmap, fn, constants, coeffs,
-      //       cstride, c_offsets, cell_info, get_perm);
-      // }
-      // else if (bs == 3)
-      // {
-      //   impl::assemble_interior_facets<T, 3>(
-      //       dof_transform, b, *mesh, facets, *dofmap, fn, constants, coeffs,
-      //       cstride, c_offsets, cell_info, get_perm);
-      // }
-      // else
-      // {
+      if (bs == 1)
+      {
+        impl::assemble_interior_facets<T, 1>(
+            dof_transform, b, *mesh, facets, *dofmap, fn, constants,
+            tcb::make_span(coeffs),
+            cstride, c_offsets, cell_info, get_perm);
+      }
+      else if (bs == 3)
+      {
+        impl::assemble_interior_facets<T, 3>(
+            dof_transform, b, *mesh, facets, *dofmap, fn, constants,
+            tcb::make_span(coeffs),
+            cstride, c_offsets, cell_info, get_perm);
+      }
+      else
+      {
       impl::assemble_interior_facets(dof_transform, b, *mesh, facets, *dofmap,
                                      fn, constants,
                                      tcb::make_span(coeffs), cstride, c_offsets,
                                      cell_info, get_perm);
-      // }
+      }
     }
   }
 }
