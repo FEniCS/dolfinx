@@ -14,6 +14,7 @@ import dolfinx.io
 import dolfinx.plot
 import numpy as np
 import ufl
+from dolfinx.mesh import CellType
 from mpi4py import MPI
 
 try:
@@ -41,7 +42,7 @@ def int_u(x):
     return x[0] + 3 * x[1] + 5 * x[2]
 
 
-mesh = dolfinx.UnitCubeMesh(MPI.COMM_WORLD, 4, 3, 5, cell_type=dolfinx.cpp.mesh.CellType.tetrahedron)
+mesh = dolfinx.UnitCubeMesh(MPI.COMM_WORLD, 4, 3, 5, cell_type=CellType.tetrahedron)
 V = dolfinx.FunctionSpace(mesh, ("Lagrange", 1))
 u = dolfinx.Function(V)
 u.interpolate(int_u)
@@ -124,7 +125,7 @@ def int_2D(x):
     return np.sin(np.pi * x[0]) * np.sin(2 * x[1] * np.pi)
 
 
-mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, 12, 12, cell_type=dolfinx.cpp.mesh.CellType.quadrilateral)
+mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, 12, 12, cell_type=CellType.quadrilateral)
 V = dolfinx.FunctionSpace(mesh, ("Lagrange", 1))
 u = dolfinx.Function(V)
 u.interpolate(int_2D)
@@ -175,7 +176,7 @@ def in_circle(x):
 # Create a dolfinx.MeshTag for all cells. If midpoint is inside the
 # circle, it gets value 1, otherwise 0.
 num_cells = mesh.topology.index_map(mesh.topology.dim).size_local
-midpoints = dolfinx.cpp.mesh.midpoints(mesh, mesh.topology.dim, list(np.arange(num_cells, dtype=np.int32)))
+midpoints = dolfinx.mesh.midpoints(mesh, mesh.topology.dim, list(np.arange(num_cells, dtype=np.int32)))
 cell_tags = dolfinx.MeshTags(mesh, mesh.topology.dim, np.arange(num_cells), in_circle(midpoints))
 
 # As the dolfinx.MeshTag contains a value for every cell in the
@@ -286,7 +287,7 @@ def vel(x):
     return vals
 
 
-mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, 6, 6, dolfinx.cpp.mesh.CellType.triangle)
+mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, 6, 6, CellType.triangle)
 V = dolfinx.VectorFunctionSpace(mesh, ("Lagrange", 2))
 uh = dolfinx.Function(V)
 uh.interpolate(vel)
@@ -355,7 +356,7 @@ def vel(x):
     return vals
 
 
-mesh = dolfinx.UnitCubeMesh(MPI.COMM_WORLD, 4, 4, 4, dolfinx.cpp.mesh.CellType.hexahedron)
+mesh = dolfinx.UnitCubeMesh(MPI.COMM_WORLD, 4, 4, 4, CellType.hexahedron)
 V = dolfinx.VectorFunctionSpace(mesh, ("DG", 2))
 uh = dolfinx.Function(V)
 uh.interpolate(vel)

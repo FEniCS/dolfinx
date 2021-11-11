@@ -10,14 +10,12 @@
 
 from contextlib import ExitStack
 
-import dolfinx
 import numpy as np
-from dolfinx import BoxMesh, DirichletBC, Function, VectorFunctionSpace, cpp
-from dolfinx.cpp.mesh import CellType
+from dolfinx import BoxMesh, DirichletBC, Function, VectorFunctionSpace, la
 from dolfinx.fem import (apply_lifting, assemble_matrix, assemble_vector,
                          locate_dofs_geometrical, set_bc)
 from dolfinx.io import XDMFFile
-from dolfinx.la import VectorSpaceBasis
+from dolfinx.mesh import CellType, GhostMode
 from mpi4py import MPI
 from petsc4py import PETSc
 from ufl import (Identity, SpatialCoordinate, TestFunction, TrialFunction,
@@ -39,7 +37,7 @@ def build_nullspace(V):
 
     # Create list of vectors for null space
     index_map = V.dofmap.index_map
-    nullspace_basis = [cpp.la.create_vector(index_map, V.dofmap.index_map_bs) for i in range(6)]
+    nullspace_basis = [la.create_vector(index_map, V.dofmap.index_map_bs) for i in range(6)]
 
     with ExitStack() as stack:
         vec_local = [stack.enter_context(x.localForm()) for x in nullspace_basis]
@@ -64,7 +62,7 @@ def build_nullspace(V):
         basis[5][dofs[1]] = -x2
 
     # Create vector space basis and orthogonalize
-    basis = VectorSpaceBasis(nullspace_basis)
+    basis = la.VectorSpaceBasis(nullspace_basis)
     basis.orthonormalize()
 
     _x = [basis[i] for i in range(6)]
@@ -75,7 +73,7 @@ def build_nullspace(V):
 mesh = BoxMesh(
     MPI.COMM_WORLD, [np.array([0.0, 0.0, 0.0]),
                      np.array([2.0, 1.0, 1.0])], [12, 12, 12],
-    CellType.tetrahedron, dolfinx.cpp.mesh.GhostMode.shared_facet)
+    CellType.tetrahedron, GhostMode.shared_facet)
 
 
 def boundary(x):

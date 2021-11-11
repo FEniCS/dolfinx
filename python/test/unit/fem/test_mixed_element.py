@@ -4,14 +4,14 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-from mpi4py import MPI
+import dolfinx
 import numpy as np
 import pytest
-import dolfinx
 import ufl
-from dolfinx import UnitSquareMesh, UnitCubeMesh, FunctionSpace
-from dolfinx.cpp.mesh import CellType
+from dolfinx import FunctionSpace, UnitCubeMesh, UnitSquareMesh
+from dolfinx.mesh import CellType, GhostMode
 from dolfinx_utils.test.skips import skip_in_parallel
+from mpi4py import MPI
 
 
 @skip_in_parallel
@@ -24,11 +24,9 @@ from dolfinx_utils.test.skips import skip_in_parallel
 ])
 def test_mixed_element(ElementType, space, cell, order):
     if cell == ufl.triangle:
-        mesh = UnitSquareMesh(MPI.COMM_WORLD, 1, 1, CellType.triangle,
-                              dolfinx.cpp.mesh.GhostMode.shared_facet)
+        mesh = UnitSquareMesh(MPI.COMM_WORLD, 1, 1, CellType.triangle, GhostMode.shared_facet)
     else:
-        mesh = UnitCubeMesh(MPI.COMM_WORLD, 1, 1, 1, CellType.tetrahedron,
-                            dolfinx.cpp.mesh.GhostMode.shared_facet)
+        mesh = UnitCubeMesh(MPI.COMM_WORLD, 1, 1, 1, CellType.tetrahedron, GhostMode.shared_facet)
 
     norms = []
     U_el = ufl.FiniteElement(space, cell, order)

@@ -12,9 +12,9 @@ import numpy as np
 import pytest
 import ufl
 from dolfinx import UnitCubeMesh, UnitSquareMesh, VectorFunctionSpace, cpp, la
-from dolfinx.cpp.mesh import CellType, GhostMode
 from dolfinx.fem import assemble_matrix
 from dolfinx.generation import BoxMesh
+from dolfinx.mesh import CellType, GhostMode
 from mpi4py import MPI
 from ufl import TestFunction, TrialFunction, dx, grad, inner
 
