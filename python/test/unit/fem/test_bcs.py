@@ -6,6 +6,7 @@
 
 import dolfinx
 import numpy as np
+import pytest
 import ufl
 from mpi4py import MPI
 from petsc4py import PETSc
@@ -24,8 +25,10 @@ def test_locate_dofs_geometrical():
     W = dolfinx.fem.FunctionSpace(mesh, P0 * P1)
     V = W.sub(0).collapse()
 
-    dofs = dolfinx.fem.locate_dofs_geometrical(
-        (W.sub(0), V), lambda x: np.isclose(x.T, [0, 0, 0]).all(axis=1))
+    with pytest.raises(RuntimeError):
+        dolfinx.fem.locate_dofs_geometrical(W, lambda x: np.isclose(x.T, [0, 0, 0]).all(axis=1))
+
+    dofs = dolfinx.fem.locate_dofs_geometrical((W.sub(0), V), lambda x: np.isclose(x.T, [0, 0, 0]).all(axis=1))
 
     # Collect dofs (global indices) from all processes
     dofs0_global = W.sub(0).dofmap.index_map.local_to_global(dofs[0])

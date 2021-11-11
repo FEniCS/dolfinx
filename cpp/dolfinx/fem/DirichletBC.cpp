@@ -581,6 +581,13 @@ std::vector<std::int32_t> fem::locate_dofs_geometrical(
   // especially when we usually want the boundary dofs only. Add
   // interface that computes dofs coordinates only for specified cell.
 
+  assert(V.element());
+  if (V.element()->is_mixed())
+  {
+    throw std::runtime_error(
+        "Cannot locate dofs geometrically for mixed space. Use subspaces.");
+  }
+
   // Compute dof coordinates
   const xt::xtensor<double, 2> dof_coordinates
       = V.tabulate_dof_coordinates(true);

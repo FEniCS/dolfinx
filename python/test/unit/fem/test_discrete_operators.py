@@ -9,7 +9,7 @@ import numpy
 import pytest
 from dolfinx import FunctionSpace, UnitCubeMesh, UnitSquareMesh
 from dolfinx.cpp.fem import create_discrete_gradient
-from dolfinx.cpp.mesh import GhostMode
+from dolfinx.mesh import GhostMode
 from dolfinx_utils.test.skips import skip_in_parallel
 from mpi4py import MPI
 from petsc4py import PETSc
