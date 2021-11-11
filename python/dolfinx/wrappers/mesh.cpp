@@ -200,9 +200,8 @@ void mesh(py::module& m)
             }
             else
             {
-              std::array<std::size_t, 2> shape
-                  = {static_cast<std::size_t>(x.shape(0)),
-                     static_cast<std::size_t>(x.shape(1))};
+              std::array shape
+                  = {std::size_t(x.shape(0)), std::size_t(x.shape(1))};
               auto _x
                   = xt::adapt(x.data(), x.size(), xt::no_ownership(), shape);
               return dolfinx::mesh::Geometry(map, dofmap, element, _x,
@@ -217,8 +216,8 @@ void mesh(py::module& m)
           "x",
           [](const dolfinx::mesh::Geometry& self)
           {
-            const xt::xtensor<double, 2>& x = self.x();
-            return py::array_t<double>(x.shape(), x.data(), py::cast(self));
+            return py::array_t<double>(self.x().shape(), self.x().data(),
+                                       py::cast(self));
           },
           "Return coordinates of all geometry points. Each row is the "
           "coordinate of a point.")
