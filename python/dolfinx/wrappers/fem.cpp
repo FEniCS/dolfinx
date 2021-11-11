@@ -83,23 +83,9 @@ void declare_functions(py::module& m)
         for (auto [key, val] : coeffs)
         {
           // TODO Get this using coeffs.size() / cstride instead
+          std::cout << "val.first.size() = " << val.first.size() << "\n";
           std::cout << "val.second = " << val.second << "\n";
-          int num_active_entities = 0;
-          switch (key.first)
-          {
-          case dolfinx::fem::IntegralType::cell:
-            num_active_entities = form.cell_domains(key.second).size();
-            break;
-          case dolfinx::fem::IntegralType::exterior_facet:
-            num_active_entities = form.exterior_facet_domains(key.second).size();
-            break;
-          case dolfinx::fem::IntegralType::interior_facet:
-            num_active_entities = form.interior_facet_domains(key.second).size();
-            break;
-          default:
-            throw std::exception();
-          }
-          std::cout << "num_active_entities = " << num_active_entities << "\n";
+          int num_active_entities = val.first.size() / val.second;
           test[key] =
             as_pyarray(std::move(val.first), std::array{num_active_entities,
                                                         val.second});

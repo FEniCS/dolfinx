@@ -572,7 +572,6 @@ template <typename U>
 std::pair<std::vector<typename U::scalar_type>, int>
 pack_coefficients(const U& u, fem::IntegralType integral_type, const int id)
 {
-  // FIXME This approach means .size() doesn't work
   using T = typename U::scalar_type;
 
   // Get form coefficient offsets and dofmaps
@@ -620,7 +619,7 @@ pack_coefficients(const U& u, fem::IntegralType integral_type, const int id)
     {
       const std::vector<std::int32_t>& active_cells = u.cell_domains(id);
 
-      c.reserve(active_cells.size() * offsets.back());
+      c.resize(active_cells.size() * offsets.back());
 
       // Iterate over coefficients
       for (std::size_t coeff = 0; coeff < dofmaps.size(); ++coeff)
@@ -641,7 +640,7 @@ pack_coefficients(const U& u, fem::IntegralType integral_type, const int id)
       const std::vector<std::pair<std::int32_t, int>>& active_facets
           = u.exterior_facet_domains(id);
 
-      c.reserve(active_facets.size() * offsets.back());
+      c.resize(active_facets.size() * offsets.back());
 
       // Iterate over coefficients
       for (std::size_t coeff = 0; coeff < dofmaps.size(); ++coeff)
@@ -663,7 +662,7 @@ pack_coefficients(const U& u, fem::IntegralType integral_type, const int id)
           active_facets
           = u.interior_facet_domains(id);
 
-      c.reserve(active_facets.size() * 2 * offsets.back());
+      c.resize(active_facets.size() * 2 * offsets.back());
 
       // Iterate over coefficients
       for (std::size_t coeff = 0; coeff < dofmaps.size(); ++coeff)
