@@ -7,11 +7,11 @@
 
 import random
 
+import dolfinx
 import numpy as np
 import pytest
 import ufl
-import dolfinx
-from dolfinx import Function, FunctionSpace, VectorFunctionSpace, cpp
+from dolfinx import Function, FunctionSpace, VectorFunctionSpace
 from dolfinx.cpp.mesh import CellType
 from dolfinx.mesh import create_mesh
 from dolfinx_utils.test.skips import skip_in_parallel
