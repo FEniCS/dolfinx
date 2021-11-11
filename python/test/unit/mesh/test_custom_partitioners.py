@@ -66,7 +66,7 @@ def test_custom_partitioner(tempdir, Nx, cell_type):
     rank = mpi_comm.rank
     assert (np.all(x_global[all_ranges[rank]:all_ranges[rank + 1]] == x))
 
-    cell = ufl.Cell(dolfinx.cpp.mesh.to_string(cell_shape))
+    cell = ufl.Cell(cell_shape.name)
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell, cell_degree))
 
     # Partition mesh in layers, capture geometrical data and topological
