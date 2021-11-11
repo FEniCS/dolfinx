@@ -6,7 +6,7 @@
 
 """Graph module"""
 
-# import typing
+import typing
 
 import numpy as np
 
@@ -14,11 +14,15 @@ from dolfinx import cpp as _cpp
 
 
 class AdjacencyList:
-    def __init__(self, obj):
+    def __init__(self, obj: typing.Union[_cpp.graph.AdjacencyList_int32,
+                                         _cpp.graph.AdjacencyList_int64]):
         self._cpp_object = obj
 
     @classmethod
     def from_data(cls, data, offsets):
+        """Create an AdjacencyList from the adjacency data and an array
+        of offsets in the data. The AdjacencyList copies the data and
+        offset arrays."""
         if data.dtype == np.int64:
             cpp_object = _cpp.graph.AdjacencyList_int64(data, offsets)
         elif data.dtype == np.int32:
@@ -29,6 +33,9 @@ class AdjacencyList:
 
     @classmethod
     def from_array(cls, data):
+        """Create an AdjacencyList from a rectangular array. The degree
+        of each node is the same and is equal ot the number of columns
+        in data."""
         if data.dtype == np.int64:
             cpp_object = _cpp.graph.AdjacencyList_int64(data)
         elif data.dtype == np.int32:
