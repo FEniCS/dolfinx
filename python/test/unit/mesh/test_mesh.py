@@ -345,7 +345,7 @@ def xtest_mesh_topology_against_basix(mesh_factory, ghost_mode):
         return
 
     # Create basix cell
-    cell_name = cpp.mesh.to_string(mesh.topology.cell_type)
+    cell_name = mesh.topology.cell_type.name
     basix_celltype = getattr(basix.CellType, cell_name)
 
     map = mesh.topology.index_map(mesh.topology.dim)

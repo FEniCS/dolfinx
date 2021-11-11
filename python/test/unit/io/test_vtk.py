@@ -11,10 +11,9 @@ import pytest
 import ufl
 from dolfinx import (Function, FunctionSpace, TensorFunctionSpace,
                      UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh,
-                     VectorFunctionSpace, cpp)
+                     VectorFunctionSpace)
 from dolfinx.io import VTKFile
-from dolfinx.cpp.mesh import CellType
-from dolfinx.mesh import create_mesh
+from dolfinx.mesh import CellType, create_mesh
 from dolfinx_utils.test.fixtures import tempdir
 from dolfinx_utils.test.skips import skip_in_parallel
 from mpi4py import MPI
@@ -37,7 +36,7 @@ def test_save_1d_mesh(tempdir):
 @pytest.mark.parametrize("cell_type", cell_types_2D)
 def test_save_2d_mesh(tempdir, cell_type):
     mesh = UnitSquareMesh(MPI.COMM_WORLD, 32, 32, cell_type=cell_type)
-    filename = os.path.join(tempdir, f"mesh_{cpp.mesh.to_string(cell_type)}.pvd")
+    filename = os.path.join(tempdir, f"mesh_{cell_type.name}.pvd")
     with VTKFile(MPI.COMM_WORLD, filename, "w") as vtk:
         vtk.write_mesh(mesh, 0.)
         vtk.write_mesh(mesh, 2.)
@@ -46,7 +45,7 @@ def test_save_2d_mesh(tempdir, cell_type):
 @pytest.mark.parametrize("cell_type", cell_types_3D)
 def test_save_3d_mesh(tempdir, cell_type):
     mesh = UnitCubeMesh(MPI.COMM_WORLD, 8, 8, 8, cell_type=cell_type)
-    filename = os.path.join(tempdir, f"mesh_{cpp.mesh.to_string(cell_type)}.pvd")
+    filename = os.path.join(tempdir, f"mesh_{cell_type.name}.pvd")
     with VTKFile(MPI.COMM_WORLD, filename, "w") as vtk:
         vtk.write_mesh(mesh, 0.)
         vtk.write_mesh(mesh, 2.)
