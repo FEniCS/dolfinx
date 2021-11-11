@@ -6,6 +6,7 @@
 
 #include "caster_mpi.h"
 #include <dolfinx/graph/AdjacencyList.h>
+#include <dolfinx/graph/gps.h>
 #include <dolfinx/graph/partition.h>
 #include <pybind11/numpy.h>
 #include <pybind11/operators.h>
@@ -73,5 +74,7 @@ void graph(py::module& m)
 
   declare_adjacency_list<std::int32_t>(m, "int32");
   declare_adjacency_list<std::int64_t>(m, "int64");
+
+  m.def("gps_reorder", &dolfinx::graph::gps_reorder);
 }
 } // namespace dolfinx_wrappers
