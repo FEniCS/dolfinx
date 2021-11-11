@@ -84,11 +84,11 @@ def locate_entities_boundary(mesh: cpp.mesh.Mesh,
 
 
 _uflcell_to_dolfinxcell = {
-    "interval": cpp.mesh.CellType.interval,
-    "triangle": cpp.mesh.CellType.triangle,
-    "quadrilateral": cpp.mesh.CellType.quadrilateral,
-    "tetrahedron": cpp.mesh.CellType.tetrahedron,
-    "hexahedron": cpp.mesh.CellType.hexahedron
+    "interval": CellType.interval,
+    "triangle": CellType.triangle,
+    "quadrilateral": CellType.quadrilateral,
+    "tetrahedron": CellType.tetrahedron,
+    "hexahedron": CellType.hexahedron
 }
 
 _meshtags_types = {
@@ -114,7 +114,7 @@ def refine(mesh, cell_markers=None, redistribute=True):
 
 
 def create_mesh(comm, cells, x, domain,
-                ghost_mode=cpp.mesh.GhostMode.shared_facet,
+                ghost_mode=GhostMode.shared_facet,
                 partitioner=cpp.mesh.partition_cells_graph):
     """Create a mesh from topology and geometry data"""
     ufl_element = domain.ufl_coordinate_element()
