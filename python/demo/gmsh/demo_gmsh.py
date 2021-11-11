@@ -150,7 +150,7 @@ mesh = create_mesh(MPI.COMM_WORLD, cells, x, domain)
 mesh.name = "ball_d2"
 
 # Permute also entities which are tagged
-gmsh_triangle6 = perm_gmsh(mesh.CellType.triangle, 6)
+gmsh_triangle6 = perm_gmsh(CellType.triangle, 6)
 marked_facets = marked_facets[:, gmsh_triangle6]
 
 local_entities, local_values = extract_local_entities(mesh, 2, marked_facets, facet_values)
