@@ -53,6 +53,24 @@ namespace dolfinx_wrappers
 
 namespace
 {
+  template <typename T>
+  std::map<std::pair<dolfinx::fem::IntegralType, int>,
+           std::pair<std::vector<T>, int>>
+  py_to_cpp_coeffs(const std::map<std::pair<dolfinx::fem::IntegralType, int>,
+                                  py::array_t<T, py::array::c_style>>& coefficients)
+  {
+    std::map<std::pair<dolfinx::fem::IntegralType, int>,
+                 std::pair<std::vector<T>, int>> _coefficients;
+
+        // FIXME Is there a better way?
+        for (auto [key, coeffs] : coefficients)
+        {
+          std::vector<T> _coeffs(coeffs.data(), coeffs.data() + coeffs.size());
+          _coefficients[key] = {_coeffs, coeffs.shape(1)};
+        }
+    return _coefficients;
+  }
+
 // Declare assembler function that have multiple scalar types
 template <typename T>
 void declare_functions(py::module& m)
@@ -171,15 +189,7 @@ void declare_functions(py::module& m)
          const std::map<std::pair<dolfinx::fem::IntegralType, int>,
                                   py::array_t<T, py::array::c_style>>& coefficients)
       {
-        std::map<std::pair<dolfinx::fem::IntegralType, int>,
-                 std::pair<std::vector<T>, int>> _coefficients;
-
-        // FIXME Is there a better way?
-        for (auto [key, coeffs] : coefficients)
-        {
-          std::vector<T> _coeffs(coeffs.data(), coeffs.data() + coeffs.size());
-          _coefficients[key] = {_coeffs, coeffs.shape(1)};
-        }
+        auto _coefficients = py_to_cpp_coeffs(coefficients);
 
         dolfinx::fem::assemble_vector<T>(
             xtl::span(b.mutable_data(), b.size()), L, constants,
