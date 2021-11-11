@@ -21,6 +21,7 @@
 #include <utility>
 #include <vector>
 #include <xtl/xspan.hpp>
+#include "Expression.h"
 
 namespace dolfinx::common
 {
@@ -502,7 +503,7 @@ template <typename T>
 void pack_coefficient_cell(
     const xtl::span<T>& c, int cstride, const xtl::span<const T>& v,
     const xtl::span<const std::uint32_t>& cell_info, const fem::DofMap& dofmap,
-    const std::vector<std::int32_t>& active_cells, std::int32_t offset,
+    const xtl::span<const std::int32_t>& active_cells, std::int32_t offset,
     int space_dim,
     const std::function<void(const xtl::span<T>&,
                              const xtl::span<const std::uint32_t>&,
@@ -523,7 +524,7 @@ template <typename T>
 void pack_coefficient_exterior_facet(
     const xtl::span<T>& c, int cstride, const xtl::span<const T>& v,
     const xtl::span<const std::uint32_t>& cell_info, const fem::DofMap& dofmap,
-    const std::vector<std::pair<std::int32_t, int>>& active_facets,
+    const xtl::span<const std::pair<std::int32_t, int>>& active_facets,
     std::int32_t offset, int space_dim,
     const std::function<void(const xtl::span<T>&,
                              const xtl::span<const std::uint32_t>&,
@@ -710,6 +711,69 @@ pack_coefficients(const Form<T>& u)
   }
 
   return coefficients;
+}
+
+template<typename T>
+std::pair<std::vector<T>, int>
+pack_coefficients(const Expression<T>& u,
+                  const xtl::span<const std::int32_t>& active_cells)
+{
+  // FIXME Much of this code is the same as above. Try to reusue.
+  // Get form coefficient offsets and dofmaps
+  const std::vector<std::shared_ptr<const fem::Function<T>>> coefficients
+      = u.coefficients();
+  const std::vector<int> offsets = u.coefficient_offsets();
+  std::vector<const fem::DofMap*> dofmaps(coefficients.size());
+  std::vector<const fem::FiniteElement*> elements(coefficients.size());
+  std::vector<xtl::span<const T>> v;
+  v.reserve(coefficients.size());
+  for (std::size_t i = 0; i < coefficients.size(); ++i)
+  {
+    elements[i] = coefficients[i]->function_space()->element().get();
+    dofmaps[i] = coefficients[i]->function_space()->dofmap().get();
+    v.push_back(coefficients[i]->x()->array());
+  }
+
+  // Get mesh
+  std::shared_ptr<const mesh::Mesh> mesh = u.mesh();
+  assert(mesh);
+  const int tdim = mesh->topology().dim();
+
+  const int cstride = offsets.back();
+
+  // Copy data into coefficient array
+  std::vector<T> c;
+  if (!coefficients.empty())
+  {
+    bool needs_dof_transformations = false;
+    for (std::size_t coeff = 0; coeff < dofmaps.size(); ++coeff)
+    {
+      if (elements[coeff]->needs_dof_transformations())
+      {
+        needs_dof_transformations = true;
+        mesh->topology_mutable().create_entity_permutations();
+      }
+    }
+    xtl::span<const std::uint32_t> cell_info;
+    if (needs_dof_transformations)
+      cell_info = xtl::span(mesh->topology().get_cell_permutation_info());
+    
+    c.resize(active_cells.size() * offsets.back());
+
+    // Iterate over coefficients
+    for (std::size_t coeff = 0; coeff < dofmaps.size(); ++coeff)
+    {
+      const std::function<void(const xtl::span<T>&,
+                                const xtl::span<const std::uint32_t>&,
+                                std::int32_t, int)>
+          transformation
+          = elements[coeff]->get_dof_transformation_function<T>(false, true);
+      impl::pack_coefficient_cell<T>(
+          xtl::span<T>(c), cstride, v[coeff], cell_info, *dofmaps[coeff],
+          active_cells, offsets[coeff], elements[coeff]->space_dimension(),
+          transformation);
+    }    
+  }
 }
 
 // NOTE: This is subject to change
