@@ -68,12 +68,10 @@ template <typename T>
 void assemble_vector(xtl::span<T> b, const Form<T>& L,
                      const xtl::span<const T>& constants,
                      const std::map<std::pair<IntegralType, int>,
-                                    std::pair<std::vector<T>, int>>& coeffs)
+                                    std::pair<std::vector<T>, int>>& coefficients)
 {
   // FIXME Should the vector in the map be a span?
-  // HACK to test without changing pybinding
-  // impl::assemble_vector(b, L, constants, coeffs.first, coeffs.second);
-  impl::assemble_vector(b, L);
+  impl::assemble_vector(b, L, constants, coefficients);
 }
 
 /// Assemble linear form into a vector
