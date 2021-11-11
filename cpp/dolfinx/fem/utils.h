@@ -568,12 +568,10 @@ void pack_coefficient_interior_facet(
 }
 } // namespace impl
 
-template <typename U>
-std::pair<std::vector<typename U::scalar_type>, int>
-pack_coefficients(const U& u, fem::IntegralType integral_type, const int id)
+template <typename T>
+std::pair<std::vector<T>, int>
+pack_coefficients(const Form<T>& u, fem::IntegralType integral_type, const int id)
 {
-  using T = typename U::scalar_type;
-
   // Get form coefficient offsets and dofmaps
   const std::vector<std::shared_ptr<const fem::Function<T>>> coefficients
       = u.coefficients();
@@ -689,13 +687,11 @@ pack_coefficients(const U& u, fem::IntegralType integral_type, const int id)
 // NOTE: This is subject to change
 /// Pack coefficients of u of generic type U ready for assembly
 // TODO Before this treated Form and Expression with the same code
-template <typename U>
+template <typename T>
 std::map<std::pair<IntegralType, int>,
-         std::pair<std::vector<typename U::scalar_type>, int>>
-pack_coefficients(const U& u)
+         std::pair<std::vector<T>, int>>
+pack_coefficients(const Form<T>& u)
 {
-  using T = typename U::scalar_type;
-
   std::map<std::pair<IntegralType, int>,
            std::pair<std::vector<T>, int>> coefficients;
 
