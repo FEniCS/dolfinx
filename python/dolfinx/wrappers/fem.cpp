@@ -168,11 +168,21 @@ void declare_functions(py::module& m)
       [](py::array_t<T, py::array::c_style> b, const dolfinx::fem::Form<T>& L,
          const py::array_t<T, py::array::c_style>& constants,
          const std::map<std::pair<dolfinx::fem::IntegralType, int>,
-                                  std::pair<std::vector<T>, int>>& coeffs)
+                                  py::array_t<T, py::array::c_style>>& coeffs)
       {
-        dolfinx::fem::assemble_vector<T>(
-            xtl::span(b.mutable_data(), b.size()), L, constants,
-            coeffs);
+        std::cout << "Assemble vector (need to bind properly)\n";
+
+        std::map<std::pair<dolfinx::fem::IntegralType, int>,
+                 std::pair<std::vector<T>, int>> test;
+
+        // for (auto [key, val] : coeffs)
+        // {
+        //   test[key] = {}
+        // }
+
+        // dolfinx::fem::assemble_vector<T>(
+        //     xtl::span(b.mutable_data(), b.size()), L, constants,
+        //     coeffs);
       },
       py::arg("b"), py::arg("L"), py::arg("constants"), py::arg("coeffs"),
       "Assemble linear form into an existing vector with pre-packed "
