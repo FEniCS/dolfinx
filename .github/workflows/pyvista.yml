@@ -24,6 +24,8 @@ jobs:
       DISPLAY: ":99.0"
       PYVISTA_OFF_SCREEN: true
       PYVISTA_VERSION: 0.32.1
+      # Version pinned to commit due to https://github.com/pyvista/pyvistaqt/pull/127
+      # Should be fixed in a future 0.6.0 release
       PYVISTA_QT_VERSION: 3ab85370a67d0613b9488272f935442b6e29ef61
 
       PETSC_ARCH: linux-gnu-${{ matrix.petsc_arch }}-32
