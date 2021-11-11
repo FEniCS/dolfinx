@@ -218,7 +218,7 @@ jobs:
         with:
           repository: "FEniCS/basix"
           path: "basix"
-          ref: "main"
+          ref: "mscroggs/blocked_interpolation"
       - uses: actions/checkout@v2
         with:
           repository: "FEniCS/ufl"

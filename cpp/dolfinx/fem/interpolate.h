@@ -430,7 +430,14 @@ void interpolate(Function<T>& u, const Function<T>& v)
 
     const fem::CoordinateElement& cmap = mesh->geometry().cmap();
 
-    // Creat working array
+    // Get geometry data
+    const graph::AdjacencyList<std::int32_t>& x_dofmap
+        = mesh->geometry().dofmap();
+    // FIXME: Add proper interface for num coordinate dofs
+    const std::size_t num_dofs_g = x_dofmap.num_links(0);
+    const xt::xtensor<double, 2>& x_g = mesh->geometry().x();
+
+    // Create working arrays
     std::vector<T> u_local(element_to->space_dimension());
     xt::xtensor<T, 3> v_values({points.shape(0), 1, element_to->value_size()});
     xt::xtensor<T, 3> v_mapped_values(
@@ -439,15 +446,11 @@ void interpolate(Function<T>& u, const Function<T>& v)
     std::vector<int> cell(1);
     xt::xtensor<double, 4> phi(cmap.tabulate_shape(1, points.shape(0)));
     xt::xtensor<double, 2> dphi;
-
-    // Get geometry data
-    const graph::AdjacencyList<std::int32_t>& x_dofmap
-        = mesh->geometry().dofmap();
-    // FIXME: Add proper interface for num coordinate dofs
-    const std::size_t num_dofs_g = x_dofmap.num_links(0);
-    const xt::xtensor<double, 2>& x_g = mesh->geometry().x();
-
     xt::xtensor<double, 2> coordinate_dofs({num_dofs_g, gdim});
+    xt::xtensor<double, 3> J({points.shape(0), gdim, tdim});
+    xt::xtensor<double, 3> K({points.shape(0), tdim, gdim});
+    const std::array<std::size_t, 1> sh = {points.shape(0)};
+    xt::xtensor<double, 1> detJ(sh);
 
     // Iterate over mesh and interpolate on each cell
     const int num_cells = map->size_local() + map->num_ghosts();
@@ -459,10 +462,10 @@ void interpolate(Function<T>& u, const Function<T>& v)
         for (std::size_t j = 0; j < gdim; ++j)
           coordinate_dofs(i, j) = x_g(x_dofs[i], j);
 
+      // Evaluate v at interpolation points
       cell[0] = c;
       for (std::size_t i = 0; i < cells.size(); ++i)
         cells[i] = c;
-
       const xt::xtensor<double, 2> X
           = interpolation_coords(*element_to, *mesh, cell);
       xt::xtensor<T, 2> _v({v_values.shape(0), v_values.shape(2)});
@@ -471,16 +474,10 @@ void interpolate(Function<T>& u, const Function<T>& v)
         for (std::size_t j = 0; j < v_values.shape(2); ++j)
           v_values(i, 0, j) = _v(i, j);
 
-      xt::xtensor<double, 3> J({points.shape(0), gdim, tdim});
-      xt::xtensor<double, 3> K({points.shape(0), tdim, gdim});
-      const std::array<std::size_t, 1> sh = {points.shape(0)};
-      xt::xtensor<double, 1> detJ(sh);
-
+      // Compute Jacobians
       cmap.tabulate(1, points, phi);
       dphi = xt::view(phi, xt::range(1, tdim + 1), 0, xt::all(), 0);
-
       J.fill(0);
-
       for (std::size_t p = 0; p < points.shape(0); ++p)
       {
         auto _J = xt::view(J, p, xt::all(), xt::all());
@@ -489,15 +486,16 @@ void interpolate(Function<T>& u, const Function<T>& v)
         detJ[p] = cmap.compute_jacobian_determinant(_J);
       }
 
+      // Pull back to the reference and interpolate
       element_to->map_pull_back(v_values, J, detJ, K, v_mapped_values);
 
       xt::xtensor<T, 2> _vm
           = xt::transpose(xt::view(v_mapped_values, xt::all(), 0, xt::all()));
-
       element_to->interpolate(_vm, tcb::make_span(u_local));
 
       apply_inverse_dof_transform(u_local, cell_info, c, 1);
 
+      // Map local coefficients to the correct DOFs
       xtl::span<const std::int32_t> dofs_u = dofmap_u->cell_dofs(c);
       for (std::size_t i = 0; i < dofs_u.size(); ++i)
         for (int k = 0; k < u_bs; ++k)
