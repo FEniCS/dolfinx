@@ -80,6 +80,7 @@ void declare_functions(py::module& m)
                  std::pair<std::vector<T>, int>> coeffs =
           dolfinx::fem::pack_coefficients(form);
 
+        // TODO Use underscore naming convention
         for (auto [key, val] : coeffs)
         {
           // TODO Get this using coeffs.size() / cstride instead
@@ -168,21 +169,21 @@ void declare_functions(py::module& m)
       [](py::array_t<T, py::array::c_style> b, const dolfinx::fem::Form<T>& L,
          const py::array_t<T, py::array::c_style>& constants,
          const std::map<std::pair<dolfinx::fem::IntegralType, int>,
-                                  py::array_t<T, py::array::c_style>>& coeffs)
+                                  py::array_t<T, py::array::c_style>>& coefficients)
       {
-        std::cout << "Assemble vector (need to bind properly)\n";
-
         std::map<std::pair<dolfinx::fem::IntegralType, int>,
-                 std::pair<std::vector<T>, int>> test;
+                 std::pair<std::vector<T>, int>> _coefficients;
 
-        // for (auto [key, val] : coeffs)
-        // {
-        //   test[key] = {}
-        // }
+        // FIXME Is there a better way?
+        for (auto [key, coeffs] : coefficients)
+        {
+          std::vector<T> _coeffs(coeffs.data(), coeffs.data() + coeffs.size());
+          _coefficients[key] = {_coeffs, coeffs.shape(1)};
+        }
 
-        // dolfinx::fem::assemble_vector<T>(
-        //     xtl::span(b.mutable_data(), b.size()), L, constants,
-        //     coeffs);
+        dolfinx::fem::assemble_vector<T>(
+            xtl::span(b.mutable_data(), b.size()), L, constants,
+            _coefficients);
       },
       py::arg("b"), py::arg("L"), py::arg("constants"), py::arg("coeffs"),
       "Assemble linear form into an existing vector with pre-packed "
