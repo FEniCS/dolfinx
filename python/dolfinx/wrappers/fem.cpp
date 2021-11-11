@@ -82,6 +82,7 @@ void declare_functions(py::module& m)
 
         for (auto [key, val] : coeffs)
         {
+          // TODO Get this using coeffs.size() / cstride instead
           std::cout << "val.second = " << val.second << "\n";
           int num_active_entities = 0;
           switch (key.first)
