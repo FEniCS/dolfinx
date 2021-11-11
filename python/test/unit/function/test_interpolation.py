@@ -245,16 +245,20 @@ def test_interpolation_nedelec(order1, order2):
     assert np.isclose(dolfinx.fem.assemble_scalar(ufl.inner(u - w, u - w) * ufl.dx), 0)
 
 
+@pytest.mark.parametrize("tdim", [2, 3])
 @pytest.mark.parametrize("order", [1, 2, 3])
-def test_interpolation_dg_to_n1curl(order):
-    mesh = dolfinx.UnitCubeMesh(MPI.COMM_WORLD, 2, 2, 2)
+def test_interpolation_dg_to_n1curl(tdim, order):
+    if tdim == 2:
+        mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, 5, 5)
+    else:
+        mesh = dolfinx.UnitCubeMesh(MPI.COMM_WORLD, 2, 2, 2)
     V = dolfinx.VectorFunctionSpace(mesh, ("DG", order))
     V1 = dolfinx.FunctionSpace(mesh, ("N1curl", order + 1))
 
     u = dolfinx.Function(V)
     v = dolfinx.Function(V1)
 
-    u.interpolate(lambda x: x)
+    u.interpolate(lambda x: x[:tdim] ** order)
     v.interpolate(u)
 
     s = dolfinx.fem.assemble_scalar(ufl.inner(u - v, u - v) * ufl.dx)
@@ -262,16 +266,41 @@ def test_interpolation_dg_to_n1curl(order):
     assert np.isclose(s, 0)
 
 
+@pytest.mark.parametrize("tdim", [2, 3])
 @pytest.mark.parametrize("order", [1, 2, 3])
-def test_interpolation_n1curl_to_dg(order):
-    mesh = dolfinx.UnitCubeMesh(MPI.COMM_WORLD, 2, 2, 2)
+def test_interpolation_n1curl_to_dg(tdim, order):
+    if tdim == 2:
+        mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, 5, 5)
+    else:
+        mesh = dolfinx.UnitCubeMesh(MPI.COMM_WORLD, 2, 2, 2)
     V = dolfinx.FunctionSpace(mesh, ("N1curl", order + 1))
     V1 = dolfinx.VectorFunctionSpace(mesh, ("DG", order))
 
     u = dolfinx.Function(V)
     v = dolfinx.Function(V1)
 
-    u.interpolate(lambda x: x)
+    u.interpolate(lambda x: x[:tdim] ** order)
+    v.interpolate(u)
+
+    s = dolfinx.fem.assemble_scalar(ufl.inner(u - v, u - v) * ufl.dx)
+
+    assert np.isclose(s, 0)
+
+
+@pytest.mark.parametrize("tdim", [2, 3])
+@pytest.mark.parametrize("order", [1, 2, 3])
+def test_interpolation_n2curl_to_bdm(tdim, order):
+    if tdim == 2:
+        mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, 5, 5)
+    else:
+        mesh = dolfinx.UnitCubeMesh(MPI.COMM_WORLD, 2, 2, 2)
+    V = dolfinx.FunctionSpace(mesh, ("N2curl", order))
+    V1 = dolfinx.FunctionSpace(mesh, ("BDM", order))
+
+    u = dolfinx.Function(V)
+    v = dolfinx.Function(V1)
+
+    u.interpolate(lambda x: x[:tdim] ** order)
     v.interpolate(u)
 
     s = dolfinx.fem.assemble_scalar(ufl.inner(u - v, u - v) * ufl.dx)

@@ -406,7 +406,7 @@ void interpolate(Function<T>& u, const Function<T>& v)
     //   interpolate into v's element
     //   put values into correct entries in dofmap
 
-    // --- Different elements, different map
+    //  --- Different elements, different map
     xtl::span<const std::uint32_t> cell_info;
     if (element_to->needs_dof_transformations()
         or element_from->needs_dof_transformations())
@@ -423,7 +423,6 @@ void interpolate(Function<T>& u, const Function<T>& v)
 
     // Get block sizes and dof transformation operators
     const int u_bs = element_to->block_size();
-    const int v_bs = element_from->block_size();
     const auto apply_dof_transformation
         = element_from->get_dof_transformation_function<T>(false, true, false);
     const auto apply_inverse_dof_transform
@@ -461,20 +460,27 @@ void interpolate(Function<T>& u, const Function<T>& v)
           coordinate_dofs(i, j) = x_g(x_dofs[i], j);
 
       cell[0] = c;
-      const xt::xtensor<double, 2> X
-          = interpolation_coords(*element_to, *mesh, cell);
       for (std::size_t i = 0; i < cells.size(); ++i)
         cells[i] = c;
-      xt::xtensor<T, 2> _v = xt::view(v_values, xt::all(), 0, xt::all());
+
+      const xt::xtensor<double, 2> X
+          = interpolation_coords(*element_to, *mesh, cell);
+      xt::xtensor<T, 2> _v({v_values.shape(0), v_values.shape(2)});
       v.eval(xt::transpose(X), cells, _v);
+      for (std::size_t i = 0; i < v_values.shape(0); ++i)
+        for (std::size_t j = 0; j < v_values.shape(2); ++j)
+          v_values(i, 0, j) = _v(i, j);
 
       xt::xtensor<double, 3> J({points.shape(0), gdim, tdim});
       xt::xtensor<double, 3> K({points.shape(0), tdim, gdim});
       const std::array<std::size_t, 1> sh = {points.shape(0)};
       xt::xtensor<double, 1> detJ(sh);
 
-      cmap.tabulate(1, xt::transpose(X), phi);
+      cmap.tabulate(1, points, phi);
       dphi = xt::view(phi, xt::range(1, tdim + 1), 0, xt::all(), 0);
+
+      J.fill(0);
+
       for (std::size_t p = 0; p < points.shape(0); ++p)
       {
         auto _J = xt::view(J, p, xt::all(), xt::all());
@@ -486,7 +492,8 @@ void interpolate(Function<T>& u, const Function<T>& v)
       element_to->map_pull_back(v_values, J, detJ, K, v_mapped_values);
 
       xt::xtensor<T, 2> _vm
-          = xt::view(v_mapped_values, xt::all(), 0, xt::all());
+          = xt::transpose(xt::view(v_mapped_values, xt::all(), 0, xt::all()));
+
       element_to->interpolate(_vm, tcb::make_span(u_local));
 
       apply_inverse_dof_transform(u_local, cell_info, c, 1);
