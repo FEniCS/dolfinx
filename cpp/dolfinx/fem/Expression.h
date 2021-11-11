@@ -164,11 +164,11 @@ public:
 
   /// Get value size
   /// @return value_size
-  const std::size_t value_size() const { return _value_size; }
+  std::size_t value_size() const { return _value_size; }
 
   /// Get number of points
   /// @return number of points
-  const std::size_t num_points() const { return _x.shape(0); }
+  std::size_t num_points() const { return _x.shape(0); }
 
   /// Scalar type (T).
   using scalar_type = T;
