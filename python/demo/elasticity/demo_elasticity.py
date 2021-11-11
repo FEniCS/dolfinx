@@ -11,8 +11,8 @@
 from contextlib import ExitStack
 
 import numpy as np
-from dolfinx import BoxMesh, DirichletBC, Function, VectorFunctionSpace
-from dolfinx.fem import (apply_lifting, assemble_matrix, assemble_vector, la,
+from dolfinx import BoxMesh, DirichletBC, Function, VectorFunctionSpace, la
+from dolfinx.fem import (apply_lifting, assemble_matrix, assemble_vector,
                          locate_dofs_geometrical, set_bc)
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import CellType, GhostMode

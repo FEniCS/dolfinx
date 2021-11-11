@@ -5,5 +5,5 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Linear algebra functionality"""
 
-from dolfinx.cpp.la import GhostMode  # noqa
 from dolfinx.cpp.la import VectorSpaceBasis  # noqa
+from dolfinx.cpp.la import create_vector  # noqa

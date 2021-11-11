@@ -14,7 +14,6 @@ import os
 
 import cffi
 import dolfinx
-import dolfinx.cpp
 import dolfinx.geometry
 import dolfinx.io
 import dolfinx.la
@@ -22,6 +21,7 @@ import numba
 import numba.core.typing.cffi_utils as cffi_support
 import numpy as np
 import ufl
+from dolfinx.cpp.fem import Form_complex128, Form_float64
 from dolfinx.fem import locate_dofs_topological
 from dolfinx.mesh import locate_entities_boundary
 from mpi4py import MPI
@@ -31,7 +31,7 @@ filedir = os.path.dirname(__file__)
 infile = dolfinx.io.XDMFFile(MPI.COMM_WORLD,
                              os.path.join(filedir, "cooks_tri_mesh.xdmf"),
                              "r",
-                             encoding=dolfinx.cpp.io.XDMFFile.Encoding.ASCII)
+                             encoding=dolfinx.io.XDMFFile.Encoding.ASCII)
 mesh = infile.read_mesh(name="Grid")
 infile.close()
 
@@ -143,7 +143,7 @@ def tabulate_condensed_tensor_A(A_, w_, c_, coords_, entity_local_index, permuta
 
 
 # Prepare a Form with a condensed tabulation kernel
-Form = dolfinx.cpp.fem.Form_float64 if PETSc.ScalarType == np.float64 else dolfinx.cpp.fem.Form_complex128
+Form = Form_float64 if PETSc.ScalarType == np.float64 else Form_complex128
 
 integrals = {dolfinx.fem.IntegralType.cell: ([(-1, tabulate_condensed_tensor_A.address)], None)}
 a_cond = Form([U._cpp_object, U._cpp_object], integrals, [], [], False, None)
