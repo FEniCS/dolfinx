@@ -7,7 +7,7 @@
 
 import numpy as np
 from dolfinx.cpp.graph import AdjacencyList_int32 as AdjacencyList
-from dolfinx.cpp.io import extract_local_entities, perm_gmsh
+from dolfinx.cpp.io import distribute_entity_data, perm_gmsh
 from dolfinx.io import (XDMFFile, extract_gmsh_geometry,
                         extract_gmsh_topology_and_markers, ufl_mesh_from_gmsh)
 from dolfinx.mesh import CellType, create_mesh, create_meshtags
@@ -94,7 +94,7 @@ else:
 
 mesh = create_mesh(MPI.COMM_WORLD, cells, x, ufl_mesh_from_gmsh(gmsh_cell_id, 3))
 mesh.name = "ball_d1"
-local_entities, local_values = extract_local_entities(mesh, 2, marked_facets, facet_values)
+local_entities, local_values = distribute_entity_data(mesh, 2, marked_facets, facet_values)
 
 mesh.topology.create_connectivity(2, 0)
 mt = create_meshtags(mesh, 2, AdjacencyList(local_entities), np.int32(local_values))
@@ -153,9 +153,9 @@ mesh.name = "ball_d2"
 gmsh_triangle6 = perm_gmsh(CellType.triangle, 6)
 marked_facets = marked_facets[:, gmsh_triangle6]
 
-local_entities, local_values = extract_local_entities(mesh, 2, marked_facets, facet_values)
+entities, values = distribute_entity_data(mesh, 2, marked_facets, facet_values)
 mesh.topology.create_connectivity(2, 0)
-mt = create_meshtags(mesh, 2, AdjacencyList(local_entities), np.int32(local_values))
+mt = create_meshtags(mesh, 2, AdjacencyList(entities), np.int32(values))
 mt.name = "ball_d2_surface"
 with XDMFFile(MPI.COMM_WORLD, "mesh.xdmf", "a") as file:
     file.write_mesh(mesh)
@@ -231,9 +231,9 @@ mesh.name = "hex_d2"
 gmsh_quad9 = perm_gmsh(CellType.quadrilateral, 9)
 marked_facets = marked_facets[:, gmsh_quad9]
 
-local_entities, local_values = extract_local_entities(mesh, 2, marked_facets, facet_values)
+entities, values = distribute_entity_data(mesh, 2, marked_facets, facet_values)
 mesh.topology.create_connectivity(2, 0)
-mt = create_meshtags(mesh, 2, AdjacencyList(local_entities), np.int32(local_values))
+mt = create_meshtags(mesh, 2, AdjacencyList(entities), np.int32(local_values))
 mt.name = "hex_d2_surface"
 
 with XDMFFile(MPI.COMM_WORLD, "mesh.xdmf", "a") as file:

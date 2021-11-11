@@ -344,7 +344,7 @@ XDMFFile::read_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh,
       entities, io::cells::perm_vtk(cell_type, entities.shape(1)));
 
   const auto [entities_local, values_local]
-      = xdmf_utils::extract_local_entities(*mesh, mesh::cell_dim(cell_type),
+      = xdmf_utils::distribute_entity_data(*mesh, mesh::cell_dim(cell_type),
                                            entities1, values);
 
   auto [data, offset] = graph::create_adjacency_data(entities_local);

@@ -89,15 +89,16 @@ public:
   /// Local-local mapping of dofs on entity of cell
   /// @param[in] entity_dim The entity dimension
   /// @param[in] cell_entity_index The local entity index on the cell
-  /// @return Degrees of freedom on a single element.
-  std::vector<int> entity_dofs(int entity_dim, int cell_entity_index) const;
+  /// @return Cell-lcoal degree-of-freedom indices
+  const std::vector<int>& entity_dofs(int entity_dim,
+                                      int cell_entity_index) const;
 
   /// Local-local closure dofs on entity of cell
   /// @param[in] entity_dim The entity dimension
   /// @param[in] cell_entity_index The local entity index on the cell
-  /// @return Degrees of freedom on a single element
-  std::vector<int> entity_closure_dofs(int entity_dim,
-                                       int cell_entity_index) const;
+  /// @return Cell-lcoal degree-of-freedom indices
+  const std::vector<int>& entity_closure_dofs(int entity_dim,
+                                              int cell_entity_index) const;
 
   /// Direct access to all entity dofs (dof = _entity_dofs[dim][entity][i])
   const std::vector<std::vector<std::vector<int>>>& entity_dofs_all() const;

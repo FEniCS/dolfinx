@@ -71,13 +71,13 @@ int ElementDofLayout::num_entity_closure_dofs(int dim) const
   return _num_entity_closure_dofs.at(dim);
 }
 //-----------------------------------------------------------------------------
-std::vector<int> ElementDofLayout::entity_dofs(int entity_dim,
-                                               int cell_entity_index) const
+const std::vector<int>&
+ElementDofLayout::entity_dofs(int entity_dim, int cell_entity_index) const
 {
   return _entity_dofs.at(entity_dim).at(cell_entity_index);
 }
 //-----------------------------------------------------------------------------
-std::vector<int>
+const std::vector<int>&
 ElementDofLayout::entity_closure_dofs(int entity_dim,
                                       int cell_entity_index) const
 {
