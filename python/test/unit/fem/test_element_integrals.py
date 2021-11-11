@@ -13,8 +13,7 @@ import pytest
 import ufl
 from dolfinx import (Constant, Function, FunctionSpace, VectorFunctionSpace,
                      cpp, fem)
-from dolfinx.cpp.mesh import CellType
-from dolfinx.mesh import MeshTags, create_mesh
+from dolfinx.mesh import CellType, MeshTags, create_mesh
 from dolfinx_utils.test.skips import skip_in_parallel
 from mpi4py import MPI
 from petsc4py import PETSc

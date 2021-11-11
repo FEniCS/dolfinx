@@ -10,9 +10,9 @@ import pytest
 from dolfinx import (BoxMesh, UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh,
                      cpp)
 from dolfinx.geometry import (BoundingBoxTree, compute_closest_entity,
-                              compute_collisions, compute_distance_gjk,
-                              create_midpoint_tree, compute_colliding_cells)
-from dolfinx.mesh import locate_entities, locate_entities_boundary
+                              compute_colliding_cells, compute_collisions,
+                              compute_distance_gjk, create_midpoint_tree)
+from dolfinx.mesh import CellType, locate_entities, locate_entities_boundary
 from dolfinx_utils.test.skips import skip_in_parallel
 from mpi4py import MPI
 
@@ -79,10 +79,10 @@ def test_padded_bbox(padding):
     eps = 1e-12
     x0 = numpy.array([0, 0, 0])
     x1 = numpy.array([1, 1, 1 - eps])
-    mesh_0 = BoxMesh(MPI.COMM_WORLD, [x0, x1], [1, 1, 2], cpp.mesh.CellType.hexahedron)
+    mesh_0 = BoxMesh(MPI.COMM_WORLD, [x0, x1], [1, 1, 2], CellType.hexahedron)
     x2 = numpy.array([0, 0, 1 + eps])
     x3 = numpy.array([1, 1, 2])
-    mesh_1 = BoxMesh(MPI.COMM_WORLD, [x2, x3], [1, 1, 2], cpp.mesh.CellType.hexahedron)
+    mesh_1 = BoxMesh(MPI.COMM_WORLD, [x2, x3], [1, 1, 2], CellType.hexahedron)
     if padding:
         pad = eps
     else:
@@ -368,7 +368,7 @@ def test_surface_bbtree():
 
 def test_sub_bbtree():
     """Testing point collision with a BoundingBoxTree of sub entitites"""
-    mesh = UnitCubeMesh(MPI.COMM_WORLD, 4, 4, 4, cell_type=cpp.mesh.CellType.hexahedron)
+    mesh = UnitCubeMesh(MPI.COMM_WORLD, 4, 4, 4, cell_type=CellType.hexahedron)
     tdim = mesh.topology.dim
     fdim = tdim - 1
 
@@ -395,7 +395,7 @@ def test_sub_bbtree():
         assert len(cells.links(0)) == 0
 
 
-@pytest.mark.parametrize("ct", [cpp.mesh.CellType.hexahedron, cpp.mesh.CellType.tetrahedron])
+@pytest.mark.parametrize("ct", [CellType.hexahedron, CellType.tetrahedron])
 @pytest.mark.parametrize("N", [7, 13])
 def test_sub_bbtree_box(ct, N):
     """Test that the bounding box of the stem of the bounding box tree is what we expect"""
@@ -423,8 +423,8 @@ def test_sub_bbtree_box(ct, N):
 def test_surface_bbtree_collision():
     """Compute collision between two meshes, where only one cell of each mesh are colliding"""
     tdim = 3
-    mesh1 = UnitCubeMesh(MPI.COMM_WORLD, 3, 3, 3, cpp.mesh.CellType.hexahedron)
-    mesh2 = UnitCubeMesh(MPI.COMM_WORLD, 3, 3, 3, cpp.mesh.CellType.hexahedron)
+    mesh1 = UnitCubeMesh(MPI.COMM_WORLD, 3, 3, 3, CellType.hexahedron)
+    mesh2 = UnitCubeMesh(MPI.COMM_WORLD, 3, 3, 3, CellType.hexahedron)
     mesh2.geometry.x[:, :] += numpy.array([0.9, 0.9, 0.9])
 
     sf = cpp.mesh.exterior_facet_indices(mesh1)

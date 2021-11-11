@@ -10,8 +10,9 @@ import dolfinx
 import numpy as np
 import pytest
 import ufl
-from dolfinx.cpp.mesh import CellType, GhostMode, partition_cells_graph
+from dolfinx.cpp.mesh import partition_cells_graph
 from dolfinx.io import XDMFFile
+from dolfinx.mesh import CellType, GhostMode
 from dolfinx_utils.test.fixtures import tempdir
 from mpi4py import MPI
 
