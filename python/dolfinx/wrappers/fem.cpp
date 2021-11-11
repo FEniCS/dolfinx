@@ -157,12 +157,13 @@ void declare_functions(py::module& m)
       "assemble_scalar",
       [](const dolfinx::fem::Form<T>& M,
          const py::array_t<T, py::array::c_style>& constants,
-         const py::array_t<T, py::array::c_style>& coeffs)
+         const std::map<std::pair<dolfinx::fem::IntegralType, int>,
+                                  py::array_t<T, py::array::c_style>>& coefficients)
       {
+        auto _coefficients = py_to_cpp_coeffs(coefficients);
+
         return dolfinx::fem::assemble_scalar<T>(
-            M, constants,
-            {xtl::span<const T>(coeffs.data(), coeffs.size()),
-             coeffs.shape(1)});
+            M, constants, _coefficients);
       },
       "Assemble functional over mesh with provided constants and "
       "coefficients");

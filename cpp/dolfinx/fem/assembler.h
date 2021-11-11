@@ -34,11 +34,10 @@ class FunctionSpace;
 /// process
 template <typename T>
 T assemble_scalar(const Form<T>& M, const xtl::span<const T>& constants,
-                  const std::pair<xtl::span<const T>, int>& coeffs)
+                  const std::map<std::pair<IntegralType, int>,
+                                 std::pair<std::vector<T>, int>>& coefficients)
 {
-  // FIXME HACK UNCOMMENT
-  // return impl::assemble_scalar(M, constants, coeffs.first, coeffs.second);
-  throw std::exception();
+  return impl::assemble_scalar(M, constants, coefficients);
 }
 
 /// Assemble functional into scalar
@@ -50,8 +49,8 @@ template <typename T>
 T assemble_scalar(const Form<T>& M)
 {
   const std::vector<T> constants = pack_constants(M);
-  const auto [coeffs, cstride] = pack_coefficients(M);
-  return assemble_scalar(M, tcb::make_span(constants), {coeffs, cstride});
+  const auto coefficients = pack_coefficients(M);
+  return assemble_scalar(M, tcb::make_span(constants), coefficients);
 }
 
 // -- Vectors ----------------------------------------------------------------
