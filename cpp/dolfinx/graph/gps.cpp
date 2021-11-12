@@ -6,7 +6,6 @@
 
 #include "gps.h"
 #include <algorithm>
-#include <iostream>
 #include <limits>
 
 #include <dolfinx/common/log.h>
@@ -210,15 +209,6 @@ std::vector<int> graph::gps_reorder(const graph::AdjacencyList<int>& graph)
   }
 
   std::vector<std::vector<int>> rgc = residual_graph_components(graph, rg);
-  std::cout << "rgc = [";
-  for (auto q : rgc)
-  {
-    std::cout << "[";
-    for (auto w : q)
-      std::cout << w << " ";
-    std::cout << "]\n";
-  }
-  std::cout << "]\n";
 
   // Width of levels with additional entries from rgc
   std::vector<int> wn(k), wh(k), wl(k);
@@ -326,7 +316,11 @@ std::vector<int> graph::gps_reorder(const graph::AdjacencyList<int>& graph)
     rv.insert(rv.end(), rv_next.begin(), rv_next.end());
   }
 
-  assert(static_cast<int>(rv.size()) == n);
+  if (static_cast<int>(rv.size()) != n)
+  {
+    throw std::runtime_error(
+        "Numbering incomplete: probably disconnected graph");
+  }
 
   // Reverse permutation
   std::vector<int> r(n);
