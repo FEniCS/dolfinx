@@ -736,7 +736,6 @@ pack_coefficients(const Expression<T>& u,
   // Get mesh
   std::shared_ptr<const mesh::Mesh> mesh = u.mesh();
   assert(mesh);
-  const int tdim = mesh->topology().dim();
 
   const int cstride = offsets.back();
 

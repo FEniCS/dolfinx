@@ -105,7 +105,6 @@ public:
     // Prepare cell geometry
     const graph::AdjacencyList<std::int32_t>& x_dofmap
         = _mesh->geometry().dofmap();
-    const fem::CoordinateElement& cmap = _mesh->geometry().cmap();
 
     // FIXME: Add proper interface for num coordinate dofs
     const std::size_t num_dofs_g = x_dofmap.num_links(0);
