@@ -67,7 +67,7 @@ void _lift_bc_cells(
   // Data structures used in bc application
   std::vector<double> coordinate_dofs(3 * num_dofs_g);
   std::vector<T> Ae, be;
-  for (std::int32_t index = 0; index < cells.size(); ++index)
+  for (std::size_t index = 0; index < cells.size(); ++index)
   {
     auto c = cells[index];
 
@@ -227,7 +227,7 @@ void _lift_bc_exterior_facets(
   std::vector<double> coordinate_dofs(3 * num_dofs_g);
   std::vector<T> Ae, be;
 
-  for (std::int32_t index = 0; index < facets.size(); ++index)
+  for (std::size_t index = 0; index < facets.size(); ++index)
   {
     std::int32_t cell = facets[index].first;
     int local_facet = facets[index].second;
@@ -349,7 +349,7 @@ void _lift_bc_interior_facets(
   // Temporaries for joint dofmaps
   std::vector<std::int32_t> dmapjoint0, dmapjoint1;
 
-  for (std::int32_t index = 0; index < facets.size(); ++index)
+  for (std::size_t index = 0; index < facets.size(); ++index)
   {
     const std::array<std::int32_t, 2> cells
         = {std::get<0>(facets[index]), std::get<2>(facets[index])};
@@ -527,7 +527,7 @@ void assemble_cells(
   const xtl::span<T> _be(be);
 
   // Iterate over active cells
-  for (std::int32_t index = 0; index < cells.size(); ++index)
+  for (std::size_t index = 0; index < cells.size(); ++index)
   {
     auto c = cells[index];
 
@@ -603,7 +603,7 @@ void assemble_exterior_facets(
   std::vector<T> be(bs * num_dofs);
   const xtl::span<T> _be(be);
 
-  for (std::int32_t index = 0; index < facets.size(); ++index)
+  for (std::size_t index = 0; index < facets.size(); ++index)
   {
     std::int32_t cell = facets[index].first;
     int local_facet = facets[index].second;
@@ -682,7 +682,7 @@ void assemble_interior_facets(
 
   const int bs = dofmap.bs();
   assert(_bs < 0 or _bs == bs);
-  for (std::int32_t index = 0; index < facets.size(); ++index)
+  for (std::size_t index = 0; index < facets.size(); ++index)
   {
     const std::array<std::int32_t, 2> cells
         = {std::get<0>(facets[index]), std::get<2>(facets[index])};

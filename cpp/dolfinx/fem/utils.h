@@ -511,7 +511,7 @@ void pack_coefficient_cell(
 {
   const int bs = dofmap.bs();
   // TODO Use better name than index
-  for (std::int32_t index = 0; index < active_cells.size(); ++index)
+  for (std::size_t index = 0; index < active_cells.size(); ++index)
   {
     auto cell = active_cells[index];
 
@@ -532,7 +532,7 @@ void pack_coefficient_exterior_facet(
 {
   const int bs = dofmap.bs();
   // TODO Use better name than index
-  for (std::int32_t index = 0; index < active_facets.size(); ++index)
+  for (std::size_t index = 0; index < active_facets.size(); ++index)
   {
     auto cell = active_facets[index].first;
 
@@ -554,7 +554,7 @@ void pack_coefficient_interior_facet(
 {
   const int bs = dofmap.bs();
   // TODO Use better name than index
-  for (std::int32_t index = 0; index < active_facets.size(); ++index)
+  for (std::size_t index = 0; index < active_facets.size(); ++index)
   {
     const std::array<std::int32_t, 2> cells = {
         std::get<0>(active_facets[index]), std::get<2>(active_facets[index])};
@@ -591,7 +591,6 @@ pack_coefficients(const Form<T>& u, fem::IntegralType integral_type, const int i
   // Get mesh
   std::shared_ptr<const mesh::Mesh> mesh = u.mesh();
   assert(mesh);
-  const int tdim = mesh->topology().dim();
 
   const int cstride = offsets.back();
 
