@@ -75,7 +75,7 @@ void assemble_cells(
   std::vector<double> coordinate_dofs(3 * num_dofs_g);
 
   // Iterate over active cells
-  for (std::int32_t index = 0; index < cells.size(); ++index)
+  for (std::size_t index = 0; index < cells.size(); ++index)
   {
     auto c = cells[index];
 
@@ -179,7 +179,7 @@ void assemble_exterior_facets(
   std::vector<T> Ae(ndim0 * ndim1);
   const xtl::span<T> _Ae(Ae);
 
-  for (std::int32_t index = 0; index < facets.size(); ++index)
+  for (std::size_t index = 0; index < facets.size(); ++index)
   {
     std::int32_t cell = facets[index].first;
     int local_facet = facets[index].second;
@@ -285,7 +285,7 @@ void assemble_interior_facets(
   // Temporaries for joint dofmaps
   std::vector<std::int32_t> dmapjoint0, dmapjoint1;
 
-  for (std::int32_t index = 0; index < facets.size(); ++index)
+  for (std::size_t index = 0; index < facets.size(); ++index)
   {
     const std::array<std::int32_t, 2> cells
         = {std::get<0>(facets[index]), std::get<2>(facets[index])};

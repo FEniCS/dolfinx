@@ -41,7 +41,7 @@ T assemble_cells(const mesh::Geometry& geometry,
 
   // Iterate over all cells
   T value(0);
-  for (std::int32_t index = 0; index < cells.size(); ++index)
+  for (std::size_t index = 0; index < cells.size(); ++index)
   {
     auto c = cells[index];
 
@@ -88,7 +88,7 @@ T assemble_exterior_facets(
 
   // Iterate over all facets
   T value(0);
-  for (std::int32_t index = 0; index < facets.size(); ++index)
+  for (std::size_t index = 0; index < facets.size(); ++index)
   {
     std::int32_t cell = facets[index].first;
     int local_facet = facets[index].second;
@@ -140,7 +140,7 @@ T assemble_interior_facets(
 
   // Iterate over all facets
   T value = 0;
-  for (std::int32_t index = 0; index < facets.size(); ++index)
+  for (std::size_t index = 0; index < facets.size(); ++index)
   {
     const std::array<std::int32_t, 2> cells
         = {std::get<0>(facets[index]), std::get<2>(facets[index])};
