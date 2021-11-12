@@ -1,6 +1,6 @@
 # Copyright (C) 2015 Garth N. Wells
 #
-# This file is part of DOLFINX (https://www.fenicsproject.org)
+# This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for the DiscreteOperator class"""
@@ -9,7 +9,7 @@ import numpy
 import pytest
 from dolfinx import FunctionSpace, UnitCubeMesh, UnitSquareMesh
 from dolfinx.cpp.fem import create_discrete_gradient
-from dolfinx.cpp.mesh import GhostMode
+from dolfinx.mesh import GhostMode
 from dolfinx_utils.test.skips import skip_in_parallel
 from mpi4py import MPI
 from petsc4py import PETSc

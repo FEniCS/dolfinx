@@ -1,6 +1,6 @@
 # Copyright (C) 2018 Igor A. Baratta
 #
-# This file is part of DOLFINX (https://www.fenicsproject.org)
+# This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for assembly in complex mode"""
@@ -14,7 +14,7 @@ from petsc4py import PETSc
 from ufl import dx, grad, inner
 
 pytestmark = pytest.mark.skipif(
-    not dolfinx.has_petsc_complex, reason="Only works in complex mode.")
+    not np.issubdtype(PETSc.ScalarType, np.complexfloating), reason="Only works in complex mode.")
 
 
 def test_complex_assembly():

@@ -1,6 +1,6 @@
 # Copyright (C) 2020 Igor A. Baratta
 #
-# This file is part of DOLFINX (https://www.fenicsproject.org)
+# This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -10,8 +10,9 @@ import dolfinx
 import numpy as np
 import pytest
 import ufl
-from dolfinx.cpp.mesh import CellType, GhostMode, partition_cells_graph
+from dolfinx.cpp.mesh import partition_cells_graph
 from dolfinx.io import XDMFFile
+from dolfinx.mesh import CellType, GhostMode
 from dolfinx_utils.test.fixtures import tempdir
 from mpi4py import MPI
 
@@ -19,7 +20,7 @@ assert (tempdir)
 
 
 @pytest.mark.parametrize("partitioner", [partition_cells_graph])
-@pytest.mark.parametrize("Nx", [2, 5, 10])
+@pytest.mark.parametrize("Nx", [5, 10])
 @pytest.mark.parametrize("cell_type", [CellType.tetrahedron, CellType.hexahedron])
 def test_partition_box_mesh(partitioner, Nx, cell_type):
     mesh = dolfinx.BoxMesh(MPI.COMM_WORLD, [np.array([0, 0, 0]),
@@ -53,7 +54,7 @@ def test_custom_partitioner(tempdir, Nx, cell_type):
 
     # Read topology data
     with XDMFFile(MPI.COMM_WORLD, filename, "r") as file:
-        cell_type = file.read_cell_type()
+        cell_shape, cell_degree = file.read_cell_type()
         x = file.read_geometry_data()
         topo = file.read_topology_data()
 
@@ -66,8 +67,8 @@ def test_custom_partitioner(tempdir, Nx, cell_type):
     rank = mpi_comm.rank
     assert (np.all(x_global[all_ranges[rank]:all_ranges[rank + 1]] == x))
 
-    cell = ufl.Cell(dolfinx.cpp.mesh.to_string(cell_type[0]))
-    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell, cell_type[1]))
+    cell = ufl.Cell(cell_shape.name)
+    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell, cell_degree))
 
     # Partition mesh in layers, capture geometrical data and topological
     # data from outer scope
@@ -78,7 +79,6 @@ def test_custom_partitioner(tempdir, Nx, cell_type):
 
     ghost_mode = GhostMode.none
     new_mesh = dolfinx.mesh.create_mesh(mpi_comm, topo, x, domain, ghost_mode, partitioner)
-    new_mesh.topology.create_connectivity_all()
 
     tdim = new_mesh.topology.dim
     assert mesh.topology.index_map(tdim).size_global == new_mesh.topology.index_map(tdim).size_global

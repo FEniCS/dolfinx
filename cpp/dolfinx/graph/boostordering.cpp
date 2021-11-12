@@ -1,18 +1,18 @@
 // Copyright (C) 2012 Garth N. Wells
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #define BOOST_NO_HASH
 
 #include "boostordering.h"
-#include "AdjacencyList.h"
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/compressed_sparse_row_graph.hpp>
 #include <boost/graph/cuthill_mckee_ordering.hpp>
 #include <boost/graph/properties.hpp>
 #include <dolfinx/common/Timer.h>
+#include <dolfinx/graph/AdjacencyList.h>
 #include <numeric>
 
 using namespace dolfinx;

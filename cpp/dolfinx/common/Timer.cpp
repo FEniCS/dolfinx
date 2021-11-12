@@ -1,11 +1,12 @@
 // Copyright (C) 2010 Garth N. Wells, 2015 Jan Blechta
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "Timer.h"
 #include "TimeLogManager.h"
+#include "TimeLogger.h"
 #include <stdexcept>
 
 using namespace dolfinx;

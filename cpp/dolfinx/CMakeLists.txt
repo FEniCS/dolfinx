@@ -62,8 +62,15 @@ target_include_directories(dolfinx SYSTEM PUBLIC ${UFC_INCLUDE_DIRS})
 # Basix
 target_link_libraries(dolfinx PUBLIC Basix::basix)
 
-# Eigen3
-target_include_directories(dolfinx SYSTEM PRIVATE ${EIGEN3_INCLUDE_DIR})
+# xtensor
+target_link_libraries(dolfinx PUBLIC xtl)
+target_link_libraries(dolfinx PUBLIC xtensor)
+if("XTENSOR_USE_XSIMD" IN_LIST BASIX_DEFN)
+  target_link_libraries(dolfinx PUBLIC xsimd)
+endif()
+if(XTENSOR_OPTIMIZE)
+  target_link_libraries(dolfinx PUBLIC xtensor::optimize)
+endif()
 
 # Boost
 target_link_libraries(dolfinx PUBLIC Boost::headers)
@@ -78,9 +85,15 @@ target_link_libraries(dolfinx PUBLIC PETSC::petsc)
 target_link_libraries(dolfinx PRIVATE PETSC::petsc_static)
 
 # HDF5
-target_compile_definitions(dolfinx PUBLIC ${HDF5_DEFINITIONS})
-target_link_libraries(dolfinx PUBLIC ${HDF5_C_LIBRARIES})
-target_include_directories(dolfinx SYSTEM PUBLIC ${HDF5_INCLUDE_DIRS})
+if (TARGET hdf5::hdf5)
+  target_link_libraries(dolfinx PUBLIC hdf5::hdf5)
+else()
+  # This is the old-style CMake (3.18 and earlier), remove when no
+  # longer supporting older CMake
+  target_compile_definitions(dolfinx PUBLIC ${HDF5_DEFINITIONS})
+  target_link_libraries(dolfinx PUBLIC ${HDF5_C_LIBRARIES})
+  target_include_directories(dolfinx SYSTEM PUBLIC ${HDF5_INCLUDE_DIRS})
+endif()
 
 # SCOTCH
 target_link_libraries(dolfinx PRIVATE ${SCOTCH_LIBRARIES})
@@ -88,6 +101,12 @@ target_include_directories(dolfinx SYSTEM PRIVATE ${SCOTCH_INCLUDE_DIRS})
 
 #------------------------------------------------------------------------------
 # Optional packages
+
+# ADIOS2
+if (ADIOS2_FOUND)
+  target_compile_definitions(dolfinx PUBLIC HAS_ADIOS2)
+  target_link_libraries(dolfinx PRIVATE adios2::cxx11_mpi)
+endif()
 
 # SLEPC
 if (DOLFINX_ENABLE_SLEPC AND SLEPC_FOUND)
@@ -210,6 +229,14 @@ endforeach()
 get_target_property(PKG_DOLFINX_DEFINITIONS dolfinx INTERFACE_COMPILE_DEFINITIONS)
 set(PKG_DEFINITIONS)
 foreach(_def ${PKG_DOLFINX_DEFINITIONS})
+  set(PKG_DEFINITIONS "${PKG_DEFINITIONS} -D${_def}")
+endforeach()
+
+# Get basix definitions (this is required to propagate Basix definition
+# to the pkg-config file, in the future Basix should create its own
+# basix.pc file, see https://github.com/FEniCS/basix/issues/204)
+get_target_property(PKG_BASIX_DEFINITIONS Basix::basix INTERFACE_COMPILE_DEFINITIONS)
+foreach(_def ${PKG_BASIX_DEFINITIONS})
   set(PKG_DEFINITIONS "${PKG_DEFINITIONS} -D${_def}")
 endforeach()
 

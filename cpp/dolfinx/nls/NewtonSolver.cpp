@@ -1,6 +1,6 @@
 // Copyright (C) 2005-2021 Garth N. Wells
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -113,6 +113,16 @@ void nls::NewtonSolver::setP(const std::function<void(const Vec, Mat)>& P,
   PetscObjectReference((PetscObject)_matP);
 }
 //-----------------------------------------------------------------------------
+const la::PETScKrylovSolver& nls::NewtonSolver::get_krylov_solver() const
+{
+  return _solver;
+}
+//-----------------------------------------------------------------------------
+la::PETScKrylovSolver& nls::NewtonSolver::get_krylov_solver()
+{
+  return _solver;
+}
+//-----------------------------------------------------------------------------
 void nls::NewtonSolver::set_form(const std::function<void(Vec)>& form)
 {
   _system = form;
@@ -208,6 +218,13 @@ std::pair<int, bool> dolfinx::nls::NewtonSolver::solve(Vec x)
     if (_system)
       _system(x);
     _fnF(x, _b);
+    // Initialize _residual0
+    if (_iteration == 1)
+    {
+      PetscReal _r = 0.0;
+      VecNorm(_dx, NORM_2, &_r);
+      _residual0 = _r;
+    }
 
     // Test for convergence
     if (convergence_criterion == "residual")
@@ -218,9 +235,6 @@ std::pair<int, bool> dolfinx::nls::NewtonSolver::solve(Vec x)
       // set.
       if (_iteration == 1)
       {
-        PetscReal _r = 0.0;
-        VecNorm(_dx, NORM_2, &_r);
-        _residual0 = _r;
         _residual = 1.0;
         newton_converged = false;
       }

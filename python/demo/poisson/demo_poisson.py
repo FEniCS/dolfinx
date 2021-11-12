@@ -73,15 +73,13 @@
 #
 # First, the :py:mod:`dolfinx` module is imported: ::
 
-import dolfinx
 import numpy as np
 import ufl
 from dolfinx import (DirichletBC, Function, FunctionSpace, RectangleMesh, fem,
                      plot)
-from dolfinx.cpp.mesh import CellType
 from dolfinx.fem import locate_dofs_topological
 from dolfinx.io import XDMFFile
-from dolfinx.mesh import locate_entities_boundary
+from dolfinx.mesh import CellType, GhostMode, locate_entities_boundary
 from mpi4py import MPI
 from petsc4py import PETSc
 from ufl import ds, dx, grad, inner
@@ -97,7 +95,7 @@ from ufl import ds, dx, grad, inner
 mesh = RectangleMesh(
     MPI.COMM_WORLD,
     [np.array([0, 0, 0]), np.array([1, 1, 0])], [32, 32],
-    CellType.triangle, dolfinx.cpp.mesh.GhostMode.none)
+    CellType.triangle, GhostMode.none)
 
 V = FunctionSpace(mesh, ("Lagrange", 1))
 
@@ -206,7 +204,7 @@ try:
 
     topology, cell_types = plot.create_vtk_topology(mesh, mesh.topology.dim)
     grid = pyvista.UnstructuredGrid(topology, cell_types, mesh.geometry.x)
-    grid.point_arrays["u"] = uh.compute_point_values().real
+    grid.point_data["u"] = uh.compute_point_values().real
     grid.set_active_scalars("u")
 
     plotter = pyvista.Plotter()
@@ -216,8 +214,7 @@ try:
 
     # If pyvista environment variable is set to off-screen (static) plotting save png
     if pyvista.OFF_SCREEN:
-        from pyvista.utilities.xvfb import start_xvfb
-        start_xvfb(wait=0)
+        pyvista.start_xvfb(wait=0.1)
         plotter.screenshot("uh.png")
     else:
         plotter.show()

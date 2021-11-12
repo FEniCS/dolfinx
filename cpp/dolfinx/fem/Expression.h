@@ -1,26 +1,20 @@
 // Copyright (C) 2020 - 2021 Jack S. Hale and Michal Habera
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #pragma once
 
-#include <dolfinx/common/array2d.h>
-#include <dolfinx/fem/utils.h>
+#include <dolfinx/mesh/Mesh.h>
 #include <functional>
 #include <utility>
 #include <vector>
+#include <xtensor/xarray.hpp>
+#include <xtensor/xtensor.hpp>
+#include <xtl/xspan.hpp>
 
-namespace dolfinx
-{
-
-namespace mesh
-{
-class Mesh;
-}
-
-namespace fem
+namespace dolfinx::fem
 {
 template <typename T>
 class Constant;
@@ -38,7 +32,7 @@ template <typename T>
 class Expression
 {
 public:
-  /// Create Expression
+  /// Create an Expression
   ///
   /// @param[in] coefficients Coefficients in the Expression
   /// @param[in] constants Constants in the Expression
@@ -50,13 +44,14 @@ public:
   Expression(
       const std::vector<std::shared_ptr<const fem::Function<T>>>& coefficients,
       const std::vector<std::shared_ptr<const fem::Constant<T>>>& constants,
-      const std::shared_ptr<const mesh::Mesh>& mesh, const array2d<double>& X,
+      const std::shared_ptr<const mesh::Mesh>& mesh,
+      const xt::xtensor<double, 2>& X,
       const std::function<void(T*, const T*, const T*, const double*,
-                               const int*, const uint8_t*, uint32_t)>
+                               const int*, const uint8_t*)>
           fn,
       const std::vector<int>& value_shape,
       const std::vector<int>& num_argument_dofs)
-      : _coefficients(coefficients), _constants(constants), _mesh(mesh), _x(X),
+      : _coefficients(coefficients), _constants(constants), _mesh(mesh), _X(X),
         _fn(fn), _value_shape(value_shape),
         _num_argument_dofs(num_argument_dofs)
   {
@@ -91,6 +86,64 @@ public:
     return n;
   }
 
+  /// Evaluate the expression on cells
+  /// @param[in] active_cells Cells on which to evaluate the Expression
+  /// @param[out] values A 2D array to store the result. Caller
+  /// responsible for correct sizing which should be (num_cells,
+  /// num_points * value_size columns).
+  template <typename U>
+  void eval(const xtl::span<const std::int32_t>& active_cells, U& values) const
+  {
+    static_assert(std::is_same<T, typename U::value_type>::value,
+                  "Expression and array types must be the same");
+
+    // Extract data from Expression
+    assert(_mesh);
+
+    // Prepare coefficients and constants
+    const auto [coeffs, cstride] = pack_coefficients(*this);
+    const std::vector<T> constant_data = pack_constants(*this);
+
+    // Prepare cell geometry
+    const graph::AdjacencyList<std::int32_t>& x_dofmap
+        = _mesh->geometry().dofmap();
+    const fem::CoordinateElement& cmap = _mesh->geometry().cmap();
+
+    // FIXME: Add proper interface for num coordinate dofs
+    const std::size_t num_dofs_g = x_dofmap.num_links(0);
+    const xt::xtensor<double, 2>& x_g = _mesh->geometry().x();
+
+    // Create data structures used in evaluation
+    std::vector<double> coordinate_dofs(3 * num_dofs_g);
+
+    const int num_all_argument_dofs
+        = std::accumulate(num_argument_dofs().begin(),
+                          num_argument_dofs().end(), 1, std::multiplies<int>());
+    std::vector<T> values_local(
+        num_points() * value_size() * num_all_argument_dofs, 0);
+
+    // Iterate over cells and 'assemble' into values
+    for (std::size_t c = 0; c < active_cells.size(); ++c)
+    {
+      const std::int32_t cell = active_cells[c];
+
+      auto x_dofs = x_dofmap.links(cell);
+      for (std::size_t i = 0; i < x_dofs.size(); ++i)
+      {
+        std::copy_n(xt::row(x_g, x_dofs[i]).cbegin(), 3,
+                    std::next(coordinate_dofs.begin(), 3 * i));
+      }
+
+      const T* coeff_cell = coeffs.data() + cell * cstride;
+      std::fill(values_local.begin(), values_local.end(), 0.0);
+      _fn(values_local.data(), coeff_cell, constant_data.data(),
+         coordinate_dofs.data(), nullptr, nullptr);
+
+      for (std::size_t j = 0; j < values_local.size(); ++j)
+        values(c, j) = values_local[j];
+    }
+  }
+
   /// Get function for tabulate_expression.
   /// @param[out] fn Function to tabulate expression.
   const std::function<void(T*, const T*, const T*, const double*, const int*,
@@ -115,7 +168,7 @@ public:
 
   /// Get evaluation points on reference cell
   /// @return Evaluation points
-  const array2d<double>& x() const { return _x; }
+  const xt::xtensor<double, 2>& X() const { return _X; }
 
   /// Get value size
   /// @return value_size
@@ -128,81 +181,14 @@ public:
   /// Get value shape
   const std::vector<int>& value_shape() const { return _value_shape; }
 
-  /// Get number of points
-  /// @return number of points
-  const std::size_t num_points() const { return _x.shape[0]; }
+  /// Get number of evaluation points in cell
+  /// @return number of points in cell
+  const std::size_t num_points() const { return _X.shape(0); }
 
   /// Get number of degrees-of-freedom for arguments
   const std::vector<int>& num_argument_dofs() const
   {
     return _num_argument_dofs;
-  }
-
-  /// Scalar type (T).
-  using scalar_type = T;
-
-  /// Evaluate Expression at active cells
-  array2d<T> eval(const tcb::span<const std::int32_t>& active_cells)
-  {
-    // Extract data from Expression
-    assert(_mesh);
-
-    // Prepare coefficients
-    const array2d<T> coeffs = dolfinx::fem::pack_coefficients(*this);
-
-    // Prepare constants
-    const std::vector<T> constant_values = dolfinx::fem::pack_constants(*this);
-
-    // Prepare cell geometry
-    const graph::AdjacencyList<std::int32_t>& x_dofmap
-        = _mesh->geometry().dofmap();
-    const fem::CoordinateElement& cmap = _mesh->geometry().cmap();
-
-    // FIXME: Add proper interface for num coordinate dofs
-    const int num_dofs_g = x_dofmap.num_links(0);
-    const array2d<double>& x_g = _mesh->geometry().x();
-
-    // Create data structures used in evaluation
-    const int gdim = _mesh->geometry().dim();
-    array2d<double> coordinate_dofs(num_dofs_g, gdim);
-
-    // Iterate over cells and 'assemble' into values
-    int num_all_argument_dofs
-        = std::accumulate(num_argument_dofs().begin(),
-                          num_argument_dofs().end(), 1, std::multiplies<int>());
-    std::vector<T> values_local(num_points() * value_size() * num_all_argument_dofs,
-                            0);
-
-    // Dummy values, not required for cell expressions
-    const int entity_local_index = 0;
-    const uint8_t quadrature_permutation = 0;
-
-    // Allocate memory for all results
-    array2d<T> values(active_cells.size(), values_local.size());
-
-    for (std::size_t i = 0; i < active_cells.size(); ++i)
-    {
-      const std::int32_t c = active_cells[i];
-      assert(c < x_dofmap.num_nodes());
-      auto x_dofs = x_dofmap.links(c);
-      for (int j = 0; j < num_dofs_g; ++j)
-      {
-        const auto x_dof = x_dofs[j];
-        for (int k = 0; k < gdim; ++k)
-          coordinate_dofs(j, k) = x_g(x_dof, k);
-      }
-
-      auto coeff_cell = coeffs.row(c);
-      std::fill(values_local.begin(), values_local.end(), 0.0);
-      _fn(values_local.data(), coeff_cell.data(), constant_values.data(),
-          coordinate_dofs.data(), &entity_local_index, &quadrature_permutation,
-          0);
-
-      for (std::size_t j = 0; j < values_local.size(); ++j)
-        values(i, j) = values_local[j];
-    }
-
-    return values;
   }
 
 private:
@@ -217,11 +203,11 @@ private:
 
   // Function to evaluate the Expression
   std::function<void(T*, const T*, const T*, const double*, const int*,
-                     const uint8_t*, uint32_t)>
+                     const uint8_t*)>
       _fn;
 
   // Evaluation points on reference cell
-  array2d<double> _x;
+  xt::xtensor<double, 2> _X;
 
   // The mesh
   std::shared_ptr<const mesh::Mesh> _mesh;
@@ -233,5 +219,4 @@ private:
   std::vector<int> _num_argument_dofs;
 
 };
-} // namespace fem
-} // namespace dolfinx
+} // namespace dolfinx::fem

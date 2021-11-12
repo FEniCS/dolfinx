@@ -1,6 +1,6 @@
 # Copyright (C) 2012-2019 Garth N. Wells
 #
-# This file is part of DOLFINX (https://www.fenicsproject.org)
+# This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -8,8 +8,8 @@ import os
 
 import pytest
 from dolfinx import UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh
-from dolfinx.cpp.mesh import CellType
 from dolfinx.io import XDMFFile
+from dolfinx.mesh import CellType
 from dolfinx_utils.test.fixtures import tempdir
 from mpi4py import MPI
 
@@ -54,11 +54,11 @@ def test_read_mesh_data(tempdir, tdim, n):
         file.write_mesh(mesh)
 
     with XDMFFile(MPI.COMM_WORLD, filename, "r") as file:
-        cell_type = file.read_cell_type()
+        cell_shape, cell_degree = file.read_cell_type()
         cells = file.read_topology_data()
         x = file.read_geometry_data()
 
-    assert cell_type[0] == mesh.topology.cell_type
-    assert cell_type[1] == 1
+    assert cell_shape == mesh.topology.cell_type
+    assert cell_degree == 1
     assert mesh.topology.index_map(tdim).size_global == mesh.mpi_comm().allreduce(cells.shape[0], op=MPI.SUM)
     assert mesh.geometry.index_map().size_global == mesh.mpi_comm().allreduce(x.shape[0], op=MPI.SUM)

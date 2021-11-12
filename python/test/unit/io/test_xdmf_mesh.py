@@ -1,6 +1,6 @@
 # Copyright (C) 2012-2020 Garth N. Wells and Jørgen S. Dokken
 #
-# This file is part of DOLFINX (https://www.fenicsproject.org)
+# This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -10,9 +10,8 @@ import numpy as np
 import pytest
 from dolfinx import UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh, cpp
 from dolfinx.cpp.io import perm_gmsh
-from dolfinx.cpp.mesh import CellType
 from dolfinx.io import XDMFFile, ufl_mesh_from_gmsh
-from dolfinx.mesh import create_mesh
+from dolfinx.mesh import CellType, create_mesh
 from dolfinx_utils.test.fixtures import tempdir
 from mpi4py import MPI
 

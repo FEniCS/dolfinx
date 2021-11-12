@@ -1,6 +1,6 @@
 # Copyright (C) 2021 Jørgen S. Dokken
 #
-# This file is part of DOLFINX (https://www.fenicsproject.org)
+# This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 #
@@ -14,6 +14,7 @@ import dolfinx.io
 import dolfinx.plot
 import numpy as np
 import ufl
+from dolfinx.mesh import CellType
 from mpi4py import MPI
 
 try:
@@ -25,8 +26,7 @@ except ModuleNotFoundError:
 # If environment variable PYVISTA_OFF_SCREEN is set to true save a png
 # otherwise create interactive plot
 if pyvista.OFF_SCREEN:
-    from pyvista.utilities.xvfb import start_xvfb
-    start_xvfb(wait=0.1)
+    pyvista.start_xvfb(wait=0.1)
 
 # Set some global options for all plots
 transparent = False
@@ -42,12 +42,12 @@ def int_u(x):
     return x[0] + 3 * x[1] + 5 * x[2]
 
 
-mesh = dolfinx.UnitCubeMesh(MPI.COMM_WORLD, 4, 3, 5, cell_type=dolfinx.cpp.mesh.CellType.tetrahedron)
-V = dolfinx.FunctionSpace(mesh, ("CG", 1))
+mesh = dolfinx.UnitCubeMesh(MPI.COMM_WORLD, 4, 3, 5, cell_type=CellType.tetrahedron)
+V = dolfinx.FunctionSpace(mesh, ("Lagrange", 1))
 u = dolfinx.Function(V)
 u.interpolate(int_u)
 
-# Extract mesh data from dolfin-X (only plot cells owned by the
+# Extract mesh data from DOLFINx (only plot cells owned by the
 # processor) and create a pyvista UnstructuredGrid
 num_cells = mesh.topology.index_map(mesh.topology.dim).size_local
 cell_entities = np.arange(num_cells, dtype=np.int32)
@@ -56,14 +56,14 @@ grid = pyvista.UnstructuredGrid(pyvista_cells, cell_types, mesh.geometry.x)
 
 # Compute the function values at the vertices, this is equivalent to a
 # P1 Lagrange interpolation, and can be directly attached to the Pyvista
-# mesh. Discard complex value if running dolfin-X with complex PETSc as
+# mesh. Discard complex value if running DOLFINx with complex PETSc as
 # backend
 vertex_values = u.compute_point_values()
 if np.iscomplexobj(vertex_values):
     vertex_values = vertex_values.real
 
 # Create point cloud of vertices, and add the vertex values to the cloud
-grid.point_arrays["u"] = vertex_values
+grid.point_data["u"] = vertex_values
 grid.set_active_scalars("u")
 
 # Create a pyvista plotter which is used to visualize the output
@@ -125,7 +125,7 @@ def int_2D(x):
     return np.sin(np.pi * x[0]) * np.sin(2 * x[1] * np.pi)
 
 
-mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, 12, 12, cell_type=dolfinx.cpp.mesh.CellType.quadrilateral)
+mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, 12, 12, cell_type=CellType.quadrilateral)
 V = dolfinx.FunctionSpace(mesh, ("Lagrange", 1))
 u = dolfinx.Function(V)
 u.interpolate(int_2D)
@@ -139,7 +139,7 @@ grid = pyvista.UnstructuredGrid(pyvista_cells, cell_types, mesh.geometry.x)
 point_values = u.compute_point_values()
 if np.iscomplexobj(point_values):
     point_values = point_values.real
-grid.point_arrays["u"] = point_values
+grid.point_data["u"] = point_values
 
 # We set the function "u" as the active scalar for the mesh, and warp
 # the mesh in z-direction by its values
@@ -176,12 +176,12 @@ def in_circle(x):
 # Create a dolfinx.MeshTag for all cells. If midpoint is inside the
 # circle, it gets value 1, otherwise 0.
 num_cells = mesh.topology.index_map(mesh.topology.dim).size_local
-midpoints = dolfinx.cpp.mesh.midpoints(mesh, mesh.topology.dim, list(np.arange(num_cells, dtype=np.int32)))
+midpoints = dolfinx.mesh.midpoints(mesh, mesh.topology.dim, list(np.arange(num_cells, dtype=np.int32)))
 cell_tags = dolfinx.MeshTags(mesh, mesh.topology.dim, np.arange(num_cells), in_circle(midpoints))
 
 # As the dolfinx.MeshTag contains a value for every cell in the
 # geometry, we can attach it directly to the grid
-grid.cell_arrays["Marker"] = cell_tags.values
+grid.cell_data["Marker"] = cell_tags.values
 grid.set_active_scalars("Marker")
 
 # We create a plotter consisting of two windows, and add a plot of the
@@ -246,7 +246,7 @@ values = uh.vector.array.real if np.iscomplexobj(uh.vector.array) else uh.vector
 # We create a pyvista mesh from the topology and geometry, and attach
 # the coefficients of the degrees of freedom
 grid = pyvista.UnstructuredGrid(topology, cell_types, geometry)
-grid.point_arrays["DG"] = values
+grid.point_data["DG"] = values
 grid.set_active_scalars("DG")
 
 # We would also like to visualize the underlying mesh and obtain that as
@@ -287,8 +287,8 @@ def vel(x):
     return vals
 
 
-mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, 6, 6, dolfinx.cpp.mesh.CellType.triangle)
-V = dolfinx.VectorFunctionSpace(mesh, ("CG", 2))
+mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, 6, 6, CellType.triangle)
+V = dolfinx.VectorFunctionSpace(mesh, ("Lagrange", 2))
 uh = dolfinx.Function(V)
 uh.interpolate(vel)
 
@@ -356,7 +356,7 @@ def vel(x):
     return vals
 
 
-mesh = dolfinx.UnitCubeMesh(MPI.COMM_WORLD, 4, 4, 4, dolfinx.cpp.mesh.CellType.hexahedron)
+mesh = dolfinx.UnitCubeMesh(MPI.COMM_WORLD, 4, 4, 4, CellType.hexahedron)
 V = dolfinx.VectorFunctionSpace(mesh, ("DG", 2))
 uh = dolfinx.Function(V)
 uh.interpolate(vel)

@@ -5,6 +5,8 @@
 #include <dolfinx/fem/assembler.h>
 #include <dolfinx/fem/petsc.h>
 #include <dolfinx/la/Vector.h>
+#include <xtensor/xarray.hpp>
+#include <xtensor/xview.hpp>
 
 using namespace dolfinx;
 
@@ -44,7 +46,8 @@ public:
 
   auto form()
   {
-    return [](Vec x) {
+    return [](Vec x)
+    {
       VecGhostUpdateBegin(x, INSERT_VALUES, SCATTER_FORWARD);
       VecGhostUpdateEnd(x, INSERT_VALUES, SCATTER_FORWARD);
     };
@@ -53,9 +56,10 @@ public:
   /// Compute F at current point x
   auto F()
   {
-    return [&](const Vec x, Vec) {
+    return [&](const Vec x, Vec)
+    {
       // Assemble b and update ghosts
-      tcb::span b(_b.mutable_array());
+      xtl::span<PetscScalar> b(_b.mutable_array());
       std::fill(b.begin(), b.end(), 0.0);
       fem::assemble_vector<PetscScalar>(b, *_l);
       VecGhostUpdateBegin(_b_petsc, ADD_VALUES, SCATTER_REVERSE);
@@ -68,7 +72,8 @@ public:
       VecGetSize(x_local, &n);
       const PetscScalar* array = nullptr;
       VecGetArrayRead(x_local, &array);
-      fem::set_bc<PetscScalar>(b, _bcs, tcb::span(array, n), -1.0);
+      fem::set_bc<PetscScalar>(b, _bcs, xtl::span<const PetscScalar>(array, n),
+                               -1.0);
       VecRestoreArrayRead(x, &array);
     };
   }
@@ -76,11 +81,15 @@ public:
   /// Compute J = F' at current point x
   auto J()
   {
-    return [&](const Vec, Mat A) {
+    return [&](const Vec, Mat A)
+    {
       MatZeroEntries(A);
-      fem::assemble_matrix(la::PETScMatrix::set_block_fn_add(A), *_j, _bcs);
-      fem::add_diagonal(la::PETScMatrix::set_fn_add(A), *_j->function_spaces()[0],
-                        _bcs);
+      fem::assemble_matrix(la::PETScMatrix::set_block_fn(A, ADD_VALUES), *_j,
+                           _bcs);
+      MatAssemblyBegin(A, MAT_FLUSH_ASSEMBLY);
+      MatAssemblyEnd(A, MAT_FLUSH_ASSEMBLY);
+      fem::set_diagonal(la::PETScMatrix::set_fn(A, INSERT_VALUES),
+                        *_j->function_spaces()[0], _bcs);
       MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
       MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
     };
@@ -120,72 +129,65 @@ int main(int argc, char* argv[])
     // .. code-block:: cpp
 
     // Create mesh and define function space
-    auto cmap
-        = fem::create_coordinate_map(create_coordinate_map_hyperelasticity);
     auto mesh = std::make_shared<mesh::Mesh>(generation::BoxMesh::create(
         MPI_COMM_WORLD, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}}}, {10, 10, 10},
-        cmap, mesh::GhostMode::none));
+        mesh::CellType::tetrahedron, mesh::GhostMode::none));
 
-    auto V = fem::create_functionspace(
-        create_functionspace_form_hyperelasticity_F, "u", mesh);
+    auto V = std::make_shared<fem::FunctionSpace>(fem::create_functionspace(
+        functionspace_form_hyperelasticity_F, "u", mesh));
 
     // Define solution function
     auto u = std::make_shared<fem::Function<PetscScalar>>(V);
-    auto a = fem::create_form<PetscScalar>(create_form_hyperelasticity_J,
-                                           {V, V}, {{"u", u}}, {}, {});
-    auto L = fem::create_form<PetscScalar>(create_form_hyperelasticity_F, {V},
-                                           {{"u", u}}, {}, {});
+    auto a = std::make_shared<fem::Form<PetscScalar>>(
+        fem::create_form<PetscScalar>(*form_hyperelasticity_J, {V, V},
+                                      {{"u", u}}, {}, {}));
+    auto L = std::make_shared<fem::Form<PetscScalar>>(
+        fem::create_form<PetscScalar>(*form_hyperelasticity_F, {V}, {{"u", u}},
+                                      {}, {}));
 
     auto u_rotation = std::make_shared<fem::Function<PetscScalar>>(V);
-    u_rotation->interpolate([](auto& x) {
-      const double scale = 0.005;
+    u_rotation->interpolate(
+        [](auto& x)
+        {
+          constexpr double scale = 0.005;
 
-      // Center of rotation
-      const double y0 = 0.5;
-      const double z0 = 0.5;
+          // Center of rotation
+          constexpr double x1_c = 0.5;
+          constexpr double x2_c = 0.5;
 
-      // Large angle of rotation (60 degrees)
-      const double theta = 1.04719755;
+          // Large angle of rotation (60 degrees)
+          constexpr double theta = 1.04719755;
+          xt::xarray<double> values = xt::zeros_like(x);
 
-      array2d<PetscScalar> values(3, x.shape[1], 0.0);
-      for (std::size_t i = 0; i < x.shape[1]; ++i)
-      {
-        // New coordinates
-        double y = y0 + (x(1, i) - y0) * std::cos(theta)
-                   - (x(2, i) - z0) * std::sin(theta);
-        double z = z0 + (x(1, i) - y0) * std::sin(theta)
-                   + (x(2, i) - z0) * std::cos(theta);
-
-        // Rotate at right end
-        values(1, i) = scale * (y - x(1, i));
-        values(2, i) = scale * (z - x(2, i));
-      }
-
-      return values;
-    });
+          // New coordinates
+          auto x1 = xt::row(x, 1);
+          auto x2 = xt::row(x, 2);
+          xt::row(values, 1) = scale
+                               * (x1_c + (x1 - x1_c) * std::cos(theta)
+                                  - (x2 - x2_c) * std::sin(theta) - x1);
+          xt::row(values, 2) = scale
+                               * (x2_c + (x1 - x1_c) * std::sin(theta)
+                                  - (x2 - x2_c) * std::cos(theta) - x2);
+          return values;
+        });
 
     auto u_clamp = std::make_shared<fem::Function<PetscScalar>>(V);
-    u_clamp->interpolate([](auto& x) {
-      return array2d<PetscScalar>(3, x.shape[1], 0.0);
-    });
+    u_clamp->interpolate([](auto& x) -> xt::xarray<double>
+                         { return xt::zeros_like(x); });
 
     // Create Dirichlet boundary conditions
     auto u0 = std::make_shared<fem::Function<PetscScalar>>(V);
 
-    const auto bdofs_left = fem::locate_dofs_geometrical({*V}, [](auto& x) {
-      constexpr double eps = 10 * std::numeric_limits<double>::epsilon();
-      std::vector<bool> marked(x.shape[1]);
-      std::transform(x.row(0).begin(), x.row(0).end(), marked.begin(),
-                     [](double x0) { return x0 < eps; });
-      return marked;
-    });
-    const auto bdofs_right = fem::locate_dofs_geometrical({*V}, [](auto& x) {
-      constexpr double eps = 10 * std::numeric_limits<double>::epsilon();
-      std::vector<bool> marked(x.shape[1]);
-      std::transform(x.row(0).begin(), x.row(0).end(), marked.begin(),
-                     [](double x0) { return std::abs(x0 - 1) < eps; });
-      return marked;
-    });
+    const auto bdofs_left
+        = fem::locate_dofs_geometrical({*V},
+                                       [](auto& x) -> xt::xtensor<bool, 1> {
+                                         return xt::isclose(xt::row(x, 0), 0.0);
+                                       });
+    const auto bdofs_right
+        = fem::locate_dofs_geometrical({*V},
+                                       [](auto& x) -> xt::xtensor<bool, 1> {
+                                         return xt::isclose(xt::row(x, 0), 1.0);
+                                       });
 
     auto bcs
         = std::vector({std::make_shared<const fem::DirichletBC<PetscScalar>>(
@@ -201,8 +203,8 @@ int main(int argc, char* argv[])
     newton_solver.solve(u->vector());
 
     // Save solution in VTK format
-    io::VTKFile file("u.pvd");
-    file.write(*u);
+    io::VTKFile file(MPI_COMM_WORLD, "u.pvd", "w");
+    file.write({*u}, 0.0);
   }
 
   common::subsystem::finalize_petsc();

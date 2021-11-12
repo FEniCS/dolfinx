@@ -1,6 +1,6 @@
 // Copyright (C) 2005-2010 Anders Logg, 2015 Jan Blechta
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -34,10 +34,10 @@ Table timings(std::set<TimingType> type);
 
 /// List a summary of timings and tasks. ``MPI_AVG`` reduction is
 /// printed.
-/// @param[in] mpi_comm MPI Communicator
+/// @param[in] comm MPI Communicator
 /// @param[in] type Subset of { TimingType::wall, TimingType::user,
 ///                 TimingType::system }
-void list_timings(MPI_Comm mpi_comm, std::set<TimingType> type);
+void list_timings(MPI_Comm comm, std::set<TimingType> type);
 
 /// Return timing (count, total wall time, total user time, total system
 /// time) for given task.

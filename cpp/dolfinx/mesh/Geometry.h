@@ -1,31 +1,27 @@
 // Copyright (C) 2006-2020 Anders Logg and Garth N. Wells
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #pragma once
 
 #include <dolfinx/common/MPI.h>
-#include <dolfinx/common/array2d.h>
 #include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <functional>
 #include <memory>
 #include <vector>
+#include <xtensor/xbuilder.hpp>
+#include <xtensor/xtensor.hpp>
+#include <xtensor/xview.hpp>
 
-namespace dolfinx
-{
-namespace common
+namespace dolfinx::common
 {
 class IndexMap;
 }
 
-namespace fem
-{
-class CoordinateElement;
-} // namespace fem
-
-namespace mesh
+namespace dolfinx::mesh
 {
 class Topology;
 
@@ -39,22 +35,26 @@ public:
   Geometry(const std::shared_ptr<const common::IndexMap>& index_map,
            AdjacencyList32&& dofmap, const fem::CoordinateElement& element,
            Array&& x, Vector64&& input_global_indices)
-      : _dim(x.shape[1]), _dofmap(std::forward<AdjacencyList32>(dofmap)),
+      : _dim(x.shape(1)), _dofmap(std::forward<AdjacencyList32>(dofmap)),
         _index_map(index_map), _cmap(element), _x(std::forward<Array>(x)),
         _input_global_indices(std::forward<Vector64>(input_global_indices))
   {
-    assert(_x.shape[1] > 0 and _x.shape[1] <= 3);
-    if (_x.shape[0] != _input_global_indices.size())
+    assert(_x.shape(1) > 0 and _x.shape(1) <= 3);
+    if (_x.shape(0) != _input_global_indices.size())
       throw std::runtime_error("Size mis-match");
 
     // Make all geometry 3D
     if (_dim != 3)
     {
-      array2d<double> coords(_x.shape[0], 3, 0.0);
-      for (std::size_t i = 0; i < _x.shape[0]; ++i)
-        for (std::size_t j = 0; j < _x.shape[1]; ++j)
-          coords(i, j) = _x(i, j);
-      std::swap(coords, _x);
+      xt::xtensor<double, 2> c
+          = xt::zeros<double>({_x.shape(0), static_cast<std::size_t>(3)});
+
+      // The below should work, but misbehaves with the Intel icpx compiler
+      // xt::view(c, xt::all(), xt::range(0, _dim)) = _x;
+      auto x_view = xt::view(c, xt::all(), xt::range(0, _dim));
+      x_view.assign(_x);
+
+      std::swap(c, _x);
     }
   }
 
@@ -83,10 +83,10 @@ public:
   std::shared_ptr<const common::IndexMap> index_map() const;
 
   /// Geometry degrees-of-freedom
-  array2d<double>& x();
+  xt::xtensor<double, 2>& x();
 
   /// Geometry degrees-of-freedom
-  const array2d<double>& x() const;
+  const xt::xtensor<double, 2>& x() const;
 
   /// The element that describes the geometry map
   /// @return The coordinate/geometry element
@@ -109,18 +109,21 @@ private:
   fem::CoordinateElement _cmap;
 
   // Coordinates for all points stored as a contiguous array
-  array2d<double> _x;
+  xt::xtensor<double, 2> _x;
 
   // Global indices as provided on Geometry creation
   std::vector<std::int64_t> _input_global_indices;
 };
 
 /// Build Geometry
-/// FIXME: document
-mesh::Geometry create_geometry(MPI_Comm comm, const Topology& topology,
-                               const fem::CoordinateElement& coordinate_element,
-                               const graph::AdjacencyList<std::int64_t>& cells,
-                               const array2d<double>& x);
+/// @todo document
+mesh::Geometry
+create_geometry(MPI_Comm comm, const Topology& topology,
+                const fem::CoordinateElement& coordinate_element,
+                const graph::AdjacencyList<std::int64_t>& cells,
+                const xt::xtensor<double, 2>& x,
+                const std::function<std::vector<int>(
+                    const graph::AdjacencyList<std::int32_t>&)>& reorder_fn
+                = nullptr);
 
-} // namespace mesh
-} // namespace dolfinx
+} // namespace dolfinx::mesh

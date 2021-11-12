@@ -1,6 +1,6 @@
 // Copyright (C) 2015 Garth N. Wells
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -14,6 +14,7 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <memory>
 #include <vector>
+#include <xtl/xspan.hpp>
 
 namespace dolfinx::fem
 {
@@ -160,27 +161,27 @@ void fem::assemble_discrete_gradient(
   for (std::int32_t e = 0; e < num_edges; ++e)
   {
     // Find local index of edge in one of the cells it is part of
-    tcb::span<const std::int32_t> cells = e_to_c->links(e);
+    xtl::span<const std::int32_t> cells = e_to_c->links(e);
     assert(cells.size() > 0);
     const std::int32_t cell = cells[0];
-    tcb::span<const std::int32_t> edges = c_to_e->links(cell);
+    xtl::span<const std::int32_t> edges = c_to_e->links(cell);
     const auto it = std::find(edges.begin(), edges.end(), e);
     assert(it != edges.end());
     const int local_edge = std::distance(edges.begin(), it);
 
     // Find the dofs located on the edge
-    tcb::span<const std::int32_t> dofs0 = dofmap0->cell_dofs(cell);
+    xtl::span<const std::int32_t> dofs0 = dofmap0->cell_dofs(cell);
     std::vector<std::int32_t>& local_dofs = local_edge_dofs[local_edge];
     assert(local_dofs.size() == 1);
     const std::int32_t row = dofs0[local_dofs[0]];
 
-    tcb::span<const std::int32_t> vertices = e_to_v->links(e);
+    xtl::span<const std::int32_t> vertices = e_to_v->links(e);
     assert(vertices.size() == 2);
-    tcb::span<const std::int32_t> cell_vertices = c_to_v->links(cell);
+    xtl::span<const std::int32_t> cell_vertices = c_to_v->links(cell);
 
     // Find local index of each of the vertices and map to local dof
     std::array<std::int32_t, 2> cols;
-    tcb::span<const std::int32_t> dofs1 = dofmap1->cell_dofs(cell);
+    xtl::span<const std::int32_t> dofs1 = dofmap1->cell_dofs(cell);
     for (std::int32_t i = 0; i < 2; ++i)
     {
       const auto it

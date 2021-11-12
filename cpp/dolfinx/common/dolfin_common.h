@@ -10,7 +10,7 @@ namespace dolfinx
 */
 }
 
-// DOLFINX common
+// DOLFINx common
 
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Table.h>
@@ -19,5 +19,4 @@ namespace dolfinx
 #include <dolfinx/common/init.h>
 #include <dolfinx/common/subsystem.h>
 #include <dolfinx/common/timing.h>
-#include <dolfinx/common/types.h>
 #include <dolfinx/common/version.h>

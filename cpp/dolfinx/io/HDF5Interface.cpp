@@ -1,6 +1,6 @@
 // Copyright (C) 2012 Chris N. Richardson and Garth N. Wells
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -55,7 +55,7 @@ bool has_group(const hid_t handle, const std::string& group_name)
 } // namespace
 
 //-----------------------------------------------------------------------------
-hid_t HDF5Interface::open_file(MPI_Comm mpi_comm, const std::string& filename,
+hid_t HDF5Interface::open_file(MPI_Comm comm, const std::string& filename,
                                const std::string& mode, const bool use_mpi_io)
 {
   // Set parallel access with communicator
@@ -66,7 +66,7 @@ hid_t HDF5Interface::open_file(MPI_Comm mpi_comm, const std::string& filename,
   {
     MPI_Info info;
     MPI_Info_create(&info);
-    if (H5Pset_fapl_mpio(plist_id, mpi_comm, info) < 0)
+    if (H5Pset_fapl_mpio(plist_id, comm, info) < 0)
       throw std::runtime_error("Call to H5Pset_fapl_mpio unsuccessful");
     MPI_Info_free(&info);
   }

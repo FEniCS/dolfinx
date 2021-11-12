@@ -13,12 +13,12 @@
 # solution and source term. ::
 
 import numpy as np
-from dolfinx import (Function, FunctionSpace, UnitSquareMesh, fem,
-                     has_petsc_complex)
+from dolfinx import Function, FunctionSpace, UnitSquareMesh, fem
 from dolfinx.fem.assemble import assemble_scalar
 from dolfinx.io import XDMFFile
 from mpi4py import MPI
 from ufl import FacetNormal, TestFunction, TrialFunction, dx, grad, inner
+from petsc4py import PETSc
 
 # wavenumber
 k0 = 4 * np.pi
@@ -33,11 +33,10 @@ mesh = UnitSquareMesh(MPI.COMM_WORLD, n_elem, n_elem)
 n = FacetNormal(mesh)
 
 # Source amplitude
-if has_petsc_complex:
-    A = 1 + 1j
+if np.issubdtype(PETSc.ScalarType, np.complexfloating):
+    A = PETSc.ScalarType(1 + 1j)
 else:
     A = 1
-
 
 # Test and trial function space
 V = FunctionSpace(mesh, ("Lagrange", deg))
@@ -53,23 +52,17 @@ L = inner(f, v) * dx
 # Compute solution
 uh = fem.Function(V)
 uh.name = "u"
-problem = fem.LinearProblem(a, L, u=uh)
+problem = fem.LinearProblem(a, L, u=uh, petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
 problem.solve()
 
 # Save solution in XDMF format (to be viewed in Paraview, for example)
-with XDMFFile(MPI.COMM_WORLD, "plane_wave.xdmf", "w",
-              encoding=XDMFFile.Encoding.HDF5) as file:
+with XDMFFile(MPI.COMM_WORLD, "plane_wave.xdmf", "w", encoding=XDMFFile.Encoding.HDF5) as file:
     file.write_mesh(mesh)
     file.write_function(uh)
 
 # Calculate L2 and H1 errors of FEM solution and best approximation.
 # This demonstrates the error bounds given in Ihlenburg. Pollution errors
 # are evident for high wavenumbers. ::
-
-
-# "Exact" solution expression
-def solution(values, x):
-    values[:, 0] = A * np.cos(k0 * x[:, 0]) * np.cos(k0 * x[:, 1])
 
 
 # Function space for exact solution - need it to be higher than deg

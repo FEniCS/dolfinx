@@ -39,71 +39,46 @@ set(KAHIP_FOUND FALSE)
 message(STATUS "Checking for package 'KaHIP'")
 
 if (MPI_CXX_FOUND)
-  # Check for header file
   find_path(KAHIP_INCLUDE_DIRS parhip_interface.h
-    HINTS ${KAHIP_DIR}/include $ENV{KAHIP_DIR}/include /usr/local/include
-    PATH_SUFFIXES kahip
-    DOC "Directory where the KaHIP header files are located."
-    )
+    HINTS ${KAHIP_DIR}/include $ENV{KAHIP_DIR}/include PATH_SUFFIXES kahip
+    DOC "Directory where the KaHIP header files are located.")
 
-  find_library(PARHIP_LIBRARY parhip_interface
-    HINTS ${KAHIP_DIR}/lib $ENV{KAHIP_DIR}/lib /usr/local/lib
-    NO_DEFAULT_PATH
-    DOC "Directory where the ParHIP interface is located"
-  )
+  find_library(PARHIP_LIBRARY parhip_interface HINTS ${KAHIP_DIR}/lib $ENV{KAHIP_DIR}/lib
+    DOC "Path to the ParHIP library")
 
-  find_library(PARHIP_LIBRARY parhip_interface
-    DOC "Directory where the ParHIP interface is located"
-  )
-
-  find_library(KAHIP_LIBRARY interface
-    HINTS ${KAHIP_DIR}/lib $ENV{KAHIP_DIR}/lib /usr/local/lib
-    NO_DEFAULT_PATH
-    DOC "Directory where the KaHIP interface is located"
-  )
-
-  find_library(KAHIP_LIBRARY interface
-    DOC "Directory where the KaHIP interface is located"
-  )
-
+  find_library(KAHIP_LIBRARY interface HINTS ${KAHIP_DIR}/lib $ENV{KAHIP_DIR}/lib
+    DOC "Path to the KaHIP library")
 
   set(KAHIP_LIBRARIES ${PARHIP_LIBRARY} ${KAHIP_LIBRARY})
+  if (KAHIP_LIBRARIES AND KAHIP_LIBRARIES)
 
-  if (KAHIP_LIBRARIES)
-
-    # Set flags for building test program
-    set(CMAKE_REQUIRED_INCLUDES  ${KAHIP_INCLUDE_DIRS} ${MPI_CXX_INCLUDE_PATH})
-    set(CMAKE_REQUIRED_LIBRARIES ${KAHIP_LIBRARIES}    ${MPI_CXX_LIBRARIES})
-    set(CMAKE_REQUIRED_FLAGS     ${CMAKE_REQUIRED_FLAGS}  ${MPI_CXX_COMPILE_FLAGS})
-    
     # Build and run test program
     include(CheckCXXSourceRuns)
 
-      check_cxx_source_runs("
+    # Set flags for building test program
+    set(CMAKE_REQUIRED_INCLUDES  ${KAHIP_INCLUDE_DIRS} ${MPI_CXX_INCLUDE_PATH})
+    set(CMAKE_REQUIRED_LIBRARIES ${KAHIP_LIBRARIES} ${MPI_CXX_LIBRARIES})
+    set(CMAKE_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS} ${MPI_CXX_COMPILE_FLAGS})
+    check_cxx_source_runs("
       #define MPICH_IGNORE_CXX_SEEK 1
       #include <mpi.h>
       #include <vector>
-
       #include <kaHIP_interface.h>
 
       int main()
       {
-
         int n = 5;
-        std::vector<int> xadj{0, 2, 5, 7, 9, 12};
-        std::vector<int> adjncy{1, 4, 0, 2, 4, 1, 3, 2, 4, 0, 1, 3};
+        std::vector<int> xadj = {0, 2, 5, 7, 9, 12};
+        std::vector<int> adjncy = {1, 4, 0, 2, 4, 1, 3, 2, 4, 0, 1, 3};
         std::vector<int> part(n);
-
         double imbalance = 0.03;
         int edge_cut = 0;
         int nparts = 2;
         int *vwgt = nullptr;;
         int *adjcwgt = nullptr;;
-
-        kaffpa(&n, vwgt, xadj.data(), adjcwgt, adjncy.data(), 
-               &nparts, &imbalance, false, 0, ECO, &edge_cut, 
+        kaffpa(&n, vwgt, xadj.data(), adjcwgt, adjncy.data(),
+               &nparts, &imbalance, false, 0, ECO, &edge_cut,
                part.data());
-
       return 0;
       }
       " KAHIP_TEST_RUNS)
@@ -115,5 +90,4 @@ find_package_handle_standard_args(KaHIP
                                   "KaHIP could not be found/configured."
                                   KAHIP_INCLUDE_DIRS
                                   KAHIP_LIBRARIES
-                                  KAHIP_TEST_RUNS
-                                )
+                                  KAHIP_TEST_RUNS)

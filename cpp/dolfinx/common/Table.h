@@ -1,6 +1,6 @@
 // Copyright (C) 2008-2011 Anders Logg
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -14,7 +14,6 @@
 
 namespace dolfinx
 {
-class TableEntry;
 
 /// This class provides storage and pretty-printing for tables.
 /// Example usage:

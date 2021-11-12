@@ -1,6 +1,6 @@
 // Copyright (C) 2007-2020 Anders Logg and Garth N. Wells
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -17,12 +17,38 @@
 #include <map>
 #include <numeric>
 #include <utility>
+#include <xtensor/xtensor.hpp>
 
 using namespace dolfinx;
 using namespace dolfinx::fem;
 
 namespace
 {
+/// Create a symmetric MPI neighbourhood communciator from an
+/// input neighbourhood communicator
+dolfinx::MPI::Comm create_symmetric_comm(MPI_Comm comm)
+{
+  int indegree(-1), outdegree(-2), weighted(-1);
+  MPI_Dist_graph_neighbors_count(comm, &indegree, &outdegree, &weighted);
+
+  std::vector<int> neighbors(indegree + outdegree);
+  MPI_Dist_graph_neighbors(comm, indegree, neighbors.data(), MPI_UNWEIGHTED,
+                           outdegree, neighbors.data() + indegree,
+                           MPI_UNWEIGHTED);
+
+  std::sort(neighbors.begin(), neighbors.end());
+  neighbors.erase(std::unique(neighbors.begin(), neighbors.end()),
+                  neighbors.end());
+
+  MPI_Comm comm_sym;
+  MPI_Dist_graph_create_adjacent(comm, neighbors.size(), neighbors.data(),
+                                 MPI_UNWEIGHTED, neighbors.size(),
+                                 neighbors.data(), MPI_UNWEIGHTED,
+                                 MPI_INFO_NULL, false, &comm_sym);
+
+  return dolfinx::MPI::Comm(comm_sym, false);
+}
+
 //-----------------------------------------------------------------------------
 /// Find DOFs on this processes that are constrained by a Dirichlet
 /// condition detected by another process
@@ -35,11 +61,13 @@ std::vector<std::int32_t>
 get_remote_bcs1(const common::IndexMap& map,
                 const std::vector<std::int32_t>& dofs_local)
 {
-  MPI_Comm comm = map.comm(common::IndexMap::Direction::symmetric);
+  dolfinx::MPI::Comm comm
+      = create_symmetric_comm(map.comm(common::IndexMap::Direction::forward));
 
   // Get number of processes in neighborhood
   int num_neighbors(-1), outdegree(-2), weighted(-1);
-  MPI_Dist_graph_neighbors_count(comm, &num_neighbors, &outdegree, &weighted);
+  MPI_Dist_graph_neighbors_count(comm.comm(), &num_neighbors, &outdegree,
+                                 &weighted);
 
   // Return early if there are no neighbors
   if (num_neighbors == 0)
@@ -49,7 +77,7 @@ get_remote_bcs1(const common::IndexMap& map,
   const int num_dofs = dofs_local.size();
   std::vector<int> num_dofs_recv(num_neighbors);
   MPI_Neighbor_allgather(&num_dofs, 1, MPI_INT, num_dofs_recv.data(), 1,
-                         MPI_INT, comm);
+                         MPI_INT, comm.comm());
 
   // NOTE: we could consider only dofs that we know are shared
   // Build array of global indices of dofs
@@ -67,9 +95,10 @@ get_remote_bcs1(const common::IndexMap& map,
 
   // Send/receive global index of dofs with bcs to all neighbors
   std::vector<std::int64_t> dofs_received(disp.back());
-  MPI_Neighbor_allgatherv(dofs_global.data(), dofs_global.size(), MPI_INT64_T,
-                          dofs_received.data(), num_dofs_recv.data(),
-                          disp.data(), MPI_INT64_T, comm);
+  MPI_Request request;
+  MPI_Ineighbor_allgatherv(dofs_global.data(), dofs_global.size(), MPI_INT64_T,
+                           dofs_received.data(), num_dofs_recv.data(),
+                           disp.data(), MPI_INT64_T, comm.comm(), &request);
 
   // FIXME: check that dofs is sorted
   // Build vector of local dof indicies that have been marked by another
@@ -85,6 +114,7 @@ get_remote_bcs1(const common::IndexMap& map,
   std::map<std::int64_t, std::int32_t> global_to_local(
       global_local_ghosts.begin(), global_local_ghosts.end());
 
+  MPI_Wait(&request, MPI_STATUS_IGNORE);
   std::vector<std::int32_t> dofs;
   for (std::size_t i = 0; i < dofs_received.size(); ++i)
   {
@@ -121,10 +151,12 @@ get_remote_bcs2(const common::IndexMap& map0, int bs0,
   // NOTE: assumes that dofs are unrolled, i.e. not blocked. Could it be
   // make more efficient to handle the case of a common block size?
 
-  MPI_Comm comm0 = map0.comm(common::IndexMap::Direction::symmetric);
+  dolfinx::MPI::Comm comm0
+      = create_symmetric_comm(map0.comm(common::IndexMap::Direction::forward));
 
   int num_neighbors(-1), outdegree(-2), weighted(-1);
-  MPI_Dist_graph_neighbors_count(comm0, &num_neighbors, &outdegree, &weighted);
+  MPI_Dist_graph_neighbors_count(comm0.comm(), &num_neighbors, &outdegree,
+                                 &weighted);
   assert(num_neighbors == outdegree);
 
   // Return early if there are no neighbors
@@ -134,12 +166,13 @@ get_remote_bcs2(const common::IndexMap& map0, int bs0,
   // Figure out how many entries to receive from each neighbor
   const int num_dofs = 2 * dofs_local.size();
   std::vector<int> num_dofs_recv(num_neighbors);
-  MPI_Neighbor_allgather(&num_dofs, 1, MPI_INT, num_dofs_recv.data(), 1,
-                         MPI_INT, comm0);
+  MPI_Request request;
+  MPI_Ineighbor_allgather(&num_dofs, 1, MPI_INT, num_dofs_recv.data(), 1,
+                          MPI_INT, comm0.comm(), &request);
 
   // NOTE: we consider only dofs that we know are shared
   // Build array of global indices of dofs
-  array2d<std::int64_t> dofs_global(dofs_local.size(), 2);
+  xt::xtensor<std::int64_t, 2> dofs_global({dofs_local.size(), 2});
 
   // This is messy to handle block sizes
   {
@@ -172,6 +205,7 @@ get_remote_bcs2(const common::IndexMap& map0, int bs0,
 
   // Compute displacements for data to receive. Last entry has total
   // number of received items.
+  MPI_Wait(&request, MPI_STATUS_IGNORE);
   std::vector<int> disp(num_neighbors + 1, 0);
   std::partial_sum(num_dofs_recv.begin(), num_dofs_recv.end(),
                    std::next(disp.begin()));
@@ -181,10 +215,11 @@ get_remote_bcs2(const common::IndexMap& map0, int bs0,
 
   // Send/receive global index of dofs with bcs to all neighbors
   assert(disp.back() % 2 == 0);
-  array2d<std::int64_t> dofs_received(disp.back() / 2, 2);
+  xt::xtensor<std::int64_t, 2> dofs_received(
+      {static_cast<std::size_t>(disp.back() / 2), 2});
   MPI_Neighbor_allgatherv(dofs_global.data(), dofs_global.size(), MPI_INT64_T,
                           dofs_received.data(), num_dofs_recv.data(),
-                          disp.data(), MPI_INT64_T, comm0);
+                          disp.data(), MPI_INT64_T, comm0.comm());
 
   const std::array<std::reference_wrapper<const common::IndexMap>, 2> maps
       = {map0, map1};
@@ -207,7 +242,7 @@ get_remote_bcs2(const common::IndexMap& map0, int bs0,
         global_local_ghosts.begin(), global_local_ghosts.end());
 
     std::vector<std::int32_t>& dofs = dofs_array[b];
-    for (std::size_t i = 0; i < dofs_received.shape[0]; ++i)
+    for (std::size_t i = 0; i < dofs_received.shape(0); ++i)
     {
       if (dofs_received(i, b) >= bs[b] * range[0]
           and dofs_received(i, b) < bs[b] * range[1])
@@ -241,7 +276,7 @@ get_remote_bcs2(const common::IndexMap& map0, int bs0,
 //-----------------------------------------------------------------------------
 std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
     const std::array<std::reference_wrapper<const fem::FunctionSpace>, 2>& V,
-    const int dim, const tcb::span<const std::int32_t>& entities, bool remote)
+    const int dim, const xtl::span<const std::int32_t>& entities, bool remote)
 {
   const fem::FunctionSpace& V0 = V.at(0).get();
   const fem::FunctionSpace& V1 = V.at(1).get();
@@ -310,8 +345,8 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
     const int entity_local_index = std::distance(entities_d.begin(), it);
 
     // Get cell dofmap
-    tcb::span<const std::int32_t> cell_dofs0 = dofmap0->cell_dofs(cell);
-    tcb::span<const std::int32_t> cell_dofs1 = dofmap1->cell_dofs(cell);
+    xtl::span<const std::int32_t> cell_dofs0 = dofmap0->cell_dofs(cell);
+    xtl::span<const std::int32_t> cell_dofs1 = dofmap1->cell_dofs(cell);
     assert(bs0 * cell_dofs0.size() == bs1 * cell_dofs1.size());
 
     // Loop over facet dofs and 'unpack' blocked dofs
@@ -367,7 +402,7 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t>
 fem::locate_dofs_topological(const fem::FunctionSpace& V, const int dim,
-                             const tcb::span<const std::int32_t>& entities,
+                             const xtl::span<const std::int32_t>& entities,
                              bool remote)
 {
   assert(V.dofmap());
@@ -447,7 +482,8 @@ fem::locate_dofs_topological(const fem::FunctionSpace& V, const int dim,
 //-----------------------------------------------------------------------------
 std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_geometrical(
     const std::array<std::reference_wrapper<const fem::FunctionSpace>, 2>& V,
-    const std::function<std::vector<bool>(const array2d<double>&)>& marker_fn)
+    const std::function<xt::xtensor<bool, 1>(const xt::xtensor<double, 2>&)>&
+        marker_fn)
 {
   // FIXME: Calling V.tabulate_dof_coordinates() is very expensive,
   // especially when we usually want the boundary dofs only. Add
@@ -471,11 +507,12 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_geometrical(
     throw std::runtime_error("Function spaces must have the same element.");
 
   // Compute dof coordinates
-  const array2d dof_coordinates = V1.tabulate_dof_coordinates(true);
-  assert(dof_coordinates.shape[0] == 3);
+  const xt::xtensor<double, 2> dof_coordinates
+      = V1.tabulate_dof_coordinates(true);
+  assert(dof_coordinates.shape(0) == 3);
 
   // Evaluate marker for each dof coordinate
-  const std::vector<bool> marked_dofs = marker_fn(dof_coordinates);
+  const xt::xtensor<bool, 1> marked_dofs = marker_fn(dof_coordinates);
 
   // Get dofmaps
   std::shared_ptr<const fem::DofMap> dofmap0 = V0.dofmap();
@@ -537,18 +574,27 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_geometrical(
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t> fem::locate_dofs_geometrical(
     const fem::FunctionSpace& V,
-    const std::function<std::vector<bool>(const array2d<double>&)>& marker_fn)
+    const std::function<xt::xtensor<bool, 1>(const xt::xtensor<double, 2>&)>&
+        marker_fn)
 {
   // FIXME: Calling V.tabulate_dof_coordinates() is very expensive,
   // especially when we usually want the boundary dofs only. Add
   // interface that computes dofs coordinates only for specified cell.
 
+  assert(V.element());
+  if (V.element()->is_mixed())
+  {
+    throw std::runtime_error(
+        "Cannot locate dofs geometrically for mixed space. Use subspaces.");
+  }
+
   // Compute dof coordinates
-  const array2d dof_coordinates = V.tabulate_dof_coordinates(true);
-  assert(dof_coordinates.shape[0] == 3);
+  const xt::xtensor<double, 2> dof_coordinates
+      = V.tabulate_dof_coordinates(true);
+  assert(dof_coordinates.shape(0) == 3);
 
   // Compute marker for each dof coordinate
-  const std::vector<bool> marked_dofs = marker_fn(dof_coordinates);
+  const xt::xtensor<bool, 1> marked_dofs = marker_fn(dof_coordinates);
 
   std::vector<std::int32_t> dofs;
   dofs.reserve(std::count(marked_dofs.begin(), marked_dofs.end(), true));

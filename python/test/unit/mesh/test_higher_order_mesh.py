@@ -1,6 +1,6 @@
 # Copyright (C) 2019-2021 Jørgen Schartum Dokken and Matthew Scroggs
 #
-# This file is part of DOLFINX (https://www.fenicsproject.org)
+# This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """ Unit-tests for higher order meshes """
@@ -12,10 +12,9 @@ import numpy as np
 import pytest
 import ufl
 from dolfinx.cpp.io import perm_gmsh, perm_vtk
-from dolfinx.cpp.mesh import CellType
 from dolfinx.fem import assemble_scalar
 from dolfinx.io import XDMFFile, ufl_mesh_from_gmsh
-from dolfinx.mesh import create_mesh
+from dolfinx.mesh import CellType, create_mesh
 from dolfinx_utils.test.skips import skip_in_parallel
 from mpi4py import MPI
 from ufl import dx
@@ -26,7 +25,8 @@ def check_cell_volume(points, cell, domain, volume):
 
     point_order = [i for i, _ in enumerate(points)]
     for repeat in range(5):
-        # Shuffle the cell to check that permutations of CoordinateElement are correct
+        # Shuffle the cell to check that permutations of
+        # CoordinateElement are correct
         random.shuffle(point_order)
         ordered_points = np.zeros((len(points), len(points[0])))
         for i, j in enumerate(point_order):
@@ -51,7 +51,7 @@ def test_triangle_mesh(order):
     def coord_to_vertex(x, y):
         return y * (2 * order + 3 - y) // 2 + x
 
-    # Define a cell using dolfin ordering
+    # Define a cell using DOLFINx ordering
     cell = [coord_to_vertex(i, j) for i, j in [(0, 0), (order, 0), (0, order)]]
     if order > 1:
         for i in range(1, order):
@@ -88,7 +88,7 @@ def test_tetrahedron_mesh(order):
             3 * order ** 2 - 3 * order * z + 12 * order + z ** 2 - 6 * z + 11
         ) // 6 + y * (2 * (order - z) + 3 - y) // 2 + x
 
-    # Define a cell using dolfin ordering
+    # Define a cell using DOLFINx ordering
     cell = [coord_to_vertex(x, y, z) for x, y, z in [
         (0, 0, 0), (order, 0, 0), (0, order, 0), (0, 0, order)]]
 
@@ -144,7 +144,7 @@ def test_quadrilateral_mesh(order):
     def coord_to_vertex(x, y):
         return (order + 1) * y + x
 
-    # Define a cell using dolfin ordering
+    # Define a cell using DOLFINx ordering
     cell = [coord_to_vertex(i, j)
             for i, j in [(0, 0), (order, 0), (0, order), (order, order)]]
     if order > 1:
@@ -184,7 +184,7 @@ def test_hexahedron_mesh(order):
     def coord_to_vertex(x, y, z):
         return (order + 1) ** 2 * z + (order + 1) * y + x
 
-    # Define a cell using dolfin ordering
+    # Define a cell using DOLFINx ordering
     cell = [coord_to_vertex(x, y, z) for x, y, z in [
         (0, 0, 0), (order, 0, 0), (0, order, 0), (order, order, 0),
         (0, 0, order), (order, 0, order), (0, order, order), (order, order, order)]]
@@ -257,7 +257,8 @@ def test_triangle_mesh_vtk(order):
     def coord_to_vertex(x, y):
         return y * (2 * order + 3 - y) // 2 + x
 
-    # Make the cell, following https://blog.kitware.com/modeling-arbitrary-order-lagrange-finite-elements-in-the-visualization-toolkit/  # noqa: E501
+    # Make the cell, following
+    # https://blog.kitware.com/modeling-arbitrary-order-lagrange-finite-elements-in-the-visualization-toolkit/
     cell = [coord_to_vertex(i, j) for i, j in [(0, 0), (order, 0), (0, order)]]
     if order > 1:
         for i in range(1, order):
@@ -288,7 +289,7 @@ def test_triangle_mesh_vtk(order):
 @pytest.mark.parametrize('order', range(1, 5))
 def test_tetrahedron_mesh_vtk(order):
     if order > 3:
-        pytest.xfail("VTK permutation for order > 3 tetrahedra not implemented in DOLFINX.")
+        pytest.xfail("VTK permutation for order > 3 tetrahedra not implemented in DOLFINx.")
     points = []
     points += [[i / order, j / order, 0] for j in range(order + 1)
                for i in range(order + 1 - j)]
@@ -303,7 +304,8 @@ def test_tetrahedron_mesh_vtk(order):
             3 * order ** 2 - 3 * order * z + 12 * order + z ** 2 - 6 * z + 11
         ) // 6 + y * (2 * (order - z) + 3 - y) // 2 + x
 
-    # Make the cell, following https://blog.kitware.com/modeling-arbitrary-order-lagrange-finite-elements-in-the-visualization-toolkit/  # noqa: E501
+    # Make the cell, following
+    # https://blog.kitware.com/modeling-arbitrary-order-lagrange-finite-elements-in-the-visualization-toolkit/
     cell = [coord_to_vertex(x, y, z) for x, y, z in [
         (0, 0, 0), (order, 0, 0), (0, order, 0), (0, 0, order)]]
 
@@ -322,8 +324,8 @@ def test_tetrahedron_mesh_vtk(order):
             cell.append(coord_to_vertex(0, order - i, i))
 
         if order == 3:
-            # The ordering of faces does not match documentation.
-            # See https://gitlab.kitware.com/vtk/vtk/uploads/a0dc0173a41d3cf6b03a9266c0e23688/image.png
+            # The ordering of faces does not match documentation. See
+            # https://gitlab.kitware.com/vtk/vtk/uploads/a0dc0173a41d3cf6b03a9266c0e23688/image.png
             cell.append(coord_to_vertex(1, 0, 1))
             cell.append(coord_to_vertex(1, 1, 1))
             cell.append(coord_to_vertex(0, 1, 1))
@@ -392,7 +394,8 @@ def test_quadrilateral_mesh_vtk(order):
     def coord_to_vertex(x, y):
         return (order + 1) * y + x
 
-    # Make the cell, following https://blog.kitware.com/modeling-arbitrary-order-lagrange-finite-elements-in-the-visualization-toolkit/  # noqa: E501
+    # Make the cell, following
+    # https://blog.kitware.com/modeling-arbitrary-order-lagrange-finite-elements-in-the-visualization-toolkit/
     cell = [coord_to_vertex(i, j)
             for i, j in [(0, 0), (order, 0), (order, order), (0, order)]]
     if order > 1:
@@ -421,7 +424,7 @@ def test_quadrilateral_mesh_vtk(order):
 @pytest.mark.parametrize('order', [1, 2, 3, 4])
 def test_hexahedron_mesh_vtk(order):
     if order > 2:
-        pytest.xfail("VTK permutation for order > 2 hexahedra not implemented in DOLFINX.")
+        pytest.xfail("VTK permutation for order > 2 hexahedra not implemented in DOLFINx.")
     random.seed(13)
 
     points = []
@@ -436,7 +439,8 @@ def test_hexahedron_mesh_vtk(order):
     def coord_to_vertex(x, y, z):
         return (order + 1) ** 2 * z + (order + 1) * y + x
 
-    # Make the cell, following https://blog.kitware.com/modeling-arbitrary-order-lagrange-finite-elements-in-the-visualization-toolkit/  # noqa: E501
+    # Make the cell, following
+    # https://blog.kitware.com/modeling-arbitrary-order-lagrange-finite-elements-in-the-visualization-toolkit/
     cell = [coord_to_vertex(x, y, z) for x, y, z in [
         (0, 0, 0), (order, 0, 0), (order, order, 0), (0, order, 0),
         (0, 0, order), (order, 0, order), (order, order, order), (0, order, order)]]
@@ -467,9 +471,10 @@ def test_hexahedron_mesh_vtk(order):
         for i in range(1, order):
             cell.append(coord_to_vertex(0, order, i))
 
-        # The ordering of faces does not match documentation.
-        # See https://gitlab.kitware.com/vtk/vtk/uploads/a0dc0173a41d3cf6b03a9266c0e23688/image.png
-        # The edge flip in this like however has been fixed in VTK so we follow the main documentation link for edges
+        # The ordering of faces does not match documentation. See
+        # https://gitlab.kitware.com/vtk/vtk/uploads/a0dc0173a41d3cf6b03a9266c0e23688/image.png
+        # The edge flip in this like however has been fixed in VTK so we
+        # follow the main documentation link for edges
         for j in range(1, order):
             for i in range(1, order):
                 cell.append(coord_to_vertex(0, i, j))
@@ -580,7 +585,7 @@ def test_gmsh_input_2d(order, cell_type):
     #     return values
     # cmap = fem.create_coordinate_map(mesh.mpi_comm(), mesh.ufl_domain())
     # mesh.geometry.coord_mapping = cmap
-    # V = FunctionSpace(mesh, ("CG", order))
+    # V = FunctionSpace(mesh, ("Lagrange", order))
     # u = Function(V)
     # u.interpolate(e2)
     # from dolfinx.io import VTKFile
@@ -598,7 +603,7 @@ def test_gmsh_input_3d(order, cell_type):
     except ImportError:
         pytest.skip()
     if cell_type == CellType.hexahedron and order > 2:
-        pytest.xfail("GMSH permutation for order > 2 hexahedra not implemented in DOLFINX.")
+        pytest.xfail("GMSH permutation for order > 2 hexahedra not implemented in DOLFINx.")
 
     res = 0.2
 
@@ -638,7 +643,7 @@ def test_gmsh_input_3d(order, cell_type):
         gmsh_cell_id = MPI.COMM_WORLD.bcast(gmsh.model.mesh.getElementType("hexahedron", order), root=0)
     gmsh.finalize()
 
-    # Permute the mesh topology from GMSH ordering to DOLFIN-X ordering
+    # Permute the mesh topology from GMSH ordering to DOLFINx ordering
     domain = ufl_mesh_from_gmsh(gmsh_cell_id, 3)
     cells = cells[:, perm_gmsh(cell_type, cells.shape[1])]
 
@@ -647,3 +652,23 @@ def test_gmsh_input_3d(order, cell_type):
     volume = assemble_scalar(1 * dx(mesh))
 
     assert mesh.mpi_comm().allreduce(volume, op=MPI.SUM) == pytest.approx(np.pi, rel=10 ** (-1 - order))
+
+
+@skip_in_parallel
+def test_quadrilateral_cell_order_3():
+    points = [
+        [0., 0.], [1., 0.], [0., 1.], [1., 1.],
+        [1 / 3, 2 / 9], [2 / 3, 2 / 9],
+        [0., 1 / 3], [0., 2 / 3],
+        [1., 1 / 3], [1., 2 / 3],
+        [1 / 3, 1.], [2 / 3, 1.],
+        [1 / 3, 13 / 27], [2 / 3, 13 / 27],
+        [1 / 3, 20 / 27], [2 / 3, 20 / 27]
+    ]
+
+    cell = list(range(16))
+
+    domain = ufl.Mesh(ufl.VectorElement(
+        "Lagrange", ufl.Cell("quadrilateral", geometric_dimension=2), 3))
+
+    check_cell_volume(points, cell, domain, 5 / 6)

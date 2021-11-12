@@ -1,6 +1,6 @@
 // Copyright (C) 2007 Kristian B. Oelgaard
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -10,16 +10,11 @@
 #include <cstddef>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Mesh.h>
-
-namespace dolfinx
-{
-namespace fem
-{
-class CoordinateElement;
-}
+#include <dolfinx/mesh/utils.h>
+#include <mpi.h>
 
 /// Interval mesh creation
-namespace generation::IntervalMesh
+namespace dolfinx::generation::IntervalMesh
 {
 
 /// Interval mesh of the 1D line `[a, b]`.  Given @p n cells in the
@@ -29,18 +24,15 @@ namespace generation::IntervalMesh
 /// @param[in] comm MPI communicator to build the mesh on
 /// @param[in] n The number of cells
 /// @param[in] x The end points of the interval
-/// @param[in] element Element that describes the geometry of a cell
 /// @param[in] ghost_mode Ghosting mode
 /// @param[in] partitioner Partitioning function to use for determining
 /// the parallel distribution of cells across MPI ranks
 /// @return A mesh
 mesh::Mesh
 create(MPI_Comm comm, std::size_t n, std::array<double, 2> x,
-       const fem::CoordinateElement& element, const mesh::GhostMode ghost_mode,
+       const mesh::GhostMode ghost_mode,
        const mesh::CellPartitionFunction& partitioner
        = static_cast<graph::AdjacencyList<std::int32_t> (*)(
-           MPI_Comm, int, const mesh::CellType,
-           const graph::AdjacencyList<std::int64_t>&, mesh::GhostMode)>(
-           &mesh::partition_cells_graph));
-} // namespace generation::IntervalMesh
-} // namespace dolfinx
+           MPI_Comm, int, int, const graph::AdjacencyList<std::int64_t>&,
+           mesh::GhostMode)>(&mesh::partition_cells_graph));
+} // namespace dolfinx::generation::IntervalMesh

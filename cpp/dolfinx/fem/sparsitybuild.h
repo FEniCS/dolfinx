@@ -1,6 +1,6 @@
 // Copyright (C) 2007-2019 Garth N. Wells
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -9,19 +9,17 @@
 #include <array>
 #include <functional>
 
-namespace dolfinx
-{
-namespace la
+namespace dolfinx::la
 {
 class SparsityPattern;
 }
 
-namespace mesh
+namespace dolfinx::mesh
 {
 class Topology;
 }
 
-namespace fem
+namespace dolfinx::fem
 {
 class DofMap;
 
@@ -48,5 +46,4 @@ void exterior_facets(
         dofmaps);
 
 } // namespace sparsitybuild
-} // namespace fem
-} // namespace dolfinx
+} // namespace dolfinx::fem

@@ -1,6 +1,6 @@
 // Copyright (C) 2020 Michal Habera
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -12,7 +12,6 @@
 #include <algorithm>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/UniqueIdGenerator.h>
-#include <dolfinx/common/span.hpp>
 #include <dolfinx/common/utils.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/partition.h>
@@ -21,10 +20,9 @@
 #include <memory>
 #include <utility>
 #include <vector>
+#include <xtl/xspan.hpp>
 
-namespace dolfinx
-{
-namespace mesh
+namespace dolfinx::mesh
 {
 
 /// A MeshTags are used to associate mesh entities with values. The
@@ -140,7 +138,7 @@ template <typename T>
 mesh::MeshTags<T>
 create_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh, const int dim,
                 const graph::AdjacencyList<std::int32_t>& entities,
-                const tcb::span<const T>& values)
+                const xtl::span<const T>& values)
 {
   assert(mesh);
   if ((std::size_t)entities.num_nodes() != values.size())
@@ -196,5 +194,4 @@ create_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh, const int dim,
   return mesh::MeshTags<T>(mesh, dim, std::move(indices_sorted),
                            std::move(values_sorted));
 }
-} // namespace mesh
-} // namespace dolfinx
+} // namespace dolfinx::mesh

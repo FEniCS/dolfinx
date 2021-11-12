@@ -1,9 +1,8 @@
 import numpy
 import pytest
 from dolfinx import cpp
-from dolfinx.cpp.mesh import CellType
 from dolfinx.generation import UnitCubeMesh
-from dolfinx.mesh import create_meshtags, locate_entities
+from dolfinx.mesh import CellType, create_meshtags, locate_entities
 from mpi4py import MPI
 
 celltypes_3D = [CellType.tetrahedron, CellType.hexahedron]
@@ -14,7 +13,6 @@ def test_create(cell_type):
     comm = MPI.COMM_WORLD
 
     mesh = UnitCubeMesh(comm, 6, 6, 6, cell_type)
-    mesh.topology.create_connectivity_all()
 
     marked_lines = locate_entities(mesh, 1, lambda x: numpy.isclose(x[1], 0.5))
     f_v = mesh.topology.connectivity(1, 0).array.reshape(-1, 2)

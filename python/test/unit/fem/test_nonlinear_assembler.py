@@ -1,6 +1,6 @@
 # Copyright (C) 2019 Nathan Sime
 #
-# This file is part of DOLFINX (https://www.fenicsproject.org)
+# This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for assembly"""
@@ -11,7 +11,7 @@ import dolfinx
 import numpy
 import pytest
 import ufl
-from dolfinx.mesh import locate_entities_boundary
+from dolfinx.mesh import GhostMode, locate_entities_boundary
 from mpi4py import MPI
 from petsc4py import PETSc
 from ufl import derivative, dx, inner
@@ -81,7 +81,7 @@ def test_matrix_assembly_block_nl():
 
     a_block = [[derivative(F0, u, du), derivative(F0, p, dp)],
                [derivative(F1, u, du), derivative(F1, p, dp)]]
-    L_block = [F0, F1]
+    L_block = [dolfinx.fem.Form(F0), dolfinx.fem.Form(F1)]
 
     # Monolithic blocked
     x0 = dolfinx.fem.create_vector_block(L_block)
@@ -92,8 +92,8 @@ def test_matrix_assembly_block_nl():
     x0.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
     # Ghosts are updated inside assemble_vector_block
-    A0 = dolfinx.fem.assemble_matrix_block(a_block, [bc])
-    b0 = dolfinx.fem.assemble_vector_block(L_block, a_block, [bc], x0=x0, scale=-1.0)
+    A0 = dolfinx.fem.assemble_matrix_block(a_block, bcs=[bc])
+    b0 = dolfinx.fem.assemble_vector_block(L_block, a_block, bcs=[bc], x0=x0, scale=-1.0)
     A0.assemble()
     assert A0.getType() != "nest"
     Anorm0 = A0.norm()
@@ -107,12 +107,13 @@ def test_matrix_assembly_block_nl():
         soln_sub.vector.copy(result=x1_sub)
         x1_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
-    A1 = dolfinx.fem.assemble_matrix_nest(a_block, [bc])
+    A1 = dolfinx.fem.assemble_matrix_nest(a_block, bcs=[bc])
     b1 = dolfinx.fem.assemble_vector_nest(L_block)
-    dolfinx.fem.apply_lifting_nest(b1, a_block, [bc], x1, scale=-1.0)
+    dolfinx.fem.apply_lifting_nest(b1, a_block, bcs=[bc], x0=x1, scale=-1.0)
     for b_sub in b1.getNestSubVecs():
         b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    bcs0 = dolfinx.cpp.fem.bcs_rows(dolfinx.fem.assemble._create_cpp_form(L_block), [bc])
+    bcs0 = dolfinx.fem.dirichletbc.bcs_by_block([L.function_spaces[0] for L in L_block], [bc])
+
     dolfinx.fem.set_bc_nest(b1, bcs0, x1, scale=-1.0)
     A1.assemble()
 
@@ -138,7 +139,7 @@ def test_matrix_assembly_block_nl():
     bdofsW_V1 = dolfinx.fem.locate_dofs_topological((W.sub(1), V1), facetdim, bndry_facets)
 
     bc = dolfinx.fem.dirichletbc.DirichletBC(u_bc, bdofsW_V1, W.sub(1))
-    A2 = dolfinx.fem.assemble_matrix(J, [bc])
+    A2 = dolfinx.fem.assemble_matrix(J, bcs=[bc])
     A2.assemble()
     b2 = dolfinx.fem.assemble_vector(F)
     dolfinx.fem.apply_lifting(b2, [J], bcs=[[bc]], x0=[U.vector], scale=-1.0)
@@ -151,8 +152,14 @@ def test_matrix_assembly_block_nl():
 
 class NonlinearPDE_SNESProblem():
     def __init__(self, F, J, soln_vars, bcs, P=None):
-        self.L = F
-        self.a = J
+        try:
+            self.L = [dolfinx.fem.Form(_F) for _F in F]
+        except TypeError:
+            self.L = dolfinx.fem.Form(F)
+        try:
+            self.a = [[dolfinx.fem.Form(_J) for _J in Jrow] for Jrow in J]
+        except TypeError:
+            self.a = dolfinx.fem.Form(J)
         self.a_precon = P
         self.bcs = bcs
         self.soln_vars = soln_vars
@@ -164,17 +171,17 @@ class NonlinearPDE_SNESProblem():
         with F.localForm() as f_local:
             f_local.set(0.0)
         dolfinx.fem.assemble_vector(F, self.L)
-        dolfinx.fem.apply_lifting(F, [self.a], [self.bcs], x0=[x], scale=-1.0)
+        dolfinx.fem.apply_lifting(F, [self.a], bcs=[self.bcs], x0=[x], scale=-1.0)
         F.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
         dolfinx.fem.set_bc(F, self.bcs, x, -1.0)
 
     def J_mono(self, snes, x, J, P):
         J.zeroEntries()
-        dolfinx.fem.assemble_matrix(J, self.a, self.bcs, diagonal=1.0)
+        dolfinx.fem.assemble_matrix(J, self.a, bcs=self.bcs, diagonal=1.0)
         J.assemble()
         if self.a_precon is not None:
             P.zeroEntries()
-            dolfinx.fem.assemble_matrix(P, self.a_precon, self.bcs, diagonal=1.0)
+            dolfinx.fem.assemble_matrix(P, self.a_precon, bcs=self.bcs, diagonal=1.0)
             P.assemble()
 
     def F_block(self, snes, x, F):
@@ -192,16 +199,16 @@ class NonlinearPDE_SNESProblem():
             var.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
             offset += size_local
 
-        dolfinx.fem.assemble_vector_block(F, self.L, self.a, self.bcs, x0=x, scale=-1.0)
+        dolfinx.fem.assemble_vector_block(F, self.L, self.a, bcs=self.bcs, x0=x, scale=-1.0)
 
     def J_block(self, snes, x, J, P):
         assert x.getType() != "nest" and J.getType() != "nest" and P.getType() != "nest"
         J.zeroEntries()
-        dolfinx.fem.assemble_matrix_block(J, self.a, self.bcs, diagonal=1.0)
+        dolfinx.fem.assemble_matrix_block(J, self.a, bcs=self.bcs, diagonal=1.0)
         J.assemble()
         if self.a_precon is not None:
             P.zeroEntries()
-            dolfinx.fem.assemble_matrix_block(P, self.a_precon, self.bcs, diagonal=1.0)
+            dolfinx.fem.assemble_matrix_block(P, self.a_precon, bcs=self.bcs, diagonal=1.0)
             P.assemble()
 
     def F_nest(self, snes, x, F):
@@ -214,16 +221,16 @@ class NonlinearPDE_SNESProblem():
                 _u[:] = _x
 
         # Assemble
-        bcs1 = dolfinx.cpp.fem.bcs_cols(dolfinx.fem.assemble._create_cpp_form(self.a), self.bcs)
-        for L, F_sub, a, bc in zip(self.L, F.getNestSubVecs(), self.a, bcs1):
+        bcs1 = dolfinx.fem.dirichletbc.bcs_by_block(dolfinx.fem.form.extract_function_spaces(self.a, 1), self.bcs)
+        for L, F_sub, a in zip(self.L, F.getNestSubVecs(), self.a):
             with F_sub.localForm() as F_sub_local:
                 F_sub_local.set(0.0)
             dolfinx.fem.assemble_vector(F_sub, L)
-            dolfinx.fem.apply_lifting(F_sub, a, bc, x0=x, scale=-1.0)
+            dolfinx.fem.apply_lifting(F_sub, a, bcs=bcs1, x0=x, scale=-1.0)
             F_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
         # Set bc value in RHS
-        bcs0 = dolfinx.cpp.fem.bcs_rows(dolfinx.fem.assemble._create_cpp_form(self.L), self.bcs)
+        bcs0 = dolfinx.fem.dirichletbc.bcs_by_block(dolfinx.fem.form.extract_function_spaces(self.L), self.bcs)
         for F_sub, bc, x_sub in zip(F.getNestSubVecs(), bcs0, x):
             dolfinx.fem.set_bc(F_sub, bc, x_sub, -1.0)
 
@@ -233,11 +240,11 @@ class NonlinearPDE_SNESProblem():
     def J_nest(self, snes, x, J, P):
         assert J.getType() == "nest" and P.getType() == "nest"
         J.zeroEntries()
-        dolfinx.fem.assemble_matrix_nest(J, self.a, self.bcs, diagonal=1.0)
+        dolfinx.fem.assemble_matrix_nest(J, self.a, bcs=self.bcs, diagonal=1.0)
         J.assemble()
         if self.a_precon is not None:
             P.zeroEntries()
-            dolfinx.fem.assemble_matrix_nest(P, self.a_precon, self.bcs, diagonal=1.0)
+            dolfinx.fem.assemble_matrix_nest(P, self.a_precon, bcs=self.bcs, diagonal=1.0)
             P.assemble()
 
 
@@ -423,10 +430,10 @@ def test_assembly_solve_block_nl():
 
 
 @pytest.mark.parametrize("mesh", [
-    dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 12, 11, ghost_mode=dolfinx.cpp.mesh.GhostMode.none),
-    dolfinx.generation.UnitCubeMesh(MPI.COMM_WORLD, 3, 5, 4, ghost_mode=dolfinx.cpp.mesh.GhostMode.shared_facet),
-    dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 12, 11, ghost_mode=dolfinx.cpp.mesh.GhostMode.none),
-    dolfinx.generation.UnitCubeMesh(MPI.COMM_WORLD, 3, 5, 4, ghost_mode=dolfinx.cpp.mesh.GhostMode.shared_facet)
+    dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 12, 11, ghost_mode=GhostMode.none),
+    dolfinx.generation.UnitCubeMesh(MPI.COMM_WORLD, 3, 5, 4, ghost_mode=GhostMode.shared_facet),
+    dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 12, 11, ghost_mode=GhostMode.none),
+    dolfinx.generation.UnitCubeMesh(MPI.COMM_WORLD, 3, 5, 4, ghost_mode=GhostMode.shared_facet)
 ])
 def test_assembly_solve_taylor_hood_nl(mesh):
     """Assemble Stokes problem with Taylor-Hood elements and solve."""

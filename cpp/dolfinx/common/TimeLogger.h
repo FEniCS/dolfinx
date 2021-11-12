@@ -1,6 +1,6 @@
 // Copyright (C) 2003-2016 Anders Logg, 2015 Jan Blechta
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -43,9 +43,9 @@ public:
 
   /// List a summary of timings and tasks. ``MPI_AVG`` reduction is
   /// printed.
-  /// @param mpi_comm MPI Communicator
+  /// @param comm MPI Communicator
   /// @param type Set of possible timings: wall, user or system
-  void list_timings(MPI_Comm mpi_comm, std::set<TimingType> type);
+  void list_timings(MPI_Comm comm, std::set<TimingType> type);
 
   /// Return timing
   /// @param[in] task The task name to retrieve the timing for

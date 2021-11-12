@@ -1,6 +1,6 @@
 # Copyright (C) 2017-2020 Chris N. Richardson, Michal Habera and Garth N. Wells
 #
-# This file is part of DOLFINX (https://www.fenicsproject.org)
+# This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Simple built-in mesh generation module"""
@@ -10,7 +10,7 @@ import typing
 import numpy
 import ufl
 
-from dolfinx import cpp, fem
+from dolfinx import cpp
 
 __all__ = [
     "IntervalMesh", "UnitIntervalMesh", "RectangleMesh", "UnitSquareMesh",
@@ -34,8 +34,7 @@ def IntervalMesh(comm, nx: int, points: list, ghost_mode=cpp.mesh.GhostMode.shar
 
     """
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", "interval", 1))
-    cmap = fem.create_coordinate_map(comm, domain)
-    mesh = cpp.generation.create_interval_mesh(comm, nx, points, cmap, ghost_mode, partitioner)
+    mesh = cpp.generation.create_interval_mesh(comm, nx, points, ghost_mode, partitioner)
     domain._ufl_cargo = mesh
     mesh._ufl_domain = domain
     return mesh
@@ -73,9 +72,8 @@ def RectangleMesh(comm, points: typing.List[numpy.array], n: list, cell_type=cpp
         Direction of diagonal
 
     """
-    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cpp.mesh.to_string(cell_type), 1))
-    cmap = fem.create_coordinate_map(comm, domain)
-    mesh = cpp.generation.create_rectangle_mesh(comm, points, n, cmap, ghost_mode, partitioner, diagonal)
+    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell_type.name, 1))
+    mesh = cpp.generation.create_rectangle_mesh(comm, points, n, cell_type, ghost_mode, partitioner, diagonal)
     domain._ufl_cargo = mesh
     mesh._ufl_domain = domain
     return mesh
@@ -119,9 +117,8 @@ def BoxMesh(comm, points: typing.List[numpy.array], n: list,
         List of cells in each direction
 
     """
-    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cpp.mesh.to_string(cell_type), 1))
-    cmap = fem.create_coordinate_map(comm, domain)
-    mesh = cpp.generation.create_box_mesh(comm, points, n, cmap, ghost_mode, partitioner)
+    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell_type.name, 1))
+    mesh = cpp.generation.create_box_mesh(comm, points, n, cell_type, ghost_mode, partitioner)
     domain._ufl_cargo = mesh
     mesh._ufl_domain = domain
     return mesh

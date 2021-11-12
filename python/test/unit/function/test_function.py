@@ -1,6 +1,6 @@
 # Copyright (C) 2011-2021 Garth N. Wells
 #
-# This file is part of DOLFINX (https://www.fenicsproject.org)
+# This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for the Function class"""
@@ -145,25 +145,10 @@ def test_eval(V, W, Q, mesh):
 
     x0 = (mesh.geometry.x[0] + mesh.geometry.x[1]) / 2.0
     tree = geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
-    cell_candidates = geometry.compute_collisions_point(tree, x0)
-    cell = dolfinx.cpp.geometry.select_colliding_cells(mesh, cell_candidates, x0, 1)
-
-    assert np.allclose(u3.eval(x0, cell)[:3], u2.eval(x0, cell), rtol=1e-15, atol=1e-15)
-
-
-def test_eval_multiple(W):
-    u = Function(W)
-    u.vector.set(1.0)
-    mesh = W.mesh
-    x0 = (mesh.geometry.x[0] + mesh.geometry.x[1]) / 2.0
-    x = np.array([x0, x0 + 1.0e8])
-    tree = geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
-    cell_candidates = [geometry.compute_collisions_point(tree, xi) for xi in x]
-    assert len(cell_candidates[1]) == 0
-    cell_candidates = cell_candidates[0]
-    cell = dolfinx.cpp.geometry.select_colliding_cells(mesh, cell_candidates, x0, 1)
-
-    u.eval(x[0], cell)
+    cell_candidates = geometry.compute_collisions(tree, x0)
+    cell = dolfinx.geometry.compute_colliding_cells(mesh, cell_candidates, x0)
+    first_cell = cell[0]
+    assert np.allclose(u3.eval(x0, first_cell)[:3], u2.eval(x0, first_cell), rtol=1e-15, atol=1e-15)
 
 
 @skip_in_parallel
@@ -197,7 +182,7 @@ def test_mixed_element_interpolation():
     def f(x):
         return np.ones(2, x.shape[1])
     mesh = UnitCubeMesh(MPI.COMM_WORLD, 3, 3, 3)
-    el = ufl.FiniteElement("CG", mesh.ufl_cell(), 1)
+    el = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
     V = dolfinx.FunctionSpace(mesh, ufl.MixedElement([el, el]))
     u = dolfinx.Function(V)
     with pytest.raises(RuntimeError):

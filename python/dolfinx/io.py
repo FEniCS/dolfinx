@@ -1,11 +1,13 @@
-# Copyright (C) 2017-2020 Chris N. Richardson, Garth N. Wells, Michal Habera
+# Copyright (C) 2017-2021 Chris N. Richardson, Garth N. Wells, Michal Habera
 # and Jørgen S. Dokken
 #
-# This file is part of DOLFINX (https://www.fenicsproject.org)
+# This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 """IO module for input data, post-processing and checkpointing"""
+
+import typing
 
 import numpy
 import ufl
@@ -13,7 +15,7 @@ import ufl
 from dolfinx import cpp, fem
 
 
-class VTKFile:
+class VTKFile(cpp.io.VTKFile):
     """Interface to VTK files
     VTK supports arbitrary order Lagrangian finite elements for the
     geometry description. XDMF is the preferred format for geometry
@@ -21,22 +23,21 @@ class VTKFile:
 
     """
 
-    def __init__(self, filename: str):
-        """Open VTK file
-        Parameters
-        ----------
-        filename
-            Name of the file
-        """
-        self._cpp_object = cpp.io.VTKFile(filename)
+    def write_mesh(self, mesh: cpp.mesh.Mesh, t: float = 0.0) -> None:
+        """Write mesh to file for a given time (default 0.0)"""
+        self.write(mesh, t)
 
-    def write(self, o, t=None) -> None:
-        """Write object to file"""
-        o_cpp = getattr(o, "_cpp_object", o)
-        if t is None:
-            self._cpp_object.write(o_cpp)
+    def write_function(self, u: typing.Union[typing.List[fem.Function], fem.Function], t: float = 0.0) -> None:
+        """
+        Write a single function or a list of functions to file for a given time (default 0.0)
+        """
+        cpp_list = None
+        if isinstance(u, list):
+            cpp_list = [getattr(u_, "_cpp_object", u_) for u_ in u]
         else:
-            self._cpp_object.write(o_cpp, t)
+            cpp_list = [getattr(u, "_cpp_object", u)
+                        ]
+        super().write(cpp_list, t)
 
 
 class XDMFFile(cpp.io.XDMFFile):
@@ -46,16 +47,16 @@ class XDMFFile(cpp.io.XDMFFile):
 
     def read_mesh(self, ghost_mode=cpp.mesh.GhostMode.shared_facet, name="mesh", xpath="/Xdmf/Domain"):
         # Read mesh data from file
-        cell_type = super().read_cell_type(name, xpath)
+        cell_shape, cell_degree = super().read_cell_type(name, xpath)
         cells = super().read_topology_data(name, xpath)
         x = super().read_geometry_data(name, xpath)
 
         # Construct the geometry map
-        cell = ufl.Cell(cpp.mesh.to_string(cell_type[0]), geometric_dimension=x.shape[1])
-        domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell, cell_type[1]))
-        cmap = fem.create_coordinate_map(self.comm(), domain)
+        cell = ufl.Cell(cell_shape.name, geometric_dimension=x.shape[1])
+        domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell, cell_degree))
 
         # Build the mesh
+        cmap = cpp.fem.CoordinateElement(cell_shape, cell_degree)
         mesh = cpp.mesh.create_mesh(self.comm(), cpp.graph.AdjacencyList_int64(cells),
                                     cmap, x, ghost_mode, cpp.mesh.partition_cells_graph)
         mesh.name = name
@@ -136,7 +137,7 @@ def extract_gmsh_geometry(gmsh_model, model_name=None):
     return points[perm_sort]
 
 
-# Map from Gmsh int to DOLFIN cell type and degree
+# Map from Gmsh int to DOLFINx cell type and degree
 # http://gmsh.info//doc/texinfo/gmsh.html#MSH-file-format
 _gmsh_to_cells = {1: ("interval", 1), 2: ("triangle", 1),
                   3: ("quadrilateral", 1), 4: ("tetrahedron", 1),
@@ -155,4 +156,5 @@ def ufl_mesh_from_gmsh(gmsh_cell: int, gdim: int):
     """
     shape, degree = _gmsh_to_cells[gmsh_cell]
     cell = ufl.Cell(shape, geometric_dimension=gdim)
-    return ufl.Mesh(ufl.VectorElement("Lagrange", cell, degree))
+    scalar_element = ufl.FiniteElement("Lagrange", cell, degree, variant="equispaced")
+    return ufl.Mesh(ufl.VectorElement(scalar_element))

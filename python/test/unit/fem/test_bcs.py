@@ -1,11 +1,12 @@
-# Copyright (C) 2020-2021 Joseph P. Dean, Massimiliano Leoni
+# Copyright (C) 2020-2021 Joseph P. Dean and Massimiliano Leoni
 #
-# This file is part of DOLFINX (https://www.fenicsproject.org)
+# This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import dolfinx
 import numpy as np
+import pytest
 import ufl
 from mpi4py import MPI
 from petsc4py import PETSc
@@ -24,8 +25,10 @@ def test_locate_dofs_geometrical():
     W = dolfinx.fem.FunctionSpace(mesh, P0 * P1)
     V = W.sub(0).collapse()
 
-    dofs = dolfinx.fem.locate_dofs_geometrical(
-        (W.sub(0), V), lambda x: np.isclose(x.T, [0, 0, 0]).all(axis=1))
+    with pytest.raises(RuntimeError):
+        dolfinx.fem.locate_dofs_geometrical(W, lambda x: np.isclose(x.T, [0, 0, 0]).all(axis=1))
+
+    dofs = dolfinx.fem.locate_dofs_geometrical((W.sub(0), V), lambda x: np.isclose(x.T, [0, 0, 0]).all(axis=1))
 
     # Collect dofs (global indices) from all processes
     dofs0_global = W.sub(0).dofmap.index_map.local_to_global(dofs[0])
@@ -51,36 +54,35 @@ def test_overlapping_bcs():
     """Test that, when boundaries condition overlap, the last provided
     boundary condition is applied.
     """
-    n = 123
+    n = 23
     mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, n, n)
     V = dolfinx.fem.FunctionSpace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
-
     a = inner(u, v) * dx
     L = inner(1, v) * dx
 
-    dofsLeft = dolfinx.fem.locate_dofs_geometrical(
-        V, lambda x: x[0] < 1 / (2 * n))
-    dofsTop = dolfinx.fem.locate_dofs_geometrical(
-        V, lambda x: x[1] > 1 - 1 / (2 * n))
-    dofCorner = list(set(dofsLeft).intersection(set(dofsTop)))
+    dofs_left = dolfinx.fem.locate_dofs_geometrical(V, lambda x: x[0] < 1.0 / (2.0 * n))
+    dofs_top = dolfinx.fem.locate_dofs_geometrical(V, lambda x: x[1] > 1.0 - 1.0 / (2.0 * n))
+    dof_corner = np.array(list(set(dofs_left).intersection(set(dofs_top))), dtype=np.int64)
 
     # Check only one dof pair is found globally
-    assert len(dofCorner) == 1
+    assert len(set(np.concatenate(MPI.COMM_WORLD.allgather(dof_corner)))) == 1
 
-    u0 = dolfinx.Function(V)
+    u0, u1 = dolfinx.Function(V), dolfinx.Function(V)
     with u0.vector.localForm() as u0_loc:
         u0_loc.set(0)
-    u1 = dolfinx.Function(V)
     with u1.vector.localForm() as u1_loc:
         u1_loc.set(123.456)
-    bcs = [dolfinx.DirichletBC(u0, dofsLeft), dolfinx.DirichletBC(u1, dofsTop)]
+    bcs = [dolfinx.DirichletBC(u0, dofs_left), dolfinx.DirichletBC(u1, dofs_top)]
 
-    A = dolfinx.fem.create_matrix(a)
-    b = dolfinx.fem.create_vector(L)
-
+    A, b = dolfinx.fem.create_matrix(a), dolfinx.fem.create_vector(L)
     dolfinx.fem.assemble_matrix(A, a, bcs=bcs)
     A.assemble()
+
+    # Check the diagonal (only on the rank that owns the row)
+    d = A.getDiagonal()
+    if len(dof_corner) > 0 and dof_corner[0] < V.dofmap.index_map.size_local:
+        d.array_r[dof_corner[0]] == 1.0
 
     with b.localForm() as b_loc:
         b_loc.set(0)
@@ -88,6 +90,9 @@ def test_overlapping_bcs():
     dolfinx.fem.apply_lifting(b, [a], [bcs])
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     dolfinx.fem.set_bc(b, bcs)
+    b.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
-    assert b[dofCorner[0]] == 123.456
-    assert A.getDiagonal()[dofCorner[0]] == 1
+    if len(dof_corner) > 0:
+        with b.localForm() as b_loc:
+            print(b_loc[dof_corner[0]])
+            assert b_loc[dof_corner[0]] == 123.456

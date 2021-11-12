@@ -1,6 +1,6 @@
 # Copyright (C) 2019 Chris Richardson
 #
-# This file is part of DOLFINX (https://www.fenicsproject.org)
+# This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for assembly over domains"""
@@ -9,7 +9,7 @@ import dolfinx
 import numpy
 import pytest
 import ufl
-from dolfinx.mesh import locate_entities_boundary
+from dolfinx.mesh import GhostMode, locate_entities_boundary
 from mpi4py import MPI
 from petsc4py import PETSc
 
@@ -20,21 +20,16 @@ def mesh():
 
 
 parametrize_ghost_mode = pytest.mark.parametrize("mode", [
-    pytest.param(dolfinx.cpp.mesh.GhostMode.none,
-                 marks=pytest.mark.skipif(condition=MPI.COMM_WORLD.size > 1,
-                                          reason="Unghosted interior facets fail in parallel")),
-    pytest.param(dolfinx.cpp.mesh.GhostMode.shared_facet,
-                 marks=pytest.mark.skipif(condition=MPI.COMM_WORLD.size == 1,
-                                          reason="Shared ghost modes fail in serial"))])
+    pytest.param(GhostMode.none, marks=pytest.mark.skipif(condition=MPI.COMM_WORLD.size > 1,
+                                                          reason="Unghosted interior facets fail in parallel")),
+    pytest.param(GhostMode.shared_facet, marks=pytest.mark.skipif(condition=MPI.COMM_WORLD.size == 1,
+                                                                  reason="Shared ghost modes fail in serial"))])
 
 
-@pytest.mark.parametrize("mode", [
-    dolfinx.cpp.mesh.GhostMode.none,
-    dolfinx.cpp.mesh.GhostMode.shared_facet
-])
+@pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
 def test_assembly_dx_domains(mode):
     mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 10, 10, ghost_mode=mode)
-    V = dolfinx.FunctionSpace(mesh, ("CG", 1))
+    V = dolfinx.FunctionSpace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 
     # Prepare a marking structures
@@ -91,10 +86,10 @@ def test_assembly_dx_domains(mode):
     assert s == pytest.approx(s2, 1.0e-12)
 
 
-@pytest.mark.parametrize("mode", [dolfinx.cpp.mesh.GhostMode.none, dolfinx.cpp.mesh.GhostMode.shared_facet])
+@pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
 def test_assembly_ds_domains(mode):
     mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 10, 10, ghost_mode=mode)
-    V = dolfinx.FunctionSpace(mesh, ("CG", 1))
+    V = dolfinx.FunctionSpace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 
     def bottom(x):
@@ -178,7 +173,7 @@ def test_assembly_ds_domains(mode):
 def test_assembly_dS_domains(mode):
     N = 10
     mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, N, N, ghost_mode=mode)
-    one = dolfinx.Constant(mesh, 1)
+    one = dolfinx.Constant(mesh, PETSc.ScalarType(1))
     val = dolfinx.fem.assemble_scalar(one * ufl.dS)
     val = mesh.mpi_comm().allreduce(val, op=MPI.SUM)
     assert val == pytest.approx(2 * (N - 1) + N * numpy.sqrt(2), 1.0e-7)
@@ -187,7 +182,7 @@ def test_assembly_dS_domains(mode):
 @parametrize_ghost_mode
 def test_additivity(mode):
     mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
-    V = dolfinx.FunctionSpace(mesh, ("CG", 1))
+    V = dolfinx.FunctionSpace(mesh, ("Lagrange", 1))
 
     f1 = dolfinx.Function(V)
     f2 = dolfinx.Function(V)

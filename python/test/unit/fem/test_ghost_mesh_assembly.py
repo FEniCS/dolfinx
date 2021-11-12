@@ -1,6 +1,6 @@
 # Copyright (C) 2018-2020 Garth N. Wells
 #
-# This file is part of DOLFINX (https://www.fenicsproject.org)
+# This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for assembly"""
@@ -8,9 +8,9 @@
 import pytest
 import ufl
 from dolfinx import fem
-from dolfinx.cpp.mesh import GhostMode
 from dolfinx.fem import Function, FunctionSpace
 from dolfinx.generation import UnitSquareMesh
+from dolfinx.mesh import GhostMode
 from mpi4py import MPI
 from petsc4py import PETSc
 from ufl import avg, inner

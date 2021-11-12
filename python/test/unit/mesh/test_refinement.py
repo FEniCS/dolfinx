@@ -1,14 +1,13 @@
 # Copyright (C) 2018 Chris N Richardson
 #
-# This file is part of DOLFINX (https://www.fenicsproject.org)
+# This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import dolfinx
 import ufl
 from dolfinx import FunctionSpace, UnitCubeMesh, UnitSquareMesh
-from dolfinx.cpp.mesh import GhostMode
-from dolfinx.mesh import refine
+from dolfinx.mesh import GhostMode, refine
 from mpi4py import MPI
 
 
@@ -35,7 +34,7 @@ def test_RefineUnitCubeMesh_repartition():
     assert mesh.topology.index_map(0).size_global == 3135
     assert mesh.topology.index_map(3).size_global == 15120
 
-    Q = FunctionSpace(mesh, ("CG", 1))
+    Q = FunctionSpace(mesh, ("Lagrange", 1))
     assert Q
 
 
@@ -46,7 +45,7 @@ def test_RefineUnitCubeMesh_keep_partition():
     mesh = refine(mesh, redistribute=False)
     assert mesh.topology.index_map(0).size_global == 3135
     assert mesh.topology.index_map(3).size_global == 15120
-    Q = FunctionSpace(mesh, ("CG", 1))
+    Q = FunctionSpace(mesh, ("Lagrange", 1))
     assert Q
 
 
@@ -56,7 +55,7 @@ def test_refine_create_form():
     mesh.topology.create_entities(1)
     mesh = refine(mesh, redistribute=True)
 
-    V = dolfinx.FunctionSpace(mesh, ("CG", 1))
+    V = dolfinx.FunctionSpace(mesh, ("Lagrange", 1))
 
     # Define variational problem
     u = ufl.TrialFunction(V)
