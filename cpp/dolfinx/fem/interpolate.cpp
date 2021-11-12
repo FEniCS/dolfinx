@@ -16,8 +16,7 @@ using namespace dolfinx;
 xt::xtensor<double, 2>
 fem::interpolation_coords(const fem::FiniteElement& element,
                           const mesh::Mesh& mesh,
-                          const xtl::span<const std::int32_t>& cells,
-                          bool transpose)
+                          const xtl::span<const std::int32_t>& cells)
 {
   // Get mesh geometry data and the element coordinate map
   const std::size_t gdim = mesh.geometry().dim();
@@ -36,57 +35,27 @@ fem::interpolation_coords(const fem::FiniteElement& element,
   // (x) for each cell
   xt::xtensor<double, 2> coordinate_dofs
       = xt::zeros<double>({num_dofs_g, gdim});
-  std::array<std::size_t, 2> shape
-      = {transpose ? cells.size() * X.shape(0) : 3,
-         transpose ? 3 : cells.size() * X.shape(0)};
+  std::array<std::size_t, 2> shape = {3, cells.size() * X.shape(0)};
   xt::xtensor<double, 2> x = xt::zeros<double>(shape);
-  if (transpose)
+  for (std::size_t c = 0; c < cells.size(); ++c)
   {
-    for (std::size_t c = 0; c < cells.size(); ++c)
+    // Get geometry data for current cell
+    auto x_dofs = x_dofmap.links(cells[c]);
+    for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
-      // Get geometry data for current cell
-      auto x_dofs = x_dofmap.links(cells[c]);
-      for (std::size_t i = 0; i < x_dofs.size(); ++i)
-      {
-        std::copy_n(xt::row(x_g, x_dofs[i]).begin(), gdim,
-                    std::next(coordinate_dofs.begin(), i * gdim));
-      }
-
-      // Push forward coordinates (X -> x)
-      for (std::size_t p = 0; p < X.shape(0); ++p)
-      {
-        for (std::size_t j = 0; j < gdim; ++j)
-        {
-          double acc = 0;
-          for (std::size_t k = 0; k < num_dofs_g; ++k)
-            acc += phi(p, k) * coordinate_dofs(k, j);
-          x(c * X.shape(0) + p, j) = acc;
-        }
-      }
+      std::copy_n(xt::row(x_g, x_dofs[i]).begin(), gdim,
+                  std::next(coordinate_dofs.begin(), i * gdim));
     }
-  }
-  else
-  {
-    for (std::size_t c = 0; c < cells.size(); ++c)
-    {
-      // Get geometry data for current cell
-      auto x_dofs = x_dofmap.links(cells[c]);
-      for (std::size_t i = 0; i < x_dofs.size(); ++i)
-      {
-        std::copy_n(xt::row(x_g, x_dofs[i]).begin(), gdim,
-                    std::next(coordinate_dofs.begin(), i * gdim));
-      }
 
-      // Push forward coordinates (X -> x)
-      for (std::size_t p = 0; p < X.shape(0); ++p)
+    // Push forward coordinates (X -> x)
+    for (std::size_t p = 0; p < X.shape(0); ++p)
+    {
+      for (std::size_t j = 0; j < gdim; ++j)
       {
-        for (std::size_t j = 0; j < gdim; ++j)
-        {
-          double acc = 0;
-          for (std::size_t k = 0; k < num_dofs_g; ++k)
-            acc += phi(p, k) * coordinate_dofs(k, j);
-          x(j, c * X.shape(0) + p) = acc;
-        }
+        double acc = 0;
+        for (std::size_t k = 0; k < num_dofs_g; ++k)
+          acc += phi(p, k) * coordinate_dofs(k, j);
+        x(j, c * X.shape(0) + p) = acc;
       }
     }
   }

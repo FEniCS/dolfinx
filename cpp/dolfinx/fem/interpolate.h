@@ -36,13 +36,11 @@ class Function;
 /// @param[in] mesh The domain
 /// @param[in] cells Indices of the cells in the mesh to compute
 /// interpolation coordinates for
-/// @param[in] transpose Indicates whether or not the result should be
-/// transposed
 /// @return The coordinates in the physical space at which to evaluate
 /// an expression
 xt::xtensor<double, 2>
 interpolation_coords(const fem::FiniteElement& element, const mesh::Mesh& mesh,
-                     const xtl::span<const std::int32_t>& cells, bool transpose=false);
+                     const xtl::span<const std::int32_t>& cells);
 
 /// Interpolate an expression in a finite element space
 ///
@@ -418,29 +416,50 @@ void interpolate(Function<T>& u, const Function<T>& v)
 
     // Get block sizes and dof transformation operators
     const int u_bs = element_to->block_size();
+    const int v_bs = element_from->block_size();
     const auto apply_dof_transformation
-        = element_from->get_dof_transformation_function<T>(false, true, false);
+        = element_from->get_dof_transformation_function<double>(false, true,
+                                                                false);
     const auto apply_inverse_dof_transform
         = element_to->get_dof_transformation_function<T>(true, true, false);
 
-    const fem::CoordinateElement& cmap = mesh->geometry().cmap();
+    // Get sizes of elements
+    const std::size_t v_dim = element_from->space_dimension() / v_bs;
+    const std::size_t v_ref_vs = element_from->reference_value_size() / v_bs;
+    const std::size_t v_vs = element_from->value_size() / v_bs;
 
     // Get geometry data
+    const fem::CoordinateElement& cmap = mesh->geometry().cmap();
     const graph::AdjacencyList<std::int32_t>& x_dofmap
         = mesh->geometry().dofmap();
     // FIXME: Add proper interface for num coordinate dofs
     const std::size_t num_dofs_g = x_dofmap.num_links(0);
     const xt::xtensor<double, 2>& x_g = mesh->geometry().x();
 
+    // Evaluate cmap at interpolation points
+    xt::xtensor<double, 4> phi(cmap.tabulate_shape(1, points.shape(0)));
+    xt::xtensor<double, 2> dphi;
+    cmap.tabulate(1, points, phi);
+    dphi = xt::view(phi, xt::range(1, tdim + 1), 0, xt::all(), 0);
+
+    // Evalute basis function at interpolation points on reference
+    xt::xtensor<double, 4> v_basis_derivatives_reference_values(
+        {1, points.shape(0), v_dim, v_ref_vs});
+    element_from->tabulate(v_basis_derivatives_reference_values, points, 0);
+    // auto v_basis_reference_values =
+    // xt::view(v_basis_derivatives_reference_values,
+    //                                       0, xt::all(), xt::all(),
+    //                                       xt::all());
+
     // Create working arrays
     std::vector<T> u_local(element_to->space_dimension());
+    xt::xtensor<double, 3> v_basis_values({points.shape(0), v_dim, v_vs});
+    xt::xtensor<double, 3> v_basis_reference_values(
+        {points.shape(0), v_dim, v_ref_vs});
+    std::vector<T> v_coefficients(element_from->space_dimension());
     xt::xtensor<T, 3> v_values({points.shape(0), 1, element_to->value_size()});
     xt::xtensor<T, 3> v_mapped_values(
         {points.shape(0), 1, element_to->value_size()});
-    std::vector<int> cells(points.shape(0));
-    std::vector<int> cell(1);
-    xt::xtensor<double, 4> phi(cmap.tabulate_shape(1, points.shape(0)));
-    xt::xtensor<double, 2> dphi;
     xt::xtensor<double, 2> coordinate_dofs({num_dofs_g, gdim});
     xt::xtensor<double, 3> J({points.shape(0), gdim, tdim});
     xt::xtensor<double, 3> K({points.shape(0), tdim, gdim});
@@ -457,21 +476,7 @@ void interpolate(Function<T>& u, const Function<T>& v)
         for (std::size_t j = 0; j < gdim; ++j)
           coordinate_dofs(i, j) = x_g(x_dofs[i], j);
 
-      // Evaluate v at interpolation points
-      cell[0] = c;
-      for (std::size_t i = 0; i < cells.size(); ++i)
-        cells[i] = c;
-      const xt::xtensor<double, 2> X
-          = interpolation_coords(*element_to, *mesh, cell, true);
-      xt::xtensor<T, 2> _v({v_values.shape(0), v_values.shape(2)});
-      v.eval(X, cells, _v);
-      for (std::size_t i = 0; i < v_values.shape(0); ++i)
-        for (std::size_t j = 0; j < v_values.shape(2); ++j)
-          v_values(i, 0, j) = _v(i, j);
-
       // Compute Jacobians
-      cmap.tabulate(1, points, phi);
-      dphi = xt::view(phi, xt::range(1, tdim + 1), 0, xt::all(), 0);
       J.fill(0);
       for (std::size_t p = 0; p < points.shape(0); ++p)
       {
@@ -479,6 +484,43 @@ void interpolate(Function<T>& u, const Function<T>& v)
         cmap.compute_jacobian(dphi, coordinate_dofs, _J);
         cmap.compute_jacobian_inverse(_J, xt::view(K, p, xt::all(), xt::all()));
         detJ[p] = cmap.compute_jacobian_determinant(_J);
+      }
+
+      v_basis_reference_values = xt::view(v_basis_derivatives_reference_values,
+                                          0, xt::all(), xt::all(), xt::all());
+
+      // Evaluate v at the interpolation points
+      for (std::size_t p = 0; p < points.shape(0); ++p)
+      {
+        apply_dof_transformation(
+            xtl::span(v_basis_reference_values.data() + p * v_dim * v_ref_vs,
+                      v_dim * v_ref_vs),
+            cell_info, c, v_ref_vs);
+      }
+
+      // v_basis_values.fill(0);
+      element_from->transform_reference_basis(
+          v_basis_values, v_basis_reference_values, J, detJ, K);
+
+      xtl::span<const std::int32_t> dofs_v = dofmap_v->cell_dofs(c);
+      for (std::size_t i = 0; i < dofs_v.size(); ++i)
+        for (int k = 0; k < v_bs; ++k)
+          v_coefficients[v_bs * i + k] = v_array[v_bs * dofs_v[i] + k];
+
+      for (std::size_t p = 0; p < points.shape(0); ++p)
+      {
+        for (int k = 0; k < v_bs; ++k)
+        {
+          for (std::size_t j = 0; j < v_vs; ++j)
+          {
+            v_values(p, 0, j * v_bs + k) = 0;
+            for (std::size_t i = 0; i < v_dim; ++i)
+            {
+              v_values(p, 0, j * v_bs + k)
+                  += v_coefficients[v_bs * i + k] * v_basis_values(p, i, j);
+            }
+          }
+        }
       }
 
       // Pull back to the reference and interpolate
