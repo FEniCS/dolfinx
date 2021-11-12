@@ -569,6 +569,12 @@ void pack_coefficient_interior_facet(
 }
 } // namespace impl
 
+/// Pack coefficients of a Form u for a given integral type and domain id
+///
+/// @param[in] u The Form
+/// @param[in] integral_type Type of integral
+/// @param[in] id The id of the integration domain
+/// @return A pair of the form (coeffs, cstride)
 template <typename T>
 std::pair<std::vector<T>, int>
 pack_coefficients(const Form<T>& u, fem::IntegralType integral_type, const int id)
@@ -712,6 +718,11 @@ pack_coefficients(const Form<T>& u)
   return coefficients;
 }
 
+/// Pack coefficients of a Expression u for a give list of active cells
+///
+/// @param[in] u The Expression
+/// @param[in] active_cells A list of active cells
+/// @return A pair of the form (coeffs, cstride)
 template<typename T>
 std::pair<std::vector<T>, int>
 pack_coefficients(const Expression<T>& u,

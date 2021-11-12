@@ -29,7 +29,7 @@ class FunctionSpace;
 /// @note Caller is responsible for accumulation across processes.
 /// @param[in] M The form (functional) to assemble
 /// @param[in] constants The constants that appear in `M`
-/// @param[in] coeffs The coefficients that appear in `M`
+/// @param[in] coefficients The coefficients that appear in `M`
 /// @return The contribution to the form (functional) from the local
 /// process
 template <typename T>
@@ -62,7 +62,7 @@ T assemble_scalar(const Form<T>& M)
 /// before assembly.
 /// @param[in] L The linear forms to assemble into b
 /// @param[in] constants The constants that appear in `L`
-/// @param[in] coeffs The coefficients that appear in `L`
+/// @param[in] coefficients The coefficients that appear in `L`
 template <typename T>
 void assemble_vector(xtl::span<T> b, const Form<T>& L,
                      const xtl::span<const T>& constants,
@@ -168,7 +168,7 @@ void apply_lifting(
 /// @param[in] mat_add The function for adding values into the matrix
 /// @param[in] a The bilinear from to assemble
 /// @param[in] constants Constants that appear in `a`
-/// @param[in] coeffs Coefficients that appear in `a`
+/// @param[in] coefficients Coefficients that appear in `a`
 /// @param[in] bcs Boundary conditions to apply. For boundary condition
 ///  dofs the row and column are zeroed. The diagonal  entry is not set.
 template <typename T>
@@ -240,7 +240,7 @@ void assemble_matrix(
 /// @param[in] mat_add The function for adding values into the matrix
 /// @param[in] a The bilinear form to assemble
 /// @param[in] constants Constants that appear in `a`
-/// @param[in] coeffs Coefficients that appear in `a`
+/// @param[in] coefficients Coefficients that appear in `a`
 /// @param[in] dof_marker0 Boundary condition markers for the rows. If
 /// bc[i] is true then rows i in A will be zeroed. The index i is a
 /// local index.
