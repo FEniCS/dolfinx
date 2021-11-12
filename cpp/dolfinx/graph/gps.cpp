@@ -138,7 +138,7 @@ std::vector<int> graph::gps_reorder(const graph::AdjacencyList<int>& graph)
   int u = 0;
   while (!done)
   {
-    // Sort final level S of Lv into degree order
+    // Sort final level S of Lv into increasing degree order
     std::vector<int>& S = lv.back();
     std::sort(S.begin(), S.end(), cmp_degree);
 
@@ -267,6 +267,7 @@ std::vector<int> graph::gps_reorder(const graph::AdjacencyList<int>& graph)
   std::vector<bool> in_level;
   std::vector<int> rv_next;
   std::vector<int> nbr, nbr_next;
+  std::vector<int> nrem;
 
   for (std::size_t level = 0; level < ls.size(); ++level)
   {
@@ -276,40 +277,50 @@ std::vector<int> graph::gps_reorder(const graph::AdjacencyList<int>& graph)
       in_level[w] = true;
 
     rv_next.clear();
-    while (current_node < (int)rv.size())
+    while (true)
     {
-      // Get unlabelled neighbours of current node in this level
-      // and next level
-      nbr.clear();
-      nbr_next.clear();
-      for (int w : graph.links(rv[current_node]))
+      while (current_node < (int)rv.size())
       {
-        if (labelled[w])
-          continue;
-        if (in_level[w])
-          nbr.push_back(w);
-        else
-          nbr_next.push_back(w);
+        // Get unlabelled neighbours of current node in this level
+        // and next level
+        nbr.clear();
+        nbr_next.clear();
+        for (int w : graph.links(rv[current_node]))
+        {
+          if (labelled[w])
+            continue;
+          if (in_level[w])
+            nbr.push_back(w);
+          else
+            nbr_next.push_back(w);
+        }
+
+        // Add nodes to rv in order of increasing degree
+        std::sort(nbr.begin(), nbr.end(), cmp_degree);
+        rv.insert(rv.end(), nbr.begin(), nbr.end());
+        for (int w : nbr)
+          labelled[w] = true;
+
+        // Save nodes for next level to a separate list, rv_next
+        std::sort(nbr_next.begin(), nbr_next.end(), cmp_degree);
+        rv_next.insert(rv_next.end(), nbr_next.begin(), nbr_next.end());
+        for (int w : nbr_next)
+          labelled[w] = true;
+
+        ++current_node;
       }
-
-      // Add nodes to rv in order of increasing degree
-      std::sort(nbr.begin(), nbr.end(), cmp_degree);
-      rv.insert(rv.end(), nbr.begin(), nbr.end());
-      for (int w : nbr)
-        labelled[w] = true;
-
-      // Save nodes for next level to a separate list, rv_next
-      std::sort(nbr_next.begin(), nbr_next.end(), cmp_degree);
-      rv_next.insert(rv_next.end(), nbr_next.begin(), nbr_next.end());
-      for (int w : nbr_next)
-        labelled[w] = true;
-
-      ++current_node;
+      // Find any remaining unlabelled nodes in level
+      // and label the one with lowest degree
+      nrem.clear();
+      for (int w : ls[level])
+        if (!labelled[w])
+          nrem.push_back(w);
+      if (nrem.size() == 0)
+        break;
+      std::sort(nrem.begin(), nrem.end(), cmp_degree);
+      rv.push_back(nrem.front());
+      labelled[nrem.front()] = true;
     }
-    // TODO: check if any left in current level?
-    for (int w : ls[level])
-      if (!labelled[w])
-        throw std::runtime_error("Unlabeled nodes in level");
 
     // Insert already-labelled nodes of next level
     rv.insert(rv.end(), rv_next.begin(), rv_next.end());
