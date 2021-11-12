@@ -418,7 +418,7 @@ void interpolate(Function<T>& u, const Function<T>& v)
     const int u_bs = element_to->block_size();
     const int v_bs = element_from->block_size();
     const auto apply_dof_transformation
-        = element_from->get_dof_transformation_function<double>(false, true,
+        = element_from->get_dof_transformation_function<double>(false, false,
                                                                 false);
     const auto apply_inverse_dof_transform
         = element_to->get_dof_transformation_function<T>(true, true, false);
@@ -446,10 +446,6 @@ void interpolate(Function<T>& u, const Function<T>& v)
     xt::xtensor<double, 4> v_basis_derivatives_reference_values(
         {1, points.shape(0), v_dim, v_ref_vs});
     element_from->tabulate(v_basis_derivatives_reference_values, points, 0);
-    // auto v_basis_reference_values =
-    // xt::view(v_basis_derivatives_reference_values,
-    //                                       0, xt::all(), xt::all(),
-    //                                       xt::all());
 
     // Create working arrays
     std::vector<T> u_local(element_to->space_dimension());
@@ -486,10 +482,10 @@ void interpolate(Function<T>& u, const Function<T>& v)
         detJ[p] = cmap.compute_jacobian_determinant(_J);
       }
 
+      // Get evaluated basis on reference, apply DOF transformations, push
+      // forward
       v_basis_reference_values = xt::view(v_basis_derivatives_reference_values,
                                           0, xt::all(), xt::all(), xt::all());
-
-      // Evaluate v at the interpolation points
       for (std::size_t p = 0; p < points.shape(0); ++p)
       {
         apply_dof_transformation(
@@ -497,11 +493,10 @@ void interpolate(Function<T>& u, const Function<T>& v)
                       v_dim * v_ref_vs),
             cell_info, c, v_ref_vs);
       }
-
-      // v_basis_values.fill(0);
       element_from->transform_reference_basis(
           v_basis_values, v_basis_reference_values, J, detJ, K);
 
+      // Evaluate v at the interpolation points
       xtl::span<const std::int32_t> dofs_v = dofmap_v->cell_dofs(c);
       for (std::size_t i = 0; i < dofs_v.size(); ++i)
         for (int k = 0; k < v_bs; ++k)
