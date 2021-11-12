@@ -364,8 +364,12 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh& mesh, const int entity_dim,
     throw std::runtime_error("Number of entities and data size must match");
 
   // Get layout of dofs on 0th cell entity of dimension entity_dim
+
+  const fem::ElementDofLayout cmap_dof_layout
+      = mesh.geometry().cmap().create_dof_layout();
+
   const std::vector<int> entity_layout
-      = mesh.geometry().cmap().dof_layout().entity_closure_dofs(entity_dim, 0);
+      = cmap_dof_layout.entity_closure_dofs(entity_dim, 0);
   assert(entity_layout.size() == entities.shape(1));
 
   auto c_to_v = mesh.topology().connectivity(mesh.topology().dim(), 0);
@@ -379,8 +383,7 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh& mesh, const int entity_dim,
   std::vector<int> cell_vertex_dofs(num_vertices_per_cell);
   for (int i = 0; i < num_vertices_per_cell; ++i)
   {
-    const std::vector<int>& local_index
-        = mesh.geometry().cmap().dof_layout().entity_dofs(0, i);
+    const std::vector<int>& local_index = cmap_dof_layout.entity_dofs(0, i);
     assert(local_index.size() == 1);
     cell_vertex_dofs[i] = local_index[0];
   }

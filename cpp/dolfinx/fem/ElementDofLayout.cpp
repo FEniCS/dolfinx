@@ -10,6 +10,8 @@
 #include <numeric>
 #include <stdexcept>
 
+#include <iostream>
+
 using namespace dolfinx;
 using namespace dolfinx::fem;
 
@@ -74,7 +76,7 @@ int ElementDofLayout::num_entity_closure_dofs(int dim) const
 const std::vector<int>&
 ElementDofLayout::entity_dofs(int entity_dim, int cell_entity_index) const
 {
-  return _entity_dofs.at(entity_dim).at(cell_entity_index);
+  return _entity_dofs[entity_dim][cell_entity_index];
 }
 //-----------------------------------------------------------------------------
 const std::vector<int>&
