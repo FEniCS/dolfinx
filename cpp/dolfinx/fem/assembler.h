@@ -109,7 +109,8 @@ template <typename T>
 void apply_lifting(
     xtl::span<T> b, const std::vector<std::shared_ptr<const Form<T>>>& a,
     const std::vector<xtl::span<const T>>& constants,
-    const std::vector<std::pair<xtl::span<const T>, int>>& coeffs,
+    const std::vector<std::map<std::pair<IntegralType, int>,
+                               std::pair<std::vector<T>, int>>>& coeffs,
     const std::vector<std::vector<std::shared_ptr<const DirichletBC<T>>>>& bcs1,
     const std::vector<xtl::span<const T>>& x0, double scale)
 {
@@ -134,29 +135,31 @@ void apply_lifting(
     const std::vector<std::vector<std::shared_ptr<const DirichletBC<T>>>>& bcs1,
     const std::vector<xtl::span<const T>>& x0, double scale)
 {
-  // FIXME UNCOMMENT
-
   // std::vector<std::pair<std::vector<T>, int>> coeffs_data;
   // std::vector<std::pair<xtl::span<const T>, int>> coeffs;
-  // std::vector<std::vector<T>> constants;
-  // for (auto _a : a)
-  // {
-  //   if (_a)
-  //   {
-  //     coeffs_data.push_back(pack_coefficients(*_a));
-  //     coeffs.emplace_back(coeffs_data.back().first, coeffs_data.back().second);
-  //     constants.push_back(pack_constants(*_a));
-  //   }
-  //   else
-  //   {
-  //     coeffs.emplace_back(xtl::span<const T>(), 0);
-  //     constants.push_back({});
-  //   }
-  // }
+  std::vector<std::map<std::pair<IntegralType, int>,
+              std::pair<std::vector<T>, int>>> coeffs;
+  std::vector<std::vector<T>> constants;
+  for (auto _a : a)
+  {
+    if (_a)
+    {
+      // coeffs_data.push_back(pack_coefficients(*_a));
+      // coeffs.emplace_back(coeffs_data.back().first, coeffs_data.back().second);
+      coeffs.push_back(pack_coefficients(*_a));
+      constants.push_back(pack_constants(*_a));
+    }
+    else
+    {
+      coeffs.push_back(std::map<std::pair<IntegralType, int>,
+                       std::pair<std::vector<T>, int>>());
+      constants.push_back({});
+    }
+  }
 
-  // std::vector<xtl::span<const T>> _constants(constants.begin(),
-  //                                            constants.end());
-  // apply_lifting(b, a, _constants, coeffs, bcs1, x0, scale);
+  std::vector<xtl::span<const T>> _constants(constants.begin(),
+                                             constants.end());
+  apply_lifting(b, a, _constants, coeffs, bcs1, x0, scale);
 }
 
 // -- Matrices ---------------------------------------------------------------

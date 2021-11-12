@@ -776,7 +776,8 @@ void assemble_interior_facets(
 template <typename T>
 void lift_bc(xtl::span<T> b, const Form<T>& a,
              const xtl::span<const T>& constants,
-             const xtl::span<const T>& coeffs, int cstride,
+             const std::map<std::pair<IntegralType, int>,
+                            std::pair<std::vector<T>, int>>& coefficients,
              const xtl::span<const T>& bc_values1,
              const std::vector<bool>& bc_markers1, const xtl::span<const T>& x0,
              double scale)
@@ -823,27 +824,28 @@ void lift_bc(xtl::span<T> b, const Form<T>& a,
   for (int i : a.integral_ids(IntegralType::cell))
   {
     const auto& kernel = a.kernel(IntegralType::cell, i);
+    const auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
     const std::vector<std::int32_t>& cells = a.cell_domains(i);
     if (bs0 == 1 and bs1 == 1)
     {
       _lift_bc_cells<T, 1, 1>(b, mesh->geometry(), kernel, cells, dof_transform,
                               dofmap0, bs0, dof_transform_to_transpose, dofmap1,
-                              bs1, constants, coeffs, cstride, cell_info,
-                              bc_values1, bc_markers1, x0, scale);
+                              bs1, constants, tcb::make_span(coeffs), cstride,
+                              cell_info, bc_values1, bc_markers1, x0, scale);
     }
     else if (bs0 == 3 and bs1 == 3)
     {
       _lift_bc_cells<T, 3, 3>(b, mesh->geometry(), kernel, cells, dof_transform,
                               dofmap0, bs0, dof_transform_to_transpose, dofmap1,
-                              bs1, constants, coeffs, cstride, cell_info,
-                              bc_values1, bc_markers1, x0, scale);
+                              bs1, constants, tcb::make_span(coeffs), cstride,
+                              cell_info, bc_values1, bc_markers1, x0, scale);
     }
     else
     {
       _lift_bc_cells(b, mesh->geometry(), kernel, cells, dof_transform, dofmap0,
                      bs0, dof_transform_to_transpose, dofmap1, bs1, constants,
-                     coeffs, cstride, cell_info, bc_values1, bc_markers1, x0,
-                     scale);
+                     tcb::make_span(coeffs), cstride, cell_info, bc_values1,
+                     bc_markers1, x0, scale);
     }
   }
 
@@ -864,25 +866,29 @@ void lift_bc(xtl::span<T> b, const Form<T>& a,
     for (int i : a.integral_ids(IntegralType::exterior_facet))
     {
       const auto& kernel = a.kernel(IntegralType::exterior_facet, i);
+      const auto& [coeffs, cstride]
+          = coefficients.at({IntegralType::exterior_facet, i});
       const std::vector<std::pair<std::int32_t, int>>& facets
           = a.exterior_facet_domains(i);
       _lift_bc_exterior_facets(b, *mesh, kernel, facets, dof_transform, dofmap0,
                                bs0, dof_transform_to_transpose, dofmap1, bs1,
-                               constants, coeffs, cstride, cell_info, get_perm,
-                               bc_values1, bc_markers1, x0, scale);
+                               constants, tcb::make_span(coeffs), cstride, cell_info,
+                               get_perm, bc_values1, bc_markers1, x0, scale);
     }
 
     const std::vector<int> c_offsets = a.coefficient_offsets();
     for (int i : a.integral_ids(IntegralType::interior_facet))
     {
       const auto& kernel = a.kernel(IntegralType::interior_facet, i);
+      const auto& [coeffs, cstride]
+          = coefficients.at({IntegralType::interior_facet, i});
       const std::vector<std::tuple<std::int32_t, int, std::int32_t, int>>&
           facets
           = a.interior_facet_domains(i);
       _lift_bc_interior_facets(b, *mesh, kernel, facets, dof_transform, dofmap0,
                                bs0, dof_transform_to_transpose, dofmap1, bs1,
-                               constants, coeffs, cstride, c_offsets, cell_info,
-                               get_perm, bc_values1, bc_markers1, x0, scale);
+                               constants, tcb::make_span(coeffs), cstride, c_offsets,
+                               cell_info, get_perm, bc_values1, bc_markers1, x0, scale);
     }
   }
 }
@@ -910,7 +916,8 @@ template <typename T>
 void apply_lifting(
     xtl::span<T> b, const std::vector<std::shared_ptr<const Form<T>>> a,
     const std::vector<xtl::span<const T>>& constants,
-    const std::vector<std::pair<xtl::span<const T>, int>>& coeffs,
+    const std::vector<std::map<std::pair<IntegralType, int>,
+                               std::pair<std::vector<T>, int>>>& coeffs,
     const std::vector<std::vector<std::shared_ptr<const DirichletBC<T>>>>& bcs1,
     const std::vector<xtl::span<const T>>& x0, double scale)
 {
@@ -951,12 +958,12 @@ void apply_lifting(
 
       if (!x0.empty())
       {
-        lift_bc<T>(b, *a[j], constants[j], coeffs[j].first, coeffs[j].second,
+        lift_bc<T>(b, *a[j], constants[j], coeffs[j],
                    bc_values1, bc_markers1, x0[j], scale);
       }
       else
       {
-        lift_bc<T>(b, *a[j], constants[j], coeffs[j].first, coeffs[j].second,
+        lift_bc<T>(b, *a[j], constants[j], coeffs[j],
                    bc_values1, bc_markers1, xtl::span<const T>(), scale);
       }
     }
