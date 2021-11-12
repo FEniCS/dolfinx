@@ -36,6 +36,8 @@ class Function;
 /// @param[in] mesh The domain
 /// @param[in] cells Indices of the cells in the mesh to compute
 /// interpolation coordinates for
+/// @param[in] transpose Indicates whether or not the result should be
+/// transposed
 /// @return The coordinates in the physical space at which to evaluate
 /// an expression
 xt::xtensor<double, 2>
