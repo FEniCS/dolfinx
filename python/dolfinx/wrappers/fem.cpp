@@ -228,7 +228,8 @@ void declare_functions(py::module& m)
       [](py::array_t<T, py::array::c_style> b,
          const std::vector<std::shared_ptr<const dolfinx::fem::Form<T>>>& a,
          const std::vector<py::array_t<T, py::array::c_style>>& constants,
-         const std::vector<py::array_t<T, py::array::c_style>>& coeffs,
+         const std::vector<std::map<std::pair<dolfinx::fem::IntegralType, int>,
+                                    py::array_t<T, py::array::c_style>>>& coeffs,
          const std::vector<std::vector<
              std::shared_ptr<const dolfinx::fem::DirichletBC<T>>>>& bcs1,
          const std::vector<py::array_t<T, py::array::c_style>>& x0,
@@ -243,13 +244,13 @@ void declare_functions(py::module& m)
                        std::back_inserter(_constants),
                        [](auto& c) { return c; });
 
-        std::vector<std::pair<xtl::span<const T>, int>> _coeffs;
+        std::vector<std::map<std::pair<dolfinx::fem::IntegralType, int>,
+                             std::pair<std::vector<T>, int>>> _coeffs;
         std::transform(
             coeffs.cbegin(), coeffs.cend(), std::back_inserter(_coeffs),
             [](auto& c)
             {
-              int shape1 = c.ndim() == 0 ? 0 : c.shape(1);
-              return std::pair(xtl::span<const T>(c.data(), c.size()), shape1);
+              return py_to_cpp_coeffs(c);
             });
 
         dolfinx::fem::apply_lifting<T>(xtl::span(b.mutable_data(), b.size()), a,
