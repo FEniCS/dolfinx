@@ -6,14 +6,17 @@
 
 #include "gps.h"
 #include <algorithm>
-#include <array>
 #include <iostream>
-#include <map>
+#include <limits>
+
+#include <dolfinx/common/log.h>
 
 using namespace dolfinx;
 
 namespace
 {
+// Compute the sets of connected components of the input "graph" which contain
+// the nodes in "indices".
 std::vector<std::vector<int>>
 residual_graph_components(const graph::AdjacencyList<int>& graph,
                           const std::vector<int>& indices)
@@ -29,17 +32,14 @@ residual_graph_components(const graph::AdjacencyList<int>& graph,
     labelled[w] = false;
 
   std::vector<int> r;
-  auto it = labelled.begin();
-  while (true)
+  // Find first unlabeled entry
+  auto it = std::find(labelled.begin(), labelled.end(), false);
+  while (it != labelled.end())
   {
-    // Find next unlabeled entry
-    it = std::find(it, labelled.end(), false);
-    if (it == labelled.end())
-      break;
     r = {static_cast<int>(std::distance(labelled.begin(), it))};
     labelled[r[0]] = true;
 
-    // Get connected component of graph starting from tmp[0]
+    // Get connected component of graph starting from r[0]
     int c = 0;
     while (c < static_cast<int>(r.size()))
     {
@@ -53,6 +53,9 @@ residual_graph_components(const graph::AdjacencyList<int>& graph,
       ++c;
     }
     rgc.push_back(r);
+
+    // Find next unlabeled entry
+    it = std::find(it, labelled.end(), false);
   }
 
   std::sort(rgc.begin(), rgc.end(),
@@ -132,14 +135,14 @@ std::vector<int> graph::gps_reorder(const graph::AdjacencyList<int>& graph)
   std::vector<std::vector<int>> lv = create_level_structure(graph, v);
   std::vector<std::vector<int>> lu;
   bool done = false;
-  int u;
+  int u = 0;
   while (!done)
   {
     // Sort final level S of Lv into degree order
     std::vector<int>& S = lv.back();
     std::sort(S.begin(), S.end(), cmp_degree);
 
-    int w_min = -1;
+    int w_min = std::numeric_limits<int>::max();
     done = true;
     // C. Generate level structures rooted at vertices s in S selected in
     // order of increasing degree.
@@ -156,7 +159,7 @@ std::vector<int> graph::gps_reorder(const graph::AdjacencyList<int>& graph)
       }
       //  D. Let u be the vertex of S whose associated level structure has
       //  smallest width
-      if (int w = max_level_width(lstmp); w_min < 0 or w < w_min)
+      if (int w = max_level_width(lstmp); w < w_min)
       {
         w_min = w;
         u = s;
@@ -174,10 +177,11 @@ std::vector<int> graph::gps_reorder(const graph::AdjacencyList<int>& graph)
 
   assert(lv.size() == lu.size());
   int k = lv.size();
-  std::cout << "GPS pseudo-diameter:(" << k << ") " << u << "-" << v << "\n";
+  LOG(INFO) << "GPS pseudo-diameter:(" << k << ") " << u << "-" << v << "\n";
 
   // ALGORITHM II. Minimizing level width.
 
+  // Pair (i, j) associated with each node: lvt=i, lut=j
   std::vector<int> lut(n), lvt(n);
   for (int i = 0; i < k; ++i)
   {
@@ -190,6 +194,8 @@ std::vector<int> graph::gps_reorder(const graph::AdjacencyList<int>& graph)
   assert(lut[v] == 0 and lvt[v] == 0);
   assert(lut[u] == (k - 1) and lvt[u] == (k - 1));
 
+  // Insert any nodes (i, i) into new level structure ls and capture residual
+  // nodes in rg
   std::vector<std::vector<int>> ls(k);
   std::vector<int> rg;
   for (int i = 0; i < k; ++i)
@@ -225,8 +231,8 @@ std::vector<int> graph::gps_reorder(const graph::AdjacencyList<int>& graph)
     std::copy(wn.begin(), wn.end(), wl.begin());
     for (int w : r)
     {
-      ++wh[lut[w]];
-      ++wl[lvt[w]];
+      ++wh[lvt[w]];
+      ++wl[lut[w]];
     }
     // Zero any entries which did not increase
     std::transform(wh.begin(), wh.end(), wn.begin(), wh.begin(),
@@ -239,12 +245,12 @@ std::vector<int> graph::gps_reorder(const graph::AdjacencyList<int>& graph)
     if (h0 < l0)
     {
       for (int w : r)
-        ls[lut[w]].push_back(w);
+        ls[lvt[w]].push_back(w);
     }
     else
     {
       for (int w : r)
-        ls[lvt[w]].push_back(w);
+        ls[lut[w]].push_back(w);
     }
     // TODO: h0 == l0
   }
@@ -302,7 +308,8 @@ std::vector<int> graph::gps_reorder(const graph::AdjacencyList<int>& graph)
     }
     // TODO: check if any left in current level?
     for (int w : ls[level])
-      assert(labelled[w]);
+      if (!labelled[w])
+        throw std::runtime_error("Unlabeled nodes in level");
 
     // Insert already-labelled nodes of next level
     rv.insert(rv.end(), rv_next.begin(), rv_next.end());

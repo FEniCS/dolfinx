@@ -12,5 +12,7 @@
 namespace dolfinx::graph
 {
 /// Implementation of the Gibbs-Poole-Stockmeyer algorithm
+/// @param graph Input graph to be analysed
+/// @return Reordering vector
 std::vector<int> gps_reorder(const graph::AdjacencyList<int>& graph);
 } // namespace dolfinx::graph
