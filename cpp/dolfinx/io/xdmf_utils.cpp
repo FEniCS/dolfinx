@@ -364,10 +364,8 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh& mesh, const int entity_dim,
     throw std::runtime_error("Number of entities and data size must match");
 
   // Get layout of dofs on 0th cell entity of dimension entity_dim
-
   const fem::ElementDofLayout cmap_dof_layout
       = mesh.geometry().cmap().create_dof_layout();
-
   const std::vector<int> entity_layout
       = cmap_dof_layout.entity_closure_dofs(entity_dim, 0);
   assert(entity_layout.size() == entities.shape(1));
@@ -407,8 +405,8 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh& mesh, const int entity_dim,
   assert(entity_vertex_dofs.size() == num_vertices_per_entity);
 
   // Throw away input global indices which do not belong to entity
-  // vertices This decreases the amount of data needed in parallel
-  // communication
+  // vertices. This decreases the amount of data needed in parallel
+  // communication.
   xt::xtensor<std::int64_t, 2> entities_vertices(
       {entities.shape(0), num_vertices_per_entity});
   for (std::size_t e = 0; e < entities_vertices.shape(0); ++e)
