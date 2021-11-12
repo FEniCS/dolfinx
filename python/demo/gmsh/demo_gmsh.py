@@ -94,10 +94,10 @@ else:
 
 mesh = create_mesh(MPI.COMM_WORLD, cells, x, ufl_mesh_from_gmsh(gmsh_cell_id, 3))
 mesh.name = "ball_d1"
-local_entities, local_values = distribute_entity_data(mesh, 2, marked_facets, facet_values)
+entities, values = distribute_entity_data(mesh, 2, marked_facets, facet_values)
 
 mesh.topology.create_connectivity(2, 0)
-mt = create_meshtags(mesh, 2, AdjacencyList(local_entities), np.int32(local_values))
+mt = create_meshtags(mesh, 2, AdjacencyList(entities), np.int32(values))
 mt.name = "ball_d1_surface"
 
 with XDMFFile(MPI.COMM_WORLD, "mesh.xdmf", "w") as file:
@@ -233,7 +233,7 @@ marked_facets = marked_facets[:, gmsh_quad9]
 
 entities, values = distribute_entity_data(mesh, 2, marked_facets, facet_values)
 mesh.topology.create_connectivity(2, 0)
-mt = create_meshtags(mesh, 2, AdjacencyList(entities), np.int32(local_values))
+mt = create_meshtags(mesh, 2, AdjacencyList(entities), np.int32(values))
 mt.name = "hex_d2_surface"
 
 with XDMFFile(MPI.COMM_WORLD, "mesh.xdmf", "a") as file:

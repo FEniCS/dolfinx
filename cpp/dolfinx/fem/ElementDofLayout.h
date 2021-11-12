@@ -90,8 +90,7 @@ public:
   /// @param[in] entity_dim The entity dimension
   /// @param[in] cell_entity_index The local entity index on the cell
   /// @return Cell-lcoal degree-of-freedom indices
-  const std::vector<int>& entity_dofs(int entity_dim,
-                                      int cell_entity_index) const;
+  std::vector<int> entity_dofs(int entity_dim, int cell_entity_index) const;
 
   /// Local-local closure dofs on entity of cell
   /// @param[in] entity_dim The entity dimension
