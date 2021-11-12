@@ -101,10 +101,15 @@ void declare_functions(py::module& m)
         // TODO Use underscore naming convention
         for (auto [key, val] : coeffs)
         {
-          // TODO Get this using coeffs.size() / cstride instead
-          std::cout << "val.first.size() = " << val.first.size() << "\n";
-          std::cout << "val.second = " << val.second << "\n";
-          int num_active_entities = val.first.size() / val.second;
+          int num_active_entities;
+          if (val.first.size() == 0)
+          {
+            num_active_entities = 0;
+          }
+          else
+          {
+            num_active_entities = val.first.size() / val.second;
+          }
           test[key] =
             as_pyarray(std::move(val.first), std::array{num_active_entities,
                                                         val.second});
