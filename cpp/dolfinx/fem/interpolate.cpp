@@ -16,7 +16,8 @@ using namespace dolfinx;
 xt::xtensor<double, 2>
 fem::interpolation_coords(const fem::FiniteElement& element,
                           const mesh::Mesh& mesh,
-                          const xtl::span<const std::int32_t>& cells)
+                          const xtl::span<const std::int32_t>& cells,
+                          bool transpose)
 {
   // Get mesh geometry data and the element coordinate map
   const std::size_t gdim = mesh.geometry().dim();
@@ -55,7 +56,7 @@ fem::interpolation_coords(const fem::FiniteElement& element,
         double acc = 0;
         for (std::size_t k = 0; k < num_dofs_g; ++k)
           acc += phi(p, k) * coordinate_dofs(k, j);
-        x(j, c * X.shape(0) + p) = acc;
+        x(j, transpose ? c + cells.size() * p: c * X.shape(0) + p) = acc;
       }
     }
   }

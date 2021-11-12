@@ -40,7 +40,7 @@ class Function;
 /// an expression
 xt::xtensor<double, 2>
 interpolation_coords(const fem::FiniteElement& element, const mesh::Mesh& mesh,
-                     const xtl::span<const std::int32_t>& cells);
+                     const xtl::span<const std::int32_t>& cells, bool transpose=false);
 
 /// Interpolate an expression in a finite element space
 ///
@@ -399,13 +399,6 @@ void interpolate(Function<T>& u, const Function<T>& v)
   }
   else
   {
-    // get points from v's element
-    // for each cell:
-    //   push points to cell
-    //   evaluate u at points
-    //   interpolate into v's element
-    //   put values into correct entries in dofmap
-
     //  --- Different elements, different map
     xtl::span<const std::uint32_t> cell_info;
     if (element_to->needs_dof_transformations()
@@ -467,9 +460,9 @@ void interpolate(Function<T>& u, const Function<T>& v)
       for (std::size_t i = 0; i < cells.size(); ++i)
         cells[i] = c;
       const xt::xtensor<double, 2> X
-          = interpolation_coords(*element_to, *mesh, cell);
+          = interpolation_coords(*element_to, *mesh, cell, true);
       xt::xtensor<T, 2> _v({v_values.shape(0), v_values.shape(2)});
-      v.eval(xt::transpose(X), cells, _v);
+      v.eval(X, cells, _v);
       for (std::size_t i = 0; i < v_values.shape(0); ++i)
         for (std::size_t j = 0; j < v_values.shape(2); ++j)
           v_values(i, 0, j) = _v(i, j);
