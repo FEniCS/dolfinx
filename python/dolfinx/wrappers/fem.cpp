@@ -90,7 +90,6 @@ void declare_functions(py::module& m)
         //       + mesh->topology().index_map(tdim)->num_ghosts();
         // return as_pyarray(std::move(coeffs), std::array{num_cells, cstride});
 
-        std::cout << "Packing coeffs\n";
         std::map<std::pair<dolfinx::fem::IntegralType, int>,
                  py::array_t<T, py::array::c_style>> test;
       
