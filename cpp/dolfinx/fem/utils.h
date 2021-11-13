@@ -751,7 +751,7 @@ pack_coefficients(const Expression<T>& u,
   const int cstride = offsets.back();
 
   // Copy data into coefficient array
-  std::vector<T> c;
+  std::vector<T> c(active_cells.size() * offsets.back());
   if (!coefficients.empty())
   {
     bool needs_dof_transformations = false;
@@ -766,8 +766,6 @@ pack_coefficients(const Expression<T>& u,
     xtl::span<const std::uint32_t> cell_info;
     if (needs_dof_transformations)
       cell_info = xtl::span(mesh->topology().get_cell_permutation_info());
-    
-    c.resize(active_cells.size() * offsets.back());
 
     // Iterate over coefficients
     for (std::size_t coeff = 0; coeff < dofmaps.size(); ++coeff)
@@ -783,6 +781,7 @@ pack_coefficients(const Expression<T>& u,
           transformation);
     }    
   }
+  return {std::move(c), cstride};
 }
 
 // NOTE: This is subject to change
