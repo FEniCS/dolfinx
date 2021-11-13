@@ -963,11 +963,8 @@ void apply_lifting(
 /// before assembly.
 /// @param[in] L The linear forms to assemble into b
 /// @param[in] constants Packed constants that appear in `L`
-/// @param[in] coeffs Packed coefficients that appear in `L`
+/// @param[in] coefficients Packed coefficients that appear in `L`
 template <typename T>
-// void assemble_vector(xtl::span<T> b, const Form<T>& L,
-//                      const xtl::span<const T>& constants,
-//                      const xtl::span<const T>& coeffs, int cstride)
 void assemble_vector(
     xtl::span<T> b, const Form<T>& L, const xtl::span<const T>& constants,
     const std::map<std::pair<IntegralType, int>,

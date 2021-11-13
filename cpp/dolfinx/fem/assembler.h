@@ -69,7 +69,6 @@ void assemble_vector(
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::vector<T>, int>>& coefficients)
 {
-  // FIXME Should the vector in the map be a span?
   impl::assemble_vector(b, L, constants, coefficients);
 }
 
@@ -80,8 +79,7 @@ void assemble_vector(
 template <typename T>
 void assemble_vector(xtl::span<T> b, const Form<T>& L)
 {
-  const std::map<std::pair<IntegralType, int>, std::pair<std::vector<T>, int>>
-      coefficients = pack_coefficients(L);
+  const auto coefficients = pack_coefficients(L);
   const std::vector<T> constants = pack_constants(L);
   assemble_vector(b, L, tcb::make_span(constants), coefficients);
 }
@@ -134,8 +132,6 @@ void apply_lifting(
     const std::vector<std::vector<std::shared_ptr<const DirichletBC<T>>>>& bcs1,
     const std::vector<xtl::span<const T>>& x0, double scale)
 {
-  // std::vector<std::pair<std::vector<T>, int>> coeffs_data;
-  // std::vector<std::pair<xtl::span<const T>, int>> coeffs;
   std::vector<
       std::map<std::pair<IntegralType, int>, std::pair<std::vector<T>, int>>>
       coeffs;
@@ -144,9 +140,6 @@ void apply_lifting(
   {
     if (_a)
     {
-      // coeffs_data.push_back(pack_coefficients(*_a));
-      // coeffs.emplace_back(coeffs_data.back().first,
-      // coeffs_data.back().second);
       coeffs.push_back(pack_coefficients(*_a));
       constants.push_back(pack_constants(*_a));
     }
