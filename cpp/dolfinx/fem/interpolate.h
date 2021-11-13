@@ -6,18 +6,21 @@
 
 #pragma once
 
-#include "FunctionSpace.h"
+#include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/fem/FiniteElement.h>
-#include <dolfinx/mesh/Mesh.h>
 #include <functional>
 #include <numeric>
-#include <variant>
-#include <xtensor/xadapt.hpp>
+#include <vector>
 #include <xtensor/xarray.hpp>
 #include <xtensor/xtensor.hpp>
 #include <xtensor/xview.hpp>
 #include <xtl/xspan.hpp>
+
+namespace dolfinx::mesh
+{
+class Mesh;
+} // namespace dolfinx::mesh
 
 namespace dolfinx::fem
 {

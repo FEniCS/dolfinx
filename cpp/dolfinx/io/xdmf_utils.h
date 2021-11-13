@@ -74,29 +74,33 @@ get_cell_data_values(const fem::Function<std::complex<double>>& u);
 /// Get the VTK string identifier
 std::string vtk_cell_type_str(mesh::CellType cell_type, int num_nodes);
 
-/// Extract local entities and associated values from global input
-/// indices
+/// Get owned entities and associated data from input entities defined
+/// by global 'node' indices. The input entities and data can be
+/// supplied on any rank and this function will manage the
+/// communication.
 ///
-/// @param[in] mesh
+/// @param[in] mesh A mesh
 /// @param[in] entity_dim Topological dimension of entities to extract
-/// @param[in] entities Mesh entities defined using global input
-/// indices. Let [v0, v1, v2] be vertices of some triangle. These
-/// vertices have their node numbering via vertex-to-node map, [n0, n1,
-/// n2]. Each node has in addition a persisteng input global index, so
-/// this triangle could be identified with [gi0, gi1, gi2].
-/// @param[in] values
+/// @param[in] entities Mesh entities defined using global input indices
+/// ('nodes'), typically from an input mesh file, e.g. [gi0, gi1, gi2]
+/// for a triangle. Let [v0, v1, v2] be the vertex indices of some
+/// triangle (using local indexing). Each vertex has a 'node' (geometry
+/// dof) index, and each node has a persistent input global index, so
+/// the triangle [gi0, gi1, gi2] could be identified with [v0, v1, v2].
+/// @param[in] data Data associated with each entity in `entities`.
 /// @return (Cell-vertex connectivity of owned entities, associated
-/// values)
+/// data (values) with each entity)
 /// @note This function involves parallel distribution and must be
 /// called collectively. Global input indices for entities which are not
-/// owned by current rank could passed to this function. E.g. rank0
-/// provides global input indices [gi0, gi1, gi2], but this identifies a
-/// triangle which is owned by rank1. It will be distributed and rank1
-/// will receive (local) cell-vertex connectivity for this triangle.
+/// owned by current rank could passed to this function. E.g., rank0
+/// provides an entity with global input indices [gi0, gi1, gi2], but
+/// this identifies a triangle that is owned by rank1. It will be
+/// distributed and rank1 will receive (local) cell-vertex connectivity
+/// for this triangle.
 std::pair<xt::xtensor<std::int32_t, 2>, std::vector<std::int32_t>>
-extract_local_entities(const mesh::Mesh& mesh, int entity_dim,
+distribute_entity_data(const mesh::Mesh& mesh, int entity_dim,
                        const xt::xtensor<std::int64_t, 2>& entities,
-                       const xtl::span<const std::int32_t>& values);
+                       const xtl::span<const std::int32_t>& data);
 
 /// TODO: Document
 template <typename T>

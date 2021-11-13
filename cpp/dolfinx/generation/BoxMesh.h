@@ -11,12 +11,8 @@
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/cell_types.h>
+#include <dolfinx/mesh/utils.h>
 #include <mpi.h>
-
-namespace dolfinx::fem
-{
-class CoordinateElement;
-}
 
 /// Right cuboid mesh creation
 namespace dolfinx::generation::BoxMesh
