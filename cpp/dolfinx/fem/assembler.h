@@ -64,10 +64,10 @@ T assemble_scalar(const Form<T>& M)
 /// @param[in] constants The constants that appear in `L`
 /// @param[in] coefficients The coefficients that appear in `L`
 template <typename T>
-void assemble_vector(xtl::span<T> b, const Form<T>& L,
-                     const xtl::span<const T>& constants,
-                     const std::map<std::pair<IntegralType, int>,
-                                    std::pair<std::vector<T>, int>>& coefficients)
+void assemble_vector(
+    xtl::span<T> b, const Form<T>& L, const xtl::span<const T>& constants,
+    const std::map<std::pair<IntegralType, int>,
+                   std::pair<std::vector<T>, int>>& coefficients)
 {
   // FIXME Should the vector in the map be a span?
   impl::assemble_vector(b, L, constants, coefficients);
@@ -80,9 +80,8 @@ void assemble_vector(xtl::span<T> b, const Form<T>& L,
 template <typename T>
 void assemble_vector(xtl::span<T> b, const Form<T>& L)
 {
-  const std::map<std::pair<IntegralType, int>,
-                 std::pair<std::vector<T>, int>> coefficients
-    = pack_coefficients(L);
+  const std::map<std::pair<IntegralType, int>, std::pair<std::vector<T>, int>>
+      coefficients = pack_coefficients(L);
   const std::vector<T> constants = pack_constants(L);
   assemble_vector(b, L, tcb::make_span(constants), coefficients);
 }
@@ -137,22 +136,24 @@ void apply_lifting(
 {
   // std::vector<std::pair<std::vector<T>, int>> coeffs_data;
   // std::vector<std::pair<xtl::span<const T>, int>> coeffs;
-  std::vector<std::map<std::pair<IntegralType, int>,
-              std::pair<std::vector<T>, int>>> coeffs;
+  std::vector<
+      std::map<std::pair<IntegralType, int>, std::pair<std::vector<T>, int>>>
+      coeffs;
   std::vector<std::vector<T>> constants;
   for (auto _a : a)
   {
     if (_a)
     {
       // coeffs_data.push_back(pack_coefficients(*_a));
-      // coeffs.emplace_back(coeffs_data.back().first, coeffs_data.back().second);
+      // coeffs.emplace_back(coeffs_data.back().first,
+      // coeffs_data.back().second);
       coeffs.push_back(pack_coefficients(*_a));
       constants.push_back(pack_constants(*_a));
     }
     else
     {
       coeffs.push_back(std::map<std::pair<IntegralType, int>,
-                       std::pair<std::vector<T>, int>>());
+                                std::pair<std::vector<T>, int>>());
       constants.push_back({});
     }
   }
@@ -210,8 +211,8 @@ void assemble_matrix(
   }
 
   // Assemble
-  impl::assemble_matrix(mat_add, a, constants, coefficients,
-                        dof_marker0, dof_marker1);
+  impl::assemble_matrix(mat_add, a, constants, coefficients, dof_marker0,
+                        dof_marker1);
 }
 
 /// Assemble bilinear form into a matrix
@@ -231,8 +232,7 @@ void assemble_matrix(
   const auto coefficients = pack_coefficients(a);
 
   // Assemble
-  assemble_matrix(mat_add, a, tcb::make_span(constants),
-                  coefficients, bcs);
+  assemble_matrix(mat_add, a, tcb::make_span(constants), coefficients, bcs);
 }
 
 /// Assemble bilinear form into a matrix. Matrix must already be
@@ -257,8 +257,8 @@ void assemble_matrix(
     const std::vector<bool>& dof_marker0, const std::vector<bool>& dof_marker1)
 
 {
-  impl::assemble_matrix(mat_add, a, constants, coefficients,
-                        dof_marker0, dof_marker1);
+  impl::assemble_matrix(mat_add, a, constants, coefficients, dof_marker0,
+                        dof_marker1);
 }
 
 /// Assemble bilinear form into a matrix. Matrix must already be

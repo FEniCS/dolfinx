@@ -9,6 +9,7 @@
 #include "CoordinateElement.h"
 #include "DofMap.h"
 #include "ElementDofLayout.h"
+#include "Expression.h"
 #include <dolfinx/fem/Form.h>
 #include <dolfinx/fem/Function.h>
 #include <dolfinx/la/SparsityPattern.h>
@@ -21,7 +22,6 @@
 #include <utility>
 #include <vector>
 #include <xtl/xspan.hpp>
-#include "Expression.h"
 
 namespace dolfinx::common
 {
@@ -577,7 +577,8 @@ void pack_coefficient_interior_facet(
 /// @return A pair of the form (coeffs, cstride)
 template <typename T>
 std::pair<std::vector<T>, int>
-pack_coefficients(const Form<T>& u, fem::IntegralType integral_type, const int id)
+pack_coefficients(const Form<T>& u, fem::IntegralType integral_type,
+                  const int id)
 {
   // Get form coefficient offsets and dofmaps
   const std::vector<std::shared_ptr<const fem::Function<T>>> coefficients
@@ -694,24 +695,21 @@ pack_coefficients(const Form<T>& u, fem::IntegralType integral_type, const int i
 /// Pack coefficients of u of generic type U ready for assembly
 // TODO Before this treated Form and Expression with the same code
 template <typename T>
-std::map<std::pair<IntegralType, int>,
-         std::pair<std::vector<T>, int>>
+std::map<std::pair<IntegralType, int>, std::pair<std::vector<T>, int>>
 pack_coefficients(const Form<T>& u)
 {
-  std::map<std::pair<IntegralType, int>,
-           std::pair<std::vector<T>, int>> coefficients;
+  std::map<std::pair<IntegralType, int>, std::pair<std::vector<T>, int>>
+      coefficients;
 
   // TODO Is there a better way of doing this?
   // TODO Separate into a pack_coefficient function
-  for (auto integral_type : {IntegralType::cell,
-                             IntegralType::exterior_facet,
+  for (auto integral_type : {IntegralType::cell, IntegralType::exterior_facet,
                              IntegralType::interior_facet})
   {
     for (int i : u.integral_ids(integral_type))
     {
       // FIXME Make span here instead of vector and change this to return span
-      coefficients[{integral_type, i}] =
-        pack_coefficients(u, integral_type, i);
+      coefficients[{integral_type, i}] = pack_coefficients(u, integral_type, i);
     }
   }
 
@@ -723,7 +721,7 @@ pack_coefficients(const Form<T>& u)
 /// @param[in] u The Expression
 /// @param[in] active_cells A list of active cells
 /// @return A pair of the form (coeffs, cstride)
-template<typename T>
+template <typename T>
 std::pair<std::vector<T>, int>
 pack_coefficients(const Expression<T>& u,
                   const xtl::span<const std::int32_t>& active_cells)
@@ -771,15 +769,15 @@ pack_coefficients(const Expression<T>& u,
     for (std::size_t coeff = 0; coeff < dofmaps.size(); ++coeff)
     {
       const std::function<void(const xtl::span<T>&,
-                                const xtl::span<const std::uint32_t>&,
-                                std::int32_t, int)>
+                               const xtl::span<const std::uint32_t>&,
+                               std::int32_t, int)>
           transformation
           = elements[coeff]->get_dof_transformation_function<T>(false, true);
       impl::pack_coefficient_cell<T>(
           xtl::span<T>(c), cstride, v[coeff], cell_info, *dofmaps[coeff],
           active_cells, offsets[coeff], elements[coeff]->space_dimension(),
           transformation);
-    }    
+    }
   }
   return {std::move(c), cstride};
 }

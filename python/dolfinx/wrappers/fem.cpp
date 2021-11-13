@@ -53,23 +53,25 @@ namespace dolfinx_wrappers
 
 namespace
 {
-  template <typename T>
+template <typename T>
+std::map<std::pair<dolfinx::fem::IntegralType, int>,
+         std::pair<std::vector<T>, int>>
+py_to_cpp_coeffs(
+    const std::map<std::pair<dolfinx::fem::IntegralType, int>,
+                   py::array_t<T, py::array::c_style>>& coefficients)
+{
   std::map<std::pair<dolfinx::fem::IntegralType, int>,
            std::pair<std::vector<T>, int>>
-  py_to_cpp_coeffs(const std::map<std::pair<dolfinx::fem::IntegralType, int>,
-                                  py::array_t<T, py::array::c_style>>& coefficients)
-  {
-    std::map<std::pair<dolfinx::fem::IntegralType, int>,
-                 std::pair<std::vector<T>, int>> _coefficients;
+      _coefficients;
 
-        // FIXME Is there a better way?
-        for (auto [key, coeffs] : coefficients)
-        {
-          std::vector<T> _coeffs(coeffs.data(), coeffs.data() + coeffs.size());
-          _coefficients[key] = {_coeffs, coeffs.shape(1)};
-        }
-    return _coefficients;
+  // FIXME Is there a better way?
+  for (auto [key, coeffs] : coefficients)
+  {
+    std::vector<T> _coeffs(coeffs.data(), coeffs.data() + coeffs.size());
+    _coefficients[key] = {_coeffs, coeffs.shape(1)};
   }
+  return _coefficients;
+}
 
 // Declare assembler function that have multiple scalar types
 template <typename T>
@@ -91,11 +93,12 @@ void declare_functions(py::module& m)
         // return as_pyarray(std::move(coeffs), std::array{num_cells, cstride});
 
         std::map<std::pair<dolfinx::fem::IntegralType, int>,
-                 py::array_t<T, py::array::c_style>> test;
-      
+                 py::array_t<T, py::array::c_style>>
+            test;
+
         std::map<std::pair<dolfinx::fem::IntegralType, int>,
-                 std::pair<std::vector<T>, int>> coeffs =
-          dolfinx::fem::pack_coefficients(form);
+                 std::pair<std::vector<T>, int>>
+            coeffs = dolfinx::fem::pack_coefficients(form);
 
         // TODO Use underscore naming convention
         for (auto [key, val] : coeffs)
@@ -109,9 +112,8 @@ void declare_functions(py::module& m)
           {
             num_active_entities = val.first.size() / val.second;
           }
-          test[key] =
-            as_pyarray(std::move(val.first), std::array{num_active_entities,
-                                                        val.second});
+          test[key] = as_pyarray(std::move(val.first),
+                                 std::array{num_active_entities, val.second});
         }
 
         // return dolfinx::fem::pack_coefficients(form);
@@ -162,19 +164,19 @@ void declare_functions(py::module& m)
       [](const dolfinx::fem::Form<T>& M,
          const py::array_t<T, py::array::c_style>& constants,
          const std::map<std::pair<dolfinx::fem::IntegralType, int>,
-                                  py::array_t<T, py::array::c_style>>& coefficients)
+                        py::array_t<T, py::array::c_style>>& coefficients)
       {
         auto _coefficients = py_to_cpp_coeffs(coefficients);
 
-        return dolfinx::fem::assemble_scalar<T>(
-            M, constants, _coefficients);
+        return dolfinx::fem::assemble_scalar<T>(M, constants, _coefficients);
       },
       "Assemble functional over mesh with provided constants and "
       "coefficients");
   // Vector
   // m.def(
   //     "assemble_vector",
-  //     [](py::array_t<T, py::array::c_style> b, const dolfinx::fem::Form<T>& L,
+  //     [](py::array_t<T, py::array::c_style> b, const dolfinx::fem::Form<T>&
+  //     L,
   //        const py::array_t<T, py::array::c_style>& constants,
   //        const py::array_t<T, py::array::c_style>& coeffs)
   //     {
@@ -192,13 +194,12 @@ void declare_functions(py::module& m)
       [](py::array_t<T, py::array::c_style> b, const dolfinx::fem::Form<T>& L,
          const py::array_t<T, py::array::c_style>& constants,
          const std::map<std::pair<dolfinx::fem::IntegralType, int>,
-                                  py::array_t<T, py::array::c_style>>& coefficients)
+                        py::array_t<T, py::array::c_style>>& coefficients)
       {
         auto _coefficients = py_to_cpp_coeffs(coefficients);
 
-        dolfinx::fem::assemble_vector<T>(
-            xtl::span(b.mutable_data(), b.size()), L, constants,
-            _coefficients);
+        dolfinx::fem::assemble_vector<T>(xtl::span(b.mutable_data(), b.size()),
+                                         L, constants, _coefficients);
       },
       py::arg("b"), py::arg("L"), py::arg("constants"), py::arg("coeffs"),
       "Assemble linear form into an existing vector with pre-packed "
@@ -233,7 +234,8 @@ void declare_functions(py::module& m)
          const std::vector<std::shared_ptr<const dolfinx::fem::Form<T>>>& a,
          const std::vector<py::array_t<T, py::array::c_style>>& constants,
          const std::vector<std::map<std::pair<dolfinx::fem::IntegralType, int>,
-                                    py::array_t<T, py::array::c_style>>>& coeffs,
+                                    py::array_t<T, py::array::c_style>>>&
+             coeffs,
          const std::vector<std::vector<
              std::shared_ptr<const dolfinx::fem::DirichletBC<T>>>>& bcs1,
          const std::vector<py::array_t<T, py::array::c_style>>& x0,
@@ -249,13 +251,11 @@ void declare_functions(py::module& m)
                        [](auto& c) { return c; });
 
         std::vector<std::map<std::pair<dolfinx::fem::IntegralType, int>,
-                             std::pair<std::vector<T>, int>>> _coeffs;
-        std::transform(
-            coeffs.cbegin(), coeffs.cend(), std::back_inserter(_coeffs),
-            [](auto& c)
-            {
-              return py_to_cpp_coeffs(c);
-            });
+                             std::pair<std::vector<T>, int>>>
+            _coeffs;
+        std::transform(coeffs.cbegin(), coeffs.cend(),
+                       std::back_inserter(_coeffs),
+                       [](auto& c) { return py_to_cpp_coeffs(c); });
 
         dolfinx::fem::apply_lifting<T>(xtl::span(b.mutable_data(), b.size()), a,
                                        _constants, _coeffs, bcs1, _x0, scale);
@@ -823,7 +823,8 @@ void fem(py::module& m)
       m, "CoordinateElement", "Coordinate map element")
       .def(py::init<dolfinx::mesh::CellType, int>(), py::arg("celltype"),
            py::arg("degree"))
-      .def("create_dof_layout", &dolfinx::fem::CoordinateElement::create_dof_layout)
+      .def("create_dof_layout",
+           &dolfinx::fem::CoordinateElement::create_dof_layout)
       .def("push_forward",
            [](const dolfinx::fem::CoordinateElement& self,
               const py::array_t<double, py::array::c_style>& X,
@@ -899,7 +900,8 @@ void fem(py::module& m)
       [](Mat A, const dolfinx::fem::Form<PetscScalar>& a,
          const py::array_t<PetscScalar, py::array::c_style>& constants,
          const std::map<std::pair<dolfinx::fem::IntegralType, int>,
-                                  py::array_t<PetscScalar, py::array::c_style>>& coefficients,
+                        py::array_t<PetscScalar, py::array::c_style>>&
+             coefficients,
          const std::vector<std::shared_ptr<
              const dolfinx::fem::DirichletBC<PetscScalar>>>& bcs,
          bool unrolled)
@@ -918,9 +920,8 @@ void fem(py::module& m)
 
         auto _coefficients = py_to_cpp_coeffs(coefficients);
 
-        dolfinx::fem::assemble_matrix(
-            set_fn, a, xtl::span(constants),
-            _coefficients, bcs);
+        dolfinx::fem::assemble_matrix(set_fn, a, xtl::span(constants),
+                                      _coefficients, bcs);
       },
       py::arg("A"), py::arg("a"), py::arg("constants"), py::arg("coeffs"),
       py::arg("bcs"), py::arg("unrolled") = false,
@@ -930,7 +931,8 @@ void fem(py::module& m)
       [](Mat A, const dolfinx::fem::Form<PetscScalar>& a,
          const py::array_t<PetscScalar, py::array::c_style>& constants,
          const std::map<std::pair<dolfinx::fem::IntegralType, int>,
-                                  py::array_t<PetscScalar, py::array::c_style>>& coefficients,
+                        py::array_t<PetscScalar, py::array::c_style>>&
+             coefficients,
          const std::vector<bool>& rows0, const std::vector<bool>& rows1,
          bool unrolled)
       {
@@ -948,9 +950,8 @@ void fem(py::module& m)
 
         auto _coefficients = py_to_cpp_coeffs(coefficients);
 
-        dolfinx::fem::assemble_matrix(
-            set_fn, a, xtl::span(constants),
-            _coefficients, rows0, rows1);
+        dolfinx::fem::assemble_matrix(set_fn, a, xtl::span(constants),
+                                      _coefficients, rows0, rows1);
       },
       py::arg("A"), py::arg("a"), py::arg("constants"), py::arg("coeffs"),
       py::arg("rows0"), py::arg("rows1"), py::arg("unrolled") = false);

@@ -204,9 +204,8 @@ T assemble_scalar(const fem::Form<T>& M, const xtl::span<const T>& constants,
           = coefficients.at({IntegralType::exterior_facet, i});
       const std::vector<std::pair<std::int32_t, int>>& facets
           = M.exterior_facet_domains(i);
-      value += impl::assemble_exterior_facets(*mesh, facets, fn, constants,
-                                              tcb::make_span(coeffs), cstride,
-                                              perms);
+      value += impl::assemble_exterior_facets(
+          *mesh, facets, fn, constants, tcb::make_span(coeffs), cstride, perms);
     }
 
     const std::vector<int> c_offsets = M.coefficient_offsets();
@@ -218,9 +217,9 @@ T assemble_scalar(const fem::Form<T>& M, const xtl::span<const T>& constants,
       const std::vector<std::tuple<std::int32_t, int, std::int32_t, int>>&
           facets
           = M.interior_facet_domains(i);
-      value += impl::assemble_interior_facets(
-          *mesh, facets, fn, constants, tcb::make_span(coeffs), cstride,
-          c_offsets, perms);
+      value += impl::assemble_interior_facets(*mesh, facets, fn, constants,
+                                              tcb::make_span(coeffs), cstride,
+                                              c_offsets, perms);
     }
   }
 

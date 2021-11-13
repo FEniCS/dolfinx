@@ -6,14 +6,14 @@
 
 #pragma once
 
+#include "Form.h"
+#include <map>
 #include <memory>
 #include <petscmat.h>
 #include <petscvec.h>
 #include <utility>
 #include <vector>
 #include <xtl/xspan.hpp>
-#include <map>
-#include "Form.h"
 
 namespace dolfinx::common
 {
@@ -121,7 +121,8 @@ void apply_lifting_petsc(
     Vec b, const std::vector<std::shared_ptr<const Form<PetscScalar>>>& a,
     const std::vector<xtl::span<const PetscScalar>>& constants,
     const std::vector<std::map<std::pair<IntegralType, int>,
-                               std::pair<std::vector<PetscScalar>, int>>>& coeffs,
+                               std::pair<std::vector<PetscScalar>, int>>>&
+        coeffs,
     const std::vector<
         std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>>& bcs1,
     const std::vector<Vec>& x0, double scale);

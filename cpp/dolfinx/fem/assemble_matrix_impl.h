@@ -396,7 +396,7 @@ void assemble_matrix(
                             const std::int32_t*, const T*)>& mat_set,
     const Form<T>& a, const xtl::span<const T>& constants,
     const std::map<std::pair<IntegralType, int>,
-                                    std::pair<std::vector<T>, int>>& coefficients,
+                   std::pair<std::vector<T>, int>>& coefficients,
     const std::vector<bool>& bc0, const std::vector<bool>& bc1)
 {
   std::shared_ptr<const mesh::Mesh> mesh = a.mesh();
@@ -473,8 +473,7 @@ void assemble_matrix(
       impl::assemble_exterior_facets<T>(
           mat_set, *mesh, facets, dof_transform, dofs0, bs0,
           dof_transform_to_transpose, dofs1, bs1, bc0, bc1, fn,
-          tcb::make_span(coeffs), cstride,
-          constants, cell_info, get_perm);
+          tcb::make_span(coeffs), cstride, constants, cell_info, get_perm);
     }
 
     const std::vector<int> c_offsets = a.coefficient_offsets();
@@ -489,8 +488,8 @@ void assemble_matrix(
       impl::assemble_interior_facets<T>(
           mat_set, *mesh, facets, dof_transform, *dofmap0, bs0,
           dof_transform_to_transpose, *dofmap1, bs1, bc0, bc1, fn,
-          tcb::make_span(coeffs), cstride, c_offsets, constants,
-          cell_info, get_perm);
+          tcb::make_span(coeffs), cstride, c_offsets, constants, cell_info,
+          get_perm);
     }
   }
 }
