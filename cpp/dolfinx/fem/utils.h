@@ -438,46 +438,8 @@ fem::FunctionSpace create_functionspace(
 
 namespace impl
 {
-// Pack a single coefficient
-template <typename T, int _bs = -1>
-void pack_coefficient(
-    const xtl::span<T>& c, int cstride, const xtl::span<const T>& v,
-    const xtl::span<const std::uint32_t>& cell_info, const fem::DofMap& dofmap,
-    std::int32_t num_cells, std::int32_t offset, int space_dim,
-    const std::function<void(const xtl::span<T>&,
-                             const xtl::span<const std::uint32_t>&,
-                             std::int32_t, int)>& transformation)
-{
-  const int bs = dofmap.bs();
-  assert(_bs < 0 or _bs == bs);
-  for (std::int32_t cell = 0; cell < num_cells; ++cell)
-  {
-    auto dofs = dofmap.cell_dofs(cell);
-    auto cell_coeff = c.subspan(cell * cstride + offset, space_dim);
-    for (std::size_t i = 0; i < dofs.size(); ++i)
-    {
-      if constexpr (_bs < 0)
-      {
-        const int pos_c = bs * i;
-        const int pos_v = bs * dofs[i];
-        for (int k = 0; k < bs; ++k)
-          cell_coeff[pos_c + k] = v[pos_v + k];
-      }
-      else
-      {
-        const int pos_c = _bs * i;
-        const int pos_v = _bs * dofs[i];
-        for (int k = 0; k < _bs; ++k)
-          cell_coeff[pos_c + k] = v[pos_v + k];
-      }
-    }
-
-    transformation(cell_coeff, cell_info, cell, 1);
-  }
-}
-
-// TODO Add _bs to template
-// TODO REMOVE UNUSED VARS
+// Pack a single coefficient for a single cell
+// TODO Add _bs to template i.e. template <typename T, int _bs = -1>
 template <typename T>
 inline void pack(const std::uint32_t cell, const int bs,
                  const xtl::span<T>& cell_coeff, const xtl::span<const T>& v,
