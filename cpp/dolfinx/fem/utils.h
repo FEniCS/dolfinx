@@ -461,6 +461,7 @@ inline void pack(const std::uint32_t cell, const int bs,
   transformation(cell_coeff, cell_info, cell, 1);
 }
 
+// Pack a single coefficient for a cell integral
 template <typename T>
 void pack_coefficient_cell(
     const xtl::span<T>& c, int cstride, const xtl::span<const T>& v,
@@ -482,6 +483,7 @@ void pack_coefficient_cell(
   }
 }
 
+// Pack a single coefficient for an exterior facet integral
 template <typename T>
 void pack_coefficient_exterior_facet(
     const xtl::span<T>& c, int cstride, const xtl::span<const T>& v,
@@ -493,7 +495,6 @@ void pack_coefficient_exterior_facet(
                              std::int32_t, int)>& transformation)
 {
   const int bs = dofmap.bs();
-  // TODO Use better name than index
   for (std::size_t index = 0; index < active_facets.size(); ++index)
   {
     auto cell = active_facets[index].first;
@@ -503,6 +504,7 @@ void pack_coefficient_exterior_facet(
   }
 }
 
+// Pack a single coefficient for an interior facet integral
 template <typename T>
 void pack_coefficient_interior_facet(
     const xtl::span<T>& c, int cstride, const xtl::span<const T>& v,
@@ -515,7 +517,6 @@ void pack_coefficient_interior_facet(
                              std::int32_t, int)>& transformation)
 {
   const int bs = dofmap.bs();
-  // TODO Use better name than index
   for (std::size_t index = 0; index < active_facets.size(); ++index)
   {
     const std::array<std::int32_t, 2> cells = {
@@ -654,8 +655,11 @@ pack_coefficients(const Form<T>& u, fem::IntegralType integral_type,
 }
 
 // NOTE: This is subject to change
-/// Pack coefficients of u of generic type U ready for assembly
-// TODO Before this treated Form and Expression with the same code
+/// Pack coefficients of a Form
+///
+/// @param[in] u The Form
+/// @return A map from a pair of the form (integral_type, domain_id) to
+/// a pair of the form (coeffs, cstride)
 template <typename T>
 std::map<std::pair<IntegralType, int>, std::pair<std::vector<T>, int>>
 pack_coefficients(const Form<T>& u)
@@ -664,13 +668,13 @@ pack_coefficients(const Form<T>& u)
       coefficients;
 
   // TODO Is there a better way of doing this?
-  // TODO Separate into a pack_coefficient function
   for (auto integral_type : {IntegralType::cell, IntegralType::exterior_facet,
                              IntegralType::interior_facet})
   {
     for (int i : u.integral_ids(integral_type))
     {
-      // FIXME Make span here instead of vector and change this to return span
+      // FIXME Could std::transform be used here (or elsewhere) to make the
+      // coefficient vector a span?
       coefficients[{integral_type, i}] = pack_coefficients(u, integral_type, i);
     }
   }
