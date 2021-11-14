@@ -106,33 +106,6 @@ void declare_functions(py::module& m)
         return coefficients;
       },
       "Pack coefficients for a Form.");
-  // m.def(
-  //     "pack_coefficients_by_type",
-  //     [](dolfinx::fem::Form<T>& form, fem::IntegralType integral_type,
-  //        const int id)
-  //     {
-  //       auto [coeffs, cstride] =
-  //         dolfinx::fem::pack_coefficients(form, integral_type, id);
-  //       int num_active_entities = coeffs.size() / cstride;
-  //       return as_pyarray(std::move(coeffs), std::array{num_active_entities,
-  //                                                       cstride});
-  //     },
-  //     "Pack coefficients for a Form.");
-  // FIXME Uncomment
-  // m.def(
-  //     "pack_coefficients",
-  //     [](dolfinx::fem::Expression<T>& e)
-  //     {
-  //       auto [coeffs, cstride] = dolfinx::fem::pack_coefficients(e);
-  //       std::shared_ptr<const mesh::Mesh> mesh = e.mesh();
-  //       assert(mesh);
-  //       const int tdim = mesh->topology().dim();
-  //       const std::int32_t num_cells
-  //           = mesh->topology().index_map(tdim)->size_local()
-  //             + mesh->topology().index_map(tdim)->num_ghosts();
-  //       return as_pyarray(std::move(coeffs), std::array{num_cells, cstride});
-  //     },
-  //     "Pack coefficients for an Expression.");
   m.def(
       "pack_constants",
       [](const dolfinx::fem::Form<T>& form)
@@ -159,22 +132,6 @@ void declare_functions(py::module& m)
       "Assemble functional over mesh with provided constants and "
       "coefficients");
   // Vector
-  // m.def(
-  //     "assemble_vector",
-  //     [](py::array_t<T, py::array::c_style> b, const dolfinx::fem::Form<T>&
-  //     L,
-  //        const py::array_t<T, py::array::c_style>& constants,
-  //        const py::array_t<T, py::array::c_style>& coeffs)
-  //     {
-  //       dolfinx::fem::assemble_vector<T>(
-  //           xtl::span(b.mutable_data(), b.size()), L, constants,
-  //           {xtl::span<const T>(coeffs.data(), coeffs.size()),
-  //            coeffs.shape(1)});
-  //     },
-  //     py::arg("b"), py::arg("L"), py::arg("constants"), py::arg("coeffs"),
-  //     "Assemble linear form into an existing vector with pre-packed "
-  //     "constants "
-  //     "and coefficients");
   m.def(
       "assemble_vector",
       [](py::array_t<T, py::array::c_style> b, const dolfinx::fem::Form<T>& L,
