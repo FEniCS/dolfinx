@@ -692,7 +692,8 @@ std::pair<std::vector<T>, int>
 pack_coefficients(const Expression<T>& u,
                   const xtl::span<const std::int32_t>& active_cells)
 {
-  // FIXME Much of this code is the same as above. Try to reusue.
+  // FIXME / TODO Much of this code is duplicated above. Try to refactor.
+
   // Get form coefficient offsets and dofmaps
   const std::vector<std::shared_ptr<const fem::Function<T>>> coefficients
       = u.coefficients();
