@@ -64,11 +64,10 @@ py_to_cpp_coeffs(
            std::pair<std::vector<T>, int>>
       _coefficients;
 
-  // FIXME Is there a better way?
-  for (auto [key, coeffs] : coefficients)
+  for (auto [integral, coeffs] : coefficients)
   {
     std::vector<T> _coeffs(coeffs.data(), coeffs.data() + coeffs.size());
-    _coefficients[key] = {_coeffs, coeffs.shape(1)};
+    _coefficients[integral] = {_coeffs, coeffs.shape(1)};
   }
   return _coefficients;
 }
@@ -83,41 +82,28 @@ void declare_functions(py::module& m)
       "pack_coefficients",
       [](dolfinx::fem::Form<T>& form)
       {
-        // auto [coeffs, cstride] = dolfinx::fem::pack_coefficients(form);
-        // std::shared_ptr<const mesh::Mesh> mesh = form.mesh();
-        // assert(mesh);
-        // const int tdim = mesh->topology().dim();
-        // const std::int32_t num_cells
-        //     = mesh->topology().index_map(tdim)->size_local()
-        //       + mesh->topology().index_map(tdim)->num_ghosts();
-        // return as_pyarray(std::move(coeffs), std::array{num_cells, cstride});
+        std::map<std::pair<dolfinx::fem::IntegralType, int>,
+                 std::pair<std::vector<T>, int>>
+            _coefficients = dolfinx::fem::pack_coefficients(form);
 
         std::map<std::pair<dolfinx::fem::IntegralType, int>,
                  py::array_t<T, py::array::c_style>>
-            test;
-
-        std::map<std::pair<dolfinx::fem::IntegralType, int>,
-                 std::pair<std::vector<T>, int>>
-            coeffs = dolfinx::fem::pack_coefficients(form);
-
+            coefficients;
         // TODO Use underscore naming convention
-        for (auto [key, val] : coeffs)
+        for (auto [integral, coeffs] : _coefficients)
         {
           int num_active_entities;
-          if (val.first.size() == 0)
-          {
+          if (coeffs.first.size() == 0)
             num_active_entities = 0;
-          }
           else
-          {
-            num_active_entities = val.first.size() / val.second;
-          }
-          test[key] = as_pyarray(std::move(val.first),
-                                 std::array{num_active_entities, val.second});
+            num_active_entities = coeffs.first.size() / coeffs.second;
+
+          coefficients[integral]
+              = as_pyarray(std::move(coeffs.first),
+                           std::array{num_active_entities, coeffs.second});
         }
 
-        // return dolfinx::fem::pack_coefficients(form);
-        return test;
+        return coefficients;
       },
       "Pack coefficients for a Form.");
   // m.def(
