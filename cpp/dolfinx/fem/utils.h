@@ -581,9 +581,10 @@ pack_coefficients(const Form<T>& u, fem::IntegralType integral_type,
     if (needs_dof_transformations)
       cell_info = xtl::span(mesh->topology().get_cell_permutation_info());
 
-    // TODO Change to switch
     // TODO see if this can be simplified with templating
-    if (integral_type == fem::IntegralType::cell)
+    switch (integral_type)
+    {
+    case IntegralType::cell:
     {
       const std::vector<std::int32_t>& active_cells = u.cell_domains(id);
 
@@ -602,8 +603,9 @@ pack_coefficients(const Form<T>& u, fem::IntegralType integral_type,
             active_cells, offsets[coeff], elements[coeff]->space_dimension(),
             transformation);
       }
+      break;
     }
-    else if (integral_type == fem::IntegralType::exterior_facet)
+    case IntegralType::exterior_facet:
     {
       const std::vector<std::pair<std::int32_t, int>>& active_facets
           = u.exterior_facet_domains(id);
@@ -623,8 +625,9 @@ pack_coefficients(const Form<T>& u, fem::IntegralType integral_type,
             active_facets, offsets[coeff], elements[coeff]->space_dimension(),
             transformation);
       }
+      break;
     }
-    else if (integral_type == fem::IntegralType::interior_facet)
+    case IntegralType::interior_facet:
     {
       const std::vector<std::tuple<std::int32_t, int, std::int32_t, int>>&
           active_facets
@@ -645,10 +648,11 @@ pack_coefficients(const Form<T>& u, fem::IntegralType integral_type,
             active_facets, offsets[coeff], offsets[coeff + 1],
             elements[coeff]->space_dimension(), transformation);
       }
+      break;
     }
-    else
-    {
-      throw std::exception();
+    default:
+      throw std::runtime_error(
+          "Could not pack coefficient. Integral type not supported.");
     }
   }
   return {std::move(c), cstride};
