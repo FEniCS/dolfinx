@@ -10,7 +10,6 @@
 #include <dolfinx/mesh/cell_types.h>
 #include <functional>
 #include <memory>
-#include <numeric>
 #include <vector>
 #include <xtensor/xtensor.hpp>
 #include <xtl/xspan.hpp>
@@ -45,13 +44,18 @@ public:
 
   /// String identifying the finite element
   /// @return Element signature
+  /// @note The function is provided for convenience, but it should not
+  /// be relied upon for determining the element type. Use other
+  /// functions, commonly returning enums, to determine element
+  /// properties.
   std::string signature() const noexcept;
 
   /// Cell shape
   /// @return Element cell shape
   mesh::CellType cell_shape() const noexcept;
 
-  /// Dimension of the finite element function space
+  /// Dimension of the finite element function space (the number of
+  /// degrees-of-freedom for the element)
   /// @return Dimension of the finite element space
   int space_dimension() const noexcept;
 
@@ -110,9 +114,15 @@ public:
     _element->map_push_forward_m(reference_values, J, detJ, K, values);
   }
 
-  /// Get the number of sub elements (for a mixed element)
-  /// @return the Number of sub elements
+  /// Get the number of sub elements (for a mixed or blocked element)
+  /// @return The number of sub elements
   int num_sub_elements() const noexcept;
+
+  /// Check if element is a mixed element, i.e. composed of two or more
+  /// elements of different types. A block element, e.g. a Lagrange
+  /// element with block size > 1 is not considered mixed.
+  /// @return True is element is mixed.
+  bool is_mixed() const noexcept;
 
   /// Subelements (if any)
   const std::vector<std::shared_ptr<const FiniteElement>>&
@@ -145,7 +155,7 @@ public:
   /// @todo Make the interpolating dofs in/out argument for efficiency
   /// as this function is often called from within tight loops
   /// @todo Consider handling block size > 1
-  /// @todo Re-work for fields that require a pull-back, e.g. Piols
+  /// @todo Re-work for fields that require a pull-back, e.g. Piola
   /// mapped elements
   ///
   /// Interpolate a function in the finite element space on a cell.

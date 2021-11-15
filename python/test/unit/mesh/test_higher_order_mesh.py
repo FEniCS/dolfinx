@@ -12,10 +12,9 @@ import numpy as np
 import pytest
 import ufl
 from dolfinx.cpp.io import perm_gmsh, perm_vtk
-from dolfinx.cpp.mesh import CellType
 from dolfinx.fem import assemble_scalar
 from dolfinx.io import XDMFFile, ufl_mesh_from_gmsh
-from dolfinx.mesh import create_mesh
+from dolfinx.mesh import CellType, create_mesh
 from dolfinx_utils.test.skips import skip_in_parallel
 from mpi4py import MPI
 from ufl import dx

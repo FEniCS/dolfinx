@@ -236,19 +236,25 @@ graph::AdjacencyList<std::int32_t>
 geometry::compute_collisions(const BoundingBoxTree& tree,
                              const xt::xtensor<double, 2>& points)
 {
-  std::vector<std::int32_t> entities, offsets({0});
   if (tree.num_bboxes() > 0)
   {
+    std::vector<std::int32_t> entities, offsets({0});
     for (std::size_t p = 0; p < points.shape(0); ++p)
     {
       _compute_collisions_point(tree, xt::row(points, p), tree.num_bboxes() - 1,
                                 entities);
       offsets.push_back(entities.size());
     }
-  }
 
-  return graph::AdjacencyList<std::int32_t>(std::move(entities),
-                                            std::move(offsets));
+    return graph::AdjacencyList<std::int32_t>(std::move(entities),
+                                              std::move(offsets));
+  }
+  else
+  {
+    return graph::AdjacencyList<std::int32_t>(
+        std::vector<std::int32_t>(),
+        std::vector<std::int32_t>(points.shape(0) + 1, 0));
+  }
 }
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t> geometry::compute_closest_entity(
@@ -363,8 +369,8 @@ geometry::shortest_vector(const mesh::Mesh& mesh, int dim,
       // Tabulate geometry dofs for the entity
       auto dofs = x_dofmap.links(c);
       const std::vector<int> entity_dofs
-          = geometry.cmap().dof_layout().entity_closure_dofs(dim,
-                                                             local_cell_entity);
+          = geometry.cmap().create_dof_layout().entity_closure_dofs(
+              dim, local_cell_entity);
       xt::xtensor<double, 2> nodes({entity_dofs.size(), 3});
       for (std::size_t i = 0; i < entity_dofs.size(); i++)
         for (std::size_t j = 0; j < 3; ++j)

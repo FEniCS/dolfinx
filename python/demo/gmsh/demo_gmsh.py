@@ -6,11 +6,11 @@
 # Copyright (C) 2020 Garth N. Wells and Jørgen S. Dokken ::
 
 import numpy as np
-from dolfinx import cpp
-from dolfinx.cpp.io import extract_local_entities, perm_gmsh
+from dolfinx.cpp.graph import AdjacencyList_int32 as AdjacencyList
+from dolfinx.cpp.io import distribute_entity_data, perm_gmsh
 from dolfinx.io import (XDMFFile, extract_gmsh_geometry,
                         extract_gmsh_topology_and_markers, ufl_mesh_from_gmsh)
-from dolfinx.mesh import create_mesh, create_meshtags
+from dolfinx.mesh import CellType, create_mesh, create_meshtags
 from mpi4py import MPI
 
 import gmsh
@@ -94,10 +94,10 @@ else:
 
 mesh = create_mesh(MPI.COMM_WORLD, cells, x, ufl_mesh_from_gmsh(gmsh_cell_id, 3))
 mesh.name = "ball_d1"
-local_entities, local_values = extract_local_entities(mesh, 2, marked_facets, facet_values)
+entities, values = distribute_entity_data(mesh, 2, marked_facets, facet_values)
 
 mesh.topology.create_connectivity(2, 0)
-mt = create_meshtags(mesh, 2, cpp.graph.AdjacencyList_int32(local_entities), np.int32(local_values))
+mt = create_meshtags(mesh, 2, AdjacencyList(entities), np.int32(values))
 mt.name = "ball_d1_surface"
 
 with XDMFFile(MPI.COMM_WORLD, "mesh.xdmf", "w") as file:
@@ -143,19 +143,19 @@ else:
 # Permute the topology from GMSH to DOLFINx ordering
 domain = ufl_mesh_from_gmsh(gmsh_cell_id, 3)
 
-gmsh_tetra10 = perm_gmsh(cpp.mesh.CellType.tetrahedron, 10)
+gmsh_tetra10 = perm_gmsh(CellType.tetrahedron, 10)
 cells = cells[:, gmsh_tetra10]
 
 mesh = create_mesh(MPI.COMM_WORLD, cells, x, domain)
 mesh.name = "ball_d2"
 
 # Permute also entities which are tagged
-gmsh_triangle6 = perm_gmsh(cpp.mesh.CellType.triangle, 6)
+gmsh_triangle6 = perm_gmsh(CellType.triangle, 6)
 marked_facets = marked_facets[:, gmsh_triangle6]
 
-local_entities, local_values = extract_local_entities(mesh, 2, marked_facets, facet_values)
+entities, values = distribute_entity_data(mesh, 2, marked_facets, facet_values)
 mesh.topology.create_connectivity(2, 0)
-mt = create_meshtags(mesh, 2, cpp.graph.AdjacencyList_int32(local_entities), np.int32(local_values))
+mt = create_meshtags(mesh, 2, AdjacencyList(entities), np.int32(values))
 mt.name = "ball_d2_surface"
 with XDMFFile(MPI.COMM_WORLD, "mesh.xdmf", "a") as file:
     file.write_mesh(mesh)
@@ -221,19 +221,19 @@ else:
 
 # Permute the mesh topology from GMSH ordering to DOLFINx ordering
 domain = ufl_mesh_from_gmsh(gmsh_cell_id, 3)
-gmsh_hex27 = perm_gmsh(cpp.mesh.CellType.hexahedron, 27)
+gmsh_hex27 = perm_gmsh(CellType.hexahedron, 27)
 cells = cells[:, gmsh_hex27]
 
 mesh = create_mesh(MPI.COMM_WORLD, cells, x, domain)
 mesh.name = "hex_d2"
 
 # Permute also entities which are tagged
-gmsh_quad9 = perm_gmsh(cpp.mesh.CellType.quadrilateral, 9)
+gmsh_quad9 = perm_gmsh(CellType.quadrilateral, 9)
 marked_facets = marked_facets[:, gmsh_quad9]
 
-local_entities, local_values = extract_local_entities(mesh, 2, marked_facets, facet_values)
+entities, values = distribute_entity_data(mesh, 2, marked_facets, facet_values)
 mesh.topology.create_connectivity(2, 0)
-mt = create_meshtags(mesh, 2, cpp.graph.AdjacencyList_int32(local_entities), np.int32(local_values))
+mt = create_meshtags(mesh, 2, AdjacencyList(entities), np.int32(values))
 mt.name = "hex_d2_surface"
 
 with XDMFFile(MPI.COMM_WORLD, "mesh.xdmf", "a") as file:

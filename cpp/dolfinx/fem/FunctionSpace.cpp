@@ -107,6 +107,13 @@ FunctionSpace::tabulate_dof_coordinates(bool transpose) const
         "Cannot tabulate coordinates for a FunctionSpace that is a subspace.");
   }
 
+  assert(_element);
+  if (_element->is_mixed())
+  {
+    throw std::runtime_error(
+        "Cannot tabulate coordinates for a mixed FunctionSpace.");
+  }
+
   // Geometric dimension
   assert(_mesh);
   assert(_element);

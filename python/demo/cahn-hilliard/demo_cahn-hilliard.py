@@ -113,9 +113,9 @@ import os
 import numpy as np
 from dolfinx import (Function, FunctionSpace, NewtonSolver, UnitSquareMesh,
                      log, plot)
-from dolfinx.cpp.mesh import CellType
 from dolfinx.fem import NonlinearProblem
 from dolfinx.io import XDMFFile
+from dolfinx.mesh import CellType
 from mpi4py import MPI
 from petsc4py import PETSc
 from ufl import (FiniteElement, TestFunctions, diff, dx, grad, inner, split,
@@ -305,13 +305,6 @@ while (t < T):
         p.app.processEvents()
 
 file.close()
-
-# Within the time stepping loop, the nonlinear problem is solved by
-# calling :py:func:`solver.solve(problem,u.vector)<dolfinx.cpp.NewtonSolver.solve>`,
-# with the new solution vector returned in :py:func:`u.vector<dolfinx.cpp.Function.vector>`.
-# The solution vector associated with ``u`` is copied to ``u0`` at the
-# end of each time step, and the ``c`` component of the solution
-# (the first component of ``u``) is then written to file.
 
 # Update ghost entries and plot
 if have_pyvista:

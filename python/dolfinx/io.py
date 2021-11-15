@@ -52,7 +52,7 @@ class XDMFFile(cpp.io.XDMFFile):
         x = super().read_geometry_data(name, xpath)
 
         # Construct the geometry map
-        cell = ufl.Cell(cpp.mesh.to_string(cell_shape), geometric_dimension=x.shape[1])
+        cell = ufl.Cell(cell_shape.name, geometric_dimension=x.shape[1])
         domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell, cell_degree))
 
         # Build the mesh

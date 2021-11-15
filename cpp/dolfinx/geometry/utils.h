@@ -8,7 +8,6 @@
 
 #include <array>
 #include <dolfinx/graph/AdjacencyList.h>
-#include <utility>
 #include <vector>
 #include <xtensor/xfixed.hpp>
 #include <xtensor/xshape.hpp>
