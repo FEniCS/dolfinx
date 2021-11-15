@@ -116,9 +116,11 @@ create_level_structure(const graph::AdjacencyList<int>& graph, int s)
   return graph::AdjacencyList<int>(level_structure, level_offsets);
 }
 
-} // namespace
-
-std::vector<int> graph::gps_reorder(const graph::AdjacencyList<int>& graph)
+// Gibbs-Poole-Stockmeyer algorithm, finding a reordering for the given graph,
+// operating only on nodes which are yet unlabelled (indicated with -1 in the
+// vector r).
+std::vector<int> gps_reorder_unlabelled(const graph::AdjacencyList<int>& graph,
+                                        const std::vector<int>& r)
 {
   common::Timer timer("Gibbs-Poole-Stockmeyer ordering");
 
@@ -137,7 +139,7 @@ std::vector<int> graph::gps_reorder(const graph::AdjacencyList<int>& graph)
   for (int i = 0; i < n; ++i)
   {
     int d = graph.num_links(i);
-    if (d < dmin)
+    if (d < dmin and r[i] == -1)
     {
       v = i;
       dmin = d;
@@ -266,6 +268,7 @@ std::vector<int> graph::gps_reorder(const graph::AdjacencyList<int>& graph)
 
   // ALGORITHM III. Numbering
   std::vector<int> rv;
+  rv.reserve(n);
   std::vector<std::int8_t> labelled(n, false);
 
   int current_node = 0;
@@ -335,16 +338,31 @@ std::vector<int> graph::gps_reorder(const graph::AdjacencyList<int>& graph)
     rv.insert(rv.end(), rv_next.begin(), rv_next.end());
   }
 
-  if (static_cast<int>(rv.size()) != n)
+  return rv;
+}
+
+} // namespace
+
+std::vector<int> graph::gps_reorder(const graph::AdjacencyList<int>& graph)
+{
+  const int n = graph.num_nodes();
+  int count = 0;
+  std::vector<int> r(n, -1);
+  std::vector<int> rv;
+
+  // Repeat for each disconnected part of the graph
+  while (count < n)
   {
-    throw std::runtime_error(
-        "Numbering incomplete: probably disconnected graph");
+    rv = gps_reorder_unlabelled(graph, r);
+    assert(rv.size() > 0);
+
+    // Reverse permutation
+    for (int q : rv)
+      r[q] = count++;
   }
 
-  // Reverse permutation
-  std::vector<int> r(n);
-  for (int i = 0; i < n; ++i)
-    r[rv[i]] = i;
+  // Check all labelled
+  assert(std::find(r.begin(), r.end(), -1) == r.end());
 
   return r;
 }
