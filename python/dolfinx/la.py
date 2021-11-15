@@ -6,3 +6,4 @@
 """Linear algebra functionality"""
 
 from dolfinx.cpp.la import VectorSpaceBasis  # noqa
+from dolfinx.cpp.la import create_vector  # noqa

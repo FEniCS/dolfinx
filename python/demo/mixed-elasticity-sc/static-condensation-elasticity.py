@@ -5,33 +5,31 @@
 # ========================================
 # Copyright (C) 2020  Michal Habera and Andreas Zilian
 #
-# This demo solves a Cook's plane stress elasticity test in a mixed space
-# formulation. The test is a sloped cantilever under upward traction force
-# at free end. Static condensation of internal (stress) degrees-of-freedom
-# is demonstrated. ::
+# This demo solves a Cook's plane stress elasticity test in a mixed
+# space formulation. The test is a sloped cantilever under upward
+# traction force at free end. Static condensation of internal (stress)
+# degrees-of-freedom is demonstrated. ::
 
 import os
 
 import cffi
 import dolfinx
-import dolfinx.cpp
-import dolfinx.geometry
-import dolfinx.io
-import dolfinx.la
 import numba
 import numba.core.typing.cffi_utils as cffi_support
 import numpy as np
 import ufl
+from dolfinx import geometry
+from dolfinx.cpp.fem import Form_complex128, Form_float64
 from dolfinx.fem import locate_dofs_topological
+from dolfinx.io import XDMFFile
+from dolfinx.jit import ffcx_jit
 from dolfinx.mesh import locate_entities_boundary
 from mpi4py import MPI
 from petsc4py import PETSc
 
 filedir = os.path.dirname(__file__)
-infile = dolfinx.io.XDMFFile(MPI.COMM_WORLD,
-                             os.path.join(filedir, "cooks_tri_mesh.xdmf"),
-                             "r",
-                             encoding=dolfinx.cpp.io.XDMFFile.Encoding.ASCII)
+infile = XDMFFile(MPI.COMM_WORLD, os.path.join(filedir, "cooks_tri_mesh.xdmf"),
+                  "r", encoding=XDMFFile.Encoding.ASCII)
 mesh = infile.read_mesh(name="Grid")
 infile.close()
 
@@ -97,23 +95,15 @@ b1 = - ufl.inner(f, v) * ds(1)
 # JIT compile individual blocks tabulation kernels
 nptype = "complex128" if np.issubdtype(PETSc.ScalarType, np.complexfloating) else "float64"
 ffcxtype = "double _Complex" if np.issubdtype(PETSc.ScalarType, np.complexfloating) else "double"
-
-ufc_form00, _, _ = dolfinx.jit.ffcx_jit(mesh.mpi_comm(), a00,
-                                        form_compiler_parameters={"scalar_type": ffcxtype})
+ufc_form00, _, _ = ffcx_jit(mesh.mpi_comm(), a00, form_compiler_parameters={"scalar_type": ffcxtype})
 kernel00 = getattr(ufc_form00.integrals(0)[0], f"tabulate_tensor_{nptype}")
-
-ufc_form01, _, _ = dolfinx.jit.ffcx_jit(mesh.mpi_comm(), a01,
-                                        form_compiler_parameters={"scalar_type": ffcxtype})
+ufc_form01, _, _ = ffcx_jit(mesh.mpi_comm(), a01, form_compiler_parameters={"scalar_type": ffcxtype})
 kernel01 = getattr(ufc_form01.integrals(0)[0], f"tabulate_tensor_{nptype}")
-
-ufc_form10, _, _ = dolfinx.jit.ffcx_jit(mesh.mpi_comm(), a10,
-                                        form_compiler_parameters={"scalar_type": ffcxtype})
+ufc_form10, _, _ = ffcx_jit(mesh.mpi_comm(), a10, form_compiler_parameters={"scalar_type": ffcxtype})
 kernel10 = getattr(ufc_form10.integrals(0)[0], f"tabulate_tensor_{nptype}")
 
 ffi = cffi.FFI()
-cffi_support.register_type(ffi.typeof('double _Complex'),
-                           numba.types.complex128)
-
+cffi_support.register_type(ffi.typeof('double _Complex'), numba.types.complex128)
 c_signature = numba.types.void(
     numba.types.CPointer(numba.typeof(PETSc.ScalarType())),
     numba.types.CPointer(numba.typeof(PETSc.ScalarType())),
@@ -143,7 +133,7 @@ def tabulate_condensed_tensor_A(A_, w_, c_, coords_, entity_local_index, permuta
 
 
 # Prepare a Form with a condensed tabulation kernel
-Form = dolfinx.cpp.fem.Form_float64 if PETSc.ScalarType == np.float64 else dolfinx.cpp.fem.Form_complex128
+Form = Form_float64 if PETSc.ScalarType == np.float64 else Form_complex128
 
 integrals = {dolfinx.fem.IntegralType.cell: ([(-1, tabulate_condensed_tensor_A.address)], None)}
 a_cond = Form([U._cpp_object, U._cpp_object], integrals, [], [], False, None)
@@ -167,16 +157,16 @@ A = dolfinx.fem.assemble_matrix(a, bcs=[bc])
 A.assemble()
 
 # Create bounding box for function evaluation
-bb_tree = dolfinx.geometry.BoundingBoxTree(mesh, 2)
+bb_tree = geometry.BoundingBoxTree(mesh, 2)
 
 # Check against standard table value
 p = np.array([48.0, 52.0, 0.0], dtype=np.float64)
-cell_candidates = dolfinx.geometry.compute_collisions_point(bb_tree, p)
-cell = dolfinx.cpp.geometry.select_colliding_cells(mesh, cell_candidates, p, 1)
+cell_candidates = geometry.compute_collisions(bb_tree, p)
+cells = geometry.compute_colliding_cells(mesh, cell_candidates, p)
 
 uc.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-if len(cell) > 0:
-    value = uc.eval(p, cell)
+if len(cells) > 0:
+    value = uc.eval(p, cells[0])
     print(value[1])
     assert np.isclose(value[1], 23.95, rtol=1.e-2)
 

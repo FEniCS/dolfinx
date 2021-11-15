@@ -14,7 +14,6 @@
 #include <dolfinx/mesh/cell_types.h>
 #include <utility>
 #include <vector>
-#include <xtensor/xadapt.hpp>
 #include <xtensor/xview.hpp>
 
 using namespace dolfinx;

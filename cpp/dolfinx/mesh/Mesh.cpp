@@ -15,6 +15,7 @@
 #include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/partition.h>
+#include <dolfinx/graph/scotch.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <memory>
 
@@ -80,6 +81,8 @@ Mesh mesh::create_mesh(MPI_Comm comm,
   if (ghost_mode == mesh::GhostMode::shared_vertex)
     throw std::runtime_error("Ghost mode via vertex currently disabled.");
 
+  const fem::ElementDofLayout dof_layout = element.create_dof_layout();
+
   // TODO: This step can be skipped for 'P1' elements
   //
   // Extract topology data, e.g. just the vertices. For P1 geometry this
@@ -87,8 +90,7 @@ Mesh mesh::create_mesh(MPI_Comm comm,
   // filtered lists may have 'gaps', i.e. the indices might not be
   // contiguous.
   const graph::AdjacencyList<std::int64_t> cells_topology
-      = mesh::extract_topology(element.cell_shape(), element.dof_layout(),
-                               cells);
+      = mesh::extract_topology(element.cell_shape(), dof_layout, cells);
 
   // Compute the destination rank for cells on this process via graph
   // partitioning. Always get the ghost cells via facet, though these
@@ -104,8 +106,7 @@ Mesh mesh::create_mesh(MPI_Comm comm,
 
   // Extract cell 'topology', i.e. the vertices for each cell
   const graph::AdjacencyList<std::int64_t> cells_extracted0
-      = mesh::extract_topology(element.cell_shape(), element.dof_layout(),
-                               cell_nodes0);
+      = mesh::extract_topology(element.cell_shape(), dof_layout, cell_nodes0);
 
   // Build local dual graph for owned cells to apply re-ordering to
   const std::int32_t num_owned_cells
@@ -141,7 +142,7 @@ Mesh mesh::create_mesh(MPI_Comm comm,
   // connectivities for higher-order geometries)
   for (int e = 1; e < tdim; ++e)
   {
-    if (element.dof_layout().num_entity_dofs(e) > 0)
+    if (dof_layout.num_entity_dofs(e) > 0)
     {
       auto [cell_entity, entity_vertex, index_map]
           = mesh::compute_entities(comm, topology, e);

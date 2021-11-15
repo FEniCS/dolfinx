@@ -7,10 +7,8 @@
 #include "ElementDofLayout.h"
 #include <array>
 #include <cassert>
-#include <dolfinx/mesh/cell_types.h>
-#include <map>
 #include <numeric>
-#include <set>
+#include <stdexcept>
 
 using namespace dolfinx;
 using namespace dolfinx::fem;
@@ -54,12 +52,11 @@ ElementDofLayout ElementDofLayout::copy() const
 //-----------------------------------------------------------------------------
 bool ElementDofLayout::operator==(const ElementDofLayout& layout) const
 {
-  return
-      this->_num_dofs == layout._num_dofs
-      and this->_num_entity_dofs == layout._num_entity_dofs
-      and this->_num_entity_closure_dofs == layout._num_entity_closure_dofs
-      and this->_entity_dofs == layout._entity_dofs
-      and this->_entity_closure_dofs == layout._entity_closure_dofs;
+  return this->_num_dofs == layout._num_dofs
+         and this->_num_entity_dofs == layout._num_entity_dofs
+         and this->_num_entity_closure_dofs == layout._num_entity_closure_dofs
+         and this->_entity_dofs == layout._entity_dofs
+         and this->_entity_closure_dofs == layout._entity_closure_dofs;
 }
 //-----------------------------------------------------------------------------
 int ElementDofLayout::num_dofs() const { return _num_dofs; }
@@ -74,17 +71,16 @@ int ElementDofLayout::num_entity_closure_dofs(int dim) const
   return _num_entity_closure_dofs.at(dim);
 }
 //-----------------------------------------------------------------------------
-std::vector<int> ElementDofLayout::entity_dofs(int entity_dim,
-                                               int cell_entity_index) const
+const std::vector<int>& ElementDofLayout::entity_dofs(int dim,
+                                                      int entity_index) const
 {
-  return _entity_dofs.at(entity_dim).at(cell_entity_index);
+  return _entity_dofs.at(dim).at(entity_index);
 }
 //-----------------------------------------------------------------------------
-std::vector<int>
-ElementDofLayout::entity_closure_dofs(int entity_dim,
-                                      int cell_entity_index) const
+const std::vector<int>&
+ElementDofLayout::entity_closure_dofs(int dim, int entity_index) const
 {
-  return _entity_closure_dofs.at(entity_dim).at(cell_entity_index);
+  return _entity_closure_dofs.at(dim).at(entity_index);
 }
 //-----------------------------------------------------------------------------
 const std::vector<std::vector<std::vector<int>>>&

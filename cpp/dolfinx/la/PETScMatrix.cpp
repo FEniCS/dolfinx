@@ -1,5 +1,5 @@
-// Copyright (C) 2004-2018 Johan Hoffman, Johan Jansson, Anders Logg and Garth
-// N. Wells
+// Copyright (C) 2004-2018 Johan Hoffman, Johan Jansson, Anders Logg and
+// Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -21,9 +21,9 @@ using namespace dolfinx;
 using namespace dolfinx::la;
 
 //-----------------------------------------------------------------------------
-Mat la::create_petsc_matrix(
-    MPI_Comm comm, const dolfinx::la::SparsityPattern& sparsity_pattern,
-    const std::string& type)
+Mat la::create_petsc_matrix(MPI_Comm comm,
+                            const dolfinx::la::SparsityPattern& sp,
+                            const std::string& type)
 {
   PetscErrorCode ierr;
   Mat A;
@@ -32,9 +32,8 @@ Mat la::create_petsc_matrix(
     petsc_error(ierr, __FILE__, "MatCreate");
 
   // Get IndexMaps from sparsity patterm, and block size
-  std::array maps = {sparsity_pattern.index_map(0), sparsity_pattern.index_map(1)};
-  const std::array bs
-      = {sparsity_pattern.block_size(0), sparsity_pattern.block_size(1)};
+  std::array maps = {sp.index_map(0), sp.index_map(1)};
+  const std::array bs = {sp.block_size(0), sp.block_size(1)};
 
   if (!type.empty())
     MatSetType(A, type.c_str());
@@ -52,9 +51,9 @@ Mat la::create_petsc_matrix(
 
   // Get number of nonzeros for each row from sparsity pattern
   const graph::AdjacencyList<std::int32_t>& diagonal_pattern
-      = sparsity_pattern.diagonal_pattern();
+      = sp.diagonal_pattern();
   const graph::AdjacencyList<std::int32_t>& off_diagonal_pattern
-      = sparsity_pattern.off_diagonal_pattern();
+      = sp.off_diagonal_pattern();
 
   // Apply PETSc options from the options database to the matrix (this
   // includes changing the matrix type to one specified by the user)
@@ -190,7 +189,8 @@ PETScMatrix::set_fn(Mat A, InsertMode mode)
 {
   return [A, mode, cache = std::vector<PetscInt>()](
              std::int32_t m, const std::int32_t* rows, std::int32_t n,
-             const std::int32_t* cols, const PetscScalar* vals) mutable {
+             const std::int32_t* cols, const PetscScalar* vals) mutable -> int
+  {
     PetscErrorCode ierr;
 #ifdef PETSC_USE_64BIT_INDICES
     cache.resize(m + n);
@@ -206,7 +206,8 @@ PETScMatrix::set_fn(Mat A, InsertMode mode)
     if (ierr != 0)
       la::petsc_error(ierr, __FILE__, "MatSetValuesLocal");
 #endif
-    return 0;
+
+    return ierr;
   };
 }
 //-----------------------------------------------------------------------------
@@ -216,7 +217,8 @@ PETScMatrix::set_block_fn(Mat A, InsertMode mode)
 {
   return [A, mode, cache = std::vector<PetscInt>()](
              std::int32_t m, const std::int32_t* rows, std::int32_t n,
-             const std::int32_t* cols, const PetscScalar* vals) mutable {
+             const std::int32_t* cols, const PetscScalar* vals) mutable -> int
+  {
     PetscErrorCode ierr;
 #ifdef PETSC_USE_64BIT_INDICES
     cache.resize(m + n);
@@ -232,7 +234,8 @@ PETScMatrix::set_block_fn(Mat A, InsertMode mode)
     if (ierr != 0)
       la::petsc_error(ierr, __FILE__, "MatSetValuesBlockedLocal");
 #endif
-    return 0;
+
+    return ierr;
   };
 }
 //-----------------------------------------------------------------------------
@@ -246,7 +249,8 @@ PETScMatrix::set_block_expand_fn(Mat A, int bs0, int bs1, InsertMode mode)
   return [A, bs0, bs1, mode, cache0 = std::vector<PetscInt>(),
           cache1 = std::vector<PetscInt>()](
              std::int32_t m, const std::int32_t* rows, std::int32_t n,
-             const std::int32_t* cols, const PetscScalar* vals) mutable {
+             const std::int32_t* cols, const PetscScalar* vals) mutable -> int
+  {
     PetscErrorCode ierr;
     cache0.resize(bs0 * m);
     cache1.resize(bs1 * n);
@@ -259,18 +263,17 @@ PETScMatrix::set_block_expand_fn(Mat A, int bs0, int bs1, InsertMode mode)
 
     ierr = MatSetValuesLocal(A, cache0.size(), cache0.data(), cache1.size(),
                              cache1.data(), vals, mode);
-
 #ifdef DEBUG
     if (ierr != 0)
       la::petsc_error(ierr, __FILE__, "MatSetValuesLocal");
 #endif
-    return 0;
+    return ierr;
   };
 }
 //-----------------------------------------------------------------------------
-PETScMatrix::PETScMatrix(MPI_Comm comm, const SparsityPattern& sparsity_pattern,
+PETScMatrix::PETScMatrix(MPI_Comm comm, const SparsityPattern& sp,
                          const std::string& type)
-    : PETScOperator(create_petsc_matrix(comm, sparsity_pattern, type), false)
+    : PETScOperator(create_petsc_matrix(comm, sp, type), false)
 {
   // Do nothing
 }
@@ -290,22 +293,19 @@ double PETScMatrix::norm(la::Norm norm_type) const
   {
   case la::Norm::l1:
     ierr = MatNorm(_matA, NORM_1, &value);
-    if (ierr != 0)
-      petsc_error(ierr, __FILE__, "MatNorm");
     break;
   case la::Norm::linf:
     ierr = MatNorm(_matA, NORM_INFINITY, &value);
-    if (ierr != 0)
-      petsc_error(ierr, __FILE__, "MatNorm");
     break;
   case la::Norm::frobenius:
     ierr = MatNorm(_matA, NORM_FROBENIUS, &value);
-    if (ierr != 0)
-      petsc_error(ierr, __FILE__, "MatNorm");
     break;
   default:
     throw std::runtime_error("Unknown PETSc Mat norm type");
   }
+
+  if (ierr != 0)
+    petsc_error(ierr, __FILE__, "MatNorm");
 
   return value;
 }

@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "FunctionSpace.h"
+#include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/geometry/BoundingBoxTree.h>
@@ -14,12 +14,16 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <functional>
 #include <numeric>
-#include <variant>
-#include <xtensor/xadapt.hpp>
+#include <vector>
 #include <xtensor/xarray.hpp>
 #include <xtensor/xtensor.hpp>
 #include <xtensor/xview.hpp>
 #include <xtl/xspan.hpp>
+
+namespace dolfinx::mesh
+{
+class Mesh;
+} // namespace dolfinx::mesh
 
 namespace dolfinx::fem
 {
@@ -212,7 +216,7 @@ void interpolate(
         }
 
         // Get element degrees of freedom for block
-        element->map_pull_back(_vals, J, detJ, K, reference_data);
+        element->pull_back(_vals, J, detJ, K, reference_data);
 
         xt::xtensor<T, 2> ref_data
             = xt::transpose(xt::view(reference_data, xt::all(), 0, xt::all()));
@@ -347,8 +351,11 @@ void interpolate(Function<T>& u, const Function<T>& v)
     std::vector<std::vector<std::int32_t>> candidates(x_t.shape(0));
     for (decltype(x_t.shape(0)) i = 0; i < x_t.shape(0); ++i)
     {
-      candidates[i] = dolfinx::geometry::compute_collisions(
-          globalBB, {x_t(i, 0), x_t(i, 1), x_t(i, 2)});
+      const auto collisions = dolfinx::geometry::compute_collisions(
+          globalBB,
+          xt::xtensor<double, 2>({{x_t(i, 0), x_t(i, 1), x_t(i, 2)}}));
+      candidates[i] = std::vector<std::int32_t>(collisions.links(0).cbegin(),
+                                                collisions.links(0).cend());
     }
 
     // Compute which points need to be sent to which process
@@ -444,10 +451,13 @@ void interpolate(Function<T>& u, const Function<T>& v)
       const double zp = pointsToReceive(i, 2);
 
       // Check if any cells actually contain that point
-      const auto intersectingCells = dolfinx::geometry::select_colliding_cells(
+      const auto collidingCells = dolfinx::geometry::compute_colliding_cells(
           *v.function_space()->mesh(),
-          dolfinx::geometry::compute_collisions(bbt, {xp, yp, zp}),
-          {xp, yp, zp}, 1);
+          dolfinx::geometry::compute_collisions(
+              bbt, xt::xtensor<double, 2>({{xp, yp, zp}})),
+          xt::xtensor<double, 2>({{xp, yp, zp}}));
+      const std::vector<std::int32_t> intersectingCells(
+          collidingCells.links(0).cbegin(), collidingCells.links(0).cend());
 
       // If there is any -- there should be at most one -- note it down
       if (not intersectingCells.empty())

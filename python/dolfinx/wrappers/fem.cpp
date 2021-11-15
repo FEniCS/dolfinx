@@ -746,8 +746,7 @@ void fem(py::module& m)
       m, "CoordinateElement", "Coordinate map element")
       .def(py::init<dolfinx::mesh::CellType, int>(), py::arg("celltype"),
            py::arg("degree"))
-      .def_property_readonly("dof_layout",
-                             &dolfinx::fem::CoordinateElement::dof_layout)
+      .def("create_dof_layout", &dolfinx::fem::CoordinateElement::create_dof_layout)
       .def("push_forward",
            [](const dolfinx::fem::CoordinateElement& self,
               const py::array_t<double, py::array::c_style>& X,

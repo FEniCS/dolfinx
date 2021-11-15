@@ -6,12 +6,13 @@
 
 #include "RectangleMesh.h"
 #include <cfloat>
-#include <cmath>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <xtensor/xfixed.hpp>
 #include <xtensor/xtensor.hpp>
 #include <xtensor/xview.hpp>
+#include <dolfinx/mesh/utils.h>
+
 
 using namespace dolfinx;
 using namespace dolfinx::generation;
