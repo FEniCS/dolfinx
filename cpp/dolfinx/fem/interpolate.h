@@ -61,11 +61,6 @@ void interpolate_nonmatching_maps(Function<T>& u, const Function<T>& v)
   std::shared_ptr<const FiniteElement> element1 = u.function_space()->element();
   assert(element1);
 
-  auto map = mesh->topology().index_map(tdim);
-  assert(map);
-  xtl::span<const T> array0 = v.x()->array();
-  xtl::span<T> array1 = u.x()->mutable_array();
-
   xtl::span<const std::uint32_t> cell_info;
   if (element1->needs_dof_transformations()
       or element0->needs_dof_transformations())
@@ -101,22 +96,22 @@ void interpolate_nonmatching_maps(Function<T>& u, const Function<T>& v)
   const std::size_t num_dofs_g = x_dofmap.num_links(0);
   const xt::xtensor<double, 2>& x_g = mesh->geometry().x();
 
-  // Evaluate cmap at interpolation points
+  // Evaluate coordinate map basis at reference interpolation points
   xt::xtensor<double, 4> phi(cmap.tabulate_shape(1, X.shape(0)));
   xt::xtensor<double, 2> dphi;
   cmap.tabulate(1, X, phi);
   dphi = xt::view(phi, xt::range(1, tdim + 1), 0, xt::all(), 0);
 
-  // Evalute basis function at interpolation points on reference
+  // Evaluate v basis functions at reference interpolation points
   xt::xtensor<double, 4> basis_derivatives_reference0(
       {1, X.shape(0), dim0, value_size_ref0});
   element0->tabulate(basis_derivatives_reference0, X, 0);
 
   // Create working arrays
   std::vector<T> local1(element1->space_dimension());
+  std::vector<T> coeffs0(element0->space_dimension());
   xt::xtensor<double, 3> basis0({X.shape(0), dim0, value_size0});
   xt::xtensor<double, 3> basis_reference0({X.shape(0), dim0, value_size_ref0});
-  std::vector<T> coeffs0(element0->space_dimension());
   xt::xtensor<T, 3> values0({X.shape(0), 1, element1->value_size()});
   xt::xtensor<T, 3> mapped_values0({X.shape(0), 1, element1->value_size()});
   xt::xtensor<double, 2> coordinate_dofs({num_dofs_g, gdim});
@@ -125,7 +120,11 @@ void interpolate_nonmatching_maps(Function<T>& u, const Function<T>& v)
   std::vector<double> detJ(X.shape(0));
 
   // Iterate over mesh and interpolate on each cell
-  const int num_cells = map->size_local() + map->num_ghosts();
+  xtl::span<const T> array0 = v.x()->array();
+  xtl::span<T> array1 = u.x()->mutable_array();
+  auto cell_map = mesh->topology().index_map(tdim);
+  assert(cell_map);
+  const int num_cells = cell_map->size_local() + cell_map->num_ghosts();
   for (int c = 0; c < num_cells; ++c)
   {
     // Get cell geometry (coordinate dofs)
