@@ -28,6 +28,177 @@ namespace dolfinx::fem
 template <typename T>
 class Function;
 
+namespace impl
+{
+/// Interpolate from one finite element Function to another on the same
+/// mesh. The function is for cases where the finite element basis
+/// functions for the two elements are mapped differently, e.g. one may
+/// be Piola mapped and the other with a standard isoparametric map.
+/// @param[out] u The function to interpolate to
+/// @param[in] v The function to interpolate from
+template <typename T>
+void interpolate_nonmatching_maps(Function<T>& u, const Function<T>& v)
+{
+  // Note:
+  // - Suffix '0' indicates source data (from v)
+  // - Suffix '1' indicates target data (to  u)
+
+  // Get mesh and check that functions share the same mesh
+  assert(v.function_space());
+  auto mesh = v.function_space()->mesh();
+  assert(mesh);
+  assert(u.function_space()->mesh());
+  if (mesh != u.function_space()->mesh())
+    throw std::runtime_error("Functions have different meshesÎ.");
+
+  // Mesh dims
+  const int tdim = mesh->topology().dim();
+  const int gdim = mesh->geometry().dim();
+
+  // Get elements
+  std::shared_ptr<const FiniteElement> element0 = v.function_space()->element();
+  assert(element0);
+  std::shared_ptr<const FiniteElement> element1 = u.function_space()->element();
+  assert(element1);
+
+  auto map = mesh->topology().index_map(tdim);
+  assert(map);
+  xtl::span<const T> array0 = v.x()->array();
+  xtl::span<T> array1 = u.x()->mutable_array();
+
+  xtl::span<const std::uint32_t> cell_info;
+  if (element1->needs_dof_transformations()
+      or element0->needs_dof_transformations())
+  {
+    mesh->topology_mutable().create_entity_permutations();
+    cell_info = xtl::span(mesh->topology().get_cell_permutation_info());
+  }
+
+  // Get dofmaps
+  const auto dofmap0 = v.function_space()->dofmap();
+  const auto dofmap1 = u.function_space()->dofmap();
+
+  const xt::xtensor<double, 2> X = element1->interpolation_points();
+
+  // Get block sizes and dof transformation operators
+  const int bs0 = element0->block_size();
+  const int bs1 = element1->block_size();
+  const auto apply_dof_transformation0
+      = element0->get_dof_transformation_function<double>(false, false, false);
+  const auto apply_inverse_dof_transform1
+      = element1->get_dof_transformation_function<T>(true, true, false);
+
+  // Get sizes of elements
+  const std::size_t dim0 = element0->space_dimension() / bs0;
+  const std::size_t value_size_ref0 = element0->reference_value_size() / bs0;
+  const std::size_t value_size0 = element0->value_size() / bs0;
+
+  // Get geometry data
+  const fem::CoordinateElement& cmap = mesh->geometry().cmap();
+  const graph::AdjacencyList<std::int32_t>& x_dofmap
+      = mesh->geometry().dofmap();
+  // FIXME: Add proper interface for num coordinate dofs
+  const std::size_t num_dofs_g = x_dofmap.num_links(0);
+  const xt::xtensor<double, 2>& x_g = mesh->geometry().x();
+
+  // Evaluate cmap at interpolation points
+  xt::xtensor<double, 4> phi(cmap.tabulate_shape(1, X.shape(0)));
+  xt::xtensor<double, 2> dphi;
+  cmap.tabulate(1, X, phi);
+  dphi = xt::view(phi, xt::range(1, tdim + 1), 0, xt::all(), 0);
+
+  // Evalute basis function at interpolation points on reference
+  xt::xtensor<double, 4> basis_derivatives_reference0(
+      {1, X.shape(0), dim0, value_size_ref0});
+  element0->tabulate(basis_derivatives_reference0, X, 0);
+
+  // Create working arrays
+  std::vector<T> local1(element1->space_dimension());
+  xt::xtensor<double, 3> basis0({X.shape(0), dim0, value_size0});
+  xt::xtensor<double, 3> basis_reference0({X.shape(0), dim0, value_size_ref0});
+  std::vector<T> coeffs0(element0->space_dimension());
+  xt::xtensor<T, 3> values0({X.shape(0), 1, element1->value_size()});
+  xt::xtensor<T, 3> mapped_values0({X.shape(0), 1, element1->value_size()});
+  xt::xtensor<double, 2> coordinate_dofs({num_dofs_g, gdim});
+  xt::xtensor<double, 3> J({X.shape(0), gdim, tdim});
+  xt::xtensor<double, 3> K({X.shape(0), tdim, gdim});
+  std::vector<double> detJ(X.shape(0));
+
+  // Iterate over mesh and interpolate on each cell
+  const int num_cells = map->size_local() + map->num_ghosts();
+  for (int c = 0; c < num_cells; ++c)
+  {
+    // Get cell geometry (coordinate dofs)
+    auto x_dofs = x_dofmap.links(c);
+    for (std::size_t i = 0; i < num_dofs_g; ++i)
+      for (std::size_t j = 0; j < gdim; ++j)
+        coordinate_dofs(i, j) = x_g(x_dofs[i], j);
+
+    // Compute Jacobians and reference points for current cell
+    J.fill(0);
+    for (std::size_t p = 0; p < X.shape(0); ++p)
+    {
+      auto _J = xt::view(J, p, xt::all(), xt::all());
+      cmap.compute_jacobian(dphi, coordinate_dofs, _J);
+      cmap.compute_jacobian_inverse(_J, xt::view(K, p, xt::all(), xt::all()));
+      detJ[p] = cmap.compute_jacobian_determinant(_J);
+    }
+
+    // Get evaluated basis on reference, apply DOF transformations, and
+    // push forward to physical element
+    basis_reference0 = xt::view(basis_derivatives_reference0, 0, xt::all(),
+                                xt::all(), xt::all());
+    for (std::size_t p = 0; p < X.shape(0); ++p)
+    {
+      apply_dof_transformation0(
+          xtl::span(basis_reference0.data() + p * dim0 * value_size_ref0,
+                    dim0 * value_size_ref0),
+          cell_info, c, value_size_ref0);
+    }
+    element0->transform_reference_basis(basis0, basis_reference0, J, detJ, K);
+
+    // Copy expansion coefficients for v into local array
+    xtl::span<const std::int32_t> dofs0 = dofmap0->cell_dofs(c);
+    for (std::size_t i = 0; i < dofs0.size(); ++i)
+      for (int k = 0; k < bs0; ++k)
+        coeffs0[bs0 * i + k] = array0[bs0 * dofs0[i] + k];
+
+    // Evaluate v at the interpolation points
+    for (std::size_t p = 0; p < X.shape(0); ++p)
+    {
+      for (int k = 0; k < bs0; ++k)
+      {
+        for (std::size_t j = 0; j < value_size0; ++j)
+        {
+          values0(p, 0, j * bs0 + k) = 0;
+          for (std::size_t i = 0; i < dim0; ++i)
+          {
+            values0(p, 0, j * bs0 + k)
+                += coeffs0[bs0 * i + k] * basis0(p, i, j);
+          }
+        }
+      }
+    }
+
+    // Pull back the physical values to the u reference
+    element1->map_pull_back(values0, J, detJ, K, mapped_values0);
+
+    // Interpolate on the u element
+    xt::xtensor<T, 2> _mapped_values0
+        = xt::transpose(xt::view(mapped_values0, xt::all(), 0, xt::all()));
+    element1->interpolate(_mapped_values0, tcb::make_span(local1));
+
+    apply_inverse_dof_transform1(local1, cell_info, c, 1);
+
+    // Copy local coefficients to the correct position in u dof array
+    xtl::span<const std::int32_t> dofs1 = dofmap1->cell_dofs(c);
+    for (std::size_t i = 0; i < dofs1.size(); ++i)
+      for (int k = 0; k < bs1; ++k)
+        array1[bs1 * dofs1[i] + k] = local1[bs1 * i + k];
+  }
+}
+} // namespace impl
+
 /// Compute the evaluation points in the physical space at which an
 /// expression should be computed to interpolate it in a finite elemenet
 /// space.
@@ -297,7 +468,7 @@ void interpolate(Function<T>& u, const Function<T>& v)
   }
 
   const int tdim = mesh->topology().dim();
-  const int gdim = mesh->geometry().dim();
+  // const int gdim = mesh->geometry().dim();
   const std::shared_ptr<const FiniteElement> element_to
       = u.function_space()->element();
   assert(element_to);
@@ -399,140 +570,8 @@ void interpolate(Function<T>& u, const Function<T>& v)
   }
   else
   {
-    //  --- Different elements, different map
-    xtl::span<const std::uint32_t> cell_info;
-    if (element_to->needs_dof_transformations()
-        or element_from->needs_dof_transformations())
-    {
-      mesh->topology_mutable().create_entity_permutations();
-      cell_info = xtl::span(mesh->topology().get_cell_permutation_info());
-    }
-
-    // Get dofmaps
-    const auto dofmap_u = u.function_space()->dofmap();
-    const auto dofmap_v = v.function_space()->dofmap();
-
-    const xt::xtensor<double, 2> points = element_to->interpolation_points();
-
-    // Get block sizes and dof transformation operators
-    const int u_bs = element_to->block_size();
-    const int v_bs = element_from->block_size();
-    const auto apply_dof_transformation
-        = element_from->get_dof_transformation_function<double>(false, false,
-                                                                false);
-    const auto apply_inverse_dof_transform
-        = element_to->get_dof_transformation_function<T>(true, true, false);
-
-    // Get sizes of elements
-    const std::size_t v_dim = element_from->space_dimension() / v_bs;
-    const std::size_t v_ref_vs = element_from->reference_value_size() / v_bs;
-    const std::size_t v_vs = element_from->value_size() / v_bs;
-
-    // Get geometry data
-    const fem::CoordinateElement& cmap = mesh->geometry().cmap();
-    const graph::AdjacencyList<std::int32_t>& x_dofmap
-        = mesh->geometry().dofmap();
-    // FIXME: Add proper interface for num coordinate dofs
-    const std::size_t num_dofs_g = x_dofmap.num_links(0);
-    const xt::xtensor<double, 2>& x_g = mesh->geometry().x();
-
-    // Evaluate cmap at interpolation points
-    xt::xtensor<double, 4> phi(cmap.tabulate_shape(1, points.shape(0)));
-    xt::xtensor<double, 2> dphi;
-    cmap.tabulate(1, points, phi);
-    dphi = xt::view(phi, xt::range(1, tdim + 1), 0, xt::all(), 0);
-
-    // Evalute basis function at interpolation points on reference
-    xt::xtensor<double, 4> v_basis_derivatives_reference_values(
-        {1, points.shape(0), v_dim, v_ref_vs});
-    element_from->tabulate(v_basis_derivatives_reference_values, points, 0);
-
-    // Create working arrays
-    std::vector<T> u_local(element_to->space_dimension());
-    xt::xtensor<double, 3> v_basis_values({points.shape(0), v_dim, v_vs});
-    xt::xtensor<double, 3> v_basis_reference_values(
-        {points.shape(0), v_dim, v_ref_vs});
-    std::vector<T> v_coefficients(element_from->space_dimension());
-    xt::xtensor<T, 3> v_values({points.shape(0), 1, element_to->value_size()});
-    xt::xtensor<T, 3> v_mapped_values(
-        {points.shape(0), 1, element_to->value_size()});
-    xt::xtensor<double, 2> coordinate_dofs({num_dofs_g, gdim});
-    xt::xtensor<double, 3> J({points.shape(0), gdim, tdim});
-    xt::xtensor<double, 3> K({points.shape(0), tdim, gdim});
-    const std::array<std::size_t, 1> sh = {points.shape(0)};
-    xt::xtensor<double, 1> detJ(sh);
-
-    // Iterate over mesh and interpolate on each cell
-    const int num_cells = map->size_local() + map->num_ghosts();
-    for (int c = 0; c < num_cells; ++c)
-    {
-      // Get cell geometry (coordinate dofs)
-      auto x_dofs = x_dofmap.links(c);
-      for (std::size_t i = 0; i < num_dofs_g; ++i)
-        for (std::size_t j = 0; j < gdim; ++j)
-          coordinate_dofs(i, j) = x_g(x_dofs[i], j);
-
-      // Compute Jacobians
-      J.fill(0);
-      for (std::size_t p = 0; p < points.shape(0); ++p)
-      {
-        auto _J = xt::view(J, p, xt::all(), xt::all());
-        cmap.compute_jacobian(dphi, coordinate_dofs, _J);
-        cmap.compute_jacobian_inverse(_J, xt::view(K, p, xt::all(), xt::all()));
-        detJ[p] = cmap.compute_jacobian_determinant(_J);
-      }
-
-      // Get evaluated basis on reference, apply DOF transformations, push
-      // forward
-      v_basis_reference_values = xt::view(v_basis_derivatives_reference_values,
-                                          0, xt::all(), xt::all(), xt::all());
-      for (std::size_t p = 0; p < points.shape(0); ++p)
-      {
-        apply_dof_transformation(
-            xtl::span(v_basis_reference_values.data() + p * v_dim * v_ref_vs,
-                      v_dim * v_ref_vs),
-            cell_info, c, v_ref_vs);
-      }
-      element_from->transform_reference_basis(
-          v_basis_values, v_basis_reference_values, J, detJ, K);
-
-      // Evaluate v at the interpolation points
-      xtl::span<const std::int32_t> dofs_v = dofmap_v->cell_dofs(c);
-      for (std::size_t i = 0; i < dofs_v.size(); ++i)
-        for (int k = 0; k < v_bs; ++k)
-          v_coefficients[v_bs * i + k] = v_array[v_bs * dofs_v[i] + k];
-
-      for (std::size_t p = 0; p < points.shape(0); ++p)
-      {
-        for (int k = 0; k < v_bs; ++k)
-        {
-          for (std::size_t j = 0; j < v_vs; ++j)
-          {
-            v_values(p, 0, j * v_bs + k) = 0;
-            for (std::size_t i = 0; i < v_dim; ++i)
-            {
-              v_values(p, 0, j * v_bs + k)
-                  += v_coefficients[v_bs * i + k] * v_basis_values(p, i, j);
-            }
-          }
-        }
-      }
-
-      // Pull back to the reference and interpolate
-      element_to->map_pull_back(v_values, J, detJ, K, v_mapped_values);
-
-      xt::xtensor<T, 2> _vm
-          = xt::transpose(xt::view(v_mapped_values, xt::all(), 0, xt::all()));
-      element_to->interpolate(_vm, tcb::make_span(u_local));
-
-      apply_inverse_dof_transform(u_local, cell_info, c, 1);
-
-      // Map local coefficients to the correct DOFs
-      xtl::span<const std::int32_t> dofs_u = dofmap_u->cell_dofs(c);
-      for (std::size_t i = 0; i < dofs_u.size(); ++i)
-        for (int k = 0; k < u_bs; ++k)
-          u_array[u_bs * dofs_u[i] + k] = u_local[u_bs * i + k];
-    }
+    //  --- Different elements with different maps for basis functions
+    impl::interpolate_nonmatching_maps(u, v);
   }
 }
 
