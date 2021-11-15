@@ -28,7 +28,7 @@ residual_graph_components(const graph::AdjacencyList<int>& graph,
     return rgc;
 
   // Mark all nodes as labelled, except those in the residual graph
-  std::vector<bool> labelled(n, true);
+  std::vector<std::int_fast8_t> labelled(n, true);
   for (int w : indices)
     labelled[w] = false;
 
@@ -89,15 +89,17 @@ create_level_structure(const graph::AdjacencyList<int>& graph, int s)
   level_structure.reserve(graph.array().size());
   std::vector<int> level_offsets = {0};
   level_offsets.reserve(graph.offsets().size());
-  std::vector<bool> labelled(n, false);
+  // int8 is often faster than bool
+  std::vector<std::int8_t> labelled(n, false);
   labelled[s] = true;
 
+  // Current level
   int l = 0;
+
   while (static_cast<int>(level_structure.size()) > level_offsets.back())
   {
     level_offsets.push_back(level_structure.size());
-    ++l;
-    for (int i = level_offsets[l - 1]; i < level_offsets[l]; ++i)
+    for (int i = level_offsets[l]; i < level_offsets[l + 1]; ++i)
     {
       const int node = level_structure[i];
       for (int idx : graph.links(node))
@@ -108,6 +110,7 @@ create_level_structure(const graph::AdjacencyList<int>& graph, int s)
         labelled[idx] = true;
       }
     }
+    ++l;
   }
 
   return graph::AdjacencyList<int>(level_structure, level_offsets);
@@ -118,7 +121,6 @@ create_level_structure(const graph::AdjacencyList<int>& graph, int s)
 std::vector<int> graph::gps_reorder(const graph::AdjacencyList<int>& graph)
 {
   common::Timer timer("Gibbs-Poole-Stockmeyer ordering");
-  common::Timer timer1("GPS(1)");
 
   const int n = graph.num_nodes();
 
@@ -192,9 +194,6 @@ std::vector<int> graph::gps_reorder(const graph::AdjacencyList<int>& graph)
   int k = lv.num_nodes();
   LOG(INFO) << "GPS pseudo-diameter:(" << k << ") " << u << "-" << v << "\n";
 
-  timer1.stop();
-  common::Timer timer2("GPS(2)");
-
   // ALGORITHM II. Minimizing level width.
 
   // Pair (i, j) associated with each node: lvt=i, lut=j
@@ -265,19 +264,16 @@ std::vector<int> graph::gps_reorder(const graph::AdjacencyList<int>& graph)
     }
   }
 
-  timer2.stop();
-  common::Timer timer3("GPS(3)");
-
   // ALGORITHM III. Numbering
   std::vector<int> rv;
-  std::vector<bool> labelled(n, false);
+  std::vector<std::int8_t> labelled(n, false);
 
   int current_node = 0;
   rv.push_back(v);
   labelled[v] = true;
 
   // Temporary vectors
-  std::vector<bool> in_level;
+  std::vector<std::int8_t> in_level;
   std::vector<int> rv_next;
   std::vector<int> nbr, nbr_next;
   std::vector<int> nrem;
