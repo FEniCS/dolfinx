@@ -154,7 +154,7 @@ void interpolate_nonmatching_maps(Function<T>& u, const Function<T>& v)
                     dim0 * value_size_ref0),
           cell_info, c, value_size_ref0);
     }
-    element0->transform_reference_basis(basis0, basis_reference0, J, detJ, K);
+    element0->push_forward(basis0, basis_reference0, J, detJ, K);
 
     // Copy expansion coefficients for v into local array
     xtl::span<const std::int32_t> dofs0 = dofmap0->cell_dofs(c);
@@ -162,7 +162,7 @@ void interpolate_nonmatching_maps(Function<T>& u, const Function<T>& v)
       for (int k = 0; k < bs0; ++k)
         coeffs0[bs0 * i + k] = array0[bs0 * dofs0[i] + k];
 
-    // Evaluate v at the interpolation points
+    // Evaluate v at the interpolation points (physical space)
     for (std::size_t p = 0; p < X.shape(0); ++p)
     {
       for (int k = 0; k < bs0; ++k)
@@ -180,7 +180,7 @@ void interpolate_nonmatching_maps(Function<T>& u, const Function<T>& v)
     }
 
     // Pull back the physical values to the u reference
-    element1->map_pull_back(values0, J, detJ, K, mapped_values0);
+    element1->pull_back(values0, J, detJ, K, mapped_values0);
 
     // Interpolate on the u element
     xt::xtensor<T, 2> _mapped_values0
