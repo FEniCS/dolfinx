@@ -97,18 +97,17 @@ public:
   void tabulate(xt::xtensor<double, 4>& values, const xt::xtensor<double, 2>& X,
                 int order) const;
 
-  /// Push basis functions forward to physical element
-  /// @param[out] values Basis function values on the physical domain (ndim=3)
+  /// Push forward data to the physical element
+  /// @param[out] values Function values on the physical domain (ndim=3)
   /// @param[in] reference_values Basis function values on the reference
   /// cell (ndim=3)
   /// @param[in] J The Jacobian of the map (shape=(num_points, gdim, tdim))
   /// @param[in] detJ The determinant of the Jacobian
   /// @param[in] K The inverse of the Jacobian (shape=(num_points, tdim, gdim))
   template <typename U, typename V, typename W, typename X>
-  constexpr void
-  transform_reference_basis(U&& values, const V& reference_values, const W& J,
-                            const xtl::span<const double>& detJ,
-                            const X& K) const
+  constexpr void push_forward(U&& values, const V& reference_values, const W& J,
+                              const xtl::span<const double>& detJ,
+                              const X& K) const
   {
     assert(_element);
     _element->map_push_forward_m(reference_values, J, detJ, K, values);
@@ -617,8 +616,7 @@ public:
   /// @param[out] U The input `u` mapped to the reference element. It
   /// must have dimension 3.
   template <typename O, typename P, typename Q, typename T, typename S>
-  void map_pull_back(const O& u, const P& J, const Q& detJ, const T& K,
-                     S&& U) const
+  void pull_back(const O& u, const P& J, const Q& detJ, const T& K, S&& U) const
   {
     assert(_element);
     _element->map_pull_back_m(u, J, detJ, K, U);

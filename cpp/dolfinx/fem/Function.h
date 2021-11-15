@@ -398,8 +398,7 @@ public:
                                cell_info, cell_index, reference_value_size);
 
       // Push basis forward to physical element
-      element->transform_reference_basis(basis_values, basis_reference_values,
-                                         J, detJ, K);
+      element->push_forward(basis_values, basis_reference_values, J, detJ, K);
 
       // Get degrees of freedom for current cell
       xtl::span<const std::int32_t> dofs = dofmap->cell_dofs(cell_index);

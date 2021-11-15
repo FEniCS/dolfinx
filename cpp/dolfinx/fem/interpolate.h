@@ -217,7 +217,7 @@ void interpolate(
         }
 
         // Get element degrees of freedom for block
-        element->map_pull_back(_vals, J, detJ, K, reference_data);
+        element->pull_back(_vals, J, detJ, K, reference_data);
 
         xt::xtensor<T, 2> ref_data
             = xt::transpose(xt::view(reference_data, xt::all(), 0, xt::all()));
