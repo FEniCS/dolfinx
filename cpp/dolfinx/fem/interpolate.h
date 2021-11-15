@@ -35,39 +35,32 @@ namespace impl
 template <typename U, typename V, typename W>
 void interpolation_apply(const U& Pi, const V& data, W&& coeffs, int bs)
 {
-  // const std::size_t rows = dim();
-  // const xt::xtensor<double, 2>& Pi = interpolation_matrix();
-  // assert(Pi.size() % rows == 0);
-  // const std::size_t cols = Pi.size() / rows;
-  using T = typename V::value_type;
-  const std::size_t cols = Pi.shape(1);
-
   // Compute coefficients = Pi * x (matrix-vector multiply)
   if (bs == 1)
   {
-    std::cout << "bs == 1" << std::endl;
+    assert(data.shape(0) * data.shape(1) == Pi.shape(1));
     for (std::size_t i = 0; i < Pi.shape(0); ++i)
     {
-      // Can be replaced with std::transform_reduce once GCC 8 series dies.
-      // Dot product between row i of the matrix and 'data'
-      coeffs[i] = std::inner_product(std::next(Pi.data(), i * cols),
-                                     std::next(Pi.data(), i * cols + cols),
-                                     data.data(), T(0.0));
+      coeffs[i] = 0.0;
+      for (std::size_t k = 0; k < data.shape(1); ++k)
+        for (std::size_t j = 0; j < data.shape(0); ++j)
+          coeffs[i] += Pi(i, k * data.shape(0) + j) * data(j, k);
     }
   }
   else
   {
-    std::cout << "bs > 1" << std::endl;
+    const std::size_t cols = Pi.shape(1);
     assert(data.shape(0) == Pi.shape(1));
     assert(data.shape(1) == bs);
+    using T = typename std::decay_t<W>::value_type;
     for (int k = 0; k < bs; ++k)
     {
       for (std::size_t i = 0; i < Pi.shape(0); ++i)
       {
-        coeffs[bs * i + k] = 0;
+        T acc = 0;
         for (std::size_t j = 0; j < cols; ++j)
-          // coeffs[block_size * i + k] += Pi(i, j) * data(k * cols + j);
-          coeffs[bs * i + k] += Pi(i, j) * data(j, k);
+          acc += Pi(i, j) * data(j, k);
+        coeffs[bs * i + k] = acc;
       }
     }
   }
@@ -152,7 +145,6 @@ void interpolate_nonmatching_maps(Function<T>& u, const Function<T>& v)
 
   // Create working arrays
   std::vector<T> local1(element1->space_dimension());
-  std::vector<T> local1_tmp(element1->space_dimension());
   std::vector<T> coeffs0(element0->space_dimension());
   xt::xtensor<double, 3> basis0({X.shape(0), dim0, value_size0});
   xt::xtensor<double, 3> basis_reference0({X.shape(0), dim0, value_size_ref0});
@@ -189,7 +181,7 @@ void interpolate_nonmatching_maps(Function<T>& u, const Function<T>& v)
 
     const xt::xtensor<double, 2>& Pi_1 = element1->interpolation_operator();
 
-    std::cout << "Pi " << std::endl << Pi_1 << std::endl;
+    // std::cout << "Pi " << std::endl << Pi_1 << std::endl;
 
     // Get evaluated basis on reference, apply DOF transformations, and
     // push forward to physical element
@@ -231,19 +223,20 @@ void interpolate_nonmatching_maps(Function<T>& u, const Function<T>& v)
     element1->pull_back(values0, J, detJ, K, mapped_values0);
 
     // Interpolate on the u element
-    xt::xtensor<T, 2> _mapped_values0
-        = xt::transpose(xt::view(mapped_values0, xt::all(), 0, xt::all()));
-    element1->interpolate(_mapped_values0, tcb::make_span(local1));
+    // xt::xtensor<T, 2> _mapped_values0
+    //     = xt::transpose(xt::view(mapped_values0, xt::all(), 0, xt::all()));
+    // element1->interpolate(_mapped_values0, tcb::make_span(local1));
+    // std::cout << "mmm tmp: " << std::endl << _mapped_values0 << std::endl;
 
-    const xt::xtensor<T, 2> _mapped_values0_tmp
-        = xt::view(mapped_values0, xt::all(), 0, xt::all());
-    interpolation_apply(Pi_1, _mapped_values0_tmp, local1, bs1);
+    auto _mapped_values0 = xt::view(mapped_values0, xt::all(), 0, xt::all());
 
-    std::cout << "------: " << std::endl << _mapped_values0_tmp << std::endl;
+    // std::cout << "MMM tmp: " << std::endl << _mapped_values0_tmp <<
+    // std::endl;
+    interpolation_apply(Pi_1, _mapped_values0, local1, bs1);
 
-    std::cout << "------: " << bs1 << std::endl;
-    for (std::size_t i = 0; i < local1.size(); ++i)
-      std::cout << "   " << local1[i] << ", " << local1_tmp[i] << std::endl;
+    // std::cout << "------: " << bs1 << std::endl;
+    // for (std::size_t i = 0; i < local1.size(); ++i)
+    //   std::cout << "   " << local1[i] << ", " << local1_tmp[i] << std::endl;
 
     apply_inverse_dof_transform1(local1, cell_info, c, 1);
 

@@ -266,10 +266,8 @@ def test_interpolation_dg_to_n1curl(tdim, order):
     assert np.isclose(s, 0)
 
 
-# @pytest.mark.parametrize("tdim", [2, 3])
-# @pytest.mark.parametrize("order", [1, 2, 3])
-@pytest.mark.parametrize("tdim", [2,])
-@pytest.mark.parametrize("order", [1,])
+@pytest.mark.parametrize("tdim", [2, 3])
+@pytest.mark.parametrize("order", [1, 2, 3])
 def test_interpolation_n1curl_to_dg(tdim, order):
     if tdim == 2:
         mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, 5, 5)
