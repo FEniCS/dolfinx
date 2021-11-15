@@ -16,7 +16,6 @@
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/gps.h>
 #include <dolfinx/graph/partition.h>
-#include <dolfinx/graph/scotch.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <memory>
 
