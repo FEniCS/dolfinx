@@ -476,7 +476,7 @@ void pack_coefficient_cell(
   // TODO Use better name than index
   for (std::size_t index = 0; index < active_cells.size(); ++index)
   {
-    auto cell = active_cells[index];
+    std::int32_t cell = active_cells[index];
 
     auto cell_coeff = c.subspan(index * cstride + offset, space_dim);
     pack<T>(cell, bs, cell_coeff, v, cell_info, dofmap, transformation);
@@ -497,7 +497,7 @@ void pack_coefficient_exterior_facet(
   const int bs = dofmap.bs();
   for (std::size_t index = 0; index < active_facets.size(); ++index)
   {
-    auto cell = active_facets[index].first;
+    std::int32_t cell = active_facets[index].first;
 
     auto cell_coeff = c.subspan(index * cstride + offset, space_dim);
     pack<T>(cell, bs, cell_coeff, v, cell_info, dofmap, transformation);

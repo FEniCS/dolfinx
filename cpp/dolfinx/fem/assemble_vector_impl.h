@@ -69,7 +69,7 @@ void _lift_bc_cells(
   std::vector<T> Ae, be;
   for (std::size_t index = 0; index < cells.size(); ++index)
   {
-    auto c = cells[index];
+    std::int32_t c = cells[index];
 
     // Get dof maps for cell
     auto dmap1 = dofmap1.links(c);
@@ -529,7 +529,7 @@ void assemble_cells(
   // Iterate over active cells
   for (std::size_t index = 0; index < cells.size(); ++index)
   {
-    auto c = cells[index];
+    std::int32_t c = cells[index];
 
     // Get cell coordinates/geometry
     auto x_dofs = x_dofmap.links(c);
