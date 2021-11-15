@@ -121,9 +121,9 @@ create_level_structure(const graph::AdjacencyList<int>& graph, int s)
 //-----------------------------------------------------------------------------
 // Gibbs-Poole-Stockmeyer algorithm, finding a reordering for the given graph,
 // operating only on nodes which are yet unlabelled (indicated with -1 in the
-// vector r).
+// vector rlabel).
 std::vector<int> gps_reorder_unlabelled(const graph::AdjacencyList<int>& graph,
-                                        const std::vector<int>& r)
+                                        const std::vector<int>& rlabel)
 {
   common::Timer timer("Gibbs-Poole-Stockmeyer ordering");
 
@@ -142,7 +142,7 @@ std::vector<int> gps_reorder_unlabelled(const graph::AdjacencyList<int>& graph,
   for (int i = 0; i < n; ++i)
   {
     int d = graph.num_links(i);
-    if (d < dmin and r[i] == -1)
+    if (d < dmin and rlabel[i] == -1)
     {
       v = i;
       dmin = d;
@@ -201,18 +201,18 @@ std::vector<int> gps_reorder_unlabelled(const graph::AdjacencyList<int>& graph,
 
   // ALGORITHM II. Minimizing level width.
 
-  // Pair (i, j) associated with each node: lvt=i, lut=j
-  std::vector<int> lut(n), lvt(n);
+  // Level pair (i, j) associated with each node
+  std::vector<std::array<int, 2>> lvp(n);
   for (int i = 0; i < k; ++i)
   {
     for (int w : lv.links(i))
-      lvt[w] = i;
+      lvp[w][0] = i;
     for (int w : lu.links(i))
-      lut[w] = k - 1 - i;
+      lvp[w][1] = k - 1 - i;
   }
 
-  assert(lut[v] == 0 and lvt[v] == 0);
-  assert(lut[u] == (k - 1) and lvt[u] == (k - 1));
+  assert(lvp[v][0] == 0 and lvp[v][1] == 0);
+  assert(lvp[u][0] == (k - 1) and lvp[u][1] == (k - 1));
 
   // Insert any nodes (i, i) into new level structure ls and capture residual
   // nodes in rg
@@ -222,8 +222,8 @@ std::vector<int> gps_reorder_unlabelled(const graph::AdjacencyList<int>& graph,
   {
     for (int w : lu.links(i))
     {
-      if (lut[w] == lvt[w])
-        ls[lut[w]].push_back(w);
+      if (lvp[w][0] == lvp[w][1])
+        ls[lvp[w][0]].push_back(w);
       else
         rg.push_back(w);
     }
@@ -243,8 +243,8 @@ std::vector<int> gps_reorder_unlabelled(const graph::AdjacencyList<int>& graph,
       std::copy(wn.begin(), wn.end(), wl.begin());
       for (int w : r)
       {
-        ++wh[lvt[w]];
-        ++wl[lut[w]];
+        ++wh[lvp[w][0]];
+        ++wl[lvp[w][1]];
       }
       // Zero any entries which did not increase
       std::transform(wh.begin(), wh.end(), wn.begin(), wh.begin(),
@@ -254,32 +254,18 @@ std::vector<int> gps_reorder_unlabelled(const graph::AdjacencyList<int>& graph,
       // Find maximum of those that did increase
       int h0 = *std::max_element(wh.begin(), wh.end());
       int l0 = *std::max_element(wl.begin(), wl.end());
-      if (h0 < l0)
-      {
-        for (int w : r)
-          ls[lvt[w]].push_back(w);
-      }
-      else if (h0 > l0)
-      {
-        for (int w : r)
-          ls[lut[w]].push_back(w);
-      }
-      else
-      {
-        // If h0 == l0, then use the elements of the level pairs which arise
-        // from the rooted level structure of smaller width. If the widths are
-        // equal, use the first elements. (i.e. lvt).
-        if (max_level_width(lu) < max_level_width(lv))
-        {
-          for (int w : r)
-            ls[lut[w]].push_back(w);
-        }
-        else
-        {
-          for (int w : r)
-            ls[lvt[w]].push_back(w);
-        }
-      }
+
+      // Choose which side to use
+      int side = (h0 < l0) ? 0 : 1;
+
+      // If h0 == l0, then use the elements of the level pairs which arise
+      // from the rooted level structure of smaller width. If the widths are
+      // equal, use the first elements. (i.e. lvp[][0]).
+      if (h0 == l0)
+        side = (max_level_width(lu) < max_level_width(lv)) ? 1 : 0;
+
+      for (int w : r)
+        ls[lvp[w][side]].push_back(w);
     }
   }
 
