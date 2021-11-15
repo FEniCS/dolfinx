@@ -62,8 +62,8 @@ void geometry(py::module& m)
         return as_pyarray(dolfinx::geometry::compute_closest_entity(
             tree, midpoint_tree, mesh, p));
       },
-      py::arg("tree"), py::arg("midpoint_tree"), py::arg("points"),
-      py::arg("mesh"));
+      py::arg("tree"), py::arg("midpoint_tree"), py::arg("mesh"),
+      py::arg("points"));
 
   m.def("compute_collisions",
         [](const dolfinx::geometry::BoundingBoxTree& tree,
