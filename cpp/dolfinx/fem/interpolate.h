@@ -40,8 +40,8 @@ template <typename T>
 void interpolate_nonmatching_maps(Function<T>& u, const Function<T>& v)
 {
   // Note:
-  // - Suffix '0' indicates source data (from v)
-  // - Suffix '1' indicates target data (to  u)
+  // - Suffix '0' indicates source data (v)
+  // - Suffix '1' indicates target data (u)
 
   // Get mesh and check that functions share the same mesh
   assert(v.function_space());
