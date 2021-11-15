@@ -260,6 +260,18 @@ const xt::xtensor<double, 2>& FiniteElement::interpolation_points() const
   return _element->points();
 }
 //-----------------------------------------------------------------------------
+const xt::xtensor<double, 2>& FiniteElement::interpolation_operator() const
+{
+  if (!_element)
+  {
+    throw std::runtime_error("No underlying element for interpolation. "
+                             "Cannot interpolate mixed elements directly.");
+  }
+
+  return _element->interpolation_matrix();
+}
+//-----------------------------------------------------------------------------
+
 xt::xtensor<double, 2>
 FiniteElement::create_interpolation_operator(const FiniteElement& from) const
 {
