@@ -284,11 +284,11 @@ std::vector<int> gps_reorder_unlabelled(const graph::AdjacencyList<int>& graph,
   std::vector<int> nbr, nbr_next;
   std::vector<int> nrem;
 
-  for (std::size_t level = 0; level < ls.size(); ++level)
+  for (const std::vector<int>& lslevel : ls)
   {
     // Mark all nodes of the current level
     in_level.assign(n, false);
-    for (int w : ls[level])
+    for (int w : lslevel)
       in_level[w] = true;
 
     rv_next.clear();
@@ -327,7 +327,7 @@ std::vector<int> gps_reorder_unlabelled(const graph::AdjacencyList<int>& graph,
       // Find any remaining unlabelled nodes in level
       // and label the one with lowest degree
       nrem.clear();
-      for (int w : ls[level])
+      for (int w : lslevel)
         if (!labelled[w])
           nrem.push_back(w);
       if (nrem.size() == 0)
