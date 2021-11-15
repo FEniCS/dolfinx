@@ -17,9 +17,7 @@ from petsc4py import PETSc
 @pytest.mark.skipif(np.issubdtype(PETSc.ScalarType, np.complexfloating),
                     reason="Complex expression not implemented in ufc")
 def test_expression():
-    """
-    Test UFL expression evaluation
-    """
+    """Test UFL expression evaluation"""
     mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, 10, 10)
     V = dolfinx.FunctionSpace(mesh, ("Lagrange", 2))
 
@@ -34,23 +32,21 @@ def test_expression():
     u.x.scatter_forward()
 
     grad_u = ufl.grad(u)
-
     points = np.array([[0.15, 0.3, 0], [0.953, 0.81, 0]])
-
     gdim = mesh.geometry.dim
     tdim = mesh.topology.dim
-    bb = dolfinx.geometry.BoundingBoxTree(mesh, mesh.topology.dim)
+    bb = dolfinx.geometry.BoundingBoxTree(mesh, tdim)
 
     # Find colliding cells on proc
     closest_cell = []
     local_map = []
-    for i, p in enumerate(points):
-        cells = dolfinx.geometry.compute_collisions_point(bb, p)
-        if len(cells) > 0:
-            actual_cells = dolfinx.geometry.select_colliding_cells(mesh, cells, p, 1)
-            if len(actual_cells) > 0:
-                local_map.append(i)
-                closest_cell.append(actual_cells[0])
+    cells = dolfinx.geometry.compute_collisions(bb, points)
+
+    actual_cells = dolfinx.geometry.compute_colliding_cells(mesh, cells, points)
+    for i in range(actual_cells.num_nodes):
+        if len(actual_cells.links(i)) > 0:
+            local_map.append(i)
+            closest_cell.append(actual_cells.links(i)[0])
 
     num_dofs_x = mesh.geometry.dofmap.links(0).size  # NOTE: Assumes same cell geometry in whole mesh
     t_imap = mesh.topology.index_map(tdim)

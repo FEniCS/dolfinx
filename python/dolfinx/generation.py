@@ -72,7 +72,7 @@ def RectangleMesh(comm, points: typing.List[numpy.array], n: list, cell_type=cpp
         Direction of diagonal
 
     """
-    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cpp.mesh.to_string(cell_type), 1))
+    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell_type.name, 1))
     mesh = cpp.generation.create_rectangle_mesh(comm, points, n, cell_type, ghost_mode, partitioner, diagonal)
     domain._ufl_cargo = mesh
     mesh._ufl_domain = domain
@@ -117,7 +117,7 @@ def BoxMesh(comm, points: typing.List[numpy.array], n: list,
         List of cells in each direction
 
     """
-    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cpp.mesh.to_string(cell_type), 1))
+    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell_type.name, 1))
     mesh = cpp.generation.create_box_mesh(comm, points, n, cell_type, ghost_mode, partitioner)
     domain._ufl_cargo = mesh
     mesh._ufl_domain = domain

@@ -10,7 +10,6 @@
 #include "xdmf_read.h"
 #include "xdmf_utils.h"
 #include <dolfinx/fem/ElementDofLayout.h>
-#include <xtensor/xadapt.hpp>
 
 using namespace dolfinx;
 using namespace dolfinx::io;
@@ -33,9 +32,11 @@ void xdmf_mesh::add_topology_data(
   const mesh::CellType entity_cell_type
       = mesh::cell_entity_type(topology.cell_type(), dim, 0);
 
+  const fem::ElementDofLayout cmap_dof_layout
+      = geometry.cmap().create_dof_layout();
+
   // Get number of nodes per entity
-  const int num_nodes_per_entity
-      = geometry.cmap().dof_layout().num_entity_closure_dofs(dim);
+  const int num_nodes_per_entity = cmap_dof_layout.num_entity_closure_dofs(dim);
 
   // FIXME: sort out degree/cell type
   // Get VTK string for cell type
@@ -88,10 +89,7 @@ void xdmf_mesh::add_topology_data(
     // Tabulate geometry dofs for local entities
     std::vector<std::vector<int>> entity_dofs;
     for (int e = 0; e < mesh::cell_num_entities(topology.cell_type(), dim); ++e)
-    {
-      entity_dofs.push_back(
-          geometry.cmap().dof_layout().entity_closure_dofs(dim, e));
-    }
+      entity_dofs.push_back(cmap_dof_layout.entity_closure_dofs(dim, e));
 
     for (std::int32_t e : active_entities)
     {
@@ -132,7 +130,7 @@ void xdmf_mesh::add_topology_data(
   topology_node.append_attribute("NodesPerElement") = num_nodes_per_entity;
 
   // Add topology DataItem node
-  const std::string h5_path = path_prefix + "/topology";
+  const std::string h5_path = path_prefix + std::string("/topology");
   const std::vector<std::int64_t> shape
       = {num_entities_global, num_nodes_per_entity};
   const std::string number_type = "Int";
@@ -187,7 +185,7 @@ void xdmf_mesh::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
   }
 
   // Add geometry DataItem node
-  const std::string h5_path = path_prefix + "/geometry";
+  const std::string h5_path = path_prefix + std::string("/geometry");
   const std::vector<std::int64_t> shape = {num_points, width};
 
   const std::int64_t num_local = num_points_local;

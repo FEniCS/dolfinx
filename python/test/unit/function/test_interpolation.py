@@ -7,11 +7,11 @@
 
 import random
 
+import dolfinx
 import numpy as np
 import pytest
 import ufl
-import dolfinx
-from dolfinx import Function, FunctionSpace, VectorFunctionSpace, cpp
+from dolfinx import Function, FunctionSpace, VectorFunctionSpace
 from dolfinx.cpp.mesh import CellType
 from dolfinx.mesh import create_mesh
 from dolfinx_utils.test.skips import skip_in_parallel
@@ -96,7 +96,7 @@ def one_cell_mesh(cell_type):
         ordered_points[j] = points[i]
     cells = np.array([order])
 
-    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cpp.mesh.to_string(cell_type), 1))
+    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell_type.name, 1))
     return create_mesh(MPI.COMM_WORLD, cells, ordered_points, domain)
 
 
@@ -322,7 +322,7 @@ def test_interpolation_non_affine():
 
     cells = np.array([range(len(points))], dtype=np.int32)
     cell_type = dolfinx.cpp.mesh.CellType.hexahedron
-    domain = ufl.Mesh(ufl.VectorElement("Lagrange", dolfinx.cpp.mesh.to_string(cell_type), 2))
+    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell_type.name, 2))
     mesh = dolfinx.mesh.create_mesh(MPI.COMM_WORLD, cells, points, domain)
 
     W = dolfinx.FunctionSpace(mesh, ("NCE", 1))

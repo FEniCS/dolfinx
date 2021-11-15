@@ -213,19 +213,14 @@ void FiniteElement::tabulate(xt::xtensor<double, 4>& reference_values,
   reference_values = _element->tabulate(order, X);
 }
 //-----------------------------------------------------------------------------
-void FiniteElement::transform_reference_basis(
-    xt::xtensor<double, 3>& values,
-    const xt::xtensor<double, 3>& reference_values,
-    const xt::xtensor<double, 3>& J, const xtl::span<const double>& detJ,
-    const xt::xtensor<double, 3>& K) const
-{
-  assert(_element);
-  _element->map_push_forward_m(reference_values, J, detJ, K, values);
-}
-//-----------------------------------------------------------------------------
 int FiniteElement::num_sub_elements() const noexcept
 {
   return _sub_elements.size();
+}
+//-----------------------------------------------------------------------------
+bool FiniteElement::is_mixed() const noexcept
+{
+  return !_sub_elements.empty() and _bs == 1;
 }
 //-----------------------------------------------------------------------------
 const std::vector<std::shared_ptr<const FiniteElement>>&
@@ -234,7 +229,6 @@ FiniteElement::sub_elements() const noexcept
   return _sub_elements;
 }
 //-----------------------------------------------------------------------------
-
 std::size_t FiniteElement::hash() const noexcept { return _hash; }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const FiniteElement>
@@ -290,8 +284,8 @@ FiniteElement::create_interpolation_operator(const FiniteElement& from) const
     std::array<std::size_t, 2> shape = {i_m.shape(0) * _bs, i_m.shape(1) * _bs};
     xt::xtensor<double, 2> out = xt::zeros<double>(shape);
 
-    // Alternatively this operation could be implemented during matvec
-    // with the original matrix
+    // NOTE: Alternatively this operation could be implemented during
+    // matvec with the original matrix
     for (std::size_t i = 0; i < i_m.shape(0); ++i)
       for (std::size_t j = 0; j < i_m.shape(1); ++j)
         for (int k = 0; k < _bs; ++k)
@@ -352,7 +346,7 @@ FiniteElement::get_dof_permutation_function(bool inverse,
     }
   }
 
-  if (_sub_elements.size() != 0)
+  if (!_sub_elements.empty())
   {
     if (_bs == 1)
     {
