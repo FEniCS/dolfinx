@@ -8,6 +8,7 @@
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/gps.h>
 #include <dolfinx/graph/partition.h>
+#include <dolfinx/graph/scotch.h>
 #include <pybind11/numpy.h>
 #include <pybind11/operators.h>
 #include <pybind11/pybind11.h>
@@ -75,6 +76,7 @@ void graph(py::module& m)
   declare_adjacency_list<std::int32_t>(m, "int32");
   declare_adjacency_list<std::int64_t>(m, "int64");
 
+  m.def("scotch_gps_reorder", &dolfinx::graph::scotch::compute_gps);
   m.def("gps_reorder", &dolfinx::graph::gps_reorder);
 }
 } // namespace dolfinx_wrappers
