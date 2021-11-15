@@ -50,7 +50,7 @@ public:
   /// Destructor
   ~NewtonSolver();
 
-  /// Set the function for computing the residual and the vector to the
+  /// Set the function for computing the residual and the vector to
   /// assemble the residual into
   /// @param[in] F Function to compute the residual vector b (x, b)
   /// @param[in] b The vector to assemble to residual into

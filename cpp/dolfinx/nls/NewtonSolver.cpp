@@ -21,14 +21,15 @@ namespace
 /// @param solver The Newton solver
 /// @param r The residual vector
 /// @return The pair `(residual norm, converged)`, where `converged` is
-// and true` if convergence achieved
+/// `true` if convergence achieved
 std::pair<double, bool> converged(const nls::NewtonSolver& solver, const Vec r)
 {
   la::PETScVector _r(r, true);
   double residual = _r.norm(la::Norm::l2);
 
   // Relative residual
-  const double relative_residual = residual / solver.residual0();
+  const double relative_residual = residual / (solver.residual0() == 0 ?
+          1 : solver.residual0());
 
   // Output iteration number and residual
   if (solver.report and dolfinx::MPI::rank(solver.mpi_comm()) == 0)
@@ -157,7 +158,7 @@ std::pair<int, bool> dolfinx::nls::NewtonSolver::solve(Vec x)
 
   if (!_fnJ)
   {
-    throw std::runtime_error("Function for computing Jacobianhas not "
+    throw std::runtime_error("Function for computing Jacobian has not "
                              "been provided to the NewtonSolver.");
   }
 
