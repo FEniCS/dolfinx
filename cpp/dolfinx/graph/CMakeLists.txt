@@ -10,9 +10,8 @@ set(HEADERS_graph
 
 target_sources(dolfinx PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/boostordering.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/ordering.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/ordering.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/partitioners.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/partition.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/scotch.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/ordering.cpp
 )
