@@ -6,36 +6,38 @@
 
 #include "gps.h"
 #include <algorithm>
-#include <limits>
-
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
+#include <dolfinx/graph/AdjacencyList.h>
+#include <limits>
 
 using namespace dolfinx;
 
 namespace
 {
 //-----------------------------------------------------------------------------
-// Compute the sets of connected components of the input "graph" which contain
-// the nodes in "indices".
+// Compute the sets of connected components of the input "graph" which
+// contain the nodes in "indices".
 std::vector<std::vector<int>>
 residual_graph_components(const graph::AdjacencyList<int>& graph,
-                          const std::vector<int>& indices)
+                          const xtl::span<const int>& indices)
 {
+  if (indices.empty())
+    return std::vector<std::vector<int>>();
+
   const int n = graph.num_nodes();
-  std::vector<std::vector<int>> rgc;
-  if (indices.size() == 0)
-    return rgc;
 
   // Mark all nodes as labelled, except those in the residual graph
   std::vector<std::int_fast8_t> labelled(n, true);
   for (int w : indices)
     labelled[w] = false;
 
-  std::vector<int> r;
-  r.reserve(n);
   // Find first unlabelled entry
   auto it = std::find(labelled.begin(), labelled.end(), false);
+
+  std::vector<std::vector<int>> rgc;
+  std::vector<int> r;
+  r.reserve(n);
   while (it != labelled.end())
   {
     r.clear();
@@ -63,41 +65,38 @@ residual_graph_components(const graph::AdjacencyList<int>& graph,
   }
 
   std::sort(rgc.begin(), rgc.end(),
-            [](const std::vector<int>& a, const std::vector<int>& b) {
-              return (a.size() > b.size());
-            });
+            [](const std::vector<int>& a, const std::vector<int>& b)
+            { return (a.size() > b.size()); });
 
   return rgc;
 }
-
 //-----------------------------------------------------------------------------
 // Get the (maximum) width of a level structure
-inline int max_level_width(const graph::AdjacencyList<int>& levels)
+int max_level_width(const graph::AdjacencyList<int>& levels)
 {
   int wmax = 0;
   for (int i = 0; i < levels.num_nodes(); ++i)
     wmax = std::max(wmax, levels.num_links(i));
   return wmax;
 }
-
 //-----------------------------------------------------------------------------
 // Create a level structure from graph, rooted at node s
 graph::AdjacencyList<int>
 create_level_structure(const graph::AdjacencyList<int>& graph, int s)
 {
   common::Timer t("GPS: create_level_structure");
-  const int n = graph.num_nodes();
-  std::vector<int> level_structure = {s};
-  level_structure.reserve(graph.array().size());
-  std::vector<int> level_offsets = {0};
-  level_offsets.reserve(graph.offsets().size());
-  // int8 is often faster than bool
-  std::vector<std::int8_t> labelled(n, false);
+
+  // Note: int8 is often faster than bool
+  std::vector<std::int8_t> labelled(graph.num_nodes(), false);
   labelled[s] = true;
 
   // Current level
   int l = 0;
 
+  std::vector<int> level_offsets = {0};
+  level_offsets.reserve(graph.offsets().size());
+  std::vector<int> level_structure = {s};
+  level_structure.reserve(graph.array().size());
   while (static_cast<int>(level_structure.size()) > level_offsets.back())
   {
     level_offsets.push_back(level_structure.size());
@@ -115,13 +114,14 @@ create_level_structure(const graph::AdjacencyList<int>& graph, int s)
     ++l;
   }
 
-  return graph::AdjacencyList<int>(level_structure, level_offsets);
+  return graph::AdjacencyList<int>(std::move(level_structure),
+                                   std::move(level_offsets));
 }
 
 //-----------------------------------------------------------------------------
-// Gibbs-Poole-Stockmeyer algorithm, finding a reordering for the given graph,
-// operating only on nodes which are yet unlabelled (indicated with -1 in the
-// vector rlabel).
+// Gibbs-Poole-Stockmeyer algorithm, finding a reordering for the given
+// graph, operating only on nodes which are yet unlabelled (indicated
+// with -1 in the vector rlabel).
 std::vector<int> gps_reorder_unlabelled(const graph::AdjacencyList<int>& graph,
                                         const std::vector<int>& rlabel)
 {
@@ -130,9 +130,8 @@ std::vector<int> gps_reorder_unlabelled(const graph::AdjacencyList<int>& graph,
   const int n = graph.num_nodes();
 
   // Degree comparison function
-  auto cmp_degree = [&graph](int a, int b) {
-    return (graph.num_links(a) < graph.num_links(b));
-  };
+  auto cmp_degree = [&graph](int a, int b)
+  { return (graph.num_links(a) < graph.num_links(b)); };
 
   // ALGORITHM I. Finding endpoints of a pseudo-diameter.
 
@@ -141,8 +140,7 @@ std::vector<int> gps_reorder_unlabelled(const graph::AdjacencyList<int>& graph,
   int dmin = std::numeric_limits<int>::max();
   for (int i = 0; i < n; ++i)
   {
-    int d = graph.num_links(i);
-    if (d < dmin and rlabel[i] == -1)
+    if (int d = graph.num_links(i); d < dmin and rlabel[i] == -1)
     {
       v = i;
       dmin = d;
@@ -164,8 +162,8 @@ std::vector<int> gps_reorder_unlabelled(const graph::AdjacencyList<int>& graph,
 
     int w_min = std::numeric_limits<int>::max();
     done = true;
-    // C. Generate level structures rooted at vertices s in S selected in
-    // order of increasing degree.
+    // C. Generate level structures rooted at vertices s in S selected
+    // in order of increasing degree.
     for (int s : S)
     {
       auto lstmp = create_level_structure(graph, s);
@@ -177,8 +175,9 @@ std::vector<int> gps_reorder_unlabelled(const graph::AdjacencyList<int>& graph,
         done = false;
         break;
       }
-      //  D. Let u be the vertex of S whose associated level structure has
-      //  smallest width
+
+      //  D. Let u be the vertex of S whose associated level structure
+      //  has smallest width
       if (int w = max_level_width(lstmp); w < w_min)
       {
         w_min = w;
@@ -214,8 +213,8 @@ std::vector<int> gps_reorder_unlabelled(const graph::AdjacencyList<int>& graph,
   assert(lvp[v][0] == 0 and lvp[v][1] == 0);
   assert(lvp[u][0] == (k - 1) and lvp[u][1] == (k - 1));
 
-  // Insert any nodes (i, i) into new level structure ls and capture residual
-  // nodes in rg
+  // Insert any nodes (i, i) into new level structure ls and capture
+  // residual nodes in rg
   std::vector<std::vector<int>> ls(k);
   std::vector<int> rg;
   for (int i = 0; i < k; ++i)
@@ -230,7 +229,8 @@ std::vector<int> gps_reorder_unlabelled(const graph::AdjacencyList<int>& graph,
   }
 
   {
-    std::vector<std::vector<int>> rgc = residual_graph_components(graph, rg);
+    const std::vector<std::vector<int>> rgc
+        = residual_graph_components(graph, rg);
 
     // Width of levels with additional entries from rgc
     std::vector<int> wn(k), wh(k), wl(k);
@@ -251,18 +251,19 @@ std::vector<int> gps_reorder_unlabelled(const graph::AdjacencyList<int>& graph,
                      [](int vh, int vn) { return (vh > vn) ? vh : 0; });
       std::transform(wl.begin(), wl.end(), wn.begin(), wl.begin(),
                      [](int vl, int vn) { return (vl > vn) ? vl : 0; });
+
       // Find maximum of those that did increase
       int h0 = *std::max_element(wh.begin(), wh.end());
       int l0 = *std::max_element(wl.begin(), wl.end());
 
       // Choose which side to use
-      int side = (h0 < l0) ? 0 : 1;
+      int side = h0 < l0 ? 0 : 1;
 
       // If h0 == l0, then use the elements of the level pairs which arise
       // from the rooted level structure of smaller width. If the widths are
       // equal, use the first elements. (i.e. lvp[][0]).
       if (h0 == l0)
-        side = (max_level_width(lu) < max_level_width(lv)) ? 1 : 0;
+        side = max_level_width(lu) < max_level_width(lv) ? 1 : 0;
 
       for (int w : r)
         ls[lvp[w][side]].push_back(w);
@@ -278,7 +279,7 @@ std::vector<int> gps_reorder_unlabelled(const graph::AdjacencyList<int>& graph,
   rv.push_back(v);
   labelled[v] = true;
 
-  // Temporary vectors
+  // Temporary work vectors
   std::vector<std::int8_t> in_level;
   std::vector<int> rv_next;
   std::vector<int> nbr, nbr_next;
@@ -296,14 +297,15 @@ std::vector<int> gps_reorder_unlabelled(const graph::AdjacencyList<int>& graph,
     {
       while (current_node < static_cast<int>(rv.size()))
       {
-        // Get unlabelled neighbours of current node in this level
-        // and next level
+        // Get unlabelled neighbours of current node in this level and
+        // next level
         nbr.clear();
         nbr_next.clear();
         for (int w : graph.links(rv[current_node]))
         {
           if (labelled[w])
             continue;
+
           if (in_level[w])
             nbr.push_back(w);
           else
@@ -324,14 +326,17 @@ std::vector<int> gps_reorder_unlabelled(const graph::AdjacencyList<int>& graph,
 
         ++current_node;
       }
-      // Find any remaining unlabelled nodes in level
-      // and label the one with lowest degree
+
+      // Find any remaining unlabelled nodes in level and label the one
+      // with lowest degree
       nrem.clear();
       for (int w : lslevel)
         if (!labelled[w])
           nrem.push_back(w);
+
       if (nrem.size() == 0)
         break;
+
       std::sort(nrem.begin(), nrem.end(), cmp_degree);
       rv.push_back(nrem.front());
       labelled[nrem.front()] = true;
@@ -345,16 +350,16 @@ std::vector<int> gps_reorder_unlabelled(const graph::AdjacencyList<int>& graph,
 }
 
 } // namespace
-//-----------------------------------------------------------------------------
 
-std::vector<int> graph::gps_reorder(const graph::AdjacencyList<int>& graph)
+//-----------------------------------------------------------------------------
+std::vector<int> graph::reorder_gps(const graph::AdjacencyList<int>& graph)
 {
   const int n = graph.num_nodes();
-  int count = 0;
   std::vector<int> r(n, -1);
   std::vector<int> rv;
 
   // Repeat for each disconnected part of the graph
+  int count = 0;
   while (count < n)
   {
     rv = gps_reorder_unlabelled(graph, r);
@@ -369,3 +374,4 @@ std::vector<int> graph::gps_reorder(const graph::AdjacencyList<int>& graph)
   assert(std::find(r.begin(), r.end(), -1) == r.end());
   return r;
 }
+//-----------------------------------------------------------------------------

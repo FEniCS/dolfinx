@@ -139,7 +139,7 @@ public:
       const std::function<std::vector<int>(
           const graph::AdjacencyList<std::int32_t>&)>& reorder_fn
       = [](const graph::AdjacencyList<std::int32_t>& g) {
-          return graph::gps_reorder(g);
+          return graph::reorder_gps(g);
         }) const;
 
   /// Get dofmap data
