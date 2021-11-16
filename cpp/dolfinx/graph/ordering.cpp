@@ -124,7 +124,7 @@ create_level_structure(const graph::AdjacencyList<int>& graph, int s)
 // graph, operating only on nodes which are yet unlabelled (indicated
 // with -1 in the vector rlabel).
 std::vector<int> gps_reorder_unlabelled(const graph::AdjacencyList<int>& graph,
-                                        const std::vector<int>& rlabel)
+                                        const xtl::span<const int>& rlabel)
 {
   common::Timer timer("Gibbs-Poole-Stockmeyer ordering");
 
@@ -156,7 +156,7 @@ std::vector<int> gps_reorder_unlabelled(const graph::AdjacencyList<int>& graph,
   while (!done)
   {
     // Sort final level S of Lv into increasing degree order
-    const auto& lv_final = lv.links(lv.num_nodes() - 1);
+    auto lv_final = lv.links(lv.num_nodes() - 1);
     std::vector<int> S(lv_final.size());
     std::partial_sort_copy(lv_final.begin(), lv_final.end(), S.begin(), S.end(),
                            cmp_degree);
