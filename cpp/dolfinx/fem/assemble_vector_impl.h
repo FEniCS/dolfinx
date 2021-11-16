@@ -763,7 +763,7 @@ template <typename T>
 void lift_bc(xtl::span<T> b, const Form<T>& a,
              const xtl::span<const T>& constants,
              const std::map<std::pair<IntegralType, int>,
-                            std::pair<std::vector<T>, int>>& coefficients,
+                            std::pair<xtl::span<const T>, int>>& coefficients,
              const xtl::span<const T>& bc_values1,
              const std::vector<bool>& bc_markers1, const xtl::span<const T>& x0,
              double scale)
@@ -905,7 +905,7 @@ void apply_lifting(
     xtl::span<T> b, const std::vector<std::shared_ptr<const Form<T>>> a,
     const std::vector<xtl::span<const T>>& constants,
     const std::vector<std::map<std::pair<IntegralType, int>,
-                               std::pair<std::vector<T>, int>>>& coeffs,
+                               std::pair<xtl::span<const T>, int>>>& coeffs,
     const std::vector<std::vector<std::shared_ptr<const DirichletBC<T>>>>& bcs1,
     const std::vector<xtl::span<const T>>& x0, double scale)
 {
@@ -968,7 +968,7 @@ template <typename T>
 void assemble_vector(
     xtl::span<T> b, const Form<T>& L, const xtl::span<const T>& constants,
     const std::map<std::pair<IntegralType, int>,
-                   std::pair<std::vector<T>, int>>& coefficients)
+                   std::pair<xtl::span<const T>, int>>& coefficients)
 {
   std::shared_ptr<const mesh::Mesh> mesh = L.mesh();
   assert(mesh);

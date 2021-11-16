@@ -34,7 +34,7 @@ void assemble_matrix(
                             const std::int32_t*, const T*)>& mat_set_values,
     const Form<T>& a, const xtl::span<const T>& constants,
     const std::map<std::pair<IntegralType, int>,
-                   std::pair<std::vector<T>, int>>& coefficients,
+                   std::pair<xtl::span<const T>, int>>& coefficients,
     const std::vector<bool>& bc0, const std::vector<bool>& bc1);
 
 /// Execute kernel over cells and accumulate result in matrix
@@ -396,7 +396,7 @@ void assemble_matrix(
                             const std::int32_t*, const T*)>& mat_set,
     const Form<T>& a, const xtl::span<const T>& constants,
     const std::map<std::pair<IntegralType, int>,
-                   std::pair<std::vector<T>, int>>& coefficients,
+                   std::pair<xtl::span<const T>, int>>& coefficients,
     const std::vector<bool>& bc0, const std::vector<bool>& bc1)
 {
   std::shared_ptr<const mesh::Mesh> mesh = a.mesh();

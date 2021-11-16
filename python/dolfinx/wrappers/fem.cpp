@@ -55,19 +55,19 @@ namespace
 {
 template <typename T>
 std::map<std::pair<dolfinx::fem::IntegralType, int>,
-         std::pair<std::vector<T>, int>>
+         std::pair<xtl::span<const T>, int>>
 py_to_cpp_coeffs(
     const std::map<std::pair<dolfinx::fem::IntegralType, int>,
                    py::array_t<T, py::array::c_style>>& coefficients)
 {
   std::map<std::pair<dolfinx::fem::IntegralType, int>,
-           std::pair<std::vector<T>, int>>
+           std::pair<xtl::span<const T>, int>>
       _coefficients;
 
   for (auto [integral, coeffs] : coefficients)
   {
-    std::vector<T> _coeffs(coeffs.data(), coeffs.data() + coeffs.size());
-    _coefficients[integral] = {_coeffs, coeffs.shape(1)};
+    _coefficients[integral] = {xtl::span<const T>(coeffs.data(), coeffs.size()),
+                               coeffs.shape(1)};
   }
   return _coefficients;
 }
@@ -194,7 +194,7 @@ void declare_functions(py::module& m)
                        [](auto& c) { return c; });
 
         std::vector<std::map<std::pair<dolfinx::fem::IntegralType, int>,
-                             std::pair<std::vector<T>, int>>>
+                             std::pair<xtl::span<const T>, int>>>
             _coeffs;
         std::transform(coeffs.cbegin(), coeffs.cend(),
                        std::back_inserter(_coeffs),

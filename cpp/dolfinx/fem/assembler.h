@@ -21,6 +21,29 @@ template <typename T>
 class Form;
 class FunctionSpace;
 
+// -- Helper functions -----------------------------------------------------
+
+/// Makes the std::vectors of coefficients in the coefficient map into
+/// xtl::spans
+template<typename T>
+std::map<std::pair<dolfinx::fem::IntegralType, int>,
+         std::pair<xtl::span<const T>, int>>
+make_coefficients_span(
+  const std::map<std::pair<IntegralType, int>,
+                 std::pair<std::vector<T>, int>>& coefficients)
+{
+
+  std::map<std::pair<dolfinx::fem::IntegralType, int>,
+           std::pair<xtl::span<const T>, int>> _coefficients;
+
+  for (auto [integral, coeffs] : coefficients)
+  {
+    _coefficients[integral] = {tcb::make_span(coeffs.first), coeffs.second};
+  }
+
+  return _coefficients;
+}
+
 // -- Scalar ----------------------------------------------------------------
 
 /// Assemble functional into scalar. The caller supplies the form
@@ -35,7 +58,7 @@ class FunctionSpace;
 template <typename T>
 T assemble_scalar(const Form<T>& M, const xtl::span<const T>& constants,
                   const std::map<std::pair<IntegralType, int>,
-                                 std::pair<std::vector<T>, int>>& coefficients)
+                                 std::pair<xtl::span<const T>, int>>& coefficients)
 {
   return impl::assemble_scalar(M, constants, coefficients);
 }
@@ -50,7 +73,8 @@ T assemble_scalar(const Form<T>& M)
 {
   const std::vector<T> constants = pack_constants(M);
   const auto coefficients = pack_coefficients(M);
-  return assemble_scalar(M, tcb::make_span(constants), coefficients);
+  return assemble_scalar(M, tcb::make_span(constants),
+                         make_coefficients_span(coefficients));
 }
 
 // -- Vectors ----------------------------------------------------------------
@@ -67,7 +91,7 @@ template <typename T>
 void assemble_vector(
     xtl::span<T> b, const Form<T>& L, const xtl::span<const T>& constants,
     const std::map<std::pair<IntegralType, int>,
-                   std::pair<std::vector<T>, int>>& coefficients)
+                   std::pair<xtl::span<const T>, int>>& coefficients)
 {
   impl::assemble_vector(b, L, constants, coefficients);
 }
@@ -81,7 +105,8 @@ void assemble_vector(xtl::span<T> b, const Form<T>& L)
 {
   const auto coefficients = pack_coefficients(L);
   const std::vector<T> constants = pack_constants(L);
-  assemble_vector(b, L, tcb::make_span(constants), coefficients);
+  assemble_vector(b, L, tcb::make_span(constants),
+                  make_coefficients_span(coefficients));
 }
 
 // FIXME: clarify how x0 is used
@@ -107,7 +132,7 @@ void apply_lifting(
     xtl::span<T> b, const std::vector<std::shared_ptr<const Form<T>>>& a,
     const std::vector<xtl::span<const T>>& constants,
     const std::vector<std::map<std::pair<IntegralType, int>,
-                               std::pair<std::vector<T>, int>>>& coeffs,
+                               std::pair<xtl::span<const T>, int>>>& coeffs,
     const std::vector<std::vector<std::shared_ptr<const DirichletBC<T>>>>& bcs1,
     const std::vector<xtl::span<const T>>& x0, double scale)
 {
@@ -153,7 +178,13 @@ void apply_lifting(
 
   std::vector<xtl::span<const T>> _constants(constants.begin(),
                                              constants.end());
-  apply_lifting(b, a, _constants, coeffs, bcs1, x0, scale);
+  std::vector<
+      std::map<std::pair<IntegralType, int>, std::pair<xtl::span<const T>, int>>>
+      _coeffs;
+  std::transform(coeffs.cbegin(), coeffs.cend(),
+                 std::back_inserter(_coeffs),
+                 [](auto& c) { return make_coefficients_span(c); });
+  apply_lifting(b, a, _constants, _coeffs, bcs1, x0, scale);
 }
 
 // -- Matrices ---------------------------------------------------------------
@@ -171,7 +202,7 @@ void assemble_matrix(
                             const std::int32_t*, const T*)>& mat_add,
     const Form<T>& a, const xtl::span<const T>& constants,
     const std::map<std::pair<IntegralType, int>,
-                   std::pair<std::vector<T>, int>>& coefficients,
+                   std::pair<xtl::span<const T>, int>>& coefficients,
     const std::vector<std::shared_ptr<const DirichletBC<T>>>& bcs)
 {
   // Index maps for dof ranges
@@ -225,7 +256,8 @@ void assemble_matrix(
   const auto coefficients = pack_coefficients(a);
 
   // Assemble
-  assemble_matrix(mat_add, a, tcb::make_span(constants), coefficients, bcs);
+  assemble_matrix(mat_add, a, tcb::make_span(constants),
+                  make_coefficients_span(coefficients), bcs);
 }
 
 /// Assemble bilinear form into a matrix. Matrix must already be
@@ -246,7 +278,7 @@ void assemble_matrix(
                             const std::int32_t*, const T*)>& mat_add,
     const Form<T>& a, const xtl::span<const T>& constants,
     const std::map<std::pair<IntegralType, int>,
-                   std::pair<std::vector<T>, int>>& coefficients,
+                   std::pair<xtl::span<const T>, int>>& coefficients,
     const std::vector<bool>& dof_marker0, const std::vector<bool>& dof_marker1)
 
 {
@@ -277,7 +309,8 @@ void assemble_matrix(
   const auto coefficients = pack_coefficients(a);
 
   // Assemble
-  assemble_matrix(mat_add, a, tcb::make_span(constants), coefficients,
+  assemble_matrix(mat_add, a, tcb::make_span(constants),
+                  make_coefficients_span(coefficients),
                   dof_marker0, dof_marker1);
 }
 
