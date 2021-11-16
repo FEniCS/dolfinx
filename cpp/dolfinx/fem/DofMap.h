@@ -9,7 +9,7 @@
 #include <cstdlib>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>
-#include <dolfinx/graph/gps.h>
+#include <dolfinx/graph/ordering.h>
 #include <functional>
 #include <memory>
 #include <utility>
@@ -138,9 +138,8 @@ public:
       MPI_Comm comm, const mesh::Topology& topology,
       const std::function<std::vector<int>(
           const graph::AdjacencyList<std::int32_t>&)>& reorder_fn
-      = [](const graph::AdjacencyList<std::int32_t>& g) {
-          return graph::reorder_gps(g);
-        }) const;
+      = [](const graph::AdjacencyList<std::int32_t>& g)
+      { return graph::reorder_gps(g); }) const;
 
   /// Get dofmap data
   /// @return The adjacency list with dof indices for each cell

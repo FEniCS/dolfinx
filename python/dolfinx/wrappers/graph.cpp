@@ -6,7 +6,7 @@
 
 #include "caster_mpi.h"
 #include <dolfinx/graph/AdjacencyList.h>
-#include <dolfinx/graph/gps.h>
+#include <dolfinx/graph/ordering.h>
 #include <dolfinx/graph/partition.h>
 #include <pybind11/numpy.h>
 #include <pybind11/operators.h>

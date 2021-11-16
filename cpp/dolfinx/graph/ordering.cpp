@@ -4,7 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "gps.h"
+#include "ordering.h"
 #include <algorithm>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>

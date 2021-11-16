@@ -14,7 +14,7 @@
 #include <dolfinx/common/utils.h>
 #include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/graph/AdjacencyList.h>
-#include <dolfinx/graph/gps.h>
+#include <dolfinx/graph/ordering.h>
 #include <dolfinx/graph/partition.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <memory>
