@@ -6,12 +6,12 @@
 
 #pragma once
 
+#include "DofMap.h"
+#include "FiniteElement.h"
 #include "FunctionSpace.h"
 #include "interpolate.h"
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/UniqueIdGenerator.h>
-#include <dolfinx/fem/DofMap.h>
-#include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/la/PETScVector.h>
 #include <dolfinx/la/Vector.h>
 #include <dolfinx/mesh/Geometry.h>
