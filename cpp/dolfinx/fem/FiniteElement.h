@@ -134,6 +134,9 @@ public:
   std::shared_ptr<const FiniteElement>
   extract_sub_element(const std::vector<int>& component) const;
 
+  /// Get the map type used by the element
+  basix::maps::type map_type() const;
+
   /// Check if interpolation into the finite element space is an
   /// identity operation given the evaluation on an expression at
   /// specific points, i.e. the degree-of-freedom are equal to point
@@ -149,6 +152,15 @@ public:
   /// the quadrature points used to evaluate moment degrees of freedom.
   /// @return Points on the reference cell. Shape is (num_points, tdim).
   const xt::xtensor<double, 2>& interpolation_points() const;
+
+  /// Interpolation operator (matrix) `Pi` that maps a function
+  /// evaluated at the points provided by
+  /// FiniteElement::interpolation_points to the element degrees of
+  /// freedom, i.e. dofs = Pi f_x. See the Basix documentation for
+  /// basix::FiniteElement::interpolation_matrix for how the data in
+  /// `f_x` should be ordered.
+  /// @return The interpolation operator `Pi`
+  const xt::xtensor<double, 2>& interpolation_operator() const;
 
   /// @todo Document shape/layout of @p values
   /// @todo Make the interpolating dofs in/out argument for efficiency
