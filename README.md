@@ -112,13 +112,15 @@ For questions about using DOLFINx, visit the FEniCS Discourse page:
 
 https://fenicsproject.discourse.group/
 
+or use the FEniCS Slack channel:
+
+https://fenicsproject.slack.com/
+
+(use https://fenicsproject-slack-invite.herokuapp.com/ to sign up)
+
 For bug reports, visit the DOLFINx GitHub page:
 
 https://github.com/FEniCS/dolfinx
-
-For comments and requests, send an email to the FEniCS mailing list:
-
-fenics-dev@googlegroups.com
 
 For questions related to obtaining, building or installing DOLFINx,
 send an email to the FEniCS support mailing list:
