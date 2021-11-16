@@ -6,9 +6,9 @@
 
 #pragma once
 
-#include <dolfinx/fem/CoordinateElement.h>
-#include <dolfinx/fem/DofMap.h>
-#include <dolfinx/fem/FiniteElement.h>
+#include "CoordinateElement.h"
+#include "DofMap.h"
+#include "FiniteElement.h"
 #include <functional>
 #include <numeric>
 #include <vector>
@@ -16,8 +16,6 @@
 #include <xtensor/xtensor.hpp>
 #include <xtensor/xview.hpp>
 #include <xtl/xspan.hpp>
-
-#include <xtensor/xio.hpp>
 
 namespace dolfinx::mesh
 {

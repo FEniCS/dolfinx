@@ -150,8 +150,8 @@ public:
   /// @return Points on the reference cell. Shape is (num_points, tdim).
   const xt::xtensor<double, 2>& interpolation_points() const;
 
-  /// Interpolation operator `Pi` on the element. The interpolation
-  /// matrix maps a function evaluated at the points provided by
+  /// Interpolation operator (matrix) `Pi` that maps a function
+  /// evaluated at the points provided by
   /// FiniteElement::interpolation_points to the element degrees of
   /// freedom, i.e. dofs = Pi f_x. See the Basix documentation for
   /// basix::FiniteElement::interpolation_matrix for how the data in
