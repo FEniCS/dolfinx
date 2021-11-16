@@ -242,6 +242,17 @@ FiniteElement::extract_sub_element(const std::vector<int>& component) const
   return sub_finite_element;
 }
 //-----------------------------------------------------------------------------
+basix::maps::type FiniteElement::map_type() const
+{
+  if (!_element)
+  {
+    throw std::runtime_error("Cannot element map type - no Basix element "
+                             "available. Maybe this is a mixed element?");
+  }
+
+  return _element->mapping_type();
+}
+//-----------------------------------------------------------------------------
 bool FiniteElement::interpolation_ident() const noexcept
 {
   assert(_element);
@@ -277,8 +288,8 @@ FiniteElement::create_interpolation_operator(const FiniteElement& from) const
 {
   if (_element->mapping_type() != from._element->mapping_type())
   {
-    throw std::runtime_error(
-        "Interpolation for elements with different maps is not yet supported.");
+    throw std::runtime_error("Interpolation between elements with different "
+                             "maps is not supported.");
   }
 
   if (_bs == 1 or from._bs == 1)
@@ -406,10 +417,5 @@ FiniteElement::get_dof_permutation_function(bool inverse,
                   std::uint32_t cell_permutation)
     { permute_dofs(doflist, cell_permutation); };
   }
-}
-//-----------------------------------------------------------------------------
-basix::maps::type FiniteElement::map_type() const
-{
-  return _element->mapping_type();
 }
 //-----------------------------------------------------------------------------
