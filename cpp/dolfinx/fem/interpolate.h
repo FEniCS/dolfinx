@@ -79,19 +79,13 @@ template <typename T>
 void interpolate_same_map(Function<T>& u1, const Function<T>& u0)
 {
   assert(u0.function_space());
-  const auto mesh = u1.function_space()->mesh();
+  auto mesh = u0.function_space()->mesh();
   assert(mesh);
-  assert(u0.function_space()->mesh());
-  if (mesh != u0.function_space()->mesh())
-  {
-    throw std::runtime_error(
-        "Interpolation on different meshes not supported (yet).");
-  }
 
-  const std::shared_ptr<const FiniteElement> element1
+  std::shared_ptr<const FiniteElement> element1
       = u1.function_space()->element();
   assert(element1);
-  const std::shared_ptr<const FiniteElement> element0
+  std::shared_ptr<const FiniteElement> element0
       = u0.function_space()->element();
   assert(element0);
 
@@ -110,8 +104,8 @@ void interpolate_same_map(Function<T>& u1, const Function<T>& u0)
   }
 
   // Get dofmaps
-  const auto dofmap1 = u1.function_space()->dofmap();
-  const auto dofmap0 = u0.function_space()->dofmap();
+  auto dofmap1 = u1.function_space()->dofmap();
+  auto dofmap0 = u0.function_space()->dofmap();
 
   // Create interpolation operator
   const xt::xtensor<double, 2> i_m
@@ -126,8 +120,8 @@ void interpolate_same_map(Function<T>& u1, const Function<T>& u0)
       = element1->get_dof_transformation_function<T>(true, true, false);
 
   // Creat working array
-  std::vector<T> u0_local(element0->space_dimension());
-  std::vector<T> u1_local(element1->space_dimension());
+  std::vector<T> local0(element0->space_dimension());
+  std::vector<T> local1(element1->space_dimension());
 
   // Iterate over mesh and interpolate on each cell
   const int num_cells = map->size_local() + map->num_ghosts();
@@ -136,23 +130,23 @@ void interpolate_same_map(Function<T>& u1, const Function<T>& u0)
     xtl::span<const std::int32_t> dofs0 = dofmap0->cell_dofs(c);
     for (std::size_t i = 0; i < dofs0.size(); i++)
       for (int k = 0; k < bs0; ++k)
-        u0_local[bs0 * i + k] = u0_array[bs0 * dofs0[i] + k];
+        local0[bs0 * i + k] = u0_array[bs0 * dofs0[i] + k];
 
-    apply_dof_transformation(u0_local, cell_info, c, 1);
+    apply_dof_transformation(local0, cell_info, c, 1);
 
     // FIXME: Get compile-time ranges from Basix
     // Apply interpolation operator
-    std::fill(u1_local.begin(), u1_local.end(), 0);
+    std::fill(local1.begin(), local1.end(), 0);
     for (std::size_t i = 0; i < i_m.shape(0); ++i)
       for (std::size_t j = 0; j < i_m.shape(1); ++j)
-        u1_local[i] += i_m(i, j) * u0_local[j];
+        local1[i] += i_m(i, j) * local0[j];
 
-    apply_inverse_dof_transform(u1_local, cell_info, c, 1);
+    apply_inverse_dof_transform(local1, cell_info, c, 1);
 
     xtl::span<const std::int32_t> dofs1 = dofmap1->cell_dofs(c);
     for (std::size_t i = 0; i < dofs1.size(); ++i)
       for (int k = 0; k < bs1; ++k)
-        u1_array[bs1 * dofs1[i] + k] = u1_local[bs1 * i + k];
+        u1_array[bs1 * dofs1[i] + k] = local1[bs1 * i + k];
   }
 }
 
@@ -160,31 +154,26 @@ void interpolate_same_map(Function<T>& u1, const Function<T>& u0)
 /// mesh. The function is for cases where the finite element basis
 /// functions for the two elements are mapped differently, e.g. one may
 /// be Piola mapped and the other with a standard isoparametric map.
-/// @param[out] u The function to interpolate to
-/// @param[in] v The function to interpolate from
+/// @param[out] u1 The function to interpolate to
+/// @param[in] u0 The function to interpolate from
 template <typename T>
-void interpolate_nonmatching_maps(Function<T>& u, const Function<T>& v)
+void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0)
 {
-  // Note:
-  // - Suffix '0' indicates source data (v)
-  // - Suffix '1' indicates target data (u)
-
-  // Get mesh and check that functions share the same mesh
-  assert(v.function_space());
-  auto mesh = v.function_space()->mesh();
+  // Get mesh
+  assert(u0.function_space());
+  auto mesh = u0.function_space()->mesh();
   assert(mesh);
-  assert(u.function_space()->mesh());
-  if (mesh != u.function_space()->mesh())
-    throw std::runtime_error("Functions have different meshesÎ.");
 
   // Mesh dims
   const int tdim = mesh->topology().dim();
   const int gdim = mesh->geometry().dim();
 
   // Get elements
-  std::shared_ptr<const FiniteElement> element0 = v.function_space()->element();
+  std::shared_ptr<const FiniteElement> element0
+      = u0.function_space()->element();
   assert(element0);
-  std::shared_ptr<const FiniteElement> element1 = u.function_space()->element();
+  std::shared_ptr<const FiniteElement> element1
+      = u1.function_space()->element();
   assert(element1);
 
   xtl::span<const std::uint32_t> cell_info;
@@ -196,8 +185,8 @@ void interpolate_nonmatching_maps(Function<T>& u, const Function<T>& v)
   }
 
   // Get dofmaps
-  const auto dofmap0 = v.function_space()->dofmap();
-  const auto dofmap1 = u.function_space()->dofmap();
+  auto dofmap0 = u0.function_space()->dofmap();
+  auto dofmap1 = u1.function_space()->dofmap();
 
   const xt::xtensor<double, 2> X = element1->interpolation_points();
 
@@ -249,8 +238,8 @@ void interpolate_nonmatching_maps(Function<T>& u, const Function<T>& v)
   const xt::xtensor<double, 2>& Pi_1 = element1->interpolation_operator();
 
   // Iterate over mesh and interpolate on each cell
-  xtl::span<const T> array0 = v.x()->array();
-  xtl::span<T> array1 = u.x()->mutable_array();
+  xtl::span<const T> array0 = u0.x()->array();
+  xtl::span<T> array1 = u1.x()->mutable_array();
   auto cell_map = mesh->topology().index_map(tdim);
   assert(cell_map);
   const int num_cells = cell_map->size_local() + cell_map->num_ghosts();
@@ -579,69 +568,72 @@ void interpolate_c(
 template <typename T>
 void interpolate(Function<T>& u, const Function<T>& v)
 {
+  assert(u.function_space());
   assert(v.function_space());
-  const auto mesh = u.function_space()->mesh();
-  assert(mesh);
-  assert(v.function_space()->mesh());
-  if (mesh != v.function_space()->mesh())
-  {
-    throw std::runtime_error(
-        "Interpolation on different meshes not supported (yet).");
-  }
-
-  const std::shared_ptr<const FiniteElement> element1
-      = u.function_space()->element();
-  assert(element1);
-  const std::shared_ptr<const FiniteElement> element0
-      = v.function_space()->element();
-  assert(element0);
-
-  xtl::span<T> u1_array = u.x()->mutable_array();
-  xtl::span<const T> u0_array = v.x()->array();
   if (u.function_space() == v.function_space())
   {
     // Same function spaces
+    xtl::span<T> u1_array = u.x()->mutable_array();
+    xtl::span<const T> u0_array = v.x()->array();
     std::copy(u0_array.begin(), u0_array.end(), u1_array.begin());
-  }
-  else if (element1->hash() == element0->hash())
-  {
-    // Same element
-
-    const int tdim = mesh->topology().dim();
-
-    auto map = mesh->topology().index_map(tdim);
-    assert(map);
-
-    // Get dofmaps
-    assert(v.function_space());
-    std::shared_ptr<const fem::DofMap> dofmap0 = v.function_space()->dofmap();
-    assert(dofmap0);
-    const auto dofmap1 = u.function_space()->dofmap();
-    assert(dofmap1);
-
-    // Iterate over mesh and interpolate on each cell
-    const int num_cells = map->size_local() + map->num_ghosts();
-    const int bs = dofmap0->bs();
-    assert(bs == dofmap1->bs());
-    for (int c = 0; c < num_cells; ++c)
-    {
-      xtl::span<const std::int32_t> dofs0 = dofmap0->cell_dofs(c);
-      xtl::span<const std::int32_t> dofs1 = dofmap1->cell_dofs(c);
-      assert(dofs0.size() == dofs1.size());
-      for (std::size_t i = 0; i < dofs0.size(); ++i)
-        for (int k = 0; k < bs; ++k)
-          u1_array[bs * dofs1[i] + k] = u0_array[bs * dofs1[i] + k];
-    }
-  }
-  else if (element1->map_type() == element0->map_type())
-  {
-    // Different elements, same basis function map
-    impl::interpolate_same_map(u, v);
   }
   else
   {
-    //  Different elements with different maps for basis functions
-    impl::interpolate_nonmatching_maps(u, v);
+    // Get mesh and check that functions share the same mesh
+    const auto mesh = u.function_space()->mesh();
+    assert(mesh);
+    if (mesh != v.function_space()->mesh())
+    {
+      throw std::runtime_error(
+          "Interpolation on different meshes not supported (yet).");
+    }
+
+    // Get elements
+    auto element0 = v.function_space()->element();
+    assert(element0);
+    auto element1 = u.function_space()->element();
+    assert(element1);
+    if (element1->hash() == element0->hash())
+    {
+      // Same element, different dofmaps
+
+      const int tdim = mesh->topology().dim();
+      auto cell_map = mesh->topology().index_map(tdim);
+      assert(cell_map);
+
+      // Get dofmaps
+      std::shared_ptr<const fem::DofMap> dofmap0 = v.function_space()->dofmap();
+      assert(dofmap0);
+      std::shared_ptr<const fem::DofMap> dofmap1 = u.function_space()->dofmap();
+      assert(dofmap1);
+
+      xtl::span<T> u1_array = u.x()->mutable_array();
+      xtl::span<const T> u0_array = v.x()->array();
+
+      // Iterate over mesh and interpolate on each cell
+      const int num_cells = cell_map->size_local() + cell_map->num_ghosts();
+      const int bs = dofmap0->bs();
+      assert(bs == dofmap1->bs());
+      for (int c = 0; c < num_cells; ++c)
+      {
+        xtl::span<const std::int32_t> dofs0 = dofmap0->cell_dofs(c);
+        xtl::span<const std::int32_t> dofs1 = dofmap1->cell_dofs(c);
+        assert(dofs0.size() == dofs1.size());
+        for (std::size_t i = 0; i < dofs0.size(); ++i)
+          for (int k = 0; k < bs; ++k)
+            u1_array[bs * dofs1[i] + k] = u0_array[bs * dofs0[i] + k];
+      }
+    }
+    else if (element1->map_type() == element0->map_type())
+    {
+      // Different elements, same basis function map
+      impl::interpolate_same_map(u, v);
+    }
+    else
+    {
+      //  Different elements with different maps for basis functions
+      impl::interpolate_nonmatching_maps(u, v);
+    }
   }
 }
 
