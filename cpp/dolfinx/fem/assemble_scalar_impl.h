@@ -172,9 +172,10 @@ T assemble_interior_facets(
 
 /// Assemble functional into an scalar
 template <typename T>
-T assemble_scalar(const fem::Form<T>& M, const xtl::span<const T>& constants,
-                  const std::map<std::pair<IntegralType, int>,
-                                 std::pair<xtl::span<const T>, int>>& coefficients)
+T assemble_scalar(
+    const fem::Form<T>& M, const xtl::span<const T>& constants,
+    const std::map<std::pair<IntegralType, int>,
+                   std::pair<xtl::span<const T>, int>>& coefficients)
 {
   std::shared_ptr<const mesh::Mesh> mesh = M.mesh();
   assert(mesh);

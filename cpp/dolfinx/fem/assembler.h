@@ -25,16 +25,17 @@ class FunctionSpace;
 
 /// Makes the std::vectors of coefficients in the coefficient map into
 /// xtl::spans
-template<typename T>
+template <typename T>
 std::map<std::pair<dolfinx::fem::IntegralType, int>,
          std::pair<xtl::span<const T>, int>>
 make_coefficients_span(
-  const std::map<std::pair<IntegralType, int>,
-                 std::pair<std::vector<T>, int>>& coefficients)
+    const std::map<std::pair<IntegralType, int>,
+                   std::pair<std::vector<T>, int>>& coefficients)
 {
 
   std::map<std::pair<dolfinx::fem::IntegralType, int>,
-           std::pair<xtl::span<const T>, int>> _coefficients;
+           std::pair<xtl::span<const T>, int>>
+      _coefficients;
 
   for (auto [integral, coeffs] : coefficients)
   {
@@ -56,9 +57,10 @@ make_coefficients_span(
 /// @return The contribution to the form (functional) from the local
 /// process
 template <typename T>
-T assemble_scalar(const Form<T>& M, const xtl::span<const T>& constants,
-                  const std::map<std::pair<IntegralType, int>,
-                                 std::pair<xtl::span<const T>, int>>& coefficients)
+T assemble_scalar(
+    const Form<T>& M, const xtl::span<const T>& constants,
+    const std::map<std::pair<IntegralType, int>,
+                   std::pair<xtl::span<const T>, int>>& coefficients)
 {
   return impl::assemble_scalar(M, constants, coefficients);
 }
@@ -178,11 +180,10 @@ void apply_lifting(
 
   std::vector<xtl::span<const T>> _constants(constants.begin(),
                                              constants.end());
-  std::vector<
-      std::map<std::pair<IntegralType, int>, std::pair<xtl::span<const T>, int>>>
+  std::vector<std::map<std::pair<IntegralType, int>,
+                       std::pair<xtl::span<const T>, int>>>
       _coeffs;
-  std::transform(coeffs.cbegin(), coeffs.cend(),
-                 std::back_inserter(_coeffs),
+  std::transform(coeffs.cbegin(), coeffs.cend(), std::back_inserter(_coeffs),
                  [](auto& c) { return make_coefficients_span(c); });
   apply_lifting(b, a, _constants, _coeffs, bcs1, x0, scale);
 }
@@ -310,8 +311,8 @@ void assemble_matrix(
 
   // Assemble
   assemble_matrix(mat_add, a, tcb::make_span(constants),
-                  make_coefficients_span(coefficients),
-                  dof_marker0, dof_marker1);
+                  make_coefficients_span(coefficients), dof_marker0,
+                  dof_marker1);
 }
 
 /// Sets a value to the diagonal of a matrix for specified rows. It is

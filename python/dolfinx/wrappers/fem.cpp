@@ -66,8 +66,8 @@ py_to_cpp_coeffs(
 
   for (auto [integral, coeffs] : coefficients)
   {
-    _coefficients[integral] = {xtl::span<const T>(coeffs.data(), coeffs.size()),
-                               coeffs.shape(1)};
+    _coefficients[integral]
+        = {xtl::span<const T>(coeffs.data(), coeffs.size()), coeffs.shape(1)};
   }
   return _coefficients;
 }
