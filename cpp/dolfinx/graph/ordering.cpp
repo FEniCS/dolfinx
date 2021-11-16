@@ -6,6 +6,7 @@
 
 #include "ordering.h"
 #include <algorithm>
+#include <cstdint>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/graph/AdjacencyList.h>
@@ -162,6 +163,7 @@ std::vector<int> gps_reorder_unlabelled(const graph::AdjacencyList<int>& graph,
 
     int w_min = std::numeric_limits<int>::max();
     done = true;
+
     // C. Generate level structures rooted at vertices s in S selected
     // in order of increasing degree.
     for (int s : S)
