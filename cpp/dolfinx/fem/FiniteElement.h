@@ -127,6 +127,9 @@ public:
   const std::vector<std::shared_ptr<const FiniteElement>>&
   sub_elements() const noexcept;
 
+  /// Return the topological dimension
+  int tdim() const noexcept;
+
   /// Return simple hash of the signature string
   std::size_t hash() const noexcept;
 
