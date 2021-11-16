@@ -816,21 +816,21 @@ void lift_bc(xtl::span<T> b, const Form<T>& a,
     {
       _lift_bc_cells<T, 1, 1>(b, mesh->geometry(), kernel, cells, dof_transform,
                               dofmap0, bs0, dof_transform_to_transpose, dofmap1,
-                              bs1, constants, tcb::make_span(coeffs), cstride,
+                              bs1, constants, coeffs, cstride,
                               cell_info, bc_values1, bc_markers1, x0, scale);
     }
     else if (bs0 == 3 and bs1 == 3)
     {
       _lift_bc_cells<T, 3, 3>(b, mesh->geometry(), kernel, cells, dof_transform,
                               dofmap0, bs0, dof_transform_to_transpose, dofmap1,
-                              bs1, constants, tcb::make_span(coeffs), cstride,
+                              bs1, constants, coeffs, cstride,
                               cell_info, bc_values1, bc_markers1, x0, scale);
     }
     else
     {
       _lift_bc_cells(b, mesh->geometry(), kernel, cells, dof_transform, dofmap0,
                      bs0, dof_transform_to_transpose, dofmap1, bs1, constants,
-                     tcb::make_span(coeffs), cstride, cell_info, bc_values1,
+                     coeffs, cstride, cell_info, bc_values1,
                      bc_markers1, x0, scale);
     }
   }
@@ -858,7 +858,7 @@ void lift_bc(xtl::span<T> b, const Form<T>& a,
           = a.exterior_facet_domains(i);
       _lift_bc_exterior_facets(b, *mesh, kernel, facets, dof_transform, dofmap0,
                                bs0, dof_transform_to_transpose, dofmap1, bs1,
-                               constants, tcb::make_span(coeffs), cstride,
+                               constants, coeffs, cstride,
                                cell_info, get_perm, bc_values1, bc_markers1, x0,
                                scale);
     }
@@ -874,7 +874,7 @@ void lift_bc(xtl::span<T> b, const Form<T>& a,
           = a.interior_facet_domains(i);
       _lift_bc_interior_facets(b, *mesh, kernel, facets, dof_transform, dofmap0,
                                bs0, dof_transform_to_transpose, dofmap1, bs1,
-                               constants, tcb::make_span(coeffs), cstride,
+                               constants, coeffs, cstride,
                                c_offsets, cell_info, get_perm, bc_values1,
                                bc_markers1, x0, scale);
     }
@@ -1006,18 +1006,18 @@ void assemble_vector(
     {
       impl::assemble_cells<T, 1>(dof_transform, b, mesh->geometry(), cells,
                                  dofs, bs, fn, constants,
-                                 tcb::make_span(coeffs), cstride, cell_info);
+                                 coeffs, cstride, cell_info);
     }
     else if (bs == 3)
     {
       impl::assemble_cells<T, 3>(dof_transform, b, mesh->geometry(), cells,
                                  dofs, bs, fn, constants,
-                                 tcb::make_span(coeffs), cstride, cell_info);
+                                 coeffs, cstride, cell_info);
     }
     else
     {
       impl::assemble_cells(dof_transform, b, mesh->geometry(), cells, dofs, bs,
-                           fn, constants, tcb::make_span(coeffs), cstride,
+                           fn, constants, coeffs, cstride,
                            cell_info);
     }
   }
@@ -1047,19 +1047,19 @@ void assemble_vector(
       {
         impl::assemble_exterior_facets<T, 1>(
             dof_transform, b, *mesh, facets, dofs, bs, fn, constants,
-            tcb::make_span(coeffs), cstride, cell_info, get_perm);
+            coeffs, cstride, cell_info, get_perm);
       }
       else if (bs == 3)
       {
         impl::assemble_exterior_facets<T, 3>(
             dof_transform, b, *mesh, facets, dofs, bs, fn, constants,
-            tcb::make_span(coeffs), cstride, cell_info, get_perm);
+            coeffs, cstride, cell_info, get_perm);
       }
       else
       {
         impl::assemble_exterior_facets(
             dof_transform, b, *mesh, facets, dofs, bs, fn, constants,
-            tcb::make_span(coeffs), cstride, cell_info, get_perm);
+            coeffs, cstride, cell_info, get_perm);
       }
     }
 
@@ -1076,18 +1076,18 @@ void assemble_vector(
       {
         impl::assemble_interior_facets<T, 1>(
             dof_transform, b, *mesh, facets, *dofmap, fn, constants,
-            tcb::make_span(coeffs), cstride, c_offsets, cell_info, get_perm);
+            coeffs, cstride, c_offsets, cell_info, get_perm);
       }
       else if (bs == 3)
       {
         impl::assemble_interior_facets<T, 3>(
             dof_transform, b, *mesh, facets, *dofmap, fn, constants,
-            tcb::make_span(coeffs), cstride, c_offsets, cell_info, get_perm);
+            coeffs, cstride, c_offsets, cell_info, get_perm);
       }
       else
       {
         impl::assemble_interior_facets(dof_transform, b, *mesh, facets, *dofmap,
-                                       fn, constants, tcb::make_span(coeffs),
+                                       fn, constants, coeffs,
                                        cstride, c_offsets, cell_info, get_perm);
       }
     }

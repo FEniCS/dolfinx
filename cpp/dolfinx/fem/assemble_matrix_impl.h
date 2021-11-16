@@ -445,7 +445,7 @@ void assemble_matrix(
     const std::vector<std::int32_t>& cells = a.cell_domains(i);
     impl::assemble_cells<T>(mat_set, mesh->geometry(), cells, dof_transform,
                             dofs0, bs0, dof_transform_to_transpose, dofs1, bs1,
-                            bc0, bc1, fn, tcb::make_span(coeffs), cstride,
+                            bc0, bc1, fn, coeffs, cstride,
                             constants, cell_info);
   }
 
@@ -473,7 +473,7 @@ void assemble_matrix(
       impl::assemble_exterior_facets<T>(
           mat_set, *mesh, facets, dof_transform, dofs0, bs0,
           dof_transform_to_transpose, dofs1, bs1, bc0, bc1, fn,
-          tcb::make_span(coeffs), cstride, constants, cell_info, get_perm);
+          coeffs, cstride, constants, cell_info, get_perm);
     }
 
     const std::vector<int> c_offsets = a.coefficient_offsets();
@@ -488,7 +488,7 @@ void assemble_matrix(
       impl::assemble_interior_facets<T>(
           mat_set, *mesh, facets, dof_transform, *dofmap0, bs0,
           dof_transform_to_transpose, *dofmap1, bs1, bc0, bc1, fn,
-          tcb::make_span(coeffs), cstride, c_offsets, constants, cell_info,
+          coeffs, cstride, c_offsets, constants, cell_info,
           get_perm);
     }
   }
