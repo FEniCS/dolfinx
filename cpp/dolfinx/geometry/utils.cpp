@@ -369,8 +369,8 @@ geometry::shortest_vector(const mesh::Mesh& mesh, int dim,
       // Tabulate geometry dofs for the entity
       auto dofs = x_dofmap.links(c);
       const std::vector<int> entity_dofs
-          = geometry.cmap().dof_layout().entity_closure_dofs(dim,
-                                                             local_cell_entity);
+          = geometry.cmap().create_dof_layout().entity_closure_dofs(
+              dim, local_cell_entity);
       xt::xtensor<double, 2> nodes({entity_dofs.size(), 3});
       for (std::size_t i = 0; i < entity_dofs.size(); i++)
         for (std::size_t j = 0; j < 3; ++j)
