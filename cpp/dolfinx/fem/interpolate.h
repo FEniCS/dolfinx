@@ -32,8 +32,11 @@ class Function;
 
 namespace impl
 {
-template <typename U, typename V, typename W>
-void interpolation_apply(const U& Pi, const V& data, W&& coeffs, int bs)
+// Apply interpolation operator Pi to data to evaluate the dos
+// coefficients
+template <typename U, typename V, typename T>
+void interpolation_apply(const U& Pi, const V& data, std::vector<T>& coeffs,
+                         int bs)
 {
   // Compute coefficients = Pi * x (matrix-vector multiply)
   if (bs == 1)
@@ -52,7 +55,6 @@ void interpolation_apply(const U& Pi, const V& data, W&& coeffs, int bs)
     const std::size_t cols = Pi.shape(1);
     assert(data.shape(0) == Pi.shape(1));
     assert(data.shape(1) == bs);
-    using T = typename std::decay_t<W>::value_type;
     for (int k = 0; k < bs; ++k)
     {
       for (std::size_t i = 0; i < Pi.shape(0); ++i)
@@ -63,6 +65,94 @@ void interpolation_apply(const U& Pi, const V& data, W&& coeffs, int bs)
         coeffs[bs * i + k] = acc;
       }
     }
+  }
+}
+
+/// Interpolate from one finite element Function to another on the same
+/// mesh. The function is for cases where the finite element basis
+/// functions are mapped in the same way, e.g. both use the same Piola
+/// map.
+/// @param[out] u The function to interpolate to
+/// @param[in] v The function to interpolate from
+template <typename T>
+// void interpolate_same_map(Function<T>& u, const Function<T>& v)
+void interpolate_same_map(Function<T>& u1, const Function<T>& u0)
+{
+  assert(u0.function_space());
+  const auto mesh = u1.function_space()->mesh();
+  assert(mesh);
+  assert(u0.function_space()->mesh());
+  if (mesh != u0.function_space()->mesh())
+  {
+    throw std::runtime_error(
+        "Interpolation on different meshes not supported (yet).");
+  }
+
+  const std::shared_ptr<const FiniteElement> element1
+      = u1.function_space()->element();
+  assert(element1);
+  const std::shared_ptr<const FiniteElement> element0
+      = u0.function_space()->element();
+  assert(element0);
+
+  const int tdim = mesh->topology().dim();
+  auto map = mesh->topology().index_map(tdim);
+  assert(map);
+  xtl::span<T> u1_array = u1.x()->mutable_array();
+  xtl::span<const T> u0_array = u0.x()->array();
+
+  xtl::span<const std::uint32_t> cell_info;
+  if (element1->needs_dof_transformations()
+      or element0->needs_dof_transformations())
+  {
+    mesh->topology_mutable().create_entity_permutations();
+    cell_info = xtl::span(mesh->topology().get_cell_permutation_info());
+  }
+
+  // Get dofmaps
+  const auto dofmap1 = u1.function_space()->dofmap();
+  const auto dofmap0 = u0.function_space()->dofmap();
+
+  // Create interpolation operator
+  const xt::xtensor<double, 2> i_m
+      = element1->create_interpolation_operator(*element0);
+
+  // Get block sizes and dof transformation operators
+  const int bs1 = element1->block_size();
+  const int bs0 = element0->block_size();
+  const auto apply_dof_transformation
+      = element0->get_dof_transformation_function<T>(false, true, false);
+  const auto apply_inverse_dof_transform
+      = element1->get_dof_transformation_function<T>(true, true, false);
+
+  // Creat working array
+  std::vector<T> u0_local(element0->space_dimension());
+  std::vector<T> u1_local(element1->space_dimension());
+
+  // Iterate over mesh and interpolate on each cell
+  const int num_cells = map->size_local() + map->num_ghosts();
+  for (int c = 0; c < num_cells; ++c)
+  {
+    xtl::span<const std::int32_t> dofs0 = dofmap0->cell_dofs(c);
+    for (std::size_t i = 0; i < dofs0.size(); i++)
+      for (int k = 0; k < bs0; ++k)
+        u0_local[bs0 * i + k] = u0_array[bs0 * dofs0[i] + k];
+
+    apply_dof_transformation(u0_local, cell_info, c, 1);
+
+    // FIXME: Get compile-time ranges from Basix
+    // Apply interpolation operator
+    std::fill(u1_local.begin(), u1_local.end(), 0);
+    for (std::size_t i = 0; i < i_m.shape(0); ++i)
+      for (std::size_t j = 0; j < i_m.shape(1); ++j)
+        u1_local[i] += i_m(i, j) * u0_local[j];
+
+    apply_inverse_dof_transform(u1_local, cell_info, c, 1);
+
+    xtl::span<const std::int32_t> dofs1 = dofmap1->cell_dofs(c);
+    for (std::size_t i = 0; i < dofs1.size(); ++i)
+      for (int k = 0; k < bs1; ++k)
+        u1_array[bs1 * dofs1[i] + k] = u1_local[bs1 * i + k];
   }
 }
 
@@ -155,6 +245,9 @@ void interpolate_nonmatching_maps(Function<T>& u, const Function<T>& v)
   xt::xtensor<double, 3> K({X.shape(0), tdim, gdim});
   std::vector<double> detJ(X.shape(0));
 
+  // Get interpolation operator
+  const xt::xtensor<double, 2>& Pi_1 = element1->interpolation_operator();
+
   // Iterate over mesh and interpolate on each cell
   xtl::span<const T> array0 = v.x()->array();
   xtl::span<T> array1 = u.x()->mutable_array();
@@ -178,10 +271,6 @@ void interpolate_nonmatching_maps(Function<T>& u, const Function<T>& v)
       cmap.compute_jacobian_inverse(_J, xt::view(K, p, xt::all(), xt::all()));
       detJ[p] = cmap.compute_jacobian_determinant(_J);
     }
-
-    const xt::xtensor<double, 2>& Pi_1 = element1->interpolation_operator();
-
-    // std::cout << "Pi " << std::endl << Pi_1 << std::endl;
 
     // Get evaluated basis on reference, apply DOF transformations, and
     // push forward to physical element
@@ -209,35 +298,18 @@ void interpolate_nonmatching_maps(Function<T>& u, const Function<T>& v)
       {
         for (std::size_t j = 0; j < value_size0; ++j)
         {
-          values0(p, 0, j * bs0 + k) = 0;
+          T acc = 0;
           for (std::size_t i = 0; i < dim0; ++i)
-          {
-            values0(p, 0, j * bs0 + k)
-                += coeffs0[bs0 * i + k] * basis0(p, i, j);
-          }
+            acc += coeffs0[bs0 * i + k] * basis0(p, i, j);
+          values0(p, 0, j * bs0 + k) = acc;
         }
       }
     }
 
     // Pull back the physical values to the u reference
     element1->pull_back(values0, J, detJ, K, mapped_values0);
-
-    // Interpolate on the u element
-    // xt::xtensor<T, 2> _mapped_values0
-    //     = xt::transpose(xt::view(mapped_values0, xt::all(), 0, xt::all()));
-    // element1->interpolate(_mapped_values0, tcb::make_span(local1));
-    // std::cout << "mmm tmp: " << std::endl << _mapped_values0 << std::endl;
-
     auto _mapped_values0 = xt::view(mapped_values0, xt::all(), 0, xt::all());
-
-    // std::cout << "MMM tmp: " << std::endl << _mapped_values0_tmp <<
-    // std::endl;
     interpolation_apply(Pi_1, _mapped_values0, local1, bs1);
-
-    // std::cout << "------: " << bs1 << std::endl;
-    // for (std::size_t i = 0; i < local1.size(); ++i)
-    //   std::cout << "   " << local1[i] << ", " << local1_tmp[i] << std::endl;
-
     apply_inverse_dof_transform1(local1, cell_info, c, 1);
 
     // Copy local coefficients to the correct position in u dof array
@@ -517,110 +589,58 @@ void interpolate(Function<T>& u, const Function<T>& v)
         "Interpolation on different meshes not supported (yet).");
   }
 
-  const int tdim = mesh->topology().dim();
-  // const int gdim = mesh->geometry().dim();
-  const std::shared_ptr<const FiniteElement> element_to
+  const std::shared_ptr<const FiniteElement> element1
       = u.function_space()->element();
-  assert(element_to);
-  const std::shared_ptr<const FiniteElement> element_from
+  assert(element1);
+  const std::shared_ptr<const FiniteElement> element0
       = v.function_space()->element();
-  assert(element_from);
+  assert(element0);
 
-  auto map = mesh->topology().index_map(tdim);
-  assert(map);
-  xtl::span<T> u_array = u.x()->mutable_array();
-  xtl::span<const T> v_array = v.x()->array();
+  xtl::span<T> u1_array = u.x()->mutable_array();
+  xtl::span<const T> u0_array = v.x()->array();
   if (u.function_space() == v.function_space())
   {
-    // --- Same function spaces
-    std::copy(v_array.begin(), v_array.end(), u_array.begin());
+    // Same function spaces
+    std::copy(u0_array.begin(), u0_array.end(), u1_array.begin());
   }
-  else if (element_to->hash() == element_from->hash())
+  else if (element1->hash() == element0->hash())
   {
-    // --- Same element
+    // Same element
+
+    const int tdim = mesh->topology().dim();
+
+    auto map = mesh->topology().index_map(tdim);
+    assert(map);
 
     // Get dofmaps
     assert(v.function_space());
-    std::shared_ptr<const fem::DofMap> dofmap_v = v.function_space()->dofmap();
-    assert(dofmap_v);
-    const auto dofmap_u = u.function_space()->dofmap();
-    assert(dofmap_u);
+    std::shared_ptr<const fem::DofMap> dofmap0 = v.function_space()->dofmap();
+    assert(dofmap0);
+    const auto dofmap1 = u.function_space()->dofmap();
+    assert(dofmap1);
 
     // Iterate over mesh and interpolate on each cell
     const int num_cells = map->size_local() + map->num_ghosts();
-    const int bs = dofmap_v->bs();
-    assert(bs == dofmap_u->bs());
+    const int bs = dofmap0->bs();
+    assert(bs == dofmap1->bs());
     for (int c = 0; c < num_cells; ++c)
     {
-      xtl::span<const std::int32_t> dofs_v = dofmap_v->cell_dofs(c);
-      xtl::span<const std::int32_t> dofs_u = dofmap_u->cell_dofs(c);
-      assert(dofs_v.size() == dofs_u.size());
-      for (std::size_t i = 0; i < dofs_v.size(); ++i)
+      xtl::span<const std::int32_t> dofs0 = dofmap0->cell_dofs(c);
+      xtl::span<const std::int32_t> dofs1 = dofmap1->cell_dofs(c);
+      assert(dofs0.size() == dofs1.size());
+      for (std::size_t i = 0; i < dofs0.size(); ++i)
         for (int k = 0; k < bs; ++k)
-          u_array[bs * dofs_u[i] + k] = v_array[bs * dofs_v[i] + k];
+          u1_array[bs * dofs1[i] + k] = u0_array[bs * dofs1[i] + k];
     }
   }
-  else if (element_to->map_type() == element_from->map_type())
+  else if (element1->map_type() == element0->map_type())
   {
-    // --- Different elements, same map
-
-    xtl::span<const std::uint32_t> cell_info;
-    if (element_to->needs_dof_transformations()
-        or element_from->needs_dof_transformations())
-    {
-      mesh->topology_mutable().create_entity_permutations();
-      cell_info = xtl::span(mesh->topology().get_cell_permutation_info());
-    }
-
-    // Get dofmaps
-    const auto dofmap_u = u.function_space()->dofmap();
-    const auto dofmap_v = v.function_space()->dofmap();
-
-    // Create interpolation operator
-    const xt::xtensor<double, 2> i_m
-        = element_to->create_interpolation_operator(*element_from);
-
-    // Get block sizes and dof transformation operators
-    const int u_bs = element_to->block_size();
-    const int v_bs = element_from->block_size();
-    const auto apply_dof_transformation
-        = element_from->get_dof_transformation_function<T>(false, true, false);
-    const auto apply_inverse_dof_transform
-        = element_to->get_dof_transformation_function<T>(true, true, false);
-
-    // Creat working array
-    std::vector<T> v_local(element_from->space_dimension());
-    std::vector<T> u_local(element_to->space_dimension());
-
-    // Iterate over mesh and interpolate on each cell
-    const int num_cells = map->size_local() + map->num_ghosts();
-    for (int c = 0; c < num_cells; ++c)
-    {
-      xtl::span<const std::int32_t> dofs_v = dofmap_v->cell_dofs(c);
-      for (std::size_t i = 0; i < dofs_v.size(); i++)
-        for (int k = 0; k < v_bs; k++)
-          v_local[v_bs * i + k] = v_array[v_bs * dofs_v[i] + k];
-
-      apply_dof_transformation(v_local, cell_info, c, 1);
-
-      // FIXME: Get compile-time ranges from Basix
-      // Apply interpolation operator
-      std::fill(u_local.begin(), u_local.end(), 0);
-      for (std::size_t i = 0; i < i_m.shape(0); ++i)
-        for (std::size_t j = 0; j < i_m.shape(1); ++j)
-          u_local[i] += i_m(i, j) * v_local[j];
-
-      apply_inverse_dof_transform(u_local, cell_info, c, 1);
-
-      xtl::span<const std::int32_t> dofs_u = dofmap_u->cell_dofs(c);
-      for (std::size_t i = 0; i < dofs_u.size(); ++i)
-        for (int k = 0; k < u_bs; ++k)
-          u_array[u_bs * dofs_u[i] + k] = u_local[u_bs * i + k];
-    }
+    // Different elements, same basis function map
+    impl::interpolate_same_map(u, v);
   }
   else
   {
-    //  --- Different elements with different maps for basis functions
+    //  Different elements with different maps for basis functions
     impl::interpolate_nonmatching_maps(u, v);
   }
 }
