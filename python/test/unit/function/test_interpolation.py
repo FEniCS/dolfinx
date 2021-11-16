@@ -260,9 +260,7 @@ def test_interpolation_dg_to_n1curl(tdim, order):
 
     u.interpolate(lambda x: x[:tdim] ** order)
     v.interpolate(u)
-
     s = dolfinx.fem.assemble_scalar(ufl.inner(u - v, u - v) * ufl.dx)
-
     assert np.isclose(s, 0)
 
 
@@ -281,9 +279,7 @@ def test_interpolation_n1curl_to_dg(tdim, order):
 
     u.interpolate(lambda x: x[:tdim] ** order)
     v.interpolate(u)
-
     s = dolfinx.fem.assemble_scalar(ufl.inner(u - v, u - v) * ufl.dx)
-
     assert np.isclose(s, 0)
 
 
@@ -302,9 +298,7 @@ def test_interpolation_n2curl_to_bdm(tdim, order):
 
     u.interpolate(lambda x: x[:tdim] ** order)
     v.interpolate(u)
-
     s = dolfinx.fem.assemble_scalar(ufl.inner(u - v, u - v) * ufl.dx)
-
     assert np.isclose(s, 0)
 
 
@@ -327,7 +321,6 @@ def test_interpolation_p2p(order1, order2):
     DG = dolfinx.FunctionSpace(mesh, ("DG", order2))
     w = dolfinx.Function(DG)
     w.interpolate(u)
-
     s = dolfinx.fem.assemble_scalar(ufl.inner(u - w, u - w) * ufl.dx)
     assert np.isclose(s, 0)
 
@@ -351,7 +344,6 @@ def test_interpolation_vector_elements(order1, order2):
     DG = dolfinx.VectorFunctionSpace(mesh, ("DG", order2))
     w = dolfinx.Function(DG)
     w.interpolate(u)
-
     s = dolfinx.fem.assemble_scalar(ufl.inner(u - w, u - w) * ufl.dx)
     assert np.isclose(s, 0)
 
