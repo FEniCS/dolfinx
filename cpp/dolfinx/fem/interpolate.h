@@ -32,8 +32,14 @@ class Function;
 
 namespace impl
 {
-// Apply interpolation operator Pi to data to evaluate the dos
-// coefficients
+/// Apply interpolation operator Pi to data to evaluate the dos
+/// coefficients
+/// @param[in] Pi The interpolation matrix (shape = (num dofs,
+/// num_points * value_size))
+/// @param[in] data Function evaluations, by point, e.g. (f0(x0),
+/// f1(x0), f0(x1), f1(x1), ...)
+/// @param[out] coeffs The degrees of freedom to compute
+/// @param[in] bs The block size
 template <typename U, typename V, typename T>
 void interpolation_apply(const U& Pi, const V& data, std::vector<T>& coeffs,
                          int bs)
@@ -72,10 +78,12 @@ void interpolation_apply(const U& Pi, const V& data, std::vector<T>& coeffs,
 /// mesh. The function is for cases where the finite element basis
 /// functions are mapped in the same way, e.g. both use the same Piola
 /// map.
-/// @param[out] u The function to interpolate to
-/// @param[in] v The function to interpolate from
+/// @param[out] u1 The function to interpolate to
+/// @param[in] u0 The function to interpolate from
+/// @pre The functions `u1` and `u0` must share the same mesh and the
+/// elements must share the same basis function map. Neither is checked
+/// by the function.
 template <typename T>
-// void interpolate_same_map(Function<T>& u, const Function<T>& v)
 void interpolate_same_map(Function<T>& u1, const Function<T>& u0)
 {
   assert(u0.function_space());
@@ -156,6 +164,8 @@ void interpolate_same_map(Function<T>& u1, const Function<T>& u0)
 /// be Piola mapped and the other with a standard isoparametric map.
 /// @param[out] u1 The function to interpolate to
 /// @param[in] u0 The function to interpolate from
+/// @pre The functions `u1` and `u0` must share the same mesh. This is
+/// not checked by the function.
 template <typename T>
 void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0)
 {
@@ -280,7 +290,7 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0)
       for (int k = 0; k < bs0; ++k)
         coeffs0[bs0 * i + k] = array0[bs0 * dofs0[i] + k];
 
-    // Evaluate v at the interpolation points (physical space)
+    // Evaluate v at the interpolation points (physical space values)
     for (std::size_t p = 0; p < X.shape(0); ++p)
     {
       for (int k = 0; k < bs0; ++k)
@@ -626,7 +636,7 @@ void interpolate(Function<T>& u, const Function<T>& v)
     }
     else if (element1->map_type() == element0->map_type())
     {
-      // Different elements, same basis function map
+      // Different elements, same basis function map type
       impl::interpolate_same_map(u, v);
     }
     else
