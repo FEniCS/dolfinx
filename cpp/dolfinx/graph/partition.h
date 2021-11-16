@@ -35,8 +35,7 @@ using partition_fn = std::function<graph::AdjacencyList<std::int32_t>(
     MPI_Comm comm, int nparts, const AdjacencyList<std::int64_t>& local_graph,
     std::int32_t num_ghost_nodes, bool ghosting)>;
 
-/// Partition graph across processes using  the default graph
-/// partitioner
+/// Partition graph across processes using the default graph partitioner
 ///
 /// @param comm MPI Communicator that the graph is distributed across
 /// @param nparts Number of partitions to divide graph nodes into

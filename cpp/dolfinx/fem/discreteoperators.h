@@ -6,10 +6,10 @@
 
 #pragma once
 
+#include "DofMap.h"
+#include "FunctionSpace.h"
 #include <array>
 #include <dolfinx/common/IndexMap.h>
-#include <dolfinx/fem/DofMap.h>
-#include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <memory>
