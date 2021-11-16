@@ -180,6 +180,8 @@ mesh::CellType FiniteElement::cell_shape() const noexcept
   return _cell_shape;
 }
 //-----------------------------------------------------------------------------
+int FiniteElement::tdim() const noexcept { return _tdim; }
+//-----------------------------------------------------------------------------
 int FiniteElement::space_dimension() const noexcept { return _space_dim; }
 //-----------------------------------------------------------------------------
 int FiniteElement::value_size() const noexcept { return _value_size; }
