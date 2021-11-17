@@ -192,7 +192,36 @@ public:
                                "Cannot interpolate mixed elements directly.");
     }
 
-    _element->interpolate(dofs, tcb::make_span(values), _bs);
+    const std::size_t rows = space_dimension();
+
+    const xt::xtensor<double, 2>& Pi = interpolation_operator();
+    assert(Pi.size() % rows == 0);
+    const std::size_t cols = Pi.size() / rows;
+
+    // Compute dofs = Pi * x (matrix-vector multiply)
+    if (_bs == 1)
+    {
+      for (std::size_t i = 0; i < rows; ++i)
+      {
+        // Can be replaced with std::transform_reduce once GCC 8 series dies.
+        // Dot product between row i of the matrix and 'values'
+        dofs[i] = std::inner_product(std::next(Pi.data(), i * cols),
+                                     std::next(Pi.data(), i * cols + cols),
+                                     values.data(), T(0.0));
+      }
+    }
+    else
+    {
+      for (int b = 0; b < _bs; ++b)
+      {
+        for (std::size_t i = 0; i < rows; ++i)
+        {
+          dofs[_bs * i + b] = 0;
+          for (std::size_t j = 0; j < cols; ++j)
+            dofs[_bs * i + b] += Pi(i, j) * values(b * cols + j);
+        }
+      }
+    }
   }
 
   /// Create a matrix that maps degrees of freedom from one element to
