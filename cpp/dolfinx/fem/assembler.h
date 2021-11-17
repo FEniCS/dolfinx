@@ -37,7 +37,7 @@ make_coefficients_span(
            std::pair<xtl::span<const T>, int>>
       _coefficients;
 
-  for (auto [integral, coeffs] : coefficients)
+  for (auto& [integral, coeffs] : coefficients)
   {
     _coefficients[integral] = {tcb::make_span(coeffs.first), coeffs.second};
   }
