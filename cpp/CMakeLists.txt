@@ -72,6 +72,7 @@ add_feature_info(XTENSOR_OPTIMIZE XTENSOR_OPTIMIZE "Enable architecture-specific
 # List optional packages
 list(APPEND OPTIONAL_PACKAGES "SLEPc")
 list(APPEND OPTIONAL_PACKAGES "ParMETIS")
+list(APPEND OPTIONAL_PACKAGES "SCOTCH")
 list(APPEND OPTIONAL_PACKAGES "KaHIP")
 
 # Add options
@@ -151,9 +152,9 @@ if (BASIX_PY_DIR)
   set(xtl_ROOT "${BASIX_PY_DIR};${xtl_ROOT}")
   set(xsimd "${BASIX_PY_DIR};${xsimd_ROOT}")
   set(xtensor_ROOT "${BASIX_PY_DIR};${xtensor_ROOT}")
-  
+
   # Basix installed from manylinux wheel
-  if (IS_DIRECTORY ${BASIX_PY_DIR}/../fenics_basix.libs) 
+  if (IS_DIRECTORY ${BASIX_PY_DIR}/../fenics_basix.libs)
     set(CMAKE_INSTALL_RPATH ${BASIX_PY_DIR}/../fenics_basix.libs)
   endif()
 endif()
@@ -190,12 +191,6 @@ set_package_properties(HDF5 PROPERTIES TYPE REQUIRED
   DESCRIPTION "Hierarchical Data Format 5 (HDF5)"
   URL "https://www.hdfgroup.org/HDF5")
 
-find_package(SCOTCH REQUIRED)
-set_package_properties(SCOTCH PROPERTIES TYPE REQUIRED
-  DESCRIPTION "Programs and libraries for graph, mesh and hypergraph partitioning"
-  URL "https://www.labri.fr/perso/pelegrin/scotch"
-  PURPOSE "Parallel graph partitioning and redordering")
-
 # Check for UFC
 find_package(UFC MODULE ${DOLFINX_VERSION_MAJOR}.${DOLFINX_VERSION_MINOR})
 set_package_properties(UFC PROPERTIES TYPE REQUIRED
@@ -221,6 +216,15 @@ if (DOLFINX_ENABLE_SLEPC)
     URL "http://slepc.upv.es/")
 endif()
 
+# Check for SCOTCH
+if (DOLFINX_ENABLE_SCOTCH)
+  find_package(SCOTCH)
+  set_package_properties(SCOTCH PROPERTIES TYPE OPTIONAL
+    DESCRIPTION "Programs and libraries for graph, mesh and hypergraph partitioning"
+    URL "https://www.labri.fr/perso/pelegrin/scotch"
+    PURPOSE "Parallel graph partitioning")
+endif()
+
 # Check for ParMETIS
 if (DOLFINX_ENABLE_PARMETIS)
   find_package(ParMETIS 4.0.2)
@@ -237,6 +241,11 @@ if (DOLFINX_ENABLE_KAHIP)
     DESCRIPTION "A family of graph partitioning programs"
     URL "https://kahip.github.io/"
     PURPOSE "Parallel graph partitioning")
+endif()
+
+# Check that at least one graph partitioner has been found
+if (NOT SCOTCH_FOUND AND NOT PARMETIS_FOUND AND NOT KAHIP_FOUND)
+  message(FATAL_ERROR "No graph partitioner found. SCOTCH, ParMETIS or KaHIP is required.")
 endif()
 
 #------------------------------------------------------------------------------

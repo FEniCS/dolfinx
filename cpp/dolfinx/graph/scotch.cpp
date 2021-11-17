@@ -15,6 +15,7 @@
 #include <set>
 #include <string>
 
+#ifdef HAS_PTSCOTCH
 extern "C"
 {
 #include <ptscotch.h>
@@ -289,3 +290,4 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
   };
 }
 //-----------------------------------------------------------------------------
+#endif

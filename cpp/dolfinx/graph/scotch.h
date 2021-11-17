@@ -20,6 +20,7 @@ template <typename T>
 class AdjacencyList;
 namespace scotch
 {
+#ifdef HAS_PTSCOTCH
 
 /// SCOTCH partitioning strategies
 enum class strategy
@@ -62,6 +63,8 @@ compute_gps(const AdjacencyList<std::int32_t>& graph,
 std::pair<std::vector<int>, std::vector<int>>
 compute_reordering(const AdjacencyList<std::int32_t>& graph,
                    std::string scotch_strategy = "");
+
+#endif
 
 } // namespace scotch
 } // namespace dolfinx::graph
