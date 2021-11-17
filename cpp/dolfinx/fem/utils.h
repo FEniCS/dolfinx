@@ -10,8 +10,8 @@
 #include "DofMap.h"
 #include "ElementDofLayout.h"
 #include "Expression.h"
-#include <dolfinx/fem/Form.h>
-#include <dolfinx/fem/Function.h>
+#include "Form.h"
+#include "Function.h"
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <functional>

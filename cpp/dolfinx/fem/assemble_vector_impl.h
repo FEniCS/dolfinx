@@ -6,13 +6,13 @@
 
 #pragma once
 
+#include "Constant.h"
 #include "DirichletBC.h"
 #include "DofMap.h"
 #include "Form.h"
+#include "FunctionSpace.h"
 #include "utils.h"
 #include <dolfinx/common/IndexMap.h>
-#include <dolfinx/fem/Constant.h>
-#include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>

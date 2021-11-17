@@ -7,10 +7,6 @@
 #pragma once
 
 #include "partition.h"
-#include <cstdint>
-#include <dolfinx/graph/AdjacencyList.h>
-#include <functional>
-#include <mpi.h>
 
 namespace dolfinx::graph
 {
@@ -48,4 +44,5 @@ graph::partition_fn partitioner(int mode = 1, int seed = 1,
 
 #endif
 } // namespace kahip
+
 } // namespace dolfinx::graph
