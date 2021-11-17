@@ -6,12 +6,12 @@
 
 #pragma once
 
+#include "DofMap.h"
+#include "FiniteElement.h"
 #include "FunctionSpace.h"
 #include "interpolate.h"
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/UniqueIdGenerator.h>
-#include <dolfinx/fem/DofMap.h>
-#include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/la/PETScVector.h>
 #include <dolfinx/la/Vector.h>
 #include <dolfinx/mesh/Geometry.h>
@@ -398,8 +398,7 @@ public:
                                cell_info, cell_index, reference_value_size);
 
       // Push basis forward to physical element
-      element->transform_reference_basis(basis_values, basis_reference_values,
-                                         J, detJ, K);
+      element->push_forward(basis_values, basis_reference_values, J, detJ, K);
 
       // Get degrees of freedom for current cell
       xtl::span<const std::int32_t> dofs = dofmap->cell_dofs(cell_index);

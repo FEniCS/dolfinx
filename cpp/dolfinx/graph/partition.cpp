@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "partition.h"
+#include "partitioners.h"
 #include "scotch.h"
 #include <algorithm>
 #include <dolfinx/common/IndexMap.h>
@@ -12,8 +13,6 @@
 #include <dolfinx/graph/AdjacencyList.h>
 #include <memory>
 #include <unordered_map>
-
-#include "partitioners.h"
 
 using namespace dolfinx;
 

@@ -97,18 +97,17 @@ public:
   void tabulate(xt::xtensor<double, 4>& values, const xt::xtensor<double, 2>& X,
                 int order) const;
 
-  /// Push basis functions forward to physical element
-  /// @param[out] values Basis function values on the physical domain (ndim=3)
+  /// Push forward data to the physical element
+  /// @param[out] values Function values on the physical domain (ndim=3)
   /// @param[in] reference_values Basis function values on the reference
   /// cell (ndim=3)
   /// @param[in] J The Jacobian of the map (shape=(num_points, gdim, tdim))
   /// @param[in] detJ The determinant of the Jacobian
   /// @param[in] K The inverse of the Jacobian (shape=(num_points, tdim, gdim))
   template <typename U, typename V, typename W, typename X>
-  constexpr void
-  transform_reference_basis(U&& values, const V& reference_values, const W& J,
-                            const xtl::span<const double>& detJ,
-                            const X& K) const
+  constexpr void push_forward(U&& values, const V& reference_values, const W& J,
+                              const xtl::span<const double>& detJ,
+                              const X& K) const
   {
     assert(_element);
     _element->map_push_forward_m(reference_values, J, detJ, K, values);
@@ -128,12 +127,18 @@ public:
   const std::vector<std::shared_ptr<const FiniteElement>>&
   sub_elements() const noexcept;
 
+  /// Return the topological dimension
+  int tdim() const noexcept;
+
   /// Return simple hash of the signature string
   std::size_t hash() const noexcept;
 
   /// Extract sub finite element for component
   std::shared_ptr<const FiniteElement>
   extract_sub_element(const std::vector<int>& component) const;
+
+  /// Get the map type used by the element
+  basix::maps::type map_type() const;
 
   /// Check if interpolation into the finite element space is an
   /// identity operation given the evaluation on an expression at
@@ -150,6 +155,15 @@ public:
   /// the quadrature points used to evaluate moment degrees of freedom.
   /// @return Points on the reference cell. Shape is (num_points, tdim).
   const xt::xtensor<double, 2>& interpolation_points() const;
+
+  /// Interpolation operator (matrix) `Pi` that maps a function
+  /// evaluated at the points provided by
+  /// FiniteElement::interpolation_points to the element degrees of
+  /// freedom, i.e. dofs = Pi f_x. See the Basix documentation for
+  /// basix::FiniteElement::interpolation_matrix for how the data in
+  /// `f_x` should be ordered.
+  /// @return The interpolation operator `Pi`
+  const xt::xtensor<double, 2>& interpolation_operator() const;
 
   /// @todo Document shape/layout of @p values
   /// @todo Make the interpolating dofs in/out argument for efficiency
@@ -617,8 +631,7 @@ public:
   /// @param[out] U The input `u` mapped to the reference element. It
   /// must have dimension 3.
   template <typename O, typename P, typename Q, typename T, typename S>
-  void map_pull_back(const O& u, const P& J, const Q& detJ, const T& K,
-                     S&& U) const
+  void pull_back(const O& u, const P& J, const Q& detJ, const T& K, S&& U) const
   {
     assert(_element);
     _element->map_pull_back_m(u, J, detJ, K, U);

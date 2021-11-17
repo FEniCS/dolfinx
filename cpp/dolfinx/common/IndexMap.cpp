@@ -357,13 +357,14 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
   // Map ghost owner rank to the rank on neighborhood communicator
   int myrank = -1;
   MPI_Comm_rank(mpi_comm, &myrank);
+  assert(std::find(src_ranks.begin(), src_ranks.end(), myrank)
+         == src_ranks.end());
   std::vector<std::int32_t> ghost_owners(ghosts.size());
   std::transform(src_ranks.cbegin(), src_ranks.cend(), ghost_owners.begin(),
-                 [&halo_src_ranks, myrank](auto src)
+                 [&halo_src_ranks](auto src)
                  {
                    // Get rank of owner on the neighborhood communicator
                    // (rank of out edge on _comm_owner_to_ghost)
-                   assert(src != myrank);
                    auto it = std::find(halo_src_ranks.cbegin(),
                                        halo_src_ranks.cend(), src);
                    assert(it != halo_src_ranks.end());

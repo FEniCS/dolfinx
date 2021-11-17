@@ -6,10 +6,10 @@
 
 #pragma once
 
+#include "DofMap.h"
+#include "FunctionSpace.h"
 #include <array>
 #include <dolfinx/common/IndexMap.h>
-#include <dolfinx/fem/DofMap.h>
-#include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <memory>
@@ -117,11 +117,9 @@ void fem::assemble_discrete_gradient(
   // Copy index maps from dofmaps
   std::array<std::shared_ptr<const common::IndexMap>, 2> index_maps
       = {{V0.dofmap()->index_map, V1.dofmap()->index_map}};
-  std::array<int, 2> block_sizes
-      = {V0.dofmap()->index_map_bs(), V1.dofmap()->index_map_bs()};
   std::vector<std::array<std::int64_t, 2>> local_range
       = {index_maps[0]->local_range(), index_maps[1]->local_range()};
-  assert(block_sizes[0] == block_sizes[1]);
+  assert(V0.dofmap()->index_map_bs() == V1.dofmap()->index_map_bs());
 
   // Initialize required connectivities
   const int tdim = mesh->topology().dim();

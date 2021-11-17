@@ -14,8 +14,8 @@
 #include <dolfinx/common/utils.h>
 #include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <dolfinx/graph/ordering.h>
 #include <dolfinx/graph/partition.h>
-#include <dolfinx/graph/scotch.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <memory>
 
@@ -119,8 +119,9 @@ Mesh mesh::create_mesh(MPI_Comm comm,
                                     num_owned_cells + 1),
       tdim);
 
+  std::cout << "Calling now\n";
   // Compute re-ordering of local dual graph
-  const std::vector<int> remap = graph::scotch::compute_gps(g, 2).first;
+  std::vector<int> remap = graph::reorder_gps(g);
 
   // Create re-ordered cell lists
   std::vector<std::int64_t> original_cell_index(original_cell_index0);
