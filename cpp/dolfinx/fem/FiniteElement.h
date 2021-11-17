@@ -643,7 +643,7 @@ public:
   map_pull_back_fn() const
   {
     assert(_element);
-    _element->map_pull_back<O, P, Q, R>();
+    return _element->map_pull_back<O, P, Q, R>();
   }
 
   /// Permute the DOFs of the element

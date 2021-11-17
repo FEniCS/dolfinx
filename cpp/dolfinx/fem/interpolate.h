@@ -476,6 +476,15 @@ void interpolate(
         apply_inverse_transpose_dof_transformation
         = element->get_dof_transformation_function<T>(true, true);
 
+    using xview_scalar_t
+        = xt::xview<decltype(reference_data)&, std::size_t,
+                    xt::xall<std::size_t>, xt::xall<std::size_t>>;
+    using xview_x_t = xt::xview<decltype(J)&, std::size_t,
+                                xt::xall<std::size_t>, xt::xall<std::size_t>>;
+    auto pull_back_fn
+        = element->map_pull_back_fn<xview_scalar_t, xview_scalar_t, xview_x_t,
+                                    xview_x_t>();
+
     for (std::int32_t c : cells)
     {
       auto x_dofs = x_dofmap.links(c);
@@ -496,15 +505,6 @@ void interpolate(
             xt::view(J, p, xt::all(), xt::all()));
       }
 
-      using xview_scalar_t
-          = xt::xview<decltype(reference_data)&, std::size_t,
-                      xt::xall<std::size_t>, xt::xall<std::size_t>>;
-      using xview_x_t = xt::xview<decltype(J)&, std::size_t,
-                                  xt::xall<std::size_t>, xt::xall<std::size_t>>;
-      auto pull_back_fn
-          = element->map_pull_back_fn<xview_scalar_t, xview_scalar_t, xview_x_t,
-                                      xview_x_t>();
-
       xtl::span<const std::int32_t> dofs = dofmap->cell_dofs(c);
       for (int k = 0; k < element_bs; ++k)
       {
@@ -524,6 +524,7 @@ void interpolate(
           auto _U = xt::view(reference_data, i, xt::all(), xt::all());
           pull_back_fn(_U, _u, _K, 1.0 / detJ[i], _J);
         }
+        // element->pull_back(_vals, J, detJ, K, reference_data);
 
         xt::xtensor<T, 2> ref_data
             = xt::transpose(xt::view(reference_data, xt::all(), 0, xt::all()));
