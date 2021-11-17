@@ -27,6 +27,7 @@
 #include <dolfinx/fem/petsc.h>
 #include <dolfinx/fem/utils.h>
 #include <dolfinx/geometry/BoundingBoxTree.h>
+#include <dolfinx/graph/ordering.h>
 #include <dolfinx/la/PETScMatrix.h>
 #include <dolfinx/la/PETScVector.h>
 #include <dolfinx/la/SparsityPattern.h>
@@ -649,7 +650,7 @@ void fem(py::module& m)
         auto [map, bs, dofmap] = dolfinx::fem::build_dofmap_data(
             comm.get(), topology, element_dof_layout,
             [](const dolfinx::graph::AdjacencyList<std::int32_t>& g)
-            { return dolfinx::graph::scotch::compute_gps(g, 2).first; });
+            { return dolfinx::graph::reorder_gps(g); });
         return std::tuple(std::move(map), bs, std::move(dofmap));
       },
       "Build and dofmap on a mesh.");
@@ -746,8 +747,8 @@ void fem(py::module& m)
       m, "CoordinateElement", "Coordinate map element")
       .def(py::init<dolfinx::mesh::CellType, int>(), py::arg("celltype"),
            py::arg("degree"))
-      .def_property_readonly("dof_layout",
-                             &dolfinx::fem::CoordinateElement::dof_layout)
+      .def("create_dof_layout",
+           &dolfinx::fem::CoordinateElement::create_dof_layout)
       .def("push_forward",
            [](const dolfinx::fem::CoordinateElement& self,
               const py::array_t<double, py::array::c_style>& X,

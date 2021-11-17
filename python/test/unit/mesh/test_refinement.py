@@ -7,8 +7,7 @@
 import dolfinx
 import ufl
 from dolfinx import FunctionSpace, UnitCubeMesh, UnitSquareMesh
-from dolfinx.cpp.mesh import GhostMode
-from dolfinx.mesh import refine
+from dolfinx.mesh import GhostMode, refine
 from mpi4py import MPI
 
 

@@ -9,7 +9,6 @@
 #include <boost/functional/hash.hpp>
 #include <cstring>
 #include <dolfinx/common/MPI.h>
-#include <limits>
 #include <mpi.h>
 #include <sstream>
 #include <string>

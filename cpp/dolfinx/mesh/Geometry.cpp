@@ -6,7 +6,6 @@
 
 #include "Geometry.h"
 #include "Topology.h"
-#include <boost/functional/hash.hpp>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/sort.h>
 #include <dolfinx/fem/ElementDofLayout.h>
@@ -55,7 +54,7 @@ mesh::Geometry mesh::create_geometry(
 
   //  Build 'geometry' dofmap on the topology
   auto [_dof_index_map, bs, dofmap] = fem::build_dofmap_data(
-      comm, topology, coordinate_element.dof_layout(), reorder_fn);
+      comm, topology, coordinate_element.create_dof_layout(), reorder_fn);
   auto dof_index_map
       = std::make_shared<common::IndexMap>(std::move(_dof_index_map));
 

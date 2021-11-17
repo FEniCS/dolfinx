@@ -7,13 +7,14 @@
 import math
 import sys
 
+import basix
 import numpy as np
 import pytest
-import basix
 from dolfinx import (BoxMesh, RectangleMesh, UnitCubeMesh, UnitIntervalMesh,
                      UnitSquareMesh, cpp)
-from dolfinx.cpp.mesh import CellType, is_simplex
+from dolfinx.cpp.mesh import is_simplex
 from dolfinx.fem import assemble_scalar
+from dolfinx.mesh import CellType, GhostMode
 from dolfinx_utils.test.fixtures import tempdir
 from dolfinx_utils.test.skips import skip_in_parallel
 from mpi4py import MPI
@@ -47,7 +48,7 @@ def mesh2d():
     mesh2d = RectangleMesh(
         MPI.COMM_WORLD, [np.array([0.0, 0.0, 0.0]),
                          np.array([1., 1., 0.0])], [1, 1],
-        CellType.triangle, cpp.mesh.GhostMode.none,
+        CellType.triangle, GhostMode.none,
         cpp.mesh.partition_cells_graph, 'left')
     i1 = np.where((mesh2d.geometry.x
                    == (1, 1, 0)).all(axis=1))[0][0]
@@ -60,7 +61,7 @@ def mesh_2d():
     mesh2d = RectangleMesh(
         MPI.COMM_WORLD, [np.array([0.0, 0.0, 0.0]),
                          np.array([1., 1., 0.0])], [1, 1],
-        CellType.triangle, cpp.mesh.GhostMode.none,
+        CellType.triangle, GhostMode.none,
         cpp.mesh.partition_cells_graph, 'left')
     i1 = np.where((mesh2d.geometry.x
                    == (1, 1, 0)).all(axis=1))[0][0]
@@ -122,7 +123,7 @@ def rectangle():
     return RectangleMesh(
         MPI.COMM_WORLD, [np.array([0.0, 0.0, 0.0]),
                          np.array([2.0, 2.0, 0.0])], [5, 5],
-        CellType.triangle, cpp.mesh.GhostMode.none)
+        CellType.triangle, GhostMode.none)
 
 
 @pytest.fixture
@@ -134,7 +135,7 @@ def cube():
 def box():
     return BoxMesh(MPI.COMM_WORLD, [np.array([0, 0, 0]),
                                     np.array([2, 2, 2])], [2, 2, 5], CellType.tetrahedron,
-                   cpp.mesh.GhostMode.none)
+                   GhostMode.none)
 
 
 @pytest.fixture
@@ -224,7 +225,7 @@ def test_UnitHexMesh():
 
 
 def test_BoxMeshPrism():
-    mesh = BoxMesh(MPI.COMM_WORLD, [[0., 0., 0.], [1., 1., 1.]], [2, 3, 4], CellType.prism, cpp.mesh.GhostMode.none)
+    mesh = BoxMesh(MPI.COMM_WORLD, [[0., 0., 0.], [1., 1., 1.]], [2, 3, 4], CellType.prism, GhostMode.none)
     assert mesh.topology.index_map(0).size_global == 60
     assert mesh.topology.index_map(3).size_global == 48
 
@@ -322,15 +323,15 @@ mesh_factories = [
 def xfail_ghosted_quads_hexes(mesh_factory, ghost_mode):
     """Xfail when mesh_factory on quads/hexes uses shared_vertex mode. Needs implementing."""
     if mesh_factory in [UnitSquareMesh, UnitCubeMesh]:
-        if ghost_mode == cpp.mesh.GhostMode.shared_vertex:
+        if ghost_mode == GhostMode.shared_vertex:
             pytest.xfail(reason="Missing functionality in \'{}\' with \'{}\' mode".format(mesh_factory, ghost_mode))
 
 
 @pytest.mark.parametrize("ghost_mode",
                          [
-                             cpp.mesh.GhostMode.none,
-                             cpp.mesh.GhostMode.shared_facet,
-                             cpp.mesh.GhostMode.shared_vertex,
+                             GhostMode.none,
+                             GhostMode.shared_facet,
+                             GhostMode.shared_vertex,
                          ])
 @pytest.mark.parametrize('mesh_factory', mesh_factories)
 def xtest_mesh_topology_against_basix(mesh_factory, ghost_mode):
@@ -344,7 +345,7 @@ def xtest_mesh_topology_against_basix(mesh_factory, ghost_mode):
         return
 
     # Create basix cell
-    cell_name = cpp.mesh.to_string(mesh.topology.cell_type)
+    cell_name = mesh.topology.cell_type.name
     basix_celltype = getattr(basix.CellType, cell_name)
 
     map = mesh.topology.index_map(mesh.topology.dim)

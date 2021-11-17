@@ -8,8 +8,8 @@ import os
 
 import pytest
 from dolfinx import UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh
-from dolfinx.cpp.mesh import CellType
 from dolfinx.io import XDMFFile
+from dolfinx.mesh import CellType
 from dolfinx_utils.test.fixtures import tempdir
 from mpi4py import MPI
 

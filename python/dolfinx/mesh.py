@@ -9,7 +9,11 @@ import types
 
 import numpy
 import ufl
+
 from dolfinx import cpp
+from dolfinx.cpp.mesh import CellType  # noqa
+from dolfinx.cpp.mesh import GhostMode  # noqa
+from dolfinx.cpp.mesh import midpoints  # noqa
 from dolfinx.cpp.mesh import create_meshtags
 
 __all__ = [

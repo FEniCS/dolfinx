@@ -180,6 +180,8 @@ mesh::CellType FiniteElement::cell_shape() const noexcept
   return _cell_shape;
 }
 //-----------------------------------------------------------------------------
+int FiniteElement::tdim() const noexcept { return _tdim; }
+//-----------------------------------------------------------------------------
 int FiniteElement::space_dimension() const noexcept { return _space_dim; }
 //-----------------------------------------------------------------------------
 int FiniteElement::value_size() const noexcept { return _value_size; }
@@ -218,6 +220,11 @@ int FiniteElement::num_sub_elements() const noexcept
   return _sub_elements.size();
 }
 //-----------------------------------------------------------------------------
+bool FiniteElement::is_mixed() const noexcept
+{
+  return !_sub_elements.empty() and _bs == 1;
+}
+//-----------------------------------------------------------------------------
 const std::vector<std::shared_ptr<const FiniteElement>>&
 FiniteElement::sub_elements() const noexcept
 {
@@ -235,6 +242,17 @@ FiniteElement::extract_sub_element(const std::vector<int>& component) const
   DLOG(INFO) << "Extracted finite element for sub-system: "
              << sub_finite_element->signature().c_str();
   return sub_finite_element;
+}
+//-----------------------------------------------------------------------------
+basix::maps::type FiniteElement::map_type() const
+{
+  if (!_element)
+  {
+    throw std::runtime_error("Cannot element map type - no Basix element "
+                             "available. Maybe this is a mixed element?");
+  }
+
+  return _element->mapping_type();
 }
 //-----------------------------------------------------------------------------
 bool FiniteElement::interpolation_ident() const noexcept
@@ -255,13 +273,25 @@ const xt::xtensor<double, 2>& FiniteElement::interpolation_points() const
   return _element->points();
 }
 //-----------------------------------------------------------------------------
+const xt::xtensor<double, 2>& FiniteElement::interpolation_operator() const
+{
+  if (!_element)
+  {
+    throw std::runtime_error("No underlying element for interpolation. "
+                             "Cannot interpolate mixed elements directly.");
+  }
+
+  return _element->interpolation_matrix();
+}
+//-----------------------------------------------------------------------------
+
 xt::xtensor<double, 2>
 FiniteElement::create_interpolation_operator(const FiniteElement& from) const
 {
   if (_element->mapping_type() != from._element->mapping_type())
   {
-    throw std::runtime_error(
-        "Interpolation for elements with different maps is not yet supported.");
+    throw std::runtime_error("Interpolation between elements with different "
+                             "maps is not supported.");
   }
 
   if (_bs == 1 or from._bs == 1)
@@ -341,7 +371,7 @@ FiniteElement::get_dof_permutation_function(bool inverse,
     }
   }
 
-  if (_sub_elements.size() != 0)
+  if (!_sub_elements.empty())
   {
     if (_bs == 1)
     {

@@ -7,11 +7,11 @@
 
 import random
 
+import dolfinx
 import numpy as np
 import pytest
 import ufl
-import dolfinx
-from dolfinx import Function, FunctionSpace, VectorFunctionSpace, cpp
+from dolfinx import Function, FunctionSpace, VectorFunctionSpace
 from dolfinx.cpp.mesh import CellType
 from dolfinx.mesh import create_mesh
 from dolfinx_utils.test.skips import skip_in_parallel
@@ -96,7 +96,7 @@ def one_cell_mesh(cell_type):
         ordered_points[j] = points[i]
     cells = np.array([order])
 
-    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cpp.mesh.to_string(cell_type), 1))
+    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell_type.name, 1))
     return create_mesh(MPI.COMM_WORLD, cells, ordered_points, domain)
 
 
@@ -245,20 +245,60 @@ def test_interpolation_nedelec(order1, order2):
     assert np.isclose(dolfinx.fem.assemble_scalar(ufl.inner(u - w, u - w) * ufl.dx), 0)
 
 
-@pytest.mark.xfail(strict=True)
-def test_interpolation_cross():
-    mesh = dolfinx.UnitCubeMesh(MPI.COMM_WORLD, 2, 2, 2)
-    V = dolfinx.VectorFunctionSpace(mesh, ("Lagrange", 1))
-    V1 = dolfinx.FunctionSpace(mesh, ("N1curl", 2))
+@pytest.mark.parametrize("tdim", [2, 3])
+@pytest.mark.parametrize("order", [1, 2, 3])
+def test_interpolation_dg_to_n1curl(tdim, order):
+    if tdim == 2:
+        mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, 5, 5)
+    else:
+        mesh = dolfinx.UnitCubeMesh(MPI.COMM_WORLD, 2, 2, 2)
+    V = dolfinx.VectorFunctionSpace(mesh, ("DG", order))
+    V1 = dolfinx.FunctionSpace(mesh, ("N1curl", order + 1))
 
     u = dolfinx.Function(V)
     v = dolfinx.Function(V1)
 
-    u.interpolate(lambda x: x)
+    u.interpolate(lambda x: x[:tdim] ** order)
     v.interpolate(u)
-
     s = dolfinx.fem.assemble_scalar(ufl.inner(u - v, u - v) * ufl.dx)
+    assert np.isclose(s, 0)
 
+
+@pytest.mark.parametrize("tdim", [2, 3])
+@pytest.mark.parametrize("order", [1, 2, 3])
+def test_interpolation_n1curl_to_dg(tdim, order):
+    if tdim == 2:
+        mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, 5, 5)
+    else:
+        mesh = dolfinx.UnitCubeMesh(MPI.COMM_WORLD, 2, 2, 2)
+    V = dolfinx.FunctionSpace(mesh, ("N1curl", order + 1))
+    V1 = dolfinx.VectorFunctionSpace(mesh, ("DG", order))
+
+    u = dolfinx.Function(V)
+    v = dolfinx.Function(V1)
+
+    u.interpolate(lambda x: x[:tdim] ** order)
+    v.interpolate(u)
+    s = dolfinx.fem.assemble_scalar(ufl.inner(u - v, u - v) * ufl.dx)
+    assert np.isclose(s, 0)
+
+
+@pytest.mark.parametrize("tdim", [2, 3])
+@pytest.mark.parametrize("order", [1, 2, 3])
+def test_interpolation_n2curl_to_bdm(tdim, order):
+    if tdim == 2:
+        mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, 5, 5)
+    else:
+        mesh = dolfinx.UnitCubeMesh(MPI.COMM_WORLD, 2, 2, 2)
+    V = dolfinx.FunctionSpace(mesh, ("N2curl", order))
+    V1 = dolfinx.FunctionSpace(mesh, ("BDM", order))
+
+    u = dolfinx.Function(V)
+    v = dolfinx.Function(V1)
+
+    u.interpolate(lambda x: x[:tdim] ** order)
+    v.interpolate(u)
+    s = dolfinx.fem.assemble_scalar(ufl.inner(u - v, u - v) * ufl.dx)
     assert np.isclose(s, 0)
 
 
@@ -281,7 +321,6 @@ def test_interpolation_p2p(order1, order2):
     DG = dolfinx.FunctionSpace(mesh, ("DG", order2))
     w = dolfinx.Function(DG)
     w.interpolate(u)
-
     s = dolfinx.fem.assemble_scalar(ufl.inner(u - w, u - w) * ufl.dx)
     assert np.isclose(s, 0)
 
@@ -305,7 +344,6 @@ def test_interpolation_vector_elements(order1, order2):
     DG = dolfinx.VectorFunctionSpace(mesh, ("DG", order2))
     w = dolfinx.Function(DG)
     w.interpolate(u)
-
     s = dolfinx.fem.assemble_scalar(ufl.inner(u - w, u - w) * ufl.dx)
     assert np.isclose(s, 0)
 
@@ -322,7 +360,7 @@ def test_interpolation_non_affine():
 
     cells = np.array([range(len(points))], dtype=np.int32)
     cell_type = dolfinx.cpp.mesh.CellType.hexahedron
-    domain = ufl.Mesh(ufl.VectorElement("Lagrange", dolfinx.cpp.mesh.to_string(cell_type), 2))
+    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell_type.name, 2))
     mesh = dolfinx.mesh.create_mesh(MPI.COMM_WORLD, cells, points, domain)
 
     W = dolfinx.FunctionSpace(mesh, ("NCE", 1))

@@ -5,15 +5,14 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "cell_types.h"
-#include "Geometry.h"
 #include <algorithm>
 #include <basix/cell.h>
 #include <cfloat>
 #include <cstdlib>
-#include <numeric>
 #include <stdexcept>
 #include <xtensor/xbuilder.hpp>
 #include <xtensor/xfixed.hpp>
+#include <xtensor/xtensor.hpp>
 
 using namespace dolfinx;
 

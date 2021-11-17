@@ -12,10 +12,9 @@ import numpy as np
 import pytest
 import ufl
 from dolfinx.cpp.io import perm_gmsh, perm_vtk
-from dolfinx.cpp.mesh import CellType
 from dolfinx.fem import assemble_scalar
 from dolfinx.io import XDMFFile, ufl_mesh_from_gmsh
-from dolfinx.mesh import create_mesh
+from dolfinx.mesh import CellType, create_mesh
 from dolfinx_utils.test.skips import skip_in_parallel
 from mpi4py import MPI
 from ufl import dx
@@ -653,3 +652,23 @@ def test_gmsh_input_3d(order, cell_type):
     volume = assemble_scalar(1 * dx(mesh))
 
     assert mesh.mpi_comm().allreduce(volume, op=MPI.SUM) == pytest.approx(np.pi, rel=10 ** (-1 - order))
+
+
+@skip_in_parallel
+def test_quadrilateral_cell_order_3():
+    points = [
+        [0., 0.], [1., 0.], [0., 1.], [1., 1.],
+        [1 / 3, 2 / 9], [2 / 3, 2 / 9],
+        [0., 1 / 3], [0., 2 / 3],
+        [1., 1 / 3], [1., 2 / 3],
+        [1 / 3, 1.], [2 / 3, 1.],
+        [1 / 3, 13 / 27], [2 / 3, 13 / 27],
+        [1 / 3, 20 / 27], [2 / 3, 20 / 27]
+    ]
+
+    cell = list(range(16))
+
+    domain = ufl.Mesh(ufl.VectorElement(
+        "Lagrange", ufl.Cell("quadrilateral", geometric_dimension=2), 3))
+
+    check_cell_volume(points, cell, domain, 5 / 6)

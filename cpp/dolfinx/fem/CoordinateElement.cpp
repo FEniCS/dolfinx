@@ -25,11 +25,12 @@ CoordinateElement::CoordinateElement(
   _is_affine = mesh::is_simplex(cell) and degree == 1;
 }
 //-----------------------------------------------------------------------------
-CoordinateElement::CoordinateElement(mesh::CellType celltype, int degree)
-    : CoordinateElement(
-        std::make_shared<basix::FiniteElement>(basix::create_element(
-            basix::element::family::P, mesh::cell_type_to_basix_type(celltype),
-            degree, basix::element::lagrange_variant::equispaced, false)))
+CoordinateElement::CoordinateElement(mesh::CellType celltype, int degree,
+                                     basix::element::lagrange_variant type)
+    : CoordinateElement(std::make_shared<basix::FiniteElement>(
+        basix::create_element(basix::element::family::P,
+                              mesh::cell_type_to_basix_type(celltype), degree,
+                              type, false)))
 {
   // Do nothing
 }
@@ -62,15 +63,11 @@ void CoordinateElement::tabulate(int n, const xt::xtensor<double, 2>& X,
   _element->tabulate(n, X, basis);
 }
 //--------------------------------------------------------------------------------
-ElementDofLayout CoordinateElement::dof_layout() const
+ElementDofLayout CoordinateElement::create_dof_layout() const
 {
   assert(_element);
-  std::vector<std::vector<std::vector<int>>> entity_dofs
-      = _element->entity_dofs();
-  std::vector<std::vector<std::vector<int>>> entity_closure_dofs
-      = _element->entity_closure_dofs();
-
-  return ElementDofLayout(1, entity_dofs, entity_closure_dofs, {}, {});
+  return ElementDofLayout(1, _element->entity_dofs(),
+                          _element->entity_closure_dofs(), {}, {});
 }
 //-----------------------------------------------------------------------------
 void CoordinateElement::push_forward(

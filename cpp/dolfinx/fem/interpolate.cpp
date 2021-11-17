@@ -6,10 +6,9 @@
 
 #include "interpolate.h"
 #include "FiniteElement.h"
+#include "FunctionSpace.h"
 #include <dolfinx/mesh/Mesh.h>
 #include <xtensor/xbuilder.hpp>
-#include <xtensor/xtensor.hpp>
-#include <xtensor/xview.hpp>
 
 using namespace dolfinx;
 
@@ -60,7 +59,6 @@ fem::interpolation_coords(const fem::FiniteElement& element,
       }
     }
   }
-
   return x;
 }
 //-----------------------------------------------------------------------------

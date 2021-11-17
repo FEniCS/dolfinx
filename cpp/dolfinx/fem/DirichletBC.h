@@ -6,9 +6,9 @@
 
 #pragma once
 
+#include "Function.h"
+#include "FunctionSpace.h"
 #include <array>
-#include <dolfinx/fem/Function.h>
-#include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/la/utils.h>
 #include <functional>
 #include <memory>

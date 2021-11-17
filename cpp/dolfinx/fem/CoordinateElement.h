@@ -7,10 +7,10 @@
 #pragma once
 
 #include "ElementDofLayout.h"
+#include <basix/element-families.h>
 #include <cstdint>
 #include <dolfinx/common/math.h>
 #include <dolfinx/mesh/cell_types.h>
-#include <functional>
 #include <memory>
 #include <xtensor/xtensor.hpp>
 #include <xtl/xspan.hpp>
@@ -36,7 +36,11 @@ public:
   /// Create a Lagrage coordinate element
   /// @param[in] celltype The cell shape
   /// @param[in] degree Polynomial degree of the map
-  CoordinateElement(mesh::CellType celltype, int degree);
+  /// @param[in] type The type of Lagrange element (see Basix
+  /// documentation for possible types)
+  CoordinateElement(mesh::CellType celltype, int degree,
+                    basix::element::lagrange_variant type
+                    = basix::element::lagrange_variant::equispaced);
 
   /// Destructor
   virtual ~CoordinateElement() = default;
@@ -125,7 +129,7 @@ public:
   }
 
   /// Compute and return the dof layout
-  ElementDofLayout dof_layout() const;
+  ElementDofLayout create_dof_layout() const;
 
   /// Compute physical coordinates x for points X  in the reference
   /// configuration
@@ -151,7 +155,8 @@ public:
   /// (shape=(num_points, tdim))
   /// @param[in] K The inverse of the geometry Jacobian (shape=(tdim,
   /// gdim))
-  /// @param[in] x0 The physical coordinate of reference coordinate X0=(0, 0, 0).
+  /// @param[in] x0 The physical coordinate of reference coordinate X0=(0, 0,
+  /// 0).
   /// @param[in] x The physical coordinates (shape=(num_points, gdim))
   static void pull_back_affine(xt::xtensor<double, 2>& X,
                                const xt::xtensor<double, 2>& K,
@@ -160,13 +165,15 @@ public:
 
   /// Compute reference coordinates X for physical coordinates x for a
   /// non-affine map.
-  /// @param [in,out] X The reference coordinates to compute (shape=(num_points, tdim))
+  /// @param [in,out] X The reference coordinates to compute (shape=(num_points,
+  /// tdim))
   /// @param [in] x The physical coordinates (shape=(num_points, gdim))
   /// @param [in] cell_geometry The cell nodes coordinates (shape=(num
   /// geometry nodes, gdim))
   /// @param [in] tol Tolerance for termination of Newton method.
   /// @param [in] maxit Maximum number of Newton iterations
-  /// @note If convergence is not achieved within maxit, the function throws a run-time error.
+  /// @note If convergence is not achieved within maxit, the function throws a
+  /// run-time error.
   void pull_back_nonaffine(xt::xtensor<double, 2>& X,
                            const xt::xtensor<double, 2>& x,
                            const xt::xtensor<double, 2>& cell_geometry,

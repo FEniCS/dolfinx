@@ -8,8 +8,6 @@
 
 #include "Geometry.h"
 #include "Topology.h"
-#include "cell_types.h"
-#include "utils.h"
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/UniqueIdGenerator.h>
 #include <string>
