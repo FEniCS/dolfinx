@@ -123,7 +123,7 @@ if (HAVE_O2_OPTIMISATION)
 endif()
 
 #------------------------------------------------------------------------------
-# Run tests to find required packages
+# Find required packages
 
 # Use Python for detecting UFC and Basix
 find_package(Python3 COMPONENTS Interpreter REQUIRED)
@@ -198,16 +198,14 @@ set_package_properties(UFC PROPERTIES TYPE REQUIRED
   URL "https://github.com/fenics/ffcx")
 
 #------------------------------------------------------------------------------
-# Run tests to find optional packages
+# Find optional packages
 
-# Check for ADIOS2
 find_package(ADIOS2 2.7.1)
 set_package_properties(ADIOS2 PROPERTIES TYPE OPTIONAL
   DESCRIPTION "Adaptable Input/Output (I/O) System."
   URL "https://adios2.readthedocs.io/en/latest/"
   PURPOSE "IO, including in parallel")
 
-# Check for SLEPc
 set(SLEPC_FOUND FALSE)
 if (DOLFINX_ENABLE_SLEPC)
   find_package(SLEPc 3.10)
@@ -216,7 +214,6 @@ if (DOLFINX_ENABLE_SLEPC)
     URL "http://slepc.upv.es/")
 endif()
 
-# Check for SCOTCH
 if (DOLFINX_ENABLE_SCOTCH)
   find_package(SCOTCH)
   set_package_properties(SCOTCH PROPERTIES TYPE OPTIONAL
@@ -225,7 +222,6 @@ if (DOLFINX_ENABLE_SCOTCH)
     PURPOSE "Parallel graph partitioning")
 endif()
 
-# Check for ParMETIS
 if (DOLFINX_ENABLE_PARMETIS)
   find_package(ParMETIS 4.0.2)
   set_package_properties(ParMETIS PROPERTIES TYPE OPTIONAL
@@ -234,7 +230,6 @@ if (DOLFINX_ENABLE_PARMETIS)
     PURPOSE "Parallel graph partitioning")
 endif()
 
-# Check for KaHIP
 if (DOLFINX_ENABLE_KAHIP)
   find_package(KaHIP)
   set_package_properties(KaHIP PROPERTIES TYPE OPTIONAL
