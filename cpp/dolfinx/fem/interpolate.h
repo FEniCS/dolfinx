@@ -516,7 +516,6 @@ void interpolate(
         }
 
         // Get element degrees of freedom for block
-<<<<<<< HEAD
         for (std::size_t i = 0; i < X.shape(0); ++i)
         {
           auto _K = xt::view(K, i, xt::all(), xt::all());
@@ -525,9 +524,6 @@ void interpolate(
           auto _U = xt::view(reference_data, i, xt::all(), xt::all());
           pull_back_fn(_U, _u, _K, 1.0 / detJ[i], _J);
         }
-=======
-        element->pull_back(_vals, J, detJ, K, reference_data);
->>>>>>> origin/main
 
         xt::xtensor<T, 2> ref_data
             = xt::transpose(xt::view(reference_data, xt::all(), 0, xt::all()));
