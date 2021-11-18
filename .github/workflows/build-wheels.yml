@@ -42,14 +42,12 @@ jobs:
   build_wheels:
     name: Build wheels
     runs-on: ubuntu-latest
+    container: fenicsproject/wheelbuilder_x64_64:latest
 
     env:
-      #CIBW_BUILD: "cp37-manylinux_x86_64 cp38-manylinux_x86_64 cp39-manylinux_x86_64"
-      #CIBW_BUILD: "cp38-manylinux_x86_64"
-      CIBW_MANYLINUX_X86_64_IMAGE: "docker.io/fenicsproject/wheelbuilder_x86_64:latest"
       PETSC4PY_VERSION: 3.16.0
       MPI4PY_VERSION: 3.1.2
-      PIP_EXTRA_INDEX_URL: "file:///${GITHUB_WORKSPACE}/wheels"
+      PIP_EXTRA_INDEX_URL: file:///${GITHUB_WORKSPACE}/wheels
 
     steps:
       - name: Clone DOLFINx
