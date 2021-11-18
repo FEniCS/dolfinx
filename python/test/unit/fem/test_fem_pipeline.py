@@ -472,20 +472,20 @@ def test_NC_hex(family, degree, cell_type, datadir):
 
 
 @parametrize_cell_types_quad
-@pytest.mark.parametrize("family", ["BDMCE", "BDMCE"])
+@pytest.mark.parametrize("family", ["BDMCE", "BDMCF"])
 @pytest.mark.parametrize("degree", [1, 2, 3])
 def test_BDM_quad(family, degree, cell_type, datadir):
-    pytest.skip("BDMCE and BDMCE spaces currently not implemented in basix")
+    pytest.skip("BDMCE and BDMCF spaces currently not implemented in basix")
     mesh = get_mesh(cell_type, datadir)
     V = FunctionSpace(mesh, (family, degree))
     run_vector_test(mesh, V, degree)
 
 
 @parametrize_cell_types_hex
-@pytest.mark.parametrize("family", ["AAE", "AAE"])
+@pytest.mark.parametrize("family", ["AAE", "AAF"])
 @pytest.mark.parametrize("degree", [1, 2, 3])
 def test_AA_hex(family, degree, cell_type, datadir):
-    pytest.skip("AAE and AAEÎ spaces currently not implemented in basix")
+    pytest.skip("AAE and AAF spaces currently not implemented in basix")
     mesh = get_mesh(cell_type, datadir)
     V = FunctionSpace(mesh, (family, degree))
     run_vector_test(mesh, V, degree)
