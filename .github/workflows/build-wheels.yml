@@ -39,77 +39,31 @@ on:
       - jhale/manylinux-docker-image
 
 jobs:
-  build_wheels:
-    name: Build wheels
+  build_mpi4py_wheels:
+    name: Build mpi4py wheels
     runs-on: ubuntu-latest
-    container: fenicsproject/wheelbuilder_x86_64:latest
 
     env:
-      PETSC4PY_VERSION: 3.16.0
       MPI4PY_VERSION: 3.1.2
-      PIP_EXTRA_INDEX_URL: file:///${GITHUB_WORKSPACE}/wheels
+      CIBW_MANYLINUX_X86_64_IMAGE: docker.io/fenicsproject/wheelbuilder_x86_64:latest
+      CIBW_BUILD: cp37-manylinux_x86_64 cp38-manylinux_x86_64 cp39-manylinux_x86_64
 
     steps:
-      - name: Clone DOLFINx
-        uses: actions/checkout@v2
-        with:
-          ref: ${{ inputs.dolfinx_ref }}
-          path: dolfinx
-      
       - name: Download mpi4py
         run: |
           curl -L -O https://github.com/mpi4py/mpi4py/releases/download/${MPI4PY_VERSION}/mpi4py-${MPI4PY_VERSION}.tar.gz
           mkdir -p mpi4py
           tar -xvf mpi4py-${MPI4PY_VERSION}.tar.gz -C mpi4py --strip-components 1
-
-      - name: Download petsc4py
-        run: |
-          curl -L -O https://pypi.io/packages/source/p/petsc4py/petsc4py-${PETSC4PY_VERSION}.tar.gz
-          mkdir -p petsc4py
-          tar -xvf petsc4py-${PETSC4PY_VERSION}.tar.gz -C petsc4py --strip-components 1
-
+      
       - uses: actions/setup-python@v2
 
-      - name: Setup temporary pip index
-        run: |
-          mkdir -p wheels
-          python -m pip install simple503
+      - name: Install Python dependencies
+        run: python -m pip install cibuildwheel simple503
 
       - name: Build mpi4py wheel
-        run: |
-          cd mpi4py
-          python -m pip wheel .
-          ls -A wheelhouse/* | xargs auditwheel repair
-          cp wheelhouse/* ${GITHUB_WORKSPACE}/wheels
-          cd ${GITHUB_WORKSPACE}/wheels
-          python -m simple503 --move --base-url file://$(pwd) . 
+        run: python -m cibuildwheel --output-dir wheelhouse
       
       - name: Upload artifacts
         uses: actions/upload-artifact@v2
         with:
-          path: ./wheels/*.whl
-
-
-  upload_pypi:
-    name: Upload to PyPI (optional)
-    needs: [build_wheels]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/download-artifact@v2
-        with:
-          name: artifact
-          path: dist
-
-      - uses: pypa/gh-action-pypi-publish@v1.4.2
-        if: ${{ inputs.test_pypi_publish }}
-        with:
-          user: __token__
-          password: ${{ secrets.PYPI_TOKEN }}
-          repository_url: https://pypi.org/legacy/
-
-      - uses: pypa/gh-action-pypi-publish@v1.4.2
-        if: ${{ inputs.pypi_publish }}
-        with:
-          user: __token__
-          password: ${{ secrets.PYPI_TEST_TOKEN }}
-          repository_url: https://test.pypi.org/legacy/
+          path: ./wheelhouse/*.whl
