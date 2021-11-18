@@ -58,13 +58,13 @@ jobs:
       
       - name: Download mpi4py
         run: |
-          wget https://github.com/mpi4py/mpi4py/releases/download/${MPI4PY_VERSION}/mpi4py-${MPI4PY_VERSION}.tar.gz
+          curl -L -O https://github.com/mpi4py/mpi4py/releases/download/${MPI4PY_VERSION}/mpi4py-${MPI4PY_VERSION}.tar.gz
           mkdir -p mpi4py
           tar -xvf mpi4py-${MPI4PY_VERSION}.tar.gz -C mpi4py --strip-components 1
 
       - name: Download petsc4py
         run: |
-          wget https://pypi.io/packages/source/p/petsc4py/petsc4py-${PETSC4PY_VERSION}.tar.gz
+          curl -L -O https://pypi.io/packages/source/p/petsc4py/petsc4py-${PETSC4PY_VERSION}.tar.gz
           mkdir -p petsc4py
           tar -xvf petsc4py-${PETSC4PY_VERSION}.tar.gz -C petsc4py --strip-components 1
 
