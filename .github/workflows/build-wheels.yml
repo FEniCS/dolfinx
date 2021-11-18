@@ -47,7 +47,7 @@ jobs:
       MPI4PY_VERSION: 3.1.2
       CIBW_MANYLINUX_X86_64_IMAGE: docker.io/fenicsproject/wheelbuilder_x86_64:latest
       CIBW_BUILD: cp37-manylinux_x86_64 cp38-manylinux_x86_64 cp39-manylinux_x86_64
-      CIBW_ENVIRONMENT: PIP_EXTRA_INDEX_URL=file://simple/
+      CIBW_ENVIRONMENT: PIP_EXTRA_INDEX_URL=file:///project/simple
 
     steps:
       - name: Download mpi4py
@@ -68,7 +68,13 @@ jobs:
         run: |
           mkdir -p simple
           mv wheelhouse/*.whl simple
-          python -m simple503 --move --base-url file://simple simple
+          python -m simple503 --move --base-url file:///project/simple simple
+      
+      - name: Download petsc4py
+        run: |
+          curl -L -O https://github.com/mpi4py/mpi4py/releases/download/${MPI4PY_VERSION}/mpi4py-${MPI4PY_VERSION}.tar.gz
+          mkdir -p mpi4py
+          tar -xf mpi4py-${MPI4PY_VERSION}.tar.gz -C mpi4py --strip-components 1
 
       - uses: actions/upload-artifact@v2
         with:
