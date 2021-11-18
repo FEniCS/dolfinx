@@ -89,6 +89,8 @@ jobs:
 
       - name: Clone DOLFINx
         uses: actions/checkout@v2
+        with:
+          path: dolfinx
 
       - name: Build DOLFINx wheel
         run: python -m cibuildwheel --output-dir wheelhouse dolfinx/python
