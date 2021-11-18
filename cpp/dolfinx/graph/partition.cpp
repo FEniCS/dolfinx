@@ -6,7 +6,6 @@
 
 #include "partition.h"
 #include "partitioners.h"
-#include "scotch.h"
 #include <algorithm>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/log.h>
@@ -29,8 +28,8 @@ graph::partition_graph(MPI_Comm comm, int nparts,
   return graph::scotch::partitioner()(comm, nparts, local_graph,
                                       num_ghost_nodes, ghosting);
 #elif HAS_KAHIP
-  return graph::kahip::partitioner()(comm, nparts, local_graph,
-                                      num_ghost_nodes, ghosting);
+  return graph::kahip::partitioner()(comm, nparts, local_graph, num_ghost_nodes,
+                                     ghosting);
 #else
 // Should never reach this point
 #endif
@@ -264,14 +263,12 @@ std::vector<std::int64_t> graph::build::compute_ghost_indices(
   for (int i = 0; i < num_local; ++i)
     old_to_new.insert({global_indices[i], offset_local + i});
 
-  std::for_each(recv_data.begin(), recv_data.end(),
-                [&old_to_new](auto& r)
-                {
-                  auto it = old_to_new.find(r);
-                  // Must exist on this process!
-                  assert(it != old_to_new.end());
-                  r = it->second;
-                });
+  std::for_each(recv_data.begin(), recv_data.end(), [&old_to_new](auto& r) {
+    auto it = old_to_new.find(r);
+    // Must exist on this process!
+    assert(it != old_to_new.end());
+    r = it->second;
+  });
 
   std::vector<std::int64_t> new_recv(send_data.size());
   MPI_Neighbor_alltoallv(recv_data.data(), recv_sizes.data(),
@@ -289,8 +286,7 @@ std::vector<std::int64_t> graph::build::compute_ghost_indices(
   }
 
   std::for_each(ghost_global_indices.begin(), ghost_global_indices.end(),
-                [&old_to_new](auto& q)
-                {
+                [&old_to_new](auto& q) {
                   const auto it = old_to_new.find(q);
                   assert(it != old_to_new.end());
                   q = it->second;
@@ -352,8 +348,7 @@ std::vector<std::int32_t> graph::build::compute_local_to_local(
   std::vector<std::int32_t> local0_to_local1;
   std::transform(local0_to_global.cbegin(), local0_to_global.cend(),
                  std::back_inserter(local0_to_local1),
-                 [&global_to_local1](auto l2g)
-                 {
+                 [&global_to_local1](auto l2g) {
                    auto it = global_to_local1.find(l2g);
                    assert(it != global_to_local1.end());
                    return it->second;
