@@ -40,14 +40,15 @@ on:
 
 jobs:
   build_wheels:
-    name: Build mpi4py wheels
+    name: Build wheels
     runs-on: ubuntu-latest
 
     env:
       MPI4PY_VERSION: 3.1.2
+      PETSC4PY_VERSION: 3.16.0
       CIBW_MANYLINUX_X86_64_IMAGE: docker.io/fenicsproject/wheelbuilder_x86_64:latest
       CIBW_BUILD: cp37-manylinux_x86_64 cp38-manylinux_x86_64 cp39-manylinux_x86_64
-      CIBW_ENVIRONMENT: PIP_EXTRA_INDEX_URL=file:///project/simple
+      CIBW_ENVIRONMENT: PIP_EXTRA_INDEX_URL=file:///project/simple PETSC_DIR=/usr/local
 
     steps:
       - name: Download mpi4py
@@ -61,7 +62,7 @@ jobs:
       - name: Install Python dependencies
         run: python -m pip install cibuildwheel simple503
 
-      - name: Build mpi4py wheel
+      - name: Build mpi4py wheels
         run: python -m cibuildwheel --output-dir wheelhouse mpi4py
 
       - name: Make temporary simple503 repository
@@ -76,7 +77,7 @@ jobs:
           mkdir -p petsc4py
           tar -xf petsc4py-${PETSC4PY_VERSION}.tar.gz -C petsc4py --strip-components 1
       
-      - name: Build petsc4py wheel
+      - name: Build petsc4py wheels
         run: python -m cibuildwheel --output-dir wheelhouse petsc4py
         env:
           CIBW_BEFORE_BUILD: python -m pip install numpy # Not specified correctly in petsc4py
@@ -89,11 +90,17 @@ jobs:
       - name: Clone DOLFINx
         uses: actions/checkout@v2
 
-      #- name: Build DOLFINx wheel
-      #  run: python -m cibuildwheel --output-dir wheelhouse dolfinx/python
-      #  env:
-      #    CIBW_BEFORE_BUILD: 
+      - name: Build DOLFINx wheel
+        run: python -m cibuildwheel --output-dir wheelhouse dolfinx/python
+        env:
+          CIBW_BEFORE_BUILD: python -m pip install git+https://github.com/FEniCS/basix.git && python -m pip install git+https://github.com/FEniCS/ffcx.git && cmake -S . -B build-dir -DPython3_EXECUTABLE=$(which python) && cmake --build build-dir && cmake --install build-dir
+      
+      - name: Update temporary simple503 repository
+        run: |
+          mv wheelhouse/*.whl simple
+          python -m simple503 --move --base-url file:///project/simple simple
 
       - uses: actions/upload-artifact@v2
+        if: always()
         with:
           path: simple/*
