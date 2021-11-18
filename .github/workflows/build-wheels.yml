@@ -37,7 +37,7 @@ on:
 jobs:
   build_wheels:
     name: Build wheels
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
 
     env:
       #CIBW_BUILD: "cp37-manylinux_x86_64 cp38-manylinux_x86_64 cp39-manylinux_x86_64"
@@ -64,12 +64,16 @@ jobs:
           wget https://pypi.io/packages/source/p/petsc4py/petsc4py-${PETSC4PY_VERSION}.tar.gz
           mkdir -p petsc4py
           tar -xvf petsc4py-${PETSC4PY_VERSION}.tar.gz -C petsc4py --strip-components 1
-      
-      - name: Build mpi4py wheels
-        uses: pypa/cibuildwheel@v2.1.2
-        working-directory: mpi4py
-        with:
-          wheel-dir: ../wheelhouse
+
+      - uses: actions/setup-python@v2
+
+      - name: Install cibuildwheel
+        run: python -m pip install cibuildwheel==2.2.2
+
+      - name: Build mpi4py wheel
+        run: |
+          cd mpi4py
+          python -m cibuildwheel --output-dir ../wheelhouse
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v2
