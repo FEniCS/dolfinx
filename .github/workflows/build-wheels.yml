@@ -42,7 +42,7 @@ jobs:
   build_wheels:
     name: Build wheels
     runs-on: ubuntu-latest
-    container: fenicsproject/wheelbuilder_x64_64:latest
+    container: fenicsproject/wheelbuilder_x86_64:latest
 
     env:
       PETSC4PY_VERSION: 3.16.0
