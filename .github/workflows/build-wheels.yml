@@ -87,7 +87,12 @@ jobs:
           python -m simple503 --move --base-url file:///project/simple simple
 
       - name: Clone DOLFINx
-        with: actions/checkout@v2
+        uses: actions/checkout@v2
+
+      #- name: Build DOLFINx wheel
+      #  run: python -m cibuildwheel --output-dir wheelhouse dolfinx/python
+      #  env:
+      #    CIBW_BEFORE_BUILD: 
 
       - uses: actions/upload-artifact@v2
         with:
