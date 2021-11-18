@@ -95,7 +95,7 @@ jobs:
       - name: Build DOLFINx wheel
         run: python -m cibuildwheel --output-dir wheelhouse dolfinx/python
         env:
-          CIBW_BEFORE_BUILD: python -m pip install git+https://github.com/FEniCS/basix.git && python -m pip install git+https://github.com/FEniCS/ffcx.git && cmake -S . -B build-dir -DPython3_EXECUTABLE=$(which python) && cmake --build build-dir && cmake --install build-dir
+          CIBW_BEFORE_BUILD: python -m pip install git+https://github.com/FEniCS/basix.git && python -m pip install git+https://github.com/FEniCS/ufl.git && python -m pip install git+https://github.com/FEniCS/ffcx.git && cmake -S . -B build-dir -DPython3_EXECUTABLE=$(which python) && cmake --build build-dir && cmake --install build-dir
       
       - name: Update temporary simple503 repository
         run: |
