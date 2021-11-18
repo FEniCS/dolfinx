@@ -19,7 +19,7 @@ ARG HDF5_PATCH=1
 WORKDIR /tmp
 
 RUN yum -y update && \
-    yum -y install flex bison openblas-devel ninja-build && \
+    yum -y install cmake flex bison openblas-devel ninja-build && \
     yum -y clean all && \
     rm -rf /var/cache
 

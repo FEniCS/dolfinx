@@ -197,6 +197,28 @@ set_package_properties(UFC PROPERTIES TYPE REQUIRED
   DESCRIPTION "Unified interface for form-compilers (part of FFCx)"
   URL "https://github.com/fenics/ffcx")
 
+# Check for Basix
+# Note: Basix may be installed as a standalone C++ library, or in the
+# Basix Python module tre
+execute_process(
+  COMMAND ${Python3_EXECUTABLE} -c "import basix, os, sys; sys.stdout.write(os.path.dirname(basix.__file__))"
+  OUTPUT_VARIABLE BASIX_PY_DIR
+  RESULT_VARIABLE BASIX_PY_COMMAND_RESULT
+  ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
+if (BASIX_PY_DIR)
+  message(STATUS "Adding ${BASIX_PY_DIR} to Basix search hints")
+endif()
+# PATHS for manylinux built wheels of basix
+find_package(Basix REQUIRED CONFIG HINTS ${BASIX_PY_DIR} PATHS ${BASIX_PY_DIR}/lib64/cmake/basix)
+set_package_properties(basix PROPERTIES TYPE REQUIRED
+  DESCRIPTION "FEniCS tabulation library"
+  URL "https://github.com/fenics/basix")
+
+  get_target_property(BASIX_DEFN Basix::basix INTERFACE_COMPILE_DEFINITIONS)
+  if("XTENSOR_USE_XSIMD" IN_LIST BASIX_DEFN)
+    find_package(xsimd REQUIRED)
+  endif()
+
 #------------------------------------------------------------------------------
 # Find optional packages
 
