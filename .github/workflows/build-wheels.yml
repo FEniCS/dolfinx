@@ -48,19 +48,19 @@ jobs:
 
     steps:
       - name: Clone DOLFINx
-      - uses: actions/checkout@v2
+        uses: actions/checkout@v2
         with:
           ref: ${{ inputs.dolfinx_ref }}
           path: dolfinx
       
       - name: Download mpi4py
-      - run: |
+        run: |
           wget https://github.com/mpi4py/mpi4py/releases/download/${MPI4PY_VERSION}/mpi4py-${MPI4PY_VERSION}.tar.gz
           mkdir -p mpi4py
           tar -xvf mpi4py-${MPI4PY_VERSION}.tar.gz -C mpi4py --strip-components 1
 
       - name: Download petsc4py
-      - run: |
+        run: |
           wget https://pypi.io/packages/source/p/petsc4py/petsc4py-${PETSC4PY_VERSION}.tar.gz
           mkdir -p petsc4py
           tar -xvf petsc4py-${PETSC4PY_VERSION}.tar.gz -C petsc4py --strip-components 1
