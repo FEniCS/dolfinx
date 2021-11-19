@@ -92,7 +92,7 @@ jobs:
       - name: Update temporary simple503 repository
         run: |
           cp wheelhouse/*.whl simple
-          python -m simple503 --move --base-url  simple
+          python -m simple503 --move --base-url file:///shared simple
 
       - uses: actions/upload-artifact@v2
         with:
