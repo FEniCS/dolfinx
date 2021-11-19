@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2020 Anders Logg and Garth N. Wells
+// Copyright (C) 2020-2021 Garth N. Wells and Matthew W. Scroggs
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -284,7 +284,6 @@ const xt::xtensor<double, 2>& FiniteElement::interpolation_operator() const
   return _element->interpolation_matrix();
 }
 //-----------------------------------------------------------------------------
-
 xt::xtensor<double, 2>
 FiniteElement::create_interpolation_operator(const FiniteElement& from) const
 {
@@ -296,8 +295,8 @@ FiniteElement::create_interpolation_operator(const FiniteElement& from) const
 
   if (_bs == 1 or from._bs == 1)
   {
-    // If one of the elements have bs=1, Basix can figure out the size of the
-    // matrix
+    // If one of the elements have bs=1, Basix can figure out the size
+    // of the matrix
     return basix::compute_interpolation_operator(*from._element, *_element);
   }
   else if (_bs > 1 and from._bs == _bs)
@@ -361,8 +360,8 @@ FiniteElement::get_dof_permutation_function(bool inverse,
     }
     else
     {
-      // If this element shouldn't be permuted but needs transformations, return
-      // a function that throws an error
+      // If this element shouldn't be permuted but needs
+      // transformations, return a function that throws an error
       return [](const xtl::span<std::int32_t>&, std::uint32_t)
       {
         throw std::runtime_error(

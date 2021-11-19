@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2020 Anders Logg and Garth N. Wells
+// Copyright (C) 2020-2021 Garth N. Wells and Matthew W. Scroggs
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -85,15 +85,16 @@ public:
   /// @return The string of the finite element family
   std::string family() const noexcept;
 
-  /// Evaluate all derivatives of the basis functions up to given order at given
-  /// points in reference cell
-  /// @param[in,out] values Four dimensional xtensor that will be filled with
-  /// the tabulated values. Should be of shape {num_derivatives, num_points,
-  /// num_dofs, reference_value_size}
-  /// @param[in] X Two dimensional xtensor of shape [num_points, geometric
-  /// dimension] containing the points at the reference element
-  /// @param[in] order The number of derivatives (up to and including this
-  /// order) to tabulate for.
+  /// Evaluate all derivatives of the basis functions up to given order
+  /// at given points in reference cell
+  /// @param[in,out] values Four dimensional xtensor that will be filled
+  /// with the tabulated values. Should be of shape {num_derivatives,
+  /// num_points, num_dofs, reference_value_size}
+  /// @param[in] X Two dimensional xtensor of shape [num_points,
+  /// geometric dimension] containing the points at the reference
+  /// element
+  /// @param[in] order The number of derivatives (up to and including
+  /// this order) to tabulate for
   void tabulate(xt::xtensor<double, 4>& values, const xt::xtensor<double, 2>& X,
                 int order) const;
 
@@ -190,70 +191,13 @@ public:
   /// @return The interpolation operator `Pi`
   const xt::xtensor<double, 2>& interpolation_operator() const;
 
-  /// @todo Document shape/layout of @p values
-  /// @todo Make the interpolating dofs in/out argument for efficiency
-  /// as this function is often called from within tight loops
-  /// @todo Consider handling block size > 1
-  /// @todo Re-work for fields that require a pull-back, e.g. Piola
-  /// mapped elements
-  ///
-  /// Interpolate a function in the finite element space on a cell.
-  /// Given the evaluation of the function to be interpolated at points
-  /// provided by @p FiniteElement::interpolation_points, it evaluates
-  /// the degrees of freedom for the interpolant.
-  ///
-  /// @param[in] values The values of the function. It has shape
-  /// (value_size, num_points), where `num_points` is the number of
-  /// points given by FiniteElement::interpolation_points.
-  /// @param[out] dofs The element degrees of freedom (interpolants) of
-  /// the expression. The call must allocate the space. Is has
-  template <typename T>
-  constexpr void interpolate(const xt::xtensor<T, 2>& values,
-                             const xtl::span<T>& dofs) const
-  {
-    if (!_element)
-    {
-      throw std::runtime_error("No underlying element for interpolation. "
-                               "Cannot interpolate mixed elements directly.");
-    }
-
-    const std::size_t rows = space_dimension();
-
-    const xt::xtensor<double, 2>& Pi = interpolation_operator();
-    assert(Pi.size() % rows == 0);
-    const std::size_t cols = Pi.size() / rows;
-
-    // Compute dofs = Pi * x (matrix-vector multiply)
-    if (_bs == 1)
-    {
-      for (std::size_t i = 0; i < rows; ++i)
-      {
-        // Can be replaced with std::transform_reduce once GCC 8 series dies.
-        // Dot product between row i of the matrix and 'values'
-        dofs[i] = std::inner_product(std::next(Pi.data(), i * cols),
-                                     std::next(Pi.data(), i * cols + cols),
-                                     values.data(), T(0.0));
-      }
-    }
-    else
-    {
-      for (int b = 0; b < _bs; ++b)
-      {
-        for (std::size_t i = 0; i < rows; ++i)
-        {
-          dofs[_bs * i + b] = 0;
-          for (std::size_t j = 0; j < cols; ++j)
-            dofs[_bs * i + b] += Pi(i, j) * values(b * cols + j);
-        }
-      }
-    }
-  }
-
   /// Create a matrix that maps degrees of freedom from one element to
   /// this element (interpolation)
   /// @param[in] from The element to interpolate from
   /// @return Matrix operator that maps the 'from' degrees-of-freedom to
-  /// the degrees-of-freedom of this element.
+  /// the degrees-of-freedom of this element
+  /// @note The two elements must use the same mapping between the
+  /// reference and physical cells
   /// @note Does not support mixed elements
   xt::xtensor<double, 2>
   create_interpolation_operator(const FiniteElement& from) const;
@@ -261,14 +205,14 @@ public:
   /// Check if DOF transformations are needed for this element.
   ///
   /// DOF transformations will be needed for elements which might not be
-  /// continuous when two neighbouring cells disagree on the orientation of
-  /// a shared subentity, and when this cannot be corrected for by permuting
-  /// the DOF numbering in the dofmap.
+  /// continuous when two neighbouring cells disagree on the orientation
+  /// of a shared subentity, and when this cannot be corrected for by
+  /// permuting the DOF numbering in the dofmap.
   ///
-  /// For example, Raviart-Thomas elements will need DOF transformations,
-  /// as the neighbouring cells may disagree on the orientation of a basis
-  /// function, and this orientation cannot be corrected for by permuting
-  /// the DOF numbers on each cell.
+  /// For example, Raviart-Thomas elements will need DOF
+  /// transformations, as the neighbouring cells may disagree on the
+  /// orientation of a basis function, and this orientation cannot be
+  /// corrected for by permuting the DOF numbers on each cell.
   ///
   /// @return True if DOF transformations are required
   bool needs_dof_transformations() const noexcept;
@@ -276,14 +220,15 @@ public:
   /// Check if DOF permutations are needed for this element.
   ///
   /// DOF permutations will be needed for elements which might not be
-  /// continuous when two neighbouring cells disagree on the orientation of
-  /// a shared subentity, and when this can be corrected for by permuting the
-  /// DOF numbering in the dofmap.
+  /// continuous when two neighbouring cells disagree on the orientation
+  /// of a shared subentity, and when this can be corrected for by
+  /// permuting the DOF numbering in the dofmap.
   ///
-  /// For example, higher order Lagrange elements will need DOF permutations,
-  /// as the arrangement of DOFs on a shared subentity may be different from the
-  /// point of view of neighbouring cells, and this can be corrected for by
-  /// permuting the DOF numbers on each cell.
+  /// For example, higher order Lagrange elements will need DOF
+  /// permutations, as the arrangement of DOFs on a shared subentity may
+  /// be different from the point of view of neighbouring cells, and
+  /// this can be corrected for by permuting the DOF numbers on each
+  /// cell.
   ///
   /// @return True if DOF transformations are required
   bool needs_dof_permutations() const noexcept;
@@ -296,12 +241,12 @@ public:
   /// - [in] cell The cell number
   /// - [in] block_size The block_size of the input data
   ///
-  /// @param[in] inverse Indicates whether the inverse transformations should be
-  /// returned
-  /// @param[in] transpose Indicates whether the transpose transformations
+  /// @param[in] inverse Indicates whether the inverse transformations
   /// should be returned
-  /// @param[in] scalar_element Indicates whether the scalar transformations
-  /// should be returned for a vector element
+  /// @param[in] transpose Indicates whether the transpose
+  /// transformations should be returned
+  /// @param[in] scalar_element Indicates whether the scalar
+  /// transformations should be returned for a vector element
   template <typename T>
   std::function<void(const xtl::span<T>&, const xtl::span<const std::uint32_t>&,
                      std::int32_t, int)>
@@ -605,7 +550,7 @@ public:
                                                cell_permutation);
   }
 
-  /// Apply DOF transformation to some tranposed data
+  /// Apply DOF transformation to some transposed data
   ///
   /// @param[in,out] data The data to be transformed
   /// @param[in] cell_permutation Permutation data for the cell
