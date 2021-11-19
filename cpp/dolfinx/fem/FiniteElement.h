@@ -98,16 +98,16 @@ public:
                 int order) const;
 
   /// Return a function that performs the appropriate
-  /// push-forward/pull-back for the element type
+  /// push-forward (pull-back) for the element type
   ///
-  /// @tparam O The type that hold the computed
-  /// pushed-forward/pulled-back (mapped) data (ndim==1)
-  /// @tparam P The type that hold the data to be pulled back/pushed
-  /// forwarded/ (ndim==1)
-  /// @tparam Q The type that holds the Jacobian/inverse Jacobian matrix
-  /// (ndim==2)
-  /// @tparam R The type that holds the inverse Jacobian/Jacobian matrix
-  /// (ndim==2)
+  /// @tparam O The type that hold the computed pushed-forward
+  /// (pulled-back)  data (ndim==1)
+  /// @tparam P The type that hold the data to be pulled back (pushed
+  /// forwarded) (ndim==1)
+  /// @tparam Q The type that holds the Jacobian (inverse Jacobian)
+  /// matrix (ndim==2)
+  /// @tparam R The type that holds the inverse Jacobian (Jacobian)
+  /// matrix (ndim==2)
   ///
   /// @return A function that for a push-forward takes arguments
   /// - `u` [out] The data on the physical cell after the
@@ -136,79 +136,6 @@ public:
   {
     assert(_element);
     return _element->map_fn<O, P, Q, R>();
-  }
-
-  // /// Push forward data to the physical element
-  // /// @param[out] values Function values on the physical domain (ndim=3)
-  // /// @param[in] reference_values Basis function values on the reference
-  // /// cell (ndim=3)
-  // /// @param[in] J The Jacobian of the map (shape=(num_points, gdim, tdim))
-  // /// @param[in] detJ The determinant of the Jacobian
-  // /// @param[in] K The inverse of the Jacobian (shape=(num_points, tdim, gdim))
-  // template <typename U, typename V, typename W, typename X>
-  // void push_forward(U&& values, const V& reference_values, const W& J,
-  //                   const xtl::span<const double>& detJ, const X& K) const
-  // {
-  //   assert(_element);
-  //   using u_t = xt::xview<decltype(values)&, std::size_t, xt::xall<std::size_t>,
-  //                         xt::xall<std::size_t>>;
-  //   using U_t = xt::xview<decltype(reference_values)&, std::size_t,
-  //                         xt::xall<std::size_t>, xt::xall<std::size_t>>;
-  //   using J_t = xt::xview<decltype(J)&, std::size_t, xt::xall<std::size_t>,
-  //                         xt::xall<std::size_t>>;
-  //   using K_t = xt::xview<decltype(K)&, std::size_t, xt::xall<std::size_t>,
-  //                         xt::xall<std::size_t>>;
-  //   auto map = _element->map_fn<u_t, U_t, J_t, K_t>();
-  //   for (std::size_t i = 0; i < values.shape(0); ++i)
-  //   {
-  //     auto _K = xt::view(K, i, xt::all(), xt::all());
-  //     auto _J = xt::view(J, i, xt::all(), xt::all());
-  //     auto _u = xt::view(values, i, xt::all(), xt::all());
-  //     auto _U = xt::view(reference_values, i, xt::all(), xt::all());
-  //     map(_u, _U, _J, detJ[i], _K);
-  //   }
-  // }
-
-  /// Pull back data from the physical element to the reference element.
-  /// It can process batches of points that share the same geometric
-  /// map.
-  /// @note This passes the inputs directly into the Basix
-  /// `map_pull_back` function
-  ///
-  /// @param[in] u Data defined on the physical element. It must have
-  /// dimension 3. The first index is for the geometric/map data, the
-  /// second is the point index for points that share map data, and the
-  /// third index is (vector) component, e.g. `u[i,:,:]` are points that
-  /// are mapped by `J[i,:,:]`.
-  /// @param[in] J The Jacobians. It must have dimension 3. The first
-  /// index is for the ith Jacobian, i.e. J[i,:,:] is the ith Jacobian.
-  /// @param[in] detJ The determinant of J. `detJ[i]` is
-  /// `det(J[i,:,:])`. It must have dimension 1.
-  /// @param[in] K The inverse of J, `K[i,:,:] = J[i,:,:]^-1`. It must
-  /// have dimension 3.
-  /// @param[out] U The input `u` mapped to the reference element. It
-  /// must have dimension 3.
-  template <typename O, typename P, typename Q, typename T, typename S>
-  void pull_back(const O& u, const P& J, const Q& detJ, const T& K, S&& U) const
-  {
-    assert(_element);
-    using u_t = xt::xview<decltype(u)&, std::size_t, xt::xall<std::size_t>,
-                          xt::xall<std::size_t>>;
-    using U_t = xt::xview<decltype(U)&, std::size_t, xt::xall<std::size_t>,
-                          xt::xall<std::size_t>>;
-    using J_t = xt::xview<decltype(J)&, std::size_t, xt::xall<std::size_t>,
-                          xt::xall<std::size_t>>;
-    using K_t = xt::xview<decltype(K)&, std::size_t, xt::xall<std::size_t>,
-                          xt::xall<std::size_t>>;
-    auto map = _element->map_fn<U_t, u_t, J_t, K_t>();
-    for (std::size_t i = 0; i < u.shape(0); ++i)
-    {
-      auto _K = xt::view(K, i, xt::all(), xt::all());
-      auto _J = xt::view(J, i, xt::all(), xt::all());
-      auto _u = xt::view(u, i, xt::all(), xt::all());
-      auto _U = xt::view(U, i, xt::all(), xt::all());
-      map(_U, _u, _K, 1.0 / detJ[i], _J);
-    }
   }
 
   /// Get the number of sub elements (for a mixed or blocked element)

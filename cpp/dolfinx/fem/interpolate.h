@@ -253,7 +253,13 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0)
                         xt::xall<std::size_t>>;
   using K_t = xt::xview<decltype(K)&, std::size_t, xt::xall<std::size_t>,
                         xt::xall<std::size_t>>;
-  auto push_forward_fn = element0->map_fn<u_t, U_t, J_t, K_t>();
+  auto push_forward_fn0 = element0->map_fn<u_t, U_t, J_t, K_t>();
+
+  using u1_t = xt::xview<decltype(values0)&, std::size_t, xt::xall<std::size_t>,
+                         xt::xall<std::size_t>>;
+  using U1_t = xt::xview<decltype(mapped_values0)&, std::size_t,
+                         xt::xall<std::size_t>, xt::xall<std::size_t>>;
+  auto pull_back_fn1 = element1->map_fn<U1_t, u1_t, K_t, J_t>();
 
   // Iterate over mesh and interpolate on each cell
   xtl::span<const T> array0 = u0.x()->array();
@@ -297,7 +303,7 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0)
       auto _J = xt::view(J, i, xt::all(), xt::all());
       auto _u = xt::view(basis0, i, xt::all(), xt::all());
       auto _U = xt::view(basis_reference0, i, xt::all(), xt::all());
-      push_forward_fn(_u, _U, _J, detJ[i], _K);
+      push_forward_fn0(_u, _U, _J, detJ[i], _K);
     }
 
     // Copy expansion coefficients for v into local array
@@ -322,7 +328,16 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0)
     }
 
     // Pull back the physical values to the u reference
-    element1->pull_back(values0, J, detJ, K, mapped_values0);
+    // element1->pull_back(values0, J, detJ, K, mapped_values0);
+    for (std::size_t i = 0; i < values0.shape(0); ++i)
+    {
+      auto _K = xt::view(K, i, xt::all(), xt::all());
+      auto _J = xt::view(J, i, xt::all(), xt::all());
+      auto _u = xt::view(values0, i, xt::all(), xt::all());
+      auto _U = xt::view(mapped_values0, i, xt::all(), xt::all());
+      pull_back_fn1(_U, _u, _K, 1.0 / detJ[i], _J);
+    }
+
     auto _mapped_values0 = xt::view(mapped_values0, xt::all(), 0, xt::all());
     interpolation_apply(Pi_1, _mapped_values0, local1, bs1);
     apply_inverse_dof_transform1(local1, cell_info, c, 1);
