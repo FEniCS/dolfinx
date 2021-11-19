@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.18)
 
 PROJECT(dolfinx_pybind11)
 
+# Development component which includes both Development.Module and
+# Development.Embed is not required for building a Python module.
 find_package(Python3 COMPONENTS Interpreter Development.Module REQUIRED)
 find_package(pybind11 REQUIRED CONFIG HINTS ${PYBIND11_DIR} ${PYBIND11_ROOT}
   $ENV{PYBIND11_DIR} $ENV{PYBIND11_ROOT})
@@ -34,6 +36,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Create the binding library
+# pybind11 handles its own calls to target_link_libraries
 pybind11_add_module(cpp MODULE
   dolfinx/wrappers/dolfin.cpp
   dolfinx/wrappers/common.cpp
@@ -61,7 +64,7 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
   target_compile_options(cpp PRIVATE "-fvisibility=default")
 endif()
 
-# Add DOLFINx libraries and the most minimal pybind11 target
+# Add DOLFINx libraries.
 target_link_libraries(cpp PRIVATE dolfinx)
 
 # Add xsimd if the Basix C++ interface was compiled with it

@@ -8,32 +8,16 @@ on:
     inputs:
       dolfinx_ref:
         description: "dolfinx git ref to checkout"
-        default: "main"
+        default: ""
         type: string
-      test_pypi_publish:
-        description: "Publish to Test PyPi (true | false)"
-        default: false
-        type: boolean
-      pypi_publish:
-        description: "Publish to PyPi (true | false)"
-        default: false
-        type: boolean
 
   workflow_call:
     inputs:
-      basix_ref:
+      dolfinx_ref:
         description: "dolfinx git ref to checkout"
-        default: "main"
+        default: ""
         type: string
-      test_pypi_publish:
-        description: "Publish to Test PyPi (true | false)"
-        default: false
-        type: boolean
-      pypi_publish:
-        description: "Publish to PyPi (true | false))"
-        default: false
-        type: boolean
-  
+
   push:
     branches:
       - jhale/manylinux-docker-image
@@ -58,7 +42,7 @@ jobs:
           curl -L -O https://github.com/mpi4py/mpi4py/releases/download/${MPI4PY_VERSION}/mpi4py-${MPI4PY_VERSION}.tar.gz
           mkdir -p mpi4py
           tar -xf mpi4py-${MPI4PY_VERSION}.tar.gz -C mpi4py --strip-components 1
-      
+
       - uses: actions/setup-python@v2
 
       - name: Install Python dependencies
@@ -70,42 +54,71 @@ jobs:
       - name: Make temporary simple503 repository
         run: |
           mkdir -p simple
-          mv wheelhouse/*.whl simple
+          cp wheelhouse/*.whl simple
           python -m simple503 --move --base-url file:///project/simple simple
-      
+
       - name: Download petsc4py
         run: |
           curl -L -O https://pypi.io/packages/source/p/petsc4py/petsc4py-${PETSC4PY_VERSION}.tar.gz
           mkdir -p petsc4py
           tar -xf petsc4py-${PETSC4PY_VERSION}.tar.gz -C petsc4py --strip-components 1
-      
+
       - name: Build petsc4py wheels
         run: python -m cibuildwheel --output-dir wheelhouse petsc4py
         env:
           CIBW_BEFORE_BUILD: python -m pip install numpy # Not specified correctly in petsc4py
-      
+
       - name: Update temporary simple503 repository
         run: |
-          mv wheelhouse/*.whl simple
+          cp wheelhouse/*.whl simple
           python -m simple503 --move --base-url file:///project/simple simple
 
-      - name: Clone DOLFINx
+      # TODO: Turn ref on
+      - name: Checkout DOLFINx
         uses: actions/checkout@v2
         with:
           path: dolfinx
+          #ref: ${{ inputs.dolfinx_ref }}
 
+      # TODO: Other FEniCS packages should come from pypi or test pypi
       - name: Build DOLFINx wheel
         run: python -m cibuildwheel --output-dir wheelhouse dolfinx/python
         env:
-          CIBW_BEFORE_BUILD: python -m pip install git+https://github.com/FEniCS/basix.git && python -m pip install git+https://github.com/FEniCS/ufl.git && python -m pip install git+https://github.com/FEniCS/ffcx.git && python -m pip install mpi4py petsc4py && cmake -S dolfinx/cpp -B build-dir -DPython3_EXECUTABLE=$(which python) && cmake --build build-dir && cmake --install build-dir
-     
-      # TODO: Finalise URL for upload 
+          CIBW_BEFORE_BUILD: >>
+            python -m pip install git+https://github.com/FEniCS/basix.git &&
+            python -m pip install git+https://github.com/FEniCS/ufl.git &&
+            python -m pip install git+https://github.com/FEniCS/ffcx.git &&
+            python -m pip install mpi4py petsc4py &&
+            cmake -S dolfinx/cpp -B build-dir -DPython3_EXECUTABLE=$(which python) &&
+            cmake --build build-dir &&
+            cmake --install build-dir
+          #CIBW_TEST_REQUIRES: pytest pytest-xdist
+          #CIBW_TEST_COMMAND: python -m pytest -n=2 {project}/python/test/unit/ && mpirun -np 2 python -m pytest {project}/python/test/unit/
+
+      # docker run -ti -v $(pwd):/shared --env PIP_EXTRA_INDEX_URL=file:///shared python:3.9 /bin/bash -l
       - name: Update temporary simple503 repository
         run: |
-          mv wheelhouse/*.whl simple
-          python -m simple503 --move --base-url file:///shared simple
+          cp wheelhouse/*.whl simple
+          python -m simple503 --move --base-url  simple
 
       - uses: actions/upload-artifact@v2
-        if: always()
         with:
+          name: "simple503-test"
+          path: simple/*
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: wheelhouse
+          path: wheelhouse/*
+
+      # TODO: Prettier URL
+      # TODO: Download existing files?
+      - name: Update FEniCS Project simple503 repository
+        run: |
+          python -m simple503 --move --base-url http://packages.fenicsproject.org.s3-website-eu-west-1.amazonaws.com/simple simple
+
+      # For manual upload.
+      - uses: actions/upload-artifact@v2
+        with:
+          name: "simple503"
           path: simple/*
