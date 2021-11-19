@@ -34,7 +34,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Create the binding library
-pybind11_add_module(cpp SHARED
+pybind11_add_module(cpp MODULE
   dolfinx/wrappers/dolfin.cpp
   dolfinx/wrappers/common.cpp
   dolfinx/wrappers/fem.cpp
@@ -46,7 +46,7 @@ pybind11_add_module(cpp SHARED
   dolfinx/wrappers/log.cpp
   dolfinx/wrappers/mesh.cpp
   dolfinx/wrappers/nls.cpp
-  dolfinx/wrappers/refinement.cpp MODULE)
+  dolfinx/wrappers/refinement.cpp)
 
 # Add srict compiler flags
 include(CheckCXXCompilerFlag)
