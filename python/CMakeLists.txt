@@ -2,10 +2,10 @@ cmake_minimum_required(VERSION 3.18)
 
 PROJECT(dolfinx_pybind11)
 
+find_package(Python3 COMPONENTS Interpreter Development.Module REQUIRED)
 find_package(pybind11 REQUIRED CONFIG HINTS ${PYBIND11_DIR} ${PYBIND11_ROOT}
   $ENV{PYBIND11_DIR} $ENV{PYBIND11_ROOT})
 
-find_package(Python3 COMPONENTS Interpreter Development.Module REQUIRED)
 execute_process(
   COMMAND ${Python3_EXECUTABLE} -c "import basix, os, sys; sys.stdout.write(os.path.dirname(basix.__file__))"
   OUTPUT_VARIABLE BASIX_PY_DIR

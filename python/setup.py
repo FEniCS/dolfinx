@@ -3,6 +3,7 @@ import platform
 import re
 import subprocess
 import sys
+import sysconfig
 
 from setuptools import Extension, setup
 from setuptools.command.build_ext import build_ext
@@ -43,7 +44,8 @@ class CMakeBuild(build_ext):
         extdir = os.path.abspath(os.path.dirname(self.get_ext_fullpath(ext.name)))
         cmake_args = ['-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=' + extdir,
                       '-DPython3_EXECUTABLE=' + sys.executable,
-                      '-DPython3_FIND_VIRTUALENV=FIRST']
+                      f'-DPython3_LIBRARIES={sysconfig.get_config_var("LIBDEST")}',
+                      f'-DPython3_INCLUDE_DIRS={sysconfig.get_config_var("INCLUDEPY")}']
 
         cfg = 'Debug' if self.debug else 'Release'
         build_args = ['--config', cfg]
