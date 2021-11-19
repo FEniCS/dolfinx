@@ -215,6 +215,9 @@ def random_evaluation_mesh(cell_type):
 )
 @pytest.mark.parametrize('space_order', range(1, 4))
 def test_evaluation(cell_type, space_type, space_order):
+    if cell_type == "hexahedron" and space_order >= 3:
+        pytest.skip("Skipping expensive test on hexahedron")
+
     random.seed(4)
     for repeat in range(10):
         mesh = random_evaluation_mesh(cell_type)
@@ -265,6 +268,9 @@ def test_evaluation(cell_type, space_type, space_order):
 )
 @pytest.mark.parametrize('space_order', range(1, 4))
 def test_integral(cell_type, space_type, space_order):
+    if cell_type == "hexahedron" and space_order >= 3:
+        pytest.skip("Skipping expensive test on hexahedron")
+
     random.seed(4)
     for repeat in range(10):
         mesh = random_evaluation_mesh(cell_type)

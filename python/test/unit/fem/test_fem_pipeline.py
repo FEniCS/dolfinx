@@ -426,6 +426,8 @@ def test_P_tp_built_in_mesh(family, degree, cell_type, datadir):
 @pytest.mark.parametrize("family", ["Q"])
 @pytest.mark.parametrize("degree", [2, 3, 4])
 def test_vector_P_tp(family, degree, cell_type, datadir):
+    if cell_type == CellType.hexahedron and degree == 4:
+        pytest.skip("Skip expensive test on hexahedron")
     mesh = get_mesh(cell_type, datadir)
     V = VectorFunctionSpace(mesh, (family, degree))
     run_vector_test(mesh, V, degree)
