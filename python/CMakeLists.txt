@@ -46,7 +46,7 @@ pybind11_add_module(cpp SHARED
   dolfinx/wrappers/log.cpp
   dolfinx/wrappers/mesh.cpp
   dolfinx/wrappers/nls.cpp
-  dolfinx/wrappers/refinement.cpp)
+  dolfinx/wrappers/refinement.cpp MODULE)
 
 # Add srict compiler flags
 include(CheckCXXCompilerFlag)
