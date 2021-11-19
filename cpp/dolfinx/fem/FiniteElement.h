@@ -97,20 +97,45 @@ public:
   void tabulate(xt::xtensor<double, 4>& values, const xt::xtensor<double, 2>& X,
                 int order) const;
 
-  /// Push forward data to the physical element
-  /// @param[out] values Function values on the physical domain (ndim=3)
-  /// @param[in] reference_values Basis function values on the reference
-  /// cell (ndim=3)
-  /// @param[in] J The Jacobian of the map (shape=(num_points, gdim, tdim))
-  /// @param[in] detJ The determinant of the Jacobian
-  /// @param[in] K The inverse of the Jacobian (shape=(num_points, tdim, gdim))
-  template <typename U, typename V, typename W, typename X>
-  constexpr void push_forward(U&& values, const V& reference_values, const W& J,
-                              const xtl::span<const double>& detJ,
-                              const X& K) const
+  /// Return a function that performs the appropriate
+  /// push-forward (pull-back) for the element type
+  ///
+  /// @tparam O The type that hold the computed pushed-forward
+  /// (pulled-back)  data (ndim==1)
+  /// @tparam P The type that hold the data to be pulled back (pushed
+  /// forwarded) (ndim==1)
+  /// @tparam Q The type that holds the Jacobian (inverse Jacobian)
+  /// matrix (ndim==2)
+  /// @tparam R The type that holds the inverse Jacobian (Jacobian)
+  /// matrix (ndim==2)
+  ///
+  /// @return A function that for a push-forward takes arguments
+  /// - `u` [out] The data on the physical cell after the
+  /// push-forward flattened with row-major layout, shape=(num_points,
+  /// value_size)
+  /// - `U` [in] The data on the reference cell physical field to push
+  /// forward, flattened with row-major layout, shape=(num_points,
+  /// ref_value_size)
+  /// - `J` [in] The Jacobian matrix of the map ,shape=(gdim, tdim)
+  /// - `detJ` [in] det(J)
+  /// - `K` [in] The inverse of the Jacobian matrix, shape=(tdim, gdim)
+  ///
+  /// For a pull-back the passed arguments should be:
+  /// - `U` [out] The data on the reference cell after the pull-back,
+  /// flattened with row-major layout, shape=(num_points, ref
+  /// value_size)
+  /// - `u` [in] The data on the physical cell that should be pulled
+  /// back , flattened with row-major layout, shape=(num_points,
+  /// value_size)
+  /// - `K` [in] The inverse oif the Jacobian matrix of the map
+  /// ,shape=(tdim, gdim)
+  /// - `detJ_inv` [in] 1/det(J)
+  /// - `J` [in] The Jacobian matrix, shape=(gdim, tdim)
+  template <typename O, typename P, typename Q, typename R>
+  std::function<void(O&, const P&, const Q&, double, const R&)> map_fn() const
   {
     assert(_element);
-    _element->map_push_forward_m(reference_values, J, detJ, K, values);
+    return _element->map_fn<O, P, Q, R>();
   }
 
   /// Get the number of sub elements (for a mixed or blocked element)
@@ -639,31 +664,6 @@ public:
     assert(_element);
     _element->apply_inverse_transpose_dof_transformation_to_transpose(
         data, block_size, cell_permutation);
-  }
-
-  /// Pull back data from the physical element to the reference element.
-  /// It can process batches of points that share the same geometric
-  /// map. @note This passes the inputs directly into the Basix
-  /// `map_pull_back` function
-  ///
-  /// @param[in] u Data defined on the physical element. It must have
-  /// dimension 3. The first index is for the geometric/map data, the
-  /// second is the point index for points that share map data, and the
-  /// third index is (vector) component, e.g. `u[i,:,:]` are points that
-  /// are mapped by `J[i,:,:]`.
-  /// @param[in] J The Jacobians. It must have dimension 3. The first
-  /// index is for the ith Jacobian, i.e. J[i,:,:] is the ith Jacobian.
-  /// @param[in] detJ The determinant of J. `detJ[i]` is
-  /// `det(J[i,:,:])`. It must have dimension 1.
-  /// @param[in] K The inverse of J, `K[i,:,:] = J[i,:,:]^-1`. It must
-  /// have dimension 3.
-  /// @param[out] U The input `u` mapped to the reference element. It
-  /// must have dimension 3.
-  template <typename O, typename P, typename Q, typename T, typename S>
-  void pull_back(const O& u, const P& J, const Q& detJ, const T& K, S&& U) const
-  {
-    assert(_element);
-    _element->map_pull_back_m(u, J, detJ, K, U);
   }
 
   /// Permute the DOFs of the element
