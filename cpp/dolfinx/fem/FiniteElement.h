@@ -97,37 +97,77 @@ public:
   void tabulate(xt::xtensor<double, 4>& values, const xt::xtensor<double, 2>& X,
                 int order) const;
 
-  /// Push forward data to the physical element
-  /// @param[out] values Function values on the physical domain (ndim=3)
-  /// @param[in] reference_values Basis function values on the reference
-  /// cell (ndim=3)
-  /// @param[in] J The Jacobian of the map (shape=(num_points, gdim, tdim))
-  /// @param[in] detJ The determinant of the Jacobian
-  /// @param[in] K The inverse of the Jacobian (shape=(num_points, tdim, gdim))
-  template <typename U, typename V, typename W, typename X>
-  constexpr void push_forward(U&& values, const V& reference_values, const W& J,
-                              const xtl::span<const double>& detJ,
-                              const X& K) const
+  /// Return a function that performs the appropriate
+  /// push-forward/pull-back for the element type
+  ///
+  /// @tparam O The type that hold the computed
+  /// pushed-forward/pulled-back (mapped) data (ndim==1)
+  /// @tparam P The type that hold the data to be pulled back/pushed
+  /// forwarded/ (ndim==1)
+  /// @tparam Q The type that holds the Jacobian/inverse Jacobian matrix
+  /// (ndim==2)
+  /// @tparam R The type that holds the inverse Jacobian/Jacobian matrix
+  /// (ndim==2)
+  ///
+  /// @return A function that for a push-forward takes arguments
+  /// - `u` [out] The data on the physical cell after the
+  /// push-forward flattened with row-major layout, shape=(num_points,
+  /// value_size)
+  /// - `U` [in] The data on the reference cell physical field to push
+  /// forward, flattened with row-major layout, shape=(num_points,
+  /// ref_value_size)
+  /// - `J` [in] The Jacobian matrix of the map ,shape=(gdim, tdim)
+  /// - `detJ` [in] det(J)
+  /// - `K` [in] The inverse of the Jacobian matrix, shape=(tdim, gdim)
+  ///
+  /// For a pull-back the passed arguments should be:
+  /// - `U` [out] The data on the reference cell after the pull-back,
+  /// flattened with row-major layout, shape=(num_points, ref
+  /// value_size)
+  /// - `u` [in] The data on the physical cell that should be pulled
+  /// back , flattened with row-major layout, shape=(num_points,
+  /// value_size)
+  /// - `K` [in] The inverse oif the Jacobian matrix of the map
+  /// ,shape=(tdim, gdim)
+  /// - `detJ_inv` [in] 1/det(J)
+  /// - `J` [in] The Jacobian matrix, shape=(gdim, tdim)
+  template <typename O, typename P, typename Q, typename R>
+  std::function<void(O&, const P&, const Q&, double, const R&)> map_fn() const
   {
     assert(_element);
-    using u_t = xt::xview<decltype(values)&, std::size_t, xt::xall<std::size_t>,
-                          xt::xall<std::size_t>>;
-    using U_t = xt::xview<decltype(reference_values)&, std::size_t,
-                          xt::xall<std::size_t>, xt::xall<std::size_t>>;
-    using J_t = xt::xview<decltype(J)&, std::size_t, xt::xall<std::size_t>,
-                          xt::xall<std::size_t>>;
-    using K_t = xt::xview<decltype(K)&, std::size_t, xt::xall<std::size_t>,
-                          xt::xall<std::size_t>>;
-    auto map = _element->map_fn<u_t, U_t, J_t, K_t>();
-    for (std::size_t i = 0; i < values.shape(0); ++i)
-    {
-      auto _K = xt::view(K, i, xt::all(), xt::all());
-      auto _J = xt::view(J, i, xt::all(), xt::all());
-      auto _u = xt::view(values, i, xt::all(), xt::all());
-      auto _U = xt::view(reference_values, i, xt::all(), xt::all());
-      map(_u, _U, _J, detJ[i], _K);
-    }
+    return _element->map_fn<O, P, Q, R>();
   }
+
+  // /// Push forward data to the physical element
+  // /// @param[out] values Function values on the physical domain (ndim=3)
+  // /// @param[in] reference_values Basis function values on the reference
+  // /// cell (ndim=3)
+  // /// @param[in] J The Jacobian of the map (shape=(num_points, gdim, tdim))
+  // /// @param[in] detJ The determinant of the Jacobian
+  // /// @param[in] K The inverse of the Jacobian (shape=(num_points, tdim, gdim))
+  // template <typename U, typename V, typename W, typename X>
+  // void push_forward(U&& values, const V& reference_values, const W& J,
+  //                   const xtl::span<const double>& detJ, const X& K) const
+  // {
+  //   assert(_element);
+  //   using u_t = xt::xview<decltype(values)&, std::size_t, xt::xall<std::size_t>,
+  //                         xt::xall<std::size_t>>;
+  //   using U_t = xt::xview<decltype(reference_values)&, std::size_t,
+  //                         xt::xall<std::size_t>, xt::xall<std::size_t>>;
+  //   using J_t = xt::xview<decltype(J)&, std::size_t, xt::xall<std::size_t>,
+  //                         xt::xall<std::size_t>>;
+  //   using K_t = xt::xview<decltype(K)&, std::size_t, xt::xall<std::size_t>,
+  //                         xt::xall<std::size_t>>;
+  //   auto map = _element->map_fn<u_t, U_t, J_t, K_t>();
+  //   for (std::size_t i = 0; i < values.shape(0); ++i)
+  //   {
+  //     auto _K = xt::view(K, i, xt::all(), xt::all());
+  //     auto _J = xt::view(J, i, xt::all(), xt::all());
+  //     auto _u = xt::view(values, i, xt::all(), xt::all());
+  //     auto _U = xt::view(reference_values, i, xt::all(), xt::all());
+  //     map(_u, _U, _J, detJ[i], _K);
+  //   }
+  // }
 
   /// Pull back data from the physical element to the reference element.
   /// It can process batches of points that share the same geometric
@@ -169,9 +209,6 @@ public:
       auto _U = xt::view(U, i, xt::all(), xt::all());
       map(_U, _u, _K, 1.0 / detJ[i], _J);
     }
-
-    // assert(_element);
-    // _element->map_pull_back_m(u, J, detJ, K, U);
   }
 
   /// Get the number of sub elements (for a mixed or blocked element)
@@ -700,39 +737,6 @@ public:
     assert(_element);
     _element->apply_inverse_transpose_dof_transformation_to_transpose(
         data, block_size, cell_permutation);
-  }
-
-  /// Return a function that performs the appropriate push-forward for
-  /// the element type
-  ///
-  /// @tparam O The type that hold the computed pushed-forward data
-  /// (ndim==1)
-  /// @tparam P The type that hold the data to be pulled back (ndim==1)
-  /// @tparam Q The type that holds the Jacobian matrix (ndim==2)
-  /// @tparam R The type that holds the inverse of the Jacobian matrix
-  /// (ndim==2)
-  /// @return A function that takes arguments
-  /// - `u` [out] The data on the physical cell after the
-  /// push-forward, flattened with row-major layout
-  /// - `U` [in] The data on the reference cell physical field to push
-  /// forward, flattened with row-major layout
-  /// - `J` [in] The Jacobian matrix of the map
-  /// - `detJ` [in] det(J)
-  /// - `K` [in] The inverse of the Jacobian matrix
-  ///
-  /// @note A pull back can be computed using this function by changing
-  /// the order of the arguments:
-  /// - `u` -> `U`
-  /// - `U` -> `u`
-  /// - `J` -> `K`
-  /// - `det(J)` -> 1.0/det(J)
-  /// - `K` -> `J`
-  template <typename O, typename P, typename Q, typename R>
-  std::function<void(O&, const P&, const Q&, double, const R&)>
-  push_forward_fn() const
-  {
-    assert(_element);
-    return _element->map_fn<O, P, Q, R>();
   }
 
   /// Permute the DOFs of the element

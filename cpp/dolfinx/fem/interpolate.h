@@ -245,6 +245,16 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0)
   // Get interpolation operator
   const xt::xtensor<double, 2>& Pi_1 = element1->interpolation_operator();
 
+  using u_t = xt::xview<decltype(basis_reference0)&, std::size_t,
+                        xt::xall<std::size_t>, xt::xall<std::size_t>>;
+  using U_t = xt::xview<decltype(basis_reference0)&, std::size_t,
+                        xt::xall<std::size_t>, xt::xall<std::size_t>>;
+  using J_t = xt::xview<decltype(J)&, std::size_t, xt::xall<std::size_t>,
+                        xt::xall<std::size_t>>;
+  using K_t = xt::xview<decltype(K)&, std::size_t, xt::xall<std::size_t>,
+                        xt::xall<std::size_t>>;
+  auto push_forward_fn = element0->map_fn<u_t, U_t, J_t, K_t>();
+
   // Iterate over mesh and interpolate on each cell
   xtl::span<const T> array0 = u0.x()->array();
   xtl::span<T> array1 = u1.x()->mutable_array();
@@ -280,7 +290,15 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0)
                     dim0 * value_size_ref0),
           cell_info, c, value_size_ref0);
     }
-    element0->push_forward(basis0, basis_reference0, J, detJ, K);
+    // element0->push_forward(basis0, basis_reference0, J, detJ, K);
+    for (std::size_t i = 0; i < basis0.shape(0); ++i)
+    {
+      auto _K = xt::view(K, i, xt::all(), xt::all());
+      auto _J = xt::view(J, i, xt::all(), xt::all());
+      auto _u = xt::view(basis0, i, xt::all(), xt::all());
+      auto _U = xt::view(basis_reference0, i, xt::all(), xt::all());
+      push_forward_fn(_u, _U, _J, detJ[i], _K);
+    }
 
     // Copy expansion coefficients for v into local array
     xtl::span<const std::int32_t> dofs0 = dofmap0->cell_dofs(c);
@@ -481,8 +499,9 @@ void interpolate(
                     xt::xall<std::size_t>, xt::xall<std::size_t>>;
     using xview_x_t = xt::xview<decltype(J)&, std::size_t,
                                 xt::xall<std::size_t>, xt::xall<std::size_t>>;
-    auto pull_back_fn = element->push_forward_fn<xview_scalar_t, xview_scalar_t,
-                                                 xview_x_t, xview_x_t>();
+    auto pull_back_fn
+        = element
+              ->map_fn<xview_scalar_t, xview_scalar_t, xview_x_t, xview_x_t>();
 
     for (std::int32_t c : cells)
     {
