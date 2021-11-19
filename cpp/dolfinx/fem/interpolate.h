@@ -296,7 +296,7 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0)
                     dim0 * value_size_ref0),
           cell_info, c, value_size_ref0);
     }
-    // element0->push_forward(basis0, basis_reference0, J, detJ, K);
+
     for (std::size_t i = 0; i < basis0.shape(0); ++i)
     {
       auto _K = xt::view(K, i, xt::all(), xt::all());
@@ -328,7 +328,6 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0)
     }
 
     // Pull back the physical values to the u reference
-    // element1->pull_back(values0, J, detJ, K, mapped_values0);
     for (std::size_t i = 0; i < values0.shape(0); ++i)
     {
       auto _K = xt::view(K, i, xt::all(), xt::all());
