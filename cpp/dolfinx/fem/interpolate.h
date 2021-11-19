@@ -481,9 +481,8 @@ void interpolate(
                     xt::xall<std::size_t>, xt::xall<std::size_t>>;
     using xview_x_t = xt::xview<decltype(J)&, std::size_t,
                                 xt::xall<std::size_t>, xt::xall<std::size_t>>;
-    auto pull_back_fn
-        = element->map_pull_back_fn<xview_scalar_t, xview_scalar_t, xview_x_t,
-                                    xview_x_t>();
+    auto pull_back_fn = element->push_forward_fn<xview_scalar_t, xview_scalar_t,
+                                                 xview_x_t, xview_x_t>();
 
     for (std::int32_t c : cells)
     {
@@ -524,7 +523,6 @@ void interpolate(
           auto _U = xt::view(reference_data, i, xt::all(), xt::all());
           pull_back_fn(_U, _u, _K, 1.0 / detJ[i], _J);
         }
-        // element->pull_back(_vals, J, detJ, K, reference_data);
 
         xt::xtensor<T, 2> ref_data
             = xt::transpose(xt::view(reference_data, xt::all(), 0, xt::all()));

@@ -666,13 +666,37 @@ public:
     _element->map_pull_back_m(u, J, detJ, K, U);
   }
 
-  /// Get function for mapping to data referece space <-> physical space
+  /// Return a function that performs the appropriate push-forward for
+  /// the element type
+  ///
+  /// @tparam O The type that hold the computed pushed-forward data
+  /// (ndim==1)
+  /// @tparam P The type that hold the data to be pulled back (ndim==1)
+  /// @tparam Q The type that holds the Jacobian matrix (ndim==2)
+  /// @tparam R The type that holds the inverse of the Jacobian matrix
+  /// (ndim==2)
+  /// @return A function that takes arguments
+  /// - `u` [out] The data on the physical cell after the
+  /// push-forward, flattened with row-major layout
+  /// - `U` [in] The data on the reference cell physical field to push
+  /// forward, flattened with row-major layout
+  /// - `J` [in] The Jacobian matrix of the map
+  /// - `detJ` [in] det(J)
+  /// - `K` [in] The inverse of the Jacobian matrix
+  ///
+  /// @note A pull back can be computed using this function by changing
+  /// the order of the arguments:
+  /// - `u` -> `U`
+  /// - `U` -> `u`
+  /// - `J` -> `K`
+  /// - `det(J)` -> 1.0/det(J)
+  /// - `K` -> `J`
   template <typename O, typename P, typename Q, typename R>
   std::function<void(O&, const P&, const Q&, double, const R&)>
-  map_pull_back_fn() const
+  push_forward_fn() const
   {
     assert(_element);
-    return _element->map_pull_back<O, P, Q, R>();
+    return _element->push_forward_fn<O, P, Q, R>();
   }
 
   /// Permute the DOFs of the element
