@@ -111,11 +111,10 @@ jobs:
           name: wheelhouse
           path: wheelhouse/*
 
-      # TODO: Prettier URL
       # TODO: Download existing files?
       - name: Update FEniCS Project simple503 repository
         run: |
-          python -m simple503 --move --base-url http://packages.fenicsproject.org.s3-website-eu-west-1.amazonaws.com/simple simple
+          python -m simple503 --move --base-url http://packages.fenicsproject.org/simple simple
 
       # For manual upload.
       - uses: actions/upload-artifact@v2
