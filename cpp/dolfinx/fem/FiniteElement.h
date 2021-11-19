@@ -190,65 +190,6 @@ public:
   /// @return The interpolation operator `Pi`
   const xt::xtensor<double, 2>& interpolation_operator() const;
 
-  /// @todo Document shape/layout of @p values
-  /// @todo Make the interpolating dofs in/out argument for efficiency
-  /// as this function is often called from within tight loops
-  /// @todo Consider handling block size > 1
-  /// @todo Re-work for fields that require a pull-back, e.g. Piola
-  /// mapped elements
-  ///
-  /// Interpolate a function in the finite element space on a cell.
-  /// Given the evaluation of the function to be interpolated at points
-  /// provided by @p FiniteElement::interpolation_points, it evaluates
-  /// the degrees of freedom for the interpolant.
-  ///
-  /// @param[in] values The values of the function. It has shape
-  /// (value_size, num_points), where `num_points` is the number of
-  /// points given by FiniteElement::interpolation_points.
-  /// @param[out] dofs The element degrees of freedom (interpolants) of
-  /// the expression. The call must allocate the space. Is has
-  template <typename T>
-  constexpr void interpolate(const xt::xtensor<T, 2>& values,
-                             const xtl::span<T>& dofs) const
-  {
-    if (!_element)
-    {
-      throw std::runtime_error("No underlying element for interpolation. "
-                               "Cannot interpolate mixed elements directly.");
-    }
-
-    const std::size_t rows = space_dimension();
-
-    const xt::xtensor<double, 2>& Pi = interpolation_operator();
-    assert(Pi.size() % rows == 0);
-    const std::size_t cols = Pi.size() / rows;
-
-    // Compute dofs = Pi * x (matrix-vector multiply)
-    if (_bs == 1)
-    {
-      for (std::size_t i = 0; i < rows; ++i)
-      {
-        // Can be replaced with std::transform_reduce once GCC 8 series dies.
-        // Dot product between row i of the matrix and 'values'
-        dofs[i] = std::inner_product(std::next(Pi.data(), i * cols),
-                                     std::next(Pi.data(), i * cols + cols),
-                                     values.data(), T(0.0));
-      }
-    }
-    else
-    {
-      for (int b = 0; b < _bs; ++b)
-      {
-        for (std::size_t i = 0; i < rows; ++i)
-        {
-          dofs[_bs * i + b] = 0;
-          for (std::size_t j = 0; j < cols; ++j)
-            dofs[_bs * i + b] += Pi(i, j) * values(b * cols + j);
-        }
-      }
-    }
-  }
-
   /// Create a matrix that maps degrees of freedom from one element to
   /// this element (interpolation)
   /// @param[in] from The element to interpolate from

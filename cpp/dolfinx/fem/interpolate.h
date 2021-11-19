@@ -508,6 +508,9 @@ void interpolate(
         apply_inverse_transpose_dof_transformation
         = element->get_dof_transformation_function<T>(true, true);
 
+    // Get interpolation operator
+    const xt::xtensor<double, 2>& Pi = element->interpolation_operator();
+
     using U_t = xt::xview<decltype(reference_data)&, std::size_t,
                           xt::xall<std::size_t>, xt::xall<std::size_t>>;
     using J_t = xt::xview<decltype(J)&, std::size_t, xt::xall<std::size_t>,
@@ -554,9 +557,8 @@ void interpolate(
           pull_back_fn(_U, _u, _K, 1.0 / detJ[i], _J);
         }
 
-        xt::xtensor<T, 2> ref_data
-            = xt::transpose(xt::view(reference_data, xt::all(), 0, xt::all()));
-        element->interpolate(ref_data, tcb::make_span(_coeffs));
+        auto ref_data = xt::view(reference_data, xt::all(), 0, xt::all());
+        impl::interpolation_apply(Pi, ref_data, _coeffs, element_bs);
         apply_inverse_transpose_dof_transformation(_coeffs, cell_info, c, 1);
 
         // Copy interpolation dofs into coefficient vector
