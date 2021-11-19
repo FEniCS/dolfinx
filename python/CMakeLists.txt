@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.18)
 
 PROJECT(dolfinx_pybind11)
 
-find_package(Python3 COMPONENTS Interpreter Development.Module REQUIRED)
+find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
 find_package(pybind11 REQUIRED CONFIG HINTS ${PYBIND11_DIR} ${PYBIND11_ROOT}
   $ENV{PYBIND11_DIR} $ENV{PYBIND11_ROOT})
 
@@ -61,7 +61,7 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
   target_compile_options(cpp PRIVATE "-fvisibility=default")
 endif()
 
-# Add DOLFINx libraries and other config
+# Add DOLFINx libraries and the most minimal pybind11 target
 target_link_libraries(cpp PRIVATE dolfinx pybind11::headers)
 
 # Add xsimd if the Basix C++ interface was compiled with it
