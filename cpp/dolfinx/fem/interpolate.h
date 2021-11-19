@@ -508,14 +508,11 @@ void interpolate(
         apply_inverse_transpose_dof_transformation
         = element->get_dof_transformation_function<T>(true, true);
 
-    using xview_scalar_t
-        = xt::xview<decltype(reference_data)&, std::size_t,
-                    xt::xall<std::size_t>, xt::xall<std::size_t>>;
-    using xview_x_t = xt::xview<decltype(J)&, std::size_t,
-                                xt::xall<std::size_t>, xt::xall<std::size_t>>;
-    auto pull_back_fn
-        = element
-              ->map_fn<xview_scalar_t, xview_scalar_t, xview_x_t, xview_x_t>();
+    using U_t = xt::xview<decltype(reference_data)&, std::size_t,
+                          xt::xall<std::size_t>, xt::xall<std::size_t>>;
+    using J_t = xt::xview<decltype(J)&, std::size_t, xt::xall<std::size_t>,
+                          xt::xall<std::size_t>>;
+    auto pull_back_fn = element->map_fn<U_t, U_t, J_t, J_t>();
 
     for (std::int32_t c : cells)
     {
