@@ -44,12 +44,11 @@ class CMakeBuild(build_ext):
         cmake_args = ['-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=' + extdir,
                       '-DPython3_EXECUTABLE=' + sys.executable]
 
-        # cfg = 'Debug' if self.debug else 'Release'
-        cfg = 'Debug'
+        cfg = 'Debug' if self.debug else 'Release'
         build_args = ['--config', cfg]
 
         cmake_args += ['-DCMAKE_BUILD_TYPE=' + cfg]
-        build_args += ['--', '-j']
+        build_args += ['--', '-j3']
 
         env = os.environ.copy()
         import pybind11
