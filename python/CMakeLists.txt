@@ -62,7 +62,7 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
 endif()
 
 # Add DOLFINx libraries and the most minimal pybind11 target
-target_link_libraries(cpp PRIVATE dolfinx pybind11::headers)
+target_link_libraries(cpp PRIVATE dolfinx)
 
 # Add xsimd if the Basix C++ interface was compiled with it
 if("XTENSOR_USE_XSIMD" IN_LIST BASIX_DEFN OR "XTENSOR_USE_XSIMD" IN_LIST DOLFINX_DEFN)
