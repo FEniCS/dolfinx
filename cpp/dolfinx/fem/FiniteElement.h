@@ -110,7 +110,68 @@ public:
                               const X& K) const
   {
     assert(_element);
-    _element->map_push_forward_m(reference_values, J, detJ, K, values);
+    using u_t = xt::xview<decltype(values)&, std::size_t, xt::xall<std::size_t>,
+                          xt::xall<std::size_t>>;
+    using U_t = xt::xview<decltype(reference_values)&, std::size_t,
+                          xt::xall<std::size_t>, xt::xall<std::size_t>>;
+    using J_t = xt::xview<decltype(J)&, std::size_t, xt::xall<std::size_t>,
+                          xt::xall<std::size_t>>;
+    using K_t = xt::xview<decltype(K)&, std::size_t, xt::xall<std::size_t>,
+                          xt::xall<std::size_t>>;
+    auto map = _element->map_fn<u_t, U_t, J_t, K_t>();
+    for (std::size_t i = 0; i < values.shape(0); ++i)
+    {
+      auto _K = xt::view(K, i, xt::all(), xt::all());
+      auto _J = xt::view(J, i, xt::all(), xt::all());
+      auto _u = xt::view(values, i, xt::all(), xt::all());
+      auto _U = xt::view(reference_values, i, xt::all(), xt::all());
+      map(_u, _U, _J, detJ[i], _K);
+    }
+  }
+
+  /// Pull back data from the physical element to the reference element.
+  /// It can process batches of points that share the same geometric
+  /// map.
+  /// @note This passes the inputs directly into the Basix
+  /// `map_pull_back` function
+  ///
+  /// @param[in] u Data defined on the physical element. It must have
+  /// dimension 3. The first index is for the geometric/map data, the
+  /// second is the point index for points that share map data, and the
+  /// third index is (vector) component, e.g. `u[i,:,:]` are points that
+  /// are mapped by `J[i,:,:]`.
+  /// @param[in] J The Jacobians. It must have dimension 3. The first
+  /// index is for the ith Jacobian, i.e. J[i,:,:] is the ith Jacobian.
+  /// @param[in] detJ The determinant of J. `detJ[i]` is
+  /// `det(J[i,:,:])`. It must have dimension 1.
+  /// @param[in] K The inverse of J, `K[i,:,:] = J[i,:,:]^-1`. It must
+  /// have dimension 3.
+  /// @param[out] U The input `u` mapped to the reference element. It
+  /// must have dimension 3.
+  template <typename O, typename P, typename Q, typename T, typename S>
+  void pull_back(const O& u, const P& J, const Q& detJ, const T& K, S&& U) const
+  {
+    assert(_element);
+    using u_t = xt::xview<decltype(u)&, std::size_t, xt::xall<std::size_t>,
+                          xt::xall<std::size_t>>;
+    using U_t = xt::xview<decltype(U)&, std::size_t, xt::xall<std::size_t>,
+                          xt::xall<std::size_t>>;
+    using J_t = xt::xview<decltype(J)&, std::size_t, xt::xall<std::size_t>,
+                          xt::xall<std::size_t>>;
+    using K_t = xt::xview<decltype(K)&, std::size_t, xt::xall<std::size_t>,
+                          xt::xall<std::size_t>>;
+    auto map = _element->map_fn<U_t, u_t, J_t, K_t>();
+    for (std::size_t i = 0; i < u.shape(0); ++i)
+    {
+      auto _K = xt::view(K, i, xt::all(), xt::all());
+      auto _J = xt::view(J, i, xt::all(), xt::all());
+      auto _u = xt::view(u, i, xt::all(), xt::all());
+      auto _U = xt::view(U, i, xt::all(), xt::all());
+      map(_U, _u, _K, 1.0 / detJ[i], _J);
+    }
+
+    // assert(_element);
+    // _element->map_pull_back_m(u, J, detJ, K, U);
   }
 
   /// Get the number of sub elements (for a mixed or blocked element)
@@ -641,31 +702,6 @@ public:
         data, block_size, cell_permutation);
   }
 
-  /// Pull back data from the physical element to the reference element.
-  /// It can process batches of points that share the same geometric
-  /// map. @note This passes the inputs directly into the Basix
-  /// `map_pull_back` function
-  ///
-  /// @param[in] u Data defined on the physical element. It must have
-  /// dimension 3. The first index is for the geometric/map data, the
-  /// second is the point index for points that share map data, and the
-  /// third index is (vector) component, e.g. `u[i,:,:]` are points that
-  /// are mapped by `J[i,:,:]`.
-  /// @param[in] J The Jacobians. It must have dimension 3. The first
-  /// index is for the ith Jacobian, i.e. J[i,:,:] is the ith Jacobian.
-  /// @param[in] detJ The determinant of J. `detJ[i]` is
-  /// `det(J[i,:,:])`. It must have dimension 1.
-  /// @param[in] K The inverse of J, `K[i,:,:] = J[i,:,:]^-1`. It must
-  /// have dimension 3.
-  /// @param[out] U The input `u` mapped to the reference element. It
-  /// must have dimension 3.
-  template <typename O, typename P, typename Q, typename T, typename S>
-  void pull_back(const O& u, const P& J, const Q& detJ, const T& K, S&& U) const
-  {
-    assert(_element);
-    _element->map_pull_back_m(u, J, detJ, K, U);
-  }
-
   /// Return a function that performs the appropriate push-forward for
   /// the element type
   ///
@@ -696,7 +732,7 @@ public:
   push_forward_fn() const
   {
     assert(_element);
-    return _element->push_forward_fn<O, P, Q, R>();
+    return _element->map_fn<O, P, Q, R>();
   }
 
   /// Permute the DOFs of the element
