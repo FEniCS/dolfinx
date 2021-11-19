@@ -47,7 +47,9 @@ jobs:
       MPI4PY_VERSION: 3.1.2
       PETSC4PY_VERSION: 3.16.0
       CIBW_MANYLINUX_X86_64_IMAGE: docker.io/fenicsproject/wheelbuilder_x86_64:latest
-      CIBW_BUILD: cp37-manylinux_x86_64 cp38-manylinux_x86_64 cp39-manylinux_x86_64
+      #CIBW_BUILD: cp37-manylinux_x86_64 cp38-manylinux_x86_64 cp39-manylinux_x86_64
+      CIBW_BUILD: cp39-manylinux_x86_64
+      CIBW_BUILD_VERBOSITY: 1
       CIBW_ENVIRONMENT: PIP_EXTRA_INDEX_URL=file:///project/simple PETSC_DIR=/usr/local
 
     steps:
@@ -96,11 +98,12 @@ jobs:
         run: python -m cibuildwheel --output-dir wheelhouse dolfinx/python
         env:
           CIBW_BEFORE_BUILD: python -m pip install git+https://github.com/FEniCS/basix.git && python -m pip install git+https://github.com/FEniCS/ufl.git && python -m pip install git+https://github.com/FEniCS/ffcx.git && python -m pip install mpi4py petsc4py && cmake -S dolfinx/cpp -B build-dir -DPython3_EXECUTABLE=$(which python) && cmake --build build-dir && cmake --install build-dir
-      
+     
+      # TODO: Finalise URL for upload 
       - name: Update temporary simple503 repository
         run: |
           mv wheelhouse/*.whl simple
-          python -m simple503 --move --base-url file:///project/simple simple
+          python -m simple503 --move --base-url file:///shared simple
 
       - uses: actions/upload-artifact@v2
         if: always()
