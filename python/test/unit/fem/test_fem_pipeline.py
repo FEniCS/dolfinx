@@ -432,25 +432,42 @@ def test_vector_P_tp(family, degree, cell_type, datadir):
 
 
 @parametrize_cell_types_quad
-@pytest.mark.parametrize("family", ["DQ", "DPC"])
+@pytest.mark.parametrize("family", ["DQ"])
 @pytest.mark.parametrize("degree", [1, 2, 3])
 def test_dP_quad(family, degree, cell_type, datadir):
-    if family == "DPC":
-        pytest.skip("DPC space currently not implemented in basix.")
     mesh = get_mesh(cell_type, datadir)
     V = FunctionSpace(mesh, (family, degree))
     run_dg_test(mesh, V, degree)
 
 
 @parametrize_cell_types_hex
-@pytest.mark.parametrize("family", ["DQ", "DPC"])
+@pytest.mark.parametrize("family", ["DQ"])
 @pytest.mark.parametrize("degree", [1, 2])
 def test_dP_hex(family, degree, cell_type, datadir):
-    if family == "DPC":
-        pytest.skip("DPC space currently not implemented in basix.")
     mesh = get_mesh(cell_type, datadir)
     V = FunctionSpace(mesh, (family, degree))
     run_dg_test(mesh, V, degree)
+
+
+@parametrize_cell_types_quad
+@pytest.mark.parametrize("family", ["DPC"])
+@pytest.mark.parametrize("degree", [2, 3, 4])
+def test_DPC_quad(family, degree, cell_type, datadir):
+    mesh = get_mesh(cell_type, datadir)
+    V = FunctionSpace(mesh, (family, degree))
+    if degree >= 4:
+        run_dg_test(mesh, V, 2)
+    else:
+        run_dg_test(mesh, V, 1)
+
+
+@parametrize_cell_types_hex
+@pytest.mark.parametrize("family", ["DPC"])
+@pytest.mark.parametrize("degree", [2])
+def test_DPC_hex(family, degree, cell_type, datadir):
+    mesh = get_mesh(cell_type, datadir)
+    V = FunctionSpace(mesh, (family, degree))
+    run_dg_test(mesh, V, 1)
 
 
 @parametrize_cell_types_quad
