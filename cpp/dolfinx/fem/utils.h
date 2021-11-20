@@ -751,7 +751,7 @@ std::vector<typename U::scalar_type> pack_constants(const U& u)
   for (auto& constant : constants)
   {
     const std::vector<T>& value = constant->value;
-    std::copy(value.cbegin(), value.cbegin(),
+    std::copy(value.cbegin(), value.cend(),
               std::next(constant_values.begin(), offset));
     offset += value.size();
   }
