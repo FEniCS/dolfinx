@@ -475,7 +475,7 @@ void pack_coefficient_cell(
     std::int32_t cell = active_cells[index];
 
     auto cell_coeff = c.subspan(index * cstride + offset, space_dim);
-    pack<T>(cell, bs, cell_coeff, v, cell_info, dofmap, transformation);
+    pack(cell, bs, cell_coeff, v, cell_info, dofmap, transformation);
   }
 }
 
@@ -495,7 +495,7 @@ void pack_coefficient_exterior_facet(
   {
     std::int32_t cell = active_facets[index].first;
     auto cell_coeff = c.subspan(index * cstride + offset, space_dim);
-    pack<T>(cell, bs, cell_coeff, v, cell_info, dofmap, transformation);
+    pack(cell, bs, cell_coeff, v, cell_info, dofmap, transformation);
   }
 }
 
@@ -517,10 +517,10 @@ void pack_coefficient_interior_facet(
     const std::array<std::int32_t, 2> cells = {
         std::get<0>(active_facets[index]), std::get<2>(active_facets[index])};
     auto cell_coeff0 = c.subspan(index * 2 * cstride + 2 * offset0, space_dim);
-    pack<T>(cells[0], bs, cell_coeff0, v, cell_info, dofmap, transformation);
+    pack(cells[0], bs, cell_coeff0, v, cell_info, dofmap, transformation);
     auto cell_coeff1
         = c.subspan(index * 2 * cstride + offset0 + offset1, space_dim);
-    pack<T>(cells[1], bs, cell_coeff1, v, cell_info, dofmap, transformation);
+    pack(cells[1], bs, cell_coeff1, v, cell_info, dofmap, transformation);
   }
 }
 } // namespace impl
