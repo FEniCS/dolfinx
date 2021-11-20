@@ -25,8 +25,6 @@ namespace dolfinx::fem
 
 template <typename T>
 class DirichletBC;
-template <typename T>
-class Form;
 class FunctionSpace;
 
 /// Create a matrix
