@@ -494,7 +494,6 @@ void pack_coefficient_exterior_facet(
   for (std::size_t index = 0; index < active_facets.size(); ++index)
   {
     std::int32_t cell = active_facets[index].first;
-
     auto cell_coeff = c.subspan(index * cstride + offset, space_dim);
     pack<T>(cell, bs, cell_coeff, v, cell_info, dofmap, transformation);
   }
@@ -556,9 +555,8 @@ pack_coefficients(const Form<T>& u, fem::IntegralType integral_type,
   std::shared_ptr<const mesh::Mesh> mesh = u.mesh();
   assert(mesh);
 
-  const int cstride = offsets.back();
-
   // Copy data into coefficient array
+  const int cstride = offsets.back();
   std::vector<T> c;
   if (!coefficients.empty())
   {
@@ -699,9 +697,8 @@ pack_coefficients(const Expression<T>& u,
   std::shared_ptr<const mesh::Mesh> mesh = u.mesh();
   assert(mesh);
 
-  const int cstride = offsets.back();
-
   // Copy data into coefficient array
+  const int cstride = offsets.back();
   std::vector<T> c(active_cells.size() * offsets.back());
   if (!coefficients.empty())
   {
@@ -742,7 +739,7 @@ std::vector<typename U::scalar_type> pack_constants(const U& u)
       = u.constants();
 
   // Calculate size of array needed to store packed constants
-  std::int32_t size = std::accumulate(constants.begin(), constants.end(), 0,
+  std::int32_t size = std::accumulate(constants.cbegin(), constants.cend(), 0,
                                       [](std::int32_t sum, const auto& constant)
                                       { return sum + constant->value.size(); });
 
@@ -752,8 +749,8 @@ std::vector<typename U::scalar_type> pack_constants(const U& u)
   for (const auto& constant : constants)
   {
     const std::vector<T>& value = constant->value;
-    for (std::size_t i = 0; i < value.size(); ++i)
-      constant_values[offset + i] = value[i];
+    std::copy(value.cbegin(), value.cend(),
+              std::next(constant_values.begin(), offset));
     offset += value.size();
   }
 
