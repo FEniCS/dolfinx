@@ -28,21 +28,16 @@ class FunctionSpace;
 template <typename T>
 std::map<std::pair<dolfinx::fem::IntegralType, int>,
          std::pair<xtl::span<const T>, int>>
-make_coefficients_span(
-    const std::map<std::pair<IntegralType, int>,
-                   std::pair<std::vector<T>, int>>& coefficients)
+make_coefficients_span(const std::map<std::pair<IntegralType, int>,
+                                      std::pair<std::vector<T>, int>>& coeffs)
 {
-
-  std::map<std::pair<dolfinx::fem::IntegralType, int>,
-           std::pair<xtl::span<const T>, int>>
-      _coefficients;
-
-  for (auto& [integral, coeffs] : coefficients)
-  {
-    _coefficients[integral] = {tcb::make_span(coeffs.first), coeffs.second};
-  }
-
-  return _coefficients;
+  using Key = typename std::remove_reference_t<decltype(coeffs)>::key_type;
+  std::map<Key, std::pair<xtl::span<const T>, int>> c;
+  std::transform(coeffs.cbegin(), coeffs.cend(), std::inserter(c, c.end()),
+                 [](auto& e) -> typename decltype(c)::value_type {
+                   return {e.first, {e.second.first, e.second.second}};
+                 });
+  return c;
 }
 
 // -- Scalar ----------------------------------------------------------------
