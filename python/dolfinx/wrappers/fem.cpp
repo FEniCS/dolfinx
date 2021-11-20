@@ -103,20 +103,6 @@ void declare_functions(py::module& m)
                                  std::array{num_ents, e.second.second})};
             });
         return c;
-        // for (auto [integral, coeffs] : _coefficients)
-        // {
-        //   int num_active_entities;
-        //   if (coeffs.first.size() == 0)
-        //     num_active_entities = 0;
-        //   else
-        //     num_active_entities = coeffs.first.size() / coeffs.second;
-
-        //   coefficients[integral]
-        //       = as_pyarray(std::move(coeffs.first),
-        //                    std::array{num_active_entities, coeffs.second});
-        // }
-
-        // return coefficients;
       },
       "Pack coefficients for a Form.");
   m.def(
