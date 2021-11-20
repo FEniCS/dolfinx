@@ -68,9 +68,7 @@ def random_point_in_cell(mesh):
         origin = mesh.geometry.x[0]
         axes = (mesh.geometry.x[1], mesh.geometry.x[2], mesh.geometry.x[4])
 
-    return tuple(
-        origin[i] + sum((axis[i] - origin[i]) * p for axis, p in zip(axes, point)) for i in range(3)
-    )
+    return tuple(origin[i] + sum((axis[i] - origin[i]) * p for axis, p in zip(axes, point)) for i in range(3))
 
 
 def one_cell_mesh(cell_type):
