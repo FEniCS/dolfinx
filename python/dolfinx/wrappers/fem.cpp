@@ -863,7 +863,6 @@ void fem(py::module& m)
           set_fn = dolfinx::la::PETScMatrix::set_block_fn(A, ADD_VALUES);
 
         auto _coefficients = py_to_cpp_coeffs(coefficients);
-
         dolfinx::fem::assemble_matrix(set_fn, a, xtl::span(constants),
                                       _coefficients, bcs);
       },
@@ -893,7 +892,6 @@ void fem(py::module& m)
           set_fn = dolfinx::la::PETScMatrix::set_block_fn(A, ADD_VALUES);
 
         auto _coefficients = py_to_cpp_coeffs(coefficients);
-
         dolfinx::fem::assemble_matrix(set_fn, a, xtl::span(constants),
                                       _coefficients, rows0, rows1);
       },
