@@ -586,7 +586,7 @@ pack_coefficients(const Form<T>& u, fem::IntegralType integral_type,
       {
         const auto transform
             = elements[coeff]->get_dof_transformation_function<T>(false, true);
-        impl::pack_coefficient_cell<T>(
+        impl::pack_coefficient_cell(
             xtl::span<T>(c), cstride, v[coeff], cell_info, *dofmaps[coeff],
             active_cells, offsets[coeff], elements[coeff]->space_dimension(),
             transform);
@@ -720,10 +720,10 @@ pack_coefficients(const Expression<T>& u,
     {
       const auto transform
           = elements[coeff]->get_dof_transformation_function<T>(false, true);
-      impl::pack_coefficient_cell<T>(
-          xtl::span<T>(c), cstride, v[coeff], cell_info, *dofmaps[coeff],
-          active_cells, offsets[coeff], elements[coeff]->space_dimension(),
-          transform);
+      impl::pack_coefficient_cell(xtl::span<T>(c), cstride, v[coeff], cell_info,
+                                  *dofmaps[coeff], active_cells, offsets[coeff],
+                                  elements[coeff]->space_dimension(),
+                                  transform);
     }
   }
   return {std::move(c), cstride};

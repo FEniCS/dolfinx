@@ -60,8 +60,8 @@ std::map<std::pair<dolfinx::fem::IntegralType, int>,
 py_to_cpp_coeffs(const std::map<std::pair<dolfinx::fem::IntegralType, int>,
                                 py::array_t<T, py::array::c_style>>& coeffs)
 {
-  using Key = typename std::remove_reference_t<decltype(coeffs)>::key_type;
-  std::map<Key, std::pair<xtl::span<const T>, int>> c;
+  using Key_t = typename std::remove_reference_t<decltype(coeffs)>::key_type;
+  std::map<Key_t, std::pair<xtl::span<const T>, int>> c;
   std::transform(coeffs.cbegin(), coeffs.cend(), std::inserter(c, c.end()),
                  [](auto& e) -> typename decltype(c)::value_type
                  {
