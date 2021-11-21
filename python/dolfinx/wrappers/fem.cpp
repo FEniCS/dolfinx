@@ -125,7 +125,6 @@ void declare_functions(py::module& m)
                         py::array_t<T, py::array::c_style>>& coefficients)
       {
         auto _coefficients = py_to_cpp_coeffs(coefficients);
-
         return dolfinx::fem::assemble_scalar<T>(M, constants, _coefficients);
       },
       "Assemble functional over mesh with provided constants and "
@@ -139,7 +138,6 @@ void declare_functions(py::module& m)
                         py::array_t<T, py::array::c_style>>& coefficients)
       {
         auto _coefficients = py_to_cpp_coeffs(coefficients);
-
         dolfinx::fem::assemble_vector<T>(xtl::span(b.mutable_data(), b.size()),
                                          L, constants, _coefficients);
       },
