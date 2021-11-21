@@ -84,14 +84,16 @@ void declare_functions(py::module& m)
       [](const dolfinx::fem::Form<T>& form)
       {
         using Key_t = typename std::pair<dolfinx::fem::IntegralType, int>;
+
+        // Pack coefficients
         std::map<Key_t, std::pair<std::vector<T>, int>> coeffs
             = dolfinx::fem::pack_coefficients(form);
 
         // Move into NumPy data structures
         std::map<Key_t, py::array_t<T, py::array::c_style>> c;
         std::transform(
-            coeffs.cbegin(), coeffs.cend(), std::inserter(c, c.end()),
-            [](auto e) -> typename decltype(c)::value_type
+            coeffs.begin(), coeffs.end(), std::inserter(c, c.end()),
+            [](auto& e) -> typename decltype(c)::value_type
             {
               int num_ents = e.second.first.empty()
                                  ? 0
@@ -101,31 +103,6 @@ void declare_functions(py::module& m)
                                  std::array{num_ents, e.second.second})};
             });
         return c;
-
-        // std::map<std::pair<dolfinx::fem::IntegralType, int>,
-        //          std::pair<std::vector<T>, int>>
-        //     _coefficients = dolfinx::fem::pack_coefficients(form);
-
-        // std::map<std::pair<dolfinx::fem::IntegralType, int>,
-        //          py::array_t<T, py::array::c_style>>
-        //     coefficients;
-        // // TODO Use underscore naming convention
-        // for (auto [integral, coeffs] : _coefficients)
-        // {
-        //   int num_ents = e.second.first.empty()
-        //                      ? 0
-        //                      : e.second.first.size() / e.second.second;
-        //   // int num_active_entities;
-        //   // if (coeffs.first.size() == 0)
-        //   //   num_active_entities = 0;
-        //   // else
-        //   //   num_active_entities = coeffs.first.size() / coeffs.second;
-
-        //   coefficients[integral] = as_pyarray(
-        //       std::move(coeffs.first), std::array{num_ents, coeffs.second});
-        // }
-
-        // return coefficients;
       },
       "Pack coefficients for a Form.");
   m.def(
