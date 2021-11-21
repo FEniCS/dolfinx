@@ -57,9 +57,8 @@ namespace
 template <typename T>
 std::map<std::pair<dolfinx::fem::IntegralType, int>,
          std::pair<xtl::span<const T>, int>>
-py_to_cpp_coeffs(
-    const std::map<std::pair<dolfinx::fem::IntegralType, int>,
-                   py::array_t<T, py::array::c_style>>& coeffs)
+py_to_cpp_coeffs(const std::map<std::pair<dolfinx::fem::IntegralType, int>,
+                                py::array_t<T, py::array::c_style>>& coeffs)
 {
   using Key = typename std::remove_reference_t<decltype(coeffs)>::key_type;
   std::map<Key, std::pair<xtl::span<const T>, int>> c;
@@ -72,16 +71,6 @@ py_to_cpp_coeffs(
                         e.second.shape(1)}};
                  });
   return c;
-  // std::map<std::pair<dolfinx::fem::IntegralType, int>,
-  //          std::pair<xtl::span<const T>, int>>
-  //     _coefficients;
-
-  // for (auto [integral, coeffs] : coefficients)
-  // {
-  //   _coefficients[integral]
-  //       = {xtl::span<const T>(coeffs.data(), coeffs.size()), coeffs.shape(1)};
-  // }
-  // return _coefficients;
 }
 
 // Declare assembler function that have multiple scalar types
@@ -94,28 +83,24 @@ void declare_functions(py::module& m)
       "pack_coefficients",
       [](dolfinx::fem::Form<T>& form)
       {
-        std::map<std::pair<dolfinx::fem::IntegralType, int>,
-                 std::pair<std::vector<T>, int>>
-            _coefficients = dolfinx::fem::pack_coefficients(form);
+        using Key_t = typename std::pair<dolfinx::fem::IntegralType, int>;
+        std::map<Key_t, std::pair<std::vector<T>, int>> coeffs
+            = dolfinx::fem::pack_coefficients(form);
 
-        std::map<std::pair<dolfinx::fem::IntegralType, int>,
-                 py::array_t<T, py::array::c_style>>
-            coefficients;
-        // TODO Use underscore naming convention
-        for (auto [integral, coeffs] : _coefficients)
-        {
-          int num_active_entities;
-          if (coeffs.first.size() == 0)
-            num_active_entities = 0;
-          else
-            num_active_entities = coeffs.first.size() / coeffs.second;
-
-          coefficients[integral]
-              = as_pyarray(std::move(coeffs.first),
-                           std::array{num_active_entities, coeffs.second});
-        }
-
-        return coefficients;
+        // Move into NumPy data structures
+        std::map<Key_t, py::array_t<T, py::array::c_style>> c;
+        std::transform(
+            coeffs.cbegin(), coeffs.cend(), std::inserter(c, c.end()),
+            [](auto& e) -> typename decltype(c)::value_type
+            {
+              int num_ents = e.second.first.empty()
+                                 ? 0
+                                 : e.second.first.size() / e.second.second;
+              return {e.first,
+                      as_pyarray(std::move(e.second.first),
+                                 std::array{num_ents, e.second.second})};
+            });
+        return c;
       },
       "Pack coefficients for a Form.");
   m.def(
