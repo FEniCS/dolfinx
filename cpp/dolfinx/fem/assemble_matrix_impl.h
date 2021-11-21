@@ -46,11 +46,11 @@ void assemble_cells(
     const std::function<void(const xtl::span<T>&,
                              const xtl::span<const std::uint32_t>&,
                              std::int32_t, int)>& dof_transform,
-    const graph::AdjacencyList<std::int32_t>& dofmap0, const int bs0,
+    const graph::AdjacencyList<std::int32_t>& dofmap0, int bs0,
     const std::function<void(const xtl::span<T>&,
                              const xtl::span<const std::uint32_t>&,
                              std::int32_t, int)>& dof_transform_to_transpose,
-    const graph::AdjacencyList<std::int32_t>& dofmap1, const int bs1,
+    const graph::AdjacencyList<std::int32_t>& dofmap1, int bs1,
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*)>& kernel,
@@ -445,8 +445,8 @@ void assemble_matrix(
     const std::vector<std::int32_t>& cells = a.cell_domains(i);
     impl::assemble_cells<T>(mat_set, mesh->geometry(), cells, dof_transform,
                             dofs0, bs0, dof_transform_to_transpose, dofs1, bs1,
-                            bc0, bc1, fn, coeffs, cstride,
-                            constants, cell_info);
+                            bc0, bc1, fn, coeffs, cstride, constants,
+                            cell_info);
   }
 
   if (a.num_integrals(IntegralType::exterior_facet) > 0
@@ -472,8 +472,8 @@ void assemble_matrix(
           = a.exterior_facet_domains(i);
       impl::assemble_exterior_facets<T>(
           mat_set, *mesh, facets, dof_transform, dofs0, bs0,
-          dof_transform_to_transpose, dofs1, bs1, bc0, bc1, fn,
-          coeffs, cstride, constants, cell_info, get_perm);
+          dof_transform_to_transpose, dofs1, bs1, bc0, bc1, fn, coeffs, cstride,
+          constants, cell_info, get_perm);
     }
 
     const std::vector<int> c_offsets = a.coefficient_offsets();
@@ -487,9 +487,8 @@ void assemble_matrix(
           = a.interior_facet_domains(i);
       impl::assemble_interior_facets<T>(
           mat_set, *mesh, facets, dof_transform, *dofmap0, bs0,
-          dof_transform_to_transpose, *dofmap1, bs1, bc0, bc1, fn,
-          coeffs, cstride, c_offsets, constants, cell_info,
-          get_perm);
+          dof_transform_to_transpose, *dofmap1, bs1, bc0, bc1, fn, coeffs,
+          cstride, c_offsets, constants, cell_info, get_perm);
     }
   }
 }

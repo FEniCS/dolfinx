@@ -437,8 +437,8 @@ namespace impl
 // Pack a single coefficient for a single cell
 // TODO Add _bs to template i.e. template <typename T, int _bs = -1>
 template <typename T>
-void pack(const std::uint32_t cell, const int bs,
-          const xtl::span<T>& cell_coeff, const xtl::span<const T>& v,
+void pack(const std::uint32_t cell, int bs, const xtl::span<T>& cell_coeff,
+          const xtl::span<const T>& v,
           const xtl::span<const std::uint32_t>& cell_info,
           const fem::DofMap& dofmap,
           const std::function<void(const xtl::span<T>&,
@@ -448,10 +448,8 @@ void pack(const std::uint32_t cell, const int bs,
   auto dofs = dofmap.cell_dofs(cell);
   for (std::size_t i = 0; i < dofs.size(); ++i)
   {
-    const int pos_c = bs * i;
-    const int pos_v = bs * dofs[i];
-    for (int k = 0; k < bs; ++k)
-      cell_coeff[pos_c + k] = v[pos_v + k];
+    std::copy_n(std::next(v.begin(), bs * dofs[i]), bs,
+                std::next(cell_coeff.begin(), bs * i));
   }
 
   transform(cell_coeff, cell_info, cell, 1);
@@ -533,8 +531,7 @@ void pack_coefficient_interior_facet(
 /// @return A pair of the form (coeffs, cstride)
 template <typename T>
 std::pair<std::vector<T>, int>
-pack_coefficients(const Form<T>& u, fem::IntegralType integral_type,
-                  const int id)
+pack_coefficients(const Form<T>& u, fem::IntegralType integral_type, int id)
 {
   // Get form coefficient offsets and dofmaps
   const std::vector<std::shared_ptr<const fem::Function<T>>> coefficients

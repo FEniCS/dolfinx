@@ -356,7 +356,7 @@ std::string xdmf_utils::vtk_cell_type_str(mesh::CellType cell_type,
 }
 //-----------------------------------------------------------------------------
 std::pair<xt::xtensor<std::int32_t, 2>, std::vector<std::int32_t>>
-xdmf_utils::distribute_entity_data(const mesh::Mesh& mesh, const int entity_dim,
+xdmf_utils::distribute_entity_data(const mesh::Mesh& mesh, int entity_dim,
                                    const xt::xtensor<std::int64_t, 2>& entities,
                                    const xtl::span<const std::int32_t>& data)
 {
