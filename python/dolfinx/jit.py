@@ -21,7 +21,8 @@ __all__ = ["ffcx_jit", "get_parameters"]
 
 DOLFINX_DEFAULT_JIT_PARAMETERS = {
     "cache_dir":
-        (Path.joinpath(Path.home(), ".cache", "fenics"), "Path for storing DOLFINx JIT cache"),
+        (os.getenv("XDG_CACHE_HOME", default=Path.home().joinpath(".cache")) / Path("fenics")
+         "Path for storing DOLFINx JIT cache"),
     "cffi_debug":
         (False, "CFFI debug mode"),
     "cffi_extra_compile_args":
@@ -96,14 +97,15 @@ def mpi_jit_decorator(local_jit, *args, **kwargs):
 @functools.lru_cache(maxsize=None)
 def _load_parameters():
     """Loads parameters from JSON files."""
-    user_config_file = os.path.join(Path.home(), ".config", "dolfinx", "dolfinx_jit_parameters.json")
+    user_config_file = os.getenv("XDG_CONFIG_HOME", default=Path.home().joinpath(".config")) \
+        / Path("dolfinx", "dolfinx_jit_parameters.json")
     try:
         with open(user_config_file) as f:
             user_parameters = json.load(f)
     except FileNotFoundError:
         user_parameters = {}
 
-    pwd_config_file = os.path.join(os.getcwd(), "dolfinx_jit_parameters.json")
+    pwd_config_file = Path.cwd().joinpath("dolfinx_jit_parameters.json")
     try:
         with open(pwd_config_file) as f:
             pwd_parameters = json.load(f)
@@ -176,16 +178,16 @@ def ffcx_jit(ufl_object, form_compiler_parameters={}, jit_parameters={}):
       compilation from highest to lowest is:
 
       -  **jit_parameters** (API)
-      -  **$(pwd)/dolfinx_jit_parameters.json** (local parameters)
-      -  **~/.config/dolfinx/dolfinx_jit_parameters.json** (user parameters)
+      -  **$PWD/dolfinx_jit_parameters.json** (local parameters)
+      -  **$XDG_CONFIG_HOME/dolfinx/dolfinx_jit_parameters.json** (user parameters)
       -  **DOLFINX_DEFAULT_JIT_PARAMETERS** in `dolfinx.jit`
 
       Priority ordering of parameters controlling FFCx from highest to \
       lowest is:
 
       -  **form_compiler_parameters** (API)
-      -  **$(pwd)/ffcx_parameters.json** (local parameters)
-      -  **~/.config/ffcx/ffcx_parameters.json** (user parameters)
+      -  **$PWD/ffcx_parameters.json** (local parameters)
+      -  **$XDG_CONFIG_HOME/ffcx/ffcx_parameters.json** (user parameters)
       -  **FFCX_DEFAULT_PARAMETERS** in `ffcx.parameters`
 
       The contents of the `dolfinx_parameters.json` files are cached \
