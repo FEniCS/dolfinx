@@ -29,7 +29,7 @@ jobs:
 
     env:
       MPI4PY_VERSION: 3.1.2
-      PETSC4PY_VERSION: 3.16.0
+      PETSC4PY_VERSION: 3.16.1
       CIBW_MANYLINUX_X86_64_IMAGE: docker.io/fenicsproject/wheelbuilder_x86_64:latest
       #CIBW_BUILD: cp37-manylinux_x86_64 cp38-manylinux_x86_64 cp39-manylinux_x86_64
       CIBW_BUILD: cp39-manylinux_x86_64
