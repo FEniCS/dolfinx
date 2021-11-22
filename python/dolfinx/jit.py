@@ -190,6 +190,8 @@ def ffcx_jit(ufl_object, form_compiler_parameters={}, jit_parameters={}):
       -  **$XDG_CONFIG_HOME/ffcx/ffcx_parameters.json** (user parameters)
       -  **FFCX_DEFAULT_PARAMETERS** in `ffcx.parameters`
 
+      `$XDG_CONFIG_HOME` is `~/.config/` if the environment variable is not set.
+
       The contents of the `dolfinx_parameters.json` files are cached \
       on the first call. Subsequent calls to this function use this cache.
 
