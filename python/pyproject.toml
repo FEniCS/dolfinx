@@ -1,0 +1,4 @@
+[build-system]
+requires = ["setuptools>=42", "wheel", "pybind11>=2.6.4", "cmake>=3.18", "petsc4py", "mpi4py", "fenics-basix"]
+
+build-backend = "setuptools.build_meta"
