@@ -6,12 +6,10 @@
 
 #pragma once
 
+#include <algorithm>
 #include <boost/functional/hash.hpp>
-#include <cstring>
 #include <dolfinx/common/MPI.h>
 #include <mpi.h>
-#include <sstream>
-#include <string>
 #include <utility>
 #include <vector>
 
@@ -70,7 +68,7 @@ template <class T>
 std::int64_t hash_global(const MPI_Comm comm, const T& x)
 {
   // Compute local hash
-  int64_t local_hash = hash_local(x);
+  std::int64_t local_hash = hash_local(x);
 
   // Gather hash keys on root process
   std::vector<int64_t> all_hashes(dolfinx::MPI::size(comm));
@@ -78,8 +76,8 @@ std::int64_t hash_global(const MPI_Comm comm, const T& x)
              comm);
 
   // Hash the received hash keys
-  boost::hash<std::vector<int64_t>> hash;
-  int64_t global_hash = hash(all_hashes);
+  boost::hash<std::vector<std::int64_t>> hash;
+  std::int64_t global_hash = hash(all_hashes);
 
   // Broadcast hash key to all processes
   MPI_Bcast(&global_hash, 1, MPI_INT64_T, 0, comm);
