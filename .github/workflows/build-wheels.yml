@@ -117,11 +117,11 @@ jobs:
           path: dolfinx
           #ref: ${{ inputs.dolfinx_ref }}
 
-      # TODO: mpi4py and petsc4py should be build deps of DOLFINx
+      # fenics-ffcx and fenics-basix are required by DOLFINx C++
       - name: Build DOLFINx wheel
         run: python -m cibuildwheel --output-dir wheelhouse dolfinx/python
         env:
-          CIBW_BEFORE_BUILD: python -m pip install fenics-basix && cmake -S dolfinx/cpp -B build-dir -DPython3_EXECUTABLE=$(which python) && cmake --build build-dir && cmake --install build-dir
+          CIBW_BEFORE_BUILD: python -m pip install fenics-ffcx fenics-basix && cmake -S dolfinx/cpp -B build-dir -DPython3_EXECUTABLE=$(which python) && cmake --build build-dir && cmake --install build-dir
           #CIBW_TEST_REQUIRES: pytest pytest-xdist
           #CIBW_TEST_COMMAND: python -m pytest -n=2 {project}/python/test/unit/ && mpirun -np 2 python -m pytest {project}/python/test/unit/
 
