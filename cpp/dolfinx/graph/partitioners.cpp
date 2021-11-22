@@ -545,21 +545,22 @@ graph::kahip::partitioner(int mode, int seed, double imbalance,
   {
     LOG(INFO) << "Compute graph partition using (parallel) KaHIP";
 
-    common::Timer timer("Compute graph partition (KaHIP)");
+    // KaHIP integer type
+    using T = unsigned long long;
 
-    const int size = dolfinx::MPI::size(comm);
+    common::Timer timer("Compute graph partition (KaHIP)");
 
     // Graph does not have vertex or adjacency weights, so we use null
     // pointers as arguments
-    unsigned long long *vwgt(nullptr), *adjcwgt(nullptr);
+    T *vwgt(nullptr), *adjcwgt(nullptr);
 
     // Build adjacency list data
-    using T = unsigned long long;
     common::Timer timer1("KaHIP: build adjacency data");
+    const int size = dolfinx::MPI::size(comm);
     std::vector<T> node_disp(size + 1, 0);
     const T num_local_nodes = graph.num_nodes();
     MPI_Allgather(&num_local_nodes, 1, dolfinx::MPI::mpi_type<T>(),
-                  node_disp.data() + 1, 1, dolfinx::MPI::mpi_type<T>(), pcomm);
+                  node_disp.data() + 1, 1, dolfinx::MPI::mpi_type<T>(), comm);
     std::partial_sum(node_disp.begin(), node_disp.end(), node_disp.begin());
     std::vector<T> array(graph.array().begin(), graph.array().end());
     std::vector<T> offsets(graph.offsets().begin(), graph.offsets().end());
@@ -567,11 +568,10 @@ graph::kahip::partitioner(int mode, int seed, double imbalance,
 
     // Call KaHIP to partition graph
     common::Timer timer2("KaHIP: call ParHIPPartitionKWay");
-    std::vector<unsigned long long> part(graph.num_nodes());
+    std::vector<T> part(graph.num_nodes());
     int edgecut = 0;
-    double _imbalance = imbalance;
     ParHIPPartitionKWay(node_disp.data(), offsets.data(), array.data(), vwgt,
-                        adjcwgt, &nparts, &_imbalance, suppress_output, seed,
+                        adjcwgt, &nparts, &imbalance, suppress_output, seed,
                         mode, &edgecut, part.data(), &comm);
     timer2.stop();
 
