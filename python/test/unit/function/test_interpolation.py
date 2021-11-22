@@ -19,11 +19,11 @@ from mpi4py import MPI
 
 parametrize_cell_types = pytest.mark.parametrize(
     "cell_type", [
-        # CellType.interval,
+        CellType.interval,
         CellType.triangle,
-        #     CellType.tetrahedron,
-        #     CellType.quadrilateral,
-        #     CellType.hexahedron
+        CellType.tetrahedron,
+        CellType.quadrilateral,
+        CellType.hexahedron
     ])
 
 
