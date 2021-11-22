@@ -644,22 +644,15 @@ pack_coefficients(const Form<T>& u, fem::IntegralType integral_type, int id)
 /// a pair of the form (coeffs, cstride)
 template <typename T>
 std::map<std::pair<IntegralType, int>, std::pair<std::vector<T>, int>>
-pack_coefficients(const Form<T>& u)
+pack_coefficients(const Form<T>& form)
 {
   std::map<std::pair<IntegralType, int>, std::pair<std::vector<T>, int>>
       coefficients;
 
-  // TODO Is there a better way of doing this?
-  for (auto integral_type : {IntegralType::cell, IntegralType::exterior_facet,
-                             IntegralType::interior_facet})
-  {
-    for (int i : u.integral_ids(integral_type))
-    {
-      // FIXME Could std::transform be used here (or elsewhere) to make
-      // the coefficient vector a span?
-      coefficients[{integral_type, i}] = pack_coefficients(u, integral_type, i);
-    }
-  }
+  for (auto integral_type : form.integral_types())
+    for (int i : form.integral_ids(integral_type))
+      coefficients[{integral_type, i}]
+          = pack_coefficients(form, integral_type, i);
 
   return coefficients;
 }
