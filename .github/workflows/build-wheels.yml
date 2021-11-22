@@ -48,7 +48,7 @@ jobs:
       - name: Checkout Basix
         uses: actions/checkout@v2
         with:
-          repo: FEniCS/basix
+          repository: FEniCS/basix
           path: basix
 
       - name: Build Basix wheel
@@ -58,7 +58,7 @@ jobs:
       - name: Checkout UFL
         uses: actions/checkout@v2
         with:
-          repo: FEniCS/ufl
+          repository: FEniCS/ufl
           path: ufl
 
       - name: Build UFL wheel
@@ -68,7 +68,7 @@ jobs:
       - name: Checkout FFCx
         uses: actions/checkout@v2
         with:
-          repo: FEniCS/ffcx
+          repository: FEniCS/ffcx
           path: ffcx
 
       - name: Build FFCx wheel
