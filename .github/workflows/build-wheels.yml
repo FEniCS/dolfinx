@@ -64,7 +64,7 @@ jobs:
           path: ufl
 
       - name: Build UFL wheel
-        run: python -m pip wheel -w wheelhouse ./ufl
+        run: python -m pip wheel --no-deps -w wheelhouse ./ufl
 
 
       - name: Checkout FFCx
@@ -74,7 +74,7 @@ jobs:
           path: ffcx
 
       - name: Build FFCx wheel
-        run: python -m pip wheel -w wheelhouse ./ffcx
+        run: python -m pip wheel --no-deps -w wheelhouse ./ffcx
 
 
       - name: Download mpi4py
