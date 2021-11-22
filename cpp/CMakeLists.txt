@@ -70,7 +70,7 @@ add_feature_info(XTENSOR_OPTIMIZE XTENSOR_OPTIMIZE "Enable architecture-specific
 # Enable or disable optional packages
 
 # List optional packages
-list(APPEND OPTIONAL_PACKAGES "SLEPc")
+list(APPEND OPTIONAL_PACKAGES "ADIOS2")
 list(APPEND OPTIONAL_PACKAGES "ParMETIS")
 list(APPEND OPTIONAL_PACKAGES "SCOTCH")
 list(APPEND OPTIONAL_PACKAGES "KaHIP")
@@ -200,11 +200,13 @@ set_package_properties(UFC PROPERTIES TYPE REQUIRED
 #------------------------------------------------------------------------------
 # Find optional packages
 
-find_package(ADIOS2 2.7.1)
-set_package_properties(ADIOS2 PROPERTIES TYPE OPTIONAL
-  DESCRIPTION "Adaptable Input/Output (I/O) System."
-  URL "https://adios2.readthedocs.io/en/latest/"
-  PURPOSE "IO, including in parallel")
+if (DOLFINX_ENABLE_ADIOS2)
+  find_package(ADIOS2 2.7.1)
+  set_package_properties(ADIOS2 PROPERTIES TYPE OPTIONAL
+    DESCRIPTION "Adaptable Input/Output (I/O) System."
+    URL "https://adios2.readthedocs.io/en/latest/"
+    PURPOSE "IO, including in parallel")
+endif()
 
 set(SLEPC_FOUND FALSE)
 if (DOLFINX_ENABLE_SLEPC)

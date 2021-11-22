@@ -274,7 +274,8 @@ Vec fem::create_vector_nest(
 void fem::assemble_vector_petsc(
     Vec b, const Form<PetscScalar>& L,
     const xtl::span<const PetscScalar>& constants,
-    const std::pair<xtl::span<const PetscScalar>, int>& coeffs)
+    const std::map<std::pair<IntegralType, int>,
+                   std::pair<xtl::span<const PetscScalar>, int>>& coeffs)
 {
   Vec b_local;
   VecGhostGetLocalForm(b, &b_local);
@@ -305,7 +306,9 @@ void fem::assemble_vector_petsc(Vec b, const Form<PetscScalar>& L)
 void fem::apply_lifting_petsc(
     Vec b, const std::vector<std::shared_ptr<const Form<PetscScalar>>>& a,
     const std::vector<xtl::span<const PetscScalar>>& constants,
-    const std::vector<std::pair<xtl::span<const PetscScalar>, int>>& coeffs,
+    const std::vector<std::map<std::pair<IntegralType, int>,
+                               std::pair<xtl::span<const PetscScalar>, int>>>&
+        coeffs,
     const std::vector<
         std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>>& bcs1,
     const std::vector<Vec>& x0, double scale)

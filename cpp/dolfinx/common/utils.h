@@ -58,8 +58,7 @@ std::string indent(std::string block);
 
 /// Convert a container to string
 template <typename T>
-std::string container_to_string(const T& x, const int precision,
-                                const int linebreak)
+std::string container_to_string(const T& x, int precision, int linebreak)
 {
   std::stringstream s;
   s.precision(precision);
