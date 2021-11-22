@@ -639,7 +639,7 @@ pack_coefficients(const Form<T>& u, fem::IntegralType integral_type, int id)
 // NOTE: This is subject to change
 /// Pack coefficients of a Form
 ///
-/// @param[in] u The Form
+/// @param[in] form The Form
 /// @return A map from a pair of the form (integral_type, domain_id) to
 /// a pair of the form (coeffs, cstride)
 template <typename T>
