@@ -557,9 +557,7 @@ void interpolate(
           pull_back_fn(_U, _u, _K, 1.0 / detJ[i], _J);
         }
 
-        xt::xtensor<T, 2> ref_data
-            = xt::transpose(xt::view(reference_data, xt::all(), 0, xt::all()));
-        // element->interpolate(ref_data, tcb::make_span(_coeffs));
+        auto ref_data = xt::view(reference_data, xt::all(), 0, xt::all());
         impl::interpolation_apply(Pi, ref_data, _coeffs, element_bs);
         apply_inverse_transpose_dof_transformation(_coeffs, cell_info, c, 1);
 

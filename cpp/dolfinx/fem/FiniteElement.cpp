@@ -252,13 +252,13 @@ basix::maps::type FiniteElement::map_type() const
                              "available. Maybe this is a mixed element?");
   }
 
-  return _element->mapping_type();
+  return _element->map_type();
 }
 //-----------------------------------------------------------------------------
 bool FiniteElement::interpolation_ident() const noexcept
 {
   assert(_element);
-  return _element->map_type == basix::maps::type::identity;
+  return _element->map_type() == basix::maps::type::identity;
 }
 //-----------------------------------------------------------------------------
 const xt::xtensor<double, 2>& FiniteElement::interpolation_points() const
@@ -287,7 +287,9 @@ const xt::xtensor<double, 2>& FiniteElement::interpolation_operator() const
 xt::xtensor<double, 2>
 FiniteElement::create_interpolation_operator(const FiniteElement& from) const
 {
-  if (_element->mapping_type() != from._element->mapping_type())
+  assert(_element);
+  assert(from._element);
+  if (_element->map_type() != from._element->map_type())
   {
     throw std::runtime_error("Interpolation between elements with different "
                              "maps is not supported.");
