@@ -22,8 +22,8 @@ __all__ = ["ffcx_jit", "get_parameters"]
 DOLFINX_DEFAULT_JIT_PARAMETERS = {
     "cache_dir":
         (os.getenv("XDG_CACHE_HOME", default=Path.home().joinpath(".cache")) / Path("fenics"),
-         "Path for storing DOLFINx JIT cache. " +
-         "Default prefix ~/.cache/ can be changed using XDG_CACHE_HOME environment variable."),
+         "Path for storing DOLFINx JIT cache."
+         + "Default prefix ~/.cache/ can be changed using XDG_CACHE_HOME environment variable."),
     "cffi_debug":
         (False, "CFFI debug mode"),
     "cffi_extra_compile_args":
