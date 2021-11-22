@@ -52,7 +52,9 @@ jobs:
           path: basix
 
       - name: Build Basix wheel
-        run: python -m cibuildwheel --output-dir wheelhouse basix
+        run: |
+          cd basix
+          python -m cibuildwheel --output-dir ../wheelhouse .
 
 
       - name: Checkout UFL
