@@ -507,7 +507,11 @@ graph::partition_fn graph::parmetis::partitioner(double imbalance,
         node_disp.data(), _offsets.data(), array.data(), elmwgt, nullptr,
         &wgtflag, &numflag, &ncon, &nparts, tpwgts.data(), ubvec.data(),
         _options.data(), &edgecut, part.data(), &comm);
-    assert(err == METIS_OK);
+    if (err != METIS_OK)
+    {
+      throw std::runtime_error("ParMETIS_V3_PartKway failed. Error code: "
+                               + std::to_string(err));
+    }
     timer2.stop();
 
     if (ghosting)
