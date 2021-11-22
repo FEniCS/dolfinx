@@ -78,5 +78,5 @@ setup(name='fenics-dolfinx',
       ext_modules=[CMakeExtension('dolfinx.cpp')],
       cmdclass=dict(build_ext=CMakeBuild),
       install_requires=REQUIREMENTS,
-      setup_requires=["pybind11", "petsc4py", "mpi4py"],
+      setup_requires=["pybind11"],
       zip_safe=False)
