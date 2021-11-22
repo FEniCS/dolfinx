@@ -459,12 +459,12 @@ graph::partition_fn graph::parmetis::partitioner(double imbalance,
 
     if (nparts == 1 and dolfinx::MPI::size(comm) == 1)
     {
+      // Nothing to be partitioned
       return build_adjacency_list<std::int32_t>(
           std::vector<std::int32_t>(graph.num_nodes(), 0), 1);
     }
 
     // Build adjacency list data
-    common::Timer timer1("ParMETIS: build adjacency data");
     const int rank = dolfinx::MPI::rank(comm);
 
     // Split communicator in groups (0) without and (1) with parts of
