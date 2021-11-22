@@ -89,8 +89,8 @@ jobs:
       - name: Make temporary simple503 repository
         run: |
           mkdir -p simple
-          cp wheelhouse/*.whl simple
-          python -m simple503 --base-url --move file:///project/simple simple
+          cp wheelhouse/* simple/
+          python -m simple503 --base-url file:///project/simple simple
 
 
       - name: Download petsc4py
@@ -106,8 +106,8 @@ jobs:
 
       - name: Update temporary simple503 repository
         run: |
-          cp wheelhouse/*.whl simple
-          python -m simple503 --base-url --move file:///project/simple simple
+          cp wheelhouse/* simple/
+          python -m simple503 --base-url file:///project/simple simple
 
 
       # TODO: Turn ref on
@@ -128,8 +128,8 @@ jobs:
 
       - name: Update temporary simple503 repository
         run: |
-          cp wheelhouse/*.whl simple
-          python -m simple503 --move --base-url file:///shared simple
+          cp wheelhouse/* simple
+          python -m simple503 --base-url file:///shared simple
 
       # Can be unzipped into $(pwd) and tested with:
       # docker run -ti -v $(pwd):/shared --env PIP_EXTRA_INDEX_URL=file:///shared python:3.9 /bin/bash -l
