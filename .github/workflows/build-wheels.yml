@@ -90,7 +90,7 @@ jobs:
         run: |
           mkdir -p simple
           cp wheelhouse/*.whl simple
-          python -m simple503 --base-url file:///project/simple simple
+          python -m simple503 --base-url --move file:///project/simple simple
 
 
       - name: Download petsc4py
@@ -107,7 +107,7 @@ jobs:
       - name: Update temporary simple503 repository
         run: |
           cp wheelhouse/*.whl simple
-          python -m simple503 --base-url file:///project/simple simple
+          python -m simple503 --base-url --move file:///project/simple simple
 
 
       # TODO: Turn ref on
@@ -117,12 +117,12 @@ jobs:
           path: dolfinx
           #ref: ${{ inputs.dolfinx_ref }}
 
-      # fenics-ffcx and fenics-basix are required by DOLFINx C++
+      # fenics-ffcx and fenics-basix are required by DOLFINx C++ build
       # mpi4py and petsc4py are build_requirements of DOLFINx Python
       - name: Build DOLFINx wheel
         run: python -m cibuildwheel --output-dir wheelhouse dolfinx/python
         env:
-          CIBW_BEFORE_BUILD: python -m pip -v install fenics-ffcx fenics-basix && cmake -S dolfinx/cpp -B build-dir -DPython3_EXECUTABLE=$(which python) && cmake --build build-dir && cmake --install build-dir && python -m pip -v install mpi4py petsc4py
+          CIBW_BEFORE_BUILD: python -m pip -v install fenics-ffcx fenics-basix && python -m pip -v install petsc4py mpi4py && cmake -S dolfinx/cpp -B build-dir -DPython3_EXECUTABLE=$(which python) && cmake --build build-dir && cmake --install build-dir
           #CIBW_TEST_REQUIRES: pytest pytest-xdist
           #CIBW_TEST_COMMAND: python -m pytest -n=2 {project}/python/test/unit/ && mpirun -np 2 python -m pytest {project}/python/test/unit/
 
