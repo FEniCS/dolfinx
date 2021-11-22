@@ -477,10 +477,10 @@ graph::partition_fn graph::parmetis::partitioner(double imbalance,
     std::vector<idx_t> node_disp;
     if (color == 1)
     {
+      // Build adjacency list data
       const int psize = dolfinx::MPI::size(pcomm);
-
-      node_disp = std::vector<idx_t>(psize + 1, 0);
       const idx_t num_local_nodes = graph.num_nodes();
+      node_disp = std::vector<idx_t>(psize + 1, 0);
       MPI_Allgather(&num_local_nodes, 1, dolfinx::MPI::mpi_type<idx_t>(),
                     node_disp.data() + 1, 1, dolfinx::MPI::mpi_type<idx_t>(),
                     pcomm);
@@ -489,21 +489,21 @@ graph::partition_fn graph::parmetis::partitioner(double imbalance,
       std::vector<idx_t> offsets(graph.offsets().begin(),
                                  graph.offsets().end());
 
-      // Options for ParMETIS
-      std::array<idx_t, 3> _options = {options[0], options[1], options[2]};
-
-      // Data for  ParMETIS
+      // Options and sata for ParMETIS
+      std::array<idx_t, 3> opts = {options[0], options[1], options[2]};
       idx_t ncon = 1;
       idx_t* elmwgt = nullptr;
       idx_t wgtflag(0), edgecut(0), numflag(0);
       std::vector<real_t> tpwgts(ncon * nparts,
                                  1.0 / static_cast<real_t>(nparts));
-      std::array<real_t, 1> ubvec = {static_cast<real_t>(imbalance)};
+      real_t ubvec = static_cast<real_t>(imbalance);
 
+      // Partition
+      common::Timer timer1("ParMETIS: call ParMETIS_V3_PartKway");
       int err = ParMETIS_V3_PartKway(
           node_disp.data(), offsets.data(), array.data(), elmwgt, nullptr,
-          &wgtflag, &numflag, &ncon, &nparts, tpwgts.data(), ubvec.data(),
-          _options.data(), &edgecut, part.data(), &pcomm);
+          &wgtflag, &numflag, &ncon, &nparts, tpwgts.data(), &ubvec,
+          opts.data(), &edgecut, part.data(), &pcomm);
       if (err != METIS_OK)
       {
         throw std::runtime_error("ParMETIS_V3_PartKway failed. Error code: "
