@@ -64,7 +64,7 @@ jobs:
           path: ufl
 
       - name: Build UFL wheel
-        run: python -m pip wheel -w wheelhouse ufl
+        run: python -m pip wheel -w wheelhouse ./ufl
 
 
       - name: Checkout FFCx
@@ -74,7 +74,7 @@ jobs:
           path: ffcx
 
       - name: Build FFCx wheel
-        run: python -m pip wheel -w wheelhouse ffcx
+        run: python -m pip wheel -w wheelhouse ./ffcx
 
 
       - name: Download mpi4py
@@ -132,12 +132,14 @@ jobs:
 
       # Can be unzipped into $(pwd) and tested with:
       # docker run -ti -v $(pwd):/shared --env PIP_EXTRA_INDEX_URL=file:///shared python:3.9 /bin/bash -l
-      - uses: actions/upload-artifact@v2
+      - name: Upload simple503-test artifact
+        uses: actions/upload-artifact@v2
         with:
           name: "simple503-test"
           path: simple/*
 
-      - uses: actions/upload-artifact@v2
+      - name: Upload wheelhouse artifact
+        uses: actions/upload-artifact@v2
         with:
           name: wheelhouse
           path: wheelhouse/*
@@ -148,7 +150,8 @@ jobs:
           python -m simple503 --base-url http://packages.fenicsproject.org/simple simple
 
       # For manual upload.
-      - uses: actions/upload-artifact@v2
+      - name: Upload simple503 artifact
+        uses: actions/upload-artifact@v2
         with:
           name: "simple503"
           path: simple/*
@@ -160,7 +163,8 @@ jobs:
           docker copy ${CONTAINER_ID}:/usr/local/bin/mpiexec mpiexec
           docker rm ${CONTAINER_ID}
 
-      - uses: actions/upload-artifact@v2
+      - name: Upload mpiexec artifact
+        uses: actions/upload-artifact@v2
         with:
           name: "mpiexec"
           path: mpiexec
