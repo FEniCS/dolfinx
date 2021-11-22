@@ -168,9 +168,6 @@ void io(py::module& m)
                &dolfinx::io::VTKFile::write),
            py::arg("mesh"), py::arg("t") = 0.0);
 
-  // Flag for ADIOS2 installation
-  m.def("has_adios2", &dolfinx::has_adios2);
-
 #ifdef HAS_ADIOS2
   // dolfinx::io::FidesWriter
   std::string pyclass_name = std::string("FidesWriter");

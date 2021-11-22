@@ -35,7 +35,7 @@ void common(py::module& m)
   m.attr("has_parmetis") = dolfinx::has_parmetis();
   m.attr("has_kahip") = dolfinx::has_kahip();
   m.attr("has_slepc") = dolfinx::has_slepc();
-  m.def("has_adios2", &dolfinx::has_adios2);
+  m.attr("has_adios2") = dolfinx::has_adios2();
 
 #ifdef HAS_PYBIND11_SLEPC4PY
   m.attr("has_slepc4py") = true;

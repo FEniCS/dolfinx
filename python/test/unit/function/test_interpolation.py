@@ -18,8 +18,13 @@ from dolfinx_utils.test.skips import skip_in_parallel
 from mpi4py import MPI
 
 parametrize_cell_types = pytest.mark.parametrize(
-    "cell_type", [CellType.interval, CellType.triangle, CellType.tetrahedron,
-                  CellType.quadrilateral, CellType.hexahedron])
+    "cell_type", [
+        # CellType.interval,
+        CellType.triangle,
+        #     CellType.tetrahedron,
+        #     CellType.quadrilateral,
+        #     CellType.hexahedron
+    ])
 
 
 def random_point_in_reference(cell_type):
