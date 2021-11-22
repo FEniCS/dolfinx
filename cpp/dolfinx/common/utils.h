@@ -30,10 +30,13 @@ std::pair<U, V> sort_unique(const U& indices, const V& values)
   if (indices.size() != values.size())
     throw std::runtime_error("Cannot sort two arrays of different lengths");
 
-  std::vector<std::pair<typename U::value_type, typename V::value_type>> data(
-      indices.size());
-  for (std::size_t i = 0; i < indices.size(); ++i)
-    data[i] = {indices[i], values[i]};
+  using T = typename std::pair<typename U::value_type, typename V::value_type>;
+  std::vector<T> data(indices.size());
+  std::transform(indices.cbegin(), indices.cend(), values.cbegin(),
+                 data.begin(),
+                 [](auto& idx, auto& v) -> T {
+                   return {idx, v};
+                 });
 
   // Sort make unique
   std::sort(data.begin(), data.end());
@@ -44,33 +47,12 @@ std::pair<U, V> sort_unique(const U& indices, const V& values)
   V values_new;
   indices_new.reserve(data.size());
   values_new.reserve(data.size());
-  for (auto d = data.begin(); d != it; ++d)
-  {
-    indices_new.push_back(d->first);
-    values_new.push_back(d->second);
-  }
+  std::transform(data.begin(), it, std::back_inserter(indices_new),
+                 [](auto& d) { return d.first; });
+  std::transform(data.begin(), it, std::back_inserter(values_new),
+                 [](auto& d) { return d.second; });
 
   return {std::move(indices_new), std::move(values_new)};
-}
-
-/// Indent string block
-std::string indent(std::string block);
-
-/// Convert a container to string
-template <typename T>
-std::string container_to_string(const T& x, int precision, int linebreak)
-{
-  std::stringstream s;
-  s.precision(precision);
-
-  for (std::size_t i = 0; i < (std::size_t)x.size(); ++i)
-  {
-    if ((i + 1) % linebreak == 0 && linebreak != 0)
-      s << x.data()[i] << std::endl;
-    else
-      s << x.data()[i] << " ";
-  }
-  return s.str();
 }
 
 /// Return a hash of a given object
