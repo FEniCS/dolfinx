@@ -160,7 +160,7 @@ jobs:
       - name: Extract mpiexec from Docker image
         run: |
           export CONTAINER_ID=$(docker create ${CIBW_MANYLINUX_X86_64_IMAGE})
-          docker copy ${CONTAINER_ID}:/usr/local/bin/mpiexec mpiexec
+          docker cp ${CONTAINER_ID}:/usr/local/bin/mpiexec mpiexec
           docker rm ${CONTAINER_ID}
 
       - name: Upload mpiexec artifact
