@@ -223,7 +223,7 @@ void geometry(py::module& m)
                      padding);
                }),
            py::arg("mesh"), py::arg("tdim"), py::arg("entity_indices"),
-           py::arg("padding") = 0.0)
+           py::arg("padding"))
       .def_property_readonly("num_bboxes",
                              &dolfinx::geometry::BoundingBoxTree::num_bboxes)
       .def("get_bbox",

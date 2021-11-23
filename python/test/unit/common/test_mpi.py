@@ -23,7 +23,7 @@ def test_mpi_comm_wrapper():
     """Test MPICommWrapper <-> mpi4py.MPI.Comm conversion"""
     w1 = MPI.COMM_WORLD
     m = dolfinx.UnitSquareMesh(w1, 4, 4)
-    w2 = m.mpi_comm()
+    w2 = m.mpi_comm
     assert isinstance(w1, MPI.Comm)
     assert isinstance(w2, MPI.Comm)
 

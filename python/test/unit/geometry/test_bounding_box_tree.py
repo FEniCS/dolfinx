@@ -21,7 +21,7 @@ def extract_geometricial_data(mesh, dim, entities):
     """For a set of entities in a mesh, return the coordinates of the vertices"""
     mesh_nodes = []
     geom = mesh.geometry
-    g_indices = cpp.mesh.entities_to_geometry(mesh, dim,
+    g_indices = cpp.mesh.entities_to_geometry(mesh._cpp_object, dim,
                                               numpy.array(entities, dtype=numpy.int32),
                                               False)
     for cell in g_indices:
@@ -52,7 +52,7 @@ def find_colliding_cells(mesh, bbox):
     colliding_cells = []
     num_cells = mesh.topology.index_map(mesh.topology.dim).size_local
     x_indices = cpp.mesh.entities_to_geometry(
-        mesh, mesh.topology.dim, numpy.arange(num_cells, dtype=numpy.int32), False)
+        mesh._cpp_object, mesh.topology.dim, numpy.arange(num_cells, dtype=numpy.int32), False)
     points = mesh.geometry.x
     bounding_box = expand_bbox(bbox)
     for cell in range(num_cells):
@@ -144,7 +144,7 @@ def test_compute_collisions_point_1d():
     assert len(entities.array) == 1
 
     # Get the vertices of the geometry
-    geom_entities = cpp.mesh.entities_to_geometry(mesh, tdim, entities.array, False)[0]
+    geom_entities = cpp.mesh.entities_to_geometry(mesh._cpp_object, tdim, entities.array, False)[0]
     x = mesh.geometry.x
     cell_vertices = x[geom_entities]
     # Check that we get the cell with correct vertices
@@ -160,7 +160,7 @@ def test_compute_collisions_tree_1d(point):
     def locator_A(x):
         return x[0] >= point[0]
     # Locate all vertices of mesh A that should collide
-    vertices_A = cpp.mesh.locate_entities(mesh_A, 0, locator_A)
+    vertices_A = cpp.mesh.locate_entities(mesh_A._cpp_object, 0, locator_A)
     mesh_A.topology.create_connectivity(0, mesh_A.topology.dim)
     v_to_c = mesh_A.topology.connectivity(0, mesh_A.topology.dim)
 
@@ -175,7 +175,7 @@ def test_compute_collisions_tree_1d(point):
         return x[0] <= 1
 
     # Locate all vertices of mesh B that should collide
-    vertices_B = cpp.mesh.locate_entities(mesh_B, 0, locator_B)
+    vertices_B = cpp.mesh.locate_entities(mesh_B._cpp_object, 0, locator_B)
     mesh_B.topology.create_connectivity(0, mesh_B.topology.dim)
     v_to_c = mesh_B.topology.connectivity(0, mesh_B.topology.dim)
 
@@ -183,8 +183,8 @@ def test_compute_collisions_tree_1d(point):
     cells_B = numpy.sort(numpy.unique(numpy.hstack([v_to_c.links(vertex) for vertex in vertices_B])))
 
     # Find colliding entities using bounding box trees
-    tree_A = BoundingBoxTree(mesh_A, mesh_A.topology.dim)
-    tree_B = BoundingBoxTree(mesh_B, mesh_B.topology.dim)
+    tree_A = BoundingBoxTree(mesh_A._cpp_object, mesh_A.topology.dim)
+    tree_B = BoundingBoxTree(mesh_B._cpp_object, mesh_B.topology.dim)
     entities = compute_collisions(tree_A, tree_B)
     entities_A = numpy.sort(numpy.unique([q[0] for q in entities]))
     entities_B = numpy.sort(numpy.unique([q[1] for q in entities]))
@@ -245,8 +245,8 @@ def test_compute_closest_entity_1d(dim):
     tree = BoundingBoxTree(mesh, dim)
     num_entities_local = mesh.topology.index_map(dim).size_local + mesh.topology.index_map(dim).num_ghosts
     entities = numpy.arange(num_entities_local, dtype=numpy.int32)
-    midpoint_tree = create_midpoint_tree(mesh, dim, entities)
-    closest_entities = compute_closest_entity(tree, midpoint_tree, mesh, points)
+    midpoint_tree = create_midpoint_tree(mesh._cpp_object, dim, entities)
+    closest_entities = compute_closest_entity(tree, midpoint_tree, mesh._cpp_object, points)
 
     # Find which entity is colliding with known closest point on mesh
     p_c = numpy.array([[0, 0, 0], [2 / N, 0, 0]])
@@ -276,10 +276,10 @@ def test_compute_closest_entity_2d(dim):
     tree = BoundingBoxTree(mesh, dim)
     num_entities_local = mesh.topology.index_map(dim).size_local + mesh.topology.index_map(dim).num_ghosts
     entities = numpy.arange(num_entities_local, dtype=numpy.int32)
-    midpoint_tree = create_midpoint_tree(mesh, dim, entities)
+    midpoint_tree = create_midpoint_tree(mesh._cpp_object, dim, entities)
 
     # Find which entity is colliding with known closest point on mesh
-    closest_entities = compute_closest_entity(tree, midpoint_tree, mesh, points)
+    closest_entities = compute_closest_entity(tree, midpoint_tree, mesh._cpp_object, points)
 
     # Find which entity is colliding with known closest point on mesh
     p_c = numpy.array([0, 0, 0])
@@ -305,9 +305,9 @@ def test_compute_closest_entity_3d(dim):
     tree = BoundingBoxTree(mesh, dim)
     num_entities_local = mesh.topology.index_map(dim).size_local + mesh.topology.index_map(dim).num_ghosts
     entities = numpy.arange(num_entities_local, dtype=numpy.int32)
-    midpoint_tree = create_midpoint_tree(mesh, dim, entities)
+    midpoint_tree = create_midpoint_tree(mesh._cpp_object, dim, entities)
 
-    closest_entities = compute_closest_entity(tree, midpoint_tree, mesh, points)
+    closest_entities = compute_closest_entity(tree, midpoint_tree, mesh._cpp_object, points)
 
     # Find which entity is colliding with known closest point on mesh
     p_c = numpy.array([0.9, 0, 1])
@@ -334,8 +334,8 @@ def test_compute_closest_sub_entity(dim):
 
     left_entities = locate_entities(mesh, dim, lambda x: x[0] <= 0.5)
     tree = BoundingBoxTree(mesh, dim, left_entities)
-    midpoint_tree = create_midpoint_tree(mesh, dim, left_entities)
-    closest_entities = compute_closest_entity(tree, midpoint_tree, mesh, points)
+    midpoint_tree = create_midpoint_tree(mesh._cpp_object, dim, left_entities)
+    closest_entities = compute_closest_entity(tree, midpoint_tree, mesh._cpp_object, points)
 
     # Find which entity is colliding with known closest point on mesh
     p_c = numpy.array([0.5, 0.5, 0.5])
@@ -355,7 +355,7 @@ def test_compute_closest_sub_entity(dim):
 def test_surface_bbtree():
     """Test creation of BBTree on subset of entities(surface cells)"""
     mesh = UnitCubeMesh(MPI.COMM_WORLD, 8, 8, 8)
-    sf = cpp.mesh.exterior_facet_indices(mesh)
+    sf = cpp.mesh.exterior_facet_indices(mesh._cpp_object)
     tdim = mesh.topology.dim
     f_to_c = mesh.topology.connectivity(tdim - 1, tdim)
     cells = [f_to_c.links(f)[0] for f in sf]
@@ -427,14 +427,14 @@ def test_surface_bbtree_collision():
     mesh2 = UnitCubeMesh(MPI.COMM_WORLD, 3, 3, 3, CellType.hexahedron)
     mesh2.geometry.x[:, :] += numpy.array([0.9, 0.9, 0.9])
 
-    sf = cpp.mesh.exterior_facet_indices(mesh1)
+    sf = cpp.mesh.exterior_facet_indices(mesh1._cpp_object)
     f_to_c = mesh1.topology.connectivity(tdim - 1, tdim)
 
     # Compute unique set of cells (some will be counted multiple times)
     cells = list(set([f_to_c.links(f)[0] for f in sf]))
     bbtree1 = BoundingBoxTree(mesh1, tdim, cells)
 
-    sf = cpp.mesh.exterior_facet_indices(mesh2)
+    sf = cpp.mesh.exterior_facet_indices(mesh2._cpp_object)
     f_to_c = mesh2.topology.connectivity(tdim - 1, tdim)
     cells = list(set([f_to_c.links(f)[0] for f in sf]))
     bbtree2 = BoundingBoxTree(mesh2, tdim, cells)

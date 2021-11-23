@@ -44,7 +44,10 @@ def locate_entities(mesh: _cpp.mesh.Mesh,
 
     """
 
-    return _cpp.mesh.locate_entities(mesh, dim, marker)
+    try:
+        return _cpp.mesh.locate_entities(mesh, dim, marker)
+    except TypeError:
+        return _cpp.mesh.locate_entities(mesh._cpp_object, dim, marker)
 
 
 def locate_entities_boundary(mesh: _cpp.mesh.Mesh,
