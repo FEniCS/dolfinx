@@ -12,7 +12,7 @@ from dolfinx.cpp.geometry import (create_midpoint_tree, compute_closest_entity, 
 class BoundingBoxTree(_cpp.geometry.BoundingBoxTree):
     def __init__(self, mesh, dim, entities=None, padding=0.0):
         map = mesh.topology.index_map(dim)
-        if map == None:
+        if map is None:
             raise RuntimeError(f"Mesh entities of dimension {dim} have not been created.")
         if entities is None:
             entities = range(0, map.size_local + map.num_ghosts)
