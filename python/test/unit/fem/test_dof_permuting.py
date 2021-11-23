@@ -291,7 +291,7 @@ def test_integral(cell_type, space_type, space_order):
 
                 n = Function(Vvec)
                 n.interpolate(normal)
-                form = ufl.inner(ufl.jump(v), ufl.avg(n)) * ufl.dS
+                form = ufl.inner(ufl.jump(v), n) * ufl.dS
             elif space_type in ["N1curl", "N2curl", "RTCE", "NCE", "BDMCE", "AAE"]:
                 # Hcurl
                 def tangent(x):
@@ -301,7 +301,7 @@ def test_integral(cell_type, space_type, space_order):
 
                 t = Function(Vvec)
                 t.interpolate(tangent)
-                form = ufl.inner(ufl.jump(v), ufl.avg(t)) * ufl.dS
+                form = ufl.inner(ufl.jump(v), t) * ufl.dS
                 if tdim == 3:
                     def tangent2(x):
                         values = np.zeros((3, x.shape[1]))
@@ -310,7 +310,7 @@ def test_integral(cell_type, space_type, space_order):
 
                     t2 = Function(Vvec)
                     t2.interpolate(tangent2)
-                    form += ufl.inner(ufl.jump(v), ufl.avg(t2)) * ufl.dS
+                    form += ufl.inner(ufl.jump(v), t2) * ufl.dS
             else:
                 form = ufl.jump(v) * ufl.dS
 
