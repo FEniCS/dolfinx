@@ -94,7 +94,7 @@ else:
 
 mesh = create_mesh(MPI.COMM_WORLD, cells, x, ufl_mesh_from_gmsh(gmsh_cell_id, 3))
 mesh.name = "ball_d1"
-entities, values = distribute_entity_data(mesh, 2, marked_facets, facet_values)
+entities, values = distribute_entity_data(mesh._cpp_object, 2, marked_facets, facet_values)
 
 mesh.topology.create_connectivity(2, 0)
 mt = create_meshtags(mesh, 2, AdjacencyList(entities), np.int32(values))
@@ -153,7 +153,7 @@ mesh.name = "ball_d2"
 gmsh_triangle6 = perm_gmsh(CellType.triangle, 6)
 marked_facets = marked_facets[:, gmsh_triangle6]
 
-entities, values = distribute_entity_data(mesh, 2, marked_facets, facet_values)
+entities, values = distribute_entity_data(mesh._cpp_object, 2, marked_facets, facet_values)
 mesh.topology.create_connectivity(2, 0)
 mt = create_meshtags(mesh, 2, AdjacencyList(entities), np.int32(values))
 mt.name = "ball_d2_surface"
@@ -231,7 +231,7 @@ mesh.name = "hex_d2"
 gmsh_quad9 = perm_gmsh(CellType.quadrilateral, 9)
 marked_facets = marked_facets[:, gmsh_quad9]
 
-entities, values = distribute_entity_data(mesh, 2, marked_facets, facet_values)
+entities, values = distribute_entity_data(mesh._cpp_object, 2, marked_facets, facet_values)
 mesh.topology.create_connectivity(2, 0)
 mt = create_meshtags(mesh, 2, AdjacencyList(entities), np.int32(values))
 mt.name = "hex_d2_surface"
