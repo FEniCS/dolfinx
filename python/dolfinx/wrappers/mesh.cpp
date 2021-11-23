@@ -268,8 +268,8 @@ void mesh(py::module& m)
       .def_property_readonly("cell_type", &dolfinx::mesh::Topology::cell_type)
       .def("cell_name", [](const dolfinx::mesh::Topology& self)
            { return dolfinx::mesh::to_string(self.cell_type()); })
-      .def("mpi_comm", [](dolfinx::mesh::Mesh& self)
-           { return MPICommWrapper(self.mpi_comm()); });
+      .def_property_readonly("mpi_comm", [](dolfinx::mesh::Mesh& self)
+                             { return MPICommWrapper(self.mpi_comm()); });
 
   // dolfinx::mesh::Mesh
   py::class_<dolfinx::mesh::Mesh, std::shared_ptr<dolfinx::mesh::Mesh>>(
@@ -302,7 +302,8 @@ void mesh(py::module& m)
         [](const MPICommWrapper comm, int nparts, int tdim,
            const dolfinx::graph::AdjacencyList<std::int64_t>& cells,
            dolfinx::mesh::GhostMode ghost_mode)
-            -> dolfinx::graph::AdjacencyList<std::int32_t> {
+            -> dolfinx::graph::AdjacencyList<std::int32_t>
+        {
           return dolfinx::mesh::partition_cells_graph(comm.get(), nparts, tdim,
                                                       cells, ghost_mode);
         });

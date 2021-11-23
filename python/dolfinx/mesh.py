@@ -10,7 +10,7 @@ import types
 import numpy
 import ufl
 
-from dolfinx import cpp
+from dolfinx import cpp as _cpp
 from dolfinx.cpp.mesh import CellType  # noqa
 from dolfinx.cpp.mesh import GhostMode  # noqa
 from dolfinx.cpp.mesh import midpoints  # noqa
@@ -21,7 +21,7 @@ __all__ = [
 ]
 
 
-def locate_entities(mesh: cpp.mesh.Mesh,
+def locate_entities(mesh: _cpp.mesh.Mesh,
                     dim: int,
                     marker: types.FunctionType):
     """Compute list of mesh entities satisfying a geometric marking function.
@@ -44,10 +44,10 @@ def locate_entities(mesh: cpp.mesh.Mesh,
 
     """
 
-    return cpp.mesh.locate_entities(mesh, dim, marker)
+    return _cpp.mesh.locate_entities(mesh, dim, marker)
 
 
-def locate_entities_boundary(mesh: cpp.mesh.Mesh,
+def locate_entities_boundary(mesh: _cpp.mesh.Mesh,
                              dim: int,
                              marker: types.FunctionType):
     """Compute list of mesh entities that are attached to an owned boundary facet
@@ -80,7 +80,7 @@ def locate_entities_boundary(mesh: cpp.mesh.Mesh,
 
     """
 
-    return cpp.mesh.locate_entities_boundary(mesh, dim, marker)
+    return _cpp.mesh.locate_entities_boundary(mesh, dim, marker)
 
 
 _uflcell_to_dolfinxcell = {
@@ -92,19 +92,19 @@ _uflcell_to_dolfinxcell = {
 }
 
 _meshtags_types = {
-    numpy.int8: cpp.mesh.MeshTags_int8,
-    numpy.int32: cpp.mesh.MeshTags_int32,
-    numpy.int64: cpp.mesh.MeshTags_int64,
-    numpy.double: cpp.mesh.MeshTags_double
+    numpy.int8: _cpp.mesh.MeshTags_int8,
+    numpy.int32: _cpp.mesh.MeshTags_int32,
+    numpy.int64: _cpp.mesh.MeshTags_int64,
+    numpy.double: _cpp.mesh.MeshTags_double
 }
 
 
 def refine(mesh, cell_markers=None, redistribute=True):
     """Refine a mesh"""
     if cell_markers is None:
-        mesh_refined = cpp.refinement.refine(mesh, redistribute)
+        mesh_refined = _cpp.refinement.refine(mesh, redistribute)
     else:
-        mesh_refined = cpp.refinement.refine(mesh, cell_markers, redistribute)
+        mesh_refined = _cpp.refinement.refine(mesh, cell_markers, redistribute)
 
     coordinate_element = mesh._ufl_domain.ufl_coordinate_element()
     domain = ufl.Mesh(coordinate_element)
@@ -115,17 +115,17 @@ def refine(mesh, cell_markers=None, redistribute=True):
 
 def create_mesh(comm, cells, x, domain,
                 ghost_mode=GhostMode.shared_facet,
-                partitioner=cpp.mesh.partition_cells_graph):
+                partitioner=_cpp.mesh.partition_cells_graph):
     """Create a mesh from topology and geometry data"""
     ufl_element = domain.ufl_coordinate_element()
     cell_shape = ufl_element.cell().cellname()
     cell_degree = ufl_element.degree()
-    cmap = cpp.fem.CoordinateElement(_uflcell_to_dolfinxcell[cell_shape], cell_degree)
+    cmap = _cpp.fem.CoordinateElement(_uflcell_to_dolfinxcell[cell_shape], cell_degree)
     try:
-        mesh = cpp.mesh.create_mesh(comm, cells, cmap, x, ghost_mode, partitioner)
+        mesh = _cpp.mesh.create_mesh(comm, cells, cmap, x, ghost_mode, partitioner)
     except TypeError:
-        mesh = cpp.mesh.create_mesh(comm, cpp.graph.AdjacencyList_int64(numpy.cast['int64'](cells)),
-                                    cmap, x, ghost_mode, partitioner)
+        mesh = _cpp.mesh.create_mesh(comm, _cpp.graph.AdjacencyList_int64(numpy.cast['int64'](cells)),
+                                     cmap, x, ghost_mode, partitioner)
 
     # Attach UFL data (used when passing a mesh into UFL functions)
     domain._ufl_cargo = mesh
@@ -148,6 +148,30 @@ def MeshTags(mesh, dim, indices, values):
     return fn(mesh, dim, indices.astype(numpy.int32), values)
 
 
+class Mesh:
+    def __init__(self, mesh: _cpp.mesh.Mesh):
+        self._cpp_object = mesh
+
+    @property
+    def topology(self):
+        return self._cpp_object.topology
+
+    @property
+    def geometry(self):
+        return self._cpp_object.geometry
+
+    @property
+    def comm(self):
+        return self._cpp_object.mpi_comm
+
+    def ufl_cell(self):
+        return ufl.Cell(self.topology.cell_name(), geometric_dimension=self.geometry.dim)
+
+    def ufl_domain(self):
+        """Return the ufl domain corresponding to the mesh."""
+        return self._ufl_domain
+
+
 # Functions to extend cpp.mesh.Mesh with
 
 
@@ -161,8 +185,8 @@ def ufl_domain(self):
 
 
 # Extend cpp.mesh.Mesh class, and clean-up
-cpp.mesh.Mesh.ufl_cell = ufl_cell
-cpp.mesh.Mesh.ufl_domain = ufl_domain
+_cpp.mesh.Mesh.ufl_cell = ufl_cell
+_cpp.mesh.Mesh.ufl_domain = ufl_domain
 
 del ufl_cell
 del ufl_domain
