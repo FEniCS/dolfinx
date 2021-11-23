@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "Constant.h"
 #include "Function.h"
 #include "FunctionSpace.h"
 #include <array>
@@ -168,6 +169,45 @@ public:
     _dofs1_g = _dofs0;
   }
 
+  /// Create a representation of a Dirichlet boundary condition with a constant
+  /// value.
+  ///
+  /// @param[in] V The function space to constrain
+  /// @param[in] g The constant value
+  /// @param[in] dofs Degree-of-freedom block indices (@p
+  /// std::vector<std::int32_t>) in the space of the boundary value
+  /// function applied to V_dofs[i]. The dof block indices must be
+  /// sorted.
+  /// @note The indices in `dofs` are for *blocks*, e.g. a block index
+  /// maps to 3 degrees-of-freedom if the dofmap associated with `g` has
+  /// block size 3
+  template <typename U>
+  DirichletBC(const std::shared_ptr<const fem::FunctionSpace>& V,
+              const std::shared_ptr<const fem::Constant<T>>& g, U&& dofs)
+      : _function_space(V), _g(g), _dofs0(std::forward<U>(dofs))
+  {
+    const int owned_size0 = _function_space->dofmap()->index_map->size_local();
+    auto it = std::lower_bound(_dofs0.begin(), _dofs0.end(), owned_size0);
+    const int map0_bs = _function_space->dofmap()->index_map_bs();
+    _owned_indices0 = map0_bs * std::distance(_dofs0.begin(), it);
+
+    const int bs = _function_space->dofmap()->bs();
+    if (bs > 1)
+    {
+      // Unroll for the block size
+      const std::vector<std::int32_t> dof_tmp = _dofs0;
+      _dofs0.resize(bs * dof_tmp.size());
+      for (std::size_t i = 0; i < dof_tmp.size(); ++i)
+      {
+        for (int k = 0; k < bs; ++k)
+          _dofs0[bs * i + k] = bs * dof_tmp[i] + k;
+      }
+    }
+
+    // TODO: allows single dofs array (let one point to the other)
+    _dofs1_g = _dofs0;
+  }
+
   /// Create a representation of a Dirichlet boundary condition where
   /// the space being constrained and the function that defines the
   /// constraint values do not share the same `FunctionSpace`. A typical
@@ -228,7 +268,12 @@ public:
 
   /// Return boundary value function g
   /// @return The boundary values Function
-  std::shared_ptr<const fem::Function<T>> value() const { return _g; }
+  std::variant<std::shared_ptr<const fem::Function<T>>,
+               std::shared_ptr<const fem::Constant<T>>>
+  value() const
+  {
+    return _g;
+  }
 
   /// Access dof indices (local indices, unrolled), including ghosts, to
   /// which a Dirichlet condition is applied, and the index to the first
@@ -254,16 +299,46 @@ public:
   /// @param[in] scale The scaling value to apply
   void set(xtl::span<T> x, double scale = 1.0) const
   {
-    assert(_g);
-    xtl::span<const T> g = _g->x()->array();
-    for (std::size_t i = 0; i < _dofs0.size(); ++i)
-    {
-      if (_dofs0[i] < (std::int32_t)x.size())
-      {
-        assert(_dofs1_g[i] < (std::int32_t)g.size());
-        x[_dofs0[i]] = scale * g[_dofs1_g[i]];
-      }
-    }
+    std::visit(
+        [&](auto&& g)
+        {
+          using G = std::decay_t<decltype(g)>;
+          if constexpr (std::is_same_v<G,
+                                       std::shared_ptr<const fem::Function<T>>>)
+          {
+            //   assert(g);
+            //   xtl::span<const T> g = _g->x()->array();
+            //   for (std::size_t i = 0; i < _dofs0.size(); ++i)
+            //   {
+            //     if (_dofs0[i] < (std::int32_t)x.size())
+            //     {
+            //       assert(_dofs1_g[i] < (std::int32_t)g.size());
+            //       x[_dofs0[i]] = scale * g[_dofs1_g[i]];
+            //     }
+            //   }
+          }
+          else if constexpr (std::is_same_v<
+                                 G, std::shared_ptr<const fem::Constant<T>>>)
+          {
+            // assert(g);
+            // std::vector<T> value = g.value;
+            // const std::int32_t bs =
+            // _function_space->dofmap()->index_map_bs(); assert(value.size() ==
+            // bs); for (std::size_t i = 0; i < _dofs0.size(); ++i)
+            // {
+            //   if (_dofs0[i] < (std::int32_t)x.size())
+            //   {
+            //     std::div div = std::div_t(_dofs0[i], bs);
+            //     x[_dofs0[i]] = scale * value[div.rem];
+            //   }
+            // }
+          }
+          else
+          {
+            throw std::runtime_error("Could not set BC, unknown bc type.");
+          }
+        },
+        _g);
   }
 
   /// Set bc entries in `x` to `scale * (x0 - x_bc)`
@@ -322,7 +397,9 @@ private:
   std::shared_ptr<const fem::FunctionSpace> _function_space;
 
   // The function
-  std::shared_ptr<const fem::Function<T>> _g;
+  std::variant<std::shared_ptr<const fem::Function<T>>,
+               std::shared_ptr<const fem::Constant<T>>>
+      _g;
 
   // Dof indices (_dofs0) in _function_space and (_dofs1_g) in the
   // space of _g
