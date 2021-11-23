@@ -146,7 +146,10 @@ def MeshTags(mesh, dim, indices, values):
         raise KeyError("Datatype {} of values array not recognised".format(dtype))
 
     fn = _meshtags_types[dtype]
-    return fn(mesh, dim, indices.astype(numpy.int32), values)
+    try:
+        return fn(mesh, dim, indices.astype(numpy.int32), values)
+    except TypeError:
+        return fn(mesh._cpp_object, dim, indices.astype(numpy.int32), values)
 
 
 class Mesh:
