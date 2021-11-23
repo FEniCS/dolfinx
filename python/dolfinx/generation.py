@@ -34,7 +34,7 @@ def IntervalMesh(comm, nx: int, points: list, ghost_mode=GhostMode.shared_facet,
     ghost_mode
 
     """
-    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell_type.name, 1))
+    domain = ufl.Mesh(ufl.VectorElement("Lagrange", "interval", 1))
     mesh_cpp = cpp.generation.create_interval_mesh(comm, nx, points, ghost_mode, partitioner)
     domain._ufl_cargo = mesh_cpp
     mesh_cpp._ufl_domain = domain
