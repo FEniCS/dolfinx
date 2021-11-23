@@ -168,6 +168,14 @@ class Mesh:
     def mpi_comm(self):
         return self._cpp_object.mpi_comm
 
+    @property
+    def name(self):
+        return self._cpp_object.name
+
+    @name.setter
+    def name(self, value):
+        self._cpp_object.name = value
+
     def ufl_cell(self):
         return ufl.Cell(self.topology.cell_name(), geometric_dimension=self.geometry.dim)
 
