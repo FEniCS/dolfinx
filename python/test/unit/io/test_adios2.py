@@ -31,7 +31,7 @@ def test_second_order_fides(tempdir):
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell, 2))
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
     with pytest.raises(RuntimeError):
-        FidesWriter(mesh.mpi_comm, filename, mesh)
+        FidesWriter(mesh.mpi_comm, filename, mesh._cpp_object)
 
 
 @pytest.mark.skipif(not has_adios2, reason="Requires ADIOS2.")
@@ -45,7 +45,7 @@ def test_functions_from_different_meshes_fides(tempdir):
     u0 = Function(FunctionSpace(mesh0, ("Lagrange", 1)))
     u1 = Function(FunctionSpace(mesh1, ("Lagrange", 1)))
     with pytest.raises(RuntimeError):
-        FidesWriter(mesh0.mpi_comm(), filename, [u0._cpp_object, u1._cpp_object])
+        FidesWriter(mesh0.mpi_comm, filename, [u0._cpp_object, u1._cpp_object])
 
 
 def generate_mesh(dim: int, simplex: bool, N: int = 3):
@@ -72,7 +72,7 @@ def test_fides_mesh(tempdir, dim, simplex):
     from dolfinx.cpp.io import FidesWriter
     filename = os.path.join(tempdir, "mesh_fides.bp")
     mesh = generate_mesh(dim, simplex)
-    with FidesWriter(mesh.mpi_comm, filename, mesh) as f:
+    with FidesWriter(mesh.mpi_comm, filename, mesh._cpp_object) as f:
         f.write(0.0)
         mesh.geometry.x[:, 1] += 0.1
         f.write(0.1)
@@ -150,7 +150,7 @@ def test_second_order_vtx(tempdir):
     cell = ufl.Cell("interval", geometric_dimension=points.shape[1])
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell, 2))
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
-    with VTXWriter(mesh.mpi_comm, filename, mesh) as f:
+    with VTXWriter(mesh.mpi_comm, filename, mesh._cpp_object) as f:
         f.write(0.0)
 
 
@@ -161,7 +161,7 @@ def test_vtx_mesh(tempdir, dim, simplex):
     from dolfinx.cpp.io import VTXWriter
     filename = os.path.join(tempdir, "mesh_vtx.bp")
     mesh = generate_mesh(dim, simplex)
-    with VTXWriter(mesh.mpi_comm, filename, mesh) as f:
+    with VTXWriter(mesh.mpi_comm, filename, mesh._cpp_object) as f:
         f.write(0.0)
         mesh.geometry.x[:, 1] += 0.1
         f.write(0.1)

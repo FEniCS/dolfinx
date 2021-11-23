@@ -24,9 +24,9 @@ class VTKFile(cpp.io.VTKFile):
 
     """
 
-    def write_mesh(self, mesh: cpp.mesh.Mesh, t: float = 0.0) -> None:
+    def write_mesh(self, mesh: Mesh, t: float = 0.0) -> None:
         """Write mesh to file for a given time (default 0.0)"""
-        self.write(mesh, t)
+        self.write(mesh._cpp_object, t)
 
     def write_function(self, u: typing.Union[typing.List[fem.Function], fem.Function], t: float = 0.0) -> None:
         """
@@ -72,6 +72,9 @@ class XDMFFile(cpp.io.XDMFFile):
         domain._ufl_cargo = mesh_cpp
         mesh_cpp._ufl_domain = domain
         return Mesh(mesh_cpp, domain)
+
+    def read_meshtags(self, mesh, name, xpath="/Xdmf/Domain"):
+        return super().read_meshtags(mesh._cpp_object, name, xpath)
 
 
 def extract_gmsh_topology_and_markers(gmsh_model, model_name=None):
