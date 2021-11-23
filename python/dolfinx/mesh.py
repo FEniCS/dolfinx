@@ -149,8 +149,9 @@ def MeshTags(mesh, dim, indices, values):
 
 
 class Mesh:
-    def __init__(self, mesh: _cpp.mesh.Mesh):
+    def __init__(self, mesh: _cpp.mesh.Mesh, domain: ufl.Mesh):
         self._cpp_object = mesh
+        self._ufl_domain = domain
 
     @property
     def topology(self):
