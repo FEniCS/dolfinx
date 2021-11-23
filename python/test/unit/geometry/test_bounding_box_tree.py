@@ -273,6 +273,7 @@ def test_compute_closest_entity_1d(dim):
 def test_compute_closest_entity_2d(dim):
     points = numpy.array([-1.0, -0.01, 0.0])
     mesh = UnitSquareMesh(MPI.COMM_WORLD, 15, 15)
+    mesh.topology.create_entities(dim)
     tree = BoundingBoxTree(mesh, dim)
     num_entities_local = mesh.topology.index_map(dim).size_local + mesh.topology.index_map(dim).num_ghosts
     entities = numpy.arange(num_entities_local, dtype=numpy.int32)
