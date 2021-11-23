@@ -2,10 +2,10 @@ cmake_minimum_required(VERSION 3.16)
 
 PROJECT(dolfinx_pybind11)
 
+find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
 find_package(pybind11 REQUIRED CONFIG HINTS ${PYBIND11_DIR} ${PYBIND11_ROOT}
   $ENV{PYBIND11_DIR} $ENV{PYBIND11_ROOT})
 
-find_package(Python3 COMPONENTS Interpreter REQUIRED)
 execute_process(
   COMMAND ${Python3_EXECUTABLE} -c "import basix, os, sys; sys.stdout.write(os.path.dirname(basix.__file__))"
   OUTPUT_VARIABLE BASIX_PY_DIR
@@ -71,7 +71,7 @@ endif()
 
 # Check for petsc4py
 execute_process(
-  COMMAND ${PYTHON_EXECUTABLE} -c "import petsc4py; print(petsc4py.get_include())"
+  COMMAND ${Python3_EXECUTABLE} -c "import petsc4py; print(petsc4py.get_include())"
   OUTPUT_VARIABLE PETSC4PY_INCLUDE_DIR
   RESULT_VARIABLE PETSC4PY_COMMAND_RESULT
   ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
@@ -84,7 +84,7 @@ endif()
 
 # Check for mpi4py
 execute_process(
-  COMMAND "${PYTHON_EXECUTABLE}" "-c" "import mpi4py; print(mpi4py.get_include())"
+  COMMAND "${Python3_EXECUTABLE}" "-c" "import mpi4py; print(mpi4py.get_include())"
   OUTPUT_VARIABLE MPI4PY_INCLUDE_DIR
   RESULT_VARIABLE MPI4PY_COMMAND_RESULT
   ERROR_QUIET  OUTPUT_STRIP_TRAILING_WHITESPACE)

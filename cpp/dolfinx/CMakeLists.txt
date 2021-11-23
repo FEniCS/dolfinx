@@ -95,10 +95,6 @@ else()
   target_include_directories(dolfinx SYSTEM PUBLIC ${HDF5_INCLUDE_DIRS})
 endif()
 
-# SCOTCH
-target_link_libraries(dolfinx PRIVATE ${SCOTCH_LIBRARIES})
-target_include_directories(dolfinx SYSTEM PRIVATE ${SCOTCH_INCLUDE_DIRS})
-
 #------------------------------------------------------------------------------
 # Optional packages
 
@@ -113,6 +109,13 @@ if (DOLFINX_ENABLE_SLEPC AND SLEPC_FOUND)
   target_compile_definitions(dolfinx PUBLIC HAS_SLEPC)
   target_link_libraries(dolfinx PUBLIC SLEPC::slepc)
   target_link_libraries(dolfinx PRIVATE SLEPC::slepc_static)
+endif()
+
+# SCOTCH
+if (SCOTCH_FOUND)
+  target_compile_definitions(dolfinx PUBLIC HAS_PTSCOTCH)
+  target_link_libraries(dolfinx PRIVATE ${SCOTCH_LIBRARIES})
+  target_include_directories(dolfinx SYSTEM PRIVATE ${SCOTCH_INCLUDE_DIRS})
 endif()
 
 # ParMETIS

@@ -350,6 +350,15 @@ public:
     xt::xtensor<double, 3> K = xt::zeros<double>({std::size_t(1), tdim, gdim});
     xt::xtensor<double, 1> detJ = xt::zeros<double>({1});
     xt::xtensor<double, 4> phi(cmap.tabulate_shape(1, 1));
+    using u_t = xt::xview<decltype(basis_values)&, std::size_t,
+                          xt::xall<std::size_t>, xt::xall<std::size_t>>;
+    using U_t = xt::xview<decltype(basis_reference_values)&, std::size_t,
+                          xt::xall<std::size_t>, xt::xall<std::size_t>>;
+    using J_t = xt::xview<decltype(J)&, std::size_t, xt::xall<std::size_t>,
+                          xt::xall<std::size_t>>;
+    using K_t = xt::xview<decltype(K)&, std::size_t, xt::xall<std::size_t>,
+                          xt::xall<std::size_t>>;
+    auto push_forward_fn = element->map_fn<u_t, U_t, J_t, K_t>();
     for (std::size_t p = 0; p < cells.size(); ++p)
     {
       const int cell_index = cells[p];
@@ -398,7 +407,17 @@ public:
                                cell_info, cell_index, reference_value_size);
 
       // Push basis forward to physical element
-      element->push_forward(basis_values, basis_reference_values, J, detJ, K);
+      for (std::size_t i = 0; i < basis_values.shape(0); ++i)
+      {
+        auto _K = xt::view(K, i, xt::all(), xt::all());
+        auto _J = xt::view(J, i, xt::all(), xt::all());
+        auto _u = xt::view(basis_values, i, xt::all(), xt::all());
+        auto _U = xt::view(basis_reference_values, i, xt::all(), xt::all());
+        push_forward_fn(_u, _U, _J, detJ[i], _K);
+      }
+
+      // element->push_forward(basis_values, basis_reference_values, J, detJ,
+      // K);
 
       // Get degrees of freedom for current cell
       xtl::span<const std::int32_t> dofs = dofmap->cell_dofs(cell_index);
