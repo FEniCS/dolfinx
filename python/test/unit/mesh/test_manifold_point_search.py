@@ -23,7 +23,7 @@ def test_manifold_point_search():
 
     # Extract vertices of cell
     indices = cpp.mesh.entities_to_geometry(
-        mesh, mesh.topology.dim, [colliding_cells.links(0)[0], colliding_cells.links(1)[0]], False)
+        mesh._cpp_object, mesh.topology.dim, [colliding_cells.links(0)[0], colliding_cells.links(1)[0]], False)
     cell_vertices = mesh.geometry.x[indices]
 
     # Compare vertices with input

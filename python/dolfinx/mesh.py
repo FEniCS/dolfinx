@@ -21,6 +21,13 @@ __all__ = [
 ]
 
 
+def create_meshtags(mesh, dim, entities, values):
+    try:
+        return _cpp.mesh.create_meshtags(mesh, dim, entities, values)
+    except TypeError:
+        return _cpp.mesh.create_meshtags(mesh._cpp_object, dim, entities, values)
+
+
 def locate_entities(mesh: _cpp.mesh.Mesh,
                     dim: int,
                     marker: types.FunctionType):
@@ -108,14 +115,14 @@ _meshtags_types = {
 def refine(mesh, cell_markers=None, redistribute=True):
     """Refine a mesh"""
     if cell_markers is None:
-        mesh_refined = _cpp.refinement.refine(mesh, redistribute)
+        _mesh_refined = _cpp.refinement.refine(mesh._cpp_object, redistribute)
     else:
-        mesh_refined = _cpp.refinement.refine(mesh, cell_markers, redistribute)
+        _mesh_refined = _cpp.refinement.refine(mesh._cpp_object, cell_markers, redistribute)
 
     coordinate_element = mesh._ufl_domain.ufl_coordinate_element()
     domain = ufl.Mesh(coordinate_element)
+    mesh_refined = Mesh(_mesh_refined, domain)
     domain._ufl_cargo = mesh_refined
-    mesh_refined._ufl_domain = domain
     return mesh_refined
 
 
