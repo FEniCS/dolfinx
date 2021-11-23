@@ -125,15 +125,13 @@ def create_mesh(comm, cells, x, domain,
     cell_degree = ufl_element.degree()
     cmap = _cpp.fem.CoordinateElement(_uflcell_to_dolfinxcell[cell_shape], cell_degree)
     try:
-        mesh = _cpp.mesh.create_mesh(comm, cells, cmap, x, ghost_mode, partitioner)
+        mesh_cpp = _cpp.mesh.create_mesh(comm, cells, cmap, x, ghost_mode, partitioner)
     except TypeError:
-        mesh = _cpp.mesh.create_mesh(comm, _cpp.graph.AdjacencyList_int64(numpy.cast['int64'](cells)),
-                                     cmap, x, ghost_mode, partitioner)
-
-    # Attach UFL data (used when passing a mesh into UFL functions)
-    domain._ufl_cargo = mesh
-    mesh._ufl_domain = domain
-    return mesh
+        mesh_cpp = _cpp.mesh.create_mesh(comm, _cpp.graph.AdjacencyList_int64(numpy.cast['int64'](cells)),
+                                         cmap, x, ghost_mode, partitioner)
+    m = Mesh(mesh_cpp, domain)
+    domain._ufl_cargo = m
+    return m
 
 
 def MeshTags(mesh, dim, indices, values):
