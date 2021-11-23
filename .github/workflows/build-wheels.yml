@@ -122,7 +122,7 @@ jobs:
       - name: Build DOLFINx wheel
         run: python -m cibuildwheel --output-dir wheelhouse dolfinx/python
         env:
-          CIBW_BEFORE_BUILD: python -m pip -v --only-binary fenics-basix install fenics-ffcx fenics-basix && python -m pip -v install --only-binary petsc4py,mpi4py petsc4py mpi4py && cmake -S dolfinx/cpp -B build-dir -DPython3_EXECUTABLE=$(which python) && cmake --build build-dir && cmake --install build-dir
+          CIBW_BEFORE_BUILD: python -m pip -v --prefer-binary install fenics-ffcx fenics-basix && python -m pip -v --prefer-binary install petsc4py mpi4py && cmake -S dolfinx/cpp -B build-dir -DPython3_EXECUTABLE=$(which python) && cmake --build build-dir && cmake --install build-dir
           CIBW_REPAIR_WHEEL_COMMAND_LINUX: export LD_LIBRARY_PATH=$(python -c "import site; print(site.getsitepackages()[0] + '/fenics_basix.libs')") && auditwheel repair -w {dest_dir} {wheel}
 
       - name: Update temporary simple503 repository
