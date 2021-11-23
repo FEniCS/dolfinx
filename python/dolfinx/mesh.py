@@ -80,7 +80,10 @@ def locate_entities_boundary(mesh: _cpp.mesh.Mesh,
 
     """
 
-    return _cpp.mesh.locate_entities_boundary(mesh, dim, marker)
+    try:
+        return _cpp.mesh.locate_entities_boundary(mesh, dim, marker)
+    except TypeError:
+        return _cpp.mesh.locate_entities_boundary(mesh._cpp_object, dim, marker)
 
 
 _uflcell_to_dolfinxcell = {
@@ -162,7 +165,7 @@ class Mesh:
         return self._cpp_object.geometry
 
     @property
-    def comm(self):
+    def mpi_comm(self):
         return self._cpp_object.mpi_comm
 
     def ufl_cell(self):

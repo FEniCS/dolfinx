@@ -41,12 +41,12 @@ def test_assemble_functional_dx(mode):
     mesh = UnitSquareMesh(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
     M = 1.0 * dx(domain=mesh)
     value = dolfinx.fem.assemble_scalar(M)
-    value = mesh.mpi_comm().allreduce(value, op=MPI.SUM)
+    value = mesh.mpi_comm.allreduce(value, op=MPI.SUM)
     assert value == pytest.approx(1.0, 1e-12)
     x = ufl.SpatialCoordinate(mesh)
     M = x[0] * dx(domain=mesh)
     value = dolfinx.fem.assemble_scalar(M)
-    value = mesh.mpi_comm().allreduce(value, op=MPI.SUM)
+    value = mesh.mpi_comm.allreduce(value, op=MPI.SUM)
     assert value == pytest.approx(0.5, 1e-12)
 
 
@@ -55,7 +55,7 @@ def test_assemble_functional_ds(mode):
     mesh = UnitSquareMesh(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
     M = 1.0 * ds(domain=mesh)
     value = dolfinx.fem.assemble_scalar(M)
-    value = mesh.mpi_comm().allreduce(value, op=MPI.SUM)
+    value = mesh.mpi_comm.allreduce(value, op=MPI.SUM)
     assert value == pytest.approx(4.0, 1e-12)
 
 
@@ -363,7 +363,7 @@ def test_assembly_solve_block(mode):
     b0norm = b0.norm()
     x0 = A0.createVecLeft()
     ksp = PETSc.KSP()
-    ksp.create(mesh.mpi_comm())
+    ksp.create(mesh.mpi_comm)
     ksp.setOperators(A0)
     ksp.setMonitor(monitor)
     ksp.setType('cg')
@@ -390,7 +390,7 @@ def test_assembly_solve_block(mode):
 
     x1 = b1.copy()
     ksp = PETSc.KSP()
-    ksp.create(mesh.mpi_comm())
+    ksp.create(mesh.mpi_comm)
     ksp.setMonitor(monitor)
     ksp.setOperators(A1)
     ksp.setType('cg')
@@ -438,7 +438,7 @@ def test_assembly_solve_block(mode):
 
     x2 = b2.copy()
     ksp = PETSc.KSP()
-    ksp.create(mesh.mpi_comm())
+    ksp.create(mesh.mpi_comm)
     ksp.setMonitor(monitor)
     ksp.setOperators(A2)
     ksp.setType('cg')
@@ -520,7 +520,7 @@ def test_assembly_solve_taylor_hood(mesh):
         b.assemble()
 
         ksp = PETSc.KSP()
-        ksp.create(mesh.mpi_comm())
+        ksp.create(mesh.mpi_comm)
         ksp.setOperators(A, P)
         nested_IS = P.getNestISs()
         ksp.setType("minres")
@@ -554,7 +554,7 @@ def test_assembly_solve_taylor_hood(mesh):
                                               bcs=[bc0, bc1])
 
         ksp = PETSc.KSP()
-        ksp.create(mesh.mpi_comm())
+        ksp.create(mesh.mpi_comm)
         ksp.setOperators(A, P)
         ksp.setType("minres")
         pc = ksp.getPC()
@@ -606,7 +606,7 @@ def test_assembly_solve_taylor_hood(mesh):
         dolfinx.fem.set_bc(b, [bc0, bc1])
 
         ksp = PETSc.KSP()
-        ksp.create(mesh.mpi_comm())
+        ksp.create(mesh.mpi_comm)
         ksp.setOperators(A, P)
         ksp.setType("minres")
         pc = ksp.getPC()

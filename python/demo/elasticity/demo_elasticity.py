@@ -171,5 +171,5 @@ with XDMFFile(MPI.COMM_WORLD, "elasticity.xdmf", "w") as file:
     file.write_function(u)
 
 unorm = u.vector.norm()
-if mesh.mpi_comm().rank == 0:
+if mesh.mpi_comm.rank == 0:
     print("Solution vector norm:", unorm)

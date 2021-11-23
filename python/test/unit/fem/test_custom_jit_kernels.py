@@ -118,7 +118,7 @@ def test_cffi_assembly():
     mesh = UnitSquareMesh(MPI.COMM_WORLD, 13, 13)
     V = FunctionSpace(mesh, ("Lagrange", 1))
 
-    if mesh.mpi_comm().rank == 0:
+    if mesh.mpi_comm.rank == 0:
         from cffi import FFI
         ffibuilder = FFI()
         ffibuilder.set_source("_cffi_kernelA", r"""
@@ -215,7 +215,7 @@ def test_cffi_assembly():
 
         ffibuilder.compile(verbose=True)
 
-    mesh.mpi_comm().Barrier()
+    mesh.mpi_comm.Barrier()
     from _cffi_kernelA import ffi, lib
 
     ptrA = ffi.cast("intptr_t", ffi.addressof(lib, "tabulate_tensor_poissonA"))

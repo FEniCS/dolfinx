@@ -281,8 +281,8 @@ void mesh(py::module& m)
       .def_property_readonly(
           "geometry", py::overload_cast<>(&dolfinx::mesh::Mesh::geometry),
           "Mesh geometry")
-      .def("mpi_comm", [](dolfinx::mesh::Mesh& self)
-           { return MPICommWrapper(self.mpi_comm()); })
+      .def_property_readonly("mpi_comm", [](dolfinx::mesh::Mesh& self)
+                             { return MPICommWrapper(self.mpi_comm()); })
       .def_property_readonly(
           "topology", py::overload_cast<>(&dolfinx::mesh::Mesh::topology),
           "Mesh topology", py::return_value_policy::reference_internal)

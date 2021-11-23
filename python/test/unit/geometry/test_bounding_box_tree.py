@@ -381,7 +381,7 @@ def test_sub_bbtree():
     bbtree = BoundingBoxTree(mesh, tdim, cells)
 
     # Compute a BBtree for all processes
-    process_bbtree = bbtree.create_global_tree(mesh.mpi_comm())
+    process_bbtree = bbtree.create_global_tree(mesh.mpi_comm)
 
     # Find possible ranks for this point
     point = numpy.array([0.2, 0.2, 1.0])

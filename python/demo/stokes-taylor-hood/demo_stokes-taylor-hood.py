@@ -217,7 +217,7 @@ A.setNullSpace(nsp)
 # the MINRES method, and a block-diagonal preconditioner using PETSc's
 # additive fieldsplit type preconditioner::
 
-ksp = PETSc.KSP().create(mesh.mpi_comm())
+ksp = PETSc.KSP().create(mesh.mpi_comm)
 ksp.setOperators(A, P)
 ksp.setType("minres")
 ksp.setTolerances(rtol=1e-8)
@@ -303,7 +303,7 @@ is_u = PETSc.IS().createStride(V_map.size_local * V.dofmap.index_map_bs, offset_
 is_p = PETSc.IS().createStride(Q_map.size_local, offset_p, 1, comm=PETSc.COMM_SELF)
 
 # Create Krylov solver
-ksp = PETSc.KSP().create(mesh.mpi_comm())
+ksp = PETSc.KSP().create(mesh.mpi_comm)
 ksp.setOperators(A, P)
 ksp.setTolerances(rtol=1e-8)
 ksp.setType("minres")
@@ -355,7 +355,7 @@ assert np.isclose(norm_p_1, norm_p_0)
 # Solve same problem, but now with monolithic matrices and a direct solver
 
 # Create LU solver
-ksp = PETSc.KSP().create(mesh.mpi_comm())
+ksp = PETSc.KSP().create(mesh.mpi_comm)
 ksp.setOperators(A)
 ksp.setType("preonly")
 ksp.getPC().setType("lu")
@@ -443,7 +443,7 @@ b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 dolfinx.fem.assemble.set_bc(b, bcs)
 
 # Create and configure solver
-ksp = PETSc.KSP().create(mesh.mpi_comm())
+ksp = PETSc.KSP().create(mesh.mpi_comm)
 ksp.setOperators(A)
 ksp.setType("preonly")
 ksp.getPC().setType("lu")

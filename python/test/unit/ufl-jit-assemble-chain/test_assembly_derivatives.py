@@ -133,7 +133,7 @@ def test_diff_then_integrate():
         # (also passes through form compilation and jit)
         M = f * dx
         f_integral = assemble_scalar(M)  # noqa
-        f_integral = mesh.mpi_comm().allreduce(f_integral, op=MPI.SUM)
+        f_integral = mesh.mpi_comm.allreduce(f_integral, op=MPI.SUM)
 
         # Compute integral of f manually from anti-derivative F
         # (passes through pybind11 interface and uses UFL evaluation)

@@ -101,7 +101,7 @@ def test_complex_assembly_solve():
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
     # Create solver
-    solver = PETSc.KSP().create(mesh.mpi_comm())
+    solver = PETSc.KSP().create(mesh.mpi_comm)
     solver.setOptionsPrefix("test_lu_")
     opts = PETSc.Options("test_lu_")
     opts["ksp_type"] = "preonly"

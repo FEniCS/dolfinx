@@ -38,7 +38,7 @@ def test_krylov_solver_lu():
 
     norm = 13.0
 
-    solver = PETSc.KSP().create(mesh.mpi_comm())
+    solver = PETSc.KSP().create(mesh.mpi_comm)
     solver.setOptionsPrefix("test_lu_")
     opts = PETSc.Options("test_lu_")
     opts["ksp_type"] = "preonly"

@@ -10,8 +10,8 @@ import typing
 import numpy
 import ufl
 
-from dolfinx.mesh import GhostMode, CellType
 from dolfinx import cpp
+from dolfinx.mesh import CellType, GhostMode, Mesh
 
 __all__ = [
     "IntervalMesh", "UnitIntervalMesh", "RectangleMesh", "UnitSquareMesh",
@@ -74,10 +74,11 @@ def RectangleMesh(comm, points: typing.List[numpy.array], n: list, cell_type=Cel
 
     """
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell_type.name, 1))
-    mesh = cpp.generation.create_rectangle_mesh(comm, points, n, cell_type, ghost_mode, partitioner, diagonal)
-    domain._ufl_cargo = mesh
-    mesh._ufl_domain = domain
-    return mesh
+    mesh_cpp = cpp.generation.create_rectangle_mesh(comm, points, n, cell_type, ghost_mode, partitioner, diagonal)
+    domain._ufl_cargo = mesh_cpp
+    return Mesh(mesh_cpp, domain)
+    # mesh_cpp._ufl_domain = domain
+    # return mesh_cpp
 
 
 def UnitSquareMesh(comm, nx, ny, cell_type=CellType.triangle,
