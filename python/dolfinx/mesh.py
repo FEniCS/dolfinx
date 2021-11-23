@@ -14,7 +14,6 @@ from dolfinx import cpp as _cpp
 from dolfinx.cpp.mesh import CellType  # noqa
 from dolfinx.cpp.mesh import GhostMode  # noqa
 from dolfinx.cpp.mesh import midpoints  # noqa
-from dolfinx.cpp.mesh import create_meshtags
 
 __all__ = [
     "locate_entities", "locate_entities_boundary", "refine", "create_mesh", "create_meshtags", "MeshTags"
