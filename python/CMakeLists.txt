@@ -1,9 +1,16 @@
-cmake_minimum_required(VERSION 3.18)
+cmake_minimum_required(VERSION 3.16)
 
 PROJECT(dolfinx_pybind11)
 
 # Development component which includes both Development.Module and
-# Development.Embed is not required for building a Python module.
+# Development.Embed is not required for building a Python module.  Correct
+# COMPONENT specification Development.Module added only in CMake 3.18 and
+# above.
+if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.18.0")
+  find_package(Python3 COMPONENTS Interpreter Development.Module REQUIRED)
+else()
+  find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
+endif()
 find_package(Python3 COMPONENTS Interpreter Development.Module REQUIRED)
 find_package(pybind11 REQUIRED CONFIG HINTS ${PYBIND11_DIR} ${PYBIND11_ROOT}
   $ENV{PYBIND11_DIR} $ENV{PYBIND11_ROOT})
