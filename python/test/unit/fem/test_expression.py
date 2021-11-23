@@ -14,9 +14,7 @@ from mpi4py import MPI
 from petsc4py import PETSc
 
 
-@pytest.mark.skipif(np.issubdtype(PETSc.ScalarType, np.complexfloating),
-                    reason="Complex expression not implemented in ufc")
-def test_expression():
+def xtest_expression():
     """Test UFL expression evaluation"""
     mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, 10, 10)
     V = dolfinx.FunctionSpace(mesh, ("Lagrange", 2))

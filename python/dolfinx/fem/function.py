@@ -87,6 +87,8 @@ class Expression:
 
         mesh = ufl_expression.ufl_domain().ufl_cargo()
 
+        self._dtype = dtype
+
         # Compile UFL expression with JIT
         if dtype == np.float64:
             form_compiler_parameters["scalar_type"] = "double"
@@ -102,38 +104,28 @@ class Expression:
         # Setup data (evaluation points, coefficients, constants, mesh, value_size).
         # Tabulation function.
         ffi = cffi.FFI()
-        fn = ffi.cast("uintptr_t", self.ufc_expression.tabulate_expression)
-
-        value_size = ufl.product(self.ufl_expression.ufl_shape)
-
-        ufl_coefficients = ufl.algorithms.extract_coefficients(ufl_expression)
-        coefficients = [ufl_coefficient._cpp_object for ufl_coefficient in ufl_coefficients]
-
-        ufl_constants = ufl.algorithms.analysis.extract_constants(ufl_expression)
 
         # Prepare coefficients data. For every coefficient in form take
         # its C++ object.
         original_coefficients = ufl.algorithms.extract_coefficients(ufl_expression)
-        coeffs = {f"w{i}":
-                  original_coefficients[ufc_expression.original_coefficient_positions[i]]._cpp_object for i in range(
-                      ufc_expression.num_coefficients)}
+        coeffs = [original_coefficients[self._ufc_expression.original_coefficient_positions[i]]._cpp_object
+                  for i in range(self._ufc_expression.num_coefficients)]
 
-        # Getcpp Expression type
-        def expressiontype(dtype):
+        ufl_constants = ufl.algorithms.analysis.extract_constants(ufl_expression)
+        constants = [constant._cpp_object for i, constant in enumerate(ufl_constants)]
+
+        def create_expression(dtype):
             if dtype is np.float64:
-                return cpp.fem.Expression_float64
+                return cpp.fem.create_expression_float64
             elif dtype is np.complex128:
-                return cpp.fem.Expression_complex128
+                return cpp.fem.create_expression_complex128
             else:
                 raise NotImplementedError(f"Type {dtype} not supported.")
 
-        self._cpp_object = expressiontype(dtype)(coefficients, constants, mesh, x, fn, value_size)
+        self._cpp_object = create_expression(dtype)(ffi.cast("uintptr_t", ffi.addressof(self._ufc_expression)),
+                                                    coeffs, constants, mesh)
 
-        constants = {f"c{i}": constant._cpp_object for i, constant in enumerate(ufl_constants)}
-        self._cpp_object = cpp.fem.create_expression(ffi.cast("uintptr_t", ufc_expression),
-                                                     coeffs, constants, mesh)
-
-    def eval(self, cells: np.ndarray) -> np.ndarray:
+    def eval(self, cells: np.ndarray, values: np.ndarray = None) -> np.ndarray:
         """Evaluate Expression in cells.
 
         Parameters
@@ -148,24 +140,20 @@ class Expression:
             The i-th row of u contains the expression evaluated on cells[i].
 
         """
-        cells = np.asarray(cells, dtype=np.int32)
-        num_cells = cells.shape[0]
+        _cells = np.asarray(cells, dtype=np.int32)
 
         # Allocate memory for result if u was not provided
-        if u is None:
-            if np.issubdtype(PETSc.ScalarType, np.complexfloating):
-                u = np.empty((num_cells, self.num_points * self.value_size), dtype=np.complex128)
-            else:
-                u = np.empty((num_cells, self.num_points * self.value_size), dtype=np.float64)
-            self._cpp_object.eval(cells, u)
+        if values is None:
+            num_all_argument_dofs = np.prod(self.num_argument_dofs, dtype=int)
+            values = np.empty((_cells.shape[0],
+                               self.num_points * self.value_size * num_all_argument_dofs), dtype=self.dtype)
+            self._cpp_object.eval(cells, values)
         else:
-            assert u.ndim < 3
-            assert u.size == num_cells * self.num_points * self.value_size
-            assert u.shape[0] == num_cells
-            assert u.shape[1] == self.num_points * self.value_size
-            self._cpp_object.eval(cells, u)
+            if values.ndim >= 3 or values.shape[0] != _cells.shape[0] or values.shape[1] != _cells.shape[1]:
+                raise TypeError("Provided vaules array has incorrect shape.")
+            self._cpp_object.eval(cells, values)
 
-        return u
+        return values
 
     @property
     def ufl_expression(self):
@@ -188,6 +176,11 @@ class Expression:
         return self._cpp_object.value_size
 
     @property
+    def num_argument_dofs(self):
+        """Return the value size of the expression"""
+        return self._cpp_object.num_argument_dofs
+
+    @property
     def ufc_expression(self):
         """Return the compiled ufc_expression object"""
         return self._ufc_expression
@@ -196,6 +189,11 @@ class Expression:
     def code(self):
         """Return C code strings"""
         return self._code
+
+    @property
+    def dtype(self):
+        """Return C code strings"""
+        return self._dtype
 
 
 class Function(ufl.Coefficient):

@@ -19,19 +19,80 @@ import ufl
 from mpi4py import MPI
 import petsc4py.lib
 from petsc4py import PETSc
+from petsc4py import get_config as PETSc_get_config
 import pytest
+
+
+# Get details of PETSc install
+petsc_dir = PETSc_get_config()['PETSC_DIR']
+petsc_arch = petsc4py.lib.getPathArchPETSc()[1]
+petsc_lib_name = ctypes.util.find_library("petsc")
+
+# Get PETSc int and scalar types
+if np.dtype(PETSc.ScalarType).kind == 'c':
+    complex = True
+else:
+    complex = False
+
+scalar_size = np.dtype(PETSc.ScalarType).itemsize
+index_size = np.dtype(PETSc.IntType).itemsize
+
+if index_size == 8:
+    c_int_t = "int64_t"
+    ctypes_index = ctypes.c_int64
+elif index_size == 4:
+    c_int_t = "int32_t"
+    ctypes_index = ctypes.c_int32
+else:
+    raise RuntimeError("Cannot translate PETSc index size into a C type, index_size: {}.".format(index_size))
+
+if complex and scalar_size == 16:
+    c_scalar_t = "double _Complex"
+    numba_scalar_t = numba.types.complex128
+elif complex and scalar_size == 8:
+    c_scalar_t = "float _Complex"
+    numba_scalar_t = numba.types.complex64
+elif not complex and scalar_size == 8:
+    c_scalar_t = "double"
+    numba_scalar_t = numba.types.float64
+elif not complex and scalar_size == 4:
+    c_scalar_t = "float"
+    numba_scalar_t = numba.types.float32
+else:
+    raise RuntimeError(
+        "Cannot translate PETSc scalar type to a C type, complex: {} size: {}.".format(complex, scalar_size))
+
+
+ffi = cffi.FFI()
+# Get MatSetValuesLocal from PETSc available via cffi in ABI mode
+ffi.cdef("""int MatSetValuesLocal(void* mat, {0} nrow, const {0}* irow,
+                                {0} ncol, const {0}* icol, const {1}* y, int addv);
+int MatZeroRowsLocal(void* mat, {0} nrow, const {0}* irow, {1} diag);
+int MatAssemblyBegin(void* mat, int mode);
+int MatAssemblyEnd(void* mat, int mode);
+""".format(c_int_t, c_scalar_t))
+
+if petsc_lib_name is not None:
+    petsc_lib_cffi = ffi.dlopen(petsc_lib_name)
+else:
+    try:
+        petsc_lib_cffi = ffi.dlopen(os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.so"))
+    except OSError:
+        petsc_lib_cffi = ffi.dlopen(os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.dylib"))
+    except OSError:
+        print("Could not load PETSc library for CFFI (ABI mode).")
+        raise
+MatSetValues = petsc_lib_cffi.MatSetValuesLocal
 
 
 @pytest.mark.skipif(np.issubdtype(PETSc.ScalarType, np.complexfloating),
                     reason="Complex expression not implemented in ufc")
 def test_rank0():
     """Test evaluation of UFL expression.
-
     This test evaluates gradient of P2 function at vertices of reference
     triangle. Because these points coincide with positions of point evaluation
     degrees-of-freedom of vector P1 space, values could be used to interpolate
     the expression into this space.
-
     For a donor function f(x, y) = x^2 + 2*y^2 result is compared with the
     exact gradient grad f(x, y) = [2*x, 4*y].
     """
@@ -49,25 +110,16 @@ def test_rank0():
     ufl_expr = ufl.grad(f)
     points = np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0]])
 
-    compiled_expr, module, code = dolfinx.jit.ffcx_jit(mesh.mpi_comm(), (ufl_expr, points))
-
-    ffi = cffi.FFI()
+    compiled_expr = dolfinx.Expression(ufl_expr, points)
+    num_cells = mesh.topology.index_map(2).size_local
+    array_evaluated = compiled_expr.eval(np.arange(num_cells, dtype=np.int32))
 
     @numba.njit
-    def assemble_expression(b, kernel, mesh, dofmap, coeff, coeff_dofmap):
-        pos, x_dofmap, x = mesh
-        geometry = np.zeros((3, 3))
-        w = np.zeros(6, dtype=PETSc.ScalarType)
-        constants = np.zeros(1, dtype=PETSc.ScalarType)
-        b_local = np.zeros(6, dtype=PETSc.ScalarType)
-
-        for i, cell in enumerate(pos[:-1]):
-            num_vertices = pos[i + 1] - pos[i]
-            c = x_dofmap[cell:cell + num_vertices]
+    def scatter(vec, array_evaluated, dofmap):
+        for i in range(num_cells):
             for j in range(3):
                 for k in range(2):
                     vec[2 * dofmap[i * 3 + j] + k] = array_evaluated[i, 2 * j + k]
-
 
     # Data structure for the result
     b = dolfinx.Function(vdP1)
@@ -79,6 +131,7 @@ def test_rank0():
         values = np.empty((2, x.shape[1]))
         values[0] = 2.0 * x[0]
         values[1] = 4.0 * x[1]
+
         return values
 
     b2 = dolfinx.Function(vdP1)
@@ -99,7 +152,9 @@ def test_rank1():
     compiled_expr = dolfinx.Expression(ufl_expr, points)
 
     num_cells = mesh.topology.index_map(2).size_local
-    array_evaluated = compiled_expr.eval(np.arange(num_cells))
+    array_evaluated = compiled_expr.eval(np.arange(num_cells, dtype=np.int32))
+
+    import pdb; pdb.set_trace()
 
     @numba.njit
     def scatter(A, array_evaluated, dofmap0, dofmap1):

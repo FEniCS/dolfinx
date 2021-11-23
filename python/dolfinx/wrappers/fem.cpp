@@ -401,48 +401,60 @@ void declare_objects(py::module& m, const std::string& type)
                       const dolfinx::fem::Constant<T>>>& constants,
                   const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh,
                   const py::array_t<double, py::array::c_style>& X,
-                  py::object addr, const std::size_t value_size)
+                  std::uintptr_t fn_addr, const std::vector<int>& value_shape,
+                  const std::vector<int>& num_argument_dofs)
                {
                  auto tabulate_expression_ptr
-                     = (void (*)(T*, const T*, const T*,
-                                 const double*))addr.cast<std::uintptr_t>();
-                 xt::xtensor<double, 2> _X(
-                     {std::size_t(X.shape(0)), std::size_t(X.shape(1))});
-                 std::copy_n(X.data(), X.size(), _X.data());
+                     = (void (*)(T*, const T*, const T*, const double*,
+                                 const int*, const std::uint8_t*))fn_addr;
+                 auto _X = xt::adapt(X.data(), {X.shape(0), X.shape(1)});
                  return dolfinx::fem::Expression<T>(
                      coefficients, constants, mesh, _X, tabulate_expression_ptr,
-                     value_size);
+                     value_shape, num_argument_dofs);
                }),
            py::arg("coefficients"), py::arg("constants"), py::arg("mesh"),
-           py::arg("x"), py::arg("fn"), py::arg("value_size"))
+           py::arg("x"), py::arg("fn"), py::arg("value_shape"),
+           py::arg("num_argument_dofs"))
       .def("eval",
            [](const dolfinx::fem::Expression<T>& self,
               const py::array_t<std::int32_t, py::array::c_style>& active_cells,
-              py::array_t<T> values)
+              py::array_t<T, py::array::c_style>& values)
            {
-             xt::xtensor<T, 2> _values(
-                 {std::size_t(active_cells.shape(0)),
-                  std::size_t(self.num_points() * self.value_size())});
+             const int size = values.shape(0) * values.shape(1);
+             auto _values = xt::adapt(const_cast<T*>(values.data()), size,
+                                      xt::no_ownership(),
+                                      std::array<std::size_t, 2>(
+                                          {(std::size_t)values.shape(0), (std::size_t)values.shape(1)}));
              self.eval(xtl::span(active_cells.data(), active_cells.size()),
                        _values);
-             assert(values.ndim() == 2);
-             assert(values.shape(0) == (py::ssize_t)_values.shape(0));
-             assert(values.shape(1) == (py::ssize_t)_values.shape(1));
-             auto v = values.mutable_unchecked();
-             for (py::ssize_t i = 0; i < v.shape(0); i++)
-               for (py::ssize_t j = 0; j < v.shape(1); j++)
-                 v(i, j) = _values(i, j);
            })
-      .def_property_readonly("mesh", &dolfinx::fem::Expression<T>::mesh,
-                             py::return_value_policy::reference_internal)
+      .def_property_readonly("mesh", &dolfinx::fem::Expression<T>::mesh)
       .def_property_readonly("num_points",
-                             &dolfinx::fem::Expression<T>::num_points,
-                             py::return_value_policy::reference_internal)
+                             &dolfinx::fem::Expression<T>::num_points)
       .def_property_readonly("value_size",
-                             &dolfinx::fem::Expression<T>::value_size,
-                             py::return_value_policy::reference_internal)
-      .def_property_readonly("x", &dolfinx::fem::Expression<T>::x,
-                             py::return_value_policy::reference_internal);
+                             &dolfinx::fem::Expression<T>::value_size)
+      .def_property_readonly("value_shape",
+                             &dolfinx::fem::Expression<T>::value_shape)
+      .def_property_readonly("num_argument_dofs",
+                             &dolfinx::fem::Expression<T>::num_argument_dofs)
+      .def_property_readonly("X", &dolfinx::fem::Expression<T>::X);
+
+  std::string pymethod_create_expression = std::string("create_expression_") + type;
+  m.def(
+      pymethod_create_expression.c_str(),
+      [](const std::uintptr_t expression,
+         const std::vector<std::shared_ptr<const dolfinx::fem::Function<T>>>&
+             coefficients,
+         const std::vector<std::shared_ptr<const dolfinx::fem::Constant<T>>>&
+             constants,
+         const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh)
+      {
+        const ufc_expression* p
+            = reinterpret_cast<const ufc_expression*>(expression);
+        return dolfinx::fem::create_expression<T>(*p, coefficients, constants,
+                                                  mesh);
+      },
+      "Create Form from a pointer to ufc_form.");
 }
 } // namespace
 
@@ -1003,82 +1015,76 @@ void fem(py::module& m)
       .def_property_readonly("dofmap", &dolfinx::fem::FunctionSpace::dofmap)
       .def("sub", &dolfinx::fem::FunctionSpace::sub)
       .def("tabulate_dof_coordinates",
-<<<<<<< HEAD
-           [](const dolfinx::fem::FunctionSpace& self) {
-             return as_pyarray2d(self.tabulate_dof_coordinates(false));
-           });
-
-  // dolfinx::fem::Constant
-  py::class_<dolfinx::fem::Constant<PetscScalar>,
-             std::shared_ptr<dolfinx::fem::Constant<PetscScalar>>>(
-      m, "Constant", "A value constant with respect to integration domain")
-      .def(py::init<std::vector<int>, std::vector<PetscScalar>>(),
-           "Create a constant from a scalar value array")
-      .def(
-          "value",
-          [](dolfinx::fem::Constant<PetscScalar>& self) {
-            return py::array(self.shape, self.value.data(), py::none());
-          },
-          py::return_value_policy::reference_internal);
-
-  // dolfinx::fem::Expression
-  py::class_<dolfinx::fem::Expression<PetscScalar>,
-             std::shared_ptr<dolfinx::fem::Expression<PetscScalar>>>(
-      m, "Expression", "An Expression")
-      .def(py::init(
-               [](const std::vector<std::shared_ptr<
-                      const dolfinx::fem::Function<PetscScalar>>>& coefficients,
-                  const std::vector<std::shared_ptr<
-                      const dolfinx::fem::Constant<PetscScalar>>>& constants,
-                  const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh,
-                  const py::array_t<double, py::array::c_style>& X,
-                  std::uintptr_t fn_addr, const std::vector<int>& value_shape,
-                  const std::vector<int>& num_argument_dofs) {
-                 auto tabulate_expression_ptr
-                     = (void (*)(PetscScalar*, const PetscScalar*,
-                                 const PetscScalar*, const double*, const int*,
-                                 const uint8_t*, uintptr_t))fn_addr;
-                 dolfinx::array2d<double> _X(X.shape()[0], X.shape()[1]);
-                 std::copy_n(X.data(), X.size(), _X.data());
-                 return dolfinx::fem::Expression<PetscScalar>(
-                     coefficients, constants, mesh, _X, tabulate_expression_ptr,
-                     value_shape, num_argument_dofs);
-               }),
-           py::arg("coefficients"), py::arg("constants"), py::arg("mesh"),
-           py::arg("x"), py::arg("fn"), py::arg("value_shape"),
-           py::arg("num_argument_dofs"))
-      .def("eval",
-           [](dolfinx::fem::Expression<PetscScalar>& self,
-              const py::array_t<std::int32_t, py::array::c_style>&
-                  active_cells) {
-             dolfinx::array2d<PetscScalar> values = self.eval(
-                 tcb::span(active_cells.data(), active_cells.size()));
-
-             return py::array_t(values.shape, values.strides(), values.data());
-           })
-      .def_property_readonly("mesh",
-                             &dolfinx::fem::Expression<PetscScalar>::mesh,
-                             py::return_value_policy::reference_internal)
-      .def_property_readonly("num_points",
-                             &dolfinx::fem::Expression<PetscScalar>::num_points,
-                             py::return_value_policy::reference_internal)
-      .def_property_readonly("value_size",
-                             &dolfinx::fem::Expression<PetscScalar>::value_size,
-                             py::return_value_policy::reference_internal)
-      .def_property_readonly("x", &dolfinx::fem::Expression<PetscScalar>::x,
-                             py::return_value_policy::reference_internal)
-      .def_property_readonly(
-          "num_argument_dofs",
-          &dolfinx::fem::Expression<PetscScalar>::num_argument_dofs)
-      .def_property_readonly(
-          "coefficients", &dolfinx::fem::Expression<PetscScalar>::coefficients,
-          py::return_value_policy::reference_internal)
-      .def_property_readonly("constants",
-                             &dolfinx::fem::Expression<PetscScalar>::constants,
-                             py::return_value_policy::reference_internal);
-=======
            [](const dolfinx::fem::FunctionSpace& self)
            { return xt_as_pyarray(self.tabulate_dof_coordinates(false)); });
->>>>>>> main
+
+  // template <typename T>
+  // void declare_expression(py::module& m, const std::string& type)
+  // {
+
+  //   // dolfinx::fem::Expression
+  //   py::class_<dolfinx::fem::Expression<PetscScalar>,
+  //              std::shared_ptr<dolfinx::fem::Expression<PetscScalar>>>(
+  //       m, "Expression", "An Expression")
+  //       .def(py::init(
+  //                [](const std::vector<std::shared_ptr<
+  //                       const dolfinx::fem::Function<PetscScalar>>>&
+  //                       coefficients,
+  //                   const std::vector<std::shared_ptr<
+  //                       const dolfinx::fem::Constant<PetscScalar>>>&
+  //                       constants,
+  //                   const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh,
+  //                   const py::array_t<double, py::array::c_style>& X,
+  //                   std::uintptr_t fn_addr, const std::vector<int>&
+  //                   value_shape, const std::vector<int>& num_argument_dofs)
+  //                {
+  //                  auto tabulate_expression_ptr
+  //                      = (void (*)(PetscScalar*, const PetscScalar*,
+  //                                  const PetscScalar*, const double*, const
+  //                                  int*, const uint8_t*, uintptr_t))fn_addr;
+  //                  dolfinx::array2d<double> _X(X.shape()[0], X.shape()[1]);
+  //                  std::copy_n(X.data(), X.size(), _X.data());
+  //                  return dolfinx::fem::Expression<PetscScalar>(
+  //                      coefficients, constants, mesh, _X,
+  //                      tabulate_expression_ptr, value_shape,
+  //                      num_argument_dofs);
+  //                }),
+  //            py::arg("coefficients"), py::arg("constants"), py::arg("mesh"),
+  //            py::arg("x"), py::arg("fn"), py::arg("value_shape"),
+  //            py::arg("num_argument_dofs"))
+  //       .def("eval",
+  //            [](dolfinx::fem::Expression<PetscScalar>& self,
+  //               const py::array_t<std::int32_t, py::array::c_style>&
+  //               active_cells)
+  //            {
+  //              dolfinx::array2d<PetscScalar> values = self.eval(
+  //                  tcb::span(active_cells.data(), active_cells.size()));
+
+  //              return py::array_t(values.shape, values.strides(),
+  //              values.data());
+  //            })
+  //       .def_property_readonly("mesh",
+  //                              &dolfinx::fem::Expression<PetscScalar>::mesh,
+  //                              py::return_value_policy::reference_internal)
+  //       .def_property_readonly("num_points",
+  //                              &dolfinx::fem::Expression<PetscScalar>::num_points,
+  //                              py::return_value_policy::reference_internal)
+  //       .def_property_readonly("value_size",
+  //                              &dolfinx::fem::Expression<PetscScalar>::value_size,
+  //                              py::return_value_policy::reference_internal)
+  //       .def_property_readonly("x",
+  //       &dolfinx::fem::Expression<PetscScalar>::x,
+  //                              py::return_value_policy::reference_internal)
+  //       .def_property_readonly(
+  //           "num_argument_dofs",
+  //           &dolfinx::fem::Expression<PetscScalar>::num_argument_dofs)
+  //       .def_property_readonly(
+  //           "coefficients",
+  //           &dolfinx::fem::Expression<PetscScalar>::coefficients,
+  //           py::return_value_policy::reference_internal)
+  //       .def_property_readonly("constants",
+  //                              &dolfinx::fem::Expression<PetscScalar>::constants,
+  //                              py::return_value_policy::reference_internal);
+  // }
 }
 } // namespace dolfinx_wrappers

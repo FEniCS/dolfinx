@@ -21,6 +21,9 @@
 #include <utility>
 #include <vector>
 #include <xtl/xspan.hpp>
+#include <xtensor/xtensor.hpp>
+#include <xtensor/xadapt.hpp>
+
 
 namespace dolfinx::common
 {
@@ -389,35 +392,6 @@ Form<T> create_form(
   return create_form(ufc_form, spaces, coeff_map, const_map, subdomains, mesh);
 }
 
-/// Create a Form using a factory function that returns a pointer to a
-/// ufc_form.
-/// @param[in] fptr pointer to a function returning a pointer to
-/// ufc_form
-/// @param[in] spaces The function spaces for the Form arguments
-/// @param[in] coefficients Coefficient fields in the form (by name)
-/// @param[in] constants Spatial constants in the form (by name)
-/// @param[in] subdomains Subdomain markers
-/// @param[in] mesh The mesh of the domain. This is required if the form
-/// has no arguments, e.g. a functional.
-/// @return A Form
-template <typename T>
-Form<T> create_form(
-    ufc_form* (*fptr)(),
-    const std::vector<std::shared_ptr<const fem::FunctionSpace>>& spaces,
-    const std::map<std::string, std::shared_ptr<const fem::Function<T>>>&
-        coefficients,
-    const std::map<std::string, std::shared_ptr<const fem::Constant<T>>>&
-        constants,
-    const std::map<IntegralType, const mesh::MeshTags<int>*>& subdomains,
-    const std::shared_ptr<const mesh::Mesh>& mesh = nullptr)
-{
-  ufc_form* form = fptr();
-  Form<T> L = fem::create_form<T>(*form, spaces, coefficients, constants,
-                                  subdomains, mesh);
-  std::free(form);
-  return L;
-}
-
 /// Create a FunctionSpace from UFC data
 ///
 /// @param[in] fptr Function Pointer to a ufc_function_space_create
@@ -480,7 +454,59 @@ void pack_coefficient(
 
 /// Create Expression from UFC
 template <typename T>
-std::shared_ptr<fem::Expression<T>> create_expression(
+fem::Expression<T> create_expression(
+    const ufc_expression& expression,
+    const std::vector<std::shared_ptr<const fem::Function<T>>>&
+        coefficients,
+    const std::vector<std::shared_ptr<const fem::Constant<T>>>&
+        constants,
+    const std::shared_ptr<const mesh::Mesh>& mesh = nullptr)
+{
+  const int size = expression.num_points * expression.topological_dimension;
+  const xt::xtensor<double, 2>& points = xt::adapt(
+      expression.points, size, xt::no_ownership(),
+      std::array<std::size_t, 2>(
+          {expression.num_points, expression.topological_dimension}));
+
+  std::vector<int> value_shape;
+  for (int i = 0; i < expression.num_components; ++i)
+    value_shape.push_back(expression.value_shape[i]);
+
+  std::vector<int> num_argument_dofs;
+  for (int i = 0; i < expression.num_arguments; ++i)
+    num_argument_dofs.push_back(expression.num_argument_dofs[i]);
+
+  std::function<void(T*, const T*, const T*, const double*, const int*,
+                     const std::uint8_t*)>
+      tabulate_tensor = nullptr;
+  if constexpr (std::is_same<T, float>::value)
+    tabulate_tensor = expression.tabulate_tensor_float32;
+  else if constexpr (std::is_same<T, std::complex<float>>::value)
+  {
+    tabulate_tensor
+        = reinterpret_cast<void (*)(T*, const T*, const T*, const double*,
+                                    const int*, const unsigned char*)>(
+            expression.tabulate_tensor_complex64);
+  }
+  else if constexpr (std::is_same<T, double>::value)
+    tabulate_tensor = expression.tabulate_tensor_float64;
+  else if constexpr (std::is_same<T, std::complex<double>>::value)
+  {
+    tabulate_tensor
+        = reinterpret_cast<void (*)(T*, const T*, const T*, const double*,
+                                    const int*, const unsigned char*)>(
+            expression.tabulate_tensor_complex128);
+  }
+  assert(tabulate_tensor);
+
+  return fem::Expression<T>(coefficients, constants, mesh, points, tabulate_tensor,
+                            value_shape, num_argument_dofs);
+}
+
+/// Create Expression from UFC input
+/// (with named coefficients and constants)
+template <typename T>
+fem::Expression<T> create_expression(
     const ufc_expression& expression,
     const std::map<std::string, std::shared_ptr<const fem::Function<T>>>&
         coefficients,
@@ -488,7 +514,6 @@ std::shared_ptr<fem::Expression<T>> create_expression(
         constants,
     const std::shared_ptr<const mesh::Mesh>& mesh = nullptr)
 {
-
   // Place coefficients in appropriate order
   std::vector<std::shared_ptr<const fem::Function<T>>> coeff_map;
   std::vector<std::string> coefficient_names;
@@ -522,44 +547,7 @@ std::shared_ptr<fem::Expression<T>> create_expression(
     }
   }
 
-  const std::array<int, 2> shape = {expression.num_points, expression.topological_dimension};
-  const in size = expression.num_points * expression.topological_dimension;
-  const auto points = xt::adapt(expression.points, size, xt::no_ownership(), shape);
-
-  std::vector<int> value_shape;
-  for (int i = 0; i < expression.num_components; ++i)
-    value_shape.push_back(expression.value_shape[i]);
-
-  std::vector<int> num_argument_dofs;
-  for (int i = 0; i < expression.num_arguments; ++i)
-    num_argument_dofs.push_back(expression.num_argument_dofs[i]);
-
-  std::function<void(T*, const T*, const T*, const double*, const int*,
-                     const std::uint8_t*)>
-      tabulate_tensor = nullptr;
-  if constexpr (std::is_same<T, float>::value)
-    tabulate_tensor = expression.tabulate_tensor_float32;
-  else if constexpr (std::is_same<T, std::complex<float>>::value)
-  {
-    tabulate_tensor
-        = reinterpret_cast<void (*)(T*, const T*, const T*, const double*,
-                                    const int*, const unsigned char*)>(
-            expression.tabulate_tensor_complex64);
-  }
-  else if constexpr (std::is_same<T, double>::value)
-    tabulate_tensor = expression.tabulate_tensor_float64;
-  else if constexpr (std::is_same<T, std::complex<double>>::value)
-  {
-    tabulate_tensor
-        = reinterpret_cast<void (*)(T*, const T*, const T*, const double*,
-                                    const int*, const unsigned char*)>(
-            expression.tabulate_tensor_complex128);
-  }
-  assert(tabulate_tensor);
-
-  return std::make_shared<fem::Expression<T>>(coeff_map, const_map, mesh,
-                                              points, tabulate_tensor,
-                                              value_shape, num_argument_dofs);
+  return create_expression(expression, coeff_map, const_map, mesh);
 }
 
 // NOTE: This is subject to change

@@ -89,14 +89,11 @@ public:
   /// Evaluate the expression on cells
   /// @param[in] active_cells Cells on which to evaluate the Expression
   /// @param[out] values A 2D array to store the result. Caller
-  /// responsible for correct sizing which should be (num_cells,
-  /// num_points * value_size columns).
+  /// is responsible for correct sizing which should be (num_cells,
+  /// num_points * value_size * num_all_argument_dofs columns).
   template <typename U>
   void eval(const xtl::span<const std::int32_t>& active_cells, U& values) const
   {
-    static_assert(std::is_same<T, typename U::value_type>::value,
-                  "Expression and array types must be the same");
-
     // Extract data from Expression
     assert(_mesh);
 
@@ -190,6 +187,9 @@ public:
   {
     return _num_argument_dofs;
   }
+
+  /// Scalar type (T)
+  using scalar_type = T;
 
 private:
   // Function spaces (one for each argument)
