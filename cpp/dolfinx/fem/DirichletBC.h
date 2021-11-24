@@ -236,7 +236,7 @@ public:
   {
     assert(_dofs0.size() == _dofs1_g.size());
     assert(_function_space);
-    assert(_g);
+    assert(g);
 
     const int map0_bs = _function_space->dofmap()->index_map_bs();
     const int map0_size = _function_space->dofmap()->index_map->size_local();
