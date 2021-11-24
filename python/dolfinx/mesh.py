@@ -20,6 +20,22 @@ __all__ = [
 ]
 
 
+class Mesh(_cpp.mesh.Mesh):
+    @classmethod
+    def from_cpp(cls, obj, domain):
+        obj._ufl_domain = domain
+        obj.__class__ = Mesh
+        domain._ufl_cargo = obj
+        return obj
+
+    def ufl_cell(self):
+        return ufl.Cell(self.topology.cell_name(), geometric_dimension=self.geometry.dim)
+
+    def ufl_domain(self):
+        """Return the ufl domain corresponding to the mesh."""
+        return self._ufl_domain
+
+
 def create_meshtags(mesh, dim, entities, values):
     return _cpp.mesh.create_meshtags(mesh, dim, entities, values)
 
@@ -142,19 +158,3 @@ def MeshTags(mesh, dim, indices, values):
 
     fn = _meshtags_types[dtype]
     return fn(mesh, dim, indices.astype(numpy.int32), values)
-
-
-class Mesh(_cpp.mesh.Mesh):
-    @classmethod
-    def from_cpp(cls, obj, domain):
-        obj._ufl_domain = domain
-        obj.__class__ = Mesh
-        domain._ufl_cargo = obj
-        return obj
-
-    def ufl_cell(self):
-        return ufl.Cell(self.topology.cell_name(), geometric_dimension=self.geometry.dim)
-
-    def ufl_domain(self):
-        """Return the ufl domain corresponding to the mesh."""
-        return self._ufl_domain
