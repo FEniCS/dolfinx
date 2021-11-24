@@ -61,10 +61,7 @@ def create_vtk_topology(mesh: cpp.mesh.Mesh, dim: int, entities=None):
 
     # Get the indices in the geometry array that correspong to the
     # topology vertices
-    try:
-        geometry_entities = cpp.mesh.entities_to_geometry(mesh, dim, entities, False)
-    except TypeError:
-        geometry_entities = cpp.mesh.entities_to_geometry(mesh._cpp_object, dim, entities, False)
+    geometry_entities = cpp.mesh.entities_to_geometry(mesh, dim, entities, False)
 
     # Array holding the cell type (shape) for each cell
     if mesh.topology.cell_type == CellType.prism:

@@ -21,10 +21,7 @@ __all__ = [
 
 
 def create_meshtags(mesh, dim, entities, values):
-    try:
-        return _cpp.mesh.create_meshtags(mesh, dim, entities, values)
-    except TypeError:
-        return _cpp.mesh.create_meshtags(mesh._cpp_object, dim, entities, values)
+    return _cpp.mesh.create_meshtags(mesh, dim, entities, values)
 
 
 def locate_entities(mesh: _cpp.mesh.Mesh,
@@ -50,10 +47,7 @@ def locate_entities(mesh: _cpp.mesh.Mesh,
 
     """
 
-    try:
-        return _cpp.mesh.locate_entities(mesh, dim, marker)
-    except TypeError:
-        return _cpp.mesh.locate_entities(mesh._cpp_object, dim, marker)
+    return _cpp.mesh.locate_entities(mesh, dim, marker)
 
 
 def locate_entities_boundary(mesh: _cpp.mesh.Mesh,
@@ -89,10 +83,7 @@ def locate_entities_boundary(mesh: _cpp.mesh.Mesh,
 
     """
 
-    try:
-        return _cpp.mesh.locate_entities_boundary(mesh, dim, marker)
-    except TypeError:
-        return _cpp.mesh.locate_entities_boundary(mesh._cpp_object, dim, marker)
+    return _cpp.mesh.locate_entities_boundary(mesh, dim, marker)
 
 
 _uflcell_to_dolfinxcell = {
@@ -114,9 +105,9 @@ _meshtags_types = {
 def refine(mesh, cell_markers=None, redistribute=True):
     """Refine a mesh"""
     if cell_markers is None:
-        _mesh_refined = _cpp.refinement.refine(mesh._cpp_object, redistribute)
+        _mesh_refined = _cpp.refinement.refine(mesh, redistribute)
     else:
-        _mesh_refined = _cpp.refinement.refine(mesh._cpp_object, cell_markers, redistribute)
+        _mesh_refined = _cpp.refinement.refine(mesh, cell_markers, redistribute)
 
     coordinate_element = mesh._ufl_domain.ufl_coordinate_element()
     domain = ufl.Mesh(coordinate_element)
@@ -154,10 +145,7 @@ def MeshTags(mesh, dim, indices, values):
         raise KeyError("Datatype {} of values array not recognised".format(dtype))
 
     fn = _meshtags_types[dtype]
-    try:
-        return fn(mesh, dim, indices.astype(numpy.int32), values)
-    except TypeError:
-        return fn(mesh._cpp_object, dim, indices.astype(numpy.int32), values)
+    return fn(mesh, dim, indices.astype(numpy.int32), values)
 
 
 class Mesh(_cpp.mesh.Mesh):
@@ -172,6 +160,7 @@ class Mesh(_cpp.mesh.Mesh):
     def from_cpp(cls, obj, domain):
         obj._ufl_domain = domain
         obj.__class__ = Mesh
+        domain._ufl_cargo = obj
         return obj
 
     def ufl_cell(self):

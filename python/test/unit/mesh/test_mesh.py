@@ -286,7 +286,7 @@ def test_hmin_hmax(_mesh, hmin, hmax):
     mesh = _mesh()
     tdim = mesh.topology.dim
     num_cells = mesh.topology.index_map(tdim).size_local
-    h = cpp.mesh.h(mesh._cpp_object, tdim, range(num_cells))
+    h = cpp.mesh.h(mesh, tdim, range(num_cells))
     assert h.min() == pytest.approx(hmin)
     assert h.max() == pytest.approx(hmax)
 

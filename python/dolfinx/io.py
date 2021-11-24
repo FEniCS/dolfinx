@@ -26,7 +26,7 @@ class VTKFile(cpp.io.VTKFile):
 
     def write_mesh(self, mesh: Mesh, t: float = 0.0) -> None:
         """Write mesh to file for a given time (default 0.0)"""
-        self.write(mesh._cpp_object, t)
+        self.write(mesh, t)
 
     def write_function(self, u: typing.Union[typing.List[fem.Function], fem.Function], t: float = 0.0) -> None:
         """
@@ -44,10 +44,7 @@ class VTKFile(cpp.io.VTKFile):
 class XDMFFile(cpp.io.XDMFFile):
     def write_mesh(self, mesh: Mesh) -> None:
         """Write mesh to file for a given time (default 0.0)"""
-        try:
-            super().write_mesh(mesh)
-        except TypeError:
-            super().write_mesh(mesh._cpp_object)
+        super().write_mesh(mesh)
 
     def write_function(self, u, t=0.0, mesh_xpath="/Xdmf/Domain/Grid[@GridType='Uniform'][1]"):
         u_cpp = getattr(u, "_cpp_object", u)
@@ -64,17 +61,15 @@ class XDMFFile(cpp.io.XDMFFile):
 
         # Build the mesh
         cmap = cpp.fem.CoordinateElement(cell_shape, cell_degree)
-        mesh_cpp = cpp.mesh.create_mesh(self.comm(), cpp.graph.AdjacencyList_int64(cells),
-                                        cmap, x, ghost_mode, cpp.mesh.partition_cells_graph)
-        mesh_cpp.name = name
+        mesh = cpp.mesh.create_mesh(self.comm(), cpp.graph.AdjacencyList_int64(cells),
+                                    cmap, x, ghost_mode, cpp.mesh.partition_cells_graph)
+        mesh.name = name
 
         domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell, cell_degree))
-        domain._ufl_cargo = mesh_cpp
-        mesh_cpp._ufl_domain = domain
-        return Mesh(mesh_cpp, domain)
+        return Mesh.from_cpp(mesh, domain)
 
     def read_meshtags(self, mesh, name, xpath="/Xdmf/Domain"):
-        return super().read_meshtags(mesh._cpp_object, name, xpath)
+        return super().read_meshtags(mesh, name, xpath)
 
 
 def extract_gmsh_topology_and_markers(gmsh_model, model_name=None):

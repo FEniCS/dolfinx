@@ -17,24 +17,15 @@ class BoundingBoxTree(_cpp.geometry.BoundingBoxTree):
         if entities is None:
             entities = range(0, map.size_local + map.num_ghosts)
 
-        try:
-            print("Create tree A")
-            super().__init__(mesh, dim, entities, padding)
-        except TypeError:
-            print("Create tree B")
-            super().__init__(mesh._cpp_object, dim, entities, padding)
-        print("done")
+        super().__init__(mesh, dim, entities, padding)
 
 
 def compute_colliding_cells(mesh, candidates, x):
     try:
         return _cpp.geometry.compute_colliding_cells(mesh, candidates, x)
     except TypeError:
-        return _cpp.geometry.compute_colliding_cells(mesh._cpp_object, candidates, x)
+        return _cpp.geometry.compute_colliding_cells(mesh, candidates, x)
 
 
 def squared_distance(mesh, dim, entities, points):
-    try:
-        return _cpp.geometry.squared_distance(mesh, dim, entities, points)
-    except TypeError:
-        return _cpp.geometry.squared_distance(mesh._cpp_object, dim, entities, points)
+    return _cpp.geometry.squared_distance(mesh, dim, entities, points)

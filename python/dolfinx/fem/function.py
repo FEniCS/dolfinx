@@ -422,10 +422,7 @@ class FunctionSpace(ufl.FunctionSpace):
             "uintptr_t", ffi.addressof(self._ufc_dofmap)), mesh.topology, cpp_element)
 
         # Initialize the cpp.FunctionSpace
-        try:
-            self._cpp_object = cpp.fem.FunctionSpace(mesh, cpp_element, cpp_dofmap)
-        except TypeError:
-            self._cpp_object = cpp.fem.FunctionSpace(mesh._cpp_object, cpp_element, cpp_dofmap)
+        self._cpp_object = cpp.fem.FunctionSpace(mesh, cpp_element, cpp_dofmap)
 
     def clone(self) -> "FunctionSpace":
         """Return a new FunctionSpace :math:`W` which shares data with this

@@ -85,16 +85,10 @@ class Form:
                 raise NotImplementedError(f"Type {dtype} not supported.")
 
         ffi = cffi.FFI()
-        try:
-            self._cpp_object = create_form(dtype)(ffi.cast("uintptr_t", ffi.addressof(self._ufc_form)),
-                                                  function_spaces, coeffs,
-                                                  [c._cpp_object for c in form.constants()], subdomains,
-                                                  mesh)
-        except TypeError:
-            self._cpp_object = create_form(dtype)(ffi.cast("uintptr_t", ffi.addressof(self._ufc_form)),
-                                                  function_spaces, coeffs,
-                                                  [c._cpp_object for c in form.constants()], subdomains,
-                                                  mesh._cpp_object)
+        self._cpp_object = create_form(dtype)(ffi.cast("uintptr_t", ffi.addressof(self._ufc_form)),
+                                              function_spaces, coeffs,
+                                              [c._cpp_object for c in form.constants()], subdomains,
+                                              mesh)
 
     @property
     def rank(self):

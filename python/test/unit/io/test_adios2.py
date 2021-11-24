@@ -31,7 +31,7 @@ def test_second_order_fides(tempdir):
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell, 2))
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
     with pytest.raises(RuntimeError):
-        FidesWriter(mesh.mpi_comm, filename, mesh._cpp_object)
+        FidesWriter(mesh.mpi_comm, filename, mesh)
 
 
 @pytest.mark.skipif(not has_adios2, reason="Requires ADIOS2.")
@@ -72,7 +72,7 @@ def test_fides_mesh(tempdir, dim, simplex):
     from dolfinx.cpp.io import FidesWriter
     filename = os.path.join(tempdir, "mesh_fides.bp")
     mesh = generate_mesh(dim, simplex)
-    with FidesWriter(mesh.mpi_comm, filename, mesh._cpp_object) as f:
+    with FidesWriter(mesh.mpi_comm, filename, mesh) as f:
         f.write(0.0)
         mesh.geometry.x[:, 1] += 0.1
         f.write(0.1)
@@ -150,7 +150,7 @@ def test_second_order_vtx(tempdir):
     cell = ufl.Cell("interval", geometric_dimension=points.shape[1])
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell, 2))
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
-    with VTXWriter(mesh.mpi_comm, filename, mesh._cpp_object) as f:
+    with VTXWriter(mesh.mpi_comm, filename, mesh) as f:
         f.write(0.0)
 
 
@@ -161,7 +161,7 @@ def test_vtx_mesh(tempdir, dim, simplex):
     from dolfinx.cpp.io import VTXWriter
     filename = os.path.join(tempdir, "mesh_vtx.bp")
     mesh = generate_mesh(dim, simplex)
-    with VTXWriter(mesh.mpi_comm, filename, mesh._cpp_object) as f:
+    with VTXWriter(mesh.mpi_comm, filename, mesh) as f:
         f.write(0.0)
         mesh.geometry.x[:, 1] += 0.1
         f.write(0.1)
