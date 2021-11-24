@@ -53,7 +53,7 @@ class XDMFFile(_cpp.io.XDMFFile):
         super().write_function(u_cpp, t, mesh_xpath)
 
     def read_mesh(self, ghost_mode=GhostMode.shared_facet, name="mesh", xpath="/Xdmf/Domain") -> dolfinx.mesh.Mesh:
-        # Read mesh data from file
+        """Read mesh data from file"""
         cell_shape, cell_degree = super().read_cell_type(name, xpath)
         cells = super().read_topology_data(name, xpath)
         x = super().read_geometry_data(name, xpath)

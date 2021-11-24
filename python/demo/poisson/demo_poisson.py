@@ -87,7 +87,7 @@ from ufl import ds, dx, grad, inner
 # We begin by defining a mesh of the domain and a finite element
 # function space :math:`V` relative to this mesh. As the unit square is
 # a very standard domain, we can use a built-in mesh provided by the
-# class :py:class:`UnitSquareMesh <dolfinx.cpp.UnitSquareMesh>`. In
+# class :py:class:`UnitSquareMesh <dolfinx.generation.UnitSquareMesh>`. In
 # order to create a mesh consisting of 32 x 32 squares with each square
 # divided into two triangles, we do as follows ::
 

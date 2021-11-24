@@ -23,7 +23,7 @@ def test_dgrsph_1d():
         x = 0
     # Circular chain of interval cells
     cells = [[n0, n0 + 1], [n0 + 1, n0 + 2], [n0 + 2, x]]
-    w = cpp.mesh.build_dual_graph(MPI.COMM_WORLD, to_adj(cells), 1)[0]
+    w = mesh.build_dual_graph(MPI.COMM_WORLD, to_adj(cells), 1)[0]
     assert w.num_nodes == 3
     for i in range(w.num_nodes):
         assert len(w.links(i)) == 2
@@ -41,7 +41,7 @@ def test_dgrsph_2d():
              [n0 + 1, n0 + 2, n0 + 3, n0 + 4],
              [n0 + 2, n0 + 4, n0 + 5],
              [n0 + 4, n0 + 5, x, y]]
-    w = cpp.mesh.build_dual_graph(MPI.COMM_WORLD, to_adj(cells), 2)[0]
+    w = mesh.build_dual_graph(MPI.COMM_WORLD, to_adj(cells), 2)[0]
     assert w.num_nodes == 4
     for i in range(w.num_nodes):
         assert len(w.links(i)) == 2
@@ -59,7 +59,7 @@ def test_dgrsph_3d():
              [n0 + 1, n0 + 2, n0 + 3, X, Y, n0 + 4],
              [n0 + 1, n0 + 2, X, Y, n0 + 5, n0 + 6, n0 + 7, n0 + 8],
              [X, Y, n0 + 7, n0 + 8, Z]]
-    w = cpp.mesh.build_dual_graph(MPI.COMM_WORLD, to_adj(cells), 3)[0]
+    w = mesh.build_dual_graph(MPI.COMM_WORLD, to_adj(cells), 3)[0]
     assert w.num_nodes == 4
     for i in range(w.num_nodes):
         assert len(w.links(i)) == 2

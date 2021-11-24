@@ -10,8 +10,9 @@ import types
 import numpy
 import ufl
 
+from dolfinx import graph
 from dolfinx import cpp as _cpp
-from dolfinx.cpp.mesh import CellType  # noqa
+from dolfinx.cpp.mesh import CellType, cell_dim, build_dual_graph # noqa
 from dolfinx.cpp.mesh import GhostMode  # noqa
 from dolfinx.cpp.mesh import midpoints  # noqa
 
@@ -20,15 +21,41 @@ __all__ = [
 ]
 
 
+class Topology(_cpp.mesh.Topology):
+    @classmethod
+    def from_cpp(cls, obj):
+        """Create Topology object from a C++ Topology object"""
+        obj.__class__ = Topology
+        return obj
+
+    def connectivity(self, d0, d1):
+        if super().connectivity(d0, d1) is None:
+            return None
+        else:
+            return graph.AdjacencyList(super().connectivity(d0, d1))
+
+
 class Mesh(_cpp.mesh.Mesh):
-    """Mesh object"""
+    """A class for representing meshes. Mesh objects should not be
+    created using this class directly."""
+
+    def __init__(self, comm, topology, geometry, domain):
+        super().__init__(comm, topology, geometry)
+        self._ufl_domain = domain
+        domain._ufl_cargo = self
+
     @classmethod
     def from_cpp(cls, obj, domain):
-        """Create Mesh object from a C++ Mesh"""
+        """Create Mesh object from a C++ Mesh object"""
         obj._ufl_domain = domain
         obj.__class__ = Mesh
         domain._ufl_cargo = obj
         return obj
+
+    @property
+    def topology(self):
+        """Return the UFL cell type"""
+        return Topology.from_cpp(super().topology)
 
     def ufl_cell(self):
         """Return the UFL cell type"""

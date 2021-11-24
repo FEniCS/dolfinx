@@ -418,7 +418,7 @@ def test_plus_minus_matrix(cell_type, pm1, pm2):
 def test_curl(space_type, order):
     """Test that curl is consistent for different cell permutations of a tetrahedron."""
 
-    tdim = cpp.mesh.cell_dim(CellType.tetrahedron)
+    tdim =mesh.cell_dim(CellType.tetrahedron)
     points = unit_cell_points(CellType.tetrahedron)
 
     spaces = []

@@ -12,8 +12,7 @@ import numpy as np
 import pytest
 import ufl
 from dolfinx import Function, FunctionSpace, VectorFunctionSpace
-from dolfinx.cpp.mesh import CellType
-from dolfinx.mesh import create_mesh
+from dolfinx.mesh import CellType, create_mesh
 from dolfinx_utils.test.skips import skip_in_parallel
 from mpi4py import MPI
 
@@ -362,7 +361,7 @@ def test_interpolation_non_affine():
                        [0.5, 2, 1.5], [0.5, 1, 3], [0.5, 1, 1.5]], dtype=np.float64)
 
     cells = np.array([range(len(points))], dtype=np.int32)
-    cell_type = dolfinx.cpp.mesh.CellType.hexahedron
+    cell_type = dolfinx.mesh.CellType.hexahedron
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell_type.name, 2))
     mesh = dolfinx.mesh.create_mesh(MPI.COMM_WORLD, cells, points, domain)
 

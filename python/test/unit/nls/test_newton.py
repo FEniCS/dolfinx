@@ -102,7 +102,7 @@ def test_linear_pde():
     problem = NonlinearPDEProblem(F, u, bc)
 
     # Create Newton solver and solve
-    solver = dolfinx.cpp.nls.NewtonSolver(MPI.COMM_WORLD)
+    solver = dolfinx.nls.NewtonSolver(MPI.COMM_WORLD)
     solver.setF(problem.F, problem.vector())
     solver.setJ(problem.J, problem.matrix())
     solver.set_form(problem.form)
@@ -143,7 +143,7 @@ def test_nonlinear_pde():
     # Create Newton solver and solve
     with u.vector.localForm() as u_local:
         u_local.set(0.9)
-    solver = dolfinx.cpp.nls.NewtonSolver(MPI.COMM_WORLD)
+    solver = dolfinx.nls.NewtonSolver(MPI.COMM_WORLD)
     solver.setF(problem.F, problem.vector())
     solver.setJ(problem.J, problem.matrix())
     solver.set_form(problem.form)

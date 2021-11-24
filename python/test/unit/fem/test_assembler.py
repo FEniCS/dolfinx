@@ -699,9 +699,7 @@ def test_basic_assembly_constant(mode):
 
 
 def test_lambda_assembler():
-    """Tests assembly with a lambda function
-
-    """
+    """Tests assembly with a lambda function"""
     mesh = UnitSquareMesh(MPI.COMM_WORLD, 5, 5)
     V = fem.FunctionSpace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)

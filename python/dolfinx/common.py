@@ -8,8 +8,8 @@
 import functools
 
 from dolfinx import cpp as _cpp
-from dolfinx.cpp.common import (git_commit_hash, has_debug, has_kahip,  # noqa
-                                has_parmetis)
+from dolfinx.cpp.common import (IndexMap, git_commit_hash, has_adios2,  # noqa
+                                has_debug, has_kahip, has_parmetis)
 
 TimingType = _cpp.common.TimingType
 
