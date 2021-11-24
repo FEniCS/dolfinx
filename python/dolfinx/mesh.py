@@ -21,14 +21,17 @@ __all__ = [
 
 
 class Mesh(_cpp.mesh.Mesh):
+    """Mesh object"""
     @classmethod
     def from_cpp(cls, obj, domain):
+        """Create Mesh object from a C++ Mesh"""
         obj._ufl_domain = domain
         obj.__class__ = Mesh
         domain._ufl_cargo = obj
         return obj
 
     def ufl_cell(self):
+        """Return the UFL cell type"""
         return ufl.Cell(self.topology.cell_name(), geometric_dimension=self.geometry.dim)
 
     def ufl_domain(self):
