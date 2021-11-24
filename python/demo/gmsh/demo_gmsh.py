@@ -6,7 +6,6 @@
 # Copyright (C) 2020 Garth N. Wells and Jørgen S. Dokken ::
 
 import numpy as np
-from dolfinx.cpp.graph import AdjacencyList_int32 as AdjacencyList
 from dolfinx.cpp.io import distribute_entity_data, perm_gmsh
 from dolfinx.io import (XDMFFile, extract_gmsh_geometry,
                         extract_gmsh_topology_and_markers, ufl_mesh_from_gmsh)
@@ -97,7 +96,7 @@ mesh.name = "ball_d1"
 entities, values = distribute_entity_data(mesh, 2, marked_facets, facet_values)
 
 mesh.topology.create_connectivity(2, 0)
-mt = create_meshtags(mesh, 2, AdjacencyList(entities), np.int32(values))
+mt = create_meshtags(mesh, 2, entities, np.int32(values))
 mt.name = "ball_d1_surface"
 
 with XDMFFile(MPI.COMM_WORLD, "mesh.xdmf", "w") as file:
@@ -155,7 +154,7 @@ marked_facets = marked_facets[:, gmsh_triangle6]
 
 entities, values = distribute_entity_data(mesh, 2, marked_facets, facet_values)
 mesh.topology.create_connectivity(2, 0)
-mt = create_meshtags(mesh, 2, AdjacencyList(entities), np.int32(values))
+mt = create_meshtags(mesh, 2, entities, np.int32(values))
 mt.name = "ball_d2_surface"
 with XDMFFile(MPI.COMM_WORLD, "mesh.xdmf", "a") as file:
     file.write_mesh(mesh)
@@ -233,7 +232,7 @@ marked_facets = marked_facets[:, gmsh_quad9]
 
 entities, values = distribute_entity_data(mesh, 2, marked_facets, facet_values)
 mesh.topology.create_connectivity(2, 0)
-mt = create_meshtags(mesh, 2, AdjacencyList(entities), np.int32(values))
+mt = create_meshtags(mesh, 2, entities, np.int32(values))
 mt.name = "hex_d2_surface"
 
 with XDMFFile(MPI.COMM_WORLD, "mesh.xdmf", "a") as file:
