@@ -201,7 +201,10 @@ public:
                                  G, std::shared_ptr<const fem::Constant<T>>>)
           {
             assert(f);
-            else { throw std::runtime_error("Unknown bc type."); }
+          }
+          else
+          {
+            throw std::runtime_error("Unknown bc type.");
           }
         },
         _g);
@@ -265,7 +268,10 @@ public:
                                  G, std::shared_ptr<const fem::Constant<T>>>)
           {
             assert(f);
-            else { throw std::runtime_error("Unknown bc type."); }
+          }
+          else
+          {
+            throw std::runtime_error("Unknown bc type.");
           }
         },
         _g);
