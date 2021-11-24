@@ -188,7 +188,23 @@ public:
       : _function_space(V), _g(g), _dofs0(std::forward<U>(dofs))
   {
     assert(_function_space);
-    assert(g);
+    std::visit(
+        [&](auto&& f)
+        {
+          using G = std::decay_t<decltype(f)>;
+          if constexpr (std::is_same_v<G,
+                                       std::shared_ptr<const fem::Function<T>>>)
+          {
+            assert(f);
+          }
+          else if constexpr (std::is_same_v<
+                                 G, std::shared_ptr<const fem::Constant<T>>>)
+          {
+            assert(f);
+            else { throw std::runtime_error("Unknown bc type."); }
+          }
+        },
+        _g);
 
     const int owned_size0 = _function_space->dofmap()->index_map->size_local();
     auto it = std::lower_bound(_dofs0.begin(), _dofs0.end(), owned_size0);
@@ -236,8 +252,23 @@ public:
   {
     assert(_dofs0.size() == _dofs1_g.size());
     assert(_function_space);
-    assert(g);
-
+    std::visit(
+        [&](auto&& f)
+        {
+          using G = std::decay_t<decltype(f)>;
+          if constexpr (std::is_same_v<G,
+                                       std::shared_ptr<const fem::Function<T>>>)
+          {
+            assert(f);
+          }
+          else if constexpr (std::is_same_v<
+                                 G, std::shared_ptr<const fem::Constant<T>>>)
+          {
+            assert(f);
+            else { throw std::runtime_error("Unknown bc type."); }
+          }
+        },
+        _g);
     const int map0_bs = _function_space->dofmap()->index_map_bs();
     const int map0_size = _function_space->dofmap()->index_map->size_local();
     const int owned_size0 = map0_bs * map0_size;
