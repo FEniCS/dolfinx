@@ -13,6 +13,6 @@ using namespace dolfinx;
 std::string io::get_filename(const std::string& fullname)
 {
   const boost::filesystem::path p(fullname);
-  return p.filename().string();
+  return std::string(p.filename().c_str());
 }
 //-----------------------------------------------------------------------------
