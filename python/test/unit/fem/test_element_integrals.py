@@ -8,11 +8,11 @@
 import random
 from itertools import combinations, product
 
+import dolfinx
 import numpy as np
 import pytest
 import ufl
-from dolfinx import (Constant, Function, FunctionSpace, VectorFunctionSpace,
-                     cpp, fem)
+from dolfinx import Constant, Function, FunctionSpace, VectorFunctionSpace, fem
 from dolfinx.mesh import CellType, MeshTags, create_mesh
 from dolfinx_utils.test.skips import skip_in_parallel
 from mpi4py import MPI
@@ -418,7 +418,7 @@ def test_plus_minus_matrix(cell_type, pm1, pm2):
 def test_curl(space_type, order):
     """Test that curl is consistent for different cell permutations of a tetrahedron."""
 
-    tdim =mesh.cell_dim(CellType.tetrahedron)
+    tdim = dolfinx.mesh.cell_dim(CellType.tetrahedron)
     points = unit_cell_points(CellType.tetrahedron)
 
     spaces = []

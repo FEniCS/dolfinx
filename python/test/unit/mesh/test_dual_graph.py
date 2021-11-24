@@ -1,5 +1,5 @@
 
-from dolfinx import cpp
+from dolfinx import cpp, mesh
 from mpi4py import MPI
 
 
