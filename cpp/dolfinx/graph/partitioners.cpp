@@ -538,7 +538,7 @@ std::function<graph::AdjacencyList<std::int32_t>(
 graph::kahip::partitioner(int mode, int seed, double imbalance,
                           bool suppress_output)
 {
-  return [mode, seed, imbalance,
+  return [mode, seed, &imbalance,
           suppress_output](MPI_Comm comm, int nparts,
                            const graph::AdjacencyList<std::int64_t>& graph,
                            std::int32_t, bool ghosting)
