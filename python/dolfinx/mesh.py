@@ -134,13 +134,12 @@ def create_mesh(comm, cells, x, domain,
     cell_degree = ufl_element.degree()
     cmap = _cpp.fem.CoordinateElement(_uflcell_to_dolfinxcell[cell_shape], cell_degree)
     try:
-        mesh_cpp = _cpp.mesh.create_mesh(comm, cells, cmap, x, ghost_mode, partitioner)
+        mesh= _cpp.mesh.create_mesh(comm, cells, cmap, x, ghost_mode, partitioner)
     except TypeError:
-        mesh_cpp = _cpp.mesh.create_mesh(comm, _cpp.graph.AdjacencyList_int64(numpy.cast['int64'](cells)),
+        mesh = _cpp.mesh.create_mesh(comm, _cpp.graph.AdjacencyList_int64(numpy.cast['int64'](cells)),
                                          cmap, x, ghost_mode, partitioner)
-    m = Mesh(mesh_cpp, domain)
-    domain._ufl_cargo = m
-    return m
+    domain._ufl_cargo = mesh
+    return Mesh.from_cpp(mesh, domain)
 
 
 def MeshTags(mesh, dim, indices, values):
@@ -161,30 +160,19 @@ def MeshTags(mesh, dim, indices, values):
         return fn(mesh._cpp_object, dim, indices.astype(numpy.int32), values)
 
 
-class Mesh:
-    def __init__(self, mesh: _cpp.mesh.Mesh, domain: ufl.Mesh):
-        self._cpp_object = mesh
-        self._ufl_domain = domain
+class Mesh(_cpp.mesh.Mesh):
+    # def __init__(self, domain: ufl.Mesh):
+    #     # self._cpp_object = mesh
+    #     self._ufl_domain = domain
+    # # def __init__(self, mesh: _cpp.mesh.Mesh, domain: ufl.Mesh):
+    # #     self._cpp_object = mesh
+    # #     self._ufl_domain = domain
 
-    @property
-    def topology(self):
-        return self._cpp_object.topology
-
-    @property
-    def geometry(self):
-        return self._cpp_object.geometry
-
-    @property
-    def mpi_comm(self):
-        return self._cpp_object.mpi_comm
-
-    @property
-    def name(self):
-        return self._cpp_object.name
-
-    @name.setter
-    def name(self, value):
-        self._cpp_object.name = value
+    @classmethod
+    def from_cpp(cls, obj, domain):
+        obj._ufl_domain = domain
+        obj.__class__ = Mesh
+        return obj
 
     def ufl_cell(self):
         return ufl.Cell(self.topology.cell_name(), geometric_dimension=self.geometry.dim)

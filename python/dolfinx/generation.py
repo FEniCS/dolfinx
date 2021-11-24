@@ -35,10 +35,9 @@ def IntervalMesh(comm, nx: int, points: list, ghost_mode=GhostMode.shared_facet,
 
     """
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", "interval", 1))
-    mesh_cpp = cpp.generation.create_interval_mesh(comm, nx, points, ghost_mode, partitioner)
-    domain._ufl_cargo = mesh_cpp
-    mesh_cpp._ufl_domain = domain
-    return Mesh(mesh_cpp, domain)
+    mesh = cpp.generation.create_interval_mesh(comm, nx, points, ghost_mode, partitioner)
+    domain._ufl_cargo = mesh
+    return Mesh.from_cpp(mesh, domain)
 
 
 def UnitIntervalMesh(comm, nx, ghost_mode=GhostMode.shared_facet,
@@ -74,12 +73,9 @@ def RectangleMesh(comm, points: typing.List[numpy.array], n: list, cell_type=Cel
 
     """
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell_type.name, 1))
-    mesh_cpp = cpp.generation.create_rectangle_mesh(comm, points, n, cell_type, ghost_mode, partitioner, diagonal)
-    domain._ufl_cargo = mesh_cpp
-    mesh_cpp._ufl_domain = domain
-    return Mesh(mesh_cpp, domain)
-    # mesh_cpp._ufl_domain = domain
-    # return mesh_cpp
+    mesh = cpp.generation.create_rectangle_mesh(comm, points, n, cell_type, ghost_mode, partitioner, diagonal)
+    domain._ufl_cargo = mesh
+    return Mesh.from_cpp(mesh, domain)
 
 
 def UnitSquareMesh(comm, nx, ny, cell_type=CellType.triangle,
@@ -121,10 +117,9 @@ def BoxMesh(comm, points: typing.List[numpy.array], n: list,
 
     """
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell_type.name, 1))
-    mesh_cpp = cpp.generation.create_box_mesh(comm, points, n, cell_type, ghost_mode, partitioner)
-    domain._ufl_cargo = mesh_cpp
-    mesh_cpp._ufl_domain = domain
-    return Mesh(mesh_cpp, domain)
+    mesh = cpp.generation.create_box_mesh(comm, points, n, cell_type, ghost_mode, partitioner)
+    domain._ufl_cargo = mesh
+    return Mesh.from_cpp(mesh, domain)
 
 
 def UnitCubeMesh(comm, nx, ny, nz, cell_type=CellType.tetrahedron,
