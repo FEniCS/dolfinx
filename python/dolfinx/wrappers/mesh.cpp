@@ -73,11 +73,17 @@ void declare_meshtags(py::module& m, std::string type)
 
   m.def("create_meshtags",
         [](const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh, int dim,
-           const dolfinx::graph::AdjacencyList<std::int32_t>& entities,
+           const py::array_t<T, py::array::c_style>& entities,
            const py::array_t<T, py::array::c_style>& values)
         {
+          if (entities.ndim() != 2)
+            throw std::runtime_error("Expected 2D array.");
+          std::array _shape = {std::size_t(entities.shape(0)),
+                               std::size_t(entities.shape(1))};
+          auto e = xt::adapt(entities.data(), entities.size(),
+                             xt::no_ownership(), _shape);
           return dolfinx::mesh::create_meshtags(
-              mesh, dim, entities, xtl::span(values.data(), values.size()));
+              mesh, dim, e, xtl::span(values.data(), values.size()));
         });
 }
 
@@ -302,7 +308,8 @@ void mesh(py::module& m)
         [](const MPICommWrapper comm, int nparts, int tdim,
            const dolfinx::graph::AdjacencyList<std::int64_t>& cells,
            dolfinx::mesh::GhostMode ghost_mode)
-            -> dolfinx::graph::AdjacencyList<std::int32_t> {
+            -> dolfinx::graph::AdjacencyList<std::int32_t>
+        {
           return dolfinx::mesh::partition_cells_graph(comm.get(), nparts, tdim,
                                                       cells, ghost_mode);
         });

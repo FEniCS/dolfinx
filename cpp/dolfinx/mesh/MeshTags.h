@@ -13,18 +13,18 @@
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/UniqueIdGenerator.h>
 #include <dolfinx/common/utils.h>
-#include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/partition.h>
 #include <dolfinx/io/cells.h>
 #include <map>
 #include <memory>
 #include <utility>
 #include <vector>
+#include <xtensor/xtensor.hpp>
+#include <xtensor/xview.hpp>
 #include <xtl/xspan.hpp>
 
 namespace dolfinx::mesh
 {
-
 /// A MeshTags are used to associate mesh entities with values. The
 /// entity index (local to process) identifies the entity. MeshTags is a
 /// sparse data storage class; it allows tags to be associated with an
@@ -131,17 +131,18 @@ private:
 /// Create MeshTags from arrays
 /// @param[in] mesh The Mesh that the tags are associated with
 /// @param[in] dim Topological dimension of tagged entities
-/// @param[in] entities Local vertex indices for tagged entities.
+/// @param[in] entities Local vertex indices for tagged entities
+/// (ndim==2)
 /// @param[in] values Tag values for each entity in @ entities. The
 /// length of @ values  must be equal to number of rows in @ entities.
 template <typename T>
-mesh::MeshTags<T>
-create_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh, int dim,
-                const graph::AdjacencyList<std::int32_t>& entities,
-                const xtl::span<const T>& values)
+mesh::MeshTags<T> create_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh,
+                                  int dim,
+                                  const xt::xtensor<std::int32_t, 2>& entities,
+                                  const xtl::span<const T>& values)
 {
   assert(mesh);
-  if ((std::size_t)entities.num_nodes() != values.size())
+  if (entities.shape(0) != values.size())
     throw std::runtime_error("Number of entities and values must match");
 
   // Tagged entity topological dimension
@@ -152,11 +153,10 @@ create_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh, int dim,
   if (!e_to_v)
     throw std::runtime_error("Missing entity-vertex connectivity.");
 
-  const int num_vertices_per_entity = e_to_v->num_links(0);
   const int num_entities_mesh = map_e->size_local() + map_e->num_ghosts();
 
   std::map<std::vector<std::int32_t>, std::int32_t> entity_key_to_index;
-  std::vector<std::int32_t> key(num_vertices_per_entity);
+  std::vector<std::int32_t> key(entities.shape(1));
   for (int e = 0; e < num_entities_mesh; ++e)
   {
     // Prepare a map from ordered local vertex indices to local entity
@@ -172,13 +172,12 @@ create_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh, int dim,
   // store (local entity index, tag value)
   std::vector<std::int32_t> indices_new;
   std::vector<T> values_new;
-  std::vector<std::int32_t> entity(num_vertices_per_entity);
-  for (std::int32_t e = 0; e < entities.num_nodes(); ++e)
+  std::vector<std::int32_t> entity(entities.shape(1));
+  for (std::size_t e = 0; e < entities.shape(0); ++e)
   {
     // This would fail for mixed cell type meshes
-    assert(num_vertices_per_entity == entities.num_links(e));
-    std::copy(entities.links(e).begin(), entities.links(e).end(),
-              entity.begin());
+    auto ent = xt::row(entities, e);
+    std::copy(ent.begin(), ent.end(), entity.begin());
     std::sort(entity.begin(), entity.end());
 
     if (const auto it = entity_key_to_index.find(entity);
