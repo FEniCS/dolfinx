@@ -139,7 +139,9 @@ get_remote_bcs1(const common::IndexMap& map,
 /// condition detected by another process
 ///
 /// @param[in] map0 The IndexMap with the dof layout
+/// @param[in] bs0 The block size of the index map
 /// @param[in] map1 The IndexMap with the dof layout
+/// @param[in] bs1 The block size of the index map
 /// @param[in] dofs_local The IndexMap with the dof layout
 /// @return List of local dofs with boundary conditions applied but
 ///   detected by other processes. It may contain duplicate entries.
@@ -271,6 +273,114 @@ get_remote_bcs2(const common::IndexMap& map0, int bs0,
   return dofs;
 }
 //-----------------------------------------------------------------------------
+/// Find DOFs on this processes that are constrained by a Dirichlet
+/// condition detected by another process
+///
+/// @param[in] map The IndexMap with the dof layout
+/// @param[in] bs The block size of the index map
+/// @param[in] dofs_local The IndexMap with the dof layout
+/// @return List of local dofs with boundary conditions applied but
+///   detected by other processes. It may contain duplicate entries.
+std::vector<std::int32_t>
+get_remote_bcs1_sub(const common::IndexMap& map, int bs,
+                    const std::vector<std::int32_t>& dofs_local)
+{
+  // NOTE: assumes that dofs are unrolled, i.e. not blocked. Could it be
+  // make more efficient to handle the case of a common block size?
+
+  dolfinx::MPI::Comm comm
+      = create_symmetric_comm(map.comm(common::IndexMap::Direction::forward));
+
+  int num_neighbors(-1), outdegree(-2), weighted(-1);
+  MPI_Dist_graph_neighbors_count(comm.comm(), &num_neighbors, &outdegree,
+                                 &weighted);
+  assert(num_neighbors == outdegree);
+
+  // Return early if there are no neighbors
+  if (num_neighbors == 0)
+    return {};
+
+  // Figure out how many entries to receive from each neighbor
+  const int num_dofs = dofs_local.size();
+  std::vector<int> num_dofs_recv(num_neighbors);
+  MPI_Request request;
+  MPI_Ineighbor_allgather(&num_dofs, 1, MPI_INT, num_dofs_recv.data(), 1,
+                          MPI_INT, comm.comm(), &request);
+
+  // NOTE: we consider only dofs that we know are shared
+  // Build array of global indices of dofs
+  std::vector<std::int64_t> dofs_global;
+  dofs_global.reserve(dofs_local.size());
+
+  // Convert dofs indices to 'blocks' relative to index map
+  std::vector<std::int32_t> dofs_local_block = dofs_local;
+  std::for_each(dofs_local_block.begin(), dofs_local_block.end(),
+                [bs](std::int32_t& n) { return n /= bs; });
+
+  // Get global index of each block
+  std::vector<std::int64_t> dofs_global_block(dofs_local_block.size());
+  map.local_to_global(dofs_local_block, dofs_global_block);
+
+  // Convert from block to actual index
+  for (std::size_t j = 0; j < dofs_local.size(); ++j)
+  {
+    const int index_offset = dofs_local[j] % bs;
+    dofs_global.push_back(bs * dofs_global_block[j] + index_offset);
+  }
+
+  // Compute displacements for data to receive. Last entry has total
+  // number of received items.
+  MPI_Wait(&request, MPI_STATUS_IGNORE);
+  std::vector<int> disp(num_neighbors + 1, 0);
+  std::partial_sum(num_dofs_recv.begin(), num_dofs_recv.end(),
+                   std::next(disp.begin()));
+
+  // NOTE: we could use MPI_Neighbor_alltoallv to send only to relevant
+  // processes
+
+  // Send/receive global index of dofs with bcs to all neighbors
+  std::vector<std::int64_t> dofs_received(disp.back());
+  MPI_Neighbor_allgatherv(dofs_global.data(), dofs_global.size(), MPI_INT64_T,
+                          dofs_received.data(), num_dofs_recv.data(),
+                          disp.data(), MPI_INT64_T, comm.comm());
+
+  std::vector<std::int32_t> dofs;
+
+  // FIXME: check that dofs is sorted?
+  // Build vector of local dof indicies that have been marked by
+  // another process
+  const std::array<std::int64_t, 2> range = map.local_range();
+  const std::vector<std::int64_t>& ghosts = map.ghosts();
+
+  // Build map from ghost to local position
+  std::vector<std::pair<std::int64_t, std::int32_t>> global_local_ghosts;
+  const std::int32_t local_size = range[1] - range[0];
+  for (std::size_t i = 0; i < ghosts.size(); ++i)
+    global_local_ghosts.emplace_back(ghosts[i], i + local_size);
+  std::map<std::int64_t, std::int32_t> global_to_local(
+      global_local_ghosts.begin(), global_local_ghosts.end());
+
+  for (std::size_t i = 0; i < dofs_received.size(); ++i)
+  {
+    if (dofs_received[i] >= bs * range[0] and dofs_received[i] < bs * range[1])
+    {
+      // Owned dof
+      dofs.push_back(dofs_received[i] - bs * range[0]);
+    }
+    else
+    {
+      // Search in ghosts
+      if (auto it = global_to_local.find(dofs_received[i] / bs);
+          it != global_to_local.end())
+      {
+        dofs.push_back(bs * it->second + dofs_received[i] % bs);
+      }
+    }
+  }
+  return dofs;
+}
+//-----------------------------------------------------------------------------
+
 } // namespace
 
 //-----------------------------------------------------------------------------
@@ -427,56 +537,114 @@ fem::locate_dofs_topological(const fem::FunctionSpace& V, int dim,
     entity_dofs.push_back(
         dofmap->element_dof_layout->entity_closure_dofs(dim, i));
   }
-
   auto e_to_c = mesh->topology().connectivity(dim, tdim);
   assert(e_to_c);
   auto c_to_e = mesh->topology().connectivity(tdim, dim);
   assert(c_to_e);
-
   const int num_entity_closure_dofs
       = dofmap->element_dof_layout->num_entity_closure_dofs(dim);
   std::vector<std::int32_t> dofs;
-  for (std::int32_t e : entities)
+  // If space is not a sub space we not not need to take the block size into
+  // account
+  if (V.component().size() == 0)
   {
-    // Get first attached cell
-    assert(e_to_c->num_links(e) > 0);
-    const int cell = e_to_c->links(e)[0];
-
-    // Get local index of facet with respect to the cell
-    auto entities_d = c_to_e->links(cell);
-    auto it = std::find(entities_d.begin(), entities_d.end(), e);
-    assert(it != entities_d.end());
-    const int entity_local_index = std::distance(entities_d.data(), it);
-
-    // Get cell dofmap
-    auto cell_dofs = dofmap->cell_dofs(cell);
-
-    // Loop over entity dofs
-    for (int j = 0; j < num_entity_closure_dofs; j++)
+    for (std::int32_t e : entities)
     {
-      const int index = entity_dofs[entity_local_index][j];
-      dofs.push_back(cell_dofs[index]);
+      // Get first attached cell
+      assert(e_to_c->num_links(e) > 0);
+      const int cell = e_to_c->links(e)[0];
+
+      // Get local index of facet with respect to the cell
+      auto entities_d = c_to_e->links(cell);
+      auto it = std::find(entities_d.begin(), entities_d.end(), e);
+      assert(it != entities_d.end());
+      const int entity_local_index = std::distance(entities_d.data(), it);
+
+      // Get cell dofmap
+      auto cell_dofs = dofmap->cell_dofs(cell);
+
+      // Loop over entity dofs
+      for (int j = 0; j < num_entity_closure_dofs; j++)
+      {
+        const int index = entity_dofs[entity_local_index][j];
+        dofs.push_back(cell_dofs[index]);
+      }
     }
-  }
 
-  // TODO: is removing duplicates at this point worth the effort?
-  // Remove duplicates
-  std::sort(dofs.begin(), dofs.end());
-  dofs.erase(std::unique(dofs.begin(), dofs.end()), dofs.end());
-
-  if (remote)
-  {
-    const std::vector dofs_remote
-        = get_remote_bcs1(*V.dofmap()->index_map, dofs);
-
-    // Add received bc indices to dofs_local
-    dofs.insert(dofs.end(), dofs_remote.begin(), dofs_remote.end());
-
+    // TODO: is removing duplicates at this point worth the effort?
     // Remove duplicates
     std::sort(dofs.begin(), dofs.end());
     dofs.erase(std::unique(dofs.begin(), dofs.end()), dofs.end());
-  }
 
+    if (remote)
+    {
+      const std::vector dofs_remote
+          = get_remote_bcs1(*V.dofmap()->index_map, dofs);
+
+      // Add received bc indices to dofs_local
+      dofs.insert(dofs.end(), dofs_remote.begin(), dofs_remote.end());
+
+      // Remove duplicates
+      std::sort(dofs.begin(), dofs.end());
+      dofs.erase(std::unique(dofs.begin(), dofs.end()), dofs.end());
+    }
+  }
+  else
+  {
+    // V is a sub space we need to take the block size of the dofmap and index
+    // map into account, as they differ
+    const int bs = dofmap->bs();
+    const int element_bs = dofmap->element_dof_layout->block_size();
+
+    // Iterate over marked facets
+    for (std::int32_t e : entities)
+    {
+      // Get first attached cell
+      assert(e_to_c->num_links(e) > 0);
+      const int cell = e_to_c->links(e)[0];
+
+      // Get local index of facet with respect to the cell
+      auto entities_d = c_to_e->links(cell);
+      auto it = std::find(entities_d.begin(), entities_d.end(), e);
+      assert(it != entities_d.end());
+      const int entity_local_index = std::distance(entities_d.begin(), it);
+
+      // Get cell dofmap
+      xtl::span<const std::int32_t> cell_dofs = dofmap->cell_dofs(cell);
+
+      // Loop over facet dofs and 'unpack' blocked dofs
+      for (int i = 0; i < num_entity_closure_dofs; ++i)
+      {
+        const int index = entity_dofs[entity_local_index][i];
+        for (int block = 0; block < element_bs; ++block)
+        {
+          const std::div_t pos = std::div(element_bs * index + block, bs);
+          dofs.push_back(bs * cell_dofs[pos.quot] + pos.rem);
+        }
+      }
+    }
+
+    // TODO: is removing duplicates at this point worth the effort?
+    // Remove duplicates
+    std::sort(dofs.begin(), dofs.end());
+    dofs.erase(std::unique(dofs.begin(), dofs.end()), dofs.end());
+
+    if (remote)
+    {
+      // Get bc dof indices (local) in (V, Vg) spaces on this process that
+      // were found by other processes, e.g. a vertex dof on this process
+      // that has no connected facets on the boundary.
+      const std::vector dofs_remote = get_remote_bcs1_sub(
+          *V.dofmap()->index_map, V.dofmap()->index_map_bs(), dofs);
+
+      // Add received bc indices to dofs_local
+      dofs.insert(dofs.end(), dofs_remote.begin(), dofs_remote.end());
+
+      // Remove duplicates and sort
+      std::sort(dofs.begin(), dofs.end());
+      dofs.erase(std::unique(dofs.begin(), dofs.end()), dofs.end());
+    }
+  }
   return dofs;
 }
 //-----------------------------------------------------------------------------
