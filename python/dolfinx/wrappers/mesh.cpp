@@ -78,10 +78,10 @@ void declare_meshtags(py::module& m, std::string type)
         {
           if (entities.ndim() != 2)
             throw std::runtime_error("Expected 2D array.");
-          std::array _shape = {std::size_t(entities.shape(0)),
-                               std::size_t(entities.shape(1))};
+          std::array s = {std::size_t(entities.shape(0)),
+                          std::size_t(entities.shape(1))};
           auto e = xt::adapt(entities.data(), entities.size(),
-                             xt::no_ownership(), _shape);
+                             xt::no_ownership(), s);
           return dolfinx::mesh::create_meshtags(
               mesh, dim, e, xtl::span(values.data(), values.size()));
         });

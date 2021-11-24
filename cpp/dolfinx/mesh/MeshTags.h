@@ -132,13 +132,12 @@ private:
 /// @param[in] mesh The Mesh that the tags are associated with
 /// @param[in] dim Topological dimension of tagged entities
 /// @param[in] entities Local vertex indices for tagged entities
-/// (ndim==2)
+/// (xtensor array of std::int32_t, ndim==2)
 /// @param[in] values Tag values for each entity in @ entities. The
 /// length of @ values  must be equal to number of rows in @ entities.
-template <typename T>
+template <typename T, typename U>
 mesh::MeshTags<T> create_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh,
-                                  int dim,
-                                  const xt::xtensor<std::int32_t, 2>& entities,
+                                  int dim, const U& entities,
                                   const xtl::span<const T>& values)
 {
   assert(mesh);
