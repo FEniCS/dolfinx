@@ -147,7 +147,7 @@ def test_assembly_bcs(mode):
         return numpy.logical_or(x[0] < 1.0e-6, x[0] > 1.0 - 1.0e-6)
 
     bdofsV = dolfinx.fem.locate_dofs_geometrical(V, boundary)
-    u_bc = dolfinx.Constant(mesh, 1)
+    u_bc = dolfinx.Constant(mesh, PETSc.ScalarType(1))
     bc = dolfinx.fem.dirichletbc.DirichletBC(u_bc, bdofsV, V)
 
     # Assemble and apply 'global' lifting of bcs

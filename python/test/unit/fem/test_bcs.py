@@ -104,7 +104,7 @@ def test_constant_bc():
 
     mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, 10, 10)
     V = dolfinx.FunctionSpace(mesh, ("CG", 1))
-    c = dolfinx.Constant(mesh, 2)
+    c = dolfinx.Constant(mesh, PETSc.ScalarType(2))
 
     def on_boundary(x):
         return np.ones(x.shape[1], dtype=bool)
@@ -134,7 +134,7 @@ def test_vector_constant_bc():
 
     mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, 10, 10)
     V = dolfinx.VectorFunctionSpace(mesh, ("CG", 1))
-    c = dolfinx.Constant(mesh, (2, 1))
+    c = dolfinx.Constant(mesh, PETSc.ScalarType((2, 1)))
 
     def on_boundary(x):
         return np.ones(x.shape[1], dtype=bool)
@@ -172,7 +172,7 @@ def test_sub_constant_bc():
 
     mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, 10, 10)
     V = dolfinx.VectorFunctionSpace(mesh, ("CG", 1))
-    c = dolfinx.Constant(mesh, 3.14)
+    c = dolfinx.Constant(mesh, PETSc.ScalarType(3.14))
 
     def on_boundary(x):
         return np.ones(x.shape[1], dtype=bool)
