@@ -10,7 +10,8 @@ import typing
 import cffi
 import numpy as np
 import ufl
-from dolfinx import cpp, jit
+from dolfinx import cpp as _cpp
+from dolfinx import jit
 from dolfinx.fem import function
 from petsc4py import PETSc
 
@@ -70,17 +71,17 @@ class Form:
 
         # Create dictionary of of subdomain markers (possible None for
         # some dimensions
-        subdomains = {cpp.fem.IntegralType.cell: self._subdomains.get("cell"),
-                      cpp.fem.IntegralType.exterior_facet: self._subdomains.get("exterior_facet"),
-                      cpp.fem.IntegralType.interior_facet: self._subdomains.get("interior_facet"),
-                      cpp.fem.IntegralType.vertex: self._subdomains.get("vertex")}
+        subdomains = {_cpp.fem.IntegralType.cell: self._subdomains.get("cell"),
+                      _cpp.fem.IntegralType.exterior_facet: self._subdomains.get("exterior_facet"),
+                      _cpp.fem.IntegralType.interior_facet: self._subdomains.get("interior_facet"),
+                      _cpp.fem.IntegralType.vertex: self._subdomains.get("vertex")}
 
         # Prepare dolfinx.cpp.fem.Form and hold it as a member
         def create_form(dtype):
             if dtype is np.float64:
-                return cpp.fem.create_form_float64
+                return _cpp.fem.create_form_float64
             elif dtype is np.complex128:
-                return cpp.fem.create_form_complex128
+                return _cpp.fem.create_form_complex128
             else:
                 raise NotImplementedError(f"Type {dtype} not supported.")
 

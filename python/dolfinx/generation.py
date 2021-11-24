@@ -10,7 +10,7 @@ import typing
 import numpy
 import ufl
 
-from dolfinx import cpp
+from dolfinx import cpp as _cpp
 from dolfinx.mesh import CellType, GhostMode, Mesh
 
 __all__ = [
@@ -20,7 +20,7 @@ __all__ = [
 
 
 def IntervalMesh(comm, nx: int, points: list, ghost_mode=GhostMode.shared_facet,
-                 partitioner=cpp.mesh.partition_cells_graph):
+                 partitioner=_cpp.mesh.partition_cells_graph):
     """Create an interval mesh
 
     Parameters
@@ -35,12 +35,12 @@ def IntervalMesh(comm, nx: int, points: list, ghost_mode=GhostMode.shared_facet,
 
     """
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", "interval", 1))
-    mesh = cpp.generation.create_interval_mesh(comm, nx, points, ghost_mode, partitioner)
+    mesh = _cpp.generation.create_interval_mesh(comm, nx, points, ghost_mode, partitioner)
     return Mesh.from_cpp(mesh, domain)
 
 
 def UnitIntervalMesh(comm, nx, ghost_mode=GhostMode.shared_facet,
-                     partitioner=cpp.mesh.partition_cells_graph):
+                     partitioner=_cpp.mesh.partition_cells_graph):
     """Create a mesh on the unit interval
 
     Parameters
@@ -55,7 +55,7 @@ def UnitIntervalMesh(comm, nx, ghost_mode=GhostMode.shared_facet,
 
 
 def RectangleMesh(comm, points: typing.List[numpy.array], n: list, cell_type=CellType.triangle,
-                  ghost_mode=GhostMode.shared_facet, partitioner=cpp.mesh.partition_cells_graph,
+                  ghost_mode=GhostMode.shared_facet, partitioner=_cpp.mesh.partition_cells_graph,
                   diagonal: str = "right"):
     """Create rectangle mesh
 
@@ -72,13 +72,13 @@ def RectangleMesh(comm, points: typing.List[numpy.array], n: list, cell_type=Cel
 
     """
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell_type.name, 1))
-    mesh = cpp.generation.create_rectangle_mesh(comm, points, n, cell_type, ghost_mode, partitioner, diagonal)
+    mesh = _cpp.generation.create_rectangle_mesh(comm, points, n, cell_type, ghost_mode, partitioner, diagonal)
     return Mesh.from_cpp(mesh, domain)
 
 
 def UnitSquareMesh(comm, nx, ny, cell_type=CellType.triangle,
                    ghost_mode=GhostMode.shared_facet,
-                   partitioner=cpp.mesh.partition_cells_graph, diagonal="right"):
+                   partitioner=_cpp.mesh.partition_cells_graph, diagonal="right"):
     """Create a mesh of a unit square
 
     Parameters
@@ -101,7 +101,7 @@ def UnitSquareMesh(comm, nx, ny, cell_type=CellType.triangle,
 def BoxMesh(comm, points: typing.List[numpy.array], n: list,
             cell_type=CellType.tetrahedron,
             ghost_mode=GhostMode.shared_facet,
-            partitioner=cpp.mesh.partition_cells_graph):
+            partitioner=_cpp.mesh.partition_cells_graph):
     """Create box mesh
 
     Parameters
@@ -115,12 +115,12 @@ def BoxMesh(comm, points: typing.List[numpy.array], n: list,
 
     """
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell_type.name, 1))
-    mesh = cpp.generation.create_box_mesh(comm, points, n, cell_type, ghost_mode, partitioner)
+    mesh = _cpp.generation.create_box_mesh(comm, points, n, cell_type, ghost_mode, partitioner)
     return Mesh.from_cpp(mesh, domain)
 
 
 def UnitCubeMesh(comm, nx, ny, nz, cell_type=CellType.tetrahedron,
-                 ghost_mode=GhostMode.shared_facet, partitioner=cpp.mesh.partition_cells_graph):
+                 ghost_mode=GhostMode.shared_facet, partitioner=_cpp.mesh.partition_cells_graph):
     """Create a mesh of a unit cube
 
     Parameters

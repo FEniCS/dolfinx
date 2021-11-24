@@ -12,11 +12,12 @@ import typing
 import numpy
 import ufl
 
-from dolfinx import cpp, fem
+from dolfinx import cpp as _cpp
+from dolfinx import fem
 from dolfinx.mesh import GhostMode, Mesh
 
 
-class VTKFile(cpp.io.VTKFile):
+class VTKFile(_cpp.io.VTKFile):
     """Interface to VTK files
     VTK supports arbitrary order Lagrangian finite elements for the
     geometry description. XDMF is the preferred format for geometry
@@ -41,7 +42,7 @@ class VTKFile(cpp.io.VTKFile):
         super().write(cpp_list, t)
 
 
-class XDMFFile(cpp.io.XDMFFile):
+class XDMFFile(_cpp.io.XDMFFile):
     def write_mesh(self, mesh: Mesh) -> None:
         """Write mesh to file for a given time (default 0.0)"""
         super().write_mesh(mesh)
@@ -60,9 +61,9 @@ class XDMFFile(cpp.io.XDMFFile):
         cell = ufl.Cell(cell_shape.name, geometric_dimension=x.shape[1])
 
         # Build the mesh
-        cmap = cpp.fem.CoordinateElement(cell_shape, cell_degree)
-        mesh = cpp.mesh.create_mesh(self.comm(), cpp.graph.AdjacencyList_int64(cells),
-                                    cmap, x, ghost_mode, cpp.mesh.partition_cells_graph)
+        cmap = _cpp.fem.CoordinateElement(cell_shape, cell_degree)
+        mesh = _cpp.mesh.create_mesh(self.comm(), _cpp.graph.AdjacencyList_int64(cells),
+                                     cmap, x, ghost_mode, _cpp.mesh.partition_cells_graph)
         mesh.name = name
 
         domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell, cell_degree))

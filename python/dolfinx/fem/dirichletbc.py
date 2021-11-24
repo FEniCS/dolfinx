@@ -169,7 +169,7 @@ class DirichletBC:
         if V is not None:
             # Extract cpp function space
             try:
-               self._cpp_object = dirichletbc_obj(dtype)(_value, dofs, V)
+                self._cpp_object = dirichletbc_obj(dtype)(_value, dofs, V)
             except TypeError:
                 self._cpp_object = dirichletbc_obj(dtype)(_value, dofs, V._cpp_object)
         else:
