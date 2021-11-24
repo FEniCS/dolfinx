@@ -93,19 +93,19 @@ def mesh_3d():
 @pytest.fixture
 def c0(mesh3d):
     """Original tetrahedron from UnitCubeMesh(MPI.COMM_WORLD, 1, 1, 1)"""
-    return mesh3d._cpp_object, mesh3d.topology.dim, 0
+    return mesh3d, mesh3d.topology.dim, 0
 
 
 @pytest.fixture
 def c1(mesh3d):
     # Degenerate cell
-    return mesh3d._cpp_object, mesh3d.topology.dim, 1
+    return mesh3d, mesh3d.topology.dim, 1
 
 
 @pytest.fixture
 def c5(mesh3d):
     # Regular tetrahedron with edge sqrt(2)
-    return mesh3d._cpp_object, mesh3d.topology.dim, 5
+    return mesh3d, mesh3d.topology.dim, 5
 
 
 @pytest.fixture

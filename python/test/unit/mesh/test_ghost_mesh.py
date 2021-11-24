@@ -75,8 +75,8 @@ def test_ghost_connectivities(mode):
     num_facets = map_f.size_local + map_f.num_ghosts
 
     reference = {}
-    facet_mp = cpp.mesh.midpoints(meshR._cpp_object, tdim - 1, range(num_facets))
-    cell_mp = cpp.mesh.midpoints(meshR._cpp_object, tdim, range(num_cells))
+    facet_mp = cpp.mesh.midpoints(meshR, tdim - 1, range(num_facets))
+    cell_mp = cpp.mesh.midpoints(meshR, tdim, range(num_cells))
     reference = dict.fromkeys([tuple(row) for row in facet_mp], [])
     for i in range(num_facets):
         for cidx in meshR.topology.connectivity(1, 2).links(i):
@@ -93,8 +93,8 @@ def test_ghost_connectivities(mode):
 
     num_facets_ghost = map_f.num_ghosts
     allowable_cell_indices = range(num_cells)
-    facet_mp = cpp.mesh.midpoints(meshG._cpp_object, tdim - 1, range(num_facets))
-    cell_mp = cpp.mesh.midpoints(meshG._cpp_object, tdim, range(num_cells))
+    facet_mp = cpp.mesh.midpoints(meshG, tdim - 1, range(num_facets))
+    cell_mp = cpp.mesh.midpoints(meshG, tdim, range(num_cells))
     for i in range(num_facets_ghost):
         assert tuple(facet_mp[i]) in reference
         for cidx in meshG.topology.connectivity(1, 2).links(i):

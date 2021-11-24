@@ -21,10 +21,7 @@ class BoundingBoxTree(_cpp.geometry.BoundingBoxTree):
 
 
 def compute_colliding_cells(mesh, candidates, x):
-    try:
-        return _cpp.geometry.compute_colliding_cells(mesh, candidates, x)
-    except TypeError:
-        return _cpp.geometry.compute_colliding_cells(mesh, candidates, x)
+    return _cpp.geometry.compute_colliding_cells(mesh, candidates, x)
 
 
 def squared_distance(mesh, dim, entities, points):

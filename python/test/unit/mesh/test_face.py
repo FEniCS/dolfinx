@@ -48,10 +48,10 @@ def test_normals(cube, square):
         return numpy.isclose(x[0], 0)
     fdim = cube.topology.dim - 1
     facets = locate_entities_boundary(cube, fdim, left_side)
-    normals = cell_normals(cube._cpp_object, fdim, facets)
+    normals = cell_normals(cube, fdim, facets)
     assert numpy.allclose(normals, [-1, 0, 0])
 
     fdim = square.topology.dim - 1
     facets = locate_entities_boundary(square, fdim, left_side)
-    normals = cell_normals(square._cpp_object, fdim, facets)
+    normals = cell_normals(square, fdim, facets)
     assert numpy.allclose(normals, [-1, 0, 0])

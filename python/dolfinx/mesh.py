@@ -117,15 +117,13 @@ _meshtags_types = {
 def refine(mesh, cell_markers=None, redistribute=True):
     """Refine a mesh"""
     if cell_markers is None:
-        _mesh_refined = _cpp.refinement.refine(mesh, redistribute)
+        mesh_refined = _cpp.refinement.refine(mesh, redistribute)
     else:
-        _mesh_refined = _cpp.refinement.refine(mesh, cell_markers, redistribute)
+        mesh_refined = _cpp.refinement.refine(mesh, cell_markers, redistribute)
 
     coordinate_element = mesh._ufl_domain.ufl_coordinate_element()
     domain = ufl.Mesh(coordinate_element)
-    mesh_refined = Mesh(_mesh_refined, domain)
-    domain._ufl_cargo = mesh_refined
-    return mesh_refined
+    return Mesh.from_cpp(mesh_refined, domain)
 
 
 def create_mesh(comm, cells, x, domain,
