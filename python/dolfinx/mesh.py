@@ -24,9 +24,7 @@ def create_meshtags(mesh, dim, entities, values):
     return _cpp.mesh.create_meshtags(mesh, dim, entities, values)
 
 
-def locate_entities(mesh: _cpp.mesh.Mesh,
-                    dim: int,
-                    marker: types.FunctionType):
+def locate_entities(mesh: Mesh, dim: int, marker: types.FunctionType):
     """Compute list of mesh entities satisfying a geometric marking function.
 
     Parameters
@@ -50,9 +48,7 @@ def locate_entities(mesh: _cpp.mesh.Mesh,
     return _cpp.mesh.locate_entities(mesh, dim, marker)
 
 
-def locate_entities_boundary(mesh: _cpp.mesh.Mesh,
-                             dim: int,
-                             marker: types.FunctionType):
+def locate_entities_boundary(mesh: Mesh, dim: int, marker: types.FunctionType):
     """Compute list of mesh entities that are attached to an owned boundary facet
     and satisfy a geometric marking function.
 
@@ -125,10 +121,10 @@ def create_mesh(comm, cells, x, domain,
     cell_degree = ufl_element.degree()
     cmap = _cpp.fem.CoordinateElement(_uflcell_to_dolfinxcell[cell_shape], cell_degree)
     try:
-        mesh= _cpp.mesh.create_mesh(comm, cells, cmap, x, ghost_mode, partitioner)
+        mesh = _cpp.mesh.create_mesh(comm, cells, cmap, x, ghost_mode, partitioner)
     except TypeError:
         mesh = _cpp.mesh.create_mesh(comm, _cpp.graph.AdjacencyList_int64(numpy.cast['int64'](cells)),
-                                         cmap, x, ghost_mode, partitioner)
+                                     cmap, x, ghost_mode, partitioner)
     domain._ufl_cargo = mesh
     return Mesh.from_cpp(mesh, domain)
 
@@ -149,13 +145,6 @@ def MeshTags(mesh, dim, indices, values):
 
 
 class Mesh(_cpp.mesh.Mesh):
-    # def __init__(self, domain: ufl.Mesh):
-    #     # self._cpp_object = mesh
-    #     self._ufl_domain = domain
-    # # def __init__(self, mesh: _cpp.mesh.Mesh, domain: ufl.Mesh):
-    # #     self._cpp_object = mesh
-    # #     self._ufl_domain = domain
-
     @classmethod
     def from_cpp(cls, obj, domain):
         obj._ufl_domain = domain
@@ -169,23 +158,3 @@ class Mesh(_cpp.mesh.Mesh):
     def ufl_domain(self):
         """Return the ufl domain corresponding to the mesh."""
         return self._ufl_domain
-
-
-# Functions to extend cpp.mesh.Mesh with
-
-
-def ufl_cell(self):
-    return ufl.Cell(self.topology.cell_name(), geometric_dimension=self.geometry.dim)
-
-
-def ufl_domain(self):
-    """Return the ufl domain corresponding to the mesh."""
-    return self._ufl_domain
-
-
-# Extend cpp.mesh.Mesh class, and clean-up
-_cpp.mesh.Mesh.ufl_cell = ufl_cell
-_cpp.mesh.Mesh.ufl_domain = ufl_domain
-
-del ufl_cell
-del ufl_domain
