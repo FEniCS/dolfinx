@@ -538,7 +538,7 @@ std::function<graph::AdjacencyList<std::int32_t>(
 graph::kahip::partitioner(int mode, int seed, double imbalance,
                           bool suppress_output)
 {
-  return [mode, seed, &imbalance,
+  return [mode, seed, imbalance,
           suppress_output](MPI_Comm comm, int nparts,
                            const graph::AdjacencyList<std::int64_t>& graph,
                            std::int32_t, bool ghosting)
@@ -570,9 +570,10 @@ graph::kahip::partitioner(int mode, int seed, double imbalance,
     common::Timer timer2("KaHIP: call ParHIPPartitionKWay");
     std::vector<T> part(graph.num_nodes());
     int edgecut = 0;
+    double imbvec = static_cast<double>(imbalance);
     ParHIPPartitionKWay(node_disp.data(), offsets.data(), array.data(), vwgt,
-                        adjcwgt, &nparts, &imbalance, suppress_output, seed,
-                        mode, &edgecut, part.data(), &comm);
+                        adjcwgt, &nparts, &imbvec, suppress_output, seed, mode,
+                        &edgecut, part.data(), &comm);
     timer2.stop();
 
     if (ghosting)
