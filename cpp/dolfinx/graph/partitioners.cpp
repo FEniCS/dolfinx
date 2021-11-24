@@ -570,9 +570,10 @@ graph::kahip::partitioner(int mode, int seed, double imbalance,
     common::Timer timer2("KaHIP: call ParHIPPartitionKWay");
     std::vector<T> part(graph.num_nodes());
     int edgecut = 0;
+    double _imbalance = imbalance;
     ParHIPPartitionKWay(node_disp.data(), offsets.data(), array.data(), vwgt,
-                        adjcwgt, &nparts, &imbalance, suppress_output, seed,
-                        mode, &edgecut, part.data(), &comm);
+                        adjcwgt, &nparts, & _imbalance, suppress_output, seed, mode,
+                        &edgecut, part.data(), &comm);
     timer2.stop();
 
     if (ghosting)
