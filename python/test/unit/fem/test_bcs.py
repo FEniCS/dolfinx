@@ -190,7 +190,6 @@ def test_sub_constant_bc():
         bc_fi = dolfinx.DirichletBC(u_bci, boundary_dofsi, V.sub(i))
 
         boundary_dofs = dolfinx.fem.locate_dofs_topological(V.sub(i), tdim - 1, boundary_facets)
-        print(boundary_dofs)
         bc_c = dolfinx.DirichletBC(c, boundary_dofs, V.sub(i))
 
         u_f = dolfinx.Function(V)
