@@ -1,4 +1,5 @@
-// Copyright (C) 2007-2020 Michal Habera, Anders Logg and Garth N. Wells
+// Copyright (C) 2007-2021 Michal Habera, Anders Logg, Garth N. Wells
+// and Jørgen S.Dokken
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -232,7 +233,18 @@ public:
   {
     assert(_dofs0.size() == _dofs1_g.size());
     assert(_function_space);
-    assert(_g);
+    std::visit(
+        [&](auto&& g)
+        {
+          using G = std::decay_t<decltype(g)>;
+          if constexpr (std::is_same_v<G,
+                                       std::shared_ptr<const fem::Function<T>>>)
+            assert(g);
+          else if constexpr (std::is_same_v<
+                                 G, std::shared_ptr<const fem::Constant<T>>>)
+            assert(g);
+        },
+        g);
 
     const int map0_bs = _function_space->dofmap()->index_map_bs();
     const int map0_size = _function_space->dofmap()->index_map->size_local();
