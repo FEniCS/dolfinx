@@ -114,7 +114,7 @@ def test_constant_bc():
     boundary_dofs = dolfinx.fem.locate_dofs_topological(V, tdim - 1, boundary_facets)
 
     u_bc = dolfinx.Function(V)
-    u_bc.x.array[:] = float(c.value)
+    u_bc.x.array[:] = PETSc.ScalarType(c.value)
 
     bc_f = dolfinx.DirichletBC(u_bc, boundary_dofs)
     bc_c = dolfinx.DirichletBC(c, boundary_dofs, V)
@@ -146,9 +146,9 @@ def test_vector_constant_bc():
     boundary_dofs1 = dolfinx.fem.locate_dofs_topological((V.sub(1), Vs[1]), tdim - 1, boundary_facets)
 
     u_bc0 = dolfinx.Function(Vs[0])
-    u_bc0.x.array[:] = float(c.value[0])
+    u_bc0.x.array[:] = PETSc.ScalarType(c.value[0])
     u_bc1 = dolfinx.Function(Vs[1])
-    u_bc1.x.array[:] = float(c.value[1])
+    u_bc1.x.array[:] = PETSc.ScalarType(c.value[1])
 
     bc_f0 = dolfinx.DirichletBC(u_bc0, boundary_dofs0, V.sub(0))
     bc_f1 = dolfinx.DirichletBC(u_bc1, boundary_dofs1, V.sub(1))
@@ -185,7 +185,7 @@ def test_sub_constant_bc():
         boundary_dofsi = dolfinx.fem.locate_dofs_topological((V.sub(i), Vi), tdim - 1, boundary_facets)
 
         u_bci = dolfinx.Function(Vi)
-        u_bci.x.array[:] = float(c.value)
+        u_bci.x.array[:] = PETSc.ScalarType(c.value)
 
         bc_fi = dolfinx.DirichletBC(u_bci, boundary_dofsi, V.sub(i))
 
