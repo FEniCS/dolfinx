@@ -183,10 +183,13 @@ public:
   /// maps to 3 degrees-of-freedom if the dofmap associated with `g` has
   /// block size 3
   template <typename U>
-  DirichletBC(const std::shared_ptr<const fem::FunctionSpace>& V,
-              const std::shared_ptr<const fem::Constant<T>>& g, U&& dofs)
+  DirichletBC(const std::shared_ptr<const fem::Constant<T>>& g, U&& dofs,
+              const std::shared_ptr<const fem::FunctionSpace>& V)
       : _function_space(V), _g(g), _dofs0(std::forward<U>(dofs))
   {
+    assert(_function_space);
+    assert(g);
+
     const int owned_size0 = _function_space->dofmap()->index_map->size_local();
     auto it = std::lower_bound(_dofs0.begin(), _dofs0.end(), owned_size0);
     const int map0_bs = _function_space->dofmap()->index_map_bs();
@@ -233,18 +236,7 @@ public:
   {
     assert(_dofs0.size() == _dofs1_g.size());
     assert(_function_space);
-    std::visit(
-        [&](auto&& g)
-        {
-          using G = std::decay_t<decltype(g)>;
-          if constexpr (std::is_same_v<G,
-                                       std::shared_ptr<const fem::Function<T>>>)
-            assert(g);
-          else if constexpr (std::is_same_v<
-                                 G, std::shared_ptr<const fem::Constant<T>>>)
-            assert(g);
-        },
-        g);
+    assert(g);
 
     const int map0_bs = _function_space->dofmap()->index_map_bs();
     const int map0_size = _function_space->dofmap()->index_map->size_local();
@@ -334,7 +326,7 @@ public:
           {
             assert(g);
             std::vector<T> value = g->value;
-            const std::int32_t bs = _function_space->dofmap()->index_map_bs();
+            const std::int32_t bs = _function_space->dofmap()->bs();
             assert(value.size() == (std::size_t)bs);
             for (std::size_t i = 0; i < _dofs0.size(); ++i)
             {
@@ -384,7 +376,7 @@ public:
           {
             assert(g);
             std::vector<T> value = g->value;
-            const std::int32_t bs = _function_space->dofmap()->index_map_bs();
+            const std::int32_t bs = _function_space->dofmap()->bs();
             assert(value.size() == (std::size_t)bs);
             for (std::size_t i = 0; i < _dofs0.size(); ++i)
             {
@@ -430,7 +422,7 @@ public:
           {
             assert(g);
             std::vector<T> g_value = g->value;
-            const std::int32_t bs = _function_space->dofmap()->index_map_bs();
+            const std::int32_t bs = _function_space->dofmap()->bs();
             assert(g_value.size() == (std::size_t)bs);
             for (std::size_t i = 0; i < _dofs1_g.size(); ++i)
             {

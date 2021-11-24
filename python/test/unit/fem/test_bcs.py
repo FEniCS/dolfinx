@@ -94,5 +94,108 @@ def test_overlapping_bcs():
 
     if len(dof_corner) > 0:
         with b.localForm() as b_loc:
-            print(b_loc[dof_corner[0]])
             assert b_loc[dof_corner[0]] == 123.456
+
+
+def test_constant_bc():
+    """
+    Test that setting a DirichletBC with a constant yields the same result as setting it with a function.
+    """
+
+    mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, 10, 10)
+    V = dolfinx.FunctionSpace(mesh, ("CG", 1))
+    c = dolfinx.Constant(mesh, 2)
+
+    def on_boundary(x):
+        return np.ones(x.shape[1], dtype=bool)
+
+    tdim = mesh.topology.dim
+    boundary_facets = dolfinx.mesh.locate_entities_boundary(mesh, tdim - 1, on_boundary)
+    boundary_dofs = dolfinx.fem.locate_dofs_topological(V, tdim - 1, boundary_facets)
+
+    u_bc = dolfinx.Function(V)
+    u_bc.x.array[:] = float(c.value)
+
+    bc_f = dolfinx.DirichletBC(u_bc, boundary_dofs)
+    bc_c = dolfinx.DirichletBC(c, boundary_dofs, V)
+
+    u_f = dolfinx.Function(V)
+    dolfinx.fem.set_bc(u_f.vector, [bc_f])
+
+    u_c = dolfinx.Function(V)
+    dolfinx.fem.set_bc(u_c.vector, [bc_c])
+    assert(np.allclose(u_f.vector.array, u_c.vector.array))
+
+
+def test_vector_constant_bc():
+    """
+    Test that setting a DirichletBC with a vector valued constant yields the same result as setting it with a function.
+    """
+
+    mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, 10, 10)
+    V = dolfinx.VectorFunctionSpace(mesh, ("CG", 1))
+    c = dolfinx.Constant(mesh, (2, 1))
+
+    def on_boundary(x):
+        return np.ones(x.shape[1], dtype=bool)
+
+    tdim = mesh.topology.dim
+    Vs = [V.sub(i).collapse() for i in range(V.num_sub_spaces())]
+    boundary_facets = dolfinx.mesh.locate_entities_boundary(mesh, tdim - 1, on_boundary)
+    boundary_dofs0 = dolfinx.fem.locate_dofs_topological((V.sub(0), Vs[0]), tdim - 1, boundary_facets)
+    boundary_dofs1 = dolfinx.fem.locate_dofs_topological((V.sub(1), Vs[1]), tdim - 1, boundary_facets)
+
+    u_bc0 = dolfinx.Function(Vs[0])
+    u_bc0.x.array[:] = float(c.value[0])
+    u_bc1 = dolfinx.Function(Vs[1])
+    u_bc1.x.array[:] = float(c.value[1])
+
+    bc_f0 = dolfinx.DirichletBC(u_bc0, boundary_dofs0, V.sub(0))
+    bc_f1 = dolfinx.DirichletBC(u_bc1, boundary_dofs1, V.sub(1))
+
+    boundary_dofs = dolfinx.fem.locate_dofs_topological(V, tdim - 1, boundary_facets)
+    bc_c = dolfinx.DirichletBC(c, boundary_dofs, V)
+
+    u_f = dolfinx.Function(V)
+    dolfinx.fem.set_bc(u_f.vector, [bc_f0, bc_f1])
+
+    u_c = dolfinx.Function(V)
+    dolfinx.fem.set_bc(u_c.vector, [bc_c])
+    assert(np.allclose(u_f.vector.array, u_c.vector.array))
+
+
+def test_sub_constant_bc():
+    """
+    Test that setting a DirichletBC with on a component of a vector valued function
+    yields the same result as setting it with a function.
+    """
+
+    mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, 10, 10)
+    V = dolfinx.VectorFunctionSpace(mesh, ("CG", 1))
+    c = dolfinx.Constant(mesh, 3.14)
+
+    def on_boundary(x):
+        return np.ones(x.shape[1], dtype=bool)
+
+    tdim = mesh.topology.dim
+    boundary_facets = dolfinx.mesh.locate_entities_boundary(mesh, tdim - 1, on_boundary)
+
+    for i in range(V.num_sub_spaces()):
+        Vi = V.sub(i).collapse()
+        boundary_dofsi = dolfinx.fem.locate_dofs_topological((V.sub(i), Vi), tdim - 1, boundary_facets)
+
+        u_bci = dolfinx.Function(Vi)
+        u_bci.x.array[:] = float(c.value)
+
+        bc_fi = dolfinx.DirichletBC(u_bci, boundary_dofsi, V.sub(i))
+
+        boundary_dofs = dolfinx.fem.locate_dofs_topological(V.sub(i), tdim - 1, boundary_facets)
+        print(boundary_dofs)
+        bc_c = dolfinx.DirichletBC(c, boundary_dofs, V.sub(i))
+
+        u_f = dolfinx.Function(V)
+        dolfinx.fem.set_bc(u_f.vector, [bc_fi])
+
+        u_c = dolfinx.Function(V)
+        dolfinx.fem.set_bc(u_c.vector, [bc_c])
+        assert(np.allclose(u_f.vector.array, u_c.vector.array))

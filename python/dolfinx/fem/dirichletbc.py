@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) 2017-2018 Chris N. Richardson and Garth N. Wells
+# Copyright (C) 2017-2021 Chris N. Richardson, Garth N. Wells and Jørgen S. Dokken
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -16,7 +16,7 @@ import typing
 import numpy as np
 import ufl
 from dolfinx import cpp
-from dolfinx.fem.function import Function, FunctionSpace
+from dolfinx.fem.function import Constant, Function, FunctionSpace
 from petsc4py import PETSc
 
 
@@ -117,7 +117,7 @@ def locate_dofs_topological(V: typing.Iterable[typing.Union[cpp.fem.FunctionSpac
 class DirichletBC:
     def __init__(
             self,
-            value: typing.Union[ufl.Coefficient, Function],
+            value: typing.Union[ufl.Coefficient, Function, Constant],
             dofs: typing.List[int],
             V: typing.Union[FunctionSpace] = None,
             dtype=PETSc.ScalarType):
@@ -143,19 +143,13 @@ class DirichletBC:
         # Construct bc value
         if isinstance(value, ufl.Coefficient):
             _value = value._cpp_object
-        elif isinstance(value, cpp.fem.Function):
+        elif isinstance(value, cpp.fem.Function_float64):
+            _value = value
+        elif isinstance(value, cpp.fem.Function_complex128):
             _value = value
         elif isinstance(value, Function):
             _value = value._cpp_object
-        else:
-            raise NotImplementedError
-
-        # Construct bc value
-        if isinstance(value, ufl.Coefficient):
-            _value = value._cpp_object
-        elif isinstance(value, cpp.fem.Function):
-            _value = value
-        elif isinstance(value, Function):
+        elif isinstance(value, Constant):
             _value = value._cpp_object
         else:
             raise NotImplementedError
