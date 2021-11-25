@@ -455,11 +455,11 @@ void pack(const std::uint32_t cell, int bs, const xtl::span<T>& cell_coeff,
   transform(cell_coeff, cell_info, cell, 1);
 }
 
-// Pack a single coefficient for a set of active entities
+/// Pack a single coefficient for a set of active entities
 /// @param[in, out] c The coefficient to be packed
-/// @param[in] cstride
-/// @param[in] v
-/// @param[in] cell_info
+/// @param[in] cstride The total number of coefficient values to pack for each entity.
+/// @param[in] v List of arrays with all degrees of freedom for the functions to be packed
+/// @param[in] cell_info Array of bytes describing which transformation has to be applied on the cell to map it to the reference element.
 /// @param[in] dofmap The dofmap
 /// @param[in] active_entities The set of active entities.
 /// @param[in] fetch_cells Function that fetches the cell index for an entity
