@@ -636,32 +636,29 @@ pack_coefficients(const Form<T>& u, fem::IntegralType integral_type, int id)
   return {std::move(c), cstride};
 }
 
-// NOTE: This is subject to change
 /// Pack coefficients of a Form
 ///
-/// @param[in] u The Form
+/// @note This function is subject to change
+/// @param[in] form The Form
 /// @return A map from a pair of the form (integral_type, domain_id) to
 /// a pair of the form (coeffs, cstride)
 template <typename T>
 std::map<std::pair<IntegralType, int>, std::pair<std::vector<T>, int>>
-pack_coefficients(const Form<T>& u)
+pack_coefficients(const Form<T>& form)
 {
-  std::map<std::pair<IntegralType, int>, std::pair<std::vector<T>, int>>
-      coefficients;
-
   // TODO Is there a better way of doing this?
+  std::map<std::pair<IntegralType, int>, std::pair<std::vector<T>, int>> coeffs;
   for (auto integral_type : {IntegralType::cell, IntegralType::exterior_facet,
                              IntegralType::interior_facet})
   {
-    for (int i : u.integral_ids(integral_type))
+    for (int i : form.integral_ids(integral_type))
     {
-      // FIXME Could std::transform be used here (or elsewhere) to make
-      // the coefficient vector a span?
-      coefficients[{integral_type, i}] = pack_coefficients(u, integral_type, i);
+      coeffs.insert({{integral_type, i},
+                     std::move(pack_coefficients(form, integral_type, i))});
     }
   }
 
-  return coefficients;
+  return coeffs;
 }
 
 /// Pack coefficients of a Expression u for a give list of active cells
