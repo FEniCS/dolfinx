@@ -21,18 +21,18 @@ __all__ = [
 ]
 
 
-class Topology(_cpp.mesh.Topology):
-    @classmethod
-    def from_cpp(cls, obj):
-        """Create Topology object from a C++ Topology object"""
-        obj.__class__ = Topology
-        return obj
+# class Topology(_cpp.mesh.Topology):
+#     @classmethod
+#     def from_cpp(cls, obj):
+#         """Create Topology object from a C++ Topology object"""
+#         obj.__class__ = Topology
+#         return obj
 
-    def connectivity(self, d0, d1):
-        if super().connectivity(d0, d1) is None:
-            return None
-        else:
-            return graph.AdjacencyList(super().connectivity(d0, d1))
+#     def connectivity(self, d0, d1):
+#         if super().connectivity(d0, d1) is None:
+#             return None
+#         else:
+#             return graph.AdjacencyList(super().connectivity(d0, d1))
 
 
 class Mesh(_cpp.mesh.Mesh):
@@ -52,10 +52,10 @@ class Mesh(_cpp.mesh.Mesh):
         domain._ufl_cargo = obj
         return obj
 
-    @property
-    def topology(self):
-        """Return the UFL cell type"""
-        return Topology.from_cpp(super().topology)
+    # @property
+    # def topology(self):
+    #     """Return the UFL cell type"""
+    #     return Topology.from_cpp(super().topology)
 
     def ufl_cell(self):
         """Return the UFL cell type"""
