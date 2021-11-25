@@ -11,6 +11,7 @@ import math
 import numpy
 import pytest
 from dolfinx import RectangleMesh, UnitIntervalMesh
+from dolfinx.fem import assemble_scalar
 from mpi4py import MPI
 from ufl import (FacetNormal, SpatialCoordinate, acos, as_matrix, as_vector,
                  asin, atan, cos, cross, det, dev, diff, div, dot, ds, dx,
@@ -155,7 +156,7 @@ def test_div_grad_then_integrate_over_cells_and_boundary():
 
     x, y = SpatialCoordinate(mesh)
     xs = 0.1 + 0.8 * x / 2  # scaled to be within [0.1,0.9]
-#    ys = 0.1 + 0.8 * y / 3  # scaled to be within [0.1,0.9]
+    # ys = 0.1 + 0.8 * y / 3  # scaled to be within [0.1,0.9]
     n = FacetNormal(mesh)
 
     # Define list of expressions to test, and configure accuracies
