@@ -10,7 +10,6 @@ import types
 import numpy as np
 import ufl
 
-from dolfinx import graph
 from dolfinx import cpp as _cpp
 from dolfinx.cpp.mesh import CellType, cell_dim, build_dual_graph  # noqa
 from dolfinx.cpp.mesh import GhostMode  # noqa
