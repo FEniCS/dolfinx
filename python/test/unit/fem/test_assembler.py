@@ -7,20 +7,21 @@
 
 import math
 
-import dolfinx
 import numpy
 import pytest
 import scipy.sparse
 import ufl
-from dolfinx import fem
-from dolfinx.fem import (Constant, DirichletBC, Function, FunctionSpace,
-                         apply_lifting, apply_lifting_nest, assemble_matrix,
+from dolfinx import cpp as _cpp
+from dolfinx.fem import (Constant, DirichletBC, Form, Function, FunctionSpace,
+                         VectorFunctionSpace, apply_lifting,
+                         apply_lifting_nest, assemble_matrix,
                          assemble_matrix_block, assemble_matrix_nest,
                          assemble_scalar, assemble_vector,
                          assemble_vector_block, assemble_vector_nest,
                          bcs_by_block, form, locate_dofs_geometrical,
-                         locate_dofs_topological, set_bc, set_bc_nest, Form)
-from dolfinx.generation import UnitCubeMesh, UnitSquareMesh, RectangleMesh
+                         locate_dofs_topological, set_bc, set_bc_nest)
+from dolfinx.fem.assemble import pack_coefficients, pack_constants
+from dolfinx.generation import RectangleMesh, UnitCubeMesh, UnitSquareMesh
 from dolfinx.mesh import (CellType, GhostMode, create_mesh,
                           locate_entities_boundary)
 from dolfinx_utils.test.skips import skip_in_parallel
@@ -76,8 +77,8 @@ def test_assemble_derivatives():
     v = ufl.TestFunction(Q)
     du = ufl.TrialFunction(Q)
     b = Function(Q)
-    c1 = fem.Constant(mesh, numpy.array([[1.0, 0.0], [3.0, 4.0]], PETSc.ScalarType))
-    c2 = fem.Constant(mesh, PETSc.ScalarType(2.0))
+    c1 = Constant(mesh, numpy.array([[1.0, 0.0], [3.0, 4.0]], PETSc.ScalarType))
+    c2 = Constant(mesh, PETSc.ScalarType(2.0))
 
     with b.vector.localForm() as b_local:
         b_local.set(2.0)
@@ -253,13 +254,13 @@ def test_matrix_assembly_block(mode):
     g = -3.0
     zero = Function(V0)
 
-    a00 = fem.Form(inner(u, v) * dx)
-    a01 = fem.Form(inner(p, v) * dx)
-    a10 = fem.Form(inner(u, q) * dx)
-    a11 = fem.Form(inner(p, q) * dx)
+    a00 = Form(inner(u, v) * dx)
+    a01 = Form(inner(p, v) * dx)
+    a10 = Form(inner(u, q) * dx)
+    a11 = Form(inner(p, q) * dx)
 
-    L0 = fem.Form(zero * inner(f, v) * dx)
-    L1 = fem.Form(inner(g, q) * dx)
+    L0 = Form(zero * inner(f, v) * dx)
+    L1 = Form(inner(g, q) * dx)
 
     a_block = [[a00, a01], [a10, a11]]
     L_block = [L0, L1]
@@ -454,8 +455,8 @@ def test_assembly_solve_block(mode):
 ])
 def test_assembly_solve_taylor_hood(mesh):
     """Assemble Stokes problem with Taylor-Hood elements and solve."""
-    P2 = fem.VectorFunctionSpace(mesh, ("Lagrange", 2))
-    P1 = fem.FunctionSpace(mesh, ("Lagrange", 1))
+    P2 = VectorFunctionSpace(mesh, ("Lagrange", 2))
+    P1 = FunctionSpace(mesh, ("Lagrange", 1))
 
     def boundary0(x):
         """Define boundary x = 0"""
@@ -483,9 +484,9 @@ def test_assembly_solve_taylor_hood(mesh):
     u, p = ufl.TrialFunction(P2), ufl.TrialFunction(P1)
     v, q = ufl.TestFunction(P2), ufl.TestFunction(P1)
 
-    a00 = fem.Form(inner(ufl.grad(u), ufl.grad(v)) * dx)
-    a01 = fem.Form(ufl.inner(p, ufl.div(v)) * dx)
-    a10 = fem.Form(ufl.inner(ufl.div(u), q) * dx)
+    a00 = Form(inner(ufl.grad(u), ufl.grad(v)) * dx)
+    a01 = Form(ufl.inner(p, ufl.div(v)) * dx)
+    a10 = Form(ufl.inner(ufl.div(u), q) * dx)
     a11 = None
 
     p00 = a00
@@ -496,8 +497,8 @@ def test_assembly_solve_taylor_hood(mesh):
     # We need zero function for the 'zero' part of L
     p_zero = Function(P1)
     f = Function(P2)
-    L0 = fem.Form(ufl.inner(f, v) * dx)
-    L1 = fem.Form(ufl.inner(p_zero, q) * dx)
+    L0 = Form(ufl.inner(f, v) * dx)
+    L1 = Form(ufl.inner(p_zero, q) * dx)
 
     def nested_solve():
         """Nested solver"""
@@ -511,8 +512,8 @@ def test_assembly_solve_taylor_hood(mesh):
         apply_lifting_nest(b, [[a00, a01], [a10, a11]], [bc0, bc1])
         for b_sub in b.getNestSubVecs():
             b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-        bcs = fem.bcs_by_block(form.extract_function_spaces([L0, L1]), [bc0, bc1])
-        fem.set_bc_nest(b, bcs)
+        bcs = bcs_by_block(form.extract_function_spaces([L0, L1]), [bc0, bc1])
+        set_bc_nest(b, bcs)
         b.assemble()
 
         ksp = PETSc.KSP()
@@ -702,7 +703,7 @@ def test_lambda_assembler():
     a = inner(u, v) * dx
 
     # Initial assembly
-    a_form = fem.Form(a)
+    a_form = Form(a)
 
     rdata = []
     cdata = []
@@ -714,7 +715,7 @@ def test_lambda_assembler():
         cdata.append(numpy.tile(cols, len(rows)))
         return 0
 
-    dolfinx.cpp.fem.assemble_matrix(mat_insert, a_form._cpp_object, [])
+    _cpp.fem.assemble_matrix(mat_insert, a_form._cpp_object, [])
     vdata = numpy.array(vdata).flatten()
     cdata = numpy.array(cdata).flatten()
     rdata = numpy.array(rdata).flatten()
@@ -727,10 +728,10 @@ def test_lambda_assembler():
 def test_pack_coefficients():
     """Test packing of form coefficients ahead of main assembly call"""
     mesh = UnitSquareMesh(MPI.COMM_WORLD, 12, 15)
-    V = fem.FunctionSpace(mesh, ("Lagrange", 1))
+    V = FunctionSpace(mesh, ("Lagrange", 1))
 
     # Non-blocked
-    u = fem.Function(V)
+    u = Function(V)
     v = ufl.TestFunction(V)
     c = Constant(mesh, PETSc.ScalarType(12.0))
     F = ufl.inner(c, v) * dx - c * ufl.sqrt(u * u) * ufl.inner(u, v) * dx
@@ -738,13 +739,13 @@ def test_pack_coefficients():
         x_local.set(10.0)
 
     # -- Test vector
-    b0 = fem.assemble_vector(F)
+    b0 = assemble_vector(F)
     b0.assemble()
-    constants = fem.assemble.pack_constants(F)
-    coeffs = fem.assemble.pack_coefficients(F)
+    constants = pack_constants(F)
+    coeffs = pack_coefficients(F)
     with b0.localForm() as _b0:
         for c in [(None, None), (None, coeffs), (constants, None), (constants, coeffs)]:
-            b = fem.assemble_vector(F, coeffs=c)
+            b = assemble_vector(F, coeffs=c)
             b.assemble()
             with b.localForm() as _b:
                 assert (_b0.array_r == _b.array_r).all()
@@ -755,7 +756,7 @@ def test_pack_coefficients():
         coeff *= 5.0
     with b0.localForm() as _b0:
         for c in [(None, coeffs), (constants, None), (constants, coeffs)]:
-            b = fem.assemble_vector(F, coeffs=c)
+            b = assemble_vector(F, coeffs=c)
             b.assemble()
             with b.localForm() as _b:
                 assert (_b0 - _b).norm() > 1.0e-5
@@ -764,13 +765,13 @@ def test_pack_coefficients():
     du = ufl.TrialFunction(V)
     J = ufl.derivative(F, u, du)
 
-    A0 = fem.assemble_matrix(J)
+    A0 = assemble_matrix(J)
     A0.assemble()
 
-    constants = fem.assemble.pack_constants(J)
-    coeffs = fem.assemble.pack_coefficients(J)
+    constants = pack_constants(J)
+    coeffs = pack_coefficients(J)
     for c in [(None, None), (None, coeffs), (constants, None), (constants, coeffs)]:
-        A = fem.assemble_matrix(J, coeffs=c)
+        A = assemble_matrix(J, coeffs=c)
         A.assemble()
         assert pytest.approx((A - A0).norm(), 1.0e-12) == 0.0
 
@@ -779,6 +780,6 @@ def test_pack_coefficients():
     for coeff in coeffs.values():
         coeff *= 5.0
     for c in [(None, coeffs), (constants, None), (constants, coeffs)]:
-        A = fem.assemble_matrix(J, coeffs=c)
+        A = assemble_matrix(J, coeffs=c)
         A.assemble()
         assert (A - A0).norm() > 1.0e-5
