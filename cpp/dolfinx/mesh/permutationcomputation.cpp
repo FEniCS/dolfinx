@@ -372,14 +372,8 @@ mesh::compute_cell_permutations(const mesh::Topology& topology)
 {
   const int tdim = topology.dim();
   if (tdim == 3)
-    throw std::runtime_error("Cannot compute cell permutations of a 3D mesh.")
+    throw std::runtime_error("Cannot compute cell permutations of a 3D mesh.");
 
-        const CellType cell_type
-        = topology.cell_type();
-  const std::int32_t num_cells = topology.connectivity(tdim, 0)->num_nodes();
-
-  std::vector<std::uint8_t> cell_permutations(num_cells);
-  std::int32_t used_bits = 0;
   if (tdim == 2)
     return compute_face_permutations<_BITSETSIZE>(topology);
 
