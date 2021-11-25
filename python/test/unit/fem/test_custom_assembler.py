@@ -116,7 +116,7 @@ def get_matsetvalues_api():
     if dolfinx.pkgconfig.exists("dolfinx"):
         dolfinx_pc = dolfinx.pkgconfig.parse("dolfinx")
     else:
-        pytest.skip("Could not find DOLFINx pkgconfig file, skipping test...")
+        raise RuntimeError("Could not find DOLFINx pkgconfig file")
 
     worker = os.getenv('PYTEST_XDIST_WORKER', None)
     module_name = "_petsc_cffi_{}".format(worker)
