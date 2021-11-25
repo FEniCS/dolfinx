@@ -75,9 +75,10 @@
 
 import numpy as np
 import ufl
-from dolfinx import (DirichletBC, Function, FunctionSpace, RectangleMesh, fem,
-                     plot)
-from dolfinx.fem import locate_dofs_topological
+from dolfinx import fem, plot
+from dolfinx.fem import (DirichletBC, Function, FunctionSpace,
+                         locate_dofs_topological)
+from dolfinx.generation import RectangleMesh
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import CellType, GhostMode, locate_entities_boundary
 from mpi4py import MPI

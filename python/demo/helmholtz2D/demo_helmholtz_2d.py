@@ -13,12 +13,13 @@
 # solution and source term. ::
 
 import numpy as np
-from dolfinx import Function, FunctionSpace, UnitSquareMesh, fem
+from dolfinx.fem import Function, FunctionSpace
 from dolfinx.fem.assemble import assemble_scalar
+from dolfinx.generation import UnitSquareMesh
 from dolfinx.io import XDMFFile
 from mpi4py import MPI
-from ufl import FacetNormal, TestFunction, TrialFunction, dx, grad, inner
 from petsc4py import PETSc
+from ufl import FacetNormal, TestFunction, TrialFunction, dx, grad, inner
 
 # wavenumber
 k0 = 4 * np.pi
