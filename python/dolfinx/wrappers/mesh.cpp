@@ -139,7 +139,7 @@ void mesh(py::module& m)
   m.def("build_dual_graph",
         [](const MPICommWrapper comm,
            const dolfinx::graph::AdjacencyList<std::int64_t>& cells, int tdim)
-        { return dolfinx::mesh::build_dual_graph(comm.get(), cells, tdim); });
+        { return dolfinx::mesh::build_dual_graph(comm.get(), cells, tdim); }, "Build dual graph for cells");
 
   m.def(
       "create_mesh",
