@@ -456,23 +456,27 @@ void pack(const std::uint32_t cell, int bs, const xtl::span<T>& cell_coeff,
 }
 
 /// Pack a single coefficient for a set of active entities
-/// @param[in, out] c The coefficient to be packed
-/// @param[in] cstride The total number of coefficient values to pack for each entity.
-/// @param[in] v List of arrays with all degrees of freedom for the functions to be packed
-/// @param[in] cell_info Array of bytes describing which transformation has to be applied on the cell to map it to the reference element.
+///
+/// @param[out] c The coefficient to be packed
+/// @param[in] cstride The total number of coefficient values to pack
+/// for each entity
+/// @param[in] v List of arrays with all degrees of freedom for the
+/// functions to be packed
+/// @param[in] cell_info Array of bytes describing which transformation
+/// has to be applied on the cell to map it to the reference element
 /// @param[in] dofmap The dofmap
 /// @param[in] active_entities The set of active entities.
-/// @param[in] fetch_cells Function that fetches the cell index for an entity
-/// in active_entities
+/// @param[in] fetch_cells Function that fetches the cell index for an
+/// entity in active_entities (signature:
+/// `std::function<std::int32_t(E)>`)
 /// @param[in] offset The offset for c
 /// @param[in] space_dim The dimension of the FE space
 /// @param[in] transformation The dof transformation
-template <typename T, typename ENTITY>
+template <typename T, typename E, typename Functor>
 void pack_coefficient_entity(
     const xtl::span<T>& c, int cstride, const xtl::span<const T>& v,
     const xtl::span<const std::uint32_t>& cell_info, const fem::DofMap& dofmap,
-    const xtl::span<const ENTITY>& active_entities,
-    const std::function<std::int32_t(const ENTITY&)> fetch_cells,
+    const xtl::span<const E>& active_entities, Functor fetch_cells,
     std::int32_t offset, int space_dim,
     const std::function<void(const xtl::span<T>&,
                              const xtl::span<const std::uint32_t>&,
@@ -482,7 +486,6 @@ void pack_coefficient_entity(
   for (std::size_t e = 0; e < active_entities.size(); ++e)
   {
     std::int32_t cell = fetch_cells(active_entities[e]);
-
     auto cell_coeff = c.subspan(e * cstride + offset, space_dim);
     pack(cell, bs, cell_coeff, v, cell_info, dofmap, transformation);
   }
@@ -490,7 +493,8 @@ void pack_coefficient_entity(
 
 } // namespace impl
 
-/// Pack coefficients of a Form u for a given integral type and domain id
+/// Pack coefficients of a Form u for a given integral type and domain
+/// id
 ///
 /// @param[in] u The Form
 /// @param[in] integral_type Type of integral
@@ -545,9 +549,6 @@ pack_coefficients(const Form<T>& u, fem::IntegralType integral_type, int id)
     {
       const std::vector<std::int32_t>& active_cells = u.cell_domains(id);
       c.resize(active_cells.size() * offsets.back());
-      // Create lambda function that returns cell index
-      const auto fetch_cells
-          = [&](const std::int32_t& entity) { return entity; };
 
       // Iterate over coefficients
       for (std::size_t coeff = 0; coeff < dofmaps.size(); ++coeff)
@@ -556,8 +557,8 @@ pack_coefficients(const Form<T>& u, fem::IntegralType integral_type, int id)
             = elements[coeff]->get_dof_transformation_function<T>(false, true);
         impl::pack_coefficient_entity<T, std::int32_t>(
             xtl::span<T>(c), cstride, v[coeff], cell_info, *dofmaps[coeff],
-            active_cells, fetch_cells, offsets[coeff],
-            elements[coeff]->space_dimension(), transform);
+            active_cells, [](std::int32_t entity) { return entity; },
+            offsets[coeff], elements[coeff]->space_dimension(), transform);
       }
       break;
     }
@@ -566,9 +567,9 @@ pack_coefficients(const Form<T>& u, fem::IntegralType integral_type, int id)
       const std::vector<std::pair<std::int32_t, int>>& active_facets
           = u.exterior_facet_domains(id);
       c.resize(active_facets.size() * offsets.back());
+
       // Create lambda function fetching cell index from exterior facet entity
-      const auto fetch_cells_ext
-          = [&](const std::pair<std::int32_t, int>& entity)
+      auto fetch_cells_ext = [](const std::pair<std::int32_t, int>& entity)
       { return entity.first; };
 
       // Iterate over coefficients
@@ -589,13 +590,14 @@ pack_coefficients(const Form<T>& u, fem::IntegralType integral_type, int id)
           active_facets
           = u.interior_facet_domains(id);
       c.resize(active_facets.size() * 2 * offsets.back());
-      // Create lambda functions fetching cell indices from interior facet
-      // entity
-      const auto fetch_cells_int0
-          = [&](const std::tuple<std::int32_t, int, std::int32_t, int>& entity)
+
+      // Create lambda functions fetching cell indices from interior
+      // facet entity
+      auto fetch_cells_int0
+          = [](const std::tuple<std::int32_t, int, std::int32_t, int>& entity)
       { return std::get<0>(entity); };
-      const auto fetch_cells_int1
-          = [&](const std::tuple<std::int32_t, int, std::int32_t, int>& entity)
+      auto fetch_cells_int1
+          = [](const std::tuple<std::int32_t, int, std::int32_t, int>& entity)
       { return std::get<2>(entity); };
 
       // Iterate over coefficients
@@ -637,15 +639,16 @@ template <typename T>
 std::map<std::pair<IntegralType, int>, std::pair<std::vector<T>, int>>
 pack_coefficients(const Form<T>& form)
 {
-  std::map<std::pair<IntegralType, int>, std::pair<std::vector<T>, int>>
-      coefficients;
-
+  std::map<std::pair<IntegralType, int>, std::pair<std::vector<T>, int>> coeffs;
   for (auto integral_type : form.integral_types())
+  {
     for (int i : form.integral_ids(integral_type))
-      coefficients[{integral_type, i}]
-          = pack_coefficients(form, integral_type, i);
-
-  return coefficients;
+    {
+      coeffs.emplace(std::pair(integral_type, i),
+                     pack_coefficients(form, integral_type, i));
+    }
+  }
+  return coeffs;
 }
 
 /// Pack coefficients of a Expression u for a give list of active cells
@@ -697,7 +700,6 @@ pack_coefficients(const Expression<T>& u,
     xtl::span<const std::uint32_t> cell_info;
     if (needs_dof_transformations)
       cell_info = xtl::span(mesh->topology().get_cell_permutation_info());
-    const auto fetch_cells = [&](const std::int32_t& entity) { return entity; };
 
     // Iterate over coefficients
     for (std::size_t coeff = 0; coeff < dofmaps.size(); ++coeff)
@@ -706,8 +708,8 @@ pack_coefficients(const Expression<T>& u,
           = elements[coeff]->get_dof_transformation_function<T>(false, true);
       impl::pack_coefficient_entity<T, std::int32_t>(
           xtl::span<T>(c), cstride, v[coeff], cell_info, *dofmaps[coeff],
-          active_cells, fetch_cells, offsets[coeff],
-          elements[coeff]->space_dimension(), transform);
+          active_cells, [](std::int32_t entity) { return entity; },
+          offsets[coeff], elements[coeff]->space_dimension(), transform);
     }
   }
   return {std::move(c), cstride};
