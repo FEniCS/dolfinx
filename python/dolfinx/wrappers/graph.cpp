@@ -25,27 +25,29 @@ void declare_adjacency_list(py::module& m, std::string type)
   std::string pyclass_name = std::string("AdjacencyList_") + type;
   py::class_<dolfinx::graph::AdjacencyList<T>,
              std::shared_ptr<dolfinx::graph::AdjacencyList<T>>>(
-      m, pyclass_name.c_str(), "Adjacency List")
+      m, pyclass_name.c_str(), "Adjacency List", py::dynamic_attr())
       .def(py::init(
-          [](const py::array_t<T, py::array::c_style>& adj)
-          {
-            if (adj.ndim() > 2)
-              throw std::runtime_error("Incorrect array dimension.");
-            const std::size_t dim = adj.ndim() < 2 ? 1 : adj.shape(1);
-            std::vector<T> data(adj.data(), adj.data() + adj.size());
-            return dolfinx::graph::build_adjacency_list<T>(std::move(data),
-                                                           dim);
-          }))
+               [](py::array_t<T, py::array::c_style> adj)
+               {
+                 if (adj.ndim() > 2)
+                   throw std::runtime_error("Incorrect array dimension.");
+                 const std::size_t dim = adj.ndim() < 2 ? 1 : adj.shape(1);
+                 std::vector<T> data(adj.data(), adj.data() + adj.size());
+                 return dolfinx::graph::build_adjacency_list<T>(std::move(data),
+                                                                dim);
+               }),
+           py::arg("adj").noconvert(true))
       .def(py::init(
-          [](const py::array_t<T, py::array::c_style>& array,
-             const py::array_t<std::int32_t, py::array::c_style>& displ)
-          {
-            std::vector<T> data(array.data(), array.data() + array.size());
-            std::vector<std::int32_t> offsets(displ.data(),
-                                              displ.data() + displ.size());
-            return dolfinx::graph::AdjacencyList<T>(std::move(data),
-                                                    std::move(offsets));
-          }))
+               [](const py::array_t<T, py::array::c_style>& array,
+                  const py::array_t<std::int32_t, py::array::c_style>& displ)
+               {
+                 std::vector<T> data(array.data(), array.data() + array.size());
+                 std::vector<std::int32_t> offsets(displ.data(),
+                                                   displ.data() + displ.size());
+                 return dolfinx::graph::AdjacencyList<T>(std::move(data),
+                                                         std::move(offsets));
+               }),
+           py::arg("data").noconvert(true), py::arg("offsets"))
       .def(
           "links",
           [](const dolfinx::graph::AdjacencyList<T>& self, int i)
