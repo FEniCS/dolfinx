@@ -401,7 +401,7 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
 }
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t>
-fem::locate_dofs_topological(const fem::FunctionSpace& V, const int dim,
+fem::locate_dofs_topological(const fem::FunctionSpace& V, int dim,
                              const xtl::span<const std::int32_t>& entities,
                              bool remote)
 {

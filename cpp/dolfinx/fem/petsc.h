@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include "Form.h"
+#include <map>
 #include <memory>
 #include <petscmat.h>
 #include <petscvec.h>
@@ -23,8 +25,6 @@ namespace dolfinx::fem
 
 template <typename T>
 class DirichletBC;
-template <typename T>
-class Form;
 class FunctionSpace;
 
 /// Create a matrix
@@ -83,7 +83,8 @@ Vec create_vector_nest(
 void assemble_vector_petsc(
     Vec b, const Form<PetscScalar>& L,
     const xtl::span<const PetscScalar>& constants,
-    const std::pair<xtl::span<const PetscScalar>, int>& coeffs);
+    const std::map<std::pair<IntegralType, int>,
+                   std::pair<xtl::span<const PetscScalar>, int>>& coeffs);
 
 /// Assemble linear form into an already allocated PETSc vector. Ghost
 /// contributions are not accumulated (not sent to owner). Caller is
@@ -117,7 +118,9 @@ void assemble_vector_petsc(Vec b, const Form<PetscScalar>& L);
 void apply_lifting_petsc(
     Vec b, const std::vector<std::shared_ptr<const Form<PetscScalar>>>& a,
     const std::vector<xtl::span<const PetscScalar>>& constants,
-    const std::vector<std::pair<xtl::span<const PetscScalar>, int>>& coeffs,
+    const std::vector<std::map<std::pair<IntegralType, int>,
+                               std::pair<xtl::span<const PetscScalar>, int>>>&
+        coeffs,
     const std::vector<
         std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>>& bcs1,
     const std::vector<Vec>& x0, double scale);
