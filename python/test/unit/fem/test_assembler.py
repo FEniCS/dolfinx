@@ -20,6 +20,7 @@ from dolfinx_utils.test.skips import skip_in_parallel
 from mpi4py import MPI
 from petsc4py import PETSc
 from ufl import derivative, ds, dx, inner
+from ufl.geometry import SpatialCoordinate
 
 
 def nest_matrix_norm(A):
@@ -789,3 +790,43 @@ def test_pack_coefficients():
         A = fem.assemble_matrix(J, coeffs=c)
         A.assemble()
         assert (A - A0).norm() > 1.0e-5
+
+
+def test_coefficents_non_constant():
+    "Test packing coefficients with non-constant values"
+    mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 3, 5)
+    V = fem.FunctionSpace(mesh, ("Lagrange", 3))  # degree 3 so that interpolation is exact
+
+    u = dolfinx.Function(V)
+    u.interpolate(lambda x: x[0] * x[1]**2)
+    x = SpatialCoordinate(mesh)
+
+    v = ufl.TestFunction(V)
+
+    # -- Volume integral vector
+    F = (ufl.inner(u, v) - ufl.inner(x[0] * x[1]**2, v)) * dx
+    b0 = fem.assemble_vector(F)
+    b0.assemble()
+    assert(numpy.linalg.norm(b0.array) == pytest.approx(0.0))
+
+    # -- Exterior facet integral vector
+    F = (ufl.inner(u, v) - ufl.inner(x[0] * x[1]**2, v)) * ds
+    b0 = fem.assemble_vector(F)
+    b0.assemble()
+    assert(numpy.linalg.norm(b0.array) == pytest.approx(0.0))
+
+    # -- Interior facet integral vector
+    V = fem.FunctionSpace(mesh, ("DG", 3))  # degree 3 so that interpolation is exact
+
+    u0 = dolfinx.Function(V)
+    u0.interpolate(lambda x: x[1]**2)
+    u1 = dolfinx.Function(V)
+    u1.interpolate(lambda x: x[0])
+    x = SpatialCoordinate(mesh)
+
+    v = ufl.TestFunction(V)
+
+    F = (ufl.inner(u1('+') * u0('-'), ufl.avg(v)) - ufl.inner(x[0] * x[1]**2, ufl.avg(v))) * ufl.dS
+    b0 = fem.assemble_vector(F)
+    b0.assemble()
+    assert(numpy.linalg.norm(b0.array) == pytest.approx(0.0))
