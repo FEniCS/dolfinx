@@ -8,11 +8,12 @@ import os
 import numpy as np
 import pytest
 import ufl
-from dolfinx import (DirichletBC, Function, FunctionSpace, RectangleMesh,
-                     UnitCubeMesh, UnitSquareMesh, VectorFunctionSpace, cpp,
-                     fem)
-from dolfinx.fem import (apply_lifting, assemble_matrix, assemble_scalar,
-                         assemble_vector, locate_dofs_topological, set_bc)
+from dolfinx import cpp as _cpp
+from dolfinx.fem import (DirichletBC, Form, Function, FunctionSpace,
+                         VectorFunctionSpace, apply_lifting, assemble_matrix,
+                         assemble_scalar, assemble_vector,
+                         locate_dofs_topological, set_bc)
+from dolfinx.generation import RectangleMesh, UnitCubeMesh, UnitSquareMesh
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import CellType, locate_entities_boundary
 from dolfinx_utils.test.skips import skip_if_complex
@@ -43,7 +44,7 @@ def run_scalar_test(mesh, V, degree):
     L = inner(f, v) * dx(metadata={"quadrature_degree": -1})
 
     L.integrals()[0].metadata()["quadrature_degree"] = ufl.algorithms.estimate_total_polynomial_degree(L)
-    L = fem.Form(L)
+    L = Form(L)
 
     u_bc = Function(V)
     u_bc.interpolate(lambda x: x[1]**degree)
@@ -51,7 +52,7 @@ def run_scalar_test(mesh, V, degree):
     # Create Dirichlet boundary condition
     facetdim = mesh.topology.dim - 1
     mesh.topology.create_connectivity(facetdim, mesh.topology.dim)
-    bndry_facets = np.where(np.array(cpp.mesh.compute_boundary_facets(mesh.topology)) == 1)[0]
+    bndry_facets = np.where(np.array(_cpp.mesh.compute_boundary_facets(mesh.topology)) == 1)[0]
     bdofs = locate_dofs_topological(V, facetdim, bndry_facets)
     bc = DirichletBC(u_bc, bdofs)
 
@@ -60,7 +61,7 @@ def run_scalar_test(mesh, V, degree):
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     set_bc(b, [bc])
 
-    a = fem.Form(a)
+    a = Form(a)
     A = assemble_matrix(a, bcs=[bc])
     A.assemble()
 
@@ -75,7 +76,7 @@ def run_scalar_test(mesh, V, degree):
     uh.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
     M = (u_exact - uh)**2 * dx
-    M = fem.Form(M)
+    M = Form(M)
 
     error = mesh.mpi_comm.allreduce(assemble_scalar(M), op=MPI.SUM)
     assert np.absolute(error) < 1.0e-14
@@ -113,7 +114,7 @@ def run_vector_test(mesh, V, degree):
     M = (u_exact - uh[0])**2 * dx
     for i in range(1, mesh.topology.dim):
         M += uh[i]**2 * dx
-    M = fem.Form(M)
+    M = Form(M)
 
     error = mesh.mpi_comm.allreduce(assemble_scalar(M), op=MPI.SUM)
     assert np.absolute(error) < 1.0e-14
@@ -184,7 +185,7 @@ def run_dg_test(mesh, V, degree):
 
     # Calculate error
     M = (u_exact - uh)**2 * dx
-    M = fem.Form(M)
+    M = Form(M)
 
     error = mesh.mpi_comm.allreduce(assemble_scalar(M), op=MPI.SUM)
     assert np.absolute(error) < 1.0e-14

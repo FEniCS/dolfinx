@@ -12,7 +12,9 @@ import dolfinx
 import numpy as np
 import pytest
 import ufl
-from dolfinx import Constant, Function, FunctionSpace, VectorFunctionSpace, fem
+from dolfinx.fem import (Constant, Function, FunctionSpace,
+                         VectorFunctionSpace, assemble_matrix, assemble_scalar,
+                         assemble_vector)
 from dolfinx.mesh import CellType, MeshTags, create_mesh
 from dolfinx_utils.test.skips import skip_in_parallel
 from mpi4py import MPI
@@ -163,7 +165,7 @@ def test_facet_integral(cell_type):
         out = []
         for j in range(num_facets):
             a = v * ufl.ds(subdomain_data=marker, subdomain_id=j)
-            result = fem.assemble_scalar(a)
+            result = assemble_scalar(a)
             out.append(result)
             assert np.isclose(result, out[0])
 
@@ -223,7 +225,7 @@ def test_facet_normals(cell_type):
             ones = 0
             for j in range(num_facets):
                 a = ufl.inner(v, normal) * ufl.ds(subdomain_data=marker, subdomain_id=j)
-                result = fem.assemble_scalar(a)
+                result = assemble_scalar(a)
                 if np.isclose(result, 1):
                     ones += 1
                 else:
@@ -246,7 +248,7 @@ def test_plus_minus(cell_type, space_type):
             # Check that these two integrals are equal
             for pm1, pm2 in product(["+", "-"], repeat=2):
                 a = v(pm1) * v(pm2) * ufl.dS
-                results.append(fem.assemble_scalar(a))
+                results.append(assemble_scalar(a))
     for i, j in combinations(results, 2):
         assert np.isclose(i, j)
 
@@ -272,7 +274,7 @@ def test_plus_minus_simple_vector(cell_type, pm):
             # different numberings
             v = ufl.TestFunction(V)
             a = ufl.inner(1, v(pm)) * ufl.dS
-            result = fem.assemble_vector(a)
+            result = assemble_vector(a)
             result.assemble()
             spaces.append(V)
             results.append(result)
@@ -326,7 +328,7 @@ def test_plus_minus_vector(cell_type, pm1, pm2):
             f.interpolate(lambda x: x[0] - 2 * x[1])
             v = ufl.TestFunction(V)
             a = ufl.inner(f(pm1), v(pm2)) * ufl.dS
-            result = fem.assemble_vector(a)
+            result = assemble_vector(a)
             result.assemble()
             spaces.append(V)
             results.append(result)
@@ -375,7 +377,7 @@ def test_plus_minus_matrix(cell_type, pm1, pm2):
             # Assemble matrices with combinations of + and - for a few
             # different numberings
             a = ufl.inner(u(pm1), v(pm2)) * ufl.dS
-            result = fem.assemble_matrix(a, [])
+            result = assemble_matrix(a, [])
             result.assemble()
             spaces.append(V)
             results.append(result)
@@ -438,7 +440,7 @@ def test_curl(space_type, order):
 
         f = ufl.as_vector(tuple(1 if i == 0 else 0 for i in range(tdim)))
         form = ufl.inner(f, ufl.curl(v)) * ufl.dx
-        result = fem.assemble_vector(form)
+        result = assemble_vector(form)
         spaces.append(V)
         results.append(result.array)
 
@@ -491,7 +493,7 @@ def assemble_div_matrix(k, offset):
     W = FunctionSpace(mesh, ("RTCF", k + 1))
     u, w = ufl.TrialFunction(V), ufl.TestFunction(W)
     form = ufl.inner(u, ufl.div(w)) * ufl.dx
-    A = fem.assemble_matrix(form)
+    A = assemble_matrix(form)
     A.assemble()
     return A[:, :]
 
@@ -501,7 +503,7 @@ def assemble_div_vector(k, offset):
     V = FunctionSpace(mesh, ("RTCF", k + 1))
     v = ufl.TestFunction(V)
     form = ufl.inner(Constant(mesh, PETSc.ScalarType(1)), ufl.div(v)) * ufl.dx
-    L = fem.assemble_vector(form)
+    L = assemble_vector(form)
     return L[:]
 
 

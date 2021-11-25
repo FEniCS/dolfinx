@@ -22,6 +22,9 @@ import numpy as np
 import petsc4py.lib
 import pytest
 import ufl
+from dolfinx.fem import (Function, FunctionSpace, assemble_matrix,
+                         assemble_vector, transpose_dofmap)
+from dolfinx.generation import UnitSquareMesh
 from mpi4py import MPI
 from petsc4py import PETSc
 from petsc4py import get_config as PETSc_get_config
@@ -287,8 +290,8 @@ def assemble_matrix_ctypes(A, mesh, dofmap, num_cells, set_vals, mode):
 def test_custom_mesh_loop_rank1():
 
     # Create mesh and function space
-    mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 64, 64)
-    V = dolfinx.FunctionSpace(mesh, ("Lagrange", 1))
+    mesh = UnitSquareMesh(MPI.COMM_WORLD, 64, 64)
+    V = FunctionSpace(mesh, ("Lagrange", 1))
 
     # Unpack mesh and dofmap data
     num_owned_cells = mesh.topology.index_map(mesh.topology.dim).size_local
@@ -296,11 +299,11 @@ def test_custom_mesh_loop_rank1():
     x_dofs = mesh.geometry.dofmap.array.reshape(num_cells, 3)
     x = mesh.geometry.x
     dofmap = V.dofmap.list.array.reshape(num_cells, 3)
-    dofmap_t = dolfinx.fem.transpose_dofmap(V.dofmap.list, num_owned_cells)
+    dofmap_t = transpose_dofmap(V.dofmap.list, num_owned_cells)
 
     # Assemble with pure Numba function (two passes, first will include
     # JIT overhead)
-    b0 = dolfinx.Function(V)
+    b0 = Function(V)
     for i in range(2):
         with b0.vector.localForm() as b:
             b.set(0.0)
@@ -313,7 +316,7 @@ def test_custom_mesh_loop_rank1():
 
     # Assemble with pure Numba function using parallel loop (two passes,
     # first will include JIT overhead)
-    btmp = dolfinx.Function(V)
+    btmp = Function(V)
     for i in range(2):
         with btmp.vector.localForm() as b:
             b.set(0.0)
@@ -337,7 +340,7 @@ def test_custom_mesh_loop_rank1():
     with b1.localForm() as b_local:
         b_local.set(0.0)
     start = time.time()
-    dolfinx.fem.assemble_vector(b1, L)
+    assemble_vector(b1, L)
     end = time.time()
     print("Time (C++, pass 1):", end - start)
     b1.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
@@ -345,7 +348,7 @@ def test_custom_mesh_loop_rank1():
 
     # Assemble using generated tabulate_tensor kernel and Numba assembler
     ffcxtype = "double _Complex" if np.issubdtype(PETSc.ScalarType, np.complexfloating) else "double"
-    b3 = dolfinx.Function(V)
+    b3 = Function(V)
     ufc_form, module, code = dolfinx.jit.ffcx_jit(
         mesh.mpi_comm, L, form_compiler_parameters={"scalar_type": ffcxtype})
 
@@ -368,8 +371,8 @@ def test_custom_mesh_loop_ctypes_rank2():
     """Test numba assembler for bilinear form"""
 
     # Create mesh and function space
-    mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 64, 64)
-    V = dolfinx.FunctionSpace(mesh, ("Lagrange", 1))
+    mesh = UnitSquareMesh(MPI.COMM_WORLD, 64, 64)
+    V = FunctionSpace(mesh, ("Lagrange", 1))
 
     # Extract mesh and dofmap data
     num_owned_cells = mesh.topology.index_map(mesh.topology.dim).size_local
@@ -381,7 +384,7 @@ def test_custom_mesh_loop_ctypes_rank2():
     # Generated case with general assembler
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     a = inner(u, v) * dx
-    A0 = dolfinx.fem.assemble_matrix(a)
+    A0 = assemble_matrix(a)
     A0.assemble()
     A0.zeroEntries()
 
@@ -410,18 +413,18 @@ def test_custom_mesh_loop_ctypes_rank2():
 def test_custom_mesh_loop_cffi_rank2(set_vals):
     """Test numba assembler for bilinear form"""
 
-    mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 64, 64)
-    V = dolfinx.FunctionSpace(mesh, ("Lagrange", 1))
+    mesh = UnitSquareMesh(MPI.COMM_WORLD, 64, 64)
+    V = FunctionSpace(mesh, ("Lagrange", 1))
 
     # Test against generated code and general assembler
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     a = inner(u, v) * dx
-    A0 = dolfinx.fem.assemble_matrix(a)
+    A0 = assemble_matrix(a)
     A0.assemble()
 
     A0.zeroEntries()
     start = time.time()
-    dolfinx.fem.assemble_matrix(A0, a)
+    assemble_matrix(A0, a)
     end = time.time()
     print("Time (C++, pass 2):", end - start)
     A0.assemble()

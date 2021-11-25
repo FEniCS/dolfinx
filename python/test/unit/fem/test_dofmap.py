@@ -11,8 +11,8 @@ import dolfinx
 import numpy as np
 import pytest
 import ufl
-from dolfinx import (FunctionSpace, UnitCubeMesh, UnitIntervalMesh,
-                     UnitSquareMesh, VectorFunctionSpace)
+from dolfinx.fem import FunctionSpace, VectorFunctionSpace
+from dolfinx.generation import UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh
 from dolfinx.graph import create_adjacencylist
 from dolfinx.mesh import CellType, create_mesh
 from dolfinx_utils.test.skips import skip_in_parallel
