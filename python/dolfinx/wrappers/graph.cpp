@@ -25,9 +25,9 @@ void declare_adjacency_list(py::module& m, std::string type)
   std::string pyclass_name = std::string("AdjacencyList_") + type;
   py::class_<dolfinx::graph::AdjacencyList<T>,
              std::shared_ptr<dolfinx::graph::AdjacencyList<T>>>(
-      m, pyclass_name.c_str(), "Adjacency List", py::dynamic_attr())
+      m, pyclass_name.c_str(), "Adjacency List")
       .def(py::init(
-               [](py::array_t<T, py::array::c_style> adj)
+               [](const py::array_t<T, py::array::c_style>& adj)
                {
                  if (adj.ndim() > 2)
                    throw std::runtime_error("Incorrect array dimension.");
@@ -35,8 +35,7 @@ void declare_adjacency_list(py::module& m, std::string type)
                  std::vector<T> data(adj.data(), adj.data() + adj.size());
                  return dolfinx::graph::build_adjacency_list<T>(std::move(data),
                                                                 dim);
-               }),
-           py::arg("adj").noconvert(true))
+               }))
       .def(py::init(
                [](const py::array_t<T, py::array::c_style>& array,
                   const py::array_t<std::int32_t, py::array::c_style>& displ)

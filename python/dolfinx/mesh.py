@@ -7,12 +7,12 @@
 
 import types
 
-import numpy
+import numpy as np
 import ufl
 
 from dolfinx import graph
 from dolfinx import cpp as _cpp
-from dolfinx.cpp.mesh import CellType, cell_dim, build_dual_graph # noqa
+from dolfinx.cpp.mesh import CellType, cell_dim, build_dual_graph  # noqa
 from dolfinx.cpp.mesh import GhostMode  # noqa
 from dolfinx.cpp.mesh import midpoints  # noqa
 
@@ -137,10 +137,10 @@ _uflcell_to_dolfinxcell = {
 }
 
 _meshtags_types = {
-    numpy.int8: _cpp.mesh.MeshTags_int8,
-    numpy.int32: _cpp.mesh.MeshTags_int32,
-    numpy.int64: _cpp.mesh.MeshTags_int64,
-    numpy.double: _cpp.mesh.MeshTags_double
+    np.int8: _cpp.mesh.MeshTags_int8,
+    np.int32: _cpp.mesh.MeshTags_int32,
+    np.int64: _cpp.mesh.MeshTags_int64,
+    np.double: _cpp.mesh.MeshTags_double
 }
 
 
@@ -167,7 +167,7 @@ def create_mesh(comm, cells, x, domain,
     try:
         mesh = _cpp.mesh.create_mesh(comm, cells, cmap, x, ghost_mode, partitioner)
     except TypeError:
-        mesh = _cpp.mesh.create_mesh(comm, _cpp.graph.AdjacencyList_int64(numpy.cast['int64'](cells)),
+        mesh = _cpp.mesh.create_mesh(comm, _cpp.graph.AdjacencyList_int64(np.cast['int64'](cells)),
                                      cmap, x, ghost_mode, partitioner)
     domain._ufl_cargo = mesh
     return Mesh.from_cpp(mesh, domain)
@@ -176,9 +176,9 @@ def create_mesh(comm, cells, x, domain,
 def MeshTags(mesh, dim, indices, values):
 
     if isinstance(values, int):
-        values = numpy.full(indices.shape, values, dtype=numpy.int32)
+        values = np.full(indices.shape, values, dtype=np.int32)
     elif isinstance(values, float):
-        values = numpy.full(indices.shape, values, dtype=numpy.double)
+        values = np.full(indices.shape, values, dtype=np.double)
 
     dtype = values.dtype.type
     if dtype not in _meshtags_types.keys():
