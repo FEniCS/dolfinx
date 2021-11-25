@@ -10,6 +10,9 @@ import numpy as np
 from dolfinx import cpp as _cpp
 
 
+__all__ = ["create_adjacencylist"]
+
+
 def create_adjacencylist(data: np.ndarray, offsets=None):
     """Create an AdjacencyList"""
     if offsets is None:
