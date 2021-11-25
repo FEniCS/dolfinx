@@ -633,6 +633,7 @@ pack_coefficients(const Form<T>& u, fem::IntegralType integral_type, int id)
           "Could not pack coefficient. Integral type not supported.");
     }
   }
+
   return {std::move(c), cstride};
 }
 
@@ -653,8 +654,8 @@ pack_coefficients(const Form<T>& form)
   {
     for (int i : form.integral_ids(integral_type))
     {
-      coeffs.insert({{integral_type, i},
-                     std::move(pack_coefficients(form, integral_type, i))});
+      coeffs.emplace(std::pair(integral_type, i),
+                     pack_coefficients(form, integral_type, i));
     }
   }
 
