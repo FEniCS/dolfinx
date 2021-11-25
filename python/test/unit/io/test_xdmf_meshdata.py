@@ -7,7 +7,7 @@
 import os
 
 import pytest
-from dolfinx import UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh
+from dolfinx.generation import UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import CellType
 from dolfinx_utils.test.fixtures import tempdir

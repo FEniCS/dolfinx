@@ -11,10 +11,10 @@ from contextlib import ExitStack
 import numpy as np
 import pytest
 import ufl
-from dolfinx import (DirichletBC, Function, FunctionSpace, UnitSquareMesh,
-                     VectorFunctionSpace)
-from dolfinx.fem import (apply_lifting, assemble_matrix, assemble_vector,
-                         locate_dofs_topological, set_bc)
+from dolfinx.fem import (DirichletBC, Function, FunctionSpace,
+                         VectorFunctionSpace, apply_lifting, assemble_matrix,
+                         assemble_vector, locate_dofs_topological, set_bc)
+from dolfinx.generation import UnitSquareMesh
 from dolfinx.la import VectorSpaceBasis
 from dolfinx.mesh import locate_entities_boundary
 from mpi4py import MPI

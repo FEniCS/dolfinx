@@ -10,10 +10,11 @@ import sys
 import basix
 import numpy as np
 import pytest
-from dolfinx import (BoxMesh, RectangleMesh, UnitCubeMesh, UnitIntervalMesh,
-                     UnitSquareMesh, cpp)
+from dolfinx import cpp as _cpp
 from dolfinx.cpp.mesh import is_simplex
 from dolfinx.fem import assemble_scalar
+from dolfinx.generation import (BoxMesh, RectangleMesh, UnitCubeMesh,
+                                UnitIntervalMesh, UnitSquareMesh)
 from dolfinx.mesh import CellType, GhostMode
 from dolfinx_utils.test.fixtures import tempdir
 from dolfinx_utils.test.skips import skip_in_parallel
@@ -49,7 +50,7 @@ def mesh2d():
         MPI.COMM_WORLD, [np.array([0.0, 0.0, 0.0]),
                          np.array([1., 1., 0.0])], [1, 1],
         CellType.triangle, GhostMode.none,
-        cpp.mesh.partition_cells_graph, 'left')
+        _cpp.mesh.partition_cells_graph, 'left')
     i1 = np.where((mesh2d.geometry.x
                    == (1, 1, 0)).all(axis=1))[0][0]
     mesh2d.geometry.x[i1, :2] += 0.5 * (math.sqrt(3.0) - 1.0)
@@ -62,7 +63,7 @@ def mesh_2d():
         MPI.COMM_WORLD, [np.array([0.0, 0.0, 0.0]),
                          np.array([1., 1., 0.0])], [1, 1],
         CellType.triangle, GhostMode.none,
-        cpp.mesh.partition_cells_graph, 'left')
+        _cpp.mesh.partition_cells_graph, 'left')
     i1 = np.where((mesh2d.geometry.x
                    == (1, 1, 0)).all(axis=1))[0][0]
     mesh2d.geometry.x[i1, :2] += 0.5 * (math.sqrt(3.0) - 1.0)
@@ -240,34 +241,34 @@ def test_GetCoordinates():
 @pytest.mark.skip("Needs to be re-implemented")
 @skip_in_parallel
 def test_cell_inradius(c0, c1, c5):
-    assert cpp.mesh.inradius(c0[0], [c0[2]]) == pytest.approx((3.0 - math.sqrt(3.0)) / 6.0)
-    assert cpp.mesh.inradius(c1[0], [c1[2]]) == pytest.approx(0.0)
-    assert cpp.mesh.inradius(c5[0], [c5[2]]) == pytest.approx(math.sqrt(3.0) / 6.0)
+    assert _cpp.mesh.inradius(c0[0], [c0[2]]) == pytest.approx((3.0 - math.sqrt(3.0)) / 6.0)
+    assert _cpp.mesh.inradius(c1[0], [c1[2]]) == pytest.approx(0.0)
+    assert _cpp.mesh.inradius(c5[0], [c5[2]]) == pytest.approx(math.sqrt(3.0) / 6.0)
 
 
 @pytest.mark.skip("Needs to be re-implemented")
 @skip_in_parallel
 def test_cell_circumradius(c0, c1, c5):
-    assert cpp.mesh.circumradius(c0[0], [c0[2]], c0[1]) == pytest.approx(math.sqrt(3.0) / 2.0)
+    assert _cpp.mesh.circumradius(c0[0], [c0[2]], c0[1]) == pytest.approx(math.sqrt(3.0) / 2.0)
     # Implementation of diameter() does not work accurately
     # for degenerate cells - sometimes yields NaN
-    r_c1 = cpp.mesh.circumradius(c1[0], [c1[2]], c1[1])
+    r_c1 = _cpp.mesh.circumradius(c1[0], [c1[2]], c1[1])
     assert math.isnan(r_c1)
-    assert cpp.mesh.circumradius(c5[0], [c5[2]], c5[1]) == pytest.approx(math.sqrt(3.0) / 2.0)
+    assert _cpp.mesh.circumradius(c5[0], [c5[2]], c5[1]) == pytest.approx(math.sqrt(3.0) / 2.0)
 
 
 @skip_in_parallel
 def test_cell_h(c0, c1, c5):
     for c in [c0, c1, c5]:
-        assert cpp.mesh.h(c[0], c[1], [c[2]]) == pytest.approx(math.sqrt(2.0))
+        assert _cpp.mesh.h(c[0], c[1], [c[2]]) == pytest.approx(math.sqrt(2.0))
 
 
 @pytest.mark.skip("Needs to be re-implemented")
 @skip_in_parallel
 def test_cell_radius_ratio(c0, c1, c5):
-    assert cpp.mesh.radius_ratio(c0[0], c0[2]) == pytest.approx(math.sqrt(3.0) - 1.0)
-    assert np.isnan(cpp.mesh.radius_ratio(c1[0], c1[2]))
-    assert cpp.mesh.radius_ratio(c5[0], c5[2]) == pytest.approx(1.0)
+    assert _cpp.mesh.radius_ratio(c0[0], c0[2]) == pytest.approx(math.sqrt(3.0) - 1.0)
+    assert np.isnan(_cpp.mesh.radius_ratio(c1[0], c1[2]))
+    assert _cpp.mesh.radius_ratio(c5[0], c5[2]) == pytest.approx(1.0)
 
 
 @pytest.fixture(params=['dir1_fixture', 'dir2_fixture'])
@@ -286,7 +287,7 @@ def test_hmin_hmax(_mesh, hmin, hmax):
     mesh = _mesh()
     tdim = mesh.topology.dim
     num_cells = mesh.topology.index_map(tdim).size_local
-    h = cpp.mesh.h(mesh, tdim, range(num_cells))
+    h = _cpp.mesh.h(mesh, tdim, range(num_cells))
     assert h.min() == pytest.approx(hmin)
     assert h.max() == pytest.approx(hmax)
 

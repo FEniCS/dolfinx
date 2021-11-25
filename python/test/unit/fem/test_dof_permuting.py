@@ -315,5 +315,5 @@ def test_integral(cell_type, space_type, space_order):
             else:
                 form = ufl.jump(v) * ufl.dS
 
-            value  = assemble_scalar(form)
+            value = assemble_scalar(form)
             assert np.isclose(value, 0)

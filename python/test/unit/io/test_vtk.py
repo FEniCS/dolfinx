@@ -9,9 +9,9 @@ import os
 import numpy as np
 import pytest
 import ufl
-from dolfinx import (Function, FunctionSpace, TensorFunctionSpace,
-                     UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh,
-                     VectorFunctionSpace)
+from dolfinx.fem import (Function, FunctionSpace, TensorFunctionSpace,
+                         VectorFunctionSpace)
+from dolfinx.generation import UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh
 from dolfinx.io import VTKFile
 from dolfinx.mesh import CellType, create_mesh
 from dolfinx_utils.test.fixtures import tempdir

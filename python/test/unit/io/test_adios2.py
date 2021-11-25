@@ -9,8 +9,8 @@ import os
 import numpy as np
 import pytest
 import ufl
-from dolfinx import Function, FunctionSpace, VectorFunctionSpace
 from dolfinx.common import has_adios2
+from dolfinx.fem import Function, FunctionSpace, VectorFunctionSpace
 from dolfinx.generation import UnitCubeMesh, UnitSquareMesh
 from dolfinx.mesh import CellType, create_mesh
 from dolfinx_utils.test.fixtures import tempdir

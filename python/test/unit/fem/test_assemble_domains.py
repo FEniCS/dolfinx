@@ -5,7 +5,6 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for assembly over domains"""
 
-import dolfinx
 import numpy
 import pytest
 import ufl

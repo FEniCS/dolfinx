@@ -10,9 +10,11 @@ import dolfinx
 import numpy as np
 import pytest
 import ufl
+from dolfinx import cpp as _cpp
 from dolfinx.cpp.mesh import partition_cells_graph
+from dolfinx.generation import BoxMesh
 from dolfinx.io import XDMFFile
-from dolfinx.mesh import CellType, GhostMode
+from dolfinx.mesh import CellType, GhostMode, create_mesh
 from dolfinx_utils.test.fixtures import tempdir
 from mpi4py import MPI
 
@@ -23,9 +25,9 @@ assert (tempdir)
 @pytest.mark.parametrize("Nx", [5, 10])
 @pytest.mark.parametrize("cell_type", [CellType.tetrahedron, CellType.hexahedron])
 def test_partition_box_mesh(partitioner, Nx, cell_type):
-    mesh = dolfinx.BoxMesh(MPI.COMM_WORLD, [np.array([0, 0, 0]),
-                                            np.array([1, 1, 1])], [Nx, Nx, Nx], cell_type,
-                           GhostMode.shared_facet, partitioner)
+    mesh = BoxMesh(MPI.COMM_WORLD, [np.array([0, 0, 0]),
+                                    np.array([1, 1, 1])], [Nx, Nx, Nx], cell_type,
+                   GhostMode.shared_facet, partitioner)
     tdim = mesh.topology.dim
 
     c = 6 if cell_type == CellType.tetrahedron else 1
@@ -41,8 +43,7 @@ def test_custom_partitioner(tempdir, Nx, cell_type):
 
     Lx = mpi_comm.size
     points = [np.array([0, 0, 0]), np.array([Lx, Lx, Lx])]
-    mesh = dolfinx.BoxMesh(
-        mpi_comm, points, [Nx, Nx, Nx], cell_type, GhostMode.shared_facet)
+    mesh = BoxMesh(mpi_comm, points, [Nx, Nx, Nx], cell_type, GhostMode.shared_facet)
 
     filename = os.path.join(tempdir, "u1_.xdmf")
     with XDMFFile(mpi_comm, filename, "w") as file:
@@ -78,12 +79,12 @@ def test_custom_partitioner(tempdir, Nx, cell_type):
         return dolfinx.cpp.graph.AdjacencyList_int32(dest)
 
     ghost_mode = GhostMode.none
-    new_mesh = dolfinx.mesh.create_mesh(mpi_comm, topo, x, domain, ghost_mode, partitioner)
+    new_mesh = create_mesh(mpi_comm, topo, x, domain, ghost_mode, partitioner)
 
     tdim = new_mesh.topology.dim
     assert mesh.topology.index_map(tdim).size_global == new_mesh.topology.index_map(tdim).size_global
     num_cells = new_mesh.topology.index_map(tdim).size_local
-    cell_midpoints = dolfinx.cpp.mesh.midpoints(new_mesh, tdim, range(num_cells))
+    cell_midpoints = _cpp.mesh.midpoints(new_mesh, tdim, range(num_cells))
     assert num_cells > 0
     assert np.all(cell_midpoints[:, 0] >= mpi_comm.rank)
     assert np.all(cell_midpoints[:, 0] <= mpi_comm.rank + 1)

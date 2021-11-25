@@ -8,9 +8,9 @@ import os
 
 import numpy as np
 import pytest
-from dolfinx import (Function, FunctionSpace, TensorFunctionSpace,
-                     UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh,
-                     VectorFunctionSpace)
+from dolfinx.fem import (Function, FunctionSpace, TensorFunctionSpace,
+                         VectorFunctionSpace)
+from dolfinx.generation import UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import CellType
 from dolfinx_utils.test.fixtures import tempdir
