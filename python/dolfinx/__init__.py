@@ -35,20 +35,6 @@ from dolfinx.common import (has_debug, has_kahip,
                            has_parmetis, git_commit_hash, TimingType, timing,
                            list_timings)
 
-import dolfinx.log
-
-from dolfinx.generation import (IntervalMesh, BoxMesh, RectangleMesh,
-                               UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh)
-
-
-from .fem.form import Form
-from .fem.dirichletbc import DirichletBC
-from .fem import (FunctionSpace, VectorFunctionSpace,
-                  TensorFunctionSpace, Constant, Expression, Function)
-
-from .mesh import MeshTags
-from .nls import NewtonSolver
-
 # Initialise logging
 from dolfinx import cpp as _cpp
 import sys

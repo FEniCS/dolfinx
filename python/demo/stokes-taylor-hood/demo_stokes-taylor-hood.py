@@ -73,9 +73,11 @@
 import dolfinx
 import numpy as np
 import ufl
-from dolfinx import DirichletBC, Function, FunctionSpace, RectangleMesh, fem
-from dolfinx.fem import (Form, form, locate_dofs_geometrical,
+from dolfinx import fem
+from dolfinx.fem import (Constant, DirichletBC, Form, Function, FunctionSpace,
+                         form, locate_dofs_geometrical,
                          locate_dofs_topological)
+from dolfinx.generation import RectangleMesh
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import CellType, GhostMode, locate_entities_boundary
 from mpi4py import MPI
@@ -144,13 +146,13 @@ bcs = [bc0, bc1]
 # Define variational problem
 (u, p) = ufl.TrialFunction(V), ufl.TrialFunction(Q)
 (v, q) = ufl.TestFunction(V), ufl.TestFunction(Q)
-f = dolfinx.Constant(mesh, (PETSc.ScalarType(0), PETSc.ScalarType(0)))
+f = Constant(mesh, (PETSc.ScalarType(0), PETSc.ScalarType(0)))
 
 a = [[Form(inner(grad(u), grad(v)) * dx), Form(inner(p, div(v)) * dx)],
      [Form(inner(div(u), q) * dx), None]]
 
 L = [Form(inner(f, v) * dx),
-     Form(inner(dolfinx.Constant(mesh, PETSc.ScalarType(0)), q) * dx)]
+     Form(inner(Constant(mesh, PETSc.ScalarType(0)), q) * dx)]
 
 # We will use a block-diagonal preconditioner to solve this problem::
 
@@ -427,7 +429,7 @@ bcs = [bc0, bc1, bc2]
 (u, p) = ufl.TrialFunctions(W)
 (v, q) = ufl.TestFunctions(W)
 f = Function(W0)
-zero = dolfinx.Constant(mesh, 0.0)
+zero = Constant(mesh, 0.0)
 a = Form((inner(grad(u), grad(v)) + inner(p, div(v)) + inner(div(u), q)) * dx)
 L = Form(inner(f, v) * dx)
 

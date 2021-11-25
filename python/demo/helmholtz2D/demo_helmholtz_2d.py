@@ -6,19 +6,20 @@
 # Copyright (C) 2018 Samuel Groth
 #
 # Helmholtz problem in both complex and real modes
-# In the complex mode, the exact solution is a plane wave propagating at an angle
-# theta to the positive x-axis. Chosen for comparison with results from Ihlenburg\'s
-# book \"Finite Element Analysis of Acoustic Scattering\" p138-139.
-# In real mode, the Method of Manufactured Solutions is used to produce the exact
-# solution and source term. ::
+# In the complex mode, the exact solution is a plane wave propagating at
+# an angle theta to the positive x-axis. Chosen for comparison with
+# results from Ihlenburg\'s book \"Finite Element Analysis of Acoustic
+# Scattering\" p138-139. In real mode, the Method of Manufactured
+# Solutions is used to produce the exact solution and source term. ::
 
 import numpy as np
-from dolfinx import Function, FunctionSpace, UnitSquareMesh, fem
+from dolfinx.fem import Function, FunctionSpace, LinearProblem
 from dolfinx.fem.assemble import assemble_scalar
+from dolfinx.generation import UnitSquareMesh
 from dolfinx.io import XDMFFile
 from mpi4py import MPI
-from ufl import FacetNormal, TestFunction, TrialFunction, dx, grad, inner
 from petsc4py import PETSc
+from ufl import FacetNormal, TestFunction, TrialFunction, dx, grad, inner
 
 # wavenumber
 k0 = 4 * np.pi
@@ -50,9 +51,9 @@ a = inner(grad(u), grad(v)) * dx - k0**2 * inner(u, v) * dx
 L = inner(f, v) * dx
 
 # Compute solution
-uh = fem.Function(V)
+uh = Function(V)
 uh.name = "u"
-problem = fem.LinearProblem(a, L, u=uh, petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
+problem = LinearProblem(a, L, u=uh, petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
 problem.solve()
 
 # Save solution in XDMF format (to be viewed in Paraview, for example)
