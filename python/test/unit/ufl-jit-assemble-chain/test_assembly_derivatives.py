@@ -10,8 +10,8 @@ import math
 
 import numpy
 import pytest
-from dolfinx import RectangleMesh, UnitIntervalMesh
 from dolfinx.fem import assemble_scalar
+from dolfinx.generation import RectangleMesh, UnitIntervalMesh
 from mpi4py import MPI
 from ufl import (FacetNormal, SpatialCoordinate, acos, as_matrix, as_vector,
                  asin, atan, cos, cross, det, dev, diff, div, dot, ds, dx,

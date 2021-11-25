@@ -28,12 +28,10 @@ del sys
 # del sys
 
 # Import cpp modules
-from .cpp import __version__
-
-
-from dolfinx.common import (has_debug, has_kahip,
-                           has_parmetis, git_commit_hash, TimingType, timing,
-                           list_timings)
+from dolfinx.cpp import __version__
+from dolfinx.common import (has_debug, has_kahip, has_parmetis,
+                            git_commit_hash, TimingType, timing,
+                            list_timings)
 
 # Initialise logging
 from dolfinx import cpp as _cpp

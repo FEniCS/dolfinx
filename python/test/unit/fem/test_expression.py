@@ -5,12 +5,11 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for dolfinx.cpp.fem.CoordinateMap.pull_back and dolfinx.Expression"""
 
-import dolfinx
 import dolfinx.geometry
 import numpy as np
 import pytest
 import ufl
-from dolfinx.fem import Expression, FunctionSpace
+from dolfinx.fem import Expression, Function, FunctionSpace
 from dolfinx.generation import UnitSquareMesh
 from dolfinx.geometry import (BoundingBoxTree, compute_colliding_cells,
                               compute_collisions)
@@ -31,7 +30,7 @@ def test_expression():
     def gradf(x):
         return np.asarray([4 * x[0], 2 * x[1]])
 
-    u = dolfinx.Function(V)
+    u = Function(V)
     u.interpolate(f)
     u.x.scatter_forward()
 
