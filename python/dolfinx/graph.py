@@ -8,7 +8,6 @@
 
 # import typing
 
-import numpy as np
 
 from dolfinx import cpp as _cpp
 
