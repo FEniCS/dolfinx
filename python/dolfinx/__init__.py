@@ -40,7 +40,6 @@ import dolfinx.log
 from dolfinx.generation import (IntervalMesh, BoxMesh, RectangleMesh,
                                UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh)
 
-from .cpp.mesh import Topology, Geometry
 
 from .fem.form import Form
 from .fem.dirichletbc import DirichletBC
@@ -51,9 +50,9 @@ from .mesh import MeshTags
 from .nls import NewtonSolver
 
 # Initialise logging
-from dolfinx import cpp
+from dolfinx import cpp as _cpp
 import sys
-cpp.common.init_logging(sys.argv)
+_cpp.common.init_logging(sys.argv)
 del sys
 
 def get_include(user=False):
