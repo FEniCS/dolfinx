@@ -185,4 +185,4 @@ def MeshTags(mesh, dim, indices, values):
         raise KeyError("Datatype {} of values array not recognised".format(dtype))
 
     fn = _meshtags_types[dtype]
-    return fn(mesh, dim, indices.astype(numpy.int32), values)
+    return fn(mesh, dim, indices.astype(np.int32), values)
