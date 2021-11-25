@@ -31,8 +31,7 @@ jobs:
       MPI4PY_VERSION: 3.1.2
       PETSC4PY_VERSION: 3.16.1
       CIBW_MANYLINUX_X86_64_IMAGE: docker.io/fenicsproject/wheelbuilder_x86_64:latest
-      #CIBW_BUILD: cp37-manylinux_x86_64 cp38-manylinux_x86_64 cp39-manylinux_x86_64
-      CIBW_BUILD: cp39-manylinux_x86_64
+      CIBW_BUILD: cp37-manylinux_x86_64 cp38-manylinux_x86_64 cp39-manylinux_x86_64
       CIBW_BUILD_VERBOSITY: 1
       CIBW_ENVIRONMENT: PIP_EXTRA_INDEX_URL=file:///project/simple PETSC_DIR=/usr/local
 
@@ -130,7 +129,7 @@ jobs:
           cp wheelhouse/* simple
           python -m simple503 --base-url file:///shared simple
 
-      # Can be unzipped into $(pwd) and tested with:
+      # Artifact can be unzipped into $(pwd) and tested with e.g.:
       # docker run -ti -v $(pwd):/shared --env PIP_EXTRA_INDEX_URL=file:///shared python:3.9 /bin/bash -l
       - name: Upload simple503-test artifact
         uses: actions/upload-artifact@v2
@@ -157,14 +156,14 @@ jobs:
           path: simple/*
 
       # Extract mpiexec from docker image
-      - name: Extract mpiexec from Docker image
+      - name: Extract mpiexec.hydra from Docker image
         run: |
           export CONTAINER_ID=$(docker create ${CIBW_MANYLINUX_X86_64_IMAGE})
-          docker cp ${CONTAINER_ID}:/usr/local/bin/mpiexec mpiexec
+          docker cp ${CONTAINER_ID}:/usr/local/bin/mpiexec.hydra mpiexec.hydra
           docker rm ${CONTAINER_ID}
 
       - name: Upload mpiexec artifact
         uses: actions/upload-artifact@v2
         with:
-          name: "mpiexec"
-          path: mpiexec
+          name: "mpiexec.hydra"
+          path: mpiexec.hydra
