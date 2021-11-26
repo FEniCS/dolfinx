@@ -35,7 +35,8 @@ void assemble_matrix(
     const Form<T>& a, const xtl::span<const T>& constants,
     const std::map<std::pair<IntegralType, int>,
                    std::pair<xtl::span<const T>, int>>& coefficients,
-    const std::vector<bool>& bc0, const std::vector<bool>& bc1);
+    const xtl::span<const std::int8_t>& bc0,
+    const xtl::span<const std::int8_t>& bc1);
 
 /// Execute kernel over cells and accumulate result in matrix
 template <typename T>
@@ -51,7 +52,8 @@ void assemble_cells(
                              const xtl::span<const std::uint32_t>&,
                              std::int32_t, int)>& dof_transform_to_transpose,
     const graph::AdjacencyList<std::int32_t>& dofmap1, int bs1,
-    const std::vector<bool>& bc0, const std::vector<bool>& bc1,
+    const xtl::span<const std::int8_t>& bc0,
+    const xtl::span<const std::int8_t>& bc1,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*)>& kernel,
     const xtl::span<const T>& coeffs, int cstride,
@@ -150,7 +152,8 @@ void assemble_exterior_facets(
                              const xtl::span<const std::uint32_t>&,
                              std::int32_t, int)>& dof_transform_to_transpose,
     const graph::AdjacencyList<std::int32_t>& dofmap1, int bs1,
-    const std::vector<bool>& bc0, const std::vector<bool>& bc1,
+    const xtl::span<const std::int8_t>& bc0,
+    const xtl::span<const std::int8_t>& bc1,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*)>& kernel,
     const xtl::span<const T>& coeffs, int cstride,
@@ -255,8 +258,8 @@ void assemble_interior_facets(
     const std::function<void(const xtl::span<T>&,
                              const xtl::span<const std::uint32_t>&,
                              std::int32_t, int)>& dof_transform_to_transpose,
-    const DofMap& dofmap1, int bs1, const std::vector<bool>& bc0,
-    const std::vector<bool>& bc1,
+    const DofMap& dofmap1, int bs1, const xtl::span<const std::int8_t>& bc0,
+    const xtl::span<const std::int8_t>& bc1,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*)>& kernel,
     const xtl::span<const T>& coeffs, int cstride,
@@ -397,7 +400,8 @@ void assemble_matrix(
     const Form<T>& a, const xtl::span<const T>& constants,
     const std::map<std::pair<IntegralType, int>,
                    std::pair<xtl::span<const T>, int>>& coefficients,
-    const std::vector<bool>& bc0, const std::vector<bool>& bc1)
+    const xtl::span<const std::int8_t>& bc0,
+    const xtl::span<const std::int8_t>& bc1)
 {
   std::shared_ptr<const mesh::Mesh> mesh = a.mesh();
   assert(mesh);

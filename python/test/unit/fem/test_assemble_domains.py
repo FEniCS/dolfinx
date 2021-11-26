@@ -81,11 +81,11 @@ def test_assembly_dx_domains(mode):
     # Assemble scalar
     L = w * (dx(1) + dx(2) + dx(3))
     s = assemble_scalar(L)
-    s = mesh.mpi_comm.allreduce(s, op=MPI.SUM)
+    s = mesh.comm.allreduce(s, op=MPI.SUM)
     assert s == pytest.approx(0.5, 1.0e-12)
     L2 = w * dx
     s2 = assemble_scalar(L2)
-    s2 = mesh.mpi_comm.allreduce(s2, op=MPI.SUM)
+    s2 = mesh.comm.allreduce(s2, op=MPI.SUM)
     assert s == pytest.approx(s2, 1.0e-12)
 
 
@@ -163,10 +163,10 @@ def test_assembly_ds_domains(mode):
     # Assemble scalar
     L = w * (ds(1) + ds(2) + ds(3) + ds(6))
     s = assemble_scalar(L)
-    s = mesh.mpi_comm.allreduce(s, op=MPI.SUM)
+    s = mesh.comm.allreduce(s, op=MPI.SUM)
     L2 = w * ds
     s2 = assemble_scalar(L2)
-    s2 = mesh.mpi_comm.allreduce(s2, op=MPI.SUM)
+    s2 = mesh.comm.allreduce(s2, op=MPI.SUM)
     assert (s == pytest.approx(s2, 1.0e-12) and 2.0 == pytest.approx(s, 1.0e-12))
 
 
@@ -176,7 +176,7 @@ def test_assembly_dS_domains(mode):
     mesh = UnitSquareMesh(MPI.COMM_WORLD, N, N, ghost_mode=mode)
     one = Constant(mesh, PETSc.ScalarType(1))
     val = assemble_scalar(one * ufl.dS)
-    val = mesh.mpi_comm.allreduce(val, op=MPI.SUM)
+    val = mesh.comm.allreduce(val, op=MPI.SUM)
     assert val == pytest.approx(2 * (N - 1) + N * numpy.sqrt(2), 1.0e-7)
 
 
@@ -199,15 +199,15 @@ def test_additivity(mode):
     j3 = ufl.inner(ufl.avg(f3), ufl.avg(f3)) * ufl.dS(mesh)
 
     # Assemble each scalar form separately
-    J1 = mesh.mpi_comm.allreduce(assemble_scalar(j1), op=MPI.SUM)
-    J2 = mesh.mpi_comm.allreduce(assemble_scalar(j2), op=MPI.SUM)
-    J3 = mesh.mpi_comm.allreduce(assemble_scalar(j3), op=MPI.SUM)
+    J1 = mesh.comm.allreduce(assemble_scalar(j1), op=MPI.SUM)
+    J2 = mesh.comm.allreduce(assemble_scalar(j2), op=MPI.SUM)
+    J3 = mesh.comm.allreduce(assemble_scalar(j3), op=MPI.SUM)
 
     # Sum forms and assemble the result
-    J12 = mesh.mpi_comm.allreduce(assemble_scalar(j1 + j2), op=MPI.SUM)
-    J13 = mesh.mpi_comm.allreduce(assemble_scalar(j1 + j3), op=MPI.SUM)
-    J23 = mesh.mpi_comm.allreduce(assemble_scalar(j2 + j3), op=MPI.SUM)
-    J123 = mesh.mpi_comm.allreduce(assemble_scalar(j1 + j2 + j3), op=MPI.SUM)
+    J12 = mesh.comm.allreduce(assemble_scalar(j1 + j2), op=MPI.SUM)
+    J13 = mesh.comm.allreduce(assemble_scalar(j1 + j3), op=MPI.SUM)
+    J23 = mesh.comm.allreduce(assemble_scalar(j2 + j3), op=MPI.SUM)
+    J123 = mesh.comm.allreduce(assemble_scalar(j1 + j2 + j3), op=MPI.SUM)
 
     # Compare assembled values
     assert (J1 + J2) == pytest.approx(J12)

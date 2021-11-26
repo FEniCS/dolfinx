@@ -20,8 +20,8 @@ def timing(task: str):
     return _cpp.common.timing(task)
 
 
-def list_timings(mpi_comm, timing_types: list):
-    return _cpp.common.list_timings(mpi_comm, timing_types)
+def list_timings(comm, timing_types: list):
+    return _cpp.common.list_timings(comm, timing_types)
 
 
 class Timer:
@@ -55,7 +55,7 @@ class Timer:
     may be printed using functions ``timing``, ``timings``,
     ``list_timings``, ``dump_timings_to_xml``, e.g.::
 
-        list_timings(mpi_comm, [TimingType.wall, TimingType.user])
+        list_timings(comm, [TimingType.wall, TimingType.user])
     """
 
     def __init__(self, name: str = None):

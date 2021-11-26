@@ -38,7 +38,7 @@ def test_krylov_solver_lu():
 
     norm = 13.0
 
-    solver = PETSc.KSP().create(mesh.mpi_comm)
+    solver = PETSc.KSP().create(mesh.comm)
     solver.setOptionsPrefix("test_lu_")
     opts = PETSc.Options("test_lu_")
     opts["ksp_type"] = "preonly"
@@ -133,7 +133,7 @@ def test_krylov_samg_solver_elasticity():
 
         # Create PETSC smoothed aggregation AMG preconditioner, and
         # create CG solver
-        solver = PETSc.KSP().create(mesh.mpi_comm)
+        solver = PETSc.KSP().create(mesh.comm)
         solver.setType("cg")
 
         # Set matrix operator
