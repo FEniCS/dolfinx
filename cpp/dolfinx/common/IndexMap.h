@@ -28,9 +28,9 @@ class IndexMap;
 ///
 /// @param[in] maps List of (index map, block size) pairs
 /// @returns The (0) global offset of a stacked map for this rank, (1)
-///   local offset for each submap in the stacked map, and (2) new
-///   indices for the ghosts for each submap (3) owner rank of each ghost
-///   entry for each submap
+/// local offset for each submap in the stacked map, and (2) new indices
+/// for the ghosts for each submap (3) owner rank of each ghost entry
+/// for each submap
 std::tuple<std::int64_t, std::vector<std::int32_t>,
            std::vector<std::vector<std::int64_t>>,
            std::vector<std::vector<int>>>
@@ -68,7 +68,7 @@ public:
   /// @note Collective
   /// @param[in] comm The MPI communicator
   /// @param[in] local_size Local size of the IndexMap, i.e. the number
-  ///   of owned entries
+  /// of owned entries
   IndexMap(MPI_Comm comm, std::int32_t local_size);
 
   /// Create an index map with local_size owned indiced on this process

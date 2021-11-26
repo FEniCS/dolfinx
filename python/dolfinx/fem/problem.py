@@ -71,7 +71,7 @@ class LinearProblem():
             self.u = u
         self.bcs = bcs
 
-        self._solver = PETSc.KSP().create(self.u.function_space.mesh.mpi_comm())
+        self._solver = PETSc.KSP().create(self.u.function_space.mesh.mpi_comm)
         self._solver.setOperators(self._A)
 
         # Give PETSc solver options a unique prefix
