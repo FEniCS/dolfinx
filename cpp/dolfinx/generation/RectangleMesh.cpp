@@ -23,7 +23,7 @@ mesh::Mesh build_tri(MPI_Comm comm,
                      const std::array<std::array<double, 3>, 2>& p,
                      std::array<std::size_t, 2> n, mesh::GhostMode ghost_mode,
                      const mesh::CellPartitionFunction& partitioner,
-                     generation::DiagonalType diagonal)
+                     DiagonalType diagonal)
 {
   fem::CoordinateElement element(mesh::CellType::triangle, 1);
 
@@ -64,7 +64,7 @@ mesh::Mesh build_tri(MPI_Comm comm,
                              "depth. Check dimensions");
   }
 
-  if (nx < 1 || ny < 1)
+  if (nx < 1 or ny < 1)
   {
     throw std::runtime_error(
         "Rectangle has non-positive number of vertices in some dimension: "
@@ -194,7 +194,7 @@ mesh::Mesh build_tri(MPI_Comm comm,
           auto _cell = xt::view(cells, xt::range(2 * offset, 2 * offset + 2),
                                 xt::all());
           _cell.assign(c);
-        
+
           switch (diagonal)
           {
           case DiagonalType::right_left:
@@ -232,23 +232,22 @@ mesh::Mesh build_tri(MPI_Comm comm,
           }
         }
         }
-      }     
+      }
     }
   }
   }
 
   auto [data, offset] = graph::create_adjacency_data(cells);
   return mesh::create_mesh(
-        comm,
-        graph::AdjacencyList<std::int64_t>(std::move(data), std::move(offset)),
-        element, geom, ghost_mode, partitioner);
+      comm,
+      graph::AdjacencyList<std::int64_t>(std::move(data), std::move(offset)),
+      element, geom, ghost_mode, partitioner);
 }
 
 //-----------------------------------------------------------------------------
 mesh::Mesh build_quad(MPI_Comm comm,
                       const std::array<std::array<double, 3>, 2> p,
-                      std::array<std::size_t, 2> n,
-                      const mesh::GhostMode ghost_mode,
+                      std::array<std::size_t, 2> n, mesh::GhostMode ghost_mode,
                       const mesh::CellPartitionFunction& partitioner)
 {
   fem::CoordinateElement element(mesh::CellType::quadrilateral, 1);
@@ -321,7 +320,7 @@ mesh::Mesh RectangleMesh::create(MPI_Comm comm,
                                  std::array<std::size_t, 2> n,
                                  mesh::CellType celltype,
                                  mesh::GhostMode ghost_mode,
-                                 generation::DiagonalType diagonal)
+                                 DiagonalType diagonal)
 {
   return RectangleMesh::create(
       comm, p, n, celltype, ghost_mode,
@@ -337,7 +336,7 @@ mesh::Mesh RectangleMesh::create(MPI_Comm comm,
                                  mesh::CellType celltype,
                                  mesh::GhostMode ghost_mode,
                                  const mesh::CellPartitionFunction& partitioner,
-                                 generation::DiagonalType diagonal)
+                                 DiagonalType diagonal)
 {
   switch (celltype)
   {
