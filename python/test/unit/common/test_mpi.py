@@ -24,7 +24,7 @@ def test_mpi_comm_wrapper():
     """Test MPICommWrapper <-> mpi4py.MPI.Comm conversion"""
     w1 = MPI.COMM_WORLD
     m = UnitSquareMesh(w1, 4, 4)
-    w2 = m.mpi_comm
+    w2 = m.comm
     assert isinstance(w1, MPI.Comm)
     assert isinstance(w2, MPI.Comm)
 
@@ -70,7 +70,7 @@ PYBIND11_MODULE(mpi_comm_wrapper, m)
         path = pathlib.Path(tempdir)
         open(pathlib.Path(tempdir, "mpi_comm_wrapper.cpp"), "w").write(cpp_code + cpp_code_header)
         rel_path = path.relative_to(pathlib.Path(__file__).parent)
-        p = str(rel_path).replace("/", ".") + ".mpi_comm_wrapper"
+        p = str(rel_path).replace("/", ".") + ".comm_wrapper"
         return cppimport.imp(p)
 
     module = compile_module(MPI.COMM_WORLD)
