@@ -136,7 +136,7 @@ def refine(mesh, cell_markers=None, redistribute=True):
 def create_mesh(comm, cells, x, domain,
                 ghost_mode=GhostMode.shared_facet,
                 partitioner=_cpp.mesh.partition_cells_graph):
-    """Create a mesh from topology and geometry data"""
+    """Create a mesh from topology and geometry arrays"""
     ufl_element = domain.ufl_coordinate_element()
     cell_shape = ufl_element.cell().cellname()
     cell_degree = ufl_element.degree()
