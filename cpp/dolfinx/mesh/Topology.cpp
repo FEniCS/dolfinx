@@ -548,6 +548,7 @@ void Topology::create_full_cell_permutations()
 
   const int tdim = this->dim();
   create_entities(tdim);
+  create_connectivity(tdim, tdim);
 
   auto perms = mesh::compute_cell_permutations(*this);
   _full_cell_permutations = std::move(perms);

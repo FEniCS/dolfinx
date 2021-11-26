@@ -281,7 +281,6 @@ std::vector<std::bitset<BITSETSIZE>>
 compute_face_permutations(const mesh::Topology& topology)
 {
   const int tdim = topology.dim();
-  assert(tdim > 2);
   if (!topology.index_map(2))
     throw std::runtime_error("Faces have not been computed.");
 
