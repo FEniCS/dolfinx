@@ -126,12 +126,12 @@ def refine(mesh: Mesh, cell_markers: _cpp.mesh.MeshTags_int8 = None, redistribut
 
     Parameters
     ----------
-    mesh 
+    mesh
         The mesh from which to build a refined mesh
     cell_markers
-        Optional argument to specify which cells should be refined. If not supplied uniform refinement. 
+        Optional argument to specify which cells should be refined. If not supplied uniform refinement.
         The values of the meshtag is ignored.
-    redistribute 
+    redistribute
         Optional argument to redistribute the refined mesh if mesh is a distributed mesh.
 
     Returns

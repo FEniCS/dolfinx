@@ -62,16 +62,15 @@ def compute_colliding_cells(mesh: Mesh, candidates: AdjacencyList_int32, x: nump
     Returns
     -------
     AdjacencyList_int32
-        Adjacency list where the ith node is the list of entities 
-        that collide with the ith point
+        Adjacency list where the ith node is the list of entities that collide with the ith point
     """
     return _cpp.geometry.compute_colliding_cells(mesh, candidates, x)
 
 
 def squared_distance(mesh: Mesh, dim: int, entities: typing.List[int], points: numpy.ndarray):
     """
-    Compute the squared distance between a point and a mesh entity. The 
-    distance is computed between the ith input points and the ith input entity.
+    Compute the squared distance between a point and a mesh entity. The distance is computed
+    between the ith input points and the ith input entity.
 
     Parameters
     ----------

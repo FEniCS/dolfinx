@@ -81,7 +81,8 @@ def RectangleMesh(comm, points: typing.List[numpy.array], n: list, cell_type=Cel
     partitioner
         Partitioning function to use for determining the parallel distribution of cells across MPI ranks
     diagonal
-        Direction of diagonal of triangular meshes. The options are 'left', 'right', 'crossed', 'left/right', 'right/left'
+        Direction of diagonal of triangular meshes. The options are 'left', 'right', 'crossed',
+        'left/right', 'right/left'
 
     """
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell_type.name, 1))
