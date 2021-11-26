@@ -11,9 +11,11 @@
 from contextlib import ExitStack
 
 import numpy as np
-from dolfinx import BoxMesh, DirichletBC, Function, VectorFunctionSpace, la
-from dolfinx.fem import (apply_lifting, assemble_matrix, assemble_vector,
+from dolfinx import la
+from dolfinx.fem import (DirichletBC, Function, VectorFunctionSpace,
+                         apply_lifting, assemble_matrix, assemble_vector,
                          locate_dofs_geometrical, set_bc)
+from dolfinx.generation import BoxMesh
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import CellType, GhostMode
 from mpi4py import MPI
@@ -171,5 +173,5 @@ with XDMFFile(MPI.COMM_WORLD, "elasticity.xdmf", "w") as file:
     file.write_function(u)
 
 unorm = u.vector.norm()
-if mesh.mpi_comm().rank == 0:
+if mesh.mpi_comm.rank == 0:
     print("Solution vector norm:", unorm)

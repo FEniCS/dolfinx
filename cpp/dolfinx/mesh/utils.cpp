@@ -192,8 +192,8 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
 }
 //-----------------------------------------------------------------------------
 xt::xtensor<double, 2>
-mesh::midpoints(const mesh::Mesh& mesh, int dim,
-                const xtl::span<const std::int32_t>& entities)
+mesh::compute_midpoints(const mesh::Mesh& mesh, int dim,
+                        const xtl::span<const std::int32_t>& entities)
 {
   const xt::xtensor<double, 2>& x = mesh.geometry().x();
 

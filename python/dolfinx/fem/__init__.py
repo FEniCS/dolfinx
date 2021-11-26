@@ -28,6 +28,7 @@ import typing
 from dolfinx.cpp.fem import (create_sparsity_pattern as _create_sparsity_pattern,
                              Form_complex128 as _FormComplex,
                              Form_float64 as _FormReal)
+from dolfinx.cpp.fem import transpose_dofmap  # noqa
 
 
 def create_sparsity_pattern(a: typing.Union[_FormComplex, _FormReal]):

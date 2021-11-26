@@ -209,21 +209,19 @@ void geometry(py::module& m)
   py::class_<dolfinx::geometry::BoundingBoxTree,
              std::shared_ptr<dolfinx::geometry::BoundingBoxTree>>(
       m, "BoundingBoxTree")
-      .def(py::init<const dolfinx::mesh::Mesh&, int, double>(), py::arg("mesh"),
-           py::arg("tdim"), py::arg("padding") = 0.0)
       .def(py::init(
-               [](const dolfinx::mesh::Mesh& mesh, int tdim,
+               [](const dolfinx::mesh::Mesh& mesh, int dim,
                   const py::array_t<std::int32_t, py::array::c_style>& entities,
                   double padding)
                {
                  return dolfinx::geometry::BoundingBoxTree(
-                     mesh, tdim,
+                     mesh, dim,
                      xtl::span<const std::int32_t>(entities.data(),
                                                    entities.size()),
                      padding);
                }),
-           py::arg("mesh"), py::arg("tdim"), py::arg("entity_indices"),
-           py::arg("padding") = 0.0)
+           py::arg("mesh"), py::arg("dim"), py::arg("entities"),
+           py::arg("padding"))
       .def_property_readonly("num_bboxes",
                              &dolfinx::geometry::BoundingBoxTree::num_bboxes)
       .def("get_bbox",
