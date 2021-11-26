@@ -155,8 +155,7 @@ void assemble_exterior_facets(
                              const std::uint8_t*)>& kernel,
     const xtl::span<const T>& coeffs, int cstride,
     const xtl::span<const T>& constants,
-    const xtl::span<const std::uint32_t>& cell_info,
-    const std::function<std::uint8_t(std::size_t)>& get_perm)
+    const xtl::span<const std::uint32_t>& cell_info)
 {
   const int tdim = mesh.topology().dim();
 
@@ -166,9 +165,6 @@ void assemble_exterior_facets(
   // FIXME: Add proper interface for num coordinate dofs
   const std::size_t num_dofs_g = x_dofmap.num_links(0);
   const xt::xtensor<double, 2>& x_g = mesh.geometry().x();
-
-  const int num_cell_facets
-      = mesh::cell_num_entities(mesh.topology().cell_type(), tdim - 1);
 
   // Data structures used in assembly
   std::vector<double> coordinate_dofs(3 * num_dofs_g);
@@ -193,10 +189,9 @@ void assemble_exterior_facets(
     }
 
     // Tabulate tensor
-    std::uint8_t perm = get_perm(cell * num_cell_facets + local_facet);
     std::fill(Ae.begin(), Ae.end(), 0);
     kernel(Ae.data(), coeffs.data() + index * cstride, constants.data(),
-           coordinate_dofs.data(), &local_facet, &perm);
+           coordinate_dofs.data(), &local_facet, nullptr);
 
     dof_transform(_Ae, cell_info, cell, ndim1);
     dof_transform_to_transpose(_Ae, cell_info, cell, ndim0);
@@ -449,8 +444,20 @@ void assemble_matrix(
                             cell_info);
   }
 
-  if (a.num_integrals(IntegralType::exterior_facet) > 0
-      or a.num_integrals(IntegralType::interior_facet) > 0)
+  for (int i : a.integral_ids(IntegralType::exterior_facet))
+  {
+    const auto& fn = a.kernel(IntegralType::exterior_facet, i);
+    const auto& [coeffs, cstride]
+        = coefficients.at({IntegralType::exterior_facet, i});
+    const std::vector<std::pair<std::int32_t, int>>& facets
+        = a.exterior_facet_domains(i);
+    impl::assemble_exterior_facets<T>(mat_set, *mesh, facets, dof_transform,
+                                      dofs0, bs0, dof_transform_to_transpose,
+                                      dofs1, bs1, bc0, bc1, fn, coeffs, cstride,
+                                      constants, cell_info);
+  }
+
+  if (a.num_integrals(IntegralType::interior_facet) > 0)
   {
     std::function<std::uint8_t(std::size_t)> get_perm;
     if (a.needs_facet_permutations())
@@ -462,19 +469,6 @@ void assemble_matrix(
     }
     else
       get_perm = [](std::size_t) { return 0; };
-
-    for (int i : a.integral_ids(IntegralType::exterior_facet))
-    {
-      const auto& fn = a.kernel(IntegralType::exterior_facet, i);
-      const auto& [coeffs, cstride]
-          = coefficients.at({IntegralType::exterior_facet, i});
-      const std::vector<std::pair<std::int32_t, int>>& facets
-          = a.exterior_facet_domains(i);
-      impl::assemble_exterior_facets<T>(
-          mat_set, *mesh, facets, dof_transform, dofs0, bs0,
-          dof_transform_to_transpose, dofs1, bs1, bc0, bc1, fn, coeffs, cstride,
-          constants, cell_info, get_perm);
-    }
 
     const std::vector<int> c_offsets = a.coefficient_offsets();
     for (int i : a.integral_ids(IntegralType::interior_facet))
