@@ -15,6 +15,8 @@ Public user interface
    dolfinx.fem
    dolfinx.fem.form
    dolfinx.generation
+   dolfinx.geometry
+   dolfinx.graph
    dolfinx.io
    dolfinx.jit
    dolfinx.la

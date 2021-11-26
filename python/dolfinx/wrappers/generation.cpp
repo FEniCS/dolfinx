@@ -44,6 +44,13 @@ namespace dolfinx_wrappers
 
 void generation(py::module& m)
 {
+  py::enum_<dolfinx::generation::DiagonalType>(m, "DiagonalType")
+      .value("left", dolfinx::generation::DiagonalType::left)
+      .value("right", dolfinx::generation::DiagonalType::right)
+      .value("crossed", dolfinx::generation::DiagonalType::crossed)
+      .value("left_right", dolfinx::generation::DiagonalType::left_right)
+      .value("right_left", dolfinx::generation::DiagonalType::right_left);
+
   m.def(
       "create_interval_mesh",
       [](const MPICommWrapper comm, std::size_t n, std::array<double, 2> p,
@@ -63,7 +70,7 @@ void generation(py::module& m)
          std::array<std::size_t, 2> n, dolfinx::mesh::CellType celltype,
          dolfinx::mesh::GhostMode ghost_mode,
          const PythonCellPartitionFunction& partitioner,
-         const std::string& diagonal) {
+         dolfinx::generation::DiagonalType diagonal) {
         return dolfinx::generation::RectangleMesh::create(
             comm.get(), p, n, celltype, ghost_mode,
             create_partitioner_wrapper(partitioner), diagonal);
