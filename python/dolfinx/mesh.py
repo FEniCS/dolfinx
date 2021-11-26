@@ -6,6 +6,7 @@
 """Creation, refining and marking of meshes"""
 
 import types
+import typing
 
 import numpy as np
 import ufl
@@ -149,9 +150,8 @@ def refine(mesh: Mesh, cell_markers: _cpp.mesh.MeshTags_int8 = None, redistribut
     return Mesh.from_cpp(mesh_refined, domain)
 
 
-def create_mesh(comm, cells, x, domain,
-                ghost_mode=GhostMode.shared_facet,
-                partitioner=_cpp.mesh.partition_cells_graph):
+def create_mesh(comm: _MPI.Comm, cells: typing.Union[np.ndarray, _cpp.graph.AdjacencyList_int64], x: np.ndarray,
+                domain: ufl.Mesh, ghost_mode=GhostMode.shared_facet, partitioner=_cpp.mesh.partition_cells_graph):
     """
     Create a mesh from topology and geometry arrays
 
