@@ -9,11 +9,10 @@ import typing
 
 import numpy
 import ufl
-from dolfinx.cpp.generation import DiagonalType  # noqa
-
 from mpi4py import MPI as _MPI
 
 from dolfinx import cpp as _cpp
+from dolfinx.cpp.generation import DiagonalType  # noqa
 from dolfinx.mesh import CellType, GhostMode, Mesh
 
 __all__ = [
@@ -68,8 +67,8 @@ def UnitIntervalMesh(comm: _MPI.Comm, nx: int, ghost_mode=GhostMode.shared_facet
     return IntervalMesh(comm, nx, [0.0, 1.0], ghost_mode, partitioner)
 
 
-def RectangleMesh(comm: _MPI.Comm, points: typing.List[numpy.array], n: list, cell_type=_cpp.mesh.CellType.triangle,
-                  ghost_mode=_cpp.mesh.GhostMode.shared_facet, partitioner=_cpp.mesh.partition_cells_graph,
+def RectangleMesh(comm: _MPI.Comm, points: typing.List[numpy.array], n: list, cell_type=CellType.triangle,
+                  ghost_mode=GhostMode.shared_facet, partitioner=_cpp.mesh.partition_cells_graph,
                   diagonal: DiagonalType = DiagonalType.right):
     """Create rectangle mesh
 
@@ -99,8 +98,8 @@ def RectangleMesh(comm: _MPI.Comm, points: typing.List[numpy.array], n: list, ce
     return Mesh.from_cpp(mesh, domain)
 
 
-def UnitSquareMesh(comm: _MPI.Comm, nx: int, ny: int, cell_type=_cpp.mesh.CellType.triangle,
-                   ghost_mode=_cpp.mesh.GhostMode.shared_facet,
+def UnitSquareMesh(comm: _MPI.Comm, nx: int, ny: int, cell_type=CellType.triangle,
+                   ghost_mode=GhostMode.shared_facet,
                    partitioner=_cpp.mesh.partition_cells_graph, diagonal: DiagonalType = DiagonalType.right):
     """Create a mesh of a unit square
 
