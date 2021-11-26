@@ -102,7 +102,7 @@ mesh::Mesh build_tri(MPI_Comm comm,
   }
 
   // Create midpoint vertices if the mesh type is crossed
-  if (diagonal == generation::DiagonalType::crossed)
+  if (diagonal == DiagonalType::crossed)
   {
     for (std::size_t iy = 0; iy < ny; iy++)
     {
