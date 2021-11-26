@@ -16,7 +16,7 @@ namespace dolfinx::generation
 {
 
 /// Enum for different diagonal types
-enum class DiagonalType : int
+enum DiagonalType
 {
   left,
   right,
@@ -47,8 +47,8 @@ namespace dolfinx::generation::RectangleMesh
 /// @return Mesh
 mesh::Mesh create(MPI_Comm comm, const std::array<std::array<double, 3>, 2>& p,
                   std::array<std::size_t, 2> n, mesh::CellType celltype,
-                  const mesh::GhostMode ghost_mode,
-                  const generation::DiagonalType diagonal
+                  mesh::GhostMode ghost_mode,
+                  generation::DiagonalType diagonal
                   = generation::DiagonalType::right);
 
 /// Create a uniform mesh::Mesh over the rectangle spanned by the two
@@ -69,8 +69,8 @@ mesh::Mesh create(MPI_Comm comm, const std::array<std::array<double, 3>, 2>& p,
 /// @return Mesh
 mesh::Mesh create(MPI_Comm comm, const std::array<std::array<double, 3>, 2>& p,
                   std::array<std::size_t, 2> n, mesh::CellType celltype,
-                  const mesh::GhostMode ghost_mode,
+                  mesh::GhostMode ghost_mode,
                   const mesh::CellPartitionFunction& partitioner,
-                  const generation::DiagonalType diagonal
+                  generation::DiagonalType diagonal
                   = generation::DiagonalType::right);
 } // namespace dolfinx::generation::RectangleMesh
