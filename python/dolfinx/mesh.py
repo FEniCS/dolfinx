@@ -31,24 +31,25 @@ class Mesh(_cpp.mesh.Mesh):
         domain._ufl_cargo = self
 
     @classmethod
-    def from_cpp(cls, obj, domain):
+    def from_cpp(cls, obj, domain: ufl.Mesh):
         """Create Mesh object from a C++ Mesh object"""
         obj._ufl_domain = domain
         obj.__class__ = Mesh
         domain._ufl_cargo = obj
         return obj
 
-    def ufl_cell(self):
+    def ufl_cell(self) -> ufl.Cell:
         """Return the UFL cell type"""
         return ufl.Cell(self.topology.cell_name(), geometric_dimension=self.geometry.dim)
 
-    def ufl_domain(self):
+    def ufl_domain(self) -> ufl.Mesh:
         """Return the ufl domain corresponding to the mesh."""
         return self._ufl_domain
 
 
 def locate_entities(mesh: Mesh, dim: int, marker: types.FunctionType):
-    """Compute list of mesh entities satisfying a geometric marking function.
+    """Compute list of mesh entities satisfying a geometric marking
+    function.
 
     Parameters
     ----------
@@ -57,8 +58,8 @@ def locate_entities(mesh: Mesh, dim: int, marker: types.FunctionType):
     dim
         The topological dimension of the mesh entities to consider
     marker
-        A function that takes an array of points `x` with shape
-        ``(gdim, num_points)`` and returns an array of booleans of length
+        A function that takes an array of points `x` with shape ``(gdim,
+        num_points)`` and returns an array of booleans of length
         ``num_points``, evaluating to `True` for entities to be located.
 
     Returns
@@ -72,27 +73,27 @@ def locate_entities(mesh: Mesh, dim: int, marker: types.FunctionType):
 
 
 def locate_entities_boundary(mesh: Mesh, dim: int, marker: types.FunctionType):
-    """Compute list of mesh entities that are attached to an owned boundary facet
-    and satisfy a geometric marking function.
+    """Compute list of mesh entities that are connected to an owned
+    boundary facet and satisfy a geometric marking function.
 
-    For vertices and edges, in parallel this function will not necessarily
-    mark all entities that are on the exterior boundary. For example, it is
-    possible for a process to have a vertex that lies on the boundary without
-    any of the attached facets being a boundary facet. When used to find
-    degrees-of-freedom, e.g. using fem.locate_dofs_topological, the function
-    that uses the data returned by this function must typically perform some
-    parallel communication.
+    For vertices and edges, in parallel this function will not
+    necessarily mark all entities that are on the exterior boundary. For
+    example, it is possible for a process to have a vertex that lies on
+    the boundary without any of the attached facets being a boundary
+    facet. When used to find degrees-of-freedom, e.g. using
+    fem.locate_dofs_topological, the function that uses the data
+    returned by this function must typically perform some parallel
+    communication.
 
     Parameters
     ----------
     mesh
         The mesh
     dim
-        The topological dimension of the mesh entities to
-        consider
+        The topological dimension of the mesh entities to consider
     marker
-        A function that takes an array of points `x` with shape
-        ``(gdim, num_points)`` and returns an array of booleans of length
+        A function that takes an array of points `x` with shape ``(gdim,
+        num_points)`` and returns an array of booleans of length
         ``num_points``, evaluating to `True` for entities to be located.
 
     Returns
@@ -132,7 +133,8 @@ def refine(mesh: Mesh, cell_markers: _cpp.mesh.MeshTags_int8 = None, redistribut
         Optional argument to specify which cells should be refined. If not supplied uniform refinement.
         The values of the meshtag is ignored.
     redistribute
-        Optional argument to redistribute the refined mesh if mesh is a distributed mesh.
+        Optional argument to redistribute the refined mesh if mesh is a
+        distributed mesh.
 
     Returns
     -------
@@ -149,24 +151,26 @@ def refine(mesh: Mesh, cell_markers: _cpp.mesh.MeshTags_int8 = None, redistribut
     return Mesh.from_cpp(mesh_refined, domain)
 
 
-def create_mesh(comm, cells, x, domain,
+def create_mesh(comm, cells, x, domain: ufl.Mesh,
                 ghost_mode=GhostMode.shared_facet,
                 partitioner=_cpp.mesh.partition_cells_graph):
-    """
-    Create a mesh from topology and geometry arrays
+    """Create a mesh from topology and geometry arrays
 
     comm
         The MPI communicator
     cells
-        The cells of the mesh defined through the geometry indices
+        The cells of the mesh
     x
-        The mesh geometry, a two dimensional array of mesh coordinates
+        The mesh geometry ('node' coordinates),  with shape ``(gdim,
+        num_nodes)``
     domain
-        The ufl mesh
+        The UFL mesh
     ghost_mode
-        The ghost mode used in the mesh partitioning. Options are `GhostMode.none' and `GhostMode.shared_facet`
+        The ghost mode used in the mesh partitioning
     partitioner
-        Partitioning function to use for determining the parallel distribution of cells across MPI ranks
+        Function that computes the parallel distribution of cells across
+        MPI ranks
+
     """
     ufl_element = domain.ufl_coordinate_element()
     cell_shape = ufl_element.cell().cellname()
@@ -182,8 +186,7 @@ def create_mesh(comm, cells, x, domain,
 
 
 def MeshTags(mesh: Mesh, dim: int, indices, values):
-    """
-    Create a meshtag for a set of mesh entities.
+    """Create a MeshTag for a set of mesh entities.
 
     Parameters
     ----------
