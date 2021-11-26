@@ -7,22 +7,25 @@
 
 import types
 
+import mpi4py
 import numpy as np
 import ufl
 
 from dolfinx import cpp as _cpp
 from dolfinx.cpp.mesh import (CellType, GhostMode, build_dual_graph, cell_dim,
-                              midpoints)
+                              midpoints, create_meshtags)
 
-__all__ = ["locate_entities", "locate_entities_boundary", "refine", "create_mesh", "create_meshtags", "MeshTags",
-           "CellType", "GhostMode", "build_dual_graph", "cell_dim", "midpoints"]
+__all__ = ["create_meshtags", "locate_entities", "locate_entities_boundary",
+           "refine", "create_mesh", "create_meshtags", "MeshTags", "CellType",
+           "GhostMode", "build_dual_graph", "cell_dim", "midpoints"]
 
 
 class Mesh(_cpp.mesh.Mesh):
-    """A class for representing meshes. Mesh objects should not be
+    """A class for representing meshes. Mesh objects are not generally
     created using this class directly."""
 
-    def __init__(self, comm, topology, geometry, domain):
+    def __init__(self, comm: mpi4py.MPI.Comm, topology: _cpp.mesh.Topology,
+                 geometry: _cpp.mesh.Geometry, domain: ufl.Mesh):
         super().__init__(comm, topology, geometry)
         self._ufl_domain = domain
         domain._ufl_cargo = self
@@ -42,10 +45,6 @@ class Mesh(_cpp.mesh.Mesh):
     def ufl_domain(self):
         """Return the ufl domain corresponding to the mesh."""
         return self._ufl_domain
-
-
-def create_meshtags(mesh, dim, entities, values):
-    return _cpp.mesh.create_meshtags(mesh, dim, entities, values)
 
 
 def locate_entities(mesh: Mesh, dim: int, marker: types.FunctionType):
@@ -151,7 +150,7 @@ def create_mesh(comm, cells, x, domain,
     return Mesh.from_cpp(mesh, domain)
 
 
-def MeshTags(mesh, dim, indices, values):
+def MeshTags(mesh: Mesh, dim: int, indices, values):
 
     if isinstance(values, int):
         values = np.full(indices.shape, values, dtype=np.int32)

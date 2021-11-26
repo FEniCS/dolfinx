@@ -429,7 +429,6 @@ bcs = [bc0, bc1, bc2]
 (u, p) = ufl.TrialFunctions(W)
 (v, q) = ufl.TestFunctions(W)
 f = Function(W0)
-zero = Constant(mesh, 0.0)
 a = Form((inner(grad(u), grad(v)) + inner(p, div(v)) + inner(div(u), q)) * dx)
 L = Form(inner(f, v) * dx)
 
