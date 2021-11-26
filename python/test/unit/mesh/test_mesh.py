@@ -14,6 +14,7 @@ from dolfinx import (BoxMesh, RectangleMesh, UnitCubeMesh, UnitIntervalMesh,
                      UnitSquareMesh, cpp)
 from dolfinx.cpp.mesh import is_simplex
 from dolfinx.fem import assemble_scalar
+from dolfinx.generation import DiagonalType
 from dolfinx.mesh import CellType, GhostMode
 from dolfinx_utils.test.fixtures import tempdir
 from dolfinx_utils.test.skips import skip_in_parallel
@@ -49,7 +50,7 @@ def mesh2d():
         MPI.COMM_WORLD, [np.array([0.0, 0.0, 0.0]),
                          np.array([1., 1., 0.0])], [1, 1],
         CellType.triangle, GhostMode.none,
-        cpp.mesh.partition_cells_graph, 'left')
+        cpp.mesh.partition_cells_graph, DiagonalType.left)
     i1 = np.where((mesh2d.geometry.x
                    == (1, 1, 0)).all(axis=1))[0][0]
     mesh2d.geometry.x[i1, :2] += 0.5 * (math.sqrt(3.0) - 1.0)
@@ -62,7 +63,7 @@ def mesh_2d():
         MPI.COMM_WORLD, [np.array([0.0, 0.0, 0.0]),
                          np.array([1., 1., 0.0])], [1, 1],
         CellType.triangle, GhostMode.none,
-        cpp.mesh.partition_cells_graph, 'left')
+        cpp.mesh.partition_cells_graph, DiagonalType.left)
     i1 = np.where((mesh2d.geometry.x
                    == (1, 1, 0)).all(axis=1))[0][0]
     mesh2d.geometry.x[i1, :2] += 0.5 * (math.sqrt(3.0) - 1.0)

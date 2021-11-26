@@ -9,6 +9,7 @@ import typing
 
 import numpy
 import ufl
+from dolfinx.cpp.generation import DiagonalType  # noqa
 
 from dolfinx import cpp
 
@@ -57,7 +58,7 @@ def UnitIntervalMesh(comm, nx, ghost_mode=cpp.mesh.GhostMode.shared_facet,
 
 def RectangleMesh(comm, points: typing.List[numpy.array], n: list, cell_type=cpp.mesh.CellType.triangle,
                   ghost_mode=cpp.mesh.GhostMode.shared_facet, partitioner=cpp.mesh.partition_cells_graph,
-                  diagonal: str = "right"):
+                  diagonal: DiagonalType = DiagonalType.right):
     """Create rectangle mesh
 
     Parameters
@@ -81,7 +82,7 @@ def RectangleMesh(comm, points: typing.List[numpy.array], n: list, cell_type=cpp
 
 def UnitSquareMesh(comm, nx, ny, cell_type=cpp.mesh.CellType.triangle,
                    ghost_mode=cpp.mesh.GhostMode.shared_facet,
-                   partitioner=cpp.mesh.partition_cells_graph, diagonal="right"):
+                   partitioner=cpp.mesh.partition_cells_graph, diagonal: DiagonalType = DiagonalType.right):
     """Create a mesh of a unit square
 
     Parameters
