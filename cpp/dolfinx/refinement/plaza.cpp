@@ -95,7 +95,7 @@ void enforce_rules(
 
     const std::int32_t update_count_old = update_count;
     MPI_Allreduce(&update_count_old, &update_count, 1, MPI_INT32_T, MPI_SUM,
-                  mesh.mpi_comm());
+                  mesh.comm());
   }
 }
 //-----------------------------------------------------------------------------
@@ -516,9 +516,9 @@ mesh::Mesh plaza::refine(const mesh::Mesh& mesh, bool redistribute)
   auto [cell_adj, new_vertex_coordinates, parent_cell]
       = plaza::compute_refinement_data(mesh);
 
-  if (dolfinx::MPI::size(mesh.mpi_comm()) == 1)
+  if (dolfinx::MPI::size(mesh.comm()) == 1)
   {
-    return mesh::create_mesh(mesh.mpi_comm(), cell_adj, mesh.geometry().cmap(),
+    return mesh::create_mesh(mesh.comm(), cell_adj, mesh.geometry().cmap(),
                              new_vertex_coordinates, mesh::GhostMode::none);
   }
 
@@ -529,7 +529,7 @@ mesh::Mesh plaza::refine(const mesh::Mesh& mesh, bool redistribute)
   // FIXME: this is not a robust test. Should be user option.
   int max_ghost_cells = 0;
   MPI_Allreduce(&num_ghost_cells, &max_ghost_cells, 1, MPI_INT, MPI_MAX,
-                mesh.mpi_comm());
+                mesh.comm());
 
   // Build mesh
   const mesh::GhostMode ghost_mode = max_ghost_cells == 0
@@ -547,9 +547,9 @@ mesh::Mesh plaza::refine(const mesh::Mesh& mesh,
   auto [cell_adj, new_vertex_coordinates, parent_cell]
       = plaza::compute_refinement_data(mesh, refinement_marker);
 
-  if (dolfinx::MPI::size(mesh.mpi_comm()) == 1)
+  if (dolfinx::MPI::size(mesh.comm()) == 1)
   {
-    return mesh::create_mesh(mesh.mpi_comm(), cell_adj, mesh.geometry().cmap(),
+    return mesh::create_mesh(mesh.comm(), cell_adj, mesh.geometry().cmap(),
                              new_vertex_coordinates, mesh::GhostMode::none);
   }
 
@@ -560,7 +560,7 @@ mesh::Mesh plaza::refine(const mesh::Mesh& mesh,
   // FIXME: this is not a robust test. Should be user option.
   int max_ghost_cells = 0;
   MPI_Allreduce(&num_ghost_cells, &max_ghost_cells, 1, MPI_INT, MPI_MAX,
-                mesh.mpi_comm());
+                mesh.comm());
 
   // Build mesh
   const mesh::GhostMode ghost_mode = max_ghost_cells == 0

@@ -144,7 +144,7 @@ public:
   std::array<std::int64_t, 2> local_range() const;
 
   /// Return MPI communicator
-  MPI_Comm mpi_comm() const;
+  MPI_Comm comm() const;
 
   /// Compute norm of vector
   ///
