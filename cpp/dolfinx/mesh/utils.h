@@ -45,9 +45,10 @@ xt::xtensor<double, 2>
 cell_normals(const Mesh& mesh, int dim,
              const xtl::span<const std::int32_t>& entities);
 
-/// Compute midpoints or mesh entities of a given dimension
-xt::xtensor<double, 2> midpoints(const mesh::Mesh& mesh, int dim,
-                                 const xtl::span<const std::int32_t>& entities);
+/// Compute the midpoints for mesh entities of a given dimension
+xt::xtensor<double, 2>
+compute_midpoints(const mesh::Mesh& mesh, int dim,
+                  const xtl::span<const std::int32_t>& entities);
 
 /// Compute indices of all mesh entities that evaluate to true for the
 /// provided geometric marking function. An entity is considered marked
