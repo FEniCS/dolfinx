@@ -123,7 +123,7 @@ _meshtags_types = {
 }
 
 
-def refine(mesh: Mesh, cell_markers: _cpp.mesh.MeshTags_int8 = None, redistribute: bool = True):
+def refine(mesh: Mesh, cell_markers: _cpp.mesh.MeshTags_int8 = None, redistribute: bool = True) -> Mesh:
     """Refine a mesh
 
     Parameters
@@ -154,7 +154,7 @@ def refine(mesh: Mesh, cell_markers: _cpp.mesh.MeshTags_int8 = None, redistribut
 
 def create_mesh(comm: _MPI.Comm, cells: typing.Union[np.ndarray, _cpp.graph.AdjacencyList_int64],
                 x: np.ndarray, domain: ufl.Mesh, ghost_mode=GhostMode.shared_facet,
-                partitioner=_cpp.mesh.partition_cells_graph):
+                partitioner=_cpp.mesh.partition_cells_graph) -> Mesh:
     """
     Create a mesh from topology and geometry arrays
 
@@ -187,7 +187,8 @@ def create_mesh(comm: _MPI.Comm, cells: typing.Union[np.ndarray, _cpp.graph.Adja
     return Mesh.from_cpp(mesh, domain)
 
 
-def MeshTags(mesh: Mesh, dim: int, indices, values):
+def MeshTags(mesh: Mesh, dim: int, indices: np.ndarray, values: np.ndarray) -> typing.Union[
+        _cpp.mesh.MeshTags_double, _cpp.mesh.MeshTags_int32]:
     """Create a MeshTag for a set of mesh entities.
 
     Parameters
