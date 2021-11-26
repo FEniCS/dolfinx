@@ -97,7 +97,8 @@ xt::xtensor<double, 2> create_new_geometry(
   for (auto& e : local_edge_to_new_vertex)
     edges[i++] = e.first;
 
-  const xt::xtensor<double, 2> midpoints = mesh::midpoints(mesh, 1, edges);
+  const xt::xtensor<double, 2> midpoints
+      = mesh::compute_midpoints(mesh, 1, edges);
   // The below should work, but misbehaves with the Intel icpx compiler
   // xt::view(new_vertex_coordinates, xt::range(-num_new_vertices, _),
   // xt::all())

@@ -10,11 +10,10 @@ import dolfinx
 import numpy as np
 import pytest
 import ufl
-from dolfinx import cpp as _cpp
 from dolfinx.cpp.mesh import partition_cells_graph
 from dolfinx.generation import BoxMesh
 from dolfinx.io import XDMFFile
-from dolfinx.mesh import CellType, GhostMode, create_mesh
+from dolfinx.mesh import CellType, GhostMode, compute_midpoints, create_mesh
 from dolfinx_utils.test.fixtures import tempdir
 from mpi4py import MPI
 
@@ -84,7 +83,7 @@ def test_custom_partitioner(tempdir, Nx, cell_type):
     tdim = new_mesh.topology.dim
     assert mesh.topology.index_map(tdim).size_global == new_mesh.topology.index_map(tdim).size_global
     num_cells = new_mesh.topology.index_map(tdim).size_local
-    cell_midpoints = _cpp.mesh.midpoints(new_mesh, tdim, range(num_cells))
+    cell_midpoints = compute_midpoints(new_mesh, tdim, range(num_cells))
     assert num_cells > 0
     assert np.all(cell_midpoints[:, 0] >= mpi_comm.rank)
     assert np.all(cell_midpoints[:, 0] <= mpi_comm.rank + 1)

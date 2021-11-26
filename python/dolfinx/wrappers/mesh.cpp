@@ -121,11 +121,11 @@ void mesh(py::module& m)
       },
       "Compute maximum distance between any two vertices.");
 
-  m.def("midpoints",
+  m.def("compute_midpoints",
         [](const dolfinx::mesh::Mesh& mesh, int dim,
            py::array_t<std::int32_t, py::array::c_style> entity_list)
         {
-          return xt_as_pyarray(dolfinx::mesh::midpoints(
+          return xt_as_pyarray(dolfinx::mesh::compute_midpoints(
               mesh, dim, xtl::span(entity_list.data(), entity_list.size())));
         });
   m.def("compute_boundary_facets", &dolfinx::mesh::compute_boundary_facets);
@@ -136,10 +136,12 @@ void mesh(py::module& m)
           const dolfinx::graph::AdjacencyList<std::int64_t>&,
           dolfinx::mesh::GhostMode)>;
 
-  m.def("build_dual_graph",
-        [](const MPICommWrapper comm,
-           const dolfinx::graph::AdjacencyList<std::int64_t>& cells, int tdim)
-        { return dolfinx::mesh::build_dual_graph(comm.get(), cells, tdim); }, "Build dual graph for cells");
+  m.def(
+      "build_dual_graph",
+      [](const MPICommWrapper comm,
+         const dolfinx::graph::AdjacencyList<std::int64_t>& cells, int tdim)
+      { return dolfinx::mesh::build_dual_graph(comm.get(), cells, tdim); },
+      "Build dual graph for cells");
 
   m.def(
       "create_mesh",

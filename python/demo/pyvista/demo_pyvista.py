@@ -16,7 +16,7 @@ import ufl
 from dolfinx.fem import (Function, FunctionSpace, LinearProblem,
                          VectorFunctionSpace)
 from dolfinx.generation import UnitCubeMesh, UnitSquareMesh
-from dolfinx.mesh import CellType, MeshTags, midpoints
+from dolfinx.mesh import CellType, MeshTags, compute_midpoints
 from mpi4py import MPI
 
 try:
@@ -173,7 +173,7 @@ def in_circle(x):
 # Create a dolfinx.MeshTag for all cells. If midpoint is inside the
 # circle, it gets value 1, otherwise 0.
 num_cells = mesh.topology.index_map(mesh.topology.dim).size_local
-midpoints = midpoints(mesh, mesh.topology.dim, list(np.arange(num_cells, dtype=np.int32)))
+midpoints = compute_midpoints(mesh, mesh.topology.dim, list(np.arange(num_cells, dtype=np.int32)))
 cell_tags = MeshTags(mesh, mesh.topology.dim, np.arange(num_cells), in_circle(midpoints))
 
 # As the dolfinx.MeshTag contains a value for every cell in the

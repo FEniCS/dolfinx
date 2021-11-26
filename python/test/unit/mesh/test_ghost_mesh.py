@@ -7,7 +7,7 @@
 import pytest
 from dolfinx import cpp as _cpp
 from dolfinx.generation import UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh
-from dolfinx.mesh import GhostMode
+from dolfinx.mesh import GhostMode, compute_midpoints
 from mpi4py import MPI
 
 
@@ -76,8 +76,8 @@ def test_ghost_connectivities(mode):
     num_facets = map_f.size_local + map_f.num_ghosts
 
     reference = {}
-    facet_mp = _cpp.mesh.midpoints(meshR, tdim - 1, range(num_facets))
-    cell_mp = _cpp.mesh.midpoints(meshR, tdim, range(num_cells))
+    facet_mp = compute_midpoints(meshR, tdim - 1, range(num_facets))
+    cell_mp = compute_midpoints(meshR, tdim, range(num_cells))
     reference = dict.fromkeys([tuple(row) for row in facet_mp], [])
     for i in range(num_facets):
         for cidx in meshR.topology.connectivity(1, 2).links(i):
@@ -94,8 +94,8 @@ def test_ghost_connectivities(mode):
 
     num_facets_ghost = map_f.num_ghosts
     allowable_cell_indices = range(num_cells)
-    facet_mp = _cpp.mesh.midpoints(meshG, tdim - 1, range(num_facets))
-    cell_mp = _cpp.mesh.midpoints(meshG, tdim, range(num_cells))
+    facet_mp = compute_midpoints(meshG, tdim - 1, range(num_facets))
+    cell_mp = compute_midpoints(meshG, tdim, range(num_cells))
     for i in range(num_facets_ghost):
         assert tuple(facet_mp[i]) in reference
         for cidx in meshG.topology.connectivity(1, 2).links(i):

@@ -7,24 +7,24 @@
 
 import types
 
-import mpi4py
 import numpy as np
 import ufl
+from mpi4py import MPI as _MPI
 
 from dolfinx import cpp as _cpp
 from dolfinx.cpp.mesh import (CellType, GhostMode, build_dual_graph, cell_dim,
-                              midpoints, create_meshtags)
+                              compute_midpoints, create_meshtags)
 
 __all__ = ["create_meshtags", "locate_entities", "locate_entities_boundary",
            "refine", "create_mesh", "create_meshtags", "MeshTags", "CellType",
-           "GhostMode", "build_dual_graph", "cell_dim", "midpoints"]
+           "GhostMode", "build_dual_graph", "cell_dim", "compute_midpoints"]
 
 
 class Mesh(_cpp.mesh.Mesh):
     """A class for representing meshes. Mesh objects are not generally
     created using this class directly."""
 
-    def __init__(self, comm: mpi4py.MPI.Comm, topology: _cpp.mesh.Topology,
+    def __init__(self, comm: _MPI.Comm, topology: _cpp.mesh.Topology,
                  geometry: _cpp.mesh.Geometry, domain: ufl.Mesh):
         super().__init__(comm, topology, geometry)
         self._ufl_domain = domain
