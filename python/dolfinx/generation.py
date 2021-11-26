@@ -32,9 +32,11 @@ def IntervalMesh(comm, nx: int, points: list, ghost_mode=GhostMode.shared_facet,
     point
         Coordinates of the end points
     ghost_mode
-        The ghost mode used in the mesh partitioning. Options are `GhostMode.none' and `GhostMode.shared_facet`.
+        The ghost mode used in the mesh partitioning. Options are
+        `GhostMode.none' and `GhostMode.shared_facet`.
     partitioner
-        Partitioning function to use for determining the parallel distribution of cells across MPI ranks
+        Partitioning function to use for determining the parallel
+        distribution of cells across MPI ranks
 
     """
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", "interval", 1))
@@ -53,12 +55,14 @@ def UnitIntervalMesh(comm, nx: int, ghost_mode=GhostMode.shared_facet,
     nx
         Number of cells
     ghost_mode
-        The ghost mode used in the mesh partitioning. Options are `GhostMode.none' and `GhostMode.shared_facet`.
+        The ghost mode used in the mesh partitioning. Options are
+        `GhostMode.none' and `GhostMode.shared_facet`.
     partitioner
-        Partitioning function to use for determining the parallel distribution of cells across MPI ranks
+        Partitioning function to use for determining the parallel
+        distribution of cells across MPI ranks
 
     """
-    return IntervalMesh(comm, nx, [0.0, 1.0], ghost_mode)
+    return IntervalMesh(comm, nx, [0.0, 1.0], ghost_mode, partitioner)
 
 
 def RectangleMesh(comm, points: typing.List[numpy.array], n: list, cell_type=CellType.triangle,
@@ -71,18 +75,20 @@ def RectangleMesh(comm, points: typing.List[numpy.array], n: list, cell_type=Cel
     comm
         MPI communicator
     points
-        List of `Points` representing vertices
+        Coordinates of the lower-left and upper-right corners of the
+        rectangle
     n
-        List of number of cells in each direction
+        Number of cells in each direction
     cell_type
-        The cell type. Options are `CellType.quadrialateral` and `CellType.triangle`.
+        The cell type
     ghost_mode
-        The ghost mode used in the mesh partitioning. Options are `GhostMode.none' and `GhostMode.shared_facet`
+        The ghost mode used in the mesh partitioning
     partitioner
-        Partitioning function to use for determining the parallel distribution of cells across MPI ranks
+        Function that computes the parallel distribution of cells across
+        MPI ranks
     diagonal
-        Direction of diagonal of triangular meshes. The options are 'left', 'right', 'crossed',
-        'left/right', 'right/left'
+        Direction of diagonal of triangular meshes. The options are
+        'left', 'right', 'crossed', 'left/right', 'right/left'
 
     """
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell_type.name, 1))
@@ -104,11 +110,12 @@ def UnitSquareMesh(comm, nx: int, ny: int, cell_type=CellType.triangle,
     ny
         Number of cells in "y" direction
     cell_type
-        The cell type. Options are `CellType.quadrialateral` and `CellType.triangle`
+        The cell type
     ghost_mode
-        The ghost mode used in the mesh partitioning. Options are `GhostMode.none' and `GhostMode.shared_facet`
+        The ghost mode used in the mesh partitioning
     partitioner
-        Partitioning function to use for determining the parallel distribution of cells across MPI ranks
+        Function that computes the parallel distribution of cells across
+        MPI ranks
     diagonal
         Direction of diagonal
 
@@ -129,15 +136,17 @@ def BoxMesh(comm, points: typing.List[numpy.array], n: list,
     comm
         MPI communicator
     points
-        List of points representing vertices
+        Coordinates of the 'lower-left' and 'upper-right' corners of the
+        box
     n
         List of cells in each direction
     cell_type
-        The cell type. Options are: `CellType.hexahedron`, `CellType.tetrahedron` and `CellType.prism`
+        The cell type
     ghost_mode
-        The ghost mode used in the mesh partitioning. Options are `GhostMode.none' and `GhostMode.shared_facet`
+        The ghost mode used in the mesh partitioning
     partitioner
-        Partitioning function to use for determining the parallel distribution of cells across MPI ranks
+        Function that computes the parallel distribution of cells across
+        MPI ranks
 
     """
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell_type.name, 1))
@@ -160,11 +169,12 @@ def UnitCubeMesh(comm, nx: int, ny: int, nz: int, cell_type=CellType.tetrahedron
     nz
         Number of cells in "z" direction
     cell_type
-        The cell type. Options are: `CellType.hexahedron`, `CellType.tetrahedron` and `CellType.prism`
+        The cell type
     ghost_mode
-        The ghost mode used in the mesh partitioning. Options are `GhostMode.none' and `GhostMode.shared_facet`
+        The ghost mode used in the mesh partitioning
     partitioner
-        Partitioning function to use for determining the parallel distribution of cells across MPI ranks
+        Function that computes the parallel distribution of cells across
+        MPI ranks
 
     """
     return BoxMesh(comm, [numpy.array([0.0, 0.0, 0.0]), numpy.array(

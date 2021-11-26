@@ -17,24 +17,23 @@ __all__ = ["compute_colliding_cells", "squared_distance", "compute_closest_entit
 
 
 class BoundingBoxTree(_cpp.geometry.BoundingBoxTree):
-    """
-    A class for representing bounding box trees used in collision detection.
-    """
+    """A class for representing bounding box trees used in collision
+    detection."""
 
-    def __init__(self, mesh: Mesh, dim: int, entities=None, padding: numpy.float64 = 0.0):
-        """
-        Create a bounding box tree for entities of a mesh.
+    def __init__(self, mesh: Mesh, dim: int, entities=None, padding: float = 0.0):
+        """Create a bounding box tree for entities of a mesh.
 
         Parameters
         ----------
         mesh
             The mesh
         dim
-            The dimension of the mesh entities.
+            The dimension of the mesh entities
         entities
-            List of entity indices (local to process). If not supplied, all owned and ghosted entites are used.
+            List of entity indices (local to process). If not supplied,
+            all owned and ghosted entites are used.
         padding
-            Padding for each bounding box.
+            Padding for each bounding box
 
         """
         map = mesh.topology.index_map(dim)
@@ -47,8 +46,7 @@ class BoundingBoxTree(_cpp.geometry.BoundingBoxTree):
 
 
 def compute_colliding_cells(mesh: Mesh, candidates: AdjacencyList_int32, x: numpy.ndarray):
-    """
-    From a mesh, find which cells collide with a set of points.
+    """From a mesh, find which cells collide with a set of points.
 
     Parameters
     ----------
@@ -62,15 +60,16 @@ def compute_colliding_cells(mesh: Mesh, candidates: AdjacencyList_int32, x: nump
     Returns
     -------
     AdjacencyList_int32
-        Adjacency list where the ith node is the list of entities that collide with the ith point
+        Adjacency list where the ith node is the list of entities that
+        collide with the ith point
     """
     return _cpp.geometry.compute_colliding_cells(mesh, candidates, x)
 
 
 def squared_distance(mesh: Mesh, dim: int, entities: typing.List[int], points: numpy.ndarray):
-    """
-    Compute the squared distance between a point and a mesh entity. The distance is computed
-    between the ith input points and the ith input entity.
+    """Compute the squared distance between a point and a mesh entity.
+    The distance is computed between the ith input points and the ith
+    input entity.
 
     Parameters
     ----------
@@ -80,7 +79,9 @@ def squared_distance(mesh: Mesh, dim: int, entities: typing.List[int], points: n
         The topological dimension of the mesh entities
     entities
         The indices of the mesh entities (local to process)
-    points The set points from which to computed the shortest distance (shape=(num_points, 3))
+    points
+        The set points from which to computed the shortest distance
+        (shape=(num_points, 3))
 
     Returns
     -------
