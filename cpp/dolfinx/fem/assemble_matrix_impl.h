@@ -157,8 +157,6 @@ void assemble_exterior_facets(
     const xtl::span<const T>& constants,
     const xtl::span<const std::uint32_t>& cell_info)
 {
-  const int tdim = mesh.topology().dim();
-
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
 
