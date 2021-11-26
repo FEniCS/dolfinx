@@ -199,7 +199,7 @@ int SLEPcEigenSolver::get_iteration_number() const
 //-----------------------------------------------------------------------------
 EPS SLEPcEigenSolver::eps() const { return _eps; }
 //-----------------------------------------------------------------------------
-MPI_Comm SLEPcEigenSolver::mpi_comm() const
+MPI_Comm SLEPcEigenSolver::comm() const
 {
   assert(_eps);
   MPI_Comm mpi_comm = MPI_COMM_NULL;
