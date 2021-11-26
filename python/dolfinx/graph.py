@@ -14,7 +14,9 @@ __all__ = ["create_adjacencylist"]
 
 
 def create_adjacencylist(data: np.ndarray, offsets=None):
-    """Create an AdjacencyList for int32 or int64 datasets.
+    """
+    Create an AdjacencyList for int32 or int64 datasets.
+
     Parameters
     ----------
     data
