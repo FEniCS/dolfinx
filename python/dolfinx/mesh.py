@@ -48,9 +48,8 @@ class Mesh(_cpp.mesh.Mesh):
         return self._ufl_domain
 
 
-def locate_entities(mesh: Mesh, dim: int, marker: types.FunctionType):
-    """Compute list of mesh entities satisfying a geometric marking
-    function.
+def locate_entities(mesh: Mesh, dim: int, marker: types.FunctionType) -> np.ndarray:
+    """Compute mesh entities satisfying a geometric marking function.
 
     Parameters
     ----------
@@ -73,9 +72,9 @@ def locate_entities(mesh: Mesh, dim: int, marker: types.FunctionType):
     return _cpp.mesh.locate_entities(mesh, dim, marker)
 
 
-def locate_entities_boundary(mesh: Mesh, dim: int, marker: types.FunctionType):
-    """Compute list of mesh entities that are connected to an owned
-    boundary facet and satisfy a geometric marking function.
+def locate_entities_boundary(mesh: Mesh, dim: int, marker: types.FunctionType) -> np.ndarray:
+    """Compute mesh entities that are connected to an owned boundary
+    facet and satisfy a geometric marking function.
 
     For vertices and edges, in parallel this function will not
     necessarily mark all entities that are on the exterior boundary. For
