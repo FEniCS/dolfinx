@@ -165,7 +165,7 @@ int PETScKrylovSolver::solve(Vec x, const Vec b, bool transpose) const
   }
 
   // Report results
-  // if (report && dolfinx::MPI::rank(this->mpi_comm()) == 0)
+  // if (report && dolfinx::MPI::rank(this->comm()) == 0)
   //  write_report(num_iterations, reason);
 
   return num_iterations;

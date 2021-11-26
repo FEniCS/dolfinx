@@ -96,7 +96,7 @@ class Expression:
             form_compiler_parameters["scalar_type"] = "double _Complex"
         else:
             raise RuntimeError(f"Unsupported scalar type {dtype} for Form.")
-        self._ufc_expression, module, self._code = jit.ffcx_jit(mesh.mpi_comm, (ufl_expression, x),
+        self._ufc_expression, module, self._code = jit.ffcx_jit(mesh.comm, (ufl_expression, x),
                                                                 form_compiler_parameters=form_compiler_parameters,
                                                                 jit_parameters=jit_parameters)
         self._ufl_expression = ufl_expression
@@ -415,12 +415,12 @@ class FunctionSpace(ufl.FunctionSpace):
 
         # Compile dofmap and element and create DOLFIN objects
         (self._ufc_element, self._ufc_dofmap), module, code = jit.ffcx_jit(
-            mesh.mpi_comm, self.ufl_element(), form_compiler_parameters=form_compiler_parameters,
+            mesh.comm, self.ufl_element(), form_compiler_parameters=form_compiler_parameters,
             jit_parameters=jit_parameters)
 
         ffi = cffi.FFI()
         cpp_element = _cpp.fem.FiniteElement(ffi.cast("uintptr_t", ffi.addressof(self._ufc_element)))
-        cpp_dofmap = _cpp.fem.create_dofmap(mesh.mpi_comm, ffi.cast(
+        cpp_dofmap = _cpp.fem.create_dofmap(mesh.comm, ffi.cast(
             "uintptr_t", ffi.addressof(self._ufc_dofmap)), mesh.topology, cpp_element)
 
         # Initialize the cpp.FunctionSpace

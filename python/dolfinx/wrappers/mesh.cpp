@@ -270,8 +270,8 @@ void mesh(py::module& m)
       .def_property_readonly("cell_type", &dolfinx::mesh::Topology::cell_type)
       .def("cell_name", [](const dolfinx::mesh::Topology& self)
            { return dolfinx::mesh::to_string(self.cell_type()); })
-      .def_property_readonly("mpi_comm", [](dolfinx::mesh::Mesh& self)
-                             { return MPICommWrapper(self.mpi_comm()); });
+      .def_property_readonly("comm", [](dolfinx::mesh::Mesh& self)
+                             { return MPICommWrapper(self.comm()); });
 
   // dolfinx::mesh::Mesh
   py::class_<dolfinx::mesh::Mesh, std::shared_ptr<dolfinx::mesh::Mesh>>(
@@ -286,8 +286,8 @@ void mesh(py::module& m)
       .def_property_readonly(
           "topology", py::overload_cast<>(&dolfinx::mesh::Mesh::topology),
           "Mesh topology", py::return_value_policy::reference_internal)
-      .def_property_readonly("mpi_comm", [](dolfinx::mesh::Mesh& self)
-                             { return MPICommWrapper(self.mpi_comm()); })
+      .def_property_readonly("comm", [](dolfinx::mesh::Mesh& self)
+                             { return MPICommWrapper(self.comm()); })
       .def_property_readonly("id", &dolfinx::mesh::Mesh::id)
       .def_readwrite("name", &dolfinx::mesh::Mesh::name);
 

@@ -55,7 +55,7 @@ class Form:
         else:
             raise RuntimeError(f"Unsupported scalar type {dtype} for Form.")
         self._ufc_form, module, self._code = jit.ffcx_jit(
-            mesh.mpi_comm,
+            mesh.comm,
             form,
             form_compiler_parameters=form_compiler_parameters,
             jit_parameters=jit_parameters)
