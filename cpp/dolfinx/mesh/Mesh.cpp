@@ -121,7 +121,6 @@ Mesh mesh::create_mesh(MPI_Comm comm,
                                     num_owned_cells + 1),
       tdim);
 
-  std::cout << "Calling now\n";
   // Compute re-ordering of local dual graph
   std::vector<int> remap = graph::reorder_gps(g);
 

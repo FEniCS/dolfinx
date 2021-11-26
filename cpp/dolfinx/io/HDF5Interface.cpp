@@ -37,11 +37,11 @@ bool has_group(const hid_t handle, const std::string& group_name)
 
   H5O_info_t object_info;
 #if H5_VERSION_GE(1, 12, 0)
-  herr_t err = H5Oget_info_by_name(handle, group_name.c_str(), &object_info,
-                                   H5O_INFO_ALL, lapl_id);
+  herr_t err = H5Oget_info_by_name3(handle, group_name.c_str(), &object_info,
+                                    H5O_INFO_ALL, lapl_id);
 #else
   herr_t err
-      = H5Oget_info_by_name(handle, group_name.c_str(), &object_info, lapl_id);
+      = H5Oget_info_by_name1(handle, group_name.c_str(), &object_info, lapl_id);
 #endif
   if (err < 0)
     throw std::runtime_error("Call to H5Oget_info_by_name unsuccessful");

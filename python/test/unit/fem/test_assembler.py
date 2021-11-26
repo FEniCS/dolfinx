@@ -758,7 +758,8 @@ def test_pack_coefficients():
 
     # Change coefficients
     constants *= 5.0
-    coeffs *= 5.0
+    for coeff in coeffs.values():
+        coeff *= 5.0
     with b0.localForm() as _b0:
         for c in [(None, coeffs), (constants, None), (constants, coeffs)]:
             b = fem.assemble_vector(F, coeffs=c)
@@ -782,7 +783,8 @@ def test_pack_coefficients():
 
     # Change coefficients
     constants *= 5.0
-    coeffs *= 5.0
+    for coeff in coeffs.values():
+        coeff *= 5.0
     for c in [(None, coeffs), (constants, None), (constants, coeffs)]:
         A = fem.assemble_matrix(J, coeffs=c)
         A.assemble()

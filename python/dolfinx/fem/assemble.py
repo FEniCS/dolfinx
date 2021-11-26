@@ -69,7 +69,7 @@ def pack_coefficients(form: form_type):
     """
     def _pack(form):
         if form is None:
-            return None
+            return {}
         elif isinstance(form, (tuple, list)):
             return list(map(lambda sub_form: _pack(sub_form), form))
         else:

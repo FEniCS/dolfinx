@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2020 Anders Logg and Garth N. Wells
+// Copyright (C) 2020-2021 Garth N. Wells and Matthew W. Scroggs
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -85,32 +85,58 @@ public:
   /// @return The string of the finite element family
   std::string family() const noexcept;
 
-  /// Evaluate all derivatives of the basis functions up to given order at given
-  /// points in reference cell
-  /// @param[in,out] values Four dimensional xtensor that will be filled with
-  /// the tabulated values. Should be of shape {num_derivatives, num_points,
-  /// num_dofs, reference_value_size}
-  /// @param[in] X Two dimensional xtensor of shape [num_points, geometric
-  /// dimension] containing the points at the reference element
-  /// @param[in] order The number of derivatives (up to and including this
-  /// order) to tabulate for.
+  /// Evaluate all derivatives of the basis functions up to given order
+  /// at given points in reference cell
+  /// @param[in,out] values Four dimensional xtensor that will be filled
+  /// with the tabulated values. Should be of shape {num_derivatives,
+  /// num_points, num_dofs, reference_value_size}
+  /// @param[in] X Two dimensional xtensor of shape [num_points,
+  /// geometric dimension] containing the points at the reference
+  /// element
+  /// @param[in] order The number of derivatives (up to and including
+  /// this order) to tabulate for
   void tabulate(xt::xtensor<double, 4>& values, const xt::xtensor<double, 2>& X,
                 int order) const;
 
-  /// Push forward data to the physical element
-  /// @param[out] values Function values on the physical domain (ndim=3)
-  /// @param[in] reference_values Basis function values on the reference
-  /// cell (ndim=3)
-  /// @param[in] J The Jacobian of the map (shape=(num_points, gdim, tdim))
-  /// @param[in] detJ The determinant of the Jacobian
-  /// @param[in] K The inverse of the Jacobian (shape=(num_points, tdim, gdim))
-  template <typename U, typename V, typename W, typename X>
-  constexpr void push_forward(U&& values, const V& reference_values, const W& J,
-                              const xtl::span<const double>& detJ,
-                              const X& K) const
+  /// Return a function that performs the appropriate
+  /// push-forward (pull-back) for the element type
+  ///
+  /// @tparam O The type that hold the computed pushed-forward
+  /// (pulled-back)  data (ndim==1)
+  /// @tparam P The type that hold the data to be pulled back (pushed
+  /// forwarded) (ndim==1)
+  /// @tparam Q The type that holds the Jacobian (inverse Jacobian)
+  /// matrix (ndim==2)
+  /// @tparam R The type that holds the inverse Jacobian (Jacobian)
+  /// matrix (ndim==2)
+  ///
+  /// @return A function that for a push-forward takes arguments
+  /// - `u` [out] The data on the physical cell after the
+  /// push-forward flattened with row-major layout, shape=(num_points,
+  /// value_size)
+  /// - `U` [in] The data on the reference cell physical field to push
+  /// forward, flattened with row-major layout, shape=(num_points,
+  /// ref_value_size)
+  /// - `J` [in] The Jacobian matrix of the map ,shape=(gdim, tdim)
+  /// - `detJ` [in] det(J)
+  /// - `K` [in] The inverse of the Jacobian matrix, shape=(tdim, gdim)
+  ///
+  /// For a pull-back the passed arguments should be:
+  /// - `U` [out] The data on the reference cell after the pull-back,
+  /// flattened with row-major layout, shape=(num_points, ref
+  /// value_size)
+  /// - `u` [in] The data on the physical cell that should be pulled
+  /// back , flattened with row-major layout, shape=(num_points,
+  /// value_size)
+  /// - `K` [in] The inverse oif the Jacobian matrix of the map
+  /// ,shape=(tdim, gdim)
+  /// - `detJ_inv` [in] 1/det(J)
+  /// - `J` [in] The Jacobian matrix, shape=(gdim, tdim)
+  template <typename O, typename P, typename Q, typename R>
+  std::function<void(O&, const P&, const Q&, double, const R&)> map_fn() const
   {
     assert(_element);
-    _element->map_push_forward_m(reference_values, J, detJ, K, values);
+    return _element->map_fn<O, P, Q, R>();
   }
 
   /// Get the number of sub elements (for a mixed or blocked element)
@@ -165,41 +191,13 @@ public:
   /// @return The interpolation operator `Pi`
   const xt::xtensor<double, 2>& interpolation_operator() const;
 
-  /// @todo Document shape/layout of @p values
-  /// @todo Make the interpolating dofs in/out argument for efficiency
-  /// as this function is often called from within tight loops
-  /// @todo Consider handling block size > 1
-  /// @todo Re-work for fields that require a pull-back, e.g. Piola
-  /// mapped elements
-  ///
-  /// Interpolate a function in the finite element space on a cell.
-  /// Given the evaluation of the function to be interpolated at points
-  /// provided by @p FiniteElement::interpolation_points, it evaluates
-  /// the degrees of freedom for the interpolant.
-  ///
-  /// @param[in] values The values of the function. It has shape
-  /// (value_size, num_points), where `num_points` is the number of
-  /// points given by FiniteElement::interpolation_points.
-  /// @param[out] dofs The element degrees of freedom (interpolants) of
-  /// the expression. The call must allocate the space. Is has
-  template <typename T>
-  constexpr void interpolate(const xt::xtensor<T, 2>& values,
-                             const xtl::span<T>& dofs) const
-  {
-    if (!_element)
-    {
-      throw std::runtime_error("No underlying element for interpolation. "
-                               "Cannot interpolate mixed elements directly.");
-    }
-
-    _element->interpolate(dofs, tcb::make_span(values), _bs);
-  }
-
   /// Create a matrix that maps degrees of freedom from one element to
   /// this element (interpolation)
   /// @param[in] from The element to interpolate from
   /// @return Matrix operator that maps the 'from' degrees-of-freedom to
-  /// the degrees-of-freedom of this element.
+  /// the degrees-of-freedom of this element
+  /// @note The two elements must use the same mapping between the
+  /// reference and physical cells
   /// @note Does not support mixed elements
   xt::xtensor<double, 2>
   create_interpolation_operator(const FiniteElement& from) const;
@@ -207,14 +205,14 @@ public:
   /// Check if DOF transformations are needed for this element.
   ///
   /// DOF transformations will be needed for elements which might not be
-  /// continuous when two neighbouring cells disagree on the orientation of
-  /// a shared subentity, and when this cannot be corrected for by permuting
-  /// the DOF numbering in the dofmap.
+  /// continuous when two neighbouring cells disagree on the orientation
+  /// of a shared subentity, and when this cannot be corrected for by
+  /// permuting the DOF numbering in the dofmap.
   ///
-  /// For example, Raviart-Thomas elements will need DOF transformations,
-  /// as the neighbouring cells may disagree on the orientation of a basis
-  /// function, and this orientation cannot be corrected for by permuting
-  /// the DOF numbers on each cell.
+  /// For example, Raviart-Thomas elements will need DOF
+  /// transformations, as the neighbouring cells may disagree on the
+  /// orientation of a basis function, and this orientation cannot be
+  /// corrected for by permuting the DOF numbers on each cell.
   ///
   /// @return True if DOF transformations are required
   bool needs_dof_transformations() const noexcept;
@@ -222,14 +220,15 @@ public:
   /// Check if DOF permutations are needed for this element.
   ///
   /// DOF permutations will be needed for elements which might not be
-  /// continuous when two neighbouring cells disagree on the orientation of
-  /// a shared subentity, and when this can be corrected for by permuting the
-  /// DOF numbering in the dofmap.
+  /// continuous when two neighbouring cells disagree on the orientation
+  /// of a shared subentity, and when this can be corrected for by
+  /// permuting the DOF numbering in the dofmap.
   ///
-  /// For example, higher order Lagrange elements will need DOF permutations,
-  /// as the arrangement of DOFs on a shared subentity may be different from the
-  /// point of view of neighbouring cells, and this can be corrected for by
-  /// permuting the DOF numbers on each cell.
+  /// For example, higher order Lagrange elements will need DOF
+  /// permutations, as the arrangement of DOFs on a shared subentity may
+  /// be different from the point of view of neighbouring cells, and
+  /// this can be corrected for by permuting the DOF numbers on each
+  /// cell.
   ///
   /// @return True if DOF transformations are required
   bool needs_dof_permutations() const noexcept;
@@ -242,12 +241,12 @@ public:
   /// - [in] cell The cell number
   /// - [in] block_size The block_size of the input data
   ///
-  /// @param[in] inverse Indicates whether the inverse transformations should be
-  /// returned
-  /// @param[in] transpose Indicates whether the transpose transformations
+  /// @param[in] inverse Indicates whether the inverse transformations
   /// should be returned
-  /// @param[in] scalar_element Indicates whether the scalar transformations
-  /// should be returned for a vector element
+  /// @param[in] transpose Indicates whether the transpose
+  /// transformations should be returned
+  /// @param[in] scalar_element Indicates whether the scalar
+  /// transformations should be returned for a vector element
   template <typename T>
   std::function<void(const xtl::span<T>&, const xtl::span<const std::uint32_t>&,
                      std::int32_t, int)>
@@ -551,7 +550,7 @@ public:
                                                cell_permutation);
   }
 
-  /// Apply DOF transformation to some tranposed data
+  /// Apply DOF transformation to some transposed data
   ///
   /// @param[in,out] data The data to be transformed
   /// @param[in] cell_permutation Permutation data for the cell
@@ -610,31 +609,6 @@ public:
     assert(_element);
     _element->apply_inverse_transpose_dof_transformation_to_transpose(
         data, block_size, cell_permutation);
-  }
-
-  /// Pull back data from the physical element to the reference element.
-  /// It can process batches of points that share the same geometric
-  /// map. @note This passes the inputs directly into the Basix
-  /// `map_pull_back` function
-  ///
-  /// @param[in] u Data defined on the physical element. It must have
-  /// dimension 3. The first index is for the geometric/map data, the
-  /// second is the point index for points that share map data, and the
-  /// third index is (vector) component, e.g. `u[i,:,:]` are points that
-  /// are mapped by `J[i,:,:]`.
-  /// @param[in] J The Jacobians. It must have dimension 3. The first
-  /// index is for the ith Jacobian, i.e. J[i,:,:] is the ith Jacobian.
-  /// @param[in] detJ The determinant of J. `detJ[i]` is
-  /// `det(J[i,:,:])`. It must have dimension 1.
-  /// @param[in] K The inverse of J, `K[i,:,:] = J[i,:,:]^-1`. It must
-  /// have dimension 3.
-  /// @param[out] U The input `u` mapped to the reference element. It
-  /// must have dimension 3.
-  template <typename O, typename P, typename Q, typename T, typename S>
-  void pull_back(const O& u, const P& J, const Q& detJ, const T& K, S&& U) const
-  {
-    assert(_element);
-    _element->map_pull_back_m(u, J, detJ, K, U);
   }
 
   /// Permute the DOFs of the element

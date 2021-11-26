@@ -6,7 +6,6 @@
 
 #include "partition.h"
 #include "partitioners.h"
-#include "scotch.h"
 #include <algorithm>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/log.h>
@@ -22,8 +21,18 @@ graph::partition_graph(MPI_Comm comm, int nparts,
                        const AdjacencyList<std::int64_t>& local_graph,
                        std::int32_t num_ghost_nodes, bool ghosting)
 {
+#if HAS_PARMETIS
+  return graph::parmetis::partitioner()(comm, nparts, local_graph,
+                                        num_ghost_nodes, ghosting);
+#elif HAS_PTSCOTCH
   return graph::scotch::partitioner()(comm, nparts, local_graph,
                                       num_ghost_nodes, ghosting);
+#elif HAS_KAHIP
+  return graph::kahip::partitioner()(comm, nparts, local_graph, num_ghost_nodes,
+                                     ghosting);
+#else
+// Should never reach this point
+#endif
 }
 //-----------------------------------------------------------------------------
 std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<int>,
