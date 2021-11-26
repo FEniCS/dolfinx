@@ -99,12 +99,12 @@ _meshtags_types = {
 }
 
 
-def refine(mesh, cell_markers=None, redistribute=True):
+def refine(mesh, entity_markers=None, redistribute=True):
     """Refine a mesh"""
-    if cell_markers is None:
+    if entity_markers is None:
         mesh_refined = cpp.refinement.refine(mesh, redistribute)
     else:
-        mesh_refined = cpp.refinement.refine(mesh, cell_markers, redistribute)
+        mesh_refined = cpp.refinement.refine(mesh, entity_markers, redistribute)
 
     coordinate_element = mesh._ufl_domain.ufl_coordinate_element()
     domain = ufl.Mesh(coordinate_element)

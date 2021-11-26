@@ -38,7 +38,7 @@ mesh::Mesh dolfinx::refinement::refine(const mesh::Mesh& mesh,
 //-----------------------------------------------------------------------------
 mesh::Mesh
 dolfinx::refinement::refine(const mesh::Mesh& mesh,
-                            const mesh::MeshTags<std::int8_t>& cell_markers,
+                            const mesh::MeshTags<std::int8_t>& entity_markers,
                             bool redistribute)
 {
   if (mesh.topology().cell_type() != mesh::CellType::triangle
@@ -47,7 +47,7 @@ dolfinx::refinement::refine(const mesh::Mesh& mesh,
     throw std::runtime_error("Refinement only defined for simplices");
   }
 
-  mesh::Mesh refined_mesh = plaza::refine(mesh, cell_markers, redistribute);
+  mesh::Mesh refined_mesh = plaza::refine(mesh, entity_markers, redistribute);
 
   // Report the number of refined cells
   const int D = mesh.topology().dim();

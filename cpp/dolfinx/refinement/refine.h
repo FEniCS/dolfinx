@@ -29,14 +29,13 @@ mesh::Mesh refine(const mesh::Mesh& mesh, bool redistribute = true);
 /// Create locally refined mesh
 ///
 /// @param[in] mesh The mesh from which to build a refined Mesh
-/// @param[in] cell_markers A mesh function over integers specifying
-///     which cells should be refined (value == 1) (and which should not
-///     (any other integer value)).
+/// @param[in] entity_markers MeshTags listing which mesh entity indices
+/// should be split by this refinement. The values are ignored.
 /// @param[in] redistribute Optional argument to redistribute the
 ///     refined mesh if mesh is a distributed mesh.
 /// @return A locally refined mesh
 mesh::Mesh refine(const mesh::Mesh& mesh,
-                  const mesh::MeshTags<std::int8_t>& cell_markers,
+                  const mesh::MeshTags<std::int8_t>& entity_markers,
                   bool redistribute = true);
 
 } // namespace dolfinx::refinement

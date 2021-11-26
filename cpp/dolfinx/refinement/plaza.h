@@ -51,7 +51,7 @@ mesh::Mesh refine(const mesh::Mesh& mesh,
 /// Refine with markers returning new mesh data
 ///
 /// @param[in] mesh Input mesh to be refined
-/// @param[in] refinement_marker MeshTags listing which mesh entities
+/// @param[in] refinement_marker MeshTags listing which mesh entity indices
 /// should be split by this refinement. The values are ignored.
 /// redistribute after refinement
 /// @return New mesh data: cell topology, vertex coordinates and parent cell
