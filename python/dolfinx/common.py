@@ -7,19 +7,21 @@
 
 import functools
 
-from dolfinx import cpp
-from dolfinx.cpp.common import (git_commit_hash, has_debug, has_kahip,  # noqa
-                                has_parmetis)
+from dolfinx import cpp as _cpp
+from dolfinx.cpp.common import (IndexMap, git_commit_hash, has_adios2,  # noqa
+                                has_debug, has_kahip, has_parmetis)
 
-TimingType = cpp.common.TimingType
+__all__ = ["IndexMap", "Timer", "timed"]
+
+TimingType = _cpp.common.TimingType
 
 
 def timing(task: str):
-    return cpp.common.timing(task)
+    return _cpp.common.timing(task)
 
 
 def list_timings(mpi_comm, timing_types: list):
-    return cpp.common.list_timings(mpi_comm, timing_types)
+    return _cpp.common.list_timings(mpi_comm, timing_types)
 
 
 class Timer:
@@ -58,9 +60,9 @@ class Timer:
 
     def __init__(self, name: str = None):
         if name is None:
-            self._cpp_object = cpp.common.Timer()
+            self._cpp_object = _cpp.common.Timer()
         else:
-            self._cpp_object = cpp.common.Timer(name)
+            self._cpp_object = _cpp.common.Timer(name)
 
     def __enter__(self):
         self._cpp_object.start()

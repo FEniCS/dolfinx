@@ -16,7 +16,6 @@ import ffcx.codegeneration.jit
 import ufl
 from mpi4py import MPI
 
-
 __all__ = ["ffcx_jit", "get_parameters"]
 
 DOLFINX_DEFAULT_JIT_PARAMETERS = {
