@@ -371,13 +371,25 @@ std::vector<std::uint8_t>
 mesh::compute_cell_permutations(const mesh::Topology& topology)
 {
   const int tdim = topology.dim();
+  const std::int32_t num_cells = topology.connectivity(tdim, 0)->num_nodes();
+
   if (tdim == 3)
     throw std::runtime_error("Cannot compute cell permutations of a 3D mesh.");
 
-  if (tdim == 2)
-    return compute_face_permutations<_BITSETSIZE>(topology);
+  std::vector<std::uint8_t> cell_permutations(num_cells);
 
-  if (tdim == 1)
-    return compute_edge_reflections<_BITSETSIZE>(topology);
+  if (tdim == 2)
+  {
+    const auto perms = compute_face_permutations<_BITSETSIZE>(topology);
+    for (int c = 0; c < num_cells; ++c)
+      cell_permutations[c] = perms[c].to_ulong() & 7;
+  }
+  else if (tdim == 1)
+  {
+    const auto perms = compute_edge_reflections<_BITSETSIZE>(topology);
+    for (int c = 0; c < num_cells; ++c)
+      cell_permutations[c] = perms[c].to_ulong() & 1;
+  }
+  return std::move(cell_permutations);
 }
 //-----------------------------------------------------------------------------

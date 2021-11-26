@@ -103,7 +103,7 @@ public:
   const std::vector<std::uint32_t>& get_cell_permutation_info() const;
 
   /// Returns the permutation information
-  const std::vector<std::uint8_t>& get_full_cell_permutation_info() const;
+  const std::vector<std::uint8_t>& get_full_cell_permutations() const;
 
   /// Get the permutation number to apply to a facet. The permutations
   /// are numbered so that:
