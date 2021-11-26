@@ -71,8 +71,6 @@ T assemble_exterior_facets(
     const xtl::span<const T>& constants, const xtl::span<const T>& coeffs,
     int cstride)
 {
-  const int tdim = mesh.topology().dim();
-
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
 
@@ -97,8 +95,6 @@ T assemble_exterior_facets(
       std::copy_n(xt::row(x_g, x_dofs[i]).begin(), 3,
                   std::next(coordinate_dofs.begin(), 3 * i));
     }
-
-    std::uint8_t p = 0;
 
     const T* coeff_cell = coeffs.data() + index * cstride;
     fn(&value, coeff_cell, constants.data(), coordinate_dofs.data(),
