@@ -21,9 +21,6 @@ import pytest
 from dolfinx import cpp as _cpp
 from dolfinx.cpp.mesh import is_simplex
 from dolfinx.fem import assemble_scalar
-<< << << < HEAD
-== == == =
->>>>>> > main
 
 assert (tempdir)
 
