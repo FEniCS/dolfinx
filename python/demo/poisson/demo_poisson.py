@@ -76,7 +76,7 @@
 import numpy as np
 import ufl
 from dolfinx import fem, plot
-from dolfinx.fem import (Constant, DirichletBC, Function, FunctionSpace,
+from dolfinx.fem import (Constant, DirichletBC, FunctionSpace,
                          locate_dofs_topological)
 from dolfinx.generation import RectangleMesh
 from dolfinx.io import XDMFFile
