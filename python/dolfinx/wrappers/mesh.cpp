@@ -245,7 +245,7 @@ void mesh(py::module& m)
       .def("create_entity_permutations",
            &dolfinx::mesh::Topology::create_entity_permutations)
       .def("create_full_cell_permutations",
-           &dolfinx::mesh::Topology::create_cell_permutations)
+           &dolfinx::mesh::Topology::create_full_cell_permutations)
       .def("create_connectivity", &dolfinx::mesh::Topology::create_connectivity)
       .def("get_facet_permutations",
            [](const dolfinx::mesh::Topology& self) {
