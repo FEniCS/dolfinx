@@ -121,8 +121,24 @@ _meshtags_types = {
 }
 
 
-def refine(mesh, cell_markers=None, redistribute=True):
-    """Refine a mesh"""
+def refine(mesh: Mesh, cell_markers: _cpp.mesh.MeshTags_int8 = None, redistribute: bool = True):
+    """Refine a mesh
+
+    Parameters
+    ----------
+    mesh 
+        The mesh from which to build a refined mesh
+    cell_markers
+        Optional argument to specify which cells should be refined. If not supplied uniform refinement. 
+        The values of the meshtag is ignored.
+    redistribute 
+        Optional argument to redistribute the refined mesh if mesh is a distributed mesh.
+
+    Returns
+    -------
+    Mesh
+        A locally refined mesh
+    """
     if cell_markers is None:
         mesh_refined = _cpp.refinement.refine(mesh, redistribute)
     else:
@@ -136,7 +152,22 @@ def refine(mesh, cell_markers=None, redistribute=True):
 def create_mesh(comm, cells, x, domain,
                 ghost_mode=GhostMode.shared_facet,
                 partitioner=_cpp.mesh.partition_cells_graph):
-    """Create a mesh from topology and geometry arrays"""
+    """
+    Create a mesh from topology and geometry arrays
+
+    comm
+        The MPI communicator
+    cells
+        The cells of the mesh defined through the geometry indices
+    x
+        The mesh geometry, a two dimensional array of mesh coordinates
+    domain
+        The ufl mesh
+    ghost_mode
+        The ghost mode used in the mesh partitioning. Options are `GhostMode.none' and `GhostMode.shared_facet`
+    partitioner
+        Partitioning function to use for determining the parallel distribution of cells across MPI ranks
+    """
     ufl_element = domain.ufl_coordinate_element()
     cell_shape = ufl_element.cell().cellname()
     cell_degree = ufl_element.degree()
@@ -151,6 +182,20 @@ def create_mesh(comm, cells, x, domain,
 
 
 def MeshTags(mesh: Mesh, dim: int, indices, values):
+    """
+    Create a meshtag for a set of mesh entities.
+
+    Parameters
+    ----------
+    mesh
+        The mesh
+    dim
+        The topological dimension of the mesh entity
+    indices
+        The entity indices (local to process)
+    values
+        The corresponding value for each entity
+    """
 
     if isinstance(values, int):
         values = np.full(indices.shape, values, dtype=np.int32)

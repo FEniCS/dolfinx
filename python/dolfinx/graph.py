@@ -14,7 +14,15 @@ __all__ = ["create_adjacencylist"]
 
 
 def create_adjacencylist(data: np.ndarray, offsets=None):
-    """Create an AdjacencyList"""
+    """Create an AdjacencyList for int32 or int64 datasets.
+    Parameters
+    ----------
+    data
+        The adjacency array. If the array is one-dimensional, offsets should be supplied.
+        If the array is two-dimensional the number of edges per node is the second dimension.
+    offsets
+        The offsets array with the number of edges per node.
+    """
     if offsets is None:
         try:
             return _cpp.graph.AdjacencyList_int32(data)
