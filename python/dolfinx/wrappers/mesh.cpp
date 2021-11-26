@@ -235,25 +235,33 @@ void mesh(py::module& m)
   // dolfinx::mesh::Topology class
   py::class_<dolfinx::mesh::Topology, std::shared_ptr<dolfinx::mesh::Topology>>(
       m, "Topology", "Topology object")
-      .def(py::init(
-          [](const MPICommWrapper comm, const dolfinx::mesh::CellType cell_type)
-          { return dolfinx::mesh::Topology(comm.get(), cell_type); }))
+      .def(py::init([](const MPICommWrapper comm,
+                       const dolfinx::mesh::CellType cell_type) {
+        return dolfinx::mesh::Topology(comm.get(), cell_type);
+      }))
       .def("set_connectivity", &dolfinx::mesh::Topology::set_connectivity)
       .def("set_index_map", &dolfinx::mesh::Topology::set_index_map)
       .def("create_entities", &dolfinx::mesh::Topology::create_entities)
       .def("create_entity_permutations",
            &dolfinx::mesh::Topology::create_entity_permutations)
+      .def("create_full_cell_permutations",
+           &dolfinx::mesh::Topology::create_cell_permutations)
       .def("create_connectivity", &dolfinx::mesh::Topology::create_connectivity)
       .def("get_facet_permutations",
-           [](const dolfinx::mesh::Topology& self)
-           {
+           [](const dolfinx::mesh::Topology& self) {
              const std::vector<std::uint8_t>& p = self.get_facet_permutations();
              return py::array_t<std::uint8_t>(p.size(), p.data(),
                                               py::cast(self));
            })
+      .def("get_full_cell_permutations",
+           [](const dolfinx::mesh::Topology& self) {
+             const std::vector<std::uint8_t>& p
+                 = self.get_full_cell_permutations();
+             return py::array_t<std::uint8_t>(p.size(), p.data(),
+                                              py::cast(self));
+           })
       .def("get_cell_permutation_info",
-           [](const dolfinx::mesh::Topology& self)
-           {
+           [](const dolfinx::mesh::Topology& self) {
              const std::vector<std::uint32_t>& p
                  = self.get_cell_permutation_info();
              return py::array_t<std::uint32_t>(p.size(), p.data(),
@@ -266,10 +274,12 @@ void mesh(py::module& m)
                                        py::const_))
       .def("index_map", &dolfinx::mesh::Topology::index_map)
       .def_property_readonly("cell_type", &dolfinx::mesh::Topology::cell_type)
-      .def("cell_name", [](const dolfinx::mesh::Topology& self)
-           { return dolfinx::mesh::to_string(self.cell_type()); })
-      .def("mpi_comm", [](dolfinx::mesh::Mesh& self)
-           { return MPICommWrapper(self.mpi_comm()); });
+      .def("cell_name",
+           [](const dolfinx::mesh::Topology& self) { return dolfinx::mesh::to_string(self.cell_type());
+           })
+      .def("mpi_comm", [](dolfinx::mesh::Mesh& self) {
+        return MPICommWrapper(self.mpi_comm());
+      });
 
   // dolfinx::mesh::Mesh
   py::class_<dolfinx::mesh::Mesh, std::shared_ptr<dolfinx::mesh::Mesh>>(

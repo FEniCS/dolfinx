@@ -390,6 +390,6 @@ mesh::compute_cell_permutations(const mesh::Topology& topology)
     for (int c = 0; c < num_cells; ++c)
       cell_permutations[c] = perms[c].to_ulong() & 1;
   }
-  return std::move(cell_permutations);
+  return cell_permutations;
 }
 //-----------------------------------------------------------------------------
