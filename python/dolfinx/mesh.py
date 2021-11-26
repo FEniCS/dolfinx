@@ -203,7 +203,8 @@ def MeshTags(mesh: Mesh, dim: int, indices: np.ndarray, values: np.ndarray) -> t
     """
 
     if isinstance(values, int):
-        values = np.full(indices.shape, values, dtype=np.int64)
+        assert np.can_cast(values, np.int32)
+        values = np.full(indices.shape, values, dtype=np.int32)
     elif isinstance(values, float):
         values = np.full(indices.shape, values, dtype=np.double)
 
