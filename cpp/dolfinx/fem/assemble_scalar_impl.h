@@ -69,19 +69,14 @@ T assemble_exterior_facets(
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*)>& fn,
     const xtl::span<const T>& constants, const xtl::span<const T>& coeffs,
-    int cstride, const xtl::span<const std::uint8_t>& perms)
+    int cstride)
 {
-  const int tdim = mesh.topology().dim();
-
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
 
   // FIXME: Add proper interface for num coordinate dofs
   const std::size_t num_dofs_g = x_dofmap.num_links(0);
   const xt::xtensor<double, 2>& x_g = mesh.geometry().x();
-
-  const int num_cell_facets
-      = mesh::cell_num_entities(mesh.topology().cell_type(), tdim - 1);
 
   // Create data structures used in assembly
   std::vector<double> coordinate_dofs(3 * num_dofs_g);
@@ -103,7 +98,7 @@ T assemble_exterior_facets(
 
     const T* coeff_cell = coeffs.data() + index * cstride;
     fn(&value, coeff_cell, constants.data(), coordinate_dofs.data(),
-       &local_facet, &perms[cell * num_cell_facets + local_facet]);
+       &local_facet, nullptr);
   }
 
   return value;
@@ -190,24 +185,23 @@ T assemble_scalar(
                                   coeffs, cstride);
   }
 
-  if (M.num_integrals(IntegralType::exterior_facet) > 0
-      or M.num_integrals(IntegralType::interior_facet) > 0)
+  for (int i : M.integral_ids(IntegralType::exterior_facet))
+  {
+    const auto& fn = M.kernel(IntegralType::exterior_facet, i);
+    const auto& [coeffs, cstride]
+        = coefficients.at({IntegralType::exterior_facet, i});
+    const std::vector<std::pair<std::int32_t, int>>& facets
+        = M.exterior_facet_domains(i);
+    value += impl::assemble_exterior_facets(*mesh, facets, fn, constants,
+                                            coeffs, cstride);
+  }
+
+  if (M.num_integrals(IntegralType::interior_facet) > 0)
   {
     mesh->topology_mutable().create_entity_permutations();
 
     const std::vector<std::uint8_t>& perms
         = mesh->topology().get_facet_permutations();
-
-    for (int i : M.integral_ids(IntegralType::exterior_facet))
-    {
-      const auto& fn = M.kernel(IntegralType::exterior_facet, i);
-      const auto& [coeffs, cstride]
-          = coefficients.at({IntegralType::exterior_facet, i});
-      const std::vector<std::pair<std::int32_t, int>>& facets
-          = M.exterior_facet_domains(i);
-      value += impl::assemble_exterior_facets(
-          *mesh, facets, fn, constants, coeffs, cstride, perms);
-    }
 
     const std::vector<int> c_offsets = M.coefficient_offsets();
     for (int i : M.integral_ids(IntegralType::interior_facet))
