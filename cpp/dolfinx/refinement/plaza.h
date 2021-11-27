@@ -8,6 +8,7 @@
 #include <dolfinx/graph/AdjacencyList.h>
 #include <utility>
 #include <vector>
+#include <xtl/xspan.hpp>
 
 #pragma once
 
@@ -45,7 +46,7 @@ mesh::Mesh refine(const mesh::Mesh& mesh, bool redistribute);
 /// redistribute after refinement
 /// @return New Mesh
 mesh::Mesh refine(const mesh::Mesh& mesh,
-                  const mesh::MeshTags<std::int8_t>& refinement_marker,
+                  const xtl::span<const std::int32_t>& edges,
                   bool redistribute);
 
 /// Refine with markers returning new mesh data
@@ -59,7 +60,7 @@ mesh::Mesh refine(const mesh::Mesh& mesh,
 std::tuple<graph::AdjacencyList<std::int64_t>, xt::xtensor<double, 2>,
            std::vector<std::int32_t>>
 compute_refinement_data(const mesh::Mesh& mesh,
-                        const mesh::MeshTags<std::int8_t>& refinement_marker);
+                        const xtl::span<const std::int32_t>& edges);
 
 /// Refine mesh returning new mesh data
 ///

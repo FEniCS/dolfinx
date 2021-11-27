@@ -541,11 +541,11 @@ mesh::Mesh plaza::refine(const mesh::Mesh& mesh, bool redistribute)
 }
 //-----------------------------------------------------------------------------
 mesh::Mesh plaza::refine(const mesh::Mesh& mesh,
-                         const mesh::MeshTags<std::int8_t>& refinement_marker,
+                         const xtl::span<const std::int32_t>& edges,
                          bool redistribute)
 {
   auto [cell_adj, new_vertex_coordinates, parent_cell]
-      = plaza::compute_refinement_data(mesh, refinement_marker);
+      = plaza::compute_refinement_data(mesh, edges);
 
   if (dolfinx::MPI::size(mesh.comm()) == 1)
   {
@@ -603,9 +603,8 @@ plaza::compute_refinement_data(const mesh::Mesh& mesh)
 //------------------------------------------------------------------------------
 std::tuple<graph::AdjacencyList<std::int64_t>, xt::xtensor<double, 2>,
            std::vector<std::int32_t>>
-plaza::compute_refinement_data(
-    const mesh::Mesh& mesh,
-    const mesh::MeshTags<std::int8_t>& refinement_marker)
+plaza::compute_refinement_data(const mesh::Mesh& mesh,
+                               const xtl::span<const std::int32_t>& edges)
 {
   if (mesh.topology().cell_type() != mesh::CellType::triangle
       and mesh.topology().cell_type() != mesh::CellType::tetrahedron)
@@ -617,19 +616,8 @@ plaza::compute_refinement_data(
 
   auto [neighbor_comm, shared_edges] = refinement::compute_edge_sharing(mesh);
 
-  const std::size_t entity_dim = refinement_marker.dim();
-  const std::vector<std::int32_t>& marker_indices = refinement_marker.indices();
   auto map_e = mesh.topology().index_map(1);
-  auto map_ent = mesh.topology().index_map(entity_dim);
-  assert(map_ent);
-
-  auto ent_to_edge = mesh.topology().connectivity(entity_dim, 1);
-  if (!ent_to_edge)
-  {
-    throw std::runtime_error("Connectivity missing: ("
-                             + std::to_string(entity_dim) + ", 1)");
-  }
-
+  assert(map_e);
   std::vector<bool> marked_edges(map_e->size_local() + map_e->num_ghosts(),
                                  false);
 
@@ -640,24 +628,15 @@ plaza::compute_refinement_data(
   assert(indegree == outdegree);
   const int num_neighbors = indegree;
   std::vector<std::vector<std::int32_t>> marked_for_update(num_neighbors);
-  for (std::int32_t i : marker_indices)
+  for (auto edge : edges)
   {
-    auto edges = ent_to_edge->links(i);
-    for (auto edge : edges)
-    {
-      // Already marked, so nothing to do
-      if (!marked_edges[edge])
-      {
-        marked_edges[edge] = true;
 
-        // If it is a shared edge, add all sharing neighbors to update set
-        auto map_it = shared_edges.find(edge);
-        if (map_it != shared_edges.end())
-        {
-          for (int p : map_it->second)
-            marked_for_update[p].push_back(edge);
-        }
-      }
+    // If it is a shared edge, add all sharing neighbors to update set
+    auto map_it = shared_edges.find(edge);
+    if (map_it != shared_edges.end())
+    {
+      for (int p : map_it->second)
+        marked_for_update[p].push_back(edge);
     }
   }
 
