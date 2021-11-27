@@ -28,9 +28,11 @@ namespace dolfinx::refinement
 {
 
 /// Compute the sharing of edges between processes.
-/// The resulting MPI_Comm is over the neighborhood of shared edges, allowing
-/// direct communication between peers. The resulting map is from local edge
-/// index to the set of neighbors (within the comm) that share that edge.
+///
+/// The returned MPI_Comm is over the neighborhood of shared edges,
+/// allowing direct communication between peers. The resulting map is
+/// from local edge index to the set of neighbors (within the comm) that
+/// share that edge.
 /// @param[in] mesh Mesh
 /// @return pair of comm and map
 std::pair<MPI_Comm, std::map<std::int32_t, std::vector<int>>>
@@ -75,14 +77,14 @@ mesh::Mesh partition(const mesh::Mesh& old_mesh,
                      const xt::xtensor<double, 2>& new_vertex_coordinates,
                      bool redistribute, mesh::GhostMode ghost_mode);
 
-/// Adjust indices to account for extra n values on each process This
-/// is a utility to help add new topological vertices on each process
-/// into the space of the index map.
+/// Adjust indices to account for extra n values on each process This is
+/// a utility to help add new topological vertices on each process into
+/// the space of the index map.
 ///
 /// @param index_map Index map for the current mesh vertices
 /// @param n Number of new entries to be accommodated on this process
 /// @return Global indices as if "n" extra values are appended on each
-///   process
+/// process
 std::vector<std::int64_t> adjust_indices(const common::IndexMap& index_map,
                                          std::int32_t n);
 

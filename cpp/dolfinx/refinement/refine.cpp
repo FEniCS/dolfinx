@@ -1,4 +1,4 @@
-// Copyright (C) 2010 Garth N. Wells
+// Copyright (C) 2010-2021 Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -12,34 +12,6 @@
 
 using namespace dolfinx;
 
-//-----------------------------------------------------------------------------
-std::vector<std::int32_t>
-refinement::compute_marked_edges(const mesh::Mesh& mesh,
-                                 const xtl::span<const std::int32_t> entities,
-                                 int dim)
-{
-  auto map_e = mesh.topology().index_map(1);
-  assert(map_e);
-  auto map_ent = mesh.topology().index_map(dim);
-  assert(map_ent);
-  auto ent_to_edge = mesh.topology().connectivity(dim, 1);
-  if (!ent_to_edge)
-  {
-    throw std::runtime_error("Connectivity missing: (" + std::to_string(dim)
-                             + ", 1)");
-  }
-
-  std::vector<std::int32_t> edges;
-  for (std::int32_t entity : entities)
-  {
-    auto e = ent_to_edge->links(entity);
-    edges.insert(edges.end(), e.begin(), e.end());
-  }
-
-  std::sort(edges.begin(), edges.end());
-  edges.erase(std::unique(edges.begin(), edges.end()), edges.end());
-  return edges;
-}
 //-----------------------------------------------------------------------------
 mesh::Mesh refinement::refine(const mesh::Mesh& mesh, bool redistribute)
 {

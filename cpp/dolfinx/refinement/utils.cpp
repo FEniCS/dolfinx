@@ -172,7 +172,6 @@ std::vector<bool> refinement::update_logical_edgefunction(
   {
     for (std::int32_t q : marked_for_update[i])
       data_to_send.push_back(local_to_global(q, map_e));
-
     send_offsets.push_back(data_to_send.size());
   }
 
@@ -184,9 +183,11 @@ std::vector<bool> refinement::update_logical_edgefunction(
             graph::AdjacencyList<std::int64_t>(data_to_send, send_offsets))
             .array();
 
-  // Flatten received values and set marked_edges at each index received
+  // Get local index for each global index
   std::vector<std::int32_t> local_indices(data_to_recv.size());
   map_e.global_to_local(data_to_recv, local_indices);
+
+  // Set marked_edges at each index received
   std::vector<bool> _marked_edges = marked_edges;
   for (std::int32_t local_index : local_indices)
   {

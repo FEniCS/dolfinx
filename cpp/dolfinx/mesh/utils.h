@@ -47,7 +47,7 @@ cell_normals(const Mesh& mesh, int dim,
 
 /// Compute the midpoints for mesh entities of a given dimension
 xt::xtensor<double, 2>
-compute_midpoints(const mesh::Mesh& mesh, int dim,
+compute_midpoints(const Mesh& mesh, int dim,
                   const xtl::span<const std::int32_t>& entities);
 
 /// Compute indices of all mesh entities that evaluate to true for the
@@ -61,7 +61,7 @@ compute_midpoints(const mesh::Mesh& mesh, int dim,
 /// @returns List of marked entity indices, including any ghost indices
 ///   (indices local to the process)
 std::vector<std::int32_t> locate_entities(
-    const mesh::Mesh& mesh, int dim,
+    const Mesh& mesh, int dim,
     const std::function<xt::xtensor<bool, 1>(const xt::xtensor<double, 2>&)>&
         marker);
 
@@ -86,7 +86,7 @@ std::vector<std::int32_t> locate_entities(
 /// @returns List of marked entity indices (indices local to the
 /// process)
 std::vector<std::int32_t> locate_entities_boundary(
-    const mesh::Mesh& mesh, int dim,
+    const Mesh& mesh, int dim,
     const std::function<xt::xtensor<bool, 1>(const xt::xtensor<double, 2>&)>&
         marker);
 
@@ -102,7 +102,7 @@ std::vector<std::int32_t> locate_entities_boundary(
 /// indices(i, j) is the position in the geometry array of the j-th vertex of
 /// the entity entity_list[i].
 xt::xtensor<std::int32_t, 2>
-entities_to_geometry(const mesh::Mesh& mesh, int dim,
+entities_to_geometry(const Mesh& mesh, int dim,
                      const xtl::span<const std::int32_t>& entity_list,
                      bool orient);
 
@@ -131,14 +131,25 @@ std::vector<std::int32_t> exterior_facet_indices(const Mesh& mesh);
 graph::AdjacencyList<std::int32_t>
 partition_cells_graph(MPI_Comm comm, int n, int tdim,
                       const graph::AdjacencyList<std::int64_t>& cells,
-                      mesh::GhostMode ghost_mode);
+                      GhostMode ghost_mode);
 
 /// Compute destination rank for mesh cells on this rank by applying the
 /// a provided graph partitioner to the dual graph of the mesh
 graph::AdjacencyList<std::int32_t>
 partition_cells_graph(MPI_Comm comm, int n, int tdim,
                       const graph::AdjacencyList<std::int64_t>& cells,
-                      mesh::GhostMode ghost_mode,
-                      const graph::partition_fn& partfn);
+                      GhostMode ghost_mode, const graph::partition_fn& partfn);
+
+/// Compute incident indices
+/// @param[in] mesh The mesh
+/// @param[in] entities List of indices of topological dimension `dim0`
+/// @param[in] dim0 Topological dimension
+/// @param[in] dim1 Topological dimension
+/// @return List of entities of topological dimension `dim1` that are
+/// incident to entities in `entities` (topological dimension `d0`)
+std::vector<std::int32_t>
+compute_incident_entities(const Mesh& mesh,
+                          const xtl::span<const std::int32_t> entities,
+                          int dim0, int dim1);
 
 } // namespace dolfinx::mesh

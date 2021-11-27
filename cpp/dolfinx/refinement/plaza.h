@@ -28,8 +28,7 @@ namespace dolfinx::refinement
 namespace plaza
 {
 
-/// Uniform refine, optionally redistributing and optionally
-/// calculating the parent-child relation for facets (in 2D)
+/// Uniform refinement
 ///
 /// @param[in] mesh Input mesh to be refined
 /// @param[in] redistribute Flag to call the mesh partitioner to
@@ -37,7 +36,7 @@ namespace plaza
 /// @return New mesh
 mesh::Mesh refine(const mesh::Mesh& mesh, bool redistribute);
 
-/// Refine with markers, optionally redistributing
+/// Refine by edge marker
 ///
 /// @param[in] mesh Input mesh to be refined
 /// @param[in] edges Indices of the edges that should be split by this
@@ -49,26 +48,26 @@ mesh::Mesh refine(const mesh::Mesh& mesh,
                   const xtl::span<const std::int32_t>& edges,
                   bool redistribute);
 
+/// Refine mesh returning new mesh data
+///
+/// @param[in] mesh Input mesh to be refined
+/// @return New mesh data: cell topology, vertex coordinates and parent
+/// cell index
+std::tuple<graph::AdjacencyList<std::int64_t>, xt::xtensor<double, 2>,
+           std::vector<std::int32_t>>
+compute_refinement_data(const mesh::Mesh& mesh);
+
 /// Refine with markers returning new mesh data
 ///
 /// @param[in] mesh Input mesh to be refined
 /// @param[in] edges Indices of the edges that should be split by this
 /// refinement
-/// @return New mesh data: cell topology, vertex coordinates and parent cell
-/// index
+/// @return New mesh data: cell topology, vertex coordinates and parent
+/// cell index
 std::tuple<graph::AdjacencyList<std::int64_t>, xt::xtensor<double, 2>,
            std::vector<std::int32_t>>
 compute_refinement_data(const mesh::Mesh& mesh,
                         const xtl::span<const std::int32_t>& edges);
-
-/// Refine mesh returning new mesh data
-///
-/// @param[in] mesh Input mesh to be refined
-/// @return New mesh data: cell topology, vertex coordinates and parent cell
-/// index
-std::tuple<graph::AdjacencyList<std::int64_t>, xt::xtensor<double, 2>,
-           std::vector<std::int32_t>>
-compute_refinement_data(const mesh::Mesh& mesh);
 
 } // namespace plaza
 } // namespace dolfinx::refinement

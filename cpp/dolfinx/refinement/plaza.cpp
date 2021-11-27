@@ -148,9 +148,9 @@ get_tetrahedra(const std::vector<bool>& marked_edges,
                const std::vector<std::int32_t>& longest_edge)
 {
   // Connectivity matrix for ten possible points (4 vertices + 6 edge
-  // midpoints) ordered {v0, v1, v2, v3, e0, e1, e2, e3, e4, e5} Only need
-  // upper triangle, but sometimes it is easier just to insert both entries
-  // (j,i) and (i,j).
+  // midpoints) ordered {v0, v1, v2, v3, e0, e1, e2, e3, e4, e5} Only
+  // need upper triangle, but sometimes it is easier just to insert both
+  // entries (j,i) and (i,j).
   bool conn[10][10] = {};
 
   // Edge connectivity to vertices (and by extension facets)
@@ -172,7 +172,7 @@ get_tetrahedra(const std::vector<bool>& marked_edges,
 
       // Each edge has two attached facets, in the original cell. The
       // numbering of the attached facets is the same as the two
-      // vertices which are not in the edge
+      // vertices which are not in the edge.
 
       // Opposite edge indices sum to 5. Get index of opposite edge.
       const std::int32_t e_opp = 5 - ei;
@@ -261,18 +261,17 @@ get_simplices(const std::vector<bool>& marked_edges,
               const std::vector<std::int32_t>& longest_edge, std::int32_t tdim,
               bool uniform)
 {
-  if (tdim == 2)
+  switch (tdim)
   {
+  case 2:
     assert(longest_edge.size() == 1);
     return get_triangles(marked_edges, longest_edge[0], uniform);
-  }
-  else if (tdim == 3)
-  {
+  case 3:
     assert(longest_edge.size() == 4);
     return get_tetrahedra(marked_edges, longest_edge);
-  }
-  else
+  default:
     throw std::runtime_error("Topological dimension not supported");
+  }
 }
 
 // Get the longest edge of each face (using local mesh index)
@@ -579,7 +578,6 @@ std::tuple<graph::AdjacencyList<std::int64_t>, xt::xtensor<double, 2>,
            std::vector<std::int32_t>>
 plaza::compute_refinement_data(const mesh::Mesh& mesh)
 {
-
   if (mesh.topology().cell_type() != mesh::CellType::triangle
       and mesh.topology().cell_type() != mesh::CellType::tetrahedron)
   {
@@ -634,7 +632,6 @@ plaza::compute_refinement_data(const mesh::Mesh& mesh,
   std::vector<std::vector<std::int32_t>> marked_for_update(num_neighbors);
   for (auto edge : edges)
   {
-
     // If it is a shared edge, add all sharing neighbors to update set
     auto map_it = shared_edges.find(edge);
     if (map_it != shared_edges.end())
@@ -645,11 +642,11 @@ plaza::compute_refinement_data(const mesh::Mesh& mesh,
   }
 
   // Communicate any shared edges
-  refinement::update_logical_edgefunction(neighbor_comm, marked_for_update,
-                                          marked_edges, *map_e);
+  marked_edges = refinement::update_logical_edgefunction(
+      neighbor_comm, marked_for_update, marked_edges, *map_e);
 
   // Enforce rules about refinement (i.e. if any edge is marked in a
-  // triangle, then the longest edge must also be marked).
+  // triangle, then the longest edge must also be marked)
   const auto [long_edge, edge_ratio_ok] = face_long_edge(mesh);
   marked_edges = enforce_rules(neighbor_comm, shared_edges, marked_edges, mesh,
                                long_edge);
