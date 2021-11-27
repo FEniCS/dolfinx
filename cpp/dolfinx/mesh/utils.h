@@ -149,7 +149,7 @@ partition_cells_graph(MPI_Comm comm, int n, int tdim,
 /// incident to entities in `entities` (topological dimension `d0`)
 std::vector<std::int32_t>
 compute_incident_entities(const Mesh& mesh,
-                          const xtl::span<const std::int32_t> entities, int d0,
+                          const xtl::span<const std::int32_t>& entities, int d0,
                           int d1);
 
 } // namespace dolfinx::mesh

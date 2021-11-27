@@ -536,7 +536,7 @@ mesh::partition_cells_graph(MPI_Comm comm, int n, int tdim,
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t>
 mesh::compute_incident_entities(const Mesh& mesh,
-                                const xtl::span<const std::int32_t> entities,
+                                const xtl::span<const std::int32_t>& entities,
                                 int d0, int d1)
 {
   auto map0 = mesh.topology().index_map(d0);
