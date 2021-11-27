@@ -872,9 +872,16 @@ void fem(py::module& m)
          const std::map<std::pair<dolfinx::fem::IntegralType, int>,
                         py::array_t<PetscScalar, py::array::c_style>>&
              coefficients,
-         const std::vector<bool>& rows0, const std::vector<bool>& rows1,
+         const py::array_t<std::int8_t, py::array::c_style>& rows0,
+         const py::array_t<std::int8_t, py::array::c_style>& rows1,
          bool unrolled)
       {
+        if (rows0.ndim() != 1 or rows1.ndim())
+        {
+          throw std::runtime_error(
+              "Expected 1D arrays for boundary condition rows/columns");
+        }
+
         std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                           const std::int32_t*, const PetscScalar*)>
             set_fn;

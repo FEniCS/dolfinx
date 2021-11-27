@@ -11,10 +11,10 @@ import basix
 import numpy as np
 import pytest
 from dolfinx import cpp as _cpp
-from dolfinx.cpp.mesh import is_simplex
+from dolfinx.cpp.mesh import is_simplex, partition_cells_graph
 from dolfinx.fem import assemble_scalar
-from dolfinx.generation import (BoxMesh, RectangleMesh, UnitCubeMesh,
-                                UnitIntervalMesh, UnitSquareMesh)
+from dolfinx.generation import (BoxMesh, DiagonalType, RectangleMesh,
+                                UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh)
 from dolfinx.mesh import CellType, GhostMode
 from dolfinx_utils.test.fixtures import tempdir
 from dolfinx_utils.test.skips import skip_in_parallel
@@ -50,7 +50,7 @@ def mesh2d():
         MPI.COMM_WORLD, [np.array([0.0, 0.0, 0.0]),
                          np.array([1., 1., 0.0])], [1, 1],
         CellType.triangle, GhostMode.none,
-        _cpp.mesh.partition_cells_graph, 'left')
+        partition_cells_graph, DiagonalType.left)
     i1 = np.where((mesh2d.geometry.x
                    == (1, 1, 0)).all(axis=1))[0][0]
     mesh2d.geometry.x[i1, :2] += 0.5 * (math.sqrt(3.0) - 1.0)
@@ -63,7 +63,7 @@ def mesh_2d():
         MPI.COMM_WORLD, [np.array([0.0, 0.0, 0.0]),
                          np.array([1., 1., 0.0])], [1, 1],
         CellType.triangle, GhostMode.none,
-        _cpp.mesh.partition_cells_graph, 'left')
+        partition_cells_graph, DiagonalType.left)
     i1 = np.where((mesh2d.geometry.x
                    == (1, 1, 0)).all(axis=1))[0][0]
     mesh2d.geometry.x[i1, :2] += 0.5 * (math.sqrt(3.0) - 1.0)
@@ -179,7 +179,7 @@ def test_UnitSquareMeshDistributed():
     assert mesh.topology.index_map(0).size_global == 48
     assert mesh.topology.index_map(2).size_global == 70
     assert mesh.geometry.dim == 2
-    assert mesh.mpi_comm.allreduce(mesh.topology.index_map(0).size_local, MPI.SUM) == 48
+    assert mesh.comm.allreduce(mesh.topology.index_map(0).size_local, MPI.SUM) == 48
 
 
 def test_UnitSquareMeshLocal():
@@ -196,7 +196,7 @@ def test_UnitCubeMeshDistributed():
     assert mesh.topology.index_map(0).size_global == 480
     assert mesh.topology.index_map(3).size_global == 1890
     assert mesh.geometry.dim == 3
-    assert mesh.mpi_comm.allreduce(mesh.topology.index_map(0).size_local, MPI.SUM) == 480
+    assert mesh.comm.allreduce(mesh.topology.index_map(0).size_local, MPI.SUM) == 480
 
 
 def test_UnitCubeMeshLocal():
@@ -214,7 +214,7 @@ def test_UnitQuadMesh():
     assert mesh.topology.index_map(0).size_global == 48
     assert mesh.topology.index_map(2).size_global == 35
     assert mesh.geometry.dim == 2
-    assert mesh.mpi_comm.allreduce(mesh.topology.index_map(0).size_local, MPI.SUM) == 48
+    assert mesh.comm.allreduce(mesh.topology.index_map(0).size_local, MPI.SUM) == 48
 
 
 def test_UnitHexMesh():
@@ -222,7 +222,7 @@ def test_UnitHexMesh():
     assert mesh.topology.index_map(0).size_global == 480
     assert mesh.topology.index_map(3).size_global == 315
     assert mesh.geometry.dim == 3
-    assert mesh.mpi_comm.allreduce(mesh.topology.index_map(0).size_local, MPI.SUM) == 480
+    assert mesh.comm.allreduce(mesh.topology.index_map(0).size_local, MPI.SUM) == 480
 
 
 def test_BoxMeshPrism():
@@ -401,5 +401,5 @@ def test_small_mesh():
 def test_UnitHexMesh_assemble():
     mesh = UnitCubeMesh(MPI.COMM_WORLD, 6, 7, 5, CellType.hexahedron)
     vol = assemble_scalar(1 * dx(mesh))
-    vol = mesh.mpi_comm.allreduce(vol, MPI.SUM)
+    vol = mesh.comm.allreduce(vol, MPI.SUM)
     assert vol == pytest.approx(1, rel=1e-9)

@@ -50,7 +50,7 @@ def worker_id(request):
 def test_save_and_load_1d_mesh(tempdir, encoding):
     filename = os.path.join(tempdir, "mesh.xdmf")
     mesh = UnitIntervalMesh(MPI.COMM_WORLD, 32)
-    with XDMFFile(mesh.mpi_comm, filename, "w", encoding=encoding) as file:
+    with XDMFFile(mesh.comm, filename, "w", encoding=encoding) as file:
         file.write_mesh(mesh)
     with XDMFFile(MPI.COMM_WORLD, filename, "r", encoding=encoding) as file:
         mesh2 = file.read_mesh()
@@ -66,7 +66,7 @@ def test_save_and_load_2d_mesh(tempdir, encoding, cell_type):
     mesh = UnitSquareMesh(MPI.COMM_WORLD, 12, 12, cell_type)
     mesh.name = "square"
 
-    with XDMFFile(mesh.mpi_comm, filename, "w", encoding=encoding) as file:
+    with XDMFFile(mesh.comm, filename, "w", encoding=encoding) as file:
         file.write_mesh(mesh)
 
     with XDMFFile(MPI.COMM_WORLD, filename, "r", encoding=encoding) as file:
@@ -83,7 +83,7 @@ def test_save_and_load_2d_mesh(tempdir, encoding, cell_type):
 def test_save_and_load_3d_mesh(tempdir, encoding, cell_type):
     filename = os.path.join(tempdir, "mesh.xdmf")
     mesh = UnitCubeMesh(MPI.COMM_WORLD, 12, 12, 8, cell_type)
-    with XDMFFile(mesh.mpi_comm, filename, "w", encoding=encoding) as file:
+    with XDMFFile(mesh.comm, filename, "w", encoding=encoding) as file:
         file.write_mesh(mesh)
 
     with XDMFFile(MPI.COMM_WORLD, filename, "r", encoding=encoding) as file:
@@ -135,9 +135,9 @@ def test_read_write_p2_mesh(tempdir, encoding):
     mesh = create_mesh(MPI.COMM_WORLD, cells, x, domain)
 
     filename = os.path.join(tempdir, "tet10_mesh.xdmf")
-    with XDMFFile(mesh.mpi_comm, filename, "w", encoding=encoding) as xdmf:
+    with XDMFFile(mesh.comm, filename, "w", encoding=encoding) as xdmf:
         xdmf.write_mesh(mesh)
-    with XDMFFile(mesh.mpi_comm, filename, "r", encoding=encoding) as xdmf:
+    with XDMFFile(mesh.comm, filename, "r", encoding=encoding) as xdmf:
         mesh2 = xdmf.read_mesh()
 
     assert mesh.topology.index_map(0).size_global == mesh2.topology.index_map(0).size_global

@@ -65,7 +65,7 @@ fem::create_sparsity_discrete_gradient(const fem::FunctionSpace& V0,
   assert(block_sizes[0] == block_sizes[1]);
 
   // Initialise sparsity pattern
-  la::SparsityPattern pattern(mesh->mpi_comm(), index_maps, block_sizes);
+  la::SparsityPattern pattern(mesh->comm(), index_maps, block_sizes);
 
   // Initialize required connectivities
   const int tdim = mesh->topology().dim();

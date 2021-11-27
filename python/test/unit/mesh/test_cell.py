@@ -62,7 +62,7 @@ def test_volume_cells(mesh):
     map = mesh.topology.index_map(tdim)
     num_cells = map.size_local
     v = _cpp.mesh.volume_entities(mesh, range(num_cells), mesh.topology.dim)
-    assert mesh.mpi_comm.allreduce(v.sum(), MPI.SUM) == pytest.approx(1.0, rel=1e-9)
+    assert mesh.comm.allreduce(v.sum(), MPI.SUM) == pytest.approx(1.0, rel=1e-9)
 
 
 @ pytest.mark.skip("volume_entities needs fixing")

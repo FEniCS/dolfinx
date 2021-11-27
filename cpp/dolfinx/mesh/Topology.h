@@ -139,11 +139,11 @@ public:
 
   /// Mesh MPI communicator
   /// @return The communicator on which the topology is distributed
-  MPI_Comm mpi_comm() const;
+  MPI_Comm comm() const;
 
 private:
   // MPI communicator
-  dolfinx::MPI::Comm _mpi_comm;
+  dolfinx::MPI::Comm _comm;
 
   // Cell type
   mesh::CellType _cell_type;

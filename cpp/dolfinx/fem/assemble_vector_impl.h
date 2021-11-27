@@ -51,7 +51,8 @@ void _lift_bc_cells(
     const graph::AdjacencyList<std::int32_t>& dofmap1, int bs1,
     const xtl::span<const T>& constants, const xtl::span<const T>& coeffs,
     int cstride, const xtl::span<const std::uint32_t>& cell_info,
-    const xtl::span<const T>& bc_values1, const std::vector<bool>& bc_markers1,
+    const xtl::span<const T>& bc_values1,
+    const xtl::span<const std::int8_t>& bc_markers1,
     const xtl::span<const T>& x0, double scale)
 {
   assert(_bs0 < 0 or _bs0 == bs0);
@@ -207,7 +208,8 @@ void _lift_bc_exterior_facets(
     const graph::AdjacencyList<std::int32_t>& dofmap1, int bs1,
     const xtl::span<const T>& constants, const xtl::span<const T>& coeffs,
     int cstride, const xtl::span<const std::uint32_t>& cell_info,
-    const xtl::span<const T>& bc_values1, const std::vector<bool>& bc_markers1,
+    const xtl::span<const T>& bc_values1,
+    const xtl::span<const std::int8_t>& bc_markers1,
     const xtl::span<const T>& x0, double scale)
 {
   // Prepare cell geometry
@@ -318,7 +320,8 @@ void _lift_bc_interior_facets(
     int cstride, const std::vector<int>& offsets,
     const xtl::span<const std::uint32_t>& cell_info,
     const std::function<std::uint8_t(std::size_t)>& get_perm,
-    const xtl::span<const T>& bc_values1, const std::vector<bool>& bc_markers1,
+    const xtl::span<const T>& bc_values1,
+    const xtl::span<const std::int8_t>& bc_markers1,
     const xtl::span<const T>& x0, double scale)
 {
   const int tdim = mesh.topology().dim();
@@ -751,8 +754,8 @@ void lift_bc(xtl::span<T> b, const Form<T>& a,
              const std::map<std::pair<IntegralType, int>,
                             std::pair<xtl::span<const T>, int>>& coefficients,
              const xtl::span<const T>& bc_values1,
-             const std::vector<bool>& bc_markers1, const xtl::span<const T>& x0,
-             double scale)
+             const xtl::span<const std::int8_t>& bc_markers1,
+             const xtl::span<const T>& x0, double scale)
 {
   std::shared_ptr<const mesh::Mesh> mesh = a.mesh();
   assert(mesh);
@@ -907,7 +910,7 @@ void apply_lifting(
 
   for (std::size_t j = 0; j < a.size(); ++j)
   {
-    std::vector<bool> bc_markers1;
+    std::vector<std::int8_t> bc_markers1;
     std::vector<T> bc_values1;
     if (a[j] and !bcs1[j].empty())
     {
