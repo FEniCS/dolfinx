@@ -121,11 +121,11 @@ void mesh(py::module& m)
       },
       "Compute maximum distance between any two vertices.");
 
-  m.def("midpoints",
+  m.def("compute_midpoints",
         [](const dolfinx::mesh::Mesh& mesh, int dim,
            py::array_t<std::int32_t, py::array::c_style> entity_list)
         {
-          return xt_as_pyarray(dolfinx::mesh::midpoints(
+          return xt_as_pyarray(dolfinx::mesh::compute_midpoints(
               mesh, dim, xtl::span(entity_list.data(), entity_list.size())));
         });
   m.def("compute_boundary_facets", &dolfinx::mesh::compute_boundary_facets);
@@ -136,10 +136,12 @@ void mesh(py::module& m)
           const dolfinx::graph::AdjacencyList<std::int64_t>&,
           dolfinx::mesh::GhostMode)>;
 
-  m.def("build_dual_graph",
-        [](const MPICommWrapper comm,
-           const dolfinx::graph::AdjacencyList<std::int64_t>& cells, int tdim)
-        { return dolfinx::mesh::build_dual_graph(comm.get(), cells, tdim); });
+  m.def(
+      "build_dual_graph",
+      [](const MPICommWrapper comm,
+         const dolfinx::graph::AdjacencyList<std::int64_t>& cells, int tdim)
+      { return dolfinx::mesh::build_dual_graph(comm.get(), cells, tdim); },
+      "Build dual graph for cells");
 
   m.def(
       "create_mesh",
@@ -234,7 +236,7 @@ void mesh(py::module& m)
 
   // dolfinx::mesh::Topology class
   py::class_<dolfinx::mesh::Topology, std::shared_ptr<dolfinx::mesh::Topology>>(
-      m, "Topology", "Topology object")
+      m, "Topology", py::dynamic_attr(), "Topology object")
       .def(py::init(
           [](const MPICommWrapper comm, const dolfinx::mesh::CellType cell_type)
           { return dolfinx::mesh::Topology(comm.get(), cell_type); }))
@@ -268,8 +270,8 @@ void mesh(py::module& m)
       .def_property_readonly("cell_type", &dolfinx::mesh::Topology::cell_type)
       .def("cell_name", [](const dolfinx::mesh::Topology& self)
            { return dolfinx::mesh::to_string(self.cell_type()); })
-      .def("mpi_comm", [](dolfinx::mesh::Mesh& self)
-           { return MPICommWrapper(self.mpi_comm()); });
+      .def_property_readonly("comm", [](dolfinx::mesh::Mesh& self)
+                             { return MPICommWrapper(self.comm()); });
 
   // dolfinx::mesh::Mesh
   py::class_<dolfinx::mesh::Mesh, std::shared_ptr<dolfinx::mesh::Mesh>>(
@@ -281,12 +283,11 @@ void mesh(py::module& m)
       .def_property_readonly(
           "geometry", py::overload_cast<>(&dolfinx::mesh::Mesh::geometry),
           "Mesh geometry")
-      .def("mpi_comm", [](dolfinx::mesh::Mesh& self)
-           { return MPICommWrapper(self.mpi_comm()); })
       .def_property_readonly(
           "topology", py::overload_cast<>(&dolfinx::mesh::Mesh::topology),
           "Mesh topology", py::return_value_policy::reference_internal)
-      .def("ufl_id", &dolfinx::mesh::Mesh::id)
+      .def_property_readonly("comm", [](dolfinx::mesh::Mesh& self)
+                             { return MPICommWrapper(self.comm()); })
       .def_property_readonly("id", &dolfinx::mesh::Mesh::id)
       .def_readwrite("name", &dolfinx::mesh::Mesh::name);
 
@@ -302,7 +303,8 @@ void mesh(py::module& m)
         [](const MPICommWrapper comm, int nparts, int tdim,
            const dolfinx::graph::AdjacencyList<std::int64_t>& cells,
            dolfinx::mesh::GhostMode ghost_mode)
-            -> dolfinx::graph::AdjacencyList<std::int32_t> {
+            -> dolfinx::graph::AdjacencyList<std::int32_t>
+        {
           return dolfinx::mesh::partition_cells_graph(comm.get(), nparts, tdim,
                                                       cells, ghost_mode);
         });
