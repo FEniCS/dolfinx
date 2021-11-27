@@ -537,17 +537,27 @@ mesh::partition_cells_graph(MPI_Comm comm, int n, int tdim,
 std::vector<std::int32_t>
 mesh::compute_incident_entities(const Mesh& mesh,
                                 const xtl::span<const std::int32_t> entities,
-                                int dim0, int dim1)
+                                int d0, int d1)
 {
-  auto map0 = mesh.topology().index_map(dim0);
-  assert(map0);
-  auto map1 = mesh.topology().index_map(dim1);
-  assert(map1);
-  auto e0_to_e1 = mesh.topology().connectivity(dim0, dim1);
+  auto map0 = mesh.topology().index_map(d0);
+  if (!map0)
+  {
+    throw std::runtime_error("Mesh entities of dimension " + std::to_string(d0)
+                             + " have not been created.");
+  }
+
+  auto map1 = mesh.topology().index_map(d1);
+  if (!map1)
+  {
+    throw std::runtime_error("Mesh entities of dimension " + std::to_string(d1)
+                             + " have not been created.");
+  }
+
+  auto e0_to_e1 = mesh.topology().connectivity(d0, d1);
   if (!e0_to_e1)
   {
-    throw std::runtime_error("Connectivity missing: (" + std::to_string(dim0)
-                             + ", " + std::to_string(dim1) + ")");
+    throw std::runtime_error("Connectivity missing: (" + std::to_string(d0)
+                             + ", " + std::to_string(d1) + ")");
   }
 
   std::vector<std::int32_t> entities1;

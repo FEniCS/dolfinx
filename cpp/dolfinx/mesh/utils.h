@@ -142,14 +142,14 @@ partition_cells_graph(MPI_Comm comm, int n, int tdim,
 
 /// Compute incident indices
 /// @param[in] mesh The mesh
-/// @param[in] entities List of indices of topological dimension `dim0`
-/// @param[in] dim0 Topological dimension
-/// @param[in] dim1 Topological dimension
-/// @return List of entities of topological dimension `dim1` that are
+/// @param[in] entities List of indices of topological dimension `d0`
+/// @param[in] d0 Topological dimension
+/// @param[in] d1 Topological dimension
+/// @return List of entities of topological dimension `d1` that are
 /// incident to entities in `entities` (topological dimension `d0`)
 std::vector<std::int32_t>
 compute_incident_entities(const Mesh& mesh,
-                          const xtl::span<const std::int32_t> entities,
-                          int dim0, int dim1);
+                          const xtl::span<const std::int32_t> entities, int d0,
+                          int d1);
 
 } // namespace dolfinx::mesh
