@@ -36,16 +36,17 @@ namespace dolfinx::refinement
 std::pair<MPI_Comm, std::map<std::int32_t, std::vector<int>>>
 compute_edge_sharing(const mesh::Mesh& mesh);
 
-/// Transfer marked edges between processes.
+/// Transfer marked edges between processes
 /// @param neighbor_comm MPI Communicator for neighborhood
-/// @param marked_for_update Lists of edges to be updates on each
+/// @param marked_for_update Lists of edges to be updated on each
 /// neighbor
 /// @param marked_edges Marked edges to be updated
 /// @param map_e IndexMap for edges
-void update_logical_edgefunction(
+/// @return New list of edges to be updated
+std::vector<bool> update_logical_edgefunction(
     const MPI_Comm& neighbor_comm,
     const std::vector<std::vector<std::int32_t>>& marked_for_update,
-    std::vector<bool>& marked_edges, const common::IndexMap& map_e);
+    const std::vector<bool>& marked_edges, const common::IndexMap& map_e);
 
 /// Add new vertex for each marked edge, and create
 /// new_vertex_coordinates and global_edge->new_vertex map.

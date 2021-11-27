@@ -38,8 +38,8 @@ mesh::Mesh refine(const mesh::Mesh& mesh, bool redistribute = true);
 /// Create locally refined mesh
 ///
 /// @param[in] mesh The mesh from which to build a refined Mesh
-/// @param[in] entity_markers MeshTags listing which mesh entity indices
-/// should be split by this refinement. The values are ignored.
+/// @param[in] edges Indices of the edges that should be split by this
+/// refinement
 /// @param[in] redistribute Optional argument to redistribute the
 /// refined mesh if mesh is a distributed mesh.
 /// @return A locally refined mesh

@@ -160,10 +160,10 @@ refinement::compute_edge_sharing(const mesh::Mesh& mesh)
   return {neighbor_comm, std::move(shared_edges)};
 }
 //-----------------------------------------------------------------------------
-void refinement::update_logical_edgefunction(
+std::vector<bool> refinement::update_logical_edgefunction(
     const MPI_Comm& neighbor_comm,
     const std::vector<std::vector<std::int32_t>>& marked_for_update,
-    std::vector<bool>& marked_edges, const common::IndexMap& map_e)
+    const std::vector<bool>& marked_edges, const common::IndexMap& map_e)
 {
   std::vector<std::int32_t> send_offsets = {0};
   std::vector<std::int64_t> data_to_send;
@@ -187,11 +187,14 @@ void refinement::update_logical_edgefunction(
   // Flatten received values and set marked_edges at each index received
   std::vector<std::int32_t> local_indices(data_to_recv.size());
   map_e.global_to_local(data_to_recv, local_indices);
+  std::vector<bool> _marked_edges = marked_edges;
   for (std::int32_t local_index : local_indices)
   {
     assert(local_index != -1);
-    marked_edges[local_index] = true;
+    _marked_edges[local_index] = true;
   }
+
+  return _marked_edges;
 }
 //-----------------------------------------------------------------------------
 std::pair<std::map<std::int32_t, std::int64_t>, xt::xtensor<double, 2>>

@@ -27,13 +27,15 @@ namespace
 //-----------------------------------------------------------------------------
 // Propagate edge markers according to rules (longest edge of each
 // face must be marked, if any edge of face is marked)
-void enforce_rules(
+std::vector<bool> enforce_rules(
     const MPI_Comm& neighbor_comm,
     const std::map<std::int32_t, std::vector<std::int32_t>>& shared_edges,
-    std::vector<bool>& marked_edges, const mesh::Mesh& mesh,
+    const std::vector<bool>& marked_edges, const mesh::Mesh& mesh,
     const std::vector<std::int32_t>& long_edge)
 {
   common::Timer t0("PLAZA: Enforce rules");
+
+  std::vector<bool> _marked_edges = marked_edges;
 
   // Enforce rule, that if any edge of a face is marked, longest edge
   // must also be marked
@@ -59,26 +61,26 @@ void enforce_rules(
   while (update_count > 0)
   {
     update_count = 0;
-    refinement::update_logical_edgefunction(neighbor_comm, marked_for_update,
-                                            marked_edges, *map_e);
+    _marked_edges = refinement::update_logical_edgefunction(
+        neighbor_comm, marked_for_update, _marked_edges, *map_e);
     for (int i = 0; i < num_neighbors; ++i)
       marked_for_update[i].clear();
 
     for (int f = 0; f < num_faces; ++f)
     {
       const std::int32_t long_e = long_edge[f];
-      if (marked_edges[long_e])
+      if (_marked_edges[long_e])
         continue;
 
       bool any_marked = false;
       for (auto edge : f_to_e->links(f))
-        any_marked = any_marked or marked_edges[edge];
+        any_marked = any_marked or _marked_edges[edge];
 
       if (any_marked)
       {
-        if (!marked_edges[long_e])
+        if (!_marked_edges[long_e])
         {
-          marked_edges[long_e] = true;
+          _marked_edges[long_e] = true;
 
           // If it is a shared edge, add all sharing neighbors to update
           // set
@@ -97,6 +99,8 @@ void enforce_rules(
     MPI_Allreduce(&update_count_old, &update_count, 1, MPI_INT32_T, MPI_SUM,
                   mesh.comm());
   }
+
+  return _marked_edges;
 }
 //-----------------------------------------------------------------------------
 // 2D version of subdivision allowing for uniform subdivision (flag)
@@ -647,7 +651,8 @@ plaza::compute_refinement_data(const mesh::Mesh& mesh,
   // Enforce rules about refinement (i.e. if any edge is marked in a
   // triangle, then the longest edge must also be marked).
   const auto [long_edge, edge_ratio_ok] = face_long_edge(mesh);
-  enforce_rules(neighbor_comm, shared_edges, marked_edges, mesh, long_edge);
+  marked_edges = enforce_rules(neighbor_comm, shared_edges, marked_edges, mesh,
+                               long_edge);
 
   auto [cell_adj, new_vertex_coordinates, parent_cell]
       = compute_refinement(neighbor_comm, marked_edges, shared_edges, mesh,

@@ -40,8 +40,8 @@ mesh::Mesh refine(const mesh::Mesh& mesh, bool redistribute);
 /// Refine with markers, optionally redistributing
 ///
 /// @param[in] mesh Input mesh to be refined
-/// @param[in] refinement_marker MeshTags listing which mesh entities
-/// should be split by this refinement. The values are ignored.
+/// @param[in] edges Indices of the edges that should be split by this
+/// refinement
 /// @param[in] redistribute Flag to call the Mesh Partitioner to
 /// redistribute after refinement
 /// @return New Mesh
@@ -52,9 +52,8 @@ mesh::Mesh refine(const mesh::Mesh& mesh,
 /// Refine with markers returning new mesh data
 ///
 /// @param[in] mesh Input mesh to be refined
-/// @param[in] refinement_marker MeshTags listing which mesh entity indices
-/// should be split by this refinement. The values are ignored.
-/// redistribute after refinement
+/// @param[in] edges Indices of the edges that should be split by this
+/// refinement
 /// @return New mesh data: cell topology, vertex coordinates and parent cell
 /// index
 std::tuple<graph::AdjacencyList<std::int64_t>, xt::xtensor<double, 2>,
