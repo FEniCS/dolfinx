@@ -11,6 +11,26 @@ on:
         default: ""
         type: string
 
+      build_fenicsx_stack:
+         description: "Build wheels for whole FEniCSx stack"
+         default: false
+         type: boolean
+
+      basix_ref:
+        description: "basix git ref to checkout"
+        default: ""
+        type: string
+
+      ufl_ref:
+        description: "ufl git ref to checkout"
+        default: ""
+        type: string
+
+      ffcx_ref:
+        description: "ffcx git ref to checkout"
+        default: ""
+        type: string
+
   workflow_call:
     inputs:
       dolfinx_ref:
@@ -18,9 +38,25 @@ on:
         default: ""
         type: string
 
-  push:
-    branches:
-      - jhale/manylinux-docker-image
+      build_fenicsx_stack:
+         description: "Build wheels for entire FEniCSx stack"
+         default: false
+         type: boolean
+
+      basix_ref:
+        description: "basix git ref to checkout"
+        default: ""
+        type: string
+
+      ufl_ref:
+        description: "ufl git ref to checkout"
+        default: ""
+        type: string
+
+      ffcx_ref:
+        description: "ffcx git ref to checkout"
+        default: ""
+        type: string
 
 jobs:
   build_wheels:
@@ -33,7 +69,7 @@ jobs:
       CIBW_MANYLINUX_X86_64_IMAGE: docker.io/fenicsproject/wheelbuilder_x86_64:latest
       CIBW_BUILD: cp37-manylinux_x86_64 cp38-manylinux_x86_64 cp39-manylinux_x86_64
       CIBW_BUILD_VERBOSITY: 1
-      CIBW_ENVIRONMENT: PIP_EXTRA_INDEX_URL=file:///project/simple PETSC_DIR=/usr/local
+      CIBW_ENVIRONMENT: PIP_EXTRA_INDEX_URL=file:///project/simple PETSC_DIR=/usr/local MAKEFLAGS=-j2
 
     steps:
 
@@ -42,37 +78,44 @@ jobs:
       - name: Install Python dependencies
         run: python -m pip install cibuildwheel simple503 wheel
 
-      # TODO: Next steps on FEniCS components can be removed as upstream
-      # packages will ship their own wheels
       - name: Checkout Basix
+        if: {{ input.build_fenicsx_stack }}
         uses: actions/checkout@v2
         with:
           repository: FEniCS/basix
           path: basix
+          ref: ${{ inputs.basix_ref }}
 
       - name: Build Basix wheel
+        if: {{ input.build_fenicsx_stack }}
         run: |
           cd basix
           python -m cibuildwheel --output-dir ../wheelhouse .
 
 
       - name: Checkout UFL
+        if: {{ input.build_fenicsx_stack }}
         uses: actions/checkout@v2
         with:
           repository: FEniCS/ufl
           path: ufl
+          ref: ${{ inputs.ufl_ref }}
 
       - name: Build UFL wheel
+        if: {{ input.build_fenicsx_stack }}
         run: python -m pip wheel --no-deps -w wheelhouse ./ufl
 
 
       - name: Checkout FFCx
+        if: {{ input.build_fenicsx_stack }}
         uses: actions/checkout@v2
         with:
           repository: FEniCS/ffcx
           path: ffcx
+          ref: ${{ inputs.ffcx_ref }}
 
       - name: Build FFCx wheel
+        if: {{ input.build_fenicsx_stack }}
         run: python -m pip wheel --no-deps -w wheelhouse ./ffcx
 
 
@@ -109,12 +152,11 @@ jobs:
           python -m simple503 --base-url file:///project/simple simple
 
 
-      # TODO: Turn ref on
       - name: Checkout DOLFINx
         uses: actions/checkout@v2
         with:
           path: dolfinx
-          #ref: ${{ inputs.dolfinx_ref }}
+          ref: ${{ inputs.dolfinx_ref }}
 
       # fenics-ffcx and fenics-basix are required by DOLFINx C++ build
       # mpi4py and petsc4py are build_requirements of DOLFINx Python
@@ -143,7 +185,6 @@ jobs:
           name: wheelhouse
           path: wheelhouse/*
 
-      # TODO: Download existing files?
       - name: Update FEniCS Project simple503 repository
         run: |
           python -m simple503 --base-url http://packages.fenicsproject.org/simple simple
