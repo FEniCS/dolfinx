@@ -314,27 +314,11 @@ void declare_objects(py::module& m, const std::string& type)
           "interpolate_ptr",
           [](dolfinx::fem::Function<T>& self, std::uintptr_t addr)
           {
-            std::shared_ptr<const dolfinx::fem::FunctionSpace> V
-                = self.function_space();
-            assert(V);
-
-            std::shared_ptr<const dolfinx::mesh::Mesh> mesh = V->mesh();
-            assert(mesh);
-            auto cell_map = mesh->topology().index_map(mesh->topology().dim());
-            assert(cell_map);
-            const std::int32_t num_cells
-                = cell_map->size_local() + cell_map->num_ghosts();
-            std::vector<std::int32_t> cells(num_cells, 0);
-            std::iota(cells.begin(), cells.end(), 0);
-
-            // Compute evaluation points
-            std::shared_ptr<const dolfinx::fem::FiniteElement> element
-                = V->element();
+            assert(self.function_space());
+            auto element = self.function_space()->element();
             assert(element);
-            xt::xtensor<double, 2> x
-                = dolfinx::fem::interpolation_coords(*element, *mesh, cells);
 
-            // Compute value shape
+            // Compute value size
             std::vector<int> vshape(element->value_rank(), 1);
             for (std::size_t i = 0; i < vshape.size(); ++i)
               vshape[i] = element->value_dimension(i);
@@ -343,12 +327,16 @@ void declare_objects(py::module& m, const std::string& type)
 
             std::function<void(T*, int, int, const double*)> f
                 = reinterpret_cast<void (*)(T*, int, int, const double*)>(addr);
-            xt::xarray<T> values = xt::empty<T>({value_size, x.shape(1)});
-            f(values.data(), values.shape(1), values.shape(0), x.data());
-            dolfinx::fem::interpolate<T>(self, values, cells);
+            auto _f = [&f, value_size](const xt::xtensor<double, 2>& x)
+            {
+              xt::xarray<T> values = xt::empty<T>({value_size, x.shape(1)});
+              f(values.data(), values.shape(1), values.shape(0), x.data());
+              return values;
+            };
+
+            self.interpolate(_f);
           },
-          "Interpolate using a pointer to an expression with a C "
-          "signature")
+          "Interpolate using a pointer to an expression with a C signature")
       .def_property_readonly("vector", &dolfinx::fem::Function<T>::vector,
                              "Return the PETSc vector associated with "
                              "the finite element Function")
