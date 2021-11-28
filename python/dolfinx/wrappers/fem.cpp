@@ -340,7 +340,6 @@ void declare_objects(py::module& m, const std::string& type)
           "Interpolate using a pointer to an expression with a C "
           "signature")
       .def_property_readonly("vector", &dolfinx::fem::Function<T>::vector,
-                             dolfinx::fem::interpolate_c<T>(self, _f, cells);
                              "Return the PETSc vector associated with "
                              "the finite element Function")
       .def_property_readonly(

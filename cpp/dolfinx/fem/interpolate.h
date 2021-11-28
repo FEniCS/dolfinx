@@ -382,7 +382,9 @@ void interpolate(Function<T>& u, xt::xarray<T>& f,
   const std::shared_ptr<const FiniteElement> element
       = u.function_space()->element();
   assert(element);
-  if (element->is_mixed())
+  const int element_bs = element->block_size();
+  if (int num_sub = element->num_sub_elements();
+      num_sub > 0 and num_sub != element_bs)
   {
     throw std::runtime_error("Cannot directly interpolate a mixed space. "
                              "Interpolate into subspaces.");
@@ -396,27 +398,12 @@ void interpolate(Function<T>& u, xt::xarray<T>& f,
   const int gdim = mesh->geometry().dim();
   const int tdim = mesh->topology().dim();
 
-  // Get the interpolation points on the reference cells
-  const xt::xtensor<double, 2>& X = element->interpolation_points();
-
-  if (X.shape(0) == 0)
-  {
-    throw std::runtime_error(
-        "Interpolation into this space is not yet supported.");
-  }
-
   xtl::span<const std::uint32_t> cell_info;
   if (element->needs_dof_transformations())
   {
     mesh->topology_mutable().create_entity_permutations();
     cell_info = xtl::span(mesh->topology().get_cell_permutation_info());
   }
-
-  // Evaluate function at physical points. The returned array has a
-  // number of rows equal to the number of components of the function,
-  // and the number of columns is equal to the number of evaluation
-  // points.
-  // xt::xarray<T> values = f(x);
 
   if (f.dimension() == 1)
   {
@@ -429,8 +416,8 @@ void interpolate(Function<T>& u, xt::xarray<T>& f,
   if (f.shape(0) != element->value_size())
     throw std::runtime_error("Interpolation data has the wrong shape.");
 
-  if (f.shape(1) != cells.size() * X.shape(0))
-    throw std::runtime_error("Interpolation data has the wrong shape.");
+  // if (f.shape(1) != cells.size() * X.shape(0))
+  //   throw std::runtime_error("Interpolation data has the wrong shape.");
 
   // Get dofmap
   const auto dofmap = u.function_space()->dofmap();
@@ -438,23 +425,21 @@ void interpolate(Function<T>& u, xt::xarray<T>& f,
   const int dofmap_bs = dofmap->bs();
 
   // Loop over cells and compute interpolation dofs
-  const int element_bs = element->block_size();
   const int num_scalar_dofs = element->space_dimension() / element_bs;
   const int value_size = element->value_size() / element_bs;
 
   xtl::span<T> coeffs = u.x()->mutable_array();
   std::vector<T> _coeffs(num_scalar_dofs);
 
-  const std::function<void(const xtl::span<T>&,
-                           const xtl::span<const std::uint32_t>&, std::int32_t,
-                           int)>
-      apply_inverse_transpose_dof_transformation
-      = element->get_dof_transformation_function<T>(true, true, true);
-
   // This assumes that any element with an identity interpolation matrix
   // is a point evaluation
   if (element->interpolation_ident())
   {
+    const std::function<void(const xtl::span<T>&,
+                             const xtl::span<const std::uint32_t>&,
+                             std::int32_t, int)>
+        apply_inv_transpose_dof_transformation
+        = element->get_dof_transformation_function<T>(true, true, true);
     for (std::int32_t c : cells)
     {
       xtl::span<const std::int32_t> dofs = dofmap->cell_dofs(c);
@@ -462,7 +447,7 @@ void interpolate(Function<T>& u, xt::xarray<T>& f,
       {
         for (int i = 0; i < num_scalar_dofs; ++i)
           _coeffs[i] = f(k, c * num_scalar_dofs + i);
-        apply_inverse_transpose_dof_transformation(_coeffs, cell_info, c, 1);
+        apply_inv_transpose_dof_transformation(_coeffs, cell_info, c, 1);
         for (int i = 0; i < num_scalar_dofs; ++i)
         {
           const int dof = i * element_bs + k;
@@ -474,6 +459,14 @@ void interpolate(Function<T>& u, xt::xarray<T>& f,
   }
   else
   {
+    // Get the interpolation points on the reference cells
+    const xt::xtensor<double, 2>& X = element->interpolation_points();
+    if (X.shape(0) == 0)
+    {
+      throw std::runtime_error(
+          "Interpolation into this space is not yet supported.");
+    }
+
     // Get coordinate map
     const fem::CoordinateElement& cmap = mesh->geometry().cmap();
 
@@ -578,7 +571,7 @@ void interpolate(Function<T>& u, xt::xarray<T>& f,
 /// support C code implementations of the expression, e.g. using Numba.
 /// Generally the interface where the expression function is a pure
 /// function, i.e. the expression values are the return argument, should
-/// be preferred.:
+/// be preferred.
 ///
 /// @param[out] u The function to interpolate into
 /// @param[in] f The expression to be interpolated
