@@ -1,4 +1,4 @@
-# Copyright (C) 2017-2020 Chris N. Richardson and Garth N. Wells
+# Copyright (C) 2017-2021 Chris N. Richardson and Garth N. Wells
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -49,7 +49,7 @@ class Mesh(_cpp.mesh.Mesh):
 
 
 def locate_entities(mesh: Mesh, dim: int, marker: types.FunctionType) -> np.ndarray:
-    """Compute mesh entities satisfying a geometric marking function.
+    """Compute mesh entities satisfying a geometric marking function
 
     Parameters
     ----------
@@ -74,7 +74,7 @@ def locate_entities(mesh: Mesh, dim: int, marker: types.FunctionType) -> np.ndar
 
 def locate_entities_boundary(mesh: Mesh, dim: int, marker: types.FunctionType) -> np.ndarray:
     """Compute mesh entities that are connected to an owned boundary
-    facet and satisfy a geometric marking function.
+    facet and satisfy a geometric marking function
 
     For vertices and edges, in parallel this function will not
     necessarily mark all entities that are on the exterior boundary. For
@@ -130,8 +130,8 @@ def refine(mesh: Mesh, cell_markers: _cpp.mesh.MeshTags_int8 = None, redistribut
     mesh
         The mesh from which to build a refined mesh
     cell_markers
-        Optional argument to specify which cells should be refined. If not supplied uniform refinement.
-        The values of the meshtag is ignored.
+        Optional argument to specify which cells should be refined. If
+        not supplied uniform refinement is applied.
     redistribute
         Optional argument to redistribute the refined mesh if mesh is a
         distributed mesh.
@@ -139,7 +139,7 @@ def refine(mesh: Mesh, cell_markers: _cpp.mesh.MeshTags_int8 = None, redistribut
     Returns
     -------
     Mesh
-        A locally refined mesh
+        A refined mesh
     """
     if cell_markers is None:
         mesh_refined = _cpp.refinement.refine(mesh, redistribute)
@@ -203,6 +203,7 @@ def MeshTags(mesh: Mesh, dim: int, indices: np.ndarray, values: np.ndarray) -> t
     """
 
     if isinstance(values, int):
+        assert np.can_cast(values, np.int32)
         values = np.full(indices.shape, values, dtype=np.int32)
     elif isinstance(values, float):
         values = np.full(indices.shape, values, dtype=np.double)
