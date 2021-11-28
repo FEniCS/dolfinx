@@ -314,9 +314,6 @@ void declare_objects(py::module& m, const std::string& type)
           "interpolate_ptr",
           [](dolfinx::fem::Function<T>& self, std::uintptr_t addr)
           {
-            std::function<void(T*, int, int, const double*)> f
-                = reinterpret_cast<void (*)(T*, int, int, const double*)>(addr);
-
             std::shared_ptr<const dolfinx::fem::FunctionSpace> V
                 = self.function_space();
             assert(V);
@@ -335,7 +332,7 @@ void declare_objects(py::module& m, const std::string& type)
                 = V->element();
             assert(element);
             xt::xtensor<double, 2> x
-                = fem::interpolation_coords(*element, *mesh, cells);
+                = dolfinx::fem::interpolation_coords(*element, *mesh, cells);
 
             // Compute value shape
             std::vector<int> vshape(element->value_rank(), 1);
@@ -344,6 +341,8 @@ void declare_objects(py::module& m, const std::string& type)
             std::size_t value_size = std::reduce(
                 std::begin(vshape), std::end(vshape), 1, std::multiplies<>());
 
+            std::function<void(T*, int, int, const double*)> f
+                = reinterpret_cast<void (*)(T*, int, int, const double*)>(addr);
             xt::xarray<T> values = xt::empty<T>({value_size, x.shape(1)});
             f(values.data(), values.shape(1), values.shape(0), x.data());
             dolfinx::fem::interpolate<T>(self, values, cells);
