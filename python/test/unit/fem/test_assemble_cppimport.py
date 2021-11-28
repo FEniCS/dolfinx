@@ -10,7 +10,7 @@ import pathlib
 import cppimport
 import dolfinx
 import dolfinx.pkgconfig
-import numpy
+import numpy as np
 import petsc4py
 import pytest
 import scipy.sparse.linalg
@@ -112,15 +112,13 @@ PYBIND11_MODULE(eigen_csr, m)
                     A[dofs, dofs] = 1.0
         return A
 
-    # print("******", pybind_inc())
-    # return
     mesh = UnitSquareMesh(MPI.COMM_SELF, 12, 12)
     Q = FunctionSpace(mesh, ("Lagrange", 1))
     u = ufl.TrialFunction(Q)
     v = ufl.TestFunction(Q)
     a = Form(ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx)
 
-    bdofsQ = locate_dofs_geometrical(Q, lambda x: numpy.logical_or(x[0] < 1.0e-6, x[0] > 1.0 - 1.0e-6))
+    bdofsQ = locate_dofs_geometrical(Q, lambda x: np.logical_or(np.isclose(x[0], 0.0), np.isclose(x[0], 1.0)))
     u_bc = Function(Q)
     with u_bc.vector.localForm() as u_local:
         u_local.set(1.0)
@@ -129,4 +127,4 @@ PYBIND11_MODULE(eigen_csr, m)
     A1 = assemble_matrix(a, [bc])
     A1.assemble()
     A2 = assemble_csr_matrix(a, [bc._cpp_object])
-    assert numpy.isclose(A1.norm(), scipy.sparse.linalg.norm(A2))
+    assert np.isclose(A1.norm(), scipy.sparse.linalg.norm(A2))
