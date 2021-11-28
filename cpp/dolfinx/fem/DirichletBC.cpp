@@ -41,11 +41,9 @@ dolfinx::MPI::Comm create_symmetric_comm(MPI_Comm comm)
                   neighbors.end());
 
   MPI_Comm comm_sym;
-  std::vector<int> sourceweights(neighbors.size(), 1);
-  std::vector<int> destweights(neighbors.size(), 1);
   MPI_Dist_graph_create_adjacent(comm, neighbors.size(), neighbors.data(),
-                                 sourceweights.data(), neighbors.size(),
-                                 neighbors.data(), destweights.data(),
+                                 MPI_UNWEIGHTED, neighbors.size(),
+                                 neighbors.data(), MPI_UNWEIGHTED,
                                  MPI_INFO_NULL, false, &comm_sym);
 
   return dolfinx::MPI::Comm(comm_sym, false);
@@ -403,7 +401,7 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
 }
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t>
-fem::locate_dofs_topological(const fem::FunctionSpace& V, const int dim,
+fem::locate_dofs_topological(const fem::FunctionSpace& V, int dim,
                              const xtl::span<const std::int32_t>& entities,
                              bool remote)
 {
@@ -582,6 +580,13 @@ std::vector<std::int32_t> fem::locate_dofs_geometrical(
   // FIXME: Calling V.tabulate_dof_coordinates() is very expensive,
   // especially when we usually want the boundary dofs only. Add
   // interface that computes dofs coordinates only for specified cell.
+
+  assert(V.element());
+  if (V.element()->is_mixed())
+  {
+    throw std::runtime_error(
+        "Cannot locate dofs geometrically for mixed space. Use subspaces.");
+  }
 
   // Compute dof coordinates
   const xt::xtensor<double, 2> dof_coordinates

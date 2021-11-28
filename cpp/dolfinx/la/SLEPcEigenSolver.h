@@ -84,7 +84,7 @@ public:
   EPS eps() const;
 
   /// Return MPI communicator
-  MPI_Comm mpi_comm() const;
+  MPI_Comm comm() const;
 
 private:
   // SLEPc solver pointer

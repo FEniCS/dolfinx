@@ -4,15 +4,18 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 import os
+
 import numpy as np
 import pytest
 import ufl
-from dolfinx import (DirichletBC, Function, FunctionSpace,
-                     VectorFunctionSpace, RectangleMesh, cpp, fem, UnitCubeMesh, UnitSquareMesh)
-from dolfinx.cpp.mesh import CellType, locate_entities_boundary
-from dolfinx.fem import (apply_lifting, assemble_matrix, assemble_scalar,
-                         assemble_vector, locate_dofs_topological, set_bc)
+from dolfinx import cpp as _cpp
+from dolfinx.fem import (DirichletBC, Form, Function, FunctionSpace,
+                         VectorFunctionSpace, apply_lifting, assemble_matrix,
+                         assemble_scalar, assemble_vector,
+                         locate_dofs_topological, set_bc)
+from dolfinx.generation import RectangleMesh, UnitCubeMesh, UnitSquareMesh
 from dolfinx.io import XDMFFile
+from dolfinx.mesh import CellType, locate_entities_boundary
 from dolfinx_utils.test.skips import skip_if_complex
 from mpi4py import MPI
 from petsc4py import PETSc
@@ -41,25 +44,25 @@ def run_scalar_test(mesh, V, degree):
     L = inner(f, v) * dx(metadata={"quadrature_degree": -1})
 
     L.integrals()[0].metadata()["quadrature_degree"] = ufl.algorithms.estimate_total_polynomial_degree(L)
-    L = fem.Form(L)
+    L = Form(L)
 
     u_bc = Function(V)
     u_bc.interpolate(lambda x: x[1]**degree)
 
     # Create Dirichlet boundary condition
-    mesh.topology.create_connectivity_all()
     facetdim = mesh.topology.dim - 1
-    bndry_facets = np.where(np.array(cpp.mesh.compute_boundary_facets(mesh.topology)) == 1)[0]
+    mesh.topology.create_connectivity(facetdim, mesh.topology.dim)
+    bndry_facets = np.where(np.array(_cpp.mesh.compute_boundary_facets(mesh.topology)) == 1)[0]
     bdofs = locate_dofs_topological(V, facetdim, bndry_facets)
     bc = DirichletBC(u_bc, bdofs)
 
     b = assemble_vector(L)
-    apply_lifting(b, [a], [[bc]])
+    apply_lifting(b, [a], bcs=[[bc]])
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     set_bc(b, [bc])
 
-    a = fem.Form(a)
-    A = assemble_matrix(a, [bc])
+    a = Form(a)
+    A = assemble_matrix(a, bcs=[bc])
     A.assemble()
 
     # Create LU linear solver
@@ -73,9 +76,9 @@ def run_scalar_test(mesh, V, degree):
     uh.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
     M = (u_exact - uh)**2 * dx
-    M = fem.Form(M)
+    M = Form(M)
 
-    error = mesh.mpi_comm().allreduce(assemble_scalar(M), op=MPI.SUM)
+    error = mesh.comm.allreduce(assemble_scalar(M), op=MPI.SUM)
     assert np.absolute(error) < 1.0e-14
 
 
@@ -111,9 +114,9 @@ def run_vector_test(mesh, V, degree):
     M = (u_exact - uh[0])**2 * dx
     for i in range(1, mesh.topology.dim):
         M += uh[i]**2 * dx
-    M = fem.Form(M)
+    M = Form(M)
 
-    error = mesh.mpi_comm().allreduce(assemble_scalar(M), op=MPI.SUM)
+    error = mesh.comm.allreduce(assemble_scalar(M), op=MPI.SUM)
     assert np.absolute(error) < 1.0e-14
 
 
@@ -182,9 +185,9 @@ def run_dg_test(mesh, V, degree):
 
     # Calculate error
     M = (u_exact - uh)**2 * dx
-    M = fem.Form(M)
+    M = Form(M)
 
-    error = mesh.mpi_comm().allreduce(assemble_scalar(M), op=MPI.SUM)
+    error = mesh.comm.allreduce(assemble_scalar(M), op=MPI.SUM)
     assert np.absolute(error) < 1.0e-14
 
 
@@ -311,14 +314,15 @@ def test_biharmonic():
     A = assemble_matrix(a, bcs=bcs)
     A.assemble()
     b = assemble_vector(L)
-    apply_lifting(b, [a], [bcs])
+    apply_lifting(b, [a], bcs=[bcs])
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+    set_bc(b, bcs)
 
     # Solve
     solver = PETSc.KSP().create(MPI.COMM_WORLD)
     PETSc.Options()["ksp_type"] = "preonly"
     PETSc.Options()["pc_type"] = "lu"
-    PETSc.Options()["pc_factor_mat_solver_type"] = "mumps"
+    # PETSc.Options()["pc_factor_mat_solver_type"] = "mumps"
     solver.setFromOptions()
     solver.setOperators(A)
 
@@ -328,9 +332,9 @@ def test_biharmonic():
                            mode=PETSc.ScatterMode.FORWARD)
 
     # Recall that x_h has flattened indices.
-    u_error_numerator = np.sqrt(mesh.mpi_comm().allreduce(assemble_scalar(
+    u_error_numerator = np.sqrt(mesh.comm.allreduce(assemble_scalar(
         inner(u_exact - x_h[4], u_exact - x_h[4]) * dx(mesh, metadata={"quadrature_degree": 5})), op=MPI.SUM))
-    u_error_denominator = np.sqrt(mesh.mpi_comm().allreduce(assemble_scalar(
+    u_error_denominator = np.sqrt(mesh.comm.allreduce(assemble_scalar(
         inner(u_exact, u_exact) * dx(mesh, metadata={"quadrature_degree": 5})), op=MPI.SUM))
 
     assert(np.absolute(u_error_numerator / u_error_denominator) < 0.05)
@@ -338,9 +342,9 @@ def test_biharmonic():
     # Reconstruct tensor from flattened indices.
     # Apply inverse transform. In 2D we have S^{-1} = S.
     sigma_h = S(ufl.as_tensor([[x_h[0], x_h[1]], [x_h[2], x_h[3]]]))
-    sigma_error_numerator = np.sqrt(mesh.mpi_comm().allreduce(assemble_scalar(
+    sigma_error_numerator = np.sqrt(mesh.comm.allreduce(assemble_scalar(
         inner(sigma_exact - sigma_h, sigma_exact - sigma_h) * dx(mesh, metadata={"quadrature_degree": 5})), op=MPI.SUM))
-    sigma_error_denominator = np.sqrt(mesh.mpi_comm().allreduce(assemble_scalar(
+    sigma_error_denominator = np.sqrt(mesh.comm.allreduce(assemble_scalar(
         inner(sigma_exact, sigma_exact) * dx(mesh, metadata={"quadrature_degree": 5})), op=MPI.SUM))
 
     assert(np.absolute(sigma_error_numerator / sigma_error_denominator) < 0.005)
@@ -429,6 +433,17 @@ def test_RT_N1curl_simplex(family, degree, cell_type, datadir):
 
 
 @parametrize_cell_types_simplex
+@pytest.mark.parametrize("family", ["Discontinuous Raviart-Thomas"])
+@pytest.mark.parametrize("degree", [1, 2, 3, 4])
+def test_discontinuous_RT(family, degree, cell_type, datadir):
+    if cell_type == CellType.tetrahedron and degree == 4:
+        pytest.skip("Skip expensive test on tetrahedron")
+    mesh = get_mesh(cell_type, datadir)
+    V = FunctionSpace(mesh, (family, degree))
+    run_vector_test(mesh, V, degree - 1)
+
+
+@parametrize_cell_types_simplex
 @pytest.mark.parametrize("family", ["BDM", "N2curl"])
 @pytest.mark.parametrize("degree", [1, 2])
 def test_BDM_N2curl_simplex(family, degree, cell_type, datadir):
@@ -476,31 +491,47 @@ def test_P_tp_built_in_mesh(family, degree, cell_type, datadir):
 @pytest.mark.parametrize("family", ["Q"])
 @pytest.mark.parametrize("degree", [2, 3, 4])
 def test_vector_P_tp(family, degree, cell_type, datadir):
+    if cell_type == CellType.hexahedron and degree == 4:
+        pytest.skip("Skip expensive test on hexahedron")
     mesh = get_mesh(cell_type, datadir)
     V = VectorFunctionSpace(mesh, (family, degree))
     run_vector_test(mesh, V, degree)
 
 
 @parametrize_cell_types_quad
-@pytest.mark.parametrize("family", ["DQ", "DPC"])
+@pytest.mark.parametrize("family", ["DQ"])
 @pytest.mark.parametrize("degree", [1, 2, 3])
 def test_dP_quad(family, degree, cell_type, datadir):
-    if family == "DPC":
-        pytest.skip("DPC space currently not implemented in basix.")
     mesh = get_mesh(cell_type, datadir)
     V = FunctionSpace(mesh, (family, degree))
     run_dg_test(mesh, V, degree)
 
 
 @parametrize_cell_types_hex
-@pytest.mark.parametrize("family", ["DQ", "DPC"])
+@pytest.mark.parametrize("family", ["DQ"])
 @pytest.mark.parametrize("degree", [1, 2])
 def test_dP_hex(family, degree, cell_type, datadir):
-    if family == "DPC":
-        pytest.skip("DPC space currently not implemented in basix.")
     mesh = get_mesh(cell_type, datadir)
     V = FunctionSpace(mesh, (family, degree))
     run_dg_test(mesh, V, degree)
+
+
+@parametrize_cell_types_quad
+@pytest.mark.parametrize("family", ["DPC"])
+@pytest.mark.parametrize("degree", [2, 3, 4])
+def test_DPC_quad(family, degree, cell_type, datadir):
+    mesh = get_mesh(cell_type, datadir)
+    V = FunctionSpace(mesh, (family, degree))
+    run_dg_test(mesh, V, degree // 2)
+
+
+@parametrize_cell_types_hex
+@pytest.mark.parametrize("family", ["DPC"])
+@pytest.mark.parametrize("degree", [2])
+def test_DPC_hex(family, degree, cell_type, datadir):
+    mesh = get_mesh(cell_type, datadir)
+    V = FunctionSpace(mesh, (family, degree))
+    run_dg_test(mesh, V, degree // 2)
 
 
 @parametrize_cell_types_quad
@@ -522,20 +553,18 @@ def test_NC_hex(family, degree, cell_type, datadir):
 
 
 @parametrize_cell_types_quad
-@pytest.mark.parametrize("family", ["BDMCE", "BDMCE"])
-@pytest.mark.parametrize("degree", [1, 2, 3])
+@pytest.mark.parametrize("family", ["BDMCE", "BDMCF"])
+@pytest.mark.parametrize("degree", [1, 2, 3, 4])
 def test_BDM_quad(family, degree, cell_type, datadir):
-    pytest.skip("BDMCE and BDMCE spaces currently not implemented in basix")
     mesh = get_mesh(cell_type, datadir)
     V = FunctionSpace(mesh, (family, degree))
-    run_vector_test(mesh, V, degree)
+    run_vector_test(mesh, V, (degree - 1) // 2)
 
 
 @parametrize_cell_types_hex
-@pytest.mark.parametrize("family", ["AAE", "AAE"])
+@pytest.mark.parametrize("family", ["AAE", "AAF"])
 @pytest.mark.parametrize("degree", [1, 2, 3])
 def test_AA_hex(family, degree, cell_type, datadir):
-    pytest.skip("AAE and AAEÎ spaces currently not implemented in basix")
     mesh = get_mesh(cell_type, datadir)
     V = FunctionSpace(mesh, (family, degree))
-    run_vector_test(mesh, V, degree)
+    run_vector_test(mesh, V, (degree - 1) // 2)

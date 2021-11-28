@@ -77,8 +77,11 @@ std::string get_counter(const pugi::xml_node& node, const std::string& name)
 /// Get the VTK cell type integer
 std::int8_t get_vtk_cell_type(mesh::CellType cell, int dim)
 {
+  if (cell == mesh::CellType::prism and dim == 2)
+    throw std::runtime_error("More work needed for prism cell");
+
   // Get cell type
-  mesh::CellType cell_type = mesh::cell_entity_type(cell, dim);
+  mesh::CellType cell_type = mesh::cell_entity_type(cell, dim, 0);
 
   // Determine VTK cell type (arbitrary Lagrange elements)
   // https://vtk.org/doc/nightly/html/vtkCellType_8h_source.html
@@ -174,7 +177,6 @@ void _add_data(const fem::Function<Scalar>& u,
         field_node.append_child(pugi::node_pcdata)
             .set_value(xt_to_string(values_comp, 16).c_str());
       }
-
       else if (rank == 1)
       {
         field_node.append_attribute("NumberOfComponents") = 3;
@@ -338,7 +340,7 @@ void add_mesh(const mesh::Mesh& mesh, pugi::xml_node& piece_node)
   connectivity_node.append_attribute("format") = "ascii";
 
   // Get map from VTK index i to DOLFIN index j
-  int num_nodes = geometry.cmap().dof_layout().num_dofs();
+  int num_nodes = geometry.cmap().create_dof_layout().num_dofs();
 
   std::vector<std::uint8_t> map = io::cells::transpose(
       io::cells::perm_vtk(topology.cell_type(), num_nodes));
@@ -410,7 +412,7 @@ void write_function(
     }
   }
   // Get MPI comm
-  const MPI_Comm comm = mesh->mpi_comm();
+  const MPI_Comm comm = mesh->comm();
   const int mpi_rank = dolfinx::MPI::rank(comm);
   boost::filesystem::path p(filename);
 
@@ -508,9 +510,9 @@ void write_function(
         // Extract mesh data
         int tdim = mesh->topology().dim();
         auto cmap = mesh->geometry().cmap();
-        auto geometry_layout = cmap.dof_layout();
+        const fem::ElementDofLayout geometry_layout = cmap.create_dof_layout();
         // Extract function value
-        const std::vector<Scalar>& func_values = _u.get().x()->array();
+        xtl::span<const Scalar> func_values = _u.get().x()->array();
         // Compute in tensor (one for scalar function, . . .)
         const size_t value_size_loc = element->value_size();
 
@@ -538,10 +540,6 @@ void write_function(
             if (geometry_layout.num_entity_dofs(i)
                 != element_layout->num_entity_dofs(i))
             {
-              // throw std::runtime_error("Can only save Lagrange finite element
-              // "
-              //                          "functions of same order "
-              //                          "as the mesh geometry");
               LOG(WARNING) << "Output data is interpolated into a first order "
                               "Lagrange space.";
               point_values = _u.get().compute_point_values();

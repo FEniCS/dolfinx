@@ -1,14 +1,14 @@
-// Copyright (C) 2018-2020 Garth N. Wells
+// Copyright (C) 2018-2021 Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "petsc.h"
+#include "FunctionSpace.h"
 #include "assembler.h"
 #include "sparsitybuild.h"
 #include <dolfinx/common/IndexMap.h>
-#include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/la/PETScMatrix.h>
 #include <dolfinx/la/PETScVector.h>
 #include <dolfinx/la/SparsityPattern.h>
@@ -26,7 +26,7 @@ Mat dolfinx::fem::create_matrix(const Form<PetscScalar>& a,
   // Finalise communication
   pattern.assemble();
 
-  return la::create_petsc_matrix(a.mesh()->mpi_comm(), pattern, type);
+  return la::create_petsc_matrix(a.mesh()->comm(), pattern, type);
 }
 //-----------------------------------------------------------------------------
 Mat fem::create_matrix_block(
@@ -62,7 +62,7 @@ Mat fem::create_matrix_block(
       {
         // Create sparsity pattern for block
         patterns[row].push_back(std::make_unique<la::SparsityPattern>(
-            mesh->mpi_comm(), index_maps, bs));
+            mesh->comm(), index_maps, bs));
 
         // Build sparsity pattern for block
         assert(V[0][row]->dofmap());
@@ -116,14 +116,14 @@ Mat fem::create_matrix_block(
   for (std::size_t row = 0; row < V[0].size(); ++row)
     for (std::size_t col = 0; col < V[1].size(); ++col)
       p[row].push_back(patterns[row][col].get());
-  la::SparsityPattern pattern(mesh->mpi_comm(), p, maps, bs_dofs);
+  la::SparsityPattern pattern(mesh->comm(), p, maps, bs_dofs);
   pattern.assemble();
 
   // FIXME: Add option to pass customised local-to-global map to PETSc
   // Mat constructor
 
   // Initialise matrix
-  Mat A = la::create_petsc_matrix(mesh->mpi_comm(), pattern, type);
+  Mat A = la::create_petsc_matrix(mesh->comm(), pattern, type);
 
   // Create row and column local-to-global maps (field0, field1, field2,
   // etc), i.e. ghosts of field0 appear before owned indices of field1
@@ -198,7 +198,7 @@ Mat fem::create_matrix_nest(
 
   // Initialise block (MatNest) matrix
   Mat A;
-  MatCreate(V[0][0]->mesh()->mpi_comm(), &A);
+  MatCreate(V[0][0]->mesh()->comm(), &A);
   MatSetType(A, MATNEST);
   MatNestSetSubMats(A, rows, nullptr, cols, nullptr, mats.data());
   MatSetUp(A);
@@ -243,9 +243,8 @@ Vec fem::create_vector_block(
                    dest_ranks.end());
 
   // Create map for combined problem, and create vector
-  common::IndexMap index_map(
-      maps[0].first.get().comm(common::IndexMap::Direction::forward),
-      local_size, dest_ranks, ghosts, ghost_owners);
+  common::IndexMap index_map(maps[0].first.get().comm(), local_size, dest_ranks,
+                             ghosts, ghost_owners);
 
   return la::create_petsc_vector(index_map, 1);
 }
@@ -267,14 +266,16 @@ Vec fem::create_vector_nest(
 
   // Create nested (VecNest) vector
   Vec y;
-  VecCreateNest(vecs[0]->mpi_comm(), petsc_vecs.size(), nullptr,
-                petsc_vecs.data(), &y);
+  VecCreateNest(vecs[0]->comm(), petsc_vecs.size(), nullptr, petsc_vecs.data(),
+                &y);
   return y;
 }
 //-----------------------------------------------------------------------------
-void fem::assemble_vector_petsc(Vec b, const Form<PetscScalar>& L,
-                                const xtl::span<const PetscScalar>& constants,
-                                const array2d<PetscScalar>& coeffs)
+void fem::assemble_vector_petsc(
+    Vec b, const Form<PetscScalar>& L,
+    const xtl::span<const PetscScalar>& constants,
+    const std::map<std::pair<IntegralType, int>,
+                   std::pair<xtl::span<const PetscScalar>, int>>& coeffs)
 {
   Vec b_local;
   VecGhostGetLocalForm(b, &b_local);
@@ -305,7 +306,9 @@ void fem::assemble_vector_petsc(Vec b, const Form<PetscScalar>& L)
 void fem::apply_lifting_petsc(
     Vec b, const std::vector<std::shared_ptr<const Form<PetscScalar>>>& a,
     const std::vector<xtl::span<const PetscScalar>>& constants,
-    const std::vector<const array2d<PetscScalar>*>& coeffs,
+    const std::vector<std::map<std::pair<IntegralType, int>,
+                               std::pair<xtl::span<const PetscScalar>, int>>>&
+        coeffs,
     const std::vector<
         std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>>& bcs1,
     const std::vector<Vec>& x0, double scale)

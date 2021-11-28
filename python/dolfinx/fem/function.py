@@ -13,8 +13,11 @@ import numpy as np
 import ufl
 import ufl.algorithms
 import ufl.algorithms.analysis
-from dolfinx import common, cpp, jit
+from dolfinx import cpp as _cpp
+from dolfinx import jit
 from dolfinx.fem import dofmap
+from dolfinx.mesh import Mesh
+from petsc4py import PETSc
 
 
 class Constant(ufl.Constant):
@@ -29,7 +32,10 @@ class Constant(ufl.Constant):
         """
         c_np = np.asarray(c)
         super().__init__(domain, c_np.shape)
-        self._cpp_object = cpp.fem.Constant(c_np.shape, c_np.flatten())
+        if np.iscomplexobj(c) is True:
+            self._cpp_object = _cpp.fem.Constant_complex128(c_np)
+        else:
+            self._cpp_object = _cpp.fem.Constant_float64(c_np)
 
     @property
     def value(self):
@@ -45,7 +51,9 @@ class Expression:
     def __init__(self,
                  ufl_expression: ufl.core.expr.Expr,
                  x: np.ndarray,
-                 form_compiler_parameters: dict = {}, jit_parameters: dict = {}):
+                 form_compiler_parameters: dict = {},
+                 jit_parameters: dict = {},
+                 dtype=PETSc.ScalarType):
         """Create DOLFINx Expression.
 
         Represents a mathematical expression evaluated at a pre-defined set of
@@ -82,7 +90,13 @@ class Expression:
         mesh = ufl_expression.ufl_domain().ufl_cargo()
 
         # Compile UFL expression with JIT
-        self._ufc_expression, module, self._code = jit.ffcx_jit(mesh.mpi_comm(), (ufl_expression, x),
+        if dtype == np.float64:
+            form_compiler_parameters["scalar_type"] = "double"
+        elif dtype == np.complex128:
+            form_compiler_parameters["scalar_type"] = "double _Complex"
+        else:
+            raise RuntimeError(f"Unsupported scalar type {dtype} for Form.")
+        self._ufc_expression, module, self._code = jit.ffcx_jit(mesh.comm, (ufl_expression, x),
                                                                 form_compiler_parameters=form_compiler_parameters,
                                                                 jit_parameters=jit_parameters)
         self._ufl_expression = ufl_expression
@@ -100,7 +114,16 @@ class Expression:
         ufl_constants = ufl.algorithms.analysis.extract_constants(ufl_expression)
         constants = [ufl_constant._cpp_object for ufl_constant in ufl_constants]
 
-        self._cpp_object = cpp.fem.Expression(coefficients, constants, mesh, x, fn, value_size)
+        # Getcpp Expression type
+        def expressiontype(dtype):
+            if dtype is np.float64:
+                return _cpp.fem.Expression_float64
+            elif dtype is np.complex128:
+                return _cpp.fem.Expression_complex128
+            else:
+                raise NotImplementedError(f"Type {dtype} not supported.")
+
+        self._cpp_object = expressiontype(dtype)(coefficients, constants, mesh, x, fn, value_size)
 
     def eval(self, cells: np.ndarray, u: typing.Optional[np.ndarray] = None) -> np.ndarray:
         """Evaluate Expression in cells.
@@ -129,7 +152,7 @@ class Expression:
 
         # Allocate memory for result if u was not provided
         if u is None:
-            if common.has_petsc_complex:
+            if np.issubdtype(PETSc.ScalarType, np.complexfloating):
                 u = np.empty((num_cells, self.num_points * self.value_size), dtype=np.complex128)
             else:
                 u = np.empty((num_cells, self.num_points * self.value_size), dtype=np.float64)
@@ -183,15 +206,24 @@ class Function(ufl.Coefficient):
 
     def __init__(self,
                  V: "FunctionSpace",
-                 x: typing.Optional[cpp.la.Vector] = None,
-                 name: typing.Optional[str] = None):
+                 x: typing.Optional[typing.Union[_cpp.la.Vector_float64, _cpp.la.Vector_complex128]] = None,
+                 name: typing.Optional[str] = None,
+                 dtype=PETSc.ScalarType):
         """Initialize finite element Function."""
 
         # Create cpp Function
+        def functiontype(dtype):
+            if dtype is np.float64:
+                return _cpp.fem.Function_float64
+            elif dtype is np.complex128:
+                return _cpp.fem.Function_complex128
+            else:
+                raise NotImplementedError(f"Type {dtype} not supported.")
+
         if x is not None:
-            self._cpp_object = cpp.fem.Function(V._cpp_object, x)
+            self._cpp_object = functiontype(dtype)(V._cpp_object, x)
         else:
-            self._cpp_object = cpp.fem.Function(V._cpp_object)
+            self._cpp_object = functiontype(dtype)(V._cpp_object)
 
         # Initialize the ufl.FunctionSpace
         super().__init__(V.ufl_function_space(), count=self._cpp_object.id)
@@ -253,7 +285,7 @@ class Function(ufl.Coefficient):
         # Allocate memory for return value if not provided
         if u is None:
             value_size = ufl.product(self.ufl_element().value_shape())
-            if common.has_petsc_complex:
+            if np.issubdtype(PETSc.ScalarType, np.complexfloating):
                 u = np.empty((num_points, value_size), dtype=np.complex128)
             else:
                 u = np.empty((num_points, value_size))
@@ -357,9 +389,9 @@ class FunctionSpace(ufl.FunctionSpace):
     """A space on which Functions (fields) can be defined."""
 
     def __init__(self,
-                 mesh: cpp.mesh.Mesh,
+                 mesh: Mesh,
                  element: typing.Union[ufl.FiniteElementBase, ElementMetaData],
-                 cppV: typing.Optional[cpp.fem.FunctionSpace] = None,
+                 cppV: typing.Optional[_cpp.fem.FunctionSpace] = None,
                  form_compiler_parameters: dict = {},
                  jit_parameters: dict = {}):
         """Create a finite element function space."""
@@ -383,16 +415,16 @@ class FunctionSpace(ufl.FunctionSpace):
 
         # Compile dofmap and element and create DOLFIN objects
         (self._ufc_element, self._ufc_dofmap), module, code = jit.ffcx_jit(
-            mesh.mpi_comm(), self.ufl_element(), form_compiler_parameters=form_compiler_parameters,
+            mesh.comm, self.ufl_element(), form_compiler_parameters=form_compiler_parameters,
             jit_parameters=jit_parameters)
 
         ffi = cffi.FFI()
-        cpp_element = cpp.fem.FiniteElement(ffi.cast("uintptr_t", ffi.addressof(self._ufc_element)))
-        cpp_dofmap = cpp.fem.create_dofmap(mesh.mpi_comm(), ffi.cast(
+        cpp_element = _cpp.fem.FiniteElement(ffi.cast("uintptr_t", ffi.addressof(self._ufc_element)))
+        cpp_dofmap = _cpp.fem.create_dofmap(mesh.comm, ffi.cast(
             "uintptr_t", ffi.addressof(self._ufc_dofmap)), mesh.topology, cpp_element)
 
         # Initialize the cpp.FunctionSpace
-        self._cpp_object = cpp.fem.FunctionSpace(mesh, cpp_element, cpp_dofmap)
+        self._cpp_object = _cpp.fem.FunctionSpace(mesh, cpp_element, cpp_dofmap)
 
     def clone(self) -> "FunctionSpace":
         """Return a new FunctionSpace :math:`W` which shares data with this
@@ -408,7 +440,7 @@ class FunctionSpace(ufl.FunctionSpace):
         conditions.
 
         """
-        Vcpp = cpp.fem.FunctionSpace(self._cpp_object.mesh, self._cpp_object.element, self._cpp_object.dofmap)
+        Vcpp = _cpp.fem.FunctionSpace(self._cpp_object.mesh, self._cpp_object.element, self._cpp_object.dofmap)
         return FunctionSpace(None, self.ufl_element(), Vcpp)
 
     def dolfin_element(self):
@@ -507,7 +539,7 @@ class FunctionSpace(ufl.FunctionSpace):
         return self._cpp_object.tabulate_dof_coordinates()
 
 
-def VectorFunctionSpace(mesh: cpp.mesh.Mesh,
+def VectorFunctionSpace(mesh: Mesh,
                         element: ElementMetaData,
                         dim=None,
                         restriction=None) -> "FunctionSpace":
@@ -518,7 +550,7 @@ def VectorFunctionSpace(mesh: cpp.mesh.Mesh,
     return FunctionSpace(mesh, ufl_element)
 
 
-def TensorFunctionSpace(mesh: cpp.mesh.Mesh,
+def TensorFunctionSpace(mesh: Mesh,
                         element: ElementMetaData,
                         shape=None,
                         symmetry: bool = None,

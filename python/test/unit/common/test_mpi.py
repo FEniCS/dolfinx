@@ -8,26 +8,33 @@
 
 import pathlib
 
+import cppimport
 import dolfinx
+import dolfinx.pkgconfig
 import mpi4py
+import pytest
 from dolfinx import wrappers
-from dolfinx.jit import dolfinx_pc, mpi_jit_decorator
+from dolfinx.generation import UnitSquareMesh
+from dolfinx.jit import mpi_jit_decorator
 from dolfinx_utils.test.fixtures import tempdir  # noqa: F401
 from mpi4py import MPI
-import cppimport
 
 
 def test_mpi_comm_wrapper():
     """Test MPICommWrapper <-> mpi4py.MPI.Comm conversion"""
     w1 = MPI.COMM_WORLD
-    m = dolfinx.UnitSquareMesh(w1, 4, 4)
-    w2 = m.mpi_comm()
+    m = UnitSquareMesh(w1, 4, 4)
+    w2 = m.comm
     assert isinstance(w1, MPI.Comm)
     assert isinstance(w2, MPI.Comm)
 
 
+@pytest.mark.skipif(not dolfinx.pkgconfig.exists("dolfinx"),
+                    reason="This test needs DOLFINx pkg-config.")
 def test_mpi_comm_wrapper_cppimport(tempdir):  # noqa: F811
     """Test MPICommWrapper <-> mpi4py.MPI.Comm conversion for code compiled with cppimport"""
+
+    dolfinx_pc = dolfinx.pkgconfig.parse("dolfinx")
 
     @mpi_jit_decorator
     def compile_module():

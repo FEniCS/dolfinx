@@ -6,14 +6,16 @@
 
 import os
 
+import numpy as np
 import pytest
-from dolfinx import (Function, FunctionSpace, TensorFunctionSpace,
-                     UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh,
-                     VectorFunctionSpace, has_petsc_complex)
-from dolfinx.cpp.mesh import CellType
+from dolfinx.fem import (Function, FunctionSpace, TensorFunctionSpace,
+                         VectorFunctionSpace)
+from dolfinx.generation import UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh
 from dolfinx.io import XDMFFile
+from dolfinx.mesh import CellType
 from dolfinx_utils.test.fixtures import tempdir
 from mpi4py import MPI
+from petsc4py import PETSc
 
 assert (tempdir)
 
@@ -55,8 +57,8 @@ def test_save_1d_scalar(tempdir, encoding):
     mesh = UnitIntervalMesh(MPI.COMM_WORLD, 32)
     V = FunctionSpace(mesh, ("Lagrange", 2))
     u = Function(V)
-    u.vector.set(1.0 + (1j if has_petsc_complex else 0))
-    with XDMFFile(mesh.mpi_comm(), filename2, "w", encoding=encoding) as file:
+    u.vector.set(1.0 + (1j if np.issubdtype(PETSc.ScalarType, np.complexfloating) else 0))
+    with XDMFFile(mesh.comm, filename2, "w", encoding=encoding) as file:
         file.write_mesh(mesh)
         file.write_function(u)
 
@@ -69,7 +71,7 @@ def test_save_2d_scalar(tempdir, encoding, cell_type):
     V = FunctionSpace(mesh, ("Lagrange", 2))
     u = Function(V)
     u.vector.set(1.0)
-    with XDMFFile(mesh.mpi_comm(), filename, "w", encoding=encoding) as file:
+    with XDMFFile(mesh.comm, filename, "w", encoding=encoding) as file:
         file.write_mesh(mesh)
         file.write_function(u)
 
@@ -82,7 +84,7 @@ def test_save_3d_scalar(tempdir, encoding, cell_type):
     V = FunctionSpace(mesh, ("Lagrange", 2))
     u = Function(V)
     u.vector.set(1.0)
-    with XDMFFile(mesh.mpi_comm(), filename, "w", encoding=encoding) as file:
+    with XDMFFile(mesh.comm, filename, "w", encoding=encoding) as file:
         file.write_mesh(mesh)
         file.write_function(u)
 
@@ -94,8 +96,8 @@ def test_save_2d_vector(tempdir, encoding, cell_type):
     mesh = UnitSquareMesh(MPI.COMM_WORLD, 12, 13, cell_type)
     V = VectorFunctionSpace(mesh, ("Lagrange", 2))
     u = Function(V)
-    u.vector.set(1.0 + (1j if has_petsc_complex else 0))
-    with XDMFFile(mesh.mpi_comm(), filename, "w", encoding=encoding) as file:
+    u.vector.set(1.0 + (1j if np.issubdtype(PETSc.ScalarType, np.complexfloating) else 0))
+    with XDMFFile(mesh.comm, filename, "w", encoding=encoding) as file:
         file.write_mesh(mesh)
         file.write_function(u)
 
@@ -106,8 +108,8 @@ def test_save_3d_vector(tempdir, encoding, cell_type):
     filename = os.path.join(tempdir, "u_3Dv.xdmf")
     mesh = UnitCubeMesh(MPI.COMM_WORLD, 2, 2, 2, cell_type)
     u = Function(VectorFunctionSpace(mesh, ("Lagrange", 1)))
-    u.vector.set(1.0 + (1j if has_petsc_complex else 0))
-    with XDMFFile(mesh.mpi_comm(), filename, "w", encoding=encoding) as file:
+    u.vector.set(1.0 + (1j if np.issubdtype(PETSc.ScalarType, np.complexfloating) else 0))
+    with XDMFFile(mesh.comm, filename, "w", encoding=encoding) as file:
         file.write_mesh(mesh)
         file.write_function(u)
 
@@ -118,8 +120,8 @@ def test_save_2d_tensor(tempdir, encoding, cell_type):
     filename = os.path.join(tempdir, "tensor.xdmf")
     mesh = UnitSquareMesh(MPI.COMM_WORLD, 16, 16, cell_type)
     u = Function(TensorFunctionSpace(mesh, ("Lagrange", 2)))
-    u.vector.set(1.0 + (1j if has_petsc_complex else 0))
-    with XDMFFile(mesh.mpi_comm(), filename, "w", encoding=encoding) as file:
+    u.vector.set(1.0 + (1j if np.issubdtype(PETSc.ScalarType, np.complexfloating) else 0))
+    with XDMFFile(mesh.comm, filename, "w", encoding=encoding) as file:
         file.write_mesh(mesh)
         file.write_function(u)
 
@@ -130,8 +132,8 @@ def test_save_3d_tensor(tempdir, encoding, cell_type):
     filename = os.path.join(tempdir, "u3t.xdmf")
     mesh = UnitCubeMesh(MPI.COMM_WORLD, 4, 4, 4, cell_type)
     u = Function(TensorFunctionSpace(mesh, ("Lagrange", 2)))
-    u.vector.set(1.0 + (1j if has_petsc_complex else 0))
-    with XDMFFile(mesh.mpi_comm(), filename, "w", encoding=encoding) as file:
+    u.vector.set(1.0 + (1j if np.issubdtype(PETSc.ScalarType, np.complexfloating) else 0))
+    with XDMFFile(mesh.comm, filename, "w", encoding=encoding) as file:
         file.write_mesh(mesh)
         file.write_function(u)
 
@@ -142,13 +144,13 @@ def test_save_3d_vector_series(tempdir, encoding, cell_type):
     filename = os.path.join(tempdir, "u_3D.xdmf")
     mesh = UnitCubeMesh(MPI.COMM_WORLD, 2, 2, 2, cell_type)
     u = Function(VectorFunctionSpace(mesh, ("Lagrange", 2)))
-    with XDMFFile(mesh.mpi_comm(), filename, "w", encoding=encoding) as file:
+    with XDMFFile(mesh.comm, filename, "w", encoding=encoding) as file:
         file.write_mesh(mesh)
-        u.vector.set(1.0 + (1j if has_petsc_complex else 0))
+        u.vector.set(1.0 + (1j if np.issubdtype(PETSc.ScalarType, np.complexfloating) else 0))
         file.write_function(u, 0.1)
-        u.vector.set(2.0 + (2j if has_petsc_complex else 0))
+        u.vector.set(2.0 + (2j if np.issubdtype(PETSc.ScalarType, np.complexfloating) else 0))
         file.write_function(u, 0.2)
 
-    with XDMFFile(mesh.mpi_comm(), filename, "a", encoding=encoding) as file:
-        u.vector.set(3.0 + (3j if has_petsc_complex else 0))
+    with XDMFFile(mesh.comm, filename, "a", encoding=encoding) as file:
+        u.vector.set(3.0 + (3j if np.issubdtype(PETSc.ScalarType, np.complexfloating) else 0))
         file.write_function(u, 0.3)

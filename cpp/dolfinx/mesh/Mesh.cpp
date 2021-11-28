@@ -14,6 +14,7 @@
 #include <dolfinx/common/utils.h>
 #include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <dolfinx/graph/ordering.h>
 #include <dolfinx/graph/partition.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <memory>
@@ -31,12 +32,17 @@ graph::AdjacencyList<T>
 reorder_list(const graph::AdjacencyList<T>& list,
              const xtl::span<const std::int32_t>& nodemap)
 {
+  // Copy existing data to keep ghost values (not reordered)
   std::vector<T> data(list.array());
-  std::vector<std::int32_t> offsets(list.offsets());
+  std::vector<std::int32_t> offsets(list.offsets().size());
 
-  // Compute new offsets
+  // Compute new offsets (owned and ghost)
+  offsets[0] = 0;
   for (std::size_t n = 0; n < nodemap.size(); ++n)
-    offsets[n + 1] = offsets[n] + list.num_links(nodemap[n]);
+    offsets[nodemap[n] + 1] = list.num_links(n);
+  for (std::size_t n = nodemap.size(); n < (std::size_t)list.num_nodes(); ++n)
+    offsets[n + 1] = list.num_links(n);
+  std::partial_sum(offsets.begin(), offsets.end(), offsets.begin());
   graph::AdjacencyList<T> list_new(std::move(data), std::move(offsets));
 
   for (std::size_t n = 0; n < nodemap.size(); ++n)
@@ -75,6 +81,8 @@ Mesh mesh::create_mesh(MPI_Comm comm,
   if (ghost_mode == mesh::GhostMode::shared_vertex)
     throw std::runtime_error("Ghost mode via vertex currently disabled.");
 
+  const fem::ElementDofLayout dof_layout = element.create_dof_layout();
+
   // TODO: This step can be skipped for 'P1' elements
   //
   // Extract topology data, e.g. just the vertices. For P1 geometry this
@@ -82,8 +90,7 @@ Mesh mesh::create_mesh(MPI_Comm comm,
   // filtered lists may have 'gaps', i.e. the indices might not be
   // contiguous.
   const graph::AdjacencyList<std::int64_t> cells_topology
-      = mesh::extract_topology(element.cell_shape(), element.dof_layout(),
-                               cells);
+      = mesh::extract_topology(element.cell_shape(), dof_layout, cells);
 
   // Compute the destination rank for cells on this process via graph
   // partitioning. Always get the ghost cells via facet, though these
@@ -99,8 +106,7 @@ Mesh mesh::create_mesh(MPI_Comm comm,
 
   // Extract cell 'topology', i.e. the vertices for each cell
   const graph::AdjacencyList<std::int64_t> cells_extracted0
-      = mesh::extract_topology(element.cell_shape(), element.dof_layout(),
-                               cell_nodes0);
+      = mesh::extract_topology(element.cell_shape(), dof_layout, cell_nodes0);
 
   // Build local dual graph for owned cells to apply re-ordering to
   const std::int32_t num_owned_cells
@@ -114,7 +120,7 @@ Mesh mesh::create_mesh(MPI_Comm comm,
       tdim);
 
   // Compute re-ordering of local dual graph
-  const std::vector<int> remap = graph::scotch::compute_gps(g, 2).first;
+  std::vector<int> remap = graph::reorder_gps(g);
 
   // Create re-ordered cell lists
   std::vector<std::int64_t> original_cell_index(original_cell_index0);
@@ -136,7 +142,7 @@ Mesh mesh::create_mesh(MPI_Comm comm,
   // connectivities for higher-order geometries)
   for (int e = 1; e < tdim; ++e)
   {
-    if (element.dof_layout().num_entity_dofs(e) > 0)
+    if (dof_layout.num_entity_dofs(e) > 0)
     {
       auto [cell_entity, entity_vertex, index_map]
           = mesh::compute_entities(comm, topology, e);
@@ -180,5 +186,5 @@ Geometry& Mesh::geometry() { return _geometry; }
 //-----------------------------------------------------------------------------
 const Geometry& Mesh::geometry() const { return _geometry; }
 //-----------------------------------------------------------------------------
-MPI_Comm Mesh::mpi_comm() const { return _mpi_comm.comm(); }
+MPI_Comm Mesh::comm() const { return _comm.comm(); }
 //-----------------------------------------------------------------------------

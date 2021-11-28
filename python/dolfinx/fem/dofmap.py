@@ -5,7 +5,7 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-from dolfinx import cpp
+from dolfinx import cpp as _cpp
 
 
 class DofMap:
@@ -15,7 +15,7 @@ class DofMap:
     a dof map based on a ufc_dofmap on a specific mesh.
     """
 
-    def __init__(self, dofmap: cpp.fem.DofMap):
+    def __init__(self, dofmap: _cpp.fem.DofMap):
         self._cpp_object = dofmap
 
     def cell_dofs(self, cell_index: int):

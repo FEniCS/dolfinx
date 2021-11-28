@@ -28,9 +28,9 @@ class IndexMap;
 ///
 /// @param[in] maps List of (index map, block size) pairs
 /// @returns The (0) global offset of a stacked map for this rank, (1)
-///   local offset for each submap in the stacked map, and (2) new
-///   indices for the ghosts for each submap (3) owner rank of each ghost
-///   entry for each submap
+/// local offset for each submap in the stacked map, and (2) new indices
+/// for the ghosts for each submap (3) owner rank of each ghost entry
+/// for each submap
 std::tuple<std::int64_t, std::vector<std::int32_t>,
            std::vector<std::vector<std::int64_t>>,
            std::vector<std::vector<int>>>
@@ -68,13 +68,13 @@ public:
   /// @note Collective
   /// @param[in] comm The MPI communicator
   /// @param[in] local_size Local size of the IndexMap, i.e. the number
-  ///   of owned entries
+  /// of owned entries
   IndexMap(MPI_Comm comm, std::int32_t local_size);
 
   /// Create an index map with local_size owned indiced on this process
   ///
   /// @note Collective
-  /// @param[in] mpi_comm The MPI communicator
+  /// @param[in] comm The MPI communicator
   /// @param[in] local_size Local size of the IndexMap, i.e. the number
   /// of owned entries
   /// @param[in] dest_ranks Ranks that 'ghost' indices that are owned by
@@ -83,11 +83,36 @@ public:
   /// @param[in] ghosts The global indices of ghost entries
   /// @param[in] src_ranks Owner rank (on global communicator) of each
   /// entry in @p ghosts
-  IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
+  IndexMap(MPI_Comm comm, std::int32_t local_size,
            const xtl::span<const int>& dest_ranks,
            const xtl::span<const std::int64_t>& ghosts,
            const xtl::span<const int>& src_ranks);
 
+private:
+  template <typename U, typename V, typename W, typename X>
+  IndexMap(std::array<std::int64_t, 2> local_range, std::size_t size_global,
+           MPI_Comm comm, U&& comm_owner_to_ghost, U&& comm_ghost_to_owner,
+           V&& displs_recv_fwd, V&& ghost_pos_recv_fwd, W&& ghosts,
+           X&& shared_indices)
+      : _local_range(local_range), _size_global(size_global), _comm(comm),
+        _comm_owner_to_ghost(std::forward<U>(comm_owner_to_ghost)),
+        _comm_ghost_to_owner(std::forward<U>(comm_ghost_to_owner)),
+        _displs_recv_fwd(std::forward<V>(displs_recv_fwd)),
+        _ghost_pos_recv_fwd(std::forward<V>(ghost_pos_recv_fwd)),
+        _ghosts(std::forward<W>(ghosts)),
+        _shared_indices(std::forward<X>(shared_indices))
+  {
+    _sizes_recv_fwd.resize(_displs_recv_fwd.size() - 1, 0);
+    std::adjacent_difference(_displs_recv_fwd.cbegin() + 1,
+                             _displs_recv_fwd.cend(), _sizes_recv_fwd.begin());
+
+    const std::vector<int32_t>& displs_send = _shared_indices->offsets();
+    _sizes_send_fwd.resize(_shared_indices->num_nodes(), 0);
+    std::adjacent_difference(displs_send.cbegin() + 1, displs_send.cend(),
+                             _sizes_send_fwd.begin());
+  }
+
+public:
   // Copy constructor
   IndexMap(const IndexMap& map) = delete;
 
@@ -118,6 +143,10 @@ public:
   /// Local-to-global map for ghosts (local indexing beyond end of local
   /// range)
   const std::vector<std::int64_t>& ghosts() const noexcept;
+
+  /// Return the MPI communicator used to create the index map
+  /// @return Communicator
+  MPI_Comm comm() const;
 
   /// Return a MPI communicator with attached distributed graph topology
   /// information
@@ -176,6 +205,19 @@ public:
   /// have the index as a ghost
   /// @return shared indices
   std::map<std::int32_t, std::set<int>> compute_shared_indices() const;
+
+  /// Create new index map from a subset of indices in this index map.
+  /// The order of the indices is preserved, with new map effectively a
+  /// 'compressed' map.
+  /// @param[in] indices Local indices in the map that should appear in
+  /// the new index map. All indices must be owned, i.e. indices must be
+  /// less than `this->size_local()`.
+  /// @pre `indices` must be sorted and contain no duplicates
+  /// @return The (i) new index map and (ii) a map from the ghost
+  /// position in the new map to the ghost position in the original
+  /// (this) map
+  std::pair<IndexMap, std::vector<std::int32_t>>
+  create_submap(const xtl::span<const std::int32_t>& indices) const;
 
   /// Start a non-blocking send of owned data to ranks that ghost the
   /// data. The communication is completed by calling
@@ -258,7 +300,7 @@ public:
   {
     MPI_Datatype data_type;
     if (n == 1)
-      data_type = MPI::mpi_type<T>();
+      data_type = dolfinx::MPI::mpi_type<T>();
     else
     {
       MPI_Type_contiguous(n, dolfinx::MPI::mpi_type<T>(), &data_type);
@@ -428,7 +470,8 @@ private:
   // Number indices across communicator
   std::int64_t _size_global;
 
-  // MPI neighborhood communicators
+  // MPI communicator (duplicated of 'input' communicator)
+  dolfinx::MPI::Comm _comm;
 
   // Communicator where the source ranks own the indices in the callers
   // halo, and the destination ranks 'ghost' indices owned by the
@@ -445,20 +488,22 @@ private:
   dolfinx::MPI::Comm _comm_ghost_to_owner;
 
   // MPI sizes and displacements for forward (owner -> ghost) scatter
-  std::vector<std::int32_t> _sizes_recv_fwd, _sizes_send_fwd, _displs_recv_fwd;
+  // Note: '_displs_send_fwd' can be got from _shared_indices->offsets()
+  std::vector<std::int32_t> _sizes_send_fwd, _sizes_recv_fwd, _displs_recv_fwd;
 
-  // Position in the recv buffer for a forward scatter for the _ghost[i]
-  // entry
+  // Position in the recv buffer for a forward scatter for the ith ghost
+  // index (_ghost[i]) entry
   std::vector<std::int32_t> _ghost_pos_recv_fwd;
 
   // Local-to-global map for ghost indices
   std::vector<std::int64_t> _ghosts;
 
-  // List of owned local indices that are in the halo (ghost) region on
+  // List of owned local indices that are in the ghost (halo) region on
   // other ranks, grouped by rank in the neighbor communicator
   // (destination ranks in forward communicator and source ranks in the
   // reverse communicator), i.e. `_shared_indices.num_nodes() ==
-  // size(_comm_owner_to_ghost)`.
+  // size(_comm_owner_to_ghost)`. The array _shared_indices.offsets() is
+  // equivalent to 'displs_send_fwd'.
   std::unique_ptr<graph::AdjacencyList<std::int32_t>> _shared_indices;
 };
 

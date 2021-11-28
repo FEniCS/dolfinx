@@ -55,8 +55,9 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
   MPI_Comm_create_group(MPI_COMM_WORLD, new_group, 0, &subset_comm);
 
   // Create coordinate map
-  auto e = std::make_shared<basix::FiniteElement>(
-      basix::create_element("Lagrange", "triangle", 1));
+  auto e = std::make_shared<basix::FiniteElement>(basix::create_element(
+      basix::element::family::P, basix::cell::type::triangle, 1,
+      basix::element::lagrange_variant::equispaced, false));
   fem::CoordinateElement cmap(e);
 
   // read mesh data

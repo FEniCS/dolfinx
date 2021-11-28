@@ -7,10 +7,7 @@
 #pragma once
 
 #include <array>
-#include <dolfinx/common/types.h>
 #include <memory>
-#include <set>
-#include <ufc.h>
 #include <vector>
 
 namespace dolfinx::mesh
@@ -44,8 +41,8 @@ public:
   /// @param[in] sub_dofmaps TODO
   ElementDofLayout(
       int block_size,
-      const std::vector<std::vector<std::set<int>>>& entity_dofs,
-      const std::vector<std::vector<std::set<int>>>& entity_closure_dofs,
+      const std::vector<std::vector<std::vector<int>>>& entity_dofs,
+      const std::vector<std::vector<std::vector<int>>>& entity_closure_dofs,
       const std::vector<int>& parent_map,
       const std::vector<std::shared_ptr<const ElementDofLayout>>& sub_dofmaps);
 
@@ -67,6 +64,12 @@ public:
   /// Move assignment
   ElementDofLayout& operator=(ElementDofLayout&& dofmap) = default;
 
+  /// Equality operator
+  /// @return Returns true if the layout data is the same. Sub- and
+  /// parent dofmap data is not compared.
+  /// @note The block sizes of the layouts are not compared
+  bool operator==(const ElementDofLayout& layout) const;
+
   /// Return the dimension of the local finite element function space on
   /// a cell (number of dofs on element)
   /// @return Dimension of the local finite element function space.
@@ -80,28 +83,27 @@ public:
   /// Return the number of closure dofs for a given entity dimension
   /// @param[in] dim Entity dimension
   /// @return Number of dofs associated with closure of given entity
-  ///   dimension
+  /// dimension
   int num_entity_closure_dofs(int dim) const;
 
   /// Local-local mapping of dofs on entity of cell
-  /// @param[in] entity_dim The entity dimension
-  /// @param[in] cell_entity_index The local entity index on the cell
-  /// @return Degrees of freedom on a single element.
-  std::vector<int> entity_dofs(int entity_dim, int cell_entity_index) const;
+  /// @param[in] dim The entity dimension
+  /// @param[in] entity_index The local entity index on the cell
+  /// @return Cell-local degree-of-freedom indices
+  const std::vector<int>& entity_dofs(int dim, int entity_index) const;
 
   /// Local-local closure dofs on entity of cell
-  /// @param[in] entity_dim The entity dimension
-  /// @param[in] cell_entity_index The local entity index on the cell
-  /// @return Degrees of freedom on a single element
-  std::vector<int> entity_closure_dofs(int entity_dim,
-                                       int cell_entity_index) const;
+  /// @param[in] dim The entity dimension
+  /// @param[in] entity_index The local entity index on the cell
+  /// @return Cell-local degree-of-freedom indices
+  const std::vector<int>& entity_closure_dofs(int dim, int entity_index) const;
 
   /// Direct access to all entity dofs (dof = _entity_dofs[dim][entity][i])
-  const std::vector<std::vector<std::set<int>>>& entity_dofs_all() const;
+  const std::vector<std::vector<std::vector<int>>>& entity_dofs_all() const;
 
   /// Direct access to all entity closure dofs (dof =
   /// _entity_dofs[dim][entity][i])
-  const std::vector<std::vector<std::set<int>>>&
+  const std::vector<std::vector<std::vector<int>>>&
   entity_closure_dofs_all() const;
 
   /// Get number of sub-dofmaps
@@ -120,9 +122,8 @@ public:
   int block_size() const;
 
   /// True iff dof map is a view into another map
-  ///
   /// @returns bool True if the dof map is a sub-dof map (a view into
-  ///   another map).
+  /// another map).
   bool is_view() const;
 
 private:
@@ -144,10 +145,10 @@ private:
 
   // List of dofs per entity, ordered by dimension.
   // dof = _entity_dofs[dim][entity][i]
-  std::vector<std::vector<std::set<int>>> _entity_dofs;
+  std::vector<std::vector<std::vector<int>>> _entity_dofs;
 
   // List of dofs with connected entities of lower dimension
-  std::vector<std::vector<std::set<int>>> _entity_closure_dofs;
+  std::vector<std::vector<std::vector<int>>> _entity_closure_dofs;
 
   // List of sub dofmaps
   std::vector<std::shared_ptr<const ElementDofLayout>> _sub_dofmaps;

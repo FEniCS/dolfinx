@@ -11,10 +11,8 @@
 #include <complex>
 #include <cstdint>
 #include <dolfinx/graph/AdjacencyList.h>
-#include <iostream>
 #include <numeric>
 #include <set>
-#include <tuple>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -92,13 +90,11 @@ graph::AdjacencyList<T>
 neighbor_all_to_all(MPI_Comm neighbor_comm,
                     const graph::AdjacencyList<T>& send_data);
 
-/// @todo Clarify directions
-///
-/// Return list of neighbors for a neighborhood communicator
-/// @param[in] neighbor_comm Neighborhood communicator
+/// Return list of neighbors (sources and and destination) for a
+/// neighborhood communicator
+/// @param[in] comm Neighborhood communicator
 /// @return source ranks, destination ranks
-std::tuple<std::vector<int>, std::vector<int>>
-neighbors(MPI_Comm neighbor_comm);
+std::array<std::vector<int>, 2> neighbors(MPI_Comm comm);
 
 /// Return local range for given process, splitting [0, N - 1] into
 /// size() portions of almost equal size
@@ -156,25 +152,25 @@ constexpr MPI_Datatype mpi_type()
 {
   if constexpr (std::is_same<T, float>::value)
     return MPI_FLOAT;
-  else if (std::is_same<T, double>::value)
+  else if constexpr (std::is_same<T, double>::value)
     return MPI_DOUBLE;
-  else if (std::is_same<T, std::complex<double>>::value)
+  else if constexpr (std::is_same<T, std::complex<double>>::value)
     return MPI_DOUBLE_COMPLEX;
-  else if (std::is_same<T, short int>::value)
+  else if constexpr (std::is_same<T, short int>::value)
     return MPI_SHORT;
-  else if (std::is_same<T, int>::value)
+  else if constexpr (std::is_same<T, int>::value)
     return MPI_INT;
-  else if (std::is_same<T, unsigned int>::value)
+  else if constexpr (std::is_same<T, unsigned int>::value)
     return MPI_UNSIGNED;
-  else if (std::is_same<T, long int>::value)
+  else if constexpr (std::is_same<T, long int>::value)
     return MPI_LONG;
-  else if (std::is_same<T, unsigned long>::value)
+  else if constexpr (std::is_same<T, unsigned long>::value)
     return MPI_UNSIGNED_LONG;
-  else if (std::is_same<T, long long>::value)
+  else if constexpr (std::is_same<T, long long>::value)
     return MPI_LONG_LONG;
-  else if (std::is_same<T, unsigned long long>::value)
+  else if constexpr (std::is_same<T, unsigned long long>::value)
     return MPI_UNSIGNED_LONG_LONG;
-  else if (std::is_same<T, bool>::value)
+  else if constexpr (std::is_same<T, bool>::value)
     return MPI_C_BOOL;
 }
 
@@ -191,8 +187,8 @@ graph::AdjacencyList<T> all_to_all(MPI_Comm comm,
 
   // Data size per destination rank
   std::vector<int> send_size(comm_size);
-  std::adjacent_difference(std::next(send_offsets.begin(), +1),
-                           send_offsets.end(), send_size.begin());
+  std::adjacent_difference(std::next(send_offsets.begin()), send_offsets.end(),
+                           send_size.begin());
 
   // Get received data sizes from each rank
   std::vector<int> recv_size(comm_size);
@@ -200,13 +196,12 @@ graph::AdjacencyList<T> all_to_all(MPI_Comm comm,
                mpi_type<int>(), comm);
 
   // Compute receive offset
-  std::vector<std::int32_t> recv_offset(comm_size + 1);
-  recv_offset[0] = 0;
+  std::vector<std::int32_t> recv_offset(comm_size + 1, 0);
   std::partial_sum(recv_size.begin(), recv_size.end(),
                    std::next(recv_offset.begin()));
 
   // Send/receive data
-  std::vector<T> recv_values(recv_offset[comm_size]);
+  std::vector<T> recv_values(recv_offset.back());
   MPI_Alltoallv(values_in.data(), send_size.data(), send_offsets.data(),
                 mpi_type<T>(), recv_values.data(), recv_size.data(),
                 recv_offset.data(), mpi_type<T>(), comm);

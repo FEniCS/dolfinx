@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2020 Anders Logg and Garth N. Wells
+// Copyright (C) 2020-2021 Garth N. Wells and Matthew W. Scroggs
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -6,6 +6,7 @@
 
 #include "FiniteElement.h"
 #include <basix/finite-element.h>
+#include <basix/interpolation.h>
 #include <dolfinx/common/log.h>
 #include <functional>
 #include <ufc.h>
@@ -100,6 +101,9 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
   case tetrahedron:
     _cell_shape = mesh::CellType::tetrahedron;
     break;
+  case prism:
+    _cell_shape = mesh::CellType::prism;
+    break;
   case hexahedron:
     _cell_shape = mesh::CellType::hexahedron;
     break;
@@ -110,11 +114,9 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
   assert(mesh::cell_dim(_cell_shape) == _tdim);
 
   static const std::map<ufc_shape, std::string> ufc_to_cell
-      = {{vertex, "point"},
-         {interval, "interval"},
-         {triangle, "triangle"},
-         {tetrahedron, "tetrahedron"},
-         {quadrilateral, "quadrilateral"},
+      = {{vertex, "point"},         {interval, "interval"},
+         {triangle, "triangle"},    {tetrahedron, "tetrahedron"},
+         {prism, "prism"},          {quadrilateral, "quadrilateral"},
          {hexahedron, "hexahedron"}};
   const std::string cell_shape = ufc_to_cell.at(ufc_element.cell_shape);
 
@@ -143,9 +145,23 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
 
   if (is_basix_element(ufc_element))
   {
-    // FIXME: Find a better way than strings to initialise this Basix element
-    _element = std::make_unique<basix::FiniteElement>(basix::create_element(
-        _family.c_str(), cell_shape.c_str(), ufc_element.degree));
+    if (ufc_element.lagrange_variant != -1)
+    {
+      _element = std::make_unique<basix::FiniteElement>(basix::create_element(
+          static_cast<basix::element::family>(ufc_element.basix_family),
+          static_cast<basix::cell::type>(ufc_element.basix_cell),
+          ufc_element.degree,
+          static_cast<basix::element::lagrange_variant>(
+              ufc_element.lagrange_variant),
+          ufc_element.discontinuous));
+    }
+    else
+    {
+      _element = std::make_unique<basix::FiniteElement>(basix::create_element(
+          static_cast<basix::element::family>(ufc_element.basix_family),
+          static_cast<basix::cell::type>(ufc_element.basix_cell),
+          ufc_element.degree, ufc_element.discontinuous));
+    }
 
     _needs_dof_transformations
         = !_element->dof_transformations_are_identity()
@@ -163,6 +179,8 @@ mesh::CellType FiniteElement::cell_shape() const noexcept
 {
   return _cell_shape;
 }
+//-----------------------------------------------------------------------------
+int FiniteElement::tdim() const noexcept { return _tdim; }
 //-----------------------------------------------------------------------------
 int FiniteElement::space_dimension() const noexcept { return _space_dim; }
 //-----------------------------------------------------------------------------
@@ -197,19 +215,14 @@ void FiniteElement::tabulate(xt::xtensor<double, 4>& reference_values,
   reference_values = _element->tabulate(order, X);
 }
 //-----------------------------------------------------------------------------
-void FiniteElement::transform_reference_basis(
-    xt::xtensor<double, 3>& values,
-    const xt::xtensor<double, 3>& reference_values,
-    const xt::xtensor<double, 3>& J, const xtl::span<const double>& detJ,
-    const xt::xtensor<double, 3>& K) const
-{
-  assert(_element);
-  _element->map_push_forward_m(reference_values, J, detJ, K, values);
-}
-//-----------------------------------------------------------------------------
 int FiniteElement::num_sub_elements() const noexcept
 {
   return _sub_elements.size();
+}
+//-----------------------------------------------------------------------------
+bool FiniteElement::is_mixed() const noexcept
+{
+  return !_sub_elements.empty() and _bs == 1;
 }
 //-----------------------------------------------------------------------------
 const std::vector<std::shared_ptr<const FiniteElement>>&
@@ -218,7 +231,6 @@ FiniteElement::sub_elements() const noexcept
   return _sub_elements;
 }
 //-----------------------------------------------------------------------------
-
 std::size_t FiniteElement::hash() const noexcept { return _hash; }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const FiniteElement>
@@ -232,10 +244,21 @@ FiniteElement::extract_sub_element(const std::vector<int>& component) const
   return sub_finite_element;
 }
 //-----------------------------------------------------------------------------
+basix::maps::type FiniteElement::map_type() const
+{
+  if (!_element)
+  {
+    throw std::runtime_error("Cannot element map type - no Basix element "
+                             "available. Maybe this is a mixed element?");
+  }
+
+  return _element->map_type();
+}
+//-----------------------------------------------------------------------------
 bool FiniteElement::interpolation_ident() const noexcept
 {
   assert(_element);
-  return _element->map_type == basix::maps::type::identity;
+  return _element->map_type() == basix::maps::type::identity;
 }
 //-----------------------------------------------------------------------------
 const xt::xtensor<double, 2>& FiniteElement::interpolation_points() const
@@ -248,6 +271,59 @@ const xt::xtensor<double, 2>& FiniteElement::interpolation_points() const
   }
 
   return _element->points();
+}
+//-----------------------------------------------------------------------------
+const xt::xtensor<double, 2>& FiniteElement::interpolation_operator() const
+{
+  if (!_element)
+  {
+    throw std::runtime_error("No underlying element for interpolation. "
+                             "Cannot interpolate mixed elements directly.");
+  }
+
+  return _element->interpolation_matrix();
+}
+//-----------------------------------------------------------------------------
+xt::xtensor<double, 2>
+FiniteElement::create_interpolation_operator(const FiniteElement& from) const
+{
+  assert(_element);
+  assert(from._element);
+  if (_element->map_type() != from._element->map_type())
+  {
+    throw std::runtime_error("Interpolation between elements with different "
+                             "maps is not supported.");
+  }
+
+  if (_bs == 1 or from._bs == 1)
+  {
+    // If one of the elements have bs=1, Basix can figure out the size
+    // of the matrix
+    return basix::compute_interpolation_operator(*from._element, *_element);
+  }
+  else if (_bs > 1 and from._bs == _bs)
+  {
+    // If bs != 1 for at least one element, then bs0 == bs1 for this
+    // case
+    xt::xtensor<double, 2> i_m
+        = basix::compute_interpolation_operator(*from._element, *_element);
+    std::array<std::size_t, 2> shape = {i_m.shape(0) * _bs, i_m.shape(1) * _bs};
+    xt::xtensor<double, 2> out = xt::zeros<double>(shape);
+
+    // NOTE: Alternatively this operation could be implemented during
+    // matvec with the original matrix
+    for (std::size_t i = 0; i < i_m.shape(0); ++i)
+      for (std::size_t j = 0; j < i_m.shape(1); ++j)
+        for (int k = 0; k < _bs; ++k)
+          out(i * _bs + k, j * _bs + k) = i_m(i, j);
+
+    return out;
+  }
+  else
+  {
+    throw std::runtime_error(
+        "Interpolation for element combination is not supported.");
+  }
 }
 //-----------------------------------------------------------------------------
 bool FiniteElement::needs_dof_transformations() const noexcept
@@ -286,16 +362,17 @@ FiniteElement::get_dof_permutation_function(bool inverse,
     }
     else
     {
-      // If this element shouldn't be permuted but needs transformations, return
-      // a function that throws an error
-      return [](const xtl::span<std::int32_t>&, std::uint32_t) {
+      // If this element shouldn't be permuted but needs
+      // transformations, return a function that throws an error
+      return [](const xtl::span<std::int32_t>&, std::uint32_t)
+      {
         throw std::runtime_error(
             "Permutations should not be applied for this element.");
       };
     }
   }
 
-  if (_sub_elements.size() != 0)
+  if (!_sub_elements.empty())
   {
     if (_bs == 1)
     {

@@ -6,7 +6,6 @@
 
 #include "utils.h"
 #include <dolfinx/common/MPI.h>
-#include <dolfinx/common/types.h>
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -98,7 +97,8 @@ xt::xtensor<double, 2> create_new_geometry(
   for (auto& e : local_edge_to_new_vertex)
     edges[i++] = e.first;
 
-  const xt::xtensor<double, 2> midpoints = mesh::midpoints(mesh, 1, edges);
+  const xt::xtensor<double, 2> midpoints
+      = mesh::compute_midpoints(mesh, 1, edges);
   // The below should work, but misbehaves with the Intel icpx compiler
   // xt::view(new_vertex_coordinates, xt::range(-num_new_vertices, _),
   // xt::all())
@@ -136,7 +136,7 @@ refinement::compute_edge_sharing(const mesh::Mesh& mesh)
 
   MPI_Comm neighbor_comm;
   MPI_Dist_graph_create_adjacent(
-      mesh.mpi_comm(), neighbors.size(), neighbors.data(), MPI_UNWEIGHTED,
+      mesh.comm(), neighbors.size(), neighbors.data(), MPI_UNWEIGHTED,
       neighbors.size(), neighbors.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false,
       &neighbor_comm);
 
@@ -160,10 +160,10 @@ refinement::compute_edge_sharing(const mesh::Mesh& mesh)
   return {neighbor_comm, std::move(shared_edges)};
 }
 //-----------------------------------------------------------------------------
-void refinement::update_logical_edgefunction(
+std::vector<bool> refinement::update_logical_edgefunction(
     const MPI_Comm& neighbor_comm,
     const std::vector<std::vector<std::int32_t>>& marked_for_update,
-    std::vector<bool>& marked_edges, const common::IndexMap& map_e)
+    const std::vector<bool>& marked_edges, const common::IndexMap& map_e)
 {
   std::vector<std::int32_t> send_offsets = {0};
   std::vector<std::int64_t> data_to_send;
@@ -172,7 +172,6 @@ void refinement::update_logical_edgefunction(
   {
     for (std::int32_t q : marked_for_update[i])
       data_to_send.push_back(local_to_global(q, map_e));
-
     send_offsets.push_back(data_to_send.size());
   }
 
@@ -184,14 +183,19 @@ void refinement::update_logical_edgefunction(
             graph::AdjacencyList<std::int64_t>(data_to_send, send_offsets))
             .array();
 
-  // Flatten received values and set marked_edges at each index received
+  // Get local index for each global index
   std::vector<std::int32_t> local_indices(data_to_recv.size());
   map_e.global_to_local(data_to_recv, local_indices);
+
+  // Set marked_edges at each index received
+  std::vector<bool> _marked_edges = marked_edges;
   for (std::int32_t local_index : local_indices)
   {
     assert(local_index != -1);
-    marked_edges[local_index] = true;
+    _marked_edges[local_index] = true;
   }
+
+  return _marked_edges;
 }
 //-----------------------------------------------------------------------------
 std::pair<std::map<std::int32_t, std::int64_t>, xt::xtensor<double, 2>>
@@ -211,7 +215,7 @@ refinement::create_new_vertices(
   {
     if (marked_edges[local_i] == true)
     {
-      auto it = local_edge_to_new_vertex.insert({local_i, n});
+      [[maybe_unused]] auto it = local_edge_to_new_vertex.insert({local_i, n});
       assert(it.second);
       ++n;
     }
@@ -220,7 +224,7 @@ refinement::create_new_vertices(
   const std::int64_t num_local = n;
   std::int64_t global_offset = 0;
   MPI_Exscan(&num_local, &global_offset, 1,
-             dolfinx::MPI::mpi_type<std::int64_t>(), MPI_SUM, mesh.mpi_comm());
+             dolfinx::MPI::mpi_type<std::int64_t>(), MPI_SUM, mesh.comm());
   global_offset += mesh.topology().index_map(0)->local_range()[1];
   std::for_each(local_edge_to_new_vertex.begin(),
                 local_edge_to_new_vertex.end(),
@@ -275,41 +279,13 @@ refinement::create_new_vertices(
   for (std::size_t i = 0; i < received_values.size() / 2; ++i)
   {
     assert(recv_local_edge[i] != -1);
-    auto it = local_edge_to_new_vertex.insert(
+    [[maybe_unused]] auto it = local_edge_to_new_vertex.insert(
         {recv_local_edge[i], received_values[i * 2 + 1]});
     assert(it.second);
   }
 
   return {std::move(local_edge_to_new_vertex),
           std::move(new_vertex_coordinates)};
-}
-//-----------------------------------------------------------------------------
-std::vector<std::int64_t> refinement::adjust_indices(
-    const std::shared_ptr<const common::IndexMap>& index_map, std::int32_t n)
-{
-  // Add in an extra "n" indices at the end of the current local_range
-  // of "index_map", and adjust existing indices to match.
-
-  // Get number of new indices on all processes
-  MPI_Comm comm = index_map->comm(common::IndexMap::Direction::forward);
-  int mpi_size = dolfinx::MPI::size(comm);
-  int mpi_rank = dolfinx::MPI::rank(comm);
-  std::vector<std::int32_t> recvn(mpi_size);
-  MPI_Allgather(&n, 1, MPI_INT32_T, recvn.data(), 1, MPI_INT32_T, comm);
-  std::vector<std::int64_t> global_offsets = {0};
-  for (std::int32_t r : recvn)
-    global_offsets.push_back(global_offsets.back() + r);
-
-  std::vector global_indices = index_map->global_indices();
-
-  const std::vector<int>& ghost_owners = index_map->ghost_owner_rank();
-  int local_size = index_map->size_local();
-  for (int i = 0; i < local_size; ++i)
-    global_indices[i] += global_offsets[mpi_rank];
-  for (std::size_t i = 0; i < ghost_owners.size(); ++i)
-    global_indices[local_size + i] += global_offsets[ghost_owners[i]];
-
-  return global_indices;
 }
 //-----------------------------------------------------------------------------
 mesh::Mesh
@@ -322,7 +298,7 @@ refinement::partition(const mesh::Mesh& old_mesh,
   if (redistribute)
   {
     xt::xtensor<double, 2> new_coords(new_vertex_coordinates);
-    return mesh::create_mesh(old_mesh.mpi_comm(), cell_topology,
+    return mesh::create_mesh(old_mesh.comm(), cell_topology,
                              old_mesh.geometry().cmap(), new_coords, gm);
   }
 
@@ -382,8 +358,36 @@ refinement::partition(const mesh::Mesh& old_mesh,
                                               std::move(dest_offsets));
   };
 
-  return mesh::create_mesh(old_mesh.mpi_comm(), cell_topology,
+  return mesh::create_mesh(old_mesh.comm(), cell_topology,
                            old_mesh.geometry().cmap(), new_vertex_coordinates,
                            gm, partitioner);
+}
+//-----------------------------------------------------------------------------
+std::vector<std::int64_t>
+refinement::adjust_indices(const common::IndexMap& index_map, std::int32_t n)
+{
+  // Add in an extra "n" indices at the end of the current local_range
+  // of "index_map", and adjust existing indices to match.
+
+  // Get number of new indices on all processes
+  MPI_Comm comm = index_map.comm();
+  int mpi_size = dolfinx::MPI::size(comm);
+  int mpi_rank = dolfinx::MPI::rank(comm);
+  std::vector<std::int32_t> recvn(mpi_size);
+  MPI_Allgather(&n, 1, MPI_INT32_T, recvn.data(), 1, MPI_INT32_T, comm);
+  std::vector<std::int64_t> global_offsets = {0};
+  for (std::int32_t r : recvn)
+    global_offsets.push_back(global_offsets.back() + r);
+
+  std::vector global_indices = index_map.global_indices();
+
+  const std::vector<int>& ghost_owners = index_map.ghost_owner_rank();
+  int local_size = index_map.size_local();
+  for (int i = 0; i < local_size; ++i)
+    global_indices[i] += global_offsets[mpi_rank];
+  for (std::size_t i = 0; i < ghost_owners.size(); ++i)
+    global_indices[local_size + i] += global_offsets[ghost_owners[i]];
+
+  return global_indices;
 }
 //-----------------------------------------------------------------------------

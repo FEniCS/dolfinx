@@ -9,7 +9,7 @@
 #include <cstdlib>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>
-#include <dolfinx/graph/scotch.h>
+#include <dolfinx/graph/ordering.h>
 #include <functional>
 #include <memory>
 #include <utility>
@@ -106,6 +106,10 @@ public:
   /// Move assignment
   DofMap& operator=(DofMap&& dofmap) = default;
 
+  /// Equality operator
+  /// @return Returns true if the data for the two dofmaps is equal
+  bool operator==(const DofMap& map) const;
+
   /// Local-to-global mapping of dofs on a cell
   /// @param[in] cell The cell index
   /// @return Local-global dof map for the cell (using process-local
@@ -135,7 +139,7 @@ public:
       const std::function<std::vector<int>(
           const graph::AdjacencyList<std::int32_t>&)>& reorder_fn
       = [](const graph::AdjacencyList<std::int32_t>& g)
-      { return graph::scotch::compute_gps(g, 2).first; }) const;
+      { return graph::reorder_gps(g); }) const;
 
   /// Get dofmap data
   /// @return The adjacency list with dof indices for each cell
