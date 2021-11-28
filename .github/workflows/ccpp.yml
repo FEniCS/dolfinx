@@ -37,6 +37,9 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
+      - name: Install Python test dependencies (tmp)
+        run: apt-get install libeigen3-dev
+
       - name: Install FEniCS Python components
         run: |
           python3 -m pip install git+https://github.com/FEniCS/ufl.git
@@ -102,6 +105,8 @@ jobs:
       - name: Run demos (Python, MPI (np=2))
         run: python3 -m pytest -m mpi --num-proc=2 python/demo/test.py
 
+      - name: Install Python test dependencies
+        run: apt-get install libeigen3-dev
       - name: Run Python unit tests (serial)
         run: python3 -m pytest -n=auto --durations=50 python/test/unit/
       - name: Run Python unit tests (MPI, np=2)
