@@ -15,12 +15,15 @@ import petsc4py
 import pytest
 import scipy.sparse.linalg
 import ufl
-from dolfinx.fem import Form
+from dolfinx.fem import (DirichletBC, Form, Function, FunctionSpace,
+                         assemble_matrix, locate_dofs_geometrical)
 from dolfinx.generation import UnitSquareMesh
 from dolfinx.wrappers import get_include_path as pybind_inc
 from dolfinx_utils.test.fixtures import tempdir  # noqa: F401
 from dolfinx_utils.test.skips import skip_in_parallel
 from mpi4py import MPI
+import pybind11
+
 
 
 @skip_in_parallel
@@ -36,7 +39,7 @@ def test_eigen_assembly(tempdir):  # noqa: F811
         cpp_code_header = f"""
 <%
 setup_pybind11(cfg)
-cfg['include_dirs'] = {dolfinx_pc["include_dirs"] + [petsc4py.get_include()] + [str(pybind_inc())] + eigen_dir}
+cfg['include_dirs'] = {dolfinx_pc["include_dirs"] + [petsc4py.get_include()] + [pybind11.get_include()] + [str(pybind_inc())] + eigen_dir}
 cfg['compiler_args'] = {["-D" + dm for dm in dolfinx_pc["define_macros"]]}
 cfg['compiler_args'] = ['-std=c++17']
 cfg['libraries'] = {dolfinx_pc["libraries"]}
@@ -99,7 +102,7 @@ PYBIND11_MODULE(eigen_csr, m)
     def assemble_csr_matrix(a, bcs):
         """Assemble bilinear form into an SciPy CSR matrix, in serial."""
         module = compile_eigen_csr_assembler_module()
-        A = module.assemble_matrix(a, bcs)
+        A = module.assemble_matrix(a._cpp_object, bcs)
         if a.function_spaces[0].id == a.function_spaces[1].id:
             for bc in bcs:
                 if a.function_spaces[0].contains(bc.function_space):
@@ -110,19 +113,21 @@ PYBIND11_MODULE(eigen_csr, m)
                     A[dofs, dofs] = 1.0
         return A
 
+    # print("******", pybind_inc())
+    # return
     mesh = UnitSquareMesh(MPI.COMM_SELF, 12, 12)
-    Q = dolfinx.FunctionSpace(mesh, ("Lagrange", 1))
+    Q = FunctionSpace(mesh, ("Lagrange", 1))
     u = ufl.TrialFunction(Q)
     v = ufl.TestFunction(Q)
     a = Form(ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx)
 
-    bdofsQ = dolfinx.fem.locate_dofs_geometrical(Q, lambda x: numpy.logical_or(x[0] < 1.0e-6, x[0] > 1.0 - 1.0e-6))
-    u_bc = dolfinx.fem.Function(Q)
+    bdofsQ = locate_dofs_geometrical(Q, lambda x: numpy.logical_or(x[0] < 1.0e-6, x[0] > 1.0 - 1.0e-6))
+    u_bc = Function(Q)
     with u_bc.vector.localForm() as u_local:
         u_local.set(1.0)
-    bc = dolfinx.fem.dirichletbc.DirichletBC(u_bc, bdofsQ)
+    bc = DirichletBC(u_bc, bdofsQ)
 
-    A1 = dolfinx.fem.assemble_matrix(a, [bc])
+    A1 = assemble_matrix(a, [bc])
     A1.assemble()
-    A2 = assemble_csr_matrix(a, [bc])
+    A2 = assemble_csr_matrix(a, [bc._cpp_object])
     assert numpy.isclose(A1.norm(), scipy.sparse.linalg.norm(A2))
