@@ -533,7 +533,7 @@ void pack_coefficient_entity(
 /// Pack coefficients of a Form u for a given integral type and domain
 /// id
 ///
-/// @param[in] u The Form
+/// @param[in] form The Form
 /// @param[in] integral_type Type of integral
 /// @param[in] id The id of the integration domain
 /// @return A pair of the form (coeffs, entity stride)
