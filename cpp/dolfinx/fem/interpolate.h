@@ -9,6 +9,7 @@
 #include "CoordinateElement.h"
 #include "DofMap.h"
 #include "FiniteElement.h"
+#include "FunctionSpace.h"
 #include <functional>
 #include <numeric>
 #include <vector>
@@ -359,34 +360,29 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0)
 /// @param[in] cells Indices of the cells in the mesh to compute
 /// interpolation coordinates for
 /// @return The coordinates in the physical space at which to evaluate
-/// an expression
+/// an expression. The shape is (3, num_points).
 xt::xtensor<double, 2>
 interpolation_coords(const fem::FiniteElement& element, const mesh::Mesh& mesh,
                      const xtl::span<const std::int32_t>& cells);
 
-/// Interpolate an expression in a finite element space
+/// Interpolate an expression f(x) in a finite element space
 ///
 /// @param[out] u The function to interpolate into
-/// @param[in] f The expression to be interpolated
-/// @param[in] x The points at which f should be evaluated, as computed
-/// by fem::interpolation_coords. The element used in
+/// @param[in] f Evaluation of the function `f(x)` at the physical
+/// points `x` given by fem::interpolation_coords. The element used in
 /// fem::interpolation_coords should be the same element as associated
-/// with u.
+/// with `u`.
 /// @param[in] cells Indices of the cells in the mesh on which to
 /// interpolate. Should be the same as the list used when calling
 /// fem::interpolation_coords.
 template <typename T>
-void interpolate(
-    Function<T>& u,
-    const std::function<xt::xarray<T>(const xt::xtensor<double, 2>&)>& f,
-    const xt::xtensor<double, 2>& x, const xtl::span<const std::int32_t>& cells)
+void interpolate(Function<T>& u, xt::xarray<T>& f,
+                 const xtl::span<const std::int32_t>& cells)
 {
   const std::shared_ptr<const FiniteElement> element
       = u.function_space()->element();
   assert(element);
-  const int element_bs = element->block_size();
-  if (int num_sub = element->num_sub_elements();
-      num_sub > 0 and num_sub != element_bs)
+  if (element->is_mixed())
   {
     throw std::runtime_error("Cannot directly interpolate a mixed space. "
                              "Interpolate into subspaces.");
@@ -420,20 +416,20 @@ void interpolate(
   // number of rows equal to the number of components of the function,
   // and the number of columns is equal to the number of evaluation
   // points.
-  xt::xarray<T> values = f(x);
+  // xt::xarray<T> values = f(x);
 
-  if (values.dimension() == 1)
+  if (f.dimension() == 1)
   {
     if (element->value_size() != 1)
       throw std::runtime_error("Interpolation data has the wrong shape.");
-    values.reshape(
-        {static_cast<std::size_t>(element->value_size()), x.shape(1)});
+    f.reshape({std::size_t(element->value_size()),
+               std::size_t(f.shape(0) / element->value_size())});
   }
 
-  if (values.shape(0) != element->value_size())
+  if (f.shape(0) != element->value_size())
     throw std::runtime_error("Interpolation data has the wrong shape.");
 
-  if (values.shape(1) != cells.size() * X.shape(0))
+  if (f.shape(1) != cells.size() * X.shape(0))
     throw std::runtime_error("Interpolation data has the wrong shape.");
 
   // Get dofmap
@@ -442,6 +438,7 @@ void interpolate(
   const int dofmap_bs = dofmap->bs();
 
   // Loop over cells and compute interpolation dofs
+  const int element_bs = element->block_size();
   const int num_scalar_dofs = element->space_dimension() / element_bs;
   const int value_size = element->value_size() / element_bs;
 
@@ -464,7 +461,7 @@ void interpolate(
       for (int k = 0; k < element_bs; ++k)
       {
         for (int i = 0; i < num_scalar_dofs; ++i)
-          _coeffs[i] = values(k, c * num_scalar_dofs + i);
+          _coeffs[i] = f(k, c * num_scalar_dofs + i);
         apply_inverse_transpose_dof_transformation(_coeffs, cell_info, c, 1);
         for (int i = 0; i < num_scalar_dofs; ++i)
         {
@@ -543,7 +540,7 @@ void interpolate(
         // Extract computed expression values for element block k
         for (int m = 0; m < value_size; ++m)
         {
-          std::copy_n(&values(k * value_size + m, c * X.shape(0)), X.shape(0),
+          std::copy_n(&f(k * value_size + m, c * X.shape(0)), X.shape(0),
                       xt::view(_vals, xt::all(), 0, m).begin());
         }
 
@@ -581,12 +578,10 @@ void interpolate(
 /// support C code implementations of the expression, e.g. using Numba.
 /// Generally the interface where the expression function is a pure
 /// function, i.e. the expression values are the return argument, should
-/// be preferred.
+/// be preferred.:
 ///
 /// @param[out] u The function to interpolate into
 /// @param[in] f The expression to be interpolated
-/// @param[in] x The points at which should be evaluated, as
-/// computed by fem::interpolation_coords
 /// @param[in] cells Indices of the cells in the mesh on which to
 /// interpolate. Should be the same as the list used when calling
 /// fem::interpolation_coords.
@@ -594,10 +589,11 @@ template <typename T>
 void interpolate_c(
     Function<T>& u,
     const std::function<void(xt::xarray<T>&, const xt::xtensor<double, 2>&)>& f,
-    const xt::xtensor<double, 2>& x, const xtl::span<const std::int32_t>& cells)
+    const xtl::span<const std::int32_t>& cells)
 {
-  const std::shared_ptr<const FiniteElement> element
-      = u.function_space()->element();
+  std::shared_ptr<const FunctionSpace> V = u.function_space();
+  assert(V);
+  const std::shared_ptr<const FiniteElement> element = V->element();
   assert(element);
   std::vector<int> vshape(element->value_rank(), 1);
   for (std::size_t i = 0; i < vshape.size(); ++i)
@@ -605,14 +601,13 @@ void interpolate_c(
   const std::size_t value_size = std::reduce(
       std::begin(vshape), std::end(vshape), 1, std::multiplies<>());
 
-  auto fn = [value_size, &f](const xt::xtensor<double, 2>& x)
-  {
-    xt::xarray<T> values = xt::empty<T>({value_size, x.shape(1)});
-    f(values, x);
-    return values;
-  };
+  std::shared_ptr<const mesh::Mesh> mesh = V->mesh();
+  assert(mesh);
+  xt::xtensor<double, 2> x = fem::interpolation_coords(*element, *mesh, cells);
 
-  interpolate<T>(u, fn, x, cells);
+  xt::xarray<T> values = xt::empty<T>({value_size, x.shape(1)});
+  f(values, x);
+  interpolate<T>(u, values, cells);
 }
 
 /// Interpolate from one finite element Function to another on the same
