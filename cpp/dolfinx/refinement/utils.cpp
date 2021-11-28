@@ -136,7 +136,7 @@ refinement::compute_edge_sharing(const mesh::Mesh& mesh)
 
   MPI_Comm neighbor_comm;
   MPI_Dist_graph_create_adjacent(
-      mesh.mpi_comm(), neighbors.size(), neighbors.data(), MPI_UNWEIGHTED,
+      mesh.comm(), neighbors.size(), neighbors.data(), MPI_UNWEIGHTED,
       neighbors.size(), neighbors.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false,
       &neighbor_comm);
 
@@ -220,7 +220,7 @@ refinement::create_new_vertices(
   const std::int64_t num_local = n;
   std::int64_t global_offset = 0;
   MPI_Exscan(&num_local, &global_offset, 1,
-             dolfinx::MPI::mpi_type<std::int64_t>(), MPI_SUM, mesh.mpi_comm());
+             dolfinx::MPI::mpi_type<std::int64_t>(), MPI_SUM, mesh.comm());
   global_offset += mesh.topology().index_map(0)->local_range()[1];
   std::for_each(local_edge_to_new_vertex.begin(),
                 local_edge_to_new_vertex.end(),
@@ -294,7 +294,7 @@ refinement::partition(const mesh::Mesh& old_mesh,
   if (redistribute)
   {
     xt::xtensor<double, 2> new_coords(new_vertex_coordinates);
-    return mesh::create_mesh(old_mesh.mpi_comm(), cell_topology,
+    return mesh::create_mesh(old_mesh.comm(), cell_topology,
                              old_mesh.geometry().cmap(), new_coords, gm);
   }
 
@@ -354,7 +354,7 @@ refinement::partition(const mesh::Mesh& old_mesh,
                                               std::move(dest_offsets));
   };
 
-  return mesh::create_mesh(old_mesh.mpi_comm(), cell_topology,
+  return mesh::create_mesh(old_mesh.comm(), cell_topology,
                            old_mesh.geometry().cmap(), new_vertex_coordinates,
                            gm, partitioner);
 }

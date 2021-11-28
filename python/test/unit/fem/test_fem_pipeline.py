@@ -78,7 +78,7 @@ def run_scalar_test(mesh, V, degree):
     M = (u_exact - uh)**2 * dx
     M = Form(M)
 
-    error = mesh.mpi_comm.allreduce(assemble_scalar(M), op=MPI.SUM)
+    error = mesh.comm.allreduce(assemble_scalar(M), op=MPI.SUM)
     assert np.absolute(error) < 1.0e-14
 
 
@@ -116,7 +116,7 @@ def run_vector_test(mesh, V, degree):
         M += uh[i]**2 * dx
     M = Form(M)
 
-    error = mesh.mpi_comm.allreduce(assemble_scalar(M), op=MPI.SUM)
+    error = mesh.comm.allreduce(assemble_scalar(M), op=MPI.SUM)
     assert np.absolute(error) < 1.0e-14
 
 
@@ -187,7 +187,7 @@ def run_dg_test(mesh, V, degree):
     M = (u_exact - uh)**2 * dx
     M = Form(M)
 
-    error = mesh.mpi_comm.allreduce(assemble_scalar(M), op=MPI.SUM)
+    error = mesh.comm.allreduce(assemble_scalar(M), op=MPI.SUM)
     assert np.absolute(error) < 1.0e-14
 
 
@@ -268,9 +268,9 @@ def test_biharmonic():
                            mode=PETSc.ScatterMode.FORWARD)
 
     # Recall that x_h has flattened indices.
-    u_error_numerator = np.sqrt(mesh.mpi_comm.allreduce(assemble_scalar(
+    u_error_numerator = np.sqrt(mesh.comm.allreduce(assemble_scalar(
         inner(u_exact - x_h[4], u_exact - x_h[4]) * dx(mesh, metadata={"quadrature_degree": 5})), op=MPI.SUM))
-    u_error_denominator = np.sqrt(mesh.mpi_comm.allreduce(assemble_scalar(
+    u_error_denominator = np.sqrt(mesh.comm.allreduce(assemble_scalar(
         inner(u_exact, u_exact) * dx(mesh, metadata={"quadrature_degree": 5})), op=MPI.SUM))
 
     assert(np.absolute(u_error_numerator / u_error_denominator) < 0.05)
@@ -278,9 +278,9 @@ def test_biharmonic():
     # Reconstruct tensor from flattened indices.
     # Apply inverse transform. In 2D we have S^{-1} = S.
     sigma_h = S(ufl.as_tensor([[x_h[0], x_h[1]], [x_h[2], x_h[3]]]))
-    sigma_error_numerator = np.sqrt(mesh.mpi_comm.allreduce(assemble_scalar(
+    sigma_error_numerator = np.sqrt(mesh.comm.allreduce(assemble_scalar(
         inner(sigma_exact - sigma_h, sigma_exact - sigma_h) * dx(mesh, metadata={"quadrature_degree": 5})), op=MPI.SUM))
-    sigma_error_denominator = np.sqrt(mesh.mpi_comm.allreduce(assemble_scalar(
+    sigma_error_denominator = np.sqrt(mesh.comm.allreduce(assemble_scalar(
         inner(sigma_exact, sigma_exact) * dx(mesh, metadata={"quadrature_degree": 5})), op=MPI.SUM))
 
     assert(np.absolute(sigma_error_numerator / sigma_error_denominator) < 0.005)
