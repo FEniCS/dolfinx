@@ -416,9 +416,6 @@ void interpolate(Function<T>& u, xt::xarray<T>& f,
   if (f.shape(0) != element->value_size())
     throw std::runtime_error("Interpolation data has the wrong shape.");
 
-  // if (f.shape(1) != cells.size() * X.shape(0))
-  //   throw std::runtime_error("Interpolation data has the wrong shape.");
-
   // Get dofmap
   const auto dofmap = u.function_space()->dofmap();
   assert(dofmap);
@@ -466,6 +463,9 @@ void interpolate(Function<T>& u, xt::xarray<T>& f,
       throw std::runtime_error(
           "Interpolation into this space is not yet supported.");
     }
+
+    if (f.shape(1) != cells.size() * X.shape(0))
+      throw std::runtime_error("Interpolation data has the wrong shape.");
 
     // Get coordinate map
     const fem::CoordinateElement& cmap = mesh->geometry().cmap();
@@ -562,45 +562,6 @@ void interpolate(Function<T>& u, xt::xarray<T>& f,
       }
     }
   }
-}
-
-/// Interpolate an expression f(x)
-///
-/// @note  This interface uses an expression function f that has an
-/// in/out argument for the expression values. It is primarily to
-/// support C code implementations of the expression, e.g. using Numba.
-/// Generally the interface where the expression function is a pure
-/// function, i.e. the expression values are the return argument, should
-/// be preferred.
-///
-/// @param[out] u The function to interpolate into
-/// @param[in] f The expression to be interpolated
-/// @param[in] cells Indices of the cells in the mesh on which to
-/// interpolate. Should be the same as the list used when calling
-/// fem::interpolation_coords.
-template <typename T>
-void interpolate_c(
-    Function<T>& u,
-    const std::function<void(xt::xarray<T>&, const xt::xtensor<double, 2>&)>& f,
-    const xtl::span<const std::int32_t>& cells)
-{
-  std::shared_ptr<const FunctionSpace> V = u.function_space();
-  assert(V);
-  const std::shared_ptr<const FiniteElement> element = V->element();
-  assert(element);
-  std::vector<int> vshape(element->value_rank(), 1);
-  for (std::size_t i = 0; i < vshape.size(); ++i)
-    vshape[i] = element->value_dimension(i);
-  const std::size_t value_size = std::reduce(
-      std::begin(vshape), std::end(vshape), 1, std::multiplies<>());
-
-  std::shared_ptr<const mesh::Mesh> mesh = V->mesh();
-  assert(mesh);
-  xt::xtensor<double, 2> x = fem::interpolation_coords(*element, *mesh, cells);
-
-  xt::xarray<T> values = xt::empty<T>({value_size, x.shape(1)});
-  f(values, x);
-  interpolate<T>(u, values, cells);
 }
 
 /// Interpolate from one finite element Function to another on the same
