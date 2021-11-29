@@ -41,7 +41,9 @@ public:
   /// @param[in] X points on reference cell, number of points rows and
   /// tdim cols
   /// @param[in] fn function for tabulating expression
-  /// @param[in] value_size size of expression evaluated at single point
+  /// @param[in] value_shape shape of expression evaluated at single point
+  /// @param[in] num_argument_dofs number of degrees-of-freedom for respective
+  /// argument
   Expression(
       const std::vector<std::shared_ptr<const fem::Function<T>>>& coefficients,
       const std::vector<std::shared_ptr<const fem::Constant<T>>>& constants,
