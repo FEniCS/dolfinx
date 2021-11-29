@@ -7,6 +7,7 @@
 #pragma once
 
 #include <dolfinx/mesh/Mesh.h>
+#include "Function.h"
 #include <functional>
 #include <utility>
 #include <vector>
@@ -98,13 +99,12 @@ public:
     assert(_mesh);
 
     // Prepare coefficients and constants
-    const auto [coeffs, cstride] = pack_coefficients(*this);
+    const auto [coeffs, cstride] = pack_coefficients(*this, active_cells);
     const std::vector<T> constant_data = pack_constants(*this);
 
     // Prepare cell geometry
     const graph::AdjacencyList<std::int32_t>& x_dofmap
         = _mesh->geometry().dofmap();
-    const fem::CoordinateElement& cmap = _mesh->geometry().cmap();
 
     // FIXME: Add proper interface for num coordinate dofs
     const std::size_t num_dofs_g = x_dofmap.num_links(0);
@@ -169,6 +169,7 @@ public:
 
   /// Get value size
   /// @return value_size
+<<<<<<< HEAD
   const int value_size() const
   {
     return std::accumulate(_value_shape.begin(), _value_shape.end(), 1,
@@ -181,6 +182,13 @@ public:
   /// Get number of evaluation points in cell
   /// @return number of points in cell
   const std::size_t num_points() const { return _X.shape(0); }
+=======
+  std::size_t value_size() const { return _value_size; }
+
+  /// Get number of points
+  /// @return number of points
+  std::size_t num_points() const { return _x.shape(0); }
+>>>>>>> main
 
   /// Get number of degrees-of-freedom for arguments
   const std::vector<int>& num_argument_dofs() const

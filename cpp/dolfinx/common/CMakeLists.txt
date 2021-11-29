@@ -33,5 +33,4 @@ target_sources(dolfinx PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/TimeLogManager.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/timing.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/UniqueIdGenerator.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/utils.cpp
 )

@@ -9,8 +9,9 @@
 #include "CoordinateElement.h"
 #include "DofMap.h"
 #include "ElementDofLayout.h"
-#include <dolfinx/fem/Form.h>
-#include <dolfinx/fem/Function.h>
+#include "Expression.h"
+#include "Form.h"
+#include "Function.h"
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <functional>
@@ -40,10 +41,6 @@ namespace dolfinx::fem
 {
 template <typename T>
 class Constant;
-template <typename T>
-class Form;
-template <typename T>
-class Function;
 class FunctionSpace;
 template <typename T>
 class Expression;
@@ -53,8 +50,8 @@ class Expression;
 ///
 /// @param[in] a A rectangular block on bilinear forms
 /// @return Rectangular array of the same shape as @p a with a pair of
-///   function spaces in each array entry. If a form is null, then the
-///   returned function space pair is (null, null).
+/// function spaces in each array entry. If a form is null, then the
+/// returned function space pair is (null, null).
 template <typename T>
 std::vector<
     std::vector<std::array<std::shared_ptr<const fem::FunctionSpace>, 2>>>
@@ -353,7 +350,7 @@ Form<T> create_form(
 /// @param[in] constants Spatial constants in the form (by name)
 /// @param[in] subdomains Subdomain makers
 /// @param[in] mesh The mesh of the domain. This is required if the form
-/// has no arguments, e.g. a functional.
+/// has no arguments, e.g. a functional
 /// @return A Form
 template <typename T>
 Form<T> create_form(
@@ -413,44 +410,235 @@ fem::FunctionSpace create_functionspace(
 
 namespace impl
 {
-// Pack a single coefficient
-template <typename T, int _bs = -1>
-void pack_coefficient(
+// Pack a single coefficient for a single cell
+template <typename T, int _bs, typename Functor>
+void pack(const xtl::span<T>& coeffs, std::int32_t cell, int bs,
+          const xtl::span<const T>& v,
+          const xtl::span<const std::uint32_t>& cell_info,
+          const fem::DofMap& dofmap, Functor transform)
+{
+  auto dofs = dofmap.cell_dofs(cell);
+  for (std::size_t i = 0; i < dofs.size(); ++i)
+  {
+    if constexpr (_bs < 0)
+    {
+      const int pos_c = bs * i;
+      const int pos_v = bs * dofs[i];
+      for (int k = 0; k < bs; ++k)
+        coeffs[pos_c + k] = v[pos_v + k];
+    }
+    else
+    {
+      const int pos_c = _bs * i;
+      const int pos_v = _bs * dofs[i];
+      for (int k = 0; k < _bs; ++k)
+        coeffs[pos_c + k] = v[pos_v + k];
+    }
+  }
+
+  transform(coeffs, cell_info, cell, 1);
+}
+
+/// Pack a single coefficient for a set of active entities
+///
+/// @param[out] c The coefficient to be packed
+/// @param[in] cstride The total number of coefficient values to pack
+/// for each entity
+/// @param[in] v List of arrays with all degrees of freedom for the
+/// functions to be packed
+/// @param[in] cell_info Array of bytes describing which transformation
+/// has to be applied on the cell to map it to the reference element
+/// @param[in] dofmap The dofmap
+/// @param[in] entities The set of active entities
+/// @param[in] fetch_cells Function that fetches the cell index for an
+/// entity in active_entities (signature:
+/// `std::function<std::int32_t(E)>`)
+/// @param[in] offset The offset for c
+/// @param[in] space_dim The dimension of the FE space
+/// @param[in] transformation The dof transformation
+template <typename T, typename E, typename Functor>
+void pack_coefficient_entity(
     const xtl::span<T>& c, int cstride, const xtl::span<const T>& v,
     const xtl::span<const std::uint32_t>& cell_info, const fem::DofMap& dofmap,
-    std::int32_t num_cells, std::int32_t offset, int space_dim,
+    const xtl::span<const E>& entities, Functor fetch_cells,
+    std::int32_t offset, int space_dim,
     const std::function<void(const xtl::span<T>&,
                              const xtl::span<const std::uint32_t>&,
                              std::int32_t, int)>& transformation)
 {
   const int bs = dofmap.bs();
-  assert(_bs < 0 or _bs == bs);
-  for (std::int32_t cell = 0; cell < num_cells; ++cell)
+  switch (bs)
   {
-    auto dofs = dofmap.cell_dofs(cell);
-    auto cell_coeff = c.subspan(cell * cstride + offset, space_dim);
-    for (std::size_t i = 0; i < dofs.size(); ++i)
+  case 1:
+    for (std::size_t e = 0; e < entities.size(); ++e)
     {
-      if constexpr (_bs < 0)
+      std::int32_t cell = fetch_cells(entities[e]);
+      auto cell_coeff = c.subspan(e * cstride + offset, space_dim);
+      pack<T, 1>(cell_coeff, cell, bs, v, cell_info, dofmap, transformation);
+    }
+    break;
+  case 2:
+    for (std::size_t e = 0; e < entities.size(); ++e)
+    {
+      std::int32_t cell = fetch_cells(entities[e]);
+      auto cell_coeff = c.subspan(e * cstride + offset, space_dim);
+      pack<T, 2>(cell_coeff, cell, bs, v, cell_info, dofmap, transformation);
+    }
+    break;
+  case 3:
+    for (std::size_t e = 0; e < entities.size(); ++e)
+    {
+      std::int32_t cell = fetch_cells(entities[e]);
+      auto cell_coeff = c.subspan(e * cstride + offset, space_dim);
+      pack<T, 3>(cell_coeff, cell, bs, v, cell_info, dofmap, transformation);
+    }
+    break;
+  default:
+    for (std::size_t e = 0; e < entities.size(); ++e)
+    {
+      std::int32_t cell = fetch_cells(entities[e]);
+      auto cell_coeff = c.subspan(e * cstride + offset, space_dim);
+      pack<T, -1>(cell_coeff, cell, bs, v, cell_info, dofmap, transformation);
+    }
+    break;
+  }
+}
+
+} // namespace impl
+
+/// Pack coefficients of a Form u for a given integral type and domain
+/// id
+///
+/// @param[in] form The Form
+/// @param[in] integral_type Type of integral
+/// @param[in] id The id of the integration domain
+/// @return A pair of the form (coeffs, entity stride)
+template <typename T>
+std::pair<std::vector<T>, int>
+pack_coefficients(const Form<T>& form, fem::IntegralType integral_type, int id)
+{
+  // Get form coefficient offsets and dofmaps
+  const std::vector<std::shared_ptr<const fem::Function<T>>> coefficients
+      = form.coefficients();
+  const std::vector<int> offsets = form.coefficient_offsets();
+  std::vector<const fem::DofMap*> dofmaps(coefficients.size());
+  std::vector<const fem::FiniteElement*> elements(coefficients.size());
+  std::vector<xtl::span<const T>> v;
+  v.reserve(coefficients.size());
+  for (std::size_t i = 0; i < coefficients.size(); ++i)
+  {
+    elements[i] = coefficients[i]->function_space()->element().get();
+    dofmaps[i] = coefficients[i]->function_space()->dofmap().get();
+    v.push_back(coefficients[i]->x()->array());
+  }
+
+  // Get mesh
+  std::shared_ptr<const mesh::Mesh> mesh = form.mesh();
+  assert(mesh);
+
+  // Copy data into coefficient array
+  const int cstride = offsets.back();
+  std::vector<T> c;
+  if (!coefficients.empty())
+  {
+    bool needs_dof_transformations = false;
+    for (std::size_t coeff = 0; coeff < dofmaps.size(); ++coeff)
+    {
+      if (elements[coeff]->needs_dof_transformations())
       {
-        const int pos_c = bs * i;
-        const int pos_v = bs * dofs[i];
-        for (int k = 0; k < bs; ++k)
-          cell_coeff[pos_c + k] = v[pos_v + k];
-      }
-      else
-      {
-        const int pos_c = _bs * i;
-        const int pos_v = _bs * dofs[i];
-        for (int k = 0; k < _bs; ++k)
-          cell_coeff[pos_c + k] = v[pos_v + k];
+        needs_dof_transformations = true;
+        mesh->topology_mutable().create_entity_permutations();
       }
     }
 
-    transformation(cell_coeff, cell_info, cell, 1);
+    xtl::span<const std::uint32_t> cell_info;
+    if (needs_dof_transformations)
+      cell_info = xtl::span(mesh->topology().get_cell_permutation_info());
+
+    // TODO see if this can be simplified with templating
+    switch (integral_type)
+    {
+    case IntegralType::cell:
+    {
+      const std::vector<std::int32_t>& active_cells = form.cell_domains(id);
+      c.resize(active_cells.size() * offsets.back());
+
+      // Iterate over coefficients
+      for (std::size_t coeff = 0; coeff < dofmaps.size(); ++coeff)
+      {
+        const auto transform
+            = elements[coeff]->get_dof_transformation_function<T>(false, true);
+        impl::pack_coefficient_entity<T, std::int32_t>(
+            xtl::span<T>(c), cstride, v[coeff], cell_info, *dofmaps[coeff],
+            active_cells, [](std::int32_t entity) { return entity; },
+            offsets[coeff], elements[coeff]->space_dimension(), transform);
+      }
+      break;
+    }
+    case IntegralType::exterior_facet:
+    {
+      const std::vector<std::pair<std::int32_t, int>>& active_facets
+          = form.exterior_facet_domains(id);
+      c.resize(active_facets.size() * offsets.back());
+
+      // Create lambda function fetching cell index from exterior facet entity
+      auto fetch_cell = [](const std::pair<std::int32_t, int>& entity)
+      { return entity.first; };
+
+      // Iterate over coefficients
+      for (std::size_t coeff = 0; coeff < dofmaps.size(); ++coeff)
+      {
+        const auto transform
+            = elements[coeff]->get_dof_transformation_function<T>(false, true);
+        impl::pack_coefficient_entity<T, std::pair<std::int32_t, int>>(
+            xtl::span<T>(c), cstride, v[coeff], cell_info, *dofmaps[coeff],
+            active_facets, fetch_cell, offsets[coeff],
+            elements[coeff]->space_dimension(), transform);
+      }
+      break;
+    }
+    case IntegralType::interior_facet:
+    {
+      const std::vector<std::tuple<std::int32_t, int, std::int32_t, int>>&
+          active_facets
+          = form.interior_facet_domains(id);
+      c.resize(active_facets.size() * 2 * offsets.back());
+
+      // Lambda functions to fetch cell index from interior facet entity
+      auto fetch_cell0
+          = [](const std::tuple<std::int32_t, int, std::int32_t, int>& entity)
+      { return std::get<0>(entity); };
+      auto fetch_cell1
+          = [](const std::tuple<std::int32_t, int, std::int32_t, int>& entity)
+      { return std::get<2>(entity); };
+
+      // Iterate over coefficients
+      for (std::size_t coeff = 0; coeff < dofmaps.size(); ++coeff)
+      {
+        const auto transform
+            = elements[coeff]->get_dof_transformation_function<T>(false, true);
+        // Pack coefficient ['+']
+        impl::pack_coefficient_entity<
+            T, std::tuple<std::int32_t, int, std::int32_t, int>>(
+            xtl::span<T>(c), 2 * cstride, v[coeff], cell_info, *dofmaps[coeff],
+            active_facets, fetch_cell0, 2 * offsets[coeff],
+            elements[coeff]->space_dimension(), transform);
+        // Pack coefficient ['-']
+        impl::pack_coefficient_entity<
+            T, std::tuple<std::int32_t, int, std::int32_t, int>>(
+            xtl::span<T>(c), 2 * cstride, v[coeff], cell_info, *dofmaps[coeff],
+            active_facets, fetch_cell1, offsets[coeff] + offsets[coeff + 1],
+            elements[coeff]->space_dimension(), transform);
+      }
+      break;
+    }
+    default:
+      throw std::runtime_error(
+          "Could not pack coefficient. Integral type not supported.");
+    }
   }
+  return {std::move(c), cstride};
 }
-} // namespace impl
 
 /// Create Expression from UFC
 template <typename T>
@@ -551,12 +739,38 @@ fem::Expression<T> create_expression(
 }
 
 // NOTE: This is subject to change
-/// Pack coefficients of u of generic type U ready for assembly
-template <typename U>
-std::pair<std::vector<typename U::scalar_type>, int>
-pack_coefficients(const U& u)
+/// Pack coefficients of a Form
+///
+/// @param[in] form The Form
+/// @return A map from a pair of the form (integral_type, domain_id) to
+/// a pair of the form (coeffs, cstride)
+template <typename T>
+std::map<std::pair<IntegralType, int>, std::pair<std::vector<T>, int>>
+pack_coefficients(const Form<T>& form)
 {
-  using T = typename U::scalar_type;
+  std::map<std::pair<IntegralType, int>, std::pair<std::vector<T>, int>> coeffs;
+  for (auto integral_type : form.integral_types())
+  {
+    for (int id : form.integral_ids(integral_type))
+    {
+      coeffs.emplace(std::pair(integral_type, id),
+                     pack_coefficients(form, integral_type, id));
+    }
+  }
+  return coeffs;
+}
+
+/// Pack coefficients of a Expression u for a give list of active cells
+///
+/// @param[in] u The Expression
+/// @param[in] active_cells A list of active cells
+/// @return A pair of the form (coeffs, cstride)
+template <typename T>
+std::pair<std::vector<T>, int>
+pack_coefficients(const Expression<T>& u,
+                  const xtl::span<const std::int32_t>& active_cells)
+{
+  // FIXME: Much of this code is duplicated above. Try to refactor.
 
   // Get form coefficient offsets and dofmaps
   const std::vector<std::shared_ptr<const fem::Function<T>>> coefficients
@@ -576,14 +790,10 @@ pack_coefficients(const U& u)
   // Get mesh
   std::shared_ptr<const mesh::Mesh> mesh = u.mesh();
   assert(mesh);
-  const int tdim = mesh->topology().dim();
-  const std::int32_t num_cells
-      = mesh->topology().index_map(tdim)->size_local()
-        + mesh->topology().index_map(tdim)->num_ghosts();
 
   // Copy data into coefficient array
-  std::vector<T> c(num_cells * offsets.back());
   const int cstride = offsets.back();
+  std::vector<T> c(active_cells.size() * offsets.back());
   if (!coefficients.empty())
   {
     bool needs_dof_transformations = false;
@@ -596,48 +806,21 @@ pack_coefficients(const U& u)
       }
     }
 
-    // Iterate over coefficients
     xtl::span<const std::uint32_t> cell_info;
     if (needs_dof_transformations)
       cell_info = xtl::span(mesh->topology().get_cell_permutation_info());
+
+    // Iterate over coefficients
     for (std::size_t coeff = 0; coeff < dofmaps.size(); ++coeff)
     {
-      const std::function<void(const xtl::span<T>&,
-                               const xtl::span<const std::uint32_t>&,
-                               std::int32_t, int)>
-          transformation
+      const auto transform
           = elements[coeff]->get_dof_transformation_function<T>(false, true);
-      if (int bs = dofmaps[coeff]->bs(); bs == 1)
-      {
-        impl::pack_coefficient<T, 1>(
-            xtl::span<T>(c), cstride, v[coeff], cell_info, *dofmaps[coeff],
-            num_cells, offsets[coeff], elements[coeff]->space_dimension(),
-            transformation);
-      }
-      else if (bs == 2)
-      {
-        impl::pack_coefficient<T, 2>(
-            xtl::span<T>(c), cstride, v[coeff], cell_info, *dofmaps[coeff],
-            num_cells, offsets[coeff], elements[coeff]->space_dimension(),
-            transformation);
-      }
-      else if (bs == 3)
-      {
-        impl::pack_coefficient<T, 3>(
-            xtl::span<T>(c), cstride, v[coeff], cell_info, *dofmaps[coeff],
-            num_cells, offsets[coeff], elements[coeff]->space_dimension(),
-            transformation);
-      }
-      else
-      {
-        impl::pack_coefficient<T>(xtl::span<T>(c), cstride, v[coeff], cell_info,
-                                  *dofmaps[coeff], num_cells, offsets[coeff],
-                                  elements[coeff]->space_dimension(),
-                                  transformation);
-      }
+      impl::pack_coefficient_entity<T, std::int32_t>(
+          xtl::span<T>(c), cstride, v[coeff], cell_info, *dofmaps[coeff],
+          active_cells, [](std::int32_t entity) { return entity; },
+          offsets[coeff], elements[coeff]->space_dimension(), transform);
     }
   }
-
   return {std::move(c), cstride};
 }
 
@@ -651,18 +834,18 @@ std::vector<typename U::scalar_type> pack_constants(const U& u)
       = u.constants();
 
   // Calculate size of array needed to store packed constants
-  std::int32_t size = std::accumulate(constants.begin(), constants.end(), 0,
+  std::int32_t size = std::accumulate(constants.cbegin(), constants.cend(), 0,
                                       [](std::int32_t sum, const auto& constant)
                                       { return sum + constant->value.size(); });
 
   // Pack constants
   std::vector<T> constant_values(size);
   std::int32_t offset = 0;
-  for (const auto& constant : constants)
+  for (auto& constant : constants)
   {
     const std::vector<T>& value = constant->value;
-    for (std::size_t i = 0; i < value.size(); ++i)
-      constant_values[offset + i] = value[i];
+    std::copy(value.cbegin(), value.cend(),
+              std::next(constant_values.begin(), offset));
     offset += value.size();
   }
 

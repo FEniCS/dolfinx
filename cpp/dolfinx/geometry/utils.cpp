@@ -203,7 +203,7 @@ geometry::create_midpoint_tree(const mesh::Mesh& mesh, int tdim,
   LOG(INFO) << "Building point search tree to accelerate distance queries for "
                "a given topological dimension and subset of entities.";
 
-  const auto midpoints = mesh::midpoints(mesh, tdim, entities);
+  const auto midpoints = mesh::compute_midpoints(mesh, tdim, entities);
   std::vector<std::pair<std::array<double, 3>, std::int32_t>> points(
       entities.size());
   for (std::size_t i = 0; i < points.size(); ++i)
@@ -369,8 +369,8 @@ geometry::shortest_vector(const mesh::Mesh& mesh, int dim,
       // Tabulate geometry dofs for the entity
       auto dofs = x_dofmap.links(c);
       const std::vector<int> entity_dofs
-          = geometry.cmap().dof_layout().entity_closure_dofs(dim,
-                                                             local_cell_entity);
+          = geometry.cmap().create_dof_layout().entity_closure_dofs(
+              dim, local_cell_entity);
       xt::xtensor<double, 2> nodes({entity_dofs.size(), 3});
       for (std::size_t i = 0; i < entity_dofs.size(); i++)
         for (std::size_t j = 0; j < 3; ++j)

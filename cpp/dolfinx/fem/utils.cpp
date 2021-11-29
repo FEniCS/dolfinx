@@ -5,18 +5,18 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "utils.h"
+#include "Constant.h"
+#include "DofMap.h"
+#include "FiniteElement.h"
+#include "Form.h"
+#include "Function.h"
+#include "FunctionSpace.h"
+#include "dofmapbuilder.h"
+#include "sparsitybuild.h"
 #include <array>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
-#include <dolfinx/fem/Constant.h>
-#include <dolfinx/fem/DofMap.h>
-#include <dolfinx/fem/FiniteElement.h>
-#include <dolfinx/fem/Form.h>
-#include <dolfinx/fem/Function.h>
-#include <dolfinx/fem/FunctionSpace.h>
-#include <dolfinx/fem/dofmapbuilder.h>
-#include <dolfinx/fem/sparsitybuild.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
@@ -231,6 +231,6 @@ fem::FunctionSpace fem::create_functionspace(
   return fem::FunctionSpace(
       mesh, element,
       std::make_shared<fem::DofMap>(fem::create_dofmap(
-          mesh->mpi_comm(), *ufc_map, mesh->topology(), reorder_fn, element)));
+          mesh->comm(), *ufc_map, mesh->topology(), reorder_fn, element)));
 }
 //-----------------------------------------------------------------------------

@@ -6,12 +6,12 @@
 
 #pragma once
 
+#include "DofMap.h"
+#include "FiniteElement.h"
 #include "FunctionSpace.h"
 #include "interpolate.h"
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/UniqueIdGenerator.h>
-#include <dolfinx/fem/DofMap.h>
-#include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/la/PETScVector.h>
 #include <dolfinx/la/Vector.h>
 #include <dolfinx/mesh/Geometry.h>
@@ -217,11 +217,12 @@ public:
     const int num_cells = cell_map->size_local() + cell_map->num_ghosts();
     std::vector<std::int32_t> cells(num_cells, 0);
     std::iota(cells.begin(), cells.end(), 0);
-    // FIXME: Remove interpolation coords as it should be done
-    // internally in fem::interpolate
+
     const xt::xtensor<double, 2> x = fem::interpolation_coords(
         *_function_space->element(), *_function_space->mesh(), cells);
-    fem::interpolate(*this, f, x, cells);
+    auto fx = f(x);
+
+    fem::interpolate(*this, fx, cells);
   }
 
   /// Evaluate the Function at points
@@ -350,6 +351,15 @@ public:
     xt::xtensor<double, 3> K = xt::zeros<double>({std::size_t(1), tdim, gdim});
     xt::xtensor<double, 1> detJ = xt::zeros<double>({1});
     xt::xtensor<double, 4> phi(cmap.tabulate_shape(1, 1));
+    using u_t = xt::xview<decltype(basis_values)&, std::size_t,
+                          xt::xall<std::size_t>, xt::xall<std::size_t>>;
+    using U_t = xt::xview<decltype(basis_reference_values)&, std::size_t,
+                          xt::xall<std::size_t>, xt::xall<std::size_t>>;
+    using J_t = xt::xview<decltype(J)&, std::size_t, xt::xall<std::size_t>,
+                          xt::xall<std::size_t>>;
+    using K_t = xt::xview<decltype(K)&, std::size_t, xt::xall<std::size_t>,
+                          xt::xall<std::size_t>>;
+    auto push_forward_fn = element->map_fn<u_t, U_t, J_t, K_t>();
     for (std::size_t p = 0; p < cells.size(); ++p)
     {
       const int cell_index = cells[p];
@@ -398,8 +408,17 @@ public:
                                cell_info, cell_index, reference_value_size);
 
       // Push basis forward to physical element
-      element->transform_reference_basis(basis_values, basis_reference_values,
-                                         J, detJ, K);
+      for (std::size_t i = 0; i < basis_values.shape(0); ++i)
+      {
+        auto _K = xt::view(K, i, xt::all(), xt::all());
+        auto _J = xt::view(J, i, xt::all(), xt::all());
+        auto _u = xt::view(basis_values, i, xt::all(), xt::all());
+        auto _U = xt::view(basis_reference_values, i, xt::all(), xt::all());
+        push_forward_fn(_u, _U, _J, detJ[i], _K);
+      }
+
+      // element->push_forward(basis_values, basis_reference_values, J, detJ,
+      // K);
 
       // Get degrees of freedom for current cell
       xtl::span<const std::int32_t> dofs = dofmap->cell_dofs(cell_index);

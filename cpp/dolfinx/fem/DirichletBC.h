@@ -6,9 +6,9 @@
 
 #pragma once
 
+#include "Function.h"
+#include "FunctionSpace.h"
 #include <array>
-#include <dolfinx/fem/Function.h>
-#include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/la/utils.h>
 #include <functional>
 #include <memory>
@@ -30,27 +30,26 @@ namespace dolfinx::fem
 /// associated with a facet/edge/vertex.
 ///
 /// @param[in] V The function (sub)spaces on which degrees-of-freedom
-///   (DOFs) will be located. The spaces must share the same mesh and
-///   element type.
+/// (DOFs) will be located. The spaces must share the same mesh and
+/// element type.
 /// @param[in] dim Topological dimension of mesh entities on which
-///   degrees-of-freedom will be located
+/// degrees-of-freedom will be located
 /// @param[in] entities Indices of mesh entities. All DOFs associated
-///   with the closure of these indices will be returned
+/// with the closure of these indices will be returned
 /// @param[in] remote True to return also "remotely located"
-///   degree-of-freedom indices. Remotely located degree-of-freedom
-///   indices are local/owned by the current process, but which the
-///   current process cannot identify because it does not recognize mesh
-///   entity as a marked. For example, a boundary condition dof at a
-///   vertex where this process does not have the associated boundary
-///   facet. This commonly occurs with partitioned meshes.
+/// degree-of-freedom indices. Remotely located degree-of-freedom
+/// indices are local/owned by the current process, but which the
+/// current process cannot identify because it does not recognize mesh
+/// entity as a marked. For example, a boundary condition dof at a
+/// vertex where this process does not have the associated boundary
+/// facet. This commonly occurs with partitioned meshes.
 /// @return Array of DOF indices (local to the MPI rank) in the spaces
 /// V[0] and V[1]. The array[0](i) entry is the DOF index in the space
 /// V[0] and array[1](i) is the correspinding DOF entry in the space
 /// V[1]. The returned dofs are 'unrolled', i.e. block size = 1.
 std::array<std::vector<std::int32_t>, 2> locate_dofs_topological(
     const std::array<std::reference_wrapper<const fem::FunctionSpace>, 2>& V,
-    const int dim, const xtl::span<const std::int32_t>& entities,
-    bool remote = true);
+    int dim, const xtl::span<const std::int32_t>& entities, bool remote = true);
 
 /// Find degrees-of-freedom which belong to the provided mesh entities
 /// (topological). Note that degrees-of-freedom for discontinuous
@@ -74,7 +73,7 @@ std::array<std::vector<std::int32_t>, 2> locate_dofs_topological(
 /// space V. The array uses the block size of the dofmap associated
 /// with V.
 std::vector<std::int32_t>
-locate_dofs_topological(const fem::FunctionSpace& V, const int dim,
+locate_dofs_topological(const fem::FunctionSpace& V, int dim,
                         const xtl::span<const std::int32_t>& entities,
                         bool remote = true);
 
@@ -309,7 +308,7 @@ public:
   /// V0 had a boundary condition applied, i.e. dofs which are fixed by
   /// a boundary condition. Other entries in @p markers are left
   /// unchanged.
-  void mark_dofs(std::vector<bool>& markers) const
+  void mark_dofs(const xtl::span<std::int8_t>& markers) const
   {
     for (std::size_t i = 0; i < _dofs0.size(); ++i)
     {

@@ -5,15 +5,13 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "partition.h"
-#include "scotch.h"
+#include "partitioners.h"
 #include <algorithm>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <memory>
 #include <unordered_map>
-
-#include "partitioners.h"
 
 using namespace dolfinx;
 
@@ -23,8 +21,18 @@ graph::partition_graph(MPI_Comm comm, int nparts,
                        const AdjacencyList<std::int64_t>& local_graph,
                        std::int32_t num_ghost_nodes, bool ghosting)
 {
+#if HAS_PARMETIS
+  return graph::parmetis::partitioner()(comm, nparts, local_graph,
+                                        num_ghost_nodes, ghosting);
+#elif HAS_PTSCOTCH
   return graph::scotch::partitioner()(comm, nparts, local_graph,
                                       num_ghost_nodes, ghosting);
+#elif HAS_KAHIP
+  return graph::kahip::partitioner()(comm, nparts, local_graph, num_ghost_nodes,
+                                     ghosting);
+#else
+// Should never reach this point
+#endif
 }
 //-----------------------------------------------------------------------------
 std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<int>,
@@ -316,7 +324,6 @@ std::vector<std::int64_t> graph::build::compute_local_to_global_links(
   // const std::int32_t max_local = _local.maxCoeff();
   const std::int32_t max_local
       = *std::max_element(_local.begin(), _local.end());
-  std::vector<bool> marker(max_local, false);
   std::vector<std::int64_t> local_to_global_list(max_local + 1, -1);
   for (std::size_t i = 0; i < _local.size(); ++i)
   {

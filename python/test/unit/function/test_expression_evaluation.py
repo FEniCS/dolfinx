@@ -15,7 +15,11 @@ import dolfiny.la
 import matplotlib.pyplot as plt
 import numba
 import numpy as np
+import pytest
 import ufl
+from dolfinx.fem import (Constant, Expression, Function, FunctionSpace,
+                         VectorFunctionSpace, create_matrix)
+from dolfinx.generation import UnitSquareMesh
 from mpi4py import MPI
 import petsc4py.lib
 from petsc4py import PETSc
@@ -96,11 +100,11 @@ def test_rank0():
     For a donor function f(x, y) = x^2 + 2*y^2 result is compared with the
     exact gradient grad f(x, y) = [2*x, 4*y].
     """
-    mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 5, 5)
-    P2 = dolfinx.FunctionSpace(mesh, ("P", 2))
-    vdP1 = dolfinx.VectorFunctionSpace(mesh, ("DG", 1))
+    mesh = UnitSquareMesh(MPI.COMM_WORLD, 5, 5)
+    P2 = FunctionSpace(mesh, ("P", 2))
+    vdP1 = VectorFunctionSpace(mesh, ("DG", 1))
 
-    f = dolfinx.Function(P2)
+    f = Function(P2)
 
     def expr1(x):
         return x[0] ** 2 + 2.0 * x[1] ** 2
@@ -110,7 +114,7 @@ def test_rank0():
     ufl_expr = ufl.grad(f)
     points = np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0]])
 
-    compiled_expr = dolfinx.Expression(ufl_expr, points)
+    compiled_expr = Expression(ufl_expr, points)
     num_cells = mesh.topology.index_map(2).size_local
     array_evaluated = compiled_expr.eval(np.arange(num_cells, dtype=np.int32))
 
@@ -122,7 +126,7 @@ def test_rank0():
                     vec[2 * dofmap[i * 3 + j] + k] = array_evaluated[i, 2 * j + k]
 
     # Data structure for the result
-    b = dolfinx.Function(vdP1)
+    b = Function(vdP1)
 
     dofmap = vdP1.dofmap.list.array
     scatter(b.vector.array, array_evaluated, dofmap)
@@ -134,27 +138,25 @@ def test_rank0():
 
         return values
 
-    b2 = dolfinx.Function(vdP1)
+    b2 = Function(vdP1)
     b2.interpolate(grad_expr1)
 
     assert np.isclose((b2.vector - b.vector).norm(), 0.0)
 
 
 def test_rank1():
-    mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 10, 10)
-    P2 = dolfinx.FunctionSpace(mesh, ("P", 2))
-    vdP1 = dolfinx.VectorFunctionSpace(mesh, ("DG", 1))
+    mesh = UnitSquareMesh(MPI.COMM_WORLD, 10, 10)
+    P2 = FunctionSpace(mesh, ("P", 2))
+    vdP1 = VectorFunctionSpace(mesh, ("DG", 1))
 
     f = ufl.TrialFunction(P2)
     ufl_expr = ufl.grad(f)
 
     points = np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0]])
-    compiled_expr = dolfinx.Expression(ufl_expr, points)
+    compiled_expr = Expression(ufl_expr, points)
 
     num_cells = mesh.topology.index_map(2).size_local
     array_evaluated = compiled_expr.eval(np.arange(num_cells, dtype=np.int32))
-
-    import pdb; pdb.set_trace()
 
     @numba.njit
     def scatter(A, array_evaluated, dofmap0, dofmap1):
@@ -165,7 +167,7 @@ def test_rank1():
             MatSetValues(A, 6, rows.ctypes, 6, cols.ctypes, A_local.ctypes, 1)
 
     a = ufl.TrialFunction(P2) * ufl.TestFunction(vdP1)[0] * ufl.dx
-    A = dolfinx.fem.create_matrix(a)
+    A = create_matrix(a)
 
     dofmap_col = P2.dofmap.list.array.reshape(num_cells, -1)
     dofmap_row = vdP1.dofmap.list.array
@@ -177,7 +179,7 @@ def test_rank1():
     scatter(A.handle, array_evaluated, dofmap_row, dofmap_col)
     A.assemble()
 
-    g = dolfinx.Function(P2, name="g")
+    g = Function(P2, name="g")
 
     def expr1(x):
         return x[0] ** 2 + 2.0 * x[1] ** 2
@@ -191,51 +193,23 @@ def test_rank1():
 
         return values
 
-    h = dolfinx.Function(vdP1)
+    h = Function(vdP1)
     h.interpolate(grad_expr1)
-
-    A_scipy = dolfiny.la.petsc_to_scipy(A)
-
-    plt.spy(A_scipy, markersize=0.4)
-    plt.xticks(np.arange(0, 401, step=100))
-    # plt.yticks(np.arange(0, 1, step=0.2))
-    plt.tight_layout()
-    plt.savefig("grad.pdf")
-
     h2 = A * g.vector
 
     assert np.isclose((h2 - h.vector).norm(), 0.0)
 
-    A_dense = A_scipy.todense()
-    U, S, V = scipy.linalg.svd(A_dense)
-
-    g1 = dolfinx.Function(P2, name="g1")
-    g2 = dolfinx.Function(P2, name="g2")
-    g3 = dolfinx.Function(P2, name="g3")
-
-    g.vector.array[:] = V[-1, :]
-    g1.vector.array[:] = V[-2, :]
-    g2.vector.array[:] = V[-3, :]
-    g3.vector.array[:] = V[-4, :]
-
-    gs = [g, g1, g2, g3]
-
-    for i in range(4):
-        with dolfinx.io.XDMFFile(MPI.COMM_WORLD, f"eig{i}.xdmf", "w") as file:
-            file.write_mesh(mesh)
-            file.write_function(gs[i])
-
 
 def test_rank1_div():
-    mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 10, 10)
-    vP1 = dolfinx.VectorFunctionSpace(mesh, ("P", 1))
-    dP0 = dolfinx.FunctionSpace(mesh, ("DG", 0))
+    mesh = UnitSquareMesh(MPI.COMM_WORLD, 10, 10)
+    vP1 = VectorFunctionSpace(mesh, ("P", 1))
+    dP0 = FunctionSpace(mesh, ("DG", 0))
 
     f = ufl.TrialFunction(vP1)
     ufl_expr = ufl.div(f)
 
     points = np.array([[0.25, 0.25]])
-    compiled_expr = dolfinx.Expression(ufl_expr, points)
+    compiled_expr = Expression(ufl_expr, points)
 
     num_cells = mesh.topology.index_map(2).size_local
     array_evaluated = compiled_expr.eval(np.arange(num_cells))
@@ -249,7 +223,7 @@ def test_rank1_div():
             MatSetValues(A, 1, rows.ctypes, 6, cols.ctypes, A_local.ctypes, 1)
 
     a = ufl.TrialFunction(vP1)[0] * ufl.TestFunction(dP0) * ufl.dx
-    A = dolfinx.fem.create_matrix(a)
+    A = create_matrix(a)
 
     dofmap_col = vP1.dofmap.list.array
     dofmap_row = dP0.dofmap.list.array.reshape(num_cells, -1)
@@ -261,13 +235,7 @@ def test_rank1_div():
     scatter(A.handle, array_evaluated, dofmap_row, dofmap_col)
     A.assemble()
 
-    A_scipy = dolfiny.la.petsc_to_scipy(A)
-
-    plt.spy(A_scipy, markersize=0.4)
-    plt.tight_layout()
-    plt.savefig("div.pdf")
-
-    g = dolfinx.Function(vP1)
+    g = Function(vP1)
 
     def expr1(x):
         values = np.empty((2, x.shape[1]))
@@ -283,12 +251,13 @@ def test_rank1_div():
         values[0] = 6.0
         return values
 
-    h = dolfinx.Function(dP0)
+    h = Function(dP0)
     h.interpolate(div_expr1)
 
     h2 = A * g.vector
 
     assert np.isclose((h2 - h.vector).norm(), 0.0)
+
 
 def test_simple_evaluation():
     """Test evaluation of UFL Expression.
@@ -307,8 +276,8 @@ def test_simple_evaluation():
     spatial coordinates as an Expression using UFL/FFCx and passing the result
     to a numpy function that calculates the exact gradient.
     """
-    mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 3, 3)
-    P2 = dolfinx.FunctionSpace(mesh, ("P", 2))
+    mesh = UnitSquareMesh(MPI.COMM_WORLD, 3, 3)
+    P2 = FunctionSpace(mesh, ("P", 2))
 
     # NOTE: The scaling by a constant factor of 3.0 to get f(x, y) is
     # implemented within the UFL Expression. This is to check that the
@@ -327,12 +296,12 @@ def test_simple_evaluation():
         values *= 3.0
         return values
 
-    expr = dolfinx.Function(P2)
+    expr = Function(P2)
     expr.interpolate(exact_expr)
 
-    ufl_grad_f = dolfinx.Constant(mesh, PETSc.ScalarType(3.0)) * ufl.grad(expr)
+    ufl_grad_f = Constant(mesh, PETSc.ScalarType(3.0)) * ufl.grad(expr)
     points = np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0]])
-    grad_f_expr = dolfinx.Expression(ufl_grad_f, points)
+    grad_f_expr = Expression(ufl_grad_f, points)
     assert grad_f_expr.num_points == points.shape[0]
     assert grad_f_expr.value_size == 2
 
@@ -347,7 +316,7 @@ def test_simple_evaluation():
 
     # Evaluate points in global space
     ufl_x = ufl.SpatialCoordinate(mesh)
-    x_expr = dolfinx.Expression(ufl_x, points)
+    x_expr = Expression(ufl_x, points)
     assert x_expr.num_points == points.shape[0]
     assert x_expr.value_size == 2
     x_evaluated = x_expr.eval(cells)
@@ -386,26 +355,26 @@ def test_assembly_into_quadrature_function():
     ghost cells so that no parallel communication is required after insertion
     into the vector.
     """
-    mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, 3, 6)
+    mesh = UnitSquareMesh(MPI.COMM_WORLD, 3, 6)
 
     quadrature_degree = 2
     quadrature_points, wts = basix.make_quadrature(basix.CellType.triangle, quadrature_degree)
     Q_element = ufl.VectorElement("Quadrature", ufl.triangle, quadrature_degree, quad_scheme="default")
-    Q = dolfinx.FunctionSpace(mesh, Q_element)
+    Q = FunctionSpace(mesh, Q_element)
 
     def T_exact(x):
         return x[0] + 2.0 * x[1]
 
-    P2 = dolfinx.FunctionSpace(mesh, ("P", 2))
-    T = dolfinx.Function(P2)
+    P2 = FunctionSpace(mesh, ("P", 2))
+    T = Function(P2)
     T.interpolate(T_exact)
-    A = dolfinx.Constant(mesh, PETSc.ScalarType(1.0))
-    B = dolfinx.Constant(mesh, PETSc.ScalarType(2.0))
+    A = Constant(mesh, PETSc.ScalarType(1.0))
+    B = Constant(mesh, PETSc.ScalarType(2.0))
 
     K = 1.0 / (A + B * T)
     e = B * K**2 * ufl.grad(T)
 
-    e_expr = dolfinx.Expression(e, quadrature_points)
+    e_expr = Expression(e, quadrature_points)
 
     map_c = mesh.topology.index_map(mesh.topology.dim)
     num_cells = map_c.size_local + map_c.num_ghosts
@@ -414,7 +383,7 @@ def test_assembly_into_quadrature_function():
     e_eval = e_expr.eval(cells)
 
     # Assemble into Function
-    e_Q = dolfinx.Function(Q)
+    e_Q = Function(Q)
     with e_Q.vector.localForm() as e_Q_local:
         e_Q_local.setBlockSize(e_Q.function_space.dofmap.bs)
         e_Q_local.setValuesBlocked(Q.dofmap.list.array, e_eval, addv=PETSc.InsertMode.INSERT)
