@@ -22,7 +22,7 @@ bool is_basix_element(const ufc_finite_element& element)
 {
   if (element.element_type == ufc_basix_element)
     return true;
-  else if (element.element_type == ufc_blocked_element)
+  else if (element.block_size != 1)
   {
     // TODO: what should happen if the element is a blocked element
     // containing a blocked element containing a Basix element?

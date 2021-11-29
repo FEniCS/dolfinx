@@ -59,6 +59,7 @@ fem::interpolation_coords(const fem::FiniteElement& element,
       }
     }
   }
+
   return x;
 }
 //-----------------------------------------------------------------------------
