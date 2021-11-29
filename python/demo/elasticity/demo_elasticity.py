@@ -34,25 +34,45 @@ from ufl import (Identity, SpatialCoordinate, TestFunction, TrialFunction,
 # contains rigid body modes. ::
 
 
+def is_orthonormal(basis, eps=1.0e-12):
+    """Check that list of vectors are orthonormal"""
+    for x in basis:
+        if abs(x.norm() - 1.0) > eps:
+            return False
+    for i, x in enumerate(basis[:-1]):
+        for y in basis[i + 1:]:
+            if abs(x.dot(y)) > eps:
+                return False
+    return True
+
+
+def orthonormalize(basis):
+    """Orthogoalise set of vectors in-place"""
+    for i, x in enumerate(basis):
+        for y in basis[:i]:
+            alpha = x.dot(y)
+            x.axpy(-alpha, y)
+        x.normalize()
+
+
 def build_nullspace(V):
-    """Function to build null space for 3D elasticity"""
+    """Function to build nullspace for 3D elasticity"""
 
     # Create list of vectors for null space
     index_map = V.dofmap.index_map
-    nullspace_basis = [la.create_vector(index_map, V.dofmap.index_map_bs) for i in range(6)]
-
+    nullspace = [la.create_vector(index_map, V.dofmap.index_map_bs) for i in range(6)]
     with ExitStack() as stack:
-        vec_local = [stack.enter_context(x.localForm()) for x in nullspace_basis]
+        vec_local = [stack.enter_context(x.localForm()) for x in nullspace]
         basis = [np.asarray(x) for x in vec_local]
 
         # Dof indices for each subspace (x, y and z dofs)
         dofs = [V.sub(i).dofmap.list.array for i in range(3)]
 
-        # Build translational null space basis
+        # Build translational nullspace basis
         for i in range(3):
             basis[i][dofs[i]] = 1.0
 
-        # Build rotational null space basis
+        # Build rotational nullspace basis
         x = V.tabulate_dof_coordinates()
         dofs_block = V.dofmap.list.array
         x0, x1, x2 = x[dofs_block, 0], x[dofs_block, 1], x[dofs_block, 2]
@@ -63,13 +83,9 @@ def build_nullspace(V):
         basis[5][dofs[2]] = x1
         basis[5][dofs[1]] = -x2
 
-    # Create vector space basis and orthogonalize
-    basis = la.VectorSpaceBasis(nullspace_basis)
-    basis.orthonormalize()
-
-    _x = [basis[i] for i in range(6)]
-    nsp = PETSc.NullSpace().create(vectors=_x)
-    return nsp
+    orthonormalize(nullspace)
+    assert is_orthonormal(nullspace)
+    return PETSc.NullSpace().create(vectors=nullspace)
 
 
 mesh = BoxMesh(

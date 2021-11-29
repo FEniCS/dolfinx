@@ -155,8 +155,9 @@ Mat la::create_petsc_matrix(MPI_Comm comm,
   return A;
 }
 //-----------------------------------------------------------------------------
-MatNullSpace la::create_petsc_nullspace(MPI_Comm comm,
-                                        const la::VectorSpaceBasis& nullspace)
+MatNullSpace
+la::create_petsc_nullspace(MPI_Comm comm,
+                           const la::VectorSpaceBasis<PetscScalar>& nullspace)
 {
   PetscErrorCode ierr;
 
@@ -164,12 +165,17 @@ MatNullSpace la::create_petsc_nullspace(MPI_Comm comm,
   std::vector<Vec> _nullspace;
   for (int i = 0; i < nullspace.dim(); ++i)
   {
-    assert(nullspace[i]);
-    Vec x = nullspace[i]->vec();
+    const Vector<PetscScalar>& x = nullspace[i];
+    Vec _x;
+    VecCreateMPI(x.map()->comm(), x.map()->size_local(), x.map()->size_global(),
+                 &_x);
 
-    // Copy vector pointer
-    assert(x);
-    _nullspace.push_back(x);
+    PetscScalar* data;
+    VecGetArray(_x, &data);
+    std::copy_n(x.array().begin(), x.map()->size_local(), data);
+    VecRestoreArray(_x, &data);
+
+    _nullspace.push_back(_x);
   }
 
   // Create PETSC nullspace
@@ -178,6 +184,9 @@ MatNullSpace la::create_petsc_nullspace(MPI_Comm comm,
                             _nullspace.data(), &petsc_nullspace);
   if (ierr != 0)
     petsc_error(ierr, __FILE__, "MatNullSpaceCreate");
+
+  for (std::size_t i = 0; i < _nullspace.size(); ++i)
+    VecDestroy(&_nullspace[i]);
 
   return petsc_nullspace;
 }
@@ -349,7 +358,8 @@ void PETScMatrix::set_from_options()
   MatSetFromOptions(_matA);
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::set_nullspace(const la::VectorSpaceBasis& nullspace)
+void PETScMatrix::set_nullspace(
+    const la::VectorSpaceBasis<PetscScalar>& nullspace)
 {
   assert(_matA);
 
@@ -370,7 +380,8 @@ void PETScMatrix::set_nullspace(const la::VectorSpaceBasis& nullspace)
   MatNullSpaceDestroy(&petsc_ns);
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::set_near_nullspace(const la::VectorSpaceBasis& nullspace)
+void PETScMatrix::set_near_nullspace(
+    const la::VectorSpaceBasis<PetscScalar>& nullspace)
 {
   assert(_matA);
 

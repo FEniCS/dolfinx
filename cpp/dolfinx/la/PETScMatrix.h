@@ -16,6 +16,7 @@
 namespace dolfinx::la
 {
 class SparsityPattern;
+template <typename T>
 class VectorSpaceBasis;
 
 /// Create a PETSc Mat. Caller is responsible for destroying the
@@ -25,8 +26,9 @@ Mat create_petsc_matrix(MPI_Comm comm, const SparsityPattern& sp,
 
 /// Create PETSc MatNullSpace. Caller is responsible for destruction
 /// returned object.
-MatNullSpace create_petsc_nullspace(MPI_Comm comm,
-                                    const VectorSpaceBasis& nullspace);
+MatNullSpace
+create_petsc_nullspace(MPI_Comm comm,
+                       const VectorSpaceBasis<PetscScalar>& nullspace);
 
 /// It is a simple wrapper for a PETSc matrix pointer (Mat). Its main
 /// purpose is to assist memory management of PETSc Mat objects.
@@ -125,10 +127,10 @@ public:
 
   /// Attach nullspace to matrix (typically used by Krylov solvers
   /// when solving singular systems)
-  void set_nullspace(const la::VectorSpaceBasis& nullspace);
+  void set_nullspace(const la::VectorSpaceBasis<PetscScalar>& nullspace);
 
   /// Attach 'near' nullspace to matrix (used by preconditioners,
   /// such as smoothed aggregation algerbraic multigrid)
-  void set_near_nullspace(const la::VectorSpaceBasis& nullspace);
+  void set_near_nullspace(const la::VectorSpaceBasis<PetscScalar>& nullspace);
 };
 } // namespace dolfinx::la
