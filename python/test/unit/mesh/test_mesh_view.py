@@ -30,8 +30,8 @@ def test_cell_submesh(d):
         mesh = UnitCubeMesh(MPI.COMM_WORLD, n, n, n)
     entity_dim = mesh.topology.dim
     entities = np.array([3, 5, 6], dtype=np.int32)
-    topology_test(mesh, entity_dim, entities)
-    geometry_test(mesh, entity_dim, entities)
+    submesh_topology_test(mesh, entity_dim, entities)
+    submesh_geometry_test(mesh, entity_dim, entities)
 
 
 @pytest.mark.parametrize("d", [2, 3])
@@ -44,11 +44,11 @@ def test_facet_submesh(d, n, boundary):
         mesh = UnitCubeMesh(MPI.COMM_WORLD, n, n, n)
     entity_dim = mesh.topology.dim - 1
     entities = dolfinx.mesh.locate_entities_boundary(mesh, entity_dim, boundary)
-    topology_test(mesh, entity_dim, entities)
-    geometry_test(mesh, entity_dim, entities)
+    submesh_topology_test(mesh, entity_dim, entities)
+    submesh_geometry_test(mesh, entity_dim, entities)
 
 
-def topology_test(mesh, entity_dim, entities):
+def submesh_topology_test(mesh, entity_dim, entities):
     submesh = mesh.sub(entity_dim, entities)
 
     # The vertex map that mesh.sub uses is a sorted list of unique vertices, so
@@ -74,7 +74,7 @@ def topology_test(mesh, entity_dim, entities):
             assert(vertex_map[submesh_entity_vertices[i]] == mesh_entity_vertices[i])
 
 
-def geometry_test(mesh, entity_dim, entities):
+def submesh_geometry_test(mesh, entity_dim, entities):
     submesh = mesh.sub(entity_dim, entities)
 
     assert(mesh.geometry.dim == submesh.geometry.dim)
