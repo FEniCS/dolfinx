@@ -24,6 +24,8 @@ template <typename T, class Allocator = std::allocator<T>>
 class Vector
 {
 public:
+  using value_type = T;
+
   /// Create a distributed vector
   Vector(const std::shared_ptr<const common::IndexMap>& map, int bs,
          const Allocator& alloc = Allocator())

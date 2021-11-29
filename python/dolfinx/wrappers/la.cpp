@@ -12,7 +12,6 @@
 #include <dolfinx/la/PETScVector.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/la/Vector.h>
-#include <dolfinx/la/VectorSpaceBasis.h>
 #include <dolfinx/la/utils.h>
 #include <memory>
 #include <petsc4py/petsc4py.h>
@@ -94,41 +93,6 @@ void la(py::module& m)
           "off_diagonal_pattern",
           &dolfinx::la::SparsityPattern::off_diagonal_pattern,
           py::return_value_policy::reference_internal);
-
-  // dolfinx::la::VectorSpaceBasis
-  py::class_<dolfinx::la::VectorSpaceBasis<PetscScalar>,
-             std::shared_ptr<dolfinx::la::VectorSpaceBasis<PetscScalar>>>(
-      m, "VectorSpaceBasis")
-      .def(py::init(
-          [](const std::vector<dolfinx::la::Vector<PetscScalar>>& x)
-          {
-            // std::vector<std::shared_ptr<dolfinx::la::PETScVector>> _x;
-            // for (std::size_t i = 0; i < x.size(); ++i)
-            // {
-            //   assert(x[i]);
-            //   _x.push_back(
-            //       std::make_shared<dolfinx::la::PETScVector>(x[i], true));
-            // }
-            return dolfinx::la::VectorSpaceBasis<PetscScalar>(x);
-          }))
-      .def("is_orthonormal",
-           &dolfinx::la::VectorSpaceBasis<PetscScalar>::is_orthonormal,
-           py::arg("tol") = 1.0e-10)
-      .def("is_orthogonal",
-           &dolfinx::la::VectorSpaceBasis<PetscScalar>::is_orthogonal,
-           py::arg("tol") = 1.0e-10)
-      // .def("in_nullspace",
-      //      &dolfinx::la::VectorSpaceBasis<PetscScalar>::in_nullspace,
-      //      py::arg("A"), py::arg("tol") = 1.0e-10)
-      // .def("orthogonalize",
-      //      &dolfinx::la::VectorSpaceBasis<PetscScalar>::orthogonalize)
-      .def("orthonormalize",
-           &dolfinx::la::VectorSpaceBasis<PetscScalar>::orthonormalize,
-           py::arg("tol") = 1.0e-10)
-      .def("dim", &dolfinx::la::VectorSpaceBasis<PetscScalar>::dim)
-      .def("__getitem__",
-           [](const dolfinx::la::VectorSpaceBasis<PetscScalar>& self, int i)
-           { return self[i]; });
 
   // Declare objects that are templated over type
   declare_objects<double>(m, "float64");

@@ -7,7 +7,7 @@
 
 #include "PETScMatrix.h"
 #include "PETScVector.h"
-#include "VectorSpaceBasis.h"
+#include "Vector.h"
 #include "utils.h"
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
@@ -155,41 +155,40 @@ Mat la::create_petsc_matrix(MPI_Comm comm,
   return A;
 }
 //-----------------------------------------------------------------------------
-MatNullSpace
-la::create_petsc_nullspace(MPI_Comm comm,
-                           const la::VectorSpaceBasis<PetscScalar>& nullspace)
-{
-  PetscErrorCode ierr;
+// MatNullSpace
+// la::create_petsc_nullspace(const xtl::span<const Vector<PetscScalar>>& basis)
+// {
+//   // PetscErrorCode ierr;
 
-  // Copy vectors in vector space object
-  std::vector<Vec> _nullspace;
-  for (int i = 0; i < nullspace.dim(); ++i)
-  {
-    const Vector<PetscScalar>& x = nullspace[i];
-    Vec _x;
-    VecCreateMPI(x.map()->comm(), x.map()->size_local(), x.map()->size_global(),
-                 &_x);
+//   // // Copy vectors in vector space object
+//   // std::vector<Vec> nullspace(basis.size());
+//   // for (int i = 0; i < basis.size(); ++i)
+//   // {
+//   //   int bs = basis[i].bs();
+//   //   std::int32_t local_size = bs * basis[i].map()->size_local();
+//   //   std::int64_t global_size = bs * basis[i].map()->size_global();
+//   //   VecCreateMPI(basis[i].map()->comm(), local_size, global_size,
+//   //                &nullspace[i]);
 
-    PetscScalar* data;
-    VecGetArray(_x, &data);
-    std::copy_n(x.array().begin(), x.map()->size_local(), data);
-    VecRestoreArray(_x, &data);
+//   //   PetscScalar* data;
+//   //   VecGetArray(nullspace[i], &data);
+//   //   std::copy_n(basis[i].array().begin(), local_size, data);
+//   //   VecRestoreArray(nullspace[i], &data);
+//   // }
 
-    _nullspace.push_back(_x);
-  }
+//   // // Create PETSC nullspace
+//   MatNullSpace petsc_nullspace = nullptr;
+//   // ierr = MatNullSpaceCreate(comm, PETSC_FALSE, nullspace.size(),
+//   //                           nullspace.data(), &petsc_nullspace);
+//   // if (ierr != 0)
+//   //   petsc_error(ierr, __FILE__, "MatNullSpaceCreate");
 
-  // Create PETSC nullspace
-  MatNullSpace petsc_nullspace = nullptr;
-  ierr = MatNullSpaceCreate(comm, PETSC_FALSE, _nullspace.size(),
-                            _nullspace.data(), &petsc_nullspace);
-  if (ierr != 0)
-    petsc_error(ierr, __FILE__, "MatNullSpaceCreate");
+//   // std::vector<Vec> nullspace(basis.size());
+//   // for (int i = 0; i < nullspace.size(); ++i)
+//   //   VecDestroy(&nullspace[i]);
 
-  for (std::size_t i = 0; i < _nullspace.size(); ++i)
-    VecDestroy(&_nullspace[i]);
-
-  return petsc_nullspace;
-}
+//   return petsc_nullspace;
+// }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
@@ -358,47 +357,53 @@ void PETScMatrix::set_from_options()
   MatSetFromOptions(_matA);
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::set_nullspace(
-    const la::VectorSpaceBasis<PetscScalar>& nullspace)
+// void PETScMatrix::set_nullspace(const la::VectorSpaceBasis& nullspace)
+// {
+//   assert(_matA);
+
+//   // Get matrix communicator
+//   MPI_Comm comm = MPI_COMM_NULL;
+//   PetscObjectGetComm((PetscObject)_matA, &comm);
+
+//   // Create PETSc nullspace
+//   MatNullSpace petsc_ns = create_petsc_nullspace(comm, nullspace);
+
+//   // Attach PETSc nullspace to matrix
+//   assert(_matA);
+//   PetscErrorCode ierr = MatSetNullSpace(_matA, petsc_ns);
+//   if (ierr != 0)
+//     petsc_error(ierr, __FILE__, "MatSetNullSpace");
+
+//   // Decrease reference count for nullspace by destroying
+//   MatNullSpaceDestroy(&petsc_ns);
+// }
+// //-----------------------------------------------------------------------------
+// void PETScMatrix::set_near_nullspace(const la::VectorSpaceBasis& nullspace)
+// {
+//   assert(_matA);
+
+//   // Get matrix communicator
+//   MPI_Comm comm = MPI_COMM_NULL;
+//   PetscObjectGetComm((PetscObject)_matA, &comm);
+
+//   // Create PETSc nullspace
+//   MatNullSpace petsc_ns = la::create_petsc_nullspace(comm, nullspace);
+
+//   // Attach near  nullspace to matrix
+//   assert(_matA);
+//   PetscErrorCode ierr = MatSetNearNullSpace(_matA, petsc_ns);
+//   if (ierr != 0)
+//     petsc_error(ierr, __FILE__, "MatSetNullSpace");
+
+//   // Decrease reference count for nullspace
+//   MatNullSpaceDestroy(&petsc_ns);
+// }
+// //-----------------------------------------------------------------------------
+void PETScMatrix::set_near_nullspace(MatNullSpace ns)
 {
   assert(_matA);
-
-  // Get matrix communicator
-  MPI_Comm comm = MPI_COMM_NULL;
-  PetscObjectGetComm((PetscObject)_matA, &comm);
-
-  // Create PETSc nullspace
-  MatNullSpace petsc_ns = create_petsc_nullspace(comm, nullspace);
-
-  // Attach PETSc nullspace to matrix
-  assert(_matA);
-  PetscErrorCode ierr = MatSetNullSpace(_matA, petsc_ns);
+  PetscErrorCode ierr = MatSetNearNullSpace(_matA, ns);
   if (ierr != 0)
     petsc_error(ierr, __FILE__, "MatSetNullSpace");
-
-  // Decrease reference count for nullspace by destroying
-  MatNullSpaceDestroy(&petsc_ns);
-}
-//-----------------------------------------------------------------------------
-void PETScMatrix::set_near_nullspace(
-    const la::VectorSpaceBasis<PetscScalar>& nullspace)
-{
-  assert(_matA);
-
-  // Get matrix communicator
-  MPI_Comm comm = MPI_COMM_NULL;
-  PetscObjectGetComm((PetscObject)_matA, &comm);
-
-  // Create PETSc nullspace
-  MatNullSpace petsc_ns = la::create_petsc_nullspace(comm, nullspace);
-
-  // Attach near  nullspace to matrix
-  assert(_matA);
-  PetscErrorCode ierr = MatSetNearNullSpace(_matA, petsc_ns);
-  if (ierr != 0)
-    petsc_error(ierr, __FILE__, "MatSetNullSpace");
-
-  // Decrease reference count for nullspace
-  MatNullSpaceDestroy(&petsc_ns);
 }
 //-----------------------------------------------------------------------------

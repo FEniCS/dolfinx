@@ -8,16 +8,19 @@
 #pragma once
 
 #include "PETScOperator.h"
+#include "PETScVector.h"
 #include "utils.h"
 #include <functional>
 #include <petscmat.h>
 #include <string>
+#include <vector>
+#include <xtl/xspan.hpp>
 
 namespace dolfinx::la
 {
 class SparsityPattern;
-template <typename T>
-class VectorSpaceBasis;
+// template <typename T, typename U>
+// class Vector;
 
 /// Create a PETSc Mat. Caller is responsible for destroying the
 /// returned object.
@@ -26,9 +29,43 @@ Mat create_petsc_matrix(MPI_Comm comm, const SparsityPattern& sp,
 
 /// Create PETSc MatNullSpace. Caller is responsible for destruction
 /// returned object.
-MatNullSpace
+/// @param[in] basis The nullspace basis vectors. This data is copied
+/// and not shared with the nullspace object.
+/// @return A PETSc nullspace object
+inline MatNullSpace
 create_petsc_nullspace(MPI_Comm comm,
-                       const VectorSpaceBasis<PetscScalar>& nullspace);
+                       const std::vector<xtl::span<const PetscScalar>>& basis)
+{
+  if (basis.empty())
+    return nullptr;
+
+  PetscErrorCode ierr;
+
+  // Copy Vectors in PETSc vectors
+  std::vector<Vec> ns(basis.size());
+  for (int i = 0; i < basis.size(); ++i)
+  {
+    VecCreateMPI(comm, basis[i].size(), PETSC_DETERMINE, &ns[i]);
+
+    PetscScalar* data;
+    VecGetArray(ns[i], &data);
+    std::copy(basis[i].begin(), basis[i].end(), data);
+    VecRestoreArray(ns[i], &data);
+  }
+
+  // Create PETSC nullspace
+  MatNullSpace nullspace = nullptr;
+  ierr
+      = MatNullSpaceCreate(comm, PETSC_FALSE, ns.size(), ns.data(), &nullspace);
+  if (ierr != 0)
+    petsc_error(ierr, __FILE__, "MatNullSpaceCreate");
+
+  // Decrease reference count on vector
+  for (auto v : ns)
+    VecDestroy(&v);
+
+  return nullspace;
+}
 
 /// It is a simple wrapper for a PETSc matrix pointer (Mat). Its main
 /// purpose is to assist memory management of PETSc Mat objects.
@@ -125,12 +162,13 @@ public:
   /// Call PETSc function MatSetFromOptions on the PETSc Mat object
   void set_from_options();
 
-  /// Attach nullspace to matrix (typically used by Krylov solvers
-  /// when solving singular systems)
-  void set_nullspace(const la::VectorSpaceBasis<PetscScalar>& nullspace);
+  // /// Attach nullspace to matrix (typically used by Krylov solvers
+  // /// when solving singular systems)
+  // void set_nullspace(const la::VectorSpaceBasis& nullspace);
 
   /// Attach 'near' nullspace to matrix (used by preconditioners,
   /// such as smoothed aggregation algerbraic multigrid)
-  void set_near_nullspace(const la::VectorSpaceBasis<PetscScalar>& nullspace);
+  void set_near_nullspace(MatNullSpace ns);
+  // void set_near_nullspace(const la::VectorSpaceBasis& nullspace);
 };
 } // namespace dolfinx::la
