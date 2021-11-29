@@ -654,7 +654,8 @@ fem::Expression<T> create_expression(
   const xt::xtensor<double, 2>& points = xt::adapt(
       expression.points, size, xt::no_ownership(),
       std::array<std::size_t, 2>(
-          {expression.num_points, expression.topological_dimension}));
+          {static_cast<std::size_t>(expression.num_points),
+           static_cast<std::size_t>(expression.topological_dimension)}));
 
   std::vector<int> value_shape;
   for (int i = 0; i < expression.num_components; ++i)
