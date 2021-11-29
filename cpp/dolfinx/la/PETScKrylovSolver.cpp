@@ -7,7 +7,6 @@
 #include "PETScKrylovSolver.h"
 #include "PETScOperator.h"
 #include "PETScOptions.h"
-#include "VectorSpaceBasis.h"
 #include "utils.h"
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
