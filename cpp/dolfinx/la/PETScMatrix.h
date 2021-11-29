@@ -8,7 +8,6 @@
 #pragma once
 
 #include "PETScOperator.h"
-#include "PETScVector.h"
 #include "utils.h"
 #include <functional>
 #include <petscmat.h>
@@ -32,40 +31,9 @@ Mat create_petsc_matrix(MPI_Comm comm, const SparsityPattern& sp,
 /// @param[in] basis The nullspace basis vectors. This data is copied
 /// and not shared with the nullspace object.
 /// @return A PETSc nullspace object
-inline MatNullSpace
+MatNullSpace
 create_petsc_nullspace(MPI_Comm comm,
-                       const std::vector<xtl::span<const PetscScalar>>& basis)
-{
-  if (basis.empty())
-    return nullptr;
-
-  PetscErrorCode ierr;
-
-  // Copy Vectors in PETSc vectors
-  std::vector<Vec> ns(basis.size());
-  for (int i = 0; i < basis.size(); ++i)
-  {
-    VecCreateMPI(comm, basis[i].size(), PETSC_DETERMINE, &ns[i]);
-
-    PetscScalar* data;
-    VecGetArray(ns[i], &data);
-    std::copy(basis[i].begin(), basis[i].end(), data);
-    VecRestoreArray(ns[i], &data);
-  }
-
-  // Create PETSC nullspace
-  MatNullSpace nullspace = nullptr;
-  ierr
-      = MatNullSpaceCreate(comm, PETSC_FALSE, ns.size(), ns.data(), &nullspace);
-  if (ierr != 0)
-    petsc_error(ierr, __FILE__, "MatNullSpaceCreate");
-
-  // Decrease reference count on vector
-  for (auto v : ns)
-    VecDestroy(&v);
-
-  return nullspace;
-}
+                       const std::vector<xtl::span<const PetscScalar>>& basis);
 
 /// It is a simple wrapper for a PETSc matrix pointer (Mat). Its main
 /// purpose is to assist memory management of PETSc Mat objects.

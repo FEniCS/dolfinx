@@ -7,13 +7,18 @@
 #pragma once
 
 #include "Vector.h"
-#include <vector>
+#include <xtl/xspan.hpp>
 
 namespace dolfinx::la
 {
 
-template <typename V>
-void orthonormalize(const xtl::span<V>& basis, double tol = 1.0e-10)
+/// Orthonormalize a set of vectors
+/// @param[in,out] basis The set of vectors to orthonormalise. The
+/// vectors must have identical parallel layouts. The vectors are
+/// modified in-place.
+/// @param[in] tol The tolerance used to detect a linear dependency
+template <typename T, typename U>
+void orthonormalize(const xtl::span<Vector<T, U>>& basis, double tol = 1.0e-10)
 {
   // Loop over each vector in basis
   for (std::size_t i = 0; i < basis.size(); ++i)
@@ -22,20 +27,18 @@ void orthonormalize(const xtl::span<V>& basis, double tol = 1.0e-10)
     // vectors
     for (std::size_t j = 0; j < i; ++j)
     {
-      double dot_ij = inner_product(basis[i], basis[j]);
-
       // basis_i <- basis_i - dot_ij  basis_j
-      std::transform(basis[j].array().begin(), basis[j].array().begin(),
+      T dot_ij = inner_product(basis[i], basis[j]);
+      std::transform(basis[j].array().begin(), basis[j].array().end(),
                      basis[i].array().begin(), basis[i].mutable_array().begin(),
-                     [dot_ij](auto xi, auto xj) { return xi - dot_ij * xj; });
+                     [dot_ij](auto xj, auto xi) { return xi - dot_ij * xj; });
     }
 
     // Normalise basis function
-    double norm = inner_product(basis[i], basis[i]);
-    std::transform(basis[i].array().begin(), basis[i].array().begin(),
+    double norm = std::sqrt(inner_product(basis[i], basis[i]));
+    std::transform(basis[i].array().begin(), basis[i].array().end(),
                    basis[i].mutable_array().begin(),
                    [norm](auto x) { return x / norm; });
-
     if (norm < tol)
     {
       throw std::runtime_error(
@@ -45,15 +48,19 @@ void orthonormalize(const xtl::span<V>& basis, double tol = 1.0e-10)
 }
 
 /// Test if basis is orthonormal
-template <typename V>
-bool is_orthonormal(const xtl::span<V>& basis, double tol = 1.0e-10)
+/// @param[in] basis The set of vectors to check
+/// @param[in] tol The tolerance used to test for orthonormality
+/// @return True is basis is orthonormal, otherwise false
+template <typename T, typename U>
+bool is_orthonormal(const xtl::span<const Vector<T, U>>& basis,
+                    double tol = 1.0e-10)
 {
   for (std::size_t i = 0; i < basis.size(); i++)
   {
     for (std::size_t j = i; j < basis.size(); j++)
     {
       const double delta_ij = (i == j) ? 1.0 : 0.0;
-      typename V::value_type dot_ij = inner_product(basis[i], basis[j]);
+      T dot_ij = inner_product(basis[i], basis[j]);
       if (std::abs(delta_ij - dot_ij) > tol)
         return false;
     }

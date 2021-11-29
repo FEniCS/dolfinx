@@ -155,41 +155,39 @@ Mat la::create_petsc_matrix(MPI_Comm comm,
   return A;
 }
 //-----------------------------------------------------------------------------
-// MatNullSpace
-// la::create_petsc_nullspace(const xtl::span<const Vector<PetscScalar>>& basis)
-// {
-//   // PetscErrorCode ierr;
+MatNullSpace la::create_petsc_nullspace(
+    MPI_Comm comm, const std::vector<xtl::span<const PetscScalar>>& basis)
+{
+  if (basis.empty())
+    return nullptr;
 
-//   // // Copy vectors in vector space object
-//   // std::vector<Vec> nullspace(basis.size());
-//   // for (int i = 0; i < basis.size(); ++i)
-//   // {
-//   //   int bs = basis[i].bs();
-//   //   std::int32_t local_size = bs * basis[i].map()->size_local();
-//   //   std::int64_t global_size = bs * basis[i].map()->size_global();
-//   //   VecCreateMPI(basis[i].map()->comm(), local_size, global_size,
-//   //                &nullspace[i]);
+  PetscErrorCode ierr;
 
-//   //   PetscScalar* data;
-//   //   VecGetArray(nullspace[i], &data);
-//   //   std::copy_n(basis[i].array().begin(), local_size, data);
-//   //   VecRestoreArray(nullspace[i], &data);
-//   // }
+  // Copy Vectors in PETSc vectors
+  std::vector<Vec> ns(basis.size());
+  for (int i = 0; i < basis.size(); ++i)
+  {
+    VecCreateMPI(comm, basis[i].size(), PETSC_DETERMINE, &ns[i]);
 
-//   // // Create PETSC nullspace
-//   MatNullSpace petsc_nullspace = nullptr;
-//   // ierr = MatNullSpaceCreate(comm, PETSC_FALSE, nullspace.size(),
-//   //                           nullspace.data(), &petsc_nullspace);
-//   // if (ierr != 0)
-//   //   petsc_error(ierr, __FILE__, "MatNullSpaceCreate");
+    PetscScalar* data;
+    VecGetArray(ns[i], &data);
+    std::copy(basis[i].begin(), basis[i].end(), data);
+    VecRestoreArray(ns[i], &data);
+  }
 
-//   // std::vector<Vec> nullspace(basis.size());
-//   // for (int i = 0; i < nullspace.size(); ++i)
-//   //   VecDestroy(&nullspace[i]);
+  // Create PETSC nullspace
+  MatNullSpace nullspace = nullptr;
+  ierr
+      = MatNullSpaceCreate(comm, PETSC_FALSE, ns.size(), ns.data(), &nullspace);
+  if (ierr != 0)
+    petsc_error(ierr, __FILE__, "MatNullSpaceCreate");
 
-//   return petsc_nullspace;
-// }
-//-----------------------------------------------------------------------------
+  // Decrease reference count on vector
+  for (auto v : ns)
+    VecDestroy(&v);
+
+  return nullspace;
+}
 //-----------------------------------------------------------------------------
 std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                   const std::int32_t*, const PetscScalar*)>
