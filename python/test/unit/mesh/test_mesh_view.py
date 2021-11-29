@@ -27,19 +27,11 @@ ns = [1, 2, 3]
 
 @pytest.mark.parametrize("boundary", boundaries)
 @pytest.mark.parametrize("n", ns)
-def test_facet_topology(n, boundary):
+def test_facet_mesh(n, boundary):
     mesh = UnitSquareMesh(MPI.COMM_WORLD, n, n)
     entity_dim = mesh.topology.dim - 1
     entities = dolfinx.mesh.locate_entities_boundary(mesh, entity_dim, boundary)
     topology_test(mesh, entity_dim, entities)
-
-
-@pytest.mark.parametrize("boundary", boundaries)
-@pytest.mark.parametrize("n", ns)
-def test_geometry(n, boundary):
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, n, n)
-    entity_dim = mesh.topology.dim - 1
-    entities = dolfinx.mesh.locate_entities_boundary(mesh, entity_dim, boundary)
     geometry_test(mesh, entity_dim, entities)
 
 
