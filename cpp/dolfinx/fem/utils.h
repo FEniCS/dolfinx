@@ -473,7 +473,7 @@ fem::Expression<T> create_expression(
     value_shape.push_back(expression.value_shape[i]);
 
   std::vector<int> num_argument_dofs;
-  for (int i = 0; i < expression.num_arguments; ++i)
+  for (int i = 0; i < expression.rank; ++i)
     num_argument_dofs.push_back(expression.num_argument_dofs[i]);
 
   std::function<void(T*, const T*, const T*, const double*, const int*,
