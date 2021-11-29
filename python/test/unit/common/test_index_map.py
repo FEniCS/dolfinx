@@ -27,7 +27,7 @@ def test_sub_index_map():
     src_ranks = dest_ranks
 
     # Create index map
-    map = dolfinx.cpp.common.IndexMap(comm, map_local_size, dest_ranks, map_ghosts, src_ranks)
+    map = dolfinx.common.IndexMap(comm, map_local_size, dest_ranks, map_ghosts, src_ranks)
     assert map.size_global == map_local_size * comm.size
 
     # Build list for each rank of the first (myrank + myrank % 2) local indices

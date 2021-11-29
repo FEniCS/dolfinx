@@ -240,7 +240,7 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
 
   const CellType entity_type
       = mesh::cell_entity_type(_topology.cell_type(), dim, 0);
-  mesh::Topology submesh_topology(mpi_comm(), entity_type);
+  mesh::Topology submesh_topology(comm(), entity_type);
   submesh_topology.set_index_map(0, submesh_vertex_index_map);
   submesh_topology.set_index_map(dim, submesh_entity_index_map);
   submesh_topology.set_connectivity(submesh_v_to_v, 0, 0);
@@ -290,9 +290,9 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
   // retrive this from the coordinate element
   auto submesh_coord_ele = fem::CoordinateElement(submesh_coord_cell, 1);
   auto submesh_geometry
-      = mesh::create_geometry(mpi_comm(), submesh_topology, submesh_coord_ele,
+      = mesh::create_geometry(comm(), submesh_topology, submesh_coord_ele,
                               submesh_cells_al, submesh_x);
-  return Mesh(mpi_comm(), std::move(submesh_topology),
+  return Mesh(comm(), std::move(submesh_topology),
               std::move(submesh_geometry));
 }
 //-----------------------------------------------------------------------------
@@ -306,5 +306,5 @@ Geometry& Mesh::geometry() { return _geometry; }
 //-----------------------------------------------------------------------------
 const Geometry& Mesh::geometry() const { return _geometry; }
 //-----------------------------------------------------------------------------
-MPI_Comm Mesh::mpi_comm() const { return _mpi_comm.comm(); }
+MPI_Comm Mesh::comm() const { return _comm.comm(); }
 //-----------------------------------------------------------------------------

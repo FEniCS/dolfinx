@@ -183,7 +183,7 @@ public:
 
 private:
   // MPI communicator
-  dolfinx::MPI::Comm _mpi_comm;
+  dolfinx::MPI::Comm _comm;
 
   // Cached filename
   std::string _filename;

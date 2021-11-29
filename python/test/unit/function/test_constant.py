@@ -7,7 +7,8 @@
 
 import numpy as np
 import pytest
-from dolfinx import Constant, UnitCubeMesh
+from dolfinx.fem import Constant
+from dolfinx.generation import UnitCubeMesh
 from mpi4py import MPI
 
 
