@@ -389,6 +389,35 @@ Form<T> create_form(
   return create_form(ufc_form, spaces, coeff_map, const_map, subdomains, mesh);
 }
 
+/// Create a Form using a factory function that returns a pointer to a
+/// ufc_form
+/// @param[in] fptr pointer to a function returning a pointer to
+/// ufc_form
+/// @param[in] spaces The function spaces for the Form arguments
+/// @param[in] coefficients Coefficient fields in the form (by name)
+/// @param[in] constants Spatial constants in the form (by name)
+/// @param[in] subdomains Subdomain markers
+/// @param[in] mesh The mesh of the domain. This is required if the form
+/// has no arguments, e.g. a functional.
+/// @return A Form
+template <typename T>
+Form<T> create_form(
+    ufc_form* (*fptr)(),
+    const std::vector<std::shared_ptr<const fem::FunctionSpace>>& spaces,
+    const std::map<std::string, std::shared_ptr<const fem::Function<T>>>&
+        coefficients,
+    const std::map<std::string, std::shared_ptr<const fem::Constant<T>>>&
+        constants,
+    const std::map<IntegralType, const mesh::MeshTags<int>*>& subdomains,
+    const std::shared_ptr<const mesh::Mesh>& mesh = nullptr)
+{
+  ufc_form* form = fptr();
+  Form<T> L = fem::create_form<T>(*form, spaces, coefficients, constants,
+                                  subdomains, mesh);
+  std::free(form);
+  return L;
+}
+
 /// Create a FunctionSpace from UFC data
 ///
 /// @param[in] fptr Function Pointer to a ufc_function_space_create
