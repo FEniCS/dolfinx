@@ -9,10 +9,6 @@ import basix
 import cffi
 import ctypes
 import ctypes.util
-import dolfinx
-import dolfinx.io
-import dolfiny.la
-import matplotlib.pyplot as plt
 import numba
 import numpy as np
 import pytest
@@ -24,7 +20,6 @@ from mpi4py import MPI
 import petsc4py.lib
 from petsc4py import PETSc
 from petsc4py import get_config as PETSc_get_config
-import pytest
 
 
 # Get details of PETSc install
