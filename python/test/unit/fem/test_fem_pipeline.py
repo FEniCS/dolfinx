@@ -192,7 +192,7 @@ def run_dg_test(mesh, V, degree):
 
 
 @pytest.mark.parametrize("family", ["N1curl", "N2curl"])
-@pytest.mark.parametrize("order", [1, 2, 3])
+@pytest.mark.parametrize("order", [1])
 def test_curl_curl_eigenvalue(family, order):
     """curl curl eigenvalue problem.
 
