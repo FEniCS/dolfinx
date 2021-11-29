@@ -1,6 +1,7 @@
 # TODO When finished, add to test_mesh.py since "meshview" is a mesh
 
 import dolfinx
+from dolfinx.generation import UnitSquareMesh
 from mpi4py import MPI
 import numpy as np
 from dolfinx.cpp.mesh import entities_to_geometry
@@ -27,7 +28,7 @@ ns = [1, 2, 3]
 @pytest.mark.parametrize("boundary", boundaries)
 @pytest.mark.parametrize("n", ns)
 def test_topology(n, boundary):
-    mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, n, n)
+    mesh = UnitSquareMesh(MPI.COMM_WORLD, n, n)
     entity_dim = mesh.topology.dim - 1
     entities = dolfinx.mesh.locate_entities_boundary(mesh, entity_dim, boundary)
 
@@ -59,7 +60,7 @@ def test_topology(n, boundary):
 @pytest.mark.parametrize("boundary", boundaries)
 @pytest.mark.parametrize("n", ns)
 def test_geometry(n, boundary):
-    mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, n, n)
+    mesh = UnitSquareMesh(MPI.COMM_WORLD, n, n)
     entity_dim = mesh.topology.dim - 1
     entities = dolfinx.mesh.locate_entities_boundary(mesh, entity_dim, boundary)
 
