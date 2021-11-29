@@ -1,4 +1,5 @@
 # TODO When finished, add to test_mesh.py since "meshview" is a mesh
+# TODO Test 3D
 
 import dolfinx
 from dolfinx.generation import UnitSquareMesh
@@ -21,13 +22,18 @@ def boundary_1(x):
                          np.isclose(x[1], 1.0))
 
 
-boundaries = [boundary_0, boundary_1]
-ns = [1, 2, 3]
+def test_cell_submesh():
+    n = 2
+    mesh = UnitSquareMesh(MPI.COMM_WORLD, n, n)
+    entity_dim = mesh.topology.dim
+    entities = np.array([3, 5, 6], dtype=np.int32)
+    topology_test(mesh, entity_dim, entities)
+    geometry_test(mesh, entity_dim, entities)
 
 
-@pytest.mark.parametrize("boundary", boundaries)
-@pytest.mark.parametrize("n", ns)
-def test_facet_mesh(n, boundary):
+@pytest.mark.parametrize("boundary", [boundary_0, boundary_1])
+@pytest.mark.parametrize("n", [1, 2, 3])
+def test_facet_submesh(n, boundary):
     mesh = UnitSquareMesh(MPI.COMM_WORLD, n, n)
     entity_dim = mesh.topology.dim - 1
     entities = dolfinx.mesh.locate_entities_boundary(mesh, entity_dim, boundary)
