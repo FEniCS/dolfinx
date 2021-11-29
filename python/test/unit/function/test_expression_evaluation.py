@@ -200,65 +200,6 @@ def test_rank1():
     assert np.isclose((h2 - h.vector).norm(), 0.0)
 
 
-def test_rank1_div():
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 10, 10)
-    vP1 = VectorFunctionSpace(mesh, ("P", 1))
-    dP0 = FunctionSpace(mesh, ("DG", 0))
-
-    f = ufl.TrialFunction(vP1)
-    ufl_expr = ufl.div(f)
-
-    points = np.array([[0.25, 0.25]])
-    compiled_expr = Expression(ufl_expr, points)
-
-    num_cells = mesh.topology.index_map(2).size_local
-    array_evaluated = compiled_expr.eval(np.arange(num_cells))
-
-    @numba.njit
-    def scatter(A, array_evaluated, dofmap0, dofmap1):
-        for i in range(num_cells):
-            rows = dofmap0[i, :]
-            cols = dofmap1[i, :]
-            A_local = array_evaluated[i, :]
-            MatSetValues(A, 1, rows.ctypes, 6, cols.ctypes, A_local.ctypes, 1)
-
-    a = ufl.TrialFunction(vP1)[0] * ufl.TestFunction(dP0) * ufl.dx
-    A = create_matrix(a)
-
-    dofmap_col = vP1.dofmap.list.array
-    dofmap_row = dP0.dofmap.list.array.reshape(num_cells, -1)
-
-    dofmap_col_unrolled = (2 * np.repeat(dofmap_col, 2).reshape(-1, 2)
-                           + np.arange(2)).flatten().astype(dofmap_col.dtype)
-    dofmap_col = dofmap_col_unrolled.reshape(num_cells, -1)
-
-    scatter(A.handle, array_evaluated, dofmap_row, dofmap_col)
-    A.assemble()
-
-    g = Function(vP1)
-
-    def expr1(x):
-        values = np.empty((2, x.shape[1]))
-        values[0] = 2.0 * x[0]
-        values[1] = 4.0 * x[1]
-
-        return values
-
-    g.interpolate(expr1)
-
-    def div_expr1(x):
-        values = np.empty((1, x.shape[1]))
-        values[0] = 6.0
-        return values
-
-    h = Function(dP0)
-    h.interpolate(div_expr1)
-
-    h2 = A * g.vector
-
-    assert np.isclose((h2 - h.vector).norm(), 0.0)
-
-
 def test_simple_evaluation():
     """Test evaluation of UFL Expression.
 

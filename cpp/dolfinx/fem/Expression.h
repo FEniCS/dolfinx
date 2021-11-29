@@ -169,8 +169,7 @@ public:
 
   /// Get value size
   /// @return value_size
-<<<<<<< HEAD
-  const int value_size() const
+  int value_size() const
   {
     return std::accumulate(_value_shape.begin(), _value_shape.end(), 1,
                            std::multiplies<int>());
@@ -181,14 +180,7 @@ public:
 
   /// Get number of evaluation points in cell
   /// @return number of points in cell
-  const std::size_t num_points() const { return _X.shape(0); }
-=======
-  std::size_t value_size() const { return _value_size; }
-
-  /// Get number of points
-  /// @return number of points
-  std::size_t num_points() const { return _x.shape(0); }
->>>>>>> main
+  std::size_t num_points() const { return _X.shape(0); }
 
   /// Get number of degrees-of-freedom for arguments
   const std::vector<int>& num_argument_dofs() const
