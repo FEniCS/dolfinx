@@ -49,6 +49,7 @@ def test_mixed_element(ElementType, space, cell, order):
         assert np.isclose(norms[0], i)
 
 
+@skip_in_parallel
 def test_vector_element():
     # VectorFunctionSpace containing a scalar should work
     mesh = UnitSquareMesh(MPI.COMM_WORLD, 1, 1, CellType.triangle, GhostMode.shared_facet)
