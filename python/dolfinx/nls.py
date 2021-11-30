@@ -25,7 +25,7 @@ class NewtonSolver(_cpp.nls.NewtonSolver):
         # of the non-linear problem
         self._A = fem.create_matrix(problem.a)
         self.setJ(problem.J, self._A)
-        self._b = fem.create_petsc_vector(problem.L)
+        self._b = fem.create_vector(problem.L)
         self.setF(problem.F, self._b)
         self.set_form(problem.form)
 
