@@ -1,10 +1,9 @@
-"Unit tests for nullspaces"
-
 # Copyright (C) 2014-2018 Garth N. Wells
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
+"""Unit tests for nullspaces"""
 
 from contextlib import ExitStack
 
@@ -98,22 +97,18 @@ def test_nullspace_orthogonal(mesh, degree):
     """Test that null spaces orthogonalisation"""
     V = VectorFunctionSpace(mesh, ('Lagrange', degree))
     nullspace = build_elastic_nullspace(V)
-    # assert not la.is_orthogonal(nullspace)
     assert not la.is_orthonormal(nullspace)
-
     la.orthonormalize(nullspace)
-    # assert la.is_orthogonal(nullspace)
     assert la.is_orthonormal(nullspace)
 
 
 @pytest.mark.parametrize("mesh", [
     UnitSquareMesh(MPI.COMM_WORLD, 12, 13),
-    BoxMesh(
-        MPI.COMM_WORLD,
-        [np.array([0.8, -0.2, 1.2]),
-         np.array([3.0, 11.0, -5.0])], [12, 18, 25],
-        cell_type=CellType.tetrahedron,
-        ghost_mode=GhostMode.none),
+    BoxMesh(MPI.COMM_WORLD,
+            [np.array([0.8, -0.2, 1.2]),
+             np.array([3.0, 11.0, -5.0])], [12, 18, 25],
+            cell_type=CellType.tetrahedron,
+            ghost_mode=GhostMode.none),
 ])
 @pytest.mark.parametrize("degree", [1, 2])
 def test_nullspace_check(mesh, degree):
@@ -147,4 +142,3 @@ def test_nullspace_check(mesh, degree):
     assert not ns.test(A)
     la.orthonormalize(nullspace)
     assert not ns.test(A)
-
