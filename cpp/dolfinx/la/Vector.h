@@ -317,7 +317,7 @@ void orthonormalize(const xtl::span<Vector<T, U>>& basis, double tol = 1.0e-10)
     }
 
     // Normalise basis function
-    double norm = std::sqrt(inner_product(basis[i], basis[i]));
+    double norm = basis[i].norm();
     std::transform(basis[i].array().begin(), basis[i].array().end(),
                    basis[i].mutable_array().begin(),
                    [norm](auto x) { return x / norm; });
