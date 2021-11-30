@@ -29,7 +29,7 @@ Mat la::create_petsc_matrix(MPI_Comm comm,
   Mat A;
   ierr = MatCreate(comm, &A);
   if (ierr != 0)
-    petsc_error(ierr, __FILE__, "MatCreate");
+    petsc::petsc_error(ierr, __FILE__, "MatCreate");
 
   // Get IndexMaps from sparsity patterm, and block size
   std::array maps = {sp.index_map(0), sp.index_map(1)};
@@ -47,7 +47,7 @@ Mat la::create_petsc_matrix(MPI_Comm comm,
   // Set matrix size
   ierr = MatSetSizes(A, m, n, M, N);
   if (ierr != 0)
-    petsc_error(ierr, __FILE__, "MatSetSizes");
+    petsc::petsc_error(ierr, __FILE__, "MatSetSizes");
 
   // Get number of nonzeros for each row from sparsity pattern
   const graph::AdjacencyList<std::int32_t>& diagonal_pattern
@@ -59,7 +59,7 @@ Mat la::create_petsc_matrix(MPI_Comm comm,
   // includes changing the matrix type to one specified by the user)
   ierr = MatSetFromOptions(A);
   if (ierr != 0)
-    petsc_error(ierr, __FILE__, "MatSetFromOptions");
+    petsc::petsc_error(ierr, __FILE__, "MatSetFromOptions");
 
   // Find a common block size across rows/columns
   const int _bs = (bs[0] == bs[1] ? bs[0] : 1);
@@ -90,12 +90,12 @@ Mat la::create_petsc_matrix(MPI_Comm comm,
   ierr = MatXAIJSetPreallocation(A, _bs, _nnz_diag.data(), _nnz_offdiag.data(),
                                  nullptr, nullptr);
   if (ierr != 0)
-    petsc_error(ierr, __FILE__, "MatXIJSetPreallocation");
+    petsc::petsc_error(ierr, __FILE__, "MatXIJSetPreallocation");
 
   // Set block sizes
   ierr = MatSetBlockSizes(A, bs[0], bs[1]);
   if (ierr != 0)
-    petsc_error(ierr, __FILE__, "MatSetBlockSizes");
+    petsc::petsc_error(ierr, __FILE__, "MatSetBlockSizes");
 
   // Create PETSc local-to-global map/index sets
   ISLocalToGlobalMapping local_to_global0;
@@ -106,14 +106,14 @@ Mat la::create_petsc_matrix(MPI_Comm comm,
                                       &local_to_global0);
 
   if (ierr != 0)
-    petsc_error(ierr, __FILE__, "ISLocalToGlobalMappingCreate");
+    petsc::petsc_error(ierr, __FILE__, "ISLocalToGlobalMappingCreate");
 
   // Check for common index maps
   if (maps[0] == maps[1] and bs[0] == bs[1])
   {
     ierr = MatSetLocalToGlobalMapping(A, local_to_global0, local_to_global0);
     if (ierr != 0)
-      petsc_error(ierr, __FILE__, "MatSetLocalToGlobalMapping");
+      petsc::petsc_error(ierr, __FILE__, "MatSetLocalToGlobalMapping");
   }
   else
   {
@@ -124,19 +124,19 @@ Mat la::create_petsc_matrix(MPI_Comm comm,
                                         _map1.data(), PETSC_COPY_VALUES,
                                         &local_to_global1);
     if (ierr != 0)
-      petsc_error(ierr, __FILE__, "ISLocalToGlobalMappingCreate");
+      petsc::petsc_error(ierr, __FILE__, "ISLocalToGlobalMappingCreate");
     ierr = MatSetLocalToGlobalMapping(A, local_to_global0, local_to_global1);
     if (ierr != 0)
-      petsc_error(ierr, __FILE__, "MatSetLocalToGlobalMapping");
+      petsc::petsc_error(ierr, __FILE__, "MatSetLocalToGlobalMapping");
     ierr = ISLocalToGlobalMappingDestroy(&local_to_global1);
     if (ierr != 0)
-      petsc_error(ierr, __FILE__, "ISLocalToGlobalMappingDestroy");
+      petsc::petsc_error(ierr, __FILE__, "ISLocalToGlobalMappingDestroy");
   }
 
   // Clean up local-to-global 0
   ierr = ISLocalToGlobalMappingDestroy(&local_to_global0);
   if (ierr != 0)
-    petsc_error(ierr, __FILE__, "ISLocalToGlobalMappingDestroy");
+    petsc::petsc_error(ierr, __FILE__, "ISLocalToGlobalMappingDestroy");
 
   // Note: This should be called after having set the local-to-global
   // map for MATIS (this is a dummy call if A is not of type MATIS)
@@ -147,10 +147,10 @@ Mat la::create_petsc_matrix(MPI_Comm comm,
   // Set some options on Mat object
   ierr = MatSetOption(A, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_TRUE);
   if (ierr != 0)
-    petsc_error(ierr, __FILE__, "MatSetOption");
+    petsc::petsc_error(ierr, __FILE__, "MatSetOption");
   ierr = MatSetOption(A, MAT_KEEP_NONZERO_PATTERN, PETSC_TRUE);
   if (ierr != 0)
-    petsc_error(ierr, __FILE__, "MatSetOption");
+    petsc::petsc_error(ierr, __FILE__, "MatSetOption");
 
   return A;
 }
@@ -162,7 +162,7 @@ MatNullSpace la::create_petsc_nullspace(MPI_Comm comm,
   PetscErrorCode ierr
       = MatNullSpaceCreate(comm, PETSC_FALSE, basis.size(), basis.data(), &ns);
   if (ierr != 0)
-    petsc_error(ierr, __FILE__, "MatNullSpaceCreate");
+    petsc::petsc_error(ierr, __FILE__, "MatNullSpaceCreate");
   return ns;
 }
 //-----------------------------------------------------------------------------
@@ -187,7 +187,7 @@ PETScMatrix::set_fn(Mat A, InsertMode mode)
 
 #ifdef DEBUG
     if (ierr != 0)
-      la::petsc_error(ierr, __FILE__, "MatSetValuesLocal");
+      petsc::petsc_error(ierr, __FILE__, "MatSetValuesLocal");
 #endif
 
     return ierr;
@@ -215,7 +215,7 @@ PETScMatrix::set_block_fn(Mat A, InsertMode mode)
 
 #ifdef DEBUG
     if (ierr != 0)
-      la::petsc_error(ierr, __FILE__, "MatSetValuesBlockedLocal");
+      petsc::petsc_error(ierr, __FILE__, "MatSetValuesBlockedLocal");
 #endif
 
     return ierr;
@@ -248,7 +248,7 @@ PETScMatrix::set_block_expand_fn(Mat A, int bs0, int bs1, InsertMode mode)
                              cache1.data(), vals, mode);
 #ifdef DEBUG
     if (ierr != 0)
-      la::petsc_error(ierr, __FILE__, "MatSetValuesLocal");
+      petsc::petsc_error(ierr, __FILE__, "MatSetValuesLocal");
 #endif
     return ierr;
   };
@@ -288,7 +288,7 @@ double PETScMatrix::norm(la::Norm norm_type) const
   }
 
   if (ierr != 0)
-    petsc_error(ierr, __FILE__, "MatNorm");
+    petsc::petsc_error(ierr, __FILE__, "MatNorm");
 
   return value;
 }
@@ -306,10 +306,10 @@ void PETScMatrix::apply(AssemblyType type)
 
   ierr = MatAssemblyBegin(_matA, petsc_type);
   if (ierr != 0)
-    petsc_error(ierr, __FILE__, "MatAssemblyBegin");
+    petsc::petsc_error(ierr, __FILE__, "MatAssemblyBegin");
   ierr = MatAssemblyEnd(_matA, petsc_type);
   if (ierr != 0)
-    petsc_error(ierr, __FILE__, "MatAssemblyEnd");
+    petsc::petsc_error(ierr, __FILE__, "MatAssemblyEnd");
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::set_options_prefix(std::string options_prefix)
@@ -379,6 +379,6 @@ void PETScMatrix::set_near_nullspace(MatNullSpace ns)
   assert(_matA);
   PetscErrorCode ierr = MatSetNearNullSpace(_matA, ns);
   if (ierr != 0)
-    petsc_error(ierr, __FILE__, "MatSetNullSpace");
+    petsc::petsc_error(ierr, __FILE__, "MatSetNullSpace");
 }
 //-----------------------------------------------------------------------------

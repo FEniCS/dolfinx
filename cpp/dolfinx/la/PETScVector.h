@@ -22,6 +22,13 @@ class IndexMap;
 namespace dolfinx::la
 {
 
+namespace petsc
+{
+
+/// Print error message for PETSc calls that return an error
+void petsc_error(int error_code, std::string filename,
+                 std::string petsc_function);
+
 /// Create PETsc vectors from the local data. The data is copied into
 /// the PETSc vectors and is not shared.
 /// @param[in] comm The MPI communicator
@@ -29,8 +36,26 @@ namespace dolfinx::la
 /// components must have the same length.
 /// @return Array of PETSc vectors
 std::vector<Vec>
-create_petsc_vectors(MPI_Comm comm,
-                     const std::vector<xtl::span<const PetscScalar>>& x);
+create_vectors(MPI_Comm comm,
+               const std::vector<xtl::span<const PetscScalar>>& x);
+
+/// Create a ghosted PETSc Vec
+/// @note Caller is responsible for destroying the returned object
+/// @param[in] map The index map describing the parallel layout (by block)
+/// @param[in] bs The block size
+/// @returns A PETSc Vec
+Vec create_vector(const common::IndexMap& map, int bs);
+
+/// Create a ghosted PETSc Vec from a local range and ghost indices
+/// @note Caller is responsible for destroying the returned object
+/// @param[in] comm The MPI communicator
+/// @param[in] range The local ownership range (by blocks)
+/// @param[in] ghosts Ghost blocks
+/// @param[in] bs The block size. The total number of local entries is
+/// `bs * (range[1] - range[0])`.
+/// @returns A PETSc Vec
+Vec create_vector(MPI_Comm comm, std::array<std::int64_t, 2> range,
+                  const std::vector<std::int64_t>& ghosts, int bs);
 
 /// Create a PETSc Vec that wraps the data in an array
 /// @param[in] map The index map that describes the parallel layout of
@@ -39,12 +64,8 @@ create_petsc_vectors(MPI_Comm comm,
 /// @param[in] x The local part of the vector, including ghost entries
 /// @return A PETSc Vec object that shares the data in @p x. The caller
 /// is responsible for destroying the Vec.
-Vec create_petsc_ghosted_vector(const common::IndexMap& map, int bs,
-                                const xtl::span<PetscScalar>& x);
-
-/// Print error message for PETSc calls that return an error
-void petsc_error(int error_code, std::string filename,
-                 std::string petsc_function);
+Vec create_vector_wrap(const common::IndexMap& map, int bs,
+                       const xtl::span<PetscScalar>& x);
 
 /// @todo This function could take just the local sizes
 ///
@@ -57,31 +78,9 @@ void petsc_error(int error_code, std::string filename,
 ///
 /// @param[in] maps Vector of IndexMaps and corresponding block sizes
 /// @returns Vector of PETSc Index Sets, created on` PETSC_COMM_SELF`
-std::vector<IS> create_petsc_index_sets(
+std::vector<IS> create_index_sets(
     const std::vector<
         std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps);
-
-/// Create a ghosted PETSc Vec.
-///
-/// Caller is responsible for destroying the returned object.
-///
-/// @param[in] map The index map describing the parallel layout (by block)
-/// @param[in] bs The block size
-/// @returns A PETSc Vec
-Vec create_petsc_vector(const common::IndexMap& map, int bs);
-
-/// Create a ghosted PETSc Vec from a local range and ghost indices.
-///
-/// Caller is responsible for destroying the returned object.
-///
-/// @param[in] comm The MPI communicator
-/// @param[in] range The local ownership range (by blocks)
-/// @param[in] ghosts Ghost blocks
-/// @param[in] bs The block size. The total number of local entries is
-/// `bs * (range[1] - range[0])`.
-/// @returns A PETSc Vec
-Vec create_petsc_vector(MPI_Comm comm, std::array<std::int64_t, 2> range,
-                        const std::vector<std::int64_t>& ghosts, int bs);
 
 /// Copy blocks from Vec into local vectors
 std::vector<std::vector<PetscScalar>> get_local_vectors(
@@ -94,6 +93,8 @@ void scatter_local_vectors(
     Vec x, const std::vector<xtl::span<const PetscScalar>>& x_b,
     const std::vector<
         std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps);
+
+} // namespace petsc
 
 /// A simple wrapper for a PETSc vector pointer (Vec). Its main purpose
 /// is to assist with memory/lifetime management of PETSc Vec objects.

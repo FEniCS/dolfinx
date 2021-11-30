@@ -246,7 +246,7 @@ Vec fem::create_vector_block(
   common::IndexMap index_map(maps[0].first.get().comm(), local_size, dest_ranks,
                              ghosts, ghost_owners);
 
-  return la::create_petsc_vector(index_map, 1);
+  return la::petsc::create_vector(index_map, 1);
 }
 //-----------------------------------------------------------------------------
 Vec fem::create_vector_nest(

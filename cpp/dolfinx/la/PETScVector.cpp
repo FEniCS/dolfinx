@@ -19,13 +19,31 @@ using namespace dolfinx::la;
   do                                                                           \
   {                                                                            \
     if (ierr != 0)                                                             \
-      petsc_error(ierr, __FILE__, NAME);                                       \
+      petsc::petsc_error(ierr, __FILE__, NAME);                                \
   } while (0)
 
 //-----------------------------------------------------------------------------
+void la::petsc::petsc_error(int error_code, std::string filename,
+                            std::string petsc_function)
+{
+  // Fetch PETSc error description
+  const char* desc;
+  PetscErrorMessage(error_code, &desc, nullptr);
+
+  // Log detailed error info
+  DLOG(INFO) << "PETSc error in '" << filename.c_str() << "', '"
+             << petsc_function.c_str() << "'";
+  DLOG(INFO) << "PETSc error code '" << error_code << "' (" << desc << ".";
+
+  throw std::runtime_error("Failed to successfully call PETSc function '"
+                           + petsc_function + "'. PETSc error code is: "
+                           + std ::to_string(error_code) + ", "
+                           + std::string(desc));
+}
+//-----------------------------------------------------------------------------
 std::vector<Vec>
-la::create_petsc_vectors(MPI_Comm comm,
-                         const std::vector<xtl::span<const PetscScalar>>& x)
+la::petsc::create_vectors(MPI_Comm comm,
+                          const std::vector<xtl::span<const PetscScalar>>& x)
 {
   if (x.empty())
     return std::vector<Vec>();
@@ -48,25 +66,44 @@ la::create_petsc_vectors(MPI_Comm comm,
   return v;
 }
 //-----------------------------------------------------------------------------
-void la::petsc_error(int error_code, std::string filename,
-                     std::string petsc_function)
+Vec la::petsc::create_vector(const dolfinx::common::IndexMap& map, int bs)
 {
-  // Fetch PETSc error description
-  const char* desc;
-  PetscErrorMessage(error_code, &desc, nullptr);
-
-  // Log detailed error info
-  DLOG(INFO) << "PETSc error in '" << filename.c_str() << "', '"
-             << petsc_function.c_str() << "'";
-  DLOG(INFO) << "PETSc error code '" << error_code << "' (" << desc << ".";
-
-  throw std::runtime_error("Failed to successfully call PETSc function '"
-                           + petsc_function + "'. PETSc error code is: "
-                           + std ::to_string(error_code) + ", "
-                           + std::string(desc));
+  return la::petsc::create_vector(map.comm(), map.local_range(), map.ghosts(),
+                                  bs);
 }
 //-----------------------------------------------------------------------------
-std::vector<IS> la::create_petsc_index_sets(
+Vec la::petsc::create_vector(MPI_Comm comm, std::array<std::int64_t, 2> range,
+                             const std::vector<std::int64_t>& ghosts, int bs)
+{
+  PetscErrorCode ierr;
+
+  // Get local size
+  assert(range[1] >= range[0]);
+  const std::int32_t local_size = range[1] - range[0];
+
+  Vec x;
+  const std::vector<PetscInt> _ghosts(ghosts.begin(), ghosts.end());
+  ierr = VecCreateGhostBlock(comm, bs, bs * local_size, PETSC_DETERMINE,
+                             _ghosts.size(), _ghosts.data(), &x);
+  CHECK_ERROR("VecCreateGhostBlock");
+  assert(x);
+
+  return x;
+}
+//-----------------------------------------------------------------------------
+Vec la::petsc::create_vector_wrap(const common::IndexMap& map, int bs,
+                                  const xtl::span<PetscScalar>& x)
+{
+  const std::int32_t size_local = bs * map.size_local();
+  const std::int64_t size_global = bs * map.size_global();
+  const std::vector<PetscInt> ghosts(map.ghosts().begin(), map.ghosts().end());
+  Vec vec;
+  VecCreateGhostBlockWithArray(map.comm(), bs, size_local, size_global,
+                               ghosts.size(), ghosts.data(), x.data(), &vec);
+  return vec;
+}
+//-----------------------------------------------------------------------------
+std::vector<IS> la::petsc::create_index_sets(
     const std::vector<
         std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps)
 {
@@ -86,44 +123,7 @@ std::vector<IS> la::create_petsc_index_sets(
   return is;
 }
 //-----------------------------------------------------------------------------
-Vec la::create_petsc_ghosted_vector(const common::IndexMap& map, int bs,
-                                    const xtl::span<PetscScalar>& x)
-{
-  const std::int32_t size_local = bs * map.size_local();
-  const std::int64_t size_global = bs * map.size_global();
-  const std::vector<PetscInt> ghosts(map.ghosts().begin(), map.ghosts().end());
-  Vec vec;
-  VecCreateGhostBlockWithArray(map.comm(), bs, size_local, size_global,
-                               ghosts.size(), ghosts.data(), x.data(), &vec);
-  return vec;
-}
-//-----------------------------------------------------------------------------
-Vec la::create_petsc_vector(const dolfinx::common::IndexMap& map, int bs)
-{
-  return la::create_petsc_vector(map.comm(), map.local_range(), map.ghosts(),
-                                 bs);
-}
-//-----------------------------------------------------------------------------
-Vec la::create_petsc_vector(MPI_Comm comm, std::array<std::int64_t, 2> range,
-                            const std::vector<std::int64_t>& ghosts, int bs)
-{
-  PetscErrorCode ierr;
-
-  // Get local size
-  assert(range[1] >= range[0]);
-  const std::int32_t local_size = range[1] - range[0];
-
-  Vec x;
-  const std::vector<PetscInt> _ghosts(ghosts.begin(), ghosts.end());
-  ierr = VecCreateGhostBlock(comm, bs, bs * local_size, PETSC_DETERMINE,
-                             _ghosts.size(), _ghosts.data(), &x);
-  CHECK_ERROR("VecCreateGhostBlock");
-  assert(x);
-
-  return x;
-}
-//-----------------------------------------------------------------------------
-std::vector<std::vector<PetscScalar>> la::get_local_vectors(
+std::vector<std::vector<PetscScalar>> la::petsc::get_local_vectors(
     const Vec x,
     const std::vector<
         std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps)
@@ -166,7 +166,7 @@ std::vector<std::vector<PetscScalar>> la::get_local_vectors(
   return x_b;
 }
 //-----------------------------------------------------------------------------
-void la::scatter_local_vectors(
+void la::petsc::scatter_local_vectors(
     Vec x, const std::vector<xtl::span<const PetscScalar>>& x_b,
     const std::vector<
         std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps)
@@ -211,7 +211,7 @@ void la::scatter_local_vectors(
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 PETScVector::PETScVector(const common::IndexMap& map, int bs)
-    : _x(la::create_petsc_vector(map, bs))
+    : _x(la::petsc::create_vector(map, bs))
 {
   // Do nothing
 }

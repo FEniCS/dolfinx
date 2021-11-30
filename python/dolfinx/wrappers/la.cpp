@@ -100,7 +100,7 @@ void la(py::module& m)
 
   m.def("create_vector",
         py::overload_cast<const dolfinx::common::IndexMap&, int>(
-            &dolfinx::la::create_petsc_vector),
+            &dolfinx::la::petsc::create_vector),
         py::return_value_policy::take_ownership,
         "Create a ghosted PETSc Vec for index map.");
   m.def(
@@ -112,7 +112,7 @@ void la(py::module& m)
       py::arg("type") = std::string(),
       "Create a PETSc Mat from sparsity pattern.");
   // TODO: check reference counting for index sets
-  m.def("create_petsc_index_sets", &dolfinx::la::create_petsc_index_sets,
+  m.def("create_petsc_index_sets", &dolfinx::la::petsc::create_index_sets,
         py::return_value_policy::take_ownership);
 
   m.def(
@@ -126,7 +126,7 @@ void la(py::module& m)
         std::vector<xtl::span<const PetscScalar>> _x_b;
         for (auto& array : x_b)
           _x_b.emplace_back(array.data(), array.size());
-        dolfinx::la::scatter_local_vectors(x, _x_b, maps);
+        dolfinx::la::petsc::scatter_local_vectors(x, _x_b, maps);
       },
       "Scatter the (ordered) list of sub vectors into a block "
       "vector.");
@@ -138,7 +138,7 @@ void la(py::module& m)
              maps)
       {
         std::vector<std::vector<PetscScalar>> vecs
-            = dolfinx::la::get_local_vectors(x, maps);
+            = dolfinx::la::petsc::get_local_vectors(x, maps);
         std::vector<py::array> ret;
         for (std::vector<PetscScalar>& v : vecs)
           ret.push_back(as_pyarray(std::move(v)));
