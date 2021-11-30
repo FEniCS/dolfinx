@@ -24,6 +24,7 @@ template <typename T, class Allocator = std::allocator<T>>
 class Vector
 {
 public:
+  /// The value type
   using value_type = T;
 
   /// Create a distributed vector

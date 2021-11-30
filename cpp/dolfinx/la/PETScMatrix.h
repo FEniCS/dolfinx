@@ -28,6 +28,7 @@ Mat create_petsc_matrix(MPI_Comm comm, const SparsityPattern& sp,
 
 /// Create PETSc MatNullSpace. Caller is responsible for destruction
 /// returned object.
+/// @param [in] comm The MPI communicator
 /// @param[in] basis The nullspace basis vectors
 /// @return A PETSc nullspace object
 MatNullSpace create_petsc_nullspace(MPI_Comm comm,
