@@ -7,7 +7,6 @@
 #ifdef HAS_SLEPC
 
 #include "SLEPcEigenSolver.h"
-#include "VectorSpaceBasis.h"
 #include "utils.h"
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/log.h>

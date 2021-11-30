@@ -23,6 +23,28 @@ using namespace dolfinx::la;
   } while (0)
 
 //-----------------------------------------------------------------------------
+std::vector<Vec>
+la::create_petsc_vectors(MPI_Comm comm,
+                         const std::vector<xtl::span<const PetscScalar>>& x)
+{
+  if (x.empty())
+    return std::vector<Vec>();
+
+  std::vector<Vec> v(x.size());
+  VecCreateMPI(comm, x[0].size(), PETSC_DETERMINE, &v[0]);
+  Vec* _v = v.data() + 1;
+  VecDuplicateVecs(v[0], v.size() - 1, &_v);
+  for (std::size_t i = 0; i < v.size(); ++i)
+  {
+    PetscScalar* data;
+    VecGetArray(v[i], &data);
+    std::copy(x[i].begin(), x[i].end(), data);
+    VecRestoreArray(v[i], &data);
+  }
+
+  return v;
+}
+//-----------------------------------------------------------------------------
 void la::petsc_error(int error_code, std::string filename,
                      std::string petsc_function)
 {
@@ -62,7 +84,7 @@ std::vector<IS> la::create_petsc_index_sets(
 }
 //-----------------------------------------------------------------------------
 Vec la::create_ghosted_vector(const common::IndexMap& map, int bs,
-                              xtl::span<PetscScalar> x)
+                              const xtl::span<PetscScalar>& x)
 {
   const std::int32_t size_local = bs * map.size_local();
   const std::int64_t size_global = bs * map.size_global();

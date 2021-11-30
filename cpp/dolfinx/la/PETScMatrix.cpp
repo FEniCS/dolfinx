@@ -155,38 +155,15 @@ Mat la::create_petsc_matrix(MPI_Comm comm,
   return A;
 }
 //-----------------------------------------------------------------------------
-MatNullSpace la::create_petsc_nullspace(
-    MPI_Comm comm, const std::vector<xtl::span<const PetscScalar>>& basis)
+MatNullSpace la::create_petsc_nullspace(MPI_Comm comm,
+                                        const xtl::span<const Vec>& basis)
 {
-  if (basis.empty())
-    return nullptr;
-
-  PetscErrorCode ierr;
-
-  // Copy Vectors in PETSc vectors
-  std::vector<Vec> ns(basis.size());
-  for (int i = 0; i < basis.size(); ++i)
-  {
-    VecCreateMPI(comm, basis[i].size(), PETSC_DETERMINE, &ns[i]);
-
-    PetscScalar* data;
-    VecGetArray(ns[i], &data);
-    std::copy(basis[i].begin(), basis[i].end(), data);
-    VecRestoreArray(ns[i], &data);
-  }
-
-  // Create PETSC nullspace
-  MatNullSpace nullspace = nullptr;
-  ierr
-      = MatNullSpaceCreate(comm, PETSC_FALSE, ns.size(), ns.data(), &nullspace);
+  MatNullSpace ns = nullptr;
+  PetscErrorCode ierr
+      = MatNullSpaceCreate(comm, PETSC_FALSE, basis.size(), basis.data(), &ns);
   if (ierr != 0)
     petsc_error(ierr, __FILE__, "MatNullSpaceCreate");
-
-  // Decrease reference count on vector
-  for (auto v : ns)
-    VecDestroy(&v);
-
-  return nullspace;
+  return ns;
 }
 //-----------------------------------------------------------------------------
 std::function<int(std::int32_t, const std::int32_t*, std::int32_t,

@@ -28,12 +28,10 @@ Mat create_petsc_matrix(MPI_Comm comm, const SparsityPattern& sp,
 
 /// Create PETSc MatNullSpace. Caller is responsible for destruction
 /// returned object.
-/// @param[in] basis The nullspace basis vectors. This data is copied
-/// and not shared with the nullspace object.
+/// @param[in] basis The nullspace basis vectors
 /// @return A PETSc nullspace object
-MatNullSpace
-create_petsc_nullspace(MPI_Comm comm,
-                       const std::vector<xtl::span<const PetscScalar>>& basis);
+MatNullSpace create_petsc_nullspace(MPI_Comm comm,
+                                    const xtl::span<const Vec>& basis);
 
 /// It is a simple wrapper for a PETSc matrix pointer (Mat). Its main
 /// purpose is to assist memory management of PETSc Mat objects.
