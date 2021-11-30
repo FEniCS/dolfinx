@@ -200,7 +200,7 @@ public:
       return std::sqrt(this->squared_norm());
     case la::Norm::linf:
     {
-      const std::int32_t size_local = _map->size_local();
+      const std::int32_t size_local = _bs * _map->size_local();
       double local_linf = 0.0;
       if (size_local > 0)
       {
@@ -223,7 +223,7 @@ public:
   /// @note Collective MPI operation
   double squared_norm() const
   {
-    const std::int32_t size_local = _map->size_local();
+    const std::int32_t size_local = _bs * _map->size_local();
     double result = std::transform_reduce(
         _x.begin(), std::next(_x.begin(), size_local), 0.0, std::plus<double>(),
         [](T val) { return std::norm(val); });
@@ -276,8 +276,8 @@ T inner_product(const Vector<T, Allocator>& a, const Vector<T, Allocator>& b)
   xtl::span<const T> x_b = b.array();
 
   const T local = std::transform_reduce(
-      x_a.begin(), x_a.begin() + local_size, x_b.begin(), static_cast<T>(0),
-      std::plus<T>(),
+      x_a.begin(), std::next(x_a.begin(), local_size), x_b.begin(),
+      static_cast<T>(0), std::plus<T>(),
       [](T a, T b) -> T
       {
         if constexpr (std::is_same<T, std::complex<double>>::value
@@ -318,15 +318,15 @@ void orthonormalize(const xtl::span<Vector<T, U>>& basis, double tol = 1.0e-10)
     }
 
     // Normalise basis function
-    double norm = basis[i].norm();
-    std::transform(basis[i].array().begin(), basis[i].array().end(),
-                   basis[i].mutable_array().begin(),
-                   [norm](auto x) { return x / norm; });
+    double norm = basis[i].norm(Norm::l2);
     if (norm < tol)
     {
       throw std::runtime_error(
-          "Vectorspace basis has linear dependency. Cannot orthogonalize.");
+          "Linear dependency detected. Cannot orthogonalize.");
     }
+    std::transform(basis[i].array().begin(), basis[i].array().end(),
+                   basis[i].mutable_array().begin(),
+                   [norm](auto x) { return x / norm; });
   }
 }
 
