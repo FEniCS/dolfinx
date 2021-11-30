@@ -10,7 +10,6 @@ from contextlib import ExitStack
 import numpy as np
 import pytest
 import ufl
-from dolfinx import cpp as _cpp
 from dolfinx import la
 from dolfinx.fem import VectorFunctionSpace, assemble_matrix
 from dolfinx.generation import BoxMesh, UnitCubeMesh, UnitSquareMesh

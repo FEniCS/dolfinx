@@ -145,17 +145,5 @@ void la(py::module& m)
         return ret;
       },
       "Gather an (ordered) list of sub vectors from a block vector.");
-
-  // NOTE: Enabling the below requires adding a C API for MatNullSpace to
-
-  // petsc4py
-  //   m.def("create_nullspace",
-  //         [](const MPICommWrapper comm, MPI_Comm comm,
-  //            const dolfinx::la::VectorSpaceBasis& nullspace) {
-  //           return dolfinx::la::create_petsc_nullspace(comm.get(),
-  //           nullspace);
-  //         },
-  //         py::return_value_policy::take_ownership,
-  //         "Create a PETSc MatNullSpace.");
 }
 } // namespace dolfinx_wrappers
