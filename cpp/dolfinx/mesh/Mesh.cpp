@@ -178,10 +178,9 @@ Mesh mesh::create_mesh(MPI_Comm comm,
 //-----------------------------------------------------------------------------
 Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
 {
+  // Topology
   _topology.create_connectivity(dim, 0);
-
   auto e_to_v = _topology.connectivity(dim, 0);
-
   // TODO Reserve number as in meshview branch
   // Create vector of unique and ordered vertices
   std::vector<std::int32_t> submesh_vertices
@@ -204,11 +203,12 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
       std::move(submesh_entity_index_map_pair.first));
   auto global_entities = submesh_entity_index_map_pair.second;
 
-  // Vertex index map
+  // Submesh vertex to vertex adjacency list
   auto submesh_v_to_v = std::make_shared<graph::AdjacencyList<std::int32_t>>(
       submesh_vertex_index_map->size_local()
       + submesh_vertex_index_map->num_ghosts());
 
+  // Submesh entity to vertex adjacency list
   std::vector<std::int32_t> submesh_entities;
   std::vector<std::int32_t> offsets(1, 0);
   for (auto entity : entities)
@@ -226,10 +226,10 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
     }
     offsets.push_back(submesh_entities.size());
   }
-
   auto submesh_e_to_v = std::make_shared<graph::AdjacencyList<std::int32_t>>(
       submesh_entities, offsets);
 
+  // Create submesh topology
   const CellType entity_type
       = mesh::cell_entity_type(_topology.cell_type(), dim, 0);
   mesh::Topology submesh_topology(comm(), entity_type);
@@ -238,9 +238,11 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
   submesh_topology.set_connectivity(submesh_v_to_v, 0, 0);
   submesh_topology.set_connectivity(submesh_e_to_v, dim, 0);
 
+  // Geometry
   auto e_to_g = mesh::entities_to_geometry(*this, dim, entities, false);
   xt::xarray<int> unique_sorted_x_dofs = xt::unique(e_to_g);
 
+  // Create adjacency list for submesh cell geometry
   std::vector<std::int64_t> submesh_cells;
   submesh_cells.reserve(e_to_g.shape()[0] * e_to_g.shape()[1]);
   std::vector<std::int32_t> submesh_cells_offsets(1, 0);
@@ -262,10 +264,10 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
                          submesh_entity_x_dofs.end());
     submesh_cells_offsets.push_back(submesh_cells.size());
   }
-
   graph::AdjacencyList<std::int64_t> submesh_cells_al(
       std::move(submesh_cells), std::move(submesh_cells_offsets));
 
+  // Create submesh coordinates
   const int submesh_num_x_dofs = unique_sorted_x_dofs.shape()[0];
   const int geom_dim = this->geometry().dim();
   xt::xarray<double> submesh_x
@@ -277,6 +279,7 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
         = xt::view(x, unique_sorted_x_dofs[i], xt::range(0, geom_dim));
   }
 
+  // Create submesh geometry
   CellType submesh_coord_cell
       = mesh::cell_entity_type(geometry().cmap().cell_shape(), dim, 0);
   // FIXME Currently geometry degree is hardcoded to 1 as there is no way to
