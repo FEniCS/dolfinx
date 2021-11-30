@@ -184,16 +184,8 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
 
   // TODO Reserve number as in meshview branch
   // Create vector of unique and ordered vertices
-  std::vector<std::int32_t> submesh_vertices;
-  for (auto e : entities)
-  {
-    auto vs = e_to_v->links(e);
-    submesh_vertices.insert(submesh_vertices.end(), vs.begin(), vs.end());
-  }
-  std::sort(submesh_vertices.begin(), submesh_vertices.end());
-  submesh_vertices.erase(
-      std::unique(submesh_vertices.begin(), submesh_vertices.end()),
-      submesh_vertices.end());
+  std::vector<std::int32_t> submesh_vertices
+      = mesh::compute_incident_entities(*this, entities, dim, 0);
 
   // Vertex index map
   auto vertex_index_map = _topology.index_map(0);
@@ -276,12 +268,13 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
 
   const int submesh_num_x_dofs = unique_sorted_x_dofs.shape()[0];
   const int geom_dim = this->geometry().dim();
-  xt::xarray<double> submesh_x = xt::zeros<double>({submesh_num_x_dofs, geom_dim});
+  xt::xarray<double> submesh_x
+      = xt::zeros<double>({submesh_num_x_dofs, geom_dim});
   const xt::xtensor<double, 2>& x = geometry().x();
   for (int i = 0; i < submesh_num_x_dofs; ++i)
   {
-    xt::view(submesh_x, i, xt::all()) =
-      xt::view(x, unique_sorted_x_dofs[i], xt::range(0, geom_dim));
+    xt::view(submesh_x, i, xt::all())
+        = xt::view(x, unique_sorted_x_dofs[i], xt::range(0, geom_dim));
   }
 
   CellType submesh_coord_cell
@@ -289,11 +282,9 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
   // FIXME Currently geometry degree is hardcoded to 1 as there is no way to
   // retrive this from the coordinate element
   auto submesh_coord_ele = fem::CoordinateElement(submesh_coord_cell, 1);
-  auto submesh_geometry
-      = mesh::create_geometry(comm(), submesh_topology, submesh_coord_ele,
-                              submesh_cells_al, submesh_x);
-  return Mesh(comm(), std::move(submesh_topology),
-              std::move(submesh_geometry));
+  auto submesh_geometry = mesh::create_geometry(
+      comm(), submesh_topology, submesh_coord_ele, submesh_cells_al, submesh_x);
+  return Mesh(comm(), std::move(submesh_topology), std::move(submesh_geometry));
 }
 //-----------------------------------------------------------------------------
 Topology& Mesh::topology() { return _topology; }
