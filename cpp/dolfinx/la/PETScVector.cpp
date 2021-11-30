@@ -45,15 +45,7 @@ std::vector<Vec>
 la::petsc::create_vectors(MPI_Comm comm,
                           const std::vector<xtl::span<const PetscScalar>>& x)
 {
-  if (x.empty())
-    return std::vector<Vec>();
-
   std::vector<Vec> v(x.size());
-  // VecCreateMPI(comm, x[0].size(), PETSC_DETERMINE, &v[0]);
-  // std::cout << "Done create" << std::endl;
-  // Vec* _v = v.data() + 1;
-  // VecDuplicateVecs(v[0], v.size() - 1, &_v);
-  // std::cout << "Done duple: " << v.size() - 1 << std::endl;
   for (std::size_t i = 0; i < v.size(); ++i)
   {
     VecCreateMPI(comm, x[i].size(), PETSC_DETERMINE, &v[i]);
