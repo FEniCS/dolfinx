@@ -6,7 +6,6 @@
 
 #include "BoxMesh.h"
 #include <cfloat>
-#include <cmath>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/graph/AdjacencyList.h>

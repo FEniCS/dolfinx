@@ -123,7 +123,8 @@ int main(int argc, char* argv[])
         MPI_COMM_WORLD, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 0.0}}}, {32, 32},
         mesh::CellType::triangle, mesh::GhostMode::none));
 
-    auto V = fem::create_functionspace(functionspace_form_poisson_a, "u", mesh);
+    auto V = std::make_shared<fem::FunctionSpace>(
+        fem::create_functionspace(functionspace_form_poisson_a, "u", mesh));
 
     // Next, we define the variational formulation by initializing the
     // bilinear and linear forms (:math:`a`, :math:`L`) using the previously
@@ -183,9 +184,8 @@ int main(int argc, char* argv[])
         });
 
     g->interpolate(
-        [](const xt::xtensor<double, 2>& x) -> xt::xarray<PetscScalar> {
-          return xt::sin(5 * xt::row(x, 0));
-        });
+        [](const xt::xtensor<double, 2>& x) -> xt::xarray<PetscScalar>
+        { return xt::sin(5 * xt::row(x, 0)); });
 
     // Now, we have specified the variational forms and can consider the
     // solution of the variational problem. First, we need to define a

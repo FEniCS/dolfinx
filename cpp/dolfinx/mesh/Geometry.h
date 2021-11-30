@@ -9,7 +9,6 @@
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/graph/AdjacencyList.h>
-#include <dolfinx/graph/scotch.h>
 #include <functional>
 #include <memory>
 #include <vector>
@@ -20,11 +19,6 @@
 namespace dolfinx::common
 {
 class IndexMap;
-}
-
-namespace dolfinx::fem
-{
-class CoordinateElement;
 }
 
 namespace dolfinx::mesh

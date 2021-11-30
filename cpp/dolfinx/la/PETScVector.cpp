@@ -250,7 +250,7 @@ std::array<std::int64_t, 2> PETScVector::local_range() const
   return {{n0, n1}};
 }
 //-----------------------------------------------------------------------------
-MPI_Comm PETScVector::mpi_comm() const
+MPI_Comm PETScVector::comm() const
 {
   assert(_x);
   MPI_Comm mpi_comm = MPI_COMM_NULL;

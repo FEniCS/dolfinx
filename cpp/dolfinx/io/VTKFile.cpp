@@ -343,7 +343,7 @@ void add_mesh(const mesh::Mesh& mesh, pugi::xml_node& piece_node)
   connectivity_node.append_attribute("format") = "ascii";
 
   // Get map from VTK index i to DOLFIN index j
-  int num_nodes = geometry.cmaps()[0].dof_layout().num_dofs();
+  int num_nodes = geometry.cmaps()[0].create_dof_layout().num_dofs();
 
   std::vector<std::uint8_t> map = io::cells::transpose(
       io::cells::perm_vtk(topology.cell_type(), num_nodes));
@@ -418,7 +418,7 @@ void write_function(
     }
   }
   // Get MPI comm
-  const MPI_Comm comm = mesh->mpi_comm();
+  const MPI_Comm comm = mesh->comm();
   const int mpi_rank = dolfinx::MPI::rank(comm);
   boost::filesystem::path p(filename);
 
@@ -516,7 +516,7 @@ void write_function(
         // Extract mesh data
         int tdim = mesh->topology().dim();
         auto cmap = mesh->geometry().cmaps()[0];
-        auto geometry_layout = cmap.dof_layout();
+        auto geometry_layout = cmap.create_dof_layout();
         // Extract function value
         xtl::span<const Scalar> func_values = _u.get().x()->array();
         // Compute in tensor (one for scalar function, . . .)
@@ -546,10 +546,6 @@ void write_function(
             if (geometry_layout.num_entity_dofs(i)
                 != element_layout->num_entity_dofs(i))
             {
-              // throw std::runtime_error("Can only save Lagrange finite element
-              // "
-              //                          "functions of same order "
-              //                          "as the mesh geometry");
               LOG(WARNING) << "Output data is interpolated into a first order "
                               "Lagrange space.";
               point_values = _u.get().compute_point_values();

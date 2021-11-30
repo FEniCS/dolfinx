@@ -8,8 +8,6 @@
 
 #include "Geometry.h"
 #include "Topology.h"
-#include "cell_types.h"
-#include "utils.h"
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/UniqueIdGenerator.h>
 #include <string>
@@ -59,7 +57,7 @@ public:
   template <typename Topology, typename Geometry>
   Mesh(MPI_Comm comm, Topology&& topology, Geometry&& geometry)
       : _topology(std::forward<Topology>(topology)),
-        _geometry(std::forward<Geometry>(geometry)), _mpi_comm(comm)
+        _geometry(std::forward<Geometry>(geometry)), _comm(comm)
   {
     // Do nothing
   }
@@ -111,7 +109,7 @@ public:
 
   /// Mesh MPI communicator
   /// @return The communicator on which the mesh is distributed
-  MPI_Comm mpi_comm() const;
+  MPI_Comm comm() const;
 
   /// Name
   std::string name = "mesh";
@@ -128,7 +126,7 @@ private:
   Geometry _geometry;
 
   // MPI communicator
-  dolfinx::MPI::Comm _mpi_comm;
+  dolfinx::MPI::Comm _comm;
 
   // Unique identifier
   std::size_t _unique_id = common::UniqueIdGenerator::id();

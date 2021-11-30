@@ -6,9 +6,9 @@
 
 #pragma once
 
+#include "FunctionSpace.h"
 #include <algorithm>
 #include <array>
-#include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshTags.h>
 #include <functional>
@@ -347,7 +347,7 @@ private:
   template <typename U>
   const std::function<void(T*, const T*, const T*, const double*, const int*,
                            const std::uint8_t*)>&
-  get_kernel_from_integrals(const U& integrals, const int i) const
+  get_kernel_from_integrals(const U& integrals, int i) const
   {
     auto it = integrals.find(i);
     if (it == integrals.end())

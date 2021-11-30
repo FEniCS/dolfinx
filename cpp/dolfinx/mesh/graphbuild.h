@@ -7,11 +7,15 @@
 #pragma once
 
 #include <cstdint>
-#include <dolfinx/common/MPI.h>
-#include <dolfinx/graph/AdjacencyList.h>
 #include <utility>
+#include <mpi.h>
 #include <xtensor/xarray.hpp>
 
+namespace dolfinx::graph
+{
+template <typename T>
+class AdjacencyList;
+} // namespace dolfinx::graph
 namespace dolfinx::mesh
 {
 

@@ -14,6 +14,7 @@
 #include <dolfinx/common/utils.h>
 #include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <dolfinx/graph/ordering.h>
 #include <dolfinx/graph/partition.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <memory>
@@ -117,7 +118,7 @@ Mesh mesh::create_mesh(MPI_Comm comm,
       tdim);
 
   // Compute re-ordering of local dual graph
-  const std::vector<int> remap = graph::scotch::compute_gps(g, 2).first;
+  std::vector<int> remap = graph::reorder_gps(g);
 
   // Create re-ordered cell lists
   std::vector<std::int64_t> original_cell_index(original_cell_index0);
@@ -140,7 +141,7 @@ Mesh mesh::create_mesh(MPI_Comm comm,
   // FIXME: Mixed mesh
   for (int e = 1; e < tdim; ++e)
   {
-    if (elements[0].dof_layout().num_entity_dofs(e) > 0)
+    if (elements[0].create_dof_layout().num_entity_dofs(e) > 0)
     {
       auto [cell_entity, entity_vertex, index_map]
           = mesh::compute_entities(comm, topology, e);
@@ -185,5 +186,5 @@ Geometry& Mesh::geometry() { return _geometry; }
 //-----------------------------------------------------------------------------
 const Geometry& Mesh::geometry() const { return _geometry; }
 //-----------------------------------------------------------------------------
-MPI_Comm Mesh::mpi_comm() const { return _mpi_comm.comm(); }
+MPI_Comm Mesh::comm() const { return _comm.comm(); }
 //-----------------------------------------------------------------------------

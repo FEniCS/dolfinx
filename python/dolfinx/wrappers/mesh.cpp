@@ -88,7 +88,6 @@ void mesh(py::module& m)
       .value("prism", dolfinx::mesh::CellType::prism)
       .value("hexahedron", dolfinx::mesh::CellType::hexahedron);
 
-  m.def("to_string", &dolfinx::mesh::to_string);
   m.def("to_type", &dolfinx::mesh::to_type);
   m.def("is_simplex", &dolfinx::mesh::is_simplex);
 
@@ -114,10 +113,10 @@ void mesh(py::module& m)
       },
       "Compute maximum distance between any two vertices.");
 
-  m.def("midpoints",
+  m.def("compute_midpoints",
         [](const dolfinx::mesh::Mesh& mesh, int dim,
            py::array_t<std::int32_t, py::array::c_style> entity_list) {
-          return xt_as_pyarray(dolfinx::mesh::midpoints(
+          return xt_as_pyarray(dolfinx::mesh::compute_midpoints(
               mesh, dim, xtl::span(entity_list.data(), entity_list.size())));
         });
   m.def("compute_boundary_facets", &dolfinx::mesh::compute_boundary_facets);
@@ -128,11 +127,13 @@ void mesh(py::module& m)
           const dolfinx::graph::AdjacencyList<std::int64_t>&,
           dolfinx::mesh::GhostMode)>;
 
-  m.def("build_dual_graph",
-        [](const MPICommWrapper comm,
-           const dolfinx::graph::AdjacencyList<std::int64_t>& cells, int tdim) {
-          return dolfinx::mesh::build_dual_graph(comm.get(), cells, tdim);
-        });
+  m.def(
+      "build_dual_graph",
+      [](const MPICommWrapper comm,
+         const dolfinx::graph::AdjacencyList<std::int64_t>& cells, int tdim) {
+        return dolfinx::mesh::build_dual_graph(comm.get(), cells, tdim);
+      },
+      "Build dual graph for cells");
 
   m.def(
       "create_mesh",
@@ -169,37 +170,34 @@ void mesh(py::module& m)
   // dolfinx::mesh::Geometry class
   py::class_<dolfinx::mesh::Geometry, std::shared_ptr<dolfinx::mesh::Geometry>>(
       m, "Geometry", "Geometry object")
-      .def(py::init(
-          [](const std::shared_ptr<const dolfinx::common::IndexMap>& map,
-             const dolfinx::graph::AdjacencyList<std::int32_t>& dofmap,
-             const dolfinx::fem::CoordinateElement& element,
-             const py::array_t<double, py::array::c_style>& x,
-             const py::array_t<std::int64_t, py::array::c_style>&
-                 global_indices) {
-            std::vector<std::int64_t> indices(global_indices.data(),
-                                              global_indices.data()
-                                                  + global_indices.size());
-            assert(x.ndim() <= 2);
-            if (x.ndim() == 1)
-            {
-              std::array<std::size_t, 2> shape
-                  = {static_cast<std::size_t>(x.shape(1)), 1};
-              auto _x
-                  = xt::adapt(x.data(), x.size(), xt::no_ownership(), shape);
-              return dolfinx::mesh::Geometry(map, dofmap, {element}, _x,
-                                             std::move(indices));
-            }
-            else
-            {
-              std::array<std::size_t, 2> shape
-                  = {static_cast<std::size_t>(x.shape(0)),
-                     static_cast<std::size_t>(x.shape(1))};
-              auto _x
-                  = xt::adapt(x.data(), x.size(), xt::no_ownership(), shape);
-              return dolfinx::mesh::Geometry(map, dofmap, {element}, _x,
-                                             std::move(indices));
-            }
-          }))
+      .def(py::init([](const std::shared_ptr<const dolfinx::common::IndexMap>&
+                           map,
+                       const dolfinx::graph::AdjacencyList<std::int32_t>&
+                           dofmap,
+                       const dolfinx::fem::CoordinateElement& element,
+                       const py::array_t<double, py::array::c_style>& x,
+                       const py::array_t<std::int64_t, py::array::c_style>&
+                           global_indices) {
+        std::vector<std::int64_t> indices(global_indices.data(),
+                                          global_indices.data()
+                                              + global_indices.size());
+        assert(x.ndim() <= 2);
+        if (x.ndim() == 1)
+        {
+          std::array<std::size_t, 2> shape
+              = {static_cast<std::size_t>(x.shape(1)), 1};
+          auto _x = xt::adapt(x.data(), x.size(), xt::no_ownership(), shape);
+          return dolfinx::mesh::Geometry(map, dofmap, {element}, _x,
+                                         std::move(indices));
+        }
+        else
+        {
+          std::array shape = {std::size_t(x.shape(0)), std::size_t(x.shape(1))};
+          auto _x = xt::adapt(x.data(), x.size(), xt::no_ownership(), shape);
+          return dolfinx::mesh::Geometry(map, dofmap, {element}, _x,
+                                         std::move(indices));
+        }
+      }))
       .def_property_readonly("dim", &dolfinx::mesh::Geometry::dim,
                              "Geometric dimension")
       .def_property_readonly("dofmap", &dolfinx::mesh::Geometry::dofmap)
@@ -207,8 +205,8 @@ void mesh(py::module& m)
       .def_property_readonly(
           "x",
           [](const dolfinx::mesh::Geometry& self) {
-            const xt::xtensor<double, 2>& x = self.x();
-            return py::array_t<double>(x.shape(), x.data(), py::cast(self));
+            return py::array_t<double>(self.x().shape(), self.x().data(),
+                                       py::cast(self));
           },
           "Return coordinates of all geometry points. Each row is the "
           "coordinate of a point.")
@@ -227,7 +225,7 @@ void mesh(py::module& m)
 
   // dolfinx::mesh::Topology class
   py::class_<dolfinx::mesh::Topology, std::shared_ptr<dolfinx::mesh::Topology>>(
-      m, "Topology", "Topology object")
+      m, "Topology", py::dynamic_attr(), "Topology object")
       .def(py::init([](const MPICommWrapper comm,
                        const dolfinx::mesh::CellType cell_type) {
         return dolfinx::mesh::Topology(comm.get(), cell_type);
@@ -262,8 +260,8 @@ void mesh(py::module& m)
            [](const dolfinx::mesh::Topology& self) {
              return dolfinx::mesh::to_string(self.cell_type());
            })
-      .def("mpi_comm", [](dolfinx::mesh::Mesh& self) {
-        return MPICommWrapper(self.mpi_comm());
+      .def_property_readonly("comm", [](dolfinx::mesh::Mesh& self) {
+        return MPICommWrapper(self.comm());
       });
 
   // dolfinx::mesh::Mesh
@@ -277,14 +275,12 @@ void mesh(py::module& m)
       .def_property_readonly(
           "geometry", py::overload_cast<>(&dolfinx::mesh::Mesh::geometry),
           "Mesh geometry")
-      .def("mpi_comm",
-           [](dolfinx::mesh::Mesh& self) {
-             return MPICommWrapper(self.mpi_comm());
-           })
       .def_property_readonly(
           "topology", py::overload_cast<>(&dolfinx::mesh::Mesh::topology),
           "Mesh topology", py::return_value_policy::reference_internal)
-      .def("ufl_id", &dolfinx::mesh::Mesh::id)
+      .def_property_readonly(
+          "comm",
+          [](dolfinx::mesh::Mesh& self) { return MPICommWrapper(self.comm()); })
       .def_property_readonly("id", &dolfinx::mesh::Mesh::id)
       .def_readwrite("name", &dolfinx::mesh::Mesh::name);
 

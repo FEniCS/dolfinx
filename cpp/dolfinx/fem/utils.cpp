@@ -5,18 +5,18 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "utils.h"
+#include "Constant.h"
+#include "DofMap.h"
+#include "FiniteElement.h"
+#include "Form.h"
+#include "Function.h"
+#include "FunctionSpace.h"
+#include "dofmapbuilder.h"
+#include "sparsitybuild.h"
 #include <array>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
-#include <dolfinx/fem/Constant.h>
-#include <dolfinx/fem/DofMap.h>
-#include <dolfinx/fem/FiniteElement.h>
-#include <dolfinx/fem/Form.h>
-#include <dolfinx/fem/Function.h>
-#include <dolfinx/fem/FunctionSpace.h>
-#include <dolfinx/fem/dofmapbuilder.h>
-#include <dolfinx/fem/sparsitybuild.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
@@ -166,9 +166,9 @@ fem::create_dofmap(MPI_Comm comm, const ufc_dofmap& ufc_dofmap,
     }
   }
 
-  // FIXME: Mixed mesh
-  auto [index_map, bs, dofmap] = fem::build_dofmap_data(
+  auto [_index_map, bs, dofmap] = fem::build_dofmap_data(
       comm, topology, {*element_dof_layout}, reorder_fn);
+  auto index_map = std::make_shared<common::IndexMap>(std::move(_index_map));
 
   // If the element's DOF transformations are permutations, permute the
   // DOF numbering on each cell
@@ -207,7 +207,7 @@ std::vector<std::string> fem::get_constant_names(const ufc_form& ufc_form)
   return constants;
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<fem::FunctionSpace> fem::create_functionspace(
+fem::FunctionSpace fem::create_functionspace(
     ufc_function_space* (*fptr)(const char*), const std::string& function_name,
     std::shared_ptr<mesh::Mesh> mesh,
     const std::function<std::vector<int>(
@@ -228,11 +228,9 @@ std::shared_ptr<fem::FunctionSpace> fem::create_functionspace(
 
   ufc_dofmap* ufc_map = space->dofmap;
   assert(ufc_map);
-  auto V = std::make_shared<fem::FunctionSpace>(
+  return fem::FunctionSpace(
       mesh, element,
       std::make_shared<fem::DofMap>(fem::create_dofmap(
-          mesh->mpi_comm(), *ufc_map, mesh->topology(), reorder_fn, element)));
-
-  return V;
+          mesh->comm(), *ufc_map, mesh->topology(), reorder_fn, element)));
 }
 //-----------------------------------------------------------------------------

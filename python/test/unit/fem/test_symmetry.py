@@ -8,8 +8,9 @@
 import dolfinx
 import pytest
 import ufl
-from dolfinx import FunctionSpace, UnitCubeMesh, UnitSquareMesh
-from dolfinx.cpp.mesh import CellType
+from dolfinx.fem import FunctionSpace
+from dolfinx.generation import UnitCubeMesh, UnitSquareMesh
+from dolfinx.mesh import CellType
 from dolfinx_utils.test.skips import skip_in_parallel
 from mpi4py import MPI
 from ufl import FiniteElement, MixedElement, VectorElement, grad, inner

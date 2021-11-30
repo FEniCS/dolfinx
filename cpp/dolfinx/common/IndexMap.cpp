@@ -37,8 +37,9 @@ compute_ghost_owners(const std::vector<int>& ghost_pos_recv_fwd,
 //----------------------------------------------------------------------------
 
 /// Compute the owning rank of ghost indices
-std::vector<int> get_ghost_ranks(MPI_Comm comm, std::int32_t local_size,
-                                 const xtl::span<const std::int64_t>& ghosts)
+[[maybe_unused]] std::vector<int>
+get_ghost_ranks(MPI_Comm comm, std::int32_t local_size,
+                const xtl::span<const std::int64_t>& ghosts)
 {
   int mpi_size = -1;
   MPI_Comm_size(comm, &mpi_size);
@@ -304,28 +305,28 @@ IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size)
   _shared_indices = std::make_unique<graph::AdjacencyList<std::int32_t>>(0);
 }
 //-----------------------------------------------------------------------------
-IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
+IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size,
                    const xtl::span<const int>& dest_ranks,
                    const xtl::span<const std::int64_t>& ghosts,
                    const xtl::span<const int>& src_ranks)
-    : _comm(mpi_comm), _comm_owner_to_ghost(MPI_COMM_NULL),
+    : _comm(comm), _comm_owner_to_ghost(MPI_COMM_NULL),
       _comm_ghost_to_owner(MPI_COMM_NULL), _ghosts(ghosts.begin(), ghosts.end())
 {
   assert(size_t(ghosts.size()) == src_ranks.size());
   assert(std::equal(src_ranks.begin(), src_ranks.end(),
-                    get_ghost_ranks(mpi_comm, local_size, _ghosts).begin()));
+                    get_ghost_ranks(comm, local_size, _ghosts).begin()));
 
   // Get global offset (index), using partial exclusive reduction
   std::int64_t offset = 0;
   const std::int64_t local_size_tmp = (std::int64_t)local_size;
   MPI_Request request_scan;
-  MPI_Iexscan(&local_size_tmp, &offset, 1, MPI_INT64_T, MPI_SUM, mpi_comm,
+  MPI_Iexscan(&local_size_tmp, &offset, 1, MPI_INT64_T, MPI_SUM, comm,
               &request_scan);
 
   // Send local size to sum reduction to get global size
   MPI_Request request;
-  MPI_Iallreduce(&local_size_tmp, &_size_global, 1, MPI_INT64_T, MPI_SUM,
-                 mpi_comm, &request);
+  MPI_Iallreduce(&local_size_tmp, &_size_global, 1, MPI_INT64_T, MPI_SUM, comm,
+                 &request);
 
   // Build set of src ranks for ghosts, i.e. the ranks that own the
   // callers ghosts
@@ -340,29 +341,30 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
   {
     MPI_Comm comm0;
     MPI_Dist_graph_create_adjacent(
-        mpi_comm, halo_src_ranks.size(), halo_src_ranks.data(), MPI_UNWEIGHTED,
+        comm, halo_src_ranks.size(), halo_src_ranks.data(), MPI_UNWEIGHTED,
         dest_ranks.size(), dest_ranks.data(), MPI_UNWEIGHTED, MPI_INFO_NULL,
         false, &comm0);
     _comm_owner_to_ghost = dolfinx::MPI::Comm(comm0, false);
 
     MPI_Comm comm1;
-    MPI_Dist_graph_create_adjacent(
-        mpi_comm, dest_ranks.size(), dest_ranks.data(), MPI_UNWEIGHTED,
-        halo_src_ranks.size(), halo_src_ranks.data(), MPI_UNWEIGHTED,
-        MPI_INFO_NULL, false, &comm1);
+    MPI_Dist_graph_create_adjacent(comm, dest_ranks.size(), dest_ranks.data(),
+                                   MPI_UNWEIGHTED, halo_src_ranks.size(),
+                                   halo_src_ranks.data(), MPI_UNWEIGHTED,
+                                   MPI_INFO_NULL, false, &comm1);
     _comm_ghost_to_owner = dolfinx::MPI::Comm(comm1, false);
   }
 
   // Map ghost owner rank to the rank on neighborhood communicator
   int myrank = -1;
-  MPI_Comm_rank(mpi_comm, &myrank);
+  MPI_Comm_rank(comm, &myrank);
+  assert(std::find(src_ranks.begin(), src_ranks.end(), myrank)
+         == src_ranks.end());
   std::vector<std::int32_t> ghost_owners(ghosts.size());
   std::transform(src_ranks.cbegin(), src_ranks.cend(), ghost_owners.begin(),
-                 [&halo_src_ranks, myrank](auto src)
+                 [&halo_src_ranks](auto src)
                  {
                    // Get rank of owner on the neighborhood communicator
                    // (rank of out edge on _comm_owner_to_ghost)
-                   assert(src != myrank);
                    auto it = std::find(halo_src_ranks.cbegin(),
                                        halo_src_ranks.cend(), src);
                    assert(it != halo_src_ranks.end());

@@ -67,7 +67,7 @@ void add_meshtags(MPI_Comm comm, const mesh::MeshTags<T>& meshtags,
              MPI_SUM, comm);
   const bool use_mpi_io = (dolfinx::MPI::size(comm) > 1);
   xdmf_utils::add_data_item(
-      attribute_node, h5_id, path_prefix + "/Values",
+      attribute_node, h5_id, path_prefix + std::string("/Values"),
       xtl::span<const T>(meshtags.values().data(), num_active_entities), offset,
       {global_num_values, 1}, "", use_mpi_io);
 }

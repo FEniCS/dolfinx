@@ -6,7 +6,6 @@
 
 #include "Geometry.h"
 #include "Topology.h"
-#include <boost/functional/hash.hpp>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/sort.h>
 #include <dolfinx/fem/ElementDofLayout.h>
@@ -58,11 +57,13 @@ mesh::Geometry mesh::create_geometry(
 
   std::vector<fem::ElementDofLayout> layouts;
   for (const fem::CoordinateElement& el : coordinate_elements)
-    layouts.push_back(el.dof_layout());
+    layouts.push_back(el.create_dof_layout());
 
   //  Build 'geometry' dofmap on the topology
-  auto [dof_index_map, bs, dofmap]
+  auto [_dof_index_map, bs, dofmap]
       = fem::build_dofmap_data(comm, topology, layouts, reorder_fn);
+  auto dof_index_map
+      = std::make_shared<common::IndexMap>(std::move(_dof_index_map));
 
   // If the mesh has higher order geometry, permute the dofmap
   // FIXME: will fail for higher order mixed mesh

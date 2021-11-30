@@ -4,11 +4,10 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-import dolfinx
 import ufl
-from dolfinx import FunctionSpace, UnitCubeMesh, UnitSquareMesh
-from dolfinx.cpp.mesh import GhostMode
-from dolfinx.mesh import refine
+from dolfinx.fem import FunctionSpace, assemble_matrix
+from dolfinx.generation import UnitSquareMesh, UnitCubeMesh
+from dolfinx.mesh import GhostMode, refine
 from mpi4py import MPI
 
 
@@ -52,17 +51,17 @@ def test_RefineUnitCubeMesh_keep_partition():
 
 def test_refine_create_form():
     """Check that forms can be assembled on refined mesh"""
-    mesh = dolfinx.UnitCubeMesh(MPI.COMM_WORLD, 3, 3, 3)
+    mesh = UnitCubeMesh(MPI.COMM_WORLD, 3, 3, 3)
     mesh.topology.create_entities(1)
     mesh = refine(mesh, redistribute=True)
 
-    V = dolfinx.FunctionSpace(mesh, ("Lagrange", 1))
+    V = FunctionSpace(mesh, ("Lagrange", 1))
 
     # Define variational problem
     u = ufl.TrialFunction(V)
     v = ufl.TestFunction(V)
     a = ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx
-    dolfinx.fem.assemble_matrix(a)
+    assemble_matrix(a)
 
 
 def xtest_refinement_gdim():

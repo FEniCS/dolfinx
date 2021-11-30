@@ -28,9 +28,9 @@ class IndexMap;
 ///
 /// @param[in] maps List of (index map, block size) pairs
 /// @returns The (0) global offset of a stacked map for this rank, (1)
-///   local offset for each submap in the stacked map, and (2) new
-///   indices for the ghosts for each submap (3) owner rank of each ghost
-///   entry for each submap
+/// local offset for each submap in the stacked map, and (2) new indices
+/// for the ghosts for each submap (3) owner rank of each ghost entry
+/// for each submap
 std::tuple<std::int64_t, std::vector<std::int32_t>,
            std::vector<std::vector<std::int64_t>>,
            std::vector<std::vector<int>>>
@@ -68,13 +68,13 @@ public:
   /// @note Collective
   /// @param[in] comm The MPI communicator
   /// @param[in] local_size Local size of the IndexMap, i.e. the number
-  ///   of owned entries
+  /// of owned entries
   IndexMap(MPI_Comm comm, std::int32_t local_size);
 
   /// Create an index map with local_size owned indiced on this process
   ///
   /// @note Collective
-  /// @param[in] mpi_comm The MPI communicator
+  /// @param[in] comm The MPI communicator
   /// @param[in] local_size Local size of the IndexMap, i.e. the number
   /// of owned entries
   /// @param[in] dest_ranks Ranks that 'ghost' indices that are owned by
@@ -83,7 +83,7 @@ public:
   /// @param[in] ghosts The global indices of ghost entries
   /// @param[in] src_ranks Owner rank (on global communicator) of each
   /// entry in @p ghosts
-  IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
+  IndexMap(MPI_Comm comm, std::int32_t local_size,
            const xtl::span<const int>& dest_ranks,
            const xtl::span<const std::int64_t>& ghosts,
            const xtl::span<const int>& src_ranks);

@@ -73,14 +73,13 @@
 import dolfinx
 import numpy as np
 import ufl
-from dolfinx import DirichletBC, Function, FunctionSpace, RectangleMesh
-from dolfinx.cpp.mesh import CellType
-from dolfinx.fem import (Form, locate_dofs_geometrical,
-                         locate_dofs_topological)
 from dolfinx import fem
-from dolfinx.fem import form
+from dolfinx.fem import (Constant, DirichletBC, Form, Function, FunctionSpace,
+                         form, locate_dofs_geometrical,
+                         locate_dofs_topological)
+from dolfinx.generation import RectangleMesh
 from dolfinx.io import XDMFFile
-from dolfinx.mesh import locate_entities_boundary
+from dolfinx.mesh import CellType, GhostMode, locate_entities_boundary
 from mpi4py import MPI
 from petsc4py import PETSc
 from ufl import div, dx, grad, inner
@@ -91,7 +90,7 @@ from ufl import div, dx, grad, inner
 mesh = RectangleMesh(MPI.COMM_WORLD,
                      [np.array([0, 0, 0]), np.array([1, 1, 0])],
                      [32, 32],
-                     CellType.triangle, dolfinx.cpp.mesh.GhostMode.none)
+                     CellType.triangle, GhostMode.none)
 
 
 # Function to mark x = 0, x = 1 and y = 0
@@ -147,13 +146,13 @@ bcs = [bc0, bc1]
 # Define variational problem
 (u, p) = ufl.TrialFunction(V), ufl.TrialFunction(Q)
 (v, q) = ufl.TestFunction(V), ufl.TestFunction(Q)
-f = dolfinx.Constant(mesh, (PETSc.ScalarType(0), PETSc.ScalarType(0)))
+f = Constant(mesh, (PETSc.ScalarType(0), PETSc.ScalarType(0)))
 
 a = [[Form(inner(grad(u), grad(v)) * dx), Form(inner(p, div(v)) * dx)],
      [Form(inner(div(u), q) * dx), None]]
 
 L = [Form(inner(f, v) * dx),
-     Form(inner(dolfinx.Constant(mesh, PETSc.ScalarType(0)), q) * dx)]
+     Form(inner(Constant(mesh, PETSc.ScalarType(0)), q) * dx)]
 
 # We will use a block-diagonal preconditioner to solve this problem::
 
@@ -220,7 +219,7 @@ A.setNullSpace(nsp)
 # the MINRES method, and a block-diagonal preconditioner using PETSc's
 # additive fieldsplit type preconditioner::
 
-ksp = PETSc.KSP().create(mesh.mpi_comm())
+ksp = PETSc.KSP().create(mesh.comm)
 ksp.setOperators(A, P)
 ksp.setType("minres")
 ksp.setTolerances(rtol=1e-8)
@@ -306,7 +305,7 @@ is_u = PETSc.IS().createStride(V_map.size_local * V.dofmap.index_map_bs, offset_
 is_p = PETSc.IS().createStride(Q_map.size_local, offset_p, 1, comm=PETSc.COMM_SELF)
 
 # Create Krylov solver
-ksp = PETSc.KSP().create(mesh.mpi_comm())
+ksp = PETSc.KSP().create(mesh.comm)
 ksp.setOperators(A, P)
 ksp.setTolerances(rtol=1e-8)
 ksp.setType("minres")
@@ -358,7 +357,7 @@ assert np.isclose(norm_p_1, norm_p_0)
 # Solve same problem, but now with monolithic matrices and a direct solver
 
 # Create LU solver
-ksp = PETSc.KSP().create(mesh.mpi_comm())
+ksp = PETSc.KSP().create(mesh.comm)
 ksp.setOperators(A)
 ksp.setType("preonly")
 ksp.getPC().setType("lu")
@@ -430,7 +429,6 @@ bcs = [bc0, bc1, bc2]
 (u, p) = ufl.TrialFunctions(W)
 (v, q) = ufl.TestFunctions(W)
 f = Function(W0)
-zero = dolfinx.Constant(mesh, 0.0)
 a = Form((inner(grad(u), grad(v)) + inner(p, div(v)) + inner(div(u), q)) * dx)
 L = Form(inner(f, v) * dx)
 
@@ -446,7 +444,7 @@ b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 dolfinx.fem.assemble.set_bc(b, bcs)
 
 # Create and configure solver
-ksp = PETSc.KSP().create(mesh.mpi_comm())
+ksp = PETSc.KSP().create(mesh.comm)
 ksp.setOperators(A)
 ksp.setType("preonly")
 ksp.getPC().setType("lu")

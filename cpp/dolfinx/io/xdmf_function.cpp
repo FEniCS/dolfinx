@@ -120,12 +120,14 @@ void _add_function(MPI_Comm comm, const fem::Function<Scalar>& u,
     if (component.empty())
     {
       attr_name = u.name;
-      dataset_name = "/Function/" + attr_name + "/" + t_str;
+      dataset_name
+          = std::string("/Function/") + attr_name + std::string("/") + t_str;
     }
     else
     {
-      attr_name = component + "_" + u.name;
-      dataset_name = "/Function/" + attr_name + "/" + t_str;
+      attr_name = component + std::string("_") + u.name;
+      dataset_name
+          = std::string("/Function/") + attr_name + std::string("/") + t_str;
     }
     // Add attribute node
     pugi::xml_node attribute_node = xml_node.append_child("Attribute");

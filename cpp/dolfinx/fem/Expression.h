@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "Function.h"
 #include <dolfinx/mesh/Mesh.h>
 #include <functional>
 #include <utility>
@@ -97,7 +98,7 @@ public:
     assert(_mesh);
 
     // Prepare coefficients and constants
-    const auto [coeffs, cstride] = pack_coefficients(*this);
+    const auto [coeffs, cstride] = pack_coefficients(*this, active_cells);
     const std::vector<T> constant_data = pack_constants(*this);
 
     const auto& fn = this->get_tabulate_expression();
@@ -105,6 +106,7 @@ public:
     // Prepare cell geometry
     const graph::AdjacencyList<std::int32_t>& x_dofmap
         = _mesh->geometry().dofmap();
+
     if (_mesh->geometry().cmaps().size() > 1)
       throw std::runtime_error("Mixed Topology Mesh not supported");
     const fem::CoordinateElement& cmap = _mesh->geometry().cmaps()[0];
@@ -129,7 +131,7 @@ public:
                     std::next(coordinate_dofs.begin(), 3 * i));
       }
 
-      const T* coeff_cell = coeffs.data() + cell * cstride;
+      const T* coeff_cell = coeffs.data() + c * cstride;
       std::fill(values_e.begin(), values_e.end(), 0.0);
       fn(values_e.data(), coeff_cell, constant_data.data(),
          coordinate_dofs.data());
@@ -166,11 +168,11 @@ public:
 
   /// Get value size
   /// @return value_size
-  const std::size_t value_size() const { return _value_size; }
+  std::size_t value_size() const { return _value_size; }
 
   /// Get number of points
   /// @return number of points
-  const std::size_t num_points() const { return _x.shape(0); }
+  std::size_t num_points() const { return _x.shape(0); }
 
   /// Scalar type (T).
   using scalar_type = T;

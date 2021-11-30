@@ -7,13 +7,38 @@
 #pragma once
 
 #include "partition.h"
-#include <cstdint>
-#include <dolfinx/graph/AdjacencyList.h>
-#include <functional>
-#include <mpi.h>
 
 namespace dolfinx::graph
 {
+
+namespace scotch
+{
+#ifdef HAS_PTSCOTCH
+
+/// SCOTCH partitioning strategies
+enum class strategy
+{
+  none, // SCOTCH default strategy
+  balance,
+  quality,
+  safety,
+  speed,
+  scalability
+};
+
+/// Create a graph partitioning function that uses SCOTCH
+///
+/// @param[in] strategy The SCOTCH strategy
+/// @param[in] imbalance The allowable imbalance (between 0 and 1). The
+/// smaller value the more balanced the partitioning must be.
+/// @param[in] seed Random number generator seed
+/// @return A graph partitioning function
+graph::partition_fn partitioner(scotch::strategy strategy = strategy::none,
+                                double imbalance = 0.025, int seed = 0);
+
+#endif
+
+} // namespace scotch
 
 namespace parmetis
 {
@@ -24,7 +49,7 @@ namespace parmetis
 /// param[in] options The ParMETIS option. See ParMETIS manual for
 /// details.
 graph::partition_fn partitioner(double imbalance = 1.02,
-                                std::array<int, 3> options = {0, 0, 0});
+                                std::array<int, 3> options = {1, 0, 5});
 
 #endif
 } // namespace parmetis
@@ -48,4 +73,5 @@ graph::partition_fn partitioner(int mode = 1, int seed = 1,
 
 #endif
 } // namespace kahip
+
 } // namespace dolfinx::graph

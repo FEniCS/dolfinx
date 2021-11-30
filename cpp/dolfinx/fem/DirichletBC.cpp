@@ -401,7 +401,7 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
 }
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t>
-fem::locate_dofs_topological(const fem::FunctionSpace& V, const int dim,
+fem::locate_dofs_topological(const fem::FunctionSpace& V, int dim,
                              const xtl::span<const std::int32_t>& entities,
                              bool remote)
 {
@@ -580,6 +580,13 @@ std::vector<std::int32_t> fem::locate_dofs_geometrical(
   // FIXME: Calling V.tabulate_dof_coordinates() is very expensive,
   // especially when we usually want the boundary dofs only. Add
   // interface that computes dofs coordinates only for specified cell.
+
+  assert(V.element());
+  if (V.element()->is_mixed())
+  {
+    throw std::runtime_error(
+        "Cannot locate dofs geometrically for mixed space. Use subspaces.");
+  }
 
   // Compute dof coordinates
   const xt::xtensor<double, 2> dof_coordinates

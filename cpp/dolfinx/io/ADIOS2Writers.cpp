@@ -509,7 +509,7 @@ std::vector<Scalar> pack_function_data(const fem::Function<Scalar>& u)
   // The Function and the mesh must have identical element_dof_layouts
   // (up tp the block size)
   assert(*(dofmap->element_dof_layout)
-         == mesh->geometry().cmaps()[0].dof_layout());
+         == mesh->geometry().cmaps()[0].create_dof_layout());
 
   const int tdim = mesh->topology().dim();
   auto cell_map = mesh->topology().index_map(tdim);
