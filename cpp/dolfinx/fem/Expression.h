@@ -107,9 +107,8 @@ public:
     const graph::AdjacencyList<std::int32_t>& x_dofmap
         = _mesh->geometry().dofmap();
 
-    if (_mesh->geometry().cmaps().size() > 1)
-      throw std::runtime_error("Mixed Topology Mesh not supported");
-    const fem::CoordinateElement& cmap = _mesh->geometry().cmaps()[0];
+    if (mesh.geometry().cmaps().size() != 1)
+      throw std::runtime_error("Not implemented for Mixed Topology Mesh");
 
     // FIXME: Add proper interface for num coordinate dofs
     const std::size_t num_dofs_g = x_dofmap.num_links(0);
