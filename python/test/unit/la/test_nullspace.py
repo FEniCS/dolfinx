@@ -12,11 +12,12 @@ import numpy as np
 import pytest
 import ufl
 from dolfinx import cpp as _cpp
+from dolfinx import la
 from dolfinx.fem import VectorFunctionSpace, assemble_matrix
 from dolfinx.generation import BoxMesh, UnitCubeMesh, UnitSquareMesh
-from dolfinx.la import VectorSpaceBasis
 from dolfinx.mesh import CellType, GhostMode
 from mpi4py import MPI
+from petsc4py import PETSc
 from ufl import TestFunction, TrialFunction, dx, grad, inner
 
 
@@ -31,10 +32,10 @@ def build_elastic_nullspace(V):
     dim = 3 if gdim == 2 else 6
 
     # Create list of vectors for null space
-    nullspace_basis = [_cpp.la.create_vector(V.dofmap.index_map, V.dofmap.index_map_bs) for i in range(dim)]
+    ns = [_cpp.la.create_vector(V.dofmap.index_map, V.dofmap.index_map_bs) for i in range(dim)]
 
     with ExitStack() as stack:
-        vec_local = [stack.enter_context(x.localForm()) for x in nullspace_basis]
+        vec_local = [stack.enter_context(x.localForm()) for x in ns]
         basis = [np.asarray(x) for x in vec_local]
 
         dofs = [V.sub(i).dofmap.list.array for i in range(gdim)]
@@ -58,17 +59,17 @@ def build_elastic_nullspace(V):
             basis[5][dofs[2]] = x1
             basis[5][dofs[1]] = -x2
 
-    return VectorSpaceBasis(nullspace_basis)
+    return ns
 
 
 def build_broken_elastic_nullspace(V):
     """Function to build incorrect null space for 2D elasticity"""
 
     # Create list of vectors for null space
-    nullspace_basis = [_cpp.la.create_vector(V.dofmap.index_map, V.dofmap.index_map_bs) for i in range(4)]
+    ns = [_cpp.la.create_vector(V.dofmap.index_map, V.dofmap.index_map_bs) for i in range(4)]
 
     with ExitStack() as stack:
-        vec_local = [stack.enter_context(x.localForm()) for x in nullspace_basis]
+        vec_local = [stack.enter_context(x.localForm()) for x in ns]
         basis = [np.asarray(x) for x in vec_local]
 
         dofs = [V.sub(i).dofmap.list.array for i in range(2)]
@@ -85,7 +86,7 @@ def build_broken_elastic_nullspace(V):
         # Add vector that is not in nullspace
         basis[3][dofs[1]] = x1
 
-    return VectorSpaceBasis(nullspace_basis)
+    return ns
 
 
 @pytest.mark.parametrize("mesh", [
@@ -96,13 +97,13 @@ def build_broken_elastic_nullspace(V):
 def test_nullspace_orthogonal(mesh, degree):
     """Test that null spaces orthogonalisation"""
     V = VectorFunctionSpace(mesh, ('Lagrange', degree))
-    null_space = build_elastic_nullspace(V)
-    assert not null_space.is_orthogonal()
-    assert not null_space.is_orthonormal()
+    nullspace = build_elastic_nullspace(V)
+    # assert not la.is_orthogonal(nullspace)
+    assert not la.is_orthonormal(nullspace)
 
-    null_space.orthonormalize()
-    assert null_space.is_orthogonal()
-    assert null_space.is_orthonormal()
+    la.orthonormalize(nullspace)
+    # assert la.is_orthogonal(nullspace)
+    assert la.is_orthonormal(nullspace)
 
 
 @pytest.mark.parametrize("mesh", [
@@ -135,12 +136,15 @@ def test_nullspace_check(mesh, degree):
 
     # Create null space basis and test
     null_space = build_elastic_nullspace(V)
-    assert null_space.in_nullspace(A, tol=1.0e-8)
-    null_space.orthonormalize()
-    assert null_space.in_nullspace(A, tol=1.0e-8)
+    ns = PETSc.NullSpace().create(vectors=null_space)
+    assert ns.test(A)
+    la.orthonormalize(null_space)
+    assert ns.test(A)
 
     # Create incorrect null space basis and test
-    null_space = build_broken_elastic_nullspace(V)
-    assert not null_space.in_nullspace(A, tol=1.0e-8)
-    null_space.orthonormalize()
-    assert not null_space.in_nullspace(A, tol=1.0e-8)
+    nullspace = build_broken_elastic_nullspace(V)
+    ns = PETSc.NullSpace().create(vectors=nullspace)
+    assert not ns.test(A)
+    la.orthonormalize(nullspace)
+    assert not ns.test(A)
+

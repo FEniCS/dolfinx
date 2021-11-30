@@ -83,8 +83,8 @@ std::vector<IS> la::create_petsc_index_sets(
   return is;
 }
 //-----------------------------------------------------------------------------
-Vec la::create_ghosted_vector(const common::IndexMap& map, int bs,
-                              const xtl::span<PetscScalar>& x)
+Vec la::create_petsc_ghosted_vector(const common::IndexMap& map, int bs,
+                                    const xtl::span<PetscScalar>& x)
 {
   const std::int32_t size_local = bs * map.size_local();
   const std::int64_t size_global = bs * map.size_global();

@@ -39,7 +39,7 @@ create_petsc_vectors(MPI_Comm comm,
 /// @param[in] x The local part of the vector, including ghost entries
 /// @return A PETSc Vec object that shares the data in @p x. The caller
 /// is responsible for destroying the Vec.
-Vec create_ghosted_petsc_vector(const common::IndexMap& map, int bs,
+Vec create_petsc_ghosted_vector(const common::IndexMap& map, int bs,
                                 const xtl::span<PetscScalar>& x);
 
 /// Print error message for PETSc calls that return an error
