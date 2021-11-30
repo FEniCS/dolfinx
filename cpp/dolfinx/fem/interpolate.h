@@ -213,7 +213,9 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0)
   const std::size_t value_size0 = element0->value_size() / bs0;
 
   // Get geometry data
-  const fem::CoordinateElement& cmap = mesh->geometry().cmap();
+  if (mesh->geometry().cmaps().size() != 1)
+    throw std::runtime_error("Not supported for Mixed Mesh");
+  const fem::CoordinateElement& cmap = mesh->geometry().cmaps()[0];
   const graph::AdjacencyList<std::int32_t>& x_dofmap
       = mesh->geometry().dofmap();
   // FIXME: Add proper interface for num coordinate dofs

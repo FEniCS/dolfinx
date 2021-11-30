@@ -635,7 +635,7 @@ void fem(py::module& m)
       [](const MPICommWrapper comm, const dolfinx::mesh::Topology& topology,
          const dolfinx::fem::ElementDofLayout& element_dof_layout) {
         auto [map, bs, dofmap] = dolfinx::fem::build_dofmap_data(
-            comm.get(), topology, element_dof_layout,
+            comm.get(), topology, {element_dof_layout},
             [](const dolfinx::graph::AdjacencyList<std::int32_t>& g) {
               return dolfinx::graph::reorder_gps(g);
             });
