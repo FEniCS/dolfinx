@@ -161,7 +161,7 @@ def test_rank1():
             A_local = array_evaluated[i, :]
             MatSetValues(A, 6, rows.ctypes, 6, cols.ctypes, A_local.ctypes, 1)
 
-    a = ufl.TrialFunction(P2) * ufl.TestFunction(vdP1)[0] * ufl.dx
+    a = ufl.inner(ufl.TrialFunction(P2), ufl.TestFunction(vdP1)[0]) * ufl.dx
     A = create_matrix(a)
 
     dofmap_col = P2.dofmap.list.array.reshape(num_cells, -1)
