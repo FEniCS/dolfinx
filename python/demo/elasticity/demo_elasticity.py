@@ -39,10 +39,8 @@ def build_nullspace(V):
 
     # Create list of vectors for null space
     index_map = V.dofmap.index_map
-    ghosts = index_map.ghosts.copy().astype(dtype=PETSc.IntType)
-    size = index_map.size_local
     bs = V.dofmap.index_map_bs
-    ns = [PETSc.Vec().createGhost(ghosts, bs * size, bs, comm=V.mesh.comm) for i in range(6)]
+    ns = [la.create_vector(index_map, bs) for i in range(6)]
     with ExitStack() as stack:
         vec_local = [stack.enter_context(x.localForm()) for x in ns]
         basis = [np.asarray(x) for x in vec_local]
