@@ -130,15 +130,13 @@ def test_nullspace_check(mesh, degree):
     A.assemble()
 
     # Create null space basis and test
-    null_space = build_elastic_nullspace(V)
-    ns = PETSc.NullSpace().create(vectors=null_space)
-    assert ns.test(A)
-    la.orthonormalize(null_space)
+    nullspace = build_elastic_nullspace(V)
+    la.orthonormalize(nullspace)
+    ns = PETSc.NullSpace().create(vectors=nullspace)
     assert ns.test(A)
 
     # Create incorrect null space basis and test
     nullspace = build_broken_elastic_nullspace(V)
-    ns = PETSc.NullSpace().create(vectors=nullspace)
-    assert not ns.test(A)
     la.orthonormalize(nullspace)
+    ns = PETSc.NullSpace().create(vectors=nullspace)
     assert not ns.test(A)
