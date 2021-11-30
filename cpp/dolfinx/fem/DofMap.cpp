@@ -11,6 +11,7 @@
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
+#include <dolfinx/common/sort.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Topology.h>
 #include <memory>
@@ -55,15 +56,9 @@ fem::DofMap build_collapsed_dofmap(MPI_Comm comm, const DofMap& dofmap_view,
   auto cells = topology.connectivity(tdim, 0);
   assert(cells);
 
-  // TODO: The below is just copying the dofmap adjacency list?
   // Build set of dofs that are in the new dofmap
-  std::vector<std::int32_t> dofs_view;
-  for (int i = 0; i < cells->num_nodes(); ++i)
-  {
-    for (auto dof : dofmap_view.cell_dofs(i))
-      dofs_view.push_back(dof);
-  }
-  std::sort(dofs_view.begin(), dofs_view.end());
+  std::vector<std::int32_t> dofs_view = dofmap_view.list().array();
+  dolfinx::radix_sort(xtl::span(dofs_view));
   dofs_view.erase(std::unique(dofs_view.begin(), dofs_view.end()),
                   dofs_view.end());
 
@@ -77,9 +72,13 @@ fem::DofMap build_collapsed_dofmap(MPI_Comm comm, const DofMap& dofmap_view,
   const std::size_t num_owned = std::distance(dofs_view.begin(), it_unowned0);
   const std::size_t num_unowned = std::distance(it_unowned0, dofs_view.end());
 
+  // FIXME: We can avoid the MPI_Exscan by counting the offsets for the
+  // owned mesh entities
+
   // Get process offset for new dofmap
-  const std::int64_t process_offset
-      = dolfinx::MPI::global_offset(comm, num_owned, true);
+  std::size_t offset = 0;
+  MPI_Exscan(&num_owned, &offset, 1, dolfinx::MPI::mpi_type<std::size_t>(),
+             MPI_SUM, comm);
 
   // For owned dofs, compute new global index
   std::vector<std::int64_t> global_index(dofmap_view.index_map->size_local(),
@@ -88,12 +87,11 @@ fem::DofMap build_collapsed_dofmap(MPI_Comm comm, const DofMap& dofmap_view,
   {
     const std::size_t block = std::distance(dofs_view.begin(), it);
     const std::int32_t block_parent = *it / bs_view;
-    global_index[block_parent] = block + process_offset;
+    global_index[block_parent] = block + offset;
   }
 
   // Send new global indices for owned dofs to non-owning process, and
   // receive new global indices from owner
-
   std::vector<std::int64_t> global_index_remote(
       dofmap_view.index_map->num_ghosts());
   dofmap_view.index_map->scatter_fwd(
@@ -189,6 +187,13 @@ fem::transpose_dofmap(const graph::AdjacencyList<std::int32_t>& dofmap,
                                             std::move(index_offsets));
 }
 //-----------------------------------------------------------------------------
+/// Equality operator
+bool DofMap::operator==(const DofMap& map) const
+{
+  return this->_index_map_bs == map._index_map_bs
+         and this->_dofmap == map._dofmap and this->_bs == map._bs;
+}
+//-----------------------------------------------------------------------------
 int DofMap::bs() const noexcept { return _bs; }
 //-----------------------------------------------------------------------------
 DofMap DofMap::extract_sub_dofmap(const std::vector<int>& component) const
@@ -228,8 +233,10 @@ DofMap DofMap::extract_sub_dofmap(const std::vector<int>& component) const
                 1);
 }
 //-----------------------------------------------------------------------------
-std::pair<std::unique_ptr<DofMap>, std::vector<std::int32_t>>
-DofMap::collapse(MPI_Comm comm, const mesh::Topology& topology) const
+std::pair<std::unique_ptr<DofMap>, std::vector<std::int32_t>> DofMap::collapse(
+    MPI_Comm comm, const mesh::Topology& topology,
+    const std::function<std::vector<int>(
+        const graph::AdjacencyList<std::int32_t>&)>& reorder_fn) const
 {
   assert(element_dof_layout);
   assert(index_map);
@@ -248,8 +255,9 @@ DofMap::collapse(MPI_Comm comm, const mesh::Topology& topology) const
 
     // Parent does not have block structure but sub-map does, so build
     // new submap to get block structure for collapsed dofmap.
-    auto [index_map, bs, dofmap]
-        = fem::build_dofmap_data(comm, topology, *collapsed_dof_layout);
+    auto [_index_map, bs, dofmap] = fem::build_dofmap_data(
+        comm, topology, *collapsed_dof_layout, reorder_fn);
+    auto index_map = std::make_shared<common::IndexMap>(std::move(_index_map));
     dofmap_new = std::make_unique<DofMap>(element_dof_layout, index_map, bs,
                                           std::move(dofmap), bs);
   }

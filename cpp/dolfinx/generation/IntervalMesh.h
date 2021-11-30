@@ -10,16 +10,11 @@
 #include <cstddef>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Mesh.h>
-
-namespace dolfinx
-{
-namespace fem
-{
-class CoordinateElement;
-}
+#include <dolfinx/mesh/utils.h>
+#include <mpi.h>
 
 /// Interval mesh creation
-namespace generation::IntervalMesh
+namespace dolfinx::generation::IntervalMesh
 {
 
 /// Interval mesh of the 1D line `[a, b]`.  Given @p n cells in the
@@ -40,5 +35,4 @@ create(MPI_Comm comm, std::size_t n, std::array<double, 2> x,
        = static_cast<graph::AdjacencyList<std::int32_t> (*)(
            MPI_Comm, int, int, const graph::AdjacencyList<std::int64_t>&,
            mesh::GhostMode)>(&mesh::partition_cells_graph));
-} // namespace generation::IntervalMesh
-} // namespace dolfinx
+} // namespace dolfinx::generation::IntervalMesh

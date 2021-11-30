@@ -13,21 +13,18 @@
 #include <set>
 #include <vector>
 
-namespace dolfinx
-{
-
-namespace mesh
+namespace dolfinx::mesh
 {
 class Mesh;
 enum class GhostMode;
-} // namespace mesh
+} // namespace dolfinx::mesh
 
-namespace common
+namespace dolfinx::common
 {
 class IndexMap;
 }
 
-namespace refinement
+namespace dolfinx::refinement
 {
 
 /// Compute the sharing of edges between processes.
@@ -85,9 +82,7 @@ mesh::Mesh partition(const mesh::Mesh& old_mesh,
 /// @param n Number of new entries to be accommodated on this process
 /// @return Global indices as if "n" extra values are appended on each
 ///   process
-std::vector<std::int64_t>
-adjust_indices(const std::shared_ptr<const common::IndexMap>& index_map,
-               std::int32_t n);
+std::vector<std::int64_t> adjust_indices(const common::IndexMap& index_map,
+                                         std::int32_t n);
 
-} // namespace refinement
-} // namespace dolfinx
+} // namespace dolfinx::refinement

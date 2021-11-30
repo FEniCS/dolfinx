@@ -37,13 +37,14 @@ void nls(py::module& m)
       .def("setF", &dolfinx::nls::NewtonSolver::setF)
       .def("setJ", &dolfinx::nls::NewtonSolver::setJ)
       .def("setP", &dolfinx::nls::NewtonSolver::setP)
+      .def("set_update", &dolfinx::nls::NewtonSolver::set_update)
       .def("set_form", &dolfinx::nls::NewtonSolver::set_form)
       .def("solve", &dolfinx::nls::NewtonSolver::solve)
       .def_readwrite("atol", &dolfinx::nls::NewtonSolver::atol,
                      "Absolute tolerance")
       .def_readwrite("rtol", &dolfinx::nls::NewtonSolver::rtol,
                      "Relative tolerance")
-      .def_readwrite("error_on_nonconvergence", 
+      .def_readwrite("error_on_nonconvergence",
                      &dolfinx::nls::NewtonSolver::error_on_nonconvergence)
       .def_readwrite("report", &dolfinx::nls::NewtonSolver::report)
       .def_readwrite("relaxation_parameter",

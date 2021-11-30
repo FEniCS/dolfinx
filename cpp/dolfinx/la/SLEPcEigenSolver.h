@@ -15,9 +15,7 @@
 #include <slepceps.h>
 #include <string>
 
-namespace dolfinx
-{
-namespace la
+namespace dolfinx::la
 {
 class VectorSpaceBasis;
 
@@ -86,12 +84,11 @@ public:
   EPS eps() const;
 
   /// Return MPI communicator
-  MPI_Comm mpi_comm() const;
+  MPI_Comm comm() const;
 
 private:
   // SLEPc solver pointer
   EPS _eps;
 };
-} // namespace la
-} // namespace dolfinx
+} // namespace dolfinx::la
 #endif

@@ -9,25 +9,19 @@
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <functional>
 #include <memory>
 #include <vector>
 #include <xtensor/xbuilder.hpp>
 #include <xtensor/xtensor.hpp>
 #include <xtensor/xview.hpp>
 
-namespace dolfinx
-{
-namespace common
+namespace dolfinx::common
 {
 class IndexMap;
 }
 
-namespace fem
-{
-class CoordinateElement;
-} // namespace fem
-
-namespace mesh
+namespace dolfinx::mesh
 {
 class Topology;
 
@@ -54,7 +48,12 @@ public:
     {
       xt::xtensor<double, 2> c
           = xt::zeros<double>({_x.shape(0), static_cast<std::size_t>(3)});
-      xt::view(c, xt::all(), xt::range(0, _dim)) = _x;
+
+      // The below should work, but misbehaves with the Intel icpx compiler
+      // xt::view(c, xt::all(), xt::range(0, _dim)) = _x;
+      auto x_view = xt::view(c, xt::all(), xt::range(0, _dim));
+      x_view.assign(_x);
+
       std::swap(c, _x);
     }
   }
@@ -117,11 +116,14 @@ private:
 };
 
 /// Build Geometry
-/// FIXME: document
-mesh::Geometry create_geometry(MPI_Comm comm, const Topology& topology,
-                               const fem::CoordinateElement& coordinate_element,
-                               const graph::AdjacencyList<std::int64_t>& cells,
-                               const xt::xtensor<double, 2>& x);
+/// @todo document
+mesh::Geometry
+create_geometry(MPI_Comm comm, const Topology& topology,
+                const fem::CoordinateElement& coordinate_element,
+                const graph::AdjacencyList<std::int64_t>& cells,
+                const xt::xtensor<double, 2>& x,
+                const std::function<std::vector<int>(
+                    const graph::AdjacencyList<std::int32_t>&)>& reorder_fn
+                = nullptr);
 
-} // namespace mesh
-} // namespace dolfinx
+} // namespace dolfinx::mesh

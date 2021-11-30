@@ -18,29 +18,27 @@ class xml_node;
 class xml_document;
 } // namespace pugi
 
-namespace dolfinx
-{
-namespace fem
+namespace dolfinx::fem
 {
 class CoordinateElement;
 }
 
-namespace fem
+namespace dolfinx::fem
 {
 template <typename T>
 class Function;
-} // namespace fem
+}
 
-namespace mesh
+namespace dolfinx::mesh
 {
 class Geometry;
 enum class GhostMode : int;
 class Mesh;
 template <typename T>
 class MeshTags;
-} // namespace mesh
+} // namespace dolfinx::mesh
 
-namespace io
+namespace dolfinx::io
 {
 
 /// Read and write mesh::Mesh, fem::Function and other objects in
@@ -185,7 +183,7 @@ public:
 
 private:
   // MPI communicator
-  dolfinx::MPI::Comm _mpi_comm;
+  dolfinx::MPI::Comm _comm;
 
   // Cached filename
   std::string _filename;
@@ -203,5 +201,4 @@ private:
   Encoding _encoding;
 };
 
-} // namespace io
-} // namespace dolfinx
+} // namespace dolfinx::io

@@ -123,7 +123,8 @@ int main(int argc, char* argv[])
         MPI_COMM_WORLD, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 0.0}}}, {32, 32},
         mesh::CellType::triangle, mesh::GhostMode::none));
 
-    auto V = fem::create_functionspace(functionspace_form_poisson_a, "u", mesh);
+    auto V = std::make_shared<fem::FunctionSpace>(
+        fem::create_functionspace(functionspace_form_poisson_a, "u", mesh));
 
     // Next, we define the variational formulation by initializing the
     // bilinear and linear forms (:math:`a`, :math:`L`) using the previously
@@ -164,7 +165,9 @@ int main(int argc, char* argv[])
     auto u0 = std::make_shared<fem::Function<PetscScalar>>(V);
 
     const auto bdofs = fem::locate_dofs_geometrical(
-        {*V}, [](const xt::xtensor<double, 2>& x) -> xt::xtensor<bool, 1> {
+        {*V},
+        [](const xt::xtensor<double, 2>& x) -> xt::xtensor<bool, 1>
+        {
           auto x0 = xt::row(x, 0);
           return xt::isclose(x0, 0.0) or xt::isclose(x0, 1.0);
         });
@@ -173,16 +176,16 @@ int main(int argc, char* argv[])
         u0, std::move(bdofs))};
 
     f->interpolate(
-        [](const xt::xtensor<double, 2>& x) -> xt::xarray<PetscScalar> {
+        [](const xt::xtensor<double, 2>& x) -> xt::xarray<PetscScalar>
+        {
           auto dx = xt::square(xt::row(x, 0) - 0.5)
                     + xt::square(xt::row(x, 1) - 0.5);
           return 10 * xt::exp(-(dx) / 0.02);
         });
 
     g->interpolate(
-        [](const xt::xtensor<double, 2>& x) -> xt::xarray<PetscScalar> {
-          return xt::sin(5 * xt::row(x, 0));
-        });
+        [](const xt::xtensor<double, 2>& x) -> xt::xarray<PetscScalar>
+        { return xt::sin(5 * xt::row(x, 0)); });
 
     // Now, we have specified the variational forms and can consider the
     // solution of the variational problem. First, we need to define a

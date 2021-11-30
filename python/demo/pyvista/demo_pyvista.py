@@ -9,11 +9,14 @@
 # ===============================
 
 
-import dolfinx
 import dolfinx.io
 import dolfinx.plot
 import numpy as np
 import ufl
+from dolfinx.fem import (Function, FunctionSpace, LinearProblem,
+                         VectorFunctionSpace)
+from dolfinx.generation import UnitCubeMesh, UnitSquareMesh
+from dolfinx.mesh import CellType, MeshTags, compute_midpoints
 from mpi4py import MPI
 
 try:
@@ -41,9 +44,9 @@ def int_u(x):
     return x[0] + 3 * x[1] + 5 * x[2]
 
 
-mesh = dolfinx.UnitCubeMesh(MPI.COMM_WORLD, 4, 3, 5, cell_type=dolfinx.cpp.mesh.CellType.tetrahedron)
-V = dolfinx.FunctionSpace(mesh, ("CG", 1))
-u = dolfinx.Function(V)
+mesh = UnitCubeMesh(MPI.COMM_WORLD, 4, 3, 5, cell_type=CellType.tetrahedron)
+V = FunctionSpace(mesh, ("Lagrange", 1))
+u = Function(V)
 u.interpolate(int_u)
 
 # Extract mesh data from DOLFINx (only plot cells owned by the
@@ -62,7 +65,7 @@ if np.iscomplexobj(vertex_values):
     vertex_values = vertex_values.real
 
 # Create point cloud of vertices, and add the vertex values to the cloud
-grid.point_arrays["u"] = vertex_values
+grid.point_data["u"] = vertex_values
 grid.set_active_scalars("u")
 
 # Create a pyvista plotter which is used to visualize the output
@@ -116,18 +119,13 @@ else:
 # Plotting a 2D dolfinx.Function with pyvista using warp by scalar
 # ================================================================
 
-# As in the previous section, we interpolate a function into a CG
+# As in the previous section, we interpolate a function into a Lagrange
 # function space
 
-
-def int_2D(x):
-    return np.sin(np.pi * x[0]) * np.sin(2 * x[1] * np.pi)
-
-
-mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, 12, 12, cell_type=dolfinx.cpp.mesh.CellType.quadrilateral)
-V = dolfinx.FunctionSpace(mesh, ("Lagrange", 1))
-u = dolfinx.Function(V)
-u.interpolate(int_2D)
+mesh = UnitSquareMesh(MPI.COMM_WORLD, 12, 12, cell_type=CellType.quadrilateral)
+V = FunctionSpace(mesh, ("Lagrange", 1))
+u = Function(V)
+u.interpolate(lambda x: np.sin(np.pi * x[0]) * np.sin(2 * x[1] * np.pi))
 
 # As in the previous section, we extract the geometry and topology of
 # the mesh, and attach values to the vertices
@@ -138,7 +136,7 @@ grid = pyvista.UnstructuredGrid(pyvista_cells, cell_types, mesh.geometry.x)
 point_values = u.compute_point_values()
 if np.iscomplexobj(point_values):
     point_values = point_values.real
-grid.point_arrays["u"] = point_values
+grid.point_data["u"] = point_values
 
 # We set the function "u" as the active scalar for the mesh, and warp
 # the mesh in z-direction by its values
@@ -175,12 +173,12 @@ def in_circle(x):
 # Create a dolfinx.MeshTag for all cells. If midpoint is inside the
 # circle, it gets value 1, otherwise 0.
 num_cells = mesh.topology.index_map(mesh.topology.dim).size_local
-midpoints = dolfinx.cpp.mesh.midpoints(mesh, mesh.topology.dim, list(np.arange(num_cells, dtype=np.int32)))
-cell_tags = dolfinx.MeshTags(mesh, mesh.topology.dim, np.arange(num_cells), in_circle(midpoints))
+midpoints = compute_midpoints(mesh, mesh.topology.dim, list(np.arange(num_cells, dtype=np.int32)))
+cell_tags = MeshTags(mesh, mesh.topology.dim, np.arange(num_cells), in_circle(midpoints))
 
 # As the dolfinx.MeshTag contains a value for every cell in the
 # geometry, we can attach it directly to the grid
-grid.cell_arrays["Marker"] = cell_tags.values
+grid.cell_data["Marker"] = cell_tags.values
 grid.set_active_scalars("Marker")
 
 # We create a plotter consisting of two windows, and add a plot of the
@@ -209,8 +207,8 @@ if pyvista.OFF_SCREEN:
 else:
     subplotter.show()
 
-# Plotting a dolfinx.Function
-# ===========================
+# Plotting a dolfinx.fem.Function
+# ===============================
 
 # In the previous sections we have considered CG-1 spaces, which have a
 # 1-1 correspondence with the vertices of the geometry. To be able to
@@ -221,14 +219,14 @@ else:
 # space Note that we use the `cell_tags` from the previous section to
 # restrict the integration domain on the RHS.
 dx = ufl.Measure("dx", subdomain_data=cell_tags)
-V = dolfinx.FunctionSpace(mesh, ("DG", 2))
-uh = dolfinx.Function(V)
+V = FunctionSpace(mesh, ("DG", 2))
+uh = Function(V)
 u = ufl.TrialFunction(V)
 v = ufl.TestFunction(V)
 x = ufl.SpatialCoordinate(mesh)
 a = ufl.inner(u, v) * dx
 L = ufl.inner(x[0], v) * dx(1) + ufl.inner(0.01, v) * dx(0)
-problem = dolfinx.fem.LinearProblem(a, L, u=uh, petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
+problem = LinearProblem(a, L, u=uh, petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
 problem.solve()
 
 # To get a topology that has a 1-1 correspondence with the degrees of
@@ -245,7 +243,7 @@ values = uh.vector.array.real if np.iscomplexobj(uh.vector.array) else uh.vector
 # We create a pyvista mesh from the topology and geometry, and attach
 # the coefficients of the degrees of freedom
 grid = pyvista.UnstructuredGrid(topology, cell_types, geometry)
-grid.point_arrays["DG"] = values
+grid.point_data["DG"] = values
 grid.set_active_scalars("DG")
 
 # We would also like to visualize the underlying mesh and obtain that as
@@ -272,8 +270,8 @@ else:
     plotter.show()
 
 
-# Plotting a dolfinx.Function with vector values
-# ===============================================
+# Plotting a dolfinx.fem.Function with vector values
+# ==================================================
 
 # In the previous sections, we have considered how to plot scalar valued
 # functions. This section will show you how to plot vector valued
@@ -286,9 +284,9 @@ def vel(x):
     return vals
 
 
-mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, 6, 6, dolfinx.cpp.mesh.CellType.triangle)
-V = dolfinx.VectorFunctionSpace(mesh, ("CG", 2))
-uh = dolfinx.Function(V)
+mesh = UnitSquareMesh(MPI.COMM_WORLD, 6, 6, CellType.triangle)
+V = VectorFunctionSpace(mesh, ("Lagrange", 2))
+uh = Function(V)
 uh.interpolate(vel)
 
 # We use the `dolfinx.plot.create_vtk_topology`
@@ -355,9 +353,9 @@ def vel(x):
     return vals
 
 
-mesh = dolfinx.UnitCubeMesh(MPI.COMM_WORLD, 4, 4, 4, dolfinx.cpp.mesh.CellType.hexahedron)
-V = dolfinx.VectorFunctionSpace(mesh, ("DG", 2))
-uh = dolfinx.Function(V)
+mesh = UnitCubeMesh(MPI.COMM_WORLD, 4, 4, 4, CellType.hexahedron)
+V = VectorFunctionSpace(mesh, ("DG", 2))
+uh = Function(V)
 uh.interpolate(vel)
 
 num_cells = mesh.topology.index_map(mesh.topology.dim).size_local

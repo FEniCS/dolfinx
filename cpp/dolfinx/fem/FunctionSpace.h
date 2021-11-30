@@ -7,21 +7,17 @@
 #pragma once
 
 #include <cstddef>
-#include <functional>
 #include <map>
 #include <memory>
 #include <vector>
 #include <xtensor/xtensor.hpp>
 
-namespace dolfinx
-{
-
-namespace mesh
+namespace dolfinx::mesh
 {
 class Mesh;
 }
 
-namespace fem
+namespace dolfinx::fem
 {
 class DofMap;
 class FiniteElement;
@@ -77,8 +73,7 @@ public:
   /// Collapse a subspace and return a new function space and a map from
   /// new to old dofs
   /// @return The new function space and a map from new to old dofs
-  std::pair<std::shared_ptr<FunctionSpace>, std::vector<std::int32_t>>
-  collapse() const;
+  std::pair<FunctionSpace, std::vector<std::int32_t>> collapse() const;
 
   /// Get the component with respect to the root superspace
   /// @return The component with respect to the root superspace , i.e.
@@ -143,5 +138,4 @@ std::array<std::vector<std::shared_ptr<const FunctionSpace>>, 2>
 common_function_spaces(
     const std::vector<
         std::vector<std::array<std::shared_ptr<const FunctionSpace>, 2>>>& V);
-} // namespace fem
-} // namespace dolfinx
+} // namespace dolfinx::fem

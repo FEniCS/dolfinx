@@ -111,12 +111,12 @@
 import os
 
 import numpy as np
-from dolfinx import (Function, FunctionSpace, NewtonSolver, UnitSquareMesh,
-                     log, plot)
-from dolfinx.cpp.la import scatter_forward
-from dolfinx.cpp.mesh import CellType
-from dolfinx.fem import NonlinearProblem
+from dolfinx import log, plot
+from dolfinx.fem import Function, FunctionSpace, NonlinearProblem
+from dolfinx.generation import UnitSquareMesh
 from dolfinx.io import XDMFFile
+from dolfinx.mesh import CellType
+from dolfinx.nls import NewtonSolver
 from mpi4py import MPI
 from petsc4py import PETSc
 from ufl import (FiniteElement, TestFunctions, diff, dx, grad, inner, split,
@@ -147,8 +147,8 @@ theta = 0.5      # time stepping family, e.g. theta=1 -> backward Euler, theta=0
 
 # A unit square mesh with 97 (= 96 + 1) vertices in each direction is
 # created, and on this mesh a
-# :py:class:`FunctionSpace<dolfinx.fem.FunctionSpace>`
-# ``ME`` is built using a pair of linear Lagrangian elements. ::
+# :py:class:`FunctionSpace<dolfinx.fem.FunctionSpace>` ``ME`` is built
+# using a pair of linear Lagrangian elements. ::
 
 # Create mesh and build function space
 mesh = UnitSquareMesh(MPI.COMM_WORLD, 96, 96, CellType.triangle)
@@ -162,14 +162,13 @@ q, v = TestFunctions(ME)
 
 # .. index:: split functions
 #
-# For the test functions,
-# :py:func:`TestFunctions<function ufl.argument.TestFunctions>` (note
-# the 's' at the end) is used to define the scalar test functions ``q``
-# and ``v``.
-# Some mixed objects of the
-# :py:class:`Function<dolfinx.fem.function.Function>` class on ``ME``
-# are defined to represent :math:`u = (c_{n+1}, \mu_{n+1})` and :math:`u0
-# = (c_{n}, \mu_{n})`, and these are then split into sub-functions::
+# For the test functions, :py:func:`TestFunctions<function
+# ufl.argument.TestFunctions>` (note the 's' at the end) is used to
+# define the scalar test functions ``q`` and ``v``. Some mixed objects
+# of the :py:class:`Function<dolfinx.fem.function.Function>` class on
+# ``ME`` are defined to represent :math:`u = (c_{n+1}, \mu_{n+1})` and
+# :math:`u0 = (c_{n}, \mu_{n})`, and these are then split into
+# sub-functions::
 
 # Define functions
 u = Function(ME)  # current solution
@@ -279,14 +278,14 @@ else:
     T = 50 * dt
 
 u.vector.copy(result=u0.vector)
-scatter_forward(u.x)
+u.x.scatter_forward()
 
 
 # Prepare viewer for plotting solution during the computation
 if have_pyvista:
     topology, cell_types = plot.create_vtk_topology(mesh, mesh.topology.dim)
     grid = pv.UnstructuredGrid(topology, cell_types, mesh.geometry.x)
-    grid.point_arrays["u"] = u.sub(0).compute_point_values().real
+    grid.point_data["u"] = u.sub(0).compute_point_values().real
     grid.set_active_scalars("u")
     p = pvqt.BackgroundPlotter(title="concentration", auto_update=True)
     p.add_mesh(grid, clim=[0, 1])
@@ -303,22 +302,15 @@ while (t < T):
     # Update the plot window
     if have_pyvista:
         p.add_text(f"time: {t:.2e}", font_size=12, name="timelabel")
-        grid.point_arrays["u"] = u.sub(0).compute_point_values().real
+        grid.point_data["u"] = u.sub(0).compute_point_values().real
         p.app.processEvents()
 
 file.close()
 
-# Within the time stepping loop, the nonlinear problem is solved by
-# calling :py:func:`solver.solve(problem,u.vector)<dolfinx.cpp.NewtonSolver.solve>`,
-# with the new solution vector returned in :py:func:`u.vector<dolfinx.cpp.Function.vector>`.
-# The solution vector associated with ``u`` is copied to ``u0`` at the
-# end of each time step, and the ``c`` component of the solution
-# (the first component of ``u``) is then written to file.
-
 # Update ghost entries and plot
 if have_pyvista:
-    scatter_forward(u.x)
-    grid.point_arrays["u"] = u.sub(0).compute_point_values().real
+    u.x.scatter_forward()
+    grid.point_data["u"] = u.sub(0).compute_point_values().real
     screenshot = None
     if pv.OFF_SCREEN:
         screenshot = "u.png"

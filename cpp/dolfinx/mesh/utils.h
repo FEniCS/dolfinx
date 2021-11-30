@@ -6,20 +6,18 @@
 
 #pragma once
 
-#include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/partition.h>
 #include <functional>
+#include <mpi.h>
 #include <xtl/xspan.hpp>
 
-namespace dolfinx
-{
-namespace fem
+namespace dolfinx::fem
 {
 class ElementDofLayout;
 }
 
-namespace mesh
+namespace dolfinx::mesh
 {
 enum class CellType;
 enum class GhostMode : int;
@@ -47,9 +45,10 @@ xt::xtensor<double, 2>
 cell_normals(const Mesh& mesh, int dim,
              const xtl::span<const std::int32_t>& entities);
 
-/// Compute midpoints or mesh entities of a given dimension
-xt::xtensor<double, 2> midpoints(const mesh::Mesh& mesh, int dim,
-                                 const xtl::span<const std::int32_t>& entities);
+/// Compute the midpoints for mesh entities of a given dimension
+xt::xtensor<double, 2>
+compute_midpoints(const Mesh& mesh, int dim,
+                  const xtl::span<const std::int32_t>& entities);
 
 /// Compute indices of all mesh entities that evaluate to true for the
 /// provided geometric marking function. An entity is considered marked
@@ -62,7 +61,7 @@ xt::xtensor<double, 2> midpoints(const mesh::Mesh& mesh, int dim,
 /// @returns List of marked entity indices, including any ghost indices
 ///   (indices local to the process)
 std::vector<std::int32_t> locate_entities(
-    const mesh::Mesh& mesh, int dim,
+    const Mesh& mesh, int dim,
     const std::function<xt::xtensor<bool, 1>(const xt::xtensor<double, 2>&)>&
         marker);
 
@@ -87,7 +86,7 @@ std::vector<std::int32_t> locate_entities(
 /// @returns List of marked entity indices (indices local to the
 /// process)
 std::vector<std::int32_t> locate_entities_boundary(
-    const mesh::Mesh& mesh, int dim,
+    const Mesh& mesh, int dim,
     const std::function<xt::xtensor<bool, 1>(const xt::xtensor<double, 2>&)>&
         marker);
 
@@ -103,7 +102,7 @@ std::vector<std::int32_t> locate_entities_boundary(
 /// indices(i, j) is the position in the geometry array of the j-th vertex of
 /// the entity entity_list[i].
 xt::xtensor<std::int32_t, 2>
-entities_to_geometry(const mesh::Mesh& mesh, int dim,
+entities_to_geometry(const Mesh& mesh, int dim,
                      const xtl::span<const std::int32_t>& entity_list,
                      bool orient);
 
@@ -132,21 +131,32 @@ std::vector<std::int32_t> exterior_facet_indices(const Mesh& mesh);
 graph::AdjacencyList<std::int32_t>
 partition_cells_graph(MPI_Comm comm, int n, int tdim,
                       const graph::AdjacencyList<std::int64_t>& cells,
-                      mesh::GhostMode ghost_mode);
+                      GhostMode ghost_mode);
 
 /// Compute destination rank for mesh cells on this rank by applying the
 /// a provided graph partitioner to the dual graph of the mesh
 graph::AdjacencyList<std::int32_t>
 partition_cells_graph(MPI_Comm comm, int n, int tdim,
                       const graph::AdjacencyList<std::int64_t>& cells,
-                      mesh::GhostMode ghost_mode,
-                      const graph::partition_fn& partfn);
+                      GhostMode ghost_mode, const graph::partition_fn& partfn);
+
+/// Compute incident indices
+/// @param[in] mesh The mesh
+/// @param[in] entities List of indices of topological dimension `d0`
+/// @param[in] d0 Topological dimension
+/// @param[in] d1 Topological dimension
+/// @return List of entities of topological dimension `d1` that are
+/// incident to entities in `entities` (topological dimension `d0`)
+std::vector<std::int32_t>
+compute_incident_entities(const Mesh& mesh,
+                          const xtl::span<const std::int32_t>& entities, int d0,
+                          int d1);
 
 /// Update mesh with ghost information
 /// @param[in] mesh The mesh
 /// @param[in] dest Destination rank for mesh cells on this rank
 /// @return Mesh with new ghosts
-mesh::Mesh add_ghosts(const mesh::Mesh& mesh, graph::AdjacencyList<std::int32_t>& dest);
+mesh::Mesh add_ghosts(const mesh::Mesh& mesh,
+                      graph::AdjacencyList<std::int32_t>& dest);
 
-} // namespace mesh
-} // namespace dolfinx
+} // namespace dolfinx::mesh

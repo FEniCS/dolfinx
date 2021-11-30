@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2020 Chris N. Richardson and Garth N. Wells
+// Copyright (C) 2017-2021 Chris N. Richardson and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -8,7 +8,6 @@
 #include "caster_mpi.h"
 #include "caster_petsc.h"
 #include <cfloat>
-#include <dolfinx/common/array2d.h>
 #include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/mesh/Geometry.h>
@@ -95,7 +94,6 @@ void mesh(py::module& m)
       .value("prism", dolfinx::mesh::CellType::prism)
       .value("hexahedron", dolfinx::mesh::CellType::hexahedron);
 
-  m.def("to_string", &dolfinx::mesh::to_string);
   m.def("to_type", &dolfinx::mesh::to_type);
   m.def("is_simplex", &dolfinx::mesh::is_simplex);
 
@@ -122,13 +120,12 @@ void mesh(py::module& m)
             mesh, xtl::span(entities.data(), entities.size()), dim));
       },
       "Compute maximum distance between any two vertices.");
-  m.def("midpoints", &dolfinx::mesh::midpoints);
 
-  m.def("midpoints",
+  m.def("compute_midpoints",
         [](const dolfinx::mesh::Mesh& mesh, int dim,
            py::array_t<std::int32_t, py::array::c_style> entity_list)
         {
-          return xt_as_pyarray(dolfinx::mesh::midpoints(
+          return xt_as_pyarray(dolfinx::mesh::compute_midpoints(
               mesh, dim, xtl::span(entity_list.data(), entity_list.size())));
         });
   m.def("compute_boundary_facets", &dolfinx::mesh::compute_boundary_facets);
@@ -139,10 +136,12 @@ void mesh(py::module& m)
           const dolfinx::graph::AdjacencyList<std::int64_t>&,
           dolfinx::mesh::GhostMode)>;
 
-  m.def("build_dual_graph",
-        [](const MPICommWrapper comm,
-           const dolfinx::graph::AdjacencyList<std::int64_t>& cells, int tdim)
-        { return dolfinx::mesh::build_dual_graph(comm.get(), cells, tdim); });
+  m.def(
+      "build_dual_graph",
+      [](const MPICommWrapper comm,
+         const dolfinx::graph::AdjacencyList<std::int64_t>& cells, int tdim)
+      { return dolfinx::mesh::build_dual_graph(comm.get(), cells, tdim); },
+      "Build dual graph for cells");
 
   m.def(
       "create_mesh",
@@ -151,7 +150,7 @@ void mesh(py::module& m)
          const dolfinx::fem::CoordinateElement& element,
          const py::array_t<double, py::array::c_style>& x,
          dolfinx::mesh::GhostMode ghost_mode,
-         PythonPartitioningFunction partitioner)
+         const PythonPartitioningFunction& partitioner)
       {
         auto partitioner_wrapper
             = [partitioner](
@@ -203,9 +202,8 @@ void mesh(py::module& m)
             }
             else
             {
-              std::array<std::size_t, 2> shape
-                  = {static_cast<std::size_t>(x.shape(0)),
-                     static_cast<std::size_t>(x.shape(1))};
+              std::array shape
+                  = {std::size_t(x.shape(0)), std::size_t(x.shape(1))};
               auto _x
                   = xt::adapt(x.data(), x.size(), xt::no_ownership(), shape);
               return dolfinx::mesh::Geometry(map, dofmap, element, _x,
@@ -220,8 +218,8 @@ void mesh(py::module& m)
           "x",
           [](const dolfinx::mesh::Geometry& self)
           {
-            const xt::xtensor<double, 2>& x = self.x();
-            return py::array_t<double>(x.shape(), x.data(), py::cast(self));
+            return py::array_t<double>(self.x().shape(), self.x().data(),
+                                       py::cast(self));
           },
           "Return coordinates of all geometry points. Each row is the "
           "coordinate of a point.")
@@ -238,7 +236,7 @@ void mesh(py::module& m)
 
   // dolfinx::mesh::Topology class
   py::class_<dolfinx::mesh::Topology, std::shared_ptr<dolfinx::mesh::Topology>>(
-      m, "Topology", "Topology object")
+      m, "Topology", py::dynamic_attr(), "Topology object")
       .def(py::init(
           [](const MPICommWrapper comm, const dolfinx::mesh::CellType cell_type)
           { return dolfinx::mesh::Topology(comm.get(), cell_type); }))
@@ -248,8 +246,6 @@ void mesh(py::module& m)
       .def("create_entity_permutations",
            &dolfinx::mesh::Topology::create_entity_permutations)
       .def("create_connectivity", &dolfinx::mesh::Topology::create_connectivity)
-      .def("create_connectivity_all",
-           &dolfinx::mesh::Topology::create_connectivity_all)
       .def("get_facet_permutations",
            [](const dolfinx::mesh::Topology& self)
            {
@@ -274,8 +270,8 @@ void mesh(py::module& m)
       .def_property_readonly("cell_type", &dolfinx::mesh::Topology::cell_type)
       .def("cell_name", [](const dolfinx::mesh::Topology& self)
            { return dolfinx::mesh::to_string(self.cell_type()); })
-      .def("mpi_comm", [](dolfinx::mesh::Mesh& self)
-           { return MPICommWrapper(self.mpi_comm()); });
+      .def_property_readonly("comm", [](dolfinx::mesh::Mesh& self)
+                             { return MPICommWrapper(self.comm()); });
 
   // dolfinx::mesh::Mesh
   py::class_<dolfinx::mesh::Mesh, std::shared_ptr<dolfinx::mesh::Mesh>>(
@@ -287,12 +283,11 @@ void mesh(py::module& m)
       .def_property_readonly(
           "geometry", py::overload_cast<>(&dolfinx::mesh::Mesh::geometry),
           "Mesh geometry")
-      .def("mpi_comm", [](dolfinx::mesh::Mesh& self)
-           { return MPICommWrapper(self.mpi_comm()); })
       .def_property_readonly(
           "topology", py::overload_cast<>(&dolfinx::mesh::Mesh::topology),
           "Mesh topology", py::return_value_policy::reference_internal)
-      .def("ufl_id", &dolfinx::mesh::Mesh::id)
+      .def_property_readonly("comm", [](dolfinx::mesh::Mesh& self)
+                             { return MPICommWrapper(self.comm()); })
       .def_property_readonly("id", &dolfinx::mesh::Mesh::id)
       .def_readwrite("name", &dolfinx::mesh::Mesh::name);
 

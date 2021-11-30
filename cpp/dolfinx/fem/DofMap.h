@@ -9,6 +9,8 @@
 #include <cstdlib>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <dolfinx/graph/ordering.h>
+#include <functional>
 #include <memory>
 #include <utility>
 #include <vector>
@@ -104,6 +106,10 @@ public:
   /// Move assignment
   DofMap& operator=(DofMap&& dofmap) = default;
 
+  /// Equality operator
+  /// @return Returns true if the data for the two dofmaps is equal
+  bool operator==(const DofMap& map) const;
+
   /// Local-to-global mapping of dofs on a cell
   /// @param[in] cell The cell index
   /// @return Local-global dof map for the cell (using process-local
@@ -125,9 +131,15 @@ public:
   /// @param[in] comm MPI Communicator
   /// @param[in] topology The mesh topology that the dofmap is defined
   /// on
+  /// @param[in] reorder_fn The graph re-ordering function to apply to
+  /// the dof data
   /// @return The collapsed dofmap
-  std::pair<std::unique_ptr<DofMap>, std::vector<std::int32_t>>
-  collapse(MPI_Comm comm, const mesh::Topology& topology) const;
+  std::pair<std::unique_ptr<DofMap>, std::vector<std::int32_t>> collapse(
+      MPI_Comm comm, const mesh::Topology& topology,
+      const std::function<std::vector<int>(
+          const graph::AdjacencyList<std::int32_t>&)>& reorder_fn
+      = [](const graph::AdjacencyList<std::int32_t>& g)
+      { return graph::reorder_gps(g); }) const;
 
   /// Get dofmap data
   /// @return The adjacency list with dof indices for each cell

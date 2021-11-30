@@ -7,20 +7,17 @@
 #pragma once
 
 #include <array>
-#include <dolfinx/common/MPI.h>
-#include <xtl/xspan.hpp>
+#include <mpi.h>
 #include <vector>
+#include <xtensor/xfixed.hpp>
+#include <xtl/xspan.hpp>
 
-namespace dolfinx
-{
-
-// Forward declarations
-namespace mesh
+namespace dolfinx::mesh
 {
 class Mesh;
-} // namespace mesh
+}
 
-namespace geometry
+namespace dolfinx::geometry
 {
 
 /// Axis-Aligned bounding box binary tree. It is used to find entities
@@ -74,7 +71,7 @@ public:
   /// @param[in] node The bounding box node index
   /// @return The bounding box where [0] is the lower corner and [1] is
   /// the upper corner
-  std::array<std::array<double, 3>, 2> get_bbox(std::size_t node) const;
+  xt::xtensor_fixed<double, xt::xshape<2, 3>> get_bbox(std::size_t node) const;
 
   /// Compute a global bounding tree (collective on comm)
   /// This can be used to find which process a point might have a
@@ -122,5 +119,4 @@ private:
   // List of bounding box coordinates
   std::vector<double> _bbox_coordinates;
 };
-} // namespace geometry
-} // namespace dolfinx
+} // namespace dolfinx::geometry

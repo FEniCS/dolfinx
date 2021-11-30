@@ -15,13 +15,11 @@
 #include <vector>
 #include <xtl/xspan.hpp>
 
-namespace dolfinx
-{
-namespace common
+namespace dolfinx::common
 {
 class IndexMap;
 }
-namespace la
+namespace dolfinx::la
 {
 
 /// Create a PETSc Vec that wraps the data in an array
@@ -146,7 +144,7 @@ public:
   std::array<std::int64_t, 2> local_range() const;
 
   /// Return MPI communicator
-  MPI_Comm mpi_comm() const;
+  MPI_Comm comm() const;
 
   /// Compute norm of vector
   ///
@@ -173,5 +171,4 @@ private:
   // PETSc Vec pointer
   Vec _x;
 };
-} // namespace la
-} // namespace dolfinx
+} // namespace dolfinx::la

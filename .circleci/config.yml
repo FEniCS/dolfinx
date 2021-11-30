@@ -4,7 +4,7 @@ install-python-components: &install-python-components
   name: Install FEniCS Python components
   command: |
     git clone https://github.com/FEniCS/basix.git --branch main --single-branch
-    cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -B build-dir -S ./basix
+    cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -B build-dir -S ./basix/cpp
     cmake --build build-dir --parallel 3
     cmake --install build-dir
     pip3 install ./basix/python
@@ -106,7 +106,7 @@ unit-tests-python-mpi: &unit-tests-python-mpi
 jobs:
   build-real:
     docker:
-      - image: fenicsproject/test-env:mpich
+      - image: fenicsproject/test-env:latest-mpich
     environment:
       DEBIAN_FRONTEND: "noninteractive"
       PETSC_ARCH: "linux-gnu-real-32"
@@ -142,7 +142,7 @@ jobs:
 
   build-complex:
     docker:
-      - image: fenicsproject/test-env:mpich
+      - image: fenicsproject/test-env:latest-mpich
     environment:
       DEBIAN_FRONTEND: "noninteractive"
       PETSC_ARCH: "linux-gnu-complex-32"

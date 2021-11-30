@@ -3,6 +3,7 @@ import platform
 import re
 import subprocess
 import sys
+import sysconfig
 
 from setuptools import Extension, setup
 from setuptools.command.build_ext import build_ext
@@ -11,13 +12,13 @@ if sys.version_info < (3, 7):
     print("Python 3.7 or higher required, please upgrade.")
     sys.exit(1)
 
-VERSION = "0.1.1.dev0"
+VERSION = "0.3.1.dev0"
 
 REQUIREMENTS = [
     "numpy",
     "mpi4py",
     "petsc4py",
-    "fenics-ffcx>=0.1.0,<0.2.0",
+    "fenics-ffcx>=0.3.1.dev0,<0.4.0",
     "fenics-ufl>=2021.1.0,<2021.2.0"
 ]
 
@@ -42,7 +43,9 @@ class CMakeBuild(build_ext):
     def build_extension(self, ext):
         extdir = os.path.abspath(os.path.dirname(self.get_ext_fullpath(ext.name)))
         cmake_args = ['-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=' + extdir,
-                      '-DPYTHON_EXECUTABLE=' + sys.executable]
+                      '-DPython3_EXECUTABLE=' + sys.executable,
+                      f'-DPython3_LIBRARIES={sysconfig.get_config_var("LIBDEST")}',
+                      f'-DPython3_INCLUDE_DIRS={sysconfig.get_config_var("INCLUDEPY")}']
 
         cfg = 'Debug' if self.debug else 'Release'
         build_args = ['--config', cfg]

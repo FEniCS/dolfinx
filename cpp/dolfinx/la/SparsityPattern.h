@@ -12,21 +12,18 @@
 #include <vector>
 #include <xtl/xspan.hpp>
 
-namespace dolfinx
-{
-
-namespace graph
+namespace dolfinx::graph
 {
 template <typename T>
 class AdjacencyList;
 }
 
-namespace common
+namespace dolfinx::common
 {
 class IndexMap;
 }
 
-namespace la
+namespace dolfinx::la
 {
 
 /// This class provides a sparsity pattern data structure that can be
@@ -114,11 +111,11 @@ public:
   const graph::AdjacencyList<std::int32_t>& off_diagonal_pattern() const;
 
   /// Return MPI communicator
-  MPI_Comm mpi_comm() const;
+  MPI_Comm comm() const;
 
 private:
   // MPI communicator
-  dolfinx::MPI::Comm _mpi_comm;
+  dolfinx::MPI::Comm _comm;
 
   // Index maps for each dimension
   std::array<std::shared_ptr<const common::IndexMap>, 2> _index_maps;
@@ -135,5 +132,4 @@ private:
   std::shared_ptr<graph::AdjacencyList<std::int32_t>> _diagonal;
   std::shared_ptr<graph::AdjacencyList<std::int32_t>> _off_diagonal;
 };
-} // namespace la
-} // namespace dolfinx
+} // namespace dolfinx::la

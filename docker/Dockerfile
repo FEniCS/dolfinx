@@ -8,15 +8,15 @@
 #
 # To run a nightly build:
 #
-#    docker run -ti dolfinx/dolfinx
+#    docker run -ti dolfinx/dolfinx:latest
 #
 # To run a Jupyter lab session:
 #
-#    docker run --init -p 8888:8888 dolfinx/lab
+#    docker run --init -p 8888:8888 dolfinx/lab:latest
 #
 # To run and share the current host directory with the container:
 #
-#    docker run --init -p 8888:8888 -v "$(pwd)":/root/shared dolfinx/lab
+#    docker run --init -p 8888:8888 -v "$(pwd)":/root/shared dolfinx/lab:latest
 #
 # To build from source, first checkout the DOLFINx, FFCx, Basix and UFL
 # repositories into the working directory, e.g.:
@@ -26,8 +26,8 @@
 #
 # Then run the commands:
 #
-#    docker pull dolfinx/dolfinx-onbuild
-#    echo "FROM dolfinx/dolfinx-onbuild" | docker build -f- .
+#    docker pull dolfinx/dolfinx-onbuild:latest
+#    echo "FROM dolfinx/dolfinx-onbuild:latest" | docker build -f- .
 #
 # You can build an optimised version of the complete FEniCS environment for
 # your platform using the commands:
@@ -43,34 +43,42 @@
 
 
 ARG GMSH_VERSION=4_8_4
-ARG PYBIND11_VERSION=2.6.2
-ARG PETSC_VERSION=3.15.0
-ARG SLEPC_VERSION=3.15.0
-ARG SLEPC4PY_VERSION=3.15.0
+ARG HDF5_SERIES=1.12
+ARG HDF5_PATCH=1
+ARG PYBIND11_VERSION=2.8.1
+ARG PETSC_VERSION=3.16.1
+ARG SLEPC_VERSION=3.16.0
 ARG ADIOS2_VERSION=2.7.1
-ARG PYVISTA_VERSION=0.30.0
-# TODO: Update KaHIP version upon a release.
-ARG KAHIP_VERSION=623decb
-ARG XTENSOR_VERSION=0.23.9
-ARG XTENSOR_BLAS_VERSION=0.19.1
-ARG XTL_VERSION=0.7.2
+ARG PYVISTA_VERSION=0.32.1
+ARG NUMPY_VERSION=1.20.3
+ARG KAHIP_VERSION=3.12
+ARG XTENSOR_VERSION=0.24.0
+ARG XTL_VERSION=0.7.3
+
+ARG MPICH_VERSION=3.4.2
+ARG OPENMPI_SERIES=4.1
+ARG OPENMPI_PATCH=1
 
 ########################################
 
-FROM ubuntu:20.04 as dev-env
+FROM ubuntu:21.10 as dev-env
 LABEL maintainer="fenics-project <fenics-support@googlegroups.org>"
 LABEL description="FEniCS testing and development environment with PETSc real, complex, 32-bit and 64-bit modes"
 
 ARG GMSH_VERSION
+ARG HDF5_SERIES
+ARG HDF5_PATCH
 ARG PYBIND11_VERSION
 ARG PETSC_VERSION
 ARG SLEPC_VERSION
-ARG SLEPC4PY_VERSION
 ARG ADIOS2_VERSION
 ARG KAHIP_VERSION
+ARG NUMPY_VERSION
 ARG XTENSOR_VERSION
-ARG XTENSOR_BLAS_VERSION
 ARG XTL_VERSION
+ARG MPICH_VERSION
+ARG OPENMPI_SERIES
+ARG OPENMPI_PATCH
 
 # The following ARGS are used in the dev-env layer.
 # They are safe defaults. They can be overridden by the user.
@@ -80,8 +88,13 @@ ARG PETSC_SLEPC_OPTFLAGS="-O2"
 ARG PETSC_SLEPC_MAKE_NP=2
 # Turn on PETSc and SLEPc debugging. "yes" or "no".
 ARG PETSC_SLEPC_DEBUGGING="no"
-# Ubuntu MPI variant. "mpich" or "openmpi".
+
+# MPI variant. "mpich" or "openmpi".
 ARG MPI="mpich"
+ARG MPICH_CONFIGURE_OPTIONS="--with-device=ch3"
+
+# Number of build threads to use with make
+ARG BUILD_NP=2
 
 WORKDIR /tmp
 
@@ -99,17 +112,16 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get -qq update && \
     apt-get -yq --with-new-pkgs -o Dpkg::Options::="--force-confold" upgrade && \
     apt-get -y install \
-    clang-10 \
+    clang \
     cmake \
     g++ \
     gfortran \
     libboost-dev \
     libboost-filesystem-dev \
     libboost-timer-dev \
-    libhdf5-${MPI}-dev \
     liblapack-dev \
-    lib${MPI}-dev \
     libopenblas-dev \
+    llvm-9 \
     ninja-build \
     pkg-config \
     python3-dev \
@@ -130,29 +142,45 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     libxcursor-dev \
     libxft2 \
     libxinerama1 \
-    libfltk1.3-dev \ 
+    libfltk1.3-dev \
     libfreetype6-dev  \
     libgl1-mesa-dev \
     libocct-foundation-dev \
     libocct-data-exchange-dev && \
-    #
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
+# Install MPI
+RUN if [ "$MPI" = "mpich" ]; then \
+    export FFLAGS=-fallow-argument-mismatch && \
+    wget http://www.mpich.org/static/downloads/${MPICH_VERSION}/mpich-${MPICH_VERSION}.tar.gz && \
+    tar xfz mpich-${MPICH_VERSION}.tar.gz  && \
+    cd mpich-${MPICH_VERSION}  && \
+    ./configure ${MPICH_CONFIGURE_OPTIONS} && \
+    make -j${BUILD_NP} install; \
+    else \
+    wget https://download.open-mpi.org/release/open-mpi/v${OPENMPI_SERIES}/openmpi-${OPENMPI_SERIES}.${OPENMPI_PATCH}.tar.gz && \
+    tar xfz openmpi-${OPENMPI_SERIES}.${OPENMPI_PATCH}.tar.gz  && \
+    cd openmpi-${OPENMPI_SERIES}.${OPENMPI_PATCH} && \
+    ./configure  && \
+    make -j${BUILD_NP} install; \
+    fi && \
+    ldconfig && \
+    rm -rf /tmp/*
 
 # Install Python packages (via pip)
 # - First set of packages are required to build and run DOLFINx Python.
 # - Second set of packages are recommended and/or required to build
 #   documentation or run tests.
 # LLVM_CONFIG required on aarch64, should be removed long-term.
-RUN LLVM_CONFIG=/usr/bin/llvm-config-10 pip3 install --no-cache-dir mpi4py numba && \
-    pip3 install --no-cache-dir cffi cppimport flake8 pytest pytest-xdist sphinx sphinx_rtd_theme
+RUN LLVM_CONFIG=/usr/bin/llvm-config-9 pip3 install --no-cache-dir mpi4py numba && \
+    pip3 install --no-cache-dir cffi cppimport flake8 pybind11==${PYBIND11_VERSION} pytest pytest-xdist sphinx sphinx_rtd_theme
 
 # Upgrade numpy via pip. Exclude binaries to avoid conflicts with libblas
 # (See issue #126 and #1305)
-RUN pip3 install --no-binary="numpy" numpy --upgrade
+RUN pip3 install --no-cache-dir --no-binary="numpy" numpy==${NUMPY_VERSION} --upgrade
 
-# Install xtl, xtensor, xtensor-blas.
+# Install xtl, xtensor
 RUN git clone -b ${XTL_VERSION} --single-branch https://github.com/xtensor-stack/xtl.git && \
     cd xtl && \
     cmake -G Ninja . && \
@@ -162,49 +190,50 @@ RUN git clone -b ${XTL_VERSION} --single-branch https://github.com/xtensor-stack
     cd xtensor && \
     cmake -G Ninja . && \
     ninja install && \
-    cd ../ && \
-    git clone -b ${XTENSOR_BLAS_VERSION} --single-branch https://github.com/xtensor-stack/xtensor-blas.git && \
-    cd xtensor-blas && \
-    cmake -G Ninja . && \
-    ninja install && \
-    rm -rf xtl xtensor xtensor-blas
-
-# Install pybind11
-RUN wget -nc --quiet https://github.com/pybind/pybind11/archive/v${PYBIND11_VERSION}.tar.gz && \
-    tar -xf v${PYBIND11_VERSION}.tar.gz && \
-    cd pybind11-${PYBIND11_VERSION} && \
-    mkdir build && \
-    cd build && \
-    cmake -DPYBIND11_TEST=False ../ && \
-    make install && \
-    rm -rf /tmp/*
+    rm -rf xtl xtensor
 
 # Install KaHIP
-ENV KAHIP_DIR=/usr/local/KaHIP/deploy
-RUN cd /usr/local && \
-    git clone https://github.com/schulzchristian/KaHIP.git && \
-    cd KaHIP/ && \
-    git checkout ${KAHIP_VERSION} && \
-    mkdir build && cd build && \
-    cmake -G Ninja -DCMAKE_INSTALL_PREFIX=${KAHIP_DIR} -DNONATIVEOPTIMIZATIONS=On .. && \
-    ninja install
+RUN wget -nc --quiet https://github.com/kahip/kahip/archive/v${KAHIP_VERSION}.tar.gz && \
+    tar -xf v${KAHIP_VERSION}.tar.gz && \
+    cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DNONATIVEOPTIMIZATIONS=on -B build-dir -S KaHIP-${KAHIP_VERSION} && \
+    cmake --build build-dir && \
+    cmake --install build-dir && \
+    rm -rf /tmp/*
+
+# Install HDf5
+RUN wget -nc --quiet https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-${HDF5_SERIES}/hdf5-${HDF5_SERIES}.${HDF5_PATCH}/src/hdf5-${HDF5_SERIES}.${HDF5_PATCH}.tar.gz && \
+    tar xfz hdf5-${HDF5_SERIES}.${HDF5_PATCH}.tar.gz && \
+    cd hdf5-${HDF5_SERIES}.${HDF5_PATCH} && \
+    ./configure --prefix=/usr/local --enable-parallel --enable-shared --enable-static=no && \
+    make -j${BUILD_NP} install && \
+    rm -rf /tmp/*
+
+# HDF5 CMake build broken, see
+# https://github.com/HDFGroup/hdf5/issues/969,
+# https://github.com/HDFGroup/hdf5/pull/1089
+# RUN wget -nc --quiet https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-${HDF5_SERIES}/hdf5-${HDF5_SERIES}.${HDF5_PATCH}/src/hdf5-${HDF5_SERIES}.${HDF5_PATCH}.tar.gz && \
+#    tar xfz hdf5-${HDF5_SERIES}.${HDF5_PATCH}.tar.gz && \
+#     cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -HDF5_ENABLE_PARALLEL=on -B build-dir -S hdf5-${HDF5_SERIES}.${HDF5_PATCH} && \
+#     cmake --build build-dir && \ARG BUILD_NP=2
+
+#     cmake --install build-dir && \
+#     rm -rf /tmp/*
 
 # Install ADIOS2
 RUN wget -nc --quiet https://github.com/ornladios/ADIOS2/archive/v${ADIOS2_VERSION}.tar.gz -O adios2-v${ADIOS2_VERSION}.tar.gz && \
     mkdir -p adios2-v${ADIOS2_VERSION} && \
     tar -xf adios2-v${ADIOS2_VERSION}.tar.gz -C adios2-v${ADIOS2_VERSION} --strip-components 1 && \
-    cmake -DADIOS2_USE_Fortran=Off -DBUILD_TESTING=Off -DADIOS2_BUILD_EXAMPLES=Off -DADIOS2_USE_ZeroMQ=Off  -B build-dir -S ./adios2-v${ADIOS2_VERSION} && \
+    cmake -G Ninja -DADIOS2_USE_HDF5=on -DADIOS2_USE_Fortran=off -DBUILD_TESTING=off -DADIOS2_BUILD_EXAMPLES=off -DADIOS2_USE_ZeroMQ=off -B build-dir -S ./adios2-v${ADIOS2_VERSION} && \
     cmake --build build-dir && \
     cmake --install build-dir && \
     rm -rf /tmp/*
 
 # Install GMSH
-RUN cd /usr/local && \
-    git clone -b gmsh_${GMSH_VERSION} --single-branch https://gitlab.onelab.info/gmsh/gmsh.git && \
-    cd gmsh && \
-    mkdir build && cd build && \
-    cmake -DCMAKE_BUILD_TYPE=Release -DENABLE_BUILD_DYNAMIC=1  -DENABLE_OPENMP=1  .. && \
-    make install
+RUN git clone -b gmsh_${GMSH_VERSION} --single-branch https://gitlab.onelab.info/gmsh/gmsh.git && \
+    cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DENABLE_BUILD_DYNAMIC=1  -DENABLE_OPENMP=1 -B build-dir -S gmsh && \
+    cmake --build build-dir && \
+    cmake --install build-dir && \
+    rm -rf /tmp/*
 
 ENV PYTHONPATH=/usr/local/lib:$PYTHONPATH
 
@@ -351,9 +380,10 @@ RUN chmod +x /usr/local/bin/dolfinx-*-mode
 
 ONBUILD WORKDIR /src
 
-# This leaves the sources inside the container. This is a limitation of Docker.
-# There is some trickery in the intermediate and DOLFINx containers that can be
-# used to remove this source if needed, see below.
+# This leaves the sources inside the container. This is a limitation of
+# Docker. There is some trickery in the intermediate and DOLFINx
+# containers that can be used to remove this source if needed, see
+# below.
 ONBUILD ADD basix/ /src/basix/
 ONBUILD ADD ufl/ /src/ufl/
 ONBUILD ADD ffcx/ /src/ffcx/
@@ -371,9 +401,9 @@ ONBUILD ARG DOLFINX_CMAKE_BUILD_TYPE="RelWithDebInfo"
 # Extra CMake C++ compiler flags for DOLFINx C++ build.
 ONBUILD ARG DOLFINX_CMAKE_CXX_FLAGS
 
-# The dolfinx-onbuild container expects to have folders basix/ ufl/ ffcx/ and
-# dolfinx/ mounted/shared at /src.
-ONBUILD RUN cd basix && cmake -G Ninja -DCMAKE_BUILD_TYPE=${DOLFINX_CMAKE_BUILD_TYPE} -DCMAKE_CXX_FLAGS=${DOLFINX_CMAKE_CXX_FLAGS} -B build-dir -S . && \
+# The dolfinx-onbuild container expects to have folders basix/ ufl/
+# ffcx/ and dolfinx/ mounted/shared at /src.
+ONBUILD RUN cd basix && cmake -G Ninja -DCMAKE_BUILD_TYPE=${DOLFINX_CMAKE_BUILD_TYPE} -DCMAKE_CXX_FLAGS=${DOLFINX_CMAKE_CXX_FLAGS} -B build-dir -S ./cpp && \
     cmake --build build-dir && \
     cmake --install build-dir && \
     python3 -m pip install ./python && \
@@ -414,11 +444,11 @@ FROM dolfinx-onbuild as intermediate
 FROM dev-env as dolfinx
 LABEL description="DOLFINx in 32-bit real and complex modes"
 
-# This layer manually copies the build artifacts from intermediate into dev-env
-# to make the final image. This is a workaround for a well known limitation of
-# Docker that you cannot cleanup after an ADD operation. This reduces the
-# container size by around 80MB as the /src folder no longer exists in the final
-# image.
+# This layer manually copies the build artifacts from intermediate into
+# dev-env to make the final image. This is a workaround for a well known
+# limitation of Docker that you cannot cleanup after an ADD operation.
+# This reduces the container size by around 80MB as the /src folder no
+# longer exists in the final image.
 COPY --from=intermediate /usr/local /usr/local
 COPY --from=intermediate /root/.config /root/.config
 
@@ -452,6 +482,9 @@ RUN dpkgArch="$(dpkg --print-architecture)"; \
     pip3 install --no-cache-dir pyvista==${PYVISTA_VERSION} ;; \
     esac; \
     pip3 install --no-cache-dir matplotlib
+
+# Jupyter Notebook kernel specification for complex build DOLFINx
+ADD dolfinx/docker/complex-kernel.json /usr/local/share/jupyter/kernels/python3-complex/kernel.json
 
 EXPOSE 8888/tcp
 ENV SHELL /bin/bash

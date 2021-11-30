@@ -11,10 +11,10 @@ import dolfinx
 import numpy as np
 import pytest
 import ufl
-from dolfinx import (FunctionSpace, UnitCubeMesh, UnitIntervalMesh,
-                     UnitSquareMesh, VectorFunctionSpace, cpp)
-from dolfinx.cpp.mesh import CellType
-from dolfinx.mesh import create_mesh
+from dolfinx.fem import FunctionSpace, VectorFunctionSpace
+from dolfinx.generation import UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh
+from dolfinx.graph import create_adjacencylist
+from dolfinx.mesh import CellType, create_mesh
 from dolfinx_utils.test.skips import skip_in_parallel
 from mpi4py import MPI
 from ufl import FiniteElement, MixedElement, VectorElement
@@ -59,23 +59,23 @@ def test_tabulate_dofs(mesh_factory):
 
 def test_entity_dofs(mesh):
     """Test that num entity dofs is correctly wrapped to dolfinx::DofMap"""
-    V = FunctionSpace(mesh, ("CG", 1))
+    V = FunctionSpace(mesh, ("Lagrange", 1))
     assert V.dofmap.dof_layout.num_entity_dofs(0) == 1
     assert V.dofmap.dof_layout.num_entity_dofs(1) == 0
     assert V.dofmap.dof_layout.num_entity_dofs(2) == 0
 
-    V = VectorFunctionSpace(mesh, ("CG", 1))
+    V = VectorFunctionSpace(mesh, ("Lagrange", 1))
     bs = V.dofmap.dof_layout.block_size()
     assert V.dofmap.dof_layout.num_entity_dofs(0) * bs == 2
     assert V.dofmap.dof_layout.num_entity_dofs(1) * bs == 0
     assert V.dofmap.dof_layout.num_entity_dofs(2) * bs == 0
 
-    V = FunctionSpace(mesh, ("CG", 2))
+    V = FunctionSpace(mesh, ("Lagrange", 2))
     assert V.dofmap.dof_layout.num_entity_dofs(0) == 1
     assert V.dofmap.dof_layout.num_entity_dofs(1) == 1
     assert V.dofmap.dof_layout.num_entity_dofs(2) == 0
 
-    V = FunctionSpace(mesh, ("CG", 3))
+    V = FunctionSpace(mesh, ("Lagrange", 3))
     assert V.dofmap.dof_layout.num_entity_dofs(0) == 1
     assert V.dofmap.dof_layout.num_entity_dofs(1) == 2
     assert V.dofmap.dof_layout.num_entity_dofs(2) == 1
@@ -90,7 +90,7 @@ def test_entity_dofs(mesh):
     assert V.dofmap.dof_layout.num_entity_dofs(1) == 0
     assert V.dofmap.dof_layout.num_entity_dofs(2) == 3
 
-    V = VectorFunctionSpace(mesh, ("CG", 1))
+    V = VectorFunctionSpace(mesh, ("Lagrange", 1))
     bs = V.dofmap.dof_layout.block_size()
 
     for i, cdofs in enumerate([[0, 1], [2, 3], [4, 5]]):
@@ -111,7 +111,7 @@ def test_entity_closure_dofs(mesh_factory):
     tdim = mesh.topology.dim
 
     for degree in (1, 2, 3):
-        V = FunctionSpace(mesh, ("CG", degree))
+        V = FunctionSpace(mesh, ("Lagrange", degree))
         for d in range(tdim + 1):
             map = mesh.topology.index_map(d)
             num_entities = map.size_local + map.num_ghosts
@@ -144,11 +144,11 @@ def test_entity_closure_dofs(mesh_factory):
 
 @pytest.mark.skip
 def test_clear_sub_map_data_scalar(mesh):
-    V = FunctionSpace(mesh, ("CG", 2))
+    V = FunctionSpace(mesh, ("Lagrange", 2))
     with pytest.raises(ValueError):
         V.sub(1)
 
-    V = VectorFunctionSpace(mesh, ("CG", 2))
+    V = VectorFunctionSpace(mesh, ("Lagrange", 2))
     V1 = V.sub(1)
     assert (V1)
 
@@ -291,9 +291,8 @@ def test_readonly_view_local_to_global_unwoned(mesh):
 ])
 def test_higher_order_coordinate_map(points, celltype, order):
     """Computes physical coordinates of a cell, based on the coordinate map."""
-    print(celltype)
     cells = np.array([range(len(points))])
-    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cpp.mesh.to_string(celltype), order))
+    domain = ufl.Mesh(ufl.VectorElement("Lagrange", celltype.name, order))
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
 
     V = FunctionSpace(mesh, ("Lagrange", 2))
@@ -342,7 +341,7 @@ def test_higher_order_tetra_coordinate_map(order):
                            [0, 1, 3 / 2], [1 / 2, 0, 3 / 2], [1 / 2, 1, 0], [0, 0, 3 / 2],
                            [0, 1, 0], [1 / 2, 0, 0]])
     cells = np.array([range(len(points))])
-    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cpp.mesh.to_string(celltype), order))
+    domain = ufl.Mesh(ufl.VectorElement("Lagrange", celltype.name, order))
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
     V = FunctionSpace(mesh, ("Lagrange", order))
     X = V.element.interpolation_points()
@@ -365,6 +364,6 @@ def test_higher_order_tetra_coordinate_map(order):
 
 @skip_in_parallel
 def test_transpose_dofmap():
-    dofmap = dolfinx.cpp.graph.AdjacencyList_int32(np.array([[0, 2, 1], [3, 2, 1], [4, 3, 1]], dtype=np.int32))
-    transpose = dolfinx.cpp.fem.transpose_dofmap(dofmap, 3)
+    dofmap = create_adjacencylist(np.array([[0, 2, 1], [3, 2, 1], [4, 3, 1]], dtype=np.int32))
+    transpose = dolfinx.fem.transpose_dofmap(dofmap, 3)
     assert np.array_equal(transpose.array, [0, 2, 5, 8, 1, 4, 3, 7, 6])

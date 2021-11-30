@@ -1,24 +1,13 @@
 #------------------------------------------------------------------------------
 # Top level CMakeLists.txt file for DOLFINx
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.16)
 
 #------------------------------------------------------------------------------
 # Set project name and version number
 
-project(DOLFINX VERSION "0.1.1.0")
+project(DOLFINX VERSION "0.3.1.0")
 
 set(DOXYGEN_DOLFINX_VERSION ${DOLFINX_VERSION} CACHE STRING "Version for Doxygen" FORCE)
-
-#------------------------------------------------------------------------------
-# Set CMake options, see `cmake --help-policy CMP000x`
-
-cmake_policy(VERSION 3.12)
-if (POLICY CMP0074)
-  cmake_policy(SET CMP0074 NEW)
-endif()
-if (POLICY CMP0075)
-  cmake_policy(SET CMP0075 NEW)
-endif()
 
 #------------------------------------------------------------------------------
 # Use C++17
@@ -81,8 +70,9 @@ add_feature_info(XTENSOR_OPTIMIZE XTENSOR_OPTIMIZE "Enable architecture-specific
 # Enable or disable optional packages
 
 # List optional packages
-list(APPEND OPTIONAL_PACKAGES "SLEPc")
+list(APPEND OPTIONAL_PACKAGES "ADIOS2")
 list(APPEND OPTIONAL_PACKAGES "ParMETIS")
+list(APPEND OPTIONAL_PACKAGES "SCOTCH")
 list(APPEND OPTIONAL_PACKAGES "KaHIP")
 
 # Add options
@@ -133,7 +123,10 @@ if (HAVE_O2_OPTIMISATION)
 endif()
 
 #------------------------------------------------------------------------------
-# Run tests to find required packages
+# Find required packages
+
+# Use Python for detecting UFC and Basix
+find_package(Python3 COMPONENTS Interpreter REQUIRED)
 
 # Note: When updating Boost version, also update DOLFINXCongif.cmake.in
 if(DEFINED ENV{BOOST_ROOT} OR DEFINED BOOST_ROOT)
@@ -146,19 +139,42 @@ set_package_properties(Boost PROPERTIES TYPE REQUIRED
   DESCRIPTION "Boost C++ libraries"
   URL "http://www.boost.org")
 
-# Check for required package xtensor
-find_package(xtensor REQUIRED)
+# Check for Basix
+# Note: Basix may be installed as a standalone C++ library, or in the
+# Basix Python module tree
+execute_process(
+  COMMAND ${Python3_EXECUTABLE} -c "import basix, os, sys; sys.stdout.write(os.path.dirname(basix.__file__))"
+  OUTPUT_VARIABLE BASIX_PY_DIR
+  RESULT_VARIABLE BASIX_PY_COMMAND_RESULT
+  ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
+if (BASIX_PY_DIR)
+  message(STATUS "Adding ${BASIX_PY_DIR} to Basix/xtensor/xtl search hints")
+  set(xtl_ROOT "${BASIX_PY_DIR};${xtl_ROOT}")
+  set(xsimd "${BASIX_PY_DIR};${xsimd_ROOT}")
+  set(xtensor_ROOT "${BASIX_PY_DIR};${xtensor_ROOT}")
+
+  # Basix installed from manylinux wheel
+  if (IS_DIRECTORY ${BASIX_PY_DIR}/../fenics_basix.libs)
+    set(CMAKE_INSTALL_RPATH ${BASIX_PY_DIR}/../fenics_basix.libs)
+  endif()
+endif()
+find_package(Basix REQUIRED CONFIG HINTS ${BASIX_PY_DIR})
+set_package_properties(basix PROPERTIES TYPE REQUIRED
+  DESCRIPTION "FEniCS tabulation library"
+  URL "https://github.com/fenics/basix")
+
+get_target_property(BASIX_DEFN Basix::basix INTERFACE_COMPILE_DEFINITIONS)
+if("XTENSOR_USE_XSIMD" IN_LIST BASIX_DEFN)
+  find_package(xsimd REQUIRED)
+endif()
+
+  # Check for required package xtensor
+find_package(xtensor 0.23.10 REQUIRED)
 set_package_properties(xtensor PROPERTIES TYPE REQUIRED
   DESCRIPTION "C++ library for numerical analysis with multi-dimensional array expressions."
   URL "https://xtensor.readthedocs.io/")
 
-# Check for required package xtensor-blas
-find_package(xtensor-blas REQUIRED)
-set_package_properties(xtensor-blas PROPERTIES TYPE REQUIRED
-  DESCRIPTION "BLAS extenssion to xtensor."
-  URL "https://xtensor-blas.readthedocs.io/")
-
-  find_package(PETSc 3.10)
+find_package(PETSc 3.10)
 set_package_properties(PETSc PROPERTIES TYPE REQUIRED
   DESCRIPTION "Portable, Extensible Toolkit for Scientific Computation (PETSc)"
   URL "https://www.mcs.anl.gov/petsc/"
@@ -166,41 +182,32 @@ set_package_properties(PETSc PROPERTIES TYPE REQUIRED
 
 # Check for HDF5
 set(HDF5_PREFER_PARALLEL TRUE)
-find_package(HDF5 REQUIRED)
+set(HDF5_FIND_DEBUG TRUE)
+find_package(HDF5 REQUIRED COMPONENTS C)
 if (NOT HDF5_IS_PARALLEL)
-  message(FATAL_ERROR "Found serial HDF5 build, MPI HDF5 build required, try setting HDF5_DIR")
+  message(FATAL_ERROR "Found serial HDF5 build, MPI HDF5 build required, try setting HDF5_DIR or HDF5_ROOT")
 endif()
 set_package_properties(HDF5 PROPERTIES TYPE REQUIRED
   DESCRIPTION "Hierarchical Data Format 5 (HDF5)"
   URL "https://www.hdfgroup.org/HDF5")
 
-find_package(SCOTCH REQUIRED)
-set_package_properties(SCOTCH PROPERTIES TYPE REQUIRED
-  DESCRIPTION "Programs and libraries for graph, mesh and hypergraph partitioning"
-  URL "https://www.labri.fr/perso/pelegrin/scotch"
-  PURPOSE "Enables parallel graph partitioning")
-
-# Check for required packages UFC and basix
-find_package(Python3 COMPONENTS Interpreter REQUIRED)
+# Check for UFC
 find_package(UFC MODULE ${DOLFINX_VERSION_MAJOR}.${DOLFINX_VERSION_MINOR})
 set_package_properties(UFC PROPERTIES TYPE REQUIRED
-  DESCRIPTION "Unified language for form-compilers (part of FFCx)"
+  DESCRIPTION "Unified interface for form-compilers (part of FFCx)"
   URL "https://github.com/fenics/ffcx")
 
-find_package(Basix 0.0.1 REQUIRED)
-set_package_properties(basix PROPERTIES TYPE REQUIRED
-  DESCRIPTION "FEniCS tabulation library"
-  URL "https://github.com/fenics/basix")
+#------------------------------------------------------------------------------
+# Find optional packages
 
-  get_target_property(BASIX_DEFN Basix::basix INTERFACE_COMPILE_DEFINITIONS)
-  if("XTENSOR_USE_XSIMD" IN_LIST BASIX_DEFN)
-    find_package(xsimd REQUIRED)
-  endif()
+if (DOLFINX_ENABLE_ADIOS2)
+  find_package(ADIOS2 2.7.1)
+  set_package_properties(ADIOS2 PROPERTIES TYPE OPTIONAL
+    DESCRIPTION "Adaptable Input/Output (I/O) System."
+    URL "https://adios2.readthedocs.io/en/latest/"
+    PURPOSE "IO, including in parallel")
+endif()
 
-  #------------------------------------------------------------------------------
-# Run tests to find optional packages
-
-# Check for SLEPc
 set(SLEPC_FOUND FALSE)
 if (DOLFINX_ENABLE_SLEPC)
   find_package(SLEPc 3.10)
@@ -209,22 +216,33 @@ if (DOLFINX_ENABLE_SLEPC)
     URL "http://slepc.upv.es/")
 endif()
 
-# Check for ParMETIS
+if (DOLFINX_ENABLE_SCOTCH)
+  find_package(SCOTCH)
+  set_package_properties(SCOTCH PROPERTIES TYPE OPTIONAL
+    DESCRIPTION "Programs and libraries for graph, mesh and hypergraph partitioning"
+    URL "https://www.labri.fr/perso/pelegrin/scotch"
+    PURPOSE "Parallel graph partitioning")
+endif()
+
 if (DOLFINX_ENABLE_PARMETIS)
   find_package(ParMETIS 4.0.2)
   set_package_properties(ParMETIS PROPERTIES TYPE OPTIONAL
     DESCRIPTION "Parallel Graph Partitioning and Fill-reducing Matrix Ordering"
     URL "http://glaros.dtc.umn.edu/gkhome/metis/parmetis/overview"
-    PURPOSE "Enables parallel graph partitioning")
+    PURPOSE "Parallel graph partitioning")
 endif()
 
-# Check for KaHIP
 if (DOLFINX_ENABLE_KAHIP)
   find_package(KaHIP)
   set_package_properties(KaHIP PROPERTIES TYPE OPTIONAL
     DESCRIPTION "A family of graph partitioning programs"
-    URL "http://algo2.iti.kit.edu/documents/kahip/index.html"
-    PURPOSE "Enables parallel graph partitioning")
+    URL "https://kahip.github.io/"
+    PURPOSE "Parallel graph partitioning")
+endif()
+
+# Check that at least one graph partitioner has been found
+if (NOT SCOTCH_FOUND AND NOT PARMETIS_FOUND AND NOT KAHIP_FOUND)
+  message(FATAL_ERROR "No graph partitioner found. SCOTCH, ParMETIS or KaHIP is required.")
 endif()
 
 #------------------------------------------------------------------------------

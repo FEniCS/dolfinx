@@ -6,7 +6,6 @@
 
 #include "BoxMesh.h"
 #include <cfloat>
-#include <cmath>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/graph/AdjacencyList.h>
@@ -129,7 +128,12 @@ mesh::Mesh build_tet(MPI_Comm comm,
         = {{v0, v1, v3, v7}, {v0, v1, v7, v5}, {v0, v5, v7, v4},
            {v0, v3, v2, v7}, {v0, v6, v4, v7}, {v0, v2, v6, v7}};
     std::size_t offset = 6 * (i - range_c[0]);
-    xt::view(cells, xt::range(offset, offset + 6), xt::all()) = c;
+
+    // Note: we would like to assign to a view, but this does not work
+    // correctly with the Intel icpx compiler
+    // xt::view(cells, xt::range(offset, offset + 6), xt::all()) = c;
+    auto _cell = xt::view(cells, xt::range(offset, offset + 6), xt::all());
+    _cell.assign(c);
   }
 
   fem::CoordinateElement element(mesh::CellType::tetrahedron, 1);
@@ -176,10 +180,65 @@ mesh::Mesh build_hex(MPI_Comm comm,
 
     xt::xtensor_fixed<std::int64_t, xt::xshape<8>> cell
         = {v0, v1, v2, v3, v4, v5, v6, v7};
-    xt::view(cells, i - range_c[0], xt::all()) = cell;
+    // Note: we would like to assign to a view, but this does not work
+    // correctly with the Intel icpx compiler
+    // _cell = xt::row(cells, i - range_c[0]) = c;
+    auto _cell = xt::row(cells, i - range_c[0]);
+    _cell.assign(cell);
   }
 
   fem::CoordinateElement element(mesh::CellType::hexahedron, 1);
+  auto [data, offset] = graph::create_adjacency_data(cells);
+  return mesh::create_mesh(
+      comm,
+      graph::AdjacencyList<std::int64_t>(std::move(data), std::move(offset)),
+      element, geom, ghost_mode, partitioner);
+}
+//-----------------------------------------------------------------------------
+mesh::Mesh build_prism(MPI_Comm comm,
+                     const std::array<std::array<double, 3>, 2>& p,
+                     std::array<std::size_t, 3> n,
+                     const mesh::GhostMode ghost_mode,
+                     const mesh::CellPartitionFunction& partitioner)
+{
+  xt::xtensor<double, 2> geom = create_geom(comm, p, n);
+
+  const std::int64_t nx = n[0];
+  const std::int64_t ny = n[1];
+  const std::int64_t nz = n[2];
+  const std::int64_t n_cells = nx * ny * nz;
+  std::array range_c = dolfinx::MPI::local_range(
+      dolfinx::MPI::rank(comm), n_cells, dolfinx::MPI::size(comm));
+  const std::size_t cell_range = range_c[1] - range_c[0];
+  xt::xtensor<std::int64_t, 2> cells({cell_range*2, 6});
+
+  // Create cuboids
+  for (std::int64_t i = range_c[0]; i < range_c[1]; ++i)
+  {
+    const std::int64_t iz = i / (nx * ny);
+    const std::int64_t j = i % (nx * ny);
+    const std::int64_t iy = j / nx;
+    const std::int64_t ix = j % nx;
+
+    const std::int64_t v0 = (iz * (ny + 1) + iy) * (nx + 1) + ix;
+    const std::int64_t v1 = v0 + 1;
+    const std::int64_t v2 = v0 + (nx + 1);
+    const std::int64_t v3 = v1 + (nx + 1);
+    const std::int64_t v4 = v0 + (nx + 1) * (ny + 1);
+    const std::int64_t v5 = v1 + (nx + 1) * (ny + 1);
+    const std::int64_t v6 = v2 + (nx + 1) * (ny + 1);
+    const std::int64_t v7 = v3 + (nx + 1) * (ny + 1);
+
+    xt::xtensor_fixed<std::int64_t, xt::xshape<6>> cell0
+        = {v0, v1, v2, v4, v5, v6};
+    xt::xtensor_fixed<std::int64_t, xt::xshape<6>> cell1
+        = {v1, v2, v3, v5, v6, v7};
+    
+    xt::view(cells, (i - range_c[0]) * 2, xt::all()) = cell0;
+    xt::view(cells, (i - range_c[0]) * 2 + 1, xt::all()) = cell1;
+  }
+
+  fem::CoordinateElement element(mesh::CellType::prism, 1);
   auto [data, offset] = graph::create_adjacency_data(cells);
   return mesh::create_mesh(
       comm,
@@ -204,6 +263,8 @@ mesh::Mesh BoxMesh::create(MPI_Comm comm,
     return build_tet(comm, p, n, ghost_mode, partitioner);
   case mesh::CellType::hexahedron:
     return build_hex(comm, p, n, ghost_mode, partitioner);
+  case mesh::CellType::prism:
+    return build_prism(comm, p, n, ghost_mode, partitioner);
   default:
     throw std::runtime_error("Generate box mesh. Wrong cell type");
   }

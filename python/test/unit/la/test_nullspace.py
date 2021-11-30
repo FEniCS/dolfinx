@@ -11,10 +11,11 @@ from contextlib import ExitStack
 import numpy as np
 import pytest
 import ufl
-from dolfinx import UnitCubeMesh, UnitSquareMesh, VectorFunctionSpace, cpp, la
-from dolfinx.cpp.mesh import CellType, GhostMode
-from dolfinx.fem import assemble_matrix
-from dolfinx.generation import BoxMesh
+from dolfinx import cpp as _cpp
+from dolfinx.fem import VectorFunctionSpace, assemble_matrix
+from dolfinx.generation import BoxMesh, UnitCubeMesh, UnitSquareMesh
+from dolfinx.la import VectorSpaceBasis
+from dolfinx.mesh import CellType, GhostMode
 from mpi4py import MPI
 from ufl import TestFunction, TrialFunction, dx, grad, inner
 
@@ -30,7 +31,7 @@ def build_elastic_nullspace(V):
     dim = 3 if gdim == 2 else 6
 
     # Create list of vectors for null space
-    nullspace_basis = [cpp.la.create_vector(V.dofmap.index_map, V.dofmap.index_map_bs) for i in range(dim)]
+    nullspace_basis = [_cpp.la.create_vector(V.dofmap.index_map, V.dofmap.index_map_bs) for i in range(dim)]
 
     with ExitStack() as stack:
         vec_local = [stack.enter_context(x.localForm()) for x in nullspace_basis]
@@ -57,14 +58,14 @@ def build_elastic_nullspace(V):
             basis[5][dofs[2]] = x1
             basis[5][dofs[1]] = -x2
 
-    return la.VectorSpaceBasis(nullspace_basis)
+    return VectorSpaceBasis(nullspace_basis)
 
 
 def build_broken_elastic_nullspace(V):
     """Function to build incorrect null space for 2D elasticity"""
 
     # Create list of vectors for null space
-    nullspace_basis = [cpp.la.create_vector(V.dofmap.index_map, V.dofmap.index_map_bs) for i in range(4)]
+    nullspace_basis = [_cpp.la.create_vector(V.dofmap.index_map, V.dofmap.index_map_bs) for i in range(4)]
 
     with ExitStack() as stack:
         vec_local = [stack.enter_context(x.localForm()) for x in nullspace_basis]
@@ -84,7 +85,7 @@ def build_broken_elastic_nullspace(V):
         # Add vector that is not in nullspace
         basis[3][dofs[1]] = x1
 
-    return la.VectorSpaceBasis(nullspace_basis)
+    return VectorSpaceBasis(nullspace_basis)
 
 
 @pytest.mark.parametrize("mesh", [

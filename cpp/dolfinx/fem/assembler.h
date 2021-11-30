@@ -1,4 +1,4 @@
-// Copyright (C) 2018-2020 Garth N. Wells
+// Copyright (C) 2018-2021 Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -9,18 +9,37 @@
 #include "assemble_matrix_impl.h"
 #include "assemble_scalar_impl.h"
 #include "assemble_vector_impl.h"
+#include <cstdint>
 #include <memory>
 #include <vector>
 #include <xtl/xspan.hpp>
 
 namespace dolfinx::fem
 {
-
 template <typename T>
 class DirichletBC;
 template <typename T>
 class Form;
 class FunctionSpace;
+
+// -- Helper functions -----------------------------------------------------
+
+/// Makes the std::vectors of coefficients in the coefficient map into
+/// xtl::spans
+template <typename T>
+std::map<std::pair<dolfinx::fem::IntegralType, int>,
+         std::pair<xtl::span<const T>, int>>
+make_coefficients_span(const std::map<std::pair<IntegralType, int>,
+                                      std::pair<std::vector<T>, int>>& coeffs)
+{
+  using Key = typename std::remove_reference_t<decltype(coeffs)>::key_type;
+  std::map<Key, std::pair<xtl::span<const T>, int>> c;
+  std::transform(coeffs.cbegin(), coeffs.cend(), std::inserter(c, c.end()),
+                 [](auto& e) -> typename decltype(c)::value_type {
+                   return {e.first, {e.second.first, e.second.second}};
+                 });
+  return c;
+}
 
 // -- Scalar ----------------------------------------------------------------
 
@@ -30,14 +49,16 @@ class FunctionSpace;
 /// @note Caller is responsible for accumulation across processes.
 /// @param[in] M The form (functional) to assemble
 /// @param[in] constants The constants that appear in `M`
-/// @param[in] coeffs The coefficients that appear in `M`
+/// @param[in] coefficients The coefficients that appear in `M`
 /// @return The contribution to the form (functional) from the local
 /// process
 template <typename T>
-T assemble_scalar(const Form<T>& M, const xtl::span<const T>& constants,
-                  const array2d<T>& coeffs)
+T assemble_scalar(
+    const Form<T>& M, const xtl::span<const T>& constants,
+    const std::map<std::pair<IntegralType, int>,
+                   std::pair<xtl::span<const T>, int>>& coefficients)
 {
-  return impl::assemble_scalar(M, constants, coeffs);
+  return impl::assemble_scalar(M, constants, coefficients);
 }
 
 /// Assemble functional into scalar
@@ -49,8 +70,9 @@ template <typename T>
 T assemble_scalar(const Form<T>& M)
 {
   const std::vector<T> constants = pack_constants(M);
-  const array2d<T> coeffs = pack_coefficients(M);
-  return assemble_scalar(M, tcb::make_span(constants), coeffs);
+  const auto coefficients = pack_coefficients(M);
+  return assemble_scalar(M, tcb::make_span(constants),
+                         make_coefficients_span(coefficients));
 }
 
 // -- Vectors ----------------------------------------------------------------
@@ -62,13 +84,14 @@ T assemble_scalar(const Form<T>& M)
 /// before assembly.
 /// @param[in] L The linear forms to assemble into b
 /// @param[in] constants The constants that appear in `L`
-/// @param[in] coeffs The coefficients that appear in `L`
+/// @param[in] coefficients The coefficients that appear in `L`
 template <typename T>
-void assemble_vector(xtl::span<T> b, const Form<T>& L,
-                     const xtl::span<const T>& constants,
-                     const array2d<T>& coeffs)
+void assemble_vector(
+    xtl::span<T> b, const Form<T>& L, const xtl::span<const T>& constants,
+    const std::map<std::pair<IntegralType, int>,
+                   std::pair<xtl::span<const T>, int>>& coefficients)
 {
-  impl::assemble_vector(b, L, constants, coeffs);
+  impl::assemble_vector(b, L, constants, coefficients);
 }
 
 /// Assemble linear form into a vector
@@ -78,9 +101,10 @@ void assemble_vector(xtl::span<T> b, const Form<T>& L,
 template <typename T>
 void assemble_vector(xtl::span<T> b, const Form<T>& L)
 {
+  const auto coefficients = pack_coefficients(L);
   const std::vector<T> constants = pack_constants(L);
-  const array2d<T> coeffs = pack_coefficients(L);
-  assemble_vector(b, L, tcb::make_span(constants), coeffs);
+  assemble_vector(b, L, tcb::make_span(constants),
+                  make_coefficients_span(coefficients));
 }
 
 // FIXME: clarify how x0 is used
@@ -105,7 +129,8 @@ template <typename T>
 void apply_lifting(
     xtl::span<T> b, const std::vector<std::shared_ptr<const Form<T>>>& a,
     const std::vector<xtl::span<const T>>& constants,
-    const std::vector<const array2d<T>*>& coeffs,
+    const std::vector<std::map<std::pair<IntegralType, int>,
+                               std::pair<xtl::span<const T>, int>>>& coeffs,
     const std::vector<std::vector<std::shared_ptr<const DirichletBC<T>>>>& bcs1,
     const std::vector<xtl::span<const T>>& x0, double scale)
 {
@@ -130,27 +155,32 @@ void apply_lifting(
     const std::vector<std::vector<std::shared_ptr<const DirichletBC<T>>>>& bcs1,
     const std::vector<xtl::span<const T>>& x0, double scale)
 {
-  std::vector<std::unique_ptr<array2d<T>>> coeffs;
+  std::vector<
+      std::map<std::pair<IntegralType, int>, std::pair<std::vector<T>, int>>>
+      coeffs;
   std::vector<std::vector<T>> constants;
   for (auto _a : a)
   {
     if (_a)
     {
-      coeffs.push_back(std::make_unique<array2d<T>>(pack_coefficients(*_a)));
+      coeffs.push_back(pack_coefficients(*_a));
       constants.push_back(pack_constants(*_a));
     }
     else
     {
-      coeffs.push_back(nullptr);
+      coeffs.push_back(std::map<std::pair<IntegralType, int>,
+                                std::pair<std::vector<T>, int>>());
       constants.push_back({});
     }
   }
 
-  std::vector<const array2d<T>*> _coeffs;
-  std::for_each(coeffs.begin(), coeffs.end(),
-                [&_coeffs](const auto& c) { _coeffs.push_back(c.get()); });
   std::vector<xtl::span<const T>> _constants(constants.begin(),
                                              constants.end());
+  std::vector<std::map<std::pair<IntegralType, int>,
+                       std::pair<xtl::span<const T>, int>>>
+      _coeffs;
+  std::transform(coeffs.cbegin(), coeffs.cend(), std::back_inserter(_coeffs),
+                 [](auto& c) { return make_coefficients_span(c); });
   apply_lifting(b, a, _constants, _coeffs, bcs1, x0, scale);
 }
 
@@ -160,7 +190,7 @@ void apply_lifting(
 /// @param[in] mat_add The function for adding values into the matrix
 /// @param[in] a The bilinear from to assemble
 /// @param[in] constants Constants that appear in `a`
-/// @param[in] coeffs Coefficients that appear in `a`
+/// @param[in] coefficients Coefficients that appear in `a`
 /// @param[in] bcs Boundary conditions to apply. For boundary condition
 ///  dofs the row and column are zeroed. The diagonal  entry is not set.
 template <typename T>
@@ -168,7 +198,8 @@ void assemble_matrix(
     const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                             const std::int32_t*, const T*)>& mat_add,
     const Form<T>& a, const xtl::span<const T>& constants,
-    const array2d<T>& coeffs,
+    const std::map<std::pair<IntegralType, int>,
+                   std::pair<xtl::span<const T>, int>>& coefficients,
     const std::vector<std::shared_ptr<const DirichletBC<T>>>& bcs)
 {
   // Index maps for dof ranges
@@ -178,7 +209,7 @@ void assemble_matrix(
   auto bs1 = a.function_spaces().at(1)->dofmap()->index_map_bs();
 
   // Build dof markers
-  std::vector<bool> dof_marker0, dof_marker1;
+  std::vector<std::int8_t> dof_marker0, dof_marker1;
   assert(map0);
   std::int32_t dim0 = bs0 * (map0->size_local() + map0->num_ghosts());
   assert(map1);
@@ -201,7 +232,7 @@ void assemble_matrix(
   }
 
   // Assemble
-  impl::assemble_matrix(mat_add, a, constants, coeffs, dof_marker0,
+  impl::assemble_matrix(mat_add, a, constants, coefficients, dof_marker0,
                         dof_marker1);
 }
 
@@ -219,10 +250,11 @@ void assemble_matrix(
 {
   // Prepare constants and coefficients
   const std::vector<T> constants = pack_constants(a);
-  const array2d<T> coeffs = pack_coefficients(a);
+  const auto coefficients = pack_coefficients(a);
 
   // Assemble
-  assemble_matrix(mat_add, a, tcb::make_span(constants), coeffs, bcs);
+  assemble_matrix(mat_add, a, tcb::make_span(constants),
+                  make_coefficients_span(coefficients), bcs);
 }
 
 /// Assemble bilinear form into a matrix. Matrix must already be
@@ -230,7 +262,7 @@ void assemble_matrix(
 /// @param[in] mat_add The function for adding values into the matrix
 /// @param[in] a The bilinear form to assemble
 /// @param[in] constants Constants that appear in `a`
-/// @param[in] coeffs Coefficients that appear in `a`
+/// @param[in] coefficients Coefficients that appear in `a`
 /// @param[in] dof_marker0 Boundary condition markers for the rows. If
 /// bc[i] is true then rows i in A will be zeroed. The index i is a
 /// local index.
@@ -242,11 +274,13 @@ void assemble_matrix(
     const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                             const std::int32_t*, const T*)>& mat_add,
     const Form<T>& a, const xtl::span<const T>& constants,
-    const array2d<T>& coeffs, const std::vector<bool>& dof_marker0,
-    const std::vector<bool>& dof_marker1)
+    const std::map<std::pair<IntegralType, int>,
+                   std::pair<xtl::span<const T>, int>>& coefficients,
+    const xtl::span<const std::int8_t>& dof_marker0,
+    const xtl::span<const std::int8_t>& dof_marker1)
 
 {
-  impl::assemble_matrix(mat_add, a, constants, coeffs, dof_marker0,
+  impl::assemble_matrix(mat_add, a, constants, coefficients, dof_marker0,
                         dof_marker1);
 }
 
@@ -264,16 +298,17 @@ template <typename T>
 void assemble_matrix(
     const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                             const std::int32_t*, const T*)>& mat_add,
-    const Form<T>& a, const std::vector<bool>& dof_marker0,
-    const std::vector<bool>& dof_marker1)
+    const Form<T>& a, const xtl::span<const std::int8_t>& dof_marker0,
+    const xtl::span<const std::int8_t>& dof_marker1)
 
 {
   // Prepare constants and coefficients
   const std::vector<T> constants = pack_constants(a);
-  const array2d<T> coeffs = pack_coefficients(a);
+  const auto coefficients = pack_coefficients(a);
 
   // Assemble
-  assemble_matrix(mat_add, a, tcb::make_span(constants), coeffs, dof_marker0,
+  assemble_matrix(mat_add, a, tcb::make_span(constants),
+                  make_coefficients_span(coefficients), dof_marker0,
                   dof_marker1);
 }
 
@@ -371,71 +406,6 @@ void set_bc(xtl::span<T> b,
     assert(bc);
     bc->set(b, scale);
   }
-}
-
-// FIXME: Handle null block
-// FIXME: Pass function spaces rather than forms
-
-/// Arrange boundary conditions by block
-/// @param[in] L Linear forms for each block
-/// @param[in] bcs Boundary conditions
-/// @return The boundary conditions collected by block, i.e.
-///   bcs_block[i] is the list of boundary conditions applied to L[i]. The
-///   order within bcs_block[i] preserves the input order of the bcs
-///   array.
-template <typename T>
-std::vector<std::vector<std::shared_ptr<const fem::DirichletBC<T>>>>
-bcs_rows(const std::vector<const Form<T>*>& L,
-         const std::vector<std::shared_ptr<const fem::DirichletBC<T>>>& bcs)
-{
-  // Pack DirichletBC pointers for rows
-  std::vector<std::vector<std::shared_ptr<const fem::DirichletBC<T>>>> bcs0(
-      L.size());
-  for (std::size_t i = 0; i < L.size(); ++i)
-    for (const std::shared_ptr<const DirichletBC<T>>& bc : bcs)
-      if (L[i]->function_spaces()[0]->contains(*bc->function_space()))
-        bcs0[i].push_back(bc);
-  return bcs0;
-}
-
-// FIXME: Handle null block
-// FIXME: Pass function spaces rather than forms
-
-/// Arrange boundary conditions by block
-/// @param[in] a Biinear forms for each block
-/// @param[in] bcs Boundary conditions
-/// @return The boundary conditions collected by block, i.e.
-///   bcs_block[i] is the list of boundary conditions applied to the trial
-///   space of a[i]. The order within bcs_block[i] preserves the input
-///   order of the bcs array.
-template <typename T>
-std::vector<
-    std::vector<std::vector<std::shared_ptr<const fem::DirichletBC<T>>>>>
-bcs_cols(const std::vector<std::vector<std::shared_ptr<const Form<T>>>>& a,
-         const std::vector<std::shared_ptr<const DirichletBC<T>>>& bcs)
-{
-  // Pack DirichletBC pointers for columns
-  std::vector<
-      std::vector<std::vector<std::shared_ptr<const fem::DirichletBC<T>>>>>
-      bcs1(a.size());
-  for (std::size_t i = 0; i < a.size(); ++i)
-  {
-    for (std::size_t j = 0; j < a[i].size(); ++j)
-    {
-      bcs1[i].resize(a[j].size());
-      for (const std::shared_ptr<const DirichletBC<T>>& bc : bcs)
-      {
-        // FIXME: handle case where a[i][j] is null
-        if (a[i][j])
-        {
-          if (a[i][j]->function_spaces()[1]->contains(*bc->function_space()))
-            bcs1[i][j].push_back(bc);
-        }
-      }
-    }
-  }
-
-  return bcs1;
 }
 
 } // namespace dolfinx::fem

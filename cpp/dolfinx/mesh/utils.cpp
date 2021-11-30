@@ -6,19 +6,18 @@
 
 #include "utils.h"
 #include "Geometry.h"
-#include "MeshTags.h"
 #include "cell_types.h"
 #include "graphbuild.h"
 #include <algorithm>
-#include <cfloat>
 #include <cstdlib>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/log.h>
+#include <dolfinx/common/math.h>
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/graph/partition.h>
+#include <dolfinx/mesh/Mesh.h>
 #include <stdexcept>
 #include <unordered_set>
-#include <xtensor-blas/xlinalg.hpp>
 #include <xtensor/xadapt.hpp>
 #include <xtensor/xbuilder.hpp>
 #include <xtensor/xfixed.hpp>
@@ -64,13 +63,15 @@ std::vector<double> mesh::h(const Mesh& mesh,
   if (dim != mesh.topology().dim())
     throw std::runtime_error("Cell size when dim ne tdim  requires updating.");
 
+  if (mesh.topology().cell_type() == CellType::prism and dim == 2)
+    throw std::runtime_error("More work needed for prism cell");
+
   // Get number of cell vertices
-  const mesh::CellType type
-      = cell_entity_type(mesh.topology().cell_type(), dim);
+  const CellType type = cell_entity_type(mesh.topology().cell_type(), dim, 0);
   const int num_vertices = num_cell_vertices(type);
 
   // Get geometry dofmap and dofs
-  const mesh::Geometry& geometry = mesh.geometry();
+  const Geometry& geometry = mesh.geometry();
   const graph::AdjacencyList<std::int32_t>& x_dofs = geometry.dofmap();
   const xt::xtensor<double, 2>& geom_dofs = geometry.x();
   std::vector<double> h_cells(entities.size(), 0);
@@ -80,8 +81,12 @@ std::vector<double> mesh::h(const Mesh& mesh,
   {
     // Get the coordinates  of the vertices
     auto dofs = x_dofs.links(entities[e]);
-    xt::view(points, xt::range(0, num_vertices), xt::all())
-        = xt::view(geom_dofs, xt::keep(dofs), xt::all());
+
+    // The below should work, but misbehaves with the Intel icpx compiler
+    // xt::view(points, xt::range(0, num_vertices), xt::all())
+    //     = xt::view(geom_dofs, xt::keep(dofs), xt::all());
+    auto points_view = xt::view(points, xt::range(0, num_vertices), xt::all());
+    points_view.assign(xt::view(geom_dofs, xt::keep(dofs), xt::all()));
 
     // Get maximum edge length
     for (int i = 0; i < num_vertices; ++i)
@@ -102,9 +107,11 @@ xt::xtensor<double, 2>
 mesh::cell_normals(const mesh::Mesh& mesh, int dim,
                    const xtl::span<const std::int32_t>& entities)
 {
+  if (mesh.topology().cell_type() == mesh::CellType::prism and dim == 2)
+    throw std::runtime_error("More work needed for prism cell");
+
   const int gdim = mesh.geometry().dim();
-  const mesh::CellType type
-      = mesh::cell_entity_type(mesh.topology().cell_type(), dim);
+  const CellType type = cell_entity_type(mesh.topology().cell_type(), dim, 0);
 
   // Find geometry nodes for topology entities
   const xt::xtensor<double, 2>& xg = mesh.geometry().x();
@@ -120,7 +127,7 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
   xt::xtensor<double, 2> n({num_entities, 3});
   switch (type)
   {
-  case mesh::CellType::interval:
+  case CellType::interval:
   {
     if (gdim > 2)
       throw std::invalid_argument("Interval cell normal undefined in 3D");
@@ -141,7 +148,7 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
     }
     return n;
   }
-  case mesh::CellType::triangle:
+  case CellType::triangle:
   {
     for (std::size_t i = 0; i < num_entities; ++i)
     {
@@ -153,12 +160,12 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
 
       // Define cell normal via cross product of first two edges
       auto ni = xt::row(n, i);
-      ni = xt::linalg::cross((p1 - p0), (p2 - p0));
+      ni = math::cross((p1 - p0), (p2 - p0));
       ni /= xt::norm_l2(ni);
     }
     return n;
   }
-  case mesh::CellType::quadrilateral:
+  case CellType::quadrilateral:
   {
     // TODO: check
     for (std::size_t i = 0; i < num_entities; ++i)
@@ -171,7 +178,7 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
 
       // Defined cell normal via cross product of first two edges:
       auto ni = xt::row(n, i);
-      ni = xt::linalg::cross((p1 - p0), (p2 - p0));
+      ni = math::cross((p1 - p0), (p2 - p0));
       ni /= xt::norm_l2(ni);
     }
     return n;
@@ -183,8 +190,8 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
 }
 //-----------------------------------------------------------------------------
 xt::xtensor<double, 2>
-mesh::midpoints(const mesh::Mesh& mesh, int dim,
-                const xtl::span<const std::int32_t>& entities)
+mesh::compute_midpoints(const Mesh& mesh, int dim,
+                        const xtl::span<const std::int32_t>& entities)
 {
   const xt::xtensor<double, 2>& x = mesh.geometry().x();
 
@@ -197,14 +204,17 @@ mesh::midpoints(const mesh::Mesh& mesh, int dim,
   for (std::size_t e = 0; e < entity_to_geometry.shape(0); ++e)
   {
     auto rows = xt::row(entity_to_geometry, e);
-    xt::row(x_mid, e) = xt::mean(xt::view(x, xt::keep(rows)), 0);
+    // The below should work, but misbehaves with the Intel icpx compiler
+    // xt::row(x_mid, e) = xt::mean(xt::view(x, xt::keep(rows)), 0);
+    auto _x = xt::row(x_mid, e);
+    _x.assign(xt::mean(xt::view(x, xt::keep(rows)), 0));
   }
 
   return x_mid;
 }
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t> mesh::locate_entities(
-    const mesh::Mesh& mesh, int dim,
+    const Mesh& mesh, int dim,
     const std::function<xt::xtensor<bool, 1>(const xt::xtensor<double, 2>&)>&
         marker)
 {
@@ -269,11 +279,11 @@ std::vector<std::int32_t> mesh::locate_entities(
 }
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t> mesh::locate_entities_boundary(
-    const mesh::Mesh& mesh, int dim,
+    const Mesh& mesh, int dim,
     const std::function<xt::xtensor<bool, 1>(const xt::xtensor<double, 2>&)>&
         marker)
 {
-  const mesh::Topology& topology = mesh.topology();
+  const Topology& topology = mesh.topology();
   const int tdim = topology.dim();
   if (dim == tdim)
   {
@@ -284,7 +294,7 @@ std::vector<std::int32_t> mesh::locate_entities_boundary(
   // Compute marker for boundary facets
   mesh.topology_mutable().create_entities(tdim - 1);
   mesh.topology_mutable().create_connectivity(tdim - 1, tdim);
-  const std::vector boundary_facet = mesh::compute_boundary_facets(topology);
+  const std::vector boundary_facet = compute_boundary_facets(topology);
 
   // Create entities and connectivities
   mesh.topology_mutable().create_entities(dim);
@@ -379,13 +389,16 @@ std::vector<std::int32_t> mesh::locate_entities_boundary(
 }
 //-----------------------------------------------------------------------------
 xt::xtensor<std::int32_t, 2>
-mesh::entities_to_geometry(const mesh::Mesh& mesh, int dim,
+mesh::entities_to_geometry(const Mesh& mesh, int dim,
                            const xtl::span<const std::int32_t>& entity_list,
                            bool orient)
 {
-  dolfinx::mesh::CellType cell_type = mesh.topology().cell_type();
+  CellType cell_type = mesh.topology().cell_type();
+  if (cell_type == CellType::prism and dim == 2)
+    throw std::runtime_error("More work needed for prism cells");
+
   const std::size_t num_entity_vertices
-      = mesh::num_cell_vertices(mesh::cell_entity_type(cell_type, dim));
+      = num_cell_vertices(cell_entity_type(cell_type, dim, 0));
   xt::xtensor<std::int32_t, 2> entity_geometry(
       {entity_list.size(), num_entity_vertices});
 
@@ -395,9 +408,9 @@ mesh::entities_to_geometry(const mesh::Mesh& mesh, int dim,
     throw std::runtime_error("Can only orient facets of a tetrahedral mesh");
   }
 
-  const mesh::Geometry& geometry = mesh.geometry();
+  const Geometry& geometry = mesh.geometry();
   const xt::xtensor<double, 2>& geom_dofs = geometry.x();
-  const mesh::Topology& topology = mesh.topology();
+  const Topology& topology = mesh.topology();
 
   const int tdim = topology.dim();
   mesh.topology_mutable().create_entities(dim);
@@ -448,7 +461,7 @@ mesh::entities_to_geometry(const mesh::Mesh& mesh, int dim,
 
       // Midpoint direction should be opposite to normal, hence this
       // should be negative. Switch points if not.
-      if (xt::linalg::det(a) > 0.0)
+      if (math::det(a) > 0.0)
         std::swap(entity_geometry(i, 1), entity_geometry(i, 2));
     }
   }
@@ -460,7 +473,7 @@ std::vector<std::int32_t> mesh::exterior_facet_indices(const Mesh& mesh)
 {
   // Note: Possible duplication of mesh::Topology::compute_boundary_facets
 
-  const mesh::Topology& topology = mesh.topology();
+  const Topology& topology = mesh.topology();
   std::vector<std::int32_t> surface_facets;
 
   // Get number of facets owned by this process
@@ -468,14 +481,14 @@ std::vector<std::int32_t> mesh::exterior_facet_indices(const Mesh& mesh)
   mesh.topology_mutable().create_connectivity(tdim - 1, tdim);
   auto f_to_c = topology.connectivity(tdim - 1, tdim);
   assert(topology.index_map(tdim - 1));
-  std::set<std::int32_t> fwd_shared_facets;
 
   // Only need to consider shared facets when there are no ghost cells
+  std::set<std::int32_t> fwd_shared_facets;
   if (topology.index_map(tdim)->num_ghosts() == 0)
   {
     fwd_shared_facets.insert(
-        topology.index_map(tdim - 1)->shared_indices().array().begin(),
-        topology.index_map(tdim - 1)->shared_indices().array().end());
+        topology.index_map(tdim - 1)->scatter_fwd_indices().array().begin(),
+        topology.index_map(tdim - 1)->scatter_fwd_indices().array().end());
   }
 
   // Find all owned facets (not ghost) with only one attached cell, which are
@@ -496,7 +509,7 @@ std::vector<std::int32_t> mesh::exterior_facet_indices(const Mesh& mesh)
 graph::AdjacencyList<std::int32_t>
 mesh::partition_cells_graph(MPI_Comm comm, int n, int tdim,
                             const graph::AdjacencyList<std::int64_t>& cells,
-                            mesh::GhostMode ghost_mode)
+                            GhostMode ghost_mode)
 {
   return partition_cells_graph(comm, n, tdim, cells, ghost_mode,
                                &graph::partition_graph);
@@ -505,23 +518,59 @@ mesh::partition_cells_graph(MPI_Comm comm, int n, int tdim,
 graph::AdjacencyList<std::int32_t>
 mesh::partition_cells_graph(MPI_Comm comm, int n, int tdim,
                             const graph::AdjacencyList<std::int64_t>& cells,
-                            mesh::GhostMode ghost_mode,
+                            GhostMode ghost_mode,
                             const graph::partition_fn& partfn)
 {
   LOG(INFO) << "Compute partition of cells across ranks";
 
   // Compute distributed dual graph (for the cells on this process)
-  const auto [dual_graph, graph_info]
-      = mesh::build_dual_graph(comm, cells, tdim);
-
-  // Extract data from graph_info
-  const auto [num_ghost_nodes, num_local_edges] = graph_info;
+  const auto [dual_graph, num_ghost_edges]
+      = build_dual_graph(comm, cells, tdim);
 
   // Just flag any kind of ghosting for now
   bool ghosting = (ghost_mode != mesh::GhostMode::none);
 
   // Compute partition
-  return partfn(comm, n, dual_graph, num_ghost_nodes, ghosting);
+  return partfn(comm, n, dual_graph, num_ghost_edges, ghosting);
+}
+//-----------------------------------------------------------------------------
+std::vector<std::int32_t>
+mesh::compute_incident_entities(const Mesh& mesh,
+                                const xtl::span<const std::int32_t>& entities,
+                                int d0, int d1)
+{
+  auto map0 = mesh.topology().index_map(d0);
+  if (!map0)
+  {
+    throw std::runtime_error("Mesh entities of dimension " + std::to_string(d0)
+                             + " have not been created.");
+  }
+
+  auto map1 = mesh.topology().index_map(d1);
+  if (!map1)
+  {
+    throw std::runtime_error("Mesh entities of dimension " + std::to_string(d1)
+                             + " have not been created.");
+  }
+
+  auto e0_to_e1 = mesh.topology().connectivity(d0, d1);
+  if (!e0_to_e1)
+  {
+    throw std::runtime_error("Connectivity missing: (" + std::to_string(d0)
+                             + ", " + std::to_string(d1) + ")");
+  }
+
+  std::vector<std::int32_t> entities1;
+  for (std::int32_t entity : entities)
+  {
+    auto e = e0_to_e1->links(entity);
+    entities1.insert(entities1.end(), e.begin(), e.end());
+  }
+
+  std::sort(entities1.begin(), entities1.end());
+  entities1.erase(std::unique(entities1.begin(), entities1.end()),
+                  entities1.end());
+  return entities1;
 }
 //-----------------------------------------------------------------------------
 mesh::Mesh mesh::add_ghosts(const mesh::Mesh& mesh,

@@ -10,7 +10,8 @@ import random
 import numpy as np
 import pytest
 import ufl
-from dolfinx import Function, FunctionSpace, VectorFunctionSpace, fem
+from dolfinx.fem import (Function, FunctionSpace, VectorFunctionSpace,
+                         assemble_scalar)
 from dolfinx.mesh import create_mesh
 from dolfinx_utils.test.skips import skip_in_parallel
 from mpi4py import MPI
@@ -98,19 +99,8 @@ def randomly_ordered_mesh(cell_type):
             return create_mesh(MPI.COMM_WORLD, np.ndarray((0, 8)), np.ndarray((0, 3)), domain)
 
 
-@pytest.mark.parametrize('space_type',
-                         [
-                             ("P", 1),
-                             ("P", 2),
-                             ("P", 3),
-                             ("P", 4),
-                         ])
-@pytest.mark.parametrize('cell_type', [
-    "triangle",
-    "tetrahedron",
-    "quadrilateral",
-    "hexahedron",
-])
+@pytest.mark.parametrize('space_type', [("P", 1), ("P", 2), ("P", 3), ("P", 4)])
+@pytest.mark.parametrize('cell_type', ["triangle", "tetrahedron", "quadrilateral", "hexahedron"])
 def test_dof_positions(cell_type, space_type):
     """Checks that dofs on shared triangle edges match up"""
     mesh = randomly_ordered_mesh(cell_type)
@@ -131,15 +121,11 @@ def test_dof_positions(cell_type, space_type):
     cmap = mesh.geometry.cmap
     tdim = mesh.topology.dim
 
-    mesh.topology.create_entity_permutations()
-    perms = mesh.topology.get_cell_permutation_info()
-
     V = FunctionSpace(mesh, space_type)
     entities = {i: {} for i in range(1, tdim)}
     for cell in range(coord_dofs.num_nodes):
         # Push coordinates forward
         X = V.element.interpolation_points()
-        V.element.apply_dof_transformation(X, perms[cell], tdim)
         xg = x_g[coord_dofs.links(cell), :tdim]
         x = cmap.push_forward(X, xg)
 
@@ -222,14 +208,17 @@ def random_evaluation_mesh(cell_type):
         for s in ["P", "N1curl", "RT", "BDM", "N2curl"]
     ] + [
         ("quadrilateral", s)
-        for s in ["Q"]
+        for s in ["Q", "S", "RTCE", "RTCF", "BDMCE", "BDMCF"]
     ] + [
         ("hexahedron", s)
-        for s in ["Q"]
+        for s in ["Q", "S", "NCE", "NCF", "AAE", "AAF"]
     ]
 )
 @pytest.mark.parametrize('space_order', range(1, 4))
 def test_evaluation(cell_type, space_type, space_order):
+    if cell_type == "hexahedron" and space_order >= 3:
+        pytest.skip("Skipping expensive test on hexahedron")
+
     random.seed(4)
     for repeat in range(10):
         mesh = random_evaluation_mesh(cell_type)
@@ -252,11 +241,11 @@ def test_evaluation(cell_type, space_type, space_order):
             if len(eval_points) == 1:
                 values0 = [values0]
                 values1 = [values1]
-            if space_type in ["RT", "BDM", "RTCF", "NCF"]:
+            if space_type in ["RT", "BDM", "RTCF", "NCF", "BDMCF", "AAF"]:
                 # Hdiv
                 for i, j in zip(values0, values1):
                     assert np.isclose(i[0], j[0])
-            elif space_type in ["N1curl", "N2curl", "RTCE", "NCE"]:
+            elif space_type in ["N1curl", "N2curl", "RTCE", "NCE", "BDMCE", "AAE"]:
                 # Hcurl
                 for i, j in zip(values0, values1):
                     assert np.allclose(i[1:], j[1:])
@@ -272,16 +261,16 @@ def test_evaluation(cell_type, space_type, space_order):
         for s in ["P", "N1curl", "RT", "BDM", "N2curl"]
     ] + [
         ("quadrilateral", s)
-        for s in ["Q"]
+        for s in ["Q", "S", "RTCE", "RTCF", "BDMCE", "BDMCF"]
     ] + [
         ("hexahedron", s)
-        for s in ["Q"]
+        for s in ["Q", "S", "NCE", "NCF", "AAE", "AAF"]
     ]
 )
 @pytest.mark.parametrize('space_order', range(1, 4))
 def test_integral(cell_type, space_type, space_order):
-    # TODO: Fix jump integrals in FFCx by passing in full info for both cells, then re-enable these tests
-    pytest.xfail()
+    if cell_type == "hexahedron" and space_order >= 3:
+        pytest.skip("Skipping expensive test on hexahedron")
 
     random.seed(4)
     for repeat in range(10):
@@ -293,8 +282,8 @@ def test_integral(cell_type, space_type, space_order):
 
         for d in dofs:
             v = Function(V)
-            v.vector[:] = [1 if i == d else 0 for i in range(V.dim)]
-            if space_type in ["RT", "BDM", "RTCF", "NCF"]:
+            v.vector[:] = [1 if i == d else 0 for i, _ in enumerate(v.vector[:])]
+            if space_type in ["RT", "BDM", "RTCF", "NCF", "BDMCF", "AAF"]:
                 # Hdiv
                 def normal(x):
                     values = np.zeros((tdim, x.shape[1]))
@@ -304,7 +293,7 @@ def test_integral(cell_type, space_type, space_order):
                 n = Function(Vvec)
                 n.interpolate(normal)
                 form = ufl.inner(ufl.jump(v), n) * ufl.dS
-            elif space_type in ["N1curl", "N2curl", "RTCE", "NCE"]:
+            elif space_type in ["N1curl", "N2curl", "RTCE", "NCE", "BDMCE", "AAE"]:
                 # Hcurl
                 def tangent(x):
                     values = np.zeros((tdim, x.shape[1]))
@@ -326,5 +315,5 @@ def test_integral(cell_type, space_type, space_order):
             else:
                 form = ufl.jump(v) * ufl.dS
 
-            value = fem.assemble_scalar(form)
+            value = assemble_scalar(form)
             assert np.isclose(value, 0)

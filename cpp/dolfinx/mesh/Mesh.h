@@ -8,28 +8,23 @@
 
 #include "Geometry.h"
 #include "Topology.h"
-#include "cell_types.h"
-#include "utils.h"
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/UniqueIdGenerator.h>
 #include <string>
 #include <utility>
 
-namespace dolfinx
-{
-
-namespace fem
+namespace dolfinx::fem
 {
 class CoordinateElement;
 }
 
-namespace graph
+namespace dolfinx::graph
 {
 template <typename T>
 class AdjacencyList;
 }
 
-namespace mesh
+namespace dolfinx::mesh
 {
 
 /// @todo Document fully
@@ -62,7 +57,7 @@ public:
   template <typename Topology, typename Geometry>
   Mesh(MPI_Comm comm, Topology&& topology, Geometry&& geometry)
       : _topology(std::forward<Topology>(topology)),
-        _geometry(std::forward<Geometry>(geometry)), _mpi_comm(comm)
+        _geometry(std::forward<Geometry>(geometry)), _comm(comm)
   {
     // Do nothing
   }
@@ -114,7 +109,7 @@ public:
 
   /// Mesh MPI communicator
   /// @return The communicator on which the mesh is distributed
-  MPI_Comm mpi_comm() const;
+  MPI_Comm comm() const;
 
   /// Name
   std::string name = "mesh";
@@ -131,7 +126,7 @@ private:
   Geometry _geometry;
 
   // MPI communicator
-  dolfinx::MPI::Comm _mpi_comm;
+  dolfinx::MPI::Comm _comm;
 
   // Unique identifier
   std::size_t _unique_id = common::UniqueIdGenerator::id();
@@ -163,5 +158,4 @@ Mesh create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
                  const xt::xtensor<double, 2>& x, GhostMode ghost_mode,
                  const CellPartitionFunction& cell_partitioner);
 
-} // namespace mesh
-} // namespace dolfinx
+} // namespace dolfinx::mesh

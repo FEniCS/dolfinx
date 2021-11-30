@@ -6,12 +6,10 @@
 
 #pragma once
 
-#include <dolfinx/mesh/cell_types.h>
 #include <hdf5.h>
 #include <mpi.h>
 #include <string>
-#include <tuple>
-#include <vector>
+#include <xtensor/xtensor.hpp>
 #include <xtl/xspan.hpp>
 
 namespace pugi
@@ -54,7 +52,7 @@ void add_mesh(MPI_Comm comm, pugi::xml_node& xml_node, const hid_t h5_id,
 void add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
                        const hid_t h5_id, const std::string path_prefix,
                        const mesh::Topology& topology,
-                       const mesh::Geometry& geometry, const int cell_dim,
+                       const mesh::Geometry& geometry, int cell_dim,
                        const xtl::span<const std::int32_t>& active_entities);
 
 /// Add Geometry xml node
