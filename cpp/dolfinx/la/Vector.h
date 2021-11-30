@@ -324,7 +324,7 @@ void orthonormalize(const xtl::span<Vector<T, U>>& basis, double tol = 1.0e-10)
     if (norm < tol)
     {
       throw std::runtime_error(
-          "VectorSpaceBasis has linear dependency. Cannot orthogonalize.");
+          "Vectorspace basis has linear dependency. Cannot orthogonalize.");
     }
   }
 }

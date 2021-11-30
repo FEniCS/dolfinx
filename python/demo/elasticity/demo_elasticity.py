@@ -5,8 +5,8 @@
 # ===================
 # Copyright (C) 2020 Garth N. Wells and Michal Habera
 #
-# This demo solves the equations of static linear elasticity. The solver uses
-# smoothed aggregation algebraic multigrid. ::
+# This demo solves the equations of static linear elasticity. The solver
+# uses smoothed aggregation algebraic multigrid. ::
 
 from contextlib import ExitStack
 
@@ -26,16 +26,16 @@ from ufl import (Identity, SpatialCoordinate, TestFunction, TrialFunction,
 # Nullspace and problem setup
 # ---------------------------
 #
-# Prepare a helper which builds PETSc' NullSpace.
-# Nullspace (or near nullspace) is needed to improve the
-# performance of algebraic multigrid.
+# Prepare a helper which builds a PETSc NullSpace. Nullspace (or near
+# nullspace) is needed to improve the performance of algebraic
+# multigrid.
 #
 # In the case of small deformation linear elasticity the nullspace
 # contains rigid body modes. ::
 
 
 def build_nullspace(V):
-    """Function to build nullspace for 3D elasticity"""
+    """Function to build PETSc nullspace for 3D elasticity"""
 
     # Create list of vectors for null space
     index_map = V.dofmap.index_map
@@ -133,7 +133,7 @@ set_bc(b, [bc])
 # Create solution function
 u = Function(V)
 
-# Create near null space basis (required for smoothed aggregation AMG).
+# Create near null space basis (required for smoothed aggregation AMG)
 null_space = build_nullspace(V)
 
 # Attach near nullspace to matrix

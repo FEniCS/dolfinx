@@ -180,7 +180,7 @@ public:
     {
       if (!_petsc_vector)
       {
-        _petsc_vector = la::create_ghosted_vector(
+        _petsc_vector = la::create_petsc_ghosted_vector(
             *_function_space->dofmap()->index_map,
             _function_space->dofmap()->index_map_bs(), _x->mutable_array());
       }

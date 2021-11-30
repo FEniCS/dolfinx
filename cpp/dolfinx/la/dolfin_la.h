@@ -18,4 +18,3 @@ namespace dolfinx
 #include <dolfinx/la/PETScVector.h>
 #include <dolfinx/la/SLEPcEigenSolver.h>
 #include <dolfinx/la/SparsityPattern.h>
-#include <dolfinx/la/VectorSpaceBasis.h>

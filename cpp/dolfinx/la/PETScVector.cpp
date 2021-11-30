@@ -31,11 +31,14 @@ la::create_petsc_vectors(MPI_Comm comm,
     return std::vector<Vec>();
 
   std::vector<Vec> v(x.size());
-  VecCreateMPI(comm, x[0].size(), PETSC_DETERMINE, &v[0]);
-  Vec* _v = v.data() + 1;
-  VecDuplicateVecs(v[0], v.size() - 1, &_v);
+  // VecCreateMPI(comm, x[0].size(), PETSC_DETERMINE, &v[0]);
+  // std::cout << "Done create" << std::endl;
+  // Vec* _v = v.data() + 1;
+  // VecDuplicateVecs(v[0], v.size() - 1, &_v);
+  // std::cout << "Done duple: " << v.size() - 1 << std::endl;
   for (std::size_t i = 0; i < v.size(); ++i)
   {
+    VecCreateMPI(comm, x[i].size(), PETSC_DETERMINE, &v[i]);
     PetscScalar* data;
     VecGetArray(v[i], &data);
     std::copy(x[i].begin(), x[i].end(), data);
@@ -83,8 +86,8 @@ std::vector<IS> la::create_petsc_index_sets(
   return is;
 }
 //-----------------------------------------------------------------------------
-Vec la::create_ghosted_vector(const common::IndexMap& map, int bs,
-                              const xtl::span<PetscScalar>& x)
+Vec la::create_petsc_ghosted_vector(const common::IndexMap& map, int bs,
+                                    const xtl::span<PetscScalar>& x)
 {
   const std::int32_t size_local = bs * map.size_local();
   const std::int64_t size_global = bs * map.size_global();
