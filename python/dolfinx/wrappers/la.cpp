@@ -98,16 +98,16 @@ void la(py::module& m)
   declare_objects<double>(m, "float64");
   declare_objects<std::complex<double>>(m, "complex128");
 
-  m.def("create_vector",
+  m.def("create_petsc_vector",
         py::overload_cast<const dolfinx::common::IndexMap&, int>(
             &dolfinx::la::petsc::create_vector),
         py::return_value_policy::take_ownership,
         "Create a ghosted PETSc Vec for index map.");
   m.def(
-      "create_matrix",
+      "create_petsc_matrix",
       [](const MPICommWrapper comm, const dolfinx::la::SparsityPattern& p,
          const std::string& type)
-      { return dolfinx::la::create_petsc_matrix(comm.get(), p, type); },
+      { return dolfinx::la::petsc::create_matrix(comm.get(), p, type); },
       py::return_value_policy::take_ownership, py::arg("comm"), py::arg("p"),
       py::arg("type") = std::string(),
       "Create a PETSc Mat from sparsity pattern.");

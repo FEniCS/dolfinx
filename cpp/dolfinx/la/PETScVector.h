@@ -31,6 +31,7 @@ void petsc_error(int error_code, std::string filename,
 
 /// Create PETsc vectors from the local data. The data is copied into
 /// the PETSc vectors and is not shared.
+/// @note Caller is responsible for destroying the returned object
 /// @param[in] comm The MPI communicator
 /// @param[in] x The vector data owned by the calling rank. All
 /// components must have the same length.
@@ -58,12 +59,12 @@ Vec create_vector(MPI_Comm comm, std::array<std::int64_t, 2> range,
                   const std::vector<std::int64_t>& ghosts, int bs);
 
 /// Create a PETSc Vec that wraps the data in an array
+/// @note The caller is responsible for destruction of each IS.
 /// @param[in] map The index map that describes the parallel layout of
 /// the distributed vector (by block)
 /// @param[in] bs Block size
 /// @param[in] x The local part of the vector, including ghost entries
-/// @return A PETSc Vec object that shares the data in @p x. The caller
-/// is responsible for destroying the Vec.
+/// @return A PETSc Vec object that shares the data in @p x
 Vec create_vector_wrap(const common::IndexMap& map, int bs,
                        const xtl::span<PetscScalar>& x);
 
@@ -71,10 +72,10 @@ Vec create_vector_wrap(const common::IndexMap& map, int bs,
 ///
 /// Compute PETSc IndexSets (IS) for a stack of index maps. E.g., if
 /// `map[0] = {0, 1, 2, 3, 4, 5, 6}` and `map[1] = {0, 1, 2, 4}` (in
-/// local indices) then `IS[0] = {0, 1, 2, 3, 4, 5, 6}` and `IS[1] = {7, 8,
-/// 9, 10}`.
+/// local indices) then `IS[0] = {0, 1, 2, 3, 4, 5, 6}` and `IS[1] = {7,
+/// 8, 9, 10}`.
 ///
-/// The caller is responsible for destruction of each IS.
+/// @note The caller is responsible for destruction of each IS.
 ///
 /// @param[in] maps Vector of IndexMaps and corresponding block sizes
 /// @returns Vector of PETSc Index Sets, created on` PETSC_COMM_SELF`
@@ -99,15 +100,13 @@ void scatter_local_vectors(
 /// A simple wrapper for a PETSc vector pointer (Vec). Its main purpose
 /// is to assist with memory/lifetime management of PETSc Vec objects.
 ///
-/// Access the underlying PETSc Vec pointer using the function vec() and
-/// use the full PETSc interface.
+/// Access the underlying PETSc Vec pointer using the function
+/// PETScVector::vec() and use the full PETSc interface.
 class PETScVector
 {
 public:
   /// Create vector
-  ///
-  /// Collective
-  ///
+  /// @note Collective
   /// @param[in] map Index map describing the parallel layout
   /// @param[in] bs the block size
   PETScVector(const common::IndexMap& map, int bs);
@@ -124,7 +123,7 @@ public:
   /// count will always be decreased upon destruction of the the
   /// PETScVector.
   ///
-  /// Collective
+  /// @note Collective
   ///
   /// @param[in] x The PETSc Vec
   /// @param[in] inc_ref_count True if the reference count of `x` should
@@ -141,14 +140,13 @@ public:
   PETScVector& operator=(PETScVector&& x);
 
   /// Create a copy of the vector
-  ///
-  /// Collective
+  /// @note Collective
   PETScVector copy() const;
 
   /// Return global size of vector
   std::int64_t size() const;
 
-  /// Return local size of vector (belonging to this process)
+  /// Return local size of vector (belonging to the call rank)
   std::int32_t local_size() const;
 
   /// Return ownership range for calling rank
@@ -158,11 +156,9 @@ public:
   MPI_Comm comm() const;
 
   /// Compute norm of vector
-  ///
-  /// Collective
-  ///
+  /// @note Collective
   /// @param[in] type The norm type
-  /// @returns The norm of the vector
+  /// @return The norm of the vector
   PetscReal norm(la::Norm type) const;
 
   /// Sets the prefix used by PETSc when searching the options database
