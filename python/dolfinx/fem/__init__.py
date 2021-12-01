@@ -14,7 +14,8 @@ from dolfinx.fem.assemble import (apply_lifting, apply_lifting_nest,
                                   assemble_vector_nest, create_matrix,
                                   create_matrix_block, create_matrix_nest,
                                   create_vector, create_vector_block,
-                                  create_vector_nest, set_bc, set_bc_nest)
+                                  create_vector_nest, set_bc, set_bc_nest,
+                                  pack_coefficients, pack_constants)
 from dolfinx.fem.dirichletbc import (DirichletBC, bcs_by_block, locate_dofs_geometrical,
                                      locate_dofs_topological)
 from dolfinx.fem.dofmap import DofMap
@@ -52,4 +53,4 @@ __all__ = [
     "assemble_matrix", "set_bc", "set_bc_nest",
     "DirichletBC", "bcs_by_block", "DofMap", "Form", "IntegralType",
     "adjoint", "LinearProblem", "locate_dofs_geometrical", "locate_dofs_topological",
-    "NonlinearProblem"]
+    "NonlinearProblem", "pack_coefficients", "pack_constants"]
