@@ -27,6 +27,7 @@ class Mesh;
 /// Extract topology from cell data, i.e. extract cell vertices
 /// @param[in] cell_element_type List of integer indices, indicating the
 /// CoordinateElement for each cell. Index into elements, below.
+/// If all elements are the same type, then cell_element_type may be empty.
 /// @param[in] elements List of all CoordinateElements in mesh
 /// @param[in] cells List of 'nodes' for each cell using global indices.
 /// The layout must be consistent with \p layout.

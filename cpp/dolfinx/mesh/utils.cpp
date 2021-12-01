@@ -33,6 +33,12 @@ mesh::extract_topology(const std::vector<std::uint8_t>& cell_element_type,
                        const std::vector<fem::CoordinateElement>& elements,
                        const graph::AdjacencyList<std::int64_t>& cells)
 {
+  if (cell_element_type.empty() and elements.size() != 1)
+  {
+    throw std::runtime_error(
+        "Multiple elements, but no cell element types specified");
+  }
+
   // Get a vertex list for each input CoordinateElement.
   std::vector<std::vector<int>> local_vertices;
   for (const fem::CoordinateElement& e : elements)
@@ -55,7 +61,6 @@ mesh::extract_topology(const std::vector<std::uint8_t>& cell_element_type,
   cell_offsets[0] = 0;
   if (cell_element_type.empty())
   {
-    assert(elements.size() == 1);
     std::fill(std::next(cell_offsets.begin(), 1), cell_offsets.end(),
               num_cell_vertices(elements[0].cell_shape()));
   }
@@ -74,9 +79,8 @@ mesh::extract_topology(const std::vector<std::uint8_t>& cell_element_type,
   for (int c = 0; c < cells.num_nodes(); ++c)
   {
     const int t = cell_element_type.empty() ? 0 : cell_element_type[c];
-    const std::vector<int>& cell_vertices = local_vertices[t];
     auto p = cells.links(c);
-    for (int v : cell_vertices)
+    for (int v : local_vertices[t])
       topology.push_back(p[v]);
   }
 
