@@ -161,12 +161,12 @@ def test_rank1():
     a = ufl.inner(ufl.TrialFunction(P2), ufl.TestFunction(vdP1)[0]) * ufl.dx
     A = create_matrix(a)
 
-    dofmap_col = P2.dofmap.list.array.reshape(num_cells, -1).astype(np.dtype(PETSc.IntType))
+    dofmap_col = P2.dofmap.list.array.reshape(-1, 6).astype(np.dtype(PETSc.IntType))
     dofmap_row = vdP1.dofmap.list.array
 
     dofmap_row_unrolled = (2 * np.repeat(dofmap_row, 2).reshape(-1, 2)
                            + np.arange(2)).flatten()
-    dofmap_row = dofmap_row_unrolled.reshape(num_cells, -1).astype(np.dtype(PETSc.IntType))
+    dofmap_row = dofmap_row_unrolled.reshape(-1, 6).astype(np.dtype(PETSc.IntType))
 
     scatter(A.handle, array_evaluated, dofmap_row, dofmap_col)
     A.assemble()
