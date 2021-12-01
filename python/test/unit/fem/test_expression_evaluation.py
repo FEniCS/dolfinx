@@ -11,7 +11,6 @@ import ctypes
 import ctypes.util
 import numba
 import numpy as np
-import pytest
 import ufl
 from dolfinx.fem import (Constant, Expression, Function, FunctionSpace,
                          VectorFunctionSpace, create_matrix)
