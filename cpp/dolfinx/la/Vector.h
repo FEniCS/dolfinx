@@ -192,13 +192,13 @@ public:
   /// Compute the norm of the vector
   /// @note Collective MPI operation
   /// @param type Norm type (supported types are \f$L^2\f$ and \f$L^\infty\f$)
-  T norm(la::Norm type = la::Norm::l2) const
+  T norm(Norm type = Norm::l2) const
   {
     switch (type)
     {
-    case la::Norm::l2:
+    case Norm::l2:
       return std::sqrt(this->squared_norm());
-    case la::Norm::linf:
+    case Norm::linf:
     {
       const std::int32_t size_local = _bs * _map->size_local();
       double local_linf = 0.0;
@@ -225,8 +225,8 @@ public:
   {
     const std::int32_t size_local = _bs * _map->size_local();
     double result = std::transform_reduce(
-        _x.begin(), std::next(_x.begin(), size_local), 0.0, std::plus<double>(),
-        [](T val) { return std::norm(val); });
+        _x.begin(), std::next(_x.begin(), size_local), double(0),
+        std::plus<double>(), [](T val) { return std::norm(val); });
     double norm2;
     MPI_Allreduce(&result, &norm2, 1, MPI_DOUBLE, MPI_SUM, _map->comm());
     return norm2;

@@ -114,7 +114,7 @@ public:
   void apply(AssemblyType type);
 
   /// Return norm of matrix
-  double norm(la::Norm norm_type) const;
+  double norm(Norm norm_type) const;
 
   //--- Special PETSc Functions ---
 

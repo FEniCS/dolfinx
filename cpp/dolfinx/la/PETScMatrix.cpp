@@ -267,20 +267,20 @@ PETScMatrix::PETScMatrix(Mat A, bool inc_ref_count)
   // Reference count to A is incremented in base class
 }
 //-----------------------------------------------------------------------------
-double PETScMatrix::norm(la::Norm norm_type) const
+double PETScMatrix::norm(Norm norm_type) const
 {
   assert(_matA);
   PetscErrorCode ierr;
   double value = 0.0;
   switch (norm_type)
   {
-  case la::Norm::l1:
+  case Norm::l1:
     ierr = MatNorm(_matA, NORM_1, &value);
     break;
-  case la::Norm::linf:
+  case Norm::linf:
     ierr = MatNorm(_matA, NORM_INFINITY, &value);
     break;
-  case la::Norm::frobenius:
+  case Norm::frobenius:
     ierr = MatNorm(_matA, NORM_FROBENIUS, &value);
     break;
   default:

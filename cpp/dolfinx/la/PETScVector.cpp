@@ -65,7 +65,8 @@ Vec la::petsc::create_vector(const dolfinx::common::IndexMap& map, int bs)
 }
 //-----------------------------------------------------------------------------
 Vec la::petsc::create_vector(MPI_Comm comm, std::array<std::int64_t, 2> range,
-                             const std::vector<std::int64_t>& ghosts, int bs)
+                             const xtl::span<const std::int64_t>& ghosts,
+                             int bs)
 {
   PetscErrorCode ierr;
 
@@ -84,7 +85,7 @@ Vec la::petsc::create_vector(MPI_Comm comm, std::array<std::int64_t, 2> range,
 }
 //-----------------------------------------------------------------------------
 Vec la::petsc::create_vector_wrap(const common::IndexMap& map, int bs,
-                                  const xtl::span<PetscScalar>& x)
+                                  const xtl::span<const PetscScalar>& x)
 {
   const std::int32_t size_local = bs * map.size_local();
   const std::int64_t size_global = bs * map.size_global();
@@ -264,7 +265,7 @@ std::array<std::int64_t, 2> PETScVector::local_range() const
   PetscErrorCode ierr = VecGetOwnershipRange(_x, &n0, &n1);
   CHECK_ERROR("VecGetOwnershipRange");
   assert(n0 <= n1);
-  return {{n0, n1}};
+  return {n0, n1};
 }
 //-----------------------------------------------------------------------------
 MPI_Comm PETScVector::comm() const
@@ -276,22 +277,22 @@ MPI_Comm PETScVector::comm() const
   return mpi_comm;
 }
 //-----------------------------------------------------------------------------
-PetscReal PETScVector::norm(la::Norm type) const
+PetscReal PETScVector::norm(Norm type) const
 {
   assert(_x);
   PetscErrorCode ierr;
   PetscReal value = 0.0;
   switch (type)
   {
-  case la::Norm::l1:
+  case Norm::l1:
     ierr = VecNorm(_x, NORM_1, &value);
     CHECK_ERROR("VecNorm");
     break;
-  case la::Norm::l2:
+  case Norm::l2:
     ierr = VecNorm(_x, NORM_2, &value);
     CHECK_ERROR("VecNorm");
     break;
-  case la::Norm::linf:
+  case Norm::linf:
     ierr = VecNorm(_x, NORM_INFINITY, &value);
     CHECK_ERROR("VecNorm");
     break;

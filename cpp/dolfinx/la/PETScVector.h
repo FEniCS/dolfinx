@@ -22,6 +22,7 @@ class IndexMap;
 namespace dolfinx::la
 {
 
+/// Tools for creating PETSc objects
 namespace petsc
 {
 
@@ -55,7 +56,7 @@ Vec create_vector(const common::IndexMap& map, int bs);
 /// `bs * (range[1] - range[0])`.
 /// @returns A PETSc Vec
 Vec create_vector(MPI_Comm comm, std::array<std::int64_t, 2> range,
-                  const std::vector<std::int64_t>& ghosts, int bs);
+                  const xtl::span<const std::int64_t>& ghosts, int bs);
 
 /// Create a PETSc Vec that wraps the data in an array
 /// @note The caller is responsible for destruction of each IS.
@@ -65,7 +66,7 @@ Vec create_vector(MPI_Comm comm, std::array<std::int64_t, 2> range,
 /// @param[in] x The local part of the vector, including ghost entries
 /// @return A PETSc Vec object that shares the data in @p x
 Vec create_vector_wrap(const common::IndexMap& map, int bs,
-                       const xtl::span<PetscScalar>& x);
+                       const xtl::span<const PetscScalar>& x);
 
 /// @todo This function could take just the local sizes
 ///
@@ -104,7 +105,7 @@ void scatter_local_vectors(
 class PETScVector
 {
 public:
-  /// Create vector
+  /// Create a vector
   /// @note Collective
   /// @param[in] map Index map describing the parallel layout
   /// @param[in] bs the block size
@@ -142,7 +143,7 @@ public:
   /// @note Collective
   PETScVector copy() const;
 
-  /// Return global size of vector
+  /// Return global size of the vector
   std::int64_t size() const;
 
   /// Return local size of vector (belonging to the call rank)
@@ -158,7 +159,7 @@ public:
   /// @note Collective
   /// @param[in] type The norm type
   /// @return The norm of the vector
-  PetscReal norm(la::Norm type) const;
+  PetscReal norm(Norm type) const;
 
   /// Sets the prefix used by PETSc when searching the options database
   void set_options_prefix(std::string options_prefix);
