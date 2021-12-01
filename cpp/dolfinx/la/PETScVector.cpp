@@ -19,12 +19,12 @@ using namespace dolfinx::la;
   do                                                                           \
   {                                                                            \
     if (ierr != 0)                                                             \
-      petsc::petsc_error(ierr, __FILE__, NAME);                                \
+      petsc::error(ierr, __FILE__, NAME);                                      \
   } while (0)
 
 //-----------------------------------------------------------------------------
-void la::petsc::petsc_error(int error_code, std::string filename,
-                            std::string petsc_function)
+void la::petsc::error(int error_code, std::string filename,
+                      std::string petsc_function)
 {
   // Fetch PETSc error description
   const char* desc;
