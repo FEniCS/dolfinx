@@ -131,7 +131,7 @@ void mesh(py::module& m)
   m.def("compute_boundary_facets", &dolfinx::mesh::compute_boundary_facets);
 
   using PythonPartitioningFunction
-      = std::function<olfinx::graph::AdjacencyList<std::int32_t>(
+      = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
           MPICommWrapper, int, int,
           const dolfinx::graph::AdjacencyList<std::int64_t>&,
           dolfinx::mesh::GhostMode)>;
@@ -305,8 +305,8 @@ void mesh(py::module& m)
            dolfinx::mesh::GhostMode ghost_mode)
             -> dolfinx::graph::AdjacencyList<std::int32_t>
         {
-          return dolfinx::mesh::partition_cells_graph(comm.get(), nparts, tdim,
-                                                      cells, ghost_mode);
+          return dolfinx::mesh::create_cell_partitioner()(
+              comm.get(), nparts, tdim, cells, ghost_mode);
         });
 
   m.def("locate_entities",
