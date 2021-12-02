@@ -20,13 +20,39 @@ from mpi4py import MPI
 assert (tempdir)
 
 
-@pytest.mark.parametrize("partitioner", [create_cell_partitioner()])
+partitioners = [dolfinx.cpp.graph.partitioner()]
+try:
+    from dolfinx.cpp.graph import partitioner
+    partitioners.append(partitioner())
+except:
+    pass
+try:
+    from dolfinx.cpp.graph import partitioner_scotch
+    partitioners.append(partitioner_scotch())
+except:
+    pass
+try:
+    from dolfinx.cpp.graph import partitioner_parmetis
+    partitioners.append(partitioner_parmetis())
+except:
+    pass
+try:
+    from dolfinx.cpp.graph import partitioner_kahip
+    partitioners.append(partitioner_kahip())
+except:
+    pass
+
+print("****", partitioners)
+
+
+@pytest.mark.parametrize("gpart", partitioners)
 @pytest.mark.parametrize("Nx", [5, 10])
 @pytest.mark.parametrize("cell_type", [CellType.tetrahedron, CellType.hexahedron])
-def test_partition_box_mesh(partitioner, Nx, cell_type):
+def test_partition_box_mesh(gpart, Nx, cell_type):
+    part = create_cell_partitioner(gpart)
     mesh = BoxMesh(MPI.COMM_WORLD, [np.array([0, 0, 0]),
                                     np.array([1, 1, 1])], [Nx, Nx, Nx], cell_type,
-                   GhostMode.shared_facet, partitioner)
+                   GhostMode.shared_facet, part)
     tdim = mesh.topology.dim
 
     c = 6 if cell_type == CellType.tetrahedron else 1
