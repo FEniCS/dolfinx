@@ -414,7 +414,6 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
   submesh_topology.set_connectivity(submesh_e_to_v, dim, 0);
 
   ss << "Topology created\n";
-  std::cout << ss.str() << "\n";
 
   // Geometry
   auto e_to_g = mesh::entities_to_geometry(*this, dim, entities, false);
@@ -445,6 +444,8 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
   graph::AdjacencyList<std::int64_t> submesh_cells_al(
       std::move(submesh_cells), std::move(submesh_cells_offsets));
 
+  ss << "Created submesh geom adjacency list\n";
+
   // Create submesh coordinates
   const int submesh_num_x_dofs = unique_sorted_x_dofs.shape()[0];
   const int geom_dim = this->geometry().dim();
@@ -456,6 +457,9 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
     xt::view(submesh_x, i, xt::all())
         = xt::view(x, unique_sorted_x_dofs[i], xt::range(0, geom_dim));
   }
+
+  ss << "Created submesh coords\n";
+  std::cout << ss.str() << "\n";
 
   // Create submesh geometry
   CellType submesh_coord_cell
