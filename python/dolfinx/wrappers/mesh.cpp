@@ -327,9 +327,14 @@ void mesh(py::module& m)
   declare_meshtags<double>(m, "double");
   declare_meshtags<std::int64_t>(m, "int64");
 
-  // Partitioning interface
+  // Partitioning interfaceusing
+  using PythonCellPartitionFunction
+      = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
+          MPICommWrapper, int, int,
+          const dolfinx::graph::AdjacencyList<std::int64_t>&,
+          dolfinx::mesh::GhostMode)>;
   m.def("create_cell_partitioner",
-        []()
+        []() -> PythonCellPartitionFunction
         {
           return create_cell_partitioner_py(
               dolfinx::mesh::create_cell_partitioner());
@@ -339,6 +344,7 @@ void mesh(py::module& m)
                MPICommWrapper comm, int nparts,
                const dolfinx::graph::AdjacencyList<std::int64_t>& local_graph,
                std::int32_t num_ghost_nodes, bool ghosting)>& part)
+            -> PythonCellPartitionFunction
         {
           return create_cell_partitioner_py(
               dolfinx::mesh::create_cell_partitioner(

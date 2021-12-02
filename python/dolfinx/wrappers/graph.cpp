@@ -99,8 +99,12 @@ void graph(py::module& m)
   declare_adjacency_list<std::int64_t>(m, "int64");
 
   m.def("partitioner_py",
-        []() {
-          return create_partitioner_py(dolfinx::graph::scotch::partitioner());
+        []()
+        {
+          auto p0 = dolfinx::graph::scotch::partitioner();
+          auto p1 = create_partitioner_py(p0);
+          return p1;
+          // return create_partitioner_py(dolfinx::graph::scotch::partitioner());
         });
 
   m.def("reorder_gps", &dolfinx::graph::reorder_gps);
