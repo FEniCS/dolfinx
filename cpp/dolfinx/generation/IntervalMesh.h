@@ -8,7 +8,6 @@
 
 #include <array>
 #include <cstddef>
-#include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/utils.h>
 #include <mpi.h>
