@@ -47,7 +47,7 @@ std::array<std::int64_t, 2> PETScOperator::size() const
   PetscInt m(0), n(0);
   PetscErrorCode ierr = MatGetSize(_matA, &m, &n);
   if (ierr != 0)
-    petsc_error(ierr, __FILE__, "MetGetSize");
+    petsc::error(ierr, __FILE__, "MetGetSize");
   return {{m, n}};
 }
 //-----------------------------------------------------------------------------
@@ -61,13 +61,13 @@ PETScVector PETScOperator::create_vector(std::size_t dim) const
   {
     ierr = MatCreateVecs(_matA, nullptr, &x);
     if (ierr != 0)
-      petsc_error(ierr, __FILE__, "MatCreateVecs");
+      petsc::error(ierr, __FILE__, "MatCreateVecs");
   }
   else if (dim == 1)
   {
     ierr = MatCreateVecs(_matA, &x, nullptr);
     if (ierr != 0)
-      petsc_error(ierr, __FILE__, "MatCreateVecs");
+      petsc::error(ierr, __FILE__, "MatCreateVecs");
   }
   else
   {
