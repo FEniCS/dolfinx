@@ -355,5 +355,13 @@ void mesh(py::module& m)
               orient));
         });
   m.def("exterior_facet_indices", &dolfinx::mesh::exterior_facet_indices);
+  m.def("compute_incident_entities",
+        [](const dolfinx::mesh::Mesh& mesh,
+           py::array_t<std::int32_t, py::array::c_style> entity_list, int d0,
+           int d1)
+        {
+          return as_pyarray(dolfinx::mesh::compute_incident_entities(
+              mesh, xtl::span(entity_list.data(), entity_list.size()), d0, d1));
+        });
 }
 } // namespace dolfinx_wrappers
