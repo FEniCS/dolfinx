@@ -4,8 +4,10 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "array.h"
 #include "caster_mpi.h"
+
+#include "MPICommWrapper.h"
+#include "array.h"
 #include "caster_petsc.h"
 #include <cfloat>
 #include <dolfinx/fem/CoordinateElement.h>
@@ -29,6 +31,112 @@
 #include <xtl/xspan.hpp>
 
 namespace py = pybind11;
+
+namespace
+{
+using PythonGraphPartitionFunction
+    = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
+        dolfinx_wrappers::MPICommWrapper comm, int nparts,
+        const dolfinx::graph::AdjacencyList<std::int64_t>& local_graph,
+        std::int32_t num_ghost_nodes, bool ghosting)>;
+
+using CppGraphPartitionFunction
+    = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
+        MPI_Comm comm, int nparts,
+        const dolfinx::graph::AdjacencyList<std::int64_t>& local_graph,
+        std::int32_t num_ghost_nodes, bool ghosting)>;
+
+// PythonGraphPartitionFunction
+// create_partitioner_py_wrapper(const CppGraphPartitionFunction& p_cpp)
+// {
+//   return [p_cpp](dolfinx_wrappers::MPICommWrapper comm, int nparts,
+//                  const dolfinx::graph::AdjacencyList<std::int64_t>&
+//                  local_graph, std::int32_t num_ghost_nodes, bool ghosting)
+//   { return p_cpp(comm.get(), nparts, local_graph, num_ghost_nodes, ghosting);
+//   };
+// }
+
+CppGraphPartitionFunction
+create_partitioner_cpp_wrapper(const PythonGraphPartitionFunction& p_py)
+{
+  return [p_py](MPI_Comm comm, int nparts,
+                const dolfinx::graph::AdjacencyList<std::int64_t>& local_graph,
+                std::int32_t num_ghost_nodes, bool ghosting)
+  {
+    return p_py(dolfinx_wrappers::MPICommWrapper(comm), nparts, local_graph,
+                num_ghost_nodes, ghosting);
+  };
+}
+
+// using CppGraphPartitionFunction
+//     = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
+//         MPI_Comm comm, int nparts,
+//         const dolfinx::graph::AdjacencyList<std::int64_t>& local_graph,
+//         std::int32_t num_ghost_nodes, bool ghosting)>;
+
+// using PythonGraphPartitionFunction
+//     = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
+//         dolfinx_wrappers::MPICommWrapper comm, int nparts,
+//         const dolfinx::graph::AdjacencyList<std::int64_t>& local_graph,
+//         std::int32_t num_ghost_nodes, bool ghosting)>;
+
+// ---
+
+using PythonCellPartitionFunction
+    = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
+        dolfinx_wrappers::MPICommWrapper, int, int,
+        const dolfinx::graph::AdjacencyList<std::int64_t>&,
+        dolfinx::mesh::GhostMode)>;
+
+using CppCellPartitionFunction
+    = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
+        MPI_Comm, int, int, const dolfinx::graph::AdjacencyList<std::int64_t>&,
+        dolfinx::mesh::GhostMode)>;
+
+// CppCellPartitionFunction
+// create_cell_partitioner_cpp(const PythonCellPartitionFunction& partitioner)
+// {
+//   return [partitioner](MPI_Comm comm, int n, int tdim,
+//                        const dolfinx::graph::AdjacencyList<std::int64_t>&
+//                        cells, dolfinx::mesh::GhostMode ghost_mode)
+//   {
+//     return partitioner(dolfinx_wrappers::MPICommWrapper(comm), n, tdim,
+//     cells,
+//                        ghost_mode);
+//   };
+// }
+
+PythonCellPartitionFunction
+create_cell_partitioner_py(const CppCellPartitionFunction& p_cpp)
+{
+  return [p_cpp](dolfinx_wrappers::MPICommWrapper comm, int n, int tdim,
+                 const dolfinx::graph::AdjacencyList<std::int64_t>& cells,
+                 dolfinx::mesh::GhostMode ghost_mode)
+  { return p_cpp(comm.get(), n, tdim, cells, ghost_mode); };
+}
+
+// CppGraphPartitionFunction
+// create_partitioner_cpp(const PythonGraphPartitionFunction& p_py)
+// {
+//   return [p_py](MPI_Comm comm, int nparts,
+//                 const dolfinx::graph::AdjacencyList<std::int64_t>&
+//                 local_graph, std::int32_t num_ghost_nodes, bool ghosting)
+//   {
+//     return p_py(dolfinx_wrappers::MPICommWrapper(comm), nparts, local_graph,
+//                 num_ghost_nodes, ghosting);
+//   };
+// }
+
+// PythonGraphPartitionFunction
+// create_partitioner_py(const CppGraphPartitionFunction& p_cpp)
+// {
+//   return [p_cpp](dolfinx_wrappers::MPICommWrapper comm, int nparts,
+//                  const dolfinx::graph::AdjacencyList<std::int64_t>&
+//                  local_graph, std::int32_t num_ghost_nodes, bool ghosting)
+//   { return p_cpp(comm.get(), nparts, local_graph, num_ghost_nodes, ghosting);
+//   };
+// }
+} // namespace
 
 namespace dolfinx_wrappers
 {
@@ -299,14 +407,32 @@ void mesh(py::module& m)
   declare_meshtags<std::int64_t>(m, "int64");
 
   // Partitioning interface
-  m.def("partition_cells_graph",
-        [](const MPICommWrapper comm, int nparts, int tdim,
-           const dolfinx::graph::AdjacencyList<std::int64_t>& cells,
-           dolfinx::mesh::GhostMode ghost_mode)
-            -> dolfinx::graph::AdjacencyList<std::int32_t>
+//   m.def("partition_cells_graph",
+//         [](const MPICommWrapper comm, int nparts, int tdim,
+//            const dolfinx::graph::AdjacencyList<std::int64_t>& cells,
+//            dolfinx::mesh::GhostMode ghost_mode)
+//             -> dolfinx::graph::AdjacencyList<std::int32_t>
+//         {
+//           return dolfinx::mesh::create_cell_partitioner()(
+//               comm.get(), nparts, tdim, cells, ghost_mode);
+//         });
+
+  m.def("create_cell_partitioner",
+        []()
         {
-          return dolfinx::mesh::create_cell_partitioner()(
-              comm.get(), nparts, tdim, cells, ghost_mode);
+          return create_cell_partitioner_py(
+              dolfinx::mesh::create_cell_partitioner());
+        });
+
+  m.def("create_cell_partitioner",
+        [](const std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
+               MPICommWrapper comm, int nparts,
+               const dolfinx::graph::AdjacencyList<std::int64_t>& local_graph,
+               std::int32_t num_ghost_nodes, bool ghosting)>& part)
+        {
+          return create_cell_partitioner_py(
+              dolfinx::mesh::create_cell_partitioner(
+                  create_partitioner_cpp_wrapper(part)));
         });
 
   m.def("locate_entities",

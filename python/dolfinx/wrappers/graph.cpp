@@ -9,6 +9,7 @@
 #include <dolfinx/graph/ordering.h>
 #include <dolfinx/graph/partition.h>
 #include <dolfinx/graph/partitioners.h>
+#include <pybind11/functional.h>
 #include <pybind11/numpy.h>
 #include <pybind11/operators.h>
 #include <pybind11/pybind11.h>
@@ -120,11 +121,15 @@ void graph(py::module& m)
   declare_adjacency_list<std::int32_t>(m, "int32");
   declare_adjacency_list<std::int64_t>(m, "int64");
 
-  m.def("partitioner",
+  m.def("partitioner_py",
         []()
         {
-          return create_partitioner_py_wrapper(
-              dolfinx::graph::scotch::partitioner());
+          auto p0 = dolfinx::graph::scotch::partitioner();
+          auto p1 = create_partitioner_py_wrapper(p0);
+          return p1;
+          // dolfinx::graph::scotch::partitioner();
+          // return create_partitioner_py_wrapper(
+          //     dolfinx::graph::scotch::partitioner());
         });
 
   m.def("reorder_gps", &dolfinx::graph::reorder_gps);

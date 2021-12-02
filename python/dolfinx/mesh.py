@@ -154,7 +154,7 @@ def refine(mesh: Mesh, cell_markers: _cpp.mesh.MeshTags_int8 = None, redistribut
 
 def create_mesh(comm: _MPI.Comm, cells: typing.Union[np.ndarray, _cpp.graph.AdjacencyList_int64],
                 x: np.ndarray, domain: ufl.Mesh, ghost_mode=GhostMode.shared_facet,
-                partitioner=_cpp.mesh.partition_cells_graph) -> Mesh:
+                partitioner=_cpp.mesh.create_cell_partitioner()) -> Mesh:
     """
     Create a mesh from topology and geometry arrays
 
