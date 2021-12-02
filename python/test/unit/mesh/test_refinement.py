@@ -1,4 +1,4 @@
-# Copyright (C) 2018 Chris N Richardson
+# Copyright (C) 2018-2021 Chris N Richardson and Jørgen S. Dokken
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -6,9 +6,11 @@
 
 import ufl
 from dolfinx.fem import FunctionSpace, assemble_matrix
-from dolfinx.generation import UnitSquareMesh, UnitCubeMesh
-from dolfinx.mesh import GhostMode, refine
+from dolfinx.generation import DiagonalType, UnitCubeMesh, UnitSquareMesh
+from dolfinx.mesh import (GhostMode, compute_incident_entities, locate_entities,
+                          locate_entities_boundary, refine)
 from mpi4py import MPI
+from numpy import isclose, logical_and
 
 
 def test_RefineUnitSquareMesh():
@@ -64,8 +66,49 @@ def test_refine_create_form():
     assemble_matrix(a)
 
 
-def xtest_refinement_gdim():
+def test_refinement_gdim():
     """Test that 2D refinement is still 2D"""
     mesh = UnitSquareMesh(MPI.COMM_WORLD, 3, 4, ghost_mode=GhostMode.none)
+    mesh.topology.create_entities(1)
     mesh2 = refine(mesh, redistribute=True)
     assert mesh.geometry.dim == mesh2.geometry.dim
+
+
+def test_sub_refine():
+    """Test that refinement of a subset of edges works"""
+    mesh = UnitSquareMesh(MPI.COMM_WORLD, 3, 4, diagonal=DiagonalType.left,
+                          ghost_mode=GhostMode.none)
+    mesh.topology.create_entities(1)
+
+    def left_corner_edge(x, tol=1e-16):
+        return logical_and(isclose(x[0], 0), x[1] < 1 / 4 + tol)
+
+    edges = locate_entities_boundary(mesh, 1, left_corner_edge)
+    if MPI.COMM_WORLD.size == 0:
+        assert(edges == 1)
+
+    mesh2 = refine(mesh, edges, redistribute=False)
+    assert(mesh.topology.index_map(2).size_global + 3 == mesh2.topology.index_map(2).size_global)
+
+
+def test_refine_from_cells():
+    """Check user interface for using local cells to define edges"""
+    Nx = 8
+    Ny = 3
+    assert(Nx % 2 == 0)
+    mesh = UnitSquareMesh(MPI.COMM_WORLD, Nx, Ny, diagonal=DiagonalType.left, ghost_mode=GhostMode.none)
+    mesh.topology.create_entities(1)
+
+    def left_side(x, tol=1e-16):
+        return x[0] <= 0.5 + tol
+    cells = locate_entities(mesh, mesh.topology.dim, left_side)
+    if MPI.COMM_WORLD.size == 0:
+        assert(cells.__len__() == Nx * Ny)
+    edges = compute_incident_entities(mesh, cells, 2, 1)
+    if MPI.COMM_WORLD.size == 0:
+        assert(edges.__len__() == Nx // 2 * (2 * Ny + 1) + (Nx // 2 + 1) * Ny)
+    mesh2 = refine(mesh, edges, redistribute=True)
+
+    num_cells_global = mesh2.topology.index_map(2).size_global
+    actual_cells = 3 * (Nx * Ny) + 3 * Ny + 2 * Nx * Ny
+    assert(num_cells_global == actual_cells)
