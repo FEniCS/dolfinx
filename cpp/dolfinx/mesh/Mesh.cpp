@@ -320,10 +320,29 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
   }
   ss << "\n";
 
-
-
   // Append ghost vertices from other processes owned by this process to
-  // submesh_vertices
+  // submesh_owned_vertices. First need to get the local index
+  auto global_indices = vertex_index_map->global_indices();
+  for (std::int64_t global_vertex : data_in.array())
+  {
+    auto it = std::find(global_indices.begin(), global_indices.end(), global_vertex);
+    assert(it != global_indices.end());
+    std::int32_t local_vertex = std::distance(global_indices.begin(), it);
+    submesh_owned_vertices.push_back(local_vertex);
+  }
+  // Sort submesh_owned_vertices and make unique (could have recieved same ghost
+  // vertex from multiple ranks)
+  std::sort(submesh_owned_vertices.begin(), submesh_owned_vertices.end());
+  submesh_owned_vertices.erase(std::unique(submesh_owned_vertices.begin(),
+                                           submesh_owned_vertices.end()),
+                                           submesh_owned_vertices.end());
+
+  ss << "submesh_owned_vertices = ";
+  for (auto sv : submesh_owned_vertices)
+  {
+    ss << sv << " ";
+  }
+  ss << "\n";
 
   std::cout << ss.str() << "\n";
 
