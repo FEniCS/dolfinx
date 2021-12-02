@@ -32,7 +32,7 @@ namespace dolfinx::mesh
 /// Signature for the cell partitioning function. The function should
 /// compute the destination rank for cells currently on this rank.
 using CellPartitionFunction
-    = std::function<const dolfinx::graph::AdjacencyList<std::int32_t>(
+    = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
         MPI_Comm comm, int nparts, int tdim,
         const dolfinx::graph::AdjacencyList<std::int64_t>& cells,
         dolfinx::mesh::GhostMode ghost_mode)>;

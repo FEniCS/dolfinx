@@ -131,7 +131,7 @@ void mesh(py::module& m)
   m.def("compute_boundary_facets", &dolfinx::mesh::compute_boundary_facets);
 
   using PythonPartitioningFunction
-      = std::function<const dolfinx::graph::AdjacencyList<std::int32_t>(
+      = std::function<olfinx::graph::AdjacencyList<std::int32_t>(
           MPICommWrapper, int, int,
           const dolfinx::graph::AdjacencyList<std::int64_t>&,
           dolfinx::mesh::GhostMode)>;
