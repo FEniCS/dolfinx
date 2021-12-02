@@ -24,13 +24,13 @@ void PETScOptions::clear(std::string option)
   PetscErrorCode ierr;
   ierr = PetscOptionsClearValue(nullptr, option.c_str());
   if (ierr != 0)
-    petsc_error(ierr, __FILE__, "PetscOptionsClearValue");
+    petsc::error(ierr, __FILE__, "PetscOptionsClearValue");
 }
 //-----------------------------------------------------------------------------
 void PETScOptions::clear()
 {
   PetscErrorCode ierr = PetscOptionsClear(nullptr);
   if (ierr != 0)
-    petsc_error(ierr, __FILE__, "PetscOptionsClear");
+    petsc::error(ierr, __FILE__, "PetscOptionsClear");
 }
 //-----------------------------------------------------------------------------
