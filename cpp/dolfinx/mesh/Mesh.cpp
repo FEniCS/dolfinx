@@ -23,6 +23,10 @@
 
 #include "graphbuild.h"
 
+#include <string>
+#include <iostream>
+#include <sstream>
+
 using namespace dolfinx;
 using namespace dolfinx::mesh;
 
@@ -176,6 +180,8 @@ Mesh mesh::create_mesh(MPI_Comm comm,
               mesh::create_geometry(comm, topology, element, cell_nodes1, x));
 }
 //-----------------------------------------------------------------------------
+// TODO Mention entities must be owned (this means locate_entities_boundary
+// should work, but locate entities doesn't)
 Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
 {
   // Topology
@@ -186,8 +192,156 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
   std::vector<std::int32_t> submesh_vertices
       = mesh::compute_incident_entities(*this, entities, dim, 0);
 
+  std::stringstream ss;
+
+  int rank = dolfinx::MPI::rank(comm());
+  ss << "rank = " << rank << "\n";
+
   // Vertex index map
   auto vertex_index_map = _topology.index_map(0);
+
+  MPI_Comm reverse_comm
+      = vertex_index_map->comm(dolfinx::common::IndexMap::Direction::reverse);
+  auto dest_ranks = dolfinx::MPI::neighbors(reverse_comm)[1];
+
+  ss << "submesh_vertices = ";
+  for (auto sv : submesh_vertices)
+  {
+    ss << sv << " ";
+  }
+  ss << "\n";
+
+  // Split submesh_vertices into owned and ghost vertices
+  std::vector<std::int32_t> submesh_owned_vertices;  // Local numbering
+
+  for (auto sv : submesh_vertices)
+  {
+    if (sv < vertex_index_map->size_local())
+    {
+      submesh_owned_vertices.push_back(sv);
+    }
+  }
+
+  ss << "owned_vertices = ";
+  for (auto ov : submesh_owned_vertices)
+  {
+    ss << ov << " ";
+  }
+  ss << "\n";
+
+  // Index in vertex_index_map.ghosts() of ghost vertices
+  // TODO Combine with above loop
+  std::vector<std::int32_t> submesh_ghost_indices;
+  for (std::size_t i = 0; i < submesh_vertices.size(); ++i)
+  {
+    if (submesh_vertices[i] >= vertex_index_map->size_local())
+    {
+      const std::int32_t ghost_index =
+          submesh_vertices[i] - vertex_index_map->size_local();
+      submesh_ghost_indices.push_back(ghost_index);
+    }
+  }
+
+  ss << "submesh_ghost_indices = ";
+  for (auto gi : submesh_ghost_indices)
+  {
+    ss << gi << " ";
+  }
+  ss << "\n";
+
+  ss << "dest_ranks = ";
+  for (auto rank : dest_ranks)
+  {
+    ss << rank << " ";
+  }
+  ss << "\n";
+
+  std::vector<std::int32_t> data_per_proc(dest_ranks.size(), 0);
+  auto ghost_owner_rank = vertex_index_map->ghost_owner_rank();
+  for (std::size_t dest_rank_index = 0; dest_rank_index < dest_ranks.size(); ++dest_rank_index)
+  {
+    for (auto gi : submesh_ghost_indices)
+    {
+      if (ghost_owner_rank[gi] == dest_ranks[dest_rank_index])
+      {
+        data_per_proc[dest_rank_index]++;
+      }
+    }
+  }
+
+  ss << "data_per_proc = ";
+  for (auto dpp : data_per_proc)
+  {
+    ss << dpp << " ";
+  }
+  ss << "\n";
+
+  std::vector<int> send_disp(dest_ranks.size() + 1, 0);
+  std::partial_sum(data_per_proc.begin(), data_per_proc.end(),
+                   std::next(send_disp.begin(), 1));
+  
+  ss << "send_disp = ";
+  for (auto disp : send_disp)
+  {
+    ss << disp << " ";
+  }
+  ss << "\n";
+
+  // TODO Combine with above loop
+  std::vector<std::int64_t> ghosts_to_send;
+  auto ghost_vertices = vertex_index_map->ghosts();
+  for (std::size_t dest_rank_index = 0; dest_rank_index < dest_ranks.size(); ++dest_rank_index)
+  {
+    for (auto gi : submesh_ghost_indices)
+    {
+      if (ghost_owner_rank[gi] == dest_ranks[dest_rank_index])
+      {
+        ghosts_to_send.push_back(ghost_vertices[gi]);
+      }
+    }
+  }
+
+  ss << "ghosts_to_send = ";
+  for (auto g : ghosts_to_send)
+  {
+    ss << g << " ";
+  }
+  ss << "\n";
+
+  const graph::AdjacencyList<std::int64_t> data_out(std::move(ghosts_to_send),
+                                                    std::move(send_disp));
+  const graph::AdjacencyList<std::int64_t> data_in
+      = dolfinx::MPI::neighbor_all_to_all(reverse_comm, data_out);
+
+  ss << "data_in = ";
+  for (auto d : data_in.array())
+  {
+    ss << d << " ";
+  }
+  ss << "\n";
+
+
+
+  // Append ghost vertices from other processes owned by this process to
+  // submesh_vertices
+
+  std::cout << ss.str() << "\n";
+
+  // std::cout << "source_ranks:\n";
+  // for (auto rank : source_ranks)
+  // {
+  //   std::cout << rank << " ";
+  // }
+
+  // std::cout << "\ndest_ranks:\n";
+  // for (auto rank : dest_ranks)
+  // {
+  //   std::cout << rank << " ";
+  // }
+  // std::cout << "\n";
+
+  throw "error";
+  // FIXME PARALLEL
   std::pair<common::IndexMap, std::vector<int32_t>>
       submesh_vertex_index_map_pair
       = vertex_index_map->create_submap(submesh_vertices);
