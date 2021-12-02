@@ -11,8 +11,7 @@ import basix
 import numpy as np
 import pytest
 from dolfinx import cpp as _cpp
-from dolfinx.cpp.mesh import is_simplex
-from dolfinx._cpp.mesh import create_cell_partitioner
+from dolfinx.cpp.mesh import is_simplex, create_cell_partitioner
 from dolfinx.fem import assemble_scalar
 from dolfinx.generation import (BoxMesh, DiagonalType, RectangleMesh,
                                 UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh)
