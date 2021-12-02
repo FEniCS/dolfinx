@@ -344,8 +344,6 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
   }
   ss << "\n";
 
-  std::cout << ss.str() << "\n";
-
   // std::cout << "source_ranks:\n";
   // for (auto rank : source_ranks)
   // {
@@ -359,14 +357,16 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
   // }
   // std::cout << "\n";
 
-  throw "error";
-  // FIXME PARALLEL
+  // throw "error";
   std::pair<common::IndexMap, std::vector<int32_t>>
       submesh_vertex_index_map_pair
-      = vertex_index_map->create_submap(submesh_vertices);
+      = vertex_index_map->create_submap(submesh_owned_vertices);
   auto submesh_vertex_index_map = std::make_shared<common::IndexMap>(
       std::move(submesh_vertex_index_map_pair.first));
   auto global_vertices = submesh_vertex_index_map_pair.second;
+
+  ss << "Created vertex submap\n";
+
 
   // Entity index map
   auto entity_index_map = _topology.index_map(dim);
@@ -375,6 +375,8 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
   auto submesh_entity_index_map = std::make_shared<common::IndexMap>(
       std::move(submesh_entity_index_map_pair.first));
   auto global_entities = submesh_entity_index_map_pair.second;
+
+  ss << "Created entity submap\n";
 
   // Submesh vertex to vertex adjacency list
   auto submesh_v_to_v = std::make_shared<graph::AdjacencyList<std::int32_t>>(
@@ -410,6 +412,9 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
   submesh_topology.set_index_map(dim, submesh_entity_index_map);
   submesh_topology.set_connectivity(submesh_v_to_v, 0, 0);
   submesh_topology.set_connectivity(submesh_e_to_v, dim, 0);
+
+  ss << "Topology created\n";
+  std::cout << ss.str() << "\n";
 
   // Geometry
   auto e_to_g = mesh::entities_to_geometry(*this, dim, entities, false);
