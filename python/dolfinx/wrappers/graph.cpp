@@ -121,7 +121,7 @@ void graph(py::module& m)
 #ifdef HAS_PARMETIS
   m.def(
       "partitioner_parmetis",
-      [](double imbalance, std::array<int, 3> options)  -> partition_fn
+      [](double imbalance, std::array<int, 3> options) -> partition_fn
       {
         return create_partitioner_py(
             dolfinx::graph::parmetis::partitioner(imbalance, options));
@@ -134,7 +134,7 @@ void graph(py::module& m)
   m.def(
       "partitioner_kahip",
       [](int mode = 1, int seed = 1, double imbalance = 0.03,
-         bool suppress_output = true) -> partition_fnÎ
+         bool suppress_output = true) -> partition_fn
       {
         return create_partitioner_py(dolfinx::graph::kahip::partitioner(
             mode, seed, imbalance, suppress_output));
