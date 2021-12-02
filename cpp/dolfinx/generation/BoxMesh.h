@@ -34,7 +34,7 @@ namespace dolfinx::generation::BoxMesh
 /// @return Mesh
 mesh::Mesh create(MPI_Comm comm, const std::array<std::array<double, 3>, 2>& p,
                   std::array<std::size_t, 3> n, mesh::CellType celltype,
-                  const mesh::GhostMode ghost_mode,
+                  mesh::GhostMode ghost_mode,
                   const mesh::CellPartitionFunction& partitioner
                   = mesh::create_cell_partitioner());
 } // namespace dolfinx::generation::BoxMesh

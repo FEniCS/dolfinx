@@ -506,10 +506,7 @@ std::vector<std::int32_t> mesh::exterior_facet_indices(const Mesh& mesh)
   return surface_facets;
 }
 //------------------------------------------------------------------------------
-// mesh::CellPartitionFunction
-std::function<graph::AdjacencyList<std::int32_t>(
-    MPI_Comm, int, int, const graph::AdjacencyList<std::int64_t>&,
-    mesh::GhostMode ghost_mode)>
+mesh::CellPartitionFunction
 mesh::create_cell_partitioner(const graph::partition_fn& partfn)
 {
   return

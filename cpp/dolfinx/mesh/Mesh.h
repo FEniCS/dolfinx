@@ -8,6 +8,7 @@
 
 #include "Geometry.h"
 #include "Topology.h"
+#include "utils.h"
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/UniqueIdGenerator.h>
 #include <string>
@@ -26,28 +27,6 @@ class AdjacencyList;
 
 namespace dolfinx::mesh
 {
-
-/// Signature for the cell partitioning function. The function should
-/// compute the destination rank for cells currently on this rank.
-///
-/// @param[in] comm MPI Communicator
-/// @param[in] nparts Number of partitions
-/// @param[in] tdim Topological dimension
-/// @param[in] cells Cells on this process. The ith entry in list
-/// contains the global indices for the cell vertices. Each cell can
-/// appear only once across all processes. The cell vertex indices are
-/// not necessarily contiguous globally, i.e. the maximum index across
-/// all processes can be greater than the number of vertices. High-order
-/// 'nodes', e.g. mid-side points, should not be included.
-/// @param[in] ghost_mode How to overlap the cell partitioning: none,
-/// shared_facet or shared_vertex
-/// @return Destination ranks for each cell on this process
-using CellPartitionFunction
-    = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
-        MPI_Comm comm, int nparts, int tdim,
-        const dolfinx::graph::AdjacencyList<std::int64_t>& cells,
-        dolfinx::mesh::GhostMode ghost_mode)>;
-
 /// Enum for different partitioning ghost modes
 enum class GhostMode : int
 {

@@ -15,7 +15,6 @@
 /// Interval mesh creation
 namespace dolfinx::generation::IntervalMesh
 {
-
 /// Interval mesh of the 1D line `[a, b]`.  Given @p n cells in the
 /// axial direction, the total number of intervals will be `n` and the
 /// total number of vertices will be `n + 1`.
@@ -28,7 +27,7 @@ namespace dolfinx::generation::IntervalMesh
 /// the parallel distribution of cells across MPI ranks
 /// @return A mesh
 mesh::Mesh create(MPI_Comm comm, std::size_t n, std::array<double, 2> x,
-                  const mesh::GhostMode ghost_mode,
+                  mesh::GhostMode ghost_mode,
                   const mesh::CellPartitionFunction& partitioner
                   = mesh::create_cell_partitioner());
 } // namespace dolfinx::generation::IntervalMesh
