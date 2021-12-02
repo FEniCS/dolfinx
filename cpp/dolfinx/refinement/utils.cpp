@@ -99,13 +99,19 @@ xt::xtensor<double, 2> create_new_geometry(
 
   const xt::xtensor<double, 2> midpoints
       = mesh::compute_midpoints(mesh, 1, edges);
-  // The below should work, but misbehaves with the Intel icpx compiler
-  // xt::view(new_vertex_coordinates, xt::range(-num_new_vertices, _),
-  // xt::all())
-  //     = midpoints;
-  auto _vertex = xt::view(new_vertex_coordinates,
-                          xt::range(-num_new_vertices, _), xt::all());
-  _vertex.assign(midpoints);
+
+  // Cannot use xt::range(-num_new_vertices, _) to assign midpoints as
+  // num_new_vertices can be 0
+  for (std::size_t i = 0; i < num_new_vertices; i++)
+  {
+    // The below should work, but misbehaves with the Intel icpx compiler
+    // xt::view(new_vertex_coordinates, num_vertices + i,
+    // xt::all())
+    //     = xt::row(midpoints, i);
+    auto _vertex
+        = xt::view(new_vertex_coordinates, num_vertices + i, xt::all());
+    _vertex.assign(xt::row(midpoints, i));
+  }
 
   return xt::view(new_vertex_coordinates, xt::all(),
                   xt::range(0, mesh.geometry().dim()));
