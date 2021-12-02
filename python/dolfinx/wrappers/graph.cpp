@@ -20,38 +20,15 @@ namespace py = pybind11;
 
 namespace
 {
-using PythonGraphPartitionFunction
-    = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
-        dolfinx_wrappers::MPICommWrapper comm, int nparts,
-        const dolfinx::graph::AdjacencyList<std::int64_t>& local_graph,
-        std::int32_t num_ghost_nodes, bool ghosting)>;
-
-using CppGraphPartitionFunction
-    = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
-        MPI_Comm comm, int nparts,
-        const dolfinx::graph::AdjacencyList<std::int64_t>& local_graph,
-        std::int32_t num_ghost_nodes, bool ghosting)>;
-
-PythonGraphPartitionFunction
-create_partitioner_py_wrapper(const CppGraphPartitionFunction& p_cpp)
+/// Wrap a C++ graph partitioning function as a Python-ready function
+template <typename Functor>
+auto create_partitioner_py(Functor p_cpp)
 {
   return [p_cpp](dolfinx_wrappers::MPICommWrapper comm, int nparts,
                  const dolfinx::graph::AdjacencyList<std::int64_t>& local_graph,
                  std::int32_t num_ghost_nodes, bool ghosting)
   { return p_cpp(comm.get(), nparts, local_graph, num_ghost_nodes, ghosting); };
 }
-
-// CppGraphPartitionFunction
-// create_partitioner_cpp_wrapper(const PythonGraphPartitionFunction& p_py)
-// {
-//   return [p_py](MPI_Comm comm, int nparts,
-//                 const dolfinx::graph::AdjacencyList<std::int64_t>&
-//                 local_graph, std::int32_t num_ghost_nodes, bool ghosting)
-//   {
-//     return p_py(dolfinx_wrappers::MPICommWrapper(comm), nparts, local_graph,
-//                 num_ghost_nodes, ghosting);
-//   };
-// }
 } // namespace
 
 namespace dolfinx_wrappers
@@ -122,14 +99,8 @@ void graph(py::module& m)
   declare_adjacency_list<std::int64_t>(m, "int64");
 
   m.def("partitioner_py",
-        []()
-        {
-          auto p0 = dolfinx::graph::scotch::partitioner();
-          auto p1 = create_partitioner_py_wrapper(p0);
-          return p1;
-          // dolfinx::graph::scotch::partitioner();
-          // return create_partitioner_py_wrapper(
-          //     dolfinx::graph::scotch::partitioner());
+        []() {
+          return create_partitioner_py(dolfinx::graph::scotch::partitioner());
         });
 
   m.def("reorder_gps", &dolfinx::graph::reorder_gps);
