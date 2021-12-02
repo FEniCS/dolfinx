@@ -109,19 +109,19 @@ void graph(py::module& m)
       []() -> partition_fn
       { return create_partitioner_py(dolfinx::graph::scotch::partitioner()); },
       "Default graph partitioner");
-  // m.def(
-  //     "partitioner_scotch",
-  //     [](double imbalance, int seed) -> partition_fn
-  //     {
-  //       return create_partitioner_py(dolfinx::graph::scotch::partitioner(
-  //           dolfinx::graph::scotch::strategy::none, imbalance, seed));
-  //     },
-  //     py::arg("imbalance") = 0.025, py::arg("seed") = 0,
-  //     "SCOTCH graph partitioner");
+  m.def(
+      "partitioner_scotch",
+      [](double imbalance, int seed) -> partition_fn
+      {
+        return create_partitioner_py(dolfinx::graph::scotch::partitioner(
+            dolfinx::graph::scotch::strategy::none, imbalance, seed));
+      },
+      py::arg("imbalance") = 0.025, py::arg("seed") = 0,
+      "SCOTCH graph partitioner");
 #ifdef HAS_PARMETIS
   m.def(
       "partitioner_parmetis",
-      [](double imbalance, std::array<int, 3> options) -> partition_fn
+      [](double imbalance, std::array<int, 3> options)  -> partition_fn
       {
         return create_partitioner_py(
             dolfinx::graph::parmetis::partitioner(imbalance, options));
@@ -130,18 +130,18 @@ void graph(py::module& m)
       py::arg("options") = std ::array<int, 3>({1, 0, 5}),
       "ParMETIS graph partitioner");
 #endif
-// #ifdef HAS_KAHIP
-//   m.def(
-//       "partitioner_kahip",
-//       [](int mode = 1, int seed = 1, double imbalance = 0.03,
-//          bool suppress_output = true) -> partition_fnÎ
-//       {
-//         return create_partitioner_py(dolfinx::graph::kahip::partitioner(
-//             mode, seed, imbalance, suppress_output));
-//       },
-//       py::arg("mode") = 1.02, py::arg("seed") = 1, py::arg("imbalance") = 0.03,
-//       py::arg("suppress_output") = true, "KaHIP graph partitioner");
-// #endif
+#ifdef HAS_KAHIP
+  m.def(
+      "partitioner_kahip",
+      [](int mode = 1, int seed = 1, double imbalance = 0.03,
+         bool suppress_output = true) -> partition_fnÎ
+      {
+        return create_partitioner_py(dolfinx::graph::kahip::partitioner(
+            mode, seed, imbalance, suppress_output));
+      },
+      py::arg("mode") = 1.02, py::arg("seed") = 1, py::arg("imbalance") = 0.03,
+      py::arg("suppress_output") = true, "KaHIP graph partitioner");
+#endif
 
   m.def("reorder_gps", &dolfinx::graph::reorder_gps);
 }
