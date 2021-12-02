@@ -10,7 +10,7 @@ import dolfinx
 import numpy as np
 import pytest
 import ufl
-from dolfinx.cpp.mesh import partition_cells_graph
+from dolfinx.cpp.mesh import create_cell_partitioner
 from dolfinx.generation import BoxMesh
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import CellType, GhostMode, compute_midpoints, create_mesh
@@ -20,7 +20,7 @@ from mpi4py import MPI
 assert (tempdir)
 
 
-@pytest.mark.parametrize("partitioner", [partition_cells_graph])
+@pytest.mark.parametrize("partitioner", [create_cell_partitioner()])
 @pytest.mark.parametrize("Nx", [5, 10])
 @pytest.mark.parametrize("cell_type", [CellType.tetrahedron, CellType.hexahedron])
 def test_partition_box_mesh(partitioner, Nx, cell_type):
