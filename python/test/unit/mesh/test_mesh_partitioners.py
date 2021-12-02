@@ -24,25 +24,23 @@ partitioners = [dolfinx.cpp.graph.partitioner()]
 try:
     from dolfinx.cpp.graph import partitioner
     partitioners.append(partitioner())
-except:
-    pass
+except ImportError:
+    raise
 try:
     from dolfinx.cpp.graph import partitioner_scotch
     partitioners.append(partitioner_scotch())
-except:
-    pass
+except ImportError:
+    raise
 try:
     from dolfinx.cpp.graph import partitioner_parmetis
     partitioners.append(partitioner_parmetis())
-except:
+except ImportError:
     pass
 try:
     from dolfinx.cpp.graph import partitioner_kahip
     partitioners.append(partitioner_kahip())
-except:
+except ImportError:
     pass
-
-print("****", partitioners)
 
 
 @pytest.mark.parametrize("gpart", partitioners)
