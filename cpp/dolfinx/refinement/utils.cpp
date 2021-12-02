@@ -92,20 +92,25 @@ xt::xtensor<double, 2> create_new_geometry(
     for (std::size_t j = 0; j < x_g.shape(1); ++j)
       new_vertex_coordinates(v, j) = x_g(vertex_to_x[v], j);
 
-  std::vector<int> edges(num_new_vertices);
-  int i = 0;
-  for (auto& e : local_edge_to_new_vertex)
-    edges[i++] = e.first;
+  // Compute new vertices
+  if (num_new_vertices > 0)
+  {
+    std::vector<int> edges(num_new_vertices);
+    int i = 0;
+    for (auto& e : local_edge_to_new_vertex)
+      edges[i++] = e.first;
 
-  const xt::xtensor<double, 2> midpoints
-      = mesh::compute_midpoints(mesh, 1, edges);
-  // The below should work, but misbehaves with the Intel icpx compiler
-  // xt::view(new_vertex_coordinates, xt::range(-num_new_vertices, _),
-  // xt::all())
-  //     = midpoints;
-  auto _vertex = xt::view(new_vertex_coordinates,
-                          xt::range(-num_new_vertices, _), xt::all());
-  _vertex.assign(midpoints);
+    const xt::xtensor<double, 2> midpoints
+        = mesh::compute_midpoints(mesh, 1, edges);
+
+    // The below should work, but misbehaves with the Intel icpx compiler
+    // xt::view(new_vertex_coordinates, xt::range(-num_new_vertices, _),
+    // xt::all())
+    //     = midpoints;
+    auto _vertex = xt::view(new_vertex_coordinates,
+                            xt::range(-num_new_vertices, _), xt::all());
+    _vertex.assign(midpoints);
+  }
 
   return xt::view(new_vertex_coordinates, xt::all(),
                   xt::range(0, mesh.geometry().dim()));
