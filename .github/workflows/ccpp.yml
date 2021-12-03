@@ -58,6 +58,18 @@ jobs:
           python3 -m isort --check dolfinx_utils
           python3 -m isort --check demo
           python3 -m isort --check test
+      - name: clang-format C++ checks (non-blocking)
+        continue-on-error: true
+        run: |
+          apt-get -y update # To remove once new Docker images build
+          apt-get -y install clang-format # To remove once new Docker images built
+          cd cpp
+          find . -type f \( -name "*.cpp" -o -name "*.h" \) ! -name "pugixml.cpp" ! -name "loguru.cpp" | xargs clang-format --dry-run --Werror
+      - name: clang-format Python binding checks (non-blocking)
+        continue-on-error: true
+        run: |
+          cd python/dolfinx/wrappers
+          find . -type f \( -name "*.cpp" -o -name "*.h" \) | xargs clang-format --dry-run --Werror
 
       - name: Configure C++
         run: cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build -S cpp/
