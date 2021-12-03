@@ -23,9 +23,7 @@ try:
     from dolfinx.cpp.graph import partitioner_scotch
     partitioners.append(partitioner_scotch())
 except ImportError:
-    # NOTE: Can be added back in once it is possible to build DOLFINx without SCOTCH.
-    # partitioners.append(pytest.param(None, marks=pytest.mark.skip(reason="DOLFINx build without SCOTCH")))
-    raise
+    partitioners.append(pytest.param(None, marks=pytest.mark.skip(reason="DOLFINx build without SCOTCH")))
 try:
     from dolfinx.cpp.graph import partitioner_parmetis
     partitioners.append(partitioner_parmetis())
