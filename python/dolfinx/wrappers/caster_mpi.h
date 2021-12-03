@@ -38,14 +38,23 @@ public:
   // Python to C++
   bool load(handle src, bool)
   {
-    // Simplified version of isinstance(src, mpi4py.MPI.Comm) - avoids
-    // segfault when pybind11 tries to convert some other random type to
-    // MPICommWrapper
-    if (not hasattr(src, "Allgather"))
+    // NOTE: This check would be safer than hasattr but does not evaluate to
+    // true.
+    // if (PyObject_TypeCheck(src.ptr(), &PyMPIComm_Type))
+
+    // Check that src is an mpi4py communicator
+    if (hasattr(src, "Allgather"))
+    {
+      VERIFY_MPI4PY(PyMPIComm_Get);
+      value = dolfinx_wrappers::MPICommWrapper(*PyMPIComm_Get(src.ptr()));
+      return true;
+    }
+    else
+    {
       return false;
-    VERIFY_MPI4PY(PyMPIComm_Get);
-    value = dolfinx_wrappers::MPICommWrapper(*PyMPIComm_Get(src.ptr()));
-    return true;
+    }
+
+    return !PyErr_Occurred();
   }
 
   // C++ to Python
