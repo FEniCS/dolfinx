@@ -111,6 +111,8 @@ jobs:
       - name: Run demos (Python, MPI (np=2))
         run: python3 -m pytest -m mpi --num-proc=2 python/demo/test.py
 
+      - name: Install Python test dependencies
+        run: apt-get update && apt-get -y install libeigen3-dev # To remove once new Docker images built
       - name: Run Python unit tests (serial)
         run: python3 -m pytest -n=auto --durations=50 python/test/unit/
       - name: Run Python unit tests (MPI, np=2)
