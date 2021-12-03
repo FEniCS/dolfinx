@@ -19,7 +19,6 @@
     int rc = import_mpi4py();                                                  \
     if (rc != 0)                                                               \
     {                                                                          \
-      std::cout << "ERROR: could not import mpi4py!" << std::endl;             \
       throw std::runtime_error("Error when importing mpi4py");                 \
     }                                                                          \
   }
@@ -38,23 +37,15 @@ public:
   // Python to C++
   bool load(handle src, bool)
   {
-    // NOTE: This check would be safer than hasattr but does not evaluate to
-    // true.
-    // if (PyObject_TypeCheck(src.ptr(), &PyMPIComm_Type))
-
-    // Check that src is an mpi4py communicator
-    if (hasattr(src, "Allgather"))
+    // Check whether src is an mpi4py communicator
+    VERIFY_MPI4PY(PyMPIComm_Get);
+    if (PyObject_TypeCheck(src.ptr(), &PyMPIComm_Type))
     {
-      VERIFY_MPI4PY(PyMPIComm_Get);
       value = dolfinx_wrappers::MPICommWrapper(*PyMPIComm_Get(src.ptr()));
       return true;
     }
-    else
-    {
-      return false;
-    }
 
-    return !PyErr_Occurred();
+    return false;
   }
 
   // C++ to Python
