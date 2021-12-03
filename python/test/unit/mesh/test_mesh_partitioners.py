@@ -18,7 +18,7 @@ from mpi4py import MPI
 
 assert (tempdir)
 
-partitioners = []
+partitioners = [dolfinx.cpp.graph.partitioner()]
 try:
     from dolfinx.cpp.graph import partitioner_scotch
     partitioners.append(partitioner_scotch())
