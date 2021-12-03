@@ -4,8 +4,10 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-import dolfinx
 import numpy as np
+
+import dolfinx
+
 from mpi4py import MPI
 
 

@@ -6,13 +6,15 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-import dolfinx
 import numba
 import numpy as np
+
+import dolfinx
 from dolfinx import TimingType, cpp, list_timings
 from dolfinx.fem import Function, FunctionSpace, IntegralType
 from dolfinx.generation import UnitSquareMesh
 from dolfinx_utils.test.skips import skip_if_complex
+
 from mpi4py import MPI
 from petsc4py import PETSc
 
