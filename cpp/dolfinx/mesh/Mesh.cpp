@@ -303,6 +303,18 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
   auto submesh_e_to_v = std::make_shared<graph::AdjacencyList<std::int32_t>>(
       submesh_e_to_v_vec, submesh_e_to_v_offsets);
 
+  ss << "submesh e_to_v = \n";
+  for (auto cell = 0; cell < submesh_e_to_v->num_nodes(); ++cell)
+  {
+    ss << "   cell = " << cell << ": ";
+    for (auto v : submesh_e_to_v->links(cell))
+    {
+      ss << v << " ";
+    }
+    ss << "\n";
+  }
+  ss << "\n";
+
   std::cout << ss.str() << "\n";
   throw "Stop";
 
