@@ -131,6 +131,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     python3-setuptools && \
     #
     apt-get -y install \
+    clang-format \
     doxygen \
     git \
     graphviz \
