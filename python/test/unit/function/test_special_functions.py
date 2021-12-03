@@ -5,12 +5,13 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for the function library"""
 
-import dolfinx
 import pytest
 import ufl
-from dolfinx.generation import UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh
 from dolfinx_utils.test.skips import skip_in_parallel
 from mpi4py import MPI
+
+import dolfinx
+from dolfinx.generation import UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh
 
 
 @pytest.mark.skip

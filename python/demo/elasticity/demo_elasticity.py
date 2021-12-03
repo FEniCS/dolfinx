@@ -11,6 +11,11 @@
 from contextlib import ExitStack
 
 import numpy as np
+from mpi4py import MPI
+from petsc4py import PETSc
+from ufl import (Identity, SpatialCoordinate, TestFunction, TrialFunction,
+                 as_vector, dx, grad, inner, sym, tr)
+
 from dolfinx import la
 from dolfinx.fem import (DirichletBC, Function, VectorFunctionSpace,
                          apply_lifting, assemble_matrix, assemble_vector,
@@ -18,10 +23,6 @@ from dolfinx.fem import (DirichletBC, Function, VectorFunctionSpace,
 from dolfinx.generation import BoxMesh
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import CellType, GhostMode
-from mpi4py import MPI
-from petsc4py import PETSc
-from ufl import (Identity, SpatialCoordinate, TestFunction, TrialFunction,
-                 as_vector, dx, grad, inner, sym, tr)
 
 # Nullspace and problem setup
 # ---------------------------

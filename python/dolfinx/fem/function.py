@@ -13,11 +13,12 @@ import numpy as np
 import ufl
 import ufl.algorithms
 import ufl.algorithms.analysis
+from petsc4py import PETSc
+
 from dolfinx import cpp as _cpp
 from dolfinx import jit
 from dolfinx.fem import dofmap
 from dolfinx.mesh import Mesh
-from petsc4py import PETSc
 
 
 class Constant(ufl.Constant):

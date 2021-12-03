@@ -9,11 +9,12 @@ from xml.etree import ElementTree
 
 import numpy as np
 import pytest
+from dolfinx_utils.test.fixtures import tempdir
+from mpi4py import MPI
+
 from dolfinx.generation import UnitCubeMesh
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import CellType, MeshTags, locate_entities
-from dolfinx_utils.test.fixtures import tempdir
-from mpi4py import MPI
 
 assert (tempdir)
 

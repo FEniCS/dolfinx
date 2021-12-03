@@ -8,12 +8,13 @@
 import numpy as np
 import pytest
 import ufl
+from mpi4py import MPI
+from petsc4py import PETSc
+
 from dolfinx.fem import Expression, Function, FunctionSpace
 from dolfinx.generation import UnitSquareMesh
 from dolfinx.geometry import (BoundingBoxTree, compute_colliding_cells,
                               compute_collisions)
-from mpi4py import MPI
-from petsc4py import PETSc
 
 
 @pytest.mark.skipif(np.issubdtype(PETSc.ScalarType, np.complexfloating),

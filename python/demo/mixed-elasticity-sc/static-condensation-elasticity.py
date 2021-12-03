@@ -17,6 +17,9 @@ import numba
 import numba.core.typing.cffi_utils as cffi_support
 import numpy as np
 import ufl
+from mpi4py import MPI
+from petsc4py import PETSc
+
 from dolfinx import geometry
 from dolfinx.cpp.fem import Form_complex128, Form_float64
 from dolfinx.fem import (DirichletBC, Function, FunctionSpace, IntegralType,
@@ -25,8 +28,6 @@ from dolfinx.fem import (DirichletBC, Function, FunctionSpace, IntegralType,
 from dolfinx.io import XDMFFile
 from dolfinx.jit import ffcx_jit
 from dolfinx.mesh import MeshTags, locate_entities_boundary
-from mpi4py import MPI
-from petsc4py import PETSc
 
 filedir = os.path.dirname(__file__)
 infile = XDMFFile(MPI.COMM_WORLD, os.path.join(filedir, "cooks_tri_mesh.xdmf"),

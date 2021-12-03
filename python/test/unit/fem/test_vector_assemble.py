@@ -7,9 +7,10 @@
 
 
 import ufl
+from mpi4py import MPI
+
 from dolfinx.fem import VectorFunctionSpace, assemble_matrix
 from dolfinx.generation import UnitSquareMesh
-from mpi4py import MPI
 
 
 def test_vector_assemble_matrix_exterior():

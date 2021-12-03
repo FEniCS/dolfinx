@@ -7,12 +7,13 @@
 import numpy as np
 import pytest
 import ufl
-from dolfinx import geometry
-from dolfinx.geometry import compute_distance_gjk
-from dolfinx.mesh import create_mesh
 from dolfinx_utils.test.skips import skip_in_parallel
 from mpi4py import MPI
 from scipy.spatial.transform import Rotation
+
+from dolfinx import geometry
+from dolfinx.geometry import compute_distance_gjk
+from dolfinx.mesh import create_mesh
 
 
 def distance_point_to_line_3D(P1, P2, point):

@@ -7,8 +7,8 @@
 """Graph module"""
 
 import numpy as np
-from dolfinx import cpp as _cpp
 
+from dolfinx import cpp as _cpp
 
 __all__ = ["create_adjacencylist"]
 

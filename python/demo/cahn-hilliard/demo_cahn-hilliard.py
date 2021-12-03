@@ -111,16 +111,17 @@
 import os
 
 import numpy as np
+from mpi4py import MPI
+from petsc4py import PETSc
+from ufl import (FiniteElement, TestFunctions, diff, dx, grad, inner, split,
+                 variable)
+
 from dolfinx import log, plot
 from dolfinx.fem import Function, FunctionSpace, NonlinearProblem
 from dolfinx.generation import UnitSquareMesh
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import CellType
 from dolfinx.nls import NewtonSolver
-from mpi4py import MPI
-from petsc4py import PETSc
-from ufl import (FiniteElement, TestFunctions, diff, dx, grad, inner, split,
-                 variable)
 
 try:
     import pyvista as pv

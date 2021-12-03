@@ -4,9 +4,10 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-import dolfinx
 import numpy as np
 from mpi4py import MPI
+
+import dolfinx
 
 
 def test_sub_index_map():

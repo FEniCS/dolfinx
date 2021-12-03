@@ -8,8 +8,9 @@
 import typing
 
 import ufl
-from dolfinx import fem
 from petsc4py import PETSc
+
+from dolfinx import fem
 
 
 class LinearProblem():

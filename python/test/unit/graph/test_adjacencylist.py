@@ -6,6 +6,7 @@
 
 import numpy as np
 import pytest
+
 from dolfinx.graph import create_adjacencylist
 
 

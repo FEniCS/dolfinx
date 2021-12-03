@@ -7,11 +7,12 @@
 import os
 
 import pytest
+from dolfinx_utils.test.fixtures import tempdir
+from mpi4py import MPI
+
 from dolfinx.generation import UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import CellType
-from dolfinx_utils.test.fixtures import tempdir
-from mpi4py import MPI
 
 assert (tempdir)
 

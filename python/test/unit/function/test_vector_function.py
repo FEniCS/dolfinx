@@ -8,10 +8,11 @@
 import numpy as np
 import pytest
 import ufl
-from dolfinx.fem import Function, FunctionSpace
-from dolfinx.mesh import create_mesh
 from dolfinx_utils.test.skips import skip_in_parallel
 from mpi4py import MPI
+
+from dolfinx.fem import Function, FunctionSpace
+from dolfinx.mesh import create_mesh
 
 
 @skip_in_parallel

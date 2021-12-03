@@ -10,16 +10,17 @@ import sys
 import basix
 import numpy as np
 import pytest
+from dolfinx_utils.test.fixtures import tempdir
+from dolfinx_utils.test.skips import skip_in_parallel
+from mpi4py import MPI
+from ufl import dx
+
 from dolfinx import cpp as _cpp
 from dolfinx.cpp.mesh import is_simplex, partition_cells_graph
 from dolfinx.fem import assemble_scalar
 from dolfinx.generation import (BoxMesh, DiagonalType, RectangleMesh,
                                 UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh)
 from dolfinx.mesh import CellType, GhostMode
-from dolfinx_utils.test.fixtures import tempdir
-from dolfinx_utils.test.skips import skip_in_parallel
-from mpi4py import MPI
-from ufl import dx
 
 assert (tempdir)
 

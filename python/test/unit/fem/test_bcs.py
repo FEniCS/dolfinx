@@ -7,13 +7,14 @@
 import numpy as np
 import pytest
 import ufl
+from mpi4py import MPI
+from petsc4py import PETSc
+from ufl import dx, inner
+
 from dolfinx.fem import (DirichletBC, Function, FunctionSpace, apply_lifting,
                          assemble_matrix, assemble_vector, create_matrix,
                          create_vector, locate_dofs_geometrical, set_bc)
 from dolfinx.generation import UnitSquareMesh
-from mpi4py import MPI
-from petsc4py import PETSc
-from ufl import dx, inner
 
 
 def test_locate_dofs_geometrical():

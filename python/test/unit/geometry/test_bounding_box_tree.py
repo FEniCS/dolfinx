@@ -7,6 +7,9 @@
 
 import numpy
 import pytest
+from dolfinx_utils.test.skips import skip_in_parallel
+from mpi4py import MPI
+
 from dolfinx import cpp as _cpp
 from dolfinx.generation import (BoxMesh, UnitCubeMesh, UnitIntervalMesh,
                                 UnitSquareMesh)
@@ -14,8 +17,6 @@ from dolfinx.geometry import (BoundingBoxTree, compute_closest_entity,
                               compute_colliding_cells, compute_collisions,
                               compute_distance_gjk, create_midpoint_tree)
 from dolfinx.mesh import CellType, locate_entities, locate_entities_boundary
-from dolfinx_utils.test.skips import skip_in_parallel
-from mpi4py import MPI
 
 
 def extract_geometricial_data(mesh, dim, entities):
