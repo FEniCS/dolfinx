@@ -249,6 +249,7 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
   }
   ss << "\n";
 
+  // Create submap vertex index map
   std::pair<common::IndexMap, std::vector<int32_t>>
       submesh_vertex_index_map_pair
       = vertex_index_map->create_submap(submesh_owned_vertices);
@@ -273,11 +274,34 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
   }
   ss << "\n";
 
-  // // Entity index map
-  // std::pair<common::IndexMap, std::vector<int32_t>>
-  //     submesh_entity_index_map_pair = entity_index_map->create_submap(entities);
-  // auto submesh_entity_index_map = std::make_shared<common::IndexMap>(
-  //     std::move(submesh_entity_index_map_pair.first));
+  // Create submap entity index map
+  std::pair<common::IndexMap, std::vector<int32_t>>
+      submesh_entity_index_map_pair =
+        entity_index_map->create_submap(submesh_owned_entities);
+  auto submesh_entity_index_map = std::make_shared<common::IndexMap>(
+      std::move(submesh_entity_index_map_pair.first));
+
+  // Submesh entity to vertex connectivity
+  auto e_to_v = _topology.connectivity(dim, 0);
+  std::vector<std::int32_t> submesh_e_to_v_vec;
+  std::vector<std::int32_t> submesh_e_to_v_offsets(1, 0);
+  for (auto e : entities)
+  {
+    auto vertices = e_to_v->links(e);
+
+    for (auto v : vertices)
+    {
+      auto submesh_vertex_it
+          = std::find(submesh_vertices.begin(), submesh_vertices.end(), v);
+      assert(submesh_vertex_it != submesh_vertices.end());
+      std::int32_t submesh_vertex
+          = std::distance(submesh_vertices.begin(), submesh_vertex_it);
+      submesh_e_to_v_vec.push_back(submesh_vertex);
+    }
+    submesh_e_to_v_offsets.push_back(submesh_e_to_v_vec.size());
+  }
+  auto submesh_e_to_v = std::make_shared<graph::AdjacencyList<std::int32_t>>(
+      submesh_e_to_v_vec, submesh_e_to_v_offsets);
 
   std::cout << ss.str() << "\n";
   throw "Stop";
