@@ -17,7 +17,7 @@ using namespace dolfinx::generation;
 namespace
 {
 mesh::Mesh build(MPI_Comm comm, std::size_t nx, std::array<double, 2> x,
-                 const mesh::GhostMode ghost_mode,
+                 mesh::GhostMode ghost_mode,
                  const mesh::CellPartitionFunction& partitioner)
 {
   fem::CoordinateElement element(mesh::CellType::interval, 1);
@@ -75,7 +75,7 @@ mesh::Mesh build(MPI_Comm comm, std::size_t nx, std::array<double, 2> x,
 //-----------------------------------------------------------------------------
 mesh::Mesh IntervalMesh::create(MPI_Comm comm, std::size_t n,
                                 std::array<double, 2> x,
-                                const mesh::GhostMode ghost_mode,
+                                mesh::GhostMode ghost_mode,
                                 const mesh::CellPartitionFunction& partitioner)
 {
   return build(comm, n, x, ghost_mode, partitioner);
