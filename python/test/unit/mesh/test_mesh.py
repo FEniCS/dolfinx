@@ -7,19 +7,21 @@
 import math
 import sys
 
-import basix
 import numpy as np
 import pytest
+
+import basix
 from dolfinx import cpp as _cpp
-from dolfinx.cpp.mesh import is_simplex, create_cell_partitioner
+from dolfinx.cpp.mesh import create_cell_partitioner, is_simplex
 from dolfinx.fem import assemble_scalar
 from dolfinx.generation import (BoxMesh, DiagonalType, RectangleMesh,
                                 UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh)
 from dolfinx.mesh import CellType, GhostMode
 from dolfinx_utils.test.fixtures import tempdir
 from dolfinx_utils.test.skips import skip_in_parallel
-from mpi4py import MPI
 from ufl import dx
+
+from mpi4py import MPI
 
 assert (tempdir)
 

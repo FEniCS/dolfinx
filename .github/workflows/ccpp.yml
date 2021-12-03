@@ -49,6 +49,15 @@ jobs:
           python3 -m flake8 dolfinx_utils
           python3 -m flake8 demo
           python3 -m flake8 test
+      - name: isort checks (non-blocking)
+        continue-on-error: true
+        run: |
+          python3 -m pip install isort # To remove once new Docker images built
+          cd python/
+          python3 -m isort --check dolfinx
+          python3 -m isort --check dolfinx_utils
+          python3 -m isort --check demo
+          python3 -m isort --check test
 
       - name: Configure C++
         run: cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build -S cpp/
@@ -103,7 +112,7 @@ jobs:
         run: python3 -m pytest -m mpi --num-proc=2 python/demo/test.py
 
       - name: Install Python test dependencies
-        run: apt-get update && apt-get -y install libeigen3-dev
+        run: apt-get update && apt-get -y install libeigen3-dev # To remove once new Docker images built
       - name: Run Python unit tests (serial)
         run: python3 -m pytest -n=auto --durations=50 python/test/unit/
       - name: Run Python unit tests (MPI, np=2)

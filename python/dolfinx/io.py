@@ -10,9 +10,9 @@
 import typing
 
 import numpy
-import ufl
 
 import dolfinx
+import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import fem
 from dolfinx.mesh import GhostMode

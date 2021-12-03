@@ -70,8 +70,9 @@
 #
 # We first import the modules and function that the program uses::
 
-import dolfinx
 import numpy as np
+
+import dolfinx
 import ufl
 from dolfinx import fem
 from dolfinx.fem import (Constant, DirichletBC, Form, Function, FunctionSpace,
@@ -80,9 +81,10 @@ from dolfinx.fem import (Constant, DirichletBC, Form, Function, FunctionSpace,
 from dolfinx.generation import RectangleMesh
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import CellType, GhostMode, locate_entities_boundary
+from ufl import div, dx, grad, inner
+
 from mpi4py import MPI
 from petsc4py import PETSc
-from ufl import div, dx, grad, inner
 
 # We create a Mesh and attach a coordinate map to the mesh::
 

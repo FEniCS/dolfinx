@@ -5,15 +5,16 @@
 # =====================================
 # Copyright (C) 2020 Garth N. Wells and Jørgen S. Dokken ::
 
+import gmsh
 import numpy as np
+
 from dolfinx.cpp.io import distribute_entity_data, perm_gmsh
 from dolfinx.graph import create_adjacencylist
 from dolfinx.io import (XDMFFile, extract_gmsh_geometry,
                         extract_gmsh_topology_and_markers, ufl_mesh_from_gmsh)
 from dolfinx.mesh import CellType, create_mesh, create_meshtags
-from mpi4py import MPI
 
-import gmsh
+from mpi4py import MPI
 
 # Generate a mesh on each rank with the gmsh API, and create a DOLFINx mesh
 # on each rank. ::
