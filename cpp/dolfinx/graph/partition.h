@@ -32,8 +32,7 @@ namespace dolfinx::graph
 /// distribution
 /// @return Destination rank for each input node
 using partition_fn = std::function<graph::AdjacencyList<std::int32_t>(
-    MPI_Comm comm, int nparts, const AdjacencyList<std::int64_t>& local_graph,
-    std::int32_t num_ghost_nodes, bool ghosting)>;
+    MPI_Comm, int, const AdjacencyList<std::int64_t>&, std::int32_t, bool)>;
 
 /// Partition graph across processes using the default graph partitioner
 ///

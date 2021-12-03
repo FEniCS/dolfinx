@@ -4,13 +4,15 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-from dolfinx import cpp as _cpp
-import numpy
 import typing
-from dolfinx.mesh import Mesh
-from dolfinx.cpp.graph import AdjacencyList_int32
+
+import numpy
+
+from dolfinx import cpp as _cpp
 from dolfinx.cpp.geometry import (compute_closest_entity, compute_collisions,
                                   compute_distance_gjk, create_midpoint_tree)
+from dolfinx.cpp.graph import AdjacencyList_int32
+from dolfinx.mesh import Mesh
 
 __all__ = ["compute_colliding_cells", "squared_distance", "compute_closest_entity", "compute_collisions",
            "compute_distance_gjk", "create_midpoint_tree"]

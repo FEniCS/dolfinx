@@ -12,11 +12,6 @@
 #include <petscvec.h>
 #include <string>
 
-namespace dolfinx::fem
-{
-class PETScDMCollection;
-}
-
 namespace dolfinx::la
 {
 

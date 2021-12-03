@@ -74,6 +74,7 @@
 # First, the :py:mod:`dolfinx` module is imported: ::
 
 import numpy as np
+
 import ufl
 from dolfinx import fem, plot
 from dolfinx.fem import (DirichletBC, Function, FunctionSpace,
@@ -81,9 +82,10 @@ from dolfinx.fem import (DirichletBC, Function, FunctionSpace,
 from dolfinx.generation import RectangleMesh
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import CellType, GhostMode, locate_entities_boundary
+from ufl import ds, dx, grad, inner
+
 from mpi4py import MPI
 from petsc4py import PETSc
-from ufl import ds, dx, grad, inner
 
 # We begin by defining a mesh of the domain and a finite element
 # function space :math:`V` relative to this mesh. As the unit square is

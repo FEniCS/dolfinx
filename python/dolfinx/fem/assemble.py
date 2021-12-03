@@ -12,8 +12,10 @@ import typing
 
 import ufl
 from dolfinx import cpp as _cpp
+from dolfinx import la
 from dolfinx.fem.dirichletbc import DirichletBC, bcs_by_block
 from dolfinx.fem.form import Form, extract_function_spaces
+
 from petsc4py import PETSc
 
 
@@ -81,7 +83,7 @@ def pack_coefficients(form: form_type):
 
 def create_vector(L: Form) -> PETSc.Vec:
     dofmap = _create_cpp_form(L).function_spaces[0].dofmap
-    return _cpp.la.create_vector(dofmap.index_map, dofmap.index_map_bs)
+    return la.create_petsc_vector(dofmap.index_map, dofmap.index_map_bs)
 
 
 def create_vector_block(L: typing.List[Form]) -> PETSc.Vec:
@@ -139,8 +141,8 @@ def assemble_vector(L: Form, coeffs=Coefficients(None, None)) -> PETSc.Vec:
 
     """
     _L = _create_cpp_form(L)
-    b = _cpp.la.create_vector(_L.function_spaces[0].dofmap.index_map,
-                              _L.function_spaces[0].dofmap.index_map_bs)
+    b = la.create_petsc_vector(_L.function_spaces[0].dofmap.index_map,
+                               _L.function_spaces[0].dofmap.index_map_bs)
     c = (coeffs[0] if coeffs[0] is not None else pack_constants(_L),
          coeffs[1] if coeffs[1] is not None else pack_coefficients(_L))
     with b.localForm() as b_local:

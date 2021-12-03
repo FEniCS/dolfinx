@@ -7,12 +7,14 @@
 
 import numpy
 import pytest
+
 import ufl
 from dolfinx.fem import (Constant, DirichletBC, Function, FunctionSpace,
                          apply_lifting, assemble_matrix, assemble_scalar,
                          assemble_vector, set_bc)
 from dolfinx.generation import UnitSquareMesh
 from dolfinx.mesh import GhostMode, MeshTags, locate_entities_boundary
+
 from mpi4py import MPI
 from petsc4py import PETSc
 

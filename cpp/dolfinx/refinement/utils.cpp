@@ -92,20 +92,25 @@ xt::xtensor<double, 2> create_new_geometry(
     for (std::size_t j = 0; j < x_g.shape(1); ++j)
       new_vertex_coordinates(v, j) = x_g(vertex_to_x[v], j);
 
-  std::vector<int> edges(num_new_vertices);
-  int i = 0;
-  for (auto& e : local_edge_to_new_vertex)
-    edges[i++] = e.first;
+  // Compute new vertices
+  if (num_new_vertices > 0)
+  {
+    std::vector<int> edges(num_new_vertices);
+    int i = 0;
+    for (auto& e : local_edge_to_new_vertex)
+      edges[i++] = e.first;
 
-  const xt::xtensor<double, 2> midpoints
-      = mesh::compute_midpoints(mesh, 1, edges);
-  // The below should work, but misbehaves with the Intel icpx compiler
-  // xt::view(new_vertex_coordinates, xt::range(-num_new_vertices, _),
-  // xt::all())
-  //     = midpoints;
-  auto _vertex = xt::view(new_vertex_coordinates,
-                          xt::range(-num_new_vertices, _), xt::all());
-  _vertex.assign(midpoints);
+    const xt::xtensor<double, 2> midpoints
+        = mesh::compute_midpoints(mesh, 1, edges);
+
+    // The below should work, but misbehaves with the Intel icpx compiler
+    // xt::view(new_vertex_coordinates, xt::range(-num_new_vertices, _),
+    // xt::all())
+    //     = midpoints;
+    auto _vertex = xt::view(new_vertex_coordinates,
+                            xt::range(-num_new_vertices, _), xt::all());
+    _vertex.assign(midpoints);
+  }
 
   return xt::view(new_vertex_coordinates, xt::all(),
                   xt::range(0, mesh.geometry().dim()));
@@ -160,10 +165,10 @@ refinement::compute_edge_sharing(const mesh::Mesh& mesh)
   return {neighbor_comm, std::move(shared_edges)};
 }
 //-----------------------------------------------------------------------------
-std::vector<bool> refinement::update_logical_edgefunction(
+void refinement::update_logical_edgefunction(
     const MPI_Comm& neighbor_comm,
     const std::vector<std::vector<std::int32_t>>& marked_for_update,
-    const std::vector<bool>& marked_edges, const common::IndexMap& map_e)
+    std::vector<bool>& marked_edges, const common::IndexMap& map_e)
 {
   std::vector<std::int32_t> send_offsets = {0};
   std::vector<std::int64_t> data_to_send;
@@ -172,6 +177,7 @@ std::vector<bool> refinement::update_logical_edgefunction(
   {
     for (std::int32_t q : marked_for_update[i])
       data_to_send.push_back(local_to_global(q, map_e));
+
     send_offsets.push_back(data_to_send.size());
   }
 
@@ -183,19 +189,14 @@ std::vector<bool> refinement::update_logical_edgefunction(
             graph::AdjacencyList<std::int64_t>(data_to_send, send_offsets))
             .array();
 
-  // Get local index for each global index
+  // Flatten received values and set marked_edges at each index received
   std::vector<std::int32_t> local_indices(data_to_recv.size());
   map_e.global_to_local(data_to_recv, local_indices);
-
-  // Set marked_edges at each index received
-  std::vector<bool> _marked_edges = marked_edges;
   for (std::int32_t local_index : local_indices)
   {
     assert(local_index != -1);
-    _marked_edges[local_index] = true;
+    marked_edges[local_index] = true;
   }
-
-  return _marked_edges;
 }
 //-----------------------------------------------------------------------------
 std::pair<std::map<std::int32_t, std::int64_t>, xt::xtensor<double, 2>>

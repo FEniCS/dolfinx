@@ -26,7 +26,7 @@ Mat dolfinx::fem::create_matrix(const Form<PetscScalar>& a,
   // Finalise communication
   pattern.assemble();
 
-  return la::create_petsc_matrix(a.mesh()->comm(), pattern, type);
+  return la::petsc::create_matrix(a.mesh()->comm(), pattern, type);
 }
 //-----------------------------------------------------------------------------
 Mat fem::create_matrix_block(
@@ -123,7 +123,7 @@ Mat fem::create_matrix_block(
   // Mat constructor
 
   // Initialise matrix
-  Mat A = la::create_petsc_matrix(mesh->comm(), pattern, type);
+  Mat A = la::petsc::create_matrix(mesh->comm(), pattern, type);
 
   // Create row and column local-to-global maps (field0, field1, field2,
   // etc), i.e. ghosts of field0 appear before owned indices of field1
@@ -246,7 +246,7 @@ Vec fem::create_vector_block(
   common::IndexMap index_map(maps[0].first.get().comm(), local_size, dest_ranks,
                              ghosts, ghost_owners);
 
-  return la::create_petsc_vector(index_map, 1);
+  return la::petsc::create_vector(index_map, 1);
 }
 //-----------------------------------------------------------------------------
 Vec fem::create_vector_nest(

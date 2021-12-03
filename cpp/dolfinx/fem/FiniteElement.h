@@ -128,8 +128,8 @@ public:
   /// - `u` [in] The data on the physical cell that should be pulled
   /// back , flattened with row-major layout, shape=(num_points,
   /// value_size)
-  /// - `K` [in] The inverse oif the Jacobian matrix of the map
-  /// ,shape=(tdim, gdim)
+  /// - `K` [in] The inverse oif the Jacobian matrix of the map, shape=(tdim,
+  /// gdim)
   /// - `detJ_inv` [in] 1/det(J)
   /// - `J` [in] The Jacobian matrix, shape=(gdim, tdim)
   template <typename O, typename P, typename Q, typename R>
@@ -188,14 +188,16 @@ public:
   /// freedom, i.e. dofs = Pi f_x. See the Basix documentation for
   /// basix::FiniteElement::interpolation_matrix for how the data in
   /// `f_x` should be ordered.
-  /// @return The interpolation operator `Pi`
+  /// @return The interpolation operator `Pi`. Shape is (num_dofs,
+  /// num_points*value_size)
   const xt::xtensor<double, 2>& interpolation_operator() const;
 
   /// Create a matrix that maps degrees of freedom from one element to
   /// this element (interpolation)
   /// @param[in] from The element to interpolate from
   /// @return Matrix operator that maps the 'from' degrees-of-freedom to
-  /// the degrees-of-freedom of this element
+  /// the degrees-of-freedom of this element. Shape is (num_dofs of this
+  /// element, num_dofs of `from`)
   /// @note The two elements must use the same mapping between the
   /// reference and physical cells
   /// @note Does not support mixed elements
@@ -235,9 +237,12 @@ public:
 
   /// Return a function that applies DOF transformation to some data.
   ///
-  /// The returned function will take three inputs:
-  /// - [in,out] data The data to be transformed
-  /// - [in] cell_info Permutation data for the cell
+  /// The returned function will take four inputs:
+  /// - [in,out] data The data to be transformed. This data is flattened
+  ///   with row-major layout, shape=(num_dofs, block_size)
+  /// - [in] cell_info Permutation data for the cell. The size of this
+  ///   is num_cells. For elements where no transformations are required,
+  ///   an empty span can be passed in.
   /// - [in] cell The cell number
   /// - [in] block_size The block_size of the input data
   ///
@@ -357,8 +362,11 @@ public:
   /// transposed data
   ///
   /// The returned function will take three inputs:
-  /// - [in,out] data The data to be transformed
-  /// - [in] cell_info Permutation data for the cell
+  /// - [in,out] data The data to be transformed. This data is flattened
+  ///   with row-major layout, shape=(num_dofs, block_size)
+  /// - [in] cell_info Permutation data for the cell. The size of this
+  ///   is num_cells. For elements where no transformations are required,
+  ///   an empty span can be passed in.
   /// - [in] cell The cell number
   /// - [in] block_size The block_size of the input data
   ///
@@ -488,7 +496,8 @@ public:
 
   /// Apply DOF transformation to some data
   ///
-  /// @param[in,out] data The data to be transformed
+  /// @param[in,out] data The data to be transformed. This data is flattened
+  /// with row-major layout, shape=(num_dofs, block_size)
   /// @param[in] cell_permutation Permutation data for the cell
   /// @param[in] block_size The block_size of the input data
   template <typename T>
@@ -504,7 +513,8 @@ public:
   /// VectorElements, this applies the transformations for the scalar
   /// subelement.
   ///
-  /// @param[in,out] data The data to be transformed
+  /// @param[in,out] data The data to be transformed. This data is flattened
+  /// with row-major layout, shape=(num_dofs, block_size)
   /// @param[in] cell_permutation Permutation data for the cell
   /// @param[in] block_size The block_size of the input data
   template <typename T>
@@ -521,7 +531,8 @@ public:
   /// Apply transpose transformation to some data. For VectorElements,
   /// this applies the transformations for the scalar subelement.
   ///
-  /// @param[in,out] data The data to be transformed
+  /// @param[in,out] data The data to be transformed. This data is flattened
+  /// with row-major layout, shape=(num_dofs, block_size)
   /// @param[in] cell_permutation Permutation data for the cell
   /// @param[in] block_size The block_size of the input data
   template <typename T>
@@ -537,7 +548,8 @@ public:
   /// Apply inverse transformation to some data. For VectorElements,
   /// this applies the transformations for the scalar subelement.
   ///
-  /// @param[in,out] data The data to be transformed
+  /// @param[in,out] data The data to be transformed. This data is flattened
+  /// with row-major layout, shape=(num_dofs, block_size)
   /// @param[in] cell_permutation Permutation data for the cell
   /// @param[in] block_size The block_size of the input data
   template <typename T>
@@ -552,7 +564,8 @@ public:
 
   /// Apply DOF transformation to some transposed data
   ///
-  /// @param[in,out] data The data to be transformed
+  /// @param[in,out] data The data to be transformed. This data is flattened
+  /// with row-major layout, shape=(num_dofs, block_size)
   /// @param[in] cell_permutation Permutation data for the cell
   /// @param[in] block_size The block_size of the input data
   template <typename T>
@@ -567,7 +580,8 @@ public:
 
   /// Apply inverse of DOF transformation to some transposed data.
   ///
-  /// @param[in,out] data The data to be transformed
+  /// @param[in,out] data The data to be transformed. This data is flattened
+  /// with row-major layout, shape=(num_dofs, block_size)
   /// @param[in] cell_permutation Permutation data for the cell
   /// @param[in] block_size The block_size of the input data
   template <typename T>
@@ -583,7 +597,8 @@ public:
 
   /// Apply transpose of transformation to some transposed data.
   ///
-  /// @param[in,out] data The data to be transformed
+  /// @param[in,out] data The data to be transformed. This data is flattened
+  /// with row-major layout, shape=(num_dofs, block_size)
   /// @param[in] cell_permutation Permutation data for the cell
   /// @param[in] block_size The block_size of the input data
   template <typename T>
@@ -598,7 +613,8 @@ public:
 
   /// Apply inverse transpose transformation to some transposed data
   ///
-  /// @param[in,out] data The data to be transformed
+  /// @param[in,out] data The data to be transformed. This data is flattened
+  /// with row-major layout, shape=(num_dofs, block_size)
   /// @param[in] cell_permutation Permutation data for the cell
   /// @param[in] block_size The block_size of the input data
   template <typename T>
@@ -613,22 +629,22 @@ public:
 
   /// Permute the DOFs of the element
   ///
-  /// @param[in,out] doflist The numbers of the DOFs
+  /// @param[in,out] doflist The numbers of the DOFs, a span of length num_dofs
   /// @param[in] cell_permutation Permutation data for the cell
   void permute_dofs(const xtl::span<std::int32_t>& doflist,
                     std::uint32_t cell_permutation) const;
 
   /// Unpermute the DOFs of the element
   ///
-  /// @param[in,out] doflist The numbers of the DOFs
+  /// @param[in,out] doflist The numbers of the DOFs, a span of length num_dofs
   /// @param[in] cell_permutation Permutation data for the cell
   void unpermute_dofs(const xtl::span<std::int32_t>& doflist,
                       std::uint32_t cell_permutation) const;
 
-  /// Return a function that applies DOF transformation to some data
+  /// Return a function that applies DOF permutation to some data
   ///
   /// The returned function will take three inputs:
-  /// - [in,out] data The data to be transformed
+  /// - [in,out] doflist The numbers of the DOFs, a span of length num_dofs
   /// - [in] cell_permutation Permutation data for the cell
   /// - [in] block_size The block_size of the input data
   ///

@@ -4,14 +4,16 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-import dolfinx
 import numpy as np
 import pytest
+
+import dolfinx
 import ufl
-from dolfinx.fem import FunctionSpace
+from dolfinx.fem import FunctionSpace, VectorFunctionSpace
 from dolfinx.generation import UnitCubeMesh, UnitSquareMesh
 from dolfinx.mesh import CellType, GhostMode
 from dolfinx_utils.test.skips import skip_in_parallel
+
 from mpi4py import MPI
 
 
@@ -47,3 +49,29 @@ def test_mixed_element(ElementType, space, cell, order):
 
     for i in norms[1:]:
         assert np.isclose(norms[0], i)
+
+
+@skip_in_parallel
+def test_vector_element():
+    # VectorFunctionSpace containing a scalar should work
+    mesh = UnitSquareMesh(MPI.COMM_WORLD, 1, 1, CellType.triangle, GhostMode.shared_facet)
+    U = VectorFunctionSpace(mesh, ("P", 2))
+    u = ufl.TrialFunction(U)
+    v = ufl.TestFunction(U)
+
+    a = ufl.inner(u, v) * ufl.dx
+
+    A = dolfinx.fem.assemble_matrix(a)
+    A.assemble()
+
+    with pytest.raises(ValueError):
+        # VectorFunctionSpace containing a vector should throw an error rather than segfaulting
+        U = VectorFunctionSpace(mesh, ("RT", 2))
+
+        u = ufl.TrialFunction(U)
+        v = ufl.TestFunction(U)
+
+        a = ufl.inner(u, v) * ufl.dx
+
+        A = dolfinx.fem.assemble_matrix(a)
+        A.assemble()

@@ -8,15 +8,17 @@
 import random
 from itertools import combinations, product
 
-import dolfinx
 import numpy as np
 import pytest
+
+import dolfinx
 import ufl
 from dolfinx.fem import (Constant, Function, FunctionSpace,
                          VectorFunctionSpace, assemble_matrix, assemble_scalar,
                          assemble_vector)
 from dolfinx.mesh import CellType, MeshTags, create_mesh
 from dolfinx_utils.test.skips import skip_in_parallel
+
 from mpi4py import MPI
 from petsc4py import PETSc
 
