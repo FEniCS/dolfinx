@@ -9,8 +9,25 @@
 import numpy as np
 
 from dolfinx import cpp as _cpp
+from dolfinx.cpp.graph import partitioner
 
-__all__ = ["create_adjacencylist"]
+# Import graph partitioners, which may or may not be available
+# (dependent on build configuration)
+try:
+    from dolfinx.cpp.graph import partitioner_scotch  # noqa
+except ImportError:
+    pass
+try:
+    from dolfinx.cpp.graph import partitioner_parmetis  # noqa
+except ImportError:
+    pass
+try:
+    from dolfinx.cpp.graph import partitioner_kahip  # noqa
+except ImportError:
+    pass
+
+
+__all__ = ["create_adjacencylist", "partitioner"]
 
 
 def create_adjacencylist(data: np.ndarray, offsets=None):

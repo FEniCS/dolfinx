@@ -21,19 +21,19 @@ from mpi4py import MPI
 
 assert (tempdir)
 
-partitioners = [dolfinx.cpp.graph.partitioner()]
+partitioners = [dolfinx.graph.partitioner()]
 try:
-    from dolfinx.cpp.graph import partitioner_scotch
+    from dolfinx.graph import partitioner_scotch
     partitioners.append(partitioner_scotch())
 except ImportError:
     partitioners.append(pytest.param(None, marks=pytest.mark.skip(reason="DOLFINx build without SCOTCH")))
 try:
-    from dolfinx.cpp.graph import partitioner_parmetis
+    from dolfinx.graph import partitioner_parmetis
     partitioners.append(partitioner_parmetis())
 except ImportError:
     partitioners.append(pytest.param(None, marks=pytest.mark.skip(reason="DOLFINx built without Parmetis")))
 try:
-    from dolfinx.cpp.graph import partitioner_kahip
+    from dolfinx.graph import partitioner_kahip
     partitioners.append(partitioner_kahip())
 except ImportError:
     partitioners.append(pytest.param(None, marks=pytest.mark.skip(reason="DOLFINx built without KaHiP")))
