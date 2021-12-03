@@ -322,12 +322,8 @@ mesh::Mesh RectangleMesh::create(MPI_Comm comm,
                                  mesh::GhostMode ghost_mode,
                                  DiagonalType diagonal)
 {
-  return RectangleMesh::create(
-      comm, p, n, celltype, ghost_mode,
-      static_cast<graph::AdjacencyList<std::int32_t> (*)(
-          MPI_Comm, int, int, const graph::AdjacencyList<std::int64_t>&,
-          mesh::GhostMode)>(&mesh::partition_cells_graph),
-      diagonal);
+  return RectangleMesh::create(comm, p, n, celltype, ghost_mode,
+                               mesh::create_cell_partitioner(), diagonal);
 }
 //-----------------------------------------------------------------------------
 mesh::Mesh RectangleMesh::create(MPI_Comm comm,

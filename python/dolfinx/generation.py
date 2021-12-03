@@ -22,7 +22,7 @@ __all__ = [
 
 
 def IntervalMesh(comm: _MPI.Comm, nx: int, points: list, ghost_mode=GhostMode.shared_facet,
-                 partitioner=_cpp.mesh.partition_cells_graph):
+                 partitioner=_cpp.mesh.create_cell_partitioner()):
     """Create an interval mesh
 
     Parameters
@@ -47,7 +47,7 @@ def IntervalMesh(comm: _MPI.Comm, nx: int, points: list, ghost_mode=GhostMode.sh
 
 
 def UnitIntervalMesh(comm: _MPI.Comm, nx: int, ghost_mode=GhostMode.shared_facet,
-                     partitioner=_cpp.mesh.partition_cells_graph):
+                     partitioner=_cpp.mesh.create_cell_partitioner()):
     """Create a mesh on the unit interval
 
     Parameters
@@ -68,7 +68,7 @@ def UnitIntervalMesh(comm: _MPI.Comm, nx: int, ghost_mode=GhostMode.shared_facet
 
 
 def RectangleMesh(comm: _MPI.Comm, points: typing.List[numpy.array], n: list, cell_type=CellType.triangle,
-                  ghost_mode=GhostMode.shared_facet, partitioner=_cpp.mesh.partition_cells_graph,
+                  ghost_mode=GhostMode.shared_facet, partitioner=_cpp.mesh.create_cell_partitioner(),
                   diagonal: DiagonalType = DiagonalType.right):
     """Create rectangle mesh
 
@@ -93,14 +93,15 @@ def RectangleMesh(comm: _MPI.Comm, points: typing.List[numpy.array], n: list, ce
         'left', 'right', 'crossed', 'left/right', 'right/left'
 
     """
+
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell_type.name, 1))
     mesh = _cpp.generation.create_rectangle_mesh(comm, points, n, cell_type, ghost_mode, partitioner, diagonal)
     return Mesh.from_cpp(mesh, domain)
 
 
 def UnitSquareMesh(comm: _MPI.Comm, nx: int, ny: int, cell_type=CellType.triangle,
-                   ghost_mode=GhostMode.shared_facet,
-                   partitioner=_cpp.mesh.partition_cells_graph, diagonal: DiagonalType = DiagonalType.right):
+                   ghost_mode=GhostMode.shared_facet, partitioner=_cpp.mesh.create_cell_partitioner(),
+                   diagonal: DiagonalType = DiagonalType.right):
     """Create a mesh of a unit square
 
     Parameters
@@ -130,7 +131,7 @@ def UnitSquareMesh(comm: _MPI.Comm, nx: int, ny: int, cell_type=CellType.triangl
 def BoxMesh(comm: _MPI.Comm, points: typing.List[numpy.array], n: list,
             cell_type=CellType.tetrahedron,
             ghost_mode=GhostMode.shared_facet,
-            partitioner=_cpp.mesh.partition_cells_graph):
+            partitioner=_cpp.mesh.create_cell_partitioner()):
     """Create box mesh
 
     Parameters
@@ -157,7 +158,7 @@ def BoxMesh(comm: _MPI.Comm, points: typing.List[numpy.array], n: list,
 
 
 def UnitCubeMesh(comm: _MPI.Comm, nx: int, ny: int, nz: int, cell_type=CellType.tetrahedron,
-                 ghost_mode=GhostMode.shared_facet, partitioner=_cpp.mesh.partition_cells_graph):
+                 ghost_mode=GhostMode.shared_facet, partitioner=_cpp.mesh.create_cell_partitioner()):
     """Create a mesh of a unit cube
 
     Parameters
