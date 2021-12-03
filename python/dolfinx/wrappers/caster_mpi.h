@@ -19,7 +19,6 @@
     int rc = import_mpi4py();                                                  \
     if (rc != 0)                                                               \
     {                                                                          \
-      std::cout << "ERROR: could not import mpi4py!" << std::endl;             \
       throw std::runtime_error("Error when importing mpi4py");                 \
     }                                                                          \
   }
@@ -38,14 +37,15 @@ public:
   // Python to C++
   bool load(handle src, bool)
   {
-    // Simplified version of isinstance(src, mpi4py.MPI.Comm) - avoids
-    // segfault when pybind11 tries to convert some other random type to
-    // MPICommWrapper
-    if (not hasattr(src, "Allgather"))
-      return false;
+    // Check whether src is an mpi4py communicator
     VERIFY_MPI4PY(PyMPIComm_Get);
-    value = dolfinx_wrappers::MPICommWrapper(*PyMPIComm_Get(src.ptr()));
-    return true;
+    if (PyObject_TypeCheck(src.ptr(), &PyMPIComm_Type))
+    {
+      value = dolfinx_wrappers::MPICommWrapper(*PyMPIComm_Get(src.ptr()));
+      return true;
+    }
+
+    return false;
   }
 
   // C++ to Python
