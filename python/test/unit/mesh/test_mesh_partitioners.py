@@ -22,11 +22,6 @@ assert (tempdir)
 
 partitioners = [dolfinx.cpp.graph.partitioner()]
 try:
-    from dolfinx.cpp.graph import partitioner
-    partitioners.append(partitioner())
-except ImportError:
-    raise
-try:
     from dolfinx.cpp.graph import partitioner_scotch
     partitioners.append(partitioner_scotch())
 except ImportError:
