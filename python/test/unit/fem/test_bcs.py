@@ -6,8 +6,6 @@
 
 import numpy as np
 import pytest
-from mpi4py import MPI
-from petsc4py import PETSc
 
 import ufl
 from dolfinx.fem import (DirichletBC, Function, FunctionSpace, apply_lifting,
@@ -15,6 +13,9 @@ from dolfinx.fem import (DirichletBC, Function, FunctionSpace, apply_lifting,
                          create_vector, locate_dofs_geometrical, set_bc)
 from dolfinx.generation import UnitSquareMesh
 from ufl import dx, inner
+
+from mpi4py import MPI
+from petsc4py import PETSc
 
 
 def test_locate_dofs_geometrical():

@@ -6,7 +6,6 @@
 """Test that matrices are symmetric."""
 
 import pytest
-from mpi4py import MPI
 
 import dolfinx
 import ufl
@@ -15,6 +14,8 @@ from dolfinx.generation import UnitCubeMesh, UnitSquareMesh
 from dolfinx.mesh import CellType
 from dolfinx_utils.test.skips import skip_in_parallel
 from ufl import FiniteElement, MixedElement, VectorElement, grad, inner
+
+from mpi4py import MPI
 
 
 def check_symmetry(A):

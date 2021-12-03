@@ -8,8 +8,6 @@ import cffi
 import numba
 import numpy as np
 import pytest
-from mpi4py import MPI
-from petsc4py import PETSc
 
 import basix
 import dolfinx
@@ -17,6 +15,9 @@ import ufl
 from dolfinx.fem import (Constant, Expression, Function, FunctionSpace,
                          VectorFunctionSpace)
 from dolfinx.generation import UnitSquareMesh
+
+from mpi4py import MPI
+from petsc4py import PETSc
 
 
 @pytest.mark.skipif(np.issubdtype(PETSc.ScalarType, np.complexfloating),

@@ -7,8 +7,6 @@
 
 import numpy
 import pytest
-from mpi4py import MPI
-from petsc4py import PETSc
 
 import ufl
 from dolfinx.fem import (Constant, DirichletBC, Function, FunctionSpace,
@@ -16,6 +14,9 @@ from dolfinx.fem import (Constant, DirichletBC, Function, FunctionSpace,
                          assemble_vector, set_bc)
 from dolfinx.generation import UnitSquareMesh
 from dolfinx.mesh import GhostMode, MeshTags, locate_entities_boundary
+
+from mpi4py import MPI
+from petsc4py import PETSc
 
 
 @pytest.fixture

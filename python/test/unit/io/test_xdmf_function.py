@@ -8,8 +8,6 @@ import os
 
 import numpy as np
 import pytest
-from mpi4py import MPI
-from petsc4py import PETSc
 
 from dolfinx.fem import (Function, FunctionSpace, TensorFunctionSpace,
                          VectorFunctionSpace)
@@ -17,6 +15,9 @@ from dolfinx.generation import UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import CellType
 from dolfinx_utils.test.fixtures import tempdir
+
+from mpi4py import MPI
+from petsc4py import PETSc
 
 assert (tempdir)
 

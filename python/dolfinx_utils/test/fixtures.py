@@ -11,6 +11,7 @@ import time
 from collections import defaultdict
 
 import pytest
+
 from mpi4py import MPI
 
 # --- Test fixtures (use as is or as examples): ---

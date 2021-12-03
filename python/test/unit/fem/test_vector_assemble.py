@@ -6,11 +6,11 @@
 """Unit tests for assembly on vector spaces"""
 
 
-from mpi4py import MPI
-
 import ufl
 from dolfinx.fem import VectorFunctionSpace, assemble_matrix
 from dolfinx.generation import UnitSquareMesh
+
+from mpi4py import MPI
 
 
 def test_vector_assemble_matrix_exterior():

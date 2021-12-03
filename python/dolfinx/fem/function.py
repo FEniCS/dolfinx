@@ -10,7 +10,6 @@ from functools import singledispatch
 
 import cffi
 import numpy as np
-from petsc4py import PETSc
 
 import ufl
 import ufl.algorithms
@@ -19,6 +18,8 @@ from dolfinx import cpp as _cpp
 from dolfinx import jit
 from dolfinx.fem import dofmap
 from dolfinx.mesh import Mesh
+
+from petsc4py import PETSc
 
 
 class Constant(ufl.Constant):

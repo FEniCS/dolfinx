@@ -7,8 +7,6 @@ import os
 
 import numpy as np
 import pytest
-from mpi4py import MPI
-from petsc4py import PETSc
 
 import ufl
 from dolfinx import cpp as _cpp
@@ -22,6 +20,9 @@ from dolfinx.mesh import CellType, locate_entities_boundary
 from dolfinx_utils.test.skips import skip_if_complex
 from ufl import (CellDiameter, FacetNormal, SpatialCoordinate, TestFunction,
                  TrialFunction, avg, div, ds, dS, dx, grad, inner, jump)
+
+from mpi4py import MPI
+from petsc4py import PETSc
 
 
 def run_scalar_test(mesh, V, degree):

@@ -9,7 +9,6 @@ import sys
 
 import numpy as np
 import pytest
-from mpi4py import MPI
 
 import dolfinx
 import ufl
@@ -19,6 +18,8 @@ from dolfinx.graph import create_adjacencylist
 from dolfinx.mesh import CellType, create_mesh
 from dolfinx_utils.test.skips import skip_in_parallel
 from ufl import FiniteElement, MixedElement, VectorElement
+
+from mpi4py import MPI
 
 xfail = pytest.mark.xfail(strict=True)
 

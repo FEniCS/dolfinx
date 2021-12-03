@@ -9,8 +9,6 @@ import math
 
 import numpy
 import pytest
-from mpi4py import MPI
-from petsc4py import PETSc
 
 import dolfinx
 import ufl
@@ -28,6 +26,9 @@ from dolfinx.fem.form import extract_function_spaces
 from dolfinx.generation import UnitCubeMesh, UnitSquareMesh
 from dolfinx.mesh import GhostMode, locate_entities_boundary
 from ufl import derivative, dx, inner
+
+from mpi4py import MPI
+from petsc4py import PETSc
 
 
 def nest_matrix_norm(A):

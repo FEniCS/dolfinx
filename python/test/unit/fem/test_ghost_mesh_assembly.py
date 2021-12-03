@@ -6,8 +6,6 @@
 """Unit tests for assembly"""
 
 import pytest
-from mpi4py import MPI
-from petsc4py import PETSc
 
 import ufl
 from dolfinx import fem
@@ -15,6 +13,9 @@ from dolfinx.fem import Function, FunctionSpace
 from dolfinx.generation import UnitSquareMesh
 from dolfinx.mesh import GhostMode
 from ufl import avg, inner
+
+from mpi4py import MPI
+from petsc4py import PETSc
 
 
 def dx_from_ufl(mesh):

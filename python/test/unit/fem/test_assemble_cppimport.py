@@ -9,11 +9,9 @@ import pathlib
 
 import cppimport
 import numpy as np
-import petsc4py
 import pybind11
 import pytest
 import scipy.sparse.linalg
-from mpi4py import MPI
 
 import dolfinx
 import dolfinx.pkgconfig
@@ -24,6 +22,9 @@ from dolfinx.generation import UnitSquareMesh
 from dolfinx.wrappers import get_include_path as pybind_inc
 from dolfinx_utils.test.fixtures import tempdir  # noqa: F401
 from dolfinx_utils.test.skips import skip_in_parallel
+
+import petsc4py
+from mpi4py import MPI
 
 
 @skip_in_parallel

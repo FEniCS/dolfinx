@@ -7,11 +7,11 @@
 
 import types
 
-import mpi4py
-from petsc4py import PETSc
-
 from dolfinx import cpp as _cpp
 from dolfinx import fem
+
+import mpi4py
+from petsc4py import PETSc
 
 
 class NewtonSolver(_cpp.nls.NewtonSolver):

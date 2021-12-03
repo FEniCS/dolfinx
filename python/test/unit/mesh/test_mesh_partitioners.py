@@ -8,14 +8,16 @@ import os
 
 import numpy as np
 import pytest
-from mpi4py import MPI
 
+import dolfinx
 import ufl
 from dolfinx.generation import BoxMesh
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import (CellType, GhostMode, compute_midpoints,
                           create_cell_partitioner, create_mesh)
 from dolfinx_utils.test.fixtures import tempdir
+
+from mpi4py import MPI
 
 assert (tempdir)
 

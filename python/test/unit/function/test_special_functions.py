@@ -6,12 +6,13 @@
 """Unit tests for the function library"""
 
 import pytest
-from mpi4py import MPI
 
 import dolfinx
 import ufl
 from dolfinx.generation import UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh
 from dolfinx_utils.test.skips import skip_in_parallel
+
+from mpi4py import MPI
 
 
 @pytest.mark.skip

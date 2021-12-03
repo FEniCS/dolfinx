@@ -9,12 +9,13 @@
 
 import numpy as np
 import pytest
-from mpi4py import MPI
 
 import ufl
 from dolfinx import cpp as _cpp
 from dolfinx.fem import Function, FunctionSpace
 from dolfinx.generation import UnitSquareMesh
+
+from mpi4py import MPI
 
 
 @pytest.mark.parametrize("element", [ufl.FiniteElement("Lagrange", "triangle", 1),

@@ -9,7 +9,6 @@ import types
 import typing
 
 import numpy as np
-from mpi4py import MPI as _MPI
 
 import ufl
 from dolfinx import cpp as _cpp
@@ -17,6 +16,8 @@ from dolfinx.cpp.mesh import (CellType, GhostMode, build_dual_graph, cell_dim,
                               compute_boundary_facets,
                               compute_incident_entities, compute_midpoints,
                               create_cell_partitioner, create_meshtags)
+
+from mpi4py import MPI as _MPI
 
 __all__ = ["create_meshtags", "locate_entities", "locate_entities_boundary",
            "refine", "create_mesh", "create_meshtags", "MeshTags", "CellType",

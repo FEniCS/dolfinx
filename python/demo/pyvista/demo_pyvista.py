@@ -10,7 +10,6 @@
 
 
 import numpy as np
-from mpi4py import MPI
 
 import dolfinx.io
 import dolfinx.plot
@@ -19,6 +18,8 @@ from dolfinx.fem import (Function, FunctionSpace, LinearProblem,
                          VectorFunctionSpace)
 from dolfinx.generation import UnitCubeMesh, UnitSquareMesh
 from dolfinx.mesh import CellType, MeshTags, compute_midpoints
+
+from mpi4py import MPI
 
 try:
     import pyvista

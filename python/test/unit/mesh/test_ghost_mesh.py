@@ -5,10 +5,11 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import pytest
-from mpi4py import MPI
 
 from dolfinx.generation import UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh
 from dolfinx.mesh import GhostMode, compute_midpoints
+
+from mpi4py import MPI
 
 
 @pytest.mark.xfail(reason="Shared vertex currently disabled")

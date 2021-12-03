@@ -10,8 +10,6 @@ import math
 import numpy
 import pytest
 import scipy.sparse
-from mpi4py import MPI
-from petsc4py import PETSc
 
 import ufl
 from dolfinx import cpp as _cpp
@@ -30,6 +28,9 @@ from dolfinx.mesh import (CellType, GhostMode, create_mesh,
 from dolfinx_utils.test.skips import skip_in_parallel
 from ufl import derivative, ds, dx, inner
 from ufl.geometry import SpatialCoordinate
+
+from mpi4py import MPI
+from petsc4py import PETSc
 
 
 def nest_matrix_norm(A):
