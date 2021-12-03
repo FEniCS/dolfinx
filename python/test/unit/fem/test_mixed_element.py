@@ -6,14 +6,14 @@
 
 import numpy as np
 import pytest
-import ufl
-from dolfinx_utils.test.skips import skip_in_parallel
 from mpi4py import MPI
 
 import dolfinx
+import ufl
 from dolfinx.fem import FunctionSpace, VectorFunctionSpace
 from dolfinx.generation import UnitCubeMesh, UnitSquareMesh
 from dolfinx.mesh import CellType, GhostMode
+from dolfinx_utils.test.skips import skip_in_parallel
 
 
 @skip_in_parallel

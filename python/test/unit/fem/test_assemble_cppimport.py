@@ -13,17 +13,17 @@ import petsc4py
 import pybind11
 import pytest
 import scipy.sparse.linalg
-import ufl
-from dolfinx_utils.test.fixtures import tempdir  # noqa: F401
-from dolfinx_utils.test.skips import skip_in_parallel
 from mpi4py import MPI
 
 import dolfinx
 import dolfinx.pkgconfig
+import ufl
 from dolfinx.fem import (DirichletBC, Form, Function, FunctionSpace,
                          assemble_matrix, locate_dofs_geometrical)
 from dolfinx.generation import UnitSquareMesh
 from dolfinx.wrappers import get_include_path as pybind_inc
+from dolfinx_utils.test.fixtures import tempdir  # noqa: F401
+from dolfinx_utils.test.skips import skip_in_parallel
 
 
 @skip_in_parallel

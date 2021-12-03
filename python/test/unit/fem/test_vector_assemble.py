@@ -6,9 +6,9 @@
 """Unit tests for assembly on vector spaces"""
 
 
-import ufl
 from mpi4py import MPI
 
+import ufl
 from dolfinx.fem import VectorFunctionSpace, assemble_matrix
 from dolfinx.generation import UnitSquareMesh
 

@@ -7,9 +7,9 @@
 
 import typing
 
-import ufl
 from petsc4py import PETSc
 
+import ufl
 from dolfinx import fem
 
 

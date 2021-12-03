@@ -7,12 +7,12 @@
 
 import pytest
 from mpi4py import MPI
-from ufl import (FiniteElement, TestFunction, TrialFunction, VectorElement,
-                 grad, triangle)
-from ufl.log import UFLException
 
 from dolfinx.fem import Function, FunctionSpace, VectorFunctionSpace
 from dolfinx.generation import UnitCubeMesh
+from ufl import (FiniteElement, TestFunction, TrialFunction, VectorElement,
+                 grad, triangle)
+from ufl.log import UFLException
 
 
 @pytest.fixture

@@ -16,10 +16,10 @@ import cffi
 import numba
 import numba.core.typing.cffi_utils as cffi_support
 import numpy as np
-import ufl
 from mpi4py import MPI
 from petsc4py import PETSc
 
+import ufl
 from dolfinx import geometry
 from dolfinx.cpp.fem import Form_complex128, Form_float64
 from dolfinx.fem import (DirichletBC, Function, FunctionSpace, IntegralType,

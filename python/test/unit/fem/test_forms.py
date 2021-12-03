@@ -8,11 +8,11 @@
 
 import pytest
 from mpi4py import MPI
-from ufl import TestFunction, TrialFunction, dx, inner
 
 from dolfinx.fem import Form, FunctionSpace
 from dolfinx.fem.form import extract_function_spaces
 from dolfinx.generation import UnitSquareMesh
+from ufl import TestFunction, TrialFunction, dx, inner
 
 
 def test_extract_forms():

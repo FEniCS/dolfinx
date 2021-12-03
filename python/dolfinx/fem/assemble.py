@@ -10,9 +10,9 @@ import contextlib
 import functools
 import typing
 
-import ufl
 from petsc4py import PETSc
 
+import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import la
 from dolfinx.fem.dirichletbc import DirichletBC, bcs_by_block

@@ -9,9 +9,9 @@ import types
 import typing
 
 import numpy as np
-import ufl
 from mpi4py import MPI as _MPI
 
+import ufl
 from dolfinx import cpp as _cpp
 from dolfinx.cpp.mesh import (CellType, GhostMode, build_dual_graph, cell_dim,
                               compute_boundary_facets,

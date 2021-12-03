@@ -10,11 +10,11 @@
 
 
 import numpy as np
-import ufl
 from mpi4py import MPI
 
 import dolfinx.io
 import dolfinx.plot
+import ufl
 from dolfinx.fem import (Function, FunctionSpace, LinearProblem,
                          VectorFunctionSpace)
 from dolfinx.generation import UnitCubeMesh, UnitSquareMesh

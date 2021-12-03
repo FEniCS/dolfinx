@@ -6,11 +6,10 @@
 """Unit tests for Newton solver assembly"""
 
 import numpy as np
-import ufl
 from mpi4py import MPI
 from petsc4py import PETSc
-from ufl import TestFunction, TrialFunction, derivative, dx, grad, inner
 
+import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import fem, la
 from dolfinx.fem import (DirichletBC, Form, Function, FunctionSpace,
@@ -18,6 +17,7 @@ from dolfinx.fem import (DirichletBC, Form, Function, FunctionSpace,
                          create_matrix, create_vector, locate_dofs_geometrical,
                          set_bc)
 from dolfinx.generation import UnitSquareMesh
+from ufl import TestFunction, TrialFunction, derivative, dx, grad, inner
 
 
 class NonlinearPDEProblem:

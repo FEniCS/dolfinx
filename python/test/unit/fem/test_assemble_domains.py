@@ -7,10 +7,10 @@
 
 import numpy
 import pytest
-import ufl
 from mpi4py import MPI
 from petsc4py import PETSc
 
+import ufl
 from dolfinx.fem import (Constant, DirichletBC, Function, FunctionSpace,
                          apply_lifting, assemble_matrix, assemble_scalar,
                          assemble_vector, set_bc)

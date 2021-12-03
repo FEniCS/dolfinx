@@ -4,10 +4,10 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-import ufl
 from mpi4py import MPI
 from numpy import isclose, logical_and
 
+import ufl
 from dolfinx.fem import FunctionSpace, assemble_matrix
 from dolfinx.generation import DiagonalType, UnitCubeMesh, UnitSquareMesh
 from dolfinx.mesh import (GhostMode, compute_incident_entities,

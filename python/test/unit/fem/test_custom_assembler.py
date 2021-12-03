@@ -19,17 +19,17 @@ import numba.core.typing.cffi_utils as cffi_support
 import numpy as np
 import petsc4py.lib
 import pytest
-import ufl
 from mpi4py import MPI
 from petsc4py import PETSc
 from petsc4py import get_config as PETSc_get_config
-from ufl import dx, inner
 
 import dolfinx
 import dolfinx.pkgconfig
+import ufl
 from dolfinx.fem import (Function, FunctionSpace, assemble_matrix,
                          transpose_dofmap)
 from dolfinx.generation import UnitSquareMesh
+from ufl import dx, inner
 
 # Get details of PETSc install
 petsc_dir = PETSc_get_config()['PETSC_DIR']

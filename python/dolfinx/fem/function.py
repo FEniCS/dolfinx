@@ -10,11 +10,11 @@ from functools import singledispatch
 
 import cffi
 import numpy as np
+from petsc4py import PETSc
+
 import ufl
 import ufl.algorithms
 import ufl.algorithms.analysis
-from petsc4py import PETSc
-
 from dolfinx import cpp as _cpp
 from dolfinx import jit
 from dolfinx.fem import dofmap

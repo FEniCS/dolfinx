@@ -15,12 +15,12 @@
 import numpy as np
 from mpi4py import MPI
 from petsc4py import PETSc
-from ufl import FacetNormal, TestFunction, TrialFunction, dx, grad, inner
 
 from dolfinx.fem import Function, FunctionSpace, LinearProblem
 from dolfinx.fem.assemble import assemble_scalar
 from dolfinx.generation import UnitSquareMesh
 from dolfinx.io import XDMFFile
+from ufl import FacetNormal, TestFunction, TrialFunction, dx, grad, inner
 
 # wavenumber
 k0 = 4 * np.pi
