@@ -16,12 +16,12 @@ from dolfinx import cpp as _cpp
 from dolfinx.cpp.mesh import (CellType, GhostMode, build_dual_graph, cell_dim,
                               compute_boundary_facets,
                               compute_incident_entities, compute_midpoints,
-                              create_meshtags)
+                              create_cell_partitioner, create_meshtags)
 
 __all__ = ["create_meshtags", "locate_entities", "locate_entities_boundary",
            "refine", "create_mesh", "create_meshtags", "MeshTags", "CellType",
            "GhostMode", "build_dual_graph", "cell_dim", "compute_midpoints",
-           "compute_boundary_facets", "compute_incident_entities"]
+           "compute_boundary_facets", "compute_incident_entities", "create_cell_partitioner"]
 
 
 class Mesh(_cpp.mesh.Mesh):
@@ -156,7 +156,7 @@ def refine(mesh: Mesh, edges: np.ndarray = None, redistribute: bool = True) -> M
 
 def create_mesh(comm: _MPI.Comm, cells: typing.Union[np.ndarray, _cpp.graph.AdjacencyList_int64],
                 x: np.ndarray, domain: ufl.Mesh, ghost_mode=GhostMode.shared_facet,
-                partitioner=_cpp.mesh.partition_cells_graph) -> Mesh:
+                partitioner=_cpp.mesh.create_cell_partitioner()) -> Mesh:
     """
     Create a mesh from topology and geometry arrays
 

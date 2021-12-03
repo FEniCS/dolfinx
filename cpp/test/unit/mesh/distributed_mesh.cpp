@@ -120,10 +120,7 @@ TEST_CASE("Distributed Mesh", "[distributed_mesh]")
 
   SECTION("SCOTCH")
   {
-    CHECK_NOTHROW(test_distributed_mesh(
-        static_cast<graph::AdjacencyList<std::int32_t> (*)(
-            MPI_Comm, int, int, const graph::AdjacencyList<std::int64_t>&,
-            mesh::GhostMode)>(&mesh::partition_cells_graph)));
+    CHECK_NOTHROW(test_distributed_mesh(create_cell_partitioner()));
   }
 
 #ifdef HAS_KAHIP

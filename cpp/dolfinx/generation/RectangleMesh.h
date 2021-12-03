@@ -10,7 +10,6 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <mpi.h>
-#include <string>
 
 namespace dolfinx::generation
 {
