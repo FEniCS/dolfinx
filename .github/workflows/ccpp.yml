@@ -61,8 +61,8 @@ jobs:
       - name: clang-format C++ checks (non-blocking)
         continue-on-error: true
         run: |
-          apt-get update # To remove once new Docker images build
-          apt-get install clang-format # To remove once new Docker images built
+          apt-get -y update # To remove once new Docker images build
+          apt-get -y install clang-format # To remove once new Docker images built
           cd cpp
           find . -type f \( -name "*.cpp" -o -name "*.h" \) ! -name "pugixml.cpp" ! -name "loguru.cpp" | xargs clang-format --dry-run --Werror
       - name: clang-format Python binding checks (non-blocking)
