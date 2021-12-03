@@ -14,13 +14,14 @@ from mpi4py import MPI as _MPI
 
 from dolfinx import cpp as _cpp
 from dolfinx.cpp.mesh import (CellType, GhostMode, build_dual_graph, cell_dim,
-                              compute_midpoints, create_meshtags, compute_boundary_facets,
-                              compute_incident_entities)
+                              compute_boundary_facets,
+                              compute_incident_entities, compute_midpoints,
+                              create_cell_partitioner, create_meshtags)
 
 __all__ = ["create_meshtags", "locate_entities", "locate_entities_boundary",
            "refine", "create_mesh", "create_meshtags", "MeshTags", "CellType",
            "GhostMode", "build_dual_graph", "cell_dim", "compute_midpoints",
-           "compute_boundary_facets", "compute_incident_entities"]
+           "compute_boundary_facets", "compute_incident_entities", "create_cell_partitioner"]
 
 
 class Mesh(_cpp.mesh.Mesh):
