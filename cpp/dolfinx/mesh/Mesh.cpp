@@ -426,7 +426,7 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
   }
   ss << "\n";
 
-  // Create submap vertex index map
+  // Create submesh geometry x_dof index map
   std::pair<common::IndexMap, std::vector<int32_t>>
       submesh_x_dof_index_map_pair
       = geometry_dof_index_map->create_submap(submesh_owned_x_dofs);
@@ -464,8 +464,18 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
   }
   ss << "\n";
 
+  mesh::Geometry submesh_geometry(submesh_x_dof_index_map,
+                                  std::move(submesh_x_dofmap),
+                                  submesh_coord_ele,
+                                  std::move(submesh_x),
+                                  std::move(submesh_igi));
+  
+  ss << "Geom created\n";
+
   std::cout << ss.str() << "\n";
-  throw "Stop";
+
+  return Mesh(comm(), std::move(submesh_topology), std::move(submesh_geometry));
+
 
   // xt::xarray<int> unique_sorted_x_dofs = xt::unique(e_to_g);
   // // Create adjacency list for submesh cell geometry
