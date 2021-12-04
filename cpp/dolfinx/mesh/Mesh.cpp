@@ -403,7 +403,49 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
   // retrive this from the coordinate element
   auto submesh_coord_ele = fem::CoordinateElement(submesh_coord_cell, 1);
 
-  ss << "Created coodinate element\n";
+  ss << "Created coordinate element\n";
+
+  // Create submesh geometry dof index map
+  std::shared_ptr<const dolfinx::common::IndexMap> geometry_dof_index_map
+      = this->geometry().index_map();
+
+  // Get the geometry dofs in submesh_x_dofs that are owned by this process
+  std::vector<std::int32_t> submesh_owned_x_dofs;  // Local numbering
+  for (auto x_dof : submesh_x_dofs)
+  {
+    if (x_dof < geometry_dof_index_map->size_local())
+    {
+      submesh_owned_x_dofs.push_back(x_dof);
+    }
+  }
+
+  ss << "submesh_owned_x_dofs = ";
+  for (auto x_dof : submesh_owned_x_dofs)
+  {
+    ss << x_dof << " ";
+  }
+  ss << "\n";
+
+  // Create submap vertex index map
+  std::pair<common::IndexMap, std::vector<int32_t>>
+      submesh_x_dof_index_map_pair
+      = geometry_dof_index_map->create_submap(submesh_owned_x_dofs);
+  auto submesh_x_dof_index_map = std::make_shared<common::IndexMap>(
+      std::move(submesh_x_dof_index_map_pair.first));
+  
+  ss << "submesh_x_dof_index_map->global_indices() = ";
+  for (auto i : submesh_x_dof_index_map->global_indices())
+  {
+    ss << i << " ";
+  }
+  ss << "\n";
+
+  ss << "submesh_x_dof_index_map->ghosts() = ";
+  for (auto i : submesh_x_dof_index_map->ghosts())
+  {
+    ss << i << " ";
+  }
+  ss << "\n";
 
   std::cout << ss.str() << "\n";
   throw "Stop";

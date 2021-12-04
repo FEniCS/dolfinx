@@ -125,6 +125,20 @@ mesh::Geometry mesh::create_geometry(
   }
   ss << "\n";
 
+  ss << "create_geometry dof_index_map->global_indices() = ";
+  for (auto i : dof_index_map->global_indices())
+  {
+    ss << i << " ";
+  }
+  ss << "\n";
+
+  ss << "create_geometry dof_index_map->ghosts() = ";
+  for (auto i : dof_index_map->ghosts())
+  {
+    ss << i << " ";
+  }
+  ss << "\n";
+
   std::cout << ss.str() << "\n";
 
   return Geometry(dof_index_map, std::move(dofmap), coordinate_element,
