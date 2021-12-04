@@ -181,10 +181,10 @@ Mesh mesh::create_mesh(MPI_Comm comm,
   int rank = dolfinx::MPI::rank(comm);
   ss << "rank = " << rank << "\n";
 
-  ss << "mesh e_to_v = \n";
+  ss << "mesh c_to_v = \n";
   for (auto cell = 0; cell < topology.connectivity(tdim, 0)->num_nodes(); ++cell)
   {
-    ss << "   cell = " << cell << ": ";
+    ss << "   cell " << cell << ": ";
     for (auto v : topology.connectivity(tdim, 0)->links(cell))
     {
       ss << v << " ";
@@ -309,10 +309,10 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
       submesh_e_to_v_vec, submesh_e_to_v_offsets);
 
   ss << "submesh e_to_v = \n";
-  for (auto cell = 0; cell < submesh_e_to_v->num_nodes(); ++cell)
+  for (auto e = 0; e < submesh_e_to_v->num_nodes(); ++e)
   {
-    ss << "   cell = " << cell << ": ";
-    for (auto v : submesh_e_to_v->links(cell))
+    ss << "   entity " << e << ": ";
+    for (auto v : submesh_e_to_v->links(e))
     {
       ss << v << " ";
     }
