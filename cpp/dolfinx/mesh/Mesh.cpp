@@ -331,13 +331,60 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
 
   ss << "Created topology\n";
 
+  // Geometry
+  auto e_to_g = mesh::entities_to_geometry(*this, dim, entities, false);
+  xt::xarray<int32_t> submesh_x_dofs = xt::unique(e_to_g);
+
+  // ss << "e_to_g = \n";
+  // ss << e_to_g << "\n";
+
+  // ss << "submesh_x_dofs = \n";
+  // ss << submesh_x_dofs << "\n";
+
+  // Crete submap geometry dofmap
+  std::vector<std::int32_t> submesh_x_dofmap_vec;
+  std::vector<std::int32_t> submesh_x_dofmap_offsets(1, 0);
+  for (std::size_t i = 0; i < e_to_g.shape()[0]; ++i)
+  {
+    auto entity_x_dofs = xt::row(e_to_g, i);
+
+    // Loop through entity_x_dofs, getting the corresponding x_dof in
+    // the submesh
+    // TODO Create outside loop and fill to reuse
+    std::vector<std::int32_t> submesh_entity_x_dofs;
+    for (auto x_dof : entity_x_dofs)
+    {
+      auto it = std::find(submesh_x_dofs.begin(),
+                          submesh_x_dofs.end(), x_dof);
+      assert(it != submesh_x_dofs.end());
+      auto submesh_entity_x_dof
+          = std::distance(submesh_x_dofs.begin(), it);
+      submesh_entity_x_dofs.push_back(submesh_entity_x_dof);
+    }
+    submesh_x_dofmap_vec.insert(submesh_x_dofmap_vec.end(),
+                                submesh_entity_x_dofs.begin(),
+                                submesh_entity_x_dofs.end());
+    submesh_x_dofmap_offsets.push_back(submesh_x_dofmap_vec.size());
+  }
+  graph::AdjacencyList<std::int32_t> submesh_x_dofmap(
+      std::move(submesh_x_dofmap_vec), std::move(submesh_x_dofmap_offsets));
+  
+  ss << "submesh_x_dofmap =\n";
+  for (auto cell = 0; cell < submesh_x_dofmap.num_nodes(); ++cell)
+  {
+    ss << "cell " << cell << ": ";
+    for (auto dof : submesh_x_dofmap.links(cell))
+    {
+      ss << dof << " ";
+    }
+    ss << "\n";
+  }
+  ss << "\n";
+
   std::cout << ss.str() << "\n";
   throw "Stop";
 
-  // // Geometry
-  // auto e_to_g = mesh::entities_to_geometry(*this, dim, entities, false);
   // xt::xarray<int> unique_sorted_x_dofs = xt::unique(e_to_g);
-
   // // Create adjacency list for submesh cell geometry
   // std::vector<std::int64_t> submesh_cells;
   // submesh_cells.reserve(e_to_g.shape()[0] * e_to_g.shape()[1]);

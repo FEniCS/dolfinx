@@ -113,6 +113,18 @@ mesh::Geometry mesh::create_geometry(
   ss << "create_geometry xg = \n";
   ss << xg << "\n";
 
+  ss << "create_geometry dofmap =\n";
+  for (auto cell = 0; cell < dofmap.num_nodes(); ++cell)
+  {
+    ss << "cell " << cell << ": ";
+    for (auto dof : dofmap.links(cell))
+    {
+      ss << dof << " ";
+    }
+    ss << "\n";
+  }
+  ss << "\n";
+
   std::cout << ss.str() << "\n";
 
   return Geometry(dof_index_map, std::move(dofmap), coordinate_element,

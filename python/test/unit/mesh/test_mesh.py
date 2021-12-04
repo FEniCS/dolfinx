@@ -420,6 +420,8 @@ def boundary_1(x):
                          np.isclose(x[1], 1.0))
 
 
+# TODO Create submesh of full mesh and check topology and
+# geometry are identical to original mesh
 @pytest.mark.parametrize("d", [2, 3])
 def test_cell_submesh(d):
     n = 2
