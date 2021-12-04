@@ -139,6 +139,12 @@ mesh::Geometry mesh::create_geometry(
   }
   ss << "\n";
 
+  ss << "create_geometry igi = ";
+  for (auto i : igi)
+  {
+    ss << i << " ";
+  }
+
   std::cout << ss.str() << "\n";
 
   return Geometry(dof_index_map, std::move(dofmap), coordinate_element,

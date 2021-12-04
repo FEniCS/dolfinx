@@ -447,6 +447,23 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
   }
   ss << "\n";
 
+  // Submesh geometry input_global_indices
+  const std::vector<std::int64_t>& igi = this->geometry().input_global_indices();
+  std::vector<std::int64_t> submesh_igi;
+
+  // TODO Use foreach 
+  for (std::size_t i = 0; i < submesh_num_x_dofs; ++i)
+  {
+    submesh_igi.push_back(igi[submesh_x_dofs[i]]);
+  }
+
+  ss << "submesh_igi = ";
+  for (auto i : submesh_igi)
+  {
+    ss << i << " ";
+  }
+  ss << "\n";
+
   std::cout << ss.str() << "\n";
   throw "Stop";
 
