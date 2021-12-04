@@ -396,6 +396,15 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
   ss << "submesh_x = \n";
   ss << submesh_x << "\n";
 
+  // Create submesh coordinate element
+  CellType submesh_coord_cell
+      = mesh::cell_entity_type(geometry().cmap().cell_shape(), dim, 0);
+  // FIXME Currently geometry degree is hardcoded to 1 as there is no way to
+  // retrive this from the coordinate element
+  auto submesh_coord_ele = fem::CoordinateElement(submesh_coord_cell, 1);
+
+  ss << "Created coodinate element\n";
+
   std::cout << ss.str() << "\n";
   throw "Stop";
 
