@@ -135,7 +135,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     doxygen \
     git \
     graphviz \
-    libeigen-dev \
+    libeigen3-dev \
     valgrind \
     wget && \
     #
