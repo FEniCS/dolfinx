@@ -341,7 +341,7 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
   // ss << "submesh_x_dofs = \n";
   // ss << submesh_x_dofs << "\n";
 
-  // Crete submap geometry dofmap
+  // Crete submesh geometry dofmap
   std::vector<std::int32_t> submesh_x_dofmap_vec;
   std::vector<std::int32_t> submesh_x_dofmap_offsets(1, 0);
   for (std::size_t i = 0; i < e_to_g.shape()[0]; ++i)
@@ -380,6 +380,21 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
     ss << "\n";
   }
   ss << "\n";
+
+  // Create submesh geometry coordinates
+  const int submesh_num_x_dofs = submesh_x_dofs.shape()[0];
+  const int gdim = this->geometry().dim();
+  xt::xarray<double> submesh_x
+      = xt::zeros<double>({submesh_num_x_dofs, gdim});
+  const xt::xtensor<double, 2>& x = geometry().x();
+  for (int i = 0; i < submesh_num_x_dofs; ++i)
+  {
+    xt::view(submesh_x, i, xt::all())
+        = xt::view(x, submesh_x_dofs[i], xt::range(0, gdim));
+  }
+
+  ss << "submesh_x = \n";
+  ss << submesh_x << "\n";
 
   std::cout << ss.str() << "\n";
   throw "Stop";
