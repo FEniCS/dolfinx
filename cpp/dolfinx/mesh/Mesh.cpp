@@ -448,13 +448,13 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
   ss << "\n";
 
   // Submesh geometry input_global_indices
+  // TODO Check this. Not 100 % sure what igi does
   const std::vector<std::int64_t>& igi = this->geometry().input_global_indices();
   std::vector<std::int64_t> submesh_igi;
 
-  // TODO Use foreach 
-  for (std::size_t i = 0; i < submesh_num_x_dofs; ++i)
+  for (auto submesh_x_dof : submesh_x_dofs)
   {
-    submesh_igi.push_back(igi[submesh_x_dofs[i]]);
+    submesh_igi.push_back(igi[submesh_x_dof]);
   }
 
   ss << "submesh_igi = ";
