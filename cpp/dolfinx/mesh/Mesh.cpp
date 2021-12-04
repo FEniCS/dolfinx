@@ -281,6 +281,11 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
   auto submesh_entity_index_map = std::make_shared<common::IndexMap>(
       std::move(submesh_entity_index_map_pair.first));
 
+  // Submesh vertex to vertex connectivity (identity)
+  auto submesh_v_to_v = std::make_shared<graph::AdjacencyList<std::int32_t>>(
+      submesh_vertex_index_map->size_local()
+      + submesh_vertex_index_map->num_ghosts());
+
   // Submesh entity to vertex connectivity
   auto e_to_v = _topology.connectivity(dim, 0);
   std::vector<std::int32_t> submesh_e_to_v_vec;
@@ -314,6 +319,17 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
     ss << "\n";
   }
   ss << "\n";
+
+  // Create submesh topology
+  const CellType entity_type
+      = mesh::cell_entity_type(_topology.cell_type(), dim, 0);
+  mesh::Topology submesh_topology(comm(), entity_type);
+  submesh_topology.set_index_map(0, submesh_vertex_index_map);
+  submesh_topology.set_index_map(dim, submesh_entity_index_map);
+  submesh_topology.set_connectivity(submesh_v_to_v, 0, 0);
+  submesh_topology.set_connectivity(submesh_e_to_v, dim, 0);
+
+  ss << "Created topology\n";
 
   std::cout << ss.str() << "\n";
   throw "Stop";
