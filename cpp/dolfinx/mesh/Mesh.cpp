@@ -193,15 +193,15 @@ Mesh mesh::create_mesh(MPI_Comm comm,
   }
   ss << "\n";
 
-  // ss << "create_mesh: cell_nodes1 = ";
-  // for (auto n : cell_nodes1.array())
-  // {
-  //   ss << n << " ";
-  // }
-  // ss << "\n";
+  ss << "mesh cell_nodes1 = ";
+  for (auto n : cell_nodes1.array())
+  {
+    ss << n << " ";
+  }
+  ss << "\n";
 
-  // ss << "create_mesh: x = ";
-  // ss << x << "\n";
+  ss << "mesh x = ";
+  ss << x << "\n";
 
   std::cout << ss.str() << "\n";
 
