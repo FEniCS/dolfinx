@@ -57,9 +57,7 @@ class Mesh(_cpp.mesh.Mesh):
             ufl.VectorElement("Lagrange",
                               cell=submesh_ufl_cell,
                               degree=1))
-        submesh_domain._ufl_cargo = submesh
-        submesh._ufl_domain = submesh_domain
-        return submesh
+        return Mesh.from_cpp(submesh, submesh_domain)
 
 
 def locate_entities(mesh: Mesh, dim: int, marker: types.FunctionType) -> np.ndarray:
