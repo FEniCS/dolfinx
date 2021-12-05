@@ -22,6 +22,7 @@ from dolfinx_utils.test.skips import skip_in_parallel
 from mpi4py import MPI
 from ufl import dx
 from dolfinx.cpp.mesh import entities_to_geometry
+from dolfinx.mesh import locate_entities, locate_entities_boundary
 
 assert (tempdir)
 
@@ -420,75 +421,79 @@ def boundary_1(x):
                          np.isclose(x[1], 1.0))
 
 
-# TODO Create submesh of full mesh and check topology and
-# geometry are identical to original mesh
 @pytest.mark.parametrize("d", [2, 3])
-def test_cell_submesh(d):
-    n = 2
+@pytest.mark.parametrize("n", [2, 6])
+@pytest.mark.parametrize("codim", [0, 1])
+@pytest.mark.parametrize("marker", [lambda x: x[0] >= 0.5,
+                                    lambda x: x[0] >= -1])
+def test_submesh(d, n, codim, marker):
     if d == 2:
         mesh = UnitSquareMesh(MPI.COMM_WORLD, n, n)
     else:
         mesh = UnitCubeMesh(MPI.COMM_WORLD, n, n, n)
-    entity_dim = mesh.topology.dim
-    entities = np.array([3, 5, 6], dtype=np.int32)
-    submesh_topology_test(mesh, entity_dim, entities)
-    submesh_geometry_test(mesh, entity_dim, entities)
+
+    edim = mesh.topology.dim - codim
+    entities = locate_entities(mesh, edim, marker)
+    submesh = mesh.sub(edim, entities)
+    submesh_topology_test(mesh, submesh, edim, entities)
+    submesh_geometry_test(mesh, submesh, edim, entities)
 
 
 @pytest.mark.parametrize("d", [2, 3])
+@pytest.mark.parametrize("n", [2, 6])
 @pytest.mark.parametrize("boundary", [boundary_0, boundary_1])
-@pytest.mark.parametrize("n", [1, 2, 3])
-def test_facet_submesh(d, n, boundary):
+def test_submesh_boundary(d, n, boundary):
     if d == 2:
         mesh = UnitSquareMesh(MPI.COMM_WORLD, n, n)
     else:
         mesh = UnitCubeMesh(MPI.COMM_WORLD, n, n, n)
-    entity_dim = mesh.topology.dim - 1
-    entities = dolfinx.mesh.locate_entities_boundary(mesh, entity_dim, boundary)
-    submesh_topology_test(mesh, entity_dim, entities)
-    submesh_geometry_test(mesh, entity_dim, entities)
+    edim = mesh.topology.dim - 1
+    entities = locate_entities_boundary(mesh, edim, boundary)
+    submesh = mesh.sub(edim, entities)
+    submesh_topology_test(mesh, submesh, edim, entities)
+    submesh_geometry_test(mesh, submesh, edim, entities)
 
 
-def submesh_topology_test(mesh, entity_dim, entities):
-    submesh = mesh.sub(entity_dim, entities)
+def submesh_topology_test(mesh, submesh, entity_dim, entities):
+    # Not all processes will own or ghost entities, so there is nothing to check
+    if len(entities) > 0:
+        # The vertex map that mesh.sub uses is a sorted list of unique vertices, so
+        # recreate this here. TODO Could return this from mesh.sub or save as a property
+        # etc.
+        mesh.topology.create_connectivity(entity_dim, 0)
+        mesh_e_to_v = mesh.topology.connectivity(entity_dim, 0)
+        vertex_map = []
+        for entity in entities:
+            vertices = mesh_e_to_v.links(entity)
+            vertex_map.append(vertices)
+        vertex_map = np.hstack(vertex_map)
+        vertex_map = np.unique(vertex_map)
 
-    # The vertex map that mesh.sub uses is a sorted list of unique vertices, so
-    # recreate this here. TODO Could return this from mesh.sub or save as a property
-    # etc.
-    mesh.topology.create_connectivity(entity_dim, 0)
-    mesh_e_to_v = mesh.topology.connectivity(entity_dim, 0)
-    vertex_map = []
-    for entity in entities:
-        vertices = mesh_e_to_v.links(entity)
-        vertex_map.append(vertices)
-    vertex_map = np.hstack(vertex_map)
-    vertex_map = np.unique(vertex_map)
+        submesh.topology.create_connectivity(entity_dim, 0)
+        submesh_e_to_v = submesh.topology.connectivity(entity_dim, 0)
+        for submesh_entity in range(len(entities)):
+            submesh_entity_vertices = submesh_e_to_v.links(submesh_entity)
+            mesh_entity = entities[submesh_entity]
+            mesh_entity_vertices = mesh_e_to_v.links(mesh_entity)
 
-    submesh.topology.create_connectivity(entity_dim, 0)
-    submesh_e_to_v = submesh.topology.connectivity(entity_dim, 0)
-    for submesh_entity in range(len(entities)):
-        submesh_entity_vertices = submesh_e_to_v.links(submesh_entity)
-        mesh_entity = entities[submesh_entity]
-        mesh_entity_vertices = mesh_e_to_v.links(mesh_entity)
-
-        for i in range(len(submesh_entity_vertices)):
-            assert(vertex_map[submesh_entity_vertices[i]] == mesh_entity_vertices[i])
+            for i in range(len(submesh_entity_vertices)):
+                assert(vertex_map[submesh_entity_vertices[i]] == mesh_entity_vertices[i])
 
 
-def submesh_geometry_test(mesh, entity_dim, entities):
-    submesh = mesh.sub(entity_dim, entities)
+def submesh_geometry_test(mesh, submesh, entity_dim, entities):
+    # Not all processes will own or ghost entities, so there is nothing to check
+    if len(entities) > 0:
+        assert(mesh.geometry.dim == submesh.geometry.dim)
 
-    assert(mesh.geometry.dim == submesh.geometry.dim)
+        e_to_g = entities_to_geometry(mesh, entity_dim, entities, False)
 
-    e_to_g = entities_to_geometry(mesh, entity_dim, entities, False)
+        for submesh_entity in range(len(entities)):
+            submesh_x_dofs = submesh.geometry.dofmap.links(submesh_entity)
 
-    for submesh_entity in range(len(entities)):
-        submesh_x_dofs = submesh.geometry.dofmap.links(submesh_entity)
+            # e_to_g[i] gets the mesh x_dofs of entities[i], which should
+            # correspond to the submesh x_dofs of submesh cell i
+            mesh_x_dofs = e_to_g[submesh_entity]
 
-        # e_to_g[i] gets the mesh x_dofs of entities[i], which should
-        # correspond to the submesh x_dofs of submesh cell i
-        mesh_x_dofs = e_to_g[submesh_entity]
-
-        for i in range(len(submesh_x_dofs)):
-            assert(np.allclose(mesh.geometry.x[mesh_x_dofs[i]],
-                               submesh.geometry.x[submesh_x_dofs[i]]))
+            for i in range(len(submesh_x_dofs)):
+                assert(np.allclose(mesh.geometry.x[mesh_x_dofs[i]],
+                                   submesh.geometry.x[submesh_x_dofs[i]]))
