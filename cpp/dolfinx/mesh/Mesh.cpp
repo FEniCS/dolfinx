@@ -230,149 +230,12 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
   }
   ss << "\n";
 
-
-  // Get the vertices in submesh_vertices that are owned by this process
   auto vertex_index_map = _topology.index_map(0);
-  std::vector<std::int32_t> submesh_owned_vertices;  // Local numbering
-  for (auto v : submesh_vertices)
-  {
-    if (v < vertex_index_map->size_local())
-    {
-      submesh_owned_vertices.push_back(v);
-    }
-  }
-  // TODO Need to get ghost entities here to communicate them back to owners
-
-  ss << "submesh_owned_vertices = ";
-  for (auto v : submesh_owned_vertices)
-  {
-    ss << v << " ";
-  }
-  ss << "\n";
-
-  MPI_Comm reverse_comm
-      = vertex_index_map->comm(dolfinx::common::IndexMap::Direction::reverse);
-  auto dest_ranks = dolfinx::MPI::neighbors(reverse_comm)[1];
-
-  // Index in vertex_index_map.ghosts() of ghost vertices
-  // TODO Combine with above loop
-  std::vector<std::int32_t> submesh_ghost_indices;
-  for (std::size_t i = 0; i < submesh_vertices.size(); ++i)
-  {
-    if (submesh_vertices[i] >= vertex_index_map->size_local())
-    {
-      const std::int32_t ghost_index =
-          submesh_vertices[i] - vertex_index_map->size_local();
-      submesh_ghost_indices.push_back(ghost_index);
-    }
-  }
-
-  ss << "submesh_ghost_indices = ";
-  for (auto gi : submesh_ghost_indices)
-  {
-    ss << gi << " ";
-  }
-  ss << "\n";
-
-  ss << "dest_ranks = ";
-  for (auto rank : dest_ranks)
-  {
-    ss << rank << " ";
-  }
-  ss << "\n";
-
-  std::vector<std::int32_t> data_per_proc(dest_ranks.size(), 0);
-  auto ghost_owner_rank = vertex_index_map->ghost_owner_rank();
-  for (std::size_t dest_rank_index = 0; dest_rank_index < dest_ranks.size(); ++dest_rank_index)
-  {
-    for (auto gi : submesh_ghost_indices)
-    {
-      if (ghost_owner_rank[gi] == dest_ranks[dest_rank_index])
-      {
-        data_per_proc[dest_rank_index]++;
-      }
-    }
-  }
-
-  ss << "data_per_proc = ";
-  for (auto dpp : data_per_proc)
-  {
-    ss << dpp << " ";
-  }
-  ss << "\n";
-
-  std::vector<int> send_disp(dest_ranks.size() + 1, 0);
-  std::partial_sum(data_per_proc.begin(), data_per_proc.end(),
-                   std::next(send_disp.begin(), 1));
-
-  ss << "send_disp = ";
-  for (auto disp : send_disp)
-  {
-    ss << disp << " ";
-  }
-  ss << "\n";
-
-  // TODO Combine with above loop
-  std::vector<std::int64_t> ghosts_to_send;
-  auto ghost_vertices = vertex_index_map->ghosts();
-  for (std::size_t dest_rank_index = 0; dest_rank_index < dest_ranks.size(); ++dest_rank_index)
-  {
-    for (auto gi : submesh_ghost_indices)
-    {
-      if (ghost_owner_rank[gi] == dest_ranks[dest_rank_index])
-      {
-        ghosts_to_send.push_back(ghost_vertices[gi]);
-      }
-    }
-  }
-
-  ss << "ghosts_to_send = ";
-  for (auto g : ghosts_to_send)
-  {
-    ss << g << " ";
-  }
-  ss << "\n";
-
-  const graph::AdjacencyList<std::int64_t> data_out(std::move(ghosts_to_send),
-                                                    std::move(send_disp));
-  const graph::AdjacencyList<std::int64_t> data_in
-      = dolfinx::MPI::neighbor_all_to_all(reverse_comm, data_out);
-
-  ss << "data_in = ";
-  for (auto d : data_in.array())
-  {
-    ss << d << " ";
-  }
-  ss << "\n";
-
-  // Append ghost vertices from other processes owned by this process to
-  // submesh_owned_vertices. First need to get the local index
-  auto global_indices = vertex_index_map->global_indices();
-  for (std::int64_t global_vertex : data_in.array())
-  {
-    auto it = std::find(global_indices.begin(), global_indices.end(), global_vertex);
-    assert(it != global_indices.end());
-    std::int32_t local_vertex = std::distance(global_indices.begin(), it);
-    submesh_owned_vertices.push_back(local_vertex);
-  }
-  // Sort submesh_owned_vertices and make unique (could have recieved same ghost
-  // vertex from multiple ranks)
-  std::sort(submesh_owned_vertices.begin(), submesh_owned_vertices.end());
-  submesh_owned_vertices.erase(std::unique(submesh_owned_vertices.begin(),
-                                           submesh_owned_vertices.end()),
-                                           submesh_owned_vertices.end());
+  auto submesh_owned_vertices =
+    dolfinx::common::get_owned_indices(comm(), submesh_vertices, vertex_index_map);
 
   ss << "submesh_owned_vertices = ";
   for (auto sv : submesh_owned_vertices)
-  {
-    ss << sv << " ";
-  }
-  ss << "\n";
-
-  auto submesh_owned_vertices_2 = dolfinx::common::get_owned_indices(comm(), submesh_vertices, vertex_index_map);
-
-  ss << "submesh_owned_vertices_2 = ";
-  for (auto sv : submesh_owned_vertices_2)
   {
     ss << sv << " ";
   }
@@ -468,13 +331,16 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
 
   // Geometry
   auto e_to_g = mesh::entities_to_geometry(*this, dim, entities, false);
-  xt::xarray<int32_t> submesh_x_dofs = xt::unique(e_to_g);
+  xt::xarray<int32_t> submesh_x_dofs_xt = xt::unique(e_to_g);
+  // FIXME Find better way
+  std::vector<int32_t> submesh_x_dofs(submesh_x_dofs_xt.begin(),
+                                      submesh_x_dofs_xt.end());
 
   ss << "e_to_g = \n";
   ss << e_to_g << "\n";
 
-  ss << "submesh_x_dofs = \n";
-  ss << submesh_x_dofs << "\n";
+  // ss << "submesh_x_dofs = \n";
+  // ss << submesh_x_dofs << "\n";
 
   // Crete submesh geometry dofmap
   std::vector<std::int32_t> submesh_x_dofmap_vec;
@@ -517,7 +383,7 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
   ss << "\n";
 
   // Create submesh geometry coordinates
-  const int submesh_num_x_dofs = submesh_x_dofs.shape()[0];
+  const int submesh_num_x_dofs = submesh_x_dofs.size();
   const int gdim = this->geometry().dim();
   xt::xarray<double> submesh_x
       = xt::zeros<double>({submesh_num_x_dofs, gdim});
@@ -544,16 +410,8 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
   std::shared_ptr<const dolfinx::common::IndexMap> geometry_dof_index_map
       = this->geometry().index_map();
 
-
-  // Get the geometry dofs in submesh_x_dofs that are owned by this process
-  std::vector<std::int32_t> submesh_owned_x_dofs;  // Local numbering
-  for (auto x_dof : submesh_x_dofs)
-  {
-    if (x_dof < geometry_dof_index_map->size_local())
-    {
-      submesh_owned_x_dofs.push_back(x_dof);
-    }
-  }
+  auto submesh_owned_x_dofs = dolfinx::common::get_owned_indices(
+    comm(), submesh_x_dofs, geometry_dof_index_map);
 
   ss << "submesh_owned_x_dofs = ";
   for (auto x_dof : submesh_owned_x_dofs)
@@ -562,8 +420,6 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
   }
   ss << "\n";
 
-  std::cout << ss.str() << "\n";
-  throw "Stop";
 
   // Create submesh geometry x_dof index map
   std::pair<common::IndexMap, std::vector<int32_t>>
