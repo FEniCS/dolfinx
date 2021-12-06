@@ -17,7 +17,18 @@ WORKDIR /tmp
 
 RUN sed -i 's/enabled=0/enabled=1/' /etc/yum.repos.d/Rocky-PowerTools.repo && \
     yum -y update && \
-    yum -y install cmake gcc-toolset-10 flex bison openblas ninja-build python39 python39-numpy python39-pip-wheel && \
+    yum -y install \
+      bison \
+      cmake \
+      flex \
+      gcc-toolset-10 \
+      git \
+      ninja-build \
+      openblas \
+      python39 \
+      python39-devel \
+      python39-numpy \
+      python39-pip-wheel && \
     yum -y clean all && \
     rm -rf /var/cache
 
@@ -32,7 +43,7 @@ RUN curl -L -O http://www.mpich.org/static/downloads/${MPICH_VERSION}/mpich-${MP
     make -j${BUILD_NP} install && \
     rm -rf /tmp/*
 
-RUN python3 -m pip install cffi numba mpi4py pybind11=${PYBIND11_VERSION}
+RUN python3 -m pip install --no-cache-dir cffi numba mpi4py pybind11==${PYBIND11_VERSION} wheel
 
 RUN curl -L -O http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-${PETSC_VERSION}.tar.gz && \
     mkdir petsc && \
@@ -44,20 +55,21 @@ RUN curl -L -O http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-${P
       --with-scalar-type=real \
       --with-64-bit-indices=yes \
       --with-debugging=yes \
+      --with-blas-lapack-lib=/usr/lib64/libopenblas.so.0 \
       --download-ptscotch \
       --download-hypre \
       --download-metis \
       --download-mumps \
       --download-scalapack \
-      --download-superlu \
-      --download-superlu_dist \
       --prefix=/usr/local \
       --with-make-np=${BUILD_NP} && \
     make all && \
     make install && \
     cd src/binding/petsc4py && \
-    python3 -m pip install --no-cache-dir . && \
+    PETSC_DIR=/usr/local python3 -m pip install --no-cache-dir . && \
     rm -rf /tmp/*
+
+ENV PETSC_DIR=/usr/local
 
 RUN curl -L -O https://boostorg.jfrog.io/artifactory/main/release/${BOOST_VERSION}/source/boost_${BOOST_VERSION_UNDERSCORES}.tar.gz && \
     tar -xf boost_${BOOST_VERSION_UNDERSCORES}.tar.gz && \
@@ -82,4 +94,4 @@ RUN git clone -b ${XTL_VERSION} --single-branch https://github.com/xtensor-stack
     cd xtensor && \
     cmake -G Ninja . && \
     ninja install && \
-    rm -rf xtl xtensor
+    rm -rf /tmp/*
