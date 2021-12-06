@@ -439,6 +439,7 @@ def test_submesh(d, n, codim, marker):
     submesh_geometry_test(mesh, submesh, edim, entities)
 
 
+# TODO Test case where boundary facet doesn't own both nodes
 @pytest.mark.parametrize("d", [2, 3])
 @pytest.mark.parametrize("n", [2, 6])
 @pytest.mark.parametrize("boundary", [boundary_0, boundary_1])

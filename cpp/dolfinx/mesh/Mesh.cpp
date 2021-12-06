@@ -209,11 +209,10 @@ Mesh mesh::create_mesh(MPI_Comm comm,
               mesh::create_geometry(comm, topology, element, cell_nodes1, x));
 }
 //-----------------------------------------------------------------------------
-// TODO Mention entities must be owned (this means locate_entities_boundary
-// should work, but locate entities doesn't)
 Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
 {
   // TODO Reserve number as in meshview branch
+  // TODO Create separate function for seding ghost indices back to owner
 
   std::stringstream ss;
 
@@ -370,9 +369,6 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
   }
   ss << "\n";
 
-  std::cout << ss.str() << "\n";
-  throw "Stop";
-
   // Create submap vertex index map
   std::pair<common::IndexMap, std::vector<int32_t>>
       submesh_vertex_index_map_pair
@@ -399,6 +395,11 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
   ss << "\n";
 
   // Create submap entity index map
+  // NOTE Here I don't communicate the ghost entity indices back to their
+  // owning processes because the only time this would be useful is if
+  // the list of entities contains a ghost entity on one process which is
+  // not contained in the list of entities from the owner. I can't think
+  // of many cases where this would be needed.
   std::pair<common::IndexMap, std::vector<int32_t>>
       submesh_entity_index_map_pair =
         entity_index_map->create_submap(submesh_owned_entities);
@@ -443,6 +444,9 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
     ss << "\n";
   }
   ss << "\n";
+
+  std::cout << ss.str() << "\n";
+  throw "Stop";
 
   // Create submesh topology
   const CellType entity_type
