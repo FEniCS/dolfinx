@@ -12,6 +12,8 @@
 #include <mpi.h>
 #include <utility>
 #include <vector>
+#include "IndexMap.h"
+
 
 namespace dolfinx::common
 {
@@ -84,4 +86,9 @@ std::int64_t hash_global(const MPI_Comm comm, const T& x)
 
   return global_hash;
 }
+
+// TODO Name properly
+std::vector<int32_t> get_owned_indices(
+    MPI_Comm comm, const std::vector<std::int32_t>& indices,
+    std::shared_ptr<const dolfinx::common::IndexMap> index_map);
 } // namespace dolfinx::common

@@ -369,6 +369,15 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
   }
   ss << "\n";
 
+  auto submesh_owned_vertices_2 = dolfinx::common::get_owned_indices(comm(), submesh_vertices, vertex_index_map);
+
+  ss << "submesh_owned_vertices_2 = ";
+  for (auto sv : submesh_owned_vertices_2)
+  {
+    ss << sv << " ";
+  }
+  ss << "\n";
+
   // Create submap vertex index map
   std::pair<common::IndexMap, std::vector<int32_t>>
       submesh_vertex_index_map_pair
@@ -445,8 +454,6 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
   }
   ss << "\n";
 
-  std::cout << ss.str() << "\n";
-  throw "Stop";
 
   // Create submesh topology
   const CellType entity_type
@@ -463,11 +470,11 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
   auto e_to_g = mesh::entities_to_geometry(*this, dim, entities, false);
   xt::xarray<int32_t> submesh_x_dofs = xt::unique(e_to_g);
 
-  // ss << "e_to_g = \n";
-  // ss << e_to_g << "\n";
+  ss << "e_to_g = \n";
+  ss << e_to_g << "\n";
 
-  // ss << "submesh_x_dofs = \n";
-  // ss << submesh_x_dofs << "\n";
+  ss << "submesh_x_dofs = \n";
+  ss << submesh_x_dofs << "\n";
 
   // Crete submesh geometry dofmap
   std::vector<std::int32_t> submesh_x_dofmap_vec;
@@ -537,6 +544,7 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
   std::shared_ptr<const dolfinx::common::IndexMap> geometry_dof_index_map
       = this->geometry().index_map();
 
+
   // Get the geometry dofs in submesh_x_dofs that are owned by this process
   std::vector<std::int32_t> submesh_owned_x_dofs;  // Local numbering
   for (auto x_dof : submesh_x_dofs)
@@ -553,6 +561,9 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
     ss << x_dof << " ";
   }
   ss << "\n";
+
+  std::cout << ss.str() << "\n";
+  throw "Stop";
 
   // Create submesh geometry x_dof index map
   std::pair<common::IndexMap, std::vector<int32_t>>
