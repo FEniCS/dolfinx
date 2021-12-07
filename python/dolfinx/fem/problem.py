@@ -41,7 +41,7 @@ class LinearProblem():
             Parameters that is passed to the linear algebra backend
             PETSc. For available choices for the 'petsc_options' kwarg,
             see the `PETSc-documentation
-            <https://www.mcs.anl.gov/petsc/documentation/index.html>`.
+            <https://petsc4py.readthedocs.io/en/stable/manual/ksp/>`.
 
         form_compiler_parameters
             Parameters used in FFCx compilation of this form. Run `ffcx
