@@ -421,6 +421,10 @@ def boundary_1(x):
                          np.isclose(x[1], 1.0))
 
 
+def boundary_2(x):
+    return np.logical_and(np.isclose(x[1], 1), x[0] >= 0.5)
+
+
 @pytest.mark.parametrize("d", [2, 3])
 @pytest.mark.parametrize("n", [2, 6])
 @pytest.mark.parametrize("codim", [0, 1])
@@ -446,7 +450,9 @@ def test_submesh(d, n, codim, marker, ghost_mode):
 # TODO Test case where boundary facet doesn't own both nodes
 @pytest.mark.parametrize("d", [2, 3])
 @pytest.mark.parametrize("n", [2, 6])
-@pytest.mark.parametrize("boundary", [boundary_0, boundary_1])
+@pytest.mark.parametrize("boundary", [boundary_0,
+                                      boundary_1,
+                                      boundary_2])
 @pytest.mark.parametrize("ghost_mode", [GhostMode.none,
                                         GhostMode.shared_facet])
 def test_submesh_boundary(d, n, boundary, ghost_mode):
