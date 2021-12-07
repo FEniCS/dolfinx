@@ -426,11 +426,15 @@ def boundary_1(x):
 @pytest.mark.parametrize("codim", [0, 1])
 @pytest.mark.parametrize("marker", [lambda x: x[0] >= 0.5,
                                     lambda x: x[0] >= -1])
-def test_submesh(d, n, codim, marker):
+@pytest.mark.parametrize("ghost_mode", [GhostMode.none,
+                                        GhostMode.shared_facet])
+def test_submesh(d, n, codim, marker, ghost_mode):
     if d == 2:
-        mesh = UnitSquareMesh(MPI.COMM_WORLD, n, n)
+        mesh = UnitSquareMesh(MPI.COMM_WORLD, n, n,
+                              ghost_mode=ghost_mode)
     else:
-        mesh = UnitCubeMesh(MPI.COMM_WORLD, n, n, n)
+        mesh = UnitCubeMesh(MPI.COMM_WORLD, n, n, n,
+                            ghost_mode=ghost_mode)
 
     edim = mesh.topology.dim - codim
     entities = locate_entities(mesh, edim, marker)
@@ -443,11 +447,15 @@ def test_submesh(d, n, codim, marker):
 @pytest.mark.parametrize("d", [2, 3])
 @pytest.mark.parametrize("n", [2, 6])
 @pytest.mark.parametrize("boundary", [boundary_0, boundary_1])
-def test_submesh_boundary(d, n, boundary):
+@pytest.mark.parametrize("ghost_mode", [GhostMode.none,
+                                        GhostMode.shared_facet])
+def test_submesh_boundary(d, n, boundary, ghost_mode):
     if d == 2:
-        mesh = UnitSquareMesh(MPI.COMM_WORLD, n, n)
+        mesh = UnitSquareMesh(MPI.COMM_WORLD, n, n,
+                              ghost_mode=ghost_mode)
     else:
-        mesh = UnitCubeMesh(MPI.COMM_WORLD, n, n, n)
+        mesh = UnitCubeMesh(MPI.COMM_WORLD, n, n, n,
+                            ghost_mode=ghost_mode)
     edim = mesh.topology.dim - 1
     entities = locate_entities_boundary(mesh, edim, boundary)
     submesh = mesh.sub(edim, entities)
