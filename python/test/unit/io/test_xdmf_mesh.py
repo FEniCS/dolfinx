@@ -151,7 +151,6 @@ def test_read_write_p2_mesh(tempdir, encoding):
                                         GhostMode.shared_facet])
 @pytest.mark.parametrize("encoding", encodings)
 def test_submesh(tempdir, d, n, ghost_mode, encoding):
-    n = 2
     mesh = mesh_factory(d, n, ghost_mode)
     entities = locate_entities(mesh, d, lambda x: x[0] >= 0.5)
     submesh = mesh.sub(d, entities)
