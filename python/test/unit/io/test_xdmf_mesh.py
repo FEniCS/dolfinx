@@ -147,13 +147,15 @@ def test_read_write_p2_mesh(tempdir, encoding):
 
 @pytest.mark.parametrize("d", [2, 3])
 @pytest.mark.parametrize("n", [2, 5])
+@pytest.mark.parametrize("codim", [0, 1])
 @pytest.mark.parametrize("ghost_mode", [GhostMode.none,
                                         GhostMode.shared_facet])
 @pytest.mark.parametrize("encoding", encodings)
-def test_submesh(tempdir, d, n, ghost_mode, encoding):
+def test_submesh(tempdir, d, n, codim, ghost_mode, encoding):
     mesh = mesh_factory(d, n, ghost_mode)
-    entities = locate_entities(mesh, d, lambda x: x[0] >= 0.5)
-    submesh = mesh.sub(d, entities)
+    edim = d - codim
+    entities = locate_entities(mesh, edim, lambda x: x[0] >= 0.5)
+    submesh = mesh.sub(edim, entities)
 
     filename = os.path.join(tempdir, "submesh.xdmf")
     # Check writing the mesh doesn't cause a segmentation fault
