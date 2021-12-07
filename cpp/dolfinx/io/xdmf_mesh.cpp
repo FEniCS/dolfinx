@@ -150,12 +150,7 @@ void xdmf_mesh::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
                                   const std::string path_prefix,
                                   const mesh::Geometry& geometry)
 {
-  std::stringstream ss;
-  int rank = dolfinx::MPI::rank(comm);
-  ss << "rank = " << rank << "\n";
-
   LOG(INFO) << "Adding geometry data to node \"" << xml_node.path('/') << "\"";
-  ss << "add_geometry_data Step 1\n";
   auto map = geometry.index_map();
   assert(map);
 
@@ -163,7 +158,6 @@ void xdmf_mesh::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
   // for affine meshes)
   const std::int64_t num_points = map->size_global();
   const std::int32_t num_points_local = map->size_local();
-  ss << "add_geometry_data Step 2\n";
 
   // Add geometry node and attributes
   int gdim = geometry.dim();
@@ -172,26 +166,14 @@ void xdmf_mesh::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
   assert(gdim > 0 and gdim <= 3);
   const std::string geometry_type = (gdim == 3) ? "XYZ" : "XY";
   geometry_node.append_attribute("GeometryType") = geometry_type.c_str();
-  ss << "add_geometry_data Step 3\n";
 
   // Increase 1D to 2D because XDMF has no "X" geometry, use "XY"
   const int width = (gdim == 1) ? 2 : gdim;
-  ss << "add_geometry_data Step 4\n";
 
   const xt::xtensor<double, 2>& _x = geometry.x();
 
-  ss << "_x = " << _x << "\n";
-  for (int i = 0; i < num_points_local; ++i)
-      for (int j = 0; j < gdim; ++j)
-        ss << "   _x(" << i << "," << j << ")\n";
-
-  ss << "add_geometry_data Step 5\n";
-
   int num_values = num_points_local * width;
   std::vector<double> x(num_values, 0.0);
-
-  ss << "num_values = " << num_values << "\n";
-  ss << "width = " << width << "\n";
 
   if (width == 3)
     std::copy_n(_x.data(), num_values, x.begin());
@@ -201,12 +183,10 @@ void xdmf_mesh::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
       for (int j = 0; j < gdim; ++j)
         x[width * i + j] = _x(i, j);
   }
-  ss << "add_geometry_data Step 6\n";
 
   // Add geometry DataItem node
   const std::string h5_path = path_prefix + std::string("/geometry");
   const std::vector<std::int64_t> shape = {num_points, width};
-  ss << "add_geometry_data Step 7\n";
 
   const std::int64_t num_local = num_points_local;
   std::int64_t offset = 0;
@@ -215,34 +195,24 @@ void xdmf_mesh::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
   const bool use_mpi_io = (dolfinx::MPI::size(comm) > 1);
   xdmf_utils::add_data_item(geometry_node, h5_id, h5_path, x, offset, shape, "",
                             use_mpi_io);
-  ss << "add_geometry_data Step 8\n";
-  std::cout << ss.str() << "\n";
-
 }
 //----------------------------------------------------------------------------
 void xdmf_mesh::add_mesh(MPI_Comm comm, pugi::xml_node& xml_node,
                          const hid_t h5_id, const mesh::Mesh& mesh,
                          const std::string name)
 {
-  std::stringstream ss;
-
-  int rank = dolfinx::MPI::rank(comm);
-  ss << "rank = " << rank << "\n";
-  ss << "add_mesh\n";
-
   LOG(INFO) << "Adding mesh to node \"" << xml_node.path('/') << "\"";
 
-  ss << "Step 1\n";
   // Add grid node and attributes
   pugi::xml_node grid_node = xml_node.append_child("Grid");
   assert(grid_node);
   grid_node.append_attribute("Name") = name.c_str();
   grid_node.append_attribute("GridType") = "Uniform";
-  ss << "Step 2\n";
+ 
   // Add topology node and attributes (including writing data)
   const std::string path_prefix = "/Mesh/" + name;
   const int tdim = mesh.topology().dim();
-  ss << "Step 3\n";
+ 
   // Prepare an array of active cells
   // Writing whole mesh so each cell is active, excl. ghosts
   auto map = mesh.topology().index_map(tdim);
@@ -250,16 +220,14 @@ void xdmf_mesh::add_mesh(MPI_Comm comm, pugi::xml_node& xml_node,
   const int num_cells = map->size_local();
   std::vector<std::int32_t> active_cells(num_cells);
   std::iota(active_cells.begin(), active_cells.end(), 0);
-  ss << "Step 4\n";
+ 
   add_topology_data(comm, grid_node, h5_id, path_prefix, mesh.topology(),
                     mesh.geometry(), tdim,
                     xtl::span<std::int32_t>(active_cells.data(), num_cells));
-  ss << "Step 5\n";
+ 
   // Add geometry node and attributes (including writing data)
   add_geometry_data(comm, grid_node, h5_id, path_prefix, mesh.geometry());
-  ss << "Step 6\n";
-  std::cout << ss.str() << "\n";
-}
+ }
 //----------------------------------------------------------------------------
 xt::xtensor<double, 2> xdmf_mesh::read_geometry_data(MPI_Comm comm,
                                                      const hid_t h5_id,
