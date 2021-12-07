@@ -691,6 +691,12 @@ void fem(py::module& m)
              //  return py::array_t<double>(x.shape(), x.data(),
              //  py::cast(self));
            })
+      .def("interpolation_operator",
+           [](const dolfinx::fem::FiniteElement& self)
+           {
+             const xt::xtensor<double, 2>& op = self.interpolation_operator();
+             return py::array_t<double>(op.shape(), op.data());
+           })
       .def_property_readonly("interpolation_ident",
                              &dolfinx::fem::FiniteElement::interpolation_ident)
       .def_property_readonly("value_rank",
