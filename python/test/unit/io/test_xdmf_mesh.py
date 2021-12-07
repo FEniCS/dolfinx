@@ -12,7 +12,7 @@ from dolfinx import cpp as _cpp
 from dolfinx.cpp.io import perm_gmsh
 from dolfinx.generation import UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh
 from dolfinx.io import XDMFFile, ufl_mesh_from_gmsh
-from dolfinx.mesh import CellType, create_mesh
+from dolfinx.mesh import CellType, create_mesh, GhostMode, locate_entities
 from dolfinx_utils.test.fixtures import tempdir
 from mpi4py import MPI
 
@@ -28,13 +28,13 @@ celltypes_2D = [CellType.triangle, CellType.quadrilateral]
 celltypes_3D = [CellType.tetrahedron, CellType.hexahedron]
 
 
-def mesh_factory(tdim, n):
+def mesh_factory(tdim, n, ghost_mode=GhostMode.shared_facet):
     if tdim == 1:
-        return UnitIntervalMesh(MPI.COMM_WORLD, n)
+        return UnitIntervalMesh(MPI.COMM_WORLD, n, ghost_mode=ghost_mode)
     elif tdim == 2:
-        return UnitSquareMesh(MPI.COMM_WORLD, n, n)
+        return UnitSquareMesh(MPI.COMM_WORLD, n, n, ghost_mode=ghost_mode)
     elif tdim == 3:
-        return UnitCubeMesh(MPI.COMM_WORLD, n, n, n)
+        return UnitCubeMesh(MPI.COMM_WORLD, n, n, n, ghost_mode=ghost_mode)
 
 
 @pytest.fixture
@@ -143,3 +143,20 @@ def test_read_write_p2_mesh(tempdir, encoding):
     assert mesh.topology.index_map(0).size_global == mesh2.topology.index_map(0).size_global
     assert mesh.topology.index_map(mesh.topology.dim).size_global == mesh2.topology.index_map(
         mesh.topology.dim).size_global
+
+
+@pytest.mark.parametrize("d", [2, 3])
+@pytest.mark.parametrize("n", [2, 5])
+@pytest.mark.parametrize("ghost_mode", [GhostMode.none,
+                                        GhostMode.shared_facet])
+@pytest.mark.parametrize("encoding", encodings)
+def test_submesh(tempdir, d, n, ghost_mode, encoding):
+    n = 2
+    mesh = mesh_factory(d, n, ghost_mode)
+    entities = locate_entities(mesh, d, lambda x: x[0] >= 0.5)
+    submesh = mesh.sub(d, entities)
+
+    filename = os.path.join(tempdir, "submesh.xdmf")
+    # Check writing the mesh doesn't cause a segmentation fault
+    with XDMFFile(mesh.comm, filename, "w", encoding=encoding) as xdmf:
+        xdmf.write_mesh(submesh)
