@@ -331,16 +331,36 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
 
   // Geometry
   auto e_to_g = mesh::entities_to_geometry(*this, dim, entities, false);
+  
+  ss << "e_to_g = \n";
+  ss << e_to_g << "\n";
+  
   xt::xarray<int32_t> submesh_x_dofs_xt = xt::unique(e_to_g);
   // FIXME Find better way
   std::vector<int32_t> submesh_x_dofs(submesh_x_dofs_xt.begin(),
                                       submesh_x_dofs_xt.end());
+  
+  std::shared_ptr<const dolfinx::common::IndexMap> geometry_dof_index_map
+      = this->geometry().index_map();
 
-  ss << "e_to_g = \n";
-  ss << e_to_g << "\n";
+  auto submesh_owned_x_dofs = dolfinx::common::get_owned_indices(
+    comm(), submesh_x_dofs, geometry_dof_index_map);
 
-  // ss << "submesh_x_dofs = \n";
-  // ss << submesh_x_dofs << "\n";
+  ss << "submesh_owned_x_dofs = ";
+  for (auto x_dof : submesh_owned_x_dofs)
+  {
+    ss << x_dof << " ";
+  }
+  ss << "\n";
+
+  // Add any owned entities in the submap that might come from other processes
+  submesh_x_dofs.insert(submesh_x_dofs.end(),
+                        submesh_owned_x_dofs.begin(),
+                        submesh_owned_x_dofs.end());
+  std::sort(submesh_x_dofs.begin(), submesh_x_dofs.end());
+  submesh_x_dofs.erase(std::unique(submesh_x_dofs.begin(),
+                                   submesh_x_dofs.end()),
+                                   submesh_x_dofs.end());
 
   // Crete submesh geometry dofmap
   std::vector<std::int32_t> submesh_x_dofmap_vec;
@@ -405,21 +425,6 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
   auto submesh_coord_ele = fem::CoordinateElement(submesh_coord_cell, 1);
 
   ss << "Created coordinate element\n";
-
-  // Create submesh geometry dof index map
-  std::shared_ptr<const dolfinx::common::IndexMap> geometry_dof_index_map
-      = this->geometry().index_map();
-
-  auto submesh_owned_x_dofs = dolfinx::common::get_owned_indices(
-    comm(), submesh_x_dofs, geometry_dof_index_map);
-
-  ss << "submesh_owned_x_dofs = ";
-  for (auto x_dof : submesh_owned_x_dofs)
-  {
-    ss << x_dof << " ";
-  }
-  ss << "\n";
-
 
   // Create submesh geometry x_dof index map
   std::pair<common::IndexMap, std::vector<int32_t>>

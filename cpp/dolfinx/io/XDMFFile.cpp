@@ -190,16 +190,26 @@ void XDMFFile::close()
 //-----------------------------------------------------------------------------
 void XDMFFile::write_mesh(const mesh::Mesh& mesh, const std::string xpath)
 {
+  std::stringstream ss;
+
+  int rank = dolfinx::MPI::rank(_comm.comm());
+  ss << "rank = " << rank << "\n";
+
+  ss << "write_mesh\n";
+  ss << "Step 1\n";
   pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
   if (!node)
     throw std::runtime_error("XML node '" + xpath + "' not found.");
-
+  ss << "Step 2\n";
   // Add the mesh Grid to the domain
   xdmf_mesh::add_mesh(_comm.comm(), node, _h5_id, mesh, mesh.name);
-
+  ss << "Step 3\n";
   // Save XML file (on process 0 only)
   if (MPI::rank(_comm.comm()) == 0)
     _xml_doc->save_file(_filename.c_str(), "  ");
+  ss << "Step 4\n";
+
+  std::cout << ss.str() << "\n";
 }
 //-----------------------------------------------------------------------------
 void XDMFFile::write_geometry(const mesh::Geometry& geometry,
