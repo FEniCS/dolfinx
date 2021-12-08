@@ -75,7 +75,6 @@ RUN curl -L -O http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-${P
       --download-metis \
       --download-mumps \
       --download-scalapack \
-      --download-superlu \
       --download-superlu_dist \
       --prefix=/usr/local \
       --with-make-np=${BUILD_NP} && \
