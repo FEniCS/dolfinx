@@ -145,7 +145,7 @@ mesh::Geometry mesh::create_geometry(
     ss << i << " ";
   }
 
-  std::cout << ss.str() << "\n";
+  // std::cout << ss.str() << "\n";
 
   return Geometry(dof_index_map, std::move(dofmap), coordinate_element,
                   std::move(xg), std::move(igi));
