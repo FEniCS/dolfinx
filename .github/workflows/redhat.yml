@@ -10,8 +10,6 @@ jobs:
     runs-on: ubuntu-20.04
     container: fenicsproject/test-env:latest-redhat
 
-    strategy:
-
     steps:
       - uses: actions/checkout@v2
 
