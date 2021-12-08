@@ -325,8 +325,6 @@ class Function(ufl.Coefficient):
         # Interpolate expression for the set of cells
         self._cpp_object.interpolate(expr._cpp_object, cells)
 
-        assert(False)
-
     def compute_point_values(self):
         return self._cpp_object.compute_point_values()
 
