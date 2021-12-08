@@ -380,3 +380,29 @@ def test_interpolation_non_affine():
     v.interpolate(w)
     s = assemble_scalar(ufl.inner(w - v, w - v) * ufl.dx)
     assert np.isclose(s, 0)
+
+
+@pytest.mark.parametrize("order", [2, 3, 4])
+@pytest.mark.parametrize("dim", [2, 3])
+def test_nedelec_expr(order, dim):
+    if dim == 2:
+        mesh = UnitSquareMesh(MPI.COMM_WORLD, 4, 4)
+    elif dim == 3:
+        mesh = UnitCubeMesh(MPI.COMM_WORLD, 2, 2, 2)
+
+    V = FunctionSpace(mesh, ("N1curl", order))
+
+    u = Function(V)
+    x = ufl.SpatialCoordinate(mesh)
+    # The expression (x,y,z) is contained in the N1curl function space order>1
+    f = x
+    u.interpolate_cells(f)
+
+    assert np.isclose(assemble_scalar(ufl.inner(u - f, u - f) * ufl.dx), 0)
+    # The target expression is also contained in N2curl space of any
+    # order
+    V2 = FunctionSpace(mesh, ("N2curl", 1))
+    w = Function(V2)
+    w.interpolate_cells(f)
+
+    assert np.isclose(assemble_scalar(ufl.inner(w - f, w - f) * ufl.dx), 0)

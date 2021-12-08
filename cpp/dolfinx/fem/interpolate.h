@@ -648,6 +648,7 @@ void interpolate(Function<T>& u, const Function<T>& v)
 /// mesh
 /// @param[in, out] u The function to interpolate into
 /// @param[in] expr The expression to be interpolated
+/// @param[in] cells List of cell indices (local to process) to interpolate on
 template <typename T>
 void interpolate(Function<T>& u, const Expression<T>& expr,
                  const tcb::span<const std::int32_t>& cells)
