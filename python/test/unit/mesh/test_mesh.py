@@ -496,6 +496,9 @@ def submesh_topology_test(mesh, submesh, entity_dim, entities):
 
 
 def submesh_geometry_test(mesh, submesh, entity_dim, entities):
+    submesh_geom_index_map = submesh.geometry.index_map()
+    assert(submesh_geom_index_map.size_local + submesh_geom_index_map.num_ghosts == submesh.geometry.x.shape[0])
+
     # Not all processes will own or ghost entities, so there is nothing to check
     if len(entities) > 0:
         assert(mesh.geometry.dim == submesh.geometry.dim)

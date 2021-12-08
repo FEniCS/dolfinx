@@ -203,7 +203,7 @@ Mesh mesh::create_mesh(MPI_Comm comm,
   ss << "mesh x = ";
   ss << x << "\n";
 
-  std::cout << ss.str() << "\n";
+  // std::cout << ss.str() << "\n";
 
   return Mesh(comm, std::move(topology),
               mesh::create_geometry(comm, topology, element, cell_nodes1, x));
@@ -223,23 +223,23 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
   std::vector<std::int32_t> submesh_vertices
       = mesh::compute_incident_entities(*this, entities, dim, 0);
 
-  ss << "submesh_vertices = ";
-  for (auto v : submesh_vertices)
-  {
-    ss << v << " ";
-  }
-  ss << "\n";
+  // ss << "submesh_vertices = ";
+  // for (auto v : submesh_vertices)
+  // {
+  //   ss << v << " ";
+  // }
+  // ss << "\n";
 
   auto vertex_index_map = _topology.index_map(0);
   auto submesh_owned_vertices =
     dolfinx::common::get_owned_indices(comm(), submesh_vertices, vertex_index_map);
 
-  ss << "submesh_owned_vertices = ";
-  for (auto sv : submesh_owned_vertices)
-  {
-    ss << sv << " ";
-  }
-  ss << "\n";
+  // ss << "submesh_owned_vertices = ";
+  // for (auto sv : submesh_owned_vertices)
+  // {
+  //   ss << sv << " ";
+  // }
+  // ss << "\n";
 
   // Create submap vertex index map
   std::pair<common::IndexMap, std::vector<int32_t>>
@@ -259,12 +259,12 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
     }
   }
 
-  ss << "submesh_owned_entities = ";
-  for (auto e : submesh_owned_entities)
-  {
-    ss << e << " ";
-  }
-  ss << "\n";
+  // ss << "submesh_owned_entities = ";
+  // for (auto e : submesh_owned_entities)
+  // {
+  //   ss << e << " ";
+  // }
+  // ss << "\n";
 
   // Create submap entity index map
   // NOTE Here I don't communicate the ghost entity indices back to their
@@ -305,17 +305,17 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
   auto submesh_e_to_v = std::make_shared<graph::AdjacencyList<std::int32_t>>(
       submesh_e_to_v_vec, submesh_e_to_v_offsets);
 
-  ss << "submesh e_to_v = \n";
-  for (auto e = 0; e < submesh_e_to_v->num_nodes(); ++e)
-  {
-    ss << "   entity " << e << ": ";
-    for (auto v : submesh_e_to_v->links(e))
-    {
-      ss << v << " ";
-    }
-    ss << "\n";
-  }
-  ss << "\n";
+  // ss << "submesh e_to_v = \n";
+  // for (auto e = 0; e < submesh_e_to_v->num_nodes(); ++e)
+  // {
+  //   ss << "   entity " << e << ": ";
+  //   for (auto v : submesh_e_to_v->links(e))
+  //   {
+  //     ss << v << " ";
+  //   }
+  //   ss << "\n";
+  // }
+  // ss << "\n";
 
 
   // Create submesh topology
@@ -327,7 +327,7 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
   submesh_topology.set_connectivity(submesh_v_to_v, 0, 0);
   submesh_topology.set_connectivity(submesh_e_to_v, dim, 0);
 
-  ss << "Created topology\n";
+  // ss << "Created topology\n";
 
   // Geometry
   auto e_to_g = mesh::entities_to_geometry(*this, dim, entities, false);
@@ -357,6 +357,76 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
   submesh_x_dofs.insert(submesh_x_dofs.end(),
                         submesh_owned_x_dofs.begin(),
                         submesh_owned_x_dofs.end());
+
+  // Create submesh geometry x_dof index map
+  std::pair<common::IndexMap, std::vector<int32_t>>
+      submesh_x_dof_index_map_pair
+      = geometry_dof_index_map->create_submap(submesh_owned_x_dofs);
+  auto submesh_x_dof_index_map = std::make_shared<common::IndexMap>(
+      std::move(submesh_x_dof_index_map_pair.first));
+  auto submesh_x_dof_index_map_ghost_map =
+      std::move(submesh_x_dof_index_map_pair.second);
+
+  ss << "submesh_x_dof_index_map->global_indices() = ";
+  for (auto i : submesh_x_dof_index_map->global_indices())
+  {
+    ss << i << " ";
+  }
+  ss << "\n";
+
+  ss << "submesh_x_dof_index_map->ghosts() = ";
+  for (auto i : submesh_x_dof_index_map->ghosts())
+  {
+    ss << i << " ";
+  }
+  ss << "\n";
+
+  ss << "submesh_x_dof_index_map_ghost_map = ";
+  for (auto i : submesh_x_dof_index_map_ghost_map)
+  {
+    ss << i << " ";
+  }
+  ss << "\n";
+
+  // Ghosts in the (this) mesh that are present in the submap (global index)
+  std::vector<std::int64_t> x_dof_ghosts;
+  for (int i = 0; i < submesh_x_dof_index_map->ghosts().size(); ++i)
+  {
+    x_dof_ghosts.push_back(
+      geometry_dof_index_map->ghosts()[submesh_x_dof_index_map_ghost_map[i]]);
+  }
+
+  ss << "x_dof_ghosts = ";
+  for (auto x_dof_ghost : x_dof_ghosts)
+  {
+    ss << x_dof_ghost << " ";
+  }
+  ss << "\n";
+
+  // Get local index of ghost dofs in (this) mesh
+  std::vector<std::int32_t> x_dof_ghosts_local;
+  auto geometry_dof_index_map_global_indices =
+      geometry_dof_index_map->global_indices();
+  for (auto x_dof_ghost : x_dof_ghosts)
+  {
+    auto it = std::find(geometry_dof_index_map_global_indices.begin(),
+                        geometry_dof_index_map_global_indices.end(), x_dof_ghost);
+    assert(it != geometry_dof_index_map_global_indices.end());
+    x_dof_ghosts_local.push_back(
+        std::distance(geometry_dof_index_map_global_indices.begin(), it));
+  }
+
+  ss << "x_dof_ghosts_local = ";
+  for (auto i : x_dof_ghosts_local)
+  {
+    ss << i << " ";
+  }
+  ss << "\n";
+
+  submesh_x_dofs.insert(submesh_x_dofs.end(),
+                        x_dof_ghosts_local.begin(),
+                        x_dof_ghosts_local.end());
+
   std::sort(submesh_x_dofs.begin(), submesh_x_dofs.end());
   submesh_x_dofs.erase(std::unique(submesh_x_dofs.begin(),
                                    submesh_x_dofs.end()),
@@ -424,28 +494,8 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
   // retrive this from the coordinate element
   auto submesh_coord_ele = fem::CoordinateElement(submesh_coord_cell, 1);
 
-  ss << "Created coordinate element\n";
+  // ss << "Created coordinate element\n";
 
-  // Create submesh geometry x_dof index map
-  std::pair<common::IndexMap, std::vector<int32_t>>
-      submesh_x_dof_index_map_pair
-      = geometry_dof_index_map->create_submap(submesh_owned_x_dofs);
-  auto submesh_x_dof_index_map = std::make_shared<common::IndexMap>(
-      std::move(submesh_x_dof_index_map_pair.first));
-  
-  ss << "submesh_x_dof_index_map->global_indices() = ";
-  for (auto i : submesh_x_dof_index_map->global_indices())
-  {
-    ss << i << " ";
-  }
-  ss << "\n";
-
-  ss << "submesh_x_dof_index_map->ghosts() = ";
-  for (auto i : submesh_x_dof_index_map->ghosts())
-  {
-    ss << i << " ";
-  }
-  ss << "\n";
 
   // Submesh geometry input_global_indices
   // TODO Check this. Not 100 % sure what igi does
@@ -457,12 +507,12 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
     submesh_igi.push_back(igi[submesh_x_dof]);
   }
 
-  ss << "submesh_igi = ";
-  for (auto i : submesh_igi)
-  {
-    ss << i << " ";
-  }
-  ss << "\n";
+  // ss << "submesh_igi = ";
+  // for (auto i : submesh_igi)
+  // {
+  //   ss << i << " ";
+  // }
+  // ss << "\n";
 
   mesh::Geometry submesh_geometry(submesh_x_dof_index_map,
                                   std::move(submesh_x_dofmap),
@@ -470,7 +520,7 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
                                   std::move(submesh_x),
                                   std::move(submesh_igi));
   
-  ss << "Geom created\n";
+  // ss << "Geom created\n";
 
   std::cout << ss.str() << "\n";
 
