@@ -9,14 +9,14 @@ import numpy as np
 import pytest
 
 import ufl
-from dolfinx import cpp as _cpp
 from dolfinx.fem import (DirichletBC, Form, Function, FunctionSpace,
                          VectorFunctionSpace, apply_lifting, assemble_matrix,
                          assemble_scalar, assemble_vector,
                          locate_dofs_topological, set_bc)
 from dolfinx.generation import RectangleMesh, UnitCubeMesh, UnitSquareMesh
 from dolfinx.io import XDMFFile
-from dolfinx.mesh import CellType, locate_entities_boundary
+from dolfinx.mesh import (CellType, compute_boundary_facets,
+                          locate_entities_boundary)
 from dolfinx_utils.test.skips import skip_if_complex
 from ufl import (CellDiameter, FacetNormal, SpatialCoordinate, TestFunction,
                  TrialFunction, avg, div, ds, dS, dx, grad, inner, jump)
@@ -54,7 +54,7 @@ def run_scalar_test(mesh, V, degree):
     # Create Dirichlet boundary condition
     facetdim = mesh.topology.dim - 1
     mesh.topology.create_connectivity(facetdim, mesh.topology.dim)
-    bndry_facets = np.where(np.array(_cpp.mesh.compute_boundary_facets(mesh.topology)) == 1)[0]
+    bndry_facets = np.where(np.array(compute_boundary_facets(mesh.topology)) == 1)[0]
     bdofs = locate_dofs_topological(V, facetdim, bndry_facets)
     bc = DirichletBC(u_bc, bdofs)
 
