@@ -1,4 +1,6 @@
-# Dockerfile for testing DOLFINx in Red Hat-compatible distributions.
+# Dockerfile for testing DOLFINx in Red Hat-compatible distributions.  Must be
+# built locally and pushed.
+#
 # docker build -f Dockerfile.redhat -t docker.io/fenicsproject/test-env:latest-redhat .
 # docker push docker.io/fenicsproject/test-env:latest-redhat 
 FROM rockylinux/rockylinux:8
