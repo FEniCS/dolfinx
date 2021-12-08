@@ -15,7 +15,7 @@ from dolfinx.fem import (Function, FunctionSpace, VectorFunctionSpace,
                          assemble_scalar)
 from dolfinx.generation import UnitCubeMesh, UnitSquareMesh
 from dolfinx.mesh import CellType, create_mesh
-from dolfinx_utils.test.skips import skip_in_parallel
+from dolfinx_utils.test.skips import skip_in_parallel, skip_if_complex
 
 from mpi4py import MPI
 
@@ -382,6 +382,7 @@ def test_interpolation_non_affine():
     assert np.isclose(s, 0)
 
 
+@skip_if_complex
 @pytest.mark.parametrize("order", [2, 3, 4])
 @pytest.mark.parametrize("dim", [2, 3])
 def test_nedelec_spatial(order, dim):
@@ -408,6 +409,7 @@ def test_nedelec_spatial(order, dim):
     assert np.isclose(assemble_scalar(ufl.inner(w - f, w - f) * ufl.dx), 0)
 
 
+@skip_if_complex
 @pytest.mark.parametrize("order", [1, 2, 3, 4])
 @pytest.mark.parametrize("dim", [2, 3])
 @pytest.mark.parametrize("affine", [True, False])
@@ -429,6 +431,7 @@ def test_vector_interpolation_spatial(order, dim, affine):
     assert np.isclose(assemble_scalar(ufl.inner(u - f, u - f) * ufl.dx), 0)
 
 
+@skip_if_complex
 @pytest.mark.parametrize("order", [1, 2, 3, 4])
 def test_2D_lagrange_to_curl(order):
     mesh = UnitSquareMesh(MPI.COMM_WORLD, 3, 4)
