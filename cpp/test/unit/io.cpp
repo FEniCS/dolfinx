@@ -4,7 +4,6 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-
 #ifdef HAS_ADIOS2
 
 #include <catch.hpp>
