@@ -312,6 +312,21 @@ class Function(ufl.Coefficient):
 
         _interpolate(u)
 
+    def interpolate_cells(self, ufl_expression: ufl.core.expr.Expr, cells: np.ndarray = None):
+        # If no cells supplied assemble over all local cells
+        if cells is None:
+            mesh = ufl_expression.ufl_domain().ufl_cargo()
+            num_cells_local = mesh.topology.index_map(mesh.topology.dim).size_local
+            cells = np.arange(num_cells_local, dtype=np.int32)
+
+        # Create Expression over interpolation points of Function
+        points = self.function_space.element.interpolation_points()
+        expr = Expression(ufl_expression, points)
+        # Interpolate expression for the set of cells
+        self._cpp_object.interpolate(expr._cpp_object, cells)
+
+        assert(False)
+
     def compute_point_values(self):
         return self._cpp_object.compute_point_values()
 

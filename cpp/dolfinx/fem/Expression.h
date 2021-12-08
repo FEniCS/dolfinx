@@ -6,12 +6,14 @@
 
 #pragma once
 
-#include <dolfinx/mesh/Mesh.h>
 #include "Function.h"
+#include <dolfinx/mesh/Mesh.h>
 #include <functional>
 #include <utility>
 #include <vector>
+#include <xtensor/xadapt.hpp>
 #include <xtensor/xarray.hpp>
+#include <xtensor/xio.hpp>
 #include <xtensor/xtensor.hpp>
 #include <xtl/xspan.hpp>
 
@@ -43,8 +45,8 @@ public:
   /// @param[in] fn function for tabulating expression
   /// @param[in] value_size size of expression evaluated at single point
   Expression(
-      const std::vector<std::shared_ptr<const fem::Function<T>>>& coefficients,
-      const std::vector<std::shared_ptr<const fem::Constant<T>>>& constants,
+      const std::vector<std::shared_ptr<const Function<T>>>& coefficients,
+      const std::vector<std::shared_ptr<const Constant<T>>>& constants,
       const std::shared_ptr<const mesh::Mesh>& mesh,
       const xt::xtensor<double, 2>& X,
       const std::function<void(T*, const T*, const T*, const double*)> fn,
@@ -100,7 +102,6 @@ public:
     // Prepare coefficients and constants
     const auto [coeffs, cstride] = pack_coefficients(*this, active_cells);
     const std::vector<T> constant_data = pack_constants(*this);
-
     const auto& fn = this->get_tabulate_expression();
 
     // Prepare cell geometry

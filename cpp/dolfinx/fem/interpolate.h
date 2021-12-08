@@ -29,6 +29,9 @@ namespace dolfinx::fem
 template <typename T>
 class Function;
 
+template <typename T>
+class Expression;
+
 namespace impl
 {
 /// Apply interpolation operator Pi to data to evaluate the dos
@@ -640,4 +643,14 @@ void interpolate(Function<T>& u, const Function<T>& v)
   }
 }
 
+/// Interpolate from a dolfinx Expression into a compatible Function on the same
+/// mesh
+/// @param[in, out] u The function to interpolate into
+/// @param[in] expr The expression to be interpolated
+template <typename T>
+void interpolate(Function<T>& u, const Expression<T>& expr,
+                 const tcb::span<const std::int32_t>& cells)
+{
+  std::cout << "HERE!";
+}
 } // namespace dolfinx::fem
