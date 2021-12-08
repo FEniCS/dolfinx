@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2021 Garth N. Wells, Igor A. Baratta
+// and Jørgen S.Dokken
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -663,7 +664,6 @@ void interpolate(Function<T>& u, const Expression<T>& expr,
 
   const auto dofmap = u.function_space()->dofmap();
   assert(dofmap);
-  const int dofmap_bs = dofmap->bs();
 
   // Array to hold coefficients after interpolation
   const int element_bs = element->block_size();
@@ -758,7 +758,7 @@ void interpolate(Function<T>& u, const Expression<T>& expr,
     // Copy interpolation dofs into coefficient vector
     xtl::span<const std::int32_t> dofs = dofmap->cell_dofs(c);
     assert(_coeffs.size() == dofs.size() * element_bs);
-    for (int i = 0; i < dofs.size(); ++i)
+    for (std::size_t i = 0; i < dofs.size(); ++i)
       for (int k = 0; k < element_bs; ++k)
         coeffs[element_bs * dofs[i] + k] = _coeffs[element_bs * i + k];
   }
