@@ -425,6 +425,7 @@ def boundary_2(x):
     return np.logical_and(np.isclose(x[1], 1), x[0] >= 0.5)
 
 
+# TODO Test that submesh of full mesh is a copy of the mesh
 @pytest.mark.parametrize("d", [2, 3])
 @pytest.mark.parametrize("n", [2, 6])
 @pytest.mark.parametrize("codim", [0, 1])
@@ -447,7 +448,7 @@ def test_submesh(d, n, codim, marker, ghost_mode):
     submesh_geometry_test(mesh, submesh, edim, entities)
 
 
-# TODO Test case where boundary facet doesn't own both nodes
+# TODO Test creating connectivity on a submesh
 @pytest.mark.parametrize("d", [2, 3])
 @pytest.mark.parametrize("n", [2, 6])
 @pytest.mark.parametrize("boundary", [boundary_0,
@@ -470,7 +471,7 @@ def test_submesh_boundary(d, n, boundary, ghost_mode):
 
 
 def submesh_topology_test(mesh, submesh, entity_dim, entities):
-    # Not all processes will own or ghost entities, so there is nothing to check
+    # Not all processes will own or ghost entities
     if len(entities) > 0:
         # The vertex map that mesh.sub uses is a sorted list of unique vertices, so
         # recreate this here. TODO Could return this from mesh.sub or save as a property
@@ -493,6 +494,8 @@ def submesh_topology_test(mesh, submesh, entity_dim, entities):
 
             for i in range(len(submesh_entity_vertices)):
                 assert(vertex_map[submesh_entity_vertices[i]] == mesh_entity_vertices[i])
+    else:
+        assert(submesh.topology.index_map(entity_dim).size_local == 0)
 
 
 def submesh_geometry_test(mesh, submesh, entity_dim, entities):
@@ -500,6 +503,7 @@ def submesh_geometry_test(mesh, submesh, entity_dim, entities):
     assert(submesh_geom_index_map.size_local + submesh_geom_index_map.num_ghosts == submesh.geometry.x.shape[0])
 
     # Not all processes will own or ghost entities, so there is nothing to check
+    # TODO If this isn't true, check index map local size
     if len(entities) > 0:
         assert(mesh.geometry.dim == submesh.geometry.dim)
 
