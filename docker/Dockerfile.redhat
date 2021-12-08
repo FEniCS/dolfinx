@@ -1,6 +1,6 @@
-# Dockerfile for testing DOLFINx in Redhat-compatible distributions.
-# docker build -f Dockerfile.redhat -t docker.io/fenicsproject/test-env:redhat .
-# docker push docker.io/fenicsproject/test-env:redhat 
+# Dockerfile for testing DOLFINx in Red Hat-compatible distributions.
+# docker build -f Dockerfile.redhat -t docker.io/fenicsproject/test-env:latest-redhat .
+# docker push docker.io/fenicsproject/test-env:latest-redhat 
 FROM rockylinux/rockylinux:8
 
 ARG BUILD_NP=16
@@ -34,7 +34,7 @@ RUN sed -i 's/enabled=0/enabled=1/' /etc/yum.repos.d/Rocky-PowerTools.repo && \
       python39 \
       python39-devel \
       python39-numpy \
-      python39-pip && \
+      python39-pip \
       python39-pip-wheel && \
     yum -y clean all && \
     rm -rf /var/cache
