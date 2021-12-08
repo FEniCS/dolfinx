@@ -384,7 +384,7 @@ def test_interpolation_non_affine():
 
 @pytest.mark.parametrize("order", [2, 3, 4])
 @pytest.mark.parametrize("dim", [2, 3])
-def test_nedelec_expr(order, dim):
+def test_nedelec_spatial(order, dim):
     if dim == 2:
         mesh = UnitSquareMesh(MPI.COMM_WORLD, 4, 4)
     elif dim == 3:
@@ -406,3 +406,43 @@ def test_nedelec_expr(order, dim):
     w.interpolate_cells(f)
 
     assert np.isclose(assemble_scalar(ufl.inner(w - f, w - f) * ufl.dx), 0)
+
+
+@pytest.mark.parametrize("order", [1, 2, 3, 4])
+@pytest.mark.parametrize("dim", [2, 3])
+@pytest.mark.parametrize("affine", [True, False])
+def test_vector_interpolation_spatial(order, dim, affine):
+    if dim == 2:
+        ct = CellType.triangle if affine else CellType.quadrilateral
+        mesh = UnitSquareMesh(MPI.COMM_WORLD, 3, 4, ct)
+    elif dim == 3:
+        ct = CellType.tetrahedron if affine else CellType.hexahedron
+        mesh = UnitCubeMesh(MPI.COMM_WORLD, 3, 2, 2, ct)
+
+    V = VectorFunctionSpace(mesh, ("CG", order))
+
+    u = Function(V)
+    x = ufl.SpatialCoordinate(mesh)
+    # The expression (x,y,z)^n is contained in space
+    f = ufl.as_vector([x[i]**order for i in range(dim)])
+    u.interpolate_cells(f)
+    assert np.isclose(assemble_scalar(ufl.inner(u - f, u - f) * ufl.dx), 0)
+
+
+@pytest.mark.parametrize("order", [1, 2, 3, 4])
+def test_2D_lagrange_to_curl(order):
+    mesh = UnitSquareMesh(MPI.COMM_WORLD, 3, 4)
+    V = FunctionSpace(mesh, ("N1curl", order))
+    u = Function(V)
+
+    W = FunctionSpace(mesh, ("CG", order))
+    u0 = Function(W)
+    u0.interpolate(lambda x: -x[1])
+    u1 = Function(W)
+    u1.interpolate(lambda x: x[0])
+
+    f = ufl.as_vector((u0, u1))
+    u.interpolate_cells(f)
+    x = ufl.SpatialCoordinate(mesh)
+    f_ex = ufl.as_vector((-x[1], x[0]))
+    assert np.isclose(assemble_scalar(ufl.inner(u - f_ex, u - f_ex) * ufl.dx), 0)
