@@ -14,6 +14,7 @@
 #include <numeric>
 #include <vector>
 #include <xtensor/xarray.hpp>
+#include <xtensor/xio.hpp>
 #include <xtensor/xtensor.hpp>
 #include <xtensor/xview.hpp>
 #include <xtl/xspan.hpp>
@@ -692,9 +693,10 @@ void interpolate(Function<T>& u, const Expression<T>& expr,
   const int gdim = mesh->geometry().dim();
   const int tdim
       = mesh->topology().dim(); // Create data structures for Jacobian info
-  xt::xtensor<double, 3> J = xt::empty<double>({int(X.shape(0)), gdim, tdim});
-  xt::xtensor<double, 3> K = xt::empty<double>({int(X.shape(0)), tdim, gdim});
-  xt::xtensor<double, 1> detJ = xt::empty<double>({X.shape(0)});
+  xt::xtensor<double, 2> J = xt::empty<double>({gdim, tdim});
+  xt::xtensor<double, 2> K = xt::empty<double>({tdim, gdim});
+  xt::xtensor_fixed<double, xt::xshape<1>> detJ;
+
   xt::xtensor<double, 2> coordinate_dofs
       = xt::empty<double>({num_dofs_g, gdim});
 
@@ -708,11 +710,8 @@ void interpolate(Function<T>& u, const Expression<T>& expr,
                         xt::xall<std::size_t>, xt::xall<std::size_t>>;
   using u_t = xt::xview<decltype(values)&, std::size_t, std::size_t,
                         xt::xall<std::size_t>, xt::xall<std::size_t>>;
-  using J_t = xt::xview<decltype(J)&, std::size_t, xt::xall<std::size_t>,
-                        xt::xall<std::size_t>>;
-  using K_t = xt::xview<decltype(K)&, std::size_t, xt::xall<std::size_t>,
-                        xt::xall<std::size_t>>;
-  auto pull_back_fn = element->map_fn<U_t, u_t, J_t, K_t>();
+  using J_t = xt::xtensor<double, 2>;
+  auto pull_back_fn = element->map_fn<U_t, u_t, J_t, J_t>();
 
   xtl::span<const std::uint32_t> cell_info;
   if (element->needs_dof_transformations())
@@ -736,28 +735,19 @@ void interpolate(Function<T>& u, const Expression<T>& expr,
       for (int j = 0; j < gdim; ++j)
         coordinate_dofs(i, j) = x_g(x_dofs[i], j);
 
-    // Compute J, detJ and K
-    J.fill(0);
+    // Compute J, detJ and K and pull back values
     for (std::size_t p = 0; p < num_points; ++p)
     {
+      std::fill(J.begin(), J.end(), 0);
       cmap.compute_jacobian(xt::view(dphi, xt::all(), p, xt::all()),
-                            coordinate_dofs,
-                            xt::view(J, p, xt::all(), xt::all()));
-      cmap.compute_jacobian_inverse(xt::view(J, p, xt::all(), xt::all()),
-                                    xt::view(K, p, xt::all(), xt::all()));
-      detJ[p] = cmap.compute_jacobian_determinant(
-          xt::view(J, p, xt::all(), xt::all()));
+                            coordinate_dofs, J);
+      cmap.compute_jacobian_inverse(J, K);
+      detJ[0] = cmap.compute_jacobian_determinant(J);
+      auto _u = xt::view(values, c, p, xt::all(), xt::all());
+      auto _U = xt::view(mapped_values, p, xt::all(), xt::all());
+      pull_back_fn(_U, _u, K, 1.0 / detJ[0], J);
     }
 
-    // Pull back the physical values to the u reference
-    for (std::size_t i = 0; i < values.shape(1); ++i)
-    {
-      auto _K = xt::view(K, i, xt::all(), xt::all());
-      auto _J = xt::view(J, i, xt::all(), xt::all());
-      auto _u = xt::view(values, c, i, xt::all(), xt::all());
-      auto _U = xt::view(mapped_values, i, xt::all(), xt::all());
-      pull_back_fn(_U, _u, _K, 1.0 / detJ[i], _J);
-    }
     // Apply interpolation matrix
     auto ref_vals = xt::view(mapped_values, xt::all(), 0, xt::all());
     impl::interpolation_apply(Pi, ref_vals, _coeffs, element_bs);
@@ -769,12 +759,8 @@ void interpolate(Function<T>& u, const Expression<T>& expr,
     xtl::span<const std::int32_t> dofs = dofmap->cell_dofs(c);
     assert(_coeffs.size() == dofs.size() * element_bs);
     for (int i = 0; i < dofs.size(); ++i)
-    {
       for (int k = 0; k < element_bs; ++k)
-      {
         coeffs[element_bs * dofs[i] + k] = _coeffs[element_bs * i + k];
-      }
-    }
   }
 }
 } // namespace dolfinx::fem
