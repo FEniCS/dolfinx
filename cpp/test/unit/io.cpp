@@ -4,6 +4,9 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+
+#ifdef HAS_ADIOS2
+
 #include <catch.hpp>
 #include <dolfinx/generation/RectangleMesh.h>
 #include <dolfinx/io/ADIOS2Writers.h>
@@ -38,3 +41,5 @@ TEST_CASE("Fides mesh output", "[fides_mesh_write]")
 {
   CHECK_NOTHROW(test_fides_mesh());
 }
+
+#endif
