@@ -650,22 +650,33 @@ template <typename T>
 void interpolate(Function<T>& u, const Expression<T>& expr,
                  const tcb::span<const std::int32_t>& cells)
 {
-  // Create output array for expression eval
+  // Create out array for expression values
   const std::int32_t num_points = expr.num_points();
-  const std::int32_t value_size = expr.value_size();
-  xt::xtensor<T, 2> _values(
-      {std::size_t(cells.size()), std::size_t(num_points * value_size)});
+  const std::int32_t expr_value_size = expr.value_size();
+  xt::xtensor<T, 2> expr_values(
+      {std::size_t(cells.size()), std::size_t(num_points * expr_value_size)});
+  auto X = expr.x();
 
   // Evaluate expression at interpolation points
   std::shared_ptr<const FiniteElement> element = u.function_space()->element();
-  auto X = expr.x();
+
+  const auto dofmap = u.function_space()->dofmap();
+  assert(dofmap);
+  const int dofmap_bs = dofmap->bs();
+
+  // Array to hold coefficients after interpolation
+  const int element_bs = element->block_size();
+  assert(expr_value_size == element_bs);
 
   assert(X.shape() == element->interpolation_points().shape());
-  expr.eval(cells, _values);
+  expr.eval(cells, expr_values);
+
   // Reshape array and create working array for pull back values
-  xt::xtensor<T, 3> mapped_values({num_points, 1, value_size});
-  xt::xtensor<T, 4> values = xt::reshape_view(
-      _values, {(std::int32_t)cells.size(), num_points, 1, value_size});
+  xt::xtensor<T, 3> mapped_values({num_points, 1, element->value_size()});
+  xt::xtensor<T, 4> values
+      = xt::reshape_view(expr_values, {(std::int32_t)cells.size(), num_points,
+                                       1, element->value_size()});
+  std::vector<T> _coeffs(element->space_dimension());
 
   // Prepare mesh geometry
   // Get coordinate map
@@ -715,17 +726,8 @@ void interpolate(Function<T>& u, const Expression<T>& expr,
                            int)>
       apply_inverse_transpose_dof_transformation
       = element->get_dof_transformation_function<T>(true, true);
-  const auto dofmap = u.function_space()->dofmap();
-  assert(dofmap);
-  const int dofmap_bs = dofmap->bs();
 
-  // Array to hold coefficients after interpolation
-  const int element_bs = element->block_size();
-  assert(element_bs == 1);
   xtl::span<T> coeffs = u.x()->mutable_array();
-  const int num_scalar_dofs = element->space_dimension() / element_bs;
-  std::vector<T> _coeffs(num_scalar_dofs);
-
   for (std::size_t c = 0; c < cells.size(); c++)
   {
     // Get cell geometry
@@ -733,8 +735,6 @@ void interpolate(Function<T>& u, const Expression<T>& expr,
     for (int i = 0; i < num_dofs_g; ++i)
       for (int j = 0; j < gdim; ++j)
         coordinate_dofs(i, j) = x_g(x_dofs[i], j);
-
-    xtl::span<const std::int32_t> dofs = dofmap->cell_dofs(c);
 
     // Compute J, detJ and K
     J.fill(0);
@@ -758,17 +758,22 @@ void interpolate(Function<T>& u, const Expression<T>& expr,
       auto _U = xt::view(mapped_values, i, xt::all(), xt::all());
       pull_back_fn(_U, _u, _K, 1.0 / detJ[i], _J);
     }
+    // Apply interpolation matrix
     auto ref_vals = xt::view(mapped_values, xt::all(), 0, xt::all());
     impl::interpolation_apply(Pi, ref_vals, _coeffs, element_bs);
+
+    // Apply dof transformations
     apply_inverse_transpose_dof_transformation(_coeffs, cell_info, c, 1);
 
     // Copy interpolation dofs into coefficient vector
-    assert(_coeffs.size() == num_scalar_dofs);
-    for (int i = 0; i < num_scalar_dofs; ++i)
+    xtl::span<const std::int32_t> dofs = dofmap->cell_dofs(c);
+    assert(_coeffs.size() == dofs.size() * element_bs);
+    for (int i = 0; i < dofs.size(); ++i)
     {
-      const int dof = i * element_bs;
-      std::div_t pos = std::div(dof, dofmap_bs);
-      coeffs[dofmap_bs * dofs[pos.quot] + pos.rem] = _coeffs[i];
+      for (int k = 0; k < element_bs; ++k)
+      {
+        coeffs[element_bs * dofs[i] + k] = _coeffs[element_bs * i + k];
+      }
     }
   }
 }
