@@ -24,7 +24,7 @@ RUN sed -i 's/enabled=0/enabled=1/' /etc/yum.repos.d/Rocky-PowerTools.repo && \
       gcc-toolset-10 \
       git \
       ninja-build \
-      openblas \
+      openblas-devel \
       python39 \
       python39-devel \
       python39-numpy \
@@ -55,7 +55,6 @@ RUN curl -L -O http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-${P
       --with-scalar-type=real \
       --with-64-bit-indices=yes \
       --with-debugging=yes \
-      --with-blas-lapack-lib=/usr/lib64/libopenblas.so.0 \
       --download-ptscotch \
       --download-hypre \
       --download-metis \
@@ -87,11 +86,15 @@ RUN curl -L -O https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-${HDF5_SERIES
 
 RUN git clone -b ${XTL_VERSION} --single-branch https://github.com/xtensor-stack/xtl.git && \
     cd xtl && \
-    cmake -G Ninja . && \
+    mkdir -p build && \
+    cd build && \
+    cmake -G Ninja ../ && \
     ninja install && \
-    cd ../ && \
+    cd ../../ && \
     git clone -b ${XTENSOR_VERSION} --single-branch https://github.com/xtensor-stack/xtensor.git && \
     cd xtensor && \
-    cmake -G Ninja . && \
+    mkdir -p build && \
+    cd build && \
+    cmake -G Ninja ../ && \
     ninja install && \
     rm -rf /tmp/*
