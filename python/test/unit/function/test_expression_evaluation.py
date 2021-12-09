@@ -4,16 +4,18 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-import basix
 import cffi
-import dolfinx
 import numba
 import numpy as np
 import pytest
+
+import basix
+import dolfinx
 import ufl
 from dolfinx.fem import (Constant, Expression, Function, FunctionSpace,
                          VectorFunctionSpace)
 from dolfinx.generation import UnitSquareMesh
+
 from mpi4py import MPI
 from petsc4py import PETSc
 

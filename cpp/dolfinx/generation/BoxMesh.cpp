@@ -89,8 +89,7 @@ create_geom(MPI_Comm comm, const std::array<std::array<double, 3>, 2>& p,
 //-----------------------------------------------------------------------------
 mesh::Mesh build_tet(MPI_Comm comm,
                      const std::array<std::array<double, 3>, 2>& p,
-                     std::array<std::size_t, 3> n,
-                     const mesh::GhostMode ghost_mode,
+                     std::array<std::size_t, 3> n, mesh::GhostMode ghost_mode,
                      const mesh::CellPartitionFunction& partitioner)
 {
   common::Timer timer("Build BoxMesh");
@@ -146,8 +145,7 @@ mesh::Mesh build_tet(MPI_Comm comm,
 //-----------------------------------------------------------------------------
 mesh::Mesh build_hex(MPI_Comm comm,
                      const std::array<std::array<double, 3>, 2>& p,
-                     std::array<std::size_t, 3> n,
-                     const mesh::GhostMode ghost_mode,
+                     std::array<std::size_t, 3> n, mesh::GhostMode ghost_mode,
                      const mesh::CellPartitionFunction& partitioner)
 {
   xt::xtensor<double, 2> geom = create_geom(comm, p, n);
@@ -197,8 +195,7 @@ mesh::Mesh build_hex(MPI_Comm comm,
 //-----------------------------------------------------------------------------
 mesh::Mesh build_prism(MPI_Comm comm,
                        const std::array<std::array<double, 3>, 2>& p,
-                       std::array<std::size_t, 3> n,
-                       const mesh::GhostMode ghost_mode,
+                       std::array<std::size_t, 3> n, mesh::GhostMode ghost_mode,
                        const mesh::CellPartitionFunction& partitioner)
 {
   xt::xtensor<double, 2> geom = create_geom(comm, p, n);
@@ -253,8 +250,7 @@ mesh::Mesh build_prism(MPI_Comm comm,
 mesh::Mesh BoxMesh::create(MPI_Comm comm,
                            const std::array<std::array<double, 3>, 2>& p,
                            std::array<std::size_t, 3> n,
-                           mesh::CellType celltype,
-                           const mesh::GhostMode ghost_mode,
+                           mesh::CellType celltype, mesh::GhostMode ghost_mode,
                            const mesh::CellPartitionFunction& partitioner)
 {
   switch (celltype)

@@ -9,16 +9,20 @@ import types
 import typing
 
 import numpy as np
-import ufl
-from mpi4py import MPI as _MPI
 
+import ufl
 from dolfinx import cpp as _cpp
 from dolfinx.cpp.mesh import (CellType, GhostMode, build_dual_graph, cell_dim,
-                              compute_midpoints, create_meshtags)
+                              compute_boundary_facets,
+                              compute_incident_entities, compute_midpoints,
+                              create_cell_partitioner, create_meshtags)
+
+from mpi4py import MPI as _MPI
 
 __all__ = ["create_meshtags", "locate_entities", "locate_entities_boundary",
            "refine", "create_mesh", "create_meshtags", "MeshTags", "CellType",
-           "GhostMode", "build_dual_graph", "cell_dim", "compute_midpoints"]
+           "GhostMode", "build_dual_graph", "cell_dim", "compute_midpoints",
+           "compute_boundary_facets", "compute_incident_entities", "create_cell_partitioner"]
 
 
 class Mesh(_cpp.mesh.Mesh):
@@ -122,15 +126,15 @@ _meshtags_types = {
 }
 
 
-def refine(mesh: Mesh, cell_markers: _cpp.mesh.MeshTags_int8 = None, redistribute: bool = True) -> Mesh:
+def refine(mesh: Mesh, edges: np.ndarray = None, redistribute: bool = True) -> Mesh:
     """Refine a mesh
 
     Parameters
     ----------
     mesh
         The mesh from which to build a refined mesh
-    cell_markers
-        Optional argument to specify which cells should be refined. If
+    edges
+        Optional argument to specify which edges should be refined. If
         not supplied uniform refinement is applied.
     redistribute
         Optional argument to redistribute the refined mesh if mesh is a
@@ -141,10 +145,10 @@ def refine(mesh: Mesh, cell_markers: _cpp.mesh.MeshTags_int8 = None, redistribut
     Mesh
         A refined mesh
     """
-    if cell_markers is None:
+    if edges is None:
         mesh_refined = _cpp.refinement.refine(mesh, redistribute)
     else:
-        mesh_refined = _cpp.refinement.refine(mesh, cell_markers, redistribute)
+        mesh_refined = _cpp.refinement.refine(mesh, edges, redistribute)
 
     coordinate_element = mesh._ufl_domain.ufl_coordinate_element()
     domain = ufl.Mesh(coordinate_element)
@@ -153,7 +157,7 @@ def refine(mesh: Mesh, cell_markers: _cpp.mesh.MeshTags_int8 = None, redistribut
 
 def create_mesh(comm: _MPI.Comm, cells: typing.Union[np.ndarray, _cpp.graph.AdjacencyList_int64],
                 x: np.ndarray, domain: ufl.Mesh, ghost_mode=GhostMode.shared_facet,
-                partitioner=_cpp.mesh.partition_cells_graph) -> Mesh:
+                partitioner=_cpp.mesh.create_cell_partitioner()) -> Mesh:
     """
     Create a mesh from topology and geometry arrays
 

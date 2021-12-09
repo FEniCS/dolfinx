@@ -7,7 +7,6 @@
 #include "PETScKrylovSolver.h"
 #include "PETScOperator.h"
 #include "PETScOptions.h"
-#include "VectorSpaceBasis.h"
 #include "utils.h"
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
@@ -22,7 +21,7 @@ PETScKrylovSolver::PETScKrylovSolver(MPI_Comm comm) : _ksp(nullptr)
   // Create PETSc KSP object
   ierr = KSPCreate(comm, &_ksp);
   if (ierr != 0)
-    petsc_error(ierr, __FILE__, "KSPCreate");
+    petsc::error(ierr, __FILE__, "KSPCreate");
 }
 //-----------------------------------------------------------------------------
 PETScKrylovSolver::PETScKrylovSolver(KSP ksp, bool inc_ref_count) : _ksp(ksp)
@@ -32,7 +31,7 @@ PETScKrylovSolver::PETScKrylovSolver(KSP ksp, bool inc_ref_count) : _ksp(ksp)
   {
     PetscErrorCode ierr = PetscObjectReference((PetscObject)_ksp);
     if (ierr != 0)
-      petsc_error(ierr, __FILE__, "PetscObjectReference");
+      petsc::error(ierr, __FILE__, "PetscObjectReference");
   }
 }
 //-----------------------------------------------------------------------------
@@ -63,7 +62,7 @@ void PETScKrylovSolver::set_operators(const Mat A, const Mat P)
   PetscErrorCode ierr;
   ierr = KSPSetOperators(_ksp, A, P);
   if (ierr != 0)
-    petsc_error(ierr, __FILE__, "KSPSetOperators");
+    petsc::error(ierr, __FILE__, "KSPSetOperators");
 }
 //-----------------------------------------------------------------------------
 int PETScKrylovSolver::solve(Vec x, const Vec b, bool transpose) const
@@ -102,13 +101,13 @@ int PETScKrylovSolver::solve(Vec x, const Vec b, bool transpose) const
   {
     ierr = KSPSolve(_ksp, b, x);
     if (ierr != 0)
-      petsc_error(ierr, __FILE__, "KSPSolve");
+      petsc::error(ierr, __FILE__, "KSPSolve");
   }
   else
   {
     ierr = KSPSolveTranspose(_ksp, b, x);
     if (ierr != 0)
-      petsc_error(ierr, __FILE__, "KSPSolve");
+      petsc::error(ierr, __FILE__, "KSPSolve");
   }
 
   // FIXME: Remove ghost updating?
@@ -127,21 +126,21 @@ int PETScKrylovSolver::solve(Vec x, const Vec b, bool transpose) const
   PetscInt num_iterations = 0;
   ierr = KSPGetIterationNumber(_ksp, &num_iterations);
   if (ierr != 0)
-    petsc_error(ierr, __FILE__, "KSPGetIterationNumber");
+    petsc::error(ierr, __FILE__, "KSPGetIterationNumber");
 
   // Check if the solution converged and print error/warning if not
   // converged
   KSPConvergedReason reason;
   ierr = KSPGetConvergedReason(_ksp, &reason);
   if (ierr != 0)
-    petsc_error(ierr, __FILE__, "KSPGetConvergedReason");
+    petsc::error(ierr, __FILE__, "KSPGetConvergedReason");
   if (reason < 0)
   {
     /*
     // Get solver residual norm
     double rnorm = 0.0;
     ierr = KSPGetResidualNorm(_ksp, &rnorm);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPGetResidualNorm");
+    if (ierr != 0) error(ierr, __FILE__, "KSPGetResidualNorm");
     const char *reason_str = KSPConvergedReasons[reason];
     bool error_on_nonconvergence =
     this->parameters["error_on_nonconvergence"].is_set() ?
@@ -192,7 +191,7 @@ void PETScKrylovSolver::set_options_prefix(std::string options_prefix)
   assert(_ksp);
   PetscErrorCode ierr = KSPSetOptionsPrefix(_ksp, options_prefix.c_str());
   if (ierr != 0)
-    petsc_error(ierr, __FILE__, "KSPSetOptionsPrefix");
+    petsc::error(ierr, __FILE__, "KSPSetOptionsPrefix");
 }
 //-----------------------------------------------------------------------------
 std::string PETScKrylovSolver::get_options_prefix() const
@@ -201,7 +200,7 @@ std::string PETScKrylovSolver::get_options_prefix() const
   const char* prefix = nullptr;
   PetscErrorCode ierr = KSPGetOptionsPrefix(_ksp, &prefix);
   if (ierr != 0)
-    petsc_error(ierr, __FILE__, "KSPGetOptionsPrefix");
+    petsc::error(ierr, __FILE__, "KSPGetOptionsPrefix");
   return std::string(prefix);
 }
 //-----------------------------------------------------------------------------
@@ -210,7 +209,7 @@ void PETScKrylovSolver::set_from_options() const
   assert(_ksp);
   PetscErrorCode ierr = KSPSetFromOptions(_ksp);
   if (ierr != 0)
-    petsc_error(ierr, __FILE__, "KSPSetFromOptions");
+    petsc::error(ierr, __FILE__, "KSPSetFromOptions");
 }
 //-----------------------------------------------------------------------------
 KSP PETScKrylovSolver::ksp() const { return _ksp; }

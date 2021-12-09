@@ -24,6 +24,27 @@ enum class CellType;
 enum class GhostMode : int;
 class Mesh;
 
+/// Signature for the cell partitioning function. The function should
+/// compute the destination rank for cells currently on this rank.
+///
+/// @param[in] comm MPI Communicator
+/// @param[in] nparts Number of partitions
+/// @param[in] tdim Topological dimension
+/// @param[in] cells Cells on this process. The ith entry in list
+/// contains the global indices for the cell vertices. Each cell can
+/// appear only once across all processes. The cell vertex indices are
+/// not necessarily contiguous globally, i.e. the maximum index across
+/// all processes can be greater than the number of vertices. High-order
+/// 'nodes', e.g. mid-side points, should not be included.
+/// @param[in] ghost_mode How to overlap the cell partitioning: none,
+/// shared_facet or shared_vertex
+/// @return Destination ranks for each cell on this process
+using CellPartitionFunction
+    = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
+        MPI_Comm comm, int nparts, int tdim,
+        const dolfinx::graph::AdjacencyList<std::int64_t>& cells,
+        dolfinx::mesh::GhostMode ghost_mode)>;
+
 /// Extract topology from cell data, i.e. extract cell vertices
 /// @param[in] cell_element_type List of integer indices, indicating the
 /// CoordinateElement for each cell. Index into elements, below.
@@ -116,32 +137,12 @@ entities_to_geometry(const Mesh& mesh, int dim,
 /// @return List of facet indices of exterior facets of the mesh
 std::vector<std::int32_t> exterior_facet_indices(const Mesh& mesh);
 
-/// Compute destination rank for mesh cells in this rank by applying the
-/// default graph partitioner to the dual graph of the mesh
-///
-/// @param[in] comm MPI Communicator
-/// @param[in] n Number of partitions
-/// @param[in] tdim Topological dimension
-/// @param[in] cells Cells on this process. The ith entry in list
-/// contains the global indices for the cell vertices. Each cell can
-/// appear only once across all processes. The cell vertex indices are
-/// not necessarily contiguous globally, i.e. the maximum index across
-/// all processes can be greater than the number of vertices. High-order
-/// 'nodes', e.g. mid-side points, should not be included.
-/// @param[in] ghost_mode How to overlap the cell partitioning: none,
-/// shared_facet or shared_vertex
-/// @return Destination rank for each cell on this process
-graph::AdjacencyList<std::int32_t>
-partition_cells_graph(MPI_Comm comm, int n, int tdim,
-                      const graph::AdjacencyList<std::int64_t>& cells,
-                      GhostMode ghost_mode);
-
-/// Compute destination rank for mesh cells on this rank by applying the
-/// a provided graph partitioner to the dual graph of the mesh
-graph::AdjacencyList<std::int32_t>
-partition_cells_graph(MPI_Comm comm, int n, int tdim,
-                      const graph::AdjacencyList<std::int64_t>& cells,
-                      GhostMode ghost_mode, const graph::partition_fn& partfn);
+/// Create a function that computes destination rank for mesh cells in
+/// this rank by applying the default graph partitioner to the dual
+/// graph of the mesh
+/// @return Function that computes the destination ranks for each cell
+CellPartitionFunction create_cell_partitioner(const graph::partition_fn& partfn
+                                              = &graph::partition_graph);
 
 /// Compute incident indices
 /// @param[in] mesh The mesh

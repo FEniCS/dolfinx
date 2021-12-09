@@ -7,9 +7,10 @@
 
 import math
 
-import dolfinx
 import numpy
 import pytest
+
+import dolfinx
 import ufl
 from dolfinx.fem import (DirichletBC, Form, Function, FunctionSpace,
                          VectorFunctionSpace, apply_lifting,
@@ -24,9 +25,10 @@ from dolfinx.fem import (DirichletBC, Form, Function, FunctionSpace,
 from dolfinx.fem.form import extract_function_spaces
 from dolfinx.generation import UnitCubeMesh, UnitSquareMesh
 from dolfinx.mesh import GhostMode, locate_entities_boundary
+from ufl import derivative, dx, inner
+
 from mpi4py import MPI
 from petsc4py import PETSc
-from ufl import derivative, dx, inner
 
 
 def nest_matrix_norm(A):

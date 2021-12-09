@@ -879,7 +879,7 @@ void fem(py::module& m)
          const dolfinx::fem::FunctionSpace& V1) {
         dolfinx::la::SparsityPattern sp
             = dolfinx::fem::create_sparsity_discrete_gradient(V0, V1);
-        Mat A = dolfinx::la::create_petsc_matrix(MPI_COMM_WORLD, sp);
+        Mat A = dolfinx::la::petsc::create_matrix(MPI_COMM_WORLD, sp);
         dolfinx::fem::assemble_discrete_gradient<PetscScalar>(
             dolfinx::la::PETScMatrix::set_fn(A, ADD_VALUES), V0, V1);
         MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);

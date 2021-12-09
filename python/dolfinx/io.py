@@ -10,9 +10,9 @@
 import typing
 
 import numpy
-import ufl
 
 import dolfinx
+import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import fem
 from dolfinx.mesh import GhostMode
@@ -64,7 +64,7 @@ class XDMFFile(_cpp.io.XDMFFile):
         # Build the mesh
         cmap = _cpp.fem.CoordinateElement(cell_shape, cell_degree)
         mesh = _cpp.mesh.create_mesh(self.comm(), _cpp.graph.AdjacencyList_int64(cells),
-                                     cmap, x, ghost_mode, _cpp.mesh.partition_cells_graph)
+                                     cmap, x, ghost_mode, _cpp.mesh.create_cell_partitioner())
         mesh.name = name
 
         domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell, cell_degree))

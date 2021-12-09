@@ -6,16 +6,19 @@
 """Unit tests for Newton solver assembly"""
 
 import numpy as np
+
 import ufl
 from dolfinx import cpp as _cpp
+from dolfinx import fem, la
 from dolfinx.fem import (DirichletBC, Form, Function, FunctionSpace,
                          apply_lifting, assemble_matrix, assemble_vector,
                          create_matrix, create_vector, locate_dofs_geometrical,
                          set_bc)
 from dolfinx.generation import UnitSquareMesh
+from ufl import TestFunction, TrialFunction, derivative, dx, grad, inner
+
 from mpi4py import MPI
 from petsc4py import PETSc
-from ufl import TestFunction, TrialFunction, derivative, dx, grad, inner
 
 
 class NonlinearPDEProblem:
@@ -187,8 +190,8 @@ def test_nonlinear_pde_snes():
 
     with u.vector.localForm() as u_local:
         u_local.set(0.9)
-    b = _cpp.la.create_vector(V.dofmap.index_map, V.dofmap.index_map_bs)
-    J = _cpp.fem.create_matrix(problem.a_comp._cpp_object)
+    b = la.create_petsc_vector(V.dofmap.index_map, V.dofmap.index_map_bs)
+    J = fem.create_matrix(problem.a_comp._cpp_object)
 
     # Create Newton solver and solve
     snes = PETSc.SNES().create()

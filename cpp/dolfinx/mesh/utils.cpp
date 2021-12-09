@@ -538,32 +538,27 @@ std::vector<std::int32_t> mesh::exterior_facet_indices(const Mesh& mesh)
   return surface_facets;
 }
 //------------------------------------------------------------------------------
-graph::AdjacencyList<std::int32_t>
-mesh::partition_cells_graph(MPI_Comm comm, int n, int tdim,
-                            const graph::AdjacencyList<std::int64_t>& cells,
-                            GhostMode ghost_mode)
+mesh::CellPartitionFunction
+mesh::create_cell_partitioner(const graph::partition_fn& partfn)
 {
-  return partition_cells_graph(comm, n, tdim, cells, ghost_mode,
-                               &graph::partition_graph);
-}
-//-----------------------------------------------------------------------------
-graph::AdjacencyList<std::int32_t>
-mesh::partition_cells_graph(MPI_Comm comm, int n, int tdim,
-                            const graph::AdjacencyList<std::int64_t>& cells,
-                            GhostMode ghost_mode,
-                            const graph::partition_fn& partfn)
-{
-  LOG(INFO) << "Compute partition of cells across ranks";
+  return
+      [partfn](
+          MPI_Comm comm, int nparts, int tdim,
+          const graph::AdjacencyList<std::int64_t>& cells,
+          GhostMode ghost_mode) -> dolfinx::graph::AdjacencyList<std::int32_t>
+  {
+    LOG(INFO) << "Compute partition of cells across ranks";
 
-  // Compute distributed dual graph (for the cells on this process)
-  const auto [dual_graph, num_ghost_edges]
-      = build_dual_graph(comm, cells, tdim);
+    // Compute distributed dual graph (for the cells on this process)
+    const auto [dual_graph, num_ghost_edges]
+        = build_dual_graph(comm, cells, tdim);
 
-  // Just flag any kind of ghosting for now
-  bool ghosting = (ghost_mode != mesh::GhostMode::none);
+    // Just flag any kind of ghosting for now
+    bool ghosting = (ghost_mode != mesh::GhostMode::none);
 
-  // Compute partition
-  return partfn(comm, n, dual_graph, num_ghost_edges, ghosting);
+    // Compute partition
+    return partfn(comm, nparts, dual_graph, num_ghost_edges, ghosting);
+  };
 }
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t>
