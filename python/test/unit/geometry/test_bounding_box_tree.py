@@ -21,7 +21,8 @@ from mpi4py import MPI
 
 
 def extract_geometricial_data(mesh, dim, entities):
-    """For a set of entities in a mesh, return the coordinates of the vertices"""
+    """For a set of entities in a mesh, return the coordinates of the
+    vertices"""
     mesh_nodes = []
     geom = mesh.geometry
     g_indices = _cpp.mesh.entities_to_geometry(mesh, dim,
