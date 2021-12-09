@@ -52,7 +52,6 @@ jobs:
       - name: isort checks (non-blocking)
         continue-on-error: true
         run: |
-          python3 -m pip install isort # To remove once new Docker images built
           cd python/
           python3 -m isort --check dolfinx
           python3 -m isort --check dolfinx_utils
@@ -61,8 +60,6 @@ jobs:
       - name: clang-format C++ checks (non-blocking)
         continue-on-error: true
         run: |
-          apt-get -y update # To remove once new Docker images build
-          apt-get -y install clang-format # To remove once new Docker images built
           cd cpp
           find . -type f \( -name "*.cpp" -o -name "*.h" \) ! -name "pugixml.cpp" ! -name "loguru.cpp" | xargs clang-format --dry-run --Werror
       - name: clang-format Python binding checks (non-blocking)
@@ -123,8 +120,6 @@ jobs:
       - name: Run demos (Python, MPI (np=2))
         run: python3 -m pytest -m mpi --num-proc=2 python/demo/test.py
 
-      - name: Install Python test dependencies
-        run: apt-get update && apt-get -y install libeigen3-dev # To remove once new Docker images built
       - name: Run Python unit tests (serial)
         run: python3 -m pytest -n=auto --durations=50 python/test/unit/
       - name: Run Python unit tests (MPI, np=2)
