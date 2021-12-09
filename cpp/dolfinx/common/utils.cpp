@@ -31,32 +31,15 @@ std::vector<int32_t> dolfinx::common::get_owned_indices(
     }
   }
 
+  // Communicate ghosts on this process back to their owners
   MPI_Comm reverse_comm
       = index_map->comm(dolfinx::common::IndexMap::Direction::reverse);
   auto dest_ranks = dolfinx::MPI::neighbors(reverse_comm)[1];
 
-
-  std::vector<std::int32_t> data_per_proc(dest_ranks.size(), 0);
   auto ghost_owner_rank = index_map->ghost_owner_rank();
-  for (std::size_t dest_rank_index = 0; dest_rank_index < dest_ranks.size();
-       ++dest_rank_index)
-  {
-    for (auto gi : ghost_indices)
-    {
-      if (ghost_owner_rank[gi] == dest_ranks[dest_rank_index])
-      {
-        data_per_proc[dest_rank_index]++;
-      }
-    }
-  }
-
-  std::vector<int> send_disp(dest_ranks.size() + 1, 0);
-  std::partial_sum(data_per_proc.begin(), data_per_proc.end(),
-                   std::next(send_disp.begin(), 1));
-
-  // TODO Combine with above loop
-  std::vector<std::int64_t> ghosts_to_send;
   auto ghosts = index_map->ghosts();
+  std::vector<std::int64_t> ghosts_to_send;
+  std::vector<std::int32_t> data_per_proc(dest_ranks.size(), 0);
   for (std::size_t dest_rank_index = 0; dest_rank_index < dest_ranks.size();
        ++dest_rank_index)
   {
@@ -65,9 +48,14 @@ std::vector<int32_t> dolfinx::common::get_owned_indices(
       if (ghost_owner_rank[gi] == dest_ranks[dest_rank_index])
       {
         ghosts_to_send.push_back(ghosts[gi]);
+        data_per_proc[dest_rank_index]++;
       }
     }
   }
+
+  std::vector<int> send_disp(dest_ranks.size() + 1, 0);
+  std::partial_sum(data_per_proc.begin(), data_per_proc.end(),
+                   std::next(send_disp.begin(), 1));
 
   const dolfinx::graph::AdjacencyList<std::int64_t> data_out(std::move(ghosts_to_send),
                                                              std::move(send_disp));
