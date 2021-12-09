@@ -12,8 +12,6 @@
 #include <utility>
 #include <vector>
 #include <xtensor/xadapt.hpp>
-#include <xtensor/xarray.hpp>
-#include <xtensor/xio.hpp>
 #include <xtensor/xtensor.hpp>
 #include <xtl/xspan.hpp>
 
