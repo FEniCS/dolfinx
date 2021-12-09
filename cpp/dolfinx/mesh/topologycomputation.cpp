@@ -388,19 +388,25 @@ compute_entities_by_key_matching(
     const common::IndexMap& vertex_index_map,
     const common::IndexMap& cell_index_map, mesh::CellType cell_type, int dim)
 {
+  std::cout << "Step 1\n";
+
   if (dim == 0)
   {
     throw std::runtime_error(
         "Cannot create vertices for topology. Should already exist.");
   }
 
+  std::cout << "Step 2\n";
+
   // Start timer
   common::Timer timer("Compute entities of dim = " + std::to_string(dim));
+
 
   // Initialize local array of entities
   const std::int8_t num_entities_per_cell
       = mesh::cell_num_entities(cell_type, dim);
 
+  std::cout << "Step 3\n";
   // For some cells, the num_vertices varies per facet (3 or 4)
   int max_vertices_per_entity = 0;
   for (int i = 0; i < num_entities_per_cell; ++i)
@@ -410,9 +416,11 @@ compute_entities_by_key_matching(
         mesh::num_cell_vertices(mesh::cell_entity_type(cell_type, dim, i)));
   }
 
+  std::cout << "Step 4\n";
   // Create map from cell vertices to entity vertices
   auto e_vertices = mesh::get_entity_vertices(cell_type, dim);
 
+  std::cout << "Step 5\n";
   // List of vertices for each entity in each cell
   const std::size_t num_cells = cells.num_nodes();
   xt::xtensor<std::int32_t, 2> entity_list(
@@ -436,6 +444,7 @@ compute_entities_by_key_matching(
     }
   }
 
+  std::cout << "Step 6\n";
   // Copy list and sort vertices of each entity into (reverse) order
   xt::xtensor<std::int32_t, 2> entity_list_sorted = entity_list;
   for (std::size_t i = 0; i < entity_list_sorted.shape(0); ++i)
@@ -444,13 +453,18 @@ compute_entities_by_key_matching(
               xt::row(entity_list_sorted, i).end(), std::greater<>());
   }
 
+  std::cout << "Step 7\n";
   // Sort the list and label uniquely
   const std::vector<std::int32_t> sort_order
       = dolfinx::sort_by_perm(entity_list_sorted);
+  
+  std::cout << "sort_order.size() = " << sort_order.size() << "\n";
 
+  std::cout << "Step 8\n";
   std::vector<std::int32_t> entity_index(entity_list.shape(0), 0);
   std::int32_t entity_count = 0;
-  std::int32_t last = sort_order[0];
+  // std::int32_t last = sort_order[0];
+  std::int32_t last = (sort_order.size() > 0) ? sort_order[0] : 0;
   for (std::size_t i = 1; i < sort_order.size(); ++i)
   {
     std::int32_t j = sort_order[i];
@@ -461,12 +475,14 @@ compute_entities_by_key_matching(
   }
   ++entity_count;
 
+  std::cout << "Step 9\n";
   // Communicate with other processes to find out which entities are
   // ghosted and shared. Remap the numbering so that ghosts are at the
   // end.
   auto [local_index, index_map] = get_local_indexing(
       comm, cell_index_map, vertex_index_map, entity_list, entity_index);
 
+  std::cout << "Step 10\n";
   // Entity-vertex connectivity
   std::vector<std::int32_t> offsets_ev(entity_count + 1, 0);
   std::vector<int> size_ev(entity_count);
@@ -480,6 +496,7 @@ compute_entities_by_key_matching(
   for (int i = 0; i < entity_count; ++i)
     offsets_ev[i + 1] = offsets_ev[i] + size_ev[i];
 
+  std::cout << "Step 11\n";
   graph::AdjacencyList<std::int32_t> ev(
       std::vector<std::int32_t>(offsets_ev.back()), std::move(offsets_ev));
   for (std::size_t i = 0; i < entity_list.shape(0); ++i)
@@ -491,6 +508,7 @@ compute_entities_by_key_matching(
   // NOTE: Cell-entity connectivity comes after ev creation because
   // below we use std::move(local_index)
 
+  std::cout << "Step 12\n";
   // Cell-entity connectivity
   std::vector<std::int32_t> offsets_ce(num_cells + 1, 0);
   for (std::size_t i = 0; i < offsets_ce.size() - 1; ++i)
@@ -609,13 +627,16 @@ std::tuple<std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
            std::shared_ptr<common::IndexMap>>
 mesh::compute_entities(MPI_Comm comm, const Topology& topology, int dim)
 {
+  // std::cout << "Step 1\n";
   LOG(INFO) << "Computing mesh entities of dimension " << dim;
   const int tdim = topology.dim();
 
+  // std::cout << "Step 2\n";
   // Vertices must always exist
   if (dim == 0)
     return {nullptr, nullptr, nullptr};
 
+  // std::cout << "Step 3\n";
   if (topology.connectivity(dim, 0))
   {
     // Make sure we really have the connectivity
@@ -630,14 +651,17 @@ mesh::compute_entities(MPI_Comm comm, const Topology& topology, int dim)
     return {nullptr, nullptr, nullptr};
   }
 
+  // std::cout << "Step 4\n";
   auto cells = topology.connectivity(tdim, 0);
   if (!cells)
     throw std::runtime_error("Cell connectivity missing.");
 
+  // std::cout << "Step 5\n";
   auto vertex_map = topology.index_map(0);
   assert(vertex_map);
   auto cell_map = topology.index_map(tdim);
   assert(cell_map);
+  // std::cout << "Step 6\n";
   auto [d0, d1, d2] = compute_entities_by_key_matching(
       comm, *cells, *vertex_map, *cell_map, topology.cell_type(), dim);
 
