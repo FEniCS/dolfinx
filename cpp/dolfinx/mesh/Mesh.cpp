@@ -213,11 +213,12 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
 {
   // TODO Specify sizes of vectors
 
+  // Submesh topology
   // Get the verticies in the submesh
   std::vector<std::int32_t> submesh_vertices
       = mesh::compute_incident_entities(*this, entities, dim, 0);
 
-  // For some processes, entities will be empty, but they might still own vertices
+  // For some processes, entities may be empty, but they might still own vertices
   // in the submesh that need to be included.
   auto vertex_index_map = _topology.index_map(0);
   std::vector<int32_t> submesh_owned_vertices =
@@ -286,61 +287,46 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
   submesh_topology.set_connectivity(submesh_v_to_v, 0, 0);
   submesh_topology.set_connectivity(submesh_e_to_v, dim, 0);
 
-  // Geometry
-  auto e_to_g = mesh::entities_to_geometry(*this, dim, entities, false);
-  
-  // ss << "e_to_g = \n";
-  // ss << e_to_g << "\n";
-  
+  // Submesh geometry
+  // Get the geometry dofs in the submesh based on the entities in
+  // submesh
+  xt::xtensor<std::int32_t, 2> e_to_g =
+      mesh::entities_to_geometry(*this, dim, entities, false);
+  // FIXME Find better way to do this
   xt::xarray<int32_t> submesh_x_dofs_xt = xt::unique(e_to_g);
-  // FIXME Find better way
   std::vector<int32_t> submesh_x_dofs(submesh_x_dofs_xt.begin(),
                                       submesh_x_dofs_xt.end());
-  
+
   std::shared_ptr<const dolfinx::common::IndexMap> geometry_dof_index_map
       = this->geometry().index_map();
 
+  // For some processes, entities may be empty, but they might still own
+  // geometry dofs in the submesh that need to be included.
   auto submesh_owned_x_dofs = dolfinx::common::get_owned_indices(
     comm(), submesh_x_dofs, geometry_dof_index_map);
 
-  // ss << "submesh_owned_x_dofs = ";
-  // for (auto x_dof : submesh_owned_x_dofs)
-  // {
-  //   ss << x_dof << " ";
-  // }
-  // ss << "\n";
+  // Add any owned geometry dofs in the submesh that might come from other
+  // processes
+  submesh_x_dofs.insert(submesh_x_dofs.end(),
+                        submesh_owned_x_dofs.begin(),
+                        submesh_owned_x_dofs.end());
 
-  // Create submesh geometry x_dof index map
+  // Create submesh geometry index map
   std::pair<common::IndexMap, std::vector<int32_t>>
       submesh_x_dof_index_map_pair
       = geometry_dof_index_map->create_submap(submesh_owned_x_dofs);
   auto submesh_x_dof_index_map = std::make_shared<common::IndexMap>(
       std::move(submesh_x_dof_index_map_pair.first));
+  // TODO Consider renaming
   auto submesh_x_dof_index_map_ghost_map =
       std::move(submesh_x_dof_index_map_pair.second);
 
-  // ss << "submesh_x_dof_index_map->global_indices() = ";
-  // for (auto i : submesh_x_dof_index_map->global_indices())
-  // {
-  //   ss << i << " ";
-  // }
-  // ss << "\n";
+  // On some processes, the ghosts in submesh_x_dof_index_map may not be in
+  // submesh_x_dofs, so these must be added so that each dof in the index map
+  // has geometry data (i.e. coordinates)
 
-  // ss << "submesh_x_dof_index_map->ghosts() = ";
-  // for (auto i : submesh_x_dof_index_map->ghosts())
-  // {
-  //   ss << i << " ";
-  // }
-  // ss << "\n";
-
-  // ss << "submesh_x_dof_index_map_ghost_map = ";
-  // for (auto i : submesh_x_dof_index_map_ghost_map)
-  // {
-  //   ss << i << " ";
-  // }
-  // ss << "\n";
-
-  // Ghosts in the (this) mesh that are present in the submap (global index)
+  // Get the global indices of ghosts in the mesh (this) that are present in
+  // the submesh
   std::vector<std::int64_t> x_dof_ghosts;
   for (int i = 0; i < submesh_x_dof_index_map->ghosts().size(); ++i)
   {
@@ -374,11 +360,6 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
   //   ss << i << " ";
   // }
   // ss << "\n";
-
-  // Add any owned entities in the submap that might come from other processes
-  submesh_x_dofs.insert(submesh_x_dofs.end(),
-                        submesh_owned_x_dofs.begin(),
-                        submesh_owned_x_dofs.end());
 
   // Since the submesh must contain the coordinates of all dofs in the index map
   // (owned and ghost), the ghost dofs must also be added, as they might not be
