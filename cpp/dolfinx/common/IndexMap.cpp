@@ -270,8 +270,7 @@ common::stack_index_maps(
 //-----------------------------------------------------------------------------
 IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size)
     : _comm(comm), _comm_owner_to_ghost(MPI_COMM_NULL),
-      _comm_ghost_to_owner(MPI_COMM_NULL),
-      _displs_recv_fwd(1, 0)
+      _comm_ghost_to_owner(MPI_COMM_NULL), _displs_recv_fwd(1, 0)
 {
   // Get global offset (index), using partial exclusive reduction
   std::int64_t offset = 0;
