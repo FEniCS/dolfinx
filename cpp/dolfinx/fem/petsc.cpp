@@ -256,11 +256,11 @@ Vec fem::petsc::create_vector_nest(
   assert(!maps.empty());
 
   // Loop over each form and create vector
-  std::vector<std::shared_ptr<la::PETScVector>> vecs;
+  std::vector<std::shared_ptr<la::petsc::Vector>> vecs;
   std::vector<Vec> petsc_vecs;
   for (auto& map : maps)
   {
-    vecs.push_back(std::make_shared<la::PETScVector>(map.first, map.second));
+    vecs.push_back(std::make_shared<la::petsc::Vector>(map.first, map.second));
     petsc_vecs.push_back(vecs.back()->vec());
   }
 

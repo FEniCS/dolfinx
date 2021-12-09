@@ -846,12 +846,12 @@ void fem(py::module& m)
             set_fn;
         if (unrolled)
         {
-          set_fn = dolfinx::la::PETScMatrix::set_block_expand_fn(
+          set_fn = dolfinx::la::petsc::Matrix::set_block_expand_fn(
               A, a.function_spaces()[0]->dofmap()->bs(),
               a.function_spaces()[1]->dofmap()->bs(), ADD_VALUES);
         }
         else
-          set_fn = dolfinx::la::PETScMatrix::set_block_fn(A, ADD_VALUES);
+          set_fn = dolfinx::la::petsc::Matrix::set_block_fn(A, ADD_VALUES);
 
         auto _coefficients = py_to_cpp_coeffs(coefficients);
         dolfinx::fem::assemble_matrix(set_fn, a, xtl::span(constants),
@@ -882,12 +882,12 @@ void fem(py::module& m)
             set_fn;
         if (unrolled)
         {
-          set_fn = dolfinx::la::PETScMatrix::set_block_expand_fn(
+          set_fn = dolfinx::la::petsc::Matrix::set_block_expand_fn(
               A, a.function_spaces()[0]->dofmap()->bs(),
               a.function_spaces()[1]->dofmap()->bs(), ADD_VALUES);
         }
         else
-          set_fn = dolfinx::la::PETScMatrix::set_block_fn(A, ADD_VALUES);
+          set_fn = dolfinx::la::petsc::Matrix::set_block_fn(A, ADD_VALUES);
 
         auto _coefficients = py_to_cpp_coeffs(coefficients);
         dolfinx::fem::assemble_matrix(set_fn, a, xtl::span(constants),
@@ -902,7 +902,7 @@ void fem(py::module& m)
            PetscScalar diagonal)
         {
           dolfinx::fem::set_diagonal(
-              dolfinx::la::PETScMatrix::set_fn(A, INSERT_VALUES), V, bcs,
+              dolfinx::la::petsc::Matrix::set_fn(A, INSERT_VALUES), V, bcs,
               diagonal);
         });
 
@@ -915,7 +915,7 @@ void fem(py::module& m)
             = dolfinx::fem::create_sparsity_discrete_gradient(V0, V1);
         Mat A = dolfinx::la::petsc::create_matrix(MPI_COMM_WORLD, sp);
         dolfinx::fem::assemble_discrete_gradient<PetscScalar>(
-            dolfinx::la::PETScMatrix::set_fn(A, ADD_VALUES), V0, V1);
+            dolfinx::la::petsc::Matrix::set_fn(A, ADD_VALUES), V0, V1);
         MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
         MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
         return A;

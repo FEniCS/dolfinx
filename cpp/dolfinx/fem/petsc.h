@@ -160,7 +160,7 @@ void apply_lifting(
 // FIXME: clarify x0
 // FIXME: clarify what happens with ghosts
 
-/// Set bc values in owned (local) part of the PETScVector, multiplied
+/// Set bc values in owned (local) part of the PETSc vector, multiplied
 /// by 'scale'. The vectors b and x0 must have the same local size. The
 /// bcs should be on (sub-)spaces of the form L that b represents.
 void set_bc(

@@ -24,7 +24,7 @@ public:
       : _l(L), _j(J), _bcs(bcs),
         _b(L->function_spaces()[0]->dofmap()->index_map,
            L->function_spaces()[0]->dofmap()->index_map_bs()),
-        _matA(la::PETScMatrix(fem::petsc::create_matrix(*J, "baij"), false))
+        _matA(la::petsc::Matrix(fem::petsc::create_matrix(*J, "baij"), false))
   {
     auto map = L->function_spaces()[0]->dofmap()->index_map;
     const int bs = L->function_spaces()[0]->dofmap()->index_map_bs();
@@ -84,11 +84,11 @@ public:
     return [&](const Vec, Mat A)
     {
       MatZeroEntries(A);
-      fem::assemble_matrix(la::PETScMatrix::set_block_fn(A, ADD_VALUES), *_j,
+      fem::assemble_matrix(la::petsc::Matrix::set_block_fn(A, ADD_VALUES), *_j,
                            _bcs);
       MatAssemblyBegin(A, MAT_FLUSH_ASSEMBLY);
       MatAssemblyEnd(A, MAT_FLUSH_ASSEMBLY);
-      fem::set_diagonal(la::PETScMatrix::set_fn(A, INSERT_VALUES),
+      fem::set_diagonal(la::petsc::Matrix::set_fn(A, INSERT_VALUES),
                         *_j->function_spaces()[0], _bcs);
       MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
       MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
@@ -104,7 +104,7 @@ private:
   std::vector<std::shared_ptr<const fem::DirichletBC<PetscScalar>>> _bcs;
   la::Vector<PetscScalar> _b;
   Vec _b_petsc = nullptr;
-  la::PETScMatrix _matA;
+  la::petsc::Matrix _matA;
 };
 
 int main(int argc, char* argv[])
@@ -177,7 +177,6 @@ int main(int argc, char* argv[])
 
     // Create Dirichlet boundary conditions
     auto u0 = std::make_shared<fem::Function<PetscScalar>>(V);
-
     const auto bdofs_left
         = fem::locate_dofs_geometrical({*V},
                                        [](auto& x) -> xt::xtensor<bool, 1> {
@@ -188,7 +187,6 @@ int main(int argc, char* argv[])
                                        [](auto& x) -> xt::xtensor<bool, 1> {
                                          return xt::isclose(xt::row(x, 0), 1.0);
                                        });
-
     auto bcs
         = std::vector({std::make_shared<const fem::DirichletBC<PetscScalar>>(
                            u_clamp, std::move(bdofs_left)),

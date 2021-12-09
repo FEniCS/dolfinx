@@ -95,27 +95,25 @@ void scatter_local_vectors(
     const std::vector<
         std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps);
 
-} // namespace petsc
-
 /// A simple wrapper for a PETSc vector pointer (Vec). Its main purpose
 /// is to assist with memory/lifetime management of PETSc Vec objects.
 ///
 /// Access the underlying PETSc Vec pointer using the function
-/// PETScVector::vec() and use the full PETSc interface.
-class PETScVector
+/// Vector::vec() and use the full PETSc interface.
+class Vector
 {
 public:
   /// Create a vector
   /// @note Collective
   /// @param[in] map Index map describing the parallel layout
   /// @param[in] bs the block size
-  PETScVector(const common::IndexMap& map, int bs);
+  Vector(const common::IndexMap& map, int bs);
 
   // Delete copy constructor to avoid accidental copying of 'heavy' data
-  PETScVector(const PETScVector& x) = delete;
+  Vector(const Vector& x) = delete;
 
   /// Move constructor
-  PETScVector(PETScVector&& x);
+  Vector(Vector&& x);
 
   /// Create holder of a PETSc Vec object/pointer. The Vec x object
   /// should already be created. If inc_ref_count is true, the reference
@@ -128,20 +126,20 @@ public:
   /// @param[in] x The PETSc Vec
   /// @param[in] inc_ref_count True if the reference count of `x` should
   /// be incremented
-  PETScVector(Vec x, bool inc_ref_count);
+  Vector(Vec x, bool inc_ref_count);
 
   /// Destructor
-  virtual ~PETScVector();
+  virtual ~Vector();
 
   // Assignment operator (disabled)
-  PETScVector& operator=(const PETScVector& x) = delete;
+  Vector& operator=(const Vector& x) = delete;
 
   /// Move Assignment operator
-  PETScVector& operator=(PETScVector&& x);
+  Vector& operator=(Vector&& x);
 
   /// Create a copy of the vector
   /// @note Collective
-  PETScVector copy() const;
+  Vector copy() const;
 
   /// Return global size of the vector
   std::int64_t size() const;
@@ -178,4 +176,5 @@ private:
   // PETSc Vec pointer
   Vec _x;
 };
+} // namespace petsc
 } // namespace dolfinx::la

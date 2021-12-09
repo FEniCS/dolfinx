@@ -21,10 +21,10 @@ namespace
 /// @param solver The Newton solver
 /// @param r The residual vector
 /// @return The pair `(residual norm, converged)`, where `converged` is
-// and true` if convergence achieved
+/// and true` if convergence achieved
 std::pair<double, bool> converged(const nls::NewtonSolver& solver, const Vec r)
 {
-  la::PETScVector _r(r, true);
+  la::petsc::Vector _r(r, true);
   double residual = _r.norm(la::Norm::l2);
 
   // Relative residual
@@ -69,10 +69,10 @@ nls::NewtonSolver::NewtonSolver(MPI_Comm comm)
 {
   // Create linear solver if not already created. Default to LU.
   _solver.set_options_prefix("nls_solve_");
-  la::PETScOptions::set("nls_solve_ksp_type", "preonly");
-  la::PETScOptions::set("nls_solve_pc_type", "lu");
+  la::petsc::Options::set("nls_solve_ksp_type", "preonly");
+  la::petsc::Options::set("nls_solve_pc_type", "lu");
 #if PETSC_HAVE_MUMPS
-  la::PETScOptions::set("nls_solve_pc_factor_mat_solver_type", "mumps");
+  la::petsc::Options::set("nls_solve_pc_factor_mat_solver_type", "mumps");
 #endif
   _solver.set_from_options();
 }
