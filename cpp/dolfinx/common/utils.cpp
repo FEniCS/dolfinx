@@ -11,13 +11,23 @@ std::vector<int32_t> dolfinx::common::get_owned_indices(
     MPI_Comm comm, const xtl::span<const std::int32_t>& indices,
     std::shared_ptr<const dolfinx::common::IndexMap> index_map)
 {
-  // Get the vertices in submesh_vertices that are owned by this process
-  std::vector<std::int32_t> owned_indices; // Local numbering
-  for (auto i : indices)
+  // TODO Specify size of vectors
+
+  // Split indices into those owned by this process and those that
+  // are ghosts. Note that `ghost_indices` contains the position
+  // of the ghost in index_map->ghosts()
+  std::vector<std::int32_t> owned;
+  std::vector<std::int32_t> ghost_indices;
+  for (std::size_t i = 0; i < indices.size(); ++i)
   {
-    if (i < index_map->size_local())
+    if (indices[i] < index_map->size_local())
     {
-      owned_indices.push_back(i);
+      owned.push_back(indices[i]);
+    }
+    else
+    {
+      const std::int32_t ghost_index = indices[i] - index_map->size_local();
+      ghost_indices.push_back(ghost_index);
     }
   }
 
@@ -25,17 +35,6 @@ std::vector<int32_t> dolfinx::common::get_owned_indices(
       = index_map->comm(dolfinx::common::IndexMap::Direction::reverse);
   auto dest_ranks = dolfinx::MPI::neighbors(reverse_comm)[1];
 
-  // Index in index_map.ghosts() of ghost vertices
-  // TODO Combine with above loop
-  std::vector<std::int32_t> ghost_indices;
-  for (std::size_t i = 0; i < indices.size(); ++i)
-  {
-    if (indices[i] >= index_map->size_local())
-    {
-      const std::int32_t ghost_index = indices[i] - index_map->size_local();
-      ghost_indices.push_back(ghost_index);
-    }
-  }
 
   std::vector<std::int32_t> data_per_proc(dest_ranks.size(), 0);
   auto ghost_owner_rank = index_map->ghost_owner_rank();
@@ -84,13 +83,13 @@ std::vector<int32_t> dolfinx::common::get_owned_indices(
                         global_index);
     assert(it != global_indices.end());
     std::int32_t local_index = std::distance(global_indices.begin(), it);
-    owned_indices.push_back(local_index);
+    owned.push_back(local_index);
   }
   // Sort owned_indices and make unique (could have received same ghost
   // vertex from multiple ranks)
-  std::sort(owned_indices.begin(), owned_indices.end());
-  owned_indices.erase(std::unique(owned_indices.begin(), owned_indices.end()),
-                      owned_indices.end());
+  std::sort(owned.begin(), owned.end());
+  owned.erase(std::unique(owned.begin(), owned.end()),
+                      owned.end());
 
-  return owned_indices;
+  return owned;
 }
