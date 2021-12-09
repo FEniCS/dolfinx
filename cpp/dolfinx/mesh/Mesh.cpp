@@ -176,36 +176,6 @@ Mesh mesh::create_mesh(MPI_Comm comm,
   if (element.needs_dof_permutations())
     topology.create_entity_permutations();
 
-  std::stringstream ss;
-
-  int rank = dolfinx::MPI::rank(comm);
-  ss << "rank = " << rank << "\n";
-
-  ss << "mesh c_to_v = \n";
-  for (auto cell = 0; cell < topology.connectivity(tdim, 0)->num_nodes();
-       ++cell)
-  {
-    ss << "   cell " << cell << ": ";
-    for (auto v : topology.connectivity(tdim, 0)->links(cell))
-    {
-      ss << v << " ";
-    }
-    ss << "\n";
-  }
-  ss << "\n";
-
-  ss << "mesh cell_nodes1 = ";
-  for (auto n : cell_nodes1.array())
-  {
-    ss << n << " ";
-  }
-  ss << "\n";
-
-  ss << "mesh x = ";
-  ss << x << "\n";
-
-  // std::cout << ss.str() << "\n";
-
   return Mesh(comm, std::move(topology),
               mesh::create_geometry(comm, topology, element, cell_nodes1, x));
 }
