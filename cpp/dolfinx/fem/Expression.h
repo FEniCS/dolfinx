@@ -11,7 +11,6 @@
 #include <functional>
 #include <utility>
 #include <vector>
-#include <xtensor/xadapt.hpp>
 #include <xtensor/xtensor.hpp>
 #include <xtl/xspan.hpp>
 
