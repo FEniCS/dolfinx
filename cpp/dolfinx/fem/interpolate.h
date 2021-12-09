@@ -673,7 +673,7 @@ void interpolate(Function<T>& u, const Expression<T>& expr,
   expr.eval(cells, expr_values);
 
   // Reshape evaluated data to fit interpolate
-  auto values_view = xt::reshape_view(
+  xt::xtensor<T, 3> values_view = xt::reshape_view(
       expr_values, {num_cells, num_points, element->value_size()});
   xt::xarray<T> values
       = xt::empty<T>({expr_value_size, num_cells * num_points});
