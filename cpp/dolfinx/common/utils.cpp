@@ -62,19 +62,19 @@ std::vector<int32_t> dolfinx::common::get_owned_indices(
   const dolfinx::graph::AdjacencyList<std::int64_t> data_in
       = dolfinx::MPI::neighbor_all_to_all(reverse_comm, data_out);
 
-  // Append ghost vertices from other processes owned by this process to
-  // submesh_owned_vertices. First need to get the local index
+  // Get the local index of the global indices received from other processes,
+  // and add to `owned`
   auto global_indices = index_map->global_indices();
   for (std::int64_t global_index : data_in.array())
   {
     auto it = std::find(global_indices.begin(), global_indices.end(),
                         global_index);
     assert(it != global_indices.end());
-    std::int32_t local_index = std::distance(global_indices.begin(), it);
-    owned.push_back(local_index);
+    owned.push_back(std::distance(global_indices.begin(), it));
   }
-  // Sort owned_indices and make unique (could have received same ghost
-  // vertex from multiple ranks)
+
+  // Sort `owned` and remove non-unique entries (we could have received
+  // the same ghost from multiple other processes)
   std::sort(owned.begin(), owned.end());
   owned.erase(std::unique(owned.begin(), owned.end()),
                       owned.end());
