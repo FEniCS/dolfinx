@@ -222,7 +222,7 @@ int main(int argc, char* argv[])
     VecGhostUpdateEnd(b.vec(), ADD_VALUES, SCATTER_REVERSE);
     fem::petsc::set_bc(b.vec(), bc, nullptr);
 
-    la::PETScKrylovSolver lu(MPI_COMM_WORLD);
+    la::petsc::KrylovSolver lu(MPI_COMM_WORLD);
     la::petsc::Options::set("ksp_type", "preonly");
     la::petsc::Options::set("pc_type", "lu");
     lu.set_from_options();

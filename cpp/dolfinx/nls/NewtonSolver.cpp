@@ -113,12 +113,12 @@ void nls::NewtonSolver::setP(const std::function<void(const Vec, Mat)>& P,
   PetscObjectReference((PetscObject)_matP);
 }
 //-----------------------------------------------------------------------------
-const la::PETScKrylovSolver& nls::NewtonSolver::get_krylov_solver() const
+const la::petsc::KrylovSolver& nls::NewtonSolver::get_krylov_solver() const
 {
   return _solver;
 }
 //-----------------------------------------------------------------------------
-la::PETScKrylovSolver& nls::NewtonSolver::get_krylov_solver()
+la::petsc::KrylovSolver& nls::NewtonSolver::get_krylov_solver()
 {
   return _solver;
 }
