@@ -211,37 +211,19 @@ Mesh mesh::create_mesh(MPI_Comm comm,
 //-----------------------------------------------------------------------------
 Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
 {
-  // TODO Reserve number as in meshview branch
-  // TODO Create separate function for seding ghost indices back to owner
+  // TODO Specify sizes of vectors
 
-  std::stringstream ss;
-
-  int rank = dolfinx::MPI::rank(comm());
-  ss << "\n\nmesh::sub\nrank = " << rank << "\n";
-
-  // Create vector of unique and ordered vertices
+  // Get the verticies in the submesh
   std::vector<std::int32_t> submesh_vertices
       = mesh::compute_incident_entities(*this, entities, dim, 0);
 
-  // ss << "submesh_vertices = ";
-  // for (auto v : submesh_vertices)
-  // {
-  //   ss << v << " ";
-  // }
-  // ss << "\n";
-
+  // For some processes, entities will be empty, but they might still own vertices
+  // in the submesh that need to be included.
   auto vertex_index_map = _topology.index_map(0);
-  auto submesh_owned_vertices =
+  std::vector<int32_t> submesh_owned_vertices =
     dolfinx::common::get_owned_indices(comm(), submesh_vertices, vertex_index_map);
 
-  // ss << "submesh_owned_vertices = ";
-  // for (auto sv : submesh_owned_vertices)
-  // {
-  //   ss << sv << " ";
-  // }
-  // ss << "\n";
-
-  // Create submap vertex index map
+  // Create submesh vertex index map
   std::pair<common::IndexMap, std::vector<int32_t>>
       submesh_vertex_index_map_pair
       = vertex_index_map->create_submap(submesh_owned_vertices);
@@ -259,19 +241,11 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
     }
   }
 
-  // ss << "submesh_owned_entities = ";
-  // for (auto e : submesh_owned_entities)
-  // {
-  //   ss << e << " ";
-  // }
-  // ss << "\n";
-
-  // Create submap entity index map
-  // NOTE Here I don't communicate the ghost entity indices back to their
-  // owning processes because the only time this would be useful is if
-  // the list of entities contains a ghost entity on one process which is
-  // not contained in the list of entities from the owner. I can't think
-  // of many cases where this would be needed.
+  // Create submesh entity index map
+  // NOTE Here it is assumed that every ghost entity in entities corresponds
+  // to an owned entity in entities on another process. This means that
+  // the ghost entities don't need to be communicated back to their owners,
+  // although it is simple to enable this functionality.
   std::pair<common::IndexMap, std::vector<int32_t>>
       submesh_entity_index_map_pair =
         entity_index_map->create_submap(submesh_owned_entities);
@@ -287,36 +261,21 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
   auto e_to_v = _topology.connectivity(dim, 0);
   std::vector<std::int32_t> submesh_e_to_v_vec;
   std::vector<std::int32_t> submesh_e_to_v_offsets(1, 0);
-  for (auto e : entities)
+  for (std::int32_t e : entities)
   {
-    auto vertices = e_to_v->links(e);
+    xtl::span<const std::int32_t> vertices = e_to_v->links(e);
 
-    for (auto v : vertices)
+    for (std::int32_t v : vertices)
     {
-      auto submesh_vertex_it
+      auto it
           = std::find(submesh_vertices.begin(), submesh_vertices.end(), v);
-      assert(submesh_vertex_it != submesh_vertices.end());
-      std::int32_t submesh_vertex
-          = std::distance(submesh_vertices.begin(), submesh_vertex_it);
-      submesh_e_to_v_vec.push_back(submesh_vertex);
+      assert(it != submesh_vertices.end());
+      submesh_e_to_v_vec.push_back(std::distance(submesh_vertices.begin(), it));
     }
     submesh_e_to_v_offsets.push_back(submesh_e_to_v_vec.size());
   }
   auto submesh_e_to_v = std::make_shared<graph::AdjacencyList<std::int32_t>>(
       submesh_e_to_v_vec, submesh_e_to_v_offsets);
-
-  // ss << "submesh e_to_v = \n";
-  // for (auto e = 0; e < submesh_e_to_v->num_nodes(); ++e)
-  // {
-  //   ss << "   entity " << e << ": ";
-  //   for (auto v : submesh_e_to_v->links(e))
-  //   {
-  //     ss << v << " ";
-  //   }
-  //   ss << "\n";
-  // }
-  // ss << "\n";
-
 
   // Create submesh topology
   const CellType entity_type
@@ -326,8 +285,6 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
   submesh_topology.set_index_map(dim, submesh_entity_index_map);
   submesh_topology.set_connectivity(submesh_v_to_v, 0, 0);
   submesh_topology.set_connectivity(submesh_e_to_v, dim, 0);
-
-  // ss << "Created topology\n";
 
   // Geometry
   auto e_to_g = mesh::entities_to_geometry(*this, dim, entities, false);
@@ -535,7 +492,7 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
   
   // ss << "Geom created\n";
 
-  std::cout << ss.str() << "\n";
+  // std::cout << ss.str() << "\n";
 
   return Mesh(comm(), std::move(submesh_topology), std::move(submesh_geometry));
 }
