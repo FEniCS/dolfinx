@@ -87,8 +87,11 @@ std::int64_t hash_global(const MPI_Comm comm, const T& x)
   return global_hash;
 }
 
-// TODO Name properly
+// Given a list of indices (local to process) and an index map,
+// this function retuns the indices owned by the process. If
+// the list contains ghost indices, the ghosts are communicated
+// to their owners.
 std::vector<int32_t> get_owned_indices(
-    MPI_Comm comm, const std::vector<std::int32_t>& indices,
+    MPI_Comm comm, const xtl::span<const std::int32_t>& indices,
     std::shared_ptr<const dolfinx::common::IndexMap> index_map);
 } // namespace dolfinx::common

@@ -8,7 +8,7 @@
 #include <sstream>
 
 std::vector<int32_t> dolfinx::common::get_owned_indices(
-    MPI_Comm comm, const std::vector<std::int32_t>& indices,
+    MPI_Comm comm, const xtl::span<const std::int32_t>& indices,
     std::shared_ptr<const dolfinx::common::IndexMap> index_map)
 {
   std::stringstream ss;
