@@ -349,49 +349,35 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
                         x_dof_ghosts_local.begin(),
                         x_dof_ghosts_local.end());
 
-  // Create a sorted list of unique x_dofs. submesh_x_dofs maps the submesh x_dof
-  // to the mesh (this) x_dof i.e. x_dof 3 in the submesh is x_dof submesh_x_dofs[3]
-  // in the mesh (this)
+  // Create a sorted list of unique geometry dofs. submesh_x_dofs maps the
+  // submesh geometry dofs to the mesh (this) geometry dofs i.e. dof 3 in the
+  // submesh is x_dof submesh_x_dofs[3] in the mesh
   std::sort(submesh_x_dofs.begin(), submesh_x_dofs.end());
   submesh_x_dofs.erase(std::unique(submesh_x_dofs.begin(),
                                    submesh_x_dofs.end()),
                                    submesh_x_dofs.end());
-
-  // ss << "submesh_x_dofs = ";
-  // for (auto i : submesh_x_dofs)
-  // {
-  //   ss << i << " ";
-  // }
-  // ss << "\n";
 
   // Crete submesh geometry dofmap
   std::vector<std::int32_t> submesh_x_dofmap_vec;
   std::vector<std::int32_t> submesh_x_dofmap_offsets(1, 0);
   for (std::size_t i = 0; i < e_to_g.shape()[0]; ++i)
   {
+    // Get the mesh geometry dofs for ith entity in entities
     auto entity_x_dofs = xt::row(e_to_g, i);
 
-    // Loop through entity_x_dofs, getting the corresponding x_dof in
-    // the submesh
-    // TODO Create outside loop and fill to reuse
-    std::vector<std::int32_t> submesh_entity_x_dofs;
-    for (auto x_dof : entity_x_dofs)
+    // For each mesh dof of the entity, get the submesh dof
+    for (std::int32_t x_dof : entity_x_dofs)
     {
       auto it = std::find(submesh_x_dofs.begin(),
                           submesh_x_dofs.end(), x_dof);
       assert(it != submesh_x_dofs.end());
-      auto submesh_entity_x_dof
-          = std::distance(submesh_x_dofs.begin(), it);
-      submesh_entity_x_dofs.push_back(submesh_entity_x_dof);
+      submesh_x_dofmap_vec.push_back(std::distance(submesh_x_dofs.begin(), it));
     }
-    submesh_x_dofmap_vec.insert(submesh_x_dofmap_vec.end(),
-                                submesh_entity_x_dofs.begin(),
-                                submesh_entity_x_dofs.end());
     submesh_x_dofmap_offsets.push_back(submesh_x_dofmap_vec.size());
   }
   graph::AdjacencyList<std::int32_t> submesh_x_dofmap(
       std::move(submesh_x_dofmap_vec), std::move(submesh_x_dofmap_offsets));
-  
+
   // ss << "submesh_x_dofmap =\n";
   // for (auto cell = 0; cell < submesh_x_dofmap.num_nodes(); ++cell)
   // {
