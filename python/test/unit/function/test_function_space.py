@@ -6,11 +6,14 @@
 """Unit tests for the FunctionSpace class"""
 
 import pytest
-from dolfinx import Function, FunctionSpace, UnitCubeMesh, VectorFunctionSpace
-from mpi4py import MPI
+
+from dolfinx.fem import Function, FunctionSpace, VectorFunctionSpace
+from dolfinx.generation import UnitCubeMesh
 from ufl import (FiniteElement, TestFunction, TrialFunction, VectorElement,
                  grad, triangle)
 from ufl.log import UFLException
+
+from mpi4py import MPI
 
 
 @pytest.fixture

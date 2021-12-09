@@ -124,7 +124,7 @@ public:
   double residual0() const;
 
   /// Return MPI communicator
-  MPI_Comm mpi_comm() const;
+  MPI_Comm comm() const;
 
   /// Maximum number of iterations
   int max_it = 50;
@@ -199,7 +199,7 @@ private:
   Vec _dx = nullptr;
 
   // MPI communicator
-  dolfinx::MPI::Comm _mpi_comm;
+  dolfinx::MPI::Comm _comm;
 };
 } // namespace nls
 } // namespace dolfinx

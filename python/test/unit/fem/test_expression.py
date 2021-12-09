@@ -5,11 +5,15 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for dolfinx.cpp.fem.CoordinateMap.pull_back and dolfinx.Expression"""
 
-import dolfinx
-import dolfinx.geometry
 import numpy as np
 import pytest
+
 import ufl
+from dolfinx.fem import Expression, Function, FunctionSpace
+from dolfinx.generation import UnitSquareMesh
+from dolfinx.geometry import (BoundingBoxTree, compute_colliding_cells,
+                              compute_collisions)
+
 from mpi4py import MPI
 from petsc4py import PETSc
 
@@ -18,8 +22,8 @@ from petsc4py import PETSc
                     reason="Complex expression not implemented in ufc")
 def test_expression():
     """Test UFL expression evaluation"""
-    mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, 10, 10)
-    V = dolfinx.FunctionSpace(mesh, ("Lagrange", 2))
+    mesh = UnitSquareMesh(MPI.COMM_WORLD, 10, 10)
+    V = FunctionSpace(mesh, ("Lagrange", 2))
 
     def f(x):
         return 2 * x[0]**2 + x[1]**2
@@ -27,7 +31,7 @@ def test_expression():
     def gradf(x):
         return np.asarray([4 * x[0], 2 * x[1]])
 
-    u = dolfinx.Function(V)
+    u = Function(V)
     u.interpolate(f)
     u.x.scatter_forward()
 
@@ -35,14 +39,14 @@ def test_expression():
     points = np.array([[0.15, 0.3, 0], [0.953, 0.81, 0]])
     gdim = mesh.geometry.dim
     tdim = mesh.topology.dim
-    bb = dolfinx.geometry.BoundingBoxTree(mesh, tdim)
+    bb = BoundingBoxTree(mesh, tdim)
 
     # Find colliding cells on proc
     closest_cell = []
     local_map = []
-    cells = dolfinx.geometry.compute_collisions(bb, points)
+    cells = compute_collisions(bb, points)
 
-    actual_cells = dolfinx.geometry.compute_colliding_cells(mesh, cells, points)
+    actual_cells = compute_colliding_cells(mesh, cells, points)
     for i in range(actual_cells.num_nodes):
         if len(actual_cells.links(i)) > 0:
             local_map.append(i)
@@ -63,7 +67,7 @@ def test_expression():
         points_ref[i] = point_ref
 
     # Eval using Expression
-    expr = dolfinx.Expression(grad_u, points_ref)
+    expr = Expression(grad_u, points_ref)
     grad_u_at_x = expr.eval(closest_cell).reshape(len(closest_cell), points_ref.shape[0], gdim)
 
     # Compare solutions

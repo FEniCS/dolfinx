@@ -314,34 +314,29 @@ void declare_objects(py::module& m, const std::string& type)
           "interpolate_ptr",
           [](dolfinx::fem::Function<T>& self, std::uintptr_t addr)
           {
-            const std::function<void(T*, int, int, const double*)> f
-                = reinterpret_cast<void (*)(T*, int, int, const double*)>(addr);
+            assert(self.function_space());
+            auto element = self.function_space()->element();
+            assert(element);
 
-            auto _f = [&f](xt::xarray<T>& values,
-                           const xt::xtensor<double, 2>& x) -> void {
-              f(values.data(), int(values.shape(1)), int(values.shape(0)),
-                x.data());
+            // Compute value size
+            std::vector<int> vshape(element->value_rank(), 1);
+            for (std::size_t i = 0; i < vshape.size(); ++i)
+              vshape[i] = element->value_dimension(i);
+            std::size_t value_size = std::reduce(
+                std::begin(vshape), std::end(vshape), 1, std::multiplies<>());
+
+            std::function<void(T*, int, int, const double*)> f
+                = reinterpret_cast<void (*)(T*, int, int, const double*)>(addr);
+            auto _f = [&f, value_size](const xt::xtensor<double, 2>& x)
+            {
+              xt::xarray<T> values = xt::empty<T>({value_size, x.shape(1)});
+              f(values.data(), values.shape(1), values.shape(0), x.data());
+              return values;
             };
 
-            assert(self.function_space());
-            assert(self.function_space()->element());
-            assert(self.function_space()->mesh());
-            const int tdim = self.function_space()->mesh()->topology().dim();
-            auto cell_map
-                = self.function_space()->mesh()->topology().index_map(tdim);
-            assert(cell_map);
-            const std::int32_t num_cells
-                = cell_map->size_local() + cell_map->num_ghosts();
-            std::vector<std::int32_t> cells(num_cells, 0);
-            std::iota(cells.begin(), cells.end(), 0);
-            const auto x = dolfinx::fem::interpolation_coords(
-                *self.function_space()->element(),
-                *self.function_space()->mesh(), cells);
-
-            dolfinx::fem::interpolate_c<T>(self, _f, x, cells);
+            self.interpolate(_f);
           },
-          "Interpolate using a pointer to an expression with a C "
-          "signature")
+          "Interpolate using a pointer to an expression with a C signature")
       .def_property_readonly("vector", &dolfinx::fem::Function<T>::vector,
                              "Return the PETSc vector associated with "
                              "the finite element Function")
@@ -872,9 +867,16 @@ void fem(py::module& m)
          const std::map<std::pair<dolfinx::fem::IntegralType, int>,
                         py::array_t<PetscScalar, py::array::c_style>>&
              coefficients,
-         const std::vector<bool>& rows0, const std::vector<bool>& rows1,
+         const py::array_t<std::int8_t, py::array::c_style>& rows0,
+         const py::array_t<std::int8_t, py::array::c_style>& rows1,
          bool unrolled)
       {
+        if (rows0.ndim() != 1 or rows1.ndim())
+        {
+          throw std::runtime_error(
+              "Expected 1D arrays for boundary condition rows/columns");
+        }
+
         std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                           const std::int32_t*, const PetscScalar*)>
             set_fn;
@@ -911,7 +913,7 @@ void fem(py::module& m)
       {
         dolfinx::la::SparsityPattern sp
             = dolfinx::fem::create_sparsity_discrete_gradient(V0, V1);
-        Mat A = dolfinx::la::create_petsc_matrix(MPI_COMM_WORLD, sp);
+        Mat A = dolfinx::la::petsc::create_matrix(MPI_COMM_WORLD, sp);
         dolfinx::fem::assemble_discrete_gradient<PetscScalar>(
             dolfinx::la::PETScMatrix::set_fn(A, ADD_VALUES), V0, V1);
         MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);

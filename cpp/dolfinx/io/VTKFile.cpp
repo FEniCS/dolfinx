@@ -412,7 +412,7 @@ void write_function(
     }
   }
   // Get MPI comm
-  const MPI_Comm comm = mesh->mpi_comm();
+  const MPI_Comm comm = mesh->comm();
   const int mpi_rank = dolfinx::MPI::rank(comm);
   boost::filesystem::path p(filename);
 

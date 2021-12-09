@@ -8,14 +8,18 @@
 import importlib
 
 import cffi
-import dolfinx
 import numpy as np
 import pytest
+
 import ufl
-from dolfinx import (Function, FunctionSpace, TensorFunctionSpace,
-                     UnitCubeMesh, VectorFunctionSpace, geometry)
+from dolfinx.fem import (Function, FunctionSpace, TensorFunctionSpace,
+                         VectorFunctionSpace)
+from dolfinx.generation import UnitCubeMesh
+from dolfinx.geometry import (BoundingBoxTree, compute_colliding_cells,
+                              compute_collisions)
 from dolfinx.mesh import create_mesh
 from dolfinx_utils.test.skips import skip_if_complex, skip_in_parallel
+
 from mpi4py import MPI
 from petsc4py import PETSc
 
@@ -144,9 +148,9 @@ def test_eval(V, W, Q, mesh):
     u3.interpolate(e3)
 
     x0 = (mesh.geometry.x[0] + mesh.geometry.x[1]) / 2.0
-    tree = geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
-    cell_candidates = geometry.compute_collisions(tree, x0)
-    cell = dolfinx.geometry.compute_colliding_cells(mesh, cell_candidates, x0)
+    tree = BoundingBoxTree(mesh, mesh.geometry.dim)
+    cell_candidates = compute_collisions(tree, x0)
+    cell = compute_colliding_cells(mesh, cell_candidates, x0)
     first_cell = cell[0]
     assert np.allclose(u3.eval(x0, first_cell)[:3], u2.eval(x0, first_cell), rtol=1e-15, atol=1e-15)
 
@@ -183,8 +187,8 @@ def test_mixed_element_interpolation():
         return np.ones(2, x.shape[1])
     mesh = UnitCubeMesh(MPI.COMM_WORLD, 3, 3, 3)
     el = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
-    V = dolfinx.FunctionSpace(mesh, ufl.MixedElement([el, el]))
-    u = dolfinx.Function(V)
+    V = FunctionSpace(mesh, ufl.MixedElement([el, el]))
+    u = Function(V)
     with pytest.raises(RuntimeError):
         u.interpolate(f)
 

@@ -5,13 +5,17 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for assembly in complex mode"""
 
-import dolfinx
 import numpy as np
 import pytest
+
 import ufl
+from dolfinx.fem import (Function, FunctionSpace, assemble_matrix,
+                         assemble_vector)
+from dolfinx.generation import UnitSquareMesh
+from ufl import dx, grad, inner
+
 from mpi4py import MPI
 from petsc4py import PETSc
-from ufl import dx, grad, inner
 
 pytestmark = pytest.mark.skipif(
     not np.issubdtype(PETSc.ScalarType, np.complexfloating), reason="Only works in complex mode.")
@@ -20,9 +24,9 @@ pytestmark = pytest.mark.skipif(
 def test_complex_assembly():
     """Test assembly of complex matrices and vectors"""
 
-    mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 10, 10)
+    mesh = UnitSquareMesh(MPI.COMM_WORLD, 10, 10)
     P2 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 2)
-    V = dolfinx.fem.FunctionSpace(mesh, P2)
+    V = FunctionSpace(mesh, P2)
 
     u = ufl.TrialFunction(V)
     v = ufl.TestFunction(V)
@@ -33,13 +37,13 @@ def test_complex_assembly():
     a_real = inner(u, v) * dx
     L1 = inner(g, v) * dx
 
-    b = dolfinx.fem.assemble_vector(L1)
+    b = assemble_vector(L1)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     bnorm = b.norm(PETSc.NormType.N1)
     b_norm_ref = abs(-2 + 3.0j)
     assert bnorm == pytest.approx(b_norm_ref)
 
-    A = dolfinx.fem.assemble_matrix(a_real)
+    A = assemble_matrix(a_real)
     A.assemble()
     A0_norm = A.norm(PETSc.NormType.FROBENIUS)
 
@@ -48,23 +52,23 @@ def test_complex_assembly():
     a_imag = j * inner(u, v) * dx
     f = 1j * ufl.sin(2 * np.pi * x[0])
     L0 = inner(f, v) * dx
-    A = dolfinx.fem.assemble_matrix(a_imag)
+    A = assemble_matrix(a_imag)
     A.assemble()
     A1_norm = A.norm(PETSc.NormType.FROBENIUS)
     assert A0_norm == pytest.approx(A1_norm)
 
-    b = dolfinx.fem.assemble_vector(L0)
+    b = assemble_vector(L0)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     b1_norm = b.norm(PETSc.NormType.N2)
 
     a_complex = (1 + j) * inner(u, v) * dx
     f = ufl.sin(2 * np.pi * x[0])
     L2 = inner(f, v) * dx
-    A = dolfinx.fem.assemble_matrix(a_complex)
+    A = assemble_matrix(a_complex)
     A.assemble()
     A2_norm = A.norm(PETSc.NormType.FROBENIUS)
     assert A1_norm == pytest.approx(A2_norm / np.sqrt(2))
-    b = dolfinx.fem.assemble_vector(L2)
+    b = assemble_vector(L2)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     b2_norm = b.norm(PETSc.NormType.N2)
     assert b2_norm == pytest.approx(b1_norm)
@@ -77,9 +81,9 @@ def test_complex_assembly_solve():
     """
 
     degree = 3
-    mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 20, 20)
+    mesh = UnitSquareMesh(MPI.COMM_WORLD, 20, 20)
     P = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), degree)
-    V = dolfinx.fem.FunctionSpace(mesh, P)
+    V = FunctionSpace(mesh, P)
 
     x = ufl.SpatialCoordinate(mesh)
 
@@ -95,13 +99,13 @@ def test_complex_assembly_solve():
     L = inner(f, v) * dx
 
     # Assemble
-    A = dolfinx.fem.assemble_matrix(a)
+    A = assemble_matrix(a)
     A.assemble()
-    b = dolfinx.fem.assemble_vector(L)
+    b = assemble_vector(L)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
     # Create solver
-    solver = PETSc.KSP().create(mesh.mpi_comm())
+    solver = PETSc.KSP().create(mesh.comm)
     solver.setOptionsPrefix("test_lu_")
     opts = PETSc.Options("test_lu_")
     opts["ksp_type"] = "preonly"
@@ -114,7 +118,7 @@ def test_complex_assembly_solve():
     # Reference Solution
     def ref_eval(x):
         return np.cos(2 * np.pi * x[0]) * np.cos(2 * np.pi * x[1])
-    u_ref = dolfinx.fem.Function(V)
+    u_ref = Function(V)
     u_ref.interpolate(ref_eval)
 
     diff = (x - u_ref.vector).norm(PETSc.NormType.N2)

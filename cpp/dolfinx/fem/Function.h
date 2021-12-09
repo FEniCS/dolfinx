@@ -180,7 +180,7 @@ public:
     {
       if (!_petsc_vector)
       {
-        _petsc_vector = la::create_ghosted_vector(
+        _petsc_vector = la::petsc::create_vector_wrap(
             *_function_space->dofmap()->index_map,
             _function_space->dofmap()->index_map_bs(), _x->mutable_array());
       }
@@ -217,11 +217,12 @@ public:
     const int num_cells = cell_map->size_local() + cell_map->num_ghosts();
     std::vector<std::int32_t> cells(num_cells, 0);
     std::iota(cells.begin(), cells.end(), 0);
-    // FIXME: Remove interpolation coords as it should be done
-    // internally in fem::interpolate
+
     const xt::xtensor<double, 2> x = fem::interpolation_coords(
         *_function_space->element(), *_function_space->mesh(), cells);
-    fem::interpolate(*this, f, x, cells);
+    auto fx = f(x);
+
+    fem::interpolate(*this, fx, cells);
   }
 
   /// Evaluate the Function at points

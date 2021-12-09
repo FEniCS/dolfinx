@@ -8,11 +8,10 @@
 #include <cfloat>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <dolfinx/mesh/utils.h>
 #include <xtensor/xfixed.hpp>
 #include <xtensor/xtensor.hpp>
 #include <xtensor/xview.hpp>
-#include <dolfinx/mesh/utils.h>
-
 
 using namespace dolfinx;
 using namespace dolfinx::generation;
@@ -22,10 +21,9 @@ namespace
 //-----------------------------------------------------------------------------
 mesh::Mesh build_tri(MPI_Comm comm,
                      const std::array<std::array<double, 3>, 2>& p,
-                     std::array<std::size_t, 2> n,
-                     const mesh::GhostMode ghost_mode,
+                     std::array<std::size_t, 2> n, mesh::GhostMode ghost_mode,
                      const mesh::CellPartitionFunction& partitioner,
-                     const std::string& diagonal)
+                     DiagonalType diagonal)
 {
   fem::CoordinateElement element(mesh::CellType::triangle, 1);
 
@@ -39,13 +37,6 @@ mesh::Mesh build_tri(MPI_Comm comm,
         comm,
         graph::AdjacencyList<std::int64_t>(std::move(data), std::move(offset)),
         element, geom, ghost_mode, partitioner);
-  }
-
-  // Check options
-  if (diagonal != "left" && diagonal != "right" && diagonal != "right/left"
-      && diagonal != "left/right" && diagonal != "crossed")
-  {
-    throw std::runtime_error("Unknown mesh diagonal definition.");
   }
 
   const std::array<double, 3> p0 = p[0];
@@ -73,7 +64,7 @@ mesh::Mesh build_tri(MPI_Comm comm,
                              "depth. Check dimensions");
   }
 
-  if (nx < 1 || ny < 1)
+  if (nx < 1 or ny < 1)
   {
     throw std::runtime_error(
         "Rectangle has non-positive number of vertices in some dimension: "
@@ -82,13 +73,13 @@ mesh::Mesh build_tri(MPI_Comm comm,
 
   // Create vertices and cells
   std::size_t nv, nc;
-  if (diagonal == "crossed")
+  switch (diagonal)
   {
+  case DiagonalType::crossed:
     nv = (nx + 1) * (ny + 1) + nx * ny;
     nc = 4 * nx * ny;
-  }
-  else
-  {
+    break;
+  default:
     nv = (nx + 1) * (ny + 1);
     nc = 2 * nx * ny;
   }
@@ -110,8 +101,9 @@ mesh::Mesh build_tri(MPI_Comm comm,
   }
 
   // Create midpoint vertices if the mesh type is crossed
-  if (diagonal == "crossed")
+  switch (diagonal)
   {
+  case DiagonalType::crossed:
     for (std::size_t iy = 0; iy < ny; iy++)
     {
       const double x1 = c + cd * (static_cast<double>(iy) + 0.5);
@@ -122,10 +114,15 @@ mesh::Mesh build_tri(MPI_Comm comm,
         ++vertex;
       }
     }
+    break;
+  default:
+    break;
   }
 
   // Create triangles
-  if (diagonal == "crossed")
+  switch (diagonal)
+  {
+  case DiagonalType::crossed:
   {
     for (std::size_t iy = 0; iy < ny; iy++)
     {
@@ -151,29 +148,31 @@ mesh::Mesh build_tri(MPI_Comm comm,
         _cell.assign(c);
       }
     }
+    break;
   }
-  else if (diagonal == "left" or diagonal == "right" or diagonal == "right/left"
-           or diagonal == "left/right")
+  default:
   {
-    std::string local_diagonal = diagonal;
+    DiagonalType local_diagonal = diagonal;
     for (std::size_t iy = 0; iy < ny; iy++)
     {
       // Set up alternating diagonal
-      if (diagonal == "right/left")
+      switch (diagonal)
       {
+      case DiagonalType::right_left:
         if (iy % 2)
-          local_diagonal = "right";
+          local_diagonal = DiagonalType::right;
         else
-          local_diagonal = "left";
-      }
-      if (diagonal == "left/right")
-      {
+          local_diagonal = DiagonalType::left;
+        break;
+      case DiagonalType::left_right:
         if (iy % 2)
-          local_diagonal = "left";
+          local_diagonal = DiagonalType::left;
         else
-          local_diagonal = "right";
+          local_diagonal = DiagonalType::right;
+        break;
+      default:
+        break;
       }
-
       for (std::size_t ix = 0; ix < nx; ix++)
       {
         const std::size_t v0 = iy * (nx + 1) + ix;
@@ -182,7 +181,9 @@ mesh::Mesh build_tri(MPI_Comm comm,
         const std::size_t v3 = v1 + (nx + 1);
 
         std::size_t offset = iy * nx + ix;
-        if (local_diagonal == "left")
+        switch (local_diagonal)
+        {
+        case DiagonalType::left:
         {
           xt::xtensor_fixed<std::size_t, xt::xshape<2, 3>> c
               = {{v0, v1, v2}, {v1, v2, v3}};
@@ -193,10 +194,21 @@ mesh::Mesh build_tri(MPI_Comm comm,
           auto _cell = xt::view(cells, xt::range(2 * offset, 2 * offset + 2),
                                 xt::all());
           _cell.assign(c);
-          if (diagonal == "right/left" || diagonal == "left/right")
-            local_diagonal = "right";
+
+          switch (diagonal)
+          {
+          case DiagonalType::right_left:
+            local_diagonal = DiagonalType::right;
+            break;
+          case DiagonalType::left_right:
+            local_diagonal = DiagonalType::right;
+            break;
+          default:
+            break;
+          }
+          break;
         }
-        else
+        default:
         {
           xt::xtensor_fixed<std::size_t, xt::xshape<2, 3>> c
               = {{v0, v1, v3}, {v0, v2, v3}};
@@ -207,11 +219,22 @@ mesh::Mesh build_tri(MPI_Comm comm,
           auto _cell = xt::view(cells, xt::range(2 * offset, 2 * offset + 2),
                                 xt::all());
           _cell.assign(c);
-          if (diagonal == "right/left" || diagonal == "left/right")
-            local_diagonal = "left";
+          switch (diagonal)
+          {
+          case DiagonalType::right_left:
+            local_diagonal = DiagonalType::left;
+            break;
+          case DiagonalType::left_right:
+            local_diagonal = DiagonalType::left;
+            break;
+          default:
+            break;
+          }
+        }
         }
       }
     }
+  }
   }
 
   auto [data, offset] = graph::create_adjacency_data(cells);
@@ -221,12 +244,10 @@ mesh::Mesh build_tri(MPI_Comm comm,
       element, geom, ghost_mode, partitioner);
 }
 
-} // namespace
 //-----------------------------------------------------------------------------
 mesh::Mesh build_quad(MPI_Comm comm,
                       const std::array<std::array<double, 3>, 2> p,
-                      std::array<std::size_t, 2> n,
-                      const mesh::GhostMode ghost_mode,
+                      std::array<std::size_t, 2> n, mesh::GhostMode ghost_mode,
                       const mesh::CellPartitionFunction& partitioner)
 {
   fem::CoordinateElement element(mesh::CellType::quadrilateral, 1);
@@ -292,29 +313,26 @@ mesh::Mesh build_quad(MPI_Comm comm,
       graph::AdjacencyList<std::int64_t>(std::move(data), std::move(offset)),
       element, geom, ghost_mode, partitioner);
 }
+} // namespace
 //-----------------------------------------------------------------------------
 mesh::Mesh RectangleMesh::create(MPI_Comm comm,
                                  const std::array<std::array<double, 3>, 2>& p,
                                  std::array<std::size_t, 2> n,
                                  mesh::CellType celltype,
-                                 const mesh::GhostMode ghost_mode,
-                                 const std::string& diagonal)
+                                 mesh::GhostMode ghost_mode,
+                                 DiagonalType diagonal)
 {
-  return RectangleMesh::create(
-      comm, p, n, celltype, ghost_mode,
-      static_cast<graph::AdjacencyList<std::int32_t> (*)(
-          MPI_Comm, int, int, const graph::AdjacencyList<std::int64_t>&,
-          mesh::GhostMode)>(&mesh::partition_cells_graph),
-      diagonal);
+  return RectangleMesh::create(comm, p, n, celltype, ghost_mode,
+                               mesh::create_cell_partitioner(), diagonal);
 }
 //-----------------------------------------------------------------------------
 mesh::Mesh RectangleMesh::create(MPI_Comm comm,
                                  const std::array<std::array<double, 3>, 2>& p,
                                  std::array<std::size_t, 2> n,
                                  mesh::CellType celltype,
-                                 const mesh::GhostMode ghost_mode,
+                                 mesh::GhostMode ghost_mode,
                                  const mesh::CellPartitionFunction& partitioner,
-                                 const std::string& diagonal)
+                                 DiagonalType diagonal)
 {
   switch (celltype)
   {

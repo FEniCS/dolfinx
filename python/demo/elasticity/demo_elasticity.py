@@ -5,52 +5,56 @@
 # ===================
 # Copyright (C) 2020 Garth N. Wells and Michal Habera
 #
-# This demo solves the equations of static linear elasticity. The solver uses
-# smoothed aggregation algebraic multigrid. ::
+# This demo solves the equations of static linear elasticity. The solver
+# uses smoothed aggregation algebraic multigrid. ::
 
 from contextlib import ExitStack
 
 import numpy as np
-from dolfinx import BoxMesh, DirichletBC, Function, VectorFunctionSpace, la
-from dolfinx.fem import (apply_lifting, assemble_matrix, assemble_vector,
+
+from dolfinx import la
+from dolfinx.fem import (DirichletBC, Function, VectorFunctionSpace,
+                         apply_lifting, assemble_matrix, assemble_vector,
                          locate_dofs_geometrical, set_bc)
+from dolfinx.generation import BoxMesh
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import CellType, GhostMode
-from mpi4py import MPI
-from petsc4py import PETSc
 from ufl import (Identity, SpatialCoordinate, TestFunction, TrialFunction,
                  as_vector, dx, grad, inner, sym, tr)
+
+from mpi4py import MPI
+from petsc4py import PETSc
 
 # Nullspace and problem setup
 # ---------------------------
 #
-# Prepare a helper which builds PETSc' NullSpace.
-# Nullspace (or near nullspace) is needed to improve the
-# performance of algebraic multigrid.
+# Prepare a helper which builds a PETSc NullSpace. Nullspace (or near
+# nullspace) is needed to improve the performance of algebraic
+# multigrid.
 #
 # In the case of small deformation linear elasticity the nullspace
 # contains rigid body modes. ::
 
 
 def build_nullspace(V):
-    """Function to build null space for 3D elasticity"""
+    """Function to build PETSc nullspace for 3D elasticity"""
 
     # Create list of vectors for null space
     index_map = V.dofmap.index_map
-    nullspace_basis = [la.create_vector(index_map, V.dofmap.index_map_bs) for i in range(6)]
-
+    bs = V.dofmap.index_map_bs
+    ns = [la.create_petsc_vector(index_map, bs) for i in range(6)]
     with ExitStack() as stack:
-        vec_local = [stack.enter_context(x.localForm()) for x in nullspace_basis]
+        vec_local = [stack.enter_context(x.localForm()) for x in ns]
         basis = [np.asarray(x) for x in vec_local]
 
-        # Dof indices for each subspace (x, y and z dofs)
+        # Get dof indices for each subspace (x, y and z dofs)
         dofs = [V.sub(i).dofmap.list.array for i in range(3)]
 
-        # Build translational null space basis
+        # Build translational nullspace basis
         for i in range(3):
             basis[i][dofs[i]] = 1.0
 
-        # Build rotational null space basis
+        # Build rotational nullspace basis
         x = V.tabulate_dof_coordinates()
         dofs_block = V.dofmap.list.array
         x0, x1, x2 = x[dofs_block, 0], x[dofs_block, 1], x[dofs_block, 2]
@@ -61,13 +65,9 @@ def build_nullspace(V):
         basis[5][dofs[2]] = x1
         basis[5][dofs[1]] = -x2
 
-    # Create vector space basis and orthogonalize
-    basis = la.VectorSpaceBasis(nullspace_basis)
-    basis.orthonormalize()
-
-    _x = [basis[i] for i in range(6)]
-    nsp = PETSc.NullSpace().create(vectors=_x)
-    return nsp
+    la.orthonormalize(ns)
+    assert la.is_orthonormal(ns)
+    return PETSc.NullSpace().create(vectors=ns)
 
 
 mesh = BoxMesh(
@@ -133,7 +133,7 @@ set_bc(b, [bc])
 # Create solution function
 u = Function(V)
 
-# Create near null space basis (required for smoothed aggregation AMG).
+# Create near null space basis (required for smoothed aggregation AMG)
 null_space = build_nullspace(V)
 
 # Attach near nullspace to matrix
@@ -171,5 +171,5 @@ with XDMFFile(MPI.COMM_WORLD, "elasticity.xdmf", "w") as file:
     file.write_function(u)
 
 unorm = u.vector.norm()
-if mesh.mpi_comm().rank == 0:
+if mesh.comm.rank == 0:
     print("Solution vector norm:", unorm)

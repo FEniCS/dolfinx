@@ -8,9 +8,13 @@
 import typing
 
 import numpy
-import ufl
 
-from dolfinx import cpp
+import ufl
+from dolfinx import cpp as _cpp
+from dolfinx.cpp.generation import DiagonalType  # noqa
+from dolfinx.mesh import CellType, GhostMode, Mesh
+
+from mpi4py import MPI as _MPI
 
 __all__ = [
     "IntervalMesh", "UnitIntervalMesh", "RectangleMesh", "UnitSquareMesh",
@@ -18,8 +22,8 @@ __all__ = [
 ]
 
 
-def IntervalMesh(comm, nx: int, points: list, ghost_mode=cpp.mesh.GhostMode.shared_facet,
-                 partitioner=cpp.mesh.partition_cells_graph):
+def IntervalMesh(comm: _MPI.Comm, nx: int, points: list, ghost_mode=GhostMode.shared_facet,
+                 partitioner=_cpp.mesh.create_cell_partitioner()):
     """Create an interval mesh
 
     Parameters
@@ -31,17 +35,20 @@ def IntervalMesh(comm, nx: int, points: list, ghost_mode=cpp.mesh.GhostMode.shar
     point
         Coordinates of the end points
     ghost_mode
+        The ghost mode used in the mesh partitioning. Options are
+        `GhostMode.none' and `GhostMode.shared_facet`.
+    partitioner
+        Partitioning function to use for determining the parallel
+        distribution of cells across MPI ranks
 
     """
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", "interval", 1))
-    mesh = cpp.generation.create_interval_mesh(comm, nx, points, ghost_mode, partitioner)
-    domain._ufl_cargo = mesh
-    mesh._ufl_domain = domain
-    return mesh
+    mesh = _cpp.generation.create_interval_mesh(comm, nx, points, ghost_mode, partitioner)
+    return Mesh.from_cpp(mesh, domain)
 
 
-def UnitIntervalMesh(comm, nx, ghost_mode=cpp.mesh.GhostMode.shared_facet,
-                     partitioner=cpp.mesh.partition_cells_graph):
+def UnitIntervalMesh(comm: _MPI.Comm, nx: int, ghost_mode=GhostMode.shared_facet,
+                     partitioner=_cpp.mesh.create_cell_partitioner()):
     """Create a mesh on the unit interval
 
     Parameters
@@ -50,14 +57,20 @@ def UnitIntervalMesh(comm, nx, ghost_mode=cpp.mesh.GhostMode.shared_facet,
         MPI communicator
     nx
         Number of cells
+    ghost_mode
+        The ghost mode used in the mesh partitioning. Options are
+        `GhostMode.none' and `GhostMode.shared_facet`.
+    partitioner
+        Partitioning function to use for determining the parallel
+        distribution of cells across MPI ranks
 
     """
-    return IntervalMesh(comm, nx, [0.0, 1.0], ghost_mode)
+    return IntervalMesh(comm, nx, [0.0, 1.0], ghost_mode, partitioner)
 
 
-def RectangleMesh(comm, points: typing.List[numpy.array], n: list, cell_type=cpp.mesh.CellType.triangle,
-                  ghost_mode=cpp.mesh.GhostMode.shared_facet, partitioner=cpp.mesh.partition_cells_graph,
-                  diagonal: str = "right"):
+def RectangleMesh(comm: _MPI.Comm, points: typing.List[numpy.array], n: list, cell_type=CellType.triangle,
+                  ghost_mode=GhostMode.shared_facet, partitioner=_cpp.mesh.create_cell_partitioner(),
+                  diagonal: DiagonalType = DiagonalType.right):
     """Create rectangle mesh
 
     Parameters
@@ -65,23 +78,31 @@ def RectangleMesh(comm, points: typing.List[numpy.array], n: list, cell_type=cpp
     comm
         MPI communicator
     points
-        List of `Points` representing vertices
+        Coordinates of the lower-left and upper-right corners of the
+        rectangle
     n
-        List of number of cells in each direction
+        Number of cells in each direction
+    cell_type
+        The cell type
+    ghost_mode
+        The ghost mode used in the mesh partitioning
+    partitioner
+        Function that computes the parallel distribution of cells across
+        MPI ranks
     diagonal
-        Direction of diagonal
+        Direction of diagonal of triangular meshes. The options are
+        'left', 'right', 'crossed', 'left/right', 'right/left'
 
     """
+
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell_type.name, 1))
-    mesh = cpp.generation.create_rectangle_mesh(comm, points, n, cell_type, ghost_mode, partitioner, diagonal)
-    domain._ufl_cargo = mesh
-    mesh._ufl_domain = domain
-    return mesh
+    mesh = _cpp.generation.create_rectangle_mesh(comm, points, n, cell_type, ghost_mode, partitioner, diagonal)
+    return Mesh.from_cpp(mesh, domain)
 
 
-def UnitSquareMesh(comm, nx, ny, cell_type=cpp.mesh.CellType.triangle,
-                   ghost_mode=cpp.mesh.GhostMode.shared_facet,
-                   partitioner=cpp.mesh.partition_cells_graph, diagonal="right"):
+def UnitSquareMesh(comm: _MPI.Comm, nx: int, ny: int, cell_type=CellType.triangle,
+                   ghost_mode=GhostMode.shared_facet, partitioner=_cpp.mesh.create_cell_partitioner(),
+                   diagonal: DiagonalType = DiagonalType.right):
     """Create a mesh of a unit square
 
     Parameters
@@ -92,6 +113,13 @@ def UnitSquareMesh(comm, nx, ny, cell_type=cpp.mesh.CellType.triangle,
         Number of cells in "x" direction
     ny
         Number of cells in "y" direction
+    cell_type
+        The cell type
+    ghost_mode
+        The ghost mode used in the mesh partitioning
+    partitioner
+        Function that computes the parallel distribution of cells across
+        MPI ranks
     diagonal
         Direction of diagonal
 
@@ -101,10 +129,10 @@ def UnitSquareMesh(comm, nx, ny, cell_type=cpp.mesh.CellType.triangle,
                          partitioner, diagonal)
 
 
-def BoxMesh(comm, points: typing.List[numpy.array], n: list,
-            cell_type=cpp.mesh.CellType.tetrahedron,
-            ghost_mode=cpp.mesh.GhostMode.shared_facet,
-            partitioner=cpp.mesh.partition_cells_graph):
+def BoxMesh(comm: _MPI.Comm, points: typing.List[numpy.array], n: list,
+            cell_type=CellType.tetrahedron,
+            ghost_mode=GhostMode.shared_facet,
+            partitioner=_cpp.mesh.create_cell_partitioner()):
     """Create box mesh
 
     Parameters
@@ -112,20 +140,26 @@ def BoxMesh(comm, points: typing.List[numpy.array], n: list,
     comm
         MPI communicator
     points
-        List of points representing vertices
+        Coordinates of the 'lower-left' and 'upper-right' corners of the
+        box
     n
         List of cells in each direction
+    cell_type
+        The cell type
+    ghost_mode
+        The ghost mode used in the mesh partitioning
+    partitioner
+        Function that computes the parallel distribution of cells across
+        MPI ranks
 
     """
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell_type.name, 1))
-    mesh = cpp.generation.create_box_mesh(comm, points, n, cell_type, ghost_mode, partitioner)
-    domain._ufl_cargo = mesh
-    mesh._ufl_domain = domain
-    return mesh
+    mesh = _cpp.generation.create_box_mesh(comm, points, n, cell_type, ghost_mode, partitioner)
+    return Mesh.from_cpp(mesh, domain)
 
 
-def UnitCubeMesh(comm, nx, ny, nz, cell_type=cpp.mesh.CellType.tetrahedron,
-                 ghost_mode=cpp.mesh.GhostMode.shared_facet, partitioner=cpp.mesh.partition_cells_graph):
+def UnitCubeMesh(comm: _MPI.Comm, nx: int, ny: int, nz: int, cell_type=CellType.tetrahedron,
+                 ghost_mode=GhostMode.shared_facet, partitioner=_cpp.mesh.create_cell_partitioner()):
     """Create a mesh of a unit cube
 
     Parameters
@@ -138,6 +172,13 @@ def UnitCubeMesh(comm, nx, ny, nz, cell_type=cpp.mesh.CellType.tetrahedron,
         Number of cells in "y" direction
     nz
         Number of cells in "z" direction
+    cell_type
+        The cell type
+    ghost_mode
+        The ghost mode used in the mesh partitioning
+    partitioner
+        Function that computes the parallel distribution of cells across
+        MPI ranks
 
     """
     return BoxMesh(comm, [numpy.array([0.0, 0.0, 0.0]), numpy.array(

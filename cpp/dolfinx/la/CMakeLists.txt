@@ -9,7 +9,6 @@ set(HEADERS_la
   ${CMAKE_CURRENT_SOURCE_DIR}/SparsityPattern.h
   ${CMAKE_CURRENT_SOURCE_DIR}/utils.h
   ${CMAKE_CURRENT_SOURCE_DIR}/Vector.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/VectorSpaceBasis.h
   PARENT_SCOPE)
 
 target_sources(dolfinx PRIVATE
@@ -20,5 +19,4 @@ target_sources(dolfinx PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/PETScVector.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/SLEPcEigenSolver.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/SparsityPattern.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/VectorSpaceBasis.cpp
 )

@@ -8,11 +8,14 @@
 
 
 import numpy as np
-from mpi4py import MPI
 import pytest
 
-from dolfinx import (Function, FunctionSpace, UnitSquareMesh, cpp)
 import ufl
+from dolfinx import cpp as _cpp
+from dolfinx.fem import Function, FunctionSpace
+from dolfinx.generation import UnitSquareMesh
+
+from mpi4py import MPI
 
 
 @pytest.mark.parametrize("element", [ufl.FiniteElement("Lagrange", "triangle", 1),
@@ -58,7 +61,7 @@ def test_scatter_reverse(element):
 
     # Reverse scatter (insert) should have no effect
     w0 = u.x.array.copy()
-    u.x.scatter_reverse(cpp.common.ScatterMode.insert)
+    u.x.scatter_reverse(_cpp.common.ScatterMode.insert)
     assert np.allclose(w0, u.x.array)
 
     # Fill with MPI rank, and sum all entries in the vector (including ghosts)
@@ -66,7 +69,7 @@ def test_scatter_reverse(element):
     all_count0 = MPI.COMM_WORLD.allreduce(u.x.array.sum(), op=MPI.SUM)
 
     # Reverse scatter (add)
-    u.x.scatter_reverse(cpp.common.ScatterMode.add)
+    u.x.scatter_reverse(_cpp.common.ScatterMode.add)
     num_ghosts = V.dofmap.index_map.num_ghosts
     ghost_count = MPI.COMM_WORLD.allreduce(num_ghosts * comm.rank, op=MPI.SUM)
 

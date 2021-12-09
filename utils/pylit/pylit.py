@@ -136,9 +136,11 @@ __docformat__ = 'restructuredtext'
 #
 # ::
 
-import os, sys, io
-import re, optparse
-
+import io
+import optparse
+import os
+import re
+import sys
 
 # DefaultDict
 # ~~~~~~~~~~~

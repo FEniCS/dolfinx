@@ -4,13 +4,15 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-import dolfinx
-import pytest
 import numpy
-from dolfinx import UnitCubeMesh, UnitSquareMesh
-from dolfinx.mesh import locate_entities_boundary
+import pytest
+
+from dolfinx import cpp as _cpp
 from dolfinx.cpp.mesh import cell_normals
+from dolfinx.generation import UnitCubeMesh, UnitSquareMesh
+from dolfinx.mesh import locate_entities_boundary
 from dolfinx_utils.test.skips import skip_in_parallel
+
 from mpi4py import MPI
 
 
@@ -38,7 +40,7 @@ def test_area(cube, square):
     num_faces = map.size_local + map.num_ghosts
 
     cube.topology.create_entities(1)
-    area = dolfinx.cpp.mesh.volume_entities(square, range(num_faces), 2).sum()
+    area = _cpp.mesh.volume_entities(square, range(num_faces), 2).sum()
     assert area == pytest.approx(1.0)
 
 

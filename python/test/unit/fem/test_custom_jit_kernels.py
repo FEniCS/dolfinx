@@ -6,13 +6,15 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-import dolfinx
 import numba
 import numpy as np
-from dolfinx import (Function, FunctionSpace, TimingType, UnitSquareMesh, cpp,
-                     list_timings)
-from dolfinx.fem import IntegralType
+
+import dolfinx
+from dolfinx import TimingType, cpp, list_timings
+from dolfinx.fem import Function, FunctionSpace, IntegralType
+from dolfinx.generation import UnitSquareMesh
 from dolfinx_utils.test.skips import skip_if_complex
+
 from mpi4py import MPI
 from petsc4py import PETSc
 
@@ -118,7 +120,7 @@ def test_cffi_assembly():
     mesh = UnitSquareMesh(MPI.COMM_WORLD, 13, 13)
     V = FunctionSpace(mesh, ("Lagrange", 1))
 
-    if mesh.mpi_comm().rank == 0:
+    if mesh.comm.rank == 0:
         from cffi import FFI
         ffibuilder = FFI()
         ffibuilder.set_source("_cffi_kernelA", r"""
@@ -215,7 +217,7 @@ def test_cffi_assembly():
 
         ffibuilder.compile(verbose=True)
 
-    mesh.mpi_comm().Barrier()
+    mesh.comm.Barrier()
     from _cffi_kernelA import ffi, lib
 
     ptrA = ffi.cast("intptr_t", ffi.addressof(lib, "tabulate_tensor_poissonA"))

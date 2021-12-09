@@ -184,7 +184,7 @@ compute_nonlocal_dual_graph(
   // Count data items to send to each rank
   p_count.assign(num_ranks, 0);
   bool this_equal, last_equal = false;
-  std::vector<bool> facet_match(num_facets_rcvd, false);
+  std::vector<std::int8_t> facet_match(num_facets_rcvd, false);
   for (int i = 1; i < num_facets_rcvd; ++i)
   {
     const int i0 = perm[i - 1];

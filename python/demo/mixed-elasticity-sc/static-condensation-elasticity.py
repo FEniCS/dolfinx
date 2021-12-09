@@ -13,17 +13,20 @@
 import os
 
 import cffi
-import dolfinx
 import numba
 import numba.core.typing.cffi_utils as cffi_support
 import numpy as np
+
 import ufl
 from dolfinx import geometry
 from dolfinx.cpp.fem import Form_complex128, Form_float64
-from dolfinx.fem import locate_dofs_topological
+from dolfinx.fem import (DirichletBC, Function, FunctionSpace, IntegralType,
+                         apply_lifting, assemble_matrix, assemble_vector,
+                         locate_dofs_topological, set_bc)
 from dolfinx.io import XDMFFile
 from dolfinx.jit import ffcx_jit
-from dolfinx.mesh import locate_entities_boundary
+from dolfinx.mesh import MeshTags, locate_entities_boundary
+
 from mpi4py import MPI
 from petsc4py import PETSc
 
@@ -37,8 +40,8 @@ infile.close()
 Se = ufl.TensorElement("DG", mesh.ufl_cell(), 1, symmetry=True)
 Ue = ufl.VectorElement("Lagrange", mesh.ufl_cell(), 2)
 
-S = dolfinx.FunctionSpace(mesh, Se)
-U = dolfinx.FunctionSpace(mesh, Ue)
+S = FunctionSpace(mesh, Se)
+U = FunctionSpace(mesh, Ue)
 
 # Get local dofmap sizes for later local tensor tabulations
 Ssize = S.dolfin_element().space_dimension()
@@ -60,19 +63,19 @@ def left(x):
 
 # Locate all facets at the free end and assign them value 1
 free_end_facets = locate_entities_boundary(mesh, 1, free_end)
-mt = dolfinx.mesh.MeshTags(mesh, 1, free_end_facets, 1)
+mt = MeshTags(mesh, 1, free_end_facets, 1)
 
 ds = ufl.Measure("ds", subdomain_data=mt)
 
 # Homogeneous boundary condition in displacement
-u_bc = dolfinx.Function(U)
+u_bc = Function(U)
 with u_bc.vector.localForm() as loc:
     loc.set(0.0)
 
 # Displacement BC is applied to the left side
 left_facets = locate_entities_boundary(mesh, 1, left)
 bdofs = locate_dofs_topological(U, 1, left_facets)
-bc = dolfinx.fem.DirichletBC(u_bc, bdofs)
+bc = DirichletBC(u_bc, bdofs)
 
 # Elastic stiffness tensor and Poisson ratio
 E, nu = 1.0, 1.0 / 3.0
@@ -95,11 +98,11 @@ b1 = - ufl.inner(f, v) * ds(1)
 # JIT compile individual blocks tabulation kernels
 nptype = "complex128" if np.issubdtype(PETSc.ScalarType, np.complexfloating) else "float64"
 ffcxtype = "double _Complex" if np.issubdtype(PETSc.ScalarType, np.complexfloating) else "double"
-ufc_form00, _, _ = ffcx_jit(mesh.mpi_comm(), a00, form_compiler_parameters={"scalar_type": ffcxtype})
+ufc_form00, _, _ = ffcx_jit(mesh.comm, a00, form_compiler_parameters={"scalar_type": ffcxtype})
 kernel00 = getattr(ufc_form00.integrals(0)[0], f"tabulate_tensor_{nptype}")
-ufc_form01, _, _ = ffcx_jit(mesh.mpi_comm(), a01, form_compiler_parameters={"scalar_type": ffcxtype})
+ufc_form01, _, _ = ffcx_jit(mesh.comm, a01, form_compiler_parameters={"scalar_type": ffcxtype})
 kernel01 = getattr(ufc_form01.integrals(0)[0], f"tabulate_tensor_{nptype}")
-ufc_form10, _, _ = ffcx_jit(mesh.mpi_comm(), a10, form_compiler_parameters={"scalar_type": ffcxtype})
+ufc_form10, _, _ = ffcx_jit(mesh.comm, a10, form_compiler_parameters={"scalar_type": ffcxtype})
 kernel10 = getattr(ufc_form10.integrals(0)[0], f"tabulate_tensor_{nptype}")
 
 ffi = cffi.FFI()
@@ -135,25 +138,25 @@ def tabulate_condensed_tensor_A(A_, w_, c_, coords_, entity_local_index, permuta
 # Prepare a Form with a condensed tabulation kernel
 Form = Form_float64 if PETSc.ScalarType == np.float64 else Form_complex128
 
-integrals = {dolfinx.fem.IntegralType.cell: ([(-1, tabulate_condensed_tensor_A.address)], None)}
+integrals = {IntegralType.cell: ([(-1, tabulate_condensed_tensor_A.address)], None)}
 a_cond = Form([U._cpp_object, U._cpp_object], integrals, [], [], False, None)
 
-A_cond = dolfinx.fem.assemble_matrix(a_cond, bcs=[bc])
+A_cond = assemble_matrix(a_cond, bcs=[bc])
 A_cond.assemble()
 
-b = dolfinx.fem.assemble_vector(b1)
-dolfinx.fem.apply_lifting(b, [a_cond], bcs=[[bc]])
+b = assemble_vector(b1)
+apply_lifting(b, [a_cond], bcs=[[bc]])
 b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-dolfinx.fem.set_bc(b, [bc])
+set_bc(b, [bc])
 
-uc = dolfinx.Function(U)
+uc = Function(U)
 solver = PETSc.KSP().create(A_cond.getComm())
 solver.setOperators(A_cond)
 solver.solve(b, uc.vector)
 
 # Pure displacement based formulation
 a = - ufl.inner(sigma_u(u), ufl.grad(v)) * ufl.dx
-A = dolfinx.fem.assemble_matrix(a, bcs=[bc])
+A = assemble_matrix(a, bcs=[bc])
 A.assemble()
 
 # Create bounding box for function evaluation

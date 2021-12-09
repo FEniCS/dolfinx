@@ -1,9 +1,12 @@
 import numpy as np
+
 import ufl
-from dolfinx import cpp, geometry
+from dolfinx import cpp as _cpp
+from dolfinx import geometry
 from dolfinx.geometry import BoundingBoxTree
 from dolfinx.mesh import create_mesh
 from dolfinx_utils.test.skips import skip_in_parallel
+
 from mpi4py import MPI
 
 
@@ -22,8 +25,8 @@ def test_manifold_point_search():
     colliding_cells = geometry.compute_colliding_cells(mesh, cell_candidates, points)
 
     # Extract vertices of cell
-    indices = cpp.mesh.entities_to_geometry(
-        mesh, mesh.topology.dim, [colliding_cells.links(0)[0], colliding_cells.links(1)[0]], False)
+    indices = _cpp.mesh.entities_to_geometry(mesh, mesh.topology.dim, [colliding_cells.links(0)[
+        0], colliding_cells.links(1)[0]], False)
     cell_vertices = mesh.geometry.x[indices]
 
     # Compare vertices with input

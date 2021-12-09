@@ -324,7 +324,6 @@ std::vector<std::int64_t> graph::build::compute_local_to_global_links(
   // const std::int32_t max_local = _local.maxCoeff();
   const std::int32_t max_local
       = *std::max_element(_local.begin(), _local.end());
-  std::vector<bool> marker(max_local, false);
   std::vector<std::int64_t> local_to_global_list(max_local + 1, -1);
   for (std::size_t i = 0; i < _local.size(); ++i)
   {

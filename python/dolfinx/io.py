@@ -10,12 +10,15 @@
 import typing
 
 import numpy
+
+import dolfinx
 import ufl
+from dolfinx import cpp as _cpp
+from dolfinx import fem
+from dolfinx.mesh import GhostMode
 
-from dolfinx import cpp, fem
 
-
-class VTKFile(cpp.io.VTKFile):
+class VTKFile(_cpp.io.VTKFile):
     """Interface to VTK files
     VTK supports arbitrary order Lagrangian finite elements for the
     geometry description. XDMF is the preferred format for geometry
@@ -23,7 +26,7 @@ class VTKFile(cpp.io.VTKFile):
 
     """
 
-    def write_mesh(self, mesh: cpp.mesh.Mesh, t: float = 0.0) -> None:
+    def write_mesh(self, mesh: dolfinx.mesh.Mesh, t: float = 0.0) -> None:
         """Write mesh to file for a given time (default 0.0)"""
         self.write(mesh, t)
 
@@ -40,30 +43,35 @@ class VTKFile(cpp.io.VTKFile):
         super().write(cpp_list, t)
 
 
-class XDMFFile(cpp.io.XDMFFile):
+class XDMFFile(_cpp.io.XDMFFile):
+    def write_mesh(self, mesh: dolfinx.mesh.Mesh) -> None:
+        """Write mesh to file for a given time (default 0.0)"""
+        super().write_mesh(mesh)
+
     def write_function(self, u, t=0.0, mesh_xpath="/Xdmf/Domain/Grid[@GridType='Uniform'][1]"):
         u_cpp = getattr(u, "_cpp_object", u)
         super().write_function(u_cpp, t, mesh_xpath)
 
-    def read_mesh(self, ghost_mode=cpp.mesh.GhostMode.shared_facet, name="mesh", xpath="/Xdmf/Domain"):
-        # Read mesh data from file
+    def read_mesh(self, ghost_mode=GhostMode.shared_facet, name="mesh", xpath="/Xdmf/Domain") -> dolfinx.mesh.Mesh:
+        """Read mesh data from file"""
         cell_shape, cell_degree = super().read_cell_type(name, xpath)
         cells = super().read_topology_data(name, xpath)
         x = super().read_geometry_data(name, xpath)
 
         # Construct the geometry map
         cell = ufl.Cell(cell_shape.name, geometric_dimension=x.shape[1])
-        domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell, cell_degree))
 
         # Build the mesh
-        cmap = cpp.fem.CoordinateElement(cell_shape, cell_degree)
-        mesh = cpp.mesh.create_mesh(self.comm(), cpp.graph.AdjacencyList_int64(cells),
-                                    cmap, x, ghost_mode, cpp.mesh.partition_cells_graph)
+        cmap = _cpp.fem.CoordinateElement(cell_shape, cell_degree)
+        mesh = _cpp.mesh.create_mesh(self.comm(), _cpp.graph.AdjacencyList_int64(cells),
+                                     cmap, x, ghost_mode, _cpp.mesh.create_cell_partitioner())
         mesh.name = name
-        domain._ufl_cargo = mesh
-        mesh._ufl_domain = domain
 
-        return mesh
+        domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell, cell_degree))
+        return dolfinx.mesh.Mesh.from_cpp(mesh, domain)
+
+    def read_meshtags(self, mesh, name, xpath="/Xdmf/Domain"):
+        return super().read_meshtags(mesh, name, xpath)
 
 
 def extract_gmsh_topology_and_markers(gmsh_model, model_name=None):

@@ -44,7 +44,7 @@ void nls(py::module& m)
                      "Absolute tolerance")
       .def_readwrite("rtol", &dolfinx::nls::NewtonSolver::rtol,
                      "Relative tolerance")
-      .def_readwrite("error_on_nonconvergence", 
+      .def_readwrite("error_on_nonconvergence",
                      &dolfinx::nls::NewtonSolver::error_on_nonconvergence)
       .def_readwrite("report", &dolfinx::nls::NewtonSolver::report)
       .def_readwrite("relaxation_parameter",

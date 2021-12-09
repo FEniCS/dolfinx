@@ -308,7 +308,7 @@ public:
   /// V0 had a boundary condition applied, i.e. dofs which are fixed by
   /// a boundary condition. Other entries in @p markers are left
   /// unchanged.
-  void mark_dofs(std::vector<bool>& markers) const
+  void mark_dofs(const xtl::span<std::int8_t>& markers) const
   {
     for (std::size_t i = 0; i < _dofs0.size(); ++i)
     {

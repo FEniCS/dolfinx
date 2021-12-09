@@ -31,7 +31,7 @@ std::pair<double, bool> converged(const nls::NewtonSolver& solver, const Vec r)
   const double relative_residual = residual / solver.residual0();
 
   // Output iteration number and residual
-  if (solver.report and dolfinx::MPI::rank(solver.mpi_comm()) == 0)
+  if (solver.report and dolfinx::MPI::rank(solver.comm()) == 0)
   {
     LOG(INFO) << "Newton iteration " << solver.iteration()
               << ": r (abs) = " << residual << " (tol = " << solver.atol
@@ -65,7 +65,7 @@ void update_solution(const nls::NewtonSolver& solver, const Vec dx, Vec x)
 nls::NewtonSolver::NewtonSolver(MPI_Comm comm)
     : _converged(converged), _update_solution(update_solution),
       _krylov_iterations(0), _iteration(0), _residual(0.0), _residual0(0.0),
-      _solver(comm), _dx(nullptr), _mpi_comm(comm)
+      _solver(comm), _dx(nullptr), _comm(comm)
 {
   // Create linear solver if not already created. Default to LU.
   _solver.set_options_prefix("nls_solve_");
@@ -247,7 +247,7 @@ std::pair<int, bool> dolfinx::nls::NewtonSolver::solve(Vec x)
 
   if (newton_converged)
   {
-    if (dolfinx::MPI::rank(_mpi_comm.comm()) == 0)
+    if (dolfinx::MPI::rank(_comm.comm()) == 0)
     {
       LOG(INFO) << "Newton solver finished in " << _iteration
                 << " iterations and " << _krylov_iterations
@@ -281,5 +281,5 @@ double nls::NewtonSolver::residual() const { return _residual; }
 //-----------------------------------------------------------------------------
 double nls::NewtonSolver::residual0() const { return _residual0; }
 //-----------------------------------------------------------------------------
-MPI_Comm nls::NewtonSolver::mpi_comm() const { return _mpi_comm.comm(); }
+MPI_Comm nls::NewtonSolver::comm() const { return _comm.comm(); }
 //-----------------------------------------------------------------------------

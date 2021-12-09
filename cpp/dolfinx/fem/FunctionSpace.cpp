@@ -89,7 +89,7 @@ FunctionSpace::collapse() const
   std::shared_ptr<fem::DofMap> collapsed_dofmap;
   std::vector<std::int32_t> collapsed_dofs;
   std::tie(collapsed_dofmap, collapsed_dofs)
-      = _dofmap->collapse(_mesh->mpi_comm(), _mesh->topology());
+      = _dofmap->collapse(_mesh->comm(), _mesh->topology());
 
   // Create new FunctionSpace and return
   return {FunctionSpace(_mesh, _element, collapsed_dofmap),

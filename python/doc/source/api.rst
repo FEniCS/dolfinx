@@ -15,6 +15,8 @@ Public user interface
    dolfinx.fem
    dolfinx.fem.form
    dolfinx.generation
+   dolfinx.geometry
+   dolfinx.graph
    dolfinx.io
    dolfinx.jit
    dolfinx.la
@@ -48,4 +50,4 @@ C++
 ===
 
 The C++ API is documented `here
-<https://fenicsproject.org/docs/dolfinx/dev/cpp/>`_.
+<https://docs.fenicsproject.org/dolfinx/main/cpp/>`_.

@@ -428,7 +428,7 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh& mesh, int entity_dim,
   // Send input global indices to 'post master' rank, based on input
   // global index value
   const std::int64_t num_nodes_g = mesh.geometry().index_map()->size_global();
-  const MPI_Comm comm = mesh.mpi_comm();
+  const MPI_Comm comm = mesh.comm();
   const int comm_size = MPI::size(comm);
   // NOTE: could make this int32_t be sending: index <- index - dest_rank_offset
   std::vector<std::vector<std::int64_t>> nodes_g_send(comm_size);

@@ -8,14 +8,16 @@ import os
 
 import numpy as np
 import pytest
+
 import ufl
-from dolfinx import (Function, FunctionSpace, TensorFunctionSpace,
-                     UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh,
-                     VectorFunctionSpace)
+from dolfinx.fem import (Function, FunctionSpace, TensorFunctionSpace,
+                         VectorFunctionSpace)
+from dolfinx.generation import UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh
 from dolfinx.io import VTKFile
 from dolfinx.mesh import CellType, create_mesh
 from dolfinx_utils.test.fixtures import tempdir
 from dolfinx_utils.test.skips import skip_in_parallel
+
 from mpi4py import MPI
 from petsc4py import PETSc
 
@@ -151,7 +153,7 @@ def test_save_2d_vector_CG2(tempdir):
         return vals
     u.interpolate(func)
     filename = os.path.join(tempdir, "u.pvd")
-    with VTKFile(mesh.mpi_comm(), filename, "w") as vtk:
+    with VTKFile(mesh.comm, filename, "w") as vtk:
         vtk.write_function(u, 0.)
 
 
@@ -178,7 +180,7 @@ def test_save_2d_mixed(tempdir):
     U.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
     filename = os.path.join(tempdir, "u.pvd")
-    with VTKFile(mesh.mpi_comm(), filename, "w") as vtk:
+    with VTKFile(mesh.comm, filename, "w") as vtk:
         vtk.write_function([U.sub(i) for i in range(W.num_sub_spaces())], 0.)
 
 
@@ -189,7 +191,7 @@ def test_save_1d_tensor(tempdir):
     with u.vector.localForm() as loc:
         loc.set(1.0)
     filename = os.path.join(tempdir, "u.pvd")
-    with VTKFile(mesh.mpi_comm(), filename, "w") as vtk:
+    with VTKFile(mesh.comm, filename, "w") as vtk:
         vtk.write_function(u, 0.)
 
 
@@ -200,7 +202,7 @@ def test_save_2d_tensor(tempdir):
         loc.set(1.0)
 
     filename = os.path.join(tempdir, "u.pvd")
-    with VTKFile(mesh.mpi_comm(), filename, "w") as vtk:
+    with VTKFile(mesh.comm, filename, "w") as vtk:
 
         vtk.write_function(u, 0.)
         with u.vector.localForm() as loc:
@@ -215,5 +217,5 @@ def test_save_3d_tensor(tempdir):
         loc.set(1.0)
 
     filename = os.path.join(tempdir, "u.pvd")
-    with VTKFile(mesh.mpi_comm(), filename, "w") as vtk:
+    with VTKFile(mesh.comm, filename, "w") as vtk:
         vtk.write_function(u, 0.)

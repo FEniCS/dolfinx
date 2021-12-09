@@ -9,10 +9,13 @@ import random
 
 import numpy as np
 import pytest
+
 import ufl
-from dolfinx import Function, FunctionSpace, VectorFunctionSpace, fem
+from dolfinx.fem import (Function, FunctionSpace, VectorFunctionSpace,
+                         assemble_scalar)
 from dolfinx.mesh import create_mesh
 from dolfinx_utils.test.skips import skip_in_parallel
+
 from mpi4py import MPI
 
 
@@ -314,5 +317,5 @@ def test_integral(cell_type, space_type, space_order):
             else:
                 form = ufl.jump(v) * ufl.dS
 
-            value = fem.assemble_scalar(form)
+            value = assemble_scalar(form)
             assert np.isclose(value, 0)

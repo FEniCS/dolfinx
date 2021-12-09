@@ -14,8 +14,8 @@ from typing import Optional
 import ffcx
 import ffcx.codegeneration.jit
 import ufl
-from mpi4py import MPI
 
+from mpi4py import MPI
 
 __all__ = ["ffcx_jit", "get_parameters"]
 
