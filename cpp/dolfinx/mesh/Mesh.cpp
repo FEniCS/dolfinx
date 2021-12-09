@@ -325,45 +325,26 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
   // submesh_x_dofs, so these must be added so that each dof in the index map
   // has geometry data (i.e. coordinates)
 
-  // Get the global indices of ghosts in the mesh (this) that are present in
+  // Get the local indices of ghosts in the mesh (this) that are present in
   // the submesh
-  std::vector<std::int64_t> x_dof_ghosts;
+  std::vector<std::int32_t> x_dof_ghosts_local;
+  std::vector<std::int64_t> geom_global_indices =
+      geometry_dof_index_map->global_indices();
   for (int i = 0; i < submesh_x_dof_index_map->ghosts().size(); ++i)
   {
-    x_dof_ghosts.push_back(
-      geometry_dof_index_map->ghosts()[submesh_x_dof_index_map_ghost_map[i]]);
-  }
+    // Global index of submesh_x_dof_index_map->ghosts()[i] in the mesh (this)
+    std::int64_t ghost =
+        geometry_dof_index_map->ghosts()[submesh_x_dof_index_map_ghost_map[i]];
 
-  // ss << "x_dof_ghosts = ";
-  // for (auto x_dof_ghost : x_dof_ghosts)
-  // {
-  //   ss << x_dof_ghost << " ";
-  // }
-  // ss << "\n";
-
-  // Get local index of ghost dofs in (this) mesh
-  std::vector<std::int32_t> x_dof_ghosts_local;
-  auto geometry_dof_index_map_global_indices =
-      geometry_dof_index_map->global_indices();
-  for (auto x_dof_ghost : x_dof_ghosts)
-  {
-    auto it = std::find(geometry_dof_index_map_global_indices.begin(),
-                        geometry_dof_index_map_global_indices.end(), x_dof_ghost);
-    assert(it != geometry_dof_index_map_global_indices.end());
+    // Get the local index
+    auto it = std::find(geom_global_indices.begin(),
+                        geom_global_indices.end(), ghost);
+    assert(it != geom_global_indices.end());
     x_dof_ghosts_local.push_back(
-        std::distance(geometry_dof_index_map_global_indices.begin(), it));
+        std::distance(geom_global_indices.begin(), it));
   }
 
-  // ss << "x_dof_ghosts_local = ";
-  // for (auto i : x_dof_ghosts_local)
-  // {
-  //   ss << i << " ";
-  // }
-  // ss << "\n";
-
-  // Since the submesh must contain the coordinates of all dofs in the index map
-  // (owned and ghost), the ghost dofs must also be added, as they might not be
-  // present on, for instance, processes with no entities.
+  // Add the ghosts just found to submesh_x_dofs
   submesh_x_dofs.insert(submesh_x_dofs.end(),
                         x_dof_ghosts_local.begin(),
                         x_dof_ghosts_local.end());
