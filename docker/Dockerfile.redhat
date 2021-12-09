@@ -2,13 +2,13 @@
 # built locally and pushed.
 #
 # docker build -f Dockerfile.redhat -t docker.io/fenicsproject/test-env:latest-redhat .
-# docker push docker.io/fenicsproject/test-env:latest-redhat 
+# docker push docker.io/fenicsproject/test-env:latest-redhat
 FROM rockylinux/rockylinux:8
 
 ARG BUILD_NP=16
 
 ARG MPICH_VERSION=3.4.2
-ARG PETSC_VERSION=3.16.1
+ARG PETSC_VERSION=3.16.2
 ARG BOOST_VERSION=1.77.0
 ARG BOOST_VERSION_UNDERSCORES=1_77_0
 ARG HDF5_SERIES=1.12
