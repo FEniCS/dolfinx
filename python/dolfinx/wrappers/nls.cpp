@@ -24,16 +24,18 @@ void nls(py::module& m)
   // dolfinx::NewtonSolver
   py::class_<dolfinx::nls::NewtonSolver,
              std::shared_ptr<dolfinx::nls::NewtonSolver>>(m, "NewtonSolver")
-      .def(py::init([](const MPICommWrapper comm) {
-        return std::make_unique<dolfinx::nls::NewtonSolver>(comm.get());
-      }))
-      .def_property_readonly("krylov_solver",
-           [](const dolfinx::nls::NewtonSolver& self) {
-             const dolfinx::la::PETScKrylovSolver& krylov_solver
-                 = self.get_krylov_solver();
-             KSP ksp = krylov_solver.ksp();
-             return ksp;
-           })
+      .def(py::init(
+          [](const MPICommWrapper comm)
+          { return std::make_unique<dolfinx::nls::NewtonSolver>(comm.get()); }))
+      .def_property_readonly(
+          "krylov_solver",
+          [](const dolfinx::nls::NewtonSolver& self)
+          {
+            const dolfinx::la::PETScKrylovSolver& krylov_solver
+                = self.get_krylov_solver();
+            KSP ksp = krylov_solver.ksp();
+            return ksp;
+          })
       .def("setF", &dolfinx::nls::NewtonSolver::setF)
       .def("setJ", &dolfinx::nls::NewtonSolver::setJ)
       .def("setP", &dolfinx::nls::NewtonSolver::setP)
