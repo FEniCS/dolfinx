@@ -5,7 +5,14 @@
 # =====================================
 # Copyright (C) 2020 Garth N. Wells and Jørgen S. Dokken ::
 
-import gmsh
+import sys
+
+try:
+    import gmsh
+except ImportError:
+    print("This demo requires gmsh to be installed")
+    sys.exit(0)
+
 import numpy as np
 
 from dolfinx.graph import create_adjacencylist

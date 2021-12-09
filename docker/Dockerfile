@@ -46,8 +46,8 @@ ARG GMSH_VERSION=4_8_4
 ARG HDF5_SERIES=1.12
 ARG HDF5_PATCH=1
 ARG PYBIND11_VERSION=2.8.1
-ARG PETSC_VERSION=3.16.1
-ARG SLEPC_VERSION=3.16.0
+ARG PETSC_VERSION=3.16.2
+ARG SLEPC_VERSION=3.16.1
 ARG ADIOS2_VERSION=2.7.1
 ARG PYVISTA_VERSION=0.32.1
 ARG NUMPY_VERSION=1.20.3
@@ -57,7 +57,7 @@ ARG XTL_VERSION=0.7.3
 
 ARG MPICH_VERSION=3.4.2
 ARG OPENMPI_SERIES=4.1
-ARG OPENMPI_PATCH=1
+ARG OPENMPI_PATCH=2
 
 ########################################
 
@@ -175,8 +175,8 @@ RUN if [ "$MPI" = "mpich" ]; then \
 # - Second set of packages are recommended and/or required to build
 #   documentation or run tests.
 # LLVM_CONFIG required on aarch64, should be removed long-term.
-RUN LLVM_CONFIG=/usr/bin/llvm-config-9 pip3 install --no-cache-dir mpi4py numba && \
-    pip3 install --no-cache-dir cffi cppimport flake8 isort pybind11==${PYBIND11_VERSION} pytest pytest-xdist sphinx sphinx_rtd_theme
+RUN LLVM_CONFIG=/usr/bin/llvm-config-9 pip3 install --no-cache-dir cffi mpi4py numba && \
+    pip3 install --no-cache-dir cppimport flake8 isort pybind11==${PYBIND11_VERSION} pytest pytest-xdist sphinx sphinx_rtd_theme
 
 # Upgrade numpy via pip. Exclude binaries to avoid conflicts with libblas
 # (See issue #126 and #1305)
@@ -202,7 +202,7 @@ RUN wget -nc --quiet https://github.com/kahip/kahip/archive/v${KAHIP_VERSION}.ta
     cmake --install build-dir && \
     rm -rf /tmp/*
 
-# Install HDf5
+# Install HDF5
 RUN wget -nc --quiet https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-${HDF5_SERIES}/hdf5-${HDF5_SERIES}.${HDF5_PATCH}/src/hdf5-${HDF5_SERIES}.${HDF5_PATCH}.tar.gz && \
     tar xfz hdf5-${HDF5_SERIES}.${HDF5_PATCH}.tar.gz && \
     cd hdf5-${HDF5_SERIES}.${HDF5_PATCH} && \
