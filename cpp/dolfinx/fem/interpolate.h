@@ -653,115 +653,34 @@ template <typename T>
 void interpolate(Function<T>& u, const Expression<T>& expr,
                  const tcb::span<const std::int32_t>& cells)
 {
-  // Create out array for expression values
+  // Array to hold coefficients after expression evaluation
   const std::int32_t num_points = expr.num_points();
   const std::int32_t expr_value_size = expr.value_size();
+  const std::int32_t num_cells = cells.size();
   xt::xtensor<T, 2> expr_values(
       {std::size_t(cells.size()), std::size_t(num_points * expr_value_size)});
-  auto X = expr.x();
 
-  // Evaluate expression at interpolation points
+  // Check that spaces are compatible
   std::shared_ptr<const FiniteElement> element = u.function_space()->element();
-
   const auto dofmap = u.function_space()->dofmap();
   assert(dofmap);
-
-  // Array to hold coefficients after interpolation
   const int element_bs = element->block_size();
   assert(expr_value_size == element_bs);
-
+  auto X = expr.x();
   assert(X.shape() == element->interpolation_points().shape());
+
+  // Evaluate expression at quadrature points for the subset of cells
   expr.eval(cells, expr_values);
 
-  // Reshape array and create working array for pull back values
-  xt::xtensor<T, 3> mapped_values({num_points, 1, element->value_size()});
-  xt::xtensor<T, 4> values
-      = xt::reshape_view(expr_values, {(std::int32_t)cells.size(), num_points,
-                                       1, element->value_size()});
-  std::vector<T> _coeffs(element->space_dimension());
+  // Reshape evaluated data to fit interpolate
+  auto values_view = xt::reshape_view(
+      expr_values, {num_cells, num_points, element->value_size()});
+  xt::xarray<T> values
+      = xt::empty<T>({expr_value_size, num_cells * num_points});
+  values = xt::reshape_view(xt::transpose(values_view, {2, 0, 1}),
+                            {expr_value_size, num_cells * num_points});
 
-  // Prepare mesh geometry
-  // Get coordinate map
-  auto mesh = u.function_space()->mesh();
-  const fem::CoordinateElement& cmap = mesh->geometry().cmap();
-
-  // Get geometry data
-  const graph::AdjacencyList<std::int32_t>& x_dofmap
-      = mesh->geometry().dofmap();
-  // FIXME: Add proper interface for num coordinate dofs
-  const int num_dofs_g = x_dofmap.num_links(0);
-  const xt::xtensor<double, 2>& x_g = mesh->geometry().x();
-  const int gdim = mesh->geometry().dim();
-  const int tdim
-      = mesh->topology().dim(); // Create data structures for Jacobian info
-  xt::xtensor<double, 2> J = xt::empty<double>({gdim, tdim});
-  xt::xtensor<double, 2> K = xt::empty<double>({tdim, gdim});
-  xt::xtensor_fixed<double, xt::xshape<1>> detJ;
-
-  xt::xtensor<double, 2> coordinate_dofs
-      = xt::empty<double>({num_dofs_g, gdim});
-
-  // Tabulate 1st order derivatives of shape functions at interpolation coords
-  xt::xtensor<double, 3> dphi = xt::view(
-      cmap.tabulate(1, X), xt::range(1, tdim + 1), xt::all(), xt::all(), 0);
-
-  // Get interpolation operator
-  const xt::xtensor<double, 2>& Pi = element->interpolation_operator();
-  using U_t = xt::xview<decltype(mapped_values)&, std::size_t,
-                        xt::xall<std::size_t>, xt::xall<std::size_t>>;
-  using u_t = xt::xview<decltype(values)&, std::size_t, std::size_t,
-                        xt::xall<std::size_t>, xt::xall<std::size_t>>;
-  using J_t = xt::xtensor<double, 2>;
-  auto pull_back_fn = element->map_fn<U_t, u_t, J_t, J_t>();
-
-  xtl::span<const std::uint32_t> cell_info;
-  if (element->needs_dof_transformations())
-  {
-    mesh->topology_mutable().create_entity_permutations();
-    cell_info = xtl::span(mesh->topology().get_cell_permutation_info());
-  }
-
-  const std::function<void(const xtl::span<T>&,
-                           const xtl::span<const std::uint32_t>&, std::int32_t,
-                           int)>
-      apply_inverse_transpose_dof_transformation
-      = element->get_dof_transformation_function<T>(true, true);
-
-  xtl::span<T> coeffs = u.x()->mutable_array();
-  for (std::size_t c = 0; c < cells.size(); c++)
-  {
-    // Get cell geometry
-    auto x_dofs = x_dofmap.links(cells[c]);
-    for (int i = 0; i < num_dofs_g; ++i)
-      for (int j = 0; j < gdim; ++j)
-        coordinate_dofs(i, j) = x_g(x_dofs[i], j);
-
-    // Compute J, detJ and K and pull back values
-    for (std::size_t p = 0; p < num_points; ++p)
-    {
-      std::fill(J.begin(), J.end(), 0);
-      cmap.compute_jacobian(xt::view(dphi, xt::all(), p, xt::all()),
-                            coordinate_dofs, J);
-      cmap.compute_jacobian_inverse(J, K);
-      detJ[0] = cmap.compute_jacobian_determinant(J);
-      auto _u = xt::view(values, c, p, xt::all(), xt::all());
-      auto _U = xt::view(mapped_values, p, xt::all(), xt::all());
-      pull_back_fn(_U, _u, K, 1.0 / detJ[0], J);
-    }
-
-    // Apply interpolation matrix
-    auto ref_vals = xt::view(mapped_values, xt::all(), 0, xt::all());
-    impl::interpolation_apply(Pi, ref_vals, _coeffs, element_bs);
-
-    // Apply dof transformations
-    apply_inverse_transpose_dof_transformation(_coeffs, cell_info, c, 1);
-
-    // Copy interpolation dofs into coefficient vector
-    xtl::span<const std::int32_t> dofs = dofmap->cell_dofs(c);
-    assert(_coeffs.size() == dofs.size() * element_bs);
-    for (std::size_t i = 0; i < dofs.size(); ++i)
-      for (int k = 0; k < element_bs; ++k)
-        coeffs[element_bs * dofs[i] + k] = _coeffs[element_bs * i + k];
-  }
+  // Interpolate values into appropriate space
+  interpolate(u, values, cells);
 }
 } // namespace dolfinx::fem
