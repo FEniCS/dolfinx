@@ -357,6 +357,18 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
                                    submesh_x_dofs.end()),
                                    submesh_x_dofs.end());
 
+  // Create submesh geometry coordinates
+  const xt::xtensor<double, 2>& x = geometry().x();
+  const int submesh_num_x_dofs = submesh_x_dofs.size();
+  const int gdim = this->geometry().dim();
+  xt::xarray<double> submesh_x
+      = xt::zeros<double>({submesh_num_x_dofs, gdim});
+  for (int i = 0; i < submesh_num_x_dofs; ++i)
+  {
+    xt::view(submesh_x, i, xt::all())
+        = xt::view(x, submesh_x_dofs[i], xt::range(0, gdim));
+  }
+
   // Crete submesh geometry dofmap
   std::vector<std::int32_t> submesh_x_dofmap_vec;
   std::vector<std::int32_t> submesh_x_dofmap_offsets(1, 0);
@@ -378,33 +390,6 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
   graph::AdjacencyList<std::int32_t> submesh_x_dofmap(
       std::move(submesh_x_dofmap_vec), std::move(submesh_x_dofmap_offsets));
 
-  // ss << "submesh_x_dofmap =\n";
-  // for (auto cell = 0; cell < submesh_x_dofmap.num_nodes(); ++cell)
-  // {
-  //   ss << "cell " << cell << ": ";
-  //   for (auto dof : submesh_x_dofmap.links(cell))
-  //   {
-  //     ss << dof << " ";
-  //   }
-  //   ss << "\n";
-  // }
-  // ss << "\n";
-
-  // Create submesh geometry coordinates
-  const int submesh_num_x_dofs = submesh_x_dofs.size();
-  const int gdim = this->geometry().dim();
-  xt::xarray<double> submesh_x
-      = xt::zeros<double>({submesh_num_x_dofs, gdim});
-  const xt::xtensor<double, 2>& x = geometry().x();
-  for (int i = 0; i < submesh_num_x_dofs; ++i)
-  {
-    xt::view(submesh_x, i, xt::all())
-        = xt::view(x, submesh_x_dofs[i], xt::range(0, gdim));
-  }
-
-  // ss << "submesh_x = \n";
-  // ss << submesh_x << "\n";
-
   // Create submesh coordinate element
   CellType submesh_coord_cell
       = mesh::cell_entity_type(geometry().cmap().cell_shape(), dim, 0);
@@ -412,35 +397,21 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
   // retrive this from the coordinate element
   auto submesh_coord_ele = fem::CoordinateElement(submesh_coord_cell, 1);
 
-  // ss << "Created coordinate element\n";
-
-
   // Submesh geometry input_global_indices
   // TODO Check this. Not 100 % sure what igi does
   const std::vector<std::int64_t>& igi = this->geometry().input_global_indices();
   std::vector<std::int64_t> submesh_igi;
-
   for (auto submesh_x_dof : submesh_x_dofs)
   {
     submesh_igi.push_back(igi[submesh_x_dof]);
   }
 
-  // ss << "submesh_igi = ";
-  // for (auto i : submesh_igi)
-  // {
-  //   ss << i << " ";
-  // }
-  // ss << "\n";
-
+  // Create geometry
   mesh::Geometry submesh_geometry(submesh_x_dof_index_map,
                                   std::move(submesh_x_dofmap),
                                   submesh_coord_ele,
                                   std::move(submesh_x),
                                   std::move(submesh_igi));
-  
-  // ss << "Geom created\n";
-
-  // std::cout << ss.str() << "\n";
 
   return Mesh(comm(), std::move(submesh_topology), std::move(submesh_geometry));
 }
