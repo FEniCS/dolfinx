@@ -664,8 +664,8 @@ void interpolate(Function<T>& u, const Expression<T>& expr,
   std::shared_ptr<const FiniteElement> element = u.function_space()->element();
   const auto dofmap = u.function_space()->dofmap();
   assert(dofmap);
-  const int element_bs = element->block_size();
-  assert(expr_value_size == element_bs);
+  const int element_vs = element->value_size();
+  assert(expr_value_size == element_vs);
   auto X = expr.x();
   assert(X.shape() == element->interpolation_points().shape());
 
@@ -673,8 +673,8 @@ void interpolate(Function<T>& u, const Expression<T>& expr,
   expr.eval(cells, expr_values);
 
   // Reshape evaluated data to fit interpolate
-  xt::xtensor<T, 3> values_view = xt::reshape_view(
-      expr_values, {num_cells, num_points, element->value_size()});
+  auto values_view
+      = xt::reshape_view(expr_values, {num_cells, num_points, element_vs});
   xt::xarray<T> values
       = xt::empty<T>({expr_value_size, num_cells * num_points});
   values = xt::reshape_view(xt::transpose(values_view, {2, 0, 1}),
