@@ -1,11 +1,10 @@
 #include "utils.h"
-#include <iostream>
 #include <dolfinx/common/MPI.h>
-#include <vector>
 #include <dolfinx/graph/AdjacencyList.h>
-#include <string>
 #include <iostream>
 #include <sstream>
+#include <string>
+#include <vector>
 
 std::vector<int32_t> dolfinx::common::get_owned_indices(
     MPI_Comm comm, const xtl::span<const std::int32_t>& indices,
@@ -57,8 +56,8 @@ std::vector<int32_t> dolfinx::common::get_owned_indices(
   std::partial_sum(data_per_proc.begin(), data_per_proc.end(),
                    std::next(send_disp.begin(), 1));
 
-  const dolfinx::graph::AdjacencyList<std::int64_t> data_out(std::move(ghosts_to_send),
-                                                             std::move(send_disp));
+  const dolfinx::graph::AdjacencyList<std::int64_t> data_out(
+      std::move(ghosts_to_send), std::move(send_disp));
   const dolfinx::graph::AdjacencyList<std::int64_t> data_in
       = dolfinx::MPI::neighbor_all_to_all(reverse_comm, data_out);
 
@@ -67,8 +66,8 @@ std::vector<int32_t> dolfinx::common::get_owned_indices(
   auto global_indices = index_map->global_indices();
   for (std::int64_t global_index : data_in.array())
   {
-    auto it = std::find(global_indices.begin(), global_indices.end(),
-                        global_index);
+    auto it
+        = std::find(global_indices.begin(), global_indices.end(), global_index);
     assert(it != global_indices.end());
     owned.push_back(std::distance(global_indices.begin(), it));
   }
@@ -76,8 +75,7 @@ std::vector<int32_t> dolfinx::common::get_owned_indices(
   // Sort `owned` and remove non-unique entries (we could have received
   // the same ghost from multiple other processes)
   std::sort(owned.begin(), owned.end());
-  owned.erase(std::unique(owned.begin(), owned.end()),
-                      owned.end());
+  owned.erase(std::unique(owned.begin(), owned.end()), owned.end());
 
   return owned;
 }
