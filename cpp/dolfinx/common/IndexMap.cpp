@@ -23,15 +23,13 @@ compute_ghost_owners(const std::vector<int>& ghost_pos_recv_fwd,
                      const std::vector<int>& displs_recv_fwd)
 {
   std::vector<int> owners;
-  std::transform(ghost_pos_recv_fwd.cbegin(), ghost_pos_recv_fwd.cend(),
-                 std::back_inserter(owners),
-                 [&displs_recv_fwd](auto ghost_pos)
-                 {
-                   auto it
-                       = std::upper_bound(displs_recv_fwd.cbegin(),
-                                          displs_recv_fwd.cend(), ghost_pos);
-                   return std::distance(displs_recv_fwd.cbegin(), it) - 1;
-                 });
+  std::transform(
+      ghost_pos_recv_fwd.cbegin(), ghost_pos_recv_fwd.cend(),
+      std::back_inserter(owners), [&displs_recv_fwd](auto ghost_pos) {
+        auto it = std::upper_bound(displs_recv_fwd.cbegin(),
+                                   displs_recv_fwd.cend(), ghost_pos);
+        return std::distance(displs_recv_fwd.cbegin(), it) - 1;
+      });
   return owners;
 }
 //----------------------------------------------------------------------------
@@ -60,8 +58,7 @@ get_ghost_ranks(MPI_Comm comm, std::int32_t local_size,
   // Compute rank of ghost owners
   std::vector<int> ghost_ranks(ghosts.size(), -1);
   std::transform(ghosts.cbegin(), ghosts.cend(), ghost_ranks.begin(),
-                 [&all_ranges](auto ghost)
-                 {
+                 [&all_ranges](auto ghost) {
                    auto it = std::upper_bound(all_ranges.cbegin(),
                                               all_ranges.cend(), ghost);
                    return std::distance(all_ranges.cbegin(), it) - 1;
@@ -157,8 +154,9 @@ common::stack_index_maps(
   // Compute process offset
   const std::int64_t process_offset = std::accumulate(
       maps.cbegin(), maps.cend(), std::int64_t(0),
-      [](std::int64_t c, auto& map) -> std::int64_t
-      { return c + map.first.get().local_range()[0] * map.second; });
+      [](std::int64_t c, auto& map) -> std::int64_t {
+        return c + map.first.get().local_range()[0] * map.second;
+      });
 
   // Get local map offset
   std::vector<std::int32_t> local_offset(maps.size() + 1, 0);
@@ -270,8 +268,7 @@ common::stack_index_maps(
 //-----------------------------------------------------------------------------
 IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size)
     : _comm(comm), _comm_owner_to_ghost(MPI_COMM_NULL),
-      _comm_ghost_to_owner(MPI_COMM_NULL),
-      _displs_recv_fwd(1, 0)
+      _comm_ghost_to_owner(MPI_COMM_NULL), _displs_recv_fwd(1, 0)
 {
   // Get global offset (index), using partial exclusive reduction
   std::int64_t offset = 0;
@@ -313,8 +310,13 @@ IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size,
     : _comm(comm), _comm_owner_to_ghost(MPI_COMM_NULL),
       _comm_ghost_to_owner(MPI_COMM_NULL), _ghosts(ghosts.begin(), ghosts.end())
 {
-  assert(size_t(ghosts.size()) == src_ranks.size());
-  assert(std::equal(src_ranks.begin(), src_ranks.end(),
+  // Sort ghosts into order. Source ranks will be in same order.
+  std::sort(_ghosts.begin(), _ghosts.end());
+  std::vector<int> _src_ranks(src_ranks.begin(), src_ranks.end());
+  std::sort(_src_ranks.begin(), _src_ranks.end());
+
+  assert(size_t(_ghosts.size()) == _src_ranks.size());
+  assert(std::equal(_src_ranks.begin(), _src_ranks.end(),
                     get_ghost_ranks(comm, local_size, _ghosts).begin()));
 
   // Get global offset (index), using partial exclusive reduction
@@ -331,8 +333,8 @@ IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size,
 
   // Build set of src ranks for ghosts, i.e. the ranks that own the
   // callers ghosts
-  std::vector<std::int32_t> halo_src_ranks(src_ranks.begin(), src_ranks.end());
-  std::sort(halo_src_ranks.begin(), halo_src_ranks.end());
+  std::vector<std::int32_t> halo_src_ranks(_src_ranks.begin(),
+                                           _src_ranks.end());
   halo_src_ranks.erase(
       std::unique(halo_src_ranks.begin(), halo_src_ranks.end()),
       halo_src_ranks.end());
@@ -358,12 +360,11 @@ IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size,
   // Map ghost owner rank to the rank on neighborhood communicator
   int myrank = -1;
   MPI_Comm_rank(comm, &myrank);
-  assert(std::find(src_ranks.begin(), src_ranks.end(), myrank)
-         == src_ranks.end());
-  std::vector<std::int32_t> ghost_owners(ghosts.size());
-  std::transform(src_ranks.cbegin(), src_ranks.cend(), ghost_owners.begin(),
-                 [&halo_src_ranks](auto src)
-                 {
+  assert(std::find(_src_ranks.begin(), _src_ranks.end(), myrank)
+         == _src_ranks.end());
+  std::vector<std::int32_t> ghost_owners(_ghosts.size());
+  std::transform(_src_ranks.cbegin(), _src_ranks.cend(), ghost_owners.begin(),
+                 [&halo_src_ranks](auto src) {
                    // Get rank of owner on the neighborhood communicator
                    // (rank of out edge on _comm_owner_to_ghost)
                    auto it = std::find(halo_src_ranks.cbegin(),
@@ -423,8 +424,9 @@ IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size,
   _ghost_pos_recv_fwd.resize(ghost_owners.size());
   std::transform(ghost_owners.cbegin(), ghost_owners.cend(),
                  _ghost_pos_recv_fwd.begin(),
-                 [displs = _displs_recv_fwd](auto owner) mutable
-                 { return displs[owner]++; });
+                 [displs = _displs_recv_fwd](auto owner) mutable {
+                   return displs[owner]++;
+                 });
 }
 //-----------------------------------------------------------------------------
 std::array<std::int64_t, 2> IndexMap::local_range() const noexcept
@@ -451,18 +453,17 @@ void IndexMap::local_to_global(const xtl::span<const std::int32_t>& local,
 {
   assert(local.size() <= global.size());
   const std::int32_t local_size = _local_range[1] - _local_range[0];
-  std::transform(
-      local.cbegin(), local.cend(), global.begin(),
-      [local_size, local_range = _local_range[0], &ghosts = _ghosts](auto local)
-      {
-        if (local < local_size)
-          return local_range + local;
-        else
-        {
-          assert((local - local_size) < (int)ghosts.size());
-          return ghosts[local - local_size];
-        }
-      });
+  std::transform(local.cbegin(), local.cend(), global.begin(),
+                 [local_size, local_range = _local_range[0],
+                  &ghosts = _ghosts](auto local) {
+                   if (local < local_size)
+                     return local_range + local;
+                   else
+                   {
+                     assert((local - local_size) < (int)ghosts.size());
+                     return ghosts[local - local_size];
+                   }
+                 });
 }
 //-----------------------------------------------------------------------------
 void IndexMap::global_to_local(const xtl::span<const std::int64_t>& global,
@@ -479,8 +480,7 @@ void IndexMap::global_to_local(const xtl::span<const std::int64_t>& global,
 
   std::transform(global.cbegin(), global.cend(), local.begin(),
                  [range = _local_range,
-                  &global_to_local](std::int64_t index) -> std::int32_t
-                 {
+                  &global_to_local](std::int64_t index) -> std::int32_t {
                    if (index >= range[0] and index < range[1])
                      return index - range[0];
                    else
@@ -532,9 +532,9 @@ std::vector<int> IndexMap::ghost_owner_rank() const
       = compute_ghost_owners(_ghost_pos_recv_fwd, _displs_recv_fwd);
 
   std::vector<std::int32_t> owners(ghost_owners.size());
-  std::transform(ghost_owners.cbegin(), ghost_owners.cend(), owners.begin(),
-                 [&neighbors_in](auto ghost_owner)
-                 { return neighbors_in[ghost_owner]; });
+  std::transform(
+      ghost_owners.cbegin(), ghost_owners.cend(), owners.begin(),
+      [&neighbors_in](auto ghost_owner) { return neighbors_in[ghost_owner]; });
 
   return owners;
 }
@@ -810,8 +810,9 @@ IndexMap::create_submap(const xtl::span<const std::int32_t>& indices) const
   std::vector<std::int32_t> ghost_pos_recv_fwd(ghost_owner.size());
   std::transform(ghost_owner.cbegin(), ghost_owner.cend(),
                  ghost_pos_recv_fwd.begin(),
-                 [displs = displs_recv_fwd](auto owner) mutable
-                 { return displs[owner]++; });
+                 [displs = displs_recv_fwd](auto owner) mutable {
+                   return displs[owner]++;
+                 });
 
   // Step 8: Create neighbourhood communicators for the new map
 
