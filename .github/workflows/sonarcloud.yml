@@ -54,9 +54,8 @@ jobs:
           python3 -m pip install git+https://github.com/FEniCS/ffcx.git
       - name: Run build-wrapper
         run: |
-          cd cpp
           mkdir build
-          cmake -S . -B build
+          cmake -S ./cpp -B build
           build-wrapper-linux-x86-64 --out-dir ${{ env.BUILD_WRAPPER_OUT_DIR }} cmake --build build/ --config Release
       - name: Run sonar-scanner
         env:
