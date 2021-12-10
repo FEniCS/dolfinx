@@ -14,9 +14,11 @@ import types
 import typing
 
 import numpy as np
+
 import ufl
 from dolfinx import cpp as _cpp
 from dolfinx.fem.function import Constant, Function, FunctionSpace
+
 from petsc4py import PETSc
 
 

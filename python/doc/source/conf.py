@@ -8,8 +8,8 @@
 # sys.path.insert(0, os.path.abspath('.'))
 import datetime
 import os
-import sys
 import shutil
+import sys
 
 import dolfinx
 

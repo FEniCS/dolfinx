@@ -7,13 +7,15 @@
 
 import numpy as np
 import pytest
+
 import ufl
 from dolfinx.fem import (Function, FunctionSpace, assemble_matrix,
                          assemble_vector)
 from dolfinx.generation import UnitSquareMesh
+from ufl import dx, grad, inner
+
 from mpi4py import MPI
 from petsc4py import PETSc
-from ufl import dx, grad, inner
 
 pytestmark = pytest.mark.skipif(
     not np.issubdtype(PETSc.ScalarType, np.complexfloating), reason="Only works in complex mode.")

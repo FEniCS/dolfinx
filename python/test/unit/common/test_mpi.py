@@ -9,14 +9,16 @@
 import pathlib
 
 import cppimport
+import pytest
+
 import dolfinx
 import dolfinx.pkgconfig
-import mpi4py
-import pytest
 from dolfinx import wrappers
 from dolfinx.generation import UnitSquareMesh
 from dolfinx.jit import mpi_jit_decorator
 from dolfinx_utils.test.fixtures import tempdir  # noqa: F401
+
+import mpi4py
 from mpi4py import MPI
 
 

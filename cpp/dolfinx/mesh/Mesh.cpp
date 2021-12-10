@@ -64,11 +64,8 @@ Mesh mesh::create_mesh(MPI_Comm comm,
                        const xt::xtensor<double, 2>& x,
                        mesh::GhostMode ghost_mode)
 {
-  return create_mesh(
-      comm, cells, element, x, ghost_mode,
-      static_cast<graph::AdjacencyList<std::int32_t> (*)(
-          MPI_Comm, int, int, const graph::AdjacencyList<std::int64_t>&,
-          mesh::GhostMode)>(&mesh::partition_cells_graph));
+  return create_mesh(comm, cells, element, x, ghost_mode,
+                     create_cell_partitioner());
 }
 //-----------------------------------------------------------------------------
 Mesh mesh::create_mesh(MPI_Comm comm,

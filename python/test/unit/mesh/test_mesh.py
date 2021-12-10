@@ -7,19 +7,21 @@
 import math
 import sys
 
-import basix
 import numpy as np
 import pytest
+
+import basix
 from dolfinx import cpp as _cpp
-from dolfinx.cpp.mesh import is_simplex, partition_cells_graph
+from dolfinx.cpp.mesh import create_cell_partitioner, is_simplex
 from dolfinx.fem import assemble_scalar
 from dolfinx.generation import (BoxMesh, DiagonalType, RectangleMesh,
                                 UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh)
 from dolfinx.mesh import CellType, GhostMode
 from dolfinx_utils.test.fixtures import tempdir
 from dolfinx_utils.test.skips import skip_in_parallel
-from mpi4py import MPI
 from ufl import dx
+
+from mpi4py import MPI
 
 assert (tempdir)
 
@@ -50,7 +52,7 @@ def mesh2d():
         MPI.COMM_WORLD, [np.array([0.0, 0.0, 0.0]),
                          np.array([1., 1., 0.0])], [1, 1],
         CellType.triangle, GhostMode.none,
-        partition_cells_graph, DiagonalType.left)
+        create_cell_partitioner(), DiagonalType.left)
     i1 = np.where((mesh2d.geometry.x
                    == (1, 1, 0)).all(axis=1))[0][0]
     mesh2d.geometry.x[i1, :2] += 0.5 * (math.sqrt(3.0) - 1.0)
@@ -63,7 +65,7 @@ def mesh_2d():
         MPI.COMM_WORLD, [np.array([0.0, 0.0, 0.0]),
                          np.array([1., 1., 0.0])], [1, 1],
         CellType.triangle, GhostMode.none,
-        partition_cells_graph, DiagonalType.left)
+        create_cell_partitioner(), DiagonalType.left)
     i1 = np.where((mesh2d.geometry.x
                    == (1, 1, 0)).all(axis=1))[0][0]
     mesh2d.geometry.x[i1, :2] += 0.5 * (math.sqrt(3.0) - 1.0)
