@@ -2,7 +2,10 @@ name: SonarCloud
 on:
   push:
     branches:
-      - jhale/sonarcloud
+      - main
+  pull_request:
+    branches:
+      - main
 jobs:
   build:
     name: Build
