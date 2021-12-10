@@ -85,7 +85,7 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
                                                     std::move(offsets));
 
   // Distribute cells to destination ranks
-  const auto [cell_nodes, src, original_cell_index, ghost_owners]
+  const auto [cell_nodes, original_cell_index, ghost_owners]
       = graph::build::distribute(mpi_comm, cells_topology, dest);
 
   dolfinx::mesh::Topology topology = mesh::create_topology(
@@ -131,19 +131,18 @@ TEST_CASE("Distributed Mesh", "[distributed_mesh]")
     CellPartitionFunction kahip
         = [&](MPI_Comm comm, int nparts, int tdim,
               const dolfinx::graph::AdjacencyList<std::int64_t>& cells,
-              dolfinx::mesh::GhostMode ghost_mode)
-    {
-      LOG(INFO) << "Compute partition of cells across ranks (KaHIP).";
-      // Compute distributed dual graph (for the cells on this process)
-      const auto [dual_graph, num_ghost_edges]
-          = mesh::build_dual_graph(comm, cells, tdim);
+              dolfinx::mesh::GhostMode ghost_mode) {
+            LOG(INFO) << "Compute partition of cells across ranks (KaHIP).";
+            // Compute distributed dual graph (for the cells on this process)
+            const auto [dual_graph, num_ghost_edges]
+                = mesh::build_dual_graph(comm, cells, tdim);
 
-      // Just flag any kind of ghosting for now
-      bool ghosting = (ghost_mode != mesh::GhostMode::none);
+            // Just flag any kind of ghosting for now
+            bool ghosting = (ghost_mode != mesh::GhostMode::none);
 
-      // Compute partition
-      return partfn(comm, nparts, dual_graph, num_ghost_edges, ghosting);
-    };
+            // Compute partition
+            return partfn(comm, nparts, dual_graph, num_ghost_edges, ghosting);
+          };
 
     CHECK_NOTHROW(test_distributed_mesh(kahip));
   }
