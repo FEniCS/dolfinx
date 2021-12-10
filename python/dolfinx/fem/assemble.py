@@ -236,7 +236,7 @@ def _(b: PETSc.Vec,
     maps = [(form.function_spaces[0].dofmap.index_map, form.function_spaces[0].dofmap.index_map_bs)
             for form in _create_cpp_form(L)]
     if x0 is not None:
-        x0_local = _cpp.la.get_local_vectors(x0, maps)
+        x0_local = _cpp.la.petsc.get_local_vectors(x0, maps)
         x0_sub = x0_local
     else:
         x0_local = []
@@ -249,14 +249,14 @@ def _(b: PETSc.Vec,
            coeffs_a[1] if coeffs_a[1] is not None else pack_coefficients(_a))
 
     bcs1 = _cpp_dirichletbc(bcs_by_block(extract_function_spaces(_a, 1), bcs))
-    b_local = _cpp.la.get_local_vectors(b, maps)
+    b_local = _cpp.la.petsc.get_local_vectors(b, maps)
     for b_sub, L_sub, a_sub, constant_L, coeff_L, constant_a, coeff_a in zip(b_local, _L, _a,
                                                                              c_L[0], c_L[1],
                                                                              c_a[0], c_a[1]):
         _cpp.fem.assemble_vector(b_sub, L_sub, constant_L, coeff_L)
         _cpp.fem.apply_lifting(b_sub, a_sub, constant_a, coeff_a, bcs1, x0_local, scale)
 
-    _cpp.la.scatter_local_vectors(b, b_local, maps)
+    _cpp.la.petsc.scatter_local_vectors(b, b_local, maps)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
     bcs0 = _cpp_dirichletbc(bcs_by_block(extract_function_spaces(_create_cpp_form(L)), bcs))
@@ -390,8 +390,8 @@ def _(A: PETSc.Mat,
          coeffs[1] if coeffs[1] is not None else pack_coefficients(_a))
 
     V = _extract_function_spaces(_a)
-    is_rows = _cpp.la.create_petsc_index_sets([(Vsub.dofmap.index_map, Vsub.dofmap.index_map_bs) for Vsub in V[0]])
-    is_cols = _cpp.la.create_petsc_index_sets([(Vsub.dofmap.index_map, Vsub.dofmap.index_map_bs) for Vsub in V[1]])
+    is_rows = _cpp.la.petsc.create_index_sets([(Vsub.dofmap.index_map, Vsub.dofmap.index_map_bs) for Vsub in V[0]])
+    is_cols = _cpp.la.petsc.create_index_sets([(Vsub.dofmap.index_map, Vsub.dofmap.index_map_bs) for Vsub in V[1]])
 
     # Assemble form
     for i, a_row in enumerate(_a):
