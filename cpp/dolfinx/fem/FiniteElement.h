@@ -27,6 +27,11 @@ public:
   /// @param[in] ufc_element UFC finite element
   explicit FiniteElement(const ufc_finite_element& ufc_element);
 
+  /// Create finite element from a Basix finite element
+  /// @param[in] element Basix finite element
+  /// @param[in] bs The block size
+  FiniteElement(const basix::FiniteElement& element, int bs);
+
   /// Copy constructor
   FiniteElement(const FiniteElement& element) = delete;
 
@@ -44,7 +49,7 @@ public:
 
   /// String identifying the finite element
   /// @return Element signature
-  /// @note The function is provided for convenience, but it should not
+  /// @warning The function is provided for convenience, but it should not
   /// be relied upon for determining the element type. Use other
   /// functions, commonly returning enums, to determine element
   /// properties.

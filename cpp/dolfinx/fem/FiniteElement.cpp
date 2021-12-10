@@ -16,6 +16,7 @@ using namespace dolfinx::fem;
 
 namespace
 {
+//-----------------------------------------------------------------------------
 // Check if an element is a basix element (or a blocked element
 // containing a Basix element)
 bool is_basix_element(const ufc_finite_element& element)
@@ -31,7 +32,7 @@ bool is_basix_element(const ufc_finite_element& element)
   else
     return false;
 }
-
+//-----------------------------------------------------------------------------
 // Recursively extract sub finite element
 std::shared_ptr<const FiniteElement>
 _extract_sub_element(const FiniteElement& finite_element,
@@ -171,6 +172,21 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
         = !_element->dof_transformations_are_identity()
           and _element->dof_transformations_are_permutations();
   }
+}
+//-----------------------------------------------------------------------------
+FiniteElement::FiniteElement(const basix::FiniteElement& element, int bs)
+    : _signature("Basix element"), _family("foo"), _tdim(-1),
+      _space_dim(bs * element.dim()), _value_size(-1),
+      _reference_value_size(-1), _hash(0), _bs(bs)
+{
+  _element = std::make_unique<basix::FiniteElement>(element);
+  _needs_dof_transformations
+      = !_element->dof_transformations_are_identity()
+        and !_element->dof_transformations_are_permutations();
+
+  _needs_dof_permutations
+      = !_element->dof_transformations_are_identity()
+        and _element->dof_transformations_are_permutations();
 }
 //-----------------------------------------------------------------------------
 std::string FiniteElement::signature() const noexcept { return _signature; }
