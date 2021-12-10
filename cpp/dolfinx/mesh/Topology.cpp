@@ -691,6 +691,15 @@ mesh::create_topology(MPI_Comm comm,
 
   // Unpack received data and build array of ghost vertices and owners
   // of the ghost vertices
+
+  std::vector<std::array<std::int64_t, 3>> ghost_data;
+  for (int i = 0; i < recv_triplets.size(); i += 3)
+  {
+    std::array<std::int64_t, 3> d
+        = {recv_triplets[i], recv_triplets[i + 1], recv_triplets[i + 2]};
+    ghost_data.push_back(d);
+  }
+
   std::vector<std::int64_t> ghost_vertices;
   std::vector<int> ghost_vertex_owners;
   for (std::size_t i = 0; i < recv_triplets.size(); i += 3)
@@ -718,23 +727,40 @@ mesh::create_topology(MPI_Comm comm,
 
     // Unpack received data and add to arrays of ghost indices and ghost
     // owners
-    for (std::size_t i = 0; i < recv_triplets.size(); i += 3)
+    for (int i = 0; i < recv_triplets.size(); i += 3)
     {
-      const std::int64_t global_idx_old = recv_triplets[i];
-      const auto it = global_to_local_vertices.find(global_idx_old);
-      assert(it != global_to_local_vertices.end());
-      if (it->second == -1)
-      {
-        it->second = v++;
-        ghost_vertices.push_back(recv_triplets[i + 1]);
-        ghost_vertex_owners.push_back(recv_triplets[i + 2]);
-      }
+      std::array<std::int64_t, 3> d
+          = {recv_triplets[i], recv_triplets[i + 1], recv_triplets[i + 2]};
+      ghost_data.push_back(d);
     }
   }
 
-  // Sort into owner order
-  std::sort(ghost_vertices.begin(), ghost_vertices.end());
-  std::sort(ghost_vertex_owners.begin(), ghost_vertex_owners.end());
+  std::sort(ghost_data.begin(), ghost_data.end(),
+            [](const std::array<std::int64_t, 3>& a,
+               const std::array<std::int64_t, 3>& b) { return a[1] < b[1]; });
+
+  // Reset
+  ghost_vertices.clear();
+  ghost_vertex_owners.clear();
+  v = nlocal;
+  for (auto& it : global_to_local_vertices)
+  {
+    if (it.second >= nlocal)
+      it.second = -1;
+  }
+
+  for (const std::array<std::int64_t, 3>& g : ghost_data)
+  {
+    const std::int64_t global_idx_old = g[0];
+    const auto it = global_to_local_vertices.find(global_idx_old);
+    assert(it != global_to_local_vertices.end());
+    if (it->second == -1)
+    {
+      it->second = v++;
+      ghost_vertices.push_back(g[1]);
+      ghost_vertex_owners.push_back(g[2]);
+    }
+  }
 
   MPI_Comm_free(&neighbor_comm);
 

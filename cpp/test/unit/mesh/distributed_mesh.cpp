@@ -101,6 +101,8 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
   CHECK(mesh->topology().index_map(tdim)->size_global() == 2 * N * N);
   CHECK(mesh->topology().index_map(tdim)->size_local() > 0);
 
+  std::cout << "nv=" << mesh->topology().index_map(0)->size_global() << ","
+            << (N + 1) * (N + 1) << "\n";
   CHECK(mesh->topology().index_map(0)->size_global() == (N + 1) * (N + 1));
   CHECK(mesh->topology().index_map(0)->size_local() > 0);
 
