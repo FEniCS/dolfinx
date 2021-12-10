@@ -50,6 +50,46 @@ dolfinx::MPI::Comm create_symmetric_comm(MPI_Comm comm)
 }
 
 //-----------------------------------------------------------------------------
+/// Find the cell (local to process) and index of an entity (local to cell) for
+/// a list of entities
+/// @param[in] mesh The mesh
+/// @param[in] entities The list of entities
+/// @param[in] dim The dimension of the entities
+/// @returns A list of (cell_index, entity_index) pairs for each input entity
+std::vector<std::pair<std::int32_t, int>>
+find_local_entity_index(std::shared_ptr<const mesh::Mesh> mesh,
+                        const xtl::span<const std::int32_t>& entities,
+                        const int dim)
+{
+
+  // Initialise entity-cell connectivity
+  const int tdim = mesh->topology().dim();
+  mesh->topology_mutable().create_entities(tdim);
+  mesh->topology_mutable().create_connectivity(dim, tdim);
+  auto e_to_c = mesh->topology().connectivity(dim, tdim);
+  assert(e_to_c);
+  auto c_to_e = mesh->topology().connectivity(tdim, dim);
+  assert(c_to_e);
+
+  std::vector<std::pair<std::int32_t, int>> entity_indices;
+  entity_indices.reserve(entities.size());
+
+  for (std::int32_t e : entities)
+  {
+    // Get first attached cell
+    assert(e_to_c->num_links(e) > 0);
+    const int cell = e_to_c->links(e)[0];
+
+    // Get local index of facet with respect to the cell
+    auto entities_d = c_to_e->links(cell);
+    auto it = std::find(entities_d.begin(), entities_d.end(), e);
+    assert(it != entities_d.end());
+    const int entity_local_index = std::distance(entities_d.begin(), it);
+    entity_indices.push_back({cell, entity_local_index});
+  }
+  return entity_indices;
+};
+//-----------------------------------------------------------------------------
 /// Find DOFs on this processes that are constrained by a Dirichlet
 /// condition detected by another process
 ///
@@ -397,7 +437,6 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
   assert(V1.mesh());
   if (mesh != V1.mesh())
     throw std::runtime_error("Meshes are not the same.");
-  const int tdim = mesh->topology().dim();
 
   // FIXME: Elements must be the same?
   assert(V0.element());
@@ -411,48 +450,39 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
   assert(dofmap0);
   assert(dofmap1);
 
-  // Initialise entity-cell connectivity
-  // FIXME: cleanup these calls? Some of the happen internally again.
-  mesh->topology_mutable().create_entities(tdim);
-  mesh->topology_mutable().create_connectivity(dim, tdim);
-
-  // Allocate space
-  // FIXME: check that dof layouts are the same
+  // Check that dof layouts are the same
   assert(dofmap0->element_dof_layout);
-  const int num_entity_dofs
-      = dofmap0->element_dof_layout->num_entity_closure_dofs(dim);
-  const int element_bs = dofmap0->element_dof_layout->block_size();
-  assert(element_bs == dofmap1->element_dof_layout->block_size());
+  assert(dofmap1->element_dof_layout);
+  assert(*dofmap0->element_dof_layout.get()
+         == *dofmap1->element_dof_layout.get());
 
-  // Build vector local dofs for each cell facet
+  // Build vector of local dofs for each cell entity
+  const int num_cell_entities
+      = mesh::cell_num_entities(mesh->topology().cell_type(), dim);
   std::vector<std::vector<int>> entity_dofs;
-  for (int i = 0;
-       i < mesh::cell_num_entities(mesh->topology().cell_type(), dim); ++i)
+  entity_dofs.reserve(num_cell_entities);
+  for (int i = 0; i < num_cell_entities; ++i)
   {
     entity_dofs.push_back(
         dofmap0->element_dof_layout->entity_closure_dofs(dim, i));
   }
-  auto e_to_c = mesh->topology().connectivity(dim, tdim);
-  assert(e_to_c);
-  auto c_to_e = mesh->topology().connectivity(tdim, dim);
-  assert(c_to_e);
 
   const int bs0 = dofmap0->bs();
   const int bs1 = dofmap1->bs();
 
-  // Iterate over marked facets
-  std::vector<std::array<std::int32_t, 2>> bc_dofs;
-  for (std::int32_t e : entities)
-  {
-    // Get first attached cell
-    assert(e_to_c->num_links(e) > 0);
-    const int cell = e_to_c->links(e)[0];
+  // Get cell index and local entity index
+  std::vector<std::pair<std::int32_t, int>> entity_indices
+      = find_local_entity_index(mesh, entities, dim);
 
-    // Get local index of facet with respect to the cell
-    auto entities_d = c_to_e->links(cell);
-    auto it = std::find(entities_d.begin(), entities_d.end(), e);
-    assert(it != entities_d.end());
-    const int entity_local_index = std::distance(entities_d.begin(), it);
+  // Iterate over marked facets
+  const int num_entity_dofs
+      = dofmap0->element_dof_layout->num_entity_closure_dofs(dim);
+  const int element_bs = dofmap0->element_dof_layout->block_size();
+
+  std::vector<std::array<std::int32_t, 2>> bc_dofs;
+  bc_dofs.reserve(entities.size());
+  for (auto [cell, entity_local_index] : entity_indices)
+  {
 
     // Get cell dofmap
     xtl::span<const std::int32_t> cell_dofs0 = dofmap0->cell_dofs(cell);
@@ -520,46 +550,33 @@ fem::locate_dofs_topological(const fem::FunctionSpace& V, int dim,
   assert(V.mesh());
   std::shared_ptr<const mesh::Mesh> mesh = V.mesh();
 
-  const int tdim = mesh->topology().dim();
-
-  // Initialise entity-cell connectivity
-  // FIXME: cleanup these calls? Some of them happen internally again.
-  mesh->topology_mutable().create_entities(tdim);
-  mesh->topology_mutable().create_connectivity(dim, tdim);
-
   // Prepare an element - local dof layout for dofs on entities of the
   // entity_dim
   const int num_cell_entities
       = mesh::cell_num_entities(mesh->topology().cell_type(), dim);
   std::vector<std::vector<int>> entity_dofs;
+  entity_dofs.reserve(num_cell_entities);
   for (int i = 0; i < num_cell_entities; ++i)
   {
     entity_dofs.push_back(
         dofmap->element_dof_layout->entity_closure_dofs(dim, i));
   }
-  auto e_to_c = mesh->topology().connectivity(dim, tdim);
-  assert(e_to_c);
-  auto c_to_e = mesh->topology().connectivity(tdim, dim);
-  assert(c_to_e);
+
   const int num_entity_closure_dofs
       = dofmap->element_dof_layout->num_entity_closure_dofs(dim);
   std::vector<std::int32_t> dofs;
+  dofs.reserve(entities.size() * num_entity_closure_dofs);
+
+  // Get cell index and local entity index
+  std::vector<std::pair<std::int32_t, int>> entity_indices
+      = find_local_entity_index(mesh, entities, dim);
+
   // If space is not a sub space we not not need to take the block size into
   // account
   if (V.component().size() == 0)
   {
-    for (std::int32_t e : entities)
+    for (auto [cell, entity_local_index] : entity_indices)
     {
-      // Get first attached cell
-      assert(e_to_c->num_links(e) > 0);
-      const int cell = e_to_c->links(e)[0];
-
-      // Get local index of facet with respect to the cell
-      auto entities_d = c_to_e->links(cell);
-      auto it = std::find(entities_d.begin(), entities_d.end(), e);
-      assert(it != entities_d.end());
-      const int entity_local_index = std::distance(entities_d.data(), it);
-
       // Get cell dofmap
       auto cell_dofs = dofmap->cell_dofs(cell);
 
@@ -597,17 +614,8 @@ fem::locate_dofs_topological(const fem::FunctionSpace& V, int dim,
     const int element_bs = dofmap->element_dof_layout->block_size();
 
     // Iterate over marked facets
-    for (std::int32_t e : entities)
+    for (auto [cell, entity_local_index] : entity_indices)
     {
-      // Get first attached cell
-      assert(e_to_c->num_links(e) > 0);
-      const int cell = e_to_c->links(e)[0];
-
-      // Get local index of facet with respect to the cell
-      auto entities_d = c_to_e->links(cell);
-      auto it = std::find(entities_d.begin(), entities_d.end(), e);
-      assert(it != entities_d.end());
-      const int entity_local_index = std::distance(entities_d.begin(), it);
 
       // Get cell dofmap
       xtl::span<const std::int32_t> cell_dofs = dofmap->cell_dofs(cell);
