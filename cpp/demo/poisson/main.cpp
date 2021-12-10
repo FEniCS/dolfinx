@@ -198,8 +198,7 @@ int main(int argc, char* argv[])
 
     // Compute solution
     fem::Function<PetscScalar> u(V);
-    la::petsc::Matrix A
-        = la::petsc::Matrix(fem::petsc::create_matrix(*a), false);
+    auto A = la::petsc::Matrix(fem::petsc::create_matrix(*a), false);
     la::petsc::Vector b(*L->function_spaces()[0]->dofmap()->index_map,
                         L->function_spaces()[0]->dofmap()->index_map_bs());
 
