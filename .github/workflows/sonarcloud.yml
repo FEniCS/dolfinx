@@ -1,4 +1,4 @@
-name: Build
+name: SonarCloud
 on:
   push:
     branches:
@@ -7,6 +7,7 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
+    container: dolfinx/test-env:latest-mpich
     env:
       SONAR_SCANNER_VERSION: 4.6.1.2450 # Find the latest version in the "Linux" link on this page:
                                         # https://sonarcloud.io/documentation/analysis/scan/sonarscanner/
