@@ -6,6 +6,7 @@
 """Collection of functions and function spaces"""
 
 import typing
+import warnings
 from functools import singledispatch
 
 import cffi
@@ -297,7 +298,7 @@ class Function(ufl.Coefficient):
             u = np.reshape(u, (-1, ))
         return u
 
-    def interpolate(self, u) -> None:
+    def interpolate(self, u, cells: np.ndarray = None) -> None:
         """Interpolate an expression"""
         @singledispatch
         def _interpolate(u):
@@ -310,20 +311,25 @@ class Function(ufl.Coefficient):
         def _(u_ptr):
             self._cpp_object.interpolate_ptr(u_ptr)
 
-        _interpolate(u)
+        @_interpolate.register(Expression)
+        def _(expr: Expression, cells: np.ndarray = None):
+            if cells is None:
+                mesh = self.function_space.mesh
+                num_cells_local = mesh.topology.index_map(mesh.topology.dim).size_local
+                cells = np.arange(num_cells_local, dtype=np.int32)
 
-    def interpolate_cells(self, ufl_expression: ufl.core.expr.Expr, cells: np.ndarray = None):
-        # If no cells supplied assemble over all local cells
-        if cells is None:
-            mesh = ufl_expression.ufl_domain().ufl_cargo()
-            num_cells_local = mesh.topology.index_map(mesh.topology.dim).size_local
-            cells = np.arange(num_cells_local, dtype=np.int32)
+            # Interpolate expression for the set of cells
+            self._cpp_object.interpolate(expr._cpp_object, cells)
 
-        # Create Expression over interpolation points of Function
-        points = self.function_space.element.interpolation_points()
-        expr = Expression(ufl_expression, points)
-        # Interpolate expression for the set of cells
-        self._cpp_object.interpolate(expr._cpp_object, cells)
+        # Ignore cells as input if expression.
+        # FIXME: Should all interpolate functions support input cells?
+        if not isinstance(u, Expression):
+            if cells is not None:
+                warnings.warn("List of cells as input argument is ignored. "
+                              + "All cells local to process will be used in interpolation")
+            _interpolate(u)
+        else:
+            _interpolate(u, cells)
 
     def compute_point_values(self):
         return self._cpp_object.compute_point_values()

@@ -440,14 +440,15 @@ void interpolate(Function<T>& u, xt::xarray<T>& f,
                              std::int32_t, int)>
         apply_inv_transpose_dof_transformation
         = element->get_dof_transformation_function<T>(true, true, true);
-    for (std::int32_t c : cells)
+    for (std::size_t c = 0; c < cells.size(); ++c)
     {
-      xtl::span<const std::int32_t> dofs = dofmap->cell_dofs(c);
+      const std::int32_t cell = cells[c];
+      xtl::span<const std::int32_t> dofs = dofmap->cell_dofs(cell);
       for (int k = 0; k < element_bs; ++k)
       {
         for (int i = 0; i < num_scalar_dofs; ++i)
           _coeffs[i] = f(k, c * num_scalar_dofs + i);
-        apply_inv_transpose_dof_transformation(_coeffs, cell_info, c, 1);
+        apply_inv_transpose_dof_transformation(_coeffs, cell_info, cell, 1);
         for (int i = 0; i < num_scalar_dofs; ++i)
         {
           const int dof = i * element_bs + k;
@@ -510,9 +511,10 @@ void interpolate(Function<T>& u, xt::xarray<T>& f,
                           xt::xall<std::size_t>>;
     auto pull_back_fn = element->map_fn<U_t, U_t, J_t, J_t>();
 
-    for (std::int32_t c : cells)
+    for (std::size_t c = 0; c < cells.size(); ++c)
     {
-      auto x_dofs = x_dofmap.links(c);
+      const std::int32_t cell = cells[c];
+      auto x_dofs = x_dofmap.links(cell);
       for (int i = 0; i < num_dofs_g; ++i)
         for (int j = 0; j < gdim; ++j)
           coordinate_dofs(i, j) = x_g(x_dofs[i], j);
@@ -530,7 +532,7 @@ void interpolate(Function<T>& u, xt::xarray<T>& f,
             xt::view(J, p, xt::all(), xt::all()));
       }
 
-      xtl::span<const std::int32_t> dofs = dofmap->cell_dofs(c);
+      xtl::span<const std::int32_t> dofs = dofmap->cell_dofs(cell);
       for (int k = 0; k < element_bs; ++k)
       {
         // Extract computed expression values for element block k
@@ -552,7 +554,7 @@ void interpolate(Function<T>& u, xt::xarray<T>& f,
 
         auto ref_data = xt::view(reference_data, xt::all(), 0, xt::all());
         impl::interpolation_apply(Pi, ref_data, _coeffs, element_bs);
-        apply_inverse_transpose_dof_transformation(_coeffs, cell_info, c, 1);
+        apply_inverse_transpose_dof_transformation(_coeffs, cell_info, cell, 1);
 
         // Copy interpolation dofs into coefficient vector
         assert(_coeffs.size() == num_scalar_dofs);

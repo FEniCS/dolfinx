@@ -11,10 +11,10 @@ import numpy as np
 import pytest
 
 import ufl
-from dolfinx.fem import (Function, FunctionSpace,
+from dolfinx.fem import (Expression, Function, FunctionSpace,
                          VectorFunctionSpace, assemble_scalar)
 from dolfinx.generation import UnitCubeMesh, UnitSquareMesh
-from dolfinx.mesh import CellType, create_mesh
+from dolfinx.mesh import CellType, MeshTags, create_mesh, locate_entities
 from dolfinx_utils.test.skips import skip_in_parallel
 
 from mpi4py import MPI
@@ -395,17 +395,19 @@ def test_nedelec_spatial(order, dim):
     u = Function(V)
     x = ufl.SpatialCoordinate(mesh)
     # The expression (x,y,z) is contained in the N1curl function space order>1
-    f = x
-    u.interpolate_cells(f)
+    f_ex = x
+    f = Expression(f_ex, V.element.interpolation_points)
+    u.interpolate(f)
 
-    assert np.isclose(np.abs(assemble_scalar(ufl.inner(u - f, u - f) * ufl.dx)), 0)
+    assert np.isclose(np.abs(assemble_scalar(ufl.inner(u - f_ex, u - f_ex) * ufl.dx)), 0)
     # The target expression is also contained in N2curl space of any
     # order
     V2 = FunctionSpace(mesh, ("N2curl", 1))
     w = Function(V2)
-    w.interpolate_cells(f)
+    f2 = Expression(f_ex, V2.element.interpolation_points)
+    w.interpolate(f2)
 
-    assert np.isclose(np.abs(assemble_scalar(ufl.inner(w - f, w - f) * ufl.dx)), 0)
+    assert np.isclose(np.abs(assemble_scalar(ufl.inner(w - f_ex, w - f_ex) * ufl.dx)), 0)
 
 
 @pytest.mark.parametrize("order", [1, 2, 3, 4])
@@ -425,7 +427,7 @@ def test_vector_interpolation_spatial(order, dim, affine):
     x = ufl.SpatialCoordinate(mesh)
     # The expression (x,y,z)^n is contained in space
     f = ufl.as_vector([x[i]**order for i in range(dim)])
-    u.interpolate_cells(f)
+    u.interpolate(Expression(f, V.element.interpolation_points))
     assert np.isclose(np.abs(assemble_scalar(ufl.inner(u - f, u - f) * ufl.dx)), 0)
 
 
@@ -442,7 +444,8 @@ def test_2D_lagrange_to_curl(order):
     u1.interpolate(lambda x: x[0])
 
     f = ufl.as_vector((u0, u1))
-    u.interpolate_cells(f)
+    f_expr = Expression(f, V.element.interpolation_points)
+    u.interpolate(f_expr)
     x = ufl.SpatialCoordinate(mesh)
     f_ex = ufl.as_vector((-x[1], x[0]))
     assert np.isclose(np.abs(assemble_scalar(ufl.inner(u - f_ex, u - f_ex) * ufl.dx)), 0)
@@ -463,7 +466,7 @@ def test_de_rahm_2D(order):
 
     Q = FunctionSpace(mesh, ("N2curl", order - 1))
     q = Function(Q)
-    q.interpolate_cells(g)
+    q.interpolate(Expression(g, Q.element.interpolation_points))
 
     x = ufl.SpatialCoordinate(mesh)
     g_ex = ufl.as_vector((1 + x[1], 4 * x[1] + x[0]))
@@ -475,6 +478,35 @@ def test_de_rahm_2D(order):
     def curl2D(u):
         return ufl.as_vector((ufl.Dx(u[1], 0), - ufl.Dx(u[0], 1)))
 
-    v.interpolate_cells(curl2D(ufl.grad(w)))
+    v.interpolate(Expression(curl2D(ufl.grad(w)), V.element.interpolation_points))
     h_ex = ufl.as_vector((1, -1))
     assert np.isclose(np.abs(assemble_scalar(ufl.inner(v - h_ex, v - h_ex) * ufl.dx)), 0)
+
+
+@pytest.mark.parametrize("order", [1, 2, 3, 4])
+@pytest.mark.parametrize("dim", [2, 3])
+@pytest.mark.parametrize("affine", [True, False])
+def test_interpolate_subset(order, dim, affine):
+    if dim == 2:
+        ct = CellType.triangle if affine else CellType.quadrilateral
+        mesh = UnitSquareMesh(MPI.COMM_WORLD, 3, 4, ct)
+    elif dim == 3:
+        ct = CellType.tetrahedron if affine else CellType.hexahedron
+        mesh = UnitCubeMesh(MPI.COMM_WORLD, 3, 2, 2, ct)
+
+    V = FunctionSpace(mesh, ("DG", order))
+    u = Function(V)
+
+    cells = locate_entities(mesh, mesh.topology.dim, lambda x: x[1] <= 0.5 + 1e-10)
+    num_local_cells = mesh.topology.index_map(mesh.topology.dim).size_local
+    cells_local = cells[cells < num_local_cells]
+
+    x = ufl.SpatialCoordinate(mesh)
+    f = x[1]**order
+    expr = Expression(f, V.element.interpolation_points)
+    u.interpolate(expr, cells_local)
+    mt = MeshTags(mesh, mesh.topology.dim, cells_local, np.ones(cells_local.size, dtype=np.int32))
+    dx = ufl.Measure("dx", domain=mesh, subdomain_data=mt)
+    assert np.isclose(np.abs(assemble_scalar(ufl.inner(u - f, u - f) * dx(1))), 0)
+    integral = mesh.comm.allreduce(assemble_scalar(u * dx), op=MPI.SUM)
+    assert np.isclose(integral, 1 / (order + 1) * 0.5**(order + 1), 0)
