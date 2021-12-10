@@ -6,8 +6,8 @@
 
 #pragma once
 
-#include <dolfinx/mesh/Mesh.h>
 #include "Function.h"
+#include <dolfinx/mesh/Mesh.h>
 #include <functional>
 #include <utility>
 #include <vector>

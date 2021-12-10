@@ -22,11 +22,13 @@ class IndexMap;
 
 namespace dolfinx::fem
 {
-
 template <typename T>
 class DirichletBC;
 class FunctionSpace;
 
+/// Helper functions for assembly into PETSc data structures
+namespace petsc
+{
 /// Create a matrix
 /// @param[in] a A bilinear form
 /// @param[in] type The PETSc matrix type to create
@@ -80,7 +82,7 @@ Vec create_vector_nest(
 /// @param[in] L The linear form to assemble
 /// @param[in] constants The constants that appear in `L`
 /// @param[in] coeffs The coefficients that appear in `L`
-void assemble_vector_petsc(
+void assemble_vector(
     Vec b, const Form<PetscScalar>& L,
     const xtl::span<const PetscScalar>& constants,
     const std::map<std::pair<IntegralType, int>,
@@ -95,7 +97,7 @@ void assemble_vector_petsc(
 /// process-local contribution of the form is assembled into this
 /// vector. It is not zeroed before assembly.
 /// @param[in] L The linear form to assemble
-void assemble_vector_petsc(Vec b, const Form<PetscScalar>& L);
+void assemble_vector(Vec b, const Form<PetscScalar>& L);
 
 // FIXME: clarify how x0 is used
 // FIXME: if bcs entries are set
@@ -115,7 +117,7 @@ void assemble_vector_petsc(Vec b, const Form<PetscScalar>& L);
 ///
 /// Ghost contributions are not accumulated (not sent to owner). Caller
 /// is responsible for calling VecGhostUpdateBegin/End.
-void apply_lifting_petsc(
+void apply_lifting(
     Vec b, const std::vector<std::shared_ptr<const Form<PetscScalar>>>& a,
     const std::vector<xtl::span<const PetscScalar>>& constants,
     const std::vector<std::map<std::pair<IntegralType, int>,
@@ -143,7 +145,7 @@ void apply_lifting_petsc(
 ///
 /// Ghost contributions are not accumulated (not sent to owner). Caller
 /// is responsible for calling VecGhostUpdateBegin/End.
-void apply_lifting_petsc(
+void apply_lifting(
     Vec b, const std::vector<std::shared_ptr<const Form<PetscScalar>>>& a,
     const std::vector<
         std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>>& bcs1,
@@ -156,12 +158,12 @@ void apply_lifting_petsc(
 // FIXME: clarify x0
 // FIXME: clarify what happens with ghosts
 
-/// Set bc values in owned (local) part of the PETScVector, multiplied
+/// Set bc values in owned (local) part of the PETSc vector, multiplied
 /// by 'scale'. The vectors b and x0 must have the same local size. The
 /// bcs should be on (sub-)spaces of the form L that b represents.
-void set_bc_petsc(
+void set_bc(
     Vec b,
     const std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>& bcs,
     const Vec x0, double scale = 1.0);
-
+} // namespace petsc
 } // namespace dolfinx::fem
