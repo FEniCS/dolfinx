@@ -198,31 +198,32 @@ int main(int argc, char* argv[])
 
     // Compute solution
     fem::Function<PetscScalar> u(V);
-    la::PETScMatrix A = la::PETScMatrix(fem::create_matrix(*a), false);
-    la::PETScVector b(*L->function_spaces()[0]->dofmap()->index_map,
-                      L->function_spaces()[0]->dofmap()->index_map_bs());
+    auto A = la::petsc::Matrix(fem::petsc::create_matrix(*a), false);
+    la::petsc::Vector b(*L->function_spaces()[0]->dofmap()->index_map,
+                        L->function_spaces()[0]->dofmap()->index_map_bs());
 
     MatZeroEntries(A.mat());
-    fem::assemble_matrix(la::PETScMatrix::set_block_fn(A.mat(), ADD_VALUES), *a,
-                         bc);
+    fem::assemble_matrix(la::petsc::Matrix::set_block_fn(A.mat(), ADD_VALUES),
+                         *a, bc);
     MatAssemblyBegin(A.mat(), MAT_FLUSH_ASSEMBLY);
     MatAssemblyEnd(A.mat(), MAT_FLUSH_ASSEMBLY);
-    fem::set_diagonal(la::PETScMatrix::set_fn(A.mat(), INSERT_VALUES), *V, bc);
+    fem::set_diagonal(la::petsc::Matrix::set_fn(A.mat(), INSERT_VALUES), *V,
+                      bc);
     MatAssemblyBegin(A.mat(), MAT_FINAL_ASSEMBLY);
     MatAssemblyEnd(A.mat(), MAT_FINAL_ASSEMBLY);
 
     VecSet(b.vec(), 0.0);
     VecGhostUpdateBegin(b.vec(), INSERT_VALUES, SCATTER_FORWARD);
     VecGhostUpdateEnd(b.vec(), INSERT_VALUES, SCATTER_FORWARD);
-    fem::assemble_vector_petsc(b.vec(), *L);
-    fem::apply_lifting_petsc(b.vec(), {a}, {{bc}}, {}, 1.0);
+    fem::petsc::assemble_vector(b.vec(), *L);
+    fem::petsc::apply_lifting(b.vec(), {a}, {{bc}}, {}, 1.0);
     VecGhostUpdateBegin(b.vec(), ADD_VALUES, SCATTER_REVERSE);
     VecGhostUpdateEnd(b.vec(), ADD_VALUES, SCATTER_REVERSE);
-    fem::set_bc_petsc(b.vec(), bc, nullptr);
+    fem::petsc::set_bc(b.vec(), bc, nullptr);
 
-    la::PETScKrylovSolver lu(MPI_COMM_WORLD);
-    la::PETScOptions::set("ksp_type", "preonly");
-    la::PETScOptions::set("pc_type", "lu");
+    la::petsc::KrylovSolver lu(MPI_COMM_WORLD);
+    la::petsc::Options::set("ksp_type", "preonly");
+    la::petsc::Options::set("pc_type", "lu");
     lu.set_from_options();
 
     lu.set_operator(A.mat());
