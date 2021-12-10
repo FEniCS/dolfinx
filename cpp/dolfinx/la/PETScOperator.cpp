@@ -14,19 +14,18 @@ using namespace dolfinx;
 using namespace dolfinx::la;
 
 //-----------------------------------------------------------------------------
-PETScOperator::PETScOperator(Mat A, bool inc_ref_count) : _matA(A)
+petsc::Operator::Operator(Mat A, bool inc_ref_count) : _matA(A)
 {
   assert(A);
   if (inc_ref_count)
     PetscObjectReference((PetscObject)_matA);
 }
 //-----------------------------------------------------------------------------
-PETScOperator::PETScOperator(PETScOperator&& A)
-    : _matA(std::exchange(A._matA, nullptr))
+petsc::Operator::Operator(Operator&& A) : _matA(std::exchange(A._matA, nullptr))
 {
 }
 //-----------------------------------------------------------------------------
-PETScOperator::~PETScOperator()
+petsc::Operator::~Operator()
 {
   // Decrease reference count (PETSc will destroy object once reference
   // counts reached zero)
@@ -34,14 +33,13 @@ PETScOperator::~PETScOperator()
     MatDestroy(&_matA);
 }
 //-----------------------------------------------------------------------------
-PETScOperator& PETScOperator::operator=(PETScOperator&& A)
+petsc::Operator& petsc::Operator::operator=(Operator&& A)
 {
   std::swap(_matA, A._matA);
-
   return *this;
 }
 //-----------------------------------------------------------------------------
-std::array<std::int64_t, 2> PETScOperator::size() const
+std::array<std::int64_t, 2> petsc::Operator::size() const
 {
   assert(_matA);
   PetscInt m(0), n(0);
@@ -51,7 +49,7 @@ std::array<std::int64_t, 2> PETScOperator::size() const
   return {{m, n}};
 }
 //-----------------------------------------------------------------------------
-PETScVector PETScOperator::create_vector(std::size_t dim) const
+petsc::Vector petsc::Operator::create_vector(std::size_t dim) const
 {
   assert(_matA);
   PetscErrorCode ierr;
@@ -76,8 +74,8 @@ PETScVector PETScOperator::create_vector(std::size_t dim) const
     throw std::runtime_error("Invalid dimension");
   }
 
-  return PETScVector(x, false);
+  return Vector(x, false);
 }
 //-----------------------------------------------------------------------------
-Mat PETScOperator::mat() const { return _matA; }
+Mat petsc::Operator::mat() const { return _matA; }
 //-----------------------------------------------------------------------------

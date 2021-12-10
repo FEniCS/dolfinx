@@ -212,9 +212,8 @@ T assemble_scalar(
       const std::vector<std::tuple<std::int32_t, int, std::int32_t, int>>&
           facets
           = M.interior_facet_domains(i);
-      value += impl::assemble_interior_facets(*mesh, facets, fn, constants,
-                                              coeffs, cstride,
-                                              c_offsets, perms);
+      value += impl::assemble_interior_facets(
+          *mesh, facets, fn, constants, coeffs, cstride, c_offsets, perms);
     }
   }
 

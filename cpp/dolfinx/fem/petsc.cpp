@@ -17,8 +17,8 @@
 using namespace dolfinx;
 
 //-----------------------------------------------------------------------------
-Mat dolfinx::fem::create_matrix(const Form<PetscScalar>& a,
-                                const std::string& type)
+Mat fem::petsc::create_matrix(const Form<PetscScalar>& a,
+                              const std::string& type)
 {
   // Build sparsitypattern
   la::SparsityPattern pattern = fem::create_sparsity_pattern(a);
@@ -29,7 +29,7 @@ Mat dolfinx::fem::create_matrix(const Form<PetscScalar>& a,
   return la::petsc::create_matrix(a.mesh()->comm(), pattern, type);
 }
 //-----------------------------------------------------------------------------
-Mat fem::create_matrix_block(
+Mat fem::petsc::create_matrix_block(
     const std::vector<std::vector<const fem::Form<PetscScalar>*>>& a,
     const std::string& type)
 {
@@ -171,7 +171,7 @@ Mat fem::create_matrix_block(
   return A;
 }
 //-----------------------------------------------------------------------------
-Mat fem::create_matrix_nest(
+Mat fem::petsc::create_matrix_nest(
     const std::vector<std::vector<const fem::Form<PetscScalar>*>>& a,
     const std::vector<std::vector<std::string>>& types)
 {
@@ -213,7 +213,7 @@ Mat fem::create_matrix_nest(
   return A;
 }
 //-----------------------------------------------------------------------------
-Vec fem::create_vector_block(
+Vec fem::petsc::create_vector_block(
     const std::vector<
         std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps)
 {
@@ -249,18 +249,18 @@ Vec fem::create_vector_block(
   return la::petsc::create_vector(index_map, 1);
 }
 //-----------------------------------------------------------------------------
-Vec fem::create_vector_nest(
+Vec fem::petsc::create_vector_nest(
     const std::vector<
         std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps)
 {
   assert(!maps.empty());
 
   // Loop over each form and create vector
-  std::vector<std::shared_ptr<la::PETScVector>> vecs;
+  std::vector<std::shared_ptr<la::petsc::Vector>> vecs;
   std::vector<Vec> petsc_vecs;
   for (auto& map : maps)
   {
-    vecs.push_back(std::make_shared<la::PETScVector>(map.first, map.second));
+    vecs.push_back(std::make_shared<la::petsc::Vector>(map.first, map.second));
     petsc_vecs.push_back(vecs.back()->vec());
   }
 
@@ -271,7 +271,7 @@ Vec fem::create_vector_nest(
   return y;
 }
 //-----------------------------------------------------------------------------
-void fem::assemble_vector_petsc(
+void fem::petsc::assemble_vector(
     Vec b, const Form<PetscScalar>& L,
     const xtl::span<const PetscScalar>& constants,
     const std::map<std::pair<IntegralType, int>,
@@ -289,7 +289,7 @@ void fem::assemble_vector_petsc(
   VecGhostRestoreLocalForm(b, &b_local);
 }
 //-----------------------------------------------------------------------------
-void fem::assemble_vector_petsc(Vec b, const Form<PetscScalar>& L)
+void fem::petsc::assemble_vector(Vec b, const Form<PetscScalar>& L)
 {
   Vec b_local;
   VecGhostGetLocalForm(b, &b_local);
@@ -303,7 +303,7 @@ void fem::assemble_vector_petsc(Vec b, const Form<PetscScalar>& L)
   VecGhostRestoreLocalForm(b, &b_local);
 }
 //-----------------------------------------------------------------------------
-void fem::apply_lifting_petsc(
+void fem::petsc::apply_lifting(
     Vec b, const std::vector<std::shared_ptr<const Form<PetscScalar>>>& a,
     const std::vector<xtl::span<const PetscScalar>>& constants,
     const std::vector<std::map<std::pair<IntegralType, int>,
@@ -353,7 +353,7 @@ void fem::apply_lifting_petsc(
   VecGhostRestoreLocalForm(b, &b_local);
 }
 //-----------------------------------------------------------------------------
-void fem::apply_lifting_petsc(
+void fem::petsc::apply_lifting(
     Vec b, const std::vector<std::shared_ptr<const Form<PetscScalar>>>& a,
     const std::vector<
         std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>>& bcs1,
@@ -398,7 +398,7 @@ void fem::apply_lifting_petsc(
   VecGhostRestoreLocalForm(b, &b_local);
 }
 //-----------------------------------------------------------------------------
-void fem::set_bc_petsc(
+void fem::petsc::set_bc(
     Vec b,
     const std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>& bcs,
     const Vec x0, double scale)
