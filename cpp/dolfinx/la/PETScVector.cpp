@@ -203,44 +203,44 @@ void la::petsc::scatter_local_vectors(
 }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-PETScVector::PETScVector(const common::IndexMap& map, int bs)
+petsc::Vector::Vector(const common::IndexMap& map, int bs)
     : _x(la::petsc::create_vector(map, bs))
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-PETScVector::PETScVector(Vec x, bool inc_ref_count) : _x(x)
+petsc::Vector::Vector(Vec x, bool inc_ref_count) : _x(x)
 {
   assert(x);
   if (inc_ref_count)
     PetscObjectReference((PetscObject)_x);
 }
 //-----------------------------------------------------------------------------
-PETScVector::PETScVector(PETScVector&& v) : _x(std::exchange(v._x, nullptr)) {}
+petsc::Vector::Vector(Vector&& v) : _x(std::exchange(v._x, nullptr)) {}
 //-----------------------------------------------------------------------------
-PETScVector::~PETScVector()
+petsc::Vector::~Vector()
 {
   if (_x)
     VecDestroy(&_x);
 }
 //-----------------------------------------------------------------------------
-PETScVector& PETScVector::operator=(PETScVector&& v)
+petsc::Vector& petsc::Vector::operator=(Vector&& v)
 {
   std::swap(_x, v._x);
   return *this;
 }
 //-----------------------------------------------------------------------------
-PETScVector PETScVector::copy() const
+petsc::Vector petsc::Vector::copy() const
 {
   Vec _y;
   VecDuplicate(_x, &_y);
   VecCopy(_x, _y);
-  PETScVector y(_y, true);
+  Vector y(_y, true);
   VecDestroy(&_y);
   return y;
 }
 //-----------------------------------------------------------------------------
-std::int64_t PETScVector::size() const
+std::int64_t petsc::Vector::size() const
 {
   assert(_x);
   PetscInt n = 0;
@@ -249,7 +249,7 @@ std::int64_t PETScVector::size() const
   return n;
 }
 //-----------------------------------------------------------------------------
-std::int32_t PETScVector::local_size() const
+std::int32_t petsc::Vector::local_size() const
 {
   assert(_x);
   PetscInt n = 0;
@@ -258,7 +258,7 @@ std::int32_t PETScVector::local_size() const
   return n;
 }
 //-----------------------------------------------------------------------------
-std::array<std::int64_t, 2> PETScVector::local_range() const
+std::array<std::int64_t, 2> petsc::Vector::local_range() const
 {
   assert(_x);
   PetscInt n0, n1;
@@ -268,7 +268,7 @@ std::array<std::int64_t, 2> PETScVector::local_range() const
   return {n0, n1};
 }
 //-----------------------------------------------------------------------------
-MPI_Comm PETScVector::comm() const
+MPI_Comm petsc::Vector::comm() const
 {
   assert(_x);
   MPI_Comm mpi_comm = MPI_COMM_NULL;
@@ -277,7 +277,7 @@ MPI_Comm PETScVector::comm() const
   return mpi_comm;
 }
 //-----------------------------------------------------------------------------
-PetscReal PETScVector::norm(Norm type) const
+PetscReal petsc::Vector::norm(Norm type) const
 {
   assert(_x);
   PetscErrorCode ierr;
@@ -303,14 +303,14 @@ PetscReal PETScVector::norm(Norm type) const
   return value;
 }
 //-----------------------------------------------------------------------------
-void PETScVector::set_options_prefix(std::string options_prefix)
+void petsc::Vector::set_options_prefix(std::string options_prefix)
 {
   assert(_x);
   PetscErrorCode ierr = VecSetOptionsPrefix(_x, options_prefix.c_str());
   CHECK_ERROR("VecSetOptionsPrefix");
 }
 //-----------------------------------------------------------------------------
-std::string PETScVector::get_options_prefix() const
+std::string petsc::Vector::get_options_prefix() const
 {
   assert(_x);
   const char* prefix = nullptr;
@@ -319,12 +319,12 @@ std::string PETScVector::get_options_prefix() const
   return std::string(prefix);
 }
 //-----------------------------------------------------------------------------
-void PETScVector::set_from_options()
+void petsc::Vector::set_from_options()
 {
   assert(_x);
   PetscErrorCode ierr = VecSetFromOptions(_x);
   CHECK_ERROR("VecSetFromOptions");
 }
 //-----------------------------------------------------------------------------
-Vec PETScVector::vec() const { return _x; }
+Vec petsc::Vector::vec() const { return _x; }
 //-----------------------------------------------------------------------------

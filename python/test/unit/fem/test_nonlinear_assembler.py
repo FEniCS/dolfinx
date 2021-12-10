@@ -10,7 +10,6 @@ import math
 import numpy
 import pytest
 
-import dolfinx
 import ufl
 from dolfinx.fem import (DirichletBC, Form, Function, FunctionSpace,
                          VectorFunctionSpace, apply_lifting,
@@ -26,6 +25,7 @@ from dolfinx.fem.form import extract_function_spaces
 from dolfinx.generation import UnitCubeMesh, UnitSquareMesh
 from dolfinx.mesh import GhostMode, locate_entities_boundary
 from ufl import derivative, dx, inner
+from dolfinx.cpp.la.petsc import scatter_local_vectors
 
 from mpi4py import MPI
 from petsc4py import PETSc
@@ -99,10 +99,9 @@ def test_matrix_assembly_block_nl():
 
     # Monolithic blocked
     x0 = create_vector_block(L_block)
-    dolfinx.cpp.la.scatter_local_vectors(
-        x0, [u.vector.array_r, p.vector.array_r],
-        [(u.function_space.dofmap.index_map, u.function_space.dofmap.index_map_bs),
-         (p.function_space.dofmap.index_map, p.function_space.dofmap.index_map_bs)])
+    scatter_local_vectors(x0, [u.vector.array_r, p.vector.array_r],
+                          [(u.function_space.dofmap.index_map, u.function_space.dofmap.index_map_bs),
+                           (p.function_space.dofmap.index_map, p.function_space.dofmap.index_map_bs)])
     x0.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
     # Ghosts are updated inside assemble_vector_block
@@ -332,10 +331,9 @@ def test_assembly_solve_block_nl():
         p.interpolate(initial_guess_p)
 
         x = create_vector_block(F)
-        dolfinx.cpp.la.scatter_local_vectors(
-            x, [u.vector.array_r, p.vector.array_r],
-            [(u.function_space.dofmap.index_map, u.function_space.dofmap.index_map_bs),
-             (p.function_space.dofmap.index_map, p.function_space.dofmap.index_map_bs)])
+        scatter_local_vectors(x, [u.vector.array_r, p.vector.array_r],
+                              [(u.function_space.dofmap.index_map, u.function_space.dofmap.index_map_bs),
+                               (p.function_space.dofmap.index_map, p.function_space.dofmap.index_map_bs)])
         x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
         snes.solve(None, x)
@@ -517,10 +515,9 @@ def test_assembly_solve_taylor_hood_nl(mesh):
 
     x0 = create_vector_block(F)
     with u.vector.localForm() as _u, p.vector.localForm() as _p:
-        dolfinx.cpp.la.scatter_local_vectors(
-            x0, [_u.array_r, _p.array_r],
-            [(u.function_space.dofmap.index_map, u.function_space.dofmap.index_map_bs),
-             (p.function_space.dofmap.index_map, p.function_space.dofmap.index_map_bs)])
+        scatter_local_vectors(x0, [_u.array_r, _p.array_r],
+                              [(u.function_space.dofmap.index_map, u.function_space.dofmap.index_map_bs),
+                               (p.function_space.dofmap.index_map, p.function_space.dofmap.index_map_bs)])
     x0.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
     snes.solve(None, x0)
