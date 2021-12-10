@@ -732,9 +732,6 @@ mesh::create_topology(MPI_Comm comm,
     }
   }
 
-  std::sort(ghost_vertices.begin(), ghost_vertices.end());
-  std::sort(ghost_vertex_owners.begin(), ghost_vertex_owners.end());
-
   MPI_Comm_free(&neighbor_comm);
 
   // TODO: is it possible to build neighbourhood communictor that is

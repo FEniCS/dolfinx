@@ -142,7 +142,7 @@ graph::build::distribute(MPI_Comm comm,
         // Store entry location so we can get it later
         ghost_idx.push_back(i);
         // Skip over this entry
-        i += 2 + data_recv[i + 2];
+        i += 3 + data_recv[i + 2];
         // ghost_index_owner.push_back(data_recv[i++]);
         // ghost_global_indices.push_back(data_recv[i++]);
         // const std::int64_t num_links = data_recv[i++];
