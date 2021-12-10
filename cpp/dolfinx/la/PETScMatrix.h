@@ -32,7 +32,6 @@ Mat create_matrix(MPI_Comm comm, const SparsityPattern& sp,
 /// @param[in] basis The nullspace basis vectors
 /// @return A PETSc nullspace object
 MatNullSpace create_nullspace(MPI_Comm comm, const xtl::span<const Vec>& basis);
-} // namespace petsc
 
 /// It is a simple wrapper for a PETSc matrix pointer (Mat). Its main
 /// purpose is to assist memory management of PETSc Mat objects.
@@ -40,7 +39,7 @@ MatNullSpace create_nullspace(MPI_Comm comm, const xtl::span<const Vec>& basis);
 /// For advanced usage, access the PETSc Mat pointer using the function
 /// mat() and use the standard PETSc interface.
 
-class PETScMatrix : public PETScOperator
+class Matrix : public Operator
 {
 public:
   /// Return a function with an interface for adding or inserting values
@@ -73,29 +72,29 @@ public:
   set_block_expand_fn(Mat A, int bs0, int bs1, InsertMode mode);
 
   /// Create holder for a PETSc Mat object from a sparsity pattern
-  PETScMatrix(MPI_Comm comm, const SparsityPattern& sp,
-              const std::string& type = std::string());
+  Matrix(MPI_Comm comm, const SparsityPattern& sp,
+         const std::string& type = std::string());
 
   /// Create holder of a PETSc Mat object/pointer. The Mat A object
   /// should already be created. If inc_ref_count is true, the reference
   /// counter of the Mat will be increased. The Mat reference count will
-  /// always be decreased upon destruction of the the PETScMatrix.
-  PETScMatrix(Mat A, bool inc_ref_count);
+  /// always be decreased upon destruction of the the petsc::Matrix.
+  Matrix(Mat A, bool inc_ref_count);
 
   // Copy constructor (deleted)
-  PETScMatrix(const PETScMatrix& A) = delete;
+  Matrix(const Matrix& A) = delete;
 
   /// Move constructor (falls through to base class move constructor)
-  PETScMatrix(PETScMatrix&& A) = default;
+  Matrix(Matrix&& A) = default;
 
   /// Destructor
-  ~PETScMatrix() = default;
+  ~Matrix() = default;
 
   /// Assignment operator (deleted)
-  PETScMatrix& operator=(const PETScMatrix& A) = delete;
+  Matrix& operator=(const Matrix& A) = delete;
 
   /// Move assignment operator
-  PETScMatrix& operator=(PETScMatrix&& A) = default;
+  Matrix& operator=(Matrix&& A) = default;
 
   /// Assembly type
   ///   FINAL - corresponds to PETSc MAT_FINAL_ASSEMBLY
@@ -129,4 +128,5 @@ public:
   /// Call PETSc function MatSetFromOptions on the PETSc Mat object
   void set_from_options();
 };
+} // namespace petsc
 } // namespace dolfinx::la
