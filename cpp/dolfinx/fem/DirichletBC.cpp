@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <array>
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/sort.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
@@ -97,107 +98,101 @@ find_local_entity_index(std::shared_ptr<const mesh::Mesh> mesh,
 /// @param[in] dofs_local The IndexMap with the dof layout
 /// @return List of local dofs with boundary conditions applied but
 ///   detected by other processes. It may contain duplicate entries.
-std::vector<std::int32_t>
-get_remote_bcs1(const common::IndexMap& map,
-                const std::vector<std::int32_t>& dofs_local)
-{
-  dolfinx::MPI::Comm comm
-      = create_symmetric_comm(map.comm(common::IndexMap::Direction::forward));
+// std::vector<std::int32_t>
+// get_remote_bcs1(const common::IndexMap& map,
+//                 const std::vector<std::int32_t>& dofs_local)
+// {
+//   dolfinx::MPI::Comm comm
+//       =
+//       create_symmetric_comm(map.comm(common::IndexMap::Direction::forward));
 
-  // Get number of processes in neighborhood
-  int num_neighbors(-1), outdegree(-2), weighted(-1);
-  MPI_Dist_graph_neighbors_count(comm.comm(), &num_neighbors, &outdegree,
-                                 &weighted);
+//   // Get number of processes in neighborhood
+//   int num_neighbors(-1), outdegree(-2), weighted(-1);
+//   MPI_Dist_graph_neighbors_count(comm.comm(), &num_neighbors, &outdegree,
+//                                  &weighted);
 
-  // Return early if there are no neighbors
-  if (num_neighbors == 0)
-    return {};
+//   // Return early if there are no neighbors
+//   if (num_neighbors == 0)
+//     return {};
 
-  // Figure out how many entries to receive from each neighbor
-  const int num_dofs = dofs_local.size();
-  std::vector<int> num_dofs_recv(num_neighbors);
-  MPI_Neighbor_allgather(&num_dofs, 1, MPI_INT, num_dofs_recv.data(), 1,
-                         MPI_INT, comm.comm());
+//   // Figure out how many entries to receive from each neighbor
+//   const int num_dofs = dofs_local.size();
+//   std::vector<int> num_dofs_recv(num_neighbors);
+//   MPI_Neighbor_allgather(&num_dofs, 1, MPI_INT, num_dofs_recv.data(), 1,
+//                          MPI_INT, comm.comm());
 
-  // NOTE: we could consider only dofs that we know are shared
-  // Build array of global indices of dofs
-  std::vector<std::int64_t> dofs_global(dofs_local.size());
-  map.local_to_global(dofs_local, dofs_global);
+//   // NOTE: we could consider only dofs that we know are shared
+//   // Build array of global indices of dofs
+//   std::vector<std::int64_t> dofs_global(dofs_local.size());
+//   map.local_to_global(dofs_local, dofs_global);
 
-  // Compute displacements for data to receive. Last entry has total
-  // number of received items.
-  std::vector<int> disp(num_neighbors + 1, 0);
-  std::partial_sum(num_dofs_recv.begin(), num_dofs_recv.end(),
-                   std::next(disp.begin()));
+//   // Compute displacements for data to receive. Last entry has total
+//   // number of received items.
+//   std::vector<int> disp(num_neighbors + 1, 0);
+//   std::partial_sum(num_dofs_recv.begin(), num_dofs_recv.end(),
+//                    std::next(disp.begin()));
 
-  // NOTE: we could use MPI_Neighbor_alltoallv to send only to relevant
-  // processes
+//   // NOTE: we could use MPI_Neighbor_alltoallv to send only to relevant
+//   // processes
 
-  // Send/receive global index of dofs with bcs to all neighbors
-  std::vector<std::int64_t> dofs_received(disp.back());
-  MPI_Request request;
-  MPI_Ineighbor_allgatherv(dofs_global.data(), dofs_global.size(), MPI_INT64_T,
-                           dofs_received.data(), num_dofs_recv.data(),
-                           disp.data(), MPI_INT64_T, comm.comm(), &request);
+//   // Send/receive global index of dofs with bcs to all neighbors
+//   std::vector<std::int64_t> dofs_received(disp.back());
+//   MPI_Request request;
+//   MPI_Ineighbor_allgatherv(dofs_global.data(), dofs_global.size(),
+//   MPI_INT64_T,
+//                            dofs_received.data(), num_dofs_recv.data(),
+//                            disp.data(), MPI_INT64_T, comm.comm(), &request);
 
-  // FIXME: check that dofs is sorted
-  // Build vector of local dof indicies that have been marked by another
-  // process
-  const std::array<std::int64_t, 2> range = map.local_range();
-  const std::vector<std::int64_t>& ghosts = map.ghosts();
+//   // FIXME: check that dofs is sorted
+//   // Build vector of local dof indicies that have been marked by another
+//   // process
+//   const std::array<std::int64_t, 2> range = map.local_range();
+//   const std::vector<std::int64_t>& ghosts = map.ghosts();
 
-  // Build map from ghost to local position
-  std::vector<std::pair<std::int64_t, std::int32_t>> global_local_ghosts;
-  const std::int32_t local_size = range[1] - range[0];
-  for (std::size_t i = 0; i < ghosts.size(); ++i)
-    global_local_ghosts.emplace_back(ghosts[i], i + local_size);
-  std::map<std::int64_t, std::int32_t> global_to_local(
-      global_local_ghosts.begin(), global_local_ghosts.end());
+//   // Build map from ghost to local position
+//   std::vector<std::pair<std::int64_t, std::int32_t>> global_local_ghosts;
+//   const std::int32_t local_size = range[1] - range[0];
+//   for (std::size_t i = 0; i < ghosts.size(); ++i)
+//     global_local_ghosts.emplace_back(ghosts[i], i + local_size);
+//   std::map<std::int64_t, std::int32_t> global_to_local(
+//       global_local_ghosts.begin(), global_local_ghosts.end());
 
-  MPI_Wait(&request, MPI_STATUS_IGNORE);
-  std::vector<std::int32_t> dofs;
-  for (std::size_t i = 0; i < dofs_received.size(); ++i)
-  {
-    if (dofs_received[i] >= range[0] and dofs_received[i] < range[1])
-      dofs.push_back(dofs_received[i] - range[0]);
-    else
-    {
-      // Search in ghosts
-      if (auto it = global_to_local.find(dofs_received[i]);
-          it != global_to_local.end())
-      {
-        dofs.push_back(it->second);
-      }
-    }
-  }
+//   MPI_Wait(&request, MPI_STATUS_IGNORE);
+//   std::vector<std::int32_t> dofs;
+//   for (std::size_t i = 0; i < dofs_received.size(); ++i)
+//   {
+//     if (dofs_received[i] >= range[0] and dofs_received[i] < range[1])
+//       dofs.push_back(dofs_received[i] - range[0]);
+//     else
+//     {
+//       // Search in ghosts
+//       if (auto it = global_to_local.find(dofs_received[i]);
+//           it != global_to_local.end())
+//       {
+//         dofs.push_back(it->second);
+//       }
+//     }
+//   }
 
-  return dofs;
-}
+//   return dofs;
+// }
 //-----------------------------------------------------------------------------
 
-/// Find DOFs on this processes that are constrained by a Dirichlet
-/// condition detected by another process
-///
-/// @param[in] map0 The IndexMap with the dof layout
-/// @param[in] bs0 The block size of the index map
-/// @param[in] map1 The IndexMap with the dof layout
-/// @param[in] bs1 The block size of the index map
-/// @param[in] dofs_local The IndexMap with the dof layout
-/// @return List of local dofs with boundary conditions applied but
-///   detected by other processes. It may contain duplicate entries.
-std::vector<std::array<std::int32_t, 2>>
-get_remote_bcs2(const common::IndexMap& map0, int bs0,
-                const common::IndexMap& map1, int bs1,
-                const std::vector<std::array<std::int32_t, 2>>& dofs_local)
+/// Find all DOFs on this process that has been detected on another process
+/// @param[in] comm A symmetric communciator based on the forward neighborhood
+/// communicator in the IndexMap
+/// @param[in] map The IndexMap with the dof layout
+/// @param[in] bs The block size of the IndexMap
+/// @param[in] dofs_local List of degrees of freedom local to process
+/// (unrolled). It might contain indices not found on other processes
+/// @returns List of degrees of freedom that was found on the other processes
+/// that are in the local range (including ghosts)
+std::vector<std::int32_t>
+get_remote_dofs_in_range(dolfinx::MPI::Comm comm, const common::IndexMap& map,
+                         int bs, std::vector<std::int32_t>& dofs_local)
 {
-  // NOTE: assumes that dofs are unrolled, i.e. not blocked. Could it be
-  // make more efficient to handle the case of a common block size?
-
-  dolfinx::MPI::Comm comm0
-      = create_symmetric_comm(map0.comm(common::IndexMap::Direction::forward));
-
   int num_neighbors(-1), outdegree(-2), weighted(-1);
-  MPI_Dist_graph_neighbors_count(comm0.comm(), &num_neighbors, &outdegree,
+  MPI_Dist_graph_neighbors_count(comm.comm(), &num_neighbors, &outdegree,
                                  &weighted);
   assert(num_neighbors == outdegree);
 
@@ -210,189 +205,57 @@ get_remote_bcs2(const common::IndexMap& map0, int bs0,
   std::vector<int> num_dofs_recv(num_neighbors);
   MPI_Request request;
   MPI_Ineighbor_allgather(&num_dofs, 1, MPI_INT, num_dofs_recv.data(), 1,
-                          MPI_INT, comm0.comm(), &request);
-
-  // NOTE: we consider only dofs that we know are shared
-  // Build array of global indices of dofs
-  xt::xtensor<std::int64_t, 2> dofs_global({dofs_local.size(), 2});
-
-  // This is messy to handle block sizes
-  {
-    const std::array<int, 2> _bs = {bs0, bs1};
-    const std::array<std::reference_wrapper<const common::IndexMap>, 2> maps
-        = {map0, map1};
-    std::vector<std::int32_t> _dofs_local(dofs_local.size());
-    for (int i = 0; i < 2; ++i)
-    {
-      for (std::size_t j = 0; j < _dofs_local.size(); ++j)
-        _dofs_local[j] = dofs_local[j][i];
-
-      // Convert dofs indices to 'blocks' relative to index map
-      std::vector<std::int32_t> dofs_local_block = _dofs_local;
-      std::for_each(dofs_local_block.begin(), dofs_local_block.end(),
-                    [bs = _bs[i]](std::int32_t& n) { return n /= bs; });
-
-      // Get global index of each block
-      std::vector<std::int64_t> dofs_global_block(dofs_local_block.size());
-      maps[i].get().local_to_global(dofs_local_block, dofs_global_block);
-
-      // Convert from block to actual index
-      for (std::size_t j = 0; j < dofs_local.size(); ++j)
-      {
-        const int index_offset = _dofs_local[j] % _bs[i];
-        dofs_global(j, i) = _bs[i] * dofs_global_block[j] + index_offset;
-      }
-    }
-  }
-
-  // Compute displacements for data to receive. Last entry has total
-  // number of received items.
-  MPI_Wait(&request, MPI_STATUS_IGNORE);
-  std::vector<int> disp(num_neighbors + 1, 0);
-  std::partial_sum(num_dofs_recv.begin(), num_dofs_recv.end(),
-                   std::next(disp.begin()));
-
-  // NOTE: we could use MPI_Neighbor_alltoallv to send only to relevant
-  // processes
-
-  // Send/receive global index of dofs with bcs to all neighbors
-  assert(disp.back() % 2 == 0);
-  xt::xtensor<std::int64_t, 2> dofs_received(
-      {static_cast<std::size_t>(disp.back() / 2), 2});
-  MPI_Neighbor_allgatherv(dofs_global.data(), dofs_global.size(), MPI_INT64_T,
-                          dofs_received.data(), num_dofs_recv.data(),
-                          disp.data(), MPI_INT64_T, comm0.comm());
-
-  const std::array<std::reference_wrapper<const common::IndexMap>, 2> maps
-      = {map0, map1};
-  const std::array bs = {bs0, bs1};
-  std::array<std::vector<std::int32_t>, 2> dofs_array;
-  for (int b = 0; b < 2; ++b)
-  {
-    // FIXME: check that dofs is sorted?
-    // Build vector of local dof indicies that have been marked by
-    // another process
-    const std::array<std::int64_t, 2> range = maps[b].get().local_range();
-    const std::vector<std::int64_t>& ghosts = maps[b].get().ghosts();
-
-    // Build map from ghost to local position
-    std::vector<std::pair<std::int64_t, std::int32_t>> global_local_ghosts;
-    const std::int32_t local_size = range[1] - range[0];
-    for (std::size_t i = 0; i < ghosts.size(); ++i)
-      global_local_ghosts.emplace_back(ghosts[i], i + local_size);
-    std::map<std::int64_t, std::int32_t> global_to_local(
-        global_local_ghosts.begin(), global_local_ghosts.end());
-
-    std::vector<std::int32_t>& dofs = dofs_array[b];
-    for (std::size_t i = 0; i < dofs_received.shape(0); ++i)
-    {
-      if (dofs_received(i, b) >= bs[b] * range[0]
-          and dofs_received(i, b) < bs[b] * range[1])
-      {
-        // Owned dof
-        dofs.push_back(dofs_received(i, b) - bs[b] * range[0]);
-      }
-      else
-      {
-        // Search in ghosts
-        if (auto it = global_to_local.find(dofs_received(i, b) / bs[b]);
-            it != global_to_local.end())
-        {
-          dofs.push_back(bs[b] * it->second + dofs_received(i, b) % bs[b]);
-        }
-      }
-    }
-  }
-  assert(dofs_array[0].size() == dofs_array[1].size());
-
-  std::vector<std::array<std::int32_t, 2>> dofs;
-  dofs.reserve(dofs_array[0].size());
-  for (std::size_t i = 0; i < dofs_array[0].size(); ++i)
-    dofs.push_back({dofs_array[0][i], dofs_array[1][i]});
-
-  return dofs;
-}
-//-----------------------------------------------------------------------------
-/// Find DOFs on this processes that are constrained by a Dirichlet
-/// condition detected by another process
-///
-/// @param[in] map The IndexMap with the dof layout
-/// @param[in] bs The block size of the index map
-/// @param[in] dofs_local The IndexMap with the dof layout
-/// @return List of local dofs with boundary conditions applied but
-///   detected by other processes. It may contain duplicate entries.
-std::vector<std::int32_t>
-get_remote_bcs1_sub(const common::IndexMap& map, int bs,
-                    const std::vector<std::int32_t>& dofs_local)
-{
-  // NOTE: assumes that dofs are unrolled, i.e. not blocked. Could it be
-  // make more efficient to handle the case of a common block size?
-
-  dolfinx::MPI::Comm comm
-      = create_symmetric_comm(map.comm(common::IndexMap::Direction::forward));
-
-  int num_neighbors(-1), outdegree(-2), weighted(-1);
-  MPI_Dist_graph_neighbors_count(comm.comm(), &num_neighbors, &outdegree,
-                                 &weighted);
-  assert(num_neighbors == outdegree);
-
-  // Return early if there are no neighbors
-  if (num_neighbors == 0)
-    return {};
-
-  // Figure out how many entries to receive from each neighbor
-  const int num_dofs = dofs_local.size();
-  std::vector<int> num_dofs_recv(num_neighbors);
-  MPI_Request request;
-  MPI_Ineighbor_allgather(&num_dofs, 1, MPI_INT, num_dofs_recv.data(), 1,
                           MPI_INT, comm.comm(), &request);
 
-  // NOTE: we consider only dofs that we know are shared
-  // Build array of global indices of dofs
-  std::vector<std::int64_t> dofs_global;
-  dofs_global.reserve(dofs_local.size());
-
-  // Convert dofs indices to 'blocks' relative to index map
-  std::vector<std::int32_t> dofs_local_block = dofs_local;
-  std::for_each(dofs_local_block.begin(), dofs_local_block.end(),
-                [bs](std::int32_t& n) { return n /= bs; });
-
-  // Get global index of each block
-  std::vector<std::int64_t> dofs_global_block(dofs_local_block.size());
-  map.local_to_global(dofs_local_block, dofs_global_block);
-
-  // Convert from block to actual index
-  for (std::size_t j = 0; j < dofs_local.size(); ++j)
+  std::vector<std::int64_t> dofs_global(dofs_local.size());
+  // Map DOFs to global block
+  if (bs == 1)
   {
-    const int index_offset = dofs_local[j] % bs;
-    dofs_global.push_back(bs * dofs_global_block[j] + index_offset);
+    map.local_to_global(dofs_local, dofs_global);
   }
+  else
+  {
+    // Convert dofs indices to 'blocks' relative to index map
+    std::vector<std::int32_t> dofs_local_block = dofs_local;
+    std::for_each(dofs_local_block.begin(), dofs_local_block.end(),
+                  [bs](std::int32_t& n) { return n /= bs; });
+
+    // Get global index of each block
+    std::vector<std::int64_t> dofs_global_block(dofs_local_block.size());
+    map.local_to_global(dofs_local_block, dofs_global_block);
+
+    // Convert from block to actual index
+    for (std::size_t j = 0; j < dofs_local.size(); ++j)
+    {
+      const int index_offset = dofs_local[j] % bs;
+      dofs_global[j] = bs * dofs_global_block[j] + index_offset;
+    }
+  }
+  MPI_Wait(&request, MPI_STATUS_IGNORE);
 
   // Compute displacements for data to receive. Last entry has total
   // number of received items.
-  MPI_Wait(&request, MPI_STATUS_IGNORE);
   std::vector<int> disp(num_neighbors + 1, 0);
   std::partial_sum(num_dofs_recv.begin(), num_dofs_recv.end(),
                    std::next(disp.begin()));
 
-  // NOTE: we could use MPI_Neighbor_alltoallv to send only to relevant
-  // processes
-
-  // Send/receive global index of dofs with bcs to all neighbors
+  // NOTE: We could consider only dofs that we know are shared and use
+  // MPI_Neighbor_alltoallv to send only to relevant processes Send/receive
+  // global index of dofs with bcs to all neighbors
   std::vector<std::int64_t> dofs_received(disp.back());
-  MPI_Neighbor_allgatherv(dofs_global.data(), dofs_global.size(), MPI_INT64_T,
-                          dofs_received.data(), num_dofs_recv.data(),
-                          disp.data(), MPI_INT64_T, comm.comm());
+  MPI_Ineighbor_allgatherv(dofs_global.data(), dofs_global.size(), MPI_INT64_T,
+                           dofs_received.data(), num_dofs_recv.data(),
+                           disp.data(), MPI_INT64_T, comm.comm(), &request);
 
-  std::vector<std::int32_t> dofs;
-
-  // FIXME: check that dofs is sorted?
-  // Build vector of local dof indicies that have been marked by
-  // another process
+  // FIXME: check that dofs is sorted
+  // Build vector of local dof indicies that have been marked by another
+  // process
   const std::array<std::int64_t, 2> range = map.local_range();
   const std::vector<std::int64_t>& ghosts = map.ghosts();
 
   // Build map from ghost to local position
+  // NOTE: Should we use map here or just one vector with ghosts and
+  // std::distance?
   std::vector<std::pair<std::int64_t, std::int32_t>> global_local_ghosts;
   const std::int32_t local_size = range[1] - range[0];
   for (std::size_t i = 0; i < ghosts.size(); ++i)
@@ -400,6 +263,8 @@ get_remote_bcs1_sub(const common::IndexMap& map, int bs,
   std::map<std::int64_t, std::int32_t> global_to_local(
       global_local_ghosts.begin(), global_local_ghosts.end());
 
+  MPI_Wait(&request, MPI_STATUS_IGNORE);
+  std::vector<std::int32_t> dofs;
   for (std::size_t i = 0; i < dofs_received.size(); ++i)
   {
     if (dofs_received[i] >= bs * range[0] and dofs_received[i] < bs * range[1])
@@ -419,6 +284,257 @@ get_remote_bcs1_sub(const common::IndexMap& map, int bs,
   }
   return dofs;
 }
+
+//-----------------------------------------------------------------------------
+/// Find DOFs on this processes that are constrained by a Dirichlet
+/// condition detected by another process
+///
+/// @param[in] map0 The IndexMap with the dof layout
+/// @param[in] bs0 The block size of the index map
+/// @param[in] map1 The IndexMap with the dof layout
+/// @param[in] bs1 The block size of the index map
+/// @param[in] dofs_local The IndexMap with the dof layout
+/// @return List of local dofs with boundary conditions applied but
+///   detected by other processes. It may contain duplicate entries.
+// std::vector<std::array<std::int32_t, 2>>
+// get_remote_bcs2(const common::IndexMap& map0, int bs0,
+//                 const common::IndexMap& map1, int bs1,
+//                 const std::vector<std::array<std::int32_t, 2>>& dofs_local)
+// {
+//   // NOTE: assumes that dofs are unrolled, i.e. not blocked. Could it be
+//   // make more efficient to handle the case of a common block size?
+
+//   dolfinx::MPI::Comm comm0
+//       =
+//       create_symmetric_comm(map0.comm(common::IndexMap::Direction::forward));
+
+//   int num_neighbors(-1), outdegree(-2), weighted(-1);
+//   MPI_Dist_graph_neighbors_count(comm0.comm(), &num_neighbors, &outdegree,
+//                                  &weighted);
+//   assert(num_neighbors == outdegree);
+
+//   // Return early if there are no neighbors
+//   if (num_neighbors == 0)
+//     return {};
+
+//   // Figure out how many entries to receive from each neighbor
+//   const int num_dofs = 2 * dofs_local.size();
+//   std::vector<int> num_dofs_recv(num_neighbors);
+//   MPI_Request request;
+//   MPI_Ineighbor_allgather(&num_dofs, 1, MPI_INT, num_dofs_recv.data(), 1,
+//                           MPI_INT, comm0.comm(), &request);
+
+//   // NOTE: we consider only dofs that we know are shared
+//   // Build array of global indices of dofs
+//   xt::xtensor<std::int64_t, 2> dofs_global({dofs_local.size(), 2});
+
+//   // This is messy to handle block sizes
+//   {
+//     const std::array<int, 2> _bs = {bs0, bs1};
+//     const std::array<std::reference_wrapper<const common::IndexMap>, 2> maps
+//         = {map0, map1};
+//     std::vector<std::int32_t> _dofs_local(dofs_local.size());
+//     for (int i = 0; i < 2; ++i)
+//     {
+//       for (std::size_t j = 0; j < _dofs_local.size(); ++j)
+//         _dofs_local[j] = dofs_local[j][i];
+
+//       // Convert dofs indices to 'blocks' relative to index map
+//       std::vector<std::int32_t> dofs_local_block = _dofs_local;
+//       std::for_each(dofs_local_block.begin(), dofs_local_block.end(),
+//                     [bs = _bs[i]](std::int32_t& n) { return n /= bs; });
+
+//       // Get global index of each block
+//       std::vector<std::int64_t> dofs_global_block(dofs_local_block.size());
+//       maps[i].get().local_to_global(dofs_local_block, dofs_global_block);
+
+//       // Convert from block to actual index
+//       for (std::size_t j = 0; j < dofs_local.size(); ++j)
+//       {
+//         const int index_offset = _dofs_local[j] % _bs[i];
+//         dofs_global(j, i) = _bs[i] * dofs_global_block[j] + index_offset;
+//       }
+//     }
+//   }
+
+//   // Compute displacements for data to receive. Last entry has total
+//   // number of received items.
+//   MPI_Wait(&request, MPI_STATUS_IGNORE);
+//   std::vector<int> disp(num_neighbors + 1, 0);
+//   std::partial_sum(num_dofs_recv.begin(), num_dofs_recv.end(),
+//                    std::next(disp.begin()));
+
+//   // NOTE: we could use MPI_Neighbor_alltoallv to send only to relevant
+//   // processes
+
+//   // Send/receive global index of dofs with bcs to all neighbors
+//   assert(disp.back() % 2 == 0);
+//   xt::xtensor<std::int64_t, 2> dofs_received(
+//       {static_cast<std::size_t>(disp.back() / 2), 2});
+//   MPI_Neighbor_allgatherv(dofs_global.data(), dofs_global.size(),
+//   MPI_INT64_T,
+//                           dofs_received.data(), num_dofs_recv.data(),
+//                           disp.data(), MPI_INT64_T, comm0.comm());
+
+//   const std::array<std::reference_wrapper<const common::IndexMap>, 2> maps
+//       = {map0, map1};
+//   const std::array bs = {bs0, bs1};
+//   std::array<std::vector<std::int32_t>, 2> dofs_array;
+//   for (int b = 0; b < 2; ++b)
+//   {
+//     // FIXME: check that dofs is sorted?
+//     // Build vector of local dof indicies that have been marked by
+//     // another process
+//     const std::array<std::int64_t, 2> range = maps[b].get().local_range();
+//     const std::vector<std::int64_t>& ghosts = maps[b].get().ghosts();
+
+//     // Build map from ghost to local position
+//     std::vector<std::pair<std::int64_t, std::int32_t>> global_local_ghosts;
+//     const std::int32_t local_size = range[1] - range[0];
+//     for (std::size_t i = 0; i < ghosts.size(); ++i)
+//       global_local_ghosts.emplace_back(ghosts[i], i + local_size);
+//     std::map<std::int64_t, std::int32_t> global_to_local(
+//         global_local_ghosts.begin(), global_local_ghosts.end());
+
+//     std::vector<std::int32_t>& dofs = dofs_array[b];
+//     for (std::size_t i = 0; i < dofs_received.shape(0); ++i)
+//     {
+//       if (dofs_received(i, b) >= bs[b] * range[0]
+//           and dofs_received(i, b) < bs[b] * range[1])
+//       {
+//         // Owned dof
+//         dofs.push_back(dofs_received(i, b) - bs[b] * range[0]);
+//       }
+//       else
+//       {
+//         // Search in ghosts
+//         if (auto it = global_to_local.find(dofs_received(i, b) / bs[b]);
+//             it != global_to_local.end())
+//         {
+//           dofs.push_back(bs[b] * it->second + dofs_received(i, b) % bs[b]);
+//         }
+//       }
+//     }
+//   }
+//   assert(dofs_array[0].size() == dofs_array[1].size());
+
+//   std::vector<std::array<std::int32_t, 2>> dofs;
+//   dofs.reserve(dofs_array[0].size());
+//   for (std::size_t i = 0; i < dofs_array[0].size(); ++i)
+//     dofs.push_back({dofs_array[0][i], dofs_array[1][i]});
+
+//   return dofs;
+// }
+//-----------------------------------------------------------------------------
+/// Find DOFs on this processes that are constrained by a Dirichlet
+/// condition detected by another process
+///
+/// @param[in] map The IndexMap with the dof layout
+/// @param[in] bs The block size of the index map
+/// @param[in] dofs_local The IndexMap with the dof layout
+/// @return List of local dofs with boundary conditions applied but
+///   detected by other processes. It may contain duplicate entries.
+// std::vector<std::int32_t>
+// get_remote_bcs1_sub(const common::IndexMap& map, int bs,
+//                     const std::vector<std::int32_t>& dofs_local)
+// {
+//   // NOTE: assumes that dofs are unrolled, i.e. not blocked. Could it be
+//   // make more efficient to handle the case of a common block size?
+
+//   dolfinx::MPI::Comm comm
+//       =
+//       create_symmetric_comm(map.comm(common::IndexMap::Direction::forward));
+
+//   int num_neighbors(-1), outdegree(-2), weighted(-1);
+//   MPI_Dist_graph_neighbors_count(comm.comm(), &num_neighbors, &outdegree,
+//                                  &weighted);
+//   assert(num_neighbors == outdegree);
+
+//   // Return early if there are no neighbors
+//   if (num_neighbors == 0)
+//     return {};
+
+//   // Figure out how many entries to receive from each neighbor
+//   const int num_dofs = dofs_local.size();
+//   std::vector<int> num_dofs_recv(num_neighbors);
+//   MPI_Request request;
+//   MPI_Ineighbor_allgather(&num_dofs, 1, MPI_INT, num_dofs_recv.data(), 1,
+//                           MPI_INT, comm.comm(), &request);
+
+//   // NOTE: we consider only dofs that we know are shared
+//   // Build array of global indices of dofs
+//   std::vector<std::int64_t> dofs_global;
+//   dofs_global.reserve(dofs_local.size());
+
+//   // Convert dofs indices to 'blocks' relative to index map
+//   std::vector<std::int32_t> dofs_local_block = dofs_local;
+//   std::for_each(dofs_local_block.begin(), dofs_local_block.end(),
+//                 [bs](std::int32_t& n) { return n /= bs; });
+
+//   // Get global index of each block
+//   std::vector<std::int64_t> dofs_global_block(dofs_local_block.size());
+//   map.local_to_global(dofs_local_block, dofs_global_block);
+
+//   // Convert from block to actual index
+//   for (std::size_t j = 0; j < dofs_local.size(); ++j)
+//   {
+//     const int index_offset = dofs_local[j] % bs;
+//     dofs_global.push_back(bs * dofs_global_block[j] + index_offset);
+//   }
+
+//   // Compute displacements for data to receive. Last entry has total
+//   // number of received items.
+//   MPI_Wait(&request, MPI_STATUS_IGNORE);
+//   std::vector<int> disp(num_neighbors + 1, 0);
+//   std::partial_sum(num_dofs_recv.begin(), num_dofs_recv.end(),
+//                    std::next(disp.begin()));
+
+//   // NOTE: we could use MPI_Neighbor_alltoallv to send only to relevant
+//   // processes
+
+//   // Send/receive global index of dofs with bcs to all neighbors
+//   std::vector<std::int64_t> dofs_received(disp.back());
+//   MPI_Neighbor_allgatherv(dofs_global.data(), dofs_global.size(),
+//   MPI_INT64_T,
+//                           dofs_received.data(), num_dofs_recv.data(),
+//                           disp.data(), MPI_INT64_T, comm.comm());
+
+//   std::vector<std::int32_t> dofs;
+
+//   // FIXME: check that dofs is sorted?
+//   // Build vector of local dof indicies that have been marked by
+//   // another process
+//   const std::array<std::int64_t, 2> range = map.local_range();
+//   const std::vector<std::int64_t>& ghosts = map.ghosts();
+
+//   // Build map from ghost to local position
+//   std::vector<std::pair<std::int64_t, std::int32_t>> global_local_ghosts;
+//   const std::int32_t local_size = range[1] - range[0];
+//   for (std::size_t i = 0; i < ghosts.size(); ++i)
+//     global_local_ghosts.emplace_back(ghosts[i], i + local_size);
+//   std::map<std::int64_t, std::int32_t> global_to_local(
+//       global_local_ghosts.begin(), global_local_ghosts.end());
+
+//   for (std::size_t i = 0; i < dofs_received.size(); ++i)
+//   {
+//     if (dofs_received[i] >= bs * range[0] and dofs_received[i] < bs *
+//     range[1])
+//     {
+//       // Owned dof
+//       dofs.push_back(dofs_received[i] - bs * range[0]);
+//     }
+//     else
+//     {
+//       // Search in ghosts
+//       if (auto it = global_to_local.find(dofs_received[i] / bs);
+//           it != global_to_local.end())
+//       {
+//         dofs.push_back(bs * it->second + dofs_received[i] % bs);
+//       }
+//     }
+//   }
+//   return dofs;
+// }
 //-----------------------------------------------------------------------------
 
 } // namespace
@@ -479,11 +595,11 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
       = dofmap0->element_dof_layout->num_entity_closure_dofs(dim);
   const int element_bs = dofmap0->element_dof_layout->block_size();
 
-  std::vector<std::array<std::int32_t, 2>> bc_dofs;
-  bc_dofs.reserve(entities.size());
+  std::array<std::vector<std::int32_t>, 2> bc_dofs;
+  bc_dofs[0].reserve(entities.size() * num_entity_dofs * element_bs);
+  bc_dofs[1].reserve(entities.size() * num_entity_dofs * element_bs);
   for (auto [cell, entity_local_index] : entity_indices)
   {
-
     // Get cell dofmap
     xtl::span<const std::int32_t> cell_dofs0 = dofmap0->cell_dofs(cell);
     xtl::span<const std::int32_t> cell_dofs1 = dofmap1->cell_dofs(cell);
@@ -500,44 +616,72 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
         const std::div_t pos1 = std::div(local_pos, bs1);
         const std::int32_t dof_index0 = bs0 * cell_dofs0[pos0.quot] + pos0.rem;
         const std::int32_t dof_index1 = bs1 * cell_dofs1[pos1.quot] + pos1.rem;
-        bc_dofs.push_back({dof_index0, dof_index1});
+        bc_dofs[0].push_back(dof_index0);
+        bc_dofs[1].push_back(dof_index1);
       }
     }
   }
 
   // TODO: is removing duplicates at this point worth the effort?
   // Remove duplicates
-  std::sort(bc_dofs.begin(), bc_dofs.end());
-  bc_dofs.erase(std::unique(bc_dofs.begin(), bc_dofs.end()), bc_dofs.end());
-
-  if (remote)
+  std::vector<std::int32_t> perm(bc_dofs[0].size());
+  std::iota(perm.begin(), perm.end(), 0);
+  dolfinx::argsort_radix<std::int32_t>(bc_dofs[0], perm);
+  std::array<std::vector<std::int32_t>, 2> sorted_bc_dofs = bc_dofs;
+  for (std::size_t b = 0; b < 2; ++b)
   {
-    // Get bc dof indices (local) in (V, Vg) spaces on this process that
+    for (std::size_t i = 0; i < bc_dofs[1].size(); ++i)
+    {
+      sorted_bc_dofs[b][i] = bc_dofs[b][perm[i]];
+    }
+    sorted_bc_dofs[b].erase(
+        std::unique(sorted_bc_dofs[b].begin(), sorted_bc_dofs[b].end()),
+        sorted_bc_dofs[b].end());
+  }
+
+  if (!remote)
+  {
+    return sorted_bc_dofs;
+  }
+  else
+  {
+    // Get bc dof indices (local) for each of spaces on this process that
     // were found by other processes, e.g. a vertex dof on this process
     // that has no connected facets on the boundary.
-
-    const std::vector dofs_remote = get_remote_bcs2(
-        *V0.dofmap()->index_map, V0.dofmap()->index_map_bs(),
-        *V1.dofmap()->index_map, V1.dofmap()->index_map_bs(), bc_dofs);
-
+    dolfinx::MPI::Comm comm = create_symmetric_comm(
+        V0.dofmap()->index_map->comm(common::IndexMap::Direction::forward));
+    std::vector<std::int32_t> dofs_remote = get_remote_dofs_in_range(
+        comm, *V0.dofmap()->index_map, V0.dofmap()->index_map_bs(),
+        sorted_bc_dofs[0]);
     // Add received bc indices to dofs_local
-    bc_dofs.insert(bc_dofs.end(), dofs_remote.begin(), dofs_remote.end());
+    sorted_bc_dofs[0].insert(sorted_bc_dofs[0].end(), dofs_remote.begin(),
+                             dofs_remote.end());
+
+    dofs_remote = get_remote_dofs_in_range(comm, *V1.dofmap()->index_map,
+                                           V1.dofmap()->index_map_bs(),
+                                           sorted_bc_dofs[1]);
+    sorted_bc_dofs[1].insert(sorted_bc_dofs[1].end(), dofs_remote.begin(),
+                             dofs_remote.end());
+    assert(sorted_bc_dofs[0].size() == sorted_bc_dofs[1].size());
 
     // Remove duplicates and sort
-    std::sort(bc_dofs.begin(), bc_dofs.end());
-    bc_dofs.erase(std::unique(bc_dofs.begin(), bc_dofs.end()), bc_dofs.end());
-  }
+    perm.resize(sorted_bc_dofs[0].size());
+    std::iota(perm.begin(), perm.end(), 0);
+    dolfinx::argsort_radix<std::int32_t>(sorted_bc_dofs[0], perm);
 
-  // Copy to separate vector
-  std::array dofs = {std::vector<std::int32_t>(bc_dofs.size()),
-                     std::vector<std::int32_t>(bc_dofs.size())};
-  for (std::size_t i = 0; i < dofs[0].size(); ++i)
-  {
-    dofs[0][i] = bc_dofs[i][0];
-    dofs[1][i] = bc_dofs[i][1];
+    std::array<std::vector<std::int32_t>, 2> out_dofs = sorted_bc_dofs;
+    for (std::size_t b = 0; b < 2; ++b)
+    {
+      for (std::size_t i = 0; i < bc_dofs[1].size(); ++i)
+      {
+        out_dofs[b][i] = sorted_bc_dofs[b][perm[i]];
+      }
+      out_dofs[b].erase(std::unique(out_dofs[b].begin(), out_dofs[b].end()),
+                        out_dofs[b].end());
+    }
+    assert(out_dofs[0].size() == out_dofs[1].size());
+    return out_dofs;
   }
-
-  return dofs;
 }
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t>
@@ -595,8 +739,11 @@ fem::locate_dofs_topological(const fem::FunctionSpace& V, int dim,
 
     if (remote)
     {
-      const std::vector dofs_remote
-          = get_remote_bcs1(*V.dofmap()->index_map, dofs);
+      auto map = V.dofmap()->index_map;
+      dolfinx::MPI::Comm comm = create_symmetric_comm(
+          map->comm(common::IndexMap::Direction::forward));
+      const std::vector<std::int32_t> dofs_remote
+          = get_remote_dofs_in_range(comm, *map, 1, dofs);
 
       // Add received bc indices to dofs_local
       dofs.insert(dofs.end(), dofs_remote.begin(), dofs_remote.end());
@@ -642,8 +789,10 @@ fem::locate_dofs_topological(const fem::FunctionSpace& V, int dim,
       // Get bc dof indices (local) in (V, Vg) spaces on this process that
       // were found by other processes, e.g. a vertex dof on this process
       // that has no connected facets on the boundary.
-      const std::vector dofs_remote = get_remote_bcs1_sub(
-          *V.dofmap()->index_map, V.dofmap()->index_map_bs(), dofs);
+      dolfinx::MPI::Comm comm = create_symmetric_comm(
+          V.dofmap()->index_map->comm(common::IndexMap::Direction::forward));
+      const std::vector<std::int32_t> dofs_remote = get_remote_dofs_in_range(
+          comm, *V.dofmap()->index_map, V.dofmap()->index_map_bs(), dofs);
 
       // Add received bc indices to dofs_local
       dofs.insert(dofs.end(), dofs_remote.begin(), dofs_remote.end());
