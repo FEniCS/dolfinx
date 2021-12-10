@@ -177,8 +177,8 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
 FiniteElement::FiniteElement(const basix::FiniteElement& element, int bs)
     : _signature("Basix element"), _family("foo"),
       _tdim(basix::cell::topological_dimension(element.cell_type())),
-      _space_dim(bs * element.dim()), _value_size(element.value_size()),
-      _reference_value_size(element.value_size()), _hash(0), _bs(bs)
+      _space_dim(bs * element.dim()), _value_size(bs * element.value_size()),
+      _reference_value_size(bs * element.value_size()), _hash(0), _bs(bs)
 {
   _element = std::make_unique<basix::FiniteElement>(element);
   _needs_dof_transformations
