@@ -8,7 +8,7 @@
 import numpy
 import pytest
 
-from dolfinx.cpp.fem import create_discrete_gradient
+from dolfinx.cpp.fem.petsc import create_discrete_gradient
 from dolfinx.fem import FunctionSpace
 from dolfinx.generation import UnitCubeMesh, UnitSquareMesh
 from dolfinx.mesh import GhostMode
