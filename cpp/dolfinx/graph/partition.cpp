@@ -143,14 +143,6 @@ graph::build::distribute(MPI_Comm comm,
         ghost_idx.push_back(i);
         // Skip over this entry
         i += 3 + data_recv[i + 2];
-        // ghost_index_owner.push_back(data_recv[i++]);
-        // ghost_global_indices.push_back(data_recv[i++]);
-        // const std::int64_t num_links = data_recv[i++];
-        // ghost_array.insert(ghost_array.end(), std::next(data_recv.begin(),
-        // i),
-        //                   std::next(data_recv.begin(), i + num_links));
-        // i += num_links;
-        // ghost_list_offset.push_back(ghost_list_offset.back() + num_links);
       }
     }
   }
