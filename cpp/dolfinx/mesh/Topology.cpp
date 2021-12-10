@@ -693,7 +693,7 @@ mesh::create_topology(MPI_Comm comm,
   // of the ghost vertices
 
   std::vector<std::array<std::int64_t, 3>> ghost_data;
-  for (int i = 0; i < recv_triplets.size(); i += 3)
+  for (std::size_t i = 0; i < recv_triplets.size(); i += 3)
   {
     std::array<std::int64_t, 3> d
         = {recv_triplets[i], recv_triplets[i + 1], recv_triplets[i + 2]};
@@ -727,7 +727,7 @@ mesh::create_topology(MPI_Comm comm,
 
     // Unpack received data and add to arrays of ghost indices and ghost
     // owners
-    for (int i = 0; i < recv_triplets.size(); i += 3)
+    for (std::size_t i = 0; i < recv_triplets.size(); i += 3)
     {
       std::array<std::int64_t, 3> d
           = {recv_triplets[i], recv_triplets[i + 1], recv_triplets[i + 2]};
