@@ -136,8 +136,7 @@ V = FunctionSpace(mesh, ("Lagrange", 1))
 
 # Define boundary condition on x = 0 or x = 1
 u0 = Function(V)
-with u0.vector.localForm() as u0_loc:
-    u0_loc.set(0)
+u0.x.set(0)
 facets = locate_entities_boundary(mesh, 1,
                                   lambda x: np.logical_or(np.isclose(x[0], 0.0),
                                                           np.isclose(x[0], 1.0)))
@@ -201,7 +200,7 @@ with XDMFFile(MPI.COMM_WORLD, "poisson.xdmf", "w") as file:
 
 
 # Update ghost entries and plot
-uh.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+uh.x.scatter_forward()
 try:
     import pyvista
 

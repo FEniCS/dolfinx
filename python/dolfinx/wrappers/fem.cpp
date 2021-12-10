@@ -365,7 +365,8 @@ void declare_objects(py::module& m, const std::string& type)
                   "Cannot return PETSc vector wrapper. Type mismatch");
             }
           },
-          "Return a PETSc vector that wraps the finite element Function coefficient array",
+          "Return a PETSc vector that wraps the finite element Function "
+          "coefficient array",
           py::return_value_policy::reference_internal)
       .def_property_readonly(
           "x", py::overload_cast<>(&dolfinx::fem::Function<T>::x),

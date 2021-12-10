@@ -34,6 +34,9 @@ void declare_objects(py::module& m, const std::string& type)
   std::string pyclass_vector_name = std::string("Vector_") + type;
   py::class_<dolfinx::la::Vector<T>, std::shared_ptr<dolfinx::la::Vector<T>>>(
       m, pyclass_vector_name.c_str())
+      .def("set", &dolfinx::la::Vector<T>::set)
+      .def("norm", &dolfinx::la::Vector<T>::norm,
+           py::arg("type") = dolfinx::la::Norm::l2)
       .def_property_readonly("array",
                              [](dolfinx::la::Vector<T>& self)
                              {
@@ -52,6 +55,12 @@ void petsc_module(py::module& m)
             &dolfinx::la::petsc::create_vector),
         py::return_value_policy::take_ownership,
         "Create a ghosted PETSc Vec for index map.");
+  m.def(
+      "create_vector_wrap",
+      [](dolfinx::la::Vector<PetscScalar, std::allocator<PetscScalar>>& x)
+      { return dolfinx::la::petsc::create_vector_wrap(x); },
+      py::return_value_policy::take_ownership,
+      "Create a ghosted PETSc Vec that wraps a DOLFINx Vector");
   m.def(
       "create_matrix",
       [](dolfinx_wrappers::MPICommWrapper comm,
@@ -148,6 +157,12 @@ void la(py::module& m)
           "off_diagonal_pattern",
           &dolfinx::la::SparsityPattern::off_diagonal_pattern,
           py::return_value_policy::reference_internal);
+
+  py::enum_<dolfinx::la::Norm>(m, "Norm")
+      .value("l1", dolfinx::la::Norm::l1)
+      .value("l2", dolfinx::la::Norm::l2)
+      .value("linf", dolfinx::la::Norm::linf)
+      .value("frobenius", dolfinx::la::Norm::frobenius);
 
   // Declare objects that are templated over type
   declare_objects<double>(m, "float64");

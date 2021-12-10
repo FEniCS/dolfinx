@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include "Vector.h"
 #include "utils.h"
 #include <array>
 #include <cstdint>
@@ -59,7 +60,6 @@ Vec create_vector(MPI_Comm comm, std::array<std::int64_t, 2> range,
                   const xtl::span<const std::int64_t>& ghosts, int bs);
 
 /// Create a PETSc Vec that wraps the data in an array
-/// @note The caller is responsible for destruction of each IS.
 /// @param[in] map The index map that describes the parallel layout of
 /// the distributed vector (by block)
 /// @param[in] bs Block size
@@ -67,6 +67,16 @@ Vec create_vector(MPI_Comm comm, std::array<std::int64_t, 2> range,
 /// @return A PETSc Vec object that shares the data in @p x
 Vec create_vector_wrap(const common::IndexMap& map, int bs,
                        const xtl::span<const PetscScalar>& x);
+
+/// Create a PETSc Vec that wraps the data in an array
+/// @param[in] x The vector to be wrapped
+/// @return A PETSc Vec object that shares the data in @p x
+template <typename Allocator>
+Vec create_vector_wrap(la::Vector<PetscScalar, Allocator>& x)
+{
+  assert(x.map());
+  return create_vector_wrap(*x.map(), x.bs(), x.mutable_array());
+}
 
 /// @todo This function could take just the local sizes
 ///
