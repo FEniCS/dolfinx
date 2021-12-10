@@ -35,8 +35,8 @@ graph::partition_graph(MPI_Comm comm, int nparts,
 #endif
 }
 //-----------------------------------------------------------------------------
-std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<int>,
-           std::vector<std::int64_t>, std::vector<int>>
+std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<std::int64_t>,
+           std::vector<int>>
 graph::build::distribute(MPI_Comm comm,
                          const graph::AdjacencyList<std::int64_t>& list,
                          const graph::AdjacencyList<std::int32_t>& destinations)
@@ -120,9 +120,8 @@ graph::build::distribute(MPI_Comm comm,
   std::vector<std::int64_t> ghost_global_indices;
   std::vector<std::int32_t> list_offset = {0};
   std::vector<std::int32_t> ghost_list_offset = {0};
-  std::vector<int> src;
-  std::vector<int> ghost_src;
   std::vector<int> ghost_index_owner;
+  std::vector<int> ghost_idx;
 
   for (std::size_t p = 0; p < disp_recv.size() - 1; ++p)
   {
@@ -130,7 +129,6 @@ graph::build::distribute(MPI_Comm comm,
     {
       if (data_recv[i] == mpi_rank)
       {
-        src.push_back(p);
         i++; // index_owner.push_back(data_recv[i++]);
         global_indices.push_back(data_recv[i++]);
         const std::int64_t num_links = data_recv[i++];
@@ -141,20 +139,43 @@ graph::build::distribute(MPI_Comm comm,
       }
       else
       {
-        ghost_src.push_back(p);
-        ghost_index_owner.push_back(data_recv[i++]);
-        ghost_global_indices.push_back(data_recv[i++]);
-        const std::int64_t num_links = data_recv[i++];
-        ghost_array.insert(ghost_array.end(), std::next(data_recv.begin(), i),
-                           std::next(data_recv.begin(), i + num_links));
-        i += num_links;
-        ghost_list_offset.push_back(ghost_list_offset.back() + num_links);
+        // Store entry location so we can get it later
+        ghost_idx.push_back(i);
+        // Skip over this entry
+        i += 2 + data_recv[i + 2];
+        // ghost_index_owner.push_back(data_recv[i++]);
+        // ghost_global_indices.push_back(data_recv[i++]);
+        // const std::int64_t num_links = data_recv[i++];
+        // ghost_array.insert(ghost_array.end(), std::next(data_recv.begin(),
+        // i),
+        //                   std::next(data_recv.begin(), i + num_links));
+        // i += num_links;
+        // ghost_list_offset.push_back(ghost_list_offset.back() + num_links);
       }
     }
   }
 
+  // Compute correct sort order to add ghosts
+  std::vector<int> ghost_order(ghost_idx.size());
+  std::iota(ghost_order.begin(), ghost_order.end(), 0);
+  std::sort(ghost_order.begin(), ghost_order.end(),
+            [&data_recv, &ghost_idx](const int& a, const int& b) {
+              return (data_recv[ghost_idx[a] + 1]
+                      < data_recv[ghost_idx[b] + 1]);
+            });
+
+  for (int i : ghost_order)
+  {
+    int idx = ghost_idx[i];
+    ghost_index_owner.push_back(data_recv[idx]);
+    ghost_global_indices.push_back(data_recv[idx + 1]);
+    const std::int64_t num_links = data_recv[idx + 2];
+    ghost_array.insert(ghost_array.end(), std::next(data_recv.begin(), idx + 3),
+                       std::next(data_recv.begin(), idx + 3 + num_links));
+    ghost_list_offset.push_back(ghost_list_offset.back() + num_links);
+  }
+
   // Attach all ghost cells at the end of the list
-  src.insert(src.end(), ghost_src.begin(), ghost_src.end());
   global_indices.insert(global_indices.end(), ghost_global_indices.begin(),
                         ghost_global_indices.end());
   array.insert(array.end(), ghost_array.begin(), ghost_array.end());
@@ -167,13 +188,11 @@ graph::build::distribute(MPI_Comm comm,
 
   array.shrink_to_fit();
   list_offset.shrink_to_fit();
-  src.shrink_to_fit();
   global_indices.shrink_to_fit();
   ghost_index_owner.shrink_to_fit();
   return {graph::AdjacencyList<std::int64_t>(std::move(array),
                                              std::move(list_offset)),
-          std::move(src), std::move(global_indices),
-          std::move(ghost_index_owner)};
+          std::move(global_indices), std::move(ghost_index_owner)};
 }
 //-----------------------------------------------------------------------------
 std::vector<std::int64_t> graph::build::compute_ghost_indices(
@@ -263,14 +282,12 @@ std::vector<std::int64_t> graph::build::compute_ghost_indices(
   for (int i = 0; i < num_local; ++i)
     old_to_new.insert({global_indices[i], offset_local + i});
 
-  std::for_each(recv_data.begin(), recv_data.end(),
-                [&old_to_new](auto& r)
-                {
-                  auto it = old_to_new.find(r);
-                  // Must exist on this process!
-                  assert(it != old_to_new.end());
-                  r = it->second;
-                });
+  std::for_each(recv_data.begin(), recv_data.end(), [&old_to_new](auto& r) {
+    auto it = old_to_new.find(r);
+    // Must exist on this process!
+    assert(it != old_to_new.end());
+    r = it->second;
+  });
 
   std::vector<std::int64_t> new_recv(send_data.size());
   MPI_Neighbor_alltoallv(recv_data.data(), recv_sizes.data(),
@@ -288,8 +305,7 @@ std::vector<std::int64_t> graph::build::compute_ghost_indices(
   }
 
   std::for_each(ghost_global_indices.begin(), ghost_global_indices.end(),
-                [&old_to_new](auto& q)
-                {
+                [&old_to_new](auto& q) {
                   const auto it = old_to_new.find(q);
                   assert(it != old_to_new.end());
                   q = it->second;
@@ -350,8 +366,7 @@ std::vector<std::int32_t> graph::build::compute_local_to_local(
   std::vector<std::int32_t> local0_to_local1;
   std::transform(local0_to_global.cbegin(), local0_to_global.cend(),
                  std::back_inserter(local0_to_local1),
-                 [&global_to_local1](auto l2g)
-                 {
+                 [&global_to_local1](auto l2g) {
                    auto it = global_to_local1.find(l2g);
                    assert(it != global_to_local1.end());
                    return it->second;

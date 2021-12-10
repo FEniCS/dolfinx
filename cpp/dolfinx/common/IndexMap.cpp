@@ -310,13 +310,10 @@ IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size,
     : _comm(comm), _comm_owner_to_ghost(MPI_COMM_NULL),
       _comm_ghost_to_owner(MPI_COMM_NULL), _ghosts(ghosts.begin(), ghosts.end())
 {
-  // Sort ghosts into order. Source ranks will be in same order.
-  std::sort(_ghosts.begin(), _ghosts.end());
-  std::vector<int> _src_ranks(src_ranks.begin(), src_ranks.end());
-  std::sort(_src_ranks.begin(), _src_ranks.end());
-
-  assert(size_t(_ghosts.size()) == _src_ranks.size());
-  assert(std::equal(_src_ranks.begin(), _src_ranks.end(),
+  // if (!std::is_sorted(ghosts.begin(), ghosts.end()))
+  //  throw std::runtime_error("IndexMap: ghosts must be in ascending order");
+  assert(size_t(ghosts.size()) == src_ranks.size());
+  assert(std::equal(src_ranks.begin(), src_ranks.end(),
                     get_ghost_ranks(comm, local_size, _ghosts).begin()));
 
   // Get global offset (index), using partial exclusive reduction
@@ -333,8 +330,8 @@ IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size,
 
   // Build set of src ranks for ghosts, i.e. the ranks that own the
   // callers ghosts
-  std::vector<std::int32_t> halo_src_ranks(_src_ranks.begin(),
-                                           _src_ranks.end());
+  std::vector<std::int32_t> halo_src_ranks(src_ranks.begin(), src_ranks.end());
+  std::sort(halo_src_ranks.begin(), halo_src_ranks.end());
   halo_src_ranks.erase(
       std::unique(halo_src_ranks.begin(), halo_src_ranks.end()),
       halo_src_ranks.end());
@@ -360,10 +357,10 @@ IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size,
   // Map ghost owner rank to the rank on neighborhood communicator
   int myrank = -1;
   MPI_Comm_rank(comm, &myrank);
-  assert(std::find(_src_ranks.begin(), _src_ranks.end(), myrank)
-         == _src_ranks.end());
-  std::vector<std::int32_t> ghost_owners(_ghosts.size());
-  std::transform(_src_ranks.cbegin(), _src_ranks.cend(), ghost_owners.begin(),
+  assert(std::find(src_ranks.begin(), src_ranks.end(), myrank)
+         == src_ranks.end());
+  std::vector<std::int32_t> ghost_owners(ghosts.size());
+  std::transform(src_ranks.cbegin(), src_ranks.cend(), ghost_owners.begin(),
                  [&halo_src_ranks](auto src) {
                    // Get rank of owner on the neighborhood communicator
                    // (rank of out edge on _comm_owner_to_ghost)

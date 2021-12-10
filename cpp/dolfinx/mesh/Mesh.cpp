@@ -98,7 +98,7 @@ Mesh mesh::create_mesh(MPI_Comm comm,
       comm, size, tdim, cells_topology, GhostMode::shared_facet);
 
   // Distribute cells to destination rank
-  const auto [cell_nodes0, src, original_cell_index0, ghost_owners]
+  const auto [cell_nodes0, original_cell_index0, ghost_owners]
       = graph::build::distribute(comm, cells, dest);
 
   // Extract cell 'topology', i.e. the vertices for each cell

@@ -159,10 +159,10 @@ compute_vertex_markers(const graph::AdjacencyList<std::int64_t>& cells,
 
   // Any vertices which are in ghost cells set to -1
   std::unordered_map<std::int64_t, std::int32_t> global_to_local_v;
-  std::transform(ghost_vertex_set.begin(), ghost_vertex_set.end(),
-                 std::inserter(global_to_local_v, global_to_local_v.end()),
-                 [](auto idx)
-                 { return std::pair<std::int64_t, std::int32_t>(idx, -1); });
+  std::transform(
+      ghost_vertex_set.begin(), ghost_vertex_set.end(),
+      std::inserter(global_to_local_v, global_to_local_v.end()),
+      [](auto idx) { return std::pair<std::int64_t, std::int32_t>(idx, -1); });
 
   std::vector<std::int64_t> unknown_indices_set;
   for (std::int64_t global_index : local_vertex_set)
@@ -204,10 +204,11 @@ compute_neighbor_comm(const MPI_Comm& comm,
   // Create set of all ranks that share a vertex with this rank. Note
   // this can be 'wider' than the neighbor comm of shared cells.
   std::vector<int> neighbors;
-  std::for_each(
-      global_vertex_to_ranks.begin(), global_vertex_to_ranks.end(),
-      [&neighbors](auto& q)
-      { neighbors.insert(neighbors.end(), q.second.begin(), q.second.end()); });
+  std::for_each(global_vertex_to_ranks.begin(), global_vertex_to_ranks.end(),
+                [&neighbors](auto& q) {
+                  neighbors.insert(neighbors.end(), q.second.begin(),
+                                   q.second.end());
+                });
   std::sort(neighbors.begin(), neighbors.end());
   neighbors.erase(std::unique(neighbors.begin(), neighbors.end()),
                   neighbors.end());
@@ -402,8 +403,9 @@ graph::AdjacencyList<std::int32_t> convert_cells_to_local_indexing(
   std::transform(cells.array().begin(),
                  std::next(cells.array().begin(), cells_array_local.size()),
                  cells_array_local.begin(),
-                 [&global_to_local_vertices](std::int64_t i)
-                 { return global_to_local_vertices.at(i); });
+                 [&global_to_local_vertices](std::int64_t i) {
+                   return global_to_local_vertices.at(i);
+                 });
 
   return graph::AdjacencyList<std::int32_t>(std::move(cells_array_local),
                                             std::move(local_offsets));
@@ -608,6 +610,7 @@ mesh::create_topology(MPI_Comm comm,
     // Get global indices of ghost cells
     const std::vector cell_ghost_indices = graph::build::compute_ghost_indices(
         comm, original_cell_index, ghost_owners);
+
     index_map_c = std::make_shared<common::IndexMap>(
         comm, num_local_cells,
         dolfinx::MPI::compute_graph_edges(
@@ -728,6 +731,9 @@ mesh::create_topology(MPI_Comm comm,
       }
     }
   }
+
+  std::sort(ghost_vertices.begin(), ghost_vertices.end());
+  std::sort(ghost_vertex_owners.begin(), ghost_vertex_owners.end());
 
   MPI_Comm_free(&neighbor_comm);
 
