@@ -10,7 +10,6 @@ import math
 import numpy
 import pytest
 
-import dolfinx
 import ufl
 from dolfinx.fem import (DirichletBC, Form, Function, FunctionSpace,
                          VectorFunctionSpace, apply_lifting,
@@ -517,8 +516,8 @@ def test_assembly_solve_taylor_hood_nl(mesh):
     x0 = create_vector_block(F)
     with u.vector.localForm() as _u, p.vector.localForm() as _p:
         scatter_local_vectors(x0, [_u.array_r, _p.array_r],
-            [(u.function_space.dofmap.index_map, u.function_space.dofmap.index_map_bs),
-             (p.function_space.dofmap.index_map, p.function_space.dofmap.index_map_bs)])
+                              [(u.function_space.dofmap.index_map, u.function_space.dofmap.index_map_bs),
+                               (p.function_space.dofmap.index_map, p.function_space.dofmap.index_map_bs)])
     x0.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
     snes.solve(None, x0)

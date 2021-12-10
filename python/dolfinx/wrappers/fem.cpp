@@ -119,8 +119,8 @@ void declare_functions(py::module& m)
          const std::map<std::pair<dolfinx::fem::IntegralType, int>,
                         py::array_t<T, py::array::c_style>>& coefficients)
       {
-        auto _coefficients = py_to_cpp_coeffs(coefficients);
-        return dolfinx::fem::assemble_scalar<T>(M, constants, _coefficients);
+        return dolfinx::fem::assemble_scalar<T>(M, constants,
+                                                py_to_cpp_coeffs(coefficients));
       },
       "Assemble functional over mesh with provided constants and "
       "coefficients");
@@ -132,9 +132,9 @@ void declare_functions(py::module& m)
          const std::map<std::pair<dolfinx::fem::IntegralType, int>,
                         py::array_t<T, py::array::c_style>>& coefficients)
       {
-        auto _coefficients = py_to_cpp_coeffs(coefficients);
         dolfinx::fem::assemble_vector<T>(xtl::span(b.mutable_data(), b.size()),
-                                         L, constants, _coefficients);
+                                         L, constants,
+                                         py_to_cpp_coeffs(coefficients));
       },
       py::arg("b"), py::arg("L"), py::arg("constants"), py::arg("coeffs"),
       "Assemble linear form into an existing vector with pre-packed "
@@ -498,9 +498,8 @@ void petsc_module(py::module& m)
         else
           set_fn = dolfinx::la::petsc::Matrix::set_block_fn(A, ADD_VALUES);
 
-        auto _coefficients = py_to_cpp_coeffs(coefficients);
         dolfinx::fem::assemble_matrix(set_fn, a, xtl::span(constants),
-                                      _coefficients, bcs);
+                                      py_to_cpp_coeffs(coefficients), bcs);
       },
       py::arg("A"), py::arg("a"), py::arg("constants"), py::arg("coeffs"),
       py::arg("bcs"), py::arg("unrolled") = false,
@@ -534,9 +533,9 @@ void petsc_module(py::module& m)
         else
           set_fn = dolfinx::la::petsc::Matrix::set_block_fn(A, ADD_VALUES);
 
-        auto _coefficients = py_to_cpp_coeffs(coefficients);
         dolfinx::fem::assemble_matrix(set_fn, a, xtl::span(constants),
-                                      _coefficients, rows0, rows1);
+                                      py_to_cpp_coeffs(coefficients), rows0,
+                                      rows1);
       },
       py::arg("A"), py::arg("a"), py::arg("constants"), py::arg("coeffs"),
       py::arg("rows0"), py::arg("rows1"), py::arg("unrolled") = false);

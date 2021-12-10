@@ -22,7 +22,6 @@ class IndexMap;
 
 namespace dolfinx::fem
 {
-
 template <typename T>
 class DirichletBC;
 class FunctionSpace;
@@ -30,7 +29,6 @@ class FunctionSpace;
 /// Helper functions for assembly into PETSc data structures
 namespace petsc
 {
-
 /// Create a matrix
 /// @param[in] a A bilinear form
 /// @param[in] type The PETSc matrix type to create
