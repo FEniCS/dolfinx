@@ -303,10 +303,9 @@ std::vector<std::int64_t> exchange_ghost_vertex_numbering(
     const common::IndexMap& index_map_c,
     const graph::AdjacencyList<std::int64_t>& cells, int nlocal,
     std::int64_t global_offset_v,
+    const std::vector<std::array<std::int64_t, 3>>& ghost_data,
     const std::unordered_map<std::int64_t, std::int32_t>&
-        global_to_local_vertices,
-    const xtl::span<const std::int64_t>& ghost_vertices,
-    const xtl::span<const int>& ghost_vertex_owners)
+        global_to_local_vertices)
 {
   // Receive index of ghost vertices that are not on the process
   // ('true') boundary from the ghost cell owner. Note: the ghost cell
@@ -358,13 +357,27 @@ std::vector<std::int64_t> exchange_ghost_vertex_numbering(
     std::int64_t global_idx_old = vertex_ranks.first;
     auto it = global_to_local_vertices.find(global_idx_old);
     assert(it != global_to_local_vertices.end());
-    assert(it->second != -1);
-    std::int64_t global_idx = it->second < nlocal
-                                  ? it->second + global_offset_v
-                                  : ghost_vertices[it->second - nlocal];
-    int owner_rank = it->second < nlocal
-                         ? mpi_rank
-                         : ghost_vertex_owners[it->second - nlocal];
+
+    std::int64_t global_idx = -1;
+    int owner_rank = -1;
+    if (it->second != -1)
+    {
+      assert(it->second < nlocal);
+      global_idx = it->second + global_offset_v;
+      owner_rank = mpi_rank;
+    }
+    else
+    {
+      // Ghost vertex from another process, to be forwarded on
+      auto ghost_it = std::find_if(
+          ghost_data.begin(), ghost_data.end(),
+          [&global_idx_old](const std::array<std::int64_t, 3>& arr) {
+            return arr[0] == global_idx_old;
+          });
+      global_idx = (*ghost_it)[1];
+      owner_rank = (*ghost_it)[2];
+    }
+
     for (int rank : vertex_ranks.second)
     {
       auto rank_it = global_to_neighbor_rank.find(rank);
@@ -700,19 +713,6 @@ mesh::create_topology(MPI_Comm comm,
     ghost_data.push_back(d);
   }
 
-  std::vector<std::int64_t> ghost_vertices;
-  std::vector<int> ghost_vertex_owners;
-  for (std::size_t i = 0; i < recv_triplets.size(); i += 3)
-  {
-    const std::int64_t gi = recv_triplets[i];
-    const auto it = global_to_local_vertices.find(gi);
-    assert(it != global_to_local_vertices.end());
-    assert(it->second == -1);
-    it->second = v++;
-    ghost_vertices.push_back(recv_triplets[i + 1]);
-    ghost_vertex_owners.push_back(recv_triplets[i + 2]);
-  }
-
   if (ghost_mode != mesh::GhostMode::none)
   {
     // Send and receive global (from the ghost cell owner) indices for
@@ -722,8 +722,7 @@ mesh::create_topology(MPI_Comm comm,
     const std::vector<std::int64_t> recv_triplets
         = exchange_ghost_vertex_numbering(
             neighbor_comm, global_to_neighbor_rank, *index_map_c, cells, nlocal,
-            global_offset_v, global_to_local_vertices, ghost_vertices,
-            ghost_vertex_owners);
+            global_offset_v, ghost_data, global_to_local_vertices);
 
     // Unpack received data and add to arrays of ghost indices and ghost
     // owners
@@ -735,20 +734,13 @@ mesh::create_topology(MPI_Comm comm,
     }
   }
 
+  // Sort ghost global vertex indices into order
   std::sort(ghost_data.begin(), ghost_data.end(),
             [](const std::array<std::int64_t, 3>& a,
                const std::array<std::int64_t, 3>& b) { return a[1] < b[1]; });
 
-  // Reset
-  ghost_vertices.clear();
-  ghost_vertex_owners.clear();
-  v = nlocal;
-  for (auto& it : global_to_local_vertices)
-  {
-    if (it.second >= nlocal)
-      it.second = -1;
-  }
-
+  std::vector<std::int64_t> ghost_vertices;
+  std::vector<int> ghost_vertex_owners;
   for (const std::array<std::int64_t, 3>& g : ghost_data)
   {
     const std::int64_t global_idx_old = g[0];
