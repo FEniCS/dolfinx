@@ -15,9 +15,8 @@ def test_dof_coords_2d(degree):
     u = Function(V)
 
     u.interpolate(lambda x: x[0])
-    u.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
     x = V.tabulate_dof_coordinates()
-    val = u.vector.array
+    val = u.x.array
     for i in range(len(val)):
         assert np.isclose(x[i, 0], val[i], rtol=1e-3)
 
@@ -29,8 +28,7 @@ def test_dof_coords_3d(degree):
     u = Function(V)
 
     u.interpolate(lambda x: x[0])
-    u.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
     x = V.tabulate_dof_coordinates()
-    val = u.vector.array
+    val = u.x.array
     for i in range(len(val)):
         assert np.isclose(x[i, 0], val[i], rtol=1e-3)
