@@ -83,7 +83,8 @@ def test_assemble_derivatives():
     c1 = Constant(mesh, numpy.array([[1.0, 0.0], [3.0, 4.0]], PETSc.ScalarType))
     c2 = Constant(mesh, PETSc.ScalarType(2.0))
 
-    b.x.array[:] = 2.0
+    with b.vector.localForm() as b_local:
+        b_local.set(2.0)
 
     # derivative eliminates 'u' and 'c1'
     L = ufl.inner(c1, c1) * v * dx + c2 * b * inner(u, v) * dx
@@ -104,7 +105,8 @@ def test_basic_assembly(mode):
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 
     f = Function(V)
-    f.x.array[:] = 10.0
+    with f.vector.localForm() as f_local:
+        f_local.set(10.0)
     a = inner(f * u, v) * dx + inner(u, v) * ds
     L = inner(f, v) * dx + inner(2.0, v) * ds
 
@@ -158,7 +160,8 @@ def test_assembly_bcs(mode):
     bdofsV = locate_dofs_geometrical(V, boundary)
 
     u_bc = Function(V)
-    u_bc.x.array[:] = 1.0
+    with u_bc.vector.localForm() as u_local:
+        u_local.set(1.0)
     bc = DirichletBC(u_bc, bdofsV)
 
     # Assemble and apply 'global' lifting of bcs
@@ -243,7 +246,8 @@ def test_matrix_assembly_block(mode):
     bdofsV1 = locate_dofs_topological(V1, facetdim, bndry_facets)
 
     u_bc = Function(V1)
-    u_bc.x.array[:] = 50.0
+    with u_bc.vector.localForm() as u_local:
+        u_local.set(50.0)
     bc = DirichletBC(u_bc, bdofsV1)
 
     # Define variational problem
@@ -332,9 +336,11 @@ def test_assembly_solve_block(mode):
     bdofsV1 = locate_dofs_topological(V1, facetdim, bndry_facets)
 
     u_bc0 = Function(V0)
-    u_bc0.x.array[:] = 50.0
+    u_bc0.vector.set(50.0)
+    u_bc0.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
     u_bc1 = Function(V1)
-    u_bc1.x.array[:] = 20.0
+    u_bc1.vector.set(20.0)
+    u_bc1.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
     bcs = [DirichletBC(u_bc0, bdofsV0), DirichletBC(u_bc1, bdofsV1)]
 
     # Variational problem
@@ -408,9 +414,11 @@ def test_assembly_solve_block(mode):
     L = inner(f, v0) * ufl.dx + inner(g, v1) * dx
 
     u0_bc = Function(V0)
-    u0_bc.x.array[:] = 50.0
+    u0_bc.vector.set(50.0)
+    u0_bc.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
     u1_bc = Function(V1)
-    u1_bc.x.array[:] = 20.0
+    u1_bc.vector.set(20.0)
+    u1_bc.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
     bdofsW0_V0 = locate_dofs_topological((W.sub(0), V0), facetdim, bndry_facets)
     bdofsW1_V1 = locate_dofs_topological((W.sub(1), V1), facetdim, bndry_facets)
@@ -470,7 +478,9 @@ def test_assembly_solve_taylor_hood(mesh):
     bdofs1 = locate_dofs_topological(P2, facetdim, bndry_facets1)
 
     u0 = Function(P2)
-    u0.x.array[:] = 1.0
+    u0.vector.set(1.0)
+    u0.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+
     bc0 = DirichletBC(u0, bdofs0)
     bc1 = DirichletBC(u0, bdofs1)
 
@@ -728,7 +738,8 @@ def test_pack_coefficients():
     v = ufl.TestFunction(V)
     c = Constant(mesh, PETSc.ScalarType(12.0))
     F = ufl.inner(c, v) * dx - c * ufl.sqrt(u * u) * ufl.inner(u, v) * dx
-    u.x.array[:] = 10.0
+    with u.vector.localForm() as x_local:
+        x_local.set(10.0)
 
     # -- Test vector
     b0 = assemble_vector(F)

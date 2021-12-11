@@ -103,7 +103,7 @@ def test_coefficient():
     V = FunctionSpace(mesh, ("Lagrange", 1))
     DG0 = FunctionSpace(mesh, ("DG", 0))
     vals = Function(DG0)
-    vals.x.array[:] = 2.0
+    vals.vector.set(2.0)
 
     Form = dolfinx.cpp.fem.Form_float64 if PETSc.ScalarType == np.float64 else dolfinx.cpp.fem.Form_complex128
     integrals = {IntegralType.cell: ([(-1, tabulate_tensor_b_coeff.address)], None)}

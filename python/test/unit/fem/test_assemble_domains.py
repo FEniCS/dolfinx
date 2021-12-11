@@ -49,7 +49,8 @@ def test_assembly_dx_domains(mode):
     marker = MeshTags(mesh, mesh.topology.dim, indices, values)
     dx = ufl.Measure('dx', subdomain_data=marker, domain=mesh)
     w = Function(V)
-    w.x.array[:] = 0.5
+    with w.vector.localForm() as w_local:
+        w_local.set(0.5)
 
     bc = DirichletBC(Function(V), range(30))
 
@@ -129,7 +130,8 @@ def test_assembly_ds_domains(mode):
     ds = ufl.Measure('ds', subdomain_data=marker, domain=mesh)
 
     w = Function(V)
-    w.x.array[:] = 0.5
+    with w.vector.localForm() as w_local:
+        w_local.set(0.5)
 
     bc = DirichletBC(Function(V), range(30))
 
@@ -188,9 +190,12 @@ def test_additivity(mode):
     f1 = Function(V)
     f2 = Function(V)
     f3 = Function(V)
-    f1.x.array[:] = 1.0
-    f2.x.array[:] = 2.0
-    f3.x.array[:] = 3.0
+    with f1.vector.localForm() as f1_local:
+        f1_local.set(1.0)
+    with f2.vector.localForm() as f2_local:
+        f2_local.set(2.0)
+    with f3.vector.localForm() as f3_local:
+        f3_local.set(3.0)
     j1 = ufl.inner(f1, f1) * ufl.dx(mesh)
     j2 = ufl.inner(f2, f2) * ufl.ds(mesh)
     j3 = ufl.inner(ufl.avg(f3), ufl.avg(f3)) * ufl.dS(mesh)

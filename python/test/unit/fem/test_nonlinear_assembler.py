@@ -92,6 +92,7 @@ def test_matrix_assembly_block_nl():
 
     F0 = inner(u, v) * dx + inner(p, v) * dx - inner(f, v) * dx
     F1 = inner(u, q) * dx + inner(p, q) * dx - inner(g, q) * dx
+
     a_block = [[derivative(F0, u, du), derivative(F0, p, dp)],
                [derivative(F1, u, du), derivative(F1, p, dp)]]
     L_block = [Form(F0), Form(F1)]
