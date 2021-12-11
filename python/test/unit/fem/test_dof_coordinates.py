@@ -5,7 +5,6 @@ from dolfinx.fem import Function, FunctionSpace
 from dolfinx.generation import UnitCubeMesh, UnitSquareMesh
 
 from mpi4py import MPI
-from petsc4py import PETSc
 
 
 @pytest.mark.parametrize("degree", range(1, 5))
