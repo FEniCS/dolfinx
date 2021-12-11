@@ -124,15 +124,15 @@ from ufl import (FiniteElement, TestFunctions, diff, dx, grad, inner, split,
 from mpi4py import MPI
 from petsc4py import PETSc
 
-# try:
-#     import pyvista as pv
-#     import pyvistaqt as pvqt
-#     have_pyvista = True
-#     if pv.OFF_SCREEN:
-#         pv.start_xvfb(wait=0.5)
-# except ModuleNotFoundError:
-#     print("pyvista is required to visualise the solution")
-#     have_pyvista = False
+try:
+    import pyvista as pv
+    import pyvistaqt as pvqt
+    have_pyvista = True
+    if pv.OFF_SCREEN:
+        pv.start_xvfb(wait=0.5)
+except ModuleNotFoundError:
+    print("pyvista is required to visualise the solution")
+    have_pyvista = False
 
 # Save all logging to file
 log.set_output_file("log.txt")
@@ -281,15 +281,15 @@ else:
 u0.x.array[:] = u.x.array[:]
 
 # Prepare viewer for plotting solution during the computation
-# if have_pyvista:
-#     topology, cell_types = plot.create_vtk_topology(mesh, mesh.topology.dim)
-#     grid = pv.UnstructuredGrid(topology, cell_types, mesh.geometry.x)
-#     grid.point_data["u"] = u.sub(0).compute_point_values().real
-#     grid.set_active_scalars("u")
-#     p = pvqt.BackgroundPlotter(title="concentration", auto_update=True)
-#     p.add_mesh(grid, clim=[0, 1])
-#     p.view_xy(True)
-#     p.add_text(f"time: {t}", font_size=12, name="timelabel")
+if have_pyvista:
+    topology, cell_types = plot.create_vtk_topology(mesh, mesh.topology.dim)
+    grid = pv.UnstructuredGrid(topology, cell_types, mesh.geometry.x)
+    grid.point_data["u"] = u.sub(0).compute_point_values().real
+    grid.set_active_scalars("u")
+    p = pvqt.BackgroundPlotter(title="concentration", auto_update=True)
+    p.add_mesh(grid, clim=[0, 1])
+    p.view_xy(True)
+    p.add_text(f"time: {t}", font_size=12, name="timelabel")
 
 while (t < T):
     t += dt
@@ -306,11 +306,11 @@ while (t < T):
 
 file.close()
 
-# # Update ghost entries and plot
-# if have_pyvista:
-#     u.x.scatter_forward()
-#     grid.point_data["u"] = u.sub(0).compute_point_values().real
-#     screenshot = None
-#     if pv.OFF_SCREEN:
-#         screenshot = "u.png"
-#     pv.plot(grid, show_edges=True, screenshot=screenshot)
+# Update ghost entries and plot
+if have_pyvista:
+    u.x.scatter_forward()
+    grid.point_data["u"] = u.sub(0).compute_point_values().real
+    screenshot = None
+    if pv.OFF_SCREEN:
+        screenshot = "u.png"
+    pv.plot(grid, show_edges=True, screenshot=screenshot)
