@@ -151,7 +151,7 @@ set_bc(b, [bc])
 uc = Function(U)
 solver = PETSc.KSP().create(A_cond.getComm())
 solver.setOperators(A_cond)
-solver.solve(b, uc.vector())
+solver.solve(b, uc.vector)
 
 # Pure displacement based formulation
 a = - ufl.inner(sigma_u(u), ufl.grad(v)) * ufl.dx

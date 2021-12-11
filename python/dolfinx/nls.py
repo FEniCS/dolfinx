@@ -34,7 +34,7 @@ class NewtonSolver(_cpp.nls.NewtonSolver):
         Solve non-linear problem into function u.
         Returns the number of iterations and if the solver converged
         """
-        n, converged = super().solve(u.vector())
+        n, converged = super().solve(u.vector)
         u.x.scatter_forward()
         return n, converged
 
