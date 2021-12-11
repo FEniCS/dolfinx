@@ -239,6 +239,8 @@ class Function(ufl.Coefficient):
         # Store DOLFINx FunctionSpace object
         self._V = V
 
+        self._petsc_x = None
+
     @property
     def function_space(self) -> "FunctionSpace":
         """Return the FunctionSpace"""
@@ -325,8 +327,10 @@ class Function(ufl.Coefficient):
 
     @property
     def vector(self):
-        """Return the vector holding Function degrees-of-freedom."""
-        return self._cpp_object.vector
+        """Return a PETSc vector holding Function degrees-of-freedom."""
+        if self._petsc_x is None:
+            self._petsc_x = self._cpp_object.vector()
+        return self._petsc_x
 
     @property
     def x(self):
