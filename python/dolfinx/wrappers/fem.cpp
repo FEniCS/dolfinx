@@ -332,42 +332,6 @@ void declare_objects(py::module& m, const std::string& type)
             self.interpolate(_f);
           },
           "Interpolate using a pointer to an expression with a C signature")
-      // .def_property_readonly("vector", &dolfinx::fem::Function<T>::vector,
-      //                        "Return the PETSc vector associated with "
-      //                        "the finite element Function")
-      .def(
-          "vector",
-          [](dolfinx::fem::Function<T>& self)
-          {
-            // Check that this is not a sub function
-            assert(self.function_space());
-            auto V = self.function_space();
-            assert(V->dofmap());
-            assert(V->dofmap()->index_map);
-            std::shared_ptr<dolfinx::la::Vector<T>> x = self.x();
-            if (x->bs() * x->map()->size_global()
-                != V->dofmap()->index_map->size_global()
-                       * V->dofmap()->index_map_bs())
-            {
-              throw std::runtime_error(
-                  "Cannot access a non-const vector from a subfunction");
-            }
-
-            if constexpr (std::is_same<T, PetscScalar>::value)
-            {
-              return la::petsc::create_vector_wrap(*V->dofmap()->index_map,
-                                                   V->dofmap()->index_map_bs(),
-                                                   x->mutable_array());
-            }
-            else
-            {
-              throw std::runtime_error(
-                  "Cannot return PETSc vector wrapper. Type mismatch");
-            }
-          },
-          "Return a PETSc vector that wraps the finite element Function "
-          "coefficient array",
-          py::return_value_policy::reference_internal)
       .def_property_readonly(
           "x", py::overload_cast<>(&dolfinx::fem::Function<T>::x),
           "Return the vector associated with the finite element Function")

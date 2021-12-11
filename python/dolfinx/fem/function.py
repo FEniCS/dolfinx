@@ -331,7 +331,7 @@ class Function(ufl.Coefficient):
     def vector(self):
         """Return a PETSc vector holding Function degrees-of-freedom."""
         if self._petsc_x is None:
-            self._petsc_x = self._cpp_object.vector()
+            self._petsc_x = _cpp.la.petsc.create_vector_wrap(self.x)
         return self._petsc_x
 
     @property
