@@ -184,8 +184,9 @@ int main(int argc, char* argv[])
         });
 
     g->interpolate(
-        [](const xt::xtensor<double, 2>& x) -> xt::xarray<PetscScalar>
-        { return xt::sin(5 * xt::row(x, 0)); });
+        [](const xt::xtensor<double, 2>& x) -> xt::xarray<PetscScalar> {
+          return xt::sin(5 * xt::row(x, 0));
+        });
 
     // Now, we have specified the variational forms and can consider the
     // solution of the variational problem. First, we need to define a
@@ -227,7 +228,8 @@ int main(int argc, char* argv[])
     lu.set_from_options();
 
     lu.set_operator(A.mat());
-    lu.solve(u.vector(), b.vec());
+    la::petsc::Vector _u(la::petsc::create_vector_wrap(*u.x()), false);
+    lu.solve(_u.vec(), b.vec());
 
     // The function ``u`` will be modified during the call to solve. A
     // :cpp:class:`Function` can be saved to a file. Here, we output the
