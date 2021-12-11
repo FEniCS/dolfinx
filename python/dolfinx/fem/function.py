@@ -239,6 +239,8 @@ class Function(ufl.Coefficient):
         # Store DOLFINx FunctionSpace object
         self._V = V
 
+        # PETSc Vec wrapper around the C++ function data. Constructed
+        # when first requested.
         self._petsc_x = None
 
     @property
