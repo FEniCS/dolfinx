@@ -99,7 +99,7 @@ def test_matrix_assembly_block_nl():
 
     # Monolithic blocked
     x0 = create_vector_block(L_block)
-    scatter_local_vectors(x0, [u.vector.array_r, p.vector.array_r],
+    scatter_local_vectors(x0, [u.x.array, p.x.array],
                           [(u.function_space.dofmap.index_map, u.function_space.dofmap.index_map_bs),
                            (p.function_space.dofmap.index_map, p.function_space.dofmap.index_map_bs)])
     x0.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
@@ -116,9 +116,11 @@ def test_matrix_assembly_block_nl():
     x1 = create_vector_nest(L_block)
     for x1_soln_pair in zip(x1.getNestSubVecs(), (u, p)):
         x1_sub, soln_sub = x1_soln_pair
-        soln_sub.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-        soln_sub.vector.copy(result=x1_sub)
-        x1_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+        soln_sub.x.scatter_forward()
+        # soln_sub.vector.copy(result=x1_sub)
+        with x1_sub.localForm() as x1_sub_local:
+            x1_sub_local[:] = soln_sub.x.array
+        # x1_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
     A1 = assemble_matrix_nest(a_block, bcs=[bc])
     b1 = assemble_vector_nest(L_block)
@@ -155,9 +157,9 @@ def test_matrix_assembly_block_nl():
     A2 = assemble_matrix(J, bcs=[bc])
     A2.assemble()
     b2 = assemble_vector(F)
-    apply_lifting(b2, [J], bcs=[[bc]], x0=[U.vector], scale=-1.0)
+    apply_lifting(b2, [J], bcs=[[bc]], x0=[U.vector()], scale=-1.0)
     b2.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    set_bc(b2, [bc], x0=U.vector, scale=-1.0)
+    set_bc(b2, [bc], x0=U.vector(), scale=-1.0)
     assert A2.getType() != "nest"
     assert A2.norm() == pytest.approx(Anorm0, 1.0e-12)
     assert b2.norm() == pytest.approx(bnorm0, 1.0e-12)
@@ -179,8 +181,10 @@ class NonlinearPDE_SNESProblem():
 
     def F_mono(self, snes, x, F):
         x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-        with x.localForm() as _x, self.soln_vars.vector.localForm() as _u:
-            _u[:] = _x
+        with x.localForm() as _x:
+            self.soln_vars.x.array[:] = _x
+        # with x.localForm() as _x, self.soln_vars.vector.localForm() as _u:
+        #     _u[:] = _x
         with F.localForm() as f_local:
             f_local.set(0.0)
         assemble_vector(F, self.L)
@@ -207,9 +211,9 @@ class NonlinearPDE_SNESProblem():
         offset = 0
         x_array = x.getArray(readonly=True)
         for var in self.soln_vars:
-            size_local = var.vector.getLocalSize()
-            var.vector.array[:] = x_array[offset: offset + size_local]
-            var.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+            size_local = var.vector().getLocalSize()
+            var.x.array[:size_local] = x_array[offset: offset + size_local]
+            var.x.scatter_forward()
             offset += size_local
 
         assemble_vector_block(F, self.L, self.a, bcs=self.bcs, x0=x, scale=-1.0)
@@ -230,8 +234,10 @@ class NonlinearPDE_SNESProblem():
         x = x.getNestSubVecs()
         for x_sub, var_sub in zip(x, self.soln_vars):
             x_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-            with x_sub.localForm() as _x, var_sub.vector.localForm() as _u:
-                _u[:] = _x
+            with x_sub.localForm() as _x:
+                var_sub.x.array[:] = _x
+            # with x_sub.localForm() as _x, var_sub.vector.localForm() as _u:
+            #     _u[:] = _x
 
         # Assemble
         bcs1 = bcs_by_block(extract_function_spaces(self.a, 1), self.bcs)
@@ -331,9 +337,12 @@ def test_assembly_solve_block_nl():
         p.interpolate(initial_guess_p)
 
         x = create_vector_block(F)
-        scatter_local_vectors(x, [u.vector.array_r, p.vector.array_r],
+        scatter_local_vectors(x, [u.x.array, p.x.array],
                               [(u.function_space.dofmap.index_map, u.function_space.dofmap.index_map_bs),
                                (p.function_space.dofmap.index_map, p.function_space.dofmap.index_map_bs)])
+        # scatter_local_vectors(x, [u.vector.array_r, p.vector.array_r],
+        #                       [(u.function_space.dofmap.index_map, u.function_space.dofmap.index_map_bs),
+        #                        (p.function_space.dofmap.index_map, p.function_space.dofmap.index_map_bs)])
         x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
         snes.solve(None, x)
@@ -375,9 +384,12 @@ def test_assembly_solve_block_nl():
         assert x.getType() == "nest"
         for x_soln_pair in zip(x.getNestSubVecs(), (u, p)):
             x_sub, soln_sub = x_soln_pair
-            soln_sub.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-            soln_sub.vector.copy(result=x_sub)
-            x_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+            soln_sub.x.scatter_forward()
+            with x_sub.localForm() as x_sub_local:
+                x_sub_local[:] = soln_sub
+            # soln_sub.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+            # soln_sub.vector.copy(result=x_sub)
+            # x_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
         snes.solve(None, x)
         assert snes.getKSP().getConvergedReason() > 0
@@ -425,7 +437,7 @@ def test_assembly_solve_block_nl():
         U.sub(1).interpolate(initial_guess_p)
 
         x = create_vector(F)
-        x.array = U.vector.array_r
+        x.array[:] = U.vector.array_r
 
         snes.solve(None, x)
         assert snes.getKSP().getConvergedReason() > 0
@@ -514,10 +526,13 @@ def test_assembly_solve_taylor_hood_nl(mesh):
     p.interpolate(initial_guess_p)
 
     x0 = create_vector_block(F)
-    with u.vector.localForm() as _u, p.vector.localForm() as _p:
-        scatter_local_vectors(x0, [_u.array_r, _p.array_r],
-                              [(u.function_space.dofmap.index_map, u.function_space.dofmap.index_map_bs),
-                               (p.function_space.dofmap.index_map, p.function_space.dofmap.index_map_bs)])
+    # with u.vector.localForm() as _u, p.vector.localForm() as _p:
+    #     scatter_local_vectors(x0, [_u.array_r, _p.array_r],
+    #                           [(u.function_space.dofmap.index_map, u.function_space.dofmap.index_map_bs),
+    #                            (p.function_space.dofmap.index_map, p.function_space.dofmap.index_map_bs)])
+    scatter_local_vectors(x0, [u.x.array, p.x.array],
+                          [(u.function_space.dofmap.index_map, u.function_space.dofmap.index_map_bs),
+                           (p.function_space.dofmap.index_map, p.function_space.dofmap.index_map_bs)])
     x0.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
     snes.solve(None, x0)
@@ -556,9 +571,12 @@ def test_assembly_solve_taylor_hood_nl(mesh):
     x1 = create_vector_nest(F)
     for x1_soln_pair in zip(x1.getNestSubVecs(), (u, p)):
         x1_sub, soln_sub = x1_soln_pair
-        soln_sub.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-        soln_sub.vector.copy(result=x1_sub)
-        x1_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+        soln_sub.x.scatter_forward()
+        with x1_sub.localForm() as x1_sub_local:
+            x1_sub_local[:] = soln_sub.x.array[:]
+        # soln_sub.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+        # soln_sub.vector.copy(result=x1_sub)
+        # x1_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
     x1.set(0.0)
     snes.solve(None, x1)
@@ -607,7 +625,7 @@ def test_assembly_solve_taylor_hood_nl(mesh):
     U.sub(1).interpolate(initial_guess_p)
 
     x2 = create_vector(F)
-    x2.array = U.vector.array_r
+    x2.array[:] = U.x.array
 
     snes.solve(None, x2)
 

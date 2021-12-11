@@ -49,15 +49,15 @@ cfg['library_dirs'] = {dolfinx_pc["library_dirs"]}
 """
 
         cpp_code = """
-#include <pybind11/pybind11.h>
-#include <pybind11/eigen.h>
-#include <pybind11/stl.h>
-#include <vector>
-#include <Eigen/Sparse>
-#include <petscsys.h>
-#include <dolfinx/fem/assembler.h>
-#include <dolfinx/fem/DirichletBC.h>
-#include <dolfinx/fem/Form.h>
+# include <pybind11/pybind11.h>
+# include <pybind11/eigen.h>
+# include <pybind11/stl.h>
+# include <vector>
+# include <Eigen/Sparse>
+# include <petscsys.h>
+# include <dolfinx/fem/assembler.h>
+# include <dolfinx/fem/DirichletBC.h>
+# include <dolfinx/fem/Form.h>
 
 template<typename T>
 Eigen::SparseMatrix<T, Eigen::RowMajor>
@@ -122,8 +122,7 @@ PYBIND11_MODULE(eigen_csr, m)
 
     bdofsQ = locate_dofs_geometrical(Q, lambda x: np.logical_or(np.isclose(x[0], 0.0), np.isclose(x[0], 1.0)))
     u_bc = Function(Q)
-    with u_bc.vector.localForm() as u_local:
-        u_local.set(1.0)
+    u_bc.x.array[:] = 1.0
     bc = DirichletBC(u_bc, bdofsQ)
 
     A1 = assemble_matrix(a, [bc])
