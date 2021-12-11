@@ -224,7 +224,7 @@ A.setNullSpace(nsp)
 ksp = PETSc.KSP().create(mesh.comm)
 ksp.setOperators(A, P)
 ksp.setType("minres")
-ksp.setTolerances(rtol=1e-8)
+ksp.setTolerances(rtol=1e-9)
 ksp.getPC().setType("fieldsplit")
 ksp.getPC().setFieldSplitType(PETSc.PC.CompositeType.ADDITIVE)
 
@@ -251,14 +251,13 @@ ksp.setFromOptions()
 # combined to form a nested vector and the system is solved::
 
 u, p = Function(V), Function(Q)
-# x = PETSc.Vec().createNest([u.vector, p.vector])
 x = PETSc.Vec().createNest([_cpp.la.petsc.create_vector_wrap(u.x), _cpp.la.petsc.create_vector_wrap(p.x)])
 ksp.solve(b, x)
 
 # Norms of the solution vectors are computed::
 
-norm_u_0 = x.getNestSubVecs()[0].norm()
-norm_p_0 = x.getNestSubVecs()[1].norm()
+norm_u_0 = u.x.norm()
+norm_p_0 = p.x.norm()
 if MPI.COMM_WORLD.rank == 0:
     print("(A) Norm of velocity coefficient vector (nested, iterative): {}".format(norm_u_0))
     print("(A) Norm of pressure coefficient vector (nested, iterative): {}".format(norm_p_0))
@@ -310,7 +309,7 @@ is_p = PETSc.IS().createStride(Q_map.size_local, offset_p, 1, comm=PETSc.COMM_SE
 # Create Krylov solver
 ksp = PETSc.KSP().create(mesh.comm)
 ksp.setOperators(A, P)
-ksp.setTolerances(rtol=1e-8)
+ksp.setTolerances(rtol=1e-9)
 ksp.setType("minres")
 ksp.getPC().setType("fieldsplit")
 ksp.getPC().setFieldSplitType(PETSc.PC.CompositeType.ADDITIVE)
@@ -454,8 +453,7 @@ ksp.getPC().setFactorSolverType("superlu_dist")
 
 # Compute the solution
 U = Function(W)
-# ksp.solve(b, U.vector)
-ksp.solve(b, _cpp.la.petsc.create_vector_wrap(U.x))
+ksp.solve(b, U.vector)
 
 # Split the mixed solution and collapse
 u = U.sub(0).collapse()
