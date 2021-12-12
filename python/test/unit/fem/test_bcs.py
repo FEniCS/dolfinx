@@ -75,7 +75,7 @@ def test_overlapping_bcs():
 
     u0, u1 = Function(V), Function(V)
     u0.x.array[:] = 0.0
-    u1.x.array[:] =123.456
+    u1.x.array[:] = 123.456
     bcs = [DirichletBC(u0, dofs_left), DirichletBC(u1, dofs_top)]
 
     A, b = create_matrix(a), create_vector(L)

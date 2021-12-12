@@ -135,11 +135,7 @@ V = FunctionSpace(mesh, ("Lagrange", 1))
 
 # Define boundary condition on x = 0 or x = 1
 u0 = Function(V)
-<<<<<<< HEAD
-u0.x.set(0)
-=======
 u0.x.array[:] = 0.0
->>>>>>> main
 facets = locate_entities_boundary(mesh, 1,
                                   lambda x: np.logical_or(np.isclose(x[0], 0.0),
                                                           np.isclose(x[0], 1.0)))
