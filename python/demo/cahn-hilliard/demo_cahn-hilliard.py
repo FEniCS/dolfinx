@@ -278,7 +278,8 @@ if "CI" in os.environ.keys() or "GITHUB_ACTIONS" in os.environ.keys():
 else:
     T = 50 * dt
 
-u0.x.array[:] = u.x.array[:]
+u0.x.array[:] = u.x.array
+
 
 # Prepare viewer for plotting solution during the computation
 if have_pyvista:
@@ -295,7 +296,7 @@ while (t < T):
     t += dt
     r = solver.solve(u)
     print(f"Step {int(t/dt)}: num iterations: {r[0]}")
-    u0.x.array[:] = u.x.array[:]
+    u0.x.array[:] = u.x.array
     file.write_function(u.sub(0), t)
 
     # Update the plot window
