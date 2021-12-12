@@ -332,7 +332,7 @@ def test_assembly_solve_block(mode):
     bdofsV1 = locate_dofs_topological(V1, facetdim, bndry_facets)
 
     u_bc0 = Function(V0)
-    u_bc0.x.array[:] = 5.0
+    u_bc0.x.array[:] = 50.0
     u_bc1 = Function(V1)
     u_bc1.x.array[:] = 20.0
     bcs = [DirichletBC(u_bc0, bdofsV0), DirichletBC(u_bc1, bdofsV1)]
