@@ -329,16 +329,15 @@ def test_custom_mesh_loop_rank1():
     btmp.vector.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     assert (btmp.vector - b0.vector).norm() == pytest.approx(0.0)
 
+    # Test against generated code and general assembler
+    v = ufl.TestFunction(V)
+    L = inner(1.0, v) * dx
+    start = time.time()
+    b1 = dolfinx.fem.assemble_vector(L)
+    end = time.time()
+    print("Time (C++, pass 0):", end - start)
 
-# Test against generated code and general assembler
-v = ufl.TestFunction(V)
-L = inner(1.0, v) * dx
-start = time.time()
-b1 = dolfinx.fem.assemble_vector(L)
- end = time.time()
-  print("Time (C++, pass 0):", end - start)
-
-   with b1.localForm() as b_local:
+    with b1.localForm() as b_local:
         b_local.set(0.0)
     b1.x.array[:] = 0.0
     start = time.time()
