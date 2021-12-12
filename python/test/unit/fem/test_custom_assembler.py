@@ -339,7 +339,6 @@ def test_custom_mesh_loop_rank1():
 
     with b1.localForm() as b_local:
         b_local.set(0.0)
-    b1.x.array[:] = 0.0
     start = time.time()
     dolfinx.fem.assemble_vector(b1, L)
     end = time.time()
