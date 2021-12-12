@@ -69,8 +69,7 @@ ds = ufl.Measure("ds", subdomain_data=mt)
 
 # Homogeneous boundary condition in displacement
 u_bc = Function(U)
-with u_bc.vector.localForm() as loc:
-    loc.set(0.0)
+u_bc.x.array[:] = 0.0
 
 # Displacement BC is applied to the left side
 left_facets = locate_entities_boundary(mesh, 1, left)
@@ -167,7 +166,7 @@ p = np.array([48.0, 52.0, 0.0], dtype=np.float64)
 cell_candidates = geometry.compute_collisions(bb_tree, p)
 cells = geometry.compute_colliding_cells(mesh, cell_candidates, p)
 
-uc.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+uc.x.scatter_forward()
 if len(cells) > 0:
     value = uc.eval(p, cells[0])
     print(value[1])

@@ -136,8 +136,7 @@ V = FunctionSpace(mesh, ("Lagrange", 1))
 
 # Define boundary condition on x = 0 or x = 1
 u0 = Function(V)
-with u0.vector.localForm() as u0_loc:
-    u0_loc.set(0)
+u0.x.array[:] = 0.0
 facets = locate_entities_boundary(mesh, 1,
                                   lambda x: np.logical_or(np.isclose(x[0], 0.0),
                                                           np.isclose(x[0], 1.0)))
@@ -201,9 +200,10 @@ with XDMFFile(MPI.COMM_WORLD, "poisson.xdmf", "w") as file:
 
 
 # Update ghost entries and plot
-uh.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 try:
     import pyvista
+
+    uh.x.scatter_forward()
 
     topology, cell_types = plot.create_vtk_topology(mesh, mesh.topology.dim)
     grid = pyvista.UnstructuredGrid(topology, cell_types, mesh.geometry.x)
@@ -215,7 +215,8 @@ try:
     warped = grid.warp_by_scalar()
     plotter.add_mesh(warped)
 
-    # If pyvista environment variable is set to off-screen (static) plotting save png
+    # If pyvista environment variable is set to off-screen (static)
+    # plotting save png
     if pyvista.OFF_SCREEN:
         pyvista.start_xvfb(wait=0.1)
         plotter.screenshot("uh.png")
