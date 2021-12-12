@@ -83,11 +83,7 @@ public:
   Function(const Function& v) = delete;
 
   /// Move constructor
-  Function(Function&& v)
-      : name(std::move(v.name)), _id(std::move(v._id)),
-        _function_space(std::move(v._function_space)), _x(std::move(v._x))
-  {
-  }
+  Function(Function&& v) = default;
 
   /// Destructor
   ~Function() = default;
