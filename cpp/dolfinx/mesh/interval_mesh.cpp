@@ -4,7 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "IntervalMesh.h"
+#include "interval_mesh.h"
 #include <cfloat>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>
@@ -73,7 +73,7 @@ mesh::Mesh build(MPI_Comm comm, std::size_t nx, std::array<double, 2> x,
 } // namespace
 
 //-----------------------------------------------------------------------------
-mesh::Mesh IntervalMesh::create(MPI_Comm comm, std::size_t n,
+mesh::Mesh interval_mesh::create(MPI_Comm comm, std::size_t n,
                                 std::array<double, 2> x,
                                 mesh::GhostMode ghost_mode,
                                 const mesh::CellPartitionFunction& partitioner)

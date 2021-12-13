@@ -17,4 +17,7 @@ namespace dolfinx
 #include <dolfinx/mesh/MeshTags.h>
 #include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/cell_types.h>
+#include <dolfinx/mesh/box_mesh.h>
+#include <dolfinx/mesh/interval_mesh.h>
+#include <dolfinx/mesh/rectangle_mesh.h>
 #include <dolfinx/mesh/utils.h>

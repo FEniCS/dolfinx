@@ -11,7 +11,7 @@
 #include <dolfinx/mesh/cell_types.h>
 #include <mpi.h>
 
-namespace dolfinx::generation
+namespace dolfinx::mesh
 {
 
 /// Enum for different diagonal types
@@ -24,10 +24,10 @@ enum class DiagonalType
   left_right,
   right_left
 };
-} // namespace dolfinx::generation
+} // namespace dolfinx::mesh
 
 /// Rectangle mesh creation
-namespace dolfinx::generation::RectangleMesh
+namespace dolfinx::mesh::rectangle_mesh
 {
 /// Create a uniform mesh::Mesh over the rectangle spanned by the two
 /// points @p p. The order of the two points is not important in terms
@@ -69,4 +69,4 @@ mesh::Mesh create(MPI_Comm comm, const std::array<std::array<double, 3>, 2>& p,
                   mesh::GhostMode ghost_mode,
                   const mesh::CellPartitionFunction& partitioner,
                   DiagonalType diagonal = DiagonalType::right);
-} // namespace dolfinx::generation::RectangleMesh
+} // namespace dolfinx::generation::rectangle_mesh

@@ -4,7 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "RectangleMesh.h"
+#include "rectangle_mesh.h"
 #include <cfloat>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>
@@ -14,7 +14,7 @@
 #include <xtensor/xview.hpp>
 
 using namespace dolfinx;
-using namespace dolfinx::generation;
+using namespace dolfinx::mesh;
 
 namespace
 {
@@ -315,18 +315,18 @@ mesh::Mesh build_quad(MPI_Comm comm,
 }
 } // namespace
 //-----------------------------------------------------------------------------
-mesh::Mesh RectangleMesh::create(MPI_Comm comm,
+mesh::Mesh rectangle_mesh::create(MPI_Comm comm,
                                  const std::array<std::array<double, 3>, 2>& p,
                                  std::array<std::size_t, 2> n,
                                  mesh::CellType celltype,
                                  mesh::GhostMode ghost_mode,
                                  DiagonalType diagonal)
 {
-  return RectangleMesh::create(comm, p, n, celltype, ghost_mode,
+  return rectangle_mesh::create(comm, p, n, celltype, ghost_mode,
                                mesh::create_cell_partitioner(), diagonal);
 }
 //-----------------------------------------------------------------------------
-mesh::Mesh RectangleMesh::create(MPI_Comm comm,
+mesh::Mesh rectangle_mesh::create(MPI_Comm comm,
                                  const std::array<std::array<double, 3>, 2>& p,
                                  std::array<std::size_t, 2> n,
                                  mesh::CellType celltype,

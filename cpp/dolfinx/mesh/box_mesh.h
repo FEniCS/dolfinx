@@ -14,7 +14,7 @@
 #include <mpi.h>
 
 /// Right cuboid mesh creation
-namespace dolfinx::generation::BoxMesh
+namespace dolfinx::mesh::box_mesh
 {
 
 /// Create a uniform mesh::Mesh over the rectangular prism spanned by the
@@ -37,4 +37,4 @@ mesh::Mesh create(MPI_Comm comm, const std::array<std::array<double, 3>, 2>& p,
                   mesh::GhostMode ghost_mode,
                   const mesh::CellPartitionFunction& partitioner
                   = mesh::create_cell_partitioner());
-} // namespace dolfinx::generation::BoxMesh
+} // namespace dolfinx::mesh::box_mesh

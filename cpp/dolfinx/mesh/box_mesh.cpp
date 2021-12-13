@@ -4,7 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "BoxMesh.h"
+#include "box_mesh.h"
 #include <cfloat>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
@@ -14,7 +14,7 @@
 #include <xtensor/xview.hpp>
 
 using namespace dolfinx;
-using namespace dolfinx::generation;
+using namespace dolfinx::mesh;
 
 namespace
 {
@@ -247,7 +247,7 @@ mesh::Mesh build_prism(MPI_Comm comm,
 } // namespace
 
 //-----------------------------------------------------------------------------
-mesh::Mesh BoxMesh::create(MPI_Comm comm,
+mesh::Mesh box_mesh::create(MPI_Comm comm,
                            const std::array<std::array<double, 3>, 2>& p,
                            std::array<std::size_t, 3> n,
                            mesh::CellType celltype, mesh::GhostMode ghost_mode,
