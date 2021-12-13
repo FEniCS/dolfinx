@@ -168,7 +168,6 @@ nearest_simplex(const xt::xtensor<double, 2>& s)
     throw std::runtime_error("Number of rows defining simplex not supported.");
   }
   }
-  return {nullptr, nullptr};
 }
 //----------------------------------------------------------------------------
 // Support function, finds point p in bd which maximises p.v
