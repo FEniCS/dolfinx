@@ -14,7 +14,7 @@ import pytest
 import dolfinx
 import dolfinx.pkgconfig
 from dolfinx import wrappers
-from dolfinx.generation import UnitSquareMesh
+from dolfinx.mesh import create_unit_square_mesh
 from dolfinx.jit import mpi_jit_decorator
 from dolfinx_utils.test.fixtures import tempdir  # noqa: F401
 
@@ -25,7 +25,7 @@ from mpi4py import MPI
 def test_mpi_comm_wrapper():
     """Test MPICommWrapper <-> mpi4py.MPI.Comm conversion"""
     w1 = MPI.COMM_WORLD
-    m = UnitSquareMesh(w1, 4, 4)
+    m = create_unit_square_mesh(w1, 4, 4)
     w2 = m.comm
     assert isinstance(w1, MPI.Comm)
     assert isinstance(w2, MPI.Comm)

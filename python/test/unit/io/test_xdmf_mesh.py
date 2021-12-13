@@ -11,7 +11,7 @@ import pytest
 
 from dolfinx import cpp as _cpp
 from dolfinx.cpp.io import perm_gmsh
-from dolfinx.generation import UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh
+from dolfinx.mesh import create_unit_cube_mesh, create_unit_interval_mesh, create_unit_square_mesh
 from dolfinx.io import XDMFFile, ufl_mesh_from_gmsh
 from dolfinx.mesh import CellType, create_mesh
 from dolfinx_utils.test.fixtures import tempdir
@@ -32,11 +32,11 @@ celltypes_3D = [CellType.tetrahedron, CellType.hexahedron]
 
 def mesh_factory(tdim, n):
     if tdim == 1:
-        return UnitIntervalMesh(MPI.COMM_WORLD, n)
+        return create_unit_interval_mesh(MPI.COMM_WORLD, n)
     elif tdim == 2:
-        return UnitSquareMesh(MPI.COMM_WORLD, n, n)
+        return create_unit_square_mesh(MPI.COMM_WORLD, n, n)
     elif tdim == 3:
-        return UnitCubeMesh(MPI.COMM_WORLD, n, n, n)
+        return create_unit_cube_mesh(MPI.COMM_WORLD, n, n, n)
 
 
 @pytest.fixture
@@ -51,7 +51,7 @@ def worker_id(request):
 @pytest.mark.parametrize("encoding", encodings)
 def test_save_and_load_1d_mesh(tempdir, encoding):
     filename = os.path.join(tempdir, "mesh.xdmf")
-    mesh = UnitIntervalMesh(MPI.COMM_WORLD, 32)
+    mesh = create_unit_interval_mesh(MPI.COMM_WORLD, 32)
     with XDMFFile(mesh.comm, filename, "w", encoding=encoding) as file:
         file.write_mesh(mesh)
     with XDMFFile(MPI.COMM_WORLD, filename, "r", encoding=encoding) as file:
@@ -65,7 +65,7 @@ def test_save_and_load_1d_mesh(tempdir, encoding):
 @pytest.mark.parametrize("encoding", encodings)
 def test_save_and_load_2d_mesh(tempdir, encoding, cell_type):
     filename = os.path.join(tempdir, "mesh.xdmf")
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 12, 12, cell_type)
+    mesh = create_unit_square_mesh(MPI.COMM_WORLD, 12, 12, cell_type)
     mesh.name = "square"
 
     with XDMFFile(mesh.comm, filename, "w", encoding=encoding) as file:
@@ -84,7 +84,7 @@ def test_save_and_load_2d_mesh(tempdir, encoding, cell_type):
 @pytest.mark.parametrize("encoding", encodings)
 def test_save_and_load_3d_mesh(tempdir, encoding, cell_type):
     filename = os.path.join(tempdir, "mesh.xdmf")
-    mesh = UnitCubeMesh(MPI.COMM_WORLD, 12, 12, 8, cell_type)
+    mesh = create_unit_cube_mesh(MPI.COMM_WORLD, 12, 12, 8, cell_type)
     with XDMFFile(mesh.comm, filename, "w", encoding=encoding) as file:
         file.write_mesh(mesh)
 

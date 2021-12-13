@@ -12,7 +12,7 @@ import numpy as np
 import dolfinx
 from dolfinx import TimingType, cpp, list_timings
 from dolfinx.fem import Function, FunctionSpace, IntegralType
-from dolfinx.generation import UnitSquareMesh
+from dolfinx.mesh import create_unit_square_mesh
 from dolfinx_utils.test.skips import skip_if_complex
 
 from mpi4py import MPI
@@ -73,7 +73,7 @@ def tabulate_tensor_b_coeff(b_, w_, c_, coords_, local_index, orientation):
 
 
 def test_numba_assembly():
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 13, 13)
+    mesh = create_unit_square_mesh(MPI.COMM_WORLD, 13, 13)
     V = FunctionSpace(mesh, ("Lagrange", 1))
     Form = dolfinx.cpp.fem.Form_float64 if PETSc.ScalarType == np.float64 else dolfinx.cpp.fem.Form_complex128
 
@@ -99,7 +99,7 @@ def test_numba_assembly():
 
 
 def test_coefficient():
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 13, 13)
+    mesh = create_unit_square_mesh(MPI.COMM_WORLD, 13, 13)
     V = FunctionSpace(mesh, ("Lagrange", 1))
     DG0 = FunctionSpace(mesh, ("DG", 0))
     vals = Function(DG0)
@@ -117,7 +117,7 @@ def test_coefficient():
 
 @skip_if_complex
 def test_cffi_assembly():
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 13, 13)
+    mesh = create_unit_square_mesh(MPI.COMM_WORLD, 13, 13)
     V = FunctionSpace(mesh, ("Lagrange", 1))
 
     if mesh.comm.rank == 0:

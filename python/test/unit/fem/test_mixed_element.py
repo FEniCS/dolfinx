@@ -10,7 +10,7 @@ import pytest
 import dolfinx
 import ufl
 from dolfinx.fem import FunctionSpace, VectorFunctionSpace
-from dolfinx.generation import UnitCubeMesh, UnitSquareMesh
+from dolfinx.mesh import create_unit_cube_mesh, create_unit_square_mesh
 from dolfinx.mesh import CellType, GhostMode
 from dolfinx_utils.test.skips import skip_in_parallel
 
@@ -27,9 +27,9 @@ from mpi4py import MPI
 ])
 def test_mixed_element(ElementType, space, cell, order):
     if cell == ufl.triangle:
-        mesh = UnitSquareMesh(MPI.COMM_WORLD, 1, 1, CellType.triangle, GhostMode.shared_facet)
+        mesh = create_unit_square_mesh(MPI.COMM_WORLD, 1, 1, CellType.triangle, GhostMode.shared_facet)
     else:
-        mesh = UnitCubeMesh(MPI.COMM_WORLD, 1, 1, 1, CellType.tetrahedron, GhostMode.shared_facet)
+        mesh = create_unit_cube_mesh(MPI.COMM_WORLD, 1, 1, 1, CellType.tetrahedron, GhostMode.shared_facet)
 
     norms = []
     U_el = ufl.FiniteElement(space, cell, order)
@@ -54,7 +54,7 @@ def test_mixed_element(ElementType, space, cell, order):
 @skip_in_parallel
 def test_vector_element():
     # VectorFunctionSpace containing a scalar should work
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 1, 1, CellType.triangle, GhostMode.shared_facet)
+    mesh = create_unit_square_mesh(MPI.COMM_WORLD, 1, 1, CellType.triangle, GhostMode.shared_facet)
     U = VectorFunctionSpace(mesh, ("P", 2))
     u = ufl.TrialFunction(U)
     v = ufl.TestFunction(U)

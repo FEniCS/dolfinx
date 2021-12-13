@@ -12,7 +12,7 @@ import ufl
 from dolfinx.fem import (Constant, DirichletBC, Function, FunctionSpace,
                          apply_lifting, assemble_matrix, assemble_scalar,
                          assemble_vector, set_bc)
-from dolfinx.generation import UnitSquareMesh
+from dolfinx.mesh import create_unit_square_mesh
 from dolfinx.mesh import GhostMode, MeshTags, locate_entities_boundary
 
 from mpi4py import MPI
@@ -21,7 +21,7 @@ from petsc4py import PETSc
 
 @pytest.fixture
 def mesh():
-    return UnitSquareMesh(MPI.COMM_WORLD, 10, 10)
+    return create_unit_square_mesh(MPI.COMM_WORLD, 10, 10)
 
 
 parametrize_ghost_mode = pytest.mark.parametrize("mode", [
@@ -33,7 +33,7 @@ parametrize_ghost_mode = pytest.mark.parametrize("mode", [
 
 @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
 def test_assembly_dx_domains(mode):
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 10, 10, ghost_mode=mode)
+    mesh = create_unit_square_mesh(MPI.COMM_WORLD, 10, 10, ghost_mode=mode)
     V = FunctionSpace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 
@@ -93,7 +93,7 @@ def test_assembly_dx_domains(mode):
 
 @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
 def test_assembly_ds_domains(mode):
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 10, 10, ghost_mode=mode)
+    mesh = create_unit_square_mesh(MPI.COMM_WORLD, 10, 10, ghost_mode=mode)
     V = FunctionSpace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 
@@ -175,7 +175,7 @@ def test_assembly_ds_domains(mode):
 @parametrize_ghost_mode
 def test_assembly_dS_domains(mode):
     N = 10
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, N, N, ghost_mode=mode)
+    mesh = create_unit_square_mesh(MPI.COMM_WORLD, N, N, ghost_mode=mode)
     one = Constant(mesh, PETSc.ScalarType(1))
     val = assemble_scalar(one * ufl.dS)
     val = mesh.comm.allreduce(val, op=MPI.SUM)
@@ -184,7 +184,7 @@ def test_assembly_dS_domains(mode):
 
 @parametrize_ghost_mode
 def test_additivity(mode):
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
+    mesh = create_unit_square_mesh(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
     V = FunctionSpace(mesh, ("Lagrange", 1))
 
     f1 = Function(V)

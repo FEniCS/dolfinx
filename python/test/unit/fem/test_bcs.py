@@ -11,7 +11,7 @@ import ufl
 from dolfinx.fem import (DirichletBC, Function, FunctionSpace, apply_lifting,
                          assemble_matrix, assemble_vector, create_matrix,
                          create_vector, locate_dofs_geometrical, set_bc)
-from dolfinx.generation import UnitSquareMesh
+from dolfinx.mesh import create_unit_square_mesh
 from ufl import dx, inner
 
 from mpi4py import MPI
@@ -22,7 +22,7 @@ def test_locate_dofs_geometrical():
     """Test that locate_dofs_geometrical, when passed two function
     spaces, returns the correct degrees of freedom in each space.
     """
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 4, 8)
+    mesh = create_unit_square_mesh(MPI.COMM_WORLD, 4, 8)
     p0, p1 = 1, 2
     P0 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p0)
     P1 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p1)
@@ -60,7 +60,7 @@ def test_overlapping_bcs():
     boundary condition is applied.
     """
     n = 23
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, n, n)
+    mesh = create_unit_square_mesh(MPI.COMM_WORLD, n, n)
     V = FunctionSpace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     a = inner(u, v) * dx

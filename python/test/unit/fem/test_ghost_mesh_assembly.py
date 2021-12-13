@@ -10,7 +10,7 @@ import pytest
 import ufl
 from dolfinx import fem
 from dolfinx.fem import Function, FunctionSpace
-from dolfinx.generation import UnitSquareMesh
+from dolfinx.mesh import create_unit_square_mesh
 from dolfinx.mesh import GhostMode
 from ufl import avg, inner
 
@@ -37,7 +37,7 @@ def dS_from_ufl(mesh):
 @pytest.mark.parametrize("dx", [dx_from_ufl])
 @pytest.mark.parametrize("ds", [ds_from_ufl])
 def test_ghost_mesh_assembly(mode, dx, ds):
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
+    mesh = create_unit_square_mesh(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
     V = FunctionSpace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     dx = dx(mesh)
@@ -75,7 +75,7 @@ def test_ghost_mesh_assembly(mode, dx, ds):
                                               reason="Shared vertex currently disabled"))])
 @pytest.mark.parametrize("dS", [dS_from_ufl])
 def test_ghost_mesh_dS_assembly(mode, dS):
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
+    mesh = create_unit_square_mesh(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
     V = FunctionSpace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     dS = dS(mesh)

@@ -8,7 +8,7 @@ import os
 
 import pytest
 
-from dolfinx.generation import UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh
+from dolfinx.mesh import create_unit_cube_mesh, create_unit_interval_mesh, create_unit_square_mesh
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import CellType
 from dolfinx_utils.test.fixtures import tempdir
@@ -30,11 +30,11 @@ celltypes_3D = [CellType.tetrahedron, CellType.hexahedron]
 
 def mesh_factory(tdim, n):
     if tdim == 1:
-        return UnitIntervalMesh(MPI.COMM_WORLD, n)
+        return create_unit_interval_mesh(MPI.COMM_WORLD, n)
     elif tdim == 2:
-        return UnitSquareMesh(MPI.COMM_WORLD, n, n)
+        return create_unit_square_mesh(MPI.COMM_WORLD, n, n)
     elif tdim == 3:
-        return UnitCubeMesh(MPI.COMM_WORLD, n, n, n)
+        return create_unit_cube_mesh(MPI.COMM_WORLD, n, n, n)
 
 
 @pytest.fixture

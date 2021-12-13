@@ -14,7 +14,7 @@ from dolfinx.fem import (DirichletBC, Form, Function, FunctionSpace,
                          apply_lifting, assemble_matrix, assemble_vector,
                          create_matrix, create_vector, locate_dofs_geometrical,
                          set_bc)
-from dolfinx.generation import UnitSquareMesh
+from dolfinx.mesh import create_unit_square_mesh
 from ufl import TestFunction, TrialFunction, derivative, dx, grad, inner
 
 from mpi4py import MPI
@@ -90,7 +90,7 @@ class NonlinearPDE_SNESProblem:
 def test_linear_pde():
     """Test Newton solver for a linear PDE"""
     # Create mesh and function space
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 12, 12)
+    mesh = create_unit_square_mesh(MPI.COMM_WORLD, 12, 12)
     V = FunctionSpace(mesh, ("Lagrange", 1))
     u = Function(V)
     v = TestFunction(V)
@@ -128,7 +128,7 @@ def test_linear_pde():
 def test_nonlinear_pde():
     """Test Newton solver for a simple nonlinear PDE"""
     # Create mesh and function space
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 12, 5)
+    mesh = create_unit_square_mesh(MPI.COMM_WORLD, 12, 5)
     V = FunctionSpace(mesh, ("Lagrange", 1))
     u = Function(V)
     v = TestFunction(V)
@@ -169,7 +169,7 @@ def test_nonlinear_pde():
 def test_nonlinear_pde_snes():
     """Test Newton solver for a simple nonlinear PDE"""
     # Create mesh and function space
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 12, 15)
+    mesh = create_unit_square_mesh(MPI.COMM_WORLD, 12, 15)
     V = FunctionSpace(mesh, ("Lagrange", 1))
     u = Function(V)
     v = TestFunction(V)

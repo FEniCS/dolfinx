@@ -13,7 +13,7 @@ import pytest
 import dolfinx
 import ufl
 from dolfinx.fem import FunctionSpace, VectorFunctionSpace
-from dolfinx.generation import UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh
+from dolfinx.mesh import create_unit_cube_mesh, create_unit_interval_mesh, create_unit_square_mesh
 from dolfinx.graph import create_adjacencylist
 from dolfinx.mesh import CellType, create_mesh
 from dolfinx_utils.test.skips import skip_in_parallel
@@ -26,13 +26,13 @@ xfail = pytest.mark.xfail(strict=True)
 
 @pytest.fixture
 def mesh():
-    return UnitSquareMesh(MPI.COMM_WORLD, 4, 4)
+    return create_unit_square_mesh(MPI.COMM_WORLD, 4, 4)
 
 
 @pytest.mark.skip
 @pytest.mark.parametrize(
-    'mesh_factory', [(UnitSquareMesh, (MPI.COMM_WORLD, 4, 4)),
-                     (UnitSquareMesh,
+    'mesh_factory', [(create_unit_square_mesh, (MPI.COMM_WORLD, 4, 4)),
+                     (create_unit_square_mesh,
                       (MPI.COMM_WORLD, 4, 4, CellType.quadrilateral))])
 def test_tabulate_dofs(mesh_factory):
     func, args = mesh_factory
@@ -104,8 +104,8 @@ def test_entity_dofs(mesh):
 @pytest.mark.skip
 @skip_in_parallel
 @pytest.mark.parametrize(
-    'mesh_factory', [(UnitSquareMesh, (MPI.COMM_WORLD, 2, 2)),
-                     (UnitSquareMesh,
+    'mesh_factory', [(create_unit_square_mesh, (MPI.COMM_WORLD, 2, 2)),
+                     (create_unit_square_mesh,
                       (MPI.COMM_WORLD, 2, 2, CellType.quadrilateral))])
 def test_entity_closure_dofs(mesh_factory):
     func, args = mesh_factory
@@ -167,7 +167,7 @@ def test_clear_sub_map_data_scalar(mesh):
 
 @pytest.mark.skip
 def test_clear_sub_map_data_vector(mesh):
-    mesh = UnitSquareMesh(8, 8)
+    mesh = create_unit_square_mesh(8, 8)
     P1 = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
     W = FunctionSpace(mesh, P1 * P1)
 
@@ -186,10 +186,10 @@ def test_clear_sub_map_data_vector(mesh):
 @pytest.mark.skip
 def test_block_size(mesh):
     meshes = [
-        UnitSquareMesh(8, 8),
-        UnitCubeMesh(4, 4, 4),
-        UnitSquareMesh(8, 8, CellType.quadrilateral),
-        UnitCubeMesh(4, 4, 4, CellType.hexahedron)
+        create_unit_square_mesh(8, 8),
+        create_unit_cube_mesh(4, 4, 4),
+        create_unit_square_mesh(8, 8, CellType.quadrilateral),
+        create_unit_cube_mesh(4, 4, 4, CellType.hexahedron)
     ]
     for mesh in meshes:
         P2 = FiniteElement("Lagrange", mesh.ufl_cell(), 2)
@@ -210,7 +210,7 @@ def test_block_size(mesh):
 
 @pytest.mark.skip
 def test_block_size_real(mesh):
-    mesh = UnitIntervalMesh(12)
+    mesh = create_unit_interval_mesh(12)
     V = FiniteElement('DG', mesh.ufl_cell(), 0)
     R = FiniteElement('R', mesh.ufl_cell(), 0)
     X = FunctionSpace(mesh, V * R)
@@ -219,8 +219,8 @@ def test_block_size_real(mesh):
 
 @pytest.mark.skip
 @pytest.mark.parametrize(
-    'mesh_factory', [(UnitSquareMesh, (MPI.COMM_WORLD, 4, 4)),
-                     (UnitSquareMesh,
+    'mesh_factory', [(create_unit_square_mesh, (MPI.COMM_WORLD, 4, 4)),
+                     (create_unit_square_mesh,
                       (MPI.COMM_WORLD, 4, 4, CellType.quadrilateral))])
 def test_local_dimension(mesh_factory):
     func, args = mesh_factory

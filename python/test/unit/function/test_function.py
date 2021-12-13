@@ -14,7 +14,7 @@ import pytest
 import ufl
 from dolfinx.fem import (Function, FunctionSpace, TensorFunctionSpace,
                          VectorFunctionSpace)
-from dolfinx.generation import UnitCubeMesh
+from dolfinx.mesh import create_unit_cube_mesh
 from dolfinx.geometry import (BoundingBoxTree, compute_colliding_cells,
                               compute_collisions)
 from dolfinx.mesh import create_mesh
@@ -26,7 +26,7 @@ from petsc4py import PETSc
 
 @pytest.fixture
 def mesh():
-    return UnitCubeMesh(MPI.COMM_WORLD, 3, 3, 3)
+    return create_unit_cube_mesh(MPI.COMM_WORLD, 3, 3, 3)
 
 
 @pytest.fixture
@@ -185,7 +185,7 @@ def test_interpolation_mismatch_rank1(W):
 def test_mixed_element_interpolation():
     def f(x):
         return np.ones(2, x.shape[1])
-    mesh = UnitCubeMesh(MPI.COMM_WORLD, 3, 3, 3)
+    mesh = create_unit_cube_mesh(MPI.COMM_WORLD, 3, 3, 3)
     el = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
     V = FunctionSpace(mesh, ufl.MixedElement([el, el]))
     u = Function(V)
