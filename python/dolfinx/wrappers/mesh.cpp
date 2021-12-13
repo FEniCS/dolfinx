@@ -40,10 +40,12 @@ namespace
 template <typename Functor>
 auto create_cell_partitioner_cpp(Functor p_py)
 {
-  return [p_py](MPI_Comm comm, int n, int tdim,
-                       const dolfinx::graph::AdjacencyList<std::int64_t>& cells,
-                       dolfinx::mesh::GhostMode ghost_mode)  {
-    return p_py(dolfinx_wrappers::MPICommWrapper(comm), n, tdim, cells, ghost_mode);
+  return [p_py](MPI_Comm comm, int nparts,
+                const dolfinx::graph::AdjacencyList<std::int64_t>& local_graph,
+                std::int32_t num_ghost_nodes, bool ghosting)
+  {
+    return p_py(dolfinx_wrappers::MPICommWrapper(comm), nparts, local_graph,
+                num_ghost_nodes, ghosting);
   };
 }
 
@@ -339,6 +341,17 @@ void mesh(py::module& m)
           return create_cell_partitioner_py(
               dolfinx::mesh::create_cell_partitioner());
         });
+  m.def("create_cell_partitioner",
+         [](const std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
+                MPICommWrapper comm, int nparts,
+                const dolfinx::graph::AdjacencyList<std::int64_t>& local_graph,
+                std::int32_t num_ghost_nodes, bool ghosting)>& part)
+             -> PythonCellPartitionFunction
+         {
+           return create_cell_partitioner_py(
+               dolfinx::mesh::create_cell_partitioner(
+                   create_cell_partitioner_cpp(part)));
+         });
 
   m.def("locate_entities",
         [](const dolfinx::mesh::Mesh& mesh, int dim,
