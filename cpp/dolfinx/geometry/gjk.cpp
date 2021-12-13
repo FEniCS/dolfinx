@@ -47,6 +47,67 @@ nearest_simplex(const xt::xtensor<double, 2>& s)
     else
       return {xt::reshape_view(s1, {1, 3}), s1};
   }
+  case 3:
+  {
+    const auto a = xt::row(s, 0);
+    const auto b = xt::row(s, 1);
+    const auto c = xt::row(s, 2);
+    const double ab2 = xt::norm_sq(a - b)();
+    const double ac2 = xt::norm_sq(a - c)();
+    const double bc2 = xt::norm_sq(b - c)();
+    const xt::xtensor_fixed<double, xt::xshape<3>> lm
+        = {xt::sum(a * (a - b))() / ab2, xt::sum(a * (a - c))() / ac2,
+           xt::sum(b * (b - c))() / bc2};
+
+    // Calculate triangle ABC
+    const double caba = xt::sum((c - a) * (b - a))();
+    const double c2 = 1 - caba * caba / (ab2 * ac2);
+    const double lbb = (lm[0] - lm[1] * caba / ab2) / c2;
+    const double lcc = (lm[1] - lm[0] * caba / ac2) / c2;
+
+    // Intersects triangle
+    if (lbb >= 0.0 and lcc >= 0.0 and (lbb + lcc) <= 1.0)
+    {
+      // Calculate intersection more accurately
+      auto v = math::cross(c - a, b - a);
+
+      // Barycentre of triangle
+      auto p = (a + b + c) / 3.0;
+
+      // Renormalise n in plane of ABC
+      v *= xt::sum(v * p) / xt::norm_sq(v);
+      return {std::move(s), v};
+    }
+
+    // Get closest point
+    std::size_t i = xt::argmin(xt::norm_sq(s, {1}))();
+    xt::xtensor_fixed<double, xt::xshape<3>> vmin = xt::row(s, i);
+    double qmin = xt::norm_sq(vmin)();
+
+    xt::xtensor<double, 2> smin({1, 3});
+    xt::row(smin, 0) = vmin;
+
+    // Check if edges are closer
+    constexpr const int f[3][2] = {{0, 1}, {0, 2}, {1, 2}};
+    for (std::size_t i = 0; i < s.shape(0); ++i)
+    {
+      auto s0 = xt::row(s, f[i][0]);
+      auto s1 = xt::row(s, f[i][1]);
+      if (lm[i] > 0 and lm[i] < 1)
+      {
+        auto v = s0 + lm[i] * (s1 - s0);
+        const double qnorm = xt::norm_sq(v)();
+        if (qnorm < qmin)
+        {
+          vmin = v;
+          qmin = qnorm;
+          smin.resize({2, 3});
+          xt::row(smin, 0) = s0;
+          xt::row(smin, 1) = s1;
+        }
+      }
+    }
+  }
   case 4:
   {
     auto s0 = xt::row(s, 0);
@@ -99,71 +160,12 @@ nearest_simplex(const xt::xtensor<double, 2>& s)
         }
       }
     }
-
-    return {std::move(smin), vmin};
   }
-  }
-
-  assert(s.shape(0) == 3);
-  const auto a = xt::row(s, 0);
-  const auto b = xt::row(s, 1);
-  const auto c = xt::row(s, 2);
-  const double ab2 = xt::norm_sq(a - b)();
-  const double ac2 = xt::norm_sq(a - c)();
-  const double bc2 = xt::norm_sq(b - c)();
-  const xt::xtensor_fixed<double, xt::xshape<3>> lm
-      = {xt::sum(a * (a - b))() / ab2, xt::sum(a * (a - c))() / ac2,
-         xt::sum(b * (b - c))() / bc2};
-
-  // Calculate triangle ABC
-  const double caba = xt::sum((c - a) * (b - a))();
-  const double c2 = 1 - caba * caba / (ab2 * ac2);
-  const double lbb = (lm[0] - lm[1] * caba / ab2) / c2;
-  const double lcc = (lm[1] - lm[0] * caba / ac2) / c2;
-
-  // Intersects triangle
-  if (lbb >= 0.0 and lcc >= 0.0 and (lbb + lcc) <= 1.0)
+  default:
   {
-    // Calculate intersection more accurately
-    auto v = math::cross(c - a, b - a);
-
-    // Barycentre of triangle
-    auto p = (a + b + c) / 3.0;
-
-    // Renormalise n in plane of ABC
-    v *= xt::sum(v * p) / xt::norm_sq(v);
-    return {std::move(s), v};
+    throw std::runtime_error("Number of rows defining simplex not supported.");
   }
-
-  // Get closest point
-  std::size_t i = xt::argmin(xt::norm_sq(s, {1}))();
-  xt::xtensor_fixed<double, xt::xshape<3>> vmin = xt::row(s, i);
-  double qmin = xt::norm_sq(vmin)();
-
-  xt::xtensor<double, 2> smin({1, 3});
-  xt::row(smin, 0) = vmin;
-
-  // Check if edges are closer
-  constexpr const int f[3][2] = {{0, 1}, {0, 2}, {1, 2}};
-  for (std::size_t i = 0; i < s.shape(0); ++i)
-  {
-    auto s0 = xt::row(s, f[i][0]);
-    auto s1 = xt::row(s, f[i][1]);
-    if (lm[i] > 0 and lm[i] < 1)
-    {
-      auto v = s0 + lm[i] * (s1 - s0);
-      const double qnorm = xt::norm_sq(v)();
-      if (qnorm < qmin)
-      {
-        vmin = v;
-        qmin = qnorm;
-        smin.resize({2, 3});
-        xt::row(smin, 0) = s0;
-        xt::row(smin, 1) = s1;
-      }
-    }
   }
-
   return {std::move(smin), vmin};
 }
 //----------------------------------------------------------------------------
