@@ -177,11 +177,8 @@ public:
   /// @param[in] g The constant value
   /// @param[in] dofs Degree-of-freedom block indices (@p
   /// std::vector<std::int32_t>) in the space of the boundary value
-  /// function applied to V_dofs[i]. The dof block indices must be
-  /// sorted.
-  /// @note The indices in `dofs` are for *blocks*, e.g. a block index
-  /// maps to 3 degrees-of-freedom if the dofmap associated with `g` has
-  /// block size 3
+  /// function applied to V. The dof block indices must be
+  /// sorted and unrolled.
   template <typename U>
   DirichletBC(const std::shared_ptr<const fem::Constant<T>>& g, U&& dofs,
               const std::shared_ptr<const fem::FunctionSpace>& V)
@@ -193,30 +190,27 @@ public:
         {
           using G = std::decay_t<decltype(f)>;
           if constexpr (std::is_same_v<G,
-                                       std::shared_ptr<const fem::Function<T>>>)
-          {
-            assert(f);
-          }
-          else if constexpr (std::is_same_v<
-                                 G, std::shared_ptr<const fem::Constant<T>>>)
+                                       std::shared_ptr<const fem::Constant<T>>>)
           {
             assert(f);
           }
           else
           {
-            throw std::runtime_error("Unknown bc type.");
+            throw std::runtime_error("Unknown bc type for constructor.");
           }
         },
         _g);
 
-    const int owned_size0 = _function_space->dofmap()->index_map->size_local();
-    auto it = std::lower_bound(_dofs0.begin(), _dofs0.end(), owned_size0);
     const int map0_bs = _function_space->dofmap()->index_map_bs();
-    _owned_indices0 = map0_bs * std::distance(_dofs0.begin(), it);
-
+    const int map0_size = _function_space->dofmap()->index_map->size_local();
+    const int owned_size0 = map0_bs * map0_size;
+    auto it0 = std::lower_bound(_dofs0.begin(), _dofs0.end(), owned_size0);
+    _owned_indices0 = std::distance(_dofs0.begin(), it0);
     const int bs = _function_space->dofmap()->bs();
+
     if (bs > 1)
     {
+      _owned_indices0 *= bs;
       // Unroll for the block size
       const std::vector<std::int32_t> dof_tmp = _dofs0;
       _dofs0.resize(bs * dof_tmp.size());
@@ -226,7 +220,6 @@ public:
           _dofs0[bs * i + k] = bs * dof_tmp[i] + k;
       }
     }
-
     // TODO: allows single dofs array (let one point to the other)
     _dofs1_g = _dofs0;
   }
@@ -261,11 +254,6 @@ public:
           using G = std::decay_t<decltype(f)>;
           if constexpr (std::is_same_v<G,
                                        std::shared_ptr<const fem::Function<T>>>)
-          {
-            assert(f);
-          }
-          else if constexpr (std::is_same_v<
-                                 G, std::shared_ptr<const fem::Constant<T>>>)
           {
             assert(f);
           }
