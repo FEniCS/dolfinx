@@ -9,7 +9,7 @@ import pytest
 
 from dolfinx import cpp as _cpp
 from dolfinx.cpp.mesh import cell_normals
-from dolfinx.generation import UnitCubeMesh, UnitSquareMesh
+from dolfinx.mesh import create_unit_cube_mesh, create_unit_square_mesh
 from dolfinx.mesh import locate_entities_boundary
 from dolfinx_utils.test.skips import skip_in_parallel
 
@@ -18,12 +18,12 @@ from mpi4py import MPI
 
 @pytest.fixture
 def cube():
-    return UnitCubeMesh(MPI.COMM_WORLD, 5, 5, 5)
+    return create_unit_cube_mesh(MPI.COMM_WORLD, 5, 5, 5)
 
 
 @pytest.fixture
 def square():
-    return UnitSquareMesh(MPI.COMM_WORLD, 5, 5)
+    return create_unit_square_mesh(MPI.COMM_WORLD, 5, 5)
 
 
 @pytest.mark.skip("volume_entities needs fixing")

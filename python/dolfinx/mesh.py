@@ -243,7 +243,7 @@ def create_interval_mesh(comm: _MPI.Comm, nx: int, points: list, ghost_mode=Ghos
 
     """
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", "interval", 1))
-    mesh = _cpp.generation.create_interval_mesh(comm, nx, points, ghost_mode, partitioner)
+    mesh = _cpp.mesh.create_interval_mesh(comm, nx, points, ghost_mode, partitioner)
     return Mesh.from_cpp(mesh, domain)
 
 
@@ -296,7 +296,7 @@ def create_rectangle_mesh(comm: _MPI.Comm, points: typing.List[np.array], n: lis
     """
 
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell_type.name, 1))
-    mesh = _cpp.generation.create_rectangle_mesh(comm, points, n, cell_type, ghost_mode, partitioner, diagonal)
+    mesh = _cpp.mesh.create_rectangle_mesh(comm, points, n, cell_type, ghost_mode, partitioner, diagonal)
     return Mesh.from_cpp(mesh, domain)
 
 
@@ -354,7 +354,7 @@ def create_box_mesh(comm: _MPI.Comm, points: typing.List[np.array], n: list,
 
     """
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell_type.name, 1))
-    mesh = _cpp.generation.create_box_mesh(comm, points, n, cell_type, ghost_mode, partitioner)
+    mesh = _cpp.mesh.create_box_mesh(comm, points, n, cell_type, ghost_mode, partitioner)
     return Mesh.from_cpp(mesh, domain)
 
 

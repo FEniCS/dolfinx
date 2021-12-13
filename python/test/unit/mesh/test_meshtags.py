@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from dolfinx.generation import UnitCubeMesh
+from dolfinx.mesh import create_unit_cube_mesh
 from dolfinx.graph import create_adjacencylist
 from dolfinx.mesh import CellType, create_meshtags, locate_entities
 
@@ -14,7 +14,7 @@ celltypes_3D = [CellType.tetrahedron, CellType.hexahedron]
 def test_create(cell_type):
     comm = MPI.COMM_WORLD
 
-    mesh = UnitCubeMesh(comm, 6, 6, 6, cell_type)
+    mesh = create_unit_cube_mesh(comm, 6, 6, 6, cell_type)
 
     marked_lines = locate_entities(mesh, 1, lambda x: np.isclose(x[1], 0.5))
     f_v = mesh.topology.connectivity(1, 0).array.reshape(-1, 2)
