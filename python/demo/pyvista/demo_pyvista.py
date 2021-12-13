@@ -16,8 +16,8 @@ import dolfinx.plot
 import ufl
 from dolfinx.fem import (Function, FunctionSpace, LinearProblem,
                          VectorFunctionSpace)
-from dolfinx.generation import UnitCubeMesh, UnitSquareMesh
-from dolfinx.mesh import CellType, MeshTags, compute_midpoints
+from dolfinx.mesh import (CellType, MeshTags, UnitCubeMesh, compute_midpoints,
+                          create_unit_square_mesh)
 
 from mpi4py import MPI
 
@@ -124,7 +124,7 @@ else:
 # As in the previous section, we interpolate a function into a Lagrange
 # function space
 
-mesh = UnitSquareMesh(MPI.COMM_WORLD, 12, 12, cell_type=CellType.quadrilateral)
+mesh = create_unit_square_mesh(MPI.COMM_WORLD, 12, 12, cell_type=CellType.quadrilateral)
 V = FunctionSpace(mesh, ("Lagrange", 1))
 u = Function(V)
 u.interpolate(lambda x: np.sin(np.pi * x[0]) * np.sin(2 * x[1] * np.pi))
@@ -286,7 +286,7 @@ def vel(x):
     return vals
 
 
-mesh = UnitSquareMesh(MPI.COMM_WORLD, 6, 6, CellType.triangle)
+mesh = create_unit_square_mesh(MPI.COMM_WORLD, 6, 6, CellType.triangle)
 V = VectorFunctionSpace(mesh, ("Lagrange", 2))
 uh = Function(V)
 uh.interpolate(vel)

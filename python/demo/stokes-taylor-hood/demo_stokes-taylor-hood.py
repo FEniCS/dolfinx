@@ -78,9 +78,9 @@ from dolfinx import fem
 from dolfinx.fem import (Constant, DirichletBC, Form, Function, FunctionSpace,
                          form, locate_dofs_geometrical,
                          locate_dofs_topological)
-from dolfinx.generation import RectangleMesh
 from dolfinx.io import XDMFFile
-from dolfinx.mesh import CellType, GhostMode, locate_entities_boundary
+from dolfinx.mesh import (CellType, GhostMode, RectangleMesh,
+                          locate_entities_boundary)
 from ufl import div, dx, grad, inner
 
 from mpi4py import MPI

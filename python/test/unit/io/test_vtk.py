@@ -12,9 +12,9 @@ import pytest
 import ufl
 from dolfinx.fem import (Function, FunctionSpace, TensorFunctionSpace,
                          VectorFunctionSpace)
-from dolfinx.mesh import create_unit_cube_mesh, create_unit_interval_mesh, create_unit_square_mesh
 from dolfinx.io import VTKFile
-from dolfinx.mesh import CellType, create_mesh
+from dolfinx.mesh import (CellType, create_mesh, create_unit_cube_mesh,
+                          create_unit_interval_mesh, create_unit_square_mesh)
 from dolfinx_utils.test.fixtures import tempdir
 from dolfinx_utils.test.skips import skip_in_parallel
 

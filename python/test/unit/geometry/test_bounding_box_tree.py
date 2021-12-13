@@ -9,12 +9,12 @@ import numpy
 import pytest
 
 from dolfinx import cpp as _cpp
-from dolfinx.mesh import (create_box_mesh, create_unit_cube_mesh, create_unit_interval_mesh,
-                                create_unit_square_mesh)
 from dolfinx.geometry import (BoundingBoxTree, compute_closest_entity,
                               compute_colliding_cells, compute_collisions,
                               compute_distance_gjk, create_midpoint_tree)
-from dolfinx.mesh import CellType, locate_entities, locate_entities_boundary
+from dolfinx.mesh import (CellType, create_box_mesh, create_unit_cube_mesh,
+                          create_unit_interval_mesh, create_unit_square_mesh,
+                          locate_entities, locate_entities_boundary)
 from dolfinx_utils.test.skips import skip_in_parallel
 
 from mpi4py import MPI

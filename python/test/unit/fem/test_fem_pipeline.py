@@ -13,10 +13,10 @@ from dolfinx.fem import (DirichletBC, Form, Function, FunctionSpace,
                          VectorFunctionSpace, apply_lifting, assemble_matrix,
                          assemble_scalar, assemble_vector,
                          locate_dofs_topological, set_bc)
-from dolfinx.mesh import create_rectangle_mesh, create_unit_cube_mesh, create_unit_square_mesh
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import (CellType, compute_boundary_facets,
-                          locate_entities_boundary)
+                          create_rectangle_mesh, create_unit_cube_mesh,
+                          create_unit_square_mesh, locate_entities_boundary)
 from dolfinx_utils.test.skips import skip_if_complex
 from ufl import (CellDiameter, FacetNormal, SpatialCoordinate, TestFunction,
                  TrialFunction, avg, div, ds, dS, dx, grad, inner, jump)

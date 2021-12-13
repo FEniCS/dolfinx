@@ -11,6 +11,7 @@ import numpy
 import pytest
 
 import ufl
+from dolfinx.cpp.la.petsc import scatter_local_vectors
 from dolfinx.fem import (DirichletBC, Form, Function, FunctionSpace,
                          VectorFunctionSpace, apply_lifting,
                          apply_lifting_nest, assemble_matrix,
@@ -22,10 +23,9 @@ from dolfinx.fem import (DirichletBC, Form, Function, FunctionSpace,
                          create_vector_nest, locate_dofs_topological, set_bc,
                          set_bc_nest)
 from dolfinx.fem.form import extract_function_spaces
-from dolfinx.mesh import create_unit_cube_mesh, create_unit_square_mesh
-from dolfinx.mesh import GhostMode, locate_entities_boundary
+from dolfinx.mesh import (GhostMode, create_unit_cube_mesh,
+                          create_unit_square_mesh, locate_entities_boundary)
 from ufl import derivative, dx, inner
-from dolfinx.cpp.la.petsc import scatter_local_vectors
 
 from mpi4py import MPI
 from petsc4py import PETSc

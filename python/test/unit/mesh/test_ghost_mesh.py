@@ -6,8 +6,8 @@
 
 import pytest
 
-from dolfinx.mesh import create_unit_cube_mesh, create_unit_interval_mesh, create_unit_square_mesh
-from dolfinx.mesh import GhostMode, compute_midpoints
+from dolfinx.mesh import (GhostMode, compute_midpoints, create_unit_cube_mesh,
+                          create_unit_interval_mesh, create_unit_square_mesh)
 
 from mpi4py import MPI
 

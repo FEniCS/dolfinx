@@ -10,9 +10,9 @@ from xml.etree import ElementTree
 import numpy as np
 import pytest
 
-from dolfinx.mesh import create_unit_cube_mesh
 from dolfinx.io import XDMFFile
-from dolfinx.mesh import CellType, MeshTags, locate_entities
+from dolfinx.mesh import (CellType, MeshTags, create_unit_cube_mesh,
+                          locate_entities)
 from dolfinx_utils.test.fixtures import tempdir
 
 from mpi4py import MPI

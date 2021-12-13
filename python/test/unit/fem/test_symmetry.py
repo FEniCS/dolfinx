@@ -10,8 +10,8 @@ import pytest
 import dolfinx
 import ufl
 from dolfinx.fem import FunctionSpace
-from dolfinx.mesh import create_unit_cube_mesh, create_unit_square_mesh
-from dolfinx.mesh import CellType
+from dolfinx.mesh import (CellType, create_unit_cube_mesh,
+                          create_unit_square_mesh)
 from dolfinx_utils.test.skips import skip_in_parallel
 from ufl import FiniteElement, MixedElement, VectorElement, grad, inner
 

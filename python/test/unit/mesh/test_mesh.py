@@ -14,9 +14,9 @@ import basix
 from dolfinx import cpp as _cpp
 from dolfinx.cpp.mesh import create_cell_partitioner, is_simplex
 from dolfinx.fem import assemble_scalar
-from dolfinx.mesh import (create_box_mesh, DiagonalType, create_rectangle_mesh,
-                                create_unit_cube_mesh, create_unit_interval_mesh, create_unit_square_mesh)
-from dolfinx.mesh import CellType, GhostMode
+from dolfinx.mesh import (CellType, DiagonalType, GhostMode, create_box_mesh,
+                          create_rectangle_mesh, create_unit_cube_mesh,
+                          create_unit_interval_mesh, create_unit_square_mesh)
 from dolfinx_utils.test.fixtures import tempdir
 from dolfinx_utils.test.skips import skip_in_parallel
 from ufl import dx

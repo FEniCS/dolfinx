@@ -8,8 +8,8 @@ from numpy import isclose, logical_and
 
 import ufl
 from dolfinx.fem import FunctionSpace, assemble_matrix
-from dolfinx.mesh import DiagonalType, create_unit_cube_mesh, create_unit_square_mesh
-from dolfinx.mesh import (GhostMode, compute_incident_entities,
+from dolfinx.mesh import (DiagonalType, GhostMode, compute_incident_entities,
+                          create_unit_cube_mesh, create_unit_square_mesh,
                           locate_entities, locate_entities_boundary, refine)
 
 from mpi4py import MPI

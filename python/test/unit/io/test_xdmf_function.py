@@ -11,9 +11,9 @@ import pytest
 
 from dolfinx.fem import (Function, FunctionSpace, TensorFunctionSpace,
                          VectorFunctionSpace)
-from dolfinx.mesh import create_unit_cube_mesh, create_unit_interval_mesh, create_unit_square_mesh
 from dolfinx.io import XDMFFile
-from dolfinx.mesh import CellType
+from dolfinx.mesh import (CellType, create_unit_cube_mesh,
+                          create_unit_interval_mesh, create_unit_square_mesh)
 from dolfinx_utils.test.fixtures import tempdir
 
 from mpi4py import MPI

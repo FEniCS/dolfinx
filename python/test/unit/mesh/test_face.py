@@ -9,8 +9,8 @@ import pytest
 
 from dolfinx import cpp as _cpp
 from dolfinx.cpp.mesh import cell_normals
-from dolfinx.mesh import create_unit_cube_mesh, create_unit_square_mesh
-from dolfinx.mesh import locate_entities_boundary
+from dolfinx.mesh import (create_unit_cube_mesh, create_unit_square_mesh,
+                          locate_entities_boundary)
 from dolfinx_utils.test.skips import skip_in_parallel
 
 from mpi4py import MPI

@@ -10,8 +10,7 @@ import pytest
 import ufl
 from dolfinx import fem
 from dolfinx.fem import Function, FunctionSpace
-from dolfinx.mesh import create_unit_square_mesh
-from dolfinx.mesh import GhostMode
+from dolfinx.mesh import GhostMode, create_unit_square_mesh
 from ufl import avg, inner
 
 from mpi4py import MPI

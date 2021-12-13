@@ -16,9 +16,8 @@ from dolfinx import la
 from dolfinx.fem import (DirichletBC, Function, VectorFunctionSpace,
                          apply_lifting, assemble_matrix, assemble_vector,
                          locate_dofs_geometrical, set_bc)
-from dolfinx.generation import BoxMesh
 from dolfinx.io import XDMFFile
-from dolfinx.mesh import CellType, GhostMode
+from dolfinx.mesh import BoxMesh, CellType, GhostMode
 from ufl import (Identity, SpatialCoordinate, TestFunction, TrialFunction,
                  as_vector, dx, grad, inner, sym, tr)
 

@@ -12,8 +12,8 @@ import ufl
 from dolfinx.fem import (Constant, DirichletBC, Function, FunctionSpace,
                          apply_lifting, assemble_matrix, assemble_scalar,
                          assemble_vector, set_bc)
-from dolfinx.mesh import create_unit_square_mesh
-from dolfinx.mesh import GhostMode, MeshTags, locate_entities_boundary
+from dolfinx.mesh import (GhostMode, MeshTags, create_unit_square_mesh,
+                          locate_entities_boundary)
 
 from mpi4py import MPI
 from petsc4py import PETSc

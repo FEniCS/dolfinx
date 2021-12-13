@@ -13,8 +13,8 @@ import pytest
 import ufl
 from dolfinx.fem import (Function, FunctionSpace, VectorFunctionSpace,
                          assemble_scalar)
-from dolfinx.mesh import create_unit_cube_mesh, create_unit_square_mesh
-from dolfinx.mesh import CellType, create_mesh
+from dolfinx.mesh import (CellType, create_mesh, create_unit_cube_mesh,
+                          create_unit_square_mesh)
 from dolfinx_utils.test.skips import skip_in_parallel
 
 from mpi4py import MPI

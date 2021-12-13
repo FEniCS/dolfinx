@@ -1,9 +1,9 @@
 import numpy as np
 import pytest
 
-from dolfinx.mesh import create_unit_cube_mesh
 from dolfinx.graph import create_adjacencylist
-from dolfinx.mesh import CellType, create_meshtags, locate_entities
+from dolfinx.mesh import (CellType, create_meshtags, create_unit_cube_mesh,
+                          locate_entities)
 
 from mpi4py import MPI
 

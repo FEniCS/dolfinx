@@ -9,7 +9,8 @@ import pytest
 
 import dolfinx
 import ufl
-from dolfinx.mesh import create_unit_cube_mesh, create_unit_interval_mesh, create_unit_square_mesh
+from dolfinx.mesh import (create_unit_cube_mesh, create_unit_interval_mesh,
+                          create_unit_square_mesh)
 from dolfinx_utils.test.skips import skip_in_parallel
 
 from mpi4py import MPI

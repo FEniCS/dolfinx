@@ -13,8 +13,8 @@ import pytest
 import ufl
 from dolfinx import la
 from dolfinx.fem import VectorFunctionSpace, assemble_matrix
-from dolfinx.mesh import create_box_mesh, create_unit_cube_mesh, create_unit_square_mesh
-from dolfinx.mesh import CellType, GhostMode
+from dolfinx.mesh import (CellType, GhostMode, create_box_mesh,
+                          create_unit_cube_mesh, create_unit_square_mesh)
 from ufl import TestFunction, TrialFunction, dx, grad, inner
 
 from mpi4py import MPI

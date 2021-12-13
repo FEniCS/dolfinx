@@ -16,8 +16,7 @@ from dolfinx import la
 from dolfinx.fem import (DirichletBC, Function, FunctionSpace,
                          VectorFunctionSpace, apply_lifting, assemble_matrix,
                          assemble_vector, locate_dofs_topological, set_bc)
-from dolfinx.mesh import create_unit_square_mesh
-from dolfinx.mesh import locate_entities_boundary
+from dolfinx.mesh import create_unit_square_mesh, locate_entities_boundary
 from ufl import (Identity, TestFunction, TrialFunction, dot, dx, grad, inner,
                  sym, tr)
 

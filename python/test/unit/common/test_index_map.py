@@ -7,8 +7,7 @@
 import numpy as np
 
 import dolfinx
-from dolfinx.mesh import create_unit_square_mesh
-from dolfinx.mesh import GhostMode
+from dolfinx.mesh import GhostMode, create_unit_square_mesh
 
 from mpi4py import MPI
 

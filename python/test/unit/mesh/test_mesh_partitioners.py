@@ -12,10 +12,10 @@ import pytest
 import dolfinx
 import dolfinx.graph
 import ufl
-from dolfinx.mesh import create_box_mesh
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import (CellType, GhostMode, compute_midpoints,
-                          create_cell_partitioner, create_mesh)
+                          create_box_mesh, create_cell_partitioner,
+                          create_mesh)
 from dolfinx_utils.test.fixtures import tempdir
 
 from mpi4py import MPI

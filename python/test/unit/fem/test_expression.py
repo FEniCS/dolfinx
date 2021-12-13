@@ -10,9 +10,9 @@ import pytest
 
 import ufl
 from dolfinx.fem import Expression, Function, FunctionSpace
-from dolfinx.mesh import create_unit_square_mesh
 from dolfinx.geometry import (BoundingBoxTree, compute_colliding_cells,
                               compute_collisions)
+from dolfinx.mesh import create_unit_square_mesh
 
 from mpi4py import MPI
 from petsc4py import PETSc

@@ -14,8 +14,8 @@ import pytest
 import dolfinx
 import dolfinx.pkgconfig
 from dolfinx import wrappers
-from dolfinx.mesh import create_unit_square_mesh
 from dolfinx.jit import mpi_jit_decorator
+from dolfinx.mesh import create_unit_square_mesh
 from dolfinx_utils.test.fixtures import tempdir  # noqa: F401
 
 import mpi4py
