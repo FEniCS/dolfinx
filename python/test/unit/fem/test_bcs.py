@@ -1,4 +1,4 @@
-# Copyright (C) 2020-2021 Joseph P. Dean and Massimiliano Leoni
+# Copyright (C) 2020-2021 Joseph P. Dean, Massimiliano Leoni and Jørgen S. Dokken
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -13,8 +13,8 @@ from dolfinx.fem import (Constant, DirichletBC, Function, FunctionSpace,
                          assemble_vector, create_matrix, create_vector,
                          locate_dofs_geometrical, locate_dofs_topological,
                          set_bc)
-from dolfinx.generation import UnitSquareMesh
-from dolfinx.mesh import locate_entities_boundary
+from dolfinx.generation import UnitCubeMesh, UnitSquareMesh
+from dolfinx.mesh import CellType, locate_entities_boundary
 from ufl import dx, inner
 
 from mpi4py import MPI
@@ -105,12 +105,18 @@ def test_overlapping_bcs():
             assert b_loc[dof_corner[0]] == 123.456
 
 
-def test_constant_bc():
+@pytest.mark.parametrize(
+    'mesh_factory', [(UnitSquareMesh, (MPI.COMM_WORLD, 4, 4)),
+                     (UnitSquareMesh,
+                      (MPI.COMM_WORLD, 4, 4, CellType.quadrilateral)),
+                     (UnitCubeMesh, (MPI.COMM_WORLD, 3, 3, 3),
+                      ), (UnitCubeMesh, (MPI.COMM_WORLD, 3, 3, 3, CellType.hexahedron))])
+def test_constant_bc(mesh_factory):
     """
     Test that setting a DirichletBC with a constant yields the same result as setting it with a function.
     """
-
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 10, 10)
+    func, args = mesh_factory
+    mesh = func(*args)
     V = FunctionSpace(mesh, ("CG", 1))
     c = Constant(mesh, PETSc.ScalarType(2))
 
@@ -135,14 +141,22 @@ def test_constant_bc():
     assert(np.allclose(u_f.vector.array, u_c.vector.array))
 
 
-def test_vector_constant_bc():
+@pytest.mark.parametrize(
+    'mesh_factory', [(UnitSquareMesh, (MPI.COMM_WORLD, 4, 4)),
+                     (UnitSquareMesh,
+                      (MPI.COMM_WORLD, 4, 4, CellType.quadrilateral)),
+                     (UnitCubeMesh, (MPI.COMM_WORLD, 3, 3, 3),
+                      ), (UnitCubeMesh, (MPI.COMM_WORLD, 3, 3, 3, CellType.hexahedron))])
+def test_vector_constant_bc(mesh_factory):
     """
     Test that setting a DirichletBC with a vector valued constant yields the same result as setting it with a function.
     """
-
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 10, 10)
+    func, args = mesh_factory
+    mesh = func(*args)
     V = VectorFunctionSpace(mesh, ("CG", 1))
-    c = Constant(mesh, PETSc.ScalarType((2, 1)))
+    assert(V.num_sub_spaces() == mesh.geometry.dim)
+    vals = np.arange(mesh.geometry.dim, dtype=np.float64)
+    c = Constant(mesh, PETSc.ScalarType(vals))
 
     def on_boundary(x):
         return np.ones(x.shape[1], dtype=bool)
@@ -150,35 +164,40 @@ def test_vector_constant_bc():
     tdim = mesh.topology.dim
     Vs = [V.sub(i).collapse() for i in range(V.num_sub_spaces())]
     boundary_facets = locate_entities_boundary(mesh, tdim - 1, on_boundary)
-    boundary_dofs0 = locate_dofs_topological((V.sub(0), Vs[0]), tdim - 1, boundary_facets)
-    boundary_dofs1 = locate_dofs_topological((V.sub(1), Vs[1]), tdim - 1, boundary_facets)
+    boundary_dofs = [locate_dofs_topological((V.sub(i), Vs[i]), tdim - 1, boundary_facets)
+                     for i in range(V.num_sub_spaces())]
 
-    u_bc0 = Function(Vs[0])
-    u_bc0.x.array[:] = PETSc.ScalarType(c.value[0])
-    u_bc1 = Function(Vs[1])
-    u_bc1.x.array[:] = PETSc.ScalarType(c.value[1])
-
-    bc_f0 = DirichletBC(u_bc0, boundary_dofs0, V.sub(0))
-    bc_f1 = DirichletBC(u_bc1, boundary_dofs1, V.sub(1))
+    u_bcs = [Function(Vs[i]) for i in range(V.num_sub_spaces())]
+    bcs_f = []
+    for i, u in enumerate(u_bcs):
+        u_bcs[i].x.array[:] = PETSc.ScalarType(c.value[i])
+        bcs_f.append(DirichletBC(u_bcs[i], boundary_dofs[i], V.sub(i)))
 
     boundary_dofs = locate_dofs_topological(V, tdim - 1, boundary_facets)
     bc_c = DirichletBC(c, boundary_dofs, V)
 
     u_f = Function(V)
-    set_bc(u_f.vector, [bc_f0, bc_f1])
+    set_bc(u_f.vector, bcs_f)
 
     u_c = Function(V)
     set_bc(u_c.vector, [bc_c])
     assert(np.allclose(u_f.vector.array, u_c.vector.array))
 
 
-def test_sub_constant_bc():
+@pytest.mark.parametrize(
+    'mesh_factory', [(UnitSquareMesh, (MPI.COMM_WORLD, 4, 4)),
+                     (UnitSquareMesh,
+                      (MPI.COMM_WORLD, 4, 4, CellType.quadrilateral)),
+                     (UnitCubeMesh, (MPI.COMM_WORLD, 3, 3, 3),
+                      ), (UnitCubeMesh, (MPI.COMM_WORLD, 3, 3, 3, CellType.hexahedron))])
+def test_sub_constant_bc(mesh_factory):
     """
     Test that setting a DirichletBC with on a component of a vector valued function
     yields the same result as setting it with a function.
     """
+    func, args = mesh_factory
+    mesh = func(*args)
 
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 10, 10)
     V = VectorFunctionSpace(mesh, ("CG", 1))
     c = Constant(mesh, PETSc.ScalarType(3.14))
 
