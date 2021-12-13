@@ -11,18 +11,18 @@ import numpy
 
 import ufl
 from dolfinx import cpp as _cpp
-from dolfinx.cpp.generation import DiagonalType  # noqa
+from dolfinx.cpp.mesh import DiagonalType  # noqa
 from dolfinx.mesh import CellType, GhostMode, Mesh
 
 from mpi4py import MPI as _MPI
 
 __all__ = [
-    "IntervalMesh", "UnitIntervalMesh", "RectangleMesh", "UnitSquareMesh",
-    "BoxMesh", "UnitCubeMesh"
+    "create_interval_mesh", "create_unit_interval_mesh", "create_rectangle_mesh", "create_unit_square_mesh",
+    "create_box_mesh", "create_unit_cube_mesh"
 ]
 
 
-def IntervalMesh(comm: _MPI.Comm, nx: int, points: list, ghost_mode=GhostMode.shared_facet,
+def create_interval_mesh(comm: _MPI.Comm, nx: int, points: list, ghost_mode=GhostMode.shared_facet,
                  partitioner=_cpp.mesh.create_cell_partitioner()):
     """Create an interval mesh
 
@@ -47,7 +47,7 @@ def IntervalMesh(comm: _MPI.Comm, nx: int, points: list, ghost_mode=GhostMode.sh
     return Mesh.from_cpp(mesh, domain)
 
 
-def UnitIntervalMesh(comm: _MPI.Comm, nx: int, ghost_mode=GhostMode.shared_facet,
+def create_unit_interval_mesh(comm: _MPI.Comm, nx: int, ghost_mode=GhostMode.shared_facet,
                      partitioner=_cpp.mesh.create_cell_partitioner()):
     """Create a mesh on the unit interval
 
@@ -65,10 +65,10 @@ def UnitIntervalMesh(comm: _MPI.Comm, nx: int, ghost_mode=GhostMode.shared_facet
         distribution of cells across MPI ranks
 
     """
-    return IntervalMesh(comm, nx, [0.0, 1.0], ghost_mode, partitioner)
+    return create_interval_mesh(comm, nx, [0.0, 1.0], ghost_mode, partitioner)
 
 
-def RectangleMesh(comm: _MPI.Comm, points: typing.List[numpy.array], n: list, cell_type=CellType.triangle,
+def create_rectangle_mesh(comm: _MPI.Comm, points: typing.List[numpy.array], n: list, cell_type=CellType.triangle,
                   ghost_mode=GhostMode.shared_facet, partitioner=_cpp.mesh.create_cell_partitioner(),
                   diagonal: DiagonalType = DiagonalType.right):
     """Create rectangle mesh
@@ -100,7 +100,7 @@ def RectangleMesh(comm: _MPI.Comm, points: typing.List[numpy.array], n: list, ce
     return Mesh.from_cpp(mesh, domain)
 
 
-def UnitSquareMesh(comm: _MPI.Comm, nx: int, ny: int, cell_type=CellType.triangle,
+def create_unit_square_mesh(comm: _MPI.Comm, nx: int, ny: int, cell_type=CellType.triangle,
                    ghost_mode=GhostMode.shared_facet, partitioner=_cpp.mesh.create_cell_partitioner(),
                    diagonal: DiagonalType = DiagonalType.right):
     """Create a mesh of a unit square
@@ -124,12 +124,12 @@ def UnitSquareMesh(comm: _MPI.Comm, nx: int, ny: int, cell_type=CellType.triangl
         Direction of diagonal
 
     """
-    return RectangleMesh(comm, [numpy.array([0.0, 0.0, 0.0]),
+    return create_rectangle_mesh(comm, [numpy.array([0.0, 0.0, 0.0]),
                                 numpy.array([1.0, 1.0, 0.0])], [nx, ny], cell_type, ghost_mode,
                          partitioner, diagonal)
 
 
-def BoxMesh(comm: _MPI.Comm, points: typing.List[numpy.array], n: list,
+def create_box_mesh(comm: _MPI.Comm, points: typing.List[numpy.array], n: list,
             cell_type=CellType.tetrahedron,
             ghost_mode=GhostMode.shared_facet,
             partitioner=_cpp.mesh.create_cell_partitioner()):
@@ -158,7 +158,7 @@ def BoxMesh(comm: _MPI.Comm, points: typing.List[numpy.array], n: list,
     return Mesh.from_cpp(mesh, domain)
 
 
-def UnitCubeMesh(comm: _MPI.Comm, nx: int, ny: int, nz: int, cell_type=CellType.tetrahedron,
+def create_unit_cube_mesh(comm: _MPI.Comm, nx: int, ny: int, nz: int, cell_type=CellType.tetrahedron,
                  ghost_mode=GhostMode.shared_facet, partitioner=_cpp.mesh.create_cell_partitioner()):
     """Create a mesh of a unit cube
 
@@ -181,5 +181,5 @@ def UnitCubeMesh(comm: _MPI.Comm, nx: int, ny: int, nz: int, cell_type=CellType.
         MPI ranks
 
     """
-    return BoxMesh(comm, [numpy.array([0.0, 0.0, 0.0]), numpy.array(
+    return create_box_mesh(comm, [numpy.array([0.0, 0.0, 0.0]), numpy.array(
         [1.0, 1.0, 1.0])], [nx, ny, nz], cell_type, ghost_mode, partitioner)

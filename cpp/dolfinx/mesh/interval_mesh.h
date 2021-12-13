@@ -13,7 +13,7 @@
 #include <mpi.h>
 
 /// Interval mesh creation
-namespace dolfinx::generation::interval_mesh
+namespace dolfinx::mesh::interval_mesh
 {
 /// Interval mesh of the 1D line `[a, b]`.  Given @p n cells in the
 /// axial direction, the total number of intervals will be `n` and the

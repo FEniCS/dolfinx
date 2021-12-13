@@ -12,7 +12,7 @@
 #include <xtensor/xview.hpp>
 
 using namespace dolfinx;
-using namespace dolfinx::generation;
+using namespace dolfinx::mesh;
 
 namespace
 {

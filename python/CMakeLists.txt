@@ -47,7 +47,6 @@ pybind11_add_module(cpp MODULE
   dolfinx/wrappers/dolfin.cpp
   dolfinx/wrappers/common.cpp
   dolfinx/wrappers/fem.cpp
-  dolfinx/wrappers/generation.cpp
   dolfinx/wrappers/geometry.cpp
   dolfinx/wrappers/graph.cpp
   dolfinx/wrappers/io.cpp
@@ -57,7 +56,7 @@ pybind11_add_module(cpp MODULE
   dolfinx/wrappers/nls.cpp
   dolfinx/wrappers/refinement.cpp)
 
-# Add srict compiler flags
+# Add strict compiler flags
 include(CheckCXXCompilerFlag)
 CHECK_CXX_COMPILER_FLAG("-Wall -Werror -pedantic" HAVE_PEDANTIC)
 if (HAVE_PEDANTIC)
