@@ -188,7 +188,7 @@ find_local_entity_index(std::shared_ptr<const mesh::Mesh> mesh,
 /// @returns List of degrees of freedom that was found on the other processes
 /// that are in the local range (including ghosts)
 std::vector<std::int32_t>
-get_remote_dofs_in_range(dolfinx::MPI::Comm comm, const common::IndexMap& map,
+get_remote_dofs_in_range(dolfinx::MPI::Comm& comm, const common::IndexMap& map,
                          int bs, std::vector<std::int32_t>& dofs_local)
 {
   int num_neighbors(-1), outdegree(-2), weighted(-1);
@@ -201,7 +201,7 @@ get_remote_dofs_in_range(dolfinx::MPI::Comm comm, const common::IndexMap& map,
     return {};
 
   // Figure out how many entries to receive from each neighbor
-  const int num_dofs = 2 * dofs_local.size();
+  const int num_dofs = dofs_local.size();
   std::vector<int> num_dofs_recv(num_neighbors);
   MPI_Request request;
   MPI_Ineighbor_allgather(&num_dofs, 1, MPI_INT, num_dofs_recv.data(), 1,
@@ -638,7 +638,6 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
         std::unique(sorted_bc_dofs[b].begin(), sorted_bc_dofs[b].end()),
         sorted_bc_dofs[b].end());
   }
-
   if (!remote)
   {
     return sorted_bc_dofs;
@@ -672,7 +671,7 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
     std::array<std::vector<std::int32_t>, 2> out_dofs = sorted_bc_dofs;
     for (std::size_t b = 0; b < 2; ++b)
     {
-      for (std::size_t i = 0; i < bc_dofs[1].size(); ++i)
+      for (std::size_t i = 0; i < sorted_bc_dofs[1].size(); ++i)
       {
         out_dofs[b][i] = sorted_bc_dofs[b][perm[i]];
       }
