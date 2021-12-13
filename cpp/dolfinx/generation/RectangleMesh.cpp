@@ -197,7 +197,8 @@ mesh::Mesh build_tri(MPI_Comm comm,
 
           switch (diagonal)
           {
-          case DiagonalType::right_left: DiagonalType::left_right:
+          case DiagonalType::right_left: 
+          case DiagonalType::left_right:
             local_diagonal = DiagonalType::right;
             break;
           default:
@@ -218,7 +219,8 @@ mesh::Mesh build_tri(MPI_Comm comm,
           _cell.assign(c);
           switch (diagonal)
           {
-          case DiagonalType::right_left: DiagonalType::left_right:
+          case DiagonalType::right_left:
+          case DiagonalType::left_right:
             local_diagonal = DiagonalType::left;
             break;
           default:
