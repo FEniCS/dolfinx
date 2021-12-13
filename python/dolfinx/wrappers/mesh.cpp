@@ -342,16 +342,16 @@ void mesh(py::module& m)
               dolfinx::mesh::create_cell_partitioner());
         });
   m.def("create_cell_partitioner",
-         [](const std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
-                MPICommWrapper comm, int nparts,
-                const dolfinx::graph::AdjacencyList<std::int64_t>& local_graph,
-                std::int32_t num_ghost_nodes, bool ghosting)>& part)
-             -> PythonCellPartitionFunction
-         {
-           return create_cell_partitioner_py(
-               dolfinx::mesh::create_cell_partitioner(
-                   create_cell_partitioner_cpp(part)));
-         });
+        [](const std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
+               MPICommWrapper comm, int nparts,
+               const dolfinx::graph::AdjacencyList<std::int64_t>& local_graph,
+               std::int32_t num_ghost_nodes, bool ghosting)>& part)
+            -> PythonCellPartitionFunction
+        {
+          return create_cell_partitioner_py(
+              dolfinx::mesh::create_cell_partitioner(
+                  create_cell_partitioner_cpp(part)));
+        });
 
   m.def("locate_entities",
         [](const dolfinx::mesh::Mesh& mesh, int dim,
