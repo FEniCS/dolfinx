@@ -119,7 +119,7 @@ int main(int argc, char* argv[])
 
   {
     // Create mesh and function space
-    auto mesh = std::make_shared<mesh::Mesh>(generation::RectangleMesh::create(
+    auto mesh = std::make_shared<mesh::Mesh>(mesh::rectangle_mesh::create(
         MPI_COMM_WORLD, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 0.0}}}, {32, 32},
         mesh::CellType::triangle, mesh::GhostMode::none));
 
