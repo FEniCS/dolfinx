@@ -107,6 +107,7 @@ nearest_simplex(const xt::xtensor<double, 2>& s)
         }
       }
     }
+    return {std::move(smin), vmin};
   }
   case 4:
   {
@@ -160,13 +161,14 @@ nearest_simplex(const xt::xtensor<double, 2>& s)
         }
       }
     }
+    return {std::move(smin), vmin};
   }
   default:
   {
     throw std::runtime_error("Number of rows defining simplex not supported.");
   }
   }
-  return {std::move(smin), vmin};
+  return {nullptr, nullptr};
 }
 //----------------------------------------------------------------------------
 // Support function, finds point p in bd which maximises p.v
