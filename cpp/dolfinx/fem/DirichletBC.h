@@ -176,9 +176,8 @@ public:
   /// @param[in] V The function space to constrain
   /// @param[in] g The constant value
   /// @param[in] dofs Degree-of-freedom block indices (@p
-  /// std::vector<std::int32_t>) in the space of the boundary value
-  /// function applied to V. The dof block indices must be
-  /// sorted and unrolled.
+  /// std::vector<std::int32_t>) from the input function space to constrain
+  /// @note The dofs will be unrolled with the dofmap block size
   template <typename U>
   DirichletBC(const std::shared_ptr<const fem::Constant<T>>& g, U&& dofs,
               const std::shared_ptr<const fem::FunctionSpace>& V)
