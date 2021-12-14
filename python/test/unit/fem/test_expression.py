@@ -12,7 +12,7 @@ import ufl
 from dolfinx.fem import Expression, Function, FunctionSpace
 from dolfinx.geometry import (BoundingBoxTree, compute_colliding_cells,
                               compute_collisions)
-from dolfinx.mesh import create_unit_square_mesh
+from dolfinx.mesh import create_unit_square
 
 from mpi4py import MPI
 from petsc4py import PETSc
@@ -22,7 +22,7 @@ from petsc4py import PETSc
                     reason="Complex expression not implemented in ufc")
 def test_expression():
     """Test UFL expression evaluation"""
-    mesh = create_unit_square_mesh(MPI.COMM_WORLD, 10, 10)
+    mesh = create_unit_square(MPI.COMM_WORLD, 10, 10)
     V = FunctionSpace(mesh, ("Lagrange", 2))
 
     def f(x):

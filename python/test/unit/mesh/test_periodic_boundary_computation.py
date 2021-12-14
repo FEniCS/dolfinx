@@ -6,7 +6,7 @@
 
 # import numpy as np
 
-# from dolfinx import create_unit_square_mesh
+# from dolfinx import create_unit_square
 # from dolfinx.cpp.mesh import PeriodicBoundaryComputation
 # from dolfinx_utils.test.skips import skip_in_parallel
 
@@ -17,7 +17,7 @@
 
 # @pytest.fixture
 # def mesh():
-#     return create_unit_square_mesh(MPI.COMM_WORLD, 4, 4)
+#     return create_unit_square(MPI.COMM_WORLD, 4, 4)
 
 
 # @skip_in_parallel

@@ -9,8 +9,8 @@ import os
 import pytest
 
 from dolfinx.io import XDMFFile
-from dolfinx.mesh import (CellType, create_unit_cube_mesh,
-                          create_unit_interval_mesh, create_unit_square_mesh)
+from dolfinx.mesh import (CellType, create_unit_cube,
+                          create_unit_interval, create_unit_square)
 from dolfinx_utils.test.fixtures import tempdir
 
 from mpi4py import MPI
@@ -30,11 +30,11 @@ celltypes_3D = [CellType.tetrahedron, CellType.hexahedron]
 
 def mesh_factory(tdim, n):
     if tdim == 1:
-        return create_unit_interval_mesh(MPI.COMM_WORLD, n)
+        return create_unit_interval(MPI.COMM_WORLD, n)
     elif tdim == 2:
-        return create_unit_square_mesh(MPI.COMM_WORLD, n, n)
+        return create_unit_square(MPI.COMM_WORLD, n, n)
     elif tdim == 3:
-        return create_unit_cube_mesh(MPI.COMM_WORLD, n, n, n)
+        return create_unit_cube(MPI.COMM_WORLD, n, n, n)
 
 
 @pytest.fixture

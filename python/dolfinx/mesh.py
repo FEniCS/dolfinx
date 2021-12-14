@@ -244,7 +244,7 @@ def create_interval(comm: _MPI.Comm, nx: int, points: list, ghost_mode=GhostMode
 
     """
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", "interval", 1))
-    mesh = _cpp.mesh.create_interval_mesh(comm, nx, points, ghost_mode, partitioner)
+    mesh = _cpp.mesh.create_interval(comm, nx, points, ghost_mode, partitioner)
     return Mesh.from_cpp(mesh, domain)
 
 
@@ -266,7 +266,7 @@ def create_unit_interval(comm: _MPI.Comm, nx: int, ghost_mode=GhostMode.shared_f
         distribution of cells across MPI ranks
 
     """
-    return create_interval_mesh(comm, nx, [0.0, 1.0], ghost_mode, partitioner)
+    return create_interval(comm, nx, [0.0, 1.0], ghost_mode, partitioner)
 
 
 def create_rectangle(comm: _MPI.Comm, points: typing.List[np.array], n: list, cell_type=CellType.triangle,
@@ -297,7 +297,7 @@ def create_rectangle(comm: _MPI.Comm, points: typing.List[np.array], n: list, ce
     """
 
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell_type.name, 1))
-    mesh = _cpp.mesh.create_rectangle_mesh(comm, points, n, cell_type, ghost_mode, partitioner, diagonal)
+    mesh = _cpp.mesh.create_rectangle(comm, points, n, cell_type, ghost_mode, partitioner, diagonal)
     return Mesh.from_cpp(mesh, domain)
 
 
@@ -325,7 +325,7 @@ def create_unit_square(comm: _MPI.Comm, nx: int, ny: int, cell_type=CellType.tri
         Direction of diagonal
 
     """
-    return create_rectangle_mesh(comm, [np.array([0.0, 0.0, 0.0]),
+    return create_rectangle(comm, [np.array([0.0, 0.0, 0.0]),
                                         np.array([1.0, 1.0, 0.0])], [nx, ny], cell_type, ghost_mode,
                                  partitioner, diagonal)
 
@@ -355,7 +355,7 @@ def create_box(comm: _MPI.Comm, points: typing.List[np.array], n: list,
 
     """
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell_type.name, 1))
-    mesh = _cpp.mesh.create_box_mesh(comm, points, n, cell_type, ghost_mode, partitioner)
+    mesh = _cpp.mesh.create_box(comm, points, n, cell_type, ghost_mode, partitioner)
     return Mesh.from_cpp(mesh, domain)
 
 
@@ -382,5 +382,5 @@ def create_unit_cube(comm: _MPI.Comm, nx: int, ny: int, nz: int, cell_type=CellT
         MPI ranks
 
     """
-    return create_box_mesh(comm, [np.array([0.0, 0.0, 0.0]), np.array(
+    return create_box(comm, [np.array([0.0, 0.0, 0.0]), np.array(
         [1.0, 1.0, 1.0])], [nx, ny, nz], cell_type, ghost_mode, partitioner)

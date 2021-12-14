@@ -13,7 +13,7 @@ import pytest
 import ufl
 from dolfinx import cpp as _cpp
 from dolfinx.fem import Function, FunctionSpace
-from dolfinx.mesh import create_unit_square_mesh
+from dolfinx.mesh import create_unit_square
 
 from mpi4py import MPI
 
@@ -22,7 +22,7 @@ from mpi4py import MPI
                                      ufl.VectorElement("Lagrange", "triangle", 1)])
 def test_scatter_forward(element):
 
-    mesh = create_unit_square_mesh(MPI.COMM_WORLD, 5, 5)
+    mesh = create_unit_square(MPI.COMM_WORLD, 5, 5)
     V = FunctionSpace(mesh, element)
     u = Function(V)
     bs = V.dofmap.bs
@@ -52,7 +52,7 @@ def test_scatter_forward(element):
 def test_scatter_reverse(element):
 
     comm = MPI.COMM_WORLD
-    mesh = create_unit_square_mesh(MPI.COMM_WORLD, 5, 5)
+    mesh = create_unit_square(MPI.COMM_WORLD, 5, 5)
     V = FunctionSpace(mesh, element)
     u = Function(V)
     bs = V.dofmap.bs

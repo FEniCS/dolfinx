@@ -24,7 +24,7 @@ import dolfinx.pkgconfig
 import ufl
 from dolfinx.fem import (Function, FunctionSpace, assemble_matrix,
                          transpose_dofmap)
-from dolfinx.mesh import create_unit_square_mesh
+from dolfinx.mesh import create_unit_square
 from ufl import dx, inner
 
 import petsc4py.lib
@@ -292,7 +292,7 @@ def assemble_matrix_ctypes(A, mesh, dofmap, num_cells, set_vals, mode):
 def test_custom_mesh_loop_rank1():
 
     # Create mesh and function space
-    mesh = create_unit_square_mesh(MPI.COMM_WORLD, 64, 64)
+    mesh = create_unit_square(MPI.COMM_WORLD, 64, 64)
     V = FunctionSpace(mesh, ("Lagrange", 1))
 
     # Unpack mesh and dofmap data
@@ -373,7 +373,7 @@ def test_custom_mesh_loop_ctypes_rank2():
     """Test numba assembler for bilinear form"""
 
     # Create mesh and function space
-    mesh = create_unit_square_mesh(MPI.COMM_WORLD, 64, 64)
+    mesh = create_unit_square(MPI.COMM_WORLD, 64, 64)
     V = FunctionSpace(mesh, ("Lagrange", 1))
 
     # Extract mesh and dofmap data
@@ -415,7 +415,7 @@ def test_custom_mesh_loop_ctypes_rank2():
 def test_custom_mesh_loop_cffi_rank2(set_vals):
     """Test numba assembler for bilinear form"""
 
-    mesh = create_unit_square_mesh(MPI.COMM_WORLD, 64, 64)
+    mesh = create_unit_square(MPI.COMM_WORLD, 64, 64)
     V = FunctionSpace(mesh, ("Lagrange", 1))
 
     # Test against generated code and general assembler

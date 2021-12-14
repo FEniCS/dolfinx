@@ -9,30 +9,30 @@ from numpy import isclose, logical_and
 import ufl
 from dolfinx.fem import FunctionSpace, assemble_matrix
 from dolfinx.mesh import (DiagonalType, GhostMode, compute_incident_entities,
-                          create_unit_cube_mesh, create_unit_square_mesh,
+                          create_unit_cube, create_unit_square,
                           locate_entities, locate_entities_boundary, refine)
 
 from mpi4py import MPI
 
 
-def test_Refinecreate_unit_square_mesh():
+def test_Refinecreate_unit_square():
     """Refine mesh of unit square."""
-    mesh = create_unit_square_mesh(MPI.COMM_WORLD, 5, 7, ghost_mode=GhostMode.none)
+    mesh = create_unit_square(MPI.COMM_WORLD, 5, 7, ghost_mode=GhostMode.none)
     mesh.topology.create_entities(1)
     mesh = refine(mesh, redistribute=False)
     assert mesh.topology.index_map(0).size_global == 165
     assert mesh.topology.index_map(2).size_global == 280
 
 
-def test_Refinecreate_unit_cube_mesh_repartition():
+def test_Refinecreate_unit_cube_repartition():
     """Refine mesh of unit cube."""
-    mesh = create_unit_cube_mesh(MPI.COMM_WORLD, 5, 7, 9, ghost_mode=GhostMode.none)
+    mesh = create_unit_cube(MPI.COMM_WORLD, 5, 7, 9, ghost_mode=GhostMode.none)
     mesh.topology.create_entities(1)
     mesh = refine(mesh, redistribute=True)
     assert mesh.topology.index_map(0).size_global == 3135
     assert mesh.topology.index_map(3).size_global == 15120
 
-    mesh = create_unit_cube_mesh(MPI.COMM_WORLD, 5, 7, 9, ghost_mode=GhostMode.shared_facet)
+    mesh = create_unit_cube(MPI.COMM_WORLD, 5, 7, 9, ghost_mode=GhostMode.shared_facet)
     mesh.topology.create_entities(1)
     mesh = refine(mesh, redistribute=True)
     assert mesh.topology.index_map(0).size_global == 3135
@@ -42,9 +42,9 @@ def test_Refinecreate_unit_cube_mesh_repartition():
     assert Q
 
 
-def test_Refinecreate_unit_cube_mesh_keep_partition():
+def test_Refinecreate_unit_cube_keep_partition():
     """Refine mesh of unit cube."""
-    mesh = create_unit_cube_mesh(MPI.COMM_WORLD, 5, 7, 9, ghost_mode=GhostMode.none)
+    mesh = create_unit_cube(MPI.COMM_WORLD, 5, 7, 9, ghost_mode=GhostMode.none)
     mesh.topology.create_entities(1)
     mesh = refine(mesh, redistribute=False)
     assert mesh.topology.index_map(0).size_global == 3135
@@ -55,7 +55,7 @@ def test_Refinecreate_unit_cube_mesh_keep_partition():
 
 def test_refine_create_form():
     """Check that forms can be assembled on refined mesh"""
-    mesh = create_unit_cube_mesh(MPI.COMM_WORLD, 3, 3, 3)
+    mesh = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3)
     mesh.topology.create_entities(1)
     mesh = refine(mesh, redistribute=True)
 
@@ -70,7 +70,7 @@ def test_refine_create_form():
 
 def test_refinement_gdim():
     """Test that 2D refinement is still 2D"""
-    mesh = create_unit_square_mesh(MPI.COMM_WORLD, 3, 4, ghost_mode=GhostMode.none)
+    mesh = create_unit_square(MPI.COMM_WORLD, 3, 4, ghost_mode=GhostMode.none)
     mesh.topology.create_entities(1)
     mesh2 = refine(mesh, redistribute=True)
     assert mesh.geometry.dim == mesh2.geometry.dim
@@ -78,7 +78,7 @@ def test_refinement_gdim():
 
 def test_sub_refine():
     """Test that refinement of a subset of edges works"""
-    mesh = create_unit_square_mesh(MPI.COMM_WORLD, 3, 4, diagonal=DiagonalType.left,
+    mesh = create_unit_square(MPI.COMM_WORLD, 3, 4, diagonal=DiagonalType.left,
                           ghost_mode=GhostMode.none)
     mesh.topology.create_entities(1)
 
@@ -98,7 +98,7 @@ def test_refine_from_cells():
     Nx = 8
     Ny = 3
     assert(Nx % 2 == 0)
-    mesh = create_unit_square_mesh(MPI.COMM_WORLD, Nx, Ny, diagonal=DiagonalType.left, ghost_mode=GhostMode.none)
+    mesh = create_unit_square(MPI.COMM_WORLD, Nx, Ny, diagonal=DiagonalType.left, ghost_mode=GhostMode.none)
     mesh.topology.create_entities(1)
 
     def left_side(x, tol=1e-16):

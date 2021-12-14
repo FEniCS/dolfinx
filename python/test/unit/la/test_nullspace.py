@@ -13,8 +13,8 @@ import pytest
 import ufl
 from dolfinx import la
 from dolfinx.fem import VectorFunctionSpace, assemble_matrix
-from dolfinx.mesh import (CellType, GhostMode, create_box_mesh,
-                          create_unit_cube_mesh, create_unit_square_mesh)
+from dolfinx.mesh import (CellType, GhostMode, create_box,
+                          create_unit_cube, create_unit_square)
 from ufl import TestFunction, TrialFunction, dx, grad, inner
 
 from mpi4py import MPI
@@ -90,8 +90,8 @@ def build_broken_elastic_nullspace(V):
 
 
 @pytest.mark.parametrize("mesh", [
-    create_unit_square_mesh(MPI.COMM_WORLD, 12, 13),
-    create_unit_cube_mesh(MPI.COMM_WORLD, 12, 18, 15)
+    create_unit_square(MPI.COMM_WORLD, 12, 13),
+    create_unit_cube(MPI.COMM_WORLD, 12, 18, 15)
 ])
 @pytest.mark.parametrize("degree", [1, 2])
 def test_nullspace_orthogonal(mesh, degree):
@@ -104,8 +104,8 @@ def test_nullspace_orthogonal(mesh, degree):
 
 
 @pytest.mark.parametrize("mesh", [
-    create_unit_square_mesh(MPI.COMM_WORLD, 12, 13),
-    create_box_mesh(MPI.COMM_WORLD,
+    create_unit_square(MPI.COMM_WORLD, 12, 13),
+    create_box(MPI.COMM_WORLD,
             [np.array([0.8, -0.2, 1.2]),
              np.array([3.0, 11.0, -5.0])], [12, 18, 25],
             cell_type=CellType.tetrahedron,

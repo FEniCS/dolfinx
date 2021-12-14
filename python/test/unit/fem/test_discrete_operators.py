@@ -10,8 +10,8 @@ import pytest
 
 from dolfinx.cpp.fem.petsc import create_discrete_gradient
 from dolfinx.fem import FunctionSpace
-from dolfinx.mesh import (GhostMode, create_unit_cube_mesh,
-                          create_unit_square_mesh)
+from dolfinx.mesh import (GhostMode, create_unit_cube,
+                          create_unit_square)
 from dolfinx_utils.test.skips import skip_in_parallel
 
 from mpi4py import MPI
@@ -20,10 +20,10 @@ from petsc4py import PETSc
 
 @skip_in_parallel
 @pytest.mark.parametrize("mesh", [
-    create_unit_square_mesh(MPI.COMM_WORLD, 11, 6, ghost_mode=GhostMode.none),
-    create_unit_square_mesh(MPI.COMM_WORLD, 11, 6, ghost_mode=GhostMode.shared_facet),
-    create_unit_cube_mesh(MPI.COMM_WORLD, 4, 3, 7, ghost_mode=GhostMode.none),
-    create_unit_cube_mesh(MPI.COMM_WORLD, 4, 3, 7, ghost_mode=GhostMode.shared_facet)
+    create_unit_square(MPI.COMM_WORLD, 11, 6, ghost_mode=GhostMode.none),
+    create_unit_square(MPI.COMM_WORLD, 11, 6, ghost_mode=GhostMode.shared_facet),
+    create_unit_cube(MPI.COMM_WORLD, 4, 3, 7, ghost_mode=GhostMode.none),
+    create_unit_cube(MPI.COMM_WORLD, 4, 3, 7, ghost_mode=GhostMode.shared_facet)
 ])
 def test_gradient(mesh):
     """Test discrete gradient computation (typically used for curl-curl
@@ -43,7 +43,7 @@ def test_gradient(mesh):
 def test_incompatible_spaces():
     """Test that error is thrown when function spaces are not compatible"""
 
-    mesh = create_unit_square_mesh(MPI.COMM_WORLD, 13, 7)
+    mesh = create_unit_square(MPI.COMM_WORLD, 13, 7)
     V = FunctionSpace(mesh, ("Lagrange", 1))
     W = FunctionSpace(mesh, ("Nedelec 1st kind H(curl)", 1))
     with pytest.raises(RuntimeError):

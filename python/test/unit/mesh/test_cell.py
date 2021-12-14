@@ -9,8 +9,8 @@ import pytest
 import ufl
 from dolfinx import cpp as _cpp
 from dolfinx.geometry import squared_distance
-from dolfinx.mesh import (CellType, create_mesh, create_unit_cube_mesh,
-                          create_unit_interval_mesh, create_unit_square_mesh)
+from dolfinx.mesh import (CellType, create_mesh, create_unit_cube,
+                          create_unit_interval, create_unit_square)
 from dolfinx_utils.test.skips import skip_in_parallel
 
 from mpi4py import MPI
@@ -18,7 +18,7 @@ from mpi4py import MPI
 
 @skip_in_parallel
 def test_distance_interval():
-    mesh = create_unit_interval_mesh(MPI.COMM_SELF, 1)
+    mesh = create_unit_interval(MPI.COMM_SELF, 1)
     assert squared_distance(mesh, mesh.topology.dim, [0], [-1.0, 0, 0]) == pytest.approx(1.0)
     assert squared_distance(mesh, mesh.topology.dim, [0], [0.5, 0, 0]) == pytest.approx(0.0)
 
@@ -54,10 +54,10 @@ def test_distance_tetrahedron():
 @ pytest.mark.skip("volume_entities needs fixing")
 @ pytest.mark.parametrize(
     'mesh', [
-        create_unit_interval_mesh(MPI.COMM_WORLD, 18),
-        create_unit_square_mesh(MPI.COMM_WORLD, 8, 9, CellType.triangle),
-        create_unit_square_mesh(MPI.COMM_WORLD, 8, 9, CellType.quadrilateral),
-        create_unit_cube_mesh(MPI.COMM_WORLD, 8, 9, 5, CellType.tetrahedron)
+        create_unit_interval(MPI.COMM_WORLD, 18),
+        create_unit_square(MPI.COMM_WORLD, 8, 9, CellType.triangle),
+        create_unit_square(MPI.COMM_WORLD, 8, 9, CellType.quadrilateral),
+        create_unit_cube(MPI.COMM_WORLD, 8, 9, 5, CellType.tetrahedron)
     ])
 def test_volume_cells(mesh):
     tdim = mesh.topology.dim
@@ -69,7 +69,7 @@ def test_volume_cells(mesh):
 
 @ pytest.mark.skip("volume_entities needs fixing")
 def test_volume_quadrilateralR2():
-    mesh = create_unit_square_mesh(MPI.COMM_SELF, 1, 1, CellType.quadrilateral)
+    mesh = create_unit_square(MPI.COMM_SELF, 1, 1, CellType.quadrilateral)
     assert _cpp.mesh.volume_entities(mesh, [0], mesh.topology.dim) == 1.0
 
 

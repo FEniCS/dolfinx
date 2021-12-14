@@ -11,7 +11,7 @@ import pytest
 import ufl
 from dolfinx.fem import (Function, FunctionSpace, assemble_matrix,
                          assemble_vector)
-from dolfinx.mesh import create_unit_square_mesh
+from dolfinx.mesh import create_unit_square
 from ufl import dx, grad, inner
 
 from mpi4py import MPI
@@ -24,7 +24,7 @@ pytestmark = pytest.mark.skipif(
 def test_complex_assembly():
     """Test assembly of complex matrices and vectors"""
 
-    mesh = create_unit_square_mesh(MPI.COMM_WORLD, 10, 10)
+    mesh = create_unit_square(MPI.COMM_WORLD, 10, 10)
     P2 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 2)
     V = FunctionSpace(mesh, P2)
 
@@ -81,7 +81,7 @@ def test_complex_assembly_solve():
     """
 
     degree = 3
-    mesh = create_unit_square_mesh(MPI.COMM_WORLD, 20, 20)
+    mesh = create_unit_square(MPI.COMM_WORLD, 20, 20)
     P = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), degree)
     V = FunctionSpace(mesh, P)
 

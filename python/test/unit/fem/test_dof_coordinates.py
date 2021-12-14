@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 
 from dolfinx.fem import Function, FunctionSpace
-from dolfinx.mesh import create_unit_cube_mesh, create_unit_square_mesh
+from dolfinx.mesh import create_unit_cube, create_unit_square
 
 from mpi4py import MPI
 from petsc4py import PETSc
@@ -10,7 +10,7 @@ from petsc4py import PETSc
 
 @pytest.mark.parametrize("degree", range(1, 5))
 def test_dof_coords_2d(degree):
-    mesh = create_unit_square_mesh(MPI.COMM_WORLD, 10, 10)
+    mesh = create_unit_square(MPI.COMM_WORLD, 10, 10)
     V = FunctionSpace(mesh, ("Lagrange", degree))
     u = Function(V)
 
@@ -24,7 +24,7 @@ def test_dof_coords_2d(degree):
 
 @pytest.mark.parametrize("degree", range(1, 5))
 def test_dof_coords_3d(degree):
-    mesh = create_unit_cube_mesh(MPI.COMM_WORLD, 10, 10, 10)
+    mesh = create_unit_cube(MPI.COMM_WORLD, 10, 10, 10)
     V = FunctionSpace(mesh, ("Lagrange", degree))
     u = Function(V)
 
