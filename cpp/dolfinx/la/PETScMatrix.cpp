@@ -7,7 +7,7 @@
 
 #include "PETScMatrix.h"
 #include "PETScVector.h"
-#include "VectorSpaceBasis.h"
+#include "Vector.h"
 #include "utils.h"
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
@@ -21,15 +21,15 @@ using namespace dolfinx;
 using namespace dolfinx::la;
 
 //-----------------------------------------------------------------------------
-Mat la::create_petsc_matrix(MPI_Comm comm,
-                            const dolfinx::la::SparsityPattern& sp,
-                            const std::string& type)
+Mat la::petsc::create_matrix(MPI_Comm comm,
+                             const dolfinx::la::SparsityPattern& sp,
+                             const std::string& type)
 {
   PetscErrorCode ierr;
   Mat A;
   ierr = MatCreate(comm, &A);
   if (ierr != 0)
-    petsc_error(ierr, __FILE__, "MatCreate");
+    petsc::error(ierr, __FILE__, "MatCreate");
 
   // Get IndexMaps from sparsity patterm, and block size
   std::array maps = {sp.index_map(0), sp.index_map(1)};
@@ -47,7 +47,7 @@ Mat la::create_petsc_matrix(MPI_Comm comm,
   // Set matrix size
   ierr = MatSetSizes(A, m, n, M, N);
   if (ierr != 0)
-    petsc_error(ierr, __FILE__, "MatSetSizes");
+    petsc::error(ierr, __FILE__, "MatSetSizes");
 
   // Get number of nonzeros for each row from sparsity pattern
   const graph::AdjacencyList<std::int32_t>& diagonal_pattern
@@ -59,7 +59,7 @@ Mat la::create_petsc_matrix(MPI_Comm comm,
   // includes changing the matrix type to one specified by the user)
   ierr = MatSetFromOptions(A);
   if (ierr != 0)
-    petsc_error(ierr, __FILE__, "MatSetFromOptions");
+    petsc::error(ierr, __FILE__, "MatSetFromOptions");
 
   // Find a common block size across rows/columns
   const int _bs = (bs[0] == bs[1] ? bs[0] : 1);
@@ -90,12 +90,12 @@ Mat la::create_petsc_matrix(MPI_Comm comm,
   ierr = MatXAIJSetPreallocation(A, _bs, _nnz_diag.data(), _nnz_offdiag.data(),
                                  nullptr, nullptr);
   if (ierr != 0)
-    petsc_error(ierr, __FILE__, "MatXIJSetPreallocation");
+    petsc::error(ierr, __FILE__, "MatXIJSetPreallocation");
 
   // Set block sizes
   ierr = MatSetBlockSizes(A, bs[0], bs[1]);
   if (ierr != 0)
-    petsc_error(ierr, __FILE__, "MatSetBlockSizes");
+    petsc::error(ierr, __FILE__, "MatSetBlockSizes");
 
   // Create PETSc local-to-global map/index sets
   ISLocalToGlobalMapping local_to_global0;
@@ -106,14 +106,14 @@ Mat la::create_petsc_matrix(MPI_Comm comm,
                                       &local_to_global0);
 
   if (ierr != 0)
-    petsc_error(ierr, __FILE__, "ISLocalToGlobalMappingCreate");
+    petsc::error(ierr, __FILE__, "ISLocalToGlobalMappingCreate");
 
   // Check for common index maps
   if (maps[0] == maps[1] and bs[0] == bs[1])
   {
     ierr = MatSetLocalToGlobalMapping(A, local_to_global0, local_to_global0);
     if (ierr != 0)
-      petsc_error(ierr, __FILE__, "MatSetLocalToGlobalMapping");
+      petsc::error(ierr, __FILE__, "MatSetLocalToGlobalMapping");
   }
   else
   {
@@ -124,68 +124,51 @@ Mat la::create_petsc_matrix(MPI_Comm comm,
                                         _map1.data(), PETSC_COPY_VALUES,
                                         &local_to_global1);
     if (ierr != 0)
-      petsc_error(ierr, __FILE__, "ISLocalToGlobalMappingCreate");
+      petsc::error(ierr, __FILE__, "ISLocalToGlobalMappingCreate");
     ierr = MatSetLocalToGlobalMapping(A, local_to_global0, local_to_global1);
     if (ierr != 0)
-      petsc_error(ierr, __FILE__, "MatSetLocalToGlobalMapping");
+      petsc::error(ierr, __FILE__, "MatSetLocalToGlobalMapping");
     ierr = ISLocalToGlobalMappingDestroy(&local_to_global1);
     if (ierr != 0)
-      petsc_error(ierr, __FILE__, "ISLocalToGlobalMappingDestroy");
+      petsc::error(ierr, __FILE__, "ISLocalToGlobalMappingDestroy");
   }
 
   // Clean up local-to-global 0
   ierr = ISLocalToGlobalMappingDestroy(&local_to_global0);
   if (ierr != 0)
-    petsc_error(ierr, __FILE__, "ISLocalToGlobalMappingDestroy");
+    petsc::error(ierr, __FILE__, "ISLocalToGlobalMappingDestroy");
 
   // Note: This should be called after having set the local-to-global
   // map for MATIS (this is a dummy call if A is not of type MATIS)
   // ierr = MatISSetPreallocation(A, 0, _nnz_diag.data(), 0,
   // _nnz_offdiag.data()); if (ierr != 0)
-  //   petsc_error(ierr, __FILE__, "MatISSetPreallocation");
+  //   error(ierr, __FILE__, "MatISSetPreallocation");
 
   // Set some options on Mat object
   ierr = MatSetOption(A, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_TRUE);
   if (ierr != 0)
-    petsc_error(ierr, __FILE__, "MatSetOption");
+    petsc::error(ierr, __FILE__, "MatSetOption");
   ierr = MatSetOption(A, MAT_KEEP_NONZERO_PATTERN, PETSC_TRUE);
   if (ierr != 0)
-    petsc_error(ierr, __FILE__, "MatSetOption");
+    petsc::error(ierr, __FILE__, "MatSetOption");
 
   return A;
 }
 //-----------------------------------------------------------------------------
-MatNullSpace la::create_petsc_nullspace(MPI_Comm comm,
-                                        const la::VectorSpaceBasis& nullspace)
+MatNullSpace la::petsc::create_nullspace(MPI_Comm comm,
+                                         const xtl::span<const Vec>& basis)
 {
-  PetscErrorCode ierr;
-
-  // Copy vectors in vector space object
-  std::vector<Vec> _nullspace;
-  for (int i = 0; i < nullspace.dim(); ++i)
-  {
-    assert(nullspace[i]);
-    Vec x = nullspace[i]->vec();
-
-    // Copy vector pointer
-    assert(x);
-    _nullspace.push_back(x);
-  }
-
-  // Create PETSC nullspace
-  MatNullSpace petsc_nullspace = nullptr;
-  ierr = MatNullSpaceCreate(comm, PETSC_FALSE, _nullspace.size(),
-                            _nullspace.data(), &petsc_nullspace);
+  MatNullSpace ns = nullptr;
+  PetscErrorCode ierr
+      = MatNullSpaceCreate(comm, PETSC_FALSE, basis.size(), basis.data(), &ns);
   if (ierr != 0)
-    petsc_error(ierr, __FILE__, "MatNullSpaceCreate");
-
-  return petsc_nullspace;
+    petsc::error(ierr, __FILE__, "MatNullSpaceCreate");
+  return ns;
 }
-//-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                   const std::int32_t*, const PetscScalar*)>
-PETScMatrix::set_fn(Mat A, InsertMode mode)
+petsc::Matrix::set_fn(Mat A, InsertMode mode)
 {
   return [A, mode, cache = std::vector<PetscInt>()](
              std::int32_t m, const std::int32_t* rows, std::int32_t n,
@@ -204,7 +187,7 @@ PETScMatrix::set_fn(Mat A, InsertMode mode)
 
 #ifdef DEBUG
     if (ierr != 0)
-      la::petsc_error(ierr, __FILE__, "MatSetValuesLocal");
+      petsc::error(ierr, __FILE__, "MatSetValuesLocal");
 #endif
 
     return ierr;
@@ -213,7 +196,7 @@ PETScMatrix::set_fn(Mat A, InsertMode mode)
 //-----------------------------------------------------------------------------
 std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                   const std::int32_t*, const PetscScalar*)>
-PETScMatrix::set_block_fn(Mat A, InsertMode mode)
+petsc::Matrix::set_block_fn(Mat A, InsertMode mode)
 {
   return [A, mode, cache = std::vector<PetscInt>()](
              std::int32_t m, const std::int32_t* rows, std::int32_t n,
@@ -232,7 +215,7 @@ PETScMatrix::set_block_fn(Mat A, InsertMode mode)
 
 #ifdef DEBUG
     if (ierr != 0)
-      la::petsc_error(ierr, __FILE__, "MatSetValuesBlockedLocal");
+      petsc::error(ierr, __FILE__, "MatSetValuesBlockedLocal");
 #endif
 
     return ierr;
@@ -241,7 +224,7 @@ PETScMatrix::set_block_fn(Mat A, InsertMode mode)
 //-----------------------------------------------------------------------------
 std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                   const std::int32_t*, const PetscScalar*)>
-PETScMatrix::set_block_expand_fn(Mat A, int bs0, int bs1, InsertMode mode)
+petsc::Matrix::set_block_expand_fn(Mat A, int bs0, int bs1, InsertMode mode)
 {
   if (bs0 == 1 and bs1 == 1)
     return set_fn(A, mode);
@@ -265,39 +248,38 @@ PETScMatrix::set_block_expand_fn(Mat A, int bs0, int bs1, InsertMode mode)
                              cache1.data(), vals, mode);
 #ifdef DEBUG
     if (ierr != 0)
-      la::petsc_error(ierr, __FILE__, "MatSetValuesLocal");
+      petsc::error(ierr, __FILE__, "MatSetValuesLocal");
 #endif
     return ierr;
   };
 }
 //-----------------------------------------------------------------------------
-PETScMatrix::PETScMatrix(MPI_Comm comm, const SparsityPattern& sp,
-                         const std::string& type)
-    : PETScOperator(create_petsc_matrix(comm, sp, type), false)
+petsc::Matrix::Matrix(MPI_Comm comm, const SparsityPattern& sp,
+                      const std::string& type)
+    : Operator(petsc::create_matrix(comm, sp, type), false)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-PETScMatrix::PETScMatrix(Mat A, bool inc_ref_count)
-    : PETScOperator(A, inc_ref_count)
+petsc::Matrix::Matrix(Mat A, bool inc_ref_count) : Operator(A, inc_ref_count)
 {
   // Reference count to A is incremented in base class
 }
 //-----------------------------------------------------------------------------
-double PETScMatrix::norm(la::Norm norm_type) const
+double petsc::Matrix::norm(Norm norm_type) const
 {
   assert(_matA);
   PetscErrorCode ierr;
   double value = 0.0;
   switch (norm_type)
   {
-  case la::Norm::l1:
+  case Norm::l1:
     ierr = MatNorm(_matA, NORM_1, &value);
     break;
-  case la::Norm::linf:
+  case Norm::linf:
     ierr = MatNorm(_matA, NORM_INFINITY, &value);
     break;
-  case la::Norm::frobenius:
+  case Norm::frobenius:
     ierr = MatNorm(_matA, NORM_FROBENIUS, &value);
     break;
   default:
@@ -305,12 +287,12 @@ double PETScMatrix::norm(la::Norm norm_type) const
   }
 
   if (ierr != 0)
-    petsc_error(ierr, __FILE__, "MatNorm");
+    petsc::error(ierr, __FILE__, "MatNorm");
 
   return value;
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::apply(AssemblyType type)
+void petsc::Matrix::apply(AssemblyType type)
 {
   common::Timer timer("Apply (PETScMatrix)");
 
@@ -323,19 +305,19 @@ void PETScMatrix::apply(AssemblyType type)
 
   ierr = MatAssemblyBegin(_matA, petsc_type);
   if (ierr != 0)
-    petsc_error(ierr, __FILE__, "MatAssemblyBegin");
+    petsc::error(ierr, __FILE__, "MatAssemblyBegin");
   ierr = MatAssemblyEnd(_matA, petsc_type);
   if (ierr != 0)
-    petsc_error(ierr, __FILE__, "MatAssemblyEnd");
+    petsc::error(ierr, __FILE__, "MatAssemblyEnd");
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::set_options_prefix(std::string options_prefix)
+void petsc::Matrix::set_options_prefix(std::string options_prefix)
 {
   assert(_matA);
   MatSetOptionsPrefix(_matA, options_prefix.c_str());
 }
 //-----------------------------------------------------------------------------
-std::string PETScMatrix::get_options_prefix() const
+std::string petsc::Matrix::get_options_prefix() const
 {
   assert(_matA);
   const char* prefix = nullptr;
@@ -343,51 +325,9 @@ std::string PETScMatrix::get_options_prefix() const
   return std::string(prefix);
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::set_from_options()
+void petsc::Matrix::set_from_options()
 {
   assert(_matA);
   MatSetFromOptions(_matA);
-}
-//-----------------------------------------------------------------------------
-void PETScMatrix::set_nullspace(const la::VectorSpaceBasis& nullspace)
-{
-  assert(_matA);
-
-  // Get matrix communicator
-  MPI_Comm comm = MPI_COMM_NULL;
-  PetscObjectGetComm((PetscObject)_matA, &comm);
-
-  // Create PETSc nullspace
-  MatNullSpace petsc_ns = create_petsc_nullspace(comm, nullspace);
-
-  // Attach PETSc nullspace to matrix
-  assert(_matA);
-  PetscErrorCode ierr = MatSetNullSpace(_matA, petsc_ns);
-  if (ierr != 0)
-    petsc_error(ierr, __FILE__, "MatSetNullSpace");
-
-  // Decrease reference count for nullspace by destroying
-  MatNullSpaceDestroy(&petsc_ns);
-}
-//-----------------------------------------------------------------------------
-void PETScMatrix::set_near_nullspace(const la::VectorSpaceBasis& nullspace)
-{
-  assert(_matA);
-
-  // Get matrix communicator
-  MPI_Comm comm = MPI_COMM_NULL;
-  PetscObjectGetComm((PetscObject)_matA, &comm);
-
-  // Create PETSc nullspace
-  MatNullSpace petsc_ns = la::create_petsc_nullspace(comm, nullspace);
-
-  // Attach near  nullspace to matrix
-  assert(_matA);
-  PetscErrorCode ierr = MatSetNearNullSpace(_matA, petsc_ns);
-  if (ierr != 0)
-    petsc_error(ierr, __FILE__, "MatSetNullSpace");
-
-  // Decrease reference count for nullspace
-  MatNullSpaceDestroy(&petsc_ns);
 }
 //-----------------------------------------------------------------------------

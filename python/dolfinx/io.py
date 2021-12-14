@@ -10,16 +10,21 @@
 import typing
 
 import numpy
-import ufl
 
 import dolfinx
+import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import fem
 from dolfinx.mesh import GhostMode
+from dolfinx.cpp.io import perm_gmsh as cell_perm_gmsh
+from dolfinx.cpp.io import distribute_entity_data
+
+__all__ = ["VTKFile", "XDMFFile", "cell_perm_gmsh", "distribute_entity_data"]
 
 
 class VTKFile(_cpp.io.VTKFile):
     """Interface to VTK files
+
     VTK supports arbitrary order Lagrangian finite elements for the
     geometry description. XDMF is the preferred format for geometry
     order <= 2.
@@ -64,7 +69,7 @@ class XDMFFile(_cpp.io.XDMFFile):
         # Build the mesh
         cmap = _cpp.fem.CoordinateElement(cell_shape, cell_degree)
         mesh = _cpp.mesh.create_mesh(self.comm(), _cpp.graph.AdjacencyList_int64(cells),
-                                     cmap, x, ghost_mode, _cpp.mesh.partition_cells_graph)
+                                     cmap, x, ghost_mode, _cpp.mesh.create_cell_partitioner())
         mesh.name = name
 
         domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell, cell_degree))
@@ -75,12 +80,11 @@ class XDMFFile(_cpp.io.XDMFFile):
 
 
 def extract_gmsh_topology_and_markers(gmsh_model, model_name=None):
-    """Extract all entities tagged with a physical marker
-    in the gmsh model, and collects the data per cell type.
-    Returns a nested dictionary where the first key is the gmsh
-    MSH element type integer. Each element type present
-    in the model contains the cell topology of the elements
-    and corresponding markers.
+    """Extract all entities tagged with a physical marker in the gmsh
+    model, and collects the data per cell type. Returns a nested
+    dictionary where the first key is the gmsh MSH element type integer.
+    Each element type present in the model contains the cell topology of
+    the elements and corresponding markers.
 
     """
     if model_name is not None:
@@ -91,7 +95,7 @@ def extract_gmsh_topology_and_markers(gmsh_model, model_name=None):
     topologies = {}
     for dim, tag in phys_grps:
         # Get the entities for a given dimension:
-        # dim=0->Points, dim=1->Lines, dim=2->Triangles/Quadrilaterals
+        # dim=0->Points, dim=1->Lines, dim=2->Triangles/Quadrilaterals,
         # etc.
         entities = gmsh_model.getEntitiesForPhysicalGroup(dim, tag)
 
@@ -101,16 +105,19 @@ def extract_gmsh_topology_and_markers(gmsh_model, model_name=None):
             element_data = gmsh_model.mesh.getElements(dim, tag=entity)
             element_types, element_tags, node_tags = element_data
             assert len(element_types) == 1
+
             # The MSH type of the cells on the element
             element_type = element_types[0]
             num_el = len(element_tags[0])
-            # Determine number of local nodes per element to create
-            # the topology of the elements
+
+            # Determine number of local nodes per element to create the
+            # topology of the elements
             properties = gmsh_model.mesh.getElementProperties(element_type)
             name, dim, order, num_nodes, local_coords, _ = properties
-            # 2D array of shape (num_elements,num_nodes_per_element) containing
-            # the topology of the elements on this entity
-            # NOTE: GMSH indexing starts with 1 and not zero.
+
+            # 2D array of shape (num_elements,num_nodes_per_element)
+            # containing the topology of the elements on this entity
+            # NOTE: GMSH indexing starts with 1 and not zero
             element_topology = node_tags[0].reshape(-1, num_nodes) - 1
 
             # Gather data for each element type and the
@@ -127,9 +134,9 @@ def extract_gmsh_topology_and_markers(gmsh_model, model_name=None):
 
 
 def extract_gmsh_geometry(gmsh_model, model_name=None):
-    """For a given gmsh model, extract the mesh geometry
-    as a numpy (N,3) array where the i-th row
-    corresponds to the i-th node in the mesh.
+    """For a given gmsh model, extract the mesh geometry as a numpy
+    (N,3) array where the i-th row corresponds to the i-th node in the
+    mesh.
     """
     if model_name is not None:
         gmsh_model.setCurrent(model_name)
@@ -157,9 +164,8 @@ _gmsh_to_cells = {1: ("interval", 1), 2: ("triangle", 1),
                   36: ("quadrilateral", 3)}
 
 
-def ufl_mesh_from_gmsh(gmsh_cell: int, gdim: int):
-    """
-    Create a UFL mesh from a Gmsh cell identifier and the geometric dimension.
+def ufl_mesh_from_gmsh(gmsh_cell: int, gdim: int) -> ufl.Mesh:
+    """Create a UFL mesh from a Gmsh cell identifier and the geometric dimension.
     See: # http://gmsh.info//doc/texinfo/gmsh.html#MSH-file-format
     """
     shape, degree = _gmsh_to_cells[gmsh_cell]

@@ -50,4 +50,4 @@ C++
 ===
 
 The C++ API is documented `here
-<https://fenicsproject.org/docs/dolfinx/dev/cpp/>`_.
+<https://docs.fenicsproject.org/dolfinx/main/cpp/>`_.

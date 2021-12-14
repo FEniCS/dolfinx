@@ -1,8 +1,10 @@
 import numpy as np
 import pytest
+
 from dolfinx.generation import UnitCubeMesh
 from dolfinx.graph import create_adjacencylist
 from dolfinx.mesh import CellType, create_meshtags, locate_entities
+
 from mpi4py import MPI
 
 celltypes_3D = [CellType.tetrahedron, CellType.hexahedron]

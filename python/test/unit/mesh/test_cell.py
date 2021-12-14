@@ -5,12 +5,14 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import pytest
+
 import ufl
 from dolfinx import cpp as _cpp
 from dolfinx.generation import UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh
 from dolfinx.geometry import squared_distance
 from dolfinx.mesh import CellType, create_mesh
 from dolfinx_utils.test.skips import skip_in_parallel
+
 from mpi4py import MPI
 
 

@@ -10,17 +10,19 @@ from contextlib import ExitStack
 
 import numpy as np
 import pytest
+
 import ufl
+from dolfinx import la
 from dolfinx.fem import (DirichletBC, Function, FunctionSpace,
                          VectorFunctionSpace, apply_lifting, assemble_matrix,
                          assemble_vector, locate_dofs_topological, set_bc)
 from dolfinx.generation import UnitSquareMesh
-from dolfinx.la import VectorSpaceBasis
 from dolfinx.mesh import locate_entities_boundary
-from mpi4py import MPI
-from petsc4py import PETSc
 from ufl import (Identity, TestFunction, TrialFunction, dot, dx, grad, inner,
                  sym, tr)
+
+from mpi4py import MPI
+from petsc4py import PETSc
 
 
 def test_krylov_solver_lu():
@@ -60,10 +62,10 @@ def test_krylov_samg_solver_elasticity():
         """Function to build null space for 2D elasticity"""
 
         # Create list of vectors for null space
-        nullspace_basis = [x.copy() for i in range(3)]
+        ns = [x.copy() for i in range(3)]
 
         with ExitStack() as stack:
-            vec_local = [stack.enter_context(x.localForm()) for x in nullspace_basis]
+            vec_local = [stack.enter_context(x.localForm()) for x in ns]
             basis = [np.asarray(x) for x in vec_local]
 
             # Build null space basis
@@ -74,9 +76,8 @@ def test_krylov_samg_solver_elasticity():
             basis[2][dofs[0]] = -x[dofs[0], 1]
             basis[2][dofs[1]] = x[dofs[1], 0]
 
-        null_space = VectorSpaceBasis(nullspace_basis)
-        null_space.orthonormalize()
-        return null_space
+        la.orthonormalize(ns)
+        return ns
 
     def amg_solve(N, method):
         # Elasticity parameters

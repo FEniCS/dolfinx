@@ -7,17 +7,19 @@
 
 import sys
 
-import dolfinx
 import numpy as np
 import pytest
+
+import dolfinx
 import ufl
 from dolfinx.fem import FunctionSpace, VectorFunctionSpace
 from dolfinx.generation import UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh
 from dolfinx.graph import create_adjacencylist
 from dolfinx.mesh import CellType, create_mesh
 from dolfinx_utils.test.skips import skip_in_parallel
-from mpi4py import MPI
 from ufl import FiniteElement, MixedElement, VectorElement
+
+from mpi4py import MPI
 
 xfail = pytest.mark.xfail(strict=True)
 

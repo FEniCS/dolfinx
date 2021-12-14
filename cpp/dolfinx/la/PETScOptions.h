@@ -12,7 +12,7 @@
 #include <petscoptions.h>
 #include <string>
 
-namespace dolfinx::la
+namespace dolfinx::la::petsc
 {
 
 /// These class provides static functions that permit users to set and
@@ -21,7 +21,7 @@ namespace dolfinx::la
 ///
 ///     PETScOptions::set("mat_mumps_icntl_14", 40);
 
-class PETScOptions
+class Options
 {
 public:
   /// Set PETSc option that takes no value
@@ -39,7 +39,7 @@ public:
         = PetscOptionsSetValue(nullptr, option.c_str(),
                                boost::lexical_cast<std::string>(value).c_str());
     if (ierr != 0)
-      petsc_error(ierr, __FILE__, "PetscOptionsSetValue");
+      petsc::error(ierr, __FILE__, "PetscOptionsSetValue");
   }
 
   /// Clear a PETSc option
@@ -48,4 +48,4 @@ public:
   /// Clear PETSc global options database
   static void clear();
 };
-} // namespace dolfinx::la
+} // namespace dolfinx::la::petsc

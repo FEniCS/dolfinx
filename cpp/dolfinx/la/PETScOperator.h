@@ -10,33 +10,33 @@
 #include <petscmat.h>
 #include <stdint.h>
 
-namespace dolfinx::la
+namespace dolfinx::la::petsc
 {
-class PETScVector;
+class Vector;
 
 /// This class is a base class for matrices that can be used in
-/// PETScKrylovSolver.
+/// petsc::KrylovSolver.
 
-class PETScOperator
+class Operator
 {
 public:
   /// Constructor
-  PETScOperator(Mat A, bool inc_ref_count);
+  Operator(Mat A, bool inc_ref_count);
 
   // Copy constructor (deleted)
-  PETScOperator(const PETScOperator& A) = delete;
+  Operator(const Operator& A) = delete;
 
   /// Move constructor
-  PETScOperator(PETScOperator&& A);
+  Operator(Operator&& A);
 
   /// Destructor
-  virtual ~PETScOperator();
+  virtual ~Operator();
 
   /// Assignment operator (deleted)
-  PETScOperator& operator=(const PETScOperator& A) = delete;
+  Operator& operator=(const Operator& A) = delete;
 
   /// Move assignment operator
-  PETScOperator& operator=(PETScOperator&& A);
+  Operator& operator=(Operator&& A);
 
   /// Return number of rows and columns (num_rows, num_cols). PETSc
   /// returns -1 if size has not been set.
@@ -47,7 +47,7 @@ public:
   ///
   /// @param[in] dim The dimension (axis): dim = 0 --> z = y, dim = 1
   ///                --> z = x
-  PETScVector create_vector(std::size_t dim) const;
+  Vector create_vector(std::size_t dim) const;
 
   /// Return PETSc Mat pointer
   Mat mat() const;
@@ -56,4 +56,4 @@ protected:
   // PETSc Mat pointer
   Mat _matA;
 };
-} // namespace dolfinx::la
+} // namespace dolfinx::la::petsc
