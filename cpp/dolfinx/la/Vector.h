@@ -74,6 +74,10 @@ public:
   /// Move Assignment operator
   Vector& operator=(Vector&& x) = default;
 
+  /// Set all entries (including ghosts)
+  /// @param[in] v The value to set all entries to (on calling rank)
+  void set(T v) { std::fill(_x.begin(), _x.end(), v); }
+
   /// Begin scatter of local data from owner to ghosts on other ranks
   /// @note Collective MPI operation
   void scatter_fwd_begin()

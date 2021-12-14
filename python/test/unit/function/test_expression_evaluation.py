@@ -262,10 +262,8 @@ def test_assembly_into_quadrature_function():
 
     with e_Q.vector.localForm() as local:
         e_exact_eval = np.zeros_like(local.array)
-
         for cell in range(num_cells):
             xg = x_g[coord_dofs.links(cell), :tdim]
             x = mesh.geometry.cmap.push_forward(quadrature_points, xg)
             e_exact_eval[Q_dofs_unrolled[cell]] = e_exact(x.T).T.flatten()
-
         assert np.allclose(local.array, e_exact_eval)

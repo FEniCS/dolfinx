@@ -85,7 +85,7 @@ from dolfinx.mesh import CellType, GhostMode, locate_entities_boundary
 from ufl import ds, dx, grad, inner
 
 from mpi4py import MPI
-from petsc4py import PETSc
+from petsc4py.PETSc import ScalarType
 
 # We begin by defining a mesh of the domain and a finite element
 # function space :math:`V` relative to this mesh. As the unit square is
@@ -143,7 +143,7 @@ V = FunctionSpace(mesh, ("Lagrange", 1))
 facets = locate_entities_boundary(mesh, 1,
                                   lambda x: np.logical_or(np.isclose(x[0], 0.0),
                                                           np.isclose(x[0], 1.0)))
-u0 = Constant(mesh, PETSc.ScalarType(0))
+u0 = Constant(mesh, ScalarType(0))
 bc = DirichletBC(u0, locate_dofs_topological(V, 1, facets), V)
 
 # Next, we want to express the variational problem.  First, we need to
@@ -204,10 +204,9 @@ with XDMFFile(MPI.COMM_WORLD, "poisson.xdmf", "w") as file:
 
 
 # Update ghost entries and plot
-uh.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 try:
     import pyvista
-
+    uh.x.scatter_forward()
     topology, cell_types = plot.create_vtk_topology(mesh, mesh.topology.dim)
     grid = pyvista.UnstructuredGrid(topology, cell_types, mesh.geometry.x)
     grid.point_data["u"] = uh.compute_point_values().real
@@ -218,7 +217,8 @@ try:
     warped = grid.warp_by_scalar()
     plotter.add_mesh(warped)
 
-    # If pyvista environment variable is set to off-screen (static) plotting save png
+    # If pyvista environment variable is set to off-screen (static)
+    # plotting save png
     if pyvista.OFF_SCREEN:
         pyvista.start_xvfb(wait=0.1)
         plotter.screenshot("uh.png")
