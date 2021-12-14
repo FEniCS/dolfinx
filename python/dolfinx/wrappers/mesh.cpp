@@ -59,6 +59,29 @@ auto create_cell_partitioner_py(Functor p_cpp)
   { return p_cpp(comm.get(), n, tdim, cells, ghost_mode); };
 }
 
+using PythonCellPartitionFunction
+     = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
+         dolfinx_wrappers::MPICommWrapper, int, int,
+         const dolfinx::graph::AdjacencyList<std::int64_t>&,
+         dolfinx::mesh::GhostMode)>;
+
+using CppCellPartitionFunction
+     = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
+        MPI_Comm, int, int, const dolfinx::graph::AdjacencyList<std::int64_t>&,
+        dolfinx::mesh::GhostMode)>;
+
+CppCellPartitionFunction
+create_cell_partitioner_cpp(const PythonCellPartitionFunction& partitioner)
+{
+  return [partitioner](MPI_Comm comm, int n, int tdim,
+                       const dolfinx::graph::AdjacencyList<std::int64_t>& cells,
+                       dolfinx::mesh::GhostMode ghost_mode)
+  {
+    return partitioner(dolfinx_wrappers::MPICommWrapper(comm), n, tdim, cells,
+                       ghost_mode);
+  };
+}
+
 } // namespace
 
 namespace dolfinx_wrappers
