@@ -102,9 +102,9 @@ find_local_entity_index(std::shared_ptr<const mesh::Mesh> mesh,
 /// (unrolled). It might contain indices not found on other processes
 /// @returns List of degrees of freedom that was found on the other processes
 /// that are in the local range (including ghosts)
-std::vector<std::int32_t>
-get_remote_dofs_in_range(dolfinx::MPI::Comm& comm, const common::IndexMap& map,
-                         int bs, std::vector<std::int32_t>& dofs_local)
+std::vector<std::int32_t> get_remote_dofs(const dolfinx::MPI::Comm& comm,
+                                          const common::IndexMap& map, int bs,
+                                          std::vector<std::int32_t>& dofs_local)
 {
   int num_neighbors(-1), outdegree(-2), weighted(-1);
   MPI_Dist_graph_neighbors_count(comm.comm(), &num_neighbors, &outdegree,
@@ -314,16 +314,16 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
     // that has no connected facets on the boundary.
     dolfinx::MPI::Comm comm = create_symmetric_comm(
         V0.dofmap()->index_map->comm(common::IndexMap::Direction::forward));
-    std::vector<std::int32_t> dofs_remote = get_remote_dofs_in_range(
-        comm, *V0.dofmap()->index_map, V0.dofmap()->index_map_bs(),
-        sorted_bc_dofs[0]);
+    std::vector<std::int32_t> dofs_remote
+        = get_remote_dofs(comm, *V0.dofmap()->index_map,
+                          V0.dofmap()->index_map_bs(), sorted_bc_dofs[0]);
     // Add received bc indices to dofs_local
     sorted_bc_dofs[0].insert(sorted_bc_dofs[0].end(), dofs_remote.begin(),
                              dofs_remote.end());
 
-    dofs_remote = get_remote_dofs_in_range(comm, *V1.dofmap()->index_map,
-                                           V1.dofmap()->index_map_bs(),
-                                           sorted_bc_dofs[1]);
+    dofs_remote
+        = get_remote_dofs(comm, *V1.dofmap()->index_map,
+                          V1.dofmap()->index_map_bs(), sorted_bc_dofs[1]);
     sorted_bc_dofs[1].insert(sorted_bc_dofs[1].end(), dofs_remote.begin(),
                              dofs_remote.end());
     assert(sorted_bc_dofs[0].size() == sorted_bc_dofs[1].size());
@@ -381,7 +381,7 @@ fem::locate_dofs_topological(const fem::FunctionSpace& V, int dim,
 
   // If space is not a sub space we not not need to take the block size into
   // account
-  if (V.component().size() == 0)
+  if (V.component().empty())
   {
     for (auto [cell, entity_local_index] : entity_indices)
     {
@@ -407,7 +407,7 @@ fem::locate_dofs_topological(const fem::FunctionSpace& V, int dim,
       dolfinx::MPI::Comm comm = create_symmetric_comm(
           map->comm(common::IndexMap::Direction::forward));
       const std::vector<std::int32_t> dofs_remote
-          = get_remote_dofs_in_range(comm, *map, 1, dofs);
+          = get_remote_dofs(comm, *map, 1, dofs);
 
       // Add received bc indices to dofs_local
       dofs.insert(dofs.end(), dofs_remote.begin(), dofs_remote.end());
@@ -455,7 +455,7 @@ fem::locate_dofs_topological(const fem::FunctionSpace& V, int dim,
       // that has no connected facets on the boundary.
       dolfinx::MPI::Comm comm = create_symmetric_comm(
           V.dofmap()->index_map->comm(common::IndexMap::Direction::forward));
-      const std::vector<std::int32_t> dofs_remote = get_remote_dofs_in_range(
+      const std::vector<std::int32_t> dofs_remote = get_remote_dofs(
           comm, *V.dofmap()->index_map, V.dofmap()->index_map_bs(), dofs);
 
       // Add received bc indices to dofs_local

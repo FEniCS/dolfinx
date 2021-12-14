@@ -193,9 +193,8 @@ public:
     const int owned_size0 = map0_bs * map0_size;
     auto it0 = std::lower_bound(_dofs0.begin(), _dofs0.end(), owned_size0);
     _owned_indices0 = std::distance(_dofs0.begin(), it0);
-    const int bs = _function_space->dofmap()->bs();
 
-    if (bs > 1)
+    if (const int bs = _function_space->dofmap()->bs(); bs > 1)
     {
       _owned_indices0 *= bs;
       // Unroll for the block size
@@ -325,14 +324,15 @@ public:
       std::vector<T> value = f->value;
       const std::int32_t bs = _function_space->dofmap()->bs();
       assert(value.size() == (std::size_t)bs);
-      for (std::size_t i = 0; i < _dofs0.size(); ++i)
-      {
-        if (_dofs0[i] < (std::int32_t)x.size())
-        {
-          std::div_t div = std::div(_dofs0[i], bs);
-          x[_dofs0[i]] = scale * value[div.rem];
-        }
-      }
+      std::for_each(_dofs0.cbegin(), _dofs0.cend(),
+                    [&](auto dof)
+                    {
+                      if (dof < (std::int32_t)x.size())
+                      {
+                        std::div_t div = std::div(dof, bs);
+                        x[dof] = scale * value[div.rem];
+                      }
+                    });
     }
   }
 
@@ -365,14 +365,15 @@ public:
       std::vector<T> value = f->value;
       const std::int32_t bs = _function_space->dofmap()->bs();
       assert(value.size() == (std::size_t)bs);
-      for (std::size_t i = 0; i < _dofs0.size(); ++i)
-      {
-        if (_dofs0[i] < (std::int32_t)x.size())
-        {
-          std::div_t div = std::div(_dofs0[i], bs);
-          x[_dofs0[i]] = scale * (value[div.rem] - x0[_dofs0[i]]);
-        }
-      }
+      std::for_each(_dofs0.cbegin(), _dofs0.cend(),
+                    [&](auto dof)
+                    {
+                      if (dof < (std::int32_t)x.size())
+                      {
+                        std::div_t div = std::div(dof, bs);
+                        x[dof] = scale * (value[div.rem] - x0[dof]);
+                      }
+                    });
     }
   }
 
