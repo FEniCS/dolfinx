@@ -269,7 +269,7 @@ def test_compute_closest_entity_1d(dim):
         for i in range(points.shape[0]):
             # Only check closest entity if any bounding box on the
             # process intersects with the point
-            if colliding_entity_bboxes.links(i) > 0:
+            if colliding_entity_bboxes.links(i).size > 0:
                 assert numpy.isin(closest_entities[i], colliding_entity_bboxes.links(i))
 
 
@@ -353,7 +353,7 @@ def test_compute_closest_sub_entity(dim):
         if len(colliding_cells) > 0:
             assert numpy.isin(closest_entities[0], colliding_cells)
     else:
-        if len(colliding_entity_bboxes.links(0)) > 0:
+        if colliding_entity_bboxes.links(0).size > 0:
             assert numpy.isin(closest_entities[0], colliding_entity_bboxes.links(0))
 
 
