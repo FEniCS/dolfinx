@@ -34,18 +34,16 @@ class Constant(ufl.Constant):
         """
         c_np = np.asarray(c)
         super().__init__(domain, c_np.shape)
-        if c.dtype == np.complex64:
+        if c_np.dtype == np.complex64:
             self._cpp_object = _cpp.fem.Constant_complex64(c_np)
-        elif c.dtype == np.complex128:
+        elif c_np.dtype == np.complex128:
             self._cpp_object = _cpp.fem.Constant_complex128(c_np)
-        elif c.dtype == np.float32:
+        elif c_np.dtype == np.float32:
             self._cpp_object = _cpp.fem.Constant_float32(c_np)
-        elif c.dtype == np.float64:
+        elif c_np.dtype == np.float64:
             self._cpp_object = _cpp.fem.Constant_float64(c_np)
-        elif np.iscomplexobj(c) is True:
-            self._cpp_object = _cpp.fem.Constant_complex128(c_np)
         else:
-            self._cpp_object = _cpp.fem.Constant_float64(c_np)
+            raise RuntimeError("Unsupported dtype")
 
     @property
     def value(self):
