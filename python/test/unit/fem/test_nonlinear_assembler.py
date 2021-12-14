@@ -230,7 +230,7 @@ class NonlinearPDE_SNESProblem():
         x = x.getNestSubVecs()
         for x_sub, var_sub in zip(x, self.soln_vars):
             x_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-            with x.localForm() as _x:
+            with x_sub.localForm() as _x:
                 var_sub.x.array[:] = _x.array_r
 
         # Assemble
