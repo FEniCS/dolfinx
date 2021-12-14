@@ -72,10 +72,10 @@ Vec create_vector_wrap(const common::IndexMap& map, int bs,
 /// @param[in] x The vector to be wrapped
 /// @return A PETSc Vec object that shares the data in @p x
 template <typename Allocator>
-Vec create_vector_wrap(la::Vector<PetscScalar, Allocator>& x)
+Vec create_vector_wrap(const la::Vector<PetscScalar, Allocator>& x)
 {
   assert(x.map());
-  return create_vector_wrap(*x.map(), x.bs(), x.mutable_array());
+  return create_vector_wrap(*x.map(), x.bs(), x.array());
 }
 
 /// @todo This function could take just the local sizes
