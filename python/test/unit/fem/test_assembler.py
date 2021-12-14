@@ -190,7 +190,7 @@ def test_assemble_manifold():
     but embedded in 2D (gdim=2).
     """
     points = np.array([[0.0, 0.0], [0.2, 0.0], [0.4, 0.0],
-                          [0.6, 0.0], [0.8, 0.0], [1.0, 0.0]], dtype=np.float64)
+                       [0.6, 0.0], [0.8, 0.0], [1.0, 0.0]], dtype=np.float64)
     cells = np.array([[0, 1], [1, 2], [2, 3], [3, 4], [4, 5]], dtype=np.int32)
     cell = ufl.Cell("interval", geometric_dimension=points.shape[1])
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell, 1))
