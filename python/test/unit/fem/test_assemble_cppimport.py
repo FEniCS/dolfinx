@@ -122,8 +122,7 @@ PYBIND11_MODULE(eigen_csr, m)
 
     bdofsQ = locate_dofs_geometrical(Q, lambda x: np.logical_or(np.isclose(x[0], 0.0), np.isclose(x[0], 1.0)))
     u_bc = Function(Q)
-    with u_bc.vector.localForm() as u_local:
-        u_local.set(1.0)
+    u_bc.x.array[:] = 1.0
     bc = DirichletBC(u_bc, bdofsQ)
 
     A1 = assemble_matrix(a, [bc])

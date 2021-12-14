@@ -101,8 +101,7 @@ def test_linear_pde():
         return np.logical_or(x[0] < 1.0e-8, x[0] > 1.0 - 1.0e-8)
 
     u_bc = Function(V)
-    with u_bc.vector.localForm() as u_local:
-        u_local.set(1.0)
+    u_bc.x.array[:] = 1.0
     bc = DirichletBC(u_bc, locate_dofs_geometrical(V, boundary))
 
     # Create nonlinear problem
@@ -118,8 +117,7 @@ def test_linear_pde():
     assert n == 1
 
     # Increment boundary condition and solve again
-    with u_bc.vector.localForm() as u_local:
-        u_local.set(2.0)
+    u_bc.x.array[:] = 2.0
     n, converged = solver.solve(u.vector)
     assert converged
     assert n == 1
@@ -140,16 +138,14 @@ def test_nonlinear_pde():
         return np.logical_or(x[0] < 1.0e-8, x[0] > 1.0 - 1.0e-8)
 
     u_bc = Function(V)
-    with u_bc.vector.localForm() as u_local:
-        u_local.set(1.0)
+    u_bc.x.array[:] = 1.0
     bc = DirichletBC(u_bc, locate_dofs_geometrical(V, boundary))
 
     # Create nonlinear problem
     problem = NonlinearPDEProblem(F, u, bc)
 
     # Create Newton solver and solve
-    with u.vector.localForm() as u_local:
-        u_local.set(0.9)
+    u.x.array[:] = 0.9
     solver = _cpp.nls.NewtonSolver(MPI.COMM_WORLD)
     solver.setF(problem.F, problem.vector())
     solver.setJ(problem.J, problem.matrix())
@@ -159,8 +155,7 @@ def test_nonlinear_pde():
     assert n < 6
 
     # Modify boundary condition and solve again
-    with u_bc.vector.localForm() as u_local:
-        u_local.set(0.5)
+    u_bc.x.array[:] = 0.5
     n, converged = solver.solve(u.vector)
     assert converged
     assert n < 6
@@ -181,15 +176,13 @@ def test_nonlinear_pde_snes():
         return np.logical_or(x[0] < 1.0e-8, x[0] > 1.0 - 1.0e-8)
 
     u_bc = Function(V)
-    with u_bc.vector.localForm() as u_local:
-        u_local.set(1.0)
+    u_bc.x.array[:] = 1.0
     bc = DirichletBC(u_bc, locate_dofs_geometrical(V, boundary))
 
     # Create nonlinear problem
     problem = NonlinearPDE_SNESProblem(F, u, bc)
 
-    with u.vector.localForm() as u_local:
-        u_local.set(0.9)
+    u.x.array[:] = 0.9
     b = la.create_petsc_vector(V.dofmap.index_map, V.dofmap.index_map_bs)
     J = fem.create_matrix(problem.a_comp._cpp_object)
 
@@ -208,8 +201,7 @@ def test_nonlinear_pde_snes():
     assert snes.getIterationNumber() < 6
 
     # Modify boundary condition and solve again
-    with u_bc.vector.localForm() as u_local:
-        u_local.set(0.5)
+    u_bc.x.array[:] = 0.6
     snes.solve(None, u.vector)
     assert snes.getConvergedReason() > 0
     assert snes.getIterationNumber() < 6

@@ -198,7 +198,9 @@ int main(int argc, char* argv[])
     newton_solver.setF(problem.F(), problem.vector());
     newton_solver.setJ(problem.J(), problem.matrix());
     newton_solver.set_form(problem.form());
-    newton_solver.solve(u->vector());
+
+    la::petsc::Vector _u(la::petsc::create_vector_wrap(*u->x()), false);
+    newton_solver.solve(_u.vec());
 
     // Save solution in VTK format
     io::VTKFile file(MPI_COMM_WORLD, "u.pvd", "w");

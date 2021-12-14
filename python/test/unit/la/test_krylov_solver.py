@@ -94,8 +94,7 @@ def test_krylov_samg_solver_elasticity():
         mesh = create_unit_square(MPI.COMM_WORLD, N, N)
         V = VectorFunctionSpace(mesh, 'Lagrange', 1)
         bc0 = Function(V)
-        with bc0.vector.localForm() as bc_local:
-            bc_local.set(0.0)
+        bc0.x.array[:] = 0.0
 
         def boundary(x):
             return np.full(x.shape[1], True)
