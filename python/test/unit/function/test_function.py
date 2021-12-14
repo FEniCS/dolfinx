@@ -54,10 +54,9 @@ def test_name_argument(W):
 
 def test_compute_point_values(V, W, mesh):
     u = Function(V)
+    u.x.array[:] = 1.0
     v = Function(W)
-    with u.vector.localForm() as u_local, v.vector.localForm() as v_local:
-        u_local.set(1.0)
-        v_local.set(1.0)
+    v.x.array[:] = 1.0
     u_values = u.compute_point_values()
     v_values = v.compute_point_values()
 
@@ -75,14 +74,10 @@ def test_assign(V, W):
         u0 = Function(V_)
         u1 = Function(V_)
         u2 = Function(V_)
-        with u.vector.localForm() as loc:
-            loc.set(1)
-        with u0.vector.localForm() as loc:
-            loc.set(2)
-        with u1.vector.localForm() as loc:
-            loc.set(3)
-        with u2.vector.localForm() as loc:
-            loc.set(4)
+        u.x.array[:] = 1
+        u0.x.array[:] = 2
+        u1.x.array[:] = 3
+        u2.x.array[:] = 4
 
         # Test assign + scale
         uu = Function(V_)
@@ -205,16 +200,14 @@ def test_interpolation_rank0(V):
     f.t = 1.0
     w = Function(V)
     w.interpolate(f.eval)
-    with w.vector.localForm() as x:
-        assert (x[:] == 1.0).all()
+    assert (w.x.array[:] == 1.0).all()
 
     num_vertices = V.mesh.topology.index_map(0).size_global
     assert np.isclose(w.vector.norm(PETSc.NormType.N1) - num_vertices, 0)
 
     f.t = 2.0
     w.interpolate(f.eval)
-    with w.vector.localForm() as x:
-        assert (x[:] == 2.0).all()
+    assert (w.x.array[:] == 2.0).all()
 
 
 def test_interpolation_rank1(W):

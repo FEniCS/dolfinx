@@ -217,8 +217,7 @@ def test_curl_curl_eigenvalue(family, order):
     b = inner(u, v) * dx
 
     zero_u = Function(V)
-    with zero_u.vector.localForm() as local_zero_u:
-        local_zero_u.set(0.0)
+    zero_u.x.array[:] = 0.0
 
     boundary_facets = locate_entities_boundary(
         mesh, mesh.topology.dim - 1, lambda x: np.full(x.shape[1], True, dtype=bool))
@@ -303,8 +302,7 @@ def test_biharmonic():
 
     V_1 = V.sub(1).collapse()
     zero_u = Function(V_1)
-    with zero_u.vector.localForm() as zero_u_local:
-        zero_u_local.set(0.0)
+    zero_u.x.array[:] = 0.0
 
     # Strong (Dirichlet) boundary condition
     boundary_facets = locate_entities_boundary(

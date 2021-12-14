@@ -179,8 +179,8 @@ class NonlinearPDE_SNESProblem():
 
     def F_mono(self, snes, x, F):
         x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-        with x.localForm() as _x, self.soln_vars.vector.localForm() as _u:
-            _u[:] = _x
+        with x.localForm() as _x:
+            self.soln_vars.x.array[:] = _x.array_r
         with F.localForm() as f_local:
             f_local.set(0.0)
         assemble_vector(F, self.L)
@@ -230,8 +230,8 @@ class NonlinearPDE_SNESProblem():
         x = x.getNestSubVecs()
         for x_sub, var_sub in zip(x, self.soln_vars):
             x_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-            with x_sub.localForm() as _x, var_sub.vector.localForm() as _u:
-                _u[:] = _x
+            with x.localForm() as _x:
+                var_sub.x.array[:] = _x.array_r
 
         # Assemble
         bcs1 = bcs_by_block(extract_function_spaces(self.a, 1), self.bcs)
