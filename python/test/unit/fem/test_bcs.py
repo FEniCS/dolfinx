@@ -74,10 +74,8 @@ def test_overlapping_bcs():
     assert len(set(np.concatenate(MPI.COMM_WORLD.allgather(dof_corner)))) == 1
 
     u0, u1 = Function(V), Function(V)
-    with u0.vector.localForm() as u0_loc:
-        u0_loc.set(0)
-    with u1.vector.localForm() as u1_loc:
-        u1_loc.set(123.456)
+    u0.x.array[:] = 0.0
+    u1.x.array[:] = 123.456
     bcs = [DirichletBC(u0, dofs_left), DirichletBC(u1, dofs_top)]
 
     A, b = create_matrix(a), create_vector(L)
