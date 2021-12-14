@@ -75,7 +75,7 @@ def run_scalar_test(mesh, V, degree):
 
     uh = Function(V)
     solver.solve(b, uh.vector)
-    uh.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+    uh.x.scatter_forward()
 
     M = (u_exact - uh)**2 * dx
     M = Form(M)
@@ -110,7 +110,7 @@ def run_vector_test(mesh, V, degree):
     # Solve
     uh = Function(V)
     solver.solve(b, uh.vector)
-    uh.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+    uh.x.scatter_forward()
 
     # Calculate error
     M = (u_exact - uh[0])**2 * dx
@@ -134,8 +134,7 @@ def run_dg_test(mesh, V, degree):
 
     # Coefficient
     k = Function(V)
-    k.vector.set(2.0)
-    k.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+    k.x.array[:] = 2.0
 
     # Source term
     f = - div(k * grad(u_exact))
@@ -182,8 +181,7 @@ def run_dg_test(mesh, V, degree):
     # Solve
     uh = Function(V)
     solver.solve(b, uh.vector)
-    uh.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT,
-                          mode=PETSc.ScatterMode.FORWARD)
+    uh.x.scatter_forward()
 
     # Calculate error
     M = (u_exact - uh)**2 * dx
@@ -328,8 +326,7 @@ def test_biharmonic():
 
     x_h = Function(V)
     solver.solve(b, x_h.vector)
-    x_h.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT,
-                           mode=PETSc.ScatterMode.FORWARD)
+    x_h.x.scatter_forward()
 
     # Recall that x_h has flattened indices.
     u_error_numerator = np.sqrt(mesh.comm.allreduce(assemble_scalar(
