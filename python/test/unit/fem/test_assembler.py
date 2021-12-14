@@ -831,6 +831,7 @@ def test_vector_types():
     c0 = pack_constants(L)
     c1 = pack_coefficients(L)
     _cpp.fem.assemble_vector(x0.array, L._cpp_object, c0, c1)
+    x0.scatter_reverse(_cpp.common.ScatterMode.add)
 
     c = Constant(mesh, np.complex128(1))
     L = inner(c, v) * ufl.dx
@@ -839,6 +840,7 @@ def test_vector_types():
     c0 = pack_constants(L)
     c1 = pack_coefficients(L)
     _cpp.fem.assemble_vector(x1.array, L._cpp_object, c0, c1)
+    x1.scatter_reverse(_cpp.common.ScatterMode.add)
 
     c = Constant(mesh, np.float32(1))
     L = inner(c, v) * ufl.dx
@@ -847,6 +849,7 @@ def test_vector_types():
     c0 = pack_constants(L)
     c1 = pack_coefficients(L)
     _cpp.fem.assemble_vector(x2.array, L._cpp_object, c0, c1)
+    x2.scatter_reverse(_cpp.common.ScatterMode.add)
 
     assert np.linalg.norm(x0.array - x1.array) == pytest.approx(0.0)
     assert np.linalg.norm(x0.array - x2.array) == pytest.approx(0.0, abs=1e-8)
