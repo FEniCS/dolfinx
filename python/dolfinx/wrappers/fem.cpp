@@ -35,6 +35,7 @@
 #include <dolfinx/mesh/MeshTags.h>
 #include <memory>
 #include <petsc4py/petsc4py.h>
+#include <pybind11/complex.h>
 #include <pybind11/functional.h>
 #include <pybind11/numpy.h>
 #include <pybind11/operators.h>
@@ -137,8 +138,7 @@ void declare_functions(py::module& m)
                                          py_to_cpp_coeffs(coefficients));
       },
       py::arg("b"), py::arg("L"), py::arg("constants"), py::arg("coeffs"),
-      "Assemble linear form into an existing vector with pre-packed "
-      "constants "
+      "Assemble linear form into an existing vector with pre-packed constants "
       "and coefficients");
   m.def(
       "assemble_matrix",
@@ -914,11 +914,19 @@ void fem(py::module& m)
 
   // dolfinx::fem::assemble
   declare_functions<double>(m);
+  declare_functions<float>(m);
   declare_functions<std::complex<double>>(m);
+  // declare_functions<std::complex<float>>(m);
+
   declare_objects<double>(m, "float64");
+  declare_objects<float>(m, "float32");
   declare_objects<std::complex<double>>(m, "complex128");
+  declare_objects<std::complex<float>>(m, "complex64");
+
   declare_form<double>(m, "float64");
+  declare_form<float>(m, "float32");
   declare_form<std::complex<double>>(m, "complex128");
+  declare_form<std::complex<float>>(m, "complex64");
 
   py::enum_<dolfinx::fem::IntegralType>(m, "IntegralType")
       .value("cell", dolfinx::fem::IntegralType::cell)
