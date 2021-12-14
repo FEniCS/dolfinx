@@ -304,46 +304,36 @@ public:
   /// @param[in] scale The scaling value to apply
   void set(xtl::span<T> x, double scale = 1.0) const
   {
-    std::visit(
-        [&](auto&& g)
+    if (std::holds_alternative<std::shared_ptr<const fem::Function<T>>>(_g))
+    {
+      auto f = std::get<std::shared_ptr<const fem::Function<T>>>(_g);
+      assert(f);
+      xtl::span<const T> values = f->x()->array();
+      for (std::size_t i = 0; i < _dofs0.size(); ++i)
+      {
+        if (_dofs0[i] < (std::int32_t)x.size())
         {
-          using G = std::decay_t<decltype(g)>;
-          if constexpr (std::is_same_v<G,
-                                       std::shared_ptr<const fem::Function<T>>>)
-          {
-            assert(g);
-            xtl::span<const T> values = g->x()->array();
-            for (std::size_t i = 0; i < _dofs0.size(); ++i)
-            {
-              if (_dofs0[i] < (std::int32_t)x.size())
-              {
-                assert(_dofs1_g[i] < (std::int32_t)values.size());
-                x[_dofs0[i]] = scale * values[_dofs1_g[i]];
-              }
-            }
-          }
-          else if constexpr (std::is_same_v<
-                                 G, std::shared_ptr<const fem::Constant<T>>>)
-          {
-            assert(g);
-            std::vector<T> value = g->value;
-            const std::int32_t bs = _function_space->dofmap()->bs();
-            assert(value.size() == (std::size_t)bs);
-            for (std::size_t i = 0; i < _dofs0.size(); ++i)
-            {
-              if (_dofs0[i] < (std::int32_t)x.size())
-              {
-                std::div_t div = std::div(_dofs0[i], bs);
-                x[_dofs0[i]] = scale * value[div.rem];
-              }
-            }
-          }
-          else
-          {
-            throw std::runtime_error("Could not set BC, unknown bc type.");
-          }
-        },
-        _g);
+          assert(_dofs1_g[i] < (std::int32_t)values.size());
+          x[_dofs0[i]] = scale * values[_dofs1_g[i]];
+        }
+      }
+    }
+    else if (std::holds_alternative<std::shared_ptr<const fem::Constant<T>>>(
+                 _g))
+    {
+      auto f = std::get<std::shared_ptr<const fem::Constant<T>>>(_g);
+      std::vector<T> value = f->value;
+      const std::int32_t bs = _function_space->dofmap()->bs();
+      assert(value.size() == (std::size_t)bs);
+      for (std::size_t i = 0; i < _dofs0.size(); ++i)
+      {
+        if (_dofs0[i] < (std::int32_t)x.size())
+        {
+          std::div_t div = std::div(_dofs0[i], bs);
+          x[_dofs0[i]] = scale * value[div.rem];
+        }
+      }
+    }
   }
 
   /// Set bc entries in `x` to `scale * (x0 - x_bc)`
@@ -353,47 +343,37 @@ public:
   void set(xtl::span<T> x, const xtl::span<const T>& x0,
            double scale = 1.0) const
   {
-    std::visit(
-        [&](auto&& g)
+    if (std::holds_alternative<std::shared_ptr<const fem::Function<T>>>(_g))
+    {
+      auto f = std::get<std::shared_ptr<const fem::Function<T>>>(_g);
+      assert(f);
+      xtl::span<const T> values = f->x()->array();
+      assert(x.size() <= x0.size());
+      for (std::size_t i = 0; i < _dofs0.size(); ++i)
+      {
+        if (_dofs0[i] < (std::int32_t)x.size())
         {
-          using G = std::decay_t<decltype(g)>;
-          if constexpr (std::is_same_v<G,
-                                       std::shared_ptr<const fem::Function<T>>>)
-          {
-            assert(g);
-            xtl::span<const T> values = g->x()->array();
-            assert(x.size() <= x0.size());
-            for (std::size_t i = 0; i < _dofs0.size(); ++i)
-            {
-              if (_dofs0[i] < (std::int32_t)x.size())
-              {
-                assert(_dofs1_g[i] < (std::int32_t)values.size());
-                x[_dofs0[i]] = scale * (values[_dofs1_g[i]] - x0[_dofs0[i]]);
-              }
-            }
-          }
-          else if constexpr (std::is_same_v<
-                                 G, std::shared_ptr<const fem::Constant<T>>>)
-          {
-            assert(g);
-            std::vector<T> value = g->value;
-            const std::int32_t bs = _function_space->dofmap()->bs();
-            assert(value.size() == (std::size_t)bs);
-            for (std::size_t i = 0; i < _dofs0.size(); ++i)
-            {
-              if (_dofs0[i] < (std::int32_t)x.size())
-              {
-                std::div_t div = std::div(_dofs0[i], bs);
-                x[_dofs0[i]] = scale * (value[div.rem] - x0[_dofs0[i]]);
-              }
-            }
-          }
-          else
-          {
-            throw std::runtime_error("Could not set BC, unknown bc type.");
-          }
-        },
-        _g);
+          assert(_dofs1_g[i] < (std::int32_t)values.size());
+          x[_dofs0[i]] = scale * (values[_dofs1_g[i]] - x0[_dofs0[i]]);
+        }
+      }
+    }
+    else if (std::holds_alternative<std::shared_ptr<const fem::Constant<T>>>(
+                 _g))
+    {
+      auto f = std::get<std::shared_ptr<const fem::Constant<T>>>(_g);
+      std::vector<T> value = f->value;
+      const std::int32_t bs = _function_space->dofmap()->bs();
+      assert(value.size() == (std::size_t)bs);
+      for (std::size_t i = 0; i < _dofs0.size(); ++i)
+      {
+        if (_dofs0[i] < (std::int32_t)x.size())
+        {
+          std::div_t div = std::div(_dofs0[i], bs);
+          x[_dofs0[i]] = scale * (value[div.rem] - x0[_dofs0[i]]);
+        }
+      }
+    }
   }
 
   /// @todo Review this function - it is almost identical to the
@@ -406,37 +386,28 @@ public:
   /// (the space of the function that provides the dof values)
   void dof_values(xtl::span<T> values) const
   {
-    std::visit(
-        [&](auto&& g)
-        {
-          using G = std::decay_t<decltype(g)>;
-          if constexpr (std::is_same_v<G,
-                                       std::shared_ptr<const fem::Function<T>>>)
-          {
-            assert(g);
-            xtl::span<const T> g_values = g->x()->array();
-            for (std::size_t i = 0; i < _dofs1_g.size(); ++i)
-              values[_dofs0[i]] = g_values[_dofs1_g[i]];
-          }
-          else if constexpr (std::is_same_v<
-                                 G, std::shared_ptr<const fem::Constant<T>>>)
-          {
-            assert(g);
-            std::vector<T> g_value = g->value;
-            const std::int32_t bs = _function_space->dofmap()->bs();
-            assert(g_value.size() == (std::size_t)bs);
-            for (std::size_t i = 0; i < _dofs1_g.size(); ++i)
-            {
-              std::div_t div = std::div(_dofs1_g[i], bs);
-              values[_dofs0[i]] = g_value[div.rem];
-            }
-          }
-          else
-          {
-            throw std::runtime_error("Could not set BC, unknown bc type.");
-          }
-        },
-        _g);
+    if (std::holds_alternative<std::shared_ptr<const fem::Function<T>>>(_g))
+    {
+      auto f = std::get<std::shared_ptr<const fem::Function<T>>>(_g);
+      assert(f);
+      xtl::span<const T> g_values = f->x()->array();
+      for (std::size_t i = 0; i < _dofs1_g.size(); ++i)
+        values[_dofs0[i]] = g_values[_dofs1_g[i]];
+    }
+    else if (std::holds_alternative<std::shared_ptr<const fem::Constant<T>>>(
+                 _g))
+    {
+      auto f = std::get<std::shared_ptr<const fem::Constant<T>>>(_g);
+      assert(f);
+      std::vector<T> g_value = f->value;
+      const std::int32_t bs = _function_space->dofmap()->bs();
+      assert(g_value.size() == (std::size_t)bs);
+      for (std::size_t i = 0; i < _dofs1_g.size(); ++i)
+      {
+        std::div_t div = std::div(_dofs1_g[i], bs);
+        values[_dofs0[i]] = g_value[div.rem];
+      }
+    }
   }
 
   /// Set markers[i] = true if dof i has a boundary condition applied.
