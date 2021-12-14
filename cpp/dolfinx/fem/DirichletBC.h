@@ -184,21 +184,9 @@ public:
       : _function_space(V), _g(g), _dofs0(std::forward<U>(dofs))
   {
     assert(_function_space);
-    std::visit(
-        [&](auto&& f)
-        {
-          using G = std::decay_t<decltype(f)>;
-          if constexpr (std::is_same_v<G,
-                                       std::shared_ptr<const fem::Constant<T>>>)
-          {
-            assert(f);
-          }
-          else
-          {
-            throw std::runtime_error("Unknown bc type for constructor.");
-          }
-        },
-        _g);
+
+    auto f = std::get<std::shared_ptr<const fem::Constant<T>>>(_g);
+    assert(f);
 
     const int map0_bs = _function_space->dofmap()->index_map_bs();
     const int map0_size = _function_space->dofmap()->index_map->size_local();
@@ -247,21 +235,10 @@ public:
   {
     assert(_dofs0.size() == _dofs1_g.size());
     assert(_function_space);
-    std::visit(
-        [&](auto&& f)
-        {
-          using G = std::decay_t<decltype(f)>;
-          if constexpr (std::is_same_v<G,
-                                       std::shared_ptr<const fem::Function<T>>>)
-          {
-            assert(f);
-          }
-          else
-          {
-            throw std::runtime_error("Unknown bc type.");
-          }
-        },
-        _g);
+
+    auto f = std::get<std::shared_ptr<const fem::Function<T>>>(_g);
+    assert(f);
+
     const int map0_bs = _function_space->dofmap()->index_map_bs();
     const int map0_size = _function_space->dofmap()->index_map->size_local();
     const int owned_size0 = map0_bs * map0_size;
