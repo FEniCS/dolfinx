@@ -267,7 +267,8 @@ std::vector<std::int32_t> geometry::compute_closest_entity(
   else
   {
     double R2;
-    const double initial_entity = 0;
+    double initial_entity;
+    std::array<int, 2> leaves;
     std::vector<std::int32_t> entities;
     entities.reserve(points.shape(0));
     for (std::size_t i = 0; i < points.shape(0); i++)
@@ -275,6 +276,9 @@ std::vector<std::int32_t> geometry::compute_closest_entity(
       // Use midpoint tree to find initial closest entity to the point.
       // Start by using a leaf node as the initial guess for the input
       // entity
+      leaves = midpoint_tree.bbox(0);
+      assert(is_leaf(leaves));
+      initial_entity = leaves[0];
       xt::xtensor_fixed<double, xt::xshape<3>> diff
           = xt::row(midpoint_tree.get_bbox(initial_entity), 0);
       diff -= xt::row(points, i);
@@ -286,7 +290,7 @@ std::vector<std::int32_t> geometry::compute_closest_entity(
       // lightweight.
       const auto [m_index, m_distance2] = _compute_closest_entity(
           midpoint_tree, xt::reshape_view(xt::row(points, i), {1, 3}),
-          midpoint_tree.num_bboxes() - 1, mesh, 0, R2);
+          midpoint_tree.num_bboxes() - 1, mesh, initial_entity, R2);
 
       // Use a recursive search through the bounding box tree to
       // determine which entity is actually closest.
@@ -296,7 +300,6 @@ std::vector<std::int32_t> geometry::compute_closest_entity(
       const auto [index, distance2] = _compute_closest_entity(
           tree, xt::reshape_view(xt::row(points, i), {1, 3}),
           tree.num_bboxes() - 1, mesh, m_index, m_distance2);
-
       entities.push_back(index);
     }
 
