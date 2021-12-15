@@ -127,12 +127,11 @@ std::vector<std::int32_t> locate_dofs_geometrical(
 template <typename T>
 class DirichletBC
 {
-
 public:
   /// Create a representation of a Dirichlet boundary condition where
   /// the space being constrained is the same as the function that
   /// defines the constraint values, i.e. share the same
-  /// `FunctionSpace`.
+  /// `fem::FunctionSpace`
   ///
   /// @param[in] g The boundary condition value. The boundary condition
   /// can be applied to a function on the same space as g.
@@ -148,14 +147,17 @@ public:
       : _function_space(g->function_space()), _g(g),
         _dofs0(std::forward<U>(dofs))
   {
-    const int owned_size0 = _function_space->dofmap()->index_map->size_local();
-    auto it = std::lower_bound(_dofs0.begin(), _dofs0.end(), owned_size0);
+    assert(_function_space);
     const int map0_bs = _function_space->dofmap()->index_map_bs();
+    const int map0_size = _function_space->dofmap()->index_map->size_local();
+    const int owned_size0 = map0_bs * map0_size;
+    auto it = std::lower_bound(_dofs0.begin(), _dofs0.end(), owned_size0);
     _owned_indices0 = map0_bs * std::distance(_dofs0.begin(), it);
 
-    const int bs = _function_space->dofmap()->bs();
-    if (bs > 1)
+    if (int bs = _function_space->dofmap()->bs(); bs > 1)
     {
+      _owned_indices0 *= bs;
+
       // Unroll for the block size
       const std::vector<std::int32_t> dof_tmp = _dofs0;
       _dofs0.resize(bs * dof_tmp.size());
@@ -170,13 +172,14 @@ public:
     _dofs1_g = _dofs0;
   }
 
-  /// Create a representation of a Dirichlet boundary condition with a constant
-  /// value.
+  /// Create a representation of a Dirichlet boundary condition with a
+  /// constant value
   ///
   /// @param[in] V The function space to constrain
   /// @param[in] g The constant value
   /// @param[in] dofs Degree-of-freedom block indices (@p
-  /// std::vector<std::int32_t>) from the input function space to constrain
+  /// std::vector<std::int32_t>) from the input function space to
+  /// constrain
   /// @note The dofs will be unrolled with the dofmap block size
   template <typename U>
   DirichletBC(const std::shared_ptr<const fem::Constant<T>>& g, U&& dofs,
@@ -184,10 +187,6 @@ public:
       : _function_space(V), _g(g), _dofs0(std::forward<U>(dofs))
   {
     assert(_function_space);
-
-    auto f = std::get<std::shared_ptr<const fem::Constant<T>>>(_g);
-    assert(f);
-
     const int map0_bs = _function_space->dofmap()->index_map_bs();
     const int map0_size = _function_space->dofmap()->index_map->size_local();
     const int owned_size0 = map0_bs * map0_size;
@@ -206,6 +205,7 @@ public:
           _dofs0[bs * i + k] = bs * dof_tmp[i] + k;
       }
     }
+
     // TODO: allows single dofs array (let one point to the other)
     _dofs1_g = _dofs0;
   }
@@ -363,10 +363,10 @@ public:
     {
       auto f = std::get<std::shared_ptr<const fem::Constant<T>>>(_g);
       std::vector<T> value = f->value;
-      const std::int32_t bs = _function_space->dofmap()->bs();
+      std::int32_t bs = _function_space->dofmap()->bs();
       assert(value.size() == (std::size_t)bs);
       std::for_each(_dofs0.cbegin(), _dofs0.cend(),
-                    [&](auto dof)
+                    [&x, &x0, &value, scale, bs](auto dof)
                     {
                       if (dof < (std::int32_t)x.size())
                       {
