@@ -12,9 +12,9 @@ import pytest
 import ufl
 from dolfinx.fem import (Function, FunctionSpace, TensorFunctionSpace,
                          VectorFunctionSpace)
-from dolfinx.generation import UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh
 from dolfinx.io import VTKFile
-from dolfinx.mesh import CellType, create_mesh
+from dolfinx.mesh import (CellType, create_mesh, create_unit_cube,
+                          create_unit_interval, create_unit_square)
 from dolfinx_utils.test.fixtures import tempdir
 from dolfinx_utils.test.skips import skip_in_parallel
 
@@ -29,7 +29,7 @@ cell_types_3D = [CellType.tetrahedron, CellType.hexahedron]
 
 def test_save_1d_mesh(tempdir):
     filename = os.path.join(tempdir, "mesh.pvd")
-    mesh = UnitIntervalMesh(MPI.COMM_WORLD, 32)
+    mesh = create_unit_interval(MPI.COMM_WORLD, 32)
     with VTKFile(MPI.COMM_WORLD, filename, "w") as vtk:
         vtk.write_mesh(mesh)
         vtk.write_mesh(mesh, 1)
@@ -37,7 +37,7 @@ def test_save_1d_mesh(tempdir):
 
 @pytest.mark.parametrize("cell_type", cell_types_2D)
 def test_save_2d_mesh(tempdir, cell_type):
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 32, 32, cell_type=cell_type)
+    mesh = create_unit_square(MPI.COMM_WORLD, 32, 32, cell_type=cell_type)
     filename = os.path.join(tempdir, f"mesh_{cell_type.name}.pvd")
     with VTKFile(MPI.COMM_WORLD, filename, "w") as vtk:
         vtk.write_mesh(mesh, 0.)
@@ -46,7 +46,7 @@ def test_save_2d_mesh(tempdir, cell_type):
 
 @pytest.mark.parametrize("cell_type", cell_types_3D)
 def test_save_3d_mesh(tempdir, cell_type):
-    mesh = UnitCubeMesh(MPI.COMM_WORLD, 8, 8, 8, cell_type=cell_type)
+    mesh = create_unit_cube(MPI.COMM_WORLD, 8, 8, 8, cell_type=cell_type)
     filename = os.path.join(tempdir, f"mesh_{cell_type.name}.pvd")
     with VTKFile(MPI.COMM_WORLD, filename, "w") as vtk:
         vtk.write_mesh(mesh, 0.)
@@ -54,7 +54,7 @@ def test_save_3d_mesh(tempdir, cell_type):
 
 
 def test_save_1d_scalar(tempdir):
-    mesh = UnitIntervalMesh(MPI.COMM_WORLD, 32)
+    mesh = create_unit_interval(MPI.COMM_WORLD, 32)
 
     def f(x):
         return x[0]
@@ -71,7 +71,7 @@ def test_save_1d_scalar(tempdir):
 
 @pytest.mark.parametrize("cell_type", cell_types_2D)
 def test_save_2d_scalar(tempdir, cell_type):
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 16, 16, cell_type=cell_type)
+    mesh = create_unit_square(MPI.COMM_WORLD, 16, 16, cell_type=cell_type)
     u = Function(FunctionSpace(mesh, ("Lagrange", 2)))
     u.x.array[:] = 1.0
 
@@ -83,7 +83,7 @@ def test_save_2d_scalar(tempdir, cell_type):
 
 @pytest.mark.parametrize("cell_type", cell_types_3D)
 def test_save_3d_scalar(tempdir, cell_type):
-    mesh = UnitCubeMesh(MPI.COMM_WORLD, 8, 8, 8, cell_type=cell_type)
+    mesh = create_unit_cube(MPI.COMM_WORLD, 8, 8, 8, cell_type=cell_type)
     u = Function(FunctionSpace(mesh, ("Lagrange", 2)))
     u.x.array[:] = 1.0
 
@@ -94,7 +94,7 @@ def test_save_3d_scalar(tempdir, cell_type):
 
 
 def test_save_1d_vector(tempdir):
-    mesh = UnitIntervalMesh(MPI.COMM_WORLD, 32)
+    mesh = create_unit_interval(MPI.COMM_WORLD, 32)
 
     def f(x):
         vals = np.zeros((2, x.shape[1]))
@@ -114,7 +114,7 @@ def test_save_1d_vector(tempdir):
 
 @pytest.mark.parametrize("cell_type", cell_types_2D)
 def test_save_2d_vector(tempdir, cell_type):
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 16, 16, cell_type=cell_type)
+    mesh = create_unit_square(MPI.COMM_WORLD, 16, 16, cell_type=cell_type)
     u = Function(VectorFunctionSpace(mesh, ("Lagrange", 1)))
 
     def f(x):
@@ -156,7 +156,7 @@ def test_save_2d_vector_CG2(tempdir):
 
 
 def test_save_2d_mixed(tempdir):
-    mesh = UnitCubeMesh(MPI.COMM_WORLD, 3, 3, 3)
+    mesh = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3)
 
     P2 = ufl.VectorElement("Lagrange", mesh.ufl_cell(), 2)
     P1 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
@@ -182,7 +182,7 @@ def test_save_2d_mixed(tempdir):
 
 
 def test_save_1d_tensor(tempdir):
-    mesh = UnitIntervalMesh(MPI.COMM_WORLD, 32)
+    mesh = create_unit_interval(MPI.COMM_WORLD, 32)
     element = ufl.TensorElement("Lagrange", mesh.ufl_cell(), 2, shape=(2, 2))
     u = Function(FunctionSpace(mesh, element))
     u.x.array[:] = 1.0
@@ -192,7 +192,7 @@ def test_save_1d_tensor(tempdir):
 
 
 def test_save_2d_tensor(tempdir):
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 16, 16)
+    mesh = create_unit_square(MPI.COMM_WORLD, 16, 16)
     u = Function(TensorFunctionSpace(mesh, ("Lagrange", 2)))
     u.x.array[:] = 1.0
     filename = os.path.join(tempdir, "u.pvd")
@@ -203,7 +203,7 @@ def test_save_2d_tensor(tempdir):
 
 
 def test_save_3d_tensor(tempdir):
-    mesh = UnitCubeMesh(MPI.COMM_WORLD, 8, 8, 8)
+    mesh = create_unit_cube(MPI.COMM_WORLD, 8, 8, 8)
     u = Function(TensorFunctionSpace(mesh, ("Lagrange", 2)))
     u.x.array[:] = 1.0
     filename = os.path.join(tempdir, "u.pvd")

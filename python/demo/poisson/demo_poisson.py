@@ -79,9 +79,9 @@ import ufl
 from dolfinx import fem, plot
 from dolfinx.fem import (DirichletBC, Function, FunctionSpace,
                          locate_dofs_topological)
-from dolfinx.generation import RectangleMesh
 from dolfinx.io import XDMFFile
-from dolfinx.mesh import CellType, GhostMode, locate_entities_boundary
+from dolfinx.mesh import (CellType, GhostMode, create_rectangle,
+                          locate_entities_boundary)
 from ufl import ds, dx, grad, inner
 
 from mpi4py import MPI
@@ -89,12 +89,12 @@ from mpi4py import MPI
 # We begin by defining a mesh of the domain and a finite element
 # function space :math:`V` relative to this mesh. As the unit square is
 # a very standard domain, we can use a built-in mesh provided by the
-# class :py:class:`UnitSquareMesh <dolfinx.generation.UnitSquareMesh>`. In
+# class :py:class:`create_unit_square_mesh <dolfinx.mesh.create_unit_square_mesh>`. In
 # order to create a mesh consisting of 32 x 32 squares with each square
 # divided into two triangles, we do as follows ::
 
 # Create mesh and define function space
-mesh = RectangleMesh(
+mesh = create_rectangle(
     MPI.COMM_WORLD,
     [np.array([0, 0, 0]), np.array([1, 1, 0])], [32, 32],
     CellType.triangle, GhostMode.none)
