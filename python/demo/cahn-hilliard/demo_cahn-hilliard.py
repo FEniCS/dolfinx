@@ -130,7 +130,6 @@ try:
     have_pyvista = True
     if pv.OFF_SCREEN:
         pv.start_xvfb(wait=0.5)
-
 except ModuleNotFoundError:
     print("pyvista is required to visualise the solution")
     have_pyvista = False
@@ -190,11 +189,11 @@ c0, mu0 = split(u0)
 # The initial conditions are interpolated into a finite element space::
 
 # Zero u
-with u.vector.localForm() as x_local:
-    x_local.set(0.0)
+u.x.array[:] = 0.0
 
 # Interpolate initial condition
 u.sub(0).interpolate(lambda x: 0.63 + 0.02 * (0.5 - np.random.rand(x.shape[1])))
+u.x.scatter_forward()
 
 # The first line creates an object of type ``InitialConditions``.  The
 # following two lines make ``u`` and ``u0`` interpolants of ``u_init``
@@ -279,8 +278,7 @@ if "CI" in os.environ.keys() or "GITHUB_ACTIONS" in os.environ.keys():
 else:
     T = 50 * dt
 
-u.vector.copy(result=u0.vector)
-u.x.scatter_forward()
+u0.x.array[:] = u.x.array
 
 
 # Prepare viewer for plotting solution during the computation
@@ -298,7 +296,7 @@ while (t < T):
     t += dt
     r = solver.solve(u)
     print(f"Step {int(t/dt)}: num iterations: {r[0]}")
-    u.vector.copy(result=u0.vector)
+    u0.x.array[:] = u.x.array
     file.write_function(u.sub(0), t)
 
     # Update the plot window

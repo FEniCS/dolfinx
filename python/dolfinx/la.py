@@ -5,7 +5,7 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Linear algebra functionality"""
 
-from dolfinx.cpp.la import create_petsc_vector
+from dolfinx.cpp.la.petsc import create_vector as create_petsc_vector
 
 __all__ = ["orthonormalize", "is_orthonormal", "create_petsc_vector"]
 
