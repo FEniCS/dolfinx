@@ -512,16 +512,10 @@ mesh::Mesh build_tri(MPI_Comm comm,
                                 xt::all());
           _cell.assign(c);
 
-          switch (diagonal)
+          if (diagonal == DiagonalType::right_left
+              or diagonal == DiagonalType::left_right)
           {
-          case DiagonalType::right_left:
             local_diagonal = DiagonalType::right;
-            break;
-          case DiagonalType::left_right:
-            local_diagonal = DiagonalType::right;
-            break;
-          default:
-            break;
           }
           break;
         }
@@ -536,16 +530,10 @@ mesh::Mesh build_tri(MPI_Comm comm,
           auto _cell = xt::view(cells, xt::range(2 * offset, 2 * offset + 2),
                                 xt::all());
           _cell.assign(c);
-          switch (diagonal)
+          if (diagonal == DiagonalType::right_left
+              or diagonal == DiagonalType::left_right)
           {
-          case DiagonalType::right_left:
             local_diagonal = DiagonalType::left;
-            break;
-          case DiagonalType::left_right:
-            local_diagonal = DiagonalType::left;
-            break;
-          default:
-            break;
           }
         }
         }
