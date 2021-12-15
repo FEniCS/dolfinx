@@ -7,9 +7,9 @@
 #ifdef HAS_ADIOS2
 
 #include <catch.hpp>
-#include <dolfinx/generation/RectangleMesh.h>
 #include <dolfinx/io/ADIOS2Writers.h>
 #include <dolfinx/mesh/Mesh.h>
+#include <dolfinx/mesh/generation.h>
 #include <mpi.h>
 
 using namespace dolfinx;
