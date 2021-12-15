@@ -17,7 +17,7 @@ from dolfinx.fem import (DirichletBC, Function, VectorFunctionSpace,
                          apply_lifting, assemble_matrix, assemble_vector,
                          locate_dofs_geometrical, set_bc)
 from dolfinx.io import XDMFFile
-from dolfinx.mesh import BoxMesh, CellType, GhostMode
+from dolfinx.mesh import CellType, GhostMode, create_box_mesh
 from ufl import (Identity, SpatialCoordinate, TestFunction, TrialFunction,
                  as_vector, dx, grad, inner, sym, tr)
 
@@ -69,7 +69,7 @@ def build_nullspace(V):
     return PETSc.NullSpace().create(vectors=ns)
 
 
-mesh = BoxMesh(
+mesh = create_box_mesh(
     MPI.COMM_WORLD, [np.array([0.0, 0.0, 0.0]),
                      np.array([2.0, 1.0, 1.0])], [12, 12, 12],
     CellType.tetrahedron, GhostMode.shared_facet)

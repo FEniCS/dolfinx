@@ -17,7 +17,7 @@ import numpy as np
 from dolfinx.fem import Function, FunctionSpace, LinearProblem
 from dolfinx.fem.assemble import assemble_scalar
 from dolfinx.io import XDMFFile
-from dolfinx.mesh import create_unit_square_mesh
+from dolfinx.mesh import create_unit_square
 from ufl import FacetNormal, TestFunction, TrialFunction, dx, grad, inner
 
 from mpi4py import MPI
@@ -32,7 +32,7 @@ deg = 1
 # number of elements in each direction of mesh
 n_elem = 128
 
-mesh = create_unit_square_mesh(MPI.COMM_WORLD, n_elem, n_elem)
+mesh = create_unit_square(MPI.COMM_WORLD, n_elem, n_elem)
 n = FacetNormal(mesh)
 
 # Source amplitude

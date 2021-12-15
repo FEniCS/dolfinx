@@ -115,7 +115,7 @@ import numpy as np
 from dolfinx import log, plot
 from dolfinx.fem import Function, FunctionSpace, NonlinearProblem
 from dolfinx.io import XDMFFile
-from dolfinx.mesh import CellType, create_unit_square_mesh
+from dolfinx.mesh import CellType, create_unit_square
 from dolfinx.nls import NewtonSolver
 from ufl import (FiniteElement, TestFunctions, diff, dx, grad, inner, split,
                  variable)
@@ -151,7 +151,7 @@ theta = 0.5      # time stepping family, e.g. theta=1 -> backward Euler, theta=0
 # using a pair of linear Lagrangian elements. ::
 
 # Create mesh and build function space
-mesh = create_unit_square_mesh(MPI.COMM_WORLD, 96, 96, CellType.triangle)
+mesh = create_unit_square(MPI.COMM_WORLD, 96, 96, CellType.triangle)
 P1 = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
 ME = FunctionSpace(mesh, P1 * P1)
 

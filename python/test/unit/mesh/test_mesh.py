@@ -201,7 +201,7 @@ def test_create_unit_cubeDistributed():
     assert mesh.comm.allreduce(mesh.topology.index_map(0).size_local, MPI.SUM) == 480
 
 
-def test_create_unit_cubeLocal():
+def test_create_unit_cube_local():
     """Create mesh of unit cube."""
     mesh = create_unit_cube(MPI.COMM_SELF, 5, 7, 9)
     assert mesh.topology.index_map(0).size_global == 480
@@ -211,7 +211,7 @@ def test_create_unit_cubeLocal():
     assert mesh.geometry.dim == 3
 
 
-def test_UnitQuadMesh():
+def test_create_unit_square_quads():
     mesh = create_unit_square(MPI.COMM_WORLD, 5, 7, CellType.quadrilateral)
     assert mesh.topology.index_map(0).size_global == 48
     assert mesh.topology.index_map(2).size_global == 35
@@ -219,7 +219,7 @@ def test_UnitQuadMesh():
     assert mesh.comm.allreduce(mesh.topology.index_map(0).size_local, MPI.SUM) == 48
 
 
-def test_UnitHexMesh():
+def test_create_unit_square_hex():
     mesh = create_unit_cube(MPI.COMM_WORLD, 5, 7, 9, CellType.hexahedron)
     assert mesh.topology.index_map(0).size_global == 480
     assert mesh.topology.index_map(3).size_global == 315
@@ -227,14 +227,14 @@ def test_UnitHexMesh():
     assert mesh.comm.allreduce(mesh.topology.index_map(0).size_local, MPI.SUM) == 480
 
 
-def test_create_boxPrism():
+def test_create_box_prism():
     mesh = create_box(MPI.COMM_WORLD, [[0., 0., 0.], [1., 1., 1.]], [2, 3, 4], CellType.prism, GhostMode.none)
     assert mesh.topology.index_map(0).size_global == 60
     assert mesh.topology.index_map(3).size_global == 48
 
 
 @skip_in_parallel
-def test_GetCoordinates():
+def test_get_coordinates():
     """Get coordinates of vertices"""
     mesh = create_unit_square(MPI.COMM_WORLD, 5, 5)
     assert len(mesh.geometry.x) == 36
@@ -400,7 +400,7 @@ def test_small_mesh():
     # assert mesh1d.topology.index_map(gdim).size_global == 2
 
 
-def test_UnitHexMesh_assemble():
+def test_unit_hex_mesh_assemble():
     mesh = create_unit_cube(MPI.COMM_WORLD, 6, 7, 5, CellType.hexahedron)
     vol = assemble_scalar(1 * dx(mesh))
     vol = mesh.comm.allreduce(vol, MPI.SUM)

@@ -80,7 +80,7 @@ from dolfinx import fem, plot
 from dolfinx.fem import (DirichletBC, Function, FunctionSpace,
                          locate_dofs_topological)
 from dolfinx.io import XDMFFile
-from dolfinx.mesh import (CellType, GhostMode, RectangleMesh,
+from dolfinx.mesh import (CellType, GhostMode, create_rectangle,
                           locate_entities_boundary)
 from ufl import ds, dx, grad, inner
 
@@ -94,7 +94,7 @@ from mpi4py import MPI
 # divided into two triangles, we do as follows ::
 
 # Create mesh and define function space
-mesh = RectangleMesh(
+mesh = create_rectangle(
     MPI.COMM_WORLD,
     [np.array([0, 0, 0]), np.array([1, 1, 0])], [32, 32],
     CellType.triangle, GhostMode.none)

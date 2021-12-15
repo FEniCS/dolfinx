@@ -16,8 +16,8 @@ import dolfinx.plot
 import ufl
 from dolfinx.fem import (Function, FunctionSpace, LinearProblem,
                          VectorFunctionSpace)
-from dolfinx.mesh import (CellType, MeshTags, UnitCubeMesh, compute_midpoints,
-                          create_unit_square_mesh)
+from dolfinx.mesh import (CellType, MeshTags, compute_midpoints,
+                          create_unit_square, create_unit_cube)
 
 from mpi4py import MPI
 
@@ -46,7 +46,7 @@ def int_u(x):
     return x[0] + 3 * x[1] + 5 * x[2]
 
 
-mesh = UnitCubeMesh(MPI.COMM_WORLD, 4, 3, 5, cell_type=CellType.tetrahedron)
+mesh = create_unit_cube(MPI.COMM_WORLD, 4, 3, 5, cell_type=CellType.tetrahedron)
 V = FunctionSpace(mesh, ("Lagrange", 1))
 u = Function(V)
 u.interpolate(int_u)
@@ -124,7 +124,7 @@ else:
 # As in the previous section, we interpolate a function into a Lagrange
 # function space
 
-mesh = create_unit_square_mesh(MPI.COMM_WORLD, 12, 12, cell_type=CellType.quadrilateral)
+mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, cell_type=CellType.quadrilateral)
 V = FunctionSpace(mesh, ("Lagrange", 1))
 u = Function(V)
 u.interpolate(lambda x: np.sin(np.pi * x[0]) * np.sin(2 * x[1] * np.pi))
@@ -355,7 +355,7 @@ def vel(x):
     return vals
 
 
-mesh = UnitCubeMesh(MPI.COMM_WORLD, 4, 4, 4, CellType.hexahedron)
+mesh = create_unit_cube(MPI.COMM_WORLD, 4, 4, 4, CellType.hexahedron)
 V = VectorFunctionSpace(mesh, ("DG", 2))
 uh = Function(V)
 uh.interpolate(vel)
