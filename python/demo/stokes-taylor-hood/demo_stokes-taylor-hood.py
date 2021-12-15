@@ -80,7 +80,7 @@ from dolfinx.fem import (Constant, DirichletBC, Form, Function, FunctionSpace,
                          form, locate_dofs_geometrical,
                          locate_dofs_topological)
 from dolfinx.io import XDMFFile
-from dolfinx.mesh import (CellType, GhostMode, create_rectangle
+from dolfinx.mesh import (CellType, GhostMode, create_rectangle,
                           locate_entities_boundary)
 from ufl import div, dx, grad, inner
 

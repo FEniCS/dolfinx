@@ -17,7 +17,7 @@ import ufl
 from dolfinx.fem import (Function, FunctionSpace, LinearProblem,
                          VectorFunctionSpace)
 from dolfinx.mesh import (CellType, MeshTags, compute_midpoints,
-                          create_unit_square, create_unit_cube)
+                          create_unit_cube, create_unit_square)
 
 from mpi4py import MPI
 
