@@ -13,8 +13,8 @@ import pytest
 import ufl
 from dolfinx.fem import (Expression, Function, FunctionSpace,
                          VectorFunctionSpace, assemble_scalar)
-from dolfinx.generation import UnitCubeMesh, UnitSquareMesh
-from dolfinx.mesh import CellType, MeshTags, create_mesh, locate_entities
+from dolfinx.mesh import (CellType, MeshTags, create_mesh, create_unit_cube,
+                          create_unit_square, locate_entities)
 from dolfinx_utils.test.skips import skip_in_parallel
 
 from mpi4py import MPI
@@ -229,7 +229,7 @@ def test_mixed_interpolation():
 @pytest.mark.parametrize("order1", [2, 3, 4])
 @pytest.mark.parametrize("order2", [2, 3, 4])
 def test_interpolation_nedelec(order1, order2):
-    mesh = UnitCubeMesh(MPI.COMM_WORLD, 2, 2, 2)
+    mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2)
     V = FunctionSpace(mesh, ("N1curl", order1))
     V1 = FunctionSpace(mesh, ("N1curl", order2))
 
@@ -256,9 +256,9 @@ def test_interpolation_nedelec(order1, order2):
 @pytest.mark.parametrize("order", [1, 2, 3])
 def test_interpolation_dg_to_n1curl(tdim, order):
     if tdim == 2:
-        mesh = UnitSquareMesh(MPI.COMM_WORLD, 5, 5)
+        mesh = create_unit_square(MPI.COMM_WORLD, 5, 5)
     else:
-        mesh = UnitCubeMesh(MPI.COMM_WORLD, 2, 2, 2)
+        mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2)
     V = VectorFunctionSpace(mesh, ("DG", order))
     V1 = FunctionSpace(mesh, ("N1curl", order + 1))
 
@@ -275,9 +275,9 @@ def test_interpolation_dg_to_n1curl(tdim, order):
 @pytest.mark.parametrize("order", [1, 2, 3])
 def test_interpolation_n1curl_to_dg(tdim, order):
     if tdim == 2:
-        mesh = UnitSquareMesh(MPI.COMM_WORLD, 5, 5)
+        mesh = create_unit_square(MPI.COMM_WORLD, 5, 5)
     else:
-        mesh = UnitCubeMesh(MPI.COMM_WORLD, 2, 2, 2)
+        mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2)
     V = FunctionSpace(mesh, ("N1curl", order + 1))
     V1 = VectorFunctionSpace(mesh, ("DG", order))
 
@@ -294,9 +294,9 @@ def test_interpolation_n1curl_to_dg(tdim, order):
 @pytest.mark.parametrize("order", [1, 2, 3])
 def test_interpolation_n2curl_to_bdm(tdim, order):
     if tdim == 2:
-        mesh = UnitSquareMesh(MPI.COMM_WORLD, 5, 5)
+        mesh = create_unit_square(MPI.COMM_WORLD, 5, 5)
     else:
-        mesh = UnitCubeMesh(MPI.COMM_WORLD, 2, 2, 2)
+        mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2)
     V = FunctionSpace(mesh, ("N2curl", order))
     V1 = FunctionSpace(mesh, ("BDM", order))
 
@@ -312,7 +312,7 @@ def test_interpolation_n2curl_to_bdm(tdim, order):
 @pytest.mark.parametrize("order1", [1, 2, 3, 4, 5])
 @pytest.mark.parametrize("order2", [1, 2, 3])
 def test_interpolation_p2p(order1, order2):
-    mesh = UnitCubeMesh(MPI.COMM_WORLD, 2, 2, 2)
+    mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2)
     V = FunctionSpace(mesh, ("Lagrange", order1))
     V1 = FunctionSpace(mesh, ("Lagrange", order2))
 
@@ -335,7 +335,7 @@ def test_interpolation_p2p(order1, order2):
 @pytest.mark.parametrize("order1", [1, 2, 3])
 @pytest.mark.parametrize("order2", [1, 2])
 def test_interpolation_vector_elements(order1, order2):
-    mesh = UnitCubeMesh(MPI.COMM_WORLD, 2, 2, 2)
+    mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2)
     V = VectorFunctionSpace(mesh, ("Lagrange", order1))
     V1 = VectorFunctionSpace(mesh, ("Lagrange", order2))
 
@@ -386,9 +386,9 @@ def test_interpolation_non_affine():
 @pytest.mark.parametrize("dim", [2, 3])
 def test_nedelec_spatial(order, dim):
     if dim == 2:
-        mesh = UnitSquareMesh(MPI.COMM_WORLD, 4, 4)
+        mesh = create_unit_square(MPI.COMM_WORLD, 4, 4)
     elif dim == 3:
-        mesh = UnitCubeMesh(MPI.COMM_WORLD, 2, 2, 2)
+        mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2)
 
     V = FunctionSpace(mesh, ("N1curl", order))
 
@@ -416,10 +416,10 @@ def test_nedelec_spatial(order, dim):
 def test_vector_interpolation_spatial(order, dim, affine):
     if dim == 2:
         ct = CellType.triangle if affine else CellType.quadrilateral
-        mesh = UnitSquareMesh(MPI.COMM_WORLD, 3, 4, ct)
+        mesh = create_unit_square(MPI.COMM_WORLD, 3, 4, ct)
     elif dim == 3:
         ct = CellType.tetrahedron if affine else CellType.hexahedron
-        mesh = UnitCubeMesh(MPI.COMM_WORLD, 3, 2, 2, ct)
+        mesh = create_unit_cube(MPI.COMM_WORLD, 3, 2, 2, ct)
 
     V = VectorFunctionSpace(mesh, ("CG", order))
 
@@ -433,7 +433,7 @@ def test_vector_interpolation_spatial(order, dim, affine):
 
 @pytest.mark.parametrize("order", [1, 2, 3, 4])
 def test_2D_lagrange_to_curl(order):
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 3, 4)
+    mesh = create_unit_square(MPI.COMM_WORLD, 3, 4)
     V = FunctionSpace(mesh, ("N1curl", order))
     u = Function(V)
 
@@ -453,7 +453,7 @@ def test_2D_lagrange_to_curl(order):
 
 @pytest.mark.parametrize("order", [2, 3, 4])
 def test_de_rahm_2D(order):
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 3, 4)
+    mesh = create_unit_square(MPI.COMM_WORLD, 3, 4)
     W = FunctionSpace(mesh, ("CG", order))
     w = Function(W)
 
@@ -489,10 +489,10 @@ def test_de_rahm_2D(order):
 def test_interpolate_subset(order, dim, affine):
     if dim == 2:
         ct = CellType.triangle if affine else CellType.quadrilateral
-        mesh = UnitSquareMesh(MPI.COMM_WORLD, 3, 4, ct)
+        mesh = create_unit_square(MPI.COMM_WORLD, 3, 4, ct)
     elif dim == 3:
         ct = CellType.tetrahedron if affine else CellType.hexahedron
-        mesh = UnitCubeMesh(MPI.COMM_WORLD, 3, 2, 2, ct)
+        mesh = create_unit_cube(MPI.COMM_WORLD, 3, 2, 2, ct)
 
     V = FunctionSpace(mesh, ("DG", order))
     u = Function(V)

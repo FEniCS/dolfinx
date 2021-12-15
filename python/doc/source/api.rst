@@ -14,7 +14,6 @@ Public user interface
    dolfinx.common
    dolfinx.fem
    dolfinx.fem.form
-   dolfinx.generation
    dolfinx.geometry
    dolfinx.graph
    dolfinx.io
@@ -37,7 +36,6 @@ use.
 
    dolfinx.cpp.common
    dolfinx.cpp.fem
-   dolfinx.cpp.generation
    dolfinx.cpp.geometry
    dolfinx.cpp.graph
    dolfinx.cpp.io

@@ -7,8 +7,7 @@
 import numpy as np
 
 import dolfinx
-from dolfinx.generation import UnitSquareMesh
-from dolfinx.mesh import GhostMode
+from dolfinx.mesh import GhostMode, create_unit_square
 
 from mpi4py import MPI
 
@@ -72,7 +71,7 @@ def test_sub_index_map():
 
 def test_sub_index_map_ghost_mode_none():
     n = 2
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, n, n, ghost_mode=GhostMode.none)
+    mesh = create_unit_square(MPI.COMM_WORLD, n, n, ghost_mode=GhostMode.none)
     tdim = mesh.topology.dim
     cell_index_map = mesh.topology.index_map(tdim)
     submap_indices = np.array([0, 1], dtype=np.int32)
