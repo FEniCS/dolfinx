@@ -197,7 +197,9 @@ mesh::Mesh build_tri(MPI_Comm comm,
 
           if (diagonal == DiagonalType::right_left
               or diagonal == DiagonalType::left_right)
+          {
             local_diagonal = DiagonalType::right;
+          }
           break;
         }
         default:
@@ -213,7 +215,9 @@ mesh::Mesh build_tri(MPI_Comm comm,
           _cell.assign(c);
           if (diagonal == DiagonalType::right_left
               or diagonal == DiagonalType::left_right)
+          {
             local_diagonal = DiagonalType::left;
+          }
         }
         }
       }
