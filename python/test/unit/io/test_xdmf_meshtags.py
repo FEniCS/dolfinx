@@ -10,9 +10,8 @@ from xml.etree import ElementTree
 import numpy as np
 import pytest
 
-from dolfinx.generation import UnitCubeMesh
 from dolfinx.io import XDMFFile
-from dolfinx.mesh import CellType, MeshTags, locate_entities
+from dolfinx.mesh import CellType, MeshTags, create_unit_cube, locate_entities
 from dolfinx_utils.test.fixtures import tempdir
 
 from mpi4py import MPI
@@ -33,7 +32,7 @@ celltypes_3D = [CellType.tetrahedron, CellType.hexahedron]
 def test_3d(tempdir, cell_type, encoding):
     filename = os.path.join(tempdir, "meshtags_3d.xdmf")
     comm = MPI.COMM_WORLD
-    mesh = UnitCubeMesh(comm, 4, 4, 4, cell_type)
+    mesh = create_unit_cube(comm, 4, 4, 4, cell_type)
     mesh.topology.create_entities(2)
 
     bottom_facets = locate_entities(mesh, 2, lambda x: np.isclose(x[1], 0.0))

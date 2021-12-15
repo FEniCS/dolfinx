@@ -119,7 +119,7 @@ int main(int argc, char* argv[])
 
   {
     // Create mesh and function space
-    auto mesh = std::make_shared<mesh::Mesh>(generation::RectangleMesh::create(
+    auto mesh = std::make_shared<mesh::Mesh>(mesh::create_rectangle(
         MPI_COMM_WORLD, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 0.0}}}, {32, 32},
         mesh::CellType::triangle, mesh::GhostMode::none));
 
@@ -184,9 +184,8 @@ int main(int argc, char* argv[])
         });
 
     g->interpolate(
-        [](const xt::xtensor<double, 2>& x) -> xt::xarray<PetscScalar> {
-          return xt::sin(5 * xt::row(x, 0));
-        });
+        [](const xt::xtensor<double, 2>& x) -> xt::xarray<PetscScalar>
+        { return xt::sin(5 * xt::row(x, 0)); });
 
     // Now, we have specified the variational forms and can consider the
     // solution of the variational problem. First, we need to define a

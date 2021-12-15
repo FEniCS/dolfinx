@@ -22,8 +22,8 @@ from dolfinx.fem import (Constant, DirichletBC, Form, Function, FunctionSpace,
                          bcs_by_block, form, locate_dofs_geometrical,
                          locate_dofs_topological, set_bc, set_bc_nest)
 from dolfinx.fem.assemble import pack_coefficients, pack_constants
-from dolfinx.generation import RectangleMesh, UnitCubeMesh, UnitSquareMesh
-from dolfinx.mesh import (CellType, GhostMode, create_mesh,
+from dolfinx.mesh import (CellType, GhostMode, create_mesh, create_rectangle,
+                          create_unit_cube, create_unit_square,
                           locate_entities_boundary)
 from dolfinx_utils.test.skips import skip_in_parallel
 from ufl import derivative, ds, dx, inner
@@ -49,7 +49,7 @@ def nest_matrix_norm(A):
 
 @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
 def test_assemble_functional_dx(mode):
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
+    mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
     M = 1.0 * dx(domain=mesh)
     value = assemble_scalar(M)
     value = mesh.comm.allreduce(value, op=MPI.SUM)
@@ -63,7 +63,7 @@ def test_assemble_functional_dx(mode):
 
 @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
 def test_assemble_functional_ds(mode):
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
+    mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
     M = 1.0 * ds(domain=mesh)
     value = assemble_scalar(M)
     value = mesh.comm.allreduce(value, op=MPI.SUM)
@@ -74,7 +74,7 @@ def test_assemble_derivatives():
     """This test checks the original_coefficient_positions, which may change
     under differentiation (some coefficients and constants are
     eliminated)"""
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 12, 12)
+    mesh = create_unit_square(MPI.COMM_WORLD, 12, 12)
     Q = FunctionSpace(mesh, ("Lagrange", 1))
     u = Function(Q)
     v = ufl.TestFunction(Q)
@@ -99,7 +99,7 @@ def test_assemble_derivatives():
 
 @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
 def test_basic_assembly(mode):
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
+    mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
     V = FunctionSpace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 
@@ -146,7 +146,7 @@ def test_basic_assembly(mode):
 
 @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
 def test_assembly_bcs(mode):
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
+    mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
     V = FunctionSpace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     a = inner(u, v) * dx + inner(u, v) * ds
@@ -224,7 +224,7 @@ def test_matrix_assembly_block(mode):
     """Test assembly of block matrices and vectors into (a) monolithic
     blocked structures, PETSc Nest structures, and monolithic structures.
     """
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 4, 8, ghost_mode=mode)
+    mesh = create_unit_square(MPI.COMM_WORLD, 4, 8, ghost_mode=mode)
 
     p0, p1 = 1, 2
     P0 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p0)
@@ -316,7 +316,7 @@ def test_assembly_solve_block(mode):
     """Solve a two-field mass-matrix like problem with block matrix approaches
     and test that solution is the same.
     """
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 32, 31, ghost_mode=mode)
+    mesh = create_unit_square(MPI.COMM_WORLD, 32, 31, ghost_mode=mode)
     P = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
     V0 = FunctionSpace(mesh, P)
     V1 = V0.clone()
@@ -443,10 +443,10 @@ def test_assembly_solve_block(mode):
 
 
 @ pytest.mark.parametrize("mesh", [
-    UnitSquareMesh(MPI.COMM_WORLD, 12, 11, ghost_mode=GhostMode.none),
-    UnitSquareMesh(MPI.COMM_WORLD, 12, 11, ghost_mode=GhostMode.shared_facet),
-    UnitCubeMesh(MPI.COMM_WORLD, 3, 7, 3, ghost_mode=GhostMode.none),
-    UnitCubeMesh(MPI.COMM_WORLD, 3, 7, 3, ghost_mode=GhostMode.shared_facet)
+    create_unit_square(MPI.COMM_WORLD, 12, 11, ghost_mode=GhostMode.none),
+    create_unit_square(MPI.COMM_WORLD, 12, 11, ghost_mode=GhostMode.shared_facet),
+    create_unit_cube(MPI.COMM_WORLD, 3, 7, 3, ghost_mode=GhostMode.none),
+    create_unit_cube(MPI.COMM_WORLD, 3, 7, 3, ghost_mode=GhostMode.shared_facet)
 ])
 def test_assembly_solve_taylor_hood(mesh):
     """Assemble Stokes problem with Taylor-Hood elements and solve."""
@@ -630,12 +630,12 @@ def test_assembly_solve_taylor_hood(mesh):
 
 
 def test_basic_interior_facet_assembly():
-    mesh = RectangleMesh(MPI.COMM_WORLD,
-                         [np.array([0.0, 0.0, 0.0]),
-                          np.array([1.0, 1.0, 0.0])],
-                         [5, 5],
-                         cell_type=CellType.triangle,
-                         ghost_mode=GhostMode.shared_facet)
+    mesh = create_rectangle(MPI.COMM_WORLD,
+                            [numpy.array([0.0, 0.0, 0.0]),
+                             numpy.array([1.0, 1.0, 0.0])],
+                            [5, 5],
+                            cell_type=CellType.triangle,
+                            ghost_mode=GhostMode.shared_facet)
 
     V = FunctionSpace(mesh, ("DG", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
@@ -660,7 +660,7 @@ def test_basic_assembly_constant(mode):
     matrix-valued constant.
 
     """
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 5, 5, ghost_mode=mode)
+    mesh = create_unit_square(MPI.COMM_WORLD, 5, 5, ghost_mode=mode)
     V = FunctionSpace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 
@@ -690,7 +690,7 @@ def test_basic_assembly_constant(mode):
 
 def test_lambda_assembler():
     """Tests assembly with a lambda function"""
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 5, 5)
+    mesh = create_unit_square(MPI.COMM_WORLD, 5, 5)
     V = FunctionSpace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 
@@ -721,7 +721,7 @@ def test_lambda_assembler():
 
 def test_pack_coefficients():
     """Test packing of form coefficients ahead of main assembly call"""
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 12, 15)
+    mesh = create_unit_square(MPI.COMM_WORLD, 12, 15)
     V = FunctionSpace(mesh, ("Lagrange", 1))
 
     # Non-blocked
@@ -780,7 +780,7 @@ def test_pack_coefficients():
 
 def test_coefficents_non_constant():
     "Test packing coefficients with non-constant values"
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 3, 5)
+    mesh = create_unit_square(MPI.COMM_WORLD, 3, 5)
     V = FunctionSpace(mesh, ("Lagrange", 3))  # degree 3 so that interpolation is exact
 
     u = Function(V)
@@ -820,7 +820,7 @@ def test_coefficents_non_constant():
 
 def test_vector_types():
     """Assemble form using different types"""
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 3, 5)
+    mesh = create_unit_square(MPI.COMM_WORLD, 3, 5)
     V = FunctionSpace(mesh, ("Lagrange", 3))
     v = ufl.TestFunction(V)
 
