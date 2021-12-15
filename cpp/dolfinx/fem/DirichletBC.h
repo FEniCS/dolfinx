@@ -59,18 +59,18 @@ std::array<std::vector<std::int32_t>, 2> locate_dofs_topological(
 /// associated with a facet/edge/vertex.
 ///
 /// @param[in] V The function (sub)space on which degrees-of-freedom
-///   (DOFs) will be located.
+/// (DOFs) will be located.
 /// @param[in] dim Topological dimension of mesh entities on which
-///   degrees-of-freedom will be located
+/// degrees-of-freedom will be located
 /// @param[in] entities Indices of mesh entities. All DOFs associated
-///   with the closure of these indices will be returned
+/// with the closure of these indices will be returned
 /// @param[in] remote True to return also "remotely located"
-///   degree-of-freedom indices. Remotely located degree-of-freedom
-///   indices are local/owned by the current process, but which the
-///   current process cannot identify because it does not recognize mesh
-///   entity as a marked. For example, a boundary condition dof at a
-///   vertex where this process does not have the associated boundary
-///   facet. This commonly occurs with partitioned meshes.
+/// degree-of-freedom indices. Remotely located degree-of-freedom
+/// indices are local/owned by the current process, but which the
+/// current process cannot identify because it does not recognize mesh
+/// entity as a marked. For example, a boundary condition dof at a
+/// vertex where this process does not have the associated boundary
+/// facet. This commonly occurs with partitioned meshes.
 /// @return Array of DOF index blocks (local to the MPI rank) in the
 /// space V. The array uses the block size of the dofmap associated
 /// with V.
@@ -85,8 +85,8 @@ locate_dofs_topological(const fem::FunctionSpace& V, int dim,
 /// @attention This function is slower than the topological version
 ///
 /// @param[in] V The function (sub)space(s) on which degrees of freedom
-///     will be located. The spaces must share the same mesh and
-///     element type.
+/// will be located. The spaces must share the same mesh and element
+/// type.
 /// @param[in] marker_fn Function marking tabulated degrees of freedom
 /// @return Array of DOF indices (local to the MPI rank) in the spaces
 /// V[0] and V[1]. The array[0](i) entry is the DOF index in the space
@@ -123,10 +123,40 @@ std::vector<std::int32_t> locate_dofs_geometrical(
 /// A DirichletBC is specified by the function \f$g\f$, the function
 /// space (trial space) and degrees of freedom to which the boundary
 /// condition applies.
-
 template <typename T>
 class DirichletBC
 {
+private:
+  template <typename U>
+  DirichletBC(const std::variant<std::shared_ptr<const fem::Function<T>>,
+                                 std::shared_ptr<const fem::Constant<T>>>& g,
+              U&& dofs, const std::shared_ptr<const fem::FunctionSpace>& V,
+              bool)
+      : _function_space(V), _g(g), _dofs0(std::forward<U>(dofs))
+  {
+    assert(_function_space);
+    const int map0_bs = _function_space->dofmap()->index_map_bs();
+    const int map0_size = _function_space->dofmap()->index_map->size_local();
+    const int owned_size0 = map0_bs * map0_size;
+    auto it0 = std::lower_bound(_dofs0.begin(), _dofs0.end(), owned_size0);
+    _owned_indices0 = std::distance(_dofs0.begin(), it0);
+    if (const int bs = _function_space->dofmap()->bs(); bs > 1)
+    {
+      _owned_indices0 *= bs;
+      // Unroll for the block size
+      const std::vector<std::int32_t> dof_tmp = _dofs0;
+      _dofs0.resize(bs * dof_tmp.size());
+      for (std::size_t i = 0; i < dof_tmp.size(); ++i)
+      {
+        for (int k = 0; k < bs; ++k)
+          _dofs0[bs * i + k] = bs * dof_tmp[i] + k;
+      }
+    }
+
+    // TODO: allows single dofs array (let one point to the other)
+    _dofs1_g = _dofs0;
+  }
+
 public:
   /// Create a representation of a Dirichlet boundary condition where
   /// the space being constrained is the same as the function that
@@ -144,32 +174,9 @@ public:
   /// block size 3
   template <typename U>
   DirichletBC(const std::shared_ptr<const fem::Function<T>>& g, U&& dofs)
-      : _function_space(g->function_space()), _g(g),
-        _dofs0(std::forward<U>(dofs))
+      : DirichletBC(g, dofs, g->function_space(), false)
   {
-    assert(_function_space);
-    const int map0_bs = _function_space->dofmap()->index_map_bs();
-    const int map0_size = _function_space->dofmap()->index_map->size_local();
-    const int owned_size0 = map0_bs * map0_size;
-    auto it = std::lower_bound(_dofs0.begin(), _dofs0.end(), owned_size0);
-    _owned_indices0 = map0_bs * std::distance(_dofs0.begin(), it);
-
-    if (int bs = _function_space->dofmap()->bs(); bs > 1)
-    {
-      _owned_indices0 *= bs;
-
-      // Unroll for the block size
-      const std::vector<std::int32_t> dof_tmp = _dofs0;
-      _dofs0.resize(bs * dof_tmp.size());
-      for (std::size_t i = 0; i < dof_tmp.size(); ++i)
-      {
-        for (int k = 0; k < bs; ++k)
-          _dofs0[bs * i + k] = bs * dof_tmp[i] + k;
-      }
-    }
-
-    // TODO: allows single dofs array (let one point to the other)
-    _dofs1_g = _dofs0;
+    // Do nothing
   }
 
   /// Create a representation of a Dirichlet boundary condition with a
@@ -184,30 +191,9 @@ public:
   template <typename U>
   DirichletBC(const std::shared_ptr<const fem::Constant<T>>& g, U&& dofs,
               const std::shared_ptr<const fem::FunctionSpace>& V)
-      : _function_space(V), _g(g), _dofs0(std::forward<U>(dofs))
+      : DirichletBC(g, dofs, V, false)
   {
-    assert(_function_space);
-    const int map0_bs = _function_space->dofmap()->index_map_bs();
-    const int map0_size = _function_space->dofmap()->index_map->size_local();
-    const int owned_size0 = map0_bs * map0_size;
-    auto it0 = std::lower_bound(_dofs0.begin(), _dofs0.end(), owned_size0);
-    _owned_indices0 = std::distance(_dofs0.begin(), it0);
-
-    if (const int bs = _function_space->dofmap()->bs(); bs > 1)
-    {
-      _owned_indices0 *= bs;
-      // Unroll for the block size
-      const std::vector<std::int32_t> dof_tmp = _dofs0;
-      _dofs0.resize(bs * dof_tmp.size());
-      for (std::size_t i = 0; i < dof_tmp.size(); ++i)
-      {
-        for (int k = 0; k < bs; ++k)
-          _dofs0[bs * i + k] = bs * dof_tmp[i] + k;
-      }
-    }
-
-    // TODO: allows single dofs array (let one point to the other)
-    _dofs1_g = _dofs0;
+    // Do nothing
   }
 
   /// Create a representation of a Dirichlet boundary condition where
@@ -234,10 +220,6 @@ public:
   {
     assert(_dofs0.size() == _dofs1_g.size());
     assert(_function_space);
-
-    auto f = std::get<std::shared_ptr<const fem::Function<T>>>(_g);
-    assert(f);
-
     const int map0_bs = _function_space->dofmap()->index_map_bs();
     const int map0_size = _function_space->dofmap()->index_map->size_local();
     const int owned_size0 = map0_bs * map0_size;
