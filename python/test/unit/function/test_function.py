@@ -277,3 +277,31 @@ def test_interpolation_function(mesh):
     uh = Function(Vh)
     uh.interpolate(u)
     assert np.allclose(uh.vector.array, 1)
+
+
+@skip_in_parallel
+@pytest.mark.parametrize("dim", [2, 3])
+def test_compute_point_values(dim):
+    degree = 1
+    cell = ufl.Cell("triangle", dim)
+    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell, degree, dim=dim))
+    if dim == 2:
+        x = [[0., 0.], [0., 1.], [1., 1.]]
+    else:
+        x = [[0., 0., 0.], [0., 1., 0.], [1., 1., 0.]]
+
+    cells = [[0, 1, 2]]
+    mesh = create_mesh(MPI.COMM_WORLD, cells, x, domain)
+    FE = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
+    FS = FunctionSpace(mesh, FE)
+    fx = Function(FS)
+
+    def f(x):
+        return x[0]
+
+    fx.interpolate(f)
+    ux = fx.compute_point_values().reshape(-1)
+    dof_to_vertex = np.zeros(3, dtype=np.int32)
+    for i in range(3):
+        dof_to_vertex[i] = FS.dofmap.dof_layout.entity_dofs(0, i)[0]
+    assert np.allclose(fx.x.array, ux[dof_to_vertex])
