@@ -137,8 +137,8 @@ def cube():
 @pytest.fixture
 def box():
     return create_box(MPI.COMM_WORLD, [np.array([0, 0, 0]),
-                                    np.array([2, 2, 2])], [2, 2, 5], CellType.tetrahedron,
-                   GhostMode.none)
+                                       np.array([2, 2, 2])], [2, 2, 5], CellType.tetrahedron,
+                      GhostMode.none)
 
 
 @pytest.fixture

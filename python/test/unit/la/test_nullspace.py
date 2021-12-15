@@ -106,10 +106,10 @@ def test_nullspace_orthogonal(mesh, degree):
 @pytest.mark.parametrize("mesh", [
     create_unit_square(MPI.COMM_WORLD, 12, 13),
     create_box(MPI.COMM_WORLD,
-            [np.array([0.8, -0.2, 1.2]),
-             np.array([3.0, 11.0, -5.0])], [12, 18, 25],
-            cell_type=CellType.tetrahedron,
-            ghost_mode=GhostMode.none),
+               [np.array([0.8, -0.2, 1.2]),
+                np.array([3.0, 11.0, -5.0])], [12, 18, 25],
+               cell_type=CellType.tetrahedron,
+               ghost_mode=GhostMode.none),
 ])
 @pytest.mark.parametrize("degree", [1, 2])
 def test_nullspace_check(mesh, degree):

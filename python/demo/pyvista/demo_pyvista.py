@@ -286,7 +286,7 @@ def vel(x):
     return vals
 
 
-mesh = create_unit_square_mesh(MPI.COMM_WORLD, 6, 6, CellType.triangle)
+mesh = create_unit_square(MPI.COMM_WORLD, 6, 6, CellType.triangle)
 V = VectorFunctionSpace(mesh, ("Lagrange", 2))
 uh = Function(V)
 uh.interpolate(vel)

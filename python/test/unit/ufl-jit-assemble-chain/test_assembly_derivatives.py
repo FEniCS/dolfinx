@@ -154,7 +154,7 @@ def test_div_grad_then_integrate_over_cells_and_boundary():
     # Define 2D geometry
     n = 10
     mesh = create_rectangle([numpy.array([0.0, 0.0, 0.0]),
-                          numpy.array([2.0, 3.0, 0.0])], 2 * n, 3 * n)
+                             numpy.array([2.0, 3.0, 0.0])], 2 * n, 3 * n)
 
     x, y = SpatialCoordinate(mesh)
     xs = 0.1 + 0.8 * x / 2  # scaled to be within [0.1,0.9]

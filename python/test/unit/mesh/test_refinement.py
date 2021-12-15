@@ -79,7 +79,7 @@ def test_refinement_gdim():
 def test_sub_refine():
     """Test that refinement of a subset of edges works"""
     mesh = create_unit_square(MPI.COMM_WORLD, 3, 4, diagonal=DiagonalType.left,
-                          ghost_mode=GhostMode.none)
+                              ghost_mode=GhostMode.none)
     mesh.topology.create_entities(1)
 
     def left_corner_edge(x, tol=1e-16):

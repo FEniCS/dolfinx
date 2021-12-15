@@ -224,7 +224,7 @@ def MeshTags(mesh: Mesh, dim: int, indices: np.ndarray, values: np.ndarray) -> t
 
 
 def create_interval(comm: _MPI.Comm, nx: int, points: list, ghost_mode=GhostMode.shared_facet,
-                         partitioner=_cpp.mesh.create_cell_partitioner()) -> Mesh:
+                    partitioner=_cpp.mesh.create_cell_partitioner()) -> Mesh:
     """Create an interval mesh
 
     Parameters
@@ -249,7 +249,7 @@ def create_interval(comm: _MPI.Comm, nx: int, points: list, ghost_mode=GhostMode
 
 
 def create_unit_interval(comm: _MPI.Comm, nx: int, ghost_mode=GhostMode.shared_facet,
-                              partitioner=_cpp.mesh.create_cell_partitioner()) -> Mesh:
+                         partitioner=_cpp.mesh.create_cell_partitioner()) -> Mesh:
     """Create a mesh on the unit interval
 
     Parameters
@@ -270,8 +270,8 @@ def create_unit_interval(comm: _MPI.Comm, nx: int, ghost_mode=GhostMode.shared_f
 
 
 def create_rectangle(comm: _MPI.Comm, points: typing.List[np.array], n: list, cell_type=CellType.triangle,
-                          ghost_mode=GhostMode.shared_facet, partitioner=_cpp.mesh.create_cell_partitioner(),
-                          diagonal: DiagonalType = DiagonalType.right) -> Mesh:
+                     ghost_mode=GhostMode.shared_facet, partitioner=_cpp.mesh.create_cell_partitioner(),
+                     diagonal: DiagonalType = DiagonalType.right) -> Mesh:
     """Create rectangle mesh
 
     Parameters
@@ -302,8 +302,8 @@ def create_rectangle(comm: _MPI.Comm, points: typing.List[np.array], n: list, ce
 
 
 def create_unit_square(comm: _MPI.Comm, nx: int, ny: int, cell_type=CellType.triangle,
-                            ghost_mode=GhostMode.shared_facet, partitioner=_cpp.mesh.create_cell_partitioner(),
-                            diagonal: DiagonalType = DiagonalType.right) -> Mesh:
+                       ghost_mode=GhostMode.shared_facet, partitioner=_cpp.mesh.create_cell_partitioner(),
+                       diagonal: DiagonalType = DiagonalType.right) -> Mesh:
     """Create a mesh of a unit square
 
     Parameters
@@ -326,14 +326,14 @@ def create_unit_square(comm: _MPI.Comm, nx: int, ny: int, cell_type=CellType.tri
 
     """
     return create_rectangle(comm, [np.array([0.0, 0.0, 0.0]),
-                                        np.array([1.0, 1.0, 0.0])], [nx, ny], cell_type, ghost_mode,
-                                 partitioner, diagonal)
+                                   np.array([1.0, 1.0, 0.0])], [nx, ny], cell_type, ghost_mode,
+                            partitioner, diagonal)
 
 
 def create_box(comm: _MPI.Comm, points: typing.List[np.array], n: list,
-                    cell_type=CellType.tetrahedron,
-                    ghost_mode=GhostMode.shared_facet,
-                    partitioner=_cpp.mesh.create_cell_partitioner()) -> Mesh:
+               cell_type=CellType.tetrahedron,
+               ghost_mode=GhostMode.shared_facet,
+               partitioner=_cpp.mesh.create_cell_partitioner()) -> Mesh:
     """Create box mesh
 
     Parameters
@@ -360,7 +360,7 @@ def create_box(comm: _MPI.Comm, points: typing.List[np.array], n: list,
 
 
 def create_unit_cube(comm: _MPI.Comm, nx: int, ny: int, nz: int, cell_type=CellType.tetrahedron,
-                          ghost_mode=GhostMode.shared_facet, partitioner=_cpp.mesh.create_cell_partitioner()) -> Mesh:
+                     ghost_mode=GhostMode.shared_facet, partitioner=_cpp.mesh.create_cell_partitioner()) -> Mesh:
     """Create a mesh of a unit cube
 
     Parameters

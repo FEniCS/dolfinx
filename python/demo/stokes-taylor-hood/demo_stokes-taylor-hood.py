@@ -91,9 +91,9 @@ from petsc4py import PETSc
 
 # Create mesh
 mesh = create_rectangle(MPI.COMM_WORLD,
-                     [np.array([0, 0, 0]), np.array([1, 1, 0])],
-                     [32, 32],
-                     CellType.triangle, GhostMode.none)
+                        [np.array([0, 0, 0]), np.array([1, 1, 0])],
+                        [32, 32],
+                        CellType.triangle, GhostMode.none)
 
 
 # Function to mark x = 0, x = 1 and y = 0

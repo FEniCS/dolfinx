@@ -203,7 +203,7 @@ def test_curl_curl_eigenvalue(family, order):
     from slepc4py import SLEPc
 
     mesh = create_rectangle(MPI.COMM_WORLD, [np.array([0.0, 0.0, 0.0]),
-                                          np.array([np.pi, np.pi, 0.0])], [24, 24], CellType.triangle)
+                                             np.array([np.pi, np.pi, 0.0])], [24, 24], CellType.triangle)
 
     element = ufl.FiniteElement(family, ufl.triangle, order)
     V = FunctionSpace(mesh, element)
@@ -262,7 +262,7 @@ def test_biharmonic():
     to the Hellan-Herrmann-Johnson (HHJ) finite element method in
     two-dimensions."""
     mesh = create_rectangle(MPI.COMM_WORLD, [np.array([0.0, 0.0, 0.0]),
-                                          np.array([1.0, 1.0, 0.0])], [32, 32], CellType.triangle)
+                                             np.array([1.0, 1.0, 0.0])], [32, 32], CellType.triangle)
 
     element = ufl.MixedElement([ufl.FiniteElement("Regge", ufl.triangle, 1),
                                 ufl.FiniteElement("Lagrange", ufl.triangle, 2)])
