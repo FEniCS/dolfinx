@@ -58,13 +58,13 @@ auto create_cell_partitioner_py(Functor p_cpp)
 }
 
 using PythonCellPartitionFunction
-     = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
-         dolfinx_wrappers::MPICommWrapper, int, int,
-         const dolfinx::graph::AdjacencyList<std::int64_t>&,
-         dolfinx::mesh::GhostMode)>;
+    = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
+        dolfinx_wrappers::MPICommWrapper, int, int,
+        const dolfinx::graph::AdjacencyList<std::int64_t>&,
+        dolfinx::mesh::GhostMode)>;
 
 using CppCellPartitionFunction
-     = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
+    = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
         MPI_Comm, int, int, const dolfinx::graph::AdjacencyList<std::int64_t>&,
         dolfinx::mesh::GhostMode)>;
 
