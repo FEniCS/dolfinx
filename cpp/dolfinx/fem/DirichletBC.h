@@ -150,14 +150,11 @@ public:
     assert(_function_space);
     const int map0_bs = _function_space->dofmap()->index_map_bs();
     const int map0_size = _function_space->dofmap()->index_map->size_local();
-    const int owned_size0 = map0_bs * map0_size;
-    auto it = std::lower_bound(_dofs0.begin(), _dofs0.end(), owned_size0);
+    auto it = std::lower_bound(_dofs0.begin(), _dofs0.end(), map0_size);
     _owned_indices0 = map0_bs * std::distance(_dofs0.begin(), it);
 
     if (int bs = _function_space->dofmap()->bs(); bs > 1)
     {
-      _owned_indices0 *= bs;
-
       // Unroll for the block size
       const std::vector<std::int32_t> dof_tmp = _dofs0;
       _dofs0.resize(bs * dof_tmp.size());
