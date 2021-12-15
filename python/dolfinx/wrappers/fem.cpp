@@ -332,9 +332,6 @@ void declare_objects(py::module& m, const std::string& type)
             self.interpolate(_f);
           },
           "Interpolate using a pointer to an expression with a C signature")
-      .def_property_readonly("vector", &dolfinx::fem::Function<T>::vector,
-                             "Return the PETSc vector associated with "
-                             "the finite element Function")
       .def_property_readonly(
           "x", py::overload_cast<>(&dolfinx::fem::Function<T>::x),
           "Return the vector associated with the finite element Function")

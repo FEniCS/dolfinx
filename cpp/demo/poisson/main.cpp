@@ -184,8 +184,9 @@ int main(int argc, char* argv[])
         });
 
     g->interpolate(
-        [](const xt::xtensor<double, 2>& x) -> xt::xarray<PetscScalar>
-        { return xt::sin(5 * xt::row(x, 0)); });
+        [](const xt::xtensor<double, 2>& x) -> xt::xarray<PetscScalar> {
+          return xt::sin(5 * xt::row(x, 0));
+        });
 
     // Now, we have specified the variational forms and can consider the
     // solution of the variational problem. First, we need to define a
@@ -199,8 +200,9 @@ int main(int argc, char* argv[])
     // Compute solution
     fem::Function<PetscScalar> u(V);
     auto A = la::petsc::Matrix(fem::petsc::create_matrix(*a), false);
-    la::petsc::Vector b(*L->function_spaces()[0]->dofmap()->index_map,
-                        L->function_spaces()[0]->dofmap()->index_map_bs());
+    la::Vector<PetscScalar> b(
+        L->function_spaces()[0]->dofmap()->index_map,
+        L->function_spaces()[0]->dofmap()->index_map_bs());
 
     MatZeroEntries(A.mat());
     fem::assemble_matrix(la::petsc::Matrix::set_block_fn(A.mat(), ADD_VALUES),
@@ -212,14 +214,11 @@ int main(int argc, char* argv[])
     MatAssemblyBegin(A.mat(), MAT_FINAL_ASSEMBLY);
     MatAssemblyEnd(A.mat(), MAT_FINAL_ASSEMBLY);
 
-    VecSet(b.vec(), 0.0);
-    VecGhostUpdateBegin(b.vec(), INSERT_VALUES, SCATTER_FORWARD);
-    VecGhostUpdateEnd(b.vec(), INSERT_VALUES, SCATTER_FORWARD);
-    fem::petsc::assemble_vector(b.vec(), *L);
-    fem::petsc::apply_lifting(b.vec(), {a}, {{bc}}, {}, 1.0);
-    VecGhostUpdateBegin(b.vec(), ADD_VALUES, SCATTER_REVERSE);
-    VecGhostUpdateEnd(b.vec(), ADD_VALUES, SCATTER_REVERSE);
-    fem::petsc::set_bc(b.vec(), bc, nullptr);
+    b.set(0.0);
+    fem::assemble_vector(b.mutable_array(), *L);
+    fem::apply_lifting(b.mutable_array(), {a}, {{bc}}, {}, 1.0);
+    b.scatter_rev(common::IndexMap::Mode::add);
+    fem::set_bc(b.mutable_array(), bc);
 
     la::petsc::KrylovSolver lu(MPI_COMM_WORLD);
     la::petsc::Options::set("ksp_type", "preonly");
@@ -227,7 +226,9 @@ int main(int argc, char* argv[])
     lu.set_from_options();
 
     lu.set_operator(A.mat());
-    lu.solve(u.vector(), b.vec());
+    la::petsc::Vector _u(la::petsc::create_vector_wrap(*u.x()), false);
+    la::petsc::Vector _b(la::petsc::create_vector_wrap(b), false);
+    lu.solve(_u.vec(), _b.vec());
 
     // The function ``u`` will be modified during the call to solve. A
     // :cpp:class:`Function` can be saved to a file. Here, we output the
