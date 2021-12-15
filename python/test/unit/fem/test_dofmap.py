@@ -145,45 +145,6 @@ def test_entity_closure_dofs(mesh_factory):
 
 
 @pytest.mark.skip
-def test_clear_sub_map_data_scalar(mesh):
-    V = FunctionSpace(mesh, ("Lagrange", 2))
-    with pytest.raises(ValueError):
-        V.sub(1)
-
-    V = VectorFunctionSpace(mesh, ("Lagrange", 2))
-    V1 = V.sub(1)
-    assert (V1)
-
-    # Clean sub-map data
-    V.dofmap.clear_sub_map_data()
-
-    # Can still get previously computed map
-    V1 = V.sub(1)
-
-    # New sub-map should throw an error
-    with pytest.raises(RuntimeError):
-        V.sub(0)
-
-
-@pytest.mark.skip
-def test_clear_sub_map_data_vector(mesh):
-    mesh = create_unit_square(8, 8)
-    P1 = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
-    W = FunctionSpace(mesh, P1 * P1)
-
-    # Check block size
-    assert W.dofmap.index_map.block_size == 2
-
-    W.dofmap.clear_sub_map_data()
-    with pytest.raises(RuntimeError):
-        W0 = W.sub(0)
-        assert (W0)
-    with pytest.raises(RuntimeError):
-        W1 = W.sub(1)
-        assert (W1)
-
-
-@pytest.mark.skip
 def test_block_size(mesh):
     meshes = [
         create_unit_square(8, 8),
@@ -195,26 +156,26 @@ def test_block_size(mesh):
         P2 = FiniteElement("Lagrange", mesh.ufl_cell(), 2)
 
         V = FunctionSpace(mesh, P2)
-        assert V.dofmap.block_size == 1
+        assert V.dofmap.bs == 1
 
         V = FunctionSpace(mesh, P2 * P2)
-        assert V.dofmap.index_map.block_size == 2
+        assert V.dofmap.index_map_bs == 2
 
         for i in range(1, 6):
             W = FunctionSpace(mesh, MixedElement(i * [P2]))
-            assert W.dofmap.index_map.block_size == i
+            assert W.dofmap.index_map_bs == i
 
         V = VectorFunctionSpace(mesh, ("Lagrange", 2))
-        assert V.dofmap.index_map.block_size == mesh.geometry.dim
+        assert V.dofmap.index_map_bs == mesh.geometry.dim
 
 
 @pytest.mark.skip
 def test_block_size_real(mesh):
-    mesh = create_unit_interval(12)
+    mesh = create_unit_interval(MPI.COMM_WORLD, 12)
     V = FiniteElement('DG', mesh.ufl_cell(), 0)
     R = FiniteElement('R', mesh.ufl_cell(), 0)
     X = FunctionSpace(mesh, V * R)
-    assert X.dofmap.index_map.block_size == 1
+    assert X.dofmap.index_map_bs == 1
 
 
 @pytest.mark.skip
