@@ -248,10 +248,10 @@ mesh::Mesh build_prism(MPI_Comm comm,
 
 //-----------------------------------------------------------------------------
 mesh::Mesh mesh::create_box(MPI_Comm comm,
-                           const std::array<std::array<double, 3>, 2>& p,
-                           std::array<std::size_t, 3> n,
-                           mesh::CellType celltype, mesh::GhostMode ghost_mode,
-                           const mesh::CellPartitionFunction& partitioner)
+                            const std::array<std::array<double, 3>, 2>& p,
+                            std::array<std::size_t, 3> n,
+                            mesh::CellType celltype, mesh::GhostMode ghost_mode,
+                            const mesh::CellPartitionFunction& partitioner)
 {
   switch (celltype)
   {
@@ -326,9 +326,9 @@ mesh::Mesh build(MPI_Comm comm, std::size_t nx, std::array<double, 2> x,
 
 //-----------------------------------------------------------------------------
 mesh::Mesh mesh::create_interval(MPI_Comm comm, std::size_t n,
-                                std::array<double, 2> x,
-                                mesh::GhostMode ghost_mode,
-                                const mesh::CellPartitionFunction& partitioner)
+                                 std::array<double, 2> x,
+                                 mesh::GhostMode ghost_mode,
+                                 const mesh::CellPartitionFunction& partitioner)
 {
   return build(comm, n, x, ghost_mode, partitioner);
 }
@@ -634,23 +634,21 @@ mesh::Mesh build_quad(MPI_Comm comm,
 
 //-----------------------------------------------------------------------------
 mesh::Mesh mesh::create_rectangle(MPI_Comm comm,
-                                 const std::array<std::array<double, 3>, 2>& p,
-                                 std::array<std::size_t, 2> n,
-                                 mesh::CellType celltype,
-                                 mesh::GhostMode ghost_mode,
-                                 mesh::DiagonalType diagonal)
+                                  const std::array<std::array<double, 3>, 2>& p,
+                                  std::array<std::size_t, 2> n,
+                                  mesh::CellType celltype,
+                                  mesh::GhostMode ghost_mode,
+                                  mesh::DiagonalType diagonal)
 {
   return create_rectangle(comm, p, n, celltype, ghost_mode,
-                               mesh::create_cell_partitioner(), diagonal);
+                          mesh::create_cell_partitioner(), diagonal);
 }
 //-----------------------------------------------------------------------------
-mesh::Mesh mesh::create_rectangle(MPI_Comm comm,
-                                 const std::array<std::array<double, 3>, 2>& p,
-                                 std::array<std::size_t, 2> n,
-                                 mesh::CellType celltype,
-                                 mesh::GhostMode ghost_mode,
-                                 const mesh::CellPartitionFunction& partitioner,
-                                 mesh::DiagonalType diagonal)
+mesh::Mesh mesh::create_rectangle(
+    MPI_Comm comm, const std::array<std::array<double, 3>, 2>& p,
+    std::array<std::size_t, 2> n, mesh::CellType celltype,
+    mesh::GhostMode ghost_mode, const mesh::CellPartitionFunction& partitioner,
+    mesh::DiagonalType diagonal)
 {
   switch (celltype)
   {
