@@ -14,9 +14,9 @@ from dolfinx.fem import (DirichletBC, Form, Function, FunctionSpace,
                          assemble_scalar, assemble_vector,
                          locate_dofs_topological, set_bc)
 from dolfinx.io import XDMFFile
-from dolfinx.mesh import (CellType, compute_boundary_facets,
-                          create_rectangle, create_unit_cube,
-                          create_unit_square, locate_entities_boundary)
+from dolfinx.mesh import (CellType, compute_boundary_facets, create_rectangle,
+                          create_unit_cube, create_unit_square,
+                          locate_entities_boundary)
 from dolfinx_utils.test.skips import skip_if_complex
 from ufl import (CellDiameter, FacetNormal, SpatialCoordinate, TestFunction,
                  TrialFunction, avg, div, ds, dS, dx, grad, inner, jump)

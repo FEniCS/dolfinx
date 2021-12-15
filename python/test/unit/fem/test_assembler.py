@@ -22,9 +22,9 @@ from dolfinx.fem import (Constant, DirichletBC, Form, Function, FunctionSpace,
                          bcs_by_block, form, locate_dofs_geometrical,
                          locate_dofs_topological, set_bc, set_bc_nest)
 from dolfinx.fem.assemble import pack_coefficients, pack_constants
-from dolfinx.mesh import (CellType, GhostMode, create_mesh,
-                          create_rectangle, create_unit_cube,
-                          create_unit_square, locate_entities_boundary)
+from dolfinx.mesh import (CellType, GhostMode, create_mesh, create_rectangle,
+                          create_unit_cube, create_unit_square,
+                          locate_entities_boundary)
 from dolfinx_utils.test.skips import skip_in_parallel
 from ufl import derivative, ds, dx, inner
 from ufl.geometry import SpatialCoordinate

@@ -9,8 +9,8 @@ import os
 import pytest
 
 from dolfinx.io import XDMFFile
-from dolfinx.mesh import (CellType, create_unit_cube,
-                          create_unit_interval, create_unit_square)
+from dolfinx.mesh import (CellType, create_unit_cube, create_unit_interval,
+                          create_unit_square)
 from dolfinx_utils.test.fixtures import tempdir
 
 from mpi4py import MPI

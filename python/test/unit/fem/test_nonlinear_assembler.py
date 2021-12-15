@@ -23,8 +23,8 @@ from dolfinx.fem import (DirichletBC, Form, Function, FunctionSpace,
                          create_vector_nest, locate_dofs_topological, set_bc,
                          set_bc_nest)
 from dolfinx.fem.form import extract_function_spaces
-from dolfinx.mesh import (GhostMode, create_unit_cube,
-                          create_unit_square, locate_entities_boundary)
+from dolfinx.mesh import (GhostMode, create_unit_cube, create_unit_square,
+                          locate_entities_boundary)
 from ufl import derivative, dx, inner
 
 from mpi4py import MPI

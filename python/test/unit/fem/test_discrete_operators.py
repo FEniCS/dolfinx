@@ -10,8 +10,7 @@ import pytest
 
 from dolfinx.cpp.fem.petsc import create_discrete_gradient
 from dolfinx.fem import FunctionSpace
-from dolfinx.mesh import (GhostMode, create_unit_cube,
-                          create_unit_square)
+from dolfinx.mesh import GhostMode, create_unit_cube, create_unit_square
 from dolfinx_utils.test.skips import skip_in_parallel
 
 from mpi4py import MPI
