@@ -307,12 +307,12 @@ def test_custom_mesh_loop_rank1():
     # JIT overhead)
     b0 = Function(V)
     for i in range(2):
-        with b0.vector.localForm() as b:
-            b.set(0.0)
-            start = time.time()
-            assemble_vector(np.asarray(b), (x_dofs, x), dofmap, num_owned_cells)
-            end = time.time()
-            print("Time (numba, pass {}): {}".format(i, end - start))
+        b = b0.x.array
+        b[:] = 0.0
+        start = time.time()
+        assemble_vector(b, (x_dofs, x), dofmap, num_owned_cells)
+        end = time.time()
+        print("Time (numba, pass {}): {}".format(i, end - start))
     b0.vector.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     assert b0.vector.sum() == pytest.approx(1.0)
 
@@ -320,14 +320,12 @@ def test_custom_mesh_loop_rank1():
     # first will include JIT overhead)
     btmp = Function(V)
     for i in range(2):
-        with btmp.vector.localForm() as b:
-            b.set(0.0)
-            start = time.time()
-            assemble_vector_parallel(np.asarray(b), x_dofs, x,
-                                     dofmap_t.array, dofmap_t.offsets,
-                                     num_owned_cells)
-            end = time.time()
-            print("Time (numba parallel, pass {}): {}".format(i, end - start))
+        b = btmp.x.array
+        b[:] = 0.0
+        start = time.time()
+        assemble_vector_parallel(b, x_dofs, x, dofmap_t.array, dofmap_t.offsets, num_owned_cells)
+        end = time.time()
+        print("Time (numba parallel, pass {}): {}".format(i, end - start))
     btmp.vector.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     assert (btmp.vector - b0.vector).norm() == pytest.approx(0.0)
 
@@ -359,12 +357,12 @@ def test_custom_mesh_loop_rank1():
     kernel = getattr(ufc_form.integrals(0)[0], f"tabulate_tensor_{nptype}")
 
     for i in range(2):
-        with b3.vector.localForm() as b:
-            b.set(0.0)
-            start = time.time()
-            assemble_vector_ufc(np.asarray(b), kernel, (x_dofs, x), dofmap, num_owned_cells)
-            end = time.time()
-            print("Time (numba/cffi, pass {}): {}".format(i, end - start))
+        b = b3.x.array
+        b[:] = 0.0
+        start = time.time()
+        assemble_vector_ufc(b, kernel, (x_dofs, x), dofmap, num_owned_cells)
+        end = time.time()
+        print("Time (numba/cffi, pass {}): {}".format(i, end - start))
     b3.vector.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     assert (b3.vector - b0.vector).norm() == pytest.approx(0.0)
 

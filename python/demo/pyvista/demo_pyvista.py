@@ -240,7 +240,7 @@ num_dofs_local = uh.function_space.dofmap.index_map.size_local
 geometry = uh.function_space.tabulate_dof_coordinates()[:num_dofs_local]
 
 # We discard the complex values if using PETSc in complex mode
-values = uh.vector.array.real if np.iscomplexobj(uh.vector.array) else uh.vector.array
+values = uh.x.array.real if np.iscomplexobj(uh.x.array) else uh.x.array
 
 # We create a pyvista mesh from the topology and geometry, and attach
 # the coefficients of the degrees of freedom
@@ -304,7 +304,7 @@ topology, cell_types = dolfinx.plot.create_vtk_topology(V, cell_entities)
 num_dofs_local = uh.function_space.dofmap.index_map.size_local
 geometry = uh.function_space.tabulate_dof_coordinates()[:num_dofs_local]
 values = np.zeros((V.dofmap.index_map.size_local, 3), dtype=np.float64)
-values[:, :mesh.geometry.dim] = uh.vector.array.real.reshape(V.dofmap.index_map.size_local, V.dofmap.index_map_bs)
+values[:, :mesh.geometry.dim] = uh.x.array.real.reshape(V.dofmap.index_map.size_local, V.dofmap.index_map_bs)
 
 # Create a point cloud of glyphs
 function_grid = pyvista.UnstructuredGrid(topology, cell_types, geometry)
@@ -367,7 +367,7 @@ topology, cell_types = dolfinx.plot.create_vtk_topology(V, cell_entities)
 num_dofs_local = uh.function_space.dofmap.index_map.size_local
 geometry = uh.function_space.tabulate_dof_coordinates()[:num_dofs_local]
 values = np.zeros((V.dofmap.index_map.size_local, 3), dtype=np.float64)
-values[:, :mesh.geometry.dim] = uh.vector.array.real.reshape(V.dofmap.index_map.size_local, V.dofmap.index_map_bs)
+values[:, :mesh.geometry.dim] = uh.x.array.real.reshape(V.dofmap.index_map.size_local, V.dofmap.index_map_bs)
 
 # Create a point cloud of glyphs
 grid = pyvista.UnstructuredGrid(topology, cell_types, geometry)

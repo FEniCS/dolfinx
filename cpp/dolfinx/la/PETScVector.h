@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include "Vector.h"
 #include "utils.h"
 #include <array>
 #include <cstdint>
@@ -19,13 +20,10 @@ namespace dolfinx::common
 {
 class IndexMap;
 }
-namespace dolfinx::la
-{
 
 /// Tools for creating PETSc objects
-namespace petsc
+namespace dolfinx::la::petsc
 {
-
 /// Print error message for PETSc calls that return an error
 void error(int error_code, std::string filename, std::string petsc_function);
 
@@ -48,7 +46,7 @@ create_vectors(MPI_Comm comm,
 Vec create_vector(const common::IndexMap& map, int bs);
 
 /// Create a ghosted PETSc Vec from a local range and ghost indices
-/// @note Caller is responsible for destroying the returned object
+/// @note Caller is responsible for freeing the returned object
 /// @param[in] comm The MPI communicator
 /// @param[in] range The local ownership range (by blocks)
 /// @param[in] ghosts Ghost blocks
@@ -59,14 +57,26 @@ Vec create_vector(MPI_Comm comm, std::array<std::int64_t, 2> range,
                   const xtl::span<const std::int64_t>& ghosts, int bs);
 
 /// Create a PETSc Vec that wraps the data in an array
-/// @note The caller is responsible for destruction of each IS.
 /// @param[in] map The index map that describes the parallel layout of
 /// the distributed vector (by block)
 /// @param[in] bs Block size
 /// @param[in] x The local part of the vector, including ghost entries
 /// @return A PETSc Vec object that shares the data in @p x
+/// @note The array `x` must be kept alive to use the PETSc Vec object
+/// @note The caller should call VecDestroy to free the return PETSc
+/// vector
 Vec create_vector_wrap(const common::IndexMap& map, int bs,
                        const xtl::span<const PetscScalar>& x);
+
+/// Create a PETSc Vec that wraps the data in an array
+/// @param[in] x The vector to be wrapped
+/// @return A PETSc Vec object that shares the data in @p x
+template <typename Allocator>
+Vec create_vector_wrap(const la::Vector<PetscScalar, Allocator>& x)
+{
+  assert(x.map());
+  return create_vector_wrap(*x.map(), x.bs(), x.array());
+}
 
 /// @todo This function could take just the local sizes
 ///
@@ -176,5 +186,4 @@ private:
   // PETSc Vec pointer
   Vec _x;
 };
-} // namespace petsc
-} // namespace dolfinx::la
+} // namespace dolfinx::la::petsc

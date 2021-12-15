@@ -111,8 +111,7 @@ a = inner(sigma(u), grad(v)) * dx
 L = inner(f, v) * dx
 
 u0 = Function(V)
-with u0.vector.localForm() as bc_local:
-    bc_local.set(0.0)
+u0.x.array[:] = 0.0
 
 # Set up boundary condition on inner surface
 bc = DirichletBC(u0, locate_dofs_geometrical(V, boundary))
@@ -170,6 +169,6 @@ with XDMFFile(MPI.COMM_WORLD, "elasticity.xdmf", "w") as file:
     file.write_mesh(mesh)
     file.write_function(u)
 
-unorm = u.vector.norm()
+unorm = u.x.norm()
 if mesh.comm.rank == 0:
     print("Solution vector norm:", unorm)
