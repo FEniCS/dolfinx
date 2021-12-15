@@ -206,13 +206,13 @@ def test_block_size(mesh):
     for mesh in meshes:
         P2 = FiniteElement("Lagrange", mesh.ufl_cell(), 2)
 
-    V = FunctionSpace(mesh, P2)
-    assert V.dofmap.bs == 1
+        V = FunctionSpace(mesh, P2)
+        assert V.dofmap.bs == 1
 
-    V = FunctionSpace(mesh, P2 * P2)
-    assert V.dofmap.index_map_bs == 2
+        V = FunctionSpace(mesh, P2 * P2)
+        assert V.dofmap.index_map_bs == 2
 
-    for i in range(1, 6):
+        for i in range(1, 6):
             W = FunctionSpace(mesh, MixedElement(i * [P2]))
             assert W.dofmap.index_map_bs == i
 
