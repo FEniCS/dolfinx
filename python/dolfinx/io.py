@@ -15,9 +15,9 @@ import dolfinx
 import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import fem
-from dolfinx.mesh import GhostMode
-from dolfinx.cpp.io import perm_gmsh as cell_perm_gmsh
 from dolfinx.cpp.io import distribute_entity_data
+from dolfinx.cpp.io import perm_gmsh as cell_perm_gmsh
+from dolfinx.mesh import GhostMode
 
 __all__ = ["VTKFile", "XDMFFile", "cell_perm_gmsh", "distribute_entity_data"]
 

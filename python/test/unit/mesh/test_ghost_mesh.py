@@ -6,22 +6,22 @@
 
 import pytest
 
-from dolfinx.generation import UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh
-from dolfinx.mesh import GhostMode, compute_midpoints
+from dolfinx.mesh import (GhostMode, compute_midpoints, create_unit_cube,
+                          create_unit_interval, create_unit_square)
 
 from mpi4py import MPI
 
 
 @pytest.mark.xfail(reason="Shared vertex currently disabled")
 def test_ghost_vertex_1d():
-    mesh = UnitIntervalMesh(MPI.COMM_WORLD, 20, ghost_mode=GhostMode.shared_vertex)
+    mesh = create_unit_interval(MPI.COMM_WORLD, 20, ghost_mode=GhostMode.shared_vertex)
     assert mesh.topology.index_map(0).size_global == 21
     assert mesh.topology.index_map(1).size_global == 20
 
 
 def test_ghost_facet_1d():
     N = 40
-    mesh = UnitIntervalMesh(MPI.COMM_WORLD, N, ghost_mode=GhostMode.shared_facet)
+    mesh = create_unit_interval(MPI.COMM_WORLD, N, ghost_mode=GhostMode.shared_facet)
     assert mesh.topology.index_map(0).size_global == N + 1
     assert mesh.topology.index_map(1).size_global == N
 
@@ -33,7 +33,7 @@ def test_ghost_facet_1d():
 def test_ghost_2d(mode):
     N = 8
     num_cells = N * N * 2
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, N, N, ghost_mode=mode)
+    mesh = create_unit_square(MPI.COMM_WORLD, N, N, ghost_mode=mode)
     if mesh.comm.size > 1:
         map = mesh.topology.index_map(2)
         num_cells_local = map.size_local + map.num_ghosts
@@ -46,7 +46,7 @@ def test_ghost_2d(mode):
 def test_ghost_3d(mode):
     N = 2
     num_cells = N * N * N * 6
-    mesh = UnitCubeMesh(MPI.COMM_WORLD, N, N, N, ghost_mode=mode)
+    mesh = create_unit_cube(MPI.COMM_WORLD, N, N, N, ghost_mode=mode)
     if mesh.comm.size > 1:
         map = mesh.topology.index_map(3)
         num_cells_local = map.size_local + map.num_ghosts
@@ -61,11 +61,11 @@ def test_ghost_3d(mode):
                                        marks=pytest.mark.xfail(reason="Shared vertex currently disabled"))])
 def test_ghost_connectivities(mode):
     # Ghosted mesh
-    meshG = UnitSquareMesh(MPI.COMM_WORLD, 4, 4, ghost_mode=mode)
+    meshG = create_unit_square(MPI.COMM_WORLD, 4, 4, ghost_mode=mode)
     meshG.topology.create_connectivity(1, 2)
 
     # Reference mesh, not ghosted, not parallel
-    meshR = UnitSquareMesh(MPI.COMM_SELF, 4, 4, ghost_mode=GhostMode.none)
+    meshR = create_unit_square(MPI.COMM_SELF, 4, 4, ghost_mode=GhostMode.none)
     meshR.topology.create_connectivity(1, 2)
     tdim = meshR.topology.dim
 
