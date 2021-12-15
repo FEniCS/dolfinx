@@ -281,7 +281,7 @@ def test_interpolation_function(mesh):
 
 @skip_in_parallel
 @pytest.mark.parametrize("dim", [2, 3])
-def test_compute_point_values(dim):
+def test_compute_point_values_manifold(dim):
     degree = 1
     cell = ufl.Cell("triangle", dim)
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell, degree, dim=dim))
