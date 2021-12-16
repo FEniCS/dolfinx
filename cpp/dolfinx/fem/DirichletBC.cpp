@@ -107,6 +107,8 @@ std::vector<std::int32_t>
 get_remote_dofs(MPI_Comm comm, const common::IndexMap& map, int bs_map, int bs,
                 const xtl::span<const std::int32_t>& dofs_local)
 {
+  assert(bs_map >= bs);
+
   int num_neighbors(-1), outdegree(-2), weighted(-1);
   MPI_Dist_graph_neighbors_count(comm, &num_neighbors, &outdegree, &weighted);
   assert(num_neighbors == outdegree);
@@ -123,17 +125,21 @@ get_remote_dofs(MPI_Comm comm, const common::IndexMap& map, int bs_map, int bs,
   MPI_Ineighbor_allgather(&num_dofs_block, 1, MPI_INT, num_dofs_recv.data(), 1,
                           MPI_INT, comm, &request);
 
-  // Map local dof block indices to global dof block indices
   std::vector<std::int64_t> dofs_global(num_dofs_block);
-  if (bs == 1)
+
+  // Get offset into map block
+  // NOTE: this will fail if this rank has no local dofs. Need to all
+  // MPI call
+  const int offset = dofs_local.empty() ? 0 : dofs_local.front() % bs_map;
+  if (bs_map == 1)
     map.local_to_global(dofs_local, dofs_global);
   else
   {
-    // Convert dofs indices to 'block' indices
+    // Convert dofs indices to 'block' map indices
     std::vector<std::int32_t> dofs_local_block;
     dofs_local_block.reserve(num_dofs_block);
     for (std::size_t i = 0; i < dofs_local.size(); i += bs)
-      dofs_local_block.push_back((dofs_local[i] / bs));
+      dofs_local_block.push_back(dofs_local[i] / bs_map);
 
     // Compute global index of each block
     map.local_to_global(dofs_local_block, dofs_global);
@@ -173,21 +179,23 @@ get_remote_dofs(MPI_Comm comm, const common::IndexMap& map, int bs_map, int bs,
 
   MPI_Wait(&request, MPI_STATUS_IGNORE);
   std::vector<std::int32_t> dofs;
-  for (auto dof_global_block : dofs_received)
+  for (std::size_t i = 0; i < dofs_received.size(); ++i)
   {
+    std::int64_t global_block = dofs_received[i];
+
     // Insert owned dofs, else search in ghosts
-    if (dof_global_block >= range[0] and dof_global_block < range[1])
+    if (global_block >= range[0] and global_block < range[1])
     {
       for (int k = 0; k < bs; ++k)
-        dofs.push_back(bs * dof_global_block + k - bs_map * range[0]);
+        dofs.push_back(bs_map * global_block + offset + k - bs_map * range[0]);
     }
     else
     {
-      if (auto it = global_to_local.find(dof_global_block);
+      if (auto it = global_to_local.find(global_block);
           it != global_to_local.end())
       {
         for (int k = 0; k < bs; ++k)
-          dofs.push_back(bs * it->second + k);
+          dofs.push_back(bs_map * it->second + offset + k);
       }
     }
   }
@@ -267,9 +275,9 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
     for (int i = 0; i < num_entity_dofs; ++i)
     {
       const int index = entity_dofs[entity_local_index][i];
-      for (int block = 0; block < element_bs; ++block)
+      for (int k = 0; k < element_bs; ++k)
       {
-        const int local_pos = element_bs * index + block;
+        const int local_pos = element_bs * index + k;
         const std::div_t pos0 = std::div(local_pos, bs0);
         const std::div_t pos1 = std::div(local_pos, bs1);
         const std::int32_t dof_index0 = bs0 * cell_dofs0[pos0.quot] + pos0.rem;
@@ -305,24 +313,14 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
     dolfinx::MPI::Comm comm = create_symmetric_comm(
         V0.dofmap()->index_map->comm(common::IndexMap::Direction::forward));
 
-    if (V0.dofmap()->index_map_bs() < bs0)
-    {
-      throw std::runtime_error(
-          "Different IndexMap/dofmap block sizes is not supported.");
-    }
     std::vector<std::int32_t> dofs_remote
-        = get_remote_dofs(comm.comm(), *V0.dofmap()->index_map, bs0,
-                          V0.dofmap()->index_map_bs(), sorted_bc_dofs[0]);
+        = get_remote_dofs(comm.comm(), *V0.dofmap()->index_map,
+                          V0.dofmap()->index_map_bs(), bs0, sorted_bc_dofs[0]);
 
     // Add received bc indices to dofs_local
     sorted_bc_dofs[0].insert(sorted_bc_dofs[0].end(), dofs_remote.begin(),
                              dofs_remote.end());
 
-    if (V1.dofmap()->index_map_bs() < bs1)
-    {
-      throw std::runtime_error(
-          "Different IndexMap/dofmap block sizes is not supported.");
-    }
     dofs_remote
         = get_remote_dofs(comm.comm(), *V1.dofmap()->index_map,
                           V1.dofmap()->index_map_bs(), bs1, sorted_bc_dofs[1]);
@@ -343,6 +341,7 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
       out_dofs[b].erase(std::unique(out_dofs[b].begin(), out_dofs[b].end()),
                         out_dofs[b].end());
     }
+
     assert(out_dofs[0].size() == out_dofs[1].size());
     return out_dofs;
   }
@@ -427,7 +426,6 @@ fem::locate_dofs_topological(const FunctionSpace& V, int dim,
     // Iterate over marked facets
     for (auto [cell, entity_local_index] : entity_indices)
     {
-
       // Get cell dofmap
       xtl::span<const std::int32_t> cell_dofs = dofmap->cell_dofs(cell);
 
@@ -456,11 +454,6 @@ fem::locate_dofs_topological(const FunctionSpace& V, int dim,
       dolfinx::MPI::Comm comm = create_symmetric_comm(
           V.dofmap()->index_map->comm(common::IndexMap::Direction::forward));
 
-      if (V.dofmap()->index_map_bs() < V.dofmap()->bs())
-      {
-        throw std::runtime_error(
-            "Different IndexMap/dofmap block sizes is not supported.");
-      }
       const std::vector<std::int32_t> dofs_remote
           = get_remote_dofs(comm.comm(), *V.dofmap()->index_map,
                             V.dofmap()->index_map_bs(), bs, dofs);
