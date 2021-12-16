@@ -130,20 +130,25 @@ private:
   template <typename U>
   DirichletBC(const std::variant<std::shared_ptr<const fem::Function<T>>,
                                  std::shared_ptr<const fem::Constant<T>>>& g,
-              U&& dofs, const std::shared_ptr<const fem::FunctionSpace>& V,
-              bool)
-      : _function_space(V), _g(g), _dofs0(std::forward<U>(dofs))
+              U&& dofs,
+              const std::shared_ptr<const fem::FunctionSpace>& V, bool)
+      : _g(g), _dofs0(std::forward<U>(dofs))
   {
+    // Compute number of owned dofs indices in the full space (will
+    // contain 'gaps' for sub-spaces)
     assert(_function_space);
     const int map0_bs = _function_space->dofmap()->index_map_bs();
     const int map0_size = _function_space->dofmap()->index_map->size_local();
     const int owned_size0 = map0_bs * map0_size;
+
+    // Find number of owned indices in _dofs0
     auto it0 = std::lower_bound(_dofs0.begin(), _dofs0.end(), owned_size0);
     _owned_indices0 = std::distance(_dofs0.begin(), it0);
+
+    // Unroll _dofs0 for dofmap block size > 1
     if (const int bs = _function_space->dofmap()->bs(); bs > 1)
     {
       _owned_indices0 *= bs;
-      // Unroll for the block size
       const std::vector<std::int32_t> dof_tmp = _dofs0;
       _dofs0.resize(bs * dof_tmp.size());
       for (std::size_t i = 0; i < dof_tmp.size(); ++i)
@@ -182,18 +187,23 @@ public:
   /// Create a representation of a Dirichlet boundary condition with a
   /// constant value
   ///
-  /// @param[in] V The function space to constrain
   /// @param[in] g The constant value
   /// @param[in] dofs Degree-of-freedom block indices (@p
   /// std::vector<std::int32_t>) from the input function space to
   /// constrain
+  /// @param[in] V The function space to constrain
   /// @note The dofs will be unrolled with the dofmap block size
   template <typename U>
   DirichletBC(const std::shared_ptr<const fem::Constant<T>>& g, U&& dofs,
               const std::shared_ptr<const fem::FunctionSpace>& V)
       : DirichletBC(g, dofs, V, false)
   {
-    // Do nothing
+    // FIXME: Looks like the wrong check. Should check size/rank.
+    if (g->value.size() != (std::size_t)V->dofmap()->bs())
+    {
+      throw std::runtime_error(
+          "Mis-match between Constant and dofmap block size.");
+    }
   }
 
   /// Create a representation of a Dirichlet boundary condition where
@@ -215,7 +225,7 @@ public:
   /// @note The indices in `dofs` are unrolled and not for blocks
   DirichletBC(const std::shared_ptr<const fem::Function<T>>& g,
               const std::array<std::vector<std::int32_t>, 2>& V_g_dofs,
-              std::shared_ptr<const fem::FunctionSpace> V)
+              const std::shared_ptr<const fem::FunctionSpace>& V)
       : _function_space(V), _g(g), _dofs0(V_g_dofs[0]), _dofs1_g(V_g_dofs[1])
   {
     assert(_dofs0.size() == _dofs1_g.size());
@@ -302,14 +312,13 @@ public:
     else if (std::holds_alternative<std::shared_ptr<const fem::Constant<T>>>(
                  _g))
     {
-      auto f = std::get<std::shared_ptr<const fem::Constant<T>>>(_g);
-      std::vector<T> value = f->value;
-      const std::int32_t bs = _function_space->dofmap()->bs();
-      assert(value.size() == (std::size_t)bs);
+      auto g = std::get<std::shared_ptr<const fem::Constant<T>>>(_g);
+      std::vector<T> value = g->value;
+      int bs = _function_space->dofmap()->bs();
       std::for_each(_dofs0.cbegin(), _dofs0.cend(),
-                    [&](auto dof)
+                    [size = x.size(), bs, scale, &value, &x](auto dof)
                     {
-                      if (dof < (std::int32_t)x.size())
+                      if (dof < (std::int32_t)size)
                       {
                         std::div_t div = std::div(dof, bs);
                         x[dof] = scale * value[div.rem];
@@ -327,9 +336,9 @@ public:
   {
     if (std::holds_alternative<std::shared_ptr<const fem::Function<T>>>(_g))
     {
-      auto f = std::get<std::shared_ptr<const fem::Function<T>>>(_g);
-      assert(f);
-      xtl::span<const T> values = f->x()->array();
+      auto g = std::get<std::shared_ptr<const fem::Function<T>>>(_g);
+      assert(g);
+      xtl::span<const T> values = g->x()->array();
       assert(x.size() <= x0.size());
       for (std::size_t i = 0; i < _dofs0.size(); ++i)
       {
@@ -343,10 +352,9 @@ public:
     else if (std::holds_alternative<std::shared_ptr<const fem::Constant<T>>>(
                  _g))
     {
-      auto f = std::get<std::shared_ptr<const fem::Constant<T>>>(_g);
-      std::vector<T> value = f->value;
+      auto g = std::get<std::shared_ptr<const fem::Constant<T>>>(_g);
+      std::vector<T> value = g->value;
       std::int32_t bs = _function_space->dofmap()->bs();
-      assert(value.size() == (std::size_t)bs);
       std::for_each(_dofs0.cbegin(), _dofs0.cend(),
                     [&x, &x0, &value, scale, bs](auto dof)
                     {
@@ -371,20 +379,19 @@ public:
   {
     if (std::holds_alternative<std::shared_ptr<const fem::Function<T>>>(_g))
     {
-      auto f = std::get<std::shared_ptr<const fem::Function<T>>>(_g);
-      assert(f);
-      xtl::span<const T> g_values = f->x()->array();
+      auto g = std::get<std::shared_ptr<const fem::Function<T>>>(_g);
+      assert(g);
+      xtl::span<const T> g_values = g->x()->array();
       for (std::size_t i = 0; i < _dofs1_g.size(); ++i)
         values[_dofs0[i]] = g_values[_dofs1_g[i]];
     }
     else if (std::holds_alternative<std::shared_ptr<const fem::Constant<T>>>(
                  _g))
     {
-      auto f = std::get<std::shared_ptr<const fem::Constant<T>>>(_g);
-      assert(f);
-      std::vector<T> g_value = f->value;
+      auto g = std::get<std::shared_ptr<const fem::Constant<T>>>(_g);
+      assert(g);
+      std::vector<T> g_value = g->value;
       const std::int32_t bs = _function_space->dofmap()->bs();
-      assert(g_value.size() == (std::size_t)bs);
       for (std::size_t i = 0; i < _dofs1_g.size(); ++i)
       {
         std::div_t div = std::div(_dofs1_g[i], bs);
