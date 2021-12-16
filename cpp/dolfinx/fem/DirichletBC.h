@@ -192,12 +192,12 @@ public:
   /// element.
   ///
   /// @param[in] g The boundary condition value
-  /// @param[in] V_g_dofs Two arrays of degree-of-freedom indices. First
-  /// array are indices in the space where boundary condition is applied
-  /// (V), second array are indices in the space of the boundary
-  /// condition value function g. The arrays must be sorted by the
-  /// indices in the first array. The dof indices are unrolled, i.e. are
-  /// not by dof block.
+  /// @param[in] V_g_dofs Two arrays of degree-of-freedom indices (@p
+  /// std::array<std::vector<std::int32_t>, 2>). First array are indices
+  /// in the space where boundary condition is applied (V), second array
+  /// are indices in the space of the boundary condition value function
+  /// g. The arrays must be sorted by the indices in the first array.
+  /// The dof indices are unrolled, i.e. are not by dof block.
   /// @param[in] V The function (sub)space on which the boundary
   /// condition is applied
   /// @note The indices in `dofs` are unrolled and not for blocks
