@@ -11,6 +11,7 @@ import numpy
 import pytest
 
 import ufl
+from dolfinx.cpp.la.petsc import scatter_local_vectors
 from dolfinx.fem import (DirichletBC, Form, Function, FunctionSpace,
                          VectorFunctionSpace, apply_lifting,
                          apply_lifting_nest, assemble_matrix,
@@ -22,10 +23,9 @@ from dolfinx.fem import (DirichletBC, Form, Function, FunctionSpace,
                          create_vector_nest, locate_dofs_topological, set_bc,
                          set_bc_nest)
 from dolfinx.fem.form import extract_function_spaces
-from dolfinx.generation import UnitCubeMesh, UnitSquareMesh
-from dolfinx.mesh import GhostMode, locate_entities_boundary
+from dolfinx.mesh import (GhostMode, create_unit_cube, create_unit_square,
+                          locate_entities_boundary)
 from ufl import derivative, dx, inner
-from dolfinx.cpp.la.petsc import scatter_local_vectors
 
 from mpi4py import MPI
 from petsc4py import PETSc
@@ -50,7 +50,7 @@ def test_matrix_assembly_block_nl():
     blocked structures, PETSc Nest structures, and monolithic structures
     in the nonlinear setting
     """
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 4, 8)
+    mesh = create_unit_square(MPI.COMM_WORLD, 4, 8)
 
     p0, p1 = 1, 2
     P0 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p0)
@@ -265,7 +265,7 @@ def test_assembly_solve_block_nl():
     """Solve a two-field nonlinear diffusion like problem with block matrix
     approaches and test that solution is the same.
     """
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 12, 11)
+    mesh = create_unit_square(MPI.COMM_WORLD, 12, 11)
     p = 1
     P = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p)
     V0 = FunctionSpace(mesh, P)
@@ -440,10 +440,10 @@ def test_assembly_solve_block_nl():
 
 
 @pytest.mark.parametrize("mesh", [
-    UnitSquareMesh(MPI.COMM_WORLD, 12, 11, ghost_mode=GhostMode.none),
-    UnitCubeMesh(MPI.COMM_WORLD, 3, 5, 4, ghost_mode=GhostMode.shared_facet),
-    UnitSquareMesh(MPI.COMM_WORLD, 12, 11, ghost_mode=GhostMode.none),
-    UnitCubeMesh(MPI.COMM_WORLD, 3, 5, 4, ghost_mode=GhostMode.shared_facet)
+    create_unit_square(MPI.COMM_WORLD, 12, 11, ghost_mode=GhostMode.none),
+    create_unit_cube(MPI.COMM_WORLD, 3, 5, 4, ghost_mode=GhostMode.shared_facet),
+    create_unit_square(MPI.COMM_WORLD, 12, 11, ghost_mode=GhostMode.none),
+    create_unit_cube(MPI.COMM_WORLD, 3, 5, 4, ghost_mode=GhostMode.shared_facet)
 ])
 def test_assembly_solve_taylor_hood_nl(mesh):
     """Assemble Stokes problem with Taylor-Hood elements and solve."""
