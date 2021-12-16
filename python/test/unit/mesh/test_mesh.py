@@ -49,8 +49,8 @@ def mesh_1d():
 def mesh2d():
     """Create 2D mesh with one equilateral triangle"""
     mesh2d = create_rectangle(
-        MPI.COMM_WORLD, [np.array([0.0, 0.0, 0.0]),
-                         np.array([1., 1., 0.0])], [1, 1],
+        MPI.COMM_WORLD, [np.array([0.0, 0.0]),
+                         np.array([1., 1.])], [1, 1],
         CellType.triangle, GhostMode.none,
         create_cell_partitioner(), DiagonalType.left)
     i1 = np.where((mesh2d.geometry.x
@@ -62,8 +62,8 @@ def mesh2d():
 def mesh_2d():
     """Create 2D mesh with one equilateral triangle"""
     mesh2d = create_rectangle(
-        MPI.COMM_WORLD, [np.array([0.0, 0.0, 0.0]),
-                         np.array([1., 1., 0.0])], [1, 1],
+        MPI.COMM_WORLD, [np.array([0.0, 0.0]),
+                         np.array([1., 1.])], [1, 1],
         CellType.triangle, GhostMode.none,
         create_cell_partitioner(), DiagonalType.left)
     i1 = np.where((mesh2d.geometry.x
@@ -124,8 +124,8 @@ def square():
 @pytest.fixture
 def rectangle():
     return create_rectangle(
-        MPI.COMM_WORLD, [np.array([0.0, 0.0, 0.0]),
-                         np.array([2.0, 2.0, 0.0])], [5, 5],
+        MPI.COMM_WORLD, [np.array([0.0, 0.0]),
+                         np.array([2.0, 2.0])], [5, 5],
         CellType.triangle, GhostMode.none)
 
 
