@@ -145,6 +145,9 @@ public:
               U&& dofs, const std::shared_ptr<const FunctionSpace>& V = nullptr)
       : _function_space(V), _g(g), _dofs0(std::forward<U>(dofs))
   {
+    // FIXME: throw exception for Constant if V is not a point
+    // evaluation space
+
     if (auto _g = std::get_if<std::shared_ptr<const Function<T>>>(&g); _g)
     {
       if (V)
@@ -154,6 +157,21 @@ public:
       }
       assert(*_g);
       _function_space = (*_g)->function_space();
+    }
+
+    if (auto _g = std::get_if<std::shared_ptr<const Constant<T>>>(&g); _g)
+    {
+      if (!V)
+      {
+        throw std::runtime_error("Creating a DirichletBC with a Constant "
+                                 "requires a FunctionSpace argument");
+      }
+
+      if (!V->element()->interpolation_ident())
+      {
+        throw std::runtime_error(
+            "Constant can be used only with point-evaluation elements");
+      }
     }
 
     // Compute number of owned dofs indices in the full space (will
@@ -179,9 +197,6 @@ public:
           _dofs0[bs * i + k] = bs * dof_tmp[i] + k;
       }
     }
-
-    // TODO: allows single dofs array (let one point to the other)
-    _dofs1_g = _dofs0;
   }
 
   /// Create a representation of a Dirichlet boundary condition where
@@ -283,12 +298,14 @@ public:
       auto g = std::get<std::shared_ptr<const Function<T>>>(_g);
       assert(g);
       xtl::span<const T> values = g->x()->array();
+      auto dofs1_g = _dofs1_g.empty() ? xtl::span(_dofs0) : xtl::span(_dofs1_g);
+      std::int32_t x_size = x.size();
       for (std::size_t i = 0; i < _dofs0.size(); ++i)
       {
-        if (_dofs0[i] < (std::int32_t)x.size())
+        if (_dofs0[i] < x_size)
         {
-          assert(_dofs1_g[i] < (std::int32_t)values.size());
-          x[_dofs0[i]] = scale * values[_dofs1_g[i]];
+          assert(dofs1_g[i] < (std::int32_t)values.size());
+          x[_dofs0[i]] = scale * values[dofs1_g[i]];
         }
       }
     }
@@ -297,14 +314,12 @@ public:
       auto g = std::get<std::shared_ptr<const Constant<T>>>(_g);
       std::vector<T> value = g->value;
       int bs = _function_space->dofmap()->bs();
+      std::int32_t x_size = x.size();
       std::for_each(_dofs0.cbegin(), _dofs0.cend(),
-                    [size = x.size(), bs, scale, &value, &x](auto dof)
+                    [x_size, bs, scale, &value, &x](auto dof)
                     {
-                      if (dof < (std::int32_t)size)
-                      {
-                        std::div_t div = std::div(dof, bs);
-                        x[dof] = scale * value[div.rem];
-                      }
+                      if (dof < x_size)
+                        x[dof] = scale * value[dof % bs];
                     });
     }
   }
@@ -322,12 +337,14 @@ public:
       assert(g);
       xtl::span<const T> values = g->x()->array();
       assert(x.size() <= x0.size());
+      auto dofs1_g = _dofs1_g.empty() ? xtl::span(_dofs0) : xtl::span(_dofs1_g);
+      std::int32_t x_size = x.size();
       for (std::size_t i = 0; i < _dofs0.size(); ++i)
       {
-        if (_dofs0[i] < (std::int32_t)x.size())
+        if (_dofs0[i] < x_size)
         {
-          assert(_dofs1_g[i] < (std::int32_t)values.size());
-          x[_dofs0[i]] = scale * (values[_dofs1_g[i]] - x0[_dofs0[i]]);
+          assert(dofs1_g[i] < (std::int32_t)values.size());
+          x[_dofs0[i]] = scale * (values[dofs1_g[i]] - x0[_dofs0[i]]);
         }
       }
     }
@@ -340,10 +357,7 @@ public:
                     [&x, &x0, &value, scale, bs](auto dof)
                     {
                       if (dof < (std::int32_t)x.size())
-                      {
-                        std::div_t div = std::div(dof, bs);
-                        x[dof] = scale * (value[div.rem] - x0[dof]);
-                      }
+                        x[dof] = scale * (value[dof % bs] - x0[dof]);
                     });
     }
   }
@@ -363,8 +377,9 @@ public:
       auto g = std::get<std::shared_ptr<const Function<T>>>(_g);
       assert(g);
       xtl::span<const T> g_values = g->x()->array();
-      for (std::size_t i = 0; i < _dofs1_g.size(); ++i)
-        values[_dofs0[i]] = g_values[_dofs1_g[i]];
+      auto dofs1_g = _dofs1_g.empty() ? xtl::span(_dofs0) : xtl::span(_dofs1_g);
+      for (std::size_t i = 0; i < dofs1_g.size(); ++i)
+        values[_dofs0[i]] = g_values[dofs1_g[i]];
     }
     else if (std::holds_alternative<std::shared_ptr<const Constant<T>>>(_g))
     {
@@ -372,11 +387,8 @@ public:
       assert(g);
       std::vector<T> g_value = g->value;
       const std::int32_t bs = _function_space->dofmap()->bs();
-      for (std::size_t i = 0; i < _dofs1_g.size(); ++i)
-      {
-        std::div_t div = std::div(_dofs1_g[i], bs);
-        values[_dofs0[i]] = g_value[div.rem];
-      }
+      for (std::size_t i = 0; i < _dofs0.size(); ++i)
+        values[_dofs0[i]] = g_value[_dofs0[i] % bs];
     }
   }
 
@@ -405,7 +417,7 @@ private:
       _g;
 
   // Dof indices (_dofs0) in _function_space and (_dofs1_g) in the
-  // space of _g
+  // space of _g. _dofs1_g may be empty if _dofs0 can be re-used
   std::vector<std::int32_t> _dofs0, _dofs1_g;
 
   // The first _owned_indices in _dofs are owned by this process
