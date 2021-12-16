@@ -103,12 +103,11 @@ def test_overlapping_bcs():
             assert b_loc[dof_corner[0]] == 123.456
 
 
-@pytest.mark.parametrize(
-    'mesh_factory', [(create_unit_square, (MPI.COMM_WORLD, 4, 4)),
-                     (create_unit_square,
-                      (MPI.COMM_WORLD, 4, 4, CellType.quadrilateral)),
-                     (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3),),
-                     (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3, CellType.hexahedron))])
+@pytest.mark.parametrize('mesh_factory',
+                         [(create_unit_square, (MPI.COMM_WORLD, 4, 4)),
+                          (create_unit_square, (MPI.COMM_WORLD, 4, 4, CellType.quadrilateral)),
+                          (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3)),
+                          (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3, CellType.hexahedron))])
 def test_constant_bc(mesh_factory):
     """Test that setting a DirichletBC with a constant yields the same
     result as setting it with a function."""
@@ -137,9 +136,8 @@ def test_constant_bc(mesh_factory):
 
 @pytest.mark.parametrize(
     'mesh_factory', [(create_unit_square, (MPI.COMM_WORLD, 4, 4)),
-                     (create_unit_square,
-                      (MPI.COMM_WORLD, 4, 4, CellType.quadrilateral)),
-                     (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3),),
+                     (create_unit_square, (MPI.COMM_WORLD, 4, 4, CellType.quadrilateral)),
+                     (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3)),
                      (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3, CellType.hexahedron))])
 def test_vector_constant_bc(mesh_factory):
     """Test that setting a DirichletBC with a vector valued constant
@@ -175,18 +173,18 @@ def test_vector_constant_bc(mesh_factory):
 
 
 @pytest.mark.parametrize(
-    'mesh_factory', [(create_unit_square, (MPI.COMM_WORLD, 4, 4)),
-                     (create_unit_square,
-                      (MPI.COMM_WORLD, 4, 4, CellType.quadrilateral)),
-                     (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3),),
-                     (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3, CellType.hexahedron))])
+    'mesh_factory', [
+        (create_unit_square, (MPI.COMM_WORLD, 1, 1)),
+        # (create_unit_square, (MPI.COMM_WORLD, 4, 4, CellType.quadrilateral)),
+        # (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3)),
+        # (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3, CellType.hexahedron))
+    ])
 def test_sub_constant_bc(mesh_factory):
     """Test that setting a DirichletBC with on a component of a vector
     valued function yields the same result as setting it with a
     function."""
     func, args = mesh_factory
     mesh = func(*args)
-
     V = VectorFunctionSpace(mesh, ("Lagrange", 1))
     c = Constant(mesh, PETSc.ScalarType(3.14))
 
@@ -195,7 +193,6 @@ def test_sub_constant_bc(mesh_factory):
 
     tdim = mesh.topology.dim
     boundary_facets = locate_entities_boundary(mesh, tdim - 1, lambda x: np.ones(x.shape[1], dtype=bool))
-
     for i in range(V.num_sub_spaces()):
         Vi = V.sub(i).collapse()
         u_bci = Function(Vi)
@@ -212,4 +209,29 @@ def test_sub_constant_bc(mesh_factory):
 
         u_c = Function(V)
         set_bc(u_c.vector, [bc_c])
-        assert(np.allclose(u_f.vector.array, u_c.vector.array))
+        assert np.allclose(u_f.vector.array, u_c.vector.array)
+
+    TH = ufl.MixedElement([ufl.VectorElement("Lagrange", mesh.ufl_cell(), 2),
+                           ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)])
+    W = FunctionSpace(mesh, TH)
+    U = Function(W)
+
+    # c = Constant(mesh, (PETSc.ScalarType(2), PETSc.ScalarType(2)))
+    print("Sub space", W.sub(0).dofmap.bs)
+    print("Sub space", W.sub(0).dofmap.index_map_bs)
+    dofs0 = locate_dofs_topological(W.sub(0), tdim - 1, boundary_facets)
+    # bc0 = DirichletBC(c, boundary_dofs, W.sub(0))
+    print(boundary_dofs)
+
+    # u = U.sub(0)
+    # set_bc(u.vector, [bc0])
+
+    # u1 = u.collapse()
+    # u1.x.array[:] = PETSc.ScalarType(c.value[0])
+    # # assert np.allclose(u.collapse().x.array, u1.x.array)
+
+    # print(u.x.array)
+    # print(u.collapse().x.array)
+    # print(u1.x.array)
+
+    # # p = U.sub(1)
