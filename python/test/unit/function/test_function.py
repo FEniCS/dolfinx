@@ -114,9 +114,6 @@ def test_eval(V, W, Q, mesh):
     u2 = Function(W)
     u3 = Function(Q)
 
-    def e1(x):
-        return x[0] + x[1] + x[2]
-
     def e2(x):
         values = np.empty((3, x.shape[1]))
         values[0] = x[0] + x[1] + x[2]
@@ -137,7 +134,7 @@ def test_eval(V, W, Q, mesh):
         values[8] = -x[2]
         return values
 
-    u1.interpolate(e1)
+    u1.interpolate(lambda x: x[0] + x[1] + x[2])
     u2.interpolate(e2)
     u3.interpolate(e3)
 
@@ -177,14 +174,12 @@ def test_interpolation_mismatch_rank1(W):
 
 
 def test_mixed_element_interpolation():
-    def f(x):
-        return np.ones(2, x.shape[1])
     mesh = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3)
     el = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
     V = FunctionSpace(mesh, ufl.MixedElement([el, el]))
     u = Function(V)
     with pytest.raises(RuntimeError):
-        u.interpolate(f)
+        u.interpolate(lambda x: np.ones(2, x.shape[1]))
 
 
 def test_interpolation_rank0(V):
@@ -260,11 +255,8 @@ def test_cffi_expression(V):
     f1 = Function(V)
     f1.interpolate(int(eval_ptr))
 
-    def expr_eval2(x):
-        return x[0] + x[1]
-
     f2 = Function(V)
-    f2.interpolate(expr_eval2)
+    f2.interpolate(lambda x: x[0] + x[1])
     assert (f1.vector - f2.vector).norm() < 1.0e-12
 
 
@@ -295,10 +287,7 @@ def test_compute_point_values_manifold(dim):
     FS = FunctionSpace(mesh, FE)
     fx = Function(FS)
 
-    def f(x):
-        return x[0]
-
-    fx.interpolate(f)
+    fx.interpolate(lambda x: x[0])
     ux = fx.compute_point_values().reshape(-1)
     dof_to_vertex = np.zeros(3, dtype=np.int32)
     for i in range(3):
