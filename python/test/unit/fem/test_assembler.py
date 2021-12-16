@@ -631,15 +631,13 @@ def test_assembly_solve_taylor_hood(mesh):
 
 def test_basic_interior_facet_assembly():
     mesh = create_rectangle(MPI.COMM_WORLD,
-                            [numpy.array([0.0, 0.0, 0.0]),
-                             numpy.array([1.0, 1.0, 0.0])],
+                            [np.array([0.0, 0.0, 0.0]),
+                             np.array([1.0, 1.0, 0.0])],
                             [5, 5],
                             cell_type=CellType.triangle,
                             ghost_mode=GhostMode.shared_facet)
-
     V = FunctionSpace(mesh, ("DG", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
-
     a = ufl.inner(ufl.avg(u), ufl.avg(v)) * ufl.dS
 
     A = assemble_matrix(a)
