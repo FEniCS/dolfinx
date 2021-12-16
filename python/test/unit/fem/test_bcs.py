@@ -107,22 +107,18 @@ def test_overlapping_bcs():
     'mesh_factory', [(create_unit_square, (MPI.COMM_WORLD, 4, 4)),
                      (create_unit_square,
                       (MPI.COMM_WORLD, 4, 4, CellType.quadrilateral)),
-                     (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3),
-                      ), (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3, CellType.hexahedron))])
+                     (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3),),
+                     (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3, CellType.hexahedron))])
 def test_constant_bc(mesh_factory):
-    """
-    Test that setting a DirichletBC with a constant yields the same result as setting it with a function.
-    """
+    """Test that setting a DirichletBC with a constant yields the same
+    result as setting it with a function."""
     func, args = mesh_factory
     mesh = func(*args)
-    V = FunctionSpace(mesh, ("CG", 1))
+    V = FunctionSpace(mesh, ("Lagrange", 1))
     c = Constant(mesh, PETSc.ScalarType(2))
 
-    def on_boundary(x):
-        return np.ones(x.shape[1], dtype=bool)
-
     tdim = mesh.topology.dim
-    boundary_facets = locate_entities_boundary(mesh, tdim - 1, on_boundary)
+    boundary_facets = locate_entities_boundary(mesh, tdim - 1, lambda x: np.ones(x.shape[1], dtype=bool))
     boundary_dofs = locate_dofs_topological(V, tdim - 1, boundary_facets)
 
     u_bc = Function(V)
@@ -143,25 +139,21 @@ def test_constant_bc(mesh_factory):
     'mesh_factory', [(create_unit_square, (MPI.COMM_WORLD, 4, 4)),
                      (create_unit_square,
                       (MPI.COMM_WORLD, 4, 4, CellType.quadrilateral)),
-                     (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3),
-                      ), (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3, CellType.hexahedron))])
+                     (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3),),
+                     (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3, CellType.hexahedron))])
 def test_vector_constant_bc(mesh_factory):
-    """
-    Test that setting a DirichletBC with a vector valued constant yields the same result as setting it with a function.
-    """
+    """Test that setting a DirichletBC with a vector valued constant
+    yields the same result as setting it with a function."""
     func, args = mesh_factory
     mesh = func(*args)
-    V = VectorFunctionSpace(mesh, ("CG", 1))
+    V = VectorFunctionSpace(mesh, ("Lagrange", 1))
     assert(V.num_sub_spaces() == mesh.geometry.dim)
     vals = np.arange(mesh.geometry.dim, dtype=np.float64)
     c = Constant(mesh, PETSc.ScalarType(vals))
 
-    def on_boundary(x):
-        return np.ones(x.shape[1], dtype=bool)
-
     tdim = mesh.topology.dim
     Vs = [V.sub(i).collapse() for i in range(V.num_sub_spaces())]
-    boundary_facets = locate_entities_boundary(mesh, tdim - 1, on_boundary)
+    boundary_facets = locate_entities_boundary(mesh, tdim - 1, lambda x: np.ones(x.shape[1], dtype=bool))
     boundary_dofs = [locate_dofs_topological((V.sub(i), Vs[i]), tdim - 1, boundary_facets)
                      for i in range(V.num_sub_spaces())]
 
@@ -186,32 +178,30 @@ def test_vector_constant_bc(mesh_factory):
     'mesh_factory', [(create_unit_square, (MPI.COMM_WORLD, 4, 4)),
                      (create_unit_square,
                       (MPI.COMM_WORLD, 4, 4, CellType.quadrilateral)),
-                     (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3),
-                      ), (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3, CellType.hexahedron))])
+                     (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3),),
+                     (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3, CellType.hexahedron))])
 def test_sub_constant_bc(mesh_factory):
-    """
-    Test that setting a DirichletBC with on a component of a vector valued function
-    yields the same result as setting it with a function.
-    """
+    """Test that setting a DirichletBC with on a component of a vector
+    valued function yields the same result as setting it with a
+    function."""
     func, args = mesh_factory
     mesh = func(*args)
 
-    V = VectorFunctionSpace(mesh, ("CG", 1))
+    V = VectorFunctionSpace(mesh, ("Lagrange", 1))
     c = Constant(mesh, PETSc.ScalarType(3.14))
 
     def on_boundary(x):
         return np.ones(x.shape[1], dtype=bool)
 
     tdim = mesh.topology.dim
-    boundary_facets = locate_entities_boundary(mesh, tdim - 1, on_boundary)
+    boundary_facets = locate_entities_boundary(mesh, tdim - 1, lambda x: np.ones(x.shape[1], dtype=bool))
 
     for i in range(V.num_sub_spaces()):
         Vi = V.sub(i).collapse()
-        boundary_dofsi = locate_dofs_topological((V.sub(i), Vi), tdim - 1, boundary_facets)
-
         u_bci = Function(Vi)
         u_bci.x.array[:] = PETSc.ScalarType(c.value)
 
+        boundary_dofsi = locate_dofs_topological((V.sub(i), Vi), tdim - 1, boundary_facets)
         bc_fi = DirichletBC(u_bci, boundary_dofsi, V.sub(i))
 
         boundary_dofs = locate_dofs_topological(V.sub(i), tdim - 1, boundary_facets)
