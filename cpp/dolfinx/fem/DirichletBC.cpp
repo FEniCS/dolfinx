@@ -180,28 +180,24 @@ get_remote_dofs(MPI_Comm comm, const common::IndexMap& map, int bs,
 
   MPI_Wait(&request, MPI_STATUS_IGNORE);
   std::vector<std::int32_t> dofs;
-  for (std::size_t i = 0; i < dofs_received.size(); ++i)
+  for (auto dof_recv : dofs_received)
   {
-    if (dofs_received[i] >= bs * range[0] and dofs_received[i] < bs * range[1])
-    {
-      // Owned dof
-      dofs.push_back(dofs_received[i] - bs * range[0]);
-    }
+    // Insert owned dofs, else search in ghosts
+    if (dof_recv >= bs * range[0] and dof_recv < bs * range[1])
+      dofs.push_back(dof_recv - bs * range[0]);
     else
     {
-      // Search in ghosts
-      if (auto it = global_to_local.find(dofs_received[i] / bs);
+      if (auto it = global_to_local.find(dof_recv / bs);
           it != global_to_local.end())
       {
-        dofs.push_back(bs * it->second + dofs_received[i] % bs);
+        dofs.push_back(bs * it->second + dof_recv % bs);
       }
     }
   }
+
   return dofs;
 }
-
 //-----------------------------------------------------------------------------
-
 } // namespace
 
 //-----------------------------------------------------------------------------
@@ -296,17 +292,14 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
   for (std::size_t b = 0; b < 2; ++b)
   {
     for (std::size_t i = 0; i < bc_dofs[1].size(); ++i)
-    {
       sorted_bc_dofs[b][i] = bc_dofs[b][perm[i]];
-    }
     sorted_bc_dofs[b].erase(
         std::unique(sorted_bc_dofs[b].begin(), sorted_bc_dofs[b].end()),
         sorted_bc_dofs[b].end());
   }
+
   if (!remote)
-  {
     return sorted_bc_dofs;
-  }
   else
   {
     // Get bc dof indices (local) for each of spaces on this process that
@@ -337,9 +330,7 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
     for (std::size_t b = 0; b < 2; ++b)
     {
       for (std::size_t i = 0; i < sorted_bc_dofs[1].size(); ++i)
-      {
         out_dofs[b][i] = sorted_bc_dofs[b][perm[i]];
-      }
       out_dofs[b].erase(std::unique(out_dofs[b].begin(), out_dofs[b].end()),
                         out_dofs[b].end());
     }
@@ -424,8 +415,6 @@ fem::locate_dofs_topological(const FunctionSpace& V, int dim,
     const int bs = dofmap->bs();
     const int element_bs = dofmap->element_dof_layout->block_size();
 
-    std::cout << "Block sizes: " << bs << ", " << element_bs << std::endl;
-
     // Iterate over marked facets
     for (auto [cell, entity_local_index] : entity_indices)
     {
@@ -437,9 +426,9 @@ fem::locate_dofs_topological(const FunctionSpace& V, int dim,
       for (int i = 0; i < num_entity_closure_dofs; ++i)
       {
         const int index = entity_dofs[entity_local_index][i];
-        for (int block = 0; block < element_bs; ++block)
+        for (int k = 0; k < element_bs; ++k)
         {
-          const std::div_t pos = std::div(element_bs * index + block, bs);
+          const std::div_t pos = std::div(element_bs * index + k, bs);
           dofs.push_back(bs * cell_dofs[pos.quot] + pos.rem);
         }
       }
@@ -469,6 +458,7 @@ fem::locate_dofs_topological(const FunctionSpace& V, int dim,
       dofs.erase(std::unique(dofs.begin(), dofs.end()), dofs.end());
     }
   }
+
   return dofs;
 }
 //-----------------------------------------------------------------------------
@@ -541,7 +531,6 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_geometrical(
               = bs0 * cell_dofs0[pos0.quot] + pos0.rem;
           const std::int32_t dof_index1
               = bs1 * cell_dofs1[pos1.quot] + pos1.rem;
-
           bc_dofs.push_back({dof_index0, dof_index1});
         }
       }

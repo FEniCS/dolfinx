@@ -217,9 +217,8 @@ public:
   template <typename U,
             typename = std::enable_if_t<std::is_same_v<
                 std::decay_t<U>, std::array<std::vector<std::int32_t>, 2>>>>
-  DirichletBC(const std::shared_ptr<const Function<T>>& g,
-              // const std::array<std::vector<std::int32_t>, 2>& V_g_dofs,
-              U&& V_g_dofs, const std::shared_ptr<const FunctionSpace>& V)
+  DirichletBC(const std::shared_ptr<const Function<T>>& g, U&& V_g_dofs,
+              const std::shared_ptr<const FunctionSpace>& V)
       : _function_space(V), _g(g),
         _dofs0(std::forward<typename U::value_type>(V_g_dofs[0])),
         _dofs1_g(std::forward<typename U::value_type>(V_g_dofs[1]))
