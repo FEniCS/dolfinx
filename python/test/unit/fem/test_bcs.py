@@ -174,10 +174,10 @@ def test_vector_constant_bc(mesh_factory):
 
 @pytest.mark.parametrize(
     'mesh_factory', [
-        (create_unit_square, (MPI.COMM_WORLD, 1, 1)),
-        # (create_unit_square, (MPI.COMM_WORLD, 4, 4, CellType.quadrilateral)),
-        # (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3)),
-        # (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3, CellType.hexahedron))
+        (create_unit_square, (MPI.COMM_WORLD, 4, 4)),
+        (create_unit_square, (MPI.COMM_WORLD, 4, 4, CellType.quadrilateral)),
+        (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3)),
+        (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3, CellType.hexahedron))
     ])
 def test_sub_constant_bc(mesh_factory):
     """Test that setting a DirichletBC with on a component of a vector
@@ -185,13 +185,10 @@ def test_sub_constant_bc(mesh_factory):
     function."""
     func, args = mesh_factory
     mesh = func(*args)
+    tdim = mesh.topology.dim
     V = VectorFunctionSpace(mesh, ("Lagrange", 1))
     c = Constant(mesh, PETSc.ScalarType(3.14))
 
-    def on_boundary(x):
-        return np.ones(x.shape[1], dtype=bool)
-
-    tdim = mesh.topology.dim
     boundary_facets = locate_entities_boundary(mesh, tdim - 1, lambda x: np.ones(x.shape[1], dtype=bool))
     for i in range(V.num_sub_spaces()):
         Vi = V.sub(i).collapse()
@@ -200,38 +197,53 @@ def test_sub_constant_bc(mesh_factory):
 
         boundary_dofsi = locate_dofs_topological((V.sub(i), Vi), tdim - 1, boundary_facets)
         bc_fi = DirichletBC(u_bci, boundary_dofsi, V.sub(i))
-
         boundary_dofs = locate_dofs_topological(V.sub(i), tdim - 1, boundary_facets)
         bc_c = DirichletBC(c, boundary_dofs, V.sub(i))
 
         u_f = Function(V)
         set_bc(u_f.vector, [bc_fi])
-
         u_c = Function(V)
         set_bc(u_c.vector, [bc_c])
         assert np.allclose(u_f.vector.array, u_c.vector.array)
+
+
+@pytest.mark.parametrize(
+    'mesh_factory', [
+        (create_unit_square, (MPI.COMM_WORLD, 4, 4)),
+        (create_unit_square, (MPI.COMM_WORLD, 4, 4, CellType.quadrilateral)),
+        (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3)),
+        (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3, CellType.hexahedron))
+    ])
+def test_mixed_constant_bc(mesh_factory):
+    """Test that setting a DirichletBC with on a component of a vector
+    valued function yields the same result as setting it with a
+    function."""
+    func, args = mesh_factory
+    mesh = func(*args)
+    tdim = mesh.topology.dim
+    gdim = mesh.geometry.dim
+    boundary_facets = locate_entities_boundary(mesh, tdim - 1, lambda x: np.ones(x.shape[1], dtype=bool))
 
     TH = ufl.MixedElement([ufl.VectorElement("Lagrange", mesh.ufl_cell(), 2),
                            ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)])
     W = FunctionSpace(mesh, TH)
     U = Function(W)
 
-    # c = Constant(mesh, (PETSc.ScalarType(2), PETSc.ScalarType(2)))
-    print("Sub space", W.sub(0).dofmap.bs)
-    print("Sub space", W.sub(0).dofmap.index_map_bs)
+    # Apply BC to component of a mixed space using a Constant
+    c = Constant(mesh, (PETSc.ScalarType(2), PETSc.ScalarType(2)))
     dofs0 = locate_dofs_topological(W.sub(0), tdim - 1, boundary_facets)
-    # bc0 = DirichletBC(c, boundary_dofs, W.sub(0))
-    print(boundary_dofs)
+    bc0 = DirichletBC(c, dofs0, W.sub(0))
+    u = U.sub(0)
+    set_bc(u.vector, [bc0])
 
-    # u = U.sub(0)
-    # set_bc(u.vector, [bc0])
+    # Apply BC to component of a mixed space using a Function
+    ubc1 = u.collapse()
+    ubc1.interpolate(lambda x: np.full((gdim, x.shape[1]), 2.0))
+    dofs1 = locate_dofs_topological((W.sub(0), ubc1.function_space), tdim - 1, boundary_facets)
+    bc1 = DirichletBC(ubc1, dofs1, W.sub(0))
+    U1 = Function(W)
+    u1 = U1.sub(0)
+    set_bc(u1.vector, [bc1])
 
-    # u1 = u.collapse()
-    # u1.x.array[:] = PETSc.ScalarType(c.value[0])
-    # # assert np.allclose(u.collapse().x.array, u1.x.array)
-
-    # print(u.x.array)
-    # print(u.collapse().x.array)
-    # print(u1.x.array)
-
-    # # p = U.sub(1)
+    # Check that both approaches yield the same vector
+    assert np.allclose(u.x.array, u1.x.array)

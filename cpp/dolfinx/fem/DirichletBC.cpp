@@ -379,8 +379,8 @@ fem::locate_dofs_topological(const FunctionSpace& V, int dim,
   std::vector<std::pair<std::int32_t, int>> entity_indices
       = find_local_entity_index(mesh, entities, dim);
 
-  // If space is not a sub space we not not need to take the block size into
-  // account
+  // If space is not a sub space we not not need to take the block size
+  // into account
   if (V.component().empty())
   {
     for (auto [cell, entity_local_index] : entity_indices)
@@ -419,10 +419,12 @@ fem::locate_dofs_topological(const FunctionSpace& V, int dim,
   }
   else
   {
-    // V is a sub space we need to take the block size of the dofmap and index
-    // map into account, as they differ
+    // V is a sub space we need to take the block size of the dofmap and
+    // index map into account, as they differ
     const int bs = dofmap->bs();
     const int element_bs = dofmap->element_dof_layout->block_size();
+
+    std::cout << "Block sizes: " << bs << ", " << element_bs << std::endl;
 
     // Iterate over marked facets
     for (auto [cell, entity_local_index] : entity_indices)
