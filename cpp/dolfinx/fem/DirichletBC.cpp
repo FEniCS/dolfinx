@@ -128,7 +128,8 @@ get_remote_dofs(MPI_Comm comm, const common::IndexMap& map, int bs_map, int bs,
   std::vector<std::int64_t> dofs_global(num_dofs_block);
 
   // Get offset into map block
-  // NOTE: Could use neighbourhood allgather here
+  // NOTE: Could use neighbourhood allgather here. Also, not needed if
+  // bs_map == 1.
   const int myoffset = dofs_local.empty() ? 0 : dofs_local.front() % bs_map;
   int offset = 0;
   MPI_Request request_offset;
