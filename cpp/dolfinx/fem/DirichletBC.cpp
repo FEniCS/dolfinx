@@ -115,37 +115,29 @@ get_remote_dofs(MPI_Comm comm, const common::IndexMap& map, int bs,
     return {};
 
   // Figure out how many entries to receive from each neighbor
-  const int num_dofs = dofs_local.size();
+  assert(dofs_local.size() % bs == 0);
+  const int num_dofs = dofs_local.size() / bs;
   std::vector<int> num_dofs_recv(num_neighbors);
   MPI_Request request;
   MPI_Ineighbor_allgather(&num_dofs, 1, MPI_INT, num_dofs_recv.data(), 1,
                           MPI_INT, comm, &request);
 
-  // Map DOFs to global block
-  std::vector<std::int64_t> dofs_global(dofs_local.size());
+  // Map local dof block indices to global dof block indices
+  std::vector<std::int64_t> dofs_global(num_dofs);
   if (bs == 1)
     map.local_to_global(dofs_local, dofs_global);
   else
   {
     // Convert dofs indices to 'blocks' relative to index map
     std::vector<std::int32_t> dofs_local_block;
-    std::transform(dofs_local.begin(), dofs_local.end(),
-                   std::back_inserter(dofs_local_block),
-                   [bs](auto n) { return n /= bs; });
+    dofs_local_block.reserve(num_dofs);
+    for (std::size_t i = 0; i < dofs_local.size(); i += bs)
+      dofs_local_block.push_back(dofs_local[i] / bs);
 
-    // Get global index of each block
-    std::vector<std::int64_t> dofs_global_block(dofs_local_block.size());
-    map.local_to_global(dofs_local_block, dofs_global_block);
-
-    // Convert from block to actual index
-    std::transform(dofs_local.cbegin(), dofs_local.cend(),
-                   dofs_global_block.cbegin(), dofs_global.begin(),
-                   [bs](std::int32_t dof_local, std::int64_t dof_block_global)
-                   {
-                     int index_offset = dof_local % bs;
-                     return bs * dof_block_global + index_offset;
-                   });
+    // Compute global index of each block
+    map.local_to_global(dofs_local_block, dofs_global);
   }
+
   MPI_Wait(&request, MPI_STATUS_IGNORE);
 
   // Compute displacements for data to receive. Last entry has total
@@ -180,17 +172,20 @@ get_remote_dofs(MPI_Comm comm, const common::IndexMap& map, int bs,
 
   MPI_Wait(&request, MPI_STATUS_IGNORE);
   std::vector<std::int32_t> dofs;
-  for (auto dof_recv : dofs_received)
+  for (auto dof_global_block : dofs_received)
   {
-    // Insert owned dofs, else search in ghosts
-    if (dof_recv >= bs * range[0] and dof_recv < bs * range[1])
-      dofs.push_back(dof_recv - bs * range[0]);
-    else
+    for (int k = 0; k < bs; ++k)
     {
-      if (auto it = global_to_local.find(dof_recv / bs);
-          it != global_to_local.end())
+      // Insert owned dofs, else search in ghosts
+      if (dof_global_block >= range[0] and dof_global_block < range[1])
+        dofs.push_back(bs * dof_global_block + k - bs * range[0]);
+      else
       {
-        dofs.push_back(bs * it->second + dof_recv % bs);
+        if (auto it = global_to_local.find(dof_global_block);
+            it != global_to_local.end())
+        {
+          dofs.push_back(bs * it->second + k);
+        }
       }
     }
   }
