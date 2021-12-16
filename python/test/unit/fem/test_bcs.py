@@ -215,15 +215,12 @@ def test_sub_constant_bc(mesh_factory):
         (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3, CellType.hexahedron))
     ])
 def test_mixed_constant_bc(mesh_factory):
-    """Test that setting a DirichletBC with on a component of a vector
-    valued function yields the same result as setting it with a
-    function."""
+    """Test that setting a DirichletBC with on a component of a mixed
+    function yields the same result as setting it with a function."""
     func, args = mesh_factory
     mesh = func(*args)
-    tdim = mesh.topology.dim
-    gdim = mesh.geometry.dim
+    tdim, gdim = mesh.topology.dim, mesh.geometry.dim
     boundary_facets = locate_entities_boundary(mesh, tdim - 1, lambda x: np.ones(x.shape[1], dtype=bool))
-
     TH = ufl.MixedElement([ufl.VectorElement("Lagrange", mesh.ufl_cell(), 2),
                            ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)])
     W = FunctionSpace(mesh, TH)
