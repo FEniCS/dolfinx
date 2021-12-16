@@ -104,7 +104,7 @@ find_local_entity_index(std::shared_ptr<const mesh::Mesh> mesh,
 /// that are in the local range (including ghosts)
 std::vector<std::int32_t>
 get_remote_dofs(MPI_Comm comm, const common::IndexMap& map, int bs,
-                const std::vector<std::int32_t>& dofs_local)
+                const xtl::span<const std::int32_t>& dofs_local)
 {
   int num_neighbors(-1), outdegree(-2), weighted(-1);
   MPI_Dist_graph_neighbors_count(comm, &num_neighbors, &outdegree, &weighted);
@@ -121,29 +121,30 @@ get_remote_dofs(MPI_Comm comm, const common::IndexMap& map, int bs,
   MPI_Ineighbor_allgather(&num_dofs, 1, MPI_INT, num_dofs_recv.data(), 1,
                           MPI_INT, comm, &request);
 
-  std::vector<std::int64_t> dofs_global(dofs_local.size());
   // Map DOFs to global block
+  std::vector<std::int64_t> dofs_global(dofs_local.size());
   if (bs == 1)
-  {
     map.local_to_global(dofs_local, dofs_global);
-  }
   else
   {
     // Convert dofs indices to 'blocks' relative to index map
-    std::vector<std::int32_t> dofs_local_block = dofs_local;
-    std::for_each(dofs_local_block.begin(), dofs_local_block.end(),
-                  [bs](std::int32_t& n) { return n /= bs; });
+    std::vector<std::int32_t> dofs_local_block;
+    std::transform(dofs_local.begin(), dofs_local.end(),
+                   std::back_inserter(dofs_local_block),
+                   [bs](auto n) { return n /= bs; });
 
     // Get global index of each block
     std::vector<std::int64_t> dofs_global_block(dofs_local_block.size());
     map.local_to_global(dofs_local_block, dofs_global_block);
 
     // Convert from block to actual index
-    for (std::size_t j = 0; j < dofs_local.size(); ++j)
-    {
-      const int index_offset = dofs_local[j] % bs;
-      dofs_global[j] = bs * dofs_global_block[j] + index_offset;
-    }
+    std::transform(dofs_local.cbegin(), dofs_local.cend(),
+                   dofs_global_block.cbegin(), dofs_global.begin(),
+                   [bs](std::int32_t dof_local, std::int64_t dof_block_global)
+                   {
+                     int index_offset = dof_local % bs;
+                     return bs * dof_block_global + index_offset;
+                   });
   }
   MPI_Wait(&request, MPI_STATUS_IGNORE);
 
@@ -154,8 +155,8 @@ get_remote_dofs(MPI_Comm comm, const common::IndexMap& map, int bs,
                    std::next(disp.begin()));
 
   // NOTE: We could consider only dofs that we know are shared and use
-  // MPI_Neighbor_alltoallv to send only to relevant processes Send/receive
-  // global index of dofs with bcs to all neighbors
+  // MPI_Neighbor_alltoallv to send only to relevant processes.
+  // Send/receive global index of dofs with bcs to all neighbors
   std::vector<std::int64_t> dofs_received(disp.back());
   MPI_Ineighbor_allgatherv(dofs_global.data(), dofs_global.size(), MPI_INT64_T,
                            dofs_received.data(), num_dofs_recv.data(),
