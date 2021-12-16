@@ -97,7 +97,7 @@ find_local_entity_index(std::shared_ptr<const mesh::Mesh> mesh,
 /// @param[in] comm A symmetric communicator based on the forward
 /// neighborhood communicator in the IndexMap
 /// @param[in] map The IndexMap with the dof layout
-/// @param[in] bs The block size of the IndexMap
+/// @param[in] bs The block size of the dof array
 /// @param[in] dofs_local List of degrees of freedom local to process
 /// (unrolled). It might contain indices not found on other processes
 /// @returns List of degrees of freedom that was found on the other processes
@@ -302,13 +302,25 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
     // that has no connected facets on the boundary.
     dolfinx::MPI::Comm comm = create_symmetric_comm(
         V0.dofmap()->index_map->comm(common::IndexMap::Direction::forward));
+
+    if (V0.dofmap()->index_map_bs() != bs0)
+    {
+      throw std::runtime_error(
+          "Different IndexMap/dofmap block sizes is not supported.");
+    }
     std::vector<std::int32_t> dofs_remote
         = get_remote_dofs(comm.comm(), *V0.dofmap()->index_map,
                           V0.dofmap()->index_map_bs(), sorted_bc_dofs[0]);
+
     // Add received bc indices to dofs_local
     sorted_bc_dofs[0].insert(sorted_bc_dofs[0].end(), dofs_remote.begin(),
                              dofs_remote.end());
 
+    if (V1.dofmap()->index_map_bs() != bs1)
+    {
+      throw std::runtime_error(
+          "Different IndexMap/dofmap block sizes is not supported.");
+    }
     dofs_remote
         = get_remote_dofs(comm.comm(), *V1.dofmap()->index_map,
                           V1.dofmap()->index_map_bs(), sorted_bc_dofs[1]);
@@ -441,6 +453,12 @@ fem::locate_dofs_topological(const FunctionSpace& V, int dim,
       // that has no connected facets on the boundary.
       dolfinx::MPI::Comm comm = create_symmetric_comm(
           V.dofmap()->index_map->comm(common::IndexMap::Direction::forward));
+      if (V.dofmap()->index_map_bs() != V.dofmap()->bs())
+      {
+        throw std::runtime_error(
+            "Different IndexMap/dofmap block sizes is not supported.");
+      }
+
       const std::vector<std::int32_t> dofs_remote
           = get_remote_dofs(comm.comm(), *V.dofmap()->index_map,
                             V.dofmap()->index_map_bs(), dofs);
