@@ -11,7 +11,6 @@
 #include "Function.h"
 #include "FunctionSpace.h"
 #include <array>
-#include <dolfinx/la/utils.h>
 #include <functional>
 #include <memory>
 #include <type_traits>
@@ -19,11 +18,6 @@
 #include <vector>
 #include <xtensor/xtensor.hpp>
 #include <xtl/xspan.hpp>
-
-namespace dolfinx::mesh
-{
-class Mesh;
-}
 
 namespace dolfinx::fem
 {
