@@ -128,9 +128,12 @@ get_remote_dofs(MPI_Comm comm, const common::IndexMap& map, int bs_map, int bs,
   std::vector<std::int64_t> dofs_global(num_dofs_block);
 
   // Get offset into map block
-  // NOTE: this will fail if this rank has no local dofs. Need to all
-  // MPI call
-  const int offset = dofs_local.empty() ? 0 : dofs_local.front() % bs_map;
+  // NOTE: Could use neighbourhood allgather here
+  const int myoffset = dofs_local.empty() ? 0 : dofs_local.front() % bs_map;
+  int offset = 0;
+  MPI_Request request_offset;
+  MPI_Iallreduce(&myoffset, &offset, 1, MPI_INT, MPI_MAX, comm, &request_offset);
+
   if (bs_map == 1)
     map.local_to_global(dofs_local, dofs_global);
   else
@@ -178,11 +181,10 @@ get_remote_dofs(MPI_Comm comm, const common::IndexMap& map, int bs_map, int bs,
       global_local_ghosts.begin(), global_local_ghosts.end());
 
   MPI_Wait(&request, MPI_STATUS_IGNORE);
+  MPI_Wait(&request_offset, MPI_STATUS_IGNORE);
   std::vector<std::int32_t> dofs;
-  for (std::size_t i = 0; i < dofs_received.size(); ++i)
+  for (auto global_block : dofs_received)
   {
-    std::int64_t global_block = dofs_received[i];
-
     // Insert owned dofs, else search in ghosts
     if (global_block >= range[0] and global_block < range[1])
     {
