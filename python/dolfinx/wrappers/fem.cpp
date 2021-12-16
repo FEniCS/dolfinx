@@ -43,6 +43,7 @@
 #include <pybind11/stl.h>
 #include <string>
 #include <ufc.h>
+#include <utility>
 #include <xtensor/xadapt.hpp>
 #include <xtensor/xtensor.hpp>
 #include <xtensor/xview.hpp>
