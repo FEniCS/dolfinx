@@ -103,7 +103,7 @@ find_local_entity_index(std::shared_ptr<const mesh::Mesh> mesh,
 /// @returns List of degrees of freedom that was found on the other processes
 /// that are in the local range (including ghosts)
 std::vector<std::int32_t>
-get_remote_dofs(MPI_Comm comm, const common::IndexMap& map, int bs,
+get_remote_dofs(MPI_Comm comm, const common::IndexMap& map, int bs_map, int bs,
                 const xtl::span<const std::int32_t>& dofs_local)
 {
   int num_neighbors(-1), outdegree(-2), weighted(-1);
@@ -116,23 +116,23 @@ get_remote_dofs(MPI_Comm comm, const common::IndexMap& map, int bs,
 
   // Figure out how many entries to receive from each neighbor
   assert(dofs_local.size() % bs == 0);
-  const int num_dofs = dofs_local.size() / bs;
+  const int num_dofs_block = dofs_local.size() / bs;
   std::vector<int> num_dofs_recv(num_neighbors);
   MPI_Request request;
-  MPI_Ineighbor_allgather(&num_dofs, 1, MPI_INT, num_dofs_recv.data(), 1,
+  MPI_Ineighbor_allgather(&num_dofs_block, 1, MPI_INT, num_dofs_recv.data(), 1,
                           MPI_INT, comm, &request);
 
   // Map local dof block indices to global dof block indices
-  std::vector<std::int64_t> dofs_global(num_dofs);
-  if (bs == 1)
+  std::vector<std::int64_t> dofs_global(num_dofs_block);
+  if (bs_map == 1 and bs == 1)
     map.local_to_global(dofs_local, dofs_global);
   else
   {
-    // Convert dofs indices to 'blocks' relative to index map
+    // Convert dofs indices to 'block' indices
     std::vector<std::int32_t> dofs_local_block;
-    dofs_local_block.reserve(num_dofs);
+    dofs_local_block.reserve(num_dofs_block);
     for (std::size_t i = 0; i < dofs_local.size(); i += bs)
-      dofs_local_block.push_back(dofs_local[i] / bs);
+      dofs_local_block.push_back((dofs_local[i] / bs));
 
     // Compute global index of each block
     map.local_to_global(dofs_local_block, dofs_global);
@@ -177,8 +177,9 @@ get_remote_dofs(MPI_Comm comm, const common::IndexMap& map, int bs,
     for (int k = 0; k < bs; ++k)
     {
       // Insert owned dofs, else search in ghosts
-      if (dof_global_block >= range[0] and dof_global_block < range[1])
-        dofs.push_back(bs * dof_global_block + k - bs * range[0]);
+      if (dof_global_block >= bs_map * range[0]
+          and dof_global_block < bs_map * range[1])
+        dofs.push_back(bs * dof_global_block + k - bs_map * range[0]);
       else
       {
         if (auto it = global_to_local.find(dof_global_block);
@@ -303,27 +304,27 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
     dolfinx::MPI::Comm comm = create_symmetric_comm(
         V0.dofmap()->index_map->comm(common::IndexMap::Direction::forward));
 
-    if (V0.dofmap()->index_map_bs() != bs0)
+    if (V0.dofmap()->index_map_bs() < bs0)
     {
       throw std::runtime_error(
           "Different IndexMap/dofmap block sizes is not supported.");
     }
     std::vector<std::int32_t> dofs_remote
-        = get_remote_dofs(comm.comm(), *V0.dofmap()->index_map,
+        = get_remote_dofs(comm.comm(), *V0.dofmap()->index_map, bs0,
                           V0.dofmap()->index_map_bs(), sorted_bc_dofs[0]);
 
     // Add received bc indices to dofs_local
     sorted_bc_dofs[0].insert(sorted_bc_dofs[0].end(), dofs_remote.begin(),
                              dofs_remote.end());
 
-    if (V1.dofmap()->index_map_bs() != bs1)
+    if (V1.dofmap()->index_map_bs() < bs1)
     {
       throw std::runtime_error(
           "Different IndexMap/dofmap block sizes is not supported.");
     }
     dofs_remote
         = get_remote_dofs(comm.comm(), *V1.dofmap()->index_map,
-                          V1.dofmap()->index_map_bs(), sorted_bc_dofs[1]);
+                          V1.dofmap()->index_map_bs(), bs1, sorted_bc_dofs[1]);
     sorted_bc_dofs[1].insert(sorted_bc_dofs[1].end(), dofs_remote.begin(),
                              dofs_remote.end());
     assert(sorted_bc_dofs[0].size() == sorted_bc_dofs[1].size());
@@ -405,7 +406,7 @@ fem::locate_dofs_topological(const FunctionSpace& V, int dim,
       dolfinx::MPI::Comm comm = create_symmetric_comm(
           map->comm(common::IndexMap::Direction::forward));
       const std::vector<std::int32_t> dofs_remote
-          = get_remote_dofs(comm.comm(), *map, 1, dofs);
+          = get_remote_dofs(comm.comm(), *map, 1, 1, dofs);
 
       // Add received bc indices to dofs_local
       dofs.insert(dofs.end(), dofs_remote.begin(), dofs_remote.end());
@@ -453,15 +454,15 @@ fem::locate_dofs_topological(const FunctionSpace& V, int dim,
       // that has no connected facets on the boundary.
       dolfinx::MPI::Comm comm = create_symmetric_comm(
           V.dofmap()->index_map->comm(common::IndexMap::Direction::forward));
-      if (V.dofmap()->index_map_bs() != V.dofmap()->bs())
+
+      if (V.dofmap()->index_map_bs() < V.dofmap()->bs())
       {
         throw std::runtime_error(
             "Different IndexMap/dofmap block sizes is not supported.");
       }
-
       const std::vector<std::int32_t> dofs_remote
           = get_remote_dofs(comm.comm(), *V.dofmap()->index_map,
-                            V.dofmap()->index_map_bs(), dofs);
+                            V.dofmap()->index_map_bs(), bs, dofs);
 
       // Add received bc indices to dofs_local
       dofs.insert(dofs.end(), dofs_remote.begin(), dofs_remote.end());

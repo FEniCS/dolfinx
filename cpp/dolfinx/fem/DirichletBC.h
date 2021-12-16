@@ -43,7 +43,7 @@ namespace dolfinx::fem
 /// facet. This commonly occurs with partitioned meshes.
 /// @return Array of DOF indices (local to the MPI rank) in the spaces
 /// V[0] and V[1]. The array[0](i) entry is the DOF index in the space
-/// V[0] and array[1](i) is the correspinding DOF entry in the space
+/// V[0] and array[1](i) is the corresponding DOF entry in the space
 /// V[1]. The returned dofs are 'unrolled', i.e. block size = 1.
 std::array<std::vector<std::int32_t>, 2> locate_dofs_topological(
     const std::array<std::reference_wrapper<const FunctionSpace>, 2>& V,
