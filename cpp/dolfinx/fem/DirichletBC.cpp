@@ -206,11 +206,11 @@ std::vector<std::int32_t> get_remote_dofs(const dolfinx::MPI::Comm& comm,
 
 //-----------------------------------------------------------------------------
 std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
-    const std::array<std::reference_wrapper<const fem::FunctionSpace>, 2>& V,
+    const std::array<std::reference_wrapper<const FunctionSpace>, 2>& V,
     const int dim, const xtl::span<const std::int32_t>& entities, bool remote)
 {
-  const fem::FunctionSpace& V0 = V.at(0).get();
-  const fem::FunctionSpace& V1 = V.at(1).get();
+  const FunctionSpace& V0 = V.at(0).get();
+  const FunctionSpace& V1 = V.at(1).get();
 
   // Get mesh
   std::shared_ptr<const mesh::Mesh> mesh = V0.mesh();
@@ -226,8 +226,8 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
     throw std::runtime_error("Function spaces must have the same element.");
 
   // Get dofmaps
-  std::shared_ptr<const fem::DofMap> dofmap0 = V0.dofmap();
-  std::shared_ptr<const fem::DofMap> dofmap1 = V1.dofmap();
+  std::shared_ptr<const DofMap> dofmap0 = V0.dofmap();
+  std::shared_ptr<const DofMap> dofmap1 = V1.dofmap();
   assert(dofmap0);
   assert(dofmap1);
 
@@ -349,7 +349,7 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
 }
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t>
-fem::locate_dofs_topological(const fem::FunctionSpace& V, int dim,
+fem::locate_dofs_topological(const FunctionSpace& V, int dim,
                              const xtl::span<const std::int32_t>& entities,
                              bool remote)
 {
@@ -470,7 +470,7 @@ fem::locate_dofs_topological(const fem::FunctionSpace& V, int dim,
 }
 //-----------------------------------------------------------------------------
 std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_geometrical(
-    const std::array<std::reference_wrapper<const fem::FunctionSpace>, 2>& V,
+    const std::array<std::reference_wrapper<const FunctionSpace>, 2>& V,
     const std::function<xt::xtensor<bool, 1>(const xt::xtensor<double, 2>&)>&
         marker_fn)
 {
@@ -479,8 +479,8 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_geometrical(
   // interface that computes dofs coordinates only for specified cell.
 
   // Get function spaces
-  const fem::FunctionSpace& V0 = V.at(0).get();
-  const fem::FunctionSpace& V1 = V.at(1).get();
+  const FunctionSpace& V0 = V.at(0).get();
+  const FunctionSpace& V1 = V.at(1).get();
 
   // Get mesh
   std::shared_ptr<const mesh::Mesh> mesh = V0.mesh();
@@ -504,10 +504,10 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_geometrical(
   const xt::xtensor<bool, 1> marked_dofs = marker_fn(dof_coordinates);
 
   // Get dofmaps
-  std::shared_ptr<const fem::DofMap> dofmap0 = V0.dofmap();
+  std::shared_ptr<const DofMap> dofmap0 = V0.dofmap();
   assert(dofmap0);
   const int bs0 = dofmap0->bs();
-  std::shared_ptr<const fem::DofMap> dofmap1 = V1.dofmap();
+  std::shared_ptr<const DofMap> dofmap1 = V1.dofmap();
   assert(dofmap1);
   const int bs1 = dofmap1->bs();
 
@@ -562,7 +562,7 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_geometrical(
 }
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t> fem::locate_dofs_geometrical(
-    const fem::FunctionSpace& V,
+    const FunctionSpace& V,
     const std::function<xt::xtensor<bool, 1>(const xt::xtensor<double, 2>&)>&
         marker_fn)
 {
