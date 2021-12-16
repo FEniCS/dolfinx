@@ -138,6 +138,7 @@ public:
   /// @note The indices in `dofs` are for *blocks*, e.g. a block index
   /// maps to 3 degrees-of-freedom if the dofmap associated with `g` has
   /// block size 3
+  /// @note `fem::Constant` can be used only with point-evaluation elements
   template <typename U, typename = std::enable_if_t<std::is_same_v<
                             std::decay_t<U>, std::vector<std::int32_t>>>>
   DirichletBC(const std::variant<std::shared_ptr<const Function<T>>,
@@ -145,9 +146,6 @@ public:
               U&& dofs, const std::shared_ptr<const FunctionSpace>& V = nullptr)
       : _function_space(V), _g(g), _dofs0(std::forward<U>(dofs))
   {
-    // FIXME: throw exception for Constant if V is not a point
-    // evaluation space
-
     if (auto _g = std::get_if<std::shared_ptr<const Function<T>>>(&g); _g)
     {
       if (V)
