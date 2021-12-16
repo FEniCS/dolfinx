@@ -35,6 +35,7 @@
 #include <dolfinx/mesh/MeshTags.h>
 #include <memory>
 #include <petsc4py/petsc4py.h>
+#include <pybind11/complex.h>
 #include <pybind11/functional.h>
 #include <pybind11/numpy.h>
 #include <pybind11/operators.h>
@@ -48,9 +49,6 @@
 #include <xtensor/xview.hpp>
 
 namespace py = pybind11;
-
-namespace dolfinx_wrappers
-{
 
 namespace
 {
@@ -68,7 +66,6 @@ py_to_cpp_coeffs(const std::map<std::pair<dolfinx::fem::IntegralType, int>,
                  });
   return c;
 }
-
 // Declare assembler function that have multiple scalar types
 template <typename T>
 void declare_functions(py::module& m)
@@ -93,22 +90,23 @@ void declare_functions(py::module& m)
               int num_ents = e.second.first.empty()
                                  ? 0
                                  : e.second.first.size() / e.second.second;
-              return {e.first,
-                      as_pyarray(std::move(e.second.first),
-                                 std::array{num_ents, e.second.second})};
+              return {e.first, dolfinx_wrappers::as_pyarray(
+                                   std::move(e.second.first),
+                                   std::array{num_ents, e.second.second})};
             });
         return c;
       },
       "Pack coefficients for a Form.");
   m.def(
       "pack_constants",
-      [](const dolfinx::fem::Form<T>& form)
-      { return as_pyarray(dolfinx::fem::pack_constants(form)); },
+      [](const dolfinx::fem::Form<T>& form) {
+        return dolfinx_wrappers::as_pyarray(dolfinx::fem::pack_constants(form));
+      },
       "Pack constants for a Form.");
   m.def(
       "pack_constants",
       [](const dolfinx::fem::Expression<T>& e)
-      { return as_pyarray(dolfinx::fem::pack_constants(e)); },
+      { return dolfinx_wrappers::as_pyarray(dolfinx::fem::pack_constants(e)); },
       "Pack constants for an Expression.");
 
   // Functional
@@ -137,8 +135,7 @@ void declare_functions(py::module& m)
                                          py_to_cpp_coeffs(coefficients));
       },
       py::arg("b"), py::arg("L"), py::arg("constants"), py::arg("coeffs"),
-      "Assemble linear form into an existing vector with pre-packed "
-      "constants "
+      "Assemble linear form into an existing vector with pre-packed constants "
       "and coefficients");
   m.def(
       "assemble_matrix",
@@ -366,8 +363,9 @@ void declare_objects(py::module& m, const std::string& type)
           "Evaluate Function")
       .def(
           "compute_point_values",
-          [](const dolfinx::fem::Function<T>& self)
-          { return xt_as_pyarray(self.compute_point_values()); },
+          [](const dolfinx::fem::Function<T>& self) {
+            return dolfinx_wrappers::xt_as_pyarray(self.compute_point_values());
+          },
           "Compute values at all mesh points")
       .def_property_readonly("function_space",
                              &dolfinx::fem::Function<T>::function_space);
@@ -701,11 +699,32 @@ void declare_form(py::module& m, const std::string& type)
 }
 } // namespace
 
+namespace dolfinx_wrappers
+{
+
 void fem(py::module& m)
 {
   py::module petsc_mod
       = m.def_submodule("petsc", "PETSc-specific finite element module");
   petsc_module(petsc_mod);
+
+  // dolfinx::fem::assemble
+  declare_functions<double>(m);
+  declare_functions<float>(m);
+  declare_functions<std::complex<double>>(m);
+  // NOTE: we can't enable std::complex<float> because C++ doesn't
+  // support multiplication of std::complex<float> and double.
+  // declare_functions<std::complex<float>>(m);
+
+  declare_objects<double>(m, "float64");
+  declare_objects<float>(m, "float32");
+  declare_objects<std::complex<double>>(m, "complex128");
+  declare_objects<std::complex<float>>(m, "complex64");
+
+  declare_form<double>(m, "float64");
+  declare_form<float>(m, "float32");
+  declare_form<std::complex<double>>(m, "complex128");
+  declare_form<std::complex<float>>(m, "complex64");
 
   m.def(
       "create_sparsity_pattern",
@@ -911,14 +930,6 @@ void fem(py::module& m)
 
              return xt_as_pyarray(std::move(X));
            });
-
-  // dolfinx::fem::assemble
-  declare_functions<double>(m);
-  declare_functions<std::complex<double>>(m);
-  declare_objects<double>(m, "float64");
-  declare_objects<std::complex<double>>(m, "complex128");
-  declare_form<double>(m, "float64");
-  declare_form<std::complex<double>>(m, "complex128");
 
   py::enum_<dolfinx::fem::IntegralType>(m, "IntegralType")
       .value("cell", dolfinx::fem::IntegralType::cell)

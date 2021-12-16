@@ -155,7 +155,9 @@ constexpr MPI_Datatype mpi_type()
   else if constexpr (std::is_same<T, double>::value)
     return MPI_DOUBLE;
   else if constexpr (std::is_same<T, std::complex<double>>::value)
-    return MPI_DOUBLE_COMPLEX;
+    return MPI_C_DOUBLE_COMPLEX;
+  else if constexpr (std::is_same<T, std::complex<float>>::value)
+    return MPI_C_FLOAT_COMPLEX;
   else if constexpr (std::is_same<T, short int>::value)
     return MPI_SHORT;
   else if constexpr (std::is_same<T, int>::value)
