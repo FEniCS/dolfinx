@@ -97,6 +97,7 @@ find_local_entity_index(std::shared_ptr<const mesh::Mesh> mesh,
 /// @param[in] comm A symmetric communicator based on the forward
 /// neighborhood communicator in the IndexMap
 /// @param[in] map The IndexMap with the dof layout
+/// @param[in] bs_map The block size of the index map, i.e. the dof array
 /// @param[in] bs The block size of the dof array
 /// @param[in] dofs_local List of degrees of freedom local to process
 /// (unrolled). It might contain indices not found on other processes
@@ -124,7 +125,7 @@ get_remote_dofs(MPI_Comm comm, const common::IndexMap& map, int bs_map, int bs,
 
   // Map local dof block indices to global dof block indices
   std::vector<std::int64_t> dofs_global(num_dofs_block);
-  if (bs_map == 1 and bs == 1)
+  if (bs == 1)
     map.local_to_global(dofs_local, dofs_global);
   else
   {
@@ -174,19 +175,19 @@ get_remote_dofs(MPI_Comm comm, const common::IndexMap& map, int bs_map, int bs,
   std::vector<std::int32_t> dofs;
   for (auto dof_global_block : dofs_received)
   {
-    for (int k = 0; k < bs; ++k)
+    // Insert owned dofs, else search in ghosts
+    if (dof_global_block >= range[0] and dof_global_block < range[1])
     {
-      // Insert owned dofs, else search in ghosts
-      if (dof_global_block >= bs_map * range[0]
-          and dof_global_block < bs_map * range[1])
+      for (int k = 0; k < bs; ++k)
         dofs.push_back(bs * dof_global_block + k - bs_map * range[0]);
-      else
+    }
+    else
+    {
+      if (auto it = global_to_local.find(dof_global_block);
+          it != global_to_local.end())
       {
-        if (auto it = global_to_local.find(dof_global_block);
-            it != global_to_local.end())
-        {
+        for (int k = 0; k < bs; ++k)
           dofs.push_back(bs * it->second + k);
-        }
       }
     }
   }
