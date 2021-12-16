@@ -347,7 +347,7 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
       strat_val = SCOTCH_STRATSCALABILITY;
       break;
     default:
-      throw("Unknown SCOTCH strategy");
+      throw std::runtime_error("Unknown SCOTCH strategy");
     }
     err = SCOTCH_stratDgraphMapBuild(&strat, strat_val, nparts, nparts,
                                      imbalance);
