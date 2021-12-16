@@ -152,13 +152,13 @@ public:
   {
     if (auto _g = std::get_if<std::shared_ptr<const Function<T>>>(&g); _g)
     {
-      assert(*_g);
-      _function_space = (*_g)->function_space();
       if (V)
       {
         throw std::runtime_error("Function space argument not expected for "
                                  "DirichletBC when using a Function.");
       }
+      assert(*_g);
+      _function_space = (*_g)->function_space();
     }
 
     // Compute number of owned dofs indices in the full space (will
@@ -282,7 +282,6 @@ public:
     {
       auto g = std::get<std::shared_ptr<const Function<T>>>(_g);
       assert(g);
-      assert(*g);
       xtl::span<const T> values = g->x()->array();
       for (std::size_t i = 0; i < _dofs0.size(); ++i)
       {
@@ -321,7 +320,6 @@ public:
     {
       auto g = std::get<std::shared_ptr<const Function<T>>>(_g);
       assert(g);
-      assert(*g);
       xtl::span<const T> values = g->x()->array();
       assert(x.size() <= x0.size());
       for (std::size_t i = 0; i < _dofs0.size(); ++i)
@@ -364,7 +362,6 @@ public:
     {
       auto g = std::get<std::shared_ptr<const Function<T>>>(_g);
       assert(g);
-      assert(*g);
       xtl::span<const T> g_values = g->x()->array();
       for (std::size_t i = 0; i < _dofs1_g.size(); ++i)
         values[_dofs0[i]] = g_values[_dofs1_g[i]];
@@ -373,7 +370,6 @@ public:
     {
       auto g = std::get<std::shared_ptr<const Constant<T>>>(_g);
       assert(g);
-      assert(*g);
       std::vector<T> g_value = g->value;
       const std::int32_t bs = _function_space->dofmap()->bs();
       for (std::size_t i = 0; i < _dofs1_g.size(); ++i)
