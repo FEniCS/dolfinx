@@ -167,6 +167,24 @@ public:
     const xt::xtensor<double, 2> x = fem::interpolation_coords(
         *_function_space->element(), *_function_space->mesh(), cells);
     auto fx = f(x);
+    if (_function_space->element() == 1)
+    {
+      if (fx.ndim() != 1)
+        throw std::runtime_error("Expected 1D array of data");
+      if (fx.shape(0) != x.shape(1))
+        throw std::runtime_error("Data returned by callable has wrong length");
+    }
+    else
+    {
+      if (fx.ndim() != 2)
+        throw std::runtime_error("Expected 2D array of data");
+      if (fx.shape(0) != _function_space->element())
+        throw std::runtime_error(
+            "Data returned by callable has wrong shape(0) size");
+      if (fx.shape(1) != x.shape(1))
+        throw std::runtime_error(
+            "Data returned by callable has wrong shape(1) size");
+    }
 
     fem::interpolate(*this, fx, cells);
   }
