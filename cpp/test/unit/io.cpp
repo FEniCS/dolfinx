@@ -25,8 +25,10 @@ void test_fides_mesh()
       mesh::CellType::triangle, mesh::GhostMode::shared_facet));
   io::FidesWriter writer(mesh->comm(), "test_mesh.bp", mesh);
   writer.write(0.0);
-  auto points = xt::adapt(mesh->geometry().x(),
-                          {mesh->geometry().x().size() / 3, std::size_t(3)});
+  auto points
+      = xt::adapt(mesh->geometry().x().data(), mesh->geometry().x().size(),
+                  xt::no_ownership(),
+                  std::array{mesh->geometry().x().size() / 3, std::size_t(3)});
   // Move all coordinates of the mesh geometry
   points += 1;
   writer.write(0.2);
