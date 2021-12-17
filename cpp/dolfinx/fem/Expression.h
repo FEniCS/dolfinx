@@ -146,7 +146,7 @@ public:
   /// Get function for tabulate_expression.
   /// @param[out] fn Function to tabulate expression.
   const std::function<void(T*, const T*, const T*, const double*, const int*,
-                           const uint8_t*, uint32_t)>&
+                           const uint8_t*)>&
   get_tabulate_expression() const
   {
     return _fn;

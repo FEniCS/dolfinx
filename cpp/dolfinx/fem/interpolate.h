@@ -667,7 +667,7 @@ void interpolate(Function<T>& u, const Expression<T>& expr,
   assert(dofmap);
   const int element_vs = element->value_size();
   assert(expr_value_size == element_vs);
-  auto X = expr.x();
+  auto X = expr.X();
   assert(X.shape() == element->interpolation_points().shape());
 
   // Evaluate expression at quadrature points for the subset of cells
