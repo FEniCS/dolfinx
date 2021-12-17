@@ -4,11 +4,13 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
+import numpy
 import pytest
 
-from dolfinx.mesh import (GhostMode, compute_midpoints, create_unit_cube,
-                          create_unit_interval, create_unit_square)
-
+from dolfinx.mesh import (CellType, GhostMode, compute_midpoints, create_unit_cube,
+                          create_unit_interval, create_unit_square,
+                          compute_interface_facets, update_ghosts)
+from dolfinx.graph import create_adjacencylist
 from mpi4py import MPI
 
 
@@ -102,3 +104,51 @@ def test_ghost_connectivities(mode):
         for cidx in meshG.topology.connectivity(1, 2).links(i):
             assert cidx in allowable_cell_indices
             assert cell_mp[cidx].tolist() in reference[tuple(facet_mp[i])]
+
+
+@pytest.mark.parametrize("cell_type", [CellType.tetrahedron, CellType.hexahedron])
+def test_ghost_update(cell_type):
+    comm = MPI.COMM_WORLD
+    N = 2
+    mode = GhostMode.shared_facet
+    num_cells = N * N * N * 6
+    mesh = create_unit_cube(comm, N, N, N, ghost_mode=mode)
+    tdim = mesh.topology.dim
+    mesh.topology.create_connectivity(tdim - 1, tdim)
+
+    # If ghost_mode==shared_facet all interface facets are ghosts
+    facets = compute_interface_facets(mesh.topology)
+    facet_map = mesh.topology.index_map(tdim - 1)
+    num_facets = facet_map.size_local
+    interface_facets = numpy.where(facets)[0]
+    assert numpy.all(interface_facets >= num_facets)
+
+    # Remove all ghosts
+    cell_map = mesh.topology.index_map(tdim)
+    num_local_cells = cell_map.size_local
+    dest = numpy.full([num_local_cells], fill_value=comm.rank, dtype=numpy.int32)
+    mesh1 = update_ghosts(mesh, create_adjacencylist(dest))
+    cell_map = mesh1.topology.index_map(tdim)
+    assert cell_map.num_ghosts == 0
+    assert cell_map.size_local == num_local_cells
+
+    # Create mesh with maximal overlap (all cells are duplicated in all processes)
+    dest = numpy.zeros([cell_map.size_local, comm.size], dtype=numpy.int32)
+    ranks = numpy.arange(comm.size, dtype=numpy.int32)
+    mask = numpy.ones(len(ranks), dtype=bool)
+    mask[comm.rank] = False
+    ranks = ranks[mask]
+    ranks = numpy.insert(ranks, 0, comm.rank)
+    dest[:, :] = ranks
+
+    offset = numpy.arange(cell_map.size_local + 1, dtype=numpy.int32)
+    offset = offset * comm.size
+
+    cell_partitioning = create_adjacencylist(dest, offset)
+    mesh2 = update_ghosts(mesh, cell_partitioning)
+    cell_map2 = mesh2.topology.index_map(tdim)
+    new_size = cell_map2.size_local + cell_map2.num_ghosts
+
+    assert new_size == num_cells
+    assert cell_map2.size_global == cell_map.size_global
+    assert cell_map2.size_local == cell_map.size_local
