@@ -213,9 +213,8 @@ void mesh(py::module& m)
           return partitioner(MPICommWrapper(comm), n, tdim, cells, ghost_mode);
         };
 
-        const std::size_t shape1 = x.ndim() == 1 ? 1 : x.shape()[1];
-        std::array<std::size_t, 2> shape
-            = {static_cast<std::size_t>(x.shape(0)), shape1};
+        std::size_t shape1 = x.ndim() == 1 ? 1 : x.shape()[1];
+        std::vector shape{std::size_t(x.shape(0)), shape1};
         auto _x = xt::adapt(x.data(), x.size(), xt::no_ownership(), shape);
         return dolfinx::mesh::create_mesh(comm.get(), cells, element, _x,
                                           ghost_mode, partitioner_wrapper);
@@ -273,8 +272,7 @@ void mesh(py::module& m)
           [](const dolfinx::mesh::Geometry& self)
           {
             std::array<std::size_t, 2> shape = {self.x().size() / 3, 3};
-            return py::array_t<double>(shape, self.x().data(),
-                                       py::cast(self));
+            return py::array_t<double>(shape, self.x().data(), py::cast(self));
           },
           "Return coordinates of all geometry points. Each row is the "
           "coordinate of a point.")
