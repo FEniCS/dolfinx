@@ -89,8 +89,11 @@ xt::xtensor<double, 2> create_new_geometry(
       {num_vertices + num_new_vertices, 3});
 
   for (std::size_t v = 0; v < num_vertices; ++v)
+  {
+    const int pos = 3 * vertex_to_x[v];
     for (std::size_t j = 0; j < 3; ++j)
-      new_vertex_coordinates(v, j) = x_g[3 * vertex_to_x[v] + j];
+      new_vertex_coordinates(v, j) = x_g[pos + j];
+  }
 
   // Compute new vertices
   if (num_new_vertices > 0)

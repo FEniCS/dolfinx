@@ -254,8 +254,11 @@ std::vector<std::int32_t> mesh::locate_entities(
   xtl::span<const double> x_nodes = mesh.geometry().x();
   xt::xtensor<double, 2> x_vertices({3, vertex_to_node.size()});
   for (std::size_t i = 0; i < vertex_to_node.size(); ++i)
+  {
+    const int pos = 3 * vertex_to_node[i];
     for (std::size_t j = 0; j < 3; ++j)
-      x_vertices(j, i) = x_nodes[3 * vertex_to_node[i] + j];
+      x_vertices(j, i) = x_nodes[pos + j];
+  }
 
   // Run marker function on vertex coordinates
   const xt::xtensor<bool, 1> marked = marker(x_vertices);
