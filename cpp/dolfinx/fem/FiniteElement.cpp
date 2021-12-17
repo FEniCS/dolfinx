@@ -409,9 +409,9 @@ FiniteElement::get_dof_permutation_function(bool inverse,
           = _sub_elements[0]->get_dof_permutation_function(inverse);
       int dim = _sub_elements[0]->space_dimension();
       int bs = _bs;
-      return [dim, sub_element_function, bs,
-              subdofs](const xtl::span<std::int32_t>& doflist,
-                       std::uint32_t cell_permutation) {
+      return [dim, sub_element_function,
+              bs](const xtl::span<std::int32_t>& doflist,
+                  std::uint32_t cell_permutation) {
         std::vector<std::int32_t> subdofs(dim);
         for (int b = 0; b < bs; ++b)
         {
