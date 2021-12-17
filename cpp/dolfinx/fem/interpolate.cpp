@@ -22,7 +22,7 @@ fem::interpolation_coords(const fem::FiniteElement& element,
   const std::size_t gdim = mesh.geometry().dim();
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
   const std::size_t num_dofs_g = x_dofmap.num_links(0);
-  const xt::xtensor<double, 2>& x_g = mesh.geometry().x();
+  const std::vector<double>& x_g = mesh.geometry().xnew();
 
   const fem::CoordinateElement& cmap = mesh.geometry().cmap();
 
@@ -43,7 +43,7 @@ fem::interpolation_coords(const fem::FiniteElement& element,
     auto x_dofs = x_dofmap.links(cells[c]);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
-      std::copy_n(xt::row(x_g, x_dofs[i]).begin(), gdim,
+      std::copy_n(std::next(x_g.begin(), 3 * x_dofs[i]), gdim,
                   std::next(coordinate_dofs.begin(), i * gdim));
     }
 

@@ -324,8 +324,7 @@ geometry::shortest_vector(const mesh::Mesh& mesh, int dim,
   assert(points.shape(1) == 3);
   const int tdim = mesh.topology().dim();
   const mesh::Geometry& geometry = mesh.geometry();
-  const xt::xtensor<double, 2>& geom_dofs = geometry.x();
-  assert(geom_dofs.shape(1) == 3);
+  const std::vector<double>& geom_dofs = geometry.xnew();
 
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
 
@@ -338,7 +337,7 @@ geometry::shortest_vector(const mesh::Mesh& mesh, int dim,
       xt::xtensor<double, 2> nodes({dofs.size(), 3});
       for (std::size_t i = 0; i < dofs.size(); ++i)
         for (std::size_t j = 0; j < 3; ++j)
-          nodes(i, j) = geom_dofs(dofs[i], j);
+          nodes(i, j) = geom_dofs[3 * dofs[i] + j];
 
       xt::row(shortest_vectors, e) = geometry::compute_distance_gjk(
           xt::reshape_view(xt::row(points, e), {1, 3}), nodes);
@@ -374,7 +373,7 @@ geometry::shortest_vector(const mesh::Mesh& mesh, int dim,
       xt::xtensor<double, 2> nodes({entity_dofs.size(), 3});
       for (std::size_t i = 0; i < entity_dofs.size(); i++)
         for (std::size_t j = 0; j < 3; ++j)
-          nodes(i, j) = geom_dofs(dofs[entity_dofs[i]], j);
+          nodes(i, j) = geom_dofs[3 * dofs[entity_dofs[i]] + j];
 
       xt::row(shortest_vectors, e) = compute_distance_gjk(
           xt::reshape_view(xt::row(points, e), {1, 3}), nodes);

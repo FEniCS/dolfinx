@@ -231,37 +231,37 @@ void mesh(py::module& m)
   // dolfinx::mesh::Geometry class
   py::class_<dolfinx::mesh::Geometry, std::shared_ptr<dolfinx::mesh::Geometry>>(
       m, "Geometry", "Geometry object")
-      .def(py::init(
-          [](const std::shared_ptr<const dolfinx::common::IndexMap>& map,
-             const dolfinx::graph::AdjacencyList<std::int32_t>& dofmap,
-             const dolfinx::fem::CoordinateElement& element,
-             const py::array_t<double, py::array::c_style>& x,
-             const py::array_t<std::int64_t, py::array::c_style>&
-                 global_indices)
-          {
-            std::vector<std::int64_t> indices(global_indices.data(),
-                                              global_indices.data()
-                                                  + global_indices.size());
-            assert(x.ndim() <= 2);
-            if (x.ndim() == 1)
-            {
-              std::array<std::size_t, 2> shape
-                  = {static_cast<std::size_t>(x.shape(1)), 1};
-              auto _x
-                  = xt::adapt(x.data(), x.size(), xt::no_ownership(), shape);
-              return dolfinx::mesh::Geometry(map, dofmap, element, _x,
-                                             std::move(indices));
-            }
-            else
-            {
-              std::array shape
-                  = {std::size_t(x.shape(0)), std::size_t(x.shape(1))};
-              auto _x
-                  = xt::adapt(x.data(), x.size(), xt::no_ownership(), shape);
-              return dolfinx::mesh::Geometry(map, dofmap, element, _x,
-                                             std::move(indices));
-            }
-          }))
+    //   .def(py::init(
+    //       [](const std::shared_ptr<const dolfinx::common::IndexMap>& map,
+    //          const dolfinx::graph::AdjacencyList<std::int32_t>& dofmap,
+    //          const dolfinx::fem::CoordinateElement& element,
+    //          const py::array_t<double, py::array::c_style>& x,
+    //          const py::array_t<std::int64_t, py::array::c_style>&
+    //              global_indices)
+    //       {
+    //         std::vector<std::int64_t> indices(global_indices.data(),
+    //                                           global_indices.data()
+    //                                               + global_indices.size());
+    //         assert(x.ndim() <= 2);
+    //         if (x.ndim() == 1)
+    //         {
+    //           std::array<std::size_t, 2> shape
+    //               = {static_cast<std::size_t>(x.shape(1)), 1};
+    //           auto _x
+    //               = xt::adapt(x.data(), x.size(), xt::no_ownership(), shape);
+    //           return dolfinx::mesh::Geometry(map, dofmap, element, _x,
+    //                                          std::move(indices));
+    //         }
+    //         else
+    //         {
+    //           std::array shape
+    //               = {std::size_t(x.shape(0)), std::size_t(x.shape(1))};
+    //           auto _x
+    //               = xt::adapt(x.data(), x.size(), xt::no_ownership(), shape);
+    //           return dolfinx::mesh::Geometry(map, dofmap, element, _x,
+    //                                          std::move(indices));
+    //         }
+    //       }))
       .def_property_readonly("dim", &dolfinx::mesh::Geometry::dim,
                              "Geometric dimension")
       .def_property_readonly("dofmap", &dolfinx::mesh::Geometry::dofmap)
@@ -270,7 +270,8 @@ void mesh(py::module& m)
           "x",
           [](const dolfinx::mesh::Geometry& self)
           {
-            return py::array_t<double>(self.x().shape(), self.x().data(),
+            std::array<std::size_t, 2> shape = {self.xnew().size(), 3};
+            return py::array_t<double>(shape, self.xnew().data(),
                                        py::cast(self));
           },
           "Return coordinates of all geometry points. Each row is the "

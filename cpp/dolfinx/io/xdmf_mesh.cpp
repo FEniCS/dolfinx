@@ -171,7 +171,7 @@ void xdmf_mesh::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
   // Increase 1D to 2D because XDMF has no "X" geometry, use "XY"
   const int width = (gdim == 1) ? 2 : gdim;
 
-  const xt::xtensor<double, 2>& _x = geometry.x();
+  const std::vector<double>& _x = geometry.xnew();
 
   int num_values = num_points_local * width;
   std::vector<double> x(num_values, 0.0);
@@ -181,7 +181,7 @@ void xdmf_mesh::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
   {
     for (int i = 0; i < num_points_local; ++i)
       for (int j = 0; j < gdim; ++j)
-        x[width * i + j] = _x(i, j);
+        x[width * i + j] = _x[3 * i + j];
   }
 
   // Add geometry DataItem node

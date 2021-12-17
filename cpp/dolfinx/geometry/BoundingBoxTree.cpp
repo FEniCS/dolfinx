@@ -38,7 +38,7 @@ compute_bbox_of_entity(const mesh::Mesh& mesh, int dim, std::int32_t index)
 {
   // Get the geometrical indices for the mesh entity
   const int tdim = mesh.topology().dim();
-  const xt::xtensor<double, 2>& xg = mesh.geometry().x();
+  const std::vector<double>& xg = mesh.geometry().xnew();
 
   mesh.topology_mutable().create_connectivity(dim, tdim);
 
@@ -49,8 +49,8 @@ compute_bbox_of_entity(const mesh::Mesh& mesh, int dim, std::int32_t index)
   auto entity_vertices = xt::row(vertex_indices, 0);
 
   std::array<std::array<double, 3>, 2> b;
-  b[0] = {xg(entity_vertices[0], 0), xg(entity_vertices[0], 1),
-          xg(entity_vertices[0], 2)};
+  b[0] = {xg[3 * entity_vertices[0]], xg[3 * entity_vertices[0] + 1],
+          xg[3 * entity_vertices[0] + 2]};
   b[1] = b[0];
 
   // Compute min and max over vertices
@@ -58,8 +58,8 @@ compute_bbox_of_entity(const mesh::Mesh& mesh, int dim, std::int32_t index)
   {
     for (int j = 0; j < 3; ++j)
     {
-      b[0][j] = std::min(b[0][j], xg(local_vertex, j));
-      b[1][j] = std::max(b[1][j], xg(local_vertex, j));
+      b[0][j] = std::min(b[0][j], xg[3 * local_vertex + j]);
+      b[1][j] = std::max(b[1][j], xg[3 * local_vertex + j]);
     }
   }
 

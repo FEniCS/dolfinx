@@ -11,6 +11,7 @@
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/fem/dofmapbuilder.h>
 #include <dolfinx/graph/partition.h>
+#include <xtensor/xadapt.hpp>
 
 using namespace dolfinx;
 using namespace dolfinx::mesh;
@@ -28,9 +29,9 @@ std::shared_ptr<const common::IndexMap> Geometry::index_map() const
   return _index_map;
 }
 //-----------------------------------------------------------------------------
-xt::xtensor<double, 2>& Geometry::x() { return _x; }
-//-----------------------------------------------------------------------------
-const xt::xtensor<double, 2>& Geometry::x() const { return _x; }
+// xt::xtensor<double, 2>& Geometry::x() { return _foo; }
+// //-----------------------------------------------------------------------------
+// const xt::xtensor<double, 2>& Geometry::x() const { return _foo; }
 //-----------------------------------------------------------------------------
 const fem::CoordinateElement& Geometry::cmap() const { return _cmap; }
 //-----------------------------------------------------------------------------
@@ -93,11 +94,12 @@ mesh::Geometry mesh::create_geometry(
 
   // Build coordinate dof array,  copying coordinates to correct
   // position
-  xt::xtensor<double, 2> xg({coords.shape(0), coords.shape(1)});
+  std::vector<double> xg(coords.shape(0) * coords.shape(1));
+  auto _xg = xt::adapt(xg, {coords.shape(0), std::size_t(3)});
   for (std::size_t i = 0; i < coords.shape(0); ++i)
   {
     auto row = xt::view(coords, l2l[i]);
-    std::copy(row.cbegin(), row.cend(), xt::row(xg, i).begin());
+    std::copy(row.cbegin(), row.cend(), xt::row(_xg, i).begin());
   }
 
   // Allocate space for input global indices and copy data
@@ -106,6 +108,6 @@ mesh::Geometry mesh::create_geometry(
                  [&indices](auto index) { return indices[index]; });
 
   return Geometry(dof_index_map, std::move(dofmap), coordinate_element,
-                  std::move(xg), std::move(igi));
+                  std::move(xg), coords.shape(1), std::move(igi));
 }
 //-----------------------------------------------------------------------------

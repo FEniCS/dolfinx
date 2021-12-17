@@ -11,6 +11,7 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/generation.h>
 #include <mpi.h>
+#include <xtl/xadapt.h>
 
 using namespace dolfinx;
 
@@ -24,7 +25,8 @@ void test_fides_mesh()
       mesh::CellType::triangle, mesh::GhostMode::shared_facet));
   io::FidesWriter writer(mesh->comm(), "test_mesh.bp", mesh);
   writer.write(0.0);
-  xt::xtensor<double, 2>& points = mesh->geometry().x();
+  auto points = xt::adapt(mesh->geometry().xnew(),
+                          {mesh->geometry().xnew().size() / 3, std::size_t(3)});
   // Move all coordinates of the mesh geometry
   points += 1;
   writer.write(0.2);
