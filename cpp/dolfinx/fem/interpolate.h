@@ -218,7 +218,7 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0)
       = mesh->geometry().dofmap();
   // FIXME: Add proper interface for num coordinate dofs
   const std::size_t num_dofs_g = x_dofmap.num_links(0);
-  const std::vector<double>& x_g = mesh->geometry().xnew();
+  const std::vector<double>& x_g = mesh->geometry().x();
 
   // Evaluate coordinate map basis at reference interpolation points
   xt::xtensor<double, 4> phi(cmap.tabulate_shape(1, X.shape(0)));
@@ -475,7 +475,7 @@ void interpolate(Function<T>& u, xt::xarray<T>& f,
         = mesh->geometry().dofmap();
     // FIXME: Add proper interface for num coordinate dofs
     const int num_dofs_g = x_dofmap.num_links(0);
-    const std::vector<double>& x_g = mesh->geometry().xnew();
+    const std::vector<double>& x_g = mesh->geometry().x();
 
     // Create data structures for Jacobian info
     xt::xtensor<double, 3> J = xt::empty<double>({int(X.shape(0)), gdim, tdim});

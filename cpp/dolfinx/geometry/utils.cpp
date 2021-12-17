@@ -324,7 +324,7 @@ geometry::shortest_vector(const mesh::Mesh& mesh, int dim,
   assert(points.shape(1) == 3);
   const int tdim = mesh.topology().dim();
   const mesh::Geometry& geometry = mesh.geometry();
-  const std::vector<double>& geom_dofs = geometry.xnew();
+  const std::vector<double>& geom_dofs = geometry.x();
 
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
 

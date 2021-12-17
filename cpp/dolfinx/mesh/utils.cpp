@@ -73,8 +73,8 @@ std::vector<double> mesh::h(const Mesh& mesh,
   // Get geometry dofmap and dofs
   const Geometry& geometry = mesh.geometry();
   const graph::AdjacencyList<std::int32_t>& x_dofs = geometry.dofmap();
-  auto geom_dofs = xt::adapt(geometry.xnew(),
-                             {geometry.xnew().size() / 3, std::size_t(3)});
+  auto geom_dofs
+      = xt::adapt(geometry.x(), {geometry.x().size() / 3, std::size_t(3)});
   std::vector<double> h_cells(entities.size(), 0);
   assert(num_vertices <= 8);
   xt::xtensor_fixed<double, xt::xshape<8, 3>> points;
@@ -115,8 +115,8 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
   const CellType type = cell_entity_type(mesh.topology().cell_type(), dim, 0);
 
   // Find geometry nodes for topology entities
-  auto xg = xt::adapt(mesh.geometry().xnew(),
-                      {mesh.geometry().xnew().size() / 3, std::size_t(3)});
+  auto xg = xt::adapt(mesh.geometry().x(),
+                      {mesh.geometry().x().size() / 3, std::size_t(3)});
 
   // Orient cells if they are tetrahedron
   bool orient = false;
@@ -195,8 +195,8 @@ xt::xtensor<double, 2>
 mesh::compute_midpoints(const Mesh& mesh, int dim,
                         const xtl::span<const std::int32_t>& entities)
 {
-  auto x = xt::adapt(mesh.geometry().xnew(),
-                     {mesh.geometry().xnew().size() / 3, std::size_t(3)});
+  auto x = xt::adapt(mesh.geometry().x(),
+                     {mesh.geometry().x().size() / 3, std::size_t(3)});
 
   // Build map from entity -> geometry dof
   // FIXME: This assumes a linear geometry.
@@ -246,7 +246,7 @@ std::vector<std::int32_t> mesh::locate_entities(
   }
 
   // Pack coordinates of vertices
-  const std::vector<double>& x_nodes = mesh.geometry().xnew();
+  const std::vector<double>& x_nodes = mesh.geometry().x();
   xt::xtensor<double, 2> x_vertices({3, vertex_to_node.size()});
   for (std::size_t i = 0; i < vertex_to_node.size(); ++i)
     for (std::size_t j = 0; j < 3; ++j)
@@ -327,7 +327,7 @@ std::vector<std::int32_t> mesh::locate_entities_boundary(
 
   // Get geometry data
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
-  const std::vector<double>& x_nodes = mesh.geometry().xnew();
+  const std::vector<double>& x_nodes = mesh.geometry().x();
 
   // Build vector of boundary vertices
   const std::vector<std::int32_t> vertices(boundary_vertices.begin(),
@@ -412,8 +412,8 @@ mesh::entities_to_geometry(const Mesh& mesh, int dim,
   }
 
   const Geometry& geometry = mesh.geometry();
-  const auto geom_dofs = xt::adapt(
-      geometry.xnew(), {geometry.xnew().size() / 3, std::size_t(3)});
+  const auto geom_dofs
+      = xt::adapt(geometry.x(), {geometry.x().size() / 3, std::size_t(3)});
   const Topology& topology = mesh.topology();
 
   const int tdim = topology.dim();

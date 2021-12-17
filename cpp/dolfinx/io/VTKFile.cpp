@@ -326,8 +326,8 @@ void add_mesh(const mesh::Mesh& mesh, pugi::xml_node& piece_node)
   x_node.append_attribute("type") = "Float64";
   x_node.append_attribute("NumberOfComponents") = "3";
   x_node.append_attribute("format") = "ascii";
-  auto x = xt::adapt(geometry.xnew(),
-                     {geometry.xnew().size() / 3, std::size_t(3)});
+  auto x = xt::adapt(geometry.x(),
+                     {geometry.x().size() / 3, std::size_t(3)});
   x_node.append_child(pugi::node_pcdata).set_value(xt_to_string(x, 16).c_str());
 
   // Add topology(cells)
@@ -528,7 +528,7 @@ void write_function(
 
         // Resize array for holding point values
         xt::xtensor<Scalar, 2> point_values = xt::zeros<Scalar>(
-            {mesh->geometry().xnew().size() / 3, value_size_loc});
+            {mesh->geometry().x().size() / 3, value_size_loc});
 
         // If scalar function space
         if (element->num_sub_elements() == 0)

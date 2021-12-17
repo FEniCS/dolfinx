@@ -40,24 +40,9 @@ public:
         _index_map(index_map), _cmap(element), _x(std::forward<Array>(x)),
         _input_global_indices(std::forward<Vector64>(input_global_indices))
   {
-    // assert(_x.shape(1) > 0 and _x.shape(1) <= 3);
     assert(_x.size() % 3 == 0);
     if (_x.size() / 3 != _input_global_indices.size())
       throw std::runtime_error("Size mis-match");
-
-    // // Make all geometry 3D
-    // if (_dim != 3)
-    // {
-    //   xt::xtensor<double, 2> c
-    //       = xt::zeros<double>({_x.shape(0), static_cast<std::size_t>(3)});
-
-    //   // The below should work, but misbehaves with the Intel icpx compiler
-    //   // xt::view(c, xt::all(), xt::range(0, _dim)) = _x;
-    //   auto x_view = xt::view(c, xt::all(), xt::range(0, _dim));
-    //   x_view.assign(_x);
-
-    //   std::swap(c, _x);
-    // }
   }
 
   /// Copy constructor
@@ -84,17 +69,15 @@ public:
   /// Index map
   std::shared_ptr<const common::IndexMap> index_map() const;
 
-  /// Geometry degrees-of-freedom
-  // auto x() { return xt::adapt(_x, {_x.size() / 3, std::size_t(3)}); }
+  /// Access geometry degrees-of-freedom data (const version)
+  /// @return The flattened row-major geometry data, where the shape is
+  /// (num_points, 3)
+  const std::vector<double>& x() const { return _x; }
 
-  /// Geometry degrees-of-freedom
-  auto xt() const { return xt::adapt(_x, {_x.size() / 3, std::size_t(3)}); }
-
-  /// Geometry degrees-of-freedom (new)
-  const std::vector<double>& xnew() const { return _x; }
-
-  /// Geometry degrees-of-freedom (new)
-  std::vector<double>& xnew() { return _x; }
+  /// Access geometry degrees-of-freedom data (version)
+  /// @return The flattened row-major geometry data, where the shape is
+  /// (num_points, 3)
+  std::vector<double>& x() { return _x; }
 
   /// The element that describes the geometry map
   /// @return The coordinate/geometry element

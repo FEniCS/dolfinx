@@ -149,7 +149,7 @@ FunctionSpace::tabulate_dof_coordinates(bool transpose) const
   const graph::AdjacencyList<std::int32_t>& x_dofmap
       = _mesh->geometry().dofmap();
   // FIXME: Add proper interface for num coordinate dofs
-  const std::vector<double>& x_g = _mesh->geometry().xnew();
+  const std::vector<double>& x_g = _mesh->geometry().x();
   const std::size_t num_dofs_g = x_dofmap.num_links(0);
 
   // Array to hold coordinates to return

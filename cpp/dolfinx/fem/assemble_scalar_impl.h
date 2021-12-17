@@ -34,7 +34,7 @@ T assemble_cells(const mesh::Geometry& geometry,
 
   // FIXME: Add proper interface for num coordinate dofs
   const std::size_t num_dofs_g = x_dofmap.num_links(0);
-  const std::vector<double>& x_g = geometry.xnew();
+  const std::vector<double>& x_g = geometry.x();
 
   // Create data structures used in assembly
   std::vector<double> coordinate_dofs(3 * num_dofs_g);
@@ -76,7 +76,7 @@ T assemble_exterior_facets(
 
   // FIXME: Add proper interface for num coordinate dofs
   const std::size_t num_dofs_g = x_dofmap.num_links(0);
-  const std::vector<double>& x_g = mesh.geometry().xnew();
+  const std::vector<double>& x_g = mesh.geometry().x();
 
   // Create data structures used in assembly
   std::vector<double> coordinate_dofs(3 * num_dofs_g);
@@ -123,7 +123,7 @@ T assemble_interior_facets(
 
   // FIXME: Add proper interface for num coordinate dofs
   const std::size_t num_dofs_g = x_dofmap.num_links(0);
-  const std::vector<double>& x_g = mesh.geometry().xnew();
+  const std::vector<double>& x_g = mesh.geometry().x();
 
   // Create data structures used in assembly
   xt::xtensor<double, 3> coordinate_dofs({2, num_dofs_g, 3});

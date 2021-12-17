@@ -63,7 +63,7 @@ void _lift_bc_cells(
 
   // FIXME: Add proper interface for num coordinate dofs
   const std::size_t num_dofs_g = x_dofmap.num_links(0);
-  const std::vector<double>& x_g = geometry.xnew();
+  const std::vector<double>& x_g = geometry.x();
 
   // Data structures used in bc application
   std::vector<double> coordinate_dofs(3 * num_dofs_g);
@@ -217,7 +217,7 @@ void _lift_bc_exterior_facets(
 
   // FIXME: Add proper interface for num coordinate dofs
   const std::size_t num_dofs_g = x_dofmap.num_links(0);
-  const std::vector<double>& x_g = mesh.geometry().xnew();
+  const std::vector<double>& x_g = mesh.geometry().x();
 
   // Data structures used in bc application
   std::vector<double> coordinate_dofs(3 * num_dofs_g);
@@ -331,7 +331,7 @@ void _lift_bc_interior_facets(
 
   // FIXME: Add proper interface for num coordinate dofs
   const std::size_t num_dofs_g = x_dofmap.num_links(0);
-  const std::vector<double>& x_g = mesh.geometry().xnew();
+  const std::vector<double>& x_g = mesh.geometry().x();
 
   const int num_cell_facets
       = mesh::cell_num_entities(mesh.topology().cell_type(), tdim - 1);
@@ -513,7 +513,7 @@ void assemble_cells(
 
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = x_dofmap.num_links(0);
-  const std::vector<double>& x_g = geometry.xnew();
+  const std::vector<double>& x_g = geometry.x();
 
   // FIXME: Add proper interface for num_dofs
   // Create data structures used in assembly
@@ -584,7 +584,7 @@ void assemble_exterior_facets(
 
   // FIXME: Add proper interface for num coordinate dofs
   const std::size_t num_dofs_g = x_dofmap.num_links(0);
-  const std::vector<double>& x_g = mesh.geometry().xnew();
+  const std::vector<double>& x_g = mesh.geometry().x();
 
   // FIXME: Add proper interface for num_dofs
   // Create data structures used in assembly
@@ -659,7 +659,7 @@ void assemble_interior_facets(
 
   // FIXME: Add proper interface for num coordinate dofs
   const std::size_t num_dofs_g = x_dofmap.num_links(0);
-  const std::vector<double>& x_g = mesh.geometry().xnew();
+  const std::vector<double>& x_g = mesh.geometry().x();
 
   // Create data structures used in assembly
   xt::xtensor<double, 3> coordinate_dofs({2, num_dofs_g, 3});

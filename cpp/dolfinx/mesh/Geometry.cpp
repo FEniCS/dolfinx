@@ -95,11 +95,10 @@ mesh::Geometry mesh::create_geometry(
   // Build coordinate dof array,  copying coordinates to correct
   // position
   std::vector<double> xg(coords.shape(0) * 3, 0.0);
-  auto _xg = xt::adapt(xg, {coords.shape(0), std::size_t(3)});
   for (std::size_t i = 0; i < coords.shape(0); ++i)
   {
     auto row = xt::view(coords, l2l[i]);
-    std::copy(row.cbegin(), row.cend(), xt::row(_xg, i).begin());
+    std::copy(row.cbegin(), row.cend(), std::next(xg.begin(), 3 * i));
   }
 
   // Allocate space for input global indices and copy data

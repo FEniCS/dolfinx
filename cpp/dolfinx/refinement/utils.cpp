@@ -81,7 +81,7 @@ xt::xtensor<double, 2> create_new_geometry(
   }
 
   // Copy over existing mesh vertices
-  const std::vector<double>& x_g = mesh.geometry().xnew();
+  const std::vector<double>& x_g = mesh.geometry().x();
 
   const std::size_t num_vertices = map_v->size_local();
   const std::size_t num_new_vertices = local_edge_to_new_vertex.size();

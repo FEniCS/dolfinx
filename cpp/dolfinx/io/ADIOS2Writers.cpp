@@ -220,7 +220,7 @@ tabulate_lagrange_dof_coordinates(const dolfinx::fem::FunctionSpace& V)
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& dofmap_x
       = mesh->geometry().dofmap();
-  const std::vector<double>& x_g = mesh->geometry().xnew();
+  const std::vector<double>& x_g = mesh->geometry().x();
   const std::size_t num_dofs_g = dofmap_x.num_links(0);
 
   xtl::span<const std::uint32_t> cell_info;
@@ -282,7 +282,7 @@ void vtx_write_mesh(adios2::IO& io, adios2::Engine& engine,
   const std::uint32_t num_vertices = x_map->size_local() + x_map->num_ghosts();
   adios2::Variable<double> local_geometry
       = define_variable<double>(io, "geometry", {}, {}, {num_vertices, 3});
-  engine.Put<double>(local_geometry, mesh.geometry().xnew().data());
+  engine.Put<double>(local_geometry, mesh.geometry().x().data());
 
   // Put number of nodes. The mesh data is written with local indices,
   // therefore we need the ghost vertices.
@@ -630,7 +630,7 @@ void fides_write_mesh(adios2::IO& io, adios2::Engine& engine,
   const std::uint32_t num_vertices = x_map->size_local() + x_map->num_ghosts();
   adios2::Variable<double> local_geometry
       = define_variable<double>(io, "points", {}, {}, {num_vertices, 3});
-  engine.Put<double>(local_geometry, mesh.geometry().xnew().data());
+  engine.Put<double>(local_geometry, mesh.geometry().x().data());
 
   // TODO: The DOLFINx and VTK topology are the same for some cell types
   // - no need to repack via extract_vtk_connectivity in these cases

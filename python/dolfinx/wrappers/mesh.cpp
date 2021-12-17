@@ -272,8 +272,8 @@ void mesh(py::module& m)
           "x",
           [](const dolfinx::mesh::Geometry& self)
           {
-            std::array<std::size_t, 2> shape = {self.xnew().size() / 3, 3};
-            return py::array_t<double>(shape, self.xnew().data(),
+            std::array<std::size_t, 2> shape = {self.x().size() / 3, 3};
+            return py::array_t<double>(shape, self.x().data(),
                                        py::cast(self));
           },
           "Return coordinates of all geometry points. Each row is the "
