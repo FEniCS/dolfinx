@@ -1,35 +1,54 @@
-# Copyright (C) 2011 Kristian B. Oelgaard
+# Copyright (C) 2021 Jørgen S. Dokken
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for the function library"""
 
+import numpy
 import pytest
 
-import dolfinx
 import ufl
+from dolfinx.fem import Constant, assemble_scalar
 from dolfinx.mesh import (create_unit_cube, create_unit_interval,
                           create_unit_square)
-from dolfinx_utils.test.skips import skip_in_parallel
 
 from mpi4py import MPI
+from petsc4py.PETSc import ScalarType
 
 
-@pytest.mark.skip
-@skip_in_parallel
-def testFacetArea():
-    references = [(create_unit_interval(MPI.COMM_WORLD, 1), 2, 2), (create_unit_square(
-        MPI.COMM_WORLD, 1, 1), 4, 4), (create_unit_cube(MPI.COMM_WORLD, 1, 1, 1),
-                                       6, 3)]
-    for mesh, surface, ref_int in references:
-        c0 = ufl.FacetArea(mesh)
-        c1 = dolfinx.FacetArea(mesh)
-        assert (c0)
-        assert (c1)
+def test_facet_area1D():
+    mesh = create_unit_interval(MPI.COMM_WORLD, 10)
+
+    # NOTE: Area of a vertex is defined to 1 in ufl
+    c0 = ufl.FacetArea(mesh)
+    c = Constant(mesh, ScalarType(1))
+
+    ds = ufl.Measure("ds", domain=mesh)
+    a0 = mesh.comm.allreduce(assemble_scalar(c * ds), op=MPI.SUM)
+    a = mesh.comm.allreduce(assemble_scalar(c0 * ds), op=MPI.SUM)
+    assert numpy.isclose(float(a), 2)
+    assert numpy.isclose(float(a0), 2)
 
 
-#        assert round(assemble(c*dx(mesh)) - 1, 7) == 0
-#        assert round(assemble(c*ds(mesh)) - surface, 7) == 0
-#        assert round(assemble(c0*ds(mesh)) - ref_int, 7) == 0
-#        assert round(assemble(c1*ds(mesh)) - ref_int, 7) == 0
+@pytest.mark.parametrize('mesh_factory', [(create_unit_square, (MPI.COMM_WORLD, 3, 3), 1. / 3),
+                                          #   (create_unit_square, (MPI.COMM_WORLD, 3, 3, CellType.quadrilateral), 1. / 3),
+                                          (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3), 1 / 18.),
+                                          #   (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3, CellType.hexahedron), 1. / 9)
+                                          ])
+def test_facet_area(mesh_factory):
+    """
+    Compute facet area of cell. UFL currently only supports affine cells for this computation
+    """
+    func, args, exact_area = mesh_factory
+    mesh = func(*args)
+    c0 = ufl.FacetArea(mesh)
+    c = Constant(mesh, ScalarType(1))
+    tdim = mesh.topology.dim
+    num_faces = 4 if tdim == 2 else 6
+
+    ds = ufl.Measure("ds", domain=mesh)
+    a = mesh.comm.allreduce(assemble_scalar(c * ds), op=MPI.SUM)
+    a0 = mesh.comm.allreduce(assemble_scalar(c0 * ds), op=MPI.SUM)
+    assert numpy.isclose(float(a), num_faces)
+    assert numpy.isclose(float(a0), num_faces * exact_area)
