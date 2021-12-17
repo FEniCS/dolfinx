@@ -26,7 +26,7 @@ namespace dolfinx::mesh
 ///
 /// @param[in] comm MPI communicator to build mesh on
 /// @param[in] p Points of box
-/// @param[in] n Number of cells in each direction.
+/// @param[in] n Number of cells in each direction
 /// @param[in] celltype Cell shape
 /// @param[in] ghost_mode Ghost mode
 /// @param[in] partitioner Partitioning function to use for
@@ -81,7 +81,7 @@ enum class DiagonalType
 /// @param[in] diagonal Direction of diagonals
 /// @return Mesh
 mesh::Mesh create_rectangle(MPI_Comm comm,
-                            const std::array<std::array<double, 3>, 2>& p,
+                            const std::array<std::array<double, 2>, 2>& p,
                             std::array<std::size_t, 2> n,
                             mesh::CellType celltype, mesh::GhostMode ghost_mode,
                             DiagonalType diagonal = DiagonalType::right);
@@ -103,7 +103,7 @@ mesh::Mesh create_rectangle(MPI_Comm comm,
 /// @param[in] diagonal Direction of diagonals
 /// @return Mesh
 mesh::Mesh create_rectangle(MPI_Comm comm,
-                            const std::array<std::array<double, 3>, 2>& p,
+                            const std::array<std::array<double, 2>, 2>& p,
                             std::array<std::size_t, 2> n,
                             mesh::CellType celltype, mesh::GhostMode ghost_mode,
                             const mesh::CellPartitionFunction& partitioner,

@@ -454,7 +454,7 @@ void mesh(py::module& m)
   m.def(
       "create_rectangle",
       [](const MPICommWrapper comm,
-         const std::array<std::array<double, 3>, 2>& p,
+         const std::array<std::array<double, 2>, 2>& p,
          std::array<std::size_t, 2> n, dolfinx::mesh::CellType celltype,
          dolfinx::mesh::GhostMode ghost_mode,
          const PythonCellPartitionFunction& partitioner,

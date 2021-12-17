@@ -96,7 +96,7 @@ from mpi4py import MPI
 # Create mesh and define function space
 mesh = create_rectangle(
     MPI.COMM_WORLD,
-    [np.array([0, 0, 0]), np.array([1, 1, 0])], [32, 32],
+    [np.array([0, 0]), np.array([1, 1])], [32, 32],
     CellType.triangle, GhostMode.none)
 
 V = FunctionSpace(mesh, ("Lagrange", 1))

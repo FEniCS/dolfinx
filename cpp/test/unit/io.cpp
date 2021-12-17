@@ -21,7 +21,7 @@ namespace
 void test_fides_mesh()
 {
   auto mesh = std::make_shared<mesh::Mesh>(mesh::create_rectangle(
-      MPI_COMM_WORLD, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 0.0}}}, {22, 12},
+      MPI_COMM_WORLD, {{{0.0, 0.0}, {1.0, 1.0}}}, {22, 12},
       mesh::CellType::triangle, mesh::GhostMode::shared_facet));
   io::FidesWriter writer(mesh->comm(), "test_mesh.bp", mesh);
   writer.write(0.0);

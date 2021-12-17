@@ -27,7 +27,7 @@ void create_mesh_file()
 {
   // Create mesh using all processes and save xdmf
   auto mesh = std::make_shared<mesh::Mesh>(mesh::create_rectangle(
-      MPI_COMM_WORLD, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 0.0}}}, {N, N},
+      MPI_COMM_WORLD, {{{0.0, 0.0}, {1.0, 1.0}}}, {N, N},
       mesh::CellType::triangle, mesh::GhostMode::shared_facet));
 
   // Save mesh in XDMF format
