@@ -339,6 +339,7 @@ public:
       if (cmap.is_affine())
       {
         J.fill(0);
+        K.fill(0);
         pull_back_affine(X, coordinate_dofs,
                          xt::view(J, 0, xt::all(), xt::all()),
                          xt::view(K, 0, xt::all(), xt::all()), xp);
