@@ -6,17 +6,19 @@
 """Unit tests for the FunctionSpace class"""
 
 import pytest
+
 from dolfinx.fem import Function, FunctionSpace, VectorFunctionSpace
-from dolfinx.generation import UnitCubeMesh
-from mpi4py import MPI
+from dolfinx.mesh import create_unit_cube
 from ufl import (FiniteElement, TestFunction, TrialFunction, VectorElement,
                  grad, triangle)
 from ufl.log import UFLException
 
+from mpi4py import MPI
+
 
 @pytest.fixture
 def mesh():
-    return UnitCubeMesh(MPI.COMM_WORLD, 8, 8, 8)
+    return create_unit_cube(MPI.COMM_WORLD, 8, 8, 8)
 
 
 @pytest.fixture
@@ -110,7 +112,7 @@ def test_sub(Q, W):
     assert W.element.num_sub_elements() == X.element.num_sub_elements()
     assert W.element.space_dimension() == X.element.space_dimension()
     assert W.element.value_rank == X.element.value_rank
-    assert W.element.interpolation_points().shape == X.element.interpolation_points().shape
+    assert W.element.interpolation_points.shape == X.element.interpolation_points.shape
     assert W.element.signature() == X.element.signature()
 
 
@@ -173,7 +175,7 @@ def test_argument_equality(mesh, V, V2, W, W2):
     function spaces.
 
     """
-    mesh2 = UnitCubeMesh(MPI.COMM_WORLD, 8, 8, 8)
+    mesh2 = create_unit_cube(MPI.COMM_WORLD, 8, 8, 8)
     V3 = FunctionSpace(mesh2, ('CG', 1))
     W3 = VectorFunctionSpace(mesh2, ('CG', 1))
 

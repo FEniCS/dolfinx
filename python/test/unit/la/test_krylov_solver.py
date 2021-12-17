@@ -10,22 +10,23 @@ from contextlib import ExitStack
 
 import numpy as np
 import pytest
+
 import ufl
 from dolfinx import la
 from dolfinx.fem import (DirichletBC, Function, FunctionSpace,
                          VectorFunctionSpace, apply_lifting, assemble_matrix,
                          assemble_vector, locate_dofs_topological, set_bc)
-from dolfinx.generation import UnitSquareMesh
-from dolfinx.mesh import locate_entities_boundary
-from mpi4py import MPI
-from petsc4py import PETSc
+from dolfinx.mesh import create_unit_square, locate_entities_boundary
 from ufl import (Identity, TestFunction, TrialFunction, dot, dx, grad, inner,
                  sym, tr)
+
+from mpi4py import MPI
+from petsc4py import PETSc
 
 
 def test_krylov_solver_lu():
 
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 12, 12)
+    mesh = create_unit_square(MPI.COMM_WORLD, 12, 12)
     V = FunctionSpace(mesh, ("Lagrange", 1))
     u, v = TrialFunction(V), TestFunction(V)
 
@@ -90,11 +91,10 @@ def test_krylov_samg_solver_elasticity():
                 grad(v))) * Identity(2)
 
         # Define problem
-        mesh = UnitSquareMesh(MPI.COMM_WORLD, N, N)
+        mesh = create_unit_square(MPI.COMM_WORLD, N, N)
         V = VectorFunctionSpace(mesh, 'Lagrange', 1)
         bc0 = Function(V)
-        with bc0.vector.localForm() as bc_local:
-            bc_local.set(0.0)
+        bc0.x.array[:] = 0.0
 
         def boundary(x):
             return np.full(x.shape[1], True)

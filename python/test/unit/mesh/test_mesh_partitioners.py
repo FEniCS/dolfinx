@@ -6,32 +6,34 @@
 
 import os
 
-import dolfinx
 import numpy as np
 import pytest
+
+import dolfinx
+import dolfinx.graph
 import ufl
-from dolfinx.generation import BoxMesh
 from dolfinx.io import XDMFFile
-from dolfinx.mesh import (CellType, GhostMode, compute_midpoints,
+from dolfinx.mesh import (CellType, GhostMode, compute_midpoints, create_box,
                           create_cell_partitioner, create_mesh)
 from dolfinx_utils.test.fixtures import tempdir
+
 from mpi4py import MPI
 
 assert (tempdir)
 
-partitioners = [dolfinx.cpp.graph.partitioner()]
+partitioners = [dolfinx.graph.partitioner()]
 try:
-    from dolfinx.cpp.graph import partitioner_scotch
+    from dolfinx.graph import partitioner_scotch
     partitioners.append(partitioner_scotch())
 except ImportError:
     partitioners.append(pytest.param(None, marks=pytest.mark.skip(reason="DOLFINx build without SCOTCH")))
 try:
-    from dolfinx.cpp.graph import partitioner_parmetis
+    from dolfinx.graph import partitioner_parmetis
     partitioners.append(partitioner_parmetis())
 except ImportError:
     partitioners.append(pytest.param(None, marks=pytest.mark.skip(reason="DOLFINx built without Parmetis")))
 try:
-    from dolfinx.cpp.graph import partitioner_kahip
+    from dolfinx.graph import partitioner_kahip
     partitioners.append(partitioner_kahip())
 except ImportError:
     partitioners.append(pytest.param(None, marks=pytest.mark.skip(reason="DOLFINx built without KaHiP")))
@@ -42,8 +44,8 @@ except ImportError:
 @pytest.mark.parametrize("cell_type", [CellType.tetrahedron, CellType.hexahedron])
 def test_partition_box_mesh(gpart, Nx, cell_type):
     part = create_cell_partitioner(gpart)
-    mesh = BoxMesh(MPI.COMM_WORLD, [np.array([0, 0, 0]), np.array([1, 1, 1])], [Nx, Nx, Nx],
-                   cell_type, GhostMode.shared_facet, part)
+    mesh = create_box(MPI.COMM_WORLD, [np.array([0, 0, 0]), np.array([1, 1, 1])], [Nx, Nx, Nx],
+                      cell_type, GhostMode.shared_facet, part)
     tdim = mesh.topology.dim
     c = 6 if cell_type == CellType.tetrahedron else 1
     assert mesh.topology.index_map(tdim).size_global == Nx**3 * c
@@ -57,7 +59,7 @@ def test_custom_partitioner(tempdir, Nx, cell_type):
     mpi_comm = MPI.COMM_WORLD
     Lx = mpi_comm.size
     points = [np.array([0, 0, 0]), np.array([Lx, Lx, Lx])]
-    mesh = BoxMesh(mpi_comm, points, [Nx, Nx, Nx], cell_type, GhostMode.shared_facet)
+    mesh = create_box(mpi_comm, points, [Nx, Nx, Nx], cell_type, GhostMode.shared_facet)
 
     filename = os.path.join(tempdir, "u1_.xdmf")
     with XDMFFile(mpi_comm, filename, "w") as file:

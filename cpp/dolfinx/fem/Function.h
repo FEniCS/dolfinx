@@ -12,7 +12,6 @@
 #include "interpolate.h"
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/UniqueIdGenerator.h>
-#include <dolfinx/la/PETScVector.h>
 #include <dolfinx/la/Vector.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -20,7 +19,6 @@
 #include <functional>
 #include <memory>
 #include <numeric>
-#include <petscvec.h>
 #include <string>
 #include <utility>
 #include <variant>
@@ -33,6 +31,9 @@ namespace dolfinx::fem
 {
 
 class FunctionSpace;
+
+template <typename T>
+class Expression;
 
 /// This class represents a function \f$ u_h \f$ in a finite
 /// element function space \f$ V_h \f$, given by
@@ -85,31 +86,13 @@ public:
   Function(const Function& v) = delete;
 
   /// Move constructor
-  Function(Function&& v)
-      : name(std::move(v.name)), _id(std::move(v._id)),
-        _function_space(std::move(v._function_space)), _x(std::move(v._x)),
-        _petsc_vector(std::exchange(v._petsc_vector, nullptr))
-  {
-  }
+  Function(Function&& v) = default;
 
   /// Destructor
-  virtual ~Function()
-  {
-    if (_petsc_vector)
-      VecDestroy(&_petsc_vector);
-  }
+  ~Function() = default;
 
   /// Move assignment
-  Function& operator=(Function&& v) noexcept
-  {
-    name = std::move(v.name);
-    _id = std::move(v._id);
-    _function_space = std::move(v._function_space);
-    _x = std::move(v._x);
-    std::swap(_petsc_vector, v._petsc_vector);
-
-    return *this;
-  }
+  Function& operator=(Function&& v) = default;
 
   // Assignment
   Function& operator=(const Function& v) = delete;
@@ -159,40 +142,6 @@ public:
     return _function_space;
   }
 
-  /// Return vector of expansion coefficients as a PETSc Vec. Throws an
-  /// exception if a PETSc Vec cannot be created due to a type mismatch.
-  /// @return The vector of expansion coefficients
-  Vec vector() const
-  {
-    // Check that this is not a sub function
-    assert(_function_space->dofmap());
-    assert(_function_space->dofmap()->index_map);
-    if (_x->bs() * _x->map()->size_global()
-        != _function_space->dofmap()->index_map->size_global()
-               * _function_space->dofmap()->index_map_bs())
-    {
-      throw std::runtime_error(
-          "Cannot access a non-const vector from a subfunction");
-    }
-
-    // Check that data type is the same as the PETSc build
-    if constexpr (std::is_same<T, PetscScalar>::value)
-    {
-      if (!_petsc_vector)
-      {
-        _petsc_vector = la::petsc::create_vector_wrap(
-            *_function_space->dofmap()->index_map,
-            _function_space->dofmap()->index_map_bs(), _x->mutable_array());
-      }
-      return _petsc_vector;
-    }
-    else
-    {
-      throw std::runtime_error(
-          "Cannot return PETSc vector wrapper. Type mismatch");
-    }
-  }
-
   /// Underlying vector
   std::shared_ptr<const la::Vector<T>> x() const { return _x; }
 
@@ -223,6 +172,15 @@ public:
     auto fx = f(x);
 
     fem::interpolate(*this, fx, cells);
+  }
+
+  /// Interpolate an Expression (based on ufl)
+  /// @param[in] expr The function to be interpolated.
+  /// @param[in] cells The cells (local to process) to interpolate into
+  void interpolate(const Expression<T>& expr,
+                   const xtl::span<const std::int32_t>& cells)
+  {
+    fem::interpolate(*this, expr, cells);
   }
 
   /// Evaluate the Function at points
@@ -381,6 +339,7 @@ public:
       if (cmap.is_affine())
       {
         J.fill(0);
+        K.fill(0);
         pull_back_affine(X, coordinate_dofs,
                          xt::view(J, 0, xt::all(), xt::all()),
                          xt::view(K, 0, xt::all(), xt::all()), xp);
@@ -503,8 +462,5 @@ private:
 
   // The vector of expansion coefficients (local)
   std::shared_ptr<la::Vector<T>> _x;
-
-  // PETSc wrapper of the expansion coefficients
-  mutable Vec _petsc_vector = nullptr;
 };
 } // namespace dolfinx::fem

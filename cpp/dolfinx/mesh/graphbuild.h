@@ -7,8 +7,8 @@
 #pragma once
 
 #include <cstdint>
-#include <utility>
 #include <mpi.h>
+#include <utility>
 #include <xtensor/xarray.hpp>
 
 namespace dolfinx::graph

@@ -16,6 +16,7 @@ import cffi
 import numba
 import numba.core.typing.cffi_utils as cffi_support
 import numpy as np
+
 import ufl
 from dolfinx import geometry
 from dolfinx.cpp.fem import Form_complex128, Form_float64
@@ -25,6 +26,7 @@ from dolfinx.fem import (DirichletBC, Function, FunctionSpace, IntegralType,
 from dolfinx.io import XDMFFile
 from dolfinx.jit import ffcx_jit
 from dolfinx.mesh import MeshTags, locate_entities_boundary
+
 from mpi4py import MPI
 from petsc4py import PETSc
 
@@ -67,8 +69,7 @@ ds = ufl.Measure("ds", subdomain_data=mt)
 
 # Homogeneous boundary condition in displacement
 u_bc = Function(U)
-with u_bc.vector.localForm() as loc:
-    loc.set(0.0)
+u_bc.x.array[:] = 0.0
 
 # Displacement BC is applied to the left side
 left_facets = locate_entities_boundary(mesh, 1, left)
@@ -165,7 +166,7 @@ p = np.array([48.0, 52.0, 0.0], dtype=np.float64)
 cell_candidates = geometry.compute_collisions(bb_tree, p)
 cells = geometry.compute_colliding_cells(mesh, cell_candidates, p)
 
-uc.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+uc.x.scatter_forward()
 if len(cells) > 0:
     value = uc.eval(p, cells[0])
     print(value[1])

@@ -9,11 +9,13 @@ import random
 
 import numpy as np
 import pytest
+
 import ufl
 from dolfinx.fem import (Function, FunctionSpace, VectorFunctionSpace,
                          assemble_scalar)
 from dolfinx.mesh import create_mesh
 from dolfinx_utils.test.skips import skip_in_parallel
+
 from mpi4py import MPI
 
 
@@ -125,7 +127,7 @@ def test_dof_positions(cell_type, space_type):
     entities = {i: {} for i in range(1, tdim)}
     for cell in range(coord_dofs.num_nodes):
         # Push coordinates forward
-        X = V.element.interpolation_points()
+        X = V.element.interpolation_points
         xg = x_g[coord_dofs.links(cell), :tdim]
         x = cmap.push_forward(X, xg)
 

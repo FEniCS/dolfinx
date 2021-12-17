@@ -6,21 +6,23 @@
 
 import numpy as np
 import pytest
+
 import ufl
 from dolfinx.fem import (DirichletBC, Function, FunctionSpace, apply_lifting,
                          assemble_matrix, assemble_vector, create_matrix,
                          create_vector, locate_dofs_geometrical, set_bc)
-from dolfinx.generation import UnitSquareMesh
+from dolfinx.mesh import create_unit_square
+from ufl import dx, inner
+
 from mpi4py import MPI
 from petsc4py import PETSc
-from ufl import dx, inner
 
 
 def test_locate_dofs_geometrical():
     """Test that locate_dofs_geometrical, when passed two function
     spaces, returns the correct degrees of freedom in each space.
     """
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 4, 8)
+    mesh = create_unit_square(MPI.COMM_WORLD, 4, 8)
     p0, p1 = 1, 2
     P0 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p0)
     P1 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p1)
@@ -58,7 +60,7 @@ def test_overlapping_bcs():
     boundary condition is applied.
     """
     n = 23
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, n, n)
+    mesh = create_unit_square(MPI.COMM_WORLD, n, n)
     V = FunctionSpace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     a = inner(u, v) * dx
@@ -72,10 +74,8 @@ def test_overlapping_bcs():
     assert len(set(np.concatenate(MPI.COMM_WORLD.allgather(dof_corner)))) == 1
 
     u0, u1 = Function(V), Function(V)
-    with u0.vector.localForm() as u0_loc:
-        u0_loc.set(0)
-    with u1.vector.localForm() as u1_loc:
-        u1_loc.set(123.456)
+    u0.x.array[:] = 0.0
+    u1.x.array[:] = 123.456
     bcs = [DirichletBC(u0, dofs_left), DirichletBC(u1, dofs_top)]
 
     A, b = create_matrix(a), create_vector(L)
@@ -85,7 +85,7 @@ def test_overlapping_bcs():
     # Check the diagonal (only on the rank that owns the row)
     d = A.getDiagonal()
     if len(dof_corner) > 0 and dof_corner[0] < V.dofmap.index_map.size_local:
-        d.array_r[dof_corner[0]] == 1.0
+        assert np.isclose(d.array_r[dof_corner[0]], 1.0)
 
     with b.localForm() as b_loc:
         b_loc.set(0)

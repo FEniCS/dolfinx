@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2021 Garth N. Wells, Igor A. Baratta
+// and Jørgen S.Dokken
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -17,7 +18,6 @@
 #include <xtensor/xtensor.hpp>
 #include <xtensor/xview.hpp>
 #include <xtl/xspan.hpp>
-
 namespace dolfinx::mesh
 {
 class Mesh;
@@ -28,6 +28,9 @@ namespace dolfinx::fem
 
 template <typename T>
 class Function;
+
+template <typename T>
+class Expression;
 
 namespace impl
 {
@@ -437,14 +440,15 @@ void interpolate(Function<T>& u, xt::xarray<T>& f,
                              std::int32_t, int)>
         apply_inv_transpose_dof_transformation
         = element->get_dof_transformation_function<T>(true, true, true);
-    for (std::int32_t c : cells)
+    for (std::size_t c = 0; c < cells.size(); ++c)
     {
-      xtl::span<const std::int32_t> dofs = dofmap->cell_dofs(c);
+      const std::int32_t cell = cells[c];
+      xtl::span<const std::int32_t> dofs = dofmap->cell_dofs(cell);
       for (int k = 0; k < element_bs; ++k)
       {
         for (int i = 0; i < num_scalar_dofs; ++i)
           _coeffs[i] = f(k, c * num_scalar_dofs + i);
-        apply_inv_transpose_dof_transformation(_coeffs, cell_info, c, 1);
+        apply_inv_transpose_dof_transformation(_coeffs, cell_info, cell, 1);
         for (int i = 0; i < num_scalar_dofs; ++i)
         {
           const int dof = i * element_bs + k;
@@ -507,9 +511,10 @@ void interpolate(Function<T>& u, xt::xarray<T>& f,
                           xt::xall<std::size_t>>;
     auto pull_back_fn = element->map_fn<U_t, U_t, J_t, J_t>();
 
-    for (std::int32_t c : cells)
+    for (std::size_t c = 0; c < cells.size(); ++c)
     {
-      auto x_dofs = x_dofmap.links(c);
+      const std::int32_t cell = cells[c];
+      auto x_dofs = x_dofmap.links(cell);
       for (int i = 0; i < num_dofs_g; ++i)
         for (int j = 0; j < gdim; ++j)
           coordinate_dofs(i, j) = x_g(x_dofs[i], j);
@@ -527,7 +532,7 @@ void interpolate(Function<T>& u, xt::xarray<T>& f,
             xt::view(J, p, xt::all(), xt::all()));
       }
 
-      xtl::span<const std::int32_t> dofs = dofmap->cell_dofs(c);
+      xtl::span<const std::int32_t> dofs = dofmap->cell_dofs(cell);
       for (int k = 0; k < element_bs; ++k)
       {
         // Extract computed expression values for element block k
@@ -549,7 +554,7 @@ void interpolate(Function<T>& u, xt::xarray<T>& f,
 
         auto ref_data = xt::view(reference_data, xt::all(), 0, xt::all());
         impl::interpolation_apply(Pi, ref_data, _coeffs, element_bs);
-        apply_inverse_transpose_dof_transformation(_coeffs, cell_info, c, 1);
+        apply_inverse_transpose_dof_transformation(_coeffs, cell_info, cell, 1);
 
         // Copy interpolation dofs into coefficient vector
         assert(_coeffs.size() == num_scalar_dofs);
@@ -640,4 +645,43 @@ void interpolate(Function<T>& u, const Function<T>& v)
   }
 }
 
+/// Interpolate from a dolfinx Expression into a compatible Function on the same
+/// mesh
+/// @param[in, out] u The function to interpolate into
+/// @param[in] expr The expression to be interpolated
+/// @param[in] cells List of cell indices (local to process) to interpolate on
+template <typename T>
+void interpolate(Function<T>& u, const Expression<T>& expr,
+                 const tcb::span<const std::int32_t>& cells)
+{
+  // Array to hold coefficients after expression evaluation
+  const std::int32_t num_points = expr.num_points();
+  const std::int32_t expr_value_size = expr.value_size();
+  const std::int32_t num_cells = cells.size();
+  xt::xtensor<T, 2> expr_values(
+      {std::size_t(cells.size()), std::size_t(num_points * expr_value_size)});
+
+  // Check that spaces are compatible
+  std::shared_ptr<const FiniteElement> element = u.function_space()->element();
+  const auto dofmap = u.function_space()->dofmap();
+  assert(dofmap);
+  const int element_vs = element->value_size();
+  assert(expr_value_size == element_vs);
+  auto X = expr.x();
+  assert(X.shape() == element->interpolation_points().shape());
+
+  // Evaluate expression at quadrature points for the subset of cells
+  expr.eval(cells, expr_values);
+
+  // Reshape evaluated data to fit interpolate
+  auto values_view
+      = xt::reshape_view(expr_values, {num_cells, num_points, element_vs});
+  xt::xarray<T> values
+      = xt::empty<T>({expr_value_size, num_cells * num_points});
+  values = xt::reshape_view(xt::transpose(values_view, {2, 0, 1}),
+                            {expr_value_size, num_cells * num_points});
+
+  // Interpolate values into appropriate space
+  interpolate(u, values, cells);
+}
 } // namespace dolfinx::fem

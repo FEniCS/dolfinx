@@ -11,17 +11,18 @@
 from contextlib import ExitStack
 
 import numpy as np
+
 from dolfinx import la
 from dolfinx.fem import (DirichletBC, Function, VectorFunctionSpace,
                          apply_lifting, assemble_matrix, assemble_vector,
                          locate_dofs_geometrical, set_bc)
-from dolfinx.generation import BoxMesh
 from dolfinx.io import XDMFFile
-from dolfinx.mesh import CellType, GhostMode
-from mpi4py import MPI
-from petsc4py import PETSc
+from dolfinx.mesh import CellType, GhostMode, create_box
 from ufl import (Identity, SpatialCoordinate, TestFunction, TrialFunction,
                  as_vector, dx, grad, inner, sym, tr)
+
+from mpi4py import MPI
+from petsc4py import PETSc
 
 # Nullspace and problem setup
 # ---------------------------
@@ -68,7 +69,7 @@ def build_nullspace(V):
     return PETSc.NullSpace().create(vectors=ns)
 
 
-mesh = BoxMesh(
+mesh = create_box(
     MPI.COMM_WORLD, [np.array([0.0, 0.0, 0.0]),
                      np.array([2.0, 1.0, 1.0])], [12, 12, 12],
     CellType.tetrahedron, GhostMode.shared_facet)
@@ -109,8 +110,7 @@ a = inner(sigma(u), grad(v)) * dx
 L = inner(f, v) * dx
 
 u0 = Function(V)
-with u0.vector.localForm() as bc_local:
-    bc_local.set(0.0)
+u0.x.array[:] = 0.0
 
 # Set up boundary condition on inner surface
 bc = DirichletBC(u0, locate_dofs_geometrical(V, boundary))
@@ -168,6 +168,6 @@ with XDMFFile(MPI.COMM_WORLD, "elasticity.xdmf", "w") as file:
     file.write_mesh(mesh)
     file.write_function(u)
 
-unorm = u.vector.norm()
+unorm = u.x.norm()
 if mesh.comm.rank == 0:
     print("Solution vector norm:", unorm)

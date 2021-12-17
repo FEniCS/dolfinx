@@ -12,38 +12,38 @@
 #include <petscvec.h>
 #include <string>
 
-namespace dolfinx::la
+namespace dolfinx::la::petsc
 {
 
 /// This class implements Krylov methods for linear systems of the form
 /// Ax = b. It is a wrapper for the Krylov solvers of PETSc.
 
-class PETScKrylovSolver
+class KrylovSolver
 {
 public:
   /// Create Krylov solver for a particular method and named
   /// preconditioner
-  explicit PETScKrylovSolver(MPI_Comm comm);
+  explicit KrylovSolver(MPI_Comm comm);
 
   /// Create solver wrapper of a PETSc KSP object
   /// @param[in] ksp The PETSc KSP object. It should already have been created
   /// @param[in] inc_ref_count Increment the reference count on `ksp` if true
-  PETScKrylovSolver(KSP ksp, bool inc_ref_count);
+  KrylovSolver(KSP ksp, bool inc_ref_count);
 
   // Copy constructor (deleted)
-  PETScKrylovSolver(const PETScKrylovSolver& solver) = delete;
+  KrylovSolver(const KrylovSolver& solver) = delete;
 
   /// Move constructor
-  PETScKrylovSolver(PETScKrylovSolver&& solver);
+  KrylovSolver(KrylovSolver&& solver);
 
   /// Destructor
-  ~PETScKrylovSolver();
+  ~KrylovSolver();
 
   // Assignment operator (deleted)
-  PETScKrylovSolver& operator=(const PETScKrylovSolver&) = delete;
+  KrylovSolver& operator=(const KrylovSolver&) = delete;
 
   /// Move assignment
-  PETScKrylovSolver& operator=(PETScKrylovSolver&& solver);
+  KrylovSolver& operator=(KrylovSolver&& solver);
 
   /// Set operator (Mat)
   void set_operator(const Mat A);
@@ -79,4 +79,4 @@ private:
   // PETSc solver pointer
   KSP _ksp;
 };
-} // namespace dolfinx::la
+} // namespace dolfinx::la::petsc

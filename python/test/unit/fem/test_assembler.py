@@ -7,9 +7,10 @@
 
 import math
 
-import numpy
+import numpy as np
 import pytest
 import scipy.sparse
+
 import ufl
 from dolfinx import cpp as _cpp
 from dolfinx.fem import (Constant, DirichletBC, Form, Function, FunctionSpace,
@@ -21,14 +22,15 @@ from dolfinx.fem import (Constant, DirichletBC, Form, Function, FunctionSpace,
                          bcs_by_block, form, locate_dofs_geometrical,
                          locate_dofs_topological, set_bc, set_bc_nest)
 from dolfinx.fem.assemble import pack_coefficients, pack_constants
-from dolfinx.generation import RectangleMesh, UnitCubeMesh, UnitSquareMesh
-from dolfinx.mesh import (CellType, GhostMode, create_mesh,
+from dolfinx.mesh import (CellType, GhostMode, create_mesh, create_rectangle,
+                          create_unit_cube, create_unit_square,
                           locate_entities_boundary)
 from dolfinx_utils.test.skips import skip_in_parallel
-from mpi4py import MPI
-from petsc4py import PETSc
 from ufl import derivative, ds, dx, inner
 from ufl.geometry import SpatialCoordinate
+
+from mpi4py import MPI
+from petsc4py import PETSc
 
 
 def nest_matrix_norm(A):
@@ -47,7 +49,7 @@ def nest_matrix_norm(A):
 
 @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
 def test_assemble_functional_dx(mode):
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
+    mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
     M = 1.0 * dx(domain=mesh)
     value = assemble_scalar(M)
     value = mesh.comm.allreduce(value, op=MPI.SUM)
@@ -61,7 +63,7 @@ def test_assemble_functional_dx(mode):
 
 @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
 def test_assemble_functional_ds(mode):
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
+    mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
     M = 1.0 * ds(domain=mesh)
     value = assemble_scalar(M)
     value = mesh.comm.allreduce(value, op=MPI.SUM)
@@ -72,17 +74,16 @@ def test_assemble_derivatives():
     """This test checks the original_coefficient_positions, which may change
     under differentiation (some coefficients and constants are
     eliminated)"""
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 12, 12)
+    mesh = create_unit_square(MPI.COMM_WORLD, 12, 12)
     Q = FunctionSpace(mesh, ("Lagrange", 1))
     u = Function(Q)
     v = ufl.TestFunction(Q)
     du = ufl.TrialFunction(Q)
     b = Function(Q)
-    c1 = Constant(mesh, numpy.array([[1.0, 0.0], [3.0, 4.0]], PETSc.ScalarType))
+    c1 = Constant(mesh, np.array([[1.0, 0.0], [3.0, 4.0]], PETSc.ScalarType))
     c2 = Constant(mesh, PETSc.ScalarType(2.0))
 
-    with b.vector.localForm() as b_local:
-        b_local.set(2.0)
+    b.x.array[:] = 2.0
 
     # derivative eliminates 'u' and 'c1'
     L = ufl.inner(c1, c1) * v * dx + c2 * b * inner(u, v) * dx
@@ -98,13 +99,12 @@ def test_assemble_derivatives():
 
 @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
 def test_basic_assembly(mode):
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
+    mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
     V = FunctionSpace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 
     f = Function(V)
-    with f.vector.localForm() as f_local:
-        f_local.set(10.0)
+    f.x.array[:] = 10.0
     a = inner(f * u, v) * dx + inner(u, v) * ds
     L = inner(f, v) * dx + inner(2.0, v) * ds
 
@@ -146,20 +146,19 @@ def test_basic_assembly(mode):
 
 @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
 def test_assembly_bcs(mode):
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
+    mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
     V = FunctionSpace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     a = inner(u, v) * dx + inner(u, v) * ds
     L = inner(1.0, v) * dx
 
     def boundary(x):
-        return numpy.logical_or(x[0] < 1.0e-6, x[0] > 1.0 - 1.0e-6)
+        return np.logical_or(x[0] < 1.0e-6, x[0] > 1.0 - 1.0e-6)
 
     bdofsV = locate_dofs_geometrical(V, boundary)
 
     u_bc = Function(V)
-    with u_bc.vector.localForm() as u_local:
-        u_local.set(1.0)
+    u_bc.x.array[:] = 1.0
     bc = DirichletBC(u_bc, bdofsV)
 
     # Assemble and apply 'global' lifting of bcs
@@ -190,9 +189,9 @@ def test_assemble_manifold():
     """Test assembly of poisson problem on a mesh with topological dimension 1
     but embedded in 2D (gdim=2).
     """
-    points = numpy.array([[0.0, 0.0], [0.2, 0.0], [0.4, 0.0],
-                          [0.6, 0.0], [0.8, 0.0], [1.0, 0.0]], dtype=numpy.float64)
-    cells = numpy.array([[0, 1], [1, 2], [2, 3], [3, 4], [4, 5]], dtype=numpy.int32)
+    points = np.array([[0.0, 0.0], [0.2, 0.0], [0.4, 0.0],
+                       [0.6, 0.0], [0.8, 0.0], [1.0, 0.0]], dtype=np.float64)
+    cells = np.array([[0, 1], [1, 2], [2, 3], [3, 4], [4, 5]], dtype=np.int32)
     cell = ufl.Cell("interval", geometric_dimension=points.shape[1])
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell, 1))
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
@@ -207,7 +206,7 @@ def test_assemble_manifold():
     a = ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx(mesh)
     L = ufl.inner(1.0, v) * ufl.dx(mesh)
 
-    bcdofs = locate_dofs_geometrical(U, lambda x: numpy.isclose(x[0], 0.0))
+    bcdofs = locate_dofs_geometrical(U, lambda x: np.isclose(x[0], 0.0))
     bcs = [DirichletBC(w, bcdofs)]
     A = assemble_matrix(a, bcs=bcs)
     A.assemble()
@@ -216,8 +215,8 @@ def test_assemble_manifold():
     apply_lifting(b, [a], bcs=[bcs])
     set_bc(b, bcs)
 
-    assert numpy.isclose(b.norm(), 0.41231)
-    assert numpy.isclose(A.norm(), 25.0199)
+    assert np.isclose(b.norm(), 0.41231)
+    assert np.isclose(A.norm(), 25.0199)
 
 
 @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
@@ -225,7 +224,7 @@ def test_matrix_assembly_block(mode):
     """Test assembly of block matrices and vectors into (a) monolithic
     blocked structures, PETSc Nest structures, and monolithic structures.
     """
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 4, 8, ghost_mode=mode)
+    mesh = create_unit_square(MPI.COMM_WORLD, 4, 8, ghost_mode=mode)
 
     p0, p1 = 1, 2
     P0 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p0)
@@ -235,7 +234,7 @@ def test_matrix_assembly_block(mode):
     V1 = FunctionSpace(mesh, P1)
 
     def boundary(x):
-        return numpy.logical_or(x[0] < 1.0e-6, x[0] > 1.0 - 1.0e-6)
+        return np.logical_or(x[0] < 1.0e-6, x[0] > 1.0 - 1.0e-6)
 
     # Locate facets on boundary
     facetdim = mesh.topology.dim - 1
@@ -244,8 +243,7 @@ def test_matrix_assembly_block(mode):
     bdofsV1 = locate_dofs_topological(V1, facetdim, bndry_facets)
 
     u_bc = Function(V1)
-    with u_bc.vector.localForm() as u_local:
-        u_local.set(50.0)
+    u_bc.x.array[:] = 50.0
     bc = DirichletBC(u_bc, bdofsV1)
 
     # Define variational problem
@@ -318,13 +316,13 @@ def test_assembly_solve_block(mode):
     """Solve a two-field mass-matrix like problem with block matrix approaches
     and test that solution is the same.
     """
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 32, 31, ghost_mode=mode)
+    mesh = create_unit_square(MPI.COMM_WORLD, 32, 31, ghost_mode=mode)
     P = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
     V0 = FunctionSpace(mesh, P)
     V1 = V0.clone()
 
     def boundary(x):
-        return numpy.logical_or(x[0] < 1.0e-6, x[0] > 1.0 - 1.0e-6)
+        return np.logical_or(x[0] < 1.0e-6, x[0] > 1.0 - 1.0e-6)
 
     # Locate facets on boundary
     facetdim = mesh.topology.dim - 1
@@ -334,11 +332,9 @@ def test_assembly_solve_block(mode):
     bdofsV1 = locate_dofs_topological(V1, facetdim, bndry_facets)
 
     u_bc0 = Function(V0)
-    u_bc0.vector.set(50.0)
-    u_bc0.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+    u_bc0.x.array[:] = 50.0
     u_bc1 = Function(V1)
-    u_bc1.vector.set(20.0)
-    u_bc1.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+    u_bc1.x.array[:] = 20.0
     bcs = [DirichletBC(u_bc0, bdofsV0), DirichletBC(u_bc1, bdofsV1)]
 
     # Variational problem
@@ -412,11 +408,9 @@ def test_assembly_solve_block(mode):
     L = inner(f, v0) * ufl.dx + inner(g, v1) * dx
 
     u0_bc = Function(V0)
-    u0_bc.vector.set(50.0)
-    u0_bc.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+    u0_bc.x.array[:] = 50.0
     u1_bc = Function(V1)
-    u1_bc.vector.set(20.0)
-    u1_bc.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+    u1_bc.x.array[:] = 20.0
 
     bdofsW0_V0 = locate_dofs_topological((W.sub(0), V0), facetdim, bndry_facets)
     bdofsW1_V1 = locate_dofs_topological((W.sub(1), V1), facetdim, bndry_facets)
@@ -449,10 +443,10 @@ def test_assembly_solve_block(mode):
 
 
 @ pytest.mark.parametrize("mesh", [
-    UnitSquareMesh(MPI.COMM_WORLD, 12, 11, ghost_mode=GhostMode.none),
-    UnitSquareMesh(MPI.COMM_WORLD, 12, 11, ghost_mode=GhostMode.shared_facet),
-    UnitCubeMesh(MPI.COMM_WORLD, 3, 7, 3, ghost_mode=GhostMode.none),
-    UnitCubeMesh(MPI.COMM_WORLD, 3, 7, 3, ghost_mode=GhostMode.shared_facet)
+    create_unit_square(MPI.COMM_WORLD, 12, 11, ghost_mode=GhostMode.none),
+    create_unit_square(MPI.COMM_WORLD, 12, 11, ghost_mode=GhostMode.shared_facet),
+    create_unit_cube(MPI.COMM_WORLD, 3, 7, 3, ghost_mode=GhostMode.none),
+    create_unit_cube(MPI.COMM_WORLD, 3, 7, 3, ghost_mode=GhostMode.shared_facet)
 ])
 def test_assembly_solve_taylor_hood(mesh):
     """Assemble Stokes problem with Taylor-Hood elements and solve."""
@@ -461,11 +455,11 @@ def test_assembly_solve_taylor_hood(mesh):
 
     def boundary0(x):
         """Define boundary x = 0"""
-        return x[0] < 10 * numpy.finfo(float).eps
+        return x[0] < 10 * np.finfo(float).eps
 
     def boundary1(x):
         """Define boundary x = 1"""
-        return x[0] > (1.0 - 10 * numpy.finfo(float).eps)
+        return x[0] > (1.0 - 10 * np.finfo(float).eps)
 
     # Locate facets on boundaries
     facetdim = mesh.topology.dim - 1
@@ -476,8 +470,7 @@ def test_assembly_solve_taylor_hood(mesh):
     bdofs1 = locate_dofs_topological(P2, facetdim, bndry_facets1)
 
     u0 = Function(P2)
-    u0.vector.set(1.0)
-    u0.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+    u0.x.array[:] = 1.0
 
     bc0 = DirichletBC(u0, bdofs0)
     bc1 = DirichletBC(u0, bdofs1)
@@ -637,16 +630,14 @@ def test_assembly_solve_taylor_hood(mesh):
 
 
 def test_basic_interior_facet_assembly():
-    mesh = RectangleMesh(MPI.COMM_WORLD,
-                         [numpy.array([0.0, 0.0, 0.0]),
-                          numpy.array([1.0, 1.0, 0.0])],
-                         [5, 5],
-                         cell_type=CellType.triangle,
-                         ghost_mode=GhostMode.shared_facet)
-
+    mesh = create_rectangle(MPI.COMM_WORLD,
+                            [np.array([0.0, 0.0]),
+                             np.array([1.0, 1.0])],
+                            [5, 5],
+                            cell_type=CellType.triangle,
+                            ghost_mode=GhostMode.shared_facet)
     V = FunctionSpace(mesh, ("DG", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
-
     a = ufl.inner(ufl.avg(u), ufl.avg(v)) * ufl.dS
 
     A = assemble_matrix(a)
@@ -667,11 +658,11 @@ def test_basic_assembly_constant(mode):
     matrix-valued constant.
 
     """
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 5, 5, ghost_mode=mode)
+    mesh = create_unit_square(MPI.COMM_WORLD, 5, 5, ghost_mode=mode)
     V = FunctionSpace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 
-    c = Constant(mesh, numpy.array([[1.0, 2.0], [5.0, 3.0]], PETSc.ScalarType))
+    c = Constant(mesh, np.array([[1.0, 2.0], [5.0, 3.0]], PETSc.ScalarType))
 
     a = inner(c[1, 0] * u, v) * dx + inner(c[1, 0] * u, v) * ds
     L = inner(c[1, 0], v) * dx + inner(c[1, 0], v) * ds
@@ -697,7 +688,7 @@ def test_basic_assembly_constant(mode):
 
 def test_lambda_assembler():
     """Tests assembly with a lambda function"""
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 5, 5)
+    mesh = create_unit_square(MPI.COMM_WORLD, 5, 5)
     V = FunctionSpace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 
@@ -712,23 +703,23 @@ def test_lambda_assembler():
 
     def mat_insert(rows, cols, vals):
         vdata.append(vals)
-        rdata.append(numpy.repeat(rows, len(cols)))
-        cdata.append(numpy.tile(cols, len(rows)))
+        rdata.append(np.repeat(rows, len(cols)))
+        cdata.append(np.tile(cols, len(rows)))
         return 0
 
     _cpp.fem.assemble_matrix(mat_insert, a_form._cpp_object, [])
-    vdata = numpy.array(vdata).flatten()
-    cdata = numpy.array(cdata).flatten()
-    rdata = numpy.array(rdata).flatten()
+    vdata = np.array(vdata).flatten()
+    cdata = np.array(cdata).flatten()
+    rdata = np.array(rdata).flatten()
     mat = scipy.sparse.coo_matrix((vdata, (rdata, cdata)))
-    v = numpy.ones(mat.shape[1])
+    v = np.ones(mat.shape[1])
     s = MPI.COMM_WORLD.allreduce(mat.dot(v).sum(), MPI.SUM)
-    assert numpy.isclose(s, 1.0)
+    assert np.isclose(s, 1.0)
 
 
 def test_pack_coefficients():
     """Test packing of form coefficients ahead of main assembly call"""
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 12, 15)
+    mesh = create_unit_square(MPI.COMM_WORLD, 12, 15)
     V = FunctionSpace(mesh, ("Lagrange", 1))
 
     # Non-blocked
@@ -736,8 +727,7 @@ def test_pack_coefficients():
     v = ufl.TestFunction(V)
     c = Constant(mesh, PETSc.ScalarType(12.0))
     F = ufl.inner(c, v) * dx - c * ufl.sqrt(u * u) * ufl.inner(u, v) * dx
-    with u.vector.localForm() as x_local:
-        x_local.set(10.0)
+    u.x.array[:] = 10.0
 
     # -- Test vector
     b0 = assemble_vector(F)
@@ -788,7 +778,7 @@ def test_pack_coefficients():
 
 def test_coefficents_non_constant():
     "Test packing coefficients with non-constant values"
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 3, 5)
+    mesh = create_unit_square(MPI.COMM_WORLD, 3, 5)
     V = FunctionSpace(mesh, ("Lagrange", 3))  # degree 3 so that interpolation is exact
 
     u = Function(V)
@@ -801,13 +791,13 @@ def test_coefficents_non_constant():
     F = (ufl.inner(u, v) - ufl.inner(x[0] * x[1]**2, v)) * dx
     b0 = assemble_vector(F)
     b0.assemble()
-    assert(numpy.linalg.norm(b0.array) == pytest.approx(0.0))
+    assert(np.linalg.norm(b0.array) == pytest.approx(0.0))
 
     # -- Exterior facet integral vector
     F = (ufl.inner(u, v) - ufl.inner(x[0] * x[1]**2, v)) * ds
     b0 = assemble_vector(F)
     b0.assemble()
-    assert(numpy.linalg.norm(b0.array) == pytest.approx(0.0))
+    assert(np.linalg.norm(b0.array) == pytest.approx(0.0))
 
     # -- Interior facet integral vector
     V = FunctionSpace(mesh, ("DG", 3))  # degree 3 so that interpolation is exact
@@ -823,4 +813,41 @@ def test_coefficents_non_constant():
     F = (ufl.inner(u1('+') * u0('-'), ufl.avg(v)) - ufl.inner(x[0] * x[1]**2, ufl.avg(v))) * ufl.dS
     b0 = assemble_vector(F)
     b0.assemble()
-    assert(numpy.linalg.norm(b0.array) == pytest.approx(0.0))
+    assert(np.linalg.norm(b0.array) == pytest.approx(0.0))
+
+
+def test_vector_types():
+    """Assemble form using different types"""
+    mesh = create_unit_square(MPI.COMM_WORLD, 3, 5)
+    V = FunctionSpace(mesh, ("Lagrange", 3))
+    v = ufl.TestFunction(V)
+
+    c = Constant(mesh, np.float64(1))
+    L = inner(c, v) * ufl.dx
+    x0 = _cpp.la.Vector_float64(V.dofmap.index_map, V.dofmap.index_map_bs)
+    L = Form(L, dtype=x0.array.dtype)
+    c0 = pack_constants(L)
+    c1 = pack_coefficients(L)
+    _cpp.fem.assemble_vector(x0.array, L._cpp_object, c0, c1)
+    x0.scatter_reverse(_cpp.common.ScatterMode.add)
+
+    c = Constant(mesh, np.complex128(1))
+    L = inner(c, v) * ufl.dx
+    x1 = _cpp.la.Vector_complex128(V.dofmap.index_map, V.dofmap.index_map_bs)
+    L = Form(L, dtype=x1.array.dtype)
+    c0 = pack_constants(L)
+    c1 = pack_coefficients(L)
+    _cpp.fem.assemble_vector(x1.array, L._cpp_object, c0, c1)
+    x1.scatter_reverse(_cpp.common.ScatterMode.add)
+
+    c = Constant(mesh, np.float32(1))
+    L = inner(c, v) * ufl.dx
+    x2 = _cpp.la.Vector_float32(V.dofmap.index_map, V.dofmap.index_map_bs)
+    L = Form(L, dtype=x2.array.dtype)
+    c0 = pack_constants(L)
+    c1 = pack_coefficients(L)
+    _cpp.fem.assemble_vector(x2.array, L._cpp_object, c0, c1)
+    x2.scatter_reverse(_cpp.common.ScatterMode.add)
+
+    assert np.linalg.norm(x0.array - x1.array) == pytest.approx(0.0)
+    assert np.linalg.norm(x0.array - x2.array) == pytest.approx(0.0, abs=1e-8)

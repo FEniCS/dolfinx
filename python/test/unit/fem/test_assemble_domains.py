@@ -7,19 +7,21 @@
 
 import numpy
 import pytest
+
 import ufl
 from dolfinx.fem import (Constant, DirichletBC, Function, FunctionSpace,
                          apply_lifting, assemble_matrix, assemble_scalar,
                          assemble_vector, set_bc)
-from dolfinx.generation import UnitSquareMesh
-from dolfinx.mesh import GhostMode, MeshTags, locate_entities_boundary
+from dolfinx.mesh import (GhostMode, MeshTags, create_unit_square,
+                          locate_entities_boundary)
+
 from mpi4py import MPI
 from petsc4py import PETSc
 
 
 @pytest.fixture
 def mesh():
-    return UnitSquareMesh(MPI.COMM_WORLD, 10, 10)
+    return create_unit_square(MPI.COMM_WORLD, 10, 10)
 
 
 parametrize_ghost_mode = pytest.mark.parametrize("mode", [
@@ -31,7 +33,7 @@ parametrize_ghost_mode = pytest.mark.parametrize("mode", [
 
 @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
 def test_assembly_dx_domains(mode):
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 10, 10, ghost_mode=mode)
+    mesh = create_unit_square(MPI.COMM_WORLD, 10, 10, ghost_mode=mode)
     V = FunctionSpace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 
@@ -47,8 +49,7 @@ def test_assembly_dx_domains(mode):
     marker = MeshTags(mesh, mesh.topology.dim, indices, values)
     dx = ufl.Measure('dx', subdomain_data=marker, domain=mesh)
     w = Function(V)
-    with w.vector.localForm() as w_local:
-        w_local.set(0.5)
+    w.x.array[:] = 0.5
 
     bc = DirichletBC(Function(V), range(30))
 
@@ -91,7 +92,7 @@ def test_assembly_dx_domains(mode):
 
 @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
 def test_assembly_ds_domains(mode):
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 10, 10, ghost_mode=mode)
+    mesh = create_unit_square(MPI.COMM_WORLD, 10, 10, ghost_mode=mode)
     V = FunctionSpace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 
@@ -128,8 +129,7 @@ def test_assembly_ds_domains(mode):
     ds = ufl.Measure('ds', subdomain_data=marker, domain=mesh)
 
     w = Function(V)
-    with w.vector.localForm() as w_local:
-        w_local.set(0.5)
+    w.x.array[:] = 0.5
 
     bc = DirichletBC(Function(V), range(30))
 
@@ -173,7 +173,7 @@ def test_assembly_ds_domains(mode):
 @parametrize_ghost_mode
 def test_assembly_dS_domains(mode):
     N = 10
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, N, N, ghost_mode=mode)
+    mesh = create_unit_square(MPI.COMM_WORLD, N, N, ghost_mode=mode)
     one = Constant(mesh, PETSc.ScalarType(1))
     val = assemble_scalar(one * ufl.dS)
     val = mesh.comm.allreduce(val, op=MPI.SUM)
@@ -182,18 +182,15 @@ def test_assembly_dS_domains(mode):
 
 @parametrize_ghost_mode
 def test_additivity(mode):
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
+    mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
     V = FunctionSpace(mesh, ("Lagrange", 1))
 
     f1 = Function(V)
     f2 = Function(V)
     f3 = Function(V)
-    with f1.vector.localForm() as f1_local:
-        f1_local.set(1.0)
-    with f2.vector.localForm() as f2_local:
-        f2_local.set(2.0)
-    with f3.vector.localForm() as f3_local:
-        f3_local.set(3.0)
+    f1.x.array[:] = 1.0
+    f2.x.array[:] = 2.0
+    f3.x.array[:] = 3.0
     j1 = ufl.inner(f1, f1) * ufl.dx(mesh)
     j2 = ufl.inner(f2, f2) * ufl.ds(mesh)
     j3 = ufl.inner(ufl.avg(f3), ufl.avg(f3)) * ufl.dS(mesh)

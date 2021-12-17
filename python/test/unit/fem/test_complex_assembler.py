@@ -7,13 +7,15 @@
 
 import numpy as np
 import pytest
+
 import ufl
 from dolfinx.fem import (Function, FunctionSpace, assemble_matrix,
                          assemble_vector)
-from dolfinx.generation import UnitSquareMesh
+from dolfinx.mesh import create_unit_square
+from ufl import dx, grad, inner
+
 from mpi4py import MPI
 from petsc4py import PETSc
-from ufl import dx, grad, inner
 
 pytestmark = pytest.mark.skipif(
     not np.issubdtype(PETSc.ScalarType, np.complexfloating), reason="Only works in complex mode.")
@@ -22,7 +24,7 @@ pytestmark = pytest.mark.skipif(
 def test_complex_assembly():
     """Test assembly of complex matrices and vectors"""
 
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 10, 10)
+    mesh = create_unit_square(MPI.COMM_WORLD, 10, 10)
     P2 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 2)
     V = FunctionSpace(mesh, P2)
 
@@ -79,7 +81,7 @@ def test_complex_assembly_solve():
     """
 
     degree = 3
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 20, 20)
+    mesh = create_unit_square(MPI.COMM_WORLD, 20, 20)
     P = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), degree)
     V = FunctionSpace(mesh, P)
 

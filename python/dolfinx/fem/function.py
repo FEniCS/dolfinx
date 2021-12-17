@@ -6,10 +6,12 @@
 """Collection of functions and function spaces"""
 
 import typing
+import warnings
 from functools import singledispatch
 
 import cffi
 import numpy as np
+
 import ufl
 import ufl.algorithms
 import ufl.algorithms.analysis
@@ -17,6 +19,7 @@ from dolfinx import cpp as _cpp
 from dolfinx import jit
 from dolfinx.fem import dofmap
 from dolfinx.mesh import Mesh
+
 from petsc4py import PETSc
 
 
@@ -32,10 +35,16 @@ class Constant(ufl.Constant):
         """
         c_np = np.asarray(c)
         super().__init__(domain, c_np.shape)
-        if np.iscomplexobj(c) is True:
+        if c_np.dtype == np.complex64:
+            self._cpp_object = _cpp.fem.Constant_complex64(c_np)
+        elif c_np.dtype == np.complex128:
             self._cpp_object = _cpp.fem.Constant_complex128(c_np)
-        else:
+        elif c_np.dtype == np.float32:
+            self._cpp_object = _cpp.fem.Constant_float32(c_np)
+        elif c_np.dtype == np.float64:
             self._cpp_object = _cpp.fem.Constant_float64(c_np)
+        else:
+            raise RuntimeError("Unsupported dtype")
 
     @property
     def value(self):
@@ -238,6 +247,10 @@ class Function(ufl.Coefficient):
         # Store DOLFINx FunctionSpace object
         self._V = V
 
+        # PETSc Vec wrapper around the C++ function data. Constructed
+        # when first requested.
+        self._petsc_x = None
+
     @property
     def function_space(self) -> "FunctionSpace":
         """Return the FunctionSpace"""
@@ -276,7 +289,7 @@ class Function(ufl.Coefficient):
             u = np.reshape(u, (-1, ))
         return u
 
-    def interpolate(self, u) -> None:
+    def interpolate(self, u, cells: np.ndarray = None) -> None:
         """Interpolate an expression"""
         @singledispatch
         def _interpolate(u):
@@ -289,7 +302,25 @@ class Function(ufl.Coefficient):
         def _(u_ptr):
             self._cpp_object.interpolate_ptr(u_ptr)
 
-        _interpolate(u)
+        @_interpolate.register(Expression)
+        def _(expr: Expression, cells: np.ndarray = None):
+            if cells is None:
+                mesh = self.function_space.mesh
+                num_cells_local = mesh.topology.index_map(mesh.topology.dim).size_local
+                cells = np.arange(num_cells_local, dtype=np.int32)
+
+            # Interpolate expression for the set of cells
+            self._cpp_object.interpolate(expr._cpp_object, cells)
+
+        # Ignore cells as input if expression.
+        # FIXME: Should all interpolate functions support input cells?
+        if not isinstance(u, Expression):
+            if cells is not None:
+                warnings.warn("List of cells as input argument is ignored. "
+                              + "All cells local to process will be used in interpolation")
+            _interpolate(u)
+        else:
+            _interpolate(u, cells)
 
     def compute_point_values(self):
         return self._cpp_object.compute_point_values()
@@ -304,8 +335,10 @@ class Function(ufl.Coefficient):
 
     @property
     def vector(self):
-        """Return the vector holding Function degrees-of-freedom."""
-        return self._cpp_object.vector
+        """Return a PETSc vector holding Function degrees-of-freedom."""
+        if self._petsc_x is None:
+            self._petsc_x = _cpp.la.petsc.create_vector_wrap(self.x)
+        return self._petsc_x
 
     @property
     def x(self):

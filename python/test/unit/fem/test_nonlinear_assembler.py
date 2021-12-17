@@ -7,10 +7,11 @@
 
 import math
 
-import dolfinx
 import numpy
 import pytest
+
 import ufl
+from dolfinx.cpp.la.petsc import scatter_local_vectors
 from dolfinx.fem import (DirichletBC, Form, Function, FunctionSpace,
                          VectorFunctionSpace, apply_lifting,
                          apply_lifting_nest, assemble_matrix,
@@ -22,11 +23,12 @@ from dolfinx.fem import (DirichletBC, Form, Function, FunctionSpace,
                          create_vector_nest, locate_dofs_topological, set_bc,
                          set_bc_nest)
 from dolfinx.fem.form import extract_function_spaces
-from dolfinx.generation import UnitCubeMesh, UnitSquareMesh
-from dolfinx.mesh import GhostMode, locate_entities_boundary
+from dolfinx.mesh import (GhostMode, create_unit_cube, create_unit_square,
+                          locate_entities_boundary)
+from ufl import derivative, dx, inner
+
 from mpi4py import MPI
 from petsc4py import PETSc
-from ufl import derivative, dx, inner
 
 
 def nest_matrix_norm(A):
@@ -48,7 +50,7 @@ def test_matrix_assembly_block_nl():
     blocked structures, PETSc Nest structures, and monolithic structures
     in the nonlinear setting
     """
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 4, 8)
+    mesh = create_unit_square(MPI.COMM_WORLD, 4, 8)
 
     p0, p1 = 1, 2
     P0 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p0)
@@ -97,10 +99,9 @@ def test_matrix_assembly_block_nl():
 
     # Monolithic blocked
     x0 = create_vector_block(L_block)
-    dolfinx.cpp.la.scatter_local_vectors(
-        x0, [u.vector.array_r, p.vector.array_r],
-        [(u.function_space.dofmap.index_map, u.function_space.dofmap.index_map_bs),
-         (p.function_space.dofmap.index_map, p.function_space.dofmap.index_map_bs)])
+    scatter_local_vectors(x0, [u.vector.array_r, p.vector.array_r],
+                          [(u.function_space.dofmap.index_map, u.function_space.dofmap.index_map_bs),
+                           (p.function_space.dofmap.index_map, p.function_space.dofmap.index_map_bs)])
     x0.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
     # Ghosts are updated inside assemble_vector_block
@@ -178,8 +179,8 @@ class NonlinearPDE_SNESProblem():
 
     def F_mono(self, snes, x, F):
         x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-        with x.localForm() as _x, self.soln_vars.vector.localForm() as _u:
-            _u[:] = _x
+        with x.localForm() as _x:
+            self.soln_vars.x.array[:] = _x.array_r
         with F.localForm() as f_local:
             f_local.set(0.0)
         assemble_vector(F, self.L)
@@ -229,8 +230,8 @@ class NonlinearPDE_SNESProblem():
         x = x.getNestSubVecs()
         for x_sub, var_sub in zip(x, self.soln_vars):
             x_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-            with x_sub.localForm() as _x, var_sub.vector.localForm() as _u:
-                _u[:] = _x
+            with x_sub.localForm() as _x:
+                var_sub.x.array[:] = _x.array_r
 
         # Assemble
         bcs1 = bcs_by_block(extract_function_spaces(self.a, 1), self.bcs)
@@ -264,7 +265,7 @@ def test_assembly_solve_block_nl():
     """Solve a two-field nonlinear diffusion like problem with block matrix
     approaches and test that solution is the same.
     """
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 12, 11)
+    mesh = create_unit_square(MPI.COMM_WORLD, 12, 11)
     p = 1
     P = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p)
     V0 = FunctionSpace(mesh, P)
@@ -330,10 +331,9 @@ def test_assembly_solve_block_nl():
         p.interpolate(initial_guess_p)
 
         x = create_vector_block(F)
-        dolfinx.cpp.la.scatter_local_vectors(
-            x, [u.vector.array_r, p.vector.array_r],
-            [(u.function_space.dofmap.index_map, u.function_space.dofmap.index_map_bs),
-             (p.function_space.dofmap.index_map, p.function_space.dofmap.index_map_bs)])
+        scatter_local_vectors(x, [u.vector.array_r, p.vector.array_r],
+                              [(u.function_space.dofmap.index_map, u.function_space.dofmap.index_map_bs),
+                               (p.function_space.dofmap.index_map, p.function_space.dofmap.index_map_bs)])
         x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
         snes.solve(None, x)
@@ -440,10 +440,10 @@ def test_assembly_solve_block_nl():
 
 
 @pytest.mark.parametrize("mesh", [
-    UnitSquareMesh(MPI.COMM_WORLD, 12, 11, ghost_mode=GhostMode.none),
-    UnitCubeMesh(MPI.COMM_WORLD, 3, 5, 4, ghost_mode=GhostMode.shared_facet),
-    UnitSquareMesh(MPI.COMM_WORLD, 12, 11, ghost_mode=GhostMode.none),
-    UnitCubeMesh(MPI.COMM_WORLD, 3, 5, 4, ghost_mode=GhostMode.shared_facet)
+    create_unit_square(MPI.COMM_WORLD, 12, 11, ghost_mode=GhostMode.none),
+    create_unit_cube(MPI.COMM_WORLD, 3, 5, 4, ghost_mode=GhostMode.shared_facet),
+    create_unit_square(MPI.COMM_WORLD, 12, 11, ghost_mode=GhostMode.none),
+    create_unit_cube(MPI.COMM_WORLD, 3, 5, 4, ghost_mode=GhostMode.shared_facet)
 ])
 def test_assembly_solve_taylor_hood_nl(mesh):
     """Assemble Stokes problem with Taylor-Hood elements and solve."""
@@ -515,10 +515,9 @@ def test_assembly_solve_taylor_hood_nl(mesh):
 
     x0 = create_vector_block(F)
     with u.vector.localForm() as _u, p.vector.localForm() as _p:
-        dolfinx.cpp.la.scatter_local_vectors(
-            x0, [_u.array_r, _p.array_r],
-            [(u.function_space.dofmap.index_map, u.function_space.dofmap.index_map_bs),
-             (p.function_space.dofmap.index_map, p.function_space.dofmap.index_map_bs)])
+        scatter_local_vectors(x0, [_u.array_r, _p.array_r],
+                              [(u.function_space.dofmap.index_map, u.function_space.dofmap.index_map_bs),
+                               (p.function_space.dofmap.index_map, p.function_space.dofmap.index_map_bs)])
     x0.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
     snes.solve(None, x0)

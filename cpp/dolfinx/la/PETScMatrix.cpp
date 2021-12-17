@@ -168,7 +168,7 @@ MatNullSpace la::petsc::create_nullspace(MPI_Comm comm,
 //-----------------------------------------------------------------------------
 std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                   const std::int32_t*, const PetscScalar*)>
-PETScMatrix::set_fn(Mat A, InsertMode mode)
+petsc::Matrix::set_fn(Mat A, InsertMode mode)
 {
   return [A, mode, cache = std::vector<PetscInt>()](
              std::int32_t m, const std::int32_t* rows, std::int32_t n,
@@ -196,7 +196,7 @@ PETScMatrix::set_fn(Mat A, InsertMode mode)
 //-----------------------------------------------------------------------------
 std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                   const std::int32_t*, const PetscScalar*)>
-PETScMatrix::set_block_fn(Mat A, InsertMode mode)
+petsc::Matrix::set_block_fn(Mat A, InsertMode mode)
 {
   return [A, mode, cache = std::vector<PetscInt>()](
              std::int32_t m, const std::int32_t* rows, std::int32_t n,
@@ -224,7 +224,7 @@ PETScMatrix::set_block_fn(Mat A, InsertMode mode)
 //-----------------------------------------------------------------------------
 std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                   const std::int32_t*, const PetscScalar*)>
-PETScMatrix::set_block_expand_fn(Mat A, int bs0, int bs1, InsertMode mode)
+petsc::Matrix::set_block_expand_fn(Mat A, int bs0, int bs1, InsertMode mode)
 {
   if (bs0 == 1 and bs1 == 1)
     return set_fn(A, mode);
@@ -254,20 +254,19 @@ PETScMatrix::set_block_expand_fn(Mat A, int bs0, int bs1, InsertMode mode)
   };
 }
 //-----------------------------------------------------------------------------
-PETScMatrix::PETScMatrix(MPI_Comm comm, const SparsityPattern& sp,
-                         const std::string& type)
-    : PETScOperator(petsc::create_matrix(comm, sp, type), false)
+petsc::Matrix::Matrix(MPI_Comm comm, const SparsityPattern& sp,
+                      const std::string& type)
+    : Operator(petsc::create_matrix(comm, sp, type), false)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-PETScMatrix::PETScMatrix(Mat A, bool inc_ref_count)
-    : PETScOperator(A, inc_ref_count)
+petsc::Matrix::Matrix(Mat A, bool inc_ref_count) : Operator(A, inc_ref_count)
 {
   // Reference count to A is incremented in base class
 }
 //-----------------------------------------------------------------------------
-double PETScMatrix::norm(Norm norm_type) const
+double petsc::Matrix::norm(Norm norm_type) const
 {
   assert(_matA);
   PetscErrorCode ierr;
@@ -293,7 +292,7 @@ double PETScMatrix::norm(Norm norm_type) const
   return value;
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::apply(AssemblyType type)
+void petsc::Matrix::apply(AssemblyType type)
 {
   common::Timer timer("Apply (PETScMatrix)");
 
@@ -312,13 +311,13 @@ void PETScMatrix::apply(AssemblyType type)
     petsc::error(ierr, __FILE__, "MatAssemblyEnd");
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::set_options_prefix(std::string options_prefix)
+void petsc::Matrix::set_options_prefix(std::string options_prefix)
 {
   assert(_matA);
   MatSetOptionsPrefix(_matA, options_prefix.c_str());
 }
 //-----------------------------------------------------------------------------
-std::string PETScMatrix::get_options_prefix() const
+std::string petsc::Matrix::get_options_prefix() const
 {
   assert(_matA);
   const char* prefix = nullptr;
@@ -326,7 +325,7 @@ std::string PETScMatrix::get_options_prefix() const
   return std::string(prefix);
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::set_from_options()
+void petsc::Matrix::set_from_options()
 {
   assert(_matA);
   MatSetFromOptions(_matA);

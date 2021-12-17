@@ -15,6 +15,7 @@ from dolfinx import cpp as _cpp
 from dolfinx import la
 from dolfinx.fem.dirichletbc import DirichletBC, bcs_by_block
 from dolfinx.fem.form import Form, extract_function_spaces
+
 from petsc4py import PETSc
 
 
@@ -88,30 +89,30 @@ def create_vector(L: Form) -> PETSc.Vec:
 def create_vector_block(L: typing.List[Form]) -> PETSc.Vec:
     maps = [(form.function_spaces[0].dofmap.index_map, form.function_spaces[0].dofmap.index_map_bs)
             for form in _create_cpp_form(L)]
-    return _cpp.fem.create_vector_block(maps)
+    return _cpp.fem.petsc.create_vector_block(maps)
 
 
 def create_vector_nest(L: typing.List[Form]) -> PETSc.Vec:
     maps = [(form.function_spaces[0].dofmap.index_map, form.function_spaces[0].dofmap.index_map_bs)
             for form in _create_cpp_form(L)]
-    return _cpp.fem.create_vector_nest(maps)
+    return _cpp.fem.petsc.create_vector_nest(maps)
 
 
 # -- Matrix instantiation ----------------------------------------------------
 
 def create_matrix(a: Form, mat_type=None) -> PETSc.Mat:
     if mat_type is not None:
-        return _cpp.fem.create_matrix(_create_cpp_form(a), mat_type)
+        return _cpp.fem.petsc.create_matrix(_create_cpp_form(a), mat_type)
     else:
-        return _cpp.fem.create_matrix(_create_cpp_form(a))
+        return _cpp.fem.petsc.create_matrix(_create_cpp_form(a))
 
 
 def create_matrix_block(a: typing.List[typing.List[Form]]) -> PETSc.Mat:
-    return _cpp.fem.create_matrix_block(_create_cpp_form(a))
+    return _cpp.fem.petsc.create_matrix_block(_create_cpp_form(a))
 
 
 def create_matrix_nest(a: typing.List[typing.List[Form]]) -> PETSc.Mat:
-    return _cpp.fem.create_matrix_nest(_create_cpp_form(a))
+    return _cpp.fem.petsc.create_matrix_nest(_create_cpp_form(a))
 
 
 Coefficients = collections.namedtuple('Coefficients', ['constants', 'coeffs'])
@@ -174,7 +175,7 @@ def assemble_vector_nest(L: Form, coeffs=Coefficients(None, None)) -> PETSc.Vec:
     """
     maps = [(form.function_spaces[0].dofmap.index_map, form.function_spaces[0].dofmap.index_map_bs)
             for form in _create_cpp_form(L)]
-    b = _cpp.fem.create_vector_nest(maps)
+    b = _cpp.fem.petsc.create_vector_nest(maps)
     for b_sub in b.getNestSubVecs():
         with b_sub.localForm() as b_local:
             b_local.set(0.0)
@@ -212,7 +213,7 @@ def assemble_vector_block(L: typing.List[Form],
     """
     maps = [(form.function_spaces[0].dofmap.index_map, form.function_spaces[0].dofmap.index_map_bs)
             for form in _create_cpp_form(L)]
-    b = _cpp.fem.create_vector_block(maps)
+    b = _cpp.fem.petsc.create_vector_block(maps)
     with b.localForm() as b_local:
         b_local.set(0.0)
     return assemble_vector_block(b, L, a, bcs, x0, scale, coeffs_L, coeffs_a)
@@ -235,7 +236,7 @@ def _(b: PETSc.Vec,
     maps = [(form.function_spaces[0].dofmap.index_map, form.function_spaces[0].dofmap.index_map_bs)
             for form in _create_cpp_form(L)]
     if x0 is not None:
-        x0_local = _cpp.la.get_local_vectors(x0, maps)
+        x0_local = _cpp.la.petsc.get_local_vectors(x0, maps)
         x0_sub = x0_local
     else:
         x0_local = []
@@ -248,14 +249,14 @@ def _(b: PETSc.Vec,
            coeffs_a[1] if coeffs_a[1] is not None else pack_coefficients(_a))
 
     bcs1 = _cpp_dirichletbc(bcs_by_block(extract_function_spaces(_a, 1), bcs))
-    b_local = _cpp.la.get_local_vectors(b, maps)
+    b_local = _cpp.la.petsc.get_local_vectors(b, maps)
     for b_sub, L_sub, a_sub, constant_L, coeff_L, constant_a, coeff_a in zip(b_local, _L, _a,
                                                                              c_L[0], c_L[1],
                                                                              c_a[0], c_a[1]):
         _cpp.fem.assemble_vector(b_sub, L_sub, constant_L, coeff_L)
         _cpp.fem.apply_lifting(b_sub, a_sub, constant_a, coeff_a, bcs1, x0_local, scale)
 
-    _cpp.la.scatter_local_vectors(b, b_local, maps)
+    _cpp.la.petsc.scatter_local_vectors(b, b_local, maps)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
     bcs0 = _cpp_dirichletbc(bcs_by_block(extract_function_spaces(_create_cpp_form(L)), bcs))
@@ -281,7 +282,7 @@ def assemble_matrix(a: Form,
     finalised, i.e. ghost values are not accumulated.
 
     """
-    A = _cpp.fem.create_matrix(_create_cpp_form(a))
+    A = _cpp.fem.petsc.create_matrix(_create_cpp_form(a))
     return assemble_matrix(A, a, bcs, diagonal, coeffs)
 
 
@@ -298,11 +299,11 @@ def _(A: PETSc.Mat,
     _a = _create_cpp_form(a)
     c = (coeffs[0] if coeffs[0] is not None else pack_constants(_a),
          coeffs[1] if coeffs[1] is not None else pack_coefficients(_a))
-    _cpp.fem.assemble_matrix_petsc(A, _a, c[0], c[1], _cpp_dirichletbc(bcs))
+    _cpp.fem.petsc.assemble_matrix(A, _a, c[0], c[1], _cpp_dirichletbc(bcs))
     if _a.function_spaces[0].id == _a.function_spaces[1].id:
         A.assemblyBegin(PETSc.Mat.AssemblyType.FLUSH)
         A.assemblyEnd(PETSc.Mat.AssemblyType.FLUSH)
-        _cpp.fem.insert_diagonal(A, _a.function_spaces[0], _cpp_dirichletbc(bcs), diagonal)
+        _cpp.fem.petsc.insert_diagonal(A, _a.function_spaces[0], _cpp_dirichletbc(bcs), diagonal)
     return A
 
 
@@ -313,7 +314,7 @@ def assemble_matrix_nest(a: typing.List[typing.List[Form]],
                          diagonal: float = 1.0,
                          coeffs=Coefficients(None, None)) -> PETSc.Mat:
     """Assemble bilinear forms into matrix"""
-    A = _cpp.fem.create_matrix_nest(_create_cpp_form(a), mat_types)
+    A = _cpp.fem.petsc.create_matrix_nest(_create_cpp_form(a), mat_types)
     assemble_matrix_nest(A, a, bcs, diagonal, coeffs)
     return A
 
@@ -343,7 +344,7 @@ def assemble_matrix_block(a: typing.List[typing.List[Form]],
                           diagonal: float = 1.0,
                           coeffs=Coefficients(None, None)) -> PETSc.Mat:
     """Assemble bilinear forms into matrix"""
-    A = _cpp.fem.create_matrix_block(_create_cpp_form(a))
+    A = _cpp.fem.petsc.create_matrix_block(_create_cpp_form(a))
     return assemble_matrix_block(A, a, bcs, diagonal, coeffs)
 
 
@@ -389,15 +390,15 @@ def _(A: PETSc.Mat,
          coeffs[1] if coeffs[1] is not None else pack_coefficients(_a))
 
     V = _extract_function_spaces(_a)
-    is_rows = _cpp.la.create_petsc_index_sets([(Vsub.dofmap.index_map, Vsub.dofmap.index_map_bs) for Vsub in V[0]])
-    is_cols = _cpp.la.create_petsc_index_sets([(Vsub.dofmap.index_map, Vsub.dofmap.index_map_bs) for Vsub in V[1]])
+    is_rows = _cpp.la.petsc.create_index_sets([(Vsub.dofmap.index_map, Vsub.dofmap.index_map_bs) for Vsub in V[0]])
+    is_cols = _cpp.la.petsc.create_index_sets([(Vsub.dofmap.index_map, Vsub.dofmap.index_map_bs) for Vsub in V[1]])
 
     # Assemble form
     for i, a_row in enumerate(_a):
         for j, a_sub in enumerate(a_row):
             if a_sub is not None:
                 Asub = A.getLocalSubMatrix(is_rows[i], is_cols[j])
-                _cpp.fem.assemble_matrix_petsc(Asub, a_sub, c[0][i][j], c[1][i][j], _cpp_dirichletbc(bcs), True)
+                _cpp.fem.petsc.assemble_matrix(Asub, a_sub, c[0][i][j], c[1][i][j], _cpp_dirichletbc(bcs), True)
                 A.restoreLocalSubMatrix(is_rows[i], is_cols[j], Asub)
 
     # Flush to enable switch from add to set in the matrix
@@ -409,7 +410,7 @@ def _(A: PETSc.Mat,
             if a_sub is not None:
                 Asub = A.getLocalSubMatrix(is_rows[i], is_cols[j])
                 if a_sub.function_spaces[0].id == a_sub.function_spaces[1].id:
-                    _cpp.fem.insert_diagonal(Asub, a_sub.function_spaces[0], _cpp_dirichletbc(bcs), diagonal)
+                    _cpp.fem.petsc.insert_diagonal(Asub, a_sub.function_spaces[0], _cpp_dirichletbc(bcs), diagonal)
                 A.restoreLocalSubMatrix(is_rows[i], is_cols[j], Asub)
 
     return A

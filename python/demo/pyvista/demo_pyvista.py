@@ -9,14 +9,16 @@
 # ===============================
 
 
+import numpy as np
+
 import dolfinx.io
 import dolfinx.plot
-import numpy as np
 import ufl
 from dolfinx.fem import (Function, FunctionSpace, LinearProblem,
                          VectorFunctionSpace)
-from dolfinx.generation import UnitCubeMesh, UnitSquareMesh
-from dolfinx.mesh import CellType, MeshTags, compute_midpoints
+from dolfinx.mesh import (CellType, MeshTags, compute_midpoints,
+                          create_unit_cube, create_unit_square)
+
 from mpi4py import MPI
 
 try:
@@ -44,7 +46,7 @@ def int_u(x):
     return x[0] + 3 * x[1] + 5 * x[2]
 
 
-mesh = UnitCubeMesh(MPI.COMM_WORLD, 4, 3, 5, cell_type=CellType.tetrahedron)
+mesh = create_unit_cube(MPI.COMM_WORLD, 4, 3, 5, cell_type=CellType.tetrahedron)
 V = FunctionSpace(mesh, ("Lagrange", 1))
 u = Function(V)
 u.interpolate(int_u)
@@ -122,7 +124,7 @@ else:
 # As in the previous section, we interpolate a function into a Lagrange
 # function space
 
-mesh = UnitSquareMesh(MPI.COMM_WORLD, 12, 12, cell_type=CellType.quadrilateral)
+mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, cell_type=CellType.quadrilateral)
 V = FunctionSpace(mesh, ("Lagrange", 1))
 u = Function(V)
 u.interpolate(lambda x: np.sin(np.pi * x[0]) * np.sin(2 * x[1] * np.pi))
@@ -231,14 +233,13 @@ problem.solve()
 
 # To get a topology that has a 1-1 correspondence with the degrees of
 # freedom in the function space, we call
-# `dolfinx.plot.create_vtk_topology`. We obtain the geometry for
-# the dofs owned on this process by tabulation of the dof coordinates.
+# `dolfinx.plot.create_vtk_topology`.
 topology, cell_types = dolfinx.plot.create_vtk_topology(V)
 num_dofs_local = uh.function_space.dofmap.index_map.size_local
-geometry = uh.function_space.tabulate_dof_coordinates()[:num_dofs_local]
+geometry = uh.function_space.tabulate_dof_coordinates()
 
 # We discard the complex values if using PETSc in complex mode
-values = uh.vector.array.real if np.iscomplexobj(uh.vector.array) else uh.vector.array
+values = uh.x.array.real if np.iscomplexobj(uh.x.array) else uh.x.array
 
 # We create a pyvista mesh from the topology and geometry, and attach
 # the coefficients of the degrees of freedom
@@ -284,7 +285,7 @@ def vel(x):
     return vals
 
 
-mesh = UnitSquareMesh(MPI.COMM_WORLD, 6, 6, CellType.triangle)
+mesh = create_unit_square(MPI.COMM_WORLD, 6, 6, CellType.triangle)
 V = VectorFunctionSpace(mesh, ("Lagrange", 2))
 uh = Function(V)
 uh.interpolate(vel)
@@ -299,10 +300,10 @@ topology, cell_types = dolfinx.plot.create_vtk_topology(V, cell_entities)
 # As we deal with a vector function space, we need to adjust the values
 # in the underlying one dimensional array in dolfinx.Function, by
 # reshaping the data, and add an extra column to make it a 3D vector
-num_dofs_local = uh.function_space.dofmap.index_map.size_local
-geometry = uh.function_space.tabulate_dof_coordinates()[:num_dofs_local]
-values = np.zeros((V.dofmap.index_map.size_local, 3), dtype=np.float64)
-values[:, :mesh.geometry.dim] = uh.vector.array.real.reshape(V.dofmap.index_map.size_local, V.dofmap.index_map_bs)
+num_dofs = V.dofmap.index_map.size_local + V.dofmap.index_map.num_ghosts
+geometry = V.tabulate_dof_coordinates()
+values = np.zeros((num_dofs, 3), dtype=np.float64)
+values[:, :mesh.geometry.dim] = uh.x.array.real.reshape(num_dofs, V.dofmap.index_map_bs)
 
 # Create a point cloud of glyphs
 function_grid = pyvista.UnstructuredGrid(topology, cell_types, geometry)
@@ -353,7 +354,7 @@ def vel(x):
     return vals
 
 
-mesh = UnitCubeMesh(MPI.COMM_WORLD, 4, 4, 4, CellType.hexahedron)
+mesh = create_unit_cube(MPI.COMM_WORLD, 4, 4, 4, CellType.hexahedron)
 V = VectorFunctionSpace(mesh, ("DG", 2))
 uh = Function(V)
 uh.interpolate(vel)
@@ -362,10 +363,10 @@ num_cells = mesh.topology.index_map(mesh.topology.dim).size_local
 cell_entities = np.arange(num_cells, dtype=np.int32)
 
 topology, cell_types = dolfinx.plot.create_vtk_topology(V, cell_entities)
-num_dofs_local = uh.function_space.dofmap.index_map.size_local
-geometry = uh.function_space.tabulate_dof_coordinates()[:num_dofs_local]
-values = np.zeros((V.dofmap.index_map.size_local, 3), dtype=np.float64)
-values[:, :mesh.geometry.dim] = uh.vector.array.real.reshape(V.dofmap.index_map.size_local, V.dofmap.index_map_bs)
+num_dofs = V.dofmap.index_map.size_local + V.dofmap.index_map.num_ghosts
+geometry = uh.function_space.tabulate_dof_coordinates()
+values = np.zeros((num_dofs, 3), dtype=np.float64)
+values[:, :mesh.geometry.dim] = uh.x.array.real.reshape(num_dofs, V.dofmap.index_map_bs)
 
 # Create a point cloud of glyphs
 grid = pyvista.UnstructuredGrid(topology, cell_types, geometry)

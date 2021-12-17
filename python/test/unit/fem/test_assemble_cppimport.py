@@ -8,21 +8,23 @@
 import pathlib
 
 import cppimport
-import dolfinx
-import dolfinx.pkgconfig
 import numpy as np
-import petsc4py
+import pybind11
 import pytest
 import scipy.sparse.linalg
+
+import dolfinx
+import dolfinx.pkgconfig
 import ufl
 from dolfinx.fem import (DirichletBC, Form, Function, FunctionSpace,
                          assemble_matrix, locate_dofs_geometrical)
-from dolfinx.generation import UnitSquareMesh
+from dolfinx.mesh import create_unit_square
 from dolfinx.wrappers import get_include_path as pybind_inc
 from dolfinx_utils.test.fixtures import tempdir  # noqa: F401
 from dolfinx_utils.test.skips import skip_in_parallel
+
+import petsc4py
 from mpi4py import MPI
-import pybind11
 
 
 @skip_in_parallel
@@ -112,7 +114,7 @@ PYBIND11_MODULE(eigen_csr, m)
                     A[dofs, dofs] = 1.0
         return A
 
-    mesh = UnitSquareMesh(MPI.COMM_SELF, 12, 12)
+    mesh = create_unit_square(MPI.COMM_SELF, 12, 12)
     Q = FunctionSpace(mesh, ("Lagrange", 1))
     u = ufl.TrialFunction(Q)
     v = ufl.TestFunction(Q)
@@ -120,8 +122,7 @@ PYBIND11_MODULE(eigen_csr, m)
 
     bdofsQ = locate_dofs_geometrical(Q, lambda x: np.logical_or(np.isclose(x[0], 0.0), np.isclose(x[0], 1.0)))
     u_bc = Function(Q)
-    with u_bc.vector.localForm() as u_local:
-        u_local.set(1.0)
+    u_bc.x.array[:] = 1.0
     bc = DirichletBC(u_bc, bdofsQ)
 
     A1 = assemble_matrix(a, [bc])
