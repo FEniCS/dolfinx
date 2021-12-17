@@ -75,3 +75,20 @@ def test_vector_element():
 
         A = dolfinx.fem.assemble_matrix(a)
         A.assemble()
+
+
+@skip_in_parallel
+def test_element_product():
+    mesh = create_unit_square(MPI.COMM_WORLD, 2, 2)
+    P3 = ufl.VectorElement("Lagrange", mesh.ufl_cell(), 3)
+    P1 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
+    TH = P3 * P1
+    W = FunctionSpace(mesh, TH)
+
+    u = ufl.TrialFunction(U)
+    v = ufl.TestFunction(U)
+
+    a = ufl.inner(u, v) * ufl.dx
+
+    A = dolfinx.fem.assemble_matrix(a)
+    A.assemble()
