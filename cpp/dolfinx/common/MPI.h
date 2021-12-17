@@ -174,6 +174,11 @@ constexpr MPI_Datatype mpi_type()
     return MPI_UNSIGNED_LONG_LONG;
   else if constexpr (std::is_same<T, bool>::value)
     return MPI_C_BOOL;
+  else if constexpr (std::is_same<T, std::int8_t>::value)
+    return MPI_INT8_T;
+  else
+    // Issue compile time error
+    static_assert(!std::is_same<T, T>::value);
 }
 
 //---------------------------------------------------------------------------
