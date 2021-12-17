@@ -89,7 +89,7 @@ nearest_simplex(const xt::xtensor<double, 2>& s)
 
     // Check if edges are closer
     constexpr const int f[3][2] = {{0, 1}, {0, 2}, {1, 2}};
-    for (std::size_t i = 0; i < s.shape(0); ++i)
+    for (std::size_t i = 0; i < s_rows; ++i)
     {
       auto s0 = xt::row(s, f[i][0]);
       auto s1 = xt::row(s, f[i][1]);

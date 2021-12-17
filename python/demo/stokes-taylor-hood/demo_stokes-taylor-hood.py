@@ -91,7 +91,7 @@ from petsc4py import PETSc
 
 # Create mesh
 mesh = create_rectangle(MPI.COMM_WORLD,
-                        [np.array([0, 0, 0]), np.array([1, 1, 0])],
+                        [np.array([0, 0]), np.array([1, 1])],
                         [32, 32],
                         CellType.triangle, GhostMode.none)
 
