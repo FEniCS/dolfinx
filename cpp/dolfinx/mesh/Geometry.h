@@ -72,12 +72,12 @@ public:
   /// Access geometry degrees-of-freedom data (const version)
   /// @return The flattened row-major geometry data, where the shape is
   /// (num_points, 3)
-  const std::vector<double>& x() const { return _x; }
+  const std::vector<double>& x() const;
 
   /// Access geometry degrees-of-freedom data (version)
   /// @return The flattened row-major geometry data, where the shape is
   /// (num_points, 3)
-  std::vector<double>& x() { return _x; }
+  std::vector<double>& x();
 
   /// The element that describes the geometry map
   /// @return The coordinate/geometry element

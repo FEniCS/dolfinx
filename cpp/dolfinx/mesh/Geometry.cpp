@@ -29,9 +29,9 @@ std::shared_ptr<const common::IndexMap> Geometry::index_map() const
   return _index_map;
 }
 //-----------------------------------------------------------------------------
-// xt::xtensor<double, 2>& Geometry::x() { return _foo; }
-// //-----------------------------------------------------------------------------
-// const xt::xtensor<double, 2>& Geometry::x() const { return _foo; }
+std::vector<double>& Geometry::x() { return _x; }
+//-----------------------------------------------------------------------------
+const std::vector<double>& Geometry::x() const { return _x; }
 //-----------------------------------------------------------------------------
 const fem::CoordinateElement& Geometry::cmap() const { return _cmap; }
 //-----------------------------------------------------------------------------
