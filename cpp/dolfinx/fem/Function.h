@@ -338,8 +338,11 @@ public:
       // Get cell geometry (coordinate dofs)
       auto x_dofs = x_dofmap.links(cell_index);
       for (std::size_t i = 0; i < num_dofs_g; ++i)
+      {
+        const int pos = 3 * x_dofs[i];
         for (std::size_t j = 0; j < gdim; ++j)
-          coordinate_dofs(i, j) = x_g[3 * x_dofs[i] + j];
+          coordinate_dofs(i, j) = x_g[pos + j];
+      }
 
       for (std::size_t j = 0; j < gdim; ++j)
         xp(0, j) = x(p, j);

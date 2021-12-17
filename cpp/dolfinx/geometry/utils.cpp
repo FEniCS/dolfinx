@@ -334,8 +334,11 @@ geometry::shortest_vector(const mesh::Mesh& mesh, int dim,
       auto dofs = x_dofmap.links(entities[e]);
       xt::xtensor<double, 2> nodes({dofs.size(), 3});
       for (std::size_t i = 0; i < dofs.size(); ++i)
+      {
+        const int pos = 3 * dofs[i];
         for (std::size_t j = 0; j < 3; ++j)
-          nodes(i, j) = geom_dofs[3 * dofs[i] + j];
+          nodes(i, j) = geom_dofs[pos + j];
+      }
 
       xt::row(shortest_vectors, e) = geometry::compute_distance_gjk(
           xt::reshape_view(xt::row(points, e), {1, 3}), nodes);
@@ -370,8 +373,11 @@ geometry::shortest_vector(const mesh::Mesh& mesh, int dim,
               dim, local_cell_entity);
       xt::xtensor<double, 2> nodes({entity_dofs.size(), 3});
       for (std::size_t i = 0; i < entity_dofs.size(); i++)
+      {
+        const int pos = 3 * dofs[entity_dofs[i]];
         for (std::size_t j = 0; j < 3; ++j)
-          nodes(i, j) = geom_dofs[3 * dofs[entity_dofs[i]] + j];
+          nodes(i, j) = geom_dofs[pos + j];
+      }
 
       xt::row(shortest_vectors, e) = compute_distance_gjk(
           xt::reshape_view(xt::row(points, e), {1, 3}), nodes);

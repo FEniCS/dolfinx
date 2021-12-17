@@ -273,8 +273,11 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0)
     // Get cell geometry (coordinate dofs)
     auto x_dofs = x_dofmap.links(c);
     for (std::size_t i = 0; i < num_dofs_g; ++i)
+    {
+      const int pos = 3 * x_dofs[i];
       for (std::size_t j = 0; j < gdim; ++j)
-        coordinate_dofs(i, j) = x_g[3 * x_dofs[i] + j];
+        coordinate_dofs(i, j) = x_g[pos + j];
+    }
 
     // Compute Jacobians and reference points for current cell
     J.fill(0);
@@ -511,8 +514,11 @@ void interpolate(Function<T>& u, xt::xarray<T>& f,
     {
       auto x_dofs = x_dofmap.links(c);
       for (int i = 0; i < num_dofs_g; ++i)
+      {
+        const int pos = 3 * x_dofs[i];
         for (int j = 0; j < gdim; ++j)
-          coordinate_dofs(i, j) = x_g[3 * x_dofs[i] + j];
+          coordinate_dofs(i, j) = x_g[pos + j];
+      }
 
       // Compute J, detJ and K
       J.fill(0);
