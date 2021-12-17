@@ -78,17 +78,26 @@ def test_vector_element():
 
 
 @skip_in_parallel
-def test_element_product():
+@pytest.mark.parametrize("d1", range(1, 4))
+@pytest.mark.parametrize("d2", range(1, 4))
+def test_element_product(d1, d2):
     mesh = create_unit_square(MPI.COMM_WORLD, 2, 2)
-    P3 = ufl.VectorElement("Lagrange", mesh.ufl_cell(), 3)
-    P1 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
+    P3 = ufl.VectorElement("Lagrange", mesh.ufl_cell(), d1)
+    P1 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), d2)
     TH = P3 * P1
     W = FunctionSpace(mesh, TH)
 
-    u = ufl.TrialFunction(U)
-    v = ufl.TestFunction(U)
-
-    a = ufl.inner(u, v) * ufl.dx
-
+    u = ufl.TrialFunction(W)
+    v = ufl.TestFunction(W)
+    a = ufl.inner(u[0], v[0]) * ufl.dx
     A = dolfinx.fem.assemble_matrix(a)
     A.assemble()
+
+    W = FunctionSpace(mesh, P3)
+    u = ufl.TrialFunction(W)
+    v = ufl.TestFunction(W)
+    a = ufl.inner(u[0], v[0]) * ufl.dx
+    B = dolfinx.fem.assemble_matrix(a)
+    B.assemble()
+
+    assert np.isclose(A.norm(), B.norm())
