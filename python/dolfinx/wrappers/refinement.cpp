@@ -16,7 +16,6 @@ namespace dolfinx_wrappers
 
 void refinement(py::module& m)
 {
-
   // dolfinx::refinement::refine
   m.def("refine",
         py::overload_cast<const dolfinx::mesh::Mesh&, bool>(
