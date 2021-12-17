@@ -152,3 +152,8 @@ def test_ghost_update(cell_type):
     assert new_size == num_cells
     assert cell_map2.size_global == cell_map.size_global
     assert cell_map2.size_local == cell_map.size_local
+
+    # No interface facets for maximal overlap
+    mesh2.topology.create_connectivity(tdim - 1, tdim)
+    facets = compute_interface_facets(mesh2.topology)
+    assert not numpy.any(facets)
