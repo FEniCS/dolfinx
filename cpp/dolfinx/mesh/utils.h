@@ -153,4 +153,12 @@ compute_incident_entities(const Mesh& mesh,
                           const xtl::span<const std::int32_t>& entities, int d0,
                           int d1);
 
+/// Update mesh with a new set of ghosts.
+// Ghost can be removed or added according to the new ghost list.
+/// @param[in] mesh The mesh
+/// @param[in] dest Destination rank for mesh cells owned by this rank
+/// @return Mesh with new ghosts
+mesh::Mesh update_ghosts(const mesh::Mesh& mesh,
+                         graph::AdjacencyList<std::int32_t>& dest);
+
 } // namespace dolfinx::mesh

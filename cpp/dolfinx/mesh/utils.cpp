@@ -13,6 +13,7 @@
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/math.h>
+#include <dolfinx/common/sort.h>
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/graph/partition.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -566,5 +567,65 @@ mesh::compute_incident_entities(const Mesh& mesh,
   entities1.erase(std::unique(entities1.begin(), entities1.end()),
                   entities1.end());
   return entities1;
+}
+//-----------------------------------------------------------------------------
+mesh::Mesh mesh::update_ghosts(const mesh::Mesh& mesh,
+                               graph::AdjacencyList<std::int32_t>& dest)
+{
+  // Get topology information
+  const mesh::Topology& topology = mesh.topology();
+  int tdim = topology.dim();
+
+  std::shared_ptr<const common::IndexMap> cell_map = topology.index_map(tdim);
+  std::shared_ptr<const common::IndexMap> vert_map = topology.index_map(0);
+  std::shared_ptr<const graph::AdjacencyList<std::int32_t>> cv
+      = topology.connectivity(tdim, 0);
+
+  std::int32_t num_local_cells = cell_map->size_local();
+  std::int32_t num_ghosts = cell_map->num_ghosts();
+
+  // Get geometry information
+  const mesh::Geometry& geometry = mesh.geometry();
+  int gdim = geometry.dim();
+  const xt::xtensor<double, 2>& coord = geometry.x();
+
+  std::vector<std::int32_t> vertex_to_coord(vert_map->size_local()
+                                            + vert_map->num_ghosts());
+  for (std::int32_t c = 0; c < num_local_cells + num_ghosts; ++c)
+  {
+    auto vertices = cv->links(c);
+    auto dofs = geometry.dofmap().links(c);
+    for (std::size_t i = 0; i < vertices.size(); ++i)
+      vertex_to_coord[vertices[i]] = dofs[i];
+  }
+
+  std::vector<std::int64_t> topology_array;
+  std::vector<std::int32_t> counter(num_local_cells);
+  std::vector<int64_t> global_inds(cv->num_links(0));
+
+  // Compute topology information
+  for (std::int32_t i = 0; i < num_local_cells; i++)
+  {
+    vert_map->local_to_global(cv->links(i), global_inds);
+    topology_array.insert(topology_array.end(), global_inds.begin(),
+                          global_inds.end());
+    counter[i] += global_inds.size();
+  }
+
+  std::vector<std::int32_t> offsets(counter.size() + 1, 0);
+  std::partial_sum(counter.begin(), counter.end(), offsets.begin() + 1);
+  graph::AdjacencyList<std::int64_t> cell_vertices(topology_array, offsets);
+
+  // Copy over existing mesh vertices
+  const std::int32_t num_local_vertices = vert_map->size_local();
+  xt::xtensor<double, 2> x = xt::empty<double>({num_local_vertices, gdim});
+  for (int v = 0; v < num_local_vertices; ++v)
+    for (int j = 0; j < gdim; ++j)
+      x(v, j) = coord(vertex_to_coord[v], j);
+
+  auto partitioner = [&dest](...) { return dest; };
+
+  return mesh::create_mesh(mesh.comm(), cell_vertices, geometry.cmap(), x,
+                           mesh::GhostMode::shared_facet, partitioner);
 }
 //-----------------------------------------------------------------------------

@@ -40,6 +40,15 @@ class Topology;
 ///   exterior of the domain.
 std::vector<bool> compute_boundary_facets(const Topology& topology);
 
+/// Compute marker for facets that are on the interface between adjacent
+/// subdomains, i.e. are connected to only one cell and are either shared or
+/// ghosts;
+/// @param[in] topology The topology
+/// @return Vector with length equal to the number of facets (owned + ghosts) on
+///   this this process. True if the ith facet (local index) is on the
+///   interface.
+std::vector<bool> compute_interface_facets(const Topology& topology);
+
 /// Topology stores the topology of a mesh, consisting of mesh entities
 /// and connectivity (incidence relations for the mesh entities).
 ///
