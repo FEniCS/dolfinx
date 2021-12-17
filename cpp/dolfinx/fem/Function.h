@@ -167,11 +167,10 @@ public:
     const xt::xtensor<double, 2> x = fem::interpolation_coords(
         *_function_space->element(), *_function_space->mesh(), cells);
     auto fx = f(x);
-    if (int vs = _function_space->element()->value_size(); vs == 1)
+    if (int vs = _function_space->element()->value_size();
+        vs == 1 and fx.dimension() == 1)
     {
       // Check for scalar-valued functions
-      if (fx.dimension() != 1)
-        throw std::runtime_error("Expected 1D array of data");
       if (fx.shape(0) != x.shape(1))
         throw std::runtime_error("Data returned by callable has wrong length");
     }
