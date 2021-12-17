@@ -94,7 +94,7 @@ mesh::Geometry mesh::create_geometry(
 
   // Build coordinate dof array,  copying coordinates to correct
   // position
-  std::vector<double> xg(coords.shape(0) * coords.shape(1));
+  std::vector<double> xg(coords.shape(0) * 3, 0.0);
   auto _xg = xt::adapt(xg, {coords.shape(0), std::size_t(3)});
   for (std::size_t i = 0; i < coords.shape(0); ++i)
   {
