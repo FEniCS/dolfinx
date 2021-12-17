@@ -93,6 +93,9 @@ public:
   /// Geometry degrees-of-freedom (new)
   const std::vector<double>& xnew() const { return _x; }
 
+  /// Geometry degrees-of-freedom (new)
+  std::vector<double>& xnew() { return _x; }
+
   /// The element that describes the geometry map
   /// @return The coordinate/geometry element
   const fem::CoordinateElement& cmap() const;
