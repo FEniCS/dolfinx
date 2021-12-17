@@ -109,7 +109,7 @@ public:
 
     // FIXME: Add proper interface for num coordinate dofs
     const std::size_t num_dofs_g = x_dofmap.num_links(0);
-    const std::vector<double>& x_g = _mesh->geometry().x();
+    xtl::span<const double> x_g = _mesh->geometry().x();
 
     // Create data structures used in evaluation
     std::vector<double> coordinate_dofs(3 * num_dofs_g);

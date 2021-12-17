@@ -65,7 +65,7 @@ void assemble_cells(
 
   // FIXME: Add proper interface for num coordinate dofs
   const std::size_t num_dofs_g = x_dofmap.num_links(0);
-  const std::vector<double>& x_g = geometry.x();
+  xtl::span<const double> x_g = geometry.x();
 
   // Iterate over active cells
   const int num_dofs0 = dofmap0.links(0).size();
@@ -165,7 +165,7 @@ void assemble_exterior_facets(
 
   // FIXME: Add proper interface for num coordinate dofs
   const std::size_t num_dofs_g = x_dofmap.num_links(0);
-  const std::vector<double>& x_g = mesh.geometry().x();
+  xtl::span<const double> x_g = mesh.geometry().x();
 
   // Data structures used in assembly
   std::vector<double> coordinate_dofs(3 * num_dofs_g);
@@ -267,7 +267,7 @@ void assemble_interior_facets(
 
   // FIXME: Add proper interface for num coordinate dofs
   const std::size_t num_dofs_g = x_dofmap.num_links(0);
-  const std::vector<double>& x_g = mesh.geometry().x();
+  xtl::span<const double> x_g = mesh.geometry().x();
 
   // Data structures used in assembly
   xt::xtensor<double, 3> coordinate_dofs({2, num_dofs_g, 3});

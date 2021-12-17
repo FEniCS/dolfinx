@@ -171,7 +171,7 @@ void xdmf_mesh::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
   // Increase 1D to 2D because XDMF has no "X" geometry, use "XY"
   const int width = (gdim == 1) ? 2 : gdim;
 
-  const std::vector<double>& _x = geometry.x();
+  xtl::span<const double>  _x = geometry.x();
 
   int num_values = num_points_local * width;
   std::vector<double> x(num_values, 0.0);

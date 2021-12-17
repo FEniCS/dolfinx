@@ -220,7 +220,7 @@ tabulate_lagrange_dof_coordinates(const dolfinx::fem::FunctionSpace& V)
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& dofmap_x
       = mesh->geometry().dofmap();
-  const std::vector<double>& x_g = mesh->geometry().x();
+  xtl::span<const double> x_g = mesh->geometry().x();
   const std::size_t num_dofs_g = dofmap_x.num_links(0);
 
   xtl::span<const std::uint32_t> cell_info;

@@ -326,8 +326,9 @@ void add_mesh(const mesh::Mesh& mesh, pugi::xml_node& piece_node)
   x_node.append_attribute("type") = "Float64";
   x_node.append_attribute("NumberOfComponents") = "3";
   x_node.append_attribute("format") = "ascii";
-  auto x = xt::adapt(geometry.x(),
-                     {geometry.x().size() / 3, std::size_t(3)});
+  const auto x
+      = xt::adapt(geometry.x().data(), geometry.x().size(), xt::no_ownership(),
+                  std::vector({geometry.x().size() / 3, std::size_t(3)}));
   x_node.append_child(pugi::node_pcdata).set_value(xt_to_string(x, 16).c_str());
 
   // Add topology(cells)

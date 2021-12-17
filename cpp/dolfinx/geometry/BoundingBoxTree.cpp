@@ -38,7 +38,7 @@ compute_bbox_of_entity(const mesh::Mesh& mesh, int dim, std::int32_t index)
 {
   // Get the geometrical indices for the mesh entity
   const int tdim = mesh.topology().dim();
-  const std::vector<double>& xg = mesh.geometry().x();
+  xtl::span<const double> xg = mesh.geometry().x();
 
   mesh.topology_mutable().create_connectivity(dim, tdim);
 
