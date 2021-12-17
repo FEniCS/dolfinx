@@ -18,10 +18,11 @@ namespace dolfinx::common
 
 namespace impl
 {
-template <class InputIt, class OutputIt>
-inline void copy_3(InputIt first, OutputIt result)
+/// std::copy_n-type function with compile-time loop bound
+template <int N, class InputIt, class OutputIt>
+inline void copy_N(InputIt first, OutputIt result)
 {
-  for (int i = 0; i < 3; ++i)
+  for (int i = 0; i < N; ++i)
     *result++ = *first++;
 }
 } // namespace impl

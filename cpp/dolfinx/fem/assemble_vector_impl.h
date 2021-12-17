@@ -113,7 +113,7 @@ void _lift_bc_cells(
     auto x_dofs = x_dofmap.links(c);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
-      common::impl::copy_3(std::next(x_g.begin(), 3 * x_dofs[i]),
+      common::impl::copy_N<3>(std::next(x_g.begin(), 3 * x_dofs[i]),
                            std::next(coordinate_dofs.begin(), 3 * i));
     }
 
@@ -253,7 +253,7 @@ void _lift_bc_exterior_facets(
     auto x_dofs = x_dofmap.links(cell);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
-      common::impl::copy_3(std::next(x_g.begin(), 3 * x_dofs[i]),
+      common::impl::copy_N<3>(std::next(x_g.begin(), 3 * x_dofs[i]),
                            std::next(coordinate_dofs.begin(), 3 * i));
     }
 
@@ -357,13 +357,13 @@ void _lift_bc_interior_facets(
     auto x_dofs0 = x_dofmap.links(cells[0]);
     for (std::size_t i = 0; i < x_dofs0.size(); ++i)
     {
-      common::impl::copy_3(std::next(x_g.begin(), 3 * x_dofs0[i]),
+      common::impl::copy_N<3>(std::next(x_g.begin(), 3 * x_dofs0[i]),
                            xt::view(coordinate_dofs, 0, i, xt::all()).begin());
     }
     auto x_dofs1 = x_dofmap.links(cells[1]);
     for (std::size_t i = 0; i < x_dofs1.size(); ++i)
     {
-      common::impl::copy_3(std::next(x_g.begin(), 3 * x_dofs1[i]),
+      common::impl::copy_N<3>(std::next(x_g.begin(), 3 * x_dofs1[i]),
                            xt::view(coordinate_dofs, 1, i, xt::all()).begin());
     }
 
@@ -532,7 +532,7 @@ void assemble_cells(
     auto x_dofs = x_dofmap.links(c);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
-      common::impl::copy_3(std::next(x_g.begin(), 3 * x_dofs[i]),
+      common::impl::copy_N<3>(std::next(x_g.begin(), 3 * x_dofs[i]),
                            std::next(coordinate_dofs.begin(), 3 * i));
     }
 
@@ -603,7 +603,7 @@ void assemble_exterior_facets(
     auto x_dofs = x_dofmap.links(cell);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
-      common::impl::copy_3(std::next(x_g.begin(), 3 * x_dofs[i]),
+      common::impl::copy_N<3>(std::next(x_g.begin(), 3 * x_dofs[i]),
                            std::next(coordinate_dofs.begin(), 3 * i));
     }
 
@@ -683,13 +683,13 @@ void assemble_interior_facets(
     auto x_dofs0 = x_dofmap.links(cells[0]);
     for (std::size_t i = 0; i < x_dofs0.size(); ++i)
     {
-      common::impl::copy_3(std::next(x_g.begin(), 3 * x_dofs0[i]),
+      common::impl::copy_N<3>(std::next(x_g.begin(), 3 * x_dofs0[i]),
                            xt::view(coordinate_dofs, 0, i, xt::all()).begin());
     }
     auto x_dofs1 = x_dofmap.links(cells[1]);
     for (std::size_t i = 0; i < x_dofs1.size(); ++i)
     {
-      common::impl::copy_3(std::next(x_g.begin(), 3 * x_dofs1[i]),
+      common::impl::copy_N<3>(std::next(x_g.begin(), 3 * x_dofs1[i]),
                            xt::view(coordinate_dofs, 1, i, xt::all()).begin());
     }
 

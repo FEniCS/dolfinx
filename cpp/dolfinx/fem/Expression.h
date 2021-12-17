@@ -124,7 +124,7 @@ public:
       auto x_dofs = x_dofmap.links(cell);
       for (std::size_t i = 0; i < x_dofs.size(); ++i)
       {
-        common::impl::copy_3(std::next(x_g.begin(), 3 * x_dofs[i]),
+        common::impl::copy_N<3>(std::next(x_g.begin(), 3 * x_dofs[i]),
                              std::next(coordinate_dofs.begin(), 3 * i));
       }
 
