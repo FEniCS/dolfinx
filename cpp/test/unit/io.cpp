@@ -28,7 +28,7 @@ void test_fides_mesh()
   auto points
       = xt::adapt(mesh->geometry().x().data(), mesh->geometry().x().size(),
                   xt::no_ownership(),
-                  std::array{mesh->geometry().x().size() / 3, std::size_t(3)});
+                  std::vector{mesh->geometry().x().size() / 3, std::size_t(3)});
   // Move all coordinates of the mesh geometry
   points += 1;
   writer.write(0.2);

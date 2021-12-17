@@ -441,7 +441,7 @@ public:
     const auto x_g = xt::adapt(
         mesh->geometry().x().data(), mesh->geometry().x().size(),
         xt::no_ownership(),
-        std::array{mesh->geometry().x().size() / 3, std::size_t(3)});
+        std::vector{mesh->geometry().x().size() / 3, std::size_t(3)});
 
     // Interpolate point values on each cell (using last computed value if
     // not continuous, e.g. discontinuous Galerkin methods)
