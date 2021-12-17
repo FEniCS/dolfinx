@@ -100,7 +100,9 @@ find_local_entity_index(std::shared_ptr<const mesh::Mesh> mesh,
 /// @param[in] bs_map The block size of the index map, i.e. the dof array
 /// @param[in] bs The block size of the dof array
 /// @param[in] dofs_local List of degrees of freedom local to process
-/// (unrolled). It might contain indices not found on other processes
+/// (unrolled). It might contain indices not found on other processes.
+/// The indices has to be ordered in blocks, i.e. the the dofs from i*bs
+/// to (i+1)*bs has to correspond to dofs in a single block.
 /// @returns List of degrees of freedom that was found on the other processes
 /// that are in the local range (including ghosts)
 std::vector<std::int32_t>
