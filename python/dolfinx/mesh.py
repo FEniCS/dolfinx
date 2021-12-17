@@ -295,7 +295,6 @@ def create_rectangle(comm: _MPI.Comm, points: typing.List[np.array], n: list, ce
         'left', 'right', 'crossed', 'left/right', 'right/left'
 
     """
-
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell_type.name, 1))
     mesh = _cpp.mesh.create_rectangle(comm, points, n, cell_type, ghost_mode, partitioner, diagonal)
     return Mesh.from_cpp(mesh, domain)
@@ -325,8 +324,8 @@ def create_unit_square(comm: _MPI.Comm, nx: int, ny: int, cell_type=CellType.tri
         Direction of diagonal
 
     """
-    return create_rectangle(comm, [np.array([0.0, 0.0, 0.0]),
-                                   np.array([1.0, 1.0, 0.0])], [nx, ny], cell_type, ghost_mode,
+    return create_rectangle(comm, [np.array([0.0, 0.0]),
+                                   np.array([1.0, 1.0])], [nx, ny], cell_type, ghost_mode,
                             partitioner, diagonal)
 
 

@@ -337,7 +337,7 @@ namespace
 {
 //-----------------------------------------------------------------------------
 mesh::Mesh build_tri(MPI_Comm comm,
-                     const std::array<std::array<double, 3>, 2>& p,
+                     const std::array<std::array<double, 2>, 2>& p,
                      std::array<std::size_t, 2> n, mesh::GhostMode ghost_mode,
                      const mesh::CellPartitionFunction& partitioner,
                      DiagonalType diagonal)
@@ -356,8 +356,8 @@ mesh::Mesh build_tri(MPI_Comm comm,
         element, geom, ghost_mode, partitioner);
   }
 
-  const std::array<double, 3> p0 = p[0];
-  const std::array<double, 3> p1 = p[1];
+  const std::array<double, 2> p0 = p[0];
+  const std::array<double, 2> p1 = p[1];
 
   const std::size_t nx = n[0];
   const std::size_t ny = n[1];
@@ -551,7 +551,7 @@ mesh::Mesh build_tri(MPI_Comm comm,
 
 //-----------------------------------------------------------------------------
 mesh::Mesh build_quad(MPI_Comm comm,
-                      const std::array<std::array<double, 3>, 2> p,
+                      const std::array<std::array<double, 2>, 2> p,
                       std::array<std::size_t, 2> n, mesh::GhostMode ghost_mode,
                       const mesh::CellPartitionFunction& partitioner)
 {
@@ -622,7 +622,7 @@ mesh::Mesh build_quad(MPI_Comm comm,
 
 //-----------------------------------------------------------------------------
 mesh::Mesh mesh::create_rectangle(MPI_Comm comm,
-                                  const std::array<std::array<double, 3>, 2>& p,
+                                  const std::array<std::array<double, 2>, 2>& p,
                                   std::array<std::size_t, 2> n,
                                   mesh::CellType celltype,
                                   mesh::GhostMode ghost_mode,
@@ -633,7 +633,7 @@ mesh::Mesh mesh::create_rectangle(MPI_Comm comm,
 }
 //-----------------------------------------------------------------------------
 mesh::Mesh mesh::create_rectangle(
-    MPI_Comm comm, const std::array<std::array<double, 3>, 2>& p,
+    MPI_Comm comm, const std::array<std::array<double, 2>, 2>& p,
     std::array<std::size_t, 2> n, mesh::CellType celltype,
     mesh::GhostMode ghost_mode, const mesh::CellPartitionFunction& partitioner,
     mesh::DiagonalType diagonal)
