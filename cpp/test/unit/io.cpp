@@ -11,7 +11,7 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/generation.h>
 #include <mpi.h>
-#include <xtl/xadapt.h>
+#include <xtensor/xadapt.hpp>
 
 using namespace dolfinx;
 
