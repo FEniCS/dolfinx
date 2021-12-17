@@ -233,11 +233,10 @@ problem.solve()
 
 # To get a topology that has a 1-1 correspondence with the degrees of
 # freedom in the function space, we call
-# `dolfinx.plot.create_vtk_topology`. We obtain the geometry for
-# the dofs owned on this process by tabulation of the dof coordinates.
+# `dolfinx.plot.create_vtk_topology`.
 topology, cell_types = dolfinx.plot.create_vtk_topology(V)
 num_dofs_local = uh.function_space.dofmap.index_map.size_local
-geometry = uh.function_space.tabulate_dof_coordinates()[:num_dofs_local]
+geometry = uh.function_space.tabulate_dof_coordinates()
 
 # We discard the complex values if using PETSc in complex mode
 values = uh.x.array.real if np.iscomplexobj(uh.x.array) else uh.x.array
@@ -301,10 +300,10 @@ topology, cell_types = dolfinx.plot.create_vtk_topology(V, cell_entities)
 # As we deal with a vector function space, we need to adjust the values
 # in the underlying one dimensional array in dolfinx.Function, by
 # reshaping the data, and add an extra column to make it a 3D vector
-num_dofs_local = uh.function_space.dofmap.index_map.size_local
-geometry = uh.function_space.tabulate_dof_coordinates()[:num_dofs_local]
-values = np.zeros((V.dofmap.index_map.size_local, 3), dtype=np.float64)
-values[:, :mesh.geometry.dim] = uh.x.array.real.reshape(V.dofmap.index_map.size_local, V.dofmap.index_map_bs)
+num_dofs = V.dofmap.index_map.size_local + V.dofmap.index_map.num_ghosts
+geometry = V.tabulate_dof_coordinates()
+values = np.zeros((num_dofs, 3), dtype=np.float64)
+values[:, :mesh.geometry.dim] = uh.x.array.real.reshape(num_dofs, V.dofmap.index_map_bs)
 
 # Create a point cloud of glyphs
 function_grid = pyvista.UnstructuredGrid(topology, cell_types, geometry)
@@ -364,10 +363,10 @@ num_cells = mesh.topology.index_map(mesh.topology.dim).size_local
 cell_entities = np.arange(num_cells, dtype=np.int32)
 
 topology, cell_types = dolfinx.plot.create_vtk_topology(V, cell_entities)
-num_dofs_local = uh.function_space.dofmap.index_map.size_local
-geometry = uh.function_space.tabulate_dof_coordinates()[:num_dofs_local]
-values = np.zeros((V.dofmap.index_map.size_local, 3), dtype=np.float64)
-values[:, :mesh.geometry.dim] = uh.x.array.real.reshape(V.dofmap.index_map.size_local, V.dofmap.index_map_bs)
+num_dofs = V.dofmap.index_map.size_local + V.dofmap.index_map.num_ghosts
+geometry = uh.function_space.tabulate_dof_coordinates()
+values = np.zeros((num_dofs, 3), dtype=np.float64)
+values[:, :mesh.geometry.dim] = uh.x.array.real.reshape(num_dofs, V.dofmap.index_map_bs)
 
 # Create a point cloud of glyphs
 grid = pyvista.UnstructuredGrid(topology, cell_types, geometry)
