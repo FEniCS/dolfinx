@@ -9,6 +9,7 @@
 #include "utils.h"
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/log.h>
+#include <dolfinx/common/utils.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/utils.h>
@@ -311,10 +312,10 @@ BoundingBoxTree BoundingBoxTree::create_global_tree(const MPI_Comm& comm) const
       _recv_bbox(mpi_size);
   for (std::size_t i = 0; i < _recv_bbox.size(); ++i)
   {
-    std::copy_n(std::next(recv_bbox.begin(), 6 * i), 3,
-                _recv_bbox[i].first[0].begin());
-    std::copy_n(std::next(recv_bbox.begin(), 6 * i + 3), 3,
-                _recv_bbox[i].first[1].begin());
+    common::impl::copy_3(std::next(recv_bbox.begin(), 6 * i),
+                         _recv_bbox[i].first[0].begin());
+    common::impl::copy_3(std::next(recv_bbox.begin(), 6 * i + 3),
+                         _recv_bbox[i].first[1].begin());
     _recv_bbox[i].second = i;
   }
 
@@ -368,9 +369,10 @@ xt::xtensor_fixed<double, xt::xshape<2, 3>>
 BoundingBoxTree::get_bbox(std::size_t node) const
 {
   xt::xtensor_fixed<double, xt::xshape<2, 3>> x;
-  std::copy_n(std::next(_bbox_coordinates.begin(), 6 * node), 3, x.begin());
-  std::copy_n(std::next(_bbox_coordinates.begin(), 6 * node + 3), 3,
-              std::next(x.begin(), 3));
+  common::impl::copy_3(std::next(_bbox_coordinates.begin(), 6 * node),
+                       x.begin());
+  common::impl::copy_3(std::next(_bbox_coordinates.begin(), 6 * node + 3),
+                       std::next(x.begin(), 3));
   return x;
 }
 //-----------------------------------------------------------------------------

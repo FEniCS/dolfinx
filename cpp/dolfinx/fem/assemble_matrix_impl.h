@@ -10,6 +10,7 @@
 #include "Form.h"
 #include "FunctionSpace.h"
 #include "utils.h"
+#include <dolfinx/common/utils.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/la/utils.h>
 #include <dolfinx/mesh/Geometry.h>
@@ -85,8 +86,8 @@ void assemble_cells(
     auto x_dofs = x_dofmap.links(c);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
-      std::copy_n(std::next(x_g.begin(), 3 * x_dofs[i]), 3,
-                  std::next(coordinate_dofs.begin(), 3 * i));
+      common::impl::copy_3(std::next(x_g.begin(), 3 * x_dofs[i]),
+                           std::next(coordinate_dofs.begin(), 3 * i));
     }
 
     // Tabulate tensor
@@ -185,8 +186,8 @@ void assemble_exterior_facets(
     auto x_dofs = x_dofmap.links(cell);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
-      std::copy_n(std::next(x_g.begin(), 3 * x_dofs[i]), 3,
-                  std::next(coordinate_dofs.begin(), 3 * i));
+      common::impl::copy_3(std::next(x_g.begin(), 3 * x_dofs[i]),
+                           std::next(coordinate_dofs.begin(), 3 * i));
     }
 
     // Tabulate tensor
@@ -292,14 +293,14 @@ void assemble_interior_facets(
     auto x_dofs0 = x_dofmap.links(cells[0]);
     for (std::size_t i = 0; i < x_dofs0.size(); ++i)
     {
-      std::copy_n(std::next(x_g.begin(), 3 * x_dofs0[i]), 3,
-                  xt::view(coordinate_dofs, 0, i, xt::all()).begin());
+      common::impl::copy_3(std::next(x_g.begin(), 3 * x_dofs0[i]),
+                           xt::view(coordinate_dofs, 0, i, xt::all()).begin());
     }
     auto x_dofs1 = x_dofmap.links(cells[1]);
     for (std::size_t i = 0; i < x_dofs1.size(); ++i)
     {
-      std::copy_n(std::next(x_g.begin(), 3 * x_dofs1[i]), 3,
-                  xt::view(coordinate_dofs, 1, i, xt::all()).begin());
+      common::impl::copy_3(std::next(x_g.begin(), 3 * x_dofs1[i]),
+                           xt::view(coordinate_dofs, 1, i, xt::all()).begin());
     }
 
     // Get dof maps for cells and pack

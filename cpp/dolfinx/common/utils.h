@@ -16,6 +16,16 @@
 namespace dolfinx::common
 {
 
+namespace impl
+{
+template <class InputIt, class OutputIt>
+inline void copy_3(InputIt first, OutputIt result)
+{
+  for (int i = 0; i < 3; ++i)
+    *result++ = *first++;
+}
+} // namespace impl
+
 /// Sort two arrays based on the values in array @p indices. Any
 /// duplicate indices and the corresponding value are removed. In the
 /// case of duplicates, the entry with the smallest value is retained.
