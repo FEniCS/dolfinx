@@ -1,4 +1,4 @@
-# Copyright (C) 2016 Garth N. Wells
+# Copyright (C) 2016-2021 Garth N. Wells, Igor A. Baratta
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
