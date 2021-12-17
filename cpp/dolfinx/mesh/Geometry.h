@@ -117,9 +117,7 @@ private:
   fem::CoordinateElement _cmap;
 
   // Coordinates for all points stored as a contiguous array
-  // xt::xtensor<double, 2> _x;
   std::vector<double> _x;
-  xt::xtensor<double, 2> _foo;
 
   // Global indices as provided on Geometry creation
   std::vector<std::int64_t> _input_global_indices;
