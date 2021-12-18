@@ -23,8 +23,7 @@ from petsc4py import PETSc
 
 def test_locate_dofs_geometrical():
     """Test that locate_dofs_geometrical, when passed two function
-    spaces, returns the correct degrees of freedom in each space.
-    """
+    spaces, returns the correct degrees of freedom in each space"""
     mesh = create_unit_square(MPI.COMM_WORLD, 4, 8)
     p0, p1 = 1, 2
     P0 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p0)
@@ -60,8 +59,7 @@ def test_locate_dofs_geometrical():
 
 def test_overlapping_bcs():
     """Test that, when boundaries condition overlap, the last provided
-    boundary condition is applied.
-    """
+    boundary condition is applied"""
     n = 23
     mesh = create_unit_square(MPI.COMM_WORLD, n, n)
     V = FunctionSpace(mesh, ("Lagrange", 1))
@@ -110,14 +108,14 @@ def test_overlapping_bcs():
                           (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3, CellType.hexahedron))])
 def test_constant_bc(mesh_factory):
     """Test that setting a DirichletBC with a constant yields the same
-    result as setting it with a function."""
+    result as setting it with a function"""
     func, args = mesh_factory
     mesh = func(*args)
     V = FunctionSpace(mesh, ("Lagrange", 1))
     c = Constant(mesh, PETSc.ScalarType(2))
-
     tdim = mesh.topology.dim
     boundary_facets = locate_entities_boundary(mesh, tdim - 1, lambda x: np.ones(x.shape[1], dtype=bool))
+
     boundary_dofs = locate_dofs_topological(V, tdim - 1, boundary_facets)
 
     u_bc = Function(V)
@@ -143,7 +141,7 @@ def test_constant_bc(mesh_factory):
     ])
 def test_vector_constant_bc(mesh_factory):
     """Test that setting a DirichletBC with a vector valued constant
-    yields the same result as setting it with a function."""
+    yields the same result as setting it with a function"""
     func, args = mesh_factory
     mesh = func(*args)
     tdim = mesh.topology.dim
@@ -184,14 +182,14 @@ def test_vector_constant_bc(mesh_factory):
 def test_sub_constant_bc(mesh_factory):
     """Test that setting a DirichletBC with on a component of a vector
     valued function yields the same result as setting it with a
-    function."""
+    function"""
     func, args = mesh_factory
     mesh = func(*args)
     tdim = mesh.topology.dim
     V = VectorFunctionSpace(mesh, ("Lagrange", 1))
     c = Constant(mesh, PETSc.ScalarType(3.14))
-
     boundary_facets = locate_entities_boundary(mesh, tdim - 1, lambda x: np.ones(x.shape[1], dtype=bool))
+
     for i in range(V.num_sub_spaces()):
         Vi = V.sub(i).collapse()
         u_bci = Function(Vi)
@@ -218,7 +216,7 @@ def test_sub_constant_bc(mesh_factory):
     ])
 def test_mixed_constant_bc(mesh_factory):
     """Test that setting a DirichletBC with on a component of a mixed
-    function yields the same result as setting it with a function."""
+    function yields the same result as setting it with a function"""
     func, args = mesh_factory
     mesh = func(*args)
     tdim, gdim = mesh.topology.dim, mesh.geometry.dim
