@@ -1,7 +1,6 @@
 set(HEADERS_la
   ${CMAKE_CURRENT_SOURCE_DIR}/dolfin_la.h
   ${CMAKE_CURRENT_SOURCE_DIR}/PETScMatrix.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/PETScVector.h
   ${CMAKE_CURRENT_SOURCE_DIR}/SLEPcEigenSolver.h
   ${CMAKE_CURRENT_SOURCE_DIR}/SparsityPattern.h
   ${CMAKE_CURRENT_SOURCE_DIR}/utils.h
@@ -10,7 +9,6 @@ set(HEADERS_la
 
 target_sources(dolfinx PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/PETScMatrix.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/PETScVector.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/SLEPcEigenSolver.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/SparsityPattern.cpp
 )
