@@ -674,6 +674,10 @@ void interpolate(Function<T>& u, const Expression<T>& expr,
   expr.eval(cells, expr_values);
 
   // Reshape evaluated data to fit interpolate
+  // Expression returns matrix of shape (num_cells, num_points * value_size),
+  // i.e. xyzxyz ordering of dof values per cell per point. The interpolation
+  // uses xxyyzz input, ordered for all points of each cell, i.e. (value_size,
+  // num_cells*num_points)
   auto values_view
       = xt::reshape_view(expr_values, {num_cells, num_points, element_vs});
   xt::xarray<T> values
