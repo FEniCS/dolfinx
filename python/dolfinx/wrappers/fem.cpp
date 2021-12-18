@@ -43,6 +43,7 @@
 #include <pybind11/stl.h>
 #include <string>
 #include <ufc.h>
+#include <utility>
 #include <xtensor/xadapt.hpp>
 #include <xtensor/xtensor.hpp>
 #include <xtensor/xview.hpp>
@@ -230,13 +231,15 @@ void declare_objects(py::module& m, const std::string& type)
 
   dirichletbc
       .def(py::init(
-          [](const std::shared_ptr<const dolfinx::fem::Function<T>>& g,
-             const py::array_t<std::int32_t, py::array::c_style>& dofs)
+          [](const std::variant<std::shared_ptr<const dolfinx::fem::Function<T>>,
+                                std::shared_ptr<const dolfinx::fem::Constant<T>>>& g,
+             const py::array_t<std::int32_t, py::array::c_style>& dofs,
+             const std::shared_ptr<const dolfinx::fem::FunctionSpace>& V)
           {
             return dolfinx::fem::DirichletBC<T>(
                 g, std::vector<std::int32_t>(dofs.data(),
-                                             dofs.data() + dofs.size()));
-          }))
+                                             dofs.data() + dofs.size()), V);
+          }), py::arg("g"), py::arg("dofs"), py::arg("V")=py::none())
       .def(py::init(
           [](const std::shared_ptr<const dolfinx::fem::Function<T>>& g,
              const std::array<py::array_t<std::int32_t, py::array::c_style>, 2>&
