@@ -96,13 +96,10 @@ def test_linear_pde():
     v = TestFunction(V)
     F = inner(10.0, v) * dx - inner(grad(u), grad(v)) * dx
 
-    def boundary(x):
-        """Define Dirichlet boundary (x = 0 or x = 1)."""
-        return np.logical_or(x[0] < 1.0e-8, x[0] > 1.0 - 1.0e-8)
-
     u_bc = Function(V)
     u_bc.x.array[:] = 1.0
-    bc = DirichletBC(u_bc, locate_dofs_geometrical(V, boundary))
+    bc = DirichletBC(u_bc, locate_dofs_geometrical(V, lambda x: np.logical_or(np.isclose(x[0], 0.0),
+                                                                              np.isclose(x[0], 1.0))))
 
     # Create nonlinear problem
     problem = NonlinearPDEProblem(F, u, bc)
@@ -133,13 +130,10 @@ def test_nonlinear_pde():
     F = inner(5.0, v) * dx - ufl.sqrt(u * u) * inner(
         grad(u), grad(v)) * dx - inner(u, v) * dx
 
-    def boundary(x):
-        """Define Dirichlet boundary (x = 0 or x = 1)."""
-        return np.logical_or(x[0] < 1.0e-8, x[0] > 1.0 - 1.0e-8)
-
     u_bc = Function(V)
     u_bc.x.array[:] = 1.0
-    bc = DirichletBC(u_bc, locate_dofs_geometrical(V, boundary))
+    bc = DirichletBC(u_bc, locate_dofs_geometrical(V, lambda x: np.logical_or(np.isclose(x[0], 0.0),
+                                                                              np.isclose(x[0], 1.0))))
 
     # Create nonlinear problem
     problem = NonlinearPDEProblem(F, u, bc)
@@ -171,13 +165,10 @@ def test_nonlinear_pde_snes():
     F = inner(5.0, v) * dx - ufl.sqrt(u * u) * inner(
         grad(u), grad(v)) * dx - inner(u, v) * dx
 
-    def boundary(x):
-        """Define Dirichlet boundary (x = 0 or x = 1)."""
-        return np.logical_or(x[0] < 1.0e-8, x[0] > 1.0 - 1.0e-8)
-
     u_bc = Function(V)
     u_bc.x.array[:] = 1.0
-    bc = DirichletBC(u_bc, locate_dofs_geometrical(V, boundary))
+    bc = DirichletBC(u_bc, locate_dofs_geometrical(V, lambda x: np.logical_or(np.isclose(x[0], 0.0),
+                                                                              np.isclose(x[0], 1.0))))
 
     # Create nonlinear problem
     problem = NonlinearPDE_SNESProblem(F, u, bc)

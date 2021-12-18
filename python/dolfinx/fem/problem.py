@@ -110,7 +110,7 @@ class LinearProblem():
 
         # Solve linear system and update ghost values in the solution
         self._solver.solve(self._b, self._x)
-        self._x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+        self.u.x.scatter_forward()
 
         return self.u
 

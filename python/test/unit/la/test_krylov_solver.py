@@ -96,11 +96,8 @@ def test_krylov_samg_solver_elasticity():
         bc0 = Function(V)
         bc0.x.array[:] = 0.0
 
-        def boundary(x):
-            return np.full(x.shape[1], True)
-
         facetdim = mesh.topology.dim - 1
-        bndry_facets = locate_entities_boundary(mesh, facetdim, boundary)
+        bndry_facets = locate_entities_boundary(mesh, facetdim, lambda x: np.full(x.shape[1], True))
 
         bdofs = locate_dofs_topological(V.sub(0), V, facetdim, bndry_facets)
         bc = DirichletBC(bc0, bdofs, V.sub(0))
