@@ -798,22 +798,7 @@ int petsc::KrylovSolver::solve(Vec x, const Vec b, bool transpose) const
   KSPGetOperators(_ksp, &_A, &_P);
   assert(_A);
 
-  // Create wrapper around PETSc Mat object
-  // la::PETScOperator A(_A);
-
   PetscErrorCode ierr;
-
-  // // Check dimensions
-  // const std::array<std::int64_t, 2> size = A.size();
-  // if (size[0] != b.size())
-  // {
-  //   log::dolfin_error(
-  //       "PETScKrylovSolver.cpp",
-  //       "unable to solve linear system with PETSc Krylov solver",
-  //       "Non-matching dimensions for linear system (matrix has %ld "
-  //       "rows and right-hand side vector has %ld rows)",
-  //       size[0], b.size());
-  // }
 
   // Solve linear system
   LOG(INFO) << "PETSc Krylov solver starting to solve system.";
