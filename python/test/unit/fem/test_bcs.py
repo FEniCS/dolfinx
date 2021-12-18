@@ -136,10 +136,10 @@ def test_constant_bc(mesh_factory):
 
 @pytest.mark.parametrize(
     'mesh_factory', [
-        # (create_unit_square, (MPI.COMM_WORLD, 4, 4)),
+        (create_unit_square, (MPI.COMM_WORLD, 4, 4)),
         (create_unit_square, (MPI.COMM_WORLD, 4, 4, CellType.quadrilateral)),
-        # (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3)),
-        # (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3, CellType.hexahedron))
+        (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3)),
+        (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3, CellType.hexahedron))
     ])
 def test_vector_constant_bc(mesh_factory):
     """Test that setting a DirichletBC with a vector valued constant
@@ -149,14 +149,12 @@ def test_vector_constant_bc(mesh_factory):
     tdim = mesh.topology.dim
     V = VectorFunctionSpace(mesh, ("Lagrange", 1))
     assert(V.num_sub_spaces() == mesh.geometry.dim)
-    # vals = np.arange(1, mesh.geometry.dim + 1, dtype=np.float64)
-    vals = (1, 0)
+    vals = np.arange(1, mesh.geometry.dim + 1, dtype=np.float64)
     c = Constant(mesh, PETSc.ScalarType(vals))
     boundary_facets = locate_entities_boundary(mesh, tdim - 1, lambda x: np.ones(x.shape[1], dtype=bool))
 
     # Set using sub-functions
-    # Vs = [V.sub(i).collapse() for i in range(V.num_sub_spaces())]
-    Vs = [V.sub(i).collapse() for i in range(1)]
+    Vs = [V.sub(i).collapse() for i in range(V.num_sub_spaces())]
     boundary_dofs = [locate_dofs_topological((V.sub(i), Vs[i]), tdim - 1, boundary_facets)
                      for i in range(len(Vs))]
     u_bcs = [Function(Vs[i]) for i in range(len(Vs))]
@@ -164,7 +162,6 @@ def test_vector_constant_bc(mesh_factory):
     for i, u in enumerate(u_bcs):
         u_bcs[i].x.array[:] = PETSc.ScalarType(c.value[i])
         bcs_f.append(DirichletBC(u_bcs[i], boundary_dofs[i], V.sub(i)))
-
     u_f = Function(V)
     set_bc(u_f.vector, bcs_f)
 
@@ -174,13 +171,7 @@ def test_vector_constant_bc(mesh_factory):
     u_c = Function(V)
     set_bc(u_c.vector, [bc_c])
 
-    # assert(np.allclose(u_f.x.array, u_c.x.array))
-    if MPI.COMM_WORLD.rank == 1:
-        # assert(np.allclose(u_f.x.array, u_c.x.array))
-        print("foo")
-        print("\n\n", u_f.x.array  - u_c.x.array)
-        print("\n\n", u_f.x.array)
-        print("\n\n", u_c.x.array)
+    assert(np.allclose(u_f.x.array, u_c.x.array))
 
 
 @pytest.mark.parametrize(

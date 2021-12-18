@@ -90,25 +90,23 @@ find_local_entity_index(std::shared_ptr<const mesh::Mesh> mesh,
   return entity_indices;
 };
 //-----------------------------------------------------------------------------
-/// Find all DOFs on this process that has been detected on another
+
+/// Find all DOFs on this process that have been detected on another
 /// process
 /// @param[in] comm A symmetric communicator based on the forward
 /// neighborhood communicator in the IndexMap
 /// @param[in] map The IndexMap with the dof layout
 /// @param[in] bs_map The block size of the index map, i.e. the dof array
-/// @param[in] bs The block size of the dof array
 /// @param[in] dofs_local List of degrees of freedom local to process
 /// (unrolled). It might contain indices not found on other processes.
 /// The indices has to be ordered in blocks, i.e. the the dofs from i*bs
 /// to (i+1)*bs has to correspond to dofs in a single block.
-/// @returns List of degrees of freedom that was found on the other processes
-/// that are in the local range (including ghosts)
+/// @returns Degrees of freedom found on the other ranks that exist on
+/// this rank
 std::vector<std::int32_t>
-get_remote_dofs(MPI_Comm comm, const common::IndexMap& map, int bs_map, int bs,
+get_remote_dofs(MPI_Comm comm, const common::IndexMap& map, int bs_map,
                 const xtl::span<const std::int32_t>& dofs_local)
 {
-  assert(bs_map >= bs);
-
   int num_neighbors(-1), outdegree(-2), weighted(-1);
   MPI_Dist_graph_neighbors_count(comm, &num_neighbors, &outdegree, &weighted);
   assert(num_neighbors == outdegree);
@@ -118,43 +116,35 @@ get_remote_dofs(MPI_Comm comm, const common::IndexMap& map, int bs_map, int bs,
     return {};
 
   // Figure out how many entries to receive from each neighbor
-  // assert(dofs_local.size() % bs == 0);
   const int num_dofs_block = dofs_local.size();
   std::vector<int> num_dofs_recv(num_neighbors);
   MPI_Request request;
   MPI_Ineighbor_allgather(&num_dofs_block, 1, MPI_INT, num_dofs_recv.data(), 1,
                           MPI_INT, comm, &request);
 
-  // Get offset into map block
-  // NOTE: Could use neighbourhood allgather here. Also, not needed if
-  // bs_map == 1.
-  const int myoffset = dofs_local.empty() ? 0 : dofs_local.front() % bs_map;
-  int offset = 0;
-  MPI_Request request_offset;
-  MPI_Iallreduce(&myoffset, &offset, 1, MPI_INT, MPI_MAX, comm,
-                 &request_offset);
-
-  // if (bs_map == 1)
-  std::vector<std::int64_t> dofs_global(num_dofs_block);
-  if (bs_map == bs)
+  std::vector<std::int64_t> dofs_global(dofs_local.size());
+  if (bs_map == 1)
   {
     dofs_global.resize(dofs_local.size());
     map.local_to_global(dofs_local, dofs_global);
   }
   else
   {
-    std::cout << "Map bs NOTE ONE" << std::endl;
-
     // Convert dofs indices to 'block' map indices
-    std::vector<std::int32_t> dofs_local_block;
-    dofs_local_block.reserve(dofs_local.size());
-    for (std::size_t i = 0; i < dofs_local.size(); ++i)
-      dofs_local_block.push_back(bs * dofs_local[i] / bs_map);
-    // for (std::size_t i = 0; i < dofs_local.size(); i += bs)
-    //   dofs_local_block.push_back(dofs_local[i] / bs_map);
+    std::vector<std::int32_t> dofs_local_m;
+    dofs_local_m.reserve(dofs_local.size());
+    std::transform(dofs_local.cbegin(), dofs_local.cend(),
+                   std::back_inserter(dofs_local_m),
+                   [bs_map](auto dof) { return dof / bs_map; });
 
     // Compute global index of each block
-    map.local_to_global(dofs_local_block, dofs_global);
+    map.local_to_global(dofs_local_m, dofs_global);
+
+    // Add offset
+    std::transform(dofs_global.cbegin(), dofs_global.cend(),
+                   dofs_local.cbegin(), dofs_global.begin(),
+                   [bs_map](auto global_block, auto local_dof)
+                   { return bs_map * global_block + (local_dof % bs_map); });
   }
 
   MPI_Wait(&request, MPI_STATUS_IGNORE);
@@ -179,7 +169,7 @@ get_remote_dofs(MPI_Comm comm, const common::IndexMap& map, int bs_map, int bs,
   const std::array<std::int64_t, 2> range = map.local_range();
   const std::vector<std::int64_t>& ghosts = map.ghosts();
 
-  // Build map from ghost to local position
+  // Build map from ghost global index to local position
   // NOTE: Should we use map here or just one vector with ghosts and
   // std::distance?
   std::vector<std::pair<std::int64_t, std::int32_t>> global_local_ghosts;
@@ -190,27 +180,19 @@ get_remote_dofs(MPI_Comm comm, const common::IndexMap& map, int bs_map, int bs,
       global_local_ghosts.begin(), global_local_ghosts.end());
 
   MPI_Wait(&request, MPI_STATUS_IGNORE);
-  MPI_Wait(&request_offset, MPI_STATUS_IGNORE);
-  std::cout << "Offset: " << offset << ", " << bs_map << ", " << bs
-            << std::endl;
   std::vector<std::int32_t> dofs;
-  for (auto global_block : dofs_received)
+  for (auto dof_global : dofs_received)
   {
     // Insert owned dofs, else search in ghosts
-    if (global_block >= range[0] and global_block < range[1])
-    {
-      // for (int k = 0; k < bs; ++k)
-      int k = 0;
-      dofs.push_back(bs_map * global_block + offset + k - bs_map * range[0]);
-    }
+    std::int64_t block = dof_global / bs_map;
+    if (block >= range[0] and block < range[1])
+      dofs.push_back(dof_global - bs_map * range[0]);
     else
     {
-      if (auto it = global_to_local.find(global_block);
-          it != global_to_local.end())
+      if (auto it = global_to_local.find(block); it != global_to_local.end())
       {
-        // for (int k = 0; k < bs; ++k)
-        int k = 0;
-        dofs.push_back(bs_map * it->second + offset + k);
+        int offset = dof_global % bs_map;
+        dofs.push_back(bs_map * it->second + offset);
       }
     }
   }
@@ -326,28 +308,17 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
     // that has no connected facets on the boundary.
     dolfinx::MPI::Comm comm = create_symmetric_comm(
         V0.dofmap()->index_map->comm(common::IndexMap::Direction::forward));
-
-    std::cout << "*** Block sizes: " << bs[0] << ", " << bs[1] << std::endl;
-    std::cout << "*** Map bs:      " << V0.dofmap()->index_map_bs() << ", "
-              << V1.dofmap()->index_map_bs() << std::endl;
-
-    std::cout << "*** Get remote 0" << std::endl;
     std::vector<std::int32_t> dofs_remote
         = get_remote_dofs(comm.comm(), *V0.dofmap()->index_map,
-                          V0.dofmap()->index_map_bs(), 1, sorted_bc_dofs[0]);
-    std::cout << "*** num remote 0: " << dofs_remote.size() << std::endl;
-
-    MPI_Barrier(MPI_COMM_WORLD);
+                          V0.dofmap()->index_map_bs(), sorted_bc_dofs[0]);
 
     // Add received bc indices to dofs_local
     sorted_bc_dofs[0].insert(sorted_bc_dofs[0].end(), dofs_remote.begin(),
                              dofs_remote.end());
 
-    std::cout << "*** Get remote 1" << std::endl;
     dofs_remote
         = get_remote_dofs(comm.comm(), *V1.dofmap()->index_map,
-                          V1.dofmap()->index_map_bs(), 1, sorted_bc_dofs[1]);
-    std::cout << "*** num remote 1: " << dofs_remote.size() << std::endl;
+                          V1.dofmap()->index_map_bs(), sorted_bc_dofs[1]);
     sorted_bc_dofs[1].insert(sorted_bc_dofs[1].end(), dofs_remote.begin(),
                              dofs_remote.end());
     assert(sorted_bc_dofs[0].size() == sorted_bc_dofs[1].size());
@@ -363,11 +334,6 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
         out_dofs[b][i] = sorted_bc_dofs[b][perm[i]];
       out_dofs[b].erase(std::unique(out_dofs[b].begin(), out_dofs[b].end()),
                         out_dofs[b].end());
-
-      // if (bs[b] > 1)
-      // {
-      //   std::vector<std::int32_t> tmp = out_dofs[b];
-      // }
     }
 
     assert(out_dofs[0].size() == out_dofs[1].size());
@@ -456,8 +422,11 @@ fem::locate_dofs_topological(const FunctionSpace& V, int dim,
     auto map = V.dofmap()->index_map;
     dolfinx::MPI::Comm comm = create_symmetric_comm(
         map->comm(common::IndexMap::Direction::forward));
-    std::vector<std::int32_t> dofs_remote = get_remote_dofs(
-        comm.comm(), *map, V.dofmap()->index_map_bs(), bs, dofs);
+    std::vector<std::int32_t> dofs_remote;
+    if (int map_bs = V.dofmap()->index_map_bs(); map_bs == bs)
+      dofs_remote = get_remote_dofs(comm.comm(), *map, 1, dofs);
+    else
+      dofs_remote = get_remote_dofs(comm.comm(), *map, map_bs, dofs);
 
     // Add received bc indices to dofs_local, sort, and remove
     // duplicates
