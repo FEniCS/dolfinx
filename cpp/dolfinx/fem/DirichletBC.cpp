@@ -143,8 +143,10 @@ get_remote_dofs(MPI_Comm comm, const common::IndexMap& map, int bs_map, int bs,
     // Convert dofs indices to 'block' map indices
     std::vector<std::int32_t> dofs_local_block;
     dofs_local_block.reserve(num_dofs_block);
-    for (std::size_t i = 0; i < dofs_local.size(); i += bs)
-      dofs_local_block.push_back(dofs_local[i] / bs_map);
+    for (std::size_t i = 0; i < dofs_local.size(); ++i)
+      dofs_local_block.push_back(bs * dofs_local[i] / bs_map);
+    // for (std::size_t i = 0; i < dofs_local.size(); i += bs)
+    //   dofs_local_block.push_back(dofs_local[i] / bs_map);
 
     // Compute global index of each block
     map.local_to_global(dofs_local_block, dofs_global);
@@ -190,16 +192,18 @@ get_remote_dofs(MPI_Comm comm, const common::IndexMap& map, int bs_map, int bs,
     // Insert owned dofs, else search in ghosts
     if (global_block >= range[0] and global_block < range[1])
     {
-      for (int k = 0; k < bs; ++k)
-        dofs.push_back(bs_map * global_block + offset + k - bs_map * range[0]);
+      // for (int k = 0; k < bs; ++k)
+      int k = 1;
+      dofs.push_back(bs_map * global_block + offset + k - bs_map * range[0]);
     }
     else
     {
       if (auto it = global_to_local.find(global_block);
           it != global_to_local.end())
       {
-        for (int k = 0; k < bs; ++k)
-          dofs.push_back(bs_map * it->second + offset + k);
+        // for (int k = 0; k < bs; ++k)
+        int k = 1;
+        dofs.push_back(bs_map * it->second + offset + k);
       }
     }
   }
@@ -379,11 +383,19 @@ fem::locate_dofs_topological(const FunctionSpace& V, int dim,
   std::vector<std::int32_t> dofs;
   dofs.reserve(entities.size()
                * dofmap->element_dof_layout->num_entity_closure_dofs(dim));
-  std::vector<std::int32_t> dofs_remote;
-  if (V.component().empty())
+
+  // V is a sub space we need to take the block size of the dofmap and
+  // the index map into account as they can differ
+  const int bs = dofmap->bs();
+  const int element_bs = dofmap->element_dof_layout->block_size();
+
+  std::cout << "BS: " << V.dofmap()->index_map_bs() << ", " << bs << ", "
+            << element_bs << std::endl;
+
+  // Iterate over marked facets
+  if (element_bs == bs)
   {
-    // If space is not a sub space we not not need to take the block size
-    // into account
+    // Work with blocks
     for (auto [cell, entity_local_index] : entity_indices)
     {
       // Get cell dofmap and loop over entity dofs
@@ -391,29 +403,10 @@ fem::locate_dofs_topological(const FunctionSpace& V, int dim,
       for (int index : entity_dofs[entity_local_index])
         dofs.push_back(cell_dofs[index]);
     }
-
-    // TODO: is removing duplicates at this point worth the effort?
-    // Remove duplicates
-    std::sort(dofs.begin(), dofs.end());
-    dofs.erase(std::unique(dofs.begin(), dofs.end()), dofs.end());
-
-    if (remote)
-    {
-      auto map = V.dofmap()->index_map;
-      dolfinx::MPI::Comm comm = create_symmetric_comm(
-          map->comm(common::IndexMap::Direction::forward));
-      assert(V.dofmap()->index_map_bs() == V.dofmap()->bs());
-      dofs_remote = get_remote_dofs(comm.comm(), *map, 1, 1, dofs);
-    }
   }
-  else
+  else if (bs == 1)
   {
-    // V is a sub space we need to take the block size of the dofmap and
-    // index map into account, as they can differ
-    const int bs = dofmap->bs();
-    const int element_bs = dofmap->element_dof_layout->block_size();
-
-    // Iterate over marked facets
+    // Space is not blocked
     for (auto [cell, entity_local_index] : entity_indices)
     {
       // Get cell dofmap and loop over facet dofs and 'unpack' blocked dofs
@@ -427,27 +420,29 @@ fem::locate_dofs_topological(const FunctionSpace& V, int dim,
         }
       }
     }
-
-    // TODO: is removing duplicates at this point worth the effort?
-    // Remove duplicates
-    std::sort(dofs.begin(), dofs.end());
-    dofs.erase(std::unique(dofs.begin(), dofs.end()), dofs.end());
-
-    if (remote)
-    {
-      // Get bc dof indices (local) in  V spaces on this process that
-      // were found by other processes, e.g. a vertex dof on this
-      // process that has no connected facets on the boundary.
-      dolfinx::MPI::Comm comm = create_symmetric_comm(
-          V.dofmap()->index_map->comm(common::IndexMap::Direction::forward));
-      dofs_remote = get_remote_dofs(comm.comm(), *V.dofmap()->index_map,
-                                    V.dofmap()->index_map_bs(), bs, dofs);
-    }
   }
+  else
+    throw std::runtime_error("Not supported");
+
+  // TODO: is removing duplicates at this point worth the effort?
+  // Remove duplicates
+  std::sort(dofs.begin(), dofs.end());
+  dofs.erase(std::unique(dofs.begin(), dofs.end()), dofs.end());
 
   if (remote)
   {
-    // Add received bc indices to dofs_local, sort, and remove duplicates
+    // Get bc dof indices (local) in  V spaces on this process that were
+    // found by other processes, e.g. a vertex dof on this process that
+    // has no connected facets on the boundary.
+
+    auto map = V.dofmap()->index_map;
+    dolfinx::MPI::Comm comm = create_symmetric_comm(
+        map->comm(common::IndexMap::Direction::forward));
+    std::vector<std::int32_t> dofs_remote;
+    dofs_remote = get_remote_dofs(comm.comm(), *map, V.dofmap()->index_map_bs(),
+                                  bs, dofs);
+    // Add received bc indices to dofs_local, sort, and remove
+    // duplicates
     dofs.insert(dofs.end(), dofs_remote.begin(), dofs_remote.end());
     std::sort(dofs.begin(), dofs.end());
     dofs.erase(std::unique(dofs.begin(), dofs.end()), dofs.end());
