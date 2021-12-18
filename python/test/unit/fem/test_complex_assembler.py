@@ -76,9 +76,7 @@ def test_complex_assembly():
 
 def test_complex_assembly_solve():
     """Solve a positive definite helmholtz problem and verify solution
-    with the method of manufactured solutions
-
-    """
+    with the method of manufactured solutions"""
 
     degree = 3
     mesh = create_unit_square(MPI.COMM_WORLD, 20, 20)
