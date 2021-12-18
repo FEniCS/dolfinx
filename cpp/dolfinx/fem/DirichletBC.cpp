@@ -216,7 +216,6 @@ fem::locate_dofs_topological(const FunctionSpace& V, int dim,
   const int num_cell_entities
       = mesh::cell_num_entities(mesh->topology().cell_type(), dim);
   std::vector<std::vector<int>> entity_dofs;
-  entity_dofs.reserve(num_cell_entities);
   for (int i = 0; i < num_cell_entities; ++i)
   {
     entity_dofs.push_back(
@@ -253,7 +252,8 @@ fem::locate_dofs_topological(const FunctionSpace& V, int dim,
     // Space is not blocked, unroll dofs
     for (auto [cell, entity_local_index] : entity_indices)
     {
-      // Get cell dofmap and loop over facet dofs and 'unpack' blocked dofs
+      // Get cell dofmap and loop over facet dofs and 'unpack' blocked
+      // dofs
       xtl::span<const std::int32_t> cell_dofs = dofmap->cell_dofs(cell);
       for (int index : entity_dofs[entity_local_index])
       {
@@ -277,8 +277,7 @@ fem::locate_dofs_topological(const FunctionSpace& V, int dim,
   {
     // Get bc dof indices (local) in  V spaces on this process that were
     // found by other processes, e.g. a vertex dof on this process that
-    // has no connected facets on the boundary.
-
+    // has no connected facets on the boundary
     auto map = dofmap->index_map;
     dolfinx::MPI::Comm comm = create_symmetric_comm(
         map->comm(common::IndexMap::Direction::forward));
@@ -334,7 +333,6 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
   const int num_cell_entities
       = mesh::cell_num_entities(mesh->topology().cell_type(), dim);
   std::vector<std::vector<int>> entity_dofs;
-  entity_dofs.reserve(num_cell_entities);
   for (int i = 0; i < num_cell_entities; ++i)
   {
     entity_dofs.push_back(
@@ -387,8 +385,8 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
   std::array<std::vector<std::int32_t>, 2> sorted_bc_dofs = bc_dofs;
   for (std::size_t b = 0; b < 2; ++b)
   {
-    for (std::size_t i = 0; i < bc_dofs[1].size(); ++i)
-      sorted_bc_dofs[b][i] = bc_dofs[b][perm[i]];
+    std::transform(perm.cbegin(), perm.cend(), sorted_bc_dofs[b].begin(),
+                   [&bc_dofs = bc_dofs[b]](auto p) { return bc_dofs[p]; });
     sorted_bc_dofs[b].erase(
         std::unique(sorted_bc_dofs[b].begin(), sorted_bc_dofs[b].end()),
         sorted_bc_dofs[b].end());
@@ -425,8 +423,9 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
     std::array<std::vector<std::int32_t>, 2> out_dofs = sorted_bc_dofs;
     for (std::size_t b = 0; b < 2; ++b)
     {
-      for (std::size_t i = 0; i < sorted_bc_dofs[1].size(); ++i)
-        out_dofs[b][i] = sorted_bc_dofs[b][perm[i]];
+      std::transform(perm.cbegin(), perm.cend(), out_dofs[b].begin(),
+                     [&sorted_dofs = sorted_bc_dofs[b]](auto p)
+                     { return sorted_dofs[p]; });
       out_dofs[b].erase(std::unique(out_dofs[b].begin(), out_dofs[b].end()),
                         out_dofs[b].end());
     }
