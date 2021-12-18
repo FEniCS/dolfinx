@@ -27,6 +27,32 @@ namespace dolfinx::fem
 /// elements are associated with the cell even if they may appear to be
 /// associated with a facet/edge/vertex.
 ///
+/// @param[in] V The function (sub)space on which degrees-of-freedom
+/// (DOFs) will be located.
+/// @param[in] dim Topological dimension of mesh entities on which
+/// degrees-of-freedom will be located
+/// @param[in] entities Indices of mesh entities. All DOFs associated
+/// with the closure of these indices will be returned
+/// @param[in] remote True to return also "remotely located"
+/// degree-of-freedom indices. Remotely located degree-of-freedom
+/// indices are local/owned by the current process, but which the
+/// current process cannot identify because it does not recognize mesh
+/// entity as a marked. For example, a boundary condition dof at a
+/// vertex where this process does not have the associated boundary
+/// facet. This commonly occurs with partitioned meshes.
+/// @return Array of DOF index blocks (local to the MPI rank) in the
+/// space V. The array uses the block size of the dofmap associated
+/// with V.
+std::vector<std::int32_t>
+locate_dofs_topological(const FunctionSpace& V, int dim,
+                        const xtl::span<const std::int32_t>& entities,
+                        bool remote = true);
+
+/// Find degrees-of-freedom which belong to the provided mesh entities
+/// (topological). Note that degrees-of-freedom for discontinuous
+/// elements are associated with the cell even if they may appear to be
+/// associated with a facet/edge/vertex.
+///
 /// @param[in] V The function (sub)spaces on which degrees-of-freedom
 /// (DOFs) will be located. The spaces must share the same mesh and
 /// element type.
@@ -49,31 +75,21 @@ std::array<std::vector<std::int32_t>, 2> locate_dofs_topological(
     const std::array<std::reference_wrapper<const FunctionSpace>, 2>& V,
     int dim, const xtl::span<const std::int32_t>& entities, bool remote = true);
 
-/// Find degrees-of-freedom which belong to the provided mesh entities
-/// (topological). Note that degrees-of-freedom for discontinuous
-/// elements are associated with the cell even if they may appear to be
-/// associated with a facet/edge/vertex.
+/// Finds degrees of freedom whose geometric coordinate is true for the
+/// provided marking function.
 ///
-/// @param[in] V The function (sub)space on which degrees-of-freedom
-/// (DOFs) will be located.
-/// @param[in] dim Topological dimension of mesh entities on which
-/// degrees-of-freedom will be located
-/// @param[in] entities Indices of mesh entities. All DOFs associated
-/// with the closure of these indices will be returned
-/// @param[in] remote True to return also "remotely located"
-/// degree-of-freedom indices. Remotely located degree-of-freedom
-/// indices are local/owned by the current process, but which the
-/// current process cannot identify because it does not recognize mesh
-/// entity as a marked. For example, a boundary condition dof at a
-/// vertex where this process does not have the associated boundary
-/// facet. This commonly occurs with partitioned meshes.
+/// @attention This function is slower than the topological version
+///
+/// @param[in] V The function (sub)space on which degrees of freedom
+/// will be located.
+/// @param[in] marker_fn Function marking tabulated degrees of freedom
 /// @return Array of DOF index blocks (local to the MPI rank) in the
 /// space V. The array uses the block size of the dofmap associated
 /// with V.
-std::vector<std::int32_t>
-locate_dofs_topological(const FunctionSpace& V, int dim,
-                        const xtl::span<const std::int32_t>& entities,
-                        bool remote = true);
+std::vector<std::int32_t> locate_dofs_geometrical(
+    const FunctionSpace& V,
+    const std::function<xt::xtensor<bool, 1>(const xt::xtensor<double, 2>&)>&
+        marker_fn);
 
 /// Finds degrees of freedom whose geometric coordinate is true for the
 /// provided marking function.
@@ -90,22 +106,6 @@ locate_dofs_topological(const FunctionSpace& V, int dim,
 /// V[1]. The returned dofs are 'unrolled', i.e. block size = 1.
 std::array<std::vector<std::int32_t>, 2> locate_dofs_geometrical(
     const std::array<std::reference_wrapper<const FunctionSpace>, 2>& V,
-    const std::function<xt::xtensor<bool, 1>(const xt::xtensor<double, 2>&)>&
-        marker_fn);
-
-/// Finds degrees of freedom whose geometric coordinate is true for the
-/// provided marking function.
-///
-/// @attention This function is slower than the topological version
-///
-/// @param[in] V The function (sub)space on which degrees of freedom
-/// will be located.
-/// @param[in] marker_fn Function marking tabulated degrees of freedom
-/// @return Array of DOF index blocks (local to the MPI rank) in the
-/// space V. The array uses the block size of the dofmap associated
-/// with V.
-std::vector<std::int32_t> locate_dofs_geometrical(
-    const FunctionSpace& V,
     const std::function<xt::xtensor<bool, 1>(const xt::xtensor<double, 2>&)>&
         marker_fn);
 

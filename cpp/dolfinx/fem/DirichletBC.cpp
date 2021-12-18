@@ -201,6 +201,103 @@ get_remote_dofs(MPI_Comm comm, const common::IndexMap& map, int bs_map,
 } // namespace
 
 //-----------------------------------------------------------------------------
+std::vector<std::int32_t>
+fem::locate_dofs_topological(const FunctionSpace& V, int dim,
+                             const xtl::span<const std::int32_t>& entities,
+                             bool remote)
+{
+  assert(V.dofmap());
+  std::shared_ptr<const DofMap> dofmap = V.dofmap();
+  assert(V.mesh());
+  std::shared_ptr<const mesh::Mesh> mesh = V.mesh();
+
+  // Prepare an element - local dof layout for dofs on entities of the
+  // entity_dim
+  const int num_cell_entities
+      = mesh::cell_num_entities(mesh->topology().cell_type(), dim);
+  std::vector<std::vector<int>> entity_dofs;
+  entity_dofs.reserve(num_cell_entities);
+  for (int i = 0; i < num_cell_entities; ++i)
+  {
+    entity_dofs.push_back(
+        dofmap->element_dof_layout->entity_closure_dofs(dim, i));
+  }
+
+  // Get cell index and local entity index
+  std::vector<std::pair<std::int32_t, int>> entity_indices
+      = find_local_entity_index(mesh, entities, dim);
+
+  std::vector<std::int32_t> dofs;
+  dofs.reserve(entities.size()
+               * dofmap->element_dof_layout->num_entity_closure_dofs(dim));
+
+  // V is a sub space we need to take the block size of the dofmap and
+  // the index map into account as they can differ
+  const int bs = dofmap->bs();
+  const int element_bs = dofmap->element_dof_layout->block_size();
+
+  // Iterate over marked facets
+  if (element_bs == bs)
+  {
+    // Work with blocks
+    for (auto [cell, entity_local_index] : entity_indices)
+    {
+      // Get cell dofmap and loop over entity dofs
+      auto cell_dofs = dofmap->cell_dofs(cell);
+      for (int index : entity_dofs[entity_local_index])
+        dofs.push_back(cell_dofs[index]);
+    }
+  }
+  else if (bs == 1)
+  {
+    // Space is not blocked, unroll dofs
+    for (auto [cell, entity_local_index] : entity_indices)
+    {
+      // Get cell dofmap and loop over facet dofs and 'unpack' blocked dofs
+      xtl::span<const std::int32_t> cell_dofs = dofmap->cell_dofs(cell);
+      for (int index : entity_dofs[entity_local_index])
+      {
+        for (int k = 0; k < element_bs; ++k)
+        {
+          const std::div_t pos = std::div(element_bs * index + k, bs);
+          dofs.push_back(bs * cell_dofs[pos.quot] + pos.rem);
+        }
+      }
+    }
+  }
+  else
+    throw std::runtime_error("Block size combination not supported");
+
+  // TODO: is removing duplicates at this point worth the effort?
+  // Remove duplicates
+  std::sort(dofs.begin(), dofs.end());
+  dofs.erase(std::unique(dofs.begin(), dofs.end()), dofs.end());
+
+  if (remote)
+  {
+    // Get bc dof indices (local) in  V spaces on this process that were
+    // found by other processes, e.g. a vertex dof on this process that
+    // has no connected facets on the boundary.
+
+    auto map = dofmap->index_map;
+    dolfinx::MPI::Comm comm = create_symmetric_comm(
+        map->comm(common::IndexMap::Direction::forward));
+    std::vector<std::int32_t> dofs_remote;
+    if (int map_bs = dofmap->index_map_bs(); map_bs == bs)
+      dofs_remote = get_remote_dofs(comm.comm(), *map, 1, dofs);
+    else
+      dofs_remote = get_remote_dofs(comm.comm(), *map, map_bs, dofs);
+
+    // Add received bc indices to dofs_local, sort, and remove
+    // duplicates
+    dofs.insert(dofs.end(), dofs_remote.begin(), dofs_remote.end());
+    std::sort(dofs.begin(), dofs.end());
+    dofs.erase(std::unique(dofs.begin(), dofs.end()), dofs.end());
+  }
+
+  return dofs;
+}
+//-----------------------------------------------------------------------------
 std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
     const std::array<std::reference_wrapper<const FunctionSpace>, 2>& V,
     const int dim, const xtl::span<const std::int32_t>& entities, bool remote)
@@ -339,98 +436,36 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
   }
 }
 //-----------------------------------------------------------------------------
-std::vector<std::int32_t>
-fem::locate_dofs_topological(const FunctionSpace& V, int dim,
-                             const xtl::span<const std::int32_t>& entities,
-                             bool remote)
+std::vector<std::int32_t> fem::locate_dofs_geometrical(
+    const FunctionSpace& V,
+    const std::function<xt::xtensor<bool, 1>(const xt::xtensor<double, 2>&)>&
+        marker_fn)
 {
-  assert(V.dofmap());
-  std::shared_ptr<const DofMap> dofmap = V.dofmap();
-  assert(V.mesh());
-  std::shared_ptr<const mesh::Mesh> mesh = V.mesh();
+  // FIXME: Calling V.tabulate_dof_coordinates() is very expensive,
+  // especially when we usually want the boundary dofs only. Add
+  // interface that computes dofs coordinates only for specified cell.
 
-  // Prepare an element - local dof layout for dofs on entities of the
-  // entity_dim
-  const int num_cell_entities
-      = mesh::cell_num_entities(mesh->topology().cell_type(), dim);
-  std::vector<std::vector<int>> entity_dofs;
-  entity_dofs.reserve(num_cell_entities);
-  for (int i = 0; i < num_cell_entities; ++i)
+  assert(V.element());
+  if (V.element()->is_mixed())
   {
-    entity_dofs.push_back(
-        dofmap->element_dof_layout->entity_closure_dofs(dim, i));
+    throw std::runtime_error(
+        "Cannot locate dofs geometrically for mixed space. Use subspaces.");
   }
 
-  // Get cell index and local entity index
-  std::vector<std::pair<std::int32_t, int>> entity_indices
-      = find_local_entity_index(mesh, entities, dim);
+  // Compute dof coordinates
+  const xt::xtensor<double, 2> dof_coordinates
+      = V.tabulate_dof_coordinates(true);
+  assert(dof_coordinates.shape(0) == 3);
+
+  // Compute marker for each dof coordinate
+  const xt::xtensor<bool, 1> marked_dofs = marker_fn(dof_coordinates);
 
   std::vector<std::int32_t> dofs;
-  dofs.reserve(entities.size()
-               * dofmap->element_dof_layout->num_entity_closure_dofs(dim));
-
-  // V is a sub space we need to take the block size of the dofmap and
-  // the index map into account as they can differ
-  const int bs = dofmap->bs();
-  const int element_bs = dofmap->element_dof_layout->block_size();
-
-  // Iterate over marked facets
-  if (element_bs == bs)
+  dofs.reserve(std::count(marked_dofs.begin(), marked_dofs.end(), true));
+  for (std::size_t i = 0; i < marked_dofs.size(); ++i)
   {
-    // Work with blocks
-    for (auto [cell, entity_local_index] : entity_indices)
-    {
-      // Get cell dofmap and loop over entity dofs
-      auto cell_dofs = dofmap->cell_dofs(cell);
-      for (int index : entity_dofs[entity_local_index])
-        dofs.push_back(cell_dofs[index]);
-    }
-  }
-  else if (bs == 1)
-  {
-    // Space is not blocked, unroll dofs
-    for (auto [cell, entity_local_index] : entity_indices)
-    {
-      // Get cell dofmap and loop over facet dofs and 'unpack' blocked dofs
-      xtl::span<const std::int32_t> cell_dofs = dofmap->cell_dofs(cell);
-      for (int index : entity_dofs[entity_local_index])
-      {
-        for (int k = 0; k < element_bs; ++k)
-        {
-          const std::div_t pos = std::div(element_bs * index + k, bs);
-          dofs.push_back(bs * cell_dofs[pos.quot] + pos.rem);
-        }
-      }
-    }
-  }
-  else
-    throw std::runtime_error("Block size combination not supported");
-
-  // TODO: is removing duplicates at this point worth the effort?
-  // Remove duplicates
-  std::sort(dofs.begin(), dofs.end());
-  dofs.erase(std::unique(dofs.begin(), dofs.end()), dofs.end());
-
-  if (remote)
-  {
-    // Get bc dof indices (local) in  V spaces on this process that were
-    // found by other processes, e.g. a vertex dof on this process that
-    // has no connected facets on the boundary.
-
-    auto map = dofmap->index_map;
-    dolfinx::MPI::Comm comm = create_symmetric_comm(
-        map->comm(common::IndexMap::Direction::forward));
-    std::vector<std::int32_t> dofs_remote;
-    if (int map_bs = dofmap->index_map_bs(); map_bs == bs)
-      dofs_remote = get_remote_dofs(comm.comm(), *map, 1, dofs);
-    else
-      dofs_remote = get_remote_dofs(comm.comm(), *map, map_bs, dofs);
-
-    // Add received bc indices to dofs_local, sort, and remove
-    // duplicates
-    dofs.insert(dofs.end(), dofs_remote.begin(), dofs_remote.end());
-    std::sort(dofs.begin(), dofs.end());
-    dofs.erase(std::unique(dofs.begin(), dofs.end()), dofs.end());
+    if (marked_dofs[i])
+      dofs.push_back(i);
   }
 
   return dofs;
@@ -522,43 +557,6 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_geometrical(
                  [](auto dof) { return dof[0]; });
   std::transform(bc_dofs.cbegin(), bc_dofs.cend(), dofs[1].begin(),
                  [](auto dof) { return dof[1]; });
-
-  return dofs;
-}
-//-----------------------------------------------------------------------------
-std::vector<std::int32_t> fem::locate_dofs_geometrical(
-    const FunctionSpace& V,
-    const std::function<xt::xtensor<bool, 1>(const xt::xtensor<double, 2>&)>&
-        marker_fn)
-{
-  // FIXME: Calling V.tabulate_dof_coordinates() is very expensive,
-  // especially when we usually want the boundary dofs only. Add
-  // interface that computes dofs coordinates only for specified cell.
-
-  assert(V.element());
-  if (V.element()->is_mixed())
-  {
-    throw std::runtime_error(
-        "Cannot locate dofs geometrically for mixed space. Use subspaces.");
-  }
-
-  // Compute dof coordinates
-  const xt::xtensor<double, 2> dof_coordinates
-      = V.tabulate_dof_coordinates(true);
-  assert(dof_coordinates.shape(0) == 3);
-
-  // Compute marker for each dof coordinate
-  const xt::xtensor<bool, 1> marked_dofs = marker_fn(dof_coordinates);
-
-  std::vector<std::int32_t> dofs;
-  dofs.reserve(std::count(marked_dofs.begin(), marked_dofs.end(), true));
-
-
-  for (std::size_t i = 0; i < marked_dofs.size(); ++i)
-  {
-    if (marked_dofs[i])
-      dofs.push_back(i);
-  }
 
   return dofs;
 }

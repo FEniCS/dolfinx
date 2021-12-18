@@ -161,13 +161,14 @@ int main(int argc, char* argv[])
 
     // Define boundary condition
 
-    const auto bdofs = fem::locate_dofs_geometrical(
-        {*V},
+    auto facets = mesh::locate_entities_boundary(
+        *mesh, 1,
         [](auto& x) -> xt::xtensor<bool, 1>
         {
           auto x0 = xt::row(x, 0);
           return xt::isclose(x0, 0.0) or xt::isclose(x0, 2.0);
         });
+    const auto bdofs = fem::locate_dofs_topological({*V}, 1, facets);
 
     auto zero = std::make_shared<fem::Constant<T>>(0);
     std::vector bc{std::make_shared<const fem::DirichletBC<T>>(zero, bdofs, V)};
