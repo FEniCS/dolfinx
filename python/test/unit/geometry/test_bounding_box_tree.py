@@ -263,13 +263,13 @@ def test_compute_closest_entity_1d(dim):
         colliding_cells = compute_colliding_cells(mesh, colliding_entity_bboxes, p_c)
         for i in range(points.shape[0]):
             # If colliding entity is on process
-            if len(colliding_cells.links(i)) > 0:
+            if colliding_cells.links(i).size > 0:
                 assert numpy.isin(closest_entities[i], colliding_cells.links(i))
     else:
         for i in range(points.shape[0]):
             # Only check closest entity if any bounding box on the
             # process intersects with the point
-            if colliding_entity_bboxes.links(i) > 0:
+            if colliding_entity_bboxes.links(i).size > 0:
                 assert numpy.isin(closest_entities[i], colliding_entity_bboxes.links(i))
 
 
@@ -333,17 +333,17 @@ def test_compute_closest_entity_3d(dim):
 def test_compute_closest_sub_entity(dim):
     """Compute distance from subset of cells in a mesh to a point inside the mesh"""
     ref_distance = 0.31
-    points = numpy.array([0.5 + ref_distance, 0.5, 0.5])
+    xc, yc, zc = 0.5, 0.5, 0.5
+    points = numpy.array([xc + ref_distance, yc, zc])
     mesh = create_unit_cube(MPI.COMM_WORLD, 8, 8, 8)
     mesh.topology.create_entities(dim)
-
-    left_entities = locate_entities(mesh, dim, lambda x: x[0] <= 0.5)
+    left_entities = locate_entities(mesh, dim, lambda x: x[0] <= xc)
     tree = BoundingBoxTree(mesh, dim, left_entities)
     midpoint_tree = create_midpoint_tree(mesh, dim, left_entities)
     closest_entities = compute_closest_entity(tree, midpoint_tree, mesh, points)
 
     # Find which entity is colliding with known closest point on mesh
-    p_c = numpy.array([0.5, 0.5, 0.5])
+    p_c = numpy.array([xc, yc, zc])
     colliding_entity_bboxes = compute_collisions(tree, p_c)
 
     # Refine search by checking for actual collision if the entities are
@@ -413,7 +413,7 @@ def test_sub_bbtree_box(ct, N):
 
     facets = locate_entities_boundary(mesh, fdim, marker)
     f_to_c = mesh.topology.connectivity(fdim, tdim)
-    cells = numpy.unique([f_to_c.links(f)[0] for f in facets])
+    cells = numpy.int32(numpy.unique([f_to_c.links(f)[0] for f in facets]))
     bbtree = BoundingBoxTree(mesh, tdim, cells)
     num_boxes = bbtree.num_bboxes
     if num_boxes > 0:
