@@ -67,10 +67,10 @@ nls::NewtonSolver::NewtonSolver(MPI_Comm comm)
 {
   // Create linear solver if not already created. Default to LU.
   _solver.set_options_prefix("nls_solve_");
-  la::petsc::Options::set("nls_solve_ksp_type", "preonly");
-  la::petsc::Options::set("nls_solve_pc_type", "lu");
+  la::petsc::options::set("nls_solve_ksp_type", "preonly");
+  la::petsc::options::set("nls_solve_pc_type", "lu");
 #if PETSC_HAVE_MUMPS
-  la::petsc::Options::set("nls_solve_pc_factor_mat_solver_type", "mumps");
+  la::petsc::options::set("nls_solve_pc_factor_mat_solver_type", "mumps");
 #endif
   _solver.set_from_options();
 }

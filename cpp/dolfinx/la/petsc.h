@@ -126,34 +126,32 @@ MatNullSpace create_nullspace(MPI_Comm comm, const xtl::span<const Vec>& basis);
 /// retrieve PETSc options via the PETSc option/parameter system. The
 /// option must not be prefixed by '-', e.g.
 ///
-///     PETScOptions::set("mat_mumps_icntl_14", 40);
-class Options
+///     la::petsc::options::set("mat_mumps_icntl_14", 40);
+namespace options
 {
-public:
-  /// Set PETSc option that takes no value
-  static void set(std::string option);
+/// Set PETSc option that takes no value
+void set(std::string option);
 
-  /// Generic function for setting PETSc option
-  template <typename T>
-  static void set(std::string option, const T value)
-  {
-    if (option[0] != '-')
-      option = '-' + option;
+/// Generic function for setting PETSc option
+template <typename T>
+void set(std::string option, const T value)
+{
+  if (option[0] != '-')
+    option = '-' + option;
 
-    PetscErrorCode ierr;
-    ierr
-        = PetscOptionsSetValue(nullptr, option.c_str(),
-                               boost::lexical_cast<std::string>(value).c_str());
-    if (ierr != 0)
-      petsc::error(ierr, __FILE__, "PetscOptionsSetValue");
-  }
+  PetscErrorCode ierr;
+  ierr = PetscOptionsSetValue(nullptr, option.c_str(),
+                              boost::lexical_cast<std::string>(value).c_str());
+  if (ierr != 0)
+    petsc::error(ierr, __FILE__, "PetscOptionsSetValue");
+}
 
-  /// Clear a PETSc option
-  static void clear(std::string option);
+/// Clear a PETSc option
+void clear(std::string option);
 
-  /// Clear PETSc global options database
-  static void clear();
-};
+/// Clear PETSc global options database
+void clear();
+}; // namespace options
 
 /// A simple wrapper for a PETSc vector pointer (Vec). Its main purpose
 /// is to assist with memory/lifetime management of PETSc Vec objects.

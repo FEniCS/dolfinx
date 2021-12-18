@@ -220,8 +220,8 @@ int main(int argc, char* argv[])
     fem::set_bc(b.mutable_array(), bc);
 
     la::petsc::KrylovSolver lu(MPI_COMM_WORLD);
-    la::petsc::Options::set("ksp_type", "preonly");
-    la::petsc::Options::set("pc_type", "lu");
+    la::petsc::options::set("ksp_type", "preonly");
+    la::petsc::options::set("pc_type", "lu");
     lu.set_from_options();
 
     lu.set_operator(A.mat());

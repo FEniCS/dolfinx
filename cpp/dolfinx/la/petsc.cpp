@@ -352,12 +352,12 @@ MatNullSpace la::petsc::create_nullspace(MPI_Comm comm,
 }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-void petsc::Options::set(std::string option)
+void petsc::options::set(std::string option)
 {
-  petsc::Options::set<std::string>(option, "");
+  petsc::options::set<std::string>(option, "");
 }
 //-----------------------------------------------------------------------------
-void petsc::Options::clear(std::string option)
+void petsc::options::clear(std::string option)
 {
   if (option[0] != '-')
     option = '-' + option;
@@ -368,7 +368,7 @@ void petsc::Options::clear(std::string option)
     petsc::error(ierr, __FILE__, "PetscOptionsClearValue");
 }
 //-----------------------------------------------------------------------------
-void petsc::Options::clear()
+void petsc::options::clear()
 {
   PetscErrorCode ierr = PetscOptionsClear(nullptr);
   if (ierr != 0)
