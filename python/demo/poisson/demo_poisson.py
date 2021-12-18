@@ -80,8 +80,7 @@ from dolfinx import fem, plot
 from dolfinx.fem import (Constant, DirichletBC, FunctionSpace,
                          locate_dofs_topological)
 from dolfinx.io import XDMFFile
-from dolfinx.mesh import (CellType, GhostMode, create_rectangle,
-                          locate_entities_boundary)
+from dolfinx.mesh import CellType, create_rectangle, locate_entities_boundary
 from ufl import ds, dx, grad, inner
 
 from mpi4py import MPI
@@ -95,11 +94,7 @@ from petsc4py.PETSc import ScalarType
 # divided into two triangles, we do as follows ::
 
 # Create mesh and define function space
-mesh = create_rectangle(
-    MPI.COMM_WORLD,
-    [np.array([0, 0]), np.array([1, 1])], [32, 32],
-    CellType.triangle, GhostMode.none)
-
+mesh = create_rectangle(MPI.COMM_WORLD, ((0.0, 0.0), (2.0, 1.0)), (32, 16), CellType.triangle)
 V = FunctionSpace(mesh, ("Lagrange", 1))
 
 # The second argument to :py:class:`FunctionSpace
@@ -140,11 +135,9 @@ V = FunctionSpace(mesh, ("Lagrange", 1))
 # boundary condition then looks as follows: ::
 
 # Define boundary condition on x = 0 or x = 1
-facets = locate_entities_boundary(mesh, 1,
-                                  lambda x: np.logical_or(np.isclose(x[0], 0.0),
-                                                          np.isclose(x[0], 1.0)))
-u0 = Constant(mesh, ScalarType(0))
-bc = DirichletBC(u0, locate_dofs_topological(V, 1, facets), V)
+facets = locate_entities_boundary(mesh, 1, lambda x: np.logical_or(np.isclose(x[0], 0.0),
+                                                                   np.isclose(x[0], 1.0)))
+bc = DirichletBC(Constant(mesh, ScalarType(0)), locate_dofs_topological(V, 1, facets), V)
 
 # Next, we want to express the variational problem.  First, we need to
 # specify the trial function :math:`u` and the test function :math:`v`,
@@ -203,10 +196,9 @@ with XDMFFile(MPI.COMM_WORLD, "poisson.xdmf", "w") as file:
     file.write_function(uh)
 
 
-# Update ghost entries and plot
+# Plot solution
 try:
     import pyvista
-    uh.x.scatter_forward()
     topology, cell_types = plot.create_vtk_topology(mesh, mesh.topology.dim)
     grid = pyvista.UnstructuredGrid(topology, cell_types, mesh.geometry.x)
     grid.point_data["u"] = uh.compute_point_values().real
