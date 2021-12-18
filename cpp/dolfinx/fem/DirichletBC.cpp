@@ -25,6 +25,7 @@ using namespace dolfinx::fem;
 
 namespace
 {
+//-----------------------------------------------------------------------------
 /// Create a symmetric MPI neighbourhood communciator from an
 /// input neighbourhood communicator
 dolfinx::MPI::Comm create_symmetric_comm(MPI_Comm comm)
@@ -49,7 +50,6 @@ dolfinx::MPI::Comm create_symmetric_comm(MPI_Comm comm)
 
   return dolfinx::MPI::Comm(comm_sym, false);
 }
-
 //-----------------------------------------------------------------------------
 /// Find the cell (local to process) and index of an entity (local to cell) for
 /// a list of entities
@@ -62,7 +62,6 @@ find_local_entity_index(std::shared_ptr<const mesh::Mesh> mesh,
                         const xtl::span<const std::int32_t>& entities,
                         const int dim)
 {
-
   // Initialise entity-cell connectivity
   const int tdim = mesh->topology().dim();
   mesh->topology_mutable().create_entities(tdim);
@@ -74,26 +73,25 @@ find_local_entity_index(std::shared_ptr<const mesh::Mesh> mesh,
 
   std::vector<std::pair<std::int32_t, int>> entity_indices;
   entity_indices.reserve(entities.size());
-
   for (std::int32_t e : entities)
   {
     // Get first attached cell
     assert(e_to_c->num_links(e) > 0);
-    const int cell = e_to_c->links(e)[0];
+    const int cell = e_to_c->links(e).front();
 
     // Get local index of facet with respect to the cell
     auto entities_d = c_to_e->links(cell);
     auto it = std::find(entities_d.begin(), entities_d.end(), e);
     assert(it != entities_d.end());
-    const int entity_local_index = std::distance(entities_d.begin(), it);
-    entity_indices.push_back({cell, entity_local_index});
+    std::size_t entity_local_index = std::distance(entities_d.begin(), it);
+    entity_indices.emplace_back(cell, entity_local_index);
   }
+
   return entity_indices;
 };
-
 //-----------------------------------------------------------------------------
-
-/// Find all DOFs on this process that has been detected on another process
+/// Find all DOFs on this process that has been detected on another
+/// process
 /// @param[in] comm A symmetric communicator based on the forward
 /// neighborhood communicator in the IndexMap
 /// @param[in] map The IndexMap with the dof layout
@@ -135,7 +133,8 @@ get_remote_dofs(MPI_Comm comm, const common::IndexMap& map, int bs_map, int bs,
   const int myoffset = dofs_local.empty() ? 0 : dofs_local.front() % bs_map;
   int offset = 0;
   MPI_Request request_offset;
-  MPI_Iallreduce(&myoffset, &offset, 1, MPI_INT, MPI_MAX, comm, &request_offset);
+  MPI_Iallreduce(&myoffset, &offset, 1, MPI_INT, MPI_MAX, comm,
+                 &request_offset);
 
   if (bs_map == 1)
     map.local_to_global(dofs_local, dofs_global);
@@ -262,13 +261,14 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
       = find_local_entity_index(mesh, entities, dim);
 
   // Iterate over marked facets
-  const int num_entity_dofs
-      = dofmap0->element_dof_layout->num_entity_closure_dofs(dim);
   const int element_bs = dofmap0->element_dof_layout->block_size();
-
   std::array<std::vector<std::int32_t>, 2> bc_dofs;
-  bc_dofs[0].reserve(entities.size() * num_entity_dofs * element_bs);
-  bc_dofs[1].reserve(entities.size() * num_entity_dofs * element_bs);
+  bc_dofs[0].reserve(entities.size()
+                     * dofmap0->element_dof_layout->num_entity_closure_dofs(dim)
+                     * element_bs);
+  bc_dofs[1].reserve(entities.size()
+                     * dofmap0->element_dof_layout->num_entity_closure_dofs(dim)
+                     * element_bs);
   for (auto [cell, entity_local_index] : entity_indices)
   {
     // Get cell dofmap
@@ -277,9 +277,8 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
     assert(bs0 * cell_dofs0.size() == bs1 * cell_dofs1.size());
 
     // Loop over facet dofs and 'unpack' blocked dofs
-    for (int i = 0; i < num_entity_dofs; ++i)
+    for (int index : entity_dofs[entity_local_index])
     {
-      const int index = entity_dofs[entity_local_index][i];
       for (int k = 0; k < element_bs; ++k)
       {
         const int local_pos = element_bs * index + k;
@@ -337,7 +336,6 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
     perm.resize(sorted_bc_dofs[0].size());
     std::iota(perm.begin(), perm.end(), 0);
     dolfinx::argsort_radix<std::int32_t>(sorted_bc_dofs[0], perm);
-
     std::array<std::vector<std::int32_t>, 2> out_dofs = sorted_bc_dofs;
     for (std::size_t b = 0; b < 2; ++b)
     {
@@ -374,30 +372,24 @@ fem::locate_dofs_topological(const FunctionSpace& V, int dim,
         dofmap->element_dof_layout->entity_closure_dofs(dim, i));
   }
 
-  const int num_entity_closure_dofs
-      = dofmap->element_dof_layout->num_entity_closure_dofs(dim);
-  std::vector<std::int32_t> dofs;
-  dofs.reserve(entities.size() * num_entity_closure_dofs);
-
   // Get cell index and local entity index
   std::vector<std::pair<std::int32_t, int>> entity_indices
       = find_local_entity_index(mesh, entities, dim);
 
-  // If space is not a sub space we not not need to take the block size
-  // into account
+  std::vector<std::int32_t> dofs;
+  dofs.reserve(entities.size()
+               * dofmap->element_dof_layout->num_entity_closure_dofs(dim));
+  std::vector<std::int32_t> dofs_remote;
   if (V.component().empty())
   {
+    // If space is not a sub space we not not need to take the block size
+    // into account
     for (auto [cell, entity_local_index] : entity_indices)
     {
-      // Get cell dofmap
+      // Get cell dofmap and loop over entity dofs
       auto cell_dofs = dofmap->cell_dofs(cell);
-
-      // Loop over entity dofs
-      for (int j = 0; j < num_entity_closure_dofs; j++)
-      {
-        const int index = entity_dofs[entity_local_index][j];
+      for (int index : entity_dofs[entity_local_index])
         dofs.push_back(cell_dofs[index]);
-      }
     }
 
     // TODO: is removing duplicates at this point worth the effort?
@@ -410,34 +402,24 @@ fem::locate_dofs_topological(const FunctionSpace& V, int dim,
       auto map = V.dofmap()->index_map;
       dolfinx::MPI::Comm comm = create_symmetric_comm(
           map->comm(common::IndexMap::Direction::forward));
-      const std::vector<std::int32_t> dofs_remote
-          = get_remote_dofs(comm.comm(), *map, 1, 1, dofs);
-
-      // Add received bc indices to dofs_local
-      dofs.insert(dofs.end(), dofs_remote.begin(), dofs_remote.end());
-
-      // Remove duplicates
-      std::sort(dofs.begin(), dofs.end());
-      dofs.erase(std::unique(dofs.begin(), dofs.end()), dofs.end());
+      assert(V.dofmap()->index_map_bs() == V.dofmap()->bs());
+      dofs_remote = get_remote_dofs(comm.comm(), *map, 1, 1, dofs);
     }
   }
   else
   {
     // V is a sub space we need to take the block size of the dofmap and
-    // index map into account, as they differ
+    // index map into account, as they can differ
     const int bs = dofmap->bs();
     const int element_bs = dofmap->element_dof_layout->block_size();
 
     // Iterate over marked facets
     for (auto [cell, entity_local_index] : entity_indices)
     {
-      // Get cell dofmap
+      // Get cell dofmap and loop over facet dofs and 'unpack' blocked dofs
       xtl::span<const std::int32_t> cell_dofs = dofmap->cell_dofs(cell);
-
-      // Loop over facet dofs and 'unpack' blocked dofs
-      for (int i = 0; i < num_entity_closure_dofs; ++i)
+      for (int index : entity_dofs[entity_local_index])
       {
-        const int index = entity_dofs[entity_local_index][i];
         for (int k = 0; k < element_bs; ++k)
         {
           const std::div_t pos = std::div(element_bs * index + k, bs);
@@ -453,23 +435,22 @@ fem::locate_dofs_topological(const FunctionSpace& V, int dim,
 
     if (remote)
     {
-      // Get bc dof indices (local) in (V, Vg) spaces on this process that
-      // were found by other processes, e.g. a vertex dof on this process
-      // that has no connected facets on the boundary.
+      // Get bc dof indices (local) in  V spaces on this process that
+      // were found by other processes, e.g. a vertex dof on this
+      // process that has no connected facets on the boundary.
       dolfinx::MPI::Comm comm = create_symmetric_comm(
           V.dofmap()->index_map->comm(common::IndexMap::Direction::forward));
-
-      const std::vector<std::int32_t> dofs_remote
-          = get_remote_dofs(comm.comm(), *V.dofmap()->index_map,
-                            V.dofmap()->index_map_bs(), bs, dofs);
-
-      // Add received bc indices to dofs_local
-      dofs.insert(dofs.end(), dofs_remote.begin(), dofs_remote.end());
-
-      // Remove duplicates and sort
-      std::sort(dofs.begin(), dofs.end());
-      dofs.erase(std::unique(dofs.begin(), dofs.end()), dofs.end());
+      dofs_remote = get_remote_dofs(comm.comm(), *V.dofmap()->index_map,
+                                    V.dofmap()->index_map_bs(), bs, dofs);
     }
+  }
+
+  if (remote)
+  {
+    // Add received bc indices to dofs_local, sort, and remove duplicates
+    dofs.insert(dofs.end(), dofs_remote.begin(), dofs_remote.end());
+    std::sort(dofs.begin(), dofs.end());
+    dofs.erase(std::unique(dofs.begin(), dofs.end()), dofs.end());
   }
 
   return dofs;
