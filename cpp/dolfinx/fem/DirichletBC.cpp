@@ -96,11 +96,9 @@ find_local_entity_index(std::shared_ptr<const mesh::Mesh> mesh,
 /// @param[in] comm A symmetric communicator based on the forward
 /// neighborhood communicator in the IndexMap
 /// @param[in] map The IndexMap with the dof layout
-/// @param[in] bs_map The block size of the index map, i.e. the dof array
-/// @param[in] dofs_local List of degrees of freedom local to process
-/// (unrolled). It might contain indices not found on other processes.
-/// The indices has to be ordered in blocks, i.e. the the dofs from i*bs
-/// to (i+1)*bs has to correspond to dofs in a single block.
+/// @param[in] bs_map The block size of the index map, i.e. the dof
+/// array. It should be set to one if `dofs_local` contains block indices.
+/// @param[in] dofs_local List of degrees of freedom on this rank
 /// @returns Degrees of freedom found on the other ranks that exist on
 /// this rank
 std::vector<std::int32_t>
@@ -390,7 +388,7 @@ fem::locate_dofs_topological(const FunctionSpace& V, int dim,
   }
   else if (bs == 1)
   {
-    // Space is not blocked
+    // Space is not blocked, unroll dofs
     for (auto [cell, entity_local_index] : entity_indices)
     {
       // Get cell dofmap and loop over facet dofs and 'unpack' blocked dofs
@@ -406,7 +404,7 @@ fem::locate_dofs_topological(const FunctionSpace& V, int dim,
     }
   }
   else
-    throw std::runtime_error("Not supported");
+    throw std::runtime_error("Block size combination not supported");
 
   // TODO: is removing duplicates at this point worth the effort?
   // Remove duplicates
@@ -419,11 +417,11 @@ fem::locate_dofs_topological(const FunctionSpace& V, int dim,
     // found by other processes, e.g. a vertex dof on this process that
     // has no connected facets on the boundary.
 
-    auto map = V.dofmap()->index_map;
+    auto map = dofmap->index_map;
     dolfinx::MPI::Comm comm = create_symmetric_comm(
         map->comm(common::IndexMap::Direction::forward));
     std::vector<std::int32_t> dofs_remote;
-    if (int map_bs = V.dofmap()->index_map_bs(); map_bs == bs)
+    if (int map_bs = dofmap->index_map_bs(); map_bs == bs)
       dofs_remote = get_remote_dofs(comm.comm(), *map, 1, dofs);
     else
       dofs_remote = get_remote_dofs(comm.comm(), *map, map_bs, dofs);
@@ -520,11 +518,10 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_geometrical(
   // Copy to separate array
   std::array dofs = {std::vector<std::int32_t>(bc_dofs.size()),
                      std::vector<std::int32_t>(bc_dofs.size())};
-  for (std::size_t i = 0; i < bc_dofs.size(); ++i)
-  {
-    dofs[0][i] = bc_dofs[i][0];
-    dofs[1][i] = bc_dofs[i][1];
-  }
+  std::transform(bc_dofs.cbegin(), bc_dofs.cend(), dofs[0].begin(),
+                 [](auto dof) { return dof[0]; });
+  std::transform(bc_dofs.cbegin(), bc_dofs.cend(), dofs[1].begin(),
+                 [](auto dof) { return dof[1]; });
 
   return dofs;
 }
@@ -555,6 +552,8 @@ std::vector<std::int32_t> fem::locate_dofs_geometrical(
 
   std::vector<std::int32_t> dofs;
   dofs.reserve(std::count(marked_dofs.begin(), marked_dofs.end(), true));
+
+
   for (std::size_t i = 0; i < marked_dofs.size(); ++i)
   {
     if (marked_dofs[i])
