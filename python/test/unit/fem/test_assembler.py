@@ -152,14 +152,9 @@ def test_assembly_bcs(mode):
     a = inner(u, v) * dx + inner(u, v) * ds
     L = inner(1.0, v) * dx
 
-    def boundary(x):
-        return np.logical_or(x[0] < 1.0e-6, x[0] > 1.0 - 1.0e-6)
-
-    bdofsV = locate_dofs_geometrical(V, boundary)
-
-    u_bc = Function(V)
-    u_bc.x.array[:] = 1.0
-    bc = DirichletBC(u_bc, bdofsV)
+    bdofsV = locate_dofs_geometrical(V, lambda x: np.logical_or(np.isclose(x[0], 0.0), np.isclose(x[0], 1.0)))
+    u_bc = Constant(mesh, PETSc.ScalarType(1))
+    bc = DirichletBC(u_bc, bdofsV, V)
 
     # Assemble and apply 'global' lifting of bcs
     A = assemble_matrix(a)
@@ -174,8 +169,6 @@ def test_assembly_bcs(mode):
     set_bc(f, [bc])
 
     # Assemble vector and apply lifting of bcs during assembly
-    b = assemble_vector(L)
-    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     b_bc = assemble_vector(L)
     apply_lifting(b_bc, [a], [[bc]])
     b_bc.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
@@ -184,11 +177,10 @@ def test_assembly_bcs(mode):
     assert (f - b_bc).norm() == pytest.approx(0.0, rel=1e-12, abs=1e-12)
 
 
-@skip_in_parallel
+@ skip_in_parallel
 def test_assemble_manifold():
-    """Test assembly of poisson problem on a mesh with topological dimension 1
-    but embedded in 2D (gdim=2).
-    """
+    """Test assembly of poisson problem on a mesh with topological
+    dimension 1 but embedded in 2D (gdim=2)"""
     points = np.array([[0.0, 0.0], [0.2, 0.0], [0.4, 0.0],
                        [0.6, 0.0], [0.8, 0.0], [1.0, 0.0]], dtype=np.float64)
     cells = np.array([[0, 1], [1, 2], [2, 3], [3, 4], [4, 5]], dtype=np.int32)
@@ -219,26 +211,22 @@ def test_assemble_manifold():
     assert np.isclose(A.norm(), 25.0199)
 
 
-@pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
+@ pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
 def test_matrix_assembly_block(mode):
     """Test assembly of block matrices and vectors into (a) monolithic
-    blocked structures, PETSc Nest structures, and monolithic structures.
-    """
+    blocked structures, PETSc Nest structures, and monolithic
+    structures"""
     mesh = create_unit_square(MPI.COMM_WORLD, 4, 8, ghost_mode=mode)
-
     p0, p1 = 1, 2
     P0 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p0)
     P1 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p1)
-
     V0 = FunctionSpace(mesh, P0)
     V1 = FunctionSpace(mesh, P1)
 
-    def boundary(x):
-        return np.logical_or(x[0] < 1.0e-6, x[0] > 1.0 - 1.0e-6)
-
     # Locate facets on boundary
     facetdim = mesh.topology.dim - 1
-    bndry_facets = locate_entities_boundary(mesh, facetdim, boundary)
+    bndry_facets = locate_entities_boundary(mesh, facetdim, lambda x: np.logical_or(np.isclose(x[0], 0.0),
+                                                                                    np.isclose(x[0], 1.0)))
 
     bdofsV1 = locate_dofs_topological(V1, facetdim, bndry_facets)
 
@@ -311,22 +299,19 @@ def test_matrix_assembly_block(mode):
     assert b2.norm() == pytest.approx(bnorm0, 1.0e-9)
 
 
-@pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
+@ pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
 def test_assembly_solve_block(mode):
     """Solve a two-field mass-matrix like problem with block matrix approaches
-    and test that solution is the same.
-    """
+    and test that solution is the same"""
     mesh = create_unit_square(MPI.COMM_WORLD, 32, 31, ghost_mode=mode)
     P = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
     V0 = FunctionSpace(mesh, P)
     V1 = V0.clone()
 
-    def boundary(x):
-        return np.logical_or(x[0] < 1.0e-6, x[0] > 1.0 - 1.0e-6)
-
     # Locate facets on boundary
     facetdim = mesh.topology.dim - 1
-    bndry_facets = locate_entities_boundary(mesh, facetdim, boundary)
+    bndry_facets = locate_entities_boundary(mesh, facetdim, lambda x: np.logical_or(np.isclose(x[0], 0.0),
+                                                                                    np.isclose(x[0], 1.0)))
 
     bdofsV0 = locate_dofs_topological(V0, facetdim, bndry_facets)
     bdofsV1 = locate_dofs_topological(V1, facetdim, bndry_facets)
@@ -455,11 +440,11 @@ def test_assembly_solve_taylor_hood(mesh):
 
     def boundary0(x):
         """Define boundary x = 0"""
-        return x[0] < 10 * np.finfo(float).eps
+        return np.isclose(x[0], 0.0)
 
     def boundary1(x):
         """Define boundary x = 1"""
-        return x[0] > (1.0 - 10 * np.finfo(float).eps)
+        return np.isclose(x[0], 1.0)
 
     # Locate facets on boundaries
     facetdim = mesh.topology.dim - 1
@@ -650,7 +635,7 @@ def test_basic_interior_facet_assembly():
     assert isinstance(b, PETSc.Vec)
 
 
-@pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
+@ pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
 def test_basic_assembly_constant(mode):
     """Tests assembly with Constant
 

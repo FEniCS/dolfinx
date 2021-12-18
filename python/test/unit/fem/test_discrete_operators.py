@@ -5,7 +5,7 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for the DiscreteOperator class"""
 
-import numpy
+import numpy as np
 import pytest
 
 from dolfinx.cpp.fem.petsc import create_discrete_gradient
@@ -36,7 +36,7 @@ def test_gradient(mesh):
     m, n = G.getSize()
     assert m == num_edges
     assert n == mesh.topology.index_map(0).size_global
-    assert numpy.isclose(G.norm(PETSc.NormType.FROBENIUS), numpy.sqrt(2.0 * num_edges))
+    assert np.isclose(G.norm(PETSc.NormType.FROBENIUS), np.sqrt(2.0 * num_edges))
 
 
 def test_incompatible_spaces():

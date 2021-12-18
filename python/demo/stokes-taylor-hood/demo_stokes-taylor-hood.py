@@ -419,8 +419,7 @@ bc1 = DirichletBC(lid_velocity, dofs, W.sub(0))
 # constant, we pin the pressure at the point (0, 0)
 zero = Function(Q)
 zero.x.set(0.0)
-dofs = locate_dofs_geometrical((W.sub(1), Q),
-                               lambda x: np.isclose(x.T, [0, 0, 0]).all(axis=1))
+dofs = locate_dofs_geometrical((W.sub(1), Q), lambda x: np.isclose(x.T, [0, 0, 0]).all(axis=1))
 bc2 = DirichletBC(zero, dofs, W.sub(1))
 
 # Collect Dirichlet boundary conditions
