@@ -7,8 +7,7 @@
 #include "NewtonSolver.h"
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/log.h>
-#include <dolfinx/la/PETScKrylovSolver.h>
-#include <dolfinx/la/PETScOptions.h>
+#include <dolfinx/la/PETScMatrix.h>
 #include <dolfinx/la/PETScVector.h>
 #include <string>
 

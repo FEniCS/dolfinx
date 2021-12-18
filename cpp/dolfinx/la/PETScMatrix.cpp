@@ -166,6 +166,97 @@ MatNullSpace la::petsc::create_nullspace(MPI_Comm comm,
   return ns;
 }
 //-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+void petsc::Options::set(std::string option)
+{
+  petsc::Options::set<std::string>(option, "");
+}
+//-----------------------------------------------------------------------------
+void petsc::Options::clear(std::string option)
+{
+  if (option[0] != '-')
+    option = '-' + option;
+
+  PetscErrorCode ierr;
+  ierr = PetscOptionsClearValue(nullptr, option.c_str());
+  if (ierr != 0)
+    petsc::error(ierr, __FILE__, "PetscOptionsClearValue");
+}
+//-----------------------------------------------------------------------------
+void petsc::Options::clear()
+{
+  PetscErrorCode ierr = PetscOptionsClear(nullptr);
+  if (ierr != 0)
+    petsc::error(ierr, __FILE__, "PetscOptionsClear");
+}
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+petsc::Operator::Operator(Mat A, bool inc_ref_count) : _matA(A)
+{
+  assert(A);
+  if (inc_ref_count)
+    PetscObjectReference((PetscObject)_matA);
+}
+//-----------------------------------------------------------------------------
+petsc::Operator::Operator(Operator&& A) : _matA(std::exchange(A._matA, nullptr))
+{
+}
+//-----------------------------------------------------------------------------
+petsc::Operator::~Operator()
+{
+  // Decrease reference count (PETSc will destroy object once reference
+  // counts reached zero)
+  if (_matA)
+    MatDestroy(&_matA);
+}
+//-----------------------------------------------------------------------------
+petsc::Operator& petsc::Operator::operator=(Operator&& A)
+{
+  std::swap(_matA, A._matA);
+  return *this;
+}
+//-----------------------------------------------------------------------------
+std::array<std::int64_t, 2> petsc::Operator::size() const
+{
+  assert(_matA);
+  PetscInt m(0), n(0);
+  PetscErrorCode ierr = MatGetSize(_matA, &m, &n);
+  if (ierr != 0)
+    petsc::error(ierr, __FILE__, "MetGetSize");
+  return {{m, n}};
+}
+//-----------------------------------------------------------------------------
+petsc::Vector petsc::Operator::create_vector(std::size_t dim) const
+{
+  assert(_matA);
+  PetscErrorCode ierr;
+
+  Vec x = nullptr;
+  if (dim == 0)
+  {
+    ierr = MatCreateVecs(_matA, nullptr, &x);
+    if (ierr != 0)
+      petsc::error(ierr, __FILE__, "MatCreateVecs");
+  }
+  else if (dim == 1)
+  {
+    ierr = MatCreateVecs(_matA, &x, nullptr);
+    if (ierr != 0)
+      petsc::error(ierr, __FILE__, "MatCreateVecs");
+  }
+  else
+  {
+    LOG(ERROR) << "Cannot initialize PETSc vector to match PETSc matrix. "
+               << "Dimension must be 0 or 1, not " << dim;
+    throw std::runtime_error("Invalid dimension");
+  }
+
+  return Vector(x, false);
+}
+//-----------------------------------------------------------------------------
+Mat petsc::Operator::mat() const { return _matA; }
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                   const std::int32_t*, const PetscScalar*)>
 petsc::Matrix::set_fn(Mat A, InsertMode mode)
@@ -330,4 +421,190 @@ void petsc::Matrix::set_from_options()
   assert(_matA);
   MatSetFromOptions(_matA);
 }
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+petsc::KrylovSolver::KrylovSolver(MPI_Comm comm) : _ksp(nullptr)
+{
+  PetscErrorCode ierr;
+
+  // Create PETSc KSP object
+  ierr = KSPCreate(comm, &_ksp);
+  if (ierr != 0)
+    petsc::error(ierr, __FILE__, "KSPCreate");
+}
+//-----------------------------------------------------------------------------
+petsc::KrylovSolver::KrylovSolver(KSP ksp, bool inc_ref_count) : _ksp(ksp)
+{
+  assert(_ksp);
+  if (inc_ref_count)
+  {
+    PetscErrorCode ierr = PetscObjectReference((PetscObject)_ksp);
+    if (ierr != 0)
+      petsc::error(ierr, __FILE__, "PetscObjectReference");
+  }
+}
+//-----------------------------------------------------------------------------
+petsc::KrylovSolver::KrylovSolver(KrylovSolver&& solver)
+    : _ksp(std::exchange(solver._ksp, nullptr))
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+petsc::KrylovSolver::~KrylovSolver()
+{
+  if (_ksp)
+    KSPDestroy(&_ksp);
+}
+//-----------------------------------------------------------------------------
+petsc::KrylovSolver& petsc::KrylovSolver::operator=(KrylovSolver&& solver)
+{
+  std::swap(_ksp, solver._ksp);
+  return *this;
+}
+//-----------------------------------------------------------------------------
+void petsc::KrylovSolver::set_operator(const Mat A) { set_operators(A, A); }
+//-----------------------------------------------------------------------------
+void petsc::KrylovSolver::set_operators(const Mat A, const Mat P)
+{
+  assert(A);
+  assert(_ksp);
+  PetscErrorCode ierr;
+  ierr = KSPSetOperators(_ksp, A, P);
+  if (ierr != 0)
+    petsc::error(ierr, __FILE__, "KSPSetOperators");
+}
+//-----------------------------------------------------------------------------
+int petsc::KrylovSolver::solve(Vec x, const Vec b, bool transpose) const
+{
+  common::Timer timer("PETSc Krylov solver");
+  assert(x);
+  assert(b);
+
+  // Get PETSc operators
+  Mat _A, _P;
+  KSPGetOperators(_ksp, &_A, &_P);
+  assert(_A);
+
+  // Create wrapper around PETSc Mat object
+  // la::PETScOperator A(_A);
+
+  PetscErrorCode ierr;
+
+  // // Check dimensions
+  // const std::array<std::int64_t, 2> size = A.size();
+  // if (size[0] != b.size())
+  // {
+  //   log::dolfin_error(
+  //       "PETScKrylovSolver.cpp",
+  //       "unable to solve linear system with PETSc Krylov solver",
+  //       "Non-matching dimensions for linear system (matrix has %ld "
+  //       "rows and right-hand side vector has %ld rows)",
+  //       size[0], b.size());
+  // }
+
+  // Solve linear system
+  LOG(INFO) << "PETSc Krylov solver starting to solve system.";
+
+  // Solve system
+  if (!transpose)
+  {
+    ierr = KSPSolve(_ksp, b, x);
+    if (ierr != 0)
+      petsc::error(ierr, __FILE__, "KSPSolve");
+  }
+  else
+  {
+    ierr = KSPSolveTranspose(_ksp, b, x);
+    if (ierr != 0)
+      petsc::error(ierr, __FILE__, "KSPSolve");
+  }
+
+  // FIXME: Remove ghost updating?
+  // Update ghost values in solution vector
+  Vec xg;
+  VecGhostGetLocalForm(x, &xg);
+  const bool is_ghosted = xg ? true : false;
+  VecGhostRestoreLocalForm(x, &xg);
+  if (is_ghosted)
+  {
+    VecGhostUpdateBegin(x, INSERT_VALUES, SCATTER_FORWARD);
+    VecGhostUpdateEnd(x, INSERT_VALUES, SCATTER_FORWARD);
+  }
+
+  // Get the number of iterations
+  PetscInt num_iterations = 0;
+  ierr = KSPGetIterationNumber(_ksp, &num_iterations);
+  if (ierr != 0)
+    petsc::error(ierr, __FILE__, "KSPGetIterationNumber");
+
+  // Check if the solution converged and print error/warning if not
+  // converged
+  KSPConvergedReason reason;
+  ierr = KSPGetConvergedReason(_ksp, &reason);
+  if (ierr != 0)
+    petsc::error(ierr, __FILE__, "KSPGetConvergedReason");
+  if (reason < 0)
+  {
+    /*
+    // Get solver residual norm
+    double rnorm = 0.0;
+    ierr = KSPGetResidualNorm(_ksp, &rnorm);
+    if (ierr != 0) error(ierr, __FILE__, "KSPGetResidualNorm");
+    const char *reason_str = KSPConvergedReasons[reason];
+    bool error_on_nonconvergence =
+    this->parameters["error_on_nonconvergence"].is_set() ?
+    this->parameters["error_on_nonconvergence"] : true;
+    if (error_on_nonconvergence)
+    {
+      log::dolfin_error("PETScKrylovSolver.cpp",
+                   "solve linear system using PETSc Krylov solver",
+                   "Solution failed to converge in %i iterations (PETSc reason
+    %s, residual norm ||r|| = %e)",
+                   static_cast<int>(num_iterations), reason_str, rnorm);
+    }
+    else
+    {
+      log::warning("Krylov solver did not converge in %i iterations (PETSc
+    reason %s,
+    residual norm ||r|| = %e).",
+              num_iterations, reason_str, rnorm);
+    }
+    */
+  }
+
+  // Report results
+  // if (report && dolfinx::MPI::rank(this->comm()) == 0)
+  //  write_report(num_iterations, reason);
+
+  return num_iterations;
+}
+//-----------------------------------------------------------------------------
+void petsc::KrylovSolver::set_options_prefix(std::string options_prefix)
+{
+  // Set options prefix
+  assert(_ksp);
+  PetscErrorCode ierr = KSPSetOptionsPrefix(_ksp, options_prefix.c_str());
+  if (ierr != 0)
+    petsc::error(ierr, __FILE__, "KSPSetOptionsPrefix");
+}
+//-----------------------------------------------------------------------------
+std::string petsc::KrylovSolver::get_options_prefix() const
+{
+  assert(_ksp);
+  const char* prefix = nullptr;
+  PetscErrorCode ierr = KSPGetOptionsPrefix(_ksp, &prefix);
+  if (ierr != 0)
+    petsc::error(ierr, __FILE__, "KSPGetOptionsPrefix");
+  return std::string(prefix);
+}
+//-----------------------------------------------------------------------------
+void petsc::KrylovSolver::set_from_options() const
+{
+  assert(_ksp);
+  PetscErrorCode ierr = KSPSetFromOptions(_ksp);
+  if (ierr != 0)
+    petsc::error(ierr, __FILE__, "KSPSetFromOptions");
+}
+//-----------------------------------------------------------------------------
+KSP petsc::KrylovSolver::ksp() const { return _ksp; }
 //-----------------------------------------------------------------------------
