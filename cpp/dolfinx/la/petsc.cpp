@@ -39,11 +39,171 @@ void la::petsc::error(int error_code, std::string filename,
   DLOG(INFO) << "PETSc error in '" << filename.c_str() << "', '"
              << petsc_function.c_str() << "'";
   DLOG(INFO) << "PETSc error code '" << error_code << "' (" << desc << ".";
-
   throw std::runtime_error("Failed to successfully call PETSc function '"
                            + petsc_function + "'. PETSc error code is: "
                            + std ::to_string(error_code) + ", "
                            + std::string(desc));
+}
+//-----------------------------------------------------------------------------
+std::vector<Vec>
+la::petsc::create_vectors(MPI_Comm comm,
+                          const std::vector<xtl::span<const PetscScalar>>& x)
+{
+  std::vector<Vec> v(x.size());
+  for (std::size_t i = 0; i < v.size(); ++i)
+  {
+    VecCreateMPI(comm, x[i].size(), PETSC_DETERMINE, &v[i]);
+    PetscScalar* data;
+    VecGetArray(v[i], &data);
+    std::copy(x[i].begin(), x[i].end(), data);
+    VecRestoreArray(v[i], &data);
+  }
+
+  return v;
+}
+//-----------------------------------------------------------------------------
+Vec la::petsc::create_vector(const dolfinx::common::IndexMap& map, int bs)
+{
+  return la::petsc::create_vector(map.comm(), map.local_range(), map.ghosts(),
+                                  bs);
+}
+//-----------------------------------------------------------------------------
+Vec la::petsc::create_vector(MPI_Comm comm, std::array<std::int64_t, 2> range,
+                             const xtl::span<const std::int64_t>& ghosts,
+                             int bs)
+{
+  PetscErrorCode ierr;
+
+  // Get local size
+  assert(range[1] >= range[0]);
+  const std::int32_t local_size = range[1] - range[0];
+
+  Vec x;
+  const std::vector<PetscInt> _ghosts(ghosts.begin(), ghosts.end());
+  ierr = VecCreateGhostBlock(comm, bs, bs * local_size, PETSC_DETERMINE,
+                             _ghosts.size(), _ghosts.data(), &x);
+  CHECK_ERROR("VecCreateGhostBlock");
+  assert(x);
+
+  return x;
+}
+//-----------------------------------------------------------------------------
+Vec la::petsc::create_vector_wrap(const common::IndexMap& map, int bs,
+                                  const xtl::span<const PetscScalar>& x)
+{
+  const std::int32_t size_local = bs * map.size_local();
+  const std::int64_t size_global = bs * map.size_global();
+  const std::vector<PetscInt> ghosts(map.ghosts().begin(), map.ghosts().end());
+  Vec vec;
+  VecCreateGhostBlockWithArray(map.comm(), bs, size_local, size_global,
+                               ghosts.size(), ghosts.data(), x.data(), &vec);
+  return vec;
+}
+//-----------------------------------------------------------------------------
+std::vector<IS> la::petsc::create_index_sets(
+    const std::vector<
+        std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps)
+{
+  std::vector<IS> is;
+  std::int64_t offset = 0;
+  for (auto& map : maps)
+  {
+    const int bs = map.second;
+    const std::int32_t size
+        = map.first.get().size_local() + map.first.get().num_ghosts();
+    IS _is;
+    ISCreateStride(PETSC_COMM_SELF, bs * size, offset, 1, &_is);
+    is.push_back(_is);
+    offset += bs * size;
+  }
+
+  return is;
+}
+//-----------------------------------------------------------------------------
+std::vector<std::vector<PetscScalar>> la::petsc::get_local_vectors(
+    const Vec x,
+    const std::vector<
+        std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps)
+{
+  // Get ghost offset
+  int offset_owned = 0;
+  for (auto& map : maps)
+    offset_owned += map.first.get().size_local() * map.second;
+
+  // Unwrap PETSc vector
+  Vec x_local;
+  VecGhostGetLocalForm(x, &x_local);
+  PetscInt n = 0;
+  VecGetSize(x_local, &n);
+  const PetscScalar* array = nullptr;
+  VecGetArrayRead(x_local, &array);
+  xtl::span _x(array, n);
+
+  // Copy PETSc Vec data in to local vectors
+  std::vector<std::vector<PetscScalar>> x_b;
+  int offset = 0;
+  int offset_ghost = offset_owned; // Ghost DoFs start after owned
+  for (auto map : maps)
+  {
+    const std::int32_t size_owned = map.first.get().size_local() * map.second;
+    const std::int32_t size_ghost = map.first.get().num_ghosts() * map.second;
+
+    x_b.emplace_back(size_owned + size_ghost);
+    std::copy_n(std::next(_x.begin(), offset), size_owned, x_b.back().begin());
+    std::copy_n(std::next(_x.begin(), offset_ghost), size_ghost,
+                std::next(x_b.back().begin(), size_owned));
+
+    offset += size_owned;
+    offset_ghost += size_ghost;
+  }
+
+  VecRestoreArrayRead(x_local, &array);
+  VecGhostRestoreLocalForm(x, &x_local);
+
+  return x_b;
+}
+//-----------------------------------------------------------------------------
+void la::petsc::scatter_local_vectors(
+    Vec x, const std::vector<xtl::span<const PetscScalar>>& x_b,
+    const std::vector<
+        std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps)
+{
+  if (x_b.size() != maps.size())
+    throw std::runtime_error("Mismatch in vector/map size.");
+
+  // Get ghost offset
+  int offset_owned = 0;
+  for (auto& map : maps)
+    offset_owned += map.first.get().size_local() * map.second;
+
+  Vec x_local;
+  VecGhostGetLocalForm(x, &x_local);
+  PetscInt n = 0;
+  VecGetSize(x_local, &n);
+  PetscScalar* array = nullptr;
+  VecGetArray(x_local, &array);
+  xtl::span _x(array, n);
+
+  // Copy local vectors into PETSc Vec
+  int offset = 0;
+  int offset_ghost = offset_owned; // Ghost DoFs start after owned
+  for (std::size_t i = 0; i < maps.size(); ++i)
+  {
+    const std::int32_t size_owned
+        = maps[i].first.get().size_local() * maps[i].second;
+    const std::int32_t size_ghost
+        = maps[i].first.get().num_ghosts() * maps[i].second;
+
+    std::copy_n(x_b[i].begin(), size_owned, std::next(_x.begin(), offset));
+    std::copy_n(std::next(x_b[i].begin(), size_owned), size_ghost,
+                std::next(_x.begin(), offset_ghost));
+
+    offset += size_owned;
+    offset_ghost += size_ghost;
+  }
+
+  VecRestoreArray(x_local, &array);
+  VecGhostRestoreLocalForm(x, &x_local);
 }
 //-----------------------------------------------------------------------------
 Mat la::petsc::create_matrix(MPI_Comm comm,
@@ -216,167 +376,6 @@ void petsc::Options::clear()
 }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-std::vector<Vec>
-la::petsc::create_vectors(MPI_Comm comm,
-                          const std::vector<xtl::span<const PetscScalar>>& x)
-{
-  std::vector<Vec> v(x.size());
-  for (std::size_t i = 0; i < v.size(); ++i)
-  {
-    VecCreateMPI(comm, x[i].size(), PETSC_DETERMINE, &v[i]);
-    PetscScalar* data;
-    VecGetArray(v[i], &data);
-    std::copy(x[i].begin(), x[i].end(), data);
-    VecRestoreArray(v[i], &data);
-  }
-
-  return v;
-}
-//-----------------------------------------------------------------------------
-Vec la::petsc::create_vector(const dolfinx::common::IndexMap& map, int bs)
-{
-  return la::petsc::create_vector(map.comm(), map.local_range(), map.ghosts(),
-                                  bs);
-}
-//-----------------------------------------------------------------------------
-Vec la::petsc::create_vector(MPI_Comm comm, std::array<std::int64_t, 2> range,
-                             const xtl::span<const std::int64_t>& ghosts,
-                             int bs)
-{
-  PetscErrorCode ierr;
-
-  // Get local size
-  assert(range[1] >= range[0]);
-  const std::int32_t local_size = range[1] - range[0];
-
-  Vec x;
-  const std::vector<PetscInt> _ghosts(ghosts.begin(), ghosts.end());
-  ierr = VecCreateGhostBlock(comm, bs, bs * local_size, PETSC_DETERMINE,
-                             _ghosts.size(), _ghosts.data(), &x);
-  CHECK_ERROR("VecCreateGhostBlock");
-  assert(x);
-
-  return x;
-}
-//-----------------------------------------------------------------------------
-Vec la::petsc::create_vector_wrap(const common::IndexMap& map, int bs,
-                                  const xtl::span<const PetscScalar>& x)
-{
-  const std::int32_t size_local = bs * map.size_local();
-  const std::int64_t size_global = bs * map.size_global();
-  const std::vector<PetscInt> ghosts(map.ghosts().begin(), map.ghosts().end());
-  Vec vec;
-  VecCreateGhostBlockWithArray(map.comm(), bs, size_local, size_global,
-                               ghosts.size(), ghosts.data(), x.data(), &vec);
-  return vec;
-}
-//-----------------------------------------------------------------------------
-std::vector<IS> la::petsc::create_index_sets(
-    const std::vector<
-        std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps)
-{
-  std::vector<IS> is;
-  std::int64_t offset = 0;
-  for (auto& map : maps)
-  {
-    const int bs = map.second;
-    const std::int32_t size
-        = map.first.get().size_local() + map.first.get().num_ghosts();
-    IS _is;
-    ISCreateStride(PETSC_COMM_SELF, bs * size, offset, 1, &_is);
-    is.push_back(_is);
-    offset += bs * size;
-  }
-
-  return is;
-}
-//-----------------------------------------------------------------------------
-std::vector<std::vector<PetscScalar>> la::petsc::get_local_vectors(
-    const Vec x,
-    const std::vector<
-        std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps)
-{
-  // Get ghost offset
-  int offset_owned = 0;
-  for (auto& map : maps)
-    offset_owned += map.first.get().size_local() * map.second;
-
-  // Unwrap PETSc vector
-  Vec x_local;
-  VecGhostGetLocalForm(x, &x_local);
-  PetscInt n = 0;
-  VecGetSize(x_local, &n);
-  const PetscScalar* array = nullptr;
-  VecGetArrayRead(x_local, &array);
-  xtl::span _x(array, n);
-
-  // Copy PETSc Vec data in to local vectors
-  std::vector<std::vector<PetscScalar>> x_b;
-  int offset = 0;
-  int offset_ghost = offset_owned; // Ghost DoFs start after owned
-  for (auto map : maps)
-  {
-    const std::int32_t size_owned = map.first.get().size_local() * map.second;
-    const std::int32_t size_ghost = map.first.get().num_ghosts() * map.second;
-
-    x_b.emplace_back(size_owned + size_ghost);
-    std::copy_n(std::next(_x.begin(), offset), size_owned, x_b.back().begin());
-    std::copy_n(std::next(_x.begin(), offset_ghost), size_ghost,
-                std::next(x_b.back().begin(), size_owned));
-
-    offset += size_owned;
-    offset_ghost += size_ghost;
-  }
-
-  VecRestoreArrayRead(x_local, &array);
-  VecGhostRestoreLocalForm(x, &x_local);
-
-  return x_b;
-}
-//-----------------------------------------------------------------------------
-void la::petsc::scatter_local_vectors(
-    Vec x, const std::vector<xtl::span<const PetscScalar>>& x_b,
-    const std::vector<
-        std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps)
-{
-  if (x_b.size() != maps.size())
-    throw std::runtime_error("Mismatch in vector/map size.");
-
-  // Get ghost offset
-  int offset_owned = 0;
-  for (auto& map : maps)
-    offset_owned += map.first.get().size_local() * map.second;
-
-  Vec x_local;
-  VecGhostGetLocalForm(x, &x_local);
-  PetscInt n = 0;
-  VecGetSize(x_local, &n);
-  PetscScalar* array = nullptr;
-  VecGetArray(x_local, &array);
-  xtl::span _x(array, n);
-
-  // Copy local vectors into PETSc Vec
-  int offset = 0;
-  int offset_ghost = offset_owned; // Ghost DoFs start after owned
-  for (std::size_t i = 0; i < maps.size(); ++i)
-  {
-    const std::int32_t size_owned
-        = maps[i].first.get().size_local() * maps[i].second;
-    const std::int32_t size_ghost
-        = maps[i].first.get().num_ghosts() * maps[i].second;
-
-    std::copy_n(x_b[i].begin(), size_owned, std::next(_x.begin(), offset));
-    std::copy_n(std::next(x_b[i].begin(), size_owned), size_ghost,
-                std::next(_x.begin(), offset_ghost));
-
-    offset += size_owned;
-    offset_ghost += size_ghost;
-  }
-
-  VecRestoreArray(x_local, &array);
-  VecGhostRestoreLocalForm(x, &x_local);
-}
-//-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 petsc::Vector::Vector(const common::IndexMap& map, int bs)
     : _x(la::petsc::create_vector(map, bs))
@@ -539,7 +538,7 @@ std::array<std::int64_t, 2> petsc::Operator::size() const
   return {{m, n}};
 }
 //-----------------------------------------------------------------------------
-petsc::Vector petsc::Operator::create_vector(std::size_t dim) const
+Vec petsc::Operator::create_vector(std::size_t dim) const
 {
   assert(_matA);
   PetscErrorCode ierr;
@@ -564,7 +563,7 @@ petsc::Vector petsc::Operator::create_vector(std::size_t dim) const
     throw std::runtime_error("Invalid dimension");
   }
 
-  return Vector(x, false);
+  return x;
 }
 //-----------------------------------------------------------------------------
 Mat petsc::Operator::mat() const { return _matA; }
@@ -593,7 +592,6 @@ petsc::Matrix::set_fn(Mat A, InsertMode mode)
     if (ierr != 0)
       petsc::error(ierr, __FILE__, "MatSetValuesLocal");
 #endif
-
     return ierr;
   };
 }
@@ -621,7 +619,6 @@ petsc::Matrix::set_block_fn(Mat A, InsertMode mode)
     if (ierr != 0)
       petsc::error(ierr, __FILE__, "MatSetValuesBlockedLocal");
 #endif
-
     return ierr;
   };
 }
@@ -692,7 +689,6 @@ double petsc::Matrix::norm(Norm norm_type) const
 
   if (ierr != 0)
     petsc::error(ierr, __FILE__, "MatNorm");
-
   return value;
 }
 //-----------------------------------------------------------------------------
@@ -702,11 +698,9 @@ void petsc::Matrix::apply(AssemblyType type)
 
   assert(_matA);
   PetscErrorCode ierr;
-
   MatAssemblyType petsc_type = MAT_FINAL_ASSEMBLY;
   if (type == AssemblyType::FLUSH)
     petsc_type = MAT_FLUSH_ASSEMBLY;
-
   ierr = MatAssemblyBegin(_matA, petsc_type);
   if (ierr != 0)
     petsc::error(ierr, __FILE__, "MatAssemblyBegin");
@@ -738,10 +732,8 @@ void petsc::Matrix::set_from_options()
 //-----------------------------------------------------------------------------
 petsc::KrylovSolver::KrylovSolver(MPI_Comm comm) : _ksp(nullptr)
 {
-  PetscErrorCode ierr;
-
   // Create PETSc KSP object
-  ierr = KSPCreate(comm, &_ksp);
+  PetscErrorCode ierr = KSPCreate(comm, &_ksp);
   if (ierr != 0)
     petsc::error(ierr, __FILE__, "KSPCreate");
 }
@@ -781,8 +773,7 @@ void petsc::KrylovSolver::set_operators(const Mat A, const Mat P)
 {
   assert(A);
   assert(_ksp);
-  PetscErrorCode ierr;
-  ierr = KSPSetOperators(_ksp, A, P);
+  PetscErrorCode ierr = KSPSetOperators(_ksp, A, P);
   if (ierr != 0)
     petsc::error(ierr, __FILE__, "KSPSetOperators");
 }

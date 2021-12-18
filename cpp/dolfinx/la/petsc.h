@@ -33,51 +33,6 @@ namespace petsc
 /// Print error message for PETSc calls that return an error
 void error(int error_code, std::string filename, std::string petsc_function);
 
-/// Create a PETSc Mat. Caller is responsible for destroying the
-/// returned object.
-Mat create_matrix(MPI_Comm comm, const SparsityPattern& sp,
-                  const std::string& type = std::string());
-
-/// Create PETSc MatNullSpace. Caller is responsible for destruction
-/// returned object.
-/// @param [in] comm The MPI communicator
-/// @param[in] basis The nullspace basis vectors
-/// @return A PETSc nullspace object
-MatNullSpace create_nullspace(MPI_Comm comm, const xtl::span<const Vec>& basis);
-
-/// These class provides static functions that permit users to set and
-/// retrieve PETSc options via the PETSc option/parameter system. The
-/// option must not be prefixed by '-', e.g.
-///
-///     PETScOptions::set("mat_mumps_icntl_14", 40);
-class Options
-{
-public:
-  /// Set PETSc option that takes no value
-  static void set(std::string option);
-
-  /// Generic function for setting PETSc option
-  template <typename T>
-  static void set(std::string option, const T value)
-  {
-    if (option[0] != '-')
-      option = '-' + option;
-
-    PetscErrorCode ierr;
-    ierr
-        = PetscOptionsSetValue(nullptr, option.c_str(),
-                               boost::lexical_cast<std::string>(value).c_str());
-    if (ierr != 0)
-      petsc::error(ierr, __FILE__, "PetscOptionsSetValue");
-  }
-
-  /// Clear a PETSc option
-  static void clear(std::string option);
-
-  /// Clear PETSc global options database
-  static void clear();
-};
-
 /// Create PETsc vectors from the local data. The data is copied into
 /// the PETSc vectors and is not shared.
 /// @note Caller is responsible for destroying the returned object
@@ -155,6 +110,50 @@ void scatter_local_vectors(
     Vec x, const std::vector<xtl::span<const PetscScalar>>& x_b,
     const std::vector<
         std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps);
+/// Create a PETSc Mat. Caller is responsible for destroying the
+/// returned object.
+Mat create_matrix(MPI_Comm comm, const SparsityPattern& sp,
+                  const std::string& type = std::string());
+
+/// Create PETSc MatNullSpace. Caller is responsible for destruction
+/// returned object.
+/// @param [in] comm The MPI communicator
+/// @param[in] basis The nullspace basis vectors
+/// @return A PETSc nullspace object
+MatNullSpace create_nullspace(MPI_Comm comm, const xtl::span<const Vec>& basis);
+
+/// These class provides static functions that permit users to set and
+/// retrieve PETSc options via the PETSc option/parameter system. The
+/// option must not be prefixed by '-', e.g.
+///
+///     PETScOptions::set("mat_mumps_icntl_14", 40);
+class Options
+{
+public:
+  /// Set PETSc option that takes no value
+  static void set(std::string option);
+
+  /// Generic function for setting PETSc option
+  template <typename T>
+  static void set(std::string option, const T value)
+  {
+    if (option[0] != '-')
+      option = '-' + option;
+
+    PetscErrorCode ierr;
+    ierr
+        = PetscOptionsSetValue(nullptr, option.c_str(),
+                               boost::lexical_cast<std::string>(value).c_str());
+    if (ierr != 0)
+      petsc::error(ierr, __FILE__, "PetscOptionsSetValue");
+  }
+
+  /// Clear a PETSc option
+  static void clear(std::string option);
+
+  /// Clear PETSc global options database
+  static void clear();
+};
 
 /// A simple wrapper for a PETSc vector pointer (Vec). Its main purpose
 /// is to assist with memory/lifetime management of PETSc Vec objects.
@@ -237,6 +236,7 @@ private:
   // PETSc Vec pointer
   Vec _x;
 };
+
 /// This class is a base class for matrices that can be used in
 /// petsc::KrylovSolver.
 class Operator
@@ -268,8 +268,8 @@ public:
   /// y = Ax. In the parallel case, size and layout are both important.
   ///
   /// @param[in] dim The dimension (axis): dim = 0 --> z = y, dim = 1
-  ///                --> z = x
-  Vector create_vector(std::size_t dim) const;
+  /// --> z = x
+  Vec create_vector(std::size_t dim) const;
 
   /// Return PETSc Mat pointer
   Mat mat() const;
