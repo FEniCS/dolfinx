@@ -7,7 +7,7 @@
 #pragma once
 
 #include <dolfinx/common/MPI.h>
-#include <dolfinx/la/PETScMatrix.h>
+#include <dolfinx/la/petsc.h>
 #include <functional>
 #include <memory>
 #include <petscmat.h>

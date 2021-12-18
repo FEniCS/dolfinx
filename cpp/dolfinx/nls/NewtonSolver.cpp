@@ -7,7 +7,7 @@
 #include "NewtonSolver.h"
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/log.h>
-#include <dolfinx/la/PETScMatrix.h>
+#include <dolfinx/la/petsc.h>
 #include <string>
 
 using namespace dolfinx;

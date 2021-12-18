@@ -8,9 +8,9 @@
 #include "caster_mpi.h"
 #include "caster_petsc.h"
 #include <dolfinx/common/IndexMap.h>
-#include <dolfinx/la/PETScMatrix.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/la/Vector.h>
+#include <dolfinx/la/petsc.h>
 #include <dolfinx/la/utils.h>
 #include <memory>
 #include <petsc4py/petsc4py.h>

@@ -10,7 +10,7 @@
 #include "utils.h"
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/log.h>
-#include <dolfinx/la/PETScMatrix.h>
+#include <dolfinx/la/petsc.h>
 #include <petscmat.h>
 #include <slepcversion.h>
 
