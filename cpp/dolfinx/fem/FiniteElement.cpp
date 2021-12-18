@@ -403,8 +403,26 @@ FiniteElement::get_dof_permutation_function(bool inverse,
     }
     else if (!scalar_element)
     {
-      throw std::runtime_error(
-          "Permuting DOFs for vector elements not implemented.");
+      // Vector element
+      std::function<void(const xtl::span<std::int32_t>&, std::uint32_t)>
+          sub_element_function
+          = _sub_elements[0]->get_dof_permutation_function(inverse);
+      int dim = _sub_elements[0]->space_dimension();
+      int bs = _bs;
+      return
+          [sub_element_function, bs, subdofs = std::vector<std::int32_t>(dim)](
+              const xtl::span<std::int32_t>& doflist,
+              std::uint32_t cell_permutation) mutable
+      {
+        for (int k = 0; k < bs; ++k)
+        {
+          for (std::size_t i = 0; i < subdofs.size(); ++i)
+            subdofs[i] = doflist[bs * i + k];
+          sub_element_function(subdofs, cell_permutation);
+          for (std::size_t i = 0; i < subdofs.size(); ++i)
+            doflist[bs * i + k] = subdofs[i];
+        }
+      };
     }
   }
 
