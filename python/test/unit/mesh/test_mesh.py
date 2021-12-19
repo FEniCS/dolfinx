@@ -430,6 +430,7 @@ def boundary_2(x):
 
 # TODO Test that submesh of full mesh is a copy of the mesh
 # TODO Test creating facet vertex connectivity for submesh of cells
+# TODO Test entities_to_geometry (fails with GhostMode.none)
 @pytest.mark.parametrize("d", [2, 3])
 @pytest.mark.parametrize("n", [2, 6])
 @pytest.mark.parametrize("codim", [0, 1])
