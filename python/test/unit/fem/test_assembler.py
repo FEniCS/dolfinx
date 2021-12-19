@@ -383,11 +383,6 @@ def test_assembly_solve_block(mode):
     a = inner(u0, v0) * dx + inner(u1, v1) * dx
     L = inner(f, v0) * ufl.dx + inner(g, v1) * dx
 
-    u0_bc = Function(V0)
-    u0_bc.x.array[:] = 50.0
-    u1_bc = Function(V1)
-    u1_bc.x.array[:] = 20.0
-
     bdofsW0_V0 = locate_dofs_topological(W.sub(0), facetdim, bndry_facets)
     bdofsW1_V1 = locate_dofs_topological(W.sub(1), facetdim, bndry_facets)
     bcs = [DirichletBC(u0_bc, bdofsW0_V0, W.sub(0)), DirichletBC(u1_bc, bdofsW1_V1, W.sub(1))]
