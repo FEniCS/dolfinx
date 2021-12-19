@@ -134,9 +134,9 @@ class DirichletBC:
 
         # Determine the dtype
         try:
-            dtype = value.dtype
-        except AttributeError:
             dtype = value.x.array.dtype
+        except AttributeError:
+            dtype = value.dtype
 
         # Unwrap value object, if required
         try:
@@ -149,6 +149,8 @@ class DirichletBC:
                 return _cpp.fem.DirichletBC_float32
             elif dtype == np.float64:
                 return _cpp.fem.DirichletBC_float64
+            elif dtype == np.complex64:
+                return _cpp.fem.DirichletBC_complex64
             elif dtype == np.complex128:
                 return _cpp.fem.DirichletBC_complex128
             else:
@@ -171,8 +173,8 @@ class DirichletBC:
 
 def bcs_by_block(spaces: typing.Iterable[FunctionSpace],
                  bcs: typing.Iterable[DirichletBC]) -> typing.Iterable[typing.Iterable[DirichletBC]]:
-    """This function arranges Dirichlet boundary conditions by the
-    function space that they constrain.
+    """Arrange Dirichlet boundary conditions by the function space that
+    they constrain.
 
     Given a sequence of function spaces `spaces` and a sequence of
     DirichletBC objects `bcs`, return a list where the ith entry is the

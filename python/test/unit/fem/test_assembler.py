@@ -153,8 +153,7 @@ def test_assembly_bcs(mode):
     L = inner(1.0, v) * dx
 
     bdofsV = locate_dofs_geometrical(V, lambda x: np.logical_or(np.isclose(x[0], 0.0), np.isclose(x[0], 1.0)))
-    u_bc = Constant(mesh, PETSc.ScalarType(1))
-    bc = DirichletBC(u_bc, bdofsV, V)
+    bc = DirichletBC(PETSc.ScalarType(1), bdofsV, V)
 
     # Assemble and apply 'global' lifting of bcs
     A = assemble_matrix(a)
@@ -191,15 +190,12 @@ def test_assemble_manifold():
     assert mesh.topology.dim == 1
 
     U = FunctionSpace(mesh, ("P", 1))
-
     u, v = ufl.TrialFunction(U), ufl.TestFunction(U)
-    w = Function(U)
-
     a = ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx(mesh)
     L = ufl.inner(1.0, v) * ufl.dx(mesh)
 
     bcdofs = locate_dofs_geometrical(U, lambda x: np.isclose(x[0], 0.0))
-    bcs = [DirichletBC(w, bcdofs)]
+    bcs = [DirichletBC(PETSc.ScalarType(0), bcdofs, U)]
     A = assemble_matrix(a, bcs=bcs)
     A.assemble()
 
@@ -227,12 +223,9 @@ def test_matrix_assembly_block(mode):
     facetdim = mesh.topology.dim - 1
     bndry_facets = locate_entities_boundary(mesh, facetdim, lambda x: np.logical_or(np.isclose(x[0], 0.0),
                                                                                     np.isclose(x[0], 1.0)))
-
     bdofsV1 = locate_dofs_topological(V1, facetdim, bndry_facets)
-
-    u_bc = Function(V1)
-    u_bc.x.array[:] = 50.0
-    bc = DirichletBC(u_bc, bdofsV1)
+    u_bc = PETSc.ScalarType(50.0)
+    bc = DirichletBC(u_bc, bdofsV1, V1)
 
     # Define variational problem
     u, p = ufl.TrialFunction(V0), ufl.TrialFunction(V1)
@@ -286,7 +279,7 @@ def test_matrix_assembly_block(mode):
         u1, v0) * dx
     L = zero * inner(f, v0) * ufl.dx + inner(g, v1) * dx
 
-    bdofsW_V1 = locate_dofs_topological((W.sub(1), V1), mesh.topology.dim - 1, bndry_facets)
+    bdofsW_V1 = locate_dofs_topological(W.sub(1), mesh.topology.dim - 1, bndry_facets)
     bc = DirichletBC(u_bc, bdofsW_V1, W.sub(1))
     A2 = assemble_matrix(a, bcs=[bc])
     A2.assemble()

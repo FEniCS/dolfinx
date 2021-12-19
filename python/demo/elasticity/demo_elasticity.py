@@ -104,12 +104,10 @@ v = TestFunction(V)
 a = inner(sigma(u), grad(v)) * dx
 L = inner(f, v) * dx
 
-u0 = Function(V)
-u0.x.array[:] = 0.0
-
 # Set up boundary condition on inner surface
-bc = DirichletBC(u0, locate_dofs_geometrical(V, lambda x: np.logical_or(np.isclose(x[0], 0.0),
-                                                                        np.isclose(x[1], 1.0))))
+bc = DirichletBC(np.array([0, 0, 0], dtype=PETSc.ScalarType),
+                 locate_dofs_geometrical(V, lambda x: np.logical_or(np.isclose(x[0], 0.0),
+                                                                    np.isclose(x[1], 1.0))), V)
 
 # Assembly and solve
 # ------------------

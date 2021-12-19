@@ -236,27 +236,46 @@ void declare_objects(py::module& m, const std::string& type)
               [](T g, const py::array_t<std::int32_t, py::array::c_style>& dofs,
                  const std::shared_ptr<const dolfinx::fem::FunctionSpace>& V)
               {
-                return dolfinx::fem::DirichletBC<T>(
-                    g, std::vector(dofs.data(), dofs.data() + dofs.size()), V);
+    if (dofs.ndim() != 1)
+      throw std::runtime_error("Wrong number of dims");
+    return dolfinx::fem::DirichletBC<T>(
+        g, std::vector(dofs.data(), dofs.data() + dofs.size()), V);
               }),
-          py::arg("g"), py::arg("dofs"), py::arg("V"))
+          py::arg("g").noconvert(), py::arg("dofs").noconvert(), py::arg("V"))
+      .def(py::init(
+          [](const py::array_t<T>& g,
+             const py::array_t<std::int32_t, py::array::c_style>& dofs,
+             const std::shared_ptr<const dolfinx::fem::FunctionSpace>& V)
+          {
+    if (dofs.ndim() != 1)
+      throw std::runtime_error("Wrong number of dims");
+    std::vector<std::size_t> strides;
+    std::transform(g.strides(), g.strides() + g.ndim(),
+                   std::back_inserter(strides),
+                   [](auto s) { return s / sizeof(T); });
+    std::vector<std::size_t> shape(g.shape(), g.shape() + g.ndim());
+    auto _g = xt::adapt(g.data(), g.size(), xt::no_ownership(), shape, strides);
+    return dolfinx::fem::DirichletBC<T>(
+        _g, std::vector(dofs.data(), dofs.data() + dofs.size()), V);
+          }),
+          py::arg("g").noconvert(), py::arg("dofs").noconvert(), py::arg("V"))
       .def(py::init(
                [](const std::shared_ptr<const dolfinx::fem::Constant<T>>& g,
                   const py::array_t<std::int32_t, py::array::c_style>& dofs,
                   const std::shared_ptr<const dolfinx::fem::FunctionSpace>& V)
                {
-                 return dolfinx::fem::DirichletBC<T>(
-                     g, std::vector(dofs.data(), dofs.data() + dofs.size()), V);
+    return dolfinx::fem::DirichletBC<T>(
+        g, std::vector(dofs.data(), dofs.data() + dofs.size()), V);
                }),
-           py::arg("g"), py::arg("dofs"), py::arg("V"))
+           py::arg("g").noconvert(), py::arg("dofs").noconvert(), py::arg("V"))
       .def(py::init(
                [](const std::shared_ptr<const dolfinx::fem::Function<T>>& g,
                   const py::array_t<std::int32_t, py::array::c_style>& dofs)
                {
-                 return dolfinx::fem::DirichletBC<T>(
-                     g, std::vector(dofs.data(), dofs.data() + dofs.size()));
+    return dolfinx::fem::DirichletBC<T>(
+        g, std::vector(dofs.data(), dofs.data() + dofs.size()));
                }),
-           py::arg("g"), py::arg("dofs"))
+           py::arg("g").noconvert(), py::arg("dofs").noconvert())
       .def(
           py::init(
               [](const std::shared_ptr<const dolfinx::fem::Function<T>>& g,
@@ -264,21 +283,20 @@ void declare_objects(py::module& m, const std::string& type)
                                   2>& V_g_dofs,
                  const std::shared_ptr<const dolfinx::fem::FunctionSpace>& V)
               {
-                std::array dofs
-                    = {std::vector(V_g_dofs[0].data(),
+    std::array dofs = {std::vector(V_g_dofs[0].data(),
                                    V_g_dofs[0].data() + V_g_dofs[0].size()),
                        std::vector(V_g_dofs[1].data(),
                                    V_g_dofs[1].data() + V_g_dofs[1].size())};
-                return dolfinx::fem::DirichletBC(g, std::move(dofs), V);
+    return dolfinx::fem::DirichletBC(g, std::move(dofs), V);
               }),
-          py::arg("g"), py::arg("dofs"), py::arg("V"))
+          py::arg("g").noconvert(), py::arg("dofs").noconvert(), py::arg("V").noconvert())
       .def("dof_indices",
            [](const dolfinx::fem::DirichletBC<T>& self)
            {
-             auto [dofs, owned] = self.dof_indices();
-             return std::pair(py::array_t<std::int32_t>(
-                                  dofs.size(), dofs.data(), py::cast(self)),
-                              owned);
+    auto [dofs, owned] = self.dof_indices();
+    return std::pair(
+        py::array_t<std::int32_t>(dofs.size(), dofs.data(), py::cast(self)),
+        owned);
            })
       .def_property_readonly("function_space",
                              &dolfinx::fem::DirichletBC<T>::function_space)
@@ -348,10 +366,12 @@ void declare_objects(py::module& m, const std::string& type)
 
             self.interpolate(_f);
           },
-          "Interpolate using a pointer to an expression with a C signature")
+          "Interpolate using a pointer to an expression with a C "
+          "signature")
       .def_property_readonly(
           "x", py::overload_cast<>(&dolfinx::fem::Function<T>::x),
-          "Return the vector associated with the finite element Function")
+          "Return the vector associated with the finite element "
+          "Function")
       .def(
           "eval",
           [](const dolfinx::fem::Function<T>& self,
@@ -369,10 +389,10 @@ void declare_objects(py::module& m, const std::string& type)
             std::array<std::size_t, 2> shape_u;
             std::copy_n(u.shape(), 2, shape_u.begin());
 
-            // The below should work, but misbehaves with the Intel icpx
-            // compiler
-            // xt::xtensor<T, 2> _u = xt::adapt(
-            //     u.mutable_data(), u.size(), xt::no_ownership(), shape_u);
+            // The below should work, but misbehaves with the Intel
+            // icpx compiler xt::xtensor<T, 2> _u = xt::adapt(
+            //     u.mutable_data(), u.size(), xt::no_ownership(),
+            //     shape_u);
             xt::xtensor<T, 2> _u(shape_u);
             std::copy_n(u.data(), u.size(), _u.data());
 
@@ -396,6 +416,8 @@ void declare_objects(py::module& m, const std::string& type)
              std::shared_ptr<dolfinx::fem::Constant<T>>>(
       m, pyclass_name_constant.c_str(),
       "A value constant with respect to integration domain")
+      .def(py::init([](T c) { return dolfinx::fem::Constant<T>(c); }),
+           py::arg("c").noconvert(), "Create a constant from a scalar")
       .def(py::init(
                [](const py::array_t<T, py::array::c_style>& c)
                {
@@ -404,7 +426,7 @@ void declare_objects(py::module& m, const std::string& type)
                  return dolfinx::fem::Constant<T>(
                      xt::adapt(c.data(), c.size(), xt::no_ownership(), s));
                }),
-           "Create a constant from a scalar value array")
+           py::arg("c").noconvert(), "Create a constant from a value array")
       .def(
           "value",
           [](dolfinx::fem::Constant<T>& self)
