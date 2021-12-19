@@ -19,8 +19,6 @@ import ufl
 from dolfinx import cpp as _cpp
 from dolfinx.fem.function import Constant, Function, FunctionSpace
 
-from petsc4py import PETSc
-
 
 def locate_dofs_geometrical(V: typing.Iterable[typing.Union[_cpp.fem.FunctionSpace, FunctionSpace]],
                             marker: types.FunctionType):
