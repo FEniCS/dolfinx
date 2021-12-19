@@ -309,11 +309,9 @@ def test_assembly_solve_block(mode):
     bdofsV0 = locate_dofs_topological(V0, facetdim, bndry_facets)
     bdofsV1 = locate_dofs_topological(V1, facetdim, bndry_facets)
 
-    u_bc0 = Function(V0)
-    u_bc0.x.array[:] = 50.0
-    u_bc1 = Function(V1)
-    u_bc1.x.array[:] = 20.0
-    bcs = [DirichletBC(u_bc0, bdofsV0), DirichletBC(u_bc1, bdofsV1)]
+    u_bc0 = PETSc.ScalarType(50.0)
+    u_bc1 = PETSc.ScalarType(20.0)
+    bcs = [DirichletBC(u_bc0, bdofsV0, V0), DirichletBC(u_bc1, bdofsV1, V1)]
 
     # Variational problem
     u, p = ufl.TrialFunction(V0), ufl.TrialFunction(V1)
@@ -390,9 +388,8 @@ def test_assembly_solve_block(mode):
     u1_bc = Function(V1)
     u1_bc.x.array[:] = 20.0
 
-    bdofsW0_V0 = locate_dofs_topological((W.sub(0), V0), facetdim, bndry_facets)
-    bdofsW1_V1 = locate_dofs_topological((W.sub(1), V1), facetdim, bndry_facets)
-
+    bdofsW0_V0 = locate_dofs_topological(W.sub(0), facetdim, bndry_facets)
+    bdofsW1_V1 = locate_dofs_topological(W.sub(1), facetdim, bndry_facets)
     bcs = [DirichletBC(u0_bc, bdofsW0_V0, W.sub(0)), DirichletBC(u1_bc, bdofsW1_V1, W.sub(1))]
 
     A2 = assemble_matrix(a, bcs=bcs)
