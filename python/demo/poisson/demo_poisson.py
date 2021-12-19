@@ -77,8 +77,7 @@ import numpy as np
 
 import ufl
 from dolfinx import fem, plot
-from dolfinx.fem import (Constant, DirichletBC, FunctionSpace,
-                         locate_dofs_topological)
+from dolfinx.fem import DirichletBC, FunctionSpace, locate_dofs_topological
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import CellType, create_rectangle, locate_entities_boundary
 from ufl import ds, dx, grad, inner
@@ -192,30 +191,30 @@ uh = problem.solve()
 # <dolfinx.common.plot.plot>` command: ::
 
 # Save solution in XDMF format
-# with XDMFFile(MPI.COMM_WORLD, "poisson.xdmf", "w") as file:
-#     file.write_mesh(mesh)
-#     file.write_function(uh)
+with XDMFFile(MPI.COMM_WORLD, "poisson.xdmf", "w") as file:
+    file.write_mesh(mesh)
+    file.write_function(uh)
 
 
-# # Plot solution
-# try:
-#     import pyvista
-#     topology, cell_types = plot.create_vtk_topology(mesh, mesh.topology.dim)
-#     grid = pyvista.UnstructuredGrid(topology, cell_types, mesh.geometry.x)
-#     grid.point_data["u"] = uh.compute_point_values().real
-#     grid.set_active_scalars("u")
+# Plot solution
+try:
+    import pyvista
+    topology, cell_types = plot.create_vtk_topology(mesh, mesh.topology.dim)
+    grid = pyvista.UnstructuredGrid(topology, cell_types, mesh.geometry.x)
+    grid.point_data["u"] = uh.compute_point_values().real
+    grid.set_active_scalars("u")
 
-#     plotter = pyvista.Plotter()
-#     plotter.add_mesh(grid, show_edges=True)
-#     warped = grid.warp_by_scalar()
-#     plotter.add_mesh(warped)
+    plotter = pyvista.Plotter()
+    plotter.add_mesh(grid, show_edges=True)
+    warped = grid.warp_by_scalar()
+    plotter.add_mesh(warped)
 
-#     # If pyvista environment variable is set to off-screen (static)
-#     # plotting save png
-#     if pyvista.OFF_SCREEN:
-#         pyvista.start_xvfb(wait=0.1)
-#         plotter.screenshot("uh.png")
-#     else:
-#         plotter.show()
-# except ModuleNotFoundError:
-#     print("pyvista is required to visualise the solution")
+    # If pyvista environment variable is set to off-screen (static)
+    # plotting save png
+    if pyvista.OFF_SCREEN:
+        pyvista.start_xvfb(wait=0.1)
+        plotter.screenshot("uh.png")
+    else:
+        plotter.show()
+except ModuleNotFoundError:
+    print("pyvista is required to visualise the solution")
