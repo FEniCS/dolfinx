@@ -34,10 +34,16 @@ class Constant(ufl.Constant):
         """
         c_np = np.asarray(c)
         super().__init__(domain, c_np.shape)
-        if np.iscomplexobj(c) is True:
+        if c_np.dtype == np.complex64:
+            self._cpp_object = _cpp.fem.Constant_complex64(c_np)
+        elif c_np.dtype == np.complex128:
             self._cpp_object = _cpp.fem.Constant_complex128(c_np)
-        else:
+        elif c_np.dtype == np.float32:
+            self._cpp_object = _cpp.fem.Constant_float32(c_np)
+        elif c_np.dtype == np.float64:
             self._cpp_object = _cpp.fem.Constant_float64(c_np)
+        else:
+            raise RuntimeError("Unsupported dtype")
 
     @property
     def value(self):
@@ -239,6 +245,10 @@ class Function(ufl.Coefficient):
         # Store DOLFINx FunctionSpace object
         self._V = V
 
+        # PETSc Vec wrapper around the C++ function data. Constructed
+        # when first requested.
+        self._petsc_x = None
+
     @property
     def function_space(self) -> "FunctionSpace":
         """Return the FunctionSpace"""
@@ -325,8 +335,10 @@ class Function(ufl.Coefficient):
 
     @property
     def vector(self):
-        """Return the vector holding Function degrees-of-freedom."""
-        return self._cpp_object.vector
+        """Return a PETSc vector holding Function degrees-of-freedom."""
+        if self._petsc_x is None:
+            self._petsc_x = _cpp.la.petsc.create_vector_wrap(self.x)
+        return self._petsc_x
 
     @property
     def x(self):

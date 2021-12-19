@@ -9,15 +9,15 @@
 
 import typing
 
-import numpy
+import numpy as np
 
 import dolfinx
 import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import fem
-from dolfinx.mesh import GhostMode
-from dolfinx.cpp.io import perm_gmsh as cell_perm_gmsh
 from dolfinx.cpp.io import distribute_entity_data
+from dolfinx.cpp.io import perm_gmsh as cell_perm_gmsh
+from dolfinx.mesh import GhostMode
 
 __all__ = ["VTKFile", "XDMFFile", "cell_perm_gmsh", "distribute_entity_data"]
 
@@ -123,12 +123,12 @@ def extract_gmsh_topology_and_markers(gmsh_model, model_name=None):
             # Gather data for each element type and the
             # corresponding physical markers
             if element_type in topologies.keys():
-                topologies[element_type]["topology"] = numpy.concatenate(
+                topologies[element_type]["topology"] = np.concatenate(
                     (topologies[element_type]["topology"], element_topology), axis=0)
-                topologies[element_type]["cell_data"] = numpy.concatenate(
-                    (topologies[element_type]["cell_data"], numpy.full(num_el, tag)), axis=0)
+                topologies[element_type]["cell_data"] = np.concatenate(
+                    (topologies[element_type]["cell_data"], np.full(num_el, tag)), axis=0)
             else:
-                topologies[element_type] = {"topology": element_topology, "cell_data": numpy.full(num_el, tag)}
+                topologies[element_type] = {"topology": element_topology, "cell_data": np.full(num_el, tag)}
 
     return topologies
 
@@ -147,8 +147,8 @@ def extract_gmsh_geometry(gmsh_model, model_name=None):
     # GMSH indices starts at 1
     indices -= 1
     # Sort nodes in geometry according to the unique index
-    perm_sort = numpy.argsort(indices)
-    assert numpy.all(indices[perm_sort] == numpy.arange(len(indices)))
+    perm_sort = np.argsort(indices)
+    assert np.all(indices[perm_sort] == np.arange(len(indices)))
     return points[perm_sort]
 
 

@@ -14,7 +14,7 @@ import dolfinx
 import ufl
 from dolfinx.fem import (Constant, Expression, Function, FunctionSpace,
                          VectorFunctionSpace)
-from dolfinx.generation import UnitSquareMesh
+from dolfinx.mesh import create_unit_square
 
 from mpi4py import MPI
 from petsc4py import PETSc
@@ -37,7 +37,7 @@ def test_rank0():
     For a donor function f(x, y) = x^2 + 2*y^2 result is compared with the
     exact gradient grad f(x, y) = [2*x, 4*y].
     """
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 5, 5)
+    mesh = create_unit_square(MPI.COMM_WORLD, 5, 5)
     P2 = FunctionSpace(mesh, ("P", 2))
     vP1 = VectorFunctionSpace(mesh, ("P", 1))
 
@@ -124,7 +124,7 @@ def test_simple_evaluation():
     spatial coordinates as an Expression using UFL/FFCx and passing the result
     to a numpy function that calculates the exact gradient.
     """
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 3, 3)
+    mesh = create_unit_square(MPI.COMM_WORLD, 3, 3)
     P2 = FunctionSpace(mesh, ("P", 2))
 
     # NOTE: The scaling by a constant factor of 3.0 to get f(x, y) is
@@ -203,7 +203,7 @@ def test_assembly_into_quadrature_function():
     ghost cells so that no parallel communication is required after insertion
     into the vector.
     """
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 3, 6)
+    mesh = create_unit_square(MPI.COMM_WORLD, 3, 6)
 
     quadrature_degree = 2
     quadrature_points, wts = basix.make_quadrature(basix.CellType.triangle, quadrature_degree)
@@ -262,10 +262,8 @@ def test_assembly_into_quadrature_function():
 
     with e_Q.vector.localForm() as local:
         e_exact_eval = np.zeros_like(local.array)
-
         for cell in range(num_cells):
             xg = x_g[coord_dofs.links(cell), :tdim]
             x = mesh.geometry.cmap.push_forward(quadrature_points, xg)
             e_exact_eval[Q_dofs_unrolled[cell]] = e_exact(x.T).T.flatten()
-
         assert np.allclose(local.array, e_exact_eval)

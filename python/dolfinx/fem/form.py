@@ -50,15 +50,17 @@ class Form:
             raise RuntimeError("Expecting to find a Mesh in the form.")
 
         # Compile UFL form with JIT
-        if dtype == np.float64:
+        if dtype == np.float32:
+            form_compiler_parameters["scalar_type"] = "float"
+        elif dtype == np.float64:
             form_compiler_parameters["scalar_type"] = "double"
         elif dtype == np.complex128:
             form_compiler_parameters["scalar_type"] = "double _Complex"
         else:
             raise RuntimeError(f"Unsupported scalar type {dtype} for Form.")
+
         self._ufc_form, module, self._code = jit.ffcx_jit(
-            mesh.comm,
-            form,
+            mesh.comm, form,
             form_compiler_parameters=form_compiler_parameters,
             jit_parameters=jit_parameters)
 
@@ -80,9 +82,11 @@ class Form:
 
         # Prepare dolfinx.cpp.fem.Form and hold it as a member
         def create_form(dtype):
-            if dtype is np.float64:
+            if dtype == np.float32:
+                return _cpp.fem.create_form_float32
+            elif dtype == np.float64:
                 return _cpp.fem.create_form_float64
-            elif dtype is np.complex128:
+            elif dtype == np.complex128:
                 return _cpp.fem.create_form_complex128
             else:
                 raise NotImplementedError(f"Type {dtype} not supported.")

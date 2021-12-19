@@ -10,8 +10,8 @@ import pytest
 import dolfinx
 import ufl
 from dolfinx.fem import FunctionSpace, VectorFunctionSpace
-from dolfinx.generation import UnitCubeMesh, UnitSquareMesh
-from dolfinx.mesh import CellType, GhostMode
+from dolfinx.mesh import (CellType, GhostMode, create_unit_cube,
+                          create_unit_square)
 from dolfinx_utils.test.skips import skip_in_parallel
 
 from mpi4py import MPI
@@ -27,9 +27,9 @@ from mpi4py import MPI
 ])
 def test_mixed_element(ElementType, space, cell, order):
     if cell == ufl.triangle:
-        mesh = UnitSquareMesh(MPI.COMM_WORLD, 1, 1, CellType.triangle, GhostMode.shared_facet)
+        mesh = create_unit_square(MPI.COMM_WORLD, 1, 1, CellType.triangle, GhostMode.shared_facet)
     else:
-        mesh = UnitCubeMesh(MPI.COMM_WORLD, 1, 1, 1, CellType.tetrahedron, GhostMode.shared_facet)
+        mesh = create_unit_cube(MPI.COMM_WORLD, 1, 1, 1, CellType.tetrahedron, GhostMode.shared_facet)
 
     norms = []
     U_el = ufl.FiniteElement(space, cell, order)
@@ -54,7 +54,7 @@ def test_mixed_element(ElementType, space, cell, order):
 @skip_in_parallel
 def test_vector_element():
     # VectorFunctionSpace containing a scalar should work
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 1, 1, CellType.triangle, GhostMode.shared_facet)
+    mesh = create_unit_square(MPI.COMM_WORLD, 1, 1, CellType.triangle, GhostMode.shared_facet)
     U = VectorFunctionSpace(mesh, ("P", 2))
     u = ufl.TrialFunction(U)
     v = ufl.TestFunction(U)
@@ -75,3 +75,29 @@ def test_vector_element():
 
         A = dolfinx.fem.assemble_matrix(a)
         A.assemble()
+
+
+@skip_in_parallel
+@pytest.mark.parametrize("d1", range(1, 4))
+@pytest.mark.parametrize("d2", range(1, 4))
+def test_element_product(d1, d2):
+    mesh = create_unit_square(MPI.COMM_WORLD, 2, 2)
+    P3 = ufl.VectorElement("Lagrange", mesh.ufl_cell(), d1)
+    P1 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), d2)
+    TH = P3 * P1
+    W = FunctionSpace(mesh, TH)
+
+    u = ufl.TrialFunction(W)
+    v = ufl.TestFunction(W)
+    a = ufl.inner(u[0], v[0]) * ufl.dx
+    A = dolfinx.fem.assemble_matrix(a)
+    A.assemble()
+
+    W = FunctionSpace(mesh, P3)
+    u = ufl.TrialFunction(W)
+    v = ufl.TestFunction(W)
+    a = ufl.inner(u[0], v[0]) * ufl.dx
+    B = dolfinx.fem.assemble_matrix(a)
+    B.assemble()
+
+    assert np.isclose(A.norm(), B.norm())

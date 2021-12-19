@@ -323,14 +323,13 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
       submesh_x_dofs.end());
 
   // Create submesh geometry coordinates
-  const xt::xtensor<double, 2>& x = geometry().x();
+  xtl::span<const double> x = geometry().x();
   const int submesh_num_x_dofs = submesh_x_dofs.size();
-  const int gdim = this->geometry().dim();
-  xt::xarray<double> submesh_x = xt::zeros<double>({submesh_num_x_dofs, gdim});
+  std::vector<double> submesh_x(3 * submesh_num_x_dofs);
   for (int i = 0; i < submesh_num_x_dofs; ++i)
   {
-    xt::view(submesh_x, i, xt::all())
-        = xt::view(x, submesh_x_dofs[i], xt::range(0, gdim));
+    common::impl::copy_N<3>(std::next(x.begin(), 3 * submesh_x_dofs[i]),
+                            std::next(submesh_x.begin(), 3 * i));
   }
 
   // Crete submesh geometry dofmap
@@ -373,7 +372,7 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
   // Create geometry
   mesh::Geometry submesh_geometry(
       submesh_x_dof_index_map, std::move(submesh_x_dofmap), submesh_coord_ele,
-      std::move(submesh_x), std::move(submesh_igi));
+      std::move(submesh_x), geometry().dim(), std::move(submesh_igi));
 
   return Mesh(comm(), std::move(submesh_topology), std::move(submesh_geometry));
 }

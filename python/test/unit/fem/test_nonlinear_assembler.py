@@ -7,10 +7,11 @@
 
 import math
 
-import numpy
+import numpy as np
 import pytest
 
 import ufl
+from dolfinx.cpp.la.petsc import scatter_local_vectors
 from dolfinx.fem import (DirichletBC, Form, Function, FunctionSpace,
                          VectorFunctionSpace, apply_lifting,
                          apply_lifting_nest, assemble_matrix,
@@ -22,10 +23,9 @@ from dolfinx.fem import (DirichletBC, Form, Function, FunctionSpace,
                          create_vector_nest, locate_dofs_topological, set_bc,
                          set_bc_nest)
 from dolfinx.fem.form import extract_function_spaces
-from dolfinx.generation import UnitCubeMesh, UnitSquareMesh
-from dolfinx.mesh import GhostMode, locate_entities_boundary
+from dolfinx.mesh import (GhostMode, create_unit_cube, create_unit_square,
+                          locate_entities_boundary)
 from ufl import derivative, dx, inner
-from dolfinx.cpp.la.petsc import scatter_local_vectors
 
 from mpi4py import MPI
 from petsc4py import PETSc
@@ -50,29 +50,25 @@ def test_matrix_assembly_block_nl():
     blocked structures, PETSc Nest structures, and monolithic structures
     in the nonlinear setting
     """
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 4, 8)
-
+    mesh = create_unit_square(MPI.COMM_WORLD, 4, 8)
     p0, p1 = 1, 2
     P0 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p0)
     P1 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p1)
-
     V0 = FunctionSpace(mesh, P0)
     V1 = FunctionSpace(mesh, P1)
 
-    def boundary(x):
-        return numpy.logical_or(x[0] < 1.0e-6, x[0] > 1.0 - 1.0e-6)
-
     def initial_guess_u(x):
-        return numpy.sin(x[0]) * numpy.sin(x[1])
+        return np.sin(x[0]) * np.sin(x[1])
 
     def initial_guess_p(x):
         return -x[0]**2 - x[1]**3
 
     def bc_value(x):
-        return numpy.cos(x[0]) * numpy.cos(x[1])
+        return np.cos(x[0]) * np.cos(x[1])
 
     facetdim = mesh.topology.dim - 1
-    bndry_facets = locate_entities_boundary(mesh, facetdim, boundary)
+    bndry_facets = locate_entities_boundary(mesh, facetdim, lambda x: np.logical_or(np.isclose(x[0], 0.0),
+                                                                                    np.isclose(x[0], 1.0)))
 
     u_bc = Function(V1)
     u_bc.interpolate(bc_value)
@@ -179,8 +175,8 @@ class NonlinearPDE_SNESProblem():
 
     def F_mono(self, snes, x, F):
         x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-        with x.localForm() as _x, self.soln_vars.vector.localForm() as _u:
-            _u[:] = _x
+        with x.localForm() as _x:
+            self.soln_vars.x.array[:] = _x.array_r
         with F.localForm() as f_local:
             f_local.set(0.0)
         assemble_vector(F, self.L)
@@ -230,8 +226,8 @@ class NonlinearPDE_SNESProblem():
         x = x.getNestSubVecs()
         for x_sub, var_sub in zip(x, self.soln_vars):
             x_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-            with x_sub.localForm() as _x, var_sub.vector.localForm() as _u:
-                _u[:] = _x
+            with x_sub.localForm() as _x:
+                var_sub.x.array[:] = _x.array_r
 
         # Assemble
         bcs1 = bcs_by_block(extract_function_spaces(self.a, 1), self.bcs)
@@ -265,7 +261,7 @@ def test_assembly_solve_block_nl():
     """Solve a two-field nonlinear diffusion like problem with block matrix
     approaches and test that solution is the same.
     """
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 12, 11)
+    mesh = create_unit_square(MPI.COMM_WORLD, 12, 11)
     p = 1
     P = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p)
     V0 = FunctionSpace(mesh, P)
@@ -275,19 +271,17 @@ def test_assembly_solve_block_nl():
         return x[0]**2 + x[1]**2
 
     def bc_val_1(x):
-        return numpy.sin(x[0]) * numpy.cos(x[1])
+        return np.sin(x[0]) * np.cos(x[1])
 
     def initial_guess_u(x):
-        return numpy.sin(x[0]) * numpy.sin(x[1])
+        return np.sin(x[0]) * np.sin(x[1])
 
     def initial_guess_p(x):
         return -x[0]**2 - x[1]**3
 
-    def boundary(x):
-        return numpy.logical_or(x[0] < 1.0e-6, x[0] > 1.0 - 1.0e-6)
-
     facetdim = mesh.topology.dim - 1
-    bndry_facets = locate_entities_boundary(mesh, facetdim, boundary)
+    bndry_facets = locate_entities_boundary(mesh, facetdim, lambda x: np.logical_or(np.isclose(x[0], 0.0),
+                                                                                    np.isclose(x[0], 1.0)))
 
     u_bc0 = Function(V0)
     u_bc0.interpolate(bc_val_0)
@@ -439,11 +433,11 @@ def test_assembly_solve_block_nl():
     assert norm2 == pytest.approx(norm0, 1.0e-12)
 
 
-@pytest.mark.parametrize("mesh", [
-    UnitSquareMesh(MPI.COMM_WORLD, 12, 11, ghost_mode=GhostMode.none),
-    UnitCubeMesh(MPI.COMM_WORLD, 3, 5, 4, ghost_mode=GhostMode.shared_facet),
-    UnitSquareMesh(MPI.COMM_WORLD, 12, 11, ghost_mode=GhostMode.none),
-    UnitCubeMesh(MPI.COMM_WORLD, 3, 5, 4, ghost_mode=GhostMode.shared_facet)
+@ pytest.mark.parametrize("mesh", [
+    create_unit_square(MPI.COMM_WORLD, 12, 11, ghost_mode=GhostMode.none),
+    create_unit_cube(MPI.COMM_WORLD, 3, 5, 4, ghost_mode=GhostMode.shared_facet),
+    create_unit_square(MPI.COMM_WORLD, 12, 11, ghost_mode=GhostMode.none),
+    create_unit_cube(MPI.COMM_WORLD, 3, 5, 4, ghost_mode=GhostMode.shared_facet)
 ])
 def test_assembly_solve_taylor_hood_nl(mesh):
     """Assemble Stokes problem with Taylor-Hood elements and solve."""
@@ -453,27 +447,27 @@ def test_assembly_solve_taylor_hood_nl(mesh):
 
     def boundary0(x):
         """Define boundary x = 0"""
-        return x[0] < 10 * numpy.finfo(float).eps
+        return np.isclose(x[0], 0.0)
 
     def boundary1(x):
         """Define boundary x = 1"""
-        return x[0] > (1.0 - 10 * numpy.finfo(float).eps)
+        return np.isclose(x[0], 1.0)
 
     def initial_guess_u(x):
-        u_init = numpy.row_stack((numpy.sin(x[0]) * numpy.sin(x[1]),
-                                  numpy.cos(x[0]) * numpy.cos(x[1])))
+        u_init = np.row_stack((np.sin(x[0]) * np.sin(x[1]),
+                               np.cos(x[0]) * np.cos(x[1])))
         if gdim == 3:
-            u_init = numpy.row_stack((u_init, numpy.cos(x[2])))
+            u_init = np.row_stack((u_init, np.cos(x[2])))
         return u_init
 
     def initial_guess_p(x):
         return -x[0]**2 - x[1]**3
 
     u_bc_0 = Function(P2)
-    u_bc_0.interpolate(lambda x: numpy.row_stack(tuple(x[j] + float(j) for j in range(gdim))))
+    u_bc_0.interpolate(lambda x: np.row_stack(tuple(x[j] + float(j) for j in range(gdim))))
 
     u_bc_1 = Function(P2)
-    u_bc_1.interpolate(lambda x: numpy.row_stack(tuple(numpy.sin(x[j]) for j in range(gdim))))
+    u_bc_1.interpolate(lambda x: np.row_stack(tuple(np.sin(x[j]) for j in range(gdim))))
 
     facetdim = mesh.topology.dim - 1
     bndry_facets0 = locate_entities_boundary(mesh, facetdim, boundary0)

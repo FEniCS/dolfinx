@@ -13,9 +13,9 @@ from dolfinx.fem import (DirichletBC, Form, Function, FunctionSpace,
                          VectorFunctionSpace, apply_lifting, assemble_matrix,
                          assemble_scalar, assemble_vector,
                          locate_dofs_topological, set_bc)
-from dolfinx.generation import RectangleMesh, UnitCubeMesh, UnitSquareMesh
 from dolfinx.io import XDMFFile
-from dolfinx.mesh import (CellType, compute_boundary_facets,
+from dolfinx.mesh import (CellType, compute_boundary_facets, create_rectangle,
+                          create_unit_cube, create_unit_square,
                           locate_entities_boundary)
 from dolfinx_utils.test.skips import skip_if_complex
 from ufl import (CellDiameter, FacetNormal, SpatialCoordinate, TestFunction,
@@ -75,7 +75,7 @@ def run_scalar_test(mesh, V, degree):
 
     uh = Function(V)
     solver.solve(b, uh.vector)
-    uh.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+    uh.x.scatter_forward()
 
     M = (u_exact - uh)**2 * dx
     M = Form(M)
@@ -110,7 +110,7 @@ def run_vector_test(mesh, V, degree):
     # Solve
     uh = Function(V)
     solver.solve(b, uh.vector)
-    uh.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+    uh.x.scatter_forward()
 
     # Calculate error
     M = (u_exact - uh[0])**2 * dx
@@ -134,8 +134,7 @@ def run_dg_test(mesh, V, degree):
 
     # Coefficient
     k = Function(V)
-    k.vector.set(2.0)
-    k.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+    k.x.array[:] = 2.0
 
     # Source term
     f = - div(k * grad(u_exact))
@@ -182,8 +181,7 @@ def run_dg_test(mesh, V, degree):
     # Solve
     uh = Function(V)
     solver.solve(b, uh.vector)
-    uh.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT,
-                          mode=PETSc.ScatterMode.FORWARD)
+    uh.x.scatter_forward()
 
     # Calculate error
     M = (u_exact - uh)**2 * dx
@@ -204,8 +202,8 @@ def test_curl_curl_eigenvalue(family, order):
     slepc4py = pytest.importorskip("slepc4py")  # noqa: F841
     from slepc4py import SLEPc
 
-    mesh = RectangleMesh(MPI.COMM_WORLD, [np.array([0.0, 0.0, 0.0]),
-                                          np.array([np.pi, np.pi, 0.0])], [24, 24], CellType.triangle)
+    mesh = create_rectangle(MPI.COMM_WORLD, [np.array([0.0, 0.0]),
+                                             np.array([np.pi, np.pi])], [24, 24], CellType.triangle)
 
     element = ufl.FiniteElement(family, ufl.triangle, order)
     V = FunctionSpace(mesh, element)
@@ -217,8 +215,7 @@ def test_curl_curl_eigenvalue(family, order):
     b = inner(u, v) * dx
 
     zero_u = Function(V)
-    with zero_u.vector.localForm() as local_zero_u:
-        local_zero_u.set(0.0)
+    zero_u.x.array[:] = 0.0
 
     boundary_facets = locate_entities_boundary(
         mesh, mesh.topology.dim - 1, lambda x: np.full(x.shape[1], True, dtype=bool))
@@ -264,8 +261,8 @@ def test_biharmonic():
     Solved using rotated Regge mixed finite element method. This is equivalent
     to the Hellan-Herrmann-Johnson (HHJ) finite element method in
     two-dimensions."""
-    mesh = RectangleMesh(MPI.COMM_WORLD, [np.array([0.0, 0.0, 0.0]),
-                                          np.array([1.0, 1.0, 0.0])], [32, 32], CellType.triangle)
+    mesh = create_rectangle(MPI.COMM_WORLD, [np.array([0.0, 0.0]),
+                                             np.array([1.0, 1.0])], [32, 32], CellType.triangle)
 
     element = ufl.MixedElement([ufl.FiniteElement("Regge", ufl.triangle, 1),
                                 ufl.FiniteElement("Lagrange", ufl.triangle, 2)])
@@ -303,8 +300,7 @@ def test_biharmonic():
 
     V_1 = V.sub(1).collapse()
     zero_u = Function(V_1)
-    with zero_u.vector.localForm() as zero_u_local:
-        zero_u_local.set(0.0)
+    zero_u.x.array[:] = 0.0
 
     # Strong (Dirichlet) boundary condition
     boundary_facets = locate_entities_boundary(
@@ -330,8 +326,7 @@ def test_biharmonic():
 
     x_h = Function(V)
     solver.solve(b, x_h.vector)
-    x_h.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT,
-                           mode=PETSc.ScatterMode.FORWARD)
+    x_h.x.scatter_forward()
 
     # Recall that x_h has flattened indices.
     u_error_numerator = np.sqrt(mesh.comm.allreduce(assemble_scalar(
@@ -355,13 +350,13 @@ def test_biharmonic():
 def get_mesh(cell_type, datadir):
     # In parallel, use larger meshes
     if cell_type == CellType.triangle:
-        filename = "UnitSquareMesh_triangle.xdmf"
+        filename = "create_unit_square_triangle.xdmf"
     elif cell_type == CellType.quadrilateral:
-        filename = "UnitSquareMesh_quad.xdmf"
+        filename = "create_unit_square_quad.xdmf"
     elif cell_type == CellType.tetrahedron:
-        filename = "UnitCubeMesh_tetra.xdmf"
+        filename = "create_unit_cube_tetra.xdmf"
     elif cell_type == CellType.hexahedron:
-        filename = "UnitCubeMesh_hexahedron.xdmf"
+        filename = "create_unit_cube_hexahedron.xdmf"
     with XDMFFile(MPI.COMM_WORLD, os.path.join(datadir, filename), "r", encoding=XDMFFile.Encoding.ASCII) as xdmf:
         return xdmf.read_mesh(name="Grid")
 
@@ -396,9 +391,9 @@ def test_P_simplex(family, degree, cell_type, datadir):
 @pytest.mark.parametrize("degree", [2, 3, 4])
 def test_P_simplex_built_in(family, degree, cell_type, datadir):
     if cell_type == CellType.tetrahedron:
-        mesh = UnitCubeMesh(MPI.COMM_WORLD, 5, 5, 5)
+        mesh = create_unit_cube(MPI.COMM_WORLD, 5, 5, 5)
     elif cell_type == CellType.triangle:
-        mesh = UnitSquareMesh(MPI.COMM_WORLD, 5, 5)
+        mesh = create_unit_square(MPI.COMM_WORLD, 5, 5)
     V = FunctionSpace(mesh, (family, degree))
     run_scalar_test(mesh, V, degree)
 
@@ -481,9 +476,9 @@ def test_P_tp(family, degree, cell_type, datadir):
 @pytest.mark.parametrize("degree", [2, 3, 4])
 def test_P_tp_built_in_mesh(family, degree, cell_type, datadir):
     if cell_type == CellType.hexahedron:
-        mesh = UnitCubeMesh(MPI.COMM_WORLD, 5, 5, 5, cell_type)
+        mesh = create_unit_cube(MPI.COMM_WORLD, 5, 5, 5, cell_type)
     elif cell_type == CellType.quadrilateral:
-        mesh = UnitSquareMesh(MPI.COMM_WORLD, 5, 5, cell_type)
+        mesh = create_unit_square(MPI.COMM_WORLD, 5, 5, cell_type)
     mesh = get_mesh(cell_type, datadir)
     V = FunctionSpace(mesh, (family, degree))
     run_scalar_test(mesh, V, degree)

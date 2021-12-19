@@ -5,15 +5,15 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for assembly over domains"""
 
-import numpy
+import numpy as np
 import pytest
 
 import ufl
 from dolfinx.fem import (Constant, DirichletBC, Function, FunctionSpace,
                          apply_lifting, assemble_matrix, assemble_scalar,
                          assemble_vector, set_bc)
-from dolfinx.generation import UnitSquareMesh
-from dolfinx.mesh import GhostMode, MeshTags, locate_entities_boundary
+from dolfinx.mesh import (GhostMode, MeshTags, create_unit_square,
+                          locate_entities_boundary)
 
 from mpi4py import MPI
 from petsc4py import PETSc
@@ -21,7 +21,7 @@ from petsc4py import PETSc
 
 @pytest.fixture
 def mesh():
-    return UnitSquareMesh(MPI.COMM_WORLD, 10, 10)
+    return create_unit_square(MPI.COMM_WORLD, 10, 10)
 
 
 parametrize_ghost_mode = pytest.mark.parametrize("mode", [
@@ -33,7 +33,7 @@ parametrize_ghost_mode = pytest.mark.parametrize("mode", [
 
 @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
 def test_assembly_dx_domains(mode):
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 10, 10, ghost_mode=mode)
+    mesh = create_unit_square(MPI.COMM_WORLD, 10, 10, ghost_mode=mode)
     V = FunctionSpace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 
@@ -42,15 +42,14 @@ def test_assembly_dx_domains(mode):
     # values are [1, 2, 3, 3, ...]
     cell_map = mesh.topology.index_map(mesh.topology.dim)
     num_cells = cell_map.size_local + cell_map.num_ghosts
-    indices = numpy.arange(0, num_cells)
-    values = numpy.full(indices.shape, 3, dtype=numpy.intc)
+    indices = np.arange(0, num_cells)
+    values = np.full(indices.shape, 3, dtype=np.intc)
     values[0] = 1
     values[1] = 2
     marker = MeshTags(mesh, mesh.topology.dim, indices, values)
     dx = ufl.Measure('dx', subdomain_data=marker, domain=mesh)
     w = Function(V)
-    with w.vector.localForm() as w_local:
-        w_local.set(0.5)
+    w.x.array[:] = 0.5
 
     bc = DirichletBC(Function(V), range(30))
 
@@ -93,45 +92,44 @@ def test_assembly_dx_domains(mode):
 
 @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
 def test_assembly_ds_domains(mode):
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 10, 10, ghost_mode=mode)
+    mesh = create_unit_square(MPI.COMM_WORLD, 10, 10, ghost_mode=mode)
     V = FunctionSpace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 
     def bottom(x):
-        return numpy.isclose(x[1], 0.0)
+        return np.isclose(x[1], 0.0)
 
     def top(x):
-        return numpy.isclose(x[1], 1.0)
+        return np.isclose(x[1], 1.0)
 
     def left(x):
-        return numpy.isclose(x[0], 0.0)
+        return np.isclose(x[0], 0.0)
 
     def right(x):
-        return numpy.isclose(x[0], 1.0)
+        return np.isclose(x[0], 1.0)
 
     bottom_facets = locate_entities_boundary(mesh, mesh.topology.dim - 1, bottom)
-    bottom_vals = numpy.full(bottom_facets.shape, 1, numpy.intc)
+    bottom_vals = np.full(bottom_facets.shape, 1, np.intc)
 
     top_facets = locate_entities_boundary(mesh, mesh.topology.dim - 1, top)
-    top_vals = numpy.full(top_facets.shape, 2, numpy.intc)
+    top_vals = np.full(top_facets.shape, 2, np.intc)
 
     left_facets = locate_entities_boundary(mesh, mesh.topology.dim - 1, left)
-    left_vals = numpy.full(left_facets.shape, 3, numpy.intc)
+    left_vals = np.full(left_facets.shape, 3, np.intc)
 
     right_facets = locate_entities_boundary(mesh, mesh.topology.dim - 1, right)
-    right_vals = numpy.full(right_facets.shape, 6, numpy.intc)
+    right_vals = np.full(right_facets.shape, 6, np.intc)
 
-    indices = numpy.hstack((bottom_facets, top_facets, left_facets, right_facets))
-    values = numpy.hstack((bottom_vals, top_vals, left_vals, right_vals))
+    indices = np.hstack((bottom_facets, top_facets, left_facets, right_facets))
+    values = np.hstack((bottom_vals, top_vals, left_vals, right_vals))
 
-    indices, pos = numpy.unique(indices, return_index=True)
+    indices, pos = np.unique(indices, return_index=True)
     marker = MeshTags(mesh, mesh.topology.dim - 1, indices, values[pos])
 
     ds = ufl.Measure('ds', subdomain_data=marker, domain=mesh)
 
     w = Function(V)
-    with w.vector.localForm() as w_local:
-        w_local.set(0.5)
+    w.x.array[:] = 0.5
 
     bc = DirichletBC(Function(V), range(30))
 
@@ -175,27 +173,24 @@ def test_assembly_ds_domains(mode):
 @parametrize_ghost_mode
 def test_assembly_dS_domains(mode):
     N = 10
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, N, N, ghost_mode=mode)
+    mesh = create_unit_square(MPI.COMM_WORLD, N, N, ghost_mode=mode)
     one = Constant(mesh, PETSc.ScalarType(1))
     val = assemble_scalar(one * ufl.dS)
     val = mesh.comm.allreduce(val, op=MPI.SUM)
-    assert val == pytest.approx(2 * (N - 1) + N * numpy.sqrt(2), 1.0e-7)
+    assert val == pytest.approx(2 * (N - 1) + N * np.sqrt(2), 1.0e-7)
 
 
 @parametrize_ghost_mode
 def test_additivity(mode):
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
+    mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
     V = FunctionSpace(mesh, ("Lagrange", 1))
 
     f1 = Function(V)
     f2 = Function(V)
     f3 = Function(V)
-    with f1.vector.localForm() as f1_local:
-        f1_local.set(1.0)
-    with f2.vector.localForm() as f2_local:
-        f2_local.set(2.0)
-    with f3.vector.localForm() as f3_local:
-        f3_local.set(3.0)
+    f1.x.array[:] = 1.0
+    f2.x.array[:] = 2.0
+    f3.x.array[:] = 3.0
     j1 = ufl.inner(f1, f1) * ufl.dx(mesh)
     j2 = ufl.inner(f2, f2) * ufl.ds(mesh)
     j3 = ufl.inner(ufl.avg(f3), ufl.avg(f3)) * ufl.dS(mesh)
