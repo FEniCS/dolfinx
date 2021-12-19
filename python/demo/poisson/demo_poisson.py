@@ -138,7 +138,7 @@ V = FunctionSpace(mesh, ("Lagrange", 1))
 # Define boundary condition on x = 0 or x = 1
 facets = locate_entities_boundary(mesh, 1, lambda x: np.logical_or(np.isclose(x[0], 0.0),
                                                                    np.isclose(x[0], 2.0)))
-bc = DirichletBC(Constant(mesh, ScalarType(0)), locate_dofs_topological(V, 1, facets), V)
+bc = DirichletBC(ScalarType(0), locate_dofs_topological(V, 1, facets), V)
 
 # Next, we want to express the variational problem.  First, we need to
 # specify the trial function :math:`u` and the test function :math:`v`,
@@ -192,30 +192,30 @@ uh = problem.solve()
 # <dolfinx.common.plot.plot>` command: ::
 
 # Save solution in XDMF format
-with XDMFFile(MPI.COMM_WORLD, "poisson.xdmf", "w") as file:
-    file.write_mesh(mesh)
-    file.write_function(uh)
+# with XDMFFile(MPI.COMM_WORLD, "poisson.xdmf", "w") as file:
+#     file.write_mesh(mesh)
+#     file.write_function(uh)
 
 
-# Plot solution
-try:
-    import pyvista
-    topology, cell_types = plot.create_vtk_topology(mesh, mesh.topology.dim)
-    grid = pyvista.UnstructuredGrid(topology, cell_types, mesh.geometry.x)
-    grid.point_data["u"] = uh.compute_point_values().real
-    grid.set_active_scalars("u")
+# # Plot solution
+# try:
+#     import pyvista
+#     topology, cell_types = plot.create_vtk_topology(mesh, mesh.topology.dim)
+#     grid = pyvista.UnstructuredGrid(topology, cell_types, mesh.geometry.x)
+#     grid.point_data["u"] = uh.compute_point_values().real
+#     grid.set_active_scalars("u")
 
-    plotter = pyvista.Plotter()
-    plotter.add_mesh(grid, show_edges=True)
-    warped = grid.warp_by_scalar()
-    plotter.add_mesh(warped)
+#     plotter = pyvista.Plotter()
+#     plotter.add_mesh(grid, show_edges=True)
+#     warped = grid.warp_by_scalar()
+#     plotter.add_mesh(warped)
 
-    # If pyvista environment variable is set to off-screen (static)
-    # plotting save png
-    if pyvista.OFF_SCREEN:
-        pyvista.start_xvfb(wait=0.1)
-        plotter.screenshot("uh.png")
-    else:
-        plotter.show()
-except ModuleNotFoundError:
-    print("pyvista is required to visualise the solution")
+#     # If pyvista environment variable is set to off-screen (static)
+#     # plotting save png
+#     if pyvista.OFF_SCREEN:
+#         pyvista.start_xvfb(wait=0.1)
+#         plotter.screenshot("uh.png")
+#     else:
+#         plotter.show()
+# except ModuleNotFoundError:
+#     print("pyvista is required to visualise the solution")

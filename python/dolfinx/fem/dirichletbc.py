@@ -115,12 +115,8 @@ def locate_dofs_topological(V: typing.Iterable[typing.Union[_cpp.fem.FunctionSpa
 
 
 class DirichletBC:
-    def __init__(
-            self,
-            value: typing.Union[ufl.Coefficient, Function, Constant],
-            dofs: typing.List[int],
-            V: FunctionSpace = None,
-            dtype=PETSc.ScalarType):
+    def __init__(self, value: typing.Union[ufl.Coefficient, Function, Constant],
+                 dofs: typing.List[int], V: FunctionSpace = None):
         """Representation of Dirichlet boundary condition which is imposed on
         a linear system.
 
@@ -136,34 +132,31 @@ class DirichletBC:
             problem is the same of function space of boundary values function.
         V : optional
             Function space of a problem to which boundary conditions are applied.
-        dtype : optional
-            The function scalar type, e.g. ``numpy.float64``.
         """
 
-        # Construct bc value
-        if isinstance(value, ufl.Coefficient):
+        # Determine the dtype
+        try:
+            dtype = value.dtype
+        except AttributeError:
+            dtype = value.x.array.dtype
+
+        # Unwrap value object, if required
+        try:
             _value = value._cpp_object
-        elif isinstance(value, Function):
-            _value = value._cpp_object
-        elif isinstance(value, Constant):
-            _value = value._cpp_object
-        elif isinstance(value, _cpp.fem.Function_float64):
+        except AttributeError:
             _value = value
-        elif isinstance(value, _cpp.fem.Function_complex128):
-            _value = value
-        else:
-            raise NotImplementedError
 
         def dirichletbc_obj(dtype):
-            if dtype is np.float64:
+            if dtype == np.float32:
+                return _cpp.fem.DirichletBC_float32
+            elif dtype == np.float64:
                 return _cpp.fem.DirichletBC_float64
-            elif dtype is np.complex128:
+            elif dtype == np.complex128:
                 return _cpp.fem.DirichletBC_complex128
             else:
                 raise NotImplementedError(f"Type {dtype} not supported.")
 
         if V is not None:
-            # Extract cpp function space
             try:
                 self._cpp_object = dirichletbc_obj(dtype)(_value, dofs, V)
             except TypeError:

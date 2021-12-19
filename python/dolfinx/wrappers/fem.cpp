@@ -231,14 +231,15 @@ void declare_objects(py::module& m, const std::string& type)
                   "conditions");
 
   dirichletbc
-      .def(py::init(
-               [](const std::shared_ptr<const dolfinx::fem::Function<T>>& g,
-                  const py::array_t<std::int32_t, py::array::c_style>& dofs)
-               {
-                 return dolfinx::fem::DirichletBC<T>(
-                     g, std::vector(dofs.data(), dofs.data() + dofs.size()));
-               }),
-           py::arg("g"), py::arg("dofs"))
+      .def(
+          py::init(
+              [](T g, const py::array_t<std::int32_t, py::array::c_style>& dofs,
+                 const std::shared_ptr<const dolfinx::fem::FunctionSpace>& V)
+              {
+                return dolfinx::fem::DirichletBC<T>(
+                    g, std::vector(dofs.data(), dofs.data() + dofs.size()), V);
+              }),
+          py::arg("g"), py::arg("dofs"), py::arg("V"))
       .def(py::init(
                [](const std::shared_ptr<const dolfinx::fem::Constant<T>>& g,
                   const py::array_t<std::int32_t, py::array::c_style>& dofs,
@@ -248,6 +249,14 @@ void declare_objects(py::module& m, const std::string& type)
                      g, std::vector(dofs.data(), dofs.data() + dofs.size()), V);
                }),
            py::arg("g"), py::arg("dofs"), py::arg("V"))
+      .def(py::init(
+               [](const std::shared_ptr<const dolfinx::fem::Function<T>>& g,
+                  const py::array_t<std::int32_t, py::array::c_style>& dofs)
+               {
+                 return dolfinx::fem::DirichletBC<T>(
+                     g, std::vector(dofs.data(), dofs.data() + dofs.size()));
+               }),
+           py::arg("g"), py::arg("dofs"))
       .def(
           py::init(
               [](const std::shared_ptr<const dolfinx::fem::Function<T>>& g,

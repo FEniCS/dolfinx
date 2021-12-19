@@ -47,12 +47,16 @@ class Constant(ufl.Constant):
 
     @property
     def value(self):
-        """Returns value of the constant."""
+        """The value of the constant"""
         return self._cpp_object.value()
 
     @value.setter
     def value(self, v):
         np.copyto(self._cpp_object.value(), np.asarray(v))
+
+    @property
+    def dtype(self):
+        return self.value.dtype
 
 
 class Expression:
@@ -335,15 +339,19 @@ class Function(ufl.Coefficient):
 
     @property
     def vector(self):
-        """Return a PETSc vector holding Function degrees-of-freedom."""
+        """PETSc vector holding the degrees-of-freedom."""
         if self._petsc_x is None:
             self._petsc_x = _cpp.la.petsc.create_vector_wrap(self.x)
         return self._petsc_x
 
     @property
     def x(self):
-        """Return the vector holding Function degrees-of-freedom."""
+        """Vector holding the degrees-of-freedom."""
         return self._cpp_object.x
+
+    @property
+    def dtype(self):
+        return self._cpp_object.x.array.dtype
 
     @property
     def name(self) -> str:
