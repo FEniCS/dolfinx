@@ -277,7 +277,7 @@ void declare_objects(py::module& m, const std::string& type)
                  return dolfinx::fem::DirichletBC<T>(
                      g, std::vector(dofs.data(), dofs.data() + dofs.size()));
                }),
-           py::arg("g").noconvert(), py::arg("dofs").noconvert())
+           py::arg("g").noconvert(), py::arg("dofs"))
       .def(
           py::init(
               [](const std::shared_ptr<const dolfinx::fem::Function<T>>& g,

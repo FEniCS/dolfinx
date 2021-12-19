@@ -309,9 +309,9 @@ def test_assembly_solve_block(mode):
     bdofsV0 = locate_dofs_topological(V0, facetdim, bndry_facets)
     bdofsV1 = locate_dofs_topological(V1, facetdim, bndry_facets)
 
-    u_bc0 = PETSc.ScalarType(50.0)
-    u_bc1 = PETSc.ScalarType(20.0)
-    bcs = [DirichletBC(u_bc0, bdofsV0, V0), DirichletBC(u_bc1, bdofsV1, V1)]
+    u0_bc = PETSc.ScalarType(50.0)
+    u1_bc = PETSc.ScalarType(20.0)
+    bcs = [DirichletBC(u0_bc, bdofsV0, V0), DirichletBC(u1_bc, bdofsV1, V1)]
 
     # Variational problem
     u, p = ufl.TrialFunction(V0), ufl.TrialFunction(V1)
