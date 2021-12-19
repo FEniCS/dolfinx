@@ -74,10 +74,8 @@ def test_overlapping_bcs():
     # Check only one dof pair is found globally
     assert len(set(np.concatenate(MPI.COMM_WORLD.allgather(dof_corner)))) == 1
 
-    u0, u1 = Function(V), Function(V)
-    u0.x.array[:] = 0.0
-    u1.x.array[:] = 123.456
-    bcs = [DirichletBC(u0, dofs_left), DirichletBC(u1, dofs_top)]
+    bcs = [DirichletBC(PETSc.ScalarType(0), dofs_left, V),
+           DirichletBC(PETSc.ScalarType(123.456), dofs_top, V)]
 
     A, b = create_matrix(a), create_vector(L)
     assemble_matrix(A, a, bcs=bcs)
@@ -134,7 +132,7 @@ def test_constant_bc(mesh_factory):
 
 @pytest.mark.parametrize(
     'mesh_factory', [
-        (create_unit_square, (MPI.COMM_WORLD, 2, 2)),
+        (create_unit_square, (MPI.COMM_WORLD, 4, 4)),
         (create_unit_square, (MPI.COMM_WORLD, 4, 4, CellType.quadrilateral)),
         (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3)),
         (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3, CellType.hexahedron))

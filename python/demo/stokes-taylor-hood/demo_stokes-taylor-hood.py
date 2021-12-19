@@ -127,11 +127,9 @@ V, Q = FunctionSpace(mesh, P2), FunctionSpace(mesh, P1)
 
 # No-slip boundary condition for velocity field (`V`) on boundaries
 # where x = 0, x = 1, and y = 0
-noslip = Function(V)
-noslip.x.set(0)
-
+noslip = np.zeros(mesh.geometry.dim, dtype=PETSc.ScalarType)
 facets = locate_entities_boundary(mesh, 1, noslip_boundary)
-bc0 = DirichletBC(noslip, locate_dofs_topological(V, 1, facets))
+bc0 = DirichletBC(noslip, locate_dofs_topological(V, 1, facets), V)
 
 # Driving velocity condition u = (1, 0) on top boundary (y = 1)
 lid_velocity = Function(V)
