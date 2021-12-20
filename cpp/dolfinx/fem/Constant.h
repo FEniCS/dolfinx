@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <type_traits>
 #include <vector>
 #include <xtensor/xarray.hpp>
 
@@ -21,11 +22,17 @@ class Constant
 public:
   /// Create a rank-0 (scalar-valued) constant
   /// @param[in] c Value of the constant
-  explicit Constant(T c) : value({c}) {}
+  template <
+      typename = std::enable_if_t<
+          std::is_arithmetic_v<
+              T> || std::is_same_v<T, std::complex<float>> || std::is_same_v<T, std::complex<double>>>>
+  Constant(T c) : value({c})
+  {
+  }
 
   /// Create a rank-d constant
   /// @param[in] c Value of the constant
-  explicit Constant(const xt::xarray<T>& c)
+  Constant(const xt::xarray<T>& c)
       : shape(c.shape().begin(), c.shape().end()), value(c.begin(), c.end())
   {
   }
