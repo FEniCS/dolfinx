@@ -234,7 +234,7 @@ public:
         = mesh->geometry().dofmap();
     // FIXME: Add proper interface for num coordinate dofs
     const std::size_t num_dofs_g = x_dofmap.num_links(0);
-    const xt::xtensor<double, 2>& x_g = mesh->geometry().x();
+    xtl::span<const double> x_g = mesh->geometry().x();
 
     // Get coordinate map
     const fem::CoordinateElement& cmap = mesh->geometry().cmap();
@@ -338,8 +338,11 @@ public:
       // Get cell geometry (coordinate dofs)
       auto x_dofs = x_dofmap.links(cell_index);
       for (std::size_t i = 0; i < num_dofs_g; ++i)
+      {
+        const int pos = 3 * x_dofs[i];
         for (std::size_t j = 0; j < gdim; ++j)
-          coordinate_dofs(i, j) = x_g(x_dofs[i], j);
+          coordinate_dofs(i, j) = x_g[pos + j];
+      }
 
       for (std::size_t j = 0; j < gdim; ++j)
         xp(0, j) = x(p, j);
@@ -426,7 +429,7 @@ public:
 
     // Resize Array for holding point values
     xt::xtensor<T, 2> point_values(
-        {mesh->geometry().x().shape(0), value_size_loc});
+        {mesh->geometry().x().size() / 3, value_size_loc});
 
     // Prepare cell geometry
     const graph::AdjacencyList<std::int32_t>& x_dofmap
@@ -434,7 +437,11 @@ public:
 
     // FIXME: Add proper interface for num coordinate dofs
     const int num_dofs_g = x_dofmap.num_links(0);
-    const xt::xtensor<double, 2>& x_g = mesh->geometry().x();
+
+    const auto x_g = xt::adapt(
+        mesh->geometry().x().data(), mesh->geometry().x().size(),
+        xt::no_ownership(),
+        std::vector{mesh->geometry().x().size() / 3, std::size_t(3)});
 
     // Interpolate point values on each cell (using last computed value if
     // not continuous, e.g. discontinuous Galerkin methods)

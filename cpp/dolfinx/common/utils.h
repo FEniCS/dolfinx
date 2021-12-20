@@ -16,6 +16,17 @@
 namespace dolfinx::common
 {
 
+namespace impl
+{
+/// std::copy_n-type function with compile-time loop bound
+template <int N, class InputIt, class OutputIt>
+inline void copy_N(InputIt first, OutputIt result)
+{
+  for (int i = 0; i < N; ++i)
+    *result++ = *first++;
+}
+} // namespace impl
+
 /// Sort two arrays based on the values in array @p indices. Any
 /// duplicate indices and the corresponding value are removed. In the
 /// case of duplicates, the entry with the smallest value is retained.
