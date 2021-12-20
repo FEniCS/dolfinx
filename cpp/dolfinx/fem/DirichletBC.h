@@ -156,9 +156,9 @@ private:
 
 public:
   /// Create a representation of a Dirichlet boundary condition
-  /// constrained by a scalar constant
+  /// constrained by a scalar or tensor constant
   ///
-  /// @param[in] g The boundary condition value
+  /// @param[in] g The boundary condition value (`T` or `xt::xarray<T>`)
   /// @param[in] dofs Degree-of-freedom block indices (@p
   /// std::vector<std::int32_t>) to be constrained. The indices must be
   /// sorted.
@@ -167,26 +167,12 @@ public:
   /// maps to 3 degrees-of-freedom if the dofmap associated with `g` has
   /// block size 3
   /// @note Can be used only with point-evaluation elements
-  template <typename U>
-  DirichletBC(T g, U&& dofs, const std::shared_ptr<const FunctionSpace>& V)
-      : DirichletBC(std::make_shared<Constant<T>>(g), dofs, V)
-  {
-  }
-
-  /// Create a representation of a Dirichlet boundary condition
-  /// constrained by a rank-d constant
-  ///
-  /// @param[in] g The boundary condition value
-  /// @param[in] dofs Degree-of-freedom block indices (@p
-  /// std::vector<std::int32_t>) to be constrained. The indices must be
-  /// sorted.
-  /// @param[in] V The function space to be constrained
-  /// @note The indices in `dofs` are for *blocks*, e.g. a block index
-  /// maps to 3 degrees-of-freedom if the dofmap associated with `g` has
-  /// block size 3
-  /// @note Can be used only with point-evaluation elements
-  template <typename U>
-  DirichletBC(const xt::xarray<T>& g, U&& dofs,
+  // template <typename U>
+  template <typename S, typename U,
+            typename = std::enable_if_t<
+                std::is_convertible_v<
+                    S, T> or std::is_convertible_v<S, xt::xarray<T>>>>
+  DirichletBC(const S& g, U&& dofs,
               const std::shared_ptr<const FunctionSpace>& V)
       : DirichletBC(std::make_shared<Constant<T>>(g), dofs, V)
   {
