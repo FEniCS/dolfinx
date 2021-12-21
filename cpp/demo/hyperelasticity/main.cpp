@@ -181,9 +181,8 @@ int main(int argc, char* argv[])
                                          return xt::isclose(xt::row(x, 0), 1.0);
                                        });
     auto bcs = std::vector{
-        std::make_shared<const fem::DirichletBC<T>>(
-            std::make_shared<const fem::Constant<T>>(xt::zeros<T>({3})),
-            bdofs_left, V),
+        std::make_shared<const fem::DirichletBC<T>>(xt::xarray<T>{0, 0, 0},
+                                                    bdofs_left, V),
         std::make_shared<const fem::DirichletBC<T>>(u_rotation, bdofs_right)};
 
     HyperElasticProblem problem(L, a, bcs);

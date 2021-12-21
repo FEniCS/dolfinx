@@ -109,7 +109,7 @@ std::array<std::vector<std::int32_t>, 2> locate_dofs_geometrical(
     const std::function<xt::xtensor<bool, 1>(const xt::xtensor<double, 2>&)>&
         marker_fn);
 
-/// Interface for setting (strong) Dirichlet boundary conditions
+/// Object for setting (strong) Dirichlet boundary conditions
 ///
 ///     \f$u = g \ \text{on} \ G\f$,
 ///
@@ -122,56 +122,13 @@ std::array<std::vector<std::int32_t>, 2> locate_dofs_geometrical(
 template <typename T>
 class DirichletBC
 {
-public:
-  /// Create a representation of a Dirichlet boundary condition where
-  /// the space being constrained is the same as the function that
-  /// defines the constraint values, i.e. share the same
-  /// `fem::FunctionSpace`, or is constrained by a fem::Constant
-  ///
-  /// @param[in] g The boundary condition value
-  /// @param[in] dofs Degree-of-freedom block indices (@p
-  /// std::vector<std::int32_t>) in the space of the boundary value
-  /// function applied to V_dofs[i]. The dof block indices must be
-  /// sorted.
-  /// @param[in] V The function space to be constrain. Required only if
-  /// `g` is a fem::Constant.
-  /// @note The indices in `dofs` are for *blocks*, e.g. a block index
-  /// maps to 3 degrees-of-freedom if the dofmap associated with `g` has
-  /// block size 3
-  /// @note `fem::Constant` can be used only with point-evaluation elements
-  template <typename U, typename = std::enable_if_t<std::is_same_v<
-                            std::decay_t<U>, std::vector<std::int32_t>>>>
+private:
+  template <typename U>
   DirichletBC(const std::variant<std::shared_ptr<const Function<T>>,
                                  std::shared_ptr<const Constant<T>>>& g,
-              U&& dofs, const std::shared_ptr<const FunctionSpace>& V = nullptr)
+              U&& dofs, const std::shared_ptr<const FunctionSpace>& V, void*)
       : _function_space(V), _g(g), _dofs0(std::forward<U>(dofs))
   {
-    if (auto _g = std::get_if<std::shared_ptr<const Function<T>>>(&g); _g)
-    {
-      if (V)
-      {
-        throw std::runtime_error("Function space argument not expected for "
-                                 "DirichletBC when using a Function.");
-      }
-      assert(*_g);
-      _function_space = (*_g)->function_space();
-    }
-
-    if (auto _g = std::get_if<std::shared_ptr<const Constant<T>>>(&g); _g)
-    {
-      if (!V)
-      {
-        throw std::runtime_error("Creating a DirichletBC with a Constant "
-                                 "requires a FunctionSpace argument");
-      }
-
-      if (!V->element()->interpolation_ident())
-      {
-        throw std::runtime_error(
-            "Constant can be used only with point-evaluation elements");
-      }
-    }
-
     // Compute number of owned dofs indices in the full space (will
     // contain 'gaps' for sub-spaces)
     assert(_function_space);
@@ -197,6 +154,80 @@ public:
     }
   }
 
+public:
+  /// Create a representation of a Dirichlet boundary condition
+  /// constrained by a scalar or tensor constant
+  ///
+  /// @param[in] g The boundary condition value (`T` or `xt::xarray<T>`)
+  /// @param[in] dofs Degree-of-freedom block indices (@p
+  /// std::vector<std::int32_t>) to be constrained. The indices must be
+  /// sorted.
+  /// @param[in] V The function space to be constrained
+  /// @note The indices in `dofs` are for *blocks*, e.g. a block index
+  /// maps to 3 degrees-of-freedom if the dofmap associated with `g` has
+  /// block size 3
+  /// @note Can be used only with point-evaluation elements
+  // template <typename U>
+  template <typename S, typename U,
+            typename = std::enable_if_t<
+                std::is_convertible_v<
+                    S, T> or std::is_convertible_v<S, xt::xarray<T>>>>
+  DirichletBC(const S& g, U&& dofs,
+              const std::shared_ptr<const FunctionSpace>& V)
+      : DirichletBC(std::make_shared<Constant<T>>(g), dofs, V)
+  {
+  }
+
+  /// Create a representation of a Dirichlet boundary condition
+  /// constrained by a fem::Constant
+  ///
+  /// @param[in] g The boundary condition value
+  /// @param[in] dofs Degree-of-freedom block indices (@p
+  /// std::vector<std::int32_t>) to be constrained. The indices must be
+  /// sorted.
+  /// @param[in] V The function space to be constrained
+  /// @note The indices in `dofs` are for *blocks*, e.g. a block index
+  /// maps to 3 degrees-of-freedom if the dofmap associated with `g` has
+  /// block size 3
+  /// @note Can be used only with point-evaluation elements
+  template <typename U>
+  DirichletBC(const std::shared_ptr<const Constant<T>>& g, U&& dofs,
+              const std::shared_ptr<const FunctionSpace>& V)
+      : DirichletBC(g, dofs, V, nullptr)
+  {
+    assert(g);
+    assert(V);
+    if (V->element()->value_rank() != g->shape.size())
+    {
+      throw std::runtime_error(
+          "Rank mis-match between Constant and function space in DirichletBC");
+    }
+
+    if (!V->element()->interpolation_ident())
+    {
+      throw std::runtime_error(
+          "Constant can be used only with point-evaluation elements");
+    }
+  }
+
+  /// Create a representation of a Dirichlet boundary condition where
+  /// the space being constrained is the same as the function that
+  /// defines the constraint Function, i.e. share the same
+  /// `fem::FunctionSpace`
+  ///
+  /// @param[in] g The boundary condition value
+  /// @param[in] dofs Degree-of-freedom block indices (@p
+  /// std::vector<std::int32_t>) to be constrained. The indices must be
+  /// sorted.
+  /// @note The indices in `dofs` are for *blocks*, e.g. a block index
+  /// maps to 3 degrees-of-freedom if the dofmap associated with `g` has
+  /// block size 3
+  template <typename U>
+  DirichletBC(const std::shared_ptr<const Function<T>>& g, U&& dofs)
+      : DirichletBC(g, dofs, g->function_space(), nullptr)
+  {
+  }
+
   /// Create a representation of a Dirichlet boundary condition where
   /// the space being constrained and the function that defines the
   /// constraint values do not share the same `FunctionSpace`. A typical
@@ -214,9 +245,7 @@ public:
   /// @param[in] V The function (sub)space on which the boundary
   /// condition is applied
   /// @note The indices in `dofs` are unrolled and not for blocks
-  template <typename U,
-            typename = std::enable_if_t<std::is_same_v<
-                std::decay_t<U>, std::array<std::vector<std::int32_t>, 2>>>>
+  template <typename U>
   DirichletBC(const std::shared_ptr<const Function<T>>& g, U&& V_g_dofs,
               const std::shared_ptr<const FunctionSpace>& V)
       : _function_space(V), _g(g),
@@ -348,7 +377,7 @@ public:
     else if (std::holds_alternative<std::shared_ptr<const Constant<T>>>(_g))
     {
       auto g = std::get<std::shared_ptr<const Constant<T>>>(_g);
-      std::vector<T> value = g->value;
+      const std::vector<T>& value = g->value;
       std::int32_t bs = _function_space->dofmap()->bs();
       std::for_each(_dofs0.cbegin(), _dofs0.cend(),
                     [&x, &x0, &value, scale, bs](auto dof)
@@ -382,7 +411,7 @@ public:
     {
       auto g = std::get<std::shared_ptr<const Constant<T>>>(_g);
       assert(g);
-      std::vector<T> g_value = g->value;
+      const std::vector<T>& g_value = g->value;
       const std::int32_t bs = _function_space->dofmap()->bs();
       for (std::size_t i = 0; i < _dofs0.size(); ++i)
         values[_dofs0[i]] = g_value[_dofs0[i] % bs];
