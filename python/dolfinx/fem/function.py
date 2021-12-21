@@ -48,11 +48,13 @@ class Constant(ufl.Constant):
     @property
     def value(self):
         """The value of the constant"""
-        return self._cpp_object.value()
+        print("Inside getter")
+        return self._cpp_object.value
 
     @value.setter
     def value(self, v):
-        np.copyto(self._cpp_object.value(), np.asarray(v))
+        print("Inside Setter")
+        np.copyto(self._cpp_object.value, np.asarray(v))
 
     @property
     def dtype(self):

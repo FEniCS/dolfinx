@@ -389,8 +389,7 @@ void declare_objects(py::module& m, const std::string& type)
           {
             // TODO: handle 1d case
 
-            std::array<std::size_t, 2> shape_x;
-            std::copy_n(x.shape(), 2, shape_x.begin());
+            std::vector<std::size_t> shape_x(x.shape(), x.shape() + 2);
             auto _x
                 = xt::adapt(x.data(), x.size(), xt::no_ownership(), shape_x);
 
@@ -423,7 +422,7 @@ void declare_objects(py::module& m, const std::string& type)
   py::class_<dolfinx::fem::Constant<T>,
              std::shared_ptr<dolfinx::fem::Constant<T>>>(
       m, pyclass_name_constant.c_str(),
-      "A value constant with respect to integration domain")
+      "Value constant with respect to integration domain")
       .def(py::init([](T c) { return dolfinx::fem::Constant<T>(c); }),
            py::arg("c").noconvert(), "Create a constant from a scalar")
       .def(py::init(
@@ -435,7 +434,7 @@ void declare_objects(py::module& m, const std::string& type)
                      xt::adapt(c.data(), c.size(), xt::no_ownership(), s));
                }),
            py::arg("c").noconvert(), "Create a constant from a value array")
-      .def(
+      .def_property_readonly(
           "value",
           [](dolfinx::fem::Constant<T>& self)
           { return py::array(self.shape, self.value.data(), py::none()); },

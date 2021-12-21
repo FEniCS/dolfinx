@@ -165,6 +165,11 @@ class DirichletBC:
             self._cpp_object = dirichletbc_obj(dtype)(_value, dofs)
 
     @property
+    def g(self):
+        """The boundary condition value(s)"""
+        return self._cpp_object.value
+
+    @property
     def function_space(self):
         """The function space to which boundary condition constrains
         will be applied"""

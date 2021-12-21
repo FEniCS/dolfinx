@@ -126,7 +126,7 @@ private:
   template <typename U>
   DirichletBC(const std::variant<std::shared_ptr<const Function<T>>,
                                  std::shared_ptr<const Constant<T>>>& g,
-              U&& dofs, const std::shared_ptr<const FunctionSpace>& V, int)
+              U&& dofs, const std::shared_ptr<const FunctionSpace>& V, void*)
       : _function_space(V), _g(g), _dofs0(std::forward<U>(dofs))
   {
     // Compute number of owned dofs indices in the full space (will
@@ -193,7 +193,7 @@ public:
   template <typename U>
   DirichletBC(const std::shared_ptr<const Constant<T>>& g, U&& dofs,
               const std::shared_ptr<const FunctionSpace>& V)
-      : DirichletBC(g, dofs, V, 0)
+      : DirichletBC(g, dofs, V, nullptr)
   {
     assert(g);
     assert(V);
@@ -224,7 +224,7 @@ public:
   /// block size 3
   template <typename U>
   DirichletBC(const std::shared_ptr<const Function<T>>& g, U&& dofs)
-      : DirichletBC(g, dofs, g->function_space(), 0)
+      : DirichletBC(g, dofs, g->function_space(), nullptr)
   {
   }
 
@@ -377,7 +377,7 @@ public:
     else if (std::holds_alternative<std::shared_ptr<const Constant<T>>>(_g))
     {
       auto g = std::get<std::shared_ptr<const Constant<T>>>(_g);
-      std::vector<T> value = g->value;
+      const std::vector<T>& value = g->value;
       std::int32_t bs = _function_space->dofmap()->bs();
       std::for_each(_dofs0.cbegin(), _dofs0.cend(),
                     [&x, &x0, &value, scale, bs](auto dof)
@@ -411,7 +411,7 @@ public:
     {
       auto g = std::get<std::shared_ptr<const Constant<T>>>(_g);
       assert(g);
-      std::vector<T> g_value = g->value;
+      const std::vector<T>& g_value = g->value;
       const std::int32_t bs = _function_space->dofmap()->bs();
       for (std::size_t i = 0; i < _dofs0.size(); ++i)
         values[_dofs0[i]] = g_value[_dofs0[i] % bs];

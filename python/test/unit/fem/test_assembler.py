@@ -439,11 +439,9 @@ def test_assembly_solve_taylor_hood(mesh):
     bdofs0 = locate_dofs_topological(P2, facetdim, bndry_facets0)
     bdofs1 = locate_dofs_topological(P2, facetdim, bndry_facets1)
 
-    u0 = Function(P2)
-    u0.x.array[:] = 1.0
-
-    bc0 = DirichletBC(u0, bdofs0)
-    bc1 = DirichletBC(u0, bdofs1)
+    bc_value = np.ones(mesh.geometry.dim, dtype=PETSc.ScalarType)
+    bc0 = DirichletBC(bc_value, bdofs0, P2)
+    bc1 = DirichletBC(bc_value, bdofs1, P2)
 
     u, p = ufl.TrialFunction(P2), ufl.TrialFunction(P1)
     v, q = ufl.TestFunction(P2), ufl.TestFunction(P1)
@@ -549,11 +547,11 @@ def test_assembly_solve_taylor_hood(mesh):
         L1 = inner(p_zero, q) * dx
         L = L0 + L1
 
-        bdofsW0_P2_0 = locate_dofs_topological((W.sub(0), P2), facetdim, bndry_facets0)
-        bdofsW0_P2_1 = locate_dofs_topological((W.sub(0), P2), facetdim, bndry_facets1)
+        bdofsW0_P2_0 = locate_dofs_topological(W.sub(0), facetdim, bndry_facets0)
+        bdofsW0_P2_1 = locate_dofs_topological(W.sub(0), facetdim, bndry_facets1)
 
-        bc0 = DirichletBC(u0, bdofsW0_P2_0, W.sub(0))
-        bc1 = DirichletBC(u0, bdofsW0_P2_1, W.sub(0))
+        bc0 = DirichletBC(bc_value, bdofsW0_P2_0, W.sub(0))
+        bc1 = DirichletBC(bc_value, bdofsW0_P2_1, W.sub(0))
 
         A = assemble_matrix(a, bcs=[bc0, bc1])
         A.assemble()
@@ -600,11 +598,8 @@ def test_assembly_solve_taylor_hood(mesh):
 
 
 def test_basic_interior_facet_assembly():
-    mesh = create_rectangle(MPI.COMM_WORLD,
-                            [np.array([0.0, 0.0]),
-                             np.array([1.0, 1.0])],
-                            [5, 5],
-                            cell_type=CellType.triangle,
+    mesh = create_rectangle(MPI.COMM_WORLD, [np.array([0.0, 0.0]), np.array([1.0, 1.0])],
+                            [5, 5], cell_type=CellType.triangle,
                             ghost_mode=GhostMode.shared_facet)
     V = FunctionSpace(mesh, ("DG", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
