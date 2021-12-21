@@ -214,13 +214,12 @@ def test_curl_curl_eigenvalue(family, order):
     a = inner(ufl.curl(u), ufl.curl(v)) * dx
     b = inner(u, v) * dx
 
-    zero_u = Function(V)
-    zero_u.x.array[:] = 0.0
-
     boundary_facets = locate_entities_boundary(
         mesh, mesh.topology.dim - 1, lambda x: np.full(x.shape[1], True, dtype=bool))
     boundary_dofs = locate_dofs_topological(V, mesh.topology.dim - 1, boundary_facets)
 
+    zero_u = Function(V)
+    zero_u.x.array[:] = 0.0
     bcs = [DirichletBC(zero_u, boundary_dofs)]
 
     A = assemble_matrix(a, bcs=bcs)
