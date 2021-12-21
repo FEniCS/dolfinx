@@ -218,7 +218,7 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0)
       = mesh->geometry().dofmap();
   // FIXME: Add proper interface for num coordinate dofs
   const std::size_t num_dofs_g = x_dofmap.num_links(0);
-  const xt::xtensor<double, 2>& x_g = mesh->geometry().x();
+  xtl::span<const double> x_g = mesh->geometry().x();
 
   // Evaluate coordinate map basis at reference interpolation points
   xt::xtensor<double, 4> phi(cmap.tabulate_shape(1, X.shape(0)));
@@ -273,8 +273,11 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0)
     // Get cell geometry (coordinate dofs)
     auto x_dofs = x_dofmap.links(c);
     for (std::size_t i = 0; i < num_dofs_g; ++i)
+    {
+      const int pos = 3 * x_dofs[i];
       for (std::size_t j = 0; j < gdim; ++j)
-        coordinate_dofs(i, j) = x_g(x_dofs[i], j);
+        coordinate_dofs(i, j) = x_g[pos + j];
+    }
 
     // Compute Jacobians and reference points for current cell
     J.fill(0);
@@ -475,7 +478,7 @@ void interpolate(Function<T>& u, xt::xarray<T>& f,
         = mesh->geometry().dofmap();
     // FIXME: Add proper interface for num coordinate dofs
     const int num_dofs_g = x_dofmap.num_links(0);
-    const xt::xtensor<double, 2>& x_g = mesh->geometry().x();
+    xtl::span<const double> x_g = mesh->geometry().x();
 
     // Create data structures for Jacobian info
     xt::xtensor<double, 3> J = xt::empty<double>({int(X.shape(0)), gdim, tdim});
@@ -511,8 +514,11 @@ void interpolate(Function<T>& u, xt::xarray<T>& f,
     {
       auto x_dofs = x_dofmap.links(c);
       for (int i = 0; i < num_dofs_g; ++i)
+      {
+        const int pos = 3 * x_dofs[i];
         for (int j = 0; j < gdim; ++j)
-          coordinate_dofs(i, j) = x_g(x_dofs[i], j);
+          coordinate_dofs(i, j) = x_g[pos + j];
+      }
 
       // Compute J, detJ and K
       J.fill(0);

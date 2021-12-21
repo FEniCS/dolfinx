@@ -75,11 +75,6 @@ mesh = create_box(
     CellType.tetrahedron, GhostMode.shared_facet)
 
 
-def boundary(x):
-    return np.logical_or(np.isclose(x[0], 0.0),
-                         np.isclose(x[1], 1.0))
-
-
 # Rotation rate and mass density
 omega = 300.0
 rho = 10.0
@@ -113,7 +108,8 @@ u0 = Function(V)
 u0.x.array[:] = 0.0
 
 # Set up boundary condition on inner surface
-bc = DirichletBC(u0, locate_dofs_geometrical(V, boundary))
+bc = DirichletBC(u0, locate_dofs_geometrical(V, lambda x: np.logical_or(np.isclose(x[0], 0.0),
+                                                                        np.isclose(x[1], 1.0))))
 
 # Assembly and solve
 # ------------------
