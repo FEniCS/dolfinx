@@ -22,8 +22,8 @@ namespace
 /// and true` if convergence achieved
 std::pair<double, bool> converged(const nls::NewtonSolver& solver, const Vec r)
 {
-  la::petsc::Vector _r(r, true);
-  double residual = _r.norm(la::Norm::l2);
+  PetscReal residual = 0.0;
+  VecNorm(r, NORM_2, &residual);
 
   // Relative residual
   const double relative_residual = residual / solver.residual0();
