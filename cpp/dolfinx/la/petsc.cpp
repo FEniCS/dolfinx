@@ -451,32 +451,6 @@ MPI_Comm petsc::Vector::comm() const
   return mpi_comm;
 }
 //-----------------------------------------------------------------------------
-PetscReal petsc::Vector::norm(Norm type) const
-{
-  assert(_x);
-  PetscErrorCode ierr;
-  PetscReal value = 0.0;
-  switch (type)
-  {
-  case Norm::l1:
-    ierr = VecNorm(_x, NORM_1, &value);
-    CHECK_ERROR("VecNorm");
-    break;
-  case Norm::l2:
-    ierr = VecNorm(_x, NORM_2, &value);
-    CHECK_ERROR("VecNorm");
-    break;
-  case Norm::linf:
-    ierr = VecNorm(_x, NORM_INFINITY, &value);
-    CHECK_ERROR("VecNorm");
-    break;
-  default:
-    throw std::runtime_error("Norm type not support for PETSc Vec");
-  }
-
-  return value;
-}
-//-----------------------------------------------------------------------------
 void petsc::Vector::set_options_prefix(std::string options_prefix)
 {
   assert(_x);

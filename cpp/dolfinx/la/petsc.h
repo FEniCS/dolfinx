@@ -211,12 +211,6 @@ public:
   /// Return MPI communicator
   MPI_Comm comm() const;
 
-  /// Compute norm of vector
-  /// @note Collective
-  /// @param[in] type The norm type
-  /// @return The norm of the vector
-  PetscReal norm(Norm type) const;
-
   /// Sets the prefix used by PETSc when searching the options database
   void set_options_prefix(std::string options_prefix);
 
