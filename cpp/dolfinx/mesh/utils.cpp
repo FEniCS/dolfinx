@@ -634,7 +634,7 @@ mesh::Mesh mesh::update_ghosts(const mesh::Mesh& mesh,
   xt::xtensor<double, 2> x = xt::empty<double>({num_local_vertices, gdim});
   for (int v = 0; v < num_local_vertices; ++v)
     for (int j = 0; j < gdim; ++j)
-      x(v, j) = coord[vertex_to_coord[v] * gdim + j];
+      x(v, j) = coord[vertex_to_coord[v] * 3 + j];
 
   auto partitioner = [&dest](...) { return dest; };
 
