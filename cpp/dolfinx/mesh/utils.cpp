@@ -600,7 +600,7 @@ mesh::Mesh mesh::update_ghosts(const mesh::Mesh& mesh,
   // Get geometry information
   const mesh::Geometry& geometry = mesh.geometry();
   int gdim = geometry.dim();
-  const xt::xtensor<double, 2>& coord = geometry.x();
+  xtl::span<const double> coord = geometry.x();
 
   std::vector<std::int32_t> vertex_to_coord(vert_map->size_local()
                                             + vert_map->num_ghosts());
@@ -634,7 +634,7 @@ mesh::Mesh mesh::update_ghosts(const mesh::Mesh& mesh,
   xt::xtensor<double, 2> x = xt::empty<double>({num_local_vertices, gdim});
   for (int v = 0; v < num_local_vertices; ++v)
     for (int j = 0; j < gdim; ++j)
-      x(v, j) = coord(vertex_to_coord[v], j);
+      x(v, j) = coord[vertex_to_coord[v] * gdim + j];
 
   auto partitioner = [&dest](...) { return dest; };
 
