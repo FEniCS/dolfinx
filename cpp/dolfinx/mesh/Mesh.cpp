@@ -371,7 +371,8 @@ Mesh::create_submesh(int dim, const xtl::span<const std::int32_t>& entities)
   const std::vector<std::int64_t>& igi
       = this->geometry().input_global_indices();
   std::vector<std::int64_t> submesh_igi;
-  for (auto submesh_x_dof : submesh_to_mesh_x_dof_map)
+  submesh_igi.reserve(submesh_to_mesh_x_dof_map.size());
+  for (std::int32_t submesh_x_dof : submesh_to_mesh_x_dof_map)
   {
     submesh_igi.push_back(igi[submesh_x_dof]);
   }
