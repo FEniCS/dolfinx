@@ -293,62 +293,26 @@ Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
   auto submesh_owned_x_dofs = dolfinx::common::get_owned_indices(
       comm(), submesh_x_dofs, geometry_dof_index_map);
 
-  // Add any owned geometry dofs in the submesh that might come from other
-  // processes
-  submesh_x_dofs.insert(submesh_x_dofs.end(), submesh_owned_x_dofs.begin(),
-                        submesh_owned_x_dofs.end());
-
   // Create submesh geometry index map
   std::pair<common::IndexMap, std::vector<int32_t>> submesh_x_dof_index_map_pair
       = geometry_dof_index_map->create_submap(submesh_owned_x_dofs);
   auto submesh_x_dof_index_map = std::make_shared<common::IndexMap>(
       std::move(submesh_x_dof_index_map_pair.first));
-  // TODO Consider renaming
-  auto submesh_x_dof_index_map_ghost_map
-      = std::move(submesh_x_dof_index_map_pair.second);
 
-  // On some processes, the ghosts in submesh_x_dof_index_map may not be in
-  // submesh_x_dofs, so these must be added so that each dof in the index map
-  // has geometry data (i.e. coordinates)
-
-  // Get the local indices of ghosts in the mesh (this) that are present in
-  // the submesh
-  std::vector<std::int32_t> x_dof_ghosts_local;
-  std::vector<std::int64_t> geom_global_indices
-      = geometry_dof_index_map->global_indices();
-  for (int i = 0; i < submesh_x_dof_index_map->ghosts().size(); ++i)
+  std::vector<int32_t> submesh_to_mesh_x_dof_map = submesh_owned_x_dofs;
+  for (auto x_dof_index : submesh_x_dof_index_map_pair.second)
   {
-    // Global index of submesh_x_dof_index_map->ghosts()[i] in the mesh (this)
-    std::int64_t ghost = geometry_dof_index_map
-                             ->ghosts()[submesh_x_dof_index_map_ghost_map[i]];
-
-    // Get the local index
-    auto it = std::find(geom_global_indices.begin(), geom_global_indices.end(),
-                        ghost);
-    assert(it != geom_global_indices.end());
-    x_dof_ghosts_local.push_back(
-        std::distance(geom_global_indices.begin(), it));
+    int32_t x_dof = geometry_dof_index_map->size_local() + x_dof_index;
+    submesh_to_mesh_x_dof_map.push_back(x_dof);
   }
-
-  // Add the ghosts just found to submesh_x_dofs
-  submesh_x_dofs.insert(submesh_x_dofs.end(), x_dof_ghosts_local.begin(),
-                        x_dof_ghosts_local.end());
-
-  // Create a sorted list of unique geometry dofs. submesh_x_dofs maps the
-  // submesh geometry dofs to the mesh (this) geometry dofs i.e. dof 3 in the
-  // submesh is x_dof submesh_x_dofs[3] in the mesh
-  std::sort(submesh_x_dofs.begin(), submesh_x_dofs.end());
-  submesh_x_dofs.erase(
-      std::unique(submesh_x_dofs.begin(), submesh_x_dofs.end()),
-      submesh_x_dofs.end());
 
   // Create submesh geometry coordinates
   xtl::span<const double> x = geometry().x();
-  const int submesh_num_x_dofs = submesh_x_dofs.size();
+  const int submesh_num_x_dofs = submesh_to_mesh_x_dof_map.size();
   std::vector<double> submesh_x(3 * submesh_num_x_dofs);
   for (int i = 0; i < submesh_num_x_dofs; ++i)
   {
-    common::impl::copy_N<3>(std::next(x.begin(), 3 * submesh_x_dofs[i]),
+    common::impl::copy_N<3>(std::next(x.begin(), 3 * submesh_to_mesh_x_dof_map[i]),
                             std::next(submesh_x.begin(), 3 * i));
   }
 
@@ -363,9 +327,9 @@ Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
     // For each mesh dof of the entity, get the submesh dof
     for (std::int32_t x_dof : entity_x_dofs)
     {
-      auto it = std::find(submesh_x_dofs.begin(), submesh_x_dofs.end(), x_dof);
-      assert(it != submesh_x_dofs.end());
-      submesh_x_dofmap_vec.push_back(std::distance(submesh_x_dofs.begin(), it));
+      auto it = std::find(submesh_to_mesh_x_dof_map.begin(), submesh_to_mesh_x_dof_map.end(), x_dof);
+      assert(it != submesh_to_mesh_x_dof_map.end());
+      submesh_x_dofmap_vec.push_back(std::distance(submesh_to_mesh_x_dof_map.begin(), it));
     }
     submesh_x_dofmap_offsets.push_back(submesh_x_dofmap_vec.size());
   }
@@ -384,7 +348,7 @@ Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
   const std::vector<std::int64_t>& igi
       = this->geometry().input_global_indices();
   std::vector<std::int64_t> submesh_igi;
-  for (auto submesh_x_dof : submesh_x_dofs)
+  for (auto submesh_x_dof : submesh_to_mesh_x_dof_map)
   {
     submesh_igi.push_back(igi[submesh_x_dof]);
   }
