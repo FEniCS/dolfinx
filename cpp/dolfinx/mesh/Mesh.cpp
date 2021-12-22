@@ -186,15 +186,6 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
   std::vector<std::int32_t> submesh_vertices
       = mesh::compute_incident_entities(*this, entities, dim, 0);
 
-  std::stringstream ss;
-
-  int rank = dolfinx::MPI::rank(comm());
-
-  ss << "rank " << rank << "\n";
-
-  ss << "submesh_vertices = " << xt::adapt(submesh_vertices) << "\n";
-
-
   // For some processes, entities may be empty, but they might still own
   // vertices in the submesh that need to be included.
   auto vertex_index_map = _topology.index_map(0);
@@ -202,18 +193,12 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
       = dolfinx::common::get_owned_indices(comm(), submesh_vertices,
                                            vertex_index_map);
 
-  ss << "submesh_owned_vertices = " << xt::adapt(submesh_owned_vertices) << "\n";
-
   // Create submesh vertex index map
   std::pair<common::IndexMap, std::vector<int32_t>>
       submesh_vertex_index_map_pair
       = vertex_index_map->create_submap(submesh_owned_vertices);
   auto submesh_vertex_index_map = std::make_shared<common::IndexMap>(
       std::move(submesh_vertex_index_map_pair.first));
-
-  auto submesh_vertex_ghost_map = submesh_vertex_index_map_pair.second;
-
-  ss << "submesh_vertex_ghost_map = " << xt::adapt(submesh_vertex_ghost_map) << "\n";
 
   // Create a map from the vertices (local) in the submesh to the vertices (local)
   // in the mesh (this). NOTE this is not the same as `submesh_vertices` above,
@@ -225,16 +210,12 @@ Mesh Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
   // Add owned vertices to the map
   std::vector<int32_t> submesh_to_mesh_vertex_map = submesh_owned_vertices;
   // Add ghost vertices to the map
-  for (auto v_i : submesh_vertex_ghost_map)
+  for (auto v_i : submesh_vertex_index_map_pair.second)
   {
     // Get the local index of the ghost and append
     int32_t v = vertex_index_map->size_local() + v_i;
     submesh_to_mesh_vertex_map.push_back(v);
   }
-
-  ss << "submesh_to_mesh_vertex_map = " << xt::adapt(submesh_to_mesh_vertex_map) << "\n";
-
-  std::cout << ss.str() << "\n";
 
   // Get the entities in the submesh that are owned by this process
   auto entity_index_map = _topology.index_map(dim);
