@@ -26,6 +26,7 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <algorithm>
 
 using namespace dolfinx;
 using namespace dolfinx::mesh;
@@ -180,6 +181,10 @@ Mesh mesh::create_mesh(MPI_Comm comm,
 std::pair<Mesh, std::vector<std::int32_t>>
 Mesh::create_submesh(int dim, const xtl::span<const std::int32_t>& entities)
 {
+  std::stringstream ss;
+  int rank = dolfinx::MPI::rank(comm());
+  ss << "Rank " << rank << "\n";
+
   // TODO Specify sizes of vectors
 
   // Submesh topology
@@ -211,10 +216,11 @@ Mesh::create_submesh(int dim, const xtl::span<const std::int32_t>& entities)
   std::vector<int32_t> submesh_to_mesh_vertex_map;
   submesh_to_mesh_vertex_map.reserve(submesh_vertex_index_map->size_local()
                                      + submesh_vertex_index_map->num_ghosts());
-  submesh_to_mesh_vertex_map.insert(submesh_to_mesh_vertex_map.end(),
+  submesh_to_mesh_vertex_map.insert(submesh_to_mesh_vertex_map.begin(),
                                     submesh_owned_vertices.begin(),
                                     submesh_owned_vertices.end());
   // Add ghost vertices to the map
+  // TODO Use std::transform?
   for (auto v_i : submesh_vertex_index_map_pair.second)
   {
     // Get the local index of the ghost and append
