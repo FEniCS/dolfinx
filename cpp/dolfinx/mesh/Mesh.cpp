@@ -337,7 +337,9 @@ Mesh::create_submesh(int dim, const xtl::span<const std::int32_t>& entities)
 
   // Crete submesh geometry dofmap
   std::vector<std::int32_t> submesh_x_dofmap_vec;
+  submesh_x_dofmap_vec.reserve(e_to_g.shape()[0] * e_to_g.shape()[1]);
   std::vector<std::int32_t> submesh_x_dofmap_offsets(1, 0);
+  submesh_x_dofmap_offsets.reserve(e_to_g.shape()[0] + 1);
   for (std::size_t i = 0; i < e_to_g.shape()[0]; ++i)
   {
     // Get the mesh geometry dofs for ith entity in entities
