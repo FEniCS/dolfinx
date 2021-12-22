@@ -18,6 +18,7 @@
 #include <xtensor/xtensor.hpp>
 #include <xtensor/xview.hpp>
 #include <xtl/xspan.hpp>
+
 namespace dolfinx::mesh
 {
 class Mesh;
@@ -25,10 +26,8 @@ class Mesh;
 
 namespace dolfinx::fem
 {
-
 template <typename T>
 class Function;
-
 template <typename T>
 class Expression;
 
@@ -651,47 +650,51 @@ void interpolate(Function<T>& u, const Function<T>& v)
   }
 }
 
-/// Interpolate from a dolfinx Expression into a compatible Function on the same
-/// mesh
-/// @param[in, out] u The function to interpolate into
+/// Interpolate from an Expression into a compatible Function on the
+/// same mesh
+/// @param[out] u The function to interpolate into
 /// @param[in] expr The expression to be interpolated
-/// @param[in] cells List of cell indices (local to process) to interpolate on
+/// @param[in] cells List of cell indices (local to process) to
+/// interpolate on
 template <typename T>
 void interpolate(Function<T>& u, const Expression<T>& expr,
-                 const tcb::span<const std::int32_t>& cells)
+                 const xtl::span<const std::int32_t>& cells)
 {
-  // Array to hold coefficients after expression evaluation
-  const std::int32_t num_points = expr.num_points();
-  const std::int32_t expr_value_size = expr.value_size();
-  const std::int32_t num_cells = cells.size();
-  xt::xtensor<T, 2> expr_values(
-      {std::size_t(cells.size()), std::size_t(num_points * expr_value_size)});
-
   // Check that spaces are compatible
-  std::shared_ptr<const FiniteElement> element = u.function_space()->element();
-  const auto dofmap = u.function_space()->dofmap();
+  assert(u.function_space());
+  auto element = u.function_space()->element();
+  assert(element);
+  auto dofmap = u.function_space()->dofmap();
   assert(dofmap);
-  const int element_vs = element->value_size();
+  std::size_t element_vs = element->value_size();
+
+  std::size_t expr_value_size = expr.value_size();
   assert(expr_value_size == element_vs);
   auto X = expr.x();
   assert(X.shape() == element->interpolation_points().shape());
 
-  // Evaluate expression at quadrature points for the subset of cells
-  expr.eval(cells, expr_values);
+  // Array to hold evaluted Expression
+  std::size_t num_points = expr.num_points();
+  std::size_t num_cells = cells.size();
+  xt::xtensor<T, 2> f({num_cells, num_points * expr_value_size});
+
+  // Evaluate Expression at points
+  expr.eval(cells, f);
 
   // Reshape evaluated data to fit interpolate
   // Expression returns matrix of shape (num_cells, num_points * value_size),
   // i.e. xyzxyz ordering of dof values per cell per point. The interpolation
   // uses xxyyzz input, ordered for all points of each cell, i.e. (value_size,
   // num_cells*num_points)
-  auto values_view
-      = xt::reshape_view(expr_values, {num_cells, num_points, element_vs});
-  xt::xarray<T> values
-      = xt::empty<T>({expr_value_size, num_cells * num_points});
-  values = xt::reshape_view(xt::transpose(values_view, {2, 0, 1}),
-                            {expr_value_size, num_cells * num_points});
+  auto f_view = xt::reshape_view(f, {num_cells, num_points, element_vs});
+
+  // xt::xarray<T> values
+  //     = xt::empty<T>({expr_value_size, num_cells * num_points});
+  xt::xarray<T> _f
+      = xt::reshape_view(xt::transpose(f_view, {2, 0, 1}),
+                         {expr_value_size, num_cells * num_points});
 
   // Interpolate values into appropriate space
-  interpolate(u, values, cells);
+  interpolate(u, _f, cells);
 }
 } // namespace dolfinx::fem
