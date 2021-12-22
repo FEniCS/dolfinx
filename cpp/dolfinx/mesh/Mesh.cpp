@@ -201,11 +201,12 @@ Mesh::create_submesh(int dim, const xtl::span<const std::int32_t>& entities)
   auto submesh_vertex_index_map = std::make_shared<common::IndexMap>(
       std::move(submesh_vertex_index_map_pair.first));
 
-  // Create a map from the vertices (local) in the submesh to the vertices (local)
-  // in the mesh (this). NOTE this is not the same as `submesh_vertices` above,
-  // since on a process, some ghost entities not present in the submesh may have a
-  // vertex in the submesh, which would not be returned by
-  // mesh::compute_incident_entities but is present in the submesh vertex index map.
+  // Create a map from the vertices (local) in the submesh to the vertices
+  // (local) in the mesh (this). NOTE this is not the same as `submesh_vertices`
+  // above, since on a process, some ghost entities not present in the submesh
+  // may have a vertex in the submesh, which would not be returned by
+  // mesh::compute_incident_entities but is present in the submesh vertex index
+  // map.
   // TODO Reserve size (equal to number of owned and ghosted vertices in the
   // submesh vertex map)
   // Add owned vertices to the map
@@ -259,7 +260,7 @@ Mesh::create_submesh(int dim, const xtl::span<const std::int32_t>& entities)
                           submesh_to_mesh_vertex_map.end(), v);
       assert(it != submesh_to_mesh_vertex_map.end());
       submesh_e_to_v_vec.push_back(
-        std::distance(submesh_to_mesh_vertex_map.begin(), it));
+          std::distance(submesh_to_mesh_vertex_map.begin(), it));
     }
     submesh_e_to_v_offsets.push_back(submesh_e_to_v_vec.size());
   }
@@ -312,8 +313,9 @@ Mesh::create_submesh(int dim, const xtl::span<const std::int32_t>& entities)
   std::vector<double> submesh_x(3 * submesh_num_x_dofs);
   for (int i = 0; i < submesh_num_x_dofs; ++i)
   {
-    common::impl::copy_N<3>(std::next(x.begin(), 3 * submesh_to_mesh_x_dof_map[i]),
-                            std::next(submesh_x.begin(), 3 * i));
+    common::impl::copy_N<3>(
+        std::next(x.begin(), 3 * submesh_to_mesh_x_dof_map[i]),
+        std::next(submesh_x.begin(), 3 * i));
   }
 
   // Crete submesh geometry dofmap
@@ -327,9 +329,11 @@ Mesh::create_submesh(int dim, const xtl::span<const std::int32_t>& entities)
     // For each mesh dof of the entity, get the submesh dof
     for (std::int32_t x_dof : entity_x_dofs)
     {
-      auto it = std::find(submesh_to_mesh_x_dof_map.begin(), submesh_to_mesh_x_dof_map.end(), x_dof);
+      auto it = std::find(submesh_to_mesh_x_dof_map.begin(),
+                          submesh_to_mesh_x_dof_map.end(), x_dof);
       assert(it != submesh_to_mesh_x_dof_map.end());
-      submesh_x_dofmap_vec.push_back(std::distance(submesh_to_mesh_x_dof_map.begin(), it));
+      submesh_x_dofmap_vec.push_back(
+          std::distance(submesh_to_mesh_x_dof_map.begin(), it));
     }
     submesh_x_dofmap_offsets.push_back(submesh_x_dofmap_vec.size());
   }
@@ -358,8 +362,9 @@ Mesh::create_submesh(int dim, const xtl::span<const std::int32_t>& entities)
       submesh_x_dof_index_map, std::move(submesh_x_dofmap), submesh_coord_ele,
       std::move(submesh_x), geometry().dim(), std::move(submesh_igi));
 
-  return {Mesh(comm(), std::move(submesh_topology), std::move(submesh_geometry)),
-          std::move(submesh_to_mesh_vertex_map)};
+  return {
+      Mesh(comm(), std::move(submesh_topology), std::move(submesh_geometry)),
+      std::move(submesh_to_mesh_vertex_map)};
 }
 //-----------------------------------------------------------------------------
 Topology& Mesh::topology() { return _topology; }
