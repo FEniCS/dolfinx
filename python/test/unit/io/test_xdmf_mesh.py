@@ -157,7 +157,7 @@ def test_submesh(tempdir, d, n, codim, ghost_mode, encoding):
     mesh = mesh_factory(d, n, ghost_mode)
     edim = d - codim
     entities = locate_entities(mesh, edim, lambda x: x[0] >= 0.5)
-    submesh = mesh.sub(edim, entities)
+    submesh = mesh.create_submesh(edim, entities)[0]
 
     filename = os.path.join(tempdir, "submesh.xdmf")
     # Check writing the mesh doesn't cause a segmentation fault
