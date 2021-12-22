@@ -51,8 +51,6 @@ def test_assembly_dx_domains(mode):
     w = Function(V)
     w.x.array[:] = 0.5
 
-    bc = DirichletBC(Function(V), range(30))
-
     # Assemble matrix
     a = w * ufl.inner(u, v) * (dx(1) + dx(2) + dx(3))
     A = assemble_matrix(a)
@@ -61,6 +59,8 @@ def test_assembly_dx_domains(mode):
     A2 = assemble_matrix(a2)
     A2.assemble()
     assert (A - A2).norm() < 1.0e-12
+
+    bc = DirichletBC(Function(V), range(30))
 
     # Assemble vector
     L = ufl.inner(w, v) * (dx(1) + dx(2) + dx(3))

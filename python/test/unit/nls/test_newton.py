@@ -96,10 +96,9 @@ def test_linear_pde():
     v = TestFunction(V)
     F = inner(10.0, v) * dx - inner(grad(u), grad(v)) * dx
 
-    u_bc = Function(V)
-    u_bc.x.array[:] = 1.0
-    bc = DirichletBC(u_bc, locate_dofs_geometrical(V, lambda x: np.logical_or(np.isclose(x[0], 0.0),
-                                                                              np.isclose(x[0], 1.0))))
+    bc = DirichletBC(PETSc.ScalarType(1.0),
+                     locate_dofs_geometrical(V, lambda x: np.logical_or(np.isclose(x[0], 0.0),
+                                                                        np.isclose(x[0], 1.0))), V)
 
     # Create nonlinear problem
     problem = NonlinearPDEProblem(F, u, bc)
@@ -114,7 +113,7 @@ def test_linear_pde():
     assert n == 1
 
     # Increment boundary condition and solve again
-    u_bc.x.array[:] = 2.0
+    bc.g.value[...] = PETSc.ScalarType(2.0)
     n, converged = solver.solve(u.vector)
     assert converged
     assert n == 1
@@ -130,10 +129,9 @@ def test_nonlinear_pde():
     F = inner(5.0, v) * dx - ufl.sqrt(u * u) * inner(
         grad(u), grad(v)) * dx - inner(u, v) * dx
 
-    u_bc = Function(V)
-    u_bc.x.array[:] = 1.0
-    bc = DirichletBC(u_bc, locate_dofs_geometrical(V, lambda x: np.logical_or(np.isclose(x[0], 0.0),
-                                                                              np.isclose(x[0], 1.0))))
+    bc = DirichletBC(PETSc.ScalarType(1.0),
+                     locate_dofs_geometrical(V, lambda x: np.logical_or(np.isclose(x[0], 0.0),
+                                                                        np.isclose(x[0], 1.0))), V)
 
     # Create nonlinear problem
     problem = NonlinearPDEProblem(F, u, bc)
@@ -149,10 +147,10 @@ def test_nonlinear_pde():
     assert n < 6
 
     # Modify boundary condition and solve again
-    u_bc.x.array[:] = 0.5
+    bc.g.value[...] = 0.5
     n, converged = solver.solve(u.vector)
     assert converged
-    assert n < 6
+    assert n > 0 and n < 6
 
 
 def test_nonlinear_pde_snes():
