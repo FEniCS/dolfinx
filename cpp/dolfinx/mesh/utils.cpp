@@ -583,7 +583,7 @@ mesh::compute_incident_entities(const Mesh& mesh,
 }
 //-----------------------------------------------------------------------------
 mesh::Mesh mesh::update_ghosts(const mesh::Mesh& mesh,
-                               graph::AdjacencyList<std::int32_t>& dest)
+                               const graph::AdjacencyList<std::int32_t>& dest)
 {
   // Get topology information
   const mesh::Topology& topology = mesh.topology();

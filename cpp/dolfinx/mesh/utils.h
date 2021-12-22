@@ -159,6 +159,6 @@ compute_incident_entities(const Mesh& mesh,
 /// @param[in] dest Destination rank for mesh cells owned by this rank
 /// @return Mesh with new ghosts
 mesh::Mesh update_ghosts(const mesh::Mesh& mesh,
-                         graph::AdjacencyList<std::int32_t>& dest);
+                         const graph::AdjacencyList<std::int32_t>& dest);
 
 } // namespace dolfinx::mesh
