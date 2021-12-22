@@ -207,10 +207,13 @@ Mesh::create_submesh(int dim, const xtl::span<const std::int32_t>& entities)
   // may have a vertex in the submesh, which would not be returned by
   // mesh::compute_incident_entities but is present in the submesh vertex index
   // map.
-  // TODO Reserve size (equal to number of owned and ghosted vertices in the
-  // submesh vertex map)
   // Add owned vertices to the map
-  std::vector<int32_t> submesh_to_mesh_vertex_map = submesh_owned_vertices;
+  std::vector<int32_t> submesh_to_mesh_vertex_map;
+  submesh_to_mesh_vertex_map.reserve(submesh_vertex_index_map->size_local()
+                                     + submesh_vertex_index_map->num_ghosts());
+  submesh_to_mesh_vertex_map.insert(submesh_to_mesh_vertex_map.end(),
+                                    submesh_owned_vertices.begin(),
+                                    submesh_owned_vertices.end());
   // Add ghost vertices to the map
   for (auto v_i : submesh_vertex_index_map_pair.second)
   {
