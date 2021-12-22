@@ -7,8 +7,6 @@
 import math
 import sys
 
-import basix
-import dolfinx
 import numpy as np
 import pytest
 
@@ -481,7 +479,7 @@ def submesh_topology_test(mesh, submesh, submesh_to_mesh_vertex_map, entity_dim,
     if entity_dim == mesh_tdim:
         submesh.topology.create_entities(mesh_tdim - 1)
         submesh.topology.create_connectivity(mesh_tdim - 1, 0)
-    
+
     # Not all processes will own or ghost entities
     if len(entities) > 0:
         # The vertex map that mesh.sub uses is a sorted list of unique vertices, so
