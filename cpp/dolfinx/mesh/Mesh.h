@@ -104,8 +104,10 @@ public:
   /// Create submesh of mesh entities
   /// @param[in] dim Entity dimension
   /// @param[in] entities The entities
-  /// @return The submesh
-  Mesh sub(int dim, const xtl::span<const std::int32_t>& entities);
+  /// @return The submesh and a map from the (local) submesh vertices
+  /// to the (local) mesh (this) vertices
+  std::pair<Mesh, std::vector<std::int32_t>>
+  sub(int dim, const xtl::span<const std::int32_t>& entities);
 
   /// Name
   std::string name = "mesh";

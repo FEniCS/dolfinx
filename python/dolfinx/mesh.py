@@ -55,7 +55,7 @@ class Mesh(_cpp.mesh.Mesh):
         return self._ufl_domain
 
     def sub(self, dim, entities):
-        submesh = self.sub_without_ufl(dim, entities)
+        submesh, submesh_to_mesh_vertex_map = self.sub_without_ufl(dim, entities)
         # FIXME This is essentially a copy of the above ufl_cell method
         submesh_ufl_cell = ufl.Cell(submesh.topology.cell_name(),
                                     geometric_dimension=submesh.geometry.dim)
@@ -64,7 +64,8 @@ class Mesh(_cpp.mesh.Mesh):
             ufl.VectorElement("Lagrange",
                               cell=submesh_ufl_cell,
                               degree=1))
-        return Mesh.from_cpp(submesh, submesh_domain)
+        return (Mesh.from_cpp(submesh, submesh_domain),
+                submesh_to_mesh_vertex_map)
 
 
 def locate_entities(mesh: Mesh, dim: int, marker: types.FunctionType) -> np.ndarray:

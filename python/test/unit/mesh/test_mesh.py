@@ -429,7 +429,6 @@ def boundary_2(x):
 
 
 # TODO Test that submesh of full mesh is a copy of the mesh
-# TODO Test creating facet vertex connectivity for submesh of cells
 # TODO Test entities_to_geometry (fails with GhostMode.none)
 @pytest.mark.parametrize("d", [2, 3])
 @pytest.mark.parametrize("n", [2, 6])
@@ -448,12 +447,11 @@ def test_submesh(d, n, codim, marker, ghost_mode):
 
     edim = mesh.topology.dim - codim
     entities = locate_entities(mesh, edim, marker)
-    submesh = mesh.sub(edim, entities)
-    submesh_topology_test(mesh, submesh, edim, entities)
+    submesh, submesh_to_mesh_vertex_map = mesh.sub(edim, entities)
+    submesh_topology_test(mesh, submesh, submesh_to_mesh_vertex_map, edim, entities)
     submesh_geometry_test(mesh, submesh, edim, entities)
 
 
-# TODO Test creating connectivity on a submesh
 @pytest.mark.parametrize("d", [2, 3])
 @pytest.mark.parametrize("n", [2, 6])
 @pytest.mark.parametrize("boundary", [boundary_0,
@@ -470,12 +468,19 @@ def test_submesh_boundary(d, n, boundary, ghost_mode):
                                 ghost_mode=ghost_mode)
     edim = mesh.topology.dim - 1
     entities = locate_entities_boundary(mesh, edim, boundary)
-    submesh = mesh.sub(edim, entities)
-    submesh_topology_test(mesh, submesh, edim, entities)
+    submesh, submesh_to_mesh_vertex_map = mesh.sub(edim, entities)
+    submesh_topology_test(mesh, submesh, submesh_to_mesh_vertex_map, edim, entities)
     submesh_geometry_test(mesh, submesh, edim, entities)
 
 
-def submesh_topology_test(mesh, submesh, entity_dim, entities):
+def submesh_topology_test(mesh, submesh, submesh_to_mesh_vertex_map, entity_dim, entities):
+    # If we have a cell submesh, check that creating facets / creating connectivity
+    # doesn't cause a segmentation fault
+    mesh_tdim = mesh.topology.dim
+    if entity_dim == mesh_tdim:
+        submesh.topology.create_entities(mesh_tdim - 1)
+        submesh.topology.create_connectivity(mesh_tdim - 1, 0)
+    
     # Not all processes will own or ghost entities
     if len(entities) > 0:
         # The vertex map that mesh.sub uses is a sorted list of unique vertices, so
@@ -483,12 +488,6 @@ def submesh_topology_test(mesh, submesh, entity_dim, entities):
         # etc.
         mesh.topology.create_connectivity(entity_dim, 0)
         mesh_e_to_v = mesh.topology.connectivity(entity_dim, 0)
-        vertex_map = []
-        for entity in entities:
-            vertices = mesh_e_to_v.links(entity)
-            vertex_map.append(vertices)
-        vertex_map = np.hstack(vertex_map)
-        vertex_map = np.unique(vertex_map)
 
         submesh.topology.create_connectivity(entity_dim, 0)
         submesh_e_to_v = submesh.topology.connectivity(entity_dim, 0)
@@ -498,7 +497,7 @@ def submesh_topology_test(mesh, submesh, entity_dim, entities):
             mesh_entity_vertices = mesh_e_to_v.links(mesh_entity)
 
             for i in range(len(submesh_entity_vertices)):
-                assert(vertex_map[submesh_entity_vertices[i]] == mesh_entity_vertices[i])
+                assert(submesh_to_mesh_vertex_map[submesh_entity_vertices[i]] == mesh_entity_vertices[i])
     else:
         assert(submesh.topology.index_map(entity_dim).size_local == 0)
 
