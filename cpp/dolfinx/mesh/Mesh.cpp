@@ -178,7 +178,7 @@ Mesh mesh::create_mesh(MPI_Comm comm,
 }
 //-----------------------------------------------------------------------------
 std::pair<Mesh, std::vector<std::int32_t>>
-Mesh::sub(int dim, const xtl::span<const std::int32_t>& entities)
+Mesh::create_submesh(int dim, const xtl::span<const std::int32_t>& entities)
 {
   // TODO Specify sizes of vectors
 

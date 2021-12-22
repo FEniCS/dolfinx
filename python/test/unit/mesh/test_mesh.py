@@ -448,7 +448,7 @@ def test_submesh(d, n, codim, marker, ghost_mode):
 
     edim = mesh.topology.dim - codim
     entities = locate_entities(mesh, edim, marker)
-    submesh, submesh_to_mesh_vertex_map = mesh.sub(edim, entities)
+    submesh, submesh_to_mesh_vertex_map = mesh.create_submesh(edim, entities)
     submesh_topology_test(mesh, submesh, submesh_to_mesh_vertex_map, edim, entities)
     submesh_geometry_test(mesh, submesh, edim, entities)
 
@@ -469,7 +469,7 @@ def test_submesh_boundary(d, n, boundary, ghost_mode):
                                 ghost_mode=ghost_mode)
     edim = mesh.topology.dim - 1
     entities = locate_entities_boundary(mesh, edim, boundary)
-    submesh, submesh_to_mesh_vertex_map = mesh.sub(edim, entities)
+    submesh, submesh_to_mesh_vertex_map = mesh.create_submesh(edim, entities)
     submesh_topology_test(mesh, submesh, submesh_to_mesh_vertex_map, edim, entities)
     submesh_geometry_test(mesh, submesh, edim, entities)
 

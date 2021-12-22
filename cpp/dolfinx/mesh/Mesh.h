@@ -107,7 +107,7 @@ public:
   /// @return The submesh and a map from the (local) submesh vertices
   /// to the (local) mesh (this) vertices
   std::pair<Mesh, std::vector<std::int32_t>>
-  sub(int dim, const xtl::span<const std::int32_t>& entities);
+  create_submesh(int dim, const xtl::span<const std::int32_t>& entities);
 
   /// Name
   std::string name = "mesh";

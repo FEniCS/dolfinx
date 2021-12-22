@@ -54,8 +54,8 @@ class Mesh(_cpp.mesh.Mesh):
         """Return the ufl domain corresponding to the mesh."""
         return self._ufl_domain
 
-    def sub(self, dim, entities):
-        submesh, submesh_to_mesh_vertex_map = self.sub_without_ufl(dim, entities)
+    def create_submesh(self, dim, entities):
+        submesh, submesh_to_mesh_vertex_map = self.create_submesh_cpp(dim, entities)
         # FIXME This is essentially a copy of the above ufl_cell method
         submesh_ufl_cell = ufl.Cell(submesh.topology.cell_name(),
                                     geometric_dimension=submesh.geometry.dim)

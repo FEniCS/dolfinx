@@ -314,10 +314,10 @@ void mesh(py::module& m)
           "topology", py::overload_cast<>(&dolfinx::mesh::Mesh::topology),
           "Mesh topology", py::return_value_policy::reference_internal)
     // FIXME How can this be done in a cleaner manner?
-      .def("sub_without_ufl", [](dolfinx::mesh::Mesh& self, int dim,
+      .def("create_submesh_cpp", [](dolfinx::mesh::Mesh& self, int dim,
                      const py::array_t<std::int32_t, py::array::c_style> entities)
             {
-                return self.sub(
+                return self.create_submesh(
                     dim, xtl::span(entities.data(), entities.size()));
             })
       .def_property_readonly("comm", [](dolfinx::mesh::Mesh& self)
