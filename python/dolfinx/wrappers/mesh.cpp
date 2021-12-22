@@ -269,20 +269,23 @@ void mesh(py::module& m)
            &dolfinx::mesh::Topology::create_full_cell_permutations)
       .def("create_connectivity", &dolfinx::mesh::Topology::create_connectivity)
       .def("get_facet_permutations",
-           [](const dolfinx::mesh::Topology& self) {
+           [](const dolfinx::mesh::Topology& self)
+           {
              const std::vector<std::uint8_t>& p = self.get_facet_permutations();
              return py::array_t<std::uint8_t>(p.size(), p.data(),
                                               py::cast(self));
            })
       .def("get_full_cell_permutations",
-           [](const dolfinx::mesh::Topology& self) {
+           [](const dolfinx::mesh::Topology& self)
+           {
              const std::vector<std::uint8_t>& p
                  = self.get_full_cell_permutations();
              return py::array_t<std::uint8_t>(p.size(), p.data(),
                                               py::cast(self));
            })
       .def("get_cell_permutation_info",
-           [](const dolfinx::mesh::Topology& self) {
+           [](const dolfinx::mesh::Topology& self)
+           {
              const std::vector<std::uint32_t>& p
                  = self.get_cell_permutation_info();
              return py::array_t<std::uint32_t>(p.size(), p.data(),
@@ -313,13 +316,13 @@ void mesh(py::module& m)
       .def_property_readonly(
           "topology", py::overload_cast<>(&dolfinx::mesh::Mesh::topology),
           "Mesh topology", py::return_value_policy::reference_internal)
-    // FIXME How can this be done in a cleaner manner?
-      .def("create_submesh_cpp", [](dolfinx::mesh::Mesh& self, int dim,
-                     const py::array_t<std::int32_t, py::array::c_style> entities)
-            {
-                return self.create_submesh(
-                    dim, xtl::span(entities.data(), entities.size()));
-            })
+      .def("create_submesh_cpp",
+           [](dolfinx::mesh::Mesh& self, int dim,
+              const py::array_t<std::int32_t, py::array::c_style> entities)
+           {
+             return self.create_submesh(
+                 dim, xtl::span(entities.data(), entities.size()));
+           })
       .def_property_readonly("comm", [](dolfinx::mesh::Mesh& self)
                              { return MPICommWrapper(self.comm()); })
       .def_property_readonly("id", &dolfinx::mesh::Mesh::id)
