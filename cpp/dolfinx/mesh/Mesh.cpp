@@ -230,7 +230,7 @@ Mesh::create_submesh(int dim, const xtl::span<const std::int32_t>& entities)
 
   // Get the entities in the submesh that are owned by this process
   auto entity_index_map = _topology.index_map(dim);
-  std::vector<std::int32_t> submesh_owned_entities; // Local numbering
+  std::vector<std::int32_t> submesh_owned_entities;
   for (auto e : entities)
   {
     if (e < entity_index_map->size_local())
@@ -256,9 +256,14 @@ Mesh::create_submesh(int dim, const xtl::span<const std::int32_t>& entities)
       + submesh_vertex_index_map->num_ghosts());
 
   // Submesh entity to vertex connectivity
+  const CellType entity_type
+      = mesh::cell_entity_type(topology().cell_type(), dim, 0);
+  const int num_vertices_per_entity = mesh::cell_num_entities(entity_type, 0);
   auto e_to_v = _topology.connectivity(dim, 0);
   std::vector<std::int32_t> submesh_e_to_v_vec;
+  submesh_e_to_v_vec.reserve(entities.size() * num_vertices_per_entity);
   std::vector<std::int32_t> submesh_e_to_v_offsets(1, 0);
+  submesh_e_to_v_offsets.reserve(entities.size() + 1);
   for (std::int32_t e : entities)
   {
     xtl::span<const std::int32_t> vertices = e_to_v->links(e);
@@ -277,8 +282,6 @@ Mesh::create_submesh(int dim, const xtl::span<const std::int32_t>& entities)
       submesh_e_to_v_vec, submesh_e_to_v_offsets);
 
   // Create submesh topology
-  const CellType entity_type
-      = mesh::cell_entity_type(_topology.cell_type(), dim, 0);
   mesh::Topology submesh_topology(comm(), entity_type);
   submesh_topology.set_index_map(0, submesh_vertex_index_map);
   submesh_topology.set_index_map(dim, submesh_entity_index_map);
