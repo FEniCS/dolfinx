@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "Constant.h"
 #include "CoordinateElement.h"
 #include "DofMap.h"
 #include "ElementDofLayout.h"

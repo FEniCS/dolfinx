@@ -287,10 +287,8 @@ def test_assembly_solve_block_nl():
     u_bc0.interpolate(bc_val_0)
     u_bc1 = Function(V1)
     u_bc1.interpolate(bc_val_1)
-
     bdofs0 = locate_dofs_topological(V0, facetdim, bndry_facets)
     bdofs1 = locate_dofs_topological(V1, facetdim, bndry_facets)
-
     bcs = [DirichletBC(u_bc0, bdofs0), DirichletBC(u_bc1, bdofs1)]
 
     # Block and Nest variational problem
@@ -396,10 +394,8 @@ def test_assembly_solve_block_nl():
         u0_bc.interpolate(bc_val_0)
         u1_bc = Function(V1)
         u1_bc.interpolate(bc_val_1)
-
         bdofsW0_V0 = locate_dofs_topological((W.sub(0), V0), facetdim, bndry_facets)
         bdofsW1_V1 = locate_dofs_topological((W.sub(1), V1), facetdim, bndry_facets)
-
         bcs = [DirichletBC(u0_bc, bdofsW0_V0, W.sub(0)), DirichletBC(u1_bc, bdofsW1_V1, W.sub(1))]
 
         Jmat = create_matrix(J)

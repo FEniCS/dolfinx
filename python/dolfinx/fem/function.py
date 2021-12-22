@@ -48,20 +48,21 @@ class Constant(ufl.Constant):
 
     @property
     def value(self):
-        """Returns value of the constant."""
-        return self._cpp_object.value()
+        """The value of the constant"""
+        return self._cpp_object.value
 
     @value.setter
     def value(self, v):
-        np.copyto(self._cpp_object.value(), np.asarray(v))
+        np.copyto(self._cpp_object.value, np.asarray(v))
+
+    @property
+    def dtype(self):
+        return self.value.dtype
 
 
 class Expression:
-    def __init__(self,
-                 ufl_expression: ufl.core.expr.Expr,
-                 x: np.ndarray,
-                 form_compiler_parameters: dict = {},
-                 jit_parameters: dict = {},
+    def __init__(self, ufl_expression: ufl.core.expr.Expr, x: np.ndarray,
+                 form_compiler_parameters: dict = {}, jit_parameters: dict = {},
                  dtype=PETSc.ScalarType):
         """Create DOLFINx Expression.
 
@@ -177,38 +178,38 @@ class Expression:
 
     @property
     def ufl_expression(self):
-        """Return the original UFL Expression"""
+        """Original UFL Expression"""
         return self._ufl_expression
 
     @property
     def x(self):
-        """Return the evaluation points on the reference cell"""
+        """Evaluation points on the reference cell"""
         return self._cpp_object.x
 
     @property
     def num_points(self):
-        """Return the number of evaluation points on the reference cell."""
+        """Number of evaluation points on the reference cell."""
         return self._cpp_object.num_points
 
     @property
     def value_size(self):
-        """Return the value size of the expression"""
+        """Value size of the expression"""
         return self._cpp_object.value_size
 
     @property
     def ufc_expression(self):
-        """Return the compiled ufc_expression object"""
+        """The compiled ufc_expression object"""
         return self._ufc_expression
 
     @property
     def code(self):
-        """Return C code strings"""
+        """C code strings"""
         return self._code
 
 
 class Function(ufl.Coefficient):
-    """A finite element function that is represented by a function
-    space (domain, element and dofmap) and a vector holding the
+    """A finite element function that is represented by a function space
+    (domain, element and dofmap) and a vector holding the
     degrees-of-freedom
 
     """
@@ -252,7 +253,7 @@ class Function(ufl.Coefficient):
 
     @property
     def function_space(self) -> "FunctionSpace":
-        """Return the FunctionSpace"""
+        """The FunctionSpace that the Function is defined on"""
         return self._V
 
     def ufl_evaluate(self, x, component, derivatives):
@@ -354,15 +355,19 @@ class Function(ufl.Coefficient):
 
     @property
     def vector(self):
-        """Return a PETSc vector holding Function degrees-of-freedom."""
+        """PETSc vector holding the degrees-of-freedom."""
         if self._petsc_x is None:
             self._petsc_x = _cpp.la.petsc.create_vector_wrap(self.x)
         return self._petsc_x
 
     @property
     def x(self):
-        """Return the vector holding Function degrees-of-freedom."""
+        """Vector holding the degrees-of-freedom."""
         return self._cpp_object.x
+
+    @property
+    def dtype(self):
+        return self._cpp_object.x.array.dtype
 
     @property
     def name(self) -> str:
@@ -375,11 +380,11 @@ class Function(ufl.Coefficient):
 
     @property
     def id(self) -> int:
-        """Return object id index."""
+        """Pbject id index."""
         return self._cpp_object.id
 
     def __str__(self):
-        """Return a pretty print representation of it self."""
+        """Pretty print representation of it self."""
         return self.name
 
     def sub(self, i: int):
@@ -477,11 +482,11 @@ class FunctionSpace(ufl.FunctionSpace):
         return FunctionSpace(None, self.ufl_element(), Vcpp)
 
     def dolfin_element(self):
-        """Return the DOLFINx element."""
+        """DOLFINx element."""
         return self._cpp_object.element
 
     def num_sub_spaces(self) -> int:
-        """Return the number of sub spaces."""
+        """Number of sub spaces."""
         return self.dolfin_element().num_sub_elements()
 
     def sub(self, i: int) -> "FunctionSpace":
@@ -524,12 +529,12 @@ class FunctionSpace(ufl.FunctionSpace):
         return self._cpp_object.mesh.ufl_cell()
 
     def ufl_function_space(self) -> ufl.FunctionSpace:
-        """Return the UFL function space"""
+        """UFL function space"""
         return self
 
     @property
     def id(self) -> int:
-        """The unique identifier"""
+        """Unique identifier"""
         return self._cpp_object.id
 
     @property
@@ -538,7 +543,7 @@ class FunctionSpace(ufl.FunctionSpace):
 
     @property
     def dofmap(self) -> "dofmap.DofMap":
-        """Return the degree-of-freedom map associated with the function space."""
+        """Degree-of-freedom map associated with the function space."""
         return dofmap.DofMap(self._cpp_object.dofmap)
 
     @property
