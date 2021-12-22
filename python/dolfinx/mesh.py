@@ -56,7 +56,6 @@ class Mesh(_cpp.mesh.Mesh):
 
     def create_submesh(self, dim, entities):
         submesh, submesh_to_mesh_vertex_map = self.create_submesh_cpp(dim, entities)
-        # FIXME This is essentially a copy of the above ufl_cell method
         submesh_ufl_cell = ufl.Cell(submesh.topology.cell_name(),
                                     geometric_dimension=submesh.geometry.dim)
         # FIXME Don't hard code degree (and maybe Lagrange?)
