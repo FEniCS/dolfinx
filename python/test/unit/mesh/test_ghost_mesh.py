@@ -9,7 +9,7 @@ import pytest
 
 from dolfinx.mesh import (CellType, GhostMode, compute_midpoints, create_unit_cube,
                           create_unit_interval, create_unit_square,
-                          compute_interface_facets, update_ghosts)
+                          partition_boundary_facet_markers, update_ghosts)
 from dolfinx.graph import create_adjacencylist
 from mpi4py import MPI
 
@@ -117,7 +117,7 @@ def test_ghost_update(cell_type):
     mesh.topology.create_connectivity(tdim - 1, tdim)
 
     # If ghost_mode==shared_facet all interface facets are ghosts
-    facets = compute_interface_facets(mesh.topology)
+    facets = partition_boundary_facet_markers(mesh.topology)
     facet_map = mesh.topology.index_map(tdim - 1)
     num_facets = facet_map.size_local
     interface_facets = numpy.where(facets)[0]
@@ -155,5 +155,5 @@ def test_ghost_update(cell_type):
 
     # No interface facets for maximal overlap
     mesh2.topology.create_connectivity(tdim - 1, tdim)
-    facets = compute_interface_facets(mesh2.topology)
+    facets = partition_boundary_facet_markers(mesh2.topology)
     assert not numpy.any(facets)

@@ -598,7 +598,7 @@ mesh::Mesh mesh::update_ghosts(const mesh::Mesh& mesh,
   std::int32_t num_ghosts = cell_map->num_ghosts();
 
   // Get geometry information
-  const mesh::Geometry& geometry = mesh.geometry();
+  const Geometry& geometry = mesh.geometry();
   int gdim = geometry.dim();
   xtl::span<const double> coord = geometry.x();
 
