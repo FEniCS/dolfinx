@@ -312,7 +312,12 @@ Mesh::create_submesh(int dim, const xtl::span<const std::int32_t>& entities)
   auto submesh_x_dof_index_map = std::make_shared<common::IndexMap>(
       std::move(submesh_x_dof_index_map_pair.first));
 
-  std::vector<int32_t> submesh_to_mesh_x_dof_map = submesh_owned_x_dofs;
+  std::vector<int32_t> submesh_to_mesh_x_dof_map;
+  submesh_to_mesh_x_dof_map.reserve(submesh_x_dof_index_map->size_local() +
+                                    submesh_x_dof_index_map->num_ghosts());
+  submesh_to_mesh_x_dof_map.insert(submesh_to_mesh_x_dof_map.begin(),
+                                   submesh_owned_x_dofs.begin(),
+                                   submesh_owned_x_dofs.end());
   for (auto x_dof_index : submesh_x_dof_index_map_pair.second)
   {
     int32_t x_dof = geometry_dof_index_map->size_local() + x_dof_index;
