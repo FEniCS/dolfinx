@@ -181,12 +181,6 @@ Mesh mesh::create_mesh(MPI_Comm comm,
 std::pair<Mesh, std::vector<std::int32_t>>
 Mesh::create_submesh(int dim, const xtl::span<const std::int32_t>& entities)
 {
-  std::stringstream ss;
-  int rank = dolfinx::MPI::rank(comm());
-  ss << "Rank " << rank << "\n";
-
-  // TODO Specify sizes of vectors
-
   // Submesh topology
   // Get the verticies in the submesh
   std::vector<std::int32_t> submesh_vertices
