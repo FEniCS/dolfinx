@@ -23,10 +23,10 @@
 
 #include "graphbuild.h"
 
+#include <algorithm>
 #include <iostream>
 #include <sstream>
 #include <string>
-#include <algorithm>
 
 using namespace dolfinx;
 using namespace dolfinx::mesh;
@@ -190,8 +190,7 @@ Mesh::create_submesh(int dim, const xtl::span<const std::int32_t>& entities)
   // vertices in the submesh that need to be included.
   auto vertex_index_map = _topology.index_map(0);
   std::vector<int32_t> submesh_owned_vertices
-      = dolfinx::common::get_owned_indices(comm(), submesh_vertices,
-                                           vertex_index_map);
+      = dolfinx::common::get_owned_indices(submesh_vertices, vertex_index_map);
 
   // Create submesh vertex index map
   std::pair<common::IndexMap, std::vector<int32_t>>
@@ -298,7 +297,7 @@ Mesh::create_submesh(int dim, const xtl::span<const std::int32_t>& entities)
   // For some processes, entities may be empty, but they might still own
   // geometry dofs in the submesh that need to be included.
   auto submesh_owned_x_dofs = dolfinx::common::get_owned_indices(
-      comm(), submesh_x_dofs, geometry_dof_index_map);
+      submesh_x_dofs, geometry_dof_index_map);
 
   // Create submesh geometry index map
   std::pair<common::IndexMap, std::vector<int32_t>> submesh_x_dof_index_map_pair
@@ -307,8 +306,8 @@ Mesh::create_submesh(int dim, const xtl::span<const std::int32_t>& entities)
       std::move(submesh_x_dof_index_map_pair.first));
 
   std::vector<int32_t> submesh_to_mesh_x_dof_map;
-  submesh_to_mesh_x_dof_map.reserve(submesh_x_dof_index_map->size_local() +
-                                    submesh_x_dof_index_map->num_ghosts());
+  submesh_to_mesh_x_dof_map.reserve(submesh_x_dof_index_map->size_local()
+                                    + submesh_x_dof_index_map->num_ghosts());
   submesh_to_mesh_x_dof_map.insert(submesh_to_mesh_x_dof_map.begin(),
                                    submesh_owned_x_dofs.begin(),
                                    submesh_owned_x_dofs.end());

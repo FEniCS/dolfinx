@@ -103,6 +103,6 @@ std::int64_t hash_global(const MPI_Comm comm, const T& x)
 // the list contains ghost indices, the ghosts are communicated
 // to their owners.
 std::vector<int32_t> get_owned_indices(
-    MPI_Comm comm, const xtl::span<const std::int32_t>& indices,
+    const xtl::span<const std::int32_t>& indices,
     std::shared_ptr<const dolfinx::common::IndexMap> index_map);
 } // namespace dolfinx::common
