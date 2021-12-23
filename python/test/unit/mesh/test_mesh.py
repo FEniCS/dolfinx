@@ -473,40 +473,38 @@ def test_submesh_boundary(d, n, boundary, ghost_mode):
 
 
 def submesh_topology_test(mesh, submesh, vertex_map, entity_dim, entities):
-    # If we have a cell submesh, check that creating facets / creating connectivity
-    # doesn't cause a segmentation fault
+    # Check that creating facets / creating connectivity doesn't cause
+    # a segmentation fault
     mesh_tdim = mesh.topology.dim
     if entity_dim == mesh_tdim:
         submesh.topology.create_entities(mesh_tdim - 1)
         submesh.topology.create_connectivity(mesh_tdim - 1, 0)
 
-    # Not all processes will own or ghost entities
+    # Some processes might not own or ghost entities
     if len(entities) > 0:
-        # The vertex map that mesh.sub uses is a sorted list of unique vertices, so
-        # recreate this here. TODO Could return this from mesh.sub or save as a property
-        # etc.
         mesh.topology.create_connectivity(entity_dim, 0)
         mesh_e_to_v = mesh.topology.connectivity(entity_dim, 0)
-
         submesh.topology.create_connectivity(entity_dim, 0)
         submesh_e_to_v = submesh.topology.connectivity(entity_dim, 0)
         for submesh_entity in range(len(entities)):
             submesh_entity_vertices = submesh_e_to_v.links(submesh_entity)
+            # The submesh is created such that entities is the map from the
+            # submesh entity to the mesh entity
             mesh_entity = entities[submesh_entity]
             mesh_entity_vertices = mesh_e_to_v.links(mesh_entity)
-
             for i in range(len(submesh_entity_vertices)):
-                assert(vertex_map[submesh_entity_vertices[i]] == mesh_entity_vertices[i])
+                assert(vertex_map[submesh_entity_vertices[i]]
+                       == mesh_entity_vertices[i])
     else:
         assert(submesh.topology.index_map(entity_dim).size_local == 0)
 
 
 def submesh_geometry_test(mesh, submesh, geom_map, entity_dim, entities):
     submesh_geom_index_map = submesh.geometry.index_map()
-    assert(submesh_geom_index_map.size_local +
-           submesh_geom_index_map.num_ghosts == submesh.geometry.x.shape[0])
+    assert(submesh_geom_index_map.size_local
+           + submesh_geom_index_map.num_ghosts == submesh.geometry.x.shape[0])
 
-    # In a submesh, some processes may not have any entities
+    # Some processes might not own or ghost entities
     if len(entities) > 0:
         assert(mesh.geometry.dim == submesh.geometry.dim)
 
