@@ -380,12 +380,11 @@ void declare_objects(py::module& m, const std::string& type)
           [](dolfinx::fem::Function<T>& self,
              const dolfinx::fem::Expression<T>& expr,
              const py::array_t<std::int32_t, py::array::c_style>& cells)
-          { self.interpolate(expr, xtl::span(cells.data(), cells.size())); },
-          "Interpolate using an Expression over a set of cells")
+          { self.interpolate(expr, cells); },
+          "Interpolate using an Expression on a set of cells")
       .def_property_readonly(
           "x", py::overload_cast<>(&dolfinx::fem::Function<T>::x),
-          "Return the vector associated with the finite element "
-          "Function")
+          "Return the vector associated with the finite element Function")
       .def(
           "eval",
           [](const dolfinx::fem::Function<T>& self,

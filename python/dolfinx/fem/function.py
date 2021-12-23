@@ -329,10 +329,10 @@ class Function(ufl.Coefficient):
                 num_cells_local = mesh.topology.index_map(mesh.topology.dim).size_local
                 cells = np.arange(num_cells_local, dtype=np.int32)
 
-            # Interpolate expression for the set of cells
+            # Interpolate Expression on set of cells
             self._cpp_object.interpolate(expr._cpp_object, cells)
 
-        # Ignore cells as input if expression.
+        # Ignore cells as input if Expression
         # FIXME: Should all interpolate functions support input cells?
         if not isinstance(u, Expression):
             if cells is not None:
