@@ -137,9 +137,6 @@ public:
   /// Compute entity permutations and reflections
   void create_entity_permutations();
 
-  /// Compute cell permutations and reflections
-  void create_full_cell_permutations();
-
   /// Mesh MPI communicator
   /// @return The communicator on which the topology is distributed
   MPI_Comm comm() const;
@@ -162,9 +159,6 @@ private:
   // [cell0_0, cell0_1, ,cell0_2, cell1_0, cell1_1, ,cell1_2, ...,
   // celln_0, celln_1, ,celln_2,]
   std::vector<std::uint8_t> _facet_permutations;
-
-  // @todo: Get Matthew to document
-  std::vector<std::uint8_t> _full_cell_permutations;
 
   // Cell permutation info. See the documentation for
   // get_cell_permutation_info for documentation of how this is encoded.
