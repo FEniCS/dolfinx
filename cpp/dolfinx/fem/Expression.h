@@ -28,7 +28,6 @@ class Constant;
 /// at quadrature points in all cells. This evaluated gradient can then
 /// be used as input in to a non-FEniCS function that calculates a
 /// material constitutive model.
-
 template <typename T>
 class Expression
 {
@@ -38,8 +37,7 @@ public:
   /// @param[in] coefficients Coefficients in the Expression
   /// @param[in] constants Constants in the Expression
   /// @param[in] mesh
-  /// @param[in] X points on reference cell, number of points rows and
-  /// tdim cols
+  /// @param[in] X points on reference cell, shape=(num_points, tdim)
   /// @param[in] fn function for tabulating expression
   /// @param[in] value_size size of expression evaluated at single point
   Expression(
@@ -74,7 +72,7 @@ public:
   std::vector<int> coefficient_offsets() const
   {
     std::vector<int> n{0};
-    for (const auto& c : _coefficients)
+    for (auto& c : _coefficients)
     {
       if (!c)
         throw std::runtime_error("Not all form coefficients have been set.");
@@ -84,12 +82,12 @@ public:
   }
 
   /// Evaluate the expression on cells
-  /// @param[in] active_cells Cells on which to evaluate the Expression
+  /// @param[in] cells Cells on which to evaluate the Expression
   /// @param[out] values A 2D array to store the result. Caller
   /// responsible for correct sizing which should be (num_cells,
   /// num_points * value_size columns).
   template <typename U>
-  void eval(const xtl::span<const std::int32_t>& active_cells, U& values) const
+  void eval(const xtl::span<const std::int32_t>& cells, U& values) const
   {
     static_assert(std::is_same<T, typename U::value_type>::value,
                   "Expression and array types must be the same");
@@ -98,7 +96,7 @@ public:
     assert(_mesh);
 
     // Prepare coefficients and constants
-    const auto [coeffs, cstride] = pack_coefficients(*this, active_cells);
+    const auto [coeffs, cstride] = pack_coefficients(*this, cells);
     const std::vector<T> constant_data = pack_constants(*this);
     const auto& fn = this->get_tabulate_expression();
 
@@ -115,15 +113,15 @@ public:
 
     // Iterate over cells and 'assemble' into values
     std::vector<T> values_e(this->num_points() * this->value_size(), 0);
-    for (std::size_t c = 0; c < active_cells.size(); ++c)
+    for (std::size_t c = 0; c < cells.size(); ++c)
     {
-      const std::int32_t cell = active_cells[c];
+      const std::int32_t cell = cells[c];
 
       auto x_dofs = x_dofmap.links(cell);
       for (std::size_t i = 0; i < x_dofs.size(); ++i)
       {
         common::impl::copy_N<3>(std::next(x_g.begin(), 3 * x_dofs[i]),
-                             std::next(coordinate_dofs.begin(), 3 * i));
+                                std::next(coordinate_dofs.begin(), 3 * i));
       }
 
       const T* coeff_cell = coeffs.data() + c * cstride;
@@ -137,7 +135,7 @@ public:
   }
 
   /// Get function for tabulate_expression.
-  /// @param[out] fn Function to tabulate expression.
+  /// @return Function to tabulate expression.
   const std::function<void(T*, const T*, const T*, const double*)>&
   get_tabulate_expression() const
   {
@@ -146,8 +144,8 @@ public:
 
   /// Access constants
   /// @return Vector of attached constants with their names. Names are
-  ///   used to set constants in user's c++ code. Index in the vector is
-  ///   the position of the constant in the original (nonsimplified) form.
+  /// used to set constants in user's c++ code. Index in the vector is
+  /// the position of the constant in the original (nonsimplified) form.
   const std::vector<std::shared_ptr<const fem::Constant<T>>>& constants() const
   {
     return _constants;
@@ -169,7 +167,7 @@ public:
   /// @return number of points
   std::size_t num_points() const { return _x.shape(0); }
 
-  /// Scalar type (T).
+  /// Scalar type (T)
   using scalar_type = T;
 
 private:
