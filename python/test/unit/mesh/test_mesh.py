@@ -427,8 +427,6 @@ def boundary_2(x):
 
 
 # TODO Test that submesh of full mesh is a copy of the mesh
-# TODO Add issue for entities_to_geometry as it segfaults when a process
-# has a vertex but no cells, since it works by finding the cell.
 @pytest.mark.parametrize("d", [2, 3])
 @pytest.mark.parametrize("n", [2, 6])
 @pytest.mark.parametrize("codim", [0, 1])
