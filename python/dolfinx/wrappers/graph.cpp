@@ -103,7 +103,7 @@ void graph(py::module& m)
           MPICommWrapper, int,
           const dolfinx::graph::AdjacencyList<std::int64_t>&, std::int32_t,
           bool)>;
-#ifdef HAS_SCOTCH
+#ifdef HAS_PTSCOTCH
   m.def(
       "partitioner",
       []() -> partition_fn
