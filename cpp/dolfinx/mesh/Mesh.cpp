@@ -18,15 +18,9 @@
 #include <dolfinx/graph/partition.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <memory>
-#include <xtensor/xio.hpp>
 #include <xtensor/xsort.hpp>
 
 #include "graphbuild.h"
-
-#include <algorithm>
-#include <iostream>
-#include <sstream>
-#include <string>
 
 using namespace dolfinx;
 using namespace dolfinx::mesh;

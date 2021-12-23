@@ -10,7 +10,6 @@
 #include "xdmf_read.h"
 #include "xdmf_utils.h"
 #include <dolfinx/fem/ElementDofLayout.h>
-#include <xtensor/xio.hpp>
 
 using namespace dolfinx;
 using namespace dolfinx::io;

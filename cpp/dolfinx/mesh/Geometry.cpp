@@ -13,8 +13,6 @@
 #include <dolfinx/graph/partition.h>
 #include <xtensor/xadapt.hpp>
 
-#include <xtensor/xio.hpp>
-
 using namespace dolfinx;
 using namespace dolfinx::mesh;
 

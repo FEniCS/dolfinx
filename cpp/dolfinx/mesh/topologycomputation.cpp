@@ -451,7 +451,6 @@ compute_entities_by_key_matching(
   
   std::vector<std::int32_t> entity_index(entity_list.shape(0), 0);
   std::int32_t entity_count = 0;
-  // std::int32_t last = sort_order[0];
   std::int32_t last = (sort_order.size() > 0) ? sort_order[0] : 0;
   for (std::size_t i = 1; i < sort_order.size(); ++i)
   {

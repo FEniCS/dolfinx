@@ -96,14 +96,11 @@ public:
     // Extract _mesh from fem::FunctionSpace, and check they are the same
     if (!_mesh and !function_spaces.empty())
       _mesh = function_spaces[0]->mesh();
-    // HACK Disabled this check to allow facet spaces to be created. TODO Add new
-    // check to make sure the meshes are related in some way i.e. same mesh or one
-    // is a submesh etc.
-    // for (const auto& V : function_spaces)
-    // {
-    //   // if (_mesh != V->mesh())
-    //   //   throw std::runtime_error("Incompatible mesh");
-    // }
+    for (const auto& V : function_spaces)
+    {
+      if (_mesh != V->mesh())
+        throw std::runtime_error("Incompatible mesh");
+    }
     if (!_mesh)
       throw std::runtime_error("No mesh could be associated with the Form.");
 
