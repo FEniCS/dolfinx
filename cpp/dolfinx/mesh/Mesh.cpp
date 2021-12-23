@@ -186,9 +186,8 @@ Mesh::create_submesh(int dim, const xtl::span<const std::int32_t>& entities)
   std::vector<std::int32_t> submesh_vertices
       = mesh::compute_incident_entities(*this, entities, dim, 0);
 
-  // For some processes, entities may be empty, but they might still own
-  // vertices in the submesh that need to be included.
-  auto vertex_index_map = _topology.index_map(0);
+  // Get the vertices in the submesh owned by this process
+  auto vertex_index_map = topology().index_map(0);
   std::vector<int32_t> submesh_owned_vertices
       = dolfinx::common::get_owned_indices(submesh_vertices, vertex_index_map);
 
@@ -199,26 +198,22 @@ Mesh::create_submesh(int dim, const xtl::span<const std::int32_t>& entities)
   auto submesh_vertex_index_map = std::make_shared<common::IndexMap>(
       std::move(submesh_vertex_index_map_pair.first));
 
-  // Create a map from the vertices (local) in the submesh to the vertices
-  // (local) in the mesh (this). NOTE this is not the same as `submesh_vertices`
-  // above, since on a process, some ghost entities not present in the submesh
-  // may have a vertex in the submesh, which would not be returned by
-  // mesh::compute_incident_entities but is present in the submesh vertex index
-  // map.
-  // Add owned vertices to the map
+  // Create a map from the (local) vertices in the submesh to the (local)
+  // vertices in the mesh (this).
   std::vector<int32_t> submesh_to_mesh_vertex_map;
   submesh_to_mesh_vertex_map.reserve(submesh_vertex_index_map->size_local()
                                      + submesh_vertex_index_map->num_ghosts());
+  // Add owned vertices to the map
   submesh_to_mesh_vertex_map.insert(submesh_to_mesh_vertex_map.begin(),
                                     submesh_owned_vertices.begin(),
                                     submesh_owned_vertices.end());
   // Add ghost vertices to the map
   // TODO Use std::transform?
-  for (auto v_i : submesh_vertex_index_map_pair.second)
+  for (std::int32_t vertex_index : submesh_vertex_index_map_pair.second)
   {
     // Get the local index of the ghost and append
-    int32_t v = vertex_index_map->size_local() + v_i;
-    submesh_to_mesh_vertex_map.push_back(v);
+    int32_t vertex = vertex_index_map->size_local() + vertex_index;
+    submesh_to_mesh_vertex_map.push_back(vertex);
   }
 
   // Get the entities in the submesh that are owned by this process
@@ -233,10 +228,9 @@ Mesh::create_submesh(int dim, const xtl::span<const std::int32_t>& entities)
   }
 
   // Create submesh entity index map
-  // NOTE Here it is assumed that every ghost entity in entities corresponds
-  // to an owned entity in entities on another process. This means that
-  // the ghost entities don't need to be communicated back to their owners,
-  // although it is simple to enable this functionality.
+  // TODO Call dolfinx::common::get_owned_indices here? Do we want to support
+  // `entities` possibly haveing a ghost on one process that is not in `entities`
+  // on the owning process?
   std::pair<common::IndexMap, std::vector<int32_t>>
       submesh_entity_index_map_pair
       = entity_index_map->create_submap(submesh_owned_entities);

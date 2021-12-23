@@ -101,11 +101,12 @@ public:
   /// @return The communicator on which the mesh is distributed
   MPI_Comm comm() const;
 
-  /// Create submesh of mesh entities
+  /// Create a submesh consisting of a subset of entities in the
+  /// mesh (this)
   /// @param[in] dim Entity dimension
-  /// @param[in] entities The entities
+  /// @param[in] entities Vector of entities in the mesh
   /// @return The submesh and a map from the (local) submesh vertices
-  /// to the (local) mesh (this) vertices
+  /// to the (local) mesh vertices
   std::pair<Mesh, std::vector<std::int32_t>>
   create_submesh(int dim, const xtl::span<const std::int32_t>& entities);
 
