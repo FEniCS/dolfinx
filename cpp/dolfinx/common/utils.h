@@ -6,14 +6,13 @@
 
 #pragma once
 
+#include "IndexMap.h"
 #include <algorithm>
 #include <boost/functional/hash.hpp>
 #include <dolfinx/common/MPI.h>
 #include <mpi.h>
 #include <utility>
 #include <vector>
-#include "IndexMap.h"
-
 
 namespace dolfinx::common
 {
@@ -98,14 +97,13 @@ std::int64_t hash_global(const MPI_Comm comm, const T& x)
   return global_hash;
 }
 
-/// Given a list of indices (local to process) and an index map,
-/// this function retuns the indices owned by the process. If
-/// the list contains ghost indices, the ghosts are communicated
-/// to their owners.
-/// @param[in] indices Array of indices
+/// Given a vector of indices (local to process) and an index map,
+/// this function retuns the indices owned by the process. Ghost
+/// indices are communicated to their owners.
+/// @param[in] indices Vector of indices
 /// @param[in] index_map The index map
-/// @return Array of indices owned by the process
-std::vector<int32_t> get_owned_indices(
-    const xtl::span<const std::int32_t>& indices,
-    std::shared_ptr<const dolfinx::common::IndexMap> index_map);
+/// @return Vector of indices owned by the process
+std::vector<int32_t>
+get_owned_indices(const xtl::span<const std::int32_t>& indices,
+                  std::shared_ptr<const dolfinx::common::IndexMap> index_map);
 } // namespace dolfinx::common
