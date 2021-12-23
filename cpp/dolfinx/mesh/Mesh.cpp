@@ -178,7 +178,7 @@ Mesh mesh::create_mesh(MPI_Comm comm,
               mesh::create_geometry(comm, topology, element, cell_nodes1, x));
 }
 //-----------------------------------------------------------------------------
-std::pair<Mesh, std::vector<std::int32_t>>
+std::tuple<Mesh, std::vector<std::int32_t>, std::vector<std::int32_t>>
 Mesh::create_submesh(int dim, const xtl::span<const std::int32_t>& entities)
 {
   // Submesh topology
@@ -369,10 +369,10 @@ Mesh::create_submesh(int dim, const xtl::span<const std::int32_t>& entities)
       submesh_x_dof_index_map, std::move(submesh_x_dofmap), submesh_coord_ele,
       std::move(submesh_x), geometry().dim(), std::move(submesh_igi));
 
-  // TODO Return submesh_to_mesh_x_dof_map too?
   return {
       Mesh(comm(), std::move(submesh_topology), std::move(submesh_geometry)),
-      std::move(submesh_to_mesh_vertex_map)};
+      std::move(submesh_to_mesh_vertex_map),
+      std::move(submesh_to_mesh_x_dof_map)};
 }
 //-----------------------------------------------------------------------------
 Topology& Mesh::topology() { return _topology; }

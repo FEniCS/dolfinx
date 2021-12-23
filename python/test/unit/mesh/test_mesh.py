@@ -446,9 +446,9 @@ def test_submesh(d, n, codim, marker, ghost_mode):
 
     edim = mesh.topology.dim - codim
     entities = locate_entities(mesh, edim, marker)
-    submesh, submesh_to_mesh_vertex_map = mesh.create_submesh(edim, entities)
-    submesh_topology_test(mesh, submesh, submesh_to_mesh_vertex_map, edim, entities)
-    submesh_geometry_test(mesh, submesh, edim, entities)
+    submesh, vertex_map, geom_map = mesh.create_submesh(edim, entities)
+    submesh_topology_test(mesh, submesh, vertex_map, edim, entities)
+    submesh_geometry_test(mesh, submesh, geom_map, edim, entities)
 
 
 @pytest.mark.parametrize("d", [2, 3])
@@ -467,12 +467,12 @@ def test_submesh_boundary(d, n, boundary, ghost_mode):
                                 ghost_mode=ghost_mode)
     edim = mesh.topology.dim - 1
     entities = locate_entities_boundary(mesh, edim, boundary)
-    submesh, submesh_to_mesh_vertex_map = mesh.create_submesh(edim, entities)
-    submesh_topology_test(mesh, submesh, submesh_to_mesh_vertex_map, edim, entities)
-    submesh_geometry_test(mesh, submesh, edim, entities)
+    submesh, vertex_map, geom_map = mesh.create_submesh(edim, entities)
+    submesh_topology_test(mesh, submesh, vertex_map, edim, entities)
+    submesh_geometry_test(mesh, submesh, geom_map, edim, entities)
 
 
-def submesh_topology_test(mesh, submesh, submesh_to_mesh_vertex_map, entity_dim, entities):
+def submesh_topology_test(mesh, submesh, vertex_map, entity_dim, entities):
     # If we have a cell submesh, check that creating facets / creating connectivity
     # doesn't cause a segmentation fault
     mesh_tdim = mesh.topology.dim
@@ -496,12 +496,14 @@ def submesh_topology_test(mesh, submesh, submesh_to_mesh_vertex_map, entity_dim,
             mesh_entity_vertices = mesh_e_to_v.links(mesh_entity)
 
             for i in range(len(submesh_entity_vertices)):
-                assert(submesh_to_mesh_vertex_map[submesh_entity_vertices[i]] == mesh_entity_vertices[i])
+                assert(vertex_map[submesh_entity_vertices[i]] == mesh_entity_vertices[i])
     else:
         assert(submesh.topology.index_map(entity_dim).size_local == 0)
 
 
-def submesh_geometry_test(mesh, submesh, entity_dim, entities):
+def submesh_geometry_test(mesh, submesh, geom_map, entity_dim, entities):
+    print("Hi")
+    
     submesh_geom_index_map = submesh.geometry.index_map()
     assert(submesh_geom_index_map.size_local + submesh_geom_index_map.num_ghosts == submesh.geometry.x.shape[0])
 

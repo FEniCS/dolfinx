@@ -105,9 +105,10 @@ public:
   /// mesh (this)
   /// @param[in] dim Entity dimension
   /// @param[in] entities Vector of entities in the mesh
-  /// @return The submesh and a map from the (local) submesh vertices
-  /// to the (local) mesh vertices
-  std::pair<Mesh, std::vector<std::int32_t>>
+  /// @return The submesh, a map from the (local) submesh vertices
+  /// to the (local) mesh vertices, and a map from the (local)
+  /// submesh geometry dofs to the (local) mesh geometry dofs
+  std::tuple<Mesh, std::vector<std::int32_t>, std::vector<std::int32_t>>
   create_submesh(int dim, const xtl::span<const std::int32_t>& entities);
 
   /// Name

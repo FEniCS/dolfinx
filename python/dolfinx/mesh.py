@@ -55,7 +55,7 @@ class Mesh(_cpp.mesh.Mesh):
         return self._ufl_domain
 
     def create_submesh(self, dim, entities):
-        submesh, submesh_to_mesh_vertex_map = self.create_submesh_cpp(dim, entities)
+        submesh, vertex_map, geom_map = self.create_submesh_cpp(dim, entities)
         submesh_ufl_cell = ufl.Cell(submesh.topology.cell_name(),
                                     geometric_dimension=submesh.geometry.dim)
         # FIXME Don't hard code degree (and maybe Lagrange?)
@@ -64,7 +64,7 @@ class Mesh(_cpp.mesh.Mesh):
                               cell=submesh_ufl_cell,
                               degree=1))
         return (Mesh.from_cpp(submesh, submesh_domain),
-                submesh_to_mesh_vertex_map)
+                vertex_map, geom_map)
 
 
 def locate_entities(mesh: Mesh, dim: int, marker: types.FunctionType) -> np.ndarray:
