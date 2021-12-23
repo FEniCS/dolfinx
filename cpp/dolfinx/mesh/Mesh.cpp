@@ -219,7 +219,7 @@ Mesh::create_submesh(int dim, const xtl::span<const std::int32_t>& entities)
   // Get the entities in the submesh that are owned by this process
   auto entity_index_map = _topology.index_map(dim);
   std::vector<std::int32_t> submesh_owned_entities;
-  for (auto e : entities)
+  for (std::int32_t e : entities)
   {
     if (e < entity_index_map->size_local())
     {
@@ -285,11 +285,9 @@ Mesh::create_submesh(int dim, const xtl::span<const std::int32_t>& entities)
   std::vector<int32_t> submesh_x_dofs(submesh_x_dofs_xt.begin(),
                                       submesh_x_dofs_xt.end());
 
-  std::shared_ptr<const dolfinx::common::IndexMap> geometry_dof_index_map
-      = this->geometry().index_map();
+  auto geometry_dof_index_map = this->geometry().index_map();
 
-  // For some processes, entities may be empty, but they might still own
-  // geometry dofs in the submesh that need to be included.
+  // Get the geometry dofs in the submesh owned by this process
   auto submesh_owned_x_dofs = dolfinx::common::get_owned_indices(
       submesh_x_dofs, geometry_dof_index_map);
 
@@ -299,6 +297,8 @@ Mesh::create_submesh(int dim, const xtl::span<const std::int32_t>& entities)
   auto submesh_x_dof_index_map = std::make_shared<common::IndexMap>(
       std::move(submesh_x_dof_index_map_pair.first));
 
+  // Create a map from the (local) geometry dofs in the submesh to the (local)
+  // geometry dofs in the mesh (this).
   std::vector<int32_t> submesh_to_mesh_x_dof_map;
   submesh_to_mesh_x_dof_map.reserve(submesh_x_dof_index_map->size_local()
                                     + submesh_x_dof_index_map->num_ghosts());
@@ -349,12 +349,12 @@ Mesh::create_submesh(int dim, const xtl::span<const std::int32_t>& entities)
   // Create submesh coordinate element
   CellType submesh_coord_cell
       = mesh::cell_entity_type(geometry().cmap().cell_shape(), dim, 0);
-  // FIXME Currently geometry degree is hardcoded to 1 as there is no way to
+  // FIXME Geometry degree is hardcoded to 1 as there is no way to
   // retrive this from the coordinate element
   auto submesh_coord_ele = fem::CoordinateElement(submesh_coord_cell, 1);
 
   // Submesh geometry input_global_indices
-  // TODO Check this. Not 100 % sure what igi does
+  // TODO Check this
   const std::vector<std::int64_t>& igi
       = this->geometry().input_global_indices();
   std::vector<std::int64_t> submesh_igi;
@@ -369,6 +369,7 @@ Mesh::create_submesh(int dim, const xtl::span<const std::int32_t>& entities)
       submesh_x_dof_index_map, std::move(submesh_x_dofmap), submesh_coord_ele,
       std::move(submesh_x), geometry().dim(), std::move(submesh_igi));
 
+  // TODO Return submesh_to_mesh_x_dof_map too?
   return {
       Mesh(comm(), std::move(submesh_topology), std::move(submesh_geometry)),
       std::move(submesh_to_mesh_vertex_map)};
