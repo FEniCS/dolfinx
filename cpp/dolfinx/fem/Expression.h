@@ -85,7 +85,8 @@ public:
   /// @param[in] cells Cells on which to evaluate the Expression
   /// @param[out] values A 2D array to store the result. Caller
   /// responsible for correct sizing which should be (num_cells,
-  /// num_points * value_size columns).
+  /// num_points, value_size), flattened (row-major) rp (num_cells,
+  /// num_points * value_size).
   template <typename U>
   void eval(const xtl::span<const std::int32_t>& cells, U& values) const
   {

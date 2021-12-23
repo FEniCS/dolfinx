@@ -376,7 +376,8 @@ interpolation_coords(const fem::FiniteElement& element, const mesh::Mesh& mesh,
 /// @param[in] f Evaluation of the function `f(x)` at the physical
 /// points `x` given by fem::interpolation_coords. The element used in
 /// fem::interpolation_coords should be the same element as associated
-/// with `u`.
+/// with `u`. The shape of `f` should be (value_size, num_points), or if
+/// value_size=1 the shape can be (num_points,).
 /// @param[in] cells Indices of the cells in the mesh on which to
 /// interpolate. Should be the same as the list used when calling
 /// fem::interpolation_coords.
