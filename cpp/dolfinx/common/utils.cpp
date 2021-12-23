@@ -10,8 +10,6 @@ std::vector<int32_t> dolfinx::common::get_owned_indices(
     const xtl::span<const std::int32_t>& indices,
     std::shared_ptr<const dolfinx::common::IndexMap> index_map)
 {
-  // TODO Specify size of vectors
-
   // Split indices into those owned by this process and those that
   // are ghosts. Note that `ghost_indices` contains the position
   // of the ghost in index_map->ghosts()
