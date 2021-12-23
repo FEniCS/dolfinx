@@ -654,11 +654,11 @@ void interpolate(Function<T>& u, const Function<T>& v)
 /// Interpolate from an Expression into a compatible Function on the
 /// same mesh
 /// @param[out] u The function to interpolate into
-/// @param[in] expr The expression to be interpolated. The evaluation points on
-/// the reference cell for the expression has to be the interpolation points of
-/// u.
-/// @param[in] cells List of cell indices (local to process) to
-/// interpolate on
+/// @param[in] expr The Expression to be interpolated. The Expression
+/// must have been created using the reference coordinates
+/// `FiniteElement::interpolation_points()` for the element associated
+/// with `u`.
+/// @param[in] cells List of cell indices to interpolate on
 template <typename T>
 void interpolate(Function<T>& u, const Expression<T>& expr,
                  const xtl::span<const std::int32_t>& cells)
