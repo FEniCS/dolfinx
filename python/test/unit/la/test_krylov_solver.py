@@ -93,16 +93,13 @@ def test_krylov_samg_solver_elasticity():
         # Define problem
         mesh = create_unit_square(MPI.COMM_WORLD, N, N)
         V = VectorFunctionSpace(mesh, 'Lagrange', 1)
-        bc0 = Function(V)
-        bc0.x.array[:] = 0.0
+        u = TrialFunction(V)
+        v = TestFunction(V)
 
         facetdim = mesh.topology.dim - 1
         bndry_facets = locate_entities_boundary(mesh, facetdim, lambda x: np.full(x.shape[1], True))
-
         bdofs = locate_dofs_topological(V.sub(0), V, facetdim, bndry_facets)
-        bc = DirichletBC(bc0, bdofs, V.sub(0))
-        u = TrialFunction(V)
-        v = TestFunction(V)
+        bc = DirichletBC(PETSc.ScalarType(0), bdofs, V.sub(0))
 
         # Forms
         a, L = inner(sigma(u), grad(v)) * dx, dot(ufl.as_vector((1.0, 1.0)), v) * dx
