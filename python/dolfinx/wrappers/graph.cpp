@@ -103,6 +103,7 @@ void graph(py::module& m)
           MPICommWrapper, int,
           const dolfinx::graph::AdjacencyList<std::int64_t>&, std::int32_t,
           bool)>;
+#ifdef HAS_SCOTCH
   m.def(
       "partitioner",
       []() -> partition_fn
@@ -117,7 +118,13 @@ void graph(py::module& m)
       },
       py::arg("imbalance") = 0.025, py::arg("seed") = 0,
       "SCOTCH graph partitioner");
+#endif
 #ifdef HAS_PARMETIS
+  m.def(
+      "partitioner",
+      []() -> partition_fn
+      { return create_partitioner_py(dolfinx::graph::parmetis::partitioner()); },
+      "Default graph partitioner");
   m.def(
       "partitioner_parmetis",
       [](double imbalance, std::array<int, 3> options) -> partition_fn
@@ -131,6 +138,11 @@ void graph(py::module& m)
 #endif
 #ifdef HAS_KAHIP
   m.def(
+      "partitioner",
+      []() -> partition_fn
+      { return create_partitioner_py(dolfinx::graph::kahip::partitioner()); },
+      "Default graph partitioner");
+  m.def(
       "partitioner_kahip",
       [](int mode = 1, int seed = 1, double imbalance = 0.03,
          bool suppress_output = true) -> partition_fn
@@ -138,7 +150,7 @@ void graph(py::module& m)
         return create_partitioner_py(dolfinx::graph::kahip::partitioner(
             mode, seed, imbalance, suppress_output));
       },
-      py::arg("mode") = 1.02, py::arg("seed") = 1, py::arg("imbalance") = 0.03,
+      py::arg("mode") = 1, py::arg("seed") = 1, py::arg("imbalance") = 0.03,
       py::arg("suppress_output") = true, "KaHIP graph partitioner");
 #endif
 
