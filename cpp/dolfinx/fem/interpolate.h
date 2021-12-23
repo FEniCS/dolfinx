@@ -653,7 +653,9 @@ void interpolate(Function<T>& u, const Function<T>& v)
 /// Interpolate from an Expression into a compatible Function on the
 /// same mesh
 /// @param[out] u The function to interpolate into
-/// @param[in] expr The expression to be interpolated
+/// @param[in] expr The expression to be interpolated. The evaluation points on
+/// the reference cell for the expression has to be the interpolation points of
+/// u.
 /// @param[in] cells List of cell indices (local to process) to
 /// interpolate on
 template <typename T>
