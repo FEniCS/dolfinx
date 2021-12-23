@@ -503,22 +503,20 @@ def submesh_topology_test(mesh, submesh, vertex_map, entity_dim, entities):
 
 def submesh_geometry_test(mesh, submesh, geom_map, entity_dim, entities):
     submesh_geom_index_map = submesh.geometry.index_map()
-    assert(submesh_geom_index_map.size_local + submesh_geom_index_map.num_ghosts == submesh.geometry.x.shape[0])
+    assert(submesh_geom_index_map.size_local +
+           submesh_geom_index_map.num_ghosts == submesh.geometry.x.shape[0])
 
-    # Not all processes will own or ghost entities, so there is nothing to check
-    # TODO If this isn't true, check index map local size
+    # In a submesh, some processes may not have any entities
     if len(entities) > 0:
         assert(mesh.geometry.dim == submesh.geometry.dim)
 
         e_to_g = entities_to_geometry(mesh, entity_dim, entities, False)
-
         for submesh_entity in range(len(entities)):
             submesh_x_dofs = submesh.geometry.dofmap.links(submesh_entity)
-
             # e_to_g[i] gets the mesh x_dofs of entities[i], which should
-            # correspond to the submesh x_dofs of submesh cell i
+            # correspond to the x_dofs of cell i in the submesh
             mesh_x_dofs = e_to_g[submesh_entity]
-
             for i in range(len(submesh_x_dofs)):
+                assert(mesh_x_dofs[i] == geom_map[submesh_x_dofs[i]])
                 assert(np.allclose(mesh.geometry.x[mesh_x_dofs[i]],
                                    submesh.geometry.x[submesh_x_dofs[i]]))
