@@ -689,15 +689,9 @@ void interpolate(Function<T>& u, const Expression<T>& expr,
   // i.e. xyzxyz ordering of dof values per cell per point. The interpolation
   // uses xxyyzz input, ordered for all points of each cell, i.e. (value_size,
   // num_cells*num_points)
-  auto f_view = xt::reshape_view(f, {num_cells, num_points, element_vs});
-
-  // xt::xarray<T> values
-  //     = xt::empty<T>({expr_value_size, num_cells * num_points});
-  xt::xarray<T> _f
-      = xt::reshape_view(xt::transpose(f_view, {2, 0, 1}),
-                         {expr_value_size, num_cells * num_points});
+  xt::xarray<T> ft = xt::transpose(f);
 
   // Interpolate values into appropriate space
-  interpolate(u, _f, cells);
+  interpolate(u, ft, cells);
 }
 } // namespace dolfinx::fem
