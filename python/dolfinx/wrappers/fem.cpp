@@ -485,7 +485,7 @@ void declare_objects(py::module& m, const std::string& type)
 
                  if (values.shape(0) != cells.shape(0)
                      or values.shape(1)
-                            != std::size_t(self.x().shape(0)
+                            != py::ssize_t(self.x().shape(0)
                                            * self.value_size()))
                  {
                    throw std::runtime_error(
