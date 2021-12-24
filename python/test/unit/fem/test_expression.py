@@ -44,15 +44,10 @@ def test_rank0():
     vP1 = VectorFunctionSpace(mesh, ("P", 1))
 
     f = Function(P2)
-
-    def expr1(x):
-        return x[0] ** 2 + 2.0 * x[1] ** 2
-
-    f.interpolate(expr1)
+    f.interpolate(lambda x: x[0] ** 2 + 2.0 * x[1]**2)
 
     ufl_expr = ufl.grad(f)
     points = np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0]])
-
     compiled_expr, module, code = dolfinx.jit.ffcx_jit(mesh.comm, (ufl_expr, points))
 
     ffi = cffi.FFI()
@@ -93,18 +88,11 @@ def test_rank0():
 
     # Data structure for the result
     b = Function(vP1)
-
     assemble_expression(b.vector.array, compiled_expr.tabulate_expression,
                         (pos, x_dofs, x), dofmap, f.vector.array, coeff_dofmap)
 
-    def grad_expr1(x):
-        values = np.empty((2, x.shape[1]))
-        values[0] = 2.0 * x[0]
-        values[1] = 4.0 * x[1]
-        return values
-
     b2 = Function(vP1)
-    b2.interpolate(grad_expr1)
+    b2.interpolate(lambda x: np.vstack((2.0 * x[0], 4.0 * x[1])))
 
     assert np.isclose((b2.vector - b.vector).norm(), 0.0)
 
@@ -135,7 +123,7 @@ def test_simple_evaluation():
     def exact_expr(x):
         return x[0] ** 2 + 2.0 * x[1] ** 2
 
-    # Unused, but remains for clarity.
+    # Unused, but remains for clarity
     def f(x):
         return 3 * (x[0] ** 2 + 2.0 * x[1] ** 2)
 
@@ -155,7 +143,7 @@ def test_simple_evaluation():
     assert grad_f_expr.x.shape[0] == points.shape[0]
     assert grad_f_expr.value_size == 2
 
-    # NOTE: Cell numbering is process local.
+    # NOTE: Cell numbering is process local
     map_c = mesh.topology.index_map(mesh.topology.dim)
     num_cells = map_c.size_local + map_c.num_ghosts
     cells = np.arange(0, num_cells, dtype=np.int32)
@@ -182,10 +170,10 @@ def test_simple_evaluation():
 def test_assembly_into_quadrature_function():
     """Test assembly into a Quadrature function.
 
-    This test evaluates a UFL Expression into a Quadrature function space by
-    evaluating the Expression on all cells of the mesh, and then inserting the
-    evaluated values into a PETSc Vector constructed from a matching Quadrature
-    function space.
+    This test evaluates a UFL Expression into a Quadrature function
+    space by evaluating the Expression on all cells of the mesh, and
+    then inserting the evaluated values into a PETSc Vector constructed
+    from a matching Quadrature function space.
 
     Concretely, we consider the evaluation of:
 
@@ -195,15 +183,15 @@ def test_assembly_into_quadrature_function():
 
         K = 1/(A + B*T)
 
-    where A and B are Constants and T is a Coefficient on a P2 finite element
-    space with T = x + 2*y.
+    where A and B are Constants and T is a Coefficient on a P2 finite
+    element space with T = x + 2*y.
 
-    The result is compared with interpolating the analytical expression of e
-    directly into the Quadrature space.
+    The result is compared with interpolating the analytical expression
+    of e directly into the Quadrature space.
 
-    In parallel, each process evaluates the Expression on both local cells and
-    ghost cells so that no parallel communication is required after insertion
-    into the vector.
+    In parallel, each process evaluates the Expression on both local
+    cells and ghost cells so that no parallel communication is required
+    after insertion into the vector.
     """
     mesh = create_unit_square(MPI.COMM_WORLD, 3, 6)
 
@@ -212,12 +200,9 @@ def test_assembly_into_quadrature_function():
     Q_element = ufl.VectorElement("Quadrature", ufl.triangle, quadrature_degree, quad_scheme="default")
     Q = FunctionSpace(mesh, Q_element)
 
-    def T_exact(x):
-        return x[0] + 2.0 * x[1]
-
     P2 = FunctionSpace(mesh, ("P", 2))
     T = Function(P2)
-    T.interpolate(T_exact)
+    T.interpolate(lambda x: x[0] + 2.0 * x[1])
     A = Constant(mesh, PETSc.ScalarType(1.0))
     B = Constant(mesh, PETSc.ScalarType(2.0))
 
@@ -241,18 +226,15 @@ def test_assembly_into_quadrature_function():
     def e_exact(x):
         T = x[0] + 2.0 * x[1]
         K = 1.0 / (A.value + B.value * T)
-
         grad_T = np.zeros((2, x.shape[1]))
         grad_T[0, :] = 1.0
         grad_T[1, :] = 2.0
+        return B.value * K**2 * grad_T
 
-        e = B.value * K**2 * grad_T
-        return e
-
-    # FIXME: Below is only for testing purposes,
-    # never to be used in user code!
+    # FIXME: Below is only for testing purposes, never to be used in
+    # user code!
     #
-    # Replace when interpolation into Quadrature element works.
+    # Replace when interpolation into Quadrature element works
     coord_dofs = mesh.geometry.dofmap
     x_g = mesh.geometry.x
     tdim = mesh.topology.dim
@@ -282,7 +264,7 @@ def test_expression():
         return 2 * x[0]**2 + x[1]**2
 
     def gradf(x):
-        return np.asarray([4 * x[0], 2 * x[1]])
+        return np.hstack(([4 * x[0], 2 * x[1]]))
 
     u = Function(V)
     u.interpolate(f)
