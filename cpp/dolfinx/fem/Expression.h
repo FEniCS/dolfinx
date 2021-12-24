@@ -46,7 +46,7 @@ public:
       const std::shared_ptr<const mesh::Mesh>& mesh,
       const xt::xtensor<double, 2>& X,
       const std::function<void(T*, const T*, const T*, const double*)> fn,
-      const std::size_t value_size)
+      std::size_t value_size)
       : _coefficients(coefficients), _constants(constants), _mesh(mesh), _x(X),
         _fn(fn), _value_size(value_size)
   {

@@ -447,55 +447,70 @@ void declare_objects(py::module& m, const std::string& type)
 
   // dolfinx::fem::Expression
   std::string pyclass_name_expr = std::string("Expression_") + type;
-  py::class_<dolfinx::fem::Expression<T>,
+  py::
+      class_<dolfinx::fem::Expression<T>,
              std::shared_ptr<dolfinx::fem::Expression<T>>>(
-      m, pyclass_name_expr.c_str(), "An Expression")
-      .def(py::init(
-               [](const std::vector<std::shared_ptr<
-                      const dolfinx::fem::Function<T>>>& coefficients,
-                  const std::vector<std::shared_ptr<
-                      const dolfinx::fem::Constant<T>>>& constants,
-                  const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh,
-                  const py::array_t<double, py::array::c_style>& X,
-                  py::object addr, const std::size_t value_size)
+          m, pyclass_name_expr.c_str(), "An Expression")
+          .def(py::init(
+                   [](const std::vector<std::shared_ptr<
+                          const dolfinx::fem::Function<T>>>& coefficients,
+                      const std::vector<std::shared_ptr<
+                          const dolfinx::fem::Constant<T>>>& constants,
+                      const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh,
+                      const py::array_t<double, py::array::c_style>& X,
+                      py::object addr, std::size_t value_size)
+                   {
+                     auto tabulate_expression_ptr
+                         = (void (*)(T*, const T*, const T*,
+                                     const double*))addr.cast<std::uintptr_t>();
+                     xt::xtensor<double, 2> _X(
+                         {std::size_t(X.shape(0)), std::size_t(X.shape(1))});
+                     std::copy_n(X.data(), X.size(), _X.data());
+                     return dolfinx::fem::Expression<T>(
+                         coefficients, constants, mesh, _X,
+                         tabulate_expression_ptr, value_size);
+                   }),
+               py::arg("coefficients"), py::arg("constants"), py::arg("mesh"),
+               py::arg("x"), py::arg("fn"), py::arg("value_size"))
+          .def("eval",
+               [](const dolfinx::fem::Expression<T>& self,
+                  const py::array_t<std::int32_t, py::array::c_style>& cells,
+                  py::array_t<T> values)
                {
-                 auto tabulate_expression_ptr
-                     = (void (*)(T*, const T*, const T*,
-                                 const double*))addr.cast<std::uintptr_t>();
-                 xt::xtensor<double, 2> _X(
-                     {std::size_t(X.shape(0)), std::size_t(X.shape(1))});
-                 std::copy_n(X.data(), X.size(), _X.data());
-                 return dolfinx::fem::Expression<T>(
-                     coefficients, constants, mesh, _X, tabulate_expression_ptr,
-                     value_size);
-               }),
-           py::arg("coefficients"), py::arg("constants"), py::arg("mesh"),
-           py::arg("x"), py::arg("fn"), py::arg("value_size"))
-      .def("eval",
-           [](const dolfinx::fem::Expression<T>& self,
-              const py::array_t<std::int32_t, py::array::c_style>& cells,
-              py::array_t<T> values)
-           {
-             assert(values.ndim() == 2);
-             assert(values.shape(0) == cells.shape(0));
-             assert(values.shape(1) == self.x().shape(0) * self.value_size());
+                 if (values.ndim() != 2)
+                 {
+                   throw std::runtime_error(
+                       "Expect 2D array for Expression evaluation data");
+                 }
 
-             xt::xtensor<T, 2> _values(
-                 {std::size_t(cells.shape(0)),
-                  std::size_t(self.x().shape(0) * self.value_size())});
-             self.eval(xtl::span(cells.data(), cells.size()), _values);
-             auto v = values.mutable_unchecked();
-             for (py::ssize_t i = 0; i < v.shape(0); ++i)
-               for (py::ssize_t j = 0; j < v.shape(1); ++j)
-                 v(i, j) = _values(i, j);
-           })
-      .def_property_readonly("mesh", &dolfinx::fem::Expression<T>::mesh,
-                             py::return_value_policy::reference_internal)
-      .def_property_readonly("value_size",
-                             &dolfinx::fem::Expression<T>::value_size,
-                             py::return_value_policy::reference_internal)
-      .def_property_readonly("x", &dolfinx::fem::Expression<T>::x,
-                             py::return_value_policy::reference_internal);
+                 if (values.shape(0) != cells.shape(0)
+                     or values.shape(1)
+                            != self.x().shape(0) * self.value_size())
+                 {
+                   throw std::runtime_error(
+                       "Incorrect array shape for Expression evaluation");
+                 }
+
+                 xt::xtensor<T, 2> _values(
+                     {std::size_t(cells.shape(0)),
+                      std::size_t(self.x().shape(0) * self.value_size())});
+                 self.eval(xtl::span(cells.data(), cells.size()), _values);
+
+                 auto v = values.mutable_unchecked();
+                 for (py::ssize_t i = 0; i < v.shape(0); ++i)
+                   for (py::ssize_t j = 0; j < v.shape(1); ++j)
+                     v(i, j) = _values(i, j);
+               })
+          .def_property_readonly("mesh", &dolfinx::fem::Expression<T>::mesh)
+          .def_property_readonly("value_size",
+                                 &dolfinx::fem::Expression<T>::value_size)
+          .def_property_readonly("x",
+                                 [](const dolfinx::fem::Expression<T>& self)
+                                 {
+                                   auto& x = self.x();
+                                   return py::array_t<const double>(
+                                       x.shape(), x.data(), py::none());
+                                 });
 }
 
 void petsc_module(py::module& m)

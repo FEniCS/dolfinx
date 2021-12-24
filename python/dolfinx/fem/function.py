@@ -163,15 +163,11 @@ class Expression:
         # Allocate memory for result if u was not provided
         if u is None:
             if np.issubdtype(PETSc.ScalarType, np.complexfloating):
-                u = np.empty((num_cells, self.num_points * self.value_size), dtype=np.complex128)
+                u = np.empty((num_cells, self.x.shape[0] * self.value_size), dtype=np.complex128)
             else:
-                u = np.empty((num_cells, self.num_points * self.value_size), dtype=np.float64)
+                u = np.empty((num_cells, self.x.shape[0] * self.value_size), dtype=np.float64)
             self._cpp_object.eval(cells, u)
         else:
-            assert u.ndim < 3
-            assert u.size == num_cells * self.num_points * self.value_size
-            assert u.shape[0] == num_cells
-            assert u.shape[1] == self.num_points * self.value_size
             self._cpp_object.eval(cells, u)
 
         return u
@@ -185,11 +181,6 @@ class Expression:
     def x(self):
         """Evaluation points on the reference cell"""
         return self._cpp_object.x
-
-    @property
-    def num_points(self):
-        """Number of evaluation points on the reference cell."""
-        return self._cpp_object.num_points
 
     @property
     def value_size(self):

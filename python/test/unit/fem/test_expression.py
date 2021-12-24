@@ -152,7 +152,7 @@ def test_simple_evaluation():
     ufl_grad_f = Constant(mesh, PETSc.ScalarType(3.0)) * ufl.grad(expr)
     points = np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0]])
     grad_f_expr = Expression(ufl_grad_f, points)
-    assert grad_f_expr.num_points == points.shape[0]
+    assert grad_f_expr.x.shape[0] == points.shape[0]
     assert grad_f_expr.value_size == 2
 
     # NOTE: Cell numbering is process local.
@@ -162,16 +162,16 @@ def test_simple_evaluation():
 
     grad_f_evaluated = grad_f_expr.eval(cells)
     assert grad_f_evaluated.shape[0] == cells.shape[0]
-    assert grad_f_evaluated.shape[1] == grad_f_expr.value_size * grad_f_expr.num_points
+    assert grad_f_evaluated.shape[1] == grad_f_expr.value_size * grad_f_expr.x.shape[0]
 
     # Evaluate points in global space
     ufl_x = ufl.SpatialCoordinate(mesh)
     x_expr = Expression(ufl_x, points)
-    assert x_expr.num_points == points.shape[0]
+    assert x_expr.x.shape[0] == points.shape[0]
     assert x_expr.value_size == 2
     x_evaluated = x_expr.eval(cells)
     assert x_evaluated.shape[0] == cells.shape[0]
-    assert x_evaluated.shape[1] == x_expr.num_points * x_expr.value_size
+    assert x_evaluated.shape[1] == x_expr.x.shape[0] * x_expr.value_size
 
     # Evaluate exact gradient using global points
     grad_f_exact = exact_grad_f(x_evaluated)
