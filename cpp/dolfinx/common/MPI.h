@@ -155,7 +155,9 @@ constexpr MPI_Datatype mpi_type()
   else if constexpr (std::is_same<T, double>::value)
     return MPI_DOUBLE;
   else if constexpr (std::is_same<T, std::complex<double>>::value)
-    return MPI_DOUBLE_COMPLEX;
+    return MPI_C_DOUBLE_COMPLEX;
+  else if constexpr (std::is_same<T, std::complex<float>>::value)
+    return MPI_C_FLOAT_COMPLEX;
   else if constexpr (std::is_same<T, short int>::value)
     return MPI_SHORT;
   else if constexpr (std::is_same<T, int>::value)
@@ -172,6 +174,11 @@ constexpr MPI_Datatype mpi_type()
     return MPI_UNSIGNED_LONG_LONG;
   else if constexpr (std::is_same<T, bool>::value)
     return MPI_C_BOOL;
+  else if constexpr (std::is_same<T, std::int8_t>::value)
+    return MPI_INT8_T;
+  else
+    // Issue compile time error
+    static_assert(!std::is_same<T, T>::value);
 }
 
 //---------------------------------------------------------------------------

@@ -16,7 +16,6 @@ void mpi(py::module& m);
 
 void log(py::module& m);
 void fem(py::module& m);
-void generation(py::module& m);
 void geometry(py::module& m);
 void graph(py::module& m);
 void io(py::module& m);
@@ -51,11 +50,6 @@ PYBIND11_MODULE(cpp, m)
   // Create fem submodule [fem]
   py::module fem = m.def_submodule("fem", "FEM module");
   dolfinx_wrappers::fem(fem);
-
-  // Create generation submodule [generation]
-  py::module generation
-      = m.def_submodule("generation", "Mesh generation module");
-  dolfinx_wrappers::generation(generation);
 
   // Create geometry submodule
   py::module geometry = m.def_submodule("geometry", "Geometry module");

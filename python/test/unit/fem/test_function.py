@@ -14,10 +14,9 @@ import pytest
 import ufl
 from dolfinx.fem import (Function, FunctionSpace, TensorFunctionSpace,
                          VectorFunctionSpace)
-from dolfinx.generation import UnitCubeMesh
 from dolfinx.geometry import (BoundingBoxTree, compute_colliding_cells,
                               compute_collisions)
-from dolfinx.mesh import create_mesh
+from dolfinx.mesh import create_mesh, create_unit_cube
 from dolfinx_utils.test.skips import skip_if_complex, skip_in_parallel
 
 from mpi4py import MPI
@@ -26,7 +25,7 @@ from petsc4py import PETSc
 
 @pytest.fixture
 def mesh():
-    return UnitCubeMesh(MPI.COMM_WORLD, 3, 3, 3)
+    return create_unit_cube(MPI.COMM_WORLD, 3, 3, 3)
 
 
 @pytest.fixture
@@ -115,9 +114,6 @@ def test_eval(V, W, Q, mesh):
     u2 = Function(W)
     u3 = Function(Q)
 
-    def e1(x):
-        return x[0] + x[1] + x[2]
-
     def e2(x):
         values = np.empty((3, x.shape[1]))
         values[0] = x[0] + x[1] + x[2]
@@ -138,7 +134,7 @@ def test_eval(V, W, Q, mesh):
         values[8] = -x[2]
         return values
 
-    u1.interpolate(e1)
+    u1.interpolate(lambda x: x[0] + x[1] + x[2])
     u2.interpolate(e2)
     u3.interpolate(e3)
 
@@ -178,14 +174,12 @@ def test_interpolation_mismatch_rank1(W):
 
 
 def test_mixed_element_interpolation():
-    def f(x):
-        return np.ones(2, x.shape[1])
-    mesh = UnitCubeMesh(MPI.COMM_WORLD, 3, 3, 3)
+    mesh = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3)
     el = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
     V = FunctionSpace(mesh, ufl.MixedElement([el, el]))
     u = Function(V)
     with pytest.raises(RuntimeError):
-        u.interpolate(f)
+        u.interpolate(lambda x: np.ones(2, x.shape[1]))
 
 
 def test_interpolation_rank0(V):
@@ -261,11 +255,8 @@ def test_cffi_expression(V):
     f1 = Function(V)
     f1.interpolate(int(eval_ptr))
 
-    def expr_eval2(x):
-        return x[0] + x[1]
-
     f2 = Function(V)
-    f2.interpolate(expr_eval2)
+    f2.interpolate(lambda x: x[0] + x[1])
     assert (f1.vector - f2.vector).norm() < 1.0e-12
 
 
@@ -277,3 +268,28 @@ def test_interpolation_function(mesh):
     uh = Function(Vh)
     uh.interpolate(u)
     assert np.allclose(uh.vector.array, 1)
+
+
+@skip_in_parallel
+@pytest.mark.parametrize("dim", [2, 3])
+def test_compute_point_values_manifold(dim):
+    degree = 1
+    cell = ufl.Cell("triangle", dim)
+    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell, degree, dim=dim))
+    if dim == 2:
+        x = [[0., 0.], [0., 1.], [1., 1.]]
+    else:
+        x = [[0., 0., 0.], [0., 1., 0.], [1., 1., 0.]]
+
+    cells = [[0, 1, 2]]
+    mesh = create_mesh(MPI.COMM_WORLD, cells, x, domain)
+    FE = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
+    FS = FunctionSpace(mesh, FE)
+    fx = Function(FS)
+
+    fx.interpolate(lambda x: x[0])
+    ux = fx.compute_point_values().reshape(-1)
+    dof_to_vertex = np.zeros(3, dtype=np.int32)
+    for i in range(3):
+        dof_to_vertex[i] = FS.dofmap.dof_layout.entity_dofs(0, i)[0]
+    assert np.allclose(fx.x.array, ux[dof_to_vertex])

@@ -81,7 +81,7 @@ xt::xtensor<double, 2> create_new_geometry(
   }
 
   // Copy over existing mesh vertices
-  const xt::xtensor<double, 2>& x_g = mesh.geometry().x();
+  xtl::span<const double> x_g = mesh.geometry().x();
 
   const std::size_t num_vertices = map_v->size_local();
   const std::size_t num_new_vertices = local_edge_to_new_vertex.size();
@@ -89,8 +89,11 @@ xt::xtensor<double, 2> create_new_geometry(
       {num_vertices + num_new_vertices, 3});
 
   for (std::size_t v = 0; v < num_vertices; ++v)
-    for (std::size_t j = 0; j < x_g.shape(1); ++j)
-      new_vertex_coordinates(v, j) = x_g(vertex_to_x[v], j);
+  {
+    const int pos = 3 * vertex_to_x[v];
+    for (std::size_t j = 0; j < 3; ++j)
+      new_vertex_coordinates(v, j) = x_g[pos + j];
+  }
 
   // Compute new vertices
   if (num_new_vertices > 0)

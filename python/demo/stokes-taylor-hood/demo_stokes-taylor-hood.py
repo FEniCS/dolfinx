@@ -79,9 +79,9 @@ from dolfinx import fem
 from dolfinx.fem import (Constant, DirichletBC, Form, Function, FunctionSpace,
                          form, locate_dofs_geometrical,
                          locate_dofs_topological)
-from dolfinx.generation import RectangleMesh
 from dolfinx.io import XDMFFile
-from dolfinx.mesh import CellType, GhostMode, locate_entities_boundary
+from dolfinx.mesh import (CellType, GhostMode, create_rectangle,
+                          locate_entities_boundary)
 from ufl import div, dx, grad, inner
 
 from mpi4py import MPI
@@ -90,10 +90,10 @@ from petsc4py import PETSc
 # We create a Mesh and attach a coordinate map to the mesh::
 
 # Create mesh
-mesh = RectangleMesh(MPI.COMM_WORLD,
-                     [np.array([0, 0, 0]), np.array([1, 1, 0])],
-                     [32, 32],
-                     CellType.triangle, GhostMode.none)
+mesh = create_rectangle(MPI.COMM_WORLD,
+                        [np.array([0, 0]), np.array([1, 1])],
+                        [32, 32],
+                        CellType.triangle, GhostMode.none)
 
 
 # Function to mark x = 0, x = 1 and y = 0
@@ -127,11 +127,9 @@ V, Q = FunctionSpace(mesh, P2), FunctionSpace(mesh, P1)
 
 # No-slip boundary condition for velocity field (`V`) on boundaries
 # where x = 0, x = 1, and y = 0
-noslip = Function(V)
-noslip.x.set(0)
-
+noslip = np.zeros(mesh.geometry.dim, dtype=PETSc.ScalarType)
 facets = locate_entities_boundary(mesh, 1, noslip_boundary)
-bc0 = DirichletBC(noslip, locate_dofs_topological(V, 1, facets))
+bc0 = DirichletBC(noslip, locate_dofs_topological(V, 1, facets), V)
 
 # Driving velocity condition u = (1, 0) on top boundary (y = 1)
 lid_velocity = Function(V)
@@ -419,8 +417,7 @@ bc1 = DirichletBC(lid_velocity, dofs, W.sub(0))
 # constant, we pin the pressure at the point (0, 0)
 zero = Function(Q)
 zero.x.set(0.0)
-dofs = locate_dofs_geometrical((W.sub(1), Q),
-                               lambda x: np.isclose(x.T, [0, 0, 0]).all(axis=1))
+dofs = locate_dofs_geometrical((W.sub(1), Q), lambda x: np.isclose(x.T, [0, 0, 0]).all(axis=1))
 bc2 = DirichletBC(zero, dofs, W.sub(1))
 
 # Collect Dirichlet boundary conditions

@@ -309,7 +309,10 @@ face_long_edge(const mesh::Mesh& mesh)
   auto map_e = mesh.topology().index_map(1);
   assert(map_e);
   std::vector<double> edge_length(map_e->size_local() + map_e->num_ghosts());
-  const xt::xtensor<double, 2>& x = mesh.geometry().x();
+  auto x = xt::adapt(
+      mesh.geometry().x().data(), mesh.geometry().x().size(),
+      xt::no_ownership(),
+      std::vector({mesh.geometry().x().size() / 3, std::size_t(3)}));
   for (std::size_t e = 0; e < edge_length.size(); ++e)
   {
     // Get first attached cell

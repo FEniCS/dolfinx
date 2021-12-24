@@ -196,7 +196,7 @@ public:
   /// Compute the norm of the vector
   /// @note Collective MPI operation
   /// @param type Norm type (supported types are \f$L^2\f$ and \f$L^\infty\f$)
-  T norm(Norm type = Norm::l2) const
+  double norm(Norm type = Norm::l2) const
   {
     switch (type)
     {

@@ -8,10 +8,9 @@
 #include "caster_mpi.h"
 #include "caster_petsc.h"
 #include <dolfinx/common/IndexMap.h>
-#include <dolfinx/la/PETScMatrix.h>
-#include <dolfinx/la/PETScVector.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/la/Vector.h>
+#include <dolfinx/la/petsc.h>
 #include <dolfinx/la/utils.h>
 #include <memory>
 #include <petsc4py/petsc4py.h>
@@ -34,6 +33,9 @@ void declare_objects(py::module& m, const std::string& type)
   std::string pyclass_vector_name = std::string("Vector_") + type;
   py::class_<dolfinx::la::Vector<T>, std::shared_ptr<dolfinx::la::Vector<T>>>(
       m, pyclass_vector_name.c_str())
+      .def(py::init(
+          [](const std::shared_ptr<const dolfinx::common::IndexMap>& map,
+             int bs) { return dolfinx::la::Vector<T>(map, bs); }))
       .def("set", &dolfinx::la::Vector<T>::set)
       .def("norm", &dolfinx::la::Vector<T>::norm,
            py::arg("type") = dolfinx::la::Norm::l2)
@@ -168,6 +170,8 @@ void la(py::module& m)
 
   // Declare objects that are templated over type
   declare_objects<double>(m, "float64");
+  declare_objects<float>(m, "float32");
   declare_objects<std::complex<double>>(m, "complex128");
+  declare_objects<std::complex<float>>(m, "complex64");
 }
 } // namespace dolfinx_wrappers

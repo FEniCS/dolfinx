@@ -16,9 +16,8 @@ from dolfinx import la
 from dolfinx.fem import (DirichletBC, Function, VectorFunctionSpace,
                          apply_lifting, assemble_matrix, assemble_vector,
                          locate_dofs_geometrical, set_bc)
-from dolfinx.generation import BoxMesh
 from dolfinx.io import XDMFFile
-from dolfinx.mesh import CellType, GhostMode
+from dolfinx.mesh import CellType, GhostMode, create_box
 from ufl import (Identity, SpatialCoordinate, TestFunction, TrialFunction,
                  as_vector, dx, grad, inner, sym, tr)
 
@@ -70,15 +69,10 @@ def build_nullspace(V):
     return PETSc.NullSpace().create(vectors=ns)
 
 
-mesh = BoxMesh(
+mesh = create_box(
     MPI.COMM_WORLD, [np.array([0.0, 0.0, 0.0]),
                      np.array([2.0, 1.0, 1.0])], [12, 12, 12],
     CellType.tetrahedron, GhostMode.shared_facet)
-
-
-def boundary(x):
-    return np.logical_or(np.isclose(x[0], 0.0),
-                         np.isclose(x[1], 1.0))
 
 
 # Rotation rate and mass density
@@ -110,11 +104,10 @@ v = TestFunction(V)
 a = inner(sigma(u), grad(v)) * dx
 L = inner(f, v) * dx
 
-u0 = Function(V)
-u0.x.array[:] = 0.0
-
 # Set up boundary condition on inner surface
-bc = DirichletBC(u0, locate_dofs_geometrical(V, boundary))
+bc = DirichletBC(np.array([0, 0, 0], dtype=PETSc.ScalarType),
+                 locate_dofs_geometrical(V, lambda x: np.logical_or(np.isclose(x[0], 0.0),
+                                                                    np.isclose(x[1], 1.0))), V)
 
 # Assembly and solve
 # ------------------

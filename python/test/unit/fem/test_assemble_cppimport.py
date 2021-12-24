@@ -16,15 +16,16 @@ import scipy.sparse.linalg
 import dolfinx
 import dolfinx.pkgconfig
 import ufl
-from dolfinx.fem import (DirichletBC, Form, Function, FunctionSpace,
+from dolfinx.fem import (DirichletBC, Form, FunctionSpace,
                          assemble_matrix, locate_dofs_geometrical)
-from dolfinx.generation import UnitSquareMesh
+from dolfinx.mesh import create_unit_square
 from dolfinx.wrappers import get_include_path as pybind_inc
 from dolfinx_utils.test.fixtures import tempdir  # noqa: F401
 from dolfinx_utils.test.skips import skip_in_parallel
 
 import petsc4py
 from mpi4py import MPI
+from petsc4py import PETSc
 
 
 @skip_in_parallel
@@ -114,16 +115,14 @@ PYBIND11_MODULE(eigen_csr, m)
                     A[dofs, dofs] = 1.0
         return A
 
-    mesh = UnitSquareMesh(MPI.COMM_SELF, 12, 12)
+    mesh = create_unit_square(MPI.COMM_SELF, 12, 12)
     Q = FunctionSpace(mesh, ("Lagrange", 1))
     u = ufl.TrialFunction(Q)
     v = ufl.TestFunction(Q)
     a = Form(ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx)
 
     bdofsQ = locate_dofs_geometrical(Q, lambda x: np.logical_or(np.isclose(x[0], 0.0), np.isclose(x[0], 1.0)))
-    u_bc = Function(Q)
-    u_bc.x.array[:] = 1.0
-    bc = DirichletBC(u_bc, bdofsQ)
+    bc = DirichletBC(PETSc.ScalarType(1), bdofsQ, Q)
 
     A1 = assemble_matrix(a, [bc])
     A1.assemble()

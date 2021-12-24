@@ -26,8 +26,8 @@ constexpr int N = 4;
 void create_mesh_file()
 {
   // Create mesh using all processes and save xdmf
-  auto mesh = std::make_shared<mesh::Mesh>(generation::RectangleMesh::create(
-      MPI_COMM_WORLD, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 0.0}}}, {N, N},
+  auto mesh = std::make_shared<mesh::Mesh>(mesh::create_rectangle(
+      MPI_COMM_WORLD, {{{0.0, 0.0}, {1.0, 1.0}}}, {N, N},
       mesh::CellType::triangle, mesh::GhostMode::shared_facet));
 
   // Save mesh in XDMF format
@@ -104,7 +104,7 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
   CHECK(mesh->topology().index_map(0)->size_global() == (N + 1) * (N + 1));
   CHECK(mesh->topology().index_map(0)->size_local() > 0);
 
-  CHECK(mesh->geometry().x().shape(0)
+  CHECK(mesh->geometry().x().size() / 3
         == mesh->topology().index_map(0)->size_local()
                + mesh->topology().index_map(0)->num_ghosts());
 

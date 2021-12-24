@@ -14,7 +14,7 @@ from dolfinx.fem import (DirichletBC, Form, Function, FunctionSpace,
                          apply_lifting, assemble_matrix, assemble_vector,
                          create_matrix, create_vector, locate_dofs_geometrical,
                          set_bc)
-from dolfinx.generation import UnitSquareMesh
+from dolfinx.mesh import create_unit_square
 from ufl import TestFunction, TrialFunction, derivative, dx, grad, inner
 
 from mpi4py import MPI
@@ -90,19 +90,15 @@ class NonlinearPDE_SNESProblem:
 def test_linear_pde():
     """Test Newton solver for a linear PDE"""
     # Create mesh and function space
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 12, 12)
+    mesh = create_unit_square(MPI.COMM_WORLD, 12, 12)
     V = FunctionSpace(mesh, ("Lagrange", 1))
     u = Function(V)
     v = TestFunction(V)
     F = inner(10.0, v) * dx - inner(grad(u), grad(v)) * dx
 
-    def boundary(x):
-        """Define Dirichlet boundary (x = 0 or x = 1)."""
-        return np.logical_or(x[0] < 1.0e-8, x[0] > 1.0 - 1.0e-8)
-
-    u_bc = Function(V)
-    u_bc.x.array[:] = 1.0
-    bc = DirichletBC(u_bc, locate_dofs_geometrical(V, boundary))
+    bc = DirichletBC(PETSc.ScalarType(1.0),
+                     locate_dofs_geometrical(V, lambda x: np.logical_or(np.isclose(x[0], 0.0),
+                                                                        np.isclose(x[0], 1.0))), V)
 
     # Create nonlinear problem
     problem = NonlinearPDEProblem(F, u, bc)
@@ -117,7 +113,7 @@ def test_linear_pde():
     assert n == 1
 
     # Increment boundary condition and solve again
-    u_bc.x.array[:] = 2.0
+    bc.g.value[...] = PETSc.ScalarType(2.0)
     n, converged = solver.solve(u.vector)
     assert converged
     assert n == 1
@@ -126,20 +122,16 @@ def test_linear_pde():
 def test_nonlinear_pde():
     """Test Newton solver for a simple nonlinear PDE"""
     # Create mesh and function space
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 12, 5)
+    mesh = create_unit_square(MPI.COMM_WORLD, 12, 5)
     V = FunctionSpace(mesh, ("Lagrange", 1))
     u = Function(V)
     v = TestFunction(V)
     F = inner(5.0, v) * dx - ufl.sqrt(u * u) * inner(
         grad(u), grad(v)) * dx - inner(u, v) * dx
 
-    def boundary(x):
-        """Define Dirichlet boundary (x = 0 or x = 1)."""
-        return np.logical_or(x[0] < 1.0e-8, x[0] > 1.0 - 1.0e-8)
-
-    u_bc = Function(V)
-    u_bc.x.array[:] = 1.0
-    bc = DirichletBC(u_bc, locate_dofs_geometrical(V, boundary))
+    bc = DirichletBC(PETSc.ScalarType(1.0),
+                     locate_dofs_geometrical(V, lambda x: np.logical_or(np.isclose(x[0], 0.0),
+                                                                        np.isclose(x[0], 1.0))), V)
 
     # Create nonlinear problem
     problem = NonlinearPDEProblem(F, u, bc)
@@ -155,29 +147,26 @@ def test_nonlinear_pde():
     assert n < 6
 
     # Modify boundary condition and solve again
-    u_bc.x.array[:] = 0.5
+    bc.g.value[...] = 0.5
     n, converged = solver.solve(u.vector)
     assert converged
-    assert n < 6
+    assert n > 0 and n < 6
 
 
 def test_nonlinear_pde_snes():
     """Test Newton solver for a simple nonlinear PDE"""
     # Create mesh and function space
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 12, 15)
+    mesh = create_unit_square(MPI.COMM_WORLD, 12, 15)
     V = FunctionSpace(mesh, ("Lagrange", 1))
     u = Function(V)
     v = TestFunction(V)
     F = inner(5.0, v) * dx - ufl.sqrt(u * u) * inner(
         grad(u), grad(v)) * dx - inner(u, v) * dx
 
-    def boundary(x):
-        """Define Dirichlet boundary (x = 0 or x = 1)."""
-        return np.logical_or(x[0] < 1.0e-8, x[0] > 1.0 - 1.0e-8)
-
     u_bc = Function(V)
     u_bc.x.array[:] = 1.0
-    bc = DirichletBC(u_bc, locate_dofs_geometrical(V, boundary))
+    bc = DirichletBC(u_bc, locate_dofs_geometrical(V, lambda x: np.logical_or(np.isclose(x[0], 0.0),
+                                                                              np.isclose(x[0], 1.0))))
 
     # Create nonlinear problem
     problem = NonlinearPDE_SNESProblem(F, u, bc)
