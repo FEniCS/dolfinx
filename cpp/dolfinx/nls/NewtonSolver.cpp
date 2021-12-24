@@ -7,9 +7,7 @@
 #include "NewtonSolver.h"
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/log.h>
-#include <dolfinx/la/PETScKrylovSolver.h>
-#include <dolfinx/la/PETScOptions.h>
-#include <dolfinx/la/PETScVector.h>
+#include <dolfinx/la/petsc.h>
 #include <string>
 
 using namespace dolfinx;
@@ -24,8 +22,8 @@ namespace
 /// and true` if convergence achieved
 std::pair<double, bool> converged(const nls::NewtonSolver& solver, const Vec r)
 {
-  la::petsc::Vector _r(r, true);
-  double residual = _r.norm(la::Norm::l2);
+  PetscReal residual = 0.0;
+  VecNorm(r, NORM_2, &residual);
 
   // Relative residual
   const double relative_residual = residual / solver.residual0();
@@ -69,10 +67,10 @@ nls::NewtonSolver::NewtonSolver(MPI_Comm comm)
 {
   // Create linear solver if not already created. Default to LU.
   _solver.set_options_prefix("nls_solve_");
-  la::petsc::Options::set("nls_solve_ksp_type", "preonly");
-  la::petsc::Options::set("nls_solve_pc_type", "lu");
+  la::petsc::options::set("nls_solve_ksp_type", "preonly");
+  la::petsc::options::set("nls_solve_pc_type", "lu");
 #if PETSC_HAVE_MUMPS
-  la::petsc::Options::set("nls_solve_pc_factor_mat_solver_type", "mumps");
+  la::petsc::options::set("nls_solve_pc_factor_mat_solver_type", "mumps");
 #endif
   _solver.set_from_options();
 }
