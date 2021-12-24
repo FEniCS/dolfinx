@@ -113,7 +113,7 @@ public:
     std::vector<double> coordinate_dofs(3 * num_dofs_g);
 
     // Iterate over cells and 'assemble' into values
-    std::vector<T> values_e(this->num_points() * this->value_size(), 0);
+    std::vector<T> values_e(_x.shape(0) * this->value_size(), 0);
     for (std::size_t c = 0; c < cells.size(); ++c)
     {
       const std::int32_t cell = cells[c];
@@ -156,17 +156,13 @@ public:
   /// @return The mesh
   std::shared_ptr<const mesh::Mesh> mesh() const { return _mesh; }
 
-  /// Get evaluation points on reference cell
-  /// @return Evaluation points
+  /// Evaluation points on the reference cell
+  /// @return Evaluation points (shape=(num_points, tdim))
   const xt::xtensor<double, 2>& x() const { return _x; }
 
   /// Get value size
   /// @return value_size
   std::size_t value_size() const { return _value_size; }
-
-  /// Get number of points
-  /// @return number of points
-  std::size_t num_points() const { return _x.shape(0); }
 
   /// Scalar type (T)
   using scalar_type = T;

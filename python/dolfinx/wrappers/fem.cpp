@@ -473,26 +473,23 @@ void declare_objects(py::module& m, const std::string& type)
            py::arg("x"), py::arg("fn"), py::arg("value_size"))
       .def("eval",
            [](const dolfinx::fem::Expression<T>& self,
-              const py::array_t<std::int32_t, py::array::c_style>& active_cells,
+              const py::array_t<std::int32_t, py::array::c_style>& cells,
               py::array_t<T> values)
            {
-             xt::xtensor<T, 2> _values(
-                 {std::size_t(active_cells.shape(0)),
-                  std::size_t(self.num_points() * self.value_size())});
-             self.eval(xtl::span(active_cells.data(), active_cells.size()),
-                       _values);
              assert(values.ndim() == 2);
-             assert(values.shape(0) == (py::ssize_t)_values.shape(0));
-             assert(values.shape(1) == (py::ssize_t)_values.shape(1));
+             assert(values.shape(0) == cells.shape(0));
+             assert(values.shape(1) == self.x().shape(0) * self.value_size());
+
+             xt::xtensor<T, 2> _values(
+                 {std::size_t(cells.shape(0)),
+                  std::size_t(self.x().shape(0) * self.value_size())});
+             self.eval(xtl::span(cells.data(), cells.size()), _values);
              auto v = values.mutable_unchecked();
-             for (py::ssize_t i = 0; i < v.shape(0); i++)
-               for (py::ssize_t j = 0; j < v.shape(1); j++)
+             for (py::ssize_t i = 0; i < v.shape(0); ++i)
+               for (py::ssize_t j = 0; j < v.shape(1); ++j)
                  v(i, j) = _values(i, j);
            })
       .def_property_readonly("mesh", &dolfinx::fem::Expression<T>::mesh,
-                             py::return_value_policy::reference_internal)
-      .def_property_readonly("num_points",
-                             &dolfinx::fem::Expression<T>::num_points,
                              py::return_value_policy::reference_internal)
       .def_property_readonly("value_size",
                              &dolfinx::fem::Expression<T>::value_size,

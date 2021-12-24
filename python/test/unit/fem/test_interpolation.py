@@ -174,8 +174,7 @@ def test_vector_interpolation(cell_type, order):
 
 
 @skip_in_parallel
-@pytest.mark.parametrize(
-    "cell_type", [CellType.triangle, CellType.tetrahedron])
+@pytest.mark.parametrize("cell_type", [CellType.triangle, CellType.tetrahedron])
 @pytest.mark.parametrize("order", range(1, 5))
 def test_N1curl_interpolation(cell_type, order):
     random.seed(8)
@@ -194,8 +193,7 @@ def test_N2curl_interpolation(cell_type, order):
 
 
 @skip_in_parallel
-@pytest.mark.parametrize(
-    "cell_type", [CellType.quadrilateral])
+@pytest.mark.parametrize("cell_type", [CellType.quadrilateral])
 @pytest.mark.parametrize("order", range(1, 5))
 def test_RTCE_interpolation(cell_type, order):
     random.seed(8)
@@ -205,8 +203,7 @@ def test_RTCE_interpolation(cell_type, order):
 
 
 @skip_in_parallel
-@pytest.mark.parametrize(
-    "cell_type", [CellType.hexahedron])
+@pytest.mark.parametrize("cell_type", [CellType.hexahedron])
 @pytest.mark.parametrize("order", range(1, 5))
 def test_NCE_interpolation(cell_type, order):
     random.seed(8)
@@ -240,7 +237,6 @@ def test_interpolation_nedelec(order1, order2):
     # space order>1
     u.interpolate(lambda x: x)
     v.interpolate(u)
-
     assert np.isclose(assemble_scalar(ufl.inner(u - v, u - v) * ufl.dx), 0)
 
     # The target expression is also contained in N2curl space of any
@@ -248,7 +244,6 @@ def test_interpolation_nedelec(order1, order2):
     V2 = FunctionSpace(mesh, ("N2curl", 1))
     w = Function(V2)
     w.interpolate(u)
-
     assert np.isclose(assemble_scalar(ufl.inner(u - w, u - w) * ufl.dx), 0)
 
 
@@ -261,9 +256,7 @@ def test_interpolation_dg_to_n1curl(tdim, order):
         mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2)
     V = VectorFunctionSpace(mesh, ("DG", order))
     V1 = FunctionSpace(mesh, ("N1curl", order + 1))
-
-    u = Function(V)
-    v = Function(V1)
+    u, v = Function(V), Function(V1)
 
     u.interpolate(lambda x: x[:tdim] ** order)
     v.interpolate(u)
@@ -280,9 +273,7 @@ def test_interpolation_n1curl_to_dg(tdim, order):
         mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2)
     V = FunctionSpace(mesh, ("N1curl", order + 1))
     V1 = VectorFunctionSpace(mesh, ("DG", order))
-
-    u = Function(V)
-    v = Function(V1)
+    u, v = Function(V), Function(V1)
 
     u.interpolate(lambda x: x[:tdim] ** order)
     v.interpolate(u)
@@ -372,9 +363,7 @@ def test_interpolation_non_affine():
 
     W = FunctionSpace(mesh, ("NCE", 1))
     V = FunctionSpace(mesh, ("NCE", 2))
-
-    w = Function(W)
-    v = Function(V)
+    w, v = Function(W), Function(V)
 
     w.interpolate(lambda x: x)
     v.interpolate(w)
@@ -391,22 +380,22 @@ def test_nedelec_spatial(order, dim):
         mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2)
 
     V = FunctionSpace(mesh, ("N1curl", order))
-
     u = Function(V)
     x = ufl.SpatialCoordinate(mesh)
-    # The expression (x,y,z) is contained in the N1curl function space order>1
+
+    # The expression (x,y,z) is contained in the N1curl function space
+    # order>1
     f_ex = x
     f = Expression(f_ex, V.element.interpolation_points)
     u.interpolate(f)
-
     assert np.isclose(np.abs(assemble_scalar(ufl.inner(u - f_ex, u - f_ex) * ufl.dx)), 0)
+
     # The target expression is also contained in N2curl space of any
     # order
     V2 = FunctionSpace(mesh, ("N2curl", 1))
     w = Function(V2)
     f2 = Expression(f_ex, V2.element.interpolation_points)
     w.interpolate(f2)
-
     assert np.isclose(np.abs(assemble_scalar(ufl.inner(w - f_ex, w - f_ex) * ufl.dx)), 0)
 
 
@@ -421,10 +410,10 @@ def test_vector_interpolation_spatial(order, dim, affine):
         ct = CellType.tetrahedron if affine else CellType.hexahedron
         mesh = create_unit_cube(MPI.COMM_WORLD, 3, 2, 2, ct)
 
-    V = VectorFunctionSpace(mesh, ("CG", order))
-
+    V = VectorFunctionSpace(mesh, ("Lagrange", order))
     u = Function(V)
     x = ufl.SpatialCoordinate(mesh)
+
     # The expression (x,y,z)^n is contained in space
     f = ufl.as_vector([x[i]**order for i in range(dim)])
     u.interpolate(Expression(f, V.element.interpolation_points))
@@ -437,7 +426,7 @@ def test_2D_lagrange_to_curl(order):
     V = FunctionSpace(mesh, ("N1curl", order))
     u = Function(V)
 
-    W = FunctionSpace(mesh, ("CG", order))
+    W = FunctionSpace(mesh, ("Lagrange", order))
     u0 = Function(W)
     u0.interpolate(lambda x: -x[1])
     u1 = Function(W)
@@ -454,7 +443,7 @@ def test_2D_lagrange_to_curl(order):
 @pytest.mark.parametrize("order", [2, 3, 4])
 def test_de_rahm_2D(order):
     mesh = create_unit_square(MPI.COMM_WORLD, 3, 4)
-    W = FunctionSpace(mesh, ("CG", order))
+    W = FunctionSpace(mesh, ("Lagrange", order))
     w = Function(W)
 
     def f(x):
@@ -463,7 +452,6 @@ def test_de_rahm_2D(order):
     w.interpolate(f)
 
     g = ufl.grad(w)
-
     Q = FunctionSpace(mesh, ("N2curl", order - 1))
     q = Function(Q)
     q.interpolate(Expression(g, Q.element.interpolation_points))

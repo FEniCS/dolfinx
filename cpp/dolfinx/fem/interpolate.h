@@ -664,34 +664,31 @@ void interpolate(Function<T>& u, const Expression<T>& expr,
                  const xtl::span<const std::int32_t>& cells)
 {
   // Check that spaces are compatible
+  std::size_t value_size = expr.value_size();
   assert(u.function_space());
-  auto element = u.function_space()->element();
-  assert(element);
-  auto dofmap = u.function_space()->dofmap();
-  assert(dofmap);
-  std::size_t element_vs = element->value_size();
-
-  std::size_t expr_value_size = expr.value_size();
-  assert(expr_value_size == element_vs);
-  auto X = expr.x();
-  assert(X.shape() == element->interpolation_points().shape());
+  assert(u.function_space()->element());
+  assert(value_size == u.function_space()->element()->value_size());
+  assert(expr.x().shape()
+         == u.function_space()->element()->interpolation_points().shape());
 
   // Array to hold evaluted Expression
-  std::size_t num_points = expr.num_points();
   std::size_t num_cells = cells.size();
-  xt::xtensor<T, 2> f({num_cells, num_points * expr_value_size});
+  std::size_t num_points = expr.x().shape(0);
+  xt::xtensor<T, 3> f({num_cells, num_points, value_size});
 
   // Evaluate Expression at points
-  expr.eval(cells, f);
+  auto f_view = xt::reshape_view(f, {num_cells, num_points * value_size});
+  expr.eval(cells, f_view);
 
   // Reshape evaluated data to fit interpolate
-  // Expression returns matrix of shape (num_cells, num_points * value_size),
-  // i.e. xyzxyz ordering of dof values per cell per point. The interpolation
-  // uses xxyyzz input, ordered for all points of each cell, i.e. (value_size,
-  // num_cells*num_points)
-  xt::xarray<T> ft = xt::transpose(f);
+  // Expression returns matrix of shape (num_cells, num_points *
+  // value_size), i.e. xyzxyz ordering of dof values per cell per point.
+  // The interpolation uses xxyyzz input, ordered for all points of each
+  // cell, i.e. (value_size, num_cells*num_points)
+  xt::xarray<T> _f = xt::reshape_view(xt::transpose(f, {2, 0, 1}),
+                                      {value_size, num_cells * num_points});
 
   // Interpolate values into appropriate space
-  interpolate(u, ft, cells);
+  interpolate(u, _f, cells);
 }
 } // namespace dolfinx::fem
