@@ -485,10 +485,10 @@ void declare_objects(py::module& m, const std::string& type)
 
                  if (values.shape(0) != cells.shape(0)
                      or values.shape(1)
-                            != self.x().shape(0) * self.value_size())
+                            != std::size_t(self.x().shape(0) * self.value_size())
                  {
-                   throw std::runtime_error(
-                       "Incorrect array shape for Expression evaluation");
+      throw std::runtime_error(
+          "Incorrect array shape for Expression evaluation");
                  }
 
                  xt::xtensor<T, 2> _values(
