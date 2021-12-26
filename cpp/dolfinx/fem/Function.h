@@ -32,6 +32,9 @@ namespace dolfinx::fem
 
 class FunctionSpace;
 
+template <typename T>
+class Expression;
+
 /// This class represents a function \f$ u_h \f$ in a finite
 /// element function space \f$ V_h \f$, given by
 ///
@@ -190,6 +193,15 @@ public:
     }
 
     fem::interpolate(*this, fx, cells);
+  }
+
+  /// Interpolate an Expression (based on ufl)
+  /// @param[in] expr The function to be interpolated.
+  /// @param[in] cells The cells (local to process) to interpolate into
+  void interpolate(const Expression<T>& expr,
+                   const xtl::span<const std::int32_t>& cells)
+  {
+    fem::interpolate(*this, expr, cells);
   }
 
   /// Evaluate the Function at points
