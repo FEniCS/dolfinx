@@ -44,8 +44,8 @@ S = FunctionSpace(mesh, Se)
 U = FunctionSpace(mesh, Ue)
 
 # Get local dofmap sizes for later local tensor tabulations
-Ssize = S.dolfin_element().space_dimension()
-Usize = U.dolfin_element().space_dimension()
+Ssize = S.element.space_dimension
+Usize = U.element.space_dimension
 
 sigma, tau = ufl.TrialFunction(S), ufl.TestFunction(S)
 u, v = ufl.TrialFunction(U), ufl.TestFunction(U)
