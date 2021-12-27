@@ -58,10 +58,10 @@ class LinearProblem():
         .. code-block:: python
             problem = LinearProblem(a, L, [bc0, bc1], petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
         """
-        self._a = fem.create_form(a, form_compiler_parameters=form_compiler_parameters, jit_parameters=jit_parameters)
+        self._a = fem.form(a, form_compiler_parameters=form_compiler_parameters, jit_parameters=jit_parameters)
         self._A = fem.create_matrix(self._a)
 
-        self._L = fem.create_form(L, form_compiler_parameters=form_compiler_parameters, jit_parameters=jit_parameters)
+        self._L = fem.form(L, form_compiler_parameters=form_compiler_parameters, jit_parameters=jit_parameters)
         self._b = fem.create_vector(self._L)
 
         if u is None:
@@ -174,16 +174,16 @@ class NonlinearProblem:
         .. code-block:: python
             problem = LinearProblem(F, u, [bc0, bc1])
         """
-        self._L = fem.form.create_form(F, form_compiler_parameters=form_compiler_parameters,
-                                       jit_parameters=jit_parameters)
+        self._L = fem.form.form(F, form_compiler_parameters=form_compiler_parameters,
+                                jit_parameters=jit_parameters)
         # Create the Jacobian matrix, dF/du
         if J is None:
             V = u.function_space
             du = ufl.TrialFunction(V)
             J = ufl.derivative(F, u, du)
 
-        self._a = fem.form.create_form(J, form_compiler_parameters=form_compiler_parameters,
-                                       jit_parameters=jit_parameters)
+        self._a = fem.form.form(J, form_compiler_parameters=form_compiler_parameters,
+                                jit_parameters=jit_parameters)
         self.bcs = bcs
 
     @property

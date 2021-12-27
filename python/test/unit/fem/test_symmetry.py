@@ -9,8 +9,7 @@ import pytest
 
 import dolfinx
 import ufl
-from dolfinx.fem import FunctionSpace
-from dolfinx.fem import create_form as form
+from dolfinx.fem import FunctionSpace, form
 from dolfinx.mesh import CellType, create_unit_cube, create_unit_square
 from dolfinx_utils.test.skips import skip_in_parallel
 from ufl import FiniteElement, MixedElement, VectorElement, grad, inner

@@ -14,9 +14,8 @@ import numpy as np
 
 from dolfinx import la
 from dolfinx.fem import (DirichletBC, Function, VectorFunctionSpace,
-                         apply_lifting, assemble_matrix, assemble_vector)
-from dolfinx.fem import create_form as form
-from dolfinx.fem import locate_dofs_geometrical, set_bc
+                         apply_lifting, assemble_matrix, assemble_vector, form,
+                         locate_dofs_geometrical, set_bc)
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import CellType, GhostMode, create_box
 from ufl import (Identity, SpatialCoordinate, TestFunction, TrialFunction,

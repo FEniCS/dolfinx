@@ -22,9 +22,8 @@ import pytest
 import dolfinx
 import dolfinx.pkgconfig
 import ufl
-from dolfinx.fem import Function, FunctionSpace, assemble_matrix
-from dolfinx.fem import create_form as form
-from dolfinx.fem import transpose_dofmap
+from dolfinx.fem import (Function, FunctionSpace, assemble_matrix, form,
+                         transpose_dofmap)
 from dolfinx.mesh import create_unit_square
 from ufl import dx, inner
 

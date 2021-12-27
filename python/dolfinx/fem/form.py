@@ -96,8 +96,8 @@ class Form:
         return self._code
 
 
-def create_form(form: ufl.Form, dtype: np.dtype = PETSc.ScalarType,
-                form_compiler_parameters: dict = {}, jit_parameters: dict = {}):
+def form(form: ufl.Form, dtype: np.dtype = PETSc.ScalarType,
+         form_compiler_parameters: dict = {}, jit_parameters: dict = {}):
     """Create a DOLFINx Form
 
     Parameters
@@ -113,8 +113,8 @@ def create_form(form: ufl.Form, dtype: np.dtype = PETSc.ScalarType,
 
     Note
     ----
-    This wrapper for UFL form is responsible for the actual FFCx compilation
-    and attaching coefficients and domains specific data to the underlying
+    The DOLFINx form is responsible for the FFCx JIT compilation and
+    attaching coefficients and domains specific data to the underlying
     C++ Form.
     """
     if dtype == np.float32:
@@ -130,7 +130,7 @@ def create_form(form: ufl.Form, dtype: np.dtype = PETSc.ScalarType,
 
     def _create_form(form):
         """Recursively look for ufl.Forms and convert to
-        dolfinx.cpp.fem.Form, otherwise return form argument"""
+        dolfinx.fem.Form, otherwise return form argument"""
         if isinstance(form, ufl.Form):
             return formcls(form, dtype, form_compiler_parameters, jit_parameters)
         elif isinstance(form, (tuple, list)):
@@ -138,8 +138,6 @@ def create_form(form: ufl.Form, dtype: np.dtype = PETSc.ScalarType,
         return form
 
     return _create_form(form)
-
-    # return formcls(form, dtype, form_compiler_parameters, jit_parameters)
 
 
 _args = typing.Union[typing.Iterable[Form], typing.Iterable[typing.Iterable[Form]]]

@@ -10,9 +10,9 @@ import pytest
 import ufl
 from dolfinx.fem import (Constant, DirichletBC, Function, FunctionSpace,
                          VectorFunctionSpace, apply_lifting, assemble_matrix,
-                         assemble_vector, create_form, create_matrix,
-                         create_vector, locate_dofs_geometrical,
-                         locate_dofs_topological, set_bc)
+                         assemble_vector, create_matrix, create_vector, form,
+                         locate_dofs_geometrical, locate_dofs_topological,
+                         set_bc)
 from dolfinx.mesh import (CellType, create_unit_cube, create_unit_square,
                           locate_entities_boundary)
 from ufl import dx, inner
@@ -64,10 +64,8 @@ def test_overlapping_bcs():
     mesh = create_unit_square(MPI.COMM_WORLD, n, n)
     V = FunctionSpace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
-    a = inner(u, v) * dx
-    L = inner(1, v) * dx
-
-    a, L = create_form(a), create_form(L)
+    a = form(inner(u, v) * dx)
+    L = form(inner(1, v) * dx)
 
     dofs_left = locate_dofs_geometrical(V, lambda x: x[0] < 1.0 / (2.0 * n))
     dofs_top = locate_dofs_geometrical(V, lambda x: x[1] > 1.0 - 1.0 / (2.0 * n))

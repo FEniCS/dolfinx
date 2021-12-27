@@ -17,12 +17,11 @@ from dolfinx.fem import (DirichletBC, Function, FunctionSpace,
                          apply_lifting_nest, assemble_matrix,
                          assemble_matrix_block, assemble_matrix_nest,
                          assemble_vector, assemble_vector_block,
-                         assemble_vector_nest, bcs_by_block)
-from dolfinx.fem import create_form as form
-from dolfinx.fem import (create_matrix, create_matrix_block,
-                         create_matrix_nest, create_vector,
-                         create_vector_block, create_vector_nest,
-                         locate_dofs_topological, set_bc, set_bc_nest)
+                         assemble_vector_nest, bcs_by_block, create_matrix,
+                         create_matrix_block, create_matrix_nest,
+                         create_vector, create_vector_block,
+                         create_vector_nest, form, locate_dofs_topological,
+                         set_bc, set_bc_nest)
 from dolfinx.fem.form import extract_function_spaces
 from dolfinx.mesh import (GhostMode, create_unit_cube, create_unit_square,
                           locate_entities_boundary)

@@ -12,8 +12,7 @@ import pytest
 
 import ufl
 from dolfinx import la
-from dolfinx.fem import VectorFunctionSpace, assemble_matrix
-from dolfinx.fem import create_form as form
+from dolfinx.fem import VectorFunctionSpace, assemble_matrix, form
 from dolfinx.mesh import (CellType, GhostMode, create_box, create_unit_cube,
                           create_unit_square)
 from ufl import TestFunction, TrialFunction, dx, grad, inner

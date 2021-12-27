@@ -11,9 +11,8 @@ import pytest
 import ufl
 from dolfinx.fem import (DirichletBC, Function, FunctionSpace,
                          VectorFunctionSpace, apply_lifting, assemble_matrix,
-                         assemble_scalar, assemble_vector)
-from dolfinx.fem import create_form as form
-from dolfinx.fem import locate_dofs_topological, set_bc
+                         assemble_scalar, assemble_vector, form,
+                         locate_dofs_topological, set_bc)
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import (CellType, compute_boundary_facets, create_rectangle,
                           create_unit_cube, create_unit_square,

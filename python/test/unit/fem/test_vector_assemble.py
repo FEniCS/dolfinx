@@ -7,9 +7,8 @@
 
 
 import ufl
-from dolfinx.fem import VectorFunctionSpace, assemble_matrix
+from dolfinx.fem import VectorFunctionSpace, assemble_matrix, form
 from dolfinx.mesh import create_unit_square
-from dolfinx.fem import create_form as form
 
 from mpi4py import MPI
 

@@ -14,8 +14,7 @@
 
 import numpy as np
 
-from dolfinx.fem import Function, FunctionSpace, LinearProblem
-from dolfinx.fem import create_form as form
+from dolfinx.fem import Function, FunctionSpace, LinearProblem, form
 from dolfinx.fem.assemble import assemble_scalar
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import create_unit_square

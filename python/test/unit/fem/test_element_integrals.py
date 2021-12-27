@@ -15,8 +15,7 @@ import dolfinx
 import ufl
 from dolfinx.fem import (Constant, Function, FunctionSpace,
                          VectorFunctionSpace, assemble_matrix, assemble_scalar,
-                         assemble_vector)
-from dolfinx.fem import create_form as form
+                         assemble_vector, form)
 from dolfinx.mesh import CellType, MeshTags, create_mesh
 from dolfinx_utils.test.skips import skip_in_parallel
 

@@ -8,8 +8,7 @@
 
 import pytest
 
-from dolfinx.fem import FunctionSpace
-from dolfinx.fem import create_form as form
+from dolfinx.fem import FunctionSpace, form
 from dolfinx.fem.form import extract_function_spaces
 from dolfinx.mesh import create_unit_square
 from ufl import TestFunction, TrialFunction, dx, inner

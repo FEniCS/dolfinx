@@ -76,9 +76,8 @@ import dolfinx
 import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import fem
-from dolfinx.fem import (Constant, DirichletBC, Function, FunctionSpace,
-                         create_form, form, locate_dofs_geometrical,
-                         locate_dofs_topological)
+from dolfinx.fem import (Constant, DirichletBC, Function, FunctionSpace, form,
+                         locate_dofs_geometrical, locate_dofs_topological)
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import (CellType, GhostMode, create_rectangle,
                           locate_entities_boundary)
@@ -148,15 +147,15 @@ bcs = [bc0, bc1]
 (v, q) = ufl.TestFunction(V), ufl.TestFunction(Q)
 f = Constant(mesh, (PETSc.ScalarType(0), PETSc.ScalarType(0)))
 
-a = create_form([[inner(grad(u), grad(v)) * dx, inner(p, div(v)) * dx],
-                 [inner(div(u), q) * dx, None]])
+a = form([[inner(grad(u), grad(v)) * dx, inner(p, div(v)) * dx],
+          [inner(div(u), q) * dx, None]])
 
-L = create_form([inner(f, v) * dx,
-                 inner(Constant(mesh, PETSc.ScalarType(0)), q) * dx])
+L = form([inner(f, v) * dx,
+          inner(Constant(mesh, PETSc.ScalarType(0)), q) * dx])
 
 # We will use a block-diagonal preconditioner to solve this problem::
 
-a_p11 = create_form(inner(p, q) * dx)
+a_p11 = form(inner(p, q) * dx)
 a_p = [[a[0][0], None],
        [None, a_p11]]
 
@@ -427,8 +426,8 @@ bcs = [bc0, bc1, bc2]
 (u, p) = ufl.TrialFunctions(W)
 (v, q) = ufl.TestFunctions(W)
 f = Function(W0)
-a = create_form((inner(grad(u), grad(v)) + inner(p, div(v)) + inner(div(u), q)) * dx)
-L = create_form(inner(f, v) * dx)
+a = form((inner(grad(u), grad(v)) + inner(p, div(v)) + inner(div(u), q)) * dx)
+L = form(inner(f, v) * dx)
 
 
 # Assemble LHS matrix and RHS vector

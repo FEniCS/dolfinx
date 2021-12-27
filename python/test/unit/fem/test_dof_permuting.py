@@ -12,8 +12,7 @@ import pytest
 
 import ufl
 from dolfinx.fem import (Function, FunctionSpace, VectorFunctionSpace,
-                         assemble_scalar)
-from dolfinx.fem import create_form as form
+                         assemble_scalar, form)
 from dolfinx.mesh import create_mesh
 from dolfinx_utils.test.skips import skip_in_parallel
 

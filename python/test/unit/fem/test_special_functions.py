@@ -9,8 +9,7 @@ import numpy
 import pytest
 
 import ufl
-from dolfinx.fem import Constant, assemble_scalar
-from dolfinx.fem import create_form as form
+from dolfinx.fem import Constant, assemble_scalar, form
 from dolfinx.mesh import (create_unit_cube, create_unit_interval,
                           create_unit_square)
 

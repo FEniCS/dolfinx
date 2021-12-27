@@ -15,11 +15,11 @@ import ufl
 from dolfinx import la
 from dolfinx.fem import (DirichletBC, Function, FunctionSpace,
                          VectorFunctionSpace, apply_lifting, assemble_matrix,
-                         assemble_vector, locate_dofs_topological, set_bc)
+                         assemble_vector, form, locate_dofs_topological,
+                         set_bc)
 from dolfinx.mesh import create_unit_square, locate_entities_boundary
 from ufl import (Identity, TestFunction, TrialFunction, dot, dx, grad, inner,
                  sym, tr)
-from dolfinx.fem import create_form as form
 
 from mpi4py import MPI
 from petsc4py import PETSc

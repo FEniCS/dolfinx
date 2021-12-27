@@ -13,8 +13,7 @@ import pytest
 
 import ufl
 from dolfinx.cpp.io import perm_gmsh, perm_vtk
-from dolfinx.fem import assemble_scalar
-from dolfinx.fem import create_form as form
+from dolfinx.fem import assemble_scalar, form
 from dolfinx.io import XDMFFile, ufl_mesh_from_gmsh
 from dolfinx.mesh import CellType, create_mesh
 from dolfinx_utils.test.skips import skip_in_parallel

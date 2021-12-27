@@ -13,8 +13,7 @@ import pytest
 import basix
 from dolfinx import cpp as _cpp
 from dolfinx.cpp.mesh import create_cell_partitioner, is_simplex
-from dolfinx.fem import assemble_scalar
-from dolfinx.fem import create_form as form
+from dolfinx.fem import assemble_scalar, form
 from dolfinx.mesh import (CellType, DiagonalType, GhostMode, create_box,
                           create_rectangle, create_unit_cube,
                           create_unit_interval, create_unit_square)

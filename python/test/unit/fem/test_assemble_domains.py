@@ -11,9 +11,7 @@ import pytest
 import ufl
 from dolfinx.fem import (Constant, DirichletBC, Function, FunctionSpace,
                          apply_lifting, assemble_matrix, assemble_scalar,
-                         assemble_vector)
-from dolfinx.fem import create_form as form
-from dolfinx.fem import set_bc
+                         assemble_vector, form, set_bc)
 from dolfinx.mesh import (GhostMode, MeshTags, create_unit_square,
                           locate_entities_boundary)
 

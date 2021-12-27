@@ -9,8 +9,7 @@ import pytest
 
 import ufl
 from dolfinx import fem
-from dolfinx.fem import Function, FunctionSpace
-from dolfinx.fem import create_form as form
+from dolfinx.fem import Function, FunctionSpace, form
 from dolfinx.mesh import GhostMode, create_unit_square
 from ufl import avg, inner
 

@@ -7,8 +7,7 @@
 from numpy import isclose, logical_and
 
 import ufl
-from dolfinx.fem import FunctionSpace, assemble_matrix
-from dolfinx.fem import create_form as form
+from dolfinx.fem import FunctionSpace, assemble_matrix, form
 from dolfinx.mesh import (DiagonalType, GhostMode, compute_incident_entities,
                           create_unit_cube, create_unit_square,
                           locate_entities, locate_entities_boundary, refine)

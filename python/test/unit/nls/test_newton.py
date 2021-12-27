@@ -11,10 +11,8 @@ import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import fem, la
 from dolfinx.fem import (DirichletBC, Function, FunctionSpace, apply_lifting,
-                         assemble_matrix, assemble_vector)
-from dolfinx.fem import create_form as form
-from dolfinx.fem import (create_matrix, create_vector, locate_dofs_geometrical,
-                         set_bc)
+                         assemble_matrix, assemble_vector, create_matrix,
+                         create_vector, form, locate_dofs_geometrical, set_bc)
 from dolfinx.mesh import create_unit_square
 from ufl import TestFunction, TrialFunction, derivative, dx, grad, inner
 

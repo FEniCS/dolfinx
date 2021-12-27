@@ -19,10 +19,8 @@ from dolfinx.fem import (Constant, DirichletBC, Function, FunctionSpace,
                          assemble_matrix_block, assemble_matrix_nest,
                          assemble_scalar, assemble_vector,
                          assemble_vector_block, assemble_vector_nest,
-                         bcs_by_block)
-from dolfinx.fem import create_form as form
-from dolfinx.fem import (locate_dofs_geometrical, locate_dofs_topological,
-                         set_bc, set_bc_nest)
+                         bcs_by_block, form, locate_dofs_geometrical,
+                         locate_dofs_topological, set_bc, set_bc_nest)
 from dolfinx.fem.assemble import pack_coefficients, pack_constants
 from dolfinx.fem.form import extract_function_spaces
 from dolfinx.mesh import (CellType, GhostMode, create_mesh, create_rectangle,
