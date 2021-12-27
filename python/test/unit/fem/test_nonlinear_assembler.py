@@ -12,7 +12,7 @@ import pytest
 
 import ufl
 from dolfinx.cpp.la.petsc import scatter_local_vectors
-from dolfinx.fem import (DirichletBC, Function, FunctionSpace,
+from dolfinx.fem import (dirichletbc, Function, FunctionSpace,
                          VectorFunctionSpace, apply_lifting,
                          apply_lifting_nest, assemble_matrix,
                          assemble_matrix_block, assemble_matrix_nest,
@@ -72,7 +72,7 @@ def test_matrix_assembly_block_nl():
     u_bc = Function(V1)
     u_bc.interpolate(bc_value)
     bdofs = locate_dofs_topological(V1, facetdim, bndry_facets)
-    bc = DirichletBC(u_bc, bdofs)
+    bc = dirichletbc(u_bc, bdofs)
 
     # Define variational problem
     du, dp = ufl.TrialFunction(V0), ufl.TrialFunction(V1)
@@ -147,7 +147,7 @@ def test_matrix_assembly_block_nl():
 
     bdofsW_V1 = locate_dofs_topological((W.sub(1), V1), facetdim, bndry_facets)
 
-    bc = DirichletBC(u_bc, bdofsW_V1, W.sub(1))
+    bc = dirichletbc(u_bc, bdofsW_V1, W.sub(1))
     A2 = assemble_matrix(J, bcs=[bc])
     A2.assemble()
     b2 = assemble_vector(F)
@@ -283,7 +283,7 @@ def test_assembly_solve_block_nl():
     u_bc1.interpolate(bc_val_1)
     bdofs0 = locate_dofs_topological(V0, facetdim, bndry_facets)
     bdofs1 = locate_dofs_topological(V1, facetdim, bndry_facets)
-    bcs = [DirichletBC(u_bc0, bdofs0), DirichletBC(u_bc1, bdofs1)]
+    bcs = [dirichletbc(u_bc0, bdofs0), dirichletbc(u_bc1, bdofs1)]
 
     # Block and Nest variational problem
     u, p = Function(V0), Function(V1)
@@ -393,7 +393,7 @@ def test_assembly_solve_block_nl():
         u1_bc.interpolate(bc_val_1)
         bdofsW0_V0 = locate_dofs_topological((W.sub(0), V0), facetdim, bndry_facets)
         bdofsW1_V1 = locate_dofs_topological((W.sub(1), V1), facetdim, bndry_facets)
-        bcs = [DirichletBC(u0_bc, bdofsW0_V0, W.sub(0)), DirichletBC(u1_bc, bdofsW1_V1, W.sub(1))]
+        bcs = [dirichletbc(u0_bc, bdofsW0_V0, W.sub(0)), dirichletbc(u1_bc, bdofsW1_V1, W.sub(1))]
 
         Jmat = create_matrix(J)
         Fvec = create_vector(F)
@@ -469,7 +469,7 @@ def test_assembly_solve_taylor_hood_nl(mesh):
     bdofs0 = locate_dofs_topological(P2, facetdim, bndry_facets0)
     bdofs1 = locate_dofs_topological(P2, facetdim, bndry_facets1)
 
-    bcs = [DirichletBC(u_bc_0, bdofs0), DirichletBC(u_bc_1, bdofs1)]
+    bcs = [dirichletbc(u_bc_0, bdofs0), dirichletbc(u_bc_1, bdofs1)]
 
     u, p = Function(P2), Function(P1)
     du, dp = ufl.TrialFunction(P2), ufl.TrialFunction(P1)
@@ -579,7 +579,7 @@ def test_assembly_solve_taylor_hood_nl(mesh):
     bdofsW0_P2_0 = locate_dofs_topological((W.sub(0), P2), facetdim, bndry_facets0)
     bdofsW0_P2_1 = locate_dofs_topological((W.sub(0), P2), facetdim, bndry_facets1)
 
-    bcs = [DirichletBC(u_bc_0, bdofsW0_P2_0, W.sub(0)), DirichletBC(u_bc_1, bdofsW0_P2_1, W.sub(0))]
+    bcs = [dirichletbc(u_bc_0, bdofsW0_P2_0, W.sub(0)), dirichletbc(u_bc_1, bdofsW0_P2_1, W.sub(0))]
 
     Jmat2 = create_matrix(J)
     Pmat2 = create_matrix(P)

@@ -132,48 +132,48 @@ class DirichletBC:
             Function space of a problem to which boundary conditions are applied.
         """
 
-        # Determine the dtype
-        try:
-            dtype = value.x.array.dtype
-        except AttributeError:
-            dtype = value.dtype
-
         # Unwrap value object, if required
         try:
             _value = value._cpp_object
         except AttributeError:
             _value = value
 
-        def dirichletbc_obj(dtype):
-            if dtype == np.float32:
-                return _cpp.fem.DirichletBC_float32
-            elif dtype == np.float64:
-                return _cpp.fem.DirichletBC_float64
-            elif dtype == np.complex64:
-                return _cpp.fem.DirichletBC_complex64
-            elif dtype == np.complex128:
-                return _cpp.fem.DirichletBC_complex128
-            else:
-                raise NotImplementedError(f"Type {dtype} not supported.")
-
         if V is not None:
             try:
-                self._cpp_object = dirichletbc_obj(dtype)(_value, dofs, V)
+                super().__init__(_value, dofs, V)
             except TypeError:
-                self._cpp_object = dirichletbc_obj(dtype)(_value, dofs, V._cpp_object)
+                super().__init__(_value, dofs, V._cpp_object)
         else:
-            self._cpp_object = dirichletbc_obj(dtype)(_value, dofs)
+            super().__init__(_value, dofs)
 
     @property
     def g(self):
         """The boundary condition value(s)"""
-        return self._cpp_object.value
+        return self.value
 
-    @property
-    def function_space(self):
-        """The function space to which boundary condition constrains
-        will be applied"""
-        return self._cpp_object.function_space
+
+def dirichletbc(value: typing.Union[ufl.Coefficient, Function, Constant],
+                dofs: typing.List[int], V: FunctionSpace = None):
+
+    # Determine the dtype
+    try:
+        dtype = value.x.array.dtype
+    except AttributeError:
+        dtype = value.dtype
+
+    if dtype == np.float32:
+        bctype = _cpp.fem.DirichletBC_float32
+    elif dtype == np.float64:
+        bctype = _cpp.fem.DirichletBC_float64
+    elif dtype == np.complex64:
+        bctype = _cpp.fem.DirichletBC_complex64
+    elif dtype == np.complex128:
+        bctype = _cpp.fem.DirichletBC_complex128
+    else:
+        raise NotImplementedError(f"Type {dtype} not supported.")
+
+    formcls = type("DirichletBC", (DirichletBC, bctype), {})
+    return formcls(value, dofs, V)
 
 
 def bcs_by_block(spaces: typing.Iterable[FunctionSpace],

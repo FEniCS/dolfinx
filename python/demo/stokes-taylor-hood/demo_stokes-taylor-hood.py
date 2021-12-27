@@ -76,7 +76,7 @@ import dolfinx
 import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import fem
-from dolfinx.fem import (Constant, DirichletBC, Function, FunctionSpace,
+from dolfinx.fem import (Constant, dirichletbc, Function, FunctionSpace,
                          extract_function_spaces, form,
                          locate_dofs_geometrical, locate_dofs_topological)
 from dolfinx.io import XDMFFile
@@ -129,13 +129,13 @@ V, Q = FunctionSpace(mesh, P2), FunctionSpace(mesh, P1)
 # where x = 0, x = 1, and y = 0
 noslip = np.zeros(mesh.geometry.dim, dtype=PETSc.ScalarType)
 facets = locate_entities_boundary(mesh, 1, noslip_boundary)
-bc0 = DirichletBC(noslip, locate_dofs_topological(V, 1, facets), V)
+bc0 = dirichletbc(noslip, locate_dofs_topological(V, 1, facets), V)
 
 # Driving velocity condition u = (1, 0) on top boundary (y = 1)
 lid_velocity = Function(V)
 lid_velocity.interpolate(lid_velocity_expression)
 facets = locate_entities_boundary(mesh, 1, lid)
-bc1 = DirichletBC(lid_velocity, locate_dofs_topological(V, 1, facets))
+bc1 = dirichletbc(lid_velocity, locate_dofs_topological(V, 1, facets))
 
 # Collect Dirichlet boundary conditions
 bcs = [bc0, bc1]
@@ -400,7 +400,7 @@ W0 = W.sub(0).collapse()
 noslip = Function(V)
 facets = locate_entities_boundary(mesh, 1, noslip_boundary)
 dofs = locate_dofs_topological((W.sub(0), V), 1, facets)
-bc0 = DirichletBC(noslip, dofs, W.sub(0))
+bc0 = dirichletbc(noslip, dofs, W.sub(0))
 
 
 # Driving velocity condition u = (1, 0) on top boundary (y = 1)
@@ -408,7 +408,7 @@ lid_velocity = Function(W0)
 lid_velocity.interpolate(lid_velocity_expression)
 facets = locate_entities_boundary(mesh, 1, lid)
 dofs = locate_dofs_topological((W.sub(0), V), 1, facets)
-bc1 = DirichletBC(lid_velocity, dofs, W.sub(0))
+bc1 = dirichletbc(lid_velocity, dofs, W.sub(0))
 
 
 # Since for this problem the pressure is only determined up to a
@@ -416,7 +416,7 @@ bc1 = DirichletBC(lid_velocity, dofs, W.sub(0))
 zero = Function(Q)
 zero.x.set(0.0)
 dofs = locate_dofs_geometrical((W.sub(1), Q), lambda x: np.isclose(x.T, [0, 0, 0]).all(axis=1))
-bc2 = DirichletBC(zero, dofs, W.sub(1))
+bc2 = dirichletbc(zero, dofs, W.sub(1))
 
 # Collect Dirichlet boundary conditions
 bcs = [bc0, bc1, bc2]

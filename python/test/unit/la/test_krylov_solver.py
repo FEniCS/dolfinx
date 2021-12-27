@@ -13,7 +13,7 @@ import pytest
 
 import ufl
 from dolfinx import la
-from dolfinx.fem import (DirichletBC, Function, FunctionSpace,
+from dolfinx.fem import (dirichletbc, Function, FunctionSpace,
                          VectorFunctionSpace, apply_lifting, assemble_matrix,
                          assemble_vector, form, locate_dofs_topological,
                          set_bc)
@@ -100,7 +100,7 @@ def test_krylov_samg_solver_elasticity():
         facetdim = mesh.topology.dim - 1
         bndry_facets = locate_entities_boundary(mesh, facetdim, lambda x: np.full(x.shape[1], True))
         bdofs = locate_dofs_topological(V.sub(0), V, facetdim, bndry_facets)
-        bc = DirichletBC(PETSc.ScalarType(0), bdofs, V.sub(0))
+        bc = dirichletbc(PETSc.ScalarType(0), bdofs, V.sub(0))
 
         # Forms
         a, L = inner(sigma(u), grad(v)) * dx, dot(ufl.as_vector((1.0, 1.0)), v) * dx

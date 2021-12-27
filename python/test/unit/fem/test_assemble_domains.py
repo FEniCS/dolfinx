@@ -9,7 +9,7 @@ import numpy as np
 import pytest
 
 import ufl
-from dolfinx.fem import (Constant, DirichletBC, Function, FunctionSpace,
+from dolfinx.fem import (Constant, dirichletbc, Function, FunctionSpace,
                          apply_lifting, assemble_matrix, assemble_scalar,
                          assemble_vector, form, set_bc)
 from dolfinx.mesh import (GhostMode, MeshTags, create_unit_square,
@@ -60,7 +60,7 @@ def test_assembly_dx_domains(mode):
     A2.assemble()
     assert (A - A2).norm() < 1.0e-12
 
-    bc = DirichletBC(Function(V), range(30))
+    bc = dirichletbc(Function(V), range(30))
 
     # Assemble vector
     L = form(ufl.inner(w, v) * (dx(1) + dx(2) + dx(3)))
@@ -131,7 +131,7 @@ def test_assembly_ds_domains(mode):
     w = Function(V)
     w.x.array[:] = 0.5
 
-    bc = DirichletBC(Function(V), range(30))
+    bc = dirichletbc(Function(V), range(30))
 
     # Assemble matrix
     a = form(w * ufl.inner(u, v) * (ds(1) + ds(2) + ds(3) + ds(6)))

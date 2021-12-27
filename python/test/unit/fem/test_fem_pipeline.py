@@ -9,7 +9,7 @@ import numpy as np
 import pytest
 
 import ufl
-from dolfinx.fem import (DirichletBC, Function, FunctionSpace,
+from dolfinx.fem import (dirichletbc, Function, FunctionSpace,
                          VectorFunctionSpace, apply_lifting, assemble_matrix,
                          assemble_scalar, assemble_vector, form,
                          locate_dofs_topological, set_bc)
@@ -56,7 +56,7 @@ def run_scalar_test(mesh, V, degree):
     mesh.topology.create_connectivity(facetdim, mesh.topology.dim)
     bndry_facets = np.where(np.array(compute_boundary_facets(mesh.topology)) == 1)[0]
     bdofs = locate_dofs_topological(V, facetdim, bndry_facets)
-    bc = DirichletBC(u_bc, bdofs)
+    bc = dirichletbc(u_bc, bdofs)
 
     b = assemble_vector(L)
     apply_lifting(b, [a], bcs=[[bc]])
@@ -221,7 +221,7 @@ def test_curl_curl_eigenvalue(family, order):
 
     zero_u = Function(V)
     zero_u.x.array[:] = 0.0
-    bcs = [DirichletBC(zero_u, boundary_dofs)]
+    bcs = [dirichletbc(zero_u, boundary_dofs)]
 
     a, b = form(a), form(b)
 
@@ -309,7 +309,7 @@ def test_biharmonic():
         mesh, mesh.topology.dim - 1, lambda x: np.full(x.shape[1], True, dtype=bool))
     boundary_dofs = locate_dofs_topological((V.sub(1), V_1), mesh.topology.dim - 1, boundary_facets)
 
-    bcs = [DirichletBC(zero_u, boundary_dofs, V.sub(1))]
+    bcs = [dirichletbc(zero_u, boundary_dofs, V.sub(1))]
 
     A = assemble_matrix(a, bcs=bcs)
     A.assemble()

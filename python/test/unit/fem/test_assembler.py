@@ -13,7 +13,7 @@ import scipy.sparse
 
 import ufl
 from dolfinx import cpp as _cpp
-from dolfinx.fem import (Constant, DirichletBC, Function, FunctionSpace,
+from dolfinx.fem import (Constant, dirichletbc, Function, FunctionSpace,
                          VectorFunctionSpace, apply_lifting,
                          apply_lifting_nest, assemble_matrix,
                          assemble_matrix_block, assemble_matrix_nest,
@@ -156,7 +156,7 @@ def test_assembly_bcs(mode):
     a, L = form(a), form(L)
 
     bdofsV = locate_dofs_geometrical(V, lambda x: np.logical_or(np.isclose(x[0], 0.0), np.isclose(x[0], 1.0)))
-    bc = DirichletBC(PETSc.ScalarType(1), bdofsV, V)
+    bc = dirichletbc(PETSc.ScalarType(1), bdofsV, V)
 
     # Assemble and apply 'global' lifting of bcs
     A = assemble_matrix(a)
@@ -199,7 +199,7 @@ def test_assemble_manifold():
     a, L = form(a), form(L)
 
     bcdofs = locate_dofs_geometrical(U, lambda x: np.isclose(x[0], 0.0))
-    bcs = [DirichletBC(PETSc.ScalarType(0), bcdofs, U)]
+    bcs = [dirichletbc(PETSc.ScalarType(0), bcdofs, U)]
     A = assemble_matrix(a, bcs=bcs)
     A.assemble()
 
@@ -229,7 +229,7 @@ def test_matrix_assembly_block(mode):
                                                                                     np.isclose(x[0], 1.0)))
     bdofsV1 = locate_dofs_topological(V1, facetdim, bndry_facets)
     u_bc = PETSc.ScalarType(50.0)
-    bc = DirichletBC(u_bc, bdofsV1, V1)
+    bc = dirichletbc(u_bc, bdofsV1, V1)
 
     # Define variational problem
     u, p = ufl.TrialFunction(V0), ufl.TrialFunction(V1)
@@ -285,7 +285,7 @@ def test_matrix_assembly_block(mode):
     a, L = form(a), form(L)
 
     bdofsW_V1 = locate_dofs_topological(W.sub(1), mesh.topology.dim - 1, bndry_facets)
-    bc = DirichletBC(u_bc, bdofsW_V1, W.sub(1))
+    bc = dirichletbc(u_bc, bdofsW_V1, W.sub(1))
     A2 = assemble_matrix(a, bcs=[bc])
     A2.assemble()
     b2 = assemble_vector(L)
@@ -316,7 +316,7 @@ def test_assembly_solve_block(mode):
 
     u0_bc = PETSc.ScalarType(50.0)
     u1_bc = PETSc.ScalarType(20.0)
-    bcs = [DirichletBC(u0_bc, bdofsV0, V0), DirichletBC(u1_bc, bdofsV1, V1)]
+    bcs = [dirichletbc(u0_bc, bdofsV0, V0), dirichletbc(u1_bc, bdofsV1, V1)]
 
     # Variational problem
     u, p = ufl.TrialFunction(V0), ufl.TrialFunction(V1)
@@ -391,7 +391,7 @@ def test_assembly_solve_block(mode):
 
     bdofsW0_V0 = locate_dofs_topological(W.sub(0), facetdim, bndry_facets)
     bdofsW1_V1 = locate_dofs_topological(W.sub(1), facetdim, bndry_facets)
-    bcs = [DirichletBC(u0_bc, bdofsW0_V0, W.sub(0)), DirichletBC(u1_bc, bdofsW1_V1, W.sub(1))]
+    bcs = [dirichletbc(u0_bc, bdofsW0_V0, W.sub(0)), dirichletbc(u1_bc, bdofsW1_V1, W.sub(1))]
 
     A2 = assemble_matrix(a, bcs=bcs)
     A2.assemble()
@@ -446,8 +446,8 @@ def test_assembly_solve_taylor_hood(mesh):
     bdofs1 = locate_dofs_topological(P2, facetdim, bndry_facets1)
 
     bc_value = np.ones(mesh.geometry.dim, dtype=PETSc.ScalarType)
-    bc0 = DirichletBC(bc_value, bdofs0, P2)
-    bc1 = DirichletBC(bc_value, bdofs1, P2)
+    bc0 = dirichletbc(bc_value, bdofs0, P2)
+    bc1 = dirichletbc(bc_value, bdofs1, P2)
 
     u, p = ufl.TrialFunction(P2), ufl.TrialFunction(P1)
     v, q = ufl.TestFunction(P2), ufl.TestFunction(P1)
@@ -558,8 +558,8 @@ def test_assembly_solve_taylor_hood(mesh):
         bdofsW0_P2_0 = locate_dofs_topological(W.sub(0), facetdim, bndry_facets0)
         bdofsW0_P2_1 = locate_dofs_topological(W.sub(0), facetdim, bndry_facets1)
 
-        bc0 = DirichletBC(bc_value, bdofsW0_P2_0, W.sub(0))
-        bc1 = DirichletBC(bc_value, bdofsW0_P2_1, W.sub(0))
+        bc0 = dirichletbc(bc_value, bdofsW0_P2_0, W.sub(0))
+        bc1 = dirichletbc(bc_value, bdofsW0_P2_1, W.sub(0))
 
         A = assemble_matrix(a, bcs=[bc0, bc1])
         A.assemble()

@@ -16,7 +16,7 @@ import scipy.sparse.linalg
 import dolfinx
 import dolfinx.pkgconfig
 import ufl
-from dolfinx.fem import (DirichletBC, FunctionSpace, assemble_matrix, form,
+from dolfinx.fem import (dirichletbc, FunctionSpace, assemble_matrix, form,
                          locate_dofs_geometrical)
 from dolfinx.mesh import create_unit_square
 from dolfinx.wrappers import get_include_path as pybind_inc
@@ -122,9 +122,9 @@ PYBIND11_MODULE(eigen_csr, m)
     a = form(ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx)
 
     bdofsQ = locate_dofs_geometrical(Q, lambda x: np.logical_or(np.isclose(x[0], 0.0), np.isclose(x[0], 1.0)))
-    bc = DirichletBC(PETSc.ScalarType(1), bdofsQ, Q)
+    bc = dirichletbc(PETSc.ScalarType(1), bdofsQ, Q)
 
     A1 = assemble_matrix(a, [bc])
     A1.assemble()
-    A2 = assemble_csr_matrix(a, [bc._cpp_object])
+    A2 = assemble_csr_matrix(a, [bc])
     assert np.isclose(A1.norm(), scipy.sparse.linalg.norm(A2))

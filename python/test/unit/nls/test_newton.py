@@ -10,7 +10,7 @@ import numpy as np
 import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import fem, la
-from dolfinx.fem import (DirichletBC, Function, FunctionSpace, apply_lifting,
+from dolfinx.fem import (dirichletbc, Function, FunctionSpace, apply_lifting,
                          assemble_matrix, assemble_vector, create_matrix,
                          create_vector, form, locate_dofs_geometrical, set_bc)
 from dolfinx.mesh import create_unit_square
@@ -94,7 +94,7 @@ def test_linear_pde():
     v = TestFunction(V)
     F = inner(10.0, v) * dx - inner(grad(u), grad(v)) * dx
 
-    bc = DirichletBC(PETSc.ScalarType(1.0),
+    bc = dirichletbc(PETSc.ScalarType(1.0),
                      locate_dofs_geometrical(V, lambda x: np.logical_or(np.isclose(x[0], 0.0),
                                                                         np.isclose(x[0], 1.0))), V)
 
@@ -127,7 +127,7 @@ def test_nonlinear_pde():
     F = inner(5.0, v) * dx - ufl.sqrt(u * u) * inner(
         grad(u), grad(v)) * dx - inner(u, v) * dx
 
-    bc = DirichletBC(PETSc.ScalarType(1.0),
+    bc = dirichletbc(PETSc.ScalarType(1.0),
                      locate_dofs_geometrical(V, lambda x: np.logical_or(np.isclose(x[0], 0.0),
                                                                         np.isclose(x[0], 1.0))), V)
 
@@ -163,7 +163,7 @@ def test_nonlinear_pde_snes():
 
     u_bc = Function(V)
     u_bc.x.array[:] = 1.0
-    bc = DirichletBC(u_bc, locate_dofs_geometrical(V, lambda x: np.logical_or(np.isclose(x[0], 0.0),
+    bc = dirichletbc(u_bc, locate_dofs_geometrical(V, lambda x: np.logical_or(np.isclose(x[0], 0.0),
                                                                               np.isclose(x[0], 1.0))))
 
     # Create nonlinear problem
