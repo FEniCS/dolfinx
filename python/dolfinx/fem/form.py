@@ -20,7 +20,7 @@ from petsc4py import PETSc
 
 class Form:
     def __init__(self, form: ufl.Form, dtype: np.dtype, form_compiler_parameters, jit_parameters):
-        """Create DOLFINx Form (new)
+        """A DOLFINx finite element form
 
         Parameters
         ----------
@@ -111,11 +111,6 @@ def form(form: ufl.Form, dtype: np.dtype = PETSc.ScalarType,
     jit_parameters
         See :py:func:`ffcx_jit <dolfinx.jit.ffcx_jit>`
 
-    Note
-    ----
-    The DOLFINx form is responsible for the FFCx JIT compilation and
-    attaching coefficients and domains specific data to the underlying
-    C++ Form.
     """
     if dtype == np.float32:
         ftype = _cpp.fem.Form_float32

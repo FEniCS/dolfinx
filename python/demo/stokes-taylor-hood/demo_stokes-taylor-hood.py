@@ -149,9 +149,7 @@ f = Constant(mesh, (PETSc.ScalarType(0), PETSc.ScalarType(0)))
 
 a = form([[inner(grad(u), grad(v)) * dx, inner(p, div(v)) * dx],
           [inner(div(u), q) * dx, None]])
-
-L = form([inner(f, v) * dx,
-          inner(Constant(mesh, PETSc.ScalarType(0)), q) * dx])
+L = form([inner(f, v) * dx, inner(Constant(mesh, PETSc.ScalarType(0)), q) * dx])
 
 # We will use a block-diagonal preconditioner to solve this problem::
 
