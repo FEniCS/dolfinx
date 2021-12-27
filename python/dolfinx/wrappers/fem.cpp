@@ -356,9 +356,7 @@ void declare_objects(py::module& m, const std::string& type)
             assert(element);
 
             // Compute value size
-            std::vector<int> vshape(element->value_rank(), 1);
-            for (std::size_t i = 0; i < vshape.size(); ++i)
-              vshape[i] = element->value_dimension(i);
+            auto vshape = element->value_shape();
             std::size_t value_size = std::reduce(
                 std::begin(vshape), std::end(vshape), 1, std::multiplies<>());
 
@@ -856,7 +854,8 @@ void fem(py::module& m)
                 = reinterpret_cast<const ufc_finite_element*>(ufc_element);
             return dolfinx::fem::FiniteElement(*p);
           }))
-      .def("num_sub_elements", &dolfinx::fem::FiniteElement::num_sub_elements)
+      .def_property_readonly("num_sub_elements",
+                             &dolfinx::fem::FiniteElement::num_sub_elements)
       .def_property_readonly(
           "interpolation_points",
           [](const dolfinx::fem::FiniteElement& self)
@@ -866,10 +865,15 @@ void fem(py::module& m)
           })
       .def_property_readonly("interpolation_ident",
                              &dolfinx::fem::FiniteElement::interpolation_ident)
-      .def_property_readonly("value_rank",
-                             &dolfinx::fem::FiniteElement::value_rank)
-      .def("space_dimension", &dolfinx::fem::FiniteElement::space_dimension)
-      .def("value_dimension", &dolfinx::fem::FiniteElement::value_dimension)
+      .def_property_readonly("space_dimension",
+                             &dolfinx::fem::FiniteElement::space_dimension)
+      .def_property_readonly("value_shape",
+                             [](const dolfinx::fem::FiniteElement& self)
+                             {
+                               xtl::span<const int> shape = self.value_shape();
+                               return py::array_t(shape.size(), shape.data(),
+                                                  py::none());
+                             })
       .def("apply_dof_transformation",
            [](const dolfinx::fem::FiniteElement& self,
               py::array_t<double, py::array::c_style>& x,

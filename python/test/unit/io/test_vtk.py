@@ -178,7 +178,7 @@ def test_save_2d_mixed(tempdir):
     U.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
     filename = os.path.join(tempdir, "u.pvd")
     with VTKFile(mesh.comm, filename, "w") as vtk:
-        vtk.write_function([U.sub(i) for i in range(W.num_sub_spaces())], 0.)
+        vtk.write_function([U.sub(i) for i in range(W.num_sub_spaces)], 0.)
 
 
 def test_save_1d_tensor(tempdir):

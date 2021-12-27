@@ -144,12 +144,12 @@ def test_vector_constant_bc(mesh_factory):
     mesh = func(*args)
     tdim = mesh.topology.dim
     V = VectorFunctionSpace(mesh, ("Lagrange", 1))
-    assert(V.num_sub_spaces() == mesh.geometry.dim)
+    assert V.num_sub_spaces == mesh.geometry.dim
     c = np.arange(1, mesh.geometry.dim + 1, dtype=PETSc.ScalarType)
     boundary_facets = locate_entities_boundary(mesh, tdim - 1, lambda x: np.ones(x.shape[1], dtype=bool))
 
     # Set using sub-functions
-    Vs = [V.sub(i).collapse() for i in range(V.num_sub_spaces())]
+    Vs = [V.sub(i).collapse() for i in range(V.num_sub_spaces)]
     boundary_dofs = [locate_dofs_topological((V.sub(i), Vs[i]), tdim - 1, boundary_facets)
                      for i in range(len(Vs))]
     u_bcs = [Function(Vs[i]) for i in range(len(Vs))]
@@ -188,7 +188,7 @@ def test_sub_constant_bc(mesh_factory):
     c = Constant(mesh, PETSc.ScalarType(3.14))
     boundary_facets = locate_entities_boundary(mesh, tdim - 1, lambda x: np.ones(x.shape[1], dtype=bool))
 
-    for i in range(V.num_sub_spaces()):
+    for i in range(V.num_sub_spaces):
         Vi = V.sub(i).collapse()
         u_bci = Function(Vi)
         u_bci.x.array[:] = PETSc.ScalarType(c.value)
