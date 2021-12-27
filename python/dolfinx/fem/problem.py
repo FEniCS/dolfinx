@@ -58,10 +58,10 @@ class LinearProblem():
         .. code-block:: python
             problem = LinearProblem(a, L, [bc0, bc1], petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
         """
-        self._a = fem.Form(a, form_compiler_parameters=form_compiler_parameters, jit_parameters=jit_parameters)
+        self._a = fem.create_form(a, form_compiler_parameters=form_compiler_parameters, jit_parameters=jit_parameters)
         self._A = fem.create_matrix(self._a)
 
-        self._L = fem.Form(L, form_compiler_parameters=form_compiler_parameters, jit_parameters=jit_parameters)
+        self._L = fem.create_form(L, form_compiler_parameters=form_compiler_parameters, jit_parameters=jit_parameters)
         self._b = fem.create_vector(self._L)
 
         if u is None:

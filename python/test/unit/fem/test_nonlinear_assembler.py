@@ -162,10 +162,7 @@ def test_matrix_assembly_block_nl():
 class NonlinearPDE_SNESProblem():
     def __init__(self, F, J, soln_vars, bcs, P=None):
         self.L = F
-        try:
-            self.a = [[Form(_J) for _J in Jrow] for Jrow in J]
-        except TypeError:
-            self.a = Form(J)
+        self.a = J
         self.a_precon = P
         self.bcs = bcs
         self.soln_vars = soln_vars
@@ -301,7 +298,7 @@ def test_assembly_solve_block_nl():
     J = [[derivative(F[0], u, du), derivative(F[0], p, dp)],
          [derivative(F[1], u, du), derivative(F[1], p, dp)]]
 
-    F = create_form(F)
+    F, J = create_form(F), create_form(J)
 
     def blocked_solve():
         """Blocked version"""
@@ -388,7 +385,7 @@ def test_assembly_solve_block_nl():
             - inner(f, v0) * ufl.dx - inner(g, v1) * dx
         J = derivative(F, U, dU)
 
-        F = create_form(F)
+        F, J = create_form(F), create_form(J)
 
         u0_bc = Function(V0)
         u0_bc.interpolate(bc_val_0)
@@ -485,7 +482,7 @@ def test_assembly_solve_taylor_hood_nl(mesh):
     P = [[J[0][0], None],
          [None, inner(dp, q) * dx]]
 
-    F = create_form(F)
+    F, J, P = create_form(F), create_form(J), create_form(P)
 
     # -- Blocked and monolithic
 
@@ -577,7 +574,7 @@ def test_assembly_solve_taylor_hood_nl(mesh):
     J = derivative(F, U, dU)
     P = inner(ufl.grad(du), ufl.grad(v)) * dx + inner(dp, q) * dx
 
-    F = create_form(F)
+    F, J, P = create_form(F), create_form(J), create_form(P)
 
     bdofsW0_P2_0 = locate_dofs_topological((W.sub(0), P2), facetdim, bndry_facets0)
     bdofsW0_P2_1 = locate_dofs_topological((W.sub(0), P2), facetdim, bndry_facets1)

@@ -222,9 +222,7 @@ def create_form(form: ufl.Form, dtype: np.dtype = PETSc.ScalarType,
     def _create_form(form):
         """Recursively look for ufl.Forms and convert to
         dolfinx.cpp.fem.Form, otherwise return form argument"""
-        if isinstance(form, Form):
-            return form._cpp_object
-        elif isinstance(form, ufl.Form):
+        if isinstance(form, ufl.Form):
             return formcls(form, dtype, form_compiler_parameters, jit_parameters)
         elif isinstance(form, (tuple, list)):
             return list(map(lambda sub_form: _create_form(sub_form), form))

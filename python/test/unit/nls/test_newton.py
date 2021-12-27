@@ -12,8 +12,8 @@ from dolfinx import cpp as _cpp
 from dolfinx import fem, la
 from dolfinx.fem import (DirichletBC, Form, Function, FunctionSpace,
                          apply_lifting, assemble_matrix, assemble_vector,
-                         create_matrix, create_vector, locate_dofs_geometrical,
-                         set_bc)
+                         create_form, create_matrix, create_vector,
+                         locate_dofs_geometrical, set_bc)
 from dolfinx.mesh import create_unit_square
 from ufl import TestFunction, TrialFunction, derivative, dx, grad, inner
 
@@ -27,8 +27,8 @@ class NonlinearPDEProblem:
     def __init__(self, F, u, bc):
         V = u.function_space
         du = TrialFunction(V)
-        self.L = F
-        self.a = derivative(F, u, du)
+        self.L = create_form(F)
+        self.a = create_form(derivative(F, u, du))
         self.bc = bc
 
     def form(self, x):

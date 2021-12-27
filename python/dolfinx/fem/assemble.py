@@ -88,31 +88,31 @@ def create_vector(L: Form) -> PETSc.Vec:
 
 def create_vector_block(L: typing.List[Form]) -> PETSc.Vec:
     maps = [(form.function_spaces[0].dofmap.index_map, form.function_spaces[0].dofmap.index_map_bs)
-            for form in _create_cpp_form(L)]
+            for form in L]
     return _cpp.fem.petsc.create_vector_block(maps)
 
 
 def create_vector_nest(L: typing.List[Form]) -> PETSc.Vec:
     maps = [(form.function_spaces[0].dofmap.index_map, form.function_spaces[0].dofmap.index_map_bs)
-            for form in _create_cpp_form(L)]
+            for form in L]
     return _cpp.fem.petsc.create_vector_nest(maps)
 
 
 # -- Matrix instantiation ----------------------------------------------------
 
 def create_matrix(a: Form, mat_type=None) -> PETSc.Mat:
-    if mat_type is not None:
-        return _cpp.fem.petsc.create_matrix(_create_cpp_form(a), mat_type)
+    if mat_type is None:
+        return _cpp.fem.petsc.create_matrix(a)
     else:
-        return _cpp.fem.petsc.create_matrix(_create_cpp_form(a))
+        return _cpp.fem.petsc.create_matrix(a, mat_type)
 
 
 def create_matrix_block(a: typing.List[typing.List[Form]]) -> PETSc.Mat:
-    return _cpp.fem.petsc.create_matrix_block(_create_cpp_form(a))
+    return _cpp.fem.petsc.create_matrix_block(a)
 
 
 def create_matrix_nest(a: typing.List[typing.List[Form]]) -> PETSc.Mat:
-    return _cpp.fem.petsc.create_matrix_nest(_create_cpp_form(a))
+    return _cpp.fem.petsc.create_matrix_nest(a)
 
 
 Coefficients = collections.namedtuple('Coefficients', ['constants', 'coeffs'])
