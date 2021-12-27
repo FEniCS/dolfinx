@@ -197,7 +197,7 @@ public:
   {
     assert(g);
     assert(V);
-    if (V->element()->value_rank() != g->shape.size())
+    if (V->element()->value_shape().size() != g->shape.size())
     {
       throw std::runtime_error(
           "Rank mis-match between Constant and function space in DirichletBC");

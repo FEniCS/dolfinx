@@ -35,7 +35,7 @@ bool _is_cellwise(const fem::Function<Scalar>& u)
   assert(u.function_space());
 
   assert(u.function_space()->element());
-  const int rank = u.function_space()->element()->value_rank();
+  const int rank = u.function_space()->element()->value_shape().size();
   assert(u.function_space()->mesh());
   const int tdim = u.function_space()->mesh()->topology().dim();
   int cell_based_dim = 1;
@@ -126,7 +126,7 @@ template <typename Scalar>
 void _add_data(const fem::Function<Scalar>& u,
                const xt::xtensor<Scalar, 2>& values, pugi::xml_node& data_node)
 {
-  const int rank = u.function_space()->element()->value_rank();
+  const int rank = u.function_space()->element()->value_shape().size();
   const int dim = u.function_space()->element()->value_size();
   if (rank == 1)
   {
@@ -461,7 +461,7 @@ void write_function(
     // as Paraview only supports one active type
     if (piece_node.child(data_type.c_str()).empty())
       piece_node.append_child(data_type.c_str());
-    const int rank = _u.get().function_space()->element()->value_rank();
+    const int rank = _u.get().function_space()->element()->value_shape().size();
     pugi::xml_node data_node = piece_node.child(data_type.c_str());
     std::string rank_type;
     if (rank == 0)
@@ -667,7 +667,8 @@ void write_function(
     {
       std::string d_type = is_cellwise(_u) ? "PCellData" : "PPointData";
       pugi::xml_node data_pnode = grid_node.child(d_type.c_str());
-      const int rank = _u.get().function_space()->element()->value_rank();
+      const int rank
+          = _u.get().function_space()->element()->value_shape().size();
       int ncomps = 0;
       if (rank == 1)
         ncomps = 3;
