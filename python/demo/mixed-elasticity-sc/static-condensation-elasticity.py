@@ -21,8 +21,10 @@ import ufl
 from dolfinx import geometry
 from dolfinx.cpp.fem import Form_complex128, Form_float64
 from dolfinx.fem import (DirichletBC, Function, FunctionSpace, IntegralType,
-                         apply_lifting, assemble_matrix, assemble_vector,
-                         create_form, locate_dofs_topological, set_bc)
+                         apply_lifting, assemble_matrix, assemble_vector)
+from dolfinx.fem import create_form
+from dolfinx.fem import create_form as form
+from dolfinx.fem import locate_dofs_topological, set_bc
 from dolfinx.io import XDMFFile
 from dolfinx.jit import ffcx_jit
 from dolfinx.mesh import MeshTags, locate_entities_boundary
@@ -154,7 +156,7 @@ solver.setOperators(A_cond)
 solver.solve(b, uc.vector)
 
 # Pure displacement based formulation
-a = - ufl.inner(sigma_u(u), ufl.grad(v)) * ufl.dx
+a = form(- ufl.inner(sigma_u(u), ufl.grad(v)) * ufl.dx)
 A = assemble_matrix(a, bcs=[bc])
 A.assemble()
 
