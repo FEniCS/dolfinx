@@ -153,7 +153,30 @@ class DirichletBC:
 
 
 def dirichletbc(value: typing.Union[ufl.Coefficient, Function, Constant],
-                dofs: typing.List[int], V: FunctionSpace = None):
+                dofs: typing.List[int], V: FunctionSpace = None) -> DirichletBC:
+    """Create a representation of Dirichlet boundary condition which
+    is imposed on a linear system.
+
+    Parameters
+    ----------
+    value
+        Lifted boundary values function.
+    dofs
+        Local indices of degrees of freedom in function space to which
+        boundary condition applies.
+        Expects array of size (number of dofs, 2) if function space of the
+        problem, ``V``, is passed. Otherwise assumes function space of the
+        problem is the same of function space of boundary values function.
+    V : optional
+        Function space of a problem to which boundary conditions are applied.
+
+
+    Returns
+    -------
+    DirichletBC
+        A representation of the boundary condition for modifying linear systems.
+
+    """
 
     # Determine the dtype
     try:
