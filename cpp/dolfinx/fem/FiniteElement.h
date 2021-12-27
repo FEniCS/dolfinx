@@ -24,8 +24,8 @@ class FiniteElement
 {
 public:
   /// Create finite element from UFC finite element
-  /// @param[in] ufc_element UFC finite element
-  explicit FiniteElement(const ufc_finite_element& ufc_element);
+  /// @param[in] e UFC finite element
+  explicit FiniteElement(const ufc_finite_element& e);
 
   /// Copy constructor
   FiniteElement(const FiniteElement& element) = delete;
