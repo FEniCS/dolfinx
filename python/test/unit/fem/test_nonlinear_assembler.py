@@ -20,9 +20,8 @@ from dolfinx.fem import (DirichletBC, Function, FunctionSpace,
                          assemble_vector_nest, bcs_by_block, create_matrix,
                          create_matrix_block, create_matrix_nest,
                          create_vector, create_vector_block,
-                         create_vector_nest, form, locate_dofs_topological,
-                         set_bc, set_bc_nest)
-from dolfinx.fem.form import extract_function_spaces
+                         create_vector_nest, extract_function_spaces, form,
+                         locate_dofs_topological, set_bc, set_bc_nest)
 from dolfinx.mesh import (GhostMode, create_unit_cube, create_unit_square,
                           locate_entities_boundary)
 from ufl import derivative, dx, inner

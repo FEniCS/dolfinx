@@ -13,6 +13,8 @@ from dolfinx.cpp.fem import Form_float64 as _FormReal
 from dolfinx.cpp.fem import transpose_dofmap  # noqa
 from dolfinx.cpp.fem import IntegralType
 from dolfinx.cpp.fem import create_sparsity_pattern as _create_sparsity_pattern
+from dolfinx.fem.forms import Form, form, extract_function_spaces
+
 from dolfinx.fem.assemble import (apply_lifting, apply_lifting_nest,
                                   assemble_matrix, assemble_matrix_block,
                                   assemble_matrix_nest, assemble_scalar,
@@ -26,7 +28,6 @@ from dolfinx.fem.dirichletbc import (DirichletBC, bcs_by_block,
                                      locate_dofs_geometrical,
                                      locate_dofs_topological)
 from dolfinx.fem.dofmap import DofMap
-from dolfinx.fem.form import Form, form
 from dolfinx.fem.formmanipulations import adjoint
 from dolfinx.fem.function import (Constant, Expression, Function,
                                   FunctionSpace, TensorFunctionSpace,
@@ -55,4 +56,4 @@ __all__ = [
     "assemble_matrix", "set_bc", "set_bc_nest",
     "DirichletBC", "bcs_by_block", "DofMap", "Form", "form", "IntegralType",
     "adjoint", "LinearProblem", "locate_dofs_geometrical", "locate_dofs_topological",
-    "NonlinearProblem", "pack_coefficients", "pack_constants"]
+    "NonlinearProblem", "pack_coefficients", "pack_constants", "extract_function_spaces"]

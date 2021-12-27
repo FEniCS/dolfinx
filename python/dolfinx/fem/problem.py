@@ -174,16 +174,16 @@ class NonlinearProblem:
         .. code-block:: python
             problem = LinearProblem(F, u, [bc0, bc1])
         """
-        self._L = fem.form.form(F, form_compiler_parameters=form_compiler_parameters,
-                                jit_parameters=jit_parameters)
+        self._L = fem.form(F, form_compiler_parameters=form_compiler_parameters,
+                           jit_parameters=jit_parameters)
         # Create the Jacobian matrix, dF/du
         if J is None:
             V = u.function_space
             du = ufl.TrialFunction(V)
             J = ufl.derivative(F, u, du)
 
-        self._a = fem.form.form(J, form_compiler_parameters=form_compiler_parameters,
-                                jit_parameters=jit_parameters)
+        self._a = fem.form(J, form_compiler_parameters=form_compiler_parameters,
+                           jit_parameters=jit_parameters)
         self.bcs = bcs
 
     @property

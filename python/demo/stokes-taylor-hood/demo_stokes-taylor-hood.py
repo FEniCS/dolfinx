@@ -76,7 +76,8 @@ import dolfinx
 import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import fem
-from dolfinx.fem import (Constant, DirichletBC, Function, FunctionSpace, form,
+from dolfinx.fem import (Constant, DirichletBC, Function, FunctionSpace,
+                         extract_function_spaces, form,
                          locate_dofs_geometrical, locate_dofs_topological)
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import (CellType, GhostMode, create_rectangle,
@@ -190,7 +191,7 @@ for b_sub in b.getNestSubVecs():
     b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
 # Set Dirichlet boundary condition values in the RHS
-bcs0 = fem.bcs_by_block(form.extract_function_spaces(L), bcs)
+bcs0 = fem.bcs_by_block(extract_function_spaces(L), bcs)
 dolfinx.fem.assemble.set_bc_nest(b, bcs0)
 
 # Ths pressure field for this problem is determined only up to a
