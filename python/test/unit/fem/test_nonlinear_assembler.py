@@ -17,11 +17,11 @@ from dolfinx.fem import (DirichletBC, Form, Function, FunctionSpace,
                          apply_lifting_nest, assemble_matrix,
                          assemble_matrix_block, assemble_matrix_nest,
                          assemble_vector, assemble_vector_block,
-                         assemble_vector_nest, bcs_by_block, create_matrix,
-                         create_matrix_block, create_matrix_nest,
-                         create_vector, create_vector_block,
-                         create_vector_nest, locate_dofs_topological, set_bc,
-                         set_bc_nest)
+                         assemble_vector_nest, bcs_by_block, create_form,
+                         create_matrix, create_matrix_block,
+                         create_matrix_nest, create_vector,
+                         create_vector_block, create_vector_nest,
+                         locate_dofs_topological, set_bc, set_bc_nest)
 from dolfinx.fem.form import extract_function_spaces
 from dolfinx.mesh import (GhostMode, create_unit_cube, create_unit_square,
                           locate_entities_boundary)
@@ -161,10 +161,7 @@ def test_matrix_assembly_block_nl():
 
 class NonlinearPDE_SNESProblem():
     def __init__(self, F, J, soln_vars, bcs, P=None):
-        try:
-            self.L = [Form(_F) for _F in F]
-        except TypeError:
-            self.L = Form(F)
+        self.L = F
         try:
             self.a = [[Form(_J) for _J in Jrow] for Jrow in J]
         except TypeError:
@@ -301,9 +298,10 @@ def test_assembly_solve_block_nl():
 
     F = [inner((u**2 + 1) * ufl.grad(u), ufl.grad(v)) * dx - inner(f, v) * dx,
          inner((p**2 + 1) * ufl.grad(p), ufl.grad(q)) * dx - inner(g, q) * dx]
-
     J = [[derivative(F[0], u, du), derivative(F[0], p, dp)],
          [derivative(F[1], u, du), derivative(F[1], p, dp)]]
+
+    F = create_form(F)
 
     def blocked_solve():
         """Blocked version"""
@@ -389,6 +387,8 @@ def test_assembly_solve_block_nl():
             + inner((u1**2 + 1) * ufl.grad(u1), ufl.grad(v1)) * dx \
             - inner(f, v0) * ufl.dx - inner(g, v1) * dx
         J = derivative(F, U, dU)
+
+        F = create_form(F)
 
         u0_bc = Function(V0)
         u0_bc.interpolate(bc_val_0)
@@ -485,6 +485,8 @@ def test_assembly_solve_taylor_hood_nl(mesh):
     P = [[J[0][0], None],
          [None, inner(dp, q) * dx]]
 
+    F = create_form(F)
+
     # -- Blocked and monolithic
 
     Jmat0 = create_matrix_block(J)
@@ -574,6 +576,8 @@ def test_assembly_solve_taylor_hood_nl(mesh):
         + inner(ufl.div(u), q) * dx
     J = derivative(F, U, dU)
     P = inner(ufl.grad(du), ufl.grad(v)) * dx + inner(dp, q) * dx
+
+    F = create_form(F)
 
     bdofsW0_P2_0 = locate_dofs_topological((W.sub(0), P2), facetdim, bndry_facets0)
     bdofsW0_P2_1 = locate_dofs_topological((W.sub(0), P2), facetdim, bndry_facets1)

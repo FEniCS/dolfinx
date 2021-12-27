@@ -82,7 +82,7 @@ def pack_coefficients(form: form_type):
 # -- Vector instantiation ----------------------------------------------------
 
 def create_vector(L: Form) -> PETSc.Vec:
-    dofmap = _create_cpp_form(L).function_spaces[0].dofmap
+    dofmap = L.function_spaces[0].dofmap
     return la.create_petsc_vector(dofmap.index_map, dofmap.index_map_bs)
 
 
