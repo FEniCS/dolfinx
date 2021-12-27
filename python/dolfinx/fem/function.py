@@ -395,7 +395,7 @@ class Function(ufl.Coefficient):
         function resides in the subspace of the mixed space.
 
         """
-        num_sub_spaces = self.function_space.num_sub_spaces()
+        num_sub_spaces = self.function_space.num_sub_spaces
         if num_sub_spaces == 1:
             raise RuntimeError("No subfunctions to extract")
         return tuple(self.sub(i) for i in range(num_sub_spaces))
@@ -472,17 +472,14 @@ class FunctionSpace(ufl.FunctionSpace):
         Vcpp = _cpp.fem.FunctionSpace(self._cpp_object.mesh, self._cpp_object.element, self._cpp_object.dofmap)
         return FunctionSpace(None, self.ufl_element(), Vcpp)
 
-    def dolfin_element(self):
-        """DOLFINx element."""
-        return self._cpp_object.element
-
+    @property
     def num_sub_spaces(self) -> int:
-        """Number of sub spaces."""
-        return self.dolfin_element().num_sub_elements
+        """Number of sub spaces"""
+        return self.element.num_sub_elements
 
     def sub(self, i: int) -> "FunctionSpace":
         """Return the i-th sub space."""
-        assert self.ufl_element().num_sub_elements > i
+        assert self.ufl_element().num_sub_elements() > i
         sub_element = self.ufl_element().sub_elements()[i]
         cppV_sub = self._cpp_object.sub([i])
         return FunctionSpace(None, sub_element, cppV_sub)
