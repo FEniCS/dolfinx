@@ -119,6 +119,7 @@ from dolfinx.mesh import CellType, create_unit_square
 from dolfinx.nls import NewtonSolver
 from ufl import (FiniteElement, TestFunctions, diff, dx, grad, inner, split,
                  variable)
+from dolfinx.fem import create_form as form
 
 from mpi4py import MPI
 from petsc4py import PETSc

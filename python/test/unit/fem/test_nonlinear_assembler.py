@@ -17,8 +17,9 @@ from dolfinx.fem import (DirichletBC, Form, Function, FunctionSpace,
                          apply_lifting_nest, assemble_matrix,
                          assemble_matrix_block, assemble_matrix_nest,
                          assemble_vector, assemble_vector_block,
-                         assemble_vector_nest, bcs_by_block, create_form,
-                         create_matrix, create_matrix_block,
+                         assemble_vector_nest, bcs_by_block)
+from dolfinx.fem import create_form as form
+from dolfinx.fem import (create_matrix, create_matrix_block,
                          create_matrix_nest, create_vector,
                          create_vector_block, create_vector_nest,
                          locate_dofs_topological, set_bc, set_bc_nest)
@@ -144,6 +145,7 @@ def test_matrix_assembly_block_nl():
     F = inner(u0, v0) * dx + inner(u1, v0) * dx + inner(u0, v1) * dx + inner(u1, v1) * dx \
         - inner(f, v0) * ufl.dx - inner(g, v1) * dx
     J = derivative(F, U, dU)
+    F, J = form(F), form(J)
 
     bdofsW_V1 = locate_dofs_topological((W.sub(1), V1), facetdim, bndry_facets)
 
@@ -298,7 +300,7 @@ def test_assembly_solve_block_nl():
     J = [[derivative(F[0], u, du), derivative(F[0], p, dp)],
          [derivative(F[1], u, du), derivative(F[1], p, dp)]]
 
-    F, J = create_form(F), create_form(J)
+    F, J = form(F), form(J)
 
     def blocked_solve():
         """Blocked version"""
@@ -385,7 +387,7 @@ def test_assembly_solve_block_nl():
             - inner(f, v0) * ufl.dx - inner(g, v1) * dx
         J = derivative(F, U, dU)
 
-        F, J = create_form(F), create_form(J)
+        F, J = form(F), form(J)
 
         u0_bc = Function(V0)
         u0_bc.interpolate(bc_val_0)
@@ -482,7 +484,7 @@ def test_assembly_solve_taylor_hood_nl(mesh):
     P = [[J[0][0], None],
          [None, inner(dp, q) * dx]]
 
-    F, J, P = create_form(F), create_form(J), create_form(P)
+    F, J, P = form(F), form(J), form(P)
 
     # -- Blocked and monolithic
 
@@ -574,7 +576,7 @@ def test_assembly_solve_taylor_hood_nl(mesh):
     J = derivative(F, U, dU)
     P = inner(ufl.grad(du), ufl.grad(v)) * dx + inner(dp, q) * dx
 
-    F, J, P = create_form(F), create_form(J), create_form(P)
+    F, J, P = form(F), form(J), form(P)
 
     bdofsW0_P2_0 = locate_dofs_topological((W.sub(0), P2), facetdim, bndry_facets0)
     bdofsW0_P2_1 = locate_dofs_topological((W.sub(0), P2), facetdim, bndry_facets1)

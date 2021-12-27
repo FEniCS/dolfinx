@@ -10,6 +10,7 @@ import pytest
 import ufl
 from dolfinx import fem
 from dolfinx.fem import Function, FunctionSpace
+from dolfinx.fem import create_form as form
 from dolfinx.mesh import GhostMode, create_unit_square
 from ufl import avg, inner
 
@@ -44,8 +45,8 @@ def test_ghost_mesh_assembly(mode, dx, ds):
 
     f = Function(V)
     f.x.array[:] = 10.0
-    a = inner(f * u, v) * dx + inner(u, v) * ds
-    L = inner(f, v) * dx + inner(2.0, v) * ds
+    a = form(inner(f * u, v) * dx + inner(u, v) * ds)
+    L = form(inner(f, v) * dx + inner(2.0, v) * ds)
 
     # Initial assembly
     A = fem.assemble_matrix(a)
@@ -77,8 +78,7 @@ def test_ghost_mesh_dS_assembly(mode, dS):
     V = FunctionSpace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     dS = dS(mesh)
-
-    a = inner(avg(u), avg(v)) * dS
+    a = form(inner(avg(u), avg(v)) * dS)
 
     # Initial assembly
     A = fem.assemble_matrix(a)

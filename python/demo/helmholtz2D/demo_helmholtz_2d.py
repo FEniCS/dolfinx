@@ -15,6 +15,7 @@
 import numpy as np
 
 from dolfinx.fem import Function, FunctionSpace, LinearProblem
+from dolfinx.fem import create_form as form
 from dolfinx.fem.assemble import assemble_scalar
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import create_unit_square
@@ -75,11 +76,11 @@ u_exact.interpolate(lambda x: A * np.cos(k0 * x[0]) * np.cos(k0 * x[1]))
 
 # H1 errors
 diff = uh - u_exact
-H1_diff = mesh.comm.allreduce(assemble_scalar(inner(grad(diff), grad(diff)) * dx), op=MPI.SUM)
-H1_exact = mesh.comm.allreduce(assemble_scalar(inner(grad(u_exact), grad(u_exact)) * dx), op=MPI.SUM)
+H1_diff = mesh.comm.allreduce(assemble_scalar(form(inner(grad(diff), grad(diff)) * dx)), op=MPI.SUM)
+H1_exact = mesh.comm.allreduce(assemble_scalar(form(inner(grad(u_exact), grad(u_exact)) * dx)), op=MPI.SUM)
 print("Relative H1 error of FEM solution:", abs(np.sqrt(H1_diff) / np.sqrt(H1_exact)))
 
 # L2 errors
-L2_diff = mesh.comm.allreduce(assemble_scalar(inner(diff, diff) * dx), op=MPI.SUM)
-L2_exact = mesh.comm.allreduce(assemble_scalar(inner(u_exact, u_exact) * dx), op=MPI.SUM)
+L2_diff = mesh.comm.allreduce(assemble_scalar(form(inner(diff, diff) * dx)), op=MPI.SUM)
+L2_exact = mesh.comm.allreduce(assemble_scalar(form(inner(u_exact, u_exact) * dx)), op=MPI.SUM)
 print("Relative L2 error of FEM solution:", abs(np.sqrt(L2_diff) / np.sqrt(L2_exact)))

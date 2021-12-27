@@ -9,6 +9,7 @@ import numpy as np
 import pytest
 
 import ufl
+from dolfinx.fem import create_form as form
 from dolfinx.fem import (DirichletBC, Form, Function, FunctionSpace,
                          VectorFunctionSpace, apply_lifting, assemble_matrix,
                          assemble_scalar, assemble_vector,
@@ -46,7 +47,7 @@ def run_scalar_test(mesh, V, degree):
     L = inner(f, v) * dx(metadata={"quadrature_degree": -1})
 
     L.integrals()[0].metadata()["quadrature_degree"] = ufl.algorithms.estimate_total_polynomial_degree(L)
-    L = Form(L)
+    L = form(L)
 
     u_bc = Function(V)
     u_bc.interpolate(lambda x: x[1]**degree)
@@ -63,7 +64,7 @@ def run_scalar_test(mesh, V, degree):
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     set_bc(b, [bc])
 
-    a = Form(a)
+    a = form(a)
     A = assemble_matrix(a, bcs=[bc])
     A.assemble()
 
@@ -78,7 +79,7 @@ def run_scalar_test(mesh, V, degree):
     uh.x.scatter_forward()
 
     M = (u_exact - uh)**2 * dx
-    M = Form(M)
+    M = form(M)
 
     error = mesh.comm.allreduce(assemble_scalar(M), op=MPI.SUM)
     assert np.absolute(error) < 1.0e-14
@@ -87,12 +88,12 @@ def run_scalar_test(mesh, V, degree):
 def run_vector_test(mesh, V, degree):
     """Projection into H(div/curl) spaces"""
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
-    a = inner(u, v) * dx
+    a = form(inner(u, v) * dx)
 
     # Source term
     x = SpatialCoordinate(mesh)
     u_exact = x[0] ** degree
-    L = inner(u_exact, v[0]) * dx
+    L = form(inner(u_exact, v[0]) * dx)
 
     b = assemble_vector(L)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
@@ -116,7 +117,7 @@ def run_vector_test(mesh, V, degree):
     M = (u_exact - uh[0])**2 * dx
     for i in range(1, mesh.topology.dim):
         M += uh[i]**2 * dx
-    M = Form(M)
+    M = form(M)
 
     error = mesh.comm.allreduce(assemble_scalar(M), op=MPI.SUM)
     assert np.absolute(error) < 1.0e-14
@@ -166,6 +167,8 @@ def run_dg_test(mesh, V, degree):
     for integral in L.integrals():
         integral.metadata()["quadrature_degree"] = ufl.algorithms.estimate_total_polynomial_degree(L)
 
+    a, L = form(a), form(L)
+
     b = assemble_vector(L)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
@@ -185,7 +188,7 @@ def run_dg_test(mesh, V, degree):
 
     # Calculate error
     M = (u_exact - uh)**2 * dx
-    M = Form(M)
+    M = form(M)
 
     error = mesh.comm.allreduce(assemble_scalar(M), op=MPI.SUM)
     assert np.absolute(error) < 1.0e-14
@@ -221,6 +224,8 @@ def test_curl_curl_eigenvalue(family, order):
     zero_u = Function(V)
     zero_u.x.array[:] = 0.0
     bcs = [DirichletBC(zero_u, boundary_dofs)]
+
+    a, b = form(a), form(b)
 
     A = assemble_matrix(a, bcs=bcs)
     A.assemble()
@@ -294,8 +299,8 @@ def test_biharmonic():
             - ufl.dot(ufl.dot(tau_S, n), n) * ufl.dot(grad(v), n) * ds
 
     # Non-symmetric formulation
-    a = inner(sigma_S, tau_S) * dx - b(tau_S, u) + b(sigma_S, v)
-    L = inner(f_exact, v) * dx
+    a = form(inner(sigma_S, tau_S) * dx - b(tau_S, u) + b(sigma_S, v))
+    L = form(inner(f_exact, v) * dx)
 
     V_1 = V.sub(1).collapse()
     zero_u = Function(V_1)
@@ -329,9 +334,9 @@ def test_biharmonic():
 
     # Recall that x_h has flattened indices.
     u_error_numerator = np.sqrt(mesh.comm.allreduce(assemble_scalar(
-        inner(u_exact - x_h[4], u_exact - x_h[4]) * dx(mesh, metadata={"quadrature_degree": 5})), op=MPI.SUM))
+        form(inner(u_exact - x_h[4], u_exact - x_h[4]) * dx(mesh, metadata={"quadrature_degree": 5}))), op=MPI.SUM))
     u_error_denominator = np.sqrt(mesh.comm.allreduce(assemble_scalar(
-        inner(u_exact, u_exact) * dx(mesh, metadata={"quadrature_degree": 5})), op=MPI.SUM))
+        form(inner(u_exact, u_exact) * dx(mesh, metadata={"quadrature_degree": 5}))), op=MPI.SUM))
 
     assert(np.absolute(u_error_numerator / u_error_denominator) < 0.05)
 
@@ -339,9 +344,9 @@ def test_biharmonic():
     # Apply inverse transform. In 2D we have S^{-1} = S.
     sigma_h = S(ufl.as_tensor([[x_h[0], x_h[1]], [x_h[2], x_h[3]]]))
     sigma_error_numerator = np.sqrt(mesh.comm.allreduce(assemble_scalar(
-        inner(sigma_exact - sigma_h, sigma_exact - sigma_h) * dx(mesh, metadata={"quadrature_degree": 5})), op=MPI.SUM))
+        form(inner(sigma_exact - sigma_h, sigma_exact - sigma_h) * dx(mesh, metadata={"quadrature_degree": 5}))), op=MPI.SUM))
     sigma_error_denominator = np.sqrt(mesh.comm.allreduce(assemble_scalar(
-        inner(sigma_exact, sigma_exact) * dx(mesh, metadata={"quadrature_degree": 5})), op=MPI.SUM))
+        form(inner(sigma_exact, sigma_exact) * dx(mesh, metadata={"quadrature_degree": 5}))), op=MPI.SUM))
 
     assert(np.absolute(sigma_error_numerator / sigma_error_denominator) < 0.005)
 

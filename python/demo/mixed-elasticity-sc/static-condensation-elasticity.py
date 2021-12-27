@@ -22,7 +22,7 @@ from dolfinx import geometry
 from dolfinx.cpp.fem import Form_complex128, Form_float64
 from dolfinx.fem import (DirichletBC, Function, FunctionSpace, IntegralType,
                          apply_lifting, assemble_matrix, assemble_vector,
-                         locate_dofs_topological, set_bc)
+                         create_form, locate_dofs_topological, set_bc)
 from dolfinx.io import XDMFFile
 from dolfinx.jit import ffcx_jit
 from dolfinx.mesh import MeshTags, locate_entities_boundary
@@ -92,7 +92,7 @@ a10 = - ufl.inner(sigma, ufl.grad(v)) * ufl.dx
 a01 = - ufl.inner(sigma_u(u), tau) * ufl.dx
 
 f = ufl.as_vector([0.0, 1.0 / 16])
-b1 = - ufl.inner(f, v) * ds(1)
+b1 = create_form(- ufl.inner(f, v) * ds(1))
 
 # JIT compile individual blocks tabulation kernels
 nptype = "complex128" if np.issubdtype(PETSc.ScalarType, np.complexfloating) else "float64"

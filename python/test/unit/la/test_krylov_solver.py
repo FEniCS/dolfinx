@@ -19,6 +19,7 @@ from dolfinx.fem import (DirichletBC, Function, FunctionSpace,
 from dolfinx.mesh import create_unit_square, locate_entities_boundary
 from ufl import (Identity, TestFunction, TrialFunction, dot, dx, grad, inner,
                  sym, tr)
+from dolfinx.fem import create_form as form
 
 from mpi4py import MPI
 from petsc4py import PETSc
@@ -30,8 +31,8 @@ def test_krylov_solver_lu():
     V = FunctionSpace(mesh, ("Lagrange", 1))
     u, v = TrialFunction(V), TestFunction(V)
 
-    a = inner(u, v) * dx
-    L = inner(1.0, v) * dx
+    a = form(inner(u, v) * dx)
+    L = form(inner(1.0, v) * dx)
     A = assemble_matrix(a)
     A.assemble()
     b = assemble_vector(L)

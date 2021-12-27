@@ -125,10 +125,9 @@ def assemble_scalar(M: Form, coeffs=Coefficients(None, None)) -> PETSc.ScalarTyp
     accumulated across processes.
 
     """
-    _M = _create_cpp_form(M)
-    c = (coeffs[0] if coeffs[0] is not None else pack_constants(_M),
-         coeffs[1] if coeffs[1] is not None else pack_coefficients(_M))
-    return _cpp.fem.assemble_scalar(_M, c[0], c[1])
+    c = (coeffs[0] if coeffs[0] is not None else pack_constants(M),
+         coeffs[1] if coeffs[1] is not None else pack_coefficients(M))
+    return _cpp.fem.assemble_scalar(M, c[0], c[1])
 
 
 # -- Vector assembly ---------------------------------------------------------
@@ -140,14 +139,13 @@ def assemble_vector(L: Form, coeffs=Coefficients(None, None)) -> PETSc.Vec:
     owning processes.
 
     """
-    _L = _create_cpp_form(L)
-    b = la.create_petsc_vector(_L.function_spaces[0].dofmap.index_map,
-                               _L.function_spaces[0].dofmap.index_map_bs)
-    c = (coeffs[0] if coeffs[0] is not None else pack_constants(_L),
-         coeffs[1] if coeffs[1] is not None else pack_coefficients(_L))
+    b = la.create_petsc_vector(L.function_spaces[0].dofmap.index_map,
+                               L.function_spaces[0].dofmap.index_map_bs)
+    c = (coeffs[0] if coeffs[0] is not None else pack_constants(L),
+         coeffs[1] if coeffs[1] is not None else pack_coefficients(L))
     with b.localForm() as b_local:
         b_local.set(0.0)
-        _cpp.fem.assemble_vector(b_local.array_w, _L, c[0], c[1])
+        _cpp.fem.assemble_vector(b_local.array_w, L, c[0], c[1])
     return b
 
 

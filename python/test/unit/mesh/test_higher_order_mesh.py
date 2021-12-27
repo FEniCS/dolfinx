@@ -14,6 +14,7 @@ import pytest
 import ufl
 from dolfinx.cpp.io import perm_gmsh, perm_vtk
 from dolfinx.fem import assemble_scalar
+from dolfinx.fem import create_form as form
 from dolfinx.io import XDMFFile, ufl_mesh_from_gmsh
 from dolfinx.mesh import CellType, create_mesh
 from dolfinx_utils.test.skips import skip_in_parallel
@@ -36,7 +37,7 @@ def check_cell_volume(points, cell, domain, volume):
         ordered_cell = [point_order[i] for i in cell]
 
         mesh = create_mesh(MPI.COMM_WORLD, [ordered_cell], ordered_points, domain)
-        area = assemble_scalar(1 * dx(mesh))
+        area = assemble_scalar(form(1 * dx(mesh)))
 
         assert np.isclose(area, volume)
 
@@ -529,7 +530,7 @@ def test_map_vtk_to_dolfin(vtk, dolfin, cell_type):
 def test_xdmf_input_tri(datadir):
     with XDMFFile(MPI.COMM_WORLD, os.path.join(datadir, "mesh.xdmf"), "r", encoding=XDMFFile.Encoding.ASCII) as xdmf:
         mesh = xdmf.read_mesh(name="Grid")
-    surface = assemble_scalar(1 * dx(mesh))
+    surface = assemble_scalar(form(1 * dx(mesh)))
     assert mesh.comm.allreduce(surface, op=MPI.SUM) == pytest.approx(4 * np.pi, rel=1e-4)
 
 
@@ -576,7 +577,7 @@ def test_gmsh_input_2d(order, cell_type):
 
     cells = cells[:, perm_gmsh(cell_type, cells.shape[1])]
     mesh = create_mesh(MPI.COMM_WORLD, cells, x, ufl_mesh_from_gmsh(gmsh_cell_id, x.shape[1]))
-    surface = assemble_scalar(1 * dx(mesh))
+    surface = assemble_scalar(form(1 * dx(mesh)))
 
     assert mesh.comm.allreduce(surface, op=MPI.SUM) == pytest.approx(4 * np.pi, rel=10 ** (-1 - order))
 
@@ -651,7 +652,7 @@ def test_gmsh_input_3d(order, cell_type):
 
     mesh = create_mesh(MPI.COMM_WORLD, cells, x, domain)
 
-    volume = assemble_scalar(1 * dx(mesh))
+    volume = assemble_scalar(form(1 * dx(mesh)))
 
     assert mesh.comm.allreduce(volume, op=MPI.SUM) == pytest.approx(np.pi, rel=10 ** (-1 - order))
 
