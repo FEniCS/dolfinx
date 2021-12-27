@@ -53,6 +53,6 @@ __all__ = [
     "assemble_vector_block", "assemble_vector_nest",
     "assemble_matrix_block", "assemble_matrix_nest",
     "assemble_matrix", "set_bc", "set_bc_nest",
-    "DirichletBC", "bcs_by_block", "DofMap", "create_form", "Form", "IntegralType",
+    "DirichletBC", "bcs_by_block", "DofMap", "Form", "create_form", "IntegralType",
     "adjoint", "LinearProblem", "locate_dofs_geometrical", "locate_dofs_topological",
     "NonlinearProblem", "pack_coefficients", "pack_constants"]

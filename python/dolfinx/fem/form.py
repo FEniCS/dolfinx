@@ -19,108 +19,7 @@ from petsc4py import PETSc
 
 
 class Form:
-    def __init__(self, form: ufl.Form, dtype: np.dtype = PETSc.ScalarType,
-                 form_compiler_parameters: dict = {}, jit_parameters: dict = {}):
-        """Create DOLFINx Form
-
-        Parameters
-        ----------
-        form
-            Pure UFL form
-        dtype
-            The scalar type to use for the compiled form
-        form_compiler_parameters
-            See :py:func:`ffcx_jit <dolfinx.jit.ffcx_jit>`
-        jit_parameters
-            See :py:func:`ffcx_jit <dolfinx.jit.ffcx_jit>`
-
-        Note
-        ----
-        This wrapper for UFL form is responsible for the actual FFCx compilation
-        and attaching coefficients and domains specific data to the underlying
-        C++ Form.
-        """
-
-        # Extract subdomain data from UFL form
-        sd = form.subdomain_data()
-        self._subdomains, = list(sd.values())  # Assuming single domain
-        domain, = list(sd.keys())  # Assuming single domain
-        mesh = domain.ufl_cargo()
-        if mesh is None:
-            raise RuntimeError("Expecting to find a Mesh in the form.")
-
-        # Compile UFL form with JIT
-        if dtype == np.float32:
-            form_compiler_parameters["scalar_type"] = "float"
-        elif dtype == np.float64:
-            form_compiler_parameters["scalar_type"] = "double"
-        elif dtype == np.complex128:
-            form_compiler_parameters["scalar_type"] = "double _Complex"
-        else:
-            raise RuntimeError(f"Unsupported scalar type {dtype} for Form.")
-
-        self._ufc_form, module, self._code = jit.ffcx_jit(
-            mesh.comm, form,
-            form_compiler_parameters=form_compiler_parameters,
-            jit_parameters=jit_parameters)
-
-        # For every argument in form extract its function space
-        function_spaces = [func.ufl_function_space()._cpp_object for func in form.arguments()]
-
-        # Prepare coefficients data. For every coefficient in form take
-        # its C++ object.
-        original_coefficients = form.coefficients()
-        coeffs = [original_coefficients[self._ufc_form.original_coefficient_position[
-            i]]._cpp_object for i in range(self._ufc_form.num_coefficients)]
-
-        # Create dictionary of of subdomain markers (possible None for
-        # some dimensions
-        subdomains = {_cpp.fem.IntegralType.cell: self._subdomains.get("cell"),
-                      _cpp.fem.IntegralType.exterior_facet: self._subdomains.get("exterior_facet"),
-                      _cpp.fem.IntegralType.interior_facet: self._subdomains.get("interior_facet"),
-                      _cpp.fem.IntegralType.vertex: self._subdomains.get("vertex")}
-
-        # Prepare dolfinx.cpp.fem.Form and hold it as a member
-        def create_form(dtype):
-            if dtype == np.float32:
-                return _cpp.fem.create_form_float32
-            elif dtype == np.float64:
-                return _cpp.fem.create_form_float64
-            elif dtype == np.complex128:
-                return _cpp.fem.create_form_complex128
-            else:
-                raise NotImplementedError(f"Type {dtype} not supported.")
-
-        ffi = cffi.FFI()
-        self._cpp_object = create_form(dtype)(ffi.cast("uintptr_t", ffi.addressof(self._ufc_form)),
-                                              function_spaces, coeffs,
-                                              [c._cpp_object for c in form.constants()], subdomains,
-                                              mesh)
-
-    @property
-    def rank(self):
-        """Return the compiled ufc_form object"""
-        return self._cpp_object.rank
-
-    @property
-    def function_spaces(self):
-        """Return the compiled ufc_form object"""
-        return self._cpp_object.function_spaces
-
-    @property
-    def ufc_form(self):
-        """Return the compiled ufc_form object"""
-        return self._ufc_form
-
-    @property
-    def code(self):
-        """Return C code strings"""
-        return self._code
-
-
-class NewForm:
-    def __init__(self, form: ufl.Form, dtype: np.dtype, form_compiler_parameters: dict = {},
-                 jit_parameters: dict = {}):
+    def __init__(self, form: ufl.Form, dtype: np.dtype, form_compiler_parameters, jit_parameters):
         """Create DOLFINx Form (new)
 
         Parameters
@@ -181,10 +80,20 @@ class NewForm:
                       _cpp.fem.IntegralType.vertex: self._subdomains.get("vertex")}
 
         ffi = cffi.FFI()
-        self._cpp_object = super().__init__(ffi.cast("uintptr_t", ffi.addressof(self._ufc_form)),
-                                            function_spaces, coeffs,
-                                            [c._cpp_object for c in form.constants()], subdomains,
-                                            mesh)
+        super().__init__(ffi.cast("uintptr_t", ffi.addressof(self._ufc_form)),
+                         function_spaces, coeffs,
+                         [c._cpp_object for c in form.constants()], subdomains,
+                         mesh)
+
+    @property
+    def ufc_form(self):
+        """The compiled ufc_form object"""
+        return self._ufc_form
+
+    @property
+    def code(self):
+        """C code strings"""
+        return self._code
 
 
 def create_form(form: ufl.Form, dtype: np.dtype = PETSc.ScalarType,
@@ -217,7 +126,7 @@ def create_form(form: ufl.Form, dtype: np.dtype = PETSc.ScalarType,
     else:
         raise NotImplementedError(f"Type {dtype} not supported.")
 
-    formcls = type("Form", (NewForm, ftype), {})
+    formcls = type("Form", (Form, ftype), {})
 
     def _create_form(form):
         """Recursively look for ufl.Forms and convert to
