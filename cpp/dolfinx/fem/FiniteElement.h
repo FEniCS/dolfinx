@@ -74,12 +74,9 @@ public:
   /// @return The value size for the reference element
   int reference_value_size() const noexcept;
 
-  /// Rank of the value space
-  /// @return The value rank
-  int value_rank() const noexcept;
-
-  /// Return the dimension of the value space for axis i
-  int value_dimension(int i) const;
+  /// Shape of the value space. The rank is the size of the
+  /// `value_shape`.
+  xtl::span<const int> value_shape() const noexcept;
 
   /// The finite element family
   /// @return The string of the finite element family
@@ -670,7 +667,7 @@ private:
   std::size_t _hash;
 
   // Dimension of each value space
-  std::vector<int> _value_dimension;
+  std::vector<int> _value_shape;
 
   // Block size for VectorElements and TensorElements. This gives the
   // number of DOFs colocated at each point.

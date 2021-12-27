@@ -122,7 +122,7 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
 
   // Fill value dimension
   for (int i = 0; i < ufc_element.value_rank; ++i)
-    _value_dimension.push_back(ufc_element.value_shape[i]);
+    _value_shape.push_back(ufc_element.value_shape[i]);
 
   _needs_dof_transformations = false;
   _needs_dof_permutations = false;
@@ -191,19 +191,11 @@ int FiniteElement::reference_value_size() const noexcept
   return _reference_value_size;
 }
 //-----------------------------------------------------------------------------
-int FiniteElement::value_rank() const noexcept
-{
-  return _value_dimension.size();
-}
-//-----------------------------------------------------------------------------
 int FiniteElement::block_size() const noexcept { return _bs; }
 //-----------------------------------------------------------------------------
-int FiniteElement::value_dimension(int i) const
+xtl::span<const int> FiniteElement::value_shape() const
 {
-  if (i >= (int)_value_dimension.size())
-    return 1;
-  else
-    return _value_dimension.at(i);
+  return _value_shape;
 }
 //-----------------------------------------------------------------------------
 std::string FiniteElement::family() const noexcept { return _family; }

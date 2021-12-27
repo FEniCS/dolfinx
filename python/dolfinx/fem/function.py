@@ -478,11 +478,11 @@ class FunctionSpace(ufl.FunctionSpace):
 
     def num_sub_spaces(self) -> int:
         """Number of sub spaces."""
-        return self.dolfin_element().num_sub_elements()
+        return self.dolfin_element().num_sub_elements
 
     def sub(self, i: int) -> "FunctionSpace":
         """Return the i-th sub space."""
-        assert self.ufl_element().num_sub_elements() > i
+        assert self.ufl_element().num_sub_elements > i
         sub_element = self.ufl_element().sub_elements()[i]
         cppV_sub = self._cpp_object.sub([i])
         return FunctionSpace(None, sub_element, cppV_sub)
