@@ -12,7 +12,7 @@ import pytest
 
 import ufl
 from dolfinx.cpp.la.petsc import scatter_local_vectors
-from dolfinx.fem import (DirichletBC, Form, Function, FunctionSpace,
+from dolfinx.fem import (DirichletBC, Function, FunctionSpace,
                          VectorFunctionSpace, apply_lifting,
                          apply_lifting_nest, assemble_matrix,
                          assemble_matrix_block, assemble_matrix_nest,
@@ -90,9 +90,9 @@ def test_matrix_assembly_block_nl():
     F0 = inner(u, v) * dx + inner(p, v) * dx - inner(f, v) * dx
     F1 = inner(u, q) * dx + inner(p, q) * dx - inner(g, q) * dx
 
-    a_block = [[derivative(F0, u, du), derivative(F0, p, dp)],
-               [derivative(F1, u, du), derivative(F1, p, dp)]]
-    L_block = [Form(F0), Form(F1)]
+    a_block = form([[derivative(F0, u, du), derivative(F0, p, dp)],
+                    [derivative(F1, u, du), derivative(F1, p, dp)]])
+    L_block = form([F0, F1])
 
     # Monolithic blocked
     x0 = create_vector_block(L_block)

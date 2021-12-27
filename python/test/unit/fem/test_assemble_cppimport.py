@@ -16,8 +16,9 @@ import scipy.sparse.linalg
 import dolfinx
 import dolfinx.pkgconfig
 import ufl
-from dolfinx.fem import (DirichletBC, Form, FunctionSpace,
-                         assemble_matrix, locate_dofs_geometrical)
+from dolfinx.fem import DirichletBC, FunctionSpace, assemble_matrix
+from dolfinx.fem import create_form as form
+from dolfinx.fem import locate_dofs_geometrical
 from dolfinx.mesh import create_unit_square
 from dolfinx.wrappers import get_include_path as pybind_inc
 from dolfinx_utils.test.fixtures import tempdir  # noqa: F401
@@ -104,7 +105,7 @@ PYBIND11_MODULE(eigen_csr, m)
     def assemble_csr_matrix(a, bcs):
         """Assemble bilinear form into an SciPy CSR matrix, in serial."""
         module = compile_eigen_csr_assembler_module()
-        A = module.assemble_matrix(a._cpp_object, bcs)
+        A = module.assemble_matrix(a, bcs)
         if a.function_spaces[0].id == a.function_spaces[1].id:
             for bc in bcs:
                 if a.function_spaces[0].contains(bc.function_space):
@@ -119,7 +120,7 @@ PYBIND11_MODULE(eigen_csr, m)
     Q = FunctionSpace(mesh, ("Lagrange", 1))
     u = ufl.TrialFunction(Q)
     v = ufl.TestFunction(Q)
-    a = Form(ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx)
+    a = form(ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx)
 
     bdofsQ = locate_dofs_geometrical(Q, lambda x: np.logical_or(np.isclose(x[0], 0.0), np.isclose(x[0], 1.0)))
     bc = DirichletBC(PETSc.ScalarType(1), bdofsQ, Q)

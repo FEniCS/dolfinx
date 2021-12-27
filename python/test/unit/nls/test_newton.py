@@ -10,10 +10,11 @@ import numpy as np
 import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import fem, la
-from dolfinx.fem import (DirichletBC, Form, Function, FunctionSpace,
-                         apply_lifting, assemble_matrix, assemble_vector,
-                         create_form, create_matrix, create_vector,
-                         locate_dofs_geometrical, set_bc)
+from dolfinx.fem import (DirichletBC, Function, FunctionSpace, apply_lifting,
+                         assemble_matrix, assemble_vector)
+from dolfinx.fem import create_form as form
+from dolfinx.fem import (create_matrix, create_vector, locate_dofs_geometrical,
+                         set_bc)
 from dolfinx.mesh import create_unit_square
 from ufl import TestFunction, TrialFunction, derivative, dx, grad, inner
 
@@ -27,8 +28,8 @@ class NonlinearPDEProblem:
     def __init__(self, F, u, bc):
         V = u.function_space
         du = TrialFunction(V)
-        self.L = create_form(F)
-        self.a = create_form(derivative(F, u, du))
+        self.L = form(F)
+        self.a = form(derivative(F, u, du))
         self.bc = bc
 
     def form(self, x):
@@ -60,9 +61,8 @@ class NonlinearPDE_SNESProblem:
     def __init__(self, F, u, bc):
         V = u.function_space
         du = TrialFunction(V)
-        self.L = F
-        self.a = derivative(F, u, du)
-        self.a_comp = Form(self.a)
+        self.L = form(F)
+        self.a = form(derivative(F, u, du))
         self.bc = bc
         self._F, self._J = None, None
         self.u = u
@@ -173,7 +173,7 @@ def test_nonlinear_pde_snes():
 
     u.x.array[:] = 0.9
     b = la.create_petsc_vector(V.dofmap.index_map, V.dofmap.index_map_bs)
-    J = fem.create_matrix(problem.a_comp._cpp_object)
+    J = fem.create_matrix(problem.a)
 
     # Create Newton solver and solve
     snes = PETSc.SNES().create()

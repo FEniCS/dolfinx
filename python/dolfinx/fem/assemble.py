@@ -60,7 +60,8 @@ def pack_constants(form: form_type):
             return list(map(lambda sub_form: _pack(sub_form), form))
         else:
             return _cpp.fem.pack_constants(form)
-    return _pack(_create_cpp_form(form))
+
+    return _pack(form)
 
 
 def pack_coefficients(form: form_type):
@@ -76,7 +77,8 @@ def pack_coefficients(form: form_type):
             return list(map(lambda sub_form: _pack(sub_form), form))
         else:
             return _cpp.fem.pack_coefficients(form)
-    return _pack(_create_cpp_form(form))
+
+    return _pack(form)
 
 
 # -- Vector instantiation ----------------------------------------------------
@@ -156,11 +158,10 @@ def _(b: PETSc.Vec, L: Form, coeffs=Coefficients(None, None)) -> PETSc.Vec:
     values are not accumulated on the owning processes.
 
     """
-    _L = _create_cpp_form(L)
-    c = (coeffs[0] if coeffs[0] is not None else pack_constants(_L),
-         coeffs[1] if coeffs[1] is not None else pack_coefficients(_L))
+    c = (coeffs[0] if coeffs[0] is not None else pack_constants(L),
+         coeffs[1] if coeffs[1] is not None else pack_coefficients(L))
     with b.localForm() as b_local:
-        _cpp.fem.assemble_vector(b_local.array_w, _L, c[0], c[1])
+        _cpp.fem.assemble_vector(b_local.array_w, L, c[0], c[1])
     return b
 
 
@@ -172,7 +173,7 @@ def assemble_vector_nest(L: Form, coeffs=Coefficients(None, None)) -> PETSc.Vec:
 
     """
     maps = [(form.function_spaces[0].dofmap.index_map, form.function_spaces[0].dofmap.index_map_bs)
-            for form in _create_cpp_form(L)]
+            for form in L]
     b = _cpp.fem.petsc.create_vector_nest(maps)
     for b_sub in b.getNestSubVecs():
         with b_sub.localForm() as b_local:
@@ -187,10 +188,9 @@ def _(b: PETSc.Vec, L: typing.List[Form], coeffs=Coefficients(None, None)) -> PE
     ghost values are not accumulated on the owning processes.
 
     """
-    _L = _create_cpp_form(L)
-    c = (coeffs[0] if coeffs[0] is not None else pack_constants(_L),
-         coeffs[1] if coeffs[1] is not None else pack_coefficients(_L))
-    for b_sub, L_sub, constant, coeff in zip(b.getNestSubVecs(), _L, c[0], c[1]):
+    c = (coeffs[0] if coeffs[0] is not None else pack_constants(L),
+         coeffs[1] if coeffs[1] is not None else pack_coefficients(L))
+    for b_sub, L_sub, constant, coeff in zip(b.getNestSubVecs(), L, c[0], c[1]):
         with b_sub.localForm() as b_local:
             _cpp.fem.assemble_vector(b_local.array_w, L_sub, constant, coeff)
     return b
@@ -210,7 +210,7 @@ def assemble_vector_block(L: typing.List[Form],
 
     """
     maps = [(form.function_spaces[0].dofmap.index_map, form.function_spaces[0].dofmap.index_map_bs)
-            for form in _create_cpp_form(L)]
+            for form in L]
     b = _cpp.fem.petsc.create_vector_block(maps)
     with b.localForm() as b_local:
         b_local.set(0.0)
@@ -232,7 +232,7 @@ def _(b: PETSc.Vec,
 
     """
     maps = [(form.function_spaces[0].dofmap.index_map, form.function_spaces[0].dofmap.index_map_bs)
-            for form in _create_cpp_form(L)]
+            for form in L]
     if x0 is not None:
         x0_local = _cpp.la.petsc.get_local_vectors(x0, maps)
         x0_sub = x0_local
@@ -240,15 +240,14 @@ def _(b: PETSc.Vec,
         x0_local = []
         x0_sub = [None] * len(maps)
 
-    _L, _a = _create_cpp_form(L), _create_cpp_form(a)
-    c_L = (coeffs_L[0] if coeffs_L[0] is not None else pack_constants(_L),
-           coeffs_L[1] if coeffs_L[1] is not None else pack_coefficients(_L))
-    c_a = (coeffs_a[0] if coeffs_a[0] is not None else pack_constants(_a),
-           coeffs_a[1] if coeffs_a[1] is not None else pack_coefficients(_a))
+    c_L = (coeffs_L[0] if coeffs_L[0] is not None else pack_constants(L),
+           coeffs_L[1] if coeffs_L[1] is not None else pack_coefficients(L))
+    c_a = (coeffs_a[0] if coeffs_a[0] is not None else pack_constants(a),
+           coeffs_a[1] if coeffs_a[1] is not None else pack_coefficients(a))
 
-    bcs1 = _cpp_dirichletbc(bcs_by_block(extract_function_spaces(_a, 1), bcs))
+    bcs1 = _cpp_dirichletbc(bcs_by_block(extract_function_spaces(a, 1), bcs))
     b_local = _cpp.la.petsc.get_local_vectors(b, maps)
-    for b_sub, L_sub, a_sub, constant_L, coeff_L, constant_a, coeff_a in zip(b_local, _L, _a,
+    for b_sub, L_sub, a_sub, constant_L, coeff_L, constant_a, coeff_a in zip(b_local, L, a,
                                                                              c_L[0], c_L[1],
                                                                              c_a[0], c_a[1]):
         _cpp.fem.assemble_vector(b_sub, L_sub, constant_L, coeff_L)
@@ -257,7 +256,7 @@ def _(b: PETSc.Vec,
     _cpp.la.petsc.scatter_local_vectors(b, b_local, maps)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
-    bcs0 = _cpp_dirichletbc(bcs_by_block(extract_function_spaces(_create_cpp_form(L)), bcs))
+    bcs0 = _cpp_dirichletbc(bcs_by_block(extract_function_spaces(L), bcs))
     offset = 0
     b_array = b.getArray(readonly=False)
     for submap, bc, _x0 in zip(maps, bcs0, x0_sub):
@@ -280,7 +279,7 @@ def assemble_matrix(a: Form,
     finalised, i.e. ghost values are not accumulated.
 
     """
-    A = _cpp.fem.petsc.create_matrix(_create_cpp_form(a))
+    A = _cpp.fem.petsc.create_matrix(a)
     return assemble_matrix(A, a, bcs, diagonal, coeffs)
 
 
@@ -294,14 +293,13 @@ def _(A: PETSc.Mat,
     finalised, i.e. ghost values are not accumulated.
 
     """
-    _a = _create_cpp_form(a)
-    c = (coeffs[0] if coeffs[0] is not None else pack_constants(_a),
-         coeffs[1] if coeffs[1] is not None else pack_coefficients(_a))
-    _cpp.fem.petsc.assemble_matrix(A, _a, c[0], c[1], _cpp_dirichletbc(bcs))
-    if _a.function_spaces[0].id == _a.function_spaces[1].id:
+    c = (coeffs[0] if coeffs[0] is not None else pack_constants(a),
+         coeffs[1] if coeffs[1] is not None else pack_coefficients(a))
+    _cpp.fem.petsc.assemble_matrix(A, a, c[0], c[1], _cpp_dirichletbc(bcs))
+    if a.function_spaces[0].id == a.function_spaces[1].id:
         A.assemblyBegin(PETSc.Mat.AssemblyType.FLUSH)
         A.assemblyEnd(PETSc.Mat.AssemblyType.FLUSH)
-        _cpp.fem.petsc.insert_diagonal(A, _a.function_spaces[0], _cpp_dirichletbc(bcs), diagonal)
+        _cpp.fem.petsc.insert_diagonal(A, a.function_spaces[0], _cpp_dirichletbc(bcs), diagonal)
     return A
 
 
@@ -312,7 +310,7 @@ def assemble_matrix_nest(a: typing.List[typing.List[Form]],
                          diagonal: float = 1.0,
                          coeffs=Coefficients(None, None)) -> PETSc.Mat:
     """Assemble bilinear forms into matrix"""
-    A = _cpp.fem.petsc.create_matrix_nest(_create_cpp_form(a), mat_types)
+    A = _cpp.fem.petsc.create_matrix_nest(a, mat_types)
     assemble_matrix_nest(A, a, bcs, diagonal, coeffs)
     return A
 
@@ -324,10 +322,9 @@ def _(A: PETSc.Mat,
       diagonal: float = 1.0,
       coeffs=Coefficients(None, None)) -> PETSc.Mat:
     """Assemble bilinear forms into matrix"""
-    _a = _create_cpp_form(a)
-    c = (coeffs[0] if coeffs[0] is not None else pack_constants(_a),
-         coeffs[1] if coeffs[1] is not None else pack_coefficients(_a))
-    for i, (a_row, const_row, coeff_row) in enumerate(zip(_a, c[0], c[1])):
+    c = (coeffs[0] if coeffs[0] is not None else pack_constants(a),
+         coeffs[1] if coeffs[1] is not None else pack_coefficients(a))
+    for i, (a_row, const_row, coeff_row) in enumerate(zip(a, c[0], c[1])):
         for j, (a_block, const, coeff) in enumerate(zip(a_row, const_row, coeff_row)):
             if a_block is not None:
                 Asub = A.getNestSubMatrix(i, j)
@@ -342,7 +339,7 @@ def assemble_matrix_block(a: typing.List[typing.List[Form]],
                           diagonal: float = 1.0,
                           coeffs=Coefficients(None, None)) -> PETSc.Mat:
     """Assemble bilinear forms into matrix"""
-    A = _cpp.fem.petsc.create_matrix_block(_create_cpp_form(a))
+    A = _cpp.fem.petsc.create_matrix_block(a)
     return assemble_matrix_block(A, a, bcs, diagonal, coeffs)
 
 
@@ -383,16 +380,15 @@ def _(A: PETSc.Mat,
       diagonal: float = 1.0,
       coeffs=Coefficients(None, None)) -> PETSc.Mat:
     """Assemble bilinear forms into matrix"""
-    _a = _create_cpp_form(a)
-    c = (coeffs[0] if coeffs[0] is not None else pack_constants(_a),
-         coeffs[1] if coeffs[1] is not None else pack_coefficients(_a))
+    c = (coeffs[0] if coeffs[0] is not None else pack_constants(a),
+         coeffs[1] if coeffs[1] is not None else pack_coefficients(a))
 
-    V = _extract_function_spaces(_a)
+    V = _extract_function_spaces(a)
     is_rows = _cpp.la.petsc.create_index_sets([(Vsub.dofmap.index_map, Vsub.dofmap.index_map_bs) for Vsub in V[0]])
     is_cols = _cpp.la.petsc.create_index_sets([(Vsub.dofmap.index_map, Vsub.dofmap.index_map_bs) for Vsub in V[1]])
 
     # Assemble form
-    for i, a_row in enumerate(_a):
+    for i, a_row in enumerate(a):
         for j, a_sub in enumerate(a_row):
             if a_sub is not None:
                 Asub = A.getLocalSubMatrix(is_rows[i], is_cols[j])
@@ -403,7 +399,7 @@ def _(A: PETSc.Mat,
     A.assemble(PETSc.Mat.AssemblyType.FLUSH)
 
     # Set diagonal
-    for i, a_row in enumerate(_a):
+    for i, a_row in enumerate(a):
         for j, a_sub in enumerate(a_row):
             if a_sub is not None:
                 Asub = A.getLocalSubMatrix(is_rows[i], is_cols[j])
@@ -436,14 +432,13 @@ def apply_lifting(b: PETSc.Vec,
     Ghost contributions are not accumulated (not sent to owner). Caller
     is responsible for calling VecGhostUpdateBegin/End.
     """
-    _a = _create_cpp_form(a)
-    c = (coeffs[0] if coeffs[0] is not None else pack_constants(_a),
-         coeffs[1] if coeffs[1] is not None else pack_coefficients(_a))
+    c = (coeffs[0] if coeffs[0] is not None else pack_constants(a),
+         coeffs[1] if coeffs[1] is not None else pack_coefficients(a))
     with contextlib.ExitStack() as stack:
         x0 = [stack.enter_context(x.localForm()) for x in x0]
         x0_r = [x.array_r for x in x0]
         b_local = stack.enter_context(b.localForm())
-        _cpp.fem.apply_lifting(b_local.array_w, _a, c[0], c[1], _cpp_dirichletbc(bcs), x0_r, scale)
+        _cpp.fem.apply_lifting(b_local.array_w, a, c[0], c[1], _cpp_dirichletbc(bcs), x0_r, scale)
 
 
 def apply_lifting_nest(b: PETSc.Vec,
@@ -456,11 +451,10 @@ def apply_lifting_nest(b: PETSc.Vec,
 
     """
     x0 = [] if x0 is None else x0.getNestSubVecs()
-    _a = _create_cpp_form(a)
-    c = (coeffs[0] if coeffs[0] is not None else pack_constants(_a),
-         coeffs[1] if coeffs[1] is not None else pack_coefficients(_a))
-    bcs1 = bcs_by_block(extract_function_spaces(_a, 1), bcs)
-    for b_sub, a_sub, constants, coeffs in zip(b.getNestSubVecs(), _a, c[0], c[1]):
+    c = (coeffs[0] if coeffs[0] is not None else pack_constants(a),
+         coeffs[1] if coeffs[1] is not None else pack_coefficients(a))
+    bcs1 = bcs_by_block(extract_function_spaces(a, 1), bcs)
+    for b_sub, a_sub, constants, coeffs in zip(b.getNestSubVecs(), a, c[0], c[1]):
         apply_lifting(b_sub, a_sub, bcs1, x0, scale, (constants, coeffs))
     return b
 

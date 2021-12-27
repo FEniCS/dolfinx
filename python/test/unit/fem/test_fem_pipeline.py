@@ -9,11 +9,11 @@ import numpy as np
 import pytest
 
 import ufl
-from dolfinx.fem import create_form as form
-from dolfinx.fem import (DirichletBC, Form, Function, FunctionSpace,
+from dolfinx.fem import (DirichletBC, Function, FunctionSpace,
                          VectorFunctionSpace, apply_lifting, assemble_matrix,
-                         assemble_scalar, assemble_vector,
-                         locate_dofs_topological, set_bc)
+                         assemble_scalar, assemble_vector)
+from dolfinx.fem import create_form as form
+from dolfinx.fem import locate_dofs_topological, set_bc
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import (CellType, compute_boundary_facets, create_rectangle,
                           create_unit_cube, create_unit_square,
@@ -37,6 +37,7 @@ def run_scalar_test(mesh, V, degree):
     # Get quadrature degree for bilinear form integrand (ignores effect of non-affine map)
     a = inner(grad(u), grad(v)) * dx(metadata={"quadrature_degree": -1})
     a.integrals()[0].metadata()["quadrature_degree"] = ufl.algorithms.estimate_total_polynomial_degree(a)
+    a = form(a)
 
     # Source term
     x = SpatialCoordinate(mesh)
@@ -45,7 +46,6 @@ def run_scalar_test(mesh, V, degree):
 
     # Set quadrature degree for linear form integrand (ignores effect of non-affine map)
     L = inner(f, v) * dx(metadata={"quadrature_degree": -1})
-
     L.integrals()[0].metadata()["quadrature_degree"] = ufl.algorithms.estimate_total_polynomial_degree(L)
     L = form(L)
 
@@ -80,7 +80,6 @@ def run_scalar_test(mesh, V, degree):
 
     M = (u_exact - uh)**2 * dx
     M = form(M)
-
     error = mesh.comm.allreduce(assemble_scalar(M), op=MPI.SUM)
     assert np.absolute(error) < 1.0e-14
 
@@ -344,7 +343,8 @@ def test_biharmonic():
     # Apply inverse transform. In 2D we have S^{-1} = S.
     sigma_h = S(ufl.as_tensor([[x_h[0], x_h[1]], [x_h[2], x_h[3]]]))
     sigma_error_numerator = np.sqrt(mesh.comm.allreduce(assemble_scalar(
-        form(inner(sigma_exact - sigma_h, sigma_exact - sigma_h) * dx(mesh, metadata={"quadrature_degree": 5}))), op=MPI.SUM))
+        form(inner(sigma_exact - sigma_h, sigma_exact - sigma_h) * dx(mesh, metadata={"quadrature_degree": 5}))),
+        op=MPI.SUM))
     sigma_error_denominator = np.sqrt(mesh.comm.allreduce(assemble_scalar(
         form(inner(sigma_exact, sigma_exact) * dx(mesh, metadata={"quadrature_degree": 5}))), op=MPI.SUM))
 

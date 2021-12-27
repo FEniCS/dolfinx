@@ -10,6 +10,7 @@ import pytest
 import dolfinx
 import ufl
 from dolfinx.fem import FunctionSpace, VectorFunctionSpace
+from dolfinx.fem import create_form as form
 from dolfinx.mesh import (CellType, GhostMode, create_unit_cube,
                           create_unit_square)
 from dolfinx_utils.test.skips import skip_in_parallel
@@ -20,11 +21,12 @@ from mpi4py import MPI
 @skip_in_parallel
 @pytest.mark.parametrize("cell", [ufl.triangle, ufl.tetrahedron])
 @pytest.mark.parametrize("order", [1, 2])
-@pytest.mark.parametrize("ElementType, space", [
-    (ufl.FiniteElement, "Lagrange"),
-    (ufl.VectorElement, "Lagrange"),
-    (ufl.FiniteElement, "N1curl")
-])
+@pytest.mark.parametrize("ElementType, space",
+                         [
+                             (ufl.FiniteElement, "Lagrange"),
+                             (ufl.VectorElement, "Lagrange"),
+                             (ufl.FiniteElement, "N1curl")
+                         ])
 def test_mixed_element(ElementType, space, cell, order):
     if cell == ufl.triangle:
         mesh = create_unit_square(MPI.COMM_WORLD, 1, 1, CellType.triangle, GhostMode.shared_facet)
@@ -35,11 +37,9 @@ def test_mixed_element(ElementType, space, cell, order):
     U_el = ufl.FiniteElement(space, cell, order)
     for i in range(3):
         U = FunctionSpace(mesh, U_el)
-
         u = ufl.TrialFunction(U)
         v = ufl.TestFunction(U)
-
-        a = ufl.inner(u, v) * ufl.dx
+        a = form(ufl.inner(u, v) * ufl.dx)
 
         A = dolfinx.fem.assemble_matrix(a)
         A.assemble()
@@ -58,21 +58,16 @@ def test_vector_element():
     U = VectorFunctionSpace(mesh, ("P", 2))
     u = ufl.TrialFunction(U)
     v = ufl.TestFunction(U)
-
-    a = ufl.inner(u, v) * ufl.dx
-
+    a = form(ufl.inner(u, v) * ufl.dx)
     A = dolfinx.fem.assemble_matrix(a)
     A.assemble()
 
     with pytest.raises(ValueError):
         # VectorFunctionSpace containing a vector should throw an error rather than segfaulting
         U = VectorFunctionSpace(mesh, ("RT", 2))
-
         u = ufl.TrialFunction(U)
         v = ufl.TestFunction(U)
-
-        a = ufl.inner(u, v) * ufl.dx
-
+        a = form(ufl.inner(u, v) * ufl.dx)
         A = dolfinx.fem.assemble_matrix(a)
         A.assemble()
 
@@ -89,14 +84,14 @@ def test_element_product(d1, d2):
 
     u = ufl.TrialFunction(W)
     v = ufl.TestFunction(W)
-    a = ufl.inner(u[0], v[0]) * ufl.dx
+    a = form(ufl.inner(u[0], v[0]) * ufl.dx)
     A = dolfinx.fem.assemble_matrix(a)
     A.assemble()
 
     W = FunctionSpace(mesh, P3)
     u = ufl.TrialFunction(W)
     v = ufl.TestFunction(W)
-    a = ufl.inner(u[0], v[0]) * ufl.dx
+    a = form(ufl.inner(u[0], v[0]) * ufl.dx)
     B = dolfinx.fem.assemble_matrix(a)
     B.assemble()
 
