@@ -147,26 +147,6 @@ SparsityPattern::SparsityPattern(
   }
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const common::IndexMap>
-SparsityPattern::index_map(int dim) const
-{
-  return _index_maps.at(dim);
-}
-//-----------------------------------------------------------------------------
-std::vector<std::int64_t> SparsityPattern::column_indices() const
-{
-  std::array range = _index_maps[1]->local_range();
-  const std::int32_t local_size = range[1] - range[0];
-  const std::int32_t num_ghosts = _col_ghosts.size();
-  std::vector<std::int64_t> global(local_size + num_ghosts);
-  std::iota(global.begin(), global.begin() + local_size, range[0]);
-  std::copy(_col_ghosts.begin(), _col_ghosts.end(),
-            global.begin() + local_size);
-  return global;
-}
-//-----------------------------------------------------------------------------
-int SparsityPattern::block_size(int dim) const { return _bs[dim]; }
-//-----------------------------------------------------------------------------
 void SparsityPattern::insert(const xtl::span<const std::int32_t>& rows,
                              const xtl::span<const std::int32_t>& cols)
 {
@@ -223,6 +203,26 @@ void SparsityPattern::insert_diagonal(const std::vector<int32_t>& rows)
     }
   }
 }
+//-----------------------------------------------------------------------------
+std::shared_ptr<const common::IndexMap>
+SparsityPattern::index_map(int dim) const
+{
+  return _index_maps.at(dim);
+}
+//-----------------------------------------------------------------------------
+std::vector<std::int64_t> SparsityPattern::column_indices() const
+{
+  std::array range = _index_maps[1]->local_range();
+  const std::int32_t local_size = range[1] - range[0];
+  const std::int32_t num_ghosts = _col_ghosts.size();
+  std::vector<std::int64_t> global(local_size + num_ghosts);
+  std::iota(global.begin(), global.begin() + local_size, range[0]);
+  std::copy(_col_ghosts.begin(), _col_ghosts.end(),
+            global.begin() + local_size);
+  return global;
+}
+//-----------------------------------------------------------------------------
+int SparsityPattern::block_size(int dim) const { return _bs[dim]; }
 //-----------------------------------------------------------------------------
 void SparsityPattern::assemble()
 {

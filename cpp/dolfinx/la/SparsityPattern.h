@@ -69,35 +69,34 @@ public:
   /// Move assignment
   SparsityPattern& operator=(SparsityPattern&& pattern) = default;
 
-  /// Index map for given dimension dimension. Returns the index map for
-  /// rows and columns that will be set by the current MPI rank.
-  ///
-  /// @param[in] dim The requested map, row (0) or column (1)
-  /// @return The index map
-  std::shared_ptr<const common::IndexMap> index_map(int dim) const;
-
-  /// Global indices of non-zero columns on owned rows.
-  /// @note The ghosts are computed only once SparsityPattern::assemble has
-  /// been called.
-  ///
-  /// @return The global index non-zero columns on this process, including
-  /// ghosts
-  std::vector<std::int64_t> column_indices() const;
-
-  /// Return index map block size for dimension dim
-  int block_size(int dim) const;
-
   /// Insert non-zero locations using local (process-wise) indices
   void insert(const xtl::span<const std::int32_t>& rows,
               const xtl::span<const std::int32_t>& cols);
 
   /// Insert non-zero locations on the diagonal
   /// @param[in] rows The rows in local (process-wise) indices. The
-  ///   indices must exist in the row IndexMap.
+  /// indices must exist in the row IndexMap.
   void insert_diagonal(const std::vector<std::int32_t>& rows);
 
   /// Finalize sparsity pattern and communicate off-process entries
   void assemble();
+
+  /// Index map for given dimension dimension. Returns the index map for
+  /// rows and columns that will be set by the current MPI rank.
+  /// @param[in] dim The requested map, row (0) or column (1)
+  /// @return The index map
+  std::shared_ptr<const common::IndexMap> index_map(int dim) const;
+
+  /// Global indices of non-zero columns on owned rows
+  ///
+  /// @note The ghosts are computed only once SparsityPattern::assemble
+  /// has been called
+  /// @return The global index non-zero columns on this process,
+  /// including ghosts
+  std::vector<std::int64_t> column_indices() const;
+
+  /// Return index map block size for dimension dim
+  int block_size(int dim) const;
 
   /// Return number of local nonzeros
   std::int64_t num_nonzeros() const;
@@ -106,8 +105,9 @@ public:
   /// indices for the columns.
   const graph::AdjacencyList<std::int32_t>& diagonal_pattern() const;
 
-  /// Sparsity pattern for the un-owned (off-diagonal) columns. Uses local
-  /// indices for the columns. Translate to global with column IndexMap.
+  /// Sparsity pattern for the un-owned (off-diagonal) columns. Uses
+  /// local indices for the columns. Translate to global with column
+  /// IndexMap.
   const graph::AdjacencyList<std::int32_t>& off_diagonal_pattern() const;
 
   /// Return MPI communicator
