@@ -59,10 +59,7 @@ class Mesh(_cpp.mesh.Mesh):
         submesh_ufl_cell = ufl.Cell(submesh.topology.cell_name(),
                                     geometric_dimension=submesh.geometry.dim)
         # FIXME Don't hard code degree (and maybe Lagrange?)
-        submesh_domain = ufl.Mesh(
-            ufl.VectorElement("Lagrange",
-                              cell=submesh_ufl_cell,
-                              degree=1))
+        submesh_domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell=submesh_ufl_cell, degree=1))
         return (Mesh.from_cpp(submesh, submesh_domain),
                 vertex_map, geom_map)
 
