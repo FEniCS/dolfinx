@@ -14,6 +14,7 @@
 // #include <numeric>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <vector>
+#include <xtensor/xtensor.hpp>
 #include <xtl/xspan.hpp>
 
 namespace dolfinx::la
@@ -30,7 +31,9 @@ public:
   /// Create a distributed matrix
   Matrix(const SparsityPattern& p, const Allocator& alloc = Allocator())
       : _data(p.num_nonzeros(), 0, alloc), _cols(p.num_nonzeros()),
-        _row_ptr(p.index_map(0)->size_local() + p.index_map(0)->num_ghosts())
+        _row_ptr(
+            p.index_map(0)->size_local() + p.index_map(0)->num_ghosts() + 1, 0),
+        _ncols(p.index_map(1)->size_local() + p.index_map(1)->num_ghosts())
   {
     // TODO: handle block sizes
     // TODO: check that column indices for each row in p are sorted
@@ -40,6 +43,9 @@ public:
     std::copy(dp.array().begin(), dp.array().end(), _cols.begin());
     std::copy(dp.offsets().begin(), dp.offsets().end(), _row_ptr.begin());
   }
+
+  /// Set all non-zero entries to a value
+  void set(T x) { std::fill(_data.begin(), _data.end(), x); }
 
   /// Add
   void add(const xtl::span<const T>& x,
@@ -93,6 +99,24 @@ public:
   //   }
   // }
 
+  xt::xtensor<T, 2> to_dense() const
+  {
+    std::int32_t nrows = _row_ptr.size() - 1;
+    xt::xtensor<T, 2> A = xt::zeros<T>({nrows, _ncols});
+    for (std::size_t r = 0; r < nrows; ++r)
+    {
+      auto cit0 = std::next(_cols.begin(), _row_ptr[r]);
+      auto cit1 = std::next(_cols.begin(), _row_ptr[r + 1]);
+      for (auto it = cit0; it != cit1; ++it)
+      {
+        std::size_t pos = std::distance(_cols.begin(), it);
+        A(r, *it) = _data[pos];
+      }
+    }
+
+    return A;
+  }
+
 private:
   // // Map describing the data layout
   // std::shared_ptr<const common::IndexMap> _map;
@@ -108,6 +132,8 @@ private:
   // Data
   std::vector<T, Allocator> _data;
   std::vector<std::int32_t> _cols, _row_ptr;
+
+  std::int32_t _ncols = -1;
 };
 
 } // namespace dolfinx::la
