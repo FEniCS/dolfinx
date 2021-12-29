@@ -182,6 +182,7 @@ Mesh::create_submesh(int dim, const xtl::span<const std::int32_t>& entities)
 
   // Get the vertices in the submesh owned by this process
   auto vertex_index_map = topology().index_map(0);
+  assert(vertex_index_map);
   std::vector<int32_t> submesh_owned_vertices
       = dolfinx::common::get_owned_indices(submesh_vertices, vertex_index_map);
 
@@ -208,7 +209,8 @@ Mesh::create_submesh(int dim, const xtl::span<const std::int32_t>& entities)
   }
 
   // Get the entities in the submesh that are owned by this process
-  auto entity_index_map = _topology.index_map(dim);
+  auto entity_index_map = topology().index_map(dim);
+  assert(entity_index_map);
   std::vector<std::int32_t> submesh_owned_entities;
   for (std::int32_t e : entities)
   {
@@ -276,7 +278,8 @@ Mesh::create_submesh(int dim, const xtl::span<const std::int32_t>& entities)
   std::vector<int32_t> submesh_x_dofs(submesh_x_dofs_xt.begin(),
                                       submesh_x_dofs_xt.end());
 
-  auto geometry_dof_index_map = this->geometry().index_map();
+  auto geometry_dof_index_map = geometry().index_map();
+  assert(geometry_dof_index_map);
 
   // Get the geometry dofs in the submesh owned by this process
   auto submesh_owned_x_dofs = dolfinx::common::get_owned_indices(
