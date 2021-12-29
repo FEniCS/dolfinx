@@ -41,6 +41,7 @@ public:
     std::copy(dp.offsets().begin(), dp.offsets().end(), _row_ptr.begin());
   }
 
+  /// Add
   void add(const xtl::span<const T>& x,
            const xtl::span<const std::int32_t>& rows,
            const xtl::span<const std::int32_t>& cols)
