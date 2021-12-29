@@ -48,7 +48,7 @@ template <typename Scalar>
 bool has_cell_centred_data(const fem::Function<Scalar>& u)
 {
   int cell_based_dim = 1;
-  const int rank = u.function_space()->element()->value_rank();
+  const int rank = u.function_space()->element()->value_shape().size();
   for (int i = 0; i < rank; i++)
     cell_based_dim *= u.function_space()->mesh()->topology().dim();
 
@@ -66,7 +66,7 @@ bool has_cell_centred_data(const fem::Function<Scalar>& u)
 int get_padded_width(const fem::FiniteElement& e)
 {
   const int width = e.value_size();
-  const int rank = e.value_rank();
+  const int rank = e.value_shape().size();
   if (rank == 1 and width == 2)
     return 3;
   else if (rank == 2 and width == 4)
@@ -104,7 +104,7 @@ void _add_function(MPI_Comm comm, const fem::Function<Scalar>& u,
   const int num_values
       = cell_centred ? map_c->size_global() : map_v->size_global();
 
-  const int value_rank = u.function_space()->element()->value_rank();
+  const int value_rank = u.function_space()->element()->value_shape().size();
 
   std::vector<std::string> components = {""};
   if constexpr (!std::is_scalar<Scalar>::value)

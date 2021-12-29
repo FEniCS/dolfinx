@@ -6,6 +6,7 @@
 """Collection of functions and function spaces"""
 
 import typing
+import warnings
 from functools import singledispatch
 
 import cffi
@@ -162,15 +163,11 @@ class Expression:
         # Allocate memory for result if u was not provided
         if u is None:
             if np.issubdtype(PETSc.ScalarType, np.complexfloating):
-                u = np.empty((num_cells, self.num_points * self.value_size), dtype=np.complex128)
+                u = np.empty((num_cells, self.x.shape[0] * self.value_size), dtype=np.complex128)
             else:
-                u = np.empty((num_cells, self.num_points * self.value_size), dtype=np.float64)
+                u = np.empty((num_cells, self.x.shape[0] * self.value_size), dtype=np.float64)
             self._cpp_object.eval(cells, u)
         else:
-            assert u.ndim < 3
-            assert u.size == num_cells * self.num_points * self.value_size
-            assert u.shape[0] == num_cells
-            assert u.shape[1] == self.num_points * self.value_size
             self._cpp_object.eval(cells, u)
 
         return u
@@ -184,11 +181,6 @@ class Expression:
     def x(self):
         """Evaluation points on the reference cell"""
         return self._cpp_object.x
-
-    @property
-    def num_points(self):
-        """Number of evaluation points on the reference cell."""
-        return self._cpp_object.num_points
 
     @property
     def value_size(self):
@@ -308,7 +300,7 @@ class Function(ufl.Coefficient):
             u = np.reshape(u, (-1, ))
         return u
 
-    def interpolate(self, u) -> None:
+    def interpolate(self, u, cells: np.ndarray = None) -> None:
         """Interpolate an expression"""
         @singledispatch
         def _interpolate(u):
@@ -321,7 +313,25 @@ class Function(ufl.Coefficient):
         def _(u_ptr):
             self._cpp_object.interpolate_ptr(u_ptr)
 
-        _interpolate(u)
+        @_interpolate.register(Expression)
+        def _(expr: Expression, cells: np.ndarray = None):
+            if cells is None:
+                mesh = self.function_space.mesh
+                num_cells_local = mesh.topology.index_map(mesh.topology.dim).size_local
+                cells = np.arange(num_cells_local, dtype=np.int32)
+
+            # Interpolate Expression on set of cells
+            self._cpp_object.interpolate(expr._cpp_object, cells)
+
+        # Ignore cells as input if Expression
+        # FIXME: Should all interpolate functions support input cells?
+        if not isinstance(u, Expression):
+            if cells is not None:
+                warnings.warn("List of cells as input argument is ignored. "
+                              + "All cells local to process will be used in interpolation")
+            _interpolate(u)
+        else:
+            _interpolate(u, cells)
 
     def compute_point_values(self):
         return self._cpp_object.compute_point_values()
@@ -385,7 +395,7 @@ class Function(ufl.Coefficient):
         function resides in the subspace of the mixed space.
 
         """
-        num_sub_spaces = self.function_space.num_sub_spaces()
+        num_sub_spaces = self.function_space.num_sub_spaces
         if num_sub_spaces == 1:
             raise RuntimeError("No subfunctions to extract")
         return tuple(self.sub(i) for i in range(num_sub_spaces))
@@ -462,13 +472,10 @@ class FunctionSpace(ufl.FunctionSpace):
         Vcpp = _cpp.fem.FunctionSpace(self._cpp_object.mesh, self._cpp_object.element, self._cpp_object.dofmap)
         return FunctionSpace(None, self.ufl_element(), Vcpp)
 
-    def dolfin_element(self):
-        """DOLFINx element."""
-        return self._cpp_object.element
-
+    @property
     def num_sub_spaces(self) -> int:
-        """Number of sub spaces."""
-        return self.dolfin_element().num_sub_elements()
+        """Number of sub spaces"""
+        return self.element.num_sub_elements
 
     def sub(self, i: int) -> "FunctionSpace":
         """Return the i-th sub space."""

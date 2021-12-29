@@ -15,11 +15,12 @@ using namespace dolfinx;
 using namespace dolfinx::io;
 
 //-----------------------------------------------------------------------------
-void xdmf_mesh::add_topology_data(
-    MPI_Comm comm, pugi::xml_node& xml_node, const hid_t h5_id,
-    const std::string path_prefix, const mesh::Topology& topology,
-    const mesh::Geometry& geometry, int dim,
-    const xtl::span<const std::int32_t>& active_entities)
+void xdmf_mesh::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
+                                  const hid_t h5_id,
+                                  const std::string path_prefix,
+                                  const mesh::Topology& topology,
+                                  const mesh::Geometry& geometry, int dim,
+                                  const xtl::span<const std::int32_t>& entities)
 {
   LOG(INFO) << "Adding topology data to node \"" << xml_node.path('/') << "\"";
 
@@ -62,7 +63,7 @@ void xdmf_mesh::add_topology_data(
   assert(map_e);
   if (dim == tdim)
   {
-    for (std::int32_t c : active_entities)
+    for (std::int32_t c : entities)
     {
       assert(c < cells_g.num_nodes());
       auto nodes = cells_g.links(c);
@@ -91,7 +92,7 @@ void xdmf_mesh::add_topology_data(
     for (int e = 0; e < mesh::cell_num_entities(topology.cell_type(), dim); ++e)
       entity_dofs.push_back(cmap_dof_layout.entity_closure_dofs(dim, e));
 
-    for (std::int32_t e : active_entities)
+    for (std::int32_t e : entities)
     {
       // Get first attached cell
       std::int32_t c = e_to_c->links(e)[0];
@@ -219,13 +220,13 @@ void xdmf_mesh::add_mesh(MPI_Comm comm, pugi::xml_node& xml_node,
   auto map = mesh.topology().index_map(tdim);
   assert(map);
   const int num_cells = map->size_local();
-  std::vector<std::int32_t> active_cells(num_cells);
-  std::iota(active_cells.begin(), active_cells.end(), 0);
- 
+  std::vector<std::int32_t> cells(num_cells);
+  std::iota(cells.begin(), cells.end(), 0);
+
   add_topology_data(comm, grid_node, h5_id, path_prefix, mesh.topology(),
                     mesh.geometry(), tdim,
-                    xtl::span<std::int32_t>(active_cells.data(), num_cells));
- 
+                    xtl::span<std::int32_t>(cells.data(), num_cells));
+
   // Add geometry node and attributes (including writing data)
   add_geometry_data(comm, grid_node, h5_id, path_prefix, mesh.geometry());
  }
