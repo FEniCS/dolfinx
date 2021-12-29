@@ -48,9 +48,17 @@ public:
   void set(T x) { std::fill(_data.begin(), _data.end(), x); }
 
   /// Add
-  void add(const xtl::span<const T>& x,
-           const xtl::span<const std::int32_t>& rows,
-           const xtl::span<const std::int32_t>& cols)
+  /// @param[in] x The `m` by `n` dense block of values (row-major) to
+  /// add to the matrix
+  /// @param[in] rows The row indices of `x` (indices are local to the MPI rank)
+  /// @param[in] cols The column indices of `x` (indices are local to
+  /// the MPI rank)
+  /// @param[in] op
+  template <typename U>
+  void add(
+      const xtl::span<const T>& x, const xtl::span<const std::int32_t>& rows,
+      const xtl::span<const std::int32_t>& cols,
+      U op = [](auto lhs, auto rhs) { return lhs + rhs; })
   {
     assert(x.size() == rows.size() * cols.size());
     for (std::size_t r = 0; r < rows.size(); ++r)
@@ -69,7 +77,8 @@ public:
         auto it = std::find(cit0, cit1, cols[c]);
         assert(it != cit1);
         std::size_t d = std::distance(_cols.begin(), it);
-        _data[d] += xr[c];
+        // _data[d] += xr[c];
+        _data[d] = op(_data[d], xr[c]);
       }
     }
   }

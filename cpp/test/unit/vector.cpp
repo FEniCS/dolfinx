@@ -71,10 +71,10 @@ void test_matrix()
   p.assemble();
 
   la::Matrix<float> A(p);
-  A.add(std::vector<decltype(A)::value_type>{1}, std::vector{0},
-        std::vector{0});
+  A.add(std::vector<decltype(A)::value_type>{1}, std::vector{0}, std::vector{0},
+        [](auto lhs, auto rhs) { return lhs + rhs; });
   A.add(std::vector<decltype(A)::value_type>{2.3}, std::vector{4},
-        std::vector{5});
+        std::vector{5}, [](auto lhs, auto rhs) { return lhs + rhs; });
 
   const auto Adense = A.to_dense();
   xt::xtensor<float, 2> Aref = xt::zeros<float>({8, 8});
