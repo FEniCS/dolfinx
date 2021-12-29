@@ -99,6 +99,8 @@ public:
   //   }
   // }
 
+  /// Convert to a dense matrix
+  /// @return Dense copy of the matrix
   xt::xtensor<T, 2> to_dense() const
   {
     std::int32_t nrows = _row_ptr.size() - 1;
