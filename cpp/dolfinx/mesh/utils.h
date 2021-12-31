@@ -23,6 +23,27 @@ enum class CellType;
 enum class GhostMode : int;
 class Mesh;
 
+/// Signature for the cell partitioning function. The function should
+/// compute the destination rank for cells currently on this rank.
+///
+/// @param[in] comm MPI Communicator
+/// @param[in] nparts Number of partitions
+/// @param[in] tdim Topological dimension
+/// @param[in] cells Cells on this process. The ith entry in list
+/// contains the global indices for the cell vertices. Each cell can
+/// appear only once across all processes. The cell vertex indices are
+/// not necessarily contiguous globally, i.e. the maximum index across
+/// all processes can be greater than the number of vertices. High-order
+/// 'nodes', e.g. mid-side points, should not be included.
+/// @param[in] ghost_mode How to overlap the cell partitioning: none,
+/// shared_facet or shared_vertex
+/// @return Destination ranks for each cell on this process
+using CellPartitionFunction
+    = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
+        MPI_Comm comm, int nparts, int tdim,
+        const dolfinx::graph::AdjacencyList<std::int64_t>& cells,
+        dolfinx::mesh::GhostMode ghost_mode)>;
+
 /// Extract topology from cell data, i.e. extract cell vertices
 /// @param[in] cell_type The cell shape
 /// @param[in] layout The layout of geometry 'degrees-of-freedom' on the
@@ -45,9 +66,10 @@ xt::xtensor<double, 2>
 cell_normals(const Mesh& mesh, int dim,
              const xtl::span<const std::int32_t>& entities);
 
-/// Compute midpoints or mesh entities of a given dimension
-xt::xtensor<double, 2> midpoints(const mesh::Mesh& mesh, int dim,
-                                 const xtl::span<const std::int32_t>& entities);
+/// Compute the midpoints for mesh entities of a given dimension
+xt::xtensor<double, 2>
+compute_midpoints(const Mesh& mesh, int dim,
+                  const xtl::span<const std::int32_t>& entities);
 
 /// Compute indices of all mesh entities that evaluate to true for the
 /// provided geometric marking function. An entity is considered marked
@@ -60,7 +82,7 @@ xt::xtensor<double, 2> midpoints(const mesh::Mesh& mesh, int dim,
 /// @returns List of marked entity indices, including any ghost indices
 ///   (indices local to the process)
 std::vector<std::int32_t> locate_entities(
-    const mesh::Mesh& mesh, int dim,
+    const Mesh& mesh, int dim,
     const std::function<xt::xtensor<bool, 1>(const xt::xtensor<double, 2>&)>&
         marker);
 
@@ -85,7 +107,7 @@ std::vector<std::int32_t> locate_entities(
 /// @returns List of marked entity indices (indices local to the
 /// process)
 std::vector<std::int32_t> locate_entities_boundary(
-    const mesh::Mesh& mesh, int dim,
+    const Mesh& mesh, int dim,
     const std::function<xt::xtensor<bool, 1>(const xt::xtensor<double, 2>&)>&
         marker);
 
@@ -101,7 +123,7 @@ std::vector<std::int32_t> locate_entities_boundary(
 /// indices(i, j) is the position in the geometry array of the j-th vertex of
 /// the entity entity_list[i].
 xt::xtensor<std::int32_t, 2>
-entities_to_geometry(const mesh::Mesh& mesh, int dim,
+entities_to_geometry(const Mesh& mesh, int dim,
                      const xtl::span<const std::int32_t>& entity_list,
                      bool orient);
 
@@ -112,32 +134,23 @@ entities_to_geometry(const mesh::Mesh& mesh, int dim,
 /// @return List of facet indices of exterior facets of the mesh
 std::vector<std::int32_t> exterior_facet_indices(const Mesh& mesh);
 
-/// Compute destination rank for mesh cells in this rank by applying the
-/// default graph partitioner to the dual graph of the mesh
-///
-/// @param[in] comm MPI Communicator
-/// @param[in] n Number of partitions
-/// @param[in] tdim Topological dimension
-/// @param[in] cells Cells on this process. The ith entry in list
-/// contains the global indices for the cell vertices. Each cell can
-/// appear only once across all processes. The cell vertex indices are
-/// not necessarily contiguous globally, i.e. the maximum index across
-/// all processes can be greater than the number of vertices. High-order
-/// 'nodes', e.g. mid-side points, should not be included.
-/// @param[in] ghost_mode How to overlap the cell partitioning: none,
-/// shared_facet or shared_vertex
-/// @return Destination rank for each cell on this process
-graph::AdjacencyList<std::int32_t>
-partition_cells_graph(MPI_Comm comm, int n, int tdim,
-                      const graph::AdjacencyList<std::int64_t>& cells,
-                      mesh::GhostMode ghost_mode);
+/// Create a function that computes destination rank for mesh cells in
+/// this rank by applying the default graph partitioner to the dual
+/// graph of the mesh
+/// @return Function that computes the destination ranks for each cell
+CellPartitionFunction create_cell_partitioner(const graph::partition_fn& partfn
+                                              = &graph::partition_graph);
 
-/// Compute destination rank for mesh cells on this rank by applying the
-/// a provided graph partitioner to the dual graph of the mesh
-graph::AdjacencyList<std::int32_t>
-partition_cells_graph(MPI_Comm comm, int n, int tdim,
-                      const graph::AdjacencyList<std::int64_t>& cells,
-                      mesh::GhostMode ghost_mode,
-                      const graph::partition_fn& partfn);
+/// Compute incident indices
+/// @param[in] mesh The mesh
+/// @param[in] entities List of indices of topological dimension `d0`
+/// @param[in] d0 Topological dimension
+/// @param[in] d1 Topological dimension
+/// @return List of entities of topological dimension `d1` that are
+/// incident to entities in `entities` (topological dimension `d0`)
+std::vector<std::int32_t>
+compute_incident_entities(const Mesh& mesh,
+                          const xtl::span<const std::int32_t>& entities, int d0,
+                          int d1);
 
 } // namespace dolfinx::mesh

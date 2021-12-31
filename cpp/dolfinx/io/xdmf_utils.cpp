@@ -37,7 +37,7 @@ namespace
 std::int64_t get_padded_width(const fem::FiniteElement& e)
 {
   const int width = e.value_size();
-  const int rank = e.value_rank();
+  const int rank = e.value_shape().size();
   if (rank == 1 and width == 2)
     return 3;
   else if (rank == 2 and width == 4)
@@ -62,7 +62,7 @@ std::vector<Scalar> _get_point_data_values(const fem::Function<Scalar>& u)
   // FIXME: Unpick the below code for the new layout of data from
   //        GenericFunction::compute_vertex_values
   std::vector<Scalar> _data_values(width * num_local_points, 0.0);
-  const int value_rank = u.function_space()->element()->value_rank();
+  const int value_rank = u.function_space()->element()->value_shape().size();
   if (value_rank > 0)
   {
     // Transpose vector/tensor data arrays
@@ -93,7 +93,7 @@ std::vector<Scalar> _get_cell_data_values(const fem::Function<Scalar>& u)
   assert(u.function_space()->dofmap());
   const auto mesh = u.function_space()->mesh();
   const int value_size = u.function_space()->element()->value_size();
-  const int value_rank = u.function_space()->element()->value_rank();
+  const int value_rank = u.function_space()->element()->value_shape().size();
 
   // Allocate memory for function values at cell centres
   const int tdim = mesh->topology().dim();
@@ -428,7 +428,7 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh& mesh, int entity_dim,
   // Send input global indices to 'post master' rank, based on input
   // global index value
   const std::int64_t num_nodes_g = mesh.geometry().index_map()->size_global();
-  const MPI_Comm comm = mesh.mpi_comm();
+  const MPI_Comm comm = mesh.comm();
   const int comm_size = MPI::size(comm);
   // NOTE: could make this int32_t be sending: index <- index - dest_rank_offset
   std::vector<std::vector<std::int64_t>> nodes_g_send(comm_size);

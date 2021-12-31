@@ -231,6 +231,6 @@ fem::FunctionSpace fem::create_functionspace(
   return fem::FunctionSpace(
       mesh, element,
       std::make_shared<fem::DofMap>(fem::create_dofmap(
-          mesh->mpi_comm(), *ufc_map, mesh->topology(), reorder_fn, element)));
+          mesh->comm(), *ufc_map, mesh->topology(), reorder_fn, element)));
 }
 //-----------------------------------------------------------------------------

@@ -6,12 +6,15 @@
 """Methods for solving nonlinear equations."""
 
 import types
-from petsc4py import PETSc
-from dolfinx import fem, cpp
+
+from dolfinx import cpp as _cpp
+from dolfinx import fem
+
 import mpi4py
+from petsc4py import PETSc
 
 
-class NewtonSolver(cpp.nls.NewtonSolver):
+class NewtonSolver(_cpp.nls.NewtonSolver):
     def __init__(self, comm: mpi4py.MPI.Intracomm, problem: fem.NonlinearProblem):
         """
         Create a Newton solver for a given MPI communicator and non-linear problem.

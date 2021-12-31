@@ -37,25 +37,6 @@ using namespace dolfinx;
 namespace
 {
 //-----------------------------------------------------------------------------
-
-/// Build ParMETIS adjacency list data
-template <typename T>
-std::array<std::vector<T>, 3>
-build_adjacency_data(MPI_Comm comm,
-                     const graph::AdjacencyList<std::int64_t>& graph)
-{
-  // Communicate number of nodes between all processors
-  const int size = dolfinx::MPI::size(comm);
-  std::vector<T> node_disp(size + 1, 0);
-  const T num_local_nodes = graph.num_nodes();
-  MPI_Allgather(&num_local_nodes, 1, dolfinx::MPI::mpi_type<T>(),
-                node_disp.data() + 1, 1, dolfinx::MPI::mpi_type<T>(), comm);
-  std::partial_sum(node_disp.begin(), node_disp.end(), node_disp.begin());
-  return {std::move(node_disp),
-          std::vector<T>(graph.array().begin(), graph.array().end()),
-          std::vector<T>(graph.offsets().begin(), graph.offsets().end())};
-}
-//-----------------------------------------------------------------------------
 template <typename T>
 graph::AdjacencyList<std::int32_t> compute_destination_ranks(
     MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& graph,
@@ -366,7 +347,7 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
       strat_val = SCOTCH_STRATSCALABILITY;
       break;
     default:
-      throw("Unknown SCOTCH strategy");
+      throw std::runtime_error("Unknown SCOTCH strategy");
     }
     err = SCOTCH_stratDgraphMapBuild(&strat, strat_val, nparts, nparts,
                                      imbalance);
@@ -476,48 +457,70 @@ graph::partition_fn graph::parmetis::partitioner(double imbalance,
     LOG(INFO) << "Compute graph partition using ParMETIS";
     common::Timer timer("Compute graph partition (ParMETIS)");
 
-    if (graph.num_nodes() == 0)
+    if (nparts == 1 and dolfinx::MPI::size(comm) == 1)
     {
-      throw std::runtime_error(
-          "ParMETIS cannot partition a graph where one of the MPI ranks has no "
-          "data. Try PT-SCOTCH or KaHIP instead.");
+      // Nothing to be partitioned
+      return build_adjacency_list<std::int32_t>(
+          std::vector<std::int32_t>(graph.num_nodes(), 0), 1);
     }
-
-    // Options for ParMETIS
-    std::array<idx_t, 3> _options = {options[0], options[1], options[2]};
-
-    // Data for  ParMETIS
-    idx_t ncon = 1;
-    idx_t* elmwgt = nullptr;
-    idx_t wgtflag(0), edgecut(0), numflag(0);
-    std::vector<real_t> tpwgts(ncon * nparts,
-                               1.0 / static_cast<real_t>(nparts));
-    std::array<real_t, 1> ubvec = {static_cast<real_t>(imbalance)};
 
     // Build adjacency list data
-    common::Timer timer1("ParMETIS: build adjacency data");
-    auto [node_disp, array, _offsets]
-        = build_adjacency_data<idx_t>(comm, graph);
-    timer1.stop();
+    const int rank = dolfinx::MPI::rank(comm);
 
-    // Call ParMETIS to partition graph
-    common::Timer timer2("ParMETIS: call ParMETIS_V3_PartKway");
+    // Split communicator in groups (0) without and (1) with parts of
+    // the graph
     std::vector<idx_t> part(graph.num_nodes());
-    int err = ParMETIS_V3_PartKway(
-        node_disp.data(), _offsets.data(), array.data(), elmwgt, nullptr,
-        &wgtflag, &numflag, &ncon, &nparts, tpwgts.data(), ubvec.data(),
-        _options.data(), &edgecut, part.data(), &comm);
-    if (err != METIS_OK)
-    {
-      throw std::runtime_error("ParMETIS_V3_PartKway failed. Error code: "
-                               + std::to_string(err));
-    }
-    timer2.stop();
+    MPI_Comm pcomm = MPI_COMM_NULL;
+    int color = graph.num_nodes() == 0 ? 0 : 1;
+    MPI_Comm_split(comm, color, rank, &pcomm);
 
-    if (ghosting)
-      return compute_destination_ranks(comm, graph, node_disp, part);
+    std::vector<idx_t> node_disp;
+    if (color == 1)
+    {
+      // Build adjacency list data
+      const int psize = dolfinx::MPI::size(pcomm);
+      const idx_t num_local_nodes = graph.num_nodes();
+      node_disp = std::vector<idx_t>(psize + 1, 0);
+      MPI_Allgather(&num_local_nodes, 1, dolfinx::MPI::mpi_type<idx_t>(),
+                    node_disp.data() + 1, 1, dolfinx::MPI::mpi_type<idx_t>(),
+                    pcomm);
+      std::partial_sum(node_disp.begin(), node_disp.end(), node_disp.begin());
+      std::vector<idx_t> array(graph.array().begin(), graph.array().end());
+      std::vector<idx_t> offsets(graph.offsets().begin(),
+                                 graph.offsets().end());
+
+      // Options and sata for ParMETIS
+      std::array<idx_t, 3> opts = {options[0], options[1], options[2]};
+      idx_t ncon = 1;
+      idx_t* elmwgt = nullptr;
+      idx_t wgtflag(0), edgecut(0), numflag(0);
+      std::vector<real_t> tpwgts(ncon * nparts,
+                                 1.0 / static_cast<real_t>(nparts));
+      real_t ubvec = static_cast<real_t>(imbalance);
+
+      // Partition
+      common::Timer timer1("ParMETIS: call ParMETIS_V3_PartKway");
+      int err = ParMETIS_V3_PartKway(
+          node_disp.data(), offsets.data(), array.data(), elmwgt, nullptr,
+          &wgtflag, &numflag, &ncon, &nparts, tpwgts.data(), &ubvec,
+          opts.data(), &edgecut, part.data(), &pcomm);
+      if (err != METIS_OK)
+      {
+        throw std::runtime_error("ParMETIS_V3_PartKway failed. Error code: "
+                                 + std::to_string(err));
+      }
+    }
+
+    if (ghosting and graph.num_nodes() > 0)
+    {
+      graph::AdjacencyList<std::int32_t> dest
+          = compute_destination_ranks(pcomm, graph, node_disp, part);
+      MPI_Comm_free(&pcomm);
+      return dest;
+    }
     else
     {
+      MPI_Comm_free(&pcomm);
       return build_adjacency_list<std::int32_t>(
           std::vector<std::int32_t>(part.begin(), part.end()), 1);
     }
@@ -542,21 +545,30 @@ graph::kahip::partitioner(int mode, int seed, double imbalance,
   {
     LOG(INFO) << "Compute graph partition using (parallel) KaHIP";
 
+    // KaHIP integer type
+    using T = unsigned long long;
+
     common::Timer timer("Compute graph partition (KaHIP)");
 
     // Graph does not have vertex or adjacency weights, so we use null
     // pointers as arguments
-    unsigned long long *vwgt(nullptr), *adjcwgt(nullptr);
+    T *vwgt(nullptr), *adjcwgt(nullptr);
 
     // Build adjacency list data
     common::Timer timer1("KaHIP: build adjacency data");
-    auto [node_disp, array, offsets]
-        = build_adjacency_data<unsigned long long>(comm, graph);
+    const int size = dolfinx::MPI::size(comm);
+    std::vector<T> node_disp(size + 1, 0);
+    const T num_local_nodes = graph.num_nodes();
+    MPI_Allgather(&num_local_nodes, 1, dolfinx::MPI::mpi_type<T>(),
+                  node_disp.data() + 1, 1, dolfinx::MPI::mpi_type<T>(), comm);
+    std::partial_sum(node_disp.begin(), node_disp.end(), node_disp.begin());
+    std::vector<T> array(graph.array().begin(), graph.array().end());
+    std::vector<T> offsets(graph.offsets().begin(), graph.offsets().end());
     timer1.stop();
 
     // Call KaHIP to partition graph
     common::Timer timer2("KaHIP: call ParHIPPartitionKWay");
-    std::vector<unsigned long long> part(graph.num_nodes());
+    std::vector<T> part(graph.num_nodes());
     int edgecut = 0;
     double _imbalance = imbalance;
     ParHIPPartitionKWay(node_disp.data(), offsets.data(), array.data(), vwgt,

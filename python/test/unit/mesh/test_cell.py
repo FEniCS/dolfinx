@@ -5,19 +5,22 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import pytest
+
 import ufl
-from dolfinx import (UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh, cpp,
-                     geometry)
-from dolfinx.mesh import CellType, create_mesh
+from dolfinx import cpp as _cpp
+from dolfinx.geometry import squared_distance
+from dolfinx.mesh import (CellType, create_mesh, create_unit_cube,
+                          create_unit_interval, create_unit_square)
 from dolfinx_utils.test.skips import skip_in_parallel
+
 from mpi4py import MPI
 
 
 @skip_in_parallel
 def test_distance_interval():
-    mesh = UnitIntervalMesh(MPI.COMM_SELF, 1)
-    assert geometry.squared_distance(mesh, mesh.topology.dim, [0], [-1.0, 0, 0]) == pytest.approx(1.0)
-    assert geometry.squared_distance(mesh, mesh.topology.dim, [0], [0.5, 0, 0]) == pytest.approx(0.0)
+    mesh = create_unit_interval(MPI.COMM_SELF, 1)
+    assert squared_distance(mesh, mesh.topology.dim, [0], [-1.0, 0, 0]) == pytest.approx(1.0)
+    assert squared_distance(mesh, mesh.topology.dim, [0], [0.5, 0, 0]) == pytest.approx(0.0)
 
 
 @skip_in_parallel
@@ -28,9 +31,9 @@ def test_distance_triangle():
     x = [[0., 0., 0.], [0., 1., 0.], [1., 1., 0.]]
     cells = [[0, 1, 2]]
     mesh = create_mesh(MPI.COMM_WORLD, cells, x, domain)
-    assert geometry.squared_distance(mesh, mesh.topology.dim, [0], [-1.0, -1.0, 0.0]) == pytest.approx(2.0)
-    assert geometry.squared_distance(mesh, mesh.topology.dim, [0], [-1.0, 0.5, 0.0]) == pytest.approx(1.0)
-    assert geometry.squared_distance(mesh, mesh.topology.dim, [0], [0.5, 0.5, 0.0]) == pytest.approx(0.0)
+    assert squared_distance(mesh, mesh.topology.dim, [0], [-1.0, -1.0, 0.0]) == pytest.approx(2.0)
+    assert squared_distance(mesh, mesh.topology.dim, [0], [-1.0, 0.5, 0.0]) == pytest.approx(1.0)
+    assert squared_distance(mesh, mesh.topology.dim, [0], [0.5, 0.5, 0.0]) == pytest.approx(0.0)
 
 
 @skip_in_parallel
@@ -43,31 +46,31 @@ def test_distance_tetrahedron():
     x = [[0., 0., 0.], [0., 1., 0.], [0., 1., 1.], [1, 1., 1]]
     cells = [[0, 1, 2, 3]]
     mesh = create_mesh(MPI.COMM_WORLD, cells, x, domain)
-    assert geometry.squared_distance(mesh, mesh.topology.dim, [0], [-1.0, -1.0, -1.0]) == pytest.approx(3.0)
-    assert geometry.squared_distance(mesh, mesh.topology.dim, [0], [-1.0, 0.5, 0.5]) == pytest.approx(1.0)
-    assert geometry.squared_distance(mesh, mesh.topology.dim, [0], [0.5, 0.5, 0.5]) == pytest.approx(0.0)
+    assert squared_distance(mesh, mesh.topology.dim, [0], [-1.0, -1.0, -1.0]) == pytest.approx(3.0)
+    assert squared_distance(mesh, mesh.topology.dim, [0], [-1.0, 0.5, 0.5]) == pytest.approx(1.0)
+    assert squared_distance(mesh, mesh.topology.dim, [0], [0.5, 0.5, 0.5]) == pytest.approx(0.0)
 
 
 @ pytest.mark.skip("volume_entities needs fixing")
 @ pytest.mark.parametrize(
     'mesh', [
-        UnitIntervalMesh(MPI.COMM_WORLD, 18),
-        UnitSquareMesh(MPI.COMM_WORLD, 8, 9, CellType.triangle),
-        UnitSquareMesh(MPI.COMM_WORLD, 8, 9, CellType.quadrilateral),
-        UnitCubeMesh(MPI.COMM_WORLD, 8, 9, 5, CellType.tetrahedron)
+        create_unit_interval(MPI.COMM_WORLD, 18),
+        create_unit_square(MPI.COMM_WORLD, 8, 9, CellType.triangle),
+        create_unit_square(MPI.COMM_WORLD, 8, 9, CellType.quadrilateral),
+        create_unit_cube(MPI.COMM_WORLD, 8, 9, 5, CellType.tetrahedron)
     ])
 def test_volume_cells(mesh):
     tdim = mesh.topology.dim
     map = mesh.topology.index_map(tdim)
     num_cells = map.size_local
-    v = cpp.mesh.volume_entities(mesh, range(num_cells), mesh.topology.dim)
-    assert mesh.mpi_comm().allreduce(v.sum(), MPI.SUM) == pytest.approx(1.0, rel=1e-9)
+    v = _cpp.mesh.volume_entities(mesh, range(num_cells), mesh.topology.dim)
+    assert mesh.comm.allreduce(v.sum(), MPI.SUM) == pytest.approx(1.0, rel=1e-9)
 
 
 @ pytest.mark.skip("volume_entities needs fixing")
 def test_volume_quadrilateralR2():
-    mesh = UnitSquareMesh(MPI.COMM_SELF, 1, 1, CellType.quadrilateral)
-    assert cpp.mesh.volume_entities(mesh, [0], mesh.topology.dim) == 1.0
+    mesh = create_unit_square(MPI.COMM_SELF, 1, 1, CellType.quadrilateral)
+    assert _cpp.mesh.volume_entities(mesh, [0], mesh.topology.dim) == 1.0
 
 
 @ pytest.mark.skip("volume_entities needs fixing")
@@ -79,7 +82,7 @@ def test_volume_quadrilateralR3(x):
     cells = [[0, 1, 2, 3]]
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", "quadrilateral", 1))
     mesh = create_mesh(MPI.COMM_SELF, cells, x, domain)
-    assert cpp.mesh.volume_entities(mesh, [0], mesh.topology.dim) == 1.0
+    assert _cpp.mesh.volume_entities(mesh, [0], mesh.topology.dim) == 1.0
 
 
 @ pytest.mark.skip("volume_entities needs fixing")
@@ -97,7 +100,7 @@ def test_volume_quadrilateral_coplanarity_check_1(scaling):
         cells = [[0, 1, 2, 3]]
         domain = ufl.Mesh(ufl.VectorElement("Lagrange", "quadrilateral", 1))
         mesh = create_mesh(MPI.COMM_SELF, cells, x, domain)
-        cpp.mesh.volume_entities(mesh, [0], mesh.topology.dim)
+        _cpp.mesh.volume_entities(mesh, [0], mesh.topology.dim)
 
     assert "Not coplanar" in str(error.value)
 
@@ -116,6 +119,6 @@ def test_volume_quadrilateral_coplanarity_check_2(scaling):
         cells = [[0, 1, 2, 3]]
         domain = ufl.Mesh(ufl.VectorElement("Lagrange", "quadrilateral", 1))
         mesh = create_mesh(MPI.COMM_SELF, cells, x, domain)
-        cpp.mesh.volume_entities(mesh, [0], mesh.topology.dim)
+        _cpp.mesh.volume_entities(mesh, [0], mesh.topology.dim)
 
     assert "Not coplanar" in str(error.value)

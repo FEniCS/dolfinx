@@ -17,7 +17,6 @@
 
 namespace dolfinx::la
 {
-class VectorSpaceBasis;
 
 /// This class provides an eigenvalue solver for PETSc matrices. It is a
 /// wrapper for the SLEPc eigenvalue solver.
@@ -84,7 +83,7 @@ public:
   EPS eps() const;
 
   /// Return MPI communicator
-  MPI_Comm mpi_comm() const;
+  MPI_Comm comm() const;
 
 private:
   // SLEPc solver pointer

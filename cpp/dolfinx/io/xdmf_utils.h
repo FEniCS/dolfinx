@@ -105,10 +105,9 @@ distribute_entity_data(const mesh::Mesh& mesh, int entity_dim,
 /// TODO: Document
 template <typename T>
 void add_data_item(pugi::xml_node& xml_node, const hid_t h5_id,
-                   const std::string h5_path, const T& x,
-                   const std::int64_t offset,
-                   const std::vector<std::int64_t> shape,
-                   const std::string number_type, const bool use_mpi_io)
+                   const std::string& h5_path, const T& x, std::int64_t offset,
+                   const std::vector<std::int64_t>& shape,
+                   const std::string& number_type, bool use_mpi_io)
 {
   // Add DataItem node
   assert(xml_node);
@@ -132,8 +131,17 @@ void add_data_item(pugi::xml_node& xml_node, const hid_t h5_id,
   {
     data_item_node.append_attribute("Format") = "XML";
     assert(shape.size() == 2);
-    data_item_node.append_child(pugi::node_pcdata)
-        .set_value(common::container_to_string(x, 16, shape[1]).c_str());
+    std::ostringstream s;
+    s.precision(16);
+    for (std::size_t i = 0; i < (std::size_t)x.size(); ++i)
+    {
+      if ((i + 1) % shape[1] == 0 and shape[1] != 0)
+        s << x.data()[i] << std::endl;
+      else
+        s << x.data()[i] << " ";
+    }
+
+    data_item_node.append_child(pugi::node_pcdata).set_value(s.str().c_str());
   }
   else
   {

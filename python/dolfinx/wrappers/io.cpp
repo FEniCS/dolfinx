@@ -15,7 +15,7 @@
 #include <dolfinx/io/XDMFFile.h>
 #include <dolfinx/io/cells.h>
 #include <dolfinx/io/xdmf_utils.h>
-#include <dolfinx/la/PETScVector.h>
+// #include <dolfinx/la/PETScVector.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshTags.h>
 #include <memory>
@@ -167,9 +167,6 @@ void io(py::module& m)
            py::overload_cast<const dolfinx::mesh::Mesh&, double>(
                &dolfinx::io::VTKFile::write),
            py::arg("mesh"), py::arg("t") = 0.0);
-
-  // Flag for ADIOS2 installation
-  m.def("has_adios2", &dolfinx::has_adios2);
 
 #ifdef HAS_ADIOS2
   // dolfinx::io::FidesWriter

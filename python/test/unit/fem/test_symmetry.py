@@ -5,14 +5,16 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Test that matrices are symmetric."""
 
-import dolfinx
 import pytest
+
+import dolfinx
 import ufl
-from dolfinx import FunctionSpace, UnitCubeMesh, UnitSquareMesh
-from dolfinx.mesh import CellType
+from dolfinx.fem import FunctionSpace
+from dolfinx.mesh import CellType, create_unit_cube, create_unit_square
 from dolfinx_utils.test.skips import skip_in_parallel
-from mpi4py import MPI
 from ufl import FiniteElement, MixedElement, VectorElement, grad, inner
+
+from mpi4py import MPI
 
 
 def check_symmetry(A):
@@ -21,9 +23,9 @@ def check_symmetry(A):
 
 def run_symmetry_test(cell_type, element, form_f):
     if cell_type == CellType.triangle or cell_type == CellType.quadrilateral:
-        mesh = UnitSquareMesh(MPI.COMM_WORLD, 2, 2, cell_type)
+        mesh = create_unit_square(MPI.COMM_WORLD, 2, 2, cell_type)
     else:
-        mesh = UnitCubeMesh(MPI.COMM_WORLD, 2, 2, 2, cell_type)
+        mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, cell_type)
 
     space = FunctionSpace(mesh, element)
 
@@ -108,9 +110,9 @@ def test_stiffness_matrix_dS(cell_type, element, order, sign):
 @pytest.mark.parametrize("order", range(1, 2))
 def test_mixed_element_form(cell_type, sign, order):
     if cell_type == CellType.triangle or cell_type == CellType.quadrilateral:
-        mesh = UnitSquareMesh(MPI.COMM_WORLD, 2, 2, cell_type)
+        mesh = create_unit_square(MPI.COMM_WORLD, 2, 2, cell_type)
     else:
-        mesh = UnitCubeMesh(MPI.COMM_WORLD, 2, 2, 2, cell_type)
+        mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, cell_type)
 
     if cell_type == CellType.triangle:
         U_el = MixedElement([FiniteElement("Lagrange", ufl.triangle, order),
@@ -143,9 +145,9 @@ def test_mixed_element_form(cell_type, sign, order):
 @pytest.mark.parametrize("order", range(1, 2))
 def test_mixed_element_vector_element_form(cell_type, sign, order):
     if cell_type == CellType.triangle or cell_type == CellType.quadrilateral:
-        mesh = UnitSquareMesh(MPI.COMM_WORLD, 2, 2, cell_type)
+        mesh = create_unit_square(MPI.COMM_WORLD, 2, 2, cell_type)
     else:
-        mesh = UnitCubeMesh(MPI.COMM_WORLD, 2, 2, 2, cell_type)
+        mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, cell_type)
 
     if cell_type == CellType.triangle:
         U_el = MixedElement([VectorElement("Lagrange", ufl.triangle, order),

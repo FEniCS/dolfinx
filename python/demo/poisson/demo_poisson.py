@@ -74,29 +74,27 @@
 # First, the :py:mod:`dolfinx` module is imported: ::
 
 import numpy as np
+
 import ufl
-from dolfinx import (DirichletBC, Function, FunctionSpace, RectangleMesh, fem,
-                     plot)
-from dolfinx.fem import locate_dofs_topological
+from dolfinx import fem, plot
+from dolfinx.fem import DirichletBC, FunctionSpace, locate_dofs_topological
 from dolfinx.io import XDMFFile
-from dolfinx.mesh import CellType, GhostMode, locate_entities_boundary
-from mpi4py import MPI
-from petsc4py import PETSc
+from dolfinx.mesh import CellType, create_rectangle, locate_entities_boundary
 from ufl import ds, dx, grad, inner
+
+from mpi4py import MPI
+from petsc4py.PETSc import ScalarType
 
 # We begin by defining a mesh of the domain and a finite element
 # function space :math:`V` relative to this mesh. As the unit square is
 # a very standard domain, we can use a built-in mesh provided by the
-# class :py:class:`UnitSquareMesh <dolfinx.cpp.UnitSquareMesh>`. In
-# order to create a mesh consisting of 32 x 32 squares with each square
-# divided into two triangles, we do as follows ::
+# class :py:class:`create_unit_square_mesh
+# <dolfinx.mesh.create_unit_square_mesh>`. In order to create a mesh
+# consisting of 32 x 32 squares with each square divided into two
+# triangles, we do as follows ::
 
 # Create mesh and define function space
-mesh = RectangleMesh(
-    MPI.COMM_WORLD,
-    [np.array([0, 0, 0]), np.array([1, 1, 0])], [32, 32],
-    CellType.triangle, GhostMode.none)
-
+mesh = create_rectangle(MPI.COMM_WORLD, ((0.0, 0.0), (2.0, 1.0)), (32, 16), CellType.triangle)
 V = FunctionSpace(mesh, ("Lagrange", 1))
 
 # The second argument to :py:class:`FunctionSpace
@@ -119,26 +117,27 @@ V = FunctionSpace(mesh, ("Lagrange", 1))
 #
 # Now, the Dirichlet boundary condition can be created using the class
 # :py:class:`DirichletBC <dolfinx.fem.bcs.DirichletBC>`. A
-# :py:class:`DirichletBC <dolfinx.fem.bcs.DirichletBC>` takes two
-# arguments: the value of the boundary condition and the part of the
-# boundary on which the condition applies. This boundary part is
-# identified with degrees of freedom in the function space to which we
-# apply the boundary conditions. A method ``locate_dofs_geometrical`` is
-# provided to extract the boundary degrees of freedom using a
-# geometrical criterium. In our example, the function space is ``V``,
-# the value of the boundary condition (0.0) can represented using a
-# :py:class:`Function <dolfinx.functions.Function>` and the Dirichlet
-# boundary is defined immediately above. The definition of the Dirichlet
-# boundary condition then looks as follows: ::
+# :py:class:`DirichletBC <dolfinx.fem.bcs.DirichletBC>` takes three
+# arguments: the value of the boundary condition, the part of the
+# boundary which the condition apply to, and the function space. This
+# boundary part is identified with degrees of freedom in the function
+# space to which we apply the boundary conditions.
+#
+# To identify the degrees of freedom, we first find the facets (entities
+# of dimension 1) that likes on the boundary of the mesh, and satisfies
+# our criteria for `\Gamma_D`. Then, we use the function
+# ``locate_dofs_topological`` to identify all degrees of freedom that is
+# located on the facet (including the vertices). In our example, the
+# function space is ``V``, the value of the boundary condition (0.0) can
+# represented using a :py:class:`Constant
+# <dolfinx.fem.function.Constant>` and the Dirichlet boundary is defined
+# immediately above. The definition of the Dirichlet boundary condition
+# then looks as follows: ::
 
 # Define boundary condition on x = 0 or x = 1
-u0 = Function(V)
-with u0.vector.localForm() as u0_loc:
-    u0_loc.set(0)
-facets = locate_entities_boundary(mesh, 1,
-                                  lambda x: np.logical_or(np.isclose(x[0], 0.0),
-                                                          np.isclose(x[0], 1.0)))
-bc = DirichletBC(u0, locate_dofs_topological(V, 1, facets))
+facets = locate_entities_boundary(mesh, 1, lambda x: np.logical_or(np.isclose(x[0], 0.0),
+                                                                   np.isclose(x[0], 2.0)))
+bc = DirichletBC(ScalarType(0), locate_dofs_topological(V, 1, facets), V)
 
 # Next, we want to express the variational problem.  First, we need to
 # specify the trial function :math:`u` and the test function :math:`v`,
@@ -197,11 +196,9 @@ with XDMFFile(MPI.COMM_WORLD, "poisson.xdmf", "w") as file:
     file.write_function(uh)
 
 
-# Update ghost entries and plot
-uh.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+# Plot solution
 try:
     import pyvista
-
     topology, cell_types = plot.create_vtk_topology(mesh, mesh.topology.dim)
     grid = pyvista.UnstructuredGrid(topology, cell_types, mesh.geometry.x)
     grid.point_data["u"] = uh.compute_point_values().real
@@ -212,7 +209,8 @@ try:
     warped = grid.warp_by_scalar()
     plotter.add_mesh(warped)
 
-    # If pyvista environment variable is set to off-screen (static) plotting save png
+    # If pyvista environment variable is set to off-screen (static)
+    # plotting save png
     if pyvista.OFF_SCREEN:
         pyvista.start_xvfb(wait=0.1)
         plotter.screenshot("uh.png")

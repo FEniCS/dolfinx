@@ -24,8 +24,8 @@ class FiniteElement
 {
 public:
   /// Create finite element from UFC finite element
-  /// @param[in] ufc_element UFC finite element
-  explicit FiniteElement(const ufc_finite_element& ufc_element);
+  /// @param[in] e UFC finite element
+  explicit FiniteElement(const ufc_finite_element& e);
 
   /// Copy constructor
   FiniteElement(const FiniteElement& element) = delete;
@@ -74,26 +74,24 @@ public:
   /// @return The value size for the reference element
   int reference_value_size() const noexcept;
 
-  /// Rank of the value space
-  /// @return The value rank
-  int value_rank() const noexcept;
-
-  /// Return the dimension of the value space for axis i
-  int value_dimension(int i) const;
+  /// Shape of the value space. The rank is the size of the
+  /// `value_shape`.
+  xtl::span<const int> value_shape() const noexcept;
 
   /// The finite element family
   /// @return The string of the finite element family
   std::string family() const noexcept;
 
-  /// Evaluate all derivatives of the basis functions up to given order at given
-  /// points in reference cell
-  /// @param[in,out] values Four dimensional xtensor that will be filled with
-  /// the tabulated values. Should be of shape {num_derivatives, num_points,
-  /// num_dofs, reference_value_size}
-  /// @param[in] X Two dimensional xtensor of shape [num_points, geometric
-  /// dimension] containing the points at the reference element
-  /// @param[in] order The number of derivatives (up to and including this
-  /// order) to tabulate for.
+  /// Evaluate all derivatives of the basis functions up to given order
+  /// at given points in reference cell
+  /// @param[in,out] values Four dimensional xtensor that will be filled
+  /// with the tabulated values. Should be of shape {num_derivatives,
+  /// num_points, num_dofs, reference_value_size}
+  /// @param[in] X Two dimensional xtensor of shape [num_points,
+  /// geometric dimension] containing the points at the reference
+  /// element
+  /// @param[in] order The number of derivatives (up to and including
+  /// this order) to tabulate for
   void tabulate(xt::xtensor<double, 4>& values, const xt::xtensor<double, 2>& X,
                 int order) const;
 
@@ -127,8 +125,8 @@ public:
   /// - `u` [in] The data on the physical cell that should be pulled
   /// back , flattened with row-major layout, shape=(num_points,
   /// value_size)
-  /// - `K` [in] The inverse oif the Jacobian matrix of the map
-  /// ,shape=(tdim, gdim)
+  /// - `K` [in] The inverse oif the Jacobian matrix of the map, shape=(tdim,
+  /// gdim)
   /// - `detJ_inv` [in] 1/det(J)
   /// - `J` [in] The Jacobian matrix, shape=(gdim, tdim)
   template <typename O, typename P, typename Q, typename R>
@@ -187,14 +185,18 @@ public:
   /// freedom, i.e. dofs = Pi f_x. See the Basix documentation for
   /// basix::FiniteElement::interpolation_matrix for how the data in
   /// `f_x` should be ordered.
-  /// @return The interpolation operator `Pi`
+  /// @return The interpolation operator `Pi`. Shape is (num_dofs,
+  /// num_points*value_size)
   const xt::xtensor<double, 2>& interpolation_operator() const;
 
   /// Create a matrix that maps degrees of freedom from one element to
   /// this element (interpolation)
   /// @param[in] from The element to interpolate from
   /// @return Matrix operator that maps the 'from' degrees-of-freedom to
-  /// the degrees-of-freedom of this element.
+  /// the degrees-of-freedom of this element. Shape is (num_dofs of this
+  /// element, num_dofs of `from`)
+  /// @note The two elements must use the same mapping between the
+  /// reference and physical cells
   /// @note Does not support mixed elements
   xt::xtensor<double, 2>
   create_interpolation_operator(const FiniteElement& from) const;
@@ -202,14 +204,14 @@ public:
   /// Check if DOF transformations are needed for this element.
   ///
   /// DOF transformations will be needed for elements which might not be
-  /// continuous when two neighbouring cells disagree on the orientation of
-  /// a shared subentity, and when this cannot be corrected for by permuting
-  /// the DOF numbering in the dofmap.
+  /// continuous when two neighbouring cells disagree on the orientation
+  /// of a shared subentity, and when this cannot be corrected for by
+  /// permuting the DOF numbering in the dofmap.
   ///
-  /// For example, Raviart-Thomas elements will need DOF transformations,
-  /// as the neighbouring cells may disagree on the orientation of a basis
-  /// function, and this orientation cannot be corrected for by permuting
-  /// the DOF numbers on each cell.
+  /// For example, Raviart-Thomas elements will need DOF
+  /// transformations, as the neighbouring cells may disagree on the
+  /// orientation of a basis function, and this orientation cannot be
+  /// corrected for by permuting the DOF numbers on each cell.
   ///
   /// @return True if DOF transformations are required
   bool needs_dof_transformations() const noexcept;
@@ -217,32 +219,36 @@ public:
   /// Check if DOF permutations are needed for this element.
   ///
   /// DOF permutations will be needed for elements which might not be
-  /// continuous when two neighbouring cells disagree on the orientation of
-  /// a shared subentity, and when this can be corrected for by permuting the
-  /// DOF numbering in the dofmap.
+  /// continuous when two neighbouring cells disagree on the orientation
+  /// of a shared subentity, and when this can be corrected for by
+  /// permuting the DOF numbering in the dofmap.
   ///
-  /// For example, higher order Lagrange elements will need DOF permutations,
-  /// as the arrangement of DOFs on a shared subentity may be different from the
-  /// point of view of neighbouring cells, and this can be corrected for by
-  /// permuting the DOF numbers on each cell.
+  /// For example, higher order Lagrange elements will need DOF
+  /// permutations, as the arrangement of DOFs on a shared subentity may
+  /// be different from the point of view of neighbouring cells, and
+  /// this can be corrected for by permuting the DOF numbers on each
+  /// cell.
   ///
   /// @return True if DOF transformations are required
   bool needs_dof_permutations() const noexcept;
 
   /// Return a function that applies DOF transformation to some data.
   ///
-  /// The returned function will take three inputs:
-  /// - [in,out] data The data to be transformed
-  /// - [in] cell_info Permutation data for the cell
+  /// The returned function will take four inputs:
+  /// - [in,out] data The data to be transformed. This data is flattened
+  ///   with row-major layout, shape=(num_dofs, block_size)
+  /// - [in] cell_info Permutation data for the cell. The size of this
+  ///   is num_cells. For elements where no transformations are required,
+  ///   an empty span can be passed in.
   /// - [in] cell The cell number
   /// - [in] block_size The block_size of the input data
   ///
-  /// @param[in] inverse Indicates whether the inverse transformations should be
-  /// returned
-  /// @param[in] transpose Indicates whether the transpose transformations
+  /// @param[in] inverse Indicates whether the inverse transformations
   /// should be returned
-  /// @param[in] scalar_element Indicates whether the scalar transformations
-  /// should be returned for a vector element
+  /// @param[in] transpose Indicates whether the transpose
+  /// transformations should be returned
+  /// @param[in] scalar_element Indicates whether the scalar
+  /// transformations should be returned for a vector element
   template <typename T>
   std::function<void(const xtl::span<T>&, const xtl::span<const std::uint32_t>&,
                      std::int32_t, int)>
@@ -353,8 +359,11 @@ public:
   /// transposed data
   ///
   /// The returned function will take three inputs:
-  /// - [in,out] data The data to be transformed
-  /// - [in] cell_info Permutation data for the cell
+  /// - [in,out] data The data to be transformed. This data is flattened
+  ///   with row-major layout, shape=(num_dofs, block_size)
+  /// - [in] cell_info Permutation data for the cell. The size of this
+  ///   is num_cells. For elements where no transformations are required,
+  ///   an empty span can be passed in.
   /// - [in] cell The cell number
   /// - [in] block_size The block_size of the input data
   ///
@@ -484,7 +493,8 @@ public:
 
   /// Apply DOF transformation to some data
   ///
-  /// @param[in,out] data The data to be transformed
+  /// @param[in,out] data The data to be transformed. This data is flattened
+  /// with row-major layout, shape=(num_dofs, block_size)
   /// @param[in] cell_permutation Permutation data for the cell
   /// @param[in] block_size The block_size of the input data
   template <typename T>
@@ -500,7 +510,8 @@ public:
   /// VectorElements, this applies the transformations for the scalar
   /// subelement.
   ///
-  /// @param[in,out] data The data to be transformed
+  /// @param[in,out] data The data to be transformed. This data is flattened
+  /// with row-major layout, shape=(num_dofs, block_size)
   /// @param[in] cell_permutation Permutation data for the cell
   /// @param[in] block_size The block_size of the input data
   template <typename T>
@@ -517,7 +528,8 @@ public:
   /// Apply transpose transformation to some data. For VectorElements,
   /// this applies the transformations for the scalar subelement.
   ///
-  /// @param[in,out] data The data to be transformed
+  /// @param[in,out] data The data to be transformed. This data is flattened
+  /// with row-major layout, shape=(num_dofs, block_size)
   /// @param[in] cell_permutation Permutation data for the cell
   /// @param[in] block_size The block_size of the input data
   template <typename T>
@@ -533,7 +545,8 @@ public:
   /// Apply inverse transformation to some data. For VectorElements,
   /// this applies the transformations for the scalar subelement.
   ///
-  /// @param[in,out] data The data to be transformed
+  /// @param[in,out] data The data to be transformed. This data is flattened
+  /// with row-major layout, shape=(num_dofs, block_size)
   /// @param[in] cell_permutation Permutation data for the cell
   /// @param[in] block_size The block_size of the input data
   template <typename T>
@@ -546,9 +559,10 @@ public:
                                                cell_permutation);
   }
 
-  /// Apply DOF transformation to some tranposed data
+  /// Apply DOF transformation to some transposed data
   ///
-  /// @param[in,out] data The data to be transformed
+  /// @param[in,out] data The data to be transformed. This data is flattened
+  /// with row-major layout, shape=(num_dofs, block_size)
   /// @param[in] cell_permutation Permutation data for the cell
   /// @param[in] block_size The block_size of the input data
   template <typename T>
@@ -563,7 +577,8 @@ public:
 
   /// Apply inverse of DOF transformation to some transposed data.
   ///
-  /// @param[in,out] data The data to be transformed
+  /// @param[in,out] data The data to be transformed. This data is flattened
+  /// with row-major layout, shape=(num_dofs, block_size)
   /// @param[in] cell_permutation Permutation data for the cell
   /// @param[in] block_size The block_size of the input data
   template <typename T>
@@ -579,7 +594,8 @@ public:
 
   /// Apply transpose of transformation to some transposed data.
   ///
-  /// @param[in,out] data The data to be transformed
+  /// @param[in,out] data The data to be transformed. This data is flattened
+  /// with row-major layout, shape=(num_dofs, block_size)
   /// @param[in] cell_permutation Permutation data for the cell
   /// @param[in] block_size The block_size of the input data
   template <typename T>
@@ -594,7 +610,8 @@ public:
 
   /// Apply inverse transpose transformation to some transposed data
   ///
-  /// @param[in,out] data The data to be transformed
+  /// @param[in,out] data The data to be transformed. This data is flattened
+  /// with row-major layout, shape=(num_dofs, block_size)
   /// @param[in] cell_permutation Permutation data for the cell
   /// @param[in] block_size The block_size of the input data
   template <typename T>
@@ -609,22 +626,22 @@ public:
 
   /// Permute the DOFs of the element
   ///
-  /// @param[in,out] doflist The numbers of the DOFs
+  /// @param[in,out] doflist The numbers of the DOFs, a span of length num_dofs
   /// @param[in] cell_permutation Permutation data for the cell
   void permute_dofs(const xtl::span<std::int32_t>& doflist,
                     std::uint32_t cell_permutation) const;
 
   /// Unpermute the DOFs of the element
   ///
-  /// @param[in,out] doflist The numbers of the DOFs
+  /// @param[in,out] doflist The numbers of the DOFs, a span of length num_dofs
   /// @param[in] cell_permutation Permutation data for the cell
   void unpermute_dofs(const xtl::span<std::int32_t>& doflist,
                       std::uint32_t cell_permutation) const;
 
-  /// Return a function that applies DOF transformation to some data
+  /// Return a function that applies DOF permutation to some data
   ///
   /// The returned function will take three inputs:
-  /// - [in,out] data The data to be transformed
+  /// - [in,out] doflist The numbers of the DOFs, a span of length num_dofs
   /// - [in] cell_permutation Permutation data for the cell
   /// - [in] block_size The block_size of the input data
   ///
@@ -650,7 +667,7 @@ private:
   std::size_t _hash;
 
   // Dimension of each value space
-  std::vector<int> _value_dimension;
+  std::vector<int> _value_shape;
 
   // Block size for VectorElements and TensorElements. This gives the
   // number of DOFs colocated at each point.

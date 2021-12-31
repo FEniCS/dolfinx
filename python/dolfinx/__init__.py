@@ -9,6 +9,7 @@
 
 # Store dl open flags to restore them after import
 import sys
+
 stored_dlopen_flags = sys.getdlopenflags()
 
 # Developer note: below is related to OpenMPI
@@ -16,7 +17,7 @@ stored_dlopen_flags = sys.getdlopenflags()
 if "linux" in sys.platform:
     # FIXME: What with other platforms?
     try:
-        from ctypes import RTLD_NOW, RTLD_GLOBAL
+        from ctypes import RTLD_GLOBAL, RTLD_NOW
     except ImportError:
         RTLD_NOW = 2
         RTLD_GLOBAL = 256
@@ -27,33 +28,16 @@ del sys
 # sys.setdlopenflags(stored_dlopen_flags)
 # del sys
 
-# Import cpp modules
-from .cpp import __version__
-
-
-from dolfinx.common import (has_debug, has_kahip,
-                           has_parmetis, git_commit_hash, TimingType, timing,
-                           list_timings)
-
-import dolfinx.log
-
-from dolfinx.generation import (IntervalMesh, BoxMesh, RectangleMesh,
-                               UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh)
-
-from .cpp.mesh import Topology, Geometry
-
-from .fem.form import Form
-from .fem.dirichletbc import DirichletBC
-from .fem import (FunctionSpace, VectorFunctionSpace,
-                  TensorFunctionSpace, Constant, Expression, Function)
-
-from .mesh import MeshTags
-from .nls import NewtonSolver
+import sys
 
 # Initialise logging
-from dolfinx import cpp
-import sys
-cpp.common.init_logging(sys.argv)
+from dolfinx import cpp as _cpp
+from dolfinx.common import (TimingType, git_commit_hash, has_debug, has_kahip,
+                            has_parmetis, list_timings, timing)
+# Import cpp modules
+from dolfinx.cpp import __version__
+
+_cpp.common.init_logging(sys.argv)
 del sys
 
 def get_include(user=False):

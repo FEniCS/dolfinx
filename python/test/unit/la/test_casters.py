@@ -7,18 +7,20 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import pathlib
+
+import cppimport
+import numpy as np
 import pytest
 
-import numpy
-import petsc4py
 import dolfinx
 import dolfinx.pkgconfig
 from dolfinx.jit import mpi_jit_decorator
 from dolfinx.wrappers import get_include_path as pybind_inc
 from dolfinx_utils.test.fixtures import tempdir  # noqa: F401
+
+import petsc4py
 from mpi4py import MPI
 from petsc4py import PETSc
-import cppimport
 
 
 @pytest.mark.skipif(not dolfinx.pkgconfig.exists("dolfinx"),
@@ -81,10 +83,10 @@ PYBIND11_MODULE(petsc_casters_cppimport, m)
     x1.create(MPI.COMM_WORLD)
     x1.setSizes((local_range[1] - local_range[0], None))
     x1.setFromOptions()
-    x1.setArray(numpy.arange(local_range[0], local_range[1]))
+    x1.setArray(np.arange(local_range[0], local_range[1]))
     x2 = x1.copy()
 
     # Replace each component by its exponential
     module.PETSc_exp(x1)
     x2.exp()
-    assert numpy.allclose(x1.getArray(), x2.getArray())
+    assert np.allclose(x1.getArray(), x2.getArray())

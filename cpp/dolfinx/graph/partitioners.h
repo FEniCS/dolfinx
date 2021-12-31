@@ -49,7 +49,7 @@ namespace parmetis
 /// param[in] options The ParMETIS option. See ParMETIS manual for
 /// details.
 graph::partition_fn partitioner(double imbalance = 1.02,
-                                std::array<int, 3> options = {0, 0, 0});
+                                std::array<int, 3> options = {1, 0, 5});
 
 #endif
 } // namespace parmetis

@@ -16,7 +16,7 @@ add_library(dolfinx)
 #------------------------------------------------------------------------------
 # Add source files to the target
 
-set(DOLFINX_DIRS common fem generation geometry graph io la mesh nls refinement)
+set(DOLFINX_DIRS common fem geometry graph io la mesh nls refinement)
 
 install(FILES dolfinx.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} COMPONENT Development)
 
@@ -112,7 +112,7 @@ if (DOLFINX_ENABLE_SLEPC AND SLEPC_FOUND)
 endif()
 
 # SCOTCH
-if (SCOTCH_FOUND)
+if (DOLFINX_ENABLE_SCOTCH AND SCOTCH_FOUND)
   target_compile_definitions(dolfinx PUBLIC HAS_PTSCOTCH)
   target_link_libraries(dolfinx PRIVATE ${SCOTCH_LIBRARIES})
   target_include_directories(dolfinx SYSTEM PRIVATE ${SCOTCH_INCLUDE_DIRS})

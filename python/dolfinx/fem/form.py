@@ -9,9 +9,12 @@ import typing
 
 import cffi
 import numpy as np
+
 import ufl
-from dolfinx import cpp, jit
+from dolfinx import cpp as _cpp
+from dolfinx import jit
 from dolfinx.fem import function
+
 from petsc4py import PETSc
 
 
@@ -47,15 +50,17 @@ class Form:
             raise RuntimeError("Expecting to find a Mesh in the form.")
 
         # Compile UFL form with JIT
-        if dtype == np.float64:
+        if dtype == np.float32:
+            form_compiler_parameters["scalar_type"] = "float"
+        elif dtype == np.float64:
             form_compiler_parameters["scalar_type"] = "double"
         elif dtype == np.complex128:
             form_compiler_parameters["scalar_type"] = "double _Complex"
         else:
             raise RuntimeError(f"Unsupported scalar type {dtype} for Form.")
+
         self._ufc_form, module, self._code = jit.ffcx_jit(
-            mesh.mpi_comm(),
-            form,
+            mesh.comm, form,
             form_compiler_parameters=form_compiler_parameters,
             jit_parameters=jit_parameters)
 
@@ -70,24 +75,27 @@ class Form:
 
         # Create dictionary of of subdomain markers (possible None for
         # some dimensions
-        subdomains = {cpp.fem.IntegralType.cell: self._subdomains.get("cell"),
-                      cpp.fem.IntegralType.exterior_facet: self._subdomains.get("exterior_facet"),
-                      cpp.fem.IntegralType.interior_facet: self._subdomains.get("interior_facet"),
-                      cpp.fem.IntegralType.vertex: self._subdomains.get("vertex")}
+        subdomains = {_cpp.fem.IntegralType.cell: self._subdomains.get("cell"),
+                      _cpp.fem.IntegralType.exterior_facet: self._subdomains.get("exterior_facet"),
+                      _cpp.fem.IntegralType.interior_facet: self._subdomains.get("interior_facet"),
+                      _cpp.fem.IntegralType.vertex: self._subdomains.get("vertex")}
 
         # Prepare dolfinx.cpp.fem.Form and hold it as a member
         def create_form(dtype):
-            if dtype is np.float64:
-                return cpp.fem.create_form_float64
-            elif dtype is np.complex128:
-                return cpp.fem.create_form_complex128
+            if dtype == np.float32:
+                return _cpp.fem.create_form_float32
+            elif dtype == np.float64:
+                return _cpp.fem.create_form_float64
+            elif dtype == np.complex128:
+                return _cpp.fem.create_form_complex128
             else:
                 raise NotImplementedError(f"Type {dtype} not supported.")
 
         ffi = cffi.FFI()
         self._cpp_object = create_form(dtype)(ffi.cast("uintptr_t", ffi.addressof(self._ufc_form)),
                                               function_spaces, coeffs,
-                                              [c._cpp_object for c in form.constants()], subdomains, mesh)
+                                              [c._cpp_object for c in form.constants()], subdomains,
+                                              mesh)
 
     @property
     def rank(self):

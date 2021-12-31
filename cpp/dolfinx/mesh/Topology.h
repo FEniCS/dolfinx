@@ -38,7 +38,7 @@ class Topology;
 /// @return Vector with length equal to the number of owned facets on
 ///   this this process. True if the ith facet (local index) is on the
 ///   exterior of the domain.
-std::vector<bool> compute_boundary_facets(const Topology& topology);
+std::vector<std::int8_t> compute_boundary_facets(const Topology& topology);
 
 /// Topology stores the topology of a mesh, consisting of mesh entities
 /// and connectivity (incidence relations for the mesh entities).
@@ -139,11 +139,11 @@ public:
 
   /// Mesh MPI communicator
   /// @return The communicator on which the topology is distributed
-  MPI_Comm mpi_comm() const;
+  MPI_Comm comm() const;
 
 private:
   // MPI communicator
-  dolfinx::MPI::Comm _mpi_comm;
+  dolfinx::MPI::Comm _comm;
 
   // Cell type
   mesh::CellType _cell_type;

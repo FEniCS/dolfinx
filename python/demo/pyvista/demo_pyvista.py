@@ -9,12 +9,16 @@
 # ===============================
 
 
-import dolfinx
+import numpy as np
+
 import dolfinx.io
 import dolfinx.plot
-import numpy as np
 import ufl
-from dolfinx.mesh import CellType
+from dolfinx.fem import (Function, FunctionSpace, LinearProblem,
+                         VectorFunctionSpace)
+from dolfinx.mesh import (CellType, MeshTags, compute_midpoints,
+                          create_unit_cube, create_unit_square)
+
 from mpi4py import MPI
 
 try:
@@ -42,9 +46,9 @@ def int_u(x):
     return x[0] + 3 * x[1] + 5 * x[2]
 
 
-mesh = dolfinx.UnitCubeMesh(MPI.COMM_WORLD, 4, 3, 5, cell_type=CellType.tetrahedron)
-V = dolfinx.FunctionSpace(mesh, ("Lagrange", 1))
-u = dolfinx.Function(V)
+mesh = create_unit_cube(MPI.COMM_WORLD, 4, 3, 5, cell_type=CellType.tetrahedron)
+V = FunctionSpace(mesh, ("Lagrange", 1))
+u = Function(V)
 u.interpolate(int_u)
 
 # Extract mesh data from DOLFINx (only plot cells owned by the
@@ -117,18 +121,13 @@ else:
 # Plotting a 2D dolfinx.Function with pyvista using warp by scalar
 # ================================================================
 
-# As in the previous section, we interpolate a function into a CG
+# As in the previous section, we interpolate a function into a Lagrange
 # function space
 
-
-def int_2D(x):
-    return np.sin(np.pi * x[0]) * np.sin(2 * x[1] * np.pi)
-
-
-mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, 12, 12, cell_type=CellType.quadrilateral)
-V = dolfinx.FunctionSpace(mesh, ("Lagrange", 1))
-u = dolfinx.Function(V)
-u.interpolate(int_2D)
+mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, cell_type=CellType.quadrilateral)
+V = FunctionSpace(mesh, ("Lagrange", 1))
+u = Function(V)
+u.interpolate(lambda x: np.sin(np.pi * x[0]) * np.sin(2 * x[1] * np.pi))
 
 # As in the previous section, we extract the geometry and topology of
 # the mesh, and attach values to the vertices
@@ -176,8 +175,8 @@ def in_circle(x):
 # Create a dolfinx.MeshTag for all cells. If midpoint is inside the
 # circle, it gets value 1, otherwise 0.
 num_cells = mesh.topology.index_map(mesh.topology.dim).size_local
-midpoints = dolfinx.mesh.midpoints(mesh, mesh.topology.dim, list(np.arange(num_cells, dtype=np.int32)))
-cell_tags = dolfinx.MeshTags(mesh, mesh.topology.dim, np.arange(num_cells), in_circle(midpoints))
+midpoints = compute_midpoints(mesh, mesh.topology.dim, list(np.arange(num_cells, dtype=np.int32)))
+cell_tags = MeshTags(mesh, mesh.topology.dim, np.arange(num_cells), in_circle(midpoints))
 
 # As the dolfinx.MeshTag contains a value for every cell in the
 # geometry, we can attach it directly to the grid
@@ -210,8 +209,8 @@ if pyvista.OFF_SCREEN:
 else:
     subplotter.show()
 
-# Plotting a dolfinx.Function
-# ===========================
+# Plotting a dolfinx.fem.Function
+# ===============================
 
 # In the previous sections we have considered CG-1 spaces, which have a
 # 1-1 correspondence with the vertices of the geometry. To be able to
@@ -222,26 +221,25 @@ else:
 # space Note that we use the `cell_tags` from the previous section to
 # restrict the integration domain on the RHS.
 dx = ufl.Measure("dx", subdomain_data=cell_tags)
-V = dolfinx.FunctionSpace(mesh, ("DG", 2))
-uh = dolfinx.Function(V)
+V = FunctionSpace(mesh, ("DG", 2))
+uh = Function(V)
 u = ufl.TrialFunction(V)
 v = ufl.TestFunction(V)
 x = ufl.SpatialCoordinate(mesh)
 a = ufl.inner(u, v) * dx
 L = ufl.inner(x[0], v) * dx(1) + ufl.inner(0.01, v) * dx(0)
-problem = dolfinx.fem.LinearProblem(a, L, u=uh, petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
+problem = LinearProblem(a, L, u=uh, petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
 problem.solve()
 
 # To get a topology that has a 1-1 correspondence with the degrees of
 # freedom in the function space, we call
-# `dolfinx.plot.create_vtk_topology`. We obtain the geometry for
-# the dofs owned on this process by tabulation of the dof coordinates.
+# `dolfinx.plot.create_vtk_topology`.
 topology, cell_types = dolfinx.plot.create_vtk_topology(V)
 num_dofs_local = uh.function_space.dofmap.index_map.size_local
-geometry = uh.function_space.tabulate_dof_coordinates()[:num_dofs_local]
+geometry = uh.function_space.tabulate_dof_coordinates()
 
 # We discard the complex values if using PETSc in complex mode
-values = uh.vector.array.real if np.iscomplexobj(uh.vector.array) else uh.vector.array
+values = uh.x.array.real if np.iscomplexobj(uh.x.array) else uh.x.array
 
 # We create a pyvista mesh from the topology and geometry, and attach
 # the coefficients of the degrees of freedom
@@ -273,8 +271,8 @@ else:
     plotter.show()
 
 
-# Plotting a dolfinx.Function with vector values
-# ===============================================
+# Plotting a dolfinx.fem.Function with vector values
+# ==================================================
 
 # In the previous sections, we have considered how to plot scalar valued
 # functions. This section will show you how to plot vector valued
@@ -287,9 +285,9 @@ def vel(x):
     return vals
 
 
-mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, 6, 6, CellType.triangle)
-V = dolfinx.VectorFunctionSpace(mesh, ("Lagrange", 2))
-uh = dolfinx.Function(V)
+mesh = create_unit_square(MPI.COMM_WORLD, 6, 6, CellType.triangle)
+V = VectorFunctionSpace(mesh, ("Lagrange", 2))
+uh = Function(V)
 uh.interpolate(vel)
 
 # We use the `dolfinx.plot.create_vtk_topology`
@@ -302,10 +300,10 @@ topology, cell_types = dolfinx.plot.create_vtk_topology(V, cell_entities)
 # As we deal with a vector function space, we need to adjust the values
 # in the underlying one dimensional array in dolfinx.Function, by
 # reshaping the data, and add an extra column to make it a 3D vector
-num_dofs_local = uh.function_space.dofmap.index_map.size_local
-geometry = uh.function_space.tabulate_dof_coordinates()[:num_dofs_local]
-values = np.zeros((V.dofmap.index_map.size_local, 3), dtype=np.float64)
-values[:, :mesh.geometry.dim] = uh.vector.array.real.reshape(V.dofmap.index_map.size_local, V.dofmap.index_map_bs)
+num_dofs = V.dofmap.index_map.size_local + V.dofmap.index_map.num_ghosts
+geometry = V.tabulate_dof_coordinates()
+values = np.zeros((num_dofs, 3), dtype=np.float64)
+values[:, :mesh.geometry.dim] = uh.x.array.real.reshape(num_dofs, V.dofmap.index_map_bs)
 
 # Create a point cloud of glyphs
 function_grid = pyvista.UnstructuredGrid(topology, cell_types, geometry)
@@ -356,19 +354,19 @@ def vel(x):
     return vals
 
 
-mesh = dolfinx.UnitCubeMesh(MPI.COMM_WORLD, 4, 4, 4, CellType.hexahedron)
-V = dolfinx.VectorFunctionSpace(mesh, ("DG", 2))
-uh = dolfinx.Function(V)
+mesh = create_unit_cube(MPI.COMM_WORLD, 4, 4, 4, CellType.hexahedron)
+V = VectorFunctionSpace(mesh, ("DG", 2))
+uh = Function(V)
 uh.interpolate(vel)
 
 num_cells = mesh.topology.index_map(mesh.topology.dim).size_local
 cell_entities = np.arange(num_cells, dtype=np.int32)
 
 topology, cell_types = dolfinx.plot.create_vtk_topology(V, cell_entities)
-num_dofs_local = uh.function_space.dofmap.index_map.size_local
-geometry = uh.function_space.tabulate_dof_coordinates()[:num_dofs_local]
-values = np.zeros((V.dofmap.index_map.size_local, 3), dtype=np.float64)
-values[:, :mesh.geometry.dim] = uh.vector.array.real.reshape(V.dofmap.index_map.size_local, V.dofmap.index_map_bs)
+num_dofs = V.dofmap.index_map.size_local + V.dofmap.index_map.num_ghosts
+geometry = uh.function_space.tabulate_dof_coordinates()
+values = np.zeros((num_dofs, 3), dtype=np.float64)
+values[:, :mesh.geometry.dim] = uh.x.array.real.reshape(num_dofs, V.dofmap.index_map_bs)
 
 # Create a point cloud of glyphs
 grid = pyvista.UnstructuredGrid(topology, cell_types, geometry)

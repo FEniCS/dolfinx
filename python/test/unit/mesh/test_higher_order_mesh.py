@@ -10,14 +10,16 @@ import random
 
 import numpy as np
 import pytest
+
 import ufl
 from dolfinx.cpp.io import perm_gmsh, perm_vtk
 from dolfinx.fem import assemble_scalar
 from dolfinx.io import XDMFFile, ufl_mesh_from_gmsh
 from dolfinx.mesh import CellType, create_mesh
 from dolfinx_utils.test.skips import skip_in_parallel
-from mpi4py import MPI
 from ufl import dx
+
+from mpi4py import MPI
 
 
 def check_cell_volume(points, cell, domain, volume):
@@ -528,7 +530,7 @@ def test_xdmf_input_tri(datadir):
     with XDMFFile(MPI.COMM_WORLD, os.path.join(datadir, "mesh.xdmf"), "r", encoding=XDMFFile.Encoding.ASCII) as xdmf:
         mesh = xdmf.read_mesh(name="Grid")
     surface = assemble_scalar(1 * dx(mesh))
-    assert mesh.mpi_comm().allreduce(surface, op=MPI.SUM) == pytest.approx(4 * np.pi, rel=1e-4)
+    assert mesh.comm.allreduce(surface, op=MPI.SUM) == pytest.approx(4 * np.pi, rel=1e-4)
 
 
 @skip_in_parallel
@@ -576,14 +578,14 @@ def test_gmsh_input_2d(order, cell_type):
     mesh = create_mesh(MPI.COMM_WORLD, cells, x, ufl_mesh_from_gmsh(gmsh_cell_id, x.shape[1]))
     surface = assemble_scalar(1 * dx(mesh))
 
-    assert mesh.mpi_comm().allreduce(surface, op=MPI.SUM) == pytest.approx(4 * np.pi, rel=10 ** (-1 - order))
+    assert mesh.comm.allreduce(surface, op=MPI.SUM) == pytest.approx(4 * np.pi, rel=10 ** (-1 - order))
 
     # Bug related to VTK output writing
     # def e2(x):
     #     values = np.empty((x.shape[0], 1))
     #     values[:, 0] = x[:, 0]
     #     return values
-    # cmap = fem.create_coordinate_map(mesh.mpi_comm(), mesh.ufl_domain())
+    # cmap = fem.create_coordinate_map(mesh.comm, mesh.ufl_domain())
     # mesh.geometry.coord_mapping = cmap
     # V = FunctionSpace(mesh, ("Lagrange", order))
     # u = Function(V)
@@ -651,7 +653,7 @@ def test_gmsh_input_3d(order, cell_type):
 
     volume = assemble_scalar(1 * dx(mesh))
 
-    assert mesh.mpi_comm().allreduce(volume, op=MPI.SUM) == pytest.approx(np.pi, rel=10 ** (-1 - order))
+    assert mesh.comm.allreduce(volume, op=MPI.SUM) == pytest.approx(np.pi, rel=10 ** (-1 - order))
 
 
 @skip_in_parallel
