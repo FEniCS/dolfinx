@@ -14,7 +14,7 @@
 
 std::vector<int32_t> dolfinx::common::compute_owned_indices(
     const xtl::span<const std::int32_t>& indices,
-    std::shared_ptr<const dolfinx::common::IndexMap> index_map)
+    const dolfinx::common::IndexMap& index_map)
 {
   // Split indices into those owned by this process and those that
   // are ghosts. `ghost_indices` contains the position of the ghost
@@ -23,13 +23,13 @@ std::vector<int32_t> dolfinx::common::compute_owned_indices(
   std::vector<std::int32_t> ghost_indices;
   for (std::size_t i = 0; i < indices.size(); ++i)
   {
-    if (indices[i] < index_map->size_local())
+    if (indices[i] < index_map.size_local())
     {
       owned.push_back(indices[i]);
     }
     else
     {
-      const std::int32_t ghost_index = indices[i] - index_map->size_local();
+      const std::int32_t ghost_index = indices[i] - index_map.size_local();
       ghost_indices.push_back(ghost_index);
     }
   }
@@ -38,10 +38,10 @@ std::vector<int32_t> dolfinx::common::compute_owned_indices(
   // neighborhood and the links for a given process are the ghosts (global
   // numbering) in `indices` owned by that process.
   MPI_Comm reverse_comm
-      = index_map->comm(dolfinx::common::IndexMap::Direction::reverse);
+      = index_map.comm(dolfinx::common::IndexMap::Direction::reverse);
   std::vector<std::int32_t> dest_ranks = dolfinx::MPI::neighbors(reverse_comm)[1];
-  const std::vector<std::int32_t>& ghost_owner_rank = index_map->ghost_owner_rank();
-  const std::vector<std::int64_t>& ghosts = index_map->ghosts();
+  const std::vector<std::int32_t>& ghost_owner_rank = index_map.ghost_owner_rank();
+  const std::vector<std::int64_t>& ghosts = index_map.ghosts();
   std::vector<std::int64_t> ghosts_to_send;
   std::vector<std::int32_t> ghosts_per_proc(dest_ranks.size(), 0);
   // Loop through all destination ranks in the neighborhood
@@ -74,7 +74,7 @@ std::vector<int32_t> dolfinx::common::compute_owned_indices(
 
   // Get the local index from the global indices received from other
   // processes and add to `owned`
-  const std::vector<std::int64_t>& global_indices = index_map->global_indices();
+  const std::vector<std::int64_t>& global_indices = index_map.global_indices();
   for (std::int64_t global_index : data_in.array())
   {
     auto it
