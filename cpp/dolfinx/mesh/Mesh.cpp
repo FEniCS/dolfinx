@@ -202,13 +202,11 @@ Mesh::create_submesh(int dim, const xtl::span<const std::int32_t>& entities)
   submesh_to_mesh_vertex_map.reserve(submesh_vertex_index_map->size_local()
                                      + submesh_vertex_index_map->num_ghosts());
   // Add ghost vertices to the map
-  // TODO Use std::transform?
-  for (std::int32_t vertex_index : submesh_vertex_index_map_pair.second)
-  {
-    // Get the local index of the ghost and append
-    int32_t vertex = vertex_index_map->size_local() + vertex_index;
-    submesh_to_mesh_vertex_map.push_back(vertex);
-  }
+  std::transform(submesh_vertex_index_map_pair.second.begin(),
+                 submesh_vertex_index_map_pair.second.end(),
+                 std::back_inserter(submesh_to_mesh_vertex_map),
+                 [vertex_index_map](std::int32_t vertex_index)
+                 { return vertex_index_map->size_local() + vertex_index; });
 
   // Get the entities in the submesh that are owned by this process
   auto entity_index_map = topology().index_map(dim);
