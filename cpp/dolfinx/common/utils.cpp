@@ -43,7 +43,7 @@ std::vector<int32_t> dolfinx::common::get_owned_indices(
   const std::vector<std::int32_t> ghost_owner_rank = index_map->ghost_owner_rank();
   const std::vector<std::int64_t>& ghosts = index_map->ghosts();
   std::vector<std::int64_t> ghosts_to_send;
-  std::vector<std::int32_t> data_per_proc(dest_ranks.size(), 0);
+  std::vector<std::int32_t> ghosts_per_proc(dest_ranks.size(), 0);
   // Loop through all destination ranks in the neighborhood
   for (std::size_t dest_rank_index = 0; dest_rank_index < dest_ranks.size();
        ++dest_rank_index)
@@ -56,14 +56,14 @@ std::vector<int32_t> dolfinx::common::get_owned_indices(
       if (ghost_owner_rank[ghost_index] == dest_ranks[dest_rank_index])
       {
         ghosts_to_send.push_back(ghosts[ghost_index]);
-        data_per_proc[dest_rank_index]++;
+        ghosts_per_proc[dest_rank_index]++;
       }
     }
   }
   // Create a list of partial sums of the number of ghosts per process
   // and create the AdjacencyList
   std::vector<int> send_disp(dest_ranks.size() + 1, 0);
-  std::partial_sum(data_per_proc.begin(), data_per_proc.end(),
+  std::partial_sum(ghosts_per_proc.begin(), ghosts_per_proc.end(),
                    std::next(send_disp.begin(), 1));
   const dolfinx::graph::AdjacencyList<std::int64_t> data_out(
       std::move(ghosts_to_send), std::move(send_disp));
