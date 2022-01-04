@@ -18,6 +18,7 @@
 #include <dolfinx/graph/partition.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <memory>
+#include <xtensor/xio.hpp>
 #include <xtensor/xsort.hpp>
 
 #include "graphbuild.h"
@@ -196,8 +197,8 @@ Mesh::create_submesh(int dim, const xtl::span<const std::int32_t>& entities)
 
   // Create a map from the (local) vertices in the submesh to the (local)
   // vertices in the mesh (this).
-  std::vector<int32_t> submesh_to_mesh_vertex_map(submesh_owned_vertices.begin(),
-                                                  submesh_owned_vertices.end());
+  std::vector<int32_t> submesh_to_mesh_vertex_map(
+      submesh_owned_vertices.begin(), submesh_owned_vertices.end());
   submesh_to_mesh_vertex_map.reserve(submesh_vertex_index_map->size_local()
                                      + submesh_vertex_index_map->num_ghosts());
   // Add ghost vertices to the map
@@ -213,18 +214,15 @@ Mesh::create_submesh(int dim, const xtl::span<const std::int32_t>& entities)
   auto entity_index_map = topology().index_map(dim);
   assert(entity_index_map);
   std::vector<std::int32_t> submesh_owned_entities;
-  for (std::int32_t e : entities)
-  {
-    if (e < entity_index_map->size_local())
-    {
-      submesh_owned_entities.push_back(e);
-    }
-  }
+  std::copy_if(entities.begin(), entities.end(),
+               std::back_inserter(submesh_owned_entities),
+               [entity_index_map](std::int32_t e)
+               { return e < entity_index_map->size_local(); });
 
   // Create submesh entity index map
-  // TODO Call dolfinx::common::get_owned_indices here? Do we want to support
-  // `entities` possibly haveing a ghost on one process that is not in `entities`
-  // on the owning process?
+  // TODO Call dolfinx::common::get_owned_indices here? Do we want to
+  // support `entities` possibly haveing a ghost on one process that is not
+  // in `entities` on the owning process?
   std::pair<common::IndexMap, std::vector<int32_t>>
       submesh_entity_index_map_pair
       = entity_index_map->create_submap(submesh_owned_entities);
