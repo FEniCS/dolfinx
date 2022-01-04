@@ -174,15 +174,16 @@ Mesh mesh::create_mesh(MPI_Comm comm,
 }
 //-----------------------------------------------------------------------------
 std::tuple<Mesh, std::vector<std::int32_t>, std::vector<std::int32_t>>
-Mesh::create_submesh(int dim, const xtl::span<const std::int32_t>& entities)
+mesh::create_submesh(const Mesh& mesh, int dim,
+                     const xtl::span<const std::int32_t>& entities)
 {
   // Submesh topology
   // Get the verticies in the submesh
   std::vector<std::int32_t> submesh_vertices
-      = mesh::compute_incident_entities(*this, entities, dim, 0);
+      = mesh::compute_incident_entities(mesh, entities, dim, 0);
 
   // Get the vertices in the submesh owned by this process
-  auto vertex_index_map = topology().index_map(0);
+  auto vertex_index_map = mesh.topology().index_map(0);
   assert(vertex_index_map);
   std::vector<int32_t> submesh_owned_vertices
       = dolfinx::common::compute_owned_indices(submesh_vertices,
@@ -209,7 +210,7 @@ Mesh::create_submesh(int dim, const xtl::span<const std::int32_t>& entities)
                  { return vertex_index_map->size_local() + vertex_index; });
 
   // Get the entities in the submesh that are owned by this process
-  auto entity_index_map = topology().index_map(dim);
+  auto entity_index_map = mesh.topology().index_map(dim);
   assert(entity_index_map);
   std::vector<std::int32_t> submesh_owned_entities;
   std::copy_if(entities.begin(), entities.end(),
@@ -234,9 +235,9 @@ Mesh::create_submesh(int dim, const xtl::span<const std::int32_t>& entities)
 
   // Submesh entity to vertex connectivity
   const CellType entity_type
-      = mesh::cell_entity_type(topology().cell_type(), dim, 0);
+      = mesh::cell_entity_type(mesh.topology().cell_type(), dim, 0);
   const int num_vertices_per_entity = mesh::cell_num_entities(entity_type, 0);
-  auto e_to_v = _topology.connectivity(dim, 0);
+  auto e_to_v = mesh.topology().connectivity(dim, 0);
   std::vector<std::int32_t> submesh_e_to_v_vec;
   submesh_e_to_v_vec.reserve(entities.size() * num_vertices_per_entity);
   std::vector<std::int32_t> submesh_e_to_v_offsets(1, 0);
@@ -259,7 +260,7 @@ Mesh::create_submesh(int dim, const xtl::span<const std::int32_t>& entities)
       submesh_e_to_v_vec, submesh_e_to_v_offsets);
 
   // Create submesh topology
-  mesh::Topology submesh_topology(comm(), entity_type);
+  mesh::Topology submesh_topology(mesh.comm(), entity_type);
   submesh_topology.set_index_map(0, submesh_vertex_index_map);
   submesh_topology.set_index_map(dim, submesh_entity_index_map);
   submesh_topology.set_connectivity(submesh_v_to_v, 0, 0);
@@ -269,13 +270,13 @@ Mesh::create_submesh(int dim, const xtl::span<const std::int32_t>& entities)
   // Get the geometry dofs in the submesh based on the entities in
   // submesh
   xt::xtensor<std::int32_t, 2> e_to_g
-      = mesh::entities_to_geometry(*this, dim, entities, false);
+      = mesh::entities_to_geometry(mesh, dim, entities, false);
   // FIXME Find better way to do this
   xt::xarray<int32_t> submesh_x_dofs_xt = xt::unique(e_to_g);
   std::vector<int32_t> submesh_x_dofs(submesh_x_dofs_xt.begin(),
                                       submesh_x_dofs_xt.end());
 
-  auto geometry_dof_index_map = geometry().index_map();
+  auto geometry_dof_index_map = mesh.geometry().index_map();
   assert(geometry_dof_index_map);
 
   // Get the geometry dofs in the submesh owned by this process
@@ -302,7 +303,7 @@ Mesh::create_submesh(int dim, const xtl::span<const std::int32_t>& entities)
                  });
 
   // Create submesh geometry coordinates
-  xtl::span<const double> x = geometry().x();
+  xtl::span<const double> x = mesh.geometry().x();
   const int submesh_num_x_dofs = submesh_to_mesh_x_dof_map.size();
   std::vector<double> submesh_x(3 * submesh_num_x_dofs);
   for (int i = 0; i < submesh_num_x_dofs; ++i)
@@ -338,15 +339,14 @@ Mesh::create_submesh(int dim, const xtl::span<const std::int32_t>& entities)
 
   // Create submesh coordinate element
   CellType submesh_coord_cell
-      = mesh::cell_entity_type(geometry().cmap().cell_shape(), dim, 0);
+      = mesh::cell_entity_type(mesh.geometry().cmap().cell_shape(), dim, 0);
   // FIXME Geometry degree is hardcoded to 1 as there is no way to
   // retrive this from the coordinate element
   auto submesh_coord_ele = fem::CoordinateElement(submesh_coord_cell, 1);
 
   // Submesh geometry input_global_indices
   // TODO Check this
-  const std::vector<std::int64_t>& igi
-      = this->geometry().input_global_indices();
+  const std::vector<std::int64_t>& igi = mesh.geometry().input_global_indices();
   std::vector<std::int64_t> submesh_igi;
   submesh_igi.reserve(submesh_to_mesh_x_dof_map.size());
   std::transform(
@@ -357,12 +357,12 @@ Mesh::create_submesh(int dim, const xtl::span<const std::int32_t>& entities)
   // Create geometry
   mesh::Geometry submesh_geometry(
       submesh_x_dof_index_map, std::move(submesh_x_dofmap), submesh_coord_ele,
-      std::move(submesh_x), geometry().dim(), std::move(submesh_igi));
+      std::move(submesh_x), mesh.geometry().dim(), std::move(submesh_igi));
 
-  return {
-      Mesh(comm(), std::move(submesh_topology), std::move(submesh_geometry)),
-      std::move(submesh_to_mesh_vertex_map),
-      std::move(submesh_to_mesh_x_dof_map)};
+  return {Mesh(mesh.comm(), std::move(submesh_topology),
+               std::move(submesh_geometry)),
+          std::move(submesh_to_mesh_vertex_map),
+          std::move(submesh_to_mesh_x_dof_map)};
 }
 //-----------------------------------------------------------------------------
 Topology& Mesh::topology() { return _topology; }

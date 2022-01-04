@@ -221,6 +221,14 @@ void mesh(py::module& m)
       },
       "Helper function for creating meshes.");
 
+  m.def("create_submesh",
+        [](dolfinx::mesh::Mesh& mesh, int dim,
+           const py::array_t<std::int32_t, py::array::c_style> entities)
+        {
+          return dolfinx::mesh::create_submesh(
+              mesh, dim, xtl::span(entities.data(), entities.size()));
+        });
+
   // dolfinx::mesh::GhostMode enums
   py::enum_<dolfinx::mesh::GhostMode>(m, "GhostMode")
       .value("none", dolfinx::mesh::GhostMode::none)
@@ -306,13 +314,6 @@ void mesh(py::module& m)
       .def_property_readonly(
           "topology", py::overload_cast<>(&dolfinx::mesh::Mesh::topology),
           "Mesh topology", py::return_value_policy::reference_internal)
-      .def("create_submesh_cpp",
-           [](dolfinx::mesh::Mesh& self, int dim,
-              const py::array_t<std::int32_t, py::array::c_style> entities)
-           {
-             return self.create_submesh(
-                 dim, xtl::span(entities.data(), entities.size()));
-           })
       .def_property_readonly("comm", [](dolfinx::mesh::Mesh& self)
                              { return MPICommWrapper(self.comm()); })
       .def_property_readonly("id", &dolfinx::mesh::Mesh::id)

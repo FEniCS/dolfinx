@@ -101,16 +101,6 @@ public:
   /// @return The communicator on which the mesh is distributed
   MPI_Comm comm() const;
 
-  /// Create a submesh consisting of a subset of entities in the
-  /// mesh (this)
-  /// @param[in] dim Entity dimension
-  /// @param[in] entities Vector of entities in the mesh
-  /// @return The submesh, a map from the (local) submesh vertices
-  /// to the (local) mesh vertices, and a map from the (local)
-  /// submesh geometry dofs to the (local) mesh geometry dofs
-  std::tuple<Mesh, std::vector<std::int32_t>, std::vector<std::int32_t>>
-  create_submesh(int dim, const xtl::span<const std::int32_t>& entities);
-
   /// Name
   std::string name = "mesh";
 
@@ -157,5 +147,16 @@ Mesh create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
                  const fem::CoordinateElement& element,
                  const xt::xtensor<double, 2>& x, GhostMode ghost_mode,
                  const CellPartitionFunction& cell_partitioner);
+
+/// Create a submesh consisting of a subset of entities in a mesh
+/// @param[in] mesh The mesh
+/// @param[in] dim Entity dimension
+/// @param[in] entities Vector of entities in the mesh
+/// @return The submesh, a map from the (local) submesh vertices
+/// to the (local) mesh vertices, and a map from the (local)
+/// submesh geometry dofs to the (local) mesh geometry dofs
+std::tuple<Mesh, std::vector<std::int32_t>, std::vector<std::int32_t>>
+create_submesh(const Mesh& mesh, int dim,
+               const xtl::span<const std::int32_t>& entities);
 
 } // namespace dolfinx::mesh

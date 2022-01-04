@@ -54,15 +54,6 @@ class Mesh(_cpp.mesh.Mesh):
         """Return the ufl domain corresponding to the mesh."""
         return self._ufl_domain
 
-    def create_submesh(self, dim, entities):
-        submesh, vertex_map, geom_map = self.create_submesh_cpp(dim, entities)
-        submesh_ufl_cell = ufl.Cell(submesh.topology.cell_name(),
-                                    geometric_dimension=submesh.geometry.dim)
-        # FIXME Don't hard code degree (and maybe Lagrange?)
-        submesh_domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell=submesh_ufl_cell, degree=1))
-        return (Mesh.from_cpp(submesh, submesh_domain),
-                vertex_map, geom_map)
-
 
 def locate_entities(mesh: Mesh, dim: int, marker: types.FunctionType) -> np.ndarray:
     """Compute mesh entities satisfying a geometric marking function
@@ -200,6 +191,15 @@ def create_mesh(comm: _MPI.Comm, cells: typing.Union[np.ndarray, _cpp.graph.Adja
                                      cmap, x, ghost_mode, partitioner)
     domain._ufl_cargo = mesh
     return Mesh.from_cpp(mesh, domain)
+
+
+def create_submesh(mesh, dim, entities):
+    submesh, vertex_map, geom_map = _cpp.mesh.create_submesh(mesh, dim, entities)
+    submesh_ufl_cell = ufl.Cell(submesh.topology.cell_name(),
+                                geometric_dimension=submesh.geometry.dim)
+    # FIXME Don't hard code degree (and maybe Lagrange?)
+    submesh_domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell=submesh_ufl_cell, degree=1))
+    return (Mesh.from_cpp(submesh, submesh_domain), vertex_map, geom_map)
 
 
 def MeshTags(mesh: Mesh, dim: int, indices: np.ndarray, values: np.ndarray) -> typing.Union[

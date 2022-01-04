@@ -16,7 +16,8 @@ from dolfinx.cpp.mesh import create_cell_partitioner, is_simplex
 from dolfinx.fem import assemble_scalar
 from dolfinx.mesh import (CellType, DiagonalType, GhostMode, create_box,
                           create_rectangle, create_unit_cube,
-                          create_unit_interval, create_unit_square)
+                          create_unit_interval, create_unit_square,
+                          create_submesh)
 from dolfinx_utils.test.fixtures import tempdir
 from dolfinx_utils.test.skips import skip_in_parallel
 from ufl import dx
@@ -441,7 +442,7 @@ def test_submesh(d, n, codim, marker, ghost_mode):
 
     edim = mesh.topology.dim - codim
     entities = locate_entities(mesh, edim, marker)
-    submesh, vertex_map, geom_map = mesh.create_submesh(edim, entities)
+    submesh, vertex_map, geom_map = create_submesh(mesh, edim, entities)
     submesh_topology_test(mesh, submesh, vertex_map, edim, entities)
     submesh_geometry_test(mesh, submesh, geom_map, edim, entities)
 
@@ -462,7 +463,7 @@ def test_submesh_boundary(d, n, boundary, ghost_mode):
                                 ghost_mode=ghost_mode)
     edim = mesh.topology.dim - 1
     entities = locate_entities_boundary(mesh, edim, boundary)
-    submesh, vertex_map, geom_map = mesh.create_submesh(edim, entities)
+    submesh, vertex_map, geom_map = create_submesh(mesh, edim, entities)
     submesh_topology_test(mesh, submesh, vertex_map, edim, entities)
     submesh_geometry_test(mesh, submesh, geom_map, edim, entities)
 

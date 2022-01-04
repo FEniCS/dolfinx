@@ -13,7 +13,7 @@ from dolfinx import cpp as _cpp
 from dolfinx.cpp.io import perm_gmsh
 from dolfinx.io import XDMFFile, ufl_mesh_from_gmsh
 from dolfinx.mesh import (CellType, create_mesh, create_unit_cube, create_unit_interval,
-                          create_unit_square, GhostMode, locate_entities)
+                          create_unit_square, GhostMode, locate_entities, create_submesh)
 from dolfinx_utils.test.fixtures import tempdir
 
 from mpi4py import MPI
@@ -157,7 +157,7 @@ def test_submesh(tempdir, d, n, codim, ghost_mode, encoding):
     mesh = mesh_factory(d, n, ghost_mode)
     edim = d - codim
     entities = locate_entities(mesh, edim, lambda x: x[0] >= 0.5)
-    submesh = mesh.create_submesh(edim, entities)[0]
+    submesh = create_submesh(mesh, edim, entities)[0]
 
     filename = os.path.join(tempdir, "submesh.xdmf")
     # Check writing the mesh doesn't cause a segmentation fault
