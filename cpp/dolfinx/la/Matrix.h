@@ -54,11 +54,10 @@ public:
   /// @param[in] cols The column indices of `x` (indices are local to
   /// the MPI rank)
   /// @param[in] op
-  template <typename U>
-  void add(
-      const xtl::span<const T>& x, const xtl::span<const std::int32_t>& rows,
-      const xtl::span<const std::int32_t>& cols,
-      U op = [](auto lhs, auto rhs) { return lhs + rhs; })
+  void add(const xtl::span<const T>& x,
+           const xtl::span<const std::int32_t>& rows,
+           const xtl::span<const std::int32_t>& cols,
+           std::function<T(T, T)> op = std::plus<T>())
   {
     assert(x.size() == rows.size() * cols.size());
     for (std::size_t r = 0; r < rows.size(); ++r)
@@ -82,31 +81,6 @@ public:
       }
     }
   }
-
-  // void set(const xtl::span<const T>& x,
-  //          const xtl::span<const std::int32_t>& rows,
-  //          const xtl::span<const std::int32_t>& cols)
-  // {
-  //   assert(x.size() == rows.size() * cols.size());
-  //   for (std::size_t r = 0; r < rows.size(); ++r)
-  //   {
-  //     // Columns indices for row
-  //     auto cit0 = std::next(_cols.begin(), _row_ptr[row]);
-  //     auto cit1 = std::next(_cols.begin(), _row_ptr[row + 1]);
-
-  //     // Current data row
-  //     const T* xr = x.data() + r * cols.size();
-
-  //     for (std::size_t c = 0; c < cols.size(); ++c)
-  //     {
-  //       // Find position of column index
-  //       auto it = std::find(cit0, cit1, cols[c]);
-  //       assert(it != cit1);
-  //       std::size_t d = std::distance(_cols.begin(), it);
-  //       _data[d] = xr[c];
-  //     }
-  //   }
-  // }
 
   /// Convert to a dense matrix
   /// @return Dense copy of the matrix

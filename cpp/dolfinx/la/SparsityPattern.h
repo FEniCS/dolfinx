@@ -124,9 +124,8 @@ private:
   // Non-zero ghost columns in owned rows
   std::vector<std::int64_t> _col_ghosts;
 
-  // Caches for unassembled entries on owned and unowned (ghost) rows
-  std::vector<std::vector<std::int32_t>> _cache_owned;
-  std::vector<std::vector<std::int32_t>> _cache_unowned;
+  // Cache for unassembled entries on owned and unowned (ghost) rows
+  std::vector<std::vector<std::int32_t>> _row_cache;
 
   // Sparsity pattern data (computed once pattern is finalised)
   std::shared_ptr<graph::AdjacencyList<std::int32_t>> _diagonal;
