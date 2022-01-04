@@ -184,7 +184,7 @@ Mesh::create_submesh(int dim, const xtl::span<const std::int32_t>& entities)
   auto vertex_index_map = topology().index_map(0);
   assert(vertex_index_map);
   std::vector<int32_t> submesh_owned_vertices
-      = dolfinx::common::get_owned_indices(submesh_vertices, vertex_index_map);
+      = dolfinx::common::compute_owned_indices(submesh_vertices, vertex_index_map);
 
   // Create submesh vertex index map
   std::pair<common::IndexMap, std::vector<int32_t>>
@@ -282,7 +282,7 @@ Mesh::create_submesh(int dim, const xtl::span<const std::int32_t>& entities)
   assert(geometry_dof_index_map);
 
   // Get the geometry dofs in the submesh owned by this process
-  auto submesh_owned_x_dofs = dolfinx::common::get_owned_indices(
+  auto submesh_owned_x_dofs = dolfinx::common::compute_owned_indices(
       submesh_x_dofs, geometry_dof_index_map);
 
   // Create submesh geometry index map

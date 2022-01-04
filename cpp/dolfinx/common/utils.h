@@ -104,6 +104,6 @@ std::int64_t hash_global(const MPI_Comm comm, const T& x)
 /// @param[in] index_map The index map
 /// @return Vector of indices owned by the process
 std::vector<int32_t>
-get_owned_indices(const xtl::span<const std::int32_t>& indices,
+compute_owned_indices(const xtl::span<const std::int32_t>& indices,
                   std::shared_ptr<const dolfinx::common::IndexMap> index_map);
 } // namespace dolfinx::common
