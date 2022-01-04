@@ -34,8 +34,9 @@ std::vector<int32_t> dolfinx::common::get_owned_indices(
     }
   }
 
-  // Create an AdjacencyList containing the ghosts on this process that
-  // need to be sent to the other processes in the neighborhood.
+  // Create an AdjacencyList whose nodes are the processes in the
+  // neighborhood and the links for a given process are the ghosts (global
+  // numbering) in `indices` owned by that process.
   MPI_Comm reverse_comm
       = index_map->comm(dolfinx::common::IndexMap::Direction::reverse);
   std::vector<std::int32_t> dest_ranks = dolfinx::MPI::neighbors(reverse_comm)[1];
@@ -51,8 +52,7 @@ std::vector<int32_t> dolfinx::common::get_owned_indices(
     for (std::int32_t ghost_index : ghost_indices)
     {
       // Check if the ghost is owned by the destination rank. If so,
-      // add that ghost to the AdjacencyList so it is sent to the correct
-      // process.
+      // add that ghost so it is sent to the correct process.
       if (ghost_owner_rank[ghost_index] == dest_ranks[dest_rank_index])
       {
         ghosts_to_send.push_back(ghosts[ghost_index]);
@@ -60,13 +60,15 @@ std::vector<int32_t> dolfinx::common::get_owned_indices(
       }
     }
   }
+  // Create a list of partial sums of the number of ghosts per process
+  // and create the AdjacencyList
   std::vector<int> send_disp(dest_ranks.size() + 1, 0);
   std::partial_sum(data_per_proc.begin(), data_per_proc.end(),
                    std::next(send_disp.begin(), 1));
   const dolfinx::graph::AdjacencyList<std::int64_t> data_out(
       std::move(ghosts_to_send), std::move(send_disp));
 
-  // Communicate ghosts on this process back to their owners
+  // Communicate ghosts on this process in `indices` back to their owners
   const dolfinx::graph::AdjacencyList<std::int64_t> data_in
       = dolfinx::MPI::neighbor_all_to_all(reverse_comm, data_out);
 
