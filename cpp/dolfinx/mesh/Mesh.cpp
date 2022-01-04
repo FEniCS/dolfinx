@@ -294,11 +294,12 @@ Mesh::create_submesh(int dim, const xtl::span<const std::int32_t>& entities)
                                                  submesh_owned_x_dofs.end());
   submesh_to_mesh_x_dof_map.reserve(submesh_x_dof_index_map->size_local()
                                     + submesh_x_dof_index_map->num_ghosts());
-  for (auto x_dof_index : submesh_x_dof_index_map_pair.second)
-  {
-    int32_t x_dof = geometry_dof_index_map->size_local() + x_dof_index;
-    submesh_to_mesh_x_dof_map.push_back(x_dof);
-  }
+  std::transform(submesh_x_dof_index_map_pair.second.begin(),
+                 submesh_x_dof_index_map_pair.second.end(),
+                 std::back_inserter(submesh_to_mesh_x_dof_map),
+                 [geometry_dof_index_map](std::int32_t x_dof_index) {
+                   return geometry_dof_index_map->size_local() + x_dof_index;
+                 });
 
   // Create submesh geometry coordinates
   xtl::span<const double> x = geometry().x();
