@@ -39,8 +39,10 @@ std::vector<int32_t> dolfinx::common::compute_owned_indices(
   // numbering) in `indices` owned by that process.
   MPI_Comm reverse_comm
       = index_map.comm(dolfinx::common::IndexMap::Direction::reverse);
-  std::vector<std::int32_t> dest_ranks = dolfinx::MPI::neighbors(reverse_comm)[1];
-  const std::vector<std::int32_t>& ghost_owner_rank = index_map.ghost_owner_rank();
+  std::vector<std::int32_t> dest_ranks
+      = dolfinx::MPI::neighbors(reverse_comm)[1];
+  const std::vector<std::int32_t>& ghost_owner_rank
+      = index_map.ghost_owner_rank();
   const std::vector<std::int64_t>& ghosts = index_map.ghosts();
   std::vector<std::int64_t> ghosts_to_send;
   std::vector<std::int32_t> ghosts_per_proc(dest_ranks.size(), 0);
@@ -75,13 +77,15 @@ std::vector<int32_t> dolfinx::common::compute_owned_indices(
   // Get the local index from the global indices received from other
   // processes and add to `owned`
   const std::vector<std::int64_t>& global_indices = index_map.global_indices();
-  for (std::int64_t global_index : data_in.array())
-  {
-    auto it
-        = std::find(global_indices.begin(), global_indices.end(), global_index);
-    assert(it != global_indices.end());
-    owned.push_back(std::distance(global_indices.begin(), it));
-  }
+  std::transform(data_in.array().begin(), data_in.array().end(),
+                 std::back_inserter(owned),
+                 [&global_indices](std::int64_t global_index)
+                 {
+                   auto it = std::find(global_indices.begin(),
+                                       global_indices.end(), global_index);
+                   assert(it != global_indices.end());
+                   return std::distance(global_indices.begin(), it);
+                 });
 
   // Sort `owned` and remove non-unique entries (we could have received
   // the same ghost from multiple other processes)
