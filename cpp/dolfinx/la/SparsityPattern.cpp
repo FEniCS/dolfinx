@@ -78,6 +78,7 @@ SparsityPattern::SparsityPattern(
 
   _row_cache.resize(_index_maps[0]->size_local()
                     + _index_maps[0]->num_ghosts());
+  const std::int32_t num_rows_local_new = _index_maps[0]->size_local();
 
   // Iterate over block rows
   for (std::size_t row = 0; row < patterns.size(); ++row)
@@ -138,7 +139,7 @@ SparsityPattern::SparsityPattern(
           for (int k0 = 0; k0 < bs_dof0; ++k0)
           {
             for (int k1 = 0; k1 < bs_dof1; ++k1)
-              _row_cache[num_rows_local + r_new + k0].push_back(c_new + k1);
+              _row_cache[num_rows_local_new + r_new + k0].push_back(c_new + k1);
           }
         }
       }
