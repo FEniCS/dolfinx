@@ -97,9 +97,9 @@ std::int64_t hash_global(const MPI_Comm comm, const T& x)
   return global_hash;
 }
 
-/// Given a vector of indices (local to process) and an index map,
-/// this function retuns the indices owned by the process. Ghost
-/// indices are communicated to their owners.
+/// Given a vector of indices (local numbering) and an index map,
+/// this funcion returns the indices owned by this process, including
+/// indices that might only appear as ghosts on other processes.
 /// @param[in] indices Vector of indices
 /// @param[in] index_map The index map
 /// @return Vector of indices owned by the process
