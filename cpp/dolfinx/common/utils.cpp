@@ -39,8 +39,8 @@ std::vector<int32_t> dolfinx::common::get_owned_indices(
       = index_map->comm(dolfinx::common::IndexMap::Direction::reverse);
   std::vector<std::int32_t> dest_ranks = dolfinx::MPI::neighbors(reverse_comm)[1];
 
-  std::vector<std::int32_t> ghost_owner_rank = index_map->ghost_owner_rank();
-  std::vector<std::int64_t> ghosts = index_map->ghosts();
+  const std::vector<std::int32_t> ghost_owner_rank = index_map->ghost_owner_rank();
+  const std::vector<std::int64_t>& ghosts = index_map->ghosts();
   std::vector<std::int64_t> ghosts_to_send;
   std::vector<std::int32_t> data_per_proc(dest_ranks.size(), 0);
   for (std::size_t dest_rank_index = 0; dest_rank_index < dest_ranks.size();
