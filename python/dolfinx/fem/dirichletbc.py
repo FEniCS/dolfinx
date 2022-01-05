@@ -96,11 +96,14 @@ def locate_dofs_topological(V: typing.Iterable[typing.Union[_cpp.fem.FunctionSpa
             return _cpp.fem.locate_dofs_topological(V._cpp_object, entity_dim, _entities, remote)
 
 
-class DirichletBC:
+class DirichletBCMetaClass:
     def __init__(self, value: typing.Union[ufl.Coefficient, Function, Constant],
                  dofs: typing.List[int], V: FunctionSpace = None):
         """Representation of Dirichlet boundary condition which is imposed on
         a linear system.
+
+        Notes:
+        ABCC
 
         Parameters
         ----------
@@ -137,7 +140,7 @@ class DirichletBC:
 
 
 def dirichletbc(value: typing.Union[ufl.Coefficient, Function, Constant],
-                dofs: typing.List[int], V: FunctionSpace = None) -> DirichletBC:
+                dofs: typing.List[int], V: FunctionSpace = None) -> DirichletBCMetaClass:
     """Create a representation of Dirichlet boundary condition which
     is imposed on a linear system.
 
@@ -177,12 +180,12 @@ def dirichletbc(value: typing.Union[ufl.Coefficient, Function, Constant],
     else:
         raise NotImplementedError(f"Type {dtype} not supported.")
 
-    formcls = type("DirichletBC", (DirichletBC, bctype), {})
+    formcls = type("DirichletBC", (DirichletBCMetaClass, bctype), {})
     return formcls(value, dofs, V)
 
 
 def bcs_by_block(spaces: typing.Iterable[FunctionSpace],
-                 bcs: typing.Iterable[DirichletBC]) -> typing.Iterable[typing.Iterable[DirichletBC]]:
+                 bcs: typing.Iterable[DirichletBCMetaClass]) -> typing.Iterable[typing.Iterable[DirichletBCMetaClass]]:
     """Arrange Dirichlet boundary conditions by the function space that
     they constrain.
 

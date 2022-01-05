@@ -175,7 +175,7 @@ def _(b: PETSc.Vec, L: typing.List[fem.FormMetaClass], coeffs=Coefficients(None,
 @ functools.singledispatch
 def assemble_vector_block(L: typing.List[fem.FormMetaClass],
                           a: typing.List[typing.List[fem.FormMetaClass]],
-                          bcs: typing.List[fem.DirichletBC] = [],
+                          bcs: typing.List[fem.DirichletBCMetaClass] = [],
                           x0: typing.Optional[PETSc.Vec] = None,
                           scale: float = 1.0,
                           coeffs_L=Coefficients(None, None),
@@ -196,7 +196,7 @@ def assemble_vector_block(L: typing.List[fem.FormMetaClass],
 def _(b: PETSc.Vec,
       L: typing.List[fem.FormMetaClass],
       a,
-      bcs: typing.List[fem.DirichletBC] = [],
+      bcs: typing.List[fem.DirichletBCMetaClass] = [],
       x0: typing.Optional[PETSc.Vec] = None,
       scale: float = 1.0,
       coeffs_L=Coefficients(None, None),
@@ -246,7 +246,7 @@ def _(b: PETSc.Vec,
 
 
 @ functools.singledispatch
-def assemble_matrix(a: fem.FormMetaClass, bcs: typing.List[fem.DirichletBC] = [],
+def assemble_matrix(a: fem.FormMetaClass, bcs: typing.List[fem.DirichletBCMetaClass] = [],
                     diagonal: float = 1.0,
                     coeffs=Coefficients(None, None)) -> PETSc.Mat:
     """Assemble bilinear form into a matrix. The returned matrix is not
@@ -260,7 +260,7 @@ def assemble_matrix(a: fem.FormMetaClass, bcs: typing.List[fem.DirichletBC] = []
 @ assemble_matrix.register(PETSc.Mat)
 def _(A: PETSc.Mat,
       a: fem.FormMetaClass,
-      bcs: typing.List[fem.DirichletBC] = [],
+      bcs: typing.List[fem.DirichletBCMetaClass] = [],
       diagonal: float = 1.0,
       coeffs=Coefficients(None, None)) -> PETSc.Mat:
     """Assemble bilinear form into a matrix. The returned matrix is not
@@ -280,7 +280,7 @@ def _(A: PETSc.Mat,
 # FIXME: Revise this interface
 @ functools.singledispatch
 def assemble_matrix_nest(a: typing.List[typing.List[fem.FormMetaClass]],
-                         bcs: typing.List[fem.DirichletBC] = [], mat_types=[],
+                         bcs: typing.List[fem.DirichletBCMetaClass] = [], mat_types=[],
                          diagonal: float = 1.0,
                          coeffs=Coefficients(None, None)) -> PETSc.Mat:
     """Assemble bilinear forms into matrix"""
@@ -291,7 +291,7 @@ def assemble_matrix_nest(a: typing.List[typing.List[fem.FormMetaClass]],
 
 @ assemble_matrix_nest.register(PETSc.Mat)
 def _(A: PETSc.Mat, a: typing.List[typing.List[fem.FormMetaClass]],
-      bcs: typing.List[fem.DirichletBC] = [], diagonal: float = 1.0,
+      bcs: typing.List[fem.DirichletBCMetaClass] = [], diagonal: float = 1.0,
       coeffs=Coefficients(None, None)) -> PETSc.Mat:
     """Assemble bilinear forms into matrix"""
     c = (coeffs[0] if coeffs[0] is not None else pack_constants(a),
@@ -307,7 +307,7 @@ def _(A: PETSc.Mat, a: typing.List[typing.List[fem.FormMetaClass]],
 # FIXME: Revise this interface
 @ functools.singledispatch
 def assemble_matrix_block(a: typing.List[typing.List[fem.FormMetaClass]],
-                          bcs: typing.List[fem.DirichletBC] = [],
+                          bcs: typing.List[fem.DirichletBCMetaClass] = [],
                           diagonal: float = 1.0,
                           coeffs=Coefficients(None, None)) -> PETSc.Mat:
     """Assemble bilinear forms into matrix"""
@@ -347,7 +347,7 @@ def _extract_function_spaces(a: typing.List[typing.List[fem.FormMetaClass]]):
 
 @ assemble_matrix_block.register(PETSc.Mat)
 def _(A: PETSc.Mat, a: typing.List[typing.List[fem.FormMetaClass]],
-      bcs: typing.List[fem.DirichletBC] = [], diagonal: float = 1.0,
+      bcs: typing.List[fem.DirichletBCMetaClass] = [], diagonal: float = 1.0,
       coeffs=Coefficients(None, None)) -> PETSc.Mat:
     """Assemble bilinear forms into matrix"""
     c = (coeffs[0] if coeffs[0] is not None else pack_constants(a),
@@ -383,7 +383,7 @@ def _(A: PETSc.Mat, a: typing.List[typing.List[fem.FormMetaClass]],
 # -- Modifiers for Dirichlet conditions ---------------------------------------
 
 def apply_lifting(b: PETSc.Vec, a: typing.List[fem.FormMetaClass],
-                  bcs: typing.List[typing.List[fem.DirichletBC]],
+                  bcs: typing.List[typing.List[fem.DirichletBCMetaClass]],
                   x0: typing.Optional[typing.List[PETSc.Vec]] = [],
                   scale: float = 1.0, coeffs=Coefficients(None, None)) -> None:
     """Modify RHS vector b for lifting of Dirichlet boundary conditions.
@@ -410,7 +410,7 @@ def apply_lifting(b: PETSc.Vec, a: typing.List[fem.FormMetaClass],
 
 
 def apply_lifting_nest(b: PETSc.Vec, a: typing.List[typing.List[fem.FormMetaClass]],
-                       bcs: typing.List[fem.DirichletBC],
+                       bcs: typing.List[fem.DirichletBCMetaClass],
                        x0: typing.Optional[PETSc.Vec] = None,
                        scale: float = 1.0, coeffs=Coefficients(None, None)) -> PETSc.Vec:
     """Modify nested vector for lifting of Dirichlet boundary conditions.
@@ -425,7 +425,7 @@ def apply_lifting_nest(b: PETSc.Vec, a: typing.List[typing.List[fem.FormMetaClas
     return b
 
 
-def set_bc(b: PETSc.Vec, bcs: typing.List[fem.DirichletBC],
+def set_bc(b: PETSc.Vec, bcs: typing.List[fem.DirichletBCMetaClass],
            x0: typing.Optional[PETSc.Vec] = None, scale: float = 1.0) -> None:
     """Insert boundary condition values into vector. Only local (owned)
     entries are set, hence communication after calling this function is
@@ -438,7 +438,7 @@ def set_bc(b: PETSc.Vec, bcs: typing.List[fem.DirichletBC],
     _cpp.fem.set_bc(b.array_w, bcs, x0, scale)
 
 
-def set_bc_nest(b: PETSc.Vec, bcs: typing.List[typing.List[fem.DirichletBC]],
+def set_bc_nest(b: PETSc.Vec, bcs: typing.List[typing.List[fem.DirichletBCMetaClass]],
                 x0: typing.Optional[PETSc.Vec] = None, scale: float = 1.0) -> None:
     """Insert boundary condition values into nested vector. Only local (owned)
     entries are set, hence communication after calling this function is

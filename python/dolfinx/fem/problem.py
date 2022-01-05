@@ -20,7 +20,7 @@ class LinearProblem():
 
     """
 
-    def __init__(self, a: ufl.Form, L: ufl.Form, bcs: typing.List[fem.DirichletBC] = [],
+    def __init__(self, a: ufl.Form, L: ufl.Form, bcs: typing.List[fem.DirichletBCMetaClass] = [],
                  u: fem.Function = None, petsc_options={}, form_compiler_parameters={}, jit_parameters={}):
         """Initialize solver for a linear variational problem.
 
@@ -146,7 +146,7 @@ class NonlinearProblem:
 
     """
 
-    def __init__(self, F: ufl.form.Form, u: fem.Function, bcs: typing.List[fem.DirichletBC] = [],
+    def __init__(self, F: ufl.form.Form, u: fem.Function, bcs: typing.List[fem.DirichletBCMetaClass] = [],
                  J: ufl.form.Form = None, form_compiler_parameters={}, jit_parameters={}):
         """Initialize class that sets up structures for solving the
         non-linear problem using Newton's method, dF/du(u) du = -F(u)
