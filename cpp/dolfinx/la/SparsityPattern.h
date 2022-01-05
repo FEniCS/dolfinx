@@ -98,7 +98,7 @@ public:
   /// Compute IndexMap for columns after SparsityPattern assembly
   /// @return IndexMap for all non-zero columns on this process, including
   /// ghosts
-  common::IndexMap column_index_map() const;
+  std::shared_ptr<const common::IndexMap> column_index_map() const;
 
   /// Return index map block size for dimension dim
   int block_size(int dim) const;
@@ -124,6 +124,8 @@ private:
 
   // Index maps for each dimension
   std::array<std::shared_ptr<const common::IndexMap>, 2> _index_maps;
+
+  // Block size
   std::array<int, 2> _bs;
 
   // Non-zero ghost columns in owned rows

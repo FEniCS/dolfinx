@@ -25,18 +25,18 @@ public:
 
   /// Create a distributed matrix
   Matrix(const SparsityPattern& p, const Allocator& alloc = Allocator())
-      : _data(p.num_nonzeros(), 0, alloc), _cols(p.num_nonzeros()),
-        _row_ptr(
-            p.index_map(0)->size_local() + p.index_map(0)->num_ghosts() + 1, 0),
-        _ncols(p.index_map(1)->size_local() + p.index_map(1)->num_ghosts())
+      : _index_maps({p.index_map(0), p.column_index_map()}),
+        _data(p.num_nonzeros(), 0, alloc), _cols(p.num_nonzeros()),
+        _row_ptr(_index_maps[0]->size_local() + 1, 0),
+        _ncols(_index_maps[1]->size_local() + _index_maps[1]->num_ghosts())
   {
     // TODO: handle block sizes
     // TODO: check that column indices for each row in p are sorted
     // TODO: support distributed matrices
 
-    const graph::AdjacencyList<std::int32_t>& dp = p.diagonal_pattern();
-    std::copy(dp.array().begin(), dp.array().end(), _cols.begin());
-    std::copy(dp.offsets().begin(), dp.offsets().end(), _row_ptr.begin());
+    const graph::AdjacencyList<std::int32_t>& pg = p.graph();
+    std::copy(pg.array().begin(), pg.array().end(), _cols.begin());
+    std::copy(pg.offsets().begin(), pg.offsets().end(), _row_ptr.begin());
   }
 
   /// Set all non-zero entries to a value
@@ -71,7 +71,6 @@ public:
         auto it = std::find(cit0, cit1, cols[c]);
         assert(it != cit1);
         std::size_t d = std::distance(_cols.begin(), it);
-        // _data[d] += xr[c];
         _data[d] = op(_data[d], xr[c]);
       }
     }
