@@ -111,7 +111,7 @@ public:
   }
 
   /// Copy cached ghost values to row owner.
-  void finalise(std::function<T(T, T)> op = std::plus<T>())
+  void finalize(std::function<T(T, T)> op = std::plus<T>())
   {
     const std::int32_t local_size0 = _index_maps[0]->size_local();
     const std::int32_t num_ghosts0 = _index_maps[0]->num_ghosts();
@@ -220,6 +220,10 @@ public:
       std::size_t d = std::distance(_cols.begin(), cit);
       _data[d] += op(_data[d], ghost_value_data_in[i]);
     }
+
+    // Clear cache
+    std::vector<std::vector<std::int32_t>>(num_ghosts0).swap(_index_cache);
+    std::vector<std::vector<T>>(num_ghosts0).swap(_value_cache);
   }
 
 private:
