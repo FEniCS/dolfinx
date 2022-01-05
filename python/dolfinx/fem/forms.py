@@ -19,9 +19,9 @@ from petsc4py import PETSc
 
 
 class Form:
-    def __init__(self, mod, form, V: list[_cpp.fem.FunctionSpace], coeffs, constants,
+    def __init__(self, form, V: list[_cpp.fem.FunctionSpace], coeffs, constants,
                  subdomains: dict[_cpp.mesh.MeshTags_int32], mesh: _cpp.mesh.Mesh):
-        """A DOLFINx finite element form
+        """A DOLFINx finite element form object
 
         Parameters
         ----------
@@ -56,7 +56,7 @@ class Form:
         return self._code
 
 
-def form(form: ufl.Form, dtype: np.dtype = PETSc.ScalarType,
+def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtype = PETSc.ScalarType,
          form_compiler_parameters: dict = {}, jit_parameters: dict = {}):
     """Create a DOLFINx Form
 
@@ -75,8 +75,7 @@ def form(form: ufl.Form, dtype: np.dtype = PETSc.ScalarType,
     ----
     This function is responsible for the compilation of a UFL form
     (using FFCx) and attaching coefficients and domains specific data to
-    the underlying
-    C++ form.
+    the underlying C++ form.
     """
     if dtype == np.float32:
         ftype = _cpp.fem.Form_float32
@@ -92,7 +91,8 @@ def form(form: ufl.Form, dtype: np.dtype = PETSc.ScalarType,
 
     formcls = type("Form", (Form, ftype), {})
 
-    def _create_form(form):
+    def _form(form):
+        """"Compile a single UFL form"""
         # Extract subdomain data from UFL form
         sd = form.subdomain_data()
         subdomains, = list(sd.values())  # Assuming single domain
@@ -115,7 +115,7 @@ def form(form: ufl.Form, dtype: np.dtype = PETSc.ScalarType,
                                         ]._cpp_object for i in range(ufc_form.num_coefficients)]
         constants = [c._cpp_object for c in form.constants()]
 
-        # Dict of of subdomain markers, possibly None for some dimensions
+        # Subdomain markers (possibly None for some dimensions)
         subdomains = {_cpp.fem.IntegralType.cell: subdomains.get("cell"),
                       _cpp.fem.IntegralType.exterior_facet: subdomains.get("exterior_facet"),
                       _cpp.fem.IntegralType.interior_facet: subdomains.get("interior_facet"),
@@ -123,16 +123,16 @@ def form(form: ufl.Form, dtype: np.dtype = PETSc.ScalarType,
 
         return formcls(ufc_form, V, coeffs, constants, subdomains, mesh)
 
-    def _create_form_rec(form):
-        """Recursively look for ufl.Forms and compile to
-        dolfinx.fem.Form, otherwise return form argument"""
+    def _create_form(form):
+        """Recursively convert ufl.Forms to dolfinx.fem.Form, otherwise
+        return form argument"""
         if isinstance(form, ufl.Form):
-            return _create_form(form)
+            return _form(form)
         elif isinstance(form, (tuple, list)):
-            return list(map(lambda sub_form: _create_form_rec(sub_form), form))
+            return list(map(lambda sub_form: _create_form(sub_form), form))
         return form
 
-    return _create_form_rec(form)
+    return _create_form(form)
 
 
 _args = typing.Union[typing.Iterable[Form], typing.Iterable[typing.Iterable[Form]]]
