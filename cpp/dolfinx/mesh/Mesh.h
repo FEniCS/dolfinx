@@ -148,14 +148,16 @@ Mesh create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
                  const xt::xtensor<double, 2>& x, GhostMode ghost_mode,
                  const CellPartitionFunction& cell_partitioner);
 
-/// Create a submesh consisting of a subset of entities in a mesh. Entity `i`
-/// in the submesh corresponds to `entities[i]` in the mesh.
+/// Create a new mesh consisting of a subset of entities in a mesh.
+/// Entity `i` in the new mesh corresponds to `entities[i]` in the input
+/// mesh.
 /// @param[in] mesh The mesh
 /// @param[in] dim Entity dimension
-/// @param[in] entities Vector of entities in the mesh
-/// @return The submesh, a map from the (local) submesh vertices
-/// to the (local) mesh vertices, and a map from the (local)
-/// submesh geometry dofs to the (local) mesh geometry dofs
+/// @param[in] entities List of entity indicies in `mesh` to include in
+/// the new mesh
+/// @return The new mesh, a map from the new mesh vertices to the mesh
+/// vertices in the input mesh, and a map from the new mesh geometry
+/// dofs to the original mesh geometry dofs
 std::tuple<Mesh, std::vector<std::int32_t>, std::vector<std::int32_t>>
 create_submesh(const Mesh& mesh, int dim,
                const xtl::span<const std::int32_t>& entities);

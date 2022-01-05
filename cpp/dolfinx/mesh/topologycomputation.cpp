@@ -450,7 +450,7 @@ compute_entities_by_key_matching(
 
   std::vector<std::int32_t> entity_index(entity_list.shape(0), 0);
   std::int32_t entity_count = 0;
-  std::int32_t last = (sort_order.size() > 0) ? sort_order[0] : 0;
+  std::int32_t last = sort_order.empty() ? 0 : sort_order.front();
   for (std::size_t i = 1; i < sort_order.size(); ++i)
   {
     std::int32_t j = sort_order[i];
@@ -472,20 +472,22 @@ compute_entities_by_key_matching(
   std::vector<int> size_ev(entity_count);
   for (std::size_t i = 0; i < entity_list.shape(0); ++i)
   {
-    size_ev[local_index[i]]
-        = (entity_list(i, max_vertices_per_entity - 1) == -1)
-              ? (max_vertices_per_entity - 1)
-              : max_vertices_per_entity;
+    if (entity_list(i, max_vertices_per_entity - 1) == -1)
+      size_ev[local_index[i]] = max_vertices_per_entity - 1;
+    else
+      size_ev[local_index[i]] = max_vertices_per_entity;
   }
-  for (int i = 0; i < entity_count; ++i)
-    offsets_ev[i + 1] = offsets_ev[i] + size_ev[i];
+
+  std::transform(size_ev.cbegin(), size_ev.cend(), offsets_ev.cbegin(),
+                 std::next(offsets_ev.begin()),
+                 [](auto a, auto b) { return a + b; });
 
   graph::AdjacencyList<std::int32_t> ev(
       std::vector<std::int32_t>(offsets_ev.back()), std::move(offsets_ev));
   for (std::size_t i = 0; i < entity_list.shape(0); ++i)
   {
-    std::copy_n(xt::row(entity_list, i).begin(), ev.num_links(local_index[i]),
-                ev.links(local_index[i]).begin());
+    auto _ev = ev.links(local_index[i]);
+    std::copy_n(xt::row(entity_list, i).begin(), _ev.size(), _ev.begin());
   }
 
   // NOTE: Cell-entity connectivity comes after ev creation because
@@ -493,8 +495,10 @@ compute_entities_by_key_matching(
 
   // Cell-entity connectivity
   std::vector<std::int32_t> offsets_ce(num_cells + 1, 0);
-  for (std::size_t i = 0; i < offsets_ce.size() - 1; ++i)
-    offsets_ce[i + 1] = offsets_ce[i] + num_entities_per_cell;
+  std::transform(offsets_ce.cbegin(), std::prev(offsets_ce.cend()),
+                 std::next(offsets_ce.begin()),
+                 [num_entities_per_cell](auto x)
+                 { return x + num_entities_per_cell; });
   graph::AdjacencyList<std::int32_t> ce(std::move(local_index),
                                         std::move(offsets_ce));
 
