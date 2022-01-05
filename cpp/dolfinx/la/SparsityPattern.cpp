@@ -97,7 +97,7 @@ SparsityPattern::SparsityPattern(
       if (!p)
         continue;
 
-      if (p->_diagonal)
+      if (p->_graph)
       {
         throw std::runtime_error("Sub-sparsity pattern has been finalised. "
                                  "Cannot compute stacked pattern.");
@@ -150,7 +150,7 @@ SparsityPattern::SparsityPattern(
 void SparsityPattern::insert(const xtl::span<const std::int32_t>& rows,
                              const xtl::span<const std::int32_t>& cols)
 {
-  if (_diagonal)
+  if (_graph)
   {
     throw std::runtime_error(
         "Cannot insert into sparsity pattern. It has already been assembled");
@@ -174,7 +174,7 @@ void SparsityPattern::insert(const xtl::span<const std::int32_t>& rows,
 //-----------------------------------------------------------------------------
 void SparsityPattern::insert_diagonal(const std::vector<int32_t>& rows)
 {
-  if (_diagonal)
+  if (_graph)
   {
     throw std::runtime_error(
         "Cannot insert into sparsity pattern. It has already been assembled");
@@ -218,9 +218,9 @@ int SparsityPattern::block_size(int dim) const { return _bs[dim]; }
 //-----------------------------------------------------------------------------
 void SparsityPattern::assemble()
 {
-  if (_diagonal)
+  if (_graph)
     throw std::runtime_error("Sparsity pattern has already been finalised.");
-  assert(!_off_diagonal);
+  assert(!_off_graph);
 
   common::Timer t0("SparsityPattern::assemble");
 
@@ -328,9 +328,9 @@ void SparsityPattern::assemble()
   }
 
   // Sort and remove duplicate column indices in each owned row
-  std::vector<std::int32_t> adj_counts(local_size0, 0),
-      adj_counts_off(local_size0, 0);
-  std::vector<std::int32_t> adj_data, adj_data_off;
+  std::vector<std::int32_t> adj_counts(local_size0, 0);
+  std::vector<std::int32_t> adj_data;
+  _off_diagonal_offset.resize(local_size0);
   for (std::int32_t i = 0; i < local_size0; ++i)
   {
     std::vector<std::int32_t>& row = _row_cache[i];
@@ -339,26 +339,19 @@ void SparsityPattern::assemble()
         = std::unique(row.begin(), row.end());
 
     // Find position of first "off-diagonal" column
-    const std::vector<std::int32_t>::iterator it_diag
-        = std::lower_bound(row.begin(), it_end, local_size1);
+    _off_diagonal_offset[i] = std::distance(
+        row.begin(), std::lower_bound(row.begin(), it_end, local_size1));
 
     // Store owned columns
-    adj_data.insert(adj_data.end(), row.begin(), it_diag);
-    adj_counts[i] += (it_diag - row.begin());
-
-    // Store non-owned columns
-    adj_data_off.insert(adj_data_off.end(), it_diag, it_end);
-    adj_counts_off[i] += (it_end - it_diag);
+    adj_data.insert(adj_data.end(), row.begin(), it_end);
+    adj_counts[i] += (it_end - row.begin());
   }
   std::vector<std::vector<std::int32_t>>().swap(_row_cache);
 
   // Compute offsets for diagonal and off-diagonal block adjacency lists
-  std::vector<std::int32_t> adj_offsets(local_size0 + 1),
-      adj_offsets_off(local_size0 + 1);
+  std::vector<std::int32_t> adj_offsets(local_size0 + 1);
   std::partial_sum(adj_counts.begin(), adj_counts.end(),
                    adj_offsets.begin() + 1);
-  std::partial_sum(adj_counts_off.begin(), adj_counts_off.end(),
-                   adj_offsets_off.begin() + 1);
 
   // FIXME: after assembly, there are no ghost rows, i.e. the IndexMap for rows
   // should be non-overlapping. However, we are retaining the row overlap
@@ -366,7 +359,7 @@ void SparsityPattern::assemble()
   // assembly.
   //
   // _index_maps[0] = std::make_shared<common::IndexMap>(comm, local_size0);
-  _diagonal = std::make_shared<graph::AdjacencyList<std::int32_t>>(
+  _graph = std::make_shared<graph::AdjacencyList<std::int32_t>>(
       std::move(adj_data), std::move(adj_offsets));
 
   // Column map increased due to received rows from other processes (see
@@ -374,33 +367,30 @@ void SparsityPattern::assemble()
   LOG(INFO) << "Column ghost size increased from "
             << _index_maps[1]->ghosts().size() << " to " << _col_ghosts.size()
             << "\n";
-
-  _off_diagonal = std::make_shared<graph::AdjacencyList<std::int32_t>>(
-      std::move(adj_data_off), std::move(adj_offsets_off));
 }
 //-----------------------------------------------------------------------------
 std::int64_t SparsityPattern::num_nonzeros() const
 {
-  if (!_diagonal)
+  if (!_graph)
     throw std::runtime_error("Sparsity pattern has not be assembled.");
-  assert(_off_diagonal);
-  return _diagonal->array().size() + _off_diagonal->array().size();
+  return _graph->array().size();
 }
 //-----------------------------------------------------------------------------
-const graph::AdjacencyList<std::int32_t>&
-SparsityPattern::diagonal_pattern() const
+std::int32_t SparsityPattern::nnz_diag(int row) const
 {
-  if (!_diagonal)
-    throw std::runtime_error("Sparsity pattern has not been finalised.");
-  return *_diagonal;
+  return _off_diagonal_offset[row];
 }
 //-----------------------------------------------------------------------------
-const graph::AdjacencyList<std::int32_t>&
-SparsityPattern::off_diagonal_pattern() const
+std::int32_t SparsityPattern::nnz_off_diag(int row) const
 {
-  if (!_off_diagonal)
+  return _graph->num_links(row) - _off_diagonal_offset[row];
+}
+//-----------------------------------------------------------------------------
+const graph::AdjacencyList<std::int32_t>& SparsityPattern::graph() const
+{
+  if (!_graph)
     throw std::runtime_error("Sparsity pattern has not been finalised.");
-  return *_off_diagonal;
+  return *_graph;
 }
 //-----------------------------------------------------------------------------
 MPI_Comm SparsityPattern::comm() const { return _comm.comm(); }

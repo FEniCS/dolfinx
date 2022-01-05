@@ -101,14 +101,11 @@ public:
   /// Return number of local nonzeros
   std::int64_t num_nonzeros() const;
 
-  /// Sparsity pattern for the owned (diagonal) block. Uses local
-  /// indices for the columns.
-  const graph::AdjacencyList<std::int32_t>& diagonal_pattern() const;
+  std::int32_t nnz_diag(int row) const;
+  std::int32_t nnz_off_diag(int row) const;
 
-  /// Sparsity pattern for the un-owned (off-diagonal) columns. Uses
-  /// local indices for the columns. Translate to global with column
-  /// IndexMap.
-  const graph::AdjacencyList<std::int32_t>& off_diagonal_pattern() const;
+  /// Sparsity pattern graph. Uses local indices for the columns.
+  const graph::AdjacencyList<std::int32_t>& graph() const;
 
   /// Return MPI communicator
   MPI_Comm comm() const;
@@ -128,7 +125,9 @@ private:
   std::vector<std::vector<std::int32_t>> _row_cache;
 
   // Sparsity pattern data (computed once pattern is finalised)
-  std::shared_ptr<graph::AdjacencyList<std::int32_t>> _diagonal;
-  std::shared_ptr<graph::AdjacencyList<std::int32_t>> _off_diagonal;
+  std::shared_ptr<graph::AdjacencyList<std::int32_t>> _graph;
+
+  // Start of off-diagonal (unowned columns) on each row
+  std::vector<int> _off_diagonal_offset;
 };
 } // namespace dolfinx::la

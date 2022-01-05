@@ -7,11 +7,6 @@
 #pragma once
 
 #include "SparsityPattern.h"
-// #include <complex>
-// #include <dolfinx/common/IndexMap.h>
-// #include <limits>
-// #include <memory>
-// #include <numeric>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <vector>
 #include <xtensor/xtensor.hpp>
@@ -108,11 +103,6 @@ private:
 
   // // Block size
   // int _bs;
-
-  // // Data type and buffers for ghost scatters
-  // MPI_Datatype _datatype = MPI_DATATYPE_NULL;
-  // MPI_Request _request = MPI_REQUEST_NULL;
-  // std::vector<T> _buffer_send_fwd, _buffer_recv_fwd;
 
   // Data
   std::vector<T, Allocator> _data;
