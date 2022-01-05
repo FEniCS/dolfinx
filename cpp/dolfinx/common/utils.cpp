@@ -7,7 +7,9 @@
 #include "utils.h"
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <dolfinx/common/sort.h>
 #include <vector>
+#include <xtl/xspan.hpp>
 
 std::vector<int32_t> dolfinx::common::compute_owned_indices(
     const xtl::span<const std::int32_t>& indices,
@@ -86,7 +88,7 @@ std::vector<int32_t> dolfinx::common::compute_owned_indices(
 
   // Sort `owned` and remove non-unique entries (we could have received
   // the same ghost from multiple other processes)
-  std::sort(owned.begin(), owned.end());
+  dolfinx::radix_sort(xtl::span(owned));
   owned.erase(std::unique(owned.begin(), owned.end()), owned.end());
 
   return owned;
