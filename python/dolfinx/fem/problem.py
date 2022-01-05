@@ -199,6 +199,7 @@ class NonlinearProblem:
     def form(self, x: PETSc.Vec):
         """This function is called before the residual or Jacobian is
         computed. This is usually used to update ghost values.
+
         Parameters
         ----------
         x

@@ -20,26 +20,25 @@ from petsc4py import PETSc
 
 class Form:
     def __init__(self, form, V: list[_cpp.fem.FunctionSpace], coeffs, constants,
-                 subdomains: dict[_cpp.mesh.MeshTags_int32], mesh: _cpp.mesh.Mesh):
-        """A DOLFINx finite element form object
+                 subdomains: dict[_cpp.mesh.MeshTags_int32], mesh: _cpp.mesh.Mesh, code):
+        """A finite element form
 
-        Parameters
-        ----------
-        form
-            Compiled UFC form
-        V
-            The argument function spaces
-        coeffs
-            Finite element coefficients that appear in the form
-        constants
-            Constants appearing in the form
-        subdomains
-            Subdomains for integrals
-        mesh
-            The mesh that the form is deined on
+        Notes:
+            Forms should normally be constructed using the forms.form
+            function and not using this class initialiser. This class is
+            combined with different base classes that depend on the
+            scalar type used in the Form.
+
+        Args:
+            form: Compiled UFC form
+            V: The argument function spaces
+            coeffs: Finite element coefficients that appear in the form
+            constants: Constants appearing in the form
+            subdomains: Subdomains for integrals
+            mesh: The mesh that the form is deined on
 
         """
-
+        self._code = code
         self._ufc_form = form
         ffi = cffi.FFI()
         super().__init__(ffi.cast("uintptr_t", ffi.addressof(self._ufc_form)),
@@ -57,25 +56,26 @@ class Form:
 
 
 def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtype = PETSc.ScalarType,
-         form_compiler_parameters: dict = {}, jit_parameters: dict = {}):
-    """Create a DOLFINx Form
+         form_compiler_parameters: dict = {}, jit_parameters: dict = {}) -> "dolfinx.fem.Form":
+    """Create a DOLFINx Form or an array of Forms
 
-    Parameters
-    ----------
-    form
-        A UFL form for list of UFL forms
-    dtype
-        The scalar type to use for the compiled form
-    form_compiler_parameters
-        See :py:func:`ffcx_jit <dolfinx.jit.ffcx_jit>`
-    jit_parameters
-        See :py:func:`ffcx_jit <dolfinx.jit.ffcx_jit>`
+    Args:
+        form: A UFL form or list(s) of UFL forms
+        dtype: Scalar type to use for the compiled form
+        form_compiler_parameters: See :func:`ffcx_jit <dolfinx.jit.ffcx_jit>`
+        jit_parameters:See :func:`ffcx_jit <dolfinx.jit.ffcx_jit>`
 
-    Note
-    ----
-    This function is responsible for the compilation of a UFL form
-    (using FFCx) and attaching coefficients and domains specific data to
-    the underlying C++ form.
+    Returns:
+        Compiled finite element Form
+
+    Notes:
+        This function is responsible for the compilation of a UFL form
+        (using FFCx) and attaching coefficients and domains specific
+        data to the underlying C++ form. It dynamically create a
+        :class:`Form` instance with an appropriate base class for the
+        scalar type, e.g. `_cpp.fem.Form_float64`.
+
+
     """
     if dtype == np.float32:
         ftype = _cpp.fem.Form_float32
@@ -121,7 +121,7 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtyp
                       _cpp.fem.IntegralType.interior_facet: subdomains.get("interior_facet"),
                       _cpp.fem.IntegralType.vertex: subdomains.get("vertex")}
 
-        return formcls(ufc_form, V, coeffs, constants, subdomains, mesh)
+        return formcls(ufc_form, V, coeffs, constants, subdomains, mesh, code)
 
     def _create_form(form):
         """Recursively convert ufl.Forms to dolfinx.fem.Form, otherwise

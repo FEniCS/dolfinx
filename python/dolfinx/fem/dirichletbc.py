@@ -5,9 +5,7 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Support for representing Dirichlet boundary conditions that are enforced
-via modification of linear systems.
-
-"""
+via modification of linear systems."""
 
 import collections.abc
 import types
@@ -21,23 +19,17 @@ from dolfinx.fem.function import Constant, Function, FunctionSpace
 
 
 def locate_dofs_geometrical(V: typing.Iterable[typing.Union[_cpp.fem.FunctionSpace, FunctionSpace]],
-                            marker: types.FunctionType):
+                            marker: types.FunctionType) -> np.ndarray:
     """Locate degrees-of-freedom geometrically using a marker function.
 
-    Parameters
-    ----------
-    V
-        Function space(s) in which to search for degree-of-freedom indices.
+    Args:
+        V: Function space(s) in which to search for degree-of-freedom indices.
+        marker: A function that takes an array of points ``x`` with shape
+            ``(gdim, num_points)`` and returns an array of booleans of
+            length ``num_points``, evaluating to ``True`` for entities whose
+            degree-of-freedom should be returned.
 
-    marker
-        A function that takes an array of points ``x`` with shape
-        ``(gdim, num_points)`` and returns an array of booleans of length
-        ``num_points``, evaluating to ``True`` for entities whose
-        degree-of-freedom should be returned.
-
-    Returns
-    -------
-    numpy.ndarray
+    Returns:
         An array of degree-of-freedom indices (local to the process)
         for degrees-of-freedom whose coordinate evaluates to True for the
         marker function.
@@ -66,26 +58,18 @@ def locate_dofs_geometrical(V: typing.Iterable[typing.Union[_cpp.fem.FunctionSpa
 
 
 def locate_dofs_topological(V: typing.Iterable[typing.Union[_cpp.fem.FunctionSpace, FunctionSpace]],
-                            entity_dim: int,
-                            entities: typing.List[int],
-                            remote: bool = True):
+                            entity_dim: int, entities: typing.List[int],
+                            remote: bool = True) -> np.ndarray:
     """Locate degrees-of-freedom belonging to mesh entities topologically.
 
-    Parameters
-    ----------
-    V
-        Function space(s) in which to search for degree-of-freedom indices.
-    entity_dim
-        Topological dimension of entities where degrees-of-freedom are located.
-    entities
-        Indices of mesh entities of dimension ``entity_dim`` where
-        degrees-of-freedom are located.
-    remote : True
-        True to return also "remotely located" degree-of-freedom indices.
+    Args:
+        V: Function space(s) in which to search for degree-of-freedom indices.
+        entity_dim: Topological dimension of entities where degrees-of-freedom are located.
+        entities: Indices of mesh entities of dimension ``entity_dim`` where
+            degrees-of-freedom are located.
+        remote: True to return also "remotely located" degree-of-freedom indices.
 
-    Returns
-    -------
-    numpy.ndarray
+    Returns:
         An array of degree-of-freedom indices (local to the process) for
         degrees-of-freedom topologically belonging to mesh entities.
 
@@ -128,7 +112,7 @@ class DirichletBC:
             Expects array of size (number of dofs, 2) if function space of the
             problem, ``V``, is passed. Otherwise assumes function space of the
             problem is the same of function space of boundary values function.
-        V : optional
+        V
             Function space of a problem to which boundary conditions are applied.
         """
 
@@ -171,9 +155,7 @@ def dirichletbc(value: typing.Union[ufl.Coefficient, Function, Constant],
         Function space of a problem to which boundary conditions are applied.
 
 
-    Returns
-    -------
-    DirichletBC
+    Returns:
         A representation of the boundary condition for modifying linear systems.
 
     """

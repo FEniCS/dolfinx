@@ -88,11 +88,13 @@ class Expression:
         jit_parameters
             Parameters controlling JIT compilation of C code.
 
-        Note
-        ----
+        Notes
+        -----
         This wrapper is responsible for the FFCx compilation of the UFL Expr
         and attaching the correct data to the underlying C++ Expression.
+
         """
+
         assert x.ndim < 3
         num_points = x.shape[0] if x.ndim == 2 else 1
         x = np.reshape(x, (num_points, -1))
@@ -336,7 +338,7 @@ class Function(ufl.Coefficient):
     def compute_point_values(self):
         return self._cpp_object.compute_point_values()
 
-    def copy(self):
+    def copy(self) -> "Function":
         """Return a copy of the Function. The FunctionSpace is shared and the
         degree-of-freedom vector is copied.
 
@@ -357,7 +359,7 @@ class Function(ufl.Coefficient):
         return self._cpp_object.x
 
     @property
-    def dtype(self):
+    def dtype(self) -> np.dtype:
         return self._cpp_object.x.array.dtype
 
     @property
