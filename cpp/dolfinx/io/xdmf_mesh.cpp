@@ -210,11 +210,11 @@ void xdmf_mesh::add_mesh(MPI_Comm comm, pugi::xml_node& xml_node,
   assert(grid_node);
   grid_node.append_attribute("Name") = name.c_str();
   grid_node.append_attribute("GridType") = "Uniform";
- 
+
   // Add topology node and attributes (including writing data)
   const std::string path_prefix = "/Mesh/" + name;
   const int tdim = mesh.topology().dim();
- 
+
   // Prepare an array of active cells
   // Writing whole mesh so each cell is active, excl. ghosts
   auto map = mesh.topology().index_map(tdim);
@@ -229,7 +229,7 @@ void xdmf_mesh::add_mesh(MPI_Comm comm, pugi::xml_node& xml_node,
 
   // Add geometry node and attributes (including writing data)
   add_geometry_data(comm, grid_node, h5_id, path_prefix, mesh.geometry());
- }
+}
 //----------------------------------------------------------------------------
 xt::xtensor<double, 2> xdmf_mesh::read_geometry_data(MPI_Comm comm,
                                                      const hid_t h5_id,

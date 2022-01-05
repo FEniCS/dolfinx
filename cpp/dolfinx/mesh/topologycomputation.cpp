@@ -397,7 +397,6 @@ compute_entities_by_key_matching(
   // Start timer
   common::Timer timer("Compute entities of dim = " + std::to_string(dim));
 
-
   // Initialize local array of entities
   const std::int8_t num_entities_per_cell
       = mesh::cell_num_entities(cell_type, dim);
@@ -448,7 +447,7 @@ compute_entities_by_key_matching(
   // Sort the list and label uniquely
   const std::vector<std::int32_t> sort_order
       = dolfinx::sort_by_perm(entity_list_sorted);
-  
+
   std::vector<std::int32_t> entity_index(entity_list.shape(0), 0);
   std::int32_t entity_count = 0;
   std::int32_t last = (sort_order.size() > 0) ? sort_order[0] : 0;

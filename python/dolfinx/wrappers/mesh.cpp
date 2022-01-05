@@ -222,8 +222,8 @@ void mesh(py::module& m)
       "Helper function for creating meshes.");
 
   m.def("create_submesh",
-        [](dolfinx::mesh::Mesh& mesh, int dim,
-           const py::array_t<std::int32_t, py::array::c_style> entities)
+        [](const dolfinx::mesh::Mesh& mesh, int dim,
+           const py::array_t<std::int32_t, py::array::c_style>& entities)
         {
           return dolfinx::mesh::create_submesh(
               mesh, dim, xtl::span(entities.data(), entities.size()));
