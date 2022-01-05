@@ -180,12 +180,12 @@ class Expression:
         return self._ufl_expression
 
     @property
-    def x(self):
+    def x(self) -> np.ndarray:
         """Evaluation points on the reference cell"""
         return self._cpp_object.x
 
     @property
-    def value_size(self):
+    def value_size(self) -> int:
         """Value size of the expression"""
         return self._cpp_object.value_size
 
@@ -195,7 +195,7 @@ class Expression:
         return self._ufc_expression
 
     @property
-    def code(self):
+    def code(self) -> str:
         """C code strings"""
         return self._code
 
@@ -402,7 +402,7 @@ class Function(ufl.Coefficient):
             raise RuntimeError("No subfunctions to extract")
         return tuple(self.sub(i) for i in range(num_sub_spaces))
 
-    def collapse(self):
+    def collapse(self) -> "Function":
         u_collapsed = self._cpp_object.collapse()
         V_collapsed = FunctionSpace(None, self.ufl_element(),
                                     u_collapsed.function_space)
@@ -537,7 +537,7 @@ class FunctionSpace(ufl.FunctionSpace):
         return dofmap.DofMap(self._cpp_object.dofmap)
 
     @property
-    def mesh(self):
+    def mesh(self) -> Mesh:
         """Return the mesh on which the function space is defined."""
         return self._cpp_object.mesh
 
@@ -563,7 +563,7 @@ class FunctionSpace(ufl.FunctionSpace):
         else:
             return V
 
-    def tabulate_dof_coordinates(self):
+    def tabulate_dof_coordinates(self) -> np.ndarray:
         return self._cpp_object.tabulate_dof_coordinates()
 
 

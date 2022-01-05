@@ -24,10 +24,10 @@ class FormMetaClass:
         """A finite element form
 
         Notes:
-            Forms should normally be constructed using the forms.form
-            function and not using this class initialiser. This class is
-            combined with different base classes that depend on the
-            scalar type used in the Form.
+            Forms should normally be constructed using
+            :func:`forms.form` and not using this class initialiser.
+            This class is combined with different base classes that
+            depend on the scalar type used in the Form.
 
         Args:
             form: Compiled UFC form
@@ -50,7 +50,7 @@ class FormMetaClass:
         return self._ufc_form
 
     @property
-    def code(self):
+    def code(self) -> str:
         """C code strings"""
         return self._code
 
