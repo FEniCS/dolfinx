@@ -204,6 +204,9 @@ SparsityPattern::index_map(int dim) const
 //-----------------------------------------------------------------------------
 std::vector<std::int64_t> SparsityPattern::column_indices() const
 {
+  if (!_graph)
+    throw std::runtime_error("Sparsity pattern has not been finalised.");
+
   std::array range = _index_maps[1]->local_range();
   const std::int32_t local_size = range[1] - range[0];
   const std::int32_t num_ghosts = _col_ghosts.size();
@@ -214,13 +217,28 @@ std::vector<std::int64_t> SparsityPattern::column_indices() const
   return global;
 }
 //-----------------------------------------------------------------------------
+common::IndexMap SparsityPattern::column_index_map() const
+{
+  if (!_graph)
+    throw std::runtime_error("Sparsity pattern has not been finalised.");
+
+  std::array range = _index_maps[1]->local_range();
+  const std::int32_t local_size = range[1] - range[0];
+
+  return common::IndexMap(
+      _comm.comm(), local_size,
+      dolfinx::MPI::compute_graph_edges(
+          _comm.comm(),
+          std::set<int>(_col_ghost_owners.begin(), _col_ghost_owners.end())),
+      _col_ghosts, _col_ghost_owners);
+}
+//-----------------------------------------------------------------------------
 int SparsityPattern::block_size(int dim) const { return _bs[dim]; }
 //-----------------------------------------------------------------------------
 void SparsityPattern::assemble()
 {
   if (_graph)
     throw std::runtime_error("Sparsity pattern has already been finalised.");
-  assert(!_off_graph);
 
   common::Timer t0("SparsityPattern::assemble");
 
@@ -235,6 +253,7 @@ void SparsityPattern::assemble()
   const std::int32_t local_size1 = _index_maps[1]->size_local();
   const std::array local_range1 = _index_maps[1]->local_range();
   _col_ghosts = _index_maps[1]->ghosts();
+  _col_ghost_owners = _index_maps[1]->ghost_owner_rank();
 
   // Global to local map for ghost columns
   std::map<std::int64_t, std::int32_t> global_to_local;
@@ -264,7 +283,7 @@ void SparsityPattern::assemble()
     // Add to src size
     assert(ghost_to_neighbour_rank[i] < (int)data_per_proc.size());
     data_per_proc[ghost_to_neighbour_rank[i]]
-        += 2 * _row_cache[i + local_size0].size();
+        += 3 * _row_cache[i + local_size0].size();
   }
 
   // Compute send displacements
@@ -276,6 +295,7 @@ void SparsityPattern::assemble()
   // col_owner) triplets to send to neighborhood
   std::vector<int> insert_pos(send_disp);
   std::vector<std::int64_t> ghost_data(send_disp.back());
+  const int rank = dolfinx::MPI::rank(_comm.comm());
   for (int i = 0; i < num_ghosts0; ++i)
   {
     const int neighbour_rank = ghost_to_neighbour_rank[i];
@@ -287,11 +307,17 @@ void SparsityPattern::assemble()
       // Pack send data
       ghost_data[pos] = ghosts0[i];
       if (col_local < local_size1)
+      {
         ghost_data[pos + 1] = col_local + local_range1[0];
+        ghost_data[pos + 2] = rank;
+      }
       else
+      {
         ghost_data[pos + 1] = _col_ghosts[col_local - local_size1];
+        ghost_data[pos + 2] = _col_ghost_owners[col_local - local_size1];
+      }
 
-      insert_pos[neighbour_rank] += 2;
+      insert_pos[neighbour_rank] += 3;
     }
   }
 
@@ -303,10 +329,11 @@ void SparsityPattern::assemble()
 
   // Add data received from the neighborhood
   const std::vector<std::int64_t>& in_ghost_data = ghost_data_in.array();
-  for (std::size_t i = 0; i < in_ghost_data.size(); i += 2)
+  for (std::size_t i = 0; i < in_ghost_data.size(); i += 3)
   {
     const std::int32_t row_local = in_ghost_data[i] - local_range0[0];
     const std::int64_t col = in_ghost_data[i + 1];
+    const int owner = in_ghost_data[i + 2];
     if (col >= local_range1[0] and col < local_range1[1])
     {
       // Convert to local column index
@@ -320,6 +347,7 @@ void SparsityPattern::assemble()
       if (it.second)
       {
         _col_ghosts.push_back(col);
+        _col_ghost_owners.push_back(owner);
         ++local_i;
       }
       const std::int32_t col_local = it.first->second;
@@ -353,17 +381,10 @@ void SparsityPattern::assemble()
   std::partial_sum(adj_counts.begin(), adj_counts.end(),
                    adj_offsets.begin() + 1);
 
-  // FIXME: after assembly, there are no ghost rows, i.e. the IndexMap for rows
-  // should be non-overlapping. However, we are retaining the row overlap
-  // information and associated mapping, as this will be needed for matrix
-  // assembly.
-  //
-  // _index_maps[0] = std::make_shared<common::IndexMap>(comm, local_size0);
   _graph = std::make_shared<graph::AdjacencyList<std::int32_t>>(
       std::move(adj_data), std::move(adj_offsets));
 
-  // Column map increased due to received rows from other processes (see
-  // above)
+  // Column count increased due to received rows from other processes
   LOG(INFO) << "Column ghost size increased from "
             << _index_maps[1]->ghosts().size() << " to " << _col_ghosts.size()
             << "\n";

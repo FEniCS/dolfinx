@@ -98,8 +98,8 @@ public:
   }
 
 private:
-  // // Map describing the data layout
-  // std::shared_ptr<const common::IndexMap> _map;
+  // Map describing the data layout for rows and columns
+  std::vector<std::shared_ptr<const common::IndexMap>> _index_maps;
 
   // // Block size
   // int _bs;

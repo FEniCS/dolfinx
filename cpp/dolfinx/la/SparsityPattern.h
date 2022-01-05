@@ -95,6 +95,11 @@ public:
   /// including ghosts
   std::vector<std::int64_t> column_indices() const;
 
+  /// Compute IndexMap for columns after SparsityPattern assembly
+  /// @return IndexMap for all non-zero columns on this process, including
+  /// ghosts
+  common::IndexMap column_index_map() const;
+
   /// Return index map block size for dimension dim
   int block_size(int dim) const;
 
@@ -123,6 +128,8 @@ private:
 
   // Non-zero ghost columns in owned rows
   std::vector<std::int64_t> _col_ghosts;
+  // Owning process of ghost columns in owned rows
+  std::vector<std::int32_t> _col_ghost_owners;
 
   // Cache for unassembled entries on owned and unowned (ghost) rows
   std::vector<std::vector<std::int32_t>> _row_cache;
