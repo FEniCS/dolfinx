@@ -18,7 +18,7 @@ from dolfinx.fem import function
 from petsc4py import PETSc
 
 
-class Form:
+class FormMetaClass:
     def __init__(self, form, V: list[_cpp.fem.FunctionSpace], coeffs, constants,
                  subdomains: dict[_cpp.mesh.MeshTags_int32], mesh: _cpp.mesh.Mesh, code):
         """A finite element form
@@ -56,7 +56,7 @@ class Form:
 
 
 def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtype = PETSc.ScalarType,
-         form_compiler_parameters: dict = {}, jit_parameters: dict = {}) -> "dolfinx.fem.Form":
+         form_compiler_parameters: dict = {}, jit_parameters: dict = {}) -> FormMetaClass:
     """Create a DOLFINx Form or an array of Forms
 
     Args:
@@ -89,7 +89,7 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtyp
     else:
         raise NotImplementedError(f"Type {dtype} not supported.")
 
-    formcls = type("Form", (Form, ftype), {})
+    formcls = type("Form", (FormMetaClass, ftype), {})
 
     def _form(form):
         """"Compile a single UFL form"""
@@ -135,7 +135,7 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtyp
     return _create_form(form)
 
 
-_args = typing.Union[typing.Iterable[Form], typing.Iterable[typing.Iterable[Form]]]
+_args = typing.Union[typing.Iterable[FormMetaClass], typing.Iterable[typing.Iterable[FormMetaClass]]]
 
 
 def extract_function_spaces(forms: _args, index: int = 0) -> typing.Iterable[function.FunctionSpace]:

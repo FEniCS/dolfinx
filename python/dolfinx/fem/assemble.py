@@ -10,7 +10,6 @@ import contextlib
 import functools
 import typing
 
-import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import la
 from dolfinx import fem
@@ -20,9 +19,7 @@ from petsc4py import PETSc
 
 
 # -- Packing constants and coefficients --------------------------------------
-form_type = typing.Union[fem.Form, ufl.Form,
-                         typing.Sequence[fem.Form],
-                         typing.Sequence[ufl.Form]]
+form_type = typing.Union[fem.FormMetaClass, typing.Sequence[fem.FormMetaClass]]
 
 
 def pack_constants(form: form_type):
@@ -61,18 +58,18 @@ def pack_coefficients(form: form_type):
 
 # -- Vector instantiation ----------------------------------------------------
 
-def create_vector(L: fem.Form) -> PETSc.Vec:
+def create_vector(L: fem.FormMetaClass) -> PETSc.Vec:
     dofmap = L.function_spaces[0].dofmap
     return la.create_petsc_vector(dofmap.index_map, dofmap.index_map_bs)
 
 
-def create_vector_block(L: typing.List[fem.Form]) -> PETSc.Vec:
+def create_vector_block(L: typing.List[fem.FormMetaClass]) -> PETSc.Vec:
     maps = [(form.function_spaces[0].dofmap.index_map,
              form.function_spaces[0].dofmap.index_map_bs) for form in L]
     return _cpp.fem.petsc.create_vector_block(maps)
 
 
-def create_vector_nest(L: typing.List[fem.Form]) -> PETSc.Vec:
+def create_vector_nest(L: typing.List[fem.FormMetaClass]) -> PETSc.Vec:
     maps = [(form.function_spaces[0].dofmap.index_map,
              form.function_spaces[0].dofmap.index_map_bs) for form in L]
     return _cpp.fem.petsc.create_vector_nest(maps)
@@ -80,18 +77,18 @@ def create_vector_nest(L: typing.List[fem.Form]) -> PETSc.Vec:
 
 # -- Matrix instantiation ----------------------------------------------------
 
-def create_matrix(a: fem.Form, mat_type=None) -> PETSc.Mat:
+def create_matrix(a: fem.FormMetaClass, mat_type=None) -> PETSc.Mat:
     if mat_type is None:
         return _cpp.fem.petsc.create_matrix(a)
     else:
         return _cpp.fem.petsc.create_matrix(a, mat_type)
 
 
-def create_matrix_block(a: typing.List[typing.List[fem.Form]]) -> PETSc.Mat:
+def create_matrix_block(a: typing.List[typing.List[fem.FormMetaClass]]) -> PETSc.Mat:
     return _cpp.fem.petsc.create_matrix_block(a)
 
 
-def create_matrix_nest(a: typing.List[typing.List[fem.Form]]) -> PETSc.Mat:
+def create_matrix_nest(a: typing.List[typing.List[fem.FormMetaClass]]) -> PETSc.Mat:
     return _cpp.fem.petsc.create_matrix_nest(a)
 
 
@@ -100,7 +97,7 @@ Coefficients = collections.namedtuple('Coefficients', ['constants', 'coeffs'])
 # -- Scalar assembly ---------------------------------------------------------
 
 
-def assemble_scalar(M: fem.Form, coeffs=Coefficients(None, None)) -> PETSc.ScalarType:
+def assemble_scalar(M: fem.FormMetaClass, coeffs=Coefficients(None, None)) -> PETSc.ScalarType:
     """Assemble functional. The returned value is local and not
     accumulated across processes.
 
@@ -113,7 +110,7 @@ def assemble_scalar(M: fem.Form, coeffs=Coefficients(None, None)) -> PETSc.Scala
 # -- Vector assembly ---------------------------------------------------------
 
 @ functools.singledispatch
-def assemble_vector(L: fem.Form, coeffs=Coefficients(None, None)) -> PETSc.Vec:
+def assemble_vector(L: fem.FormMetaClass, coeffs=Coefficients(None, None)) -> PETSc.Vec:
     """Assemble linear form into a new PETSc vector. The returned vector
     is not finalised, i.e. ghost values are not accumulated on the
     owning processes.
@@ -130,7 +127,7 @@ def assemble_vector(L: fem.Form, coeffs=Coefficients(None, None)) -> PETSc.Vec:
 
 
 @ assemble_vector.register(PETSc.Vec)
-def _(b: PETSc.Vec, L: fem.Form, coeffs=Coefficients(None, None)) -> PETSc.Vec:
+def _(b: PETSc.Vec, L: fem.FormMetaClass, coeffs=Coefficients(None, None)) -> PETSc.Vec:
     """Assemble linear form into an existing PETSc vector. The vector is
     not zeroed before assembly and it is not finalised, i.e. ghost
     values are not accumulated on the owning processes.
@@ -144,7 +141,7 @@ def _(b: PETSc.Vec, L: fem.Form, coeffs=Coefficients(None, None)) -> PETSc.Vec:
 
 
 @ functools.singledispatch
-def assemble_vector_nest(L: fem.Form, coeffs=Coefficients(None, None)) -> PETSc.Vec:
+def assemble_vector_nest(L: fem.FormMetaClass, coeffs=Coefficients(None, None)) -> PETSc.Vec:
     """Assemble linear forms into a new nested PETSc (VecNest) vector.
     The returned vector is not finalised, i.e. ghost values are not
     accumulated on the owning processes.
@@ -160,7 +157,7 @@ def assemble_vector_nest(L: fem.Form, coeffs=Coefficients(None, None)) -> PETSc.
 
 
 @ assemble_vector_nest.register(PETSc.Vec)
-def _(b: PETSc.Vec, L: typing.List[fem.Form], coeffs=Coefficients(None, None)) -> PETSc.Vec:
+def _(b: PETSc.Vec, L: typing.List[fem.FormMetaClass], coeffs=Coefficients(None, None)) -> PETSc.Vec:
     """Assemble linear forms into a nested PETSc (VecNest) vector. The
     vector is not zeroed before assembly and it is not finalised, i.e.
     ghost values are not accumulated on the owning processes.
@@ -176,8 +173,8 @@ def _(b: PETSc.Vec, L: typing.List[fem.Form], coeffs=Coefficients(None, None)) -
 
 # FIXME: Revise this interface
 @ functools.singledispatch
-def assemble_vector_block(L: typing.List[fem.Form],
-                          a: typing.List[typing.List[fem.Form]],
+def assemble_vector_block(L: typing.List[fem.FormMetaClass],
+                          a: typing.List[typing.List[fem.FormMetaClass]],
                           bcs: typing.List[fem.DirichletBC] = [],
                           x0: typing.Optional[PETSc.Vec] = None,
                           scale: float = 1.0,
@@ -197,7 +194,7 @@ def assemble_vector_block(L: typing.List[fem.Form],
 
 @ assemble_vector_block.register(PETSc.Vec)
 def _(b: PETSc.Vec,
-      L: typing.List[fem.Form],
+      L: typing.List[fem.FormMetaClass],
       a,
       bcs: typing.List[fem.DirichletBC] = [],
       x0: typing.Optional[PETSc.Vec] = None,
@@ -249,7 +246,7 @@ def _(b: PETSc.Vec,
 
 
 @ functools.singledispatch
-def assemble_matrix(a: fem.Form, bcs: typing.List[fem.DirichletBC] = [],
+def assemble_matrix(a: fem.FormMetaClass, bcs: typing.List[fem.DirichletBC] = [],
                     diagonal: float = 1.0,
                     coeffs=Coefficients(None, None)) -> PETSc.Mat:
     """Assemble bilinear form into a matrix. The returned matrix is not
@@ -262,7 +259,7 @@ def assemble_matrix(a: fem.Form, bcs: typing.List[fem.DirichletBC] = [],
 
 @ assemble_matrix.register(PETSc.Mat)
 def _(A: PETSc.Mat,
-      a: fem.Form,
+      a: fem.FormMetaClass,
       bcs: typing.List[fem.DirichletBC] = [],
       diagonal: float = 1.0,
       coeffs=Coefficients(None, None)) -> PETSc.Mat:
@@ -282,7 +279,7 @@ def _(A: PETSc.Mat,
 
 # FIXME: Revise this interface
 @ functools.singledispatch
-def assemble_matrix_nest(a: typing.List[typing.List[fem.Form]],
+def assemble_matrix_nest(a: typing.List[typing.List[fem.FormMetaClass]],
                          bcs: typing.List[fem.DirichletBC] = [], mat_types=[],
                          diagonal: float = 1.0,
                          coeffs=Coefficients(None, None)) -> PETSc.Mat:
@@ -293,7 +290,7 @@ def assemble_matrix_nest(a: typing.List[typing.List[fem.Form]],
 
 
 @ assemble_matrix_nest.register(PETSc.Mat)
-def _(A: PETSc.Mat, a: typing.List[typing.List[fem.Form]],
+def _(A: PETSc.Mat, a: typing.List[typing.List[fem.FormMetaClass]],
       bcs: typing.List[fem.DirichletBC] = [], diagonal: float = 1.0,
       coeffs=Coefficients(None, None)) -> PETSc.Mat:
     """Assemble bilinear forms into matrix"""
@@ -309,7 +306,7 @@ def _(A: PETSc.Mat, a: typing.List[typing.List[fem.Form]],
 
 # FIXME: Revise this interface
 @ functools.singledispatch
-def assemble_matrix_block(a: typing.List[typing.List[fem.Form]],
+def assemble_matrix_block(a: typing.List[typing.List[fem.FormMetaClass]],
                           bcs: typing.List[fem.DirichletBC] = [],
                           diagonal: float = 1.0,
                           coeffs=Coefficients(None, None)) -> PETSc.Mat:
@@ -318,7 +315,7 @@ def assemble_matrix_block(a: typing.List[typing.List[fem.Form]],
     return assemble_matrix_block(A, a, bcs, diagonal, coeffs)
 
 
-def _extract_function_spaces(a: typing.List[typing.List[fem.Form]]):
+def _extract_function_spaces(a: typing.List[typing.List[fem.FormMetaClass]]):
     """From a rectangular array of bilinear forms, extraction the function spaces
     for each block row and block column
 
@@ -349,7 +346,7 @@ def _extract_function_spaces(a: typing.List[typing.List[fem.Form]]):
 
 
 @ assemble_matrix_block.register(PETSc.Mat)
-def _(A: PETSc.Mat, a: typing.List[typing.List[fem.Form]],
+def _(A: PETSc.Mat, a: typing.List[typing.List[fem.FormMetaClass]],
       bcs: typing.List[fem.DirichletBC] = [], diagonal: float = 1.0,
       coeffs=Coefficients(None, None)) -> PETSc.Mat:
     """Assemble bilinear forms into matrix"""
@@ -385,7 +382,7 @@ def _(A: PETSc.Mat, a: typing.List[typing.List[fem.Form]],
 
 # -- Modifiers for Dirichlet conditions ---------------------------------------
 
-def apply_lifting(b: PETSc.Vec, a: typing.List[fem.Form],
+def apply_lifting(b: PETSc.Vec, a: typing.List[fem.FormMetaClass],
                   bcs: typing.List[typing.List[fem.DirichletBC]],
                   x0: typing.Optional[typing.List[PETSc.Vec]] = [],
                   scale: float = 1.0, coeffs=Coefficients(None, None)) -> None:
@@ -412,7 +409,7 @@ def apply_lifting(b: PETSc.Vec, a: typing.List[fem.Form],
         _cpp.fem.apply_lifting(b_local.array_w, a, c[0], c[1], bcs, x0_r, scale)
 
 
-def apply_lifting_nest(b: PETSc.Vec, a: typing.List[typing.List[fem.Form]],
+def apply_lifting_nest(b: PETSc.Vec, a: typing.List[typing.List[fem.FormMetaClass]],
                        bcs: typing.List[fem.DirichletBC],
                        x0: typing.Optional[PETSc.Vec] = None,
                        scale: float = 1.0, coeffs=Coefficients(None, None)) -> PETSc.Vec:

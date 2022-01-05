@@ -21,7 +21,7 @@ from dolfinx.fem.function import (Constant, Expression, Function,
                                   FunctionSpace, TensorFunctionSpace,
                                   VectorFunctionSpace)
 from dolfinx.fem.formmanipulations import adjoint
-from dolfinx.fem.forms import Form, form, extract_function_spaces
+from dolfinx.fem.forms import FormMetaClass, form, extract_function_spaces
 from dolfinx.fem.assemble import (apply_lifting, apply_lifting_nest,
                                   assemble_matrix, assemble_matrix_block,
                                   assemble_matrix_nest, assemble_scalar,
@@ -53,6 +53,6 @@ __all__ = [
     "assemble_vector_block", "assemble_vector_nest",
     "assemble_matrix_block", "assemble_matrix_nest",
     "assemble_matrix", "set_bc", "set_bc_nest",
-    "DirichletBC", "dirichletbc", "bcs_by_block", "DofMap", "Form", "form", "IntegralType",
+    "DirichletBC", "dirichletbc", "bcs_by_block", "DofMap", "FormMetaClass", "form", "IntegralType",
     "adjoint", "LinearProblem", "locate_dofs_geometrical", "locate_dofs_topological",
     "NonlinearProblem", "pack_coefficients", "pack_constants", "extract_function_spaces"]

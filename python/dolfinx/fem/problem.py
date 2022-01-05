@@ -115,12 +115,12 @@ class LinearProblem():
         return self.u
 
     @property
-    def L(self) -> fem.Form:
+    def L(self) -> fem.FormMetaClass:
         """Get the compiled linear form"""
         return self._L
 
     @property
-    def a(self) -> fem.Form:
+    def a(self) -> fem.FormMetaClass:
         """Get the compiled bilinear form"""
         return self._a
 
@@ -187,12 +187,12 @@ class NonlinearProblem:
         self.bcs = bcs
 
     @property
-    def L(self) -> fem.Form:
+    def L(self) -> fem.FormMetaClass:
         """Get the compiled linear form (the residual)"""
         return self._L
 
     @property
-    def a(self) -> fem.Form:
+    def a(self) -> fem.FormMetaClass:
         """Get the compiled bilinear form (the Jacobian)"""
         return self._a
 
