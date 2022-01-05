@@ -186,7 +186,7 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   assert(mesh_vertex_index_map);
   std::vector<int32_t> submesh_owned_vertices
       = dolfinx::common::compute_owned_indices(submesh_vertices,
-                                               *mesh_vertex_index_map.get());
+                                               *mesh_vertex_index_map);
 
   // Create submesh vertex index map
   std::pair<common::IndexMap, std::vector<int32_t>>
@@ -205,8 +205,9 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   std::transform(submesh_vertex_index_map_pair.second.begin(),
                  submesh_vertex_index_map_pair.second.end(),
                  std::back_inserter(submesh_to_mesh_vertex_map),
-                 [mesh_vertex_index_map](std::int32_t vertex_index)
-                 { return mesh_vertex_index_map->size_local() + vertex_index; });
+                 [mesh_vertex_index_map](std::int32_t vertex_index) {
+                   return mesh_vertex_index_map->size_local() + vertex_index;
+                 });
 
   // Get the entities in the submesh that are owned by this process
   auto mesh_entity_index_map = mesh.topology().index_map(dim);
@@ -244,7 +245,6 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   for (std::int32_t e : entities)
   {
     xtl::span<const std::int32_t> vertices = mesh_e_to_v->links(e);
-
     for (std::int32_t v : vertices)
     {
       auto it = std::find(submesh_to_mesh_vertex_map.begin(),
@@ -256,7 +256,7 @@ mesh::create_submesh(const Mesh& mesh, int dim,
     submesh_e_to_v_offsets.push_back(submesh_e_to_v_vec.size());
   }
   auto submesh_e_to_v = std::make_shared<graph::AdjacencyList<std::int32_t>>(
-      submesh_e_to_v_vec, submesh_e_to_v_offsets);
+      std::move(submesh_e_to_v_vec), std::move(submesh_e_to_v_offsets));
 
   // Create submesh topology
   mesh::Topology submesh_topology(mesh.comm(), entity_type);
@@ -280,7 +280,7 @@ mesh::create_submesh(const Mesh& mesh, int dim,
 
   // Get the geometry dofs in the submesh owned by this process
   auto submesh_owned_x_dofs = dolfinx::common::compute_owned_indices(
-      submesh_x_dofs, *mesh_geometry_dof_index_map.get());
+      submesh_x_dofs, *mesh_geometry_dof_index_map);
 
   // Create submesh geometry index map
   std::pair<common::IndexMap, std::vector<int32_t>> submesh_x_dof_index_map_pair
@@ -294,12 +294,12 @@ mesh::create_submesh(const Mesh& mesh, int dim,
                                                  submesh_owned_x_dofs.end());
   submesh_to_mesh_x_dof_map.reserve(submesh_x_dof_index_map->size_local()
                                     + submesh_x_dof_index_map->num_ghosts());
-  std::transform(submesh_x_dof_index_map_pair.second.begin(),
-                 submesh_x_dof_index_map_pair.second.end(),
-                 std::back_inserter(submesh_to_mesh_x_dof_map),
-                 [mesh_geometry_dof_index_map](std::int32_t x_dof_index) {
-                   return mesh_geometry_dof_index_map->size_local() + x_dof_index;
-                 });
+  std::transform(
+      submesh_x_dof_index_map_pair.second.begin(),
+      submesh_x_dof_index_map_pair.second.end(),
+      std::back_inserter(submesh_to_mesh_x_dof_map),
+      [mesh_geometry_dof_index_map](std::int32_t x_dof_index)
+      { return mesh_geometry_dof_index_map->size_local() + x_dof_index; });
 
   // Create submesh geometry coordinates
   xtl::span<const double> mesh_x = mesh.geometry().x();
@@ -345,13 +345,15 @@ mesh::create_submesh(const Mesh& mesh, int dim,
 
   // Submesh geometry input_global_indices
   // TODO Check this
-  const std::vector<std::int64_t>& mesh_igi = mesh.geometry().input_global_indices();
+  const std::vector<std::int64_t>& mesh_igi
+      = mesh.geometry().input_global_indices();
   std::vector<std::int64_t> submesh_igi;
   submesh_igi.reserve(submesh_to_mesh_x_dof_map.size());
-  std::transform(
-      submesh_to_mesh_x_dof_map.begin(), submesh_to_mesh_x_dof_map.end(),
-      std::back_inserter(submesh_igi),
-      [&mesh_igi](std::int32_t submesh_x_dof) { return mesh_igi[submesh_x_dof]; });
+  std::transform(submesh_to_mesh_x_dof_map.begin(),
+                 submesh_to_mesh_x_dof_map.end(),
+                 std::back_inserter(submesh_igi),
+                 [&mesh_igi](std::int32_t submesh_x_dof)
+                 { return mesh_igi[submesh_x_dof]; });
 
   // Create geometry
   mesh::Geometry submesh_geometry(

@@ -26,7 +26,7 @@ class IndexMap;
 /// index map, this function returns the indices owned by this process,
 /// including indices that might have been in the list of indices on
 /// another processes.
-/// @param[in] indices Vector of indices
+/// @param[in] indices List of indices
 /// @param[in] map The index map
 /// @return Vector of indices owned by the process
 std::vector<int32_t>
