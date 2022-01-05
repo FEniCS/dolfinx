@@ -27,7 +27,8 @@ namespace dolfinx::la
 {
 
 /// This class provides a sparsity pattern data structure that can be
-/// used to initialize sparse matrices.
+/// used to initialize sparse matrices. After assembly, column indices are
+/// always sorted in increasing order.
 
 class SparsityPattern
 {
@@ -103,7 +104,7 @@ public:
   /// Return index map block size for dimension dim
   int block_size(int dim) const;
 
-  /// Return number of local nonzeros
+  /// Return total number of local nonzeros
   std::int64_t num_nonzeros() const;
 
   /// Number of non-zeros in owned columns (diagonal block) on a given row
