@@ -7,9 +7,6 @@
 #include "utils.h"
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>
-#include <iostream>
-#include <sstream>
-#include <string>
 #include <vector>
 
 std::vector<int32_t> dolfinx::common::compute_owned_indices(
