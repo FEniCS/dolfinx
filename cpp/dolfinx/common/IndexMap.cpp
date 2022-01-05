@@ -208,14 +208,19 @@ std::vector<int32_t> dolfinx::common::compute_owned_indices(
   // Get the local index from the global indices received from other
   // processes and add to `owned`
   const std::vector<std::int64_t>& global_indices = map.global_indices();
-  std::transform(data_in.array().begin(), data_in.array().end(),
+  std::vector<std::pair<std::int64_t, std::int32_t>> global_to_local_vec(
+      global_indices.size());
+  for (std::size_t i = 0; i < global_indices.size(); ++i)
+    global_to_local_vec[i] = {global_indices[i], i};
+  const std::unordered_map global_to_local(global_to_local_vec.begin(),
+                                           global_to_local_vec.end());
+  std::transform(data_in.array().cbegin(), data_in.array().cend(),
                  std::back_inserter(owned),
-                 [&global_indices](std::int64_t global_index)
+                 [&global_to_local](std::int64_t global_index)
                  {
-                   auto it = std::find(global_indices.begin(),
-                                       global_indices.end(), global_index);
-                   assert(it != global_indices.end());
-                   return std::distance(global_indices.begin(), it);
+                   auto it = global_to_local.find(global_index);
+                   assert(it != global_to_local.end());
+                   return it->second;
                  });
 
   // Sort `owned` and remove non-unique entries (we could have received
