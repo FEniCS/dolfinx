@@ -101,7 +101,10 @@ public:
   /// Return number of local nonzeros
   std::int64_t num_nonzeros() const;
 
+  /// Number of non-zeros in owned columns (diagonal block) on a given row
   std::int32_t nnz_diag(int row) const;
+
+  /// Number of non-zeros in unowned columns (off-diagonal block) on a given row
   std::int32_t nnz_off_diag(int row) const;
 
   /// Sparsity pattern graph. Uses local indices for the columns.
