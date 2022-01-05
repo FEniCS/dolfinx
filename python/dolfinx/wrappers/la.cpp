@@ -42,8 +42,7 @@ void declare_objects(py::module& m, const std::string& type)
       .def_property_readonly("map", &dolfinx::la::Vector<T>::map)
       .def_property_readonly("bs", &dolfinx::la::Vector<T>::bs)
       .def_property_readonly("array",
-                             [](dolfinx::la::Vector<T>& self)
-                             {
+                             [](dolfinx::la::Vector<T>& self) {
                                xtl::span<T> array = self.mutable_array();
                                return py::array_t<T>(array.size(), array.data(),
                                                      py::cast(self));
@@ -61,15 +60,17 @@ void petsc_module(py::module& m)
         "Create a ghosted PETSc Vec for index map.");
   m.def(
       "create_vector_wrap",
-      [](dolfinx::la::Vector<PetscScalar, std::allocator<PetscScalar>>& x)
-      { return dolfinx::la::petsc::create_vector_wrap(x); },
+      [](dolfinx::la::Vector<PetscScalar, std::allocator<PetscScalar>>& x) {
+        return dolfinx::la::petsc::create_vector_wrap(x);
+      },
       py::return_value_policy::take_ownership,
       "Create a ghosted PETSc Vec that wraps a DOLFINx Vector");
   m.def(
       "create_matrix",
       [](dolfinx_wrappers::MPICommWrapper comm,
-         const dolfinx::la::SparsityPattern& p, const std::string& type)
-      { return dolfinx::la::petsc::create_matrix(comm.get(), p, type); },
+         const dolfinx::la::SparsityPattern& p, const std::string& type) {
+        return dolfinx::la::petsc::create_matrix(comm.get(), p, type);
+      },
       py::return_value_policy::take_ownership, py::arg("comm"), py::arg("p"),
       py::arg("type") = std::string(),
       "Create a PETSc Mat from sparsity pattern.");
@@ -84,8 +85,7 @@ void petsc_module(py::module& m)
          const std::vector<py::array_t<PetscScalar, py::array::c_style>>& x_b,
          const std::vector<std::pair<
              std::reference_wrapper<const dolfinx::common::IndexMap>, int>>&
-             maps)
-      {
+             maps) {
         std::vector<xtl::span<const PetscScalar>> _x_b;
         for (auto& array : x_b)
           _x_b.emplace_back(array.data(), array.size());
@@ -98,8 +98,7 @@ void petsc_module(py::module& m)
       [](const Vec x,
          const std::vector<std::pair<
              std::reference_wrapper<const dolfinx::common::IndexMap>, int>>&
-             maps)
-      {
+             maps) {
         std::vector<std::vector<PetscScalar>> vecs
             = dolfinx::la::petsc::get_local_vectors(x, maps);
         std::vector<py::array> ret;
@@ -128,8 +127,9 @@ void la(py::module& m)
           [](const MPICommWrapper comm,
              const std::array<std::shared_ptr<const dolfinx::common::IndexMap>,
                               2>& maps,
-             const std::array<int, 2>& bs)
-          { return dolfinx::la::SparsityPattern(comm.get(), maps, bs); }))
+             const std::array<int, 2>& bs) {
+            return dolfinx::la::SparsityPattern(comm.get(), maps, bs);
+          }))
       .def(py::init(
           [](const MPICommWrapper comm,
              const std::vector<std::vector<const dolfinx::la::SparsityPattern*>>
@@ -148,19 +148,13 @@ void la(py::module& m)
       .def("insert",
            [](dolfinx::la::SparsityPattern& self,
               const py::array_t<std::int32_t, py::array::c_style>& rows,
-              const py::array_t<std::int32_t, py::array::c_style>& cols)
-           {
+              const py::array_t<std::int32_t, py::array::c_style>& cols) {
              self.insert(xtl::span(rows.data(), rows.size()),
                          xtl::span(cols.data(), cols.size()));
            })
       .def("insert_diagonal", &dolfinx::la::SparsityPattern::insert_diagonal)
-      .def_property_readonly("diagonal_pattern",
-                             &dolfinx::la::SparsityPattern::diagonal_pattern,
-                             py::return_value_policy::reference_internal)
-      .def_property_readonly(
-          "off_diagonal_pattern",
-          &dolfinx::la::SparsityPattern::off_diagonal_pattern,
-          py::return_value_policy::reference_internal);
+      .def_property_readonly("graph", &dolfinx::la::SparsityPattern::graph,
+                             py::return_value_policy::reference_internal);
 
   py::enum_<dolfinx::la::Norm>(m, "Norm")
       .value("l1", dolfinx::la::Norm::l1)
