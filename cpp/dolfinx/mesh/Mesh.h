@@ -148,7 +148,8 @@ Mesh create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
                  const xt::xtensor<double, 2>& x, GhostMode ghost_mode,
                  const CellPartitionFunction& cell_partitioner);
 
-/// Create a submesh consisting of a subset of entities in a mesh
+/// Create a submesh consisting of a subset of entities in a mesh. Entity `i`
+/// in the submesh corresponds to `entities[i]` in the mesh.
 /// @param[in] mesh The mesh
 /// @param[in] dim Entity dimension
 /// @param[in] entities Vector of entities in the mesh
