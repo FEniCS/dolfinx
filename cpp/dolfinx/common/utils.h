@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "IndexMap.h"
 #include <algorithm>
 #include <boost/functional/hash.hpp>
 #include <dolfinx/common/MPI.h>
@@ -95,4 +96,5 @@ std::int64_t hash_global(const MPI_Comm comm, const T& x)
 
   return global_hash;
 }
+
 } // namespace dolfinx::common
