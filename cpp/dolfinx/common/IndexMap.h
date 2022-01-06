@@ -22,6 +22,17 @@ namespace dolfinx::common
 // Forward declaration
 class IndexMap;
 
+/// Given a vector of indices (local numbering, owned or ghost) and an
+/// index map, this function returns the indices owned by this process,
+/// including indices that might have been in the list of indices on
+/// another processes.
+/// @param[in] indices List of indices
+/// @param[in] map The index map
+/// @return Vector of indices owned by the process
+std::vector<int32_t>
+compute_owned_indices(const xtl::span<const std::int32_t>& indices,
+                      const IndexMap& map);
+
 /// Compute layout data and ghost indices for a stacked (concatenated)
 /// index map, i.e. 'splice' multiple maps into one. Communication is
 /// required to compute the new ghost indices.
