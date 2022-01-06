@@ -71,8 +71,9 @@ public:
         for (std::size_t c = 0; c < cols.size(); ++c)
         {
           // Find position of column index
-          auto it = std::find(cit0, cit1, cols[c]);
+          auto it = std::lower_bound(cit0, cit1, cols[c]);
           assert(it != cit1);
+          assert(*it == cols[c]);
           std::size_t d = std::distance(_cols.begin(), it);
           _data[d] = op(_data[d], xr[c]);
         }
@@ -108,19 +109,15 @@ public:
   /// @return Dense copy of the matrix
   xt::xtensor<T, 2> to_dense() const
   {
-    std::int32_t nrows = _row_ptr.size() - 1;
-    std::int32_t ncols
+    const std::int32_t nrows = _row_ptr.size() - 1;
+    assert(nrows == _index_maps[0]->size_local());
+    const std::int32_t ncols
         = _index_maps[1]->size_local() + _index_maps[1]->num_ghosts();
     xt::xtensor<T, 2> A = xt::zeros<T>({nrows, ncols});
     for (std::size_t r = 0; r < nrows; ++r)
     {
-      auto cit0 = std::next(_cols.begin(), _row_ptr[r]);
-      auto cit1 = std::next(_cols.begin(), _row_ptr[r + 1]);
-      for (auto it = cit0; it != cit1; ++it)
-      {
-        std::size_t pos = std::distance(_cols.begin(), it);
-        A(r, *it) = _data[pos];
-      }
+      for (int j = _row_ptr[r]; j < _row_ptr[r + 1]; ++j)
+        A(r, _cols[j]) = _data[j];
     }
 
     return A;
@@ -241,8 +238,9 @@ public:
       auto cit1 = std::next(_cols.begin(), _row_ptr[local_row + 1]);
 
       // Find position of column index and insert data
-      auto cit = std::find(cit0, cit1, local_col);
+      auto cit = std::lower_bound(cit0, cit1, local_col);
       assert(cit != cit1);
+      assert(*cit == local_col);
       std::size_t d = std::distance(_cols.begin(), cit);
       _data[d] = op(_data[d], ghost_value_data_in[i]);
     }
