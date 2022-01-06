@@ -203,14 +203,23 @@ public:
     for (std::int64_t global_i : ghosts1)
       global_to_local.insert({global_i, local_i++});
 
+    assert(ghost_index_data_in.size() == 2 * ghost_value_data_in.size());
+
     for (std::size_t i = 0; i < ghost_value_data_in.size(); ++i)
     {
-      const std::int32_t local_row = ghost_index_data_in[i] - local_range0[0];
+      // Row must be on this process
+      const std::int32_t local_row
+          = ghost_index_data_in[2 * i] - local_range0[0];
       assert(local_row >= 0 and local_row < local_size0);
-      const auto it = global_to_local.find(ghost_index_data_in[i + 1]);
-      assert(it != global_to_local.end());
-      const std::int32_t local_col = it->second;
 
+      // Column may be owned or unowned
+      std::int32_t local_col = ghost_index_data_in[2 * i + 1] - local_range1[0];
+      if (local_col < 0 or local_col >= local_size1)
+      {
+        const auto it = global_to_local.find(ghost_index_data_in[2 * i + 1]);
+        assert(it != global_to_local.end());
+        local_col = it->second;
+      }
       auto cit0 = std::next(_cols.begin(), _row_ptr[local_row]);
       auto cit1 = std::next(_cols.begin(), _row_ptr[local_row + 1]);
 
@@ -218,7 +227,7 @@ public:
       auto cit = std::find(cit0, cit1, local_col);
       assert(cit != cit1);
       std::size_t d = std::distance(_cols.begin(), cit);
-      _data[d] += op(_data[d], ghost_value_data_in[i]);
+      _data[d] = op(_data[d], ghost_value_data_in[i]);
     }
 
     // Clear cache
