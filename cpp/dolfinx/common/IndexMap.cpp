@@ -156,6 +156,12 @@ std::vector<int32_t> dolfinx::common::compute_owned_indices(
   // in map.ghosts()
   std::vector<std::int32_t> owned;
   std::vector<std::int32_t> ghost_indices;
+  // Get number of owned and ghost indices in indicies list to reserve vectors
+  auto is_owned = [&map](std::int32_t index){ return index < map.size_local(); };
+  const int num_owned = std::count_if(indices.begin(), indices.end(), is_owned);
+  const int num_ghost = indices.size() - num_owned;
+  owned.reserve(num_owned);
+  ghost_indices.reserve(num_ghost);
   for (std::size_t i = 0; i < indices.size(); ++i)
   {
     if (indices[i] < map.size_local())
