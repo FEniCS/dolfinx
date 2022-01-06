@@ -7,16 +7,15 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+import typing
 
-if TYPE_CHECKING:
+if typing.TYPE_CHECKING:
     from dolfinx.fem.forms import FormMetaClass
     from dolfinx.fem.dirichletbc import bcs_by_block, DirichletBCMetaClass
 
 import collections
 import contextlib
 import functools
-import typing
 
 from dolfinx import cpp as _cpp
 from dolfinx import la
