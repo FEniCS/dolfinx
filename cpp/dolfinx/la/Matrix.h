@@ -88,6 +88,21 @@ public:
     }
   }
 
+  /// Insertion functor with a general operation
+  /// @param A Matrix to insert into
+  /// @param op Operation (usually add or set)
+  static std::function<int(int nr, const int* r, int nc, const int* c,
+                           const T* data)>
+  mat_insert_values(Matrix& A, std::function<T(T, T)> op)
+  {
+    return
+        [&A, &op](int nr, const int* r, int nc, const int* c, const T* data) {
+          A.add(tcb::span<const T>(data, nr * nc), tcb::span<const int>(r, nr),
+                tcb::span<const int>(c, nc), op);
+          return 0;
+        };
+  }
+
   /// Convert to a dense matrix
   /// @return Dense copy of the matrix
   xt::xtensor<T, 2> to_dense() const
