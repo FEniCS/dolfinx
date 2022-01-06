@@ -18,7 +18,6 @@ import numpy as np
 import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import jit
-from dolfinx.fem import function
 
 from petsc4py import PETSc
 
@@ -140,7 +139,8 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtyp
     return _create_form(form)
 
 
-def extract_function_spaces(forms: typing.Union[typing.Iterable[FormMetaClass], typing.Iterable[typing.Iterable[FormMetaClass]]],
+def extract_function_spaces(forms: typing.Union[typing.Iterable[FormMetaClass],
+                                                typing.Iterable[typing.Iterable[FormMetaClass]]],
                             index: int = 0) -> typing.Iterable[function.FunctionSpace]:
     """Extract common function spaces from an array of forms. If `forms`
     is a list of linear form, this function returns of list of the the

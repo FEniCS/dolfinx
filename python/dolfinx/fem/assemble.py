@@ -11,7 +11,7 @@ import typing
 
 if typing.TYPE_CHECKING:
     from dolfinx.fem.forms import FormMetaClass
-    from dolfinx.fem.dirichletbc import bcs_by_block, DirichletBCMetaClass
+    from dolfinx.fem.dirichletbc import DirichletBCMetaClass
 
 import collections
 import contextlib

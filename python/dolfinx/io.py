@@ -11,10 +11,9 @@ import typing
 
 import numpy as np
 
-import dolfinx
 import ufl
 from dolfinx import cpp as _cpp
-from dolfinx import fem
+from dolfinx.fem import Function
 from dolfinx.cpp.io import distribute_entity_data
 from dolfinx.cpp.io import perm_gmsh as cell_perm_gmsh
 from dolfinx.mesh import GhostMode, Mesh
@@ -35,7 +34,7 @@ class VTKFile(_cpp.io.VTKFile):
         """Write mesh to file for a given time (default 0.0)"""
         self.write(mesh, t)
 
-    def write_function(self, u: typing.Union[typing.List[fem.Function], fem.Function], t: float = 0.0) -> None:
+    def write_function(self, u: typing.Union[typing.List[Function], Function], t: float = 0.0) -> None:
         """
         Write a single function or a list of functions to file for a given time (default 0.0)
         """
