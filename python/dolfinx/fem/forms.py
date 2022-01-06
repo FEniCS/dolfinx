@@ -5,7 +5,12 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
+from __future__ import annotations
+
 import typing
+
+if typing.TYPE_CHECKING:
+    from dolfinx.fem import function
 
 import cffi
 import numpy as np
@@ -135,10 +140,8 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtyp
     return _create_form(form)
 
 
-_args = typing.Union[typing.Iterable[FormMetaClass], typing.Iterable[typing.Iterable[FormMetaClass]]]
-
-
-def extract_function_spaces(forms: _args, index: int = 0) -> typing.Iterable[function.FunctionSpace]:
+def extract_function_spaces(forms: typing.Union[typing.Iterable[FormMetaClass], typing.Iterable[typing.Iterable[FormMetaClass]]],
+                            index: int = 0) -> typing.Iterable[function.FunctionSpace]:
     """Extract common function spaces from an array of forms. If `forms`
     is a list of linear form, this function returns of list of the the
     corresponding test functions. If `forms` is a 2D array of bilinear

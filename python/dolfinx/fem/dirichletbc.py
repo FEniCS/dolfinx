@@ -7,6 +7,13 @@
 """Support for representing Dirichlet boundary conditions that are enforced
 via modification of linear systems."""
 
+from __future__ import annotations
+
+import typing
+
+if typing.TYPE_CHECKING:
+    from dolfinx.fem.function import Constant, Function, FunctionSpace
+
 import collections.abc
 import types
 import typing
@@ -15,7 +22,6 @@ import numpy as np
 
 import ufl
 from dolfinx import cpp as _cpp
-from dolfinx.fem.function import Constant, Function, FunctionSpace
 
 
 def locate_dofs_geometrical(V: typing.Iterable[typing.Union[_cpp.fem.FunctionSpace, FunctionSpace]],

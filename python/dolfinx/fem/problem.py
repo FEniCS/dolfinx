@@ -5,7 +5,13 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
+from __future__ import annotations
+
 import typing
+
+if typing.TYPE_CHECKING:
+    from dolfinx.fem.forms import FormMetaClass
+    from dolfinx.fem.dirichletbc import DirichletBCMetaClass
 
 import ufl
 from dolfinx import cpp as _cpp
@@ -20,7 +26,7 @@ class LinearProblem():
 
     """
 
-    def __init__(self, a: ufl.Form, L: ufl.Form, bcs: typing.List[fem.DirichletBCMetaClass] = [],
+    def __init__(self, a: ufl.Form, L: ufl.Form, bcs: typing.List[DirichletBCMetaClass] = [],
                  u: fem.Function = None, petsc_options={}, form_compiler_parameters={}, jit_parameters={}):
         """Initialize solver for a linear variational problem.
 
@@ -115,12 +121,12 @@ class LinearProblem():
         return self.u
 
     @property
-    def L(self) -> fem.FormMetaClass:
+    def L(self) -> FormMetaClass:
         """Get the compiled linear form"""
         return self._L
 
     @property
-    def a(self) -> fem.FormMetaClass:
+    def a(self) -> FormMetaClass:
         """Get the compiled bilinear form"""
         return self._a
 
@@ -146,7 +152,7 @@ class NonlinearProblem:
 
     """
 
-    def __init__(self, F: ufl.form.Form, u: fem.Function, bcs: typing.List[fem.DirichletBCMetaClass] = [],
+    def __init__(self, F: ufl.form.Form, u: fem.Function, bcs: typing.List[DirichletBCMetaClass] = [],
                  J: ufl.form.Form = None, form_compiler_parameters={}, jit_parameters={}):
         """Initialize class that sets up structures for solving the
         non-linear problem using Newton's method, dF/du(u) du = -F(u)
@@ -187,12 +193,12 @@ class NonlinearProblem:
         self.bcs = bcs
 
     @property
-    def L(self) -> fem.FormMetaClass:
+    def L(self) -> FormMetaClass:
         """Get the compiled linear form (the residual)"""
         return self._L
 
     @property
-    def a(self) -> fem.FormMetaClass:
+    def a(self) -> FormMetaClass:
         """Get the compiled bilinear form (the Jacobian)"""
         return self._a
 

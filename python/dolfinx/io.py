@@ -17,7 +17,7 @@ from dolfinx import cpp as _cpp
 from dolfinx import fem
 from dolfinx.cpp.io import distribute_entity_data
 from dolfinx.cpp.io import perm_gmsh as cell_perm_gmsh
-from dolfinx.mesh import GhostMode
+from dolfinx.mesh import GhostMode, Mesh
 
 __all__ = ["VTKFile", "XDMFFile", "cell_perm_gmsh", "distribute_entity_data"]
 
@@ -31,7 +31,7 @@ class VTKFile(_cpp.io.VTKFile):
 
     """
 
-    def write_mesh(self, mesh: dolfinx.mesh.Mesh, t: float = 0.0) -> None:
+    def write_mesh(self, mesh: Mesh, t: float = 0.0) -> None:
         """Write mesh to file for a given time (default 0.0)"""
         self.write(mesh, t)
 
@@ -49,7 +49,7 @@ class VTKFile(_cpp.io.VTKFile):
 
 
 class XDMFFile(_cpp.io.XDMFFile):
-    def write_mesh(self, mesh: dolfinx.mesh.Mesh) -> None:
+    def write_mesh(self, mesh: Mesh) -> None:
         """Write mesh to file for a given time (default 0.0)"""
         super().write_mesh(mesh)
 
@@ -57,7 +57,7 @@ class XDMFFile(_cpp.io.XDMFFile):
         u_cpp = getattr(u, "_cpp_object", u)
         super().write_function(u_cpp, t, mesh_xpath)
 
-    def read_mesh(self, ghost_mode=GhostMode.shared_facet, name="mesh", xpath="/Xdmf/Domain") -> dolfinx.mesh.Mesh:
+    def read_mesh(self, ghost_mode=GhostMode.shared_facet, name="mesh", xpath="/Xdmf/Domain") -> Mesh:
         """Read mesh data from file"""
         cell_shape, cell_degree = super().read_cell_type(name, xpath)
         cells = super().read_topology_data(name, xpath)
@@ -73,7 +73,7 @@ class XDMFFile(_cpp.io.XDMFFile):
         mesh.name = name
 
         domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell, cell_degree))
-        return dolfinx.mesh.Mesh.from_cpp(mesh, domain)
+        return Mesh.from_cpp(mesh, domain)
 
     def read_meshtags(self, mesh, name, xpath="/Xdmf/Domain"):
         return super().read_meshtags(mesh, name, xpath)

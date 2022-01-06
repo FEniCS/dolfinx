@@ -5,17 +5,23 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Methods for solving nonlinear equations."""
 
+from __future__ import annotations
+
+import typing
+
+if typing.TYPE_CHECKING:
+    from dolfinx.fem.problem import NonlinearProblem
+    from mpi4py import MPI
+    from petsc4py import PETSc
+
 import types
 
 from dolfinx import cpp as _cpp
 from dolfinx import fem
 
-import mpi4py
-from petsc4py import PETSc
-
 
 class NewtonSolver(_cpp.nls.NewtonSolver):
-    def __init__(self, comm: mpi4py.MPI.Intracomm, problem: fem.NonlinearProblem):
+    def __init__(self, comm: MPI.Intracomm, problem: NonlinearProblem):
         """
         Create a Newton solver for a given MPI communicator and non-linear problem.
         """

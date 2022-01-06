@@ -5,7 +5,13 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Collection of functions and function spaces"""
 
+from __future__ import annotations
+
 import typing
+
+if typing.TYPE_CHECKING:
+    from dolfinx.mesh import Mesh
+
 import warnings
 from functools import singledispatch
 
@@ -18,7 +24,6 @@ import ufl.algorithms.analysis
 from dolfinx import cpp as _cpp
 from dolfinx import jit
 from dolfinx.fem import dofmap
-from dolfinx.mesh import Mesh
 
 from petsc4py import PETSc
 
@@ -208,7 +213,7 @@ class Function(ufl.Coefficient):
     """
 
     def __init__(self,
-                 V: "FunctionSpace",
+                 V: FunctionSpace,
                  x: typing.Optional[typing.Union[_cpp.la.Vector_float64, _cpp.la.Vector_complex128]] = None,
                  name: typing.Optional[str] = None,
                  dtype=PETSc.ScalarType):
@@ -245,7 +250,7 @@ class Function(ufl.Coefficient):
         self._petsc_x = None
 
     @property
-    def function_space(self) -> "FunctionSpace":
+    def function_space(self) -> FunctionSpace:
         """The FunctionSpace that the Function is defined on"""
         return self._V
 
@@ -338,7 +343,7 @@ class Function(ufl.Coefficient):
     def compute_point_values(self):
         return self._cpp_object.compute_point_values()
 
-    def copy(self) -> "Function":
+    def copy(self) -> Function:
         """Return a copy of the Function. The FunctionSpace is shared and the
         degree-of-freedom vector is copied.
 
@@ -402,7 +407,7 @@ class Function(ufl.Coefficient):
             raise RuntimeError("No subfunctions to extract")
         return tuple(self.sub(i) for i in range(num_sub_spaces))
 
-    def collapse(self) -> "Function":
+    def collapse(self) -> Function:
         u_collapsed = self._cpp_object.collapse()
         V_collapsed = FunctionSpace(None, self.ufl_element(),
                                     u_collapsed.function_space)
@@ -457,7 +462,7 @@ class FunctionSpace(ufl.FunctionSpace):
         # Initialize the cpp.FunctionSpace
         self._cpp_object = _cpp.fem.FunctionSpace(mesh, cpp_element, cpp_dofmap)
 
-    def clone(self) -> "FunctionSpace":
+    def clone(self) -> FunctionSpace:
         """Return a new FunctionSpace :math:`W` which shares data with this
         FunctionSpace :math:`V`, but with a different unique integer ID.
 
@@ -479,7 +484,7 @@ class FunctionSpace(ufl.FunctionSpace):
         """Number of sub spaces"""
         return self.element.num_sub_elements
 
-    def sub(self, i: int) -> "FunctionSpace":
+    def sub(self, i: int) -> FunctionSpace:
         """Return the i-th sub space."""
         assert self.ufl_element().num_sub_elements() > i
         sub_element = self.ufl_element().sub_elements()[i]
@@ -532,7 +537,7 @@ class FunctionSpace(ufl.FunctionSpace):
         return self._cpp_object.element
 
     @property
-    def dofmap(self) -> "dofmap.DofMap":
+    def dofmap(self) -> dofmap.DofMap:
         """Degree-of-freedom map associated with the function space."""
         return dofmap.DofMap(self._cpp_object.dofmap)
 
@@ -567,10 +572,8 @@ class FunctionSpace(ufl.FunctionSpace):
         return self._cpp_object.tabulate_dof_coordinates()
 
 
-def VectorFunctionSpace(mesh: Mesh,
-                        element: ElementMetaData,
-                        dim=None,
-                        restriction=None) -> "FunctionSpace":
+def VectorFunctionSpace(mesh: Mesh, element: ElementMetaData, dim=None,
+                        restriction=None) -> FunctionSpace:
     """Create vector finite element (composition of scalar elements) function space."""
 
     e = ElementMetaData(*element)
@@ -578,11 +581,8 @@ def VectorFunctionSpace(mesh: Mesh,
     return FunctionSpace(mesh, ufl_element)
 
 
-def TensorFunctionSpace(mesh: Mesh,
-                        element: ElementMetaData,
-                        shape=None,
-                        symmetry: bool = None,
-                        restriction=None) -> "FunctionSpace":
+def TensorFunctionSpace(mesh: Mesh, element: ElementMetaData, shape=None,
+                        symmetry: bool = None, restriction=None) -> FunctionSpace:
     """Create tensor finite element (composition of scalar elements) function space."""
 
     e = ElementMetaData(*element)

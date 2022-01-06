@@ -6,7 +6,14 @@
 
 """Graph module"""
 
-import numpy as np
+from __future__ import annotations
+
+import typing
+
+if typing.TYPE_CHECKING:
+    import numpy as np
+    from dolfinx.fem.forms import FormMetaClass
+
 
 from dolfinx import cpp as _cpp
 from dolfinx.cpp.graph import partitioner
