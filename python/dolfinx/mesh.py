@@ -181,6 +181,15 @@ def create_mesh(comm: _MPI.Comm, cells: typing.Union[np.ndarray, _cpp.graph.Adja
     return Mesh.from_cpp(mesh, domain)
 
 
+def create_submesh(mesh, dim, entities):
+    submesh, vertex_map, geom_map = _cpp.mesh.create_submesh(mesh, dim, entities)
+    submesh_ufl_cell = ufl.Cell(submesh.topology.cell_name(),
+                                geometric_dimension=submesh.geometry.dim)
+    # FIXME Don't hard code degree (and maybe Lagrange?)
+    submesh_domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell=submesh_ufl_cell, degree=1))
+    return (Mesh.from_cpp(submesh, submesh_domain), vertex_map, geom_map)
+
+
 def MeshTags(mesh: Mesh, dim: int, indices: np.ndarray, values: np.ndarray) -> typing.Union[
         _cpp.mesh.MeshTags_double, _cpp.mesh.MeshTags_int32]:
     """Create a MeshTag for a set of mesh entities.
