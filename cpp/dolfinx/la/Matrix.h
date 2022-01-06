@@ -49,10 +49,10 @@ public:
   /// @param[in] cols The column indices of `x` (indices are local to
   /// the MPI rank)
   /// @param[in] op
-  void add(const xtl::span<const T>& x,
-           const xtl::span<const std::int32_t>& rows,
-           const xtl::span<const std::int32_t>& cols,
-           std::function<T(T, T)> op = std::plus<T>())
+  template <class BinaryOp = decltype(std::plus<T>())>
+  void
+  add(const xtl::span<const T>& x, const xtl::span<const std::int32_t>& rows,
+      const xtl::span<const std::int32_t>& cols, BinaryOp op = std::plus<T>())
   {
     const std::int32_t local_size0 = _index_maps[0]->size_local();
     assert(x.size() == rows.size() * cols.size());
@@ -91,16 +91,17 @@ public:
   /// Insertion functor with a general operation
   /// @param A Matrix to insert into
   /// @param op Operation (add by default)
+  template <class BinaryOp = decltype(std::plus<T>())>
   static std::function<int(int nr, const int* r, int nc, const int* c,
                            const T* data)>
-  mat_insert_values(Matrix& A, std::function<T(T, T)> op = std::plus<T>())
+  mat_insert_values(Matrix& A, BinaryOp op = std::plus<T>())
   {
-    return [&A, &op](int nr, const int* r, int nc, const int* c, const T* data)
-    {
-      A.add(tcb::span<const T>(data, nr * nc), tcb::span<const int>(r, nr),
-            tcb::span<const int>(c, nc), op);
-      return 0;
-    };
+    return
+        [&A, &op](int nr, const int* r, int nc, const int* c, const T* data) {
+          A.add(tcb::span<const T>(data, nr * nc), tcb::span<const int>(r, nr),
+                tcb::span<const int>(c, nc), op);
+          return 0;
+        };
   }
 
   /// Convert to a dense matrix
@@ -126,7 +127,8 @@ public:
   }
 
   /// Copy cached ghost values to row owner.
-  void finalize(std::function<T(T, T)> op = std::plus<T>())
+  template <class BinaryOp = decltype(std::plus<T>())>
+  void finalize(BinaryOp op = std::plus<T>())
   {
     const std::int32_t local_size0 = _index_maps[0]->size_local();
     const std::int32_t num_ghosts0 = _index_maps[0]->num_ghosts();
