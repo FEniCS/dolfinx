@@ -313,9 +313,9 @@ BoundingBoxTree BoundingBoxTree::create_global_tree(const MPI_Comm& comm) const
   for (std::size_t i = 0; i < _recv_bbox.size(); ++i)
   {
     common::impl::copy_N<3>(std::next(recv_bbox.begin(), 6 * i),
-                         _recv_bbox[i].first[0].begin());
+                            _recv_bbox[i].first[0].begin());
     common::impl::copy_N<3>(std::next(recv_bbox.begin(), 6 * i + 3),
-                         _recv_bbox[i].first[1].begin());
+                            _recv_bbox[i].first[1].begin());
     _recv_bbox[i].second = i;
   }
 
@@ -370,9 +370,9 @@ BoundingBoxTree::get_bbox(std::size_t node) const
 {
   xt::xtensor_fixed<double, xt::xshape<2, 3>> x;
   common::impl::copy_N<3>(std::next(_bbox_coordinates.begin(), 6 * node),
-                       x.begin());
+                          x.begin());
   common::impl::copy_N<3>(std::next(_bbox_coordinates.begin(), 6 * node + 3),
-                       std::next(x.begin(), 3));
+                          std::next(x.begin(), 3));
   return x;
 }
 //-----------------------------------------------------------------------------
