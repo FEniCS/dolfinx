@@ -11,8 +11,7 @@ import warnings
 import numpy as np
 
 from dolfinx import cpp as _cpp
-from dolfinx import fem
-from dolfinx import mesh
+from dolfinx import fem, mesh
 from dolfinx.mesh import CellType
 
 # NOTE: Edge visualization of higher order elements are sketchy, see:
