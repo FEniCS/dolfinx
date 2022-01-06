@@ -95,12 +95,12 @@ public:
                            const T* data)>
   mat_insert_values(Matrix& A, std::function<T(T, T)> op = std::plus<T>())
   {
-    return
-        [&A, &op](int nr, const int* r, int nc, const int* c, const T* data) {
-          A.add(tcb::span<const T>(data, nr * nc), tcb::span<const int>(r, nr),
-                tcb::span<const int>(c, nc), op);
-          return 0;
-        };
+    return [&A, &op](int nr, const int* r, int nc, const int* c, const T* data)
+    {
+      A.add(tcb::span<const T>(data, nr * nc), tcb::span<const int>(r, nr),
+            tcb::span<const int>(c, nc), op);
+      return 0;
+    };
   }
 
   /// Convert to a dense matrix
@@ -260,6 +260,15 @@ public:
   {
     return _index_maps;
   }
+
+  /// Get local values
+  xtl::span<T> values() { return xtl::span(_data); }
+
+  /// Get local row pointers
+  xtl::span<std::int32_t> row_ptr() { return xtl::span(_row_ptr); }
+
+  /// Get local column indices
+  xtl::span<std::int32_t> cols() { return xtl::span(_cols); }
 
 private:
   // Map describing the data layout for rows and columns
