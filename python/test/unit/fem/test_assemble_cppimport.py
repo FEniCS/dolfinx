@@ -16,8 +16,8 @@ import scipy.sparse.linalg
 import dolfinx
 import dolfinx.pkgconfig
 import ufl
-from dolfinx.fem import (DirichletBC, Form, FunctionSpace,
-                         assemble_matrix, locate_dofs_geometrical)
+from dolfinx.fem import (DirichletBC, Form, FunctionSpace, assemble_matrix,
+                         locate_dofs_geometrical)
 from dolfinx.mesh import create_unit_square
 from dolfinx.wrappers import get_include_path as pybind_inc
 from dolfinx_utils.test.fixtures import tempdir  # noqa: F401
