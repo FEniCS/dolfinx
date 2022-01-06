@@ -45,7 +45,7 @@ compute_edge_sharing(const mesh::Mesh& mesh);
 void update_logical_edgefunction(
     const MPI_Comm& neighbor_comm,
     const std::vector<std::vector<std::int32_t>>& marked_for_update,
-    std::vector<bool>& marked_edges, const common::IndexMap& map_e);
+    std::vector<std::int8_t>& marked_edges, const common::IndexMap& map_e);
 
 /// Add new vertex for each marked edge, and create
 /// new_vertex_coordinates and global_edge->new_vertex map.
@@ -59,7 +59,7 @@ std::pair<std::map<std::int32_t, std::int64_t>, xt::xtensor<double, 2>>
 create_new_vertices(
     const MPI_Comm& neighbor_comm,
     const std::map<std::int32_t, std::vector<std::int32_t>>& shared_edges,
-    const mesh::Mesh& mesh, const std::vector<bool>& marked_edges);
+    const mesh::Mesh& mesh, const std::vector<std::int8_t>& marked_edges);
 
 /// Use vertex and topology data to partition new mesh across
 /// processes
