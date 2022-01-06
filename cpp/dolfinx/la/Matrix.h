@@ -90,10 +90,10 @@ public:
 
   /// Insertion functor with a general operation
   /// @param A Matrix to insert into
-  /// @param op Operation (usually add or set)
+  /// @param op Operation (add by default)
   static std::function<int(int nr, const int* r, int nc, const int* c,
                            const T* data)>
-  mat_insert_values(Matrix& A, std::function<T(T, T)> op)
+  mat_insert_values(Matrix& A, std::function<T(T, T)> op = std::plus<T>())
   {
     return
         [&A, &op](int nr, const int* r, int nc, const int* c, const T* data) {
@@ -250,9 +250,20 @@ public:
     std::vector<std::vector<T>>(num_ghosts0).swap(_value_cache);
   }
 
+  /// Index maps for the row and column space. The row IndexMap contains ghost
+  /// entries for rows which may be inserted into and the column IndexMap
+  /// contains all local and ghost columns that may exist in the owned rows.
+  ///
+  /// @return Row and column index maps
+  const std::array<std::shared_ptr<const common::IndexMap>, 2>&
+  index_maps() const
+  {
+    return _index_maps;
+  }
+
 private:
   // Map describing the data layout for rows and columns
-  std::vector<std::shared_ptr<const common::IndexMap>> _index_maps;
+  std::array<std::shared_ptr<const common::IndexMap>, 2> _index_maps;
 
   // // Block size
   // int _bs;
