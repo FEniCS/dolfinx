@@ -9,7 +9,7 @@ import numpy
 import pytest
 
 import ufl
-from dolfinx.fem import Constant, assemble_scalar
+from dolfinx.fem import Constant, assemble_scalar, form
 from dolfinx.mesh import (create_unit_cube, create_unit_interval,
                           create_unit_square)
 
@@ -25,8 +25,8 @@ def test_facet_area1D():
     c = Constant(mesh, ScalarType(1))
 
     ds = ufl.Measure("ds", domain=mesh)
-    a0 = mesh.comm.allreduce(assemble_scalar(c * ds), op=MPI.SUM)
-    a = mesh.comm.allreduce(assemble_scalar(c0 * ds), op=MPI.SUM)
+    a0 = mesh.comm.allreduce(assemble_scalar(form(c * ds)), op=MPI.SUM)
+    a = mesh.comm.allreduce(assemble_scalar(form(c0 * ds)), op=MPI.SUM)
     assert numpy.isclose(a.real, 2)
     assert numpy.isclose(a0.real, 2)
 
@@ -51,7 +51,7 @@ def test_facet_area(mesh_factory):
     num_faces = 4 if tdim == 2 else 6
 
     ds = ufl.Measure("ds", domain=mesh)
-    a = mesh.comm.allreduce(assemble_scalar(c * ds), op=MPI.SUM)
-    a0 = mesh.comm.allreduce(assemble_scalar(c0 * ds), op=MPI.SUM)
+    a = mesh.comm.allreduce(assemble_scalar(form(c * ds)), op=MPI.SUM)
+    a0 = mesh.comm.allreduce(assemble_scalar(form(c0 * ds)), op=MPI.SUM)
     assert numpy.isclose(a.real, num_faces)
     assert numpy.isclose(a0.real, num_faces * exact_area)

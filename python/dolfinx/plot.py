@@ -12,7 +12,8 @@ import numpy as np
 
 from dolfinx import cpp as _cpp
 from dolfinx import fem
-from dolfinx.mesh import CellType, Mesh
+from dolfinx import mesh
+from dolfinx.mesh import CellType
 
 # NOTE: Edge visualization of higher order elements are sketchy, see:
 # https://github.com/pyvista/pyvista/issues/947
@@ -48,7 +49,7 @@ def _element_degree(cell_type: CellType, num_nodes: int):
 
 
 @functools.singledispatch
-def create_vtk_topology(mesh: Mesh, dim: int, entities=None):
+def create_vtk_topology(mesh: mesh.Mesh, dim: int, entities=None):
     """Create vtk mesh topology data for mesh entities of a given
     dimension. The vertex indices in the returned topology array are the
     indices for the associated entry in the mesh geometry.

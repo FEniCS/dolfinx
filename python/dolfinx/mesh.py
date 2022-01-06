@@ -5,6 +5,8 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Creation, refining and marking of meshes"""
 
+from __future__ import annotations
+
 import types
 import typing
 
@@ -21,7 +23,7 @@ from dolfinx.cpp.mesh import (CellType, DiagonalType, GhostMode,
 from mpi4py import MPI as _MPI
 
 __all__ = ["create_meshtags", "locate_entities", "locate_entities_boundary",
-           "refine", "create_mesh", "create_meshtags", "MeshTags", "CellType",
+           "refine", "create_mesh", "create_meshtags", "Mesh", "MeshTags", "CellType",
            "GhostMode", "build_dual_graph", "cell_dim", "compute_midpoints",
            "compute_boundary_facets", "compute_incident_entities", "create_cell_partitioner",
            "create_interval", "create_unit_interval", "create_rectangle", "create_unit_square",
@@ -29,17 +31,26 @@ __all__ = ["create_meshtags", "locate_entities", "locate_entities_boundary",
 
 
 class Mesh(_cpp.mesh.Mesh):
-    """A class for representing meshes. Mesh objects are not generally
-    created using this class directly."""
-
     def __init__(self, comm: _MPI.Comm, topology: _cpp.mesh.Topology,
                  geometry: _cpp.mesh.Geometry, domain: ufl.Mesh):
+        """A class for representing meshes
+
+        Args:
+            comm: The MPI communicator
+            topology: The mesh topology
+            geometry: The mesh geometry
+            domain: The MPI communicator
+
+        Notes:
+            Mesh objects are not generally created using this class directly.
+
+        """
         super().__init__(comm, topology, geometry)
         self._ufl_domain = domain
         domain._ufl_cargo = self
 
     @classmethod
-    def from_cpp(cls, obj, domain: ufl.Mesh):
+    def from_cpp(cls, obj, domain: ufl.Mesh) -> Mesh:
         """Create Mesh object from a C++ Mesh object"""
         obj._ufl_domain = domain
         obj.__class__ = Mesh
@@ -58,24 +69,17 @@ class Mesh(_cpp.mesh.Mesh):
 def locate_entities(mesh: Mesh, dim: int, marker: types.FunctionType) -> np.ndarray:
     """Compute mesh entities satisfying a geometric marking function
 
-    Parameters
-    ----------
-    mesh
-        The mesh
-    dim
-        The topological dimension of the mesh entities to consider
-    marker
-        A function that takes an array of points `x` with shape ``(gdim,
-        num_points)`` and returns an array of booleans of length
-        ``num_points``, evaluating to `True` for entities to be located.
+    Args:
+        mesh: Mesh to locate entities on
+        dim: Topological dimension of the mesh entities to consider
+        marker: A function that takes an array of points `x` with shape ``(gdim,
+            num_points)`` and returns an array of booleans of length
+            ``num_points``, evaluating to `True` for entities to be located.
 
-    Returns
-    -------
-    numpy.ndarray
+    Returns:
         Indices (local to the process) of marked mesh entities.
 
     """
-
     return _cpp.mesh.locate_entities(mesh, dim, marker)
 
 
@@ -92,24 +96,17 @@ def locate_entities_boundary(mesh: Mesh, dim: int, marker: types.FunctionType) -
     returned by this function must typically perform some parallel
     communication.
 
-    Parameters
-    ----------
-    mesh
-        The mesh
-    dim
-        The topological dimension of the mesh entities to consider
-    marker
-        A function that takes an array of points `x` with shape ``(gdim,
-        num_points)`` and returns an array of booleans of length
-        ``num_points``, evaluating to `True` for entities to be located.
+    Args:
+        mesh: Mesh to locate boundary entities on
+        dim: Topological dimension of the mesh entities to consider
+        marker: Function that takes an array of points `x` with shape ``(gdim,
+            num_points)`` and returns an array of booleans of length
+            ``num_points``, evaluating to `True` for entities to be located.
 
-    Returns
-    -------
-    numpy.ndarray
+    Returns:
         Indices (local to the process) of marked mesh entities.
 
     """
-
     return _cpp.mesh.locate_entities_boundary(mesh, dim, marker)
 
 
@@ -132,20 +129,15 @@ _meshtags_types = {
 def refine(mesh: Mesh, edges: np.ndarray = None, redistribute: bool = True) -> Mesh:
     """Refine a mesh
 
-    Parameters
-    ----------
-    mesh
-        The mesh from which to build a refined mesh
-    edges
-        Optional argument to specify which edges should be refined. If
-        not supplied uniform refinement is applied.
-    redistribute
-        Optional argument to redistribute the refined mesh if mesh is a
-        distributed mesh.
+    Args:
+        mesh: The mesh from which to build a refined mesh
+        edges: Optional argument to specify which edges should be refined. If
+            not supplied uniform refinement is applied.
+        redistribute:
+            Optional argument to redistribute the refined mesh if mesh is a
+            distributed mesh.
 
-    Returns
-    -------
-    Mesh
+    Returns:
         A refined mesh
     """
     if edges is None:
@@ -164,20 +156,16 @@ def create_mesh(comm: _MPI.Comm, cells: typing.Union[np.ndarray, _cpp.graph.Adja
     """
     Create a mesh from topology and geometry arrays
 
-    comm
-        The MPI communicator
-    cells
-        The cells of the mesh
-    x
-        The mesh geometry ('node' coordinates),  with shape ``(gdim,
-        num_nodes)``
-    domain
-        The UFL mesh
-    ghost_mode
-        The ghost mode used in the mesh partitioning
-    partitioner
-        Function that computes the parallel distribution of cells across
-        MPI ranks
+    Args:
+        comm: MPI communicator to define the mesh on
+        cells: Cells of the mesh
+        x: Mesh geometry ('node' coordinates),  with shape ``(gdim, num_nodes)``
+        domain: UFL mesh
+        ghost_mode: The ghost mode used in the mesh partitioning
+        partitioner: Function that computes the parallel distribution of cells across MPI ranks
+
+    Returns:
+        A new mesh
 
     """
     ufl_element = domain.ufl_coordinate_element()

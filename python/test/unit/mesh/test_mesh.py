@@ -13,7 +13,7 @@ import pytest
 import basix
 from dolfinx import cpp as _cpp
 from dolfinx.cpp.mesh import create_cell_partitioner, is_simplex
-from dolfinx.fem import assemble_scalar
+from dolfinx.fem import assemble_scalar, form
 from dolfinx.mesh import (CellType, DiagonalType, GhostMode, create_box,
                           create_rectangle, create_unit_cube,
                           create_unit_interval, create_unit_square,
@@ -405,7 +405,7 @@ def test_small_mesh():
 
 def test_unit_hex_mesh_assemble():
     mesh = create_unit_cube(MPI.COMM_WORLD, 6, 7, 5, CellType.hexahedron)
-    vol = assemble_scalar(1 * dx(mesh))
+    vol = assemble_scalar(form(1 * dx(mesh)))
     vol = mesh.comm.allreduce(vol, MPI.SUM)
     assert vol == pytest.approx(1, rel=1e-9)
 
