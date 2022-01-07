@@ -17,13 +17,13 @@ if (NOT TARGET dolfinx)
 endif()
 
 # Executable
-add_executable(${PROJECT_NAME} poisson.c main.cpp)
+add_executable(${PROJECT_NAME} main.cpp poisson.c)
 
 # Target libraries
 target_link_libraries(${PROJECT_NAME} dolfinx)
 
 # Set strict compiler flags
-set_source_files_properties(main.cpp PROPERTIES COMPILE_FLAGS -Wall -Wextra -pedantic -Werror)
+set_source_files_properties(main.cpp PROPERTIES COMPILE_FLAGS "-Wall -Wextra -pedantic -Werror")
 
 # Test targets (this is for the DOLFINx test system and is not required for users)
 set(TEST_PARAMETERS2 -np 2 ${MPIEXEC_PARAMS} "./${PROJECT_NAME}")
