@@ -67,6 +67,15 @@ def test_compute_point_values(V, W, mesh):
     assert all(u_values == u_values2)
 
 
+def test_copy(V):
+    u = Function(V)
+    u.interpolate(lambda x: x[0] + 2 * x[1])
+    v = u.copy()
+    assert np.allclose(u.x.array, v.x.array)
+    u.x.array[:] = 1
+    assert not np.allclose(u.x.array, v.x.array)
+
+
 def test_assign(V, W):
     for V_ in [V, W]:
         u = Function(V_)
