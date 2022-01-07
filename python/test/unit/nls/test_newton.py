@@ -10,10 +10,9 @@ import numpy as np
 import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import fem, la
-from dolfinx.fem import (DirichletBC, Form, Function, FunctionSpace,
-                         apply_lifting, assemble_matrix, assemble_vector,
-                         create_matrix, create_vector, locate_dofs_geometrical,
-                         set_bc)
+from dolfinx.fem import (dirichletbc, Function, FunctionSpace, apply_lifting,
+                         assemble_matrix, assemble_vector, create_matrix,
+                         create_vector, form, locate_dofs_geometrical, set_bc)
 from dolfinx.mesh import create_unit_square
 from ufl import TestFunction, TrialFunction, derivative, dx, grad, inner
 
@@ -27,8 +26,8 @@ class NonlinearPDEProblem:
     def __init__(self, F, u, bc):
         V = u.function_space
         du = TrialFunction(V)
-        self.L = F
-        self.a = derivative(F, u, du)
+        self.L = form(F)
+        self.a = form(derivative(F, u, du))
         self.bc = bc
 
     def form(self, x):
@@ -60,9 +59,8 @@ class NonlinearPDE_SNESProblem:
     def __init__(self, F, u, bc):
         V = u.function_space
         du = TrialFunction(V)
-        self.L = F
-        self.a = derivative(F, u, du)
-        self.a_comp = Form(self.a)
+        self.L = form(F)
+        self.a = form(derivative(F, u, du))
         self.bc = bc
         self._F, self._J = None, None
         self.u = u
@@ -96,10 +94,9 @@ def test_linear_pde():
     v = TestFunction(V)
     F = inner(10.0, v) * dx - inner(grad(u), grad(v)) * dx
 
-    u_bc = Function(V)
-    u_bc.x.array[:] = 1.0
-    bc = DirichletBC(u_bc, locate_dofs_geometrical(V, lambda x: np.logical_or(np.isclose(x[0], 0.0),
-                                                                              np.isclose(x[0], 1.0))))
+    bc = dirichletbc(PETSc.ScalarType(1.0),
+                     locate_dofs_geometrical(V, lambda x: np.logical_or(np.isclose(x[0], 0.0),
+                                                                        np.isclose(x[0], 1.0))), V)
 
     # Create nonlinear problem
     problem = NonlinearPDEProblem(F, u, bc)
@@ -114,7 +111,7 @@ def test_linear_pde():
     assert n == 1
 
     # Increment boundary condition and solve again
-    u_bc.x.array[:] = 2.0
+    bc.g.value[...] = PETSc.ScalarType(2.0)
     n, converged = solver.solve(u.vector)
     assert converged
     assert n == 1
@@ -130,10 +127,9 @@ def test_nonlinear_pde():
     F = inner(5.0, v) * dx - ufl.sqrt(u * u) * inner(
         grad(u), grad(v)) * dx - inner(u, v) * dx
 
-    u_bc = Function(V)
-    u_bc.x.array[:] = 1.0
-    bc = DirichletBC(u_bc, locate_dofs_geometrical(V, lambda x: np.logical_or(np.isclose(x[0], 0.0),
-                                                                              np.isclose(x[0], 1.0))))
+    bc = dirichletbc(PETSc.ScalarType(1.0),
+                     locate_dofs_geometrical(V, lambda x: np.logical_or(np.isclose(x[0], 0.0),
+                                                                        np.isclose(x[0], 1.0))), V)
 
     # Create nonlinear problem
     problem = NonlinearPDEProblem(F, u, bc)
@@ -149,10 +145,10 @@ def test_nonlinear_pde():
     assert n < 6
 
     # Modify boundary condition and solve again
-    u_bc.x.array[:] = 0.5
+    bc.g.value[...] = 0.5
     n, converged = solver.solve(u.vector)
     assert converged
-    assert n < 6
+    assert n > 0 and n < 6
 
 
 def test_nonlinear_pde_snes():
@@ -167,7 +163,7 @@ def test_nonlinear_pde_snes():
 
     u_bc = Function(V)
     u_bc.x.array[:] = 1.0
-    bc = DirichletBC(u_bc, locate_dofs_geometrical(V, lambda x: np.logical_or(np.isclose(x[0], 0.0),
+    bc = dirichletbc(u_bc, locate_dofs_geometrical(V, lambda x: np.logical_or(np.isclose(x[0], 0.0),
                                                                               np.isclose(x[0], 1.0))))
 
     # Create nonlinear problem
@@ -175,7 +171,7 @@ def test_nonlinear_pde_snes():
 
     u.x.array[:] = 0.9
     b = la.create_petsc_vector(V.dofmap.index_map, V.dofmap.index_map_bs)
-    J = fem.create_matrix(problem.a_comp._cpp_object)
+    J = fem.create_matrix(problem.a)
 
     # Create Newton solver and solve
     snes = PETSc.SNES().create()

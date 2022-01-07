@@ -9,9 +9,9 @@ import numpy as np
 import pytest
 
 import ufl
-from dolfinx.fem import (Constant, DirichletBC, Function, FunctionSpace,
+from dolfinx.fem import (Constant, dirichletbc, Function, FunctionSpace,
                          apply_lifting, assemble_matrix, assemble_scalar,
-                         assemble_vector, set_bc)
+                         assemble_vector, form, set_bc)
 from dolfinx.mesh import (GhostMode, MeshTags, create_unit_square,
                           locate_entities_boundary)
 
@@ -51,19 +51,19 @@ def test_assembly_dx_domains(mode):
     w = Function(V)
     w.x.array[:] = 0.5
 
-    bc = DirichletBC(Function(V), range(30))
-
     # Assemble matrix
-    a = w * ufl.inner(u, v) * (dx(1) + dx(2) + dx(3))
+    a = form(w * ufl.inner(u, v) * (dx(1) + dx(2) + dx(3)))
     A = assemble_matrix(a)
     A.assemble()
-    a2 = w * ufl.inner(u, v) * dx
+    a2 = form(w * ufl.inner(u, v) * dx)
     A2 = assemble_matrix(a2)
     A2.assemble()
     assert (A - A2).norm() < 1.0e-12
 
+    bc = dirichletbc(Function(V), range(30))
+
     # Assemble vector
-    L = ufl.inner(w, v) * (dx(1) + dx(2) + dx(3))
+    L = form(ufl.inner(w, v) * (dx(1) + dx(2) + dx(3)))
     b = assemble_vector(L)
 
     apply_lifting(b, [a], [[bc]])
@@ -71,7 +71,7 @@ def test_assembly_dx_domains(mode):
                   mode=PETSc.ScatterMode.REVERSE)
     set_bc(b, [bc])
 
-    L2 = ufl.inner(w, v) * dx
+    L2 = form(ufl.inner(w, v) * dx)
     b2 = assemble_vector(L2)
     apply_lifting(b2, [a], [[bc]])
     b2.ghostUpdate(addv=PETSc.InsertMode.ADD_VALUES,
@@ -80,11 +80,11 @@ def test_assembly_dx_domains(mode):
     assert (b - b2).norm() < 1.0e-12
 
     # Assemble scalar
-    L = w * (dx(1) + dx(2) + dx(3))
+    L = form(w * (dx(1) + dx(2) + dx(3)))
     s = assemble_scalar(L)
     s = mesh.comm.allreduce(s, op=MPI.SUM)
     assert s == pytest.approx(0.5, 1.0e-12)
-    L2 = w * dx
+    L2 = form(w * dx)
     s2 = assemble_scalar(L2)
     s2 = mesh.comm.allreduce(s2, op=MPI.SUM)
     assert s == pytest.approx(s2, 1.0e-12)
@@ -131,28 +131,28 @@ def test_assembly_ds_domains(mode):
     w = Function(V)
     w.x.array[:] = 0.5
 
-    bc = DirichletBC(Function(V), range(30))
+    bc = dirichletbc(Function(V), range(30))
 
     # Assemble matrix
-    a = w * ufl.inner(u, v) * (ds(1) + ds(2) + ds(3) + ds(6))
+    a = form(w * ufl.inner(u, v) * (ds(1) + ds(2) + ds(3) + ds(6)))
     A = assemble_matrix(a)
     A.assemble()
     norm1 = A.norm()
-    a2 = w * ufl.inner(u, v) * ds
+    a2 = form(w * ufl.inner(u, v) * ds)
     A2 = assemble_matrix(a2)
     A2.assemble()
     norm2 = A2.norm()
     assert norm1 == pytest.approx(norm2, 1.0e-12)
 
     # Assemble vector
-    L = ufl.inner(w, v) * (ds(1) + ds(2) + ds(3) + ds(6))
+    L = form(ufl.inner(w, v) * (ds(1) + ds(2) + ds(3) + ds(6)))
     b = assemble_vector(L)
 
     apply_lifting(b, [a], [[bc]])
     b.ghostUpdate(addv=PETSc.InsertMode.ADD_VALUES, mode=PETSc.ScatterMode.REVERSE)
     set_bc(b, [bc])
 
-    L2 = ufl.inner(w, v) * ds
+    L2 = form(ufl.inner(w, v) * ds)
     b2 = assemble_vector(L2)
     apply_lifting(b2, [a2], [[bc]])
     b2.ghostUpdate(addv=PETSc.InsertMode.ADD_VALUES, mode=PETSc.ScatterMode.REVERSE)
@@ -161,10 +161,10 @@ def test_assembly_ds_domains(mode):
     assert b.norm() == pytest.approx(b2.norm(), 1.0e-12)
 
     # Assemble scalar
-    L = w * (ds(1) + ds(2) + ds(3) + ds(6))
+    L = form(w * (ds(1) + ds(2) + ds(3) + ds(6)))
     s = assemble_scalar(L)
     s = mesh.comm.allreduce(s, op=MPI.SUM)
-    L2 = w * ds
+    L2 = form(w * ds)
     s2 = assemble_scalar(L2)
     s2 = mesh.comm.allreduce(s2, op=MPI.SUM)
     assert (s == pytest.approx(s2, 1.0e-12) and 2.0 == pytest.approx(s, 1.0e-12))
@@ -175,7 +175,7 @@ def test_assembly_dS_domains(mode):
     N = 10
     mesh = create_unit_square(MPI.COMM_WORLD, N, N, ghost_mode=mode)
     one = Constant(mesh, PETSc.ScalarType(1))
-    val = assemble_scalar(one * ufl.dS)
+    val = assemble_scalar(form(one * ufl.dS))
     val = mesh.comm.allreduce(val, op=MPI.SUM)
     assert val == pytest.approx(2 * (N - 1) + N * np.sqrt(2), 1.0e-7)
 
@@ -196,15 +196,15 @@ def test_additivity(mode):
     j3 = ufl.inner(ufl.avg(f3), ufl.avg(f3)) * ufl.dS(mesh)
 
     # Assemble each scalar form separately
-    J1 = mesh.comm.allreduce(assemble_scalar(j1), op=MPI.SUM)
-    J2 = mesh.comm.allreduce(assemble_scalar(j2), op=MPI.SUM)
-    J3 = mesh.comm.allreduce(assemble_scalar(j3), op=MPI.SUM)
+    J1 = mesh.comm.allreduce(assemble_scalar(form(j1)), op=MPI.SUM)
+    J2 = mesh.comm.allreduce(assemble_scalar(form(j2)), op=MPI.SUM)
+    J3 = mesh.comm.allreduce(assemble_scalar(form(j3)), op=MPI.SUM)
 
     # Sum forms and assemble the result
-    J12 = mesh.comm.allreduce(assemble_scalar(j1 + j2), op=MPI.SUM)
-    J13 = mesh.comm.allreduce(assemble_scalar(j1 + j3), op=MPI.SUM)
-    J23 = mesh.comm.allreduce(assemble_scalar(j2 + j3), op=MPI.SUM)
-    J123 = mesh.comm.allreduce(assemble_scalar(j1 + j2 + j3), op=MPI.SUM)
+    J12 = mesh.comm.allreduce(assemble_scalar(form(j1 + j2)), op=MPI.SUM)
+    J13 = mesh.comm.allreduce(assemble_scalar(form(j1 + j3)), op=MPI.SUM)
+    J23 = mesh.comm.allreduce(assemble_scalar(form(j2 + j3)), op=MPI.SUM)
+    J123 = mesh.comm.allreduce(assemble_scalar(form(j1 + j2 + j3)), op=MPI.SUM)
 
     # Compare assembled values
     assert (J1 + J2) == pytest.approx(J12)

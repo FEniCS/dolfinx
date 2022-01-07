@@ -22,12 +22,12 @@ from dolfinx.fem.assemble import (apply_lifting, apply_lifting_nest,
                                   create_vector, create_vector_block,
                                   create_vector_nest, pack_coefficients,
                                   pack_constants, set_bc, set_bc_nest)
-from dolfinx.fem.dirichletbc import (DirichletBC, bcs_by_block,
-                                     locate_dofs_geometrical,
+from dolfinx.fem.dirichletbc import (DirichletBCMetaClass, bcs_by_block,
+                                     dirichletbc, locate_dofs_geometrical,
                                      locate_dofs_topological)
 from dolfinx.fem.dofmap import DofMap
-from dolfinx.fem.form import Form
 from dolfinx.fem.formmanipulations import adjoint
+from dolfinx.fem.forms import FormMetaClass, extract_function_spaces, form
 from dolfinx.fem.function import (Constant, Expression, Function,
                                   FunctionSpace, TensorFunctionSpace,
                                   VectorFunctionSpace)
@@ -53,6 +53,6 @@ __all__ = [
     "assemble_vector_block", "assemble_vector_nest",
     "assemble_matrix_block", "assemble_matrix_nest",
     "assemble_matrix", "set_bc", "set_bc_nest",
-    "DirichletBC", "bcs_by_block", "DofMap", "Form", "IntegralType",
+    "DirichletBCMetaClass", "dirichletbc", "bcs_by_block", "DofMap", "FormMetaClass", "form", "IntegralType",
     "adjoint", "LinearProblem", "locate_dofs_geometrical", "locate_dofs_topological",
-    "NonlinearProblem", "pack_coefficients", "pack_constants"]
+    "NonlinearProblem", "pack_coefficients", "pack_constants", "extract_function_spaces"]

@@ -9,9 +9,8 @@
 #include "assembler.h"
 #include "sparsitybuild.h"
 #include <dolfinx/common/IndexMap.h>
-#include <dolfinx/la/PETScMatrix.h>
-#include <dolfinx/la/PETScVector.h>
 #include <dolfinx/la/SparsityPattern.h>
+#include <dolfinx/la/petsc.h>
 #include <xtl/xspan.hpp>
 
 using namespace dolfinx;

@@ -5,7 +5,14 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Collection of functions and function spaces"""
 
+from __future__ import annotations
+
 import typing
+
+if typing.TYPE_CHECKING:
+    from dolfinx.mesh import Mesh
+
+import warnings
 from functools import singledispatch
 
 import cffi
@@ -17,7 +24,6 @@ import ufl.algorithms.analysis
 from dolfinx import cpp as _cpp
 from dolfinx import jit
 from dolfinx.fem import dofmap
-from dolfinx.mesh import Mesh
 
 from petsc4py import PETSc
 
@@ -47,20 +53,21 @@ class Constant(ufl.Constant):
 
     @property
     def value(self):
-        """Returns value of the constant."""
-        return self._cpp_object.value()
+        """The value of the constant"""
+        return self._cpp_object.value
 
     @value.setter
     def value(self, v):
-        np.copyto(self._cpp_object.value(), np.asarray(v))
+        np.copyto(self._cpp_object.value, np.asarray(v))
+
+    @property
+    def dtype(self):
+        return self.value.dtype
 
 
 class Expression:
-    def __init__(self,
-                 ufl_expression: ufl.core.expr.Expr,
-                 x: np.ndarray,
-                 form_compiler_parameters: dict = {},
-                 jit_parameters: dict = {},
+    def __init__(self, ufl_expression: ufl.core.expr.Expr, x: np.ndarray,
+                 form_compiler_parameters: dict = {}, jit_parameters: dict = {},
                  dtype=PETSc.ScalarType):
         """Create DOLFINx Expression.
 
@@ -86,11 +93,13 @@ class Expression:
         jit_parameters
             Parameters controlling JIT compilation of C code.
 
-        Note
-        ----
+        Notes
+        -----
         This wrapper is responsible for the FFCx compilation of the UFL Expr
         and attaching the correct data to the underlying C++ Expression.
+
         """
+
         assert x.ndim < 3
         num_points = x.shape[0] if x.ndim == 2 else 1
         x = np.reshape(x, (num_points, -1))
@@ -161,59 +170,50 @@ class Expression:
         # Allocate memory for result if u was not provided
         if u is None:
             if np.issubdtype(PETSc.ScalarType, np.complexfloating):
-                u = np.empty((num_cells, self.num_points * self.value_size), dtype=np.complex128)
+                u = np.empty((num_cells, self.x.shape[0] * self.value_size), dtype=np.complex128)
             else:
-                u = np.empty((num_cells, self.num_points * self.value_size), dtype=np.float64)
+                u = np.empty((num_cells, self.x.shape[0] * self.value_size), dtype=np.float64)
             self._cpp_object.eval(cells, u)
         else:
-            assert u.ndim < 3
-            assert u.size == num_cells * self.num_points * self.value_size
-            assert u.shape[0] == num_cells
-            assert u.shape[1] == self.num_points * self.value_size
             self._cpp_object.eval(cells, u)
 
         return u
 
     @property
     def ufl_expression(self):
-        """Return the original UFL Expression"""
+        """Original UFL Expression"""
         return self._ufl_expression
 
     @property
-    def x(self):
-        """Return the evaluation points on the reference cell"""
+    def x(self) -> np.ndarray:
+        """Evaluation points on the reference cell"""
         return self._cpp_object.x
 
     @property
-    def num_points(self):
-        """Return the number of evaluation points on the reference cell."""
-        return self._cpp_object.num_points
-
-    @property
-    def value_size(self):
-        """Return the value size of the expression"""
+    def value_size(self) -> int:
+        """Value size of the expression"""
         return self._cpp_object.value_size
 
     @property
     def ufc_expression(self):
-        """Return the compiled ufc_expression object"""
+        """The compiled ufc_expression object"""
         return self._ufc_expression
 
     @property
-    def code(self):
-        """Return C code strings"""
+    def code(self) -> str:
+        """C code strings"""
         return self._code
 
 
 class Function(ufl.Coefficient):
-    """A finite element function that is represented by a function
-    space (domain, element and dofmap) and a vector holding the
+    """A finite element function that is represented by a function space
+    (domain, element and dofmap) and a vector holding the
     degrees-of-freedom
 
     """
 
     def __init__(self,
-                 V: "FunctionSpace",
+                 V: FunctionSpace,
                  x: typing.Optional[typing.Union[_cpp.la.Vector_float64, _cpp.la.Vector_complex128]] = None,
                  name: typing.Optional[str] = None,
                  dtype=PETSc.ScalarType):
@@ -250,8 +250,8 @@ class Function(ufl.Coefficient):
         self._petsc_x = None
 
     @property
-    def function_space(self) -> "FunctionSpace":
-        """Return the FunctionSpace"""
+    def function_space(self) -> FunctionSpace:
+        """The FunctionSpace that the Function is defined on"""
         return self._V
 
     def ufl_evaluate(self, x, component, derivatives):
@@ -307,7 +307,7 @@ class Function(ufl.Coefficient):
             u = np.reshape(u, (-1, ))
         return u
 
-    def interpolate(self, u) -> None:
+    def interpolate(self, u, cells: np.ndarray = None) -> None:
         """Interpolate an expression"""
         @singledispatch
         def _interpolate(u):
@@ -320,30 +320,51 @@ class Function(ufl.Coefficient):
         def _(u_ptr):
             self._cpp_object.interpolate_ptr(u_ptr)
 
-        _interpolate(u)
+        @_interpolate.register(Expression)
+        def _(expr: Expression, cells: np.ndarray = None):
+            if cells is None:
+                mesh = self.function_space.mesh
+                num_cells_local = mesh.topology.index_map(mesh.topology.dim).size_local
+                cells = np.arange(num_cells_local, dtype=np.int32)
+
+            # Interpolate Expression on set of cells
+            self._cpp_object.interpolate(expr._cpp_object, cells)
+
+        # Ignore cells as input if Expression
+        # FIXME: Should all interpolate functions support input cells?
+        if not isinstance(u, Expression):
+            if cells is not None:
+                warnings.warn("List of cells as input argument is ignored. "
+                              + "All cells local to process will be used in interpolation")
+            _interpolate(u)
+        else:
+            _interpolate(u, cells)
 
     def compute_point_values(self):
         return self._cpp_object.compute_point_values()
 
-    def copy(self):
+    def copy(self) -> Function:
         """Return a copy of the Function. The FunctionSpace is shared and the
         degree-of-freedom vector is copied.
 
         """
-        return Function(self.function_space,
-                        self._cpp_object.vector.copy())
+        return Function(self.function_space, type(self.x)(self.x))
 
     @property
     def vector(self):
-        """Return a PETSc vector holding Function degrees-of-freedom."""
+        """PETSc vector holding the degrees-of-freedom."""
         if self._petsc_x is None:
             self._petsc_x = _cpp.la.petsc.create_vector_wrap(self.x)
         return self._petsc_x
 
     @property
     def x(self):
-        """Return the vector holding Function degrees-of-freedom."""
+        """Vector holding the degrees-of-freedom."""
         return self._cpp_object.x
+
+    @property
+    def dtype(self) -> np.dtype:
+        return self._cpp_object.x.array.dtype
 
     @property
     def name(self) -> str:
@@ -356,11 +377,11 @@ class Function(ufl.Coefficient):
 
     @property
     def id(self) -> int:
-        """Return object id index."""
+        """Pbject id index."""
         return self._cpp_object.id
 
     def __str__(self):
-        """Return a pretty print representation of it self."""
+        """Pretty print representation of it self."""
         return self.name
 
     def sub(self, i: int):
@@ -380,12 +401,12 @@ class Function(ufl.Coefficient):
         function resides in the subspace of the mixed space.
 
         """
-        num_sub_spaces = self.function_space.num_sub_spaces()
+        num_sub_spaces = self.function_space.num_sub_spaces
         if num_sub_spaces == 1:
             raise RuntimeError("No subfunctions to extract")
         return tuple(self.sub(i) for i in range(num_sub_spaces))
 
-    def collapse(self):
+    def collapse(self) -> Function:
         u_collapsed = self._cpp_object.collapse()
         V_collapsed = FunctionSpace(None, self.ufl_element(),
                                     u_collapsed.function_space)
@@ -440,7 +461,7 @@ class FunctionSpace(ufl.FunctionSpace):
         # Initialize the cpp.FunctionSpace
         self._cpp_object = _cpp.fem.FunctionSpace(mesh, cpp_element, cpp_dofmap)
 
-    def clone(self) -> "FunctionSpace":
+    def clone(self) -> FunctionSpace:
         """Return a new FunctionSpace :math:`W` which shares data with this
         FunctionSpace :math:`V`, but with a different unique integer ID.
 
@@ -457,15 +478,12 @@ class FunctionSpace(ufl.FunctionSpace):
         Vcpp = _cpp.fem.FunctionSpace(self._cpp_object.mesh, self._cpp_object.element, self._cpp_object.dofmap)
         return FunctionSpace(None, self.ufl_element(), Vcpp)
 
-    def dolfin_element(self):
-        """Return the DOLFINx element."""
-        return self._cpp_object.element
-
+    @property
     def num_sub_spaces(self) -> int:
-        """Return the number of sub spaces."""
-        return self.dolfin_element().num_sub_elements()
+        """Number of sub spaces"""
+        return self.element.num_sub_elements
 
-    def sub(self, i: int) -> "FunctionSpace":
+    def sub(self, i: int) -> FunctionSpace:
         """Return the i-th sub space."""
         assert self.ufl_element().num_sub_elements() > i
         sub_element = self.ufl_element().sub_elements()[i]
@@ -505,12 +523,12 @@ class FunctionSpace(ufl.FunctionSpace):
         return self._cpp_object.mesh.ufl_cell()
 
     def ufl_function_space(self) -> ufl.FunctionSpace:
-        """Return the UFL function space"""
+        """UFL function space"""
         return self
 
     @property
     def id(self) -> int:
-        """The unique identifier"""
+        """Unique identifier"""
         return self._cpp_object.id
 
     @property
@@ -518,12 +536,12 @@ class FunctionSpace(ufl.FunctionSpace):
         return self._cpp_object.element
 
     @property
-    def dofmap(self) -> "dofmap.DofMap":
-        """Return the degree-of-freedom map associated with the function space."""
+    def dofmap(self) -> dofmap.DofMap:
+        """Degree-of-freedom map associated with the function space."""
         return dofmap.DofMap(self._cpp_object.dofmap)
 
     @property
-    def mesh(self):
+    def mesh(self) -> Mesh:
         """Return the mesh on which the function space is defined."""
         return self._cpp_object.mesh
 
@@ -549,14 +567,12 @@ class FunctionSpace(ufl.FunctionSpace):
         else:
             return V
 
-    def tabulate_dof_coordinates(self):
+    def tabulate_dof_coordinates(self) -> np.ndarray:
         return self._cpp_object.tabulate_dof_coordinates()
 
 
-def VectorFunctionSpace(mesh: Mesh,
-                        element: ElementMetaData,
-                        dim=None,
-                        restriction=None) -> "FunctionSpace":
+def VectorFunctionSpace(mesh: Mesh, element: ElementMetaData, dim=None,
+                        restriction=None) -> FunctionSpace:
     """Create vector finite element (composition of scalar elements) function space."""
 
     e = ElementMetaData(*element)
@@ -564,11 +580,8 @@ def VectorFunctionSpace(mesh: Mesh,
     return FunctionSpace(mesh, ufl_element)
 
 
-def TensorFunctionSpace(mesh: Mesh,
-                        element: ElementMetaData,
-                        shape=None,
-                        symmetry: bool = None,
-                        restriction=None) -> "FunctionSpace":
+def TensorFunctionSpace(mesh: Mesh, element: ElementMetaData, shape=None,
+                        symmetry: bool = None, restriction=None) -> FunctionSpace:
     """Create tensor finite element (composition of scalar elements) function space."""
 
     e = ElementMetaData(*element)
