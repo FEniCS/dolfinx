@@ -88,7 +88,7 @@ find_local_entity_index(std::shared_ptr<const mesh::Mesh> mesh,
   }
 
   return entity_indices;
-};
+}
 //-----------------------------------------------------------------------------
 
 /// Find all DOFs on this process that have been detected on another

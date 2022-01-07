@@ -76,9 +76,9 @@ import dolfinx
 import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import fem
-from dolfinx.fem import (Constant, DirichletBC, Form, Function, FunctionSpace,
-                         form, locate_dofs_geometrical,
-                         locate_dofs_topological)
+from dolfinx.fem import (Constant, dirichletbc, Function, FunctionSpace,
+                         extract_function_spaces, form,
+                         locate_dofs_geometrical, locate_dofs_topological)
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import (CellType, GhostMode, create_rectangle,
                           locate_entities_boundary)
@@ -129,13 +129,13 @@ V, Q = FunctionSpace(mesh, P2), FunctionSpace(mesh, P1)
 # where x = 0, x = 1, and y = 0
 noslip = np.zeros(mesh.geometry.dim, dtype=PETSc.ScalarType)
 facets = locate_entities_boundary(mesh, 1, noslip_boundary)
-bc0 = DirichletBC(noslip, locate_dofs_topological(V, 1, facets), V)
+bc0 = dirichletbc(noslip, locate_dofs_topological(V, 1, facets), V)
 
 # Driving velocity condition u = (1, 0) on top boundary (y = 1)
 lid_velocity = Function(V)
 lid_velocity.interpolate(lid_velocity_expression)
 facets = locate_entities_boundary(mesh, 1, lid)
-bc1 = DirichletBC(lid_velocity, locate_dofs_topological(V, 1, facets))
+bc1 = dirichletbc(lid_velocity, locate_dofs_topological(V, 1, facets))
 
 # Collect Dirichlet boundary conditions
 bcs = [bc0, bc1]
@@ -148,15 +148,13 @@ bcs = [bc0, bc1]
 (v, q) = ufl.TestFunction(V), ufl.TestFunction(Q)
 f = Constant(mesh, (PETSc.ScalarType(0), PETSc.ScalarType(0)))
 
-a = [[Form(inner(grad(u), grad(v)) * dx), Form(inner(p, div(v)) * dx)],
-     [Form(inner(div(u), q) * dx), None]]
-
-L = [Form(inner(f, v) * dx),
-     Form(inner(Constant(mesh, PETSc.ScalarType(0)), q) * dx)]
+a = form([[inner(grad(u), grad(v)) * dx, inner(p, div(v)) * dx],
+          [inner(div(u), q) * dx, None]])
+L = form([inner(f, v) * dx, inner(Constant(mesh, PETSc.ScalarType(0)), q) * dx])
 
 # We will use a block-diagonal preconditioner to solve this problem::
 
-a_p11 = Form(inner(p, q) * dx)
+a_p11 = form(inner(p, q) * dx)
 a_p = [[a[0][0], None],
        [None, a_p11]]
 
@@ -193,7 +191,7 @@ for b_sub in b.getNestSubVecs():
     b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
 # Set Dirichlet boundary condition values in the RHS
-bcs0 = fem.bcs_by_block(form.extract_function_spaces(L), bcs)
+bcs0 = fem.bcs_by_block(extract_function_spaces(L), bcs)
 dolfinx.fem.assemble.set_bc_nest(b, bcs0)
 
 # Ths pressure field for this problem is determined only up to a
@@ -402,7 +400,7 @@ W0 = W.sub(0).collapse()
 noslip = Function(V)
 facets = locate_entities_boundary(mesh, 1, noslip_boundary)
 dofs = locate_dofs_topological((W.sub(0), V), 1, facets)
-bc0 = DirichletBC(noslip, dofs, W.sub(0))
+bc0 = dirichletbc(noslip, dofs, W.sub(0))
 
 
 # Driving velocity condition u = (1, 0) on top boundary (y = 1)
@@ -410,7 +408,7 @@ lid_velocity = Function(W0)
 lid_velocity.interpolate(lid_velocity_expression)
 facets = locate_entities_boundary(mesh, 1, lid)
 dofs = locate_dofs_topological((W.sub(0), V), 1, facets)
-bc1 = DirichletBC(lid_velocity, dofs, W.sub(0))
+bc1 = dirichletbc(lid_velocity, dofs, W.sub(0))
 
 
 # Since for this problem the pressure is only determined up to a
@@ -418,7 +416,7 @@ bc1 = DirichletBC(lid_velocity, dofs, W.sub(0))
 zero = Function(Q)
 zero.x.set(0.0)
 dofs = locate_dofs_geometrical((W.sub(1), Q), lambda x: np.isclose(x.T, [0, 0, 0]).all(axis=1))
-bc2 = DirichletBC(zero, dofs, W.sub(1))
+bc2 = dirichletbc(zero, dofs, W.sub(1))
 
 # Collect Dirichlet boundary conditions
 bcs = [bc0, bc1, bc2]
@@ -427,8 +425,9 @@ bcs = [bc0, bc1, bc2]
 (u, p) = ufl.TrialFunctions(W)
 (v, q) = ufl.TestFunctions(W)
 f = Function(W0)
-a = Form((inner(grad(u), grad(v)) + inner(p, div(v)) + inner(div(u), q)) * dx)
-L = Form(inner(f, v) * dx)
+a = form((inner(grad(u), grad(v)) + inner(p, div(v)) + inner(div(u), q)) * dx)
+L = form(inner(f, v) * dx)
+
 
 # Assemble LHS matrix and RHS vector
 A = dolfinx.fem.assemble_matrix(a, bcs=bcs)

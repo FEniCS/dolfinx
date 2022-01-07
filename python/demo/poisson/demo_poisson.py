@@ -77,7 +77,7 @@ import numpy as np
 
 import ufl
 from dolfinx import fem, plot
-from dolfinx.fem import DirichletBC, FunctionSpace, locate_dofs_topological
+from dolfinx.fem import dirichletbc, FunctionSpace, locate_dofs_topological
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import CellType, create_rectangle, locate_entities_boundary
 from ufl import ds, dx, grad, inner
@@ -137,7 +137,7 @@ V = FunctionSpace(mesh, ("Lagrange", 1))
 # Define boundary condition on x = 0 or x = 1
 facets = locate_entities_boundary(mesh, 1, lambda x: np.logical_or(np.isclose(x[0], 0.0),
                                                                    np.isclose(x[0], 2.0)))
-bc = DirichletBC(ScalarType(0), locate_dofs_topological(V, 1, facets), V)
+bc = dirichletbc(ScalarType(0), locate_dofs_topological(V, 1, facets), V)
 
 # Next, we want to express the variational problem.  First, we need to
 # specify the trial function :math:`u` and the test function :math:`v`,
