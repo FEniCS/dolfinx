@@ -13,7 +13,6 @@ Public user interface
 
    dolfinx.common
    dolfinx.fem
-   dolfinx.fem.form
    dolfinx.geometry
    dolfinx.graph
    dolfinx.io

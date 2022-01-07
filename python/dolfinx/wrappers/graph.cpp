@@ -106,8 +106,9 @@ void graph(py::module& m)
   m.def(
       "partitioner",
       []() -> partition_fn
-      { return create_partitioner_py(dolfinx::graph::scotch::partitioner()); },
+      { return create_partitioner_py(dolfinx::graph::partition_graph); },
       "Default graph partitioner");
+#ifdef HAS_PTSCOTCH
   m.def(
       "partitioner_scotch",
       [](double imbalance, int seed) -> partition_fn
@@ -117,6 +118,7 @@ void graph(py::module& m)
       },
       py::arg("imbalance") = 0.025, py::arg("seed") = 0,
       "SCOTCH graph partitioner");
+#endif
 #ifdef HAS_PARMETIS
   m.def(
       "partitioner_parmetis",
@@ -138,7 +140,7 @@ void graph(py::module& m)
         return create_partitioner_py(dolfinx::graph::kahip::partitioner(
             mode, seed, imbalance, suppress_output));
       },
-      py::arg("mode") = 1.02, py::arg("seed") = 1, py::arg("imbalance") = 0.03,
+      py::arg("mode") = 1, py::arg("seed") = 1, py::arg("imbalance") = 0.03,
       py::arg("suppress_output") = true, "KaHIP graph partitioner");
 #endif
 

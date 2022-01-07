@@ -12,7 +12,7 @@ import pytest
 
 import ufl
 from dolfinx.cpp.la.petsc import scatter_local_vectors
-from dolfinx.fem import (DirichletBC, Form, Function, FunctionSpace,
+from dolfinx.fem import (dirichletbc, Function, FunctionSpace,
                          VectorFunctionSpace, apply_lifting,
                          apply_lifting_nest, assemble_matrix,
                          assemble_matrix_block, assemble_matrix_nest,
@@ -20,9 +20,8 @@ from dolfinx.fem import (DirichletBC, Form, Function, FunctionSpace,
                          assemble_vector_nest, bcs_by_block, create_matrix,
                          create_matrix_block, create_matrix_nest,
                          create_vector, create_vector_block,
-                         create_vector_nest, locate_dofs_topological, set_bc,
-                         set_bc_nest)
-from dolfinx.fem.form import extract_function_spaces
+                         create_vector_nest, extract_function_spaces, form,
+                         locate_dofs_topological, set_bc, set_bc_nest)
 from dolfinx.mesh import (GhostMode, create_unit_cube, create_unit_square,
                           locate_entities_boundary)
 from ufl import derivative, dx, inner
@@ -73,7 +72,7 @@ def test_matrix_assembly_block_nl():
     u_bc = Function(V1)
     u_bc.interpolate(bc_value)
     bdofs = locate_dofs_topological(V1, facetdim, bndry_facets)
-    bc = DirichletBC(u_bc, bdofs)
+    bc = dirichletbc(u_bc, bdofs)
 
     # Define variational problem
     du, dp = ufl.TrialFunction(V0), ufl.TrialFunction(V1)
@@ -89,9 +88,9 @@ def test_matrix_assembly_block_nl():
     F0 = inner(u, v) * dx + inner(p, v) * dx - inner(f, v) * dx
     F1 = inner(u, q) * dx + inner(p, q) * dx - inner(g, q) * dx
 
-    a_block = [[derivative(F0, u, du), derivative(F0, p, dp)],
-               [derivative(F1, u, du), derivative(F1, p, dp)]]
-    L_block = [Form(F0), Form(F1)]
+    a_block = form([[derivative(F0, u, du), derivative(F0, p, dp)],
+                    [derivative(F1, u, du), derivative(F1, p, dp)]])
+    L_block = form([F0, F1])
 
     # Monolithic blocked
     x0 = create_vector_block(L_block)
@@ -144,10 +143,11 @@ def test_matrix_assembly_block_nl():
     F = inner(u0, v0) * dx + inner(u1, v0) * dx + inner(u0, v1) * dx + inner(u1, v1) * dx \
         - inner(f, v0) * ufl.dx - inner(g, v1) * dx
     J = derivative(F, U, dU)
+    F, J = form(F), form(J)
 
     bdofsW_V1 = locate_dofs_topological((W.sub(1), V1), facetdim, bndry_facets)
 
-    bc = DirichletBC(u_bc, bdofsW_V1, W.sub(1))
+    bc = dirichletbc(u_bc, bdofsW_V1, W.sub(1))
     A2 = assemble_matrix(J, bcs=[bc])
     A2.assemble()
     b2 = assemble_vector(F)
@@ -161,14 +161,8 @@ def test_matrix_assembly_block_nl():
 
 class NonlinearPDE_SNESProblem():
     def __init__(self, F, J, soln_vars, bcs, P=None):
-        try:
-            self.L = [Form(_F) for _F in F]
-        except TypeError:
-            self.L = Form(F)
-        try:
-            self.a = [[Form(_J) for _J in Jrow] for Jrow in J]
-        except TypeError:
-            self.a = Form(J)
+        self.L = F
+        self.a = J
         self.a_precon = P
         self.bcs = bcs
         self.soln_vars = soln_vars
@@ -289,7 +283,7 @@ def test_assembly_solve_block_nl():
     u_bc1.interpolate(bc_val_1)
     bdofs0 = locate_dofs_topological(V0, facetdim, bndry_facets)
     bdofs1 = locate_dofs_topological(V1, facetdim, bndry_facets)
-    bcs = [DirichletBC(u_bc0, bdofs0), DirichletBC(u_bc1, bdofs1)]
+    bcs = [dirichletbc(u_bc0, bdofs0), dirichletbc(u_bc1, bdofs1)]
 
     # Block and Nest variational problem
     u, p = Function(V0), Function(V1)
@@ -301,9 +295,10 @@ def test_assembly_solve_block_nl():
 
     F = [inner((u**2 + 1) * ufl.grad(u), ufl.grad(v)) * dx - inner(f, v) * dx,
          inner((p**2 + 1) * ufl.grad(p), ufl.grad(q)) * dx - inner(g, q) * dx]
-
     J = [[derivative(F[0], u, du), derivative(F[0], p, dp)],
          [derivative(F[1], u, du), derivative(F[1], p, dp)]]
+
+    F, J = form(F), form(J)
 
     def blocked_solve():
         """Blocked version"""
@@ -390,13 +385,15 @@ def test_assembly_solve_block_nl():
             - inner(f, v0) * ufl.dx - inner(g, v1) * dx
         J = derivative(F, U, dU)
 
+        F, J = form(F), form(J)
+
         u0_bc = Function(V0)
         u0_bc.interpolate(bc_val_0)
         u1_bc = Function(V1)
         u1_bc.interpolate(bc_val_1)
         bdofsW0_V0 = locate_dofs_topological((W.sub(0), V0), facetdim, bndry_facets)
         bdofsW1_V1 = locate_dofs_topological((W.sub(1), V1), facetdim, bndry_facets)
-        bcs = [DirichletBC(u0_bc, bdofsW0_V0, W.sub(0)), DirichletBC(u1_bc, bdofsW1_V1, W.sub(1))]
+        bcs = [dirichletbc(u0_bc, bdofsW0_V0, W.sub(0)), dirichletbc(u1_bc, bdofsW1_V1, W.sub(1))]
 
         Jmat = create_matrix(J)
         Fvec = create_vector(F)
@@ -472,7 +469,7 @@ def test_assembly_solve_taylor_hood_nl(mesh):
     bdofs0 = locate_dofs_topological(P2, facetdim, bndry_facets0)
     bdofs1 = locate_dofs_topological(P2, facetdim, bndry_facets1)
 
-    bcs = [DirichletBC(u_bc_0, bdofs0), DirichletBC(u_bc_1, bdofs1)]
+    bcs = [dirichletbc(u_bc_0, bdofs0), dirichletbc(u_bc_1, bdofs1)]
 
     u, p = Function(P2), Function(P1)
     du, dp = ufl.TrialFunction(P2), ufl.TrialFunction(P1)
@@ -484,6 +481,8 @@ def test_assembly_solve_taylor_hood_nl(mesh):
          [derivative(F[1], u, du), derivative(F[1], p, dp)]]
     P = [[J[0][0], None],
          [None, inner(dp, q) * dx]]
+
+    F, J, P = form(F), form(J), form(P)
 
     # -- Blocked and monolithic
 
@@ -575,10 +574,12 @@ def test_assembly_solve_taylor_hood_nl(mesh):
     J = derivative(F, U, dU)
     P = inner(ufl.grad(du), ufl.grad(v)) * dx + inner(dp, q) * dx
 
+    F, J, P = form(F), form(J), form(P)
+
     bdofsW0_P2_0 = locate_dofs_topological((W.sub(0), P2), facetdim, bndry_facets0)
     bdofsW0_P2_1 = locate_dofs_topological((W.sub(0), P2), facetdim, bndry_facets1)
 
-    bcs = [DirichletBC(u_bc_0, bdofsW0_P2_0, W.sub(0)), DirichletBC(u_bc_1, bdofsW0_P2_1, W.sub(0))]
+    bcs = [dirichletbc(u_bc_0, bdofsW0_P2_0, W.sub(0)), dirichletbc(u_bc_1, bdofsW0_P2_1, W.sub(0))]
 
     Jmat2 = create_matrix(J)
     Pmat2 = create_matrix(P)

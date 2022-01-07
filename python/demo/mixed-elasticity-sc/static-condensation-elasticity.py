@@ -20,8 +20,8 @@ import numpy as np
 import ufl
 from dolfinx import geometry
 from dolfinx.cpp.fem import Form_complex128, Form_float64
-from dolfinx.fem import (DirichletBC, Function, FunctionSpace, IntegralType,
-                         apply_lifting, assemble_matrix, assemble_vector,
+from dolfinx.fem import (dirichletbc, Function, FunctionSpace, IntegralType,
+                         apply_lifting, assemble_matrix, assemble_vector, form,
                          locate_dofs_topological, set_bc)
 from dolfinx.io import XDMFFile
 from dolfinx.jit import ffcx_jit
@@ -74,7 +74,7 @@ u_bc.x.array[:] = 0.0
 # Displacement BC is applied to the left side
 left_facets = locate_entities_boundary(mesh, 1, left)
 bdofs = locate_dofs_topological(U, 1, left_facets)
-bc = DirichletBC(u_bc, bdofs)
+bc = dirichletbc(u_bc, bdofs)
 
 # Elastic stiffness tensor and Poisson ratio
 E, nu = 1.0, 1.0 / 3.0
@@ -92,7 +92,7 @@ a10 = - ufl.inner(sigma, ufl.grad(v)) * ufl.dx
 a01 = - ufl.inner(sigma_u(u), tau) * ufl.dx
 
 f = ufl.as_vector([0.0, 1.0 / 16])
-b1 = - ufl.inner(f, v) * ds(1)
+b1 = form(- ufl.inner(f, v) * ds(1))
 
 # JIT compile individual blocks tabulation kernels
 nptype = "complex128" if np.issubdtype(PETSc.ScalarType, np.complexfloating) else "float64"
@@ -154,7 +154,7 @@ solver.setOperators(A_cond)
 solver.solve(b, uc.vector)
 
 # Pure displacement based formulation
-a = - ufl.inner(sigma_u(u), ufl.grad(v)) * ufl.dx
+a = form(- ufl.inner(sigma_u(u), ufl.grad(v)) * ufl.dx)
 A = assemble_matrix(a, bcs=[bc])
 A.assemble()
 

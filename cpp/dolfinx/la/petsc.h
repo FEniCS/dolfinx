@@ -151,7 +151,7 @@ void clear(std::string option);
 
 /// Clear PETSc global options database
 void clear();
-}; // namespace options
+} // namespace options
 
 /// A simple wrapper for a PETSc vector pointer (Vec). Its main purpose
 /// is to assist with memory/lifetime management of PETSc Vec objects.
