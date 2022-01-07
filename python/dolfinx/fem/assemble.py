@@ -11,7 +11,7 @@ import typing
 
 if typing.TYPE_CHECKING:
     from dolfinx.fem.forms import FormMetaClass
-    from dolfinx.fem.dirichletbc import DirichletBCMetaClass
+    from dolfinx.fem.bcs import DirichletBCMetaClass
 
 import collections
 import contextlib
@@ -19,7 +19,7 @@ import functools
 
 from dolfinx import cpp as _cpp
 from dolfinx import la
-from dolfinx.fem.dirichletbc import bcs_by_block
+from dolfinx.fem.bcs import bcs_by_block
 from dolfinx.fem.forms import extract_function_spaces
 
 from petsc4py import PETSc
