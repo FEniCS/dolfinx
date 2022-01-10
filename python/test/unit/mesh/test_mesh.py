@@ -13,13 +13,16 @@ import pytest
 import basix
 from dolfinx import cpp as _cpp
 from dolfinx.cpp.mesh import create_cell_partitioner, is_simplex
-from dolfinx.fem import assemble_scalar
+from dolfinx.fem import assemble_scalar, form
 from dolfinx.mesh import (CellType, DiagonalType, GhostMode, create_box,
                           create_rectangle, create_unit_cube,
-                          create_unit_interval, create_unit_square)
+                          create_unit_interval, create_unit_square,
+                          create_submesh)
 from dolfinx_utils.test.fixtures import tempdir
 from dolfinx_utils.test.skips import skip_in_parallel
 from ufl import dx
+from dolfinx.cpp.mesh import entities_to_geometry
+from dolfinx.mesh import locate_entities, locate_entities_boundary
 
 from mpi4py import MPI
 
@@ -402,6 +405,111 @@ def test_small_mesh():
 
 def test_unit_hex_mesh_assemble():
     mesh = create_unit_cube(MPI.COMM_WORLD, 6, 7, 5, CellType.hexahedron)
-    vol = assemble_scalar(1 * dx(mesh))
+    vol = assemble_scalar(form(1 * dx(mesh)))
     vol = mesh.comm.allreduce(vol, MPI.SUM)
     assert vol == pytest.approx(1, rel=1e-9)
+
+
+def boundary_0(x):
+    lr = np.logical_or(np.isclose(x[0], 0.0), np.isclose(x[0], 1.0))
+    tb = np.logical_or(np.isclose(x[1], 0.0), np.isclose(x[1], 1.0))
+    return np.logical_or(lr, tb)
+
+
+def boundary_1(x):
+    return np.logical_or(np.isclose(x[0], 1.0), np.isclose(x[1], 1.0))
+
+
+def boundary_2(x):
+    return np.logical_and(np.isclose(x[1], 1), x[0] >= 0.5)
+
+
+# TODO Test that submesh of full mesh is a copy of the mesh
+@pytest.mark.parametrize("d", [2, 3])
+@pytest.mark.parametrize("n", [2, 6])
+@pytest.mark.parametrize("codim", [0, 1])
+@pytest.mark.parametrize("marker", [lambda x: x[0] >= 0.5,
+                                    lambda x: x[0] >= -1])
+@pytest.mark.parametrize("ghost_mode", [GhostMode.none,
+                                        GhostMode.shared_facet])
+def test_submesh(d, n, codim, marker, ghost_mode):
+    if d == 2:
+        mesh = create_unit_square(MPI.COMM_WORLD, n, n,
+                                  ghost_mode=ghost_mode)
+    else:
+        mesh = create_unit_cube(MPI.COMM_WORLD, n, n, n,
+                                ghost_mode=ghost_mode)
+
+    edim = mesh.topology.dim - codim
+    entities = locate_entities(mesh, edim, marker)
+    submesh, vertex_map, geom_map = create_submesh(mesh, edim, entities)
+    submesh_topology_test(mesh, submesh, vertex_map, edim, entities)
+    submesh_geometry_test(mesh, submesh, geom_map, edim, entities)
+
+
+@pytest.mark.parametrize("d", [2, 3])
+@pytest.mark.parametrize("n", [2, 6])
+@pytest.mark.parametrize("boundary", [boundary_0,
+                                      boundary_1,
+                                      boundary_2])
+@pytest.mark.parametrize("ghost_mode", [GhostMode.none,
+                                        GhostMode.shared_facet])
+def test_submesh_boundary(d, n, boundary, ghost_mode):
+    if d == 2:
+        mesh = create_unit_square(MPI.COMM_WORLD, n, n,
+                                  ghost_mode=ghost_mode)
+    else:
+        mesh = create_unit_cube(MPI.COMM_WORLD, n, n, n,
+                                ghost_mode=ghost_mode)
+    edim = mesh.topology.dim - 1
+    entities = locate_entities_boundary(mesh, edim, boundary)
+    submesh, vertex_map, geom_map = create_submesh(mesh, edim, entities)
+    submesh_topology_test(mesh, submesh, vertex_map, edim, entities)
+    submesh_geometry_test(mesh, submesh, geom_map, edim, entities)
+
+
+def submesh_topology_test(mesh, submesh, vertex_map, entity_dim, entities):
+    # Check that creating facets / creating connectivity doesn't cause
+    # a segmentation fault
+    mesh_tdim = mesh.topology.dim
+    if entity_dim == mesh_tdim:
+        submesh.topology.create_entities(mesh_tdim - 1)
+        submesh.topology.create_connectivity(mesh_tdim - 1, 0)
+
+    # Some processes might not own or ghost entities
+    if len(entities) > 0:
+        mesh.topology.create_connectivity(entity_dim, 0)
+        mesh_e_to_v = mesh.topology.connectivity(entity_dim, 0)
+        submesh.topology.create_connectivity(entity_dim, 0)
+        submesh_e_to_v = submesh.topology.connectivity(entity_dim, 0)
+        for submesh_entity in range(len(entities)):
+            submesh_entity_vertices = submesh_e_to_v.links(submesh_entity)
+            # The submesh is created such that entities is the map from the
+            # submesh entity to the mesh entity
+            mesh_entity = entities[submesh_entity]
+            mesh_entity_vertices = mesh_e_to_v.links(mesh_entity)
+            for i in range(len(submesh_entity_vertices)):
+                assert(vertex_map[submesh_entity_vertices[i]]
+                       == mesh_entity_vertices[i])
+    else:
+        assert(submesh.topology.index_map(entity_dim).size_local == 0)
+
+
+def submesh_geometry_test(mesh, submesh, geom_map, entity_dim, entities):
+    submesh_geom_index_map = submesh.geometry.index_map()
+    assert(submesh_geom_index_map.size_local + submesh_geom_index_map.num_ghosts == submesh.geometry.x.shape[0])
+
+    # Some processes might not own or ghost entities
+    if len(entities) > 0:
+        assert(mesh.geometry.dim == submesh.geometry.dim)
+
+        e_to_g = entities_to_geometry(mesh, entity_dim, entities, False)
+        for submesh_entity in range(len(entities)):
+            submesh_x_dofs = submesh.geometry.dofmap.links(submesh_entity)
+            # e_to_g[i] gets the mesh x_dofs of entities[i], which should
+            # correspond to the x_dofs of cell i in the submesh
+            mesh_x_dofs = e_to_g[submesh_entity]
+            for i in range(len(submesh_x_dofs)):
+                assert(mesh_x_dofs[i] == geom_map[submesh_x_dofs[i]])
+                assert(np.allclose(mesh.geometry.x[mesh_x_dofs[i]],
+                                   submesh.geometry.x[submesh_x_dofs[i]]))

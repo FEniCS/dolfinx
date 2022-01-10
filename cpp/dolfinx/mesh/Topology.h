@@ -38,7 +38,7 @@ class Topology;
 /// @return Vector with length equal to the number of owned facets on
 ///   this this process. True if the ith facet (local index) is on the
 ///   exterior of the domain.
-std::vector<bool> compute_boundary_facets(const Topology& topology);
+std::vector<std::int8_t> compute_boundary_facets(const Topology& topology);
 
 /// Compute marker for facets that are on  partition boundary, i.e. are
 /// connected to only one cell and are either shared or ghosts;

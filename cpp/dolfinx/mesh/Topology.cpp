@@ -411,7 +411,7 @@ graph::AdjacencyList<std::int32_t> convert_cells_to_local_indexing(
 } // namespace
 
 //-----------------------------------------------------------------------------
-std::vector<bool> mesh::compute_boundary_facets(const Topology& topology)
+std::vector<std::int8_t> mesh::compute_boundary_facets(const Topology& topology)
 {
   const int tdim = topology.dim();
   auto facets = topology.index_map(tdim - 1);
@@ -429,7 +429,7 @@ std::vector<bool> mesh::compute_boundary_facets(const Topology& topology)
   auto fc = topology.connectivity(tdim - 1, tdim);
   if (!fc)
     throw std::runtime_error("Facet-cell connectivity missing.");
-  std::vector<bool> _boundary_facet(facets->size_local(), false);
+  std::vector<std::int8_t> _boundary_facet(facets->size_local(), false);
   for (std::size_t f = 0; f < _boundary_facet.size(); ++f)
   {
     if (fc->num_links(f) == 1

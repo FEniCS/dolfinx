@@ -67,8 +67,8 @@ def test_python_interface(V, V2, W, W2, Q):
 
     assert V.ufl_cell() == V2.ufl_cell()
     assert W.ufl_cell() == W2.ufl_cell()
-    assert V.dolfin_element().signature() == V2.dolfin_element().signature()
-    assert W.dolfin_element().signature() == W2.dolfin_element().signature()
+    assert V.element.signature() == V2.element.signature()
+    assert W.element.signature() == W2.element.signature()
     assert V.ufl_element() == V2.ufl_element()
     assert W.ufl_element() == W2.ufl_element()
     assert W.id == W2.id
@@ -109,10 +109,10 @@ def test_sub(Q, W):
     assert W.dofmap.dof_layout.block_size() == X.dofmap.dof_layout.block_size()
     assert W.dofmap.bs * len(W.dofmap.cell_dofs(0)) == len(X.dofmap.cell_dofs(0))
 
-    assert W.element.num_sub_elements() == X.element.num_sub_elements()
-    assert W.element.space_dimension() == X.element.space_dimension()
-    assert W.element.value_rank == X.element.value_rank
-    assert W.element.interpolation_points().shape == X.element.interpolation_points().shape
+    assert W.element.num_sub_elements == X.element.num_sub_elements
+    assert W.element.space_dimension == X.element.space_dimension
+    assert W.element.value_shape == X.element.value_shape
+    assert W.element.interpolation_points.shape == X.element.interpolation_points.shape
     assert W.element.signature() == X.element.signature()
 
 

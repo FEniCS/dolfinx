@@ -7,7 +7,7 @@
 from numpy import isclose, logical_and
 
 import ufl
-from dolfinx.fem import FunctionSpace, assemble_matrix
+from dolfinx.fem import FunctionSpace, assemble_matrix, form
 from dolfinx.mesh import (DiagonalType, GhostMode, compute_incident_entities,
                           create_unit_cube, create_unit_square,
                           locate_entities, locate_entities_boundary, refine)
@@ -64,7 +64,7 @@ def test_refine_create_form():
     # Define variational problem
     u = ufl.TrialFunction(V)
     v = ufl.TestFunction(V)
-    a = ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx
+    a = form(ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx)
     assemble_matrix(a)
 
 

@@ -114,7 +114,7 @@ void _lift_bc_cells(
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
       common::impl::copy_N<3>(std::next(x_g.begin(), 3 * x_dofs[i]),
-                           std::next(coordinate_dofs.begin(), 3 * i));
+                              std::next(coordinate_dofs.begin(), 3 * i));
     }
 
     // Size data structure for assembly
@@ -254,7 +254,7 @@ void _lift_bc_exterior_facets(
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
       common::impl::copy_N<3>(std::next(x_g.begin(), 3 * x_dofs[i]),
-                           std::next(coordinate_dofs.begin(), 3 * i));
+                              std::next(coordinate_dofs.begin(), 3 * i));
     }
 
     // Size data structure for assembly
@@ -318,8 +318,7 @@ void _lift_bc_interior_facets(
                              std::int32_t, int)>& dof_transform_to_transpose,
     const graph::AdjacencyList<std::int32_t>& dofmap1, int bs1,
     const xtl::span<const T>& constants, const xtl::span<const T>& coeffs,
-    int cstride, const std::vector<int>& offsets,
-    const xtl::span<const std::uint32_t>& cell_info,
+    int cstride, const xtl::span<const std::uint32_t>& cell_info,
     const std::function<std::uint8_t(std::size_t)>& get_perm,
     const xtl::span<const T>& bc_values1,
     const xtl::span<const std::int8_t>& bc_markers1,
@@ -339,8 +338,6 @@ void _lift_bc_interior_facets(
 
   // Data structures used in assembly
   xt::xtensor<double, 3> coordinate_dofs({2, num_dofs_g, 3});
-  std::vector<T> coeff_array(2 * offsets.back());
-  assert(offsets.back() == cstride);
   std::vector<T> Ae, be;
 
   // Temporaries for joint dofmaps
@@ -357,14 +354,16 @@ void _lift_bc_interior_facets(
     auto x_dofs0 = x_dofmap.links(cells[0]);
     for (std::size_t i = 0; i < x_dofs0.size(); ++i)
     {
-      common::impl::copy_N<3>(std::next(x_g.begin(), 3 * x_dofs0[i]),
-                           xt::view(coordinate_dofs, 0, i, xt::all()).begin());
+      common::impl::copy_N<3>(
+          std::next(x_g.begin(), 3 * x_dofs0[i]),
+          xt::view(coordinate_dofs, 0, i, xt::all()).begin());
     }
     auto x_dofs1 = x_dofmap.links(cells[1]);
     for (std::size_t i = 0; i < x_dofs1.size(); ++i)
     {
-      common::impl::copy_N<3>(std::next(x_g.begin(), 3 * x_dofs1[i]),
-                           xt::view(coordinate_dofs, 1, i, xt::all()).begin());
+      common::impl::copy_N<3>(
+          std::next(x_g.begin(), 3 * x_dofs1[i]),
+          xt::view(coordinate_dofs, 1, i, xt::all()).begin());
     }
 
     // Get dof maps for cells and pack
@@ -533,7 +532,7 @@ void assemble_cells(
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
       common::impl::copy_N<3>(std::next(x_g.begin(), 3 * x_dofs[i]),
-                           std::next(coordinate_dofs.begin(), 3 * i));
+                              std::next(coordinate_dofs.begin(), 3 * i));
     }
 
     // Tabulate vector for cell
@@ -604,7 +603,7 @@ void assemble_exterior_facets(
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
       common::impl::copy_N<3>(std::next(x_g.begin(), 3 * x_dofs[i]),
-                           std::next(coordinate_dofs.begin(), 3 * i));
+                              std::next(coordinate_dofs.begin(), 3 * i));
     }
 
     // Tabulate element vector
@@ -649,8 +648,7 @@ void assemble_interior_facets(
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*)>& fn,
     const xtl::span<const T>& constants, const xtl::span<const T>& coeffs,
-    int cstride, const xtl::span<const int>& offsets,
-    const xtl::span<const std::uint32_t>& cell_info,
+    int cstride, const xtl::span<const std::uint32_t>& cell_info,
     const std::function<std::uint8_t(std::size_t)>& get_perm)
 {
   const int tdim = mesh.topology().dim();
@@ -665,7 +663,6 @@ void assemble_interior_facets(
   // Create data structures used in assembly
   xt::xtensor<double, 3> coordinate_dofs({2, num_dofs_g, 3});
   std::vector<T> be;
-  assert(offsets.back() == cstride);
 
   const int num_cell_facets
       = mesh::cell_num_entities(mesh.topology().cell_type(), tdim - 1);
@@ -683,14 +680,16 @@ void assemble_interior_facets(
     auto x_dofs0 = x_dofmap.links(cells[0]);
     for (std::size_t i = 0; i < x_dofs0.size(); ++i)
     {
-      common::impl::copy_N<3>(std::next(x_g.begin(), 3 * x_dofs0[i]),
-                           xt::view(coordinate_dofs, 0, i, xt::all()).begin());
+      common::impl::copy_N<3>(
+          std::next(x_g.begin(), 3 * x_dofs0[i]),
+          xt::view(coordinate_dofs, 0, i, xt::all()).begin());
     }
     auto x_dofs1 = x_dofmap.links(cells[1]);
     for (std::size_t i = 0; i < x_dofs1.size(); ++i)
     {
-      common::impl::copy_N<3>(std::next(x_g.begin(), 3 * x_dofs1[i]),
-                           xt::view(coordinate_dofs, 1, i, xt::all()).begin());
+      common::impl::copy_N<3>(
+          std::next(x_g.begin(), 3 * x_dofs1[i]),
+          xt::view(coordinate_dofs, 1, i, xt::all()).begin());
     }
 
     // Get dofmaps for cells
@@ -851,7 +850,6 @@ void lift_bc(xtl::span<T> b, const Form<T>& a,
     else
       get_perm = [](std::size_t) { return 0; };
 
-    const std::vector<int> c_offsets = a.coefficient_offsets();
     for (int i : a.integral_ids(IntegralType::interior_facet))
     {
       const auto& kernel = a.kernel(IntegralType::interior_facet, i);
@@ -862,8 +860,8 @@ void lift_bc(xtl::span<T> b, const Form<T>& a,
           = a.interior_facet_domains(i);
       _lift_bc_interior_facets(b, *mesh, kernel, facets, dof_transform, dofmap0,
                                bs0, dof_transform_to_transpose, dofmap1, bs1,
-                               constants, coeffs, cstride, c_offsets, cell_info,
-                               get_perm, bc_values1, bc_markers1, x0, scale);
+                               constants, coeffs, cstride, cell_info, get_perm,
+                               bc_values1, bc_markers1, x0, scale);
     }
   }
 }
@@ -1047,7 +1045,6 @@ void assemble_vector(
     else
       get_perm = [](std::size_t) { return 0; };
 
-    const std::vector<int> c_offsets = L.coefficient_offsets();
     for (int i : L.integral_ids(IntegralType::interior_facet))
     {
       const auto& fn = L.kernel(IntegralType::interior_facet, i);
@@ -1058,21 +1055,21 @@ void assemble_vector(
           = L.interior_facet_domains(i);
       if (bs == 1)
       {
-        impl::assemble_interior_facets<T, 1>(
-            dof_transform, b, *mesh, facets, *dofmap, fn, constants, coeffs,
-            cstride, c_offsets, cell_info, get_perm);
+        impl::assemble_interior_facets<T, 1>(dof_transform, b, *mesh, facets,
+                                             *dofmap, fn, constants, coeffs,
+                                             cstride, cell_info, get_perm);
       }
       else if (bs == 3)
       {
-        impl::assemble_interior_facets<T, 3>(
-            dof_transform, b, *mesh, facets, *dofmap, fn, constants, coeffs,
-            cstride, c_offsets, cell_info, get_perm);
+        impl::assemble_interior_facets<T, 3>(dof_transform, b, *mesh, facets,
+                                             *dofmap, fn, constants, coeffs,
+                                             cstride, cell_info, get_perm);
       }
       else
       {
         impl::assemble_interior_facets(dof_transform, b, *mesh, facets, *dofmap,
                                        fn, constants, coeffs, cstride,
-                                       c_offsets, cell_info, get_perm);
+                                       cell_info, get_perm);
       }
     }
   }
