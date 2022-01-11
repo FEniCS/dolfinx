@@ -38,12 +38,24 @@ jobs:
           # apt install -y intel-hpckit
           apt install -y intel-oneapi-common-vars intel-oneapi-compiler-dpcpp-cpp
 
-      - name: Install FEniCS Python components
+      - name: Install Basix
         run: |
           . /opt/intel/oneapi/setvars.sh
-          python3 -m pip install git+https://github.com/FEniCS/ufl.git
           python3 -m pip install git+https://github.com/FEniCS/basix.git
-          python3 -m pip install git+https://github.com/FEniCS/ffcx.git
+
+      - name: Clone FFCx
+        uses: actions/checkout@v2
+        with:
+          path: ./ffcx
+          repository: FEniCS/ffcx
+          ref: ufcx
+
+      - name: Install FFCx interface
+        run: |
+          . /opt/intel/oneapi/setvars.sh
+          cmake -B ufcx-build-dir -S ffcx/cmake/
+          cmake --build ufcx-build-dir
+          cmake --install ufcx-build-dir
 
       - name: Configure C++
         run: |
@@ -55,6 +67,11 @@ jobs:
           . /opt/intel/oneapi/setvars.sh
           cmake --build build
           cmake --install build
+
+      - name: Install UFL and FFCx modules
+        run: |
+          python3 -m pip install ffcx/
+          python3 -m pip install git+https://github.com/FEniCS/ufl.git
 
       - name: Build and run C++ unit tests (serial and MPI)
         run: |
