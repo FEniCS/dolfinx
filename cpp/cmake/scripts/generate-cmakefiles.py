@@ -31,9 +31,13 @@ if (NOT DEFINED PETSC_SCALAR_COMPLEX)
   message(FATAL_ERROR "PETSc scalar type not defined")
 endif()
 
+if (PETSC_SCALAR_COMPLEX EQUAL 1)
+  set(SCALAR_TYPE "--scalar_type double _Complex")
+endif()
+
 add_custom_command(
   OUTPUT {ufl_c_files}
-  COMMAND ffcx ${{CMAKE_CURRENT_SOURCE_DIR}}/{ufl_files} ${{PETSC_SCALAR_COMPLEX}}
+  COMMAND ffcx ${{CMAKE_CURRENT_SOURCE_DIR}}/{ufl_files} ${{SCALAR_TYPE}}
   DEPENDS {ufl_files}
   COMMENT "Compiling {ufl_files} using FFCx"
 )
