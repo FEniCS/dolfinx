@@ -162,6 +162,7 @@ void SparsityPattern::insert(const xtl::span<const std::int32_t>& rows,
 
   for (std::int32_t row : rows)
   {
+    assert(row >= 0);
     if (row < size0)
       _row_cache[row].insert(_row_cache[row].end(), cols.begin(), cols.end());
     else
@@ -186,6 +187,7 @@ void SparsityPattern::insert_diagonal(const std::vector<int32_t>& rows)
 
   for (std::int32_t row : rows)
   {
+    assert(row >= 0);
     if (row < size0)
       _row_cache[row].push_back(row);
     else
@@ -359,11 +361,11 @@ void SparsityPattern::assemble()
     }
   }
 
-  // Sort and remove duplicate column indices in each owned row
-  std::vector<std::int32_t> adj_counts(local_size0, 0);
+  // Sort and remove duplicate column indices in each row
+  std::vector<std::int32_t> adj_counts(local_size0 + num_ghosts0, 0);
   std::vector<std::int32_t> adj_data;
-  _off_diagonal_offset.resize(local_size0);
-  for (std::int32_t i = 0; i < local_size0; ++i)
+  _off_diagonal_offset.resize(local_size0 + num_ghosts0);
+  for (std::int32_t i = 0; i < local_size0 + num_ghosts0; ++i)
   {
     std::vector<std::int32_t>& row = _row_cache[i];
     std::sort(row.begin(), row.end());
@@ -374,13 +376,13 @@ void SparsityPattern::assemble()
     _off_diagonal_offset[i] = std::distance(
         row.begin(), std::lower_bound(row.begin(), it_end, local_size1));
 
-    // Store owned columns
     adj_data.insert(adj_data.end(), row.begin(), it_end);
     adj_counts[i] += (it_end - row.begin());
   }
+  // Clear cache
   std::vector<std::vector<std::int32_t>>().swap(_row_cache);
 
-  // Compute offsets for diagonal and off-diagonal block adjacency lists
+  // Compute offsets for adjacency list
   std::vector<std::int32_t> adj_offsets(local_size0 + 1);
   std::partial_sum(adj_counts.begin(), adj_counts.end(),
                    adj_offsets.begin() + 1);
