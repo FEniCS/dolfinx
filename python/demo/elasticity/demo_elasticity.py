@@ -13,8 +13,8 @@ from contextlib import ExitStack
 import numpy as np
 
 from dolfinx import la
-from dolfinx.fem import (DirichletBC, Function, VectorFunctionSpace,
-                         apply_lifting, assemble_matrix, assemble_vector,
+from dolfinx.fem import (Function, VectorFunctionSpace, apply_lifting,
+                         assemble_matrix, assemble_vector, dirichletbc, form,
                          locate_dofs_geometrical, set_bc)
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import CellType, GhostMode, create_box
@@ -101,11 +101,11 @@ V = VectorFunctionSpace(mesh, ("Lagrange", 1))
 # Define variational problem
 u = TrialFunction(V)
 v = TestFunction(V)
-a = inner(sigma(u), grad(v)) * dx
-L = inner(f, v) * dx
+a = form(inner(sigma(u), grad(v)) * dx)
+L = form(inner(f, v) * dx)
 
 # Set up boundary condition on inner surface
-bc = DirichletBC(np.array([0, 0, 0], dtype=PETSc.ScalarType),
+bc = dirichletbc(np.array([0, 0, 0], dtype=PETSc.ScalarType),
                  locate_dofs_geometrical(V, lambda x: np.logical_or(np.isclose(x[0], 0.0),
                                                                     np.isclose(x[1], 1.0))), V)
 

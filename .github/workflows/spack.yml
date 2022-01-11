@@ -54,7 +54,6 @@ jobs:
           . ./spack/share/spack/setup-env.sh
           spack env activate cpp-main
           cd dolfinx-main/cpp/
-          python cmake/scripts/generate-cmakefiles.py
           cd demo/poisson
           ffcx poisson.ufl
           cmake .
@@ -71,7 +70,6 @@ jobs:
           . ./spack/share/spack/setup-env.sh
           spack env activate cpp-release
           cd dolfinx-release/cpp/
-          python cmake/scripts/generate-cmakefiles.py
           cd demo/poisson
           ffcx poisson.ufl
           cmake .

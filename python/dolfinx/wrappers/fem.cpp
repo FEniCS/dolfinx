@@ -680,6 +680,24 @@ void declare_form(py::module& m, const std::string& type)
           py::arg("spaces"), py::arg("integrals"), py::arg("coefficients"),
           py::arg("constants"), py::arg("need_permutation_data"),
           py::arg("mesh") = py::none())
+      .def(py::init(
+               [](std::uintptr_t form,
+                  const std::vector<std::shared_ptr<
+                      const dolfinx::fem::FunctionSpace>>& spaces,
+                  const std::vector<std::shared_ptr<
+                      const dolfinx::fem::Function<T>>>& coefficients,
+                  const std::vector<std::shared_ptr<
+                      const dolfinx::fem::Constant<T>>>& constants,
+                  const std::map<dolfinx::fem::IntegralType,
+                                 const dolfinx::mesh::MeshTags<int>*>&
+                      subdomains,
+                  const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh)
+               {
+                 ufc_form* p = reinterpret_cast<ufc_form*>(form);
+                 return dolfinx::fem::create_form<T>(
+                     *p, spaces, coefficients, constants, subdomains, mesh);
+               }),
+           "Create a Form from a pointer to a ufc_form")
       .def_property_readonly("coefficients",
                              &dolfinx::fem::Form<T>::coefficients)
       .def_property_readonly("rank", &dolfinx::fem::Form<T>::rank)
@@ -744,7 +762,7 @@ void declare_form(py::module& m, const std::string& type)
   std::string pymethod_create_form = std::string("create_form_") + type;
   m.def(
       pymethod_create_form.c_str(),
-      [](const std::uintptr_t form,
+      [](std::uintptr_t form,
          const std::vector<std::shared_ptr<const dolfinx::fem::FunctionSpace>>&
              spaces,
          const std::vector<std::shared_ptr<const dolfinx::fem::Function<T>>>&
@@ -755,7 +773,7 @@ void declare_form(py::module& m, const std::string& type)
                         const dolfinx::mesh::MeshTags<int>*>& subdomains,
          const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh)
       {
-        const ufc_form* p = reinterpret_cast<const ufc_form*>(form);
+        ufc_form* p = reinterpret_cast<ufc_form*>(form);
         return dolfinx::fem::create_form<T>(*p, spaces, coefficients, constants,
                                             subdomains, mesh);
       },
@@ -808,21 +826,21 @@ void fem(py::module& m)
       "Create a sparsity pattern.");
   m.def(
       "create_element_dof_layout",
-      [](const std::uintptr_t dofmap, const dolfinx::mesh::CellType cell_type,
+      [](std::uintptr_t dofmap, const dolfinx::mesh::CellType cell_type,
          const std::vector<int>& parent_map)
       {
-        const ufc_dofmap* p = reinterpret_cast<const ufc_dofmap*>(dofmap);
+        ufc_dofmap* p = reinterpret_cast<ufc_dofmap*>(dofmap);
         return dolfinx::fem::create_element_dof_layout(*p, cell_type,
                                                        parent_map);
       },
       "Create ElementDofLayout object from a ufc dofmap.");
   m.def(
       "create_dofmap",
-      [](const MPICommWrapper comm, const std::uintptr_t dofmap,
+      [](const MPICommWrapper comm, std::uintptr_t dofmap,
          dolfinx::mesh::Topology& topology,
          std::shared_ptr<dolfinx::fem::FiniteElement> element)
       {
-        const ufc_dofmap* p = reinterpret_cast<const ufc_dofmap*>(dofmap);
+        ufc_dofmap* p = reinterpret_cast<ufc_dofmap*>(dofmap);
         return dolfinx::fem::create_dofmap(comm.get(), *p, topology, nullptr,
                                            element);
       },
@@ -848,10 +866,10 @@ void fem(py::module& m)
              std::shared_ptr<dolfinx::fem::FiniteElement>>(
       m, "FiniteElement", "Finite element object")
       .def(py::init(
-          [](const std::uintptr_t ufc_element)
+          [](std::uintptr_t ufc_element)
           {
-            const ufc_finite_element* p
-                = reinterpret_cast<const ufc_finite_element*>(ufc_element);
+            ufc_finite_element* p
+                = reinterpret_cast<ufc_finite_element*>(ufc_element);
             return dolfinx::fem::FiniteElement(*p);
           }))
       .def_property_readonly("num_sub_elements",

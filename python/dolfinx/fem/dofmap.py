@@ -19,7 +19,7 @@ class DofMap:
         self._cpp_object = dofmap
 
     def cell_dofs(self, cell_index: int):
-        """ Returns the Local-global dof map for the cell (using process-local indices)
+        """ Returns the local-global dof map for the cell (using process-local indices)
 
         Parameters
         ----------
