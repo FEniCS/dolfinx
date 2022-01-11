@@ -10,9 +10,10 @@ import numpy as np
 import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import fem, la
-from dolfinx.fem import (dirichletbc, Function, FunctionSpace, apply_lifting,
+from dolfinx.fem import (Function, FunctionSpace, apply_lifting,
                          assemble_matrix, assemble_vector, create_matrix,
-                         create_vector, form, locate_dofs_geometrical, set_bc)
+                         create_vector, dirichletbc, form,
+                         locate_dofs_geometrical, set_bc)
 from dolfinx.mesh import create_unit_square
 from ufl import TestFunction, TrialFunction, derivative, dx, grad, inner
 

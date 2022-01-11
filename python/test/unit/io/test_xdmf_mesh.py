@@ -12,8 +12,9 @@ import pytest
 from dolfinx import cpp as _cpp
 from dolfinx.cpp.io import perm_gmsh
 from dolfinx.io import XDMFFile, ufl_mesh_from_gmsh
-from dolfinx.mesh import (CellType, create_mesh, create_unit_cube, create_unit_interval,
-                          create_unit_square, GhostMode, locate_entities, create_submesh)
+from dolfinx.mesh import (CellType, GhostMode, create_mesh, create_submesh,
+                          create_unit_cube, create_unit_interval,
+                          create_unit_square, locate_entities)
 from dolfinx_utils.test.fixtures import tempdir
 
 from mpi4py import MPI
