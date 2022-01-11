@@ -43,15 +43,15 @@ class FormMetaClass:
 
         """
         self._code = code
-        self._ufc_form = form
+        self._ufcx_form = form
         ffi = cffi.FFI()
-        super().__init__(ffi.cast("uintptr_t", ffi.addressof(self._ufc_form)),
+        super().__init__(ffi.cast("uintptr_t", ffi.addressof(self._ufcx_form)),
                          V, coeffs, constants, subdomains, mesh)
 
     @property
-    def ufc_form(self):
-        """The compiled ufc_form object"""
-        return self._ufc_form
+    def ufcx_form(self):
+        """The compiled ufcx_form object"""
+        return self._ufcx_form
 
     @property
     def code(self) -> str:
@@ -105,7 +105,7 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtyp
         if mesh is None:
             raise RuntimeError("Expecting to find a Mesh in the form.")
 
-        ufc_form, module, code = jit.ffcx_jit(mesh.comm, form,
+        ufcx_form, module, code = jit.ffcx_jit(mesh.comm, form,
                                               form_compiler_parameters=form_compiler_parameters,
                                               jit_parameters=jit_parameters)
 
@@ -115,8 +115,8 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtyp
         # Prepare coefficients data. For every coefficient in form take its
         # C++ object.
         original_coefficients = form.coefficients()
-        coeffs = [original_coefficients[ufc_form.original_coefficient_position[i]
-                                        ]._cpp_object for i in range(ufc_form.num_coefficients)]
+        coeffs = [original_coefficients[ufcx_form.original_coefficient_position[i]
+                                        ]._cpp_object for i in range(ufcx_form.num_coefficients)]
         constants = [c._cpp_object for c in form.constants()]
 
         # Subdomain markers (possibly None for some dimensions)
@@ -125,7 +125,7 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtyp
                       _cpp.fem.IntegralType.interior_facet: subdomains.get("interior_facet"),
                       _cpp.fem.IntegralType.vertex: subdomains.get("vertex")}
 
-        return formcls(ufc_form, V, coeffs, constants, subdomains, mesh, code)
+        return formcls(ufcx_form, V, coeffs, constants, subdomains, mesh, code)
 
     def _create_form(form):
         """Recursively convert ufl.Forms to dolfinx.fem.Form, otherwise

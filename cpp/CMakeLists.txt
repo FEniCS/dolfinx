@@ -125,7 +125,7 @@ endif()
 #------------------------------------------------------------------------------
 # Find required packages
 
-# Use Python for detecting UFC and Basix
+# Use Python for detecting x and Basix
 find_package(Python3 COMPONENTS Interpreter REQUIRED)
 
 # Note: When updating Boost version, also update DOLFINXCongif.cmake.in
@@ -192,8 +192,8 @@ set_package_properties(HDF5 PROPERTIES TYPE REQUIRED
   URL "https://www.hdfgroup.org/HDF5")
 
 # Check for UFC
-find_package(UFC MODULE ${DOLFINX_VERSION_MAJOR}.${DOLFINX_VERSION_MINOR})
-set_package_properties(UFC PROPERTIES TYPE REQUIRED
+find_package(UFCx MODULE ${DOLFINX_VERSION_MAJOR}.${DOLFINX_VERSION_MINOR})
+set_package_properties(UFCx PROPERTIES TYPE REQUIRED
   DESCRIPTION "Unified interface for form-compilers (part of FFCx)"
   URL "https://github.com/fenics/ffcx")
 

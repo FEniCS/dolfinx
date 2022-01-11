@@ -1,13 +1,13 @@
-# - Try to find UFC
+# - Try to find UFCx
 #
 # Once done this will define
 #
 # This module defines
 #
-#  UFC_FOUND        - system has UFC with correct version
-#  UFC_INCLUDE_DIRS - where to find ufc.h
-#  UFC_VERSION      - UFC version
-#  UFC_SIGNATURE    - UFC signature
+#  UFCX_FOUND        - system has UFC with correct version
+#  UFCX_INCLUDE_DIRS - where to find ufcx.h
+#  UFCX_VERSION      - UFC version
+#  UFCX_SIGNATURE    - UFC signature
 
 #=============================================================================
 # Copyright (C) 2010 Johannes Ring
@@ -38,20 +38,20 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #=============================================================================
 
-# Two paths: Set UFC_INCLUDE_DIR manually, or ask Python/FFCx for location
+# Two paths: Set UFCX_INCLUDE_DIR manually, or ask Python/FFCx for location
 # of UFC headers.
 
-if (DEFINED ENV{UFC_INCLUDE_DIR})
-  MESSAGE(STATUS "Looking for UFC in $ENV{UFC_INCLUDE_DIR}...")
+if (DEFINED ENV{UFCX_INCLUDE_DIR})
+  MESSAGE(STATUS "Looking for UFC in $ENV{UFCX_INCLUDE_DIR}...")
 
-  if (EXISTS "$ENV{UFC_INCLUDE_DIR}/ufc.h")
-    set(UFC_INCLUDE_DIRS $ENV{UFC_INCLUDE_DIR} CACHE STRING "Where to find ufc.h")
+  if (EXISTS "$ENV{UFCX_INCLUDE_DIR}/ufcx.h")
+    set(UFCX_INCLUDE_DIRS $ENV{UFCX_INCLUDE_DIR} CACHE STRING "Where to find ufcx.h")
     execute_process(
-      COMMAND /bin/bash -c "cat $ENV{UFC_INCLUDE_DIR}/ufc.h | sha1sum | cut -c 1-40"
-      OUTPUT_VARIABLE UFC_SIGNATURE OUTPUT_STRIP_TRAILING_WHITESPACE)
+      COMMAND /bin/bash -c "cat $ENV{UFCX_INCLUDE_DIR}/ufcx.h | sha1sum | cut -c 1-40"
+      OUTPUT_VARIABLE UFCX_SIGNATURE OUTPUT_STRIP_TRAILING_WHITESPACE)
     # Assume user knows what they are doing.
-    set(UFC_VERSION ${UFC_FIND_VERSION})
-    set(UFC_VERSION_OK TRUE)
+    set(UFCX_VERSION ${UFCX_FIND_VERSION})
+    set(UFCX_VERSION_OK TRUE)
    else()
        MESSAGE(STATUS "Could not find UFC header.")
    endif()
@@ -59,39 +59,39 @@ else()
   MESSAGE(STATUS "Asking Python module FFCx for location of UFC... (Python executable: ${Python3_EXECUTABLE})")
   execute_process(
     COMMAND ${Python3_EXECUTABLE} -c "import ffcx.codegeneration, sys; sys.stdout.write(ffcx.codegeneration.get_include_path())"
-    OUTPUT_VARIABLE UFC_INCLUDE_DIR
+    OUTPUT_VARIABLE UFCX_INCLUDE_DIR
     )
 
-  if (UFC_INCLUDE_DIR)
-    set(UFC_INCLUDE_DIRS ${UFC_INCLUDE_DIR} CACHE STRING "Where to find ufc.h")
+  if (UFCX_INCLUDE_DIR)
+    set(UFCX_INCLUDE_DIRS ${UFCX_INCLUDE_DIR} CACHE STRING "Where to find ufcx.h")
 
     execute_process(
       COMMAND ${Python3_EXECUTABLE} -c "import ffcx, sys; sys.stdout.write(ffcx.__version__)"
-      OUTPUT_VARIABLE UFC_VERSION
+      OUTPUT_VARIABLE UFCX_VERSION
       )
 
-    if (UFC_FIND_VERSION)
+    if (UFCX_FIND_VERSION)
       # Check if version found is >= required version
-      if (NOT "${UFC_VERSION}" VERSION_LESS "${UFC_FIND_VERSION}")
-        set(UFC_VERSION_OK TRUE)
+      if (NOT "${UFCX_VERSION}" VERSION_LESS "${UFCX_FIND_VERSION}")
+        set(UFCX_VERSION_OK TRUE)
       endif()
     else()
       # No specific version requested
-      set(UFC_VERSION_OK TRUE)
+      set(UFCX_VERSION_OK TRUE)
     endif()
   endif()
 
   execute_process(
     COMMAND ${Python3_EXECUTABLE} -c "import ffcx.codegeneration, sys; sys.stdout.write(ffcx.codegeneration.get_signature())"
-    OUTPUT_VARIABLE UFC_SIGNATURE
+    OUTPUT_VARIABLE UFCX_SIGNATURE
   )
 endif()
 
-mark_as_advanced(UFC_VERSION UFC_INCLUDE_DIRS UFC_SIGNATURE UFC_VERSION_OK)
+mark_as_advanced(UFCX_VERSION UFCX_INCLUDE_DIRS UFCX_SIGNATURE UFCX_VERSION_OK)
 # Standard package handling
-find_package_handle_standard_args(UFC
-                                  "UFC could not be found."
-                                  UFC_INCLUDE_DIRS
-                                  UFC_VERSION
-                                  UFC_VERSION_OK
-                                  UFC_SIGNATURE)
+find_package_handle_standard_args(UFCx
+                                  "UFCx could not be found."
+                                  UFCX_INCLUDE_DIRS
+                                  UFCX_VERSION
+                                  UFCX_VERSION_OK
+                                  UFCX_SIGNATURE)
