@@ -27,7 +27,8 @@ public:
   Matrix(const SparsityPattern& p, const Allocator& alloc = Allocator())
       : _index_maps({p.index_map(0), p.column_index_map()}),
         _data(p.num_nonzeros(), 0, alloc), _cols(p.num_nonzeros()),
-        _row_ptr(_index_maps[0]->size_local() + 1, 0),
+        _row_ptr(
+            _index_maps[0]->size_local() + _index_maps[0]->num_ghosts() + 1, 0),
         _index_cache(_index_maps[0]->num_ghosts()),
         _value_cache(_index_maps[0]->num_ghosts())
   {
@@ -55,6 +56,8 @@ public:
       const xtl::span<const std::int32_t>& cols, BinaryOp op = std::plus<T>())
   {
     const std::int32_t local_size0 = _index_maps[0]->size_local();
+    const std::int32_t num_ghosts0 = _index_maps[0]->num_ghosts();
+
     assert(x.size() == rows.size() * cols.size());
     for (std::size_t r = 0; r < rows.size(); ++r)
     {
@@ -63,7 +66,7 @@ public:
       // Current data row
       const T* xr = x.data() + r * cols.size();
 
-      if (row < local_size0)
+      if (row < local_size0 + num_ghosts0)
       {
         auto cit0 = std::next(_cols.begin(), _row_ptr[row]);
         auto cit1 = std::next(_cols.begin(), _row_ptr[row + 1]);
@@ -80,11 +83,7 @@ public:
       }
       else
       {
-        for (std::size_t c = 0; c < cols.size(); ++c)
-        {
-          _index_cache[row - local_size0].push_back(cols[c]);
-          _value_cache[row - local_size0].push_back(xr[c]);
-        }
+        throw std::runtime_error("Local row out of range");
       }
     }
   }
@@ -110,7 +109,8 @@ public:
   xt::xtensor<T, 2> to_dense() const
   {
     const std::int32_t nrows = _row_ptr.size() - 1;
-    assert(nrows == _index_maps[0]->size_local());
+    assert(nrows
+           == _index_maps[0]->size_local() + _index_maps[0]->num_ghosts());
     const std::int32_t ncols
         = _index_maps[1]->size_local() + _index_maps[1]->num_ghosts();
     xt::xtensor<T, 2> A = xt::zeros<T>({nrows, ncols});
@@ -158,7 +158,8 @@ public:
 
       // Add to src size
       assert(ghost_to_neighbour_rank[i] < (int)data_per_proc.size());
-      data_per_proc[ghost_to_neighbour_rank[i]] += _value_cache[i].size();
+      data_per_proc[ghost_to_neighbour_rank[i]]
+          += _row_ptr[local_size0 + i + 1] - _row_ptr[local_size0 + i];
     }
 
     // Compute send displacements for values and indices (x2)
@@ -176,9 +177,12 @@ public:
     for (int i = 0; i < num_ghosts0; ++i)
     {
       const int neighbour_rank = ghost_to_neighbour_rank[i];
-      const std::vector<std::int32_t>& col_cache_i = _index_cache[i];
-      const std::vector<T>& val_cache_i = _value_cache[i];
-
+      const xtl::span<std::int32_t> col_cache_i(
+          _cols.data() + _row_ptr[local_size0 + i],
+          _row_ptr[local_size0 + i + 1] - _row_ptr[local_size0 + i]);
+      const xtl::span<T> val_cache_i(_data.data() + _row_ptr[local_size0 + i],
+                                     _row_ptr[local_size0 + i + 1]
+                                         - _row_ptr[local_size0 + i]);
       for (std::size_t j = 0; j < col_cache_i.size(); ++j)
       {
         std::int32_t col_local = col_cache_i[j];
@@ -246,8 +250,7 @@ public:
     }
 
     // Clear cache
-    std::vector<std::vector<std::int32_t>>(num_ghosts0).swap(_index_cache);
-    std::vector<std::vector<T>>(num_ghosts0).swap(_value_cache);
+    std::fill(_data.begin() + _row_ptr[local_size0], _data.end(), 0);
   }
 
   /// Index maps for the row and column space. The row IndexMap contains ghost
@@ -280,10 +283,6 @@ private:
   // Data
   std::vector<T, Allocator> _data;
   std::vector<std::int32_t> _cols, _row_ptr;
-
-  // Caching for off-process rows
-  std::vector<std::vector<std::int32_t>> _index_cache;
-  std::vector<std::vector<T>> _value_cache;
 };
 
 } // namespace dolfinx::la
