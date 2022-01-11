@@ -106,8 +106,8 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtyp
             raise RuntimeError("Expecting to find a Mesh in the form.")
 
         ufcx_form, module, code = jit.ffcx_jit(mesh.comm, form,
-                                              form_compiler_parameters=form_compiler_parameters,
-                                              jit_parameters=jit_parameters)
+                                               form_compiler_parameters=form_compiler_parameters,
+                                               jit_parameters=jit_parameters)
 
         # For each argument in form extract its function space
         V = [arg.ufl_function_space()._cpp_object for arg in form.arguments()]

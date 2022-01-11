@@ -125,7 +125,7 @@ endif()
 #------------------------------------------------------------------------------
 # Find required packages
 
-# Use Python for detecting x and Basix
+# Use Python for detecting UFCx and Basix
 find_package(Python3 COMPONENTS Interpreter REQUIRED)
 
 # Note: When updating Boost version, also update DOLFINXCongif.cmake.in
