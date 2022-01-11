@@ -193,8 +193,10 @@ set_package_properties(HDF5 PROPERTIES TYPE REQUIRED
   URL "https://www.hdfgroup.org/HDF5")
 
 # Check for UFC. First check for UFCxConfig.cmake (CONFIG)
-find_package(UFCx ${DOLFINX_VERSION_MAJOR}.${DOLFINX_VERSION_MINOR} CONFIG)
-if (NOT UFCx_FOUND)
+# Note: we use the case (ufcx vs UFCx) elsewhere to determine by which
+# method UFCx was found
+find_package(ufcx ${DOLFINX_VERSION_MAJOR}.${DOLFINX_VERSION_MINOR} CONFIG)
+if (NOT ufcx_FOUND)
   # Next, check in MODULE mode (using FindUFCX.cmake)
   find_package(Python3 COMPONENTS Interpreter REQUIRED)
   find_package(UFCx ${DOLFINX_VERSION_MAJOR}.${DOLFINX_VERSION_MINOR} REQUIRED MODULE)
