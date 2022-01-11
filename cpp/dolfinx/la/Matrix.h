@@ -28,32 +28,88 @@ public:
       : _index_maps({p.index_map(0), p.column_index_map()}),
         _data(p.num_nonzeros(), 0, alloc), _cols(p.num_nonzeros()),
         _row_ptr(
-            _index_maps[0]->size_local() + _index_maps[0]->num_ghosts() + 1, 0),
-        _index_cache(_index_maps[0]->num_ghosts()),
-        _value_cache(_index_maps[0]->num_ghosts())
+            _index_maps[0]->size_local() + _index_maps[0]->num_ghosts() + 1, 0)
   {
     // TODO: handle block sizes
-    // TODO: support distributed matrices
 
     const graph::AdjacencyList<std::int32_t>& pg = p.graph();
     std::copy(pg.array().begin(), pg.array().end(), _cols.begin());
     std::copy(pg.offsets().begin(), pg.offsets().end(), _row_ptr.begin());
   }
 
-  /// Set all non-zero entries to a value
-  void set(T x) { std::fill(_data.begin(), _data.end(), x); }
+  /// Set all non-zero local entries to a value
+  void set(T x)
+  {
+    const std::int32_t local_size0 = _index_maps[0]->size_local();
+    std::fill(_data.begin(), std::next(_data.begin(), _row_ptr[local_size0]),
+              x);
+  }
 
-  /// Add
+  /// Set values in local matrix
+  /// @param[in] x The `m` by `n` dense block of values (row-major) to
+  /// set in the matrix
+  /// @param[in] rows The row indices of `x` (indices are local to the MPI rank)
+  /// @param[in] cols The column indices of `x` (indices are local to
+  /// the MPI rank)
+  void set(const xtl::span<const T>& x,
+           const xtl::span<const std::int32_t>& rows,
+           const xtl::span<const std::int32_t>& cols)
+  {
+    const std::int32_t local_size0 = _index_maps[0]->size_local();
+    const std::int32_t num_ghosts0 = _index_maps[0]->num_ghosts();
+
+    assert(x.size() == rows.size() * cols.size());
+    for (std::size_t r = 0; r < rows.size(); ++r)
+    {
+      // Columns indices for row
+      std::int32_t row = rows[r];
+      // Current data row
+      const T* xr = x.data() + r * cols.size();
+
+      if (row < local_size0)
+      {
+        auto cit0 = std::next(_cols.begin(), _row_ptr[row]);
+        auto cit1 = std::next(_cols.begin(), _row_ptr[row + 1]);
+
+        for (std::size_t c = 0; c < cols.size(); ++c)
+        {
+          // Find position of column index
+          auto it = std::lower_bound(cit0, cit1, cols[c]);
+          assert(it != cit1);
+          assert(*it == cols[c]);
+          std::size_t d = std::distance(_cols.begin(), it);
+          _data[d] = xr[c];
+        }
+      }
+      else
+      {
+        throw std::runtime_error("Local row out of range");
+      }
+    }
+  }
+
+  /// Insertion functor to set local values in matrix
+  /// @param A Matrix to insert into
+  static std::function<int(int nr, const int* r, int nc, const int* c,
+                           const T* data)>
+  mat_set_values(Matrix& A)
+  {
+    return [&A](int nr, const int* r, int nc, const int* c, const T* data) {
+      A.set(tcb::span<const T>(data, nr * nc), tcb::span<const int>(r, nr),
+            tcb::span<const int>(c, nc));
+      return 0;
+    };
+  }
+
+  /// Add values to local matrix
   /// @param[in] x The `m` by `n` dense block of values (row-major) to
   /// add to the matrix
   /// @param[in] rows The row indices of `x` (indices are local to the MPI rank)
   /// @param[in] cols The column indices of `x` (indices are local to
   /// the MPI rank)
-  /// @param[in] op
-  template <class BinaryOp = decltype(std::plus<T>())>
-  void
-  add(const xtl::span<const T>& x, const xtl::span<const std::int32_t>& rows,
-      const xtl::span<const std::int32_t>& cols, BinaryOp op = std::plus<T>())
+  void add(const xtl::span<const T>& x,
+           const xtl::span<const std::int32_t>& rows,
+           const xtl::span<const std::int32_t>& cols)
   {
     const std::int32_t local_size0 = _index_maps[0]->size_local();
     const std::int32_t num_ghosts0 = _index_maps[0]->num_ghosts();
@@ -78,7 +134,7 @@ public:
           assert(it != cit1);
           assert(*it == cols[c]);
           std::size_t d = std::distance(_cols.begin(), it);
-          _data[d] = op(_data[d], xr[c]);
+          _data[d] += xr[c];
         }
       }
       else
@@ -88,29 +144,25 @@ public:
     }
   }
 
-  /// Insertion functor with a general operation
+  /// Insertion functor to add values to matrix
   /// @param A Matrix to insert into
-  /// @param op Operation (add by default)
-  template <class BinaryOp = decltype(std::plus<T>())>
   static std::function<int(int nr, const int* r, int nc, const int* c,
                            const T* data)>
-  mat_insert_values(Matrix& A, BinaryOp op = std::plus<T>())
+  mat_add_values(Matrix& A)
   {
-    return
-        [&A, &op](int nr, const int* r, int nc, const int* c, const T* data) {
-          A.add(tcb::span<const T>(data, nr * nc), tcb::span<const int>(r, nr),
-                tcb::span<const int>(c, nc), op);
-          return 0;
-        };
+    return [&A](int nr, const int* r, int nc, const int* c, const T* data) {
+      A.add(tcb::span<const T>(data, nr * nc), tcb::span<const int>(r, nr),
+            tcb::span<const int>(c, nc));
+      return 0;
+    };
   }
 
   /// Convert to a dense matrix
   /// @return Dense copy of the matrix
-  xt::xtensor<T, 2> to_dense() const
+  xt::xtensor<T, 2> to_dense(bool ghost_rows = false) const
   {
-    const std::int32_t nrows = _row_ptr.size() - 1;
-    assert(nrows
-           == _index_maps[0]->size_local() + _index_maps[0]->num_ghosts());
+    const std::int32_t nrows
+        = ghost_rows ? _row_ptr.size() - 1 : _index_maps[0]->size_local();
     const std::int32_t ncols
         = _index_maps[1]->size_local() + _index_maps[1]->num_ghosts();
     xt::xtensor<T, 2> A = xt::zeros<T>({nrows, ncols});
@@ -123,10 +175,12 @@ public:
     return A;
   }
 
-  /// Copy cached ghost values to row owner.
-  template <class BinaryOp = decltype(std::plus<T>())>
-  void finalize(BinaryOp op = std::plus<T>())
+  /// Copy cached ghost values to row owner and add.
+  void finalize()
   {
+    // TODO: move some of this to the constructor and/or share data from
+    // SparsityPattern
+
     const std::int32_t local_size0 = _index_maps[0]->size_local();
     const std::int32_t num_ghosts0 = _index_maps[0]->num_ghosts();
     const std::array local_range0 = _index_maps[0]->local_range();
@@ -246,11 +300,11 @@ public:
       assert(cit != cit1);
       assert(*cit == local_col);
       std::size_t d = std::distance(_cols.begin(), cit);
-      _data[d] = op(_data[d], ghost_value_data_in[i]);
+      _data[d] += ghost_value_data_in[i];
     }
 
     // Clear cache
-    std::fill(_data.begin() + _row_ptr[local_size0], _data.end(), 0);
+    std::fill(std::next(_data.begin(), _row_ptr[local_size0]), _data.end(), 0);
   }
 
   /// Index maps for the row and column space. The row IndexMap contains ghost
@@ -275,6 +329,7 @@ public:
 
 private:
   // Map describing the data layout for rows and columns
+  // including ghost rows and ghost columns
   std::array<std::shared_ptr<const common::IndexMap>, 2> _index_maps;
 
   // // Block size
