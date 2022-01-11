@@ -56,8 +56,12 @@ target_compile_definitions(dolfinx PUBLIC DOLFINX_VERSION="${DOLFINX_VERSION}")
 #------------------------------------------------------------------------------
 # Add include directories and libraries of required packages
 
-# UFC
-target_include_directories(dolfinx SYSTEM PUBLIC ${UFCX_INCLUDE_DIRS})
+# UFCx
+if (TARGET ufcx::ufcx)
+  target_link_libraries(dolfinx PUBLIC ufcx::ufcx)
+else()
+  target_include_directories(dolfinx SYSTEM PUBLIC ${UFCX_INCLUDE_DIRS})
+endif()
 
 # Basix
 target_link_libraries(dolfinx PUBLIC Basix::basix)
