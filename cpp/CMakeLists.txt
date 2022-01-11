@@ -298,28 +298,6 @@ if (GENERATE_DEMO_TEST_DATA)
 endif()
 
 #------------------------------------------------------------------------------
-# Generate form files for tests and demos
-
-if (GENERATE_DEMO_TEST_DATA)
-  message(STATUS "")
-  message(STATUS "Generating form files in demo and test directories. May take some time...")
-  message(STATUS "----------------------------------------------------------------------------------------")
-  execute_process(
-    COMMAND ${Python3_EXECUTABLE} "-B" "-u" ${DOLFINX_SOURCE_DIR}/cmake/scripts/generate-form-files.py ${PETSC_SCALAR_COMPLEX}
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    RESULT_VARIABLE FORM_GENERATION_RESULT
-    OUTPUT_VARIABLE FORM_GENERATION_OUTPUT
-    ERROR_VARIABLE FORM_GENERATION_OUTPUT
-    )
-
-  if (FORM_GENERATION_RESULT)
-    # Cleanup so that form generation is triggered next time we run cmake
-    file(REMOVE_RECURSE ${CMAKE_CURRENT_BINARY_DIR}/demo ${CMAKE_CURRENT_BINARY_DIR}/test)
-    message(FATAL_ERROR "Generation of form files failed: \n${FORM_GENERATION_OUTPUT}")
-  endif()
-endif()
-
-#------------------------------------------------------------------------------
 # Install the demo source files
 install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/demo DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/dolfinx
   FILES_MATCHING
