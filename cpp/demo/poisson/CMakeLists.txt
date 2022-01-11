@@ -21,9 +21,11 @@ if (NOT DEFINED PETSC_SCALAR_COMPLEX)
   message(FATAL_ERROR "PETSc scalar type not defined")
 endif()
 
-if (PETSC_SCALAR_COMPLEX EQUAL 1)
-  set(SCALAR_TYPE "--scalar_type "double _Complex"")
-endif()
+# if (PETSC_SCALAR_COMPLEX EQUAL 1)
+  set(SCALAR_TYPE "--scalar_type \"double _Complex\"")
+# endif()
+
+message("Testing: " ${SCALAR_TYPE})
 
 add_custom_command(
   OUTPUT poisson.c
@@ -32,7 +34,7 @@ add_custom_command(
   COMMENT "Compiling poisson.ufl using FFCx"
 )
 
-add_executable(${PROJECT_NAME} main.cpp poisson.c ${CMAKE_CURRENT_BINARY_DIR}/poisson.c)
+add_executable(${PROJECT_NAME} main.cpp ${CMAKE_CURRENT_BINARY_DIR}/poisson.c)
 target_link_libraries(${PROJECT_NAME} dolfinx)
 
 # Do not throw error for 'multi-line comments' (these are typical in
