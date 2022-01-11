@@ -32,13 +32,12 @@ if (NOT DEFINED PETSC_SCALAR_COMPLEX)
 endif()
 
 if (PETSC_SCALAR_COMPLEX EQUAL 1)
-  set(SCALAR_TYPE "--scalar_type \\"double _Complex\\"")
+  set(SCALAR_TYPE "--scalar_type=\\"double _Complex\\"")
 endif()
-
-message("Testing: " ${{SCALAR_TYPE}})
 
 add_custom_command(
   OUTPUT {ufl_c_files}
+  VERBATIM
   COMMAND ffcx ${{CMAKE_CURRENT_SOURCE_DIR}}/{ufl_files} ${{SCALAR_TYPE}}
   DEPENDS {ufl_files}
   COMMENT "Compiling {ufl_files} using FFCx"
