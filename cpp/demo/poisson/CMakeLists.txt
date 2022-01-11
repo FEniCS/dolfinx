@@ -22,17 +22,15 @@ if (NOT DEFINED PETSC_SCALAR_COMPLEX)
 endif()
 
 if (PETSC_SCALAR_COMPLEX EQUAL 1)
-  set(SCALAR_TYPE "--scalar_type=\"double _Complex\"")
+  set(SCALAR_TYPE "--scalar_type=double _Complex")
 endif()
-
-message("Testing: " ${SCALAR_TYPE})
 
 add_custom_command(
   OUTPUT poisson.c
   VERBATIM
   COMMAND ffcx ${CMAKE_CURRENT_SOURCE_DIR}/poisson.ufl ${SCALAR_TYPE}
   DEPENDS poisson.ufl
-  COMMENT "Compiling poisson.ufl using FFCx"
+  COMMENT "Compile poisson.ufl using FFCx"
 )
 
 add_executable(${PROJECT_NAME} poisson.c main.cpp ${CMAKE_CURRENT_BINARY_DIR}/poisson.c)

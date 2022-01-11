@@ -32,7 +32,7 @@ if (NOT DEFINED PETSC_SCALAR_COMPLEX)
 endif()
 
 if (PETSC_SCALAR_COMPLEX EQUAL 1)
-  set(SCALAR_TYPE "--scalar_type=\\"double _Complex\\"")
+  set(SCALAR_TYPE "--scalar_type=double _Complex")
 endif()
 
 add_custom_command(
@@ -40,7 +40,7 @@ add_custom_command(
   VERBATIM
   COMMAND ffcx ${{CMAKE_CURRENT_SOURCE_DIR}}/{ufl_files} ${{SCALAR_TYPE}}
   DEPENDS {ufl_files}
-  COMMENT "Compiling {ufl_files} using FFCx"
+  COMMENT "Compile {ufl_files} using FFCx"
 )
 
 add_executable(${{PROJECT_NAME}} {src_files} ${{CMAKE_CURRENT_BINARY_DIR}}/{ufl_c_files})

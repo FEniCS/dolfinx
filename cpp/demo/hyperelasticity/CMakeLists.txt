@@ -22,17 +22,15 @@ if (NOT DEFINED PETSC_SCALAR_COMPLEX)
 endif()
 
 if (PETSC_SCALAR_COMPLEX EQUAL 1)
-  set(SCALAR_TYPE "--scalar_type=\"double _Complex\"")
+  set(SCALAR_TYPE "--scalar_type=double _Complex")
 endif()
-
-message("Testing: " ${SCALAR_TYPE})
 
 add_custom_command(
   OUTPUT hyperelasticity.c
   VERBATIM
   COMMAND ffcx ${CMAKE_CURRENT_SOURCE_DIR}/hyperelasticity.ufl ${SCALAR_TYPE}
   DEPENDS hyperelasticity.ufl
-  COMMENT "Compiling hyperelasticity.ufl using FFCx"
+  COMMENT "Compile hyperelasticity.ufl using FFCx"
 )
 
 add_executable(${PROJECT_NAME} hyperelasticity.c main.cpp ${CMAKE_CURRENT_BINARY_DIR}/hyperelasticity.c)
