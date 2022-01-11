@@ -62,6 +62,15 @@ jobs:
           . /opt/intel/oneapi/setvars.sh
           cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build -S cpp/
 
+      - name: Build and run C++ unit tests (serial and MPI)
+        run: |
+          . /opt/intel/oneapi/setvars.sh
+          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/unit/ -S build/test/unit/
+          cmake --build build/test/unit
+          cd build/test/unit
+          ctest --output-on-failure -R unittests
+          mpiexec -np 2 ctest --output-on-failure -R unittests
+
       - name: Build and install C++ library
         run: |
           . /opt/intel/oneapi/setvars.sh
@@ -72,15 +81,6 @@ jobs:
         run: |
           python3 -m pip install ffcx/
           python3 -m pip install git+https://github.com/FEniCS/ufl.git
-
-      - name: Build and run C++ unit tests (serial and MPI)
-        run: |
-          . /opt/intel/oneapi/setvars.sh
-          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/unit/ -S build/test/unit/
-          cmake --build build/test/unit
-          cd build/test/unit
-          ctest --output-on-failure -R unittests
-          mpiexec -np 2 ctest --output-on-failure -R unittests
 
       - name: Build and run C++ regression tests (serial and MPI (np=2))
         run: |
