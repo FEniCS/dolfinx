@@ -25,11 +25,8 @@ if (PETSC_SCALAR_COMPLEX EQUAL 1)
 endif()
 add_custom_command(
   OUTPUT hyperelasticity.c
-  VERBATIM
   COMMAND ffcx ${CMAKE_CURRENT_SOURCE_DIR}/hyperelasticity.ufl ${SCALAR_TYPE}
-  DEPENDS hyperelasticity.ufl
-  COMMENT "Compile hyperelasticity.ufl using FFCx"
-)
+  VERBATIM DEPENDS hyperelasticity.ufl COMMENT "Compile hyperelasticity.ufl using FFCx")
 
 add_executable(${PROJECT_NAME} main.cpp ${CMAKE_CURRENT_BINARY_DIR}/hyperelasticity.c)
 target_link_libraries(${PROJECT_NAME} dolfinx)

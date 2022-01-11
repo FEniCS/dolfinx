@@ -35,11 +35,8 @@ if (PETSC_SCALAR_COMPLEX EQUAL 1)
 endif()
 add_custom_command(
   OUTPUT {ufl_c_files}
-  VERBATIM
   COMMAND ffcx ${{CMAKE_CURRENT_SOURCE_DIR}}/{ufl_files} ${{SCALAR_TYPE}}
-  DEPENDS {ufl_files}
-  COMMENT "Compile {ufl_files} using FFCx"
-)
+  VERBATIM DEPENDS {ufl_files} COMMENT "Compile {ufl_files} using FFCx")
 
 add_executable(${{PROJECT_NAME}} {src_files} ${{CMAKE_CURRENT_BINARY_DIR}}/{ufl_c_files})
 target_link_libraries(${{PROJECT_NAME}} dolfinx)

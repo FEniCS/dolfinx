@@ -9,9 +9,9 @@ import numpy as np
 import pytest
 
 import ufl
-from dolfinx.fem import (dirichletbc, Function, FunctionSpace,
-                         VectorFunctionSpace, apply_lifting, assemble_matrix,
-                         assemble_scalar, assemble_vector, form,
+from dolfinx.fem import (Function, FunctionSpace, VectorFunctionSpace,
+                         apply_lifting, assemble_matrix, assemble_scalar,
+                         assemble_vector, dirichletbc, form,
                          locate_dofs_topological, set_bc)
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import (CellType, compute_boundary_facets, create_rectangle,
