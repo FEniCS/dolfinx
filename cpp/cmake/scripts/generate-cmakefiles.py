@@ -32,7 +32,7 @@ if (NOT DEFINED PETSC_SCALAR_COMPLEX)
 endif()
 
 if (PETSC_SCALAR_COMPLEX EQUAL 1)
-  set(SCALAR_TYPE "--scalar_type double _Complex")
+  set(SCALAR_TYPE "--scalar_type \"double _Complex\"")
 endif()
 
 add_custom_command(
