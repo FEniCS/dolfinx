@@ -26,15 +26,13 @@ if (NOT TARGET dolfinx)
   find_package(DOLFINX REQUIRED)
 endif()
 
-# Compile UFL files
+# Add target to compile UFL files
 if (NOT DEFINED PETSC_SCALAR_COMPLEX)
   message(FATAL_ERROR "PETSc scalar type not defined")
 endif()
-
 if (PETSC_SCALAR_COMPLEX EQUAL 1)
   set(SCALAR_TYPE "--scalar_type=double _Complex")
 endif()
-
 add_custom_command(
   OUTPUT {ufl_c_files}
   VERBATIM
@@ -80,7 +78,6 @@ def generate_cmake_files(subdirectory, generated_files):
     for root, dirs, files in os.walk(cwd + "/" + subdirectory):
 
         cpp_files = set()
-        c_files = set()
         ufl_files = set()
         ufl_c_files = set()
         executable_names = set()
@@ -105,8 +102,6 @@ def generate_cmake_files(subdirectory, generated_files):
                 filename, extension = os.path.splitext(f)
                 if extension == ".cpp":
                     cpp_files.add(f)
-                elif extension == ".c":
-                    c_files.add(f)
                 elif extension == ".ufl":
                     ufl_files.add(f)
                     ufl_c_files.add(f.replace(".ufl", ".c"))
@@ -127,7 +122,7 @@ def generate_cmake_files(subdirectory, generated_files):
         # If directory contains a main file we assume that only one
         # executable should be generated for this directory and all
         # other .cpp files should be linked to this
-        name_forms["src_files"] = ' '.join(cpp_files | c_files)
+        name_forms["src_files"] = ' '.join(cpp_files)
         name_forms["ufl_files"] = ' '.join(ufl_files)
         name_forms["ufl_c_files"] = ' '.join(ufl_c_files)
 

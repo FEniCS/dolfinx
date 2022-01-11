@@ -16,15 +16,13 @@ if (NOT TARGET dolfinx)
   find_package(DOLFINX REQUIRED)
 endif()
 
-# Compile UFL files
+# Add target to compile UFL files
 if (NOT DEFINED PETSC_SCALAR_COMPLEX)
   message(FATAL_ERROR "PETSc scalar type not defined")
 endif()
-
 if (PETSC_SCALAR_COMPLEX EQUAL 1)
   set(SCALAR_TYPE "--scalar_type=double _Complex")
 endif()
-
 add_custom_command(
   OUTPUT hyperelasticity.c
   VERBATIM
@@ -33,7 +31,7 @@ add_custom_command(
   COMMENT "Compile hyperelasticity.ufl using FFCx"
 )
 
-add_executable(${PROJECT_NAME} hyperelasticity.c main.cpp ${CMAKE_CURRENT_BINARY_DIR}/hyperelasticity.c)
+add_executable(${PROJECT_NAME} main.cpp ${CMAKE_CURRENT_BINARY_DIR}/hyperelasticity.c)
 target_link_libraries(${PROJECT_NAME} dolfinx)
 
 # Do not throw error for 'multi-line comments' (these are typical in
