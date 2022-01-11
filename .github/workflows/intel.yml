@@ -48,7 +48,7 @@ jobs:
         with:
           path: ./ffcx
           repository: FEniCS/ffcx
-          ref: ufcx
+          ref: cmake-ufcx
 
       - name: Install FFCx interface
         run: |
