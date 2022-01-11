@@ -79,8 +79,8 @@ jobs:
 
       - name: Install UFL and FFCx modules
         run: |
-          python3 -m pip install ffcx/
           python3 -m pip install git+https://github.com/FEniCS/ufl.git
+          python3 -m pip install ffcx/
 
       - name: Build and run DOLFINx C++ regression tests (serial and MPI (np=2))
         run: |
