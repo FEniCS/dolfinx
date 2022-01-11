@@ -4,18 +4,31 @@
 #
 cmake_minimum_required(VERSION 3.16)
 
+set(PROJECT_NAME demo_hyperelasticity)
+project(${PROJECT_NAME} LANGUAGES C CXX)
+
 # Set C++17 standard
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-set(PROJECT_NAME demo_hyperelasticity)
-project(${PROJECT_NAME})
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 if (NOT TARGET dolfinx)
   find_package(DOLFINX REQUIRED)
 endif()
 
-add_executable(${PROJECT_NAME} hyperelasticity.c main.cpp)
+# Compile UFL files
+if (NOT DEFINED PETSC_SCALAR_COMPLEX)
+  message(FATAL_ERROR "PETSc scalar type not defined")
+endif()
+
+add_custom_command(
+  OUTPUT hyperelasticity.c
+  COMMAND ffcx ${CMAKE_CURRENT_SOURCE_DIR}/hyperelasticity.ufl ${PETSC_SCALAR_COMPLEX}
+  DEPENDS hyperelasticity.ufl
+  COMMENT "Compiling hyperelasticity.ufl using FFCx"
+)
+
+add_executable(${PROJECT_NAME} main.cpp ${CMAKE_CURRENT_BINARY_DIR}/hyperelasticity.c)
 target_link_libraries(${PROJECT_NAME} dolfinx)
 
 # Do not throw error for 'multi-line comments' (these are typical in
