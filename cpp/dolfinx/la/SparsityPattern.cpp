@@ -383,7 +383,7 @@ void SparsityPattern::assemble()
   std::vector<std::vector<std::int32_t>>().swap(_row_cache);
 
   // Compute offsets for adjacency list
-  std::vector<std::int32_t> adj_offsets(local_size0 + 1);
+  std::vector<std::int32_t> adj_offsets(local_size0 + num_ghosts0 + 1);
   std::partial_sum(adj_counts.begin(), adj_counts.end(),
                    adj_offsets.begin() + 1);
 
