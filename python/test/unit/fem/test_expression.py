@@ -323,6 +323,7 @@ def test_zero_elimination():
     e = Expression(u.dx(0).dx(0) + u, V.element.interpolation_points)
     v = Function(V)
     v.interpolate(e)
+    v.x.scatter_forward()
     assert(np.allclose(u.x.array, v.x.array))
 
     # Test vector elimination
@@ -337,6 +338,7 @@ def test_zero_elimination():
     e = Expression(ufl.grad(u) + ufl.as_vector((u.dx(0).dx(0), u.dx(1).dx(1), 0)), W.element.interpolation_points)
     grad_u_expr = Function(W)
     grad_u_expr.interpolate(e)
+    grad_u_expr.x.scatter_forward()
 
     gu = Function(W)
 
@@ -362,6 +364,7 @@ def test_zero_elimination():
     e = Expression(ufl.grad(u) + ufl.as_tensor(((u[0].dx(0).dx(0), 5), (-1, 0))), W.element.interpolation_points)
     grad_u_expr = Function(W)
     grad_u_expr.interpolate(e)
+    grad_u_expr.x.scatter_forward()
 
     gu = Function(W)
 
