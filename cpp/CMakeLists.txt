@@ -126,9 +126,6 @@ endif()
 #------------------------------------------------------------------------------
 # Find required packages
 
-# Use Python for detecting UFCx and Basix
-find_package(Python3 COMPONENTS Interpreter REQUIRED)
-
 # Note: When updating Boost version, also update DOLFINXCongif.cmake.in
 if(DEFINED ENV{BOOST_ROOT} OR DEFINED BOOST_ROOT)
   set(Boost_NO_SYSTEM_PATHS on)
@@ -139,6 +136,9 @@ find_package(Boost 1.70 REQUIRED timer filesystem)
 set_package_properties(Boost PROPERTIES TYPE REQUIRED
   DESCRIPTION "Boost C++ libraries"
   URL "http://www.boost.org")
+
+# Use Python for detecting UFCx and Basix
+find_package(Python3 COMPONENTS Interpreter REQUIRED)
 
 # Check for Basix
 # Note: Basix may be installed as a standalone C++ library, or in the
@@ -207,10 +207,17 @@ set_package_properties(HDF5 PROPERTIES TYPE REQUIRED
   DESCRIPTION "Hierarchical Data Format 5 (HDF5)"
   URL "https://www.hdfgroup.org/HDF5")
 
-# Check for UFC
-find_package(UFCx MODULE ${DOLFINX_VERSION_MAJOR}.${DOLFINX_VERSION_MINOR})
+# Check for UFC. First check for UFCxConfig.cmake (CONFIG)
+# Note: we use the case (ufcx vs UFCx) elsewhere to determine by which
+# method UFCx was found
+find_package(ufcx ${DOLFINX_VERSION_MAJOR}.${DOLFINX_VERSION_MINOR} CONFIG)
+if (NOT ufcx_FOUND)
+  # Next, check in MODULE mode (using FindUFCX.cmake)
+  find_package(Python3 COMPONENTS Interpreter REQUIRED)
+  find_package(UFCx ${DOLFINX_VERSION_MAJOR}.${DOLFINX_VERSION_MINOR} REQUIRED MODULE)
+endif()
 set_package_properties(UFCx PROPERTIES TYPE REQUIRED
-  DESCRIPTION "Unified interface for form-compilers (part of FFCx)"
+  DESCRIPTION "Interface for form-compilers (part of FFCx)"
   URL "https://github.com/fenics/ffcx")
 
 #------------------------------------------------------------------------------
