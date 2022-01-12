@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Garth N. Wells
+// Copyright (C) 2021-2022 Garth N. Wells and Chris N. Richardson
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -31,6 +31,9 @@ public:
             _index_maps[0]->size_local() + _index_maps[0]->num_ghosts() + 1, 0)
   {
     // TODO: handle block sizes
+
+    // Comm for ghost updates
+    _nbr_comm = _index_maps[0]->comm(common::IndexMap::Direction::reverse);
 
     const graph::AdjacencyList<std::int32_t>& pg = p.graph();
     std::copy(pg.array().begin(), pg.array().end(), _cols.begin());
@@ -193,8 +196,7 @@ public:
     const std::vector<std::int64_t>& ghosts1 = _index_maps[1]->ghosts();
 
     // Get ghost->owner communicator for rows
-    MPI_Comm comm = _index_maps[0]->comm(common::IndexMap::Direction::reverse);
-    const auto dest_ranks = dolfinx::MPI::neighbors(comm)[1];
+    const auto dest_ranks = dolfinx::MPI::neighbors(_nbr_comm)[1];
 
     // Global-to-neigbourhood map for destination ranks
     std::map<int, std::int32_t> dest_proc_to_neighbor;
@@ -263,12 +265,12 @@ public:
     const graph::AdjacencyList<std::int64_t> ghost_index_data_out(
         std::move(ghost_index_data), std::move(index_send_disp));
     const std::vector<std::int64_t> ghost_index_data_in
-        = MPI::neighbor_all_to_all(comm, ghost_index_data_out).array();
+        = MPI::neighbor_all_to_all(_nbr_comm, ghost_index_data_out).array();
 
     const graph::AdjacencyList<T> ghost_value_data_out(
         std::move(ghost_value_data), std::move(val_send_disp));
     const std::vector<T> ghost_value_data_in
-        = MPI::neighbor_all_to_all(comm, ghost_value_data_out).array();
+        = MPI::neighbor_all_to_all(_nbr_comm, ghost_value_data_out).array();
 
     // Global to local map for ghost columns
     std::map<std::int64_t, std::int32_t> global_to_local;
@@ -308,6 +310,37 @@ public:
     std::fill(std::next(_data.begin(), _row_ptr[local_size0]), _data.end(), 0);
   }
 
+  /// More efficient update routine, using precomputed data
+  void final2()
+  {
+    // Pack ghost rows to owners
+    std::vector<int> insert_pos(_val_send_disp);
+    std::vector<T> ghost_value_data(_val_send_disp.back());
+    for (int i = 0; i < num_ghosts0; ++i)
+    {
+      const int neighbour_rank = _ghost_row_to_neighbour_rank[i];
+      // Get position in send buffer
+      const std::int32_t val_pos = insert_pos[neighbour_rank];
+      std::copy(std::next(_data.data(), _row_ptr[local_size0 + i]),
+                std::next(_data.data(), _row_ptr[local_size0 + i + 1]),
+                std::next(ghost_value_data.begin(), val_pos));
+
+      insert_pos[neighbour_rank]
+          += _row_ptr[local_size0 + i + 1] - _row_ptr[local_size0 + i];
+    }
+
+    const graph::AdjacencyList<T> ghost_value_data_out(
+        std::move(ghost_value_data), std::move(_val_send_disp));
+    const std::vector<T> ghost_value_data_in
+        = MPI::neighbor_all_to_all(_nbr_comm, ghost_value_data_out).array();
+
+    assert(ghost_value_data_in.size() == _unpack_pos.size());
+
+    // Unpack ghost values to columns
+    for (std::size_t i = 0; i < ghost_value_data_in.size(); ++i)
+      _data[_unpack_pos[i]] += ghost_value_data_in[i];
+  }
+
   /// Index maps for the row and column space. The row IndexMap contains ghost
   /// entries for rows which may be inserted into and the column IndexMap
   /// contains all local and ghost columns that may exist in the owned rows.
@@ -339,6 +372,11 @@ private:
   // Data
   std::vector<T, Allocator> _data;
   std::vector<std::int32_t> _cols, _row_ptr;
+
+  // Precomputed data for finalize/update
+  MPI_Comm _nbr_comm;
+  std::vector<int> _unpack_pos;
+  std::vector<int> _val_send_disp;
 };
 
 } // namespace dolfinx::la
