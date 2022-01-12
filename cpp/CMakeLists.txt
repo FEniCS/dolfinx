@@ -169,7 +169,7 @@ if("XTENSOR_USE_XSIMD" IN_LIST BASIX_DEFN)
   find_package(xsimd REQUIRED)
 endif()
 
-# Check for required package xtensor
+# Check for xtensor
 find_package(xtensor 0.23.10 REQUIRED)
 set_package_properties(xtensor PROPERTIES TYPE REQUIRED
   DESCRIPTION "C++ library for numerical analysis with multi-dimensional array expressions."
@@ -180,6 +180,7 @@ find_package(PkgConfig REQUIRED)
 set(ENV{PKG_CONFIG_PATH} "$ENV{PETSC_DIR}/$ENV{PETSC_ARCH}/lib/pkgconfig:$ENV{PETSC_DIR}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
 pkg_search_module(PETSC IMPORTED_TARGET PETSc petsc)
 
+# Check if PETSc build uses real or complex scalars
 find_file (_PETSC_SYS_HEADER  petscsys.h ${PETSC_INCLUDE_DIRS})
 include(CheckSymbolExists)
 check_symbol_exists(PETSC_USE_COMPLEX _PETSC_SYS_HEADER PETSC_SCALAR_COMPLEX)
