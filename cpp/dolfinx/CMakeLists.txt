@@ -81,8 +81,9 @@ target_link_libraries(dolfinx PRIVATE Boost::filesystem)
 target_link_libraries(dolfinx PUBLIC MPI::MPI_CXX)
 
 # PETSc
-target_link_libraries(dolfinx PUBLIC PETSC::petsc)
-target_link_libraries(dolfinx PRIVATE PETSC::petsc_static)
+target_link_libraries(dolfinx PRIVATE PkgConfig::PETSC)
+# target_link_libraries(dolfinx PUBLIC PETSC::petsc)
+# target_link_libraries(dolfinx PRIVATE PETSC::petsc_static)
 
 # HDF5
 if (TARGET hdf5::hdf5)
@@ -106,7 +107,6 @@ endif()
 
 # SLEPC
 if (DOLFINX_ENABLE_SLEPC AND SLEPC_FOUND)
-  message("*** setting")
   target_link_libraries(dolfinx PRIVATE PkgConfig::SLEPC)
   target_compile_definitions(dolfinx PUBLIC HAS_SLEPC)
 endif()
@@ -166,7 +166,6 @@ configure_package_config_file(${DOLFINX_SOURCE_DIR}/cmake/templates/DOLFINXConfi
 # Install CMake helper files
 install(
   FILES
-  ${CMAKE_SOURCE_DIR}/cmake/modules/FindPETSc.cmake
   ${CMAKE_BINARY_DIR}/dolfinx/DOLFINXConfig.cmake
   ${CMAKE_BINARY_DIR}/dolfinx/DOLFINXConfigVersion.cmake
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/dolfinx

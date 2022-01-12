@@ -169,13 +169,27 @@ if("XTENSOR_USE_XSIMD" IN_LIST BASIX_DEFN)
   find_package(xsimd REQUIRED)
 endif()
 
-  # Check for required package xtensor
+# Check for required package xtensor
 find_package(xtensor 0.23.10 REQUIRED)
 set_package_properties(xtensor PROPERTIES TYPE REQUIRED
   DESCRIPTION "C++ library for numerical analysis with multi-dimensional array expressions."
   URL "https://xtensor.readthedocs.io/")
 
-find_package(PETSc 3.10)
+# Check for PETSc
+find_package(PkgConfig REQUIRED)
+set(ENV{PKG_CONFIG_PATH} "$ENV{PETSC_DIR}/$ENV{PETSC_ARCH}/lib/pkgconfig:$ENV{PETSC_DIR}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
+pkg_search_module(PETSC IMPORTED_TARGET PETSc petsc)
+
+find_file (_PETSC_SYS_HEADER  petscsys.h ${PETSC_INCLUDE_DIRS})
+include(CheckSymbolExists)
+check_symbol_exists(PETSC_USE_COMPLEX _PETSC_SYS_HEADER PETSC_SCALAR_COMPLEX)
+
+# Setting for FeatureSummary
+if(PETSC_FOUND)
+  set_property(GLOBAL APPEND PROPERTY PACKAGES_FOUND PETSc)
+else()
+  set_property(GLOBAL APPEND PROPERTY PACKAGES_NOT_FOUND PETSc)
+endif()
 set_package_properties(PETSc PROPERTIES TYPE REQUIRED
   DESCRIPTION "Portable, Extensible Toolkit for Scientific Computation (PETSc)"
   URL "https://www.mcs.anl.gov/petsc/"
@@ -214,10 +228,10 @@ if (DOLFINX_ENABLE_SLEPC)
   set(ENV{PKG_CONFIG_PATH} "$ENV{SLEPC_DIR}/$ENV{PETSC_ARCH}/lib/pkgconfig:$ENV{SLEPC_DIR}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
   set(ENV{PKG_CONFIG_PATH} "$ENV{PETSC_DIR}/$ENV{PETSC_ARCH}/lib/pkgconfig:$ENV{PETSC_DIR}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
   set(ENV{PKG_CONFIG_PATH} "$ENV{PETSC_DIR}/$ENV{PETSC_ARCH}:$ENV{PETSC_DIR}:$ENV{PKG_CONFIG_PATH}")
-  pkg_search_module(SLEPC IMPORTED_TARGET slepc)
+  pkg_search_module(SLEPC IMPORTED_TARGET slepc>=3.15)
 
   # Setting for FeatureSummary
-  if(SLEPc_FOUND)
+  if(SLEPC_FOUND)
     set_property(GLOBAL APPEND PROPERTY PACKAGES_FOUND SLEPc)
   else()
     set_property(GLOBAL APPEND PROPERTY PACKAGES_NOT_FOUND SLEPc)
