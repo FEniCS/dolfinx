@@ -12,17 +12,16 @@ import pytest
 
 import basix
 from dolfinx import cpp as _cpp
-from dolfinx.cpp.mesh import create_cell_partitioner, is_simplex
+from dolfinx.cpp.mesh import (create_cell_partitioner, entities_to_geometry,
+                              is_simplex)
 from dolfinx.fem import assemble_scalar, form
 from dolfinx.mesh import (CellType, DiagonalType, GhostMode, create_box,
-                          create_rectangle, create_unit_cube,
+                          create_rectangle, create_submesh, create_unit_cube,
                           create_unit_interval, create_unit_square,
-                          create_submesh)
+                          locate_entities, locate_entities_boundary)
 from dolfinx_utils.test.fixtures import tempdir
 from dolfinx_utils.test.skips import skip_in_parallel
 from ufl import dx
-from dolfinx.cpp.mesh import entities_to_geometry
-from dolfinx.mesh import locate_entities, locate_entities_boundary
 
 from mpi4py import MPI
 

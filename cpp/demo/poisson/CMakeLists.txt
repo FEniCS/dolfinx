@@ -4,18 +4,31 @@
 #
 cmake_minimum_required(VERSION 3.16)
 
+set(PROJECT_NAME demo_poisson)
+project(${PROJECT_NAME} LANGUAGES C CXX)
+
 # Set C++17 standard
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-set(PROJECT_NAME demo_poisson)
-project(${PROJECT_NAME})
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 if (NOT TARGET dolfinx)
   find_package(DOLFINX REQUIRED)
 endif()
 
-add_executable(${PROJECT_NAME} poisson.c main.cpp)
+# Add target to compile UFL files
+if (NOT DEFINED PETSC_SCALAR_COMPLEX)
+  message(FATAL_ERROR "PETSc scalar type not defined")
+endif()
+if (PETSC_SCALAR_COMPLEX EQUAL 1)
+  set(SCALAR_TYPE "--scalar_type=double _Complex")
+endif()
+add_custom_command(
+  OUTPUT poisson.c
+  COMMAND ffcx ${CMAKE_CURRENT_SOURCE_DIR}/poisson.ufl ${SCALAR_TYPE}
+  VERBATIM DEPENDS poisson.ufl COMMENT "Compile poisson.ufl using FFCx")
+
+add_executable(${PROJECT_NAME} main.cpp ${CMAKE_CURRENT_BINARY_DIR}/poisson.c)
 target_link_libraries(${PROJECT_NAME} dolfinx)
 
 # Do not throw error for 'multi-line comments' (these are typical in

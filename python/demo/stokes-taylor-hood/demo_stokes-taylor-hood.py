@@ -76,7 +76,7 @@ import dolfinx
 import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import fem
-from dolfinx.fem import (Constant, dirichletbc, Function, FunctionSpace,
+from dolfinx.fem import (Constant, Function, FunctionSpace, dirichletbc,
                          extract_function_spaces, form,
                          locate_dofs_geometrical, locate_dofs_topological)
 from dolfinx.io import XDMFFile

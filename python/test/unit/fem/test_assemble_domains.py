@@ -9,9 +9,9 @@ import numpy as np
 import pytest
 
 import ufl
-from dolfinx.fem import (Constant, dirichletbc, Function, FunctionSpace,
-                         apply_lifting, assemble_matrix, assemble_scalar,
-                         assemble_vector, form, set_bc)
+from dolfinx.fem import (Constant, Function, FunctionSpace, apply_lifting,
+                         assemble_matrix, assemble_scalar, assemble_vector,
+                         dirichletbc, form, set_bc)
 from dolfinx.mesh import (GhostMode, MeshTags, create_unit_square,
                           locate_entities_boundary)
 
