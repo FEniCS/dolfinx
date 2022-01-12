@@ -70,6 +70,7 @@ jobs:
           spack env activate cpp-release
           cd dolfinx-release/cpp/
           cd demo/poisson
+          ffcx poisson.ufl
           cmake .
           export VERBOSE=1
           make -j2
