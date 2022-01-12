@@ -30,21 +30,17 @@ public:
   Matrix(const SparsityPattern& p, const Allocator& alloc = Allocator())
       : _index_maps({p.index_map(0), p.column_index_map()}),
         _bs({p.block_size(0), p.block_size(1)}),
-        _data(p.num_nonzeros(), 0, alloc), _cols(p.num_nonzeros()),
-        _row_ptr(
-            _index_maps[0]->size_local() + _index_maps[0]->num_ghosts() + 1, 0)
+        _data(p.num_nonzeros(), 0, alloc),
+        _cols(p.graph().array().begin(), p.graph().array().end()),
+        _row_ptr(p.graph().offsets().begin(), p.graph().offsets().end())
   {
-    // Store sparsity
-    const graph::AdjacencyList<std::int32_t>& pg = p.graph();
-    std::copy(pg.array().begin(), pg.array().end(), _cols.begin());
-    std::copy(pg.offsets().begin(), pg.offsets().end(), _row_ptr.begin());
-
     // TODO: handle block sizes
     if (_bs[0] > 1 or _bs[1] > 1)
       throw std::runtime_error("Block size not yet supported");
 
     // Precompute some data for ghost updates via MPI
-    _nbr_comm = _index_maps[0]->comm(common::IndexMap::Direction::reverse);
+    // Get ghost->owner communicator for rows
+    _neighbor_comm = _index_maps[0]->comm(common::IndexMap::Direction::reverse);
 
     const std::int32_t local_size0 = _index_maps[0]->size_local();
     const std::array local_range0 = _index_maps[0]->local_range();
@@ -55,11 +51,10 @@ public:
     const std::array local_range1 = _index_maps[1]->local_range();
     const std::vector<std::int64_t>& ghosts1 = _index_maps[1]->ghosts();
 
-    // Get ghost->owner communicator for rows
-    const auto dest_ranks = dolfinx::MPI::neighbors(_nbr_comm)[1];
+    const auto dest_ranks = dolfinx::MPI::neighbors(_neighbor_comm)[1];
     const int num_neighbors = dest_ranks.size();
 
-    // Global-to-neigbourhood map for destination ranks
+    // Global-to-local ranks for neighborhood
     std::map<int, std::int32_t> dest_proc_to_neighbor;
     for (std::size_t i = 0; i < dest_ranks.size(); ++i)
       dest_proc_to_neighbor.insert({dest_ranks[i], i});
@@ -68,7 +63,6 @@ public:
     _ghost_row_to_neighbor_rank.resize(num_ghosts0, -1);
     for (int i = 0; i < num_ghosts0; ++i)
     {
-      // Find rank on neigbourhood comm of ghost owner
       const auto it = dest_proc_to_neighbor.find(ghost_owners0[i]);
       assert(it != dest_proc_to_neighbor.end());
       _ghost_row_to_neighbor_rank[i] = it->second;
@@ -120,7 +114,8 @@ public:
     const graph::AdjacencyList<std::int64_t> ghost_index_data_out(
         std::move(ghost_index_data), std::move(index_send_disp));
     std::vector<std::int64_t> ghost_index_data_in
-        = MPI::neighbor_all_to_all(_nbr_comm, ghost_index_data_out).array();
+        = MPI::neighbor_all_to_all(_neighbor_comm, ghost_index_data_out)
+              .array();
 
     // Global to local map for ghost columns
     std::map<std::int64_t, std::int32_t> global_to_local;
@@ -321,7 +316,8 @@ public:
     const graph::AdjacencyList<T> ghost_value_data_out(
         std::move(ghost_value_data), std::move(_val_send_disp));
     const std::vector<T> ghost_value_data_in
-        = MPI::neighbor_all_to_all(_nbr_comm, ghost_value_data_out).array();
+        = MPI::neighbor_all_to_all(_neighbor_comm, ghost_value_data_out)
+              .array();
 
     // Add to local rows
     assert(ghost_value_data_in.size() == _unpack_pos.size());
@@ -366,7 +362,7 @@ private:
 
   // Precomputed data for finalize/update
   // Neighborhood communicator
-  MPI_Comm _nbr_comm;
+  MPI_Comm _neighbor_com;
   // Position in _data to add received data
   std::vector<int> _unpack_pos;
   // Displacements for alltoall for each neighbor when sending
