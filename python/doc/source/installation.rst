@@ -26,7 +26,7 @@ C++ core
 - xtensor (https://xtensor.readthedocs.io/)
 - pkg-config (https://www.freedesktop.org/wiki/Software/pkg-config/)
 - Python 3 [build dependency]
-- FFCx [build dependency, for ``ufc.h`` header]
+- FFCx [build dependency, for ``ufcx.h`` header]
 - MPI
 - HDF5 (with MPI support enabled)
 - PETSc [2]_

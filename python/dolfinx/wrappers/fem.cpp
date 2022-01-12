@@ -42,7 +42,7 @@
 #include <pybind11/pytypes.h>
 #include <pybind11/stl.h>
 #include <string>
-#include <ufc.h>
+#include <ufcx.h>
 #include <utility>
 #include <xtensor/xadapt.hpp>
 #include <xtensor/xtensor.hpp>
@@ -693,11 +693,11 @@ void declare_form(py::module& m, const std::string& type)
                       subdomains,
                   const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh)
                {
-                 ufc_form* p = reinterpret_cast<ufc_form*>(form);
+                 ufcx_form* p = reinterpret_cast<ufcx_form*>(form);
                  return dolfinx::fem::create_form<T>(
                      *p, spaces, coefficients, constants, subdomains, mesh);
                }),
-           "Create a Form from a pointer to a ufc_form")
+           "Create a Form from a pointer to a ufcx_form")
       .def_property_readonly("coefficients",
                              &dolfinx::fem::Form<T>::coefficients)
       .def_property_readonly("rank", &dolfinx::fem::Form<T>::rank)
@@ -773,11 +773,11 @@ void declare_form(py::module& m, const std::string& type)
                         const dolfinx::mesh::MeshTags<int>*>& subdomains,
          const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh)
       {
-        ufc_form* p = reinterpret_cast<ufc_form*>(form);
+        ufcx_form* p = reinterpret_cast<ufcx_form*>(form);
         return dolfinx::fem::create_form<T>(*p, spaces, coefficients, constants,
                                             subdomains, mesh);
       },
-      "Create Form from a pointer to ufc_form.");
+      "Create Form from a pointer to ufcx_form.");
 }
 } // namespace
 
@@ -829,7 +829,7 @@ void fem(py::module& m)
       [](std::uintptr_t dofmap, const dolfinx::mesh::CellType cell_type,
          const std::vector<int>& parent_map)
       {
-        ufc_dofmap* p = reinterpret_cast<ufc_dofmap*>(dofmap);
+        ufcx_dofmap* p = reinterpret_cast<ufcx_dofmap*>(dofmap);
         return dolfinx::fem::create_element_dof_layout(*p, cell_type,
                                                        parent_map);
       },
@@ -840,11 +840,11 @@ void fem(py::module& m)
          dolfinx::mesh::Topology& topology,
          std::shared_ptr<dolfinx::fem::FiniteElement> element)
       {
-        ufc_dofmap* p = reinterpret_cast<ufc_dofmap*>(dofmap);
+        ufcx_dofmap* p = reinterpret_cast<ufcx_dofmap*>(dofmap);
         return dolfinx::fem::create_dofmap(comm.get(), *p, topology, nullptr,
                                            element);
       },
-      "Create DofMap object from a pointer to ufc_dofmap.");
+      "Create DofMap object from a pointer to ufcx_dofmap.");
   m.def(
       "build_dofmap",
       [](const MPICommWrapper comm, const dolfinx::mesh::Topology& topology,
@@ -866,10 +866,10 @@ void fem(py::module& m)
              std::shared_ptr<dolfinx::fem::FiniteElement>>(
       m, "FiniteElement", "Finite element object")
       .def(py::init(
-          [](std::uintptr_t ufc_element)
+          [](std::uintptr_t ufcx_element)
           {
-            ufc_finite_element* p
-                = reinterpret_cast<ufc_finite_element*>(ufc_element);
+            ufcx_finite_element* p
+                = reinterpret_cast<ufcx_finite_element*>(ufcx_element);
             return dolfinx::fem::FiniteElement(*p);
           }))
       .def_property_readonly("num_sub_elements",
