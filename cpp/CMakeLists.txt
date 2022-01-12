@@ -181,11 +181,9 @@ set(ENV{PKG_CONFIG_PATH} "$ENV{PETSC_DIR}/$ENV{PETSC_ARCH}/lib/pkgconfig:$ENV{PE
 pkg_search_module(PETSC IMPORTED_TARGET PETSc petsc)
 
 # Check if PETSc build uses real or complex scalars
-find_file (_PETSC_SYS_HEADER  petscsys.h ${PETSC_INCLUDE_DIRS})
 include(CheckSymbolExists)
-check_symbol_exists(PETSC_USE_COMPLEX _PETSC_SYS_HEADER PETSC_SCALAR_COMPLEX)
-message("Compelx check: ${PETSC_SCALAR_COMPLEX}")
-
+find_file (_PETSC_SYS_HEADER  petscsys.h ${PETSC_INCLUDE_DIRS})
+check_symbol_exists(PETSC_USE_COMPLEX _PETSC_SYS_HEADER HAVE_PETSC_SCALAR_COMPLEX)
 
 # Setting for FeatureSummary
 if(PETSC_FOUND)
