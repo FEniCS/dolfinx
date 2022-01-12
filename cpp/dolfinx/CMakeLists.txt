@@ -81,9 +81,7 @@ target_link_libraries(dolfinx PRIVATE Boost::filesystem)
 target_link_libraries(dolfinx PUBLIC MPI::MPI_CXX)
 
 # PETSc
-target_link_libraries(dolfinx PRIVATE PkgConfig::PETSC)
-# target_link_libraries(dolfinx PUBLIC PETSC::petsc)
-# target_link_libraries(dolfinx PRIVATE PETSC::petsc_static)
+target_link_libraries(dolfinx PUBLIC PkgConfig::PETSC)
 
 # HDF5
 if (TARGET hdf5::hdf5)
@@ -107,7 +105,7 @@ endif()
 
 # SLEPC
 if (DOLFINX_ENABLE_SLEPC AND SLEPC_FOUND)
-  target_link_libraries(dolfinx PRIVATE PkgConfig::SLEPC)
+  target_link_libraries(dolfinx PUBLIC PkgConfig::SLEPC)
   target_compile_definitions(dolfinx PUBLIC HAS_SLEPC)
 endif()
 
