@@ -158,6 +158,7 @@ public:
   }
 
   /// Convert to a dense matrix
+  /// @param ghost_rows Include ghost rows
   /// @return Dense copy of the matrix
   xt::xtensor<T, 2> to_dense(bool ghost_rows = false) const
   {
