@@ -39,7 +39,7 @@ set_target_properties(dolfinx PROPERTIES
 
 # Add git revision flag to the one affected file
 set_source_files_properties(common/defines.cpp PROPERTIES
-  COMPILE_DEFINITIONS "UFC_SIGNATURE=\"${UFC_SIGNATURE}\";DOLFINX_GIT_COMMIT_HASH=\"${GIT_COMMIT_HASH}\"")
+  COMPILE_DEFINITIONS "UFCX_SIGNATURE=\"${UFCX_SIGNATURE}\";DOLFINX_GIT_COMMIT_HASH=\"${GIT_COMMIT_HASH}\"")
 
 #------------------------------------------------------------------------------
 # Set compiler options and defintions
@@ -56,8 +56,12 @@ target_compile_definitions(dolfinx PUBLIC DOLFINX_VERSION="${DOLFINX_VERSION}")
 #------------------------------------------------------------------------------
 # Add include directories and libraries of required packages
 
-# UFC
-target_include_directories(dolfinx SYSTEM PUBLIC ${UFC_INCLUDE_DIRS})
+# UFCx
+if (TARGET ufcx::ufcx)
+  target_link_libraries(dolfinx PUBLIC ufcx::ufcx)
+else()
+  target_include_directories(dolfinx SYSTEM PUBLIC ${UFCX_INCLUDE_DIRS})
+endif()
 
 # Basix
 target_link_libraries(dolfinx PUBLIC Basix::basix)

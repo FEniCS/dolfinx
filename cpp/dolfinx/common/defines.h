@@ -15,7 +15,7 @@ namespace dolfinx
 std::string version();
 
 /// Return UFC signature string
-std::string ufc_signature();
+std::string ufcx_signature();
 
 /// Return git changeset hash (returns "unknown" if changeset is
 /// not known)

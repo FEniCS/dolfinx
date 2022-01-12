@@ -9,7 +9,7 @@
 #include <basix/interpolation.h>
 #include <dolfinx/common/log.h>
 #include <functional>
-#include <ufc.h>
+#include <ufcx.h>
 
 using namespace dolfinx;
 using namespace dolfinx::fem;
@@ -18,15 +18,15 @@ namespace
 {
 // Check if an element is a basix element (or a blocked element
 // containing a Basix element)
-bool is_basix_element(const ufc_finite_element& element)
+bool is_basix_element(const ufcx_finite_element& element)
 {
-  if (element.element_type == ufc_basix_element)
+  if (element.element_type == ufcx_basix_element)
     return true;
   else if (element.block_size != 1)
   {
     // TODO: what should happen if the element is a blocked element
     // containing a blocked element containing a Basix element?
-    return element.sub_elements[0]->element_type == ufc_basix_element;
+    return element.sub_elements[0]->element_type == ufcx_basix_element;
   }
   else
     return false;
@@ -78,7 +78,7 @@ _extract_sub_element(const FiniteElement& finite_element,
 } // namespace
 
 //-----------------------------------------------------------------------------
-FiniteElement::FiniteElement(const ufc_finite_element& e)
+FiniteElement::FiniteElement(const ufcx_finite_element& e)
     : _signature(e.signature), _family(e.family),
       _tdim(e.topological_dimension), _space_dim(e.space_dimension),
       _value_size(e.value_size), _reference_value_size(e.reference_value_size),
@@ -86,7 +86,7 @@ FiniteElement::FiniteElement(const ufc_finite_element& e)
       _value_shape(e.value_shape, e.value_shape + e.value_rank),
       _bs(e.block_size)
 {
-  const ufc_shape _shape = e.cell_shape;
+  const ufcx_shape _shape = e.cell_shape;
   switch (_shape)
   {
   case interval:
@@ -113,20 +113,20 @@ FiniteElement::FiniteElement(const ufc_finite_element& e)
   }
   assert(mesh::cell_dim(_cell_shape) == _tdim);
 
-  static const std::map<ufc_shape, std::string> ufc_to_cell
+  static const std::map<ufcx_shape, std::string> ufcx_to_cell
       = {{vertex, "point"},         {interval, "interval"},
          {triangle, "triangle"},    {tetrahedron, "tetrahedron"},
          {prism, "prism"},          {quadrilateral, "quadrilateral"},
          {hexahedron, "hexahedron"}};
-  const std::string cell_shape = ufc_to_cell.at(e.cell_shape);
+  const std::string cell_shape = ufcx_to_cell.at(e.cell_shape);
 
   _needs_dof_transformations = false;
   _needs_dof_permutations = false;
   // Create all sub-elements
   for (int i = 0; i < e.num_sub_elements; ++i)
   {
-    ufc_finite_element* ufc_sub_element = e.sub_elements[i];
-    _sub_elements.push_back(std::make_shared<FiniteElement>(*ufc_sub_element));
+    ufcx_finite_element* ufcx_sub_element = e.sub_elements[i];
+    _sub_elements.push_back(std::make_shared<FiniteElement>(*ufcx_sub_element));
     if (_sub_elements[i]->needs_dof_permutations()
         and !_needs_dof_transformations)
     {
