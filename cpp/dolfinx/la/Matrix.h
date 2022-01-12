@@ -26,6 +26,7 @@ public:
   /// Create a distributed matrix
   Matrix(const SparsityPattern& p, const Allocator& alloc = Allocator())
       : _index_maps({p.index_map(0), p.column_index_map()}),
+        _bs({p.block_size(0), p.block_size(1)}),
         _data(p.num_nonzeros(), 0, alloc), _cols(p.num_nonzeros()),
         _row_ptr(
             _index_maps[0]->size_local() + _index_maps[0]->num_ghosts() + 1, 0)
@@ -36,6 +37,8 @@ public:
     std::copy(pg.offsets().begin(), pg.offsets().end(), _row_ptr.begin());
 
     // TODO: handle block sizes
+    if (p.block_size(0) > 1 or p.block_size(1) > 1)
+      throw std::runtime_error("Block size not yet supported");
 
     // Precompute some data for ghost updates via MPI
     _nbr_comm = _index_maps[0]->comm(common::IndexMap::Direction::reverse);
@@ -352,7 +355,7 @@ private:
   std::array<std::shared_ptr<const common::IndexMap>, 2> _index_maps;
 
   // // Block size
-  // int _bs;
+  std::array<int, 2> _bs;
 
   // Data
   std::vector<T, Allocator> _data;

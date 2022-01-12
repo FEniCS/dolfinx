@@ -405,18 +405,22 @@ std::int64_t SparsityPattern::num_nonzeros() const
 //-----------------------------------------------------------------------------
 std::int32_t SparsityPattern::nnz_diag(int row) const
 {
+  if (!_graph)
+    throw std::runtime_error("Sparsity pattern has not be assembled.");
   return _off_diagonal_offset[row];
 }
 //-----------------------------------------------------------------------------
 std::int32_t SparsityPattern::nnz_off_diag(int row) const
 {
+  if (!_graph)
+    throw std::runtime_error("Sparsity pattern has not be assembled.");
   return _graph->num_links(row) - _off_diagonal_offset[row];
 }
 //-----------------------------------------------------------------------------
 const graph::AdjacencyList<std::int32_t>& SparsityPattern::graph() const
 {
   if (!_graph)
-    throw std::runtime_error("Sparsity pattern has not been finalised.");
+    throw std::runtime_error("Sparsity pattern has not been assembled.");
   return *_graph;
 }
 //-----------------------------------------------------------------------------
