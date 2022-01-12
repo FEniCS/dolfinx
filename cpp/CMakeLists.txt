@@ -125,7 +125,6 @@ endif()
 #------------------------------------------------------------------------------
 # Find required packages
 
-
 # Note: When updating Boost version, also update DOLFINXCongif.cmake.in
 if(DEFINED ENV{BOOST_ROOT} OR DEFINED BOOST_ROOT)
   set(Boost_NO_SYSTEM_PATHS on)
