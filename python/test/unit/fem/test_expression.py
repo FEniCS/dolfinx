@@ -16,7 +16,7 @@ from dolfinx.fem import (Constant, Expression, Function, FunctionSpace,
                          VectorFunctionSpace)
 from dolfinx.geometry import (BoundingBoxTree, compute_colliding_cells,
                               compute_collisions)
-from dolfinx.mesh import create_unit_square
+from dolfinx.mesh import create_unit_cube, create_unit_square
 
 from mpi4py import MPI
 from petsc4py import PETSc
@@ -311,45 +311,10 @@ def test_expression():
         assert np.allclose(grad_u_at_x[i, i], gradf(point))
 
 
-def test_zero_elimination():
+def test_tensor_zero_elimination():
     """ Testing that ffcx eliminates zeros correctly when compiling expressions"""
-    mesh = dolfinx.mesh.create_unit_cube(MPI.COMM_WORLD, 3, 3, 3)
 
-    # Test scalar elimination
-    DG = ufl.FiniteElement("DG", mesh.ufl_cell(), 1)
-    V = FunctionSpace(mesh, DG)
-    u = Function(V)
-    u.interpolate(lambda x: x[0])
-    e = Expression(u.dx(0).dx(0) + u, V.element.interpolation_points)
-    v = Function(V)
-    v.interpolate(e)
-    v.x.scatter_forward()
-    assert(np.allclose(u.x.array, v.x.array))
-
-    # Test vector elimination
-    DG = ufl.FiniteElement("DG", mesh.ufl_cell(), 1)
-    V = FunctionSpace(mesh, DG)
-    u = Function(V)
-    u.interpolate(lambda x: x[0] + 2 * x[1])
-
-    VDG = ufl.VectorElement("DG", mesh.ufl_cell(), 0)
-    W = FunctionSpace(mesh, VDG)
-    v = Function(W)
-    e = Expression(ufl.grad(u) + ufl.as_vector((u.dx(0).dx(0), u.dx(1).dx(1), 0)), W.element.interpolation_points)
-    grad_u_expr = Function(W)
-    grad_u_expr.interpolate(e)
-    grad_u_expr.x.scatter_forward()
-
-    gu = Function(W)
-
-    def gradu(x):
-        val = np.zeros(x.shape, dtype=PETSc.ScalarType)
-        val[0] = 1
-        val[1] = 2
-        return val
-
-    gu.interpolate(gradu)
-    assert(np.allclose(gu.x.array, grad_u_expr.x.array))
+    mesh = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3)
 
     # Test tensor elimination
     el = ufl.FiniteElement("N1curl", mesh.ufl_cell(), 1)
