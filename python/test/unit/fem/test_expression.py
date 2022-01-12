@@ -352,29 +352,35 @@ def test_zero_elimination():
     assert(np.allclose(gu.x.array, grad_u_expr.x.array))
 
     # Test tensor elimination
-    mesh = create_unit_square(MPI.COMM_WORLD, 10, 10)
-    DG = ufl.VectorElement("DG", mesh.ufl_cell(), 1)
-    V = FunctionSpace(mesh, DG)
+    el = ufl.FiniteElement("N1curl", mesh.ufl_cell(), 1)
+    V = FunctionSpace(mesh, el)
     u = Function(V)
-    u.interpolate(lambda x: (x[0], 2 * x[1]))
 
-    TDG = ufl.TensorElement("DG", mesh.ufl_cell(), 0)
-    W = FunctionSpace(mesh, TDG)
-    v = Function(W)
-    e = Expression(ufl.grad(u) + ufl.as_tensor(((u[0].dx(0).dx(0), 5), (-1, 0))), W.element.interpolation_points)
+    def u_ex(x):
+        val = np.zeros(x.shape, dtype=PETSc.ScalarType)
+        val[0] = x[1]
+        val[1] = -x[0]
+        val[2] = 0
+        return val
+
+    u.interpolate(u_ex)
+
+    DG = ufl.TensorElement("DG", mesh.ufl_cell(), 1)
+    W = FunctionSpace(mesh, DG)
+    cu = ufl.curl(u)
+    t = ufl.as_tensor([[cu[2], cu[1], 0], [cu[2], cu[0], 0], [0, cu[1], 0]])
+    e = Expression(ufl.sym(t),
+                   W.element.interpolation_points)
     grad_u_expr = Function(W)
     grad_u_expr.interpolate(e)
     grad_u_expr.x.scatter_forward()
 
-    gu = Function(W)
-
-    def gradu(x):
-        val = np.zeros((4, x.shape[1]), dtype=PETSc.ScalarType)
-        val[0] = 1
-        val[1] = 5
-        val[2] = -1
-        val[3] = 2
+    def exact(x):
+        val = np.zeros((9, x.shape[1]), dtype=PETSc.ScalarType)
+        val[0] = -2
+        val[1] = -1
+        val[3] = -1
         return val
-
-    gu.interpolate(gradu)
+    gu = Function(W)
+    gu.interpolate(exact)
     assert(np.allclose(gu.x.array, grad_u_expr.x.array))
