@@ -223,6 +223,18 @@ fem::FunctionSpace fem::create_functionspace(
 
   ufc_finite_element* ufc_element = space->finite_element;
   assert(ufc_element);
+
+  if (space->geometry_degree != mesh->geometry().cmap().degree()
+      or static_cast<basix::cell::type>(space->geometry_basix_cell)
+             != mesh::cell_type_to_basix_type(
+                 mesh->geometry().cmap().cell_shape())
+      or static_cast<basix::element::lagrange_variant>(
+             space->geometry_basix_variant)
+             != mesh->geometry().cmap().variant())
+  {
+    throw std::runtime_error("UFL mesh and CoordinateElement do not match.");
+  }
+
   std::shared_ptr<const fem::FiniteElement> element
       = std::make_shared<fem::FiniteElement>(*ufc_element);
 

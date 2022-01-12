@@ -77,7 +77,7 @@ import numpy as np
 
 import ufl
 from dolfinx import fem, plot
-from dolfinx.fem import dirichletbc, FunctionSpace, locate_dofs_topological
+from dolfinx.fem import FunctionSpace, dirichletbc, locate_dofs_topological
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import CellType, create_rectangle, locate_entities_boundary
 from ufl import ds, dx, grad, inner
