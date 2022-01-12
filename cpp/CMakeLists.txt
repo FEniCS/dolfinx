@@ -180,10 +180,11 @@ find_package(PkgConfig REQUIRED)
 set(ENV{PKG_CONFIG_PATH} "$ENV{PETSC_DIR}/$ENV{PETSC_ARCH}/lib/pkgconfig:$ENV{PETSC_DIR}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
 pkg_search_module(PETSC REQUIRED IMPORTED_TARGET PETSc>=3.15 petsc>=3.15)
 
-# Check if PETSc build uses real or complex scalars
+# Check if PETSc build uses real or complex scalars (this is configured
+# in DOLFINxConfig.cmake.in)
 include(CheckSymbolExists)
-find_file (_PETSC_SYS_HEADER  petscsys.h ${PETSC_INCLUDE_DIRS})
-check_symbol_exists(PETSC_USE_COMPLEX _PETSC_SYS_HEADER HAVE_PETSC_SCALAR_COMPLEX)
+set(CMAKE_REQUIRED_INCLUDES ${PETSC_INCLUDE_DIRS})
+check_symbol_exists(PETSC_USE_COMPLEX petscsystypes.h HAVE_PETSC_SCALAR_COMPLEX)
 
 # Setting for FeatureSummary
 if(PETSC_FOUND)
