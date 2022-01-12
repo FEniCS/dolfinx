@@ -309,3 +309,69 @@ def test_expression():
     for i, cell in enumerate(closest_cell):
         point = points[local_map[i]]
         assert np.allclose(grad_u_at_x[i, i], gradf(point))
+
+
+def test_zero_elimination():
+    """ Testing that ffcx eliminates zeros correctly when compiling expressions"""
+    mesh = dolfinx.mesh.create_unit_cube(MPI.COMM_WORLD, 3, 3, 3)
+
+    # Test scalar elimination
+    DG = ufl.FiniteElement("DG", mesh.ufl_cell(), 1)
+    V = FunctionSpace(mesh, DG)
+    u = Function(V)
+    u.interpolate(lambda x: x[0])
+    e = Expression(u.dx(0).dx(0) + u, V.element.interpolation_points)
+    v = Function(V)
+    v.interpolate(e)
+    assert(np.allclose(u.x.array, v.x.array))
+
+    # Test vector elimination
+    DG = ufl.FiniteElement("DG", mesh.ufl_cell(), 1)
+    V = FunctionSpace(mesh, DG)
+    u = Function(V)
+    u.interpolate(lambda x: x[0] + 2 * x[1])
+
+    VDG = ufl.VectorElement("DG", mesh.ufl_cell(), 0)
+    W = FunctionSpace(mesh, VDG)
+    v = Function(W)
+    e = Expression(ufl.grad(u) + ufl.as_vector((u.dx(0).dx(0), u.dx(1).dx(1), 0)), W.element.interpolation_points)
+    grad_u_expr = Function(W)
+    grad_u_expr.interpolate(e)
+
+    gu = Function(W)
+
+    def gradu(x):
+        val = np.zeros(x.shape, dtype=PETSc.ScalarType)
+        val[0] = 1
+        val[1] = 2
+        return val
+
+    gu.interpolate(gradu)
+    assert(np.allclose(gu.x.array, grad_u_expr.x.array))
+
+    # Test tensor elimination
+    mesh = create_unit_square(MPI.COMM_WORLD, 10, 10)
+    DG = ufl.VectorElement("DG", mesh.ufl_cell(), 1)
+    V = FunctionSpace(mesh, DG)
+    u = Function(V)
+    u.interpolate(lambda x: (x[0], 2 * x[1]))
+
+    TDG = ufl.TensorElement("DG", mesh.ufl_cell(), 0)
+    W = FunctionSpace(mesh, TDG)
+    v = Function(W)
+    e = Expression(ufl.grad(u) + ufl.as_tensor(((u[0].dx(0).dx(0), 5), (-1, 0))), W.element.interpolation_points)
+    grad_u_expr = Function(W)
+    grad_u_expr.interpolate(e)
+
+    gu = Function(W)
+
+    def gradu(x):
+        val = np.zeros((4, x.shape[1]), dtype=PETSc.ScalarType)
+        val[0] = 1
+        val[1] = 5
+        val[2] = -1
+        val[3] = 2
+        return val
+
+    gu.interpolate(gradu)
+    assert(np.allclose(gu.x.array, grad_u_expr.x.array))
