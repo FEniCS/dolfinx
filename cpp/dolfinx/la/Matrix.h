@@ -15,7 +15,10 @@
 namespace dolfinx::la
 {
 
-/// Distributed sparse Matrix
+/// Distributed sparse matrix
+/// Highly "experimental" storage of a matrix in CSR format
+/// which can be assembled into using the usual dolfinx assembly routines
+/// Matrix internal data can be accessed for interfacing with other code.
 template <typename T, class Allocator = std::allocator<T>>
 class Matrix
 {
@@ -37,7 +40,7 @@ public:
     std::copy(pg.offsets().begin(), pg.offsets().end(), _row_ptr.begin());
 
     // TODO: handle block sizes
-    if (p.block_size(0) > 1 or p.block_size(1) > 1)
+    if (_bs[0] > 1 or _bs[1] > 1)
       throw std::runtime_error("Block size not yet supported");
 
     // Precompute some data for ghost updates via MPI
@@ -61,7 +64,7 @@ public:
     for (std::size_t i = 0; i < dest_ranks.size(); ++i)
       dest_proc_to_neighbor.insert({dest_ranks[i], i});
 
-    // Get ownership of each ghost row by neighbor
+    // Ownership of each ghost row using neighbor rank
     _ghost_row_to_neighbor_rank.resize(num_ghosts0, -1);
     for (int i = 0; i < num_ghosts0; ++i)
     {
@@ -71,11 +74,10 @@ public:
       _ghost_row_to_neighbor_rank[i] = it->second;
     }
 
-    // Compute size of data to send to each process
+    // Compute size of data to send to each neighbor
     std::vector<std::int32_t> data_per_proc(num_neighbors, 0);
     for (int i = 0; i < num_ghosts0; ++i)
     {
-      // Add to src size
       assert(_ghost_row_to_neighbor_rank[i] < (int)data_per_proc.size());
       data_per_proc[_ghost_row_to_neighbor_rank[i]]
           += _row_ptr[local_size0 + i + 1] - _row_ptr[local_size0 + i];
@@ -99,7 +101,7 @@ public:
       for (int j = _row_ptr[local_size0 + i]; j < _row_ptr[local_size0 + i + 1];
            ++j)
       {
-        // Get index in send buffer
+        // Get index position in send buffer
         const std::int32_t idx_pos = insert_pos[neighbor_rank];
 
         // Pack send data (row, col) as global indices
@@ -126,7 +128,8 @@ public:
     for (std::int64_t global_i : ghosts1)
       global_to_local.insert({global_i, local_i++});
 
-    // Compute location to which data for this index should be placed
+    // Compute location in which data for each index should be stored when
+    // received
     for (std::size_t i = 0; i < ghost_index_data_in.size(); i += 2)
     {
       // Row must be on this process
