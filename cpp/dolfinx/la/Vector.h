@@ -26,6 +26,9 @@ class Vector
 public:
   /// The value type
   using value_type = T;
+  
+  /// The allocator type 
+  using allocator_type = Allocator;
 
   /// Create a distributed vector
   Vector(const std::shared_ptr<const common::IndexMap>& map, int bs,
