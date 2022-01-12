@@ -339,9 +339,8 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   // Create submesh coordinate element
   CellType submesh_coord_cell
       = mesh::cell_entity_type(mesh.geometry().cmap().cell_shape(), dim, 0);
-  // FIXME Geometry degree is hardcoded to 1 as there is no way to
-  // retrive this from the coordinate element
-  auto submesh_coord_ele = fem::CoordinateElement(submesh_coord_cell, 1);
+  auto submesh_coord_ele = fem::CoordinateElement(
+      submesh_coord_cell, mesh.geometry().cmap().degree());
 
   // Submesh geometry input_global_indices
   // TODO Check this
