@@ -16,14 +16,14 @@ if (NOT TARGET dolfinx)
   find_package(DOLFINX REQUIRED)
 endif()
 
-# Add target to compile UFL files
 if (PETSC_SCALAR_COMPLEX EQUAL 1)
-  message("This demo does not work with in complex mode")
+  message(STATUS "** This demo does not support complex mode")
 else()
+  # Add target to compile UFL files
   add_custom_command(
-  OUTPUT hyperelasticity.c
-  COMMAND ffcx ${CMAKE_CURRENT_SOURCE_DIR}/hyperelasticity.ufl ${SCALAR_TYPE}
-  VERBATIM DEPENDS hyperelasticity.ufl COMMENT "Compile hyperelasticity.ufl using FFCx")
+    OUTPUT hyperelasticity.c
+    COMMAND ffcx ${CMAKE_CURRENT_SOURCE_DIR}/hyperelasticity.ufl
+    VERBATIM DEPENDS hyperelasticity.ufl COMMENT "Compile hyperelasticity.ufl using FFCx")
 
   add_executable(${PROJECT_NAME} main.cpp ${CMAKE_CURRENT_BINARY_DIR}/hyperelasticity.c)
   target_link_libraries(${PROJECT_NAME} dolfinx)
