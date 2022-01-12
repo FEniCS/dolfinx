@@ -14,7 +14,7 @@
 #include <xtensor/xtensor.hpp>
 #include <xtl/xspan.hpp>
 
-struct ufc_finite_element;
+struct ufcx_finite_element;
 
 namespace dolfinx::fem
 {
@@ -25,7 +25,7 @@ class FiniteElement
 public:
   /// Create finite element from UFC finite element
   /// @param[in] e UFC finite element
-  explicit FiniteElement(const ufc_finite_element& e);
+  explicit FiniteElement(const ufcx_finite_element& e);
 
   /// Create finite element from a Basix finite element
   /// @param[in] element Basix finite element

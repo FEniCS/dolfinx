@@ -36,6 +36,8 @@ void declare_objects(py::module& m, const std::string& type)
       .def(py::init(
           [](const std::shared_ptr<const dolfinx::common::IndexMap>& map,
              int bs) { return dolfinx::la::Vector<T>(map, bs); }))
+      .def(py::init([](const dolfinx::la::Vector<T>& vec)
+                    { return dolfinx::la::Vector<T>(vec); }))
       .def("set", &dolfinx::la::Vector<T>::set)
       .def("norm", &dolfinx::la::Vector<T>::norm,
            py::arg("type") = dolfinx::la::Norm::l2)

@@ -49,6 +49,12 @@ public:
   /// @return The cell shape
   mesh::CellType cell_shape() const;
 
+  /// The degree of the element
+  int degree() const;
+
+  /// The variant of the element
+  basix::element::lagrange_variant variant() const;
+
   /// Return the topological dimension of the cell shape
   int topological_dimension() const;
 

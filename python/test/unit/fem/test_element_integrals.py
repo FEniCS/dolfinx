@@ -15,7 +15,7 @@ import dolfinx
 import ufl
 from dolfinx.fem import (Constant, Function, FunctionSpace,
                          VectorFunctionSpace, assemble_matrix, assemble_scalar,
-                         assemble_vector)
+                         assemble_vector, form)
 from dolfinx.mesh import CellType, MeshTags, create_mesh
 from dolfinx_utils.test.skips import skip_in_parallel
 
@@ -166,7 +166,7 @@ def test_facet_integral(cell_type):
         # equal
         out = []
         for j in range(num_facets):
-            a = v * ufl.ds(subdomain_data=marker, subdomain_id=j)
+            a = form(v * ufl.ds(subdomain_data=marker, subdomain_id=j))
             result = assemble_scalar(a)
             out.append(result)
             assert np.isclose(result, out[0])
@@ -226,7 +226,7 @@ def test_facet_normals(cell_type):
             # normal over a face is 1 on one face and 0 on the others
             ones = 0
             for j in range(num_facets):
-                a = ufl.inner(v, normal) * ufl.ds(subdomain_data=marker, subdomain_id=j)
+                a = form(ufl.inner(v, normal) * ufl.ds(subdomain_data=marker, subdomain_id=j))
                 result = assemble_scalar(a)
                 if np.isclose(result, 1):
                     ones += 1
@@ -249,7 +249,7 @@ def test_plus_minus(cell_type, space_type):
             v.interpolate(lambda x: x[0] - 2 * x[1])
             # Check that these two integrals are equal
             for pm1, pm2 in product(["+", "-"], repeat=2):
-                a = v(pm1) * v(pm2) * ufl.dS
+                a = form(v(pm1) * v(pm2) * ufl.dS)
                 results.append(assemble_scalar(a))
     for i, j in combinations(results, 2):
         assert np.isclose(i, j)
@@ -275,7 +275,7 @@ def test_plus_minus_simple_vector(cell_type, pm):
             # Assemble vectors v['+'] * dS and v['-'] * dS for a few
             # different numberings
             v = ufl.TestFunction(V)
-            a = ufl.inner(1, v(pm)) * ufl.dS
+            a = form(ufl.inner(1, v(pm)) * ufl.dS)
             result = assemble_vector(a)
             result.assemble()
             spaces.append(V)
@@ -329,7 +329,7 @@ def test_plus_minus_vector(cell_type, pm1, pm2):
             f = Function(V)
             f.interpolate(lambda x: x[0] - 2 * x[1])
             v = ufl.TestFunction(V)
-            a = ufl.inner(f(pm1), v(pm2)) * ufl.dS
+            a = form(ufl.inner(f(pm1), v(pm2)) * ufl.dS)
             result = assemble_vector(a)
             result.assemble()
             spaces.append(V)
@@ -378,7 +378,7 @@ def test_plus_minus_matrix(cell_type, pm1, pm2):
 
             # Assemble matrices with combinations of + and - for a few
             # different numberings
-            a = ufl.inner(u(pm1), v(pm2)) * ufl.dS
+            a = form(ufl.inner(u(pm1), v(pm2)) * ufl.dS)
             result = assemble_matrix(a, [])
             result.assemble()
             spaces.append(V)
@@ -441,8 +441,8 @@ def test_curl(space_type, order):
         v = ufl.TestFunction(V)
 
         f = ufl.as_vector(tuple(1 if i == 0 else 0 for i in range(tdim)))
-        form = ufl.inner(f, ufl.curl(v)) * ufl.dx
-        result = assemble_vector(form)
+        L = form(ufl.inner(f, ufl.curl(v)) * ufl.dx)
+        result = assemble_vector(L)
         spaces.append(V)
         results.append(result.array)
 
@@ -494,8 +494,8 @@ def assemble_div_matrix(k, offset):
     V = FunctionSpace(mesh, ("DQ", k))
     W = FunctionSpace(mesh, ("RTCF", k + 1))
     u, w = ufl.TrialFunction(V), ufl.TestFunction(W)
-    form = ufl.inner(u, ufl.div(w)) * ufl.dx
-    A = assemble_matrix(form)
+    a = form(ufl.inner(u, ufl.div(w)) * ufl.dx)
+    A = assemble_matrix(a)
     A.assemble()
     return A[:, :]
 
@@ -504,9 +504,9 @@ def assemble_div_vector(k, offset):
     mesh = create_quad_mesh(offset)
     V = FunctionSpace(mesh, ("RTCF", k + 1))
     v = ufl.TestFunction(V)
-    form = ufl.inner(Constant(mesh, PETSc.ScalarType(1)), ufl.div(v)) * ufl.dx
-    L = assemble_vector(form)
-    return L[:]
+    L = form(ufl.inner(Constant(mesh, PETSc.ScalarType(1)), ufl.div(v)) * ufl.dx)
+    b = assemble_vector(L)
+    return b[:]
 
 
 @skip_in_parallel

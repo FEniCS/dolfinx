@@ -125,9 +125,6 @@ endif()
 #------------------------------------------------------------------------------
 # Find required packages
 
-# Use Python for detecting UFC and Basix
-find_package(Python3 COMPONENTS Interpreter REQUIRED)
-
 # Note: When updating Boost version, also update DOLFINXCongif.cmake.in
 if(DEFINED ENV{BOOST_ROOT} OR DEFINED BOOST_ROOT)
   set(Boost_NO_SYSTEM_PATHS on)
@@ -138,6 +135,9 @@ find_package(Boost 1.70 REQUIRED timer filesystem)
 set_package_properties(Boost PROPERTIES TYPE REQUIRED
   DESCRIPTION "Boost C++ libraries"
   URL "http://www.boost.org")
+
+# Use Python for detecting UFCx and Basix
+find_package(Python3 COMPONENTS Interpreter REQUIRED)
 
 # Check for Basix
 # Note: Basix may be installed as a standalone C++ library, or in the
@@ -191,10 +191,17 @@ set_package_properties(HDF5 PROPERTIES TYPE REQUIRED
   DESCRIPTION "Hierarchical Data Format 5 (HDF5)"
   URL "https://www.hdfgroup.org/HDF5")
 
-# Check for UFC
-find_package(UFC MODULE ${DOLFINX_VERSION_MAJOR}.${DOLFINX_VERSION_MINOR})
-set_package_properties(UFC PROPERTIES TYPE REQUIRED
-  DESCRIPTION "Unified interface for form-compilers (part of FFCx)"
+# Check for UFC. First check for UFCxConfig.cmake (CONFIG)
+# Note: we use the case (ufcx vs UFCx) elsewhere to determine by which
+# method UFCx was found
+find_package(ufcx ${DOLFINX_VERSION_MAJOR}.${DOLFINX_VERSION_MINOR} CONFIG)
+if (NOT ufcx_FOUND)
+  # Next, check in MODULE mode (using FindUFCX.cmake)
+  find_package(Python3 COMPONENTS Interpreter REQUIRED)
+  find_package(UFCx ${DOLFINX_VERSION_MAJOR}.${DOLFINX_VERSION_MINOR} REQUIRED MODULE)
+endif()
+set_package_properties(UFCx PROPERTIES TYPE REQUIRED
+  DESCRIPTION "Interface for form-compilers (part of FFCx)"
   URL "https://github.com/fenics/ffcx")
 
 #------------------------------------------------------------------------------
@@ -294,65 +301,6 @@ if (GENERATE_DEMO_TEST_DATA)
     ERROR_VARIABLE COPY_DEMO_DATA_OUTPUT)
   if (COPY_DEMO_DATA_RESULT)
     message(FATAL_ERROR "Copy demo data failed: \n${COPY_DEMO_DATA_OUTPUT}")
-  endif()
-endif()
-
-#------------------------------------------------------------------------------
-# Generate form files for tests and demos
-
-if (GENERATE_DEMO_TEST_DATA)
-  message(STATUS "")
-  message(STATUS "Generating form files in demo and test directories. May take some time...")
-  message(STATUS "----------------------------------------------------------------------------------------")
-  execute_process(
-    COMMAND ${Python3_EXECUTABLE} "-B" "-u" ${DOLFINX_SOURCE_DIR}/cmake/scripts/generate-form-files.py ${PETSC_SCALAR_COMPLEX}
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    RESULT_VARIABLE FORM_GENERATION_RESULT
-    OUTPUT_VARIABLE FORM_GENERATION_OUTPUT
-    ERROR_VARIABLE FORM_GENERATION_OUTPUT
-    )
-
-  if (FORM_GENERATION_RESULT)
-    # Cleanup so that form generation is triggered next time we run cmake
-    file(REMOVE_RECURSE ${CMAKE_CURRENT_BINARY_DIR}/demo ${CMAKE_CURRENT_BINARY_DIR}/test)
-    message(FATAL_ERROR "Generation of form files failed: \n${FORM_GENERATION_OUTPUT}")
-  endif()
-endif()
-
-#------------------------------------------------------------------------------
-# Generate CMakeLists.txt files for demos if needed
-
-# NOTE: We need to call this script after generate-formfiles
-
-if (GENERATE_DEMO_TEST_DATA)
-  message(STATUS "")
-  message(STATUS "Generating CMakeLists.txt files in demo directory")
-  message(STATUS "-------------------------------------------------------------------")
-  # Generate CMakeLists.txt files in build directory
-  execute_process(
-    COMMAND ${Python3_EXECUTABLE} ${DOLFINX_SOURCE_DIR}/cmake/scripts/generate-cmakefiles.py
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    RESULT_VARIABLE CMAKE_GENERATION_RESULT
-    OUTPUT_VARIABLE CMAKE_GENERATION_OUTPUT
-    ERROR_VARIABLE CMAKE_GENERATION_OUTPUT
-    )
-  if (CMAKE_GENERATION_RESULT)
-    # Cleanup so FFCx rebuild is triggered next time we run cmake
-    file(REMOVE_RECURSE ${CMAKE_CURRENT_BINARY_DIR}/demo ${CMAKE_CURRENT_BINARY_DIR}/test)
-    message(FATAL_ERROR "Generation of CMakeLists.txt files in build directory failed: \n${CMAKE_GENERATION_OUTPUT}")
-  else()
-    # Generate CMakeLists.txt files in source directory as well, as developers might find it
-    # easier to run in-place demo builds while preparing new demos or modifying existing ones
-    execute_process(
-      COMMAND ${Python3_EXECUTABLE} ${DOLFINX_SOURCE_DIR}/cmake/scripts/generate-cmakefiles.py
-      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-      RESULT_VARIABLE CMAKE_GENERATION_RESULT
-      OUTPUT_VARIABLE CMAKE_GENERATION_OUTPUT
-      ERROR_VARIABLE CMAKE_GENERATION_OUTPUT
-      )
-    if (CMAKE_GENERATION_RESULT)
-      message(FATAL_ERROR "Generation of CMakeLists.txt files in source directory failed: \n${CMAKE_GENERATION_OUTPUT}")
-    endif()
   endif()
 endif()
 

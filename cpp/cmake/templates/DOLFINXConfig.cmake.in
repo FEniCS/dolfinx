@@ -22,6 +22,10 @@ find_dependency(Boost 1.70 REQUIRED COMPONENTS timer filesystem)
 find_dependency(xtl)
 find_dependency(xtensor)
 
+if (@ufcx_FOUND@)
+  find_dependency(ufcx)
+endif()
+
 # Basix
 find_package(Python3 COMPONENTS Interpreter)
 if(Python3_Interpreter_FOUND)

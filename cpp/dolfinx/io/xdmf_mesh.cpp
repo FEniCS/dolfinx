@@ -150,9 +150,7 @@ void xdmf_mesh::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
                                   const std::string path_prefix,
                                   const mesh::Geometry& geometry)
 {
-
   LOG(INFO) << "Adding geometry data to node \"" << xml_node.path('/') << "\"";
-
   auto map = geometry.index_map();
   assert(map);
 
@@ -176,6 +174,7 @@ void xdmf_mesh::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
 
   int num_values = num_points_local * width;
   std::vector<double> x(num_values, 0.0);
+
   if (width == 3)
     std::copy_n(_x.data(), num_values, x.begin());
   else
