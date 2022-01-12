@@ -251,7 +251,7 @@ set_package_properties(SCOTCH PROPERTIES TYPE OPTIONAL
   PURPOSE "Parallel graph partitioning")
 
 if (DOLFINX_ENABLE_PARMETIS)
-  find_package(PARMETIS 4.0.2)
+  find_package(ParMETIS 4.0.2)
 endif()
 set_package_properties(ParMETIS PROPERTIES TYPE OPTIONAL
   DESCRIPTION "Parallel Graph Partitioning and Fill-reducing Matrix Ordering"
