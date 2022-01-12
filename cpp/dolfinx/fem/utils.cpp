@@ -23,7 +23,7 @@
 #include <dolfinx/mesh/topologycomputation.h>
 #include <memory>
 #include <string>
-#include <ufc.h>
+#include <ufcx.h>
 
 using namespace dolfinx;
 
@@ -71,7 +71,7 @@ la::SparsityPattern fem::create_sparsity_pattern(
 }
 //-----------------------------------------------------------------------------
 fem::ElementDofLayout
-fem::create_element_dof_layout(const ufc_dofmap& dofmap,
+fem::create_element_dof_layout(const ufcx_dofmap& dofmap,
                                const mesh::CellType cell_type,
                                const std::vector<int>& parent_map)
 {
@@ -113,22 +113,22 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
   std::vector<std::shared_ptr<const fem::ElementDofLayout>> sub_dofmaps;
   for (int i = 0; i < dofmap.num_sub_dofmaps; ++i)
   {
-    ufc_dofmap* ufc_sub_dofmap = dofmap.sub_dofmaps[i];
+    ufcx_dofmap* ufcx_sub_dofmap = dofmap.sub_dofmaps[i];
     if (element_block_size == 1)
     {
       offsets.push_back(offsets.back()
-                        + ufc_sub_dofmap->num_element_support_dofs
-                              * ufc_sub_dofmap->block_size);
+                        + ufcx_sub_dofmap->num_element_support_dofs
+                              * ufcx_sub_dofmap->block_size);
     }
     else
       offsets.push_back(offsets.back() + 1);
 
-    std::vector<int> parent_map_sub(ufc_sub_dofmap->num_element_support_dofs
-                                    * ufc_sub_dofmap->block_size);
+    std::vector<int> parent_map_sub(ufcx_sub_dofmap->num_element_support_dofs
+                                    * ufcx_sub_dofmap->block_size);
     for (std::size_t j = 0; j < parent_map_sub.size(); ++j)
       parent_map_sub[j] = offsets[i] + element_block_size * j;
     sub_dofmaps.push_back(std::make_shared<fem::ElementDofLayout>(
-        create_element_dof_layout(*ufc_sub_dofmap, cell_type, parent_map_sub)));
+        create_element_dof_layout(*ufcx_sub_dofmap, cell_type, parent_map_sub)));
   }
 
   // Check for "block structure". This should ultimately be replaced,
@@ -138,14 +138,14 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
 }
 //-----------------------------------------------------------------------------
 fem::DofMap
-fem::create_dofmap(MPI_Comm comm, const ufc_dofmap& ufc_dofmap,
+fem::create_dofmap(MPI_Comm comm, const ufcx_dofmap& ufcx_dofmap,
                    mesh::Topology& topology,
                    const std::function<std::vector<int>(
                        const graph::AdjacencyList<std::int32_t>&)>& reorder_fn,
                    std::shared_ptr<const dolfinx::fem::FiniteElement> element)
 {
   auto element_dof_layout = std::make_shared<ElementDofLayout>(
-      create_element_dof_layout(ufc_dofmap, topology.cell_type()));
+      create_element_dof_layout(ufcx_dofmap, topology.cell_type()));
   assert(element_dof_layout);
 
   // Create required mesh entities
@@ -189,31 +189,31 @@ fem::create_dofmap(MPI_Comm comm, const ufc_dofmap& ufc_dofmap,
   return DofMap(element_dof_layout, index_map, bs, std::move(dofmap), bs);
 }
 //-----------------------------------------------------------------------------
-std::vector<std::string> fem::get_coefficient_names(const ufc_form& ufc_form)
+std::vector<std::string> fem::get_coefficient_names(const ufcx_form& ufcx_form)
 {
   std::vector<std::string> coefficients;
-  const char** names = ufc_form.coefficient_name_map();
-  for (int i = 0; i < ufc_form.num_coefficients; ++i)
+  const char** names = ufcx_form.coefficient_name_map();
+  for (int i = 0; i < ufcx_form.num_coefficients; ++i)
     coefficients.push_back(names[i]);
   return coefficients;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::string> fem::get_constant_names(const ufc_form& ufc_form)
+std::vector<std::string> fem::get_constant_names(const ufcx_form& ufcx_form)
 {
   std::vector<std::string> constants;
-  const char** names = ufc_form.constant_name_map();
-  for (int i = 0; i < ufc_form.num_constants; ++i)
+  const char** names = ufcx_form.constant_name_map();
+  for (int i = 0; i < ufcx_form.num_constants; ++i)
     constants.push_back(names[i]);
   return constants;
 }
 //-----------------------------------------------------------------------------
 fem::FunctionSpace fem::create_functionspace(
-    ufc_function_space* (*fptr)(const char*), const std::string& function_name,
+    ufcx_function_space* (*fptr)(const char*), const std::string& function_name,
     std::shared_ptr<mesh::Mesh> mesh,
     const std::function<std::vector<int>(
         const graph::AdjacencyList<std::int32_t>&)>& reorder_fn)
 {
-  ufc_function_space* space = fptr(function_name.c_str());
+  ufcx_function_space* space = fptr(function_name.c_str());
   if (!space)
   {
     throw std::runtime_error(
@@ -221,8 +221,8 @@ fem::FunctionSpace fem::create_functionspace(
         + function_name);
   }
 
-  ufc_finite_element* ufc_element = space->finite_element;
-  assert(ufc_element);
+  ufcx_finite_element* ufcx_element = space->finite_element;
+  assert(ufcx_element);
 
   if (space->geometry_degree != mesh->geometry().cmap().degree()
       or static_cast<basix::cell::type>(space->geometry_basix_cell)
@@ -236,13 +236,13 @@ fem::FunctionSpace fem::create_functionspace(
   }
 
   std::shared_ptr<const fem::FiniteElement> element
-      = std::make_shared<fem::FiniteElement>(*ufc_element);
+      = std::make_shared<fem::FiniteElement>(*ufcx_element);
 
-  ufc_dofmap* ufc_map = space->dofmap;
-  assert(ufc_map);
+  ufcx_dofmap* ufcx_map = space->dofmap;
+  assert(ufcx_map);
   return fem::FunctionSpace(
       mesh, element,
       std::make_shared<fem::DofMap>(fem::create_dofmap(
-          mesh->comm(), *ufc_map, mesh->topology(), reorder_fn, element)));
+          mesh->comm(), *ufcx_map, mesh->topology(), reorder_fn, element)));
 }
 //-----------------------------------------------------------------------------
