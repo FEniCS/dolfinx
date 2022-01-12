@@ -18,25 +18,26 @@ endif()
 
 # Add target to compile UFL files
 if (PETSC_SCALAR_COMPLEX EQUAL 1)
-  set(SCALAR_TYPE "--scalar_type=double _Complex")
-endif()
-add_custom_command(
+  message("This demo does not work with in complex mode")
+else()
+  add_custom_command(
   OUTPUT hyperelasticity.c
   COMMAND ffcx ${CMAKE_CURRENT_SOURCE_DIR}/hyperelasticity.ufl ${SCALAR_TYPE}
   VERBATIM DEPENDS hyperelasticity.ufl COMMENT "Compile hyperelasticity.ufl using FFCx")
 
-add_executable(${PROJECT_NAME} main.cpp ${CMAKE_CURRENT_BINARY_DIR}/hyperelasticity.c)
-target_link_libraries(${PROJECT_NAME} dolfinx)
+  add_executable(${PROJECT_NAME} main.cpp ${CMAKE_CURRENT_BINARY_DIR}/hyperelasticity.c)
+  target_link_libraries(${PROJECT_NAME} dolfinx)
 
-# Do not throw error for 'multi-line comments' (these are typical in
-# rst which includes LaTeX)
-include(CheckCXXCompilerFlag)
-CHECK_CXX_COMPILER_FLAG("-Wno-comment" HAVE_NO_MULTLINE)
-set_source_files_properties(main.cpp PROPERTIES COMPILE_FLAGS "$<$<BOOL:${HAVE_NO_MULTLINE}>:-Wno-comment -Wall -Wextra -pedantic -Werror>")
+  # Do not throw error for 'multi-line comments' (these are typical in
+  # rst which includes LaTeX)
+  include(CheckCXXCompilerFlag)
+  CHECK_CXX_COMPILER_FLAG("-Wno-comment" HAVE_NO_MULTLINE)
+  set_source_files_properties(main.cpp PROPERTIES COMPILE_FLAGS "$<$<BOOL:${HAVE_NO_MULTLINE}>:-Wno-comment -Wall -Wextra -pedantic -Werror>")
 
-# Test targets (used by DOLFINx testing system)
-set(TEST_PARAMETERS2 -np 2 ${MPIEXEC_PARAMS} "./${PROJECT_NAME}")
-set(TEST_PARAMETERS3 -np 3 ${MPIEXEC_PARAMS} "./${PROJECT_NAME}")
-add_test(NAME ${PROJECT_NAME}_mpi_2 COMMAND "mpirun" ${TEST_PARAMETERS2})
-add_test(NAME ${PROJECT_NAME}_mpi_3 COMMAND "mpirun" ${TEST_PARAMETERS3})
-add_test(NAME ${PROJECT_NAME}_serial COMMAND ${PROJECT_NAME})
+  # Test targets (used by DOLFINx testing system)
+  set(TEST_PARAMETERS2 -np 2 ${MPIEXEC_PARAMS} "./${PROJECT_NAME}")
+  set(TEST_PARAMETERS3 -np 3 ${MPIEXEC_PARAMS} "./${PROJECT_NAME}")
+  add_test(NAME ${PROJECT_NAME}_mpi_2 COMMAND "mpirun" ${TEST_PARAMETERS2})
+  add_test(NAME ${PROJECT_NAME}_mpi_3 COMMAND "mpirun" ${TEST_PARAMETERS3})
+  add_test(NAME ${PROJECT_NAME}_serial COMMAND ${PROJECT_NAME})
+endif()
