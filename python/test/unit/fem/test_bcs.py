@@ -8,11 +8,11 @@ import numpy as np
 import pytest
 
 import ufl
-from dolfinx.fem import (Constant, dirichletbc, Function, FunctionSpace,
+from dolfinx.fem import (Constant, Function, FunctionSpace,
                          VectorFunctionSpace, apply_lifting, assemble_matrix,
-                         assemble_vector, create_matrix, create_vector, form,
-                         locate_dofs_geometrical, locate_dofs_topological,
-                         set_bc)
+                         assemble_vector, create_matrix, create_vector,
+                         dirichletbc, form, locate_dofs_geometrical,
+                         locate_dofs_topological, set_bc)
 from dolfinx.mesh import (CellType, create_unit_cube, create_unit_square,
                           locate_entities_boundary)
 from ufl import dx, inner
