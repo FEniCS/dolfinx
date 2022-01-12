@@ -178,7 +178,7 @@ set_package_properties(xtensor PROPERTIES TYPE REQUIRED
 # Check for PETSc
 find_package(PkgConfig REQUIRED)
 set(ENV{PKG_CONFIG_PATH} "$ENV{PETSC_DIR}/$ENV{PETSC_ARCH}/lib/pkgconfig:$ENV{PETSC_DIR}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
-pkg_search_module(PETSC IMPORTED_TARGET PETSc petsc)
+pkg_search_module(PETSC REQUIRED IMPORTED_TARGET PETSc>=3.15 petsc>=3.15)
 
 # Check if PETSc build uses real or complex scalars
 include(CheckSymbolExists)
@@ -238,7 +238,7 @@ if (DOLFINX_ENABLE_SLEPC)
     set_property(GLOBAL APPEND PROPERTY PACKAGES_NOT_FOUND SLEPc)
   endif()
 endif()
-set_package_properties(SLEPc PROPERTIES TYPE OPTIONAL
+set_package_properties(SLEPc PROPERTIES TYPE RECOMMENDED
   DESCRIPTION "Scalable Library for Eigenvalue Problem Computations"
   URL "http://slepc.upv.es/"
   PURPOSE "Eigenvalue computation")
@@ -254,7 +254,7 @@ set_package_properties(SCOTCH PROPERTIES TYPE OPTIONAL
 if (DOLFINX_ENABLE_PARMETIS)
   find_package(ParMETIS 4.0.2)
 endif()
-set_package_properties(ParMETIS PROPERTIES TYPE OPTIONAL
+set_package_properties(ParMETIS PROPERTIES TYPE RECOMMENDED
   DESCRIPTION "Parallel Graph Partitioning and Fill-reducing Matrix Ordering"
   URL "http://glaros.dtc.umn.edu/gkhome/metis/parmetis/overview"
   PURPOSE "Parallel graph partitioning")
