@@ -26,18 +26,21 @@ C++ core
 - xtensor (https://xtensor.readthedocs.io/)
 - pkg-config (https://www.freedesktop.org/wiki/Software/pkg-config/)
 - Python 3 [build dependency]
-- FFCx [build dependency, for ``ufcx.h`` header]
+- Basix (http://github.com/FEniCS/basix).
+- UFCx [build dependency ``ufcx.h``, provided by FFCx]
 - MPI
 - HDF5 (with MPI support enabled)
 - PETSc [2]_
-- SCOTCH and PT-SCOTCH [1]_  (required for parallel mesh computation)
 
 .. rubric:: Optional
 
 - KaHIP
 - ParMETIS [1]_
+- PT-SCOTCH [1]_  (required for parallel mesh computation)
 - SLEPc
 
+Note that at least one of KaHIP, ParMETIS or PT-SCOTCH is required.
+ParMETIS is recommended.
 
 Python interface
 ----------------
