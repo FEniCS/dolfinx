@@ -184,6 +184,8 @@ pkg_search_module(PETSC IMPORTED_TARGET PETSc petsc)
 find_file (_PETSC_SYS_HEADER  petscsys.h ${PETSC_INCLUDE_DIRS})
 include(CheckSymbolExists)
 check_symbol_exists(PETSC_USE_COMPLEX _PETSC_SYS_HEADER PETSC_SCALAR_COMPLEX)
+message("Compelx check: ${PETSC_SCALAR_COMPLEX}")
+
 
 # Setting for FeatureSummary
 if(PETSC_FOUND)
