@@ -73,6 +73,7 @@ add_feature_info(XTENSOR_OPTIMIZE XTENSOR_OPTIMIZE "Enable architecture-specific
 list(APPEND OPTIONAL_PACKAGES "ADIOS2")
 list(APPEND OPTIONAL_PACKAGES "ParMETIS")
 list(APPEND OPTIONAL_PACKAGES "SCOTCH")
+list(APPEND OPTIONAL_PACKAGES "SLEPc")
 list(APPEND OPTIONAL_PACKAGES "KaHIP")
 
 # Add options
@@ -202,43 +203,54 @@ set_package_properties(UFC PROPERTIES TYPE REQUIRED
 
 if (DOLFINX_ENABLE_ADIOS2)
   find_package(ADIOS2 2.7.1)
-  set_package_properties(ADIOS2 PROPERTIES TYPE OPTIONAL
-    DESCRIPTION "Adaptable Input/Output (I/O) System."
-    URL "https://adios2.readthedocs.io/en/latest/"
-    PURPOSE "IO, including in parallel")
 endif()
+set_package_properties(ADIOS2 PROPERTIES TYPE OPTIONAL
+  DESCRIPTION "Adaptable Input/Output (I/O) System."
+  URL "https://adios2.readthedocs.io/en/latest/"
+  PURPOSE "IO, including in parallel")
 
-set(SLEPC_FOUND FALSE)
 if (DOLFINX_ENABLE_SLEPC)
-  find_package(SLEPc 3.10)
-  set_package_properties(SLEPc PROPERTIES TYPE OPTIONAL
-    DESCRIPTION "Scalable Library for Eigenvalue Problem Computations"
-    URL "http://slepc.upv.es/")
+  find_package(PkgConfig REQUIRED)
+  set(ENV{PKG_CONFIG_PATH} "$ENV{SLEPC_DIR}/$ENV{PETSC_ARCH}/lib/pkgconfig:$ENV{SLEPC_DIR}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
+  set(ENV{PKG_CONFIG_PATH} "$ENV{PETSC_DIR}/$ENV{PETSC_ARCH}/lib/pkgconfig:$ENV{PETSC_DIR}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
+  set(ENV{PKG_CONFIG_PATH} "$ENV{PETSC_DIR}/$ENV{PETSC_ARCH}:$ENV{PETSC_DIR}:$ENV{PKG_CONFIG_PATH}")
+  pkg_search_module(SLEPC IMPORTED_TARGET slepc)
+
+  # Setting for FeatureSummary
+  if(SLEPc_FOUND)
+    set_property(GLOBAL APPEND PROPERTY PACKAGES_FOUND SLEPc)
+  else()
+    set_property(GLOBAL APPEND PROPERTY PACKAGES_NOT_FOUND SLEPc)
+  endif()
 endif()
+set_package_properties(SLEPc PROPERTIES TYPE OPTIONAL
+  DESCRIPTION "Scalable Library for Eigenvalue Problem Computations"
+  URL "http://slepc.upv.es/"
+  PURPOSE "Eigenvalue computation")
 
 if (DOLFINX_ENABLE_SCOTCH)
   find_package(SCOTCH)
-  set_package_properties(SCOTCH PROPERTIES TYPE OPTIONAL
-    DESCRIPTION "Programs and libraries for graph, mesh and hypergraph partitioning"
-    URL "https://www.labri.fr/perso/pelegrin/scotch"
-    PURPOSE "Parallel graph partitioning")
 endif()
+set_package_properties(SCOTCH PROPERTIES TYPE OPTIONAL
+  DESCRIPTION "Programs and libraries for graph, mesh and hypergraph partitioning"
+  URL "https://www.labri.fr/perso/pelegrin/scotch"
+  PURPOSE "Parallel graph partitioning")
 
 if (DOLFINX_ENABLE_PARMETIS)
-  find_package(ParMETIS 4.0.2)
-  set_package_properties(ParMETIS PROPERTIES TYPE OPTIONAL
-    DESCRIPTION "Parallel Graph Partitioning and Fill-reducing Matrix Ordering"
-    URL "http://glaros.dtc.umn.edu/gkhome/metis/parmetis/overview"
-    PURPOSE "Parallel graph partitioning")
+  find_package(PARMETIS 4.0.2)
 endif()
+set_package_properties(ParMETIS PROPERTIES TYPE OPTIONAL
+  DESCRIPTION "Parallel Graph Partitioning and Fill-reducing Matrix Ordering"
+  URL "http://glaros.dtc.umn.edu/gkhome/metis/parmetis/overview"
+  PURPOSE "Parallel graph partitioning")
 
 if (DOLFINX_ENABLE_KAHIP)
   find_package(KaHIP)
-  set_package_properties(KaHIP PROPERTIES TYPE OPTIONAL
-    DESCRIPTION "A family of graph partitioning programs"
-    URL "https://kahip.github.io/"
-    PURPOSE "Parallel graph partitioning")
 endif()
+set_package_properties(KaHIP PROPERTIES TYPE OPTIONAL
+  DESCRIPTION "A family of graph partitioning programs"
+  URL "https://kahip.github.io/"
+  PURPOSE "Parallel graph partitioning")
 
 # Check that at least one graph partitioner has been found
 if (NOT SCOTCH_FOUND AND NOT PARMETIS_FOUND AND NOT KAHIP_FOUND)
