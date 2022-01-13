@@ -10,12 +10,6 @@
 #include <dolfinx/common/Table.h>
 #include <dolfinx/common/TimeLogManager.h>
 
-namespace
-{
-dolfinx::common::Timer __global_timer;
-dolfinx::common::Timer __tic_timer;
-} // namespace
-
 using namespace dolfinx;
 using namespace dolfinx::common;
 
