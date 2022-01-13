@@ -64,17 +64,17 @@ jobs:
         with:
           ref: v${{ env.release_version }}
           path: ./dolfinx-release
-      - name: Run a C++ test (release version)
-        run: |
-          . ./spack/share/spack/setup-env.sh
-          spack env activate cpp-release
-          cd dolfinx-release/cpp/
-          cd demo/poisson
-          ffcx poisson.ufl
-          cmake .
-          export VERBOSE=1
-          make -j2
-          mpirun -np 2 ./demo_poisson
+      # - name: Run a C++ test (release version)
+      #   run: |
+      #     . ./spack/share/spack/setup-env.sh
+      #     spack env activate cpp-release
+      #     cd dolfinx-release/cpp/
+      #     cd demo/poisson
+      #     ffcx poisson.ufl
+      #     cmake .
+      #     export VERBOSE=1
+      #     make -j2
+      #     mpirun -np 2 ./demo_poisson
 
       - name: Build DOLFINx (Python, development)
         run: |
