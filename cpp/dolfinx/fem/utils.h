@@ -19,7 +19,7 @@
 #include <memory>
 #include <set>
 #include <string>
-#include <ufc.h>
+#include <ufcx.h>
 #include <utility>
 #include <vector>
 #include <xtl/xspan.hpp>
@@ -112,37 +112,38 @@ la::SparsityPattern create_sparsity_pattern(
     const std::array<std::reference_wrapper<const fem::DofMap>, 2>& dofmaps,
     const std::set<IntegralType>& integrals);
 
-/// Create an ElementDofLayout from a ufc_dofmap
-ElementDofLayout create_element_dof_layout(const ufc_dofmap& dofmap,
+/// Create an ElementDofLayout from a ufcx_dofmap
+ElementDofLayout create_element_dof_layout(const ufcx_dofmap& dofmap,
                                            const mesh::CellType cell_type,
                                            const std::vector<int>& parent_map
                                            = {});
 
-/// Create a dof map on mesh from a ufc_dofmap
+/// Create a dof map on mesh from a ufcx_dofmap
 /// @param[in] comm MPI communicator
-/// @param[in] dofmap The ufc_dofmap
+/// @param[in] dofmap The ufcx_dofmap
 /// @param[in] topology The mesh topology
 /// @param[in] element The finite element
 /// @param[in] reorder_fn The graph reordering function called on the
 /// dofmap
 DofMap
-create_dofmap(MPI_Comm comm, const ufc_dofmap& dofmap, mesh::Topology& topology,
+create_dofmap(MPI_Comm comm, const ufcx_dofmap& dofmap,
+              mesh::Topology& topology,
               const std::function<std::vector<int>(
                   const graph::AdjacencyList<std::int32_t>&)>& reorder_fn,
               std::shared_ptr<const dolfinx::fem::FiniteElement> element);
 
 /// Get the name of each coefficient in a UFC form
-/// @param[in] ufc_form The UFC form
+/// @param[in] ufcx_form The UFC form
 /// return The name of each coefficient
-std::vector<std::string> get_coefficient_names(const ufc_form& ufc_form);
+std::vector<std::string> get_coefficient_names(const ufcx_form& ufcx_form);
 
 /// Get the name of each constant in a UFC form
-/// @param[in] ufc_form The UFC form
+/// @param[in] ufcx_form The UFC form
 /// return The name of each constant
-std::vector<std::string> get_constant_names(const ufc_form& ufc_form);
+std::vector<std::string> get_constant_names(const ufcx_form& ufcx_form);
 
 /// Create a Form from UFC input
-/// @param[in] ufc_form The UFC form
+/// @param[in] ufcx_form The UFC form
 /// @param[in] spaces Vector of function spaces
 /// @param[in] coefficients Coefficient fields in the form
 /// @param[in] constants Spatial constants in the form
@@ -150,21 +151,21 @@ std::vector<std::string> get_constant_names(const ufc_form& ufc_form);
 /// @param[in] mesh The mesh of the domain
 template <typename T>
 Form<T> create_form(
-    const ufc_form& ufc_form,
+    const ufcx_form& ufcx_form,
     const std::vector<std::shared_ptr<const fem::FunctionSpace>>& spaces,
     const std::vector<std::shared_ptr<const fem::Function<T>>>& coefficients,
     const std::vector<std::shared_ptr<const fem::Constant<T>>>& constants,
     const std::map<IntegralType, const mesh::MeshTags<int>*>& subdomains,
     const std::shared_ptr<const mesh::Mesh>& mesh = nullptr)
 {
-  if (ufc_form.rank != (int)spaces.size())
+  if (ufcx_form.rank != (int)spaces.size())
     throw std::runtime_error("Wrong number of argument spaces for Form.");
-  if (ufc_form.num_coefficients != (int)coefficients.size())
+  if (ufcx_form.num_coefficients != (int)coefficients.size())
   {
     throw std::runtime_error(
         "Mismatch between number of expected and provided Form coefficients.");
   }
-  if (ufc_form.num_constants != (int)constants.size())
+  if (ufcx_form.num_constants != (int)constants.size())
   {
     throw std::runtime_error(
         "Mismatch between number of expected and provided Form constants.");
@@ -175,9 +176,9 @@ Form<T> create_form(
   for (std::size_t i = 0; i < spaces.size(); ++i)
   {
     assert(spaces[i]->element());
-    ufc_finite_element* ufc_element = ufc_form.finite_elements[i];
-    assert(ufc_element);
-    if (std::string(ufc_element->signature)
+    ufcx_finite_element* ufcx_element = ufcx_form.finite_elements[i];
+    assert(ufcx_element);
+    if (std::string(ufcx_element->signature)
         != spaces[i]->element()->signature())
     {
       throw std::runtime_error(
@@ -197,12 +198,12 @@ Form<T> create_form(
   bool needs_facet_permutations = false;
 
   // Attach cell kernels
-  std::vector<int> cell_integral_ids(ufc_form.integral_ids(cell),
-                                     ufc_form.integral_ids(cell)
-                                         + ufc_form.num_integrals(cell));
-  for (int i = 0; i < ufc_form.num_integrals(cell); ++i)
+  std::vector<int> cell_integral_ids(ufcx_form.integral_ids(cell),
+                                     ufcx_form.integral_ids(cell)
+                                         + ufcx_form.num_integrals(cell));
+  for (int i = 0; i < ufcx_form.num_integrals(cell); ++i)
   {
-    ufc_integral* integral = ufc_form.integrals(cell)[i];
+    ufcx_integral* integral = ufcx_form.integrals(cell)[i];
     assert(integral);
 
     kern k = nullptr;
@@ -240,8 +241,8 @@ Form<T> create_form(
   // FIXME: Can facets be handled better?
 
   // Create facets, if required
-  if (ufc_form.num_integrals(exterior_facet) > 0
-      or ufc_form.num_integrals(interior_facet) > 0)
+  if (ufcx_form.num_integrals(exterior_facet) > 0
+      or ufcx_form.num_integrals(interior_facet) > 0)
   {
     if (!spaces.empty())
     {
@@ -253,12 +254,12 @@ Form<T> create_form(
 
   // Attach exterior facet kernels
   std::vector<int> exterior_facet_integral_ids(
-      ufc_form.integral_ids(exterior_facet),
-      ufc_form.integral_ids(exterior_facet)
-          + ufc_form.num_integrals(exterior_facet));
-  for (int i = 0; i < ufc_form.num_integrals(exterior_facet); ++i)
+      ufcx_form.integral_ids(exterior_facet),
+      ufcx_form.integral_ids(exterior_facet)
+          + ufcx_form.num_integrals(exterior_facet));
+  for (int i = 0; i < ufcx_form.num_integrals(exterior_facet); ++i)
   {
-    ufc_integral* integral = ufc_form.integrals(exterior_facet)[i];
+    ufcx_integral* integral = ufcx_form.integrals(exterior_facet)[i];
     assert(integral);
 
     kern k = nullptr;
@@ -295,12 +296,12 @@ Form<T> create_form(
 
   // Attach interior facet kernels
   std::vector<int> interior_facet_integral_ids(
-      ufc_form.integral_ids(interior_facet),
-      ufc_form.integral_ids(interior_facet)
-          + ufc_form.num_integrals(interior_facet));
-  for (int i = 0; i < ufc_form.num_integrals(interior_facet); ++i)
+      ufcx_form.integral_ids(interior_facet),
+      ufcx_form.integral_ids(interior_facet)
+          + ufcx_form.num_integrals(interior_facet));
+  for (int i = 0; i < ufcx_form.num_integrals(interior_facet); ++i)
   {
-    ufc_integral* integral = ufc_form.integrals(interior_facet)[i];
+    ufcx_integral* integral = ufcx_form.integrals(interior_facet)[i];
     assert(integral);
 
     kern k = nullptr;
@@ -340,7 +341,7 @@ Form<T> create_form(
 }
 
 /// Create a Form from UFC input
-/// @param[in] ufc_form The UFC form
+/// @param[in] ufcx_form The UFC form
 /// @param[in] spaces The function spaces for the Form arguments
 /// @param[in] coefficients Coefficient fields in the form (by name)
 /// @param[in] constants Spatial constants in the form (by name)
@@ -350,7 +351,7 @@ Form<T> create_form(
 /// @return A Form
 template <typename T>
 Form<T> create_form(
-    const ufc_form& ufc_form,
+    const ufcx_form& ufcx_form,
     const std::vector<std::shared_ptr<const fem::FunctionSpace>>& spaces,
     const std::map<std::string, std::shared_ptr<const fem::Function<T>>>&
         coefficients,
@@ -361,7 +362,7 @@ Form<T> create_form(
 {
   // Place coefficients in appropriate order
   std::vector<std::shared_ptr<const fem::Function<T>>> coeff_map;
-  for (const std::string& name : get_coefficient_names(ufc_form))
+  for (const std::string& name : get_coefficient_names(ufcx_form))
   {
     if (auto it = coefficients.find(name); it != coefficients.end())
       coeff_map.push_back(it->second);
@@ -374,7 +375,7 @@ Form<T> create_form(
 
   // Place constants in appropriate order
   std::vector<std::shared_ptr<const fem::Constant<T>>> const_map;
-  for (const std::string& name : get_constant_names(ufc_form))
+  for (const std::string& name : get_constant_names(ufcx_form))
   {
     if (auto it = constants.find(name); it != constants.end())
       const_map.push_back(it->second);
@@ -382,13 +383,13 @@ Form<T> create_form(
       throw std::runtime_error("Form constant \"" + name + "\" not provided.");
   }
 
-  return create_form(ufc_form, spaces, coeff_map, const_map, subdomains, mesh);
+  return create_form(ufcx_form, spaces, coeff_map, const_map, subdomains, mesh);
 }
 
 /// Create a Form using a factory function that returns a pointer to a
-/// ufc_form
+/// ufcx_form
 /// @param[in] fptr pointer to a function returning a pointer to
-/// ufc_form
+/// ufcx_form
 /// @param[in] spaces The function spaces for the Form arguments
 /// @param[in] coefficients Coefficient fields in the form (by name)
 /// @param[in] constants Spatial constants in the form (by name)
@@ -398,7 +399,7 @@ Form<T> create_form(
 /// @return A Form
 template <typename T>
 Form<T> create_form(
-    ufc_form* (*fptr)(),
+    ufcx_form* (*fptr)(),
     const std::vector<std::shared_ptr<const fem::FunctionSpace>>& spaces,
     const std::map<std::string, std::shared_ptr<const fem::Function<T>>>&
         coefficients,
@@ -407,7 +408,7 @@ Form<T> create_form(
     const std::map<IntegralType, const mesh::MeshTags<int>*>& subdomains,
     const std::shared_ptr<const mesh::Mesh>& mesh = nullptr)
 {
-  ufc_form* form = fptr();
+  ufcx_form* form = fptr();
   Form<T> L = fem::create_form<T>(*form, spaces, coefficients, constants,
                                   subdomains, mesh);
   std::free(form);
@@ -416,7 +417,7 @@ Form<T> create_form(
 
 /// Create a FunctionSpace from UFC data
 ///
-/// @param[in] fptr Function Pointer to a ufc_function_space_create
+/// @param[in] fptr Function Pointer to a ufcx_function_space_create
 /// function
 /// @param[in] function_name Name of a function whose function space to
 /// create. Function name is the name of Python variable for
@@ -427,7 +428,7 @@ Form<T> create_form(
 /// dofmap
 /// @return The created function space
 fem::FunctionSpace create_functionspace(
-    ufc_function_space* (*fptr)(const char*), const std::string& function_name,
+    ufcx_function_space* (*fptr)(const char*), const std::string& function_name,
     std::shared_ptr<mesh::Mesh> mesh,
     const std::function<
         std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>& reorder_fn
