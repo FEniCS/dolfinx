@@ -362,7 +362,7 @@ private:
 
   // Precomputed data for finalize/update
   // Neighborhood communicator
-  MPI_Comm _neighbor_com;
+  MPI_Comm _neighbor_comm;
   // Position in _data to add received data
   std::vector<int> _unpack_pos;
   // Displacements for alltoall for each neighbor when sending
