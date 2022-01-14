@@ -62,7 +62,7 @@ int main(int argc, char* argv[])
 
     // Interpolate and expression the the finite element space and save
     // the result to file
-    constexpr double PI = xt::numeric_constants<T>::PI;
+    constexpr double PI = xt::numeric_constants<double>::PI;
     u->interpolate([PI](auto& x) { return xt::sin(2 * PI * xt::row(x, 0)); });
 
     // Save solution in VTK format
