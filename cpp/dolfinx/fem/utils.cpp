@@ -189,18 +189,6 @@ fem::create_dofmap(MPI_Comm comm,
   return DofMap(layout, index_map, bs, std::move(dofmap), bs);
 }
 //-----------------------------------------------------------------------------
-fem::DofMap
-fem::create_dofmap(MPI_Comm comm, const ufcx_dofmap& ufcx_dofmap,
-                   mesh::Topology& topology,
-                   const std::function<std::vector<int>(
-                       const graph::AdjacencyList<std::int32_t>&)>& reorder_fn,
-                   std::shared_ptr<const dolfinx::fem::FiniteElement> element)
-{
-  auto layout = std::make_shared<ElementDofLayout>(
-      create_element_dof_layout(ufcx_dofmap, topology.cell_type()));
-  return create_dofmap(comm, layout, topology, reorder_fn, element);
-}
-//-----------------------------------------------------------------------------
 std::vector<std::string> fem::get_coefficient_names(const ufcx_form& ufcx_form)
 {
   std::vector<std::string> coefficients;
@@ -252,9 +240,11 @@ fem::FunctionSpace fem::create_functionspace(
 
   ufcx_dofmap* ufcx_map = space->dofmap;
   assert(ufcx_map);
+  auto layout = std::make_shared<ElementDofLayout>(
+      create_element_dof_layout(*ufcx_map, mesh->topology().cell_type()));
   return fem::FunctionSpace(
       mesh, element,
       std::make_shared<fem::DofMap>(fem::create_dofmap(
-          mesh->comm(), *ufcx_map, mesh->topology(), reorder_fn, element)));
+          mesh->comm(), layout, mesh->topology(), reorder_fn, element)));
 }
 //-----------------------------------------------------------------------------

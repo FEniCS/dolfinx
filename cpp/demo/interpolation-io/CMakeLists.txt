@@ -21,9 +21,9 @@ target_link_libraries(${PROJECT_NAME} dolfinx)
 
 # Do not throw error for 'multi-line comments' (these are typical in
 # rst which includes LaTeX)
-# include(CheckCXXCompilerFlag)
-# CHECK_CXX_COMPILER_FLAG("-Wno-comment" HAVE_NO_MULTLINE)
-# set_source_files_properties(main.cpp PROPERTIES COMPILE_FLAGS "$<$<BOOL:${HAVE_NO_MULTLINE}>:-Wno-comment -Wall -Wextra -pedantic -Werror>")
+include(CheckCXXCompilerFlag)
+CHECK_CXX_COMPILER_FLAG("-Wno-comment" HAVE_NO_MULTLINE)
+set_source_files_properties(main.cpp PROPERTIES COMPILE_FLAGS "$<$<BOOL:${HAVE_NO_MULTLINE}>:-Wno-comment -Wall -Wextra -pedantic -Werror>")
 
 # Test targets (used by DOLFINx testing system)
 set(TEST_PARAMETERS2 -np 2 ${MPIEXEC_PARAMS} "./${PROJECT_NAME}")

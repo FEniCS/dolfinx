@@ -169,7 +169,7 @@ FiniteElement::FiniteElement(const ufcx_finite_element& e)
 }
 //-----------------------------------------------------------------------------
 FiniteElement::FiniteElement(const basix::FiniteElement& element, int bs)
-    : _signature("Basix element"), _family("foo"),
+    : _signature("Basix element"),
       _tdim(basix::cell::topological_dimension(element.cell_type())),
       _space_dim(bs * element.dim()), _value_size(bs * element.value_size()),
       _reference_value_size(bs * element.value_size()), _hash(0), _bs(bs)
@@ -182,6 +182,20 @@ FiniteElement::FiniteElement(const basix::FiniteElement& element, int bs)
   _needs_dof_permutations
       = !_element->dof_transformations_are_identity()
         and _element->dof_transformations_are_permutations();
+
+  assert(_element);
+  switch (_element->family())
+  {
+  case basix::element::family::P:
+    _family = "Lagrange";
+    break;
+  case basix::element::family::DPC:
+    _family = "Discontinuous Lagrange";
+    break;
+  default:
+    _family = "unknown";
+    break;
+  }
 }
 //-----------------------------------------------------------------------------
 std::string FiniteElement::signature() const noexcept { return _signature; }

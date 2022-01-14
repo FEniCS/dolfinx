@@ -133,20 +133,6 @@ create_dofmap(MPI_Comm comm,
                   const graph::AdjacencyList<std::int32_t>&)>& reorder_fn,
               std::shared_ptr<const dolfinx::fem::FiniteElement> element);
 
-/// Create a dof map on mesh from a ufcx_dofmap
-/// @param[in] comm MPI communicator
-/// @param[in] dofmap The ufcx_dofmap
-/// @param[in] topology The mesh topology
-/// @param[in] element The finite element
-/// @param[in] reorder_fn The graph reordering function called on the
-/// dofmap
-DofMap
-create_dofmap(MPI_Comm comm, const ufcx_dofmap& dofmap,
-              mesh::Topology& topology,
-              const std::function<std::vector<int>(
-                  const graph::AdjacencyList<std::int32_t>&)>& reorder_fn,
-              std::shared_ptr<const dolfinx::fem::FiniteElement> element);
-
 /// Get the name of each coefficient in a UFC form
 /// @param[in] ufcx_form The UFC form
 /// return The name of each coefficient

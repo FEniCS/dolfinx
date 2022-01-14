@@ -13,6 +13,7 @@
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/fem/utils.h>
+#include <dolfinx/io/ADIOS2Writers.h>
 #include <dolfinx/io/VTKFile.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/cell_types.h>
@@ -21,11 +22,11 @@
 
 using namespace dolfinx;
 
-
 /// This program shows how to create finite element spaces without FFCx
 /// generated code
 int main(int argc, char* argv[])
 {
+  common::subsystem::init_logging(argc, argv);
   common::subsystem::init_mpi(argc, argv);
 
   {
@@ -35,17 +36,16 @@ int main(int argc, char* argv[])
         mesh::CellType::triangle, mesh::GhostMode::none));
 
     // Create a Basix element
-    auto e_basix = std::make_shared<basix::FiniteElement>(
-        basix::element::create_lagrange(
-            mesh::cell_type_to_basix_type(mesh::CellType::triangle), 1,
-            basix::element::lagrange_variant::equispaced, false));
+    basix::FiniteElement e_basix = basix::element::create_lagrange(
+        mesh::cell_type_to_basix_type(mesh::CellType::triangle), 1,
+        basix::element::lagrange_variant::equispaced, false);
 
     // Create a DOLFINx element
-    auto e = std::make_shared<fem::FiniteElement>(*e_basix, 1);
+    auto e = std::make_shared<fem::FiniteElement>(e_basix, 1);
 
     // Create a dofmap
     auto layout = std::make_shared<fem::ElementDofLayout>(
-        1, e_basix->entity_dofs(), e_basix->entity_closure_dofs(),
+        1, e_basix.entity_dofs(), e_basix.entity_closure_dofs(),
         std::vector<int>(),
         std::vector<std::shared_ptr<const fem::ElementDofLayout>>{});
 
@@ -66,6 +66,12 @@ int main(int argc, char* argv[])
     // Save solution in VTK format
     io::VTKFile file(MPI_COMM_WORLD, "u.pvd", "w");
     file.write({*u}, 0.0);
+
+#ifdef HAS_ADIOS2
+    io::VTXWriter outfile(MPI_COMM_WORLD, "output.bp", {u});
+    outfile.write(0.0);
+    outfile.close();
+#endif
   }
 
   common::subsystem::finalize_mpi();
