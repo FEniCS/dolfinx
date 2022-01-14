@@ -18,9 +18,11 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <dolfinx/mesh/generation.h>
+#include <petscsys.h>
 #include <xtensor/xmath.hpp>
 
 using namespace dolfinx;
+using T = PetscScalar;
 
 /// This program shows how to create finite element spaces without FFCx
 /// generated code
@@ -56,11 +58,11 @@ int main(int argc, char* argv[])
     auto V = std::make_shared<fem::FunctionSpace>(mesh, e, dofmap);
 
     // Create a Function
-    auto u = std::make_shared<fem::Function<double>>(V);
+    auto u = std::make_shared<fem::Function<T>>(V);
 
     // Interpolate and expression the the finite element space and save
     // the result to file
-    constexpr double PI = xt::numeric_constants<double>::PI;
+    constexpr double PI = xt::numeric_constants<T>::PI;
     u->interpolate([PI](auto& x) { return xt::sin(2 * PI * xt::row(x, 0)); });
 
     // Save solution in VTK format

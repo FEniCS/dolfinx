@@ -838,20 +838,23 @@ void fem(py::module& m)
       "create_dofmap",
       [](const MPICommWrapper comm, std::uintptr_t dofmap,
          dolfinx::mesh::Topology& topology,
-         std::shared_ptr<dolfinx::fem::FiniteElement> element)
+         const std::shared_ptr<dolfinx::fem::FiniteElement>& element)
       {
         ufcx_dofmap* p = reinterpret_cast<ufcx_dofmap*>(dofmap);
-        return dolfinx::fem::create_dofmap(comm.get(), *p, topology, nullptr,
-                                           element);
+        assert(partial_sort_copy);
+        auto layout = std::make_shared<dolfinx::fem::ElementDofLayout>(
+            dolfinx::fem::create_element_dof_layout(*p, topology.cell_type()));
+        return dolfinx::fem::create_dofmap(comm.get(), layout, topology,
+                                           nullptr, element);
       },
       "Create DofMap object from a pointer to ufcx_dofmap.");
   m.def(
       "build_dofmap",
       [](const MPICommWrapper comm, const dolfinx::mesh::Topology& topology,
-         const dolfinx::fem::ElementDofLayout& element_dof_layout)
+         const dolfinx::fem::ElementDofLayout& layout)
       {
         auto [map, bs, dofmap] = dolfinx::fem::build_dofmap_data(
-            comm.get(), topology, element_dof_layout,
+            comm.get(), topology, layout,
             [](const dolfinx::graph::AdjacencyList<std::int32_t>& g)
             { return dolfinx::graph::reorder_gps(g); });
         return std::tuple(std::move(map), bs, std::move(dofmap));
