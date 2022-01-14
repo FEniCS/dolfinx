@@ -169,11 +169,17 @@ FiniteElement::FiniteElement(const ufcx_finite_element& e)
 }
 //-----------------------------------------------------------------------------
 FiniteElement::FiniteElement(const basix::FiniteElement& element, int bs)
-    : _signature("Basix element"),
+    : // _signature("Basix element " + std::to_string(bs)),
       _tdim(basix::cell::topological_dimension(element.cell_type())),
       _space_dim(bs * element.dim()), _value_size(bs * element.value_size()),
-      _reference_value_size(bs * element.value_size()), _hash(0), _bs(bs)
+      _reference_value_size(bs * element.value_size()), _hash(0),
+      _value_shape(element.value_shape()), _bs(bs)
 {
+  if (_value_shape.empty() and bs > 1)
+    _value_shape = {1};
+  std::transform(_value_shape.cbegin(), _value_shape.cend(),
+                 _value_shape.begin(), [bs](auto s) { return bs * s; });
+
   _element = std::make_unique<basix::FiniteElement>(element);
   _needs_dof_transformations
       = !_element->dof_transformations_are_identity()
@@ -196,6 +202,9 @@ FiniteElement::FiniteElement(const basix::FiniteElement& element, int bs)
     _family = "unknown";
     break;
   }
+
+  _signature = "Basix element " + _family + " " + std::to_string(bs);
+  _hash = std::hash<std::string>{}(_signature);
 }
 //-----------------------------------------------------------------------------
 std::string FiniteElement::signature() const noexcept { return _signature; }
