@@ -118,6 +118,21 @@ ElementDofLayout create_element_dof_layout(const ufcx_dofmap& dofmap,
                                            const std::vector<int>& parent_map
                                            = {});
 
+/// Create a dof map on mesh
+/// @param[in] comm MPI communicator
+/// @param[in] layout The dof layout on an element
+/// @param[in] topology The mesh topology
+/// @param[in] element The finite element
+/// @param[in] reorder_fn The graph reordering function called on the
+/// dofmap
+DofMap
+create_dofmap(MPI_Comm comm,
+              const std::shared_ptr<const fem::ElementDofLayout>& layout,
+              mesh::Topology& topology,
+              const std::function<std::vector<int>(
+                  const graph::AdjacencyList<std::int32_t>&)>& reorder_fn,
+              std::shared_ptr<const dolfinx::fem::FiniteElement> element);
+
 /// Create a dof map on mesh from a ufcx_dofmap
 /// @param[in] comm MPI communicator
 /// @param[in] dofmap The ufcx_dofmap
