@@ -841,7 +841,7 @@ void fem(py::module& m)
          const std::shared_ptr<dolfinx::fem::FiniteElement>& element)
       {
         ufcx_dofmap* p = reinterpret_cast<ufcx_dofmap*>(dofmap);
-        assert(partial_sort_copy);
+        assert(p);
         auto layout = std::make_shared<dolfinx::fem::ElementDofLayout>(
             dolfinx::fem::create_element_dof_layout(*p, topology.cell_type()));
         return dolfinx::fem::create_dofmap(comm.get(), layout, topology,
