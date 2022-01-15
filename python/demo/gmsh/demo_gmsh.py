@@ -67,7 +67,7 @@ if MPI.COMM_WORLD.rank == 0:
     model.occ.synchronize()
 
     # Add physical tag 1 for exterior surfaces
-    boundary = model.getBoundary(model_dim_tags[0])
+    boundary = model.getBoundary(model_dim_tags[0], oriented=False)
     boundary_ids = [b[1] for b in boundary]
     model.addPhysicalGroup(2, boundary_ids, tag=1)
     model.setPhysicalName(2, 1, "Sphere surface")
