@@ -300,8 +300,8 @@ public:
   /// Copy cached ghost values to row owner and add.
   void finalize()
   {
-    auto q = finalize_begin();
-    finalize_end(q);
+    finalize_begin();
+    finalize_end();
   }
 
   /// Begin transfer of ghost row entries to owning processes
