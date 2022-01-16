@@ -167,6 +167,15 @@ FiniteElement::FiniteElement(const ufcx_finite_element& e)
   }
 }
 //-----------------------------------------------------------------------------
+bool FiniteElement::operator==(const FiniteElement& e) const
+{
+  if (!_element)
+    throw std::runtime_error("No Basix element");
+  if (!e._element)
+    throw std::runtime_error("No Basix element");
+  return *_element == *e._element;
+}
+//-----------------------------------------------------------------------------
 std::string FiniteElement::signature() const noexcept { return _signature; }
 //-----------------------------------------------------------------------------
 mesh::CellType FiniteElement::cell_shape() const noexcept

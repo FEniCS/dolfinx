@@ -872,6 +872,7 @@ void fem(py::module& m)
                 = reinterpret_cast<ufcx_finite_element*>(ufcx_element);
             return dolfinx::fem::FiniteElement(*p);
           }))
+      .def("__eq__", &dolfinx::fem::FiniteElement::operator==)
       .def_property_readonly("num_sub_elements",
                              &dolfinx::fem::FiniteElement::num_sub_elements)
       .def_property_readonly(

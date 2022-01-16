@@ -42,6 +42,10 @@ public:
   /// Move assignment
   FiniteElement& operator=(FiniteElement&& element) = default;
 
+  /// Check if two elements are equivalent
+  /// @return True is the two elements are the same
+  bool operator==(const FiniteElement& e) const;
+
   /// String identifying the finite element
   /// @return Element signature
   /// @note The function is provided for convenience, but it should not
