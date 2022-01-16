@@ -20,14 +20,14 @@ namespace dolfinx::la
 /// which can be assembled into using the usual dolfinx assembly routines
 /// Matrix internal data can be accessed for interfacing with other code.
 template <typename T, class Allocator = std::allocator<T>>
-class Matrix
+class MatrixCSR
 {
 public:
   /// The value type
   using value_type = T;
 
   /// Create a distributed matrix
-  Matrix(const SparsityPattern& p, const Allocator& alloc = Allocator())
+  MatrixCSR(const SparsityPattern& p, const Allocator& alloc = Allocator())
       : _index_maps({p.index_map(0), p.column_index_map()}),
         _bs({p.block_size(0), p.block_size(1)}),
         _data(p.num_nonzeros(), 0, alloc),
@@ -113,9 +113,14 @@ public:
     // Create and communicate adjacency list to neighborhood
     const graph::AdjacencyList<std::int64_t> ghost_index_data_out(
         std::move(ghost_index_data), std::move(index_send_disp));
-    std::vector<std::int64_t> ghost_index_data_in
-        = MPI::neighbor_all_to_all(_neighbor_comm, ghost_index_data_out)
-              .array();
+    const graph::AdjacencyList<std::int64_t> ghost_index_data_in
+        = MPI::neighbor_all_to_all(_neighbor_comm, ghost_index_data_out);
+
+    // Store received offsets for future use, when transferring data values.
+    _val_recv_disp.resize(ghost_index_data_in.offsets().size());
+    std::transform(ghost_index_data_in.offsets().begin(),
+                   ghost_index_data_in.offsets().end(), _val_recv_disp.begin(),
+                   [](int d) { return d / 2; });
 
     // Global to local map for ghost columns
     std::map<std::int64_t, std::int32_t> global_to_local;
@@ -125,17 +130,19 @@ public:
 
     // Compute location in which data for each index should be stored when
     // received
-    for (std::size_t i = 0; i < ghost_index_data_in.size(); i += 2)
+    const std::vector<std::int64_t>& ghost_index_array
+        = ghost_index_data_in.array();
+    for (std::size_t i = 0; i < ghost_index_array.size(); i += 2)
     {
       // Row must be on this process
-      const std::int32_t local_row = ghost_index_data_in[i] - local_range0[0];
+      const std::int32_t local_row = ghost_index_array[i] - local_range0[0];
       assert(local_row >= 0 and local_row < local_size0);
 
       // Column may be owned or unowned
-      std::int32_t local_col = ghost_index_data_in[i + 1] - local_range1[0];
+      std::int32_t local_col = ghost_index_array[i + 1] - local_range1[0];
       if (local_col < 0 or local_col >= local_size1)
       {
-        const auto it = global_to_local.find(ghost_index_data_in[i + 1]);
+        const auto it = global_to_local.find(ghost_index_array[i + 1]);
         assert(it != global_to_local.end());
         local_col = it->second;
       }
@@ -206,7 +213,7 @@ public:
   /// @param A Matrix to insert into
   static std::function<int(int nr, const int* r, int nc, const int* c,
                            const T* data)>
-  mat_set_values(Matrix& A)
+  mat_set_values(MatrixCSR& A)
   {
     return [&A](int nr, const int* r, int nc, const int* c, const T* data) {
       A.set(tcb::span<const T>(data, nr * nc), tcb::span<const int>(r, nr),
@@ -262,7 +269,7 @@ public:
   /// @param A Matrix to insert into
   static std::function<int(int nr, const int* r, int nc, const int* c,
                            const T* data)>
-  mat_add_values(Matrix& A)
+  mat_add_values(MatrixCSR& A)
   {
     return [&A](int nr, const int* r, int nc, const int* c, const T* data) {
       A.add(tcb::span<const T>(data, nr * nc), tcb::span<const int>(r, nr),
@@ -293,6 +300,15 @@ public:
   /// Copy cached ghost values to row owner and add.
   void finalize()
   {
+    auto q = finalize_begin();
+    finalize_end(q);
+  }
+
+  /// Begin transfer of ghost row entries to owning processes
+  /// using non-blocking communication with MPI.
+  /// Must be followed by finalize_end()
+  void finalize_begin()
+  {
     const std::int32_t local_size0 = _index_maps[0]->size_local();
     const std::int32_t num_ghosts0 = _index_maps[0]->num_ghosts();
 
@@ -312,19 +328,39 @@ public:
           += _row_ptr[local_size0 + i + 1] - _row_ptr[local_size0 + i];
     }
 
-    // Create and communicate adjacency list to neighborhood
-    const graph::AdjacencyList<T> ghost_value_data_out(
-        std::move(ghost_value_data), std::move(_val_send_disp));
-    const std::vector<T> ghost_value_data_in
-        = MPI::neighbor_all_to_all(_neighbor_comm, ghost_value_data_out)
-              .array();
+    _ghost_value_data_in.resize(_val_recv_disp.back());
+
+    // Compute data sizes for send and receive from displacements
+    std::vector<int> val_send_count(_val_send_disp.size() - 1);
+    std::adjacent_difference(std::next(_val_send_disp.begin()),
+                             _val_send_disp.end(), val_send_count.begin());
+
+    std::vector<int> val_recv_count(_val_recv_disp.size() - 1);
+    std::adjacent_difference(std::next(_val_recv_disp.begin()),
+                             _val_recv_disp.end(), val_recv_count.begin());
+
+    int status = MPI_Ineighbor_alltoallv(
+        ghost_value_data.data(), val_send_count.data(), _val_send_disp.data(),
+        dolfinx::MPI::mpi_type<T>(), _ghost_value_data_in.data(),
+        val_recv_count.data(), _val_recv_disp.data(),
+        dolfinx::MPI::mpi_type<T>(), _neighbor_comm, &_request);
+    assert(status == MPI_SUCCESS);
+  }
+
+  /// Complete transfer of ghost rows to owning processes
+  /// Must be preceded by finalize_begin()
+  void finalize_end()
+  {
+    int status = MPI_Wait(&_request, MPI_STATUS_IGNORE);
+    assert(status == MPI_SUCCESS);
 
     // Add to local rows
-    assert(ghost_value_data_in.size() == _unpack_pos.size());
-    for (std::size_t i = 0; i < ghost_value_data_in.size(); ++i)
-      _data[_unpack_pos[i]] += ghost_value_data_in[i];
+    assert(_ghost_value_data_in.size() == _unpack_pos.size());
+    for (std::size_t i = 0; i < _ghost_value_data_in.size(); ++i)
+      _data[_unpack_pos[i]] += _ghost_value_data_in[i];
 
     // Clear cache
+    const std::int32_t local_size0 = _index_maps[0]->size_local();
     std::fill(std::next(_data.begin(), _row_ptr[local_size0]), _data.end(), 0);
   }
 
@@ -363,12 +399,17 @@ private:
   // Precomputed data for finalize/update
   // Neighborhood communicator
   MPI_Comm _neighbor_comm;
+  // Request in non-blocking communication
+  MPI_Request _request;
   // Position in _data to add received data
   std::vector<int> _unpack_pos;
-  // Displacements for alltoall for each neighbor when sending
+  // Displacements for alltoall for each neighbor when sending and receiving
   std::vector<int> _val_send_disp;
+  std::vector<int> _val_recv_disp;
   // Ownership of each row, by neighbor
   std::vector<int> _ghost_row_to_neighbor_rank;
+  // Temporary store for finalize data during non-blocking communication
+  std::vector<T> _ghost_value_data_in;
 };
 
 } // namespace dolfinx::la

@@ -70,7 +70,7 @@ void test_matrix()
   p.insert(std::vector{5}, std::vector{4});
   p.assemble();
 
-  la::Matrix<float> A(p);
+  la::MatrixCSR<float> A(p);
   A.add(std::vector<decltype(A)::value_type>{1}, std::vector{0},
         std::vector{0});
   A.add(std::vector<decltype(A)::value_type>{2.3}, std::vector{4},
