@@ -9,7 +9,7 @@
 #include <catch.hpp>
 #include <dolfinx.h>
 #include <dolfinx/common/IndexMap.h>
-#include <dolfinx/la/Matrix.h>
+#include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/la/Vector.h>
 
