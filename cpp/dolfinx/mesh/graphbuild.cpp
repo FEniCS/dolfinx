@@ -171,15 +171,11 @@ compute_nonlocal_dual_graph(
   // Get permutation that takes facets into sorted order
   std::vector<int> perm(num_facets_rcvd);
   std::iota(perm.begin(), perm.end(), 0);
-  std::sort(perm.begin(), perm.end(),
-            [&recvd_buffer](int a, int b)
-            {
-              return std::lexicographical_compare(
-                  recvd_buffer.links(a).begin(),
-                  std::prev(recvd_buffer.links(a).end()),
-                  recvd_buffer.links(b).begin(),
-                  std::prev(recvd_buffer.links(b).end()));
-            });
+  std::sort(perm.begin(), perm.end(), [&recvd_buffer](int a, int b) {
+    return std::lexicographical_compare(
+        recvd_buffer.links(a).begin(), std::prev(recvd_buffer.links(a).end()),
+        recvd_buffer.links(b).begin(), std::prev(recvd_buffer.links(b).end()));
+  });
 
   // Count data items to send to each rank
   p_count.assign(num_ranks, 0);
@@ -336,7 +332,7 @@ mesh::build_local_dual_graph(const xtl::span<const std::int64_t>& cell_vertices,
   const std::int32_t num_vertices = vcounter + 1;
 
   // Build local-to-global map for vertices
-  std::vector<int32_t> local_to_global_v(num_vertices);
+  std::vector<std::int64_t> local_to_global_v(num_vertices);
   for (std::size_t i = 0; i < cell_vertices_local.size(); i++)
     local_to_global_v[cell_vertices_local[i]] = cell_vertices[i];
 
@@ -436,8 +432,9 @@ mesh::build_local_dual_graph(const xtl::span<const std::int64_t>& cell_vertices,
       assert(facet_vertices.size() <= std::size_t(max_num_facet_vertices));
       std::transform(facet_vertices.cbegin(), facet_vertices.cend(),
                      facet.begin(),
-                     [&cell_vertices_local, offset = cell_offsets[c]](auto fv)
-                     { return cell_vertices_local[offset + fv]; });
+                     [&cell_vertices_local, offset = cell_offsets[c]](auto fv) {
+                       return cell_vertices_local[offset + fv];
+                     });
 
       // Sort facet "indices"
       std::sort(facet.begin(), facet.end());
