@@ -93,8 +93,8 @@ public:
     for (int i = 0; i < num_ghosts0; ++i)
     {
       const int neighbor_rank = _ghost_row_to_neighbor_rank[i];
-      for (int j = _row_ptr[local_size[0] + i];
-           j < _row_ptr[local_size[0] + i + 1]; ++j)
+      int row_id = local_size[0] + i;
+      for (int j = _row_ptr[row_id]; j < _row_ptr[row_id + 1]; ++j)
       {
         // Get index position in send buffer
         const std::int32_t idx_pos = insert_pos[neighbor_rank];
