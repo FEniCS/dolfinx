@@ -440,7 +440,7 @@ IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size,
     // NOTE: create uniform weights as a workaround to issue
     // https://github.com/pmodels/mpich/issues/5764
     std::vector<int> src_weights(halo_src_ranks.size(), 1);
-    std::vector<int> dest_weights(halo_src_ranks.size(), 1);
+    std::vector<int> dest_weights(dest_ranks.size(), 1);
 
     MPI_Comm comm0;
     MPI_Dist_graph_create_adjacent(
