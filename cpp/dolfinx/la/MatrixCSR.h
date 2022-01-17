@@ -162,8 +162,8 @@ public:
   /// Set all non-zero local entries to a value
   void set(T x)
   {
-    std::int32_t local_size[0] = _index_maps[0]->size_local();
-    std::fill(_data.begin(), std::next(_data.begin(), _row_ptr[local_size[0]]),
+    std::int32_t local_size0 = _index_maps[0]->size_local();
+    std::fill(_data.begin(), std::next(_data.begin(), _row_ptr[local_size0]),
               x);
   }
 
