@@ -296,17 +296,12 @@ common::stack_index_maps(
   const std::vector<int> out_neighbors(out_neighbor_set.begin(),
                                        out_neighbor_set.end());
 
-  // NOTE: create uniform weights as a workaround to issue
-  // https://github.com/pmodels/mpich/issues/5764
-  const std::vector<int> in_weights(in_neighbors.size(), 1);
-  const std::vector<int> out_weights(out_neighbors.size(), 1);
-
   // Create neighborhood communicator
   MPI_Comm comm;
   MPI_Dist_graph_create_adjacent(
       maps.at(0).first.get().comm(), in_neighbors.size(), in_neighbors.data(),
-      in_weights.data(), out_neighbors.size(), out_neighbors.data(),
-      out_weights.data(), MPI_INFO_NULL, false, &comm);
+      MPI_UNWEIGHTED, out_neighbors.size(), out_neighbors.data(),
+      MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
 
   int indegree(-1), outdegree(-2), weighted(-1);
   MPI_Dist_graph_neighbors_count(comm, &indegree, &outdegree, &weighted);
