@@ -296,12 +296,17 @@ common::stack_index_maps(
   const std::vector<int> out_neighbors(out_neighbor_set.begin(),
                                        out_neighbor_set.end());
 
+  // NOTE: create uniform weights as a workaround to issue
+  // https://github.com/pmodels/mpich/issues/5764
+  const std::vector<int> in_weights(in_neighbors.size(), 1);
+  const std::vector<int> out_weights(out_neighbors.size(), 1);
+
   // Create neighborhood communicator
   MPI_Comm comm;
   MPI_Dist_graph_create_adjacent(
       maps.at(0).first.get().comm(), in_neighbors.size(), in_neighbors.data(),
-      MPI_UNWEIGHTED, out_neighbors.size(), out_neighbors.data(),
-      MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
+      in_weights.data(), out_neighbors.size(), out_neighbors.data(),
+      out_weights.data(), MPI_INFO_NULL, false, &comm);
 
   int indegree(-1), outdegree(-2), weighted(-1);
   MPI_Dist_graph_neighbors_count(comm, &indegree, &outdegree, &weighted);
@@ -384,12 +389,15 @@ IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size)
   // Create communicators with empty neighborhoods
   MPI_Comm comm0, comm1;
   std::vector<int> ranks(0);
+  // NOTE: create uniform weights as a workaround to issue
+  // https://github.com/pmodels/mpich/issues/5764
+  std::vector<int> weights(0);
   MPI_Dist_graph_create_adjacent(comm, ranks.size(), ranks.data(),
-                                 MPI_UNWEIGHTED, ranks.size(), ranks.data(),
-                                 MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm0);
+                                 weights.data(), ranks.size(), ranks.data(),
+                                 weights.data(), MPI_INFO_NULL, false, &comm0);
   MPI_Dist_graph_create_adjacent(comm, ranks.size(), ranks.data(),
-                                 MPI_UNWEIGHTED, ranks.size(), ranks.data(),
-                                 MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm1);
+                                 weights.data(), ranks.size(), ranks.data(),
+                                 weights.data(), MPI_INFO_NULL, false, &comm1);
   _comm_owner_to_ghost = dolfinx::MPI::Comm(comm0, false);
   _comm_ghost_to_owner = dolfinx::MPI::Comm(comm1, false);
   _shared_indices = std::make_unique<graph::AdjacencyList<std::int32_t>>(0);
@@ -429,17 +437,22 @@ IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size,
   // Create communicators with directed edges: (0) owner -> ghost,
   // (1) ghost -> owner
   {
+    // NOTE: create uniform weights as a workaround to issue
+    // https://github.com/pmodels/mpich/issues/5764
+    std::vector<int> src_weights(halo_src_ranks.size(), 1);
+    std::vector<int> dest_weights(halo_src_ranks.size(), 1);
+
     MPI_Comm comm0;
     MPI_Dist_graph_create_adjacent(
-        comm, halo_src_ranks.size(), halo_src_ranks.data(), MPI_UNWEIGHTED,
-        dest_ranks.size(), dest_ranks.data(), MPI_UNWEIGHTED, MPI_INFO_NULL,
-        false, &comm0);
+        comm, halo_src_ranks.size(), halo_src_ranks.data(), src_weights.data(),
+        dest_ranks.size(), dest_ranks.data(), dest_weights.data(),
+        MPI_INFO_NULL, false, &comm0);
     _comm_owner_to_ghost = dolfinx::MPI::Comm(comm0, false);
 
     MPI_Comm comm1;
     MPI_Dist_graph_create_adjacent(comm, dest_ranks.size(), dest_ranks.data(),
-                                   MPI_UNWEIGHTED, halo_src_ranks.size(),
-                                   halo_src_ranks.data(), MPI_UNWEIGHTED,
+                                   dest_weights.data(), halo_src_ranks.size(),
+                                   halo_src_ranks.data(), src_weights.data(),
                                    MPI_INFO_NULL, false, &comm1);
     _comm_ghost_to_owner = dolfinx::MPI::Comm(comm1, false);
   }
@@ -915,13 +928,20 @@ IndexMap::create_submap(const xtl::span<const std::int32_t>& indices) const
     if (ranks_old_to_new_send[r] >= 0)
       out_ranks.push_back(dest_ranks[r]);
 
+  // NOTE: create uniform weights as a workaround to issue
+  // https://github.com/pmodels/mpich/issues/5764
+  std::vector<int> in_weights(in_ranks.size(), 1);
+  std::vector<int> out_weights(out_ranks.size(), 1);
+
   MPI_Comm comm0, comm1;
-  MPI_Dist_graph_create_adjacent(
-      comm, in_ranks.size(), in_ranks.data(), MPI_UNWEIGHTED, out_ranks.size(),
-      out_ranks.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm0);
-  MPI_Dist_graph_create_adjacent(
-      comm, out_ranks.size(), out_ranks.data(), MPI_UNWEIGHTED, in_ranks.size(),
-      in_ranks.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm1);
+  MPI_Dist_graph_create_adjacent(comm, in_ranks.size(), in_ranks.data(),
+                                 in_weights.data(), out_ranks.size(),
+                                 out_ranks.data(), out_weights.data(),
+                                 MPI_INFO_NULL, false, &comm0);
+  MPI_Dist_graph_create_adjacent(comm, out_ranks.size(), out_ranks.data(),
+                                 out_weights.data(), in_ranks.size(),
+                                 in_ranks.data(), in_weights.data(),
+                                 MPI_INFO_NULL, false, &comm1);
 
   // Wait for the MPI_Iallreduce to complete
   MPI_Wait(&request_size, MPI_STATUS_IGNORE);
