@@ -16,9 +16,9 @@ namespace dolfinx::la
 {
 
 /// Distributed sparse matrix
-/// Highly "experimental" storage of a matrix in CSR format
-/// which can be assembled into using the usual dolfinx assembly routines
-/// Matrix internal data can be accessed for interfacing with other code.
+/// Highly "experimental" storage of a matrix in CSR format which can be
+/// assembled into using the usual dolfinx assembly routines Matrix
+/// internal data can be accessed for interfacing with other code.
 template <typename T, class Allocator = std::allocator<T>>
 class MatrixCSR
 {
@@ -128,8 +128,8 @@ public:
     for (std::int64_t global_i : ghosts1)
       global_to_local.insert({global_i, local_i++});
 
-    // Compute location in which data for each index should be stored when
-    // received
+    // Compute location in which data for each index should be stored
+    // when received
     const std::vector<std::int64_t>& ghost_index_array
         = ghost_index_data_in.array();
     for (std::size_t i = 0; i < ghost_index_array.size(); i += 2)
@@ -161,7 +161,7 @@ public:
   /// Set all non-zero local entries to a value
   void set(T x)
   {
-    const std::int32_t local_size0 = _index_maps[0]->size_local();
+    std::int32_t local_size0 = _index_maps[0]->size_local();
     std::fill(_data.begin(), std::next(_data.begin(), _row_ptr[local_size0]),
               x);
   }
@@ -169,7 +169,8 @@ public:
   /// Set values in local matrix
   /// @param[in] x The `m` by `n` dense block of values (row-major) to
   /// set in the matrix
-  /// @param[in] rows The row indices of `x` (indices are local to the MPI rank)
+  /// @param[in] rows The row indices of `x` (indices are local to the
+  /// MPI rank)
   /// @param[in] cols The column indices of `x` (indices are local to
   /// the MPI rank)
   void set(const xtl::span<const T>& x,
@@ -184,6 +185,7 @@ public:
     {
       // Columns indices for row
       std::int32_t row = rows[r];
+
       // Current data row
       const T* xr = x.data() + r * cols.size();
 
@@ -191,7 +193,6 @@ public:
       {
         auto cit0 = std::next(_cols.begin(), _row_ptr[row]);
         auto cit1 = std::next(_cols.begin(), _row_ptr[row + 1]);
-
         for (std::size_t c = 0; c < cols.size(); ++c)
         {
           // Find position of column index
@@ -203,9 +204,7 @@ public:
         }
       }
       else
-      {
         throw std::runtime_error("Local row out of range");
-      }
     }
   }
 
@@ -215,7 +214,8 @@ public:
                            const T* data)>
   mat_set_values(MatrixCSR& A)
   {
-    return [&A](int nr, const int* r, int nc, const int* c, const T* data) {
+    return [&A](int nr, const int* r, int nc, const int* c, const T* data)
+    {
       A.set(tcb::span<const T>(data, nr * nc), tcb::span<const int>(r, nr),
             tcb::span<const int>(c, nc));
       return 0;
@@ -225,7 +225,8 @@ public:
   /// Add values to local matrix
   /// @param[in] x The `m` by `n` dense block of values (row-major) to
   /// add to the matrix
-  /// @param[in] rows The row indices of `x` (indices are local to the MPI rank)
+  /// @param[in] rows The row indices of `x` (indices are local to the
+  /// MPI rank)
   /// @param[in] cols The column indices of `x` (indices are local to
   /// the MPI rank)
   void add(const xtl::span<const T>& x,
@@ -240,6 +241,7 @@ public:
     {
       // Columns indices for row
       std::int32_t row = rows[r];
+
       // Current data row
       const T* xr = x.data() + r * cols.size();
 
@@ -247,7 +249,6 @@ public:
       {
         auto cit0 = std::next(_cols.begin(), _row_ptr[row]);
         auto cit1 = std::next(_cols.begin(), _row_ptr[row + 1]);
-
         for (std::size_t c = 0; c < cols.size(); ++c)
         {
           // Find position of column index
@@ -259,9 +260,7 @@ public:
         }
       }
       else
-      {
         throw std::runtime_error("Local row out of range");
-      }
     }
   }
 
@@ -271,7 +270,8 @@ public:
                            const T* data)>
   mat_add_values(MatrixCSR& A)
   {
-    return [&A](int nr, const int* r, int nc, const int* c, const T* data) {
+    return [&A](int nr, const int* r, int nc, const int* c, const T* data)
+    {
       A.add(tcb::span<const T>(data, nr * nc), tcb::span<const int>(r, nr),
             tcb::span<const int>(c, nc));
       return 0;
@@ -289,15 +289,12 @@ public:
         = _index_maps[1]->size_local() + _index_maps[1]->num_ghosts();
     xt::xtensor<T, 2> A = xt::zeros<T>({nrows, ncols});
     for (std::size_t r = 0; r < nrows; ++r)
-    {
       for (int j = _row_ptr[r]; j < _row_ptr[r + 1]; ++j)
         A(r, _cols[j]) = _data[j];
-    }
-
     return A;
   }
 
-  /// Copy cached ghost values to row owner and add.
+  /// Copy cached ghost values to row owner and add
   void finalize()
   {
     finalize_begin();
@@ -306,7 +303,7 @@ public:
 
   /// Begin transfer of ghost row entries to owning processes
   /// using non-blocking communication with MPI.
-  /// Must be followed by finalize_end()
+  /// @note Must be followed by finalize_end()
   void finalize_begin()
   {
     const std::int32_t local_size0 = _index_maps[0]->size_local();
@@ -348,7 +345,7 @@ public:
   }
 
   /// Complete transfer of ghost rows to owning processes
-  /// Must be preceded by finalize_begin()
+  /// @note Must be preceded by finalize_begin()
   void finalize_end()
   {
     int status = MPI_Wait(&_request, MPI_STATUS_IGNORE);
@@ -364,9 +361,10 @@ public:
     std::fill(std::next(_data.begin(), _row_ptr[local_size0]), _data.end(), 0);
   }
 
-  /// Index maps for the row and column space. The row IndexMap contains ghost
-  /// entries for rows which may be inserted into and the column IndexMap
-  /// contains all local and ghost columns that may exist in the owned rows.
+  /// Index maps for the row and column space. The row IndexMap contains
+  /// ghost entries for rows which may be inserted into and the column
+  /// IndexMap contains all local and ghost columns that may exist in
+  /// the owned rows.
   ///
   /// @return Row and column index maps
   const std::array<std::shared_ptr<const common::IndexMap>, 2>&
@@ -376,13 +374,16 @@ public:
   }
 
   /// Get local values
-  xtl::span<T> values() { return xtl::span(_data); }
+  xtl::span<T> values() { return _data; }
+
+  /// Get local values (const version)
+  xtl::span<const T> values() const { return _data; }
 
   /// Get local row pointers
-  xtl::span<std::int32_t> row_ptr() { return xtl::span(_row_ptr); }
+  xtl::span<const std::int32_t> const row_ptr() { return _row_ptr; }
 
   /// Get local column indices
-  xtl::span<std::int32_t> cols() { return xtl::span(_cols); }
+  xtl::span<const std::int32_t> const cols() { return _cols; }
 
 private:
   // Map describing the data layout for rows and columns
