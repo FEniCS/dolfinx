@@ -234,10 +234,9 @@ public:
            const xtl::span<const std::int32_t>& rows,
            const xtl::span<const std::int32_t>& cols)
   {
+    assert(x.size() == rows.size() * cols.size());
     const std::int32_t local_size0 = _index_maps[0]->size_local();
     const std::int32_t num_ghosts0 = _index_maps[0]->num_ghosts();
-
-    assert(x.size() == rows.size() * cols.size());
     for (std::size_t r = 0; r < rows.size(); ++r)
     {
       // Columns indices for row
