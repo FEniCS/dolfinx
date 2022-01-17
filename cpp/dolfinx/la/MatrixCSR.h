@@ -43,13 +43,13 @@ public:
 
     // Precompute some data for ghost updates via MPI
 
-    const std::int32_t local_size0 = _index_maps[0]->size_local();
-    const std::array local_range0 = _index_maps[0]->local_range();
+    const std::array local_size
+        = {_index_maps[0]->size_local(), _index_maps[1]->size_local()};
+    const std::array local_range
+        = {_index_maps[0]->local_range(), _index_maps[1]->local_range()};
     const std::int32_t num_ghosts0 = _index_maps[0]->num_ghosts();
-    const std::vector<std::int64_t>& ghosts0 = _index_maps[0]->ghosts();
     const std::vector<int> ghost_owners0 = _index_maps[0]->ghost_owner_rank();
-    const std::int32_t local_size1 = _index_maps[1]->size_local();
-    const std::array local_range1 = _index_maps[1]->local_range();
+    const std::vector<std::int64_t>& ghosts0 = _index_maps[0]->ghosts();
     const std::vector<std::int64_t>& ghosts1 = _index_maps[1]->ghosts();
 
     const auto dest_ranks = dolfinx::MPI::neighbors(_neighbor_comm.comm())[1];
@@ -75,13 +75,13 @@ public:
     {
       assert(_ghost_row_to_neighbor_rank[i] < (int)data_per_proc.size());
       data_per_proc[_ghost_row_to_neighbor_rank[i]]
-          += _row_ptr[local_size0 + i + 1] - _row_ptr[local_size0 + i];
+          += _row_ptr[local_size[0] + i + 1] - _row_ptr[local_size[0] + i];
     }
 
     // Compute send displacements for values and indices (x2)
     _val_send_disp.resize(num_neighbors + 1, 0);
     std::partial_sum(data_per_proc.begin(), data_per_proc.end(),
-                     std::next(_val_send_disp.begin(), 1));
+                     std::next(_val_send_disp.begin()));
 
     std::vector<int> index_send_disp(num_neighbors + 1);
     std::transform(_val_send_disp.begin(), _val_send_disp.end(),
@@ -93,19 +93,18 @@ public:
     for (int i = 0; i < num_ghosts0; ++i)
     {
       const int neighbor_rank = _ghost_row_to_neighbor_rank[i];
-      for (int j = _row_ptr[local_size0 + i]; j < _row_ptr[local_size0 + i + 1];
-           ++j)
+      for (int j = _row_ptr[local_size[0] + i];
+           j < _row_ptr[local_size[0] + i + 1]; ++j)
       {
         // Get index position in send buffer
         const std::int32_t idx_pos = insert_pos[neighbor_rank];
 
         // Pack send data (row, col) as global indices
         ghost_index_data[idx_pos] = ghosts0[i];
-        const std::int32_t col_local = _cols[j];
-        if (col_local < local_size1)
-          ghost_index_data[idx_pos + 1] = col_local + local_range1[0];
+        if (const std::int32_t col_local = _cols[j]; col_local < local_size[1])
+          ghost_index_data[idx_pos + 1] = col_local + local_range[1][0];
         else
-          ghost_index_data[idx_pos + 1] = ghosts1[col_local - local_size1];
+          ghost_index_data[idx_pos + 1] = ghosts1[col_local - local_size[1]];
 
         insert_pos[neighbor_rank] += 2;
       }
@@ -126,7 +125,7 @@ public:
 
     // Global to local map for ghost columns
     std::map<std::int64_t, std::int32_t> global_to_local;
-    std::int32_t local_i = local_size1;
+    std::int32_t local_i = local_size[1];
     for (std::int64_t global_i : ghosts1)
       global_to_local.insert({global_i, local_i++});
 
@@ -137,12 +136,12 @@ public:
     for (std::size_t i = 0; i < ghost_index_array.size(); i += 2)
     {
       // Row must be on this process
-      const std::int32_t local_row = ghost_index_array[i] - local_range0[0];
-      assert(local_row >= 0 and local_row < local_size0);
+      const std::int32_t local_row = ghost_index_array[i] - local_range[0][0];
+      assert(local_row >= 0 and local_row < local_size[0]);
 
       // Column may be owned or unowned
-      std::int32_t local_col = ghost_index_array[i + 1] - local_range1[0];
-      if (local_col < 0 or local_col >= local_size1)
+      std::int32_t local_col = ghost_index_array[i + 1] - local_range[1][0];
+      if (local_col < 0 or local_col >= local_size[1])
       {
         const auto it = global_to_local.find(ghost_index_array[i + 1]);
         assert(it != global_to_local.end());
@@ -163,8 +162,8 @@ public:
   /// Set all non-zero local entries to a value
   void set(T x)
   {
-    std::int32_t local_size0 = _index_maps[0]->size_local();
-    std::fill(_data.begin(), std::next(_data.begin(), _row_ptr[local_size0]),
+    std::int32_t local_size[0] = _index_maps[0]->size_local();
+    std::fill(_data.begin(), std::next(_data.begin(), _row_ptr[local_size[0]]),
               x);
   }
 
