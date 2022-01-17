@@ -259,7 +259,6 @@ class Function(ufl.Coefficient):
         # FIXME: same as dolfinx.expression.Expression version. Find way
         # to re-use.
         assert derivatives == ()  # TODO: Handle derivatives
-        assert(False)
         if component:
             shape = self.ufl_shape
             assert len(shape) == len(component)
