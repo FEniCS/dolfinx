@@ -163,8 +163,7 @@ public:
   void set(T x)
   {
     std::int32_t local_size0 = _index_maps[0]->size_local();
-    std::fill_n(_data.begin(), local_size0,
-              x);
+    std::fill_n(_data.begin(), local_size0, x);
   }
 
   /// Set values in local matrix
