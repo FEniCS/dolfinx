@@ -7,6 +7,7 @@
 #pragma once
 
 #include "SparsityPattern.h"
+#include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <vector>
 #include <xtensor/xtensor.hpp>
@@ -32,15 +33,15 @@ public:
         _bs({p.block_size(0), p.block_size(1)}),
         _data(p.num_nonzeros(), 0, alloc),
         _cols(p.graph().array().begin(), p.graph().array().end()),
-        _row_ptr(p.graph().offsets().begin(), p.graph().offsets().end())
+        _row_ptr(p.graph().offsets().begin(), p.graph().offsets().end()),
+        _neighbor_comm(
+            p.index_map(0)->comm(common::IndexMap::Direction::reverse))
   {
     // TODO: handle block sizes
     if (_bs[0] > 1 or _bs[1] > 1)
       throw std::runtime_error("Block size not yet supported");
 
     // Precompute some data for ghost updates via MPI
-    // Get ghost->owner communicator for rows
-    _neighbor_comm = _index_maps[0]->comm(common::IndexMap::Direction::reverse);
 
     const std::int32_t local_size0 = _index_maps[0]->size_local();
     const std::array local_range0 = _index_maps[0]->local_range();
@@ -51,7 +52,7 @@ public:
     const std::array local_range1 = _index_maps[1]->local_range();
     const std::vector<std::int64_t>& ghosts1 = _index_maps[1]->ghosts();
 
-    const auto dest_ranks = dolfinx::MPI::neighbors(_neighbor_comm)[1];
+    const auto dest_ranks = dolfinx::MPI::neighbors(_neighbor_comm.comm())[1];
     const int num_neighbors = dest_ranks.size();
 
     // Global-to-local ranks for neighborhood
@@ -114,7 +115,8 @@ public:
     const graph::AdjacencyList<std::int64_t> ghost_index_data_out(
         std::move(ghost_index_data), std::move(index_send_disp));
     const graph::AdjacencyList<std::int64_t> ghost_index_data_in
-        = MPI::neighbor_all_to_all(_neighbor_comm, ghost_index_data_out);
+        = dolfinx::MPI::neighbor_all_to_all(_neighbor_comm.comm(),
+                                            ghost_index_data_out);
 
     // Store received offsets for future use, when transferring data values.
     _val_recv_disp.resize(ghost_index_data_in.offsets().size());
@@ -340,7 +342,7 @@ public:
         ghost_value_data.data(), val_send_count.data(), _val_send_disp.data(),
         dolfinx::MPI::mpi_type<T>(), _ghost_value_data_in.data(),
         val_recv_count.data(), _val_recv_disp.data(),
-        dolfinx::MPI::mpi_type<T>(), _neighbor_comm, &_request);
+        dolfinx::MPI::mpi_type<T>(), _neighbor_comm.comm(), &_request);
     assert(status == MPI_SUCCESS);
   }
 
@@ -398,8 +400,9 @@ private:
   std::vector<std::int32_t> _cols, _row_ptr;
 
   // Precomputed data for finalize/update
-  // Neighborhood communicator
-  MPI_Comm _neighbor_comm;
+  // Neighborhood communicator (ghost->owner communicator for rows)
+  dolfinx::MPI::Comm _neighbor_comm;
+
   // Request in non-blocking communication
   MPI_Request _request;
   // Position in _data to add received data
