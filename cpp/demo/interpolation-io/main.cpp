@@ -67,10 +67,10 @@ void interpolate_scalar(const std::shared_ptr<mesh::Mesh>& mesh)
 // Lagrange finite element function to a VTX file for visualisation.
 void interpolate_nedelec(const std::shared_ptr<mesh::Mesh>& mesh)
 {
-  // Create a Basix Nedelec (first kind) element of degree 1 (lowest
-  // order, dim=3 on triangle)
+  // Create a Basix Nedelec (first kind) element of degree 2 (lowest
+  // order, dim=6 on triangle)
   basix::FiniteElement e_basix = basix::element::create_nedelec(
-      mesh::cell_type_to_basix_type(mesh::CellType::triangle), 1, false);
+      mesh::cell_type_to_basix_type(mesh::CellType::triangle), 2, false);
 
   // Create a DOLFINx Nedelec element
   auto e = std::make_shared<fem::FiniteElement>(e_basix, 1);
@@ -88,8 +88,8 @@ void interpolate_nedelec(const std::shared_ptr<mesh::Mesh>& mesh)
   auto u = std::make_shared<fem::Function<T>>(V);
 
   // Interpolate the vector field
-  //  u = [0, 1]  if x[0] < 0.5
-  //      [1, 1]  if x[0] >= 0.5
+  //  u = [x[0], x[1]]  if x[0] < 0.5
+  //      [x[0], x[1] + 1]  if x[0] >= 0.5
   // in the Nedelec space.
   //
   // Note that the x1 component of this field is continuous, and the x0
@@ -98,10 +98,10 @@ void interpolate_nedelec(const std::shared_ptr<mesh::Mesh>& mesh)
   u->interpolate(
       [](auto& x) -> xt::xtensor<T, 2>
       {
-        xt::xtensor<T, 2> v = xt::ones<T>({std::size_t(2), x.shape(1)});
+        xt::xtensor<T, 2> v = xt::view(x, xt::range(0, 2), xt::all());
         auto v0 = xt::row(v, 0);
         auto x0 = xt::row(x, 0);
-        xt::row(v, 0) = xt::where(x0 < 0.5, 0, 1);
+        v0 = xt::where(x0 < 0.5, v0, v0 + 1);
         return v;
       });
 
@@ -113,7 +113,7 @@ void interpolate_nedelec(const std::shared_ptr<mesh::Mesh>& mesh)
 
   // First create a degree 1 vector-valued discontinuous Lagrange space:
   basix::FiniteElement e_basix_l = basix::element::create_lagrange(
-      mesh::cell_type_to_basix_type(mesh::CellType::triangle), 1,
+      mesh::cell_type_to_basix_type(mesh::CellType::triangle), 2,
       basix::element::lagrange_variant::equispaced, true);
   auto e_l = std::make_shared<fem::FiniteElement>(e_basix_l, 2);
   fem::ElementDofLayout layout_l(2, e_basix_l.entity_dofs(),
