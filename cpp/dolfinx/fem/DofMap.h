@@ -135,7 +135,7 @@ public:
   /// @param[in] reorder_fn The graph re-ordering function to apply to
   /// the dof data
   /// @return The collapsed dofmap
-  std::pair<std::unique_ptr<DofMap>, std::vector<std::int32_t>> collapse(
+  std::pair<DofMap, std::vector<std::int32_t>> collapse(
       MPI_Comm comm, const mesh::Topology& topology,
       const std::function<std::vector<int>(
           const graph::AdjacencyList<std::int32_t>&)>& reorder_fn
