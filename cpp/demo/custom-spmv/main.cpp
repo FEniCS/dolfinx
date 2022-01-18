@@ -24,9 +24,7 @@ void spmv_impl(xtl::span<const T> values,
   {
     double vi{0};
     for (std::int32_t j = row_begin[i]; j < row_end[i]; j++)
-    {
       vi += values[j] * x[indices[j]];
-    }
     y[i] += vi;
   }
 }
