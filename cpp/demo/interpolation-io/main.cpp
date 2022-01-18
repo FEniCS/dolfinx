@@ -22,11 +22,12 @@
 #include <petscsys.h>
 #include <xtensor/xmath.hpp>
 
-#include <xtensor/xio.hpp>
-
 using namespace dolfinx;
 using T = PetscScalar;
 
+// This function interpolations a function is a finite element space and
+// outputs the finite element function to a VTK file for visualisation.
+// It also shows how to create a finite element using Basix.
 void interpolate_scalar(const std::shared_ptr<mesh::Mesh>& mesh)
 {
   // Create a Basix continuous Lagrange element of degree 1
@@ -60,6 +61,10 @@ void interpolate_scalar(const std::shared_ptr<mesh::Mesh>& mesh)
   file.write({*u}, 0.0);
 }
 
+// This function interpolations a function is a H(curl) finite element
+// space. To visualise the function, it interpolates the H(curl) finite
+// element function in a discontinuous Lagrange space and outputs the
+// Lagrange finite element function to a VTX file for visualisation.
 void interpolate_nedelec(const std::shared_ptr<mesh::Mesh>& mesh)
 {
   // Create a Basix Nedelec (first kind) element of degree 1 (lowest
@@ -122,7 +127,7 @@ void interpolate_nedelec(const std::shared_ptr<mesh::Mesh>& mesh)
   // space:
   u_l->interpolate(*u);
 
-  // Outout the discontinuous Lagrange space in VTK format. When
+  // Output the discontinuous Lagrange space in VTK format. When
   // plotting the x0 component the field will appear discontinuous at x0
   // = 0.5 (jump in the normal component between cells) and the x1
   // component will appear continuous (continuous tangent component
@@ -141,14 +146,22 @@ int main(int argc, char* argv[])
   common::subsystem::init_logging(argc, argv);
   common::subsystem::init_mpi(argc, argv);
 
+  // The main body of the function is scoped with the curly braces to
+  // ensure that all objects that depend on an MPI communicator are
+  // destroyed before MPI is finalised at the end of this function.
   {
     // Create mesh
     auto mesh = std::make_shared<mesh::Mesh>(mesh::create_rectangle(
         MPI_COMM_WORLD, {{{0.0, 0.0}, {1.0, 1.0}}}, {32, 32},
         mesh::CellType::triangle, mesh::GhostMode::none));
 
+    // Interpolate a function in a scalar Lagrange space and output the
+    // result to file for visualisation
     interpolate_scalar(mesh);
 
+    // Interpolate a function in a H(curl) finite element space, and
+    // then interpolate the H(curl) in a discontinuous Lagrange space
+    // for visualisation
     interpolate_nedelec(mesh);
   }
 
