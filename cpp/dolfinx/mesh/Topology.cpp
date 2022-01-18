@@ -44,7 +44,7 @@ determine_sharing_ranks(MPI_Comm comm,
   std::int64_t max_index = 0;
   if (!unknown_idx.empty())
     max_index = *std::max_element(unknown_idx.begin(), unknown_idx.end());
-  MPI_Allreduce(&max_index, &global_space, 1, MPI_INT64_T, MPI_SUM, comm);
+  MPI_Allreduce(&max_index, &global_space, 1, MPI_INT64_T, MPI_MAX, comm);
   global_space += 1;
 
   std::vector<std::vector<std::int64_t>> send_indices(mpi_size);
