@@ -31,21 +31,13 @@ using T = PetscScalar;
 void interpolate_scalar(const std::shared_ptr<mesh::Mesh>& mesh)
 {
   // Create a Basix continuous Lagrange element of degree 1
-  basix::FiniteElement e_basix = basix::element::create_lagrange(
+  basix::FiniteElement e = basix::element::create_lagrange(
       mesh::cell_type_to_basix_type(mesh::CellType::triangle), 1,
       basix::element::lagrange_variant::equispaced, true);
 
-  // Create a DOLFINx scalar Lagrange element
-  auto e = std::make_shared<fem::FiniteElement>(e_basix, 1);
-
-  // Create a dofmap
-  fem::ElementDofLayout layout(1, e_basix.entity_dofs(),
-                               e_basix.entity_closure_dofs(), {}, {});
-  auto dofmap = std::make_shared<fem::DofMap>(
-      fem::create_dofmap(mesh->comm(), layout, mesh->topology(), nullptr, e));
-
-  // Create a function space
-  auto V = std::make_shared<fem::FunctionSpace>(mesh, e, dofmap);
+  // Create a scalar function space
+  auto V = std::make_shared<fem::FunctionSpace>(
+      fem::create_functionspace(mesh, e, 1));
 
   // Create a finite element Function
   auto u = std::make_shared<fem::Function<T>>(V);
@@ -69,20 +61,12 @@ void interpolate_nedelec(const std::shared_ptr<mesh::Mesh>& mesh)
 {
   // Create a Basix Nedelec (first kind) element of degree 2 (lowest
   // order, dim=6 on triangle)
-  basix::FiniteElement e_basix = basix::element::create_nedelec(
+  basix::FiniteElement e = basix::element::create_nedelec(
       mesh::cell_type_to_basix_type(mesh::CellType::triangle), 2, false);
 
-  // Create a DOLFINx Nedelec element
-  auto e = std::make_shared<fem::FiniteElement>(e_basix, 1);
-
-  // Create a dofmap
-  fem::ElementDofLayout layout(1, e_basix.entity_dofs(),
-                               e_basix.entity_closure_dofs(), {}, {});
-  auto dofmap = std::make_shared<fem::DofMap>(
-      fem::create_dofmap(mesh->comm(), layout, mesh->topology(), nullptr, e));
-
   // Create a function space
-  auto V = std::make_shared<fem::FunctionSpace>(mesh, e, dofmap);
+  auto V = std::make_shared<fem::FunctionSpace>(
+      fem::create_functionspace(mesh, e, 1));
 
   // Create a finite element Function
   auto u = std::make_shared<fem::Function<T>>(V);
@@ -111,16 +95,15 @@ void interpolate_nedelec(const std::shared_ptr<mesh::Mesh>& mesh)
   // function exactly in a discontinuous Lagrange space which we can
   // then visualise. We do this here.
 
-  // First create a degree 1 vector-valued discontinuous Lagrange space:
-  basix::FiniteElement e_basix_l = basix::element::create_lagrange(
+  // First create a degree 2 vector-valued discontinuous Lagrange space:
+  basix::FiniteElement e_l = basix::element::create_lagrange(
       mesh::cell_type_to_basix_type(mesh::CellType::triangle), 2,
       basix::element::lagrange_variant::equispaced, true);
-  auto e_l = std::make_shared<fem::FiniteElement>(e_basix_l, 2);
-  fem::ElementDofLayout layout_l(2, e_basix_l.entity_dofs(),
-                                 e_basix_l.entity_closure_dofs(), {}, {});
-  auto dofmap_l = std::make_shared<fem::DofMap>(fem::create_dofmap(
-      mesh->comm(), layout_l, mesh->topology(), nullptr, e_l));
-  auto V_l = std::make_shared<fem::FunctionSpace>(mesh, e_l, dofmap_l);
+
+  // Create a function space
+  auto V_l = std::make_shared<fem::FunctionSpace>(
+      fem::create_functionspace(mesh, e_l, 2));
+
   auto u_l = std::make_shared<fem::Function<T>>(V_l);
 
   // Interpolate the Nedelec function into the discontinuous Lagrange
