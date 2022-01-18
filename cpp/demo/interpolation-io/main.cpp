@@ -61,19 +61,12 @@ int main(int argc, char* argv[])
     auto e_n = std::make_shared<fem::FiniteElement>(e_basix_n, 1);
 
     // Create a dofmap
-    auto layout = std::make_shared<fem::ElementDofLayout>(
-        1, e_basix.entity_dofs(), e_basix.entity_closure_dofs(),
-        std::vector<int>(),
-        std::vector<std::shared_ptr<const fem::ElementDofLayout>>{});
-    auto layout_v = std::make_shared<fem::ElementDofLayout>(
-        2, e_basix_v.entity_dofs(), e_basix_v.entity_closure_dofs(),
-        std::vector<int>(),
-        std::vector<std::shared_ptr<const fem::ElementDofLayout>>{});
-
-    auto layout_n = std::make_shared<fem::ElementDofLayout>(
-        1, e_basix_n.entity_dofs(), e_basix_n.entity_closure_dofs(),
-        std::vector<int>(),
-        std::vector<std::shared_ptr<const fem::ElementDofLayout>>{});
+    fem::ElementDofLayout layout(1, e_basix.entity_dofs(),
+                                 e_basix.entity_closure_dofs(), {}, {});
+    fem::ElementDofLayout layout_v(2, e_basix_v.entity_dofs(),
+                                   e_basix_v.entity_closure_dofs(), {}, {});
+    fem::ElementDofLayout layout_n(1, e_basix_n.entity_dofs(),
+                                   e_basix_n.entity_closure_dofs(), {}, {});
 
     auto dofmap = std::make_shared<fem::DofMap>(fem::create_dofmap(
         MPI_COMM_WORLD, layout, mesh->topology(), nullptr, e));

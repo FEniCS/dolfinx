@@ -36,11 +36,15 @@ ElementDofLayout::ElementDofLayout(
     assert(!_entity_closure_dofs[dim].empty());
     _num_entity_dofs[dim] = entity_dofs[dim][0].size();
     _num_entity_closure_dofs[dim] = _entity_closure_dofs[dim][0].size();
-    for (std::size_t entity_index = 0; entity_index < entity_dofs[dim].size();
-         ++entity_index)
-    {
-      _num_dofs += entity_dofs[dim][entity_index].size();
-    }
+    _num_dofs = std::accumulate(
+        entity_dofs[dim].begin(), entity_dofs[dim].end(),
+        _num_dofs, [](auto a, auto& b) { return a + b.size(); });
+    // for (std::size_t entity_index = 0; entity_index <
+    // entity_dofs[dim].size();
+    //      ++entity_index)
+    // {
+    //   _num_dofs += entity_dofs[dim][entity_index].size();
+    // }
   }
 }
 //-----------------------------------------------------------------------------
