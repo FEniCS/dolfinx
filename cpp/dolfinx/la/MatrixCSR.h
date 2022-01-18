@@ -308,7 +308,7 @@ public:
   /// Get the number of local rows
   /// @param[in] ghost_rows Set to true to include ghost rows in the
   /// number of local rows
-  std::int32_t rows(bool ghost_rows = false)
+  std::int32_t rows(bool ghost_rows = false) const
   {
     return ghost_rows ? _row_ptr.size() - 1 : _index_maps[0]->size_local();
   }
