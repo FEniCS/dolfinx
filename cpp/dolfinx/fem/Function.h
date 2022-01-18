@@ -25,9 +25,9 @@
 #include <variant>
 #include <vector>
 #include <xtensor/xadapt.hpp>
+#include <xtensor/xio.hpp>
 #include <xtensor/xtensor.hpp>
 #include <xtl/xspan.hpp>
-
 namespace dolfinx::fem
 {
 
@@ -272,14 +272,6 @@ public:
                                "elements. Extract subspaces.");
     }
 
-    // Prepare basis function data structures
-    xt::xtensor<double, 4> basis_derivatives_reference_values(
-        {1, x.shape(0), space_dimension, reference_value_size});
-    auto basis_reference_values = xt::view(basis_derivatives_reference_values,
-                                           0, xt::all(), xt::all(), xt::all());
-    xt::xtensor<double, 3> basis_values(
-        {static_cast<std::size_t>(1), space_dimension, value_size});
-
     // Create work vector for expansion coefficients
     std::vector<T> coefficients(space_dimension * bs_element);
 
@@ -303,12 +295,6 @@ public:
     std::fill(u.data(), u.data() + u.size(), 0.0);
     const xtl::span<const T>& _v = _x->array();
 
-    const std::function<void(const xtl::span<double>&,
-                             const xtl::span<const std::uint32_t>&,
-                             std::int32_t, int)>
-        apply_dof_transformation
-        = element->get_dof_transformation_function<double>();
-
     // -- Lambda function for affine pull-backs
     xt::xtensor<double, 4> data(cmap.tabulate_shape(1, 1));
     const xt::xtensor<double, 2> X0(xt::zeros<double>({std::size_t(1), tdim}));
@@ -330,22 +316,14 @@ public:
     xt::xtensor<double, 3> K = xt::zeros<double>({x.shape(0), tdim, gdim});
     xt::xtensor<double, 1> detJ = xt::zeros<double>({x.shape(0)});
     xt::xtensor<double, 4> phi(cmap.tabulate_shape(1, 1));
-    using u_t = xt::xview<decltype(basis_values)&, std::size_t,
-                          xt::xall<std::size_t>, xt::xall<std::size_t>>;
-    using U_t = xt::xview<decltype(basis_reference_values)&, std::size_t,
-                          xt::xall<std::size_t>, xt::xall<std::size_t>>;
-    using J_t = xt::xview<decltype(J)&, std::size_t, xt::xall<std::size_t>,
-                          xt::xall<std::size_t>>;
-    using K_t = xt::xview<decltype(K)&, std::size_t, xt::xall<std::size_t>,
-                          xt::xall<std::size_t>>;
-    auto push_forward_fn = element->map_fn<u_t, U_t, J_t, K_t>();
 
     xt::xtensor<double, 2> _Xp({1, tdim});
     for (std::size_t p = 0; p < cells.size(); ++p)
     {
-      // NOTE: We do no longer accept negative cell indices
       const int cell_index = cells[p];
-      assert(!(cell_index < 0));
+      // Skip negative cell indices
+      if (cell_index < 0)
+        continue;
 
       // Get cell geometry (coordinate dofs)
       auto x_dofs = x_dofmap.links(cell_index);
@@ -378,21 +356,52 @@ public:
       }
       xt::row(X, p) = xt::row(_Xp, 0);
     }
+
+    // Prepare basis function data structures
+    xt::xtensor<double, 4> basis_derivatives_reference_values(
+        {1, x.shape(0), space_dimension, reference_value_size});
+    xt::xtensor<double, 3> basis_values(
+        {static_cast<std::size_t>(1), space_dimension, value_size});
+
     // Compute basis on reference element
     element->tabulate(basis_derivatives_reference_values, X, 0);
+
+    // FIXME: Should avoid copy, but apply_dof_transformation does not support
+    // the view of basis_reference_values;
+    xt::xtensor<double, 2> basis_reference_values(
+        {space_dimension, reference_value_size});
+
+    using u_t = xt::xview<decltype(basis_values)&, std::size_t,
+                          xt::xall<std::size_t>, xt::xall<std::size_t>>;
+    using U_t = decltype(basis_reference_values);
+    using J_t = xt::xview<decltype(J)&, std::size_t, xt::xall<std::size_t>,
+                          xt::xall<std::size_t>>;
+    using K_t = xt::xview<decltype(K)&, std::size_t, xt::xall<std::size_t>,
+                          xt::xall<std::size_t>>;
+    auto push_forward_fn = element->map_fn<u_t, U_t, J_t, K_t>();
+    const std::function<void(const xtl::span<double>&,
+                             const xtl::span<const std::uint32_t>&,
+                             std::int32_t, int)>
+        apply_dof_transformation
+        = element->get_dof_transformation_function<double>();
 
     for (std::size_t p = 0; p < cells.size(); ++p)
     {
       const int cell_index = cells[p];
+      // Skip negative cell indices
+      if (cell_index < 0)
+        continue;
 
       // Permute the reference values to account for the cell's orientation
+      basis_reference_values = xt::view(basis_derivatives_reference_values, 0,
+                                        p, xt::all(), xt::all());
       apply_dof_transformation(xtl::span(basis_reference_values.data(),
                                          basis_reference_values.size()),
                                cell_info, cell_index, reference_value_size);
 
       auto _K = xt::view(K, p, xt::all(), xt::all());
       auto _J = xt::view(J, p, xt::all(), xt::all());
-      auto _U = xt::view(basis_reference_values, p, xt::all(), xt::all());
+      auto _U = xt::view(basis_reference_values, xt::all(), xt::all());
       auto _u = xt::view(basis_values, (std::size_t)0, xt::all(), xt::all());
       push_forward_fn(_u, _U, _J, detJ[p], _K);
 
