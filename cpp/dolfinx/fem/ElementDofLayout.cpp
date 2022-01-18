@@ -20,10 +20,10 @@ ElementDofLayout::ElementDofLayout(
     const std::vector<std::vector<std::vector<int>>>& entity_dofs,
     const std::vector<std::vector<std::vector<int>>>& entity_closure_dofs,
     const std::vector<int>& parent_map,
-    const std::vector<ElementDofLayout>& sub_dofmaps)
+    const std::vector<ElementDofLayout>& sub_layouts)
     : _block_size(block_size), _parent_map(parent_map), _num_dofs(0),
       _entity_dofs(entity_dofs), _entity_closure_dofs(entity_closure_dofs),
-      _sub_dofmaps(sub_dofmaps)
+      _sub_dofmaps(sub_layouts)
 {
   // TODO: Handle global support dofs
 
@@ -36,15 +36,9 @@ ElementDofLayout::ElementDofLayout(
     assert(!_entity_closure_dofs[dim].empty());
     _num_entity_dofs[dim] = entity_dofs[dim][0].size();
     _num_entity_closure_dofs[dim] = _entity_closure_dofs[dim][0].size();
-    _num_dofs = std::accumulate(
-        entity_dofs[dim].begin(), entity_dofs[dim].end(),
-        _num_dofs, [](auto a, auto& b) { return a + b.size(); });
-    // for (std::size_t entity_index = 0; entity_index <
-    // entity_dofs[dim].size();
-    //      ++entity_index)
-    // {
-    //   _num_dofs += entity_dofs[dim][entity_index].size();
-    // }
+    _num_dofs = std::accumulate(entity_dofs[dim].begin(),
+                                entity_dofs[dim].end(), _num_dofs,
+                                [](auto a, auto& b) { return a + b.size(); });
   }
 }
 //-----------------------------------------------------------------------------
@@ -103,25 +97,20 @@ ElementDofLayout::entity_closure_dofs_all() const
 int ElementDofLayout::num_sub_dofmaps() const { return _sub_dofmaps.size(); }
 //-----------------------------------------------------------------------------
 const ElementDofLayout&
-ElementDofLayout::sub_dofmap(const std::vector<int>& component) const
+ElementDofLayout::sub_layout(const xtl::span<const int>& component) const
 {
-  if (component.size() == 0)
+  if (component.empty())
     throw std::runtime_error("No sub dofmap specified");
-  // std::shared_ptr<const ElementDofLayout> current
-  //     = _sub_dofmaps.at(component[0]);
   std::reference_wrapper<const ElementDofLayout> current
       = _sub_dofmaps.at(component[0]);
   for (std::size_t i = 1; i < component.size(); ++i)
-  {
-    const int idx = component[i];
-    current = _sub_dofmaps.at(idx);
-  }
+    current = _sub_dofmaps.at(component[i]);
 
   return current;
 }
 //-----------------------------------------------------------------------------
 std::vector<int>
-ElementDofLayout::sub_view(const std::vector<int>& component) const
+ElementDofLayout::sub_view(const xtl::span<const int>& component) const
 {
   // Fill up a list of parent dofs, from which subdofmap will select
   std::vector<int> dof_list(_num_dofs * _block_size);

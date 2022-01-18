@@ -222,8 +222,7 @@ DofMap DofMap::extract_sub_dofmap(const std::vector<int>& component) const
 
   // Set element dof layout and cell dimension
   ElementDofLayout sub_element_dof_layout
-      = this->element_dof_layout().sub_dofmap(component);
-
+      = _element_dof_layout.sub_layout(component);
   return DofMap(std::move(sub_element_dof_layout), this->index_map,
                 this->index_map_bs(),
                 graph::build_adjacency_list<std::int32_t>(std::move(dofmap),
