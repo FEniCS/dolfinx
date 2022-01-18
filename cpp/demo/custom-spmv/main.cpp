@@ -95,14 +95,19 @@ int main(int argc, char* argv[])
     //      |  A_P-1 |
     //
     // Each submatrix A_i is owned by a single process "i" and can be further
-    // decomposed into diagonal and off diagonal blocks:
-    //  Ai = |Ai_diag Ai_off|
+    // decomposed into diagonal (Ai[0]) and off diagonal blocks (Ai[1]):
+    //  Ai = |Ai[0] Ai[1]|
     //
-    // If A is square, the diagonal block Ai_diag is also square and countains
+    // If A is square, the diagonal block Ai[0] is also square and countains
     // only owned columns and rows.
-    //
-    // The block Ai_off contains ghost columns (unowned dofs).
-    //
+    // The block Ai[1] contains ghost columns (unowned dofs).
+
+    // Likewise, a vector can be decomposed in owned and ghost blocks:
+    // xi = |   x[0]  |
+    //      |   x[1]  |
+
+    //  y = |Ai[0] Ai[1]| |   x[0]  | = Ai[0] x[0] + Ai[1] x[1]
+    //                    |   x[1]  |
 
     // Create function to compute y = A x in parallel
     auto spmv = [&A](la::Vector<T>& x, la::Vector<T>& y)
