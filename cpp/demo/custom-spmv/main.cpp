@@ -47,7 +47,7 @@ int main(int argc, char* argv[])
 
     // Create mesh and function space
     auto mesh = std::make_shared<mesh::Mesh>(mesh::create_box(
-        comm, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}}}, {10, 10, 10},
+        comm, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}}}, {32, 32, 32},
         mesh::CellType::tetrahedron, mesh::GhostMode::none));
 
     auto V = std::make_shared<fem::FunctionSpace>(
@@ -167,7 +167,7 @@ int main(int argc, char* argv[])
     for (int i = 0; i < ndofs_local; i++)
       err_abs += std::abs(y0_array[i] - y1_array[i]);
 
-    if (err_abs > 1e-15)
+    if (err_abs > 1e-8)
       throw std::runtime_error("Solution mismatch");
 
     dolfinx::list_timings(comm, {dolfinx::TimingType::wall});
