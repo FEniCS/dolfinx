@@ -76,7 +76,7 @@ int main(int argc, char* argv[])
     auto V_v = std::make_shared<fem::FunctionSpace>(mesh, e_v, dofmap_v);
     auto V_n = std::make_shared<fem::FunctionSpace>(mesh, e_n, dofmap_n);
 
-    // Create a Function
+    // Create a finite elemenet Function
     auto u = std::make_shared<fem::Function<T>>(V);
     auto u_v = std::make_shared<fem::Function<T>>(V_v);
     auto u_n = std::make_shared<fem::Function<T>>(V_n);
@@ -106,10 +106,6 @@ int main(int argc, char* argv[])
     outfile.close();
 
     u_v->interpolate(*u_n);
-    // auto x = u_v->x()->array();
-    // for (auto xi : x)
-    //   std::cout << xi << std::endl;
-
     io::VTXWriter outfile_n(MPI_COMM_WORLD, "output_n.bp", {u_v});
     outfile_n.write(0.0);
     outfile_n.close();

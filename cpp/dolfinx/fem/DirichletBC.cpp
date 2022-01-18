@@ -324,7 +324,7 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
   assert(dofmap1);
 
   // Check that dof layouts are the same
-  assert(&dofmap0->element_dof_layout() == &dofmap1->element_dof_layout());
+  assert(dofmap0->element_dof_layout() == dofmap1->element_dof_layout());
 
   // Build vector of local dofs for each cell entity
   const int num_cell_entities
