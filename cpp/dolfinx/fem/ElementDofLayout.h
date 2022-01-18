@@ -7,7 +7,6 @@
 #pragma once
 
 #include <array>
-#include <memory>
 #include <vector>
 
 namespace dolfinx::mesh
@@ -44,7 +43,7 @@ public:
       const std::vector<std::vector<std::vector<int>>>& entity_dofs,
       const std::vector<std::vector<std::vector<int>>>& entity_closure_dofs,
       const std::vector<int>& parent_map,
-      const std::vector<std::shared_ptr<const ElementDofLayout>>& sub_dofmaps);
+      const std::vector<ElementDofLayout>& sub_dofmaps);
 
   /// Copy the DOF layout, discarding any parent information
   ElementDofLayout copy() const;
@@ -110,8 +109,7 @@ public:
   int num_sub_dofmaps() const;
 
   /// Get sub-dofmap given by list of components, one for each level
-  std::shared_ptr<const ElementDofLayout>
-  sub_dofmap(const std::vector<int>& component) const;
+  const ElementDofLayout& sub_dofmap(const std::vector<int>& component) const;
 
   /// Get view for a sub dofmap, defined by the component list (as for
   /// sub_dofmap()), into this dofmap. I.e., the dofs in this dofmap
@@ -151,7 +149,8 @@ private:
   std::vector<std::vector<std::vector<int>>> _entity_closure_dofs;
 
   // List of sub dofmaps
-  std::vector<std::shared_ptr<const ElementDofLayout>> _sub_dofmaps;
+  // std::vector<std::shared_ptr<const ElementDofLayout>> _sub_dofmaps;
+  std::vector<ElementDofLayout> _sub_dofmaps;
 };
 
 } // namespace dolfinx::fem

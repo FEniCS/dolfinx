@@ -19,7 +19,7 @@ ElementDofLayout::ElementDofLayout(
     const std::vector<std::vector<std::vector<int>>>& entity_dofs,
     const std::vector<std::vector<std::vector<int>>>& entity_closure_dofs,
     const std::vector<int>& parent_map,
-    const std::vector<std::shared_ptr<const ElementDofLayout>>& sub_dofmaps)
+    const std::vector<ElementDofLayout>& sub_dofmaps)
     : _block_size(block_size), _parent_map(parent_map), _num_dofs(0),
       _entity_dofs(entity_dofs), _entity_closure_dofs(entity_closure_dofs),
       _sub_dofmaps(sub_dofmaps)
@@ -97,12 +97,14 @@ ElementDofLayout::entity_closure_dofs_all() const
 //-----------------------------------------------------------------------------
 int ElementDofLayout::num_sub_dofmaps() const { return _sub_dofmaps.size(); }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const ElementDofLayout>
+const ElementDofLayout&
 ElementDofLayout::sub_dofmap(const std::vector<int>& component) const
 {
   if (component.size() == 0)
     throw std::runtime_error("No sub dofmap specified");
-  std::shared_ptr<const ElementDofLayout> current
+  // std::shared_ptr<const ElementDofLayout> current
+  //     = _sub_dofmaps.at(component[0]);
+  std::reference_wrapper<const ElementDofLayout> current
       = _sub_dofmaps.at(component[0]);
   for (std::size_t i = 1; i < component.size(); ++i)
   {
@@ -127,7 +129,7 @@ ElementDofLayout::sub_view(const std::vector<int>& component) const
     assert(element_dofmap_current);
     if (i >= (int)element_dofmap_current->_sub_dofmaps.size())
       throw std::runtime_error("Invalid component");
-    element_dofmap_current = _sub_dofmaps.at(i).get();
+    element_dofmap_current = &_sub_dofmaps.at(i);
 
     std::vector<int> dof_list_new(element_dofmap_current->_num_dofs
                                   * element_dofmap_current->_block_size);

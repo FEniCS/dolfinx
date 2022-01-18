@@ -110,7 +110,7 @@ fem::create_element_dof_layout(const ufcx_dofmap& dofmap,
 
   // Create UFC subdofmaps and compute offset
   std::vector<int> offsets(1, 0);
-  std::vector<std::shared_ptr<const fem::ElementDofLayout>> sub_dofmaps;
+  std::vector<fem::ElementDofLayout> sub_dofmaps;
   for (int i = 0; i < dofmap.num_sub_dofmaps; ++i)
   {
     ufcx_dofmap* ufcx_sub_dofmap = dofmap.sub_dofmaps[i];
@@ -128,8 +128,7 @@ fem::create_element_dof_layout(const ufcx_dofmap& dofmap,
     for (std::size_t j = 0; j < parent_map_sub.size(); ++j)
       parent_map_sub[j] = offsets[i] + element_block_size * j;
     sub_dofmaps.push_back(
-        std::make_shared<fem::ElementDofLayout>(create_element_dof_layout(
-            *ufcx_sub_dofmap, cell_type, parent_map_sub)));
+        create_element_dof_layout(*ufcx_sub_dofmap, cell_type, parent_map_sub));
   }
 
   // Check for "block structure". This should ultimately be replaced,

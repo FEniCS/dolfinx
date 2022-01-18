@@ -40,7 +40,8 @@ remap_dofs(const std::vector<std::int32_t>& old_to_new,
 fem::DofMap build_collapsed_dofmap(MPI_Comm comm, const DofMap& dofmap_view,
                                    const mesh::Topology& topology)
 {
-  ElementDofLayout element_dof_layout(dofmap_view.element_dof_layout());
+  // Copy dof layout, discarding parent data
+  ElementDofLayout element_dof_layout = dofmap_view.element_dof_layout().copy();
   if (element_dof_layout.block_size() > 1)
   {
     throw std::runtime_error(
@@ -221,7 +222,7 @@ DofMap DofMap::extract_sub_dofmap(const std::vector<int>& component) const
 
   // Set element dof layout and cell dimension
   ElementDofLayout sub_element_dof_layout
-      = *(this->element_dof_layout().sub_dofmap(component));
+      = this->element_dof_layout().sub_dofmap(component);
 
   return DofMap(std::move(sub_element_dof_layout), this->index_map,
                 this->index_map_bs(),
@@ -241,12 +242,12 @@ std::pair<std::unique_ptr<DofMap>, std::vector<std::int32_t>> DofMap::collapse(
 
   // Parent does not have block structure but sub-map does, so build
   // new submap to get block structure for collapsed dofmap.
-  // Create new dofmap
+  // Create new dofmapEL
   std::unique_ptr<DofMap> dofmap_new;
   if (this->index_map_bs() == 1 and _element_dof_layout.block_size() > 1)
   {
     // Create new element dof layout and reset parent
-    ElementDofLayout collapsed_dof_layout = _element_dof_layout;
+    ElementDofLayout collapsed_dof_layout = _element_dof_layout.copy();
 
     // Parent does not have block structure but sub-map does, so build
     // new submap to get block structure for collapsed dofmap.

@@ -161,6 +161,7 @@ private:
   // Block size for the IndexMap
   int _index_map_bs = -1;
 
+  // Layout of dofs on a cell
   ElementDofLayout _element_dof_layout;
 
   // Cell-local-to-dof map (dofs for cell dofmap[cell])
