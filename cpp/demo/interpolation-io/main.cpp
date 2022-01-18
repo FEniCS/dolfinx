@@ -85,7 +85,8 @@ void interpolate_nedelec(const std::shared_ptr<mesh::Mesh>& mesh)
         xt::xtensor<T, 2> v = xt::view(x, xt::range(0, 2), xt::all());
         auto v0 = xt::row(v, 0);
         auto x0 = xt::row(x, 0);
-        v0 = xt::where(x0 < 0.5, v0, v0 + 1);
+        xt::row(v, 0) = xt::where(x0 < 0.5, v0, v0 + 1);
+        // v0 = xt::where(x0 < 0.5, v0, v0 + 1);
         return v;
       });
 
