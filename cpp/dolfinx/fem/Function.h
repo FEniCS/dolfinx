@@ -219,7 +219,6 @@ public:
             const xtl::span<const std::int32_t>& cells,
             xt::xtensor<T, 2>& u) const
   {
-    dolfinx::common::Timer t6("~Eval C++");
     // TODO: This could be easily made more efficient by exploiting points
     // being ordered by the cell to which they belong.
 
@@ -275,7 +274,7 @@ public:
 
     // Prepare basis function data structures
     xt::xtensor<double, 4> basis_derivatives_reference_values(
-        {1, 1, space_dimension, reference_value_size});
+        {1, x.shape(0), space_dimension, reference_value_size});
     auto basis_reference_values = xt::view(basis_derivatives_reference_values,
                                            0, xt::all(), xt::all(), xt::all());
     xt::xtensor<double, 3> basis_values(
@@ -326,10 +325,10 @@ public:
     };
 
     xt::xtensor<double, 2> dphi;
-    xt::xtensor<double, 2> X({1, tdim});
-    xt::xtensor<double, 3> J = xt::zeros<double>({std::size_t(1), gdim, tdim});
-    xt::xtensor<double, 3> K = xt::zeros<double>({std::size_t(1), tdim, gdim});
-    xt::xtensor<double, 1> detJ = xt::zeros<double>({1});
+    xt::xtensor<double, 2> X({x.shape(0), tdim});
+    xt::xtensor<double, 3> J = xt::zeros<double>({x.shape(0), gdim, tdim});
+    xt::xtensor<double, 3> K = xt::zeros<double>({x.shape(0), tdim, gdim});
+    xt::xtensor<double, 1> detJ = xt::zeros<double>({x.shape(0)});
     xt::xtensor<double, 4> phi(cmap.tabulate_shape(1, 1));
     using u_t = xt::xview<decltype(basis_values)&, std::size_t,
                           xt::xall<std::size_t>, xt::xall<std::size_t>>;
@@ -340,15 +339,13 @@ public:
     using K_t = xt::xview<decltype(K)&, std::size_t, xt::xall<std::size_t>,
                           xt::xall<std::size_t>>;
     auto push_forward_fn = element->map_fn<u_t, U_t, J_t, K_t>();
-    xt::xtensor<double, 2> Xs(
-        {cells.size(), std::size_t(mesh->geometry().dim())});
+
+    xt::xtensor<double, 2> _Xp({1, tdim});
     for (std::size_t p = 0; p < cells.size(); ++p)
     {
+      // NOTE: We do no longer accept negative cell indices
       const int cell_index = cells[p];
-
-      // Skip negative cell indices
-      if (cell_index < 0)
-        continue;
+      assert(!(cell_index < 0));
 
       // Get cell geometry (coordinate dofs)
       auto x_dofs = x_dofmap.links(cell_index);
@@ -362,61 +359,42 @@ public:
       for (std::size_t j = 0; j < gdim; ++j)
         xp(0, j) = x(p, j);
 
+      auto _J = xt::view(J, p, xt::all(), xt::all());
+      auto _K = xt::view(K, p, xt::all(), xt::all());
       // Compute reference coordinates X, and J, detJ and K
       if (cmap.is_affine())
       {
-        J.fill(0);
-        K.fill(0);
-        dolfinx::common::Timer t("~Pull back affine");
-        pull_back_affine(X, coordinate_dofs,
-                         xt::view(J, 0, xt::all(), xt::all()),
-                         xt::view(K, 0, xt::all(), xt::all()), xp);
-        t.stop();
-        dolfinx::common::Timer t1("~Compute determinant (affine)");
-        detJ[0] = cmap.compute_jacobian_determinant(
-            xt::view(J, 0, xt::all(), xt::all()));
-        t1.stop();
+        pull_back_affine(_Xp, coordinate_dofs, _J, _K, xp);
+        detJ[p] = cmap.compute_jacobian_determinant(_J);
       }
       else
       {
-        dolfinx::common::Timer t("~Pull back non-affine");
-        cmap.pull_back_nonaffine(X, xp, coordinate_dofs);
-        t.stop();
-        dolfinx::common::Timer t1("~Compute determinant (nonaffine)");
-        cmap.tabulate(1, X, phi);
+        cmap.pull_back_nonaffine(_Xp, xp, coordinate_dofs);
+        cmap.tabulate(1, _Xp, phi);
         dphi = xt::view(phi, xt::range(1, tdim + 1), 0, xt::all(), 0);
-        J.fill(0);
-        auto _J = xt::view(J, 0, xt::all(), xt::all());
         cmap.compute_jacobian(dphi, coordinate_dofs, _J);
-        cmap.compute_jacobian_inverse(_J, xt::view(K, 0, xt::all(), xt::all()));
-        detJ[0] = cmap.compute_jacobian_determinant(_J);
-        t1.stop();
+        cmap.compute_jacobian_inverse(_J, _K);
+        detJ[p] = cmap.compute_jacobian_determinant(_J);
       }
-      xt::row(Xs, p) = xt::row(X, 0);
-      dolfinx::common::Timer t2("~Tabulate reference");
-      // Compute basis on reference element
-      element->tabulate(basis_derivatives_reference_values, X, 0);
-      t2.stop();
-      dolfinx::common::Timer t3("~Apply transformation");
+      xt::row(X, p) = xt::row(_Xp, 0);
+    }
+    // Compute basis on reference element
+    element->tabulate(basis_derivatives_reference_values, X, 0);
+
+    for (std::size_t p = 0; p < cells.size(); ++p)
+    {
+      const int cell_index = cells[p];
+
       // Permute the reference values to account for the cell's orientation
       apply_dof_transformation(xtl::span(basis_reference_values.data(),
                                          basis_reference_values.size()),
                                cell_info, cell_index, reference_value_size);
-      t3.stop();
 
-      dolfinx::common::Timer t4("~push forward");
-      // Push basis forward to physical element
-      for (std::size_t i = 0; i < basis_values.shape(0); ++i)
-      {
-        auto _K = xt::view(K, i, xt::all(), xt::all());
-        auto _J = xt::view(J, i, xt::all(), xt::all());
-        auto _u = xt::view(basis_values, i, xt::all(), xt::all());
-        auto _U = xt::view(basis_reference_values, i, xt::all(), xt::all());
-        push_forward_fn(_u, _U, _J, detJ[i], _K);
-      }
-      t4.stop();
-      // element->push_forward(basis_values, basis_reference_values, J, detJ,
-      // K);
+      auto _K = xt::view(K, p, xt::all(), xt::all());
+      auto _J = xt::view(J, p, xt::all(), xt::all());
+      auto _U = xt::view(basis_reference_values, p, xt::all(), xt::all());
+      auto _u = xt::view(basis_values, (std::size_t)0, xt::all(), xt::all());
+      push_forward_fn(_u, _U, _J, detJ[p], _K);
 
       // Get degrees of freedom for current cell
       xtl::span<const std::int32_t> dofs = dofmap->cell_dofs(cell_index);
@@ -424,7 +402,6 @@ public:
         for (int k = 0; k < bs_dof; ++k)
           coefficients[bs_dof * i + k] = _v[bs_dof * dofs[i] + k];
 
-      dolfinx::common::Timer t5("~Compute expansion");
       // Compute expansion
       auto u_row = xt::row(u, p);
       for (int k = 0; k < bs_element; ++k)
@@ -438,14 +415,7 @@ public:
           }
         }
       }
-      t5.stop();
     }
-    t6.stop();
-    xt::xtensor<double, 4> all_basis_derivatives_reference_values(
-        {1, x.shape(0), space_dimension, reference_value_size});
-    dolfinx::common::Timer t7("~Tabulate all at once");
-    element->tabulate(all_basis_derivatives_reference_values, Xs, 0);
-    t7.stop();
   }
 
   /// Compute values at all mesh 'nodes'
