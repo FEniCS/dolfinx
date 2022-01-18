@@ -95,20 +95,22 @@ int main(int argc, char* argv[])
     //      |  A_P-1 |
     //
     // Each submatrix A_i is owned by a single process "i" and can be further
-    // decomposed into diagonal (Ai[0]) and off diagonal blocks (Ai[1]):
+    // decomposed into diagonal (Ai[0]) and off diagonal (Ai[1]) blocks:
     //  Ai = |Ai[0] Ai[1]|
     //
     // If A is square, the diagonal block Ai[0] is also square and countains
-    // only owned columns and rows.
-    // The block Ai[1] contains ghost columns (unowned dofs).
+    // only owned columns and rows. The block Ai[1] contains ghost columns
+    // (unowned dofs).
 
-    // Likewise, a vector can be decomposed in owned and ghost blocks:
+    // Likewise, a vector x can be decomposed into owned and ghost blocks:
     // xi = |   x[0]  |
     //      |   x[1]  |
-
+    //
+    // So the product y = Ax can be computed into two separate steps:
     //  y[0] = |Ai[0] Ai[1]| |   x[0]  | = Ai[0] x[0] + Ai[1] x[1]
     //                       |   x[1]  |
-
+    //
+    //
     // Create function to compute y = A x in parallel
     auto spmv = [&A](la::Vector<T>& x, la::Vector<T>& y)
     {
@@ -145,11 +147,11 @@ int main(int argc, char* argv[])
     spmv(x, y0);
     t0.stop();
 
-    ui->x()->scatter_fwd();
-    const auto coefficients = fem::pack_coefficients(*M);
-    const std::vector<T> constants = fem::pack_constants(*M);
     common::Timer t1("~Matrix Free action");
     {
+      ui->x()->scatter_fwd();
+      const auto coefficients = fem::pack_coefficients(*M);
+      const std::vector<T> constants = fem::pack_constants(*M);
       fem::assemble_vector(y1.mutable_array(), *M, tcb::make_span(constants),
                            make_coefficients_span(coefficients));
       y1.scatter_rev(common::IndexMap::Mode::add);
