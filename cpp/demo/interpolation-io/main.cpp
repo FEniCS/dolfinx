@@ -48,23 +48,19 @@ int main(int argc, char* argv[])
         mesh::cell_type_to_basix_type(mesh::CellType::triangle), 1,
         basix::element::lagrange_variant::equispaced, false);
 
-    basix::FiniteElement e_basix_v = basix::element::create_lagrange(
-        mesh::cell_type_to_basix_type(mesh::CellType::triangle), 1,
-        basix::element::lagrange_variant::equispaced, true);
-
     basix::FiniteElement e_basix_n = basix::element::create_nedelec(
         mesh::cell_type_to_basix_type(mesh::CellType::triangle), 1, false);
 
     // Create a DOLFINx element
     auto e = std::make_shared<fem::FiniteElement>(e_basix, 1);
-    auto e_v = std::make_shared<fem::FiniteElement>(e_basix_v, 2);
+    auto e_v = std::make_shared<fem::FiniteElement>(e_basix, 2);
     auto e_n = std::make_shared<fem::FiniteElement>(e_basix_n, 1);
 
     // Create a dofmap
     fem::ElementDofLayout layout(1, e_basix.entity_dofs(),
                                  e_basix.entity_closure_dofs(), {}, {});
-    fem::ElementDofLayout layout_v(2, e_basix_v.entity_dofs(),
-                                   e_basix_v.entity_closure_dofs(), {}, {});
+    fem::ElementDofLayout layout_v(2, e_basix.entity_dofs(),
+                                   e_basix.entity_closure_dofs(), {}, {});
     fem::ElementDofLayout layout_n(1, e_basix_n.entity_dofs(),
                                    e_basix_n.entity_closure_dofs(), {}, {});
 
