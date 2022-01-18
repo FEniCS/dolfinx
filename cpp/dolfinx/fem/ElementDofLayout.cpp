@@ -7,6 +7,7 @@
 #include "ElementDofLayout.h"
 #include <array>
 #include <cassert>
+#include <functional>
 #include <numeric>
 #include <stdexcept>
 
