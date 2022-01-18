@@ -37,6 +37,9 @@ public:
   /// The value type
   using value_type = T;
 
+  /// The allocator type
+  using allocator_type = Allocator;
+
   /// Insertion functor for setting values in matrix. It is typically
   /// used in finite element assembly functions.
   /// @param A Matrix to insert into
@@ -85,8 +88,14 @@ public:
     if (_bs[0] > 1 or _bs[1] > 1)
       throw std::runtime_error("Block size not yet supported");
 
-    // Precompute some data for ghost updates via MPI
+    // Compute off-diagonal offset for each row
+    xtl::span<const std::int32_t> num_diag_nnz = p.off_diagonal_offset();
+    _off_diagonal_offset.reserve(num_diag_nnz.size());
+    std::transform(num_diag_nnz.begin(), num_diag_nnz.end(), _row_ptr.begin(),
+                   std::back_inserter(_off_diagonal_offset),
+                   std::plus<std::int32_t>());
 
+    // Precompute some data for ghost updates via MPI
     const std::array local_size
         = {_index_maps[0]->size_local(), _index_maps[1]->size_local()};
     const std::array local_range
@@ -296,6 +305,14 @@ public:
     }
   }
 
+  /// Get the number of local rows
+  /// @param[in] ghost_rows Set to true to include ghost rows in the
+  /// number of local rows
+  std::int32_t rows(bool ghost_rows = false)
+  {
+    return ghost_rows ? _row_ptr.size() - 1 : _index_maps[0]->size_local();
+  }
+
   /// Copy to a dense matrix
   /// @note This function is typically used for debugging and not used
   /// in production
@@ -304,8 +321,7 @@ public:
   /// @return Dense copy of the matrix
   xt::xtensor<T, 2> to_dense(bool ghost_rows = false) const
   {
-    const std::int32_t nrows
-        = ghost_rows ? _row_ptr.size() - 1 : _index_maps[0]->size_local();
+    const std::int32_t nrows = rows(ghost_rows);
     const std::int32_t ncols
         = _index_maps[1]->size_local() + _index_maps[1]->num_ghosts();
     xt::xtensor<T, 2> A = xt::zeros<T>({nrows, ncols});
@@ -388,7 +404,7 @@ public:
   /// IndexMap contains all local and ghost columns that may exist in
   /// the owned rows.
   ///
-  /// @return Row (0) and column (2) index maps
+  /// @return Row (0) and column (1) index maps
   const std::array<std::shared_ptr<const common::IndexMap>, 2>&
   index_maps() const
   {
@@ -396,16 +412,44 @@ public:
   }
 
   /// Get local data values
-  xtl::span<T> values() { return _data; }
+  /// @param[in] ghost_rows Set to true to include data of ghost rows
+  xtl::span<T> values(bool ghost_rows = false)
+  {
+    const std::int32_t nrows = rows(ghost_rows);
+    return xtl::span<T>(_data.data(), _row_ptr.at(nrows));
+  }
 
   /// Get local values (const version)
-  xtl::span<const T> values() const { return _data; }
+  /// @param[in] ghost_rows Set to true to include data of ghost rows
+  xtl::span<const T> values(bool ghost_rows = false) const
+  {
+    const std::int32_t nrows = rows(ghost_rows);
+    return xtl::span<const T>(_data.data(), _row_ptr.at(nrows));
+  }
 
   /// Get local row pointers
-  xtl::span<const std::int32_t> const row_ptr() { return _row_ptr; }
+  /// @param[in] ghost_rows Set to true to include data of ghost rows
+  xtl::span<const std::int32_t> const row_ptr(bool ghost_rows = false)
+  {
+    const std::int32_t nrows = rows(ghost_rows);
+    return xtl::span<const std::int32_t>(_row_ptr.data(), nrows + 1);
+  }
 
   /// Get local column indices
-  xtl::span<const std::int32_t> const cols() { return _cols; }
+  /// @param[in] ghost_rows Set to true to include data of ghost rows
+  xtl::span<const std::int32_t> const cols(bool ghost_rows = false)
+  {
+    const std::int32_t nrows = rows(ghost_rows);
+    return xtl::span<const std::int32_t>(_cols.data(), _row_ptr.at(nrows));
+  }
+
+  /// Get start of off-diagonal (unowned columns) on each row
+  /// @param[in] ghost_rows Set to true to include data of ghost rows
+  xtl::span<const std::int32_t> const off_diag_offset(bool ghost_rows = false)
+  {
+    const std::size_t nrows = rows(ghost_rows);
+    return xtl::span<const std::int32_t>(_off_diagonal_offset.data(), nrows);
+  }
 
 private:
   // Maps describing the data layout for rows and columns
@@ -417,6 +461,9 @@ private:
   // Matrix data
   std::vector<T, Allocator> _data;
   std::vector<std::int32_t> _cols, _row_ptr;
+
+  // Start of off-diagonal (unowned columns) on each row
+  std::vector<std::int32_t> _off_diagonal_offset;
 
   // Neighborhood communicator (ghost->owner communicator for rows)
   dolfinx::MPI::Comm _comm;

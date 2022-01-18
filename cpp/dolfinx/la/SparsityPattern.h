@@ -116,6 +116,9 @@ public:
   /// Sparsity pattern graph. Uses local indices for the columns.
   const graph::AdjacencyList<std::int32_t>& graph() const;
 
+  /// Row-wise start of off-diagonal (unowned columns) on each row
+  xtl::span<const int> off_diagonal_offset() const;
+
   /// Return MPI communicator
   MPI_Comm comm() const;
 

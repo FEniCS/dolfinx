@@ -424,5 +424,10 @@ const graph::AdjacencyList<std::int32_t>& SparsityPattern::graph() const
   return *_graph;
 }
 //-----------------------------------------------------------------------------
+xtl::span<const int> SparsityPattern::off_diagonal_offset() const
+{
+  return _off_diagonal_offset;
+}
+//-----------------------------------------------------------------------------
 MPI_Comm SparsityPattern::comm() const { return _comm.comm(); }
 //-----------------------------------------------------------------------------
