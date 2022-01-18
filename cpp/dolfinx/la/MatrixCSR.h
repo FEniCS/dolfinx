@@ -17,9 +17,19 @@ namespace dolfinx::la
 {
 
 /// Distributed sparse matrix
-/// Highly "experimental" storage of a matrix in CSR format which can be
-/// assembled into using the usual dolfinx assembly routines Matrix
-/// internal data can be accessed for interfacing with other code.
+///
+/// The matrix storage format is compressed sparse row. The matrix is
+/// partitioned row-wise across MPI rank.
+///
+/// @tparam T The data type for the matrix
+/// @tparam Allocator The memory allocator type for the data storage
+///
+/// @note Highly "experimental" storage of a matrix in CSR format which
+/// can be assembled into using the usual dolfinx assembly routines
+/// Matrix internal data can be accessed for interfacing with other
+/// code.
+///
+/// @todo Handle block sizes
 template <typename T, class Allocator = std::allocator<T>>
 class MatrixCSR
 {
@@ -27,15 +37,49 @@ public:
   /// The value type
   using value_type = T;
 
+  /// Insertion functor for setting values in matrix. It is typically
+  /// used in finite element assembly functions.
+  /// @param A Matrix to insert into
+  /// @return Function for inserting values into `A`
+  static std::function<int(int nr, const int* r, int nc, const int* c,
+                           const T* data)>
+  mat_set_values(MatrixCSR& A)
+  {
+    return [&A](int nr, const int* r, int nc, const int* c, const T* data)
+    {
+      A.set(tcb::span<const T>(data, nr * nc), tcb::span<const int>(r, nr),
+            tcb::span<const int>(c, nc));
+      return 0;
+    };
+  }
+
+  /// Insertion functor for accumulating values in matrix. It is
+  /// typically used in finite element assembly functions.
+  /// @param A Matrix to insert into
+  /// @return Function for inserting values into `A`
+  static std::function<int(int nr, const int* r, int nc, const int* c,
+                           const T* data)>
+  mat_add_values(MatrixCSR& A)
+  {
+    return [&A](int nr, const int* r, int nc, const int* c, const T* data)
+    {
+      A.add(tcb::span<const T>(data, nr * nc), tcb::span<const int>(r, nr),
+            tcb::span<const int>(c, nc));
+      return 0;
+    };
+  }
+
   /// Create a distributed matrix
+  /// @param[in] p The sparsty pattern the describes the parallel
+  /// distribution and the non-zero structure
+  /// @param[in] alloc The memory allocator for the data storafe
   MatrixCSR(const SparsityPattern& p, const Allocator& alloc = Allocator())
       : _index_maps({p.index_map(0), p.column_index_map()}),
         _bs({p.block_size(0), p.block_size(1)}),
         _data(p.num_nonzeros(), 0, alloc),
         _cols(p.graph().array().begin(), p.graph().array().end()),
         _row_ptr(p.graph().offsets().begin(), p.graph().offsets().end()),
-        _neighbor_comm(
-            p.index_map(0)->comm(common::IndexMap::Direction::reverse))
+        _comm(p.index_map(0)->comm(common::IndexMap::Direction::reverse))
   {
     // TODO: handle block sizes
     if (_bs[0] > 1 or _bs[1] > 1)
@@ -52,7 +96,8 @@ public:
     const std::vector<std::int64_t>& ghosts0 = _index_maps[0]->ghosts();
     const std::vector<std::int64_t>& ghosts1 = _index_maps[1]->ghosts();
 
-    const auto dest_ranks = dolfinx::MPI::neighbors(_neighbor_comm.comm())[1];
+    const std::vector<int> dest_ranks
+        = dolfinx::MPI::neighbors(_comm.comm())[1];
     const int num_neighbors = dest_ranks.size();
 
     // Global-to-local ranks for neighborhood
@@ -114,8 +159,7 @@ public:
     const graph::AdjacencyList<std::int64_t> ghost_index_data_out(
         std::move(ghost_index_data), std::move(index_send_disp));
     const graph::AdjacencyList<std::int64_t> ghost_index_data_in
-        = dolfinx::MPI::neighbor_all_to_all(_neighbor_comm.comm(),
-                                            ghost_index_data_out);
+        = dolfinx::MPI::neighbor_all_to_all(_comm.comm(), ghost_index_data_out);
 
     // Store received offsets for future use, when transferring data values.
     _val_recv_disp.resize(ghost_index_data_in.offsets().size());
@@ -160,27 +204,25 @@ public:
   }
 
   /// Set all non-zero local entries to a value
-  void set(T x)
-  {
-    std::int32_t local_size0 = _index_maps[0]->size_local();
-    std::fill_n(_data.begin(), local_size0, x);
-  }
+  /// @param[in] x The value to set non-zero matrix entries to
+  /// @todo This should probably also set ghost rows
+  void set(T x) { std::fill_n(_data.begin(), _index_maps[0]->size_local(), x); }
 
-  /// Set values in local matrix
+  /// Set values in the matrix
+  /// @note Only entries included in the sparsity pattern used to
+  /// initialize the matrix can be set
+  /// @note All indices are local to the calling MPI rank
   /// @param[in] x The `m` by `n` dense block of values (row-major) to
   /// set in the matrix
-  /// @param[in] rows The row indices of `x` (indices are local to the
-  /// MPI rank)
-  /// @param[in] cols The column indices of `x` (indices are local to
-  /// the MPI rank)
+  /// @param[in] rows The row indices of `x`
+  /// @param[in] cols The column indices of `x`
   void set(const xtl::span<const T>& x,
            const xtl::span<const std::int32_t>& rows,
            const xtl::span<const std::int32_t>& cols)
   {
+    assert(x.size() == rows.size() * cols.size());
     const std::int32_t local_size0 = _index_maps[0]->size_local();
     const std::int32_t num_ghosts0 = _index_maps[0]->num_ghosts();
-
-    assert(x.size() == rows.size() * cols.size());
     for (std::size_t r = 0; r < rows.size(); ++r)
     {
       // Columns indices for row
@@ -208,27 +250,14 @@ public:
     }
   }
 
-  /// Insertion functor to set local values in matrix
-  /// @param A Matrix to insert into
-  static std::function<int(int nr, const int* r, int nc, const int* c,
-                           const T* data)>
-  mat_set_values(MatrixCSR& A)
-  {
-    return [&A](int nr, const int* r, int nc, const int* c, const T* data)
-    {
-      A.set(tcb::span<const T>(data, nr * nc), tcb::span<const int>(r, nr),
-            tcb::span<const int>(c, nc));
-      return 0;
-    };
-  }
-
-  /// Add values to local matrix
+  /// Accumulate values in the matrix
+  /// @note Only entries included in the sparsity pattern used to
+  /// initialize the matrix can be accumulated in to
+  /// @note All indices are local to the calling MPI rank
   /// @param[in] x The `m` by `n` dense block of values (row-major) to
   /// add to the matrix
-  /// @param[in] rows The row indices of `x` (indices are local to the
-  /// MPI rank)
-  /// @param[in] cols The column indices of `x` (indices are local to
-  /// the MPI rank)
+  /// @param[in] rows The row indices of `x`
+  /// @param[in] cols The column indices of `x`
   void add(const xtl::span<const T>& x,
            const xtl::span<const std::int32_t>& rows,
            const xtl::span<const std::int32_t>& cols)
@@ -263,22 +292,11 @@ public:
     }
   }
 
-  /// Insertion functor to add values to matrix
-  /// @param A Matrix to insert into
-  static std::function<int(int nr, const int* r, int nc, const int* c,
-                           const T* data)>
-  mat_add_values(MatrixCSR& A)
-  {
-    return [&A](int nr, const int* r, int nc, const int* c, const T* data)
-    {
-      A.add(tcb::span<const T>(data, nr * nc), tcb::span<const int>(r, nr),
-            tcb::span<const int>(c, nc));
-      return 0;
-    };
-  }
-
-  /// Convert to a dense matrix
-  /// @param ghost_rows Include ghost rows
+  /// Copy to a dense matrix
+  /// @note This function is typically used for debugging and not used
+  /// in production
+  /// @param[in] ghost_rows Set to true to include ghost rows in the
+  /// returned matrix
   /// @return Dense copy of the matrix
   xt::xtensor<T, 2> to_dense(bool ghost_rows = false) const
   {
@@ -293,16 +311,17 @@ public:
     return A;
   }
 
-  /// Copy cached ghost values to row owner and add
+  /// Communicate ghost row data to the owning ranks
   void finalize()
   {
     finalize_begin();
     finalize_end();
   }
 
-  /// Begin transfer of ghost row entries to owning processes
-  /// using non-blocking communication with MPI.
-  /// @note Must be followed by finalize_end()
+  /// Begin communication of ghost row data to owning ranks
+  /// @note Calls to this function must be followed by
+  /// MatrixCSR::finalize_end(). Between the two calls matrix values
+  /// must not be changed.
   void finalize_begin()
   {
     const std::int32_t local_size0 = _index_maps[0]->size_local();
@@ -314,12 +333,12 @@ public:
     for (int i = 0; i < num_ghosts0; ++i)
     {
       const int neighbor_rank = _ghost_row_to_neighbor_rank[i];
+
       // Get position in send buffer
       const std::int32_t val_pos = insert_pos[neighbor_rank];
       std::copy(std::next(_data.data(), _row_ptr[local_size0 + i]),
                 std::next(_data.data(), _row_ptr[local_size0 + i + 1]),
                 std::next(ghost_value_data.begin(), val_pos));
-
       insert_pos[neighbor_rank]
           += _row_ptr[local_size0 + i + 1] - _row_ptr[local_size0 + i];
     }
@@ -339,12 +358,12 @@ public:
         ghost_value_data.data(), val_send_count.data(), _val_send_disp.data(),
         dolfinx::MPI::mpi_type<T>(), _ghost_value_data_in.data(),
         val_recv_count.data(), _val_recv_disp.data(),
-        dolfinx::MPI::mpi_type<T>(), _neighbor_comm.comm(), &_request);
+        dolfinx::MPI::mpi_type<T>(), _comm.comm(), &_request);
     assert(status == MPI_SUCCESS);
   }
 
-  /// Complete transfer of ghost rows to owning processes
-  /// @note Must be preceded by finalize_begin()
+  /// Begin communication of ghost row data to owning ranks
+  /// @note Must be preceded by MatrixCSR::finalize_begin()
   void finalize_end()
   {
     int status = MPI_Wait(&_request, MPI_STATUS_IGNORE);
@@ -355,7 +374,7 @@ public:
     for (std::size_t i = 0; i < _ghost_value_data_in.size(); ++i)
       _data[_unpack_pos[i]] += _ghost_value_data_in[i];
 
-    // Clear cache
+    // Set ghost row data to zero
     const std::int32_t local_size0 = _index_maps[0]->size_local();
     std::fill(std::next(_data.begin(), _row_ptr[local_size0]), _data.end(), 0);
   }
@@ -365,14 +384,14 @@ public:
   /// IndexMap contains all local and ghost columns that may exist in
   /// the owned rows.
   ///
-  /// @return Row and column index maps
+  /// @return Row (0) and column (2) index maps
   const std::array<std::shared_ptr<const common::IndexMap>, 2>&
   index_maps() const
   {
     return _index_maps;
   }
 
-  /// Get local values
+  /// Get local data values
   xtl::span<T> values() { return _data; }
 
   /// Get local values (const version)
@@ -385,30 +404,34 @@ public:
   xtl::span<const std::int32_t> const cols() { return _cols; }
 
 private:
-  // Map describing the data layout for rows and columns
-  // including ghost rows and ghost columns
+  // Maps describing the data layout for rows and columns
   std::array<std::shared_ptr<const common::IndexMap>, 2> _index_maps;
 
-  // // Block size
+  // Block sizes
   std::array<int, 2> _bs;
 
-  // Data
+  // Matrix data
   std::vector<T, Allocator> _data;
   std::vector<std::int32_t> _cols, _row_ptr;
 
-  // Precomputed data for finalize/update
   // Neighborhood communicator (ghost->owner communicator for rows)
-  dolfinx::MPI::Comm _neighbor_comm;
+  dolfinx::MPI::Comm _comm;
+
+  // -- Precomputed data for finalize/update
 
   // Request in non-blocking communication
   MPI_Request _request;
+
   // Position in _data to add received data
   std::vector<int> _unpack_pos;
+
   // Displacements for alltoall for each neighbor when sending and receiving
-  std::vector<int> _val_send_disp;
-  std::vector<int> _val_recv_disp;
+
+  std::vector<int> _val_send_disp, _val_recv_disp;
+
   // Ownership of each row, by neighbor
   std::vector<int> _ghost_row_to_neighbor_rank;
+
   // Temporary store for finalize data during non-blocking communication
   std::vector<T> _ghost_value_data_in;
 };
