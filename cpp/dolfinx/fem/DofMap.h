@@ -85,8 +85,9 @@ public:
                 graph::AdjacencyList<std::int32_t>, std::decay_t<U>>::value>>
   DofMap(E&& element, std::shared_ptr<const common::IndexMap> index_map,
          int index_map_bs, U&& dofmap, int bs)
-      : _element_dof_layout(std::forward<E>(element)), index_map(index_map),
-        _index_map_bs(index_map_bs), _dofmap(std::forward<U>(dofmap)), _bs(bs)
+      : index_map(index_map), _index_map_bs(index_map_bs),
+        _element_dof_layout(std::forward<E>(element)),
+        _dofmap(std::forward<U>(dofmap)), _bs(bs)
   {
     // Do nothing
   }
