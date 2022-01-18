@@ -44,21 +44,40 @@ determine_sharing_ranks(MPI_Comm comm,
   std::int64_t max_index = 0;
   if (!unknown_idx.empty())
     max_index = *std::max_element(unknown_idx.begin(), unknown_idx.end());
-  MPI_Allreduce(&max_index, &global_space, 1, MPI_INT64_T, MPI_SUM, comm);
+  MPI_Allreduce(&max_index, &global_space, 1, MPI_INT64_T, MPI_MAX, comm);
   global_space += 1;
 
-  std::vector<std::vector<std::int64_t>> send_indices(mpi_size);
+  std::vector<std::int32_t> send_sizes(mpi_size);
+  std::vector<std::int32_t> send_offsets(mpi_size + 1, 0);
   for (std::int64_t global_i : unknown_idx)
   {
     const int index_owner
         = dolfinx::MPI::index_owner(mpi_size, global_i, global_space);
-    send_indices[index_owner].push_back(global_i);
+    send_sizes[index_owner]++;
   }
+  std::partial_sum(send_sizes.begin(), send_sizes.end(),
+                   std::next(send_offsets.begin()));
+
+  std::vector<std::int64_t> send_indices(send_offsets.back());
+  for (std::int64_t global_i : unknown_idx)
+  {
+    const int index_owner
+        = dolfinx::MPI::index_owner(mpi_size, global_i, global_space);
+    send_indices[send_offsets[index_owner]] = global_i;
+    send_offsets[index_owner]++;
+  }
+  // Reset offsets
+  send_offsets[0] = 0;
+  std::partial_sum(send_sizes.begin(), send_sizes.end(),
+                   std::next(send_offsets.begin()));
+
+  LOG(INFO) << "Sending " << send_indices.size() << " indices";
+  const graph::AdjacencyList<std::int64_t> send_index_adj(
+      std::move(send_indices), std::move(send_offsets));
 
   const graph::AdjacencyList<std::int64_t> recv_indices
-      = dolfinx::MPI::all_to_all(
-          comm, graph::AdjacencyList<std::int64_t>(send_indices));
-
+      = dolfinx::MPI::all_to_all(comm, send_index_adj);
+    
   // Get index sharing - ownership will be first entry (randomised later)
   std::unordered_map<std::int64_t, std::vector<int>> index_to_owner;
   for (int p = 0; p < recv_indices.num_nodes(); ++p)
@@ -101,7 +120,7 @@ determine_sharing_ranks(MPI_Comm comm,
   index_to_owner.clear();
   for (int p = 0; p < mpi_size; ++p)
   {
-    const std::vector<std::int64_t>& send_v = send_indices[p];
+    xtl::span<const std::int64_t> send_v = send_index_adj.links(p);
     auto r_owner = recv_owner.links(p);
     std::size_t c(0), i(0);
     while (c < r_owner.size())
@@ -159,10 +178,10 @@ compute_vertex_markers(const graph::AdjacencyList<std::int64_t>& cells,
 
   // Any vertices which are in ghost cells set to -1
   std::unordered_map<std::int64_t, std::int32_t> global_to_local_v;
-  std::transform(ghost_vertex_set.begin(), ghost_vertex_set.end(),
-                 std::inserter(global_to_local_v, global_to_local_v.end()),
-                 [](auto idx)
-                 { return std::pair<std::int64_t, std::int32_t>(idx, -1); });
+  std::transform(
+      ghost_vertex_set.begin(), ghost_vertex_set.end(),
+      std::inserter(global_to_local_v, global_to_local_v.end()),
+      [](auto idx) { return std::pair<std::int64_t, std::int32_t>(idx, -1); });
 
   std::vector<std::int64_t> unknown_indices_set;
   for (std::int64_t global_index : local_vertex_set)
@@ -204,10 +223,11 @@ compute_neighbor_comm(const MPI_Comm& comm,
   // Create set of all ranks that share a vertex with this rank. Note
   // this can be 'wider' than the neighbor comm of shared cells.
   std::vector<int> neighbors;
-  std::for_each(
-      global_vertex_to_ranks.begin(), global_vertex_to_ranks.end(),
-      [&neighbors](auto& q)
-      { neighbors.insert(neighbors.end(), q.second.begin(), q.second.end()); });
+  std::for_each(global_vertex_to_ranks.begin(), global_vertex_to_ranks.end(),
+                [&neighbors](auto& q) {
+                  neighbors.insert(neighbors.end(), q.second.begin(),
+                                   q.second.end());
+                });
   std::sort(neighbors.begin(), neighbors.end());
   neighbors.erase(std::unique(neighbors.begin(), neighbors.end()),
                   neighbors.end());
@@ -402,8 +422,9 @@ graph::AdjacencyList<std::int32_t> convert_cells_to_local_indexing(
   std::transform(cells.array().begin(),
                  std::next(cells.array().begin(), cells_array_local.size()),
                  cells_array_local.begin(),
-                 [&global_to_local_vertices](std::int64_t i)
-                 { return global_to_local_vertices.at(i); });
+                 [&global_to_local_vertices](std::int64_t i) {
+                   return global_to_local_vertices.at(i);
+                 });
 
   return graph::AdjacencyList<std::int32_t>(std::move(cells_array_local),
                                             std::move(local_offsets));
