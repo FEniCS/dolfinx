@@ -102,14 +102,14 @@ int main(int argc, char* argv[])
     // only owned columns and rows. The block Ai[1] contains ghost columns
     // (unowned dofs).
 
-    // Likewise, a vector x can be decomposed into owned and ghost blocks:
+    // Likewise, a local vector x can be decomposed into owned and ghost blocks:
     // xi = |   x[0]  |
     //      |   x[1]  |
     //
     // So the product y = Ax can be computed into two separate steps:
     //  y[0] = |Ai[0] Ai[1]| |   x[0]  | = Ai[0] x[0] + Ai[1] x[1]
     //                       |   x[1]  |
-    //
+    // Since the ghost values x[1] are not always available
     //
     // Create function to compute y = A x in parallel
     auto spmv = [&A](la::Vector<T>& x, la::Vector<T>& y)
@@ -131,14 +131,14 @@ int main(int argc, char* argv[])
       xtl::span<const std::int32_t> row_end(row_ptr.data() + 1, nrows);
 
       // First stage:  spmv - diagonal
-      // yi += Ai_diag * xi
+      // yi[0] += Ai[0] * xi[0]
       spmv_impl<T>(values, row_begin, off_diag_offset, cols, _x, _y);
 
       // finalize ghost update
       x.scatter_fwd_end();
 
       // Second stage:  spmv - off-diagonal
-      // yi += Ai_off * xi
+      // yi[0] += Ai[1] * xi[1]
       spmv_impl<T>(values, off_diag_offset, row_end, cols, _x, _y);
     };
 
