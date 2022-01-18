@@ -40,11 +40,8 @@ remap_dofs(const std::vector<std::int32_t>& old_to_new,
 fem::DofMap build_collapsed_dofmap(MPI_Comm comm, const DofMap& dofmap_view,
                                    const mesh::Topology& topology)
 {
-  auto element_dof_layout = std::make_shared<ElementDofLayout>(
-      dofmap_view.element_dof_layout->copy());
-  assert(element_dof_layout);
-
-  if (element_dof_layout->block_size() > 1)
+  ElementDofLayout element_dof_layout(dofmap_view.element_dof_layout());
+  if (element_dof_layout.block_size() > 1)
   {
     throw std::runtime_error(
         "Cannot collapse dofmap with block size greater "
@@ -129,13 +126,12 @@ fem::DofMap build_collapsed_dofmap(MPI_Comm comm, const DofMap& dofmap_view,
   std::vector<std::int32_t> dofmap = remap_dofs(old_to_new, dof_array_view);
 
   // Dimension sanity checks
-  assert(element_dof_layout);
   assert((int)dofmap.size()
-         == (cells->num_nodes() * element_dof_layout->num_dofs()));
+         == (cells->num_nodes() * element_dof_layout.num_dofs()));
 
-  const int cell_dimension = element_dof_layout->num_dofs();
+  const int cell_dimension = element_dof_layout.num_dofs();
   assert(dofmap.size() % cell_dimension == 0);
-  return fem::DofMap(element_dof_layout, index_map, 1,
+  return fem::DofMap(std::move(element_dof_layout), index_map, 1,
                      graph::build_adjacency_list<std::int32_t>(
                          std::move(dofmap), cell_dimension),
                      1);
@@ -200,14 +196,9 @@ DofMap DofMap::extract_sub_dofmap(const std::vector<int>& component) const
 {
   assert(!component.empty());
 
-  // Set element dof layout and cell dimension
-  assert(element_dof_layout);
-  std::shared_ptr<const ElementDofLayout> sub_element_dof_layout
-      = this->element_dof_layout->sub_dofmap(component);
-
   // Get components in parent map that correspond to sub-dofs
   const std::vector sub_element_map_view
-      = this->element_dof_layout->sub_view(component);
+      = this->element_dof_layout().sub_view(component);
 
   // Build dofmap by extracting from parent
   const int num_cells = this->_dofmap.num_nodes();
@@ -227,7 +218,13 @@ DofMap DofMap::extract_sub_dofmap(const std::vector<int>& component) const
   }
 
   // FIXME X
-  return DofMap(sub_element_dof_layout, this->index_map, this->index_map_bs(),
+
+  // Set element dof layout and cell dimension
+  ElementDofLayout sub_element_dof_layout
+      = *(this->element_dof_layout().sub_dofmap(component));
+
+  return DofMap(std::move(sub_element_dof_layout), this->index_map,
+                this->index_map_bs(),
                 graph::build_adjacency_list<std::int32_t>(std::move(dofmap),
                                                           dofs_per_cell),
                 1);
@@ -238,7 +235,6 @@ std::pair<std::unique_ptr<DofMap>, std::vector<std::int32_t>> DofMap::collapse(
     const std::function<std::vector<int>(
         const graph::AdjacencyList<std::int32_t>&)>& reorder_fn) const
 {
-  assert(element_dof_layout);
   assert(index_map);
 
   // Create new element dof layout and reset parent
@@ -247,18 +243,17 @@ std::pair<std::unique_ptr<DofMap>, std::vector<std::int32_t>> DofMap::collapse(
   // new submap to get block structure for collapsed dofmap.
   // Create new dofmap
   std::unique_ptr<DofMap> dofmap_new;
-  if (this->index_map_bs() == 1 and this->element_dof_layout->block_size() > 1)
+  if (this->index_map_bs() == 1 and _element_dof_layout.block_size() > 1)
   {
     // Create new element dof layout and reset parent
-    auto collapsed_dof_layout
-        = std::make_shared<ElementDofLayout>(element_dof_layout->copy());
+    ElementDofLayout collapsed_dof_layout = _element_dof_layout;
 
     // Parent does not have block structure but sub-map does, so build
     // new submap to get block structure for collapsed dofmap.
     auto [_index_map, bs, dofmap] = fem::build_dofmap_data(
-        comm, topology, *collapsed_dof_layout, reorder_fn);
+        comm, topology, collapsed_dof_layout, reorder_fn);
     auto index_map = std::make_shared<common::IndexMap>(std::move(_index_map));
-    dofmap_new = std::make_unique<DofMap>(element_dof_layout, index_map, bs,
+    dofmap_new = std::make_unique<DofMap>(_element_dof_layout, index_map, bs,
                                           std::move(dofmap), bs);
   }
   else

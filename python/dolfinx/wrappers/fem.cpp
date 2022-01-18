@@ -842,8 +842,8 @@ void fem(py::module& m)
       {
         ufcx_dofmap* p = reinterpret_cast<ufcx_dofmap*>(dofmap);
         assert(p);
-        auto layout = std::make_shared<dolfinx::fem::ElementDofLayout>(
-            dolfinx::fem::create_element_dof_layout(*p, topology.cell_type()));
+        dolfinx::fem::ElementDofLayout layout
+            = dolfinx::fem::create_element_dof_layout(*p, topology.cell_type());
         return dolfinx::fem::create_dofmap(comm.get(), layout, topology,
                                            nullptr, element);
       },
@@ -930,7 +930,7 @@ void fem(py::module& m)
   // dolfinx::fem::DofMap
   py::class_<dolfinx::fem::DofMap, std::shared_ptr<dolfinx::fem::DofMap>>(
       m, "DofMap", "DofMap object")
-      .def(py::init<std::shared_ptr<const dolfinx::fem::ElementDofLayout>,
+      .def(py::init<const dolfinx::fem::ElementDofLayout&,
                     std::shared_ptr<const dolfinx::common::IndexMap>, int,
                     dolfinx::graph::AdjacencyList<std::int32_t>&, int>(),
            py::arg("element_dof_layout"), py::arg("index_map"),
@@ -938,7 +938,8 @@ void fem(py::module& m)
       .def_readonly("index_map", &dolfinx::fem::DofMap::index_map)
       .def_property_readonly("index_map_bs",
                              &dolfinx::fem::DofMap::index_map_bs)
-      .def_readonly("dof_layout", &dolfinx::fem::DofMap::element_dof_layout)
+      .def_property_readonly("dof_layout",
+                             &dolfinx::fem::DofMap::element_dof_layout)
       .def("cell_dofs",
            [](const dolfinx::fem::DofMap& self, int cell)
            {

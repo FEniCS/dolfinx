@@ -105,8 +105,7 @@ std::vector<Scalar> _get_cell_data_values(const fem::Function<Scalar>& u)
   std::vector<std::int32_t> dof_set;
   dof_set.reserve(local_size);
   const auto dofmap = u.function_space()->dofmap();
-  assert(dofmap->element_dof_layout);
-  const int ndofs = dofmap->element_dof_layout->num_dofs();
+  const int ndofs = dofmap->element_dof_layout().num_dofs();
   const int bs = dofmap->bs();
   assert(ndofs * bs == value_size);
 

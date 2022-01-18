@@ -54,8 +54,7 @@ bool has_cell_centred_data(const fem::Function<Scalar>& u)
 
   assert(u.function_space());
   assert(u.function_space()->dofmap());
-  assert(u.function_space()->dofmap()->element_dof_layout);
-  return (u.function_space()->dofmap()->element_dof_layout->num_dofs()
+  return (u.function_space()->dofmap()->element_dof_layout().num_dofs()
               * u.function_space()->dofmap()->bs()
           == cell_based_dim);
 }

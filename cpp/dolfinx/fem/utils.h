@@ -126,8 +126,7 @@ ElementDofLayout create_element_dof_layout(const ufcx_dofmap& dofmap,
 /// @param[in] reorder_fn The graph reordering function called on the
 /// dofmap
 DofMap
-create_dofmap(MPI_Comm comm,
-              const std::shared_ptr<const fem::ElementDofLayout>& layout,
+create_dofmap(MPI_Comm comm, const fem::ElementDofLayout& layout,
               mesh::Topology& topology,
               const std::function<std::vector<int>(
                   const graph::AdjacencyList<std::int32_t>&)>& reorder_fn,
