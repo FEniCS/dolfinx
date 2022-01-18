@@ -106,8 +106,8 @@ int main(int argc, char* argv[])
     // xi = |   x[0]  |
     //      |   x[1]  |
 
-    //  y = |Ai[0] Ai[1]| |   x[0]  | = Ai[0] x[0] + Ai[1] x[1]
-    //                    |   x[1]  |
+    //  y[0] = |Ai[0] Ai[1]| |   x[0]  | = Ai[0] x[0] + Ai[1] x[1]
+    //                       |   x[1]  |
 
     // Create function to compute y = A x in parallel
     auto spmv = [&A](la::Vector<T>& x, la::Vector<T>& y)
