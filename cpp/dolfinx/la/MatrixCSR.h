@@ -203,6 +203,10 @@ public:
     }
   }
 
+  /// Move constructor
+  /// @todo Check handling of MPI_Request
+  MatrixCSR(MatrixCSR&& A) = default;
+
   /// Set all non-zero local entries to a value
   /// @param[in] x The value to set non-zero matrix entries to
   /// @todo This should probably also set ghost rows
