@@ -57,9 +57,9 @@ int main(int argc, char* argv[])
     MPI_Comm comm = MPI_COMM_WORLD;
 
     // Create mesh and function space
-    auto mesh = std::make_shared<mesh::Mesh>(
-        mesh::create_box(comm, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}}}, {2, 2, 2},
-                         mesh::CellType::tetrahedron, mesh::GhostMode::none));
+    auto mesh = std::make_shared<mesh::Mesh>(mesh::create_box(
+        comm, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}}}, {10, 10, 10},
+        mesh::CellType::tetrahedron, mesh::GhostMode::none));
 
     auto V = std::make_shared<fem::FunctionSpace>(
         fem::create_functionspace(functionspace_form_poisson_a, "u", mesh));
@@ -124,7 +124,7 @@ int main(int argc, char* argv[])
       x.scatter_fwd_end();
 
       // Second stage:  spmv - off-diagonal
-      // spmv_impl<T>(values, off_diag_offset, row_end, cols, _x, _y);
+      spmv_impl<T>(values, off_diag_offset, row_end, cols, _x, _y);
     };
 
     // Two stage matrix vector computation
