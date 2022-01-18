@@ -429,7 +429,7 @@ public:
 
   /// Get local row pointers
   /// @param[in] ghost_rows Set to true to include data of ghost rows
-  xtl::span<const std::int32_t> const row_ptr(bool ghost_rows = false)
+  xtl::span<const std::int32_t> row_ptr(bool ghost_rows = false) const
   {
     const std::int32_t nrows = rows(ghost_rows);
     return xtl::span<const std::int32_t>(_row_ptr.data(), nrows + 1);
@@ -437,7 +437,7 @@ public:
 
   /// Get local column indices
   /// @param[in] ghost_rows Set to true to include data of ghost rows
-  xtl::span<const std::int32_t> const cols(bool ghost_rows = false)
+  xtl::span<const std::int32_t> cols(bool ghost_rows = false) const
   {
     const std::int32_t nrows = rows(ghost_rows);
     return xtl::span<const std::int32_t>(_cols.data(), _row_ptr.at(nrows));
@@ -445,7 +445,7 @@ public:
 
   /// Get start of off-diagonal (unowned columns) on each row
   /// @param[in] ghost_rows Set to true to include data of ghost rows
-  xtl::span<const std::int32_t> const off_diag_offset(bool ghost_rows = false)
+  xtl::span<const std::int32_t> off_diag_offset(bool ghost_rows = false) const
   {
     const std::size_t nrows = rows(ghost_rows);
     return xtl::span<const std::int32_t>(_off_diagonal_offset.data(), nrows);
