@@ -11,7 +11,14 @@ using T = PetscScalar;
 
 namespace
 {
-
+/// Computes y += A*x for a local CSR matrix A and local dense vectors x,y
+/// @param[in] values Nonzero values of A
+/// @param[in] row_begin First index of each row in the arrays values and
+/// indices.
+/// @param[in] row_end Last index of each row in the arrays values and indices.
+/// @param[in] indices Column indices for each non-zero element of the matrix A
+/// @param[in] x Input vector
+/// @param[in, out] x Output vector
 template <typename T>
 void spmv_impl(xtl::span<const T> values,
                xtl::span<const std::int32_t> row_begin,
