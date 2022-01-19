@@ -10,7 +10,3 @@ f = Coefficient(V)
 kappa = Constant(mesh)
 
 a = kappa * inner(grad(u), grad(v)) * dx
-L = inner(f, v) * dx
-
-ui = Coefficient(V)
-M = action(a, ui)
