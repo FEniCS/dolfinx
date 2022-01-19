@@ -38,21 +38,3 @@ try:
         file.write(0.0)
 except ImportError:
     print("ADIOS2 required for VTK output")
-
-
-# # Plot solution
-# try:
-#     import pyvista
-    # from dolfinx import plot
-#     topology, cell_types = plot.create_vtk_topology(mesh, mesh.topology.dim)
-#     grid = pyvista.UnstructuredGrid(topology, cell_types, mesh.geometry.x)
-#     grid.point_data["u0"] = u0.real
-#     grid.set_active_scalars("u0")
-
-#     plotter = pyvista.Plotter()
-#     plotter.add_mesh(grid, show_edges=True)
-#     warped = grid.warp_by_scalar()
-#     plotter.add_mesh(warped)
-#     plotter.show()
-# except ModuleNotFoundError:
-#     print("pyvista is required to visualise the solution")
