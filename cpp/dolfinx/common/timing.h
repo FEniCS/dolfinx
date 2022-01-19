@@ -39,7 +39,7 @@ Table timings(std::set<TimingType> type);
 ///                 TimingType::system }
 /// @param[in] reduction MPI Reduction to apply (min, max or average)
 void list_timings(MPI_Comm comm, std::set<TimingType> type,
-                  Table::Reduction reduction = Table::Reduction::average);
+                  Table::Reduction reduction = Table::Reduction::max);
 
 /// Return timing (count, total wall time, total user time, total system
 /// time) for given task.
