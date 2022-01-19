@@ -49,18 +49,21 @@ void common(py::module& m)
       .value("add", dolfinx::common::IndexMap::Mode::add)
       .value("insert", dolfinx::common::IndexMap::Mode::insert);
 
+  py::enum_<dolfinx::Table::Reduction>(m, "Reduction")
+      .value("max", dolfinx::Table::Reduction::max)
+      .value("min", dolfinx::Table::Reduction::min)
+      .value("average", dolfinx::Table::Reduction::average);
+
   // dolfinx::common::IndexMap
   py::class_<dolfinx::common::IndexMap,
              std::shared_ptr<dolfinx::common::IndexMap>>(m, "IndexMap")
-      .def(py::init(
-          [](const MPICommWrapper comm, std::int32_t local_size,
-             const std::vector<int>& dest_ranks,
-             const std::vector<std::int64_t>& ghosts,
-             const std::vector<int>& ghost_owners)
-          {
-            return std::make_shared<dolfinx::common::IndexMap>(
-                comm.get(), local_size, dest_ranks, ghosts, ghost_owners);
-          }))
+      .def(py::init([](const MPICommWrapper comm, std::int32_t local_size,
+                       const std::vector<int>& dest_ranks,
+                       const std::vector<std::int64_t>& ghosts,
+                       const std::vector<int>& ghost_owners) {
+        return std::make_shared<dolfinx::common::IndexMap>(
+            comm.get(), local_size, dest_ranks, ghosts, ghost_owners);
+      }))
       .def_property_readonly("size_local",
                              &dolfinx::common::IndexMap::size_local)
       .def_property_readonly("size_global",
@@ -72,13 +75,13 @@ void common(py::module& m)
                              "Range of indices owned by this map")
       .def(
           "ghost_owner_rank",
-          [](const dolfinx::common::IndexMap& self)
-          { return as_pyarray(self.ghost_owner_rank()); },
+          [](const dolfinx::common::IndexMap& self) {
+            return as_pyarray(self.ghost_owner_rank());
+          },
           "Return owning process for each ghost index")
       .def_property_readonly(
           "ghosts",
-          [](const dolfinx::common::IndexMap& self)
-          {
+          [](const dolfinx::common::IndexMap& self) {
             const std::vector<std::int64_t>& ghosts = self.ghosts();
             return py::array_t<std::int64_t>(ghosts.size(), ghosts.data(),
                                              py::cast(self));
@@ -87,8 +90,7 @@ void common(py::module& m)
       .def("global_indices", &dolfinx::common::IndexMap::global_indices)
       .def("local_to_global",
            [](const dolfinx::common::IndexMap& self,
-              const py::array_t<std::int32_t, py::array::c_style>& local)
-           {
+              const py::array_t<std::int32_t, py::array::c_style>& local) {
              if (local.ndim() != 1)
                throw std::runtime_error("Array of local indices must be 1D.");
              py::array_t<std::int64_t> global(local.size());
@@ -99,8 +101,7 @@ void common(py::module& m)
            })
       .def("create_submap",
            [](const dolfinx::common::IndexMap& self,
-              const py::array_t<std::int32_t, py::array::c_style>& entities)
-           {
+              const py::array_t<std::int32_t, py::array::c_style>& entities) {
              auto [map, ghosts] = self.create_submap(entities);
              return std::pair(std::move(map), as_pyarray(std::move(ghosts)));
            });
@@ -124,19 +125,17 @@ void common(py::module& m)
   m.def("timing", &dolfinx::timing);
 
   m.def("list_timings",
-        [](const MPICommWrapper comm, std::vector<dolfinx::TimingType> type)
-        {
+        [](const MPICommWrapper comm, std::vector<dolfinx::TimingType> type,
+           dolfinx::Table::Reduction reduction) {
           std::set<dolfinx::TimingType> _type(type.begin(), type.end());
-          dolfinx::list_timings(comm.get(), _type);
+          dolfinx::list_timings(comm.get(), _type, reduction);
         });
 
-  m.def("init_logging",
-        [](std::vector<std::string> args)
-        {
-          std::vector<char*> argv(args.size() + 1, nullptr);
-          for (std::size_t i = 0; i < args.size(); ++i)
-            argv[i] = const_cast<char*>(args[i].data());
-          dolfinx::common::subsystem::init_logging(args.size(), argv.data());
-        });
+  m.def("init_logging", [](std::vector<std::string> args) {
+    std::vector<char*> argv(args.size() + 1, nullptr);
+    for (std::size_t i = 0; i < args.size(); ++i)
+      argv[i] = const_cast<char*>(args[i].data());
+    dolfinx::common::subsystem::init_logging(args.size(), argv.data());
+  });
 }
 } // namespace dolfinx_wrappers
