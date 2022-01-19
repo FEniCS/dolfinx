@@ -2,7 +2,7 @@
 import numpy as np
 
 from dolfinx.fem import Function, FunctionSpace, VectorFunctionSpace
-from dolfinx.mesh import CellType, create_rectangle
+from dolfinx.mesh import CellType, create_rectangle, locate_entities
 
 from mpi4py import MPI
 from petsc4py.PETSc import ScalarType
@@ -14,16 +14,13 @@ mesh = create_rectangle(MPI.COMM_WORLD, ((0.0, 0.0), (1.0, 1.0)), (16, 16), Cell
 V = FunctionSpace(mesh, ("Nedelec 1st kind H(curl)", 2))
 u = Function(V, dtype=ScalarType)
 
+tdim = mesh.topology.dim
+cells0 = locate_entities(mesh, tdim, lambda x: x[0] < 0.5)
+cells1 = locate_entities(mesh, tdim, lambda x: x[0] >= 0.5)
 
-def f(x):
-    """TODO"""
-    v = x[:2, :]
-    v[0] = np.where(x[0] < 0.5, v[0], v[0] + 1)
-    return v
-
-
-# Interpolate f in the Nedelec/H(curl) space
-u.interpolate(f)
+# Interpolate a function in the Nedelec/H(curl) space
+u.interpolate(lambda x: x[:2], cells0)
+u.interpolate(lambda x: x[:2] + 1, cells1)
 
 # Create a vector-valued discontinuous Lagrange space and function, and
 # interpolate the H(curl) function u

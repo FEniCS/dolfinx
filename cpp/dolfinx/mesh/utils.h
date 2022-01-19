@@ -77,10 +77,10 @@ compute_midpoints(const Mesh& mesh, int dim,
 ///
 /// @param[in] mesh The mesh
 /// @param[in] dim The topological dimension of the entities to be
-///   considered
+/// considered
 /// @param[in] marker The marking function
 /// @returns List of marked entity indices, including any ghost indices
-///   (indices local to the process)
+/// (indices local to the process)
 std::vector<std::int32_t> locate_entities(
     const Mesh& mesh, int dim,
     const std::function<xt::xtensor<bool, 1>(const xt::xtensor<double, 2>&)>&
