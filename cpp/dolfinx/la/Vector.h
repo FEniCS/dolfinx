@@ -26,8 +26,8 @@ class Vector
 public:
   /// The value type
   using value_type = T;
-  
-  /// The allocator type 
+
+  /// The allocator type
   using allocator_type = Allocator;
 
   /// Create a distributed vector
@@ -44,6 +44,7 @@ public:
       MPI_Type_commit(&_datatype);
     }
 
+    // Pre-allocate buffers data
     const std::vector<std::int32_t>& indices
         = _map->scatter_fwd_indices().array();
     _buffer_send_fwd.resize(_bs * indices.size());
