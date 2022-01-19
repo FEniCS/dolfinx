@@ -45,7 +45,9 @@ public:
   /// printed.
   /// @param comm MPI Communicator
   /// @param type Set of possible timings: wall, user or system
-  void list_timings(MPI_Comm comm, std::set<TimingType> type);
+  /// @param reduction Reduction type (min, max or average)
+  void list_timings(MPI_Comm comm, std::set<TimingType> type,
+                    Table::Reduction reduction);
 
   /// Return timing
   /// @param[in] task The task name to retrieve the timing for
