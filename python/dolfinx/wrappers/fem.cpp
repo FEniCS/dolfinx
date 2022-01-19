@@ -349,7 +349,8 @@ void declare_objects(py::module& m, const std::string& type)
           [](dolfinx::fem::Function<T>& self, dolfinx::fem::Function<T>& u,
              const py::array_t<std::int32_t, py::array::c_style>& cells)
           { self.interpolate(u, cells); },
-          py::arg("u"), py::arg("cells"), "Interpolate a finite element function")
+          py::arg("u"), py::arg("cells"),
+          "Interpolate a finite element function")
       .def(
           "interpolate_ptr",
           [](dolfinx::fem::Function<T>& self, std::uintptr_t addr,

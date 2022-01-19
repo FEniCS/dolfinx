@@ -692,4 +692,5 @@ void interpolate(Function<T>& u, const Expression<T>& expr,
   // Interpolate values into appropriate space
   interpolate(u, _f, cells);
 }
+
 } // namespace dolfinx::fem

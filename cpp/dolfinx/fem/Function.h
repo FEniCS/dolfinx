@@ -14,6 +14,7 @@
 #include <dolfinx/common/UniqueIdGenerator.h>
 #include <dolfinx/la/Vector.h>
 #include <dolfinx/mesh/Geometry.h>
+#include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
 #include <functional>
 #include <memory>
@@ -28,9 +29,7 @@
 
 namespace dolfinx::fem
 {
-
 class FunctionSpace;
-
 template <typename T>
 class Expression;
 
@@ -40,7 +39,6 @@ class Expression;
 /// \f[     u_h = \sum_{i=1}^{n} U_i \phi_i \f]
 /// where \f$ \{\phi_i\}_{i=1}^{n} \f$ is a basis for \f$ V_h \f$,
 /// and \f$ U \f$ is a vector of expansion coefficients for \f$ u_h \f$.
-
 template <typename T>
 class Function
 {
@@ -228,11 +226,26 @@ public:
 
   /// Interpolate an Expression (based on UFL)
   /// @param[in] e The function to be interpolated
-  /// @param[in] cells The cells to interpolate into
+  /// @param[in] cells The cells to interpolate on
   void interpolate(const Expression<T>& e,
                    const xtl::span<const std::int32_t>& cells)
   {
     fem::interpolate(*this, e, cells);
+  }
+
+  /// Interpolate an Expression (based on UFL) on all cells
+  /// @param[in] e The function to be interpolated
+  void interpolate(const Expression<T>& e)
+  {
+    assert(_function_space);
+    assert(_function_space->mesh());
+    const int tdim = _function_space->mesh()->topology().dim();
+    auto cell_map = _function_space->mesh()->topology().index_map(tdim);
+    assert(cell_map);
+    std::int32_t num_cells = cell_map->size_local() + cell_map->num_ghosts();
+    std::vector<std::int32_t> cells(num_cells, 0);
+    std::iota(cells.begin(), cells.end(), 0);
+    interpolate(e, cells);
   }
 
   /// Evaluate the Function at points
