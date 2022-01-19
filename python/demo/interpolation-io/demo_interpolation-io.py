@@ -1,6 +1,4 @@
 
-import numpy as np
-
 from dolfinx.fem import Function, FunctionSpace, VectorFunctionSpace
 from dolfinx.mesh import CellType, create_rectangle, locate_entities
 
