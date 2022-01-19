@@ -229,12 +229,10 @@ def test_interpolation_nedelec(order1, order2):
     mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2)
     V = FunctionSpace(mesh, ("N1curl", order1))
     V1 = FunctionSpace(mesh, ("N1curl", order2))
-
-    u = Function(V)
-    v = Function(V1)
+    u, v = Function(V), Function(V1)
 
     # The expression "lambda x: x" is contained in the N1curl function
-    # space order>1
+    # space for order > 1
     u.interpolate(lambda x: x)
     v.interpolate(u)
     assert np.isclose(assemble_scalar(form(ufl.inner(u - v, u - v) * ufl.dx)), 0)
