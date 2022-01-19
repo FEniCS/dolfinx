@@ -19,9 +19,10 @@ Table dolfinx::timings(std::set<TimingType> type)
   return TimeLogManager::logger().timings(type);
 }
 //-----------------------------------------------------------------------------
-void dolfinx::list_timings(MPI_Comm comm, std::set<TimingType> type)
+void dolfinx::list_timings(MPI_Comm comm, std::set<TimingType> type,
+                           Table::Reduction reduction)
 {
-  TimeLogManager::logger().list_timings(comm, type);
+  TimeLogManager::logger().list_timings(comm, type, reduction);
 }
 //-----------------------------------------------------------------------------
 std::tuple<std::size_t, double, double, double>
