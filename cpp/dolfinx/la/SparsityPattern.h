@@ -97,9 +97,9 @@ public:
   std::vector<std::int64_t> column_indices() const;
 
   /// Compute IndexMap for columns after SparsityPattern assembly
-  /// @return IndexMap for all non-zero columns on this process, including
-  /// ghosts
-  std::shared_ptr<const common::IndexMap> column_index_map() const;
+  /// @return IndexMap for all non-zero columns on this process,
+  /// including ghosts
+  common::IndexMap column_index_map() const;
 
   /// Return index map block size for dimension dim
   int block_size(int dim) const;

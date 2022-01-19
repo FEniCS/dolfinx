@@ -213,30 +213,25 @@ std::vector<std::int64_t> SparsityPattern::column_indices() const
   const std::int32_t local_size = range[1] - range[0];
   const std::int32_t num_ghosts = _col_ghosts.size();
   std::vector<std::int64_t> global(local_size + num_ghosts);
-  std::iota(global.begin(), global.begin() + local_size, range[0]);
+  std::iota(global.begin(), std::next(global.begin(), local_size), range[0]);
   std::copy(_col_ghosts.begin(), _col_ghosts.end(),
             global.begin() + local_size);
   return global;
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const common::IndexMap>
-SparsityPattern::column_index_map() const
+common::IndexMap SparsityPattern::column_index_map() const
 {
   if (!_graph)
     throw std::runtime_error("Sparsity pattern has not been finalised.");
 
   std::array range = _index_maps[1]->local_range();
   const std::int32_t local_size = range[1] - range[0];
-
-  std::shared_ptr<const common::IndexMap> column_index_map
-      = std::make_shared<common::IndexMap>(
-          _comm.comm(), local_size,
-          dolfinx::MPI::compute_graph_edges(
-              _comm.comm(), std::set<int>(_col_ghost_owners.begin(),
-                                          _col_ghost_owners.end())),
-          _col_ghosts, _col_ghost_owners);
-
-  return column_index_map;
+  return common::IndexMap(
+      _comm.comm(), local_size,
+      dolfinx::MPI::compute_graph_edges(
+          _comm.comm(),
+          std::set<int>(_col_ghost_owners.begin(), _col_ghost_owners.end())),
+      _col_ghosts, _col_ghost_owners);
 }
 //-----------------------------------------------------------------------------
 int SparsityPattern::block_size(int dim) const { return _bs[dim]; }

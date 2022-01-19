@@ -77,7 +77,8 @@ public:
   /// distribution and the non-zero structure
   /// @param[in] alloc The memory allocator for the data storafe
   MatrixCSR(const SparsityPattern& p, const Allocator& alloc = Allocator())
-      : _index_maps({p.index_map(0), p.column_index_map()}),
+      : _index_maps({p.index_map(0),
+                     std::make_shared<common::IndexMap>(p.column_index_map())}),
         _bs({p.block_size(0), p.block_size(1)}),
         _data(p.num_nonzeros(), 0, alloc),
         _cols(p.graph().array().begin(), p.graph().array().end()),
