@@ -78,6 +78,7 @@ void interpolation_apply(const U& Pi, const V& data, std::vector<T>& coeffs,
 /// map.
 /// @param[out] u1 The function to interpolate to
 /// @param[in] u0 The function to interpolate from
+/// @param[in] cells The cells to interpolate on
 /// @pre The functions `u1` and `u0` must share the same mesh and the
 /// elements must share the same basis function map. Neither is checked
 /// by the function.
@@ -131,8 +132,6 @@ void interpolate_same_map(Function<T>& u1, const Function<T>& u0,
   std::vector<T> local1(element1->space_dimension());
 
   // Iterate over mesh and interpolate on each cell
-  // const int num_cells = map->size_local() + map->num_ghosts();
-  // for (int c = 0; c < num_cells; ++c)
   for (auto c : cells)
   {
     xtl::span<const std::int32_t> dofs0 = dofmap0->cell_dofs(c);
@@ -164,6 +163,7 @@ void interpolate_same_map(Function<T>& u1, const Function<T>& u0,
 /// be Piola mapped and the other with a standard isoparametric map.
 /// @param[out] u1 The function to interpolate to
 /// @param[in] u0 The function to interpolate from
+/// @param[in] cells The cells to interpolate on
 /// @pre The functions `u1` and `u0` must share the same mesh. This is
 /// not checked by the function.
 template <typename T>
@@ -267,10 +267,6 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0,
   // Iterate over mesh and interpolate on each cell
   xtl::span<const T> array0 = u0.x()->array();
   xtl::span<T> array1 = u1.x()->mutable_array();
-  auto cell_map = mesh->topology().index_map(tdim);
-  assert(cell_map);
-  // const int num_cells = cell_map->size_local() + cell_map->num_ghosts();
-  // for (int c = 0; c < num_cells; ++c)
   for (auto c : cells)
   {
     // Get cell geometry (coordinate dofs)
