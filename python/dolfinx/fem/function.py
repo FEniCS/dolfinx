@@ -12,7 +12,6 @@ import typing
 if typing.TYPE_CHECKING:
     from dolfinx.mesh import Mesh
 
-import warnings
 from functools import singledispatch
 
 import cffi
