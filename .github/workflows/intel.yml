@@ -38,25 +38,39 @@ jobs:
           # apt install -y intel-hpckit
           apt install -y intel-oneapi-common-vars intel-oneapi-compiler-dpcpp-cpp
 
-      - name: Install FEniCS Python components
+      - name: Install Basix
         run: |
           . /opt/intel/oneapi/setvars.sh
           python3 -m pip install git+https://github.com/FEniCS/ufl.git@michal/expressions
           python3 -m pip install git+https://github.com/FEniCS/basix.git
           python3 -m pip install git+https://github.com/FEniCS/ffcx.git@michal/expressions-cpp
 
-      - name: Configure C++
+      - name: Clone FFCx
+        uses: actions/checkout@v2
+        with:
+          path: ./ffcx
+          repository: FEniCS/ffcx
+          ref: main
+
+      - name: Install FFCx C interface
+        run: |
+          . /opt/intel/oneapi/setvars.sh
+          cmake -B ufcx-build-dir -S ffcx/cmake/
+          cmake --build ufcx-build-dir
+          cmake --install ufcx-build-dir
+
+      - name: Configure DOLFInx C++
         run: |
           . /opt/intel/oneapi/setvars.sh
           cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build -S cpp/
 
-      - name: Build and install C++ library
+      - name: Build and install DOLFINx C++ library
         run: |
           . /opt/intel/oneapi/setvars.sh
           cmake --build build
           cmake --install build
 
-      - name: Build and run C++ unit tests (serial and MPI)
+      - name: Build and run DOLFINx C++ unit tests (serial and MPI)
         run: |
           . /opt/intel/oneapi/setvars.sh
           cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/unit/ -S build/test/unit/
@@ -65,7 +79,12 @@ jobs:
           ctest --output-on-failure -R unittests
           mpiexec -np 2 ctest --output-on-failure -R unittests
 
-      - name: Build and run C++ regression tests (serial and MPI (np=2))
+      - name: Install UFL and FFCx modules
+        run: |
+          python3 -m pip install git+https://github.com/FEniCS/ufl.git
+          python3 -m pip install ffcx/
+
+      - name: Build and run DOLFINx C++ regression tests (serial and MPI (np=2))
         run: |
           . /opt/intel/oneapi/setvars.sh
           cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/demo/ -S build/demo/
@@ -74,7 +93,7 @@ jobs:
           ctest -R demo -R serial
           ctest -R demo -R mpi_2
 
-      - name: Build Python interface
+      - name: Build DOLFINx Python interface
         run: |
           . /opt/intel/oneapi/setvars.sh
           python3 -m pip -v install python/
@@ -82,20 +101,20 @@ jobs:
         run: |
           mkdir -p ~/.config/dolfinx
           echo '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }' > ~/.config/dolfinx/dolfinx_jit_parameters.json
-      - name: Run demos (Python, serial)
+      - name: Run DOLFINx demos (Python, serial)
         run: |
           . /opt/intel/oneapi/setvars.sh
           python3 -m pytest -v -n=2 -m serial --durations=10 python/demo/test.py
-      - name: Run demos (Python, MPI (np=2))
+      - name: Run DOLFINx demos (Python, MPI (np=2))
         run: |
           . /opt/intel/oneapi/setvars.sh
           python3 -m pytest -v -m mpi --num-proc=2 python/demo/test.py
-      - name: Run Python unit tests (serial)
+      - name: Run DOLFINx Python unit tests (serial)
         run: |
           . /opt/intel/oneapi/setvars.sh
           pip3 install sympy
           python3 -m pytest -n=auto --durations=50 python/test/unit/
-      - name: Run Python unit tests (MPI, np=2)
+      - name: Run DOLFINxPython unit tests (MPI, np=2)
         run: |
           . /opt/intel/oneapi/setvars.sh
           mpirun -np 2 python3 -m pytest python/test/unit/

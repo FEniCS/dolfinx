@@ -27,6 +27,9 @@ public:
   /// The value type
   using value_type = T;
 
+  /// The allocator type
+  using allocator_type = Allocator;
+
   /// Create a distributed vector
   Vector(const std::shared_ptr<const common::IndexMap>& map, int bs,
          const Allocator& alloc = Allocator())
@@ -196,7 +199,7 @@ public:
   /// Compute the norm of the vector
   /// @note Collective MPI operation
   /// @param type Norm type (supported types are \f$L^2\f$ and \f$L^\infty\f$)
-  T norm(Norm type = Norm::l2) const
+  double norm(Norm type = Norm::l2) const
   {
     switch (type)
     {
@@ -247,6 +250,9 @@ public:
 
   /// Get local part of the vector
   xtl::span<T> mutable_array() { return xtl::span(_x); }
+
+  /// Get the allocator associated with the container
+  constexpr allocator_type allocator() const { return _x.get_allocator(); }
 
 private:
   // Map describing the data layout

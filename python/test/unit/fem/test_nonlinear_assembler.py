@@ -7,22 +7,21 @@
 
 import math
 
-import numpy
+import numpy as np
 import pytest
 
 import ufl
 from dolfinx.cpp.la.petsc import scatter_local_vectors
-from dolfinx.fem import (DirichletBC, Form, Function, FunctionSpace,
-                         VectorFunctionSpace, apply_lifting,
-                         apply_lifting_nest, assemble_matrix,
+from dolfinx.fem import (Function, FunctionSpace, VectorFunctionSpace,
+                         apply_lifting, apply_lifting_nest, assemble_matrix,
                          assemble_matrix_block, assemble_matrix_nest,
                          assemble_vector, assemble_vector_block,
                          assemble_vector_nest, bcs_by_block, create_matrix,
                          create_matrix_block, create_matrix_nest,
                          create_vector, create_vector_block,
-                         create_vector_nest, locate_dofs_topological, set_bc,
-                         set_bc_nest)
-from dolfinx.fem.form import extract_function_spaces
+                         create_vector_nest, dirichletbc,
+                         extract_function_spaces, form,
+                         locate_dofs_topological, set_bc, set_bc_nest)
 from dolfinx.mesh import (GhostMode, create_unit_cube, create_unit_square,
                           locate_entities_boundary)
 from ufl import derivative, dx, inner
@@ -51,33 +50,29 @@ def test_matrix_assembly_block_nl():
     in the nonlinear setting
     """
     mesh = create_unit_square(MPI.COMM_WORLD, 4, 8)
-
     p0, p1 = 1, 2
     P0 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p0)
     P1 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p1)
-
     V0 = FunctionSpace(mesh, P0)
     V1 = FunctionSpace(mesh, P1)
 
-    def boundary(x):
-        return numpy.logical_or(x[0] < 1.0e-6, x[0] > 1.0 - 1.0e-6)
-
     def initial_guess_u(x):
-        return numpy.sin(x[0]) * numpy.sin(x[1])
+        return np.sin(x[0]) * np.sin(x[1])
 
     def initial_guess_p(x):
         return -x[0]**2 - x[1]**3
 
     def bc_value(x):
-        return numpy.cos(x[0]) * numpy.cos(x[1])
+        return np.cos(x[0]) * np.cos(x[1])
 
     facetdim = mesh.topology.dim - 1
-    bndry_facets = locate_entities_boundary(mesh, facetdim, boundary)
+    bndry_facets = locate_entities_boundary(mesh, facetdim, lambda x: np.logical_or(np.isclose(x[0], 0.0),
+                                                                                    np.isclose(x[0], 1.0)))
 
     u_bc = Function(V1)
     u_bc.interpolate(bc_value)
     bdofs = locate_dofs_topological(V1, facetdim, bndry_facets)
-    bc = DirichletBC(u_bc, bdofs)
+    bc = dirichletbc(u_bc, bdofs)
 
     # Define variational problem
     du, dp = ufl.TrialFunction(V0), ufl.TrialFunction(V1)
@@ -93,9 +88,9 @@ def test_matrix_assembly_block_nl():
     F0 = inner(u, v) * dx + inner(p, v) * dx - inner(f, v) * dx
     F1 = inner(u, q) * dx + inner(p, q) * dx - inner(g, q) * dx
 
-    a_block = [[derivative(F0, u, du), derivative(F0, p, dp)],
-               [derivative(F1, u, du), derivative(F1, p, dp)]]
-    L_block = [Form(F0), Form(F1)]
+    a_block = form([[derivative(F0, u, du), derivative(F0, p, dp)],
+                    [derivative(F1, u, du), derivative(F1, p, dp)]])
+    L_block = form([F0, F1])
 
     # Monolithic blocked
     x0 = create_vector_block(L_block)
@@ -148,10 +143,11 @@ def test_matrix_assembly_block_nl():
     F = inner(u0, v0) * dx + inner(u1, v0) * dx + inner(u0, v1) * dx + inner(u1, v1) * dx \
         - inner(f, v0) * ufl.dx - inner(g, v1) * dx
     J = derivative(F, U, dU)
+    F, J = form(F), form(J)
 
     bdofsW_V1 = locate_dofs_topological((W.sub(1), V1), facetdim, bndry_facets)
 
-    bc = DirichletBC(u_bc, bdofsW_V1, W.sub(1))
+    bc = dirichletbc(u_bc, bdofsW_V1, W.sub(1))
     A2 = assemble_matrix(J, bcs=[bc])
     A2.assemble()
     b2 = assemble_vector(F)
@@ -165,14 +161,8 @@ def test_matrix_assembly_block_nl():
 
 class NonlinearPDE_SNESProblem():
     def __init__(self, F, J, soln_vars, bcs, P=None):
-        try:
-            self.L = [Form(_F) for _F in F]
-        except TypeError:
-            self.L = Form(F)
-        try:
-            self.a = [[Form(_J) for _J in Jrow] for Jrow in J]
-        except TypeError:
-            self.a = Form(J)
+        self.L = F
+        self.a = J
         self.a_precon = P
         self.bcs = bcs
         self.soln_vars = soln_vars
@@ -275,29 +265,25 @@ def test_assembly_solve_block_nl():
         return x[0]**2 + x[1]**2
 
     def bc_val_1(x):
-        return numpy.sin(x[0]) * numpy.cos(x[1])
+        return np.sin(x[0]) * np.cos(x[1])
 
     def initial_guess_u(x):
-        return numpy.sin(x[0]) * numpy.sin(x[1])
+        return np.sin(x[0]) * np.sin(x[1])
 
     def initial_guess_p(x):
         return -x[0]**2 - x[1]**3
 
-    def boundary(x):
-        return numpy.logical_or(x[0] < 1.0e-6, x[0] > 1.0 - 1.0e-6)
-
     facetdim = mesh.topology.dim - 1
-    bndry_facets = locate_entities_boundary(mesh, facetdim, boundary)
+    bndry_facets = locate_entities_boundary(mesh, facetdim, lambda x: np.logical_or(np.isclose(x[0], 0.0),
+                                                                                    np.isclose(x[0], 1.0)))
 
     u_bc0 = Function(V0)
     u_bc0.interpolate(bc_val_0)
     u_bc1 = Function(V1)
     u_bc1.interpolate(bc_val_1)
-
     bdofs0 = locate_dofs_topological(V0, facetdim, bndry_facets)
     bdofs1 = locate_dofs_topological(V1, facetdim, bndry_facets)
-
-    bcs = [DirichletBC(u_bc0, bdofs0), DirichletBC(u_bc1, bdofs1)]
+    bcs = [dirichletbc(u_bc0, bdofs0), dirichletbc(u_bc1, bdofs1)]
 
     # Block and Nest variational problem
     u, p = Function(V0), Function(V1)
@@ -309,9 +295,10 @@ def test_assembly_solve_block_nl():
 
     F = [inner((u**2 + 1) * ufl.grad(u), ufl.grad(v)) * dx - inner(f, v) * dx,
          inner((p**2 + 1) * ufl.grad(p), ufl.grad(q)) * dx - inner(g, q) * dx]
-
     J = [[derivative(F[0], u, du), derivative(F[0], p, dp)],
          [derivative(F[1], u, du), derivative(F[1], p, dp)]]
+
+    F, J = form(F), form(J)
 
     def blocked_solve():
         """Blocked version"""
@@ -398,15 +385,15 @@ def test_assembly_solve_block_nl():
             - inner(f, v0) * ufl.dx - inner(g, v1) * dx
         J = derivative(F, U, dU)
 
+        F, J = form(F), form(J)
+
         u0_bc = Function(V0)
         u0_bc.interpolate(bc_val_0)
         u1_bc = Function(V1)
         u1_bc.interpolate(bc_val_1)
-
         bdofsW0_V0 = locate_dofs_topological((W.sub(0), V0), facetdim, bndry_facets)
         bdofsW1_V1 = locate_dofs_topological((W.sub(1), V1), facetdim, bndry_facets)
-
-        bcs = [DirichletBC(u0_bc, bdofsW0_V0, W.sub(0)), DirichletBC(u1_bc, bdofsW1_V1, W.sub(1))]
+        bcs = [dirichletbc(u0_bc, bdofsW0_V0, W.sub(0)), dirichletbc(u1_bc, bdofsW1_V1, W.sub(1))]
 
         Jmat = create_matrix(J)
         Fvec = create_vector(F)
@@ -439,7 +426,7 @@ def test_assembly_solve_block_nl():
     assert norm2 == pytest.approx(norm0, 1.0e-12)
 
 
-@pytest.mark.parametrize("mesh", [
+@ pytest.mark.parametrize("mesh", [
     create_unit_square(MPI.COMM_WORLD, 12, 11, ghost_mode=GhostMode.none),
     create_unit_cube(MPI.COMM_WORLD, 3, 5, 4, ghost_mode=GhostMode.shared_facet),
     create_unit_square(MPI.COMM_WORLD, 12, 11, ghost_mode=GhostMode.none),
@@ -453,27 +440,27 @@ def test_assembly_solve_taylor_hood_nl(mesh):
 
     def boundary0(x):
         """Define boundary x = 0"""
-        return x[0] < 10 * numpy.finfo(float).eps
+        return np.isclose(x[0], 0.0)
 
     def boundary1(x):
         """Define boundary x = 1"""
-        return x[0] > (1.0 - 10 * numpy.finfo(float).eps)
+        return np.isclose(x[0], 1.0)
 
     def initial_guess_u(x):
-        u_init = numpy.row_stack((numpy.sin(x[0]) * numpy.sin(x[1]),
-                                  numpy.cos(x[0]) * numpy.cos(x[1])))
+        u_init = np.row_stack((np.sin(x[0]) * np.sin(x[1]),
+                               np.cos(x[0]) * np.cos(x[1])))
         if gdim == 3:
-            u_init = numpy.row_stack((u_init, numpy.cos(x[2])))
+            u_init = np.row_stack((u_init, np.cos(x[2])))
         return u_init
 
     def initial_guess_p(x):
         return -x[0]**2 - x[1]**3
 
     u_bc_0 = Function(P2)
-    u_bc_0.interpolate(lambda x: numpy.row_stack(tuple(x[j] + float(j) for j in range(gdim))))
+    u_bc_0.interpolate(lambda x: np.row_stack(tuple(x[j] + float(j) for j in range(gdim))))
 
     u_bc_1 = Function(P2)
-    u_bc_1.interpolate(lambda x: numpy.row_stack(tuple(numpy.sin(x[j]) for j in range(gdim))))
+    u_bc_1.interpolate(lambda x: np.row_stack(tuple(np.sin(x[j]) for j in range(gdim))))
 
     facetdim = mesh.topology.dim - 1
     bndry_facets0 = locate_entities_boundary(mesh, facetdim, boundary0)
@@ -482,7 +469,7 @@ def test_assembly_solve_taylor_hood_nl(mesh):
     bdofs0 = locate_dofs_topological(P2, facetdim, bndry_facets0)
     bdofs1 = locate_dofs_topological(P2, facetdim, bndry_facets1)
 
-    bcs = [DirichletBC(u_bc_0, bdofs0), DirichletBC(u_bc_1, bdofs1)]
+    bcs = [dirichletbc(u_bc_0, bdofs0), dirichletbc(u_bc_1, bdofs1)]
 
     u, p = Function(P2), Function(P1)
     du, dp = ufl.TrialFunction(P2), ufl.TrialFunction(P1)
@@ -494,6 +481,8 @@ def test_assembly_solve_taylor_hood_nl(mesh):
          [derivative(F[1], u, du), derivative(F[1], p, dp)]]
     P = [[J[0][0], None],
          [None, inner(dp, q) * dx]]
+
+    F, J, P = form(F), form(J), form(P)
 
     # -- Blocked and monolithic
 
@@ -585,10 +574,12 @@ def test_assembly_solve_taylor_hood_nl(mesh):
     J = derivative(F, U, dU)
     P = inner(ufl.grad(du), ufl.grad(v)) * dx + inner(dp, q) * dx
 
+    F, J, P = form(F), form(J), form(P)
+
     bdofsW0_P2_0 = locate_dofs_topological((W.sub(0), P2), facetdim, bndry_facets0)
     bdofsW0_P2_1 = locate_dofs_topological((W.sub(0), P2), facetdim, bndry_facets1)
 
-    bcs = [DirichletBC(u_bc_0, bdofsW0_P2_0, W.sub(0)), DirichletBC(u_bc_1, bdofsW0_P2_1, W.sub(0))]
+    bcs = [dirichletbc(u_bc_0, bdofsW0_P2_0, W.sub(0)), dirichletbc(u_bc_1, bdofsW0_P2_1, W.sub(0))]
 
     Jmat2 = create_matrix(J)
     Pmat2 = create_matrix(P)

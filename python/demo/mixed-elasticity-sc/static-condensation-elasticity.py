@@ -20,8 +20,8 @@ import numpy as np
 import ufl
 from dolfinx import geometry
 from dolfinx.cpp.fem import Form_complex128, Form_float64
-from dolfinx.fem import (DirichletBC, Function, FunctionSpace, IntegralType,
-                         apply_lifting, assemble_matrix, assemble_vector,
+from dolfinx.fem import (Function, FunctionSpace, IntegralType, apply_lifting,
+                         assemble_matrix, assemble_vector, dirichletbc, form,
                          locate_dofs_topological, set_bc)
 from dolfinx.io import XDMFFile
 from dolfinx.jit import ffcx_jit
@@ -44,8 +44,8 @@ S = FunctionSpace(mesh, Se)
 U = FunctionSpace(mesh, Ue)
 
 # Get local dofmap sizes for later local tensor tabulations
-Ssize = S.dolfin_element().space_dimension()
-Usize = U.dolfin_element().space_dimension()
+Ssize = S.element.space_dimension
+Usize = U.element.space_dimension
 
 sigma, tau = ufl.TrialFunction(S), ufl.TestFunction(S)
 u, v = ufl.TrialFunction(U), ufl.TestFunction(U)
@@ -74,7 +74,7 @@ u_bc.x.array[:] = 0.0
 # Displacement BC is applied to the left side
 left_facets = locate_entities_boundary(mesh, 1, left)
 bdofs = locate_dofs_topological(U, 1, left_facets)
-bc = DirichletBC(u_bc, bdofs)
+bc = dirichletbc(u_bc, bdofs)
 
 # Elastic stiffness tensor and Poisson ratio
 E, nu = 1.0, 1.0 / 3.0
@@ -92,17 +92,17 @@ a10 = - ufl.inner(sigma, ufl.grad(v)) * ufl.dx
 a01 = - ufl.inner(sigma_u(u), tau) * ufl.dx
 
 f = ufl.as_vector([0.0, 1.0 / 16])
-b1 = - ufl.inner(f, v) * ds(1)
+b1 = form(- ufl.inner(f, v) * ds(1))
 
 # JIT compile individual blocks tabulation kernels
 nptype = "complex128" if np.issubdtype(PETSc.ScalarType, np.complexfloating) else "float64"
 ffcxtype = "double _Complex" if np.issubdtype(PETSc.ScalarType, np.complexfloating) else "double"
-ufc_form00, _, _ = ffcx_jit(mesh.comm, a00, form_compiler_parameters={"scalar_type": ffcxtype})
-kernel00 = getattr(ufc_form00.integrals(0)[0], f"tabulate_tensor_{nptype}")
-ufc_form01, _, _ = ffcx_jit(mesh.comm, a01, form_compiler_parameters={"scalar_type": ffcxtype})
-kernel01 = getattr(ufc_form01.integrals(0)[0], f"tabulate_tensor_{nptype}")
-ufc_form10, _, _ = ffcx_jit(mesh.comm, a10, form_compiler_parameters={"scalar_type": ffcxtype})
-kernel10 = getattr(ufc_form10.integrals(0)[0], f"tabulate_tensor_{nptype}")
+ufcx_form00, _, _ = ffcx_jit(mesh.comm, a00, form_compiler_parameters={"scalar_type": ffcxtype})
+kernel00 = getattr(ufcx_form00.integrals(0)[0], f"tabulate_tensor_{nptype}")
+ufcx_form01, _, _ = ffcx_jit(mesh.comm, a01, form_compiler_parameters={"scalar_type": ffcxtype})
+kernel01 = getattr(ufcx_form01.integrals(0)[0], f"tabulate_tensor_{nptype}")
+ufcx_form10, _, _ = ffcx_jit(mesh.comm, a10, form_compiler_parameters={"scalar_type": ffcxtype})
+kernel10 = getattr(ufcx_form10.integrals(0)[0], f"tabulate_tensor_{nptype}")
 
 ffi = cffi.FFI()
 cffi_support.register_type(ffi.typeof('double _Complex'), numba.types.complex128)
@@ -154,7 +154,7 @@ solver.setOperators(A_cond)
 solver.solve(b, uc.vector)
 
 # Pure displacement based formulation
-a = - ufl.inner(sigma_u(u), ufl.grad(v)) * ufl.dx
+a = form(- ufl.inner(sigma_u(u), ufl.grad(v)) * ufl.dx)
 A = assemble_matrix(a, bcs=[bc])
 A.assemble()
 

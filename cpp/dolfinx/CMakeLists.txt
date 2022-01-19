@@ -39,7 +39,7 @@ set_target_properties(dolfinx PROPERTIES
 
 # Add git revision flag to the one affected file
 set_source_files_properties(common/defines.cpp PROPERTIES
-  COMPILE_DEFINITIONS "UFC_SIGNATURE=\"${UFC_SIGNATURE}\";DOLFINX_GIT_COMMIT_HASH=\"${GIT_COMMIT_HASH}\"")
+  COMPILE_DEFINITIONS "UFCX_SIGNATURE=\"${UFCX_SIGNATURE}\";DOLFINX_GIT_COMMIT_HASH=\"${GIT_COMMIT_HASH}\"")
 
 #------------------------------------------------------------------------------
 # Set compiler options and defintions
@@ -56,8 +56,12 @@ target_compile_definitions(dolfinx PUBLIC DOLFINX_VERSION="${DOLFINX_VERSION}")
 #------------------------------------------------------------------------------
 # Add include directories and libraries of required packages
 
-# UFC
-target_include_directories(dolfinx SYSTEM PUBLIC ${UFC_INCLUDE_DIRS})
+# UFCx
+if (TARGET ufcx::ufcx)
+  target_link_libraries(dolfinx PUBLIC ufcx::ufcx)
+else()
+  target_include_directories(dolfinx SYSTEM PUBLIC ${UFCX_INCLUDE_DIRS})
+endif()
 
 # Basix
 target_link_libraries(dolfinx PUBLIC Basix::basix)
@@ -81,8 +85,7 @@ target_link_libraries(dolfinx PRIVATE Boost::filesystem)
 target_link_libraries(dolfinx PUBLIC MPI::MPI_CXX)
 
 # PETSc
-target_link_libraries(dolfinx PUBLIC PETSC::petsc)
-target_link_libraries(dolfinx PRIVATE PETSC::petsc_static)
+target_link_libraries(dolfinx PUBLIC PkgConfig::PETSC)
 
 # HDF5
 if (TARGET hdf5::hdf5)
@@ -106,9 +109,8 @@ endif()
 
 # SLEPC
 if (DOLFINX_ENABLE_SLEPC AND SLEPC_FOUND)
+  target_link_libraries(dolfinx PUBLIC PkgConfig::SLEPC)
   target_compile_definitions(dolfinx PUBLIC HAS_SLEPC)
-  target_link_libraries(dolfinx PUBLIC SLEPC::slepc)
-  target_link_libraries(dolfinx PRIVATE SLEPC::slepc_static)
 endif()
 
 # SCOTCH
@@ -160,14 +162,12 @@ write_basic_package_version_file(${CMAKE_BINARY_DIR}/dolfinx/DOLFINXConfigVersio
   COMPATIBILITY ExactVersion)
 
 configure_package_config_file(${DOLFINX_SOURCE_DIR}/cmake/templates/DOLFINXConfig.cmake.in
-${CMAKE_BINARY_DIR}/dolfinx/DOLFINXConfig.cmake
-INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/dolfinx)
+  ${CMAKE_BINARY_DIR}/dolfinx/DOLFINXConfig.cmake
+  INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/dolfinx)
 
 # Install CMake helper files
 install(
   FILES
-  ${CMAKE_SOURCE_DIR}/cmake/modules/FindPETSc.cmake
-  ${CMAKE_SOURCE_DIR}/cmake/modules/FindSLEPc.cmake
   ${CMAKE_BINARY_DIR}/dolfinx/DOLFINXConfig.cmake
   ${CMAKE_BINARY_DIR}/dolfinx/DOLFINXConfigVersion.cmake
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/dolfinx

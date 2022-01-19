@@ -11,6 +11,7 @@
 #include "FunctionSpace.h"
 #include "utils.h"
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/utils.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
@@ -34,7 +35,7 @@ T assemble_cells(const mesh::Geometry& geometry,
 
   // FIXME: Add proper interface for num coordinate dofs
   const std::size_t num_dofs_g = x_dofmap.num_links(0);
-  const xt::xtensor<double, 2>& x_g = geometry.x();
+  xtl::span<const double> x_g = geometry.x();
 
   // Create data structures used in assembly
   std::vector<double> coordinate_dofs(3 * num_dofs_g);
@@ -49,8 +50,8 @@ T assemble_cells(const mesh::Geometry& geometry,
     auto x_dofs = x_dofmap.links(c);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
-      std::copy_n(xt::row(x_g, x_dofs[i]).begin(), 3,
-                  std::next(coordinate_dofs.begin(), 3 * i));
+      common::impl::copy_N<3>(std::next(x_g.begin(), 3 * x_dofs[i]),
+                              std::next(coordinate_dofs.begin(), 3 * i));
     }
 
     const T* coeff_cell = coeffs.data() + index * cstride;
@@ -76,7 +77,7 @@ T assemble_exterior_facets(
 
   // FIXME: Add proper interface for num coordinate dofs
   const std::size_t num_dofs_g = x_dofmap.num_links(0);
-  const xt::xtensor<double, 2>& x_g = mesh.geometry().x();
+  xtl::span<const double> x_g = mesh.geometry().x();
 
   // Create data structures used in assembly
   std::vector<double> coordinate_dofs(3 * num_dofs_g);
@@ -92,8 +93,8 @@ T assemble_exterior_facets(
     auto x_dofs = x_dofmap.links(cell);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
-      std::copy_n(xt::row(x_g, x_dofs[i]).begin(), 3,
-                  std::next(coordinate_dofs.begin(), 3 * i));
+      common::impl::copy_N<3>(std::next(x_g.begin(), 3 * x_dofs[i]),
+                              std::next(coordinate_dofs.begin(), 3 * i));
     }
 
     const T* coeff_cell = coeffs.data() + index * cstride;
@@ -123,7 +124,7 @@ T assemble_interior_facets(
 
   // FIXME: Add proper interface for num coordinate dofs
   const std::size_t num_dofs_g = x_dofmap.num_links(0);
-  const xt::xtensor<double, 2>& x_g = mesh.geometry().x();
+  xtl::span<const double> x_g = mesh.geometry().x();
 
   // Create data structures used in assembly
   xt::xtensor<double, 3> coordinate_dofs({2, num_dofs_g, 3});
@@ -146,14 +147,16 @@ T assemble_interior_facets(
     auto x_dofs0 = x_dofmap.links(cells[0]);
     for (std::size_t i = 0; i < x_dofs0.size(); ++i)
     {
-      std::copy_n(xt::view(x_g, x_dofs0[i]).begin(), 3,
-                  xt::view(coordinate_dofs, 0, i, xt::all()).begin());
+      common::impl::copy_N<3>(
+          std::next(x_g.begin(), 3 * x_dofs0[i]),
+          xt::view(coordinate_dofs, 0, i, xt::all()).begin());
     }
     auto x_dofs1 = x_dofmap.links(cells[1]);
     for (std::size_t i = 0; i < x_dofs1.size(); ++i)
     {
-      std::copy_n(xt::view(x_g, x_dofs1[i]).begin(), 3,
-                  xt::view(coordinate_dofs, 1, i, xt::all()).begin());
+      common::impl::copy_N<3>(
+          std::next(x_g.begin(), 3 * x_dofs1[i]),
+          xt::view(coordinate_dofs, 1, i, xt::all()).begin());
     }
 
     const std::array perm{perms[cells[0] * num_cell_facets + local_facet[0]],

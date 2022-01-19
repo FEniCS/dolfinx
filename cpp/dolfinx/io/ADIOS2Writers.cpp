@@ -131,7 +131,7 @@ void vtx_write_data(adios2::IO& io, adios2::Engine& engine,
   // Get function data array and information about layout
   assert(u.x());
   xtl::span<const Scalar> u_vector = u.x()->array();
-  const int rank = u.function_space()->element()->value_rank();
+  const int rank = u.function_space()->element()->value_shape().size();
   const std::uint32_t num_comp = std::pow(3, rank);
   std::shared_ptr<const fem::DofMap> dofmap = u.function_space()->dofmap();
   assert(dofmap);
@@ -220,7 +220,7 @@ tabulate_lagrange_dof_coordinates(const dolfinx::fem::FunctionSpace& V)
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& dofmap_x
       = mesh->geometry().dofmap();
-  const xt::xtensor<double, 2>& x_g = mesh->geometry().x();
+  xtl::span<const double> x_g = mesh->geometry().x();
   const std::size_t num_dofs_g = dofmap_x.num_links(0);
 
   xtl::span<const std::uint32_t> cell_info;
@@ -249,7 +249,7 @@ tabulate_lagrange_dof_coordinates(const dolfinx::fem::FunctionSpace& V)
     auto dofs_x = dofmap_x.links(c);
     for (std::size_t i = 0; i < dofs_x.size(); ++i)
     {
-      std::copy_n(xt::row(x_g, dofs_x[i]).begin(), gdim,
+      std::copy_n(std::next(x_g.begin(), 3 * dofs_x[i]), gdim,
                   std::next(coordinate_dofs.begin(), i * gdim));
     }
 
@@ -520,7 +520,7 @@ std::vector<Scalar> pack_function_data(const fem::Function<Scalar>& u)
   const std::uint32_t num_vertices
       = vertex_map->size_local() + vertex_map->num_ghosts();
 
-  const int rank = u.function_space()->element()->value_rank();
+  const int rank = u.function_space()->element()->value_shape().size();
   const std::uint32_t num_components = std::pow(3, rank);
 
   // Get dof array and pack into array (padded where appropriate)
@@ -563,7 +563,7 @@ void fides_write_data(adios2::IO& io, adios2::Engine& engine,
   const int gdim = mesh->geometry().dim();
 
   // Vectors and tensor need padding in gdim < 3
-  const int rank = u.function_space()->element()->value_rank();
+  const int rank = u.function_space()->element()->value_shape().size();
   const bool need_padding = rank > 0 and gdim != 3 ? true : false;
 
   // Get vertex data. If the mesh and function dofmaps are the same we

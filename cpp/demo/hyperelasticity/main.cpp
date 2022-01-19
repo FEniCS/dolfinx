@@ -14,13 +14,14 @@ using namespace dolfinx;
 //
 // .. code-block:: cpp
 
+using T = PetscScalar;
+
 class HyperElasticProblem
 {
 public:
   HyperElasticProblem(
-      std::shared_ptr<fem::Form<PetscScalar>> L,
-      std::shared_ptr<fem::Form<PetscScalar>> J,
-      std::vector<std::shared_ptr<const fem::DirichletBC<PetscScalar>>> bcs)
+      std::shared_ptr<fem::Form<T>> L, std::shared_ptr<fem::Form<T>> J,
+      std::vector<std::shared_ptr<const fem::DirichletBC<T>>> bcs)
       : _l(L), _j(J), _bcs(bcs),
         _b(L->function_spaces()[0]->dofmap()->index_map,
            L->function_spaces()[0]->dofmap()->index_map_bs()),
@@ -59,9 +60,9 @@ public:
     return [&](const Vec x, Vec)
     {
       // Assemble b and update ghosts
-      xtl::span<PetscScalar> b(_b.mutable_array());
+      xtl::span<T> b(_b.mutable_array());
       std::fill(b.begin(), b.end(), 0.0);
-      fem::assemble_vector<PetscScalar>(b, *_l);
+      fem::assemble_vector<T>(b, *_l);
       VecGhostUpdateBegin(_b_petsc, ADD_VALUES, SCATTER_REVERSE);
       VecGhostUpdateEnd(_b_petsc, ADD_VALUES, SCATTER_REVERSE);
 
@@ -70,10 +71,9 @@ public:
       VecGhostGetLocalForm(x, &x_local);
       PetscInt n = 0;
       VecGetSize(x_local, &n);
-      const PetscScalar* array = nullptr;
+      const T* array = nullptr;
       VecGetArrayRead(x_local, &array);
-      fem::set_bc<PetscScalar>(b, _bcs, xtl::span<const PetscScalar>(array, n),
-                               -1.0);
+      fem::set_bc<T>(b, _bcs, xtl::span<const T>(array, n), -1.0);
       VecRestoreArrayRead(x, &array);
     };
   }
@@ -100,9 +100,9 @@ public:
   Mat matrix() { return _matA.mat(); }
 
 private:
-  std::shared_ptr<fem::Form<PetscScalar>> _l, _j;
-  std::vector<std::shared_ptr<const fem::DirichletBC<PetscScalar>>> _bcs;
-  la::Vector<PetscScalar> _b;
+  std::shared_ptr<fem::Form<T>> _l, _j;
+  std::vector<std::shared_ptr<const fem::DirichletBC<T>>> _bcs;
+  la::Vector<T> _b;
   Vec _b_petsc = nullptr;
   la::petsc::Matrix _matA;
 };
@@ -137,15 +137,13 @@ int main(int argc, char* argv[])
         functionspace_form_hyperelasticity_F, "u", mesh));
 
     // Define solution function
-    auto u = std::make_shared<fem::Function<PetscScalar>>(V);
-    auto a = std::make_shared<fem::Form<PetscScalar>>(
-        fem::create_form<PetscScalar>(*form_hyperelasticity_J, {V, V},
-                                      {{"u", u}}, {}, {}));
-    auto L = std::make_shared<fem::Form<PetscScalar>>(
-        fem::create_form<PetscScalar>(*form_hyperelasticity_F, {V}, {{"u", u}},
-                                      {}, {}));
+    auto u = std::make_shared<fem::Function<T>>(V);
+    auto a = std::make_shared<fem::Form<T>>(fem::create_form<T>(
+        *form_hyperelasticity_J, {V, V}, {{"u", u}}, {}, {}));
+    auto L = std::make_shared<fem::Form<T>>(
+        fem::create_form<T>(*form_hyperelasticity_F, {V}, {{"u", u}}, {}, {}));
 
-    auto u_rotation = std::make_shared<fem::Function<PetscScalar>>(V);
+    auto u_rotation = std::make_shared<fem::Function<T>>(V);
     u_rotation->interpolate(
         [](auto& x)
         {
@@ -157,11 +155,11 @@ int main(int argc, char* argv[])
 
           // Large angle of rotation (60 degrees)
           constexpr double theta = 1.04719755;
-          xt::xarray<double> values = xt::zeros_like(x);
 
           // New coordinates
           auto x1 = xt::row(x, 1);
           auto x2 = xt::row(x, 2);
+          xt::xarray<double> values = xt::zeros_like(x);
           xt::row(values, 1) = scale
                                * (x1_c + (x1 - x1_c) * std::cos(theta)
                                   - (x2 - x2_c) * std::sin(theta) - x1);
@@ -171,27 +169,21 @@ int main(int argc, char* argv[])
           return values;
         });
 
-    auto u_clamp = std::make_shared<fem::Function<PetscScalar>>(V);
-    u_clamp->interpolate([](auto& x) -> xt::xarray<double>
-                         { return xt::zeros_like(x); });
-
     // Create Dirichlet boundary conditions
-    auto u0 = std::make_shared<fem::Function<PetscScalar>>(V);
-    const auto bdofs_left
+    auto bdofs_left
         = fem::locate_dofs_geometrical({*V},
                                        [](auto& x) -> xt::xtensor<bool, 1> {
                                          return xt::isclose(xt::row(x, 0), 0.0);
                                        });
-    const auto bdofs_right
+    auto bdofs_right
         = fem::locate_dofs_geometrical({*V},
                                        [](auto& x) -> xt::xtensor<bool, 1> {
                                          return xt::isclose(xt::row(x, 0), 1.0);
                                        });
-    auto bcs
-        = std::vector({std::make_shared<const fem::DirichletBC<PetscScalar>>(
-                           u_clamp, std::move(bdofs_left)),
-                       std::make_shared<const fem::DirichletBC<PetscScalar>>(
-                           u_rotation, std::move(bdofs_right))});
+    auto bcs = std::vector{
+        std::make_shared<const fem::DirichletBC<T>>(xt::xarray<T>{0, 0, 0},
+                                                    bdofs_left, V),
+        std::make_shared<const fem::DirichletBC<T>>(u_rotation, bdofs_right)};
 
     HyperElasticProblem problem(L, a, bcs);
     nls::NewtonSolver newton_solver(MPI_COMM_WORLD);

@@ -29,8 +29,9 @@
 
 namespace dolfinx::fem
 {
-
 class FunctionSpace;
+template <typename T>
+class Expression;
 
 template <typename T>
 class Expression;
@@ -41,7 +42,6 @@ class Expression;
 /// \f[     u_h = \sum_{i=1}^{n} U_i \phi_i \f]
 /// where \f$ \{\phi_i\}_{i=1}^{n} \f$ is a basis for \f$ V_h \f$,
 /// and \f$ U \f$ is a vector of expansion coefficients for \f$ u_h \f$.
-
 template <typename T>
 class Function
 {
@@ -148,39 +148,136 @@ public:
   /// Underlying vector
   std::shared_ptr<la::Vector<T>> x() { return _x; }
 
-  /// Interpolate a Function (on possibly non-matching meshes)
-  /// @param[in] v The function to be interpolated.
-  void interpolate(const Function<T>& v) { fem::interpolate(*this, v); }
+  /// Interpolate a Function
+  /// @param[in] v The function to be interpolated
+  /// @param[in] cells The cells to interpolate on
+  void interpolate(const Function<T>& v,
+                   const xtl::span<const std::int32_t>& cells)
+  {
+    fem::interpolate(*this, v, cells);
+  }
 
-  /// Interpolate an expression
+  /// Interpolate a Function
+  /// @param[in] v The function to be interpolated
+  void interpolate(const Function<T>& v)
+  {
+    assert(_function_space);
+    assert(_function_space->mesh());
+    int tdim = _function_space->mesh()->topology().dim();
+    auto cell_map = _function_space->mesh()->topology().index_map(tdim);
+    assert(cell_map);
+    std::int32_t num_cells = cell_map->size_local() + cell_map->num_ghosts();
+    std::vector<std::int32_t> cells(num_cells, 0);
+    std::iota(cells.begin(), cells.end(), 0);
+
+    fem::interpolate(*this, v, cells);
+  }
+
+  /// Interpolate an expression function on a list of cells
+  /// @param[in] f The expression function to be interpolated
+  /// @param[in] cells The cells to interpolate on
+  void interpolate(
+      const std::function<xt::xarray<T>(const xt::xtensor<double, 2>&)>& f,
+      const xtl::span<const std::int32_t>& cells)
+  {
+    assert(_function_space);
+    assert(_function_space->element());
+    assert(_function_space->mesh());
+    const xt::xtensor<double, 2> x = fem::interpolation_coords(
+        *_function_space->element(), *_function_space->mesh(), cells);
+    auto fx = f(x);
+    if (int vs = _function_space->element()->value_size();
+        vs == 1 and fx.dimension() == 1)
+    {
+      // Check for scalar-valued functions
+      if (fx.shape(0) != x.shape(1))
+        throw std::runtime_error("Data returned by callable has wrong length");
+    }
+    else
+    {
+      // Check for vector/tensor value
+      if (fx.dimension() != 2)
+        throw std::runtime_error("Expected 2D array of data");
+      if (fx.shape(0) != vs)
+      {
+        throw std::runtime_error(
+            "Data returned by callable has wrong shape(0) size");
+      }
+      if (fx.shape(1) != x.shape(1))
+        throw std::runtime_error(
+            "Data returned by callable has wrong shape(1) size");
+    }
+
+    fem::interpolate(*this, fx, cells);
+  }
+
+  /// Interpolate an expression function on the whole domain
   /// @param[in] f The expression to be interpolated
   void interpolate(
       const std::function<xt::xarray<T>(const xt::xtensor<double, 2>&)>& f)
   {
     assert(_function_space);
-    assert(_function_space->element());
     assert(_function_space->mesh());
     const int tdim = _function_space->mesh()->topology().dim();
     auto cell_map = _function_space->mesh()->topology().index_map(tdim);
     assert(cell_map);
-    const int num_cells = cell_map->size_local() + cell_map->num_ghosts();
+    std::int32_t num_cells = cell_map->size_local() + cell_map->num_ghosts();
     std::vector<std::int32_t> cells(num_cells, 0);
     std::iota(cells.begin(), cells.end(), 0);
-
-    const xt::xtensor<double, 2> x = fem::interpolation_coords(
-        *_function_space->element(), *_function_space->mesh(), cells);
-    auto fx = f(x);
-
-    fem::interpolate(*this, fx, cells);
+    interpolate(f, cells);
   }
 
-  /// Interpolate an Expression (based on ufl)
-  /// @param[in] expr The function to be interpolated.
-  /// @param[in] cells The cells (local to process) to interpolate into
-  void interpolate(const Expression<T>& expr,
+  /// Interpolate an Expression (based on UFL)
+  /// @param[in] e The Expression to be interpolated. The Expression
+  /// must have been created using the reference coordinates
+  /// `FiniteElement::interpolation_points()` for the element associated
+  /// with `u`.
+  /// @param[in] cells The cells to interpolate on
+  void interpolate(const Expression<T>& e,
                    const xtl::span<const std::int32_t>& cells)
   {
-    fem::interpolate(*this, expr, cells);
+    // Check that spaces are compatible
+    std::size_t value_size = e.value_size();
+    assert(_function_space);
+    assert(_function_space->element());
+    assert(value_size == _function_space->element()->value_size());
+    assert(e.x().shape()
+           == _function_space->element()->interpolation_points().shape());
+
+    // Array to hold evaluted Expression
+    std::size_t num_cells = cells.size();
+    std::size_t num_points = e.x().shape(0);
+    xt::xtensor<T, 3> f({num_cells, num_points, value_size});
+
+    // Evaluate Expression at points
+    auto f_view = xt::reshape_view(f, {num_cells, num_points * value_size});
+    e.eval(cells, f_view);
+
+    // Reshape evaluated data to fit interpolate
+    // Expression returns matrix of shape (num_cells, num_points *
+    // value_size), i.e. xyzxyz ordering of dof values per cell per point.
+    // The interpolation uses xxyyzz input, ordered for all points of each
+    // cell, i.e. (value_size, num_cells*num_points)
+    xt::xarray<T> _f = xt::reshape_view(xt::transpose(f, {2, 0, 1}),
+                                        {value_size, num_cells * num_points});
+
+    // Interpolate values into appropriate space
+    fem::interpolate(*this, _f, cells);
+  }
+
+  /// Interpolate an Expression (based on UFL) on all cells
+  /// @param[in] e The function to be interpolated
+  void interpolate(const Expression<T>& e)
+  {
+    assert(_function_space);
+    assert(_function_space->mesh());
+    const int tdim = _function_space->mesh()->topology().dim();
+    auto cell_map = _function_space->mesh()->topology().index_map(tdim);
+    assert(cell_map);
+    std::int32_t num_cells = cell_map->size_local() + cell_map->num_ghosts();
+    std::vector<std::int32_t> cells(num_cells, 0);
+    std::iota(cells.begin(), cells.end(), 0);
+    interpolate(e, cells);
   }
 
   /// Evaluate the Function at points
@@ -225,7 +322,7 @@ public:
         = mesh->geometry().dofmap();
     // FIXME: Add proper interface for num coordinate dofs
     const std::size_t num_dofs_g = x_dofmap.num_links(0);
-    const xt::xtensor<double, 2>& x_g = mesh->geometry().x();
+    xtl::span<const double> x_g = mesh->geometry().x();
 
     // Get coordinate map
     const fem::CoordinateElement& cmap = mesh->geometry().cmap();
@@ -288,19 +385,18 @@ public:
         = element->get_dof_transformation_function<double>();
 
     // -- Lambda function for affine pull-backs
-    auto pull_back_affine =
-        [&cmap, tdim,
-         X0 = xt::xtensor<double, 2>(xt::zeros<double>({std::size_t(1), tdim})),
-         data = xt::xtensor<double, 4>(cmap.tabulate_shape(1, 1)),
-         dphi = xt::xtensor<double, 2>({tdim, cmap.tabulate_shape(1, 1)[2]})](
-            auto&& X, const auto& cell_geometry, auto&& J, auto&& K,
-            const auto& x) mutable
+    xt::xtensor<double, 4> data(cmap.tabulate_shape(1, 1));
+    const xt::xtensor<double, 2> X0(xt::zeros<double>({std::size_t(1), tdim}));
+    cmap.tabulate(1, X0, data);
+    const xt::xtensor<double, 2> dphi_i
+        = xt::view(data, xt::range(1, tdim + 1), 0, xt::all(), 0);
+    auto pull_back_affine = [dphi_i](auto&& X, const auto& cell_geometry,
+                                     auto&& J, auto&& K, const auto& x) mutable
     {
-      cmap.tabulate(1, X0, data);
-      dphi = xt::view(data, xt::range(1, tdim + 1), 0, xt::all(), 0);
-      cmap.compute_jacobian(dphi, cell_geometry, J);
-      cmap.compute_jacobian_inverse(J, K);
-      cmap.pull_back_affine(X, K, cmap.x0(cell_geometry), x);
+      fem::CoordinateElement::compute_jacobian(dphi_i, cell_geometry, J);
+      fem::CoordinateElement::compute_jacobian_inverse(J, K);
+      fem::CoordinateElement::pull_back_affine(
+          X, K, fem::CoordinateElement::x0(cell_geometry), x);
     };
 
     xt::xtensor<double, 2> dphi;
@@ -329,8 +425,11 @@ public:
       // Get cell geometry (coordinate dofs)
       auto x_dofs = x_dofmap.links(cell_index);
       for (std::size_t i = 0; i < num_dofs_g; ++i)
+      {
+        const int pos = 3 * x_dofs[i];
         for (std::size_t j = 0; j < gdim; ++j)
-          coordinate_dofs(i, j) = x_g(x_dofs[i], j);
+          coordinate_dofs(i, j) = x_g[pos + j];
+      }
 
       for (std::size_t j = 0; j < gdim; ++j)
         xp(0, j) = x(p, j);
@@ -417,7 +516,7 @@ public:
 
     // Resize Array for holding point values
     xt::xtensor<T, 2> point_values(
-        {mesh->geometry().x().shape(0), value_size_loc});
+        {mesh->geometry().x().size() / 3, value_size_loc});
 
     // Prepare cell geometry
     const graph::AdjacencyList<std::int32_t>& x_dofmap
@@ -425,7 +524,11 @@ public:
 
     // FIXME: Add proper interface for num coordinate dofs
     const int num_dofs_g = x_dofmap.num_links(0);
-    const xt::xtensor<double, 2>& x_g = mesh->geometry().x();
+
+    const auto x_g = xt::adapt(
+        mesh->geometry().x().data(), mesh->geometry().x().size(),
+        xt::no_ownership(),
+        std::vector{mesh->geometry().x().size() / 3, std::size_t(3)});
 
     // Interpolate point values on each cell (using last computed value if
     // not continuous, e.g. discontinuous Galerkin methods)

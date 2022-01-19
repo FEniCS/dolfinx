@@ -23,18 +23,18 @@ def mesh():
 
 @pytest.fixture
 def V(mesh):
-    return FunctionSpace(mesh, ('CG', 1))
+    return FunctionSpace(mesh, ('Lagrange', 1))
 
 
 @pytest.fixture
 def W(mesh):
-    return VectorFunctionSpace(mesh, ('CG', 1))
+    return VectorFunctionSpace(mesh, ('Lagrange', 1))
 
 
 @pytest.fixture
 def Q(mesh):
-    W = VectorElement('CG', mesh.ufl_cell(), 1)
-    V = FiniteElement('CG', mesh.ufl_cell(), 1)
+    W = VectorElement('Lagrange', mesh.ufl_cell(), 1)
+    V = FiniteElement('Lagrange', mesh.ufl_cell(), 1)
     return FunctionSpace(mesh, W * V)
 
 
@@ -67,8 +67,8 @@ def test_python_interface(V, V2, W, W2, Q):
 
     assert V.ufl_cell() == V2.ufl_cell()
     assert W.ufl_cell() == W2.ufl_cell()
-    assert V.dolfin_element().signature() == V2.dolfin_element().signature()
-    assert W.dolfin_element().signature() == W2.dolfin_element().signature()
+    assert V.element.signature() == V2.element.signature()
+    assert W.element.signature() == W2.element.signature()
     assert V.ufl_element() == V2.ufl_element()
     assert W.ufl_element() == W2.ufl_element()
     assert W.id == W2.id
@@ -109,9 +109,9 @@ def test_sub(Q, W):
     assert W.dofmap.dof_layout.block_size() == X.dofmap.dof_layout.block_size()
     assert W.dofmap.bs * len(W.dofmap.cell_dofs(0)) == len(X.dofmap.cell_dofs(0))
 
-    assert W.element.num_sub_elements() == X.element.num_sub_elements()
-    assert W.element.space_dimension() == X.element.space_dimension()
-    assert W.element.value_rank == X.element.value_rank
+    assert W.element.num_sub_elements == X.element.num_sub_elements
+    assert W.element.space_dimension == X.element.space_dimension
+    assert W.element.value_shape == X.element.value_shape
     assert W.element.interpolation_points.shape == X.element.interpolation_points.shape
     assert W.element.signature() == X.element.signature()
 
@@ -172,12 +172,10 @@ def test_collapse(W, V):
 
 def test_argument_equality(mesh, V, V2, W, W2):
     """Placed this test here because it's mainly about detecting differing
-    function spaces.
-
-    """
+    function spaces"""
     mesh2 = create_unit_cube(MPI.COMM_WORLD, 8, 8, 8)
-    V3 = FunctionSpace(mesh2, ('CG', 1))
-    W3 = VectorFunctionSpace(mesh2, ('CG', 1))
+    V3 = FunctionSpace(mesh2, ("Lagrange", 1))
+    W3 = VectorFunctionSpace(mesh2, ("Lagrange", 1))
 
     for TF in (TestFunction, TrialFunction):
         v = TF(V)

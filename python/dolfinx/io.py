@@ -9,15 +9,14 @@
 
 import typing
 
-import numpy
+import numpy as np
 
-import dolfinx
 import ufl
 from dolfinx import cpp as _cpp
-from dolfinx import fem
 from dolfinx.cpp.io import distribute_entity_data
 from dolfinx.cpp.io import perm_gmsh as cell_perm_gmsh
-from dolfinx.mesh import GhostMode
+from dolfinx.fem import Function
+from dolfinx.mesh import GhostMode, Mesh
 
 __all__ = ["VTKFile", "XDMFFile", "cell_perm_gmsh", "distribute_entity_data"]
 
@@ -31,11 +30,11 @@ class VTKFile(_cpp.io.VTKFile):
 
     """
 
-    def write_mesh(self, mesh: dolfinx.mesh.Mesh, t: float = 0.0) -> None:
+    def write_mesh(self, mesh: Mesh, t: float = 0.0) -> None:
         """Write mesh to file for a given time (default 0.0)"""
         self.write(mesh, t)
 
-    def write_function(self, u: typing.Union[typing.List[fem.Function], fem.Function], t: float = 0.0) -> None:
+    def write_function(self, u: typing.Union[typing.List[Function], Function], t: float = 0.0) -> None:
         """
         Write a single function or a list of functions to file for a given time (default 0.0)
         """
@@ -49,7 +48,7 @@ class VTKFile(_cpp.io.VTKFile):
 
 
 class XDMFFile(_cpp.io.XDMFFile):
-    def write_mesh(self, mesh: dolfinx.mesh.Mesh) -> None:
+    def write_mesh(self, mesh: Mesh) -> None:
         """Write mesh to file for a given time (default 0.0)"""
         super().write_mesh(mesh)
 
@@ -57,7 +56,7 @@ class XDMFFile(_cpp.io.XDMFFile):
         u_cpp = getattr(u, "_cpp_object", u)
         super().write_function(u_cpp, t, mesh_xpath)
 
-    def read_mesh(self, ghost_mode=GhostMode.shared_facet, name="mesh", xpath="/Xdmf/Domain") -> dolfinx.mesh.Mesh:
+    def read_mesh(self, ghost_mode=GhostMode.shared_facet, name="mesh", xpath="/Xdmf/Domain") -> Mesh:
         """Read mesh data from file"""
         cell_shape, cell_degree = super().read_cell_type(name, xpath)
         cells = super().read_topology_data(name, xpath)
@@ -73,7 +72,7 @@ class XDMFFile(_cpp.io.XDMFFile):
         mesh.name = name
 
         domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell, cell_degree))
-        return dolfinx.mesh.Mesh.from_cpp(mesh, domain)
+        return Mesh.from_cpp(mesh, domain)
 
     def read_meshtags(self, mesh, name, xpath="/Xdmf/Domain"):
         return super().read_meshtags(mesh, name, xpath)
@@ -123,12 +122,12 @@ def extract_gmsh_topology_and_markers(gmsh_model, model_name=None):
             # Gather data for each element type and the
             # corresponding physical markers
             if element_type in topologies.keys():
-                topologies[element_type]["topology"] = numpy.concatenate(
+                topologies[element_type]["topology"] = np.concatenate(
                     (topologies[element_type]["topology"], element_topology), axis=0)
-                topologies[element_type]["cell_data"] = numpy.concatenate(
-                    (topologies[element_type]["cell_data"], numpy.full(num_el, tag)), axis=0)
+                topologies[element_type]["cell_data"] = np.concatenate(
+                    (topologies[element_type]["cell_data"], np.full(num_el, tag)), axis=0)
             else:
-                topologies[element_type] = {"topology": element_topology, "cell_data": numpy.full(num_el, tag)}
+                topologies[element_type] = {"topology": element_topology, "cell_data": np.full(num_el, tag)}
 
     return topologies
 
@@ -147,8 +146,8 @@ def extract_gmsh_geometry(gmsh_model, model_name=None):
     # GMSH indices starts at 1
     indices -= 1
     # Sort nodes in geometry according to the unique index
-    perm_sort = numpy.argsort(indices)
-    assert numpy.all(indices[perm_sort] == numpy.arange(len(indices)))
+    perm_sort = np.argsort(indices)
+    assert np.all(indices[perm_sort] == np.arange(len(indices)))
     return points[perm_sort]
 
 

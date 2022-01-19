@@ -81,7 +81,7 @@ xt::xtensor<double, 2> create_new_geometry(
   }
 
   // Copy over existing mesh vertices
-  const xt::xtensor<double, 2>& x_g = mesh.geometry().x();
+  xtl::span<const double> x_g = mesh.geometry().x();
 
   const std::size_t num_vertices = map_v->size_local();
   const std::size_t num_new_vertices = local_edge_to_new_vertex.size();
@@ -89,8 +89,11 @@ xt::xtensor<double, 2> create_new_geometry(
       {num_vertices + num_new_vertices, 3});
 
   for (std::size_t v = 0; v < num_vertices; ++v)
-    for (std::size_t j = 0; j < x_g.shape(1); ++j)
-      new_vertex_coordinates(v, j) = x_g(vertex_to_x[v], j);
+  {
+    const int pos = 3 * vertex_to_x[v];
+    for (std::size_t j = 0; j < 3; ++j)
+      new_vertex_coordinates(v, j) = x_g[pos + j];
+  }
 
   // Compute new vertices
   if (num_new_vertices > 0)
@@ -168,7 +171,7 @@ refinement::compute_edge_sharing(const mesh::Mesh& mesh)
 void refinement::update_logical_edgefunction(
     const MPI_Comm& neighbor_comm,
     const std::vector<std::vector<std::int32_t>>& marked_for_update,
-    std::vector<bool>& marked_edges, const common::IndexMap& map_e)
+    std::vector<std::int8_t>& marked_edges, const common::IndexMap& map_e)
 {
   std::vector<std::int32_t> send_offsets = {0};
   std::vector<std::int64_t> data_to_send;
@@ -203,7 +206,7 @@ std::pair<std::map<std::int32_t, std::int64_t>, xt::xtensor<double, 2>>
 refinement::create_new_vertices(
     const MPI_Comm& neighbor_comm,
     const std::map<std::int32_t, std::vector<std::int32_t>>& shared_edges,
-    const mesh::Mesh& mesh, const std::vector<bool>& marked_edges)
+    const mesh::Mesh& mesh, const std::vector<std::int8_t>& marked_edges)
 {
   // Take marked_edges and use to create new vertices
   const std::shared_ptr<const common::IndexMap> edge_index_map

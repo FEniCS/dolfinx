@@ -213,14 +213,21 @@ void mesh(py::module& m)
           return partitioner(MPICommWrapper(comm), n, tdim, cells, ghost_mode);
         };
 
-        const std::size_t shape1 = x.ndim() == 1 ? 1 : x.shape()[1];
-        std::array<std::size_t, 2> shape
-            = {static_cast<std::size_t>(x.shape(0)), shape1};
+        std::size_t shape1 = x.ndim() == 1 ? 1 : x.shape()[1];
+        std::vector shape{std::size_t(x.shape(0)), shape1};
         auto _x = xt::adapt(x.data(), x.size(), xt::no_ownership(), shape);
         return dolfinx::mesh::create_mesh(comm.get(), cells, element, _x,
                                           ghost_mode, partitioner_wrapper);
       },
       "Helper function for creating meshes.");
+
+  m.def("create_submesh",
+        [](const dolfinx::mesh::Mesh& mesh, int dim,
+           const py::array_t<std::int32_t, py::array::c_style>& entities)
+        {
+          return dolfinx::mesh::create_submesh(
+              mesh, dim, xtl::span(entities.data(), entities.size()));
+        });
 
   // dolfinx::mesh::GhostMode enums
   py::enum_<dolfinx::mesh::GhostMode>(m, "GhostMode")
@@ -231,37 +238,6 @@ void mesh(py::module& m)
   // dolfinx::mesh::Geometry class
   py::class_<dolfinx::mesh::Geometry, std::shared_ptr<dolfinx::mesh::Geometry>>(
       m, "Geometry", "Geometry object")
-      .def(py::init(
-          [](const std::shared_ptr<const dolfinx::common::IndexMap>& map,
-             const dolfinx::graph::AdjacencyList<std::int32_t>& dofmap,
-             const dolfinx::fem::CoordinateElement& element,
-             const py::array_t<double, py::array::c_style>& x,
-             const py::array_t<std::int64_t, py::array::c_style>&
-                 global_indices)
-          {
-            std::vector<std::int64_t> indices(global_indices.data(),
-                                              global_indices.data()
-                                                  + global_indices.size());
-            assert(x.ndim() <= 2);
-            if (x.ndim() == 1)
-            {
-              std::array<std::size_t, 2> shape
-                  = {static_cast<std::size_t>(x.shape(1)), 1};
-              auto _x
-                  = xt::adapt(x.data(), x.size(), xt::no_ownership(), shape);
-              return dolfinx::mesh::Geometry(map, dofmap, element, _x,
-                                             std::move(indices));
-            }
-            else
-            {
-              std::array shape
-                  = {std::size_t(x.shape(0)), std::size_t(x.shape(1))};
-              auto _x
-                  = xt::adapt(x.data(), x.size(), xt::no_ownership(), shape);
-              return dolfinx::mesh::Geometry(map, dofmap, element, _x,
-                                             std::move(indices));
-            }
-          }))
       .def_property_readonly("dim", &dolfinx::mesh::Geometry::dim,
                              "Geometric dimension")
       .def_property_readonly("dofmap", &dolfinx::mesh::Geometry::dofmap)
@@ -270,8 +246,8 @@ void mesh(py::module& m)
           "x",
           [](const dolfinx::mesh::Geometry& self)
           {
-            return py::array_t<double>(self.x().shape(), self.x().data(),
-                                       py::cast(self));
+            std::array<std::size_t, 2> shape = {self.x().size() / 3, 3};
+            return py::array_t<double>(shape, self.x().data(), py::cast(self));
           },
           "Return coordinates of all geometry points. Each row is the "
           "coordinate of a point.")
