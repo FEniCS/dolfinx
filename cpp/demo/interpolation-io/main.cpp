@@ -80,15 +80,24 @@ void interpolate_nedelec(const std::shared_ptr<mesh::Mesh>& mesh)
   // Note that the x1 component of this field is continuous, and the x0
   // component is discontinuous across x0 = 0.5. This function lies in
   // the Nedelec space when there are cell edges aligned to x0 = 0.5.
+  auto cells0 = mesh::locate_entities(
+      *mesh, 2, [](auto& x) { return xt::row(x, 0) <= 0.5; });
+  auto cells1 = mesh::locate_entities(
+      *mesh, 2, [](auto& x) { return xt::row(x, 0) >= 0.5; });
+
+  u->interpolate(
+      [](auto& x) -> xt::xtensor<T, 2> {
+        return xt::view(x, xt::range(0, 2), xt::all());
+      },
+      cells0);
   u->interpolate(
       [](auto& x) -> xt::xtensor<T, 2>
       {
         xt::xtensor<T, 2> v = xt::view(x, xt::range(0, 2), xt::all());
-        auto v0 = xt::row(v, 0);
-        auto x0 = xt::row(x, 0);
-        xt::real(v0) = xt::where(x0 < 0.5, xt::real(v0), xt::real(v0) + 1);
+        xt::row(v, 0) += 1;
         return v;
-      });
+      },
+      cells1);
 
   // Nedelec spaces are not generally supported by visualisation tools.
   // Simply evaluting a Nedelec function at cell vertices can
