@@ -176,7 +176,7 @@ int main(int argc, char* argv[])
 
       dolfinx::fem::assemble_vector(y_array, *M);
       fem::apply_lifting(y_array, {a}, {{bc}}, {}, 1.0);
-      fem::set_bc(y_array, {bc});
+      fem::set_bc(y_array, {bc}, {x_array});
 
       // Update owned values
       y.scatter_rev(common::IndexMap::Mode::add);
