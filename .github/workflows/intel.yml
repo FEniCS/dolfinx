@@ -82,7 +82,6 @@ jobs:
           ctest --output-on-failure -R unittests
           mpiexec -np 2 ctest --output-on-failure -R unittests
 
-
       - name: Build and run DOLFINx C++ regression tests (serial and MPI (np=2))
         run: |
           . /opt/intel/oneapi/setvars.sh
