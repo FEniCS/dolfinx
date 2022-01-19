@@ -366,13 +366,11 @@ public:
     // Compute basis on reference element
     element->tabulate(basis_derivatives_reference_values, X, 0);
 
-    // FIXME: Should avoid copying, but we cannot make a span of an xt::view
-    xt::xtensor<double, 2> basis_reference_values(
-        {space_dimension, reference_value_size});
-
     using u_t = xt::xview<decltype(basis_values)&, std::size_t,
                           xt::xall<std::size_t>, xt::xall<std::size_t>>;
-    using U_t = decltype(basis_reference_values);
+    using U_t
+        = xt::xview<decltype(basis_derivatives_reference_values)&, std::size_t,
+                    std::size_t, xt::xall<std::size_t>, xt::xall<std::size_t>>;
     using J_t = xt::xview<decltype(J)&, std::size_t, xt::xall<std::size_t>,
                           xt::xall<std::size_t>>;
     using K_t = xt::xview<decltype(K)&, std::size_t, xt::xall<std::size_t>,
@@ -383,6 +381,7 @@ public:
                              std::int32_t, int)>
         apply_dof_transformation
         = element->get_dof_transformation_function<double>();
+    const std::size_t num_basis_values = space_dimension * reference_value_size;
 
     for (std::size_t p = 0; p < cells.size(); ++p)
     {
@@ -392,15 +391,16 @@ public:
         continue;
 
       // Permute the reference values to account for the cell's orientation
-      basis_reference_values = xt::view(basis_derivatives_reference_values, 0,
-                                        p, xt::all(), xt::all());
-      apply_dof_transformation(xtl::span(basis_reference_values.data(),
-                                         basis_reference_values.size()),
-                               cell_info, cell_index, reference_value_size);
+      apply_dof_transformation(
+          xtl::span(basis_derivatives_reference_values.data()
+                        + p * num_basis_values,
+                    num_basis_values),
+          cell_info, cell_index, reference_value_size);
 
       auto _K = xt::view(K, p, xt::all(), xt::all());
       auto _J = xt::view(J, p, xt::all(), xt::all());
-      auto _U = xt::view(basis_reference_values, xt::all(), xt::all());
+      auto _U = xt::view(basis_derivatives_reference_values, (std::size_t)0, p,
+                         xt::all(), xt::all());
       auto _u = xt::view(basis_values, (std::size_t)0, xt::all(), xt::all());
       push_forward_fn(_u, _U, _J, detJ[p], _K);
 
