@@ -9,10 +9,7 @@
 #include <cmath>
 #include <dolfinx.h>
 #include <dolfinx/fem/Constant.h>
-#include <dolfinx/fem/petsc.h>
-#include <dolfinx/la/MatrixCSR.h>
 #include <xtensor/xarray.hpp>
-#include <xtensor/xview.hpp>
 
 using namespace dolfinx;
 
