@@ -323,8 +323,8 @@ class Function(ufl.Coefficient):
             except AttributeError:
                 self._cpp_object.interpolate(u, cells)
 
-        @_interpolate.register(int, cells)
-        def _(u_ptr):
+        @_interpolate.register(int)
+        def _(u_ptr, cells):
             self._cpp_object.interpolate_ptr(u_ptr, cells)
 
         if cells is None:
