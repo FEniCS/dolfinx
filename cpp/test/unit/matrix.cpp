@@ -69,7 +69,10 @@ void spmv_impl(xtl::span<const T> values,
 //  y[0] = |Ai[0] Ai[1]| |   x[0]  | = Ai[0] x[0] + Ai[1] x[1]
 //                       |   x[1]  |
 //
-// Create function to compute y = A x in parallel
+/// Computes y += A*x for a parallel CSR matrix A and parallel dense vectors x,y
+/// @param[in] A Parallel CSR matrix
+/// @param[in] x Input vector
+/// @param[in, out] y Output vector
 template <typename T>
 void spmv(la::MatrixCSR<T>& A, la::Vector<T>& x, la::Vector<T>& y)
 {
