@@ -27,6 +27,7 @@ else()
 
   add_executable(${PROJECT_NAME} main.cpp ${CMAKE_CURRENT_BINARY_DIR}/hyperelasticity.c)
   target_link_libraries(${PROJECT_NAME} dolfinx)
+  include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
   # Do not throw error for 'multi-line comments' (these are typical in
   # rst which includes LaTeX)
