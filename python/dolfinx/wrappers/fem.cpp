@@ -327,7 +327,8 @@ void declare_objects(py::module& m, const std::string& type)
       .def(
           "interpolate",
           [](dolfinx::fem::Function<T>& self,
-             const std::function<py::array_t<T>(const py::array_t<double>&)>& f)
+             const std::function<py::array_t<T>(const py::array_t<double>&)>& f,
+             const py::array_t<std::int32_t, py::array::c_style>& cells)
           {
             auto _f = [&f](const xt::xtensor<double, 2>& x) -> xt::xarray<T>
             {
@@ -340,16 +341,20 @@ void declare_objects(py::module& m, const std::string& type)
               std::copy_n(v.shape(), v.ndim(), std::back_inserter(shape));
               return xt::adapt(v.data(), shape);
             };
-            self.interpolate(_f);
+            self.interpolate(_f, cells);
           },
-          py::arg("f"), "Interpolate an expression")
-      .def("interpolate",
-           py::overload_cast<const dolfinx::fem::Function<T>&>(
-               &dolfinx::fem::Function<T>::interpolate),
-           py::arg("u"), "Interpolate a finite element function")
+          py::arg("f"), py::arg("cells"), "Interpolate an expression function")
+      .def(
+          "interpolate",
+          [](dolfinx::fem::Function<T>& self, dolfinx::fem::Function<T>& u,
+             const py::array_t<std::int32_t, py::array::c_style>& cells)
+          { self.interpolate(u, cells); },
+          py::arg("u"), py::arg("cells"),
+          "Interpolate a finite element function")
       .def(
           "interpolate_ptr",
-          [](dolfinx::fem::Function<T>& self, std::uintptr_t addr)
+          [](dolfinx::fem::Function<T>& self, std::uintptr_t addr,
+             const py::array_t<std::int32_t, py::array::c_style>& cells)
           {
             assert(self.function_space());
             auto element = self.function_space()->element();
@@ -369,8 +374,9 @@ void declare_objects(py::module& m, const std::string& type)
               return values;
             };
 
-            self.interpolate(_f);
+            self.interpolate(_f, cells);
           },
+          py::arg("f"), py::arg("cells"),
           "Interpolate using a pointer to an Expression with a C signature")
       .def(
           "interpolate",
@@ -378,7 +384,7 @@ void declare_objects(py::module& m, const std::string& type)
              const dolfinx::fem::Expression<T>& expr,
              const py::array_t<std::int32_t, py::array::c_style>& cells)
           { self.interpolate(expr, cells); },
-          "Interpolate using an Expression on a set of cells")
+          "Interpolate an Expression on a set of cells")
       .def_property_readonly(
           "x", py::overload_cast<>(&dolfinx::fem::Function<T>::x),
           "Return the vector associated with the finite element Function")
