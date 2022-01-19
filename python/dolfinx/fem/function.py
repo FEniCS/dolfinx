@@ -123,13 +123,13 @@ class Expression:
         # Setup data (evaluation points, coefficients, constants, mesh, value_size).
         # Tabulation function.
         ffi = cffi.FFI()
-        fn = ffi.cast("uintptr_t", self.ufcx_expression.tabulate_expression)
+        fn = ffi.cast("uintptr_t", self._ufcx_expression.tabulate_tensor_float64)
 
         # Prepare coefficients data. For every coefficient in form take
         # its C++ object.
         original_coefficients = ufl.algorithms.extract_coefficients(ufl_expression)
-        coeffs = [original_coefficients[self._ufc_expression.original_coefficient_positions[i]]._cpp_object
-                  for i in range(self._ufc_expression.num_coefficients)]
+        coeffs = [original_coefficients[self._ufcx_expression.original_coefficient_positions[i]]._cpp_object
+                  for i in range(self._ufcx_expression.num_coefficients)]
 
         ufl_constants = ufl.algorithms.analysis.extract_constants(ufl_expression)
         constants = [constant._cpp_object for i, constant in enumerate(ufl_constants)]
@@ -142,7 +142,7 @@ class Expression:
             else:
                 raise NotImplementedError(f"Type {dtype} not supported.")
 
-        self._cpp_object = create_expression(dtype)(ffi.cast("uintptr_t", ffi.addressof(self._ufc_expression)),
+        self._cpp_object = create_expression(dtype)(ffi.cast("uintptr_t", ffi.addressof(self._ufcx_expression)),
                                                     coeffs, constants, mesh)
 
     def eval(self, cells: np.ndarray, values: np.ndarray = None) -> np.ndarray:
@@ -161,16 +161,15 @@ class Expression:
 
         """
         _cells = np.asarray(cells, dtype=np.int32)
+        num_cells = _cells.shape[0]
 
         # Allocate memory for result if u was not provided
         if values is None:
             num_all_argument_dofs = np.prod(self.num_argument_dofs, dtype=int)
             if np.issubdtype(PETSc.ScalarType, np.complexfloating):
-                values = np.empty((num_cells, self.x.shape[0] * self.value_size * num_all_argument_dofs), dtype=np.complex128)
+                values = np.empty((num_cells, self.X.shape[0] * self.value_size * num_all_argument_dofs), dtype=np.complex128)
             else:
-                values = np.empty((num_cells, self.x.shape[0] * self.value_size * num_all_argument_dofs), dtype=np.float64)
-            values = np.empty((_cells.shape[0],
-                               self.num_points * self.value_size * num_all_argument_dofs), dtype=self.dtype)
+                values = np.empty((num_cells, self.X.shape[0] * self.value_size * num_all_argument_dofs), dtype=np.float64)
             self._cpp_object.eval(cells, values)
         else:
             if values.ndim >= 3 or values.shape[0] != _cells.shape[0] or values.shape[1] != _cells.shape[1]:
@@ -185,9 +184,13 @@ class Expression:
         return self._ufl_expression
 
     @property
-    def x(self) -> np.ndarray:
+    def X(self) -> np.ndarray:
         """Evaluation points on the reference cell"""
-        return self._cpp_object.x
+        return self._cpp_object.X
+
+    @property
+    def num_points(self) -> int:
+        return self._cpp_object.X.shape[0]
 
     @property
     def value_size(self) -> int:

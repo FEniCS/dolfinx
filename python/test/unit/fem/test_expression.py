@@ -5,6 +5,8 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import cffi
+import ctypes
+import ctypes.util
 import numba
 import numpy as np
 import pytest
@@ -13,7 +15,8 @@ import basix
 import dolfinx
 import ufl
 from dolfinx.fem import (Constant, Expression, Function, FunctionSpace,
-                         VectorFunctionSpace)
+                         VectorFunctionSpace, create_sparsity_pattern, form)
+from dolfinx.cpp.la.petsc import create_matrix
 from dolfinx.mesh import create_unit_square
 
 from mpi4py import MPI
@@ -138,7 +141,7 @@ def test_rank0():
 
 
 def test_rank1():
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 10, 10)
+    mesh = create_unit_square(MPI.COMM_WORLD, 10, 10)
     P2 = FunctionSpace(mesh, ("P", 2))
     vdP1 = VectorFunctionSpace(mesh, ("DG", 1))
 
@@ -159,8 +162,10 @@ def test_rank1():
             A_local = array_evaluated[i, :]
             MatSetValues(A, 6, rows.ctypes, 6, cols.ctypes, A_local.ctypes, 1)
 
-    a = ufl.inner(ufl.TrialFunction(P2), ufl.TestFunction(vdP1)[0]) * ufl.dx
-    A = create_matrix(a)
+    a = form(ufl.inner(ufl.TrialFunction(P2), ufl.TestFunction(vdP1)[0]) * ufl.dx)
+    sparsity_pattern = create_sparsity_pattern(a)
+    sparsity_pattern.assemble()
+    A = create_matrix(MPI.COMM_WORLD, sparsity_pattern)
 
     dofmap_col = P2.dofmap.list.array.reshape(-1, 6).astype(np.dtype(PETSc.IntType))
     dofmap_row = vdP1.dofmap.list.array

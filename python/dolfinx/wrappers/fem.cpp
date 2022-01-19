@@ -473,7 +473,7 @@ void declare_objects(py::module& m, const std::string& type)
                      value_shape, num_argument_dofs);
                }),
            py::arg("coefficients"), py::arg("constants"), py::arg("mesh"),
-           py::arg("x"), py::arg("fn"), py::arg("value_shape"),
+           py::arg("X"), py::arg("fn"), py::arg("value_shape"),
            py::arg("num_argument_dofs"))
       .def("eval",
            [](const dolfinx::fem::Expression<T>& self,
@@ -497,7 +497,7 @@ void declare_objects(py::module& m, const std::string& type)
                              &dolfinx::fem::Expression<T>::value_shape)
       .def_property_readonly("num_argument_dofs",
                              &dolfinx::fem::Expression<T>::num_argument_dofs)
-      .def_property_readonly("X", &dolfinx::fem::Expression<T>::X);
+      .def_property_readonly("X", [](const dolfinx::fem::Expression<T>& self){ return dolfinx_wrappers::xt_as_pyarray(std::move(self.X())); } );
 
   std::string pymethod_create_expression = std::string("create_expression_") + type;
   m.def(
