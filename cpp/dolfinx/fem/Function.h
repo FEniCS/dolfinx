@@ -14,7 +14,6 @@
 #include <dolfinx/common/UniqueIdGenerator.h>
 #include <dolfinx/la/Vector.h>
 #include <dolfinx/mesh/Geometry.h>
-#include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
 #include <functional>
 #include <memory>
@@ -148,25 +147,41 @@ public:
   /// Underlying vector
   std::shared_ptr<la::Vector<T>> x() { return _x; }
 
-  /// Interpolate a Function (on possibly non-matching meshes)
-  /// @param[in] v The function to be interpolated.
-  void interpolate(const Function<T>& v) { fem::interpolate(*this, v); }
+  /// Interpolate a Function
+  /// @param[in] v The function to be interpolated
+  /// @param[in] cells The cells to interpolate on
+  void interpolate(const Function<T>& v,
+                   const xtl::span<const std::int32_t>& cells)
+  {
+    fem::interpolate(*this, v, cells);
+  }
 
-  /// Interpolate an expression
-  /// @param[in] f The expression to be interpolated
+  /// Interpolate a Function
+  /// @param[in] v The function to be interpolated
+  void interpolate(const Function<T>& v)
+  {
+    assert(_function_space);
+    assert(_function_space->mesh());
+    int tdim = _function_space->mesh()->topology().dim();
+    auto cell_map = _function_space->mesh()->topology().index_map(tdim);
+    assert(cell_map);
+    std::int32_t num_cells = cell_map->size_local() + cell_map->num_ghosts();
+    std::vector<std::int32_t> cells(num_cells, 0);
+    std::iota(cells.begin(), cells.end(), 0);
+
+    fem::interpolate(*this, v, cells);
+  }
+
+  /// Interpolate an expression function on a list of cells
+  /// @param[in] f The expression function to be interpolated
+  /// @param[in] cells The cells to interpolate on
   void interpolate(
-      const std::function<xt::xarray<T>(const xt::xtensor<double, 2>&)>& f)
+      const std::function<xt::xarray<T>(const xt::xtensor<double, 2>&)>& f,
+      const xtl::span<const std::int32_t>& cells)
   {
     assert(_function_space);
     assert(_function_space->element());
     assert(_function_space->mesh());
-    const int tdim = _function_space->mesh()->topology().dim();
-    auto cell_map = _function_space->mesh()->topology().index_map(tdim);
-    assert(cell_map);
-    const int num_cells = cell_map->size_local() + cell_map->num_ghosts();
-    std::vector<std::int32_t> cells(num_cells, 0);
-    std::iota(cells.begin(), cells.end(), 0);
-
     const xt::xtensor<double, 2> x = fem::interpolation_coords(
         *_function_space->element(), *_function_space->mesh(), cells);
     auto fx = f(x);
@@ -195,13 +210,29 @@ public:
     fem::interpolate(*this, fx, cells);
   }
 
-  /// Interpolate an Expression (based on ufl)
-  /// @param[in] expr The function to be interpolated.
-  /// @param[in] cells The cells (local to process) to interpolate into
-  void interpolate(const Expression<T>& expr,
+  /// Interpolate an expression function on the whole domain
+  /// @param[in] f The expression to be interpolated
+  void interpolate(
+      const std::function<xt::xarray<T>(const xt::xtensor<double, 2>&)>& f)
+  {
+    assert(_function_space);
+    assert(_function_space->mesh());
+    const int tdim = _function_space->mesh()->topology().dim();
+    auto cell_map = _function_space->mesh()->topology().index_map(tdim);
+    assert(cell_map);
+    std::int32_t num_cells = cell_map->size_local() + cell_map->num_ghosts();
+    std::vector<std::int32_t> cells(num_cells, 0);
+    std::iota(cells.begin(), cells.end(), 0);
+    interpolate(f, cells);
+  }
+
+  /// Interpolate an Expression (based on UFL)
+  /// @param[in] e The function to be interpolated
+  /// @param[in] cells The cells to interpolate into
+  void interpolate(const Expression<T>& e,
                    const xtl::span<const std::int32_t>& cells)
   {
-    fem::interpolate(*this, expr, cells);
+    fem::interpolate(*this, e, cells);
   }
 
   /// Evaluate the Function at points

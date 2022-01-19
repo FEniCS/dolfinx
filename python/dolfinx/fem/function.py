@@ -310,35 +310,22 @@ class Function(ufl.Coefficient):
     def interpolate(self, u, cells: np.ndarray = None) -> None:
         """Interpolate an expression"""
         @singledispatch
-        def _interpolate(u):
+        def _interpolate(u, cells):
             try:
-                self._cpp_object.interpolate(u._cpp_object)
+                self._cpp_object.interpolate(u._cpp_object, cells)
             except AttributeError:
-                self._cpp_object.interpolate(u)
+                self._cpp_object.interpolate(u, cells)
 
-        @_interpolate.register(int)
+        @_interpolate.register(int, cells)
         def _(u_ptr):
-            self._cpp_object.interpolate_ptr(u_ptr)
+            self._cpp_object.interpolate_ptr(u_ptr, cells)
 
-        @_interpolate.register(Expression)
-        def _(expr: Expression, cells: np.ndarray = None):
-            if cells is None:
-                mesh = self.function_space.mesh
-                num_cells_local = mesh.topology.index_map(mesh.topology.dim).size_local
-                cells = np.arange(num_cells_local, dtype=np.int32)
-
-            # Interpolate Expression on set of cells
-            self._cpp_object.interpolate(expr._cpp_object, cells)
-
-        # Ignore cells as input if Expression
-        # FIXME: Should all interpolate functions support input cells?
-        if not isinstance(u, Expression):
-            if cells is not None:
-                warnings.warn("List of cells as input argument is ignored. "
-                              + "All cells local to process will be used in interpolation")
-            _interpolate(u)
-        else:
-            _interpolate(u, cells)
+        if cells is None:
+            mesh = self.function_space.mesh
+            map = mesh.topology.index_map(mesh.topology.dim)
+            num_cells = map.size_local + map.num_ghosts
+            cells = np.arange(num_cells, dtype=np.int32)
+        _interpolate(u, cells)
 
     def compute_point_values(self):
         return self._cpp_object.compute_point_values()
