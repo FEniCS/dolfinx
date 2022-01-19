@@ -8,6 +8,7 @@
 
 #include "Function.h"
 #include <dolfinx/mesh/Mesh.h>
+#include <dolfinx/common/utils.h>
 #include <functional>
 #include <utility>
 #include <vector>
@@ -110,7 +111,7 @@ public:
 
     // FIXME: Add proper interface for num coordinate dofs
     const std::size_t num_dofs_g = x_dofmap.num_links(0);
-    const xt::xtensor<double, 2>& x_g = _mesh->geometry().x();
+    xtl::span<const double> x_g = _mesh->geometry().x();
 
     // Create data structures used in evaluation
     std::vector<double> coordinate_dofs(3 * num_dofs_g);
@@ -129,10 +130,10 @@ public:
       auto x_dofs = x_dofmap.links(cell);
       for (std::size_t i = 0; i < x_dofs.size(); ++i)
       {
-        std::copy_n(xt::row(x_g, x_dofs[i]).cbegin(), 3,
-                    std::next(coordinate_dofs.begin(), 3 * i));
+        common::impl::copy_N<3>(std::next(x_g.begin(), 3 * x_dofs[i]),
+                                std::next(coordinate_dofs.begin(), 3 * i));
       }
-
+ 
       const T* coeff_cell = coeffs.data() + cell * cstride;
       std::fill(values_local.begin(), values_local.end(), 0.0);
       _fn(values_local.data(), coeff_cell, constant_data.data(),

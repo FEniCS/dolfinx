@@ -241,12 +241,12 @@ public:
     assert(_function_space);
     assert(_function_space->element());
     assert(value_size == _function_space->element()->value_size());
-    assert(e.x().shape()
+    assert(e.X().shape()
            == _function_space->element()->interpolation_points().shape());
 
     // Array to hold evaluted Expression
     std::size_t num_cells = cells.size();
-    std::size_t num_points = e.x().shape(0);
+    std::size_t num_points = e.X().shape(0);
     xt::xtensor<T, 3> f({num_cells, num_points, value_size});
 
     // Evaluate Expression at points

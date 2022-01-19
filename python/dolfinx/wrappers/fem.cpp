@@ -509,8 +509,8 @@ void declare_objects(py::module& m, const std::string& type)
              constants,
          const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh)
       {
-        const ufc_expression* p
-            = reinterpret_cast<const ufc_expression*>(expression);
+        const ufcx_expression* p
+            = reinterpret_cast<const ufcx_expression*>(expression);
         return dolfinx::fem::create_expression<T>(*p, coefficients, constants,
                                                   mesh);
       },
