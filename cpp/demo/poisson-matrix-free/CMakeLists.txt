@@ -4,7 +4,7 @@
 #
 cmake_minimum_required(VERSION 3.16)
 
-set(PROJECT_NAME demo_poisson)
+set(PROJECT_NAME matrix_free)
 project(${PROJECT_NAME} LANGUAGES C CXX)
 
 # Set C++17 standard
