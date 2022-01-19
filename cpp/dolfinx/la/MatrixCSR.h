@@ -308,7 +308,7 @@ public:
   /// Get the number of local rows
   /// @param[in] ghost_rows Set to true to include ghost rows in the
   /// number of local rows
-  std::int32_t rows(bool ghost_rows = false) const
+  std::int32_t num_rows(bool ghost_rows = false) const
   {
     return ghost_rows ? _row_ptr.size() - 1 : _index_maps[0]->size_local();
   }
@@ -321,7 +321,7 @@ public:
   /// @return Dense copy of the matrix
   xt::xtensor<T, 2> to_dense(bool ghost_rows = false) const
   {
-    const std::int32_t nrows = rows(ghost_rows);
+    const std::int32_t nrows = num_rows(ghost_rows);
     const std::int32_t ncols
         = _index_maps[1]->size_local() + _index_maps[1]->num_ghosts();
     xt::xtensor<T, 2> A = xt::zeros<T>({nrows, ncols});
@@ -415,7 +415,7 @@ public:
   /// @param[in] ghost_rows Set to true to include data of ghost rows
   xtl::span<T> values(bool ghost_rows = false)
   {
-    const std::int32_t nrows = rows(ghost_rows);
+    const std::int32_t nrows = num_rows(ghost_rows);
     return xtl::span<T>(_data.data(), _row_ptr.at(nrows));
   }
 
@@ -423,7 +423,7 @@ public:
   /// @param[in] ghost_rows Set to true to include data of ghost rows
   xtl::span<const T> values(bool ghost_rows = false) const
   {
-    const std::int32_t nrows = rows(ghost_rows);
+    const std::int32_t nrows = num_rows(ghost_rows);
     return xtl::span<const T>(_data.data(), _row_ptr.at(nrows));
   }
 
@@ -431,7 +431,7 @@ public:
   /// @param[in] ghost_rows Set to true to include data of ghost rows
   xtl::span<const std::int32_t> row_ptr(bool ghost_rows = false) const
   {
-    const std::int32_t nrows = rows(ghost_rows);
+    const std::int32_t nrows = num_rows(ghost_rows);
     return xtl::span<const std::int32_t>(_row_ptr.data(), nrows + 1);
   }
 
@@ -439,7 +439,7 @@ public:
   /// @param[in] ghost_rows Set to true to include data of ghost rows
   xtl::span<const std::int32_t> cols(bool ghost_rows = false) const
   {
-    const std::int32_t nrows = rows(ghost_rows);
+    const std::int32_t nrows = num_rows(ghost_rows);
     return xtl::span<const std::int32_t>(_cols.data(), _row_ptr.at(nrows));
   }
 
@@ -447,7 +447,7 @@ public:
   /// @param[in] ghost_rows Set to true to include data of ghost rows
   xtl::span<const std::int32_t> off_diag_offset(bool ghost_rows = false) const
   {
-    const std::size_t nrows = rows(ghost_rows);
+    const std::size_t nrows = num_rows(ghost_rows);
     return xtl::span<const std::int32_t>(_off_diagonal_offset.data(), nrows);
   }
 

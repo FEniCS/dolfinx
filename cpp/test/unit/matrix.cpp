@@ -150,9 +150,35 @@ void test_matrix_apply()
   std::for_each(y.array().begin(), y.array().begin(), check_component);
 }
 
+void test_matrix()
+{
+  auto map0 = std::make_shared<common::IndexMap>(MPI_COMM_SELF, 8);
+  la::SparsityPattern p(MPI_COMM_SELF, {map0, map0}, {1, 1});
+  p.insert(std::vector{0}, std::vector{0});
+  p.insert(std::vector{4}, std::vector{5});
+  p.insert(std::vector{5}, std::vector{4});
+  p.assemble();
+
+  la::MatrixCSR<float> A(p);
+  A.add(std::vector<decltype(A)::value_type>{1}, std::vector{0},
+        std::vector{0});
+  A.add(std::vector<decltype(A)::value_type>{2.3}, std::vector{4},
+        std::vector{5});
+
+  const auto Adense = A.to_dense();
+  xt::xtensor<float, 2> Aref = xt::zeros<float>({8, 8});
+  Aref(0, 0) = 1;
+  Aref(4, 5) = 2.3;
+  CHECK((Adense == Aref));
+
+  Aref(4, 4) = 2.3;
+  CHECK((Adense != Aref));
+}
+
 } // namespace
 
 TEST_CASE("Linear Algebra CSR Matrix", "[la_matrix]")
 {
+  CHECK_NOTHROW(test_matrix());
   CHECK_NOTHROW(test_matrix_apply());
 }
