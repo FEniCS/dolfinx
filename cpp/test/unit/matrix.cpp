@@ -84,7 +84,7 @@ void spmv(la::MatrixCSR<T>& A, la::Vector<T>& x, la::Vector<T>& y)
   xtl::span<const std::int32_t> off_diag_offset = A.off_diag_offset();
   xtl::span<const T> values = A.values();
 
-  std::int32_t nrows = A.rows();
+  std::int32_t nrows = A.num_rows();
 
   xtl::span<const T> _x = x.array();
   xtl::span<T> _y = y.mutable_array();
@@ -131,7 +131,7 @@ void test_matrix_apply()
   fem::assemble_matrix(la::MatrixCSR<double>::mat_add_values(A), *a, {});
   A.finalize();
 
-  CHECK((V->dofmap()->index_map->size_local() == A.rows()));
+  CHECK((V->dofmap()->index_map->size_local() == A.num_rows()));
 
   // Get compatible vectors
   auto maps = A.index_maps();
