@@ -32,10 +32,12 @@ else()
   # Add target to compile UFL files
   add_custom_command(
     OUTPUT {ufl_c_files}
-    COMMAND ffcx ${{CMAKE_CURRENT_SOURCE_DIR}}/{ufl_files} -o ${{CMAKE_CURRENT_SOURCE_DIR}}
+    COMMAND ffcx ${{CMAKE_CURRENT_SOURCE_DIR}}/{ufl_files}
     VERBATIM DEPENDS {ufl_files} COMMENT "Compile {ufl_files} using FFCx")
 
-  add_executable(${{PROJECT_NAME}} {src_files} ${{CMAKE_CURRENT_SOURCE_DIR}}/{ufl_c_files})
+  set(CMAKE_INCLUDE_CURRENT_DIR ON)
+  
+  add_executable(${{PROJECT_NAME}} {src_files} ${{CMAKE_CURRENT_BINARY_DIR}}/{ufl_c_files})
   target_link_libraries(${{PROJECT_NAME}} dolfinx)
 
   # Do not throw error for 'multi-line comments' (these are typical in
@@ -78,10 +80,10 @@ if (PETSC_SCALAR_COMPLEX EQUAL 1)
 endif()
 add_custom_command(
   OUTPUT {ufl_c_files}
-  COMMAND ffcx ${{CMAKE_CURRENT_SOURCE_DIR}}/{ufl_files} ${{SCALAR_TYPE}} -o ${{CMAKE_CURRENT_SOURCE_DIR}}
+  COMMAND ffcx ${{CMAKE_CURRENT_SOURCE_DIR}}/{ufl_files} ${{SCALAR_TYPE}}
   VERBATIM DEPENDS {ufl_files} COMMENT "Compile {ufl_files} using FFCx")
 
-add_executable(${{PROJECT_NAME}} {src_files} ${{CMAKE_CURRENT_SOURCE_DIR}}/{ufl_c_files})
+add_executable(${{PROJECT_NAME}} {src_files} ${{CMAKE_CURRENT_BINARY_DIR}}/{ufl_c_files})
 target_link_libraries(${{PROJECT_NAME}} dolfinx)
 
 # Do not throw error for 'multi-line comments' (these are typical in
@@ -153,7 +155,8 @@ def generate_cmake_files(subdirectory, generated_files):
             continue
 
         if len(ufl_files) > 1:
-            raise RuntimeError("CMake generation supports exactly one UFL file")
+            raise RuntimeError(
+                "CMake generation supports exactly one UFL file")
 
         # Name of demo and cpp source files
         # print("**, ", main_file_name, cpp_files)
@@ -170,7 +173,8 @@ def generate_cmake_files(subdirectory, generated_files):
         if program_name not in executable_names:
             executable_names.add(program_name)
         else:
-            warnings.warn("Duplicate executable names found when generating CMakeLists.txt files.")
+            warnings.warn(
+                "Duplicate executable names found when generating CMakeLists.txt files.")
 
         # Write file
         filename = os.path.join(program_dir, "CMakeLists.txt")

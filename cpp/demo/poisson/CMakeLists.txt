@@ -22,10 +22,12 @@ if (PETSC_SCALAR_COMPLEX EQUAL 1)
 endif()
 add_custom_command(
   OUTPUT poisson.c
-  COMMAND ffcx ${CMAKE_CURRENT_SOURCE_DIR}/poisson.ufl ${SCALAR_TYPE} -o ${CMAKE_CURRENT_SOURCE_DIR}
+  COMMAND ffcx ${CMAKE_CURRENT_SOURCE_DIR}/poisson.ufl ${SCALAR_TYPE}
   VERBATIM DEPENDS poisson.ufl COMMENT "Compile poisson.ufl using FFCx")
 
-add_executable(${PROJECT_NAME} main.cpp ${CMAKE_CURRENT_SOURCE_DIR}/poisson.c)
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+
+add_executable(${PROJECT_NAME} main.cpp ${CMAKE_CURRENT_BINARY_DIR}/poisson.c)
 target_link_libraries(${PROJECT_NAME} dolfinx)
 
 # Do not throw error for 'multi-line comments' (these are typical in
