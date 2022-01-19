@@ -343,16 +343,19 @@ public:
       if (cmap.is_affine())
       {
         pull_back_affine(_Xp, coordinate_dofs, _J, _K, xp);
-        detJ[p] = cmap.compute_jacobian_determinant(_J);
+        detJ[p]
+            = dolfinx::fem::CoordinateElement::compute_jacobian_determinant(_J);
       }
       else
       {
         cmap.pull_back_nonaffine(_Xp, xp, coordinate_dofs);
         cmap.tabulate(1, _Xp, phi);
         dphi = xt::view(phi, xt::range(1, tdim + 1), 0, xt::all(), 0);
-        cmap.compute_jacobian(dphi, coordinate_dofs, _J);
-        cmap.compute_jacobian_inverse(_J, _K);
-        detJ[p] = cmap.compute_jacobian_determinant(_J);
+        dolfinx::fem::CoordinateElement::compute_jacobian(dphi, coordinate_dofs,
+                                                          _J);
+        dolfinx::fem::CoordinateElement::compute_jacobian_inverse(_J, _K);
+        detJ[p]
+            = dolfinx::fem::CoordinateElement::compute_jacobian_determinant(_J);
       }
       xt::row(X, p) = xt::row(_Xp, 0);
     }
