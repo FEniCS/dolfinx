@@ -26,8 +26,8 @@ class Vector
 public:
   /// The value type
   using value_type = T;
-  
-  /// The allocator type 
+
+  /// The allocator type
   using allocator_type = Allocator;
 
   /// Create a distributed vector
@@ -250,6 +250,9 @@ public:
 
   /// Get local part of the vector
   xtl::span<T> mutable_array() { return xtl::span(_x); }
+
+  /// Get the allocator associated with the container
+  constexpr allocator_type allocator() const { return _x.get_allocator(); }
 
 private:
   // Map describing the data layout
