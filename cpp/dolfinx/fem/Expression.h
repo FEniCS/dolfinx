@@ -35,6 +35,7 @@ class Expression
 public:
   /// Create an Expression
   ///
+  /// @param[in] function_space Function space for Argument
   /// @param[in] coefficients Coefficients in the Expression
   /// @param[in] constants Constants in the Expression
   /// @param[in] mesh
@@ -42,9 +43,8 @@ public:
   /// tdim cols
   /// @param[in] fn function for tabulating expression
   /// @param[in] value_shape shape of expression evaluated at single point
-  /// @param[in] num_argument_dofs number of degrees-of-freedom for respective
-  /// argument
   Expression(
+      const std::shared_ptr<const fem::FunctionSpace> function_space,
       const std::vector<std::shared_ptr<const fem::Function<T>>>& coefficients,
       const std::vector<std::shared_ptr<const fem::Constant<T>>>& constants,
       const std::shared_ptr<const mesh::Mesh>& mesh,
@@ -52,11 +52,10 @@ public:
       const std::function<void(T*, const T*, const T*, const double*,
                                const int*, const uint8_t*)>
           fn,
-      const std::vector<int>& value_shape,
-      const std::vector<int>& num_argument_dofs)
-      : _coefficients(coefficients), _constants(constants), _mesh(mesh), _X(X),
-        _fn(fn), _value_shape(value_shape),
-        _num_argument_dofs(num_argument_dofs)
+      const std::vector<int>& value_shape)
+      : _function_space(function_space), _coefficients(coefficients),
+        _constants(constants), _mesh(mesh), _X(X), _fn(fn),
+        _value_shape(value_shape)
   {
     // Do nothing
   }
@@ -115,11 +114,19 @@ public:
     // Create data structures used in evaluation
     std::vector<double> coordinate_dofs(3 * num_dofs_g);
 
-    const int num_all_argument_dofs
-        = std::accumulate(num_argument_dofs().begin(),
-                          num_argument_dofs().end(), 1, std::multiplies<int>());
-    std::vector<T> values_local(
-        num_points() * value_size() * num_all_argument_dofs, 0);
+    const int num_argument_dofs
+        = _function_space->dofmap()->element_dof_layout()->num_dofs();
+    std::vector<T> values_local(num_points() * value_size() * num_argument_dofs,
+                                0);
+
+    const bool needs_transformation_data
+        = element->needs_dof_transformations();
+    xtl::span<const std::uint32_t> cell_info;
+    if (needs_transformation_data)
+    {
+      mesh->topology_mutable().create_entity_permutations();
+      cell_info = xtl::span(mesh->topology().get_cell_permutation_info());
+    }
 
     // Iterate over cells and 'assemble' into values
     for (std::size_t c = 0; c < active_cells.size(); ++c)
@@ -184,18 +191,12 @@ public:
   /// @return number of points in cell
   std::size_t num_points() const { return _X.shape(0); }
 
-  /// Get number of degrees-of-freedom for arguments
-  const std::vector<int>& num_argument_dofs() const
-  {
-    return _num_argument_dofs;
-  }
-
   /// Scalar type (T)
   using scalar_type = T;
 
 private:
-  // Function spaces (one for each argument)
-  std::vector<std::shared_ptr<const fem::FunctionSpace>> _function_spaces;
+  // Function space for Argument
+  std::shared_ptr<const fem::FunctionSpace> _function_space;
 
   // Coefficients associated with the Expression
   std::vector<std::shared_ptr<const fem::Function<T>>> _coefficients;
@@ -216,9 +217,6 @@ private:
 
   // Shape of the evaluated expression
   std::vector<int> _value_shape;
-
-  // Number of degrees-of-freedom for arguments
-  std::vector<int> _num_argument_dofs;
 
 };
 } // namespace dolfinx::fem

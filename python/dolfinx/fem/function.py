@@ -178,11 +178,6 @@ class Expression:
         return self._cpp_object.value_size
 
     @property
-    def num_argument_dofs(self):
-        """Return the value size of the expression"""
-        return self._cpp_object.num_argument_dofs
-
-    @property
     def ufc_expression(self):
         """Return the compiled ufc_expression object"""
         return self._ufc_expression

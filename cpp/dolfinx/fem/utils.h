@@ -673,6 +673,7 @@ pack_coefficients(const Form<T>& form, fem::IntegralType integral_type, int id)
 template <typename T>
 fem::Expression<T> create_expression(
     const ufc_expression& expression,
+    const std::shared_ptr<fem::FunctionSpace> function_space,
     const std::vector<std::shared_ptr<const fem::Function<T>>>&
         coefficients,
     const std::vector<std::shared_ptr<const fem::Constant<T>>>&
@@ -689,10 +690,6 @@ fem::Expression<T> create_expression(
   std::vector<int> value_shape;
   for (int i = 0; i < expression.num_components; ++i)
     value_shape.push_back(expression.value_shape[i]);
-
-  std::vector<int> num_argument_dofs;
-  for (int i = 0; i < expression.rank; ++i)
-    num_argument_dofs.push_back(expression.num_argument_dofs[i]);
 
   std::function<void(T*, const T*, const T*, const double*, const int*,
                      const std::uint8_t*)>
@@ -717,8 +714,8 @@ fem::Expression<T> create_expression(
   }
   assert(tabulate_tensor);
 
-  return fem::Expression<T>(coefficients, constants, mesh, points, tabulate_tensor,
-                            value_shape, num_argument_dofs);
+  return fem::Expression<T>(function_space, coefficients, constants, mesh,
+                            points, tabulate_tensor, value_shape);
 }
 
 /// Create Expression from UFC input
@@ -726,6 +723,7 @@ fem::Expression<T> create_expression(
 template <typename T>
 fem::Expression<T> create_expression(
     const ufc_expression& expression,
+    const std::shared_ptr<fem::FunctionSpace> function_space,
     const std::map<std::string, std::shared_ptr<const fem::Function<T>>>&
         coefficients,
     const std::map<std::string, std::shared_ptr<const fem::Constant<T>>>&
@@ -765,7 +763,7 @@ fem::Expression<T> create_expression(
     }
   }
 
-  return create_expression(expression, coeff_map, const_map, mesh);
+  return create_expression(expression, function_space, coeff_map, const_map, mesh);
 }
 
 // NOTE: This is subject to change
