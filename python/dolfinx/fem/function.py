@@ -306,8 +306,16 @@ class Function(ufl.Coefficient):
             u = np.reshape(u, (-1, ))
         return u
 
-    def interpolate(self, u, cells: np.ndarray = None) -> None:
-        """Interpolate an expression"""
+    def interpolate(self, u: typing.Union[typing.Callable, Expression, Function],
+                    cells: np.ndarray = None) -> None:
+        """Interpolate an expression
+
+        Args:
+            u: The function, Expression or Function to interpolate
+            cells: The cells to interpolate over. If `None` then all
+                cells are interpolated over
+
+        """
         @singledispatch
         def _interpolate(u, cells):
             try:
@@ -322,8 +330,7 @@ class Function(ufl.Coefficient):
         if cells is None:
             mesh = self.function_space.mesh
             map = mesh.topology.index_map(mesh.topology.dim)
-            num_cells = map.size_local + map.num_ghosts
-            cells = np.arange(num_cells, dtype=np.int32)
+            cells = np.arange(map.size_local + map.num_ghosts, dtype=np.int32)
         _interpolate(u, cells)
 
     def compute_point_values(self):
@@ -527,7 +534,7 @@ class FunctionSpace(ufl.FunctionSpace):
         return dofmap.DofMap(self._cpp_object.dofmap)
 
     @property
-    def mesh(self) -> Mesh:
+    def mesh(self) -> _cpp.mesh.Mesh:
         """Return the mesh on which the function space is defined."""
         return self._cpp_object.mesh
 
