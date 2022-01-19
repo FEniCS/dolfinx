@@ -14,8 +14,7 @@ import numpy as np
 import dolfinx.io
 import dolfinx.plot
 import ufl
-from dolfinx.fem import (Function, FunctionSpace, LinearProblem,
-                         VectorFunctionSpace)
+from dolfinx.fem import Function, FunctionSpace, VectorFunctionSpace
 from dolfinx.mesh import (CellType, MeshTags, compute_midpoints,
                           create_unit_cube, create_unit_square)
 
