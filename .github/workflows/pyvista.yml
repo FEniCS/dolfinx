@@ -51,7 +51,7 @@ jobs:
           apt-get install -y --no-install-recommends libgl1-mesa-dev xvfb # pyvista
           apt-get install -y --no-install-recommends python3-pyqt5 libgl1-mesa-glx  # pyvistaqt
           pip3 install pyvista==${PYVISTA_VERSION}
-          pup3 install pyvistaqt==${PYVISTA_QT_VERSION}
+          pip3 install pyvistaqt==${PYVISTA_QT_VERSION}
 
       - name: Configure C++
         run: cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build -S cpp/
