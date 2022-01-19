@@ -58,16 +58,15 @@ template <typename T>
 void interpolate_nedelec(const std::shared_ptr<mesh::Mesh>& mesh,
                          const std::string& filename)
 {
-  // Create a Basix Nedelec (first kind) element of degree 2 (lowest
-  // order, dim=6 on triangle)
+  // Create a Basix Nedelec (first kind) element of degree 2 (dim=6 on triangle)
   basix::FiniteElement e = basix::element::create_nedelec(
       mesh::cell_type_to_basix_type(mesh::CellType::triangle), 2, false);
 
-  // Create a function space
+  // Create a Nedelec function space
   auto V = std::make_shared<fem::FunctionSpace>(
       fem::create_functionspace(mesh, e, 1));
 
-  // Create a finite element Function
+  // Create a Nedelec finite element Function
   auto u = std::make_shared<fem::Function<T>>(V);
 
   // Interpolate the vector field
@@ -78,11 +77,14 @@ void interpolate_nedelec(const std::shared_ptr<mesh::Mesh>& mesh,
   // Note that the x1 component of this field is continuous, and the x0
   // component is discontinuous across x0 = 0.5. This function lies in
   // the Nedelec space when there are cell edges aligned to x0 = 0.5.
+
+  // Find cells with all vertices satisfying (0) x0 <= 0.5 and (1) x0 >= 0.5
   auto cells0 = mesh::locate_entities(
       *mesh, 2, [](auto& x) { return xt::row(x, 0) <= 0.5; });
   auto cells1 = mesh::locate_entities(
       *mesh, 2, [](auto& x) { return xt::row(x, 0) >= 0.5; });
 
+  // Interpolation on the two sets of cells
   u->interpolate(
       [](auto& x) -> xt::xtensor<T, 2> {
         return xt::view(x, xt::range(0, 2), xt::all());
