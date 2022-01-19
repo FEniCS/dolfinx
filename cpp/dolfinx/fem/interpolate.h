@@ -25,8 +25,6 @@ namespace dolfinx::fem
 {
 template <typename T>
 class Function;
-template <typename T>
-class Expression;
 
 namespace impl
 {
@@ -650,47 +648,6 @@ void interpolate(Function<T>& u, const Function<T>& v,
       impl::interpolate_nonmatching_maps(u, v, cells);
     }
   }
-}
-
-/// Interpolate from an Expression into a compatible Function on the
-/// same mesh
-/// @param[out] u The function to interpolate into
-/// @param[in] expr The Expression to be interpolated. The Expression
-/// must have been created using the reference coordinates
-/// `FiniteElement::interpolation_points()` for the element associated
-/// with `u`.
-/// @param[in] cells List of cell indices to interpolate on
-template <typename T>
-void interpolate(Function<T>& u, const Expression<T>& expr,
-                 const xtl::span<const std::int32_t>& cells)
-{
-  // Check that spaces are compatible
-  std::size_t value_size = expr.value_size();
-  assert(u.function_space());
-  assert(u.function_space()->element());
-  assert(value_size == u.function_space()->element()->value_size());
-  assert(expr.x().shape()
-         == u.function_space()->element()->interpolation_points().shape());
-
-  // Array to hold evaluted Expression
-  std::size_t num_cells = cells.size();
-  std::size_t num_points = expr.x().shape(0);
-  xt::xtensor<T, 3> f({num_cells, num_points, value_size});
-
-  // Evaluate Expression at points
-  auto f_view = xt::reshape_view(f, {num_cells, num_points * value_size});
-  expr.eval(cells, f_view);
-
-  // Reshape evaluated data to fit interpolate
-  // Expression returns matrix of shape (num_cells, num_points *
-  // value_size), i.e. xyzxyz ordering of dof values per cell per point.
-  // The interpolation uses xxyyzz input, ordered for all points of each
-  // cell, i.e. (value_size, num_cells*num_points)
-  xt::xarray<T> _f = xt::reshape_view(xt::transpose(f, {2, 0, 1}),
-                                      {value_size, num_cells * num_points});
-
-  // Interpolate values into appropriate space
-  interpolate(u, _f, cells);
 }
 
 } // namespace dolfinx::fem

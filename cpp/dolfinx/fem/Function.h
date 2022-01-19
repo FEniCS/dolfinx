@@ -225,12 +225,41 @@ public:
   }
 
   /// Interpolate an Expression (based on UFL)
-  /// @param[in] e The function to be interpolated
+  /// @param[in] e The Expression to be interpolated. The Expression
+  /// must have been created using the reference coordinates
+  /// `FiniteElement::interpolation_points()` for the element associated
+  /// with `u`.
   /// @param[in] cells The cells to interpolate on
   void interpolate(const Expression<T>& e,
                    const xtl::span<const std::int32_t>& cells)
   {
-    fem::interpolate(*this, e, cells);
+    // Check that spaces are compatible
+    std::size_t value_size = e.value_size();
+    assert(_function_space);
+    assert(_function_space->element());
+    assert(value_size == _function_space->element()->value_size());
+    assert(e.x().shape()
+           == _function_space->element()->interpolation_points().shape());
+
+    // Array to hold evaluted Expression
+    std::size_t num_cells = cells.size();
+    std::size_t num_points = e.x().shape(0);
+    xt::xtensor<T, 3> f({num_cells, num_points, value_size});
+
+    // Evaluate Expression at points
+    auto f_view = xt::reshape_view(f, {num_cells, num_points * value_size});
+    e.eval(cells, f_view);
+
+    // Reshape evaluated data to fit interpolate
+    // Expression returns matrix of shape (num_cells, num_points *
+    // value_size), i.e. xyzxyz ordering of dof values per cell per point.
+    // The interpolation uses xxyyzz input, ordered for all points of each
+    // cell, i.e. (value_size, num_cells*num_points)
+    xt::xarray<T> _f = xt::reshape_view(xt::transpose(f, {2, 0, 1}),
+                                        {value_size, num_cells * num_points});
+
+    // Interpolate values into appropriate space
+    fem::interpolate(*this, _f, cells);
   }
 
   /// Interpolate an Expression (based on UFL) on all cells
