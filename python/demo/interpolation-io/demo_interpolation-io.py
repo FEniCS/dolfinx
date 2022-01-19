@@ -1,4 +1,14 @@
 
+# Copyright (C) 2022 Garth N. Wells
+#
+# This file is part of DOLFINx (https://www.fenicsproject.org)
+#
+# SPDX-License-Identifier:    LGPL-3.0-or-later
+#
+# ====================
+# Interpolation and IO
+# ====================
+
 from dolfinx.fem import Function, FunctionSpace, VectorFunctionSpace
 from dolfinx.mesh import CellType, create_rectangle, locate_entities
 
