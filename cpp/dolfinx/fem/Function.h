@@ -366,8 +366,7 @@ public:
     // Compute basis on reference element
     element->tabulate(basis_derivatives_reference_values, X, 0);
 
-    // FIXME: Should avoid copy, but apply_dof_transformation does not support
-    // the view of basis_reference_values;
+    // FIXME: Should avoid copying, but we cannot make a span of an xt::view
     xt::xtensor<double, 2> basis_reference_values(
         {space_dimension, reference_value_size});
 
