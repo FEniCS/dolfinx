@@ -253,6 +253,9 @@ public:
   /// Get local part of the vector
   xtl::span<T> mutable_array() { return xtl::span(_x); }
 
+  /// Get the allocator associated with the container
+  constexpr allocator_type allocator() const { return _x.get_allocator(); }
+
 private:
   // Map describing the data layout
   std::shared_ptr<const common::IndexMap> _map;
