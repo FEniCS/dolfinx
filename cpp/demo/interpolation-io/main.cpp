@@ -56,7 +56,7 @@ void interpolate_scalar(const std::shared_ptr<mesh::Mesh>& mesh,
 // Lagrange finite element function to a VTX file for visualisation.
 template <typename T>
 void interpolate_nedelec(const std::shared_ptr<mesh::Mesh>& mesh,
-                         const std::string& filename)
+                         [[maybe_unused]] const std::string& filename)
 {
   // Create a Basix Nedelec (first kind) element of degree 2 (dim=6 on triangle)
   basix::FiniteElement e = basix::element::create_nedelec(
