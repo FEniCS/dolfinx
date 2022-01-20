@@ -43,8 +43,7 @@ bool _is_cellwise(const fem::Function<Scalar>& u)
     cell_based_dim *= tdim;
 
   assert(u.function_space()->dofmap());
-  assert(u.function_space()->dofmap()->element_dof_layout);
-  if (u.function_space()->dofmap()->element_dof_layout->num_dofs()
+  if (u.function_space()->dofmap()->element_dof_layout().num_dofs()
       == cell_based_dim)
   {
     return true;
@@ -534,12 +533,12 @@ void write_function(
         if (element->num_sub_elements() == 0)
         {
           auto dofmap = _u.get().function_space()->dofmap();
-          auto element_layout = dofmap->element_dof_layout;
+          auto& element_layout = dofmap->element_dof_layout();
           for (std::int32_t i = 0; i <= tdim; i++)
           {
             // Check that subelement layout matches geometry layout
             if (geometry_layout.num_entity_dofs(i)
-                != element_layout->num_entity_dofs(i))
+                != element_layout.num_entity_dofs(i))
             {
               LOG(WARNING) << "Output data is interpolated into a first order "
                               "Lagrange space.";
@@ -564,13 +563,13 @@ void write_function(
         for (std::int32_t k = 0; k < element->num_sub_elements(); k++)
         {
           auto dofmap = _u.get().function_space()->sub({k})->dofmap();
-          auto element_layout = dofmap->element_dof_layout;
+          auto& element_layout = dofmap->element_dof_layout();
 
           for (std::int32_t i = 0; i <= tdim; i++)
           {
             // Check that subelement layout matches geometry layout
             if (geometry_layout.num_entity_dofs(i)
-                != element_layout->num_entity_dofs(i))
+                != element_layout.num_entity_dofs(i))
             {
               element_matching_mesh = false;
               break;

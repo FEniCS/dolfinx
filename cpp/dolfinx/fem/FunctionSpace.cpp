@@ -86,10 +86,10 @@ FunctionSpace::collapse() const
     throw std::runtime_error("Function space is not a subspace");
 
   // Create collapsed DofMap
-  std::shared_ptr<fem::DofMap> collapsed_dofmap;
-  std::vector<std::int32_t> collapsed_dofs;
-  std::tie(collapsed_dofmap, collapsed_dofs)
+  auto [_collapsed_dofmap, collapsed_dofs]
       = _dofmap->collapse(_mesh->comm(), _mesh->topology());
+  auto collapsed_dofmap
+      = std::make_shared<fem::DofMap>(std::move(_collapsed_dofmap));
 
   // Create new FunctionSpace and return
   return {FunctionSpace(_mesh, _element, collapsed_dofmap),
