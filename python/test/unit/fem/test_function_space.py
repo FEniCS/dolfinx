@@ -163,7 +163,7 @@ def test_collapse(W, V):
     assert Vs.dofmap.cell_dofs(0)[0] != V.dofmap.cell_dofs(0)[0]
 
     # Collapse the space it should now be the same as V
-    Vc, dofmap_new_old = Vs.collapse(True)
+    Vc = Vs.collapse()[0]
     assert Vc.dofmap.cell_dofs(0)[0] == V.dofmap.cell_dofs(0)[0]
     f0 = Function(V)
     f1 = Function(Vc)
