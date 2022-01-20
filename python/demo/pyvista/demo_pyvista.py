@@ -232,7 +232,7 @@ def plot_nedelec():
     element = ufl.FiniteElement("N1curl", mesh.ufl_cell(), 2)
     V = FunctionSpace(mesh, element)
     u = Function(V)
-    u.interpolate(lambda x: (x[2]**2, np.zeros(x.shape[1]), -x[0] * x[2]))
+    u.interpolate(lambda x: (x[2]**2, np.zeros(x.shape[1]), -x[0] * x[2]), dtype=np.float64)
 
     # Exact visualisation of the Nédélec spaces requires a Lagrange or
     # discontinuous Lagrange finite element functions. Therefore, we
