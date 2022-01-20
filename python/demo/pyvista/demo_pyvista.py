@@ -167,19 +167,19 @@ def plot_higher_order():
     u.interpolate(lambda x: x[0], cells0)
     u.interpolate(lambda x: x[1] + 1, cells1)
 
-    # To get a topology that has a 1-1 correspondence with the degrees of
-    # freedom in the function space, we call
+    # To get a topology that has a 1-1 correspondence with the
+    # degrees-of-freedom in the function space, we call
     # `dolfinx.plot.create_vtk_mesh`.
-    topology, cell_types, x = plot.create_vtk_mesh(V)
+    cells, types, x = plot.create_vtk_mesh(V)
 
-    # We create a pyvista mesh from the topology and geometry, and attach
+    # Create a pyvista mesh from the topology and geometry, and attach
     # the coefficients of the degrees of freedom
-    grid = pyvista.UnstructuredGrid(topology, cell_types, x)
+    grid = pyvista.UnstructuredGrid(cells, types, x)
     grid.point_data["u"] = u.x.array
     grid.set_active_scalars("u")
 
-    # We would also like to visualize the underlying mesh and obtain that as
-    # we have done previously
+    # We would also like to visualize the underlying mesh and obtain
+    # that as we have done previously
     num_cells = mesh.topology.index_map(mesh.topology.dim).size_local
     cell_entities = np.arange(num_cells, dtype=np.int32)
     cells, types, x = plot.create_vtk_mesh(mesh, mesh.topology.dim, cell_entities)
@@ -257,66 +257,6 @@ def plot_nedelec():
         plotter.show()
 
 
-def plot_vector2():
-    # Plotting Function with vector values
-    # ====================================
-
-    # In the previous sections, we have considered how to plot scalar valued
-    # functions. This section will show you how to plot vector-valued
-    # functions. We start by interpolating an expression into a second order
-    # Lagrange.
-    mesh = create_unit_square(MPI.COMM_WORLD, 6, 6, CellType.triangle)
-    V = VectorFunctionSpace(mesh, ("Lagrange", 2))
-    u = Function(V, dtype=np.float64)
-    u.interpolate(lambda x: np.vstack((np.sin(x[1]), 0.1 * x[0])))
-
-    # We use the `dolfinx.plot.create_vtk_mesh`
-    # function, as in the previous section. However, we input a set of cell
-    # entities, which can restrict the plotting to subsets of our mesh
-    num_cells = mesh.topology.index_map(mesh.topology.dim).size_local
-    cell_entities = np.arange(num_cells, dtype=np.int32)
-    topology, cell_types, x = plot.create_vtk_mesh(V, cell_entities)
-
-    # As we deal with a vector function space, we need to adjust the values
-    # in the underlying one dimensional array in dolfinx.Function, by
-    # reshaping the data, and add an extra column to make it a 3D vector
-    num_dofs = x.shape[0]
-    values = np.zeros((num_dofs, 3), dtype=np.float64)
-    values[:, :mesh.geometry.dim] = u.x.array.reshape(num_dofs, V.dofmap.index_map_bs)
-
-    # Create a point cloud of glyphs
-    function_grid = pyvista.UnstructuredGrid(topology, cell_types, x)
-    function_grid["vectors"] = values
-    function_grid.set_active_vectors("vectors")
-    glyphs = function_grid.glyph(orient="vectors", factor=0.1)
-
-    # To add streamlines in 2D, you need to supply the two points creating a
-    # sampling line
-    # NOTE: This crashes if ran in parallel, seems to be a pyvista issue
-    # with pointa, pointb
-    if MPI.COMM_WORLD.size == 0:
-        streamlines = function_grid.streamlines(vectors="vectors", return_source=False,
-                                                pointa=(0.5, 0.0, 0), pointb=(0.5, 1, 0))
-
-    # Create pyvista mesh from the mesh
-    pyvista_cells, cell_types, x = plot.create_vtk_mesh(mesh, mesh.topology.dim, cell_entities)
-    grid = pyvista.UnstructuredGrid(pyvista_cells, cell_types, x)
-
-    # Add mesh, glyphs and streamlines to plotter
-    plotter = pyvista.Plotter()
-    plotter.add_text("Second-order vector function.", position="upper_edge", font_size=14, color="black")
-    plotter.add_mesh(grid, show_edges=True, color="black", style="wireframe")
-    plotter.add_mesh(glyphs)
-    if MPI.COMM_WORLD.size == 0:
-        plotter.add_mesh(streamlines.tube(radius=0.001), show_scalar_bar=False)
-    plotter.view_xy()
-    if pyvista.OFF_SCREEN:
-        plotter.screenshot(f"vectors_{MPI.COMM_WORLD.rank}.png",
-                           transparent_background=transparent, window_size=[figsize, figsize])
-    else:
-        plotter.show()
-
-
 def plot_streamlines():
     # Plotting streamlines
     # ====================
@@ -328,13 +268,13 @@ def plot_streamlines():
     u = Function(V, dtype=np.float64)
     u.interpolate(lambda x: np.vstack((-(x[1] - 0.5), x[0] - 0.5, np.zeros(x.shape[1]))))
 
-    topology, cell_types, x = plot.create_vtk_mesh(V)
+    cells, types, x = plot.create_vtk_mesh(V)
     num_dofs = x.shape[0]
     values = np.zeros((num_dofs, 3), dtype=np.float64)
     values[:, :mesh.geometry.dim] = u.x.array.reshape(num_dofs, V.dofmap.index_map_bs)
 
     # Create a point cloud of glyphs
-    grid = pyvista.UnstructuredGrid(topology, cell_types, x)
+    grid = pyvista.UnstructuredGrid(cells, types, x)
     grid["vectors"] = values
     grid.set_active_vectors("vectors")
     glyphs = grid.glyph(orient="vectors", factor=0.1)
@@ -358,5 +298,4 @@ plot_scalar()
 plot_meshtags()
 plot_higher_order()
 plot_nedelec()
-plot_vector2()
 plot_streamlines()
