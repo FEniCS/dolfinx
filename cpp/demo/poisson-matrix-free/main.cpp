@@ -116,8 +116,6 @@ int main(int argc, char* argv[])
     auto g = std::make_shared<fem::Function<T>>(V);
 
     // Define variational forms
-    auto a = std::make_shared<fem::Form<T>>(fem::create_form<T>(
-        *form_poisson_a, {V, V}, {}, {{"kappa", kappa}}, {}));
     auto L = std::make_shared<fem::Form<T>>(fem::create_form<T>(
         *form_poisson_L, {V}, {{"f", f}, {"g", g}}, {}, {}));
 
@@ -153,7 +151,8 @@ int main(int argc, char* argv[])
 
     // Assemble RHS
     fem::assemble_vector(b.mutable_array(), *L);
-    fem::apply_lifting(b.mutable_array(), {a}, {{bc}}, {}, 1.0);
+    bc->set(ui->x()->mutable_array(), -1);
+    dolfinx::fem::assemble_vector(b.mutable_array(), *M);
     b.scatter_rev(common::IndexMap::Mode::add);
 
     // Set BC dofs to zero (effectively zeroes columns of A)
