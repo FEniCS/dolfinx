@@ -105,18 +105,17 @@ public:
     return Function(sub_space, _x);
   }
 
-  /// Collapse a subfunction (view into the Function) to a stand-alone
+  /// Collapse a subfunction (view into a Function) to a stand-alone
   /// Function
   /// @return New collapsed Function
   Function collapse() const
   {
     // Create new collapsed FunctionSpace
-    auto [function_space_new, collapsed_map] = _function_space->collapse();
+    auto [V_new, collapsed_map] = _function_space->collapse();
 
     // Create new vector
     auto vector_new = std::make_shared<la::Vector<T>>(
-        function_space_new.dofmap()->index_map,
-        function_space_new.dofmap()->index_map_bs());
+        V_new.dofmap()->index_map, V_new.dofmap()->index_map_bs());
 
     // Copy values into new vector
     xtl::span<const T> x_old = _x->array();
@@ -128,9 +127,8 @@ public:
       x_new[i] = x_old[collapsed_map[i]];
     }
 
-    return Function(
-        std::make_shared<FunctionSpace>(std::move(function_space_new)),
-        vector_new);
+    return Function(std::make_shared<FunctionSpace>(std::move(V_new)),
+                    vector_new);
   }
 
   /// Return shared pointer to function space

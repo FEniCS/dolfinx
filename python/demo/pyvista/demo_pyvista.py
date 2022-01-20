@@ -36,22 +36,24 @@ transparent = False
 figsize = 800
 pyvista.rcParams["background"] = [0.5, 0.5, 0.5]
 
-# Plotting a 2D dolfinx.Function with pyvista using warp by scalar
-# ================================================================
+# Plotting a Function using warp by scalar
+# ========================================
 
-# We start by creating a unit square mesh and interpolating a function into a first order Lagrange space
+# We start by creating a unit square mesh and interpolating a function
+# into a first order Lagrange space
 mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, cell_type=CellType.quadrilateral)
 V = FunctionSpace(mesh, ("Lagrange", 1))
 u = Function(V)
 u.interpolate(lambda x: np.sin(np.pi * x[0]) * np.sin(2 * x[1] * np.pi))
 
-# As we want to visualize the function u, we have to create a grid to attached the dof values to
-# We do this by creating a topology and geometry based on the function space V
+# As we want to visualize the function u, we have to create a grid to
+# attached the dof values to We do this by creating a topology and
+# geometry based on the function space V
 pyvista_cells, cell_types = dolfinx.plot.create_vtk_topology(V)
 grid = pyvista.UnstructuredGrid(pyvista_cells, cell_types, mesh.geometry.x)
 
-# We obtain the dof values from u and discard complex values if running in complex mode
-# (as they are currently zero)
+# We obtain the dof values from u and discard complex values if running
+# in complex mode (as they are currently zero)
 point_values = u.x.array.real if np.iscomplexobj(u.x.array) else u.x.array
 grid.point_data["u"] = point_values
 
@@ -60,8 +62,8 @@ grid.point_data["u"] = point_values
 grid.set_active_scalars("u")
 warped = grid.warp_by_scalar()
 
-# We create a plotting window consisting of to plots, one of the scalar values, and one where
-# the mesh is warped by these values
+# We create a plotting window consisting of to plots, one of the scalar
+# values, and one where the mesh is warped by these values
 subplotter = pyvista.Plotter(shape=(1, 2))
 subplotter.subplot(0, 0)
 subplotter.add_text("Mesh with scalar function", font_size=14, color="black", position="upper_edge")
@@ -71,8 +73,7 @@ subplotter.view_xy()
 subplotter.subplot(0, 1)
 subplotter.add_text("Warped function", position="upper_edge", font_size=14, color="black")
 sargs = dict(height=0.8, width=0.1, vertical=True, position_x=0.05,
-             position_y=0.05, fmt="%1.2e",
-             title_font_size=40, color="black", label_font_size=25)
+             position_y=0.05, fmt="%1.2e", title_font_size=40, color="black", label_font_size=25)
 subplotter.set_position([-3, 2.6, 0.3])
 subplotter.set_focus([3, -1, -0.15])
 subplotter.set_viewup([0, 0, 1])
@@ -83,15 +84,15 @@ else:
     subplotter.show()
 
 
-# Plotting a 2D MeshTags and using subplots
-# =========================================
+# MeshTags and using subplots
+# ===========================
 
 # We continue using the mesh from the previous section, and find all
 # cells satisfying the condition below
 
 
 def in_circle(x):
-    # Mark sphere with radius < sqrt(2)
+    """Mark sphere with radius < sqrt(2)"""
     return np.array((x.T[0] - 0.5)**2 + (x.T[1] - 0.5)**2 < 0.2**2, dtype=np.int32)
 
 
@@ -132,17 +133,15 @@ if pyvista.OFF_SCREEN:
 else:
     subplotter.show()
 
-# Plotting a dolfinx.fem.Function
+# Plotting higher order Functions
 # ===============================
 
-# In the previous sections we have considered CG-1 spaces, which have a
-# 1-1 correspondence with the vertices of the geometry. To be able to
-# plot higher order function spaces, both CG and DG spaces, we have to
-# adjust our plotting technique.
+# In the previous sections we have considered degree 1 Lagrange spaces.
+# We can also plot higher degree functions.
 
-# We start by interpolating a discontinuous function into a second order DG
-# space Note that we use the `cell_tags` from the previous section to
-# get the cells for each of the regions
+# We start by interpolating a discontinuous function into a second order
+# discontinuous Lagrange  space Note that we use the `cell_tags` from
+# the previous section to get the cells for each of the regions
 cells0 = cell_tags.indices[cell_tags.values == 0]
 cells1 = cell_tags.indices[cell_tags.values == 1]
 V = FunctionSpace(mesh, ("DG", 2))
@@ -154,7 +153,6 @@ uh.interpolate(lambda x: x[1], cells1)
 # freedom in the function space, we call
 # `dolfinx.plot.create_vtk_topology`.
 topology, cell_types = dolfinx.plot.create_vtk_topology(V)
-num_dofs_local = uh.function_space.dofmap.index_map.size_local
 geometry = uh.function_space.tabulate_dof_coordinates()
 
 # We discard the complex values if using PETSc in complex mode
@@ -163,8 +161,8 @@ values = uh.x.array.real if np.iscomplexobj(uh.x.array) else uh.x.array
 # We create a pyvista mesh from the topology and geometry, and attach
 # the coefficients of the degrees of freedom
 grid = pyvista.UnstructuredGrid(topology, cell_types, geometry)
-grid.point_data["DG"] = values
-grid.set_active_scalars("DG")
+grid.point_data["u"] = values
+grid.set_active_scalars("u")
 
 # We would also like to visualize the underlying mesh and obtain that as
 # we have done previously
@@ -189,11 +187,12 @@ if pyvista.OFF_SCREEN:
 else:
     plotter.show()
 
-# Plotting a vector-function with pyvista
-# ===========================================
 
-# The previous section has considered how to plot scalar valued functions.
-# In this section we will consider how to plot vector valued functions.
+# Plotting vector-element functions
+# =================================
+
+# In this section we will consider how to plot vector-element functions,
+# e.g. Raviart-Thomas or Nédélec elements
 
 mesh = create_unit_cube(MPI.COMM_WORLD, 4, 3, 5, cell_type=CellType.tetrahedron)
 
@@ -207,40 +206,33 @@ pyvista_cells, cell_types = dolfinx.plot.create_vtk_topology(mesh, mesh.topology
 geometry = mesh.geometry.x
 grid_0 = pyvista.UnstructuredGrid(pyvista_cells, cell_types, geometry)
 
-# We add this grid (as a wireframe) to the plotter
+# Add this grid (as a wireframe) to the plotter
 plotter.add_mesh(grid_0, style="wireframe", line_width=2, color="black")
 
-# We create a function space consisting of first order Nédélec (first kind) elements
-# We want to interpolate a simple vector function
-
-
-def int_u(x):
-    return (x[2]**2, np.zeros(x.shape[1]), -x[0] * x[2])
-
-
+# Create a function space consisting of first order Nédélec (first kind)
+# elements and interpolate a vector-valued expression
 element = ufl.FiniteElement("N1curl", mesh.ufl_cell(), 2)
 V = FunctionSpace(mesh, element)
 u = Function(V)
-u.interpolate(int_u)
+u.interpolate(lambda x: (x[2]**2, np.zeros(x.shape[1]), -x[0] * x[2]))
 
-
-# We only support plotting of Lagrange and Discontinuous Lagrange functions.
-# Therefore we interpolate the function into a first order Discontinuous Lagrange space.
-output_element = ufl.VectorElement("DG", mesh.ufl_cell(), 2)
+# Exact visualisation of the Nédélec spaces requires a Lagrange or
+# discontinuous Lagrange finite element functions. Therefore, we
+# interpolate the Nédélec function into a first-order discontinuous
+# Lagrange space.
+output_element = ufl.VectorElement("Discontinuous Lagrange", mesh.ufl_cell(), 2)
 V_output = FunctionSpace(mesh, output_element)
 u_out = Function(V_output)
 u_out.interpolate(u)
 
-# We create a second grid, whose geometry and topology is based on the output function space
+# Create a second grid, whose geometry and topology is based on the
+# output function space
 cells_1, cell_types_1 = dolfinx.plot.create_vtk_topology(V_output)
 geometry_1 = V_output.tabulate_dof_coordinates()
 grid_1 = pyvista.UnstructuredGrid(cells_1, cell_types_1, geometry_1)
 
-# If dolfinx is executed in complex mode, we discard the complex values
-# and reshape it to match the 3D vector structure
-output_values = u_out.x.array.real.reshape(geometry_1.shape[0], V_output.dofmap.index_map_bs)
 # Create point cloud of vertices, and add the vertex values to the cloud
-grid_1.point_data["u"] = output_values
+grid_1.point_data["u"] = u_out.x.array.reshape(geometry_1.shape[0], V_output.dofmap.index_map_bs).real
 glyphs = grid_1.glyph(orient="u", factor=0.1)
 
 # We add in the glyphs corresponding to the plotter
@@ -254,24 +246,17 @@ else:
     plotter.show()
 
 
-# Plotting a dolfinx.fem.Function with vector values
-# ==================================================
+# Plotting Function with vector values
+# ====================================
 
 # In the previous sections, we have considered how to plot scalar valued
-# functions. This section will show you how to plot vector valued
+# functions. This section will show you how to plot vector-valued
 # functions. We start by interpolating an expression into a second order
-# CG space.
-def vel(x):
-    vals = np.zeros((2, x.shape[1]))
-    vals[0] = np.sin(x[1])
-    vals[1] = 0.1 * x[0]
-    return vals
-
-
+# Lagrange.
 mesh = create_unit_square(MPI.COMM_WORLD, 6, 6, CellType.triangle)
 V = VectorFunctionSpace(mesh, ("Lagrange", 2))
 uh = Function(V)
-uh.interpolate(vel)
+uh.interpolate(lambda x: np.vstack((np.sin(x[1]), 0.1 * x[0])))
 
 # We use the `dolfinx.plot.create_vtk_topology`
 # function, as in the previous section. However, we input a set of cell
@@ -286,7 +271,7 @@ topology, cell_types = dolfinx.plot.create_vtk_topology(V, cell_entities)
 geometry = V.tabulate_dof_coordinates()
 num_dofs = geometry.shape[0]
 values = np.zeros((num_dofs, 3), dtype=np.float64)
-values[:, :mesh.geometry.dim] = uh.x.array.real.reshape(num_dofs, V.dofmap.index_map_bs)
+values[:, :mesh.geometry.dim] = uh.x.array.reshape(num_dofs, V.dofmap.index_map_bs).real
 
 # Create a point cloud of glyphs
 function_grid = pyvista.UnstructuredGrid(topology, cell_types, geometry)
@@ -308,8 +293,7 @@ grid = pyvista.UnstructuredGrid(pyvista_cells, cell_types, mesh.geometry.x)
 
 # Add mesh, glyphs and streamlines to plotter
 plotter = pyvista.Plotter()
-plotter.add_text("Second order vector function.",
-                 position="upper_edge", font_size=14, color="black")
+plotter.add_text("Second-order vector function.", position="upper_edge", font_size=14, color="black")
 sargs = dict(height=0.1, width=0.8, vertical=False, position_x=0.1, position_y=0, color="black")
 
 plotter.add_mesh(grid, show_edges=True, color="black", style="wireframe")
@@ -323,30 +307,24 @@ if pyvista.OFF_SCREEN:
 else:
     plotter.show()
 
-# Plotting a dolfinx.Function with vector values
-# ===============================================
+# Plotting streamlines
+# ====================
 
 # In this section we illustrate how to visualize streamlines in 3D
-
-
-def vel(x):
-    vals = np.zeros((3, x.shape[1]))
-    vals[0] = -(x[1] - 0.5)
-    vals[1] = x[0] - 0.5
-    vals[2] = 0
-    return vals
 
 
 mesh = create_unit_cube(MPI.COMM_WORLD, 4, 4, 4, CellType.hexahedron)
 V = VectorFunctionSpace(mesh, ("DG", 2))
 uh = Function(V)
-uh.interpolate(vel)
+# uh.interpolate(vel)
+uh.interpolate(lambda x: np.vstack((-(x[1] - 0.5), x[0] - 0.5, np.zeros(x.shape[1]) )))
+
 
 topology, cell_types = dolfinx.plot.create_vtk_topology(V)
 geometry = uh.function_space.tabulate_dof_coordinates()
 num_dofs = geometry.shape[0]
 values = np.zeros((num_dofs, 3), dtype=np.float64)
-values[:, :mesh.geometry.dim] = uh.x.array.real.reshape(num_dofs, V.dofmap.index_map_bs)
+values[:, :mesh.geometry.dim] = uh.x.array.reshape(num_dofs, V.dofmap.index_map_bs).real
 
 # Create a point cloud of glyphs
 grid = pyvista.UnstructuredGrid(topology, cell_types, geometry)
@@ -357,8 +335,7 @@ streamlines = grid.streamlines(vectors="vectors", return_source=False, source_ra
 
 # Create Create plotter
 plotter = pyvista.Plotter()
-plotter.add_text("Vector function as streamlines.",
-                 position="upper_edge", font_size=20, color="black")
+plotter.add_text("Vector function as streamlines.", position="upper_edge", font_size=20, color="black")
 sargs = dict(height=0.1, width=0.8, vertical=False, position_x=0.1, position_y=0, color="black")
 plotter.add_mesh(grid, style="wireframe")
 plotter.add_mesh(glyphs)
