@@ -134,7 +134,7 @@ int main(int argc, char* argv[])
           return xt::isclose(x0, 0.0) or xt::isclose(x0, 2.0);
         });
     const auto bdofs = fem::locate_dofs_topological({*V}, 1, facets);
-    auto bc = std::make_shared<const fem::DirichletBC<T>>(0.0, bdofs, V);
+    auto bc = std::make_shared<const fem::DirichletBC<T>>(1.0, bdofs, V);
 
     f->interpolate(
         [](auto& x) -> xt::xarray<T>
@@ -149,40 +149,41 @@ int main(int argc, char* argv[])
 
     // Compute solution
     fem::Function<T> u(V);
-    la::Vector<T> b(L->function_spaces()[0]->dofmap()->index_map,
-                    L->function_spaces()[0]->dofmap()->index_map_bs());
+    la::Vector<T> b(V->dofmap()->index_map, V->dofmap()->index_map_bs());
 
     // Assemble RHS
-    b.set(0.0);
     fem::assemble_vector(b.mutable_array(), *L);
     fem::apply_lifting(b.mutable_array(), {a}, {{bc}}, {}, 1.0);
     b.scatter_rev(common::IndexMap::Mode::add);
-    fem::set_bc(b.mutable_array(), {bc});
+
+    // Set BC dofs to zero (effectively zeroes columns of A)
+    fem::set_bc(b.mutable_array(), {bc}, 0.0);
 
     std::function<void(la::Vector<T>&, la::Vector<T>&)> action
         = [&](la::Vector<T>& x, la::Vector<T>& y)
     {
       // Update ghost values
       x.scatter_fwd();
-
       y.set(0);
-      auto x_array = x.array();
-      auto y_array = y.mutable_array();
 
       // Update coefficient ui, just copy data from x to ui
-      // TODO: Create interface to update coefficients
-      std::copy(x_array.begin(), x_array.end(),
+      std::copy(x.array().begin(), x.array().end(),
                 ui->x()->mutable_array().begin());
 
-      dolfinx::fem::assemble_vector(y_array, *M);
-      fem::apply_lifting(y_array, {a}, {{bc}}, {}, 1.0);
-      fem::set_bc(y_array, {bc}, {x_array});
+      dolfinx::fem::assemble_vector(y.mutable_array(), *M);
+
+      // Set BC dofs to zero (effectively zeroes rows of A)
+      fem::set_bc(y.mutable_array(), {bc}, 0.0);
 
       // Update owned values
       y.scatter_rev(common::IndexMap::Mode::add);
     };
 
+    u.x()->set(0);
     linalg::cg(*u.x(), b, action, 100, 1e-6);
+
+    // Set BC values
+    fem::set_bc(u.x()->mutable_array(), {bc}, 1.0);
 
     // Save solution in VTK format
     io::VTKFile file(MPI_COMM_WORLD, "u.pvd", "w");
