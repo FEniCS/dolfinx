@@ -1,4 +1,4 @@
-# Copyright (C) 2021-2022 Jørgen S. Dokken
+# Copyright (C) 2021-2022 Jørgen S. Dokken and Garth N. Wells
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -11,9 +11,7 @@
 
 import numpy as np
 
-import dolfinx.io
-import dolfinx.plot
-import ufl
+import dolfinx.plot as plot
 from dolfinx.fem import Function, FunctionSpace, VectorFunctionSpace
 from dolfinx.mesh import (CellType, MeshTags, compute_midpoints,
                           create_unit_cube, create_unit_square)
@@ -51,7 +49,7 @@ def plot_scalar():
     # As we want to visualize the function u, we have to create a grid to
     # attached the dof values to We do this by creating a topology and
     # geometry based on the function space V
-    cells, types = dolfinx.plot.create_vtk_topology(V)
+    cells, types = plot.create_vtk_topology(V)
     grid = pyvista.UnstructuredGrid(cells, types, mesh.geometry.x)
     grid.point_data["u"] = u.x.array
 
@@ -102,7 +100,7 @@ def plot_meshtags():
     midpoints = compute_midpoints(mesh, mesh.topology.dim, list(np.arange(num_cells, dtype=np.int32)))
     cell_tags = MeshTags(mesh, mesh.topology.dim, np.arange(num_cells), in_circle(midpoints))
 
-    cells, types = dolfinx.plot.create_vtk_topology(mesh, mesh.topology.dim)
+    cells, types = plot.create_vtk_topology(mesh, mesh.topology.dim)
     grid = pyvista.UnstructuredGrid(cells, types, mesh.geometry.x)
 
     # As the dolfinx.MeshTag contains a value for every cell in the
@@ -119,9 +117,9 @@ def plot_meshtags():
     subplotter.view_xy()
 
     # We can also visualize subsets of data, by creating a smaller topology,
-    # only consisting of thos entities that has value one in the
+    # only consisting of those entities that has value one in the
     # dolfinx.MeshTag
-    cells, types = dolfinx.plot.create_vtk_topology(
+    cells, types = plot.create_vtk_topology(
         mesh, mesh.topology.dim, cell_tags.indices[cell_tags.values == 1])
 
     # We add this grid to the second plotter
@@ -172,7 +170,7 @@ def plot_higher_order():
     # To get a topology that has a 1-1 correspondence with the degrees of
     # freedom in the function space, we call
     # `dolfinx.plot.create_vtk_topology`.
-    topology, cell_types = dolfinx.plot.create_vtk_topology(V)
+    topology, cell_types = plot.create_vtk_topology(V)
     geometry = u.function_space.tabulate_dof_coordinates()
 
     # We create a pyvista mesh from the topology and geometry, and attach
@@ -185,7 +183,7 @@ def plot_higher_order():
     # we have done previously
     num_cells = mesh.topology.index_map(mesh.topology.dim).size_local
     cell_entities = np.arange(num_cells, dtype=np.int32)
-    cells, types = dolfinx.plot.create_vtk_topology(mesh, mesh.topology.dim, cell_entities)
+    cells, types = plot.create_vtk_topology(mesh, mesh.topology.dim, cell_entities)
     org_grid = pyvista.UnstructuredGrid(cells, types, mesh.geometry.x)
 
     # We visualize the data
@@ -220,17 +218,16 @@ def plot_nedelec():
                      position="upper_edge", font_size=14, color="black")
 
     # Next, we create a pyvista.UnstructuredGrid based on the mesh
-    pyvista_cells, cell_types = dolfinx.plot.create_vtk_topology(mesh, mesh.topology.dim)
+    pyvista_cells, cell_types = plot.create_vtk_topology(mesh, mesh.topology.dim)
     geometry = mesh.geometry.x
-    grid_0 = pyvista.UnstructuredGrid(pyvista_cells, cell_types, geometry)
+    grid = pyvista.UnstructuredGrid(pyvista_cells, cell_types, geometry)
 
     # Add this grid (as a wireframe) to the plotter
-    plotter.add_mesh(grid_0, style="wireframe", line_width=2, color="black")
+    plotter.add_mesh(grid, style="wireframe", line_width=2, color="black")
 
     # Create a function space consisting of first order Nédélec (first kind)
     # elements and interpolate a vector-valued expression
-    element = ufl.FiniteElement("N1curl", mesh.ufl_cell(), 2)
-    V = FunctionSpace(mesh, element)
+    V = FunctionSpace(mesh, ("N1curl", 2))
     u = Function(V, dtype=np.float64)
     u.interpolate(lambda x: (x[2]**2, np.zeros(x.shape[1]), -x[0] * x[2]))
 
@@ -239,18 +236,18 @@ def plot_nedelec():
     # interpolate the Nédélec function into a first-order discontinuous
     # Lagrange space.
     V0 = VectorFunctionSpace(mesh, ("Discontinuous Lagrange", 2))
-    u0 = Function(V_output, dtype=np.float64)
+    u0 = Function(V0, dtype=np.float64)
     u0.interpolate(u)
 
     # Create a second grid, whose geometry and topology is based on the
     # output function space
-    cells, cell_types = dolfinx.plot.create_vtk_topology(V_output)
-    geometry_1 = V0.tabulate_dof_coordinates()
-    grid_1 = pyvista.UnstructuredGrid(cells, cell_types, geometry_1)
+    cells, cell_types = plot.create_vtk_topology(V0)
+    geometry = V0.tabulate_dof_coordinates()
+    grid = pyvista.UnstructuredGrid(cells, cell_types, geometry)
 
     # Create point cloud of vertices, and add the vertex values to the cloud
-    grid_1.point_data["u"] = u_out.x.array.reshape(geometry_1.shape[0], V_output.dofmap.index_map_bs)
-    glyphs = grid_1.glyph(orient="u", factor=0.1)
+    grid.point_data["u"] = u0.x.array.reshape(geometry.shape[0], V0.dofmap.index_map_bs)
+    glyphs = grid.glyph(orient="u", factor=0.1)
 
     # We add in the glyphs corresponding to the plotter
     plotter.add_mesh(glyphs)
@@ -281,7 +278,7 @@ def plot_vector2():
     # entities, which can restrict the plotting to subsets of our mesh
     num_cells = mesh.topology.index_map(mesh.topology.dim).size_local
     cell_entities = np.arange(num_cells, dtype=np.int32)
-    topology, cell_types = dolfinx.plot.create_vtk_topology(V, cell_entities)
+    topology, cell_types = plot.create_vtk_topology(V, cell_entities)
 
     # As we deal with a vector function space, we need to adjust the values
     # in the underlying one dimensional array in dolfinx.Function, by
@@ -306,7 +303,7 @@ def plot_vector2():
                                                 pointa=(0.5, 0.0, 0), pointb=(0.5, 1, 0))
 
     # Create pyvista mesh from the mesh
-    pyvista_cells, cell_types = dolfinx.plot.create_vtk_topology(mesh, mesh.topology.dim, cell_entities)
+    pyvista_cells, cell_types = plot.create_vtk_topology(mesh, mesh.topology.dim, cell_entities)
     grid = pyvista.UnstructuredGrid(pyvista_cells, cell_types, mesh.geometry.x)
 
     # Add mesh, glyphs and streamlines to plotter
@@ -331,11 +328,11 @@ def plot_streamlines():
     # In this section we illustrate how to visualize streamlines in 3D
 
     mesh = create_unit_cube(MPI.COMM_WORLD, 4, 4, 4, CellType.hexahedron)
-    V = VectorFunctionSpace(mesh, ("DG", 2))
+    V = VectorFunctionSpace(mesh, ("Discontinuous Lagrange", 2))
     u = Function(V, dtype=np.float64)
     u.interpolate(lambda x: np.vstack((-(x[1] - 0.5), x[0] - 0.5, np.zeros(x.shape[1]))))
 
-    topology, cell_types = dolfinx.plot.create_vtk_topology(V)
+    topology, cell_types = plot.create_vtk_topology(V)
     geometry = u.function_space.tabulate_dof_coordinates()
     num_dofs = geometry.shape[0]
     values = np.zeros((num_dofs, 3), dtype=np.float64)
