@@ -231,23 +231,22 @@ def plot_nedelec():
     # elements and interpolate a vector-valued expression
     element = ufl.FiniteElement("N1curl", mesh.ufl_cell(), 2)
     V = FunctionSpace(mesh, element)
-    u = Function(V)
-    u.interpolate(lambda x: (x[2]**2, np.zeros(x.shape[1]), -x[0] * x[2]), dtype=np.float64)
+    u = Function(V, dtype=np.float64)
+    u.interpolate(lambda x: (x[2]**2, np.zeros(x.shape[1]), -x[0] * x[2]))
 
     # Exact visualisation of the Nédélec spaces requires a Lagrange or
     # discontinuous Lagrange finite element functions. Therefore, we
     # interpolate the Nédélec function into a first-order discontinuous
     # Lagrange space.
-    # output_element = ufl.VectorElement("Discontinuous Lagrange", mesh.ufl_cell(), 2)
-    V_output = VectorFunctionSpace(mesh, ("Discontinuous Lagrange", 2))
-    u_out = Function(V_output, dtype=np.float64)
-    u_out.interpolate(u)
+    V0 = VectorFunctionSpace(mesh, ("Discontinuous Lagrange", 2))
+    u0 = Function(V_output, dtype=np.float64)
+    u0.interpolate(u)
 
     # Create a second grid, whose geometry and topology is based on the
     # output function space
-    cells_1, cell_types_1 = dolfinx.plot.create_vtk_topology(V_output)
-    geometry_1 = V_output.tabulate_dof_coordinates()
-    grid_1 = pyvista.UnstructuredGrid(cells_1, cell_types_1, geometry_1)
+    cells, cell_types = dolfinx.plot.create_vtk_topology(V_output)
+    geometry_1 = V0.tabulate_dof_coordinates()
+    grid_1 = pyvista.UnstructuredGrid(cells, cell_types, geometry_1)
 
     # Create point cloud of vertices, and add the vertex values to the cloud
     grid_1.point_data["u"] = u_out.x.array.reshape(geometry_1.shape[0], V_output.dofmap.index_map_bs)
