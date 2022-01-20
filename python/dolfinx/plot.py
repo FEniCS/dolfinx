@@ -31,22 +31,6 @@ _cell_degree_tetrahedron = {4: 1, 10: 2, 20: 3}
 _cell_degree_hexahedron = {8: 1, 27: 2}
 
 
-def _element_degree(cell_type: CellType, num_nodes: int):
-    """Determine the degree of a cell by the number of nodes"""
-    if cell_type == CellType.triangle:
-        return _cell_degree_triangle[num_nodes]
-    elif cell_type == CellType.point:
-        return 1
-    elif cell_type == CellType.interval:
-        return num_nodes - 1
-    elif cell_type == CellType.tetrahedron:
-        return _cell_degree_tetrahedron[num_nodes]
-    elif cell_type == CellType.quadrilateral:
-        return int(np.sqrt(num_nodes) - 1)
-    elif cell_type == CellType.hexahedron:
-        return _cell_degree_hexahedron[num_nodes]
-
-
 @functools.singledispatch
 def create_vtk_mesh(mesh: mesh.Mesh, dim: int, entities=None):
     """Create vtk mesh topology data for mesh entities of a given
@@ -68,8 +52,7 @@ def create_vtk_mesh(mesh: mesh.Mesh, dim: int, entities=None):
     if mesh.topology.cell_type == CellType.prism:
         raise RuntimeError("Plotting of prism meshes not supported")
     e_type = _cpp.mesh.cell_entity_type(mesh.topology.cell_type, dim, 0)
-
-    degree = _element_degree(e_type, geometry_entities.shape[1])
+    degree = mesh.geometry.cmap.degree
     if degree == 1:
         cell_types = np.full(num_cells, _first_order_vtk[e_type])
     else:

@@ -300,7 +300,7 @@ def test_biharmonic():
     a = form(inner(sigma_S, tau_S) * dx - b(tau_S, u) + b(sigma_S, v))
     L = form(inner(f_exact, v) * dx)
 
-    V_1 = V.sub(1).collapse()
+    V_1 = V.sub(1).collapse()[0]
     zero_u = Function(V_1)
     zero_u.x.array[:] = 0.0
 

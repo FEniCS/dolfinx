@@ -955,6 +955,7 @@ void fem(py::module& m)
            py::arg("degree"))
       .def("create_dof_layout",
            &dolfinx::fem::CoordinateElement::create_dof_layout)
+      .def_property_readonly("degree", &dolfinx::fem::CoordinateElement::degree)
       .def("push_forward",
            [](const dolfinx::fem::CoordinateElement& self,
               const py::array_t<double, py::array::c_style>& X,

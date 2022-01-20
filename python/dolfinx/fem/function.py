@@ -535,19 +535,12 @@ class FunctionSpace(ufl.FunctionSpace):
         """Return the mesh on which the function space is defined."""
         return self._cpp_object.mesh
 
-    def collapse(self):
+    def collapse(self) -> tuple[FunctionSpace, np.ndarray]:
         """Collapse a subspace and return a new function space and a map from
         new to old dofs.
 
-        *Arguments*
-            collapsed_dofs
-                Return the map from new to old dofs
-
-       *Returns*
-           FunctionSpace
-                The new function space.
-           dict
-                The map from new to old dofs (optional)
+        Returns:
+            The new function space and the map from new to old dofs
 
         """
         cpp_space, dofs = self._cpp_object.collapse()

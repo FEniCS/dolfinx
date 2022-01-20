@@ -547,8 +547,8 @@ def test_assembly_solve_taylor_hood(mesh):
         p11 = ufl.inner(p, q) * dx
         p_form = p00 + p11
 
-        f = Function(W.sub(0).collapse())
-        p_zero = Function(W.sub(1).collapse())
+        f = Function(W.sub(0).collapse()[0])
+        p_zero = Function(W.sub(1).collapse()[0])
         L0 = inner(f, v) * dx
         L1 = inner(p_zero, q) * dx
         L = L0 + L1
