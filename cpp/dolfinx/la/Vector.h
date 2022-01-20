@@ -34,6 +34,8 @@ public:
   Vector(const std::shared_ptr<const common::IndexMap>& map, int bs,
          const Allocator& alloc = Allocator())
       : _map(map), _bs(bs),
+        _buffer_send_fwd(bs * map->scatter_fwd_indices().array().size()),
+        _buffer_recv_fwd(bs * map->num_ghosts()),
         _x(bs * (map->size_local() + map->num_ghosts()), alloc)
   {
     if (bs == 1)
@@ -43,12 +45,6 @@ public:
       MPI_Type_contiguous(bs, dolfinx::MPI::mpi_type<T>(), &_datatype);
       MPI_Type_commit(&_datatype);
     }
-
-    // Pre-allocate buffers data
-    const std::vector<std::int32_t>& indices
-        = _map->scatter_fwd_indices().array();
-    _buffer_send_fwd.resize(_bs * indices.size());
-    _buffer_recv_fwd.resize(_bs * _map->num_ghosts());
   }
 
   /// Copy constructor
