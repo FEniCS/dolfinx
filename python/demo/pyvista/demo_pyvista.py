@@ -45,19 +45,15 @@ def plot_scalar():
     # into a first order Lagrange space
     mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, cell_type=CellType.quadrilateral)
     V = FunctionSpace(mesh, ("Lagrange", 1))
-    u = Function(V)
+    u = Function(V, dtype=np.float64)
     u.interpolate(lambda x: np.sin(np.pi * x[0]) * np.sin(2 * x[1] * np.pi))
 
     # As we want to visualize the function u, we have to create a grid to
     # attached the dof values to We do this by creating a topology and
     # geometry based on the function space V
-    pyvista_cells, cell_types = dolfinx.plot.create_vtk_topology(V)
-    grid = pyvista.UnstructuredGrid(pyvista_cells, cell_types, mesh.geometry.x)
-
-    # We obtain the dof values from u and discard complex values if running
-    # in complex mode (as they are currently zero)
-    point_values = u.x.array.real if np.iscomplexobj(u.x.array) else u.x.array
-    grid.point_data["u"] = point_values
+    cells, types = dolfinx.plot.create_vtk_topology(V)
+    grid = pyvista.UnstructuredGrid(cells, types, mesh.geometry.x)
+    grid.point_data["u"] = u.x.array
 
     # We set the function "u" as the active scalar for the mesh, and warp
     # the mesh in z-direction by its values
@@ -68,7 +64,7 @@ def plot_scalar():
     # values, and one where the mesh is warped by these values
     subplotter = pyvista.Plotter(shape=(1, 2))
     subplotter.subplot(0, 0)
-    subplotter.add_text("Mesh with scalar function", font_size=14, color="black", position="upper_edge")
+    subplotter.add_text("Scalar countour field", font_size=14, color="black", position="upper_edge")
     subplotter.add_mesh(grid, show_edges=True, show_scalar_bar=True)
     subplotter.view_xy()
 
