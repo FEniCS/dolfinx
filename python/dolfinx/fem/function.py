@@ -535,7 +535,7 @@ class FunctionSpace(ufl.FunctionSpace):
         """Return the mesh on which the function space is defined."""
         return self._cpp_object.mesh
 
-    def collapse(self, collapsed_dofs: bool = False):
+    def collapse(self):
         """Collapse a subspace and return a new function space and a map from
         new to old dofs.
 
@@ -552,10 +552,7 @@ class FunctionSpace(ufl.FunctionSpace):
         """
         cpp_space, dofs = self._cpp_object.collapse()
         V = FunctionSpace(None, self.ufl_element(), cpp_space)
-        if collapsed_dofs:
-            return V, dofs
-        else:
-            return V
+        return V, dofs
 
     def tabulate_dof_coordinates(self) -> np.ndarray:
         return self._cpp_object.tabulate_dof_coordinates()

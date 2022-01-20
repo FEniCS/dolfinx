@@ -49,8 +49,8 @@ def plot_scalar():
     # As we want to visualize the function u, we have to create a grid to
     # attached the dof values to We do this by creating a topology and
     # geometry based on the function space V
-    cells, types = plot.create_vtk_topology(V)
-    grid = pyvista.UnstructuredGrid(cells, types, mesh.geometry.x)
+    cells, types, x = plot.create_vtk_mesh(V)
+    grid = pyvista.UnstructuredGrid(cells, types, x)
     grid.point_data["u"] = u.x.array
 
     # We set the function "u" as the active scalar for the mesh, and warp
@@ -100,8 +100,8 @@ def plot_meshtags():
     midpoints = compute_midpoints(mesh, mesh.topology.dim, list(np.arange(num_cells, dtype=np.int32)))
     cell_tags = MeshTags(mesh, mesh.topology.dim, np.arange(num_cells), in_circle(midpoints))
 
-    cells, types = plot.create_vtk_topology(mesh, mesh.topology.dim)
-    grid = pyvista.UnstructuredGrid(cells, types, mesh.geometry.x)
+    cells, types, x = plot.create_vtk_mesh(mesh, mesh.topology.dim)
+    grid = pyvista.UnstructuredGrid(cells, types, x)
 
     # As the dolfinx.MeshTag contains a value for every cell in the
     # geometry, we can attach it directly to the grid
@@ -119,11 +119,11 @@ def plot_meshtags():
     # We can also visualize subsets of data, by creating a smaller topology,
     # only consisting of those entities that has value one in the
     # dolfinx.MeshTag
-    cells, types = plot.create_vtk_topology(
+    cells, types, x = plot.create_vtk_mesh(
         mesh, mesh.topology.dim, cell_tags.indices[cell_tags.values == 1])
 
     # We add this grid to the second plotter
-    sub_grid = pyvista.UnstructuredGrid(cells, types, mesh.geometry.x)
+    sub_grid = pyvista.UnstructuredGrid(cells, types, x)
     subplotter.subplot(0, 1)
     subplotter.add_text("Subset of mesh", font_size=14, color="black", position="upper_edge")
     subplotter.add_mesh(sub_grid, show_edges=True, edge_color="black")
@@ -169,13 +169,12 @@ def plot_higher_order():
 
     # To get a topology that has a 1-1 correspondence with the degrees of
     # freedom in the function space, we call
-    # `dolfinx.plot.create_vtk_topology`.
-    topology, cell_types = plot.create_vtk_topology(V)
-    geometry = u.function_space.tabulate_dof_coordinates()
+    # `dolfinx.plot.create_vtk_mesh`.
+    topology, cell_types, x = plot.create_vtk_mesh(V)
 
     # We create a pyvista mesh from the topology and geometry, and attach
     # the coefficients of the degrees of freedom
-    grid = pyvista.UnstructuredGrid(topology, cell_types, geometry)
+    grid = pyvista.UnstructuredGrid(topology, cell_types, x)
     grid.point_data["u"] = u.x.array
     grid.set_active_scalars("u")
 
@@ -183,8 +182,8 @@ def plot_higher_order():
     # we have done previously
     num_cells = mesh.topology.index_map(mesh.topology.dim).size_local
     cell_entities = np.arange(num_cells, dtype=np.int32)
-    cells, types = plot.create_vtk_topology(mesh, mesh.topology.dim, cell_entities)
-    org_grid = pyvista.UnstructuredGrid(cells, types, mesh.geometry.x)
+    cells, types, x = plot.create_vtk_mesh(mesh, mesh.topology.dim, cell_entities)
+    org_grid = pyvista.UnstructuredGrid(cells, types, x)
 
     # We visualize the data
     plotter = pyvista.Plotter()
@@ -218,9 +217,8 @@ def plot_nedelec():
                      position="upper_edge", font_size=14, color="black")
 
     # Next, we create a pyvista.UnstructuredGrid based on the mesh
-    pyvista_cells, cell_types = plot.create_vtk_topology(mesh, mesh.topology.dim)
-    geometry = mesh.geometry.x
-    grid = pyvista.UnstructuredGrid(pyvista_cells, cell_types, geometry)
+    pyvista_cells, cell_types, x = plot.create_vtk_mesh(mesh, mesh.topology.dim)
+    grid = pyvista.UnstructuredGrid(pyvista_cells, cell_types, x)
 
     # Add this grid (as a wireframe) to the plotter
     plotter.add_mesh(grid, style="wireframe", line_width=2, color="black")
@@ -241,12 +239,11 @@ def plot_nedelec():
 
     # Create a second grid, whose geometry and topology is based on the
     # output function space
-    cells, cell_types = plot.create_vtk_topology(V0)
-    geometry = V0.tabulate_dof_coordinates()
-    grid = pyvista.UnstructuredGrid(cells, cell_types, geometry)
+    cells, cell_types, x = plot.create_vtk_mesh(V0)
+    grid = pyvista.UnstructuredGrid(cells, cell_types, x)
 
     # Create point cloud of vertices, and add the vertex values to the cloud
-    grid.point_data["u"] = u0.x.array.reshape(geometry.shape[0], V0.dofmap.index_map_bs)
+    grid.point_data["u"] = u0.x.array.reshape(x.shape[0], V0.dofmap.index_map_bs)
     glyphs = grid.glyph(orient="u", factor=0.1)
 
     # We add in the glyphs corresponding to the plotter
@@ -273,23 +270,22 @@ def plot_vector2():
     u = Function(V, dtype=np.float64)
     u.interpolate(lambda x: np.vstack((np.sin(x[1]), 0.1 * x[0])))
 
-    # We use the `dolfinx.plot.create_vtk_topology`
+    # We use the `dolfinx.plot.create_vtk_mesh`
     # function, as in the previous section. However, we input a set of cell
     # entities, which can restrict the plotting to subsets of our mesh
     num_cells = mesh.topology.index_map(mesh.topology.dim).size_local
     cell_entities = np.arange(num_cells, dtype=np.int32)
-    topology, cell_types = plot.create_vtk_topology(V, cell_entities)
+    topology, cell_types, x = plot.create_vtk_mesh(V, cell_entities)
 
     # As we deal with a vector function space, we need to adjust the values
     # in the underlying one dimensional array in dolfinx.Function, by
     # reshaping the data, and add an extra column to make it a 3D vector
-    geometry = V.tabulate_dof_coordinates()
-    num_dofs = geometry.shape[0]
+    num_dofs = x.shape[0]
     values = np.zeros((num_dofs, 3), dtype=np.float64)
     values[:, :mesh.geometry.dim] = u.x.array.reshape(num_dofs, V.dofmap.index_map_bs)
 
     # Create a point cloud of glyphs
-    function_grid = pyvista.UnstructuredGrid(topology, cell_types, geometry)
+    function_grid = pyvista.UnstructuredGrid(topology, cell_types, x)
     function_grid["vectors"] = values
     function_grid.set_active_vectors("vectors")
     glyphs = function_grid.glyph(orient="vectors", factor=0.1)
@@ -303,8 +299,8 @@ def plot_vector2():
                                                 pointa=(0.5, 0.0, 0), pointb=(0.5, 1, 0))
 
     # Create pyvista mesh from the mesh
-    pyvista_cells, cell_types = plot.create_vtk_topology(mesh, mesh.topology.dim, cell_entities)
-    grid = pyvista.UnstructuredGrid(pyvista_cells, cell_types, mesh.geometry.x)
+    pyvista_cells, cell_types, x = plot.create_vtk_mesh(mesh, mesh.topology.dim, cell_entities)
+    grid = pyvista.UnstructuredGrid(pyvista_cells, cell_types, x)
 
     # Add mesh, glyphs and streamlines to plotter
     plotter = pyvista.Plotter()
@@ -332,14 +328,13 @@ def plot_streamlines():
     u = Function(V, dtype=np.float64)
     u.interpolate(lambda x: np.vstack((-(x[1] - 0.5), x[0] - 0.5, np.zeros(x.shape[1]))))
 
-    topology, cell_types = plot.create_vtk_topology(V)
-    geometry = u.function_space.tabulate_dof_coordinates()
-    num_dofs = geometry.shape[0]
+    topology, cell_types, x = plot.create_vtk_mesh(V)
+    num_dofs = x.shape[0]
     values = np.zeros((num_dofs, 3), dtype=np.float64)
     values[:, :mesh.geometry.dim] = u.x.array.reshape(num_dofs, V.dofmap.index_map_bs)
 
     # Create a point cloud of glyphs
-    grid = pyvista.UnstructuredGrid(topology, cell_types, geometry)
+    grid = pyvista.UnstructuredGrid(topology, cell_types, x)
     grid["vectors"] = values
     grid.set_active_vectors("vectors")
     glyphs = grid.glyph(orient="vectors", factor=0.1)

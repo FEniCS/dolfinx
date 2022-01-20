@@ -277,22 +277,18 @@ if "CI" in os.environ.keys() or "GITHUB_ACTIONS" in os.environ.keys():
 else:
     T = 50 * dt
 
-# Get the sub-function c (a view into the mixed element)
-c = u.sub(0)
+# Get the sub-space for c and the corresponding dofs in the mixed space
+# vector
+V0, dofs = ME.sub(0).collapse()
 
 # Prepare viewer for plotting the solution during the computation
 if have_pyvista:
-    # Create a non-mixed function for visualisation
-    c_out = c.collapse()
-
     # Create a VTK 'mesh' with 'nodes' at the function dofs
-    geometry = c_out.function_space.tabulate_dof_coordinates()
-    topology, cell_types = plot.create_vtk_topology(c_out.function_space)
-    grid = pv.UnstructuredGrid(topology, cell_types, geometry)
+    topology, cell_types, x = plot.create_vtk_mesh(V0)
+    grid = pv.UnstructuredGrid(topology, cell_types, x)
 
-    # Interpolate c in the output function
-    c_out.interpolate(c)
-    grid.point_data["c"] = c_out.x.array.real
+    # Set output data
+    grid.point_data["c"] = u.x.array[dofs].real
     grid.set_active_scalars("c")
 
     p = pvqt.BackgroundPlotter(title="concentration", auto_update=True)
@@ -300,6 +296,7 @@ if have_pyvista:
     p.view_xy(True)
     p.add_text(f"time: {t}", font_size=12, name="timelabel")
 
+c = u.sub(0)
 u0.x.array[:] = u.x.array
 while (t < T):
     t += dt
@@ -311,16 +308,15 @@ while (t < T):
     # Update the plot window
     if have_pyvista:
         p.add_text(f"time: {t:.2e}", font_size=12, name="timelabel")
-        c_out.interpolate(c)
-        grid.point_data["c"] = c_out.x.array.real
+        grid.point_data["c"] = u.x.array[dofs].real
         p.app.processEvents()
 
 file.close()
 
 # Update ghost entries and plot
 if have_pyvista:
-    c_out.x.scatter_forward()
-    grid.point_data["c"] = c_out.x.array.real
+    u.x.scatter_forward()
+    grid.point_data["c"] = u.x.array[dofs].real
     screenshot = None
     if pv.OFF_SCREEN:
         screenshot = "c.png"

@@ -48,7 +48,7 @@ def _element_degree(cell_type: CellType, num_nodes: int):
 
 
 @functools.singledispatch
-def create_vtk_topology(mesh: mesh.Mesh, dim: int, entities=None):
+def create_vtk_mesh(mesh: mesh.Mesh, dim: int, entities=None):
     """Create vtk mesh topology data for mesh entities of a given
     dimension. The vertex indices in the returned topology array are the
     indices for the associated entry in the mesh geometry.
@@ -84,12 +84,13 @@ def create_vtk_topology(mesh: mesh.Mesh, dim: int, entities=None):
     topology = np.zeros((num_cells, num_vertices_per_cell + 1), dtype=np.int32)
     topology[:, 0] = num_vertices_per_cell
     topology[:, 1:] = geometry_entities[:, map_vtk]
-    return topology.reshape(1, -1)[0], cell_types
+
+    return topology.reshape(1, -1)[0], cell_types, mesh.geometry.x
 
 
-@create_vtk_topology.register(fem.FunctionSpace)
+@create_vtk_mesh.register(fem.FunctionSpace)
 def _(V: fem.FunctionSpace, entities=None):
-    """Creates a vtk mesh topology (topology array and array of cell
+    """Creates a VTK mesh topology (topology array and array of cell
     types) that is based on the degree-of-freedom coordinates. Note that
     this function supports Lagrange elements (continuous and
     discontinuous) only.
@@ -125,4 +126,4 @@ def _(V: fem.FunctionSpace, entities=None):
     dofmap_ = dofmap.list.array.reshape(dofmap.list.num_nodes, num_dofs_per_cell)
 
     topology[:, 1:] = dofmap_[:num_cells, perm]
-    return topology.reshape(1, -1)[0], cell_types
+    return topology.reshape(1, -1)[0], cell_types, V.tabulate_dof_coordinates()

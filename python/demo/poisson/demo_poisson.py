@@ -199,9 +199,8 @@ with XDMFFile(MPI.COMM_WORLD, "poisson.xdmf", "w") as file:
 # Plot solution
 try:
     import pyvista
-    topology, cell_types = plot.create_vtk_topology(V)
-    geometry = V.tabulate_dof_coordinates()
-    grid = pyvista.UnstructuredGrid(topology, cell_types, geometry)
+    topology, cell_types, x = plot.create_vtk_mesh(V)
+    grid = pyvista.UnstructuredGrid(topology, cell_types, x)
     grid.point_data["u"] = uh.x.array.real
     grid.set_active_scalars("u")
 
