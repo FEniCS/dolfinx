@@ -17,6 +17,7 @@
 
 import numpy as np
 
+from dolfinx import plot
 from dolfinx.fem import Function, FunctionSpace, VectorFunctionSpace
 from dolfinx.mesh import CellType, create_rectangle, locate_entities
 
@@ -57,3 +58,46 @@ try:
         file.write(0.0)
 except ImportError:
     print("ADIOS2 required for VTK output")
+
+
+# Plot solution
+try:
+    import pyvista
+    cells, types, x = plot.create_vtk_mesh(V0)
+    grid = pyvista.UnstructuredGrid(cells, types, x)
+    values = np.zeros((x.shape[0], 3), dtype=np.float64)
+    values[:, :mesh.topology.dim] = u0.x.array.reshape(x.shape[0], mesh.topology.dim).real
+    grid.point_data["u"] = values
+
+    pl = pyvista.Plotter(shape=(2, 2))
+
+    pl.subplot(0, 0)
+    pl.add_text("magnitude", font_size=12, color="black", position="upper_edge")
+    pl.add_mesh(grid.copy(), show_edges=True)
+
+    pl.subplot(0, 1)
+    glyphs = grid.glyph(orient="u", factor=0.08)
+    pl.add_text("vector glyphs", font_size=12, color="black", position="upper_edge")
+    pl.add_mesh(glyphs, show_scalar_bar=False)
+    pl.add_mesh(grid.copy(), style="wireframe", line_width=2, color="black")
+
+    pl.subplot(1, 0)
+    pl.add_text("x-component", font_size=12, color="black", position="upper_edge")
+    pl.add_mesh(grid.copy(), component=0, show_edges=True)
+
+    pl.subplot(1, 1)
+    pl.add_text("y-component", font_size=12, color="black", position="upper_edge")
+    pl.add_mesh(grid.copy(), component=1, show_edges=True)
+
+    pl.view_xy()
+    pl.link_views()
+
+    # If pyvista environment variable is set to off-screen (static)
+    # plotting save png
+    if pyvista.OFF_SCREEN:
+        pyvista.start_xvfb(wait=0.1)
+        pl.screenshot("uh.png")
+    else:
+        pl.show()
+except ModuleNotFoundError:
+    print("pyvista is required to visualise the solution")
