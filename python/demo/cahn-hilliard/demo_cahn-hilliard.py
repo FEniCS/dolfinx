@@ -271,48 +271,57 @@ file.write_mesh(mesh)
 # Step in time
 t = 0.0
 
-# Check if we are running on CI server and reduce run time
+#  Reduce run time if on test (CI) server
 if "CI" in os.environ.keys() or "GITHUB_ACTIONS" in os.environ.keys():
     T = 3 * dt
 else:
     T = 50 * dt
 
-u0.x.array[:] = u.x.array
+# Get the sub-function c (a view into the mixed element)
+c = u.sub(0)
 
-
-# Prepare viewer for plotting solution during the computation
+# Prepare viewer for plotting the solution during the computation
 if have_pyvista:
-    ME_0 = ME.sub(0).collapse()
-    geometry = ME_0.tabulate_dof_coordinates()
-    topology, cell_types = plot.create_vtk_topology(ME_0)
+    # Create a non-mixed function for visualisation
+    c_out = c.collapse()
+
+    # Create a VTK 'mesh' with 'nodes' at the function dofs
+    geometry = c_out.function_space.tabulate_dof_coordinates()
+    topology, cell_types = plot.create_vtk_topology(c_out.function_space)
     grid = pv.UnstructuredGrid(topology, cell_types, geometry)
-    grid.point_data["u"] = u.sub(0).collapse().x.array.real
-    grid.set_active_scalars("u")
+
+    # Interpolate c in the output function
+    c_out.interpolate(c)
+    grid.point_data["c"] = c_out.x.array.real
+    grid.set_active_scalars("c")
+
     p = pvqt.BackgroundPlotter(title="concentration", auto_update=True)
     p.add_mesh(grid, clim=[0, 1])
     p.view_xy(True)
     p.add_text(f"time: {t}", font_size=12, name="timelabel")
 
+u0.x.array[:] = u.x.array
 while (t < T):
     t += dt
     r = solver.solve(u)
     print(f"Step {int(t/dt)}: num iterations: {r[0]}")
     u0.x.array[:] = u.x.array
-    file.write_function(u.sub(0), t)
+    file.write_function(c, t)
 
     # Update the plot window
     if have_pyvista:
         p.add_text(f"time: {t:.2e}", font_size=12, name="timelabel")
-        grid.point_data["u"] = u.sub(0).collapse().x.array.real
+        c_out.interpolate(c)
+        grid.point_data["c"] = c_out.x.array.real
         p.app.processEvents()
 
 file.close()
 
 # Update ghost entries and plot
 if have_pyvista:
-    u.x.scatter_forward()
-    grid.point_data["u"] = u.sub(0).collapse().x.array.real
+    c_out.x.scatter_forward()
+    grid.point_data["c"] = c_out.x.array.real
     screenshot = None
     if pv.OFF_SCREEN:
-        screenshot = "u.png"
+        screenshot = "c.png"
     pv.plot(grid, show_edges=True, screenshot=screenshot)

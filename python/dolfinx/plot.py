@@ -90,9 +90,9 @@ def create_vtk_topology(mesh: mesh.Mesh, dim: int, entities=None):
 @create_vtk_topology.register(fem.FunctionSpace)
 def _(V: fem.FunctionSpace, entities=None):
     """Creates a vtk mesh topology (topology array and array of cell
-    types) that is based on degree of freedom coordinate. Note that this
-    function supports Lagrange elements (continuous and discontinuous)
-    only.
+    types) that is based on the degree-of-freedom coordinates. Note that
+    this function supports Lagrange elements (continuous and
+    discontinuous) only.
 
     """
     family = V.ufl_element().family()
