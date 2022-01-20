@@ -127,7 +127,7 @@ def test_constant_bc(mesh_factory):
 
     u_c = Function(V)
     set_bc(u_c.vector, [bc_c])
-    assert(np.allclose(u_f.vector.array, u_c.vector.array))
+    assert np.allclose(u_f.vector.array, u_c.vector.array)
 
 
 @pytest.mark.parametrize(
@@ -167,7 +167,7 @@ def test_vector_constant_bc(mesh_factory):
     u_c.x.array[:] = 0.0
     set_bc(u_c.vector, [bc_c])
 
-    assert(np.allclose(u_f.x.array, u_c.x.array))
+    assert np.allclose(u_f.x.array, u_c.x.array)
 
 
 @pytest.mark.parametrize(

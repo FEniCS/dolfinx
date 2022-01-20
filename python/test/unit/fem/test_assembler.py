@@ -768,13 +768,13 @@ def test_coefficents_non_constant():
     F = form((ufl.inner(u, v) - ufl.inner(x[0] * x[1]**2, v)) * dx)
     b0 = assemble_vector(F)
     b0.assemble()
-    assert(np.linalg.norm(b0.array) == pytest.approx(0.0))
+    assert np.linalg.norm(b0.array) == pytest.approx(0.0)
 
     # -- Exterior facet integral vector
     F = form((ufl.inner(u, v) - ufl.inner(x[0] * x[1]**2, v)) * ds)
     b0 = assemble_vector(F)
     b0.assemble()
-    assert(np.linalg.norm(b0.array) == pytest.approx(0.0))
+    assert np.linalg.norm(b0.array) == pytest.approx(0.0)
 
     # -- Interior facet integral vector
     V = FunctionSpace(mesh, ("DG", 3))  # degree 3 so that interpolation is exact
@@ -791,7 +791,7 @@ def test_coefficents_non_constant():
     F = form(F)
     b0 = assemble_vector(F)
     b0.assemble()
-    assert(np.linalg.norm(b0.array) == pytest.approx(0.0))
+    assert np.linalg.norm(b0.array) == pytest.approx(0.0)
 
 
 def test_vector_types():
