@@ -93,7 +93,7 @@ def plot_meshtags():
     # cells satisfying the condition below
 
     def in_circle(x):
-        """Mark sphere with radius < sqrt(2)"""
+        """True for points inside circle with radius 2"""
         return np.array((x.T[0] - 0.5)**2 + (x.T[1] - 0.5)**2 < 0.2**2, dtype=np.int32)
 
     # Create a dolfinx.MeshTag for all cells. If midpoint is inside the
