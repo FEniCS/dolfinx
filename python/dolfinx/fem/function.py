@@ -333,9 +333,6 @@ class Function(ufl.Coefficient):
             cells = np.arange(map.size_local + map.num_ghosts, dtype=np.int32)
         _interpolate(u, cells)
 
-    def compute_point_values(self):
-        return self._cpp_object.compute_point_values()
-
     def copy(self) -> Function:
         """Return a copy of the Function. The FunctionSpace is shared and the
         degree-of-freedom vector is copied.
@@ -538,27 +535,17 @@ class FunctionSpace(ufl.FunctionSpace):
         """Return the mesh on which the function space is defined."""
         return self._cpp_object.mesh
 
-    def collapse(self, collapsed_dofs: bool = False):
+    def collapse(self) -> tuple[FunctionSpace, np.ndarray]:
         """Collapse a subspace and return a new function space and a map from
         new to old dofs.
 
-        *Arguments*
-            collapsed_dofs
-                Return the map from new to old dofs
-
-       *Returns*
-           FunctionSpace
-                The new function space.
-           dict
-                The map from new to old dofs (optional)
+        Returns:
+            The new function space and the map from new to old dofs
 
         """
         cpp_space, dofs = self._cpp_object.collapse()
         V = FunctionSpace(None, self.ufl_element(), cpp_space)
-        if collapsed_dofs:
-            return V, dofs
-        else:
-            return V
+        return V, dofs
 
     def tabulate_dof_coordinates(self) -> np.ndarray:
         return self._cpp_object.tabulate_dof_coordinates()
