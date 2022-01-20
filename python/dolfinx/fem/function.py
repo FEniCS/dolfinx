@@ -8,7 +8,6 @@
 from __future__ import annotations
 
 import typing
-import warnings
 
 if typing.TYPE_CHECKING:
     from dolfinx.mesh import Mesh
@@ -123,7 +122,6 @@ class Expression:
         # Setup data (evaluation points, coefficients, constants, mesh, value_size).
         # Tabulation function.
         ffi = cffi.FFI()
-        fn = ffi.cast("uintptr_t", self._ufcx_expression.tabulate_tensor_float64)
 
         # Prepare coefficients data. For every coefficient in form take
         # its C++ object.
@@ -167,9 +165,11 @@ class Expression:
         if values is None:
             num_all_argument_dofs = np.prod(self.num_argument_dofs, dtype=int)
             if np.issubdtype(PETSc.ScalarType, np.complexfloating):
-                values = np.empty((num_cells, self.X.shape[0] * self.value_size * num_all_argument_dofs), dtype=np.complex128)
+                values = np.empty((num_cells,
+                                   self.X.shape[0] * self.value_size * num_all_argument_dofs), dtype=np.complex128)
             else:
-                values = np.empty((num_cells, self.X.shape[0] * self.value_size * num_all_argument_dofs), dtype=np.float64)
+                values = np.empty((num_cells,
+                                   self.X.shape[0] * self.value_size * num_all_argument_dofs), dtype=np.float64)
             self._cpp_object.eval(cells, values)
         else:
             if values.ndim >= 3 or values.shape[0] != _cells.shape[0] or values.shape[1] != _cells.shape[1]:
@@ -329,7 +329,7 @@ class Function(ufl.Coefficient):
             mesh = self.function_space.mesh
             map = mesh.topology.index_map(mesh.topology.dim)
             cells = np.arange(map.size_local + map.num_ghosts, dtype=np.int32)
-        
+
         _interpolate(u, cells)
 
     def compute_point_values(self):

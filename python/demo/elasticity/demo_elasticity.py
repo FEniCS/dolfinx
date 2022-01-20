@@ -13,13 +13,14 @@ from contextlib import ExitStack
 import numpy as np
 
 from dolfinx import la
-from dolfinx.fem import (Function, Expression, VectorFunctionSpace, apply_lifting,
-                         assemble_matrix, assemble_vector, dirichletbc, form,
+from dolfinx.fem import (Expression, Function, FunctionSpace,
+                         VectorFunctionSpace, apply_lifting, assemble_matrix,
+                         assemble_vector, dirichletbc, form,
                          locate_dofs_geometrical, set_bc)
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import CellType, GhostMode, create_box
 from ufl import (Identity, SpatialCoordinate, TestFunction, TrialFunction,
-                 as_vector, dx, grad, inner, sym, sqrt, tr)
+                 as_vector, dx, grad, inner, sqrt, sym, tr)
 
 from mpi4py import MPI
 from petsc4py import PETSc
