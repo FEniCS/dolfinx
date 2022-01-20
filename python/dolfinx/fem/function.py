@@ -9,8 +9,7 @@ from __future__ import annotations
 
 import typing
 
-if typing.TYPE_CHECKING:
-    from dolfinx.mesh import Mesh
+from dolfinx.mesh import Mesh
 
 from functools import singledispatch
 
