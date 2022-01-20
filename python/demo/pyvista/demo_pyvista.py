@@ -102,8 +102,8 @@ def plot_meshtags():
     midpoints = compute_midpoints(mesh, mesh.topology.dim, list(np.arange(num_cells, dtype=np.int32)))
     cell_tags = MeshTags(mesh, mesh.topology.dim, np.arange(num_cells), in_circle(midpoints))
 
-    pyvista_cells, cell_types = dolfinx.plot.create_vtk_topology(mesh, mesh.topology.dim)
-    grid = pyvista.UnstructuredGrid(pyvista_cells, cell_types, mesh.geometry.x)
+    cells, types = dolfinx.plot.create_vtk_topology(mesh, mesh.topology.dim)
+    grid = pyvista.UnstructuredGrid(cells, types, mesh.geometry.x)
 
     # As the dolfinx.MeshTag contains a value for every cell in the
     # geometry, we can attach it directly to the grid
@@ -121,11 +121,11 @@ def plot_meshtags():
     # We can also visualize subsets of data, by creating a smaller topology,
     # only consisting of thos entities that has value one in the
     # dolfinx.MeshTag
-    pyvista_cells, cell_types = dolfinx.plot.create_vtk_topology(
+    cells, types = dolfinx.plot.create_vtk_topology(
         mesh, mesh.topology.dim, cell_tags.indices[cell_tags.values == 1])
 
     # We add this grid to the second plotter
-    sub_grid = pyvista.UnstructuredGrid(pyvista_cells, cell_types, mesh.geometry.x)
+    sub_grid = pyvista.UnstructuredGrid(cells, types, mesh.geometry.x)
     subplotter.subplot(0, 1)
     subplotter.add_text("Subset of mesh", font_size=14, color="black", position="upper_edge")
     subplotter.add_mesh(sub_grid, show_edges=True, edge_color="black")
@@ -164,36 +164,33 @@ def plot_higher_order():
     # the previous section to get the cells for each of the regions
     cells0 = cell_tags.indices[cell_tags.values == 0]
     cells1 = cell_tags.indices[cell_tags.values == 1]
-    V = FunctionSpace(mesh, ("DG", 2))
-    uh = Function(V)
-    uh.interpolate(lambda x: x[0], cells0)
-    uh.interpolate(lambda x: x[1], cells1)
+    V = FunctionSpace(mesh, ("Discontinuous Lagrange", 2))
+    u = Function(V, dtype=np.float64)
+    u.interpolate(lambda x: x[0], cells0)
+    u.interpolate(lambda x: x[1] + 1, cells1)
 
     # To get a topology that has a 1-1 correspondence with the degrees of
     # freedom in the function space, we call
     # `dolfinx.plot.create_vtk_topology`.
     topology, cell_types = dolfinx.plot.create_vtk_topology(V)
-    geometry = uh.function_space.tabulate_dof_coordinates()
-
-    # We discard the complex values if using PETSc in complex mode
-    values = uh.x.array.real if np.iscomplexobj(uh.x.array) else uh.x.array
+    geometry = u.function_space.tabulate_dof_coordinates()
 
     # We create a pyvista mesh from the topology and geometry, and attach
     # the coefficients of the degrees of freedom
     grid = pyvista.UnstructuredGrid(topology, cell_types, geometry)
-    grid.point_data["u"] = values
+    grid.point_data["u"] = u.x.array
     grid.set_active_scalars("u")
 
     # We would also like to visualize the underlying mesh and obtain that as
     # we have done previously
     num_cells = mesh.topology.index_map(mesh.topology.dim).size_local
     cell_entities = np.arange(num_cells, dtype=np.int32)
-    pyvista_cells, cell_types = dolfinx.plot.create_vtk_topology(mesh, mesh.topology.dim, cell_entities)
-    org_grid = pyvista.UnstructuredGrid(pyvista_cells, cell_types, mesh.geometry.x)
+    cells, types = dolfinx.plot.create_vtk_topology(mesh, mesh.topology.dim, cell_entities)
+    org_grid = pyvista.UnstructuredGrid(cells, types, mesh.geometry.x)
 
     # We visualize the data
     plotter = pyvista.Plotter()
-    plotter.add_text("Second order discontinuous elements",
+    plotter.add_text("Second-order (P2) discontinuous elements",
                      position="upper_edge", font_size=14, color="black")
     sargs = dict(height=0.1, width=0.8, vertical=False, position_x=0.1, position_y=0, color="black")
     plotter.add_mesh(grid, show_edges=False, scalar_bar_args=sargs, line_width=0)
@@ -241,9 +238,9 @@ def plot_nedelec():
     # discontinuous Lagrange finite element functions. Therefore, we
     # interpolate the Nédélec function into a first-order discontinuous
     # Lagrange space.
-    output_element = ufl.VectorElement("Discontinuous Lagrange", mesh.ufl_cell(), 2)
-    V_output = FunctionSpace(mesh, output_element)
-    u_out = Function(V_output)
+    # output_element = ufl.VectorElement("Discontinuous Lagrange", mesh.ufl_cell(), 2)
+    V_output = VectorFunctionSpace(mesh, ("Discontinuous Lagrange", 2))
+    u_out = Function(V_output, dtype=np.float64)
     u_out.interpolate(u)
 
     # Create a second grid, whose geometry and topology is based on the
@@ -253,7 +250,7 @@ def plot_nedelec():
     grid_1 = pyvista.UnstructuredGrid(cells_1, cell_types_1, geometry_1)
 
     # Create point cloud of vertices, and add the vertex values to the cloud
-    grid_1.point_data["u"] = u_out.x.array.reshape(geometry_1.shape[0], V_output.dofmap.index_map_bs).real
+    grid_1.point_data["u"] = u_out.x.array.reshape(geometry_1.shape[0], V_output.dofmap.index_map_bs)
     glyphs = grid_1.glyph(orient="u", factor=0.1)
 
     # We add in the glyphs corresponding to the plotter
@@ -277,8 +274,8 @@ def plot_vector2():
     # Lagrange.
     mesh = create_unit_square(MPI.COMM_WORLD, 6, 6, CellType.triangle)
     V = VectorFunctionSpace(mesh, ("Lagrange", 2))
-    uh = Function(V)
-    uh.interpolate(lambda x: np.vstack((np.sin(x[1]), 0.1 * x[0])))
+    u = Function(V, dtype=np.float64)
+    u.interpolate(lambda x: np.vstack((np.sin(x[1]), 0.1 * x[0])))
 
     # We use the `dolfinx.plot.create_vtk_topology`
     # function, as in the previous section. However, we input a set of cell
@@ -293,7 +290,7 @@ def plot_vector2():
     geometry = V.tabulate_dof_coordinates()
     num_dofs = geometry.shape[0]
     values = np.zeros((num_dofs, 3), dtype=np.float64)
-    values[:, :mesh.geometry.dim] = uh.x.array.reshape(num_dofs, V.dofmap.index_map_bs).real
+    values[:, :mesh.geometry.dim] = u.x.array.reshape(num_dofs, V.dofmap.index_map_bs)
 
     # Create a point cloud of glyphs
     function_grid = pyvista.UnstructuredGrid(topology, cell_types, geometry)
@@ -336,15 +333,14 @@ def plot_streamlines():
 
     mesh = create_unit_cube(MPI.COMM_WORLD, 4, 4, 4, CellType.hexahedron)
     V = VectorFunctionSpace(mesh, ("DG", 2))
-    uh = Function(V)
-    # uh.interpolate(vel)
-    uh.interpolate(lambda x: np.vstack((-(x[1] - 0.5), x[0] - 0.5, np.zeros(x.shape[1]))))
+    u = Function(V, dtype=np.float64)
+    u.interpolate(lambda x: np.vstack((-(x[1] - 0.5), x[0] - 0.5, np.zeros(x.shape[1]))))
 
     topology, cell_types = dolfinx.plot.create_vtk_topology(V)
-    geometry = uh.function_space.tabulate_dof_coordinates()
+    geometry = u.function_space.tabulate_dof_coordinates()
     num_dofs = geometry.shape[0]
     values = np.zeros((num_dofs, 3), dtype=np.float64)
-    values[:, :mesh.geometry.dim] = uh.x.array.reshape(num_dofs, V.dofmap.index_map_bs).real
+    values[:, :mesh.geometry.dim] = u.x.array.reshape(num_dofs, V.dofmap.index_map_bs)
 
     # Create a point cloud of glyphs
     grid = pyvista.UnstructuredGrid(topology, cell_types, geometry)
