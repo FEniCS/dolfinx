@@ -1,4 +1,4 @@
-// Copyright (C) 2003-2020 Anders Logg and Garth N. Wells
+// Copyright (C) 2003-2022 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -11,7 +11,6 @@
 #include "FunctionSpace.h"
 #include "interpolate.h"
 #include <dolfinx/common/IndexMap.h>
-#include <dolfinx/common/Timer.h>
 #include <dolfinx/common/UniqueIdGenerator.h>
 #include <dolfinx/la/Vector.h>
 #include <dolfinx/mesh/Geometry.h>
@@ -22,7 +21,6 @@
 #include <numeric>
 #include <string>
 #include <utility>
-#include <variant>
 #include <vector>
 #include <xtensor/xadapt.hpp>
 #include <xtensor/xtensor.hpp>
@@ -44,7 +42,7 @@ template <typename T>
 class Function
 {
 public:
-  /// The field type for the Function, e.g. double
+  /// Field type for the Function, e.g. double
   using value_type = T;
 
   /// Create function on given function space
@@ -63,7 +61,8 @@ public:
 
   /// Create function on given function space with a given vector
   ///
-  /// *Warning: This constructor is intended for internal library use only*
+  /// @warning This constructor is intended for internal library use
+  /// only
   ///
   /// @param[in] V The function space
   /// @param[in] x The vector
@@ -111,27 +110,26 @@ public:
   Function collapse() const
   {
     // Create new collapsed FunctionSpace
-    auto [V_new, collapsed_map] = _function_space->collapse();
+    auto [V, map] = _function_space->collapse();
 
     // Create new vector
-    auto vector_new = std::make_shared<la::Vector<T>>(
-        V_new.dofmap()->index_map, V_new.dofmap()->index_map_bs());
+    auto x = std::make_shared<la::Vector<T>>(V.dofmap()->index_map,
+                                             V.dofmap()->index_map_bs());
 
     // Copy values into new vector
     xtl::span<const T> x_old = _x->array();
-    xtl::span<T> x_new = vector_new->mutable_array();
-    for (std::size_t i = 0; i < collapsed_map.size(); ++i)
+    xtl::span<T> x_new = x->mutable_array();
+    for (std::size_t i = 0; i < map.size(); ++i)
     {
       assert((int)i < x_new.size());
-      assert(collapsed_map[i] < x_old.size());
-      x_new[i] = x_old[collapsed_map[i]];
+      assert(map[i] < x_old.size());
+      x_new[i] = x_old[map[i]];
     }
 
-    return Function(std::make_shared<FunctionSpace>(std::move(V_new)),
-                    vector_new);
+    return Function(std::make_shared<FunctionSpace>(std::move(V)), x);
   }
 
-  /// Return shared pointer to function space
+  /// Access the function space
   /// @return The function space
   std::shared_ptr<const FunctionSpace> function_space() const
   {
@@ -200,8 +198,10 @@ public:
             "Data returned by callable has wrong shape(0) size");
       }
       if (fx.shape(1) != x.shape(1))
+      {
         throw std::runtime_error(
             "Data returned by callable has wrong shape(1) size");
+      }
     }
 
     fem::interpolate(*this, fx, cells);
