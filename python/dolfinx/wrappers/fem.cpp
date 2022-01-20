@@ -416,12 +416,6 @@ void declare_objects(py::module& m, const std::string& type)
           },
           py::arg("x"), py::arg("cells"), py::arg("values"),
           "Evaluate Function")
-      .def(
-          "compute_point_values",
-          [](const dolfinx::fem::Function<T>& self) {
-            return dolfinx_wrappers::xt_as_pyarray(self.compute_point_values());
-          },
-          "Compute values at all mesh points")
       .def_property_readonly("function_space",
                              &dolfinx::fem::Function<T>::function_space);
 

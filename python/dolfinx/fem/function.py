@@ -333,9 +333,6 @@ class Function(ufl.Coefficient):
             cells = np.arange(map.size_local + map.num_ghosts, dtype=np.int32)
         _interpolate(u, cells)
 
-    def compute_point_values(self):
-        return self._cpp_object.compute_point_values()
-
     def copy(self) -> Function:
         """Return a copy of the Function. The FunctionSpace is shared and the
         degree-of-freedom vector is copied.
