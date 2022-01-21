@@ -106,6 +106,8 @@ class Expression:
         self._dtype = dtype
 
         # Compile UFL expression with JIT
+        if dtype == np.float32:
+            form_compiler_parameters["scalar_type"] = "float"
         if dtype == np.float64:
             form_compiler_parameters["scalar_type"] = "double"
         elif dtype == np.complex128:
@@ -117,7 +119,6 @@ class Expression:
                                                                  jit_parameters=jit_parameters)
         self._ufl_expression = ufl_expression
 
-        # Setup data (evaluation points, coefficients, constants, mesh, value_size).
         # Tabulation function.
         ffi = cffi.FFI()
 
@@ -131,14 +132,16 @@ class Expression:
         constants = [constant._cpp_object for i, constant in enumerate(ufl_constants)]
 
         def create_expression(dtype):
-            if dtype is np.float64:
+            if dtype is np.float32:
+                return _cpp.fem.create_expression_float32
+            elif dtype is np.float64:
                 return _cpp.fem.create_expression_float64
             elif dtype is np.complex128:
                 return _cpp.fem.create_expression_complex128
             else:
                 raise NotImplementedError(f"Type {dtype} not supported.")
 
-        self._cpp_object = create_expression(self.dtype)(ffi.cast("uintptr_t", ffi.addressof(self._ufcx_expression)),
+        self._cpp_object = create_expression(dtype)(ffi.cast("uintptr_t", ffi.addressof(self._ufcx_expression)),
                                                     coeffs, constants, mesh)
 
     def eval(self, cells: np.ndarray, values: typing.Optional[np.ndarray] = None) -> np.ndarray:
