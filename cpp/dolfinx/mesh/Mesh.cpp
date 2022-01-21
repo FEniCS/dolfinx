@@ -76,10 +76,12 @@ Mesh mesh::create_mesh(MPI_Comm comm,
                        mesh::GhostMode ghost_mode,
                        const mesh::CellPartitionFunction& cell_partitioner)
 {
-  if (ghost_mode == mesh::GhostMode::shared_vertex)
+  if (ghost_mode == GhostMode::shared_vertex)
     throw std::runtime_error("Ghost mode via vertex currently disabled.");
 
   const fem::ElementDofLayout dof_layout = element.create_dof_layout();
+
+  // -- Prepare topology for partitioning
 
   // TODO: This step can be skipped for 'P1' elements
   //
@@ -88,28 +90,36 @@ Mesh mesh::create_mesh(MPI_Comm comm,
   // filtered lists may have 'gaps', i.e. the indices might not be
   // contiguous.
   const graph::AdjacencyList<std::int64_t> cells_topology
-      = mesh::extract_topology(element.cell_shape(), dof_layout, cells);
+      = extract_topology(element.cell_shape(), dof_layout, cells);
+
+  // -- Partition topology
 
   // Compute the destination rank for cells on this process via graph
   // partitioning. Always get the ghost cells via facet, though these
   // may be discarded later.
   const int size = dolfinx::MPI::size(comm);
-  const int tdim = mesh::cell_dim(element.cell_shape());
+  const int tdim = cell_dim(element.cell_shape());
   const graph::AdjacencyList<std::int32_t> dest = cell_partitioner(
       comm, size, tdim, cells_topology, GhostMode::shared_facet);
+
+  // -- Distribute cells (topology, includes higher-order 'nodes')
 
   // Distribute cells to destination rank
   const auto [cell_nodes0, src, original_cell_index0, ghost_owners]
       = graph::build::distribute(comm, cells, dest);
 
+  // -- Extra cell topology
+
   // Extract cell 'topology', i.e. the vertices for each cell
   const graph::AdjacencyList<std::int64_t> cells_extracted0
-      = mesh::extract_topology(element.cell_shape(), dof_layout, cell_nodes0);
+      = extract_topology(element.cell_shape(), dof_layout, cell_nodes0);
+
+  // -- Re-order cells
 
   // Build local dual graph for owned cells to apply re-ordering to
   const std::int32_t num_owned_cells
       = cells_extracted0.num_nodes() - ghost_owners.size();
-  const auto [g, m] = mesh::build_local_dual_graph(
+  const auto [g, m] = build_local_dual_graph(
       xtl::span<const std::int64_t>(
           cells_extracted0.array().data(),
           cells_extracted0.offsets()[num_owned_cells]),
@@ -129,12 +139,14 @@ Mesh mesh::create_mesh(MPI_Comm comm,
   const graph::AdjacencyList<std::int64_t> cell_nodes
       = reorder_list(cell_nodes0, remap);
 
+  // -- Create Topology
+
   // Create cells and vertices with the ghosting requested. Input
   // topology includes cells shared via facet, but ghosts will be
   // removed later if not required by ghost_mode.
   Topology topology
-      = mesh::create_topology(comm, cells_extracted, original_cell_index,
-                              ghost_owners, element.cell_shape(), ghost_mode);
+      = create_topology(comm, cells_extracted, original_cell_index,
+                        ghost_owners, element.cell_shape(), ghost_mode);
 
   // Create connectivity required to compute the Geometry (extra
   // connectivities for higher-order geometries)
@@ -143,7 +155,7 @@ Mesh mesh::create_mesh(MPI_Comm comm,
     if (dof_layout.num_entity_dofs(e) > 0)
     {
       auto [cell_entity, entity_vertex, index_map]
-          = mesh::compute_entities(comm, topology, e);
+          = compute_entities(comm, topology, e);
       if (cell_entity)
         topology.set_connectivity(cell_entity, tdim, e);
       if (entity_vertex)
@@ -167,9 +179,8 @@ Mesh mesh::create_mesh(MPI_Comm comm,
                                                  std::move(off1));
   if (element.needs_dof_permutations())
     topology.create_entity_permutations();
-
-  return Mesh(comm, std::move(topology),
-              mesh::create_geometry(comm, topology, element, cell_nodes1, x));
+  Geometry geometry = create_geometry(comm, topology, element, cell_nodes1, x);
+  return Mesh(comm, std::move(topology), std::move(geometry));
 }
 //-----------------------------------------------------------------------------
 std::tuple<Mesh, std::vector<std::int32_t>, std::vector<std::int32_t>>
@@ -179,7 +190,7 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   // Submesh topology
   // Get the verticies in the submesh
   std::vector<std::int32_t> submesh_vertices
-      = mesh::compute_incident_entities(mesh, entities, dim, 0);
+      = compute_incident_entities(mesh, entities, dim, 0);
 
   // Get the vertices in the submesh owned by this process
   auto mesh_vertex_index_map = mesh.topology().index_map(0);
@@ -235,8 +246,8 @@ mesh::create_submesh(const Mesh& mesh, int dim,
 
   // Submesh entity to vertex connectivity
   const CellType entity_type
-      = mesh::cell_entity_type(mesh.topology().cell_type(), dim, 0);
-  const int num_vertices_per_entity = mesh::cell_num_entities(entity_type, 0);
+      = cell_entity_type(mesh.topology().cell_type(), dim, 0);
+  const int num_vertices_per_entity = cell_num_entities(entity_type, 0);
   auto mesh_e_to_v = mesh.topology().connectivity(dim, 0);
   std::vector<std::int32_t> submesh_e_to_v_vec;
   submesh_e_to_v_vec.reserve(entities.size() * num_vertices_per_entity);
@@ -259,7 +270,7 @@ mesh::create_submesh(const Mesh& mesh, int dim,
       std::move(submesh_e_to_v_vec), std::move(submesh_e_to_v_offsets));
 
   // Create submesh topology
-  mesh::Topology submesh_topology(mesh.comm(), entity_type);
+  Topology submesh_topology(mesh.comm(), entity_type);
   submesh_topology.set_index_map(0, submesh_vertex_index_map);
   submesh_topology.set_index_map(dim, submesh_entity_index_map);
   submesh_topology.set_connectivity(submesh_v_to_v, 0, 0);
@@ -269,7 +280,7 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   // Get the geometry dofs in the submesh based on the entities in
   // submesh
   xt::xtensor<std::int32_t, 2> e_to_g
-      = mesh::entities_to_geometry(mesh, dim, entities, false);
+      = entities_to_geometry(mesh, dim, entities, false);
   // FIXME Find better way to do this
   xt::xarray<int32_t> submesh_x_dofs_xt = xt::unique(e_to_g);
   std::vector<int32_t> submesh_x_dofs(submesh_x_dofs_xt.begin(),
@@ -338,7 +349,7 @@ mesh::create_submesh(const Mesh& mesh, int dim,
 
   // Create submesh coordinate element
   CellType submesh_coord_cell
-      = mesh::cell_entity_type(mesh.geometry().cmap().cell_shape(), dim, 0);
+      = cell_entity_type(mesh.geometry().cmap().cell_shape(), dim, 0);
   auto submesh_coord_ele = fem::CoordinateElement(
       submesh_coord_cell, mesh.geometry().cmap().degree());
 
@@ -355,7 +366,7 @@ mesh::create_submesh(const Mesh& mesh, int dim,
                  { return mesh_igi[submesh_x_dof]; });
 
   // Create geometry
-  mesh::Geometry submesh_geometry(
+  Geometry submesh_geometry(
       submesh_x_dof_index_map, std::move(submesh_x_dofmap), submesh_coord_ele,
       std::move(submesh_x), mesh.geometry().dim(), std::move(submesh_igi));
 
