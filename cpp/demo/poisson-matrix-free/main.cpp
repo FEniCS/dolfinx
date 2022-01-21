@@ -4,6 +4,25 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+//===============================================================//
+// Matrix Free CG solver (C++)
+// =============================================================//
+//
+// This demo illustrates how to:
+// * Solve a linear partial differential equation using a matrix free CG solver.
+// * Create and apply Dirichlet boundary conditions
+// * Compute errors
+//
+// .. math::
+//    - \nabla^{2} u &= f \quad {\rm in} \ \Omega, \\
+//      u &= u_D \quad {\rm on} \ \Gamma_{D}
+//
+//  Where
+// .. math::
+//    u_D &= 1 + x^2 + 2y^2, \\
+//    f = -6
+//
+
 #include "poisson.h"
 #include <cmath>
 #include <dolfinx.h>
@@ -39,7 +58,7 @@ void axpy(la::Vector<T>& r, T alpha, const la::Vector<T>& x,
 template <typename T>
 int cg(la::Vector<T>& x, const la::Vector<T>& b,
        std::function<void(la::Vector<T>&, la::Vector<T>&)> matvec_function,
-       int kmax = 50, double rtol = 1e-8)
+       int kmax = 50, double rtol = 1e-8, bool verbose = 0)
 {
   int M = b.map()->size_local();
   MPI_Comm comm = b.map()->comm(common::IndexMap::Direction::forward);
@@ -78,7 +97,7 @@ int cg(la::Vector<T>& x, const la::Vector<T>& b,
     const T beta = rnorm_new / rnorm;
     rnorm = rnorm_new;
 
-    if (rank == 0)
+    if (rank == 0 and verbose)
       std::cout << "Iteration: " << k << ": " << std::sqrt(rnorm / rnorm0)
                 << std::endl;
 
@@ -108,7 +127,7 @@ int main(int argc, char* argv[])
         fem::create_functionspace(functionspace_form_poisson_M, "ui", mesh));
 
     // Prepare and set Constants for the bilinear form
-    auto f = std::make_shared<fem::Constant<T>>(6.0);
+    auto f = std::make_shared<fem::Constant<T>>(-6.0);
 
     // Define variational forms
     auto L = std::make_shared<fem::Form<T>>(
@@ -119,7 +138,13 @@ int main(int argc, char* argv[])
     auto M = std::make_shared<fem::Form<T>>(
         fem::create_form<T>(*form_poisson_M, {V}, {{"ui", ui}}, {{}}, {}));
 
+    // Define boundary condition
     auto u_D = std::make_shared<fem::Function<T>>(V);
+    u_D->interpolate(
+        [](auto&& x) {
+          return 1 + xt::square(xt::row(x, 0)) + 2 * xt::square(xt::row(x, 0));
+        });
+
     auto facets = mesh::exterior_facet_indices(*mesh);
     const auto bdofs = fem::locate_dofs_topological({*V}, 1, facets);
     auto bc = std::make_shared<const fem::DirichletBC<T>>(u_D, bdofs);
@@ -162,15 +187,18 @@ int main(int argc, char* argv[])
 
     // Compute solution using the conjugate gradient method
     auto u = std::make_shared<fem::Function<T>>(V);
-    linalg::cg(*u->x(), b, action, 200, 1e-6);
+    int it = linalg::cg(*u->x(), b, action, 200, 1e-6);
 
     // Set BC values in the solution vectors
     fem::set_bc(u->x()->mutable_array(), {bc}, 1.0);
 
+    // Compute H1 error
     auto E = std::make_shared<fem::Form<T>>(fem::create_form<T>(
         *form_poisson_E, {}, {{"ue", u_D}, {"uc", u}}, {}, {}, mesh));
     T error = fem::assemble_scalar(*E);
-    std::cout << error;
+
+    std::cout << "Number of CG iterations " << it << std::endl;
+    std::cout << "Finite element error (H1 norm) " << error << std::endl;
   }
 
   common::subsystem::finalize_mpi();
