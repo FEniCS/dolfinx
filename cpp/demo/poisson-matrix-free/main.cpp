@@ -63,7 +63,7 @@ int cg(la::Vector<T>& x, const la::Vector<T>& b,
     matvec_function(p, y);
 
     // alpha = r.r/p.y
-    const double alpha = rnorm / la::inner_product(p, y);
+    const T alpha = rnorm / la::inner_product(p, y);
 
     // Update x (x <- x + alpha*p)
     axpy(x, alpha, p, x);
