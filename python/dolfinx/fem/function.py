@@ -7,9 +7,8 @@
 
 from __future__ import annotations
 
-import typing
-
-from dolfinx.mesh import Mesh
+if typing.TYPE_CHECKING:
+    from dolfinx.mesh import Mesh
 
 from functools import singledispatch
 
@@ -139,7 +138,7 @@ class Expression:
             else:
                 raise NotImplementedError(f"Type {dtype} not supported.")
 
-        self._cpp_object = create_expression(dtype)(ffi.cast("uintptr_t", ffi.addressof(self._ufcx_expression)),
+        self._cpp_object = create_expression(self.dtype)(ffi.cast("uintptr_t", ffi.addressof(self._ufcx_expression)),
                                                     coeffs, constants, mesh)
 
     def eval(self, cells: np.ndarray, values: typing.Optional[np.ndarray] = None) -> np.ndarray:
@@ -167,7 +166,7 @@ class Expression:
 
         # Allocate memory for result if u was not provided
         if values is None:
-            values = np.empty(values_shape, dtype=self._dtype)
+            values = np.empty(values_shape, dtype=self.dtype)
         else:
             if values.shape != values_shape:
                 raise TypeError("Passed array values does not have correct shape.")
@@ -219,8 +218,7 @@ class Expression:
 
     @property
     def dtype(self):
-        """Return C code strings"""
-        return self._dtype
+        return self.dtype
 
 
 class Function(ufl.Coefficient):
