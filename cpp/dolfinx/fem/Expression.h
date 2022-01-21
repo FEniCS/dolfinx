@@ -54,7 +54,7 @@ public:
           fn,
       const std::vector<int>& value_shape,
       const std::vector<int>& num_argument_dofs)
-      : _coefficients(coefficients), _constants(constants), _mesh(mesh), _X(X),
+      : _coefficients(coefficients), _constants(constants), _mesh(mesh), _x_ref(X),
         _fn(fn), _value_shape(value_shape),
         _num_argument_dofs(num_argument_dofs)
   {
@@ -168,7 +168,7 @@ public:
 
   /// Get evaluation points on reference cell
   /// @return Evaluation points
-  const xt::xtensor<double, 2>& X() const { return _X; }
+  const xt::xtensor<double, 2>& X() const { return _x_ref; }
 
   /// Get value size
   /// @return value_size
@@ -179,13 +179,15 @@ public:
   }
 
   /// Get value shape
+  /// @return value shape
   const std::vector<int>& value_shape() const { return _value_shape; }
 
   /// Get number of evaluation points in cell
   /// @return number of points in cell
-  std::size_t num_points() const { return _X.shape(0); }
+  std::size_t num_points() const { return _x_ref.shape(0); }
 
   /// Get number of degrees-of-freedom for arguments
+  /// @return number of degrees-of-freedom for arguments
   const std::vector<int>& num_argument_dofs() const
   {
     return _num_argument_dofs;
@@ -209,8 +211,8 @@ private:
                      const uint8_t*)>
       _fn;
 
-  // Evaluation points on reference cell
-  xt::xtensor<double, 2> _X;
+  // Evaluation points on reference cell. Synonymous with X in public interface.
+  xt::xtensor<double, 2> _x_ref;
 
   // The mesh
   std::shared_ptr<const mesh::Mesh> _mesh;

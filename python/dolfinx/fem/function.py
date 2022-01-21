@@ -64,7 +64,7 @@ class Constant(ufl.Constant):
 
 
 class Expression:
-    def __init__(self, ufl_expression: ufl.core.expr.Expr, x: np.ndarray,
+    def __init__(self, ufl_expression: ufl.core.expr.Expr, X: np.ndarray,
                  form_compiler_parameters: dict = {}, jit_parameters: dict = {},
                  dtype=PETSc.ScalarType):
         """Create DOLFINx Expression.
@@ -82,7 +82,7 @@ class Expression:
         ----------
         ufl_expression
             Pure UFL expression
-        x
+        X
             Array of points of shape (num_points, tdim) on the reference
             element.
         form_compiler_parameters
@@ -98,9 +98,9 @@ class Expression:
 
         """
 
-        assert x.ndim < 3
-        num_points = x.shape[0] if x.ndim == 2 else 1
-        x = np.reshape(x, (num_points, -1))
+        assert X.ndim < 3
+        num_points = X.shape[0] if X.ndim == 2 else 1
+        _X = np.reshape(X, (num_points, -1))
 
         mesh = ufl_expression.ufl_domain().ufl_cargo()
 
@@ -113,7 +113,7 @@ class Expression:
             form_compiler_parameters["scalar_type"] = "double _Complex"
         else:
             raise RuntimeError(f"Unsupported scalar type {dtype} for Form.")
-        self._ufcx_expression, module, self._code = jit.ffcx_jit(mesh.comm, (ufl_expression, x),
+        self._ufcx_expression, module, self._code = jit.ffcx_jit(mesh.comm, (ufl_expression, _X),
                                                                  form_compiler_parameters=form_compiler_parameters,
                                                                  jit_parameters=jit_parameters)
         self._ufl_expression = ufl_expression
@@ -145,6 +145,8 @@ class Expression:
     def eval(self, cells: np.ndarray, values: typing.Optional[np.ndarray] = None) -> np.ndarray:
         """Evaluate Expression in cells.
 
+        If values is not passed then a new array will be allocated.
+
         Parameters
         ----------
         cells
@@ -154,23 +156,21 @@ class Expression:
 
         Returns
         -------
-
-        u: np.ndarray
-            The i-th row of u contains the expression evaluated on cells[i].
+        np.ndarray
+          The i-th row of u contains the expression evaluated on cells[i].
 
         """
         _cells = np.asarray(cells, dtype=np.int32)
-        values_shape = (_cells.shape[0], self.X.shape[0] * self.value_size * self.num_all_argument_dofs)
+        values_shape = (_cells.shape[0], self.num_points * self.value_size * self.num_all_argument_dofs)
 
         # Allocate memory for result if u was not provided
         if values is None:
-            if np.issubdtype(PETSc.ScalarType, np.complexfloating):
-                values = np.empty(values_shape, dtype=np.complex128)
-            else:
-                values = np.empty(values_shape, dtype=np.float64)
+            values = np.empty(values_shape, dtype=self._dtype)
         else:
-            if values.ndim > 2 or values.shape != values_shape:
-                raise TypeError(f"Provided values array does not have correct shape: {values_shape}.")
+            if values.shape != values_shape:
+                raise TypeError("Passed array values does not have correct shape.")
+            if values.dtype != self._dtype:
+                raise TypeError("Passed array values does not have correct dtype.")
 
         self._cpp_object.eval(cells, values)
 
@@ -205,6 +205,7 @@ class Expression:
         """Return the number of all argument dofs of the expression"""
         return np.prod(self.num_argument_dofs, dtype=np.intc)
 
+    @property
     def ufcx_expression(self):
         """The compiled ufcx_expression object"""
         return self._ufcx_expression
