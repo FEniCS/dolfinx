@@ -101,56 +101,35 @@ int main(int argc, char* argv[])
   {
     // Create mesh and function space
     auto mesh = std::make_shared<mesh::Mesh>(mesh::create_rectangle(
-        MPI_COMM_WORLD, {{{0.0, 0.0}, {2.0, 1.0}}}, {32, 16},
+        MPI_COMM_WORLD, {{{0.0, 0.0}, {1.0, 1.0}}}, {8, 8},
         mesh::CellType::triangle, mesh::GhostMode::none));
 
     auto V = std::make_shared<fem::FunctionSpace>(
-        fem::create_functionspace(functionspace_form_poisson_a, "u", mesh));
+        fem::create_functionspace(functionspace_form_poisson_M, "ui", mesh));
 
     // Prepare and set Constants for the bilinear form
-    auto kappa = std::make_shared<fem::Constant<T>>(2.0);
-    auto f = std::make_shared<fem::Function<T>>(V);
-    auto g = std::make_shared<fem::Function<T>>(V);
+    auto f = std::make_shared<fem::Constant<T>>(6.0);
 
     // Define variational forms
-    auto L = std::make_shared<fem::Form<T>>(fem::create_form<T>(
-        *form_poisson_L, {V}, {{"f", f}, {"g", g}}, {}, {}));
+    auto L = std::make_shared<fem::Form<T>>(
+        fem::create_form<T>(*form_poisson_L, {V}, {}, {{"f", f}}, {}));
 
     // Action of the bilinear form "a" on a function ui
     auto ui = std::make_shared<fem::Function<T>>(V);
-    auto M = std::make_shared<fem::Form<T>>(fem::create_form<T>(
-        *form_poisson_M, {V}, {{"ui", ui}}, {{"kappa", kappa}}, {}));
+    auto M = std::make_shared<fem::Form<T>>(
+        fem::create_form<T>(*form_poisson_M, {V}, {{"ui", ui}}, {{}}, {}));
 
-    auto facets = mesh::locate_entities_boundary(
-        *mesh, 1,
-        [](auto& x) -> xt::xtensor<bool, 1>
-        {
-          auto x0 = xt::row(x, 0);
-          return xt::isclose(x0, 0.0) or xt::isclose(x0, 2.0);
-        });
+    auto u_D = std::make_shared<fem::Function<T>>(V);
+    auto facets = mesh::exterior_facet_indices(*mesh);
     const auto bdofs = fem::locate_dofs_topological({*V}, 1, facets);
-    auto bc = std::make_shared<const fem::DirichletBC<T>>(1.0, bdofs, V);
-
-    f->interpolate(
-        [](auto& x) -> xt::xarray<T>
-        {
-          auto dx = xt::square(xt::row(x, 0) - 0.5)
-                    + xt::square(xt::row(x, 1) - 0.5);
-          return 10 * xt::exp(-(dx) / 0.02);
-        });
-
-    g->interpolate(
-        [](auto& x) -> xt::xarray<T> { return xt::sin(5 * xt::row(x, 0)); });
-
-    // Compute solution
-    fem::Function<T> u(V);
-    la::Vector<T> b(V->dofmap()->index_map, V->dofmap()->index_map_bs());
+    auto bc = std::make_shared<const fem::DirichletBC<T>>(u_D, bdofs);
 
     // Assemble RHS vector
+    la::Vector<T> b(V->dofmap()->index_map, V->dofmap()->index_map_bs());
     fem::assemble_vector(b.mutable_array(), *L);
 
     // Apply lifting to account for Dirichlet boundary condition
-    fem::set_bc(u.x()->mutable_array(), {bc}, 0.0);
+    fem::set_bc(ui->x()->mutable_array(), {bc}, -1.0);
     dolfinx::fem::assemble_vector(b.mutable_array(), *M);
 
     // Communicate ghost values
@@ -182,15 +161,16 @@ int main(int argc, char* argv[])
     };
 
     // Compute solution using the conjugate gradient method
-    u.x()->set(0);
-    linalg::cg(*u.x(), b, action, 100, 1e-6);
+    auto u = std::make_shared<fem::Function<T>>(V);
+    linalg::cg(*u->x(), b, action, 200, 1e-6);
 
     // Set BC values in the solution vectors
-    fem::set_bc(u.x()->mutable_array(), {bc}, 1.0);
+    fem::set_bc(u->x()->mutable_array(), {bc}, 1.0);
 
-    // Save solution in VTK format
-    // io::VTKFile file(mesh->comm(), "u.pvd", "w");
-    // file.write({u}, 0.0);
+    auto E = std::make_shared<fem::Form<T>>(fem::create_form<T>(
+        *form_poisson_E, {}, {{"ue", u_D}, {"uc", u}}, {}, {}, mesh));
+    T error = fem::assemble_scalar(*E);
+    std::cout << error;
   }
 
   common::subsystem::finalize_mpi();
