@@ -30,7 +30,7 @@ def test_locate_dofs_geometrical():
     P1 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p1)
 
     W = FunctionSpace(mesh, P0 * P1)
-    V = W.sub(0).collapse()
+    V = W.sub(0).collapse()[0]
 
     with pytest.raises(RuntimeError):
         locate_dofs_geometrical(W, lambda x: np.isclose(x.T, [0, 0, 0]).all(axis=1))
@@ -127,7 +127,7 @@ def test_constant_bc(mesh_factory):
 
     u_c = Function(V)
     set_bc(u_c.vector, [bc_c])
-    assert(np.allclose(u_f.vector.array, u_c.vector.array))
+    assert np.allclose(u_f.vector.array, u_c.vector.array)
 
 
 @pytest.mark.parametrize(
@@ -149,7 +149,7 @@ def test_vector_constant_bc(mesh_factory):
     boundary_facets = locate_entities_boundary(mesh, tdim - 1, lambda x: np.ones(x.shape[1], dtype=bool))
 
     # Set using sub-functions
-    Vs = [V.sub(i).collapse() for i in range(V.num_sub_spaces)]
+    Vs = [V.sub(i).collapse()[0] for i in range(V.num_sub_spaces)]
     boundary_dofs = [locate_dofs_topological((V.sub(i), Vs[i]), tdim - 1, boundary_facets)
                      for i in range(len(Vs))]
     u_bcs = [Function(Vs[i]) for i in range(len(Vs))]
@@ -167,7 +167,7 @@ def test_vector_constant_bc(mesh_factory):
     u_c.x.array[:] = 0.0
     set_bc(u_c.vector, [bc_c])
 
-    assert(np.allclose(u_f.x.array, u_c.x.array))
+    assert np.allclose(u_f.x.array, u_c.x.array)
 
 
 @pytest.mark.parametrize(
@@ -189,7 +189,7 @@ def test_sub_constant_bc(mesh_factory):
     boundary_facets = locate_entities_boundary(mesh, tdim - 1, lambda x: np.ones(x.shape[1], dtype=bool))
 
     for i in range(V.num_sub_spaces):
-        Vi = V.sub(i).collapse()
+        Vi = V.sub(i).collapse()[0]
         u_bci = Function(Vi)
         u_bci.x.array[:] = PETSc.ScalarType(c.value)
 
