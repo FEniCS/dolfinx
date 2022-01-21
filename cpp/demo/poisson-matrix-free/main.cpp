@@ -31,7 +31,7 @@
 
 using namespace dolfinx;
 
-using T = DOLFINX_SCALAR_TYPE;
+using T = PetscScalar;
 
 namespace linalg
 {
@@ -206,7 +206,7 @@ int main(int argc, char* argv[])
     if (dolfinx::MPI::rank(comm) == 0)
     {
       std::cout << "Number of CG iterations " << it << std::endl;
-      std::cout << "Finite element error (H1 norm) " << error << std::endl;
+      std::cout << "Finite element error (L2 norm) " << error << std::endl;
     }
   }
 
