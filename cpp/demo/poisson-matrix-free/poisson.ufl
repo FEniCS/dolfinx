@@ -26,18 +26,21 @@ V = FunctionSpace(mesh, element)
 u = TrialFunction(V)
 v = TestFunction(V)
 f = Constant(V)
-uc = Coefficient(V)
-ue = Coefficient(V)
+
 
 # Finally, we define the bilinear and linear forms according to the
 # variational formulation of the equations::
-
 a = inner(grad(u), grad(v)) * dx
 L = inner(f, v) * dx
 
+# Define linear form (action of a)
 ui = Coefficient(V)
 M = action(a, ui)
-E = inner(uc-ue, uc-ue)*dx
+
+# Define form to compute the L2 norm of the error
+usol = Coefficient(V)
+uexact = Coefficient(V)
+E = inner(usol-uexact, usol-uexact)*dx
 
 
 forms = [M, L, E]
