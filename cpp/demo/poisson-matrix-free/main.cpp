@@ -31,15 +31,15 @@
 
 using namespace dolfinx;
 
-using T = PetscScalar;
+using T = DOLFINX_SCALAR_TYPE;
 
 namespace linalg
 {
 /// Compute vector r = alpha*x + y
-/// @param r Result
-/// @param alpha
-/// @param x
-/// @param y
+/// @param[in, out]  r Result
+/// @param[in]  alpha
+/// @param[in]  x
+/// @param[in]  y
 template <typename T>
 void axpy(la::Vector<T>& r, T alpha, const la::Vector<T>& x,
           const la::Vector<T>& y)
@@ -51,13 +51,15 @@ void axpy(la::Vector<T>& r, T alpha, const la::Vector<T>& x,
 }
 
 /// Solve problem A.x = b using the Conjugate Gradient method
-/// @param b RHS Vector
-/// @param x Solution Vector
-/// @param action Function that provides the action of the linear operator
-/// @param kmax Maxmimum number of iterations
+/// @param[in]  b RHS Vector
+/// @param[in, out]  x Solution Vector
+/// @param[in]  action Function that provides the action of the linear operator
+/// @param[in]  kmax Maxmimum number of iterations
+/// @param[in]  rtol Relative tolerances for convergence.
+/// @param[in]  verbose Set to true to print residual norm
 template <typename T, typename ApplyFunction>
 int cg(la::Vector<T>& x, const la::Vector<T>& b, ApplyFunction&& action,
-       int kmax = 50, double rtol = 1e-8, bool verbose = 0)
+       int kmax = 50, double rtol = 1e-8, bool verbose = false)
 {
   int M = b.map()->size_local();
   MPI_Comm comm = b.map()->comm(common::IndexMap::Direction::forward);
@@ -143,7 +145,7 @@ int main(int argc, char* argv[])
     auto u_D = std::make_shared<fem::Function<T>>(V);
     u_D->interpolate(
         [](auto&& x) {
-          return 1 + xt::square(xt::row(x, 0)) + 2 * xt::square(xt::row(x, 0));
+          return 1 + xt::square(xt::row(x, 0)) + 2 * xt::square(xt::row(x, 1));
         });
 
     auto facets = mesh::exterior_facet_indices(*mesh);
