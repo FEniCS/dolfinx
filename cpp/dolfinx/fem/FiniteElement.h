@@ -51,6 +51,10 @@ public:
   /// @return True is the two elements are the same
   bool operator==(const FiniteElement& e) const;
 
+  /// Check if two elements are noy equivalent
+  /// @return True is the two elements are not the same
+  bool operator!=(const FiniteElement& e) const;
+
   /// String identifying the finite element
   /// @return Element signature
   /// @warning The function is provided for convenience, but it should not
@@ -161,9 +165,6 @@ public:
 
   /// Return the topological dimension
   int tdim() const noexcept;
-
-  /// Return simple hash of the signature string
-  std::size_t hash() const noexcept;
 
   /// Extract sub finite element for component
   std::shared_ptr<const FiniteElement>
@@ -671,9 +672,6 @@ private:
 
   // List of sub-elements (if any)
   std::vector<std::shared_ptr<const FiniteElement>> _sub_elements;
-
-  // Simple hash of the signature string
-  std::size_t _hash;
 
   // Dimension of each value space
   std::vector<int> _value_shape;
