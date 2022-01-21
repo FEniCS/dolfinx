@@ -71,40 +71,47 @@ mesh::Geometry mesh::create_geometry(
       coordinate_element.unpermute_dofs(dofmap.links(cell), cell_info[cell]);
   }
 
-  // Build list of unique (global) node indices from adjacency list
-  // (geometry nodes)
-  std::vector<std::int64_t> indices = cell_nodes.array();
-  dolfinx::radix_sort(xtl::span(indices));
-  indices.erase(std::unique(indices.begin(), indices.end()), indices.end());
+  auto remap_data = [](auto comm, auto& cell_nodes, auto& x, auto& dofmap)
+  {
+    // Build list of unique (global) node indices from adjacency list
+    // (geometry nodes)
+    std::vector<std::int64_t> indices = cell_nodes.array();
+    dolfinx::radix_sort(xtl::span(indices));
+    indices.erase(std::unique(indices.begin(), indices.end()), indices.end());
 
-  //  Fetch node coordinates by global index from other ranks. Order of
-  //  coords matches order of the indices in 'indices'
-  xt::xtensor<double, 2> coords
-      = graph::build::distribute_data<double>(comm, indices, x);
+    //  Fetch node coordinates by global index from other ranks. Order of
+    //  coords matches order of the indices in 'indices'
+    xt::xtensor<double, 2> coords
+        = graph::build::distribute_data<double>(comm, indices, x);
 
-  // Compute local-to-global map from local indices in dofmap to the
-  // corresponding global indices in cell_nodes
-  std::vector l2g
-      = graph::build::compute_local_to_global_links(cell_nodes, dofmap);
+    // Compute local-to-global map from local indices in dofmap to the
+    // corresponding global indices in cell_nodes
+    std::vector l2g
+        = graph::build::compute_local_to_global_links(cell_nodes, dofmap);
 
-  // Compute local (dof) to local (position in coords) map from (i)
-  // local-to-global for dofs and (ii) local-to-global for entries in
-  // coords
-  std::vector l2l = graph::build::compute_local_to_local(l2g, indices);
+    // Compute local (dof) to local (position in coords) map from (i)
+    // local-to-global for dofs and (ii) local-to-global for entries in
+    // coords
+    std::vector l2l = graph::build::compute_local_to_local(l2g, indices);
 
-  // Build coordinate dof array,  copying coordinates to correct
+    // Allocate space for input global indices and copy data
+    std::vector<std::int64_t> igi(indices.size());
+    std::transform(l2l.cbegin(), l2l.cend(), igi.begin(),
+                   [&indices](auto index) { return indices[index]; });
+
+    return std::tuple(std::move(coords), std::move(l2l), std::move(igi));
+  };
+
+  auto [coords, l2l, igi] = remap_data(comm, cell_nodes, x, dofmap);
+
+  // Build coordinate dof array, copying coordinates to correct
   // position
-  std::vector<double> xg(coords.shape(0) * 3, 0.0);
+  std::vector<double> xg(3 * coords.shape(0), 0.0);
   for (std::size_t i = 0; i < coords.shape(0); ++i)
   {
     auto row = xt::view(coords, l2l[i]);
     std::copy(row.cbegin(), row.cend(), std::next(xg.begin(), 3 * i));
   }
-
-  // Allocate space for input global indices and copy data
-  std::vector<std::int64_t> igi(indices.size());
-  std::transform(l2l.cbegin(), l2l.cend(), igi.begin(),
-                 [&indices](auto index) { return indices[index]; });
 
   return Geometry(dof_index_map, std::move(dofmap), coordinate_element,
                   std::move(xg), coords.shape(1), std::move(igi));
