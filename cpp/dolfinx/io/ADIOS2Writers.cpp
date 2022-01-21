@@ -505,8 +505,8 @@ std::vector<Scalar> pack_function_data(const fem::Function<Scalar>& u)
   assert(mesh);
 
   // The Function and the mesh must have identical element_dof_layouts
-  // (up tp the block size)
-  assert(*(dofmap->element_dof_layout)
+  // (up to the block size)
+  assert(dofmap->element_dof_layout()
          == mesh->geometry().cmap().create_dof_layout());
 
   const int tdim = mesh->topology().dim();

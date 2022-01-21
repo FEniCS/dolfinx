@@ -106,7 +106,7 @@ def test_sub(Q, W):
                 == len(X.dofmap.dof_layout.entity_closure_dofs(dim, i)) \
                 == len(X.dofmap.dof_layout.entity_closure_dofs(dim, 0))
 
-    assert W.dofmap.dof_layout.block_size() == X.dofmap.dof_layout.block_size()
+    assert W.dofmap.dof_layout.block_size == X.dofmap.dof_layout.block_size
     assert W.dofmap.bs * len(W.dofmap.cell_dofs(0)) == len(X.dofmap.cell_dofs(0))
 
     assert W.element.num_sub_elements == X.element.num_sub_elements
@@ -163,7 +163,7 @@ def test_collapse(W, V):
     assert Vs.dofmap.cell_dofs(0)[0] != V.dofmap.cell_dofs(0)[0]
 
     # Collapse the space it should now be the same as V
-    Vc, dofmap_new_old = Vs.collapse(True)
+    Vc = Vs.collapse()[0]
     assert Vc.dofmap.cell_dofs(0)[0] == V.dofmap.cell_dofs(0)[0]
     f0 = Function(V)
     f1 = Function(Vc)

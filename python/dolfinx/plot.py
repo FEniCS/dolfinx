@@ -31,24 +31,8 @@ _cell_degree_tetrahedron = {4: 1, 10: 2, 20: 3}
 _cell_degree_hexahedron = {8: 1, 27: 2}
 
 
-def _element_degree(cell_type: CellType, num_nodes: int):
-    """Determine the degree of a cell by the number of nodes"""
-    if cell_type == CellType.triangle:
-        return _cell_degree_triangle[num_nodes]
-    elif cell_type == CellType.point:
-        return 1
-    elif cell_type == CellType.interval:
-        return num_nodes - 1
-    elif cell_type == CellType.tetrahedron:
-        return _cell_degree_tetrahedron[num_nodes]
-    elif cell_type == CellType.quadrilateral:
-        return int(np.sqrt(num_nodes) - 1)
-    elif cell_type == CellType.hexahedron:
-        return _cell_degree_hexahedron[num_nodes]
-
-
 @functools.singledispatch
-def create_vtk_topology(mesh: mesh.Mesh, dim: int, entities=None):
+def create_vtk_mesh(mesh: mesh.Mesh, dim: int, entities=None):
     """Create vtk mesh topology data for mesh entities of a given
     dimension. The vertex indices in the returned topology array are the
     indices for the associated entry in the mesh geometry.
@@ -68,8 +52,7 @@ def create_vtk_topology(mesh: mesh.Mesh, dim: int, entities=None):
     if mesh.topology.cell_type == CellType.prism:
         raise RuntimeError("Plotting of prism meshes not supported")
     e_type = _cpp.mesh.cell_entity_type(mesh.topology.cell_type, dim, 0)
-
-    degree = _element_degree(e_type, geometry_entities.shape[1])
+    degree = mesh.geometry.cmap.degree
     if degree == 1:
         cell_types = np.full(num_cells, _first_order_vtk[e_type])
     else:
@@ -84,15 +67,16 @@ def create_vtk_topology(mesh: mesh.Mesh, dim: int, entities=None):
     topology = np.zeros((num_cells, num_vertices_per_cell + 1), dtype=np.int32)
     topology[:, 0] = num_vertices_per_cell
     topology[:, 1:] = geometry_entities[:, map_vtk]
-    return topology.reshape(1, -1)[0], cell_types
+
+    return topology.reshape(1, -1)[0], cell_types, mesh.geometry.x
 
 
-@create_vtk_topology.register(fem.FunctionSpace)
+@create_vtk_mesh.register(fem.FunctionSpace)
 def _(V: fem.FunctionSpace, entities=None):
-    """Creates a vtk mesh topology (topology array and array of cell
-    types) that is based on degree of freedom coordinate. Note that this
-    function supports Lagrange elements (continuous and discontinuous)
-    only.
+    """Creates a VTK mesh topology (topology array and array of cell
+    types) that is based on the degree-of-freedom coordinates. Note that
+    this function supports Lagrange elements (continuous and
+    discontinuous) only.
 
     """
     family = V.ufl_element().family()
@@ -125,4 +109,4 @@ def _(V: fem.FunctionSpace, entities=None):
     dofmap_ = dofmap.list.array.reshape(dofmap.list.num_nodes, num_dofs_per_cell)
 
     topology[:, 1:] = dofmap_[:num_cells, perm]
-    return topology.reshape(1, -1)[0], cell_types
+    return topology.reshape(1, -1)[0], cell_types, V.tabulate_dof_coordinates()

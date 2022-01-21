@@ -416,12 +416,6 @@ void declare_objects(py::module& m, const std::string& type)
           },
           py::arg("x"), py::arg("cells"), py::arg("values"),
           "Evaluate Function")
-      .def(
-          "compute_point_values",
-          [](const dolfinx::fem::Function<T>& self) {
-            return dolfinx_wrappers::xt_as_pyarray(self.compute_point_values());
-          },
-          "Compute values at all mesh points")
       .def_property_readonly("function_space",
                              &dolfinx::fem::Function<T>::function_space);
 
@@ -844,20 +838,23 @@ void fem(py::module& m)
       "create_dofmap",
       [](const MPICommWrapper comm, std::uintptr_t dofmap,
          dolfinx::mesh::Topology& topology,
-         std::shared_ptr<dolfinx::fem::FiniteElement> element)
+         const dolfinx::fem::FiniteElement& element)
       {
         ufcx_dofmap* p = reinterpret_cast<ufcx_dofmap*>(dofmap);
-        return dolfinx::fem::create_dofmap(comm.get(), *p, topology, nullptr,
-                                           element);
+        assert(p);
+        dolfinx::fem::ElementDofLayout layout
+            = dolfinx::fem::create_element_dof_layout(*p, topology.cell_type());
+        return dolfinx::fem::create_dofmap(comm.get(), layout, topology,
+                                           nullptr, element);
       },
       "Create DofMap object from a pointer to ufcx_dofmap.");
   m.def(
       "build_dofmap",
       [](const MPICommWrapper comm, const dolfinx::mesh::Topology& topology,
-         const dolfinx::fem::ElementDofLayout& element_dof_layout)
+         const dolfinx::fem::ElementDofLayout& layout)
       {
         auto [map, bs, dofmap] = dolfinx::fem::build_dofmap_data(
-            comm.get(), topology, element_dof_layout,
+            comm.get(), topology, layout,
             [](const dolfinx::graph::AdjacencyList<std::int32_t>& g)
             { return dolfinx::graph::reorder_gps(g); });
         return std::tuple(std::move(map), bs, std::move(dofmap));
@@ -919,8 +916,7 @@ void fem(py::module& m)
       .def(py::init<int, const std::vector<std::vector<std::vector<int>>>&,
                     const std::vector<std::vector<std::vector<int>>>&,
                     const std::vector<int>&,
-                    const std::vector<std::shared_ptr<
-                        const dolfinx::fem::ElementDofLayout>>>())
+                    const std::vector<dolfinx::fem::ElementDofLayout>&>())
       .def_property_readonly("num_dofs",
                              &dolfinx::fem::ElementDofLayout::num_dofs)
       .def("num_entity_dofs", &dolfinx::fem::ElementDofLayout::num_entity_dofs)
@@ -929,12 +925,13 @@ void fem(py::module& m)
       .def("entity_dofs", &dolfinx::fem::ElementDofLayout::entity_dofs)
       .def("entity_closure_dofs",
            &dolfinx::fem::ElementDofLayout::entity_closure_dofs)
-      .def("block_size", &dolfinx::fem::ElementDofLayout::block_size);
+      .def_property_readonly("block_size",
+                             &dolfinx::fem::ElementDofLayout::block_size);
 
   // dolfinx::fem::DofMap
   py::class_<dolfinx::fem::DofMap, std::shared_ptr<dolfinx::fem::DofMap>>(
       m, "DofMap", "DofMap object")
-      .def(py::init<std::shared_ptr<const dolfinx::fem::ElementDofLayout>,
+      .def(py::init<const dolfinx::fem::ElementDofLayout&,
                     std::shared_ptr<const dolfinx::common::IndexMap>, int,
                     dolfinx::graph::AdjacencyList<std::int32_t>&, int>(),
            py::arg("element_dof_layout"), py::arg("index_map"),
@@ -942,7 +939,8 @@ void fem(py::module& m)
       .def_readonly("index_map", &dolfinx::fem::DofMap::index_map)
       .def_property_readonly("index_map_bs",
                              &dolfinx::fem::DofMap::index_map_bs)
-      .def_readonly("dof_layout", &dolfinx::fem::DofMap::element_dof_layout)
+      .def_property_readonly("dof_layout",
+                             &dolfinx::fem::DofMap::element_dof_layout)
       .def("cell_dofs",
            [](const dolfinx::fem::DofMap& self, int cell)
            {
@@ -962,6 +960,7 @@ void fem(py::module& m)
            py::arg("degree"))
       .def("create_dof_layout",
            &dolfinx::fem::CoordinateElement::create_dof_layout)
+      .def_property_readonly("degree", &dolfinx::fem::CoordinateElement::degree)
       .def("push_forward",
            [](const dolfinx::fem::CoordinateElement& self,
               const py::array_t<double, py::array::c_style>& X,
