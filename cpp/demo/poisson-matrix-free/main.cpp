@@ -139,8 +139,8 @@ int main(int argc, char* argv[])
           return 10 * xt::exp(-(dx) / 0.02);
         });
 
-    g->interpolate([](auto& x) -> xt::xarray<T>
-                   { return xt::sin(5 * xt::row(x, 0)); });
+    g->interpolate(
+        [](auto& x) -> xt::xarray<T> { return xt::sin(5 * xt::row(x, 0)); });
 
     // Compute solution
     fem::Function<T> u(V);
@@ -150,7 +150,7 @@ int main(int argc, char* argv[])
     fem::assemble_vector(b.mutable_array(), *L);
 
     // Apply lifting to account for Dirichlet boundary condition
-    bc->set(ui->x()->mutable_array(), -1);
+    fem::set_bc(u.x()->mutable_array(), {bc}, 0.0);
     dolfinx::fem::assemble_vector(b.mutable_array(), *M);
 
     // Communicate ghost values
@@ -159,7 +159,7 @@ int main(int argc, char* argv[])
     // Set BC dofs to zero (effectively zeroes columns of A)
     fem::set_bc(b.mutable_array(), {bc}, 0.0);
 
-    // Creat function for computing the action of A on x (y = Ax)
+    // Create function for computing the action of A on x (y = Ax)
     std::function<void(la::Vector<T>&, la::Vector<T>&)> action
         = [&](la::Vector<T>& x, la::Vector<T>& y)
     {
