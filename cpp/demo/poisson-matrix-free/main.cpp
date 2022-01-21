@@ -5,7 +5,6 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "poisson.h"
-
 #include <cmath>
 #include <dolfinx.h>
 #include <dolfinx/fem/Constant.h>
@@ -26,13 +25,13 @@ template <typename T>
 void axpy(la::Vector<T>& r, T alpha, const la::Vector<T>& x,
           const la::Vector<T>& y)
 {
-  std::transform(x.array().cbegin(), x.array().cbegin() + x.map()->size_local(),
+  std::transform(x.array().cbegin(),
+                 std::next(x.array().cbegin(), x.map()->size_local()),
                  y.array().cbegin(), r.mutable_array().begin(),
-                 [&alpha](const T& vx, const T& vy)
-                 { return vx * alpha + vy; });
+                 [alpha](auto x, auto y) { return alpha * x + y; });
 }
 
-/// Solve problem A.x = b with Conjugate Gradient method
+/// Solve problem A.x = b using the Conjugate Gradient method
 /// @param b RHS Vector
 /// @param x Solution Vector
 /// @param matvec_function Function that provides the operator action
@@ -46,12 +45,9 @@ int cg(la::Vector<T>& x, const la::Vector<T>& b,
   MPI_Comm comm = b.map()->comm(common::IndexMap::Direction::forward);
   int rank = dolfinx::MPI::rank(comm);
 
-  // Residual vector
-  la::Vector<T> r(b); // or b - A.x0
-  la::Vector<T> y(b);
-  la::Vector<T> p(x);
-  std::copy(r.array().begin(), r.array().begin() + M,
-            p.mutable_array().begin());
+  // Working vectors Residual vector
+  la::Vector<T> r(b), y(b), p(x);
+  std::copy_n(r.array().begin(), M, p.mutable_array().begin());
 
   double rnorm0 = r.squared_norm();
 
@@ -63,18 +59,16 @@ int cg(la::Vector<T>& x, const la::Vector<T>& b,
   {
     ++k;
 
-    // MatVec
-    // y = A.p;
+    // MatVec (y = A p)
     matvec_function(p, y);
 
-    // Calculate alpha = r.r/p.y
+    // alpha = r.r/p.y
     const double alpha = rnorm / la::inner_product(p, y);
 
-    // Update x and r
-    // x = x + alpha*p
+    // Update x (x <- x + alpha*p)
     axpy(x, alpha, p, x);
 
-    // r = r - alpha*y
+    // Update r (r <- r - alpha*y)
     axpy(r, -alpha, y, r);
 
     // Update rnorm
@@ -88,10 +82,10 @@ int cg(la::Vector<T>& x, const la::Vector<T>& b,
     if (rnorm / rnorm0 < rtol2)
       break;
 
-    // Update p.
-    // p = beta*p + r
+    // Update p (p <- beta*p + r)
     axpy(p, beta, p, r);
   }
+
   return k;
 }
 } // namespace linalg
@@ -99,7 +93,8 @@ int cg(la::Vector<T>& x, const la::Vector<T>& b,
 int main(int argc, char* argv[])
 {
   common::subsystem::init_logging(argc, argv);
-  common::subsystem::init_petsc(argc, argv);
+  // common::subsystem::init_petsc(argc, argv);
+  common::subsystem::init_mpi(argc, argv);
 
   {
     // Create mesh and function space
@@ -149,46 +144,54 @@ int main(int argc, char* argv[])
     fem::Function<T> u(V);
     la::Vector<T> b(V->dofmap()->index_map, V->dofmap()->index_map_bs());
 
-    // Assemble RHS
+    // Assemble RHS vector
     fem::assemble_vector(b.mutable_array(), *L);
+
+    // Apply lifting to account for Dirichlet boundary condition
     bc->set(ui->x()->mutable_array(), -1);
     dolfinx::fem::assemble_vector(b.mutable_array(), *M);
+
+    // Communicate ghost values
     b.scatter_rev(common::IndexMap::Mode::add);
 
     // Set BC dofs to zero (effectively zeroes columns of A)
     fem::set_bc(b.mutable_array(), {bc}, 0.0);
 
+    // Creat function for computing the action of A on x (y = Ax)
     std::function<void(la::Vector<T>&, la::Vector<T>&)> action
         = [&](la::Vector<T>& x, la::Vector<T>& y)
     {
-      // Update ghost values
+      // Update ghost values and zero y
       x.scatter_fwd();
       y.set(0);
 
-      // Update coefficient ui, just copy data from x to ui
+      // Update coefficient ui (just copy data from x to ui)
       std::copy(x.array().begin(), x.array().end(),
                 ui->x()->mutable_array().begin());
 
+      // Compute action of A on x
       dolfinx::fem::assemble_vector(y.mutable_array(), *M);
 
       // Set BC dofs to zero (effectively zeroes rows of A)
       fem::set_bc(y.mutable_array(), {bc}, 0.0);
 
-      // Update owned values
+      // Communicate ghost values
       y.scatter_rev(common::IndexMap::Mode::add);
     };
 
+    // Compute solution using the conjugate gradient method
     u.x()->set(0);
     linalg::cg(*u.x(), b, action, 100, 1e-6);
 
-    // Set BC values
+    // Set BC values in the solution vectors
     fem::set_bc(u.x()->mutable_array(), {bc}, 1.0);
 
     // Save solution in VTK format
-    io::VTKFile file(MPI_COMM_WORLD, "u.pvd", "w");
+    io::VTKFile file(mesh->comm(), "u.pvd", "w");
     file.write({u}, 0.0);
   }
 
   common::subsystem::finalize_petsc();
+  // common::subsystem::finalize_mpi();
   return 0;
 }
