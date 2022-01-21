@@ -178,21 +178,17 @@ Mesh mesh::create_mesh(MPI_Comm comm,
       = [](auto comm, auto& cell_nodes, auto& topology, auto& element, auto& x)
   {
     int tdim = topology.dim();
-    int n_cells_local = topology.index_map(tdim)->size_local()
-                        + topology.index_map(tdim)->num_ghosts();
+    int num_cells = topology.index_map(tdim)->size_local()
+                    + topology.index_map(tdim)->num_ghosts();
 
     // Remove ghost cells from geometry data, if not required
-    std::vector<std::int32_t> off1(
-        cell_nodes.offsets().begin(),
-        std::next(cell_nodes.offsets().begin(), n_cells_local + 1));
-    std::vector data1(
-        cell_nodes.array().begin(),
-        std::next(cell_nodes.array().begin(), off1[n_cells_local]));
-    graph::AdjacencyList<std::int64_t> cell_nodes1(std::move(data1),
-                                                   std::move(off1));
+    cell_nodes.offsets().resize(num_cells + 1);
+    cell_nodes.array().resize(cell_nodes.offsets().back());
+
     if (element.needs_dof_permutations())
       topology.create_entity_permutations();
-    return create_geometry(comm, topology, element, cell_nodes1, x);
+
+    return create_geometry(comm, topology, element, cell_nodes, x);
   };
 
   Geometry geometry = build_geometry(comm, cell_nodes, topology, element, x);
