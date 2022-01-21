@@ -142,13 +142,15 @@ class Expression:
         self._cpp_object = create_expression(dtype)(ffi.cast("uintptr_t", ffi.addressof(self._ufcx_expression)),
                                                     coeffs, constants, mesh)
 
-    def eval(self, cells: np.ndarray, values: np.ndarray = None) -> np.ndarray:
+    def eval(self, cells: np.ndarray, values: typing.Optional[np.ndarray] = None) -> np.ndarray:
         """Evaluate Expression in cells.
 
         Parameters
         ----------
         cells
             local indices of cells to evaluate expression.
+        values
+            array to store result of evaluation.
 
         Returns
         -------
@@ -158,22 +160,19 @@ class Expression:
 
         """
         _cells = np.asarray(cells, dtype=np.int32)
-        num_cells = _cells.shape[0]
+        values_shape = (_cells.shape[0], self.X.shape[0] * self.value_size * self.num_all_argument_dofs)
 
         # Allocate memory for result if u was not provided
         if values is None:
-            num_all_argument_dofs = np.prod(self.num_argument_dofs, dtype=int)
             if np.issubdtype(PETSc.ScalarType, np.complexfloating):
-                values = np.empty((num_cells,
-                                   self.X.shape[0] * self.value_size * num_all_argument_dofs), dtype=np.complex128)
+                values = np.empty(values_shape, dtype=np.complex128)
             else:
-                values = np.empty((num_cells,
-                                   self.X.shape[0] * self.value_size * num_all_argument_dofs), dtype=np.float64)
-            self._cpp_object.eval(cells, values)
+                values = np.empty(values_shape, dtype=np.float64)
         else:
-            if values.ndim >= 3 or values.shape[0] != _cells.shape[0] or values.shape[1] != _cells.shape[1]:
-                raise TypeError("Provided vaules array has incorrect shape.")
-            self._cpp_object.eval(cells, values)
+            if values.ndim > 2 or values.shape != values_shape:
+                raise TypeError(f"Provided values array does not have correct shape: {values_shape}.")
+
+        self._cpp_object.eval(cells, values)
 
         return values
 
@@ -200,6 +199,11 @@ class Expression:
     def num_argument_dofs(self):
         """Return the value size of the expression"""
         return self._cpp_object.num_argument_dofs
+
+    @property
+    def num_all_argument_dofs(self):
+        """Return the number of all argument dofs of the expression"""
+        return np.prod(self.num_argument_dofs, dtype=np.intc)
 
     def ufcx_expression(self):
         """The compiled ufcx_expression object"""
