@@ -145,7 +145,9 @@ class Expression:
     def eval(self, cells: np.ndarray, values: typing.Optional[np.ndarray] = None) -> np.ndarray:
         """Evaluate Expression in cells.
 
-        If values is not passed then a new array will be allocated.
+        values should have shape (cells.shape[0], num_points * value_size *
+        num_all_argument_dofs). If values is not passed then a new array will
+        be allocated.
 
         Parameters
         ----------
