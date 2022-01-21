@@ -53,11 +53,10 @@ void axpy(la::Vector<T>& r, T alpha, const la::Vector<T>& x,
 /// Solve problem A.x = b using the Conjugate Gradient method
 /// @param b RHS Vector
 /// @param x Solution Vector
-/// @param matvec_function Function that provides the operator action
+/// @param action Function that provides the action of the linear operator
 /// @param kmax Maxmimum number of iterations
-template <typename T>
-int cg(la::Vector<T>& x, const la::Vector<T>& b,
-       std::function<void(la::Vector<T>&, la::Vector<T>&)> matvec_function,
+template <typename T, typename ApplyFunction>
+int cg(la::Vector<T>& x, const la::Vector<T>& b, ApplyFunction&& action,
        int kmax = 50, double rtol = 1e-8, bool verbose = 0)
 {
   int M = b.map()->size_local();
@@ -79,7 +78,7 @@ int cg(la::Vector<T>& x, const la::Vector<T>& b,
     ++k;
 
     // MatVec (y = A p)
-    matvec_function(p, y);
+    action(p, y);
 
     // alpha = r.r/p.y
     const T alpha = rnorm / la::inner_product(p, y);
@@ -118,10 +117,12 @@ int main(int argc, char* argv[])
   common::subsystem::init_mpi(argc, argv);
 
   {
+    MPI_Comm comm = MPI_COMM_WORLD;
+
     // Create mesh and function space
     auto mesh = std::make_shared<mesh::Mesh>(mesh::create_rectangle(
-        MPI_COMM_WORLD, {{{0.0, 0.0}, {1.0, 1.0}}}, {8, 8},
-        mesh::CellType::triangle, mesh::GhostMode::none));
+        comm, {{{0.0, 0.0}, {1.0, 1.0}}}, {32, 32}, mesh::CellType::triangle,
+        mesh::GhostMode::none));
 
     auto V = std::make_shared<fem::FunctionSpace>(
         fem::create_functionspace(functionspace_form_poisson_M, "ui", mesh));
@@ -189,16 +190,22 @@ int main(int argc, char* argv[])
     auto u = std::make_shared<fem::Function<T>>(V);
     int it = linalg::cg(*u->x(), b, action, 200, 1e-6);
 
+    // Update ghost values and zero y
+    u->x()->scatter_fwd();
+
     // Set BC values in the solution vectors
     fem::set_bc(u->x()->mutable_array(), {bc}, 1.0);
 
-    // Compute H1 error
+    // Compute H1 error e = (u - u_d, u - u_d)*dx
     auto E = std::make_shared<fem::Form<T>>(fem::create_form<T>(
         *form_poisson_E, {}, {{"ue", u_D}, {"uc", u}}, {}, {}, mesh));
     T error = fem::assemble_scalar(*E);
 
-    std::cout << "Number of CG iterations " << it << std::endl;
-    std::cout << "Finite element error (H1 norm) " << error << std::endl;
+    if (dolfinx::MPI::rank(comm) == 0)
+    {
+      std::cout << "Number of CG iterations " << it << std::endl;
+      std::cout << "Finite element error (H1 norm) " << error << std::endl;
+    }
   }
 
   common::subsystem::finalize_mpi();
