@@ -77,7 +77,8 @@ int cg(la::Vector<T>& x, const la::Vector<T>& b,
     rnorm = rnorm_new;
 
     if (rank == 0)
-      std::cout << "it " << k << ": " << std::sqrt(rnorm / rnorm0) << std::endl;
+      std::cout << "Iteration: " << k << ": " << std::sqrt(rnorm / rnorm0)
+                << std::endl;
 
     if (rnorm / rnorm0 < rtol2)
       break;
@@ -93,7 +94,6 @@ int cg(la::Vector<T>& x, const la::Vector<T>& b,
 int main(int argc, char* argv[])
 {
   common::subsystem::init_logging(argc, argv);
-  // common::subsystem::init_petsc(argc, argv);
   common::subsystem::init_mpi(argc, argv);
 
   {
@@ -137,8 +137,8 @@ int main(int argc, char* argv[])
           return 10 * xt::exp(-(dx) / 0.02);
         });
 
-    g->interpolate(
-        [](auto& x) -> xt::xarray<T> { return xt::sin(5 * xt::row(x, 0)); });
+    g->interpolate([](auto& x) -> xt::xarray<T>
+                   { return xt::sin(5 * xt::row(x, 0)); });
 
     // Compute solution
     fem::Function<T> u(V);
@@ -191,7 +191,6 @@ int main(int argc, char* argv[])
     file.write({u}, 0.0);
   }
 
-  common::subsystem::finalize_petsc();
-  // common::subsystem::finalize_mpi();
+  common::subsystem::finalize_mpi();
   return 0;
 }
