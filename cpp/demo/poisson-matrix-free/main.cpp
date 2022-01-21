@@ -157,6 +157,7 @@ int main(int argc, char* argv[])
     fem::assemble_vector(b.mutable_array(), *L);
 
     // Apply lifting to account for Dirichlet boundary condition
+    // b <- b - A * x_bc 
     fem::set_bc(ui->x()->mutable_array(), {bc}, -1.0);
     dolfinx::fem::assemble_vector(b.mutable_array(), *M);
 
