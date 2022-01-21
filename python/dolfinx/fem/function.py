@@ -218,7 +218,7 @@ class Expression:
 
     @property
     def dtype(self):
-        return self.dtype
+        return self._dtype
 
 
 class Function(ufl.Coefficient):
