@@ -71,9 +71,11 @@ int cg(la::Vector<T>& x, const la::Vector<T>& b,
     // Update r (r <- r - alpha*y)
     axpy(r, -alpha, y, r);
 
-    // Update rnorm
+    // Update residual norm
+    // Note: we use T for beta to support float, double, etc. T can be
+    // complex, despite its value always being real
     const double rnorm_new = r.squared_norm();
-    const double beta = rnorm_new / rnorm;
+    const T beta = rnorm_new / rnorm;
     rnorm = rnorm_new;
 
     if (rank == 0)
@@ -114,7 +116,7 @@ int main(int argc, char* argv[])
     auto L = std::make_shared<fem::Form<T>>(fem::create_form<T>(
         *form_poisson_L, {V}, {{"f", f}, {"g", g}}, {}, {}));
 
-    // Action of the bilinear form "a" to a function ui
+    // Action of the bilinear form "a" on a function ui
     auto ui = std::make_shared<fem::Function<T>>(V);
     auto M = std::make_shared<fem::Form<T>>(fem::create_form<T>(
         *form_poisson_M, {V}, {{"ui", ui}}, {{"kappa", kappa}}, {}));
@@ -187,8 +189,8 @@ int main(int argc, char* argv[])
     fem::set_bc(u.x()->mutable_array(), {bc}, 1.0);
 
     // Save solution in VTK format
-    io::VTKFile file(mesh->comm(), "u.pvd", "w");
-    file.write({u}, 0.0);
+    // io::VTKFile file(mesh->comm(), "u.pvd", "w");
+    // file.write({u}, 0.0);
   }
 
   common::subsystem::finalize_mpi();
