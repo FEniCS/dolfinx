@@ -177,7 +177,7 @@ def test_collision_2nd_order_triangle():
     colliding_cells = geometry.compute_colliding_cells(mesh, cell_candidates, sample_points)
     # Check for collision
     for i in range(colliding_cells.num_nodes):
-        assert(len(colliding_cells.links(i)) == 1)
+        assert len(colliding_cells.links(i)) == 1
 
     # Check if there is a point on the linear approximation of the
     # curved facet
