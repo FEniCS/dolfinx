@@ -493,7 +493,8 @@ void declare_objects(py::module& m, const std::string& type)
                              &dolfinx::fem::Expression<T>::num_argument_dofs)
       .def_property_readonly("X", [](const dolfinx::fem::Expression<T>& self){ return py::array_t<double>(self.X().shape(), self.X().data(), py::cast(self)); } );
 
-  std::string pymethod_create_expression = std::string("create_expression_") + type;
+  std::string pymethod_create_expression
+      = std::string("create_expression_") + type;
   m.def(
       pymethod_create_expression.c_str(),
       [](const std::uintptr_t expression,
