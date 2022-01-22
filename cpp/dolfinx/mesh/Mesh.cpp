@@ -188,7 +188,7 @@ Mesh mesh::create_mesh(MPI_Comm comm,
     if (element.needs_dof_permutations())
       topology.create_entity_permutations();
 
-    return create_geometry(comm, topology, element, cell_nodes, x);
+    return create_geometry(comm, topology, element, cell_nodes, x, x.shape(1));
   };
 
   Geometry geometry = build_geometry(comm, cell_nodes, topology, element, x);

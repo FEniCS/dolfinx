@@ -12,7 +12,6 @@
 #include <functional>
 #include <memory>
 #include <vector>
-#include <xtensor/xtensor.hpp>
 #include <xtl/xspan.hpp>
 
 namespace dolfinx::common
@@ -115,13 +114,22 @@ private:
   std::vector<std::int64_t> _input_global_indices;
 };
 
-/// Build Geometry
-/// @todo document
+/// Build Geometry from input data
+///
+/// @param[in] comm The MPI communicator to build the Geometry on
+/// @param[in] element The element that defines the geometry map for
+/// each cell
+/// @param[in] cells The mesh cells, including higher-ordder geometry 'nodes'
+/// @param[in] x The node coordinates (row-major, with shape (num_nodes,
+/// geometric dimension)
+/// @param[in] dim The geometric dimensions (1, 2, or 3)
+/// @param[in] reorder_fn Function for re-ordering the degree-of-freedom
+/// map associated with the geometry data
 mesh::Geometry
 create_geometry(MPI_Comm comm, const Topology& topology,
-                const fem::CoordinateElement& coordinate_element,
+                const fem::CoordinateElement& element,
                 const graph::AdjacencyList<std::int64_t>& cells,
-                const xt::xtensor<double, 2>& x,
+                const xtl::span<const double>& x, int dim,
                 const std::function<std::vector<int>(
                     const graph::AdjacencyList<std::int32_t>&)>& reorder_fn
                 = nullptr);

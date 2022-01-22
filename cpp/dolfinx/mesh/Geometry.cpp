@@ -11,7 +11,6 @@
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/fem/dofmapbuilder.h>
 #include <dolfinx/graph/partition.h>
-#include <xtensor/xadapt.hpp>
 
 using namespace dolfinx;
 using namespace dolfinx::mesh;
@@ -44,9 +43,9 @@ const std::vector<std::int64_t>& Geometry::input_global_indices() const
 //-----------------------------------------------------------------------------
 mesh::Geometry mesh::create_geometry(
     MPI_Comm comm, const Topology& topology,
-    const fem::CoordinateElement& coordinate_element,
+    const fem::CoordinateElement& element,
     const graph::AdjacencyList<std::int64_t>& cell_nodes,
-    const xt::xtensor<double, 2>& x,
+    const xtl::span<const double>& x, int dim,
     const std::function<std::vector<int>(
         const graph::AdjacencyList<std::int32_t>&)>& reorder_fn)
 {
@@ -55,12 +54,12 @@ mesh::Geometry mesh::create_geometry(
 
   //  Build 'geometry' dofmap on the topology
   auto [_dof_index_map, bs, dofmap] = fem::build_dofmap_data(
-      comm, topology, coordinate_element.create_dof_layout(), reorder_fn);
+      comm, topology, element.create_dof_layout(), reorder_fn);
   auto dof_index_map
       = std::make_shared<common::IndexMap>(std::move(_dof_index_map));
 
   // If the mesh has higher order geometry, permute the dofmap
-  if (coordinate_element.needs_dof_permutations())
+  if (element.needs_dof_permutations())
   {
     const int D = topology.dim();
     const int num_cells = topology.connectivity(D, 0)->num_nodes();
@@ -68,10 +67,11 @@ mesh::Geometry mesh::create_geometry(
         = topology.get_cell_permutation_info();
 
     for (std::int32_t cell = 0; cell < num_cells; ++cell)
-      coordinate_element.unpermute_dofs(dofmap.links(cell), cell_info[cell]);
+      element.unpermute_dofs(dofmap.links(cell), cell_info[cell]);
   }
 
-  auto remap_data = [](auto comm, auto& cell_nodes, auto& x, auto& dofmap)
+  auto remap_data
+      = [](auto comm, auto& cell_nodes, auto& x, int dim, auto& dofmap)
   {
     // Build list of unique (global) node indices from adjacency list
     // (geometry nodes)
@@ -81,8 +81,8 @@ mesh::Geometry mesh::create_geometry(
 
     //  Fetch node coordinates by global index from other ranks. Order of
     //  coords matches order of the indices in 'indices'
-    std::vector<double> coords = graph::build::distribute_data<double>(
-        comm, indices, xtl::span(x.begin(), x.size()), x.shape(1));
+    std::vector<double> coords
+        = graph::build::distribute_data<double>(comm, indices, x, dim);
 
     // Compute local-to-global map from local indices in dofmap to the
     // corresponding global indices in cell_nodes
@@ -102,13 +102,13 @@ mesh::Geometry mesh::create_geometry(
     return std::tuple(std::move(coords), std::move(l2l), std::move(igi));
   };
 
-  auto [coords, l2l, igi] = remap_data(comm, cell_nodes, x, dofmap);
+  auto [coords, l2l, igi] = remap_data(comm, cell_nodes, x, dim, dofmap);
 
   // Build coordinate dof array, copying coordinates to correct
   // position
-  assert(coords.size() % x.shape(1) == 0);
-  const std::size_t shape0 = coords.size() / x.shape(1);
-  const std::size_t shape1 = x.shape(1);
+  assert(coords.size() % dim == 0);
+  const std::size_t shape0 = coords.size() / dim;
+  const std::size_t shape1 = dim;
   std::vector<double> xg(3 * shape0, 0);
   for (std::size_t i = 0; i < shape0; ++i)
   {
@@ -116,7 +116,7 @@ mesh::Geometry mesh::create_geometry(
                 std::next(xg.begin(), 3 * i));
   }
 
-  return Geometry(dof_index_map, std::move(dofmap), coordinate_element,
-                  std::move(xg), x.shape(1), std::move(igi));
+  return Geometry(dof_index_map, std::move(dofmap), element, std::move(xg), dim,
+                  std::move(igi));
 }
 //-----------------------------------------------------------------------------
