@@ -107,10 +107,11 @@ mesh::Geometry mesh::create_geometry(
   // Build coordinate dof array, copying coordinates to correct
   // position
   std::vector<double> xg(3 * coords.shape(0), 0.0);
+  const std::size_t shape1 = coords.shape(1);
   for (std::size_t i = 0; i < coords.shape(0); ++i)
   {
-    auto row = xt::view(coords, l2l[i]);
-    std::copy(row.cbegin(), row.cend(), std::next(xg.begin(), 3 * i));
+    std::copy_n(std::next(coords.cbegin(), shape1 * l2l[i]), shape1,
+                std::next(xg.begin(), 3 * i));
   }
 
   return Geometry(dof_index_map, std::move(dofmap), coordinate_element,
