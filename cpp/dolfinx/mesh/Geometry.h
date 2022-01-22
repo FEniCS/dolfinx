@@ -12,10 +12,7 @@
 #include <functional>
 #include <memory>
 #include <vector>
-#include <xtensor/xadapt.hpp>
-#include <xtensor/xbuilder.hpp>
 #include <xtensor/xtensor.hpp>
-#include <xtensor/xview.hpp>
 #include <xtl/xspan.hpp>
 
 namespace dolfinx::common
@@ -53,7 +50,7 @@ public:
   {
     assert(_x.size() % 3 == 0);
     if (_x.size() / 3 != _input_global_indices.size())
-      throw std::runtime_error("Size mis-match");
+      throw std::runtime_error("Geometry size mis-match");
   }
 
   /// Copy constructor
@@ -110,7 +107,8 @@ private:
   // The coordinate element
   fem::CoordinateElement _cmap;
 
-  // Coordinates for all points stored as a contiguous array
+  // Coordinates for all points stored as a contiguous array (roe-major,
+  // column size = 3)
   std::vector<double> _x;
 
   // Global indices as provided on Geometry creation

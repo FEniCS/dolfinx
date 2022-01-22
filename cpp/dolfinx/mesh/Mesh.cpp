@@ -8,6 +8,7 @@
 #include "Mesh.h"
 #include "Geometry.h"
 #include "Topology.h"
+#include "graphbuild.h"
 #include "topologycomputation.h"
 #include "utils.h"
 #include <dolfinx/common/IndexMap.h>
@@ -19,8 +20,7 @@
 #include <dolfinx/mesh/cell_types.h>
 #include <memory>
 #include <xtensor/xsort.hpp>
-
-#include "graphbuild.h"
+#include <xtensor/xview.hpp>
 
 using namespace dolfinx;
 using namespace dolfinx::mesh;
