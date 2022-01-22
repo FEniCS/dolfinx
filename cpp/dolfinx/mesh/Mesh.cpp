@@ -85,16 +85,18 @@ Mesh mesh::create_mesh(MPI_Comm comm,
   auto build_topology = [](auto comm, auto& element, auto& dof_layout,
                            auto& cells, auto ghost_mode, auto& cell_partitioner)
   {
-    // TODO: This step can be skipped for 'P1' elements
-    //
-    // Extract topology data, e.g. just the vertices. For P1 geometry this
-    // should just be the identity operator. For other elements the
-    // filtered lists may have 'gaps', i.e. the indices might not be
-    // contiguous.
-    const graph::AdjacencyList<std::int64_t> cells_topology
-        = extract_topology(element.cell_shape(), dof_layout, cells);
-
     // -- Partition topology
+
+    // Note: the function extract_topology (returns an
+    // AdjacencyList<std::int64_t>) extract topology data, e.g. just the
+    // vertices. For P1 geometry this should just be the identity
+    // operator. For other elements the filtered lists may have 'gaps',
+    // i.e. the indices might not be contiguous. We don't create an
+    // object before calling cell_partitioner to ensure that memory is
+    // freed immediately.
+    //
+    // Note: extract_topology could be skipped for 'P1' elements since
+    // it is just the identity
 
     // Compute the destination rank for cells on this process via graph
     // partitioning. Always get the ghost cells via facet, though these
@@ -102,13 +104,18 @@ Mesh mesh::create_mesh(MPI_Comm comm,
     const int size = dolfinx::MPI::size(comm);
     const int tdim = cell_dim(element.cell_shape());
     const graph::AdjacencyList<std::int32_t> dest = cell_partitioner(
-        comm, size, tdim, cells_topology, GhostMode::shared_facet);
+        comm, size, tdim,
+        extract_topology(element.cell_shape(), dof_layout, cells),
+        GhostMode::shared_facet);
 
     // -- Distribute cells (topology, includes higher-order 'nodes')
 
     // Distribute cells to destination rank
-    const auto [cell_nodes0, src, original_cell_index0, ghost_owners]
+    auto [cell_nodes0, src, original_cell_index0, ghost_owners]
         = graph::build::distribute(comm, cells, dest);
+
+    // Release memory
+    decltype(src)().swap(src);
 
     // -- Extra cell topology
 
@@ -121,16 +128,18 @@ Mesh mesh::create_mesh(MPI_Comm comm,
     // Build local dual graph for owned cells to apply re-ordering to
     const std::int32_t num_owned_cells
         = cells_extracted0.num_nodes() - ghost_owners.size();
-    const auto [g, m] = build_local_dual_graph(
-        xtl::span<const std::int64_t>(
-            cells_extracted0.array().data(),
-            cells_extracted0.offsets()[num_owned_cells]),
-        xtl::span<const std::int32_t>(cells_extracted0.offsets().data(),
-                                      num_owned_cells + 1),
-        tdim);
+    const auto graph
+        = build_local_dual_graph(
+              xtl::span<const std::int64_t>(
+                  cells_extracted0.array().data(),
+                  cells_extracted0.offsets()[num_owned_cells]),
+              xtl::span<const std::int32_t>(cells_extracted0.offsets().data(),
+                                            num_owned_cells + 1),
+              tdim)
+              .first;
 
     // Compute re-ordering of local dual graph
-    std::vector<int> remap = graph::reorder_gps(g);
+    std::vector<int> remap = graph::reorder_gps(graph);
 
     // Create re-ordered cell lists
     std::vector<std::int64_t> original_cell_index(original_cell_index0);
