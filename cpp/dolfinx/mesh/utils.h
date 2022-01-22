@@ -20,8 +20,15 @@ class ElementDofLayout;
 namespace dolfinx::mesh
 {
 enum class CellType;
-enum class GhostMode : int;
 class Mesh;
+
+/// Enum for different partitioning ghost modes
+enum class GhostMode : int
+{
+  none,
+  shared_facet,
+  shared_vertex
+};
 
 /// Signature for the cell partitioning function. The function should
 /// compute the destination rank for cells currently on this rank.

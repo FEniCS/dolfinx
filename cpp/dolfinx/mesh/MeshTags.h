@@ -135,10 +135,9 @@ private:
 /// @param[in] values Tag values for each entity in @ entities. The
 /// length of @ values  must be equal to number of rows in @ entities.
 template <typename T>
-mesh::MeshTags<T>
-create_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh, int dim,
-                const graph::AdjacencyList<std::int32_t>& entities,
-                const xtl::span<const T>& values)
+MeshTags<T> create_meshtags(const std::shared_ptr<const Mesh>& mesh, int dim,
+                            const graph::AdjacencyList<std::int32_t>& entities,
+                            const xtl::span<const T>& values)
 {
   assert(mesh);
   if ((std::size_t)entities.num_nodes() != values.size())
@@ -191,7 +190,7 @@ create_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh, int dim,
 
   auto [indices_sorted, values_sorted]
       = common::sort_unique(indices_new, values_new);
-  return mesh::MeshTags<T>(mesh, dim, std::move(indices_sorted),
-                           std::move(values_sorted));
+  return MeshTags<T>(mesh, dim, std::move(indices_sorted),
+                     std::move(values_sorted));
 }
 } // namespace dolfinx::mesh

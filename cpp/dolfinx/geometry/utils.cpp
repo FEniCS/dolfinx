@@ -14,6 +14,8 @@
 #include <dolfinx/mesh/utils.h>
 #include <xtensor/xfixed.hpp>
 #include <xtensor/xnorm.hpp>
+#include <xtensor/xview.hpp>
+
 using namespace dolfinx;
 
 namespace

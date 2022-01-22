@@ -16,7 +16,9 @@
 #include <limits>
 #include <map>
 #include <vector>
+#include <xtensor/xadapt.hpp>
 #include <xtensor/xnorm.hpp>
+#include <xtensor/xview.hpp>
 
 using namespace dolfinx;
 using namespace dolfinx::refinement;
