@@ -117,6 +117,7 @@ private:
 /// Build Geometry from input data
 ///
 /// @param[in] comm The MPI communicator to build the Geometry on
+/// @param[in] topology The mesh topology
 /// @param[in] element The element that defines the geometry map for
 /// each cell
 /// @param[in] cells The mesh cells, including higher-ordder geometry 'nodes'
