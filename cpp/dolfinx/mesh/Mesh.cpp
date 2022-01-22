@@ -8,6 +8,7 @@
 #include "Mesh.h"
 #include "Geometry.h"
 #include "Topology.h"
+#include "cell_types.h"
 #include "graphbuild.h"
 #include "topologycomputation.h"
 #include "utils.h"
@@ -17,7 +18,6 @@
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/ordering.h>
 #include <dolfinx/graph/partition.h>
-#include <dolfinx/mesh/cell_types.h>
 #include <memory>
 #include <xtensor/xsort.hpp>
 #include <xtensor/xview.hpp>
