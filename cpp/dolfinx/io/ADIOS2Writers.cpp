@@ -7,6 +7,7 @@
 #ifdef HAS_ADIOS2
 
 #include "ADIOS2Writers.h"
+#include "cells.h"
 #include "pugixml.hpp"
 #include <adios2.h>
 #include <algorithm>
@@ -14,7 +15,6 @@
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/fem/Function.h>
 #include <dolfinx/fem/FunctionSpace.h>
-#include <dolfinx/io/cells.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/utils.h>
 #include <xtensor/xtensor.hpp>
