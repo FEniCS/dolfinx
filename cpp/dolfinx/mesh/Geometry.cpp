@@ -81,8 +81,8 @@ mesh::Geometry mesh::create_geometry(
 
     //  Fetch node coordinates by global index from other ranks. Order of
     //  coords matches order of the indices in 'indices'
-    xt::xtensor<double, 2> coords
-        = graph::build::distribute_data<double>(comm, indices, x);
+    std::vector<double> coords
+        = graph::build::distribute_data<double>(comm, indices, x, x.shape(1));
 
     // Compute local-to-global map from local indices in dofmap to the
     // corresponding global indices in cell_nodes
@@ -106,15 +106,15 @@ mesh::Geometry mesh::create_geometry(
 
   // Build coordinate dof array, copying coordinates to correct
   // position
-  std::vector<double> xg(3 * coords.shape(0), 0.0);
-  const std::size_t shape1 = coords.shape(1);
-  for (std::size_t i = 0; i < coords.shape(0); ++i)
+  std::vector<double> xg(3 * x.shape(0), 0.0);
+  const std::size_t shape1 = x.shape(1);
+  for (std::size_t i = 0; i < x.shape(0); ++i)
   {
     std::copy_n(std::next(coords.cbegin(), shape1 * l2l[i]), shape1,
                 std::next(xg.begin(), 3 * i));
   }
 
   return Geometry(dof_index_map, std::move(dofmap), coordinate_element,
-                  std::move(xg), coords.shape(1), std::move(igi));
+                  std::move(xg), x.shape(1), std::move(igi));
 }
 //-----------------------------------------------------------------------------

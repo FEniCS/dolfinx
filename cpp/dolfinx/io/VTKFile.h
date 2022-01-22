@@ -7,7 +7,6 @@
 #pragma once
 
 #include <dolfinx/common/MPI.h>
-#include <dolfinx/fem/Function.h>
 #include <functional>
 #include <memory>
 #include <string>
@@ -17,7 +16,7 @@ namespace pugi
 class xml_document;
 }
 
-namespace dolfinx::function
+namespace dolfinx::fem
 {
 template <typename T>
 class Function;
