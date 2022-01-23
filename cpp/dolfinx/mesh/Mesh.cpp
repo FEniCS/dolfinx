@@ -114,7 +114,7 @@ Mesh mesh::create_mesh(MPI_Comm comm,
     auto [cell_nodes, src, original_cell_index0, ghost_owners]
         = graph::build::distribute(comm, cells, dest);
 
-    // Release memory (src not used)
+    // Release memory
     decltype(src)().swap(src);
 
     // -- Extra cell topology
@@ -128,21 +128,18 @@ Mesh mesh::create_mesh(MPI_Comm comm,
     // Build local dual graph for owned cells to apply re-ordering to
     const std::int32_t num_owned_cells
         = cells_extracted.num_nodes() - ghost_owners.size();
-    const auto graph
-        = build_local_dual_graph(
-              xtl::span<const std::int64_t>(
-                  cells_extracted.array().data(),
-                  cells_extracted.offsets()[num_owned_cells]),
-              xtl::span<const std::int32_t>(cells_extracted.offsets().data(),
-                                            num_owned_cells + 1),
-              tdim)
-              .first;
-
-    // Compute re-ordering of local dual graph
-    std::vector<int> remap = graph::reorder_gps(graph);
+    const std::vector<int> remap = graph::reorder_gps(
+        build_local_dual_graph(
+            xtl::span<const std::int64_t>(
+                cells_extracted.array().data(),
+                cells_extracted.offsets()[num_owned_cells]),
+            xtl::span<const std::int32_t>(cells_extracted.offsets().data(),
+                                          num_owned_cells + 1),
+            tdim)
+            .first);
 
     // Create re-ordered cell lists
-    std::vector<std::int64_t> original_cell_index(original_cell_index0.size());
+    std::vector<std::int64_t> original_cell_index(original_cell_index0);
     for (std::size_t i = 0; i < remap.size(); ++i)
       original_cell_index[remap[i]] = original_cell_index0[i];
     cells_extracted = reorder_list(cells_extracted, remap);
