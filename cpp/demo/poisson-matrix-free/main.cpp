@@ -56,10 +56,9 @@ void axpy(la::Vector<T>& r, T alpha, const la::Vector<T>& x,
 /// @param[in]  action Function that provides the action of the linear operator
 /// @param[in]  kmax Maxmimum number of iterations
 /// @param[in]  rtol Relative tolerances for convergence.
-/// @param[in]  verbose Set to true to print residual norm
 template <typename T, typename ApplyFunction>
 int cg(la::Vector<T>& x, const la::Vector<T>& b, ApplyFunction&& action,
-       int kmax = 50, double rtol = 1e-8, bool verbose = false)
+       int kmax = 50, double rtol = 1e-8)
 {
   int M = b.map()->size_local();
   MPI_Comm comm = b.map()->comm(common::IndexMap::Direction::forward);
@@ -98,10 +97,6 @@ int cg(la::Vector<T>& x, const la::Vector<T>& b, ApplyFunction&& action,
     const T beta = rnorm_new / rnorm;
     rnorm = rnorm_new;
 
-    if (rank == 0 and verbose)
-      std::cout << "Iteration: " << k << ": " << std::sqrt(rnorm / rnorm0)
-                << std::endl;
-
     if (rnorm / rnorm0 < rtol2)
       break;
 
@@ -123,7 +118,7 @@ int main(int argc, char* argv[])
 
     // Create mesh and function space
     auto mesh = std::make_shared<mesh::Mesh>(mesh::create_rectangle(
-        comm, {{{0.0, 0.0}, {1.0, 1.0}}}, {32, 32}, mesh::CellType::triangle,
+        comm, {{{0.0, 0.0}, {1.0, 1.0}}}, {10, 10}, mesh::CellType::triangle,
         mesh::GhostMode::none));
 
     auto V = std::make_shared<fem::FunctionSpace>(
@@ -157,7 +152,7 @@ int main(int argc, char* argv[])
     fem::assemble_vector(b.mutable_array(), *L);
 
     // Apply lifting to account for Dirichlet boundary condition
-    // b <- b - A * x_bc 
+    // b <- b - A * x_bc
     fem::set_bc(ui->x()->mutable_array(), {bc}, -1.0);
     dolfinx::fem::assemble_vector(b.mutable_array(), *M);
 
@@ -201,7 +196,7 @@ int main(int argc, char* argv[])
 
     // Compute H1 error e = (u - u_d, u - u_d)*dx
     auto E = std::make_shared<fem::Form<T>>(fem::create_form<T>(
-        *form_poisson_E, {}, {{"ue", u_D}, {"uc", u}}, {}, {}, mesh));
+        *form_poisson_E, {}, {{"uexact", u_D}, {"usol", u}}, {}, {}, mesh));
     T error = fem::assemble_scalar(*E);
 
     if (dolfinx::MPI::rank(comm) == 0)
