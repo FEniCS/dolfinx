@@ -13,6 +13,7 @@
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/utils.h>
+#include <xtensor/xview.hpp>
 
 using namespace dolfinx;
 using namespace dolfinx::geometry;

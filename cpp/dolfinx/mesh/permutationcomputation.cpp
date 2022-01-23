@@ -5,12 +5,12 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "permutationcomputation.h"
+#include "Topology.h"
+#include "cell_types.h"
 #include <algorithm>
 #include <bitset>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/graph/AdjacencyList.h>
-#include <dolfinx/mesh/Topology.h>
-#include <dolfinx/mesh/cell_types.h>
 
 namespace
 {
