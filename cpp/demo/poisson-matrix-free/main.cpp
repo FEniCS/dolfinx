@@ -61,8 +61,6 @@ int cg(la::Vector<T>& x, const la::Vector<T>& b, ApplyFunction&& action,
        int kmax = 50, double rtol = 1e-8)
 {
   int M = b.map()->size_local();
-  MPI_Comm comm = b.map()->comm(common::IndexMap::Direction::forward);
-  int rank = dolfinx::MPI::rank(comm);
 
   // Working vectors Residual vector
   la::Vector<T> r(b), y(b), p(x);
