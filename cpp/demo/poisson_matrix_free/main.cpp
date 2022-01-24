@@ -65,7 +65,7 @@ int cg(la::Vector<U>& x, const la::Vector<U>& b, ApplyFunction&& action,
 
   // Compute initial residual r0 = b - Ax0
   action(x, y);
-  axpy(r, -1., y, b);
+  axpy(r, U(-1.), y, b);
 
   la::Vector<U> p(r);
 
