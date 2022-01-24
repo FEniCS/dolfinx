@@ -142,7 +142,8 @@ int main(int argc, char* argv[])
         });
 
     std::vector<std::int32_t> facets = mesh::exterior_facet_indices(*mesh);
-    const auto bdofs = fem::locate_dofs_topological({*V}, 1, facets);
+    std::vector<std::int32_t> bdofs
+        = fem::locate_dofs_topological({*V}, 1, facets);
     auto bc = std::make_shared<const fem::DirichletBC<T>>(u_D, bdofs);
 
     // Assemble RHS vector
@@ -192,7 +193,7 @@ int main(int argc, char* argv[])
     // Set BC values in the solution vectors
     fem::set_bc(u->x()->mutable_array(), {bc}, 1.0);
 
-    // Compute H1 error e = (u - u_d, u - u_d)*dx
+    // Compute L2 error of the solution vector e = (u - u_d, u - u_d)*dx
     auto E = std::make_shared<fem::Form<T>>(fem::create_form<T>(
         *form_poisson_E, {}, {{"uexact", u_D}, {"usol", u}}, {}, {}, mesh));
     T error = fem::assemble_scalar(*E);
