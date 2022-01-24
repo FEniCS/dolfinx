@@ -151,6 +151,9 @@ public:
   /// Offset for each node in array() (const version)
   const std::vector<std::int32_t>& offsets() const { return _offsets; }
 
+  /// Offset for each node in array()
+  std::vector<std::int32_t>& offsets() { return _offsets; }
+
   /// Return informal string representation (pretty-print)
   std::string str() const
   {

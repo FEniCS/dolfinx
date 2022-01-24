@@ -40,3 +40,4 @@ All documented demos
    demos/helmholtz2D/demo_helmholtz_2d.py.rst
    demos/mixed-elasticity-sc/static-condensation-elasticity.py.rst
    demos/pyvista/demo_pyvista.py.rst
+   demos/interpolation-io/demo_interpolation-io.py.rst

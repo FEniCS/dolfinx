@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "FiniteElement.h"
+#include <algorithm>
 #include <basix/finite-element.h>
 #include <basix/interpolation.h>
 #include <dolfinx/common/log.h>
@@ -16,6 +17,7 @@ using namespace dolfinx::fem;
 
 namespace
 {
+//-----------------------------------------------------------------------------
 // Check if an element is a basix element (or a blocked element
 // containing a Basix element)
 bool is_basix_element(const ufcx_finite_element& element)
@@ -31,7 +33,7 @@ bool is_basix_element(const ufcx_finite_element& element)
   else
     return false;
 }
-
+//-----------------------------------------------------------------------------
 // Recursively extract sub finite element
 std::shared_ptr<const FiniteElement>
 _extract_sub_element(const FiniteElement& finite_element,
@@ -81,7 +83,6 @@ _extract_sub_element(const FiniteElement& finite_element,
 FiniteElement::FiniteElement(const ufcx_finite_element& e)
     : _signature(e.signature), _family(e.family),
       _tdim(e.topological_dimension), _space_dim(e.space_dimension),
-      _value_size(e.value_size), _reference_value_size(e.reference_value_size),
       _hash(std::hash<std::string>{}(_signature)),
       _value_shape(e.value_shape, e.value_shape + e.value_rank),
       _bs(e.block_size)
@@ -167,6 +168,44 @@ FiniteElement::FiniteElement(const ufcx_finite_element& e)
   }
 }
 //-----------------------------------------------------------------------------
+FiniteElement::FiniteElement(const basix::FiniteElement& element, int bs)
+    : // _signature("Basix element " + std::to_string(bs)),
+      _tdim(basix::cell::topological_dimension(element.cell_type())),
+      _space_dim(bs * element.dim()), _hash(0),
+      _value_shape(element.value_shape()), _bs(bs)
+{
+  if (_value_shape.empty() and bs > 1)
+    _value_shape = {1};
+  std::transform(_value_shape.cbegin(), _value_shape.cend(),
+                 _value_shape.begin(), [bs](auto s) { return bs * s; });
+
+  _element = std::make_unique<basix::FiniteElement>(element);
+  _needs_dof_transformations
+      = !_element->dof_transformations_are_identity()
+        and !_element->dof_transformations_are_permutations();
+
+  _needs_dof_permutations
+      = !_element->dof_transformations_are_identity()
+        and _element->dof_transformations_are_permutations();
+
+  assert(_element);
+  switch (_element->family())
+  {
+  case basix::element::family::P:
+    _family = "Lagrange";
+    break;
+  case basix::element::family::DPC:
+    _family = "Discontinuous Lagrange";
+    break;
+  default:
+    _family = "unknown";
+    break;
+  }
+
+  _signature = "Basix element " + _family + " " + std::to_string(bs);
+  _hash = std::hash<std::string>{}(_signature);
+}
+//-----------------------------------------------------------------------------
 std::string FiniteElement::signature() const noexcept { return _signature; }
 //-----------------------------------------------------------------------------
 mesh::CellType FiniteElement::cell_shape() const noexcept
@@ -178,11 +217,16 @@ int FiniteElement::tdim() const noexcept { return _tdim; }
 //-----------------------------------------------------------------------------
 int FiniteElement::space_dimension() const noexcept { return _space_dim; }
 //-----------------------------------------------------------------------------
-int FiniteElement::value_size() const noexcept { return _value_size; }
-//-----------------------------------------------------------------------------
-int FiniteElement::reference_value_size() const noexcept
+int FiniteElement::value_size() const
 {
-  return _reference_value_size;
+  return std::accumulate(_value_shape.begin(), _value_shape.end(), 1,
+                         std::multiplies<int>());
+}
+//-----------------------------------------------------------------------------
+int FiniteElement::reference_value_size() const
+{
+  return std::accumulate(_value_shape.begin(), _value_shape.end(), 1,
+                         std::multiplies<int>());
 }
 //-----------------------------------------------------------------------------
 int FiniteElement::block_size() const noexcept { return _bs; }

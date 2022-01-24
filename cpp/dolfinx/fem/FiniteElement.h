@@ -27,6 +27,11 @@ public:
   /// @param[in] e UFC finite element
   explicit FiniteElement(const ufcx_finite_element& e);
 
+  /// Create finite element from a Basix finite element
+  /// @param[in] element Basix finite element
+  /// @param[in] bs The block size
+  FiniteElement(const basix::FiniteElement& element, int bs);
+
   /// Copy constructor
   FiniteElement(const FiniteElement& element) = delete;
 
@@ -44,7 +49,7 @@ public:
 
   /// String identifying the finite element
   /// @return Element signature
-  /// @note The function is provided for convenience, but it should not
+  /// @warning The function is provided for convenience, but it should not
   /// be relied upon for determining the element type. Use other
   /// functions, commonly returning enums, to determine element
   /// properties.
@@ -67,12 +72,12 @@ public:
 
   /// The value size, e.g. 1 for a scalar function, 2 for a 2D vector
   /// @return The value size
-  int value_size() const noexcept;
+  int value_size() const;
 
   /// The value size, e.g. 1 for a scalar function, 2 for a 2D vector
   /// for the reference element
   /// @return The value size for the reference element
-  int reference_value_size() const noexcept;
+  int reference_value_size() const;
 
   /// Shape of the value space. The rank is the size of the
   /// `value_shape`.
@@ -658,7 +663,7 @@ private:
 
   mesh::CellType _cell_shape;
 
-  int _tdim, _space_dim, _value_size, _reference_value_size;
+  int _tdim, _space_dim;
 
   // List of sub-elements (if any)
   std::vector<std::shared_ptr<const FiniteElement>> _sub_elements;

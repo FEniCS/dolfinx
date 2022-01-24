@@ -12,7 +12,6 @@ import typing
 if typing.TYPE_CHECKING:
     from dolfinx.mesh import Mesh
 
-import warnings
 from functools import singledispatch
 
 import cffi
@@ -307,41 +306,32 @@ class Function(ufl.Coefficient):
             u = np.reshape(u, (-1, ))
         return u
 
-    def interpolate(self, u, cells: np.ndarray = None) -> None:
-        """Interpolate an expression"""
+    def interpolate(self, u: typing.Union[typing.Callable, Expression, Function],
+                    cells: np.ndarray = None) -> None:
+        """Interpolate an expression
+
+        Args:
+            u: The function, Expression or Function to interpolate
+            cells: The cells to interpolate over. If `None` then all
+                cells are interpolated over
+
+        """
         @singledispatch
-        def _interpolate(u):
+        def _interpolate(u, cells):
             try:
-                self._cpp_object.interpolate(u._cpp_object)
+                self._cpp_object.interpolate(u._cpp_object, cells)
             except AttributeError:
-                self._cpp_object.interpolate(u)
+                self._cpp_object.interpolate(u, cells)
 
         @_interpolate.register(int)
-        def _(u_ptr):
-            self._cpp_object.interpolate_ptr(u_ptr)
+        def _(u_ptr, cells):
+            self._cpp_object.interpolate_ptr(u_ptr, cells)
 
-        @_interpolate.register(Expression)
-        def _(expr: Expression, cells: np.ndarray = None):
-            if cells is None:
-                mesh = self.function_space.mesh
-                num_cells_local = mesh.topology.index_map(mesh.topology.dim).size_local
-                cells = np.arange(num_cells_local, dtype=np.int32)
-
-            # Interpolate Expression on set of cells
-            self._cpp_object.interpolate(expr._cpp_object, cells)
-
-        # Ignore cells as input if Expression
-        # FIXME: Should all interpolate functions support input cells?
-        if not isinstance(u, Expression):
-            if cells is not None:
-                warnings.warn("List of cells as input argument is ignored. "
-                              + "All cells local to process will be used in interpolation")
-            _interpolate(u)
-        else:
-            _interpolate(u, cells)
-
-    def compute_point_values(self):
-        return self._cpp_object.compute_point_values()
+        if cells is None:
+            mesh = self.function_space.mesh
+            map = mesh.topology.index_map(mesh.topology.dim)
+            cells = np.arange(map.size_local + map.num_ghosts, dtype=np.int32)
+        _interpolate(u, cells)
 
     def copy(self) -> Function:
         """Return a copy of the Function. The FunctionSpace is shared and the
@@ -541,31 +531,21 @@ class FunctionSpace(ufl.FunctionSpace):
         return dofmap.DofMap(self._cpp_object.dofmap)
 
     @property
-    def mesh(self) -> Mesh:
+    def mesh(self) -> _cpp.mesh.Mesh:
         """Return the mesh on which the function space is defined."""
         return self._cpp_object.mesh
 
-    def collapse(self, collapsed_dofs: bool = False):
+    def collapse(self) -> tuple[FunctionSpace, np.ndarray]:
         """Collapse a subspace and return a new function space and a map from
         new to old dofs.
 
-        *Arguments*
-            collapsed_dofs
-                Return the map from new to old dofs
-
-       *Returns*
-           FunctionSpace
-                The new function space.
-           dict
-                The map from new to old dofs (optional)
+        Returns:
+            The new function space and the map from new to old dofs
 
         """
         cpp_space, dofs = self._cpp_object.collapse()
         V = FunctionSpace(None, self.ufl_element(), cpp_space)
-        if collapsed_dofs:
-            return V, dofs
-        else:
-            return V
+        return V, dofs
 
     def tabulate_dof_coordinates(self) -> np.ndarray:
         return self._cpp_object.tabulate_dof_coordinates()

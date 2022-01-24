@@ -4,7 +4,7 @@
 #
 cmake_minimum_required(VERSION 3.16)
 
-set(PROJECT_NAME demo_poisson)
+set(PROJECT_NAME demo_interpolation-io)
 project(${PROJECT_NAME} LANGUAGES C CXX)
 
 # Set C++17 standard
@@ -16,18 +16,7 @@ if (NOT TARGET dolfinx)
   find_package(DOLFINX REQUIRED)
 endif()
 
-# Add target to compile UFL files
-if (PETSC_SCALAR_COMPLEX EQUAL 1)
-  set(SCALAR_TYPE "--scalar_type=double _Complex")
-endif()
-add_custom_command(
-  OUTPUT poisson.c
-  COMMAND ffcx ${CMAKE_CURRENT_SOURCE_DIR}/poisson.ufl ${SCALAR_TYPE}
-  VERBATIM DEPENDS poisson.ufl COMMENT "Compile poisson.ufl using FFCx")
-
-set(CMAKE_INCLUDE_CURRENT_DIR ON)
-
-add_executable(${PROJECT_NAME} main.cpp ${CMAKE_CURRENT_BINARY_DIR}/poisson.c)
+add_executable(${PROJECT_NAME} main.cpp)
 target_link_libraries(${PROJECT_NAME} dolfinx)
 
 # Do not throw error for 'multi-line comments' (these are typical in

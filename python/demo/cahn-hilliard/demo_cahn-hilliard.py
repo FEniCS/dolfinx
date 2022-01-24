@@ -271,37 +271,44 @@ file.write_mesh(mesh)
 # Step in time
 t = 0.0
 
-# Check if we are running on CI server and reduce run time
+#  Reduce run time if on test (CI) server
 if "CI" in os.environ.keys() or "GITHUB_ACTIONS" in os.environ.keys():
     T = 3 * dt
 else:
     T = 50 * dt
 
-u0.x.array[:] = u.x.array
+# Get the sub-space for c and the corresponding dofs in the mixed space
+# vector
+V0, dofs = ME.sub(0).collapse()
 
-
-# Prepare viewer for plotting solution during the computation
+# Prepare viewer for plotting the solution during the computation
 if have_pyvista:
-    topology, cell_types = plot.create_vtk_topology(mesh, mesh.topology.dim)
-    grid = pv.UnstructuredGrid(topology, cell_types, mesh.geometry.x)
-    grid.point_data["u"] = u.sub(0).compute_point_values().real
-    grid.set_active_scalars("u")
+    # Create a VTK 'mesh' with 'nodes' at the function dofs
+    topology, cell_types, x = plot.create_vtk_mesh(V0)
+    grid = pv.UnstructuredGrid(topology, cell_types, x)
+
+    # Set output data
+    grid.point_data["c"] = u.x.array[dofs].real
+    grid.set_active_scalars("c")
+
     p = pvqt.BackgroundPlotter(title="concentration", auto_update=True)
     p.add_mesh(grid, clim=[0, 1])
     p.view_xy(True)
     p.add_text(f"time: {t}", font_size=12, name="timelabel")
 
+c = u.sub(0)
+u0.x.array[:] = u.x.array
 while (t < T):
     t += dt
     r = solver.solve(u)
     print(f"Step {int(t/dt)}: num iterations: {r[0]}")
     u0.x.array[:] = u.x.array
-    file.write_function(u.sub(0), t)
+    file.write_function(c, t)
 
     # Update the plot window
     if have_pyvista:
         p.add_text(f"time: {t:.2e}", font_size=12, name="timelabel")
-        grid.point_data["u"] = u.sub(0).compute_point_values().real
+        grid.point_data["c"] = u.x.array[dofs].real
         p.app.processEvents()
 
 file.close()
@@ -309,8 +316,8 @@ file.close()
 # Update ghost entries and plot
 if have_pyvista:
     u.x.scatter_forward()
-    grid.point_data["u"] = u.sub(0).compute_point_values().real
+    grid.point_data["c"] = u.x.array[dofs].real
     screenshot = None
     if pv.OFF_SCREEN:
-        screenshot = "u.png"
+        screenshot = "c.png"
     pv.plot(grid, show_edges=True, screenshot=screenshot)

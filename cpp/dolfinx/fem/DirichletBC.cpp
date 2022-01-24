@@ -219,7 +219,7 @@ fem::locate_dofs_topological(const FunctionSpace& V, int dim,
   for (int i = 0; i < num_cell_entities; ++i)
   {
     entity_dofs.push_back(
-        dofmap->element_dof_layout->entity_closure_dofs(dim, i));
+        dofmap->element_dof_layout().entity_closure_dofs(dim, i));
   }
 
   // Get cell index and local entity index
@@ -228,12 +228,12 @@ fem::locate_dofs_topological(const FunctionSpace& V, int dim,
 
   std::vector<std::int32_t> dofs;
   dofs.reserve(entities.size()
-               * dofmap->element_dof_layout->num_entity_closure_dofs(dim));
+               * dofmap->element_dof_layout().num_entity_closure_dofs(dim));
 
   // V is a sub space we need to take the block size of the dofmap and
   // the index map into account as they can differ
   const int bs = dofmap->bs();
-  const int element_bs = dofmap->element_dof_layout->block_size();
+  const int element_bs = dofmap->element_dof_layout().block_size();
 
   // Iterate over marked facets
   if (element_bs == bs)
@@ -324,10 +324,7 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
   assert(dofmap1);
 
   // Check that dof layouts are the same
-  assert(dofmap0->element_dof_layout);
-  assert(dofmap1->element_dof_layout);
-  assert(*dofmap0->element_dof_layout.get()
-         == *dofmap1->element_dof_layout.get());
+  assert(dofmap0->element_dof_layout() == dofmap1->element_dof_layout());
 
   // Build vector of local dofs for each cell entity
   const int num_cell_entities
@@ -336,7 +333,7 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
   for (int i = 0; i < num_cell_entities; ++i)
   {
     entity_dofs.push_back(
-        dofmap0->element_dof_layout->entity_closure_dofs(dim, i));
+        dofmap0->element_dof_layout().entity_closure_dofs(dim, i));
   }
 
   const std::array bs = {dofmap0->bs(), dofmap1->bs()};
@@ -346,14 +343,16 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
       = find_local_entity_index(mesh, entities, dim);
 
   // Iterate over marked facets
-  const int element_bs = dofmap0->element_dof_layout->block_size();
+  const int element_bs = dofmap0->element_dof_layout().block_size();
   std::array<std::vector<std::int32_t>, 2> bc_dofs;
-  bc_dofs[0].reserve(entities.size()
-                     * dofmap0->element_dof_layout->num_entity_closure_dofs(dim)
-                     * element_bs);
-  bc_dofs[1].reserve(entities.size()
-                     * dofmap0->element_dof_layout->num_entity_closure_dofs(dim)
-                     * element_bs);
+  bc_dofs[0].reserve(
+      entities.size()
+      * dofmap0->element_dof_layout().num_entity_closure_dofs(dim)
+      * element_bs);
+  bc_dofs[1].reserve(
+      entities.size()
+      * dofmap0->element_dof_layout().num_entity_closure_dofs(dim)
+      * element_bs);
   for (auto [cell, entity_local_index] : entity_indices)
   {
     // Get cell dofmap
@@ -512,8 +511,8 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_geometrical(
   assert(dofmap1);
   const int bs1 = dofmap1->bs();
 
-  const int element_bs = dofmap0->element_dof_layout->block_size();
-  assert(element_bs == dofmap1->element_dof_layout->block_size());
+  const int element_bs = dofmap0->element_dof_layout().block_size();
+  assert(element_bs == dofmap1->element_dof_layout().block_size());
 
   // Iterate over cells
   const mesh::Topology& topology = mesh->topology();

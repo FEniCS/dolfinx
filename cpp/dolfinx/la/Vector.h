@@ -26,14 +26,16 @@ class Vector
 public:
   /// The value type
   using value_type = T;
-  
-  /// The allocator type 
+
+  /// The allocator type
   using allocator_type = Allocator;
 
   /// Create a distributed vector
   Vector(const std::shared_ptr<const common::IndexMap>& map, int bs,
          const Allocator& alloc = Allocator())
       : _map(map), _bs(bs),
+        _buffer_send_fwd(bs * map->scatter_fwd_indices().array().size()),
+        _buffer_recv_fwd(bs * map->num_ghosts()),
         _x(bs * (map->size_local() + map->num_ghosts()), alloc)
   {
     if (bs == 1)
@@ -90,14 +92,12 @@ public:
     // Pack send buffer
     const std::vector<std::int32_t>& indices
         = _map->scatter_fwd_indices().array();
-    _buffer_send_fwd.resize(_bs * indices.size());
     for (std::size_t i = 0; i < indices.size(); ++i)
     {
       std::copy_n(std::next(_x.cbegin(), _bs * indices[i]), _bs,
                   std::next(_buffer_send_fwd.begin(), _bs * i));
     }
 
-    _buffer_recv_fwd.resize(_bs * _map->num_ghosts());
     _map->scatter_fwd_begin(xtl::span<const T>(_buffer_send_fwd), _datatype,
                             _request, xtl::span<T>(_buffer_recv_fwd));
   }
@@ -140,7 +140,6 @@ public:
                                _map->num_ghosts() * _bs);
     const std::vector<std::int32_t>& scatter_fwd_ghost_pos
         = _map->scatter_fwd_ghost_positions();
-    _buffer_recv_fwd.resize(_bs * scatter_fwd_ghost_pos.size());
     for (std::size_t i = 0; i < scatter_fwd_ghost_pos.size(); ++i)
     {
       const int pos = scatter_fwd_ghost_pos[i];
@@ -148,8 +147,7 @@ public:
                   std::next(_buffer_recv_fwd.begin(), _bs * pos));
     }
 
-    // Resize receive buffer and begin scatter
-    _buffer_send_fwd.resize(_bs * _map->scatter_fwd_indices().array().size());
+    // begin scatter
     _map->scatter_rev_begin(xtl::span<const T>(_buffer_recv_fwd), _datatype,
                             _request, xtl::span<T>(_buffer_send_fwd));
   }
@@ -250,6 +248,9 @@ public:
 
   /// Get local part of the vector
   xtl::span<T> mutable_array() { return xtl::span(_x); }
+
+  /// Get the allocator associated with the container
+  constexpr allocator_type allocator() const { return _x.get_allocator(); }
 
 private:
   // Map describing the data layout
