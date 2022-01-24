@@ -22,6 +22,8 @@
 //    u_D &= 1 + x^2 + 2y^2, \\
 //    f = -6
 //
+// .. note:: The demo ilustrates the use of a unpreconditioned CG solver,
+//           however for a real-world application a precondtioner might be
 
 #include "poisson.h"
 #include <cmath>
@@ -172,7 +174,7 @@ int main(int argc, char* argv[])
     {
       // Update ghost values and zero y
       x.scatter_fwd();
-      y.set(0);
+      y.set(0.0);
 
       // Update coefficient ui (just copy data from x to ui)
       std::copy(x.array().begin(), x.array().end(),
