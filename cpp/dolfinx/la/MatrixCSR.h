@@ -48,8 +48,7 @@ public:
                            const T* data)>
   mat_set_values(MatrixCSR& A)
   {
-    return [&A](int nr, const int* r, int nc, const int* c, const T* data)
-    {
+    return [&A](int nr, const int* r, int nc, const int* c, const T* data) {
       A.set(tcb::span<const T>(data, nr * nc), tcb::span<const int>(r, nr),
             tcb::span<const int>(c, nc));
       return 0;
@@ -64,8 +63,7 @@ public:
                            const T* data)>
   mat_add_values(MatrixCSR& A)
   {
-    return [&A](int nr, const int* r, int nc, const int* c, const T* data)
-    {
+    return [&A](int nr, const int* r, int nc, const int* c, const T* data) {
       A.add(tcb::span<const T>(data, nr * nc), tcb::span<const int>(r, nr),
             tcb::span<const int>(c, nc));
       return 0;
@@ -218,16 +216,20 @@ public:
   MatrixCSR(MatrixCSR&& A) = default;
 
   /// Set all non-zero local entries to a value
+  /// including entries in ghost rows
   /// @param[in] x The value to set non-zero matrix entries to
-  /// @todo This should probably also set ghost rows
-  void set(T x) { std::fill_n(_data.begin(), _index_maps[0]->size_local(), x); }
+  void set(T x) { std::fill(_data.begin(), _data.end(), x); }
 
   /// Set values in the matrix
   /// @note Only entries included in the sparsity pattern used to
-  /// initialize the matrix can be set
+  ///       initialize the matrix can be set
   /// @note All indices are local to the calling MPI rank
+  ///       and entries cannot be set in ghost rows.
+  /// @note This should be called after `finalize`. Using before `finalize` will
+  ///       set the values correctly, but incoming values may get added to them
+  ///       during a subsequent finalize operation.
   /// @param[in] x The `m` by `n` dense block of values (row-major) to
-  /// set in the matrix
+  ///       set in the matrix
   /// @param[in] rows The row indices of `x`
   /// @param[in] cols The column indices of `x`
   void set(const xtl::span<const T>& x,
@@ -235,41 +237,41 @@ public:
            const xtl::span<const std::int32_t>& cols)
   {
     assert(x.size() == rows.size() * cols.size());
-    const std::int32_t local_size0 = _index_maps[0]->size_local();
-    const std::int32_t num_ghosts0 = _index_maps[0]->num_ghosts();
+    const std::int32_t max_row = _index_maps[0]->size_local() - 1;
     for (std::size_t r = 0; r < rows.size(); ++r)
     {
       // Columns indices for row
       std::int32_t row = rows[r];
+      if (row > max_row)
+        throw std::runtime_error("Local row out of range");
 
       // Current data row
       const T* xr = x.data() + r * cols.size();
 
-      if (row < local_size0)
+      auto cit0 = std::next(_cols.begin(), _row_ptr[row]);
+      auto cit1 = std::next(_cols.begin(), _row_ptr[row + 1]);
+      for (std::size_t c = 0; c < cols.size(); ++c)
       {
-        auto cit0 = std::next(_cols.begin(), _row_ptr[row]);
-        auto cit1 = std::next(_cols.begin(), _row_ptr[row + 1]);
-        for (std::size_t c = 0; c < cols.size(); ++c)
-        {
-          // Find position of column index
-          auto it = std::lower_bound(cit0, cit1, cols[c]);
-          assert(it != cit1);
-          assert(*it == cols[c]);
-          std::size_t d = std::distance(_cols.begin(), it);
-          _data[d] = xr[c];
-        }
+        // Find position of column index
+        auto it = std::lower_bound(cit0, cit1, cols[c]);
+        assert(it != cit1);
+        assert(*it == cols[c]);
+        std::size_t d = std::distance(_cols.begin(), it);
+        _data[d] = xr[c];
       }
-      else
-        throw std::runtime_error("Local row out of range");
     }
   }
 
   /// Accumulate values in the matrix
   /// @note Only entries included in the sparsity pattern used to
-  /// initialize the matrix can be accumulated in to
-  /// @note All indices are local to the calling MPI rank
+  ///       initialize the matrix can be accumulated in to
+  /// @note All indices are local to the calling MPI rank and entries may go
+  ///       into ghost rows.
+  /// @note Use `finalize` after all entries have been added to send ghost rows
+  ///       to owners. Adding more entries after `finalize` is allowed, but
+  ///       another call to `finalize` will then be required.
   /// @param[in] x The `m` by `n` dense block of values (row-major) to
-  /// add to the matrix
+  ///       add to the matrix
   /// @param[in] rows The row indices of `x`
   /// @param[in] cols The column indices of `x`
   void add(const xtl::span<const T>& x,
@@ -277,32 +279,29 @@ public:
            const xtl::span<const std::int32_t>& cols)
   {
     assert(x.size() == rows.size() * cols.size());
-    const std::int32_t local_size0 = _index_maps[0]->size_local();
-    const std::int32_t num_ghosts0 = _index_maps[0]->num_ghosts();
+    const std::int32_t max_row
+        = _index_maps[0]->size_local() + _index_maps[0]->num_ghosts() - 1;
     for (std::size_t r = 0; r < rows.size(); ++r)
     {
-      // Columns indices for row
       std::int32_t row = rows[r];
+      if (row > max_row)
+        throw std::runtime_error("Local row out of range");
 
       // Current data row
       const T* xr = x.data() + r * cols.size();
 
-      if (row < local_size0 + num_ghosts0)
+      // Columns indices for row
+      auto cit0 = std::next(_cols.begin(), _row_ptr[row]);
+      auto cit1 = std::next(_cols.begin(), _row_ptr[row + 1]);
+      for (std::size_t c = 0; c < cols.size(); ++c)
       {
-        auto cit0 = std::next(_cols.begin(), _row_ptr[row]);
-        auto cit1 = std::next(_cols.begin(), _row_ptr[row + 1]);
-        for (std::size_t c = 0; c < cols.size(); ++c)
-        {
-          // Find position of column index
-          auto it = std::lower_bound(cit0, cit1, cols[c]);
-          assert(it != cit1);
-          assert(*it == cols[c]);
-          std::size_t d = std::distance(_cols.begin(), it);
-          _data[d] += xr[c];
-        }
+        // Find position of column index
+        auto it = std::lower_bound(cit0, cit1, cols[c]);
+        assert(it != cit1);
+        assert(*it == cols[c]);
+        std::size_t d = std::distance(_cols.begin(), it);
+        _data[d] += xr[c];
       }
-      else
-        throw std::runtime_error("Local row out of range");
     }
   }
 
