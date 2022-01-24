@@ -21,10 +21,10 @@ SparsityPattern::SparsityPattern(
     MPI_Comm comm,
     const std::array<std::shared_ptr<const common::IndexMap>, 2>& maps,
     const std::array<int, 2>& bs)
-    : _comm(comm), _index_maps(maps), _bs(bs)
+    : _comm(comm), _index_maps(maps), _bs(bs),
+      _row_cache(maps[0]->size_local() + maps[0]->num_ghosts())
 {
   assert(maps[0]);
-  _row_cache.resize(maps[0]->size_local() + maps[0]->num_ghosts());
 }
 //-----------------------------------------------------------------------------
 SparsityPattern::SparsityPattern(
@@ -157,23 +157,22 @@ void SparsityPattern::insert(const xtl::span<const std::int32_t>& rows,
   }
 
   assert(_index_maps[0]);
-  const std::int32_t local_size0 = _index_maps[0]->size_local();
-  const std::int32_t size0 = local_size0 + _index_maps[0]->num_ghosts();
+  const std::int32_t max_row
+      = _index_maps[0]->size_local() + _index_maps[0]->num_ghosts() - 1;
 
   for (std::int32_t row : rows)
   {
-    assert(row >= 0);
-    if (row < size0)
-      _row_cache[row].insert(_row_cache[row].end(), cols.begin(), cols.end());
-    else
+    if (row > max_row or row < 0)
     {
       throw std::runtime_error(
           "Cannot insert rows that do not exist in the IndexMap.");
     }
+
+    _row_cache[row].insert(_row_cache[row].end(), cols.begin(), cols.end());
   }
 }
 //-----------------------------------------------------------------------------
-void SparsityPattern::insert_diagonal(const std::vector<int32_t>& rows)
+void SparsityPattern::insert_diagonal(const xtl::span<const int32_t>& rows)
 {
   if (_graph)
   {
@@ -182,19 +181,18 @@ void SparsityPattern::insert_diagonal(const std::vector<int32_t>& rows)
   }
 
   assert(_index_maps[0]);
-  const std::int32_t local_size0 = _index_maps[0]->size_local();
-  const std::int32_t size0 = local_size0 + _index_maps[0]->num_ghosts();
+  const std::int32_t max_row
+      = _index_maps[0]->size_local() + _index_maps[0]->num_ghosts() - 1;
 
   for (std::int32_t row : rows)
   {
-    assert(row >= 0);
-    if (row < size0)
-      _row_cache[row].push_back(row);
-    else
+    if (row > max_row or row < 0)
     {
       throw std::runtime_error(
           "Cannot insert rows that do not exist in the IndexMap.");
     }
+
+    _row_cache[row].push_back(row);
   }
 }
 //-----------------------------------------------------------------------------
@@ -398,14 +396,14 @@ std::int64_t SparsityPattern::num_nonzeros() const
   return _graph->array().size();
 }
 //-----------------------------------------------------------------------------
-std::int32_t SparsityPattern::nnz_diag(int row) const
+std::int32_t SparsityPattern::nnz_diag(std::int32_t row) const
 {
   if (!_graph)
     throw std::runtime_error("Sparsity pattern has not be assembled.");
   return _off_diagonal_offset[row];
 }
 //-----------------------------------------------------------------------------
-std::int32_t SparsityPattern::nnz_off_diag(int row) const
+std::int32_t SparsityPattern::nnz_off_diag(std::int32_t row) const
 {
   if (!_graph)
     throw std::runtime_error("Sparsity pattern has not be assembled.");

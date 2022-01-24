@@ -77,7 +77,7 @@ public:
   /// Insert non-zero locations on the diagonal
   /// @param[in] rows The rows in local (process-wise) indices. The
   /// indices must exist in the row IndexMap.
-  void insert_diagonal(const std::vector<std::int32_t>& rows);
+  void insert_diagonal(const xtl::span<const std::int32_t>& rows);
 
   /// Finalize sparsity pattern and communicate off-process entries
   void assemble();
@@ -96,7 +96,7 @@ public:
   /// including ghosts
   std::vector<std::int64_t> column_indices() const;
 
-  /// Compute IndexMap for columns after SparsityPattern assembly
+  /// Compute IndexMap for columns in this SparsityPattern after assembly
   /// @return IndexMap for all non-zero columns on this process,
   /// including ghosts
   common::IndexMap column_index_map() const;
@@ -108,10 +108,10 @@ public:
   std::int64_t num_nonzeros() const;
 
   /// Number of non-zeros in owned columns (diagonal block) on a given row
-  std::int32_t nnz_diag(int row) const;
+  std::int32_t nnz_diag(std::int32_t row) const;
 
   /// Number of non-zeros in unowned columns (off-diagonal block) on a given row
-  std::int32_t nnz_off_diag(int row) const;
+  std::int32_t nnz_off_diag(std::int32_t row) const;
 
   /// Sparsity pattern graph. Uses local indices for the columns.
   const graph::AdjacencyList<std::int32_t>& graph() const;
