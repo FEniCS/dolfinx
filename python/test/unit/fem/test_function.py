@@ -10,21 +10,22 @@ import importlib
 import cffi
 import numpy as np
 import pytest
+
 import ufl
 from dolfinx.fem import (Function, FunctionSpace, TensorFunctionSpace,
                          VectorFunctionSpace)
-from dolfinx.generation import UnitCubeMesh
 from dolfinx.geometry import (BoundingBoxTree, compute_colliding_cells,
                               compute_collisions)
-from dolfinx.mesh import create_mesh
+from dolfinx.mesh import create_mesh, create_unit_cube
 from dolfinx_utils.test.skips import skip_if_complex, skip_in_parallel
+
 from mpi4py import MPI
 from petsc4py import PETSc
 
 
 @pytest.fixture
 def mesh():
-    return UnitCubeMesh(MPI.COMM_WORLD, 3, 3, 3)
+    return create_unit_cube(MPI.COMM_WORLD, 3, 3, 3)
 
 
 @pytest.fixture
@@ -50,21 +51,13 @@ def test_name_argument(W):
     assert str(v) == "v"
 
 
-def test_compute_point_values(V, W, mesh):
+def test_copy(V):
     u = Function(V)
-    v = Function(W)
-    with u.vector.localForm() as u_local, v.vector.localForm() as v_local:
-        u_local.set(1.0)
-        v_local.set(1.0)
-    u_values = u.compute_point_values()
-    v_values = v.compute_point_values()
-
-    u_ones = np.ones_like(u_values, dtype=np.float64)
-    assert np.all(np.isclose(u_values, u_ones))
-    v_ones = np.ones_like(v_values, dtype=np.float64)
-    assert np.all(np.isclose(v_values, v_ones))
-    u_values2 = u.compute_point_values()
-    assert all(u_values == u_values2)
+    u.interpolate(lambda x: x[0] + 2 * x[1])
+    v = u.copy()
+    assert np.allclose(u.x.array, v.x.array)
+    u.x.array[:] = 1
+    assert not np.allclose(u.x.array, v.x.array)
 
 
 def test_assign(V, W):
@@ -73,14 +66,10 @@ def test_assign(V, W):
         u0 = Function(V_)
         u1 = Function(V_)
         u2 = Function(V_)
-        with u.vector.localForm() as loc:
-            loc.set(1)
-        with u0.vector.localForm() as loc:
-            loc.set(2)
-        with u1.vector.localForm() as loc:
-            loc.set(3)
-        with u2.vector.localForm() as loc:
-            loc.set(4)
+        u.x.array[:] = 1
+        u0.x.array[:] = 2
+        u1.x.array[:] = 3
+        u2.x.array[:] = 4
 
         # Test assign + scale
         uu = Function(V_)
@@ -118,9 +107,6 @@ def test_eval(V, W, Q, mesh):
     u2 = Function(W)
     u3 = Function(Q)
 
-    def e1(x):
-        return x[0] + x[1] + x[2]
-
     def e2(x):
         values = np.empty((3, x.shape[1]))
         values[0] = x[0] + x[1] + x[2]
@@ -141,7 +127,7 @@ def test_eval(V, W, Q, mesh):
         values[8] = -x[2]
         return values
 
-    u1.interpolate(e1)
+    u1.interpolate(lambda x: x[0] + x[1] + x[2])
     u2.interpolate(e2)
     u3.interpolate(e3)
 
@@ -181,14 +167,12 @@ def test_interpolation_mismatch_rank1(W):
 
 
 def test_mixed_element_interpolation():
-    def f(x):
-        return np.ones(2, x.shape[1])
-    mesh = UnitCubeMesh(MPI.COMM_WORLD, 3, 3, 3)
+    mesh = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3)
     el = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
     V = FunctionSpace(mesh, ufl.MixedElement([el, el]))
     u = Function(V)
     with pytest.raises(RuntimeError):
-        u.interpolate(f)
+        u.interpolate(lambda x: np.ones(2, x.shape[1]))
 
 
 def test_interpolation_rank0(V):
@@ -203,16 +187,14 @@ def test_interpolation_rank0(V):
     f.t = 1.0
     w = Function(V)
     w.interpolate(f.eval)
-    with w.vector.localForm() as x:
-        assert (x[:] == 1.0).all()
+    assert (w.x.array[:] == 1.0).all()
 
     num_vertices = V.mesh.topology.index_map(0).size_global
     assert np.isclose(w.vector.norm(PETSc.NormType.N1) - num_vertices, 0)
 
     f.t = 2.0
     w.interpolate(f.eval)
-    with w.vector.localForm() as x:
-        assert (x[:] == 2.0).all()
+    assert (w.x.array[:] == 2.0).all()
 
 
 def test_interpolation_rank1(W):
@@ -266,11 +248,8 @@ def test_cffi_expression(V):
     f1 = Function(V)
     f1.interpolate(int(eval_ptr))
 
-    def expr_eval2(x):
-        return x[0] + x[1]
-
     f2 = Function(V)
-    f2.interpolate(expr_eval2)
+    f2.interpolate(lambda x: x[0] + x[1])
     assert (f1.vector - f2.vector).norm() < 1.0e-12
 
 

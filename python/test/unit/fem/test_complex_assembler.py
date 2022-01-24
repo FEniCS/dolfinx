@@ -7,13 +7,15 @@
 
 import numpy as np
 import pytest
+
 import ufl
 from dolfinx.fem import (Function, FunctionSpace, assemble_matrix,
-                         assemble_vector)
-from dolfinx.generation import UnitSquareMesh
+                         assemble_vector, form)
+from dolfinx.mesh import create_unit_square
+from ufl import dx, grad, inner
+
 from mpi4py import MPI
 from petsc4py import PETSc
-from ufl import dx, grad, inner
 
 pytestmark = pytest.mark.skipif(
     not np.issubdtype(PETSc.ScalarType, np.complexfloating), reason="Only works in complex mode.")
@@ -22,18 +24,16 @@ pytestmark = pytest.mark.skipif(
 def test_complex_assembly():
     """Test assembly of complex matrices and vectors"""
 
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 10, 10)
+    mesh = create_unit_square(MPI.COMM_WORLD, 10, 10)
     P2 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 2)
     V = FunctionSpace(mesh, P2)
-
     u = ufl.TrialFunction(V)
     v = ufl.TestFunction(V)
-
     g = -2 + 3.0j
     j = 1.0j
 
-    a_real = inner(u, v) * dx
-    L1 = inner(g, v) * dx
+    a_real = form(inner(u, v) * dx)
+    L1 = form(inner(g, v) * dx)
 
     b = assemble_vector(L1)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
@@ -47,9 +47,9 @@ def test_complex_assembly():
 
     x = ufl.SpatialCoordinate(mesh)
 
-    a_imag = j * inner(u, v) * dx
+    a_imag = form(j * inner(u, v) * dx)
     f = 1j * ufl.sin(2 * np.pi * x[0])
-    L0 = inner(f, v) * dx
+    L0 = form(inner(f, v) * dx)
     A = assemble_matrix(a_imag)
     A.assemble()
     A1_norm = A.norm(PETSc.NormType.FROBENIUS)
@@ -59,9 +59,9 @@ def test_complex_assembly():
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     b1_norm = b.norm(PETSc.NormType.N2)
 
-    a_complex = (1 + j) * inner(u, v) * dx
+    a_complex = form((1 + j) * inner(u, v) * dx)
     f = ufl.sin(2 * np.pi * x[0])
-    L2 = inner(f, v) * dx
+    L2 = form(inner(f, v) * dx)
     A = assemble_matrix(a_complex)
     A.assemble()
     A2_norm = A.norm(PETSc.NormType.FROBENIUS)
@@ -74,12 +74,10 @@ def test_complex_assembly():
 
 def test_complex_assembly_solve():
     """Solve a positive definite helmholtz problem and verify solution
-    with the method of manufactured solutions
-
-    """
+    with the method of manufactured solutions"""
 
     degree = 3
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 20, 20)
+    mesh = create_unit_square(MPI.COMM_WORLD, 20, 20)
     P = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), degree)
     V = FunctionSpace(mesh, P)
 
@@ -90,11 +88,10 @@ def test_complex_assembly_solve():
     f = (1. + 1j) * A * ufl.cos(2 * np.pi * x[0]) * ufl.cos(2 * np.pi * x[1])
 
     # Variational problem
-    u = ufl.TrialFunction(V)
-    v = ufl.TestFunction(V)
+    u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     C = 1.0 + 1.0j
-    a = C * inner(grad(u), grad(v)) * dx + C * inner(u, v) * dx
-    L = inner(f, v) * dx
+    a = form(C * inner(grad(u), grad(v)) * dx + C * inner(u, v) * dx)
+    L = form(inner(f, v) * dx)
 
     # Assemble
     A = assemble_matrix(a)

@@ -37,7 +37,7 @@ namespace
 std::int64_t get_padded_width(const fem::FiniteElement& e)
 {
   const int width = e.value_size();
-  const int rank = e.value_rank();
+  const int rank = e.value_shape().size();
   if (rank == 1 and width == 2)
     return 3;
   else if (rank == 2 and width == 4)
@@ -62,7 +62,7 @@ std::vector<Scalar> _get_point_data_values(const fem::Function<Scalar>& u)
   // FIXME: Unpick the below code for the new layout of data from
   //        GenericFunction::compute_vertex_values
   std::vector<Scalar> _data_values(width * num_local_points, 0.0);
-  const int value_rank = u.function_space()->element()->value_rank();
+  const int value_rank = u.function_space()->element()->value_shape().size();
   if (value_rank > 0)
   {
     // Transpose vector/tensor data arrays
@@ -93,7 +93,7 @@ std::vector<Scalar> _get_cell_data_values(const fem::Function<Scalar>& u)
   assert(u.function_space()->dofmap());
   const auto mesh = u.function_space()->mesh();
   const int value_size = u.function_space()->element()->value_size();
-  const int value_rank = u.function_space()->element()->value_rank();
+  const int value_rank = u.function_space()->element()->value_shape().size();
 
   // Allocate memory for function values at cell centres
   const int tdim = mesh->topology().dim();
@@ -105,8 +105,7 @@ std::vector<Scalar> _get_cell_data_values(const fem::Function<Scalar>& u)
   std::vector<std::int32_t> dof_set;
   dof_set.reserve(local_size);
   const auto dofmap = u.function_space()->dofmap();
-  assert(dofmap->element_dof_layout);
-  const int ndofs = dofmap->element_dof_layout->num_dofs();
+  const int ndofs = dofmap->element_dof_layout().num_dofs();
   const int bs = dofmap->bs();
   assert(ndofs * bs == value_size);
 

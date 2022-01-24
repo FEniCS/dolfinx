@@ -7,26 +7,25 @@
 
 
 import ufl
-from dolfinx.fem import VectorFunctionSpace, assemble_matrix
-from dolfinx.generation import UnitSquareMesh
+from dolfinx.fem import VectorFunctionSpace, assemble_matrix, form
+from dolfinx.mesh import create_unit_square
+
 from mpi4py import MPI
 
 
 def test_vector_assemble_matrix_exterior():
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 3, 3)
+    mesh = create_unit_square(MPI.COMM_WORLD, 3, 3)
     V = VectorFunctionSpace(mesh, ("Lagrange", 1))
-
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
-    a = ufl.inner(u, v) * ufl.ds
+    a = form(ufl.inner(u, v) * ufl.ds)
     A = assemble_matrix(a)
     A.assemble()
 
 
 def test_vector_assemble_matrix_interior():
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 3, 3)
+    mesh = create_unit_square(MPI.COMM_WORLD, 3, 3)
     V = VectorFunctionSpace(mesh, ("Lagrange", 1))
-
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
-    a = ufl.inner(ufl.jump(u), ufl.jump(v)) * ufl.dS
+    a = form(ufl.inner(ufl.jump(u), ufl.jump(v)) * ufl.dS)
     A = assemble_matrix(a)
     A.assemble()

@@ -7,19 +7,23 @@
 import math
 import sys
 
-import basix
 import numpy as np
 import pytest
+
+import basix
 from dolfinx import cpp as _cpp
-from dolfinx.cpp.mesh import is_simplex, partition_cells_graph
-from dolfinx.fem import assemble_scalar
-from dolfinx.generation import (BoxMesh, DiagonalType, RectangleMesh,
-                                UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh)
-from dolfinx.mesh import CellType, GhostMode
+from dolfinx.cpp.mesh import (create_cell_partitioner, entities_to_geometry,
+                              is_simplex)
+from dolfinx.fem import assemble_scalar, form
+from dolfinx.mesh import (CellType, DiagonalType, GhostMode, create_box,
+                          create_rectangle, create_submesh, create_unit_cube,
+                          create_unit_interval, create_unit_square,
+                          locate_entities, locate_entities_boundary)
 from dolfinx_utils.test.fixtures import tempdir
 from dolfinx_utils.test.skips import skip_in_parallel
-from mpi4py import MPI
 from ufl import dx
+
+from mpi4py import MPI
 
 assert (tempdir)
 
@@ -27,7 +31,7 @@ assert (tempdir)
 @pytest.fixture
 def mesh1d():
     """Create 1D mesh with degenerate cell"""
-    mesh1d = UnitIntervalMesh(MPI.COMM_WORLD, 4)
+    mesh1d = create_unit_interval(MPI.COMM_WORLD, 4)
     i1 = np.where((mesh1d.geometry.x == (0.75, 0, 0)).all(axis=1))[0][0]
     i2 = np.where((mesh1d.geometry.x == (1, 0, 0)).all(axis=1))[0][0]
     mesh1d.geometry.x[i2] = mesh1d.geometry.x[i1]
@@ -36,7 +40,7 @@ def mesh1d():
 
 def mesh_1d():
     """Create 1D mesh with degenerate cell"""
-    mesh1d = UnitIntervalMesh(MPI.COMM_WORLD, 4)
+    mesh1d = create_unit_interval(MPI.COMM_WORLD, 4)
     i1 = np.where((mesh1d.geometry.x == (0.75, 0, 0)).all(axis=1))[0][0]
     i2 = np.where((mesh1d.geometry.x == (1, 0, 0)).all(axis=1))[0][0]
     mesh1d.geometry.x[i2] = mesh1d.geometry.x[i1]
@@ -46,11 +50,11 @@ def mesh_1d():
 @pytest.fixture
 def mesh2d():
     """Create 2D mesh with one equilateral triangle"""
-    mesh2d = RectangleMesh(
-        MPI.COMM_WORLD, [np.array([0.0, 0.0, 0.0]),
-                         np.array([1., 1., 0.0])], [1, 1],
+    mesh2d = create_rectangle(
+        MPI.COMM_WORLD, [np.array([0.0, 0.0]),
+                         np.array([1., 1.])], [1, 1],
         CellType.triangle, GhostMode.none,
-        partition_cells_graph, DiagonalType.left)
+        create_cell_partitioner(), DiagonalType.left)
     i1 = np.where((mesh2d.geometry.x
                    == (1, 1, 0)).all(axis=1))[0][0]
     mesh2d.geometry.x[i1, :2] += 0.5 * (math.sqrt(3.0) - 1.0)
@@ -59,11 +63,11 @@ def mesh2d():
 
 def mesh_2d():
     """Create 2D mesh with one equilateral triangle"""
-    mesh2d = RectangleMesh(
-        MPI.COMM_WORLD, [np.array([0.0, 0.0, 0.0]),
-                         np.array([1., 1., 0.0])], [1, 1],
+    mesh2d = create_rectangle(
+        MPI.COMM_WORLD, [np.array([0.0, 0.0]),
+                         np.array([1., 1.])], [1, 1],
         CellType.triangle, GhostMode.none,
-        partition_cells_graph, DiagonalType.left)
+        create_cell_partitioner(), DiagonalType.left)
     i1 = np.where((mesh2d.geometry.x
                    == (1, 1, 0)).all(axis=1))[0][0]
     mesh2d.geometry.x[i1, :2] += 0.5 * (math.sqrt(3.0) - 1.0)
@@ -73,7 +77,7 @@ def mesh_2d():
 @pytest.fixture
 def mesh3d():
     """Create 3D mesh with regular tetrahedron and degenerate cells"""
-    mesh3d = UnitCubeMesh(MPI.COMM_WORLD, 1, 1, 1)
+    mesh3d = create_unit_cube(MPI.COMM_WORLD, 1, 1, 1)
     i1 = np.where((mesh3d.geometry.x == (0, 1, 0)).all(axis=1))[0][0]
     i2 = np.where((mesh3d.geometry.x == (1, 1, 1)).all(axis=1))[0][0]
     mesh3d.geometry.x[i1][0] = 1.0
@@ -83,7 +87,7 @@ def mesh3d():
 
 def mesh_3d():
     """Create 3D mesh with regular tetrahedron and degenerate cells"""
-    mesh3d = UnitCubeMesh(MPI.COMM_WORLD, 1, 1, 1)
+    mesh3d = create_unit_cube(MPI.COMM_WORLD, 1, 1, 1)
     i1 = np.where((mesh3d.geometry.x == (0, 1, 0)).all(axis=1))[0][0]
     i2 = np.where((mesh3d.geometry.x == (1, 1, 1)).all(axis=1))[0][0]
     mesh3d.geometry.x[i1][0] = 1.0
@@ -93,7 +97,7 @@ def mesh_3d():
 
 @pytest.fixture
 def c0(mesh3d):
-    """Original tetrahedron from UnitCubeMesh(MPI.COMM_WORLD, 1, 1, 1)"""
+    """Original tetrahedron from create_unit_cube(MPI.COMM_WORLD, 1, 1, 1)"""
     return mesh3d, mesh3d.topology.dim, 0
 
 
@@ -111,37 +115,37 @@ def c5(mesh3d):
 
 @pytest.fixture
 def interval():
-    return UnitIntervalMesh(MPI.COMM_WORLD, 18)
+    return create_unit_interval(MPI.COMM_WORLD, 18)
 
 
 @pytest.fixture
 def square():
-    return UnitSquareMesh(MPI.COMM_WORLD, 5, 5)
+    return create_unit_square(MPI.COMM_WORLD, 5, 5)
 
 
 @pytest.fixture
 def rectangle():
-    return RectangleMesh(
-        MPI.COMM_WORLD, [np.array([0.0, 0.0, 0.0]),
-                         np.array([2.0, 2.0, 0.0])], [5, 5],
+    return create_rectangle(
+        MPI.COMM_WORLD, [np.array([0.0, 0.0]),
+                         np.array([2.0, 2.0])], [5, 5],
         CellType.triangle, GhostMode.none)
 
 
 @pytest.fixture
 def cube():
-    return UnitCubeMesh(MPI.COMM_WORLD, 3, 3, 3)
+    return create_unit_cube(MPI.COMM_WORLD, 3, 3, 3)
 
 
 @pytest.fixture
 def box():
-    return BoxMesh(MPI.COMM_WORLD, [np.array([0, 0, 0]),
-                                    np.array([2, 2, 2])], [2, 2, 5], CellType.tetrahedron,
-                   GhostMode.none)
+    return create_box(MPI.COMM_WORLD, [np.array([0, 0, 0]),
+                                       np.array([2, 2, 2])], [2, 2, 5], CellType.tetrahedron,
+                      GhostMode.none)
 
 
 @pytest.fixture
 def mesh():
-    return UnitSquareMesh(MPI.COMM_WORLD, 3, 3)
+    return create_unit_square(MPI.COMM_WORLD, 3, 3)
 
 
 def new_comm(comm):
@@ -173,35 +177,35 @@ def test_UFLDomain(interval, square, rectangle, cube, box):
     _check_ufl_domain(box)
 
 
-def test_UnitSquareMeshDistributed():
+def test_create_unit_squareDistributed():
     """Create mesh of unit square."""
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 5, 7)
+    mesh = create_unit_square(MPI.COMM_WORLD, 5, 7)
     assert mesh.topology.index_map(0).size_global == 48
     assert mesh.topology.index_map(2).size_global == 70
     assert mesh.geometry.dim == 2
     assert mesh.comm.allreduce(mesh.topology.index_map(0).size_local, MPI.SUM) == 48
 
 
-def test_UnitSquareMeshLocal():
+def test_create_unit_squareLocal():
     """Create mesh of unit square."""
-    mesh = UnitSquareMesh(MPI.COMM_SELF, 5, 7)
+    mesh = create_unit_square(MPI.COMM_SELF, 5, 7)
     assert mesh.topology.index_map(0).size_global == 48
     assert mesh.topology.index_map(2).size_global == 70
     assert mesh.geometry.dim == 2
 
 
-def test_UnitCubeMeshDistributed():
+def test_create_unit_cubeDistributed():
     """Create mesh of unit cube."""
-    mesh = UnitCubeMesh(MPI.COMM_WORLD, 5, 7, 9)
+    mesh = create_unit_cube(MPI.COMM_WORLD, 5, 7, 9)
     assert mesh.topology.index_map(0).size_global == 480
     assert mesh.topology.index_map(3).size_global == 1890
     assert mesh.geometry.dim == 3
     assert mesh.comm.allreduce(mesh.topology.index_map(0).size_local, MPI.SUM) == 480
 
 
-def test_UnitCubeMeshLocal():
+def test_create_unit_cube_local():
     """Create mesh of unit cube."""
-    mesh = UnitCubeMesh(MPI.COMM_SELF, 5, 7, 9)
+    mesh = create_unit_cube(MPI.COMM_SELF, 5, 7, 9)
     assert mesh.topology.index_map(0).size_global == 480
     assert mesh.topology.index_map(0).size_local == 480
     assert mesh.topology.index_map(3).size_global == 1890
@@ -209,32 +213,32 @@ def test_UnitCubeMeshLocal():
     assert mesh.geometry.dim == 3
 
 
-def test_UnitQuadMesh():
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 5, 7, CellType.quadrilateral)
+def test_create_unit_square_quads():
+    mesh = create_unit_square(MPI.COMM_WORLD, 5, 7, CellType.quadrilateral)
     assert mesh.topology.index_map(0).size_global == 48
     assert mesh.topology.index_map(2).size_global == 35
     assert mesh.geometry.dim == 2
     assert mesh.comm.allreduce(mesh.topology.index_map(0).size_local, MPI.SUM) == 48
 
 
-def test_UnitHexMesh():
-    mesh = UnitCubeMesh(MPI.COMM_WORLD, 5, 7, 9, CellType.hexahedron)
+def test_create_unit_square_hex():
+    mesh = create_unit_cube(MPI.COMM_WORLD, 5, 7, 9, CellType.hexahedron)
     assert mesh.topology.index_map(0).size_global == 480
     assert mesh.topology.index_map(3).size_global == 315
     assert mesh.geometry.dim == 3
     assert mesh.comm.allreduce(mesh.topology.index_map(0).size_local, MPI.SUM) == 480
 
 
-def test_BoxMeshPrism():
-    mesh = BoxMesh(MPI.COMM_WORLD, [[0., 0., 0.], [1., 1., 1.]], [2, 3, 4], CellType.prism, GhostMode.none)
+def test_create_box_prism():
+    mesh = create_box(MPI.COMM_WORLD, [[0., 0., 0.], [1., 1., 1.]], [2, 3, 4], CellType.prism, GhostMode.none)
     assert mesh.topology.index_map(0).size_global == 60
     assert mesh.topology.index_map(3).size_global == 48
 
 
 @skip_in_parallel
-def test_GetCoordinates():
+def test_get_coordinates():
     """Get coordinates of vertices"""
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 5, 5)
+    mesh = create_unit_square(MPI.COMM_WORLD, 5, 5)
     assert len(mesh.geometry.x) == 36
 
 
@@ -311,11 +315,11 @@ def test_hmin_hmax(_mesh, hmin, hmax):
 
 
 mesh_factories = [
-    (UnitIntervalMesh, (MPI.COMM_WORLD, 18)),
-    (UnitSquareMesh, (MPI.COMM_WORLD, 4, 4)),
-    (UnitCubeMesh, (MPI.COMM_WORLD, 2, 2, 2)),
-    (UnitSquareMesh, (MPI.COMM_WORLD, 4, 4, CellType.quadrilateral)),
-    (UnitCubeMesh, (MPI.COMM_WORLD, 2, 2, 2, CellType.hexahedron)),
+    (create_unit_interval, (MPI.COMM_WORLD, 18)),
+    (create_unit_square, (MPI.COMM_WORLD, 4, 4)),
+    (create_unit_cube, (MPI.COMM_WORLD, 2, 2, 2)),
+    (create_unit_square, (MPI.COMM_WORLD, 4, 4, CellType.quadrilateral)),
+    (create_unit_cube, (MPI.COMM_WORLD, 2, 2, 2, CellType.hexahedron)),
     # FIXME: Add mechanism for testing meshes coming from IO
 ]
 
@@ -323,7 +327,7 @@ mesh_factories = [
 # FIXME: Fix this xfail
 def xfail_ghosted_quads_hexes(mesh_factory, ghost_mode):
     """Xfail when mesh_factory on quads/hexes uses shared_vertex mode. Needs implementing."""
-    if mesh_factory in [UnitSquareMesh, UnitCubeMesh]:
+    if mesh_factory in [create_unit_square, create_unit_cube]:
         if ghost_mode == GhostMode.shared_vertex:
             pytest.xfail(reason="Missing functionality in \'{}\' with \'{}\' mode".format(mesh_factory, ghost_mode))
 
@@ -375,7 +379,7 @@ def xtest_mesh_topology_against_basix(mesh_factory, ghost_mode):
 
 def xtest_mesh_topology_lifetime():
     """Check that lifetime of Mesh.topology is bound to underlying mesh object"""
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 4, 4)
+    mesh = create_unit_square(MPI.COMM_WORLD, 4, 4)
     rc = sys.getrefcount(mesh)
     topology = mesh.topology
     assert sys.getrefcount(mesh) == rc + 1
@@ -385,21 +389,124 @@ def xtest_mesh_topology_lifetime():
 
 @skip_in_parallel
 def test_small_mesh():
-    mesh3d = UnitCubeMesh(MPI.COMM_WORLD, 1, 1, 1)
+    mesh3d = create_unit_cube(MPI.COMM_WORLD, 1, 1, 1)
     gdim = mesh3d.geometry.dim
     assert mesh3d.topology.index_map(gdim).size_global == 6
 
-    mesh2d = UnitSquareMesh(MPI.COMM_WORLD, 1, 1)
+    mesh2d = create_unit_square(MPI.COMM_WORLD, 1, 1)
     gdim = mesh2d.geometry.dim
     assert mesh2d.topology.index_map(gdim).size_global == 2
 
-    # mesh1d = UnitIntervalMesh(MPI.COMM_WORLD, 2)
+    # mesh1d = create_unit_interval(MPI.COMM_WORLD, 2)
     # gdim = mesh1d.geometry.dim
     # assert mesh1d.topology.index_map(gdim).size_global == 2
 
 
-def test_UnitHexMesh_assemble():
-    mesh = UnitCubeMesh(MPI.COMM_WORLD, 6, 7, 5, CellType.hexahedron)
-    vol = assemble_scalar(1 * dx(mesh))
+def test_unit_hex_mesh_assemble():
+    mesh = create_unit_cube(MPI.COMM_WORLD, 6, 7, 5, CellType.hexahedron)
+    vol = assemble_scalar(form(1 * dx(mesh)))
     vol = mesh.comm.allreduce(vol, MPI.SUM)
     assert vol == pytest.approx(1, rel=1e-9)
+
+
+def boundary_0(x):
+    lr = np.logical_or(np.isclose(x[0], 0.0), np.isclose(x[0], 1.0))
+    tb = np.logical_or(np.isclose(x[1], 0.0), np.isclose(x[1], 1.0))
+    return np.logical_or(lr, tb)
+
+
+def boundary_1(x):
+    return np.logical_or(np.isclose(x[0], 1.0), np.isclose(x[1], 1.0))
+
+
+def boundary_2(x):
+    return np.logical_and(np.isclose(x[1], 1), x[0] >= 0.5)
+
+
+# TODO Test that submesh of full mesh is a copy of the mesh
+@pytest.mark.parametrize("d", [2, 3])
+@pytest.mark.parametrize("n", [2, 6])
+@pytest.mark.parametrize("codim", [0, 1])
+@pytest.mark.parametrize("marker", [lambda x: x[0] >= 0.5,
+                                    lambda x: x[0] >= -1])
+@pytest.mark.parametrize("ghost_mode", [GhostMode.none,
+                                        GhostMode.shared_facet])
+def test_submesh(d, n, codim, marker, ghost_mode):
+    if d == 2:
+        mesh = create_unit_square(MPI.COMM_WORLD, n, n,
+                                  ghost_mode=ghost_mode)
+    else:
+        mesh = create_unit_cube(MPI.COMM_WORLD, n, n, n,
+                                ghost_mode=ghost_mode)
+
+    edim = mesh.topology.dim - codim
+    entities = locate_entities(mesh, edim, marker)
+    submesh, vertex_map, geom_map = create_submesh(mesh, edim, entities)
+    submesh_topology_test(mesh, submesh, vertex_map, edim, entities)
+    submesh_geometry_test(mesh, submesh, geom_map, edim, entities)
+
+
+@pytest.mark.parametrize("d", [2, 3])
+@pytest.mark.parametrize("n", [2, 6])
+@pytest.mark.parametrize("boundary", [boundary_0,
+                                      boundary_1,
+                                      boundary_2])
+@pytest.mark.parametrize("ghost_mode", [GhostMode.none,
+                                        GhostMode.shared_facet])
+def test_submesh_boundary(d, n, boundary, ghost_mode):
+    if d == 2:
+        mesh = create_unit_square(MPI.COMM_WORLD, n, n,
+                                  ghost_mode=ghost_mode)
+    else:
+        mesh = create_unit_cube(MPI.COMM_WORLD, n, n, n,
+                                ghost_mode=ghost_mode)
+    edim = mesh.topology.dim - 1
+    entities = locate_entities_boundary(mesh, edim, boundary)
+    submesh, vertex_map, geom_map = create_submesh(mesh, edim, entities)
+    submesh_topology_test(mesh, submesh, vertex_map, edim, entities)
+    submesh_geometry_test(mesh, submesh, geom_map, edim, entities)
+
+
+def submesh_topology_test(mesh, submesh, vertex_map, entity_dim, entities):
+    # Check that creating facets / creating connectivity doesn't cause
+    # a segmentation fault
+    mesh_tdim = mesh.topology.dim
+    if entity_dim == mesh_tdim:
+        submesh.topology.create_entities(mesh_tdim - 1)
+        submesh.topology.create_connectivity(mesh_tdim - 1, 0)
+
+    # Some processes might not own or ghost entities
+    if len(entities) > 0:
+        mesh.topology.create_connectivity(entity_dim, 0)
+        mesh_e_to_v = mesh.topology.connectivity(entity_dim, 0)
+        submesh.topology.create_connectivity(entity_dim, 0)
+        submesh_e_to_v = submesh.topology.connectivity(entity_dim, 0)
+        for submesh_entity in range(len(entities)):
+            submesh_entity_vertices = submesh_e_to_v.links(submesh_entity)
+            # The submesh is created such that entities is the map from the
+            # submesh entity to the mesh entity
+            mesh_entity = entities[submesh_entity]
+            mesh_entity_vertices = mesh_e_to_v.links(mesh_entity)
+            for i in range(len(submesh_entity_vertices)):
+                assert vertex_map[submesh_entity_vertices[i]] == mesh_entity_vertices[i]
+    else:
+        assert submesh.topology.index_map(entity_dim).size_local == 0
+
+
+def submesh_geometry_test(mesh, submesh, geom_map, entity_dim, entities):
+    submesh_geom_index_map = submesh.geometry.index_map()
+    assert submesh_geom_index_map.size_local + submesh_geom_index_map.num_ghosts == submesh.geometry.x.shape[0]
+
+    # Some processes might not own or ghost entities
+    if len(entities) > 0:
+        assert mesh.geometry.dim == submesh.geometry.dim
+
+        e_to_g = entities_to_geometry(mesh, entity_dim, entities, False)
+        for submesh_entity in range(len(entities)):
+            submesh_x_dofs = submesh.geometry.dofmap.links(submesh_entity)
+            # e_to_g[i] gets the mesh x_dofs of entities[i], which should
+            # correspond to the x_dofs of cell i in the submesh
+            mesh_x_dofs = e_to_g[submesh_entity]
+            for i in range(len(submesh_x_dofs)):
+                assert mesh_x_dofs[i] == geom_map[submesh_x_dofs[i]]
+                assert np.allclose(mesh.geometry.x[mesh_x_dofs[i]], submesh.geometry.x[submesh_x_dofs[i]])

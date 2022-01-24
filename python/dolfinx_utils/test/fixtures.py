@@ -6,12 +6,13 @@
 """Shared fixtures for unit tests."""
 
 import os
-import time
 import shutil
+import time
 from collections import defaultdict
-from mpi4py import MPI
 
 import pytest
+
+from mpi4py import MPI
 
 # --- Test fixtures (use as is or as examples): ---
 

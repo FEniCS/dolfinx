@@ -111,16 +111,17 @@
 import os
 
 import numpy as np
+
 from dolfinx import log, plot
 from dolfinx.fem import Function, FunctionSpace, NonlinearProblem
-from dolfinx.generation import UnitSquareMesh
 from dolfinx.io import XDMFFile
-from dolfinx.mesh import CellType
+from dolfinx.mesh import CellType, create_unit_square
 from dolfinx.nls import NewtonSolver
-from mpi4py import MPI
-from petsc4py import PETSc
 from ufl import (FiniteElement, TestFunctions, diff, dx, grad, inner, split,
                  variable)
+
+from mpi4py import MPI
+from petsc4py import PETSc
 
 try:
     import pyvista as pv
@@ -128,7 +129,6 @@ try:
     have_pyvista = True
     if pv.OFF_SCREEN:
         pv.start_xvfb(wait=0.5)
-
 except ModuleNotFoundError:
     print("pyvista is required to visualise the solution")
     have_pyvista = False
@@ -151,7 +151,7 @@ theta = 0.5      # time stepping family, e.g. theta=1 -> backward Euler, theta=0
 # using a pair of linear Lagrangian elements. ::
 
 # Create mesh and build function space
-mesh = UnitSquareMesh(MPI.COMM_WORLD, 96, 96, CellType.triangle)
+mesh = create_unit_square(MPI.COMM_WORLD, 96, 96, CellType.triangle)
 P1 = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
 ME = FunctionSpace(mesh, P1 * P1)
 
@@ -188,11 +188,11 @@ c0, mu0 = split(u0)
 # The initial conditions are interpolated into a finite element space::
 
 # Zero u
-with u.vector.localForm() as x_local:
-    x_local.set(0.0)
+u.x.array[:] = 0.0
 
 # Interpolate initial condition
 u.sub(0).interpolate(lambda x: 0.63 + 0.02 * (0.5 - np.random.rand(x.shape[1])))
+u.x.scatter_forward()
 
 # The first line creates an object of type ``InitialConditions``.  The
 # following two lines make ``u`` and ``u0`` interpolants of ``u_init``
@@ -271,38 +271,44 @@ file.write_mesh(mesh)
 # Step in time
 t = 0.0
 
-# Check if we are running on CI server and reduce run time
+#  Reduce run time if on test (CI) server
 if "CI" in os.environ.keys() or "GITHUB_ACTIONS" in os.environ.keys():
     T = 3 * dt
 else:
     T = 50 * dt
 
-u.vector.copy(result=u0.vector)
-u.x.scatter_forward()
+# Get the sub-space for c and the corresponding dofs in the mixed space
+# vector
+V0, dofs = ME.sub(0).collapse()
 
-
-# Prepare viewer for plotting solution during the computation
+# Prepare viewer for plotting the solution during the computation
 if have_pyvista:
-    topology, cell_types = plot.create_vtk_topology(mesh, mesh.topology.dim)
-    grid = pv.UnstructuredGrid(topology, cell_types, mesh.geometry.x)
-    grid.point_data["u"] = u.sub(0).compute_point_values().real
-    grid.set_active_scalars("u")
+    # Create a VTK 'mesh' with 'nodes' at the function dofs
+    topology, cell_types, x = plot.create_vtk_mesh(V0)
+    grid = pv.UnstructuredGrid(topology, cell_types, x)
+
+    # Set output data
+    grid.point_data["c"] = u.x.array[dofs].real
+    grid.set_active_scalars("c")
+
     p = pvqt.BackgroundPlotter(title="concentration", auto_update=True)
     p.add_mesh(grid, clim=[0, 1])
     p.view_xy(True)
     p.add_text(f"time: {t}", font_size=12, name="timelabel")
 
+c = u.sub(0)
+u0.x.array[:] = u.x.array
 while (t < T):
     t += dt
     r = solver.solve(u)
     print(f"Step {int(t/dt)}: num iterations: {r[0]}")
-    u.vector.copy(result=u0.vector)
-    file.write_function(u.sub(0), t)
+    u0.x.array[:] = u.x.array
+    file.write_function(c, t)
 
     # Update the plot window
     if have_pyvista:
         p.add_text(f"time: {t:.2e}", font_size=12, name="timelabel")
-        grid.point_data["u"] = u.sub(0).compute_point_values().real
+        grid.point_data["c"] = u.x.array[dofs].real
         p.app.processEvents()
 
 file.close()
@@ -310,8 +316,8 @@ file.close()
 # Update ghost entries and plot
 if have_pyvista:
     u.x.scatter_forward()
-    grid.point_data["u"] = u.sub(0).compute_point_values().real
+    grid.point_data["c"] = u.x.array[dofs].real
     screenshot = None
     if pv.OFF_SCREEN:
-        screenshot = "u.png"
+        screenshot = "c.png"
     pv.plot(grid, show_edges=True, screenshot=screenshot)

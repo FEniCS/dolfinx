@@ -8,8 +8,8 @@
 # sys.path.insert(0, os.path.abspath('.'))
 import datetime
 import os
-import sys
 import shutil
+import sys
 
 import dolfinx
 
@@ -149,5 +149,6 @@ autodoc_default_options = {'members': True, 'show-inheritance': True, 'imported-
 autosummary_generate = True
 autoclass_content = "both"
 
-napoleon_google_docstring = False
+napoleon_google_docstring = True
 napoleon_use_admonition_for_notes = False
+

@@ -15,7 +15,6 @@
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/fem/Function.h>
 #include <dolfinx/fem/FunctionSpace.h>
-#include <dolfinx/la/PETScVector.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
@@ -36,7 +35,7 @@ bool _is_cellwise(const fem::Function<Scalar>& u)
   assert(u.function_space());
 
   assert(u.function_space()->element());
-  const int rank = u.function_space()->element()->value_rank();
+  const int rank = u.function_space()->element()->value_shape().size();
   assert(u.function_space()->mesh());
   const int tdim = u.function_space()->mesh()->topology().dim();
   int cell_based_dim = 1;
@@ -44,8 +43,7 @@ bool _is_cellwise(const fem::Function<Scalar>& u)
     cell_based_dim *= tdim;
 
   assert(u.function_space()->dofmap());
-  assert(u.function_space()->dofmap()->element_dof_layout);
-  if (u.function_space()->dofmap()->element_dof_layout->num_dofs()
+  if (u.function_space()->dofmap()->element_dof_layout().num_dofs()
       == cell_based_dim)
   {
     return true;
@@ -127,7 +125,7 @@ template <typename Scalar>
 void _add_data(const fem::Function<Scalar>& u,
                const xt::xtensor<Scalar, 2>& values, pugi::xml_node& data_node)
 {
-  const int rank = u.function_space()->element()->value_rank();
+  const int rank = u.function_space()->element()->value_shape().size();
   const int dim = u.function_space()->element()->value_size();
   if (rank == 1)
   {
@@ -326,7 +324,9 @@ void add_mesh(const mesh::Mesh& mesh, pugi::xml_node& piece_node)
   x_node.append_attribute("type") = "Float64";
   x_node.append_attribute("NumberOfComponents") = "3";
   x_node.append_attribute("format") = "ascii";
-  auto x = geometry.x();
+  const auto x
+      = xt::adapt(geometry.x().data(), geometry.x().size(), xt::no_ownership(),
+                  std::vector({geometry.x().size() / 3, std::size_t(3)}));
   x_node.append_child(pugi::node_pcdata).set_value(xt_to_string(x, 16).c_str());
 
   // Add topology(cells)
@@ -460,7 +460,7 @@ void write_function(
     // as Paraview only supports one active type
     if (piece_node.child(data_type.c_str()).empty())
       piece_node.append_child(data_type.c_str());
-    const int rank = _u.get().function_space()->element()->value_rank();
+    const int rank = _u.get().function_space()->element()->value_shape().size();
     pugi::xml_node data_node = piece_node.child(data_type.c_str());
     std::string rank_type;
     if (rank == 0)
@@ -527,18 +527,18 @@ void write_function(
 
         // Resize array for holding point values
         xt::xtensor<Scalar, 2> point_values = xt::zeros<Scalar>(
-            {mesh->geometry().x().shape(0), value_size_loc});
+            {mesh->geometry().x().size() / 3, value_size_loc});
 
         // If scalar function space
         if (element->num_sub_elements() == 0)
         {
           auto dofmap = _u.get().function_space()->dofmap();
-          auto element_layout = dofmap->element_dof_layout;
+          auto& element_layout = dofmap->element_dof_layout();
           for (std::int32_t i = 0; i <= tdim; i++)
           {
             // Check that subelement layout matches geometry layout
             if (geometry_layout.num_entity_dofs(i)
-                != element_layout->num_entity_dofs(i))
+                != element_layout.num_entity_dofs(i))
             {
               LOG(WARNING) << "Output data is interpolated into a first order "
                               "Lagrange space.";
@@ -563,13 +563,13 @@ void write_function(
         for (std::int32_t k = 0; k < element->num_sub_elements(); k++)
         {
           auto dofmap = _u.get().function_space()->sub({k})->dofmap();
-          auto element_layout = dofmap->element_dof_layout;
+          auto& element_layout = dofmap->element_dof_layout();
 
           for (std::int32_t i = 0; i <= tdim; i++)
           {
             // Check that subelement layout matches geometry layout
             if (geometry_layout.num_entity_dofs(i)
-                != element_layout->num_entity_dofs(i))
+                != element_layout.num_entity_dofs(i))
             {
               element_matching_mesh = false;
               break;
@@ -666,7 +666,8 @@ void write_function(
     {
       std::string d_type = is_cellwise(_u) ? "PCellData" : "PPointData";
       pugi::xml_node data_pnode = grid_node.child(d_type.c_str());
-      const int rank = _u.get().function_space()->element()->value_rank();
+      const int rank
+          = _u.get().function_space()->element()->value_shape().size();
       int ncomps = 0;
       if (rank == 1)
         ncomps = 3;

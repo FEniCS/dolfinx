@@ -14,21 +14,23 @@ import pathlib
 import time
 
 import cffi
-import dolfinx
-import dolfinx.pkgconfig
 import numba
 import numba.core.typing.cffi_utils as cffi_support
 import numpy as np
-import petsc4py.lib
 import pytest
+
+import dolfinx
+import dolfinx.pkgconfig
 import ufl
-from dolfinx.fem import (Function, FunctionSpace, assemble_matrix,
+from dolfinx.fem import (Function, FunctionSpace, assemble_matrix, form,
                          transpose_dofmap)
-from dolfinx.generation import UnitSquareMesh
+from dolfinx.mesh import create_unit_square
+from ufl import dx, inner
+
+import petsc4py.lib
 from mpi4py import MPI
 from petsc4py import PETSc
 from petsc4py import get_config as PETSc_get_config
-from ufl import dx, inner
 
 # Get details of PETSc install
 petsc_dir = PETSc_get_config()['PETSC_DIR']
@@ -290,7 +292,7 @@ def assemble_matrix_ctypes(A, mesh, dofmap, num_cells, set_vals, mode):
 def test_custom_mesh_loop_rank1():
 
     # Create mesh and function space
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 64, 64)
+    mesh = create_unit_square(MPI.COMM_WORLD, 64, 64)
     V = FunctionSpace(mesh, ("Lagrange", 1))
 
     # Unpack mesh and dofmap data
@@ -305,12 +307,12 @@ def test_custom_mesh_loop_rank1():
     # JIT overhead)
     b0 = Function(V)
     for i in range(2):
-        with b0.vector.localForm() as b:
-            b.set(0.0)
-            start = time.time()
-            assemble_vector(np.asarray(b), (x_dofs, x), dofmap, num_owned_cells)
-            end = time.time()
-            print("Time (numba, pass {}): {}".format(i, end - start))
+        b = b0.x.array
+        b[:] = 0.0
+        start = time.time()
+        assemble_vector(b, (x_dofs, x), dofmap, num_owned_cells)
+        end = time.time()
+        print("Time (numba, pass {}): {}".format(i, end - start))
     b0.vector.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     assert b0.vector.sum() == pytest.approx(1.0)
 
@@ -318,29 +320,28 @@ def test_custom_mesh_loop_rank1():
     # first will include JIT overhead)
     btmp = Function(V)
     for i in range(2):
-        with btmp.vector.localForm() as b:
-            b.set(0.0)
-            start = time.time()
-            assemble_vector_parallel(np.asarray(b), x_dofs, x,
-                                     dofmap_t.array, dofmap_t.offsets,
-                                     num_owned_cells)
-            end = time.time()
-            print("Time (numba parallel, pass {}): {}".format(i, end - start))
+        b = btmp.x.array
+        b[:] = 0.0
+        start = time.time()
+        assemble_vector_parallel(b, x_dofs, x, dofmap_t.array, dofmap_t.offsets, num_owned_cells)
+        end = time.time()
+        print("Time (numba parallel, pass {}): {}".format(i, end - start))
     btmp.vector.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     assert (btmp.vector - b0.vector).norm() == pytest.approx(0.0)
 
     # Test against generated code and general assembler
     v = ufl.TestFunction(V)
     L = inner(1.0, v) * dx
+    Lf = form(L)
     start = time.time()
-    b1 = dolfinx.fem.assemble_vector(L)
+    b1 = dolfinx.fem.assemble_vector(Lf)
     end = time.time()
     print("Time (C++, pass 0):", end - start)
 
     with b1.localForm() as b_local:
         b_local.set(0.0)
     start = time.time()
-    dolfinx.fem.assemble_vector(b1, L)
+    dolfinx.fem.assemble_vector(b1, Lf)
     end = time.time()
     print("Time (C++, pass 1):", end - start)
     b1.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
@@ -349,20 +350,20 @@ def test_custom_mesh_loop_rank1():
     # Assemble using generated tabulate_tensor kernel and Numba assembler
     ffcxtype = "double _Complex" if np.issubdtype(PETSc.ScalarType, np.complexfloating) else "double"
     b3 = Function(V)
-    ufc_form, module, code = dolfinx.jit.ffcx_jit(
+    ufcx_form, module, code = dolfinx.jit.ffcx_jit(
         mesh.comm, L, form_compiler_parameters={"scalar_type": ffcxtype})
 
     nptype = "complex128" if np.issubdtype(PETSc.ScalarType, np.complexfloating) else "float64"
     # First 0 for "cell" integrals, second 0 for the first one, i.e. default domain
-    kernel = getattr(ufc_form.integrals(0)[0], f"tabulate_tensor_{nptype}")
+    kernel = getattr(ufcx_form.integrals(0)[0], f"tabulate_tensor_{nptype}")
 
     for i in range(2):
-        with b3.vector.localForm() as b:
-            b.set(0.0)
-            start = time.time()
-            assemble_vector_ufc(np.asarray(b), kernel, (x_dofs, x), dofmap, num_owned_cells)
-            end = time.time()
-            print("Time (numba/cffi, pass {}): {}".format(i, end - start))
+        b = b3.x.array
+        b[:] = 0.0
+        start = time.time()
+        assemble_vector_ufc(b, kernel, (x_dofs, x), dofmap, num_owned_cells)
+        end = time.time()
+        print("Time (numba/cffi, pass {}): {}".format(i, end - start))
     b3.vector.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     assert (b3.vector - b0.vector).norm() == pytest.approx(0.0)
 
@@ -371,7 +372,7 @@ def test_custom_mesh_loop_ctypes_rank2():
     """Test numba assembler for bilinear form"""
 
     # Create mesh and function space
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 64, 64)
+    mesh = create_unit_square(MPI.COMM_WORLD, 64, 64)
     V = FunctionSpace(mesh, ("Lagrange", 1))
 
     # Extract mesh and dofmap data
@@ -383,7 +384,7 @@ def test_custom_mesh_loop_ctypes_rank2():
 
     # Generated case with general assembler
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
-    a = inner(u, v) * dx
+    a = form(inner(u, v) * dx)
     A0 = assemble_matrix(a)
     A0.assemble()
     A0.zeroEntries()
@@ -413,12 +414,12 @@ def test_custom_mesh_loop_ctypes_rank2():
 def test_custom_mesh_loop_cffi_rank2(set_vals):
     """Test numba assembler for bilinear form"""
 
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 64, 64)
+    mesh = create_unit_square(MPI.COMM_WORLD, 64, 64)
     V = FunctionSpace(mesh, ("Lagrange", 1))
 
     # Test against generated code and general assembler
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
-    a = inner(u, v) * dx
+    a = form(inner(u, v) * dx)
     A0 = assemble_matrix(a)
     A0.assemble()
 

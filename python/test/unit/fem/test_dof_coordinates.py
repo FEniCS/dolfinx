@@ -1,19 +1,19 @@
 import numpy as np
 import pytest
+
 from dolfinx.fem import Function, FunctionSpace
-from dolfinx.generation import UnitCubeMesh, UnitSquareMesh
+from dolfinx.mesh import create_unit_cube, create_unit_square
+
 from mpi4py import MPI
-from petsc4py import PETSc
 
 
 @pytest.mark.parametrize("degree", range(1, 5))
 def test_dof_coords_2d(degree):
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 10, 10)
+    mesh = create_unit_square(MPI.COMM_WORLD, 10, 10)
     V = FunctionSpace(mesh, ("Lagrange", degree))
     u = Function(V)
-
     u.interpolate(lambda x: x[0])
-    u.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+    u.x.scatter_forward()
     x = V.tabulate_dof_coordinates()
     val = u.vector.array
     for i in range(len(val)):
@@ -22,12 +22,11 @@ def test_dof_coords_2d(degree):
 
 @pytest.mark.parametrize("degree", range(1, 5))
 def test_dof_coords_3d(degree):
-    mesh = UnitCubeMesh(MPI.COMM_WORLD, 10, 10, 10)
+    mesh = create_unit_cube(MPI.COMM_WORLD, 10, 10, 10)
     V = FunctionSpace(mesh, ("Lagrange", degree))
     u = Function(V)
-
     u.interpolate(lambda x: x[0])
-    u.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+    u.x.scatter_forward()
     x = V.tabulate_dof_coordinates()
     val = u.vector.array
     for i in range(len(val)):

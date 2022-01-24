@@ -6,12 +6,12 @@
 
 #pragma once
 
-#include <dolfinx/mesh/Mesh.h>
 #include "Function.h"
+#include <dolfinx/common/utils.h>
+#include <dolfinx/mesh/Mesh.h>
 #include <functional>
 #include <utility>
 #include <vector>
-#include <xtensor/xarray.hpp>
 #include <xtensor/xtensor.hpp>
 #include <xtl/xspan.hpp>
 
@@ -35,7 +35,6 @@ class Expression
 public:
   /// Create an Expression
   ///
-  /// @param[in] function_space Function space for Argument
   /// @param[in] coefficients Coefficients in the Expression
   /// @param[in] constants Constants in the Expression
   /// @param[in] mesh
@@ -43,19 +42,19 @@ public:
   /// tdim cols
   /// @param[in] fn function for tabulating expression
   /// @param[in] value_shape shape of expression evaluated at single point
+  /// @param[in] function_space Function space for Argument
   Expression(
-      const std::shared_ptr<const fem::FunctionSpace> function_space,
-      const std::vector<std::shared_ptr<const fem::Function<T>>>& coefficients,
-      const std::vector<std::shared_ptr<const fem::Constant<T>>>& constants,
+      const std::vector<std::shared_ptr<const Function<T>>>& coefficients,
+      const std::vector<std::shared_ptr<const Constant<T>>>& constants,
       const std::shared_ptr<const mesh::Mesh>& mesh,
       const xt::xtensor<double, 2>& X,
       const std::function<void(T*, const T*, const T*, const double*,
                                const int*, const uint8_t*)>
           fn,
-      const std::vector<int>& value_shape)
-      : _function_space(function_space), _coefficients(coefficients),
-        _constants(constants), _mesh(mesh), _X(X), _fn(fn),
-        _value_shape(value_shape)
+      const std::vector<int>& value_shape,
+      const std::shared_ptr<const FunctionSpace> function_space = nullptr)
+      : _coefficients(coefficients), _constants(constants), _mesh(mesh), _x_ref(X),
+        _fn(fn), _value_shape(value_shape), _argument_function_space(function_space)
   {
     // Do nothing
   }
@@ -102,6 +101,7 @@ public:
     // Prepare coefficients and constants
     const auto [coeffs, cstride] = pack_coefficients(*this, active_cells);
     const std::vector<T> constant_data = pack_constants(*this);
+    const auto& fn = this->get_tabulate_expression();
 
     // Prepare cell geometry
     const graph::AdjacencyList<std::int32_t>& x_dofmap
@@ -109,24 +109,39 @@ public:
 
     // FIXME: Add proper interface for num coordinate dofs
     const std::size_t num_dofs_g = x_dofmap.num_links(0);
-    const xt::xtensor<double, 2>& x_g = _mesh->geometry().x();
+    xtl::span<const double> x_g = _mesh->geometry().x();
 
     // Create data structures used in evaluation
     std::vector<double> coordinate_dofs(3 * num_dofs_g);
 
-    const int num_argument_dofs
-        = _function_space->dofmap()->element_dof_layout()->num_dofs();
+    int num_argument_dofs = 1;
+    xtl::span<const std::uint32_t> cell_info;
+    std::function<void(const xtl::span<T>&,
+                       const xtl::span<const std::uint32_t>&, std::int32_t,
+                       int)> dof_transform
+        = [](const xtl::span<T>&, const xtl::span<const std::uint32_t>&,
+             std::int32_t, int)
+    {
+      // Do nothing
+    };
+
+    if (_argument_function_space)
+    {
+      num_argument_dofs
+          = _argument_function_space->dofmap()->element_dof_layout().num_dofs();
+      const auto element = _argument_function_space->element();
+
+      if (element->needs_dof_transformations())
+      {
+        _mesh->topology_mutable().create_entity_permutations();
+        cell_info = xtl::span(_mesh->topology().get_cell_permutation_info());
+        dof_transform = element->get_dof_transformation_function<T>();
+      }
+    }
+
     std::vector<T> values_local(num_points() * value_size() * num_argument_dofs,
                                 0);
-
-    const bool needs_transformation_data
-        = element->needs_dof_transformations();
-    xtl::span<const std::uint32_t> cell_info;
-    if (needs_transformation_data)
-    {
-      mesh->topology_mutable().create_entity_permutations();
-      cell_info = xtl::span(mesh->topology().get_cell_permutation_info());
-    }
+    const xtl::span<T> _values_local(values_local);
 
     // Iterate over cells and 'assemble' into values
     for (std::size_t c = 0; c < active_cells.size(); ++c)
@@ -136,14 +151,16 @@ public:
       auto x_dofs = x_dofmap.links(cell);
       for (std::size_t i = 0; i < x_dofs.size(); ++i)
       {
-        std::copy_n(xt::row(x_g, x_dofs[i]).cbegin(), 3,
-                    std::next(coordinate_dofs.begin(), 3 * i));
+        common::impl::copy_N<3>(std::next(x_g.begin(), 3 * x_dofs[i]),
+                                std::next(coordinate_dofs.begin(), 3 * i));
       }
 
       const T* coeff_cell = coeffs.data() + cell * cstride;
       std::fill(values_local.begin(), values_local.end(), 0.0);
       _fn(values_local.data(), coeff_cell, constant_data.data(),
-         coordinate_dofs.data(), nullptr, nullptr);
+          coordinate_dofs.data(), nullptr, nullptr);
+
+      dof_transform(_values_local, cell_info, c, num_argument_dofs);
 
       for (std::size_t j = 0; j < values_local.size(); ++j)
         values(c, j) = values_local[j];
@@ -153,7 +170,7 @@ public:
   /// Get function for tabulate_expression.
   /// @param[out] fn Function to tabulate expression.
   const std::function<void(T*, const T*, const T*, const double*, const int*,
-                           const uint8_t*, uint32_t)>&
+                           const uint8_t*)>&
   get_tabulate_expression() const
   {
     return _fn;
@@ -174,7 +191,7 @@ public:
 
   /// Get evaluation points on reference cell
   /// @return Evaluation points
-  const xt::xtensor<double, 2>& X() const { return _X; }
+  const xt::xtensor<double, 2>& X() const { return _x_ref; }
 
   /// Get value size
   /// @return value_size
@@ -185,19 +202,17 @@ public:
   }
 
   /// Get value shape
+  /// @return value shape
   const std::vector<int>& value_shape() const { return _value_shape; }
 
   /// Get number of evaluation points in cell
   /// @return number of points in cell
-  std::size_t num_points() const { return _X.shape(0); }
+  std::size_t num_points() const { return _x_ref.shape(0); }
 
   /// Scalar type (T)
   using scalar_type = T;
 
 private:
-  // Function space for Argument
-  std::shared_ptr<const fem::FunctionSpace> _function_space;
-
   // Coefficients associated with the Expression
   std::vector<std::shared_ptr<const fem::Function<T>>> _coefficients;
 
@@ -209,8 +224,8 @@ private:
                      const uint8_t*)>
       _fn;
 
-  // Evaluation points on reference cell
-  xt::xtensor<double, 2> _X;
+  // Evaluation points on reference cell. Synonymous with X in public interface.
+  xt::xtensor<double, 2> _x_ref;
 
   // The mesh
   std::shared_ptr<const mesh::Mesh> _mesh;
@@ -218,5 +233,7 @@ private:
   // Shape of the evaluated expression
   std::vector<int> _value_shape;
 
+  // Function space for Argument
+  std::shared_ptr<const fem::FunctionSpace> _argument_function_space;
 };
 } // namespace dolfinx::fem

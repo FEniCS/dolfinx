@@ -8,12 +8,15 @@ import os
 
 import numpy as np
 import pytest
+
 from dolfinx import cpp as _cpp
 from dolfinx.cpp.io import perm_gmsh
-from dolfinx.generation import UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh
 from dolfinx.io import XDMFFile, ufl_mesh_from_gmsh
-from dolfinx.mesh import CellType, create_mesh
+from dolfinx.mesh import (CellType, GhostMode, create_mesh, create_submesh,
+                          create_unit_cube, create_unit_interval,
+                          create_unit_square, locate_entities)
 from dolfinx_utils.test.fixtures import tempdir
+
 from mpi4py import MPI
 
 assert (tempdir)
@@ -28,13 +31,13 @@ celltypes_2D = [CellType.triangle, CellType.quadrilateral]
 celltypes_3D = [CellType.tetrahedron, CellType.hexahedron]
 
 
-def mesh_factory(tdim, n):
+def mesh_factory(tdim, n, ghost_mode=GhostMode.shared_facet):
     if tdim == 1:
-        return UnitIntervalMesh(MPI.COMM_WORLD, n)
+        return create_unit_interval(MPI.COMM_WORLD, n, ghost_mode=ghost_mode)
     elif tdim == 2:
-        return UnitSquareMesh(MPI.COMM_WORLD, n, n)
+        return create_unit_square(MPI.COMM_WORLD, n, n, ghost_mode=ghost_mode)
     elif tdim == 3:
-        return UnitCubeMesh(MPI.COMM_WORLD, n, n, n)
+        return create_unit_cube(MPI.COMM_WORLD, n, n, n, ghost_mode=ghost_mode)
 
 
 @pytest.fixture
@@ -49,7 +52,7 @@ def worker_id(request):
 @pytest.mark.parametrize("encoding", encodings)
 def test_save_and_load_1d_mesh(tempdir, encoding):
     filename = os.path.join(tempdir, "mesh.xdmf")
-    mesh = UnitIntervalMesh(MPI.COMM_WORLD, 32)
+    mesh = create_unit_interval(MPI.COMM_WORLD, 32)
     with XDMFFile(mesh.comm, filename, "w", encoding=encoding) as file:
         file.write_mesh(mesh)
     with XDMFFile(MPI.COMM_WORLD, filename, "r", encoding=encoding) as file:
@@ -63,7 +66,7 @@ def test_save_and_load_1d_mesh(tempdir, encoding):
 @pytest.mark.parametrize("encoding", encodings)
 def test_save_and_load_2d_mesh(tempdir, encoding, cell_type):
     filename = os.path.join(tempdir, "mesh.xdmf")
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 12, 12, cell_type)
+    mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, cell_type)
     mesh.name = "square"
 
     with XDMFFile(mesh.comm, filename, "w", encoding=encoding) as file:
@@ -82,7 +85,7 @@ def test_save_and_load_2d_mesh(tempdir, encoding, cell_type):
 @pytest.mark.parametrize("encoding", encodings)
 def test_save_and_load_3d_mesh(tempdir, encoding, cell_type):
     filename = os.path.join(tempdir, "mesh.xdmf")
-    mesh = UnitCubeMesh(MPI.COMM_WORLD, 12, 12, 8, cell_type)
+    mesh = create_unit_cube(MPI.COMM_WORLD, 12, 12, 8, cell_type)
     with XDMFFile(mesh.comm, filename, "w", encoding=encoding) as file:
         file.write_mesh(mesh)
 
@@ -143,3 +146,21 @@ def test_read_write_p2_mesh(tempdir, encoding):
     assert mesh.topology.index_map(0).size_global == mesh2.topology.index_map(0).size_global
     assert mesh.topology.index_map(mesh.topology.dim).size_global == mesh2.topology.index_map(
         mesh.topology.dim).size_global
+
+
+@pytest.mark.parametrize("d", [2, 3])
+@pytest.mark.parametrize("n", [2, 5])
+@pytest.mark.parametrize("codim", [0, 1])
+@pytest.mark.parametrize("ghost_mode", [GhostMode.none,
+                                        GhostMode.shared_facet])
+@pytest.mark.parametrize("encoding", encodings)
+def test_submesh(tempdir, d, n, codim, ghost_mode, encoding):
+    mesh = mesh_factory(d, n, ghost_mode)
+    edim = d - codim
+    entities = locate_entities(mesh, edim, lambda x: x[0] >= 0.5)
+    submesh = create_submesh(mesh, edim, entities)[0]
+
+    filename = os.path.join(tempdir, "submesh.xdmf")
+    # Check writing the mesh doesn't cause a segmentation fault
+    with XDMFFile(mesh.comm, filename, "w", encoding=encoding) as xdmf:
+        xdmf.write_mesh(submesh)

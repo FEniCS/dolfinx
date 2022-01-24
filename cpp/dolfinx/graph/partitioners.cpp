@@ -347,7 +347,7 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
       strat_val = SCOTCH_STRATSCALABILITY;
       break;
     default:
-      throw("Unknown SCOTCH strategy");
+      throw std::runtime_error("Unknown SCOTCH strategy");
     }
     err = SCOTCH_stratDgraphMapBuild(&strat, strat_val, nparts, nparts,
                                      imbalance);
@@ -572,8 +572,8 @@ graph::kahip::partitioner(int mode, int seed, double imbalance,
     int edgecut = 0;
     double _imbalance = imbalance;
     ParHIPPartitionKWay(node_disp.data(), offsets.data(), array.data(), vwgt,
-                        adjcwgt, &nparts, & _imbalance, suppress_output, seed, mode,
-                        &edgecut, part.data(), &comm);
+                        adjcwgt, &nparts, &_imbalance, suppress_output, seed,
+                        mode, &edgecut, part.data(), &comm);
     timer2.stop();
 
     if (ghosting)

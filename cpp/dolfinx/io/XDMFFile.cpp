@@ -104,8 +104,8 @@ XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename,
     // Open HDF5 file
     const std::string hdf5_filename = xdmf_utils::get_hdf5_filename(_filename);
     const bool mpi_io = MPI::size(_comm.comm()) > 1 ? true : false;
-    _h5_id = HDF5Interface::open_file(_comm.comm(), hdf5_filename,
-                                      file_mode, mpi_io);
+    _h5_id = HDF5Interface::open_file(_comm.comm(), hdf5_filename, file_mode,
+                                      mpi_io);
     assert(_h5_id > 0);
     LOG(INFO) << "Opened HDF5 file with id \"" << _h5_id << "\"";
   }

@@ -8,12 +8,14 @@ import os
 
 import numpy as np
 import pytest
+
 import ufl
 from dolfinx.common import has_adios2
 from dolfinx.fem import Function, FunctionSpace, VectorFunctionSpace
-from dolfinx.generation import UnitCubeMesh, UnitSquareMesh
-from dolfinx.mesh import CellType, create_mesh
+from dolfinx.mesh import (CellType, create_mesh, create_unit_cube,
+                          create_unit_square)
 from dolfinx_utils.test.fixtures import tempdir
+
 from mpi4py import MPI
 
 assert (tempdir)
@@ -40,8 +42,8 @@ def test_functions_from_different_meshes_fides(tempdir):
     functions on different meshes"""
     from dolfinx.cpp.io import FidesWriter
     filename = os.path.join(tempdir, "mesh_fides.bp")
-    mesh0 = UnitSquareMesh(MPI.COMM_WORLD, 5, 5)
-    mesh1 = UnitSquareMesh(MPI.COMM_WORLD, 10, 2)
+    mesh0 = create_unit_square(MPI.COMM_WORLD, 5, 5)
+    mesh1 = create_unit_square(MPI.COMM_WORLD, 10, 2)
     u0 = Function(FunctionSpace(mesh0, ("Lagrange", 1)))
     u1 = Function(FunctionSpace(mesh1, ("Lagrange", 1)))
     with pytest.raises(RuntimeError):
@@ -52,14 +54,14 @@ def generate_mesh(dim: int, simplex: bool, N: int = 3):
     """Helper function for parametrizing over meshes"""
     if dim == 2:
         if simplex:
-            return UnitSquareMesh(MPI.COMM_WORLD, N, N)
+            return create_unit_square(MPI.COMM_WORLD, N, N)
         else:
-            return UnitSquareMesh(MPI.COMM_WORLD, N, N, CellType.quadrilateral)
+            return create_unit_square(MPI.COMM_WORLD, N, N, CellType.quadrilateral)
     elif dim == 3:
         if simplex:
-            return UnitCubeMesh(MPI.COMM_WORLD, N, N, N)
+            return create_unit_cube(MPI.COMM_WORLD, N, N, N)
         else:
-            return UnitCubeMesh(MPI.COMM_WORLD, N, N, N, CellType.hexahedron)
+            return create_unit_cube(MPI.COMM_WORLD, N, N, N, CellType.hexahedron)
     else:
         raise RuntimeError("Unsupported dimension")
 
