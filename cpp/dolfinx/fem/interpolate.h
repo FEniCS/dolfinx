@@ -235,7 +235,6 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0,
   std::vector<T> local1(element1->space_dimension());
   std::vector<T> coeffs0(element0->space_dimension());
   xt::xtensor<double, 3> basis0({X.shape(0), dim0, value_size0});
-  xt::xtensor<double, 3> basis_reference0({X.shape(0), dim0, value_size_ref0});
   xt::xtensor<T, 3> values0({X.shape(0), 1, element1->value_size()});
   xt::xtensor<T, 3> mapped_values0({X.shape(0), 1, element1->value_size()});
   xt::xtensor<double, 2> coordinate_dofs({num_dofs_g, gdim});
@@ -246,10 +245,11 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0,
   // Get interpolation operator
   const xt::xtensor<double, 2>& Pi_1 = element1->interpolation_operator();
 
-  using u_t = xt::xview<decltype(basis_reference0)&, std::size_t,
-                        xt::xall<std::size_t>, xt::xall<std::size_t>>;
-  using U_t = xt::xview<decltype(basis_reference0)&, std::size_t,
-                        xt::xall<std::size_t>, xt::xall<std::size_t>>;
+  using u_t = xt::xview<decltype(basis0)&, std::size_t, xt::xall<std::size_t>,
+                        xt::xall<std::size_t>>;
+  using U_t
+      = xt::xview<decltype(basis_derivatives_reference0)&, std::size_t,
+                  std::size_t, xt::xall<std::size_t>, xt::xall<std::size_t>>;
   using J_t = xt::xview<decltype(J)&, std::size_t, xt::xall<std::size_t>,
                         xt::xall<std::size_t>>;
   using K_t = xt::xview<decltype(K)&, std::size_t, xt::xall<std::size_t>,
@@ -288,14 +288,12 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0,
 
     // Get evaluated basis on reference, apply DOF transformations, and
     // push forward to physical element
-    basis_reference0 = xt::view(basis_derivatives_reference0, 0, xt::all(),
-                                xt::all(), xt::all());
     for (std::size_t p = 0; p < X.shape(0); ++p)
     {
-      apply_dof_transformation0(
-          xtl::span(basis_reference0.data() + p * dim0 * value_size_ref0,
-                    dim0 * value_size_ref0),
-          cell_info, c, value_size_ref0);
+      apply_dof_transformation0(xtl::span(basis_derivatives_reference0.data()
+                                              + p * dim0 * value_size_ref0,
+                                          dim0 * value_size_ref0),
+                                cell_info, c, value_size_ref0);
     }
 
     for (std::size_t i = 0; i < basis0.shape(0); ++i)
@@ -303,7 +301,8 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0,
       auto _K = xt::view(K, i, xt::all(), xt::all());
       auto _J = xt::view(J, i, xt::all(), xt::all());
       auto _u = xt::view(basis0, i, xt::all(), xt::all());
-      auto _U = xt::view(basis_reference0, i, xt::all(), xt::all());
+      auto _U = xt::view(basis_derivatives_reference0, (std::size_t)0, i,
+                         xt::all(), xt::all());
       push_forward_fn0(_u, _U, _J, detJ[i], _K);
     }
 
