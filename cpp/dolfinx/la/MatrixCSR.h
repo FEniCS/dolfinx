@@ -149,7 +149,7 @@ public:
       int row_id = local_size[0] + i;
       for (int j = _row_ptr[row_id]; j < _row_ptr[row_id + 1]; ++j)
       {
-        // Get index position in send buffer
+        // Get position in send buffer to place data for this neighbour
         const std::int32_t idx_pos = insert_pos[neighbor_rank];
 
         // Pack send data (row, col) as global indices
@@ -331,17 +331,22 @@ public:
     return A;
   }
 
-  /// Communicate ghost row data to the owning ranks
+  /// Transfer ghost row data to the owning ranks
+  /// accumulating received values on the owned rows, and zeroing any existing
+  /// data in ghost rows.
   void finalize()
   {
     finalize_begin();
     finalize_end();
   }
 
-  /// Begin communication of ghost row data to owning ranks
+  /// Begin transfer of ghost row data to owning ranks, where it will be
+  /// accumulated into existing owned rows.
   /// @note Calls to this function must be followed by
   /// MatrixCSR::finalize_end(). Between the two calls matrix values
   /// must not be changed.
+  /// @note This function does not change the matrix data. Data update only
+  /// occurs with `finalize_end()`.
   void finalize_begin()
   {
     const std::int32_t local_size0 = _index_maps[0]->size_local();
@@ -354,7 +359,7 @@ public:
     {
       const int neighbor_rank = _ghost_row_to_neighbor_rank[i];
 
-      // Get position in send buffer
+      // Get position in send buffer to place data to send to this neighbour
       const std::int32_t val_pos = insert_pos[neighbor_rank];
       std::copy(std::next(_data.data(), _row_ptr[local_size0 + i]),
                 std::next(_data.data(), _row_ptr[local_size0 + i + 1]),
@@ -382,8 +387,10 @@ public:
     assert(status == MPI_SUCCESS);
   }
 
-  /// Begin communication of ghost row data to owning ranks
+  /// End transfer of ghost row data to owning ranks
   /// @note Must be preceded by MatrixCSR::finalize_begin()
+  /// @note Matrix data received from other processes will be accumulated into
+  /// locally owned rows, and ghost rows will be zeroed.
   void finalize_end()
   {
     int status = MPI_Wait(&_request, MPI_STATUS_IGNORE);
