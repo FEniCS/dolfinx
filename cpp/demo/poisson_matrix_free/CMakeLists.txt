@@ -4,7 +4,7 @@
 #
 cmake_minimum_required(VERSION 3.16)
 
-set(PROJECT_NAME matrix_free)
+set(PROJECT_NAME demo_poisson_matrix_free)
 project(${PROJECT_NAME} LANGUAGES C CXX)
 
 # Set C++17 standard
@@ -24,8 +24,6 @@ add_custom_command(
   OUTPUT poisson.c
   COMMAND ffcx ${CMAKE_CURRENT_SOURCE_DIR}/poisson.ufl ${SCALAR_TYPE}
   VERBATIM DEPENDS poisson.ufl COMMENT "Compile poisson.ufl using FFCx")
-
-set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 add_executable(${PROJECT_NAME} main.cpp ${CMAKE_CURRENT_BINARY_DIR}/poisson.c)
 target_link_libraries(${PROJECT_NAME} dolfinx)
