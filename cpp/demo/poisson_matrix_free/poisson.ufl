@@ -40,7 +40,7 @@ M = action(a, ui)
 # Define form to compute the L2 norm of the error
 usol = Coefficient(V)
 uexact = Coefficient(V)
-E = inner(usol-uexact, usol-uexact)*dx
+E = inner(usol - uexact, usol - uexact) * dx
 
 
 forms = [M, L, E]
