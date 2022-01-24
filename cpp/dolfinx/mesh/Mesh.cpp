@@ -85,16 +85,18 @@ Mesh mesh::create_mesh(MPI_Comm comm,
   auto build_topology = [](auto comm, auto& element, auto& dof_layout,
                            auto& cells, auto ghost_mode, auto& cell_partitioner)
   {
-    // TODO: This step can be skipped for 'P1' elements
-    //
-    // Extract topology data, e.g. just the vertices. For P1 geometry this
-    // should just be the identity operator. For other elements the
-    // filtered lists may have 'gaps', i.e. the indices might not be
-    // contiguous.
-    const graph::AdjacencyList<std::int64_t> cells_topology
-        = extract_topology(element.cell_shape(), dof_layout, cells);
-
     // -- Partition topology
+
+    // Note: the function extract_topology (returns an
+    // AdjacencyList<std::int64_t>) extract topology data, e.g. just the
+    // vertices. For P1 geometry this should just be the identity
+    // operator. For other elements the filtered lists may have 'gaps',
+    // i.e. the indices might not be contiguous. We don't create an
+    // object before calling cell_partitioner to ensure that memory is
+    // freed immediately.
+    //
+    // Note: extract_topology could be skipped for 'P1' elements since
+    // it is just the identity
 
     // Compute the destination rank for cells on this process via graph
     // partitioning. Always get the ghost cells via facet, though these
@@ -102,44 +104,49 @@ Mesh mesh::create_mesh(MPI_Comm comm,
     const int size = dolfinx::MPI::size(comm);
     const int tdim = cell_dim(element.cell_shape());
     const graph::AdjacencyList<std::int32_t> dest = cell_partitioner(
-        comm, size, tdim, cells_topology, GhostMode::shared_facet);
+        comm, size, tdim,
+        extract_topology(element.cell_shape(), dof_layout, cells),
+        GhostMode::shared_facet);
 
     // -- Distribute cells (topology, includes higher-order 'nodes')
 
     // Distribute cells to destination rank
-    const auto [cell_nodes0, src, original_cell_index0, ghost_owners]
+    auto [cell_nodes, src, original_cell_index0, ghost_owners]
         = graph::build::distribute(comm, cells, dest);
+
+    // Release memory (src is not used)
+    decltype(src)().swap(src);
 
     // -- Extra cell topology
 
     // Extract cell 'topology', i.e. the vertices for each cell
-    const graph::AdjacencyList<std::int64_t> cells_extracted0
-        = extract_topology(element.cell_shape(), dof_layout, cell_nodes0);
+    graph::AdjacencyList<std::int64_t> cells_extracted
+        = extract_topology(element.cell_shape(), dof_layout, cell_nodes);
 
     // -- Re-order cells
 
     // Build local dual graph for owned cells to apply re-ordering to
     const std::int32_t num_owned_cells
-        = cells_extracted0.num_nodes() - ghost_owners.size();
-    const auto [g, m] = build_local_dual_graph(
-        xtl::span<const std::int64_t>(
-            cells_extracted0.array().data(),
-            cells_extracted0.offsets()[num_owned_cells]),
-        xtl::span<const std::int32_t>(cells_extracted0.offsets().data(),
-                                      num_owned_cells + 1),
-        tdim);
+        = cells_extracted.num_nodes() - ghost_owners.size();
+    const std::vector<int> remap = graph::reorder_gps(
+        build_local_dual_graph(
+            xtl::span<const std::int64_t>(
+                cells_extracted.array().data(),
+                cells_extracted.offsets()[num_owned_cells]),
+            xtl::span<const std::int32_t>(cells_extracted.offsets().data(),
+                                          num_owned_cells + 1),
+            tdim)
+            .first);
 
-    // Compute re-ordering of local dual graph
-    std::vector<int> remap = graph::reorder_gps(g);
-
-    // Create re-ordered cell lists
-    std::vector<std::int64_t> original_cell_index(original_cell_index0);
+    // Create re-ordered cell lists (leaves ghosts unchanged)
+    std::vector<std::int64_t> original_cell_index(original_cell_index0.size());
     for (std::size_t i = 0; i < remap.size(); ++i)
       original_cell_index[remap[i]] = original_cell_index0[i];
-    const graph::AdjacencyList<std::int64_t> cells_extracted
-        = reorder_list(cells_extracted0, remap);
-    const graph::AdjacencyList<std::int64_t> cell_nodes
-        = reorder_list(cell_nodes0, remap);
+    std::copy_n(std::next(original_cell_index0.cbegin(), num_owned_cells),
+                ghost_owners.size(),
+                std::next(original_cell_index.begin(), num_owned_cells));
+    cells_extracted = reorder_list(cells_extracted, remap);
+    cell_nodes = reorder_list(cell_nodes, remap);
 
     // -- Create Topology
 
