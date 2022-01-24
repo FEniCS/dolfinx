@@ -55,7 +55,9 @@ void axpy(la::Vector<T>& r, T alpha, const la::Vector<T>& x,
 /// @param[in, out]  x Solution Vector
 /// @param[in]  action Function that provides the action of the linear operator
 /// @param[in]  kmax Maxmimum number of iterations
-/// @param[in]  rtol Relative tolerances for convergence.
+/// @param[in]  rtol Relative tolerances for convergence
+/// @tparam T The scalar type
+/// @tparam ApplyFunction Type of the function object "action"
 template <typename T, typename ApplyFunction>
 int cg(la::Vector<T>& x, const la::Vector<T>& b, ApplyFunction&& action,
        int kmax = 50, double rtol = 1e-8)
