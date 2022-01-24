@@ -49,22 +49,22 @@ void axpy(la::Vector<U>& r, U alpha, const la::Vector<U>& x,
 }
 
 /// Solve problem A.x = b using the Conjugate Gradient method
-/// @param[in]  b RHS Vector
-/// @param[in, out]  x Solution Vector
-/// @param[in]  action Function that provides the action of the linear operator
-/// @param[in]  kmax Maxmimum number of iterations
-/// @param[in]  rtol Relative tolerances for convergence
 /// @tparam U The scalar type
 /// @tparam ApplyFunction Type of the function object "action"
+/// @param[out] x Solution Vector
+/// @param[in] b RHS Vector
+/// @param[in] action Function that provides the action of the linear operator
+/// @param[in] kmax Maxmimum number of iterations
+/// @param[in] rtol Relative tolerances for convergence
 template <typename U, typename ApplyFunction>
 int cg(la::Vector<U>& x, const la::Vector<U>& b, ApplyFunction&& action,
        int kmax = 50, double rtol = 1e-8)
 {
   int M = b.map()->size_local();
 
-  // Working vectors Residual vector
+  // Working vectors
   la::Vector<U> r(b), y(b), p(x);
-  std::copy_n(r.array().begin(), M, p.mutable_array().begin());
+  std::copy_n(r.array().cbegin(), M, p.mutable_array().begin());
 
   double rnorm0 = r.squared_norm();
 
