@@ -31,8 +31,6 @@
 
 using namespace dolfinx;
 
-using T = PetscScalar;
-
 namespace linalg
 {
 /// Compute vector r = alpha*x + y
@@ -40,9 +38,9 @@ namespace linalg
 /// @param[in]  alpha
 /// @param[in]  x
 /// @param[in]  y
-template <typename T>
-void axpy(la::Vector<T>& r, T alpha, const la::Vector<T>& x,
-          const la::Vector<T>& y)
+template <typename U>
+void axpy(la::Vector<U>& r, U alpha, const la::Vector<U>& x,
+          const la::Vector<U>& y)
 {
   std::transform(x.array().cbegin(),
                  std::next(x.array().cbegin(), x.map()->size_local()),
@@ -56,16 +54,16 @@ void axpy(la::Vector<T>& r, T alpha, const la::Vector<T>& x,
 /// @param[in]  action Function that provides the action of the linear operator
 /// @param[in]  kmax Maxmimum number of iterations
 /// @param[in]  rtol Relative tolerances for convergence
-/// @tparam T The scalar type
+/// @tparam U The scalar type
 /// @tparam ApplyFunction Type of the function object "action"
-template <typename T, typename ApplyFunction>
-int cg(la::Vector<T>& x, const la::Vector<T>& b, ApplyFunction&& action,
+template <typename U, typename ApplyFunction>
+int cg(la::Vector<U>& x, const la::Vector<U>& b, ApplyFunction&& action,
        int kmax = 50, double rtol = 1e-8)
 {
   int M = b.map()->size_local();
 
   // Working vectors Residual vector
-  la::Vector<T> r(b), y(b), p(x);
+  la::Vector<U> r(b), y(b), p(x);
   std::copy_n(r.array().begin(), M, p.mutable_array().begin());
 
   double rnorm0 = r.squared_norm();
@@ -82,7 +80,7 @@ int cg(la::Vector<T>& x, const la::Vector<T>& b, ApplyFunction&& action,
     action(p, y);
 
     // alpha = r.r/p.y
-    const T alpha = rnorm / la::inner_product(p, y);
+    const U alpha = rnorm / la::inner_product(p, y);
 
     // Update x (x <- x + alpha*p)
     axpy(x, alpha, p, x);
@@ -91,10 +89,10 @@ int cg(la::Vector<T>& x, const la::Vector<T>& b, ApplyFunction&& action,
     axpy(r, -alpha, y, r);
 
     // Update residual norm
-    // Note: we use T for beta to support float, double, etc. T can be
-    // complex, despite its value always being real
+    // Note: we use U for beta to support float, double, etc. U can be
+    // complex, even though the value will always be real
     const double rnorm_new = r.squared_norm();
-    const T beta = rnorm_new / rnorm;
+    const U beta = rnorm_new / rnorm;
     rnorm = rnorm_new;
 
     if (rnorm / rnorm0 < rtol2)
@@ -114,6 +112,8 @@ int main(int argc, char* argv[])
   common::subsystem::init_mpi(argc, argv);
 
   {
+    using T = PetscScalar;
+
     MPI_Comm comm = MPI_COMM_WORLD;
 
     // Create mesh and function space
