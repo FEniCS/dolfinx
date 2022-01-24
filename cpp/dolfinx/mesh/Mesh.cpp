@@ -114,7 +114,7 @@ Mesh mesh::create_mesh(MPI_Comm comm,
     auto [cell_nodes, src, original_cell_index0, ghost_owners]
         = graph::build::distribute(comm, cells, dest);
 
-    // Release memory
+    // Release memory (src is not used)
     decltype(src)().swap(src);
 
     // -- Extra cell topology
