@@ -79,18 +79,18 @@ void spmv(la::MatrixCSR<T>& A, la::Vector<T>& x, la::Vector<T>& y)
   // start communication (update ghosts)
   x.scatter_fwd_begin();
 
-  xtl::span<const std::int32_t> row_ptr = A.row_ptr();
-  xtl::span<const std::int32_t> cols = A.cols();
-  xtl::span<const std::int32_t> off_diag_offset = A.off_diag_offset();
-  xtl::span<const T> values = A.values();
-
-  std::int32_t nrows = A.num_rows();
+  const std::int32_t nrowslocal = A.num_owned_rows();
+  xtl::span<const std::int32_t> row_ptr(A.row_ptr().data(), nrowslocal + 1);
+  xtl::span<const std::int32_t> cols(A.cols().data(), row_ptr[nrowslocal]);
+  xtl::span<const std::int32_t> off_diag_offset(A.off_diag_offset().data(),
+                                                nrowslocal);
+  xtl::span<const T> values(A.values().data(), row_ptr[nrowslocal]);
 
   xtl::span<const T> _x = x.array();
   xtl::span<T> _y = y.mutable_array();
 
-  xtl::span<const std::int32_t> row_begin(row_ptr.data(), nrows);
-  xtl::span<const std::int32_t> row_end(row_ptr.data() + 1, nrows);
+  xtl::span<const std::int32_t> row_begin(row_ptr.data(), nrowslocal);
+  xtl::span<const std::int32_t> row_end(row_ptr.data() + 1, nrowslocal);
 
   // First stage:  spmv - diagonal
   // yi[0] += Ai[0] * xi[0]
@@ -108,7 +108,7 @@ void test_matrix_apply()
 {
   MPI_Comm comm = MPI_COMM_WORLD;
   auto mesh = std::make_shared<mesh::Mesh>(
-      mesh::create_box(comm, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}}}, {32, 32, 32},
+      mesh::create_box(comm, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}}}, {12, 12, 12},
                        mesh::CellType::tetrahedron, mesh::GhostMode::none));
 
   auto V = std::make_shared<fem::FunctionSpace>(
@@ -131,7 +131,7 @@ void test_matrix_apply()
   fem::assemble_matrix(la::MatrixCSR<double>::mat_add_values(A), *a, {});
   A.finalize();
 
-  CHECK((V->dofmap()->index_map->size_local() == A.num_rows()));
+  CHECK((V->dofmap()->index_map->size_local() == A.num_owned_rows()));
 
   // Get compatible vectors
   auto maps = A.index_maps();

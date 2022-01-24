@@ -305,23 +305,21 @@ public:
     }
   }
 
-  /// Get the number of local rows
-  /// @param[in] ghost_rows Set to true to include ghost rows in the
-  /// number of local rows
-  std::int32_t num_rows(bool ghost_rows = false) const
-  {
-    return ghost_rows ? _row_ptr.size() - 1 : _index_maps[0]->size_local();
-  }
+  /// Number of local rows excluding ghost rows
+  std::int32_t num_owned_rows() const { return _index_maps[0]->size_local(); }
+
+  /// Number of local rows including ghost rows
+  std::int32_t num_all_rows() const { return _row_ptr.size() - 1; }
 
   /// Copy to a dense matrix
   /// @note This function is typically used for debugging and not used
   /// in production
-  /// @param[in] ghost_rows Set to true to include ghost rows in the
-  /// returned matrix
+  /// @note Ghost rows are also returned, and these can be truncated
+  /// manually by using num_owned_rows() if required.
   /// @return Dense copy of the matrix
-  xt::xtensor<T, 2> to_dense(bool ghost_rows = false) const
+  xt::xtensor<T, 2> to_dense() const
   {
-    const std::int32_t nrows = num_rows(ghost_rows);
+    const std::int32_t nrows = num_all_rows();
     const std::int32_t ncols
         = _index_maps[1]->size_local() + _index_maps[1]->num_ghosts();
     xt::xtensor<T, 2> A = xt::zeros<T>({nrows, ncols});
@@ -419,43 +417,31 @@ public:
   }
 
   /// Get local data values
-  /// @param[in] ghost_rows Set to true to include data of ghost rows
-  xtl::span<T> values(bool ghost_rows = false)
-  {
-    const std::int32_t nrows = num_rows(ghost_rows);
-    return xtl::span<T>(_data.data(), _row_ptr.at(nrows));
-  }
+  /// @note Includes ghost values
+  std::vector<T>& values() { return _data; }
 
   /// Get local values (const version)
-  /// @param[in] ghost_rows Set to true to include data of ghost rows
-  xtl::span<const T> values(bool ghost_rows = false) const
-  {
-    const std::int32_t nrows = num_rows(ghost_rows);
-    return xtl::span<const T>(_data.data(), _row_ptr.at(nrows));
-  }
+  /// @note Includes ghost values
+  const std::vector<T>& values() const { return _data; }
 
   /// Get local row pointers
-  /// @param[in] ghost_rows Set to true to include data of ghost rows
-  xtl::span<const std::int32_t> row_ptr(bool ghost_rows = false) const
-  {
-    const std::int32_t nrows = num_rows(ghost_rows);
-    return xtl::span<const std::int32_t>(_row_ptr.data(), nrows + 1);
-  }
+  /// @note Includes pointers to ghost rows
+  const std::vector<std::int32_t>& row_ptr() const { return _row_ptr; }
 
   /// Get local column indices
-  /// @param[in] ghost_rows Set to true to include data of ghost rows
-  xtl::span<const std::int32_t> cols(bool ghost_rows = false) const
-  {
-    const std::int32_t nrows = num_rows(ghost_rows);
-    return xtl::span<const std::int32_t>(_cols.data(), _row_ptr.at(nrows));
-  }
+  /// @note Includes columns in ghost rows
+  const std::vector<std::int32_t>& cols() const { return _cols; }
 
-  /// Get start of off-diagonal (unowned columns) on each row
-  /// @param[in] ghost_rows Set to true to include data of ghost rows
-  xtl::span<const std::int32_t> off_diag_offset(bool ghost_rows = false) const
+  /// Get the start of off-diagonal (unowned columns) on each row, allowing the
+  /// matrix to be split (virtually) into two parts.
+  /// Operations (such as matrix-vector multiply) between the owned parts of the
+  /// matrix and vector can then be performed separately from operations on the
+  /// unowned parts.
+  /// @note Includes ghost rows, which should be truncated manually if not
+  /// required.
+  const std::vector<std::int32_t>& off_diag_offset() const
   {
-    const std::size_t nrows = num_rows(ghost_rows);
-    return xtl::span<const std::int32_t>(_off_diagonal_offset.data(), nrows);
+    return _off_diagonal_offset;
   }
 
 private:
