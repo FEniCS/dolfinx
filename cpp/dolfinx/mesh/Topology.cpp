@@ -8,6 +8,7 @@
 #include "cell_types.h"
 #include "permutationcomputation.h"
 #include "topologycomputation.h"
+#include "utils.h"
 #include <algorithm>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/log.h>
@@ -15,7 +16,6 @@
 #include <dolfinx/common/utils.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/partition.h>
-#include <dolfinx/mesh/Mesh.h>
 #include <numeric>
 #include <random>
 #include <unordered_map>
@@ -77,7 +77,7 @@ determine_sharing_ranks(MPI_Comm comm,
 
   const graph::AdjacencyList<std::int64_t> recv_indices
       = dolfinx::MPI::all_to_all(comm, send_index_adj);
-    
+
   // Get index sharing - ownership will be first entry (randomised later)
   std::unordered_map<std::int64_t, std::vector<int>> index_to_owner;
   for (int p = 0; p < recv_indices.num_nodes(); ++p)
@@ -178,10 +178,10 @@ compute_vertex_markers(const graph::AdjacencyList<std::int64_t>& cells,
 
   // Any vertices which are in ghost cells set to -1
   std::unordered_map<std::int64_t, std::int32_t> global_to_local_v;
-  std::transform(
-      ghost_vertex_set.begin(), ghost_vertex_set.end(),
-      std::inserter(global_to_local_v, global_to_local_v.end()),
-      [](auto idx) { return std::pair<std::int64_t, std::int32_t>(idx, -1); });
+  std::transform(ghost_vertex_set.begin(), ghost_vertex_set.end(),
+                 std::inserter(global_to_local_v, global_to_local_v.end()),
+                 [](auto idx)
+                 { return std::pair<std::int64_t, std::int32_t>(idx, -1); });
 
   std::vector<std::int64_t> unknown_indices_set;
   for (std::int64_t global_index : local_vertex_set)
@@ -223,11 +223,10 @@ compute_neighbor_comm(const MPI_Comm& comm,
   // Create set of all ranks that share a vertex with this rank. Note
   // this can be 'wider' than the neighbor comm of shared cells.
   std::vector<int> neighbors;
-  std::for_each(global_vertex_to_ranks.begin(), global_vertex_to_ranks.end(),
-                [&neighbors](auto& q) {
-                  neighbors.insert(neighbors.end(), q.second.begin(),
-                                   q.second.end());
-                });
+  std::for_each(
+      global_vertex_to_ranks.begin(), global_vertex_to_ranks.end(),
+      [&neighbors](auto& q)
+      { neighbors.insert(neighbors.end(), q.second.begin(), q.second.end()); });
   std::sort(neighbors.begin(), neighbors.end());
   neighbors.erase(std::unique(neighbors.begin(), neighbors.end()),
                   neighbors.end());
@@ -408,7 +407,7 @@ graph::AdjacencyList<std::int32_t> convert_cells_to_local_indexing(
         global_to_local_vertices)
 {
   std::vector<std::int32_t> local_offsets;
-  if (ghost_mode == mesh::GhostMode::none)
+  if (ghost_mode == GhostMode::none)
   {
     // Discard ghost cells
     local_offsets.assign(
@@ -422,9 +421,8 @@ graph::AdjacencyList<std::int32_t> convert_cells_to_local_indexing(
   std::transform(cells.array().begin(),
                  std::next(cells.array().begin(), cells_array_local.size()),
                  cells_array_local.begin(),
-                 [&global_to_local_vertices](std::int64_t i) {
-                   return global_to_local_vertices.at(i);
-                 });
+                 [&global_to_local_vertices](std::int64_t i)
+                 { return global_to_local_vertices.at(i); });
 
   return graph::AdjacencyList<std::int32_t>(std::move(cells_array_local),
                                             std::move(local_offsets));
@@ -466,9 +464,9 @@ std::vector<std::int8_t> mesh::compute_boundary_facets(const Topology& topology)
 Topology::Topology(MPI_Comm comm, mesh::CellType type)
     : _comm(comm), _cell_type(type),
       _connectivity(
-          mesh::cell_dim(type) + 1,
+          cell_dim(type) + 1,
           std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>>(
-              mesh::cell_dim(type) + 1))
+              cell_dim(type) + 1))
 {
   // Do nothing
 }
@@ -499,7 +497,7 @@ std::int32_t Topology::create_entities(int dim)
 
   // Create local entities
   const auto [cell_entity, entity_vertex, index_map]
-      = mesh::compute_entities(_comm.comm(), *this, dim);
+      = compute_entities(_comm.comm(), *this, dim);
 
   if (cell_entity)
     set_connectivity(cell_entity, this->dim(), dim);
@@ -521,7 +519,7 @@ void Topology::create_connectivity(int d0, int d1)
   create_entities(d1);
 
   // Compute connectivity
-  const auto [c_d0_d1, c_d1_d0] = mesh::compute_connectivity(*this, d0, d1);
+  const auto [c_d0_d1, c_d1_d0] = compute_connectivity(*this, d0, d1);
 
   // NOTE: that to compute the (d0, d1) connections is it sometimes
   // necessary to compute the (d1, d0) connections. We store the (d1,
@@ -557,7 +555,7 @@ void Topology::create_entity_permutations()
     create_entities(d);
 
   auto [facet_permutations, cell_permutations]
-      = mesh::compute_entity_permutations(*this);
+      = compute_entity_permutations(*this);
   _facet_permutations = std::move(facet_permutations);
   _cell_permutations = std::move(cell_permutations);
 }
@@ -611,18 +609,18 @@ mesh::create_topology(MPI_Comm comm,
 {
   LOG(INFO) << "Create topology";
   if (cells.num_nodes() > 0
-      and cells.num_links(0) != mesh::num_cell_vertices(cell_type))
+      and cells.num_links(0) != num_cell_vertices(cell_type))
   {
     throw std::runtime_error(
         "Inconsistent number of cell vertices. Got "
         + std::to_string(cells.num_links(0)) + ", expected "
-        + std::to_string(mesh::num_cell_vertices(cell_type)) + ".");
+        + std::to_string(num_cell_vertices(cell_type)) + ".");
   }
 
   // Create index map for cells
   const std::int32_t num_local_cells = cells.num_nodes() - ghost_owners.size();
   std::shared_ptr<common::IndexMap> index_map_c;
-  if (ghost_mode == mesh::GhostMode::none)
+  if (ghost_mode == GhostMode::none)
     index_map_c = std::make_shared<common::IndexMap>(comm, num_local_cells);
   else
   {
@@ -722,7 +720,7 @@ mesh::create_topology(MPI_Comm comm,
     ghost_vertex_owners.push_back(recv_triplets[i + 2]);
   }
 
-  if (ghost_mode != mesh::GhostMode::none)
+  if (ghost_mode != GhostMode::none)
   {
     // Send and receive global (from the ghost cell owner) indices for
     // ghost vertices that are not on the process boundary
