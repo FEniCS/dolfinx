@@ -22,9 +22,9 @@
 //    u_D &= 1 + x^2 + 2y^2, \\
 //    f = -6
 //
-// .. note:: This demo illustrates the use of a matrix-free operator on an
-//           unpreconditioned CG solver, however for real-world applications
-//           using a preconditioner is highly advisable.
+// .. note:: This demo illustrates the use of a matrix-free operator inside an
+//           unpreconditioned CG solver. A preconditioned CG solver should be
+//           used for real-world problems.
 
 #include "poisson.h"
 #include <cmath>
