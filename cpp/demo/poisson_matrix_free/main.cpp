@@ -4,12 +4,12 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-//===============================================================//
-// Matrix Free CG solver (C++)
-// =============================================================//
+// =====================================
+// Matrix-free Conjugate Gradient solver
+// =====================================
 //
 // This demo illustrates how to:
-// * Solve a linear partial differential equation using a matrix free CG solver.
+// * Solve a linear partial differential equation using a matrix free CG solver
 // * Create and apply Dirichlet boundary conditions
 // * Compute errors
 //
