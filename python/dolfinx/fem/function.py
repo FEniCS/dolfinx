@@ -282,10 +282,11 @@ class Function(ufl.Coefficient):
         x = np.asarray(x, dtype=np.float64)
         assert x.ndim < 3
         if len(x) == 0:
-            num_points = 0
+            x = np.zeros((0, 3))
         else:
-            num_points = x.shape[0] if x.ndim == 2 else 1
-        x = np.zeros((0, 3)) if num_points == 0 else np.reshape(x, (num_points, -1))
+            shape0 = x.shape[0] if x.ndim == 2 else 1
+            x = np.reshape(x, (shape0, -1))
+        num_points = x.shape[0]
         if x.shape[1] != 3:
             raise ValueError("Coordinate(s) for Function evaluation must have length 3.")
 
