@@ -454,10 +454,10 @@ namespace impl
 {
 // Pack a single coefficient for a single cell
 template <typename T, int _bs, typename Functor>
-void pack(const xtl::span<T>& coeffs, std::int32_t cell, int bs,
-          const xtl::span<const T>& v,
-          const xtl::span<const std::uint32_t>& cell_info, const DofMap& dofmap,
-          Functor transform)
+void inline pack(const xtl::span<T>& coeffs, std::int32_t cell, int bs,
+                 const xtl::span<const T>& v,
+                 const xtl::span<const std::uint32_t>& cell_info,
+                 const DofMap& dofmap, Functor transform)
 {
   auto dofs = dofmap.cell_dofs(cell);
   for (std::size_t i = 0; i < dofs.size(); ++i)
@@ -486,28 +486,30 @@ void pack(const xtl::span<T>& coeffs, std::int32_t cell, int bs,
 /// @param[out] c The coefficient to be packed
 /// @param[in] cstride The total number of coefficient values to pack
 /// for each entity
-/// @param[in] v List of arrays with all degrees of freedom for the
+/// @param[in] u List of arrays with all degrees of freedom for the
 /// functions to be packed
 /// @param[in] cell_info Array of bytes describing which transformation
 /// has to be applied on the cell to map it to the reference element
-/// @param[in] dofmap The dofmap
 /// @param[in] entities The set of active entities
 /// @param[in] fetch_cells Function that fetches the cell index for an
 /// entity in active_entities (signature:
 /// `std::function<std::int32_t(E)>`)
 /// @param[in] offset The offset for c
-/// @param[in] space_dim The dimension of the FE space
-/// @param[in] transformation The dof transformation
 template <typename T, typename E, typename Functor>
-void pack_coefficient_entity(
-    const xtl::span<T>& c, int cstride, const xtl::span<const T>& v,
-    const xtl::span<const std::uint32_t>& cell_info, const DofMap& dofmap,
-    const xtl::span<const E>& entities, Functor fetch_cells,
-    std::int32_t offset, int space_dim,
-    const std::function<void(const xtl::span<T>&,
-                             const xtl::span<const std::uint32_t>&,
-                             std::int32_t, int)>& transformation)
+void pack_coefficient_entity(const xtl::span<T>& c, int cstride,
+                             const Function<T>& u,
+                             const xtl::span<const std::uint32_t>& cell_info,
+                             const xtl::span<const E>& entities,
+                             Functor fetch_cells, std::int32_t offset)
 {
+  // Read function data
+  const xtl::span<const T>& v = u.x()->array();
+  const DofMap& dofmap = *u.function_space()->dofmap();
+  std::shared_ptr<const FiniteElement> element = u.function_space()->element();
+  int space_dim = element->space_dimension();
+  const auto transformation
+      = element->get_dof_transformation_function<T>(false, true);
+
   const int bs = dofmap.bs();
   switch (bs)
   {
@@ -614,7 +616,7 @@ allocate_coefficient_data(const Form<T>& form)
 /// @param[in] cstride The coefficient stride
 template <typename T>
 void pack_coefficients(const Form<T>& form, IntegralType integral_type, int id,
-                       xtl::span<T> c, int cstride)
+                       const xtl::span<T>& c, int cstride)
 {
   // Get form coefficient offsets and dofmaps
   const std::vector<std::shared_ptr<const Function<T>>> coefficients
@@ -650,20 +652,13 @@ void pack_coefficients(const Form<T>& form, IntegralType integral_type, int id,
     {
     case IntegralType::cell:
     {
+      auto fetch_cell = [](auto e) { return e; };
       const std::vector<std::int32_t>& cells = form.cell_domains(id);
       // Iterate over coefficients
       for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
-      {
-        std::shared_ptr<const fem::FiniteElement> element
-            = coefficients[coeff]->function_space()->element();
-        const auto transform
-            = element->get_dof_transformation_function<T>(false, true);
-        auto identity = [](std::int32_t entity) { return entity; };
         impl::pack_coefficient_entity<T, std::int32_t>(
-            c, cstride, coefficients[coeff]->x()->array(), cell_info,
-            *coefficients[coeff]->function_space()->dofmap(), cells, identity,
-            offsets[coeff], element->space_dimension(), transform);
-      }
+            c, cstride, *coefficients[coeff], cell_info, cells, fetch_cell,
+            offsets[coeff]);
       break;
     }
     case IntegralType::exterior_facet:
@@ -678,14 +673,9 @@ void pack_coefficients(const Form<T>& form, IntegralType integral_type, int id,
       // Iterate over coefficients
       for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
       {
-        std::shared_ptr<const fem::FiniteElement> element
-            = coefficients[coeff]->function_space()->element();
-        const auto transform
-            = element->get_dof_transformation_function<T>(false, true);
         impl::pack_coefficient_entity<T, std::pair<std::int32_t, int>>(
-            c, cstride, coefficients[coeff]->x()->array(), cell_info,
-            *coefficients[coeff]->function_space()->dofmap(), facets,
-            fetch_cell, offsets[coeff], element->space_dimension(), transform);
+            c, cstride, *coefficients[coeff], cell_info, facets, fetch_cell,
+            offsets[coeff]);
       }
       break;
     }
@@ -705,24 +695,16 @@ void pack_coefficients(const Form<T>& form, IntegralType integral_type, int id,
       // Iterate over coefficients
       for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
       {
-        std::shared_ptr<const fem::FiniteElement> element
-            = coefficients[coeff]->function_space()->element();
-        const auto transform
-            = element->get_dof_transformation_function<T>(false, true);
         // Pack coefficient ['+']
         impl::pack_coefficient_entity<
             T, std::tuple<std::int32_t, int, std::int32_t, int>>(
-            c, 2 * cstride, coefficients[coeff]->x()->array(), cell_info,
-            *coefficients[coeff]->function_space()->dofmap(), facets,
-            fetch_cell0, 2 * offsets[coeff], element->space_dimension(),
-            transform);
+            c, 2 * cstride, *coefficients[coeff], cell_info, facets,
+            fetch_cell0, 2 * offsets[coeff]);
         // Pack coefficient ['-']
         impl::pack_coefficient_entity<
             T, std::tuple<std::int32_t, int, std::int32_t, int>>(
-            c, 2 * cstride, coefficients[coeff]->x()->array(), cell_info,
-            *coefficients[coeff]->function_space()->dofmap(), facets,
-            fetch_cell1, offsets[coeff] + offsets[coeff + 1],
-            element->space_dimension(), transform);
+            c, 2 * cstride, *coefficients[coeff], cell_info, facets,
+            fetch_cell1, offsets[coeff] + offsets[coeff + 1]);
       }
       break;
     }
