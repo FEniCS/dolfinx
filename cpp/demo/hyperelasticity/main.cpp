@@ -134,14 +134,14 @@ int main(int argc, char* argv[])
         mesh::CellType::tetrahedron, mesh::GhostMode::none));
 
     auto V = std::make_shared<fem::FunctionSpace>(fem::create_functionspace(
-        functionspace_form_hyperelasticity_F, "u", mesh));
+        functionspace_form_hyperelasticity_F_form, "u", mesh));
 
     // Define solution function
     auto u = std::make_shared<fem::Function<T>>(V);
     auto a = std::make_shared<fem::Form<T>>(fem::create_form<T>(
-        *form_hyperelasticity_J, {V, V}, {{"u", u}}, {}, {}));
+        *form_hyperelasticity_J_form, {V, V}, {{"u", u}}, {}, {}));
     auto L = std::make_shared<fem::Form<T>>(
-        fem::create_form<T>(*form_hyperelasticity_F, {V}, {{"u", u}}, {}, {}));
+        fem::create_form<T>(*form_hyperelasticity_F_form, {V}, {{"u", u}}, {}, {}));
 
     auto u_rotation = std::make_shared<fem::Function<T>>(V);
     u_rotation->interpolate(
