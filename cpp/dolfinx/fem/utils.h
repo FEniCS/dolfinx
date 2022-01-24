@@ -548,16 +548,62 @@ void pack_coefficient_entity(
 
 } // namespace impl
 
-/// Pack coefficients of a Form u for a given integral type and domain
-/// id
+template <typename T>
+std::pair<std::vector<T>, int>
+allocate_coefficient_data(const Form<T>& form, IntegralType integral_type,
+                          int id)
+{
+  // Get form coefficient offsets and dofmaps
+  const std::vector<std::shared_ptr<const Function<T>>> coefficients
+      = form.coefficients();
+  const std::vector<int> offsets = form.coefficient_offsets();
+
+  std::size_t num_entities = 0;
+  int cstride = 0;
+  if (!coefficients.empty())
+  {
+    cstride = offsets.back();
+    switch (integral_type)
+    {
+    case IntegralType::cell:
+      num_entities = form.cell_domains(id).size();
+      break;
+    case IntegralType::exterior_facet:
+      num_entities = form.exterior_facet_domains(id).size();
+      break;
+    case IntegralType::interior_facet:
+      num_entities = form.interior_facet_domains(id).size() * 2;
+      break;
+    default:
+      throw std::runtime_error(
+          "Could not allocate coefficient data. Integral type not supported.");
+    }
+  }
+  return {std::vector<T>(num_entities * cstride), cstride};
+}
+
+template <typename T>
+std::map<std::pair<IntegralType, int>, std::pair<std::vector<T>, int>>
+allocate_coefficient_data(const Form<T>& form)
+{
+  std::map<std::pair<IntegralType, int>, std::pair<std::vector<T>, int>> coeffs;
+  for (auto integral_type : form.integral_types())
+    for (int id : form.integral_ids(integral_type))
+      coeffs[std::pair(integral_type, id)]
+          = allocate_coefficient_data(form, integral_type, id);
+
+  return coeffs;
+}
+
+/// Pack coefficients of a Form for a given integral type and domain id
 ///
 /// @param[in] form The Form
 /// @param[in] integral_type Type of integral
 /// @param[in] id The id of the integration domain
 /// @return A pair of the form (coeffs, entity stride)
 template <typename T>
-std::pair<std::vector<T>, int>
-pack_coefficients(const Form<T>& form, IntegralType integral_type, int id)
+void pack_coefficients(const Form<T>& form, IntegralType integral_type, int id,
+                       xtl::span<T> c, int cstride)
 {
   // Get form coefficient offsets and dofmaps
   const std::vector<std::shared_ptr<const Function<T>>> coefficients
@@ -578,24 +624,25 @@ pack_coefficients(const Form<T>& form, IntegralType integral_type, int id)
   std::shared_ptr<const mesh::Mesh> mesh = form.mesh();
   assert(mesh);
 
-  // Copy data into coefficient array
-  const int cstride = offsets.back();
-  std::vector<T> c;
   if (!coefficients.empty())
   {
     bool needs_dof_transformations = false;
-    for (std::size_t coeff = 0; coeff < dofmaps.size(); ++coeff)
+    for (std::size_t i = 0; i < coefficients.size(); ++i)
     {
-      if (elements[coeff]->needs_dof_transformations())
+      auto element = coefficients[i]->function_space()->element();
+      if (element->needs_dof_transformations())
       {
         needs_dof_transformations = true;
-        mesh->topology_mutable().create_entity_permutations();
+        break;
       }
     }
 
     xtl::span<const std::uint32_t> cell_info;
     if (needs_dof_transformations)
+    {
+      mesh->topology_mutable().create_entity_permutations();
       cell_info = xtl::span(mesh->topology().get_cell_permutation_info());
+    }
 
     // TODO see if this can be simplified with templating
     switch (integral_type)
@@ -603,17 +650,16 @@ pack_coefficients(const Form<T>& form, IntegralType integral_type, int id)
     case IntegralType::cell:
     {
       const std::vector<std::int32_t>& cells = form.cell_domains(id);
-      c.resize(cells.size() * offsets.back());
-
       // Iterate over coefficients
       for (std::size_t coeff = 0; coeff < dofmaps.size(); ++coeff)
       {
         const auto transform
             = elements[coeff]->get_dof_transformation_function<T>(false, true);
+        auto identity = [](std::int32_t entity) { return entity; };
         impl::pack_coefficient_entity<T, std::int32_t>(
-            xtl::span<T>(c), cstride, v[coeff], cell_info, *dofmaps[coeff],
-            cells, [](std::int32_t entity) { return entity; }, offsets[coeff],
-            elements[coeff]->space_dimension(), transform);
+            c, cstride, coefficients[coeff]->x()->array(), cell_info,
+            *coefficients[coeff]->function_space()->dofmap(), cells, identity,
+            offsets[coeff], elements[coeff]->space_dimension(), transform);
       }
       break;
     }
@@ -621,8 +667,6 @@ pack_coefficients(const Form<T>& form, IntegralType integral_type, int id)
     {
       const std::vector<std::pair<std::int32_t, int>>& facets
           = form.exterior_facet_domains(id);
-      c.resize(facets.size() * offsets.back());
-
       // Create lambda function fetching cell index from exterior facet entity
       auto fetch_cell = [](const std::pair<std::int32_t, int>& entity)
       { return entity.first; };
@@ -633,8 +677,8 @@ pack_coefficients(const Form<T>& form, IntegralType integral_type, int id)
         const auto transform
             = elements[coeff]->get_dof_transformation_function<T>(false, true);
         impl::pack_coefficient_entity<T, std::pair<std::int32_t, int>>(
-            xtl::span<T>(c), cstride, v[coeff], cell_info, *dofmaps[coeff],
-            facets, fetch_cell, offsets[coeff],
+            c, cstride, coefficients[coeff]->x()->array(), cell_info,
+            *dofmaps[coeff], facets, fetch_cell, offsets[coeff],
             elements[coeff]->space_dimension(), transform);
       }
       break;
@@ -644,8 +688,6 @@ pack_coefficients(const Form<T>& form, IntegralType integral_type, int id)
       const std::vector<std::tuple<std::int32_t, int, std::int32_t, int>>&
           facets
           = form.interior_facet_domains(id);
-      c.resize(facets.size() * 2 * offsets.back());
-
       // Lambda functions to fetch cell index from interior facet entity
       auto fetch_cell0
           = [](const std::tuple<std::int32_t, int, std::int32_t, int>& entity)
@@ -662,14 +704,14 @@ pack_coefficients(const Form<T>& form, IntegralType integral_type, int id)
         // Pack coefficient ['+']
         impl::pack_coefficient_entity<
             T, std::tuple<std::int32_t, int, std::int32_t, int>>(
-            xtl::span<T>(c), 2 * cstride, v[coeff], cell_info, *dofmaps[coeff],
-            facets, fetch_cell0, 2 * offsets[coeff],
-            elements[coeff]->space_dimension(), transform);
+            c, 2 * cstride, v[coeff], cell_info, *dofmaps[coeff], facets,
+            fetch_cell0, 2 * offsets[coeff], elements[coeff]->space_dimension(),
+            transform);
         // Pack coefficient ['-']
         impl::pack_coefficient_entity<
             T, std::tuple<std::int32_t, int, std::int32_t, int>>(
-            xtl::span<T>(c), 2 * cstride, v[coeff], cell_info, *dofmaps[coeff],
-            facets, fetch_cell1, offsets[coeff] + offsets[coeff + 1],
+            c, 2 * cstride, v[coeff], cell_info, *dofmaps[coeff], facets,
+            fetch_cell1, offsets[coeff] + offsets[coeff + 1],
             elements[coeff]->space_dimension(), transform);
       }
       break;
@@ -679,7 +721,6 @@ pack_coefficients(const Form<T>& form, IntegralType integral_type, int id)
           "Could not pack coefficient. Integral type not supported.");
     }
   }
-  return {std::move(c), cstride};
 }
 
 // NOTE: This is subject to change
@@ -692,15 +733,9 @@ template <typename T>
 std::map<std::pair<IntegralType, int>, std::pair<std::vector<T>, int>>
 pack_coefficients(const Form<T>& form)
 {
-  std::map<std::pair<IntegralType, int>, std::pair<std::vector<T>, int>> coeffs;
-  for (auto integral_type : form.integral_types())
-  {
-    for (int id : form.integral_ids(integral_type))
-    {
-      coeffs.emplace(std::pair(integral_type, id),
-                     pack_coefficients(form, integral_type, id));
-    }
-  }
+  auto coeffs = allocate_coefficient_data<T>(form);
+  for (auto& [key, val] : coeffs)
+    pack_coefficients<T>(form, key.first, key.second, val.first, val.second);
   return coeffs;
 }
 
