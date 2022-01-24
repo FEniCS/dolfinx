@@ -51,7 +51,7 @@ void axpy(la::Vector<U>& r, U alpha, const la::Vector<U>& x,
 /// Solve problem A.x = b using the Conjugate Gradient method
 /// @tparam U The scalar type
 /// @tparam ApplyFunction Type of the function object "action"
-/// @param[out] x Solution Vector
+/// @param[in, out] x Solution Vector, may contain approximate initial solution
 /// @param[in] b RHS Vector
 /// @param[in] action Function that provides the action of the linear operator
 /// @param[in] kmax Maxmimum number of iterations
@@ -60,11 +60,14 @@ template <typename U, typename ApplyFunction>
 int cg(la::Vector<U>& x, const la::Vector<U>& b, ApplyFunction&& action,
        int kmax = 50, double rtol = 1e-8)
 {
-  int M = b.map()->size_local();
-
   // Working vectors
-  la::Vector<U> r(b), y(b), p(x);
-  std::copy_n(r.array().cbegin(), M, p.mutable_array().begin());
+  la::Vector<U> r(b), y(b);
+
+  // Compute initial residual r0 = b - Ax0
+  action(x, y);
+  axpy(r, -1., y, b);
+
+  la::Vector<U> p(r);
 
   double rnorm0 = r.squared_norm();
 
