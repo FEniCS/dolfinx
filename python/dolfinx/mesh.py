@@ -19,7 +19,7 @@ from dolfinx.cpp.mesh import (CellType, DiagonalType, GhostMode,
                               compute_boundary_facets,
                               compute_incident_entities, compute_midpoints,
                               create_cell_partitioner, create_meshtags,
-                              from_type, to_type)
+                              from_type, to_string)
 
 from mpi4py import MPI as _MPI
 
@@ -28,7 +28,7 @@ __all__ = ["create_meshtags", "locate_entities", "locate_entities_boundary",
            "GhostMode", "build_dual_graph", "cell_dim", "compute_midpoints",
            "compute_boundary_facets", "compute_incident_entities", "create_cell_partitioner",
            "create_interval", "create_unit_interval", "create_rectangle", "create_unit_square",
-           "create_box", "create_unit_cube", "from_type", "to_type"]
+           "create_box", "create_unit_cube", "from_type", "to_string"]
 
 
 class Mesh(_cpp.mesh.Mesh):
