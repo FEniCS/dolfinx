@@ -14,7 +14,7 @@ element = VectorElement("Lagrange", tetrahedron, 1)
 
 # Trial and test functions
 du = TrialFunction(element)     # Incremental displacement
-v  = TestFunction(element)      # Test function
+v = TestFunction(element)      # Test function
 
 # Note that ``VectorElement`` creates a finite element space of vector
 # fields. The dimension of the vector field (the number of components)
@@ -39,7 +39,7 @@ C = F.T*F               # Right Cauchy-Green tensor
 
 # Invariants of deformation tensors
 Ic = tr(C)
-J  = det(F)
+J = det(F)
 
 # Before defining the energy density and thus the total potential
 # energy, it only remains to specify constants for the elasticity
@@ -59,7 +59,7 @@ lmbda = E*nu/((1 + nu)*(1 - 2*nu))
 psi = (mu/2)*(Ic - 3) - mu*ln(J) + (lmbda/2)*(ln(J))**2
 
 # Total potential energy
-Pi = psi*dx # - inner(B, u)*dx - inner(T, u)*ds
+Pi = psi*dx  # - inner(B, u)*dx - inner(T, u)*ds
 
 # First variation of Pi (directional derivative about u in the direction of v)
 F_form = derivative(Pi, u, v)
@@ -69,7 +69,7 @@ J_form = derivative(F_form, u, du)
 
 # Compute von Mises stress in current configuration
 sigma = (1/J)*diff(psi, F)*F.T
-sigma_deviatoric = sigma - (1 / 3) * tr(sigma) * I 
+sigma_deviatoric = sigma - (1 / 3) * tr(sigma) * I
 sigma_von_mises = sqrt((3 / 2) * inner(sigma_deviatoric, sigma_deviatoric))
 
 forms = [F_form, J_form]
