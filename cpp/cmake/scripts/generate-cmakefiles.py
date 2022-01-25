@@ -26,6 +26,8 @@ if (NOT TARGET dolfinx)
   find_package(DOLFINX REQUIRED)
 endif()
 
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+
 add_executable(${{PROJECT_NAME}} {src_files})
 target_link_libraries(${{PROJECT_NAME}} dolfinx)
 
@@ -119,6 +121,8 @@ add_custom_command(
   OUTPUT {ufl_c_files}
   COMMAND ffcx ${{CMAKE_CURRENT_SOURCE_DIR}}/{ufl_files} ${{SCALAR_TYPE}}
   VERBATIM DEPENDS {ufl_files} COMMENT "Compile {ufl_files} using FFCx")
+
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 add_executable(${{PROJECT_NAME}} {src_files} ${{CMAKE_CURRENT_BINARY_DIR}}/{ufl_c_files})
 target_link_libraries(${{PROJECT_NAME}} dolfinx)

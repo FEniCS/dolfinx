@@ -5,13 +5,13 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "graphbuild.h"
+#include "cell_types.h"
 #include <algorithm>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/sort.h>
 #include <dolfinx/graph/AdjacencyList.h>
-#include <dolfinx/mesh/cell_types.h>
 #include <utility>
 #include <vector>
 #include <xtensor/xview.hpp>
@@ -171,11 +171,15 @@ compute_nonlocal_dual_graph(
   // Get permutation that takes facets into sorted order
   std::vector<int> perm(num_facets_rcvd);
   std::iota(perm.begin(), perm.end(), 0);
-  std::sort(perm.begin(), perm.end(), [&recvd_buffer](int a, int b) {
-    return std::lexicographical_compare(
-        recvd_buffer.links(a).begin(), std::prev(recvd_buffer.links(a).end()),
-        recvd_buffer.links(b).begin(), std::prev(recvd_buffer.links(b).end()));
-  });
+  std::sort(perm.begin(), perm.end(),
+            [&recvd_buffer](int a, int b)
+            {
+              return std::lexicographical_compare(
+                  recvd_buffer.links(a).begin(),
+                  std::prev(recvd_buffer.links(a).end()),
+                  recvd_buffer.links(b).begin(),
+                  std::prev(recvd_buffer.links(b).end()));
+            });
 
   // Count data items to send to each rank
   p_count.assign(num_ranks, 0);
@@ -432,9 +436,8 @@ mesh::build_local_dual_graph(const xtl::span<const std::int64_t>& cell_vertices,
       assert(facet_vertices.size() <= std::size_t(max_num_facet_vertices));
       std::transform(facet_vertices.cbegin(), facet_vertices.cend(),
                      facet.begin(),
-                     [&cell_vertices_local, offset = cell_offsets[c]](auto fv) {
-                       return cell_vertices_local[offset + fv];
-                     });
+                     [&cell_vertices_local, offset = cell_offsets[c]](auto fv)
+                     { return cell_vertices_local[offset + fv]; });
 
       // Sort facet "indices"
       std::sort(facet.begin(), facet.end());
