@@ -454,12 +454,13 @@ namespace impl
 {
 template <typename T>
 xtl::span<const std::uint32_t>
-get_cell_info(std::vector<std::shared_ptr<const Function<T>>> coefficients)
+get_cell_info(std::vector<std::shared_ptr<const Function<T>>>& coefficients)
 {
   bool needs_dof_transformations = false;
   for (auto coeff : coefficients)
   {
-    auto element = coeff->function_space()->element();
+    std::shared_ptr<const FiniteElement> element
+        = coeff->function_space()->element();
     if (element->needs_dof_transformations())
     {
       needs_dof_transformations = true;
@@ -628,7 +629,6 @@ allocate_coefficient_memory(const Form<T>& form)
     for (int id : form.integral_ids(integral_type))
       coeffs[std::pair(integral_type, id)]
           = allocate_coefficient_memory(form, integral_type, id);
-
   return coeffs;
 }
 
@@ -647,10 +647,6 @@ void pack_coefficients(const Form<T>& form, IntegralType integral_type, int id,
   const std::vector<std::shared_ptr<const Function<T>>> coefficients
       = form.coefficients();
   const std::vector<int> offsets = form.coefficient_offsets();
-
-  // Get mesh
-  std::shared_ptr<const mesh::Mesh> mesh = form.mesh();
-  assert(mesh);
 
   if (!coefficients.empty())
   {
@@ -756,6 +752,7 @@ pack_coefficients(const Expression<T>& u,
   // Get form coefficient offsets and dofmaps
   const std::vector<std::shared_ptr<const Function<T>>> coefficients
       = u.coefficients();
+  const std::vector<int> offsets = u.coefficient_offsets();
 
   // Copy data into coefficient array
   const int cstride = offsets.back();
