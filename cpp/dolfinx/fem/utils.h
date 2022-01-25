@@ -654,8 +654,9 @@ void pack_coefficients(const Form<T>& form, IntegralType integral_type, int id,
 
   if (!coefficients.empty())
   {
-    xtl::span<const std::uint32_t> cell_info = get_cell_info(coefficients);
-    // TODO see if this can be simplified with templating
+    xtl::span<const std::uint32_t> cell_info
+        = impl::get_cell_info(coefficients);
+
     switch (integral_type)
     {
     case IntegralType::cell:
@@ -664,9 +665,9 @@ void pack_coefficients(const Form<T>& form, IntegralType integral_type, int id,
       const std::vector<std::int32_t>& cells = form.cell_domains(id);
       // Iterate over coefficients
       for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
-        impl::pack_coefficient_entity(c, cstride, *coefficients[coeff],
-                                      cell_info, cells, fetch_cell,
-                                      offsets[coeff]);
+        impl::pack_coefficient_entity<T, std::int32_t>(
+            c, cstride, *coefficients[coeff], cell_info, cells, fetch_cell,
+            offsets[coeff]);
       break;
     }
     case IntegralType::exterior_facet:
@@ -678,9 +679,9 @@ void pack_coefficients(const Form<T>& form, IntegralType integral_type, int id,
 
       // Iterate over coefficients
       for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
-        impl::pack_coefficient_entity(c, cstride, *coefficients[coeff],
-                                      cell_info, facets, fetch_cell,
-                                      offsets[coeff]);
+        impl::pack_coefficient_entity<T, std::pair<std::int32_t, int>>(
+            c, cstride, *coefficients[coeff], cell_info, facets, fetch_cell,
+            offsets[coeff]);
       break;
     }
     case IntegralType::interior_facet:
@@ -696,13 +697,15 @@ void pack_coefficients(const Form<T>& form, IntegralType integral_type, int id,
       for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
       {
         // Pack coefficient ['+']
-        impl::pack_coefficient_entity(c, 2 * cstride, *coefficients[coeff],
-                                      cell_info, facets, fetch_cell0,
-                                      2 * offsets[coeff]);
+        impl::pack_coefficient_entity<
+            T, std::tuple<std::int32_t, int, std::int32_t, int>>(
+            c, 2 * cstride, *coefficients[coeff], cell_info, facets,
+            fetch_cell0, 2 * offsets[coeff]);
         // Pack coefficient ['-']
-        impl::pack_coefficient_entity(c, 2 * cstride, *coefficients[coeff],
-                                      cell_info, facets, fetch_cell1,
-                                      offsets[coeff] + offsets[coeff + 1]);
+        impl::pack_coefficient_entity<
+            T, std::tuple<std::int32_t, int, std::int32_t, int>>(
+            c, 2 * cstride, *coefficients[coeff], cell_info, facets,
+            fetch_cell1, offsets[coeff] + offsets[coeff + 1]);
       }
       break;
     }
@@ -778,29 +781,16 @@ pack_coefficients(const Expression<T>& u,
   std::vector<T> c(cells.size() * offsets.back());
   if (!coefficients.empty())
   {
-    bool needs_dof_transformations = false;
-    for (std::size_t coeff = 0; coeff < dofmaps.size(); ++coeff)
-    {
-      if (elements[coeff]->needs_dof_transformations())
-      {
-        needs_dof_transformations = true;
-        mesh->topology_mutable().create_entity_permutations();
-      }
-    }
+    xtl::span<const std::uint32_t> cell_info
+        = impl::get_cell_info(coefficients);
 
-    xtl::span<const std::uint32_t> cell_info;
-    if (needs_dof_transformations)
-      cell_info = xtl::span(mesh->topology().get_cell_permutation_info());
-
+    auto identity = [](std::int32_t entity) { return entity; };
     // Iterate over coefficients
     for (std::size_t coeff = 0; coeff < dofmaps.size(); ++coeff)
     {
-      const auto transform
-          = elements[coeff]->get_dof_transformation_function<T>(false, true);
       impl::pack_coefficient_entity<T, std::int32_t>(
-          xtl::span<T>(c), cstride, v[coeff], cell_info, *dofmaps[coeff], cells,
-          [](std::int32_t entity) { return entity; }, offsets[coeff],
-          elements[coeff]->space_dimension(), transform);
+          xtl::span<T>(c), cstride, *coefficients[coeff], cell_info, cells,
+          identity, offsets[coeff]);
     }
   }
   return {std::move(c), cstride};
