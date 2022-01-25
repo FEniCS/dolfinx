@@ -199,9 +199,6 @@ int main(int argc, char* argv[])
     auto u = std::make_shared<fem::Function<T>>(V);
     int num_it = linalg::cg(*u->x(), b, action, 200, 1e-6);
 
-    // Update ghost values
-    u->x()->scatter_fwd();
-
     // Set BC values in the solution vectors
     fem::set_bc(u->x()->mutable_array(), {bc}, 1.0);
 
