@@ -79,11 +79,6 @@ jobs:
           ctest --output-on-failure -R unittests
           mpiexec -np 2 ctest --output-on-failure -R unittests
 
-      - name: Install UFL and FFCx modules
-        run: |
-          python3 -m pip install git+https://github.com/FEniCS/ufl.git
-          python3 -m pip install ffcx/
-
       - name: Build and run DOLFINx C++ regression tests (serial and MPI (np=2))
         run: |
           . /opt/intel/oneapi/setvars.sh
