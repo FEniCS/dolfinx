@@ -43,14 +43,13 @@ jobs:
           . /opt/intel/oneapi/setvars.sh
           python3 -m pip install git+https://github.com/FEniCS/ufl.git@michal/expressions
           python3 -m pip install git+https://github.com/FEniCS/basix.git
-          python3 -m pip install git+https://github.com/FEniCS/ffcx.git@michal/expressions-cpp
 
       - name: Clone FFCx
         uses: actions/checkout@v2
         with:
           path: ./ffcx
           repository: FEniCS/ffcx
-          ref: main
+          ref: michal/expressions-cpp
 
       - name: Install FFCx C interface
         run: |
