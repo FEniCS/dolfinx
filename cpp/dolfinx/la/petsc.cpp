@@ -234,12 +234,6 @@ Mat la::petsc::create_matrix(MPI_Comm comm,
   if (ierr != 0)
     petsc::error(ierr, __FILE__, "MatSetSizes");
 
-  // Get number of nonzeros for each row from sparsity pattern
-  const graph::AdjacencyList<std::int32_t>& diagonal_pattern
-      = sp.diagonal_pattern();
-  const graph::AdjacencyList<std::int32_t>& off_diagonal_pattern
-      = sp.off_diagonal_pattern();
-
   // Apply PETSc options from the options database to the matrix (this
   // includes changing the matrix type to one specified by the user)
   ierr = MatSetFromOptions(A);
@@ -256,9 +250,9 @@ Mat la::petsc::create_matrix(MPI_Comm comm,
     _nnz_diag.resize(maps[0]->size_local());
     _nnz_offdiag.resize(maps[0]->size_local());
     for (std::size_t i = 0; i < _nnz_diag.size(); ++i)
-      _nnz_diag[i] = diagonal_pattern.links(i).size();
+      _nnz_diag[i] = sp.nnz_diag(i);
     for (std::size_t i = 0; i < _nnz_offdiag.size(); ++i)
-      _nnz_offdiag[i] = off_diagonal_pattern.links(i).size();
+      _nnz_offdiag[i] = sp.nnz_off_diag(i);
   }
   else
   {
@@ -266,9 +260,9 @@ Mat la::petsc::create_matrix(MPI_Comm comm,
     _nnz_diag.resize(maps[0]->size_local() * bs[0]);
     _nnz_offdiag.resize(maps[0]->size_local() * bs[0]);
     for (std::size_t i = 0; i < _nnz_diag.size(); ++i)
-      _nnz_diag[i] = bs[1] * diagonal_pattern.links(i / bs[0]).size();
+      _nnz_diag[i] = bs[1] * sp.nnz_diag(i / bs[0]);
     for (std::size_t i = 0; i < _nnz_offdiag.size(); ++i)
-      _nnz_offdiag[i] = bs[1] * off_diagonal_pattern.links(i / bs[0]).size();
+      _nnz_offdiag[i] = bs[1] * sp.nnz_off_diag(i / bs[0]);
   }
 
   // Allocate space for matrix
@@ -549,8 +543,7 @@ petsc::Matrix::set_fn(Mat A, InsertMode mode)
 {
   return [A, mode, cache = std::vector<PetscInt>()](
              std::int32_t m, const std::int32_t* rows, std::int32_t n,
-             const std::int32_t* cols, const PetscScalar* vals) mutable -> int
-  {
+             const std::int32_t* cols, const PetscScalar* vals) mutable -> int {
     PetscErrorCode ierr;
 #ifdef PETSC_USE_64BIT_INDICES
     cache.resize(m + n);
@@ -576,8 +569,7 @@ petsc::Matrix::set_block_fn(Mat A, InsertMode mode)
 {
   return [A, mode, cache = std::vector<PetscInt>()](
              std::int32_t m, const std::int32_t* rows, std::int32_t n,
-             const std::int32_t* cols, const PetscScalar* vals) mutable -> int
-  {
+             const std::int32_t* cols, const PetscScalar* vals) mutable -> int {
     PetscErrorCode ierr;
 #ifdef PETSC_USE_64BIT_INDICES
     cache.resize(m + n);
@@ -607,8 +599,7 @@ petsc::Matrix::set_block_expand_fn(Mat A, int bs0, int bs1, InsertMode mode)
   return [A, bs0, bs1, mode, cache0 = std::vector<PetscInt>(),
           cache1 = std::vector<PetscInt>()](
              std::int32_t m, const std::int32_t* rows, std::int32_t n,
-             const std::int32_t* cols, const PetscScalar* vals) mutable -> int
-  {
+             const std::int32_t* cols, const PetscScalar* vals) mutable -> int {
     PetscErrorCode ierr;
     cache0.resize(bs0 * m);
     cache1.resize(bs1 * n);
