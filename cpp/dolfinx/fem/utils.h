@@ -453,8 +453,8 @@ FunctionSpace create_functionspace(
 namespace impl
 {
 template <typename T>
-xtl::span<const std::uint32_t>
-get_cell_info(std::vector<std::shared_ptr<const Function<T>>>& coefficients)
+xtl::span<const std::uint32_t> get_cell_info(
+    const std::vector<std::shared_ptr<const Function<T>>>& coefficients)
 {
   bool needs_dof_transformations = false;
   for (auto coeff : coefficients)
@@ -576,12 +576,13 @@ void pack_coefficient_entity(const xtl::span<T>& c, int cstride,
 
 } // namespace impl
 
-/// Allocate memory for coefficients of a Form
+/// Allocate memory for coefficients of a single kernel (integral_type, id) of a
+/// Form
 ///
 /// @param[in] form The Form
 /// @param[in] integral_type Type of integral
 /// @param[in] id The id of the integration domain
-/// @return A pair of the form (coeffs, entity stride)
+/// @return A 1d container and the column stride
 template <typename T>
 std::pair<std::vector<T>, int>
 allocate_coefficient_memory(const Form<T>& form, IntegralType integral_type,
@@ -616,7 +617,7 @@ allocate_coefficient_memory(const Form<T>& form, IntegralType integral_type,
   return {std::vector<T>(num_entities * cstride), cstride};
 }
 
-/// Allocate memory for coefficients of a Form
+/// Allocate memory for packed coefficients of a Form
 ///
 /// @param[in] form The Form
 /// @return A pair of the form (coeffs, entity stride)
@@ -765,8 +766,8 @@ pack_coefficients(const Expression<T>& u,
     auto identity = [](std::int32_t entity) { return entity; };
     // Iterate over coefficients
     for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
-      impl::pack_coefficient_entity(c, cstride, *coefficients[coeff], cell_info,
-                                    cells, identity, offsets[coeff]);
+      impl::pack_coefficient_entity(xtl::span(c), cstride, *coefficients[coeff],
+                                    cell_info, cells, identity, offsets[coeff]);
   }
   return {std::move(c), cstride};
 }
