@@ -524,8 +524,8 @@ template <typename T, typename E, typename Functor>
 void pack_coefficient_entity(const xtl::span<T>& c, int cstride,
                              const Function<T>& u,
                              const xtl::span<const std::uint32_t>& cell_info,
-                             const xtl::span<const E>& entities,
-                             Functor fetch_cells, std::int32_t offset)
+                             const E& entities, Functor fetch_cells,
+                             std::int32_t offset)
 {
   // Read function data
   const xtl::span<const T>& v = u.x()->array();
@@ -665,9 +665,9 @@ void pack_coefficients(const Form<T>& form, IntegralType integral_type, int id,
       const std::vector<std::int32_t>& cells = form.cell_domains(id);
       // Iterate over coefficients
       for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
-        impl::pack_coefficient_entity<T, std::int32_t>(
-            c, cstride, *coefficients[coeff], cell_info, cells, fetch_cell,
-            offsets[coeff]);
+        impl::pack_coefficient_entity(c, cstride, *coefficients[coeff],
+                                      cell_info, cells, fetch_cell,
+                                      offsets[coeff]);
       break;
     }
     case IntegralType::exterior_facet:
@@ -679,9 +679,9 @@ void pack_coefficients(const Form<T>& form, IntegralType integral_type, int id,
 
       // Iterate over coefficients
       for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
-        impl::pack_coefficient_entity<T, std::pair<std::int32_t, int>>(
-            c, cstride, *coefficients[coeff], cell_info, facets, fetch_cell,
-            offsets[coeff]);
+        impl::pack_coefficient_entity(c, cstride, *coefficients[coeff],
+                                      cell_info, facets, fetch_cell,
+                                      offsets[coeff]);
       break;
     }
     case IntegralType::interior_facet:
@@ -697,15 +697,13 @@ void pack_coefficients(const Form<T>& form, IntegralType integral_type, int id,
       for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
       {
         // Pack coefficient ['+']
-        impl::pack_coefficient_entity<
-            T, std::tuple<std::int32_t, int, std::int32_t, int>>(
-            c, 2 * cstride, *coefficients[coeff], cell_info, facets,
-            fetch_cell0, 2 * offsets[coeff]);
+        impl::pack_coefficient_entity(c, 2 * cstride, *coefficients[coeff],
+                                      cell_info, facets, fetch_cell0,
+                                      2 * offsets[coeff]);
         // Pack coefficient ['-']
-        impl::pack_coefficient_entity<
-            T, std::tuple<std::int32_t, int, std::int32_t, int>>(
-            c, 2 * cstride, *coefficients[coeff], cell_info, facets,
-            fetch_cell1, offsets[coeff] + offsets[coeff + 1]);
+        impl::pack_coefficient_entity(c, 2 * cstride, *coefficients[coeff],
+                                      cell_info, facets, fetch_cell1,
+                                      offsets[coeff] + offsets[coeff + 1]);
       }
       break;
     }
@@ -755,26 +753,9 @@ std::pair<std::vector<T>, int>
 pack_coefficients(const Expression<T>& u,
                   const xtl::span<const std::int32_t>& cells)
 {
-  // FIXME: Much of this code is duplicated above. Try to refactor.
-
   // Get form coefficient offsets and dofmaps
   const std::vector<std::shared_ptr<const Function<T>>> coefficients
       = u.coefficients();
-  const std::vector<int> offsets = u.coefficient_offsets();
-  std::vector<const DofMap*> dofmaps(coefficients.size());
-  std::vector<const FiniteElement*> elements(coefficients.size());
-  std::vector<xtl::span<const T>> v;
-  v.reserve(coefficients.size());
-  for (std::size_t i = 0; i < coefficients.size(); ++i)
-  {
-    elements[i] = coefficients[i]->function_space()->element().get();
-    dofmaps[i] = coefficients[i]->function_space()->dofmap().get();
-    v.push_back(coefficients[i]->x()->array());
-  }
-
-  // Get mesh
-  std::shared_ptr<const mesh::Mesh> mesh = u.mesh();
-  assert(mesh);
 
   // Copy data into coefficient array
   const int cstride = offsets.back();
@@ -786,12 +767,9 @@ pack_coefficients(const Expression<T>& u,
 
     auto identity = [](std::int32_t entity) { return entity; };
     // Iterate over coefficients
-    for (std::size_t coeff = 0; coeff < dofmaps.size(); ++coeff)
-    {
-      impl::pack_coefficient_entity<T, std::int32_t>(
-          xtl::span<T>(c), cstride, *coefficients[coeff], cell_info, cells,
-          identity, offsets[coeff]);
-    }
+    for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
+      impl::pack_coefficient_entity(c, cstride, *coefficients[coeff], cell_info,
+                                    cells, identity, offsets[coeff]);
   }
   return {std::move(c), cstride};
 }
