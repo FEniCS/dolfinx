@@ -480,10 +480,10 @@ xtl::span<const std::uint32_t> get_cell_info(
 
 // Pack a single coefficient for a single cell
 template <typename T, int _bs, typename Functor>
-void inline pack(const xtl::span<T>& coeffs, std::int32_t cell, int bs,
-                 const xtl::span<const T>& v,
-                 const xtl::span<const std::uint32_t>& cell_info,
-                 const DofMap& dofmap, Functor transform)
+static inline void pack(const xtl::span<T>& coeffs, std::int32_t cell, int bs,
+                        const xtl::span<const T>& v,
+                        const xtl::span<const std::uint32_t>& cell_info,
+                        const DofMap& dofmap, Functor transform)
 {
   auto dofs = dofmap.cell_dofs(cell);
   for (std::size_t i = 0; i < dofs.size(); ++i)
@@ -512,14 +512,13 @@ void inline pack(const xtl::span<T>& coeffs, std::int32_t cell, int bs,
 /// @param[out] c The coefficient to be packed
 /// @param[in] cstride The total number of coefficient values to pack
 /// for each entity
-/// @param[in] u List of arrays with all degrees of freedom for the
-/// functions to be packed
+/// @param[in] u The function to extract data from
 /// @param[in] cell_info Array of bytes describing which transformation
 /// has to be applied on the cell to map it to the reference element
 /// @param[in] entities The set of active entities
 /// @param[in] fetch_cells Function that fetches the cell index for an
 /// entity in active_entities (signature:
-/// `std::function<std::int32_t(E)>`)
+/// `std::function<std::int32_t(E::value_type)>`)
 /// @param[in] offset The offset for c
 template <typename T, typename E, typename Functor>
 void pack_coefficient_entity(const xtl::span<T>& c, int cstride,
@@ -528,7 +527,7 @@ void pack_coefficient_entity(const xtl::span<T>& c, int cstride,
                              const E& entities, Functor fetch_cells,
                              std::int32_t offset)
 {
-  // Read function data
+  // Read data from coefficient "u"
   const xtl::span<const T>& v = u.x()->array();
   const DofMap& dofmap = *u.function_space()->dofmap();
   std::shared_ptr<const FiniteElement> element = u.function_space()->element();
@@ -576,8 +575,8 @@ void pack_coefficient_entity(const xtl::span<T>& c, int cstride,
 
 } // namespace impl
 
-/// Allocate memory for coefficients of a single kernel (integral_type, id) of a
-/// Form
+/// Allocate memory for coefficients of a pair (integral_type, id) from a
+/// Form form
 ///
 /// @param[in] form The Form
 /// @param[in] integral_type Type of integral
@@ -620,7 +619,8 @@ allocate_coefficient_memory(const Form<T>& form, IntegralType integral_type,
 /// Allocate memory for packed coefficients of a Form
 ///
 /// @param[in] form The Form
-/// @return A pair of the form (coeffs, entity stride)
+/// @return A map from a pair of the form (integral_type, domain_id)
+/// to a pair of the form (coeffs, cstride)
 template <typename T>
 std::map<std::pair<IntegralType, int>, std::pair<std::vector<T>, int>>
 allocate_coefficient_memory(const Form<T>& form)
