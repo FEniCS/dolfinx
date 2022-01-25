@@ -171,9 +171,13 @@ int main(int argc, char* argv[])
 
     b.scatter_fwd();
 
+    // Pack coefficients and constants
+    auto coeff = fem::allocate_coefficient_memory(*M);
+    const std::vector<T> constants = fem::pack_constants(*M);
+
     // Create function for computing the action of A on x (y = Ax)
     std::function<void(la::Vector<T>&, la::Vector<T>&)> action
-        = [&M, &ui, &bc](la::Vector<T>& x, la::Vector<T>& y)
+        = [&M, &ui, &bc, &coeff, &constants](la::Vector<T>& x, la::Vector<T>& y)
     {
       // Zero y
       y.set(0.0);
@@ -183,7 +187,9 @@ int main(int argc, char* argv[])
                 ui->x()->mutable_array().begin());
 
       // Compute action of A on x
-      fem::assemble_vector(y.mutable_array(), *M);
+      fem::pack_coefficients(*M, coeff);
+      fem::assemble_vector(y.mutable_array(), *M, xtl::span<const T>(constants),
+                           fem::make_coefficients_span(coeff));
 
       // Set BC dofs to zero (effectively zeroes rows of A)
       fem::set_bc(y.mutable_array(), {bc}, 0.0);
