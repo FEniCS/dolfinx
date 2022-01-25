@@ -37,10 +37,10 @@ using namespace dolfinx;
 namespace linalg
 {
 /// Compute vector r = alpha*x + y
-/// @param[in, out]  r Result
-/// @param[in]  alpha
-/// @param[in]  x
-/// @param[in]  y
+/// @param[in, out] r Result
+/// @param[in] alpha
+/// @param[in] x
+/// @param[in] y
 template <typename U>
 void axpy(la::Vector<U>& r, U alpha, const la::Vector<U>& x,
           const la::Vector<U>& y)
@@ -67,14 +67,14 @@ int cg(la::Vector<U>& x, const la::Vector<U>& b, ApplyFunction&& action,
   la::Vector<U> r(b), y(b);
 
   // Compute initial residual r0 = b - Ax0
+  x.scatter_fwd();
   action(x, y);
-  axpy(r, U(-1.), y, b);
+  axpy(r, U(-1), y, b);
 
   la::Vector<U> p(r);
 
-  double rnorm0 = r.squared_norm();
-
   // Iterations of CG
+  double rnorm0 = r.squared_norm();
   const double rtol2 = rtol * rtol;
   double rnorm = rnorm0;
   int k = 0;
@@ -83,6 +83,7 @@ int cg(la::Vector<U>& x, const la::Vector<U>& b, ApplyFunction&& action,
     ++k;
 
     // MatVec (y = A p)
+    p.scatter_fwd();
     action(p, y);
 
     // alpha = r.r/p.y
@@ -126,7 +127,6 @@ int main(int argc, char* argv[])
     auto mesh = std::make_shared<mesh::Mesh>(mesh::create_rectangle(
         comm, {{{0.0, 0.0}, {1.0, 1.0}}}, {10, 10}, mesh::CellType::triangle,
         mesh::GhostMode::none));
-
     auto V = std::make_shared<fem::FunctionSpace>(
         fem::create_functionspace(functionspace_form_poisson_M, "ui", mesh));
 
@@ -148,7 +148,6 @@ int main(int argc, char* argv[])
         [](auto&& x) {
           return 1 + xt::square(xt::row(x, 0)) + 2 * xt::square(xt::row(x, 1));
         });
-
     std::vector<std::int32_t> facets = mesh::exterior_facet_indices(*mesh);
     std::vector<std::int32_t> bdofs
         = fem::locate_dofs_topological({*V}, 1, facets);
@@ -171,10 +170,9 @@ int main(int argc, char* argv[])
 
     // Create function for computing the action of A on x (y = Ax)
     std::function<void(la::Vector<T>&, la::Vector<T>&)> action
-        = [&](la::Vector<T>& x, la::Vector<T>& y)
+        = [&M, &ui, &bc](la::Vector<T>& x, la::Vector<T>& y)
     {
       // Update ghost values and zero y
-      x.scatter_fwd();
       y.set(0.0);
 
       // Update coefficient ui (just copy data from x to ui)
@@ -182,7 +180,7 @@ int main(int argc, char* argv[])
                 ui->x()->mutable_array().begin());
 
       // Compute action of A on x
-      dolfinx::fem::assemble_vector(y.mutable_array(), *M);
+      fem::assemble_vector(y.mutable_array(), *M);
 
       // Set BC dofs to zero (effectively zeroes rows of A)
       fem::set_bc(y.mutable_array(), {bc}, 0.0);
@@ -193,7 +191,7 @@ int main(int argc, char* argv[])
 
     // Compute solution using the conjugate gradient method
     auto u = std::make_shared<fem::Function<T>>(V);
-    int it = linalg::cg(*u->x(), b, action, 200, 1e-6);
+    int num_it = linalg::cg(*u->x(), b, action, 200, 1e-6);
 
     // Update ghost values and zero y
     u->x()->scatter_fwd();
@@ -201,15 +199,17 @@ int main(int argc, char* argv[])
     // Set BC values in the solution vectors
     fem::set_bc(u->x()->mutable_array(), {bc}, 1.0);
 
-    // Compute L2 error of the solution vector e = (u - u_d, u - u_d)*dx
+    // Compute L2 error (squared) of the solution vector e = (u - u_d, u -
+    // u_d)*dx
     auto E = std::make_shared<fem::Form<T>>(fem::create_form<T>(
         *form_poisson_E, {}, {{"uexact", u_D}, {"usol", u}}, {}, {}, mesh));
     T error = fem::assemble_scalar(*E);
 
     if (dolfinx::MPI::rank(comm) == 0)
     {
-      std::cout << "Number of CG iterations " << it << std::endl;
-      std::cout << "Finite element error (L2 norm) " << error << std::endl;
+      std::cout << "Number of CG iterations " << num_it << std::endl;
+      std::cout << "Finite element error (L2 norm, squared) " << std::abs(error)
+                << std::endl;
     }
   }
 
