@@ -37,7 +37,7 @@ using namespace dolfinx;
 namespace linalg
 {
 /// Compute vector r = alpha*x + y
-/// @param[in, out] r Result
+/// @param[out] r Result
 /// @param[in] alpha
 /// @param[in] x
 /// @param[in] y
@@ -45,32 +45,34 @@ template <typename U>
 void axpy(la::Vector<U>& r, U alpha, const la::Vector<U>& x,
           const la::Vector<U>& y)
 {
-  std::transform(x.array().cbegin(),
-                 std::next(x.array().cbegin(), x.map()->size_local()),
-                 y.array().cbegin(), r.mutable_array().begin(),
+  std::transform(x.array().cbegin(), x.array().cend(), y.array().cbegin(),
+                 r.mutable_array().begin(),
                  [alpha](auto x, auto y) { return alpha * x + y; });
 }
 
 /// Solve problem A.x = b using the Conjugate Gradient method
 /// @tparam U The scalar type
 /// @tparam ApplyFunction Type of the function object "action"
-/// @param[in, out] x Solution Vector, may contain approximate initial solution
+/// @param[in, out] x Solution vector, may be set to an initial guess
 /// @param[in] b RHS Vector
 /// @param[in] action Function that provides the action of the linear operator
-/// @param[in] kmax Maxmimum number of iterations
+/// @param[in] kmax Maximum number of iterations
 /// @param[in] rtol Relative tolerances for convergence
+/// @return The number if iterations
+/// @pre It is required that the ghost values of `x` and `b` have been
+/// updated before this function is called
 template <typename U, typename ApplyFunction>
 int cg(la::Vector<U>& x, const la::Vector<U>& b, ApplyFunction&& action,
        int kmax = 50, double rtol = 1e-8)
 {
-  // Working vectors
+  // Create working vectors
   la::Vector<U> r(b), y(b);
 
   // Compute initial residual r0 = b - Ax0
-  x.scatter_fwd();
   action(x, y);
   axpy(r, U(-1), y, b);
 
+  // Create p work vector
   la::Vector<U> p(r);
 
   // Iterations of CG
@@ -82,11 +84,10 @@ int cg(la::Vector<U>& x, const la::Vector<U>& b, ApplyFunction&& action,
   {
     ++k;
 
-    // MatVec (y = A p)
-    p.scatter_fwd();
+    // Compute y = A p
     action(p, y);
 
-    // alpha = r.r/p.y
+    // Compute alpha = r.r/p.y
     const U alpha = rnorm / la::inner_product(p, y);
 
     // Update x (x <- x + alpha*p)
@@ -168,11 +169,13 @@ int main(int argc, char* argv[])
     // Set BC dofs to zero (effectively zeroes columns of A)
     fem::set_bc(b.mutable_array(), {bc}, 0.0);
 
+    b.scatter_fwd();
+
     // Create function for computing the action of A on x (y = Ax)
     std::function<void(la::Vector<T>&, la::Vector<T>&)> action
         = [&M, &ui, &bc](la::Vector<T>& x, la::Vector<T>& y)
     {
-      // Update ghost values and zero y
+      // Zero y
       y.set(0.0);
 
       // Update coefficient ui (just copy data from x to ui)
@@ -185,22 +188,25 @@ int main(int argc, char* argv[])
       // Set BC dofs to zero (effectively zeroes rows of A)
       fem::set_bc(y.mutable_array(), {bc}, 0.0);
 
-      // Communicate ghost values
+      // Accumuate ghost values
       y.scatter_rev(common::IndexMap::Mode::add);
+
+      // Update ghost values
+      y.scatter_fwd();
     };
 
     // Compute solution using the conjugate gradient method
     auto u = std::make_shared<fem::Function<T>>(V);
     int num_it = linalg::cg(*u->x(), b, action, 200, 1e-6);
 
-    // Update ghost values and zero y
+    // Update ghost values
     u->x()->scatter_fwd();
 
     // Set BC values in the solution vectors
     fem::set_bc(u->x()->mutable_array(), {bc}, 1.0);
 
-    // Compute L2 error (squared) of the solution vector e = (u - u_d, u -
-    // u_d)*dx
+    // Compute L2 error (squared) of the solution vector e = (u - u_d, u
+    // - u_d)*dx
     auto E = std::make_shared<fem::Form<T>>(fem::create_form<T>(
         *form_poisson_E, {}, {{"uexact", u_D}, {"usol", u}}, {}, {}, mesh));
     T error = fem::assemble_scalar(*E);
@@ -208,8 +214,8 @@ int main(int argc, char* argv[])
     if (dolfinx::MPI::rank(comm) == 0)
     {
       std::cout << "Number of CG iterations " << num_it << std::endl;
-      std::cout << "Finite element error (L2 norm, squared) " << std::abs(error)
-                << std::endl;
+      std::cout << "Finite element error (L2 norm (squared)) "
+                << std::abs(error) << std::endl;
     }
   }
 
