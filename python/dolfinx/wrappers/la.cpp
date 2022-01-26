@@ -193,7 +193,7 @@ void la(py::module& m)
       .def("insert_diagonal",
            [](dolfinx::la::SparsityPattern& self,
               const py::array_t<std::int32_t, py::array::c_style>& rows)
-           { self.insert_diagonal(xtl::span(rows.data(), rows.size())); })
+           { self.insert_diagonal(rows); })
       .def_property_readonly("graph", &dolfinx::la::SparsityPattern::graph,
                              py::return_value_policy::reference_internal);
 

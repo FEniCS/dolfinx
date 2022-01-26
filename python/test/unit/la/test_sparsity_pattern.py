@@ -13,9 +13,7 @@ from mpi4py import MPI
 
 
 def test_add_diagonal():
-    """
-    Test adding entries to diagonal of sparsity pattern
-    """
+    """Test adding entries to diagonal of sparsity pattern"""
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 10)
     V = VectorFunctionSpace(mesh, ("Lagrange", 1))
     pattern = SparsityPattern(mesh.comm, [V.dofmap.index_map, V.dofmap.index_map],
@@ -25,4 +23,4 @@ def test_add_diagonal():
     blocks = locate_dofs_topological(V, mesh.topology.dim - 1, facets)
     pattern.insert_diagonal(blocks)
     pattern.assemble()
-    assert(len(blocks) == pattern.num_nonzeros)
+    assert len(blocks) == pattern.num_nonzeros
