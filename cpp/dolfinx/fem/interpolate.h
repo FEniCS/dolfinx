@@ -644,47 +644,28 @@ void interpolate(Function<T>& u, const Function<T>& v)
       const xt::xtensor<double, 2> x = fem::interpolation_coords(
           *u.function_space()->element(), *u.function_space()->mesh(), cells);
 
-      // This transposition is a quick and dirty solution and should be avoided
-      auto x_t = xt::zeros_like(xt::transpose(x));
-      for (decltype(x.shape(1)) i = 0; i < x.shape(1); ++i)
-      {
-        for (decltype(x.shape(0)) j = 0; j < x.shape(0); ++j)
-        {
-          x_t(i, j) = x(j, i);
-        }
-      }
-
       // Create a global bounding-box tree to quickly look for processes that
       // might be able to evaluate the interpolating function at a given point
       dolfinx::geometry::BoundingBoxTree bb(*v.function_space()->mesh(), tdim,
                                             0.0001);
-      auto globalBB = bb.create_global_tree(MPI_COMM_WORLD);
+      auto globalBB = bb.create_global_tree(v.function_space()->mesh()->comm());
 
-      // For each point that needs to be evaluated, store a list of processes
-      // that might be able to do it
-      std::vector<std::vector<std::int32_t>> candidates(x_t.shape(0));
-      for (decltype(x_t.shape(0)) i = 0; i < x_t.shape(0); ++i)
-      {
-        const auto collisions = dolfinx::geometry::compute_collisions(
-            globalBB,
-            xt::xtensor<double, 2>({{x_t(i, 0), x_t(i, 1), x_t(i, 2)}}));
-        candidates[i] = std::vector<std::int32_t>(collisions.links(0).cbegin(),
-                                                  collisions.links(0).cend());
-      }
+      // Get the list of processes that might be able to evaluate each point
+      const auto collisions
+          = dolfinx::geometry::compute_collisions(globalBB, xt::transpose(x));
 
       // Compute which points need to be sent to which process
       std::vector<std::vector<double>> pointsToSend(nProcs);
       // Reserve enough space to avoid the need for reallocating
       std::for_each(pointsToSend.begin(), pointsToSend.end(),
-                    [&candidates](auto& el)
-                    { el.reserve(3 * candidates.size()); });
+                    [&x](auto& el) { el.reserve(3 * x.shape(1)); });
       // The coordinates of the points that need to be sent to process p go into
       // pointsToSend[p]
-      for (decltype(candidates.size()) i = 0; i < candidates.size(); ++i)
+      for (decltype(x.shape(1)) i = 0; i < x.shape(1); ++i)
       {
-        for (const auto& p : candidates[i])
+        for (const auto& p : collisions.links(i))
         {
-          const auto point = xt::row(x_t, i);
+          const auto point = xt::col(x, i);
           pointsToSend[p].insert(pointsToSend[p].end(), point.cbegin(),
                                  point.cend());
         }
@@ -756,28 +737,21 @@ void interpolate(Function<T>& u, const Function<T>& v)
 
       const auto xv = v.function_space()->mesh()->geometry().x();
 
-      // For each point at which the source function needs to be evaluated
+      // Collect adjacency list of all cells that collide with a given point
+      const auto collidingCells = dolfinx::geometry::compute_colliding_cells(
+          *v.function_space()->mesh(),
+          // For each point at which the source function needs to be evaluated
+          dolfinx::geometry::compute_collisions(bbt, pointsToReceive),
+          pointsToReceive);
+
       for (decltype(pointsToReceive.shape(0)) i = 0;
            i < pointsToReceive.shape(0); ++i)
       {
-        // Get its coordinates
-        const double xp = pointsToReceive(i, 0);
-        const double yp = pointsToReceive(i, 1);
-        const double zp = pointsToReceive(i, 2);
-
-        // Check if any cells actually contain that point
-        const auto collidingCells = dolfinx::geometry::compute_colliding_cells(
-            *v.function_space()->mesh(),
-            dolfinx::geometry::compute_collisions(
-                bbt, xt::xtensor<double, 2>({{xp, yp, zp}})),
-            xt::xtensor<double, 2>({{xp, yp, zp}}));
-        const std::vector<std::int32_t> intersectingCells(
-            collidingCells.links(0).cbegin(), collidingCells.links(0).cend());
-
-        // If there is any -- there should be at most one -- note it down
-        if (not intersectingCells.empty())
+        // If any cell was found at all -- there should be at most one -- note
+        // it down
+        if (not collidingCells.links(i).empty())
         {
-          evaluationCells[i] = intersectingCells[0];
+          evaluationCells[i] = collidingCells.links(i)[0];
         }
       }
 
@@ -833,7 +807,7 @@ void interpolate(Function<T>& u, const Function<T>& v)
       MPI_Win_free(&window);
 
       xt::xarray<T> myVals(
-          {x_t.shape(0), static_cast<decltype(x_t.shape(0))>(value_size)},
+          {x.shape(1), static_cast<decltype(x.shape(1))>(value_size)},
           static_cast<T>(0));
 
       // Auxiliary counters to keep track of which values correspond to which
@@ -841,10 +815,10 @@ void interpolate(Function<T>& u, const Function<T>& v)
       std::vector<std::size_t> scanningProgress(nProcs, 0);
 
       // For every point for which we need a value
-      for (decltype(candidates.size()) i = 0; i < candidates.size(); ++i)
+      for (decltype(x.shape(1)) i = 0; i < x.shape(1); ++i)
       {
         // For every candidate that might have provided that value
-        for (const auto& p : candidates[i])
+        for (const auto& p : collisions.links(i))
         {
           // For every component of the value space
           for (int j = 0; j < value_size; ++j)
@@ -861,17 +835,8 @@ void interpolate(Function<T>& u, const Function<T>& v)
         }
       }
 
-      // This transposition is a quick and dirty solution and should be avoided
-      xt::xarray<T> myVals_t = xt::zeros_like(xt::transpose(myVals));
-      for (decltype(myVals.shape(1)) i = 0; i < myVals.shape(1); ++i)
-      {
-        for (decltype(myVals.shape(0)) j = 0; j < myVals.shape(0); ++j)
-        {
-          myVals_t(i, j) = myVals(j, i);
-        }
-      }
-
       // Finally, interpolate using the computed values
+      xt::xarray<T> myVals_t = xt::transpose(myVals);
       fem::interpolate(u, myVals_t, cells);
 
       return;
