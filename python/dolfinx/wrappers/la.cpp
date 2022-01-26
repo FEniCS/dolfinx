@@ -180,7 +180,8 @@ void la(py::module& m)
           }))
       .def("index_map", &dolfinx::la::SparsityPattern::index_map)
       .def("assemble", &dolfinx::la::SparsityPattern::assemble)
-      .def("num_nonzeros", &dolfinx::la::SparsityPattern::num_nonzeros)
+      .def_property_readonly("num_nonzeros",
+                             &dolfinx::la::SparsityPattern::num_nonzeros)
       .def("insert",
            [](dolfinx::la::SparsityPattern& self,
               const py::array_t<std::int32_t, py::array::c_style>& rows,
@@ -189,7 +190,10 @@ void la(py::module& m)
              self.insert(xtl::span(rows.data(), rows.size()),
                          xtl::span(cols.data(), cols.size()));
            })
-      .def("insert_diagonal", &dolfinx::la::SparsityPattern::insert_diagonal)
+      .def("insert_diagonal",
+           [](dolfinx::la::SparsityPattern& self,
+              const py::array_t<std::int32_t, py::array::c_style>& rows)
+           { self.insert_diagonal(rows); })
       .def_property_readonly("graph", &dolfinx::la::SparsityPattern::graph,
                              py::return_value_policy::reference_internal);
 
