@@ -14,6 +14,7 @@
 #include <dolfinx/mesh/utils.h>
 #include <xtensor/xfixed.hpp>
 #include <xtensor/xnorm.hpp>
+#include <xtensor/xview.hpp>
 
 using namespace dolfinx;
 
@@ -203,7 +204,7 @@ geometry::create_midpoint_tree(const mesh::Mesh& mesh, int tdim,
   LOG(INFO) << "Building point search tree to accelerate distance queries for "
                "a given topological dimension and subset of entities.";
 
-  const auto midpoints = mesh::midpoints(mesh, tdim, entities);
+  const auto midpoints = mesh::compute_midpoints(mesh, tdim, entities);
   std::vector<std::pair<std::array<double, 3>, std::int32_t>> points(
       entities.size());
   for (std::size_t i = 0; i < points.size(); ++i)
@@ -267,7 +268,8 @@ std::vector<std::int32_t> geometry::compute_closest_entity(
   else
   {
     double R2;
-    const double initial_entity = 0;
+    double initial_entity;
+    std::array<int, 2> leaves;
     std::vector<std::int32_t> entities;
     entities.reserve(points.shape(0));
     for (std::size_t i = 0; i < points.shape(0); i++)
@@ -275,18 +277,21 @@ std::vector<std::int32_t> geometry::compute_closest_entity(
       // Use midpoint tree to find initial closest entity to the point.
       // Start by using a leaf node as the initial guess for the input
       // entity
+      leaves = midpoint_tree.bbox(0);
+      assert(is_leaf(leaves));
+      initial_entity = leaves[0];
       xt::xtensor_fixed<double, xt::xshape<3>> diff
-          = xt::row(midpoint_tree.get_bbox(initial_entity), 0);
+          = xt::row(midpoint_tree.get_bbox(0), 0);
       diff -= xt::row(points, i);
       R2 = xt::norm_sq(diff)();
 
       // Use a recursive search through the bounding box tree
       // to find determine the entity with the closest midpoint.
-      // As the midpoint tree only consist of points, the distance queries are
-      // lightweight.
+      // As the midpoint tree only consist of points, the distance
+      // queries are lightweight.
       const auto [m_index, m_distance2] = _compute_closest_entity(
           midpoint_tree, xt::reshape_view(xt::row(points, i), {1, 3}),
-          midpoint_tree.num_bboxes() - 1, mesh, 0, R2);
+          midpoint_tree.num_bboxes() - 1, mesh, initial_entity, R2);
 
       // Use a recursive search through the bounding box tree to
       // determine which entity is actually closest.
@@ -324,11 +329,8 @@ geometry::shortest_vector(const mesh::Mesh& mesh, int dim,
   assert(points.shape(1) == 3);
   const int tdim = mesh.topology().dim();
   const mesh::Geometry& geometry = mesh.geometry();
-  const xt::xtensor<double, 2>& geom_dofs = geometry.x();
-  assert(geom_dofs.shape(1) == 3);
-
+  xtl::span<const double> geom_dofs = geometry.x();
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
-
   xt::xtensor<double, 2> shortest_vectors({entities.size(), 3});
   if (dim == tdim)
   {
@@ -337,8 +339,11 @@ geometry::shortest_vector(const mesh::Mesh& mesh, int dim,
       auto dofs = x_dofmap.links(entities[e]);
       xt::xtensor<double, 2> nodes({dofs.size(), 3});
       for (std::size_t i = 0; i < dofs.size(); ++i)
+      {
+        const int pos = 3 * dofs[i];
         for (std::size_t j = 0; j < 3; ++j)
-          nodes(i, j) = geom_dofs(dofs[i], j);
+          nodes(i, j) = geom_dofs[pos + j];
+      }
 
       xt::row(shortest_vectors, e) = geometry::compute_distance_gjk(
           xt::reshape_view(xt::row(points, e), {1, 3}), nodes);
@@ -373,8 +378,11 @@ geometry::shortest_vector(const mesh::Mesh& mesh, int dim,
               dim, local_cell_entity);
       xt::xtensor<double, 2> nodes({entity_dofs.size(), 3});
       for (std::size_t i = 0; i < entity_dofs.size(); i++)
+      {
+        const int pos = 3 * dofs[entity_dofs[i]];
         for (std::size_t j = 0; j < 3; ++j)
-          nodes(i, j) = geom_dofs(dofs[entity_dofs[i]], j);
+          nodes(i, j) = geom_dofs[pos + j];
+      }
 
       xt::row(shortest_vectors, e) = compute_distance_gjk(
           xt::reshape_view(xt::row(points, e), {1, 3}), nodes);

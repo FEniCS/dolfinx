@@ -20,20 +20,19 @@ namespace dolfinx_wrappers
 {
 void nls(py::module& m)
 {
-
   // dolfinx::NewtonSolver
   py::class_<dolfinx::nls::NewtonSolver,
              std::shared_ptr<dolfinx::nls::NewtonSolver>>(m, "NewtonSolver")
-      .def(py::init([](const MPICommWrapper comm) {
-        return std::make_unique<dolfinx::nls::NewtonSolver>(comm.get());
-      }))
+      .def(py::init(
+          [](const MPICommWrapper comm)
+          { return std::make_unique<dolfinx::nls::NewtonSolver>(comm.get()); }))
       .def_property_readonly("krylov_solver",
-           [](const dolfinx::nls::NewtonSolver& self) {
-             const dolfinx::la::PETScKrylovSolver& krylov_solver
-                 = self.get_krylov_solver();
-             KSP ksp = krylov_solver.ksp();
-             return ksp;
-           })
+                             [](const dolfinx::nls::NewtonSolver& self)
+                             {
+                               const dolfinx::la::petsc::KrylovSolver& solver
+                                   = self.get_krylov_solver();
+                               return solver.ksp();
+                             })
       .def("setF", &dolfinx::nls::NewtonSolver::setF)
       .def("setJ", &dolfinx::nls::NewtonSolver::setJ)
       .def("setP", &dolfinx::nls::NewtonSolver::setP)
@@ -44,7 +43,7 @@ void nls(py::module& m)
                      "Absolute tolerance")
       .def_readwrite("rtol", &dolfinx::nls::NewtonSolver::rtol,
                      "Relative tolerance")
-      .def_readwrite("error_on_nonconvergence", 
+      .def_readwrite("error_on_nonconvergence",
                      &dolfinx::nls::NewtonSolver::error_on_nonconvergence)
       .def_readwrite("report", &dolfinx::nls::NewtonSolver::report)
       .def_readwrite("relaxation_parameter",

@@ -49,6 +49,24 @@ jobs:
           python3 -m flake8 dolfinx_utils
           python3 -m flake8 demo
           python3 -m flake8 test
+      - name: isort checks (non-blocking)
+        continue-on-error: true
+        run: |
+          cd python/
+          python3 -m isort --check dolfinx
+          python3 -m isort --check dolfinx_utils
+          python3 -m isort --check demo
+          python3 -m isort --check test
+      - name: clang-format C++ checks (non-blocking)
+        continue-on-error: true
+        run: |
+          cd cpp
+          find . -type f \( -name "*.cpp" -o -name "*.h" \) ! -name "pugixml.cpp" ! -name "loguru.cpp" | xargs clang-format --dry-run --Werror
+      - name: clang-format Python binding checks (non-blocking)
+        continue-on-error: true
+        run: |
+          cd python/dolfinx/wrappers
+          find . -type f \( -name "*.cpp" -o -name "*.h" \) | xargs clang-format --dry-run --Werror
 
       - name: Configure C++
         run: cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build -S cpp/

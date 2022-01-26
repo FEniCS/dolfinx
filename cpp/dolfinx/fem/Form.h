@@ -548,26 +548,26 @@ private:
 
     // Cells. If there is a default integral, define it on all owned
     // cells
-    for (auto& [domain_id, kernel_active_cells] : _cell_integrals)
+    for (auto& [domain_id, kernel_cells] : _cell_integrals)
     {
       if (domain_id == -1)
       {
-        std::vector<std::int32_t>& active_cells = kernel_active_cells.second;
+        std::vector<std::int32_t>& cells = kernel_cells.second;
         const int num_cells = topology.index_map(tdim)->size_local();
-        active_cells.resize(num_cells);
-        std::iota(active_cells.begin(), active_cells.end(), 0);
+        cells.resize(num_cells);
+        std::iota(cells.begin(), cells.end(), 0);
       }
     }
 
     // Exterior facets. If there is a default integral, define it only
     // on owned surface facets.
-    for (auto& [domain_id, kernel_active_facets] : _exterior_facet_integrals)
+    for (auto& [domain_id, kernel_facets] : _exterior_facet_integrals)
     {
       if (domain_id == -1)
       {
-        std::vector<std::pair<std::int32_t, int>>& active_facets
-            = kernel_active_facets.second;
-        active_facets.clear();
+        std::vector<std::pair<std::int32_t, int>>& facets
+            = kernel_facets.second;
+        facets.clear();
 
         mesh.topology_mutable().create_connectivity(tdim - 1, tdim);
         auto f_to_c = topology.connectivity(tdim - 1, tdim);
@@ -598,7 +598,7 @@ private:
             // integral
             std::pair<std::int32_t, int> pair = get_cell_local_facet_pairs<1>(
                 f, f_to_c->links(f), *c_to_f)[0];
-            active_facets.push_back(pair);
+            facets.push_back(pair);
           }
         }
       }
@@ -606,14 +606,13 @@ private:
 
     // Interior facets. If there is a default integral, define it only on
     // owned interior facets.
-    for (auto& [domain_id, kernel_active_facets] : _interior_facet_integrals)
+    for (auto& [domain_id, kernel_facets] : _interior_facet_integrals)
     {
       if (domain_id == -1)
       {
-        std::vector<std::tuple<std::int32_t, int, std::int32_t, int>>&
-            active_facets
-            = kernel_active_facets.second;
-        active_facets.clear();
+        std::vector<std::tuple<std::int32_t, int, std::int32_t, int>>& facets
+            = kernel_facets.second;
+        facets.clear();
 
         mesh.topology_mutable().create_connectivity(tdim - 1, tdim);
         auto f_to_c = topology.connectivity(tdim - 1, tdim);
@@ -625,15 +624,15 @@ private:
         // Get number of facets owned by this process
         assert(topology.index_map(tdim - 1));
         const int num_facets = topology.index_map(tdim - 1)->size_local();
-        active_facets.reserve(num_facets);
+        facets.reserve(num_facets);
         for (int f = 0; f < num_facets; ++f)
         {
           if (f_to_c->num_links(f) == 2)
           {
             std::array<std::pair<std::int32_t, int>, 2> pairs
                 = get_cell_local_facet_pairs<2>(f, f_to_c->links(f), *c_to_f);
-            active_facets.emplace_back(pairs[0].first, pairs[0].second,
-                                       pairs[1].first, pairs[1].second);
+            facets.emplace_back(pairs[0].first, pairs[0].second, pairs[1].first,
+                                pairs[1].second);
           }
         }
       }

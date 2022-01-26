@@ -7,10 +7,12 @@
 import os
 
 import pytest
-from dolfinx import UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh
+
 from dolfinx.io import XDMFFile
-from dolfinx.mesh import CellType
+from dolfinx.mesh import (CellType, create_unit_cube, create_unit_interval,
+                          create_unit_square)
 from dolfinx_utils.test.fixtures import tempdir
+
 from mpi4py import MPI
 
 assert (tempdir)
@@ -28,11 +30,11 @@ celltypes_3D = [CellType.tetrahedron, CellType.hexahedron]
 
 def mesh_factory(tdim, n):
     if tdim == 1:
-        return UnitIntervalMesh(MPI.COMM_WORLD, n)
+        return create_unit_interval(MPI.COMM_WORLD, n)
     elif tdim == 2:
-        return UnitSquareMesh(MPI.COMM_WORLD, n, n)
+        return create_unit_square(MPI.COMM_WORLD, n, n)
     elif tdim == 3:
-        return UnitCubeMesh(MPI.COMM_WORLD, n, n, n)
+        return create_unit_cube(MPI.COMM_WORLD, n, n, n)
 
 
 @pytest.fixture
@@ -50,7 +52,7 @@ def test_read_mesh_data(tempdir, tdim, n):
     filename = os.path.join(tempdir, "mesh.xdmf")
     mesh = mesh_factory(tdim, n)
     encoding = XDMFFile.Encoding.HDF5
-    with XDMFFile(mesh.mpi_comm(), filename, "w", encoding) as file:
+    with XDMFFile(mesh.comm, filename, "w", encoding) as file:
         file.write_mesh(mesh)
 
     with XDMFFile(MPI.COMM_WORLD, filename, "r") as file:
@@ -60,5 +62,5 @@ def test_read_mesh_data(tempdir, tdim, n):
 
     assert cell_shape == mesh.topology.cell_type
     assert cell_degree == 1
-    assert mesh.topology.index_map(tdim).size_global == mesh.mpi_comm().allreduce(cells.shape[0], op=MPI.SUM)
-    assert mesh.geometry.index_map().size_global == mesh.mpi_comm().allreduce(x.shape[0], op=MPI.SUM)
+    assert mesh.topology.index_map(tdim).size_global == mesh.comm.allreduce(cells.shape[0], op=MPI.SUM)
+    assert mesh.geometry.index_map().size_global == mesh.comm.allreduce(x.shape[0], op=MPI.SUM)

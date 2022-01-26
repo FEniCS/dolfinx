@@ -8,19 +8,24 @@
 import pathlib
 
 import cppimport
-import dolfinx
-import dolfinx.pkgconfig
-import numpy
-import petsc4py
+import numpy as np
+import pybind11
 import pytest
 import scipy.sparse.linalg
+
+import dolfinx
+import dolfinx.pkgconfig
 import ufl
-from dolfinx.fem import Form
-from dolfinx.generation import UnitSquareMesh
+from dolfinx.fem import (FunctionSpace, assemble_matrix, dirichletbc, form,
+                         locate_dofs_geometrical)
+from dolfinx.mesh import create_unit_square
 from dolfinx.wrappers import get_include_path as pybind_inc
 from dolfinx_utils.test.fixtures import tempdir  # noqa: F401
 from dolfinx_utils.test.skips import skip_in_parallel
+
+import petsc4py
 from mpi4py import MPI
+from petsc4py import PETSc
 
 
 @skip_in_parallel
@@ -36,9 +41,9 @@ def test_eigen_assembly(tempdir):  # noqa: F811
         cpp_code_header = f"""
 <%
 setup_pybind11(cfg)
-cfg['include_dirs'] = {dolfinx_pc["include_dirs"] + [petsc4py.get_include()] + [str(pybind_inc())] + eigen_dir}
-cfg['compiler_args'] = {["-D" + dm for dm in dolfinx_pc["define_macros"]]}
-cfg['compiler_args'] = ['-std=c++17']
+cfg['include_dirs'] = {dolfinx_pc["include_dirs"] + [petsc4py.get_include()]
+  + [pybind11.get_include()] + [str(pybind_inc())] + eigen_dir}
+cfg['compiler_args'] = ["-std=c++17", "-Wno-comment"]
 cfg['libraries'] = {dolfinx_pc["libraries"]}
 cfg['library_dirs'] = {dolfinx_pc["library_dirs"]}
 %>
@@ -110,19 +115,16 @@ PYBIND11_MODULE(eigen_csr, m)
                     A[dofs, dofs] = 1.0
         return A
 
-    mesh = UnitSquareMesh(MPI.COMM_SELF, 12, 12)
-    Q = dolfinx.FunctionSpace(mesh, ("Lagrange", 1))
+    mesh = create_unit_square(MPI.COMM_SELF, 12, 12)
+    Q = FunctionSpace(mesh, ("Lagrange", 1))
     u = ufl.TrialFunction(Q)
     v = ufl.TestFunction(Q)
-    a = Form(ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx)
+    a = form(ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx)
 
-    bdofsQ = dolfinx.fem.locate_dofs_geometrical(Q, lambda x: numpy.logical_or(x[0] < 1.0e-6, x[0] > 1.0 - 1.0e-6))
-    u_bc = dolfinx.fem.Function(Q)
-    with u_bc.vector.localForm() as u_local:
-        u_local.set(1.0)
-    bc = dolfinx.fem.dirichletbc.DirichletBC(u_bc, bdofsQ)
+    bdofsQ = locate_dofs_geometrical(Q, lambda x: np.logical_or(np.isclose(x[0], 0.0), np.isclose(x[0], 1.0)))
+    bc = dirichletbc(PETSc.ScalarType(1), bdofsQ, Q)
 
-    A1 = dolfinx.fem.assemble_matrix(a, [bc])
+    A1 = assemble_matrix(a, [bc])
     A1.assemble()
     A2 = assemble_csr_matrix(a, [bc])
-    assert numpy.isclose(A1.norm(), scipy.sparse.linalg.norm(A2))
+    assert np.isclose(A1.norm(), scipy.sparse.linalg.norm(A2))

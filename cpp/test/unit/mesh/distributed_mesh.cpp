@@ -26,8 +26,8 @@ constexpr int N = 4;
 void create_mesh_file()
 {
   // Create mesh using all processes and save xdmf
-  auto mesh = std::make_shared<mesh::Mesh>(generation::RectangleMesh::create(
-      MPI_COMM_WORLD, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 0.0}}}, {N, N},
+  auto mesh = std::make_shared<mesh::Mesh>(mesh::create_rectangle(
+      MPI_COMM_WORLD, {{{0.0, 0.0}, {1.0, 1.0}}}, {N, N},
       mesh::CellType::triangle, mesh::GhostMode::shared_facet));
 
   // Save mesh in XDMF format
@@ -92,8 +92,8 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
       mpi_comm, cell_nodes, original_cell_index, ghost_owners,
       cmap.cell_shape(), mesh::GhostMode::shared_facet);
   int tdim = topology.dim();
-  dolfinx::mesh::Geometry geometry
-      = mesh::create_geometry(mpi_comm, topology, cmap, cell_nodes, x);
+  dolfinx::mesh::Geometry geometry = mesh::create_geometry(
+      mpi_comm, topology, cmap, cell_nodes, x, x.shape(1));
 
   auto mesh = std::make_shared<dolfinx::mesh::Mesh>(
       mpi_comm, std::move(topology), std::move(geometry));
@@ -104,7 +104,7 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
   CHECK(mesh->topology().index_map(0)->size_global() == (N + 1) * (N + 1));
   CHECK(mesh->topology().index_map(0)->size_local() > 0);
 
-  CHECK(mesh->geometry().x().shape(0)
+  CHECK(mesh->geometry().x().size() / 3
         == mesh->topology().index_map(0)->size_local()
                + mesh->topology().index_map(0)->num_ghosts());
 
@@ -120,10 +120,7 @@ TEST_CASE("Distributed Mesh", "[distributed_mesh]")
 
   SECTION("SCOTCH")
   {
-    CHECK_NOTHROW(test_distributed_mesh(
-        static_cast<graph::AdjacencyList<std::int32_t> (*)(
-            MPI_Comm, int, int, const graph::AdjacencyList<std::int64_t>&,
-            mesh::GhostMode)>(&mesh::partition_cells_graph)));
+    CHECK_NOTHROW(test_distributed_mesh(create_cell_partitioner()));
   }
 
 #ifdef HAS_KAHIP

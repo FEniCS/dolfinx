@@ -9,6 +9,7 @@
 #include "assemble_matrix_impl.h"
 #include "assemble_scalar_impl.h"
 #include "assemble_vector_impl.h"
+#include <cstdint>
 #include <memory>
 #include <vector>
 #include <xtl/xspan.hpp>
@@ -208,7 +209,7 @@ void assemble_matrix(
   auto bs1 = a.function_spaces().at(1)->dofmap()->index_map_bs();
 
   // Build dof markers
-  std::vector<bool> dof_marker0, dof_marker1;
+  std::vector<std::int8_t> dof_marker0, dof_marker1;
   assert(map0);
   std::int32_t dim0 = bs0 * (map0->size_local() + map0->num_ghosts());
   assert(map1);
@@ -275,7 +276,8 @@ void assemble_matrix(
     const Form<T>& a, const xtl::span<const T>& constants,
     const std::map<std::pair<IntegralType, int>,
                    std::pair<xtl::span<const T>, int>>& coefficients,
-    const std::vector<bool>& dof_marker0, const std::vector<bool>& dof_marker1)
+    const xtl::span<const std::int8_t>& dof_marker0,
+    const xtl::span<const std::int8_t>& dof_marker1)
 
 {
   impl::assemble_matrix(mat_add, a, constants, coefficients, dof_marker0,
@@ -296,8 +298,8 @@ template <typename T>
 void assemble_matrix(
     const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                             const std::int32_t*, const T*)>& mat_add,
-    const Form<T>& a, const std::vector<bool>& dof_marker0,
-    const std::vector<bool>& dof_marker1)
+    const Form<T>& a, const xtl::span<const std::int8_t>& dof_marker0,
+    const xtl::span<const std::int8_t>& dof_marker1)
 
 {
   // Prepare constants and coefficients

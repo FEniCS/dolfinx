@@ -21,7 +21,7 @@ SparsityPattern::SparsityPattern(
     MPI_Comm comm,
     const std::array<std::shared_ptr<const common::IndexMap>, 2>& maps,
     const std::array<int, 2>& bs)
-    : _mpi_comm(comm), _index_maps(maps), _bs(bs)
+    : _comm(comm), _index_maps(maps), _bs(bs)
 {
   assert(maps[0]);
   _cache_owned.resize(maps[0]->size_local());
@@ -35,7 +35,7 @@ SparsityPattern::SparsityPattern(
                          std::reference_wrapper<const common::IndexMap>, int>>,
                      2>& maps,
     const std::array<std::vector<int>, 2>& bs)
-    : _mpi_comm(comm), _bs({1, 1})
+    : _comm(comm), _bs({1, 1})
 {
   // FIXME: - Add range/bound checks for each block
   //        - Check for compatible block sizes for each block
@@ -410,5 +410,5 @@ SparsityPattern::off_diagonal_pattern() const
   return *_off_diagonal;
 }
 //-----------------------------------------------------------------------------
-MPI_Comm SparsityPattern::mpi_comm() const { return _mpi_comm.comm(); }
+MPI_Comm SparsityPattern::comm() const { return _comm.comm(); }
 //-----------------------------------------------------------------------------

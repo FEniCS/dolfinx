@@ -6,7 +6,13 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Tools for assembling and manipulating finite element forms"""
 
+import typing
+
+from dolfinx.cpp.fem import Form_complex128 as _FormComplex
+from dolfinx.cpp.fem import Form_float64 as _FormReal
+from dolfinx.cpp.fem import transpose_dofmap  # noqa
 from dolfinx.cpp.fem import IntegralType
+from dolfinx.cpp.fem import create_sparsity_pattern as _create_sparsity_pattern
 from dolfinx.fem.assemble import (apply_lifting, apply_lifting_nest,
                                   assemble_matrix, assemble_matrix_block,
                                   assemble_matrix_nest, assemble_scalar,
@@ -14,20 +20,17 @@ from dolfinx.fem.assemble import (apply_lifting, apply_lifting_nest,
                                   assemble_vector_nest, create_matrix,
                                   create_matrix_block, create_matrix_nest,
                                   create_vector, create_vector_block,
-                                  create_vector_nest, set_bc, set_bc_nest)
-from dolfinx.fem.dirichletbc import (DirichletBC, bcs_by_block, locate_dofs_geometrical,
-                                     locate_dofs_topological)
+                                  create_vector_nest, pack_coefficients,
+                                  pack_constants, set_bc, set_bc_nest)
+from dolfinx.fem.bcs import (DirichletBCMetaClass, bcs_by_block, dirichletbc,
+                             locate_dofs_geometrical, locate_dofs_topological)
 from dolfinx.fem.dofmap import DofMap
-from dolfinx.fem.form import Form
 from dolfinx.fem.formmanipulations import adjoint
+from dolfinx.fem.forms import FormMetaClass, extract_function_spaces, form
 from dolfinx.fem.function import (Constant, Expression, Function,
                                   FunctionSpace, TensorFunctionSpace,
                                   VectorFunctionSpace)
 from dolfinx.fem.problem import LinearProblem, NonlinearProblem
-import typing
-from dolfinx.cpp.fem import (create_sparsity_pattern as _create_sparsity_pattern,
-                             Form_complex128 as _FormComplex,
-                             Form_float64 as _FormReal)
 
 
 def create_sparsity_pattern(a: typing.Union[_FormComplex, _FormReal]):
@@ -49,6 +52,6 @@ __all__ = [
     "assemble_vector_block", "assemble_vector_nest",
     "assemble_matrix_block", "assemble_matrix_nest",
     "assemble_matrix", "set_bc", "set_bc_nest",
-    "DirichletBC", "bcs_by_block", "DofMap", "Form", "IntegralType",
+    "DirichletBCMetaClass", "dirichletbc", "bcs_by_block", "DofMap", "FormMetaClass", "form", "IntegralType",
     "adjoint", "LinearProblem", "locate_dofs_geometrical", "locate_dofs_topological",
-    "NonlinearProblem"]
+    "NonlinearProblem", "pack_coefficients", "pack_constants", "extract_function_spaces"]

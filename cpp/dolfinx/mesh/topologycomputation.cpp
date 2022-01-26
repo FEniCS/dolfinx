@@ -398,20 +398,19 @@ compute_entities_by_key_matching(
   common::Timer timer("Compute entities of dim = " + std::to_string(dim));
 
   // Initialize local array of entities
-  const std::int8_t num_entities_per_cell
-      = mesh::cell_num_entities(cell_type, dim);
+  const std::int8_t num_entities_per_cell = cell_num_entities(cell_type, dim);
 
   // For some cells, the num_vertices varies per facet (3 or 4)
   int max_vertices_per_entity = 0;
   for (int i = 0; i < num_entities_per_cell; ++i)
   {
-    max_vertices_per_entity = std::max(
-        max_vertices_per_entity,
-        mesh::num_cell_vertices(mesh::cell_entity_type(cell_type, dim, i)));
+    max_vertices_per_entity
+        = std::max(max_vertices_per_entity,
+                   num_cell_vertices(cell_entity_type(cell_type, dim, i)));
   }
 
   // Create map from cell vertices to entity vertices
-  auto e_vertices = mesh::get_entity_vertices(cell_type, dim);
+  auto e_vertices = get_entity_vertices(cell_type, dim);
 
   // List of vertices for each entity in each cell
   const std::size_t num_cells = cells.num_nodes();
@@ -450,7 +449,7 @@ compute_entities_by_key_matching(
 
   std::vector<std::int32_t> entity_index(entity_list.shape(0), 0);
   std::int32_t entity_count = 0;
-  std::int32_t last = sort_order[0];
+  std::int32_t last = sort_order.empty() ? 0 : sort_order.front();
   for (std::size_t i = 1; i < sort_order.size(); ++i)
   {
     std::int32_t j = sort_order[i];
@@ -472,20 +471,22 @@ compute_entities_by_key_matching(
   std::vector<int> size_ev(entity_count);
   for (std::size_t i = 0; i < entity_list.shape(0); ++i)
   {
-    size_ev[local_index[i]]
-        = (entity_list(i, max_vertices_per_entity - 1) == -1)
-              ? (max_vertices_per_entity - 1)
-              : max_vertices_per_entity;
+    if (entity_list(i, max_vertices_per_entity - 1) == -1)
+      size_ev[local_index[i]] = max_vertices_per_entity - 1;
+    else
+      size_ev[local_index[i]] = max_vertices_per_entity;
   }
-  for (int i = 0; i < entity_count; ++i)
-    offsets_ev[i + 1] = offsets_ev[i] + size_ev[i];
+
+  std::transform(size_ev.cbegin(), size_ev.cend(), offsets_ev.cbegin(),
+                 std::next(offsets_ev.begin()),
+                 [](auto a, auto b) { return a + b; });
 
   graph::AdjacencyList<std::int32_t> ev(
       std::vector<std::int32_t>(offsets_ev.back()), std::move(offsets_ev));
   for (std::size_t i = 0; i < entity_list.shape(0); ++i)
   {
-    std::copy_n(xt::row(entity_list, i).begin(), ev.num_links(local_index[i]),
-                ev.links(local_index[i]).begin());
+    auto _ev = ev.links(local_index[i]);
+    std::copy_n(xt::row(entity_list, i).begin(), _ev.size(), _ev.begin());
   }
 
   // NOTE: Cell-entity connectivity comes after ev creation because
@@ -493,8 +494,10 @@ compute_entities_by_key_matching(
 
   // Cell-entity connectivity
   std::vector<std::int32_t> offsets_ce(num_cells + 1, 0);
-  for (std::size_t i = 0; i < offsets_ce.size() - 1; ++i)
-    offsets_ce[i + 1] = offsets_ce[i] + num_entities_per_cell;
+  std::transform(offsets_ce.cbegin(), std::prev(offsets_ce.cend()),
+                 std::next(offsets_ce.begin()),
+                 [num_entities_per_cell](auto x)
+                 { return x + num_entities_per_cell; });
   graph::AdjacencyList<std::int32_t> ce(std::move(local_index),
                                         std::move(offsets_ce));
 
@@ -576,9 +579,9 @@ compute_from_map(const graph::AdjacencyList<std::int32_t>& c_d0_0,
 
   // Search for edges of facet in map, and recover index
   const auto tri_vertices_ref
-      = mesh::get_entity_vertices(mesh::CellType::triangle, 1);
+      = get_entity_vertices(mesh::CellType::triangle, 1);
   const auto quad_vertices_ref
-      = mesh::get_entity_vertices(mesh::CellType::quadrilateral, 1);
+      = get_entity_vertices(mesh::CellType::quadrilateral, 1);
 
   for (int e = 0; e < c_d0_0.num_nodes(); ++e)
   {

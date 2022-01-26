@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2019 Anders Logg and Garth N. Wells
+// Copyright (C) 2008-2022 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -54,10 +54,12 @@ public:
 
   /// Equality operator
   /// @param[in] V Another function space
+  /// @return True is the function spaces are the same
   bool operator==(const FunctionSpace& V) const;
 
   /// Inequality operator
   /// @param[in] V Another function space.
+  /// @return True is the function spaces are not the same
   bool operator!=(const FunctionSpace& V) const;
 
   /// Extract subspace for component
@@ -77,7 +79,7 @@ public:
 
   /// Get the component with respect to the root superspace
   /// @return The component with respect to the root superspace , i.e.
-  ///         W.sub(1).sub(0) == [1, 0]
+  /// W.sub(1).sub(0) == [1, 0]
   std::vector<int> component() const;
 
   /// @todo Remove - see function in interpolate.h

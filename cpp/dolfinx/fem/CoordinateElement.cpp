@@ -191,3 +191,15 @@ bool CoordinateElement::needs_dof_permutations() const
   return !_element->dof_transformations_are_identity();
 }
 //-----------------------------------------------------------------------------
+int CoordinateElement::degree() const
+{
+  assert(_element);
+  return _element->degree();
+}
+//-----------------------------------------------------------------------------
+basix::element::lagrange_variant CoordinateElement::variant() const
+{
+  assert(_element);
+  return _element->lagrange_variant();
+}
+//-----------------------------------------------------------------------------

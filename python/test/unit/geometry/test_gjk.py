@@ -6,13 +6,15 @@
 
 import numpy as np
 import pytest
+from scipy.spatial.transform import Rotation
+
 import ufl
 from dolfinx import geometry
 from dolfinx.geometry import compute_distance_gjk
 from dolfinx.mesh import create_mesh
 from dolfinx_utils.test.skips import skip_in_parallel
+
 from mpi4py import MPI
-from scipy.spatial.transform import Rotation
 
 
 def distance_point_to_line_3D(P1, P2, point):
@@ -175,7 +177,7 @@ def test_collision_2nd_order_triangle():
     colliding_cells = geometry.compute_colliding_cells(mesh, cell_candidates, sample_points)
     # Check for collision
     for i in range(colliding_cells.num_nodes):
-        assert(len(colliding_cells.links(i)) == 1)
+        assert len(colliding_cells.links(i)) == 1
 
     # Check if there is a point on the linear approximation of the
     # curved facet
