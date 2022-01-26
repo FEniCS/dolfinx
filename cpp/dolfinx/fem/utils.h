@@ -693,7 +693,7 @@ fem::Expression<T> create_expression(
     const std::vector<std::shared_ptr<const fem::Function<T>>>& coefficients,
     const std::vector<std::shared_ptr<const fem::Constant<T>>>& constants,
     const std::shared_ptr<const fem::FunctionSpace> function_space = nullptr,
-    const std::shared_ptr<const mesh::Mesh>& mesh = nullptr)
+    const std::shared_ptr<const mesh::Mesh> mesh = nullptr)
 {
   const int size = expression.num_points * expression.topological_dimension;
   const xt::xtensor<double, 2>& points = xt::adapt(

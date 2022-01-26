@@ -202,6 +202,69 @@ def test_rank1():
     assert np.isclose((h2 - h.vector).norm(), 0.0)
 
 
+def test_rank1_hdiv():
+    """Test rank-1 Expression, i.e. Expression containing Argument (TrialFunction)
+    Test compiles f \\cdot e_x as a linear operator RT_2 -> DG_1 and assembles it into
+    global matrix A. Mapping f -> f \\cdot e_x is then executed as global mat-vec product
+    and tested against simpler interpolation codepath.
+    """
+    mesh = create_unit_square(MPI.COMM_WORLD, 10, 10)
+    DG1 = FunctionSpace(mesh, ("DG", 1))
+    RT2 = FunctionSpace(mesh, ("RT", 2))
+
+    f = ufl.TrialFunction(RT2)
+    ufl_expr = ufl.inner(f, ufl.as_vector([1.0, 0.0]))
+
+    points = np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0]])
+    compiled_expr = Expression(ufl_expr, points)
+
+    num_cells = mesh.topology.index_map(2).size_local
+    array_evaluated = compiled_expr.eval(np.arange(num_cells, dtype=np.int32))
+
+    @numba.njit
+    def scatter(A, array_evaluated, dofmap0, dofmap1):
+        for i in range(num_cells):
+            rows = dofmap0[i, :]
+            cols = dofmap1[i, :]
+            A_local = array_evaluated[i, :]
+            MatSetValues(A, 6, rows.ctypes, 6, cols.ctypes, A_local.ctypes, 1)
+
+    a = form(ufl.inner(ufl.TrialFunction(RT2), ufl.TestFunction(DG1)[0]) * ufl.dx)
+    sparsity_pattern = create_sparsity_pattern(a)
+    sparsity_pattern.assemble()
+    A = create_matrix(MPI.COMM_WORLD, sparsity_pattern)
+
+    dofmap_col = RT2.dofmap.list.array.reshape(-1, 6).astype(np.dtype(PETSc.IntType))
+    dofmap_row = DG1.dofmap.list.array
+
+    dofmap_row_unrolled = (2 * np.repeat(dofmap_row, 2).reshape(-1, 2)
+                           + np.arange(2)).flatten()
+    dofmap_row = dofmap_row_unrolled.reshape(-1, 6).astype(np.dtype(PETSc.IntType))
+
+    scatter(A.handle, array_evaluated, dofmap_row, dofmap_col)
+    A.assemble()
+
+    g = Function(RT2, name="g")
+
+    # def expr1(x):
+    #     return x[0] ** 2 + 2.0 * x[1] ** 2
+
+    # g.interpolate(expr1)
+
+    # def grad_expr1(x):
+    #     values = np.empty((2, x.shape[1]))
+    #     values[0] = 2.0 * x[0]
+    #     values[1] = 4.0 * x[1]
+
+    #     return values
+
+    # h = Function(vdP1)
+    # h.interpolate(grad_expr1)
+    # h2 = A * g.vector
+
+    # assert np.isclose((h2 - h.vector).norm(), 0.0)
+
+
 def test_simple_evaluation():
     """Test evaluation of UFL Expression.
 
