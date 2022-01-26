@@ -69,12 +69,10 @@ J_form = derivative(F_form, u, du)
 
 # Compute von Mises stress in current configuration
 sigma = (1/J)*diff(psi, F)*F.T
-sigma_deviatoric = sigma - (1 / 3) * tr(sigma) * I
-sigma_von_mises = sqrt((3 / 2) * inner(sigma_deviatoric, sigma_deviatoric))
 
 forms = [F_form, J_form]
 elements = [(element)]
-expressions = [(sigma_von_mises, [[0.25, 0.25, 0.25]])]
+expressions = [(sigma, [[0.25, 0.25, 0.25]])]
 
 # Note that ``derivative`` is here used with three arguments: the form
 # to be differentiated, the variable (function) we are supposed to

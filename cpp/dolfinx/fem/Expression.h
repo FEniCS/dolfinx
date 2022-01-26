@@ -135,7 +135,7 @@ public:
       {
         _mesh->topology_mutable().create_entity_permutations();
         cell_info = xtl::span(_mesh->topology().get_cell_permutation_info());
-        dof_transform = element->get_dof_transformation_function<T>();
+        dof_transform = element->template get_dof_transformation_function<T>();
       }
     }
 
