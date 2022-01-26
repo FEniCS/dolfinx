@@ -89,8 +89,8 @@ create_geom(MPI_Comm comm, const std::array<std::array<double, 3>, 2>& p,
 //-----------------------------------------------------------------------------
 mesh::Mesh build_tet(MPI_Comm comm,
                      const std::array<std::array<double, 3>, 2>& p,
-                     std::array<std::size_t, 3> n, mesh::GhostMode ghost_mode,
-                     const mesh::CellPartitionFunction& partitioner)
+                     std::array<std::size_t, 3> n, GhostMode ghost_mode,
+                     const CellPartitionFunction& partitioner)
 {
   common::Timer timer("Build BoxMesh");
 
@@ -135,9 +135,9 @@ mesh::Mesh build_tet(MPI_Comm comm,
     _cell.assign(c);
   }
 
-  fem::CoordinateElement element(mesh::CellType::tetrahedron, 1);
+  fem::CoordinateElement element(CellType::tetrahedron, 1);
   auto [data, offset] = graph::create_adjacency_data(cells);
-  return mesh::create_mesh(
+  return create_mesh(
       comm,
       graph::AdjacencyList<std::int64_t>(std::move(data), std::move(offset)),
       element, geom, ghost_mode, partitioner);
@@ -145,8 +145,8 @@ mesh::Mesh build_tet(MPI_Comm comm,
 //-----------------------------------------------------------------------------
 mesh::Mesh build_hex(MPI_Comm comm,
                      const std::array<std::array<double, 3>, 2>& p,
-                     std::array<std::size_t, 3> n, mesh::GhostMode ghost_mode,
-                     const mesh::CellPartitionFunction& partitioner)
+                     std::array<std::size_t, 3> n, GhostMode ghost_mode,
+                     const CellPartitionFunction& partitioner)
 {
   xt::xtensor<double, 2> geom = create_geom(comm, p, n);
 
@@ -185,9 +185,9 @@ mesh::Mesh build_hex(MPI_Comm comm,
     _cell.assign(cell);
   }
 
-  fem::CoordinateElement element(mesh::CellType::hexahedron, 1);
+  fem::CoordinateElement element(CellType::hexahedron, 1);
   auto [data, offset] = graph::create_adjacency_data(cells);
-  return mesh::create_mesh(
+  return create_mesh(
       comm,
       graph::AdjacencyList<std::int64_t>(std::move(data), std::move(offset)),
       element, geom, ghost_mode, partitioner);
@@ -195,8 +195,8 @@ mesh::Mesh build_hex(MPI_Comm comm,
 //-----------------------------------------------------------------------------
 mesh::Mesh build_prism(MPI_Comm comm,
                        const std::array<std::array<double, 3>, 2>& p,
-                       std::array<std::size_t, 3> n, mesh::GhostMode ghost_mode,
-                       const mesh::CellPartitionFunction& partitioner)
+                       std::array<std::size_t, 3> n, GhostMode ghost_mode,
+                       const CellPartitionFunction& partitioner)
 {
   xt::xtensor<double, 2> geom = create_geom(comm, p, n);
 
@@ -235,9 +235,9 @@ mesh::Mesh build_prism(MPI_Comm comm,
     xt::view(cells, (i - range_c[0]) * 2 + 1, xt::all()) = cell1;
   }
 
-  fem::CoordinateElement element(mesh::CellType::prism, 1);
+  fem::CoordinateElement element(CellType::prism, 1);
   auto [data, offset] = graph::create_adjacency_data(cells);
-  return mesh::create_mesh(
+  return create_mesh(
       comm,
       graph::AdjacencyList<std::int64_t>(std::move(data), std::move(offset)),
       element, geom, ghost_mode, partitioner);
@@ -249,17 +249,17 @@ mesh::Mesh build_prism(MPI_Comm comm,
 //-----------------------------------------------------------------------------
 mesh::Mesh mesh::create_box(MPI_Comm comm,
                             const std::array<std::array<double, 3>, 2>& p,
-                            std::array<std::size_t, 3> n,
-                            mesh::CellType celltype, mesh::GhostMode ghost_mode,
-                            const mesh::CellPartitionFunction& partitioner)
+                            std::array<std::size_t, 3> n, CellType celltype,
+                            GhostMode ghost_mode,
+                            const CellPartitionFunction& partitioner)
 {
   switch (celltype)
   {
-  case mesh::CellType::tetrahedron:
+  case CellType::tetrahedron:
     return build_tet(comm, p, n, ghost_mode, partitioner);
-  case mesh::CellType::hexahedron:
+  case CellType::hexahedron:
     return build_hex(comm, p, n, ghost_mode, partitioner);
-  case mesh::CellType::prism:
+  case CellType::prism:
     return build_prism(comm, p, n, ghost_mode, partitioner);
   default:
     throw std::runtime_error("Generate box mesh. Wrong cell type");
@@ -269,10 +269,9 @@ mesh::Mesh mesh::create_box(MPI_Comm comm,
 namespace
 {
 mesh::Mesh build(MPI_Comm comm, std::size_t nx, std::array<double, 2> x,
-                 mesh::GhostMode ghost_mode,
-                 const mesh::CellPartitionFunction& partitioner)
+                 GhostMode ghost_mode, const CellPartitionFunction& partitioner)
 {
-  fem::CoordinateElement element(mesh::CellType::interval, 1);
+  fem::CoordinateElement element(CellType::interval, 1);
 
   // Receive mesh according to parallel policy
   if (dolfinx::MPI::rank(comm) != 0)
@@ -280,7 +279,7 @@ mesh::Mesh build(MPI_Comm comm, std::size_t nx, std::array<double, 2> x,
     xt::xtensor<double, 2> geom({0, 1});
     xt::xtensor<std::int64_t, 2> cells({0, 2});
     auto [data, offset] = graph::create_adjacency_data(cells);
-    return mesh::create_mesh(
+    return create_mesh(
         comm,
         graph::AdjacencyList<std::int64_t>(std::move(data), std::move(offset)),
         element, geom, ghost_mode, partitioner);
@@ -317,7 +316,7 @@ mesh::Mesh build(MPI_Comm comm, std::size_t nx, std::array<double, 2> x,
       cells(ix, j) = ix + j;
 
   auto [data, offset] = graph::create_adjacency_data(cells);
-  return mesh::create_mesh(
+  return create_mesh(
       comm,
       graph::AdjacencyList<std::int64_t>(std::move(data), std::move(offset)),
       element, geom, ghost_mode, partitioner);
@@ -326,9 +325,8 @@ mesh::Mesh build(MPI_Comm comm, std::size_t nx, std::array<double, 2> x,
 
 //-----------------------------------------------------------------------------
 mesh::Mesh mesh::create_interval(MPI_Comm comm, std::size_t n,
-                                 std::array<double, 2> x,
-                                 mesh::GhostMode ghost_mode,
-                                 const mesh::CellPartitionFunction& partitioner)
+                                 std::array<double, 2> x, GhostMode ghost_mode,
+                                 const CellPartitionFunction& partitioner)
 {
   return build(comm, n, x, ghost_mode, partitioner);
 }
@@ -338,11 +336,11 @@ namespace
 //-----------------------------------------------------------------------------
 mesh::Mesh build_tri(MPI_Comm comm,
                      const std::array<std::array<double, 2>, 2>& p,
-                     std::array<std::size_t, 2> n, mesh::GhostMode ghost_mode,
-                     const mesh::CellPartitionFunction& partitioner,
+                     std::array<std::size_t, 2> n, GhostMode ghost_mode,
+                     const CellPartitionFunction& partitioner,
                      DiagonalType diagonal)
 {
-  fem::CoordinateElement element(mesh::CellType::triangle, 1);
+  fem::CoordinateElement element(CellType::triangle, 1);
 
   // Receive mesh if not rank 0
   if (dolfinx::MPI::rank(comm) != 0)
@@ -350,7 +348,7 @@ mesh::Mesh build_tri(MPI_Comm comm,
     xt::xtensor<double, 2> geom({0, 2});
     xt::xtensor<std::int64_t, 2> cells({0, 3});
     auto [data, offset] = graph::create_adjacency_data(cells);
-    return mesh::create_mesh(
+    return create_mesh(
         comm,
         graph::AdjacencyList<std::int64_t>(std::move(data), std::move(offset)),
         element, geom, ghost_mode, partitioner);
@@ -543,7 +541,7 @@ mesh::Mesh build_tri(MPI_Comm comm,
   }
 
   auto [data, offset] = graph::create_adjacency_data(cells);
-  return mesh::create_mesh(
+  return create_mesh(
       comm,
       graph::AdjacencyList<std::int64_t>(std::move(data), std::move(offset)),
       element, geom, ghost_mode, partitioner);
@@ -552,10 +550,10 @@ mesh::Mesh build_tri(MPI_Comm comm,
 //-----------------------------------------------------------------------------
 mesh::Mesh build_quad(MPI_Comm comm,
                       const std::array<std::array<double, 2>, 2> p,
-                      std::array<std::size_t, 2> n, mesh::GhostMode ghost_mode,
-                      const mesh::CellPartitionFunction& partitioner)
+                      std::array<std::size_t, 2> n, GhostMode ghost_mode,
+                      const CellPartitionFunction& partitioner)
 {
-  fem::CoordinateElement element(mesh::CellType::quadrilateral, 1);
+  fem::CoordinateElement element(CellType::quadrilateral, 1);
 
   // Receive mesh if not rank 0
   if (dolfinx::MPI::rank(comm) != 0)
@@ -563,7 +561,7 @@ mesh::Mesh build_quad(MPI_Comm comm,
     xt::xtensor<double, 2> geom({0, 2});
     xt::xtensor<std::int64_t, 2> cells({0, 4});
     auto [data, offset] = graph::create_adjacency_data(cells);
-    return mesh::create_mesh(
+    return create_mesh(
         comm,
         graph::AdjacencyList<std::int64_t>(std::move(data), std::move(offset)),
         element, geom, ghost_mode, partitioner);
@@ -613,7 +611,7 @@ mesh::Mesh build_quad(MPI_Comm comm,
   }
 
   auto [data, offset] = graph::create_adjacency_data(cells);
-  return mesh::create_mesh(
+  return create_mesh(
       comm,
       graph::AdjacencyList<std::int64_t>(std::move(data), std::move(offset)),
       element, geom, ghost_mode, partitioner);
@@ -624,25 +622,25 @@ mesh::Mesh build_quad(MPI_Comm comm,
 mesh::Mesh mesh::create_rectangle(MPI_Comm comm,
                                   const std::array<std::array<double, 2>, 2>& p,
                                   std::array<std::size_t, 2> n,
-                                  mesh::CellType celltype,
-                                  mesh::GhostMode ghost_mode,
-                                  mesh::DiagonalType diagonal)
+                                  CellType celltype, GhostMode ghost_mode,
+                                  DiagonalType diagonal)
 {
   return create_rectangle(comm, p, n, celltype, ghost_mode,
-                          mesh::create_cell_partitioner(), diagonal);
+                          create_cell_partitioner(), diagonal);
 }
 //-----------------------------------------------------------------------------
-mesh::Mesh mesh::create_rectangle(
-    MPI_Comm comm, const std::array<std::array<double, 2>, 2>& p,
-    std::array<std::size_t, 2> n, mesh::CellType celltype,
-    mesh::GhostMode ghost_mode, const mesh::CellPartitionFunction& partitioner,
-    mesh::DiagonalType diagonal)
+mesh::Mesh mesh::create_rectangle(MPI_Comm comm,
+                                  const std::array<std::array<double, 2>, 2>& p,
+                                  std::array<std::size_t, 2> n,
+                                  CellType celltype, GhostMode ghost_mode,
+                                  const CellPartitionFunction& partitioner,
+                                  DiagonalType diagonal)
 {
   switch (celltype)
   {
-  case mesh::CellType::triangle:
+  case CellType::triangle:
     return build_tri(comm, p, n, ghost_mode, partitioner, diagonal);
-  case mesh::CellType::quadrilateral:
+  case CellType::quadrilateral:
     return build_quad(comm, p, n, ghost_mode, partitioner);
   default:
     throw std::runtime_error("Generate rectangle mesh. Wrong cell type");

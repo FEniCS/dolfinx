@@ -7,6 +7,7 @@
 #ifdef HAS_ADIOS2
 
 #include "ADIOS2Writers.h"
+#include "cells.h"
 #include "pugixml.hpp"
 #include <adios2.h>
 #include <algorithm>
@@ -14,7 +15,6 @@
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/fem/Function.h>
 #include <dolfinx/fem/FunctionSpace.h>
-#include <dolfinx/io/cells.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/utils.h>
 #include <xtensor/xtensor.hpp>
@@ -505,8 +505,8 @@ std::vector<Scalar> pack_function_data(const fem::Function<Scalar>& u)
   assert(mesh);
 
   // The Function and the mesh must have identical element_dof_layouts
-  // (up tp the block size)
-  assert(*(dofmap->element_dof_layout)
+  // (up to the block size)
+  assert(dofmap->element_dof_layout()
          == mesh->geometry().cmap().create_dof_layout());
 
   const int tdim = mesh->topology().dim();

@@ -46,13 +46,13 @@ mesh::CellType mesh::to_type(const std::string& cell)
 {
   if (cell == "point")
     return CellType::point;
-  else if (cell == "interval")
+  else if (cell == "interval" or cell == "interval2D" or cell == "interval3D")
     return CellType::interval;
-  else if (cell == "triangle")
+  else if (cell == "triangle" or cell == "triangle3D")
     return CellType::triangle;
   else if (cell == "tetrahedron")
     return CellType::tetrahedron;
-  else if (cell == "quadrilateral")
+  else if (cell == "quadrilateral" or cell == "quadrilateral3D")
     return CellType::quadrilateral;
   else if (cell == "pyramid")
     return CellType::pyramid;

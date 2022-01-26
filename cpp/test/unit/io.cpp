@@ -12,6 +12,7 @@
 #include <dolfinx/mesh/generation.h>
 #include <mpi.h>
 #include <xtensor/xadapt.hpp>
+#include <xtensor/xview.hpp>
 
 using namespace dolfinx;
 

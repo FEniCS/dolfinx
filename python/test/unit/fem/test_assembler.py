@@ -547,8 +547,8 @@ def test_assembly_solve_taylor_hood(mesh):
         p11 = ufl.inner(p, q) * dx
         p_form = p00 + p11
 
-        f = Function(W.sub(0).collapse())
-        p_zero = Function(W.sub(1).collapse())
+        f = Function(W.sub(0).collapse()[0])
+        p_zero = Function(W.sub(1).collapse()[0])
         L0 = inner(f, v) * dx
         L1 = inner(p_zero, q) * dx
         L = L0 + L1
@@ -768,13 +768,13 @@ def test_coefficents_non_constant():
     F = form((ufl.inner(u, v) - ufl.inner(x[0] * x[1]**2, v)) * dx)
     b0 = assemble_vector(F)
     b0.assemble()
-    assert(np.linalg.norm(b0.array) == pytest.approx(0.0))
+    assert np.linalg.norm(b0.array) == pytest.approx(0.0)
 
     # -- Exterior facet integral vector
     F = form((ufl.inner(u, v) - ufl.inner(x[0] * x[1]**2, v)) * ds)
     b0 = assemble_vector(F)
     b0.assemble()
-    assert(np.linalg.norm(b0.array) == pytest.approx(0.0))
+    assert np.linalg.norm(b0.array) == pytest.approx(0.0)
 
     # -- Interior facet integral vector
     V = FunctionSpace(mesh, ("DG", 3))  # degree 3 so that interpolation is exact
@@ -791,7 +791,7 @@ def test_coefficents_non_constant():
     F = form(F)
     b0 = assemble_vector(F)
     b0.assemble()
-    assert(np.linalg.norm(b0.array) == pytest.approx(0.0))
+    assert np.linalg.norm(b0.array) == pytest.approx(0.0)
 
 
 def test_vector_types():

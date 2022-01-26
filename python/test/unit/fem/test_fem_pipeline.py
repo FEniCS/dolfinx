@@ -248,12 +248,12 @@ def test_curl_curl_eigenvalue(family, order):
     for i in range(0, num_converged):
         eigenvalues_unsorted[i] = eps.getEigenvalue(i)
 
-    assert(np.isclose(np.imag(eigenvalues_unsorted), 0.0).all())
+    assert np.isclose(np.imag(eigenvalues_unsorted), 0.0).all()
     eigenvalues_sorted = np.sort(np.real(eigenvalues_unsorted))[:-1]
     eigenvalues_sorted = eigenvalues_sorted[np.logical_not(eigenvalues_sorted < 1E-8)]
 
     eigenvalues_exact = np.array([1.0, 1.0, 2.0, 4.0, 4.0, 5.0, 5.0, 8.0, 9.0])
-    assert(np.isclose(eigenvalues_sorted[0:eigenvalues_exact.shape[0]], eigenvalues_exact, rtol=1E-2).all())
+    assert np.isclose(eigenvalues_sorted[0:eigenvalues_exact.shape[0]], eigenvalues_exact, rtol=1E-2).all()
 
 
 @skip_if_complex
@@ -300,7 +300,7 @@ def test_biharmonic():
     a = form(inner(sigma_S, tau_S) * dx - b(tau_S, u) + b(sigma_S, v))
     L = form(inner(f_exact, v) * dx)
 
-    V_1 = V.sub(1).collapse()
+    V_1 = V.sub(1).collapse()[0]
     zero_u = Function(V_1)
     zero_u.x.array[:] = 0.0
 
@@ -336,7 +336,7 @@ def test_biharmonic():
     u_error_denominator = np.sqrt(mesh.comm.allreduce(assemble_scalar(
         form(inner(u_exact, u_exact) * dx(mesh, metadata={"quadrature_degree": 5}))), op=MPI.SUM))
 
-    assert(np.absolute(u_error_numerator / u_error_denominator) < 0.05)
+    assert np.absolute(u_error_numerator / u_error_denominator) < 0.05
 
     # Reconstruct tensor from flattened indices.
     # Apply inverse transform. In 2D we have S^{-1} = S.
@@ -347,7 +347,7 @@ def test_biharmonic():
     sigma_error_denominator = np.sqrt(mesh.comm.allreduce(assemble_scalar(
         form(inner(sigma_exact, sigma_exact) * dx(mesh, metadata={"quadrature_degree": 5}))), op=MPI.SUM))
 
-    assert(np.absolute(sigma_error_numerator / sigma_error_denominator) < 0.005)
+    assert np.absolute(sigma_error_numerator / sigma_error_denominator) < 0.005
 
 
 def get_mesh(cell_type, datadir):
