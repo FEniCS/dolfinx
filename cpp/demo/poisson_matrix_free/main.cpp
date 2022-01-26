@@ -172,7 +172,7 @@ int main(int argc, char* argv[])
     b.scatter_fwd();
 
     // Pack coefficients and constants
-    auto coeff = fem::allocate_coefficient_memory(*M);
+    auto coeff = fem::allocate_coefficient_storage(*M);
     const std::vector<T> constants = fem::pack_constants(*M);
 
     // Create function for computing the action of A on x (y = Ax)

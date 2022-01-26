@@ -42,8 +42,6 @@ class Topology;
 
 namespace dolfinx::fem
 {
-template <typename T>
-class Constant;
 class FunctionSpace;
 
 /// Extract test (0) and trial (1) function spaces pairs for each
@@ -453,7 +451,7 @@ FunctionSpace create_functionspace(
 namespace impl
 {
 template <typename T>
-xtl::span<const std::uint32_t> get_cell_info(
+xtl::span<const std::uint32_t> get_cell_orientation_info(
     const std::vector<std::shared_ptr<const Function<T>>>& coefficients)
 {
   bool needs_dof_transformations = false;
@@ -475,6 +473,7 @@ xtl::span<const std::uint32_t> get_cell_info(
     mesh->topology_mutable().create_entity_permutations();
     cell_info = xtl::span(mesh->topology().get_cell_permutation_info());
   }
+
   return cell_info;
 }
 
@@ -575,20 +574,20 @@ void pack_coefficient_entity(const xtl::span<T>& c, int cstride,
 
 } // namespace impl
 
-/// Allocate memory for coefficients of a pair (integral_type, id) from a
-/// Form form
+/// Allocate storage for coefficients of a pair (integral_type, id) from
+/// a Form form
 ///
 /// @param[in] form The Form
 /// @param[in] integral_type Type of integral
 /// @param[in] id The id of the integration domain
-/// @return A 1d container and the column stride
+/// @return A storage container and the column stride
 template <typename T>
 std::pair<std::vector<T>, int>
-allocate_coefficient_memory(const Form<T>& form, IntegralType integral_type,
-                            int id)
+allocate_coefficient_storage(const Form<T>& form, IntegralType integral_type,
+                             int id)
 {
   // Get form coefficient offsets and dofmaps
-  const std::vector<std::shared_ptr<const Function<T>>> coefficients
+  const std::vector<std::shared_ptr<const Function<T>>>& coefficients
       = form.coefficients();
   const std::vector<int> offsets = form.coefficient_offsets();
 
@@ -613,23 +612,30 @@ allocate_coefficient_memory(const Form<T>& form, IntegralType integral_type,
           "Could not allocate coefficient data. Integral type not supported.");
     }
   }
+
   return {std::vector<T>(num_entities * cstride), cstride};
 }
 
 /// Allocate memory for packed coefficients of a Form
 ///
 /// @param[in] form The Form
-/// @return A map from a pair of the form (integral_type, domain_id)
-/// to a pair of the form (coeffs, cstride)
+/// @return A map from a form (integral_type, domain_id) pair to a
+/// (coeffs, cstride) pair
 template <typename T>
 std::map<std::pair<IntegralType, int>, std::pair<std::vector<T>, int>>
-allocate_coefficient_memory(const Form<T>& form)
+allocate_coefficient_storage(const Form<T>& form)
 {
   std::map<std::pair<IntegralType, int>, std::pair<std::vector<T>, int>> coeffs;
   for (auto integral_type : form.integral_types())
+  {
     for (int id : form.integral_ids(integral_type))
-      coeffs[std::pair(integral_type, id)]
-          = allocate_coefficient_memory(form, integral_type, id);
+    {
+      coeffs.emplace_hint(
+          coeffs.end(), std::pair(integral_type, id),
+          allocate_coefficient_storage(form, integral_type, id));
+    }
+  }
+
   return coeffs;
 }
 
@@ -645,14 +651,14 @@ void pack_coefficients(const Form<T>& form, IntegralType integral_type, int id,
                        const xtl::span<T>& c, int cstride)
 {
   // Get form coefficient offsets and dofmaps
-  const std::vector<std::shared_ptr<const Function<T>>> coefficients
+  const std::vector<std::shared_ptr<const Function<T>>>& coefficients
       = form.coefficients();
   const std::vector<int> offsets = form.coefficient_offsets();
 
   if (!coefficients.empty())
   {
     xtl::span<const std::uint32_t> cell_info
-        = impl::get_cell_info(coefficients);
+        = impl::get_cell_orientation_info(coefficients);
 
     switch (integral_type)
     {
@@ -662,23 +668,29 @@ void pack_coefficients(const Form<T>& form, IntegralType integral_type, int id,
       const std::vector<std::int32_t>& cells = form.cell_domains(id);
       // Iterate over coefficients
       for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
+      {
         impl::pack_coefficient_entity(c, cstride, *coefficients[coeff],
                                       cell_info, cells, fetch_cell,
                                       offsets[coeff]);
+      }
       break;
     }
     case IntegralType::exterior_facet:
     {
       const std::vector<std::pair<std::int32_t, int>>& facets
           = form.exterior_facet_domains(id);
+
       // Create lambda function fetching cell index from exterior facet entity
-      auto fetch_cell = [](const auto& entity) { return entity.first; };
+      auto fetch_cell = [](auto& entity) { return entity.first; };
 
       // Iterate over coefficients
       for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
+      {
         impl::pack_coefficient_entity(c, cstride, *coefficients[coeff],
                                       cell_info, facets, fetch_cell,
                                       offsets[coeff]);
+      }
+
       break;
     }
     case IntegralType::interior_facet:
@@ -687,8 +699,8 @@ void pack_coefficients(const Form<T>& form, IntegralType integral_type, int id,
           facets
           = form.interior_facet_domains(id);
       // Lambda functions to fetch cell index from interior facet entity
-      auto fetch_cell0 = [](const auto& entity) { return std::get<0>(entity); };
-      auto fetch_cell1 = [](const auto& entity) { return std::get<2>(entity); };
+      auto fetch_cell0 = [](auto& entity) { return std::get<0>(entity); };
+      auto fetch_cell1 = [](auto& entity) { return std::get<2>(entity); };
 
       // Iterate over coefficients
       for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
@@ -714,8 +726,8 @@ void pack_coefficients(const Form<T>& form, IntegralType integral_type, int id,
 /// Pack coefficients of a Form
 ///
 /// @param[in] form The Form
-/// @param[in] coeffs A map from a pair of the form (integral_type, domain_id)
-/// to a pair of the form (coeffs, cstride)
+/// @param[in] coeffs A map from a (integral_type, domain_id) pair to a
+/// (coeffs, cstride) pair
 template <typename T>
 void pack_coefficients(const Form<T>& form,
                        std::map<std::pair<IntegralType, int>,
@@ -725,7 +737,7 @@ void pack_coefficients(const Form<T>& form,
     pack_coefficients<T>(form, key.first, key.second, val.first, val.second);
 }
 
-// NOTE: This is subject to change
+/// @note This is subject to change
 /// Pack coefficients of a Form
 ///
 /// @param[in] form The Form
@@ -735,7 +747,7 @@ template <typename T>
 std::map<std::pair<IntegralType, int>, std::pair<std::vector<T>, int>>
 pack_coefficients(const Form<T>& form)
 {
-  auto coeffs = allocate_coefficient_memory<T>(form);
+  auto coeffs = allocate_coefficient_storage<T>(form);
   pack_coefficients<T>(form, coeffs);
   return coeffs;
 }
@@ -751,7 +763,7 @@ pack_coefficients(const Expression<T>& u,
                   const xtl::span<const std::int32_t>& cells)
 {
   // Get form coefficient offsets and dofmaps
-  const std::vector<std::shared_ptr<const Function<T>>> coefficients
+  const std::vector<std::shared_ptr<const Function<T>>>& coefficients
       = u.coefficients();
   const std::vector<int> offsets = u.coefficient_offsets();
 
@@ -761,18 +773,18 @@ pack_coefficients(const Expression<T>& u,
   if (!coefficients.empty())
   {
     xtl::span<const std::uint32_t> cell_info
-        = impl::get_cell_info(coefficients);
+        = impl::get_cell_orientation_info(coefficients);
 
-    auto identity = [](std::int32_t entity) { return entity; };
     // Iterate over coefficients
     for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
-      impl::pack_coefficient_entity(xtl::span(c), cstride, *coefficients[coeff],
-                                    cell_info, cells, identity, offsets[coeff]);
+      impl::pack_coefficient_entity(
+          xtl::span(c), cstride, *coefficients[coeff], cell_info, cells,
+          [](std::int32_t entity) { return entity; }, offsets[coeff]);
   }
   return {std::move(c), cstride};
 }
 
-// NOTE: This is subject to change
+/// @note This function is subject to change
 /// Pack constants of u of generic type U ready for assembly
 template <typename U>
 std::vector<typename U::scalar_type> pack_constants(const U& u)
@@ -783,7 +795,7 @@ std::vector<typename U::scalar_type> pack_constants(const U& u)
 
   // Calculate size of array needed to store packed constants
   std::int32_t size = std::accumulate(constants.cbegin(), constants.cend(), 0,
-                                      [](std::int32_t sum, const auto& constant)
+                                      [](std::int32_t sum, auto& constant)
                                       { return sum + constant->value.size(); });
 
   // Pack constants
