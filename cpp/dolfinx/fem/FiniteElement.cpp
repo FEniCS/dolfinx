@@ -206,10 +206,11 @@ FiniteElement::FiniteElement(const basix::FiniteElement& element, int bs)
 //-----------------------------------------------------------------------------
 bool FiniteElement::operator==(const FiniteElement& e) const
 {
-  if (!_element)
-    throw std::runtime_error("No Basix element");
-  if (!e._element)
-    throw std::runtime_error("No Basix element");
+  if (!_element or !e._element)
+  {
+    throw std::runtime_error(
+        "Missing a Basix element. Cannot check for equivalence");
+  }
   return *_element == *e._element;
 }
 //-----------------------------------------------------------------------------

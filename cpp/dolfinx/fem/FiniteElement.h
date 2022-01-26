@@ -677,7 +677,7 @@ private:
   std::vector<int> _value_shape;
 
   // Block size for VectorElements and TensorElements. This gives the
-  // number of DOFs colocated at each point.
+  // number of DOFs co-located at each dof 'point'.
   int _bs;
 
   // Indicate whether the element needs permutations or transformations
