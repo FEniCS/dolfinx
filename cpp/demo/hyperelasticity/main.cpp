@@ -1,4 +1,5 @@
 #include "hyperelasticity.h"
+#include <basix/finite-element.h>
 #include <cmath>
 #include <dolfinx.h>
 #include <dolfinx/common/log.h>
@@ -140,8 +141,8 @@ int main(int argc, char* argv[])
     auto u = std::make_shared<fem::Function<T>>(V);
     auto a = std::make_shared<fem::Form<T>>(fem::create_form<T>(
         *form_hyperelasticity_J_form, {V, V}, {{"u", u}}, {}, {}));
-    auto L = std::make_shared<fem::Form<T>>(
-        fem::create_form<T>(*form_hyperelasticity_F_form, {V}, {{"u", u}}, {}, {}));
+    auto L = std::make_shared<fem::Form<T>>(fem::create_form<T>(
+        *form_hyperelasticity_F_form, {V}, {{"u", u}}, {}, {}));
 
     auto u_rotation = std::make_shared<fem::Function<T>>(V);
     u_rotation->interpolate(
@@ -194,9 +195,34 @@ int main(int argc, char* argv[])
     la::petsc::Vector _u(la::petsc::create_vector_wrap(*u->x()), false);
     newton_solver.solve(_u.vec());
 
+    // Calculate Cauchy stress
+    // Construct appropriate Basix element for stress
+    const auto family = basix::element::family::P;
+    const auto cell_type = basix::cell::type::tetrahedron;
+    const auto variant = basix::element::lagrange_variant::equispaced;
+    const int k = 0;
+    const bool discontinuous = true;
+
+    const auto S_element
+        = basix::create_element(family, cell_type, k, variant, discontinuous);
+    auto S = std::make_shared<fem::FunctionSpace>(
+        fem::create_functionspace(mesh, S_element, 9));
+
+    // TODO: Sort out argument_function_space/mesh issue. 
+    const auto sigma_expression
+        = std::make_shared<fem::Expression<T>>(fem::create_expression<T>(
+            *expression_hyperelasticity_sigma, {{"u", u}}, {}, S, mesh));
+
+    auto sigma = std::make_shared<fem::Function<T>>(S);
+    sigma->interpolate(*sigma_expression);
+
     // Save solution in VTK format
-    io::VTKFile file(MPI_COMM_WORLD, "u.pvd", "w");
-    file.write({*u}, 0.0);
+    io::VTKFile file_u(MPI_COMM_WORLD, "u.pvd", "w");
+    file_u.write({*u}, 0.0);
+   
+    // TODO: Best choice for IO?
+    //io::VTKFile file_sigma(MPI_COMM_WORLD, "sigma.pvd", "w");
+    //file_sigma.write({*sigma}, 0.0);
   }
 
   common::subsystem::finalize_petsc();
