@@ -208,9 +208,10 @@ int main(int argc, char* argv[])
     auto S = std::make_shared<fem::FunctionSpace>(
         fem::create_functionspace(mesh, S_element, 9));
 
+    // TODO: Sort out argument_function_space/mesh issue. 
     const auto sigma_expression
         = std::make_shared<fem::Expression<T>>(fem::create_expression<T>(
-            *expression_hyperelasticity_sigma, {{"u", u}}, {}, S));
+            *expression_hyperelasticity_sigma, {{"u", u}}, {}, S, mesh));
 
     auto sigma = std::make_shared<fem::Function<T>>(S);
     sigma->interpolate(*sigma_expression);
@@ -218,9 +219,10 @@ int main(int argc, char* argv[])
     // Save solution in VTK format
     io::VTKFile file_u(MPI_COMM_WORLD, "u.pvd", "w");
     file_u.write({*u}, 0.0);
-    
-    io::VTKFile file_sigma(MPI_COMM_WORLD, "sigma.pvd", "w");
-    file_sigma.write({*sigma}, 0.0);
+   
+    // TODO: Best choice for IO?
+    //io::VTKFile file_sigma(MPI_COMM_WORLD, "sigma.pvd", "w");
+    //file_sigma.write({*sigma}, 0.0);
   }
 
   common::subsystem::finalize_petsc();
