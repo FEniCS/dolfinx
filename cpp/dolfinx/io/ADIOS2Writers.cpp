@@ -903,21 +903,17 @@ VTXWriter::VTXWriter(MPI_Comm comm, const std::string& filename,
 {
   // Extract element from first function
   assert(!u.empty());
-  const fem::FiniteElement* element = nullptr;
-  if (auto v = std::get_if<std::shared_ptr<const Fdr>>(&u[0]))
-    element = (*v)->function_space()->element().get();
-  else if (auto v = std::get_if<std::shared_ptr<const Fdc>>(&u[0]))
-    element = (*v)->function_space()->element().get();
-  else
-    throw std::runtime_error("Unsupported function.");
+  const fem::FiniteElement* element0 = std::visit(
+      [](const auto& e) { return e->function_space()->element().get(); },
+      u.front());
+  assert(element0);
 
-  const std::string first_family = element->family();
-  const int first_num_dofs = element->space_dimension() / element->block_size();
+  const std::string family0 = element0->family();
+  const int num_dofs0 = element0->space_dimension() / element0->block_size();
 
   const std::array supported_families
       = {"Lagrange", "Q", "Discontinuous Lagrange", "DQ"};
-  if (std::find(supported_families.begin(), supported_families.end(),
-                first_family)
+  if (std::find(supported_families.begin(), supported_families.end(), family0)
       == supported_families.end())
   {
     throw std::runtime_error(
@@ -925,39 +921,38 @@ VTXWriter::VTXWriter(MPI_Comm comm, const std::string& filename,
   }
 
   // Check if function is DG 0
-  if (element->space_dimension() / element->block_size() == 1)
+  if (element0->space_dimension() / element0->block_size() == 1)
     throw std::runtime_error("Piecewise constants are not supported");
 
   // Check that all functions come from same element family and have
   // same degree
   for (auto& v : _u)
   {
-    std::visit(
-        overload{[&](const std::shared_ptr<const Fdr>& u)
-                 {
-                   auto element = u->function_space()->element();
-                   std::string family = element->family();
-                   int num_dofs
-                       = element->space_dimension() / element->block_size();
-                   if ((family != first_family) or (num_dofs != first_num_dofs))
-                   {
-                     throw std::runtime_error(
-                         "Only first order Lagrange spaces supported");
-                   }
-                 },
-                 [&](const std::shared_ptr<const Fdc>& u)
-                 {
-                   auto element = u->function_space()->element();
-                   std::string family = element->family();
-                   int num_dofs
-                       = element->space_dimension() / element->block_size();
-                   if ((family != first_family) or (num_dofs != first_num_dofs))
-                   {
-                     throw std::runtime_error(
-                         "Only first order Lagrange spaces supported");
-                   }
-                 }},
-        v);
+    std::visit(overload{[&](const std::shared_ptr<const Fdr>& u)
+                        {
+                          auto element = u->function_space()->element();
+                          std::string family = element->family();
+                          int num_dofs = element->space_dimension()
+                                         / element->block_size();
+                          if ((family != family0) or (num_dofs != num_dofs0))
+                          {
+                            throw std::runtime_error(
+                                "Only first order Lagrange spaces supported");
+                          }
+                        },
+                        [&](const std::shared_ptr<const Fdc>& u)
+                        {
+                          auto element = u->function_space()->element();
+                          std::string family = element->family();
+                          int num_dofs = element->space_dimension()
+                                         / element->block_size();
+                          if ((family != family0) or (num_dofs != num_dofs0))
+                          {
+                            throw std::runtime_error(
+                                "Only first order Lagrange spaces supported");
+                          }
+                        }},
+               v);
   }
 
   // Define VTK scheme attribute for set of functions
