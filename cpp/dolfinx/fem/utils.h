@@ -737,21 +737,6 @@ void pack_coefficients(const Form<T>& form,
     pack_coefficients<T>(form, key.first, key.second, val.first, val.second);
 }
 
-/// @note This is subject to change
-/// Pack coefficients of a Form
-///
-/// @param[in] form The Form
-/// @return A map from a pair of the form (integral_type, domain_id) to
-/// a pair of the form (coeffs, cstride)
-template <typename T>
-std::map<std::pair<IntegralType, int>, std::pair<std::vector<T>, int>>
-pack_coefficients(const Form<T>& form)
-{
-  auto coeffs = allocate_coefficient_storage<T>(form);
-  pack_coefficients<T>(form, coeffs);
-  return coeffs;
-}
-
 /// Pack coefficients of a Expression u for a give list of active cells
 ///
 /// @param[in] u The Expression
