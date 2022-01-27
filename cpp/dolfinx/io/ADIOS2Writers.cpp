@@ -861,9 +861,7 @@ void FidesWriter::write(double t)
 
   fides_write_mesh(*_io, *_engine, *_mesh);
   for (auto& v : _u)
-  {
     std::visit([&](const auto& u) { fides_write_data(*_io, *_engine, *u); }, v);
-  }
 
   _engine->EndStep();
 }
@@ -881,46 +879,45 @@ VTXWriter::VTXWriter(MPI_Comm comm, const std::string& filename,
                      const ADIOS2Writer::U& u)
     : ADIOS2Writer(comm, filename, "VTX function writer", u)
 {
+  if (!u.empty())
+    throw std::runtime_error("VTXWriter fem::Function list is empty");
+
   // Extract element from first function
-  assert(!u.empty());
   const fem::FiniteElement* element0 = std::visit(
       [](const auto& e) { return e->function_space()->element().get(); },
       u.front());
   assert(element0);
 
-  const std::string family0 = element0->family();
-  const int num_dofs0 = element0->space_dimension() / element0->block_size();
-
-  const std::array supported_families
-      = {"Lagrange", "Q", "Discontinuous Lagrange", "DQ"};
-  if (std::find(supported_families.begin(), supported_families.end(), family0)
-      == supported_families.end())
-  {
-    throw std::runtime_error(
-        "Only (discontinuous) Lagrange functions are supported");
-  }
-
   // Check if function is DG 0
   if (element0->space_dimension() / element0->block_size() == 1)
-    throw std::runtime_error("Piecewise constants are not supported");
+  {
+    throw std::runtime_error(
+        "Piecewise constants are not (yet) supported by VTXWriter");
+  }
 
-  // Check that all functions come from same element family and have
-  // same degree
+  // FIXME: is the below check adequate for dectecting a Lagrange
+  // element?
+  // Check that element is Lagrange
+  if (!element0->interpolation_ident())
+  {
+    throw std::runtime_error("Only (discontinuous) Lagrange functions are "
+                             "supported. Interpolate Functions before ouput.");
+  }
+
+  // Check that all functions come from same element type
   for (auto& v : _u)
   {
     std::visit(
         [&](const auto& u)
         {
           auto element = u->function_space()->element();
-          std::string family = element->family();
-          int num_dofs = element->space_dimension() / element->block_size();
-          if (family != family0 or num_dofs != num_dofs0)
+          assert(element);
+          if (*element != *element0)
           {
             throw std::runtime_error(
-                "Only first order Lagrange spaces supported");
+                "All functions in VTXWriter must have the sane element type");
           }
         },
-
         v);
   }
 
