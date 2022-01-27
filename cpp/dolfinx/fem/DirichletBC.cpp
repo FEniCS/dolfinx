@@ -314,7 +314,7 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
   // FIXME: Elements must be the same?
   assert(V0.element());
   assert(V1.element());
-  if (V0.element()->hash() != V1.element()->hash())
+  if (*V0.element() != *V1.element())
     throw std::runtime_error("Function spaces must have the same element.");
 
   // Get dofmaps
@@ -492,7 +492,7 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_geometrical(
 
   assert(V0.element());
   assert(V1.element());
-  if (V0.element()->hash() != V1.element()->hash())
+  if (*V0.element() != *V1.element())
     throw std::runtime_error("Function spaces must have the same element.");
 
   // Compute dof coordinates
