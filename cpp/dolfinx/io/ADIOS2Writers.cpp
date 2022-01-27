@@ -813,15 +813,12 @@ FidesWriter::FidesWriter(MPI_Comm comm, const std::string& filename,
                          const ADIOS2Writer::U& u)
     : ADIOS2Writer(comm, filename, "Fides function writer", u)
 {
-  assert(!u.empty());
-  const mesh::Mesh* mesh = nullptr;
-  if (auto v = std::get_if<std::shared_ptr<const Fdr>>(&u[0]))
-    mesh = (*v)->function_space()->mesh().get();
-  else if (auto v = std::get_if<std::shared_ptr<const Fdc>>(&u[0]))
-    mesh = (*v)->function_space()->mesh().get();
-  else
-    throw std::runtime_error("Unsupported function.");
+  if (u.empty())
+    throw std::runtime_error("FidesWriter fem::Function list is empty");
 
+  // Extract Mesh from first function
+  auto mesh = std::visit(
+      [](const auto& u) { return u->function_space()->mesh(); }, u.front());
   assert(mesh);
 
   // Check that all functions are first order Lagrange
@@ -879,7 +876,7 @@ VTXWriter::VTXWriter(MPI_Comm comm, const std::string& filename,
                      const ADIOS2Writer::U& u)
     : ADIOS2Writer(comm, filename, "VTX function writer", u)
 {
-  if (!u.empty())
+  if (u.empty())
     throw std::runtime_error("VTXWriter fem::Function list is empty");
 
   // Extract element from first function
@@ -919,7 +916,7 @@ VTXWriter::VTXWriter(MPI_Comm comm, const std::string& filename,
           if (*element != *element0)
           {
             throw std::runtime_error(
-                "All functions in VTXWriter must have the sane element type");
+                "All functions in VTXWriter must have the same element type");
           }
         },
         v);
