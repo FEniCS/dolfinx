@@ -42,7 +42,7 @@ public:
   /// tdim cols
   /// @param[in] fn function for tabulating expression
   /// @param[in] value_shape shape of expression evaluated at single point
-  /// @param[in] function_space Function space for Argument
+  /// @param[in] argument_function_space Function space for Argument
   Expression(
       const std::vector<std::shared_ptr<const Function<T>>>& coefficients,
       const std::vector<std::shared_ptr<const Constant<T>>>& constants,

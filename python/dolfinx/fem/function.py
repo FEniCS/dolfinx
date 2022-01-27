@@ -116,7 +116,7 @@ class Expression:
             form_compiler_parameters["scalar_type"] = "double _Complex"
         else:
             raise RuntimeError(f"Unsupported scalar type {dtype} for Form.")
-        self._ufcx_expression, module, self._code = jit.ffcx_jit(mesh.comm, (ufl_expression, _X),
+        self._ufcx_expression, _, self._code = jit.ffcx_jit(mesh.comm, (ufl_expression, _X),
                                                                  form_compiler_parameters=form_compiler_parameters,
                                                                  jit_parameters=jit_parameters)
         self._ufl_expression = ufl_expression
@@ -131,7 +131,7 @@ class Expression:
                   for i in range(self._ufcx_expression.num_coefficients)]
 
         ufl_constants = ufl.algorithms.analysis.extract_constants(ufl_expression)
-        constants = [constant._cpp_object for i, constant in enumerate(ufl_constants)]
+        constants = [constant._cpp_object for constant in ufl_constants]
         arguments = ufl.algorithms.extract_arguments(ufl_expression)
         if len(arguments) == 0:
             self._function_space = None
