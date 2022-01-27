@@ -137,10 +137,7 @@ public:
 
     int num_argument_dofs = 1;
     xtl::span<const std::uint32_t> cell_info;
-    std::function<void(const xtl::span<T>&,
-                       const xtl::span<const std::uint32_t>&, std::int32_t,
-                       int)>
-        dof_transform_to_transpose
+    auto dof_transform_to_transpose
         = [](const xtl::span<T>&, const xtl::span<const std::uint32_t>&,
              std::int32_t, int)
     {
@@ -192,7 +189,7 @@ public:
   }
 
   /// Get function for tabulate_expression.
-  /// @param[out] fn Function to tabulate expression.
+  /// @return fn Function to tabulate expression.
   const std::function<void(T*, const T*, const T*, const double*, const int*,
                            const uint8_t*)>&
   get_tabulate_expression() const
