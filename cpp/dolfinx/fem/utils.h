@@ -693,8 +693,22 @@ fem::Expression<T> create_expression(
     const std::vector<std::shared_ptr<const fem::Function<T>>>& coefficients,
     const std::vector<std::shared_ptr<const fem::Constant<T>>>& constants,
     const std::shared_ptr<const fem::FunctionSpace> function_space = nullptr,
-    const std::shared_ptr<const mesh::Mesh> mesh = nullptr)
+    std::shared_ptr<const mesh::Mesh> mesh = nullptr)
 {
+
+  if (function_space)
+  {
+    if (!mesh)
+      mesh = function_space->mesh();
+    else if (function_space->mesh()->id() != mesh->id())
+      throw std::runtime_error("Function space on non-matching mesh.");
+  }
+  else if (expression.function_spaces)
+  {
+    throw std::runtime_error(
+        "Expression contains Argument but no function space is provided");
+  }
+
   const int size = expression.num_points * expression.topological_dimension;
   const xt::xtensor<double, 2>& points = xt::adapt(
       expression.points, size, xt::no_ownership(),
@@ -742,8 +756,8 @@ fem::Expression<T> create_expression(
         coefficients,
     const std::map<std::string, std::shared_ptr<const fem::Constant<T>>>&
         constants,
-    const std::shared_ptr<const fem::FunctionSpace> function_space,
-    const std::shared_ptr<const mesh::Mesh>& mesh = nullptr)
+    const std::shared_ptr<const fem::FunctionSpace> function_space = nullptr,
+    const std::shared_ptr<const mesh::Mesh> mesh = nullptr)
 {
   // Place coefficients in appropriate order
   std::vector<std::shared_ptr<const fem::Function<T>>> coeff_map;

@@ -5,6 +5,7 @@
 #include <dolfinx/common/log.h>
 #include <dolfinx/fem/assembler.h>
 #include <dolfinx/fem/petsc.h>
+#include <dolfinx/io/XDMFFile.h>
 #include <dolfinx/la/Vector.h>
 #include <xtensor/xarray.hpp>
 #include <xtensor/xview.hpp>
@@ -208,21 +209,23 @@ int main(int argc, char* argv[])
     auto S = std::make_shared<fem::FunctionSpace>(
         fem::create_functionspace(mesh, S_element, 9));
 
-    // TODO: Sort out argument_function_space/mesh issue. 
     const auto sigma_expression
         = std::make_shared<fem::Expression<T>>(fem::create_expression<T>(
-            *expression_hyperelasticity_sigma, {{"u", u}}, {}, S, mesh));
+            *expression_hyperelasticity_sigma, {{"u", u}}, {}, S));
 
     auto sigma = std::make_shared<fem::Function<T>>(S);
+    sigma->name = "cauchy_stress";
     sigma->interpolate(*sigma_expression);
 
     // Save solution in VTK format
     io::VTKFile file_u(MPI_COMM_WORLD, "u.pvd", "w");
     file_u.write({*u}, 0.0);
    
-    // TODO: Best choice for IO?
-    //io::VTKFile file_sigma(MPI_COMM_WORLD, "sigma.pvd", "w");
-    //file_sigma.write({*sigma}, 0.0);
+    // Save Cauchy stress in XDMF format
+    io::XDMFFile file_sigma(MPI_COMM_WORLD, "sigma.xdmf", "w");
+    file_sigma.write_mesh(*mesh);
+    file_sigma.write_function(*sigma, 0.0);
+
   }
 
   common::subsystem::finalize_petsc();

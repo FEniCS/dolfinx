@@ -67,7 +67,7 @@ F_form = derivative(Pi, u, v)
 # Compute Jacobian of F
 J_form = derivative(F_form, u, du)
 
-# Compute von Mises stress in current configuration
+# Compute Cauchy stress
 sigma = (1/J)*diff(psi, F)*F.T
 
 forms = [F_form, J_form]
