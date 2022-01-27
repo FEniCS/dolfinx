@@ -282,6 +282,25 @@ class Function(ufl.Coefficient):
         """The FunctionSpace that the Function is defined on"""
         return self._V
 
+    def ufl_evaluate(self, x, component, derivatives):
+        """Function used by ufl to evaluate the Expression"""
+        # FIXME: same as dolfinx.expression.Expression version. Find way
+        # to re-use.
+        assert derivatives == ()  # TODO: Handle derivatives
+        if component:
+            shape = self.ufl_shape
+            assert len(shape) == len(component)
+            value_size = ufl.product(shape)
+            index = ufl.utils.indexflattening.flatten_multiindex(
+                component, ufl.utils.indexflattening.shape_to_strides(shape))
+            values = np.zeros(value_size)
+            # FIXME: use a function with a return value
+            self(*x, values=values)
+            return values[index]
+        else:
+            # Scalar evaluation
+            return self(*x)
+
     def eval(self, x: np.ndarray, cells: np.ndarray, u=None) -> np.ndarray:
         """Evaluate Function at points x, where x has shape (num_points, 3),
         and cells has shape (num_points,) and cell[i] is the index of the
@@ -291,8 +310,12 @@ class Function(ufl.Coefficient):
         # Make sure input coordinates are a NumPy array
         x = np.asarray(x, dtype=np.float64)
         assert x.ndim < 3
-        num_points = x.shape[0] if x.ndim == 2 else 1
-        x = np.reshape(x, (num_points, -1))
+        if len(x) == 0:
+            x = np.zeros((0, 3))
+        else:
+            shape0 = x.shape[0] if x.ndim == 2 else 1
+            x = np.reshape(x, (shape0, -1))
+        num_points = x.shape[0]
         if x.shape[1] != 3:
             raise ValueError("Coordinate(s) for Function evaluation must have length 3.")
 
