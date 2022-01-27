@@ -258,7 +258,6 @@ class Function(ufl.Coefficient):
         # FIXME: same as dolfinx.expression.Expression version. Find way
         # to re-use.
         assert derivatives == ()  # TODO: Handle derivatives
-
         if component:
             shape = self.ufl_shape
             assert len(shape) == len(component)
@@ -282,8 +281,12 @@ class Function(ufl.Coefficient):
         # Make sure input coordinates are a NumPy array
         x = np.asarray(x, dtype=np.float64)
         assert x.ndim < 3
-        num_points = x.shape[0] if x.ndim == 2 else 1
-        x = np.reshape(x, (num_points, -1))
+        if len(x) == 0:
+            x = np.zeros((0, 3))
+        else:
+            shape0 = x.shape[0] if x.ndim == 2 else 1
+            x = np.reshape(x, (shape0, -1))
+        num_points = x.shape[0]
         if x.shape[1] != 3:
             raise ValueError("Coordinate(s) for Function evaluation must have length 3.")
 
