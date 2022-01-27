@@ -117,8 +117,8 @@ class Expression:
         else:
             raise RuntimeError(f"Unsupported scalar type {dtype} for Form.")
         self._ufcx_expression, _, self._code = jit.ffcx_jit(mesh.comm, (ufl_expression, _X),
-                                                                 form_compiler_parameters=form_compiler_parameters,
-                                                                 jit_parameters=jit_parameters)
+                                                            form_compiler_parameters=form_compiler_parameters,
+                                                            jit_parameters=jit_parameters)
         self._ufl_expression = ufl_expression
 
         # Tabulation function.
