@@ -94,12 +94,6 @@ public:
   /// @return The communicator on which the mesh is distributed
   MPI_Comm comm() const;
 
-  /// Create submesh of mesh entities
-  /// @param[in] dim Entity dimension
-  /// @param[in] entities The entities
-  /// @return The submesh
-  Mesh sub(int dim, const xtl::span<const std::int32_t>& entities);
-
   /// Name
   std::string name = "mesh";
 
