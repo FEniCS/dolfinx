@@ -99,7 +99,7 @@ public:
   std::vector<int> coefficient_offsets() const
   {
     std::vector<int> n{0};
-    for (const auto& c : _coefficients)
+    for (auto& c : _coefficients)
     {
       if (!c)
         throw std::runtime_error("Not all form coefficients have been set.");
@@ -109,18 +109,18 @@ public:
   }
 
   /// Evaluate the expression on cells
-  /// @param[in] active_cells Cells on which to evaluate the Expression
+  /// @param[in] cells Cells on which to evaluate the Expression
   /// @param[out] values A 2D array to store the result. Caller
   /// is responsible for correct sizing which should be (num_cells,
   /// num_points * value_size * num_all_argument_dofs columns).
   template <typename U>
-  void eval(const xtl::span<const std::int32_t>& active_cells, U& values) const
+  void eval(const xtl::span<const std::int32_t>& cells, U& values) const
   {
     // Extract data from Expression
     assert(_mesh);
 
     // Prepare coefficients and constants
-    const auto [coeffs, cstride] = pack_coefficients(*this, active_cells);
+    const auto [coeffs, cstride] = pack_coefficients(*this, cells);
     const std::vector<T> constant_data = pack_constants(*this);
     const auto& fn = this->get_tabulate_expression();
 
@@ -168,9 +168,9 @@ public:
     const xtl::span<T> _values_local(values_local);
 
     // Iterate over cells and 'assemble' into values
-    for (std::size_t c = 0; c < active_cells.size(); ++c)
+    for (std::size_t c = 0; c < cells.size(); ++c)
     {
-      const std::int32_t cell = active_cells[c];
+      const std::int32_t cell = cells[c];
 
       auto x_dofs = x_dofmap.links(cell);
       for (std::size_t i = 0; i < x_dofs.size(); ++i)

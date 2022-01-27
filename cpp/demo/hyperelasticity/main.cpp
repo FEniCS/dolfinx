@@ -190,7 +190,7 @@ int main(int argc, char* argv[])
         std::make_shared<const fem::DirichletBC<T>>(u_rotation, bdofs_right)};
 
     HyperElasticProblem problem(L, a, bcs);
-    nls::NewtonSolver newton_solver(MPI_COMM_WORLD);
+    nls::NewtonSolver newton_solver(mesh->comm());
     newton_solver.setF(problem.F(), problem.vector());
     newton_solver.setJ(problem.J(), problem.matrix());
     newton_solver.set_form(problem.form());
@@ -220,11 +220,11 @@ int main(int argc, char* argv[])
     sigma.interpolate(sigma_expression);
 
     // Save solution in VTK format
-    io::VTKFile file_u(MPI_COMM_WORLD, "u.pvd", "w");
+    io::VTKFile file_u(mesh->comm(), "u.pvd", "w");
     file_u.write({*u}, 0.0);
 
     // Save Cauchy stress in XDMF format
-    io::XDMFFile file_sigma(MPI_COMM_WORLD, "sigma.xdmf", "w");
+    io::XDMFFile file_sigma(mesh->comm(), "sigma.xdmf", "w");
     file_sigma.write_mesh(*mesh);
     file_sigma.write_function(sigma, 0.0);
   }

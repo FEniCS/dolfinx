@@ -18,6 +18,7 @@
 #include <functional>
 #include <memory>
 #include <set>
+#include <stdexcept>
 #include <string>
 #include <ufcx.h>
 #include <utility>
@@ -705,12 +706,12 @@ fem::Expression<T> create_expression(
   {
     if (!mesh)
       mesh = argument_function_space->mesh();
-    if (argument_function_space->mesh()->id() != mesh->id())
+    if (argument_function_space->mesh() != mesh)
       throw std::runtime_error("Argument function space on non-matching mesh.");
   }
 
   const int size = expression.num_points * expression.topological_dimension;
-  const xt::xtensor<double, 2>& points = xt::adapt(
+  const auto points = xt::adapt(
       expression.points, size, xt::no_ownership(),
       std::array<std::size_t, 2>(
           {static_cast<std::size_t>(expression.num_points),
@@ -741,10 +742,14 @@ fem::Expression<T> create_expression(
                                     const int*, const unsigned char*)>(
             expression.tabulate_tensor_complex128);
   }
+  else
+  {
+    throw std::runtime_error("Type not supported.");
+  }
   assert(tabulate_tensor);
 
-  return fem::Expression<T>(coefficients, constants, mesh, points,
-                            tabulate_tensor, value_shape, argument_function_space);
+  return fem::Expression(coefficients, constants, mesh, points,
+                         tabulate_tensor, value_shape, argument_function_space);
 }
 
 /// Create Expression from UFC input

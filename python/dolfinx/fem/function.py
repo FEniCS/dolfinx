@@ -170,7 +170,7 @@ class Expression:
         Returns
         -------
         np.ndarray
-          The i-th row of u contains the expression evaluated on cells[i].
+            The i-th row contains the expression evaluated on cells[i].
 
         """
         _cells = np.asarray(cells, dtype=np.int32)
@@ -338,7 +338,7 @@ class Function(ufl.Coefficient):
 
         @_interpolate.register(Expression)
         def _(expr: Expression, cells: np.ndarray = None):
-            # Interpolate expression for the set of cells
+            """Interpolate expression for the set of cells"""
             self._cpp_object.interpolate(expr._cpp_object, cells)
 
         if cells is None:
