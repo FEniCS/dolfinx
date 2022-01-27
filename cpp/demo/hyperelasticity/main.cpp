@@ -7,6 +7,8 @@
 #include <dolfinx/fem/petsc.h>
 #include <dolfinx/io/XDMFFile.h>
 #include <dolfinx/la/Vector.h>
+#include <dolfinx/mesh/Mesh.h>
+#include <dolfinx/mesh/cell_types.h>
 #include <xtensor/xarray.hpp>
 #include <xtensor/xview.hpp>
 
@@ -196,36 +198,35 @@ int main(int argc, char* argv[])
     la::petsc::Vector _u(la::petsc::create_vector_wrap(*u->x()), false);
     newton_solver.solve(_u.vec());
 
-    // Calculate Cauchy stress
+    // Compute Cauchy stress
     // Construct appropriate Basix element for stress
     const auto family = basix::element::family::P;
-    const auto cell_type = basix::cell::type::tetrahedron;
+    const auto cell_type
+        = mesh::cell_type_to_basix_type(mesh->topology().cell_type());
     const auto variant = basix::element::lagrange_variant::equispaced;
     const int k = 0;
     const bool discontinuous = true;
 
-    const auto S_element
+    const basix::FiniteElement S_element
         = basix::create_element(family, cell_type, k, variant, discontinuous);
-    auto S = std::make_shared<fem::FunctionSpace>(
-        fem::create_functionspace(mesh, S_element, 9));
+    auto S = std::make_shared<fem::FunctionSpace>(fem::create_functionspace(
+        mesh, S_element, pow(mesh->geometry().dim(), 2)));
 
-    const auto sigma_expression
-        = std::make_shared<fem::Expression<T>>(fem::create_expression<T>(
-            *expression_hyperelasticity_sigma, {{"u", u}}, {}, S));
+    const auto sigma_expression = fem::create_expression<T>(
+        *expression_hyperelasticity_sigma, {{"u", u}}, {}, S);
 
-    auto sigma = std::make_shared<fem::Function<T>>(S);
-    sigma->name = "cauchy_stress";
-    sigma->interpolate(*sigma_expression);
+    auto sigma = fem::Function<T>(S);
+    sigma.name = "cauchy_stress";
+    sigma.interpolate(sigma_expression);
 
     // Save solution in VTK format
     io::VTKFile file_u(MPI_COMM_WORLD, "u.pvd", "w");
     file_u.write({*u}, 0.0);
-   
+
     // Save Cauchy stress in XDMF format
     io::XDMFFile file_sigma(MPI_COMM_WORLD, "sigma.xdmf", "w");
     file_sigma.write_mesh(*mesh);
-    file_sigma.write_function(*sigma, 0.0);
-
+    file_sigma.write_function(sigma, 0.0);
   }
 
   common::subsystem::finalize_petsc();
