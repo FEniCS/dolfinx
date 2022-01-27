@@ -928,31 +928,20 @@ VTXWriter::VTXWriter(MPI_Comm comm, const std::string& filename,
   // same degree
   for (auto& v : _u)
   {
-    std::visit(overload{[&](const std::shared_ptr<const Fdr>& u)
-                        {
-                          auto element = u->function_space()->element();
-                          std::string family = element->family();
-                          int num_dofs = element->space_dimension()
-                                         / element->block_size();
-                          if ((family != family0) or (num_dofs != num_dofs0))
-                          {
-                            throw std::runtime_error(
-                                "Only first order Lagrange spaces supported");
-                          }
-                        },
-                        [&](const std::shared_ptr<const Fdc>& u)
-                        {
-                          auto element = u->function_space()->element();
-                          std::string family = element->family();
-                          int num_dofs = element->space_dimension()
-                                         / element->block_size();
-                          if ((family != family0) or (num_dofs != num_dofs0))
-                          {
-                            throw std::runtime_error(
-                                "Only first order Lagrange spaces supported");
-                          }
-                        }},
-               v);
+    std::visit(
+        [&](const auto& u)
+        {
+          auto element = u->function_space()->element();
+          std::string family = element->family();
+          int num_dofs = element->space_dimension() / element->block_size();
+          if (family != family0 or num_dofs != num_dofs0)
+          {
+            throw std::runtime_error(
+                "Only first order Lagrange spaces supported");
+          }
+        },
+
+        v);
   }
 
   // Define VTK scheme attribute for set of functions
@@ -976,26 +965,15 @@ void VTXWriter::write(double t)
   else
   {
     // Write a single mesh for functions as they share finite element
-    std::visit(overload{[&](const std::shared_ptr<const Fdr>& u) {
-                          vtx_write_mesh_from_space(*_io, *_engine,
-                                                    *u->function_space());
-                        },
-                        [&](const std::shared_ptr<const Fdc>& u) {
-                          vtx_write_mesh_from_space(*_io, *_engine,
-                                                    *u->function_space());
-                        }},
-               _u[0]);
+    std::visit(
+        [&](const auto& u)
+        { vtx_write_mesh_from_space(*_io, *_engine, *u->function_space()); },
+        _u[0]);
 
     // Write function data for each function to file
     for (auto& v : _u)
     {
-      std::visit(overload{[&](const std::shared_ptr<const Fdr>& u) {
-                            vtx_write_data<Fdr::value_type>(*_io, *_engine, *u);
-                          },
-                          [&](const std::shared_ptr<const Fdc>& u) {
-                            vtx_write_data<Fdc::value_type>(*_io, *_engine, *u);
-                          }},
-                 v);
+      std::visit([&](const auto& u) { vtx_write_data(*_io, *_engine, *u); }, v);
     };
   }
 
