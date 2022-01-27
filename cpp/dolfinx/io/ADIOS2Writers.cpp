@@ -888,6 +888,10 @@ VTXWriter::VTXWriter(MPI_Comm comm, const std::string& filename,
       u.front());
   assert(element0);
 
+  // Check if function is mixed
+  if (element0->is_mixed())
+    throw std::runtime_error("Mixed functions are not supported by VTXWriter");
+
   // Check if function is DG 0
   if (element0->space_dimension() / element0->block_size() == 1)
   {
