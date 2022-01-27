@@ -692,21 +692,21 @@ fem::Expression<T> create_expression(
     const ufcx_expression& expression,
     const std::vector<std::shared_ptr<const fem::Function<T>>>& coefficients,
     const std::vector<std::shared_ptr<const fem::Constant<T>>>& constants,
-    const std::shared_ptr<const fem::FunctionSpace> function_space = nullptr,
+    const std::shared_ptr<const fem::FunctionSpace> argument_function_space = nullptr,
     std::shared_ptr<const mesh::Mesh> mesh = nullptr)
 {
-
-  if (function_space)
-  {
-    if (!mesh)
-      mesh = function_space->mesh();
-    else if (function_space->mesh()->id() != mesh->id())
-      throw std::runtime_error("Function space on non-matching mesh.");
-  }
-  else if (expression.rank > 0)
+  if (expression.rank > 0 and !argument_function_space)
   {
     throw std::runtime_error(
-        "Expression contains Argument but no function space is provided");
+        "Expression has Argument but no Argument function space was provided");
+  }
+
+  if (argument_function_space)
+  {
+    if (!mesh)
+      mesh = argument_function_space->mesh();
+    if (argument_function_space->mesh()->id() != mesh->id())
+      throw std::runtime_error("Argument function space on non-matching mesh.");
   }
 
   const int size = expression.num_points * expression.topological_dimension;
@@ -744,7 +744,7 @@ fem::Expression<T> create_expression(
   assert(tabulate_tensor);
 
   return fem::Expression<T>(coefficients, constants, mesh, points,
-                            tabulate_tensor, value_shape, function_space);
+                            tabulate_tensor, value_shape, argument_function_space);
 }
 
 /// Create Expression from UFC input
@@ -756,7 +756,7 @@ fem::Expression<T> create_expression(
         coefficients,
     const std::map<std::string, std::shared_ptr<const fem::Constant<T>>>&
         constants,
-    const std::shared_ptr<const fem::FunctionSpace> function_space = nullptr,
+    const std::shared_ptr<const fem::FunctionSpace> argument_function_space = nullptr,
     const std::shared_ptr<const mesh::Mesh> mesh = nullptr)
 {
   // Place coefficients in appropriate order
@@ -793,7 +793,7 @@ fem::Expression<T> create_expression(
     }
   }
 
-  return create_expression(expression, coeff_map, const_map, function_space,
+  return create_expression(expression, coeff_map, const_map, argument_function_space,
                            mesh);
 }
 
