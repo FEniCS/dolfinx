@@ -117,8 +117,8 @@ class Expression:
         else:
             raise RuntimeError(f"Unsupported scalar type {dtype} for Form.")
         self._ufcx_expression, _, self._code = jit.ffcx_jit(mesh.comm, (ufl_expression, _X),
-                                                                 form_compiler_parameters=form_compiler_parameters,
-                                                                 jit_parameters=jit_parameters)
+                                                            form_compiler_parameters=form_compiler_parameters,
+                                                            jit_parameters=jit_parameters)
         self._ufl_expression = ufl_expression
 
         # Tabulation function.
@@ -134,9 +134,9 @@ class Expression:
         constants = [constant._cpp_object for constant in ufl_constants]
         arguments = ufl.algorithms.extract_arguments(ufl_expression)
         if len(arguments) == 0:
-            self._function_space = None
+            self._argument_function_space = None
         elif len(arguments) == 1:
-            self._function_space = arguments[0].ufl_function_space()._cpp_object
+            self._argument_function_space = arguments[0].ufl_function_space()._cpp_object
         else:
             raise RuntimeError("Expressions with more that one Argument not allowed.")
 
@@ -202,12 +202,18 @@ class Expression:
 
     @property
     def num_points(self) -> int:
+        """Number of points on reference cell"""
         return self._cpp_object.X.shape[0]
 
     @property
     def value_size(self) -> int:
         """Value size of the expression"""
         return self._cpp_object.value_size
+
+    @property
+    def argument_function_space(self) -> typing.Optional[FunctionSpace]:
+        """Return argument function space if expression has argument"""
+        return self._argument_function_space
 
     @property
     def ufcx_expression(self):

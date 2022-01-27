@@ -52,9 +52,11 @@ public:
                                const int*, const uint8_t*)>
           fn,
       const std::vector<int>& value_shape,
-      const std::shared_ptr<const FunctionSpace> argument_function_space = nullptr)
-      : _coefficients(coefficients), _constants(constants), _mesh(mesh), _x_ref(X),
-        _fn(fn), _value_shape(value_shape), _argument_function_space(argument_function_space)
+      const std::shared_ptr<const FunctionSpace> argument_function_space
+      = nullptr)
+      : _coefficients(coefficients), _constants(constants), _mesh(mesh),
+        _x_ref(X), _fn(fn), _value_shape(value_shape),
+        _argument_function_space(argument_function_space)
   {
     // Do nothing
   }
@@ -143,8 +145,7 @@ public:
     }
 
     const int size0 = num_points() * value_size();
-    std::vector<T> values_local(size0 * num_argument_dofs,
-                                0);
+    std::vector<T> values_local(size0 * num_argument_dofs, 0);
     const xtl::span<T> _values_local(values_local);
 
     // Iterate over cells and 'assemble' into values
@@ -164,8 +165,7 @@ public:
       _fn(values_local.data(), coeff_cell, constant_data.data(),
           coordinate_dofs.data(), nullptr, nullptr);
 
-      dof_transform_to_transpose(_values_local, cell_info, c,
-                                 size0);
+      dof_transform_to_transpose(_values_local, cell_info, c, size0);
 
       for (std::size_t j = 0; j < values_local.size(); ++j)
         values(c, j) = values_local[j];
@@ -189,6 +189,13 @@ public:
   {
     return _constants;
   }
+
+  /// Get argument function space
+  /// @return The argument function space, can be nullptr.
+  std::shared_ptr<const fem::FunctionSpace> argument_function_space() const
+  {
+    return _argument_function_space;
+  };
 
   /// Get mesh
   /// @return The mesh
