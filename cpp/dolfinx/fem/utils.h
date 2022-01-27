@@ -703,7 +703,7 @@ fem::Expression<T> create_expression(
     else if (function_space->mesh()->id() != mesh->id())
       throw std::runtime_error("Function space on non-matching mesh.");
   }
-  else if (expression.function_spaces)
+  else if (expression.rank > 0)
   {
     throw std::runtime_error(
         "Expression contains Argument but no function space is provided");

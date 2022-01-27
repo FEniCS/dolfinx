@@ -179,7 +179,7 @@ class Expression:
 
         # Allocate memory for result if u was not provided
         if values is None:
-            values = np.empty(values_shape, dtype=self.dtype)
+            values = np.zeros(values_shape, dtype=self.dtype)
         else:
             if values.shape != values_shape:
                 raise TypeError("Passed array values does not have correct shape.")

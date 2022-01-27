@@ -118,7 +118,8 @@ public:
     xtl::span<const std::uint32_t> cell_info;
     std::function<void(const xtl::span<T>&,
                        const xtl::span<const std::uint32_t>&, std::int32_t,
-                       int)> dof_transform
+                       int)>
+        dof_transform_to_transpose
         = [](const xtl::span<T>&, const xtl::span<const std::uint32_t>&,
              std::int32_t, int)
     {
@@ -135,11 +136,14 @@ public:
       {
         _mesh->topology_mutable().create_entity_permutations();
         cell_info = xtl::span(_mesh->topology().get_cell_permutation_info());
-        dof_transform = element->template get_dof_transformation_function<T>();
+        dof_transform_to_transpose
+            = element
+                  ->template get_dof_transformation_to_transpose_function<T>();
       }
     }
 
-    std::vector<T> values_local(num_points() * value_size() * num_argument_dofs,
+    const int size0 = num_points() * value_size();
+    std::vector<T> values_local(size0 * num_argument_dofs,
                                 0);
     const xtl::span<T> _values_local(values_local);
 
@@ -160,7 +164,8 @@ public:
       _fn(values_local.data(), coeff_cell, constant_data.data(),
           coordinate_dofs.data(), nullptr, nullptr);
 
-      dof_transform(_values_local, cell_info, c, num_argument_dofs);
+      dof_transform_to_transpose(_values_local, cell_info, c,
+                                 size0);
 
       for (std::size_t j = 0; j < values_local.size(); ++j)
         values(c, j) = values_local[j];
