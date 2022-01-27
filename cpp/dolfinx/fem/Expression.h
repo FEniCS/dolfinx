@@ -35,6 +35,8 @@ class Expression
 public:
   /// Create an Expression
   ///
+  /// Users should prefer the create_expression factory functions
+  ///
   /// @param[in] coefficients Coefficients in the Expression
   /// @param[in] constants Constants in the Expression
   /// @param[in] mesh
@@ -67,11 +69,28 @@ public:
   /// Destructor
   virtual ~Expression() = default;
 
-  /// Access coefficients
+  /// Get argument function space
+  /// @return The argument function space, nullptr if there is no argument.
+  std::shared_ptr<const fem::FunctionSpace> argument_function_space() const
+  {
+    return _argument_function_space;
+  };
+
+  /// Get coefficients
+  /// @return Vector of attached coefficients
   const std::vector<std::shared_ptr<const fem::Function<T>>>&
   coefficients() const
   {
     return _coefficients;
+  }
+
+  /// Get constants
+  /// @return Vector of attached constants with their names. Names are
+  ///   used to set constants in user's c++ code. Index in the vector is
+  ///   the position of the constant in the original (nonsimplified) form.
+  const std::vector<std::shared_ptr<const fem::Constant<T>>>& constants() const
+  {
+    return _constants;
   }
 
   /// Offset for each coefficient expansion array on a cell. Used to
@@ -181,29 +200,13 @@ public:
     return _fn;
   }
 
-  /// Access constants
-  /// @return Vector of attached constants with their names. Names are
-  ///   used to set constants in user's c++ code. Index in the vector is
-  ///   the position of the constant in the original (nonsimplified) form.
-  const std::vector<std::shared_ptr<const fem::Constant<T>>>& constants() const
-  {
-    return _constants;
-  }
-
-  /// Get argument function space
-  /// @return The argument function space, can be nullptr.
-  std::shared_ptr<const fem::FunctionSpace> argument_function_space() const
-  {
-    return _argument_function_space;
-  };
-
   /// Get mesh
   /// @return The mesh
   std::shared_ptr<const mesh::Mesh> mesh() const { return _mesh; }
 
-  /// Get evaluation points on reference cell
-  /// @return Evaluation points
-  const xt::xtensor<double, 2>& X() const { return _x_ref; }
+  /// Get number of evaluation points in cell
+  /// @return number of points in cell
+  std::size_t num_points() const { return _x_ref.shape(0); }
 
   /// Get value size
   /// @return value_size
@@ -217,14 +220,17 @@ public:
   /// @return value shape
   const std::vector<int>& value_shape() const { return _value_shape; }
 
-  /// Get number of evaluation points in cell
-  /// @return number of points in cell
-  std::size_t num_points() const { return _x_ref.shape(0); }
+  /// Get evaluation points on reference cell
+  /// @return Evaluation points
+  const xt::xtensor<double, 2>& X() const { return _x_ref; }
 
   /// Scalar type (T)
   using scalar_type = T;
 
 private:
+  // Function space for Argument
+  std::shared_ptr<const fem::FunctionSpace> _argument_function_space;
+
   // Coefficients associated with the Expression
   std::vector<std::shared_ptr<const fem::Function<T>>> _coefficients;
 
@@ -236,16 +242,13 @@ private:
                      const uint8_t*)>
       _fn;
 
-  // Evaluation points on reference cell. Synonymous with X in public interface.
-  xt::xtensor<double, 2> _x_ref;
-
   // The mesh
   std::shared_ptr<const mesh::Mesh> _mesh;
 
   // Shape of the evaluated expression
   std::vector<int> _value_shape;
 
-  // Function space for Argument
-  std::shared_ptr<const fem::FunctionSpace> _argument_function_space;
+  // Evaluation points on reference cell. Synonymous with X in public interface.
+  xt::xtensor<double, 2> _x_ref;
 };
 } // namespace dolfinx::fem
