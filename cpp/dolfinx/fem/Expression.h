@@ -52,9 +52,9 @@ public:
                                const int*, const uint8_t*)>
           fn,
       const std::vector<int>& value_shape,
-      const std::shared_ptr<const FunctionSpace> function_space = nullptr)
+      const std::shared_ptr<const FunctionSpace> argument_function_space = nullptr)
       : _coefficients(coefficients), _constants(constants), _mesh(mesh), _x_ref(X),
-        _fn(fn), _value_shape(value_shape), _argument_function_space(function_space)
+        _fn(fn), _value_shape(value_shape), _argument_function_space(argument_function_space)
   {
     // Do nothing
   }
