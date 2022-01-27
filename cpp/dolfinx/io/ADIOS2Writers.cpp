@@ -830,33 +830,19 @@ FidesWriter::FidesWriter(MPI_Comm comm, const std::string& filename,
   for (auto& v : _u)
   {
     std::visit(
-        overload{
-            [&](const std::shared_ptr<const Fdr>& u)
-            {
-              auto element = u->function_space()->element();
-              assert(element);
-              std::string family = element->family();
-              int num_dofs = element->space_dimension() / element->block_size();
-              if ((family != "Lagrange" and family != "Q" and family != "P")
-                  or (num_dofs != num_vertices_per_cell))
-              {
-                throw std::runtime_error(
-                    "Only first order Lagrange spaces supported");
-              }
-            },
-            [&](const std::shared_ptr<const Fdc>& u)
-            {
-              auto element = u->function_space()->element();
-              assert(element);
-              std::string family = element->family();
-              int num_dofs = element->space_dimension() / element->block_size();
-              if ((family != "Lagrange" and family != "Q" and family != "P")
-                  or (num_dofs != num_vertices_per_cell))
-              {
-                throw std::runtime_error(
-                    "Only first order Lagrange spaces supported");
-              }
-            }},
+        [&](const auto& u)
+        {
+          auto element = u->function_space()->element();
+          assert(element);
+          std::string family = element->family();
+          int num_dofs = element->space_dimension() / element->block_size();
+          if ((family != "Lagrange" and family != "Q" and family != "P")
+              or (num_dofs != num_vertices_per_cell))
+          {
+            throw std::runtime_error(
+                "Only first order Lagrange spaces supported");
+          }
+        },
         v);
   }
 
@@ -876,14 +862,8 @@ void FidesWriter::write(double t)
   fides_write_mesh(*_io, *_engine, *_mesh);
   for (auto& v : _u)
   {
-    std::visit(overload{[&](const std::shared_ptr<const Fdr>& u) {
-                          fides_write_data<Fdr::value_type>(*_io, *_engine, *u);
-                        },
-                        [&](const std::shared_ptr<const Fdc>& u) {
-                          fides_write_data<Fdc::value_type>(*_io, *_engine, *u);
-                        }},
-               v);
-  };
+    std::visit([&](const auto& u) { fides_write_data(*_io, *_engine, *u); }, v);
+  }
 
   _engine->EndStep();
 }
