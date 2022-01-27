@@ -37,16 +37,14 @@ namespace dolfinx::io
 /// be saved. For vertex-based functions the output must be
 /// isoparametic, i.e. the geometry and the finite element functions
 /// must be defined using the same basis.
-
-/// This format if It is not suitable to checkpointing as it may
-/// decimate some data.
-
+///
+/// @warning This format is not suitable to checkpointing
 class VTKFile
 {
 public:
   /// Create VTK file
-  VTKFile(MPI_Comm comm, const std::string filename,
-          const std::string file_mode);
+  VTKFile(MPI_Comm comm, const std::string& filename,
+          const std::string& file_mode);
 
   /// Destructor
   ~VTKFile();
@@ -57,22 +55,22 @@ public:
   /// Flushes XML files to disk
   void flush();
 
-  /// Write mesh to file. Supports arbitrary order Lagrange
+  /// Write a mesh to file. Supports arbitrary order Lagrange
   /// isoparametric cells.
   /// @param[in] mesh The Mesh to write to file
-  /// @param[in] time Time parameter to associate with the @p mesh
+  /// @param[in] time Time parameter to associate with @p mesh
   void write(const mesh::Mesh& mesh, double time = 0.0);
 
-  /// Output fem::Function and timestep
+  /// Write a finite element function with an associated timestep
   /// @param[in] u List of functions to write to file
-  /// @param[in] t Time parameter to associate with the @p mesh
+  /// @param[in] t Time parameter to associate with @p u
   void write(
       const std::vector<std::reference_wrapper<const fem::Function<double>>>& u,
       double t);
 
-  /// Output fem::Function and timestep
+  /// Write a finite element function with an associated timestep
   /// @param[in] u List of functions to write to file
-  /// @param[in] t Time parameter to associate with the @p mesh
+  /// @param[in] t Time parameter to associate with @p u
   void write(
       const std::vector<
           std::reference_wrapper<const fem::Function<std::complex<double>>>>& u,

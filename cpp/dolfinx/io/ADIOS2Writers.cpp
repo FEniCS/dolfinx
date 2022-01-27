@@ -148,10 +148,9 @@ void vtx_write_data(adios2::IO& io, adios2::Engine& engine,
     // ---- Real
     std::vector<double> data(num_dofs * num_comp, 0);
     for (std::size_t i = 0; i < num_dofs; ++i)
-    {
       for (int j = 0; j < index_map_bs; ++j)
         data[i * num_comp + j] = u_vector[i * index_map_bs + j];
-    }
+
     adios2::Variable<double> output
         = define_variable<double>(io, u.name, {}, {}, {num_dofs, num_comp});
     engine.Put<double>(output, data.data(), adios2::Mode::Sync);
@@ -160,10 +159,9 @@ void vtx_write_data(adios2::IO& io, adios2::Engine& engine,
   {
     std::vector<double> data(num_dofs * num_comp, 0);
     for (std::size_t i = 0; i < num_dofs; ++i)
-    {
       for (int j = 0; j < index_map_bs; ++j)
         data[i * num_comp + j] = std::real(u_vector[i * index_map_bs + j]);
-    }
+
     adios2::Variable<double> output_real = define_variable<double>(
         io, u.name + "_real", {}, {}, {num_dofs, num_comp});
     engine.Put<double>(output_real, data.data(), adios2::Mode::Sync);
