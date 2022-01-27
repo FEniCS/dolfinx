@@ -220,7 +220,7 @@ class Expression:
 
     @property
     def ufcx_expression(self):
-        """Return the compiled ufc_expression object"""
+        """Return the compiled ufcx_expression object"""
         return self._ufcx_expression
 
     @property
