@@ -734,9 +734,10 @@ fem::Expression<T> create_expression(
     const ufcx_expression& expression,
     const std::vector<std::shared_ptr<const fem::Function<T>>>& coefficients,
     const std::vector<std::shared_ptr<const fem::Constant<T>>>& constants,
-    const std::shared_ptr<const fem::FunctionSpace> argument_function_space = nullptr,
-    std::shared_ptr<const mesh::Mesh> mesh = nullptr)
+    const std::shared_ptr<const mesh::Mesh> mesh,
+    const std::shared_ptr<const fem::FunctionSpace> argument_function_space = nullptr)
 {
+  assert(mesh);
   if (expression.rank > 0 and !argument_function_space)
   {
     throw std::runtime_error(
@@ -745,8 +746,7 @@ fem::Expression<T> create_expression(
 
   if (argument_function_space)
   {
-    if (!mesh)
-      mesh = argument_function_space->mesh();
+    assert(argument_function_space);
     if (argument_function_space->mesh() != mesh)
       throw std::runtime_error("Argument function space on non-matching mesh.");
   }
@@ -802,8 +802,8 @@ fem::Expression<T> create_expression(
         coefficients,
     const std::map<std::string, std::shared_ptr<const fem::Constant<T>>>&
         constants,
-    const std::shared_ptr<const fem::FunctionSpace> argument_function_space = nullptr,
-    const std::shared_ptr<const mesh::Mesh> mesh = nullptr)
+    const std::shared_ptr<const mesh::Mesh> mesh,
+    const std::shared_ptr<const fem::FunctionSpace> argument_function_space = nullptr)
 {
   // Place coefficients in appropriate order
   std::vector<std::shared_ptr<const fem::Function<T>>> coeff_map;
@@ -839,8 +839,8 @@ fem::Expression<T> create_expression(
     }
   }
 
-  return create_expression(expression, coeff_map, const_map, argument_function_space,
-                           mesh);
+  return create_expression(expression, coeff_map, const_map, mesh,
+                           argument_function_space);
 }
 
 // NOTE: This is subject to change
