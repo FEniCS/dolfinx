@@ -190,6 +190,11 @@ int main(int argc, char* argv[])
     newton_solver.setF(problem.F(), problem.vector());
     newton_solver.setJ(problem.J(), problem.matrix());
     newton_solver.set_form(problem.form());
+    la::petsc::KrylovSolver& krylov_solver = newton_solver.get_krylov_solver();
+    // MUMPS is known to fail for this demo on LLVM-based systems
+    la::petsc::options::set("nls_solve_pc_type", "lu");
+    la::petsc::options::set("nls_solve_pc_factor_mat_solver_type", "superlu_dist");
+    krylov_solver.set_from_options();
 
     la::petsc::Vector _u(la::petsc::create_vector_wrap(*u->x()), false);
     newton_solver.solve(_u.vec());
