@@ -44,22 +44,24 @@ tabulate_lagrange_dof_coordinates(const dolfinx::fem::FunctionSpace& V)
   const std::size_t gdim = mesh->geometry().dim();
   const int tdim = mesh->topology().dim();
 
-  // Get dofmap data
-  auto dofmap = V.dofmap();
-  assert(dofmap);
-  auto map_dofs = dofmap->index_map;
-  assert(map_dofs);
-  const int index_map_bs = dofmap->index_map_bs();
-  const int dofmap_bs = dofmap->bs();
+  // // Get dofmap data
+  // auto dofmap = V.dofmap();
+  // assert(dofmap);
+  // auto map_dofs = dofmap->index_map;
+  // assert(map_dofs);
+  // const int index_map_bs = dofmap->index_map_bs();
+  // const int dofmap_bs = dofmap->bs();
 
-  // Get element data
+  // // Get element data
   auto element = V.element();
-  assert(element);
-  const int e_block_size = element->block_size();
-  const std::size_t scalar_dofs = element->space_dimension() / e_block_size;
+  // assert(element);
+  // const int e_block_size = element->block_size();
+  // const std::size_t scalar_dofs = element->space_dimension() / e_block_size;
+  // const std::int32_t num_dofs
+  //     = index_map_bs * (map_dofs->size_local() + map_dofs->num_ghosts())
+  //       / dofmap_bs;
   const std::int32_t num_dofs
-      = index_map_bs * (map_dofs->size_local() + map_dofs->num_ghosts())
-        / dofmap_bs;
+      = index_map_bs * (map_dofs->size_local() + map_dofs->num_ghosts());
 
   // Get the dof coordinates on the reference element and the  mesh
   // coordinate map
@@ -111,8 +113,11 @@ tabulate_lagrange_dof_coordinates(const dolfinx::fem::FunctionSpace& V)
     // Copy dof coordinates into vector
     auto dofs = dofmap->cell_dofs(c);
     for (std::size_t i = 0; i < dofs.size(); ++i)
+    {
+      std::int32_t dof = dofs[i];
       for (std::size_t j = 0; j < gdim; ++j)
-        coords(dofs[i], j) = x(i, j);
+        coords(dof, j) = x(i, j);
+    }
   }
 
   return coords;
