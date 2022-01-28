@@ -507,13 +507,13 @@ void declare_objects(py::module& m, const std::string& type)
              coefficients,
          const std::vector<std::shared_ptr<const dolfinx::fem::Constant<T>>>&
              constants,
-         const std::shared_ptr<const dolfinx::mesh::Mesh> mesh,
-         const std::shared_ptr<const dolfinx::fem::FunctionSpace> argument_function_space)
+         const std::shared_ptr<const dolfinx::fem::FunctionSpace> argument_function_space,
+         const std::shared_ptr<const dolfinx::mesh::Mesh> mesh)
       {
         const ufcx_expression* p
             = reinterpret_cast<const ufcx_expression*>(expression);
-        return dolfinx::fem::create_expression<T>(*p, coefficients, constants, mesh,
-                                                  argument_function_space);
+        return dolfinx::fem::create_expression<T>(*p, coefficients, constants,
+                                                  argument_function_space, mesh);
       },
       "Create Form from a pointer to ufc_form.");
 }

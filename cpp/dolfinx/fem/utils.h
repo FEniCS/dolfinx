@@ -734,19 +734,48 @@ fem::Expression<T> create_expression(
     const ufcx_expression& expression,
     const std::vector<std::shared_ptr<const fem::Function<T>>>& coefficients,
     const std::vector<std::shared_ptr<const fem::Constant<T>>>& constants,
-    const std::shared_ptr<const mesh::Mesh> mesh,
-    const std::shared_ptr<const fem::FunctionSpace> argument_function_space = nullptr)
+    const std::shared_ptr<const fem::FunctionSpace> argument_function_space
+    = nullptr,
+    std::shared_ptr<const mesh::Mesh> mesh = nullptr)
 {
-  assert(mesh);
   if (expression.rank > 0 and !argument_function_space)
   {
     throw std::runtime_error(
-        "Expression has Argument but no Argument function space was provided");
+        "Expression has Argument but no Argument function space was provided.");
+  }
+
+  // If a mesh is not passed try and get one from coefficients or arguments
+  // otherwise fail
+  if (!mesh)
+  {
+    if (coefficients.size() > 0)
+    {
+      mesh = coefficients[0]->function_space()->mesh();
+    }
+    else if (argument_function_space)
+    {
+      mesh = argument_function_space->mesh();
+    }
+    else
+    {
+      throw std::runtime_error(
+          "Expression has no coefficients or arguments, pass a mesh.");
+    }
+  }
+
+  // Check that mesh matches with arguments and coefficients
+  if (coefficients.size() > 0)
+  {
+    for (auto c : coefficients)
+    {
+      if (c->function_space()->mesh() != mesh)
+        throw std::runtime_error(
+            "Coefficient function space on non-matching mesh.");
+    }
   }
 
   if (argument_function_space)
   {
-    assert(argument_function_space);
     if (argument_function_space->mesh() != mesh)
       throw std::runtime_error("Argument function space on non-matching mesh.");
   }
@@ -789,8 +818,8 @@ fem::Expression<T> create_expression(
   }
   assert(tabulate_tensor);
 
-  return fem::Expression(coefficients, constants, mesh, points,
-                         tabulate_tensor, value_shape, argument_function_space);
+  return fem::Expression(coefficients, constants, mesh, points, tabulate_tensor,
+                         value_shape, argument_function_space);
 }
 
 /// Create Expression from UFC input
@@ -802,8 +831,9 @@ fem::Expression<T> create_expression(
         coefficients,
     const std::map<std::string, std::shared_ptr<const fem::Constant<T>>>&
         constants,
-    const std::shared_ptr<const mesh::Mesh> mesh,
-    const std::shared_ptr<const fem::FunctionSpace> argument_function_space = nullptr)
+    const std::shared_ptr<const fem::FunctionSpace> argument_function_space
+    = nullptr,
+    const std::shared_ptr<const mesh::Mesh> mesh = nullptr)
 {
   // Place coefficients in appropriate order
   std::vector<std::shared_ptr<const fem::Function<T>>> coeff_map;
@@ -839,8 +869,8 @@ fem::Expression<T> create_expression(
     }
   }
 
-  return create_expression(expression, coeff_map, const_map, mesh,
-                           argument_function_space);
+  return create_expression(expression, coeff_map, const_map,
+                           argument_function_space, mesh);
 }
 
 // NOTE: This is subject to change

@@ -151,7 +151,7 @@ class Expression:
                 raise NotImplementedError(f"Type {dtype} not supported.")
 
         self._cpp_object = create_expression(dtype)(ffi.cast("uintptr_t", ffi.addressof(self._ufcx_expression)),
-                                                    coeffs, constants, mesh, self.argument_function_space)
+                                                    coeffs, constants, self.argument_function_space, mesh)
 
     def eval(self, cells: np.ndarray, values: typing.Optional[np.ndarray] = None) -> np.ndarray:
         """Evaluate Expression in cells.
