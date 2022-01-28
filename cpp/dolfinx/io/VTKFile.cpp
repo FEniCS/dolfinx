@@ -35,24 +35,25 @@ namespace
 /// @return An array with shape (num_dofs, 3) array where the ith row
 /// corresponds to the coordinate of the ith dof in `V` (local to
 /// process)
+/// @pre `V` must be Lagrange and must not be a subspace
 xt::xtensor<double, 2>
 tabulate_lagrange_dof_coordinates(const dolfinx::fem::FunctionSpace& V)
 {
-  std::shared_ptr<const mesh::Mesh> mesh = V.mesh();
+  auto mesh = V.mesh();
   assert(mesh);
   const std::size_t gdim = mesh->geometry().dim();
   const int tdim = mesh->topology().dim();
 
   // Get dofmap data
-  std::shared_ptr<const fem::DofMap> dofmap = V.dofmap();
+  auto dofmap = V.dofmap();
   assert(dofmap);
-  std::shared_ptr<const common::IndexMap> map_dofs = dofmap->index_map;
+  auto map_dofs = dofmap->index_map;
   assert(map_dofs);
   const int index_map_bs = dofmap->index_map_bs();
   const int dofmap_bs = dofmap->bs();
 
   // Get element data
-  std::shared_ptr<const fem::FiniteElement> element = V.element();
+  auto element = V.element();
   assert(element);
   const int e_block_size = element->block_size();
   const std::size_t scalar_dofs = element->space_dimension() / e_block_size;
@@ -130,7 +131,7 @@ vtk_mesh_from_space(const fem::FunctionSpace& V)
   const int tdim = mesh->topology().dim();
 
   xt::xtensor<double, 2> x = tabulate_lagrange_dof_coordinates(V);
-  const std::size_t num_dofs = x.shape(0);
+  // const std::size_t num_dofs = x.shape(0);
   const std::size_t num_cells = mesh->topology().index_map(tdim)->size_local();
 
   // Create permutation from DOLFINx dof ordering to VTK
@@ -144,7 +145,7 @@ vtk_mesh_from_space(const fem::FunctionSpace& V)
   // [N0, v0_0, ...., v0_N0, N1, v1_0, ...., v1_N1, ....]
   // std::vector<std::int64_t> vtk_topology(num_cells * (num_nodes + 1));
   xt::xtensor<std::int64_t, 2> vtk_topology({num_cells, num_nodes});
-  for (std::int32_t c = 0; c < num_cells; ++c)
+  for (std::size_t c = 0; c < num_cells; ++c)
   {
     auto dofs = dofmap->cell_dofs(c);
     for (std::size_t i = 0; i < dofs.size(); ++i)
@@ -204,7 +205,7 @@ xt::xtensor<std::int64_t, 2> extract_vtk_connectivity(const mesh::Mesh& mesh)
 //----------------------------------------------------------------------------
 /// Return true if Function is a cell-wise constant, otherwise false
 template <typename Scalar>
-bool _is_cellwise(const fem::Function<Scalar>& u)
+bool is_cellwise(const fem::Function<Scalar>& u)
 {
   assert(u.function_space());
 
@@ -224,13 +225,6 @@ bool _is_cellwise(const fem::Function<Scalar>& u)
   }
   else
     return false;
-}
-//----------------------------------------------------------------------------
-bool is_cellwise(const fem::Function<double>& u) { return _is_cellwise(u); }
-//----------------------------------------------------------------------------
-bool is_cellwise(const fem::Function<std::complex<double>>& u)
-{
-  return _is_cellwise(u);
 }
 //----------------------------------------------------------------------------
 
@@ -494,7 +488,7 @@ void write_function(
   for (auto _u : u)
   {
     std::string data_type;
-    if (is_cellwise(_u))
+    if (is_cellwise(_u.get()))
       data_type = "CellData";
     else
       data_type = "PointData";
@@ -522,8 +516,9 @@ void write_function(
   for (auto _u : u)
   {
     auto element = _u.get().function_space()->element();
-    pugi::xml_node data_node = is_cellwise(_u) ? piece_node.child("CellData")
-                                               : piece_node.child("PointData");
+    pugi::xml_node data_node = is_cellwise(_u.get())
+                                   ? piece_node.child("CellData")
+                                   : piece_node.child("PointData");
     assert(!data_node.empty());
 
     auto dofmap = _u.get().function_space()->dofmap();
@@ -542,7 +537,7 @@ void write_function(
     // DOF values
     auto u_vector = _u.get().x()->array();
     std::vector<double> data(num_dofs * num_comp, 0);
-    for (std::size_t i = 0; i < num_dofs; ++i)
+    for (int i = 0; i < num_dofs; ++i)
       for (int j = 0; j < index_map_bs; ++j)
         data[i * num_comp + j] = u_vector[i * index_map_bs + j];
 
@@ -574,7 +569,7 @@ void write_function(
     grid_node.append_attribute("GhostLevel") = 0;
     for (auto _u : u)
     {
-      if (is_cellwise(_u))
+      if (is_cellwise(_u.get()))
       {
         if (grid_node.child("PCellData").empty())
           grid_node.append_child("PCellData");
@@ -596,7 +591,7 @@ void write_function(
 
     for (auto _u : u)
     {
-      std::string d_type = is_cellwise(_u) ? "PCellData" : "PPointData";
+      std::string d_type = is_cellwise(_u.get()) ? "PCellData" : "PPointData";
       pugi::xml_node data_pnode = grid_node.child(d_type.c_str());
       const int rank
           = _u.get().function_space()->element()->value_shape().size();
@@ -784,10 +779,9 @@ void io::VTKFile::write(
   write_function(u, time, _pvd_xml, _filename);
 }
 //----------------------------------------------------------------------------
-void io::VTKFile::write(
-    const std::vector<
-        std::reference_wrapper<const fem::Function<std::complex<double>>>>& u,
-    double time)
+void io::VTKFile::write(const std::vector<std::reference_wrapper<
+                            const fem::Function<std::complex<double>>>>& /*u*/,
+                        double /*time*/)
 {
   // write_function(u, time, _pvd_xml, _filename);
 }
