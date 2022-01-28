@@ -115,7 +115,7 @@ class Expression:
         elif dtype == np.complex128:
             form_compiler_parameters["scalar_type"] = "double _Complex"
         else:
-            raise RuntimeError(f"Unsupported scalar type {dtype} for Form.")
+            raise RuntimeError(f"Unsupported scalar type {dtype} for Expression.")
         self._ufcx_expression, _, self._code = jit.ffcx_jit(mesh.comm, (ufl_expression, _X),
                                                             form_compiler_parameters=form_compiler_parameters,
                                                             jit_parameters=jit_parameters)
