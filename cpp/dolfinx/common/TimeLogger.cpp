@@ -1,6 +1,6 @@
 // Copyright (C) 2003-2016 Anders Logg
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -38,15 +38,16 @@ void TimeLogger::register_timing(std::string task, double wall, double user,
     _timings.insert({task, {1, wall, user, system}});
 }
 //-----------------------------------------------------------------------------
-void TimeLogger::list_timings(MPI_Comm mpi_comm, std::set<TimingType> type)
+void TimeLogger::list_timings(MPI_Comm comm, std::set<TimingType> type,
+                              Table::Reduction reduction)
 {
   // Format and reduce to rank 0
   Table timings = this->timings(type);
-  timings = timings.reduce(mpi_comm, Table::Reduction::average);
+  timings = timings.reduce(comm, reduction);
   const std::string str = "\n" + timings.str();
 
   // Print just on rank 0
-  if (dolfinx::MPI::rank(mpi_comm) == 0)
+  if (dolfinx::MPI::rank(comm) == 0)
     std::cout << str << std::endl;
 }
 //-----------------------------------------------------------------------------

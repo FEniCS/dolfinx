@@ -1,13 +1,12 @@
 # Copyright (C) 2016 Garth N. Wells
 #
-# This file is part of DOLFINX (https://www.fenicsproject.org)
+# This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
+import glob
 import os
 import sys
-import glob
-
 
 # Get directory of this file
 dir_path = os.path.dirname(os.path.realpath(__file__))

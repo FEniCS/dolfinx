@@ -1,19 +1,20 @@
 // Copyright (C) 2015 Garth N. Wells
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #pragma once
 
+#include "DofMap.h"
+#include "FunctionSpace.h"
 #include <array>
 #include <dolfinx/common/IndexMap.h>
-#include <dolfinx/fem/DofMap.h>
-#include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <memory>
 #include <vector>
+#include <xtl/xspan.hpp>
 
 namespace dolfinx::fem
 {
@@ -108,19 +109,17 @@ void fem::assemble_discrete_gradient(
   }
 
   // Build maps from entities to local dof indices
-  std::shared_ptr<const dolfinx::fem::ElementDofLayout> layout0
-      = V0.dofmap()->element_dof_layout;
-  std::shared_ptr<const dolfinx::fem::ElementDofLayout> layout1
-      = V1.dofmap()->element_dof_layout;
+  const dolfinx::fem::ElementDofLayout& layout0
+      = V0.dofmap()->element_dof_layout();
+  const dolfinx::fem::ElementDofLayout& layout1
+      = V1.dofmap()->element_dof_layout();
 
   // Copy index maps from dofmaps
   std::array<std::shared_ptr<const common::IndexMap>, 2> index_maps
       = {{V0.dofmap()->index_map, V1.dofmap()->index_map}};
-  std::array<int, 2> block_sizes
-      = {V0.dofmap()->index_map_bs(), V1.dofmap()->index_map_bs()};
   std::vector<std::array<std::int64_t, 2>> local_range
       = {index_maps[0]->local_range(), index_maps[1]->local_range()};
-  assert(block_sizes[0] == block_sizes[1]);
+  assert(V0.dofmap()->index_map_bs() == V1.dofmap()->index_map_bs());
 
   // Initialize required connectivities
   const int tdim = mesh->topology().dim();
@@ -143,13 +142,13 @@ void fem::assemble_discrete_gradient(
       = mesh::cell_num_entities(mesh->topology().cell_type(), 1);
   std::map<std::int32_t, std::vector<std::int32_t>> local_edge_dofs;
   for (std::int32_t i = 0; i < num_edges_per_cell; ++i)
-    local_edge_dofs[i] = layout0->entity_dofs(1, i);
+    local_edge_dofs[i] = layout0.entity_dofs(1, i);
   // Create local lookup table for local vertex to cell dofs
   const int num_vertices_per_cell
       = mesh::cell_num_entities(mesh->topology().cell_type(), 0);
   std::map<std::int32_t, std::vector<std::int32_t>> local_vertex_dofs;
   for (std::int32_t i = 0; i < num_vertices_per_cell; ++i)
-    local_vertex_dofs[i] = layout1->entity_dofs(0, i);
+    local_vertex_dofs[i] = layout1.entity_dofs(0, i);
 
   // Build discrete gradient operator/matrix
   const std::shared_ptr<const fem::DofMap> dofmap1 = V1.dofmap();
@@ -160,27 +159,27 @@ void fem::assemble_discrete_gradient(
   for (std::int32_t e = 0; e < num_edges; ++e)
   {
     // Find local index of edge in one of the cells it is part of
-    tcb::span<const std::int32_t> cells = e_to_c->links(e);
+    xtl::span<const std::int32_t> cells = e_to_c->links(e);
     assert(cells.size() > 0);
     const std::int32_t cell = cells[0];
-    tcb::span<const std::int32_t> edges = c_to_e->links(cell);
+    xtl::span<const std::int32_t> edges = c_to_e->links(cell);
     const auto it = std::find(edges.begin(), edges.end(), e);
     assert(it != edges.end());
     const int local_edge = std::distance(edges.begin(), it);
 
     // Find the dofs located on the edge
-    tcb::span<const std::int32_t> dofs0 = dofmap0->cell_dofs(cell);
+    xtl::span<const std::int32_t> dofs0 = dofmap0->cell_dofs(cell);
     std::vector<std::int32_t>& local_dofs = local_edge_dofs[local_edge];
     assert(local_dofs.size() == 1);
     const std::int32_t row = dofs0[local_dofs[0]];
 
-    tcb::span<const std::int32_t> vertices = e_to_v->links(e);
+    xtl::span<const std::int32_t> vertices = e_to_v->links(e);
     assert(vertices.size() == 2);
-    tcb::span<const std::int32_t> cell_vertices = c_to_v->links(cell);
+    xtl::span<const std::int32_t> cell_vertices = c_to_v->links(cell);
 
     // Find local index of each of the vertices and map to local dof
     std::array<std::int32_t, 2> cols;
-    tcb::span<const std::int32_t> dofs1 = dofmap1->cell_dofs(cell);
+    xtl::span<const std::int32_t> dofs1 = dofmap1->cell_dofs(cell);
     for (std::int32_t i = 0; i < 2; ++i)
     {
       const auto it

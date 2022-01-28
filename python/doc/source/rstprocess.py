@@ -1,12 +1,12 @@
 # Copyright (C) 2017 Garth N. Wells
 #
-# This file is part of DOLFIN (https://www.fenicsproject.org)
+# This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-import sys
 import os
 import shutil
+import sys
 
 sys.path.append('../../../utils/pylit/')
 try:
@@ -16,7 +16,7 @@ except ImportError:
 
 
 def process():
-    """Copy demo rst files (C++ and Python) from the DOLFIN source tree
+    """Copy demo rst files (C++ and Python) from the DOLFINx source tree
     into the demo source tree, and process file with pylit
 
     """

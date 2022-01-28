@@ -1,23 +1,32 @@
 // Copyright (C) 2009-2010 Anders Logg
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #pragma once
 
+#include "IndexMap.h"
+#include <algorithm>
 #include <boost/functional/hash.hpp>
-#include <cstring>
 #include <dolfinx/common/MPI.h>
-#include <limits>
 #include <mpi.h>
-#include <sstream>
-#include <string>
 #include <utility>
 #include <vector>
 
 namespace dolfinx::common
 {
+
+namespace impl
+{
+/// std::copy_n-type function with compile-time loop bound
+template <int N, class InputIt, class OutputIt>
+inline void copy_N(InputIt first, OutputIt result)
+{
+  for (int i = 0; i < N; ++i)
+    *result++ = *first++;
+}
+} // namespace impl
 
 /// Sort two arrays based on the values in array @p indices. Any
 /// duplicate indices and the corresponding value are removed. In the
@@ -31,10 +40,13 @@ std::pair<U, V> sort_unique(const U& indices, const V& values)
   if (indices.size() != values.size())
     throw std::runtime_error("Cannot sort two arrays of different lengths");
 
-  std::vector<std::pair<typename U::value_type, typename V::value_type>> data(
-      indices.size());
-  for (std::size_t i = 0; i < indices.size(); ++i)
-    data[i] = {indices[i], values[i]};
+  using T = typename std::pair<typename U::value_type, typename V::value_type>;
+  std::vector<T> data(indices.size());
+  std::transform(indices.cbegin(), indices.cend(), values.cbegin(),
+                 data.begin(),
+                 [](auto& idx, auto& v) -> T {
+                   return {idx, v};
+                 });
 
   // Sort make unique
   std::sort(data.begin(), data.end());
@@ -45,34 +57,12 @@ std::pair<U, V> sort_unique(const U& indices, const V& values)
   V values_new;
   indices_new.reserve(data.size());
   values_new.reserve(data.size());
-  for (auto d = data.begin(); d != it; ++d)
-  {
-    indices_new.push_back(d->first);
-    values_new.push_back(d->second);
-  }
+  std::transform(data.begin(), it, std::back_inserter(indices_new),
+                 [](auto& d) { return d.first; });
+  std::transform(data.begin(), it, std::back_inserter(values_new),
+                 [](auto& d) { return d.second; });
 
   return {std::move(indices_new), std::move(values_new)};
-}
-
-/// Indent string block
-std::string indent(std::string block);
-
-/// Convert a container to string
-template <typename T>
-std::string container_to_string(const T& x, const int precision,
-                                const int linebreak)
-{
-  std::stringstream s;
-  s.precision(precision);
-
-  for (std::size_t i = 0; i < (std::size_t)x.size(); ++i)
-  {
-    if ((i + 1) % linebreak == 0 && linebreak != 0)
-      s << x.data()[i] << std::endl;
-    else
-      s << x.data()[i] << " ";
-  }
-  return s.str();
 }
 
 /// Return a hash of a given object
@@ -90,7 +80,7 @@ template <class T>
 std::int64_t hash_global(const MPI_Comm comm, const T& x)
 {
   // Compute local hash
-  int64_t local_hash = hash_local(x);
+  std::int64_t local_hash = hash_local(x);
 
   // Gather hash keys on root process
   std::vector<int64_t> all_hashes(dolfinx::MPI::size(comm));
@@ -98,12 +88,13 @@ std::int64_t hash_global(const MPI_Comm comm, const T& x)
              comm);
 
   // Hash the received hash keys
-  boost::hash<std::vector<int64_t>> hash;
-  int64_t global_hash = hash(all_hashes);
+  boost::hash<std::vector<std::int64_t>> hash;
+  std::int64_t global_hash = hash(all_hashes);
 
   // Broadcast hash key to all processes
   MPI_Bcast(&global_hash, 1, MPI_INT64_T, 0, comm);
 
   return global_hash;
 }
+
 } // namespace dolfinx::common

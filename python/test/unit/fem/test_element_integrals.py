@@ -1,21 +1,26 @@
 # Copyright (C) 2009-2020 Garth N. Wells, Matthew W. Scroggs and Jorgen S. Dokken
 #
-# This file is part of DOLFIN (https://www.fenicsproject.org)
+# This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for the fem interface"""
 
+import random
 from itertools import combinations, product
-from random import shuffle
 
 import numpy as np
 import pytest
+
+import dolfinx
 import ufl
-from dolfinx import Function, FunctionSpace, VectorFunctionSpace, cpp, fem
-from dolfinx.cpp.mesh import CellType
-from dolfinx.mesh import MeshTags, create_mesh
+from dolfinx.fem import (Constant, Function, FunctionSpace,
+                         VectorFunctionSpace, assemble_matrix, assemble_scalar,
+                         assemble_vector, form)
+from dolfinx.mesh import CellType, MeshTags, create_mesh
 from dolfinx_utils.test.skips import skip_in_parallel
+
 from mpi4py import MPI
+from petsc4py import PETSc
 
 parametrize_cell_types = pytest.mark.parametrize(
     "cell_type",
@@ -53,15 +58,14 @@ def unit_cell(cell_type, random_order=True):
     # Randomly number the points and create the mesh
     order = list(range(num_points))
     if random_order:
-        shuffle(order)
+        random.shuffle(order)
     ordered_points = np.zeros(points.shape)
     for i, j in enumerate(order):
         ordered_points[j] = points[i]
     cells = np.array([order])
 
-    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cpp.mesh.to_string(cell_type), 1))
+    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell_type.name, 1))
     mesh = create_mesh(MPI.COMM_WORLD, cells, ordered_points, domain)
-    mesh.topology.create_connectivity_all()
     return mesh
 
 
@@ -114,15 +118,14 @@ def two_unit_cells(cell_type, agree=False, random_order=True, return_order=False
     # Randomly number the points and create the mesh
     order = list(range(num_points))
     if random_order:
-        shuffle(order)
+        random.shuffle(order)
     ordered_points = np.zeros(points.shape)
     for i, j in enumerate(order):
         ordered_points[j] = points[i]
     ordered_cells = np.array([[order[i] for i in c] for c in cells])
 
-    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cpp.mesh.to_string(cell_type), 1))
+    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell_type.name, 1))
     mesh = create_mesh(MPI.COMM_WORLD, ordered_cells, ordered_points, domain)
-    mesh.topology.create_connectivity_all()
     if return_order:
         return mesh, order
     return mesh
@@ -139,6 +142,7 @@ def test_facet_integral(cell_type):
         V = FunctionSpace(mesh, ("Lagrange", 2))
         v = Function(V)
 
+        mesh.topology.create_entities(tdim - 1)
         map_f = mesh.topology.index_map(tdim - 1)
         num_facets = map_f.size_local + map_f.num_ghosts
         indices = np.arange(0, num_facets)
@@ -162,8 +166,8 @@ def test_facet_integral(cell_type):
         # equal
         out = []
         for j in range(num_facets):
-            a = v * ufl.ds(subdomain_data=marker, subdomain_id=j)
-            result = fem.assemble_scalar(a)
+            a = form(v * ufl.ds(subdomain_data=marker, subdomain_id=j))
+            result = assemble_scalar(a)
             out.append(result)
             assert np.isclose(result, out[0])
 
@@ -175,11 +179,13 @@ def test_facet_normals(cell_type):
     for count in range(5):
         mesh = unit_cell(cell_type)
         tdim = mesh.topology.dim
+        mesh.topology.create_entities(tdim - 1)
 
         V = VectorFunctionSpace(mesh, ("Lagrange", 1))
         normal = ufl.FacetNormal(mesh)
         v = Function(V)
 
+        mesh.topology.create_entities(tdim - 1)
         map_f = mesh.topology.index_map(tdim - 1)
         num_facets = map_f.size_local + map_f.num_ghosts
         indices = np.arange(0, num_facets)
@@ -220,8 +226,8 @@ def test_facet_normals(cell_type):
             # normal over a face is 1 on one face and 0 on the others
             ones = 0
             for j in range(num_facets):
-                a = ufl.inner(v, normal) * ufl.ds(subdomain_data=marker, subdomain_id=j)
-                result = fem.assemble_scalar(a)
+                a = form(ufl.inner(v, normal) * ufl.ds(subdomain_data=marker, subdomain_id=j))
+                result = assemble_scalar(a)
                 if np.isclose(result, 1):
                     ones += 1
                 else:
@@ -230,7 +236,7 @@ def test_facet_normals(cell_type):
 
 
 @skip_in_parallel
-@pytest.mark.parametrize('space_type', ["CG", "DG"])
+@pytest.mark.parametrize('space_type', ["Lagrange", "DG"])
 @parametrize_cell_types
 def test_plus_minus(cell_type, space_type):
     """Test that ('+') and ('-') give the same value for continuous functions"""
@@ -243,8 +249,8 @@ def test_plus_minus(cell_type, space_type):
             v.interpolate(lambda x: x[0] - 2 * x[1])
             # Check that these two integrals are equal
             for pm1, pm2 in product(["+", "-"], repeat=2):
-                a = v(pm1) * v(pm2) * ufl.dS
-                results.append(fem.assemble_scalar(a))
+                a = form(v(pm1) * v(pm2) * ufl.dS)
+                results.append(assemble_scalar(a))
     for i, j in combinations(results, 2):
         assert np.isclose(i, j)
 
@@ -269,8 +275,8 @@ def test_plus_minus_simple_vector(cell_type, pm):
             # Assemble vectors v['+'] * dS and v['-'] * dS for a few
             # different numberings
             v = ufl.TestFunction(V)
-            a = ufl.inner(1, v(pm)) * ufl.dS
-            result = fem.assemble_vector(a)
+            a = form(ufl.inner(1, v(pm)) * ufl.dS)
+            result = assemble_vector(a)
             result.assemble()
             spaces.append(V)
             results.append(result)
@@ -323,15 +329,15 @@ def test_plus_minus_vector(cell_type, pm1, pm2):
             f = Function(V)
             f.interpolate(lambda x: x[0] - 2 * x[1])
             v = ufl.TestFunction(V)
-            a = ufl.inner(f(pm1), v(pm2)) * ufl.dS
-            result = fem.assemble_vector(a)
+            a = form(ufl.inner(f(pm1), v(pm2)) * ufl.dS)
+            result = assemble_vector(a)
             result.assemble()
             spaces.append(V)
             results.append(result)
             orders.append(order)
 
-    # Check that the above vectors all have the same values as the first one,
-    # but permuted due to differently ordered dofs
+    # Check that the above vectors all have the same values as the first
+    # one, but permuted due to differently ordered dofs
     dofmap0 = spaces[0].mesh.geometry.dofmap
     for result, space in zip(results[1:], spaces[1:]):
         # Get the data relating to two results
@@ -372,8 +378,8 @@ def test_plus_minus_matrix(cell_type, pm1, pm2):
 
             # Assemble matrices with combinations of + and - for a few
             # different numberings
-            a = ufl.inner(u(pm1), v(pm2)) * ufl.dS
-            result = fem.assemble_matrix(a, [])
+            a = form(ufl.inner(u(pm1), v(pm2)) * ufl.dS)
+            result = assemble_matrix(a, [])
             result.assemble()
             spaces.append(V)
             results.append(result)
@@ -409,50 +415,131 @@ def test_plus_minus_matrix(cell_type, pm1, pm2):
                 assert np.isclose(results[0][a, c], result[b, d])
 
 
+@pytest.mark.skip(reason="This test relies on the mesh constructor not re-ordering the mesh points. Needs replacing.")
 @skip_in_parallel
 @pytest.mark.parametrize('order', [1, 2])
 @pytest.mark.parametrize('space_type', ["N1curl", "N2curl"])
 def test_curl(space_type, order):
     """Test that curl is consistent for different cell permutations of a tetrahedron."""
 
-    tdim = cpp.mesh.cell_dim(CellType.tetrahedron)
+    tdim = dolfinx.mesh.cell_dim(CellType.tetrahedron)
     points = unit_cell_points(CellType.tetrahedron)
 
     spaces = []
     results = []
     cell = list(range(len(points)))
+    random.seed(2)
+
     # Assemble vector on 5 randomly numbered cells
     for i in range(5):
-        shuffle(cell)
+        random.shuffle(cell)
 
-        domain = ufl.Mesh(ufl.VectorElement("Lagrange", cpp.mesh.to_string(CellType.tetrahedron), 1))
+        domain = ufl.Mesh(ufl.VectorElement("Lagrange", ufl.tetrahedron, 1))
         mesh = create_mesh(MPI.COMM_WORLD, [cell], points, domain)
-        mesh.topology.create_connectivity_all()
 
         V = FunctionSpace(mesh, (space_type, order))
         v = ufl.TestFunction(V)
 
         f = ufl.as_vector(tuple(1 if i == 0 else 0 for i in range(tdim)))
-        form = ufl.inner(f, ufl.curl(v)) * ufl.dx
-        result = fem.assemble_vector(form)
+        L = form(ufl.inner(f, ufl.curl(v)) * ufl.dx)
+        result = assemble_vector(L)
         spaces.append(V)
         results.append(result.array)
 
-    # Check that all DOFs on edges agree
-    V = spaces[0]
-    result = results[0]
-    connectivity = V.mesh.topology.connectivity(1, 0)
-    for i, edge in enumerate(V.mesh.topology.connectivity(tdim, 1).links(0)):
-        vertices = connectivity.links(edge)
-        values = sorted([result[V.dofmap.cell_dofs(0)[a]] for a in V.dofmap.dof_layout.entity_dofs(1, i)])
+    # Set data for first space
+    V0 = spaces[0]
+    c10_0 = V.mesh.topology.connectivity(1, 0)
 
-        for s, r in zip(spaces[1:], results[1:]):
-            c = s.mesh.topology.connectivity(1, 0)
-            for j, e in enumerate(s.mesh.topology.connectivity(tdim, 1).links(0)):
-                if sorted(c.links(e)) == sorted(vertices):
-                    v = sorted([r[s.dofmap.cell_dofs(0)[a]] for a in s.dofmap.dof_layout.entity_dofs(1, j)])
-                    assert np.allclose(values, v)
+    # Check that all DOFs on edges agree
+
+    # Loop over cell edges
+    for i, edge in enumerate(V0.mesh.topology.connectivity(tdim, 1).links(0)):
+
+        # Get the edge vertices
+        vertices0 = c10_0.links(edge)  # Need to map back
+
+        # Get assembled values on edge
+        values0 = sorted([result[V0.dofmap.cell_dofs(0)[a]] for a in V0.dofmap.dof_layout.entity_dofs(1, i)])
+
+        for V, result in zip(spaces[1:], results[1:]):
+            # Get edge->vertex connectivity
+            c10 = V.mesh.topology.connectivity(1, 0)
+
+            # Loop over cell edges
+            for j, e in enumerate(V.mesh.topology.connectivity(tdim, 1).links(0)):
+                if sorted(c10.links(e)) == sorted(vertices0):  # need to map back c.links(e)
+                    values = sorted([result[V.dofmap.cell_dofs(0)[a]] for a in V.dofmap.dof_layout.entity_dofs(1, j)])
+                    assert np.allclose(values0, values)
                     break
             else:
                 continue
             break
+
+
+def create_quad_mesh(offset):
+    """Creates a mesh of a single square element if offset = 0, or a
+    trapezium element if |offset| > 0."""
+    x = np.array([[0, 0],
+                  [1, 0],
+                  [0, 0.5 + offset],
+                  [1, 0.5 - offset]])
+    cells = np.array([[0, 1, 2, 3]])
+    ufl_mesh = ufl.Mesh(ufl.VectorElement("Lagrange", "quadrilateral", 1))
+    mesh = create_mesh(MPI.COMM_WORLD, cells, x, ufl_mesh)
+    return mesh
+
+
+def assemble_div_matrix(k, offset):
+    mesh = create_quad_mesh(offset)
+    V = FunctionSpace(mesh, ("DQ", k))
+    W = FunctionSpace(mesh, ("RTCF", k + 1))
+    u, w = ufl.TrialFunction(V), ufl.TestFunction(W)
+    a = form(ufl.inner(u, ufl.div(w)) * ufl.dx)
+    A = assemble_matrix(a)
+    A.assemble()
+    return A[:, :]
+
+
+def assemble_div_vector(k, offset):
+    mesh = create_quad_mesh(offset)
+    V = FunctionSpace(mesh, ("RTCF", k + 1))
+    v = ufl.TestFunction(V)
+    L = form(ufl.inner(Constant(mesh, PETSc.ScalarType(1)), ufl.div(v)) * ufl.dx)
+    b = assemble_vector(L)
+    return b[:]
+
+
+@skip_in_parallel
+@pytest.mark.parametrize("k", [0, 1, 2])
+def test_div_general_quads_mat(k):
+    """Tests that assembling inner(u, div(w)) * dx, where u is from a
+    "DQ" space and w is from an "RTCF" space, gives the same matrix for
+    square and trapezoidal elements. This should be the case due to the
+    properties of the Piola transform."""
+
+    # Assemble matrix on a mesh of square elements and on a mesh of
+    # trapezium elements
+    A_square = assemble_div_matrix(k, 0)
+    A_trap = assemble_div_matrix(k, 0.25)
+
+    # Due to the properties of the Piola transform, A_square and A_trap
+    # should be equal
+    assert np.allclose(A_square, A_trap, atol=1e-8)
+
+
+@skip_in_parallel
+@pytest.mark.parametrize("k", [0, 1, 2])
+def test_div_general_quads_vec(k):
+    """Tests that assembling inner(1, div(w)) * dx, where w is from an
+    "RTCF" space, gives the same matrix for square and trapezoidal
+    elements. This should be the case due to the properties of the Piola
+    transform."""
+
+    # Assemble vector on a mesh of square elements and on a mesh of
+    # trapezium elements
+    L_square = assemble_div_vector(k, 0)
+    L_trap = assemble_div_vector(k, 0.25)
+
+    # Due to the properties of the Piola transform, L_square and L_trap
+    # should be equal
+    assert np.allclose(L_square, L_trap, atol=1e-8)

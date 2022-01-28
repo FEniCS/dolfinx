@@ -1,6 +1,6 @@
 // Copyright (C) 2017 Chris Richardson, Garth N. Wells and Tormod Landet
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -19,7 +19,6 @@
     int rc = import_mpi4py();                                                  \
     if (rc != 0)                                                               \
     {                                                                          \
-      std::cout << "ERROR: could not import mpi4py!" << std::endl;             \
       throw std::runtime_error("Error when importing mpi4py");                 \
     }                                                                          \
   }
@@ -38,14 +37,15 @@ public:
   // Python to C++
   bool load(handle src, bool)
   {
-    // Simplified version of isinstance(src, mpi4py.MPI.Comm) - avoids
-    // segfault when pybind11 tries to convert some other random type to
-    // MPICommWrapper
-    if (not hasattr(src, "Allgather"))
-      return false;
+    // Check whether src is an mpi4py communicator
     VERIFY_MPI4PY(PyMPIComm_Get);
-    value = dolfinx_wrappers::MPICommWrapper(*PyMPIComm_Get(src.ptr()));
-    return true;
+    if (PyObject_TypeCheck(src.ptr(), &PyMPIComm_Type))
+    {
+      value = dolfinx_wrappers::MPICommWrapper(*PyMPIComm_Get(src.ptr()));
+      return true;
+    }
+
+    return false;
   }
 
   // C++ to Python

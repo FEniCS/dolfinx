@@ -1,6 +1,6 @@
 // Copyright (C) 2019 Jorgen S. Dokken
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -10,6 +10,7 @@
 #include <dolfinx/mesh/cell_types.h>
 #include <numeric>
 #include <stdexcept>
+#include <xtensor/xview.hpp>
 
 using namespace dolfinx;
 namespace
@@ -163,6 +164,17 @@ std::vector<std::uint8_t> vtk_tetrahedron(int num_nodes)
   }
 }
 //-----------------------------------------------------------------------------
+std::vector<std::uint8_t> vtk_wedge(int num_nodes)
+{
+  switch (num_nodes)
+  {
+  case 6:
+    return {0, 1, 2, 3, 4, 5};
+  default:
+    throw std::runtime_error("Unknown wedge layout");
+  }
+}
+//-----------------------------------------------------------------------------
 std::vector<std::uint8_t> vtk_quadrilateral(int num_nodes)
 {
   // Check that num_nodes is a square integer (since quadrilaterals are
@@ -298,6 +310,9 @@ std::vector<std::uint8_t> io::cells::perm_vtk(mesh::CellType type,
   case mesh::CellType::quadrilateral:
     map = vtk_quadrilateral(num_nodes);
     break;
+  case mesh::CellType::prism:
+    map = vtk_wedge(num_nodes);
+    break;
   case mesh::CellType::hexahedron:
     map = vtk_hexahedron(num_nodes);
     break;
@@ -349,16 +364,16 @@ io::cells::transpose(const std::vector<std::uint8_t>& map)
   return transpose;
 }
 //-----------------------------------------------------------------------------
-array2d<std::int64_t>
-io::cells::compute_permutation(const array2d<std::int64_t>& cells,
+xt::xtensor<std::int64_t, 2>
+io::cells::compute_permutation(const xt::xtensor<std::int64_t, 2>& cells,
                                const std::vector<std::uint8_t>& p)
 {
-  array2d<std::int64_t> cells_new(cells.shape);
-  for (std::size_t c = 0; c < cells_new.shape[0]; ++c)
+  xt::xtensor<std::int64_t, 2> cells_new(cells.shape());
+  for (std::size_t c = 0; c < cells_new.shape(0); ++c)
   {
-    auto cell = cells.row(c);
-    auto cell_new = cells_new.row(c);
-    for (std::size_t i = 0; i < cell_new.size(); ++i)
+    auto cell = xt::row(cells, c);
+    auto cell_new = xt::row(cells_new, c);
+    for (std::size_t i = 0; i < cell_new.shape(0); ++i)
       cell_new[i] = cell[p[i]];
   }
   return cells_new;
@@ -367,9 +382,12 @@ io::cells::compute_permutation(const array2d<std::int64_t>& cells,
 std::int8_t io::cells::get_vtk_cell_type(const dolfinx::mesh::Mesh& mesh,
                                          int dim)
 {
+  if (mesh.topology().cell_type() == mesh::CellType::prism)
+    throw std::runtime_error("More work needed for prism cell");
+
   // Get cell type
   mesh::CellType cell_type
-      = mesh::cell_entity_type(mesh.topology().cell_type(), dim);
+      = mesh::cell_entity_type(mesh.topology().cell_type(), dim, 0);
 
   // Determine VTK cell type (Using arbitrary Lagrange elements)
   // https://vtk.org/doc/nightly/html/vtkCellType_8h_source.html

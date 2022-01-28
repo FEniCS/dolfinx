@@ -1,7 +1,7 @@
-DOLFINX Python interface
-=======================
+DOLFINx Python interface
+========================
 
-Building the DOLFINX Python interface uses pybind11.
+Building the DOLFINx Python interface uses pybind11.
 
 1. Install pybdind11 version 2.2.1 or later. Use CMake to install
    pybind11, e.g.::
@@ -16,9 +16,9 @@ Building the DOLFINX Python interface uses pybind11.
 
    The FEniCS Docker images are configured with pybind11.
 
-2. Build and install the DOLFINX C++ library in the usual way.
+2. Build and install the DOLFINx C++ library in the usual way.
 
-3. Build DOLFINX Python interface::
+3. Build DOLFINx Python interface::
 
      export PYBIND11_DIR=/path/to/pybind11/install
      pip3 -v install . --user

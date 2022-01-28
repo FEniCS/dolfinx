@@ -1,61 +1,55 @@
 // Copyright (C) 2006-2020 Anders Logg and Garth N. Wells
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #pragma once
 
 #include <dolfinx/common/MPI.h>
-#include <dolfinx/common/array2d.h>
 #include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <functional>
 #include <memory>
 #include <vector>
+#include <xtl/xspan.hpp>
 
-namespace dolfinx
-{
-namespace common
+namespace dolfinx::common
 {
 class IndexMap;
 }
 
-namespace fem
-{
-class CoordinateElement;
-} // namespace fem
-
-namespace mesh
+namespace dolfinx::mesh
 {
 class Topology;
 
-/// Geometry stores the geometry imposed on a mesh.
-
+/// Geometry stores the geometry imposed on a mesh
 class Geometry
 {
 public:
   /// Constructor
+  ///
+  /// @param[in] index_map Index map associated with the geometry dofmap
+  /// @param[in] dofmap The geometry (point) dofmap. For a cell, it
+  /// gives the position in the point array of each local geometry node
+  /// @param[in] element The element that describes the cell geometry map
+  /// @param[in] x The point coordinates. It is a `std::vector<double>`
+  /// and uses row-major storage. The shape is (num_points, 3).
+  /// @param[in] dim The geometric dimension (0 < dim <= 3)
+  /// @param[in] input_global_indices The 'global' input index of each
+  /// point, commonly from a mesh input file. The type is
+  /// `std:vector<std::int64_t>`.
   template <typename AdjacencyList32, typename Array, typename Vector64>
   Geometry(const std::shared_ptr<const common::IndexMap>& index_map,
            AdjacencyList32&& dofmap, const fem::CoordinateElement& element,
-           Array&& x, Vector64&& input_global_indices)
-      : _dim(x.shape[1]), _dofmap(std::forward<AdjacencyList32>(dofmap)),
+           Array&& x, int dim, Vector64&& input_global_indices)
+      : _dim(dim), _dofmap(std::forward<AdjacencyList32>(dofmap)),
         _index_map(index_map), _cmap(element), _x(std::forward<Array>(x)),
         _input_global_indices(std::forward<Vector64>(input_global_indices))
   {
-    assert(_x.shape[1] > 0 and _x.shape[1] <= 3);
-    if (_x.shape[0] != _input_global_indices.size())
-      throw std::runtime_error("Size mis-match");
-
-    // Make all geometry 3D
-    if (_dim != 3)
-    {
-      array2d<double> coords(_x.shape[0], 3, 0.0);
-      for (std::size_t i = 0; i < _x.shape[0]; ++i)
-        for (std::size_t j = 0; j < _x.shape[1]; ++j)
-          coords(i, j) = _x(i, j);
-      std::swap(coords, _x);
-    }
+    assert(_x.size() % 3 == 0);
+    if (_x.size() / 3 != _input_global_indices.size())
+      throw std::runtime_error("Geometry size mis-match");
   }
 
   /// Copy constructor
@@ -82,11 +76,15 @@ public:
   /// Index map
   std::shared_ptr<const common::IndexMap> index_map() const;
 
-  /// Geometry degrees-of-freedom
-  array2d<double>& x();
+  /// Access geometry degrees-of-freedom data (const version)
+  /// @return The flattened row-major geometry data, where the shape is
+  /// (num_points, 3)
+  xtl::span<const double> x() const;
 
-  /// Geometry degrees-of-freedom
-  const array2d<double>& x() const;
+  /// Access geometry degrees-of-freedom data (version)
+  /// @return The flattened row-major geometry data, where the shape is
+  /// (num_points, 3)
+  xtl::span<double> x();
 
   /// The element that describes the geometry map
   /// @return The coordinate/geometry element
@@ -108,19 +106,33 @@ private:
   // The coordinate element
   fem::CoordinateElement _cmap;
 
-  // Coordinates for all points stored as a contiguous array
-  array2d<double> _x;
+  // Coordinates for all points stored as a contiguous array (roe-major,
+  // column size = 3)
+  std::vector<double> _x;
 
   // Global indices as provided on Geometry creation
   std::vector<std::int64_t> _input_global_indices;
 };
 
-/// Build Geometry
-/// FIXME: document
-mesh::Geometry create_geometry(MPI_Comm comm, const Topology& topology,
-                               const fem::CoordinateElement& coordinate_element,
-                               const graph::AdjacencyList<std::int64_t>& cells,
-                               const array2d<double>& x);
+/// Build Geometry from input data
+///
+/// @param[in] comm The MPI communicator to build the Geometry on
+/// @param[in] topology The mesh topology
+/// @param[in] element The element that defines the geometry map for
+/// each cell
+/// @param[in] cells The mesh cells, including higher-ordder geometry 'nodes'
+/// @param[in] x The node coordinates (row-major, with shape (num_nodes,
+/// geometric dimension)
+/// @param[in] dim The geometric dimensions (1, 2, or 3)
+/// @param[in] reorder_fn Function for re-ordering the degree-of-freedom
+/// map associated with the geometry data
+mesh::Geometry
+create_geometry(MPI_Comm comm, const Topology& topology,
+                const fem::CoordinateElement& element,
+                const graph::AdjacencyList<std::int64_t>& cells,
+                const xtl::span<const double>& x, int dim,
+                const std::function<std::vector<int>(
+                    const graph::AdjacencyList<std::int32_t>&)>& reorder_fn
+                = nullptr);
 
-} // namespace mesh
-} // namespace dolfinx
+} // namespace dolfinx::mesh

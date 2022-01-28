@@ -1,19 +1,18 @@
 // Copyright (C) 2019-2020 Garth N. Wells
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #pragma once
 
 #include <array>
+#include <basix/cell.h>
+#include <dolfinx/graph/AdjacencyList.h>
 #include <map>
 #include <set>
 #include <string>
 #include <vector>
-
-#include "dolfinx/common/array2d.h"
-#include "dolfinx/graph/AdjacencyList.h"
 
 namespace dolfinx::mesh
 {
@@ -42,21 +41,24 @@ std::string to_string(CellType type);
 /// @return The cell type
 CellType to_type(const std::string& cell);
 
-/// Return type of cell for entity of dimension d
-CellType cell_entity_type(CellType type, int d);
+/// Return type of cell for entity of dimension d at given entity index.
+CellType cell_entity_type(CellType type, int d, int index);
 
 /// Return facet type of cell
+/// For simplex and hypercube cell types, this is independent of the facet
+/// index, but for prism and pyramid, it can be triangle or quadrilateral.
 /// @param[in] type The cell type
-/// @return The type of the cell's facets
-CellType cell_facet_type(CellType type);
+/// @param[in] index The facet index
+/// @return The type of facet for this cell at this index
+CellType cell_facet_type(CellType type, int index);
 
-/// Return list of entities, where entities(e, k) is the local vertex index for
-/// the kth vertex of entity e of dimension dim
-dolfinx::graph::AdjacencyList<int> get_entity_vertices(CellType type, int dim);
+/// Return list of entities, where entities(e, k) is the local vertex
+/// index for the kth vertex of entity e of dimension dim
+graph::AdjacencyList<int> get_entity_vertices(CellType type, int dim);
 
 /// Get entities of dimension dim1 and that make up entities of dimension
 /// dim0
-dolfinx::array2d<int> get_sub_entities(CellType type, int dim0, int dim1);
+graph::AdjacencyList<int> get_sub_entities(CellType type, int dim0, int dim1);
 
 /// Return topological dimension of cell type
 int cell_dim(CellType type);
@@ -65,7 +67,7 @@ int cell_dim(CellType type);
 /// @param[in] dim Entity dimension
 /// @param[in] type Cell type
 /// @return Number of entities in cell
-int cell_num_entities(mesh::CellType type, int dim);
+int cell_num_entities(CellType type, int dim);
 
 /// Check if cell is a simplex
 /// @param[in] type Cell type
@@ -83,6 +85,12 @@ int num_cell_vertices(CellType type);
 /// attached to a cell entity. Map from entity {dim_e, entity_e} to
 /// closure{sub_dim, (sub_entities)}
 std::map<std::array<int, 2>, std::vector<std::set<int>>>
-cell_entity_closure(mesh::CellType cell_type);
+cell_entity_closure(CellType cell_type);
+
+/// Convert a cell type to a Basix cell type
+basix::cell::type cell_type_to_basix_type(CellType celltype);
+
+/// Get a cell type from a Basix cell type
+CellType cell_type_from_basix_type(basix::cell::type celltype);
 
 } // namespace dolfinx::mesh

@@ -9,7 +9,7 @@ namespace dolfinx
 */
 }
 
-// DOLFINX mesh interface
+// DOLFINx mesh interface
 
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Geometry.h>
@@ -17,4 +17,5 @@ namespace dolfinx
 #include <dolfinx/mesh/MeshTags.h>
 #include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/cell_types.h>
+#include <dolfinx/mesh/generation.h>
 #include <dolfinx/mesh/utils.h>

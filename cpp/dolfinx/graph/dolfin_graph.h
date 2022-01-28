@@ -10,7 +10,6 @@ namespace dolfinx
 */
 }
 
-// DOLFINX graph interface
+// DOLFINx graph interface
 
-#include <dolfinx/graph/boostordering.h>
 #include <dolfinx/graph/partition.h>

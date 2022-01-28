@@ -1,13 +1,13 @@
 // Copyright (C) 2005-2021 Garth N. Wells
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #pragma once
 
 #include <dolfinx/common/MPI.h>
-#include <dolfinx/la/PETScKrylovSolver.h>
+#include <dolfinx/la/petsc.h>
 #include <functional>
 #include <memory>
 #include <petscmat.h>
@@ -17,10 +17,10 @@
 namespace dolfinx
 {
 
-namespace la
+namespace la::petsc
 {
-class PETScKrylovSolver;
-} // namespace la
+class KrylovSolver;
+} // namespace la::petsc
 
 namespace nls
 {
@@ -35,8 +35,20 @@ public:
   /// @param[in] comm The MPI communicator for the solver
   explicit NewtonSolver(MPI_Comm comm);
 
+  // Move constructor (deleted)
+  NewtonSolver(NewtonSolver&& solver) = delete;
+
+  // Copy constructor (deleted)
+  NewtonSolver(const NewtonSolver& solver) = delete;
+
+  // Assignment operator (deleted)
+  NewtonSolver& operator=(const NewtonSolver& solver) = delete;
+
+  // Move assignment constructor (deleted)
+  NewtonSolver& operator=(const NewtonSolver&& solver) = delete;
+
   /// Destructor
-  virtual ~NewtonSolver();
+  ~NewtonSolver();
 
   /// Set the function for computing the residual and the vector to the
   /// assemble the residual into
@@ -54,6 +66,18 @@ public:
   /// @param[in] P Function to compute the preconditioner matrix b (x, P)
   /// @param[in] Pmat The matrix to assemble the preconditioner into
   void setP(const std::function<void(const Vec, Mat)>& P, Mat Pmat);
+
+  /// Get the internal Krylov solver used to solve for the Newton updates
+  /// const version
+  /// The Krylov solver prefix is nls_solve_
+  /// @return The Krylov solver
+  const la::petsc::KrylovSolver& get_krylov_solver() const;
+
+  /// Get the internal Krylov solver used to solve for the Newton updates
+  /// non-const version
+  /// The Krylov solver prefix is nls_solve_
+  /// @return The Krylov solver
+  la::petsc::KrylovSolver& get_krylov_solver();
 
   /// Set the function that is called before the residual or Jacobian
   /// are computed. It is commonly used to update ghost values.
@@ -100,7 +124,7 @@ public:
   double residual0() const;
 
   /// Return MPI communicator
-  MPI_Comm mpi_comm() const;
+  MPI_Comm comm() const;
 
   /// Maximum number of iterations
   int max_it = 50;
@@ -169,13 +193,13 @@ private:
   double _residual, _residual0;
 
   // Linear solver
-  la::PETScKrylovSolver _solver;
+  la::petsc::KrylovSolver _solver;
 
   // Solution vector
   Vec _dx = nullptr;
 
   // MPI communicator
-  dolfinx::MPI::Comm _mpi_comm;
+  dolfinx::MPI::Comm _comm;
 };
 } // namespace nls
 } // namespace dolfinx

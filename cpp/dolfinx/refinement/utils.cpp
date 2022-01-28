@@ -1,13 +1,11 @@
 // Copyright (C) 2013-2020 Chris Richardson
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "utils.h"
-#include <Eigen/Core>
 #include <dolfinx/common/MPI.h>
-#include <dolfinx/common/types.h>
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -20,8 +18,12 @@
 #include <memory>
 #include <mpi.h>
 #include <vector>
+#include <xtensor/xadapt.hpp>
+#include <xtensor/xtensor.hpp>
+#include <xtensor/xview.hpp>
 
 using namespace dolfinx;
+using namespace xt::placeholders;
 
 namespace
 {
@@ -50,7 +52,7 @@ std::int64_t local_to_global(std::int32_t local_index,
 // @param Mesh
 // @param local_edge_to_new_vertex
 // @return array of points
-array2d<double> create_new_geometry(
+xt::xtensor<double, 2> create_new_geometry(
     const mesh::Mesh& mesh,
     const std::map<std::int32_t, std::int64_t>& local_edge_to_new_vertex)
 {
@@ -79,34 +81,42 @@ array2d<double> create_new_geometry(
   }
 
   // Copy over existing mesh vertices
-  const array2d<double>& x_g = mesh.geometry().x();
+  xtl::span<const double> x_g = mesh.geometry().x();
 
-  const std::int32_t num_vertices = map_v->size_local();
-  const std::int32_t num_new_vertices = local_edge_to_new_vertex.size();
-  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>
-      new_vertex_coordinates(num_vertices + num_new_vertices, 3);
+  const std::size_t num_vertices = map_v->size_local();
+  const std::size_t num_new_vertices = local_edge_to_new_vertex.size();
+  xt::xtensor<double, 2> new_vertex_coordinates(
+      {num_vertices + num_new_vertices, 3});
 
-  for (int v = 0; v < num_vertices; ++v)
-    for (std::size_t j = 0; j < x_g.shape[1]; ++j)
-      new_vertex_coordinates(v, j) = x_g(vertex_to_x[v], j);
+  for (std::size_t v = 0; v < num_vertices; ++v)
+  {
+    const int pos = 3 * vertex_to_x[v];
+    for (std::size_t j = 0; j < 3; ++j)
+      new_vertex_coordinates(v, j) = x_g[pos + j];
+  }
 
-  std::vector<int> edges(num_new_vertices);
-  int i = 0;
-  for (auto& e : local_edge_to_new_vertex)
-    edges[i++] = e.first;
+  // Compute new vertices
+  if (num_new_vertices > 0)
+  {
+    std::vector<int> edges(num_new_vertices);
+    int i = 0;
+    for (auto& e : local_edge_to_new_vertex)
+      edges[i++] = e.first;
 
-  const auto midpoints = mesh::midpoints(mesh, 1, edges);
-  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
-      midpoints_eigen(midpoints.data(), midpoints.shape[0], midpoints.shape[1]);
-  new_vertex_coordinates.bottomRows(num_new_vertices) = midpoints_eigen;
+    const xt::xtensor<double, 2> midpoints
+        = mesh::compute_midpoints(mesh, 1, edges);
 
-  const int gdim = mesh.geometry().dim();
-  array2d<double> x(new_vertex_coordinates.rows(), gdim);
-  for (std::size_t i = 0; i < x.shape[0]; ++i)
-    for (std::size_t j = 0; j < x.shape[1]; ++j)
-      x(i, j) = new_vertex_coordinates(i, j);
+    // The below should work, but misbehaves with the Intel icpx compiler
+    // xt::view(new_vertex_coordinates, xt::range(-num_new_vertices, _),
+    // xt::all())
+    //     = midpoints;
+    auto _vertex = xt::view(new_vertex_coordinates,
+                            xt::range(-num_new_vertices, _), xt::all());
+    _vertex.assign(midpoints);
+  }
 
-  return x;
+  return xt::view(new_vertex_coordinates, xt::all(),
+                  xt::range(0, mesh.geometry().dim()));
 }
 } // namespace
 
@@ -134,7 +144,7 @@ refinement::compute_edge_sharing(const mesh::Mesh& mesh)
 
   MPI_Comm neighbor_comm;
   MPI_Dist_graph_create_adjacent(
-      mesh.mpi_comm(), neighbors.size(), neighbors.data(), MPI_UNWEIGHTED,
+      mesh.comm(), neighbors.size(), neighbors.data(), MPI_UNWEIGHTED,
       neighbors.size(), neighbors.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false,
       &neighbor_comm);
 
@@ -161,7 +171,7 @@ refinement::compute_edge_sharing(const mesh::Mesh& mesh)
 void refinement::update_logical_edgefunction(
     const MPI_Comm& neighbor_comm,
     const std::vector<std::vector<std::int32_t>>& marked_for_update,
-    std::vector<bool>& marked_edges, const common::IndexMap& map_e)
+    std::vector<std::int8_t>& marked_edges, const common::IndexMap& map_e)
 {
   std::vector<std::int32_t> send_offsets = {0};
   std::vector<std::int64_t> data_to_send;
@@ -192,11 +202,11 @@ void refinement::update_logical_edgefunction(
   }
 }
 //-----------------------------------------------------------------------------
-std::pair<std::map<std::int32_t, std::int64_t>, array2d<double>>
+std::pair<std::map<std::int32_t, std::int64_t>, xt::xtensor<double, 2>>
 refinement::create_new_vertices(
     const MPI_Comm& neighbor_comm,
     const std::map<std::int32_t, std::vector<std::int32_t>>& shared_edges,
-    const mesh::Mesh& mesh, const std::vector<bool>& marked_edges)
+    const mesh::Mesh& mesh, const std::vector<std::int8_t>& marked_edges)
 {
   // Take marked_edges and use to create new vertices
   const std::shared_ptr<const common::IndexMap> edge_index_map
@@ -209,21 +219,23 @@ refinement::create_new_vertices(
   {
     if (marked_edges[local_i] == true)
     {
-      auto it = local_edge_to_new_vertex.insert({local_i, n});
+      [[maybe_unused]] auto it = local_edge_to_new_vertex.insert({local_i, n});
       assert(it.second);
       ++n;
     }
   }
-  const int num_new_vertices = n;
-  const std::size_t global_offset
-      = MPI::global_offset(mesh.mpi_comm(), num_new_vertices, true)
-        + mesh.topology().index_map(0)->local_range()[1];
 
-  for (auto& e : local_edge_to_new_vertex)
-    e.second += global_offset;
+  const std::int64_t num_local = n;
+  std::int64_t global_offset = 0;
+  MPI_Exscan(&num_local, &global_offset, 1,
+             dolfinx::MPI::mpi_type<std::int64_t>(), MPI_SUM, mesh.comm());
+  global_offset += mesh.topology().index_map(0)->local_range()[1];
+  std::for_each(local_edge_to_new_vertex.begin(),
+                local_edge_to_new_vertex.end(),
+                [global_offset](auto& e) { e.second += global_offset; });
 
   // Create actual points
-  array2d<double> new_vertex_coordinates
+  xt::xtensor<double, 2> new_vertex_coordinates
       = create_new_geometry(mesh, local_edge_to_new_vertex);
 
   // If they are shared, then the new global vertex index needs to be
@@ -271,7 +283,7 @@ refinement::create_new_vertices(
   for (std::size_t i = 0; i < received_values.size() / 2; ++i)
   {
     assert(recv_local_edge[i] != -1);
-    auto it = local_edge_to_new_vertex.insert(
+    [[maybe_unused]] auto it = local_edge_to_new_vertex.insert(
         {recv_local_edge[i], received_values[i * 2 + 1]});
     assert(it.second);
   }
@@ -280,66 +292,39 @@ refinement::create_new_vertices(
           std::move(new_vertex_coordinates)};
 }
 //-----------------------------------------------------------------------------
-std::vector<std::int64_t> refinement::adjust_indices(
-    const std::shared_ptr<const common::IndexMap>& index_map, std::int32_t n)
-{
-  // Add in an extra "n" indices at the end of the current local_range
-  // of "index_map", and adjust existing indices to match.
-
-  // Get number of new indices on all processes
-  int mpi_size = dolfinx::MPI::size(index_map->comm());
-  int mpi_rank = dolfinx::MPI::rank(index_map->comm());
-  std::vector<std::int32_t> recvn(mpi_size);
-  MPI_Allgather(&n, 1, MPI_INT32_T, recvn.data(), 1, MPI_INT32_T,
-                index_map->comm());
-  std::vector<std::int64_t> global_offsets = {0};
-  for (std::int32_t r : recvn)
-    global_offsets.push_back(global_offsets.back() + r);
-
-  std::vector global_indices = index_map->global_indices();
-
-  const std::vector<int>& ghost_owners = index_map->ghost_owner_rank();
-  int local_size = index_map->size_local();
-  for (int i = 0; i < local_size; ++i)
-    global_indices[i] += global_offsets[mpi_rank];
-  for (std::size_t i = 0; i < ghost_owners.size(); ++i)
-    global_indices[local_size + i] += global_offsets[ghost_owners[i]];
-
-  return global_indices;
-}
-//-----------------------------------------------------------------------------
 mesh::Mesh
 refinement::partition(const mesh::Mesh& old_mesh,
                       const graph::AdjacencyList<std::int64_t>& cell_topology,
-                      const array2d<double>& new_vertex_coordinates,
+                      const xt::xtensor<double, 2>& new_vertex_coordinates,
                       bool redistribute, mesh::GhostMode gm)
 {
 
   if (redistribute)
   {
-    array2d<double> new_coords(new_vertex_coordinates);
-    return mesh::create_mesh(old_mesh.mpi_comm(), cell_topology,
+    xt::xtensor<double, 2> new_coords(new_vertex_coordinates);
+    return mesh::create_mesh(old_mesh.comm(), cell_topology,
                              old_mesh.geometry().cmap(), new_coords, gm);
   }
 
-  auto partitioner = [](MPI_Comm mpi_comm, int, int tdim,
+  auto partitioner = [](MPI_Comm comm, int, int tdim,
                         const graph::AdjacencyList<std::int64_t>& cell_topology,
-                        mesh::GhostMode) {
+                        mesh::GhostMode)
+  {
     // Find out the ghosting information
-    auto [graph, info] = mesh::build_dual_graph(mpi_comm, cell_topology, tdim);
+    auto [graph, _] = mesh::build_dual_graph(comm, cell_topology, tdim);
 
     // FIXME: much of this is reverse engineering of data that is already
     // known in the GraphBuilder
 
-    const int mpi_size = MPI::size(mpi_comm);
-    const int mpi_rank = MPI::rank(mpi_comm);
+    const int mpi_size = MPI::size(comm);
+    const int mpi_rank = MPI::rank(comm);
     const std::int32_t local_size = graph.num_nodes();
     std::vector<std::int32_t> local_sizes(mpi_size);
     std::vector<std::int64_t> local_offsets(mpi_size + 1);
 
     // Get the "local range" for all processes
     MPI_Allgather(&local_size, 1, MPI_INT32_T, local_sizes.data(), 1,
-                  MPI_INT32_T, mpi_comm);
+                  MPI_INT32_T, comm);
     for (int i = 0; i < mpi_size; ++i)
       local_offsets[i + 1] = local_offsets[i] + local_sizes[i];
 
@@ -377,8 +362,36 @@ refinement::partition(const mesh::Mesh& old_mesh,
                                               std::move(dest_offsets));
   };
 
-  return mesh::create_mesh(old_mesh.mpi_comm(), cell_topology,
+  return mesh::create_mesh(old_mesh.comm(), cell_topology,
                            old_mesh.geometry().cmap(), new_vertex_coordinates,
                            gm, partitioner);
+}
+//-----------------------------------------------------------------------------
+std::vector<std::int64_t>
+refinement::adjust_indices(const common::IndexMap& index_map, std::int32_t n)
+{
+  // Add in an extra "n" indices at the end of the current local_range
+  // of "index_map", and adjust existing indices to match.
+
+  // Get number of new indices on all processes
+  MPI_Comm comm = index_map.comm();
+  int mpi_size = dolfinx::MPI::size(comm);
+  int mpi_rank = dolfinx::MPI::rank(comm);
+  std::vector<std::int32_t> recvn(mpi_size);
+  MPI_Allgather(&n, 1, MPI_INT32_T, recvn.data(), 1, MPI_INT32_T, comm);
+  std::vector<std::int64_t> global_offsets = {0};
+  for (std::int32_t r : recvn)
+    global_offsets.push_back(global_offsets.back() + r);
+
+  std::vector global_indices = index_map.global_indices();
+
+  const std::vector<int>& ghost_owners = index_map.ghost_owner_rank();
+  int local_size = index_map.size_local();
+  for (int i = 0; i < local_size; ++i)
+    global_indices[i] += global_offsets[mpi_rank];
+  for (std::size_t i = 0; i < ghost_owners.size(); ++i)
+    global_indices[local_size + i] += global_offsets[ghost_owners[i]];
+
+  return global_indices;
 }
 //-----------------------------------------------------------------------------

@@ -1,80 +1,158 @@
 // Copyright (C) 2020 Chris Richardson and Mattia Montinari
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "gjk.h"
-#include <Eigen/Geometry>
-#include <array>
-#include <iomanip>
-#include <iostream>
+#include <dolfinx/common/math.h>
 #include <stdexcept>
+#include <tuple>
+#include <xtensor/xbuilder.hpp>
+#include <xtensor/xfixed.hpp>
+#include <xtensor/xnorm.hpp>
+#include <xtensor/xsort.hpp>
+#include <xtensor/xtensor.hpp>
+#include <xtensor/xview.hpp>
 
 using namespace dolfinx;
 
 namespace
 {
+
 // Find the resulting sub-simplex of the input simplex which is nearest to the
 // origin. Also, return the shortest vector from the origin to the resulting
 // simplex.
-std::pair<Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor>,
-          Eigen::Vector3d>
-nearest_simplex(
-    const Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor, 4, 3>& s)
+std::pair<xt::xtensor<double, 2>, xt::xtensor_fixed<double, xt::xshape<3>>>
+nearest_simplex(const xt::xtensor<double, 2>& s)
 {
-  if (s.rows() == 2)
+  assert(s.shape(1) == 3);
+  const std::size_t s_rows = s.shape(0);
+  switch (s_rows)
   {
-    const Eigen::Vector3d ab = s.row(1) - s.row(0);
-    const double lm = -s.row(0).dot(ab) / ab.squaredNorm();
+  case 2:
+  {
+    auto s0 = xt::row(s, 0);
+    auto s1 = xt::row(s, 1);
+    const double lm = -xt::sum(s0 * (s1 - s0))() / xt::norm_sq(s1 - s0)();
     if (lm >= 0.0 and lm <= 1.0)
     {
       // The origin is between A and B
-      Eigen::Vector3d v = s.row(0).transpose() + lm * ab;
-      return {s.topRows(2), v};
+      auto v = s0 + lm * (s1 - s0);
+      return {s, v};
     }
-    if (lm < 0.0)
-      return {s.row(0), s.row(0)};
-    else
-      return {s.row(1), s.row(1)};
-  }
-  else if (s.rows() == 4)
-  {
-    Eigen::Vector4d B;
-    const Eigen::Vector3d W1 = s.row(0).cross(s.row(1));
-    const Eigen::Vector3d W2 = s.row(2).cross(s.row(3));
-    B[0] = s.row(2) * W1;
-    B[1] = -s.row(3) * W1;
-    B[2] = s.row(0) * W2;
-    B[3] = -s.row(1) * W2;
 
-    const bool signDetM = std::signbit(B.sum());
-    Eigen::Array<bool, 4, 1> f_inside;
+    if (lm < 0.0)
+      return {xt::reshape_view(s0, {1, 3}), s0};
+    else
+      return {xt::reshape_view(s1, {1, 3}), s1};
+  }
+  case 3:
+  {
+    const auto a = xt::row(s, 0);
+    const auto b = xt::row(s, 1);
+    const auto c = xt::row(s, 2);
+    const double ab2 = xt::norm_sq(a - b)();
+    const double ac2 = xt::norm_sq(a - c)();
+    const double bc2 = xt::norm_sq(b - c)();
+    const xt::xtensor_fixed<double, xt::xshape<3>> lm
+        = {xt::sum(a * (a - b))() / ab2, xt::sum(a * (a - c))() / ac2,
+           xt::sum(b * (b - c))() / bc2};
+
+    // Calculate triangle ABC
+    const double caba = xt::sum((c - a) * (b - a))();
+    const double c2 = 1 - caba * caba / (ab2 * ac2);
+    const double lbb = (lm[0] - lm[1] * caba / ab2) / c2;
+    const double lcc = (lm[1] - lm[0] * caba / ac2) / c2;
+
+    // Intersects triangle
+    if (lbb >= 0.0 and lcc >= 0.0 and (lbb + lcc) <= 1.0)
+    {
+      // Calculate intersection more accurately
+      auto v = math::cross(c - a, b - a);
+
+      // Barycentre of triangle
+      auto p = (a + b + c) / 3.0;
+
+      // Renormalise n in plane of ABC
+      v *= xt::sum(v * p) / xt::norm_sq(v);
+      return {std::move(s), v};
+    }
+
+    // Get closest point
+    std::size_t i = xt::argmin(xt::norm_sq(s, {1}))();
+    xt::xtensor_fixed<double, xt::xshape<3>> vmin = xt::row(s, i);
+    double qmin = xt::norm_sq(vmin)();
+
+    xt::xtensor<double, 2> smin({1, 3});
+    xt::row(smin, 0) = vmin;
+
+    // Check if edges are closer
+    constexpr const int f[3][2] = {{0, 1}, {0, 2}, {1, 2}};
+    for (std::size_t i = 0; i < s_rows; ++i)
+    {
+      auto s0 = xt::row(s, f[i][0]);
+      auto s1 = xt::row(s, f[i][1]);
+      if (lm[i] > 0 and lm[i] < 1)
+      {
+        auto v = s0 + lm[i] * (s1 - s0);
+        const double qnorm = xt::norm_sq(v)();
+        if (qnorm < qmin)
+        {
+          vmin = v;
+          qmin = qnorm;
+          smin.resize({2, 3});
+          xt::row(smin, 0) = s0;
+          xt::row(smin, 1) = s1;
+        }
+      }
+    }
+    return {std::move(smin), vmin};
+  }
+  case 4:
+  {
+    auto s0 = xt::row(s, 0);
+    auto s1 = xt::row(s, 1);
+    auto s2 = xt::row(s, 2);
+    auto s3 = xt::row(s, 3);
+    auto W1 = math::cross(s0, s1);
+    auto W2 = math::cross(s2, s3);
+
+    xt::xtensor_fixed<double, xt::xshape<4>> B;
+    B[0] = xt::sum(s2 * W1)();
+    B[1] = -xt::sum(s3 * W1)();
+    B[2] = xt::sum(s0 * W2)();
+    B[3] = -xt::sum(s1 * W2)();
+
+    const bool signDetM = std::signbit(xt::sum(B)());
+    std::array<bool, 4> f_inside;
     for (int i = 0; i < 4; ++i)
       f_inside[i] = (std::signbit(B[i]) == signDetM);
 
     if (f_inside[1] and f_inside[2] and f_inside[3])
     {
       if (f_inside[0]) // The origin is inside the tetrahedron
-        return {s, Eigen::Vector3d::Zero()};
-
-      // The origin projection P faces BCD
-      return nearest_simplex(s.topRows(3));
+        return {s, xt::zeros<double>({3})};
+      else // The origin projection P faces BCD
+        return nearest_simplex(xt::view(s, xt::range(0, 3), xt::all()));
     }
 
     // Test ACD, ABD and/or ABC.
-    Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor> smin;
-    Eigen::Vector3d vmin = {0, 0, 0};
-    static const int facets[3][3] = {{0, 1, 3}, {0, 2, 3}, {1, 2, 3}};
+    xt::xtensor<double, 2> smin;
+    xt::xtensor_fixed<double, xt::xshape<3>> vmin = xt::zeros<double>({3});
+    constexpr int facets[3][3] = {{0, 1, 3}, {0, 2, 3}, {1, 2, 3}};
     double qmin = std::numeric_limits<double>::max();
     for (int i = 0; i < 3; ++i)
     {
       if (f_inside[i + 1] == false)
       {
-        Eigen::Matrix<double, 3, 3, Eigen::RowMajor> M;
-        M << s.row(facets[i][0]), s.row(facets[i][1]), s.row(facets[i][2]);
-        auto [snew, v] = nearest_simplex(M);
-        const double q = v.squaredNorm();
+        xt::xtensor_fixed<double, xt::xshape<3, 3>> M;
+        xt::row(M, 0) = xt::row(s, facets[i][0]);
+        xt::row(M, 1) = xt::row(s, facets[i][1]);
+        xt::row(M, 2) = xt::row(s, facets[i][2]);
+
+        const auto [snew, v] = nearest_simplex(M);
+        const double q = xt::norm_sq(v)();
         if (q < qmin)
         {
           qmin = q;
@@ -83,79 +161,25 @@ nearest_simplex(
         }
       }
     }
-    return {std::move(smin), std::move(vmin)};
+    return {std::move(smin), vmin};
   }
-
-  assert(s.rows() == 3);
-  const auto a = s.row(0);
-  const auto b = s.row(1);
-  const auto c = s.row(2);
-  const double ab2 = (a - b).squaredNorm();
-  const double ac2 = (a - c).squaredNorm();
-  const double bc2 = (b - c).squaredNorm();
-  const Eigen::Vector3d lm
-      = {a.dot(a - b) / ab2, a.dot(a - c) / ac2, b.dot(b - c) / bc2};
-
-  // Calculate triangle ABC
-  const double caba = (c - a).dot(b - a);
-  const double c2 = 1 - caba * caba / (ab2 * ac2);
-  const double lbb = (lm[0] - lm[1] * caba / ab2) / c2;
-  const double lcc = (lm[1] - lm[0] * caba / ac2) / c2;
-
-  // Intersects triangle
-  if (lbb >= 0.0 and lcc >= 0.0 and (lbb + lcc) <= 1.0)
+  default:
   {
-    // Calculate intersection more accurately
-    Eigen::Vector3d v = (c - a).cross(b - a);
-
-    // Barycentre of triangle
-    Eigen::Vector3d p = (a + b + c) / 3.0;
-    // Renormalise n in plane of ABC
-    v *= v.dot(p) / v.squaredNorm();
-    return {std::move(s), std::move(v)};
+    throw std::runtime_error("Number of rows defining simplex not supported.");
   }
-
-  // Get closest point
-  int i;
-  s.rowwise().squaredNorm().minCoeff(&i);
-  Eigen::Vector3d vmin = s.row(i);
-  double qmin = vmin.squaredNorm();
-  Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor> smin
-      = vmin.transpose();
-
-  // Check if edges are closer
-  static const int f[3][2] = {{0, 1}, {0, 2}, {1, 2}};
-  for (int i = 0; i < s.rows(); ++i)
-  {
-    if (lm[i] > 0 and lm[i] < 1)
-    {
-      const Eigen::Vector3d v
-          = s.row(f[i][0]) + lm[i] * (s.row(f[i][1]) - s.row(f[i][0]));
-      const double qnorm = v.squaredNorm();
-      if (qnorm < qmin)
-      {
-        vmin = v;
-        qmin = qnorm;
-        smin.resize(2, 3);
-        smin.row(0) = s.row(f[i][0]);
-        smin.row(1) = s.row(f[i][1]);
-      }
-    }
   }
-
-  return {std::move(smin), std::move(vmin)};
 }
 //----------------------------------------------------------------------------
 // Support function, finds point p in bd which maximises p.v
-Eigen::Vector3d
-support(const Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor>& bd,
-        const Eigen::Vector3d& v)
+xt::xtensor_fixed<double, xt::xshape<3>>
+support(const xt::xtensor<double, 2>& bd,
+        const xt::xtensor_fixed<double, xt::xshape<3>>& v)
 {
   int i = 0;
-  double qmax = bd.row(0) * v;
-  for (int m = 1; m < bd.rows(); ++m)
+  double qmax = xt::sum(xt::row(bd, 0) * v)();
+  for (std::size_t m = 1; m < bd.shape(0); ++m)
   {
-    const double q = bd.row(m) * v;
+    double q = xt::sum(xt::row(bd, m) * v)();
     if (q > qmax)
     {
       qmax = q;
@@ -163,70 +187,69 @@ support(const Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor>& bd,
     }
   }
 
-  return bd.row(i);
+  return xt::row(bd, i);
 }
 } // namespace
 //----------------------------------------------------------------------------
-std::array<double, 3> geometry::compute_distance_gjk(const array2d<double>& p,
-                                                     const array2d<double>& q)
+xt::xtensor_fixed<double, xt::xshape<3>>
+geometry::compute_distance_gjk(const xt::xtensor<double, 2>& p,
+                               const xt::xtensor<double, 2>& q)
 {
-  assert(p.shape[1] == 3);
-  assert(q.shape[1] == 3);
-  const Eigen::Map<
-      const Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
-      _p(p.data(), p.shape[0], p.shape[1]);
-  const Eigen::Map<
-      const Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
-      _q(q.data(), q.shape[0], q.shape[1]);
+  assert(p.shape(1) == 3);
+  assert(q.shape(1) == 3);
 
-  const int maxk = 10; // Maximum number of iterations of the GJK algorithm
+  constexpr int maxk = 10; // Maximum number of iterations of the GJK algorithm
 
   // Tolerance
-  const double eps = 1e-12;
+  constexpr double eps = 1e-12;
 
   // Initialise vector and simplex
-  Eigen::Vector3d v = _p.row(0) - _q.row(0);
-  Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor, 4, 3> s
-      = v.transpose();
+  xt::xtensor_fixed<double, xt::xshape<3>> v = xt::row(p, 0) - xt::row(q, 0);
+  xt::xtensor<double, 2> s({1, 3});
+  xt::row(s, 0) = v;
 
   // Begin GJK iteration
   int k;
   for (k = 0; k < maxk; ++k)
   {
     // Support function
-    const Eigen::Vector3d w = support(_p, -v) - support(_q, v);
+    const xt::xtensor_fixed<double, xt::xshape<3>> w
+        = support(p, -v) - support(q, v);
 
     // Break if any existing points are the same as w
-    int m;
-    for (m = 0; m < s.rows(); ++m)
+    assert(s.shape(1) == 3);
+    std::size_t m;
+    for (m = 0; m < s.shape(0); ++m)
     {
-      if (s(m, 0) == w[0] and s(m, 1) == w[1] and s(m, 2) == w[2])
+      if (xt::row(s, m) == w)
         break;
     }
-    if (m != s.rows())
+
+    if (m != s.shape(0))
       break;
 
-    // 1st exit condition (v-w).v = 0
-    const double vnorm2 = v.squaredNorm();
-    const double vw = vnorm2 - v.dot(w);
+    // 1st exit condition (v - w).v = 0
+    const double vnorm2 = xt::norm_sq(v)();
+    const double vw = vnorm2 - xt::sum(v * w)();
     if (vw < (eps * vnorm2) or vw < eps)
       break;
 
     // Add new vertex to simplex
-    s.conservativeResize(s.rows() + 1, 3);
-    s.bottomRows(1) = w.transpose();
+    s = xt::vstack(xt::xtuple(s, xt::reshape_view(w, {1, 3})));
+    assert(s.shape(1) == 3);
 
     // Find nearest subset of simplex
     std::tie(s, v) = nearest_simplex(s);
+    assert(s.shape(1) == 3);
 
     // 2nd exit condition - intersecting or touching
-    if (v.squaredNorm() < eps * eps)
+    if (xt::norm_sq(v)() < eps * eps)
       break;
   }
 
   if (k == maxk)
     throw std::runtime_error("GJK error: max iteration limit reached");
 
-  return {v[0], v[1], v[2]};
+  return v;
 }
 //----------------------------------------------------------------------------

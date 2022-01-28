@@ -1,6 +1,6 @@
 // Copyright (C) 2014-2020 Chris Richardson
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -16,6 +16,9 @@
 #include <limits>
 #include <map>
 #include <vector>
+#include <xtensor/xadapt.hpp>
+#include <xtensor/xnorm.hpp>
+#include <xtensor/xview.hpp>
 
 using namespace dolfinx;
 using namespace dolfinx::refinement;
@@ -29,7 +32,7 @@ namespace
 void enforce_rules(
     const MPI_Comm& neighbor_comm,
     const std::map<std::int32_t, std::vector<std::int32_t>>& shared_edges,
-    std::vector<bool>& marked_edges, const mesh::Mesh& mesh,
+    std::vector<std::int8_t>& marked_edges, const mesh::Mesh& mesh,
     const std::vector<std::int32_t>& long_edge)
 {
   common::Timer t0("PLAZA: Enforce rules");
@@ -94,14 +97,14 @@ void enforce_rules(
 
     const std::int32_t update_count_old = update_count;
     MPI_Allreduce(&update_count_old, &update_count, 1, MPI_INT32_T, MPI_SUM,
-                  mesh.mpi_comm());
+                  mesh.comm());
   }
 }
 //-----------------------------------------------------------------------------
 // 2D version of subdivision allowing for uniform subdivision (flag)
-std::vector<std::int32_t> get_triangles(const std::vector<bool>& marked_edges,
-                                        const std::int32_t longest_edge,
-                                        bool uniform)
+std::vector<std::int32_t>
+get_triangles(const std::vector<std::int8_t>& marked_edges,
+              const std::int32_t longest_edge, bool uniform)
 {
   // Longest edge must be marked
   assert(marked_edges[longest_edge]);
@@ -139,7 +142,7 @@ std::vector<std::int32_t> get_triangles(const std::vector<bool>& marked_edges,
 //-----------------------------------------------------------------------------
 // 3D version of subdivision
 std::vector<std::int32_t>
-get_tetrahedra(const std::vector<bool>& marked_edges,
+get_tetrahedra(const std::vector<std::int8_t>& marked_edges,
                const std::vector<std::int32_t>& longest_edge)
 {
   // Connectivity matrix for ten possible points (4 vertices + 6 edge
@@ -252,7 +255,7 @@ get_tetrahedra(const std::vector<bool>& marked_edges,
 ///   being similar shape
 /// @return
 std::vector<std::int32_t>
-get_simplices(const std::vector<bool>& marked_edges,
+get_simplices(const std::vector<std::int8_t>& marked_edges,
               const std::vector<std::int32_t>& longest_edge, std::int32_t tdim,
               bool uniform)
 {
@@ -271,7 +274,7 @@ get_simplices(const std::vector<bool>& marked_edges,
 }
 
 // Get the longest edge of each face (using local mesh index)
-std::pair<std::vector<std::int32_t>, std::vector<bool>>
+std::pair<std::vector<std::int32_t>, std::vector<std::int8_t>>
 face_long_edge(const mesh::Mesh& mesh)
 {
   const int tdim = mesh.topology().dim();
@@ -287,7 +290,7 @@ face_long_edge(const mesh::Mesh& mesh)
 
   // Storage for face-local index of longest edge
   std::vector<std::int32_t> long_edge(num_faces);
-  std::vector<bool> edge_ratio_ok;
+  std::vector<std::int8_t> edge_ratio_ok;
 
   // Check mesh face quality (may be used in 2D to switch to "uniform"
   // refinement)
@@ -308,7 +311,10 @@ face_long_edge(const mesh::Mesh& mesh)
   auto map_e = mesh.topology().index_map(1);
   assert(map_e);
   std::vector<double> edge_length(map_e->size_local() + map_e->num_ghosts());
-  const array2d<double>& x = mesh.geometry().x();
+  auto x = xt::adapt(
+      mesh.geometry().x().data(), mesh.geometry().x().size(),
+      xt::no_ownership(),
+      std::vector({mesh.geometry().x().size() / 3, std::size_t(3)}));
   for (std::size_t e = 0; e < edge_length.size(); ++e)
   {
     // Get first attached cell
@@ -328,11 +334,9 @@ face_long_edge(const mesh::Mesh& mesh)
     const std::size_t local1 = std::distance(cell_vertices.begin(), it1);
 
     auto x_dofs = x_dofmap.links(c);
-    auto x0 = x.row(x_dofs[local0]);
-    auto x1 = x.row(x_dofs[local1]);
-    edge_length[e] = std::sqrt(std::transform_reduce(
-        x0.begin(), x0.end(), x1.begin(), 0.0, std::plus<>(),
-        [](double x, double y) { return (x - y) * (x - y); }));
+    auto x0 = xt::row(x, x_dofs[local0]);
+    auto x1 = xt::row(x, x_dofs[local1]);
+    edge_length[e] = xt::norm_l2(x0 - x1)();
   }
 
   // Get longest edge of each face
@@ -383,13 +387,13 @@ face_long_edge(const mesh::Mesh& mesh)
 }
 //-----------------------------------------------------------------------------
 // Convenient interface for both uniform and marker refinement
-std::tuple<graph::AdjacencyList<std::int64_t>, array2d<double>,
+std::tuple<graph::AdjacencyList<std::int64_t>, xt::xtensor<double, 2>,
            std::vector<std::int32_t>>
 compute_refinement(
-    const MPI_Comm& neighbor_comm, const std::vector<bool>& marked_edges,
+    const MPI_Comm& neighbor_comm, const std::vector<std::int8_t>& marked_edges,
     const std::map<std::int32_t, std::vector<std::int32_t>> shared_edges,
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& long_edge,
-    const std::vector<bool>& edge_ratio_ok)
+    const std::vector<std::int8_t>& edge_ratio_ok)
 {
   const std::int32_t tdim = mesh.topology().dim();
   const std::int32_t num_cell_edges = tdim * 3 - 3;
@@ -420,7 +424,7 @@ compute_refinement(
       marked_edges.begin() + mesh.topology().index_map(1)->size_local(), true);
 
   std::vector<std::int64_t> global_indices = refinement::adjust_indices(
-      mesh.topology().index_map(0), num_new_vertices_local);
+      *mesh.topology().index_map(0), num_new_vertices_local);
 
   const int num_cells = map_c->size_local();
   std::vector<std::int64_t> cell_topology;
@@ -452,7 +456,7 @@ compute_refinement(
     {
       // Get the marked edge indices for new vertices and make bool
       // vector of marked edges
-      std::vector<bool> markers(num_cell_edges, false);
+      std::vector<std::int8_t> markers(num_cell_edges, false);
       auto edges = c_to_e->links(c);
       for (int p : marked_edge_list)
       {
@@ -517,11 +521,10 @@ mesh::Mesh plaza::refine(const mesh::Mesh& mesh, bool redistribute)
   auto [cell_adj, new_vertex_coordinates, parent_cell]
       = plaza::compute_refinement_data(mesh);
 
-  if (dolfinx::MPI::size(mesh.mpi_comm()) == 1)
+  if (dolfinx::MPI::size(mesh.comm()) == 1)
   {
-    array2d<double> coords(new_vertex_coordinates);
-    return mesh::create_mesh(mesh.mpi_comm(), cell_adj, mesh.geometry().cmap(),
-                             coords, mesh::GhostMode::none);
+    return mesh::create_mesh(mesh.comm(), cell_adj, mesh.geometry().cmap(),
+                             new_vertex_coordinates, mesh::GhostMode::none);
   }
 
   const std::shared_ptr<const common::IndexMap> map_c
@@ -531,10 +534,10 @@ mesh::Mesh plaza::refine(const mesh::Mesh& mesh, bool redistribute)
   // FIXME: this is not a robust test. Should be user option.
   int max_ghost_cells = 0;
   MPI_Allreduce(&num_ghost_cells, &max_ghost_cells, 1, MPI_INT, MPI_MAX,
-                mesh.mpi_comm());
+                mesh.comm());
 
   // Build mesh
-  const mesh::GhostMode ghost_mode = (max_ghost_cells == 0)
+  const mesh::GhostMode ghost_mode = max_ghost_cells == 0
                                          ? mesh::GhostMode::none
                                          : mesh::GhostMode::shared_facet;
 
@@ -543,17 +546,16 @@ mesh::Mesh plaza::refine(const mesh::Mesh& mesh, bool redistribute)
 }
 //-----------------------------------------------------------------------------
 mesh::Mesh plaza::refine(const mesh::Mesh& mesh,
-                         const mesh::MeshTags<std::int8_t>& refinement_marker,
+                         const xtl::span<const std::int32_t>& edges,
                          bool redistribute)
 {
   auto [cell_adj, new_vertex_coordinates, parent_cell]
-      = plaza::compute_refinement_data(mesh, refinement_marker);
+      = plaza::compute_refinement_data(mesh, edges);
 
-  if (dolfinx::MPI::size(mesh.mpi_comm()) == 1)
+  if (dolfinx::MPI::size(mesh.comm()) == 1)
   {
-    array2d<double> coords(new_vertex_coordinates);
-    return mesh::create_mesh(mesh.mpi_comm(), cell_adj, mesh.geometry().cmap(),
-                             coords, mesh::GhostMode::none);
+    return mesh::create_mesh(mesh.comm(), cell_adj, mesh.geometry().cmap(),
+                             new_vertex_coordinates, mesh::GhostMode::none);
   }
 
   const std::shared_ptr<const common::IndexMap> map_c
@@ -563,10 +565,10 @@ mesh::Mesh plaza::refine(const mesh::Mesh& mesh,
   // FIXME: this is not a robust test. Should be user option.
   int max_ghost_cells = 0;
   MPI_Allreduce(&num_ghost_cells, &max_ghost_cells, 1, MPI_INT, MPI_MAX,
-                mesh.mpi_comm());
+                mesh.comm());
 
   // Build mesh
-  const mesh::GhostMode ghost_mode = (max_ghost_cells == 0)
+  const mesh::GhostMode ghost_mode = max_ghost_cells == 0
                                          ? mesh::GhostMode::none
                                          : mesh::GhostMode::shared_facet;
 
@@ -574,7 +576,7 @@ mesh::Mesh plaza::refine(const mesh::Mesh& mesh,
                                redistribute, ghost_mode);
 }
 //------------------------------------------------------------------------------
-std::tuple<graph::AdjacencyList<std::int64_t>, array2d<double>,
+std::tuple<graph::AdjacencyList<std::int64_t>, xt::xtensor<double, 2>,
            std::vector<std::int32_t>>
 plaza::compute_refinement_data(const mesh::Mesh& mesh)
 {
@@ -591,8 +593,8 @@ plaza::compute_refinement_data(const mesh::Mesh& mesh)
 
   // Mark all edges
   auto map_e = mesh.topology().index_map(1);
-  std::vector<bool> marked_edges(map_e->size_local() + map_e->num_ghosts(),
-                                 true);
+  std::vector<std::int8_t> marked_edges(
+      map_e->size_local() + map_e->num_ghosts(), true);
 
   const auto [long_edge, edge_ratio_ok] = face_long_edge(mesh);
   auto [cell_adj, new_vertex_coordinates, parent_cell]
@@ -604,11 +606,10 @@ plaza::compute_refinement_data(const mesh::Mesh& mesh)
           std::move(parent_cell)};
 }
 //------------------------------------------------------------------------------
-std::tuple<graph::AdjacencyList<std::int64_t>, array2d<double>,
+std::tuple<graph::AdjacencyList<std::int64_t>, xt::xtensor<double, 2>,
            std::vector<std::int32_t>>
-plaza::compute_refinement_data(
-    const mesh::Mesh& mesh,
-    const mesh::MeshTags<std::int8_t>& refinement_marker)
+plaza::compute_refinement_data(const mesh::Mesh& mesh,
+                               const xtl::span<const std::int32_t>& edges)
 {
   if (mesh.topology().cell_type() != mesh::CellType::triangle
       and mesh.topology().cell_type() != mesh::CellType::tetrahedron)
@@ -620,21 +621,11 @@ plaza::compute_refinement_data(
 
   auto [neighbor_comm, shared_edges] = refinement::compute_edge_sharing(mesh);
 
-  const std::size_t entity_dim = refinement_marker.dim();
-  const std::vector<std::int32_t>& marker_indices = refinement_marker.indices();
   auto map_e = mesh.topology().index_map(1);
-  auto map_ent = mesh.topology().index_map(entity_dim);
-  assert(map_ent);
+  assert(map_e);
 
-  auto ent_to_edge = mesh.topology().connectivity(entity_dim, 1);
-  if (!ent_to_edge)
-  {
-    throw std::runtime_error("Connectivity missing: ("
-                             + std::to_string(entity_dim) + ", 1)");
-  }
-
-  std::vector<bool> marked_edges(map_e->size_local() + map_e->num_ghosts(),
-                                 false);
+  std::vector<std::int8_t> marked_edges(
+      map_e->size_local() + map_e->num_ghosts(), false);
 
   // Get number of neighbors
   int indegree(-1), outdegree(-2), weighted(-1);
@@ -643,23 +634,19 @@ plaza::compute_refinement_data(
   assert(indegree == outdegree);
   const int num_neighbors = indegree;
   std::vector<std::vector<std::int32_t>> marked_for_update(num_neighbors);
-  for (std::int32_t i : marker_indices)
+  for (auto edge : edges)
   {
-    auto edges = ent_to_edge->links(i);
-    for (auto edge : edges)
+    // Already marked, so nothing to do
+    if (!marked_edges[edge])
     {
-      // Already marked, so nothing to do
-      if (!marked_edges[edge])
-      {
-        marked_edges[edge] = true;
+      marked_edges[edge] = true;
 
-        // If it is a shared edge, add all sharing neighbors to update set
-        auto map_it = shared_edges.find(edge);
-        if (map_it != shared_edges.end())
-        {
-          for (int p : map_it->second)
-            marked_for_update[p].push_back(edge);
-        }
+      // If it is a shared edge, add all sharing neighbors to update set
+      auto map_it = shared_edges.find(edge);
+      if (map_it != shared_edges.end())
+      {
+        for (int p : map_it->second)
+          marked_for_update[p].push_back(edge);
       }
     }
   }

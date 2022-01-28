@@ -1,17 +1,21 @@
 // Copyright (C) 2007-2020 Anders Logg and Garth N. Wells
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #pragma once
 
+#include "ElementDofLayout.h"
 #include <cstdlib>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <dolfinx/graph/ordering.h>
+#include <functional>
 #include <memory>
 #include <utility>
 #include <vector>
+#include <xtl/xspan.hpp>
 
 namespace dolfinx::common
 {
@@ -25,7 +29,6 @@ class Topology;
 
 namespace dolfinx::fem
 {
-class ElementDofLayout;
 
 /// Create an adjacency list that maps a global index (process-wise) to
 /// the 'unassembled' cell-wise contributions. It is built from the
@@ -67,7 +70,8 @@ public:
   /// Create a DofMap from the layout of dofs on a reference element, an
   /// IndexMap defining the distribution of dofs across processes and a
   /// vector of indices
-  /// @param[in] element The layout of the degrees of freedom on an element
+  /// @param[in] element The layout of the degrees of freedom on an
+  /// element (fem::ElementDofLayout)
   /// @param[in] index_map The map describing the parallel distribution
   /// of the degrees of freedom
   /// @param[in] index_map_bs The block size associated with the @p
@@ -76,14 +80,14 @@ public:
   /// (graph::AdjacencyList<std::int32_t>) with the degrees-of-freedom
   /// for each cell
   /// @param[in] bs The block size of the @p dofmap
-  template <typename U,
+  template <typename E, typename U,
             typename = std::enable_if_t<std::is_same<
                 graph::AdjacencyList<std::int32_t>, std::decay_t<U>>::value>>
-  DofMap(std::shared_ptr<const ElementDofLayout> element,
-         std::shared_ptr<const common::IndexMap> index_map, int index_map_bs,
-         U&& dofmap, int bs)
-      : element_dof_layout(element), index_map(index_map),
-        _index_map_bs(index_map_bs), _dofmap(std::forward<U>(dofmap)), _bs(bs)
+  DofMap(E&& element, std::shared_ptr<const common::IndexMap> index_map,
+         int index_map_bs, U&& dofmap, int bs)
+      : index_map(index_map), _index_map_bs(index_map_bs),
+        _element_dof_layout(std::forward<E>(element)),
+        _dofmap(std::forward<U>(dofmap)), _bs(bs)
   {
     // Do nothing
   }
@@ -103,11 +107,15 @@ public:
   /// Move assignment
   DofMap& operator=(DofMap&& dofmap) = default;
 
+  /// Equality operator
+  /// @return Returns true if the data for the two dofmaps is equal
+  bool operator==(const DofMap& map) const;
+
   /// Local-to-global mapping of dofs on a cell
   /// @param[in] cell The cell index
   /// @return Local-global dof map for the cell (using process-local
   /// indices)
-  tcb::span<const std::int32_t> cell_dofs(int cell) const
+  xtl::span<const std::int32_t> cell_dofs(int cell) const
   {
     return _dofmap.links(cell);
   }
@@ -124,26 +132,38 @@ public:
   /// @param[in] comm MPI Communicator
   /// @param[in] topology The mesh topology that the dofmap is defined
   /// on
+  /// @param[in] reorder_fn The graph re-ordering function to apply to
+  /// the dof data
   /// @return The collapsed dofmap
-  std::pair<std::unique_ptr<DofMap>, std::vector<std::int32_t>>
-  collapse(MPI_Comm comm, const mesh::Topology& topology) const;
+  std::pair<DofMap, std::vector<std::int32_t>> collapse(
+      MPI_Comm comm, const mesh::Topology& topology,
+      const std::function<std::vector<int>(
+          const graph::AdjacencyList<std::int32_t>&)>& reorder_fn
+      = [](const graph::AdjacencyList<std::int32_t>& g)
+      { return graph::reorder_gps(g); }) const;
 
   /// Get dofmap data
   /// @return The adjacency list with dof indices for each cell
   const graph::AdjacencyList<std::int32_t>& list() const;
 
   /// Layout of dofs on an element
-  std::shared_ptr<const ElementDofLayout> element_dof_layout;
+  const ElementDofLayout& element_dof_layout() const
+  {
+    return _element_dof_layout;
+  }
 
-  /// Index map that described the parallel distribution of the dofmap
+  /// Index map that describes the parallel distribution of the dofmap
   std::shared_ptr<const common::IndexMap> index_map;
 
-  /// Index map that described the parallel distribution of the dofmap
+  /// Block size associated with the index_map
   int index_map_bs() const;
 
 private:
   // Block size for the IndexMap
   int _index_map_bs = -1;
+
+  // Layout of dofs on a cell
+  ElementDofLayout _element_dof_layout;
 
   // Cell-local-to-dof map (dofs for cell dofmap[cell])
   graph::AdjacencyList<std::int32_t> _dofmap;

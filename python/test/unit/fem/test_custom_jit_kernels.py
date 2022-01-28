@@ -2,17 +2,19 @@
 
 # Copyright (C) 2018-2019 Chris N. Richardson and Michal Habera
 #
-# This file is part of DOLFINX (https://www.fenicsproject.org)
+# This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-import dolfinx
 import numba
 import numpy as np
-from dolfinx import (Function, FunctionSpace, TimingType, UnitSquareMesh, cpp,
-                     list_timings)
-from dolfinx.fem import IntegralType
+
+import dolfinx
+from dolfinx import TimingType, cpp, list_timings
+from dolfinx.fem import Function, FunctionSpace, IntegralType
+from dolfinx.mesh import create_unit_square
 from dolfinx_utils.test.skips import skip_if_complex
+
 from mpi4py import MPI
 from petsc4py import PETSc
 
@@ -28,12 +30,12 @@ c_signature = numba.types.void(
 @numba.cfunc(c_signature, nopython=True)
 def tabulate_tensor_A(A_, w_, c_, coords_, entity_local_index, cell_orientation):
     A = numba.carray(A_, (3, 3), dtype=PETSc.ScalarType)
-    coordinate_dofs = numba.carray(coords_, (3, 2), dtype=np.float64)
+    coordinate_dofs = numba.carray(coords_, (3, 3), dtype=np.float64)
 
     # Ke=∫Ωe BTe Be dΩ
-    x0, y0 = coordinate_dofs[0, :]
-    x1, y1 = coordinate_dofs[1, :]
-    x2, y2 = coordinate_dofs[2, :]
+    x0, y0 = coordinate_dofs[0, :2]
+    x1, y1 = coordinate_dofs[1, :2]
+    x2, y2 = coordinate_dofs[2, :2]
 
     # 2x Element area Ae
     Ae = abs((x0 - x1) * (y2 - y1) - (y0 - y1) * (x2 - x1))
@@ -46,10 +48,10 @@ def tabulate_tensor_A(A_, w_, c_, coords_, entity_local_index, cell_orientation)
 @numba.cfunc(c_signature, nopython=True)
 def tabulate_tensor_b(b_, w_, c_, coords_, local_index, orientation):
     b = numba.carray(b_, (3), dtype=PETSc.ScalarType)
-    coordinate_dofs = numba.carray(coords_, (3, 2), dtype=np.float64)
-    x0, y0 = coordinate_dofs[0, :]
-    x1, y1 = coordinate_dofs[1, :]
-    x2, y2 = coordinate_dofs[2, :]
+    coordinate_dofs = numba.carray(coords_, (3, 3), dtype=np.float64)
+    x0, y0 = coordinate_dofs[0, :2]
+    x1, y1 = coordinate_dofs[1, :2]
+    x2, y2 = coordinate_dofs[2, :2]
 
     # 2x Element area Ae
     Ae = abs((x0 - x1) * (y2 - y1) - (y0 - y1) * (x2 - x1))
@@ -60,10 +62,10 @@ def tabulate_tensor_b(b_, w_, c_, coords_, local_index, orientation):
 def tabulate_tensor_b_coeff(b_, w_, c_, coords_, local_index, orientation):
     b = numba.carray(b_, (3), dtype=PETSc.ScalarType)
     w = numba.carray(w_, (1), dtype=PETSc.ScalarType)
-    coordinate_dofs = numba.carray(coords_, (3, 2), dtype=np.float64)
-    x0, y0 = coordinate_dofs[0, :]
-    x1, y1 = coordinate_dofs[1, :]
-    x2, y2 = coordinate_dofs[2, :]
+    coordinate_dofs = numba.carray(coords_, (3, 3), dtype=np.float64)
+    x0, y0 = coordinate_dofs[0, :2]
+    x1, y1 = coordinate_dofs[1, :2]
+    x2, y2 = coordinate_dofs[2, :2]
 
     # 2x Element area Ae
     Ae = abs((x0 - x1) * (y2 - y1) - (y0 - y1) * (x2 - x1))
@@ -71,16 +73,17 @@ def tabulate_tensor_b_coeff(b_, w_, c_, coords_, local_index, orientation):
 
 
 def test_numba_assembly():
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 13, 13)
+    mesh = create_unit_square(MPI.COMM_WORLD, 13, 13)
     V = FunctionSpace(mesh, ("Lagrange", 1))
+    Form = dolfinx.cpp.fem.Form_float64 if PETSc.ScalarType == np.float64 else dolfinx.cpp.fem.Form_complex128
 
     integrals = {IntegralType.cell: ([(-1, tabulate_tensor_A.address),
                                       (12, tabulate_tensor_A.address),
                                       (2, tabulate_tensor_A.address)], None)}
-    a = cpp.fem.Form([V._cpp_object, V._cpp_object], integrals, [], [], False)
+    a = Form([V._cpp_object, V._cpp_object], integrals, [], [], False)
 
     integrals = {IntegralType.cell: ([(-1, tabulate_tensor_b.address)], None)}
-    L = cpp.fem.Form([V._cpp_object], integrals, [], [], False)
+    L = Form([V._cpp_object], integrals, [], [], False)
 
     A = dolfinx.fem.assemble_matrix(a)
     A.assemble()
@@ -96,29 +99,28 @@ def test_numba_assembly():
 
 
 def test_coefficient():
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 13, 13)
+    mesh = create_unit_square(MPI.COMM_WORLD, 13, 13)
     V = FunctionSpace(mesh, ("Lagrange", 1))
     DG0 = FunctionSpace(mesh, ("DG", 0))
     vals = Function(DG0)
     vals.vector.set(2.0)
 
+    Form = dolfinx.cpp.fem.Form_float64 if PETSc.ScalarType == np.float64 else dolfinx.cpp.fem.Form_complex128
     integrals = {IntegralType.cell: ([(-1, tabulate_tensor_b_coeff.address)], None)}
-    L = cpp.fem.Form([V._cpp_object], integrals, [vals._cpp_object], [], False)
+    L = Form([V._cpp_object], integrals, [vals._cpp_object], [], False)
 
     b = dolfinx.fem.assemble_vector(L)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-
     bnorm = b.norm(PETSc.NormType.N2)
-    print(bnorm)
     assert (np.isclose(bnorm, 2.0 * 0.0739710713711999))
 
 
 @skip_if_complex
 def test_cffi_assembly():
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 13, 13)
+    mesh = create_unit_square(MPI.COMM_WORLD, 13, 13)
     V = FunctionSpace(mesh, ("Lagrange", 1))
 
-    if mesh.mpi_comm().rank == 0:
+    if mesh.comm.rank == 0:
         from cffi import FFI
         ffibuilder = FFI()
         ffibuilder.set_source("_cffi_kernelA", r"""
@@ -136,10 +138,10 @@ def test_cffi_assembly():
         // PM* dimensions: [entities][dofs][dofs]
         alignas(32) static const double FE3_C0_D01_Q1[1][1][2] = { { { -1.0, 1.0 } } };
         // Unstructured piecewise computations
-        const double J_c0 = coordinate_dofs[0] * FE3_C0_D01_Q1[0][0][0] + coordinate_dofs[2] * FE3_C0_D01_Q1[0][0][1];
-        const double J_c3 = coordinate_dofs[1] * FE3_C0_D01_Q1[0][0][0] + coordinate_dofs[5] * FE3_C0_D01_Q1[0][0][1];
-        const double J_c1 = coordinate_dofs[0] * FE3_C0_D01_Q1[0][0][0] + coordinate_dofs[4] * FE3_C0_D01_Q1[0][0][1];
-        const double J_c2 = coordinate_dofs[1] * FE3_C0_D01_Q1[0][0][0] + coordinate_dofs[3] * FE3_C0_D01_Q1[0][0][1];
+        const double J_c0 = coordinate_dofs[0] * FE3_C0_D01_Q1[0][0][0] + coordinate_dofs[3] * FE3_C0_D01_Q1[0][0][1];
+        const double J_c3 = coordinate_dofs[1] * FE3_C0_D01_Q1[0][0][0] + coordinate_dofs[7] * FE3_C0_D01_Q1[0][0][1];
+        const double J_c1 = coordinate_dofs[0] * FE3_C0_D01_Q1[0][0][0] + coordinate_dofs[6] * FE3_C0_D01_Q1[0][0][1];
+        const double J_c2 = coordinate_dofs[1] * FE3_C0_D01_Q1[0][0][0] + coordinate_dofs[4] * FE3_C0_D01_Q1[0][0][1];
         alignas(32) double sp[20];
         sp[0] = J_c0 * J_c3;
         sp[1] = J_c1 * J_c2;
@@ -185,10 +187,10 @@ def test_cffi_assembly():
         // PM* dimensions: [entities][dofs][dofs]
         alignas(32) static const double FE4_C0_D01_Q1[1][1][2] = { { { -1.0, 1.0 } } };
         // Unstructured piecewise computations
-        const double J_c0 = coordinate_dofs[0] * FE4_C0_D01_Q1[0][0][0] + coordinate_dofs[2] * FE4_C0_D01_Q1[0][0][1];
-        const double J_c3 = coordinate_dofs[1] * FE4_C0_D01_Q1[0][0][0] + coordinate_dofs[5] * FE4_C0_D01_Q1[0][0][1];
-        const double J_c1 = coordinate_dofs[0] * FE4_C0_D01_Q1[0][0][0] + coordinate_dofs[4] * FE4_C0_D01_Q1[0][0][1];
-        const double J_c2 = coordinate_dofs[1] * FE4_C0_D01_Q1[0][0][0] + coordinate_dofs[3] * FE4_C0_D01_Q1[0][0][1];
+        const double J_c0 = coordinate_dofs[0] * FE4_C0_D01_Q1[0][0][0] + coordinate_dofs[3] * FE4_C0_D01_Q1[0][0][1];
+        const double J_c3 = coordinate_dofs[1] * FE4_C0_D01_Q1[0][0][0] + coordinate_dofs[7] * FE4_C0_D01_Q1[0][0][1];
+        const double J_c1 = coordinate_dofs[0] * FE4_C0_D01_Q1[0][0][0] + coordinate_dofs[6] * FE4_C0_D01_Q1[0][0][1];
+        const double J_c2 = coordinate_dofs[1] * FE4_C0_D01_Q1[0][0][0] + coordinate_dofs[4] * FE4_C0_D01_Q1[0][0][1];
         alignas(32) double sp[4];
         sp[0] = J_c0 * J_c3;
         sp[1] = J_c1 * J_c2;
@@ -215,16 +217,16 @@ def test_cffi_assembly():
 
         ffibuilder.compile(verbose=True)
 
-    mesh.mpi_comm().Barrier()
+    mesh.comm.Barrier()
     from _cffi_kernelA import ffi, lib
 
     ptrA = ffi.cast("intptr_t", ffi.addressof(lib, "tabulate_tensor_poissonA"))
     integrals = {IntegralType.cell: ([(-1, ptrA)], None)}
-    a = cpp.fem.Form([V._cpp_object, V._cpp_object], integrals, [], [], False)
+    a = cpp.fem.Form_float64([V._cpp_object, V._cpp_object], integrals, [], [], False)
 
     ptrL = ffi.cast("intptr_t", ffi.addressof(lib, "tabulate_tensor_poissonL"))
     integrals = {IntegralType.cell: ([(-1, ptrL)], None)}
-    L = cpp.fem.Form([V._cpp_object], integrals, [], [], False)
+    L = cpp.fem.Form_float64([V._cpp_object], integrals, [], [], False)
 
     A = dolfinx.fem.assemble_matrix(a)
     A.assemble()

@@ -8,19 +8,23 @@ on:
   schedule:
     # '*' is a special character in YAML, so string must be quoted
     - cron: "0 1 * * *"
+  workflow_dispatch: ~
+
 jobs:
   build:
     if: "!(contains(github.event.head_commit.message, '[ci skip]') || contains(github.event.head_commit.message, '[skip ci]'))"
     runs-on: ubuntu-20.04
-    container: fenicsproject/test-env:openmpi
+    container: fenicsproject/test-env:latest-openmpi
 
     env:
-      CC: clang-10
-      CXX: clang++-10
+      CC: clang
+      CXX: clang++
 
-      # For pyvista
+      # For pyvista/pyvistaqt
       DISPLAY: ":99.0"
       PYVISTA_OFF_SCREEN: true
+      PYVISTA_VERSION: 0.33.2
+      PYVISTA_QT_VERSION: 0.7.0
 
       PETSC_ARCH: linux-gnu-${{ matrix.petsc_arch }}-32
       OMPI_ALLOW_RUN_AS_ROOT: 1
@@ -38,25 +42,16 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Get Basix and install
-        uses: actions/checkout@v2
-        with:
-          path: ./basix
-          repository: FEniCS/basix
-          ref: main
-
       - name: Install FEniCS Python components
         run: |
-          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build-dir -S ./basix
-          cmake --build build-dir
-          cmake --install build-dir
-          python3 -m pip install ./basix/python
           python3 -m pip install git+https://github.com/FEniCS/ufl.git
+          python3 -m pip install git+https://github.com/FEniCS/basix.git
           python3 -m pip install git+https://github.com/FEniCS/ffcx.git
           apt-get update
-          apt-get install -y --no-install-recommends libgl1-mesa-dev xvfb # pyvista
+          apt-get install -y --no-install-recommends libgl1-mesa-dev xvfb  # pyvista
           apt-get install -y --no-install-recommends python3-pyqt5 libgl1-mesa-glx  # pyvistaqt
-          pip3 install pyvista pyvistaqt
+          pip3 install pyvista==${PYVISTA_VERSION}
+          pip3 install pyvistaqt==${PYVISTA_QT_VERSION}
 
       - name: Configure C++
         run: cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build -S cpp/

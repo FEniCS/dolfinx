@@ -544,7 +544,7 @@ namespace loguru
 
 	static void escape(std::string& out, const std::string& str)
 	{
-		for (char c : str) {
+		for (signed char c : str) {
 			/**/ if (c == '\a') { out += "\\a";  }
 			else if (c == '\b') { out += "\\b";  }
 			else if (c == '\f') { out += "\\f";  }
@@ -1741,7 +1741,7 @@ namespace loguru
 		return Text{STRDUP(str.c_str())};
 	}
 
-	Text ec_to_text(char c)
+	Text ec_to_text(signed char c)
 	{
 		// Add quotes around the character to make it obvious where it begin and ends.
 		std::string str = "'";

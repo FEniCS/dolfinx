@@ -1,6 +1,6 @@
 // Copyright (C) 2012-2020 Chris N. Richardson, Garth N. Wells and Michal Habera
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -18,29 +18,27 @@ class xml_node;
 class xml_document;
 } // namespace pugi
 
-namespace dolfinx
-{
-namespace fem
+namespace dolfinx::fem
 {
 class CoordinateElement;
 }
 
-namespace fem
+namespace dolfinx::fem
 {
 template <typename T>
 class Function;
-} // namespace fem
+}
 
-namespace mesh
+namespace dolfinx::mesh
 {
 class Geometry;
 enum class GhostMode : int;
 class Mesh;
 template <typename T>
 class MeshTags;
-} // namespace mesh
+} // namespace dolfinx::mesh
 
-namespace io
+namespace dolfinx::io
 {
 
 /// Read and write mesh::Mesh, fem::Function and other objects in
@@ -111,17 +109,17 @@ public:
   /// @param[in] name Name of the mesh (Grid)
   /// @param[in] xpath XPath where Mesh Grid data is located
   /// @return (Cell type, degree), and cells topology (global node indexing)
-  array2d<std::int64_t> read_topology_data(const std::string name,
-                                           const std::string xpath
-                                           = "/Xdmf/Domain") const;
+  xt::xtensor<std::int64_t, 2> read_topology_data(const std::string name,
+                                                  const std::string xpath
+                                                  = "/Xdmf/Domain") const;
 
   /// Read Geometry data for Mesh
   /// @param[in] name Name of the mesh (Grid)
   /// @param[in] xpath XPath where Mesh Grid data is located
   /// @return points on each process
-  array2d<double> read_geometry_data(const std::string name,
-                                     const std::string xpath
-                                     = "/Xdmf/Domain") const;
+  xt::xtensor<double, 2> read_geometry_data(const std::string name,
+                                            const std::string xpath
+                                            = "/Xdmf/Domain") const;
 
   /// Read information about cell type
   /// @param[in] grid_name Name of Grid for which cell type is needed
@@ -185,7 +183,7 @@ public:
 
 private:
   // MPI communicator
-  dolfinx::MPI::Comm _mpi_comm;
+  dolfinx::MPI::Comm _comm;
 
   // Cached filename
   std::string _filename;
@@ -203,5 +201,4 @@ private:
   Encoding _encoding;
 };
 
-} // namespace io
-} // namespace dolfinx
+} // namespace dolfinx::io

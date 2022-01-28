@@ -70,26 +70,30 @@
 #
 # We first import the modules and function that the program uses::
 
-import dolfinx
 import numpy as np
+
+import dolfinx
 import ufl
-from dolfinx import DirichletBC, Function, FunctionSpace, RectangleMesh
-from dolfinx.cpp.mesh import CellType
-from dolfinx.fem import locate_dofs_geometrical, locate_dofs_topological
+from dolfinx import cpp as _cpp
+from dolfinx import fem
+from dolfinx.fem import (Constant, Function, FunctionSpace, dirichletbc,
+                         extract_function_spaces, form,
+                         locate_dofs_geometrical, locate_dofs_topological)
 from dolfinx.io import XDMFFile
-from dolfinx.mesh import locate_entities_boundary
-from mpi4py import MPI
-from petsc4py import PETSc
+from dolfinx.mesh import (CellType, GhostMode, create_rectangle,
+                          locate_entities_boundary)
 from ufl import div, dx, grad, inner
 
+from mpi4py import MPI
+from petsc4py import PETSc
 
 # We create a Mesh and attach a coordinate map to the mesh::
 
 # Create mesh
-mesh = RectangleMesh(MPI.COMM_WORLD,
-                     [np.array([0, 0, 0]), np.array([1, 1, 0])],
-                     [32, 32],
-                     CellType.triangle, dolfinx.cpp.mesh.GhostMode.none)
+mesh = create_rectangle(MPI.COMM_WORLD,
+                        [np.array([0, 0]), np.array([1, 1])],
+                        [32, 32],
+                        CellType.triangle, GhostMode.none)
 
 
 # Function to mark x = 0, x = 1 and y = 0
@@ -123,18 +127,15 @@ V, Q = FunctionSpace(mesh, P2), FunctionSpace(mesh, P1)
 
 # No-slip boundary condition for velocity field (`V`) on boundaries
 # where x = 0, x = 1, and y = 0
-noslip = Function(V)
-with noslip.vector.localForm() as bc_local:
-    bc_local.set(0.0)
-
+noslip = np.zeros(mesh.geometry.dim, dtype=PETSc.ScalarType)
 facets = locate_entities_boundary(mesh, 1, noslip_boundary)
-bc0 = DirichletBC(noslip, locate_dofs_topological(V, 1, facets))
+bc0 = dirichletbc(noslip, locate_dofs_topological(V, 1, facets), V)
 
 # Driving velocity condition u = (1, 0) on top boundary (y = 1)
 lid_velocity = Function(V)
 lid_velocity.interpolate(lid_velocity_expression)
 facets = locate_entities_boundary(mesh, 1, lid)
-bc1 = DirichletBC(lid_velocity, locate_dofs_topological(V, 1, facets))
+bc1 = dirichletbc(lid_velocity, locate_dofs_topological(V, 1, facets))
 
 # Collect Dirichlet boundary conditions
 bcs = [bc0, bc1]
@@ -145,17 +146,15 @@ bcs = [bc0, bc1]
 # Define variational problem
 (u, p) = ufl.TrialFunction(V), ufl.TrialFunction(Q)
 (v, q) = ufl.TestFunction(V), ufl.TestFunction(Q)
-f = dolfinx.Constant(mesh, (0, 0))
+f = Constant(mesh, (PETSc.ScalarType(0), PETSc.ScalarType(0)))
 
-a = [[inner(grad(u), grad(v)) * dx, inner(p, div(v)) * dx],
-     [inner(div(u), q) * dx, None]]
-
-L = [inner(f, v) * dx,
-     inner(dolfinx.Constant(mesh, 0), q) * dx]
+a = form([[inner(grad(u), grad(v)) * dx, inner(p, div(v)) * dx],
+          [inner(div(u), q) * dx, None]])
+L = form([inner(f, v) * dx, inner(Constant(mesh, PETSc.ScalarType(0)), q) * dx])
 
 # We will use a block-diagonal preconditioner to solve this problem::
 
-a_p11 = inner(p, q) * dx
+a_p11 = form(inner(p, q) * dx)
 a_p = [[a[0][0], None],
        [None, a_p11]]
 
@@ -168,7 +167,7 @@ a_p = [[a[0][0], None],
 # Dirichlet boundary conditions are zeroed and a value of 1 is set on
 # the diagonal.
 
-A = dolfinx.fem.assemble_matrix_nest(a, bcs)
+A = dolfinx.fem.assemble_matrix_nest(a, bcs=bcs)
 A.assemble()
 
 # We create a nested matrix `P` to use as the preconditioner. The
@@ -185,14 +184,14 @@ P.assemble()
 b = dolfinx.fem.assemble.assemble_vector_nest(L)
 
 # Modify ('lift') the RHS for Dirichlet boundary conditions
-dolfinx.fem.assemble.apply_lifting_nest(b, a, bcs)
+dolfinx.fem.assemble.apply_lifting_nest(b, a, bcs=bcs)
 
 # Sum contributions from ghost entries on the owner
 for b_sub in b.getNestSubVecs():
     b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
 # Set Dirichlet boundary condition values in the RHS
-bcs0 = dolfinx.cpp.fem.bcs_rows(dolfinx.fem.assemble._create_cpp_form(L), bcs)
+bcs0 = fem.bcs_by_block(extract_function_spaces(L), bcs)
 dolfinx.fem.assemble.set_bc_nest(b, bcs0)
 
 # Ths pressure field for this problem is determined only up to a
@@ -218,10 +217,10 @@ A.setNullSpace(nsp)
 # the MINRES method, and a block-diagonal preconditioner using PETSc's
 # additive fieldsplit type preconditioner::
 
-ksp = PETSc.KSP().create(mesh.mpi_comm())
+ksp = PETSc.KSP().create(mesh.comm)
 ksp.setOperators(A, P)
 ksp.setType("minres")
-ksp.setTolerances(rtol=1e-8)
+ksp.setTolerances(rtol=1e-9)
 ksp.getPC().setType("fieldsplit")
 ksp.getPC().setFieldSplitType(PETSc.PC.CompositeType.ADDITIVE)
 
@@ -248,13 +247,13 @@ ksp.setFromOptions()
 # combined to form a nested vector and the system is solved::
 
 u, p = Function(V), Function(Q)
-x = PETSc.Vec().createNest([u.vector, p.vector])
+x = PETSc.Vec().createNest([_cpp.la.petsc.create_vector_wrap(u.x), _cpp.la.petsc.create_vector_wrap(p.x)])
 ksp.solve(b, x)
 
 # Norms of the solution vectors are computed::
 
-norm_u_0 = u.vector.norm()
-norm_p_0 = p.vector.norm()
+norm_u_0 = u.x.norm()
+norm_p_0 = p.x.norm()
 if MPI.COMM_WORLD.rank == 0:
     print("(A) Norm of velocity coefficient vector (nested, iterative): {}".format(norm_u_0))
     print("(A) Norm of pressure coefficient vector (nested, iterative): {}".format(norm_p_0))
@@ -264,12 +263,12 @@ if MPI.COMM_WORLD.rank == 0:
 # are updated.
 
 with XDMFFile(MPI.COMM_WORLD, "velocity.xdmf", "w") as ufile_xdmf:
-    u.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+    u.x.scatter_forward()
     ufile_xdmf.write_mesh(mesh)
     ufile_xdmf.write_function(u)
 
 with XDMFFile(MPI.COMM_WORLD, "pressure.xdmf", "w") as pfile_xdmf:
-    p.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+    p.x.scatter_forward()
     pfile_xdmf.write_mesh(mesh)
     pfile_xdmf.write_function(p)
 
@@ -280,11 +279,11 @@ with XDMFFile(MPI.COMM_WORLD, "pressure.xdmf", "w") as pfile_xdmf:
 # Next, we solve same problem, but now with monolithic (non-nested)
 # matrices and iterative solvers.
 
-A = dolfinx.fem.assemble_matrix_block(a, bcs)
+A = dolfinx.fem.assemble_matrix_block(a, bcs=bcs)
 A.assemble()
-P = dolfinx.fem.assemble_matrix_block(a_p, bcs)
+P = dolfinx.fem.assemble_matrix_block(a_p, bcs=bcs)
 P.assemble()
-b = dolfinx.fem.assemble.assemble_vector_block(L, a, bcs)
+b = dolfinx.fem.assemble.assemble_vector_block(L, a, bcs=bcs)
 
 # Set near null space for pressure
 null_vec = A.createVecLeft()
@@ -304,9 +303,9 @@ is_u = PETSc.IS().createStride(V_map.size_local * V.dofmap.index_map_bs, offset_
 is_p = PETSc.IS().createStride(Q_map.size_local, offset_p, 1, comm=PETSc.COMM_SELF)
 
 # Create Krylov solver
-ksp = PETSc.KSP().create(mesh.mpi_comm())
+ksp = PETSc.KSP().create(mesh.comm)
 ksp.setOperators(A, P)
-ksp.setTolerances(rtol=1e-8)
+ksp.setTolerances(rtol=1e-9)
 ksp.setType("minres")
 ksp.getPC().setType("fieldsplit")
 ksp.getPC().setFieldSplitType(PETSc.PC.CompositeType.ADDITIVE)
@@ -337,13 +336,13 @@ ksp.solve(b, x)
 # Create Functions and scatter x solution
 u, p = Function(V), Function(Q)
 offset = V_map.size_local * V.dofmap.index_map_bs
-u.vector.array[:] = x.array_r[:offset]
-p.vector.array[:] = x.array_r[offset:]
+u.x.array[:offset] = x.array_r[:offset]
+p.x.array[:(len(x.array_r) - offset)] = x.array_r[offset:]
 
 # We can calculate the :math:`L^2` norms of u and p as follows::
 
-norm_u_1 = u.vector.norm()
-norm_p_1 = p.vector.norm()
+norm_u_1 = u.x.norm()
+norm_p_1 = p.x.norm()
 if MPI.COMM_WORLD.rank == 0:
     print("(B) Norm of velocity coefficient vector (blocked, iterative): {}".format(norm_u_1))
     print("(B) Norm of pressure coefficient vector (blocked, interative): {}".format(norm_p_1))
@@ -356,7 +355,7 @@ assert np.isclose(norm_p_1, norm_p_0)
 # Solve same problem, but now with monolithic matrices and a direct solver
 
 # Create LU solver
-ksp = PETSc.KSP().create(mesh.mpi_comm())
+ksp = PETSc.KSP().create(mesh.comm)
 ksp.setOperators(A)
 ksp.setType("preonly")
 ksp.getPC().setType("lu")
@@ -372,13 +371,13 @@ ksp.solve(b, x)
 # Create Functions and scatter x solution
 u, p = Function(V), Function(Q)
 offset = V_map.size_local * V.dofmap.index_map_bs
-u.vector.array[:] = x.array_r[:offset]
-p.vector.array[:] = x.array_r[offset:]
+u.x.array[:offset] = x.array_r[:offset]
+p.x.array[:(len(x.array_r) - offset)] = x.array_r[offset:]
 
 # We can calculate the :math:`L^2` norms of u and p as follows::
 
-norm_u_2 = u.vector.norm()
-norm_p_2 = p.vector.norm()
+norm_u_2 = u.x.norm()
+norm_p_2 = p.x.norm()
 if MPI.COMM_WORLD.rank == 0:
     print("(C) Norm of velocity coefficient vector (blocked, direct): {}".format(norm_u_2))
     print("(C) Norm of pressure coefficient vector (blocked, direct): {}".format(norm_p_2))
@@ -395,13 +394,13 @@ assert np.isclose(norm_p_2, norm_p_0)
 # Create the function space
 TH = P2 * P1
 W = FunctionSpace(mesh, TH)
-W0 = W.sub(0).collapse()
+W0, _ = W.sub(0).collapse()
 
 # No slip boundary condition
 noslip = Function(V)
 facets = locate_entities_boundary(mesh, 1, noslip_boundary)
 dofs = locate_dofs_topological((W.sub(0), V), 1, facets)
-bc0 = DirichletBC(noslip, dofs, W.sub(0))
+bc0 = dirichletbc(noslip, dofs, W.sub(0))
 
 
 # Driving velocity condition u = (1, 0) on top boundary (y = 1)
@@ -409,17 +408,15 @@ lid_velocity = Function(W0)
 lid_velocity.interpolate(lid_velocity_expression)
 facets = locate_entities_boundary(mesh, 1, lid)
 dofs = locate_dofs_topological((W.sub(0), V), 1, facets)
-bc1 = DirichletBC(lid_velocity, dofs, W.sub(0))
+bc1 = dirichletbc(lid_velocity, dofs, W.sub(0))
 
 
 # Since for this problem the pressure is only determined up to a
 # constant, we pin the pressure at the point (0, 0)
 zero = Function(Q)
-with zero.vector.localForm() as zero_local:
-    zero_local.set(0.0)
-dofs = locate_dofs_geometrical((W.sub(1), Q),
-                               lambda x: np.isclose(x.T, [0, 0, 0]).all(axis=1))
-bc2 = DirichletBC(zero, dofs, W.sub(1))
+zero.x.set(0.0)
+dofs = locate_dofs_geometrical((W.sub(1), Q), lambda x: np.isclose(x.T, [0, 0, 0]).all(axis=1))
+bc2 = dirichletbc(zero, dofs, W.sub(1))
 
 # Collect Dirichlet boundary conditions
 bcs = [bc0, bc1, bc2]
@@ -428,23 +425,23 @@ bcs = [bc0, bc1, bc2]
 (u, p) = ufl.TrialFunctions(W)
 (v, q) = ufl.TestFunctions(W)
 f = Function(W0)
-zero = dolfinx.Constant(mesh, 0.0)
-a = (inner(grad(u), grad(v)) + inner(p, div(v)) + inner(div(u), q)) * dx
-L = inner(f, v) * dx
+a = form((inner(grad(u), grad(v)) + inner(p, div(v)) + inner(div(u), q)) * dx)
+L = form(inner(f, v) * dx)
+
 
 # Assemble LHS matrix and RHS vector
-A = dolfinx.fem.assemble_matrix(a, bcs)
+A = dolfinx.fem.assemble_matrix(a, bcs=bcs)
 A.assemble()
 b = dolfinx.fem.assemble.assemble_vector(L)
 
-dolfinx.fem.assemble.apply_lifting(b, [a], [bcs])
+dolfinx.fem.assemble.apply_lifting(b, [a], bcs=[bcs])
 b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
 # Set Dirichlet boundary condition values in the RHS
 dolfinx.fem.assemble.set_bc(b, bcs)
 
 # Create and configure solver
-ksp = PETSc.KSP().create(mesh.mpi_comm())
+ksp = PETSc.KSP().create(mesh.comm)
 ksp.setOperators(A)
 ksp.setType("preonly")
 ksp.getPC().setType("lu")
@@ -459,8 +456,8 @@ u = U.sub(0).collapse()
 p = U.sub(1).collapse()
 
 # Compute norms
-norm_u_3 = u.vector.norm()
-norm_p_3 = p.vector.norm()
+norm_u_3 = u.x.norm()
+norm_p_3 = p.x.norm()
 if MPI.COMM_WORLD.rank == 0:
     print("(D) Norm of velocity coefficient vector (monolithic, direct): {}".format(norm_u_3))
     print("(D) Norm of pressure coefficient vector (monolithic, direct): {}".format(norm_p_3))
@@ -468,11 +465,11 @@ assert np.isclose(norm_u_3, norm_u_0)
 
 # Write the solution to file
 with XDMFFile(MPI.COMM_WORLD, "new_velocity.xdmf", "w") as ufile_xdmf:
-    u.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+    u.x.scatter_forward()
     ufile_xdmf.write_mesh(mesh)
     ufile_xdmf.write_function(u)
 
 with XDMFFile(MPI.COMM_WORLD, "my.xdmf", "w") as pfile_xdmf:
-    p.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+    p.x.scatter_forward()
     pfile_xdmf.write_mesh(mesh)
     pfile_xdmf.write_function(p)

@@ -1,8 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
 project(dolfinx-demos)
 
-# Find DOLFINX config file
-find_package(Basix REQUIRED)
+# Find DOLFINx config file
 find_package(DOLFINX REQUIRED)
 
 # Enable testing
@@ -18,4 +17,6 @@ endmacro(add_demo_subdirectory)
 
 # Add demos
 add_demo_subdirectory(poisson)
+add_demo_subdirectory(poisson_matrix_free)
 add_demo_subdirectory(hyperelasticity)
+add_demo_subdirectory(interpolation-io)

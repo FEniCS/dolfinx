@@ -1,17 +1,21 @@
 // Copyright (C) 2020 Matthew Scroggs
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "permutationcomputation.h"
+#include "Topology.h"
+#include "cell_types.h"
 #include <algorithm>
 #include <bitset>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/graph/AdjacencyList.h>
-#include <dolfinx/mesh/Topology.h>
 
-#define _BITSETSIZE 32
+namespace
+{
+constexpr int _BITSETSIZE = 32;
+} // namespace
 
 using namespace dolfinx;
 
@@ -337,7 +341,6 @@ mesh::compute_entity_permutations(const mesh::Topology& topology)
       {
         facet_permutations[c * facets_per_cell + i]
             = (cell_permutation_info[c] >> (3 * i)) & 7;
-        // facet_permutations(i, c) = (cell_permutation_info[c] >> (3 * i)) & 7;
       }
     }
   }
@@ -355,10 +358,7 @@ mesh::compute_entity_permutations(const mesh::Topology& topology)
       for (int c = 0; c < num_cells; ++c)
       {
         for (int i = 0; i < facets_per_cell; ++i)
-        {
           facet_permutations[c * facets_per_cell + i] = edge_perm[c][i];
-          // facet_permutations(i, c) = edge_perm[c][i];
-        }
       }
     }
   }

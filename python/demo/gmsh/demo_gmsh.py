@@ -5,18 +5,26 @@
 # =====================================
 # Copyright (C) 2020 Garth N. Wells and Jørgen S. Dokken ::
 
+import sys
+
+try:
+    import gmsh
+except ImportError:
+    print("This demo requires gmsh to be installed")
+    sys.exit(0)
+
 import numpy as np
-from dolfinx import cpp
-from dolfinx.cpp.io import extract_local_entities, perm_gmsh
-from dolfinx.io import (XDMFFile, extract_gmsh_geometry,
+
+from dolfinx.graph import create_adjacencylist
+from dolfinx.io import (XDMFFile, cell_perm_gmsh, distribute_entity_data,
+                        extract_gmsh_geometry,
                         extract_gmsh_topology_and_markers, ufl_mesh_from_gmsh)
-from dolfinx.mesh import create_mesh, create_meshtags
+from dolfinx.mesh import CellType, create_mesh, create_meshtags
+
 from mpi4py import MPI
 
-import gmsh
-
-# Generate a mesh on each rank with the gmsh API, and create a DOLFIN-X mesh
-# on each rank. ::
+# Generate a mesh on each rank with the gmsh API, and create a DOLFINx
+# mesh on each rank. ::
 
 gmsh.initialize()
 gmsh.option.setNumber("General.Terminal", 0)
@@ -44,8 +52,8 @@ mesh = create_mesh(MPI.COMM_SELF, cells, x, ufl_mesh_from_gmsh(element_types[0],
 with XDMFFile(MPI.COMM_SELF, "mesh_rank_{}.xdmf".format(MPI.COMM_WORLD.rank), "w") as file:
     file.write_mesh(mesh)
 
-# Create a distributed (parallel) mesh with affine geometry.
-# Generate mesh on rank 0, then build a distributed mesh ::
+# Create a distributed (parallel) mesh with affine geometry. Generate
+# mesh on rank 0, then build a distributed mesh ::
 
 if MPI.COMM_WORLD.rank == 0:
     # Generate a mesh
@@ -59,7 +67,7 @@ if MPI.COMM_WORLD.rank == 0:
     model.occ.synchronize()
 
     # Add physical tag 1 for exterior surfaces
-    boundary = model.getBoundary((3, model_dim_tags[0][0][1]))
+    boundary = model.getBoundary(model_dim_tags[0], oriented=False)
     boundary_ids = [b[1] for b in boundary]
     model.addPhysicalGroup(2, boundary_ids, tag=1)
     model.setPhysicalName(2, 1, "Sphere surface")
@@ -94,10 +102,10 @@ else:
 
 mesh = create_mesh(MPI.COMM_WORLD, cells, x, ufl_mesh_from_gmsh(gmsh_cell_id, 3))
 mesh.name = "ball_d1"
-local_entities, local_values = extract_local_entities(mesh, 2, marked_facets, facet_values)
+entities, values = distribute_entity_data(mesh, 2, marked_facets, facet_values)
 
 mesh.topology.create_connectivity(2, 0)
-mt = create_meshtags(mesh, 2, cpp.graph.AdjacencyList_int32(local_entities), np.int32(local_values))
+mt = create_meshtags(mesh, 2, create_adjacencylist(entities), np.int32(values))
 mt.name = "ball_d1_surface"
 
 with XDMFFile(MPI.COMM_WORLD, "mesh.xdmf", "w") as file:
@@ -105,8 +113,8 @@ with XDMFFile(MPI.COMM_WORLD, "mesh.xdmf", "w") as file:
     mesh.topology.create_connectivity(2, 3)
     file.write_meshtags(mt, geometry_xpath="/Xdmf/Domain/Grid[@Name='ball_d1']/Geometry")
 
-# Create a distributed (parallel) mesh with quadratic geometry.
-# Generate mesh on rank 0, then build a distributed mesh. ::
+# Create a distributed (parallel) mesh with quadratic geometry. Generate
+# mesh on rank 0, then build a distributed mesh. ::
 
 if MPI.COMM_WORLD.rank == 0:
     # Using model.setCurrent(model_name) lets you change between models
@@ -140,22 +148,22 @@ else:
     cells, x = np.empty([0, num_nodes]), np.empty([0, 3])
     marked_facets, facet_values = np.empty((0, 6)).astype(np.int64), np.empty((0,)).astype(np.int32)
 
-# Permute the topology from GMSH to DOLFIN-X ordering
+# Permute the topology from GMSH to DOLFINx ordering
 domain = ufl_mesh_from_gmsh(gmsh_cell_id, 3)
 
-gmsh_tetra10 = perm_gmsh(cpp.mesh.CellType.tetrahedron, 10)
+gmsh_tetra10 = cell_perm_gmsh(CellType.tetrahedron, 10)
 cells = cells[:, gmsh_tetra10]
 
 mesh = create_mesh(MPI.COMM_WORLD, cells, x, domain)
 mesh.name = "ball_d2"
 
 # Permute also entities which are tagged
-gmsh_triangle6 = perm_gmsh(cpp.mesh.CellType.triangle, 6)
+gmsh_triangle6 = cell_perm_gmsh(CellType.triangle, 6)
 marked_facets = marked_facets[:, gmsh_triangle6]
 
-local_entities, local_values = extract_local_entities(mesh, 2, marked_facets, facet_values)
+entities, values = distribute_entity_data(mesh, 2, marked_facets, facet_values)
 mesh.topology.create_connectivity(2, 0)
-mt = create_meshtags(mesh, 2, cpp.graph.AdjacencyList_int32(local_entities), np.int32(local_values))
+mt = create_meshtags(mesh, 2, create_adjacencylist(entities), np.int32(values))
 mt.name = "ball_d2_surface"
 with XDMFFile(MPI.COMM_WORLD, "mesh.xdmf", "a") as file:
     file.write_mesh(mesh)
@@ -219,21 +227,21 @@ else:
     marked_facets, facet_values = np.empty((0, 6)).astype(np.int64), np.empty((0,)).astype(np.int32)
 
 
-# Permute the mesh topology from GMSH ordering to DOLFIN-X ordering
+# Permute the mesh topology from GMSH ordering to DOLFINx ordering
 domain = ufl_mesh_from_gmsh(gmsh_cell_id, 3)
-gmsh_hex27 = perm_gmsh(cpp.mesh.CellType.hexahedron, 27)
+gmsh_hex27 = cell_perm_gmsh(CellType.hexahedron, 27)
 cells = cells[:, gmsh_hex27]
 
 mesh = create_mesh(MPI.COMM_WORLD, cells, x, domain)
 mesh.name = "hex_d2"
 
 # Permute also entities which are tagged
-gmsh_quad9 = perm_gmsh(cpp.mesh.CellType.quadrilateral, 9)
+gmsh_quad9 = cell_perm_gmsh(CellType.quadrilateral, 9)
 marked_facets = marked_facets[:, gmsh_quad9]
 
-local_entities, local_values = extract_local_entities(mesh, 2, marked_facets, facet_values)
+entities, values = distribute_entity_data(mesh, 2, marked_facets, facet_values)
 mesh.topology.create_connectivity(2, 0)
-mt = create_meshtags(mesh, 2, cpp.graph.AdjacencyList_int32(local_entities), np.int32(local_values))
+mt = create_meshtags(mesh, 2, create_adjacencylist(entities), np.int32(values))
 mt.name = "hex_d2_surface"
 
 with XDMFFile(MPI.COMM_WORLD, "mesh.xdmf", "a") as file:

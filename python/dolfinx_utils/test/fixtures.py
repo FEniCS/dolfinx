@@ -1,17 +1,18 @@
 # Copyright (C) 2014-2014 Martin Sandve Alnæs and Aslak Wigdahl Bergersen
 #
-# This file is part of DOLFINX (https://www.fenicsproject.org)
+# This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Shared fixtures for unit tests."""
 
 import os
-import time
 import shutil
+import time
 from collections import defaultdict
-from mpi4py import MPI
 
 import pytest
+
+from mpi4py import MPI
 
 # --- Test fixtures (use as is or as examples): ---
 

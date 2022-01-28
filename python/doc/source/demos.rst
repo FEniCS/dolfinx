@@ -1,4 +1,4 @@
-.. DOLFIN demos
+.. DOLFINx demos
 
 Demos
 =====
@@ -7,7 +7,7 @@ Demos
 Introductory demos
 ------------------
 
-These demos illustrate core DOLFIN/FEniCS usage and are a good way to
+These demos illustrate core DOLFINx/FEniCSx usage and are a good way to
 begin learning FEniCS. We recommend that you go through these examples
 in the given order.
 
@@ -40,3 +40,4 @@ All documented demos
    demos/helmholtz2D/demo_helmholtz_2d.py.rst
    demos/mixed-elasticity-sc/static-condensation-elasticity.py.rst
    demos/pyvista/demo_pyvista.py.rst
+   demos/interpolation-io/demo_interpolation-io.py.rst

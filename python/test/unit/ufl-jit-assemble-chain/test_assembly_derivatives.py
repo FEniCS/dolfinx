@@ -2,20 +2,23 @@
 
 # Copyright (C) 2011 Martin S. Alnaes
 #
-# This file is part of DOLFINX (https://www.fenicsproject.org)
+# This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import math
 
-import numpy
+import numpy as np
 import pytest
-from dolfinx import RectangleMesh, UnitIntervalMesh
-from mpi4py import MPI
+
+from dolfinx.fem import assemble_scalar
+from dolfinx.mesh import create_rectangle, create_unit_interval
 from ufl import (FacetNormal, SpatialCoordinate, acos, as_matrix, as_vector,
                  asin, atan, cos, cross, det, dev, diff, div, dot, ds, dx,
                  elem_div, elem_mult, elem_op, elem_pow, erf, exp, grad, inner,
                  ln, outer, sin, skew, sym, tan, tr)
+
+from mpi4py import MPI
 
 
 @pytest.mark.skip
@@ -23,7 +26,7 @@ def test_diff_then_integrate():
 
     # Define 1D geometry
     n = 21
-    mesh = UnitIntervalMesh(MPI.COMM_WORLD, n)
+    mesh = create_unit_interval(MPI.COMM_WORLD, n)
 
     # Shift and scale mesh
     x0, x1 = 1.5, 3.14
@@ -129,11 +132,11 @@ def test_diff_then_integrate():
             print(x)
             print(f)
 
-        # Apply integration with DOLFINX
+        # Apply integration with DOLFINx
         # (also passes through form compilation and jit)
         M = f * dx
         f_integral = assemble_scalar(M)  # noqa
-        f_integral = mesh.mpi_comm().allreduce(f_integral, op=MPI.SUM)
+        f_integral = mesh.comm.allreduce(f_integral, op=MPI.SUM)
 
         # Compute integral of f manually from anti-derivative F
         # (passes through pybind11 interface and uses UFL evaluation)
@@ -150,12 +153,12 @@ def test_div_grad_then_integrate_over_cells_and_boundary():
 
     # Define 2D geometry
     n = 10
-    mesh = RectangleMesh([numpy.array([0.0, 0.0, 0.0]),
-                          numpy.array([2.0, 3.0, 0.0])], 2 * n, 3 * n)
+    mesh = create_rectangle([np.array([0.0, 0.0]),
+                             np.array([2.0, 3.0])], 2 * n, 3 * n)
 
     x, y = SpatialCoordinate(mesh)
     xs = 0.1 + 0.8 * x / 2  # scaled to be within [0.1,0.9]
-#    ys = 0.1 + 0.8 * y / 3  # scaled to be within [0.1,0.9]
+    # ys = 0.1 + 0.8 * y / 3  # scaled to be within [0.1,0.9]
     n = FacetNormal(mesh)
 
     # Define list of expressions to test, and configure accuracies

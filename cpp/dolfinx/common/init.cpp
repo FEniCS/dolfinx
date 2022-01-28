@@ -1,6 +1,6 @@
 // Copyright (C) 2005-2011 Anders Logg
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -12,7 +12,7 @@
 void dolfinx::init(int argc, char* argv[])
 {
   common::subsystem::init_logging(argc, argv);
-  LOG(INFO) << "Initializing DOLFINX version" << DOLFINX_VERSION;
+  LOG(INFO) << "Initializing DOLFINx version" << DOLFINX_VERSION;
   common::subsystem::init_petsc(argc, argv);
 }
 //-----------------------------------------------------------------------------

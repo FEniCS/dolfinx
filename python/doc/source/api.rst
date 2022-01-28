@@ -13,7 +13,8 @@ Public user interface
 
    dolfinx.common
    dolfinx.fem
-   dolfinx.generation
+   dolfinx.geometry
+   dolfinx.graph
    dolfinx.io
    dolfinx.jit
    dolfinx.la
@@ -25,7 +26,7 @@ Public user interface
 pybind11 wrapped interface
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-These are interfaces to the C++ component of DOLFIN, and are low-level
+These are interfaces to the C++ component of DOLFINx, and are low-level
 and subject to change. They are not intended for application-level
 use.
 
@@ -34,7 +35,6 @@ use.
 
    dolfinx.cpp.common
    dolfinx.cpp.fem
-   dolfinx.cpp.generation
    dolfinx.cpp.geometry
    dolfinx.cpp.graph
    dolfinx.cpp.io
@@ -47,4 +47,4 @@ C++
 ===
 
 The C++ API is documented `here
-<https://fenicsproject.org/docs/dolfinx/dev/cpp/>`_.
+<https://docs.fenicsproject.org/dolfinx/main/cpp/>`_.

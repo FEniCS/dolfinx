@@ -1,6 +1,6 @@
 // Copyright (C) 2012-2020 Chris Richardson
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -8,27 +8,23 @@
 
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
-#include <dolfinx/common/array2d.h>
 #include <map>
 #include <memory>
 #include <set>
 #include <vector>
 
-namespace dolfinx
-{
-
-namespace mesh
+namespace dolfinx::mesh
 {
 class Mesh;
 enum class GhostMode;
-} // namespace mesh
+} // namespace dolfinx::mesh
 
-namespace common
+namespace dolfinx::common
 {
 class IndexMap;
 }
 
-namespace refinement
+namespace dolfinx::refinement
 {
 
 /// Compute the sharing of edges between processes.
@@ -49,7 +45,7 @@ compute_edge_sharing(const mesh::Mesh& mesh);
 void update_logical_edgefunction(
     const MPI_Comm& neighbor_comm,
     const std::vector<std::vector<std::int32_t>>& marked_for_update,
-    std::vector<bool>& marked_edges, const common::IndexMap& map_e);
+    std::vector<std::int8_t>& marked_edges, const common::IndexMap& map_e);
 
 /// Add new vertex for each marked edge, and create
 /// new_vertex_coordinates and global_edge->new_vertex map.
@@ -59,11 +55,11 @@ void update_logical_edgefunction(
 /// @param[in] mesh Existing mesh
 /// @param[in] marked_edges
 /// @return edge_to_new_vertex map and geometry array
-std::pair<std::map<std::int32_t, std::int64_t>, array2d<double>>
+std::pair<std::map<std::int32_t, std::int64_t>, xt::xtensor<double, 2>>
 create_new_vertices(
     const MPI_Comm& neighbor_comm,
     const std::map<std::int32_t, std::vector<std::int32_t>>& shared_edges,
-    const mesh::Mesh& mesh, const std::vector<bool>& marked_edges);
+    const mesh::Mesh& mesh, const std::vector<std::int8_t>& marked_edges);
 
 /// Use vertex and topology data to partition new mesh across
 /// processes
@@ -75,7 +71,7 @@ create_new_vertices(
 /// @return New mesh
 mesh::Mesh partition(const mesh::Mesh& old_mesh,
                      const graph::AdjacencyList<std::int64_t>& cell_topology,
-                     const array2d<double>& new_vertex_coordinates,
+                     const xt::xtensor<double, 2>& new_vertex_coordinates,
                      bool redistribute, mesh::GhostMode ghost_mode);
 
 /// Adjust indices to account for extra n values on each process This
@@ -86,9 +82,7 @@ mesh::Mesh partition(const mesh::Mesh& old_mesh,
 /// @param n Number of new entries to be accommodated on this process
 /// @return Global indices as if "n" extra values are appended on each
 ///   process
-std::vector<std::int64_t>
-adjust_indices(const std::shared_ptr<const common::IndexMap>& index_map,
-               std::int32_t n);
+std::vector<std::int64_t> adjust_indices(const common::IndexMap& index_map,
+                                         std::int32_t n);
 
-} // namespace refinement
-} // namespace dolfinx
+} // namespace dolfinx::refinement

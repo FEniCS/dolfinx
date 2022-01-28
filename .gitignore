@@ -67,7 +67,7 @@ test_*_tempdir
 
 .cache
 
-# FFCX generated demo files
+# FFCx generated demo files
 cpp/demo/**/**/*.h
 cpp/demo/documented/cahn-hilliard/CahnHilliard2D.cpp
 cpp/demo/documented/cahn-hilliard/CahnHilliard3D.cpp

@@ -8,9 +8,12 @@ on:
   schedule:
     # '*' is a special character in YAML, so string must be quoted
     - cron: "0 2 * * THU"
+  workflow_dispatch: ~
 
 jobs:
   build:
+    env:
+      release_version: 0.3.0
     strategy:
       matrix:
         # os: [ubuntu-20.04, macos-10.15]
@@ -18,75 +21,86 @@ jobs:
       fail-fast: false
     runs-on: ${{ matrix.os }}
 
-    env:
-      MPLBACKEND: agg
-      OPENBLAS_NUM_THREADS: 1
-      OMPI_MCA_rmaps_base_oversubscribe: 1
-      OMPI_MCA_plm: isolated
-      OMPI_MCA_btl_vader_single_copy_mechanism: none
-      OMPI_MCA_mpi_yield_when_idle: 1
-      OMPI_MCA_hwloc_base_binding_policy: none
-
     steps:
-
-      # grub-efi: https://github.com/actions/virtual-environments/issues/1605
-      - name: Install compilers
-        run: |
-          sudo apt-get update
-          sudo apt-get install grub-efi
-          sudo update-grub
-          sudo apt-get upgrade
-          sudo apt-get install g++-10 gfortran-10 grub-efi
-        if: matrix.os == 'ubuntu-20.04'
-
       - name: Get Spack
         uses: actions/checkout@v2
         with:
           path: ./spack
           repository: spack/spack
-
-      - name: Build DOLFIN-X (C++) via Spack
+      - name: Build DOLFINx (C++) development version via Spack
         run: |
           . ./spack/share/spack/setup-env.sh
-          spack env create cpp
-          spack env activate cpp
-          echo "  concretization: together" >> ./spack/var/spack/environments/cpp/spack.yaml
+          spack env create cpp-main
+          spack env activate cpp-main
+          spack add fenics-dolfinx@main
+          spack install
+      - name: Build DOLFINx (C++) release version via Spack
+        run: |
+          . ./spack/share/spack/setup-env.sh
+          spack env create cpp-release
+          spack env activate cpp-release
           spack add fenics-dolfinx
-          spack -v install
+          spack install
 
-      - name: Get DOLFIN-X code (to access test files)
+      - name: Get DOLFINx code (to access test files)
         uses: actions/checkout@v2
         with:
-          path: ./dolfinx-test
-
-      - name: Run a C++ test via Spack
+          ref: main
+          path: ./dolfinx-main
+      - name: Run a C++ test (development version)
         run: |
           . ./spack/share/spack/setup-env.sh
-          spack env activate cpp
-          cd dolfinx-test/cpp/
-          python cmake/scripts/generate-cmakefiles.py
+          spack env activate cpp-main
+          cd dolfinx-main/cpp/
           cd demo/poisson
           ffcx poisson.ufl
           cmake .
           export VERBOSE=1
-          make
+          make -j2
           mpirun -np 2 ./demo_poisson
-
-      - name: Build DOLFIN-X (Python) and test dependencies via Spack
+      - name: Get DOLFINx code (to access test files)
+        uses: actions/checkout@v2
+        with:
+          ref: v${{ env.release_version }}
+          path: ./dolfinx-release
+      - name: Run a C++ test (release version)
         run: |
           . ./spack/share/spack/setup-env.sh
-          spack env create py
-          spack env activate py
-          echo "  concretization: together" >> ./spack/var/spack/environments/py/spack.yaml
+          spack env activate cpp-release
+          cd dolfinx-release/cpp/
+          cd demo/poisson
+          ffcx poisson.ufl
+          cmake .
+          export VERBOSE=1
+          make -j2
+          mpirun -np 2 ./demo_poisson
+
+      - name: Build DOLFINx (Python, development)
+        run: |
+          . ./spack/share/spack/setup-env.sh
+          spack env create py-main
+          spack env activate py-main
+          spack add py-fenics-dolfinx@main
+          spack install
+      - name: Build DOLFINx (Python, release version)
+        run: |
+          . ./spack/share/spack/setup-env.sh
+          spack env create py-release
+          spack env activate py-release
           spack add py-fenics-dolfinx
-          spack add py-pip py-pytest py-pytest-xdist py-scipy
           spack install
 
       # NOTE: numba is installed via pip because the spack package takes
       # an extremely long time to compile
-      - name: Run DOLFIN-X (Python) tests
+      - name: Run DOLFINx (Python, development) test
         run: |
           . ./spack/share/spack/setup-env.sh
-          spack env activate py
+          spack env activate py-main
           pip install numba
-          mpirun -np 2 python3 ./dolfinx-test/python/demo/stokes-taylor-hood/demo_stokes-taylor-hood.py
+          mpirun -np 2 python3 ./dolfinx-main/python/demo/stokes-taylor-hood/demo_stokes-taylor-hood.py
+      - name: Run DOLFINx (Python, release) test
+        run: |
+          . ./spack/share/spack/setup-env.sh
+          spack env activate py-release
+          pip install numba
+          mpirun -np 2 python3 ./dolfinx-release/python/demo/stokes-taylor-hood/demo_stokes-taylor-hood.py

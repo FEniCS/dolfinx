@@ -1,12 +1,12 @@
 // Copyright (C) 2007-2019 Garth N. Wells
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "sparsitybuild.h"
+#include "DofMap.h"
 #include <dolfinx/common/IndexMap.h>
-#include <dolfinx/fem/DofMap.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/mesh/Topology.h>

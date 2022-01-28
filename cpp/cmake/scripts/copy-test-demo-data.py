@@ -1,21 +1,21 @@
 # Copyright (C) 2013 Johan Hake
 #
-# This file is part of DOLFIN.
+# This file is part of DOLFINx.
 #
-# DOLFIN is free software: you can redistribute it and/or modify
+# DOLFINx is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# DOLFIN is distributed in the hope that it will be useful,
+# DOLFINx is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU Lesser General Public License for more details.
 #
 # You should have received a copy of the GNU Lesser General Public License
-# along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
+# along with DOLFINx. If not, see <http://www.gnu.org/licenses/>.
 #
-# Copy all data, tests and demo to a given directory relative to the top dolfinx
+# Copy all data, tests and demo to a given directory relative to the top DOLFINx
 # source directory
 
 import os
@@ -43,7 +43,7 @@ def copy_data(top_destdir, complex_mode):
 
     if abs_destdir == dolfinx_dir:
         raise RuntimeError("destination directory cannot be the same as "
-                           "the dolfinx source directory")
+                           "the DOLFINx source directory")
 
     if not os.path.isdir(abs_destdir):
         raise RuntimeError("%s is not a directory." % abs_destdir)

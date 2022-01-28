@@ -1,6 +1,6 @@
 // Copyright (C) 2017 Tormod Landet
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -25,7 +25,8 @@ public:
   MPICommWrapper(MPI_Comm comm) : _comm(comm) {}
 
   /// Assignment operator
-  MPICommWrapper& operator=(const MPI_Comm comm) {
+  MPICommWrapper& operator=(const MPI_Comm comm)
+  {
     this->_comm = comm;
     return *this;
   }

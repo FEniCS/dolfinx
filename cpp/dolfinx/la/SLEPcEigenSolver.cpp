@@ -1,17 +1,16 @@
 // Copyright (C) 2005-2018 Garth N. Wells
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #ifdef HAS_SLEPC
 
 #include "SLEPcEigenSolver.h"
-#include "VectorSpaceBasis.h"
+#include "petsc.h"
 #include "utils.h"
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/log.h>
-#include <dolfinx/la/PETScVector.h>
 #include <petscmat.h>
 #include <slepcversion.h>
 
@@ -31,8 +30,14 @@ SLEPcEigenSolver::SLEPcEigenSolver(EPS eps, bool inc_ref_count) : _eps(eps)
   {
     ierr = PetscObjectReference((PetscObject)_eps);
     if (ierr != 0)
-      petsc_error(ierr, __FILE__, "PetscObjectReference");
+      petsc::error(ierr, __FILE__, "PetscObjectReference");
   }
+}
+//-----------------------------------------------------------------------------
+SLEPcEigenSolver::SLEPcEigenSolver(SLEPcEigenSolver&& solver)
+    : _eps(std::exchange(solver._eps, nullptr))
+{
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 SLEPcEigenSolver::~SLEPcEigenSolver()
@@ -41,9 +46,14 @@ SLEPcEigenSolver::~SLEPcEigenSolver()
     EPSDestroy(&_eps);
 }
 //-----------------------------------------------------------------------------
+SLEPcEigenSolver& SLEPcEigenSolver::operator=(SLEPcEigenSolver&& solver)
+{
+  std::swap(_eps, solver._eps);
+  return *this;
+}
+//-----------------------------------------------------------------------------
 void SLEPcEigenSolver::set_operators(const Mat A, const Mat B)
 {
-  // Set operators
   assert(_eps);
   EPSSetOperators(_eps, A, B);
 }
@@ -157,7 +167,7 @@ void SLEPcEigenSolver::set_options_prefix(std::string options_prefix)
   assert(_eps);
   PetscErrorCode ierr = EPSSetOptionsPrefix(_eps, options_prefix.c_str());
   if (ierr != 0)
-    petsc_error(ierr, __FILE__, "EPSSetOptionsPrefix");
+    petsc::error(ierr, __FILE__, "EPSSetOptionsPrefix");
 }
 //-----------------------------------------------------------------------------
 std::string SLEPcEigenSolver::get_options_prefix() const
@@ -166,7 +176,7 @@ std::string SLEPcEigenSolver::get_options_prefix() const
   const char* prefix = nullptr;
   PetscErrorCode ierr = EPSGetOptionsPrefix(_eps, &prefix);
   if (ierr != 0)
-    petsc_error(ierr, __FILE__, "EPSGetOptionsPrefix");
+    petsc::error(ierr, __FILE__, "EPSGetOptionsPrefix");
   return std::string(prefix);
 }
 //-----------------------------------------------------------------------------
@@ -175,7 +185,7 @@ void SLEPcEigenSolver::set_from_options() const
   assert(_eps);
   PetscErrorCode ierr = EPSSetFromOptions(_eps);
   if (ierr != 0)
-    petsc_error(ierr, __FILE__, "EPSSetFromOptions");
+    petsc::error(ierr, __FILE__, "EPSSetFromOptions");
 }
 //-----------------------------------------------------------------------------
 int SLEPcEigenSolver::get_iteration_number() const
@@ -188,7 +198,7 @@ int SLEPcEigenSolver::get_iteration_number() const
 //-----------------------------------------------------------------------------
 EPS SLEPcEigenSolver::eps() const { return _eps; }
 //-----------------------------------------------------------------------------
-MPI_Comm SLEPcEigenSolver::mpi_comm() const
+MPI_Comm SLEPcEigenSolver::comm() const
 {
   assert(_eps);
   MPI_Comm mpi_comm = MPI_COMM_NULL;

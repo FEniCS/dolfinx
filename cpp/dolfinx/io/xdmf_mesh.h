@@ -1,19 +1,16 @@
 // Copyright (C) 2012-2018 Chris N. Richardson and Garth N. Wells
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #pragma once
 
-#include <dolfinx/common/array2d.h>
-#include <dolfinx/common/span.hpp>
-#include <dolfinx/mesh/cell_types.h>
 #include <hdf5.h>
 #include <mpi.h>
 #include <string>
-#include <tuple>
-#include <vector>
+#include <xtensor/xtensor.hpp>
+#include <xtl/xspan.hpp>
 
 namespace pugi
 {
@@ -49,14 +46,13 @@ void add_mesh(MPI_Comm comm, pugi::xml_node& xml_node, const hid_t h5_id,
 /// @param[in] topology
 /// @param[in] geometry
 /// @param[in] cell_dim Dimension of mesh entities to save
-/// @param[in] active_entities Local-to-process indices of mesh entities
-///   whose topology will be saved. This is used to save subsets of
-///   Mesh.
+/// @param[in] entities Local-to-process indices of mesh entities
+/// whose topology will be saved. This is used to save subsets of Mesh.
 void add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
                        const hid_t h5_id, const std::string path_prefix,
                        const mesh::Topology& topology,
-                       const mesh::Geometry& geometry, const int cell_dim,
-                       const tcb::span<const std::int32_t>& active_entities);
+                       const mesh::Geometry& geometry, int cell_dim,
+                       const xtl::span<const std::int32_t>& entities);
 
 /// Add Geometry xml node
 void add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
@@ -65,13 +61,14 @@ void add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
 
 /// Read Geometry data
 /// @returns geometry
-array2d<double> read_geometry_data(MPI_Comm comm, const hid_t h5_id,
-                                   const pugi::xml_node& node);
+xt::xtensor<double, 2> read_geometry_data(MPI_Comm comm, const hid_t h5_id,
+                                          const pugi::xml_node& node);
 
 /// Read Topology data
 /// @returns ((cell type, degree), topology)
-array2d<std::int64_t> read_topology_data(MPI_Comm comm, const hid_t h5_id,
-                                         const pugi::xml_node& node);
+xt::xtensor<std::int64_t, 2> read_topology_data(MPI_Comm comm,
+                                                const hid_t h5_id,
+                                                const pugi::xml_node& node);
 
 } // namespace io::xdmf_mesh
 } // namespace dolfinx

@@ -73,7 +73,7 @@ J = derivative(F, u, du)
 # taken in.
 #
 # Before the form file can be used in the C++ program, it must be
-# compiled using FFCX by running (on the command-line):
+# compiled using FFCx by running (on the command-line):
 #
 # .. code-block:: sh
 #

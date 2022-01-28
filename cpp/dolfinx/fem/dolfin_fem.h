@@ -9,7 +9,7 @@ namespace dolfinx
 */
 }
 
-// DOLFINX fem interface
+// DOLFINx fem interface
 
 #include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/fem/DirichletBC.h>

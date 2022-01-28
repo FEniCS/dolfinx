@@ -1,6 +1,6 @@
 // Copyright (C) 2012 Chris N. Richardson and Garth N. Wells
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -16,10 +16,7 @@
 #include <string>
 #include <vector>
 
-namespace dolfinx
-{
-
-namespace io
+namespace dolfinx::io
 {
 
 /// This class provides an interface to some HDF5 functionality
@@ -29,11 +26,11 @@ class HDF5Interface
 #define HDF5_FAIL -1
 public:
   /// Open HDF5 and return file descriptor
-  /// @param[in] mpi_comm MPI communicator
+  /// @param[in] comm MPI communicator
   /// @param[in] filename Name of the HDF5 file to open
   /// @param[in] mode Mode in which to open the file (w, r, a)
   /// @param[in] use_mpi_io True if MPI-IO should be used
-  static hid_t open_file(MPI_Comm mpi_comm, const std::string& filename,
+  static hid_t open_file(MPI_Comm comm, const std::string& filename,
                          const std::string& mode, const bool use_mpi_io);
 
   /// Close HDF5 file
@@ -165,9 +162,8 @@ inline void HDF5Interface::write_dataset(
     const std::vector<int64_t>& global_size, bool use_mpi_io, bool use_chunking)
 {
   // Data rank
-  const std::size_t rank = global_size.size();
+  const int rank = global_size.size();
   assert(rank != 0);
-
   if (rank > 2)
   {
     throw std::runtime_error("Cannot write dataset to HDF5 file"
@@ -188,12 +184,10 @@ inline void HDF5Interface::write_dataset(
   // Dataset dimensions
   const std::vector<hsize_t> dimsf(global_size.begin(), global_size.end());
 
-  // Generic status report
-  herr_t status;
-
   // Create a global data space
   const hid_t filespace0 = H5Screate_simple(rank, dimsf.data(), nullptr);
-  assert(filespace0 != HDF5_FAIL);
+  if (filespace0 == HDF5_FAIL)
+    throw std::runtime_error("Failed to create HDF5 data space");
 
   // Set chunking parameters
   hid_t chunking_properties;
@@ -221,21 +215,28 @@ inline void HDF5Interface::write_dataset(
   const hid_t dset_id
       = H5Dcreate2(file_handle, dataset_path.c_str(), h5type, filespace0,
                    H5P_DEFAULT, chunking_properties, H5P_DEFAULT);
-  assert(dset_id != HDF5_FAIL);
+  if (dset_id == HDF5_FAIL)
+    throw std::runtime_error("Failed to create HDF5 global dataset.");
+
+  // Generic status report
+  herr_t status;
 
   // Close global data space
   status = H5Sclose(filespace0);
-  assert(status != HDF5_FAIL);
+  if (status == HDF5_FAIL)
+    throw std::runtime_error("Failed to close HDF5 global data space.");
 
   // Create a local data space
   const hid_t memspace = H5Screate_simple(rank, count.data(), nullptr);
-  assert(memspace != HDF5_FAIL);
+  if (memspace == HDF5_FAIL)
+    throw std::runtime_error("Failed to create HDF5 local data space.");
 
   // Create a file dataspace within the global space - a hyperslab
   const hid_t filespace1 = H5Dget_space(dset_id);
   status = H5Sselect_hyperslab(filespace1, H5S_SELECT_SET, offset.data(),
                                nullptr, count.data(), nullptr);
-  assert(status != HDF5_FAIL);
+  if (status == HDF5_FAIL)
+    throw std::runtime_error("Failed to create HDF5 dataspace.");
 
   // Set parallel access
   const hid_t plist_id = H5Pcreate(H5P_DATASET_XFER);
@@ -243,7 +244,12 @@ inline void HDF5Interface::write_dataset(
   {
 #ifdef H5_HAVE_PARALLEL
     status = H5Pset_dxpl_mpio(plist_id, H5FD_MPIO_COLLECTIVE);
-    assert(status != HDF5_FAIL);
+    if (status == HDF5_FAIL)
+    {
+      throw std::runtime_error(
+          "Failed to set HDF5 data transfer property list.");
+    }
+
 #else
     throw std::runtime_error("HDF5 library has not been configured with MPI");
 #endif
@@ -251,30 +257,39 @@ inline void HDF5Interface::write_dataset(
 
   // Write local dataset into selected hyperslab
   status = H5Dwrite(dset_id, h5type, memspace, filespace1, plist_id, data);
-  assert(status != HDF5_FAIL);
+  if (status == HDF5_FAIL)
+  {
+    throw std::runtime_error(
+        "Failed to write HDF5 local dataset into hyperslab.");
+  }
 
   if (use_chunking)
   {
     // Close chunking properties
     status = H5Pclose(chunking_properties);
-    assert(status != HDF5_FAIL);
+    if (status == HDF5_FAIL)
+      throw std::runtime_error("Failed to close HDF5 chunking properties.");
   }
 
   // Close dataset collectively
   status = H5Dclose(dset_id);
-  assert(status != HDF5_FAIL);
+  if (status == HDF5_FAIL)
+    throw std::runtime_error("Failed to close HDF5 dataset.");
 
   // Close hyperslab
   status = H5Sclose(filespace1);
-  assert(status != HDF5_FAIL);
+  if (status == HDF5_FAIL)
+    throw std::runtime_error("Failed to close HDF5 hyperslab.");
 
   // Close local dataset
   status = H5Sclose(memspace);
-  assert(status != HDF5_FAIL);
+  if (status == HDF5_FAIL)
+    throw std::runtime_error("Failed to close local HDF5 dataset.");
 
   // Release file-access template
   status = H5Pclose(plist_id);
-  assert(status != HDF5_FAIL);
+  if (status == HDF5_FAIL)
+    throw std::runtime_error("Failed to release HDF5 file-access template.");
 }
 //---------------------------------------------------------------------------
 template <typename T>
@@ -288,16 +303,17 @@ HDF5Interface::read_dataset(const hid_t file_handle,
   // Open the dataset
   const hid_t dset_id
       = H5Dopen2(file_handle, dataset_path.c_str(), H5P_DEFAULT);
-  assert(dset_id != HDF5_FAIL);
+  if (dset_id == HDF5_FAIL)
+    throw std::runtime_error("Failed to open HDF5 global dataset.");
 
   // Open dataspace
   const hid_t dataspace = H5Dget_space(dset_id);
-  assert(dataspace != HDF5_FAIL);
+  if (dataspace == HDF5_FAIL)
+    throw std::runtime_error("Failed to open HDF5 data space.");
 
   // Get rank of data set
   const int rank = H5Sget_simple_extent_ndims(dataspace);
   assert(rank >= 0);
-
   if (rank > 2)
     LOG(WARNING) << "HDF5Interface::read_dataset untested for rank > 2.";
 
@@ -306,7 +322,8 @@ HDF5Interface::read_dataset(const hid_t file_handle,
 
   // Get size in each dimension
   const int ndims = H5Sget_simple_extent_dims(dataspace, shape.data(), nullptr);
-  assert(ndims == rank);
+  if (ndims != rank)
+    throw std::runtime_error("Failed to get dimensionality of dataspace");
 
   // Hyperslab selection
   std::vector<hsize_t> offset(rank, 0);
@@ -321,13 +338,15 @@ HDF5Interface::read_dataset(const hid_t file_handle,
 
   // Select a block in the dataset beginning at offset[], with
   // size=count[]
-  herr_t status = H5Sselect_hyperslab(dataspace, H5S_SELECT_SET, offset.data(),
-                                      nullptr, count.data(), nullptr);
-  assert(status != HDF5_FAIL);
+  [[maybe_unused]] herr_t status = H5Sselect_hyperslab(
+      dataspace, H5S_SELECT_SET, offset.data(), nullptr, count.data(), nullptr);
+  if (status == HDF5_FAIL)
+    throw std::runtime_error("Failed to select HDF5 hyperslab.");
 
   // Create a memory dataspace
   const hid_t memspace = H5Screate_simple(rank, count.data(), nullptr);
-  assert(memspace != HDF5_FAIL);
+  if (memspace == HDF5_FAIL)
+    throw std::runtime_error("Failed to create HDF5 dataspace.");
 
   // Create local data to read into
   std::size_t data_size = 1;
@@ -339,19 +358,23 @@ HDF5Interface::read_dataset(const hid_t file_handle,
   const hid_t h5type = hdf5_type<T>();
   status
       = H5Dread(dset_id, h5type, memspace, dataspace, H5P_DEFAULT, data.data());
-  assert(status != HDF5_FAIL);
+  if (status == HDF5_FAIL)
+    throw std::runtime_error("Failed to read HDF5 data.");
 
   // Close dataspace
   status = H5Sclose(dataspace);
-  assert(status != HDF5_FAIL);
+  if (status == HDF5_FAIL)
+    throw std::runtime_error("Failed to close HDF5 dataspace.");
 
   // Close memspace
   status = H5Sclose(memspace);
-  assert(status != HDF5_FAIL);
+  if (status == HDF5_FAIL)
+    throw std::runtime_error("Failed to close HDF5 memory space.");
 
   // Close dataset
   status = H5Dclose(dset_id);
-  assert(status != HDF5_FAIL);
+  if (status == HDF5_FAIL)
+    throw std::runtime_error("Failed to close HDF5 dataset.");
 
   auto timer_end = std::chrono::system_clock::now();
   std::chrono::duration<double> dt = (timer_end - timer_start);
@@ -363,5 +386,4 @@ HDF5Interface::read_dataset(const hid_t file_handle,
 }
 //---------------------------------------------------------------------------
 /// @endcond
-} // namespace io
-} // namespace dolfinx
+} // namespace dolfinx::io

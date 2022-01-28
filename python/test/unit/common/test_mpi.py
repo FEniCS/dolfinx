@@ -2,32 +2,41 @@
 
 # Copyright (C) 2017 Garth N. Wells
 #
-# This file is part of DOLFINX (https://www.fenicsproject.org)
+# This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import pathlib
 
-import dolfinx
-import mpi4py
-from dolfinx import wrappers
-from dolfinx.jit import dolfinx_pc, mpi_jit_decorator
-from dolfinx_utils.test.fixtures import tempdir  # noqa: F401
-from mpi4py import MPI
 import cppimport
+import pytest
+
+import dolfinx
+import dolfinx.pkgconfig
+from dolfinx import wrappers
+from dolfinx.jit import mpi_jit_decorator
+from dolfinx.mesh import create_unit_square
+from dolfinx_utils.test.fixtures import tempdir  # noqa: F401
+
+import mpi4py
+from mpi4py import MPI
 
 
 def test_mpi_comm_wrapper():
     """Test MPICommWrapper <-> mpi4py.MPI.Comm conversion"""
     w1 = MPI.COMM_WORLD
-    m = dolfinx.UnitSquareMesh(w1, 4, 4)
-    w2 = m.mpi_comm()
+    m = create_unit_square(w1, 4, 4)
+    w2 = m.comm
     assert isinstance(w1, MPI.Comm)
     assert isinstance(w2, MPI.Comm)
 
 
+@pytest.mark.skipif(not dolfinx.pkgconfig.exists("dolfinx"),
+                    reason="This test needs DOLFINx pkg-config.")
 def test_mpi_comm_wrapper_cppimport(tempdir):  # noqa: F811
     """Test MPICommWrapper <-> mpi4py.MPI.Comm conversion for code compiled with cppimport"""
+
+    dolfinx_pc = dolfinx.pkgconfig.parse("dolfinx")
 
     @mpi_jit_decorator
     def compile_module():

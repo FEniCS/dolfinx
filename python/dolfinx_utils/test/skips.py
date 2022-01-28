@@ -1,14 +1,15 @@
 # Copyright (C) 2014-2014 Aslak Wigdahl Bergersen
 #
-# This file is part of DOLFINX (https://www.fenicsproject.org)
+# This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Shared skips for unit tests involving dolfinx."""
+"""Shared skips for unit tests involving DOLFINx."""
 
-from mpi4py import MPI
+import numpy as np
 import pytest
 
-from dolfinx.common import has_petsc_complex
+from mpi4py import MPI
+from petsc4py import PETSc
 
 # Skips with respect to parallel or serial
 xfail_in_parallel = pytest.mark.xfail(
@@ -20,6 +21,6 @@ skip_in_parallel = pytest.mark.skipif(
 
 # Skips with respect to the scalar type
 skip_if_complex = pytest.mark.skipif(
-    has_petsc_complex, reason="This test does not work in complex mode.")
+    np.issubdtype(PETSc.ScalarType, np.complexfloating), reason="This test does not work in complex mode.")
 xfail_if_complex = pytest.mark.xfail(
-    has_petsc_complex, reason="This test does not work in complex mode.")
+    np.issubdtype(PETSc.ScalarType, np.complexfloating), reason="This test does not work in complex mode.")

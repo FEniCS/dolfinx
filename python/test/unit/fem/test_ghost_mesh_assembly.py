@@ -1,19 +1,20 @@
 # Copyright (C) 2018-2020 Garth N. Wells
 #
-# This file is part of DOLFINX (https://www.fenicsproject.org)
+# This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for assembly"""
 
 import pytest
+
 import ufl
 from dolfinx import fem
-from dolfinx.cpp.mesh import GhostMode
-from dolfinx.fem import Function, FunctionSpace
-from dolfinx.generation import UnitSquareMesh
+from dolfinx.fem import Function, FunctionSpace, form
+from dolfinx.mesh import GhostMode, create_unit_square
+from ufl import avg, inner
+
 from mpi4py import MPI
 from petsc4py import PETSc
-from ufl import avg, inner
 
 
 def dx_from_ufl(mesh):
@@ -35,17 +36,16 @@ def dS_from_ufl(mesh):
 @pytest.mark.parametrize("dx", [dx_from_ufl])
 @pytest.mark.parametrize("ds", [ds_from_ufl])
 def test_ghost_mesh_assembly(mode, dx, ds):
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
+    mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
     V = FunctionSpace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     dx = dx(mesh)
     ds = ds(mesh)
 
     f = Function(V)
-    with f.vector.localForm() as f_local:
-        f_local.set(10.0)
-    a = inner(f * u, v) * dx + inner(u, v) * ds
-    L = inner(f, v) * dx + inner(2.0, v) * ds
+    f.x.array[:] = 10.0
+    a = form(inner(f * u, v) * dx + inner(u, v) * ds)
+    L = form(inner(f, v) * dx + inner(2.0, v) * ds)
 
     # Initial assembly
     A = fem.assemble_matrix(a)
@@ -73,12 +73,11 @@ def test_ghost_mesh_assembly(mode, dx, ds):
                                               reason="Shared vertex currently disabled"))])
 @pytest.mark.parametrize("dS", [dS_from_ufl])
 def test_ghost_mesh_dS_assembly(mode, dS):
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
+    mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
     V = FunctionSpace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     dS = dS(mesh)
-
-    a = inner(avg(u), avg(v)) * dS
+    a = form(inner(avg(u), avg(v)) * dS)
 
     # Initial assembly
     A = fem.assemble_matrix(a)

@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2021 Garth N. Wells, Jørgen S. Dokken
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -50,10 +50,10 @@ fem::create_sparsity_discrete_gradient(const fem::FunctionSpace& V0,
   }
 
   // Build maps from entities to local dof indices
-  std::shared_ptr<const dolfinx::fem::ElementDofLayout> layout0
-      = V0.dofmap()->element_dof_layout;
-  std::shared_ptr<const dolfinx::fem::ElementDofLayout> layout1
-      = V1.dofmap()->element_dof_layout;
+  const dolfinx::fem::ElementDofLayout& layout0
+      = V0.dofmap()->element_dof_layout();
+  const dolfinx::fem::ElementDofLayout& layout1
+      = V1.dofmap()->element_dof_layout();
 
   // Copy index maps from dofmaps
   std::array<std::shared_ptr<const common::IndexMap>, 2> index_maps
@@ -65,7 +65,7 @@ fem::create_sparsity_discrete_gradient(const fem::FunctionSpace& V0,
   assert(block_sizes[0] == block_sizes[1]);
 
   // Initialise sparsity pattern
-  la::SparsityPattern pattern(mesh->mpi_comm(), index_maps, block_sizes);
+  la::SparsityPattern pattern(mesh->comm(), index_maps, block_sizes);
 
   // Initialize required connectivities
   const int tdim = mesh->topology().dim();
@@ -88,37 +88,37 @@ fem::create_sparsity_discrete_gradient(const fem::FunctionSpace& V0,
       = mesh::cell_num_entities(mesh->topology().cell_type(), 1);
   std::map<std::int32_t, std::vector<std::int32_t>> local_edge_dofs;
   for (std::int32_t i = 0; i < num_edges_per_cell; ++i)
-    local_edge_dofs[i] = layout0->entity_dofs(1, i);
+    local_edge_dofs[i] = layout0.entity_dofs(1, i);
   // Create local lookup table for local vertex to cell dofs
   const int num_vertices_per_cell
       = mesh::cell_num_entities(mesh->topology().cell_type(), 0);
   std::map<std::int32_t, std::vector<std::int32_t>> local_vertex_dofs;
   for (std::int32_t i = 0; i < num_vertices_per_cell; ++i)
-    local_vertex_dofs[i] = layout1->entity_dofs(0, i);
+    local_vertex_dofs[i] = layout1.entity_dofs(0, i);
 
   std::array<std::int32_t, 2> cols;
   for (std::int32_t e = 0; e < num_edges; ++e)
   {
     // Find local index of edge in one of the cells it is part of
-    tcb::span<const std::int32_t> cells = e_to_c->links(e);
+    xtl::span<const std::int32_t> cells = e_to_c->links(e);
     assert(cells.size() > 0);
     const std::int32_t cell = cells[0];
-    tcb::span<const std::int32_t> edges = c_to_e->links(cell);
+    xtl::span<const std::int32_t> edges = c_to_e->links(cell);
     const auto it = std::find(edges.begin(), edges.end(), e);
     assert(it != edges.end());
     const int local_edge = std::distance(edges.begin(), it);
 
     // Find the dofs located on the edge
-    tcb::span<const std::int32_t> dofs0 = dofmap0->cell_dofs(cell);
+    xtl::span<const std::int32_t> dofs0 = dofmap0->cell_dofs(cell);
     std::vector<std::int32_t>& local_dofs = local_edge_dofs[local_edge];
     assert(local_dofs.size() == 1);
     const std::int32_t row = dofs0[local_dofs[0]];
-    tcb::span<const std::int32_t> vertices = e_to_v->links(e);
+    xtl::span<const std::int32_t> vertices = e_to_v->links(e);
     assert(vertices.size() == 2);
     auto cell_vertices = c_to_v->links(cell);
 
     // Find local index of each of the vertices and map to local dof
-    tcb::span<const std::int32_t> dofs1 = V1.dofmap()->cell_dofs(cell);
+    xtl::span<const std::int32_t> dofs1 = V1.dofmap()->cell_dofs(cell);
     for (std::int32_t i = 0; i < 2; ++i)
     {
       const auto it
@@ -131,7 +131,8 @@ fem::create_sparsity_discrete_gradient(const fem::FunctionSpace& V0,
       cols[i] = dofs1[local_v_dofs[0]];
     }
 
-    pattern.insert(tcb::span(&row, 1), tcb::make_span(cols));
+    pattern.insert(xtl::span<const std::int32_t>(&row, 1),
+                   tcb::make_span(cols));
   }
   pattern.assemble();
   return pattern;

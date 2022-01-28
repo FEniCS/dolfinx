@@ -1,6 +1,6 @@
 // Copyright (C) 2006-2020 Anders Logg, Chris Richardson and Garth N. Wells
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -8,48 +8,25 @@
 
 #include "Geometry.h"
 #include "Topology.h"
-#include "cell_types.h"
 #include "utils.h"
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/UniqueIdGenerator.h>
-#include <dolfinx/common/array2d.h>
 #include <string>
 #include <utility>
 
-namespace dolfinx
-{
-
-namespace fem
+namespace dolfinx::fem
 {
 class CoordinateElement;
 }
 
-namespace graph
+namespace dolfinx::graph
 {
 template <typename T>
 class AdjacencyList;
 }
 
-namespace mesh
+namespace dolfinx::mesh
 {
-
-/// @todo Document fully
-///
-/// Signature for the cell partitioning function. The function should
-/// compute the destination rank for cells currently on this rank.
-using CellPartitionFunction
-    = std::function<const dolfinx::graph::AdjacencyList<std::int32_t>(
-        MPI_Comm comm, int nparts, int tdim,
-        const dolfinx::graph::AdjacencyList<std::int64_t>& cells,
-        dolfinx::mesh::GhostMode ghost_mode)>;
-
-/// Enum for different partitioning ghost modes
-enum class GhostMode : int
-{
-  none,
-  shared_facet,
-  shared_vertex
-};
 
 /// A Mesh consists of a set of connected and numbered mesh topological
 /// entities, and geometry data
@@ -63,7 +40,7 @@ public:
   template <typename Topology, typename Geometry>
   Mesh(MPI_Comm comm, Topology&& topology, Geometry&& geometry)
       : _topology(std::forward<Topology>(topology)),
-        _geometry(std::forward<Geometry>(geometry)), _mpi_comm(comm)
+        _geometry(std::forward<Geometry>(geometry)), _comm(comm)
   {
     // Do nothing
   }
@@ -115,7 +92,7 @@ public:
 
   /// Mesh MPI communicator
   /// @return The communicator on which the mesh is distributed
-  MPI_Comm mpi_comm() const;
+  MPI_Comm comm() const;
 
   /// Name
   std::string name = "mesh";
@@ -132,7 +109,7 @@ private:
   Geometry _geometry;
 
   // MPI communicator
-  dolfinx::MPI::Comm _mpi_comm;
+  dolfinx::MPI::Comm _comm;
 
   // Unique identifier
   std::size_t _unique_id = common::UniqueIdGenerator::id();
@@ -156,13 +133,26 @@ private:
 /// @return A distributed Mesh.
 Mesh create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
                  const fem::CoordinateElement& element,
-                 const array2d<double>& x, GhostMode ghost_mode);
+                 const xt::xtensor<double, 2>& x, GhostMode ghost_mode);
 
 /// Create a mesh using a provided mesh partitioning function
 Mesh create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
                  const fem::CoordinateElement& element,
-                 const array2d<double>& x, GhostMode ghost_mode,
+                 const xt::xtensor<double, 2>& x, GhostMode ghost_mode,
                  const CellPartitionFunction& cell_partitioner);
 
-} // namespace mesh
-} // namespace dolfinx
+/// Create a new mesh consisting of a subset of entities in a mesh.
+/// Entity `i` in the new mesh corresponds to `entities[i]` in the input
+/// mesh.
+/// @param[in] mesh The mesh
+/// @param[in] dim Entity dimension
+/// @param[in] entities List of entity indicies in `mesh` to include in
+/// the new mesh
+/// @return The new mesh, a map from the new mesh vertices to the mesh
+/// vertices in the input mesh, and a map from the new mesh geometry
+/// dofs to the original mesh geometry dofs
+std::tuple<Mesh, std::vector<std::int32_t>, std::vector<std::int32_t>>
+create_submesh(const Mesh& mesh, int dim,
+               const xtl::span<const std::int32_t>& entities);
+
+} // namespace dolfinx::mesh

@@ -9,7 +9,7 @@ namespace dolfinx
 */
 }
 
-// DOLFINX geometry interface
+// DOLFINx geometry interface
 
 #include <dolfinx/geometry/BoundingBoxTree.h>
 #include <dolfinx/geometry/gjk.h>

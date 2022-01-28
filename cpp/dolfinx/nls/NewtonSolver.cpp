@@ -1,15 +1,13 @@
 // Copyright (C) 2005-2021 Garth N. Wells
 //
-// This file is part of DOLFINX (https://www.fenicsproject.org)
+// This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "NewtonSolver.h"
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/log.h>
-#include <dolfinx/la/PETScKrylovSolver.h>
-#include <dolfinx/la/PETScOptions.h>
-#include <dolfinx/la/PETScVector.h>
+#include <dolfinx/la/petsc.h>
 #include <string>
 
 using namespace dolfinx;
@@ -21,17 +19,17 @@ namespace
 /// @param solver The Newton solver
 /// @param r The residual vector
 /// @return The pair `(residual norm, converged)`, where `converged` is
-// and true` if convergence achieved
+/// and true` if convergence achieved
 std::pair<double, bool> converged(const nls::NewtonSolver& solver, const Vec r)
 {
-  la::PETScVector _r(r, true);
-  double residual = _r.norm(la::Norm::l2);
+  PetscReal residual = 0.0;
+  VecNorm(r, NORM_2, &residual);
 
   // Relative residual
   const double relative_residual = residual / solver.residual0();
 
   // Output iteration number and residual
-  if (solver.report and dolfinx::MPI::rank(solver.mpi_comm()) == 0)
+  if (solver.report and dolfinx::MPI::rank(solver.comm()) == 0)
   {
     LOG(INFO) << "Newton iteration " << solver.iteration()
               << ": r (abs) = " << residual << " (tol = " << solver.atol
@@ -65,14 +63,14 @@ void update_solution(const nls::NewtonSolver& solver, const Vec dx, Vec x)
 nls::NewtonSolver::NewtonSolver(MPI_Comm comm)
     : _converged(converged), _update_solution(update_solution),
       _krylov_iterations(0), _iteration(0), _residual(0.0), _residual0(0.0),
-      _solver(comm), _dx(nullptr), _mpi_comm(comm)
+      _solver(comm), _dx(nullptr), _comm(comm)
 {
   // Create linear solver if not already created. Default to LU.
   _solver.set_options_prefix("nls_solve_");
-  la::PETScOptions::set("nls_solve_ksp_type", "preonly");
-  la::PETScOptions::set("nls_solve_pc_type", "lu");
+  la::petsc::options::set("nls_solve_ksp_type", "preonly");
+  la::petsc::options::set("nls_solve_pc_type", "lu");
 #if PETSC_HAVE_MUMPS
-  la::PETScOptions::set("nls_solve_pc_factor_mat_solver_type", "mumps");
+  la::petsc::options::set("nls_solve_pc_factor_mat_solver_type", "mumps");
 #endif
   _solver.set_from_options();
 }
@@ -111,6 +109,16 @@ void nls::NewtonSolver::setP(const std::function<void(const Vec, Mat)>& P,
   _fnP = P;
   _matP = Pmat;
   PetscObjectReference((PetscObject)_matP);
+}
+//-----------------------------------------------------------------------------
+const la::petsc::KrylovSolver& nls::NewtonSolver::get_krylov_solver() const
+{
+  return _solver;
+}
+//-----------------------------------------------------------------------------
+la::petsc::KrylovSolver& nls::NewtonSolver::get_krylov_solver()
+{
+  return _solver;
 }
 //-----------------------------------------------------------------------------
 void nls::NewtonSolver::set_form(const std::function<void(Vec)>& form)
@@ -208,6 +216,13 @@ std::pair<int, bool> dolfinx::nls::NewtonSolver::solve(Vec x)
     if (_system)
       _system(x);
     _fnF(x, _b);
+    // Initialize _residual0
+    if (_iteration == 1)
+    {
+      PetscReal _r = 0.0;
+      VecNorm(_dx, NORM_2, &_r);
+      _residual0 = _r;
+    }
 
     // Test for convergence
     if (convergence_criterion == "residual")
@@ -218,9 +233,6 @@ std::pair<int, bool> dolfinx::nls::NewtonSolver::solve(Vec x)
       // set.
       if (_iteration == 1)
       {
-        PetscReal _r = 0.0;
-        VecNorm(_dx, NORM_2, &_r);
-        _residual0 = _r;
         _residual = 1.0;
         newton_converged = false;
       }
@@ -233,7 +245,7 @@ std::pair<int, bool> dolfinx::nls::NewtonSolver::solve(Vec x)
 
   if (newton_converged)
   {
-    if (dolfinx::MPI::rank(_mpi_comm.comm()) == 0)
+    if (dolfinx::MPI::rank(_comm.comm()) == 0)
     {
       LOG(INFO) << "Newton solver finished in " << _iteration
                 << " iterations and " << _krylov_iterations
@@ -267,5 +279,5 @@ double nls::NewtonSolver::residual() const { return _residual; }
 //-----------------------------------------------------------------------------
 double nls::NewtonSolver::residual0() const { return _residual0; }
 //-----------------------------------------------------------------------------
-MPI_Comm nls::NewtonSolver::mpi_comm() const { return _mpi_comm.comm(); }
+MPI_Comm nls::NewtonSolver::comm() const { return _comm.comm(); }
 //-----------------------------------------------------------------------------
