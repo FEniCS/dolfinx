@@ -137,7 +137,10 @@ public:
 
     int num_argument_dofs = 1;
     xtl::span<const std::uint32_t> cell_info;
-    std::function<void(const xtl::span<T>&, const xtl::span<const std::uint32_t>&, std::int32_t, int)> dof_transform_to_transpose
+    std::function<void(const xtl::span<T>&,
+                       const xtl::span<const std::uint32_t>&, std::int32_t,
+                       int)>
+        dof_transform_to_transpose
         = [](const xtl::span<T>&, const xtl::span<const std::uint32_t>&,
              std::int32_t, int)
     {
