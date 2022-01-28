@@ -445,58 +445,64 @@ void declare_objects(py::module& m, const std::string& type)
 
   // dolfinx::fem::Expression
   std::string pyclass_name_expr = std::string("Expression_") + type;
-  py::class_<dolfinx::fem::Expression<T>,
+  py::
+      class_<dolfinx::fem::Expression<T>,
              std::shared_ptr<dolfinx::fem::Expression<T>>>(
-      m, pyclass_name_expr.c_str(), "An Expression")
-      .def(py::init(
-               [](const std::vector<std::shared_ptr<
-                      const dolfinx::fem::Function<T>>>& coefficients,
-                  const std::vector<std::shared_ptr<
-                      const dolfinx::fem::Constant<T>>>& constants,
-                  const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh,
-                  const py::array_t<double, py::array::c_style>& X,
-                  std::uintptr_t fn_addr, const std::vector<int>& value_shape,
-                  const std::shared_ptr<const fem::FunctionSpace>
-                      function_space)
-               {
-                 auto tabulate_expression_ptr
-                     = (void (*)(T*, const T*, const T*, const double*,
-                                 const int*, const std::uint8_t*))fn_addr;
-                 auto _x_ref = xt::adapt(X.data(), {X.shape(0), X.shape(1)});
-                 return dolfinx::fem::Expression<T>(
-                     coefficients, constants, mesh, _x_ref, tabulate_expression_ptr,
-                     value_shape, function_space);
-               }),
-           py::arg("coefficients"), py::arg("constants"), py::arg("mesh"),
-           py::arg("X"), py::arg("fn"), py::arg("value_shape"),
-           py::arg("function_space"))
-      .def("eval",
-           [](const dolfinx::fem::Expression<T>& self,
-              const py::array_t<std::int32_t, py::array::c_style>& active_cells,
-              py::array_t<T, py::array::c_style>& values)
-           {
-             const int size = values.shape(0) * values.shape(1);
-             auto _values = xt::adapt(const_cast<T*>(values.data()), size,
-                                      xt::no_ownership(),
-                                      std::array<std::size_t, 2>(
-                                          {(std::size_t)values.shape(0), (std::size_t)values.shape(1)}));
-             self.eval(xtl::span(active_cells.data(), active_cells.size()),
-                       _values);
-           })
-      .def_property_readonly("mesh", &dolfinx::fem::Expression<T>::mesh)
-      .def_property_readonly("num_points",
-                             &dolfinx::fem::Expression<T>::num_points)
-      .def_property_readonly("value_size",
-                             &dolfinx::fem::Expression<T>::value_size)
-      .def_property_readonly("value_shape",
-                             &dolfinx::fem::Expression<T>::value_shape)
-      .def_property_readonly("X",
-                             [](const dolfinx::fem::Expression<T>& self)
-                             {
-                               return py::array_t<double>(self.X().shape(),
-                                                          self.X().data(),
-                                                          py::cast(self));
-                             });
+          m, pyclass_name_expr.c_str(), "An Expression")
+          .def(
+              py::init(
+                  [](const std::vector<std::shared_ptr<
+                         const dolfinx::fem::Function<T>>>& coefficients,
+                     const std::vector<std::shared_ptr<
+                         const dolfinx::fem::Constant<T>>>& constants,
+                     const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh,
+                     const py::array_t<double, py::array::c_style>& X,
+                     std::uintptr_t fn_addr,
+                     const std::vector<int>& value_shape,
+                     const std::shared_ptr<const fem::FunctionSpace>
+                         function_space)
+                  {
+                    auto tabulate_expression_ptr
+                        = (void (*)(T*, const T*, const T*, const double*,
+                                    const int*, const std::uint8_t*))fn_addr;
+                    auto _x_ref = xt::adapt(X.data(), {X.shape(0), X.shape(1)});
+                    return dolfinx::fem::Expression<T>(
+                        coefficients, constants, mesh, _x_ref,
+                        tabulate_expression_ptr, value_shape, function_space);
+                  }),
+              py::arg("coefficients"), py::arg("constants"), py::arg("mesh"),
+              py::arg("X"), py::arg("fn"), py::arg("value_shape"),
+              py::arg("function_space"))
+          .def(
+              "eval",
+              [](const dolfinx::fem::Expression<T>& self,
+                 const py::
+                     array_t<std::int32_t, py::array::c_style>& active_cells,
+                 py::array_t<T, py::array::c_style>& values)
+              {
+                const int size = values.shape(0) * values.shape(1);
+                auto _values = xt::adapt(
+                    const_cast<T*>(values.data()), size, xt::no_ownership(),
+                    std::array<std::size_t, 2>({(std::size_t)values.shape(0),
+                                                (std::size_t)values.shape(1)}));
+                self.eval(xtl::span(active_cells.data(), active_cells.size()),
+                          _values);
+              })
+          .def_property_readonly("mesh", &dolfinx::fem::Expression<T>::mesh)
+          .def_property_readonly("num_points",
+                                 &dolfinx::fem::Expression<T>::num_points)
+          .def_property_readonly("value_size",
+                                 &dolfinx::fem::Expression<T>::value_size)
+          .def_property_readonly("value_shape",
+                                 &dolfinx::
+                                     fem::Expression<T>::value_shape)
+          .def_property_readonly("X",
+                                 [](const dolfinx::fem::Expression<T>& self)
+                                 {
+                                   return py::array_t<double>(self.X().shape(),
+                                                              self.X().data(),
+                                                              py::cast(self));
+                                 });
 
   std::string pymethod_create_expression
       = std::string("create_expression_") + type;
@@ -507,13 +513,14 @@ void declare_objects(py::module& m, const std::string& type)
              coefficients,
          const std::vector<std::shared_ptr<const dolfinx::fem::Constant<T>>>&
              constants,
-         const std::shared_ptr<const dolfinx::fem::FunctionSpace> argument_function_space,
+         const std::shared_ptr<const dolfinx::fem::FunctionSpace>
+             argument_function_space,
          const std::shared_ptr<const dolfinx::mesh::Mesh> mesh)
       {
         const ufcx_expression* p
             = reinterpret_cast<const ufcx_expression*>(expression);
-        return dolfinx::fem::create_expression<T>(*p, coefficients, constants,
-                                                  argument_function_space, mesh);
+        return dolfinx::fem::create_expression<T>(
+            *p, coefficients, constants, argument_function_space, mesh);
       },
       "Create Form from a pointer to ufc_form.");
 }
