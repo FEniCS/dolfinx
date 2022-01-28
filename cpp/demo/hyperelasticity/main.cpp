@@ -5,7 +5,6 @@
 #include <dolfinx/fem/assembler.h>
 #include <dolfinx/fem/petsc.h>
 #include <dolfinx/la/Vector.h>
-#include <petscksp.h>
 #include <xtensor/xarray.hpp>
 #include <xtensor/xview.hpp>
 
