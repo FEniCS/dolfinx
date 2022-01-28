@@ -23,6 +23,7 @@
 #include <utility>
 #include <vector>
 #include <xtensor/xadapt.hpp>
+#include <xtensor/xmath.hpp>
 #include <xtensor/xtensor.hpp>
 #include <xtl/xspan.hpp>
 
@@ -236,12 +237,24 @@ public:
                    const xtl::span<const std::int32_t>& cells)
   {
     // Check that spaces are compatible
-    std::size_t value_size = e.value_size();
     assert(_function_space);
     assert(_function_space->element());
-    assert(value_size == _function_space->element()->value_size());
-    assert(e.X().shape()
-           == _function_space->element()->interpolation_points().shape());
+    std::size_t value_size = e.value_size();
+    if (e.argument_function_space() != nullptr)
+    {
+      throw std::runtime_error("Cannot interpolate Expression with argument");
+    }
+    if (value_size != _function_space->element()->value_size())
+    {
+      throw std::runtime_error(
+          "Function value size not equal to Expression value size");
+    }
+    if (!xt::allclose(e.X(),
+                      _function_space->element()->interpolation_points()))
+    {
+      throw std::runtime_error("Function element interpolation points not "
+                               "equal to Expression interpolation points");
+    }
 
     // Array to hold evaluted Expression
     std::size_t num_cells = cells.size();
