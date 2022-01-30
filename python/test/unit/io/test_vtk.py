@@ -131,7 +131,7 @@ def test_save_2d_vector(tempdir, cell_type):
 
 
 @skip_in_parallel
-def test_save_2d_vector_CG2(tempdir):
+def test_save_2d_vector_P2(tempdir):
     points = np.array([[0, 0], [1, 0], [1, 2], [0, 2],
                        [1 / 2, 0], [1, 1], [1 / 2, 2],
                        [0, 1], [1 / 2, 1]])
@@ -177,6 +177,41 @@ def test_save_2d_vector_CG2(tempdir):
 #     with VTKFile(mesh.comm, filename, "w") as vtk:
 #         vtk.write_function([U.sub(i) for i in range(W.num_sub_spaces)], 0.)
 
+
+def test_save_2d_mixed(tempdir):
+    # mesh = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3)
+    mesh = create_unit_square(MPI.COMM_WORLD, 1, 1)
+    P2 = ufl.VectorElement("Lagrange", mesh.ufl_cell(), 1)
+    P1 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
+    W = FunctionSpace(mesh, P2 * P1)
+    V1 = FunctionSpace(mesh, P1)
+    V2 = FunctionSpace(mesh, P2)
+
+    def vec_func(x):
+        vals = np.zeros((2, x.shape[1]))
+        vals[0] = x[0]
+        vals[1] = 0.2 * x[1]
+        return vals
+
+    U = Function(W)
+    U1 = Function(V1)
+    U2 = Function(V2)
+    U.sub(0).interpolate(vec_func)
+    U.sub(1).interpolate(lambda x: 0.5 * x[0])
+    U1.interpolate(U.sub(1))
+    # U2.interpolate(U.sub(0))
+    U2.interpolate(vec_func)
+    # U.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+    # filename = os.path.join(tempdir, "u.pvd")
+    print("PY file io")
+    U2.name = "u"
+    U1.name = "p"
+    Up = U.sub(1)
+    Up.name = "psub"
+    with VTKFile(mesh.comm, "test.pvd", "w") as vtk:
+        # vtk.write_function([U2, U1], 0.)
+        vtk.write_function([U2, Up, U1], 0.)
+        # vtk.write_function([U.sub(i) for i in range(W.num_sub_spaces)], 0.)
 
 def test_save_1d_tensor(tempdir):
     mesh = create_unit_interval(MPI.COMM_WORLD, 32)

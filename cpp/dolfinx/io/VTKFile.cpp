@@ -31,7 +31,8 @@ namespace
 {
 /// Tabulate the coordinate for every 'node' in a Lagrange function
 /// space.
-/// @param[in] V The function space. Must be a Lagrange space.
+/// @param[in] V The function space. Must be a (discontinuous) Lagrange
+/// space.
 /// @return An array with shape (num_dofs, 3) array where the ith row
 /// corresponds to the coordinate of the ith dof in `V` (local to
 /// process)
@@ -44,24 +45,24 @@ tabulate_lagrange_dof_coordinates(const dolfinx::fem::FunctionSpace& V)
   const std::size_t gdim = mesh->geometry().dim();
   const int tdim = mesh->topology().dim();
 
-  // // Get dofmap data
-  // auto dofmap = V.dofmap();
-  // assert(dofmap);
-  // auto map_dofs = dofmap->index_map;
-  // assert(map_dofs);
-  // const int index_map_bs = dofmap->index_map_bs();
-  // const int dofmap_bs = dofmap->bs();
+  // Get dofmap data
+  auto dofmap = V.dofmap();
+  assert(dofmap);
+  auto map_dofs = dofmap->index_map;
+  assert(map_dofs);
+  const int index_map_bs = dofmap->index_map_bs();
+  const int dofmap_bs = dofmap->bs();
 
-  // // Get element data
+  // Get element data
   auto element = V.element();
-  // assert(element);
-  // const int e_block_size = element->block_size();
-  // const std::size_t scalar_dofs = element->space_dimension() / e_block_size;
-  // const std::int32_t num_dofs
-  //     = index_map_bs * (map_dofs->size_local() + map_dofs->num_ghosts())
-  //       / dofmap_bs;
+  assert(element);
+  const int e_block_size = element->block_size();
+  const std::size_t scalar_dofs = element->space_dimension() / e_block_size;
   const std::int32_t num_dofs
-      = index_map_bs * (map_dofs->size_local() + map_dofs->num_ghosts());
+      = index_map_bs * (map_dofs->size_local() + map_dofs->num_ghosts())
+        / dofmap_bs;
+  // const std::int32_t num_dofs
+  //     = index_map_bs * (map_dofs->size_local() + map_dofs->num_ghosts());
 
   // Get the dof coordinates on the reference element and the  mesh
   // coordinate map
@@ -299,8 +300,8 @@ void add_pvtu_mesh(pugi::xml_node& node)
 //----------------------------------------------------------------------------
 /// At data to a pugixml node
 template <typename Scalar>
-void _add_data(const std::string& name, int rank,
-               const std::vector<Scalar>& values, pugi::xml_node& data_node)
+void add_data(const std::string& name, int rank,
+              const std::vector<Scalar>& values, pugi::xml_node& data_node)
 {
   pugi::xml_node field_node = data_node.append_child("DataArray");
   field_node.append_attribute("type") = "Float64";
@@ -431,6 +432,8 @@ void write_function(
     double time, std::unique_ptr<pugi::xml_document>& xml_doc,
     const std::string& filename)
 {
+  std::cout << "START write" << std::endl;
+
   if (!xml_doc)
     throw std::runtime_error("VTKFile has already been closed");
 
@@ -444,19 +447,32 @@ void write_function(
 
   // Extract mesh
   // TODO: Handle case when all cells are cell-data
-  assert(u.front().get().function_space());
-  auto mesh = u.front().get().function_space()->mesh();
+  // TODO: Handle subfunctions
+  std::cout << "EXTRACT" << std::endl;
+  auto V0 = u.front().get().function_space();
+  assert(V0);
+  auto mesh = V0->mesh();
   assert(mesh);
+  auto element0 = V0->element();
   for (auto& v : u)
   {
-    if (v.get().function_space()->mesh() != mesh)
+    auto V = v.get().function_space();
+    if (!V->component().empty())
+      throw std::runtime_error("Cannot write sub-Functions to VTK file.");
+
+    if (*(V->element()) != *element0)
+    {
+      throw std::runtime_error(
+          "All functions written to VTK file must have same element.");
+    }
+
+    if (V->mesh() != mesh)
     {
       throw std::runtime_error(
           "Meshes for Functions to write to VTK file do not match.");
     }
   }
 
-  // Get MPI comm
   const MPI_Comm comm = mesh->comm();
   const int mpi_rank = dolfinx::MPI::rank(comm);
   boost::filesystem::path p(filename);
@@ -476,29 +492,28 @@ void write_function(
   vtk_node_vtu.append_attribute("version") = "0.1";
   pugi::xml_node grid_node_vtu = vtk_node_vtu.append_child("UnstructuredGrid");
 
-  // Get mesh data
-  auto [x, cells] = vtk_mesh_from_space(*u.front().get().function_space());
+  // Build mesh data
+  std::cout << "BUILD mesh" << std::endl;
+  auto [x, cells] = vtk_mesh_from_space(*V0);
+  std::cout << "POST mesh" << std::endl;
 
   // Add "Piece" node and required metadata
   pugi::xml_node piece_node = grid_node_vtu.append_child("Piece");
   piece_node.append_attribute("NumberOfPoints") = x.shape(0);
   piece_node.append_attribute("NumberOfCells") = cells.shape(0);
 
-  // FIXME: What about DG0?
+  // FIXME: What about DG0 data?
   // Add mesh data to "Piece" node
   add_mesh_new(x, cells, mesh->topology().cell_type(), mesh->topology().dim(),
                piece_node);
 
-  // Iterate over functions
+  // Set last scalar/vector/tensor Functions in u to be the 'active'
+  // (default) field(s)
   for (auto _u : u)
   {
-    std::string data_type;
-    if (is_cellwise(_u.get()))
-      data_type = "CellData";
-    else
-      data_type = "PointData";
+    std::cout << "PRE loop" << std::endl;
 
-    // Set last entry to be the 'active' (default) field
+    std::string data_type = is_cellwise(_u.get()) ? "CellData" : "PointData";
     if (piece_node.child(data_type.c_str()).empty())
       piece_node.append_child(data_type.c_str());
 
@@ -520,33 +535,81 @@ void write_function(
   // Add cell/point data to VTU node
   for (auto _u : u)
   {
-    auto element = _u.get().function_space()->element();
+    std::cout << "MAIN loop" << std::endl;
+
+    auto V = _u.get().function_space();
+    assert(V);
+    auto element = V->element();
     pugi::xml_node data_node = is_cellwise(_u.get())
                                    ? piece_node.child("CellData")
                                    : piece_node.child("PointData");
     assert(!data_node.empty());
 
-    auto dofmap = _u.get().function_space()->dofmap();
-    assert(dofmap);
+    auto dofmap = V->dofmap();
     auto index_map = dofmap->index_map;
-    assert(index_map);
-    const int index_map_bs = dofmap->index_map_bs();
-    const int dofmap_bs = dofmap->bs();
-    const std::int32_t num_dofs
+    int index_map_bs = dofmap->index_map_bs();
+    int dofmap_bs = dofmap->bs();
+    std::int32_t num_dofs_block
         = index_map_bs * (index_map->size_local() + index_map->num_ghosts())
           / dofmap_bs;
 
-    const int rank = _u.get().function_space()->element()->value_shape().size();
-    const std::int32_t num_comp = std::pow(3, rank);
+    int rank = element->value_shape().size();
+    std::int32_t num_comp = std::pow(3, rank);
+    std::vector<double> data(num_dofs_block * num_comp, 0);
+    if (V == V0)
+    {
+      std::cout << "IDENT spaces" << std::endl;
 
-    // DOF values
-    auto u_vector = _u.get().x()->array();
-    std::vector<double> data(num_dofs * num_comp, 0);
-    for (int i = 0; i < num_dofs; ++i)
-      for (int j = 0; j < index_map_bs; ++j)
-        data[i * num_comp + j] = u_vector[i * index_map_bs + j];
+      // TODO: In 3D where padding is not required, output u_vector
+      // directly
 
-    _add_data(_u.get().name, rank, data, data_node);
+      // Identical spaces
+      auto u_vector = _u.get().x()->array();
+      for (int i = 0; i < num_dofs_block; ++i)
+        for (int k = 0; k < index_map_bs; ++k)
+          data[i * num_comp + k] = u_vector[i * index_map_bs + k];
+    }
+    else if (*element == *element0)
+    {
+      std::cout << "SAME element" << std::endl;
+
+      // Same element, different dofmaps
+
+      // Get dofmaps
+      auto dofmap0 = V0->dofmap();
+      assert(dofmap0);
+      auto dofmap = V->dofmap();
+      assert(dofmap);
+
+      std::size_t num_cells = cells.shape(0);
+
+      // Interpolate on each cell
+      int bs = dofmap->bs();
+      assert(bs == dofmap0->bs());
+      auto u_vector = _u.get().x()->array();
+      std::vector<Scalar> u_interp(u_vector.size());
+      for (std::size_t c = 0; c < num_cells; ++c)
+      {
+        xtl::span<const std::int32_t> dofs0 = dofmap0->cell_dofs(c);
+        xtl::span<const std::int32_t> dofs = dofmap->cell_dofs(c);
+        assert(dofs0.size() == dofs.size());
+        for (std::size_t i = 0; i < dofs0.size(); ++i)
+          for (int k = 0; k < bs; ++k)
+            u_interp[bs * dofs0[i] + k] = u_vector[bs * dofs[i] + k];
+      }
+
+      // TODO: In 3D where padding is not required, output u_vector
+      // directly
+
+      // Pack
+      for (int i = 0; i < num_dofs_block; ++i)
+        for (int k = 0; k < index_map_bs; ++k)
+          data[i * num_comp + k] = u_interp[i * index_map_bs + k];
+    }
+    else
+      throw std::runtime_error("Elements differ");
+
+    add_data(_u.get().name, rank, data, data_node);
   }
 
   // Save VTU XML to file
