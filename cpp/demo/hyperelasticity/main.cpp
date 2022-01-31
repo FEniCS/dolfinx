@@ -6,7 +6,6 @@
 #include <dolfinx/fem/assembler.h>
 #include <dolfinx/fem/petsc.h>
 #include <dolfinx/io/XDMFFile.h>
-#include <dolfinx/la/petsc.h>
 #include <dolfinx/la/Vector.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/cell_types.h>
@@ -165,12 +164,14 @@ int main(int argc, char* argv[])
           auto x1 = xt::row(x, 1);
           auto x2 = xt::row(x, 2);
           xt::xarray<double> values = xt::zeros_like(x);
-          xt::row(values, 1) = scale
-                               * (x1_c + (x1 - x1_c) * std::cos(theta)
-                                  - (x2 - x2_c) * std::sin(theta) - x1);
-          xt::row(values, 2) = scale
-                               * (x2_c + (x1 - x1_c) * std::sin(theta)
-                                  - (x2 - x2_c) * std::cos(theta) - x2);
+          auto _row1 = xt::row(values, 1);
+          _row1.assign(scale
+                       * (x1_c + (x1 - x1_c) * std::cos(theta)
+                          - (x2 - x2_c) * std::sin(theta) - x1));
+          auto _row2 = xt::row(values, 2);
+          _row2.assign(scale
+                       * (x2_c + (x1 - x1_c) * std::sin(theta)
+                          - (x2 - x2_c) * std::cos(theta) - x2));
           return values;
         });
 
@@ -178,12 +179,14 @@ int main(int argc, char* argv[])
     auto bdofs_left
         = fem::locate_dofs_geometrical({*V},
                                        [](auto& x) -> xt::xtensor<bool, 1> {
-                                         return xt::isclose(xt::row(x, 0), 0.0);
+                                         auto x0 = xt::row(x, 0);
+                                         return xt::isclose(x0, 0.0);
                                        });
     auto bdofs_right
         = fem::locate_dofs_geometrical({*V},
                                        [](auto& x) -> xt::xtensor<bool, 1> {
-                                         return xt::isclose(xt::row(x, 0), 1.0);
+                                         auto x0 = xt::row(x, 0);
+                                         return xt::isclose(x0, 1.0);
                                        });
     auto bcs = std::vector{
         std::make_shared<const fem::DirichletBC<T>>(xt::xarray<T>{0, 0, 0},
@@ -191,14 +194,10 @@ int main(int argc, char* argv[])
         std::make_shared<const fem::DirichletBC<T>>(u_rotation, bdofs_right)};
 
     HyperElasticProblem problem(L, a, bcs);
-    nls::NewtonSolver newton_solver(MPI_COMM_WORLD);
+    nls::NewtonSolver newton_solver(mesh->comm());
     newton_solver.setF(problem.F(), problem.vector());
     newton_solver.setJ(problem.J(), problem.matrix());
     newton_solver.set_form(problem.form());
-    la::petsc::KrylovSolver& krylov_solver = newton_solver.get_krylov_solver();
-    la::petsc::options::set("nls_solve_ksp_type", "cg");
-    la::petsc::options::set("nls_solve_pc_type", "jacobi");
-    krylov_solver.set_from_options();
 
     la::petsc::Vector _u(la::petsc::create_vector_wrap(*u->x()), false);
     newton_solver.solve(_u.vec());

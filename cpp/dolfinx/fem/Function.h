@@ -249,8 +249,10 @@ public:
       throw std::runtime_error(
           "Function value size not equal to Expression value size");
     }
-    if (!xt::allclose(e.X(),
-                      _function_space->element()->interpolation_points()))
+    if ((e.X().shape()
+         != _function_space->element()->interpolation_points().shape())
+        or !xt::allclose(e.X(),
+                         _function_space->element()->interpolation_points()))
     {
       throw std::runtime_error("Function element interpolation points not "
                                "equal to Expression interpolation points");
