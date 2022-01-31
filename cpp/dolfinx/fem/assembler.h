@@ -70,7 +70,8 @@ template <typename T>
 T assemble_scalar(const Form<T>& M)
 {
   const std::vector<T> constants = pack_constants(M);
-  const auto coefficients = pack_coefficients(M);
+  auto coefficients = allocate_coefficient_storage(M);
+  pack_coefficients(M, coefficients);
   return assemble_scalar(M, tcb::make_span(constants),
                          make_coefficients_span(coefficients));
 }
@@ -101,7 +102,8 @@ void assemble_vector(
 template <typename T>
 void assemble_vector(xtl::span<T> b, const Form<T>& L)
 {
-  const auto coefficients = pack_coefficients(L);
+  auto coefficients = allocate_coefficient_storage(L);
+  pack_coefficients(L, coefficients);
   const std::vector<T> constants = pack_constants(L);
   assemble_vector(b, L, tcb::make_span(constants),
                   make_coefficients_span(coefficients));
@@ -163,7 +165,9 @@ void apply_lifting(
   {
     if (_a)
     {
-      coeffs.push_back(pack_coefficients(*_a));
+      auto coefficients = allocate_coefficient_storage(*_a);
+      pack_coefficients(*_a, coefficients);
+      coeffs.push_back(coefficients);
       constants.push_back(pack_constants(*_a));
     }
     else
@@ -250,7 +254,8 @@ void assemble_matrix(
 {
   // Prepare constants and coefficients
   const std::vector<T> constants = pack_constants(a);
-  const auto coefficients = pack_coefficients(a);
+  auto coefficients = allocate_coefficient_storage(a);
+  pack_coefficients(a, coefficients);
 
   // Assemble
   assemble_matrix(mat_add, a, tcb::make_span(constants),
@@ -304,7 +309,8 @@ void assemble_matrix(
 {
   // Prepare constants and coefficients
   const std::vector<T> constants = pack_constants(a);
-  const auto coefficients = pack_coefficients(a);
+  auto coefficients = allocate_coefficient_storage(a);
+  pack_coefficients(a, coefficients);
 
   // Assemble
   assemble_matrix(mat_add, a, tcb::make_span(constants),

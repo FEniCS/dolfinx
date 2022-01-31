@@ -847,7 +847,7 @@ void interpolate(Function<T>& u, const Function<T>& v,
     assert(element0);
     auto element1 = u.function_space()->element();
     assert(element1);
-    if (element1->hash() == element0->hash())
+    if (*element1 == *element0)
     {
       // Same element, different dofmaps (or just a subset of cells)
 
