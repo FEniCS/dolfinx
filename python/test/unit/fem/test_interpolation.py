@@ -213,6 +213,27 @@ def test_NCE_interpolation(cell_type, order):
 
 
 @skip_in_parallel
+def test_mixed_sub_interpolation():
+    mesh = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3)
+    P2 = ufl.VectorElement("Lagrange", mesh.ufl_cell(), 2)
+    P1 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
+    W = FunctionSpace(mesh, P2 * P1)
+
+    def f(x): return np.vstack((x[0], 0.2 * x[1], np.zeros(x.shape[1])))
+
+    U = Function(W)
+    U.sub(0).interpolate(f)
+
+    V2 = FunctionSpace(mesh, P2)
+    u2 = Function(V2)
+    u2.interpolate(U.sub(0))
+
+    u2a = Function(V2)
+    u2a.interpolate(f)
+    assert np.allclose(u2.vector.array, u2a.vector.array)
+
+
+@ skip_in_parallel
 def test_mixed_interpolation():
     """Test that interpolation raised an exception."""
     mesh = one_cell_mesh(CellType.triangle)
@@ -223,8 +244,8 @@ def test_mixed_interpolation():
         v.interpolate(lambda x: (x[1], 2 * x[0], 3 * x[1]))
 
 
-@pytest.mark.parametrize("order1", [2, 3, 4])
-@pytest.mark.parametrize("order2", [2, 3, 4])
+@ pytest.mark.parametrize("order1", [2, 3, 4])
+@ pytest.mark.parametrize("order2", [2, 3, 4])
 def test_interpolation_nedelec(order1, order2):
     mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2)
     V = FunctionSpace(mesh, ("N1curl", order1))
@@ -245,8 +266,8 @@ def test_interpolation_nedelec(order1, order2):
     assert np.isclose(assemble_scalar(form(ufl.inner(u - w, u - w) * ufl.dx)), 0)
 
 
-@pytest.mark.parametrize("tdim", [2, 3])
-@pytest.mark.parametrize("order", [1, 2, 3])
+@ pytest.mark.parametrize("tdim", [2, 3])
+@ pytest.mark.parametrize("order", [1, 2, 3])
 def test_interpolation_dg_to_n1curl(tdim, order):
     if tdim == 2:
         mesh = create_unit_square(MPI.COMM_WORLD, 5, 5)
@@ -262,8 +283,8 @@ def test_interpolation_dg_to_n1curl(tdim, order):
     assert np.isclose(s, 0)
 
 
-@pytest.mark.parametrize("tdim", [2, 3])
-@pytest.mark.parametrize("order", [1, 2, 3])
+@ pytest.mark.parametrize("tdim", [2, 3])
+@ pytest.mark.parametrize("order", [1, 2, 3])
 def test_interpolation_n1curl_to_dg(tdim, order):
     if tdim == 2:
         mesh = create_unit_square(MPI.COMM_WORLD, 5, 5)
@@ -279,8 +300,8 @@ def test_interpolation_n1curl_to_dg(tdim, order):
     assert np.isclose(s, 0)
 
 
-@pytest.mark.parametrize("tdim", [2, 3])
-@pytest.mark.parametrize("order", [1, 2, 3])
+@ pytest.mark.parametrize("tdim", [2, 3])
+@ pytest.mark.parametrize("order", [1, 2, 3])
 def test_interpolation_n2curl_to_bdm(tdim, order):
     if tdim == 2:
         mesh = create_unit_square(MPI.COMM_WORLD, 5, 5)
@@ -298,8 +319,8 @@ def test_interpolation_n2curl_to_bdm(tdim, order):
     assert np.isclose(s, 0)
 
 
-@pytest.mark.parametrize("order1", [1, 2, 3, 4, 5])
-@pytest.mark.parametrize("order2", [1, 2, 3])
+@ pytest.mark.parametrize("order1", [1, 2, 3, 4, 5])
+@ pytest.mark.parametrize("order2", [1, 2, 3])
 def test_interpolation_p2p(order1, order2):
     mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2)
     V = FunctionSpace(mesh, ("Lagrange", order1))
@@ -321,8 +342,8 @@ def test_interpolation_p2p(order1, order2):
     assert np.isclose(s, 0)
 
 
-@pytest.mark.parametrize("order1", [1, 2, 3])
-@pytest.mark.parametrize("order2", [1, 2])
+@ pytest.mark.parametrize("order1", [1, 2, 3])
+@ pytest.mark.parametrize("order2", [1, 2])
 def test_interpolation_vector_elements(order1, order2):
     mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2)
     V = VectorFunctionSpace(mesh, ("Lagrange", order1))
@@ -367,8 +388,8 @@ def test_interpolation_non_affine():
     assert np.isclose(s, 0)
 
 
-@pytest.mark.parametrize("order", [2, 3, 4])
-@pytest.mark.parametrize("dim", [2, 3])
+@ pytest.mark.parametrize("order", [2, 3, 4])
+@ pytest.mark.parametrize("dim", [2, 3])
 def test_nedelec_spatial(order, dim):
     if dim == 2:
         mesh = create_unit_square(MPI.COMM_WORLD, 4, 4)
@@ -395,9 +416,9 @@ def test_nedelec_spatial(order, dim):
     assert np.isclose(np.abs(assemble_scalar(form(ufl.inner(w - f_ex, w - f_ex) * ufl.dx))), 0)
 
 
-@pytest.mark.parametrize("order", [1, 2, 3, 4])
-@pytest.mark.parametrize("dim", [2, 3])
-@pytest.mark.parametrize("affine", [True, False])
+@ pytest.mark.parametrize("order", [1, 2, 3, 4])
+@ pytest.mark.parametrize("dim", [2, 3])
+@ pytest.mark.parametrize("affine", [True, False])
 def test_vector_interpolation_spatial(order, dim, affine):
     if dim == 2:
         ct = CellType.triangle if affine else CellType.quadrilateral
@@ -416,7 +437,7 @@ def test_vector_interpolation_spatial(order, dim, affine):
     assert np.isclose(np.abs(assemble_scalar(form(ufl.inner(u - f, u - f) * ufl.dx))), 0)
 
 
-@pytest.mark.parametrize("order", [1, 2, 3, 4])
+@ pytest.mark.parametrize("order", [1, 2, 3, 4])
 def test_2D_lagrange_to_curl(order):
     mesh = create_unit_square(MPI.COMM_WORLD, 3, 4)
     V = FunctionSpace(mesh, ("N1curl", order))
@@ -436,7 +457,7 @@ def test_2D_lagrange_to_curl(order):
     assert np.isclose(np.abs(assemble_scalar(form(ufl.inner(u - f_ex, u - f_ex) * ufl.dx))), 0)
 
 
-@pytest.mark.parametrize("order", [2, 3, 4])
+@ pytest.mark.parametrize("order", [2, 3, 4])
 def test_de_rahm_2D(order):
     mesh = create_unit_square(MPI.COMM_WORLD, 3, 4)
     W = FunctionSpace(mesh, ("Lagrange", order))
@@ -467,9 +488,9 @@ def test_de_rahm_2D(order):
     assert np.isclose(np.abs(assemble_scalar(form(ufl.inner(v - h_ex, v - h_ex) * ufl.dx))), 0)
 
 
-@pytest.mark.parametrize("order", [1, 2, 3, 4])
-@pytest.mark.parametrize("dim", [2, 3])
-@pytest.mark.parametrize("affine", [True, False])
+@ pytest.mark.parametrize("order", [1, 2, 3, 4])
+@ pytest.mark.parametrize("dim", [2, 3])
+@ pytest.mark.parametrize("affine", [True, False])
 def test_interpolate_subset(order, dim, affine):
     if dim == 2:
         ct = CellType.triangle if affine else CellType.quadrilateral

@@ -625,16 +625,24 @@ void interpolate(Function<T>& u, const Function<T>& v,
       xtl::span<const T> u0_array = v.x()->array();
 
       // Iterate over mesh and interpolate on each cell
-      const int bs = dofmap0->bs();
-      assert(bs == dofmap1->bs());
+      const int bs0 = dofmap0->bs();
+      const int bs1 = dofmap1->bs();
       for (auto c : cells)
       {
         xtl::span<const std::int32_t> dofs0 = dofmap0->cell_dofs(c);
         xtl::span<const std::int32_t> dofs1 = dofmap1->cell_dofs(c);
-        assert(dofs0.size() == dofs1.size());
-        for (std::size_t i = 0; i < dofs0.size(); ++i)
-          for (int k = 0; k < bs; ++k)
-            u1_array[bs * dofs1[i] + k] = u0_array[bs * dofs0[i] + k];
+        assert(bs0 * dofs0.size() == bs1 * dofs1.size());
+        for (std::size_t i = 0; i < bs0 * dofs0.size(); ++i)
+        {
+          std::div_t dv0 = std::div(i, bs0);
+          std::div_t dv1 = std::div(i, bs1);
+          u1_array[bs1 * dofs1[dv1.quot] + dv1.rem]
+              = u0_array[bs0 * dofs0[dv0.quot] + dv0.rem];
+        }
+
+        // for (std::size_t i = 0; i < dofs0.size(); ++i)
+        //   for (int k = 0; k < bs; ++k)
+        //     u1_array[bs * dofs1[i] + k] = u0_array[bs * dofs0[i] + k];
       }
     }
     else if (element1->map_type() == element0->map_type())
