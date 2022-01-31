@@ -249,24 +249,25 @@ public:
       throw std::runtime_error(
           "Function value size not equal to Expression value size");
     }
-    
+
     // Check that expression has same interpolation points as function
     if (e.X().shape()
-         == _function_space->element()->interpolation_points().shape())
+        == _function_space->element()->interpolation_points().shape())
     {
       // xt::allclose has issues on icpx in early 2022. This is why the interior
       // if is nested.
       if (!xt::allclose(e.X(),
-                         _function_space->element()->interpolation_points()))
+                        _function_space->element()->interpolation_points()))
       {
         throw std::runtime_error("Function element interpolation points not "
                                  "equal to Expression interpolation points");
       }
-    } 
-    else 
+    }
+    else
     {
-      throw std::runtime_error("Function element interpolation points shape "
-                               "does not match Expression interpolation points shape");
+      throw std::runtime_error(
+          "Function element interpolation points shape "
+          "does not match Expression interpolation points shape");
     }
 
     // Array to hold evaluted Expression
