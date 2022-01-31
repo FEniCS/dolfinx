@@ -68,6 +68,11 @@ jobs:
           cmake --build build
           cmake --install build
 
+      - name: Install UFL and FFCx modules
+        run: |
+          python3 -m pip install git+https://github.com/FEniCS/ufl.git
+          python3 -m pip install ffcx/
+
       - name: Build and run DOLFINx C++ unit tests (serial and MPI)
         run: |
           . /opt/intel/oneapi/setvars.sh
@@ -76,11 +81,6 @@ jobs:
           cd build/test/unit
           ctest --output-on-failure -R unittests
           mpiexec -np 2 ctest --output-on-failure -R unittests
-
-      - name: Install UFL and FFCx modules
-        run: |
-          python3 -m pip install git+https://github.com/FEniCS/ufl.git
-          python3 -m pip install ffcx/
 
       - name: Build and run DOLFINx C++ regression tests (serial and MPI (np=2))
         run: |

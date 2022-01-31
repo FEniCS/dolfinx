@@ -24,6 +24,11 @@
 #include <vector>
 #include <xtl/xspan.hpp>
 
+namespace basix
+{
+class FiniteElement;
+}
+
 namespace dolfinx::common
 {
 class IndexMap;
@@ -37,8 +42,6 @@ class Topology;
 
 namespace dolfinx::fem
 {
-template <typename T>
-class Constant;
 class FunctionSpace;
 
 /// Extract test (0) and trial (1) function spaces pairs for each
@@ -49,21 +52,18 @@ class FunctionSpace;
 /// function spaces in each array entry. If a form is null, then the
 /// returned function space pair is (null, null).
 template <typename T>
-std::vector<
-    std::vector<std::array<std::shared_ptr<const fem::FunctionSpace>, 2>>>
-extract_function_spaces(const std::vector<std::vector<const fem::Form<T>*>>& a)
+std::vector<std::vector<std::array<std::shared_ptr<const FunctionSpace>, 2>>>
+extract_function_spaces(const std::vector<std::vector<const Form<T>*>>& a)
 {
-  std::vector<
-      std::vector<std::array<std::shared_ptr<const fem::FunctionSpace>, 2>>>
-      spaces(
-          a.size(),
-          std::vector<std::array<std::shared_ptr<const fem::FunctionSpace>, 2>>(
-              a[0].size()));
+  std::vector<std::vector<std::array<std::shared_ptr<const FunctionSpace>, 2>>>
+      spaces(a.size(),
+             std::vector<std::array<std::shared_ptr<const FunctionSpace>, 2>>(
+                 a[0].size()));
   for (std::size_t i = 0; i < a.size(); ++i)
   {
     for (std::size_t j = 0; j < a[i].size(); ++j)
     {
-      if (const fem::Form<T>* form = a[i][j]; form)
+      if (const Form<T>* form = a[i][j]; form)
         spaces[i][j] = {form->function_spaces()[0], form->function_spaces()[1]};
     }
   }
@@ -85,7 +85,7 @@ la::SparsityPattern create_sparsity_pattern(const Form<T>& a)
   }
 
   // Get dof maps and mesh
-  std::array<std::reference_wrapper<const fem::DofMap>, 2> dofmaps{
+  std::array<std::reference_wrapper<const DofMap>, 2> dofmaps{
       *a.function_spaces().at(0)->dofmap(),
       *a.function_spaces().at(1)->dofmap()};
   std::shared_ptr mesh = a.mesh();
@@ -109,7 +109,7 @@ la::SparsityPattern create_sparsity_pattern(const Form<T>& a)
 /// SparsityPattern::assemble.
 la::SparsityPattern create_sparsity_pattern(
     const mesh::Topology& topology,
-    const std::array<std::reference_wrapper<const fem::DofMap>, 2>& dofmaps,
+    const std::array<std::reference_wrapper<const DofMap>, 2>& dofmaps,
     const std::set<IntegralType>& integrals);
 
 /// Create an ElementDofLayout from a ufcx_dofmap
@@ -118,19 +118,19 @@ ElementDofLayout create_element_dof_layout(const ufcx_dofmap& dofmap,
                                            const std::vector<int>& parent_map
                                            = {});
 
-/// Create a dof map on mesh from a ufcx_dofmap
+/// Create a dof map on mesh
 /// @param[in] comm MPI communicator
-/// @param[in] dofmap The ufcx_dofmap
+/// @param[in] layout The dof layout on an element
 /// @param[in] topology The mesh topology
 /// @param[in] element The finite element
 /// @param[in] reorder_fn The graph reordering function called on the
 /// dofmap
 DofMap
-create_dofmap(MPI_Comm comm, const ufcx_dofmap& dofmap,
+create_dofmap(MPI_Comm comm, const ElementDofLayout& layout,
               mesh::Topology& topology,
               const std::function<std::vector<int>(
                   const graph::AdjacencyList<std::int32_t>&)>& reorder_fn,
-              std::shared_ptr<const dolfinx::fem::FiniteElement> element);
+              const FiniteElement& element);
 
 /// Get the name of each coefficient in a UFC form
 /// @param[in] ufcx_form The UFC form
@@ -152,9 +152,9 @@ std::vector<std::string> get_constant_names(const ufcx_form& ufcx_form);
 template <typename T>
 Form<T> create_form(
     const ufcx_form& ufcx_form,
-    const std::vector<std::shared_ptr<const fem::FunctionSpace>>& spaces,
-    const std::vector<std::shared_ptr<const fem::Function<T>>>& coefficients,
-    const std::vector<std::shared_ptr<const fem::Constant<T>>>& constants,
+    const std::vector<std::shared_ptr<const FunctionSpace>>& spaces,
+    const std::vector<std::shared_ptr<const Function<T>>>& coefficients,
+    const std::vector<std::shared_ptr<const Constant<T>>>& constants,
     const std::map<IntegralType, const mesh::MeshTags<int>*>& subdomains,
     const std::shared_ptr<const mesh::Mesh>& mesh = nullptr)
 {
@@ -336,8 +336,8 @@ Form<T> create_form(
     integral_data[IntegralType::interior_facet].second = it->second;
   }
 
-  return fem::Form<T>(spaces, integral_data, coefficients, constants,
-                      needs_facet_permutations, mesh);
+  return Form<T>(spaces, integral_data, coefficients, constants,
+                 needs_facet_permutations, mesh);
 }
 
 /// Create a Form from UFC input
@@ -352,16 +352,15 @@ Form<T> create_form(
 template <typename T>
 Form<T> create_form(
     const ufcx_form& ufcx_form,
-    const std::vector<std::shared_ptr<const fem::FunctionSpace>>& spaces,
-    const std::map<std::string, std::shared_ptr<const fem::Function<T>>>&
+    const std::vector<std::shared_ptr<const FunctionSpace>>& spaces,
+    const std::map<std::string, std::shared_ptr<const Function<T>>>&
         coefficients,
-    const std::map<std::string, std::shared_ptr<const fem::Constant<T>>>&
-        constants,
+    const std::map<std::string, std::shared_ptr<const Constant<T>>>& constants,
     const std::map<IntegralType, const mesh::MeshTags<int>*>& subdomains,
     const std::shared_ptr<const mesh::Mesh>& mesh = nullptr)
 {
   // Place coefficients in appropriate order
-  std::vector<std::shared_ptr<const fem::Function<T>>> coeff_map;
+  std::vector<std::shared_ptr<const Function<T>>> coeff_map;
   for (const std::string& name : get_coefficient_names(ufcx_form))
   {
     if (auto it = coefficients.find(name); it != coefficients.end())
@@ -374,7 +373,7 @@ Form<T> create_form(
   }
 
   // Place constants in appropriate order
-  std::vector<std::shared_ptr<const fem::Constant<T>>> const_map;
+  std::vector<std::shared_ptr<const Constant<T>>> const_map;
   for (const std::string& name : get_constant_names(ufcx_form))
   {
     if (auto it = constants.find(name); it != constants.end())
@@ -400,20 +399,35 @@ Form<T> create_form(
 template <typename T>
 Form<T> create_form(
     ufcx_form* (*fptr)(),
-    const std::vector<std::shared_ptr<const fem::FunctionSpace>>& spaces,
-    const std::map<std::string, std::shared_ptr<const fem::Function<T>>>&
+    const std::vector<std::shared_ptr<const FunctionSpace>>& spaces,
+    const std::map<std::string, std::shared_ptr<const Function<T>>>&
         coefficients,
-    const std::map<std::string, std::shared_ptr<const fem::Constant<T>>>&
-        constants,
+    const std::map<std::string, std::shared_ptr<const Constant<T>>>& constants,
     const std::map<IntegralType, const mesh::MeshTags<int>*>& subdomains,
     const std::shared_ptr<const mesh::Mesh>& mesh = nullptr)
 {
   ufcx_form* form = fptr();
-  Form<T> L = fem::create_form<T>(*form, spaces, coefficients, constants,
-                                  subdomains, mesh);
+  Form<T> L = create_form<T>(*form, spaces, coefficients, constants, subdomains,
+                             mesh);
   std::free(form);
   return L;
 }
+
+/// Create a FunctionSpace from a Basix element
+///
+/// @param[in] mesh Mesh
+/// @param[in] e Basix finite element
+/// @param[in] bs The block size, e.g. 3 for a 'vector' Lagrange element
+/// in 3D
+/// @param[in] reorder_fn The graph reordering function to call on the
+/// dofmap. If `nullptr`, the default re-ordering is used.
+/// @return The created function space
+FunctionSpace
+create_functionspace(const std::shared_ptr<mesh::Mesh>& mesh,
+                     const basix::FiniteElement& e, int bs,
+                     const std::function<std::vector<int>(
+                         const graph::AdjacencyList<std::int32_t>&)>& reorder_fn
+                     = nullptr);
 
 /// Create a FunctionSpace from UFC data
 ///
@@ -424,24 +438,51 @@ Form<T> create_form(
 /// ufl.Coefficient, ufl.TrialFunction or ufl.TestFunction as defined in
 /// the UFL file.
 /// @param[in] mesh Mesh
-/// @param[in] reorder_fn The graph reordering function called on the
-/// dofmap
+/// @param[in] reorder_fn The graph reordering function to call on the
+/// dofmap. If `nullptr`, the default re-ordering is used.
 /// @return The created function space
-fem::FunctionSpace create_functionspace(
+FunctionSpace create_functionspace(
     ufcx_function_space* (*fptr)(const char*), const std::string& function_name,
-    std::shared_ptr<mesh::Mesh> mesh,
+    const std::shared_ptr<mesh::Mesh>& mesh,
     const std::function<
         std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>& reorder_fn
     = nullptr);
 
 namespace impl
 {
+template <typename T>
+xtl::span<const std::uint32_t> get_cell_orientation_info(
+    const std::vector<std::shared_ptr<const Function<T>>>& coefficients)
+{
+  bool needs_dof_transformations = false;
+  for (auto coeff : coefficients)
+  {
+    std::shared_ptr<const FiniteElement> element
+        = coeff->function_space()->element();
+    if (element->needs_dof_transformations())
+    {
+      needs_dof_transformations = true;
+      break;
+    }
+  }
+
+  xtl::span<const std::uint32_t> cell_info;
+  if (needs_dof_transformations)
+  {
+    auto mesh = coefficients.front()->function_space()->mesh();
+    mesh->topology_mutable().create_entity_permutations();
+    cell_info = xtl::span(mesh->topology().get_cell_permutation_info());
+  }
+
+  return cell_info;
+}
+
 // Pack a single coefficient for a single cell
 template <typename T, int _bs, typename Functor>
-void pack(const xtl::span<T>& coeffs, std::int32_t cell, int bs,
-          const xtl::span<const T>& v,
-          const xtl::span<const std::uint32_t>& cell_info,
-          const fem::DofMap& dofmap, Functor transform)
+static inline void pack(const xtl::span<T>& coeffs, std::int32_t cell, int bs,
+                        const xtl::span<const T>& v,
+                        const xtl::span<const std::uint32_t>& cell_info,
+                        const DofMap& dofmap, Functor transform)
 {
   auto dofs = dofmap.cell_dofs(cell);
   for (std::size_t i = 0; i < dofs.size(); ++i)
@@ -470,28 +511,29 @@ void pack(const xtl::span<T>& coeffs, std::int32_t cell, int bs,
 /// @param[out] c The coefficient to be packed
 /// @param[in] cstride The total number of coefficient values to pack
 /// for each entity
-/// @param[in] v List of arrays with all degrees of freedom for the
-/// functions to be packed
+/// @param[in] u The function to extract data from
 /// @param[in] cell_info Array of bytes describing which transformation
 /// has to be applied on the cell to map it to the reference element
-/// @param[in] dofmap The dofmap
 /// @param[in] entities The set of active entities
 /// @param[in] fetch_cells Function that fetches the cell index for an
 /// entity in active_entities (signature:
-/// `std::function<std::int32_t(E)>`)
+/// `std::function<std::int32_t(E::value_type)>`)
 /// @param[in] offset The offset for c
-/// @param[in] space_dim The dimension of the FE space
-/// @param[in] transformation The dof transformation
 template <typename T, typename E, typename Functor>
-void pack_coefficient_entity(
-    const xtl::span<T>& c, int cstride, const xtl::span<const T>& v,
-    const xtl::span<const std::uint32_t>& cell_info, const fem::DofMap& dofmap,
-    const xtl::span<const E>& entities, Functor fetch_cells,
-    std::int32_t offset, int space_dim,
-    const std::function<void(const xtl::span<T>&,
-                             const xtl::span<const std::uint32_t>&,
-                             std::int32_t, int)>& transformation)
+void pack_coefficient_entity(const xtl::span<T>& c, int cstride,
+                             const Function<T>& u,
+                             const xtl::span<const std::uint32_t>& cell_info,
+                             const E& entities, Functor fetch_cells,
+                             std::int32_t offset)
 {
+  // Read data from coefficient "u"
+  const xtl::span<const T>& v = u.x()->array();
+  const DofMap& dofmap = *u.function_space()->dofmap();
+  std::shared_ptr<const FiniteElement> element = u.function_space()->element();
+  int space_dim = element->space_dimension();
+  const auto transformation
+      = element->get_dof_transformation_function<T>(false, true);
+
   const int bs = dofmap.bs();
   switch (bs)
   {
@@ -532,72 +574,104 @@ void pack_coefficient_entity(
 
 } // namespace impl
 
-/// Pack coefficients of a Form u for a given integral type and domain
-/// id
+/// Allocate storage for coefficients of a pair (integral_type, id) from
+/// a Form form
 ///
 /// @param[in] form The Form
 /// @param[in] integral_type Type of integral
 /// @param[in] id The id of the integration domain
-/// @return A pair of the form (coeffs, entity stride)
+/// @return A storage container and the column stride
 template <typename T>
 std::pair<std::vector<T>, int>
-pack_coefficients(const Form<T>& form, fem::IntegralType integral_type, int id)
+allocate_coefficient_storage(const Form<T>& form, IntegralType integral_type,
+                             int id)
 {
   // Get form coefficient offsets and dofmaps
-  const std::vector<std::shared_ptr<const fem::Function<T>>> coefficients
+  const std::vector<std::shared_ptr<const Function<T>>>& coefficients
       = form.coefficients();
   const std::vector<int> offsets = form.coefficient_offsets();
-  std::vector<const fem::DofMap*> dofmaps(coefficients.size());
-  std::vector<const fem::FiniteElement*> elements(coefficients.size());
-  std::vector<xtl::span<const T>> v;
-  v.reserve(coefficients.size());
-  for (std::size_t i = 0; i < coefficients.size(); ++i)
-  {
-    elements[i] = coefficients[i]->function_space()->element().get();
-    dofmaps[i] = coefficients[i]->function_space()->dofmap().get();
-    v.push_back(coefficients[i]->x()->array());
-  }
 
-  // Get mesh
-  std::shared_ptr<const mesh::Mesh> mesh = form.mesh();
-  assert(mesh);
-
-  // Copy data into coefficient array
-  const int cstride = offsets.back();
-  std::vector<T> c;
+  std::size_t num_entities = 0;
+  int cstride = 0;
   if (!coefficients.empty())
   {
-    bool needs_dof_transformations = false;
-    for (std::size_t coeff = 0; coeff < dofmaps.size(); ++coeff)
+    cstride = offsets.back();
+    switch (integral_type)
     {
-      if (elements[coeff]->needs_dof_transformations())
-      {
-        needs_dof_transformations = true;
-        mesh->topology_mutable().create_entity_permutations();
-      }
+    case IntegralType::cell:
+      num_entities = form.cell_domains(id).size();
+      break;
+    case IntegralType::exterior_facet:
+      num_entities = form.exterior_facet_domains(id).size();
+      break;
+    case IntegralType::interior_facet:
+      num_entities = form.interior_facet_domains(id).size() * 2;
+      break;
+    default:
+      throw std::runtime_error(
+          "Could not allocate coefficient data. Integral type not supported.");
     }
+  }
 
-    xtl::span<const std::uint32_t> cell_info;
-    if (needs_dof_transformations)
-      cell_info = xtl::span(mesh->topology().get_cell_permutation_info());
+  return {std::vector<T>(num_entities * cstride), cstride};
+}
 
-    // TODO see if this can be simplified with templating
+/// Allocate memory for packed coefficients of a Form
+///
+/// @param[in] form The Form
+/// @return A map from a form (integral_type, domain_id) pair to a
+/// (coeffs, cstride) pair
+template <typename T>
+std::map<std::pair<IntegralType, int>, std::pair<std::vector<T>, int>>
+allocate_coefficient_storage(const Form<T>& form)
+{
+  std::map<std::pair<IntegralType, int>, std::pair<std::vector<T>, int>> coeffs;
+  for (auto integral_type : form.integral_types())
+  {
+    for (int id : form.integral_ids(integral_type))
+    {
+      coeffs.emplace_hint(
+          coeffs.end(), std::pair(integral_type, id),
+          allocate_coefficient_storage(form, integral_type, id));
+    }
+  }
+
+  return coeffs;
+}
+
+/// Pack coefficients of a Form for a given integral type and domain id
+///
+/// @param[in] form The Form
+/// @param[in] integral_type Type of integral
+/// @param[in] id The id of the integration domain
+/// @param[in] c The coefficient array
+/// @param[in] cstride The coefficient stride
+template <typename T>
+void pack_coefficients(const Form<T>& form, IntegralType integral_type, int id,
+                       const xtl::span<T>& c, int cstride)
+{
+  // Get form coefficient offsets and dofmaps
+  const std::vector<std::shared_ptr<const Function<T>>>& coefficients
+      = form.coefficients();
+  const std::vector<int> offsets = form.coefficient_offsets();
+
+  if (!coefficients.empty())
+  {
+    xtl::span<const std::uint32_t> cell_info
+        = impl::get_cell_orientation_info(coefficients);
+
     switch (integral_type)
     {
     case IntegralType::cell:
     {
+      auto fetch_cell = [](auto entity) { return entity; };
       const std::vector<std::int32_t>& cells = form.cell_domains(id);
-      c.resize(cells.size() * offsets.back());
-
       // Iterate over coefficients
-      for (std::size_t coeff = 0; coeff < dofmaps.size(); ++coeff)
+      for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
       {
-        const auto transform
-            = elements[coeff]->get_dof_transformation_function<T>(false, true);
-        impl::pack_coefficient_entity<T, std::int32_t>(
-            xtl::span<T>(c), cstride, v[coeff], cell_info, *dofmaps[coeff],
-            cells, [](std::int32_t entity) { return entity; }, offsets[coeff],
-            elements[coeff]->space_dimension(), transform);
+        impl::pack_coefficient_entity(c, cstride, *coefficients[coeff],
+                                      cell_info, cells, fetch_cell,
+                                      offsets[coeff]);
       }
       break;
     }
@@ -605,22 +679,18 @@ pack_coefficients(const Form<T>& form, fem::IntegralType integral_type, int id)
     {
       const std::vector<std::pair<std::int32_t, int>>& facets
           = form.exterior_facet_domains(id);
-      c.resize(facets.size() * offsets.back());
 
       // Create lambda function fetching cell index from exterior facet entity
-      auto fetch_cell = [](const std::pair<std::int32_t, int>& entity)
-      { return entity.first; };
+      auto fetch_cell = [](auto& entity) { return entity.first; };
 
       // Iterate over coefficients
-      for (std::size_t coeff = 0; coeff < dofmaps.size(); ++coeff)
+      for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
       {
-        const auto transform
-            = elements[coeff]->get_dof_transformation_function<T>(false, true);
-        impl::pack_coefficient_entity<T, std::pair<std::int32_t, int>>(
-            xtl::span<T>(c), cstride, v[coeff], cell_info, *dofmaps[coeff],
-            facets, fetch_cell, offsets[coeff],
-            elements[coeff]->space_dimension(), transform);
+        impl::pack_coefficient_entity(c, cstride, *coefficients[coeff],
+                                      cell_info, facets, fetch_cell,
+                                      offsets[coeff]);
       }
+
       break;
     }
     case IntegralType::interior_facet:
@@ -628,33 +698,21 @@ pack_coefficients(const Form<T>& form, fem::IntegralType integral_type, int id)
       const std::vector<std::tuple<std::int32_t, int, std::int32_t, int>>&
           facets
           = form.interior_facet_domains(id);
-      c.resize(facets.size() * 2 * offsets.back());
-
       // Lambda functions to fetch cell index from interior facet entity
-      auto fetch_cell0
-          = [](const std::tuple<std::int32_t, int, std::int32_t, int>& entity)
-      { return std::get<0>(entity); };
-      auto fetch_cell1
-          = [](const std::tuple<std::int32_t, int, std::int32_t, int>& entity)
-      { return std::get<2>(entity); };
+      auto fetch_cell0 = [](auto& entity) { return std::get<0>(entity); };
+      auto fetch_cell1 = [](auto& entity) { return std::get<2>(entity); };
 
       // Iterate over coefficients
-      for (std::size_t coeff = 0; coeff < dofmaps.size(); ++coeff)
+      for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
       {
-        const auto transform
-            = elements[coeff]->get_dof_transformation_function<T>(false, true);
         // Pack coefficient ['+']
-        impl::pack_coefficient_entity<
-            T, std::tuple<std::int32_t, int, std::int32_t, int>>(
-            xtl::span<T>(c), 2 * cstride, v[coeff], cell_info, *dofmaps[coeff],
-            facets, fetch_cell0, 2 * offsets[coeff],
-            elements[coeff]->space_dimension(), transform);
+        impl::pack_coefficient_entity(c, 2 * cstride, *coefficients[coeff],
+                                      cell_info, facets, fetch_cell0,
+                                      2 * offsets[coeff]);
         // Pack coefficient ['-']
-        impl::pack_coefficient_entity<
-            T, std::tuple<std::int32_t, int, std::int32_t, int>>(
-            xtl::span<T>(c), 2 * cstride, v[coeff], cell_info, *dofmaps[coeff],
-            facets, fetch_cell1, offsets[coeff] + offsets[coeff + 1],
-            elements[coeff]->space_dimension(), transform);
+        impl::pack_coefficient_entity(c, 2 * cstride, *coefficients[coeff],
+                                      cell_info, facets, fetch_cell1,
+                                      offsets[coeff] + offsets[coeff + 1]);
       }
       break;
     }
@@ -663,29 +721,20 @@ pack_coefficients(const Form<T>& form, fem::IntegralType integral_type, int id)
           "Could not pack coefficient. Integral type not supported.");
     }
   }
-  return {std::move(c), cstride};
 }
 
-// NOTE: This is subject to change
 /// Pack coefficients of a Form
 ///
 /// @param[in] form The Form
-/// @return A map from a pair of the form (integral_type, domain_id) to
-/// a pair of the form (coeffs, cstride)
+/// @param[in] coeffs A map from a (integral_type, domain_id) pair to a
+/// (coeffs, cstride) pair
 template <typename T>
-std::map<std::pair<IntegralType, int>, std::pair<std::vector<T>, int>>
-pack_coefficients(const Form<T>& form)
+void pack_coefficients(const Form<T>& form,
+                       std::map<std::pair<IntegralType, int>,
+                                std::pair<std::vector<T>, int>>& coeffs)
 {
-  std::map<std::pair<IntegralType, int>, std::pair<std::vector<T>, int>> coeffs;
-  for (auto integral_type : form.integral_types())
-  {
-    for (int id : form.integral_ids(integral_type))
-    {
-      coeffs.emplace(std::pair(integral_type, id),
-                     pack_coefficients(form, integral_type, id));
-    }
-  }
-  return coeffs;
+  for (auto& [key, val] : coeffs)
+    pack_coefficients<T>(form, key.first, key.second, val.first, val.second);
 }
 
 /// Pack coefficients of a Expression u for a give list of active cells
@@ -698,72 +747,40 @@ std::pair<std::vector<T>, int>
 pack_coefficients(const Expression<T>& u,
                   const xtl::span<const std::int32_t>& cells)
 {
-  // FIXME: Much of this code is duplicated above. Try to refactor.
-
   // Get form coefficient offsets and dofmaps
-  const std::vector<std::shared_ptr<const fem::Function<T>>> coefficients
+  const std::vector<std::shared_ptr<const Function<T>>>& coefficients
       = u.coefficients();
   const std::vector<int> offsets = u.coefficient_offsets();
-  std::vector<const fem::DofMap*> dofmaps(coefficients.size());
-  std::vector<const fem::FiniteElement*> elements(coefficients.size());
-  std::vector<xtl::span<const T>> v;
-  v.reserve(coefficients.size());
-  for (std::size_t i = 0; i < coefficients.size(); ++i)
-  {
-    elements[i] = coefficients[i]->function_space()->element().get();
-    dofmaps[i] = coefficients[i]->function_space()->dofmap().get();
-    v.push_back(coefficients[i]->x()->array());
-  }
-
-  // Get mesh
-  std::shared_ptr<const mesh::Mesh> mesh = u.mesh();
-  assert(mesh);
 
   // Copy data into coefficient array
   const int cstride = offsets.back();
   std::vector<T> c(cells.size() * offsets.back());
   if (!coefficients.empty())
   {
-    bool needs_dof_transformations = false;
-    for (std::size_t coeff = 0; coeff < dofmaps.size(); ++coeff)
-    {
-      if (elements[coeff]->needs_dof_transformations())
-      {
-        needs_dof_transformations = true;
-        mesh->topology_mutable().create_entity_permutations();
-      }
-    }
-
-    xtl::span<const std::uint32_t> cell_info;
-    if (needs_dof_transformations)
-      cell_info = xtl::span(mesh->topology().get_cell_permutation_info());
+    xtl::span<const std::uint32_t> cell_info
+        = impl::get_cell_orientation_info(coefficients);
 
     // Iterate over coefficients
-    for (std::size_t coeff = 0; coeff < dofmaps.size(); ++coeff)
-    {
-      const auto transform
-          = elements[coeff]->get_dof_transformation_function<T>(false, true);
-      impl::pack_coefficient_entity<T, std::int32_t>(
-          xtl::span<T>(c), cstride, v[coeff], cell_info, *dofmaps[coeff], cells,
-          [](std::int32_t entity) { return entity; }, offsets[coeff],
-          elements[coeff]->space_dimension(), transform);
-    }
+    for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
+      impl::pack_coefficient_entity(
+          xtl::span(c), cstride, *coefficients[coeff], cell_info, cells,
+          [](std::int32_t entity) { return entity; }, offsets[coeff]);
   }
   return {std::move(c), cstride};
 }
 
-// NOTE: This is subject to change
+/// @note This function is subject to change
 /// Pack constants of u of generic type U ready for assembly
 template <typename U>
 std::vector<typename U::scalar_type> pack_constants(const U& u)
 {
   using T = typename U::scalar_type;
-  const std::vector<std::shared_ptr<const fem::Constant<T>>>& constants
+  const std::vector<std::shared_ptr<const Constant<T>>>& constants
       = u.constants();
 
   // Calculate size of array needed to store packed constants
   std::int32_t size = std::accumulate(constants.cbegin(), constants.cend(), 0,
-                                      [](std::int32_t sum, const auto& constant)
+                                      [](std::int32_t sum, auto& constant)
                                       { return sum + constant->value.size(); });
 
   // Pack constants

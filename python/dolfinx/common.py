@@ -14,14 +14,19 @@ from dolfinx.cpp.common import (IndexMap, git_commit_hash, has_adios2,  # noqa
 __all__ = ["IndexMap", "Timer", "timed"]
 
 TimingType = _cpp.common.TimingType
+Reduction = _cpp.common.Reduction
 
 
 def timing(task: str):
     return _cpp.common.timing(task)
 
 
-def list_timings(comm, timing_types: list):
-    return _cpp.common.list_timings(comm, timing_types)
+def list_timings(comm, timing_types: list, reduction=Reduction.max):
+    """Print out a summary of all Timer measurements, with a choice of
+    wall time, system time or user time. When used in parallel, a
+    reduction is applied across all processes. By default, the maximum
+    time is shown."""
+    _cpp.common.list_timings(comm, timing_types, reduction)
 
 
 class Timer:

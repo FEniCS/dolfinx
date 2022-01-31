@@ -92,8 +92,8 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
       mpi_comm, cell_nodes, original_cell_index, ghost_owners,
       cmap.cell_shape(), mesh::GhostMode::shared_facet);
   int tdim = topology.dim();
-  dolfinx::mesh::Geometry geometry
-      = mesh::create_geometry(mpi_comm, topology, cmap, cell_nodes, x);
+  dolfinx::mesh::Geometry geometry = mesh::create_geometry(
+      mpi_comm, topology, cmap, cell_nodes, x, x.shape(1));
 
   auto mesh = std::make_shared<dolfinx::mesh::Mesh>(
       mpi_comm, std::move(topology), std::move(geometry));

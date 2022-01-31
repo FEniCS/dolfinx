@@ -19,7 +19,7 @@ REQUIREMENTS = [
     "mpi4py",
     "petsc4py",
     "fenics-ffcx>=0.3.1.dev0,<0.4.0",
-    "fenics-ufl>=2021.1.0,<2021.2.0"
+    "fenics-ufl>=2021.1.0,<2021.2.99"
 ]
 
 

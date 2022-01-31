@@ -7,6 +7,7 @@
 #ifdef HAS_ADIOS2
 
 #include "ADIOS2Writers.h"
+#include "cells.h"
 #include "pugixml.hpp"
 #include <adios2.h>
 #include <algorithm>
@@ -14,7 +15,6 @@
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/fem/Function.h>
 #include <dolfinx/fem/FunctionSpace.h>
-#include <dolfinx/io/cells.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/utils.h>
 #include <xtensor/xtensor.hpp>
@@ -505,8 +505,8 @@ std::vector<Scalar> pack_function_data(const fem::Function<Scalar>& u)
   assert(mesh);
 
   // The Function and the mesh must have identical element_dof_layouts
-  // (up tp the block size)
-  assert(*(dofmap->element_dof_layout)
+  // (up to the block size)
+  assert(dofmap->element_dof_layout()
          == mesh->geometry().cmap().create_dof_layout());
 
   const int tdim = mesh->topology().dim();
@@ -664,7 +664,7 @@ void fides_initialize_mesh_attributes(adios2::IO& io, const mesh::Mesh& mesh)
   const int num_vertices_per_cell
       = mesh::cell_num_entities(mesh.topology().cell_type(), 0);
   if (num_dofs_g != num_vertices_per_cell)
-    throw std::runtime_error("Fides only supports linear meshes.");
+    throw std::runtime_error("Fides only supports lowest-order meshes.");
 
   // NOTE: If we start using mixed element types, we can change
   // data-model to "unstructured"
@@ -691,18 +691,18 @@ void fides_initialize_function_attributes(adios2::IO& io,
   // Array of function (name, cell association types) for each function added
   // to the file
   std::vector<std::array<std::string, 2>> u_data;
-  for (auto& _u : u)
+  for (auto& v : u)
   {
-    if (auto v = std::get_if<std::shared_ptr<const ADIOS2Writer::Fdr>>(&_u))
-      u_data.push_back({(*v)->name, "points"});
-    else if (auto v
-             = std::get_if<std::shared_ptr<const ADIOS2Writer::Fdc>>(&_u))
-    {
-      for (auto part : {"real", "imag"})
-        u_data.push_back({(*v)->name + "_" + part, "points"});
-    }
-    else
-      throw std::runtime_error("Unsupported function.");
+    std::visit(
+        overload{[&u_data](const std::shared_ptr<const ADIOS2Writer::Fdr>& u) {
+                   u_data.push_back({u->name, "points"});
+                 },
+                 [&u_data](const std::shared_ptr<const ADIOS2Writer::Fdc>& u)
+                 {
+                   for (auto part : {"real", "imag"})
+                     u_data.push_back({u->name + "_" + part, "points"});
+                 }},
+        v);
   }
 
   // Write field associations to file
@@ -760,32 +760,23 @@ ADIOS2Writer::ADIOS2Writer(MPI_Comm comm, const std::string& filename,
 {
   // Extract mesh from first function
   assert(!u.empty());
-  if (auto v = std::get_if<std::shared_ptr<const Fdr>>(&u[0]))
-    _mesh = (*v)->function_space()->mesh();
-  else if (auto v = std::get_if<std::shared_ptr<const Fdc>>(&u[0]))
-    _mesh = (*v)->function_space()->mesh();
+  _mesh = std::visit([](const auto& u) { return u->function_space()->mesh(); },
+                     u.front());
+  assert(_mesh);
 
   // Check that all functions share the same mesh
   for (auto& v : u)
   {
-    if (auto _v = std::get_if<std::shared_ptr<const Fdr>>(&v))
-    {
-      if (_mesh != (*_v)->function_space()->mesh())
-      {
-        throw std::runtime_error(
-            "ADIOS2Writer only supports functions sharing the same mesh");
-      }
-    }
-    else if (auto _v = std::get_if<std::shared_ptr<const Fdc>>(&v))
-    {
-      if (_mesh != (*_v)->function_space()->mesh())
-      {
-        throw std::runtime_error(
-            "ADIOS2Writer only supports functions sharing the same mesh");
-      }
-    }
-    else
-      throw std::runtime_error("Unsupported function.");
+    std::visit(
+        [&mesh = _mesh](const auto& u)
+        {
+          if (mesh != u->function_space()->mesh())
+          {
+            throw std::runtime_error(
+                "ADIOS2Writer only supports functions sharing the same mesh");
+          }
+        },
+        v);
   }
 }
 //-----------------------------------------------------------------------------
@@ -813,50 +804,63 @@ FidesWriter::FidesWriter(MPI_Comm comm, const std::string& filename,
                          const ADIOS2Writer::U& u)
     : ADIOS2Writer(comm, filename, "Fides function writer", u)
 {
-  assert(!u.empty());
-  const mesh::Mesh* mesh = nullptr;
-  if (auto v = std::get_if<std::shared_ptr<const Fdr>>(&u[0]))
-    mesh = (*v)->function_space()->mesh().get();
-  else if (auto v = std::get_if<std::shared_ptr<const Fdc>>(&u[0]))
-    mesh = (*v)->function_space()->mesh().get();
-  else
-    throw std::runtime_error("Unsupported function.");
+  if (u.empty())
+    throw std::runtime_error("FidesWriter fem::Function list is empty");
 
+  // Extract Mesh from first function
+  auto mesh = std::visit(
+      [](const auto& u) { return u->function_space()->mesh(); }, u.front());
   assert(mesh);
 
+  // Extract element from first function
+  const fem::FiniteElement* element0 = std::visit(
+      [](const auto& e) { return e->function_space()->element().get(); },
+      u.front());
+  assert(element0);
+
+  // Check if function is mixed
+  if (element0->is_mixed())
+    throw std::runtime_error("Mixed functions are not supported by VTXWriter");
+
+  // Check if function is DG 0
+  if (element0->space_dimension() / element0->block_size() == 1)
+  {
+    throw std::runtime_error(
+        "Piecewise constants are not (yet) supported by VTXWriter");
+  }
+
+  // FIXME: is the below check adequate for dectecting a Lagrange
+  // element?
+  // Check that element is Lagrange
+  if (!element0->interpolation_ident())
+  {
+    throw std::runtime_error("Only (discontinuous) Lagrange functions are "
+                             "supported. Interpolate Functions before ouput.");
+  }
+
   // Check that all functions are first order Lagrange
-  const int num_vertices_per_cell
+  int num_vertices_per_cell
       = mesh::cell_num_entities(mesh->topology().cell_type(), 0);
   for (auto& v : _u)
   {
     std::visit(
-        overload{
-            [&](const std::shared_ptr<const Fdr>& u)
-            {
-              auto element = u->function_space()->element();
-              assert(element);
-              std::string family = element->family();
-              int num_dofs = element->space_dimension() / element->block_size();
-              if ((family != "Lagrange" and family != "Q" and family != "P")
-                  or (num_dofs != num_vertices_per_cell))
-              {
-                throw std::runtime_error(
-                    "Only first order Lagrange spaces supported");
-              }
-            },
-            [&](const std::shared_ptr<const Fdc>& u)
-            {
-              auto element = u->function_space()->element();
-              assert(element);
-              std::string family = element->family();
-              int num_dofs = element->space_dimension() / element->block_size();
-              if ((family != "Lagrange" and family != "Q" and family != "P")
-                  or (num_dofs != num_vertices_per_cell))
-              {
-                throw std::runtime_error(
-                    "Only first order Lagrange spaces supported");
-              }
-            }},
+        [&](const auto& u)
+        {
+          auto element = u->function_space()->element();
+          assert(element);
+          if (*element != *element0)
+          {
+            throw std::runtime_error(
+                "All functions in FidesWriter must have the same element type");
+          }
+
+          int num_dofs = element->space_dimension() / element->block_size();
+          if (num_dofs != num_vertices_per_cell)
+          {
+            throw std::runtime_error("Only first order Lagrange spaces are "
+                                     "supported by FidesWriter");
+          }
+        },
         v);
   }
 
@@ -875,15 +879,7 @@ void FidesWriter::write(double t)
 
   fides_write_mesh(*_io, *_engine, *_mesh);
   for (auto& v : _u)
-  {
-    std::visit(overload{[&](const std::shared_ptr<const Fdr>& u) {
-                          fides_write_data<Fdr::value_type>(*_io, *_engine, *u);
-                        },
-                        [&](const std::shared_ptr<const Fdc>& u) {
-                          fides_write_data<Fdc::value_type>(*_io, *_engine, *u);
-                        }},
-               v);
-  };
+    std::visit([&](const auto& u) { fides_write_data(*_io, *_engine, *u); }, v);
 
   _engine->EndStep();
 }
@@ -901,62 +897,49 @@ VTXWriter::VTXWriter(MPI_Comm comm, const std::string& filename,
                      const ADIOS2Writer::U& u)
     : ADIOS2Writer(comm, filename, "VTX function writer", u)
 {
+  if (u.empty())
+    throw std::runtime_error("VTXWriter fem::Function list is empty");
+
   // Extract element from first function
-  assert(!u.empty());
-  const fem::FiniteElement* element = nullptr;
-  if (auto v = std::get_if<std::shared_ptr<const Fdr>>(&u[0]))
-    element = (*v)->function_space()->element().get();
-  else if (auto v = std::get_if<std::shared_ptr<const Fdc>>(&u[0]))
-    element = (*v)->function_space()->element().get();
-  else
-    throw std::runtime_error("Unsupported function.");
+  const fem::FiniteElement* element0 = std::visit(
+      [](const auto& u) { return u->function_space()->element().get(); },
+      u.front());
+  assert(element0);
 
-  const std::string first_family = element->family();
-  const int first_num_dofs = element->space_dimension() / element->block_size();
-
-  const std::array supported_families
-      = {"Lagrange", "Q", "Discontinuous Lagrange", "DQ"};
-  if (std::find(supported_families.begin(), supported_families.end(),
-                first_family)
-      == supported_families.end())
-  {
-    throw std::runtime_error(
-        "Only (discontinuous) Lagrange functions are supported");
-  }
+  // Check if function is mixed
+  if (element0->is_mixed())
+    throw std::runtime_error("Mixed functions are not supported by VTXWriter");
 
   // Check if function is DG 0
-  if (element->space_dimension() / element->block_size() == 1)
-    throw std::runtime_error("Piecewise constants are not supported");
+  if (element0->space_dimension() / element0->block_size() == 1)
+  {
+    throw std::runtime_error(
+        "Piecewise constants are not (yet) supported by VTXWriter");
+  }
 
-  // Check that all functions come from same element family and have
-  // same degree
+  // FIXME: is the below check adequate for dectecting a Lagrange
+  // element?
+  // Check that element is Lagrange
+  if (!element0->interpolation_ident())
+  {
+    throw std::runtime_error("Only (discontinuous) Lagrange functions are "
+                             "supported. Interpolate Functions before ouput.");
+  }
+
+  // Check that all functions come from same element type
   for (auto& v : _u)
   {
     std::visit(
-        overload{[&](const std::shared_ptr<const Fdr>& u)
-                 {
-                   auto element = u->function_space()->element();
-                   std::string family = element->family();
-                   int num_dofs
-                       = element->space_dimension() / element->block_size();
-                   if ((family != first_family) or (num_dofs != first_num_dofs))
-                   {
-                     throw std::runtime_error(
-                         "Only first order Lagrange spaces supported");
-                   }
-                 },
-                 [&](const std::shared_ptr<const Fdc>& u)
-                 {
-                   auto element = u->function_space()->element();
-                   std::string family = element->family();
-                   int num_dofs
-                       = element->space_dimension() / element->block_size();
-                   if ((family != first_family) or (num_dofs != first_num_dofs))
-                   {
-                     throw std::runtime_error(
-                         "Only first order Lagrange spaces supported");
-                   }
-                 }},
+        [element0](const auto& u)
+        {
+          auto element = u->function_space()->element();
+          assert(element);
+          if (*element != *element0)
+          {
+            throw std::runtime_error(
+                "All functions in VTXWriter must have the same element type");
+          }
+        },
         v);
   }
 
@@ -981,27 +964,14 @@ void VTXWriter::write(double t)
   else
   {
     // Write a single mesh for functions as they share finite element
-    std::visit(overload{[&](const std::shared_ptr<const Fdr>& u) {
-                          vtx_write_mesh_from_space(*_io, *_engine,
-                                                    *u->function_space());
-                        },
-                        [&](const std::shared_ptr<const Fdc>& u) {
-                          vtx_write_mesh_from_space(*_io, *_engine,
-                                                    *u->function_space());
-                        }},
-               _u[0]);
+    std::visit(
+        [&](const auto& u)
+        { vtx_write_mesh_from_space(*_io, *_engine, *u->function_space()); },
+        _u[0]);
 
     // Write function data for each function to file
     for (auto& v : _u)
-    {
-      std::visit(overload{[&](const std::shared_ptr<const Fdr>& u) {
-                            vtx_write_data<Fdr::value_type>(*_io, *_engine, *u);
-                          },
-                          [&](const std::shared_ptr<const Fdc>& u) {
-                            vtx_write_data<Fdc::value_type>(*_io, *_engine, *u);
-                          }},
-                 v);
-    };
+      std::visit([&](const auto& u) { vtx_write_data(*_io, *_engine, *u); }, v);
   }
 
   _engine->EndStep();
