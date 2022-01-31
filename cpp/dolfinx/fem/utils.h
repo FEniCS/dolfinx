@@ -762,7 +762,6 @@ fem::Expression<T> create_expression(
           "Expression has no coefficients or arguments, pass a mesh.");
     }
   }
-  assert(mesh);
 
   // Check that mesh matches with arguments and coefficients
   if (coefficients.size() > 0)
