@@ -6,7 +6,6 @@
 #include <dolfinx/fem/assembler.h>
 #include <dolfinx/fem/petsc.h>
 #include <dolfinx/io/XDMFFile.h>
-#include <dolfinx/la/petsc.h>
 #include <dolfinx/la/Vector.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/cell_types.h>
@@ -195,14 +194,10 @@ int main(int argc, char* argv[])
         std::make_shared<const fem::DirichletBC<T>>(u_rotation, bdofs_right)};
 
     HyperElasticProblem problem(L, a, bcs);
-    nls::NewtonSolver newton_solver(MPI_COMM_WORLD);
+    nls::NewtonSolver newton_solver(mesh->comm());
     newton_solver.setF(problem.F(), problem.vector());
     newton_solver.setJ(problem.J(), problem.matrix());
     newton_solver.set_form(problem.form());
-    la::petsc::KrylovSolver& krylov_solver = newton_solver.get_krylov_solver();
-    la::petsc::options::set("nls_solve_ksp_type", "cg");
-    la::petsc::options::set("nls_solve_pc_type", "jacobi");
-    krylov_solver.set_from_options();
 
     la::petsc::Vector _u(la::petsc::create_vector_wrap(*u->x()), false);
     newton_solver.solve(_u.vec());
