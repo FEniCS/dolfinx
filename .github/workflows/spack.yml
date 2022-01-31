@@ -26,9 +26,8 @@ jobs:
         uses: actions/checkout@v2
         with:
           path: ./spack
-          # repository: spack/spack
-          repository: adamjstewart/spack
-          ref: packages/pip-bootstrap
+          repository: spack/spack
+          ref: develop
       - name: Build DOLFINx (C++) development version via Spack
         run: |
           . ./spack/share/spack/setup-env.sh
