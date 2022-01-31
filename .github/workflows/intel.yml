@@ -88,8 +88,8 @@ jobs:
           cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/demo/ -S build/demo/
           cmake --build build/demo
           cd build/demo
-          ctest -R demo -R serial
-          ctest -R demo -R mpi_2
+          ctest --output-on-failure -R demo -R serial
+          ctest --output-on-failure -R demo -R mpi_2
 
       - name: Build DOLFINx Python interface
         run: |
