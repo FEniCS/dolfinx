@@ -131,8 +131,10 @@ void interpolate_same_map(Function<T>& u1, const Function<T>& u0,
   std::vector<T> local1(element1->space_dimension());
 
   // Iterate over mesh and interpolate on each cell
+  std::cout << "cells" << std::endl;
   for (auto c : cells)
   {
+    std::cout << "Pack 0" << std::endl;
     xtl::span<const std::int32_t> dofs0 = dofmap0->cell_dofs(c);
     for (std::size_t i = 0; i < dofs0.size(); ++i)
       for (int k = 0; k < bs0; ++k)
@@ -142,6 +144,7 @@ void interpolate_same_map(Function<T>& u1, const Function<T>& u0,
 
     // FIXME: Get compile-time ranges from Basix
     // Apply interpolation operator
+    std::cout << "Pack 1" << std::endl;
     std::fill(local1.begin(), local1.end(), 0);
     for (std::size_t i = 0; i < i_m.shape(0); ++i)
       for (std::size_t j = 0; j < i_m.shape(1); ++j)
@@ -615,7 +618,9 @@ void interpolate(Function<T>& u, const Function<T>& v,
           "Interpolation: elements have different value dimensions");
     }
 
-    if (*element1 == *element0)
+    if (*element1 == *element0
+        and u.function_space()->dofmap()->bs()
+                == v.function_space()->dofmap()->bs())
     {
       // Same element, different dofmaps (or just a subset of cells)
 
@@ -653,9 +658,17 @@ void interpolate(Function<T>& u, const Function<T>& v,
           // int block1 = i / dofs1.size();
           std::div_t dv0 = std::div(int(i), int(dofs0.size()));
           std::div_t dv1 = std::div(int(i), int(dofs1.size()));
-          std::cout << "Dof pos: " << dv1.rem << ", " << dv0.rem << std::endl;
+          std::cout << "Size:   " << dofs0.size() << std::endl;
+          std::cout << "Dof pos:   " << dv1.rem << ", " << dv0.rem << std::endl;
+          std::cout << "Dof comp:  " << dv1.quot << ", " << dv0.quot
+                    << std::endl;
           // u1_array[bs1 * dofs1[dv1.quot] + dv1.rem]
           //     = u0_array[bs0 * dofs0[dv0.quot] + dv0.rem];
+          std::cout << "Global:    " << bs1 * dofs1[dv1.rem] + dv1.quot << ", "
+                    << bs0 * dofs0[dv0.rem] + dv0.quot << std::endl;
+          std::cout << "Value:     "
+                    << u0_array[bs0 * dofs0[dv0.rem] + dv0.quot] << std::endl;
+          std::cout << std::endl;
           u1_array[bs1 * dofs1[dv1.rem] + dv1.quot]
               = u0_array[bs0 * dofs0[dv0.rem] + dv0.quot];
         }

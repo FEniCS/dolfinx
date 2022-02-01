@@ -215,7 +215,8 @@ def test_NCE_interpolation(cell_type, order):
 def test_mixed_sub_interpolation():
     """Test interpolation of subfunctions"""
     # mesh = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3)
-    mesh = create_unit_square(MPI.COMM_WORLD, 1, 1)
+    # mesh = create_unit_square(MPI.COMM_WORLD, 1, 1)
+    mesh = one_cell_mesh(CellType.triangle)
     P2 = ufl.VectorElement("Lagrange", mesh.ufl_cell(), 1)
     P1 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
     W = FunctionSpace(mesh, P2 * P1)
@@ -225,27 +226,57 @@ def test_mixed_sub_interpolation():
     # def f(x):
     #     return np.vstack((x[0], 0.2 * x[0] * x[1]))
     def f(x):
-        return np.vstack((np.ones(x.shape[1]), 2*np.ones(x.shape[1])))
+        # return np.vstack((10 + x[0], -10 - x[1]))
+        return np.vstack((np.ones(x.shape[1]), -np.ones(x.shape[1])))
 
     U = Function(W)
-    U.sub(0).interpolate(f)
-    # U.sub(1).interpolate(lambda x: x[0])
+    print("P-----")
+    print("x-dofs", W.sub(0).sub(0).collapse()[1])
+    print("y-dofs", W.sub(0).sub(1).collapse()[1])
 
+    Usub = U.sub(0)
+    Usub.interpolate(f)
+    # print(U.x.array)
+    # U.sub(1).interpolate(lambda x: 1.15 + x[0])
+    print(U.function_space.dofmap.list)
+    print("Usub", Usub.function_space.dofmap.list)
+    print(U.x.array)
+
+    print("Usubsub0", Usub.sub(0).function_space.dofmap.list)
+    print("Usubsub1", Usub.sub(1).function_space.dofmap.list)
+    print()
+    print("0***************")
     V2 = FunctionSpace(mesh, P2)
     u2 = Function(V2)
-    u2.interpolate(U.sub(0))
+    u2.interpolate(Usub)
+    print("1***************")
+
+    print("V-----")
+    print("x-dofs (1)", V2.sub(0).collapse()[1])
+    print("y-dofs (1)", V2.sub(1).collapse()[1])
+
+    # u2a = Function(V2)
+    # u2a.interpolate(f)
+    print(u2.function_space.dofmap.list)
+    print(u2.vector.array)  # looks wrong
 
     u2a = Function(V2)
     u2a.interpolate(f)
-    assert np.allclose(u2.vector.array, u2a.vector.array)
+    print(u2a.function_space.dofmap.list)
+    print(u2a.vector.array)
 
-    # with pytest.raises(RuntimeError):
-    #     u2a.interpolate(U.sub(1))
+    print(Usub.sub(0).collapse().x.array)
+    print(Usub.sub(1).collapse().x.array)
 
-    # V1 = FunctionSpace(mesh, P1)
-    # u1a = Function(V1)
-    # with pytest.raises(RuntimeError):
-    #     u1a.interpolate(U.sub(0))
+    # assert np.allclose(u2.vector.array, u2a.vector.array)
+
+    # # with pytest.raises(RuntimeError):
+    # #     u2a.interpolate(U.sub(1))
+
+    # # V1 = FunctionSpace(mesh, P1)
+    # # u1a = Function(V1)
+    # # with pytest.raises(RuntimeError):
+    # #     u1a.interpolate(U.sub(0))
 
 
 @ skip_in_parallel
