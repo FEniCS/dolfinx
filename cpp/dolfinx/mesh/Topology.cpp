@@ -491,7 +491,8 @@ mesh::partition_boundary_facet_markers(const Topology& topology)
 
   // Remove local exterior domain facets from candidates
   // Fixme: This is problably unnecessary and going to be removed.
-  std::vector<bool> boundary_facet = mesh::compute_boundary_facets(topology);
+  std::vector<std::int8_t> boundary_facet
+      = mesh::compute_boundary_facets(topology);
   std::transform(boundary_facet.cbegin(), boundary_facet.cend(),
                  _interface_facets.begin(), _interface_facets.begin(),
                  [](auto f0, auto f1) { return f0 ? false : f1; });
