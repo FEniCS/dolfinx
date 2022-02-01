@@ -48,7 +48,8 @@ public:
                            const T* data)>
   mat_set_values(MatrixCSR& A)
   {
-    return [&A](int nr, const int* r, int nc, const int* c, const T* data) {
+    return [&A](int nr, const int* r, int nc, const int* c, const T* data)
+    {
       A.set(tcb::span<const T>(data, nr * nc), tcb::span<const int>(r, nr),
             tcb::span<const int>(c, nc));
       return 0;
@@ -63,7 +64,8 @@ public:
                            const T* data)>
   mat_add_values(MatrixCSR& A)
   {
-    return [&A](int nr, const int* r, int nc, const int* c, const T* data) {
+    return [&A](int nr, const int* r, int nc, const int* c, const T* data)
+    {
       A.add(tcb::span<const T>(data, nr * nc), tcb::span<const int>(r, nr),
             tcb::span<const int>(c, nc));
       return 0;
