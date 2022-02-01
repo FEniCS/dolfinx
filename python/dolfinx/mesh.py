@@ -19,7 +19,7 @@ from dolfinx.cpp.mesh import (CellType, DiagonalType, GhostMode,
                               compute_boundary_facets,
                               compute_incident_entities, compute_midpoints,
                               create_cell_partitioner, create_meshtags,
-                              to_type, to_string)
+                              to_string, to_type)
 
 from mpi4py import MPI as _MPI
 

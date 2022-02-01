@@ -1,4 +1,3 @@
-
 // Copyright (C) 2022 Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
@@ -85,11 +84,9 @@ void interpolate_nedelec(const std::shared_ptr<mesh::Mesh>& mesh,
       *mesh, 2, [](auto& x) { return xt::row(x, 0) >= 0.5; });
 
   // Interpolation on the two sets of cells
-  u->interpolate(
-      [](auto& x) -> xt::xtensor<T, 2> {
-        return xt::view(x, xt::range(0, 2), xt::all());
-      },
-      cells0);
+  u->interpolate([](auto& x) -> xt::xtensor<T, 2>
+                 { return xt::view(x, xt::range(0, 2), xt::all()); },
+                 cells0);
   u->interpolate(
       [](auto& x) -> xt::xtensor<T, 2>
       {
