@@ -8,7 +8,6 @@
 #include "cells.h"
 #include "pugixml.hpp"
 #include "xdmf_utils.h"
-#include <boost/filesystem.hpp>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/fem/DofMap.h>
@@ -18,6 +17,7 @@
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
+#include <filesystem>
 #include <sstream>
 #include <string>
 #include <xtensor/xcomplex.hpp>
@@ -414,7 +414,7 @@ void write_function(
   // Get MPI comm
   const MPI_Comm comm = mesh->comm();
   const int mpi_rank = dolfinx::MPI::rank(comm);
-  boost::filesystem::path p(filename);
+  std::filesystem::path p(filename);
 
   // Get the PVD "Collection" node
   pugi::xml_node xml_collections
@@ -622,7 +622,7 @@ void write_function(
   }
 
   // Save VTU XML to file
-  boost::filesystem::path vtu(p.parent_path());
+  std::filesystem::path vtu(p.parent_path());
   if (!p.parent_path().empty())
     vtu += "/";
   vtu += p.stem().string() + "_p" + std::to_string(mpi_rank) + "_"
@@ -631,7 +631,7 @@ void write_function(
   xml_vtu.save_file(vtu.c_str(), "  ");
 
   // Create a PVTU XML object on rank 0
-  boost::filesystem::path p_pvtu(p.parent_path());
+  std::filesystem::path p_pvtu(p.parent_path());
   if (!p.parent_path().empty())
     p_pvtu += "/";
   p_pvtu += p.stem().string() + counter_str;
@@ -691,7 +691,7 @@ void write_function(
       const int mpi_size = dolfinx::MPI::size(comm);
       for (int i = 0; i < mpi_size; ++i)
       {
-        boost::filesystem::path vtu = p.stem();
+        std::filesystem::path vtu = p.stem();
         vtu += "_p" + std::to_string(i) + "_" + counter_str;
         vtu.replace_extension("vtu");
         pugi::xml_node piece_node = grid_node.append_child("Piece");
@@ -777,7 +777,7 @@ void io::VTKFile::write(const mesh::Mesh& mesh, double time)
     throw std::runtime_error("VTKFile has already been closed");
 
   const int mpi_rank = MPI::rank(_comm.comm());
-  boost::filesystem::path p(_filename);
+  std::filesystem::path p(_filename);
 
   // Get the PVD "Collection" node
   pugi::xml_node xml_collections
@@ -811,7 +811,7 @@ void io::VTKFile::write(const mesh::Mesh& mesh, double time)
   add_mesh(mesh, piece_node);
 
   // Save VTU XML to file
-  boost::filesystem::path vtu(p.parent_path());
+  std::filesystem::path vtu(p.parent_path());
   if (!p.parent_path().empty())
     vtu += "/";
   vtu += p.stem().string() + "_p" + std::to_string(mpi_rank) + "_"
@@ -820,7 +820,7 @@ void io::VTKFile::write(const mesh::Mesh& mesh, double time)
   xml_vtu.save_file(vtu.c_str(), "  ");
 
   // Create a PVTU XML object on rank 0
-  boost::filesystem::path p_pvtu(p.parent_path());
+  std::filesystem::path p_pvtu(p.parent_path());
   if (!p.parent_path().empty())
     p_pvtu += "/";
   p_pvtu += p.stem().string() + counter_str;
@@ -841,7 +841,7 @@ void io::VTKFile::write(const mesh::Mesh& mesh, double time)
     const int mpi_size = MPI::size(_comm.comm());
     for (int i = 0; i < mpi_size; ++i)
     {
-      boost::filesystem::path vtu = p.stem();
+      std::filesystem::path vtu = p.stem();
       vtu += "_p" + std::to_string(i) + "_" + counter_str;
       vtu.replace_extension("vtu");
       pugi::xml_node piece_node = grid_node.append_child("Piece");

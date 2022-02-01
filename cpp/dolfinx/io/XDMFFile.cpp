@@ -12,7 +12,6 @@
 #include "xdmf_meshtags.h"
 #include "xdmf_read.h"
 #include "xdmf_utils.h"
-#include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/utils.h>
@@ -22,6 +21,7 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshTags.h>
 #include <dolfinx/mesh/utils.h>
+#include <filesystem>
 
 using namespace dolfinx;
 using namespace dolfinx::io;
@@ -146,7 +146,7 @@ XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename,
   }
   else if (_file_mode == "a")
   {
-    if (boost::filesystem::exists(_filename))
+    if (std::filesystem::exists(_filename))
     {
       // Load XML doc from file
       [[maybe_unused]] pugi::xml_parse_result result

@@ -5,14 +5,14 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "utils.h"
-#include <boost/filesystem.hpp>
+#include <filesystem>
 
 using namespace dolfinx;
 
 //-----------------------------------------------------------------------------
 std::string io::get_filename(const std::string& fullname)
 {
-  const boost::filesystem::path p(fullname);
+  const std::filesystem::path p(fullname);
   return std::string(p.filename().c_str());
 }
 //-----------------------------------------------------------------------------

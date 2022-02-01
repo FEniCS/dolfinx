@@ -5,7 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "HDF5Interface.h"
-#include <boost/filesystem.hpp>
+#include <filesystem>
 
 #define HDF5_MAXSTRLEN 80
 
@@ -81,20 +81,23 @@ hid_t HDF5Interface::open_file(MPI_Comm comm, const std::string& filename,
   }
   else if (mode == "a") // Open file to append, creating if does not exist
   {
-    if (boost::filesystem::exists(filename))
+    if (std::filesystem::exists(filename))
       file_id = H5Fopen(filename.c_str(), H5F_ACC_RDWR, plist_id);
     else
     {
       file_id
           = H5Fcreate(filename.c_str(), H5F_ACC_EXCL, H5P_DEFAULT, plist_id);
     }
+
     if (file_id < 0)
+    {
       throw std::runtime_error(
           "Failed to create/open HDF5 file (append mode).");
+    }
   }
   else if (mode == "r") // Open file to read
   {
-    if (boost::filesystem::exists(filename))
+    if (std::filesystem::exists(filename))
     {
       file_id = H5Fopen(filename.c_str(), H5F_ACC_RDONLY, plist_id);
       if (file_id < 0)
