@@ -10,6 +10,7 @@
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <memory>
+#include <filesystem>
 #include <string>
 
 namespace pugi
@@ -66,7 +67,7 @@ public:
   static const Encoding default_encoding = Encoding::HDF5;
 
   /// Constructor
-  XDMFFile(MPI_Comm comm, const std::string filename,
+  XDMFFile(MPI_Comm comm, const std::filesystem::path filename,
            const std::string file_mode,
            const Encoding encoding = default_encoding);
 
