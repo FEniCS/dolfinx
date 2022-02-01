@@ -119,8 +119,8 @@ void interpolate_same_map(Function<T>& u1, const Function<T>& u0,
       = element1->create_interpolation_operator(*element0);
 
   // Get block sizes and dof transformation operators
-  const int bs1 = element1->block_size();
-  const int bs0 = element0->block_size();
+  const int bs1 = dofmap1->bs();
+  const int bs0 = dofmap0->bs();
   auto apply_dof_transformation
       = element0->get_dof_transformation_function<T>(false, true, false);
   auto apply_inverse_dof_transform
@@ -131,10 +131,8 @@ void interpolate_same_map(Function<T>& u1, const Function<T>& u0,
   std::vector<T> local1(element1->space_dimension());
 
   // Iterate over mesh and interpolate on each cell
-  std::cout << "cells" << std::endl;
   for (auto c : cells)
   {
-    std::cout << "Pack 0" << std::endl;
     xtl::span<const std::int32_t> dofs0 = dofmap0->cell_dofs(c);
     for (std::size_t i = 0; i < dofs0.size(); ++i)
       for (int k = 0; k < bs0; ++k)
@@ -144,7 +142,6 @@ void interpolate_same_map(Function<T>& u1, const Function<T>& u0,
 
     // FIXME: Get compile-time ranges from Basix
     // Apply interpolation operator
-    std::cout << "Pack 1" << std::endl;
     std::fill(local1.begin(), local1.end(), 0);
     for (std::size_t i = 0; i < i_m.shape(0); ++i)
       for (std::size_t j = 0; j < i_m.shape(1); ++j)
@@ -313,10 +310,11 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0,
     }
 
     // Copy expansion coefficients for v into local array
+    const int dof_bs0 = dofmap0->bs();
     xtl::span<const std::int32_t> dofs0 = dofmap0->cell_dofs(c);
     for (std::size_t i = 0; i < dofs0.size(); ++i)
-      for (int k = 0; k < bs0; ++k)
-        coeffs0[bs0 * i + k] = array0[bs0 * dofs0[i] + k];
+      for (int k = 0; k < dof_bs0; ++k)
+        coeffs0[dof_bs0 * i + k] = array0[dof_bs0 * dofs0[i] + k];
 
     // Evaluate v at the interpolation points (physical space values)
     for (std::size_t p = 0; p < X.shape(0); ++p)
@@ -348,10 +346,11 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0,
     apply_inverse_dof_transform1(local1, cell_info, c, 1);
 
     // Copy local coefficients to the correct position in u dof array
+    const int dof_bs1 = dofmap1->bs();
     xtl::span<const std::int32_t> dofs1 = dofmap1->cell_dofs(c);
     for (std::size_t i = 0; i < dofs1.size(); ++i)
-      for (int k = 0; k < bs1; ++k)
-        array1[bs1 * dofs1[i] + k] = local1[bs1 * i + k];
+      for (int k = 0; k < dof_bs1; ++k)
+        array1[dof_bs1 * dofs1[i] + k] = local1[dof_bs1 * i + k];
   }
 }
 } // namespace impl
@@ -618,15 +617,15 @@ void interpolate(Function<T>& u, const Function<T>& v,
           "Interpolation: elements have different value dimensions");
     }
 
-    if (*element1 == *element0
-        and u.function_space()->dofmap()->bs()
-                == v.function_space()->dofmap()->bs())
+    if (*element1 == *element0)
     {
       // Same element, different dofmaps (or just a subset of cells)
 
       const int tdim = mesh->topology().dim();
       auto cell_map = mesh->topology().index_map(tdim);
       assert(cell_map);
+
+      assert(element1->block_size() == element0->block_size());
 
       // Get dofmaps
       std::shared_ptr<const fem::DofMap> dofmap0 = v.function_space()->dofmap();
@@ -637,62 +636,28 @@ void interpolate(Function<T>& u, const Function<T>& v,
       xtl::span<T> u1_array = u.x()->mutable_array();
       xtl::span<const T> u0_array = v.x()->array();
 
-      std::cout << "-------ebs: " << element0->block_size() << ", "
-                << element1->block_size() << std::endl;
-
       // Iterate over mesh and interpolate on each cell
       const int bs0 = dofmap0->bs();
       const int bs1 = dofmap1->bs();
-      std::cout << "-------dbs: " << bs0 << ", " << bs1 << std::endl;
       for (auto c : cells)
       {
         xtl::span<const std::int32_t> dofs0 = dofmap0->cell_dofs(c);
         xtl::span<const std::int32_t> dofs1 = dofmap1->cell_dofs(c);
         assert(bs0 * dofs0.size() == bs1 * dofs1.size());
-        std::cout << "-------" << std::endl;
-        for (std::size_t i = 0; i < bs0 * dofs0.size(); ++i)
+        for (std::size_t i = 0; i < dofs0.size(); ++i)
         {
-          // int pos0 = i % dofs0.size();
-          // int pos1 = i % dofs1.size();
-          // int block0 = i / dofs0.size();
-          // int block1 = i / dofs1.size();
-          std::div_t dv0 = std::div(int(i), int(dofs0.size()));
-          std::div_t dv1 = std::div(int(i), int(dofs1.size()));
-          std::cout << "Size:   " << dofs0.size() << std::endl;
-          std::cout << "Dof pos:   " << dv1.rem << ", " << dv0.rem << std::endl;
-          std::cout << "Dof comp:  " << dv1.quot << ", " << dv0.quot
-                    << std::endl;
-          // u1_array[bs1 * dofs1[dv1.quot] + dv1.rem]
-          //     = u0_array[bs0 * dofs0[dv0.quot] + dv0.rem];
-          std::cout << "Global:    " << bs1 * dofs1[dv1.rem] + dv1.quot << ", "
-                    << bs0 * dofs0[dv0.rem] + dv0.quot << std::endl;
-          std::cout << "Value:     "
-                    << u0_array[bs0 * dofs0[dv0.rem] + dv0.quot] << std::endl;
-          std::cout << std::endl;
-          u1_array[bs1 * dofs1[dv1.rem] + dv1.quot]
-              = u0_array[bs0 * dofs0[dv0.rem] + dv0.quot];
+          for (int k = 0; k < bs0; ++k)
+          {
+            int index = bs0 * i + k;
+            std::div_t dv1 = std::div(index, bs1);
+            u1_array[bs1 * dofs1[dv1.quot] + dv1.rem]
+                = u0_array[bs0 * dofs0[i] + k];
+          }
         }
-
-        // for (std::size_t i = 0; i < dofs0.size(); ++i)
-        // {
-        //   for (int k = 0; k < bs0; ++k)
-        //   {
-        //     int index = bs0 * i + k;
-        //     std::div_t dv1 = std::div(index, int(dofs1.size()));
-        //     u1_array[bs1 * dofs1[dv1.rem] + dv1.quot]
-        //         = u0_array[bs0 * dofs0[i] + k];
-        //   }
-        // }
-
-        // for (std::size_t i = 0; i < dofs0.size(); ++i)
-        //   for (int k = 0; k < bs; ++k)
-        //     u1_array[bs * dofs1[i] + k] = u0_array[bs * dofs0[i] + k];
       }
     }
     else if (element1->map_type() == element0->map_type())
     {
-      std::cout << "Same map" << std::endl;
-
       // Different elements, same basis function map type
       impl::interpolate_same_map(u, v, cells);
     }
