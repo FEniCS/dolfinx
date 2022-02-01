@@ -83,8 +83,8 @@ from petsc4py.PETSc import ScalarType
 # We begin by defining a mesh of the domain and a finite element
 # function space :math:`V` relative to this mesh. We create a
 # rectangular mesh using built-in function provided by
-# class :py:class:`create_rectangle<dolfinx.mesh.create_rectangle>`. 
-# In order to create a mesh consisting of 32 x 16 squares with each 
+# class :py:class:`create_rectangle<dolfinx.mesh.create_rectangle>`.
+# In order to create a mesh consisting of 32 x 16 squares with each
 # square divided into two triangles, we do as follows ::
 
 # Create an MPI communicator
@@ -142,14 +142,18 @@ V = fem.FunctionSpace(mesh, element=element)
 # then looks as follows: ::
 
 # Create a function that returns True if the point is on the boundary
+
+
 def marker(x):
     left = np.isclose(x[0], 0.0)
     right = np.isclose(x[0], 2.0)
     return np.logical_or(left, right)
 
+
 # Define boundary condition on x = 0 or x = 1
 facets = _mesh.locate_entities_boundary(mesh, dim=1, marker=marker)
-bc = fem.dirichletbc(ScalarType(0), fem.locate_dofs_topological(V, 1, facets), V)
+dofs = fem.locate_dofs_topological(V=V, entity_dim=1, entities=facets)
+bc = fem.dirichletbc(value=ScalarType(0), dofs=dofs, V=V)
 
 # Next, we want to express the variational problem.  First, we need to
 # specify the trial function :math:`u` and the test function :math:`v`,
