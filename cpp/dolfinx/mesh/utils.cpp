@@ -6,6 +6,7 @@
 
 #include "utils.h"
 #include "Geometry.h"
+#include "Mesh.h"
 #include "cell_types.h"
 #include "graphbuild.h"
 #include <algorithm>
@@ -16,7 +17,6 @@
 #include <dolfinx/common/sort.h>
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/graph/partition.h>
-#include <dolfinx/mesh/Mesh.h>
 #include <stdexcept>
 #include <unordered_set>
 #include <xtensor/xadapt.hpp>
@@ -110,7 +110,7 @@ xt::xtensor<double, 2>
 mesh::cell_normals(const mesh::Mesh& mesh, int dim,
                    const xtl::span<const std::int32_t>& entities)
 {
-  if (mesh.topology().cell_type() == mesh::CellType::prism and dim == 2)
+  if (mesh.topology().cell_type() == CellType::prism and dim == 2)
     throw std::runtime_error("More work needed for prism cell");
 
   const int gdim = mesh.geometry().dim();
@@ -124,7 +124,7 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
 
   // Orient cells if they are tetrahedron
   bool orient = false;
-  if (mesh.topology().cell_type() == mesh::CellType::tetrahedron)
+  if (mesh.topology().cell_type() == CellType::tetrahedron)
     orient = true;
   xt::xtensor<std::int32_t, 2> geometry_entities
       = entities_to_geometry(mesh, dim, entities, orient);
@@ -227,7 +227,7 @@ std::vector<std::int32_t> mesh::locate_entities(
     const std::function<xt::xtensor<bool, 1>(const xt::xtensor<double, 2>&)>&
         marker)
 {
-  const mesh::Topology& topology = mesh.topology();
+  const Topology& topology = mesh.topology();
   const int tdim = topology.dim();
 
   // Create entities and connectivities
@@ -414,11 +414,8 @@ mesh::entities_to_geometry(const Mesh& mesh, int dim,
   xt::xtensor<std::int32_t, 2> entity_geometry(
       {entity_list.size(), num_entity_vertices});
 
-  if (orient
-      and (cell_type != dolfinx::mesh::CellType::tetrahedron or dim != 2))
-  {
+  if (orient and (cell_type != CellType::tetrahedron or dim != 2))
     throw std::runtime_error("Can only orient facets of a tetrahedral mesh");
-  }
 
   const Geometry& geometry = mesh.geometry();
   auto geom_dofs
@@ -536,7 +533,7 @@ mesh::create_cell_partitioner(const graph::partition_fn& partfn)
         = build_dual_graph(comm, cells, tdim);
 
     // Just flag any kind of ghosting for now
-    bool ghosting = (ghost_mode != mesh::GhostMode::none);
+    bool ghosting = (ghost_mode != GhostMode::none);
 
     // Compute partition
     return partfn(comm, nparts, dual_graph, num_ghost_edges, ghosting);

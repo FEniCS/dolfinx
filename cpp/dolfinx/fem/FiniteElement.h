@@ -14,7 +14,7 @@
 #include <xtensor/xtensor.hpp>
 #include <xtl/xspan.hpp>
 
-struct ufc_finite_element;
+struct ufcx_finite_element;
 
 namespace dolfinx::fem
 {
@@ -25,7 +25,12 @@ class FiniteElement
 public:
   /// Create finite element from UFC finite element
   /// @param[in] e UFC finite element
-  explicit FiniteElement(const ufc_finite_element& e);
+  explicit FiniteElement(const ufcx_finite_element& e);
+
+  /// Create finite element from a Basix finite element
+  /// @param[in] element Basix finite element
+  /// @param[in] bs The block size
+  FiniteElement(const basix::FiniteElement& element, int bs);
 
   /// Copy constructor
   FiniteElement(const FiniteElement& element) = delete;
@@ -42,10 +47,22 @@ public:
   /// Move assignment
   FiniteElement& operator=(FiniteElement&& element) = default;
 
+  /// Check if two elements are equivalent
+  /// @return True is the two elements are the same
+  /// @note Equality can be checked only for non-mixed elements. For a
+  /// mixed element, this function will raise an exception.
+  bool operator==(const FiniteElement& e) const;
+
+  /// Check if two elements are not equivalent
+  /// @return True is the two elements are not the same
+  /// @note Equality can be checked only for non-mixed elements. For a
+  /// mixed element, this function will raise an exception.
+  bool operator!=(const FiniteElement& e) const;
+
   /// String identifying the finite element
   /// @return Element signature
-  /// @note The function is provided for convenience, but it should not
-  /// be relied upon for determining the element type. Use other
+  /// @warning The function is provided for convenience, but it should
+  /// not be relied upon for determining the element type. Use other
   /// functions, commonly returning enums, to determine element
   /// properties.
   std::string signature() const noexcept;
@@ -65,14 +82,18 @@ public:
   /// @return Block size of the finite element space
   int block_size() const noexcept;
 
-  /// The value size, e.g. 1 for a scalar function, 2 for a 2D vector
+  /// The value size, e.g. 1 for a scalar function, 2 for a 2D vector, 9
+  /// for a second-order tensor in 3D.
+  /// @note The return value of this function is equal to
+  /// `std::accumulate(value_shape().begin(), value_shape().end(), 1,
+  /// std::multiplies<int>())`.
   /// @return The value size
-  int value_size() const noexcept;
+  int value_size() const;
 
-  /// The value size, e.g. 1 for a scalar function, 2 for a 2D vector
-  /// for the reference element
+  /// The value size, e.g. 1 for a scalar function, 2 for a 2D vector, 9
+  /// for a second-order tensor in 3D, for the reference element
   /// @return The value size for the reference element
-  int reference_value_size() const noexcept;
+  int reference_value_size() const;
 
   /// Shape of the value space. The rank is the size of the
   /// `value_shape`.
@@ -125,8 +146,8 @@ public:
   /// - `u` [in] The data on the physical cell that should be pulled
   /// back , flattened with row-major layout, shape=(num_points,
   /// value_size)
-  /// - `K` [in] The inverse oif the Jacobian matrix of the map, shape=(tdim,
-  /// gdim)
+  /// - `K` [in] The inverse oif the Jacobian matrix of the map,
+  /// shape=(tdim, gdim)
   /// - `detJ_inv` [in] 1/det(J)
   /// - `J` [in] The Jacobian matrix, shape=(gdim, tdim)
   template <typename O, typename P, typename Q, typename R>
@@ -153,9 +174,6 @@ public:
   /// Return the topological dimension
   int tdim() const noexcept;
 
-  /// Return simple hash of the signature string
-  std::size_t hash() const noexcept;
-
   /// Extract sub finite element for component
   std::shared_ptr<const FiniteElement>
   extract_sub_element(const std::vector<int>& component) const;
@@ -168,7 +186,7 @@ public:
   /// specific points, i.e. the degree-of-freedom are equal to point
   /// evaluations. The function will return `true` for Lagrange
   /// elements.
-  ///  @return True if interpolation is an identity operation
+  /// @return True if interpolation is an identity operation
   bool interpolation_ident() const noexcept;
 
   /// Points on the reference cell at which an expression need to be
@@ -194,7 +212,7 @@ public:
   /// @param[in] from The element to interpolate from
   /// @return Matrix operator that maps the 'from' degrees-of-freedom to
   /// the degrees-of-freedom of this element. Shape is (num_dofs of this
-  /// element, num_dofs of `from`)
+  /// element, num_dofs of `from`).
   /// @note The two elements must use the same mapping between the
   /// reference and physical cells
   /// @note Does not support mixed elements
@@ -658,19 +676,16 @@ private:
 
   mesh::CellType _cell_shape;
 
-  int _tdim, _space_dim, _value_size, _reference_value_size;
+  int _tdim, _space_dim;
 
   // List of sub-elements (if any)
   std::vector<std::shared_ptr<const FiniteElement>> _sub_elements;
-
-  // Simple hash of the signature string
-  std::size_t _hash;
 
   // Dimension of each value space
   std::vector<int> _value_shape;
 
   // Block size for VectorElements and TensorElements. This gives the
-  // number of DOFs colocated at each point.
+  // number of DOFs co-located at each dof 'point'.
   int _bs;
 
   // Indicate whether the element needs permutations or transformations

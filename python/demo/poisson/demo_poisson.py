@@ -77,7 +77,7 @@ import numpy as np
 
 import ufl
 from dolfinx import fem, plot
-from dolfinx.fem import dirichletbc, FunctionSpace, locate_dofs_topological
+from dolfinx.fem import FunctionSpace, dirichletbc, locate_dofs_topological
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import CellType, create_rectangle, locate_entities_boundary
 from ufl import ds, dx, grad, inner
@@ -199,9 +199,9 @@ with XDMFFile(MPI.COMM_WORLD, "poisson.xdmf", "w") as file:
 # Plot solution
 try:
     import pyvista
-    topology, cell_types = plot.create_vtk_topology(mesh, mesh.topology.dim)
-    grid = pyvista.UnstructuredGrid(topology, cell_types, mesh.geometry.x)
-    grid.point_data["u"] = uh.compute_point_values().real
+    cells, types, x = plot.create_vtk_mesh(V)
+    grid = pyvista.UnstructuredGrid(cells, types, x)
+    grid.point_data["u"] = uh.x.array.real
     grid.set_active_scalars("u")
 
     plotter = pyvista.Plotter()

@@ -87,17 +87,17 @@ def test_sub_refine():
 
     edges = locate_entities_boundary(mesh, 1, left_corner_edge)
     if MPI.COMM_WORLD.size == 0:
-        assert(edges == 1)
+        assert edges == 1
 
     mesh2 = refine(mesh, edges, redistribute=False)
-    assert(mesh.topology.index_map(2).size_global + 3 == mesh2.topology.index_map(2).size_global)
+    assert mesh.topology.index_map(2).size_global + 3 == mesh2.topology.index_map(2).size_global
 
 
 def test_refine_from_cells():
     """Check user interface for using local cells to define edges"""
     Nx = 8
     Ny = 3
-    assert(Nx % 2 == 0)
+    assert Nx % 2 == 0
     mesh = create_unit_square(MPI.COMM_WORLD, Nx, Ny, diagonal=DiagonalType.left, ghost_mode=GhostMode.none)
     mesh.topology.create_entities(1)
 
@@ -105,12 +105,12 @@ def test_refine_from_cells():
         return x[0] <= 0.5 + tol
     cells = locate_entities(mesh, mesh.topology.dim, left_side)
     if MPI.COMM_WORLD.size == 0:
-        assert(cells.__len__() == Nx * Ny)
+        assert cells.__len__() == Nx * Ny
     edges = compute_incident_entities(mesh, cells, 2, 1)
     if MPI.COMM_WORLD.size == 0:
-        assert(edges.__len__() == Nx // 2 * (2 * Ny + 1) + (Nx // 2 + 1) * Ny)
+        assert edges.__len__() == Nx // 2 * (2 * Ny + 1) + (Nx // 2 + 1) * Ny
     mesh2 = refine(mesh, edges, redistribute=True)
 
     num_cells_global = mesh2.topology.index_map(2).size_global
     actual_cells = 3 * (Nx * Ny) + 3 * Ny + 2 * Nx * Ny
-    assert(num_cells_global == actual_cells)
+    assert num_cells_global == actual_cells

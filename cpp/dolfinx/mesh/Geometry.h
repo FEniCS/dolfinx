@@ -12,10 +12,6 @@
 #include <functional>
 #include <memory>
 #include <vector>
-#include <xtensor/xadapt.hpp>
-#include <xtensor/xbuilder.hpp>
-#include <xtensor/xtensor.hpp>
-#include <xtensor/xview.hpp>
 #include <xtl/xspan.hpp>
 
 namespace dolfinx::common
@@ -53,7 +49,7 @@ public:
   {
     assert(_x.size() % 3 == 0);
     if (_x.size() / 3 != _input_global_indices.size())
-      throw std::runtime_error("Size mis-match");
+      throw std::runtime_error("Geometry size mis-match");
   }
 
   /// Copy constructor
@@ -110,20 +106,31 @@ private:
   // The coordinate element
   fem::CoordinateElement _cmap;
 
-  // Coordinates for all points stored as a contiguous array
+  // Coordinates for all points stored as a contiguous array (roe-major,
+  // column size = 3)
   std::vector<double> _x;
 
   // Global indices as provided on Geometry creation
   std::vector<std::int64_t> _input_global_indices;
 };
 
-/// Build Geometry
-/// @todo document
+/// Build Geometry from input data
+///
+/// @param[in] comm The MPI communicator to build the Geometry on
+/// @param[in] topology The mesh topology
+/// @param[in] element The element that defines the geometry map for
+/// each cell
+/// @param[in] cells The mesh cells, including higher-ordder geometry 'nodes'
+/// @param[in] x The node coordinates (row-major, with shape (num_nodes,
+/// geometric dimension)
+/// @param[in] dim The geometric dimensions (1, 2, or 3)
+/// @param[in] reorder_fn Function for re-ordering the degree-of-freedom
+/// map associated with the geometry data
 mesh::Geometry
 create_geometry(MPI_Comm comm, const Topology& topology,
-                const fem::CoordinateElement& coordinate_element,
+                const fem::CoordinateElement& element,
                 const graph::AdjacencyList<std::int64_t>& cells,
-                const xt::xtensor<double, 2>& x,
+                const xtl::span<const double>& x, int dim,
                 const std::function<std::vector<int>(
                     const graph::AdjacencyList<std::int32_t>&)>& reorder_fn
                 = nullptr);

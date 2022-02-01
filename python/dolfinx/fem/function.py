@@ -12,7 +12,6 @@ import typing
 if typing.TYPE_CHECKING:
     from dolfinx.mesh import Mesh
 
-import warnings
 from functools import singledispatch
 
 import cffi
@@ -113,15 +112,15 @@ class Expression:
             form_compiler_parameters["scalar_type"] = "double _Complex"
         else:
             raise RuntimeError(f"Unsupported scalar type {dtype} for Form.")
-        self._ufc_expression, module, self._code = jit.ffcx_jit(mesh.comm, (ufl_expression, x),
-                                                                form_compiler_parameters=form_compiler_parameters,
-                                                                jit_parameters=jit_parameters)
+        self._ufcx_expression, module, self._code = jit.ffcx_jit(mesh.comm, (ufl_expression, x),
+                                                                 form_compiler_parameters=form_compiler_parameters,
+                                                                 jit_parameters=jit_parameters)
         self._ufl_expression = ufl_expression
 
         # Setup data (evaluation points, coefficients, constants, mesh, value_size).
         # Tabulation function.
         ffi = cffi.FFI()
-        fn = ffi.cast("uintptr_t", self.ufc_expression.tabulate_expression)
+        fn = ffi.cast("uintptr_t", self.ufcx_expression.tabulate_expression)
 
         value_size = ufl.product(self.ufl_expression.ufl_shape)
 
@@ -195,9 +194,9 @@ class Expression:
         return self._cpp_object.value_size
 
     @property
-    def ufc_expression(self):
-        """The compiled ufc_expression object"""
-        return self._ufc_expression
+    def ufcx_expression(self):
+        """The compiled ufcx_expression object"""
+        return self._ufcx_expression
 
     @property
     def code(self) -> str:
@@ -259,7 +258,6 @@ class Function(ufl.Coefficient):
         # FIXME: same as dolfinx.expression.Expression version. Find way
         # to re-use.
         assert derivatives == ()  # TODO: Handle derivatives
-
         if component:
             shape = self.ufl_shape
             assert len(shape) == len(component)
@@ -283,8 +281,12 @@ class Function(ufl.Coefficient):
         # Make sure input coordinates are a NumPy array
         x = np.asarray(x, dtype=np.float64)
         assert x.ndim < 3
-        num_points = x.shape[0] if x.ndim == 2 else 1
-        x = np.reshape(x, (num_points, -1))
+        if len(x) == 0:
+            x = np.zeros((0, 3))
+        else:
+            shape0 = x.shape[0] if x.ndim == 2 else 1
+            x = np.reshape(x, (shape0, -1))
+        num_points = x.shape[0]
         if x.shape[1] != 3:
             raise ValueError("Coordinate(s) for Function evaluation must have length 3.")
 
@@ -307,41 +309,32 @@ class Function(ufl.Coefficient):
             u = np.reshape(u, (-1, ))
         return u
 
-    def interpolate(self, u, cells: np.ndarray = None) -> None:
-        """Interpolate an expression"""
+    def interpolate(self, u: typing.Union[typing.Callable, Expression, Function],
+                    cells: np.ndarray = None) -> None:
+        """Interpolate an expression
+
+        Args:
+            u: The function, Expression or Function to interpolate
+            cells: The cells to interpolate over. If `None` then all
+                cells are interpolated over
+
+        """
         @singledispatch
-        def _interpolate(u):
+        def _interpolate(u, cells):
             try:
-                self._cpp_object.interpolate(u._cpp_object)
+                self._cpp_object.interpolate(u._cpp_object, cells)
             except AttributeError:
-                self._cpp_object.interpolate(u)
+                self._cpp_object.interpolate(u, cells)
 
         @_interpolate.register(int)
-        def _(u_ptr):
-            self._cpp_object.interpolate_ptr(u_ptr)
+        def _(u_ptr, cells):
+            self._cpp_object.interpolate_ptr(u_ptr, cells)
 
-        @_interpolate.register(Expression)
-        def _(expr: Expression, cells: np.ndarray = None):
-            if cells is None:
-                mesh = self.function_space.mesh
-                num_cells_local = mesh.topology.index_map(mesh.topology.dim).size_local
-                cells = np.arange(num_cells_local, dtype=np.int32)
-
-            # Interpolate Expression on set of cells
-            self._cpp_object.interpolate(expr._cpp_object, cells)
-
-        # Ignore cells as input if Expression
-        # FIXME: Should all interpolate functions support input cells?
-        if not isinstance(u, Expression):
-            if cells is not None:
-                warnings.warn("List of cells as input argument is ignored. "
-                              + "All cells local to process will be used in interpolation")
-            _interpolate(u)
-        else:
-            _interpolate(u, cells)
-
-    def compute_point_values(self):
-        return self._cpp_object.compute_point_values()
+        if cells is None:
+            mesh = self.function_space.mesh
+            map = mesh.topology.index_map(mesh.topology.dim)
+            cells = np.arange(map.size_local + map.num_ghosts, dtype=np.int32)
+        _interpolate(u, cells)
 
     def copy(self) -> Function:
         """Return a copy of the Function. The FunctionSpace is shared and the
@@ -449,14 +442,14 @@ class FunctionSpace(ufl.FunctionSpace):
             super().__init__(mesh.ufl_domain(), ufl_element)
 
         # Compile dofmap and element and create DOLFIN objects
-        (self._ufc_element, self._ufc_dofmap), module, code = jit.ffcx_jit(
+        (self._ufcx_element, self._ufcx_dofmap), module, code = jit.ffcx_jit(
             mesh.comm, self.ufl_element(), form_compiler_parameters=form_compiler_parameters,
             jit_parameters=jit_parameters)
 
         ffi = cffi.FFI()
-        cpp_element = _cpp.fem.FiniteElement(ffi.cast("uintptr_t", ffi.addressof(self._ufc_element)))
+        cpp_element = _cpp.fem.FiniteElement(ffi.cast("uintptr_t", ffi.addressof(self._ufcx_element)))
         cpp_dofmap = _cpp.fem.create_dofmap(mesh.comm, ffi.cast(
-            "uintptr_t", ffi.addressof(self._ufc_dofmap)), mesh.topology, cpp_element)
+            "uintptr_t", ffi.addressof(self._ufcx_dofmap)), mesh.topology, cpp_element)
 
         # Initialize the cpp.FunctionSpace
         self._cpp_object = _cpp.fem.FunctionSpace(mesh, cpp_element, cpp_dofmap)
@@ -541,31 +534,21 @@ class FunctionSpace(ufl.FunctionSpace):
         return dofmap.DofMap(self._cpp_object.dofmap)
 
     @property
-    def mesh(self) -> Mesh:
+    def mesh(self) -> _cpp.mesh.Mesh:
         """Return the mesh on which the function space is defined."""
         return self._cpp_object.mesh
 
-    def collapse(self, collapsed_dofs: bool = False):
+    def collapse(self) -> tuple[FunctionSpace, np.ndarray]:
         """Collapse a subspace and return a new function space and a map from
         new to old dofs.
 
-        *Arguments*
-            collapsed_dofs
-                Return the map from new to old dofs
-
-       *Returns*
-           FunctionSpace
-                The new function space.
-           dict
-                The map from new to old dofs (optional)
+        Returns:
+            The new function space and the map from new to old dofs
 
         """
         cpp_space, dofs = self._cpp_object.collapse()
         V = FunctionSpace(None, self.ufl_element(), cpp_space)
-        if collapsed_dofs:
-            return V, dofs
-        else:
-            return V
+        return V, dofs
 
     def tabulate_dof_coordinates(self) -> np.ndarray:
         return self._cpp_object.tabulate_dof_coordinates()

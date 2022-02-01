@@ -12,17 +12,16 @@ import pytest
 
 import basix
 from dolfinx import cpp as _cpp
-from dolfinx.cpp.mesh import create_cell_partitioner, is_simplex
+from dolfinx.cpp.mesh import (create_cell_partitioner, entities_to_geometry,
+                              is_simplex)
 from dolfinx.fem import assemble_scalar, form
 from dolfinx.mesh import (CellType, DiagonalType, GhostMode, create_box,
-                          create_rectangle, create_unit_cube,
+                          create_rectangle, create_submesh, create_unit_cube,
                           create_unit_interval, create_unit_square,
-                          create_submesh)
+                          locate_entities, locate_entities_boundary)
 from dolfinx_utils.test.fixtures import tempdir
 from dolfinx_utils.test.skips import skip_in_parallel
 from ufl import dx
-from dolfinx.cpp.mesh import entities_to_geometry
-from dolfinx.mesh import locate_entities, locate_entities_boundary
 
 from mpi4py import MPI
 
@@ -489,19 +488,18 @@ def submesh_topology_test(mesh, submesh, vertex_map, entity_dim, entities):
             mesh_entity = entities[submesh_entity]
             mesh_entity_vertices = mesh_e_to_v.links(mesh_entity)
             for i in range(len(submesh_entity_vertices)):
-                assert(vertex_map[submesh_entity_vertices[i]]
-                       == mesh_entity_vertices[i])
+                assert vertex_map[submesh_entity_vertices[i]] == mesh_entity_vertices[i]
     else:
-        assert(submesh.topology.index_map(entity_dim).size_local == 0)
+        assert submesh.topology.index_map(entity_dim).size_local == 0
 
 
 def submesh_geometry_test(mesh, submesh, geom_map, entity_dim, entities):
     submesh_geom_index_map = submesh.geometry.index_map()
-    assert(submesh_geom_index_map.size_local + submesh_geom_index_map.num_ghosts == submesh.geometry.x.shape[0])
+    assert submesh_geom_index_map.size_local + submesh_geom_index_map.num_ghosts == submesh.geometry.x.shape[0]
 
     # Some processes might not own or ghost entities
     if len(entities) > 0:
-        assert(mesh.geometry.dim == submesh.geometry.dim)
+        assert mesh.geometry.dim == submesh.geometry.dim
 
         e_to_g = entities_to_geometry(mesh, entity_dim, entities, False)
         for submesh_entity in range(len(entities)):
@@ -510,6 +508,5 @@ def submesh_geometry_test(mesh, submesh, geom_map, entity_dim, entities):
             # correspond to the x_dofs of cell i in the submesh
             mesh_x_dofs = e_to_g[submesh_entity]
             for i in range(len(submesh_x_dofs)):
-                assert(mesh_x_dofs[i] == geom_map[submesh_x_dofs[i]])
-                assert(np.allclose(mesh.geometry.x[mesh_x_dofs[i]],
-                                   submesh.geometry.x[submesh_x_dofs[i]]))
+                assert mesh_x_dofs[i] == geom_map[submesh_x_dofs[i]]
+                assert np.allclose(mesh.geometry.x[mesh_x_dofs[i]], submesh.geometry.x[submesh_x_dofs[i]])

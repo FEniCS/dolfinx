@@ -7,8 +7,8 @@
 #pragma once
 
 #include <array>
-#include <memory>
 #include <vector>
+#include <xtl/xspan.hpp>
 
 namespace dolfinx::mesh
 {
@@ -33,18 +33,18 @@ public:
   /// Constructor
   /// @param[in] block_size The number of dofs co-located at each point.
   /// @param[in] entity_dofs The dofs on each entity, in the format:
-  ///   entity_dofs[entity_dim][entity_number] = [dof0, dof1, ...]
-  /// @param[in] entity_closure_dofs The dofs on the closure of each entity, in
-  /// the format:
+  /// entity_dofs[entity_dim][entity_number] = [dof0, dof1, ...]
+  /// @param[in] entity_closure_dofs The dofs on the closure of each
+  /// entity, in the format:
   ///   entity_closure_dofs[entity_dim][entity_number] = [dof0, dof1, ...]
   /// @param[in] parent_map TODO
-  /// @param[in] sub_dofmaps TODO
+  /// @param[in] sub_layouts (`std::vector<ElementDofLayout>`)TODO
   ElementDofLayout(
       int block_size,
       const std::vector<std::vector<std::vector<int>>>& entity_dofs,
       const std::vector<std::vector<std::vector<int>>>& entity_closure_dofs,
       const std::vector<int>& parent_map,
-      const std::vector<std::shared_ptr<const ElementDofLayout>>& sub_dofmaps);
+      const std::vector<ElementDofLayout>& sub_layouts);
 
   /// Copy the DOF layout, discarding any parent information
   ElementDofLayout copy() const;
@@ -110,13 +110,13 @@ public:
   int num_sub_dofmaps() const;
 
   /// Get sub-dofmap given by list of components, one for each level
-  std::shared_ptr<const ElementDofLayout>
-  sub_dofmap(const std::vector<int>& component) const;
+  const ElementDofLayout&
+  sub_layout(const xtl::span<const int>& component) const;
 
-  /// Get view for a sub dofmap, defined by the component list (as for
-  /// sub_dofmap()), into this dofmap. I.e., the dofs in this dofmap
+  /// Get view for a sub-layout, defined by the component list (as for
+  /// sub_layour()), into this dofmap. I.e., the dofs in this dofmap
   /// that are the sub-dofs.
-  std::vector<int> sub_view(const std::vector<int>& component) const;
+  std::vector<int> sub_view(const xtl::span<const int>& component) const;
 
   /// Block size
   int block_size() const;
@@ -151,7 +151,8 @@ private:
   std::vector<std::vector<std::vector<int>>> _entity_closure_dofs;
 
   // List of sub dofmaps
-  std::vector<std::shared_ptr<const ElementDofLayout>> _sub_dofmaps;
+  // std::vector<std::shared_ptr<const ElementDofLayout>> _sub_dofmaps;
+  std::vector<ElementDofLayout> _sub_dofmaps;
 };
 
 } // namespace dolfinx::fem

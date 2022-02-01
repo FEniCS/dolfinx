@@ -15,6 +15,7 @@
 #include <memory>
 #include <type_traits>
 #include <utility>
+#include <variant>
 #include <vector>
 #include <xtensor/xtensor.hpp>
 #include <xtl/xspan.hpp>

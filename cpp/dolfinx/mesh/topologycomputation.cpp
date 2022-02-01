@@ -398,20 +398,19 @@ compute_entities_by_key_matching(
   common::Timer timer("Compute entities of dim = " + std::to_string(dim));
 
   // Initialize local array of entities
-  const std::int8_t num_entities_per_cell
-      = mesh::cell_num_entities(cell_type, dim);
+  const std::int8_t num_entities_per_cell = cell_num_entities(cell_type, dim);
 
   // For some cells, the num_vertices varies per facet (3 or 4)
   int max_vertices_per_entity = 0;
   for (int i = 0; i < num_entities_per_cell; ++i)
   {
-    max_vertices_per_entity = std::max(
-        max_vertices_per_entity,
-        mesh::num_cell_vertices(mesh::cell_entity_type(cell_type, dim, i)));
+    max_vertices_per_entity
+        = std::max(max_vertices_per_entity,
+                   num_cell_vertices(cell_entity_type(cell_type, dim, i)));
   }
 
   // Create map from cell vertices to entity vertices
-  auto e_vertices = mesh::get_entity_vertices(cell_type, dim);
+  auto e_vertices = get_entity_vertices(cell_type, dim);
 
   // List of vertices for each entity in each cell
   const std::size_t num_cells = cells.num_nodes();
@@ -580,9 +579,9 @@ compute_from_map(const graph::AdjacencyList<std::int32_t>& c_d0_0,
 
   // Search for edges of facet in map, and recover index
   const auto tri_vertices_ref
-      = mesh::get_entity_vertices(mesh::CellType::triangle, 1);
+      = get_entity_vertices(mesh::CellType::triangle, 1);
   const auto quad_vertices_ref
-      = mesh::get_entity_vertices(mesh::CellType::quadrilateral, 1);
+      = get_entity_vertices(mesh::CellType::quadrilateral, 1);
 
   for (int e = 0; e < c_d0_0.num_nodes(); ++e)
   {

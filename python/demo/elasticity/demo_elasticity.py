@@ -13,8 +13,8 @@ from contextlib import ExitStack
 import numpy as np
 
 from dolfinx import la
-from dolfinx.fem import (dirichletbc, Function, VectorFunctionSpace,
-                         apply_lifting, assemble_matrix, assemble_vector, form,
+from dolfinx.fem import (Function, VectorFunctionSpace, apply_lifting,
+                         assemble_matrix, assemble_vector, dirichletbc, form,
                          locate_dofs_geometrical, set_bc)
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import CellType, GhostMode, create_box

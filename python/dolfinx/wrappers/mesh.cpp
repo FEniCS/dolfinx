@@ -147,6 +147,7 @@ void mesh(py::module& m)
       .value("hexahedron", dolfinx::mesh::CellType::hexahedron);
 
   m.def("to_type", &dolfinx::mesh::to_type);
+  m.def("to_string", &dolfinx::mesh::to_string);
   m.def("is_simplex", &dolfinx::mesh::is_simplex);
 
   m.def("cell_entity_type", &dolfinx::mesh::cell_entity_type);

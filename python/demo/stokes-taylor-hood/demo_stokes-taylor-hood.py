@@ -76,7 +76,7 @@ import dolfinx
 import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import fem
-from dolfinx.fem import (Constant, dirichletbc, Function, FunctionSpace,
+from dolfinx.fem import (Constant, Function, FunctionSpace, dirichletbc,
                          extract_function_spaces, form,
                          locate_dofs_geometrical, locate_dofs_topological)
 from dolfinx.io import XDMFFile
@@ -394,7 +394,7 @@ assert np.isclose(norm_p_2, norm_p_0)
 # Create the function space
 TH = P2 * P1
 W = FunctionSpace(mesh, TH)
-W0 = W.sub(0).collapse()
+W0, _ = W.sub(0).collapse()
 
 # No slip boundary condition
 noslip = Function(V)

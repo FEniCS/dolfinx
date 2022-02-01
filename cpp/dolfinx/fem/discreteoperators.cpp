@@ -50,10 +50,10 @@ fem::create_sparsity_discrete_gradient(const fem::FunctionSpace& V0,
   }
 
   // Build maps from entities to local dof indices
-  std::shared_ptr<const dolfinx::fem::ElementDofLayout> layout0
-      = V0.dofmap()->element_dof_layout;
-  std::shared_ptr<const dolfinx::fem::ElementDofLayout> layout1
-      = V1.dofmap()->element_dof_layout;
+  const dolfinx::fem::ElementDofLayout& layout0
+      = V0.dofmap()->element_dof_layout();
+  const dolfinx::fem::ElementDofLayout& layout1
+      = V1.dofmap()->element_dof_layout();
 
   // Copy index maps from dofmaps
   std::array<std::shared_ptr<const common::IndexMap>, 2> index_maps
@@ -88,13 +88,13 @@ fem::create_sparsity_discrete_gradient(const fem::FunctionSpace& V0,
       = mesh::cell_num_entities(mesh->topology().cell_type(), 1);
   std::map<std::int32_t, std::vector<std::int32_t>> local_edge_dofs;
   for (std::int32_t i = 0; i < num_edges_per_cell; ++i)
-    local_edge_dofs[i] = layout0->entity_dofs(1, i);
+    local_edge_dofs[i] = layout0.entity_dofs(1, i);
   // Create local lookup table for local vertex to cell dofs
   const int num_vertices_per_cell
       = mesh::cell_num_entities(mesh->topology().cell_type(), 0);
   std::map<std::int32_t, std::vector<std::int32_t>> local_vertex_dofs;
   for (std::int32_t i = 0; i < num_vertices_per_cell; ++i)
-    local_vertex_dofs[i] = layout1->entity_dofs(0, i);
+    local_vertex_dofs[i] = layout1.entity_dofs(0, i);
 
   std::array<std::int32_t, 2> cols;
   for (std::int32_t e = 0; e < num_edges; ++e)
