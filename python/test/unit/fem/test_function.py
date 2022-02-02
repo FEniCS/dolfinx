@@ -59,48 +59,6 @@ def test_copy(V):
     assert not np.allclose(u.x.array, v.x.array)
 
 
-def test_assign(V, W):
-    for V_ in [V, W]:
-        u = Function(V_)
-        u0 = Function(V_)
-        u1 = Function(V_)
-        u2 = Function(V_)
-        u.x.array[:] = 1
-        u0.x.array[:] = 2
-        u1.x.array[:] = 3
-        u2.x.array[:] = 4
-
-        # Test assign + scale
-        uu = Function(V_)
-        u.vector.copy(result=uu.vector)
-        uu.vector.scale(2)
-        assert uu.vector.array.sum() == u0.vector.array.sum()
-
-        # Test complex assignment
-        expr = 3 * u.vector - 4 * u1.vector - 0.1 * 4 * u.vector * 4 + u2.vector + 3 * u0.vector / 3. / 0.5
-        expr.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-        expr_scalar = 3 - 4 * 3 - 0.1 * 4 * 4 + 4. + 3 * 2. / 3. / 0.5
-
-        expr.copy(result=uu.vector)
-        uu.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-        assert np.isclose(uu.vector.array.sum() - expr_scalar * uu.vector.local_size, 0)
-
-        # Test self assignment
-        expr = 3 * u.vector - 5.0 * u2.vector + u1.vector - 5 * u.vector
-        expr.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-        expr_scalar = 3 - 5 * 4. + 3. - 5
-        expr.copy(result=u.vector)
-        u.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-        assert np.isclose(u.vector.array.sum() - expr_scalar * u.vector.local_size, 0)
-
-        # Test zero assignment
-        expr = -u2.vector / 2 + 2 * u1.vector - u1.vector / 0.5 + u2.vector * 0.5
-        expr.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-        expr.copy(result=u.vector)
-        u.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-        assert round(u.vector.array.sum() - 0.0, 7) == 0
-
-
 def test_eval(V, W, Q, mesh):
     u1 = Function(V)
     u2 = Function(W)
@@ -256,8 +214,8 @@ def test_cffi_expression(V):
 def test_interpolation_function(mesh):
     V = FunctionSpace(mesh, ("Lagrange", 1))
     u = Function(V)
-    u.vector.set(1)
+    u.x.array[:] = 1
     Vh = FunctionSpace(mesh, ("Lagrange", 1))
     uh = Function(Vh)
     uh.interpolate(u)
-    assert np.allclose(uh.vector.array, 1)
+    assert np.allclose(uh.x.array, 1)
