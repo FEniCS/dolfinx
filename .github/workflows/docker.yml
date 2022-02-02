@@ -307,7 +307,7 @@ jobs:
   stop-runner:
     name: Stop self-hosted EC2 runner
     # Stop the runner even if an error happened in the previous jobs
-    if: ${{ always() && github.repository == 'FEniCS/dolfinx'}}
+    if: ${{ always() && github.repository == 'FEniCS/dolfinx' }}
     needs:
       - start_runner # required to get output from the start-runner job
       - push_end_user_multiarch_images # required to wait when the main job is done
