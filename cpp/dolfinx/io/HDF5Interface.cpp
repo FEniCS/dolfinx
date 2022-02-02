@@ -55,7 +55,8 @@ bool has_group(const hid_t handle, const std::string& group_name)
 } // namespace
 
 //-----------------------------------------------------------------------------
-hid_t HDF5Interface::open_file(MPI_Comm comm, const std::string& filename,
+hid_t HDF5Interface::open_file(MPI_Comm comm,
+                               const std::filesystem::path& filename,
                                const std::string& mode, const bool use_mpi_io)
 {
   // Set parallel access with communicator
@@ -105,8 +106,8 @@ hid_t HDF5Interface::open_file(MPI_Comm comm, const std::string& filename,
     }
     else
     {
-      throw std::runtime_error("Unable to open HDF5 file. File " + filename
-                               + " does not exist.");
+      throw std::runtime_error("Unable to open HDF5 file. File "
+                               + filename.native() + " does not exist.");
     }
   }
 

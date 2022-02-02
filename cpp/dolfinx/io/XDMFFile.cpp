@@ -32,7 +32,7 @@ template <typename Scalar>
 void _write_function(dolfinx::MPI::Comm& comm,
                      const fem::Function<Scalar>& function, const double t,
                      const std::string& mesh_xpath, pugi::xml_document& xml_doc,
-                     hid_t h5_id, const std::string& filename)
+                     hid_t h5_id, const std::filesystem::path& filename)
 {
   const std::string timegrid_xpath
       = "/Xdmf/Domain/Grid[@GridType='Collection'][@Name='" + function.name
@@ -87,7 +87,7 @@ void _write_function(dolfinx::MPI::Comm& comm,
 } // namespace
 
 //-----------------------------------------------------------------------------
-XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename,
+XDMFFile::XDMFFile(MPI_Comm comm, const std::filesystem::path& filename,
                    const std::string file_mode, const Encoding encoding)
     : _comm(comm), _filename(filename), _file_mode(file_mode),
       _xml_doc(new pugi::xml_document), _encoding(encoding)

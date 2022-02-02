@@ -8,6 +8,7 @@
 
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/fem/Function.h>
+#include <filesystem>
 #include <functional>
 #include <memory>
 #include <string>
@@ -45,7 +46,7 @@ class VTKFile
 {
 public:
   /// Create VTK file
-  VTKFile(MPI_Comm comm, const std::string filename,
+  VTKFile(MPI_Comm comm, const std::filesystem::path& filename,
           const std::string file_mode);
 
   /// Destructor
@@ -81,7 +82,7 @@ public:
 private:
   std::unique_ptr<pugi::xml_document> _pvd_xml;
 
-  std::string _filename;
+  std::filesystem::path _filename;
 
   // MPI communicator
   dolfinx::MPI::Comm _comm;

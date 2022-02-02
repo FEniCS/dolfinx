@@ -390,7 +390,7 @@ template <typename Scalar>
 void write_function(
     const std::vector<std::reference_wrapper<const fem::Function<Scalar>>>& u,
     double time, std::unique_ptr<pugi::xml_document>& xml_doc,
-    const std::string filename)
+    const std::filesystem::path& filename)
 {
   if (!xml_doc)
     throw std::runtime_error("VTKFile has already been closed");
@@ -414,7 +414,6 @@ void write_function(
   // Get MPI comm
   const MPI_Comm comm = mesh->comm();
   const int mpi_rank = dolfinx::MPI::rank(comm);
-  std::filesystem::path p(filename);
 
   // Get the PVD "Collection" node
   pugi::xml_node xml_collections
@@ -622,19 +621,19 @@ void write_function(
   }
 
   // Save VTU XML to file
-  std::filesystem::path vtu(p.parent_path());
-  if (!p.parent_path().empty())
+  std::filesystem::path vtu = filename.parent_path();
+  if (!filename.parent_path().empty())
     vtu += "/";
-  vtu += p.stem().string() + "_p" + std::to_string(mpi_rank) + "_"
+  vtu += filename.stem().string() + "_p" + std::to_string(mpi_rank) + "_"
          + counter_str;
   vtu.replace_extension("vtu");
   xml_vtu.save_file(vtu.c_str(), "  ");
 
   // Create a PVTU XML object on rank 0
-  std::filesystem::path p_pvtu(p.parent_path());
-  if (!p.parent_path().empty())
+  std::filesystem::path p_pvtu = filename.parent_path();
+  if (!filename.parent_path().empty())
     p_pvtu += "/";
-  p_pvtu += p.stem().string() + counter_str;
+  p_pvtu += filename.stem().string() + counter_str;
   p_pvtu.replace_extension("pvtu");
   if (mpi_rank == 0)
   {
@@ -691,7 +690,7 @@ void write_function(
       const int mpi_size = dolfinx::MPI::size(comm);
       for (int i = 0; i < mpi_size; ++i)
       {
-        std::filesystem::path vtu = p.stem();
+        std::filesystem::path vtu = filename.stem();
         vtu += "_p" + std::to_string(i) + "_" + counter_str;
         vtu.replace_extension("vtu");
         pugi::xml_node piece_node = grid_node.append_child("Piece");
@@ -715,7 +714,7 @@ void write_function(
 } // namespace
 
 //----------------------------------------------------------------------------
-io::VTKFile::VTKFile(MPI_Comm comm, const std::string filename,
+io::VTKFile::VTKFile(MPI_Comm comm, const std::filesystem::path& filename,
                      const std::string)
     : _filename(filename), _comm(comm)
 {
@@ -777,7 +776,6 @@ void io::VTKFile::write(const mesh::Mesh& mesh, double time)
     throw std::runtime_error("VTKFile has already been closed");
 
   const int mpi_rank = MPI::rank(_comm.comm());
-  std::filesystem::path p(_filename);
 
   // Get the PVD "Collection" node
   pugi::xml_node xml_collections
@@ -811,19 +809,19 @@ void io::VTKFile::write(const mesh::Mesh& mesh, double time)
   add_mesh(mesh, piece_node);
 
   // Save VTU XML to file
-  std::filesystem::path vtu(p.parent_path());
-  if (!p.parent_path().empty())
+  std::filesystem::path vtu = _filename.parent_path();
+  if (!_filename.parent_path().empty())
     vtu += "/";
-  vtu += p.stem().string() + "_p" + std::to_string(mpi_rank) + "_"
+  vtu += _filename.stem().string() + "_p" + std::to_string(mpi_rank) + "_"
          + counter_str;
   vtu.replace_extension("vtu");
   xml_vtu.save_file(vtu.c_str(), "  ");
 
   // Create a PVTU XML object on rank 0
-  std::filesystem::path p_pvtu(p.parent_path());
-  if (!p.parent_path().empty())
+  std::filesystem::path p_pvtu = _filename.parent_path();
+  if (!_filename.parent_path().empty())
     p_pvtu += "/";
-  p_pvtu += p.stem().string() + counter_str;
+  p_pvtu += _filename.stem().string() + counter_str;
   p_pvtu.replace_extension("pvtu");
   if (mpi_rank == 0)
   {
@@ -841,7 +839,7 @@ void io::VTKFile::write(const mesh::Mesh& mesh, double time)
     const int mpi_size = MPI::size(_comm.comm());
     for (int i = 0; i < mpi_size; ++i)
     {
-      std::filesystem::path vtu = p.stem();
+      std::filesystem::path vtu = _filename.stem();
       vtu += "_p" + std::to_string(i) + "_" + counter_str;
       vtu.replace_extension("vtu");
       pugi::xml_node piece_node = grid_node.append_child("Piece");
