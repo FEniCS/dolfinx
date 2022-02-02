@@ -37,15 +37,6 @@ def mesh_factory(tdim, n, ghost_mode=GhostMode.shared_facet):
         return create_unit_cube(MPI.COMM_WORLD, n, n, n, ghost_mode=ghost_mode)
 
 
-@pytest.fixture
-def worker_id(request):
-    """Return worker ID when using pytest-xdist to run tests in parallel"""
-    if hasattr(request.config, 'slaveinput'):
-        return request.config.slaveinput['slaveid']
-    else:
-        return 'master'
-
-
 @pytest.mark.parametrize("encoding", encodings)
 def test_save_and_load_1d_mesh(tempdir, encoding):
     filename = os.path.join(tempdir, "mesh.xdmf")

@@ -34,15 +34,6 @@ def mesh_factory(tdim, n):
         return create_unit_cube(MPI.COMM_WORLD, n, n, n)
 
 
-@pytest.fixture
-def worker_id(request):
-    """Return worker ID when using pytest-xdist to run tests in parallel"""
-    if hasattr(request.config, 'slaveinput'):
-        return request.config.slaveinput['slaveid']
-    else:
-        return 'master'
-
-
 @pytest.mark.parametrize("tdim", [2, 3])
 @pytest.mark.parametrize("n", [6])
 def test_read_mesh_data(tempdir, tdim, n):
