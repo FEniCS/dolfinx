@@ -26,11 +26,11 @@ def pytest_runtest_teardown(item):
     comm.Barrier()
 
 
-# Skip in parallel
-@pytest.fixture(scope="session")
-def skip_in_parallel(request):
-    if MPI.COMM_WORLD.size > 1:
-        pytest.skip("This test should only be run in serial.")
+# Add 'skip_in_parallel' skip
+def pytest_runtest_setup(item):
+    marker = item.get_closest_marker("skip_in_parallel")
+    if marker and MPI.COMM_WORLD.size > 1:
+        pytest.skip("This test should only be run in serial")
 
 
 @pytest.fixture(scope="module")
