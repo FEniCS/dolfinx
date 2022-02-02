@@ -489,8 +489,6 @@ void declare_objects(py::module& m, const std::string& type)
                           _values);
               })
           .def_property_readonly("mesh", &dolfinx::fem::Expression<T>::mesh)
-          .def_property_readonly("num_points",
-                                 &dolfinx::fem::Expression<T>::num_points)
           .def_property_readonly("value_size",
                                  &dolfinx::fem::Expression<T>::value_size)
           .def_property_readonly("value_shape",

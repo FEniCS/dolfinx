@@ -170,7 +170,7 @@ public:
       }
     }
 
-    const int size0 = num_points() * value_size();
+    const int size0 = _x_ref.shape(0) * value_size();
     std::vector<T> values_local(size0 * num_argument_dofs, 0);
     const xtl::span<T> _values_local(values_local);
 
@@ -210,10 +210,6 @@ public:
   /// Get mesh
   /// @return The mesh
   std::shared_ptr<const mesh::Mesh> mesh() const { return _mesh; }
-
-  /// Get number of evaluation points in cell
-  /// @return number of points in cell
-  std::size_t num_points() const { return _x_ref.shape(0); }
 
   /// Get value size
   /// @return value_size

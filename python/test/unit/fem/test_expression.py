@@ -145,10 +145,9 @@ def test_rank1_hdiv():
     RT1 = FunctionSpace(mesh, ("RT", 2))
 
     f = ufl.TrialFunction(RT1)
-    ufl_expr = f
 
     points = vdP1.element.interpolation_points
-    compiled_expr = Expression(ufl_expr, points)
+    compiled_expr = Expression(f, points)
 
     num_cells = mesh.topology.index_map(2).size_local
     array_evaluated = compiled_expr.eval(np.arange(num_cells, dtype=np.int32))
@@ -161,7 +160,7 @@ def test_rank1_hdiv():
             A_local = array_evaluated[i, :]
             MatSetValues(A, 12, rows.ctypes, 8, cols.ctypes, A_local.ctypes, 1)
 
-    a = form(ufl.inner(ufl_expr, ufl.TestFunction(vdP1)) * ufl.dx)
+    a = form(ufl.inner(f, ufl.TestFunction(vdP1)) * ufl.dx)
     sparsity_pattern = create_sparsity_pattern(a)
     sparsity_pattern.assemble()
     A = create_matrix(MPI.COMM_WORLD, sparsity_pattern)
@@ -237,7 +236,7 @@ def test_simple_evaluation():
     ufl_grad_f = Constant(mesh, PETSc.ScalarType(3.0)) * ufl.grad(expr)
     points = np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0]])
     grad_f_expr = Expression(ufl_grad_f, points)
-    assert grad_f_expr.num_points == points.shape[0]
+    assert grad_f_expr.X.shape[0] == points.shape[0]
     assert grad_f_expr.value_size == 2
 
     # NOTE: Cell numbering is process local.
@@ -247,16 +246,16 @@ def test_simple_evaluation():
 
     grad_f_evaluated = grad_f_expr.eval(cells)
     assert grad_f_evaluated.shape[0] == cells.shape[0]
-    assert grad_f_evaluated.shape[1] == grad_f_expr.value_size * grad_f_expr.num_points
+    assert grad_f_evaluated.shape[1] == grad_f_expr.value_size * grad_f_expr.X.shape[0]
 
     # Evaluate points in global space
     ufl_x = ufl.SpatialCoordinate(mesh)
     x_expr = Expression(ufl_x, points)
-    assert x_expr.num_points == points.shape[0]
+    assert x_expr.X.shape[0] == points.shape[0]
     assert x_expr.value_size == 2
     x_evaluated = x_expr.eval(cells)
     assert x_evaluated.shape[0] == cells.shape[0]
-    assert x_evaluated.shape[1] == x_expr.num_points * x_expr.value_size
+    assert x_evaluated.shape[1] == x_expr.X.shape[0] * x_expr.value_size
 
     # Evaluate exact gradient using global points
     grad_f_exact = exact_grad_f(x_evaluated)
@@ -296,13 +295,10 @@ def test_assembly_into_quadrature_function():
     quadrature_points, wts = basix.make_quadrature(basix.CellType.triangle, quadrature_degree)
     Q_element = ufl.VectorElement("Quadrature", ufl.triangle, quadrature_degree, quad_scheme="default")
     Q = FunctionSpace(mesh, Q_element)
-
-    def T_exact(x):
-        return x[0] + 2.0 * x[1]
-
     P2 = FunctionSpace(mesh, ("P", 2))
+
     T = Function(P2)
-    T.interpolate(T_exact)
+    T.interpolate(lambda x: x[0] + 2.0 * x[1])
     A = Constant(mesh, PETSc.ScalarType(1.0))
     B = Constant(mesh, PETSc.ScalarType(2.0))
 

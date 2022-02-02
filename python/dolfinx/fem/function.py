@@ -154,23 +154,9 @@ class Expression:
                                                     coeffs, constants, mesh, self.argument_function_space)
 
     def eval(self, cells: np.ndarray, values: typing.Optional[np.ndarray] = None) -> np.ndarray:
-        """Evaluate Expression in cells.
-
-        values should have shape (cells.shape[0], num_points * value_size *
-        num_all_argument_dofs). If values is not passed then a new array will
-        be allocated.
-
-        Parameters
-        ----------
-        cells
-            local indices of cells to evaluate expression.
-        values
-            array to store result of evaluation.
-
-        Returns
-        -------
-        np.ndarray
-            The i-th row contains the expression evaluated on cells[i].
+        """Evaluate Expression in cells. Values should have shape
+        (cells.shape[0], num_points * value_size * num_all_argument_dofs).
+        If values is not passed then a new array will be allocated.
 
         """
         _cells = np.asarray(cells, dtype=np.int32)
@@ -178,7 +164,7 @@ class Expression:
             argument_space_dimension = 1
         else:
             argument_space_dimension = self.argument_function_space.element.space_dimension
-        values_shape = (_cells.shape[0], self.num_points * self.value_size * argument_space_dimension)
+        values_shape = (_cells.shape[0], self.X.shape[0] * self.value_size * argument_space_dimension)
 
         # Allocate memory for result if u was not provided
         if values is None:
@@ -202,11 +188,6 @@ class Expression:
     def X(self) -> np.ndarray:
         """Evaluation points on the reference cell"""
         return self._cpp_object.X
-
-    @property
-    def num_points(self) -> int:
-        """Number of points on reference cell"""
-        return self._cpp_object.X.shape[0]
 
     @property
     def value_size(self) -> int:
