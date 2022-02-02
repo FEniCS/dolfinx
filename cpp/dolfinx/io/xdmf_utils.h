@@ -11,7 +11,6 @@
 #include <array>
 #include <dolfinx/common/utils.h>
 #include <dolfinx/mesh/cell_types.h>
-#include <filesystem>
 #include <string>
 #include <utility>
 #include <vector>
@@ -52,8 +51,7 @@ std::pair<std::string, int> get_cell_type(const pugi::xml_node& topology_node);
 // node
 std::array<std::string, 2> get_hdf5_paths(const pugi::xml_node& dataitem_node);
 
-std::filesystem::path
-get_hdf5_filename(const std::filesystem::path& xdmf_filename);
+std::string get_hdf5_filename(std::string xdmf_filename);
 
 /// Get dimensions from an XML DataSet node
 std::vector<std::int64_t> get_dataset_shape(const pugi::xml_node& dataset_node);
@@ -149,13 +147,12 @@ void add_data_item(pugi::xml_node& xml_node, const hid_t h5_id,
     data_item_node.append_attribute("Format") = "HDF";
 
     // Get name of HDF5 file, including path
-    const std::filesystem::path hdf5_filename
-        = HDF5Interface::get_filename(h5_id);
-    const std::filesystem::path filename = hdf5_filename.filename();
+    const std::string hdf5_filename = HDF5Interface::get_filename(h5_id);
+    const std::filesystem::path p(hdf5_filename);
+    const std::string filename =  std::string(p.filename().c_str());
 
     // Add HDF5 filename and HDF5 internal path to XML file
-    const std::string xdmf_path
-        = filename.native() + std::string(":") + h5_path;
+    const std::string xdmf_path = filename + std::string(":") + h5_path;
     data_item_node.append_child(pugi::node_pcdata).set_value(xdmf_path.c_str());
 
     // Compute data offset and range of values
