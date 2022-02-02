@@ -48,19 +48,25 @@ public:
   Expression(
       const std::vector<std::shared_ptr<const Function<T>>>& coefficients,
       const std::vector<std::shared_ptr<const Constant<T>>>& constants,
-      const std::shared_ptr<const mesh::Mesh>& mesh,
       const xt::xtensor<double, 2>& X,
       const std::function<void(T*, const T*, const T*, const double*,
                                const int*, const uint8_t*)>
           fn,
       const std::vector<int>& value_shape,
+      const std::shared_ptr<const mesh::Mesh> mesh = nullptr,
       const std::shared_ptr<const FunctionSpace> argument_function_space
       = nullptr)
       : _coefficients(coefficients), _constants(constants), _mesh(mesh),
         _x_ref(X), _fn(fn), _value_shape(value_shape),
         _argument_function_space(argument_function_space)
   {
-    // Do nothing
+    // Extract mesh from argument's function space
+    if (!_mesh and argument_function_space)
+      _mesh = argument_function_space->mesh();
+    else if (argument_function_space and _mesh != argument_function_space->mesh())
+      throw std::runtime_error("Incompatible mesh");
+    if (!_mesh)
+      throw std::runtime_error("No mesh could be associated with the Expression.");
   }
 
   /// Move constructor

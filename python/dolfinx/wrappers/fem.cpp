@@ -520,7 +520,7 @@ void declare_objects(py::module& m, const std::string& type)
         const ufcx_expression* p
             = reinterpret_cast<const ufcx_expression*>(expression);
         return dolfinx::fem::create_expression<T>(
-            *p, coefficients, constants, argument_function_space, mesh);
+            *p, coefficients, constants, mesh, argument_function_space);
       },
       "Create Form from a pointer to ufc_form.");
 }

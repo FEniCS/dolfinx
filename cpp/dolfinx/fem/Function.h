@@ -23,7 +23,6 @@
 #include <utility>
 #include <vector>
 #include <xtensor/xadapt.hpp>
-#include <xtensor/xmath.hpp>
 #include <xtensor/xtensor.hpp>
 #include <xtl/xspan.hpp>
 
@@ -240,39 +239,28 @@ public:
     assert(_function_space);
     assert(_function_space->element());
     std::size_t value_size = e.value_size();
-    if (e.argument_function_space() != nullptr)
-    {
-      throw std::runtime_error("Cannot interpolate Expression with argument");
-    }
+    if (e.argument_function_space())
+      throw std::runtime_error("Cannot interpolate Expression with Argument");
+
     if (value_size != _function_space->element()->value_size())
     {
       throw std::runtime_error(
           "Function value size not equal to Expression value size");
     }
 
-    // Check that expression has same interpolation points as function
-    if (e.X().shape()
-        == _function_space->element()->interpolation_points().shape())
+    const xt::xtensor<double, 2> expr_points = e.X();
+    const xt::xtensor<double, 2> element_points
+        = _function_space->element()->interpolation_points();
+
+    if (!xt::allclose(expr_points, element_points))
     {
-      // xt::allclose has issues on icpx in early 2022. This is why the interior
-      // if is nested.
-      if (!xt::allclose(e.X(),
-                        _function_space->element()->interpolation_points()))
-      {
-        throw std::runtime_error("Function element interpolation points not "
-                                 "equal to Expression interpolation points");
-      }
-    }
-    else
-    {
-      throw std::runtime_error(
-          "Function element interpolation points shape "
-          "does not match Expression interpolation points shape");
+      throw std::runtime_error("Function element interpolation points not "
+                               "equal to Expression interpolation points");
     }
 
     // Array to hold evaluted Expression
     std::size_t num_cells = cells.size();
-    std::size_t num_points = e.X().shape(0);
+    std::size_t num_points = expr_points.shape(0);
     xt::xtensor<T, 3> f({num_cells, num_points, value_size});
 
     // Evaluate Expression at points
