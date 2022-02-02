@@ -129,7 +129,7 @@ void HDF5Interface::flush_file(const hid_t handle)
     throw std::runtime_error("Failed to flush HDF5 file.");
 }
 //-----------------------------------------------------------------------------
-std::string HDF5Interface::get_filename(hid_t handle)
+std::filesystem::path HDF5Interface::get_filename(hid_t handle)
 {
   // Get length of filename
   const ssize_t length = H5Fget_name(handle, nullptr, 0);
@@ -143,7 +143,7 @@ std::string HDF5Interface::get_filename(hid_t handle)
   if (H5Fget_name(handle, name.data(), length + 1) < 0)
     throw std::runtime_error("Failed to get HDF5 filename from handle.");
 
-  return std::string(name.begin(), name.end());
+  return std::filesystem::path(name.begin(), name.end());
 }
 //-----------------------------------------------------------------------------
 bool HDF5Interface::has_dataset(const hid_t handle,

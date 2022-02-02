@@ -45,7 +45,7 @@ public:
   /// Get filename
   /// @param[in] handle HDF5 file handle
   /// return The filename
-  static std::string get_filename(hid_t handle);
+  static std::filesystem::path get_filename(hid_t handle);
 
   /// Write data to existing HDF file as defined by range blocks on each
   /// process

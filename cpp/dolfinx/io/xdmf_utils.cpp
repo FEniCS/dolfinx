@@ -232,17 +232,18 @@ xdmf_utils::get_hdf5_paths(const pugi::xml_node& dataitem_node)
   return {{paths[0], paths[1]}};
 }
 //-----------------------------------------------------------------------------
-std::string xdmf_utils::get_hdf5_filename(std::string xdmf_filename)
+std::filesystem::path
+xdmf_utils::get_hdf5_filename(const std::filesystem::path& xdmf_filename)
 {
-  std::filesystem::path p(xdmf_filename);
+  std::filesystem::path p = xdmf_filename;
   p.replace_extension(".h5");
-  if (p.string() == xdmf_filename)
+  if (p == xdmf_filename)
   {
     throw std::runtime_error("Cannot deduce name of HDF5 file from XDMF "
                              "filename. Filename clash. Check XDMF filename");
   }
 
-  return p.string();
+  return p;
 }
 //-----------------------------------------------------------------------------
 std::vector<std::int64_t>

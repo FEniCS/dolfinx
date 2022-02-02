@@ -622,7 +622,7 @@ void write_function(
 
   // Save VTU XML to file
   std::filesystem::path vtu = filename.parent_path();
-  if (!filename.parent_path().empty())
+  if (!vtu.empty())
     vtu += "/";
   vtu += filename.stem().string() + "_p" + std::to_string(mpi_rank) + "_"
          + counter_str;
@@ -631,7 +631,7 @@ void write_function(
 
   // Create a PVTU XML object on rank 0
   std::filesystem::path p_pvtu = filename.parent_path();
-  if (!filename.parent_path().empty())
+  if (!p_pvtu.empty())
     p_pvtu += "/";
   p_pvtu += filename.stem().string() + counter_str;
   p_pvtu.replace_extension("pvtu");
@@ -810,7 +810,7 @@ void io::VTKFile::write(const mesh::Mesh& mesh, double time)
 
   // Save VTU XML to file
   std::filesystem::path vtu = _filename.parent_path();
-  if (!_filename.parent_path().empty())
+  if (!vtu.empty())
     vtu += "/";
   vtu += _filename.stem().string() + "_p" + std::to_string(mpi_rank) + "_"
          + counter_str;
@@ -819,7 +819,7 @@ void io::VTKFile::write(const mesh::Mesh& mesh, double time)
 
   // Create a PVTU XML object on rank 0
   std::filesystem::path p_pvtu = _filename.parent_path();
-  if (!_filename.parent_path().empty())
+  if (!p_pvtu.empty())
     p_pvtu += "/";
   p_pvtu += _filename.stem().string() + counter_str;
   p_pvtu.replace_extension("pvtu");
