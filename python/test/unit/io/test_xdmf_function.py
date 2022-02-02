@@ -5,6 +5,7 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import os
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -41,9 +42,13 @@ def mesh_factory(tdim, n):
 # --- Function
 
 
+@pytest.mark.parametrize("use_pathlib", [True, False])
 @pytest.mark.parametrize("encoding", encodings)
-def test_save_1d_scalar(tempdir, encoding):
-    filename2 = os.path.join(tempdir, "u1_.xdmf")
+def test_save_1d_scalar(tempdir, encoding, use_pathlib):
+    filename2 = (
+        Path(tempdir).joinpath("u1_.xdmf")
+        if use_pathlib else os.path.join(tempdir, "u1_.xdmf")
+    )
     mesh = create_unit_interval(MPI.COMM_WORLD, 32)
     V = FunctionSpace(mesh, ("Lagrange", 2))
     u = Function(V)
