@@ -163,7 +163,6 @@ sigma_deviatoric = sigma(u) - (1 / 3) * tr(sigma(u)) * Identity(len(u))
 sigma_von_mises = sqrt((3 / 2) * inner(sigma_deviatoric, sigma_deviatoric))
 
 W = FunctionSpace(mesh, ("Discontinuous Lagrange", 0))
-print(W.element.interpolation_points)
 sigma_von_mises_expression = Expression(sigma_von_mises, W.element.interpolation_points)
 sigma_von_mises_h = Function(W)
 sigma_von_mises_h.interpolate(sigma_von_mises_expression)

@@ -46,8 +46,6 @@ class Topology;
 namespace dolfinx::fem
 {
 class FunctionSpace;
-template <typename T>
-class Expression;
 
 /// Extract test (0) and trial (1) function spaces pairs for each
 /// bilinear form for a rectangular array of forms
@@ -734,8 +732,8 @@ fem::Expression<T> create_expression(
     const ufcx_expression& expression,
     const std::vector<std::shared_ptr<const fem::Function<T>>>& coefficients,
     const std::vector<std::shared_ptr<const fem::Constant<T>>>& constants,
-    std::shared_ptr<const mesh::Mesh> mesh = nullptr,
-    const std::shared_ptr<const fem::FunctionSpace> argument_function_space
+    const std::shared_ptr<const mesh::Mesh>& mesh = nullptr,
+    const std::shared_ptr<const fem::FunctionSpace>& argument_function_space
     = nullptr)
 {
   if (expression.rank > 0 and !argument_function_space)
@@ -795,8 +793,8 @@ fem::Expression<T> create_expression(
         coefficients,
     const std::map<std::string, std::shared_ptr<const fem::Constant<T>>>&
         constants,
-    const std::shared_ptr<const mesh::Mesh> mesh = nullptr,
-    const std::shared_ptr<const fem::FunctionSpace> argument_function_space
+    const std::shared_ptr<const mesh::Mesh>& mesh = nullptr,
+    const std::shared_ptr<const fem::FunctionSpace>& argument_function_space
     = nullptr)
 {
   // Place coefficients in appropriate order

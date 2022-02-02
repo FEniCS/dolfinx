@@ -215,12 +215,12 @@ class Expression:
 
     @property
     def argument_function_space(self) -> typing.Optional[FunctionSpace]:
-        """Return argument function space if expression has argument"""
+        """The argument function space if expression has argument"""
         return self._argument_function_space
 
     @property
     def ufcx_expression(self):
-        """Return the compiled ufcx_expression object"""
+        """The compiled ufcx_expression object"""
         return self._ufcx_expression
 
     @property
@@ -339,7 +339,7 @@ class Function(ufl.Coefficient):
         return u
 
     def interpolate(self, u: typing.Union[typing.Callable, Expression, Function],
-                    cells: np.ndarray = None) -> None:
+                    cells: typing.Optional[np.ndarray] = None) -> None:
         """Interpolate an expression
 
         Args:
@@ -360,8 +360,8 @@ class Function(ufl.Coefficient):
             self._cpp_object.interpolate_ptr(u_ptr, cells)
 
         @_interpolate.register(Expression)
-        def _(expr: Expression, cells: np.ndarray = None):
-            """Interpolate expression for the set of cells"""
+        def _(expr: Expression, cells: typing.Optional[np.ndarray] = None):
+            """Interpolate Expression for the set of cells"""
             self._cpp_object.interpolate(expr._cpp_object, cells)
 
         if cells is None:
@@ -599,7 +599,7 @@ def VectorFunctionSpace(mesh: Mesh, element: ElementMetaData, dim=None,
 
 
 def TensorFunctionSpace(mesh: Mesh, element: ElementMetaData, shape=None,
-                        symmetry: bool = None, restriction=None) -> FunctionSpace:
+                        symmetry: typing.Optional[bool] = None, restriction=None) -> FunctionSpace:
     """Create tensor finite element (composition of scalar elements) function space."""
 
     e = ElementMetaData(*element)

@@ -164,14 +164,12 @@ int main(int argc, char* argv[])
           auto x1 = xt::row(x, 1);
           auto x2 = xt::row(x, 2);
           xt::xarray<double> values = xt::zeros_like(x);
-          auto _row1 = xt::row(values, 1);
-          _row1.assign(scale
-                       * (x1_c + (x1 - x1_c) * std::cos(theta)
-                          - (x2 - x2_c) * std::sin(theta) - x1));
-          auto _row2 = xt::row(values, 2);
-          _row2.assign(scale
-                       * (x2_c + (x1 - x1_c) * std::sin(theta)
-                          - (x2 - x2_c) * std::cos(theta) - x2));
+          xt::row(values, 1) = scale
+                               * (x1_c + (x1 - x1_c) * std::cos(theta)
+                                  - (x2 - x2_c) * std::sin(theta) - x1);
+          xt::row(values, 2) = scale
+                               * (x2_c + (x1 - x1_c) * std::sin(theta)
+                                  - (x2 - x2_c) * std::cos(theta) - x2);
           return values;
         });
 
@@ -179,14 +177,12 @@ int main(int argc, char* argv[])
     auto bdofs_left
         = fem::locate_dofs_geometrical({*V},
                                        [](auto& x) -> xt::xtensor<bool, 1> {
-                                         auto x0 = xt::row(x, 0);
-                                         return xt::isclose(x0, 0.0);
+                                         return xt::isclose(xt::row(x, 0), 0.0);
                                        });
     auto bdofs_right
         = fem::locate_dofs_geometrical({*V},
                                        [](auto& x) -> xt::xtensor<bool, 1> {
-                                         auto x0 = xt::row(x, 0);
-                                         return xt::isclose(x0, 1.0);
+                                         return xt::isclose(xt::row(x, 0), 1.0);
                                        });
     auto bcs = std::vector{
         std::make_shared<const fem::DirichletBC<T>>(xt::xarray<T>{0, 0, 0},
@@ -204,12 +200,12 @@ int main(int argc, char* argv[])
 
     // Compute Cauchy stress
     // Construct appropriate Basix element for stress
-    const auto family = basix::element::family::P;
-    const auto cell_type
+    constexpr auto family = basix::element::family::P;
+    constexpr auto cell_type
         = mesh::cell_type_to_basix_type(mesh->topology().cell_type());
-    const auto variant = basix::element::lagrange_variant::equispaced;
-    const int k = 0;
-    const bool discontinuous = true;
+    constexpr auto variant = basix::element::lagrange_variant::equispaced;
+    constexpr int k = 0;
+    constexpr bool discontinuous = true;
 
     const basix::FiniteElement S_element
         = basix::create_element(family, cell_type, k, variant, discontinuous);

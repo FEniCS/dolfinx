@@ -248,11 +248,8 @@ public:
           "Function value size not equal to Expression value size");
     }
 
-    const xt::xtensor<double, 2> expr_points = xt::eval(e.X());
-    const xt::xtensor<double, 2> element_points
-        = _function_space->element()->interpolation_points();
-
-    if (!xt::allclose(expr_points, element_points))
+    if (!xt::allclose(e.X(),
+                      _function_space->element()->interpolation_points()))
     {
       throw std::runtime_error("Function element interpolation points not "
                                "equal to Expression interpolation points");
@@ -260,7 +257,7 @@ public:
 
     // Array to hold evaluted Expression
     std::size_t num_cells = cells.size();
-    std::size_t num_points = expr_points.shape(0);
+    std::size_t num_points = e.X().shape(0);
     xt::xtensor<T, 3> f({num_cells, num_points, value_size});
 
     // Evaluate Expression at points

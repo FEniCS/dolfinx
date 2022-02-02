@@ -53,7 +53,7 @@ public:
                                const int*, const uint8_t*)>
           fn,
       const std::vector<int>& value_shape,
-      const std::shared_ptr<const mesh::Mesh> mesh = nullptr,
+      const std::shared_ptr<const mesh::Mesh>& mesh = nullptr,
       const std::shared_ptr<const FunctionSpace> argument_function_space
       = nullptr)
       : _coefficients(coefficients), _constants(constants), _mesh(mesh),
@@ -63,7 +63,7 @@ public:
     // Extract mesh from argument's function space
     if (!_mesh and argument_function_space)
       _mesh = argument_function_space->mesh();
-    else if (argument_function_space and _mesh != argument_function_space->mesh())
+    if (argument_function_space and _mesh != argument_function_space->mesh())
       throw std::runtime_error("Incompatible mesh");
     if (!_mesh)
       throw std::runtime_error("No mesh could be associated with the Expression.");
@@ -157,8 +157,9 @@ public:
     {
       num_argument_dofs
           = _argument_function_space->dofmap()->element_dof_layout().num_dofs();
-      const auto element = _argument_function_space->element();
+      auto element = _argument_function_space->element();
 
+      assert(element);
       if (element->needs_dof_transformations())
       {
         _mesh->topology_mutable().create_entity_permutations();
