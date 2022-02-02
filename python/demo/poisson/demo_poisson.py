@@ -76,7 +76,11 @@
 import numpy as np
 
 import ufl
-from dolfinx import fem, plot, io, mesh as _mesh
+from dolfinx import fem, io
+from dolfinx import mesh as _mesh
+from dolfinx import plot
+from ufl import ds, dx, exp, grad, inner, sin
+
 from mpi4py import MPI
 from petsc4py.PETSc import ScalarType
 
@@ -87,21 +91,16 @@ from petsc4py.PETSc import ScalarType
 # In order to create a mesh consisting of 32 x 16 squares with each
 # square divided into two triangles, we do as follows ::
 
-# Create an MPI communicator
-comm = MPI.COMM_WORLD
-
 # Create mesh
 mesh = _mesh.create_rectangle(
-    comm=comm,
+    comm=MPI.COMM_WORLD,
     points=((0.0, 0.0), (2.0, 1.0)),
     n=(32, 16),
-    cell_type=_mesh.CellType.triangle
+    cell_type=_mesh.CellType.triangle,
 )
-# Define element which is a tuple with (family, degree, form_degree).
-# We can also omit the form_degree and use the default value
-element = ("Lagrange", 1)
+
 # Define function space
-V = fem.FunctionSpace(mesh, element=element)
+V = fem.FunctionSpace(mesh, ("Lagrange", 1))
 
 # The second argument to :py:class:`FunctionSpace
 # <dolfinx.fem.FunctionSpace>` is a tuple consisting of ``(family, degree)``,
@@ -141,18 +140,19 @@ V = fem.FunctionSpace(mesh, element=element)
 # immediately above. The definition of the Dirichlet boundary condition
 # then looks as follows: ::
 
-# Create a function that returns True if the point is on the boundary
-
-
-def marker(x):
-    left = np.isclose(x[0], 0.0)
-    right = np.isclose(x[0], 2.0)
-    return np.logical_or(left, right)
-
 
 # Define boundary condition on x = 0 or x = 1
-facets = _mesh.locate_entities_boundary(mesh, dim=1, marker=marker)
+
+# Locate the facets on the boundary matching the provided marker function
+facets = _mesh.locate_entities_boundary(
+    mesh,
+    dim=1,
+    marker=lambda x: np.logical_or(np.isclose(x[0], 0.0), np.isclose(x[0], 2.0)),
+)
+# Locate the degrees of freedom for the relevant function space
+# that intersects the facets where we what to impose the boundary condition
 dofs = fem.locate_dofs_topological(V=V, entity_dim=1, entities=facets)
+# Define the boundary condition
 bc = fem.dirichletbc(value=ScalarType(0), dofs=dofs, V=V)
 
 # Next, we want to express the variational problem.  First, we need to
@@ -174,10 +174,10 @@ bc = fem.dirichletbc(value=ScalarType(0), dofs=dofs, V=V)
 u = ufl.TrialFunction(V)
 v = ufl.TestFunction(V)
 x = ufl.SpatialCoordinate(mesh)
-f = 10 * ufl.exp(-((x[0] - 0.5)**2 + (x[1] - 0.5)**2) / 0.02)
-g = ufl.sin(5 * x[0])
-a = ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx
-L = ufl.inner(f, v) * ufl.dx + ufl.inner(g, v) * ufl.ds
+f = 10 * exp(-((x[0] - 0.5) ** 2 + (x[1] - 0.5) ** 2) / 0.02)
+g = sin(5 * x[0])
+a = inner(grad(u), grad(v)) * dx
+L = inner(f, v) * dx + inner(g, v) * ds
 
 # Now, we have specified the variational forms and can consider the
 # solution of the variational problem. First, we need to define a
@@ -190,7 +190,9 @@ L = ufl.inner(f, v) * ufl.dx + ufl.inner(g, v) * ufl.ds
 # This class is initialized with the arguments ``a``, ``L``, and ``bc``
 # as follows: :: In this problem, we use a direct LU solver, which is
 # defined through the dictionary ``petsc_options``.
-problem = fem.LinearProblem(a, L, bcs=[bc], petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
+problem = fem.LinearProblem(
+    a, L, bcs=[bc], petsc_options={"ksp_type": "preonly", "pc_type": "lu"}
+)
 
 # When we want to compute the solution to the problem, we can specify
 # what kind of solver we want to use.
@@ -208,7 +210,7 @@ uh = problem.solve()
 # <dolfinx.common.plot.plot>` command: ::
 
 # Save solution in XDMF format
-with io.XDMFFile(comm, "poisson.xdmf", "w") as file:
+with io.XDMFFile(MPI.COMM_WORLD, "poisson.xdmf", "w") as file:
     file.write_mesh(mesh)
     file.write_function(uh)
 
@@ -216,6 +218,7 @@ with io.XDMFFile(comm, "poisson.xdmf", "w") as file:
 # Plot solution
 try:
     import pyvista
+
     cells, types, x = plot.create_vtk_mesh(V)
     grid = pyvista.UnstructuredGrid(cells, types, x)
     grid.point_data["u"] = uh.x.array.real
@@ -226,14 +229,7 @@ try:
     warped = grid.warp_by_scalar()
     plotter.add_mesh(warped)
 
-    # If pyvista environment variable is set to off-screen (static)
-    # plotting save png
-    if pyvista.OFF_SCREEN:
-        # Run demo with 'PYVISTA_OFF_SCREEN=true python demo_poisson.py'
-        pyvista.start_xvfb(wait=0.1)
-        plotter.screenshot("poisson_u.png")
-    else:
-        plotter.show()
+    plotter.show()
 except ModuleNotFoundError:
     print("'pyvista' is required to visualise the solution")
     print("Install 'pyvista' with pip: 'python3 -m pip install pyvista'")
