@@ -9,6 +9,7 @@ on:
 jobs:
   build:
     name: Build
+    if: ${{ github.repository == 'FEniCS/dolfinx' }}
     runs-on: ubuntu-latest
     container: fenicsproject/test-env:latest-mpich
     env:
