@@ -467,8 +467,9 @@ void declare_objects(py::module& m, const std::string& type)
                                     const int*, const std::uint8_t*))fn_addr;
                     auto _x_ref = xt::adapt(X.data(), {X.shape(0), X.shape(1)});
                     return dolfinx::fem::Expression<T>(
-                        coefficients, constants, mesh, _x_ref,
-                        tabulate_expression_ptr, value_shape, function_space);
+                        coefficients, constants, _x_ref,
+                        tabulate_expression_ptr, value_shape, mesh,
+                        function_space);
                   }),
               py::arg("coefficients"), py::arg("constants"), py::arg("mesh"),
               py::arg("X"), py::arg("fn"), py::arg("value_shape"),
