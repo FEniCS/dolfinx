@@ -217,6 +217,7 @@ def test_save_2d_mixed(tempdir):
         with VTKFile(mesh.comm, filename, "w") as vtk:
             vtk.write_function([U.sub(i) for i in range(W.num_sub_spaces)], 0)
 
+
 def test_save_1d_tensor(tempdir):
     mesh = create_unit_interval(MPI.COMM_WORLD, 32)
     element = ufl.TensorElement("Lagrange", mesh.ufl_cell(), 2, shape=(2, 2))
