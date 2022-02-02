@@ -15,13 +15,14 @@
 #include <dolfinx/io/XDMFFile.h>
 #include <dolfinx/io/cells.h>
 #include <dolfinx/io/xdmf_utils.h>
-// #include <dolfinx/la/PETScVector.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshTags.h>
+#include <filesystem>
 #include <memory>
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
+#include <pybind11/stl/filesystem.h>
 #include <string>
 #include <vector>
 #include <xtensor/xadapt.hpp>
@@ -75,8 +76,9 @@ void io(py::module& m)
 
   xdmf_file
       .def(py::init(
-               [](const MPICommWrapper comm, const std::string filename,
-                  const std::string file_mode,
+               [](const MPICommWrapper comm,
+                  const std::filesystem::path& filename,
+                  const std::string& file_mode,
                   dolfinx::io::XDMFFile::Encoding encoding)
                {
                  return std::make_unique<dolfinx::io::XDMFFile>(
@@ -139,7 +141,8 @@ void io(py::module& m)
   py::class_<dolfinx::io::VTKFile, std::shared_ptr<dolfinx::io::VTKFile>>(
       m, "VTKFile")
       .def(py::init(
-               [](const MPICommWrapper comm, const std::string& filename,
+               [](const MPICommWrapper comm,
+                  const std::filesystem::path& filename,
                   const std::string& mode) {
                  return std::make_unique<dolfinx::io::VTKFile>(comm.get(),
                                                                filename, mode);
@@ -175,14 +178,14 @@ void io(py::module& m)
              std::shared_ptr<dolfinx::io::FidesWriter>>(m, pyclass_name.c_str(),
                                                         "FidesWriter object")
       .def(py::init(
-          [](const MPICommWrapper comm, const std::string& filename,
+          [](const MPICommWrapper comm, const std::filesystem::path& filename,
              std::shared_ptr<const dolfinx::mesh::Mesh> mesh)
           {
             return std::make_unique<dolfinx::io::FidesWriter>(comm.get(),
                                                               filename, mesh);
           }))
       .def(py::init(
-          [](const MPICommWrapper comm, const std::string& filename,
+          [](const MPICommWrapper comm, const std::filesystem::path& filename,
              const std::vector<std::variant<
                  std::shared_ptr<const dolfinx::fem::Function<double>>,
                  std::shared_ptr<
@@ -205,14 +208,14 @@ void io(py::module& m)
   py::class_<dolfinx::io::VTXWriter, std::shared_ptr<dolfinx::io::VTXWriter>>(
       m, pyclass_name.c_str(), "VTXWriter object")
       .def(py::init(
-          [](const MPICommWrapper comm, const std::string& filename,
+          [](const MPICommWrapper comm, const std::filesystem::path& filename,
              std::shared_ptr<const dolfinx::mesh::Mesh> mesh)
           {
             return std::make_unique<dolfinx::io::VTXWriter>(comm.get(),
                                                             filename, mesh);
           }))
       .def(py::init(
-          [](const MPICommWrapper comm, const std::string& filename,
+          [](const MPICommWrapper comm, const std::filesystem::path& filename,
              const std::vector<std::variant<
                  std::shared_ptr<const dolfinx::fem::Function<double>>,
                  std::shared_ptr<

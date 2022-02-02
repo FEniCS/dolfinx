@@ -15,7 +15,6 @@ from dolfinx.geometry import (BoundingBoxTree, compute_closest_entity,
 from dolfinx.mesh import (CellType, create_box, create_unit_cube,
                           create_unit_interval, create_unit_square,
                           locate_entities, locate_entities_boundary)
-from dolfinx_utils.test.skips import skip_in_parallel
 
 from mpi4py import MPI
 
@@ -75,7 +74,7 @@ def find_colliding_cells(mesh, bbox):
 
 
 @pytest.mark.parametrize("padding", [True, False])
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 def test_padded_bbox(padding):
     """Test collision between two meshes separated by a distance of
     epsilon, and check if padding the mesh creates a possible
@@ -131,7 +130,7 @@ def test_empty_tree():
     assert bbtree.num_bboxes == 0
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 def test_compute_collisions_point_1d():
     N = 16
     p = np.array([0.3, 0, 0])
@@ -155,7 +154,7 @@ def test_compute_collisions_point_1d():
     assert np.allclose(cell_vertices, vertices)
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("point", [np.array([0.52, 0, 0]),
                                    np.array([0.9, 0, 0])])
 def test_compute_collisions_tree_1d(point):
@@ -196,7 +195,7 @@ def test_compute_collisions_tree_1d(point):
     assert np.allclose(entities_B, cells_B)
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("point", [np.array([0.52, 0.51, 0.0]),
                                    np.array([0.9, -0.9, 0.0])])
 def test_compute_collisions_tree_2d(point):
@@ -216,7 +215,7 @@ def test_compute_collisions_tree_2d(point):
     assert np.allclose(entities_B, cells_B)
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("point", [np.array([0.52, 0.51, 0.3]),
                                    np.array([0.9, -0.9, 0.3])])
 def test_compute_collisions_tree_3d(point):
@@ -418,7 +417,7 @@ def test_sub_bbtree_box(ct, N):
     assert num_boxes < tree.num_bboxes
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 def test_surface_bbtree_collision():
     """Compute collision between two meshes, where only one cell of each mesh are colliding"""
     tdim = 3
