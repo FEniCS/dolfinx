@@ -531,31 +531,32 @@ void write_function(
                                                : piece_node.child("PointData");
     assert(!data_node.empty());
 
-    auto dofmap = V->dofmap();
-    auto index_map = dofmap->index_map;
-    int index_map_bs = dofmap->index_map_bs();
-    int dofmap_bs = dofmap->bs();
-    std::int32_t num_dofs_block
-        = index_map_bs * (index_map->size_local() + index_map->num_ghosts())
-          / dofmap_bs;
-
     auto element = V->element();
     int rank = element->value_shape().size();
-    std::int32_t num_comp = std::pow(3, rank);
-    std::vector<Scalar> data(num_dofs_block * num_comp, 0);
-    auto u_vector = _u.get().x()->array();
     if (V == V0)
     {
       // Identical spaces
       if (mesh0->geometry().dim() == 3)
-        add_data(_u.get().name, rank, u_vector, data_node);
+        add_data(_u.get().name, rank, _u.get().x()->array(), data_node);
       else
       {
         // Pad with zeros and then add
-        std::vector<Scalar> data(num_dofs_block * num_comp, 0.);
+
+        auto dofmap = V->dofmap();
+        auto index_map = dofmap->index_map;
+        int index_map_bs = dofmap->index_map_bs();
+        int bs = dofmap->bs();
+        std::int32_t num_dofs_block
+            = index_map_bs * (index_map->size_local() + index_map->num_ghosts())
+              / bs;
+
+        std::int32_t num_comp = std::pow(3, rank);
+        std::vector<Scalar> data(num_dofs_block * num_comp, 0);
+        auto u_vector = _u.get().x()->array();
         for (int i = 0; i < num_dofs_block; ++i)
           for (int k = 0; k < index_map_bs; ++k)
             data[i * num_comp + k] = u_vector[i * index_map_bs + k];
+
         add_data(_u.get().name, rank, xtl::span<const Scalar>(data), data_node);
       }
     }
@@ -571,8 +572,14 @@ void write_function(
       auto dofmap = V->dofmap();
       assert(dofmap);
 
-      // Interpolate on each cell
+      auto index_map = dofmap->index_map;
+      int index_map_bs = dofmap->index_map_bs();
       int bs = dofmap->bs();
+      std::int32_t num_dofs_block
+          = index_map_bs * (index_map->size_local() + index_map->num_ghosts())
+            / bs;
+
+      // Interpolate on each cell
       auto u_vector = _u.get().x()->array();
       std::vector<Scalar> u_interp(u_vector.size());
       std::size_t num_cells = cells.shape(0);
@@ -582,19 +589,35 @@ void write_function(
         xtl::span<const std::int32_t> dofs = dofmap->cell_dofs(c);
         assert(dofs0.size() == dofs.size());
         for (std::size_t i = 0; i < dofs0.size(); ++i)
+        {
           for (int k = 0; k < bs; ++k)
-            u_interp[bs * dofs0[i] + k] = u_vector[bs * dofs[i] + k];
+          {
+            int index = bs * i + k;
+            std::div_t dv0 = std::div(index, bs0);
+            u_interp[bs0 * dofs0[dv0.quot] + dv0.rem]
+                = u_vector[bs * dofs[i] + k];
+            //  u_interp[bs * dofs0[i] + k] = u_vector[bs * dofs[i] + k];
+          }
+        }
       }
 
-      // TODO: In 3D where padding is not required, output u_vector
-      // directly
+      // Pack/add data
+      if (mesh0->geometry().dim() == 3)
+      {
+        add_data(_u.get().name, rank, xtl::span<const Scalar>(u_interp),
+                 data_node);
+      }
+      else
+      {
+        // Pack
+        std::int32_t num_comp = std::pow(3, rank);
+        std::vector<Scalar> data(num_dofs_block * num_comp, 0);
+        for (int i = 0; i < num_dofs_block; ++i)
+          for (int k = 0; k < index_map_bs; ++k)
+            data[i * num_comp + k] = u_interp[i * index_map_bs + k];
 
-      // Pack
-      for (int i = 0; i < num_dofs_block; ++i)
-        for (int k = 0; k < index_map_bs; ++k)
-          data[i * num_comp + k] = u_interp[i * index_map_bs + k];
-
-      add_data(_u.get().name, rank, xtl::span<const Scalar>(data), data_node);
+        add_data(_u.get().name, rank, xtl::span<const Scalar>(data), data_node);
+      }
     }
     else
       throw std::runtime_error("Elements differ, not permitted for VTK output");
