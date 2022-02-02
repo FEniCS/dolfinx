@@ -248,7 +248,9 @@ def test_cffi_expression(V):
 
     f2 = Function(V, dtype=np.float64)
     f2.interpolate(lambda x: x[0] + x[1])
-    assert (f1.vector - f2.vector).norm() < 1.0e-12
+
+    f1.x.array[:] -= f2.x.array
+    assert f1.x.norm() < 1.0e-12
 
 
 def test_interpolation_function(mesh):
