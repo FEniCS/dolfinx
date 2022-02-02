@@ -575,6 +575,7 @@ void write_function(
       auto index_map = dofmap->index_map;
       int index_map_bs = dofmap->index_map_bs();
       int bs = dofmap->bs();
+      int bs0 = dofmap0->bs();
       std::int32_t num_dofs_block
           = index_map_bs * (index_map->size_local() + index_map->num_ghosts())
             / bs;
