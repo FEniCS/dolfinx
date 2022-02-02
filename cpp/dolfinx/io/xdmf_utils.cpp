@@ -232,7 +232,7 @@ xdmf_utils::get_hdf5_paths(const pugi::xml_node& dataitem_node)
   return {{paths[0], paths[1]}};
 }
 //-----------------------------------------------------------------------------
-std::string xdmf_utils::get_hdf5_filename(std::string xdmf_filename)
+std::string xdmf_utils::get_hdf5_filename(const std::string& xdmf_filename)
 {
   std::filesystem::path p(xdmf_filename);
   p.replace_extension(".h5");
