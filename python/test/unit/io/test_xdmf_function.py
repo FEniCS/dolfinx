@@ -14,12 +14,9 @@ from dolfinx.fem import (Function, FunctionSpace, TensorFunctionSpace,
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import (CellType, create_unit_cube, create_unit_interval,
                           create_unit_square)
-from dolfinx_utils.test.fixtures import tempdir
 
 from mpi4py import MPI
 from petsc4py import PETSc
-
-assert (tempdir)
 
 # Supported XDMF file encoding
 if MPI.COMM_WORLD.size > 1:

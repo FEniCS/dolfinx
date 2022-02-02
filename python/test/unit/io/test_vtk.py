@@ -15,12 +15,9 @@ from dolfinx.fem import (Function, FunctionSpace, TensorFunctionSpace,
 from dolfinx.io import VTKFile
 from dolfinx.mesh import (CellType, create_mesh, create_unit_cube,
                           create_unit_interval, create_unit_square)
-from dolfinx_utils.test.fixtures import tempdir
 
 from mpi4py import MPI
 from petsc4py import PETSc
-
-assert (tempdir)
 
 cell_types_2D = [CellType.triangle, CellType.quadrilateral]
 cell_types_3D = [CellType.tetrahedron, CellType.hexahedron]

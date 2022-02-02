@@ -19,12 +19,9 @@ from dolfinx.mesh import (CellType, DiagonalType, GhostMode, create_box,
                           create_rectangle, create_submesh, create_unit_cube,
                           create_unit_interval, create_unit_square,
                           locate_entities, locate_entities_boundary)
-from dolfinx_utils.test.fixtures import tempdir
 from ufl import dx
 
 from mpi4py import MPI
-
-assert (tempdir)
 
 
 @pytest.fixture
