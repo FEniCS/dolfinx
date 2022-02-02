@@ -33,6 +33,7 @@ void test_fides_mesh()
   // Move all coordinates of the mesh geometry
   points += 1;
   writer.write(0.2);
+
   // Only move x coordinate
   auto x_coords = xt::view(points, xt::all(), 0);
   x_coords -= 0.5;

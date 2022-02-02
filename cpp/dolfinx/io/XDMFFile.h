@@ -9,6 +9,7 @@
 #include "HDF5Interface.h"
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/mesh/cell_types.h>
+#include <filesystem>
 #include <memory>
 #include <filesystem>
 #include <string>
@@ -67,7 +68,7 @@ public:
   static const Encoding default_encoding = Encoding::HDF5;
 
   /// Constructor
-  XDMFFile(MPI_Comm comm, const std::filesystem::path filename,
+  XDMFFile(MPI_Comm comm, const std::filesystem::path& filename,
            const std::string file_mode,
            const Encoding encoding = default_encoding);
 
@@ -186,8 +187,8 @@ private:
   // MPI communicator
   dolfinx::MPI::Comm _comm;
 
-  // Cached filename
-  std::string _filename;
+  // Filename
+  std::filesystem::path _filename;
 
   // File mode
   std::string _file_mode;
