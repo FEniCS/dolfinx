@@ -17,7 +17,7 @@ from dolfinx.fem import (Function, FunctionSpace, TensorFunctionSpace,
 from dolfinx.geometry import (BoundingBoxTree, compute_colliding_cells,
                               compute_collisions)
 from dolfinx.mesh import create_mesh, create_unit_cube
-from dolfinx_utils.test.skips import skip_if_complex, skip_in_parallel
+from dolfinx_utils.test.skips import skip_in_parallel
 
 from mpi4py import MPI
 from petsc4py import PETSc
@@ -215,7 +215,6 @@ def test_interpolation_rank1(W):
     assert round(w.vector.norm(PETSc.NormType.N1) - 3 * num_vertices, 7) == 0
 
 
-@skip_if_complex
 def test_cffi_expression(V):
     code_h = """
     void eval(double* values, int num_points, int value_size, const double* x);
@@ -245,10 +244,10 @@ def test_cffi_expression(V):
     eval_ptr = ffi.cast("uintptr_t", ffi.addressof(lib, "eval"))
 
     # Handle C func address by hand
-    f1 = Function(V)
+    f1 = Function(V, dtype=np.float64)
     f1.interpolate(int(eval_ptr))
 
-    f2 = Function(V)
+    f2 = Function(V, dtype=np.float64)
     f2.interpolate(lambda x: x[0] + x[1])
     assert (f1.vector - f2.vector).norm() < 1.0e-12
 
