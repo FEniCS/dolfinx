@@ -248,7 +248,7 @@ public:
           "Function value size not equal to Expression value size");
     }
 
-    const xt::xtensor<double, 2> expr_points = e.X();
+    const xt::xtensor<double, 2> expr_points = xt::eval(e.X());
     const xt::xtensor<double, 2> element_points
         = _function_space->element()->interpolation_points();
 
