@@ -201,7 +201,7 @@ int main(int argc, char* argv[])
     // Compute Cauchy stress
     // Construct appropriate Basix element for stress
     constexpr auto family = basix::element::family::P;
-    constexpr auto cell_type
+    const auto cell_type
         = mesh::cell_type_to_basix_type(mesh->topology().cell_type());
     constexpr auto variant = basix::element::lagrange_variant::equispaced;
     constexpr int k = 0;

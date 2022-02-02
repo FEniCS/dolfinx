@@ -123,19 +123,16 @@ def test_rank0():
     b = Function(vdP1)
 
     dofmap = vdP1.dofmap.list.array
-    scatter(b.vector.array, array_evaluated, dofmap)
+    scatter(b.x.array, array_evaluated, dofmap)
+    b.x.scatter_forward()
 
     def grad_expr1(x):
-        values = np.empty((2, x.shape[1]))
-        values[0] = 2.0 * x[0]
-        values[1] = 4.0 * x[1]
-
-        return values
+        return np.vstack((2.0 * x[0], 4.0 * x[1]))
 
     b2 = Function(vdP1)
     b2.interpolate(grad_expr1)
 
-    assert np.isclose((b2.vector - b.vector).norm(), 0.0)
+    assert np.allclose(b2.x.array, b.x.array)
 
 
 def test_rank1_hdiv():
