@@ -633,7 +633,13 @@ mesh::Mesh mesh::update_ghosts(const mesh::Mesh& mesh,
     for (int j = 0; j < gdim; ++j)
       x(v, j) = coord[vertex_to_coord[v] * 3 + j];
 
-  auto partitioner = [&dest](...) { return dest; };
+  auto partitioner =
+      [&dest](
+          [[maybe_unused]] MPI_Comm comm, [[maybe_unused]] int nparts,
+          [[maybe_unused]] int tdim,
+          [[maybe_unused]] const dolfinx::graph::AdjacencyList<int64_t>& cells,
+          [[maybe_unused]] dolfinx::mesh::GhostMode ghost_mode)
+  { return dest; };
 
   return mesh::create_mesh(mesh.comm(), cell_vertices, geometry.cmap(), x,
                            mesh::GhostMode::shared_facet, partitioner);

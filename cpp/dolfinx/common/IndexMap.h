@@ -212,8 +212,8 @@ public:
   /// @todo Aim to remove this function? If it's kept, should it work
   /// with neighborhood ranks?
   ///
-  /// Compute map from each local (owned) index to the set of ranks that
-  /// have the index as a ghost
+  /// Compute map from each local (owned and ghosted) index to the set of ranks
+  /// that have the index as a ghost
   /// @return shared indices
   std::map<std::int32_t, std::set<int>> compute_shared_indices() const;
 
