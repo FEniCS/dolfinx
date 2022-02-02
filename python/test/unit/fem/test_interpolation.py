@@ -15,7 +15,6 @@ from dolfinx.fem import (Expression, Function, FunctionSpace,
                          VectorFunctionSpace, assemble_scalar, form)
 from dolfinx.mesh import (CellType, MeshTags, create_mesh, create_unit_cube,
                           create_unit_square, locate_entities)
-from dolfinx_utils.test.skips import skip_in_parallel
 
 from mpi4py import MPI
 
@@ -153,7 +152,7 @@ def run_vector_test(V, poly_order):
         assert np.allclose(val, f(p))
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 @parametrize_cell_types
 @pytest.mark.parametrize("order", range(1, 5))
 def test_Lagrange_interpolation(cell_type, order):
@@ -163,7 +162,7 @@ def test_Lagrange_interpolation(cell_type, order):
     run_scalar_test(V, order)
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 @parametrize_cell_types
 @pytest.mark.parametrize('order', range(1, 5))
 def test_vector_interpolation(cell_type, order):
@@ -173,7 +172,7 @@ def test_vector_interpolation(cell_type, order):
     run_vector_test(V, order)
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("cell_type", [CellType.triangle, CellType.tetrahedron])
 @pytest.mark.parametrize("order", range(1, 5))
 def test_N1curl_interpolation(cell_type, order):
@@ -183,7 +182,7 @@ def test_N1curl_interpolation(cell_type, order):
     run_vector_test(V, order - 1)
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("cell_type", [CellType.triangle])
 @pytest.mark.parametrize("order", [1, 2])
 def test_N2curl_interpolation(cell_type, order):
@@ -192,7 +191,7 @@ def test_N2curl_interpolation(cell_type, order):
     run_vector_test(V, order)
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("cell_type", [CellType.quadrilateral])
 @pytest.mark.parametrize("order", range(1, 5))
 def test_RTCE_interpolation(cell_type, order):
@@ -202,7 +201,7 @@ def test_RTCE_interpolation(cell_type, order):
     run_vector_test(V, order - 1)
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("cell_type", [CellType.hexahedron])
 @pytest.mark.parametrize("order", range(1, 5))
 def test_NCE_interpolation(cell_type, order):
@@ -264,7 +263,7 @@ def test_mixed_sub_interpolation():
             v1.interpolate(U.sub(0))
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 def test_mixed_interpolation():
     """Test that mixed interpolation raised an exception."""
     mesh = one_cell_mesh(CellType.triangle)
@@ -387,7 +386,7 @@ def test_interpolation_vector_elements(order1, order2):
     assert np.isclose(s, 0)
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 def test_interpolation_non_affine():
     points = np.array([[0, 0, 0], [1, 0, 0], [0, 2, 0], [1, 2, 0],
                        [0, 0, 3], [1, 0, 3], [0, 2, 3], [1, 2, 3],

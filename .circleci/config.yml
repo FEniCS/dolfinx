@@ -16,7 +16,6 @@ flake8-python-code: &flake8-python-code
   command: |
     cd python/
     python3 -m flake8 dolfinx
-    python3 -m flake8 dolfinx_utils
     python3 -m flake8 demo
     python3 -m flake8 test
 
