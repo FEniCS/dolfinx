@@ -18,10 +18,12 @@
 // #include <dolfinx/la/PETScVector.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshTags.h>
+#include <filesystem>
 #include <memory>
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
+#include <pybind11/stl/filesystem.h>
 #include <string>
 #include <vector>
 #include <xtensor/xadapt.hpp>
@@ -75,7 +77,7 @@ void io(py::module& m)
 
   xdmf_file
       .def(py::init(
-               [](const MPICommWrapper comm, const std::string filename,
+               [](const MPICommWrapper comm, const std::filesystem::path filename,
                   const std::string file_mode,
                   dolfinx::io::XDMFFile::Encoding encoding)
                {
