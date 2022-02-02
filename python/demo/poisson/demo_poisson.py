@@ -76,9 +76,7 @@
 import numpy as np
 
 import ufl
-from dolfinx import fem, io
-from dolfinx import mesh as _mesh
-from dolfinx import plot
+from dolfinx import fem, io, mesh, plot
 from ufl import ds, dx, exp, grad, inner, sin
 
 from mpi4py import MPI
@@ -92,15 +90,15 @@ from petsc4py.PETSc import ScalarType
 # square divided into two triangles, we do as follows ::
 
 # Create mesh
-mesh = _mesh.create_rectangle(
+rect_mesh = mesh.create_rectangle(
     comm=MPI.COMM_WORLD,
     points=((0.0, 0.0), (2.0, 1.0)),
     n=(32, 16),
-    cell_type=_mesh.CellType.triangle,
+    cell_type=mesh.CellType.triangle,
 )
 
 # Define function space
-V = fem.FunctionSpace(mesh, ("Lagrange", 1))
+V = fem.FunctionSpace(rect_mesh, ("Lagrange", 1))
 
 # The second argument to :py:class:`FunctionSpace
 # <dolfinx.fem.FunctionSpace>` is a tuple consisting of ``(family, degree)``,
@@ -144,8 +142,8 @@ V = fem.FunctionSpace(mesh, ("Lagrange", 1))
 # Define boundary condition on x = 0 or x = 1
 
 # Locate the facets on the boundary matching the provided marker function
-facets = _mesh.locate_entities_boundary(
-    mesh,
+facets = mesh.locate_entities_boundary(
+    rect_mesh,
     dim=1,
     marker=lambda x: np.logical_or(np.isclose(x[0], 0.0), np.isclose(x[0], 2.0)),
 )
@@ -173,7 +171,7 @@ bc = fem.dirichletbc(value=ScalarType(0), dofs=dofs, V=V)
 # Define variational problem
 u = ufl.TrialFunction(V)
 v = ufl.TestFunction(V)
-x = ufl.SpatialCoordinate(mesh)
+x = ufl.SpatialCoordinate(rect_mesh)
 f = 10 * exp(-((x[0] - 0.5) ** 2 + (x[1] - 0.5) ** 2) / 0.02)
 g = sin(5 * x[0])
 a = inner(grad(u), grad(v)) * dx
@@ -211,7 +209,7 @@ uh = problem.solve()
 
 # Save solution in XDMF format
 with io.XDMFFile(MPI.COMM_WORLD, "poisson.xdmf", "w") as file:
-    file.write_mesh(mesh)
+    file.write_mesh(rect_mesh)
     file.write_function(uh)
 
 
