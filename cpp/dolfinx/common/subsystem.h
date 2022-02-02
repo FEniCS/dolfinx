@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include<mpi.h>
+
 namespace dolfinx::common
 {
 
@@ -27,11 +29,11 @@ void init_logging(int argc, char* argv[]);
 
 /// Initialize PETSc (and SLEPc, if configured) without command-line
 /// arguments
-void init_petsc();
+void init_petsc(MPI_Comm comm = MPI_COMM_WORLD);
 
 /// Initialize PETSc (and SLEPc, if configured) with command-line
 /// arguments
-void init_petsc(int argc, char* argv[]);
+void init_petsc(int argc, char* argv[], MPI_Comm comm = MPI_COMM_WORLD);
 
 /// Check if MPI has been initialised (returns true if MPI has been
 /// initialised, even if it is later finalised)

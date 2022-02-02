@@ -7,7 +7,6 @@
 #include "subsystem.h"
 #include <dolfinx/common/log.h>
 #include <iostream>
-#include <mpi.h>
 #include <petscsys.h>
 #include <string>
 #include <vector>
@@ -64,17 +63,21 @@ void subsystem::init_logging(int argc, char* argv[])
   loguru::init(argc, argv_copy.data(), options);
 }
 //-----------------------------------------------------------------------------
-void subsystem::init_petsc()
+void subsystem::init_petsc(MPI_Comm comm)
 {
   int argc = 0;
   char** argv = nullptr;
-  init_petsc(argc, argv);
+  init_petsc(argc, argv, comm);
 }
 //-----------------------------------------------------------------------------
-void subsystem::init_petsc(int argc, char* argv[])
+void subsystem::init_petsc(int argc, char* argv[], MPI_Comm comm)
 {
   if (argc > 1)
     LOG(INFO) << "Initializing PETSc with given command-line arguments.";
+
+  // Ensure the PETSC_COMM_WORLD is not MPI_COMM_WORLD if the user has specified 
+  // a communicator.
+  PETSC_COMM_WORLD = comm;
 
   PetscBool is_initialized;
   PetscInitialized(&is_initialized);
