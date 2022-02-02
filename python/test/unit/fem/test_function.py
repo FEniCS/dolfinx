@@ -17,7 +17,6 @@ from dolfinx.fem import (Function, FunctionSpace, TensorFunctionSpace,
 from dolfinx.geometry import (BoundingBoxTree, compute_colliding_cells,
                               compute_collisions)
 from dolfinx.mesh import create_mesh, create_unit_cube
-from dolfinx_utils.test.skips import skip_in_parallel
 
 from mpi4py import MPI
 from petsc4py import PETSc
@@ -139,7 +138,7 @@ def test_eval(V, W, Q, mesh):
     assert np.allclose(u3.eval(x0, first_cell)[:3], u2.eval(x0, first_cell), rtol=1e-15, atol=1e-15)
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 def test_eval_manifold():
     # Simple two-triangle surface in 3d
     vertices = [(0.0, 0.0, 1.0), (1.0, 1.0, 1.0), (1.0, 0.0, 0.0), (0.0, 1.0,

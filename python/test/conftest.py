@@ -23,6 +23,13 @@ def pytest_runtest_teardown(item):
     comm.Barrier()
 
 
+# Skip in parallel
+@pytest.fixture(scope="session")
+def skip_in_parallel(request):
+    if MPI.COMM_WORLD.size > 1:
+        pytest.skip("This test should only be run in serial.")
+
+
 @pytest.fixture(scope="module")
 def datadir(request):
     """Return the directory of the shared test data. Assumes run from

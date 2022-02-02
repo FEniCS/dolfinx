@@ -21,14 +21,13 @@ from dolfinx.fem import (FunctionSpace, assemble_matrix, dirichletbc, form,
 from dolfinx.mesh import create_unit_square
 from dolfinx.wrappers import get_include_path as pybind_inc
 from dolfinx_utils.test.fixtures import tempdir  # noqa: F401
-from dolfinx_utils.test.skips import skip_in_parallel
 
 import petsc4py
 from mpi4py import MPI
 from petsc4py import PETSc
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 @pytest.mark.skipif(not dolfinx.pkgconfig.exists("eigen3"),
                     reason="This test needs eigen3 pkg-config.")
 @pytest.mark.skipif(not dolfinx.pkgconfig.exists("dolfinx"),

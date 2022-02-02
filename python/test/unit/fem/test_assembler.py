@@ -26,7 +26,6 @@ from dolfinx.fem.assemble import pack_coefficients, pack_constants
 from dolfinx.mesh import (CellType, GhostMode, create_mesh, create_rectangle,
                           create_unit_cube, create_unit_square,
                           locate_entities_boundary)
-from dolfinx_utils.test.skips import skip_in_parallel
 from ufl import derivative, ds, dx, inner
 from ufl.geometry import SpatialCoordinate
 
@@ -179,7 +178,7 @@ def test_assembly_bcs(mode):
     assert (f - b_bc).norm() == pytest.approx(0.0, rel=1e-12, abs=1e-12)
 
 
-@ skip_in_parallel
+@pytest.mark.skip_in_parallel
 def test_assemble_manifold():
     """Test assembly of poisson problem on a mesh with topological
     dimension 1 but embedded in 2D (gdim=2)"""

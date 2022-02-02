@@ -16,7 +16,6 @@ from dolfinx.io import VTKFile
 from dolfinx.mesh import (CellType, create_mesh, create_unit_cube,
                           create_unit_interval, create_unit_square)
 from dolfinx_utils.test.fixtures import tempdir
-from dolfinx_utils.test.skips import skip_in_parallel
 
 from mpi4py import MPI
 from petsc4py import PETSc
@@ -130,7 +129,7 @@ def test_save_2d_vector(tempdir, cell_type):
         vtk.write_function(u, 0.)
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 def test_save_2d_vector_CG2(tempdir):
     points = np.array([[0, 0], [1, 0], [1, 2], [0, 2],
                        [1 / 2, 0], [1, 1], [1 / 2, 2],

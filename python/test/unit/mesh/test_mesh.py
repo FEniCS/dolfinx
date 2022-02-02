@@ -20,7 +20,6 @@ from dolfinx.mesh import (CellType, DiagonalType, GhostMode, create_box,
                           create_unit_interval, create_unit_square,
                           locate_entities, locate_entities_boundary)
 from dolfinx_utils.test.fixtures import tempdir
-from dolfinx_utils.test.skips import skip_in_parallel
 from ufl import dx
 
 from mpi4py import MPI
@@ -235,7 +234,7 @@ def test_create_box_prism():
     assert mesh.topology.index_map(3).size_global == 48
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 def test_get_coordinates():
     """Get coordinates of vertices"""
     mesh = create_unit_square(MPI.COMM_WORLD, 5, 5)
@@ -243,7 +242,7 @@ def test_get_coordinates():
 
 
 @pytest.mark.skip("Needs to be re-implemented")
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 def test_cell_inradius(c0, c1, c5):
     assert _cpp.mesh.inradius(c0[0], [c0[2]]) == pytest.approx((3.0 - math.sqrt(3.0)) / 6.0)
     assert _cpp.mesh.inradius(c1[0], [c1[2]]) == pytest.approx(0.0)
@@ -251,7 +250,7 @@ def test_cell_inradius(c0, c1, c5):
 
 
 @pytest.mark.skip("Needs to be re-implemented")
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 def test_cell_circumradius(c0, c1, c5):
     assert _cpp.mesh.circumradius(c0[0], [c0[2]], c0[1]) == pytest.approx(math.sqrt(3.0) / 2.0)
     # Implementation of diameter() does not work accurately
@@ -261,14 +260,14 @@ def test_cell_circumradius(c0, c1, c5):
     assert _cpp.mesh.circumradius(c5[0], [c5[2]], c5[1]) == pytest.approx(math.sqrt(3.0) / 2.0)
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 def test_cell_h(c0, c1, c5):
     for c in [c0, c1, c5]:
         assert _cpp.mesh.h(c[0], c[1], [c[2]]) == pytest.approx(math.sqrt(2.0))
 
 
 @pytest.mark.skip("Needs to be re-implemented")
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 def test_cell_radius_ratio(c0, c1, c5):
     assert _cpp.mesh.radius_ratio(c0[0], c0[2]) == pytest.approx(math.sqrt(3.0) - 1.0)
     assert np.isnan(_cpp.mesh.radius_ratio(c1[0], c1[2]))
@@ -280,7 +279,7 @@ def dirname(request):
     return request.getfixturevalue(request.param)
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("_mesh,hmin,hmax",
                          [
                              #  (mesh_1d, 0.0, 0.25),
@@ -296,7 +295,7 @@ def test_hmin_hmax(_mesh, hmin, hmax):
     assert h.max() == pytest.approx(hmax)
 
 
-# @skip_in_parallel
+# @pytest.mark.skip_in_parallel
 # @pytest.mark.skip("Needs to be re-implemented")
 # @pytest.mark.parametrize("mesh,rmin,rmax",
 #                          [
@@ -387,7 +386,7 @@ def xtest_mesh_topology_lifetime():
     assert sys.getrefcount(mesh) == rc
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 def test_small_mesh():
     mesh3d = create_unit_cube(MPI.COMM_WORLD, 1, 1, 1)
     gdim = mesh3d.geometry.dim
