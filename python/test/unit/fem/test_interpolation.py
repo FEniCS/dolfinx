@@ -212,9 +212,61 @@ def test_NCE_interpolation(cell_type, order):
     run_vector_test(V, order - 1)
 
 
+def test_mixed_sub_interpolation():
+    """Test interpolation of sub-functions"""
+    mesh = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3)
+
+    def f(x):
+        return np.vstack((10 + x[0], -10 - x[1], 25 + x[0]))
+
+    P2 = ufl.VectorElement("Lagrange", mesh.ufl_cell(), 2)
+    P1 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
+    for i, P in enumerate((P2 * P1, P1 * P2)):
+        W = FunctionSpace(mesh, P)
+        U = Function(W)
+        U.sub(i).interpolate(f)
+
+        # Same element
+        V = FunctionSpace(mesh, P2)
+        u, v = Function(V), Function(V)
+        u.interpolate(U.sub(i))
+        v.interpolate(f)
+        assert np.allclose(u.vector.array, v.vector.array)
+
+        # Same map, different elements
+        V = VectorFunctionSpace(mesh, ("Lagrange", 1))
+        u, v = Function(V), Function(V)
+        u.interpolate(U.sub(i))
+        v.interpolate(f)
+        assert np.allclose(u.vector.array, v.vector.array)
+
+        # Different maps (0)
+        V = FunctionSpace(mesh, ("N1curl", 1))
+        u, v = Function(V), Function(V)
+        u.interpolate(U.sub(i))
+        v.interpolate(f)
+        assert np.allclose(u.vector.array, v.vector.array)
+
+        # Different maps (1)
+        V = FunctionSpace(mesh, ("RT", 2))
+        u, v = Function(V), Function(V)
+        u.interpolate(U.sub(i))
+        v.interpolate(f)
+        assert np.allclose(u.vector.array, v.vector.array)
+
+        # Test with wrong shape
+        V0 = FunctionSpace(mesh, P.sub_elements()[0])
+        V1 = FunctionSpace(mesh, P.sub_elements()[1])
+        v0, v1 = Function(V0), Function(V1)
+        with pytest.raises(RuntimeError):
+            v0.interpolate(U.sub(1))
+        with pytest.raises(RuntimeError):
+            v1.interpolate(U.sub(0))
+
+
 @skip_in_parallel
 def test_mixed_interpolation():
-    """Test that interpolation raised an exception."""
+    """Test that mixed interpolation raised an exception."""
     mesh = one_cell_mesh(CellType.triangle)
     A = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
     B = ufl.VectorElement("Lagrange", mesh.ufl_cell(), 1)
@@ -255,7 +307,6 @@ def test_interpolation_dg_to_n1curl(tdim, order):
     V = VectorFunctionSpace(mesh, ("DG", order))
     V1 = FunctionSpace(mesh, ("N1curl", order + 1))
     u, v = Function(V), Function(V1)
-
     u.interpolate(lambda x: x[:tdim] ** order)
     v.interpolate(u)
     s = assemble_scalar(form(ufl.inner(u - v, u - v) * ufl.dx))
@@ -272,7 +323,6 @@ def test_interpolation_n1curl_to_dg(tdim, order):
     V = FunctionSpace(mesh, ("N1curl", order + 1))
     V1 = VectorFunctionSpace(mesh, ("DG", order))
     u, v = Function(V), Function(V1)
-
     u.interpolate(lambda x: x[:tdim] ** order)
     v.interpolate(u)
     s = assemble_scalar(form(ufl.inner(u - v, u - v) * ufl.dx))
@@ -288,10 +338,7 @@ def test_interpolation_n2curl_to_bdm(tdim, order):
         mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2)
     V = FunctionSpace(mesh, ("N2curl", order))
     V1 = FunctionSpace(mesh, ("BDM", order))
-
-    u = Function(V)
-    v = Function(V1)
-
+    u, v = Function(V), Function(V1)
     u.interpolate(lambda x: x[:tdim] ** order)
     v.interpolate(u)
     s = assemble_scalar(form(ufl.inner(u - v, u - v) * ufl.dx))
@@ -304,9 +351,7 @@ def test_interpolation_p2p(order1, order2):
     mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2)
     V = FunctionSpace(mesh, ("Lagrange", order1))
     V1 = FunctionSpace(mesh, ("Lagrange", order2))
-
-    u = Function(V)
-    v = Function(V1)
+    u, v = Function(V), Function(V1)
 
     u.interpolate(lambda x: x[0])
     v.interpolate(u)
@@ -327,9 +372,7 @@ def test_interpolation_vector_elements(order1, order2):
     mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2)
     V = VectorFunctionSpace(mesh, ("Lagrange", order1))
     V1 = VectorFunctionSpace(mesh, ("Lagrange", order2))
-
-    u = Function(V)
-    v = Function(V1)
+    u, v = Function(V), Function(V1)
 
     u.interpolate(lambda x: x)
     v.interpolate(u)
@@ -344,7 +387,7 @@ def test_interpolation_vector_elements(order1, order2):
     assert np.isclose(s, 0)
 
 
-@ skip_in_parallel
+@skip_in_parallel
 def test_interpolation_non_affine():
     points = np.array([[0, 0, 0], [1, 0, 0], [0, 2, 0], [1, 2, 0],
                        [0, 0, 3], [1, 0, 3], [0, 2, 3], [1, 2, 3],
@@ -441,11 +484,7 @@ def test_de_rahm_2D(order):
     mesh = create_unit_square(MPI.COMM_WORLD, 3, 4)
     W = FunctionSpace(mesh, ("Lagrange", order))
     w = Function(W)
-
-    def f(x):
-        return x[0] + x[0] * x[1] + 2 * x[1]**2
-
-    w.interpolate(f)
+    w.interpolate(lambda x: x[0] + x[0] * x[1] + 2 * x[1]**2)
 
     g = ufl.grad(w)
     Q = FunctionSpace(mesh, ("N2curl", order - 1))

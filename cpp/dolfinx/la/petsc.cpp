@@ -543,7 +543,8 @@ petsc::Matrix::set_fn(Mat A, InsertMode mode)
 {
   return [A, mode, cache = std::vector<PetscInt>()](
              std::int32_t m, const std::int32_t* rows, std::int32_t n,
-             const std::int32_t* cols, const PetscScalar* vals) mutable -> int {
+             const std::int32_t* cols, const PetscScalar* vals) mutable -> int
+  {
     PetscErrorCode ierr;
 #ifdef PETSC_USE_64BIT_INDICES
     cache.resize(m + n);
@@ -569,7 +570,8 @@ petsc::Matrix::set_block_fn(Mat A, InsertMode mode)
 {
   return [A, mode, cache = std::vector<PetscInt>()](
              std::int32_t m, const std::int32_t* rows, std::int32_t n,
-             const std::int32_t* cols, const PetscScalar* vals) mutable -> int {
+             const std::int32_t* cols, const PetscScalar* vals) mutable -> int
+  {
     PetscErrorCode ierr;
 #ifdef PETSC_USE_64BIT_INDICES
     cache.resize(m + n);
@@ -599,7 +601,8 @@ petsc::Matrix::set_block_expand_fn(Mat A, int bs0, int bs1, InsertMode mode)
   return [A, bs0, bs1, mode, cache0 = std::vector<PetscInt>(),
           cache1 = std::vector<PetscInt>()](
              std::int32_t m, const std::int32_t* rows, std::int32_t n,
-             const std::int32_t* cols, const PetscScalar* vals) mutable -> int {
+             const std::int32_t* cols, const PetscScalar* vals) mutable -> int
+  {
     PetscErrorCode ierr;
     cache0.resize(bs0 * m);
     cache1.resize(bs1 * n);

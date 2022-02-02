@@ -733,7 +733,8 @@ void fides_initialize_function_attributes(adios2::IO& io,
 } // namespace
 
 //-----------------------------------------------------------------------------
-ADIOS2Writer::ADIOS2Writer(MPI_Comm comm, const std::string& filename,
+ADIOS2Writer::ADIOS2Writer(MPI_Comm comm,
+                           const std::filesystem::path& filename,
                            const std::string& tag,
                            const std::shared_ptr<const mesh::Mesh>& mesh,
                            const U& u)
@@ -746,7 +747,8 @@ ADIOS2Writer::ADIOS2Writer(MPI_Comm comm, const std::string& filename,
   _io->SetEngine("BPFile");
 }
 //-----------------------------------------------------------------------------
-ADIOS2Writer::ADIOS2Writer(MPI_Comm comm, const std::string& filename,
+ADIOS2Writer::ADIOS2Writer(MPI_Comm comm,
+                           const std::filesystem::path& filename,
                            const std::string& tag,
                            std::shared_ptr<const mesh::Mesh> mesh)
     : ADIOS2Writer(comm, filename, tag, mesh, {})
@@ -754,7 +756,8 @@ ADIOS2Writer::ADIOS2Writer(MPI_Comm comm, const std::string& filename,
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-ADIOS2Writer::ADIOS2Writer(MPI_Comm comm, const std::string& filename,
+ADIOS2Writer::ADIOS2Writer(MPI_Comm comm,
+                           const std::filesystem::path& filename,
                            const std::string& tag, const U& u)
     : ADIOS2Writer(comm, filename, tag, nullptr, u)
 {
@@ -791,7 +794,8 @@ void ADIOS2Writer::close()
     _engine->Close();
 }
 //-----------------------------------------------------------------------------
-FidesWriter::FidesWriter(MPI_Comm comm, const std::string& filename,
+FidesWriter::FidesWriter(MPI_Comm comm,
+                         const std::filesystem::path& filename,
                          std::shared_ptr<const mesh::Mesh> mesh)
     : ADIOS2Writer(comm, filename, "Fides mesh writer", mesh)
 {
@@ -800,7 +804,8 @@ FidesWriter::FidesWriter(MPI_Comm comm, const std::string& filename,
   fides_initialize_mesh_attributes(*_io, *mesh);
 }
 //-----------------------------------------------------------------------------
-FidesWriter::FidesWriter(MPI_Comm comm, const std::string& filename,
+FidesWriter::FidesWriter(MPI_Comm comm,
+                         const std::filesystem::path& filename,
                          const ADIOS2Writer::U& u)
     : ADIOS2Writer(comm, filename, "Fides function writer", u)
 {
@@ -884,7 +889,7 @@ void FidesWriter::write(double t)
   _engine->EndStep();
 }
 //-----------------------------------------------------------------------------
-VTXWriter::VTXWriter(MPI_Comm comm, const std::string& filename,
+VTXWriter::VTXWriter(MPI_Comm comm, const std::filesystem::path& filename,
                      std::shared_ptr<const mesh::Mesh> mesh)
     : ADIOS2Writer(comm, filename, "VTX mesh writer", mesh)
 {
@@ -893,7 +898,7 @@ VTXWriter::VTXWriter(MPI_Comm comm, const std::string& filename,
   define_attribute<std::string>(*_io, "vtk.xml", vtk_scheme);
 }
 //-----------------------------------------------------------------------------
-VTXWriter::VTXWriter(MPI_Comm comm, const std::string& filename,
+VTXWriter::VTXWriter(MPI_Comm comm, const std::filesystem::path& filename,
                      const ADIOS2Writer::U& u)
     : ADIOS2Writer(comm, filename, "VTX function writer", u)
 {

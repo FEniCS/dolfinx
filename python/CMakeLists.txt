@@ -11,7 +11,7 @@ if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.18.0")
 else()
   find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
 endif()
-find_package(pybind11 REQUIRED CONFIG HINTS ${PYBIND11_DIR} ${PYBIND11_ROOT}
+find_package(pybind11 2.7.0 REQUIRED CONFIG HINTS ${PYBIND11_DIR} ${PYBIND11_ROOT}
   $ENV{PYBIND11_DIR} $ENV{PYBIND11_ROOT})
 
 execute_process(
