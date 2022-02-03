@@ -12,6 +12,7 @@
 #include "vtk_utils.h"
 #include <adios2.h>
 #include <algorithm>
+#include <array>
 #include <complex>
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/fem/Function.h>
@@ -19,12 +20,17 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/utils.h>
 #include <xtensor/xtensor.hpp>
+#include <xtensor/xview.hpp>
 
 using namespace dolfinx;
 using namespace dolfinx::io;
 
 namespace
 {
+/// String suffix for real and complex components of a vector-valued
+/// field
+constexpr std::array field_ext = {"_real", "_imag"};
+
 template <class... Ts>
 struct overload : Ts...
 {
@@ -117,7 +123,7 @@ void vtx_write_data(adios2::IO& io, adios2::Engine& engine,
         data[i * num_comp + j] = std::real(u_vector[i * index_map_bs + j]);
 
     adios2::Variable<double> output_real = define_variable<double>(
-        io, u.name + "_real", {}, {}, {num_dofs, num_comp});
+        io, u.name + field_ext[0], {}, {}, {num_dofs, num_comp});
     engine.Put<double>(output_real, data.data(), adios2::Mode::Sync);
 
     std::fill(data.begin(), data.end(), 0);
@@ -127,7 +133,7 @@ void vtx_write_data(adios2::IO& io, adios2::Engine& engine,
         data[i * num_comp + j] = std::imag(u_vector[i * index_map_bs + j]);
     }
     adios2::Variable<double> output_imag = define_variable<double>(
-        io, u.name + "_imag", {}, {}, {num_dofs, num_comp});
+        io, u.name + field_ext[1], {}, {}, {num_dofs, num_comp});
     engine.Put<double>(output_imag, data.data(), adios2::Mode::Sync);
   }
 }
@@ -200,16 +206,16 @@ void vtx_write_mesh_from_space(adios2::IO& io, adios2::Engine& engine,
   assert(mesh);
   const int tdim = mesh->topology().dim();
 
-  const auto [geometry, vtk] = io::vtk_mesh_from_space(V);
+  // Get a VTK mesh with points at the 'nodes'
+  const auto [x, vtk] = io::vtk_mesh_from_space(V);
 
-  const std::uint32_t num_dofs = geometry.shape(0);
+  const std::uint32_t num_dofs = x.shape(0);
   const std::uint32_t num_cells
       = mesh->topology().index_map(tdim)->size_local();
 
   std::vector<std::size_t> shape = {num_cells, vtk.shape(1) + 1};
-  std::vector<std::uint64_t> vtk_topology(shape[0] * shape[1]);
+  std::vector<std::uint64_t> vtk_topology(shape[0] * shape[1], vtk.shape(1));
   auto _vtk = xt::adapt(vtk_topology, shape);
-  xt::col(_vtk, 0) = vtk.shape(1);
   xt::view(_vtk, xt::all(), xt::range(1, _vtk.shape(1)))
       = xt::view(vtk, xt::range(0, num_cells, xt::all()));
 
@@ -232,7 +238,7 @@ void vtx_write_mesh_from_space(adios2::IO& io, adios2::Engine& engine,
   engine.Put<std::uint32_t>(elements, num_cells);
   engine.Put<std::uint32_t>(
       cell_type, cells::get_vtk_cell_type(mesh->topology().cell_type(), tdim));
-  engine.Put<double>(local_geometry, geometry.data());
+  engine.Put<double>(local_geometry, x.data());
   engine.Put<std::uint64_t>(local_topology, vtk_topology.data());
   engine.PerformPuts();
 }
@@ -248,8 +254,8 @@ std::vector<std::string> extract_function_names(const ADIOS2Writer::U& u)
                  { names.push_back(u->name); },
                  [&names](const std::shared_ptr<const ADIOS2Writer::Fdc>& u)
                  {
-                   names.push_back(u->name + "_real");
-                   names.push_back(u->name + "_imag");
+                   names.push_back(u->name + field_ext[0]);
+                   names.push_back(u->name + field_ext[1]);
                  }},
         v);
   };
@@ -456,13 +462,13 @@ void fides_write_data(adios2::IO& io, adios2::Engine& engine,
     std::vector<double> data_real(data.size()), data_imag(data.size());
 
     adios2::Variable<double> local_output_r = define_variable<double>(
-        io, u.name + "_real", {}, {}, {num_vertices, num_components});
+        io, u.name + field_ext[0], {}, {}, {num_vertices, num_components});
     std::transform(data.cbegin(), data.cend(), data_real.begin(),
                    [](auto& x) -> double { return std::real(x); });
     engine.Put<double>(local_output_r, data_real.data());
 
     adios2::Variable<double> local_output_c = define_variable<double>(
-        io, u.name + "_imag", {}, {}, {num_vertices, num_components});
+        io, u.name + field_ext[1], {}, {}, {num_vertices, num_components});
     std::transform(data.cbegin(), data.cend(), data_imag.begin(),
                    [](auto& x) -> double { return std::imag(x); });
     engine.Put<double>(local_output_c, data_imag.data());

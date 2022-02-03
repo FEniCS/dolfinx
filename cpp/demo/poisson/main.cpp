@@ -233,10 +233,6 @@ int main(int argc, char* argv[])
     // Save solution in VTK format
     io::VTKFile file(MPI_COMM_WORLD, "u.pvd", "w");
     file.write({u}, 0.0);
-
-    fem::Function<std::complex<double>> uu(V);
-    io::VTKFile filec(MPI_COMM_WORLD, "c.pvd", "w");
-    filec.write({uu}, 0.0);
   }
 
   common::subsystem::finalize_petsc();
