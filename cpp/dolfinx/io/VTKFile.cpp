@@ -18,6 +18,7 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
 #include <filesystem>
+#include <iterator>
 #include <sstream>
 #include <string>
 #include <xtensor/xbuilder.hpp>
@@ -139,14 +140,14 @@ vtk_mesh_from_space(const fem::FunctionSpace& V)
     throw std::runtime_error("Can create VTK mesh from a mixed element");
 
   xt::xtensor<double, 2> x = tabulate_lagrange_dof_coordinates(V);
-  // FIXME: include ghost cells?
-  const std::size_t num_cells = mesh->topology().index_map(tdim)->size_local();
+  auto map = mesh->topology().index_map(tdim);
+  const std::size_t num_cells = map->size_local() + map->num_ghosts();
 
   // Create permutation from DOLFINx dof ordering to VTK
   auto dofmap = V.dofmap();
   assert(dofmap);
   const std::uint32_t num_nodes = dofmap->cell_dofs(0).size();
-  std::vector<std::uint8_t> map = dolfinx::io::cells::transpose(
+  std::vector<std::uint8_t> vtkmap = dolfinx::io::cells::transpose(
       io::cells::perm_vtk(mesh->topology().cell_type(), num_nodes));
 
   // Extract topology for all local cells as
@@ -157,7 +158,7 @@ vtk_mesh_from_space(const fem::FunctionSpace& V)
   {
     auto dofs = dofmap->cell_dofs(c);
     for (std::size_t i = 0; i < dofs.size(); ++i)
-      vtk_topology(c, i) = dofs[map[i]];
+      vtk_topology(c, i) = dofs[vtkmap[i]];
   }
 
   return {std::move(x), std::move(vtk_topology)};
@@ -315,9 +316,9 @@ void add_data(const std::string& name, int rank,
 
 /// At mesh geometry and topology data to a pugixml node. The function
 /// adds the Points and Cells nodes to the input node/
-void add_mesh_new(const xt::xtensor<double, 2>& x,
-                  const xt::xtensor<std::int64_t, 2>& cells,
-                  mesh::CellType celltype, int tdim, pugi::xml_node& piece_node)
+void add_mesh(const xt::xtensor<double, 2>& x,
+              const xt::xtensor<std::int64_t, 2>& cells,
+              mesh::CellType celltype, int tdim, pugi::xml_node& piece_node)
 {
   // Add geometry (points)
 
@@ -364,64 +365,6 @@ void add_mesh_new(const xt::xtensor<double, 2>& x,
   type_node.append_child(pugi::node_pcdata).set_value(s.str().c_str());
 }
 //----------------------------------------------------------------------------
-
-/// At mesh geometry and topology data to a pugixml node. The function /
-/// adds the Points and Cells nodes to the input node/
-void add_mesh(const mesh::Mesh& mesh, pugi::xml_node& piece_node)
-{
-  const mesh::Topology& topology = mesh.topology();
-  const mesh::Geometry& geometry = mesh.geometry();
-  const int tdim = topology.dim();
-
-  // Add geometry (points)
-
-  pugi::xml_node points_node = piece_node.append_child("Points");
-  pugi::xml_node x_node = points_node.append_child("DataArray");
-  x_node.append_attribute("type") = "Float64";
-  x_node.append_attribute("NumberOfComponents") = "3";
-  x_node.append_attribute("format") = "ascii";
-  auto x
-      = xt::adapt(geometry.x().data(), geometry.x().size(), xt::no_ownership(),
-                  std::vector({geometry.x().size() / 3, std::size_t(3)}));
-  x_node.append_child(pugi::node_pcdata).set_value(xt_to_string(x, 16).c_str());
-
-  // Add topology (cells)
-
-  pugi::xml_node cells_node = piece_node.append_child("Cells");
-  pugi::xml_node connectivity_node = cells_node.append_child("DataArray");
-  connectivity_node.append_attribute("type") = "Int32";
-  connectivity_node.append_attribute("Name") = "connectivity";
-  connectivity_node.append_attribute("format") = "ascii";
-
-  // Extra cell topology
-  xt::xtensor<std::int64_t, 2> cells = extract_vtk_connectivity(mesh);
-  std::stringstream ss;
-  std::for_each(cells.begin(), cells.end(), [&ss](auto& v) { ss << v << " "; });
-  connectivity_node.append_child(pugi::node_pcdata).set_value(ss.str().c_str());
-
-  pugi::xml_node offsets_node = cells_node.append_child("DataArray");
-  offsets_node.append_attribute("type") = "Int32";
-  offsets_node.append_attribute("Name") = "offsets";
-  offsets_node.append_attribute("format") = "ascii";
-  std::stringstream ss_offset;
-  int num_nodes = cells.shape(1);
-  for (std::size_t i = 0; i < cells.shape(0); ++i)
-    ss_offset << (i + 1) * num_nodes << " ";
-
-  offsets_node.append_child(pugi::node_pcdata)
-      .set_value(ss_offset.str().c_str());
-
-  pugi::xml_node type_node = cells_node.append_child("DataArray");
-  type_node.append_attribute("type") = "Int8";
-  type_node.append_attribute("Name") = "types";
-  type_node.append_attribute("format") = "ascii";
-  int celltype = get_vtk_cell_type(topology.cell_type(), tdim);
-  std::stringstream s;
-  for (std::size_t c = 0; c < cells.shape(0); ++c)
-    s << celltype << " ";
-  type_node.append_child(pugi::node_pcdata).set_value(s.str().c_str());
-}
-//----------------------------------------------------------------------------
 template <typename Scalar>
 void write_function(
     const std::vector<std::reference_wrapper<const fem::Function<Scalar>>>& u,
@@ -438,31 +381,47 @@ void write_function(
 
   // TODO: Check for sub-elements (dis-allow?)
 
-  // Extract mesh
-  // TODO: Handle case when all cells are cell-data
-  // TODO: Handle subfunctions
-  // FIXME: What about DG0 data?
+  // Extract first function space with pointwise data
   auto V0 = u.front().get().function_space();
   assert(V0);
+  for (auto& v : u)
+  {
+    auto V = v.get().function_space();
+    assert(V);
+    if (!is_cellwise(*V))
+    {
+      V0 = V;
+      break;
+    }
+  }
+
+  // Check compatibility all functions
   auto mesh0 = V0->mesh();
   assert(mesh0);
   auto element0 = V0->element();
   for (auto& v : u)
   {
     auto V = v.get().function_space();
-    if (!V->component().empty())
-      throw std::runtime_error("Cannot write sub-Functions to VTK file.");
 
-    if (*(V->element()) != *element0)
-    {
-      throw std::runtime_error(
-          "All functions written to VTK file must have same element.");
-    }
-
+    // Check that functions share common mesh
     if (V->mesh() != mesh0)
     {
       throw std::runtime_error(
           "All functions written to VTK file must share the same Mesh.");
+    }
+
+    // Check for sub-functions
+    if (!V->component().empty())
+      throw std::runtime_error("Cannot write sub-Functions to VTK file.");
+
+    // Check that pointwise element are the same (up to the block size)
+    if (!is_cellwise(*V))
+    {
+      if (*(V->element()) != *element0)
+      {
+        throw std::runtime_error(
+            "All functions written to VTK file must have same element.");
+      }
     }
   }
 
@@ -484,8 +443,18 @@ void write_function(
   vtk_node_vtu.append_attribute("version") = "0.1";
   pugi::xml_node grid_node_vtu = vtk_node_vtu.append_child("UnstructuredGrid");
 
-  // Build mesh data
-  auto [x, cells] = vtk_mesh_from_space(*V0);
+  // Build mesh data to match first Function
+  xt::xtensor<double, 2> x;
+  xt::xtensor<std::int64_t, 2> cells;
+  if (is_cellwise(*V0))
+  {
+    cells = extract_vtk_connectivity(*mesh0);
+    const mesh::Geometry& geometry = mesh0->geometry();
+    x = xt::adapt(geometry.x().data(), geometry.x().size(), xt::no_ownership(),
+                  std::vector({geometry.x().size() / 3, std::size_t(3)}));
+  }
+  else
+    std::tie(x, cells) = vtk_mesh_from_space(*V0);
 
   // Add "Piece" node and required metadata
   pugi::xml_node piece_node = grid_node_vtu.append_child("Piece");
@@ -493,12 +462,13 @@ void write_function(
   piece_node.append_attribute("NumberOfCells") = cells.shape(0);
 
   // Add mesh data to "Piece" node
-  add_mesh_new(x, cells, mesh0->topology().cell_type(), mesh0->topology().dim(),
-               piece_node);
+  add_mesh(x, cells, mesh0->topology().cell_type(), mesh0->topology().dim(),
+           piece_node);
 
   // FIXME: is this actually setting the first?
   // Set last scalar/vector/tensor Functions in u to be the 'active'
   // (default) field(s)
+  constexpr std::array tensor_str = {"Scalars", "Vectors", "Tensors"};
   for (auto _u : u)
   {
     auto V = _u.get().function_space();
@@ -509,16 +479,9 @@ void write_function(
 
     const int rank = V->element()->value_shape().size();
     pugi::xml_node data_node = piece_node.child(data_type.c_str());
-    std::string rank_type;
-    if (rank == 0)
-      rank_type = "Scalars";
-    else if (rank == 1)
-      rank_type = "Vectors";
-    else if (rank == 2)
-      rank_type = "Tensors";
-    if (data_node.attribute(rank_type.c_str()).empty())
-      data_node.append_attribute(rank_type.c_str());
-    pugi::xml_attribute data = data_node.attribute(rank_type.c_str());
+    if (data_node.attribute(tensor_str[rank]).empty())
+      data_node.append_attribute(tensor_str[rank]);
+    pugi::xml_attribute data = data_node.attribute(tensor_str[rank]);
     data.set_value(_u.get().name.c_str());
   }
 
@@ -527,101 +490,124 @@ void write_function(
   {
     auto V = _u.get().function_space();
     assert(V);
-    pugi::xml_node data_node = is_cellwise(*V) ? piece_node.child("CellData")
-                                               : piece_node.child("PointData");
-    assert(!data_node.empty());
-
     auto element = V->element();
     int rank = element->value_shape().size();
-    if (V == V0)
+    std::int32_t num_comp = std::pow(3, rank);
+    if (is_cellwise(*V))
     {
-      // Identical spaces
-      if (mesh0->geometry().dim() == 3)
-        add_data(_u.get().name, rank, _u.get().x()->array(), data_node);
-      else
-      {
-        // Pad with zeros and then add
+      // -- Cell-wise data
 
-        auto dofmap = V->dofmap();
-        auto index_map = dofmap->index_map;
-        int index_map_bs = dofmap->index_map_bs();
-        int bs = dofmap->bs();
-        std::int32_t num_dofs_block
-            = index_map_bs * (index_map->size_local() + index_map->num_ghosts())
-              / bs;
+      pugi::xml_node data_node = piece_node.child("CellData");
+      assert(!data_node.empty());
 
-        std::int32_t num_comp = std::pow(3, rank);
-        std::vector<Scalar> data(num_dofs_block * num_comp, 0);
-        auto u_vector = _u.get().x()->array();
-        for (int i = 0; i < num_dofs_block; ++i)
-          for (int k = 0; k < index_map_bs; ++k)
-            data[i * num_comp + k] = u_vector[i * index_map_bs + k];
-
-        add_data(_u.get().name, rank, xtl::span<const Scalar>(data), data_node);
-      }
-    }
-    else if (*element == *element0)
-    {
-      // Same element, possibly different dofmaps
-      // TODO: we need dofmap0 to be 'blocked'
-      // TODO: check ElementDofLayout?
-
-      // Get dofmaps
-      auto dofmap0 = V0->dofmap();
-      assert(dofmap0);
       auto dofmap = V->dofmap();
-      assert(dofmap);
-
-      auto index_map = dofmap->index_map;
-      int index_map_bs = dofmap->index_map_bs();
       int bs = dofmap->bs();
-      int bs0 = dofmap0->bs();
-      std::int32_t num_dofs_block
-          = index_map_bs * (index_map->size_local() + index_map->num_ghosts())
-            / bs;
 
-      // Interpolate on each cell
+      std::vector<Scalar> data(cells.shape(0) * num_comp, 0);
       auto u_vector = _u.get().x()->array();
-      std::vector<Scalar> u_interp(u_vector.size());
-      std::size_t num_cells = cells.shape(0);
-      for (std::size_t c = 0; c < num_cells; ++c)
+      for (std::size_t c = 0; c < cells.shape(0); ++c)
       {
-        xtl::span<const std::int32_t> dofs0 = dofmap0->cell_dofs(c);
         xtl::span<const std::int32_t> dofs = dofmap->cell_dofs(c);
-        assert(dofs0.size() == dofs.size());
-        for (std::size_t i = 0; i < dofs0.size(); ++i)
-        {
+        for (std::size_t i = 0; i < dofs.size(); ++i)
           for (int k = 0; k < bs; ++k)
-          {
-            int index = bs * i + k;
-            std::div_t dv0 = std::div(index, bs0);
-            u_interp[bs0 * dofs0[dv0.quot] + dv0.rem]
-                = u_vector[bs * dofs[i] + k];
-            //  u_interp[bs * dofs0[i] + k] = u_vector[bs * dofs[i] + k];
-          }
-        }
+            data[num_comp * c + k] = u_vector[bs * dofs[i] + k];
       }
 
-      // Pack/add data
-      if (mesh0->geometry().dim() == 3)
-      {
-        add_data(_u.get().name, rank, xtl::span<const Scalar>(u_interp),
-                 data_node);
-      }
-      else
-      {
-        // Pack
-        std::int32_t num_comp = std::pow(3, rank);
-        std::vector<Scalar> data(num_dofs_block * num_comp, 0);
-        for (int i = 0; i < num_dofs_block; ++i)
-          for (int k = 0; k < index_map_bs; ++k)
-            data[i * num_comp + k] = u_interp[i * index_map_bs + k];
-
-        add_data(_u.get().name, rank, xtl::span<const Scalar>(data), data_node);
-      }
+      add_data(_u.get().name, rank, xtl::span<const Scalar>(data), data_node);
     }
     else
-      throw std::runtime_error("Elements differ, not permitted for VTK output");
+    {
+      // -- Point-wise data
+
+      pugi::xml_node data_node = piece_node.child("PointData");
+      assert(!data_node.empty());
+
+      auto pad_data = [num_comp](const fem::FunctionSpace& V,
+                                 const xtl::span<const Scalar>& u, int rank)
+      {
+        auto dofmap = V.dofmap();
+        int bs = dofmap->bs();
+        auto map = dofmap->index_map;
+        int map_bs = dofmap->index_map_bs();
+        std::int32_t num_dofs_block
+            = map_bs * (map->size_local() + map->num_ghosts()) / bs;
+
+        std::vector<Scalar> data(num_dofs_block * num_comp, 0);
+        for (int i = 0; i < num_dofs_block; ++i)
+        {
+          std::copy_n(std::next(u.cbegin(), i * map_bs), map_bs,
+                      std::next(data.begin(), i * num_comp));
+        }
+
+        return data;
+      };
+
+      if (V == V0)
+      {
+        // Identical spaces
+        if (mesh0->geometry().dim() == 3)
+          add_data(_u.get().name, rank, _u.get().x()->array(), data_node);
+        else
+        {
+          // Pad with zeros and then add
+          auto data = pad_data(*V, _u.get().x()->array(), rank);
+          add_data(_u.get().name, rank, xtl::span<const Scalar>(data),
+                   data_node);
+        }
+      }
+      else if (*element == *element0)
+      {
+        // Same element, possibly different dofmaps
+        // TODO: we need dofmap0 to be 'blocked'
+        // TODO: check ElementDofLayout?
+
+        // Get dofmaps
+        auto dofmap0 = V0->dofmap();
+        assert(dofmap0);
+        auto dofmap = V->dofmap();
+        assert(dofmap);
+
+        auto map = dofmap->index_map;
+        int map_bs = dofmap->index_map_bs();
+        int bs = dofmap->bs();
+        int bs0 = dofmap0->bs();
+        std::int32_t num_dofs_block
+            = map_bs * (map->size_local() + map->num_ghosts()) / bs;
+
+        // Interpolate on each cell
+        auto u_vector = _u.get().x()->array();
+        std::vector<Scalar> u(u_vector.size());
+        for (std::size_t c = 0; c < cells.shape(0); ++c)
+        {
+          xtl::span<const std::int32_t> dofs0 = dofmap0->cell_dofs(c);
+          xtl::span<const std::int32_t> dofs = dofmap->cell_dofs(c);
+          assert(bs0 * dofs0.size() == bs * dofs.size());
+          for (std::size_t i = 0; i < dofs0.size(); ++i)
+          {
+            for (int k = 0; k < bs; ++k)
+            {
+              int index = bs * i + k;
+              std::div_t dv0 = std::div(index, bs0);
+              u[bs0 * dofs0[dv0.quot] + dv0.rem] = u_vector[bs * dofs[i] + k];
+            }
+          }
+        }
+
+        // Pack/add data
+        if (mesh0->geometry().dim() == 3)
+          add_data(_u.get().name, rank, xtl::span<const Scalar>(u), data_node);
+        else
+        {
+          // Pad with zeros and then add
+          auto data = pad_data(*V, _u.get().x()->array(), rank);
+          add_data(_u.get().name, rank, xtl::span<const Scalar>(data),
+                   data_node);
+        }
+      }
+      else
+        throw std::runtime_error(
+            "Elements differ, not permitted for VTK output");
+    }
   }
 
   // Save VTU XML to file
@@ -806,7 +792,11 @@ void io::VTKFile::write(const mesh::Mesh& mesh, double time)
   piece_node.append_attribute("NumberOfCells") = num_cells;
 
   // Add mesh data to "Piece" node
-  add_mesh(mesh, piece_node);
+  xt::xtensor<std::int64_t, 2> cells = extract_vtk_connectivity(mesh);
+  xt::xtensor<double, 2> x
+      = xt::adapt(geometry.x().data(), geometry.x().size(), xt::no_ownership(),
+                  std::vector({geometry.x().size() / 3, std::size_t(3)}));
+  add_mesh(x, cells, topology.cell_type(), topology.dim(), piece_node);
 
   // Save VTU XML to file
   std::filesystem::path vtu = _filename.parent_path();
