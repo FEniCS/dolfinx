@@ -30,6 +30,10 @@ using namespace dolfinx;
 
 namespace
 {
+/// String suffix for real and complex components of a vector-valued
+/// field
+constexpr std::array field_ext = {"_real", "_imag"};
+
 /// Tabulate the coordinate for every 'node' in a Lagrange function
 /// space.
 /// @param[in] V The function space. Must be a (discontinuous) Lagrange
@@ -333,11 +337,11 @@ void add_data(const std::string& name, int rank,
 
     std::transform(values.cbegin(), values.cend(), v.begin(),
                    [](auto x) { return x.real(); });
-    add_data_float(name + "_real", rank, xtl::span<const T>(v), data_node);
+    add_data_float(name + field_ext[0], rank, xtl::span<const T>(v), data_node);
 
     std::transform(values.cbegin(), values.cend(), v.begin(),
                    [](auto x) { return x.imag(); });
-    add_data_float(name + "_imag", rank, xtl::span<const T>(v), data_node);
+    add_data_float(name + field_ext[1], rank, xtl::span<const T>(v), data_node);
   }
 }
 //----------------------------------------------------------------------------
@@ -670,11 +674,6 @@ void write_function(
     // Add mesh metadata to PVTU object
     add_pvtu_mesh(grid_node);
 
-    // Add field data
-    // std::vector<std::string> components = {""};
-    // if constexpr (!std::is_scalar<Scalar>::value)
-    //   components = {"real", "imag"};
-
     for (auto _u : u)
     {
       auto V = _u.get().function_space();
@@ -699,9 +698,9 @@ void write_function(
       }
       else
       {
-        constexpr int size = 8 * sizeof(Scalar::value_type);
-        add_field(_u.get().name + "_real");
-        add_field(_u.get().name + "_imag");
+        constexpr int size = 8 * sizeof(typename Scalar::value_type);
+        add_field(_u.get().name + field_ext[0], size);
+        add_field(_u.get().name + field_ext[1], size);
       }
 
       // Add data for each process to the PVTU object
@@ -873,10 +872,11 @@ void io::VTKFile::write(
   write_function(u, time, _pvd_xml, _filename);
 }
 //----------------------------------------------------------------------------
-void io::VTKFile::write(const std::vector<std::reference_wrapper<
-                            const fem::Function<std::complex<double>>>>& /*u*/,
-                        double /*time*/)
+void io::VTKFile::write(
+    const std::vector<
+        std::reference_wrapper<const fem::Function<std::complex<double>>>>& u,
+    double time)
 {
-  // write_function(u, time, _pvd_xml, _filename);
+  write_function(u, time, _pvd_xml, _filename);
 }
 //----------------------------------------------------------------------------
