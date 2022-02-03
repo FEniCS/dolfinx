@@ -430,7 +430,8 @@ void write_function(
   vtu += filename.stem().string() + "_p" + std::to_string(mpi_rank) + "_"
          + counter_str;
   vtu.replace_extension("vtu");
-  std::filesystem::create_directory(vtu.parent_path());
+  if (vtu.has_parent_path())
+    std::filesystem::create_directories(vtu.parent_path());
   xml_vtu.save_file(vtu.c_str(), "  ");
 
   // Create a PVTU XML object on rank 0
@@ -507,7 +508,8 @@ void write_function(
     }
 
     // Write PVTU file
-    std::filesystem::create_directory(p_pvtu.parent_path());
+    if (p_pvtu.has_parent_path())
+      std::filesystem::create_directories(p_pvtu.parent_path());
     xml_pvtu.save_file(p_pvtu.c_str(), "  ");
   }
 
@@ -539,7 +541,8 @@ io::VTKFile::~VTKFile()
 {
   if (_pvd_xml and MPI::rank(_comm.comm()) == 0)
   {
-    std::filesystem::create_directory(_filename.parent_path());
+    if (_filename.has_parent_path())
+      std::filesystem::create_directories(_filename.parent_path());
     _pvd_xml->save_file(_filename.c_str(), "  ");
   }
 }
@@ -548,7 +551,8 @@ void io::VTKFile::close()
 {
   if (_pvd_xml and MPI::rank(_comm.comm()) == 0)
   {
-    std::filesystem::create_directory(_filename.parent_path());
+    if (_filename.has_parent_path())
+      std::filesystem::create_directories(_filename.parent_path());
     bool status = _pvd_xml->save_file(_filename.c_str(), "  ");
     if (status == false)
     {
@@ -566,7 +570,8 @@ void io::VTKFile::flush()
 
   if (MPI::rank(_comm.comm()) == 0)
   {
-    std::filesystem::create_directory(_filename.parent_path());
+    if (_filename.has_parent_path())
+      std::filesystem::create_directories(_filename.parent_path());
     _pvd_xml->save_file(_filename.c_str(), "  ");
   }
 }
@@ -620,7 +625,8 @@ void io::VTKFile::write(const mesh::Mesh& mesh, double time)
   vtu += _filename.stem().string() + "_p" + std::to_string(mpi_rank) + "_"
          + counter_str;
   vtu.replace_extension("vtu");
-  std::filesystem::create_directory(vtu.parent_path());
+  if (vtu.has_parent_path())
+    std::filesystem::create_directories(vtu.parent_path());
   xml_vtu.save_file(vtu.c_str(), "  ");
 
   // Create a PVTU XML object on rank 0
@@ -653,7 +659,8 @@ void io::VTKFile::write(const mesh::Mesh& mesh, double time)
     }
 
     // Write PVTU file
-    std::filesystem::create_directory(p_pvtu.parent_path());
+    if (p_pvtu.has_parent_path())
+      std::filesystem::create_directories(p_pvtu.parent_path());
     xml_pvtu.save_file(p_pvtu.c_str(), "  ");
   }
 
