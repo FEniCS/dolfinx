@@ -9,6 +9,7 @@
 #include "ADIOS2Writers.h"
 #include "cells.h"
 #include "pugixml.hpp"
+#include "vtk_utils.h"
 #include <adios2.h>
 #include <algorithm>
 #include <complex>
@@ -64,53 +65,6 @@ adios2::Variable<T> define_variable(adios2::IO& io, const std::string& name,
   }
   else
     return io.DefineVariable<T>(name, shape, start, count);
-}
-//-----------------------------------------------------------------------------
-
-/// Extract the cell topology (connectivity) in VTK ordering for all
-/// cells the mesh. The 'topology' includes higher-order 'nodes'. The
-/// index of a 'node' corresponds to the index of DOLFINx geometry
-/// 'nodes'.
-/// @param [in] mesh The mesh
-/// @return The cell topology in VTK ordering and in term of the DOLFINx
-/// geometry 'nodes'
-/// @note The indices in the return array correspond to the point
-/// indices in the mesh geometry array
-/// @note Even if the indices are local (int32), both Fides and VTX
-/// require int64 as local input
-xt::xtensor<std::int64_t, 2> extract_vtk_connectivity(const mesh::Mesh& mesh)
-{
-  // Get DOLFINx to VTK permutation
-  // FIXME: Use better way to get number of nodes
-  const graph::AdjacencyList<std::int32_t>& dofmap_x = mesh.geometry().dofmap();
-  const std::size_t num_nodes = dofmap_x.num_links(0);
-  std::vector map = dolfinx::io::cells::transpose(
-      dolfinx::io::cells::perm_vtk(mesh.topology().cell_type(), num_nodes));
-  // TODO: Remove when when paraview issue 19433 is resolved
-  // (https://gitlab.kitware.com/paraview/paraview/issues/19433)
-  if (mesh.topology().cell_type() == dolfinx::mesh::CellType::hexahedron
-      and num_nodes == 27)
-  {
-    map = {0,  9, 12, 3,  1, 10, 13, 4,  18, 15, 21, 6,  19, 16,
-           22, 7, 2,  11, 5, 14, 8,  17, 20, 23, 24, 25, 26};
-  }
-  // Extract mesh 'nodes'
-  const int tdim = mesh.topology().dim();
-  const std::size_t num_cells = mesh.topology().index_map(tdim)->size_local();
-
-  // Build mesh connectivity
-
-  // Loop over cells
-  xt::xtensor<std::int64_t, 2> topology({num_cells, num_nodes});
-  for (std::size_t c = 0; c < num_cells; ++c)
-  {
-    // For each cell, get the 'nodes' and place in VTK order
-    auto dofs_x = dofmap_x.links(c);
-    for (std::size_t i = 0; i < dofs_x.size(); ++i)
-      topology(c, i) = dofs_x[map[i]];
-  }
-
-  return topology;
 }
 //-----------------------------------------------------------------------------
 
@@ -297,8 +251,9 @@ void vtx_write_mesh(adios2::IO& io, adios2::Engine& engine,
   engine.Put<std::uint32_t>(cell_variable, num_cells);
   adios2::Variable<std::uint32_t> celltype_variable
       = define_variable<std::uint32_t>(io, "types");
-  engine.Put<std::uint32_t>(celltype_variable,
-                            cells::get_vtk_cell_type(mesh, tdim));
+  engine.Put<std::uint32_t>(
+      celltype_variable,
+      cells::get_vtk_cell_type(mesh.topology().cell_type(), tdim));
 
   // Get DOLFINx to VTK permutation
   // FIXME: Use better way to get number of nodes
@@ -309,7 +264,7 @@ void vtx_write_mesh(adios2::IO& io, adios2::Engine& engine,
   // Output is written as [N0, v0_0,...., v0_N0, N1, v1_0,...., v1_N1,....]
   xt::xtensor<std::int64_t, 2> topology({num_cells, num_nodes + 1});
   xt::view(topology, xt::all(), xt::xrange(std::size_t(1), topology.shape(1)))
-      = extract_vtk_connectivity(mesh);
+      = io::extract_vtk_connectivity(mesh);
   xt::view(topology, xt::all(), 0) = num_nodes;
 
   // Put topology (nodes)
@@ -375,8 +330,8 @@ void vtx_write_mesh_from_space(adios2::IO& io, adios2::Engine& engine,
   // Write mesh information to file
   engine.Put<std::uint32_t>(vertices, num_dofs);
   engine.Put<std::uint32_t>(elements, num_cells);
-  engine.Put<std::uint32_t>(cell_type,
-                            dolfinx::io::cells::get_vtk_cell_type(*mesh, tdim));
+  engine.Put<std::uint32_t>(
+      cell_type, cells::get_vtk_cell_type(mesh->topology().cell_type(), tdim));
   engine.Put<double>(local_geometry, geometry.data());
   engine.Put<std::uint64_t>(local_topology, vtk_topology.data());
   engine.PerformPuts();
@@ -731,8 +686,7 @@ void fides_initialize_function_attributes(adios2::IO& io,
 } // namespace
 
 //-----------------------------------------------------------------------------
-ADIOS2Writer::ADIOS2Writer(MPI_Comm comm,
-                           const std::filesystem::path& filename,
+ADIOS2Writer::ADIOS2Writer(MPI_Comm comm, const std::filesystem::path& filename,
                            const std::string& tag,
                            const std::shared_ptr<const mesh::Mesh>& mesh,
                            const U& u)
@@ -745,8 +699,7 @@ ADIOS2Writer::ADIOS2Writer(MPI_Comm comm,
   _io->SetEngine("BPFile");
 }
 //-----------------------------------------------------------------------------
-ADIOS2Writer::ADIOS2Writer(MPI_Comm comm,
-                           const std::filesystem::path& filename,
+ADIOS2Writer::ADIOS2Writer(MPI_Comm comm, const std::filesystem::path& filename,
                            const std::string& tag,
                            std::shared_ptr<const mesh::Mesh> mesh)
     : ADIOS2Writer(comm, filename, tag, mesh, {})
@@ -754,8 +707,7 @@ ADIOS2Writer::ADIOS2Writer(MPI_Comm comm,
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-ADIOS2Writer::ADIOS2Writer(MPI_Comm comm,
-                           const std::filesystem::path& filename,
+ADIOS2Writer::ADIOS2Writer(MPI_Comm comm, const std::filesystem::path& filename,
                            const std::string& tag, const U& u)
     : ADIOS2Writer(comm, filename, tag, nullptr, u)
 {
@@ -792,8 +744,7 @@ void ADIOS2Writer::close()
     _engine->Close();
 }
 //-----------------------------------------------------------------------------
-FidesWriter::FidesWriter(MPI_Comm comm,
-                         const std::filesystem::path& filename,
+FidesWriter::FidesWriter(MPI_Comm comm, const std::filesystem::path& filename,
                          std::shared_ptr<const mesh::Mesh> mesh)
     : ADIOS2Writer(comm, filename, "Fides mesh writer", mesh)
 {
@@ -802,8 +753,7 @@ FidesWriter::FidesWriter(MPI_Comm comm,
   fides_initialize_mesh_attributes(*_io, *mesh);
 }
 //-----------------------------------------------------------------------------
-FidesWriter::FidesWriter(MPI_Comm comm,
-                         const std::filesystem::path& filename,
+FidesWriter::FidesWriter(MPI_Comm comm, const std::filesystem::path& filename,
                          const ADIOS2Writer::U& u)
     : ADIOS2Writer(comm, filename, "Fides function writer", u)
 {

@@ -178,7 +178,7 @@ void add_mesh(const xt::xtensor<double, 2>& x,
   type_node.append_attribute("type") = "Int8";
   type_node.append_attribute("Name") = "types";
   type_node.append_attribute("format") = "ascii";
-  int vtk_celltype = io::get_vtk_cell_type(celltype, tdim);
+  int vtk_celltype = io::cells::get_vtk_cell_type(celltype, tdim);
   std::stringstream s;
   for (std::size_t c = 0; c < cells.shape(0); ++c)
     s << vtk_celltype << " ";

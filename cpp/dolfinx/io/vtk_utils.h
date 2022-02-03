@@ -43,7 +43,4 @@ vtk_mesh_from_space(const fem::FunctionSpace& V);
 /// require int64 as local input
 xt::xtensor<std::int64_t, 2> extract_vtk_connectivity(const mesh::Mesh& mesh);
 
-/// Get the VTK cell type integer
-std::int8_t get_vtk_cell_type(mesh::CellType cell, int dim);
-
 } // namespace dolfinx::io
