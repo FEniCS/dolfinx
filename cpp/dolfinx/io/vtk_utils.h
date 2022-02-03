@@ -26,7 +26,7 @@ namespace dolfinx::io
 /// Given a FunctionSpace, create a topology and geometry based on the
 /// dof coordinates.
 /// @note Only supports (discontinuous) Lagrange functions
-/// @param[in] u The function
+/// @param[in] V The function space
 std::pair<xt::xtensor<double, 2>, xt::xtensor<std::int64_t, 2>>
 vtk_mesh_from_space(const fem::FunctionSpace& V);
 
