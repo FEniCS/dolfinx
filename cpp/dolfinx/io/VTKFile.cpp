@@ -400,6 +400,7 @@ void write_function(
     assert(V);
 
     // Check that functions share common mesh
+    assert(V->mesh());
     if (V->mesh() != mesh0)
     {
       throw std::runtime_error(
@@ -518,7 +519,7 @@ void write_function(
       // Function to pack data to 3D with 'zero' padding, typically when
       // a Function is 2D
       auto pad_data = [num_comp](const fem::FunctionSpace& V,
-                                 const xtl::span<const Scalar>& u, int rank)
+                                 const xtl::span<const Scalar>& u)
       {
         auto dofmap = V.dofmap();
         int bs = dofmap->bs();
@@ -544,7 +545,7 @@ void write_function(
         else
         {
           // Pad with zeros and then add
-          auto data = pad_data(*V, _u.get().x()->array(), rank);
+          auto data = pad_data(*V, _u.get().x()->array());
           add_data(_u.get().name, rank, xtl::span<const Scalar>(data),
                    data_node);
         }
@@ -563,10 +564,6 @@ void write_function(
 
         int bs = dofmap->bs();
         int bs0 = dofmap0->bs();
-        auto map = dofmap->index_map;
-        int map_bs = dofmap->index_map_bs();
-        std::int32_t num_dofs_block
-            = map_bs * (map->size_local() + map->num_ghosts()) / bs;
 
         // Interpolate on each cell
         auto u_vector = _u.get().x()->array();
@@ -593,7 +590,7 @@ void write_function(
         else
         {
           // Pad with zeros and then add
-          auto data = pad_data(*V, _u.get().x()->array(), rank);
+          auto data = pad_data(*V, _u.get().x()->array());
           add_data(_u.get().name, rank, xtl::span<const Scalar>(data),
                    data_node);
         }
