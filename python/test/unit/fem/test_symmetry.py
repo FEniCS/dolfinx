@@ -11,7 +11,6 @@ import dolfinx
 import ufl
 from dolfinx.fem import FunctionSpace, form
 from dolfinx.mesh import CellType, create_unit_cube, create_unit_square
-from dolfinx_utils.test.skips import skip_in_parallel
 from ufl import FiniteElement, MixedElement, VectorElement, grad, inner
 
 from mpi4py import MPI
@@ -51,7 +50,7 @@ parametrize_lagrange_elements = pytest.mark.parametrize("cell_type, element", [
 ])
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 @parametrize_elements
 @pytest.mark.parametrize("order", range(1, 2))
 def test_mass_matrix_dx(cell_type, element, order):
@@ -59,7 +58,7 @@ def test_mass_matrix_dx(cell_type, element, order):
                       lambda u, v: inner(u, v) * ufl.dx)
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 @parametrize_lagrange_elements
 @pytest.mark.parametrize("order", range(1, 2))
 def test_stiffness_matrix_dx(cell_type, element, order):
@@ -67,7 +66,7 @@ def test_stiffness_matrix_dx(cell_type, element, order):
                       lambda u, v: inner(grad(u), grad(v)) * ufl.dx)
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 @parametrize_elements
 @pytest.mark.parametrize("order", range(1, 2))
 def test_mass_matrix_ds(cell_type, element, order):
@@ -75,7 +74,7 @@ def test_mass_matrix_ds(cell_type, element, order):
                       lambda u, v: inner(u, v) * ufl.ds)
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 @parametrize_lagrange_elements
 @pytest.mark.parametrize("order", range(1, 2))
 def test_stiffness_matrix_ds(cell_type, element, order):
@@ -83,7 +82,7 @@ def test_stiffness_matrix_ds(cell_type, element, order):
                       lambda u, v: inner(grad(u), grad(v)) * ufl.ds)
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 @parametrize_elements
 @pytest.mark.parametrize("order", range(1, 2))
 @pytest.mark.parametrize("sign", ["+", "-"])
@@ -92,7 +91,7 @@ def test_mass_matrix_dS(cell_type, element, order, sign):
                       lambda u, v: inner(u, v)(sign) * ufl.dS)
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 @parametrize_lagrange_elements
 @pytest.mark.parametrize("order", range(1, 2))
 @pytest.mark.parametrize("sign", ["+", "-"])
@@ -101,7 +100,7 @@ def test_stiffness_matrix_dS(cell_type, element, order, sign):
                       lambda u, v: inner(grad(u), grad(v))(sign) * ufl.dS)
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("cell_type", [CellType.triangle, CellType.quadrilateral,
                                        CellType.tetrahedron, CellType.hexahedron])
 @pytest.mark.parametrize("sign", ["+", "-"])
@@ -135,7 +134,7 @@ def test_mixed_element_form(cell_type, sign, order):
     check_symmetry(A)
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("cell_type", [CellType.triangle, CellType.quadrilateral])
 @pytest.mark.parametrize("sign", ["+", "-"])
 @pytest.mark.parametrize("order", range(1, 2))

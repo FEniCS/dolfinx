@@ -46,7 +46,6 @@ jobs:
         run: |
           cd python/
           python3 -m flake8 dolfinx
-          python3 -m flake8 dolfinx_utils
           python3 -m flake8 demo
           python3 -m flake8 test
       - name: isort checks (non-blocking)
@@ -54,7 +53,6 @@ jobs:
         run: |
           cd python/
           python3 -m isort --check dolfinx
-          python3 -m isort --check dolfinx_utils
           python3 -m isort --check demo
           python3 -m isort --check test
       - name: clang-format C++ checks (non-blocking)

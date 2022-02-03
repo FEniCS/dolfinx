@@ -19,7 +19,6 @@ C++ core
 - Boost (http://www.boost.org), with the following compiled Boost
   components
 
-  - filesystem
   - timer
 
 - CMake (https://cmake.org) [build dependency]

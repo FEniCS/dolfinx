@@ -14,11 +14,8 @@ from dolfinx.common import has_adios2
 from dolfinx.fem import Function, FunctionSpace, VectorFunctionSpace
 from dolfinx.mesh import (CellType, create_mesh, create_unit_cube,
                           create_unit_square)
-from dolfinx_utils.test.fixtures import tempdir
 
 from mpi4py import MPI
-
-assert (tempdir)
 
 
 @pytest.mark.skipif(MPI.COMM_WORLD.size > 1, reason="This test should only be run in serial.")
