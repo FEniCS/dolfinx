@@ -8,8 +8,8 @@ install-python-components: &install-python-components
     cmake --build build-dir --parallel 3
     cmake --install build-dir
     pip3 install ./basix/python
-    pip3 install git+https://github.com/FEniCS/ufl.git@michal/expressions
-    pip3 install git+https://github.com/FEniCS/ffcx.git@michal/expressions-cpp
+    pip3 install git+https://github.com/FEniCS/ufl.git
+    pip3 install git+https://github.com/FEniCS/ffcx.git
 
 flake8-python-code: &flake8-python-code
   name: Flake8 checks on Python code
