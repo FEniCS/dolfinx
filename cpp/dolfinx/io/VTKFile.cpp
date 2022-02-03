@@ -552,9 +552,11 @@ void write_function(
       }
       else if (*element == *element0)
       {
-        // -- Same element, possibly different dofmaps
-        // TODO: we need dofmap0 to be 'blocked'
-        // TODO: check ElementDofLayout?
+        // // -- Same element, possibly different dofmaps
+        // // TODO: we need dofmap0 to be 'blocked'
+        // // TODO: check ElementDofLayout?
+
+        std::cout << "Interpolate" << std::endl;
 
         // Get dofmaps
         auto dofmap0 = V0->dofmap();
@@ -563,7 +565,7 @@ void write_function(
         assert(dofmap);
 
         int bs = dofmap->bs();
-        int bs0 = dofmap0->bs();
+        // int bs0 = dofmap0->bs();
 
         // Interpolate on each cell
         auto u_vector = _u.get().x()->array();
@@ -572,14 +574,13 @@ void write_function(
         {
           xtl::span<const std::int32_t> dofs0 = dofmap0->cell_dofs(c);
           xtl::span<const std::int32_t> dofs = dofmap->cell_dofs(c);
-          assert(bs0 * dofs0.size() == bs * dofs.size());
           for (std::size_t i = 0; i < dofs0.size(); ++i)
           {
             for (int k = 0; k < bs; ++k)
             {
-              int index = bs * i + k;
-              std::div_t dv0 = std::div(index, bs0);
-              u[bs0 * dofs0[dv0.quot] + dv0.rem] = u_vector[bs * dofs[i] + k];
+              assert(i < dofs0.size());
+              assert(bs * dofs0[i] + k < (int)u.size());
+              u[bs * dofs0[i] + k] = u_vector[bs * dofs[i] + k];
             }
           }
         }
@@ -596,8 +597,10 @@ void write_function(
         }
       }
       else
+      {
         throw std::runtime_error(
             "Elements differ, not permitted for VTK output");
+      }
     }
   }
 

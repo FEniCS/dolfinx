@@ -57,8 +57,6 @@ def test_save_1d_scalar(tempdir):
 
     u = Function(FunctionSpace(mesh, ("Lagrange", 2)))
     u.interpolate(f)
-    u.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-
     filename = os.path.join(tempdir, "u.pvd")
     with VTKFile(MPI.COMM_WORLD, filename, "w") as vtk:
         vtk.write_function(u, 0.)
@@ -101,8 +99,6 @@ def test_save_1d_vector(tempdir):
     element = ufl.VectorElement("Lagrange", mesh.ufl_cell(), 2, dim=2)
     u = Function(FunctionSpace(mesh, element))
     u.interpolate(f)
-    u.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-
     filename = os.path.join(tempdir, "u.pvd")
     with VTKFile(MPI.COMM_WORLD, filename, "w") as vtk:
         vtk.write_function(u, 0.)
@@ -120,7 +116,6 @@ def test_save_2d_vector(tempdir, cell_type):
         return vals
 
     u.interpolate(f)
-    u.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
     filename = os.path.join(tempdir, "u.pvd")
     with VTKFile(MPI.COMM_WORLD, filename, "w") as vtk:
         vtk.write_function(u, 0.)
@@ -151,32 +146,8 @@ def test_save_2d_vector_CG2(tempdir):
         vtk.write_function(u, 0.)
 
 
-# def test_save_2d_mixed(tempdir):
-#     mesh = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3)
-
-#     P2 = ufl.VectorElement("Lagrange", mesh.ufl_cell(), 2)
-#     P1 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
-#     TH = P2 * P1
-#     W = FunctionSpace(mesh, TH)
-
-#     def vec_func(x):
-#         vals = np.zeros((3, x.shape[1]))
-#         vals[0] = x[0]
-#         vals[1] = 0.2 * x[1]
-#         return vals
-
-#     U = Function(W)
-#     U.sub(0).interpolate(vec_func)
-#     U.sub(1).interpolate(lambda x: 0.5 * x[0])
-#     U.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-#     filename = os.path.join(tempdir, "u.pvd")
-#     with VTKFile(mesh.comm, filename, "w") as vtk:
-#         vtk.write_function([U.sub(i) for i in range(W.num_sub_spaces)], 0.)
-
-
 def test_save_2d_mixed(tempdir):
     mesh = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3)
-    # mesh = create_unit_square(MPI.COMM_WORLD, 1, 1)
     P2 = ufl.VectorElement("Lagrange", mesh.ufl_cell(), 1)
     P1 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
     W = FunctionSpace(mesh, P2 * P1)
@@ -195,21 +166,18 @@ def test_save_2d_mixed(tempdir):
 
     U1, U2 = Function(V1), Function(V2)
     U1.interpolate(U.sub(1))
-    print("Pre-Interp")
     U2.interpolate(U.sub(0))
-    print("Posty-Interp")
-    # U2.interpolate(vec_func)
     U2.name = "u"
     U1.name = "p"
 
-    # U.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
     filename = os.path.join(tempdir, "u.pvd")
-    Up = U.sub(1)
-    Up.name = "psub"
     with VTKFile(mesh.comm, filename, "w") as vtk:
         vtk.write_function([U2, U1], 0.)
     with VTKFile(mesh.comm, filename, "w") as vtk:
         vtk.write_function([U1, U2], 0.)
+
+    Up = U.sub(1)
+    Up.name = "psub"
     with pytest.raises(RuntimeError):
         with VTKFile(mesh.comm, filename, "w") as vtk:
             vtk.write_function([U2, Up, U1], 0)
