@@ -128,25 +128,18 @@ def test_save_2d_vector_CG2(tempdir):
                        [0, 1], [1 / 2, 1]])
     points = np.array([[0, 0], [1, 0], [0, 2], [0.5, 1], [0, 1], [0.5, 0],
                        [1, 2], [0.5, 2], [1, 1]])
-
     cells = np.array([[0, 1, 2, 3, 4, 5],
                       [1, 6, 2, 7, 3, 8]])
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", "triangle", 2))
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
     u = Function(VectorFunctionSpace(mesh, ("Lagrange", 2)))
-
-    def func(x):
-        vals = np.zeros((2, x.shape[1]))
-        vals[0] = x[0]
-        vals[1] = x[1]
-        return vals
-    u.interpolate(func)
+    u.interpolate(lambda x: np.vstack((x[0], x[1])))
     filename = os.path.join(tempdir, "u.pvd")
     with VTKFile(mesh.comm, filename, "w") as vtk:
         vtk.write_function(u, 0.)
 
 
-def test_save_2d_mixed(tempdir):
+def test_save_vtk_mixed(tempdir):
     mesh = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3)
     P2 = ufl.VectorElement("Lagrange", mesh.ufl_cell(), 1)
     P1 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
@@ -154,14 +147,8 @@ def test_save_2d_mixed(tempdir):
     V1 = FunctionSpace(mesh, P1)
     V2 = FunctionSpace(mesh, P2)
 
-    def vec_func(x):
-        vals = np.zeros((3, x.shape[1]))
-        vals[0] = x[0]
-        vals[1] = 0.2 * x[1]
-        return vals
-
     U = Function(W)
-    U.sub(0).interpolate(vec_func)
+    U.sub(0).interpolate(lambda x: np.vstack((x[0], 0.2 * x[1], np.zeros_like(x[0]))))
     U.sub(1).interpolate(lambda x: 0.5 * x[0])
 
     U1, U2 = Function(V1), Function(V2)
@@ -184,6 +171,26 @@ def test_save_2d_mixed(tempdir):
     with pytest.raises(RuntimeError):
         with VTKFile(mesh.comm, filename, "w") as vtk:
             vtk.write_function([U.sub(i) for i in range(W.num_sub_spaces)], 0)
+
+
+def test_save_vtk_cell_point(tempdir):
+    """Test writing cell-wise and point-wise data"""
+    mesh = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3)
+    P2 = ufl.VectorElement("Lagrange", mesh.ufl_cell(), 1)
+    P1 = ufl.FiniteElement("Discontinuous Lagrange", mesh.ufl_cell(), 0)
+
+    V2, V1 = FunctionSpace(mesh, P2), FunctionSpace(mesh, P1)
+    U2, U1 = Function(V2), Function(V1)
+    U2.interpolate(lambda x: np.vstack((x[0], 0.2 * x[1], np.zeros_like(x[0]))))
+    U1.interpolate(lambda x: 0.5 * x[0])
+    U2.name = "A"
+    U1.name = "B"
+
+    filename = os.path.join(tempdir, "u.pvd")
+    with VTKFile(mesh.comm, filename, "w") as vtk:
+        vtk.write_function([U2, U1], 0.)
+    with VTKFile(mesh.comm, filename, "w") as vtk:
+        vtk.write_function([U1, U2], 0.)
 
 
 def test_save_1d_tensor(tempdir):

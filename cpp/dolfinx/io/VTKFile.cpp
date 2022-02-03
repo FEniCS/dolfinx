@@ -300,8 +300,13 @@ template <typename Scalar>
 void add_data(const std::string& name, int rank,
               const xtl::span<const Scalar>& values, pugi::xml_node& data_node)
 {
+  // static_assert(std::is_floating_point_v<Scalar>, "Scalar must be a float");
+
+  constexpr int size = 8 * sizeof(Scalar);
+  std::string type = std::string("Float") + std::to_string(size);
+
   pugi::xml_node field_node = data_node.append_child("DataArray");
-  field_node.append_attribute("type") = "Float64";
+  field_node.append_attribute("type") = type.c_str();
   field_node.append_attribute("Name") = name.c_str();
   field_node.append_attribute("format") = "ascii";
 
@@ -404,7 +409,7 @@ void write_function(
     if (V->mesh() != mesh0)
     {
       throw std::runtime_error(
-          "All functions written to VTK file must share the same Mesh.");
+          "All Functions written to VTK file must share the same Mesh.");
     }
 
     // Check for sub-functions
@@ -416,8 +421,8 @@ void write_function(
     {
       if (*(V->element()) != *element0)
       {
-        throw std::runtime_error(
-            "All functions written to VTK file must have same element.");
+        throw std::runtime_error("All point-wise Functions written to VTK file "
+                                 "must have same element.");
       }
     }
   }
