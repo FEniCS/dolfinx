@@ -14,7 +14,6 @@ import ufl
 from dolfinx.fem import (Function, FunctionSpace, VectorFunctionSpace,
                          assemble_scalar, form)
 from dolfinx.mesh import create_mesh
-from dolfinx_utils.test.skips import skip_in_parallel
 
 from mpi4py import MPI
 
@@ -202,7 +201,7 @@ def random_evaluation_mesh(cell_type):
     return create_mesh(MPI.COMM_WORLD, cells, points, domain)
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 @pytest.mark.parametrize(
     "cell_type,space_type",
     [
@@ -255,7 +254,7 @@ def test_evaluation(cell_type, space_type, space_order):
                 assert np.allclose(values0, values1)
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 @pytest.mark.parametrize(
     "cell_type,space_type",
     [
