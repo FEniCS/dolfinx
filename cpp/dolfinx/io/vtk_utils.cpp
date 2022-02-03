@@ -127,7 +127,7 @@ io::vtk_mesh_from_space(const fem::FunctionSpace& V)
   if (V.element()->is_mixed())
     throw std::runtime_error("Can create VTK mesh from a mixed element");
 
-  xt::xtensor<double, 2> x = tabulate_lagrange_dof_coordinates(V);
+  const xt::xtensor<double, 2> x = tabulate_lagrange_dof_coordinates(V);
   auto map = mesh->topology().index_map(tdim);
   const std::size_t num_cells = map->size_local() + map->num_ghosts();
 
@@ -135,12 +135,11 @@ io::vtk_mesh_from_space(const fem::FunctionSpace& V)
   auto dofmap = V.dofmap();
   assert(dofmap);
   const std::uint32_t num_nodes = dofmap->cell_dofs(0).size();
-  std::vector<std::uint8_t> vtkmap = dolfinx::io::cells::transpose(
+  const std::vector<std::uint8_t> vtkmap = dolfinx::io::cells::transpose(
       io::cells::perm_vtk(mesh->topology().cell_type(), num_nodes));
 
   // Extract topology for all local cells as
-  // [N0, v0_0, ...., v0_N0, N1, v1_0, ...., v1_N1, ....]
-  // std::vector<std::int64_t> vtk_topology(num_cells * (num_nodes + 1));
+  // [v0_0, ...., v0_N0, v1_0, ...., v1_N1, ....]
   xt::xtensor<std::int64_t, 2> vtk_topology({num_cells, num_nodes});
   for (std::size_t c = 0; c < num_cells; ++c)
   {
@@ -159,15 +158,16 @@ io::extract_vtk_connectivity(const mesh::Mesh& mesh)
   // FIXME: Use better way to get number of nodes
   const graph::AdjacencyList<std::int32_t>& dofmap_x = mesh.geometry().dofmap();
   const std::size_t num_nodes = dofmap_x.num_links(0);
-  std::vector map = dolfinx::io::cells::transpose(
+  std::vector vtkmap = dolfinx::io::cells::transpose(
       dolfinx::io::cells::perm_vtk(mesh.topology().cell_type(), num_nodes));
+
   // TODO: Remove when when paraview issue 19433 is resolved
   // (https://gitlab.kitware.com/paraview/paraview/issues/19433)
   if (mesh.topology().cell_type() == dolfinx::mesh::CellType::hexahedron
       and num_nodes == 27)
   {
-    map = {0,  9, 12, 3,  1, 10, 13, 4,  18, 15, 21, 6,  19, 16,
-           22, 7, 2,  11, 5, 14, 8,  17, 20, 23, 24, 25, 26};
+    vtkmap = {0,  9, 12, 3,  1, 10, 13, 4,  18, 15, 21, 6,  19, 16,
+              22, 7, 2,  11, 5, 14, 8,  17, 20, 23, 24, 25, 26};
   }
   // Extract mesh 'nodes'
   const int tdim = mesh.topology().dim();
@@ -182,7 +182,7 @@ io::extract_vtk_connectivity(const mesh::Mesh& mesh)
     // For each cell, get the 'nodes' and place in VTK order
     auto dofs_x = dofmap_x.links(c);
     for (std::size_t i = 0; i < dofs_x.size(); ++i)
-      topology(c, i) = dofs_x[map[i]];
+      topology(c, i) = dofs_x[vtkmap[i]];
   }
 
   return topology;
