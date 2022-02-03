@@ -338,7 +338,6 @@ void add_mesh(const xt::xtensor<double, 2>& x,
   connectivity_node.append_attribute("format") = "ascii";
 
   // Extra cell topology
-  // xt::xtensor<std::int64_t, 2> cells = extract_vtk_connectivity(mesh);
   std::stringstream ss;
   std::for_each(cells.begin(), cells.end(), [&ss](auto& v) { ss << v << " "; });
   connectivity_node.append_child(pugi::node_pcdata).set_value(ss.str().c_str());
@@ -376,12 +375,8 @@ void write_function(
   if (u.empty())
     return;
 
-  // TODO: check elements are compatible (same point data element, plus
-  // possible cell data elements)
-
-  // TODO: Check for sub-elements (dis-allow?)
-
-  // Extract first function space with pointwise data
+  // Extract the first function space with pointwise data. If no
+  // pointwise functions, take first FunctionSpace
   auto V0 = u.front().get().function_space();
   assert(V0);
   for (auto& v : u)
@@ -402,6 +397,7 @@ void write_function(
   for (auto& v : u)
   {
     auto V = v.get().function_space();
+    assert(V);
 
     // Check that functions share common mesh
     if (V->mesh() != mesh0)
@@ -443,7 +439,7 @@ void write_function(
   vtk_node_vtu.append_attribute("version") = "0.1";
   pugi::xml_node grid_node_vtu = vtk_node_vtu.append_child("UnstructuredGrid");
 
-  // Build mesh data to match first Function
+  // Build mesh data using first FunctionSpace
   xt::xtensor<double, 2> x;
   xt::xtensor<std::int64_t, 2> cells;
   if (is_cellwise(*V0))
@@ -489,7 +485,6 @@ void write_function(
   for (auto _u : u)
   {
     auto V = _u.get().function_space();
-    assert(V);
     auto element = V->element();
     int rank = element->value_shape().size();
     std::int32_t num_comp = std::pow(3, rank);
@@ -499,10 +494,8 @@ void write_function(
 
       pugi::xml_node data_node = piece_node.child("CellData");
       assert(!data_node.empty());
-
       auto dofmap = V->dofmap();
       int bs = dofmap->bs();
-
       std::vector<Scalar> data(cells.shape(0) * num_comp, 0);
       auto u_vector = _u.get().x()->array();
       for (std::size_t c = 0; c < cells.shape(0); ++c)
@@ -522,6 +515,8 @@ void write_function(
       pugi::xml_node data_node = piece_node.child("PointData");
       assert(!data_node.empty());
 
+      // Function to pack data to 3D with 'zero' padding, typically when
+      // a Function is 2D
       auto pad_data = [num_comp](const fem::FunctionSpace& V,
                                  const xtl::span<const Scalar>& u, int rank)
       {
@@ -531,7 +526,6 @@ void write_function(
         int map_bs = dofmap->index_map_bs();
         std::int32_t num_dofs_block
             = map_bs * (map->size_local() + map->num_ghosts()) / bs;
-
         std::vector<Scalar> data(num_dofs_block * num_comp, 0);
         for (int i = 0; i < num_dofs_block; ++i)
         {
@@ -544,7 +538,7 @@ void write_function(
 
       if (V == V0)
       {
-        // Identical spaces
+        // -- Identical spaces
         if (mesh0->geometry().dim() == 3)
           add_data(_u.get().name, rank, _u.get().x()->array(), data_node);
         else
@@ -557,7 +551,7 @@ void write_function(
       }
       else if (*element == *element0)
       {
-        // Same element, possibly different dofmaps
+        // -- Same element, possibly different dofmaps
         // TODO: we need dofmap0 to be 'blocked'
         // TODO: check ElementDofLayout?
 
@@ -567,10 +561,10 @@ void write_function(
         auto dofmap = V->dofmap();
         assert(dofmap);
 
-        auto map = dofmap->index_map;
-        int map_bs = dofmap->index_map_bs();
         int bs = dofmap->bs();
         int bs0 = dofmap0->bs();
+        auto map = dofmap->index_map;
+        int map_bs = dofmap->index_map_bs();
         std::int32_t num_dofs_block
             = map_bs * (map->size_local() + map->num_ghosts()) / bs;
 
@@ -635,7 +629,6 @@ void write_function(
     grid_node.append_attribute("GhostLevel") = 0;
     for (auto _u : u)
     {
-      assert(_u.get().function_space());
       if (is_cellwise(*_u.get().function_space()))
       {
         if (grid_node.child("PCellData").empty())
@@ -659,15 +652,10 @@ void write_function(
     for (auto _u : u)
     {
       auto V = _u.get().function_space();
-      assert(V);
       std::string d_type = is_cellwise(*V) ? "PCellData" : "PPointData";
       pugi::xml_node data_pnode = grid_node.child(d_type.c_str());
       const int rank = V->element()->value_shape().size();
-      int ncomps = 0;
-      if (rank == 1)
-        ncomps = 3;
-      else if (rank == 2)
-        ncomps = 9;
+      constexpr std::array ncomps = {0, 3, 9};
       for (const auto& component : components)
       {
         pugi::xml_node data_node = data_pnode.append_child("PDataArray");
@@ -683,7 +671,7 @@ void write_function(
               = (component + "" + _u.get().name).c_str();
         }
 
-        data_node.append_attribute("NumberOfComponents") = ncomps;
+        data_node.append_attribute("NumberOfComponents") = ncomps[rank];
       }
 
       // Add data for each process to the PVTU object
