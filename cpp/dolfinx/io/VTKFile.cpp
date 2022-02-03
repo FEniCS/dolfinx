@@ -295,14 +295,14 @@ void add_pvtu_mesh(pugi::xml_node& node)
   data_node.append_attribute("NumberOfComponents") = "3";
 }
 //----------------------------------------------------------------------------
-/// At data to a pugixml node
-template <typename Scalar>
-void add_data(const std::string& name, int rank,
-              const xtl::span<const Scalar>& values, pugi::xml_node& data_node)
+/// Add float data to a pugixml node
+template <typename T>
+void add_data_float(const std::string& name, int rank,
+                    const xtl::span<const T>& values, pugi::xml_node& data_node)
 {
-  // static_assert(std::is_floating_point_v<Scalar>, "Scalar must be a float");
+  static_assert(std::is_floating_point_v<T>, "Scalar must be a float");
 
-  constexpr int size = 8 * sizeof(Scalar);
+  constexpr int size = 8 * sizeof(T);
   std::string type = std::string("Float") + std::to_string(size);
 
   pugi::xml_node field_node = data_node.append_child("DataArray");
@@ -316,6 +316,29 @@ void add_data(const std::string& name, int rank,
     field_node.append_attribute("NumberOfComponents") = 9;
   field_node.append_child(pugi::node_pcdata)
       .set_value(xt_to_string(values, 16).c_str());
+}
+//----------------------------------------------------------------------------
+/// At data to a pugixml node
+
+template <typename Scalar>
+void add_data(const std::string& name, int rank,
+              const xtl::span<const Scalar>& values, pugi::xml_node& data_node)
+{
+  if constexpr (std::is_scalar<Scalar>::value)
+    add_data_float(name, rank, values, data_node);
+  else
+  {
+    using T = typename Scalar::value_type;
+    std::vector<T> v(values.size());
+
+    std::transform(values.cbegin(), values.cend(), v.begin(),
+                   [](auto x) { return x.real(); });
+    add_data_float(name + "_real", rank, xtl::span<const T>(v), data_node);
+
+    std::transform(values.cbegin(), values.cend(), v.begin(),
+                   [](auto x) { return x.imag(); });
+    add_data_float(name + "_imag", rank, xtl::span<const T>(v), data_node);
+  }
 }
 //----------------------------------------------------------------------------
 
@@ -561,8 +584,6 @@ void write_function(
         // // TODO: we need dofmap0 to be 'blocked'
         // // TODO: check ElementDofLayout?
 
-        std::cout << "Interpolate" << std::endl;
-
         // Get dofmaps
         auto dofmap0 = V0->dofmap();
         assert(dofmap0);
@@ -650,9 +671,9 @@ void write_function(
     add_pvtu_mesh(grid_node);
 
     // Add field data
-    std::vector<std::string> components = {""};
-    if constexpr (!std::is_scalar<Scalar>::value)
-      components = {"real", "imag"};
+    // std::vector<std::string> components = {""};
+    // if constexpr (!std::is_scalar<Scalar>::value)
+    //   components = {"real", "imag"};
 
     for (auto _u : u)
     {
@@ -661,22 +682,26 @@ void write_function(
       pugi::xml_node data_pnode = grid_node.child(d_type.c_str());
       const int rank = V->element()->value_shape().size();
       constexpr std::array ncomps = {0, 3, 9};
-      for (const auto& component : components)
-      {
-        pugi::xml_node data_node = data_pnode.append_child("PDataArray");
-        data_node.append_attribute("type") = "Float64";
-        if constexpr (!std::is_scalar<Scalar>::value)
-        {
-          data_node.append_attribute("Name")
-              = (component + "_" + _u.get().name).c_str();
-        }
-        else
-        {
-          data_node.append_attribute("Name")
-              = (component + "" + _u.get().name).c_str();
-        }
 
+      auto add_field = [&](const std::string& name, int size)
+      {
+        std::string type = std::string("Float") + std::to_string(size);
+        pugi::xml_node data_node = data_pnode.append_child("PDataArray");
+        data_node.append_attribute("type") = type.c_str();
+        data_node.append_attribute("Name") = name.c_str();
         data_node.append_attribute("NumberOfComponents") = ncomps[rank];
+      };
+
+      if constexpr (std::is_scalar_v<Scalar>)
+      {
+        constexpr int size = 8 * sizeof(Scalar);
+        add_field(_u.get().name, size);
+      }
+      else
+      {
+        constexpr int size = 8 * sizeof(Scalar::value_type);
+        add_field(_u.get().name + "_real");
+        add_field(_u.get().name + "_imag");
       }
 
       // Add data for each process to the PVTU object
