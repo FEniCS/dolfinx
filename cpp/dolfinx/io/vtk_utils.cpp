@@ -171,7 +171,8 @@ io::extract_vtk_connectivity(const mesh::Mesh& mesh)
   }
   // Extract mesh 'nodes'
   const int tdim = mesh.topology().dim();
-  const std::size_t num_cells = mesh.topology().index_map(tdim)->size_local();
+  const std::size_t num_cells = mesh.topology().index_map(tdim)->size_local()
+                                + mesh.topology().index_map(tdim)->num_ghosts();
 
   // Build mesh connectivity
 
