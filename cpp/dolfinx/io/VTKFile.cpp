@@ -43,6 +43,8 @@ bool is_cellwise(const fem::FunctionSpace& V)
   const int rank = V.element()->value_shape().size();
   assert(V.mesh());
   const int tdim = V.mesh()->topology().dim();
+
+  // cell_based_dim = tdim^rank
   int cell_based_dim = 1;
   for (int i = 0; i < rank; ++i)
     cell_based_dim *= tdim;
@@ -63,20 +65,20 @@ std::string get_counter(const pugi::xml_node& node, const std::string& name)
                                  node.children(name.c_str()).end());
 
   // Compute counter string
-  const int num_digits = 6;
+  constexpr int num_digits = 6;
   std::string counter = std::to_string(n);
   return std::string(num_digits - counter.size(), '0').append(counter);
 }
 //----------------------------------------------------------------------------
 
-/// Convert an xtensor to a std::string
+/// Convert a container to a std::stringstream
 template <typename T>
-std::string xt_to_string(const T& x, int precision)
+std::stringstream container_to_string(const T& x, int precision)
 {
   std::stringstream s;
   s.precision(precision);
   std::for_each(x.begin(), x.end(), [&s](auto e) { s << e << " "; });
-  return s.str();
+  return s;
 }
 //----------------------------------------------------------------------------
 
@@ -110,27 +112,33 @@ void add_pvtu_mesh(pugi::xml_node& node)
   pugi::xml_node point_ghost_node = point_data_node.append_child("PDataArray");
   point_ghost_node.append_attribute("type") = "UInt8";
   point_ghost_node.append_attribute("Name") = "vtkGhostType";
-  // point_ghost_node.append_attribute("IdType") = "1";
 
   // -- Points (PPoints)
-
-  pugi::xml_node vertex_data_node = node.append_child("PPoints");
-  pugi::xml_node data_node = vertex_data_node.append_child("PDataArray");
+  pugi::xml_node x_data_node = node.child("PPoints");
+  if (x_data_node.empty())
+    x_data_node = node.append_child("PPoints");
+  pugi::xml_node data_node = x_data_node.append_child("PDataArray");
   data_node.append_attribute("type") = "Float64";
   data_node.append_attribute("NumberOfComponents") = "3";
 }
 //----------------------------------------------------------------------------
+
 /// Add float data to a pugixml node
+/// @param[in] name The name of the data array
+/// @param[in] rank The rank of the field, e.g. 1 for a vector and 2 for
+/// a tensor
+/// @param[in] values The data array to add
+/// @param[in,out] data_node The XML node to add data to
 template <typename T>
 void add_data_float(const std::string& name, int rank,
-                    const xtl::span<const T>& values, pugi::xml_node& data_node)
+                    const xtl::span<const T>& values, pugi::xml_node& node)
 {
   static_assert(std::is_floating_point_v<T>, "Scalar must be a float");
 
   constexpr int size = 8 * sizeof(T);
   std::string type = std::string("Float") + std::to_string(size);
 
-  pugi::xml_node field_node = data_node.append_child("DataArray");
+  pugi::xml_node field_node = node.append_child("DataArray");
   field_node.append_attribute("type") = type.c_str();
   field_node.append_attribute("Name") = name.c_str();
   field_node.append_attribute("format") = "ascii";
@@ -140,17 +148,25 @@ void add_data_float(const std::string& name, int rank,
   else if (rank == 2)
     field_node.append_attribute("NumberOfComponents") = 9;
   field_node.append_child(pugi::node_pcdata)
-      .set_value(xt_to_string(values, 16).c_str());
+      .set_value(container_to_string(values, 16).str().c_str());
 }
 //----------------------------------------------------------------------------
-/// At data to a pugixml node
 
+/// At data to a pugixml node
+/// @note If `values` is complex, two data arrays will be added (one
+/// real and one complex), with suffixes from `field_ext` added to the
+/// name
+/// @param[in] name The name of the data array
+/// @param[in] rank The rank of the field, e.g. 1 for a vector and 2 for
+/// a tensor
+/// @param[in] values The data array to add
+/// @param[in,out] data_node The XML node to add data to
 template <typename Scalar>
 void add_data(const std::string& name, int rank,
-              const xtl::span<const Scalar>& values, pugi::xml_node& data_node)
+              const xtl::span<const Scalar>& values, pugi::xml_node& node)
 {
   if constexpr (std::is_scalar<Scalar>::value)
-    add_data_float(name, rank, values, data_node);
+    add_data_float(name, rank, values, node);
   else
   {
     using T = typename Scalar::value_type;
@@ -158,23 +174,32 @@ void add_data(const std::string& name, int rank,
 
     std::transform(values.cbegin(), values.cend(), v.begin(),
                    [](auto x) { return x.real(); });
-    add_data_float(name + field_ext[0], rank, xtl::span<const T>(v), data_node);
+    add_data_float(name + field_ext[0], rank, xtl::span<const T>(v), node);
 
     std::transform(values.cbegin(), values.cend(), v.begin(),
                    [](auto x) { return x.imag(); });
-    add_data_float(name + field_ext[1], rank, xtl::span<const T>(v), data_node);
+    add_data_float(name + field_ext[1], rank, xtl::span<const T>(v), node);
   }
 }
 //----------------------------------------------------------------------------
 
-/// At mesh geometry and topology data to a pugixml node. The function
+/// Add mesh geometry and topology data to a pugixml node. This function
 /// adds the Points and Cells nodes to the input node.
+/// @param[in] x Coordinates of the points
+/// @param[in] x_id Unique global index for each point
+/// @param[in] x_ghost Flag indicating ifa point is a owned (1) or is a
+/// ghost (1)
+/// @param[in] cells The mesh topology
+/// @param[in] cellmap The index map for the cells
+/// @param[in] celltype The cell type
+/// @param[in] tdim Topological dimension of the cells
+/// @param[in,out] piece_node The XML node to add data to
 void add_mesh(const xt::xtensor<double, 2>& x,
               const xtl::span<const std::int64_t> x_id,
               const xtl::span<const std::uint8_t> x_ghost,
               const xt::xtensor<std::int64_t, 2>& cells,
-              const common::IndexMap& cellmap, std::int32_t num_owned_cells,
-              mesh::CellType celltype, int tdim, pugi::xml_node& piece_node)
+              const common::IndexMap& cellmap, mesh::CellType celltype,
+              int tdim, pugi::xml_node& piece_node)
 {
   // -- Add geometry (points)
 
@@ -183,7 +208,8 @@ void add_mesh(const xt::xtensor<double, 2>& x,
   x_node.append_attribute("type") = "Float64";
   x_node.append_attribute("NumberOfComponents") = "3";
   x_node.append_attribute("format") = "ascii";
-  x_node.append_child(pugi::node_pcdata).set_value(xt_to_string(x, 16).c_str());
+  x_node.append_child(pugi::node_pcdata)
+      .set_value(container_to_string(x, 16).str().c_str());
 
   // -- Add topology (cells)
 
@@ -192,31 +218,37 @@ void add_mesh(const xt::xtensor<double, 2>& x,
   connectivity_node.append_attribute("type") = "Int32";
   connectivity_node.append_attribute("Name") = "connectivity";
   connectivity_node.append_attribute("format") = "ascii";
-
-  std::stringstream ss;
-  std::for_each(cells.begin(), cells.end(), [&ss](auto& v) { ss << v << " "; });
-  connectivity_node.append_child(pugi::node_pcdata).set_value(ss.str().c_str());
+  {
+    std::stringstream ss;
+    std::for_each(cells.begin(), cells.end(),
+                  [&ss](auto& v) { ss << v << " "; });
+    connectivity_node.append_child(pugi::node_pcdata)
+        .set_value(ss.str().c_str());
+  }
 
   pugi::xml_node offsets_node = cells_node.append_child("DataArray");
   offsets_node.append_attribute("type") = "Int32";
   offsets_node.append_attribute("Name") = "offsets";
   offsets_node.append_attribute("format") = "ascii";
-  std::stringstream ss_offset;
-  int num_nodes = cells.shape(1);
-  for (std::size_t i = 0; i < cells.shape(0); ++i)
-    ss_offset << (i + 1) * num_nodes << " ";
-  offsets_node.append_child(pugi::node_pcdata)
-      .set_value(ss_offset.str().c_str());
+  {
+    std::stringstream ss;
+    int num_nodes = cells.shape(1);
+    for (std::size_t i = 0; i < cells.shape(0); ++i)
+      ss << (i + 1) * num_nodes << " ";
+    offsets_node.append_child(pugi::node_pcdata).set_value(ss.str().c_str());
+  }
 
   pugi::xml_node type_node = cells_node.append_child("DataArray");
   type_node.append_attribute("type") = "Int8";
   type_node.append_attribute("Name") = "types";
   type_node.append_attribute("format") = "ascii";
   int vtk_celltype = io::cells::get_vtk_cell_type(celltype, tdim);
-  std::stringstream s;
-  for (std::size_t c = 0; c < cells.shape(0); ++c)
-    s << vtk_celltype << " ";
-  type_node.append_child(pugi::node_pcdata).set_value(s.str().c_str());
+  {
+    std::stringstream ss;
+    for (std::size_t c = 0; c < cells.shape(0); ++c)
+      ss << vtk_celltype << " ";
+    type_node.append_child(pugi::node_pcdata).set_value(ss.str().c_str());
+  }
 
   // Ghost cell markers
   pugi::xml_node cells_data_node = piece_node.append_child("CellData");
@@ -227,13 +259,14 @@ void add_mesh(const xt::xtensor<double, 2>& x,
   ghost_cell_node.append_attribute("format") = "ascii";
   ghost_cell_node.append_attribute("RangeMin") = "0";
   ghost_cell_node.append_attribute("RangeMax") = "1";
-  std::stringstream cellghost;
-  for (std::int32_t c = 0; c < num_owned_cells; ++c)
-    cellghost << 0 << " ";
-  for (std::size_t c = num_owned_cells; c < cells.shape(0); ++c)
-    cellghost << 1 << " ";
-  ghost_cell_node.append_child(pugi::node_pcdata)
-      .set_value(cellghost.str().c_str());
+  {
+    std::stringstream ss;
+    for (std::int32_t c = 0; c < cellmap.size_local(); ++c)
+      ss << 0 << " ";
+    for (std::size_t c = cellmap.size_local(); c < cells.shape(0); ++c)
+      ss << 1 << " ";
+    ghost_cell_node.append_child(pugi::node_pcdata).set_value(ss.str().c_str());
+  }
 
   // Original cell IDs
   pugi::xml_node cell_id_node = cells_data_node.append_child("DataArray");
@@ -241,14 +274,15 @@ void add_mesh(const xt::xtensor<double, 2>& x,
   cell_id_node.append_attribute("IdType") = "1";
   cell_id_node.append_attribute("Name") = "vtkOriginalCellIds";
   cell_id_node.append_attribute("format") = "ascii";
-  std::stringstream cellindices;
-  const std::int64_t cell_offset = cellmap.local_range()[0];
-  for (std::int32_t c = 0; c < num_owned_cells; ++c)
-    cellindices << cell_offset + c << " ";
-  for (auto idx : cellmap.ghosts())
-    cellindices << idx << " ";
-  cell_id_node.append_child(pugi::node_pcdata)
-      .set_value(cellindices.str().c_str());
+  {
+    std::stringstream ss;
+    const std::int64_t cell_offset = cellmap.local_range()[0];
+    for (std::int32_t c = 0; c < cellmap.size_local(); ++c)
+      ss << cell_offset + c << " ";
+    std::for_each(cellmap.ghosts().begin(), cellmap.ghosts().end(),
+                  [&ss](auto& idx) { ss << idx << " "; });
+    cell_id_node.append_child(pugi::node_pcdata).set_value(ss.str().c_str());
+  }
 
   auto [min_idx, max_idx] = cellmap.local_range();
   max_idx -= 1;
@@ -270,11 +304,12 @@ void add_mesh(const xt::xtensor<double, 2>& x,
   point_id_node.append_attribute("IdType") = "1";
   point_id_node.append_attribute("Name") = "vtkOriginalPointIds";
   point_id_node.append_attribute("format") = "ascii";
-  std::stringstream pointindices;
-  for (auto xid : x_id)
-    pointindices << xid << " ";
-  point_id_node.append_child(pugi::node_pcdata)
-      .set_value(pointindices.str().c_str());
+  {
+    std::stringstream ss;
+    std::for_each(x_id.begin(), x_id.end(),
+                  [&ss](auto idx) { ss << idx << " "; });
+    point_id_node.append_child(pugi::node_pcdata).set_value(ss.str().c_str());
+  }
   if (!x_id.empty())
   {
     auto minmax = std::minmax_element(x_id.begin(), x_id.end());
@@ -287,11 +322,13 @@ void add_mesh(const xt::xtensor<double, 2>& x,
   point_ghost_node.append_attribute("type") = "UInt8";
   point_ghost_node.append_attribute("Name") = "vtkGhostType";
   point_ghost_node.append_attribute("format") = "ascii";
-  std::stringstream pghostindices;
-  for (int ghost : x_ghost)
-    pghostindices << ghost << " ";
-  point_ghost_node.append_child(pugi::node_pcdata)
-      .set_value(pghostindices.str().c_str());
+  {
+    std::stringstream ss;
+    std::for_each(x_ghost.begin(), x_ghost.end(),
+                  [&ss](int ghost) { ss << ghost << " "; });
+    point_ghost_node.append_child(pugi::node_pcdata)
+        .set_value(ss.str().c_str());
+  }
   if (!x_ghost.empty())
   {
     auto minmax = std::minmax_element(x_ghost.begin(), x_ghost.end());
@@ -326,7 +363,7 @@ void write_function(
     }
   }
 
-  // Check compatibility all functions
+  // Check compatibility for all functions
   auto mesh0 = V0->mesh();
   assert(mesh0);
   auto element0 = V0->element();
@@ -343,11 +380,11 @@ void write_function(
           "All Functions written to VTK file must share the same Mesh.");
     }
 
-    // Check for sub-functions
+    // Check that v isn't a sub-function
     if (!V->component().empty())
       throw std::runtime_error("Cannot write sub-Functions to VTK file.");
 
-    // Check that pointwise element are the same (up to the block size)
+    // Check that pointwise elements are the same (up to the block size)
     if (!is_cellwise(*V))
     {
       if (*(V->element()) != *element0)
@@ -357,9 +394,6 @@ void write_function(
       }
     }
   }
-
-  const MPI_Comm comm = mesh0->comm();
-  const int mpi_rank = dolfinx::MPI::rank(comm);
 
   // Get the PVD "Collection" node
   pugi::xml_node xml_collections
@@ -403,11 +437,8 @@ void write_function(
 
   // Add mesh data to "Piece" node
   int tdim = mesh0->topology().dim();
-  std::int32_t num_owned_cells
-      = mesh0->topology().index_map(tdim)->size_local();
   add_mesh(x, x_id, x_ghost, cells, *mesh0->topology().index_map(tdim),
-           num_owned_cells, mesh0->topology().cell_type(),
-           mesh0->topology().dim(), piece_node);
+           mesh0->topology().cell_type(), mesh0->topology().dim(), piece_node);
 
   // FIXME: is this actually setting the first?
   // Set last scalar/vector/tensor Functions in u to be the 'active'
@@ -417,12 +448,12 @@ void write_function(
   {
     auto V = _u.get().function_space();
     assert(V);
-    std::string data_type = is_cellwise(*V) ? "CellData" : "PointData";
-    if (piece_node.child(data_type.c_str()).empty())
-      piece_node.append_child(data_type.c_str());
+    auto data_type = is_cellwise(*V) ? "CellData" : "PointData";
+    if (piece_node.child(data_type).empty())
+      piece_node.append_child(data_type);
 
     const int rank = V->element()->value_shape().size();
-    pugi::xml_node data_node = piece_node.child(data_type.c_str());
+    pugi::xml_node data_node = piece_node.child(data_type);
     if (data_node.attribute(tensor_str[rank]).empty())
       data_node.append_attribute(tensor_str[rank]);
     pugi::xml_attribute data = data_node.attribute(tensor_str[rank]);
@@ -559,9 +590,7 @@ void write_function(
   };
 
   // Save VTU XML to file
-  // std::filesystem::path vtu = file_root / file_name;
-  // vtu += +"_p" + std::to_string(mpi_rank) + "_" + counter_str;
-  // vtu.replace_extension("vtu");
+  const int mpi_rank = dolfinx::MPI::rank(mesh0->comm());
   std::filesystem::path vtu = create_vtu_path(mpi_rank);
   if (vtu.has_parent_path())
     std::filesystem::create_directories(vtu.parent_path());
@@ -596,6 +625,7 @@ void write_function(
     // Add mesh metadata to PVTU object
     add_pvtu_mesh(grid_node);
 
+    const int mpi_size = dolfinx::MPI::size(mesh0->comm());
     for (auto _u : u)
     {
       auto V = _u.get().function_space();
@@ -626,7 +656,6 @@ void write_function(
       }
 
       // Add data for each process to the PVTU object
-      const int mpi_size = dolfinx::MPI::size(comm);
       for (int i = 0; i < mpi_size; ++i)
       {
         std::filesystem::path vtu = create_vtu_path(i);
@@ -749,8 +778,8 @@ void io::VTKFile::write(const mesh::Mesh& mesh, double time)
   std::vector<std::uint8_t> x_ghost(x.shape(0), 0);
   std::fill(std::next(x_ghost.begin(), xmap->size_local()), x_ghost.end(), 1);
   add_mesh(x, geometry.input_global_indices(), x_ghost, cells,
-           *topology.index_map(tdim), topology.index_map(tdim)->size_local(),
-           topology.cell_type(), topology.dim(), piece_node);
+           *topology.index_map(tdim), topology.cell_type(), topology.dim(),
+           piece_node);
 
   // Save VTU XML to file
   std::filesystem::path vtu = _filename.stem();
