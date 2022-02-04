@@ -82,8 +82,9 @@ std::string xt_to_string(const T& x, int precision)
 
 void add_pvtu_mesh(pugi::xml_node& node)
 {
-  // -- Cell data
-  pugi::xml_node cell_data_node = node.append_child("PCellData");
+  pugi::xml_node cell_data_node = node.child("PCellData");
+  if (cell_data_node.empty())
+    cell_data_node = node.append_child("PCellData");
 
   pugi::xml_node cell_array_node = cell_data_node.append_child("PDataArray");
   cell_array_node.append_attribute("type") = "UInt8";
