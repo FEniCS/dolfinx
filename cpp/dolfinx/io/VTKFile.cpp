@@ -82,6 +82,7 @@ std::string xt_to_string(const T& x, int precision)
 
 void add_pvtu_mesh(pugi::xml_node& node)
 {
+  // -- Cell data (PCellData)
   pugi::xml_node cell_data_node = node.child("PCellData");
   if (cell_data_node.empty())
     cell_data_node = node.append_child("PCellData");
@@ -95,7 +96,7 @@ void add_pvtu_mesh(pugi::xml_node& node)
   cell_id_node.append_attribute("Name") = "vtkOriginalCellIds";
   cell_id_node.append_attribute("IdType") = "1";
 
-  // -- Point data
+  // -- Point data (PPointData)
   pugi::xml_node point_data_node = node.child("PPointData");
   if (point_data_node.empty())
     point_data_node = node.append_child("PPointData");
@@ -105,14 +106,13 @@ void add_pvtu_mesh(pugi::xml_node& node)
   point_id_node.append_attribute("Name") = "vtkOriginalPointIds";
   point_id_node.append_attribute("IdType") = "1";
 
-  // TODO: point ghosts
-  // pugi::xml_node point_ghist_node =
-  // cell_data_node.append_child("PDataArray");
-  // point_data_node.append_attribute("type") = "UInt8";
-  // point_data_node.append_attribute("Name") = "vtkGhostType";
-  // point_data_node.append_attribute("IdType") = "1";
+  // Ghost points
+  pugi::xml_node point_ghost_node = point_data_node.append_child("PDataArray");
+  point_ghost_node.append_attribute("type") = "UInt8";
+  point_ghost_node.append_attribute("Name") = "vtkGhostType";
+  point_ghost_node.append_attribute("IdType") = "1";
 
-  // -- Points
+  // -- Points (PPoints)
 
   pugi::xml_node vertex_data_node = node.append_child("PPoints");
   pugi::xml_node data_node = vertex_data_node.append_child("PDataArray");
@@ -171,6 +171,7 @@ void add_data(const std::string& name, int rank,
 /// adds the Points and Cells nodes to the input node.
 void add_mesh(const xt::xtensor<double, 2>& x,
               const xtl::span<const std::int64_t> x_id,
+              const xtl::span<const std::uint8_t> x_ghost,
               const xt::xtensor<std::int64_t, 2>& cells,
               const common::IndexMap& cellmap, std::int32_t num_owned_cells,
               mesh::CellType celltype, int tdim, pugi::xml_node& piece_node)
@@ -261,9 +262,9 @@ void add_mesh(const xt::xtensor<double, 2>& x,
   cell_id_node.append_attribute("RangeMin") = min_idx;
   cell_id_node.append_attribute("RangeMax") = max_idx;
 
-  // Original point IDs
   pugi::xml_node points_data_node = piece_node.append_child("PointData");
 
+  // Original point IDs
   pugi::xml_node point_id_node = points_data_node.append_child("DataArray");
   point_id_node.append_attribute("type") = "Int64";
   point_id_node.append_attribute("IdType") = "1";
@@ -279,6 +280,24 @@ void add_mesh(const xt::xtensor<double, 2>& x,
     auto minmax = std::minmax_element(x_id.begin(), x_id.end());
     point_id_node.append_attribute("RangeMin") = *minmax.first;
     point_id_node.append_attribute("RangeMax") = *minmax.second;
+  }
+
+  // Point ghosts
+  pugi::xml_node point_ghost_node = points_data_node.append_child("DataArray");
+  point_ghost_node.append_attribute("type") = "UInt8";
+  point_ghost_node.append_attribute("IdType") = "1";
+  point_ghost_node.append_attribute("Name") = "vtkGhostType";
+  point_ghost_node.append_attribute("format") = "ascii";
+  std::stringstream pghostindices;
+  for (int ghost : x_ghost)
+    pghostindices << ghost << " ";
+  point_ghost_node.append_child(pugi::node_pcdata)
+      .set_value(pghostindices.str().c_str());
+  if (!x_ghost.empty())
+  {
+    auto minmax = std::minmax_element(x_ghost.begin(), x_ghost.end());
+    point_ghost_node.append_attribute("RangeMin") = *minmax.first;
+    point_ghost_node.append_attribute("RangeMax") = *minmax.second;
   }
 }
 //----------------------------------------------------------------------------
@@ -387,8 +406,9 @@ void write_function(
   int tdim = mesh0->topology().dim();
   std::int32_t num_owned_cells
       = mesh0->topology().index_map(tdim)->size_local();
-  add_mesh(x, x_id, cells, *mesh0->topology().index_map(tdim), num_owned_cells,
-           mesh0->topology().cell_type(), mesh0->topology().dim(), piece_node);
+  add_mesh(x, x_id, x_ghost, cells, *mesh0->topology().index_map(tdim),
+           num_owned_cells, mesh0->topology().cell_type(),
+           mesh0->topology().dim(), piece_node);
 
   // FIXME: is this actually setting the first?
   // Set last scalar/vector/tensor Functions in u to be the 'active'
@@ -720,14 +740,17 @@ void io::VTKFile::write(const mesh::Mesh& mesh, double time)
   piece_node.append_attribute("NumberOfCells") = num_cells;
 
   // Add mesh data to "Piece" node
-  std::vector<std::int64_t> x_id;
   xt::xtensor<std::int64_t, 2> cells = extract_vtk_connectivity(mesh);
   xt::xtensor<double, 2> x
       = xt::adapt(geometry.x().data(), geometry.x().size(), xt::no_ownership(),
                   std::vector({geometry.x().size() / 3, std::size_t(3)}));
-  add_mesh(x, x_id, cells, *topology.index_map(tdim),
-           topology.index_map(tdim)->size_local(), topology.cell_type(),
-           topology.dim(), piece_node);
+  auto xmap = geometry.index_map();
+  assert(xmap);
+  std::vector<std::uint8_t> x_ghost(x.shape(0), 0);
+  std::fill(std::next(x_ghost.begin(), xmap->size_local()), x_ghost.end(), 1);
+  add_mesh(x, geometry.input_global_indices(), x_ghost, cells,
+           *topology.index_map(tdim), topology.index_map(tdim)->size_local(),
+           topology.cell_type(), topology.dim(), piece_node);
 
   // Save VTU XML to file
   std::filesystem::path vtu = _filename.parent_path();
