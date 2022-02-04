@@ -76,8 +76,11 @@ void subsystem::init_petsc(int argc, char* argv[], MPI_Comm comm)
     LOG(INFO) << "Initializing PETSc with given command-line arguments.";
 
   // Ensure MPI has been initialised, otberwise setting PETSC_COMM_WORLD can 
-  // call MPI not initialised errors.
-  init_mpi(argc, argv);
+  // cause MPI not initialised errors.
+  int mpi_initialized;
+  MPI_Initialized(&mpi_initialized);
+  if (not mpi_initialized)
+    init_mpi(argc, argv);
   // Ensure the PETSC_COMM_WORLD is not MPI_COMM_WORLD if the user has specified 
   // a communicator.
   //
