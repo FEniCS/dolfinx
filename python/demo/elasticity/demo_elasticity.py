@@ -157,6 +157,7 @@ solver.setOperators(A)
 solver.setMonitor(lambda ksp, its, rnorm: print("Iteration: {}, rel. residual: {}".format(its, rnorm)))
 solver.solve(b, u.vector)
 solver.view()
+u.x.scatter_forward()
 
 # Compute von Mises stress via interpolation
 sigma_deviatoric = sigma(u) - (1 / 3) * tr(sigma(u)) * Identity(len(u))
