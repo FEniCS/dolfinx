@@ -549,22 +549,27 @@ void write_function(
     }
   }
 
+  auto create_vtu_path = [file_root = filename.parent_path(),
+                          file_name = filename.stem(), counter_str](int rank)
+  {
+    std::filesystem::path vtu = file_root / file_name;
+    vtu += +"_p" + std::to_string(rank) + "_" + counter_str;
+    vtu.replace_extension("vtu");
+    return vtu;
+  };
+
   // Save VTU XML to file
-  std::filesystem::path vtu = filename.parent_path();
-  if (!vtu.empty())
-    vtu += "/";
-  vtu += filename.stem().string() + "_p" + std::to_string(mpi_rank) + "_"
-         + counter_str;
-  vtu.replace_extension("vtu");
+  // std::filesystem::path vtu = file_root / file_name;
+  // vtu += +"_p" + std::to_string(mpi_rank) + "_" + counter_str;
+  // vtu.replace_extension("vtu");
+  std::filesystem::path vtu = create_vtu_path(mpi_rank);
   if (vtu.has_parent_path())
     std::filesystem::create_directories(vtu.parent_path());
   xml_vtu.save_file(vtu.c_str(), "  ");
 
   // Create a PVTU XML object on rank 0
-  std::filesystem::path p_pvtu = filename.parent_path();
-  if (!p_pvtu.empty())
-    p_pvtu += "/";
-  p_pvtu += filename.stem().string() + counter_str;
+  std::filesystem::path p_pvtu = filename.parent_path() / filename.stem();
+  p_pvtu += counter_str;
   p_pvtu.replace_extension("pvtu");
   if (mpi_rank == 0)
   {
@@ -624,12 +629,9 @@ void write_function(
       const int mpi_size = dolfinx::MPI::size(comm);
       for (int i = 0; i < mpi_size; ++i)
       {
-        std::filesystem::path vtu = filename.stem();
-        vtu += "_p" + std::to_string(i) + "_" + counter_str;
-        vtu.replace_extension("vtu");
+        std::filesystem::path vtu = create_vtu_path(i);
         pugi::xml_node piece_node = grid_node.append_child("Piece");
-        piece_node.append_attribute("Source")
-            = vtu.stem().replace_extension("vtu").c_str();
+        piece_node.append_attribute("Source") = vtu.filename().c_str();
       }
     }
 
@@ -643,8 +645,7 @@ void write_function(
   pugi::xml_node dataset_node = xml_collections.append_child("DataSet");
   dataset_node.append_attribute("timestep") = time;
   dataset_node.append_attribute("part") = "0";
-  dataset_node.append_attribute("file")
-      = p_pvtu.stem().replace_extension("pvtu").c_str();
+  dataset_node.append_attribute("file") = p_pvtu.filename().c_str();
 }
 //----------------------------------------------------------------------------
 
@@ -752,21 +753,16 @@ void io::VTKFile::write(const mesh::Mesh& mesh, double time)
            topology.cell_type(), topology.dim(), piece_node);
 
   // Save VTU XML to file
-  std::filesystem::path vtu = _filename.parent_path();
-  if (!vtu.empty())
-    vtu += "/";
-  vtu += _filename.stem().string() + "_p" + std::to_string(mpi_rank) + "_"
-         + counter_str;
+  std::filesystem::path vtu = _filename.stem();
+  vtu += std::string("_p") + std::to_string(mpi_rank) + "_" + counter_str;
   vtu.replace_extension("vtu");
   if (vtu.has_parent_path())
     std::filesystem::create_directories(vtu.parent_path());
   xml_vtu.save_file(vtu.c_str(), "  ");
 
   // Create a PVTU XML object on rank 0
-  std::filesystem::path p_pvtu = _filename.parent_path();
-  if (!p_pvtu.empty())
-    p_pvtu += "/";
-  p_pvtu += _filename.stem().string() + counter_str;
+  std::filesystem::path p_pvtu = _filename.stem();
+  p_pvtu += counter_str;
   p_pvtu.replace_extension("pvtu");
   if (mpi_rank == 0)
   {
@@ -785,7 +781,7 @@ void io::VTKFile::write(const mesh::Mesh& mesh, double time)
     for (int i = 0; i < mpi_size; ++i)
     {
       std::filesystem::path vtu = _filename.stem();
-      vtu += "_p" + std::to_string(i) + "_" + counter_str;
+      vtu += +"_p" + std::to_string(i) + "_" + counter_str;
       vtu.replace_extension("vtu");
       pugi::xml_node piece_node = grid_node.append_child("Piece");
       piece_node.append_attribute("Source") = vtu.c_str();
