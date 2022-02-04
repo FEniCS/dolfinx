@@ -8,6 +8,8 @@
 
 #include <cstdint>
 #include <dolfinx/mesh/cell_types.h>
+#include <tuple>
+#include <vector>
 #include <xtensor/xtensor.hpp>
 
 namespace dolfinx::fem
@@ -27,7 +29,8 @@ namespace dolfinx::io
 /// dof coordinates.
 /// @note Only supports (discontinuous) Lagrange functions
 /// @param[in] V The function space
-std::pair<xt::xtensor<double, 2>, xt::xtensor<std::int64_t, 2>>
+std::tuple<xt::xtensor<double, 2>, std::vector<std::int64_t>,
+           std::vector<std::uint8_t>, xt::xtensor<std::int32_t, 2>>
 vtk_mesh_from_space(const fem::FunctionSpace& V);
 
 /// Extract the cell topology (connectivity) in VTK ordering for all

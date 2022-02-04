@@ -13,6 +13,7 @@
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
+#include <tuple>
 #include <xtensor/xbuilder.hpp>
 #include <xtensor/xview.hpp>
 #include <xtl/xspan.hpp>
@@ -29,7 +30,8 @@ namespace
 /// corresponds to the coordinate of the ith dof in `V` (local to
 /// process)
 /// @pre `V` must be Lagrange and must not be a subspace
-xt::xtensor<double, 2>
+std::tuple<xt::xtensor<double, 2>, std::vector<std::int64_t>,
+           std::vector<std::uint8_t>>
 tabulate_lagrange_dof_coordinates(const dolfinx::fem::FunctionSpace& V)
 {
   auto mesh = V.mesh();
@@ -111,12 +113,25 @@ tabulate_lagrange_dof_coordinates(const dolfinx::fem::FunctionSpace& V)
     }
   }
 
-  return coords;
+  // Origina points IDs
+  std::vector<std::int64_t> x_id(num_nodes);
+  std::array<std::int64_t, 2> range = map_dofs->local_range();
+  std::int32_t size_local = range[1] - range[0];
+  std::iota(x_id.begin(), std::next(x_id.begin(), size_local), range[0]);
+  const std::vector<std::int64_t>& ghosts = map_dofs->ghosts();
+  std::copy(ghosts.begin(), ghosts.end(), std::next(x_id.begin(), size_local));
+
+  // Ghosts
+  std::vector<std::uint8_t> id_ghost(num_nodes, 0);
+  std::fill(std::next(id_ghost.begin(), size_local), id_ghost.end(), 1);
+
+  return {std::move(coords), std::move(x_id), std::move(id_ghost)};
 }
 } // namespace
 
 //-----------------------------------------------------------------------------
-std::pair<xt::xtensor<double, 2>, xt::xtensor<std::int64_t, 2>>
+std::tuple<xt::xtensor<double, 2>, std::vector<std::int64_t>,
+           std::vector<std::uint8_t>, xt::xtensor<std::int32_t, 2>>
 io::vtk_mesh_from_space(const fem::FunctionSpace& V)
 {
   auto mesh = V.mesh();
@@ -127,7 +142,7 @@ io::vtk_mesh_from_space(const fem::FunctionSpace& V)
   if (V.element()->is_mixed())
     throw std::runtime_error("Can create VTK mesh from a mixed element");
 
-  const xt::xtensor<double, 2> x = tabulate_lagrange_dof_coordinates(V);
+  const auto [x, x_id, x_ghost] = tabulate_lagrange_dof_coordinates(V);
   auto map = mesh->topology().index_map(tdim);
   const std::size_t num_cells = map->size_local() + map->num_ghosts();
 
@@ -140,7 +155,7 @@ io::vtk_mesh_from_space(const fem::FunctionSpace& V)
 
   // Extract topology for all local cells as
   // [v0_0, ...., v0_N0, v1_0, ...., v1_N1, ....]
-  xt::xtensor<std::int64_t, 2> vtk_topology({num_cells, num_nodes});
+  xt::xtensor<std::int32_t, 2> vtk_topology({num_cells, num_nodes});
   for (std::size_t c = 0; c < num_cells; ++c)
   {
     auto dofs = dofmap->cell_dofs(c);
@@ -148,7 +163,8 @@ io::vtk_mesh_from_space(const fem::FunctionSpace& V)
       vtk_topology(c, i) = dofs[vtkmap[i]];
   }
 
-  return {std::move(x), std::move(vtk_topology)};
+  return {std::move(x), std::move(x_id), std::move(x_ghost),
+          std::move(vtk_topology)};
 }
 //-----------------------------------------------------------------------------
 xt::xtensor<std::int64_t, 2>

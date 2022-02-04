@@ -207,7 +207,7 @@ void vtx_write_mesh_from_space(adios2::IO& io, adios2::Engine& engine,
   const int tdim = mesh->topology().dim();
 
   // Get a VTK mesh with points at the 'nodes'
-  const auto [x, vtk] = io::vtk_mesh_from_space(V);
+  const auto [x, x_id, x_ghost, vtk] = io::vtk_mesh_from_space(V);
 
   const std::uint32_t num_dofs = x.shape(0);
   const std::uint32_t num_cells
