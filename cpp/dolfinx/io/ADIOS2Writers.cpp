@@ -161,7 +161,9 @@ void vtx_write_mesh(adios2::IO& io, adios2::Engine& engine,
 
   // Add cell metadata
   const int tdim = mesh.topology().dim();
-  const std::uint32_t num_cells = mesh.topology().index_map(tdim)->size_local();
+  const std::uint32_t num_cells
+      = mesh.topology().index_map(tdim)->size_local()
+        + mesh.topology().index_map(tdim)->num_ghosts();
   adios2::Variable<std::uint32_t> cell_variable
       = define_variable<std::uint32_t>(io, "NumberOfCells",
                                        {adios2::LocalValueDim});
