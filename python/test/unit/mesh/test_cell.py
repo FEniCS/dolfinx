@@ -11,19 +11,18 @@ from dolfinx import cpp as _cpp
 from dolfinx.geometry import squared_distance
 from dolfinx.mesh import (CellType, create_mesh, create_unit_cube,
                           create_unit_interval, create_unit_square)
-from dolfinx_utils.test.skips import skip_in_parallel
 
 from mpi4py import MPI
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 def test_distance_interval():
     mesh = create_unit_interval(MPI.COMM_SELF, 1)
     assert squared_distance(mesh, mesh.topology.dim, [0], [-1.0, 0, 0]) == pytest.approx(1.0)
     assert squared_distance(mesh, mesh.topology.dim, [0], [0.5, 0, 0]) == pytest.approx(0.0)
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 def test_distance_triangle():
     gdim, shape, degree = 2, "triangle", 1
     cell = ufl.Cell(shape, geometric_dimension=gdim)
@@ -36,7 +35,7 @@ def test_distance_triangle():
     assert squared_distance(mesh, mesh.topology.dim, [0], [0.5, 0.5, 0.0]) == pytest.approx(0.0)
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 def test_distance_tetrahedron():
     gdim = 3
     shape = "tetrahedron"

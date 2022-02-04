@@ -12,12 +12,11 @@ import ufl
 from dolfinx.fem import FunctionSpace, VectorFunctionSpace, form
 from dolfinx.mesh import (CellType, GhostMode, create_unit_cube,
                           create_unit_square)
-from dolfinx_utils.test.skips import skip_in_parallel
 
 from mpi4py import MPI
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("cell", [ufl.triangle, ufl.tetrahedron])
 @pytest.mark.parametrize("order", [1, 2])
 @pytest.mark.parametrize("ElementType, space",
@@ -50,7 +49,7 @@ def test_mixed_element(ElementType, space, cell, order):
         assert np.isclose(norms[0], i)
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 def test_vector_element():
     # VectorFunctionSpace containing a scalar should work
     mesh = create_unit_square(MPI.COMM_WORLD, 1, 1, CellType.triangle, GhostMode.shared_facet)
@@ -71,7 +70,7 @@ def test_vector_element():
         A.assemble()
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("d1", range(1, 4))
 @pytest.mark.parametrize("d2", range(1, 4))
 def test_element_product(d1, d2):

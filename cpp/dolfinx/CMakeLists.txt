@@ -79,7 +79,6 @@ endif()
 # Boost
 target_link_libraries(dolfinx PUBLIC Boost::headers)
 target_link_libraries(dolfinx PUBLIC Boost::timer)
-target_link_libraries(dolfinx PRIVATE Boost::filesystem)
 
 # MPI
 target_link_libraries(dolfinx PUBLIC MPI::MPI_CXX)

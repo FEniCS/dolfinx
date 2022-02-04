@@ -5,7 +5,6 @@ set(HEADERS_io
   ${CMAKE_CURRENT_SOURCE_DIR}/HDF5Interface.h
   ${CMAKE_CURRENT_SOURCE_DIR}/pugiconfig.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/pugixml.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/utils.h
   ${CMAKE_CURRENT_SOURCE_DIR}/VTKFile.h
   ${CMAKE_CURRENT_SOURCE_DIR}/XDMFFile.h
   ${CMAKE_CURRENT_SOURCE_DIR}/xdmf_function.h
@@ -21,7 +20,6 @@ target_sources(dolfinx PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/HDF5Interface.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/pugixml.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/VTKFile.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/utils.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/XDMFFile.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/xdmf_function.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/xdmf_mesh.cpp

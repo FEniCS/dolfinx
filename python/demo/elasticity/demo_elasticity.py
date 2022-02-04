@@ -13,13 +13,14 @@ from contextlib import ExitStack
 import numpy as np
 
 from dolfinx import la
-from dolfinx.fem import (Function, VectorFunctionSpace, apply_lifting,
-                         assemble_matrix, assemble_vector, dirichletbc, form,
+from dolfinx.fem import (Expression, Function, FunctionSpace,
+                         VectorFunctionSpace, apply_lifting, assemble_matrix,
+                         assemble_vector, dirichletbc, form,
                          locate_dofs_geometrical, set_bc)
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import CellType, GhostMode, create_box
 from ufl import (Identity, SpatialCoordinate, TestFunction, TrialFunction,
-                 as_vector, dx, grad, inner, sym, tr)
+                 as_vector, dx, grad, inner, sqrt, sym, tr)
 
 from mpi4py import MPI
 from petsc4py import PETSc
@@ -156,11 +157,26 @@ solver.setOperators(A)
 solver.setMonitor(lambda ksp, its, rnorm: print("Iteration: {}, rel. residual: {}".format(its, rnorm)))
 solver.solve(b, u.vector)
 solver.view()
+u.x.scatter_forward()
+
+# Compute von Mises stress via interpolation
+sigma_deviatoric = sigma(u) - (1 / 3) * tr(sigma(u)) * Identity(len(u))
+sigma_von_mises = sqrt((3 / 2) * inner(sigma_deviatoric, sigma_deviatoric))
+
+W = FunctionSpace(mesh, ("Discontinuous Lagrange", 0))
+sigma_von_mises_expression = Expression(sigma_von_mises, W.element.interpolation_points)
+sigma_von_mises_h = Function(W)
+sigma_von_mises_h.interpolate(sigma_von_mises_expression)
 
 # Save solution to XDMF format
-with XDMFFile(MPI.COMM_WORLD, "elasticity.xdmf", "w") as file:
+with XDMFFile(MPI.COMM_WORLD, "displacements.xdmf", "w") as file:
     file.write_mesh(mesh)
     file.write_function(u)
+
+# Save solution to XDMF format
+with XDMFFile(MPI.COMM_WORLD, "von_mises_stress.xdmf", "w") as file:
+    file.write_mesh(mesh)
+    file.write_function(sigma_von_mises_h)
 
 unorm = u.x.norm()
 if mesh.comm.rank == 0:

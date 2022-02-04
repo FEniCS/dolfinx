@@ -7,7 +7,7 @@ on:
   push:
     # This will run every time a version tag is created
     tags:
-      - 'v*'
+      - "v*"
   schedule:
     # '*' is a special character in YAML, so string must be quoted
     - cron: "0 1 * * *"
@@ -196,7 +196,7 @@ jobs:
           - arch_tag: arm64
             os: ARM64
     runs-on: ${{ matrix.os }}
-    needs: 
+    needs:
       - start_runner
       - push_dev_multiarch_images
     env:
@@ -306,7 +306,8 @@ jobs:
 
   stop-runner:
     name: Stop self-hosted EC2 runner
-    if: ${{ always() }} # required to stop the runner even if the error happened in the previous jobs
+    # Stop the runner even if an error happened in the previous jobs
+    if: ${{ always() && github.repository == 'FEniCS/dolfinx' }}
     needs:
       - start_runner # required to get output from the start-runner job
       - push_end_user_multiarch_images # required to wait when the main job is done

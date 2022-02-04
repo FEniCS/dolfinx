@@ -11,11 +11,8 @@ import pytest
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import (CellType, create_unit_cube, create_unit_interval,
                           create_unit_square)
-from dolfinx_utils.test.fixtures import tempdir
 
 from mpi4py import MPI
-
-assert (tempdir)
 
 # Supported XDMF file encoding
 if MPI.COMM_WORLD.size > 1:
@@ -35,15 +32,6 @@ def mesh_factory(tdim, n):
         return create_unit_square(MPI.COMM_WORLD, n, n)
     elif tdim == 3:
         return create_unit_cube(MPI.COMM_WORLD, n, n, n)
-
-
-@pytest.fixture
-def worker_id(request):
-    """Return worker ID when using pytest-xdist to run tests in parallel"""
-    if hasattr(request.config, 'slaveinput'):
-        return request.config.slaveinput['slaveid']
-    else:
-        return 'master'
 
 
 @pytest.mark.parametrize("tdim", [2, 3])
