@@ -110,7 +110,7 @@ void add_pvtu_mesh(pugi::xml_node& node)
   pugi::xml_node point_ghost_node = point_data_node.append_child("PDataArray");
   point_ghost_node.append_attribute("type") = "UInt8";
   point_ghost_node.append_attribute("Name") = "vtkGhostType";
-  point_ghost_node.append_attribute("IdType") = "1";
+  // point_ghost_node.append_attribute("IdType") = "1";
 
   // -- Points (PPoints)
 
