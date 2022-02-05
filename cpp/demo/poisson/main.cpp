@@ -121,7 +121,7 @@ int main(int argc, char* argv[])
   {
     // Create mesh and function space
     auto mesh = std::make_shared<mesh::Mesh>(mesh::create_rectangle(
-        MPI_COMM_WORLD, {{{0.0, 0.0}, {2.0, 1.0}}}, {2, 2},
+        MPI_COMM_WORLD, {{{0.0, 0.0}, {2.0, 1.0}}}, {32, 16},
         mesh::CellType::triangle, mesh::GhostMode::shared_facet));
 
     auto V = std::make_shared<fem::FunctionSpace>(
@@ -233,12 +233,7 @@ int main(int argc, char* argv[])
 
     // Save solution in VTK format
     io::VTKFile file(MPI_COMM_WORLD, "u.pvd", "w");
-    file.write({*u}, 0.0);
-
-    io::VTXWriter outfile(mesh->comm(), "u.bp", {mesh});
-    // io::VTXWriter outfile(mesh->comm(), "u.bp", {u});
-    outfile.write(0.0);
-    outfile.close();
+    file.write<T>({*u}, 0.0);
   }
 
   common::subsystem::finalize_petsc();

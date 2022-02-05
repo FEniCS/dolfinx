@@ -47,7 +47,7 @@ void interpolate_scalar(const std::shared_ptr<mesh::Mesh>& mesh,
   // Write the function to a VTK file for visualisation, e.g. using
   // ParaView
   io::VTKFile file(mesh->comm(), filename.replace_extension("pvd"), "w");
-  file.write({*u}, 0.0);
+  file.write<T>({*u}, 0.0);
 }
 
 // This function interpolations a function is a H(curl) finite element
