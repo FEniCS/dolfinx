@@ -189,7 +189,7 @@ def test_save_vtk_cell_point(tempdir):
     with VTKFile(mesh.comm, filename, "w") as vtk:
         vtk.write_function([U2, U1], 0.)
     with VTKFile(mesh.comm, filename, "w") as vtk:
-        vtk.write_function([U1, U2], 0.)
+        vtk.write_function((U1, U2), 0.)
 
 
 def test_save_1d_tensor(tempdir):
