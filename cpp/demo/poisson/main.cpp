@@ -192,8 +192,7 @@ int main(int argc, char* argv[])
     // .. code-block:: cpp
 
     // Compute solution
-    auto u = std::make_shared<fem::Function<T>>(V);
-    // fem::Function<T> u(V);
+    fem::Function<T> u(V);
     auto A = la::petsc::Matrix(fem::petsc::create_matrix(*a), false);
     la::Vector<T> b(L->function_spaces()[0]->dofmap()->index_map,
                     L->function_spaces()[0]->dofmap()->index_map_bs());
@@ -220,7 +219,7 @@ int main(int argc, char* argv[])
     lu.set_from_options();
 
     lu.set_operator(A.mat());
-    la::petsc::Vector _u(la::petsc::create_vector_wrap(*u->x()), false);
+    la::petsc::Vector _u(la::petsc::create_vector_wrap(*u.x()), false);
     la::petsc::Vector _b(la::petsc::create_vector_wrap(b), false);
     lu.solve(_u.vec(), _b.vec());
 
@@ -233,7 +232,7 @@ int main(int argc, char* argv[])
 
     // Save solution in VTK format
     io::VTKFile file(MPI_COMM_WORLD, "u.pvd", "w");
-    file.write<T>({*u}, 0.0);
+    file.write<T>({u}, 0.0);
   }
 
   common::subsystem::finalize_petsc();

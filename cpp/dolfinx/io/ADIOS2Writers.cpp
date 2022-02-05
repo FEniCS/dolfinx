@@ -117,6 +117,7 @@ void vtx_write_data(adios2::IO& io, adios2::Engine& engine,
   }
   else
   {
+    // ---- Complex
     using U = typename T::value_type;
 
     std::vector<U> data(num_dofs * num_comp, 0);
@@ -182,8 +183,9 @@ void vtx_write_mesh(adios2::IO& io, adios2::Engine& engine,
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
   const std::uint32_t num_nodes = x_dofmap.num_links(0);
 
-  // Extract mesh 'nodes'
-  // Output is written as [N0, v0_0,...., v0_N0, N1, v1_0,...., v1_N1,....]
+  // Pack mesh 'nodes'. Output is written as [N0, v0_0,...., v0_N0, N1,
+  // v1_0,...., v1_N1,....], where N is the number of cell nodes and v0,
+  // etc, is the node index
   xt::xtensor<std::int64_t, 2> cells({num_cells, num_nodes + 1});
   xt::view(cells, xt::all(), xt::xrange(std::size_t(1), cells.shape(1)))
       = io::extract_vtk_connectivity(mesh);
@@ -229,8 +231,15 @@ void vtx_write_mesh_from_space(adios2::IO& io, adios2::Engine& engine,
   std::uint32_t num_dofs = x.shape(0);
   std::uint32_t num_cells = mesh->topology().index_map(tdim)->size_local();
 
+  // -- Pack mesh 'nodes'. Output is written as [N0, v0_0,...., v0_N0, N1,
+  // v1_0,...., v1_N1,....], where N is the number of cell nodes and v0,
+  // etc, is the node index.
   std::vector<std::size_t> shape = {num_cells, vtk.shape(1) + 1};
+
+  // Create vector, setting all entries to nodes per cell (vtk.shape(1))
   std::vector<std::uint64_t> vtk_topology(shape[0] * shape[1], vtk.shape(1));
+
+  // Set the [v0_0,...., v0_N0, v1_0,...., v1_N1,....] data
   auto _vtk = xt::adapt(vtk_topology, shape);
   xt::view(_vtk, xt::all(), xt::range(1, _vtk.shape(1)))
       = xt::view(vtk, xt::range(0, num_cells, xt::all()));

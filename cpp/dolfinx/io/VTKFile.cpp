@@ -161,24 +161,24 @@ void add_data_float(const std::string& name, int rank,
 /// a tensor
 /// @param[in] values The data array to add
 /// @param[in,out] data_node The XML node to add data to
-template <typename Scalar>
+template <typename T>
 void add_data(const std::string& name, int rank,
-              const xtl::span<const Scalar>& values, pugi::xml_node& node)
+              const xtl::span<const T>& values, pugi::xml_node& node)
 {
-  if constexpr (std::is_scalar<Scalar>::value)
+  if constexpr (std::is_scalar<T>::value)
     add_data_float(name, rank, values, node);
   else
   {
-    using T = typename Scalar::value_type;
-    std::vector<T> v(values.size());
+    using U = typename T::value_type;
+    std::vector<U> v(values.size());
 
     std::transform(values.cbegin(), values.cend(), v.begin(),
                    [](auto x) { return x.real(); });
-    add_data_float(name + field_ext[0], rank, xtl::span<const T>(v), node);
+    add_data_float(name + field_ext[0], rank, xtl::span<const U>(v), node);
 
     std::transform(values.cbegin(), values.cend(), v.begin(),
                    [](auto x) { return x.imag(); });
-    add_data_float(name + field_ext[1], rank, xtl::span<const T>(v), node);
+    add_data_float(name + field_ext[1], rank, xtl::span<const U>(v), node);
   }
 }
 //----------------------------------------------------------------------------
@@ -187,7 +187,7 @@ void add_data(const std::string& name, int rank,
 /// adds the Points and Cells nodes to the input node.
 /// @param[in] x Coordinates of the points
 /// @param[in] x_id Unique global index for each point
-/// @param[in] x_ghost Flag indicating ifa point is a owned (1) or is a
+/// @param[in] x_ghost Flag indicating if a point is a owned (0) or is a
 /// ghost (1)
 /// @param[in] cells The mesh topology
 /// @param[in] cellmap The index map for the cells
@@ -337,9 +337,9 @@ void add_mesh(const xt::xtensor<double, 2>& x,
   }
 }
 //----------------------------------------------------------------------------
-template <typename Scalar>
+template <typename T>
 void write_function(
-    const std::vector<std::reference_wrapper<const fem::Function<Scalar>>>& u,
+    const std::vector<std::reference_wrapper<const fem::Function<T>>>& u,
     double time, std::unique_ptr<pugi::xml_document>& xml_doc,
     const std::filesystem::path& filename)
 {
@@ -475,7 +475,7 @@ void write_function(
       assert(!data_node.empty());
       auto dofmap = V->dofmap();
       int bs = dofmap->bs();
-      std::vector<Scalar> data(cells.shape(0) * num_comp, 0);
+      std::vector<T> data(cells.shape(0) * num_comp, 0);
       auto u_vector = _u.get().x()->array();
       for (std::size_t c = 0; c < cells.shape(0); ++c)
       {
@@ -485,7 +485,7 @@ void write_function(
             data[num_comp * c + k] = u_vector[bs * dofs[i] + k];
       }
 
-      add_data(_u.get().name, rank, xtl::span<const Scalar>(data), data_node);
+      add_data(_u.get().name, rank, xtl::span<const T>(data), data_node);
     }
     else
     {
@@ -496,8 +496,8 @@ void write_function(
 
       // Function to pack data to 3D with 'zero' padding, typically when
       // a Function is 2D
-      auto pad_data = [num_comp](const fem::FunctionSpace& V,
-                                 const xtl::span<const Scalar>& u)
+      auto pad_data
+          = [num_comp](const fem::FunctionSpace& V, const xtl::span<const T>& u)
       {
         auto dofmap = V.dofmap();
         int bs = dofmap->bs();
@@ -505,7 +505,7 @@ void write_function(
         int map_bs = dofmap->index_map_bs();
         std::int32_t num_dofs_block
             = map_bs * (map->size_local() + map->num_ghosts()) / bs;
-        std::vector<Scalar> data(num_dofs_block * num_comp, 0);
+        std::vector<T> data(num_dofs_block * num_comp, 0);
         for (int i = 0; i < num_dofs_block; ++i)
         {
           std::copy_n(std::next(u.cbegin(), i * map_bs), map_bs,
@@ -524,15 +524,12 @@ void write_function(
         {
           // Pad with zeros and then add
           auto data = pad_data(*V, _u.get().x()->array());
-          add_data(_u.get().name, rank, xtl::span<const Scalar>(data),
-                   data_node);
+          add_data(_u.get().name, rank, xtl::span<const T>(data), data_node);
         }
       }
       else if (*element == *element0)
       {
         // -- Same element, possibly different dofmaps
-        // TODO: we need dofmap0 to be 'blocked'
-        // TODO: check ElementDofLayout?
 
         // Get dofmaps
         auto dofmap0 = V0->dofmap();
@@ -543,7 +540,7 @@ void write_function(
 
         // Interpolate on each cell
         auto u_vector = _u.get().x()->array();
-        std::vector<Scalar> u(u_vector.size());
+        std::vector<T> u(u_vector.size());
         for (std::size_t c = 0; c < cells.shape(0); ++c)
         {
           xtl::span<const std::int32_t> dofs0 = dofmap0->cell_dofs(c);
@@ -561,13 +558,12 @@ void write_function(
 
         // Pack/add data
         if (mesh0->geometry().dim() == 3)
-          add_data(_u.get().name, rank, xtl::span<const Scalar>(u), data_node);
+          add_data(_u.get().name, rank, xtl::span<const T>(u), data_node);
         else
         {
           // Pad with zeros and then add
           auto data = pad_data(*V, _u.get().x()->array());
-          add_data(_u.get().name, rank, xtl::span<const Scalar>(data),
-                   data_node);
+          add_data(_u.get().name, rank, xtl::span<const T>(data), data_node);
         }
       }
       else
@@ -643,14 +639,14 @@ void write_function(
         data_node.append_attribute("NumberOfComponents") = ncomps[rank];
       };
 
-      if constexpr (std::is_scalar_v<Scalar>)
+      if constexpr (std::is_scalar_v<T>)
       {
-        constexpr int size = 8 * sizeof(Scalar);
+        constexpr int size = 8 * sizeof(T);
         add_field(_u.get().name, size);
       }
       else
       {
-        constexpr int size = 8 * sizeof(typename Scalar::value_type);
+        constexpr int size = 8 * sizeof(typename T::value_type);
         add_field(_u.get().name + field_ext[0], size);
         add_field(_u.get().name + field_ext[1], size);
       }
@@ -709,6 +705,7 @@ void io::VTKFile::close()
   {
     if (_filename.has_parent_path())
       std::filesystem::create_directories(_filename.parent_path());
+
     bool status = _pvd_xml->save_file(_filename.c_str(), "  ");
     if (status == false)
     {
@@ -748,9 +745,10 @@ void io::VTKFile::write(const mesh::Mesh& mesh, double time)
   // Get mesh data for this rank
   const mesh::Topology& topology = mesh.topology();
   const mesh::Geometry& geometry = mesh.geometry();
+  auto xmap = geometry.index_map();
+  assert(xmap);
   const int tdim = topology.dim();
-  const std::int32_t num_points
-      = geometry.index_map()->size_local() + geometry.index_map()->num_ghosts();
+  const std::int32_t num_points = xmap->size_local() + xmap->num_ghosts();
   const std::int32_t num_cells = topology.index_map(tdim)->size_local()
                                  + topology.index_map(tdim)->num_ghosts();
 
@@ -771,8 +769,6 @@ void io::VTKFile::write(const mesh::Mesh& mesh, double time)
   xt::xtensor<double, 2> x
       = xt::adapt(geometry.x().data(), geometry.x().size(), xt::no_ownership(),
                   std::vector({geometry.x().size() / 3, std::size_t(3)}));
-  auto xmap = geometry.index_map();
-  assert(xmap);
   std::vector<std::uint8_t> x_ghost(x.shape(0), 0);
   std::fill(std::next(x_ghost.begin(), xmap->size_local()), x_ghost.end(), 1);
   add_mesh(x, geometry.input_global_indices(), x_ghost, cells,
