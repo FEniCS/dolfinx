@@ -84,13 +84,13 @@ adios2::Variable<T> define_variable(adios2::IO& io, const std::string& name,
 /// @param[in] io The ADIOS2 io object
 /// @param[in] engine The ADIOS2 engine object
 /// @param[in] u The function
-template <typename Scalar>
+template <typename T>
 void vtx_write_data(adios2::IO& io, adios2::Engine& engine,
-                    const fem::Function<Scalar>& u)
+                    const fem::Function<T>& u)
 {
   // Get function data array and information about layout
   assert(u.x());
-  xtl::span<const Scalar> u_vector = u.x()->array();
+  xtl::span<const T> u_vector = u.x()->array();
   const int rank = u.function_space()->element()->value_shape().size();
   const std::uint32_t num_comp = std::pow(3, rank);
   std::shared_ptr<const fem::DofMap> dofmap = u.function_space()->dofmap();
@@ -103,28 +103,30 @@ void vtx_write_data(adios2::IO& io, adios2::Engine& engine,
       = index_map_bs * (index_map->size_local() + index_map->num_ghosts())
         / dofmap_bs;
 
-  if constexpr (std::is_scalar<Scalar>::value)
+  if constexpr (std::is_scalar<T>::value)
   {
     // ---- Real
-    std::vector<double> data(num_dofs * num_comp, 0);
+    std::vector<T> data(num_dofs * num_comp, 0);
     for (std::size_t i = 0; i < num_dofs; ++i)
       for (int j = 0; j < index_map_bs; ++j)
         data[i * num_comp + j] = u_vector[i * index_map_bs + j];
 
-    adios2::Variable<double> output
-        = define_variable<double>(io, u.name, {}, {}, {num_dofs, num_comp});
-    engine.Put<double>(output, data.data(), adios2::Mode::Sync);
+    adios2::Variable<T> output
+        = define_variable<T>(io, u.name, {}, {}, {num_dofs, num_comp});
+    engine.Put<T>(output, data.data(), adios2::Mode::Sync);
   }
   else
   {
-    std::vector<double> data(num_dofs * num_comp, 0);
+    using U = typename T::value_type;
+
+    std::vector<U> data(num_dofs * num_comp, 0);
     for (std::size_t i = 0; i < num_dofs; ++i)
       for (int j = 0; j < index_map_bs; ++j)
         data[i * num_comp + j] = std::real(u_vector[i * index_map_bs + j]);
 
-    adios2::Variable<double> output_real = define_variable<double>(
+    adios2::Variable<U> output_real = define_variable<U>(
         io, u.name + field_ext[0], {}, {}, {num_dofs, num_comp});
-    engine.Put<double>(output_real, data.data(), adios2::Mode::Sync);
+    engine.Put<U>(output_real, data.data(), adios2::Mode::Sync);
 
     std::fill(data.begin(), data.end(), 0);
     for (std::size_t i = 0; i < num_dofs; ++i)
@@ -132,9 +134,9 @@ void vtx_write_data(adios2::IO& io, adios2::Engine& engine,
       for (int j = 0; j < index_map_bs; ++j)
         data[i * num_comp + j] = std::imag(u_vector[i * index_map_bs + j]);
     }
-    adios2::Variable<double> output_imag = define_variable<double>(
+    adios2::Variable<U> output_imag = define_variable<U>(
         io, u.name + field_ext[1], {}, {}, {num_dofs, num_comp});
-    engine.Put<double>(output_imag, data.data(), adios2::Mode::Sync);
+    engine.Put<U>(output_imag, data.data(), adios2::Mode::Sync);
   }
 }
 //-----------------------------------------------------------------------------
@@ -191,6 +193,18 @@ void vtx_write_mesh(adios2::IO& io, adios2::Engine& engine,
   adios2::Variable<std::int64_t> local_topology = define_variable<std::int64_t>(
       io, "connectivity", {}, {}, {num_cells, num_nodes + 1});
   engine.Put<std::int64_t>(local_topology, cells.data());
+
+  // Vertex global ids and ghost markers
+  adios2::Variable<std::int64_t> orig_id = define_variable<std::int64_t>(
+      io, "vtkOriginalPointIds", {}, {}, {num_vertices});
+  engine.Put<std::int64_t>(orig_id, geometry.input_global_indices().data());
+
+  std::vector<std::uint8_t> x_ghost(num_vertices, 0);
+  std::fill(std::next(x_ghost.begin(), x_map->size_local()), x_ghost.end(), 1);
+  adios2::Variable<std::uint8_t> ghost = define_variable<std::uint8_t>(
+      io, "vtkGhostType", {}, {}, {x_ghost.size()});
+  engine.Put<std::uint8_t>(ghost, x_ghost.data());
+
   engine.PerformPuts();
 }
 //-----------------------------------------------------------------------------
@@ -242,6 +256,15 @@ void vtx_write_mesh_from_space(adios2::IO& io, adios2::Engine& engine,
       cell_type, cells::get_vtk_cell_type(mesh->topology().cell_type(), tdim));
   engine.Put<double>(local_geometry, x.data());
   engine.Put<std::uint64_t>(local_topology, vtk_topology.data());
+
+  // Node global ids
+  adios2::Variable<std::int64_t> orig_id = define_variable<std::int64_t>(
+      io, "vtkOriginalPointIds", {}, {}, {x_id.size()});
+  engine.Put<std::int64_t>(orig_id, x_id.data());
+  adios2::Variable<std::uint8_t> ghost = define_variable<std::uint8_t>(
+      io, "vtkGhostType", {}, {}, {x_ghost.size()});
+  engine.Put<std::uint8_t>(ghost, x_ghost.data());
+
   engine.PerformPuts();
 }
 //-----------------------------------------------------------------------------
@@ -265,7 +288,7 @@ std::vector<std::string> extract_function_names(const ADIOS2Writer::U& u)
   return names;
 }
 //-----------------------------------------------------------------------------
-// Create VTK xml scheme to be interpreted by the Paraview VTKWriter
+// Create VTK xml scheme to be interpreted by the VTX reader
 // https://adios2.readthedocs.io/en/latest/ecosystem/visualization.html#saving-the-vtk-xml-data-model
 std::stringstream create_vtk_schema(const std::vector<std::string>& point_data,
                                     const std::vector<std::string>& cell_data)
@@ -301,22 +324,21 @@ std::stringstream create_vtk_schema(const std::vector<std::string>& point_data,
 
   // -- PointData
 
-  // If we have any point data to write to file
-  if (!point_data.empty())
+  pugi::xml_node xml_pointdata = piece.append_child("PointData");
+
+  // Stepping info for time dependency
+  pugi::xml_node item_time = xml_pointdata.append_child("DataArray");
+  item_time.append_attribute("Name") = "TIME";
+  item_time.append_child(pugi::node_pcdata).set_value("step");
+
+  pugi::xml_node item_idx = xml_pointdata.append_child("DataArray");
+  item_idx.append_attribute("Name") = "vtkOriginalPointIds";
+  pugi::xml_node item_ghost = xml_pointdata.append_child("DataArray");
+  item_ghost.append_attribute("Name") = "vtkGhostType";
+  for (auto& name : point_data)
   {
-    pugi::xml_node xml_pointdata = piece.append_child("PointData");
-
-    // Stepping info for time dependency
     pugi::xml_node item = xml_pointdata.append_child("DataArray");
-    item.append_attribute("Name") = "TIME";
-    item.append_child(pugi::node_pcdata).set_value("step");
-
-    // Append point data to VTK Schema
-    for (auto& name : point_data)
-    {
-      pugi::xml_node item = xml_pointdata.append_child("DataArray");
-      item.append_attribute("Name") = name.c_str();
-    }
+    item.append_attribute("Name") = name.c_str();
   }
 
   // -- CellData
@@ -369,8 +391,8 @@ std::string to_fides_cell(mesh::CellType type)
 
 /// Pack Function data at vertices. The mesh and the function must both
 /// be 'P1'
-template <typename Scalar>
-std::vector<Scalar> pack_function_data(const fem::Function<Scalar>& u)
+template <typename T>
+std::vector<T> pack_function_data(const fem::Function<T>& u)
 {
   auto V = u.function_space();
   assert(V);
@@ -403,7 +425,7 @@ std::vector<Scalar> pack_function_data(const fem::Function<Scalar>& u)
   const graph::AdjacencyList<std::int32_t>& dofmap_x = geometry.dofmap();
   const int bs = dofmap->bs();
   const auto& u_data = u.x()->array();
-  std::vector<Scalar> data(num_vertices * num_components, 0);
+  std::vector<T> data(num_vertices * num_components, 0);
   for (std::int32_t c = 0; c < num_cells; ++c)
   {
     auto dofs = dofmap->cell_dofs(c);
@@ -423,9 +445,9 @@ std::vector<Scalar> pack_function_data(const fem::Function<Scalar>& u)
 /// @param[in] io The ADIOS2 io object
 /// @param[in] engine The ADIOS2 engine object
 /// @param[in] u The function to write
-template <typename Scalar>
+template <typename T>
 void fides_write_data(adios2::IO& io, adios2::Engine& engine,
-                      const fem::Function<Scalar>& u)
+                      const fem::Function<T>& u)
 {
   // FIXME: There is an implicit assumptions that u and the mesh have
   // the same ElementDoflayout
@@ -443,14 +465,14 @@ void fides_write_data(adios2::IO& io, adios2::Engine& engine,
 
   // Get vertex data. If the mesh and function dofmaps are the same we
   // can work directly with the dof array.
-  xtl::span<const Scalar> data;
-  std::vector<Scalar> _data;
+  xtl::span<const T> data;
+  std::vector<T> _data;
   if (mesh->geometry().dofmap() == dofmap->list() and !need_padding)
     data = u.x()->array();
   else
   {
     _data = pack_function_data(u);
-    data = xtl::span<const Scalar>(_data);
+    data = xtl::span<const T>(_data);
   }
 
   auto vertex_map = mesh->topology().index_map(0);
@@ -461,33 +483,35 @@ void fides_write_data(adios2::IO& io, adios2::Engine& engine,
   // Write each real and imaginary part of the function
   const std::uint32_t num_components = std::pow(3, rank);
   assert(data.size() % num_components == 0);
-  if constexpr (std::is_scalar<Scalar>::value)
+  if constexpr (std::is_scalar<T>::value)
   {
     // ---- Real
     const std::string u_name = u.name;
-    adios2::Variable<double> local_output = define_variable<double>(
+    adios2::Variable<T> local_output = define_variable<T>(
         io, u_name, {}, {}, {num_vertices, num_components});
 
     // To reuse out_data, we use sync mode here
-    engine.Put<double>(local_output, data.data());
+    engine.Put<T>(local_output, data.data());
     engine.PerformPuts();
   }
   else
   {
     // ---- Complex
-    std::vector<double> data_real(data.size()), data_imag(data.size());
+    using U = typename T::value_type;
 
-    adios2::Variable<double> local_output_r = define_variable<double>(
+    std::vector<U> data_real(data.size()), data_imag(data.size());
+
+    adios2::Variable<U> local_output_r = define_variable<U>(
         io, u.name + field_ext[0], {}, {}, {num_vertices, num_components});
     std::transform(data.cbegin(), data.cend(), data_real.begin(),
-                   [](auto& x) -> double { return std::real(x); });
-    engine.Put<double>(local_output_r, data_real.data());
+                   [](auto& x) -> U { return std::real(x); });
+    engine.Put<U>(local_output_r, data_real.data());
 
-    adios2::Variable<double> local_output_c = define_variable<double>(
+    adios2::Variable<U> local_output_c = define_variable<U>(
         io, u.name + field_ext[1], {}, {}, {num_vertices, num_components});
     std::transform(data.cbegin(), data.cend(), data_imag.begin(),
-                   [](auto& x) -> double { return std::imag(x); });
-    engine.Put<double>(local_output_c, data_imag.data());
+                   [](auto& x) -> U { return std::imag(x); });
+    engine.Put<U>(local_output_c, data_imag.data());
     engine.PerformPuts();
   }
 }
