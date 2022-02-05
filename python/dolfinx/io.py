@@ -7,7 +7,6 @@
 
 """IO module for input data, post-processing and checkpointing"""
 
-import collections
 import typing
 
 import numpy as np
@@ -37,7 +36,7 @@ class VTKFile(_cpp.io.VTKFile):
 
     def write_function(self, u: typing.Union[typing.List[Function], Function], t: float = 0.0) -> None:
         """Write a single function or a list of functions to file for a given time (default 0.0)"""
-        if isinstance(u, collections.Iterable):
+        if isinstance(u, (list, tuple)):
             super().write([getattr(u_, "_cpp_object", u_) for u_ in u], t)
         else:
             super().write([getattr(u, "_cpp_object", u)], t)

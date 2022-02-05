@@ -50,16 +50,12 @@ def test_save_3d_mesh(tempdir, cell_type):
 
 def test_save_1d_scalar(tempdir):
     mesh = create_unit_interval(MPI.COMM_WORLD, 32)
-
-    def f(x):
-        return x[0]
-
     u = Function(FunctionSpace(mesh, ("Lagrange", 2)))
-    u.interpolate(f)
+    u.interpolate(lambda x: x[0])
     filename = os.path.join(tempdir, "u.pvd")
     with VTKFile(MPI.COMM_WORLD, filename, "w") as vtk:
         vtk.write_function(u, 0.)
-        vtk.write_function(u, 1.)
+        # vtk.write_function(u, 1.)
 
 
 @pytest.mark.parametrize("cell_type", cell_types_2D)
