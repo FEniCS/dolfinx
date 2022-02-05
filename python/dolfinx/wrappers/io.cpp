@@ -154,20 +154,13 @@ void io(py::module& m)
            [](dolfinx::io::VTKFile& self, py::object exc_type,
               py::object exc_value, py::object traceback) { self.close(); })
       .def("close", &dolfinx::io::VTKFile::close)
-      .def("write",
-           py::overload_cast<const std::vector<std::reference_wrapper<
-                                 const dolfinx::fem::Function<double>>>&,
-                             double>(&dolfinx::io::VTKFile::write),
+      .def("write", &dolfinx::io::VTKFile::write<double>, py::arg("u"),
+           py::arg("t") = 0.0)
+      .def("write", &dolfinx::io::VTKFile::write<std::complex<double>>,
            py::arg("u"), py::arg("t") = 0.0)
       .def("write",
-           py::overload_cast<
-               const std::vector<std::reference_wrapper<
-                   const dolfinx::fem::Function<std::complex<double>>>>&,
-               double>(&dolfinx::io::VTKFile::write),
-           py::arg("u"), py::arg("t") = 0.0)
-
-      .def("write",
-           py::overload_cast<const dolfinx::mesh::Mesh&, double>(
+           static_cast<void (dolfinx::io::VTKFile::*)(
+               const dolfinx::mesh::Mesh&, double)>(
                &dolfinx::io::VTKFile::write),
            py::arg("mesh"), py::arg("t") = 0.0);
 

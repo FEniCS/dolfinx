@@ -61,22 +61,32 @@ public:
   /// @param[in] time Time parameter to associate with @p mesh
   void write(const mesh::Mesh& mesh, double time = 0.0);
 
-  /// Write a finite element function with an associated timestep
+  /// Write finite elements function with an associated timestep
   /// @param[in] u List of functions to write to file
   /// @param[in] t Time parameter to associate with @p u
-  void write(
+  /// @pre All Functions in `u` must share the same mesh
+  /// @pre All Functions in `u` with point-wise data must use the same
+  /// element type (up to the block size) and the element must be
+  /// (discontinuous) Lagrange
+  /// @pre Functions in `u` cannot be sub-Functions. Interpolate
+  /// sub-Functions before output
+  template <typename T>
+  void
+  write(const std::vector<std::reference_wrapper<const fem::Function<T>>>& u,
+        double t)
+  {
+    write_functions(u, t);
+  }
+
+private:
+  void write_functions(
       const std::vector<std::reference_wrapper<const fem::Function<double>>>& u,
       double t);
-
-  /// Write a finite element function with an associated timestep
-  /// @param[in] u List of functions to write to file
-  /// @param[in] t Time parameter to associate with @p u
-  void write(
+  void write_functions(
       const std::vector<
           std::reference_wrapper<const fem::Function<std::complex<double>>>>& u,
       double t);
 
-private:
   std::unique_ptr<pugi::xml_document> _pvd_xml;
 
   std::filesystem::path _filename;

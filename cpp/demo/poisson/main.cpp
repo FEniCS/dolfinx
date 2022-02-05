@@ -236,6 +236,7 @@ int main(int argc, char* argv[])
     file.write({*u}, 0.0);
 
     io::VTXWriter outfile(mesh->comm(), "u.bp", {mesh});
+    // io::VTXWriter outfile(mesh->comm(), "u.bp", {u});
     outfile.write(0.0);
     outfile.close();
   }

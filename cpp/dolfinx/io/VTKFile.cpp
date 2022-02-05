@@ -834,14 +834,14 @@ void io::VTKFile::write(const mesh::Mesh& mesh, double time)
   }
 }
 //----------------------------------------------------------------------------
-void io::VTKFile::write(
+void io::VTKFile::write_functions(
     const std::vector<std::reference_wrapper<const fem::Function<double>>>& u,
     double time)
 {
   write_function(u, time, _pvd_xml, _filename);
 }
 //----------------------------------------------------------------------------
-void io::VTKFile::write(
+void io::VTKFile::write_functions(
     const std::vector<
         std::reference_wrapper<const fem::Function<std::complex<double>>>>& u,
     double time)
