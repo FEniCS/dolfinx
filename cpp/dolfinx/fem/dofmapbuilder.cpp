@@ -214,6 +214,7 @@ build_basic_dofmap(const mesh::Topology& topology,
   // Dof -> (dim, entity index) marker
   std::vector<std::pair<std::int8_t, std::int32_t>> dof_entity(local_size);
 
+  // FIXME Could combine these rather than having two branches
   if (connectivity[0]->num_nodes() > 0)
   {
     // Loops over cells and build dofmaps from ElementDofmap
