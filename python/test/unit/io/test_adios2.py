@@ -240,7 +240,7 @@ def test_vtx_functions(tempdir, dim, simplex):
 def test_save_vtkx_cell_point(tempdir):
     """Test writing point-wise data"""
     from dolfinx.cpp.io import VTXWriter
-    mesh = create_unit_square(MPI.COMM_WORLD, 1, 1)
+    mesh = create_unit_square(MPI.COMM_WORLD, 8, 5)
     P = ufl.FiniteElement("Discontinuous Lagrange", mesh.ufl_cell(), 0)
 
     V = FunctionSpace(mesh, P)
