@@ -30,6 +30,9 @@ T assemble_cells(const mesh::Geometry& geometry,
                  const xtl::span<const T>& constants,
                  const xtl::span<const T>& coeffs, int cstride)
 {
+  if (cells.empty())
+    return;
+
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
 
@@ -72,6 +75,9 @@ T assemble_exterior_facets(
     const xtl::span<const T>& constants, const xtl::span<const T>& coeffs,
     int cstride)
 {
+  if (facets.empty())
+    return;
+
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
 
@@ -117,6 +123,9 @@ T assemble_interior_facets(
     int cstride, const xtl::span<const int>& offsets,
     const xtl::span<const std::uint8_t>& perms)
 {
+  if (facets.empty())
+    return;
+
   const int tdim = mesh.topology().dim();
 
   // Prepare cell geometry
