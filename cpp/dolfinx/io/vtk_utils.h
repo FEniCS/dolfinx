@@ -12,23 +12,31 @@
 #include <vector>
 #include <xtensor/xtensor.hpp>
 
-namespace dolfinx::fem
+namespace dolfinx
+{
+namespace fem
 {
 class FunctionSpace;
 }
 
-namespace dolfinx::mesh
+namespace mesh
 {
 enum class CellType;
 class Mesh;
-} // namespace dolfinx::mesh
+} // namespace mesh
 
-namespace dolfinx::io
+namespace io
 {
 /// Given a FunctionSpace, create a topology and geometry based on the
-/// dof coordinates.
-/// @note Only supports (discontinuous) Lagrange functions
+/// dof coordinates
+/// @pre `V` must be a (discontinuous) Lagrange space
 /// @param[in] V The function space
+/// @returns Mesh data
+/// -# node coordinates (shape={num_nodes, 3})
+/// -# unique global ID for each node (a node that appears on more than
+/// one rank will have the same global ID)
+/// -# ghost index for each node (0=non-ghost, 1=ghost)
+/// -# cells (shape={num_cells, nodes_per_cell)})
 std::tuple<xt::xtensor<double, 2>, std::vector<std::int64_t>,
            std::vector<std::uint8_t>, xt::xtensor<std::int32_t, 2>>
 vtk_mesh_from_space(const fem::FunctionSpace& V);
@@ -46,4 +54,5 @@ vtk_mesh_from_space(const fem::FunctionSpace& V);
 /// require int64 as local input
 xt::xtensor<std::int64_t, 2> extract_vtk_connectivity(const mesh::Mesh& mesh);
 
-} // namespace dolfinx::io
+} // namespace io
+} // namespace dolfinx

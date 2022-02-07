@@ -24,15 +24,17 @@ namespace
 {
 /// Tabulate the coordinate for every 'node' in a Lagrange function
 /// space.
-/// @param[in] V The function space. Must be a (discontinuous) Lagrange
-/// space.
-/// @return An array with shape (num_dofs, 3) array where the ith row
+/// @param[in] V The function space
+/// @return Mesh coordinate data
+/// -# Node coordinates (shape={num_dofs, 3}) where the ith row
 /// corresponds to the coordinate of the ith dof in `V` (local to
 /// process)
-/// @pre `V` must be Lagrange and must not be a subspace
+/// -# Unique global index for each node
+/// -# ghost index for each node (0=non-ghost, 1=ghost)
+/// @pre `V` must be (discontinuous) Lagrange and must not be a subspace
 std::tuple<xt::xtensor<double, 2>, std::vector<std::int64_t>,
            std::vector<std::uint8_t>>
-tabulate_lagrange_dof_coordinates(const dolfinx::fem::FunctionSpace& V)
+tabulate_lagrange_dof_coordinates(const fem::FunctionSpace& V)
 {
   auto mesh = V.mesh();
   assert(mesh);
@@ -150,7 +152,7 @@ io::vtk_mesh_from_space(const fem::FunctionSpace& V)
   auto dofmap = V.dofmap();
   assert(dofmap);
   const std::uint32_t num_nodes = dofmap->cell_dofs(0).size();
-  const std::vector<std::uint8_t> vtkmap = dolfinx::io::cells::transpose(
+  const std::vector<std::uint8_t> vtkmap = io::cells::transpose(
       io::cells::perm_vtk(mesh->topology().cell_type(), num_nodes));
 
   // Extract topology for all local cells as
@@ -174,13 +176,13 @@ io::extract_vtk_connectivity(const mesh::Mesh& mesh)
   // FIXME: Use better way to get number of nodes
   const graph::AdjacencyList<std::int32_t>& dofmap_x = mesh.geometry().dofmap();
   const std::size_t num_nodes = dofmap_x.num_links(0);
-  std::vector vtkmap = dolfinx::io::cells::transpose(
-      dolfinx::io::cells::perm_vtk(mesh.topology().cell_type(), num_nodes));
+  mesh::CellType cell_type = mesh.topology().cell_type();
+  std::vector vtkmap
+      = io::cells::transpose(io::cells::perm_vtk(cell_type, num_nodes));
 
   // TODO: Remove when when paraview issue 19433 is resolved
   // (https://gitlab.kitware.com/paraview/paraview/issues/19433)
-  if (mesh.topology().cell_type() == dolfinx::mesh::CellType::hexahedron
-      and num_nodes == 27)
+  if (cell_type == mesh::CellType::hexahedron and num_nodes == 27)
   {
     vtkmap = {0,  9, 12, 3,  1, 10, 13, 4,  18, 15, 21, 6,  19, 16,
               22, 7, 2,  11, 5, 14, 8,  17, 20, 23, 24, 25, 26};

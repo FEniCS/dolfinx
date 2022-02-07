@@ -55,7 +55,6 @@ def test_save_1d_scalar(tempdir):
     filename = os.path.join(tempdir, "u.pvd")
     with VTKFile(MPI.COMM_WORLD, filename, "w") as vtk:
         vtk.write_function(u, 0.)
-        # vtk.write_function(u, 1.)
 
 
 @pytest.mark.parametrize("cell_type", cell_types_2D)
