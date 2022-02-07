@@ -12,18 +12,20 @@
 #include <vector>
 #include <xtensor/xtensor.hpp>
 
-namespace dolfinx::fem
+namespace dolfinx
+{
+namespace fem
 {
 class FunctionSpace;
 }
 
-namespace dolfinx::mesh
+namespace mesh
 {
 enum class CellType;
 class Mesh;
-} // namespace dolfinx::mesh
+} // namespace mesh
 
-namespace dolfinx::io
+namespace io
 {
 /// Given a FunctionSpace, create a topology and geometry based on the
 /// dof coordinates
@@ -52,4 +54,5 @@ vtk_mesh_from_space(const fem::FunctionSpace& V);
 /// require int64 as local input
 xt::xtensor<std::int64_t, 2> extract_vtk_connectivity(const mesh::Mesh& mesh);
 
-} // namespace dolfinx::io
+} // namespace io
+} // namespace dolfinx
