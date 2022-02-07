@@ -33,8 +33,8 @@ namespace dolfinx::io
 /// -# node coordinates (shape={num_nodes, 3})
 /// -# unique global ID for each node (a node that appears on more than
 /// one rank will have the same global ID)
-/// -# node ghost index (0=non-ghost, 1=ghost)
-/// -# cells (shape=(num_cells, nodes_per_cell))
+/// -# ghost index for each node (0=non-ghost, 1=ghost)
+/// -# cells (shape={num_cells, nodes_per_cell)})
 std::tuple<xt::xtensor<double, 2>, std::vector<std::int64_t>,
            std::vector<std::uint8_t>, xt::xtensor<std::int32_t, 2>>
 vtk_mesh_from_space(const fem::FunctionSpace& V);
