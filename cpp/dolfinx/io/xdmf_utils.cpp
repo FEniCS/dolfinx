@@ -7,7 +7,6 @@
 #include "xdmf_utils.h"
 #include "pugixml.hpp"
 #include <boost/algorithm/string.hpp>
-#include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/CoordinateElement.h>
@@ -21,6 +20,7 @@
 #include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <dolfinx/mesh/utils.h>
+#include <filesystem>
 #include <map>
 #include <xtensor/xadapt.hpp>
 #include <xtensor/xtensor.hpp>
@@ -232,17 +232,18 @@ xdmf_utils::get_hdf5_paths(const pugi::xml_node& dataitem_node)
   return {{paths[0], paths[1]}};
 }
 //-----------------------------------------------------------------------------
-std::string xdmf_utils::get_hdf5_filename(std::string xdmf_filename)
+std::filesystem::path
+xdmf_utils::get_hdf5_filename(const std::filesystem::path& xdmf_filename)
 {
-  boost::filesystem::path p(xdmf_filename);
-  p.replace_extension(".h5");
+  std::filesystem::path p = xdmf_filename;
+  p.replace_extension("h5");
   if (p.string() == xdmf_filename)
   {
     throw std::runtime_error("Cannot deduce name of HDF5 file from XDMF "
                              "filename. Filename clash. Check XDMF filename");
   }
 
-  return p.string();
+  return p;
 }
 //-----------------------------------------------------------------------------
 std::vector<std::int64_t>

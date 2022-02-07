@@ -11,6 +11,7 @@
 #include <chrono>
 #include <cstdint>
 #include <dolfinx/common/log.h>
+#include <filesystem>
 #include <hdf5.h>
 #include <mpi.h>
 #include <string>
@@ -30,7 +31,7 @@ public:
   /// @param[in] filename Name of the HDF5 file to open
   /// @param[in] mode Mode in which to open the file (w, r, a)
   /// @param[in] use_mpi_io True if MPI-IO should be used
-  static hid_t open_file(MPI_Comm comm, const std::string& filename,
+  static hid_t open_file(MPI_Comm comm, const std::filesystem::path& filename,
                          const std::string& mode, const bool use_mpi_io);
 
   /// Close HDF5 file
@@ -44,7 +45,7 @@ public:
   /// Get filename
   /// @param[in] handle HDF5 file handle
   /// return The filename
-  static std::string get_filename(hid_t handle);
+  static std::filesystem::path get_filename(hid_t handle);
 
   /// Write data to existing HDF file as defined by range blocks on each
   /// process

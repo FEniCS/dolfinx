@@ -17,7 +17,6 @@ from dolfinx.fem import (Function, FunctionSpace, TensorFunctionSpace,
 from dolfinx.geometry import (BoundingBoxTree, compute_colliding_cells,
                               compute_collisions)
 from dolfinx.mesh import create_mesh, create_unit_cube
-from dolfinx_utils.test.skips import skip_if_complex, skip_in_parallel
 
 from mpi4py import MPI
 from petsc4py import PETSc
@@ -60,48 +59,6 @@ def test_copy(V):
     assert not np.allclose(u.x.array, v.x.array)
 
 
-def test_assign(V, W):
-    for V_ in [V, W]:
-        u = Function(V_)
-        u0 = Function(V_)
-        u1 = Function(V_)
-        u2 = Function(V_)
-        u.x.array[:] = 1
-        u0.x.array[:] = 2
-        u1.x.array[:] = 3
-        u2.x.array[:] = 4
-
-        # Test assign + scale
-        uu = Function(V_)
-        u.vector.copy(result=uu.vector)
-        uu.vector.scale(2)
-        assert uu.vector.array.sum() == u0.vector.array.sum()
-
-        # Test complex assignment
-        expr = 3 * u.vector - 4 * u1.vector - 0.1 * 4 * u.vector * 4 + u2.vector + 3 * u0.vector / 3. / 0.5
-        expr.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-        expr_scalar = 3 - 4 * 3 - 0.1 * 4 * 4 + 4. + 3 * 2. / 3. / 0.5
-
-        expr.copy(result=uu.vector)
-        uu.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-        assert np.isclose(uu.vector.array.sum() - expr_scalar * uu.vector.local_size, 0)
-
-        # Test self assignment
-        expr = 3 * u.vector - 5.0 * u2.vector + u1.vector - 5 * u.vector
-        expr.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-        expr_scalar = 3 - 5 * 4. + 3. - 5
-        expr.copy(result=u.vector)
-        u.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-        assert np.isclose(u.vector.array.sum() - expr_scalar * u.vector.local_size, 0)
-
-        # Test zero assignment
-        expr = -u2.vector / 2 + 2 * u1.vector - u1.vector / 0.5 + u2.vector * 0.5
-        expr.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-        expr.copy(result=u.vector)
-        u.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-        assert round(u.vector.array.sum() - 0.0, 7) == 0
-
-
 def test_eval(V, W, Q, mesh):
     u1 = Function(V)
     u2 = Function(W)
@@ -139,7 +96,7 @@ def test_eval(V, W, Q, mesh):
     assert np.allclose(u3.eval(x0, first_cell)[:3], u2.eval(x0, first_cell), rtol=1e-15, atol=1e-15)
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 def test_eval_manifold():
     # Simple two-triangle surface in 3d
     vertices = [(0.0, 0.0, 1.0), (1.0, 1.0, 1.0), (1.0, 0.0, 0.0), (0.0, 1.0,
@@ -215,7 +172,6 @@ def test_interpolation_rank1(W):
     assert round(w.vector.norm(PETSc.NormType.N1) - 3 * num_vertices, 7) == 0
 
 
-@skip_if_complex
 def test_cffi_expression(V):
     code_h = """
     void eval(double* values, int num_points, int value_size, const double* x);
@@ -245,19 +201,21 @@ def test_cffi_expression(V):
     eval_ptr = ffi.cast("uintptr_t", ffi.addressof(lib, "eval"))
 
     # Handle C func address by hand
-    f1 = Function(V)
+    f1 = Function(V, dtype=np.float64)
     f1.interpolate(int(eval_ptr))
 
-    f2 = Function(V)
+    f2 = Function(V, dtype=np.float64)
     f2.interpolate(lambda x: x[0] + x[1])
-    assert (f1.vector - f2.vector).norm() < 1.0e-12
+
+    f1.x.array[:] -= f2.x.array
+    assert f1.x.norm() < 1.0e-12
 
 
 def test_interpolation_function(mesh):
     V = FunctionSpace(mesh, ("Lagrange", 1))
     u = Function(V)
-    u.vector.set(1)
+    u.x.array[:] = 1
     Vh = FunctionSpace(mesh, ("Lagrange", 1))
     uh = Function(Vh)
     uh.interpolate(u)
-    assert np.allclose(uh.vector.array, 1)
+    assert np.allclose(uh.x.array, 1)

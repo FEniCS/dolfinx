@@ -10,6 +10,7 @@
 
 #include <cassert>
 #include <complex>
+#include <filesystem>
 #include <memory>
 #include <mpi.h>
 #include <string>
@@ -50,7 +51,7 @@ private:
   /// @param[in] comm The MPI communicator
   /// @param[in] filename Name of output file
   /// @param[in] tag The ADIOS2 object name
-  ADIOS2Writer(MPI_Comm comm, const std::string& filename,
+  ADIOS2Writer(MPI_Comm comm, const std::filesystem::path& filename,
                const std::string& tag,
                const std::shared_ptr<const mesh::Mesh>& mesh, const U& u);
 
@@ -60,7 +61,7 @@ protected:
   /// @param[in] filename Name of output file
   /// @param[in] tag The ADIOS2 object name
   /// @param[in] mesh The mesh
-  ADIOS2Writer(MPI_Comm comm, const std::string& filename,
+  ADIOS2Writer(MPI_Comm comm, const std::filesystem::path& filename,
                const std::string& tag, std::shared_ptr<const mesh::Mesh> mesh);
 
   /// Create an ADIOS2-based writer for a list of functions
@@ -68,7 +69,7 @@ protected:
   /// @param[in] filename Name of output file
   /// @param[in] tag The ADIOS2 object name
   /// @param[in] u List of functions
-  ADIOS2Writer(MPI_Comm comm, const std::string& filename,
+  ADIOS2Writer(MPI_Comm comm, const std::filesystem::path& filename,
                const std::string& tag, const U& u);
 
   /// Move constructor
@@ -110,7 +111,7 @@ public:
   /// @param[in] mesh The mesh. The mesh must a degree 1 mesh.
   /// @note The mesh geometry can be updated between write steps but the
   /// topology should not be changed between write steps
-  FidesWriter(MPI_Comm comm, const std::string& filename,
+  FidesWriter(MPI_Comm comm, const std::filesystem::path& filename,
               std::shared_ptr<const mesh::Mesh> mesh);
 
   /// Create Fides writer for list of functions
@@ -119,7 +120,7 @@ public:
   /// @param[in] u List of functions. The functions must (1) share the
   /// same mesh (degree 1) and (2) be degree 1 Lagrange. @note All
   /// functions in `u` must share the same Mesh
-  FidesWriter(MPI_Comm comm, const std::string& filename,
+  FidesWriter(MPI_Comm comm, const std::filesystem::path& filename,
               const ADIOS2Writer::U& u);
 
   // Copy constructor
@@ -156,7 +157,7 @@ public:
   /// @note This format support arbitrary degree meshes
   /// @note The mesh geometry can be updated between write steps but the
   /// topology should not be changed between write steps
-  VTXWriter(MPI_Comm comm, const std::string& filename,
+  VTXWriter(MPI_Comm comm, const std::filesystem::path& filename,
             std::shared_ptr<const mesh::Mesh> mesh);
 
   /// Create a VTX writer for list of functions
@@ -166,7 +167,7 @@ public:
   /// same mesh and (2) be (discontinuous) Lagrange functions. The
   /// element family and degree must be the same for all functions.
   /// @note This format supports arbitrary degree meshes
-  VTXWriter(MPI_Comm comm, const std::string& filename, const U& u);
+  VTXWriter(MPI_Comm comm, const std::filesystem::path& filename, const U& u);
 
   // Copy constructor
   VTXWriter(const VTXWriter&) = delete;

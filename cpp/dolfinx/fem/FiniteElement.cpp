@@ -338,7 +338,7 @@ FiniteElement::create_interpolation_operator(const FiniteElement& from) const
 
   if (_bs == 1 or from._bs == 1)
   {
-    // If one of the elements have bs=1, Basix can figure out the size
+    // If one of the elements has bs=1, Basix can figure out the size
     // of the matrix
     return basix::compute_interpolation_operator(*from._element, *_element);
   }
