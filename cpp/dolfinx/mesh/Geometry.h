@@ -81,7 +81,7 @@ public:
   /// (num_points, 3)
   xtl::span<const double> x() const;
 
-  /// Access geometry degrees-of-freedom data (version)
+  /// Access geometry degrees-of-freedom data (non-const version)
   /// @return The flattened row-major geometry data, where the shape is
   /// (num_points, 3)
   xtl::span<double> x();
@@ -106,7 +106,7 @@ private:
   // The coordinate element
   fem::CoordinateElement _cmap;
 
-  // Coordinates for all points stored as a contiguous array (roe-major,
+  // Coordinates for all points stored as a contiguous array (row-major,
   // column size = 3)
   std::vector<double> _x;
 

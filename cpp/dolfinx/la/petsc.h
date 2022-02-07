@@ -176,7 +176,7 @@ public:
   /// Create holder of a PETSc Vec object/pointer. The Vec x object
   /// should already be created. If inc_ref_count is true, the reference
   /// counter of the Vec object will be increased. The Vec reference
-  /// count will always be decreased upon destruction of the the
+  /// count will always be decreased upon destruction of the
   /// PETScVector.
   ///
   /// @note Collective
