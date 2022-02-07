@@ -187,9 +187,8 @@ private:
 template <typename T, typename U>
 AdjacencyList<T> build_adjacency_list(U&& data, int degree)
 {
-  // using T = typename U::value_type;
-  assert(data.size() % degree == 0);
-  std::vector<std::int32_t> offsets((data.size() / degree) + 1, 0);
+  std::int32_t num_nodes = degree == 0 ? data.size() : data.size() / degree;
+  std::vector<std::int32_t> offsets(num_nodes + 1, 0);
   for (std::size_t i = 1; i < offsets.size(); ++i)
     offsets[i] = offsets[i - 1] + degree;
   return AdjacencyList<T>(std::forward<U>(data), std::move(offsets));
