@@ -131,10 +131,8 @@ void vtx_write_data(adios2::IO& io, adios2::Engine& engine,
 
     std::fill(data.begin(), data.end(), 0);
     for (std::size_t i = 0; i < num_dofs; ++i)
-    {
       for (int j = 0; j < index_map_bs; ++j)
         data[i * num_comp + j] = std::imag(u_vector[i * index_map_bs + j]);
-    }
     adios2::Variable<U> output_imag = define_variable<U>(
         io, u.name + field_ext[1], {}, {}, {num_dofs, num_comp});
     engine.Put<U>(output_imag, data.data(), adios2::Mode::Sync);
