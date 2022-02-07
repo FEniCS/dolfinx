@@ -793,7 +793,7 @@ void io::VTKFile::write(const mesh::Mesh& mesh, double time)
   xml_vtu.save_file(vtu.c_str(), "  ");
 
   // Create a PVTU XML object on rank 0
-  std::filesystem::path p_pvtu = _filename.stem();
+  std::filesystem::path p_pvtu = _filename.parent_path() / _filename.stem();
   p_pvtu += counter_str;
   p_pvtu.replace_extension("pvtu");
   if (mpi_rank == 0)
