@@ -29,10 +29,6 @@ namespace dolfinx::fem
 template <typename T>
 class Function;
 
-/// This should be hidden somewhere
-template <typename T>
-const MPI_Datatype MPI_TYPE = MPI_DOUBLE;
-
 namespace impl
 {
 /// Apply interpolation operator Pi to data to evaluate the dof
@@ -789,9 +785,10 @@ void interpolate(Function<T>& u, const Function<T>& v,
                      { return el / 3 * value_size; });
 
       // Open a window for other processes to read data from, then sync
-      MPI_Win_create(values.data(), sizeof(MPI_TYPE<T>) * values.size(),
-                     sizeof(MPI_TYPE<T>), MPI_INFO_NULL, MPI_COMM_WORLD,
-                     &window);
+      MPI_Win_create(values.data(),
+                     sizeof(dolfinx::MPI::mpi_type<T>()) * values.size(),
+                     sizeof(dolfinx::MPI::mpi_type<T>()), MPI_INFO_NULL,
+                     MPI_COMM_WORLD, &window);
       MPI_Win_fence(0, window);
 
       // Get data from each process. It is intended that fetching from itself is
@@ -800,10 +797,11 @@ void interpolate(Function<T>& u, const Function<T>& v,
       {
         const auto dest = i % nProcs;
         MPI_Get(valuesToRetrieve.data() + retrievingOffsets[dest],
-                pointsToSend[dest].size() / 3 * value_size, MPI_TYPE<T>, dest,
+                pointsToSend[dest].size() / 3 * value_size,
+                dolfinx::MPI::mpi_type<T>(), dest,
                 sendingOffsets[dest] / 3 * value_size,
-                pointsToSend[dest].size() / 3 * value_size, MPI_TYPE<T>,
-                window);
+                pointsToSend[dest].size() / 3 * value_size,
+                dolfinx::MPI::mpi_type<T>(), window);
       }
 
       // Sync, then close the window
