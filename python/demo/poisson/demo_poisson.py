@@ -54,7 +54,7 @@
 # In this demo, we shall consider the following definitions of the input
 # functions, the domain, and the boundaries:
 #
-# * :math:`\Omega = [0,1] \times [0,1]` (a unit square)
+# * :math:`\Omega = [0,2] \times [0,1]` (a rectangle)
 # * :math:`\Gamma_{D} = \{(0, y) \cup (1, y) \subset \partial \Omega\}`
 #   (Dirichlet boundary)
 # * :math:`\Gamma_{N} = \{(x, 0) \cup (x, 1) \subset \partial \Omega\}`
@@ -76,30 +76,34 @@
 import numpy as np
 
 import ufl
-from dolfinx import fem, plot
-from dolfinx.fem import FunctionSpace, dirichletbc, locate_dofs_topological
-from dolfinx.io import XDMFFile
-from dolfinx.mesh import CellType, create_rectangle, locate_entities_boundary
-from ufl import ds, dx, grad, inner
+from dolfinx import fem, io, mesh, plot
+from ufl import ds, dx, exp, grad, inner, sin
 
 from mpi4py import MPI
 from petsc4py.PETSc import ScalarType
 
 # We begin by defining a mesh of the domain and a finite element
-# function space :math:`V` relative to this mesh. As the unit square is
-# a very standard domain, we can use a built-in mesh provided by the
-# class :py:class:`create_unit_square_mesh
-# <dolfinx.mesh.create_unit_square_mesh>`. In order to create a mesh
-# consisting of 32 x 32 squares with each square divided into two
-# triangles, we do as follows ::
+# function space :math:`V` relative to this mesh. We create a
+# rectangular mesh using built-in function provided by
+# class :py:class:`create_rectangle<dolfinx.mesh.create_rectangle>`.
+# In order to create a mesh consisting of 32 x 16 squares with each
+# square divided into two triangles, we do as follows ::
 
-# Create mesh and define function space
-mesh = create_rectangle(MPI.COMM_WORLD, ((0.0, 0.0), (2.0, 1.0)), (32, 16), CellType.triangle)
-V = FunctionSpace(mesh, ("Lagrange", 1))
+# Create mesh
+rect_mesh = mesh.create_rectangle(
+    comm=MPI.COMM_WORLD,
+    points=((0.0, 0.0), (2.0, 1.0)),
+    n=(32, 16),
+    cell_type=mesh.CellType.triangle,
+)
+
+# Define function space
+V = fem.FunctionSpace(rect_mesh, ("Lagrange", 1))
 
 # The second argument to :py:class:`FunctionSpace
-# <dolfinx.fem.FunctionSpace>` is the finite element family, while the
-# third argument specifies the polynomial degree. Thus, in this case,
+# <dolfinx.fem.FunctionSpace>` is a tuple consisting of ``(family, degree)``,
+# where ``family`` is the finite element family, and ``degree`` specifies
+# the polynomial degree. Thus, in this case,
 # our space ``V`` consists of first-order, continuous Lagrange finite
 # element functions (or in order words, continuous piecewise linear
 # polynomials).
@@ -134,10 +138,20 @@ V = FunctionSpace(mesh, ("Lagrange", 1))
 # immediately above. The definition of the Dirichlet boundary condition
 # then looks as follows: ::
 
+
 # Define boundary condition on x = 0 or x = 1
-facets = locate_entities_boundary(mesh, 1, lambda x: np.logical_or(np.isclose(x[0], 0.0),
-                                                                   np.isclose(x[0], 2.0)))
-bc = dirichletbc(ScalarType(0), locate_dofs_topological(V, 1, facets), V)
+
+# Locate the facets on the boundary matching the provided marker function
+facets = mesh.locate_entities_boundary(
+    rect_mesh,
+    dim=1,
+    marker=lambda x: np.logical_or(np.isclose(x[0], 0.0), np.isclose(x[0], 2.0)),
+)
+# Locate the degrees of freedom for the relevant function space
+# that intersects the facets where we what to impose the boundary condition
+dofs = fem.locate_dofs_topological(V=V, entity_dim=1, entities=facets)
+# Define the boundary condition
+bc = fem.dirichletbc(value=ScalarType(0), dofs=dofs, V=V)
 
 # Next, we want to express the variational problem.  First, we need to
 # specify the trial function :math:`u` and the test function :math:`v`,
@@ -155,10 +169,11 @@ bc = dirichletbc(ScalarType(0), locate_dofs_topological(V, 1, facets), V)
 # the linear form ``L`` (using UFL operators). In summary, this reads ::
 
 # Define variational problem
-u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
-x = ufl.SpatialCoordinate(mesh)
-f = 10 * ufl.exp(-((x[0] - 0.5)**2 + (x[1] - 0.5)**2) / 0.02)
-g = ufl.sin(5 * x[0])
+u = ufl.TrialFunction(V)
+v = ufl.TestFunction(V)
+x = ufl.SpatialCoordinate(rect_mesh)
+f = 10 * exp(-((x[0] - 0.5) ** 2 + (x[1] - 0.5) ** 2) / 0.02)
+g = sin(5 * x[0])
 a = inner(grad(u), grad(v)) * dx
 L = inner(f, v) * dx + inner(g, v) * ds
 
@@ -173,7 +188,9 @@ L = inner(f, v) * dx + inner(g, v) * ds
 # This class is initialized with the arguments ``a``, ``L``, and ``bc``
 # as follows: :: In this problem, we use a direct LU solver, which is
 # defined through the dictionary ``petsc_options``.
-problem = fem.LinearProblem(a, L, bcs=[bc], petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
+problem = fem.LinearProblem(
+    a, L, bcs=[bc], petsc_options={"ksp_type": "preonly", "pc_type": "lu"}
+)
 
 # When we want to compute the solution to the problem, we can specify
 # what kind of solver we want to use.
@@ -191,14 +208,15 @@ uh = problem.solve()
 # <dolfinx.common.plot.plot>` command: ::
 
 # Save solution in XDMF format
-with XDMFFile(MPI.COMM_WORLD, "poisson.xdmf", "w") as file:
-    file.write_mesh(mesh)
+with io.XDMFFile(MPI.COMM_WORLD, "poisson.xdmf", "w") as file:
+    file.write_mesh(rect_mesh)
     file.write_function(uh)
 
 
 # Plot solution
 try:
     import pyvista
+
     cells, types, x = plot.create_vtk_mesh(V)
     grid = pyvista.UnstructuredGrid(cells, types, x)
     grid.point_data["u"] = uh.x.array.real
@@ -209,12 +227,7 @@ try:
     warped = grid.warp_by_scalar()
     plotter.add_mesh(warped)
 
-    # If pyvista environment variable is set to off-screen (static)
-    # plotting save png
-    if pyvista.OFF_SCREEN:
-        pyvista.start_xvfb(wait=0.1)
-        plotter.screenshot("uh.png")
-    else:
-        plotter.show()
+    plotter.show()
 except ModuleNotFoundError:
-    print("pyvista is required to visualise the solution")
+    print("'pyvista' is required to visualise the solution")
+    print("Install 'pyvista' with pip: 'python3 -m pip install pyvista'")
