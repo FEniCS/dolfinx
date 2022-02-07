@@ -50,9 +50,6 @@ int main(int argc, char *argv[])
       }
       return r;
     });
-    // Is this needed?
-    VecGhostUpdateBegin(uL->vector(), INSERT_VALUES, SCATTER_FORWARD);
-    VecGhostUpdateEnd(uL->vector(), INSERT_VALUES, SCATTER_FORWARD);
 
     fem::interpolate(*uR, *uL);
 
