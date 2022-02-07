@@ -13,6 +13,7 @@ import scipy.sparse
 
 import ufl
 from dolfinx import cpp as _cpp
+from dolfinx import graph
 from dolfinx.fem import (Constant, Function, FunctionSpace,
                          VectorFunctionSpace, apply_lifting,
                          apply_lifting_nest, assemble_matrix,
@@ -828,3 +829,51 @@ def test_vector_types():
 
     assert np.linalg.norm(x0.array - x1.array) == pytest.approx(0.0)
     assert np.linalg.norm(x0.array - x2.array) == pytest.approx(0.0, abs=1e-8)
+
+
+def test_assemble_empty_rank_mesh():
+    """Assembly on mesh where some ranks are empty"""
+    comm = MPI.COMM_WORLD
+    cell_type = CellType.triangle
+    tdim = 2
+    domain = ufl.Mesh(ufl.VectorElement("Lagrange", ufl.Cell(cell_type.name), 1))
+
+    def partitioner(comm, nparts, local_graph, num_ghost_nodes, ghosting):
+        """Leave cells on the curent rank"""
+        dest = np.full(len(cells), comm.rank, dtype=np.int32)
+        return graph.create_adjacencylist(dest)
+
+    if comm.rank == 0:
+        cells = np.array([[0, 1, 2], [0, 2, 3]], dtype=np.int64)
+        cells = graph.create_adjacencylist(cells)
+        x = np.array([[0., 0.], [1., 0.], [1., 1.], [0., 1.]])
+    else:
+        cells = graph.create_adjacencylist(np.empty((0, 3), dtype=np.int64))
+        x = np.empty((0, 2), dtype=np.float64)
+
+    mesh = create_mesh(comm, cells, x, domain, GhostMode.none, partitioner)
+
+    V = FunctionSpace(mesh, ("Lagrange", 2))
+    u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
+
+    f = Function(V)
+    f.x.array[:] = 10.0
+    a = form(inner(u, v) * dx)
+    L = form(inner(f, v) * dx)
+
+    # Assemble
+    A = assemble_matrix(a)
+    A.assemble()
+    b = assemble_vector(L)
+    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+
+    # Solve
+    ksp = PETSc.KSP()
+    ksp.create(mesh.comm)
+    ksp.setOperators(A)
+    ksp.setTolerances(rtol=1.0e-9, max_it=50)
+    ksp.setFromOptions()
+    x = b.copy()
+    ksp.solve(b, x)
+
+    assert np.allclose(x.array, 10.0)
