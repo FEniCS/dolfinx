@@ -114,6 +114,7 @@ def test_save_2d_vector(tempdir, cell_type):
     filename = os.path.join(tempdir, "u.pvd")
     with VTKFile(MPI.COMM_WORLD, filename, "w") as vtk:
         vtk.write_function(u, 0.)
+        vtk.write_function(u, 1.)
 
 
 @pytest.mark.skip_in_parallel
