@@ -117,11 +117,6 @@ jobs:
       - run: *set-jit-defaults
       - run: *unit-tests-python
       - run: *unit-tests-python-mpi
-      - persist_to_workspace:
-          root: .
-          paths:
-            - python/doc/build/html/
-            - cpp/doc/html/
       - store_test_results:
           path: ~/junit
       - store_artifacts:
