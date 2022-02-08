@@ -146,11 +146,11 @@ bcs = [bc0, bc1]
 # Define variational problem
 (u, p) = ufl.TrialFunction(V), ufl.TrialFunction(Q)
 (v, q) = ufl.TestFunction(V), ufl.TestFunction(Q)
-f = Constant(mesh, (PETSc.ScalarType(0), PETSc.ScalarType(0)))
+f = Constant(mesh, (0, 0))
 
 a = form([[inner(grad(u), grad(v)) * dx, inner(p, div(v)) * dx],
           [inner(div(u), q) * dx, None]])
-L = form([inner(f, v) * dx, inner(Constant(mesh, PETSc.ScalarType(0)), q) * dx])
+L = form([inner(f, v) * dx, inner(Constant(mesh, 0), q) * dx])
 
 # We will use a block-diagonal preconditioner to solve this problem::
 

@@ -80,8 +80,8 @@ def test_assemble_derivatives():
     v = ufl.TestFunction(Q)
     du = ufl.TrialFunction(Q)
     b = Function(Q)
-    c1 = Constant(mesh, np.array([[1.0, 0.0], [3.0, 4.0]], PETSc.ScalarType))
-    c2 = Constant(mesh, PETSc.ScalarType(2.0))
+    c1 = Constant(mesh, np.array([[1.0, 0.0], [3.0, 4.0]]))
+    c2 = Constant(mesh, 2.0)
 
     b.x.array[:] = 2.0
 
@@ -635,7 +635,7 @@ def test_basic_assembly_constant(mode):
     V = FunctionSpace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 
-    c = Constant(mesh, np.array([[1.0, 2.0], [5.0, 3.0]], PETSc.ScalarType))
+    c = Constant(mesh, np.array([[1.0, 2.0], [5.0, 3.0]]))
 
     a = inner(c[1, 0] * u, v) * dx + inner(c[1, 0] * u, v) * ds
     L = inner(c[1, 0], v) * dx + inner(c[1, 0], v) * ds
@@ -699,7 +699,7 @@ def test_pack_coefficients():
     # Non-blocked
     u = Function(V)
     v = ufl.TestFunction(V)
-    c = Constant(mesh, PETSc.ScalarType(12.0))
+    c = Constant(mesh, 12.0)
     F = ufl.inner(c, v) * dx - c * ufl.sqrt(u * u) * ufl.inner(u, v) * dx
     u.x.array[:] = 10.0
     _F = form(F)
@@ -799,7 +799,7 @@ def test_vector_types():
     V = FunctionSpace(mesh, ("Lagrange", 3))
     v = ufl.TestFunction(V)
 
-    c = Constant(mesh, np.float64(1))
+    c = Constant(mesh, 1, dtype=np.float64)
     L = inner(c, v) * ufl.dx
     x0 = _cpp.la.Vector_float64(V.dofmap.index_map, V.dofmap.index_map_bs)
     L = form(L, dtype=x0.array.dtype)
@@ -808,7 +808,7 @@ def test_vector_types():
     _cpp.fem.assemble_vector(x0.array, L, c0, c1)
     x0.scatter_reverse(_cpp.common.ScatterMode.add)
 
-    c = Constant(mesh, np.complex128(1))
+    c = Constant(mesh, 1, dtype=np.complex128)
     L = inner(c, v) * ufl.dx
     x1 = _cpp.la.Vector_complex128(V.dofmap.index_map, V.dofmap.index_map_bs)
     L = form(L, dtype=x1.array.dtype)
@@ -817,7 +817,7 @@ def test_vector_types():
     _cpp.fem.assemble_vector(x1.array, L, c0, c1)
     x1.scatter_reverse(_cpp.common.ScatterMode.add)
 
-    c = Constant(mesh, np.float32(1))
+    c = Constant(mesh, 1, dtype=np.float32)
     L = inner(c, v) * ufl.dx
     x2 = _cpp.la.Vector_float32(V.dofmap.index_map, V.dofmap.index_map_bs)
     L = form(L, dtype=x2.array.dtype)

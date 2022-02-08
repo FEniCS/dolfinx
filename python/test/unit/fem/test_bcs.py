@@ -185,7 +185,7 @@ def test_sub_constant_bc(mesh_factory):
     mesh = func(*args)
     tdim = mesh.topology.dim
     V = VectorFunctionSpace(mesh, ("Lagrange", 1))
-    c = Constant(mesh, PETSc.ScalarType(3.14))
+    c = Constant(mesh, 3.14)
     boundary_facets = locate_entities_boundary(mesh, tdim - 1, lambda x: np.ones(x.shape[1], dtype=bool))
 
     for i in range(V.num_sub_spaces):
@@ -225,7 +225,7 @@ def test_mixed_constant_bc(mesh_factory):
     U = Function(W)
 
     # Apply BC to component of a mixed space using a Constant
-    c = Constant(mesh, (PETSc.ScalarType(2), PETSc.ScalarType(2)))
+    c = Constant(mesh, (2, 2))
     dofs0 = locate_dofs_topological(W.sub(0), tdim - 1, boundary_facets)
     bc0 = dirichletbc(c, dofs0, W.sub(0))
     u = U.sub(0)

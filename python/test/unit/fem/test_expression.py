@@ -233,7 +233,7 @@ def test_simple_evaluation():
     expr = Function(P2)
     expr.interpolate(exact_expr)
 
-    ufl_grad_f = Constant(mesh, PETSc.ScalarType(3.0)) * ufl.grad(expr)
+    ufl_grad_f = Constant(mesh, 3.0) * ufl.grad(expr)
     points = np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0]])
     grad_f_expr = Expression(ufl_grad_f, points)
     assert grad_f_expr.X.shape[0] == points.shape[0]
@@ -299,8 +299,8 @@ def test_assembly_into_quadrature_function():
 
     T = Function(P2)
     T.interpolate(lambda x: x[0] + 2.0 * x[1])
-    A = Constant(mesh, PETSc.ScalarType(1.0))
-    B = Constant(mesh, PETSc.ScalarType(2.0))
+    A = Constant(mesh, 1.0)
+    B = Constant(mesh, 2.0)
 
     K = 1.0 / (A + B * T)
     e = B * K**2 * ufl.grad(T)

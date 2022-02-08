@@ -28,7 +28,8 @@ from petsc4py import PETSc
 
 
 class Constant(ufl.Constant):
-    def __init__(self, domain, c: typing.Union[np.ndarray, typing.Sequence, float]):
+    def __init__(self, domain, c: typing.Union[np.ndarray, typing.Sequence, float],
+                 dtype=PETSc.ScalarType):
         """A constant with respect to a domain.
 
         Parameters
@@ -37,7 +38,7 @@ class Constant(ufl.Constant):
         c
             Value of the constant.
         """
-        c_np = np.asarray(c)
+        c_np = np.asarray(c, dtype=dtype)
         super().__init__(domain, c_np.shape)
         if c_np.dtype == np.complex64:
             self._cpp_object = _cpp.fem.Constant_complex64(c_np)

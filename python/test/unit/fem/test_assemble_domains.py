@@ -174,7 +174,7 @@ def test_assembly_ds_domains(mode):
 def test_assembly_dS_domains(mode):
     N = 10
     mesh = create_unit_square(MPI.COMM_WORLD, N, N, ghost_mode=mode)
-    one = Constant(mesh, PETSc.ScalarType(1))
+    one = Constant(mesh, 1)
     val = assemble_scalar(form(one * ufl.dS))
     val = mesh.comm.allreduce(val, op=MPI.SUM)
     assert val == pytest.approx(2 * (N - 1) + N * np.sqrt(2), 1.0e-7)

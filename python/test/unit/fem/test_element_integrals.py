@@ -19,7 +19,6 @@ from dolfinx.fem import (Constant, Function, FunctionSpace,
 from dolfinx.mesh import CellType, MeshTags, create_mesh
 
 from mpi4py import MPI
-from petsc4py import PETSc
 
 parametrize_cell_types = pytest.mark.parametrize(
     "cell_type",
@@ -503,7 +502,7 @@ def assemble_div_vector(k, offset):
     mesh = create_quad_mesh(offset)
     V = FunctionSpace(mesh, ("RTCF", k + 1))
     v = ufl.TestFunction(V)
-    L = form(ufl.inner(Constant(mesh, PETSc.ScalarType(1)), ufl.div(v)) * ufl.dx)
+    L = form(ufl.inner(Constant(mesh, 1), ufl.div(v)) * ufl.dx)
     b = assemble_vector(L)
     return b[:]
 
