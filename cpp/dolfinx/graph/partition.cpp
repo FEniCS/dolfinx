@@ -306,6 +306,10 @@ std::vector<std::int64_t> graph::build::compute_local_to_global_links(
   common::Timer timer(
       "Compute-local-to-global links for global/local adjacency list");
 
+  // Return if gloabl and local are empty
+  if (global.num_nodes() == 0 and local.num_nodes() == 0)
+    return std::vector<std::int64_t>();
+
   // Build local-to-global for adjacency lists
   if (global.num_nodes() != local.num_nodes())
   {
@@ -321,10 +325,9 @@ std::vector<std::int64_t> graph::build::compute_local_to_global_links(
                              "global adjacency lists.");
   }
 
-  // const std::int32_t max_local = _local.maxCoeff();
-  const std::int32_t max_local
+  const std::int32_t max_local_idx
       = *std::max_element(_local.begin(), _local.end());
-  std::vector<std::int64_t> local_to_global_list(max_local + 1, -1);
+  std::vector<std::int64_t> local_to_global_list(max_local_idx + 1, -1);
   for (std::size_t i = 0; i < _local.size(); ++i)
   {
     if (local_to_global_list[_local[i]] == -1)
