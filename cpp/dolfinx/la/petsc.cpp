@@ -538,13 +538,14 @@ Mat petsc::Operator::mat() const { return _matA; }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 std::function<int(const xtl::span<const std::int32_t>&,
-                  const xtl::span<const std::int32_t>&, const PetscScalar*)>
+                  const xtl::span<const std::int32_t>&,
+                  const xtl::span<const PetscScalar>&)>
 petsc::Matrix::set_fn(Mat A, InsertMode mode)
 {
   return [A, mode, cache = std::vector<PetscInt>()](
              const xtl::span<const std::int32_t>& rows,
              const xtl::span<const std::int32_t>& cols,
-             const PetscScalar* vals) mutable -> int
+             const xtl::span<const PetscScalar>& vals) mutable -> int
   {
     PetscErrorCode ierr;
 #ifdef PETSC_USE_64BIT_INDICES
@@ -553,10 +554,11 @@ petsc::Matrix::set_fn(Mat A, InsertMode mode)
     std::copy(cols.begin(), cols.end(), std::next(cache.begin(), rows.size()));
     const PetscInt* _rows = cache.data();
     const PetscInt* _cols = _rows + rows.size();
-    ierr = MatSetValuesLocal(A, rows.size(), _rows, n, _cols, vals, mode);
+    ierr = MatSetValuesLocal(A, rows.size(), _rows, cols.size(), _cols,
+                             vals.data(), mode);
 #else
     ierr = MatSetValuesLocal(A, rows.size(), rows.data(), cols.size(),
-                             cols.data(), vals, mode);
+                             cols.data(), vals.data(), mode);
 #endif
 
 #ifdef DEBUG
@@ -568,13 +570,14 @@ petsc::Matrix::set_fn(Mat A, InsertMode mode)
 }
 //-----------------------------------------------------------------------------
 std::function<int(const xtl::span<const std::int32_t>&,
-                  const xtl::span<const std::int32_t>&, const PetscScalar*)>
+                  const xtl::span<const std::int32_t>&,
+                  const xtl::span<const PetscScalar>&)>
 petsc::Matrix::set_block_fn(Mat A, InsertMode mode)
 {
   return [A, mode, cache = std::vector<PetscInt>()](
              const xtl::span<const std::int32_t>& rows,
              const xtl::span<const std::int32_t>& cols,
-             const PetscScalar* vals) mutable -> int
+             const xtl::span<const PetscScalar>& vals) mutable -> int
   {
     PetscErrorCode ierr;
 #ifdef PETSC_USE_64BIT_INDICES
@@ -583,11 +586,11 @@ petsc::Matrix::set_block_fn(Mat A, InsertMode mode)
     std::copy(cols.begin(), cols.end(), std::next(cache.begin(), rows.size()));
     const PetscInt* _rows = cache.data();
     const PetscInt* _cols = _rows + rows.size();
-    ierr
-        = MatSetValuesBlockedLocal(A, rows.size(), _rows, n, _cols, vals, mode);
+    ierr = MatSetValuesBlockedLocal(A, rows.size(), _rows, cols.size(), _cols,
+                                    vals.data(), mode);
 #else
     ierr = MatSetValuesBlockedLocal(A, rows.size(), rows.data(), cols.size(),
-                                    cols.data(), vals, mode);
+                                    cols.data(), vals.data(), mode);
 #endif
 
 #ifdef DEBUG
@@ -599,17 +602,18 @@ petsc::Matrix::set_block_fn(Mat A, InsertMode mode)
 }
 //-----------------------------------------------------------------------------
 std::function<int(const xtl::span<const std::int32_t>&,
-                  const xtl::span<const std::int32_t>&, const PetscScalar*)>
+                  const xtl::span<const std::int32_t>&,
+                  const xtl::span<const PetscScalar>&)>
 petsc::Matrix::set_block_expand_fn(Mat A, int bs0, int bs1, InsertMode mode)
 {
   if (bs0 == 1 and bs1 == 1)
     return set_fn(A, mode);
 
   return [A, bs0, bs1, mode, cache0 = std::vector<PetscInt>(),
-          cache1
-          = std::vector<PetscInt>()](const xtl::span<const std::int32_t>& rows,
-                                     const xtl::span<const std::int32_t>& cols,
-                                     const PetscScalar* vals) mutable -> int
+          cache1 = std::vector<PetscInt>()](
+             const xtl::span<const std::int32_t>& rows,
+             const xtl::span<const std::int32_t>& cols,
+             const xtl::span<const PetscScalar>& vals) mutable -> int
   {
     PetscErrorCode ierr;
     cache0.resize(bs0 * rows.size());
@@ -622,7 +626,7 @@ petsc::Matrix::set_block_expand_fn(Mat A, int bs0, int bs1, InsertMode mode)
         cache1[bs1 * i + k] = bs1 * cols[i] + k;
 
     ierr = MatSetValuesLocal(A, cache0.size(), cache0.data(), cache1.size(),
-                             cache1.data(), vals, mode);
+                             cache1.data(), vals.data(), mode);
 #ifdef DEBUG
     if (ierr != 0)
       petsc::error(ierr, __FILE__, "MatSetValuesLocal");

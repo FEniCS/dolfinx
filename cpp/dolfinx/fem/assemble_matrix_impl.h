@@ -32,8 +32,8 @@ namespace dolfinx::fem::impl
 template <typename T>
 void assemble_matrix(
     const std::function<int(const xtl::span<const std::int32_t>&,
-                            const xtl::span<const std::int32_t>&, const T*)>&
-        mat_set_values,
+                            const xtl::span<const std::int32_t>&,
+                            const xtl::span<const T>&)>& mat_set_values,
     const Form<T>& a, const xtl::span<const T>& constants,
     const std::map<std::pair<IntegralType, int>,
                    std::pair<xtl::span<const T>, int>>& coefficients,
@@ -44,8 +44,8 @@ void assemble_matrix(
 template <typename T>
 void assemble_cells(
     const std::function<int(const xtl::span<const std::int32_t>&,
-                            const xtl::span<const std::int32_t>&, const T*)>&
-        mat_set,
+                            const xtl::span<const std::int32_t>&,
+                            const xtl::span<const T>&)>& mat_set,
     const mesh::Geometry& geometry, const xtl::span<const std::int32_t>& cells,
     const std::function<void(const xtl::span<T>&,
                              const xtl::span<const std::uint32_t>&,
@@ -139,14 +139,7 @@ void assemble_cells(
       }
     }
 
-    std::cout << "mat set" << std::endl;
-    std::cout << "cols" << std::endl;
-    for (auto col : dofs1)
-      std::cout << col << std::endl;
-
-    mat_set(dofs0, dofs1, Ae.data());
-
-    std::cout << "end mat set" << std::endl;
+    mat_set(dofs0, dofs1, Ae);
   }
 }
 
@@ -154,8 +147,8 @@ void assemble_cells(
 template <typename T>
 void assemble_exterior_facets(
     const std::function<int(const xtl::span<const std::int32_t>&,
-                            const xtl::span<const std::int32_t>&, const T*)>&
-        mat_set,
+                            const xtl::span<const std::int32_t>&,
+                            const xtl::span<const T>&)>& mat_set,
     const mesh::Mesh& mesh,
     const xtl::span<const std::pair<std::int32_t, int>>& facets,
     const std::function<void(const xtl::span<T>&,
@@ -249,7 +242,7 @@ void assemble_exterior_facets(
       }
     }
 
-    mat_set(dofs0, dofs1, Ae.data());
+    mat_set(dofs0, dofs1, Ae);
   }
 }
 
@@ -257,8 +250,8 @@ void assemble_exterior_facets(
 template <typename T>
 void assemble_interior_facets(
     const std::function<int(const xtl::span<const std::int32_t>&,
-                            const xtl::span<const std::int32_t>&, const T*)>&
-        mat_set,
+                            const xtl::span<const std::int32_t>&,
+                            const xtl::span<const T>&)>& mat_set,
     const mesh::Mesh& mesh,
     const xtl::span<const std::tuple<std::int32_t, int, std::int32_t, int>>&
         facets,
@@ -404,15 +397,15 @@ void assemble_interior_facets(
       }
     }
 
-    mat_set(dmapjoint0, dmapjoint1, Ae.data());
+    mat_set(dmapjoint0, dmapjoint1, Ae);
   }
 }
 
 template <typename T>
 void assemble_matrix(
     const std::function<int(const xtl::span<const std::int32_t>&,
-                            const xtl::span<const std::int32_t>&, const T*)>&
-        mat_set,
+                            const xtl::span<const std::int32_t>&,
+                            const xtl::span<const T>&)>& mat_set,
     const Form<T>& a, const xtl::span<const T>& constants,
     const std::map<std::pair<IntegralType, int>,
                    std::pair<xtl::span<const T>, int>>& coefficients,

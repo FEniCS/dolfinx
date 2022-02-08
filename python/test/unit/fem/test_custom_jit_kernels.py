@@ -8,11 +8,11 @@
 
 import numba
 import numpy as np
-import pytest
 
 import dolfinx
-from dolfinx import TimingType, list_timings
+from dolfinx import TimingType
 from dolfinx import cpp as _cpp
+from dolfinx import list_timings
 from dolfinx.fem import Function, FunctionSpace, IntegralType
 from dolfinx.mesh import create_unit_square
 
@@ -116,10 +116,8 @@ def test_coefficient():
     assert (np.isclose(bnorm, 2.0 * 0.0739710713711999))
 
 
-# @pytest.mark.skipif(np.issubdtype(PETSc.ScalarType, np.complexfloating),
-#                     reason="This test does not work in complex mode.")
 def test_cffi_assembly():
-    mesh = create_unit_square(MPI.COMM_WORLD, 1, 1)
+    mesh = create_unit_square(MPI.COMM_WORLD, 13, 13)
     V = FunctionSpace(mesh, ("Lagrange", 1))
 
     if mesh.comm.rank == 0:
@@ -232,27 +230,15 @@ def test_cffi_assembly():
 
     sp = dolfinx.fem.create_sparsity_pattern(a)
     sp.assemble()
-    print(sp.graph)
 
     A = _cpp.la.MatrixCSR_float64(sp)
-    # inserter = A.mat_add_values()
-    _cpp.fem.assemble_matrix(A.mat_add_values(), a, [])
+    _cpp.fem.assemble_matrix(A, a, [])
+    A.finalize()
+    assert np.isclose(np.sqrt(A.norm_squared()), 56.124860801609124)
 
-    norm = A.norm_squared()
-    print("Norm: ", np.sqrt(norm))
-
-    print(A.to_dense())
-
-    At = dolfinx.fem.assemble_matrix(a)
-    At.assemble()
-    # b = dolfinx.fem.assemble_vector(L)
-    # b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-
-    Anormt = At.norm(PETSc.NormType.FROBENIUS)
-    print("Normt: ", Anormt)
-    At.view()
-    # bnorm = b.norm(PETSc.NormType.N2)
-    # assert (np.isclose(Anorm, 56.124860801609124))
-    # assert (np.isclose(bnorm, 0.0739710713711999))
-
-    # list_timings(MPI.COMM_WORLD, [TimingType.wall])
+    b = _cpp.la.Vector_float64(L.function_spaces[0].dofmap.index_map,
+                               L.function_spaces[0].dofmap.index_map_bs)
+    _cpp.fem.assemble_vector(b.array, L, dolfinx.fem.pack_constants(L),
+                             dolfinx.fem.pack_coefficients(L))
+    b.scatter_forward()
+    assert np.isclose(b.norm(), 0.0739710713711999)

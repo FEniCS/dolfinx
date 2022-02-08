@@ -28,6 +28,7 @@
 #include <dolfinx/fem/utils.h>
 #include <dolfinx/geometry/BoundingBoxTree.h>
 #include <dolfinx/graph/ordering.h>
+#include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/la/petsc.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -141,13 +142,21 @@ void declare_functions(py::module& m)
   // Matrix
   m.def(
       "assemble_matrix",
-      [](const std::function<int(const xtl::span<const std::int32_t>&,
-                                 const xtl::span<const std::int32_t>&,
-                                 const T*)>& inserter,
-         const dolfinx::fem::Form<T>& form,
+      [](dolfinx::la::MatrixCSR<T>& A, const dolfinx::fem::Form<T>& form,
          const std::vector<std::shared_ptr<const dolfinx::fem::DirichletBC<T>>>&
-             bcs) { dolfinx::fem::assemble_matrix<T>(inserter, form, bcs); },
+             bcs)
+      { dolfinx::fem::assemble_matrix<T>(A.mat_add_values(), form, bcs); },
       "Experimental.");
+  // NOTE: This is relative slow. Need to investigate reasons
+  // m.def(
+  //     "assemble_matrix",
+  //     [](const std::function<int(const xtl::span<const std::int32_t>&,
+  //                                const xtl::span<const std::int32_t>&,
+  //                                const xtl::span<const T>&)>& fn,
+  //        const dolfinx::fem::Form<T>& form,
+  //        const std::vector<std::shared_ptr<const dolfinx::fem::DirichletBC<T>>>&
+  //            bcs) { dolfinx::fem::assemble_matrix<T>(fn, form, bcs); },
+  //     "Experimental.");
   // m.def(
   //     "assemble_matrix",
   //     [](const std::function<int(const py::array_t<std::int32_t>&,
@@ -571,7 +580,7 @@ void petsc_module(py::module& m)
       {
         std::function<int(const xtl::span<const std::int32_t>&,
                           const xtl::span<const std::int32_t>&,
-                          const PetscScalar*)>
+                          const xtl::span<const PetscScalar>&)>
             set_fn;
         if (unrolled)
         {
@@ -607,7 +616,7 @@ void petsc_module(py::module& m)
 
         std::function<int(const xtl::span<const std::int32_t>&,
                           const xtl::span<const std::int32_t>&,
-                          const PetscScalar*)>
+                          const xtl::span<const PetscScalar>&)>
             set_fn;
         if (unrolled)
         {

@@ -18,6 +18,8 @@
 namespace dolfinx::la
 {
 
+// add_csr()
+
 /// Distributed sparse matrix
 ///
 /// The matrix storage format is compressed sparse row. The matrix is
@@ -78,31 +80,46 @@ public:
   /// typically used in finite element assembly functions.
   /// @param A Matrix to insert into
   /// @return Function for inserting values into `A`
-  std::function<int(std::int32_t nr, const std::int32_t* r, std::int32_t nc,
-                    const std::int32_t* c, const T* data)>
+  std::function<int(const xtl::span<const std::int32_t>&,
+                    const xtl::span<const std::int32_t>&,
+                    const xtl::span<const T>&)>
   mat_add_values()
   {
-    return [&](std::int32_t nr, const std::int32_t* rows, std::int32_t nc,
-               const std::int32_t* cols, const T* data) -> int
+    return [&](const xtl::span<const std::int32_t>& rows,
+               const xtl::span<const std::int32_t>& cols,
+               const xtl::span<const T>& data) -> int
     {
-      std::cout << "test: " << nr << ", " << nc << std::endl;
-      for (int r = 0; r < nr; ++r)
-        for (int c = 0; c < nc; ++c)
-          std::cout << "r, c: " << r << ", " << c << ", "
-                    << *(data + r * nc + c) << std::endl;
-      std::cout << "rows: " << std::endl;
-      for (int r = 0; r < nr; ++r)
-        std::cout << rows[r] << std::endl;
-      std::cout << "cols: " << std::endl;
-      for (int c = 0; c < nc; ++c)
-        std::cout << cols[c] << std::endl;
+      // std::cout << "test: " << nr << ", " << nc << std::endl;
+      // for (int r = 0; r < nr; ++r)
+      //   for (int c = 0; c < nc; ++c)
+      //     std::cout << "r, c: " << r << ", " << c << ", "
+      //               << *(data + r * nc + c) << std::endl;
+      // std::cout << "rows: " << std::endl;
+      // for (int r = 0; r < nr; ++r)
+      //   std::cout << rows[r] << std::endl;
+      // std::cout << "cols: " << std::endl;
+      // for (int c = 0; c < nc; ++c)
+      //   std::cout << cols[c] << std::endl;
 
-      this->add(tcb::span<const T>(data, nr * nc),
-                tcb::span<const std::int32_t>(rows, nr),
-                tcb::span<const std::int32_t>(cols, nc));
+      this->add(data, rows, cols);
       return 0;
     };
   }
+
+  // std::function<
+  //     std::function<int(const xtl::span<const std::int32_t>&,
+  //                       const xtl::span<const std::int32_t>&, const T*)>()>
+  // mat_add_values_foo()
+  // {
+  //   return [&](const xtl::span<const std::int32_t>& rows,
+  //              const xtl::span<const std::int32_t>& cols, const T* data) ->
+  //              int
+  //   {
+  //     this->add(xtl::span<const T>(data, rows.size() * cols.size()), rows,
+  //               cols);
+  //     return 0;
+  //   };
+  // }
 
   /// Create a distributed matrix
   /// @param[in] p The sparsty pattern the describes the parallel
@@ -256,14 +273,14 @@ public:
 
   /// Set values in the matrix
   /// @note Only entries included in the sparsity pattern used to
-  ///       initialize the matrix can be set
-  /// @note All indices are local to the calling MPI rank
-  ///       and entries cannot be set in ghost rows.
-  /// @note This should be called after `finalize`. Using before `finalize` will
-  ///       set the values correctly, but incoming values may get added to them
-  ///       during a subsequent finalize operation.
+  /// initialize the matrix can be set
+  /// @note All indices are local to the calling MPI rank and entries
+  /// cannot be set in ghost rows.
+  /// @note This should be called after `finalize`. Using before
+  /// `finalize` will set the values correctly, but incoming values may
+  /// get added to them during a subsequent finalize operation.
   /// @param[in] x The `m` by `n` dense block of values (row-major) to
-  ///       set in the matrix
+  /// set in the matrix
   /// @param[in] rows The row indices of `x`
   /// @param[in] cols The column indices of `x`
   void set(const xtl::span<const T>& x,
@@ -312,12 +329,12 @@ public:
            const xtl::span<const std::int32_t>& rows,
            const xtl::span<const std::int32_t>& cols)
   {
-    std::cout << "Data size: " << _data.size() << std::endl;
-    std::cout << "Rows ptr: " << std::endl;
-    for (auto r : _row_ptr)
-      std::cout << r << std::endl;
-    for (auto c : _cols)
-      std::cout << c << std::endl;
+    // std::cout << "Data size: " << _data.size() << std::endl;
+    // std::cout << "Rows ptr: " << std::endl;
+    // for (auto r : _row_ptr)
+    //   std::cout << r << std::endl;
+    // for (auto c : _cols)
+    //   std::cout << c << std::endl;
 
     assert(x.size() == rows.size() * cols.size());
     const std::int32_t max_row
@@ -337,7 +354,7 @@ public:
       auto cit1 = std::next(_cols.begin(), _row_ptr[row + 1]);
       for (std::size_t c = 0; c < cols.size(); ++c)
       {
-        std::cout << "row, col: " << rows[r] << ", " << cols[c] << std::endl;
+        // std::cout << "row, col: " << rows[r] << ", " << cols[c] << std::endl;
 
         // Find position of column index
         auto it = std::lower_bound(cit0, cit1, cols[c]);
@@ -366,9 +383,6 @@ public:
   /// @return Dense copy of the matrix
   xt::xtensor<T, 2> to_dense() const
   {
-    for (auto x : _data)
-      std::cout << "X: " << x << std::endl;
-
     const std::int32_t nrows = num_all_rows();
     const std::int32_t ncols
         = _index_maps[1]->size_local() + _index_maps[1]->num_ghosts();

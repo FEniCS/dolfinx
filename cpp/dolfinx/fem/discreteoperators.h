@@ -61,8 +61,8 @@ create_sparsity_discrete_gradient(const fem::FunctionSpace& V0,
 template <typename T>
 void assemble_discrete_gradient(
     const std::function<int(const xtl::span<const std::int32_t>&,
-                            const xtl::span<const std::int32_t>&, const T*)>&
-        mat_set,
+                            const xtl::span<const std::int32_t>&,
+                            const xtl::span<const T>&)>& mat_set,
     const fem::FunctionSpace& V0, const fem::FunctionSpace& V1)
 {
   // Get mesh
@@ -190,7 +190,7 @@ void assemble_discrete_gradient(
     else
       Ae = {-1, 1};
 
-    mat_set(row, cols, Ae.data());
+    mat_set(row, cols, Ae);
   }
 }
 } // namespace dolfinx::fem

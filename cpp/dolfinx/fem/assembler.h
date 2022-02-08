@@ -200,8 +200,8 @@ void apply_lifting(
 template <typename T>
 void assemble_matrix(
     const std::function<int(const xtl::span<const std::int32_t>&,
-                            const xtl::span<const std::int32_t>&, const T*)>&
-        mat_add,
+                            const xtl::span<const std::int32_t>&,
+                            const xtl::span<const T>&)>& mat_add,
     const Form<T>& a, const xtl::span<const T>& constants,
     const std::map<std::pair<IntegralType, int>,
                    std::pair<xtl::span<const T>, int>>& coefficients,
@@ -249,8 +249,8 @@ void assemble_matrix(
 template <typename T>
 void assemble_matrix(
     const std::function<int(const xtl::span<const std::int32_t>&,
-                            const xtl::span<const std::int32_t>&, const T*)>&
-        mat_add,
+                            const xtl::span<const std::int32_t>&,
+                            const xtl::span<const T>&)>& mat_add,
     const Form<T>& a,
     const std::vector<std::shared_ptr<const DirichletBC<T>>>& bcs)
 {
@@ -279,8 +279,8 @@ void assemble_matrix(
 template <typename T>
 void assemble_matrix(
     const std::function<int(const xtl::span<const std::int32_t>&,
-                            const xtl::span<const std::int32_t>&, const T*)>&
-        mat_add,
+                            const xtl::span<const std::int32_t>&,
+                            const xtl::span<const T>&)>& mat_add,
     const Form<T>& a, const xtl::span<const T>& constants,
     const std::map<std::pair<IntegralType, int>,
                    std::pair<xtl::span<const T>, int>>& coefficients,
@@ -305,8 +305,8 @@ void assemble_matrix(
 template <typename T>
 void assemble_matrix(
     const std::function<int(const xtl::span<const std::int32_t>&,
-                            const xtl::span<const std::int32_t>&, const T*)>&
-        mat_add,
+                            const xtl::span<const std::int32_t>&,
+                            const xtl::span<const T>&)>& mat_add,
     const Form<T>& a, const xtl::span<const std::int8_t>& dof_marker0,
     const xtl::span<const std::int8_t>& dof_marker1)
 
@@ -335,14 +335,15 @@ void assemble_matrix(
 template <typename T>
 void set_diagonal(const std::function<int(const xtl::span<const std::int32_t>&,
                                           const xtl::span<const std::int32_t>&,
-                                          const T*)>& set_fn,
+                                          const xtl::span<const T>&)>& set_fn,
                   const xtl::span<const std::int32_t>& rows, T diagonal = 1.0)
 {
   for (std::size_t i = 0; i < rows.size(); ++i)
   {
     const std::int32_t row = rows[i];
     xtl::span row_span(&row, 1);
-    set_fn(row_span, row_span, &diagonal);
+    xtl::span diag_span(&diagonal, 1);
+    set_fn(row_span, row_span, diag_span);
   }
 }
 
@@ -364,7 +365,7 @@ void set_diagonal(const std::function<int(const xtl::span<const std::int32_t>&,
 template <typename T>
 void set_diagonal(const std::function<int(const xtl::span<const std::int32_t>&,
                                           const xtl::span<const std::int32_t>&,
-                                          const T*)>& set_fn,
+                                          const xtl::span<const T>&)>& set_fn,
                   const fem::FunctionSpace& V,
                   const std::vector<std::shared_ptr<const DirichletBC<T>>>& bcs,
                   T diagonal = 1.0)
