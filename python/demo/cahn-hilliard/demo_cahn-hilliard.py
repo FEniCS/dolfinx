@@ -34,7 +34,15 @@
 # equation reads:
 #
 # $$
-# \frac{\partial c}{\partial t} - \nabla \cdot M \left(\nabla\left(\frac{d f}{d c}           - \lambda \nabla^{2}c\right)\right) &= 0 \quad {\rm in} \ \Omega, \\ M\left(\nabla\left(\frac{d f}{d c} - \lambda \nabla^{2}c\right)\right) \cdot n &= 0 \quad {\rm on} \ \partial\Omega, \\ M \lambda \nabla c \cdot n &= 0 \quad {\rm on} \ \partial\Omega.
+# \begin{align}
+# \frac{\partial c}{\partial t} -
+#   \nabla \cdot M \left(\nabla\left(\frac{d f}{dc}
+#   - \lambda \nabla^{2}c\right)\right) &= 0 \quad {\rm in} \ \Omega, \\
+# M\left(\nabla\left(\frac{d f}{d c} -
+#   \lambda \nabla^{2}c\right)\right) \cdot n
+#   &= 0 \quad {\rm on} \ \partial\Omega, \\
+# M \lambda \nabla c \cdot n &= 0 \quad {\rm on} \ \partial\Omega.
+# \end{align}
 # $$
 #
 # where $c$ is the unknown field, the function $f$ is usually
@@ -51,7 +59,11 @@
 # two coupled second-order equations:
 #
 # $$
-# \frac{\partial c}{\partial t} - \nabla \cdot M \nabla\mu  &= 0 \quad {\rm in} \ \Omega, \\ \mu -  \frac{d f}{d c} + \lambda \nabla^{2}c &= 0 \quad {\rm in} \ \Omega.
+# \begin{align}
+# \frac{\partial c}{\partial t} - \nabla \cdot M \nabla\mu
+#     &= 0 \quad {\rm in} \ \Omega, \\
+# \mu -  \frac{d f}{d c} + \lambda \nabla^{2}c &= 0 \quad {\rm in} \ \Omega.
+# \end{align}
 # $$
 #
 # The unknown fields are now $c$ and $\mu$. The weak
@@ -59,7 +71,14 @@
 # \times V$ such that
 #
 # $$
-# \int_{\Omega} \frac{\partial c}{\partial t} q \, {\rm d} x + \int_{\Omega} M \nabla\mu \cdot \nabla q \, {\rm d} x        &= 0 \quad \forall \ q \in V,  \\ \int_{\Omega} \mu v \, {\rm d} x - \int_{\Omega} \frac{d f}{d c} v \, {\rm d} x - \int_{\Omega} \lambda \nabla c \cdot \nabla v \, {\rm d} x        &= 0 \quad \forall \ v \in V.
+# \begin{align}
+# \int_{\Omega} \frac{\partial c}{\partial t} q \, {\rm d} x +
+#     \int_{\Omega} M \nabla\mu \cdot \nabla q \, {\rm d} x
+#     &= 0 \quad \forall \ q \in V,  \\
+# \int_{\Omega} \mu v \, {\rm d} x - \int_{\Omega} \frac{d f}{d c} v \, {\rm d} x
+#   - \int_{\Omega} \lambda \nabla c \cdot \nabla v \, {\rm d} x
+#    &= 0 \quad \forall \ v \in V.
+# \end{align}
 # $$
 #
 # ### Time discretisation
