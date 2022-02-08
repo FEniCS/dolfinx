@@ -137,7 +137,6 @@ jobs:
       - checkout
       - run: *install-python-components
       - run: *flake8-python-code
-      - run: *build-documentation-cpp
       - run: *configure-cpp
       - run: *build-install-cpp
 
@@ -146,7 +145,6 @@ jobs:
       - run: *regression-tests-cpp-mpi
 
       - run: *build-python-interface
-      - run: *build-documentation-python
 
       - run: *demos-python
       - run: *demos-python-mpi
