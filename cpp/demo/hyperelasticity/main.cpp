@@ -221,7 +221,7 @@ int main(int argc, char* argv[])
 
     // Save solution in VTK format
     io::VTKFile file_u(mesh->comm(), "u.pvd", "w");
-    file_u.write({*u}, 0.0);
+    file_u.write<T>({*u}, 0.0);
 
     // Save Cauchy stress in XDMF format
     io::XDMFFile file_sigma(mesh->comm(), "sigma.xdmf", "w");
