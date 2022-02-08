@@ -1,13 +1,21 @@
+# ---
+# jupyter:
+#   jupytext:
+#     text_representation:
+#       extension: .py
+#       format_name: light
+#       format_version: '1.5'
+#       jupytext_version: 1.13.6
+# ---
+
+# # Elasticity equation
 #
-# .. _demo_elasticity:
-#
-# Elasticity equation
-# ===================
 # Copyright (C) 2020 Garth N. Wells and Michal Habera
 #
 # This demo solves the equations of static linear elasticity. The solver
-# uses smoothed aggregation algebraic multigrid. ::
+# uses smoothed aggregation algebraic multigrid.
 
+# +
 from contextlib import ExitStack
 
 import numpy as np
@@ -25,17 +33,19 @@ from ufl import (Identity, SpatialCoordinate, TestFunction, TrialFunction,
 from mpi4py import MPI
 from petsc4py import PETSc
 
-# Nullspace and problem setup
-# ---------------------------
+
+# -
+
+# ## Nullspace and problem setup
 #
 # Prepare a helper which builds a PETSc NullSpace. Nullspace (or near
 # nullspace) is needed to improve the performance of algebraic
 # multigrid.
 #
 # In the case of small deformation linear elasticity the nullspace
-# contains rigid body modes. ::
+# contains rigid body modes.
 
-
+# +
 def build_nullspace(V):
     """Function to build PETSc nullspace for 3D elasticity"""
 
@@ -109,11 +119,11 @@ L = form(inner(f, v) * dx)
 bc = dirichletbc(np.array([0, 0, 0], dtype=PETSc.ScalarType),
                  locate_dofs_geometrical(V, lambda x: np.logical_or(np.isclose(x[0], 0.0),
                                                                     np.isclose(x[1], 1.0))), V)
+# -
 
-# Assembly and solve
-# ------------------
-# ::
+# ## Assembly and solve
 
+# +
 # Assemble system, applying boundary conditions
 A = assemble_matrix(a, bcs=[bc])
 A.assemble()
