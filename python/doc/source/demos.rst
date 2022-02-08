@@ -32,7 +32,7 @@ All documented demos
 .. toctree::
    :maxdepth: 1
 
-   demos/poisson/demo_poisson.py.rst
+   demos/poisson/demo_poisson.md
    demos/cahn-hilliard/demo_cahn-hilliard.py.rst
    demos/stokes-taylor-hood/demo_stokes-taylor-hood.py.rst
    demos/elasticity/demo_elasticity.py.rst
