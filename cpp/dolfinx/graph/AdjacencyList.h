@@ -192,7 +192,8 @@ AdjacencyList<T> build_adjacency_list(U&& data, int degree)
     throw std::runtime_error("Degree is zero but data is not empty for "
                              "constant degree AdjacencyList");
   }
-  else if (data.size() % degree != 0)
+
+  if (degree > 0 and data.size() % degree != 0)
   {
     throw std::runtime_error(
         "Incompatible data size and degree for constant degree AdjacencyList");
