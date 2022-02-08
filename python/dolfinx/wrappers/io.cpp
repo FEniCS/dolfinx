@@ -36,15 +36,20 @@ namespace dolfinx_wrappers
 void io(py::module& m)
 {
   // dolfinx::io::cell vtk cell type converter
-  m.def("get_vtk_cell_type", &dolfinx::io::cells::get_vtk_cell_type);
+  m.def("get_vtk_cell_type", &dolfinx::io::cells::get_vtk_cell_type,
+        "Get VTK cell identifier");
 
-  // dolfinx::io VTK mesh topology converter
-  m.def("extract_vtk_connectivity", [](const dolfinx::mesh::Mesh& mesh)
-        { return xt_as_pyarray(dolfinx::io::extract_vtk_connectivity(mesh)); });
+  m.def(
+      "extract_vtk_connectivity",
+      [](const dolfinx::mesh::Mesh& mesh)
+      { return xt_as_pyarray(dolfinx::io::extract_vtk_connectivity(mesh)); },
+      "Extract the mesh topology with VTK ordering using geometry indices");
 
   // dolfinx::io::cell permutation functions
-  m.def("perm_vtk", &dolfinx::io::cells::perm_vtk);
-  m.def("perm_gmsh", &dolfinx::io::cells::perm_gmsh);
+  m.def("perm_vtk", &dolfinx::io::cells::perm_vtk,
+        "Permutation array to map from VTK to DOLFINx node ordering");
+  m.def("perm_gmsh", &dolfinx::io::cells::perm_gmsh,
+        "Permutation array to map from Gmsh to DOLFINx node ordering");
 
   // TODO: Template for different values dtypes
   m.def(

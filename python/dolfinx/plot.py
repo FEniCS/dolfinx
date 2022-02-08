@@ -46,9 +46,8 @@ def create_vtk_mesh(mesh: _mesh.Mesh, dim: int, entities=None):
         num_cells = len(entities)
 
     if dim == mesh.topology.dim:
-        geometry_entities = _cpp.io.extract_vtk_connectivity(mesh)[entities]
-        de = mesh.geometry.cmap.create_dof_layout()
-        num_nodes_per_cell = de.num_dofs
+        vtk_topology = _cpp.io.extract_vtk_connectivity(mesh)[entities]
+        num_nodes_per_cell = vtk_topology.shape[1]
     else:
         # NOTE: This linearizes higher order geometries
         geometry_entities = _cpp.mesh.entities_to_geometry(mesh, dim, entities, False)
@@ -59,12 +58,12 @@ def create_vtk_mesh(mesh: _mesh.Mesh, dim: int, entities=None):
         # Get cell data and the DOLFINx -> VTK permutation array
         num_nodes_per_cell = geometry_entities.shape[1]
         map_vtk = np.argsort(_cpp.io.perm_vtk(e_type, num_nodes_per_cell))
-        geometry_entities = geometry_entities[:, map_vtk]
+        vtk_topology = geometry_entities[:, map_vtk]
 
     # Create mesh topology
     topology = np.empty((num_cells, num_nodes_per_cell + 1), dtype=np.int32)
     topology[:, 0] = num_nodes_per_cell
-    topology[:, 1:] = geometry_entities
+    topology[:, 1:] = vtk_topology
 
     # Array holding the cell type (shape) for each cell
     vtk_type = _first_order_vtk[cell_type] if degree == 1 else _cpp.io.get_vtk_cell_type(cell_type, mesh.topology.dim)
