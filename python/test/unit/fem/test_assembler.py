@@ -843,10 +843,12 @@ def test_assemble_empty_rank_mesh():
         return graph.create_adjacencylist(dest)
 
     if comm.rank == 0:
+        # Put cells on rank 0
         cells = np.array([[0, 1, 2], [0, 2, 3]], dtype=np.int64)
         cells = graph.create_adjacencylist(cells)
         x = np.array([[0., 0.], [1., 0.], [1., 1.], [0., 1.]])
     else:
+        # No cells onm other ranks
         cells = graph.create_adjacencylist(np.empty((0, 3), dtype=np.int64))
         x = np.empty((0, 2), dtype=np.float64)
 
@@ -855,10 +857,16 @@ def test_assemble_empty_rank_mesh():
     V = FunctionSpace(mesh, ("Lagrange", 2))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 
-    f = Function(V)
+    f, k, zero = Function(V), Function(V), Function(V)
     f.x.array[:] = 10.0
-    a = form(inner(u, v) * dx)
-    L = form(inner(f, v) * dx)
+    k.x.array[:] = 1.0
+    zero.x.array[:] = 0.0
+    a = form(inner(k * u, v) * dx + inner(zero * u, v) * ds)
+    L = form(inner(f, v) * dx + inner(zero, v) * ds)
+    M = form(2 * k * dx + k * ds)
+
+    sum = comm.allreduce(assemble_scalar(M), op=MPI.SUM)
+    assert sum == pytest.approx(6.0)
 
     # Assemble
     A = assemble_matrix(a)

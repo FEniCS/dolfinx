@@ -187,6 +187,17 @@ private:
 template <typename T, typename U>
 AdjacencyList<T> build_adjacency_list(U&& data, int degree)
 {
+  if (degree == 0 and !data.empty())
+  {
+    throw std::runtime_error("Degree is zero but data is not empty for "
+                             "constant degree AdjacencyList");
+  }
+  else if (data.size() % degree != 0)
+  {
+    throw std::runtime_error(
+        "Incompatible data size and degree for constant degree AdjacencyList");
+  }
+
   std::int32_t num_nodes = degree == 0 ? data.size() : data.size() / degree;
   std::vector<std::int32_t> offsets(num_nodes + 1, 0);
   for (std::size_t i = 1; i < offsets.size(); ++i)

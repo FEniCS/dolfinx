@@ -187,7 +187,7 @@ T assemble_scalar(
   std::shared_ptr<const mesh::Mesh> mesh = M.mesh();
   assert(mesh);
 
-  T value(0);
+  T value = 0;
   for (int i : M.integral_ids(IntegralType::cell))
   {
     const auto& fn = M.kernel(IntegralType::cell, i);
