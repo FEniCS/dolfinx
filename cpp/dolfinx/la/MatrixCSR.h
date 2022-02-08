@@ -9,6 +9,8 @@
 #include "SparsityPattern.h"
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <mpi.h>
+#include <numeric>
 #include <vector>
 #include <xtensor/xtensor.hpp>
 #include <xtl/xspan.hpp>
@@ -44,30 +46,60 @@ public:
   /// used in finite element assembly functions.
   /// @param A Matrix to insert into
   /// @return Function for inserting values into `A`
-  static std::function<int(int nr, const int* r, int nc, const int* c,
-                           const T* data)>
-  mat_set_values(MatrixCSR& A)
-  {
-    return [&A](int nr, const int* r, int nc, const int* c, const T* data)
-    {
-      A.set(tcb::span<const T>(data, nr * nc), tcb::span<const int>(r, nr),
-            tcb::span<const int>(c, nc));
-      return 0;
-    };
-  }
+  // static std::function<int(int nr, const int* r, int nc, const int* c,
+  //                          const T* data)>
+  // mat_set_values(MatrixCSR& A)
+  // {
+  //   return [&A](int nr, const int* r, int nc, const int* c, const T* data)
+  //   {
+  //     A.set(tcb::span<const T>(data, nr * nc), tcb::span<const int>(r, nr),
+  //           tcb::span<const int>(c, nc));
+  //     return 0;
+  //   };
+  // }
+
+  // /// Insertion functor for accumulating values in matrix. It is
+  // /// typically used in finite element assembly functions.
+  // /// @param A Matrix to insert into
+  // /// @return Function for inserting values into `A`
+  // static std::function<int(int nr, const int* r, int nc, const int* c,
+  //                          const T* data)>
+  // mat_add_values(MatrixCSR& A)
+  // {
+  //   return [&A](int nr, const int* r, int nc, const int* c, const T* data)
+  //   {
+  //     A.add(tcb::span<const T>(data, nr * nc), tcb::span<const int>(r, nr),
+  //           tcb::span<const int>(c, nc));
+  //     return 0;
+  //   };
+  // }
 
   /// Insertion functor for accumulating values in matrix. It is
   /// typically used in finite element assembly functions.
   /// @param A Matrix to insert into
   /// @return Function for inserting values into `A`
-  static std::function<int(int nr, const int* r, int nc, const int* c,
-                           const T* data)>
-  mat_add_values(MatrixCSR& A)
+  std::function<int(std::int32_t nr, const std::int32_t* r, std::int32_t nc,
+                    const std::int32_t* c, const T* data)>
+  mat_add_values()
   {
-    return [&A](int nr, const int* r, int nc, const int* c, const T* data)
+    return [&](std::int32_t nr, const std::int32_t* rows, std::int32_t nc,
+               const std::int32_t* cols, const T* data) -> int
     {
-      A.add(tcb::span<const T>(data, nr * nc), tcb::span<const int>(r, nr),
-            tcb::span<const int>(c, nc));
+      std::cout << "test: " << nr << ", " << nc << std::endl;
+      for (int r = 0; r < nr; ++r)
+        for (int c = 0; c < nc; ++c)
+          std::cout << "r, c: " << r << ", " << c << ", "
+                    << *(data + r * nc + c) << std::endl;
+      std::cout << "rows: " << std::endl;
+      for (int r = 0; r < nr; ++r)
+        std::cout << rows[r] << std::endl;
+      std::cout << "cols: " << std::endl;
+      for (int c = 0; c < nc; ++c)
+        std::cout << cols[c] << std::endl;
+
+      this->add(tcb::span<const T>(data, nr * nc),
+                tcb::span<const std::int32_t>(rows, nr),
+                tcb::span<const std::int32_t>(cols, nc));
       return 0;
     };
   }
@@ -266,26 +298,34 @@ public:
 
   /// Accumulate values in the matrix
   /// @note Only entries included in the sparsity pattern used to
-  ///       initialize the matrix can be accumulated in to
-  /// @note All indices are local to the calling MPI rank and entries may go
-  ///       into ghost rows.
-  /// @note Use `finalize` after all entries have been added to send ghost rows
-  ///       to owners. Adding more entries after `finalize` is allowed, but
-  ///       another call to `finalize` will then be required.
+  /// initialize the matrix can be accumulated in to
+  /// @note All indices are local to the calling MPI rank and entries
+  /// may go into ghost rows.
+  /// @note Use `finalize` after all entries have been added to send
+  /// ghost rows to owners. Adding more entries after `finalize` is
+  /// allowed, but another call to `finalize` will then be required.
   /// @param[in] x The `m` by `n` dense block of values (row-major) to
-  ///       add to the matrix
+  /// add to the matrix
   /// @param[in] rows The row indices of `x`
   /// @param[in] cols The column indices of `x`
   void add(const xtl::span<const T>& x,
            const xtl::span<const std::int32_t>& rows,
            const xtl::span<const std::int32_t>& cols)
   {
+    std::cout << "Data size: " << _data.size() << std::endl;
+    std::cout << "Rows ptr: " << std::endl;
+    for (auto r : _row_ptr)
+      std::cout << r << std::endl;
+    for (auto c : _cols)
+      std::cout << c << std::endl;
+
     assert(x.size() == rows.size() * cols.size());
     const std::int32_t max_row
         = _index_maps[0]->size_local() + _index_maps[0]->num_ghosts() - 1;
     for (std::size_t r = 0; r < rows.size(); ++r)
     {
       std::int32_t row = rows[r];
+      // std::cout << "Adding row: " << r << ", " << row << std::endl;
       if (row > max_row)
         throw std::runtime_error("Local row out of range");
 
@@ -297,11 +337,16 @@ public:
       auto cit1 = std::next(_cols.begin(), _row_ptr[row + 1]);
       for (std::size_t c = 0; c < cols.size(); ++c)
       {
+        std::cout << "row, col: " << rows[r] << ", " << cols[c] << std::endl;
+
         // Find position of column index
         auto it = std::lower_bound(cit0, cit1, cols[c]);
         assert(it != cit1);
         assert(*it == cols[c]);
         std::size_t d = std::distance(_cols.begin(), it);
+        // std::cout << "  colsd: " << d << ", " << xr[c] << std::endl;
+        // std::cout << "  pos: " << d << ", " << xr[c] << std::endl;
+        assert(d < _data.size());
         _data[d] += xr[c];
       }
     }
@@ -321,6 +366,9 @@ public:
   /// @return Dense copy of the matrix
   xt::xtensor<T, 2> to_dense() const
   {
+    for (auto x : _data)
+      std::cout << "X: " << x << std::endl;
+
     const std::int32_t nrows = num_all_rows();
     const std::int32_t ncols
         = _index_maps[1]->size_local() + _index_maps[1]->num_ghosts();
@@ -404,6 +452,18 @@ public:
     // Set ghost row data to zero
     const std::int32_t local_size0 = _index_maps[0]->size_local();
     std::fill(std::next(_data.begin(), _row_ptr[local_size0]), _data.end(), 0);
+  }
+
+  /// Compute the Frobenius norm squared
+  double norm_squared() const
+  {
+    const double norm_sq_local
+        = std::accumulate(_data.begin(), _data.end(), double(0),
+                          [](double norm, T y) { return norm + std::norm(y); });
+    double norm_sq;
+    MPI_Allreduce(&norm_sq_local, &norm_sq, 1, MPI_DOUBLE, MPI_SUM,
+                  _comm.comm());
+    return norm_sq;
   }
 
   /// Index maps for the row and column space. The row IndexMap contains

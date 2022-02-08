@@ -16,6 +16,7 @@
 #include <memory>
 #include <petsc4py/petsc4py.h>
 #include <pybind11/complex.h>
+#include <pybind11/functional.h>
 #include <pybind11/numpy.h>
 #include <pybind11/operators.h>
 #include <pybind11/pybind11.h>
@@ -61,6 +62,16 @@ void declare_objects(py::module& m, const std::string& type)
       m, pyclass_matrix_name.c_str())
       .def(py::init([](const dolfinx::la::SparsityPattern& p)
                     { return dolfinx::la::MatrixCSR<T>(p); }))
+      .def("norm_squared", &dolfinx::la::MatrixCSR<T>::norm_squared)
+      .def("mat_add_values", &dolfinx::la::MatrixCSR<T>::mat_add_values)
+      // .def("set", &dolfinx::la::MatrixCSR<T>::set<T>)
+      .def("finalize", &dolfinx::la::MatrixCSR<T>::finalize)
+      .def("to_dense",
+           [](const dolfinx::la::MatrixCSR<T>& self)
+           {
+             xt::xtensor<T, 2> mat = self.to_dense();
+             return py::array_t<T>(mat.shape(), mat.data());
+           })
       .def_property_readonly("data",
                              [](dolfinx::la::MatrixCSR<T>& self)
                              {

@@ -138,27 +138,38 @@ void declare_functions(py::module& m)
       py::arg("b"), py::arg("L"), py::arg("constants"), py::arg("coeffs"),
       "Assemble linear form into an existing vector with pre-packed constants "
       "and coefficients");
+  // Matrix
   m.def(
       "assemble_matrix",
-      [](const std::function<int(const py::array_t<std::int32_t>&,
-                                 const py::array_t<std::int32_t>&,
-                                 const py::array_t<T>&)>& fin,
+      [](const std::function<int(const xtl::span<const std::int32_t>&,
+                                 const xtl::span<const std::int32_t>&,
+                                 const T*)>& inserter,
          const dolfinx::fem::Form<T>& form,
          const std::vector<std::shared_ptr<const dolfinx::fem::DirichletBC<T>>>&
-             bcs)
-      {
-        std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
-                          const std::int32_t*, const T*)>
-            f = [&fin](int nr, const int* rows, int nc, const int* cols,
-                       const T* data)
-        {
-          return fin(py::array(nr, rows), py::array(nc, cols),
-                     py::array(nr * nc, data));
-        };
-        dolfinx::fem::assemble_matrix<T>(f, form, bcs);
-      },
-      "Experimental assembly with Python insertion function. This will be "
-      "slow. Use for testing only.");
+             bcs) { dolfinx::fem::assemble_matrix<T>(inserter, form, bcs); },
+      "Experimental.");
+  // m.def(
+  //     "assemble_matrix",
+  //     [](const std::function<int(const py::array_t<std::int32_t>&,
+  //                                const py::array_t<std::int32_t>&,
+  //                                const py::array_t<T>&)>& fin,
+  //        const dolfinx::fem::Form<T>& form,
+  //        const std::vector<std::shared_ptr<const
+  //        dolfinx::fem::DirichletBC<T>>>&
+  //            bcs)
+  //     {
+  //       std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
+  //                         const std::int32_t*, const T*)>
+  //           f = [&fin](int nr, const int* rows, int nc, const int* cols,
+  //                      const T* data)
+  //       {
+  //         return fin(py::array(nr, rows), py::array(nc, cols),
+  //                    py::array(nr * nc, data));
+  //       };
+  //       dolfinx::fem::assemble_matrix<T>(f, form, bcs);
+  //     },
+  //     "Experimental assembly with Python insertion function. This will be "
+  //     "slow. Use for testing only.");
 
   // BC modifiers
   m.def(
@@ -459,7 +470,7 @@ void declare_objects(py::module& m, const std::string& type)
                      std::uintptr_t fn_addr,
                      const std::vector<int>& value_shape,
                      const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh,
-                     const std::shared_ptr<const fem::FunctionSpace>&
+                     const std::shared_ptr<const dolfinx::fem::FunctionSpace>&
                          argument_function_space)
                   {
                     auto tabulate_expression_ptr
@@ -477,7 +488,8 @@ void declare_objects(py::module& m, const std::string& type)
           .def(
               "eval",
               [](const dolfinx::fem::Expression<T>& self,
-                 const py::array_t<std::int32_t, py::array::c_style>& active_cells,
+                 const py::
+                     array_t<std::int32_t, py::array::c_style>& active_cells,
                  py::array_t<T, py::array::c_style>& values)
               {
                 const int size = values.shape(0) * values.shape(1);
@@ -492,7 +504,8 @@ void declare_objects(py::module& m, const std::string& type)
           .def_property_readonly("value_size",
                                  &dolfinx::fem::Expression<T>::value_size)
           .def_property_readonly("value_shape",
-                                 &dolfinx::fem::Expression<T>::value_shape)
+                                 &dolfinx::
+                                     fem::Expression<T>::value_shape)
           .def_property_readonly("X",
                                  [](const dolfinx::fem::Expression<T>& self)
                                  {
@@ -556,8 +569,9 @@ void petsc_module(py::module& m)
              const dolfinx::fem::DirichletBC<PetscScalar>>>& bcs,
          bool unrolled)
       {
-        std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
-                          const std::int32_t*, const PetscScalar*)>
+        std::function<int(const xtl::span<const std::int32_t>&,
+                          const xtl::span<const std::int32_t>&,
+                          const PetscScalar*)>
             set_fn;
         if (unrolled)
         {
@@ -591,8 +605,9 @@ void petsc_module(py::module& m)
               "Expected 1D arrays for boundary condition rows/columns");
         }
 
-        std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
-                          const std::int32_t*, const PetscScalar*)>
+        std::function<int(const xtl::span<const std::int32_t>&,
+                          const xtl::span<const std::int32_t>&,
+                          const PetscScalar*)>
             set_fn;
         if (unrolled)
         {
