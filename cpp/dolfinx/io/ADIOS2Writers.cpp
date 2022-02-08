@@ -9,8 +9,10 @@
 #include "ADIOS2Writers.h"
 #include "cells.h"
 #include "pugixml.hpp"
+#include "vtk_utils.h"
 #include <adios2.h>
 #include <algorithm>
+#include <array>
 #include <complex>
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/fem/Function.h>
@@ -18,12 +20,17 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/utils.h>
 #include <xtensor/xtensor.hpp>
+#include <xtensor/xview.hpp>
 
 using namespace dolfinx;
 using namespace dolfinx::io;
 
 namespace
 {
+/// String suffix for real and complex components of a vector-valued
+/// field
+constexpr std::array field_ext = {"_real", "_imag"};
+
 template <class... Ts>
 struct overload : Ts...
 {
@@ -67,53 +74,6 @@ adios2::Variable<T> define_variable(adios2::IO& io, const std::string& name,
 }
 //-----------------------------------------------------------------------------
 
-/// Extract the cell topology (connectivity) in VTK ordering for all
-/// cells the mesh. The 'topology' includes higher-order 'nodes'. The
-/// index of a 'node' corresponds to the index of DOLFINx geometry
-/// 'nodes'.
-/// @param [in] mesh The mesh
-/// @return The cell topology in VTK ordering and in term of the DOLFINx
-/// geometry 'nodes'
-/// @note The indices in the return array correspond to the point
-/// indices in the mesh geometry array
-/// @note Even if the indices are local (int32), both Fides and VTX
-/// require int64 as local input
-xt::xtensor<std::int64_t, 2> extract_vtk_connectivity(const mesh::Mesh& mesh)
-{
-  // Get DOLFINx to VTK permutation
-  // FIXME: Use better way to get number of nodes
-  const graph::AdjacencyList<std::int32_t>& dofmap_x = mesh.geometry().dofmap();
-  const std::size_t num_nodes = dofmap_x.num_links(0);
-  std::vector map = dolfinx::io::cells::transpose(
-      dolfinx::io::cells::perm_vtk(mesh.topology().cell_type(), num_nodes));
-  // TODO: Remove when when paraview issue 19433 is resolved
-  // (https://gitlab.kitware.com/paraview/paraview/issues/19433)
-  if (mesh.topology().cell_type() == dolfinx::mesh::CellType::hexahedron
-      and num_nodes == 27)
-  {
-    map = {0,  9, 12, 3,  1, 10, 13, 4,  18, 15, 21, 6,  19, 16,
-           22, 7, 2,  11, 5, 14, 8,  17, 20, 23, 24, 25, 26};
-  }
-  // Extract mesh 'nodes'
-  const int tdim = mesh.topology().dim();
-  const std::size_t num_cells = mesh.topology().index_map(tdim)->size_local();
-
-  // Build mesh connectivity
-
-  // Loop over cells
-  xt::xtensor<std::int64_t, 2> topology({num_cells, num_nodes});
-  for (std::size_t c = 0; c < num_cells; ++c)
-  {
-    // For each cell, get the 'nodes' and place in VTK order
-    auto dofs_x = dofmap_x.links(c);
-    for (std::size_t i = 0; i < dofs_x.size(); ++i)
-      topology(c, i) = dofs_x[map[i]];
-  }
-
-  return topology;
-}
-//-----------------------------------------------------------------------------
-
 /// Given a Function, write the coefficient to file using ADIOS2
 /// @note Only supports (discontinuous) Lagrange functions.
 /// @note For a complex function, the coefficient is split into a real
@@ -124,13 +84,13 @@ xt::xtensor<std::int64_t, 2> extract_vtk_connectivity(const mesh::Mesh& mesh)
 /// @param[in] io The ADIOS2 io object
 /// @param[in] engine The ADIOS2 engine object
 /// @param[in] u The function
-template <typename Scalar>
+template <typename T>
 void vtx_write_data(adios2::IO& io, adios2::Engine& engine,
-                    const fem::Function<Scalar>& u)
+                    const fem::Function<T>& u)
 {
   // Get function data array and information about layout
   assert(u.x());
-  xtl::span<const Scalar> u_vector = u.x()->array();
+  xtl::span<const T> u_vector = u.x()->array();
   const int rank = u.function_space()->element()->value_shape().size();
   const std::uint32_t num_comp = std::pow(3, rank);
   std::shared_ptr<const fem::DofMap> dofmap = u.function_space()->dofmap();
@@ -143,130 +103,40 @@ void vtx_write_data(adios2::IO& io, adios2::Engine& engine,
       = index_map_bs * (index_map->size_local() + index_map->num_ghosts())
         / dofmap_bs;
 
-  if constexpr (std::is_scalar<Scalar>::value)
+  if constexpr (std::is_scalar<T>::value)
   {
     // ---- Real
-    std::vector<double> data(num_dofs * num_comp, 0);
+    std::vector<T> data(num_dofs * num_comp, 0);
     for (std::size_t i = 0; i < num_dofs; ++i)
-    {
       for (int j = 0; j < index_map_bs; ++j)
         data[i * num_comp + j] = u_vector[i * index_map_bs + j];
-    }
-    adios2::Variable<double> output
-        = define_variable<double>(io, u.name, {}, {}, {num_dofs, num_comp});
-    engine.Put<double>(output, data.data(), adios2::Mode::Sync);
+
+    adios2::Variable<T> output
+        = define_variable<T>(io, u.name, {}, {}, {num_dofs, num_comp});
+    engine.Put<T>(output, data.data(), adios2::Mode::Sync);
   }
   else
   {
-    std::vector<double> data(num_dofs * num_comp, 0);
+    // ---- Complex
+    using U = typename T::value_type;
+
+    std::vector<U> data(num_dofs * num_comp, 0);
     for (std::size_t i = 0; i < num_dofs; ++i)
-    {
       for (int j = 0; j < index_map_bs; ++j)
         data[i * num_comp + j] = std::real(u_vector[i * index_map_bs + j]);
-    }
-    adios2::Variable<double> output_real = define_variable<double>(
-        io, u.name + "_real", {}, {}, {num_dofs, num_comp});
-    engine.Put<double>(output_real, data.data(), adios2::Mode::Sync);
+
+    adios2::Variable<U> output_real = define_variable<U>(
+        io, u.name + field_ext[0], {}, {}, {num_dofs, num_comp});
+    engine.Put<U>(output_real, data.data(), adios2::Mode::Sync);
 
     std::fill(data.begin(), data.end(), 0);
     for (std::size_t i = 0; i < num_dofs; ++i)
-    {
       for (int j = 0; j < index_map_bs; ++j)
         data[i * num_comp + j] = std::imag(u_vector[i * index_map_bs + j]);
-    }
-    adios2::Variable<double> output_imag = define_variable<double>(
-        io, u.name + "_imag", {}, {}, {num_dofs, num_comp});
-    engine.Put<double>(output_imag, data.data(), adios2::Mode::Sync);
+    adios2::Variable<U> output_imag = define_variable<U>(
+        io, u.name + field_ext[1], {}, {}, {num_dofs, num_comp});
+    engine.Put<U>(output_imag, data.data(), adios2::Mode::Sync);
   }
-}
-//-----------------------------------------------------------------------------
-
-/// Tabulate the coordinate for every 'node' in a Lagrange function
-/// space.
-/// @param[in] V The function space. Must be a Lagrange space.
-/// @return An array with shape (num_dofs, 3) array where the ith row
-/// corresponds to the coordinate of the ith dof in `V` (local to
-/// process)
-xt::xtensor<double, 2>
-tabulate_lagrange_dof_coordinates(const dolfinx::fem::FunctionSpace& V)
-{
-  std::shared_ptr<const mesh::Mesh> mesh = V.mesh();
-  assert(mesh);
-  const std::size_t gdim = mesh->geometry().dim();
-  const int tdim = mesh->topology().dim();
-
-  // Get dofmap data
-  std::shared_ptr<const fem::DofMap> dofmap = V.dofmap();
-  assert(dofmap);
-  std::shared_ptr<const common::IndexMap> map_dofs = dofmap->index_map;
-  assert(map_dofs);
-  const int index_map_bs = dofmap->index_map_bs();
-  const int dofmap_bs = dofmap->bs();
-
-  // Get element data
-  std::shared_ptr<const fem::FiniteElement> element = V.element();
-  assert(element);
-  const int e_block_size = element->block_size();
-  const std::size_t scalar_dofs = element->space_dimension() / e_block_size;
-  const std::int32_t num_dofs
-      = index_map_bs * (map_dofs->size_local() + map_dofs->num_ghosts())
-        / dofmap_bs;
-
-  // Get the dof coordinates on the reference element and the  mesh
-  // coordinate map
-  const xt::xtensor<double, 2>& X = element->interpolation_points();
-  const fem::CoordinateElement& cmap = mesh->geometry().cmap();
-
-  // Prepare cell geometry
-  const graph::AdjacencyList<std::int32_t>& dofmap_x
-      = mesh->geometry().dofmap();
-  xtl::span<const double> x_g = mesh->geometry().x();
-  const std::size_t num_dofs_g = dofmap_x.num_links(0);
-
-  xtl::span<const std::uint32_t> cell_info;
-  if (element->needs_dof_transformations())
-  {
-    mesh->topology_mutable().create_entity_permutations();
-    cell_info = xtl::span(mesh->topology().get_cell_permutation_info());
-  }
-  const auto apply_dof_transformation
-      = element->get_dof_transformation_function<double>();
-
-  // Tabulate basis functions at node reference coordinates
-  const xt::xtensor<double, 2> phi
-      = xt::view(cmap.tabulate(0, X), 0, xt::all(), xt::all(), 0);
-
-  // Loop over cells and tabulate dofs
-  auto map = mesh->topology().index_map(tdim);
-  assert(map);
-  const std::int32_t num_cells = map->size_local() + map->num_ghosts();
-  xt::xtensor<double, 2> x = xt::zeros<double>({scalar_dofs, gdim});
-  xt::xtensor<double, 2> coordinate_dofs({num_dofs_g, gdim});
-  xt::xtensor<double, 2> coords = xt::zeros<double>({num_dofs, 3});
-  for (std::int32_t c = 0; c < num_cells; ++c)
-  {
-    // Extract cell geometry
-    auto dofs_x = dofmap_x.links(c);
-    for (std::size_t i = 0; i < dofs_x.size(); ++i)
-    {
-      std::copy_n(std::next(x_g.begin(), 3 * dofs_x[i]), gdim,
-                  std::next(coordinate_dofs.begin(), i * gdim));
-    }
-
-    // Tabulate dof coordinates on cell
-    cmap.push_forward(x, coordinate_dofs, phi);
-    apply_dof_transformation(xtl::span(x.data(), x.size()),
-                             xtl::span(cell_info.data(), cell_info.size()), c,
-                             x.shape(1));
-
-    // Copy dof coordinates into vector
-    auto dofs = dofmap->cell_dofs(c);
-    for (std::size_t i = 0; i < dofs.size(); ++i)
-      for (std::size_t j = 0; j < gdim; ++j)
-        coords(dofs[i], j) = x(i, j);
-  }
-
-  return coords;
 }
 //-----------------------------------------------------------------------------
 
@@ -277,12 +147,15 @@ tabulate_lagrange_dof_coordinates(const dolfinx::fem::FunctionSpace& V)
 void vtx_write_mesh(adios2::IO& io, adios2::Engine& engine,
                     const mesh::Mesh& mesh)
 {
+  const mesh::Geometry& geometry = mesh.geometry();
+  const mesh::Topology& topology = mesh.topology();
+
   // "Put" geometry
-  std::shared_ptr<const common::IndexMap> x_map = mesh.geometry().index_map();
+  std::shared_ptr<const common::IndexMap> x_map = geometry.index_map();
   const std::uint32_t num_vertices = x_map->size_local() + x_map->num_ghosts();
   adios2::Variable<double> local_geometry
       = define_variable<double>(io, "geometry", {}, {}, {num_vertices, 3});
-  engine.Put<double>(local_geometry, mesh.geometry().x().data());
+  engine.Put<double>(local_geometry, geometry.x().data());
 
   // Put number of nodes. The mesh data is written with local indices,
   // therefore we need the ghost vertices.
@@ -291,33 +164,47 @@ void vtx_write_mesh(adios2::IO& io, adios2::Engine& engine,
   engine.Put<std::uint32_t>(vertices, num_vertices);
 
   // Add cell metadata
-  const int tdim = mesh.topology().dim();
-  const std::uint32_t num_cells = mesh.topology().index_map(tdim)->size_local();
+  const int tdim = topology.dim();
+  const std::uint32_t num_cells = topology.index_map(tdim)->size_local()
+                                  + topology.index_map(tdim)->num_ghosts();
   adios2::Variable<std::uint32_t> cell_variable
       = define_variable<std::uint32_t>(io, "NumberOfCells",
                                        {adios2::LocalValueDim});
   engine.Put<std::uint32_t>(cell_variable, num_cells);
   adios2::Variable<std::uint32_t> celltype_variable
       = define_variable<std::uint32_t>(io, "types");
-  engine.Put<std::uint32_t>(celltype_variable,
-                            cells::get_vtk_cell_type(mesh, tdim));
+  engine.Put<std::uint32_t>(
+      celltype_variable, cells::get_vtk_cell_type(topology.cell_type(), tdim));
 
   // Get DOLFINx to VTK permutation
   // FIXME: Use better way to get number of nodes
-  const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
+  const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
   const std::uint32_t num_nodes = x_dofmap.num_links(0);
 
-  // Extract mesh 'nodes'
-  // Output is written as [N0, v0_0,...., v0_N0, N1, v1_0,...., v1_N1,....]
-  xt::xtensor<std::int64_t, 2> topology({num_cells, num_nodes + 1});
-  xt::view(topology, xt::all(), xt::xrange(std::size_t(1), topology.shape(1)))
-      = extract_vtk_connectivity(mesh);
-  xt::view(topology, xt::all(), 0) = num_nodes;
+  // Pack mesh 'nodes'. Output is written as [N0, v0_0,...., v0_N0, N1,
+  // v1_0,...., v1_N1,....], where N is the number of cell nodes and v0,
+  // etc, is the node index
+  xt::xtensor<std::int64_t, 2> cells({num_cells, num_nodes + 1});
+  xt::view(cells, xt::all(), xt::xrange(std::size_t(1), cells.shape(1)))
+      = io::extract_vtk_connectivity(mesh);
+  xt::view(cells, xt::all(), 0) = num_nodes;
 
   // Put topology (nodes)
   adios2::Variable<std::int64_t> local_topology = define_variable<std::int64_t>(
       io, "connectivity", {}, {}, {num_cells, num_nodes + 1});
-  engine.Put<std::int64_t>(local_topology, topology.data());
+  engine.Put<std::int64_t>(local_topology, cells.data());
+
+  // Vertex global ids and ghost markers
+  adios2::Variable<std::int64_t> orig_id = define_variable<std::int64_t>(
+      io, "vtkOriginalPointIds", {}, {}, {num_vertices});
+  engine.Put<std::int64_t>(orig_id, geometry.input_global_indices().data());
+
+  std::vector<std::uint8_t> x_ghost(num_vertices, 0);
+  std::fill(std::next(x_ghost.begin(), x_map->size_local()), x_ghost.end(), 1);
+  adios2::Variable<std::uint8_t> ghost = define_variable<std::uint8_t>(
+      io, "vtkGhostType", {}, {}, {x_ghost.size()});
+  engine.Put<std::uint8_t>(ghost, x_ghost.data());
+
   engine.PerformPuts();
 }
 //-----------------------------------------------------------------------------
@@ -336,29 +223,24 @@ void vtx_write_mesh_from_space(adios2::IO& io, adios2::Engine& engine,
   assert(mesh);
   const int tdim = mesh->topology().dim();
 
-  xt::xtensor<double, 2> geometry = tabulate_lagrange_dof_coordinates(V);
-  const std::uint32_t num_dofs = geometry.shape(0);
-  const std::uint32_t num_cells
-      = mesh->topology().index_map(tdim)->size_local();
+  // Get a VTK mesh with points at the 'nodes'
+  const auto [x, x_id, x_ghost, vtk] = io::vtk_mesh_from_space(V);
 
-  // Create permutation from DOLFINx dof ordering to VTK
-  std::shared_ptr<const fem::DofMap> dofmap = V.dofmap();
-  assert(dofmap);
-  const std::uint32_t num_nodes = dofmap->cell_dofs(0).size();
-  std::vector<std::uint8_t> map = dolfinx::io::cells::transpose(
-      io::cells::perm_vtk(mesh->topology().cell_type(), num_nodes));
+  std::uint32_t num_dofs = x.shape(0);
+  std::uint32_t num_cells = mesh->topology().index_map(tdim)->size_local();
 
-  // Extract topology for all local cells as
-  // [N0, v0_0, ...., v0_N0, N1, v1_0, ...., v1_N1, ....]
-  std::vector<std::uint64_t> vtk_topology(num_cells * (num_nodes + 1));
-  std::int32_t topology_offset = 0;
-  for (std::uint32_t c = 0; c < num_cells; ++c)
-  {
-    auto dofs = dofmap->cell_dofs(c);
-    vtk_topology[topology_offset++] = dofs.size();
-    for (std::size_t i = 0; i < dofs.size(); ++i)
-      vtk_topology[topology_offset++] = dofs[map[i]];
-  }
+  // -- Pack mesh 'nodes'. Output is written as [N0, v0_0,...., v0_N0, N1,
+  // v1_0,...., v1_N1,....], where N is the number of cell nodes and v0,
+  // etc, is the node index.
+  std::vector<std::size_t> shape = {num_cells, vtk.shape(1) + 1};
+
+  // Create vector, setting all entries to nodes per cell (vtk.shape(1))
+  std::vector<std::uint64_t> vtk_topology(shape[0] * shape[1], vtk.shape(1));
+
+  // Set the [v0_0,...., v0_N0, v1_0,...., v1_N1,....] data
+  auto _vtk = xt::adapt(vtk_topology, shape);
+  xt::view(_vtk, xt::all(), xt::range(1, _vtk.shape(1)))
+      = xt::view(vtk, xt::range(0, num_cells, xt::all()));
 
   // Define ADIOS2 variables for geometry, topology, celltypes and
   // corresponding VTK data
@@ -366,7 +248,7 @@ void vtx_write_mesh_from_space(adios2::IO& io, adios2::Engine& engine,
       = define_variable<double>(io, "geometry", {}, {}, {num_dofs, 3});
   adios2::Variable<std::uint64_t> local_topology
       = define_variable<std::uint64_t>(io, "connectivity", {}, {},
-                                       {num_cells, num_nodes + 1});
+                                       {num_cells, vtk.shape(1) + 1});
   adios2::Variable<std::uint32_t> cell_type
       = define_variable<std::uint32_t>(io, "types");
   adios2::Variable<std::uint32_t> vertices = define_variable<std::uint32_t>(
@@ -377,10 +259,19 @@ void vtx_write_mesh_from_space(adios2::IO& io, adios2::Engine& engine,
   // Write mesh information to file
   engine.Put<std::uint32_t>(vertices, num_dofs);
   engine.Put<std::uint32_t>(elements, num_cells);
-  engine.Put<std::uint32_t>(cell_type,
-                            dolfinx::io::cells::get_vtk_cell_type(*mesh, tdim));
-  engine.Put<double>(local_geometry, geometry.data());
+  engine.Put<std::uint32_t>(
+      cell_type, cells::get_vtk_cell_type(mesh->topology().cell_type(), tdim));
+  engine.Put<double>(local_geometry, x.data());
   engine.Put<std::uint64_t>(local_topology, vtk_topology.data());
+
+  // Node global ids
+  adios2::Variable<std::int64_t> orig_id = define_variable<std::int64_t>(
+      io, "vtkOriginalPointIds", {}, {}, {x_id.size()});
+  engine.Put<std::int64_t>(orig_id, x_id.data());
+  adios2::Variable<std::uint8_t> ghost = define_variable<std::uint8_t>(
+      io, "vtkGhostType", {}, {}, {x_ghost.size()});
+  engine.Put<std::uint8_t>(ghost, x_ghost.data());
+
   engine.PerformPuts();
 }
 //-----------------------------------------------------------------------------
@@ -395,8 +286,8 @@ std::vector<std::string> extract_function_names(const ADIOS2Writer::U& u)
                  { names.push_back(u->name); },
                  [&names](const std::shared_ptr<const ADIOS2Writer::Fdc>& u)
                  {
-                   names.push_back(u->name + "_real");
-                   names.push_back(u->name + "_imag");
+                   names.push_back(u->name + field_ext[0]);
+                   names.push_back(u->name + field_ext[1]);
                  }},
         v);
   };
@@ -404,61 +295,74 @@ std::vector<std::string> extract_function_names(const ADIOS2Writer::U& u)
   return names;
 }
 //-----------------------------------------------------------------------------
-// Create VTK xml scheme to be interpreted by the Paraview VTKWriter
+// Create VTK xml scheme to be interpreted by the VTX reader
 // https://adios2.readthedocs.io/en/latest/ecosystem/visualization.html#saving-the-vtk-xml-data-model
-std::string create_vtk_schema(const std::vector<std::string>& point_data,
-                              const std::vector<std::string>& cell_data)
+std::stringstream create_vtk_schema(const std::vector<std::string>& point_data,
+                                    const std::vector<std::string>& cell_data)
 {
   // Create XML
   pugi::xml_document xml_schema;
   pugi::xml_node vtk_node = xml_schema.append_child("VTKFile");
   vtk_node.append_attribute("type") = "UnstructuredGrid";
   vtk_node.append_attribute("version") = "0.1";
-  vtk_node.append_attribute("byte_order") = "LittleEndian";
   pugi::xml_node unstructured = vtk_node.append_child("UnstructuredGrid");
+
+  // -- Piece
+
   pugi::xml_node piece = unstructured.append_child("Piece");
 
   // Add mesh attributes
   piece.append_attribute("NumberOfPoints") = "NumberOfNodes";
   piece.append_attribute("NumberOfCells") = "NumberOfCells";
 
+  // -- Points
+
   // Add point information
   pugi::xml_node xml_geometry = piece.append_child("Points");
   pugi::xml_node xml_vertices = xml_geometry.append_child("DataArray");
   xml_vertices.append_attribute("Name") = "geometry";
 
-  // Add topology pointers
+  // -- Cells
+
   pugi::xml_node xml_topology = piece.append_child("Cells");
   xml_topology.append_child("DataArray").append_attribute("Name")
       = "connectivity";
   xml_topology.append_child("DataArray").append_attribute("Name") = "types";
 
-  // If we have any point data to write to file
+  // -- PointData
+
   pugi::xml_node xml_pointdata = piece.append_child("PointData");
 
   // Stepping info for time dependency
-  pugi::xml_node item = xml_pointdata.append_child("DataArray");
-  item.append_attribute("Name") = "TIME";
-  item.append_child(pugi::node_pcdata).set_value("step");
+  pugi::xml_node item_time = xml_pointdata.append_child("DataArray");
+  item_time.append_attribute("Name") = "TIME";
+  item_time.append_child(pugi::node_pcdata).set_value("step");
 
-  // Append point data to VTK Schema
-  for (auto name : point_data)
+  pugi::xml_node item_idx = xml_pointdata.append_child("DataArray");
+  item_idx.append_attribute("Name") = "vtkOriginalPointIds";
+  pugi::xml_node item_ghost = xml_pointdata.append_child("DataArray");
+  item_ghost.append_attribute("Name") = "vtkGhostType";
+  for (auto& name : point_data)
   {
     pugi::xml_node item = xml_pointdata.append_child("DataArray");
     item.append_attribute("Name") = name.c_str();
   }
 
-  // Append cell data
-  pugi::xml_node xml_celldata = piece.append_child("CellData");
-  for (auto& name : cell_data)
+  // -- CellData
+
+  if (!cell_data.empty())
   {
-    pugi::xml_node item = xml_celldata.append_child("DataArray");
-    item.append_attribute("Name") = name.c_str();
+    pugi::xml_node xml_celldata = piece.append_child("CellData");
+    for (auto& name : cell_data)
+    {
+      pugi::xml_node item = xml_celldata.append_child("DataArray");
+      item.append_attribute("Name") = name.c_str();
+    }
   }
 
   std::stringstream ss;
   xml_schema.save(ss, "  ");
-  return ss.str();
+  return ss;
 }
 //-----------------------------------------------------------------------------
 
@@ -494,8 +398,8 @@ std::string to_fides_cell(mesh::CellType type)
 
 /// Pack Function data at vertices. The mesh and the function must both
 /// be 'P1'
-template <typename Scalar>
-std::vector<Scalar> pack_function_data(const fem::Function<Scalar>& u)
+template <typename T>
+std::vector<T> pack_function_data(const fem::Function<T>& u)
 {
   auto V = u.function_space();
   assert(V);
@@ -503,32 +407,32 @@ std::vector<Scalar> pack_function_data(const fem::Function<Scalar>& u)
   assert(dofmap);
   auto mesh = V->mesh();
   assert(mesh);
+  const mesh::Geometry& geometry = mesh->geometry();
+  const mesh::Topology& topology = mesh->topology();
 
   // The Function and the mesh must have identical element_dof_layouts
   // (up to the block size)
-  assert(dofmap->element_dof_layout()
-         == mesh->geometry().cmap().create_dof_layout());
+  assert(dofmap->element_dof_layout() == geometry.cmap().create_dof_layout());
 
-  const int tdim = mesh->topology().dim();
-  auto cell_map = mesh->topology().index_map(tdim);
+  const int tdim = topology.dim();
+  auto cell_map = topology.index_map(tdim);
   assert(cell_map);
   const std::int32_t num_cells
       = cell_map->size_local() + cell_map->num_ghosts();
 
-  auto vertex_map = mesh->topology().index_map(0);
+  auto vertex_map = topology.index_map(0);
   assert(vertex_map);
   const std::uint32_t num_vertices
       = vertex_map->size_local() + vertex_map->num_ghosts();
 
-  const int rank = u.function_space()->element()->value_shape().size();
+  const int rank = V->element()->value_shape().size();
   const std::uint32_t num_components = std::pow(3, rank);
 
   // Get dof array and pack into array (padded where appropriate)
-  const graph::AdjacencyList<std::int32_t>& dofmap_x
-      = mesh->geometry().dofmap();
+  const graph::AdjacencyList<std::int32_t>& dofmap_x = geometry.dofmap();
   const int bs = dofmap->bs();
   const auto& u_data = u.x()->array();
-  std::vector<Scalar> data(num_vertices * num_components, 0);
+  std::vector<T> data(num_vertices * num_components, 0);
   for (std::int32_t c = 0; c < num_cells; ++c)
   {
     auto dofs = dofmap->cell_dofs(c);
@@ -548,9 +452,9 @@ std::vector<Scalar> pack_function_data(const fem::Function<Scalar>& u)
 /// @param[in] io The ADIOS2 io object
 /// @param[in] engine The ADIOS2 engine object
 /// @param[in] u The function to write
-template <typename Scalar>
+template <typename T>
 void fides_write_data(adios2::IO& io, adios2::Engine& engine,
-                      const fem::Function<Scalar>& u)
+                      const fem::Function<T>& u)
 {
   // FIXME: There is an implicit assumptions that u and the mesh have
   // the same ElementDoflayout
@@ -563,19 +467,19 @@ void fides_write_data(adios2::IO& io, adios2::Engine& engine,
   const int gdim = mesh->geometry().dim();
 
   // Vectors and tensor need padding in gdim < 3
-  const int rank = u.function_space()->element()->value_shape().size();
+  const int rank = V->element()->value_shape().size();
   const bool need_padding = rank > 0 and gdim != 3 ? true : false;
 
   // Get vertex data. If the mesh and function dofmaps are the same we
   // can work directly with the dof array.
-  xtl::span<const Scalar> data;
-  std::vector<Scalar> _data;
+  xtl::span<const T> data;
+  std::vector<T> _data;
   if (mesh->geometry().dofmap() == dofmap->list() and !need_padding)
     data = u.x()->array();
   else
   {
     _data = pack_function_data(u);
-    data = xtl::span<const Scalar>(_data);
+    data = xtl::span<const T>(_data);
   }
 
   auto vertex_map = mesh->topology().index_map(0);
@@ -586,33 +490,35 @@ void fides_write_data(adios2::IO& io, adios2::Engine& engine,
   // Write each real and imaginary part of the function
   const std::uint32_t num_components = std::pow(3, rank);
   assert(data.size() % num_components == 0);
-  if constexpr (std::is_scalar<Scalar>::value)
+  if constexpr (std::is_scalar<T>::value)
   {
     // ---- Real
     const std::string u_name = u.name;
-    adios2::Variable<double> local_output = define_variable<double>(
+    adios2::Variable<T> local_output = define_variable<T>(
         io, u_name, {}, {}, {num_vertices, num_components});
 
     // To reuse out_data, we use sync mode here
-    engine.Put<double>(local_output, data.data());
+    engine.Put<T>(local_output, data.data());
     engine.PerformPuts();
   }
   else
   {
     // ---- Complex
-    std::vector<double> data_real(data.size()), data_imag(data.size());
+    using U = typename T::value_type;
 
-    adios2::Variable<double> local_output_r = define_variable<double>(
-        io, u.name + "_real", {}, {}, {num_vertices, num_components});
+    std::vector<U> data_real(data.size()), data_imag(data.size());
+
+    adios2::Variable<U> local_output_r = define_variable<U>(
+        io, u.name + field_ext[0], {}, {}, {num_vertices, num_components});
     std::transform(data.cbegin(), data.cend(), data_real.begin(),
-                   [](auto& x) -> double { return std::real(x); });
-    engine.Put<double>(local_output_r, data_real.data());
+                   [](auto& x) -> U { return std::real(x); });
+    engine.Put<U>(local_output_r, data_real.data());
 
-    adios2::Variable<double> local_output_c = define_variable<double>(
-        io, u.name + "_imag", {}, {}, {num_vertices, num_components});
+    adios2::Variable<U> local_output_c = define_variable<U>(
+        io, u.name + field_ext[1], {}, {}, {num_vertices, num_components});
     std::transform(data.cbegin(), data.cend(), data_imag.begin(),
-                   [](auto& x) -> double { return std::imag(x); });
-    engine.Put<double>(local_output_c, data_imag.data());
+                   [](auto& x) -> U { return std::imag(x); });
+    engine.Put<U>(local_output_c, data_imag.data());
     engine.PerformPuts();
   }
 }
@@ -625,12 +531,15 @@ void fides_write_data(adios2::IO& io, adios2::Engine& engine,
 void fides_write_mesh(adios2::IO& io, adios2::Engine& engine,
                       const mesh::Mesh& mesh)
 {
+  const mesh::Geometry& geometry = mesh.geometry();
+  const mesh::Topology& topology = mesh.topology();
+
   // "Put" geometry data
-  auto x_map = mesh.geometry().index_map();
+  auto x_map = geometry.index_map();
   const std::uint32_t num_vertices = x_map->size_local() + x_map->num_ghosts();
   adios2::Variable<double> local_geometry
       = define_variable<double>(io, "points", {}, {}, {num_vertices, 3});
-  engine.Put<double>(local_geometry, mesh.geometry().x().data());
+  engine.Put<double>(local_geometry, geometry.x().data());
 
   // TODO: The DOLFINx and VTK topology are the same for some cell types
   // - no need to repack via extract_vtk_connectivity in these cases
@@ -638,15 +547,15 @@ void fides_write_mesh(adios2::IO& io, adios2::Engine& engine,
   // FIXME: Use better way to get number of nodes
   // Get topological dimenson, number of cells and number of 'nodes' per
   // cell, and compute 'VTK' connectivity
-  const int tdim = mesh.topology().dim();
-  const std::int32_t num_cells = mesh.topology().index_map(tdim)->size_local();
-  const int num_nodes = mesh.geometry().dofmap().num_links(0);
-  const xt::xtensor<std::int64_t, 2> topology = extract_vtk_connectivity(mesh);
+  const int tdim = topology.dim();
+  const std::int32_t num_cells = topology.index_map(tdim)->size_local();
+  const int num_nodes = geometry.dofmap().num_links(0);
+  const xt::xtensor<std::int64_t, 2> cells = extract_vtk_connectivity(mesh);
 
   // "Put" topology data in the result in the ADIOS2 file
   adios2::Variable<std::int64_t> local_topology = define_variable<std::int64_t>(
       io, "connectivity", {}, {}, {std::size_t(num_cells * num_nodes)});
-  engine.Put<std::int64_t>(local_topology, topology.data());
+  engine.Put<std::int64_t>(local_topology, cells.data());
 
   engine.PerformPuts();
 }
@@ -657,12 +566,15 @@ void fides_write_mesh(adios2::IO& io, adios2::Engine& engine,
 /// @param[in] mesh The mesh
 void fides_initialize_mesh_attributes(adios2::IO& io, const mesh::Mesh& mesh)
 {
+  const mesh::Geometry& geometry = mesh.geometry();
+  const mesh::Topology& topology = mesh.topology();
+
   // FIXME: Add proper interface for num coordinate dofs
   // Check that mesh is first order mesh
-  const graph::AdjacencyList<std::int32_t>& dofmap_x = mesh.geometry().dofmap();
+  const graph::AdjacencyList<std::int32_t>& dofmap_x = geometry.dofmap();
   const int num_dofs_g = dofmap_x.num_links(0);
   const int num_vertices_per_cell
-      = mesh::cell_num_entities(mesh.topology().cell_type(), 0);
+      = mesh::cell_num_entities(topology.cell_type(), 0);
   if (num_dofs_g != num_vertices_per_cell)
     throw std::runtime_error("Fides only supports lowest-order meshes.");
 
@@ -676,7 +588,7 @@ void fides_initialize_mesh_attributes(adios2::IO& io, const mesh::Mesh& mesh)
   define_attribute<std::string>(io, "Fides_Connecticity_Variable",
                                 "connectivity");
 
-  std::string cell_type = to_fides_cell(mesh.topology().cell_type());
+  std::string cell_type = to_fides_cell(topology.cell_type());
   define_attribute<std::string>(io, "Fides_Cell_Type", cell_type);
 }
 //-----------------------------------------------------------------------------
@@ -699,8 +611,8 @@ void fides_initialize_function_attributes(adios2::IO& io,
                  },
                  [&u_data](const std::shared_ptr<const ADIOS2Writer::Fdc>& u)
                  {
-                   for (auto part : {"real", "imag"})
-                     u_data.push_back({u->name + "_" + part, "points"});
+                   u_data.push_back({u->name + field_ext[0], "points"});
+                   u_data.push_back({u->name + field_ext[1], "points"});
                  }},
         v);
   }
@@ -733,8 +645,7 @@ void fides_initialize_function_attributes(adios2::IO& io,
 } // namespace
 
 //-----------------------------------------------------------------------------
-ADIOS2Writer::ADIOS2Writer(MPI_Comm comm,
-                           const std::filesystem::path& filename,
+ADIOS2Writer::ADIOS2Writer(MPI_Comm comm, const std::filesystem::path& filename,
                            const std::string& tag,
                            const std::shared_ptr<const mesh::Mesh>& mesh,
                            const U& u)
@@ -747,8 +658,7 @@ ADIOS2Writer::ADIOS2Writer(MPI_Comm comm,
   _io->SetEngine("BPFile");
 }
 //-----------------------------------------------------------------------------
-ADIOS2Writer::ADIOS2Writer(MPI_Comm comm,
-                           const std::filesystem::path& filename,
+ADIOS2Writer::ADIOS2Writer(MPI_Comm comm, const std::filesystem::path& filename,
                            const std::string& tag,
                            std::shared_ptr<const mesh::Mesh> mesh)
     : ADIOS2Writer(comm, filename, tag, mesh, {})
@@ -756,8 +666,7 @@ ADIOS2Writer::ADIOS2Writer(MPI_Comm comm,
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-ADIOS2Writer::ADIOS2Writer(MPI_Comm comm,
-                           const std::filesystem::path& filename,
+ADIOS2Writer::ADIOS2Writer(MPI_Comm comm, const std::filesystem::path& filename,
                            const std::string& tag, const U& u)
     : ADIOS2Writer(comm, filename, tag, nullptr, u)
 {
@@ -788,14 +697,13 @@ ADIOS2Writer::~ADIOS2Writer() { close(); }
 void ADIOS2Writer::close()
 {
   assert(_engine);
-  // This looks a bit odd because ADIOS2 uses `operator bool()` to
-  // test if the engine is open
+  // This looks odd because ADIOS2 uses `operator bool()` to test if the
+  // engine is open
   if (*_engine)
     _engine->Close();
 }
 //-----------------------------------------------------------------------------
-FidesWriter::FidesWriter(MPI_Comm comm,
-                         const std::filesystem::path& filename,
+FidesWriter::FidesWriter(MPI_Comm comm, const std::filesystem::path& filename,
                          std::shared_ptr<const mesh::Mesh> mesh)
     : ADIOS2Writer(comm, filename, "Fides mesh writer", mesh)
 {
@@ -804,8 +712,7 @@ FidesWriter::FidesWriter(MPI_Comm comm,
   fides_initialize_mesh_attributes(*_io, *mesh);
 }
 //-----------------------------------------------------------------------------
-FidesWriter::FidesWriter(MPI_Comm comm,
-                         const std::filesystem::path& filename,
+FidesWriter::FidesWriter(MPI_Comm comm, const std::filesystem::path& filename,
                          const ADIOS2Writer::U& u)
     : ADIOS2Writer(comm, filename, "Fides function writer", u)
 {
@@ -894,7 +801,7 @@ VTXWriter::VTXWriter(MPI_Comm comm, const std::filesystem::path& filename,
     : ADIOS2Writer(comm, filename, "VTX mesh writer", mesh)
 {
   // Define VTK scheme attribute for mesh
-  std::string vtk_scheme = create_vtk_schema({}, {});
+  std::string vtk_scheme = create_vtk_schema({}, {}).str();
   define_attribute<std::string>(*_io, "vtk.xml", vtk_scheme);
 }
 //-----------------------------------------------------------------------------
@@ -919,7 +826,8 @@ VTXWriter::VTXWriter(MPI_Comm comm, const std::filesystem::path& filename,
   if (element0->space_dimension() / element0->block_size() == 1)
   {
     throw std::runtime_error(
-        "Piecewise constants are not (yet) supported by VTXWriter");
+        "VTK does not support cell-wise fields. See "
+        "https://gitlab.kitware.com/vtk/vtk/-/issues/18458.");
   }
 
   // FIXME: is the below check adequate for dectecting a Lagrange
@@ -950,7 +858,7 @@ VTXWriter::VTXWriter(MPI_Comm comm, const std::filesystem::path& filename,
 
   // Define VTK scheme attribute for set of functions
   std::vector<std::string> names = extract_function_names(u);
-  std::string vtk_scheme = create_vtk_schema(names, {});
+  std::string vtk_scheme = create_vtk_schema(names, {}).str();
   define_attribute<std::string>(*_io, "vtk.xml", vtk_scheme);
 }
 //-----------------------------------------------------------------------------
