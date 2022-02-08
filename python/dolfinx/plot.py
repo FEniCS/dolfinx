@@ -17,7 +17,8 @@ from dolfinx import mesh as _mesh
 # NOTE: This dictionary and following function should be revised when
 # pyvista has better support for arbitrary lagrangian elements, see:
 # https://github.com/pyvista/pyvista/issues/947
-
+# Cell types can be found at
+# https://vtk.org/doc/nightly/html/vtkCellType_8h_source.html
 _first_order_vtk = {_mesh.CellType.interval: 3,
                     _mesh.CellType.triangle: 5,
                     _mesh.CellType.quadrilateral: 9,
@@ -32,39 +33,44 @@ def create_vtk_mesh(mesh: _mesh.Mesh, dim: int, entities=None):
     indices for the associated entry in the mesh geometry.
 
     """
+    cell_type = mesh.topology.cell_type
+    degree = mesh.geometry.cmap.degree
+    if cell_type == _mesh.CellType.prism:
+        raise RuntimeError("Plotting of prism meshes not supported")
+
+    # Use all cells local to process if not supplied
     if entities is None:
         num_cells = mesh.topology.index_map(dim).size_local
         entities = np.arange(num_cells, dtype=np.int32)
     else:
         num_cells = len(entities)
 
-    # Get the indices in the geometry array that correspong to the
-    # topology vertices
-    # NOTE: This linearizes higher order geometries
-    geometry_entities = _cpp.mesh.entities_to_geometry(mesh, dim, entities, False)
+    if dim == mesh.topology.dim:
+        geometry_entities = _cpp.io.extract_vtk_connectivity(mesh)[entities]
+        de = mesh.geometry.cmap.create_dof_layout()
+        num_nodes_per_cell = de.num_dofs
+    else:
+        # NOTE: This linearizes higher order geometries
+        geometry_entities = _cpp.mesh.entities_to_geometry(mesh, dim, entities, False)
+        if degree > 1:
+            warnings.warn("Linearizing topology for higher order sub entities.")
+        e_type = _cpp.mesh.cell_entity_type(cell_type, dim, 0)
+
+        # Get cell data and the DOLFINx -> VTK permutation array
+        num_nodes_per_cell = geometry_entities.shape[1]
+        map_vtk = np.argsort(_cpp.io.perm_vtk(e_type, num_nodes_per_cell))
+        geometry_entities = geometry_entities[:, map_vtk]
+
+    # Create mesh topology
+    topology = np.empty((num_cells, num_nodes_per_cell + 1), dtype=np.int32)
+    topology[:, 0] = num_nodes_per_cell
+    topology[:, 1:] = geometry_entities
 
     # Array holding the cell type (shape) for each cell
-    cell_type = mesh.topology.cell_type
-    if cell_type == _mesh.CellType.prism:
-        raise RuntimeError("Plotting of prism meshes not supported")
-    degree = mesh.geometry.cmap.degree
-    if degree > 1:
-        warnings.warn("Plotting of higher order mesh topologies is experimental.")
-
-    e_type = _cpp.mesh.cell_entity_type(cell_type, dim, 0)
     vtk_type = _first_order_vtk[cell_type] if degree == 1 else _cpp.io.get_vtk_cell_type(cell_type, mesh.topology.dim)
     cell_types = np.full(num_cells, vtk_type)
 
-    # Get cell data and the DOLFINx -> VTK permutation array
-    num_vertices_per_cell = geometry_entities.shape[1]
-    map_vtk = np.argsort(_cpp.io.perm_vtk(e_type, num_vertices_per_cell))
-
-    # Create mesh topology
-    topology = np.zeros((num_cells, num_vertices_per_cell + 1), dtype=np.int32)
-    topology[:, 0] = num_vertices_per_cell
-    topology[:, 1:] = geometry_entities[:, map_vtk]
-
-    return topology.reshape(1, -1)[0], cell_types, mesh.geometry.x
+    return topology.reshape(-1), cell_types, mesh.geometry.x
 
 
 @create_vtk_mesh.register(fem.FunctionSpace)

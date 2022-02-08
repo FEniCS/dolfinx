@@ -14,6 +14,7 @@
 #include <dolfinx/io/VTKFile.h>
 #include <dolfinx/io/XDMFFile.h>
 #include <dolfinx/io/cells.h>
+#include <dolfinx/io/vtk_utils.h>
 #include <dolfinx/io/xdmf_utils.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshTags.h>
@@ -36,6 +37,10 @@ void io(py::module& m)
 {
   // dolfinx::io::cell vtk cell type converter
   m.def("get_vtk_cell_type", &dolfinx::io::cells::get_vtk_cell_type);
+
+  // dolfinx::io VTK mesh topology converter
+  m.def("extract_vtk_connectivity", [](const dolfinx::mesh::Mesh& mesh)
+        { return xt_as_pyarray(dolfinx::io::extract_vtk_connectivity(mesh)); });
 
   // dolfinx::io::cell permutation functions
   m.def("perm_vtk", &dolfinx::io::cells::perm_vtk);
