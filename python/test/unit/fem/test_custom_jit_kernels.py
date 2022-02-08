@@ -10,9 +10,8 @@ import numba
 import numpy as np
 
 import dolfinx
-from dolfinx import TimingType
+from dolfinx import TimingType, list_timings
 from dolfinx import cpp as _cpp
-from dolfinx import list_timings
 from dolfinx.fem import Function, FunctionSpace, IntegralType
 from dolfinx.mesh import create_unit_square
 
@@ -238,7 +237,8 @@ def test_cffi_assembly():
 
     b = _cpp.la.Vector_float64(L.function_spaces[0].dofmap.index_map,
                                L.function_spaces[0].dofmap.index_map_bs)
+    b.array[:] = 0.0
     _cpp.fem.assemble_vector(b.array, L, dolfinx.fem.pack_constants(L),
                              dolfinx.fem.pack_coefficients(L))
-    b.scatter_forward()
+    b.scatter_reverse(_cpp.common.ScatterMode.add)
     assert np.isclose(b.norm(), 0.0739710713711999)

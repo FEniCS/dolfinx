@@ -80,10 +80,10 @@ public:
   /// typically used in finite element assembly functions.
   /// @param A Matrix to insert into
   /// @return Function for inserting values into `A`
-  std::function<int(const xtl::span<const std::int32_t>&,
-                    const xtl::span<const std::int32_t>&,
-                    const xtl::span<const T>&)>
-  mat_add_values()
+  // std::function<int(const xtl::span<const std::int32_t>&,
+  //                   const xtl::span<const std::int32_t>&,
+  //                   const xtl::span<const T>&)>
+  auto mat_add_values()
   {
     return [&](const xtl::span<const std::int32_t>& rows,
                const xtl::span<const std::int32_t>& cols,
@@ -261,13 +261,17 @@ public:
            const xtl::span<const std::int32_t>& cols)
   {
     assert(x.size() == rows.size() * cols.size());
-    const std::int32_t max_row = _index_maps[0]->size_local() - 1;
     for (std::size_t r = 0; r < rows.size(); ++r)
     {
       // Columns indices for row
       std::int32_t row = rows[r];
-      if (row > max_row)
+#ifdef DEBUG
+      if (std::int32_t max_row = _index_maps[0]->size_local() - 1;
+          row > max_row)
+      {
         throw std::runtime_error("Local row out of range");
+      }
+#endif
 
       // Current data row
       const T* xr = x.data() + r * cols.size();
@@ -433,9 +437,12 @@ public:
   /// Compute the Frobenius norm squared
   double norm_squared() const
   {
-    const double norm_sq_local
-        = std::accumulate(_data.begin(), _data.end(), double(0),
-                          [](double norm, T y) { return norm + std::norm(y); });
+    const std::size_t num_owned_rows = _index_maps[0]->size_local();
+    assert(num_owned_rows < _row_ptr.size());
+
+    const double norm_sq_local = std::accumulate(
+        _data.cbegin(), std::next(_data.cbegin(), _row_ptr[num_owned_rows]),
+        double(0), [](double norm, T y) { return norm + std::norm(y); });
     double norm_sq;
     MPI_Allreduce(&norm_sq_local, &norm_sq, 1, MPI_DOUBLE, MPI_SUM,
                   _comm.comm());
