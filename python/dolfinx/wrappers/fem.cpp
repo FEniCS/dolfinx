@@ -154,31 +154,34 @@ void declare_functions(py::module& m)
   //                                const xtl::span<const std::int32_t>&,
   //                                const xtl::span<const T>&)>& fn,
   //        const dolfinx::fem::Form<T>& form,
-  //        const std::vector<std::shared_ptr<const dolfinx::fem::DirichletBC<T>>>&
-  //            bcs) { dolfinx::fem::assemble_matrix<T>(fn, form, bcs); },
-  //     "Experimental.");
-  // m.def(
-  //     "assemble_matrix",
-  //     [](const std::function<int(const py::array_t<std::int32_t>&,
-  //                                const py::array_t<std::int32_t>&,
-  //                                const py::array_t<T>&)>& fin,
-  //        const dolfinx::fem::Form<T>& form,
   //        const std::vector<std::shared_ptr<const
   //        dolfinx::fem::DirichletBC<T>>>&
-  //            bcs)
-  //     {
-  //       std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
-  //                         const std::int32_t*, const T*)>
-  //           f = [&fin](int nr, const int* rows, int nc, const int* cols,
-  //                      const T* data)
-  //       {
-  //         return fin(py::array(nr, rows), py::array(nc, cols),
-  //                    py::array(nr * nc, data));
-  //       };
-  //       dolfinx::fem::assemble_matrix<T>(f, form, bcs);
-  //     },
-  //     "Experimental assembly with Python insertion function. This will be "
-  //     "slow. Use for testing only.");
+  //            bcs) { dolfinx::fem::assemble_matrix<T>(fn, form, bcs); },
+  //     "Experimental.");
+  m.def(
+      "assemble_matrix",
+      [](const std::function<int(const py::array_t<std::int32_t>&,
+                                 const py::array_t<std::int32_t>&,
+                                 const py::array_t<T>&)>& fin,
+         const dolfinx::fem::Form<T>& form,
+         const std::vector<std::shared_ptr<const dolfinx::fem::DirichletBC<T>>>&
+             bcs)
+      {
+        std::function<int(const xtl::span<const std::int32_t>&,
+                          const xtl::span<const std::int32_t>&,
+                          const xtl::span<const T>&)>
+            f = [&fin](const xtl::span<const std::int32_t>& rows,
+                       const xtl::span<const std::int32_t>& cols,
+                       const xtl::span<const T>& data)
+        {
+          return fin(py::array(rows.size(), rows.data()),
+                     py::array(cols.size(), cols.data()),
+                     py::array(data.size(), data.data()));
+        };
+        dolfinx::fem::assemble_matrix<T>(f, form, bcs);
+      },
+      "Experimental assembly with Python insertion function. This will be "
+      "slow. Use for testing only.");
 
   // BC modifiers
   m.def(
