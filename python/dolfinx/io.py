@@ -35,16 +35,11 @@ class VTKFile(_cpp.io.VTKFile):
         self.write(mesh, t)
 
     def write_function(self, u: typing.Union[typing.List[Function], Function], t: float = 0.0) -> None:
-        """
-        Write a single function or a list of functions to file for a given time (default 0.0)
-        """
-        cpp_list = None
-        if isinstance(u, list):
-            cpp_list = [getattr(u_, "_cpp_object", u_) for u_ in u]
+        """Write a single function or a list of functions to file for a given time (default 0.0)"""
+        if isinstance(u, (list, tuple)):
+            super().write([getattr(u_, "_cpp_object", u_) for u_ in u], t)
         else:
-            cpp_list = [getattr(u, "_cpp_object", u)
-                        ]
-        super().write(cpp_list, t)
+            super().write([getattr(u, "_cpp_object", u)], t)
 
 
 class XDMFFile(_cpp.io.XDMFFile):
@@ -52,9 +47,8 @@ class XDMFFile(_cpp.io.XDMFFile):
         """Write mesh to file for a given time (default 0.0)"""
         super().write_mesh(mesh)
 
-    def write_function(self, u, t=0.0, mesh_xpath="/Xdmf/Domain/Grid[@GridType='Uniform'][1]"):
-        u_cpp = getattr(u, "_cpp_object", u)
-        super().write_function(u_cpp, t, mesh_xpath)
+    def write_function(self, u, t: float = 0.0, mesh_xpath="/Xdmf/Domain/Grid[@GridType='Uniform'][1]"):
+        super().write_function(getattr(u, "_cpp_object", u), t, mesh_xpath)
 
     def read_mesh(self, ghost_mode=GhostMode.shared_facet, name="mesh", xpath="/Xdmf/Domain") -> Mesh:
         """Read mesh data from file"""
@@ -88,8 +82,9 @@ def extract_gmsh_topology_and_markers(gmsh_model, model_name=None):
     """
     if model_name is not None:
         gmsh_model.setCurrent(model_name)
-    # Get the physical groups from gmsh on the form
-    # [(dim1, tag1),(dim1, tag2), (dim2, tag3),...]
+
+    # Get the physical groups from gmsh on the form [(dim1, tag1),(dim1,
+    # tag2), (dim2, tag3),...]
     phys_grps = gmsh_model.getPhysicalGroups()
     topologies = {}
     for dim, tag in phys_grps:
@@ -136,15 +131,19 @@ def extract_gmsh_geometry(gmsh_model, model_name=None):
     """For a given gmsh model, extract the mesh geometry as a numpy
     (N,3) array where the i-th row corresponds to the i-th node in the
     mesh.
+
     """
     if model_name is not None:
         gmsh_model.setCurrent(model_name)
+
     # Get the unique tag and coordinates for nodes
     # in mesh
     indices, points, _ = gmsh_model.mesh.getNodes()
     points = points.reshape(-1, 3)
+
     # GMSH indices starts at 1
     indices -= 1
+
     # Sort nodes in geometry according to the unique index
     perm_sort = np.argsort(indices)
     assert np.all(indices[perm_sort] == np.arange(len(indices)))
@@ -166,6 +165,7 @@ _gmsh_to_cells = {1: ("interval", 1), 2: ("triangle", 1),
 def ufl_mesh_from_gmsh(gmsh_cell: int, gdim: int) -> ufl.Mesh:
     """Create a UFL mesh from a Gmsh cell identifier and the geometric dimension.
     See: # http://gmsh.info//doc/texinfo/gmsh.html#MSH-file-format
+
     """
     shape, degree = _gmsh_to_cells[gmsh_cell]
     cell = ufl.Cell(shape, geometric_dimension=gdim)

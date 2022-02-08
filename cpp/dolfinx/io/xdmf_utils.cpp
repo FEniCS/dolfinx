@@ -7,7 +7,6 @@
 #include "xdmf_utils.h"
 #include "pugixml.hpp"
 #include <boost/algorithm/string.hpp>
-#include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/CoordinateElement.h>
@@ -21,6 +20,7 @@
 #include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <dolfinx/mesh/utils.h>
+#include <filesystem>
 #include <map>
 #include <xtensor/xadapt.hpp>
 #include <xtensor/xtensor.hpp>
@@ -31,6 +31,58 @@ using namespace dolfinx::io;
 
 namespace
 {
+/// Compute values at all mesh 'nodes'
+/// @return The values at all geometric points
+/// @warning This function will be removed soon. Use interpolation
+/// instead.
+template <typename T>
+xt::xtensor<T, 2> compute_point_values(const fem::Function<T>& u)
+{
+  auto V = u.function_space();
+  assert(V);
+  std::shared_ptr<const mesh::Mesh> mesh = V->mesh();
+  assert(mesh);
+  const int tdim = mesh->topology().dim();
+
+  // Compute in tensor (one for scalar function, . . .)
+  const std::size_t value_size_loc = V->element()->value_size();
+
+  // Resize Array for holding point values
+  xt::xtensor<T, 2> point_values(
+      {mesh->geometry().x().size() / 3, value_size_loc});
+
+  // Prepare cell geometry
+  const graph::AdjacencyList<std::int32_t>& x_dofmap
+      = mesh->geometry().dofmap();
+
+  // FIXME: Add proper interface for num coordinate dofs
+  const int num_dofs_g = x_dofmap.num_links(0);
+
+  const auto x_g
+      = xt::adapt(mesh->geometry().x().data(), mesh->geometry().x().size(),
+                  xt::no_ownership(),
+                  std::vector{mesh->geometry().x().size() / 3, std::size_t(3)});
+
+  // Interpolate point values on each cell (using last computed value if
+  // not continuous, e.g. discontinuous Galerkin methods)
+  auto map = mesh->topology().index_map(tdim);
+  assert(map);
+  const std::int32_t num_cells = map->size_local() + map->num_ghosts();
+
+  std::vector<std::int32_t> cells(x_g.shape(0));
+  for (std::int32_t c = 0; c < num_cells; ++c)
+  {
+    // Get coordinates for all points in cell
+    xtl::span<const std::int32_t> dofs = x_dofmap.links(c);
+    for (int i = 0; i < num_dofs_g; ++i)
+      cells[dofs[i]] = c;
+  }
+
+  u.eval(x_g, cells, point_values);
+
+  return point_values;
+}
+
 //-----------------------------------------------------------------------------
 // Get data width - normally the same as u.value_size(), but expand for
 // 2D vector/tensor because XDMF presents everything as 3D
@@ -51,7 +103,7 @@ std::vector<Scalar> _get_point_data_values(const fem::Function<Scalar>& u)
 {
   std::shared_ptr<const mesh::Mesh> mesh = u.function_space()->mesh();
   assert(mesh);
-  const xt::xtensor<Scalar, 2> data_values = u.compute_point_values();
+  const xt::xtensor<Scalar, 2> data_values = compute_point_values(u);
 
   const int width = get_padded_width(*u.function_space()->element());
   assert(mesh->geometry().index_map());
@@ -232,17 +284,18 @@ xdmf_utils::get_hdf5_paths(const pugi::xml_node& dataitem_node)
   return {{paths[0], paths[1]}};
 }
 //-----------------------------------------------------------------------------
-std::string xdmf_utils::get_hdf5_filename(std::string xdmf_filename)
+std::filesystem::path
+xdmf_utils::get_hdf5_filename(const std::filesystem::path& xdmf_filename)
 {
-  boost::filesystem::path p(xdmf_filename);
-  p.replace_extension(".h5");
+  std::filesystem::path p = xdmf_filename;
+  p.replace_extension("h5");
   if (p.string() == xdmf_filename)
   {
     throw std::runtime_error("Cannot deduce name of HDF5 file from XDMF "
                              "filename. Filename clash. Check XDMF filename");
   }
 
-  return p.string();
+  return p;
 }
 //-----------------------------------------------------------------------------
 std::vector<std::int64_t>

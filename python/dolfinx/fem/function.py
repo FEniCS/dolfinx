@@ -65,7 +65,7 @@ class Constant(ufl.Constant):
 
 
 class Expression:
-    def __init__(self, ufl_expression: ufl.core.expr.Expr, x: np.ndarray,
+    def __init__(self, ufl_expression: ufl.core.expr.Expr, X: np.ndarray,
                  form_compiler_parameters: dict = {}, jit_parameters: dict = {},
                  dtype=PETSc.ScalarType):
         """Create DOLFINx Expression.
@@ -83,7 +83,7 @@ class Expression:
         ----------
         ufl_expression
             Pure UFL expression
-        x
+        X
             Array of points of shape (num_points, tdim) on the reference
             element.
         form_compiler_parameters
@@ -99,84 +99,85 @@ class Expression:
 
         """
 
-        assert x.ndim < 3
-        num_points = x.shape[0] if x.ndim == 2 else 1
-        x = np.reshape(x, (num_points, -1))
+        assert X.ndim < 3
+        num_points = X.shape[0] if X.ndim == 2 else 1
+        _X = np.reshape(X, (num_points, -1))
 
         mesh = ufl_expression.ufl_domain().ufl_cargo()
 
+        self._dtype = dtype
+
         # Compile UFL expression with JIT
+        if dtype == np.float32:
+            form_compiler_parameters["scalar_type"] = "float"
         if dtype == np.float64:
             form_compiler_parameters["scalar_type"] = "double"
         elif dtype == np.complex128:
             form_compiler_parameters["scalar_type"] = "double _Complex"
         else:
-            raise RuntimeError(f"Unsupported scalar type {dtype} for Form.")
-        self._ufcx_expression, module, self._code = jit.ffcx_jit(mesh.comm, (ufl_expression, x),
-                                                                 form_compiler_parameters=form_compiler_parameters,
-                                                                 jit_parameters=jit_parameters)
+            raise RuntimeError(f"Unsupported scalar type {dtype} for Expression.")
+        self._ufcx_expression, _, self._code = jit.ffcx_jit(mesh.comm, (ufl_expression, _X),
+                                                            form_compiler_parameters=form_compiler_parameters,
+                                                            jit_parameters=jit_parameters)
         self._ufl_expression = ufl_expression
 
-        # Setup data (evaluation points, coefficients, constants, mesh, value_size).
         # Tabulation function.
         ffi = cffi.FFI()
-        fn = ffi.cast("uintptr_t", self.ufcx_expression.tabulate_expression)
 
-        value_size = ufl.product(self.ufl_expression.ufl_shape)
-
-        ufl_coefficients = ufl.algorithms.extract_coefficients(ufl_expression)
-        coefficients = [ufl_coefficient._cpp_object for ufl_coefficient in ufl_coefficients]
+        # Prepare coefficients data. For every coefficient in form take
+        # its C++ object.
+        original_coefficients = ufl.algorithms.extract_coefficients(ufl_expression)
+        coeffs = [original_coefficients[self._ufcx_expression.original_coefficient_positions[i]]._cpp_object
+                  for i in range(self._ufcx_expression.num_coefficients)]
 
         ufl_constants = ufl.algorithms.analysis.extract_constants(ufl_expression)
-        constants = [ufl_constant._cpp_object for ufl_constant in ufl_constants]
+        constants = [constant._cpp_object for constant in ufl_constants]
+        arguments = ufl.algorithms.extract_arguments(ufl_expression)
+        if len(arguments) == 0:
+            self._argument_function_space = None
+        elif len(arguments) == 1:
+            self._argument_function_space = arguments[0].ufl_function_space()._cpp_object
+        else:
+            raise RuntimeError("Expressions with more that one Argument not allowed.")
 
-        # Getcpp Expression type
-        def expressiontype(dtype):
-            if dtype is np.float64:
-                return _cpp.fem.Expression_float64
+        def create_expression(dtype):
+            if dtype is np.float32:
+                return _cpp.fem.create_expression_float32
+            elif dtype is np.float64:
+                return _cpp.fem.create_expression_float64
             elif dtype is np.complex128:
-                return _cpp.fem.Expression_complex128
+                return _cpp.fem.create_expression_complex128
             else:
                 raise NotImplementedError(f"Type {dtype} not supported.")
 
-        self._cpp_object = expressiontype(dtype)(coefficients, constants, mesh, x, fn, value_size)
+        self._cpp_object = create_expression(dtype)(ffi.cast("uintptr_t", ffi.addressof(self._ufcx_expression)),
+                                                    coeffs, constants, mesh, self.argument_function_space)
 
-    def eval(self, cells: np.ndarray, u: typing.Optional[np.ndarray] = None) -> np.ndarray:
-        """Evaluate Expression in cells.
+    def eval(self, cells: np.ndarray, values: typing.Optional[np.ndarray] = None) -> np.ndarray:
+        """Evaluate Expression in cells. Values should have shape
+        (cells.shape[0], num_points * value_size * num_all_argument_dofs).
+        If values is not passed then a new array will be allocated.
 
-        Parameters
-        ----------
-        cells
-            local indices of cells to evaluate expression.
-        u: optional
-            array of shape (num_cells, num_points*value_size) to
-            store result of expression evaluation.
-
-        Returns
-        -------
-
-        u: np.ndarray
-            The i-th row of u contains the expression evaluated on cells[i].
-
-        Note
-        ----
-        This function allocates u of the appropriate size if u is not passed.
         """
-        cells = np.asarray(cells, dtype=np.int32)
-        assert cells.ndim == 1
-        num_cells = cells.shape[0]
+        _cells = np.asarray(cells, dtype=np.int32)
+        if self.argument_function_space is None:
+            argument_space_dimension = 1
+        else:
+            argument_space_dimension = self.argument_function_space.element.space_dimension
+        values_shape = (_cells.shape[0], self.X.shape[0] * self.value_size * argument_space_dimension)
 
         # Allocate memory for result if u was not provided
-        if u is None:
-            if np.issubdtype(PETSc.ScalarType, np.complexfloating):
-                u = np.empty((num_cells, self.x.shape[0] * self.value_size), dtype=np.complex128)
-            else:
-                u = np.empty((num_cells, self.x.shape[0] * self.value_size), dtype=np.float64)
-            self._cpp_object.eval(cells, u)
+        if values is None:
+            values = np.zeros(values_shape, dtype=self.dtype)
         else:
-            self._cpp_object.eval(cells, u)
+            if values.shape != values_shape:
+                raise TypeError("Passed array values does not have correct shape.")
+            if values.dtype != self._dtype:
+                raise TypeError("Passed array values does not have correct dtype.")
 
-        return u
+        self._cpp_object.eval(cells, values)
+
+        return values
 
     @property
     def ufl_expression(self):
@@ -184,14 +185,19 @@ class Expression:
         return self._ufl_expression
 
     @property
-    def x(self) -> np.ndarray:
+    def X(self) -> np.ndarray:
         """Evaluation points on the reference cell"""
-        return self._cpp_object.x
+        return self._cpp_object.X
 
     @property
     def value_size(self) -> int:
         """Value size of the expression"""
         return self._cpp_object.value_size
+
+    @property
+    def argument_function_space(self) -> typing.Optional[FunctionSpace]:
+        """The argument function space if expression has argument"""
+        return self._argument_function_space
 
     @property
     def ufcx_expression(self):
@@ -202,6 +208,10 @@ class Expression:
     def code(self) -> str:
         """C code strings"""
         return self._code
+
+    @property
+    def dtype(self):
+        return self._dtype
 
 
 class Function(ufl.Coefficient):
@@ -258,7 +268,6 @@ class Function(ufl.Coefficient):
         # FIXME: same as dolfinx.expression.Expression version. Find way
         # to re-use.
         assert derivatives == ()  # TODO: Handle derivatives
-
         if component:
             shape = self.ufl_shape
             assert len(shape) == len(component)
@@ -282,8 +291,12 @@ class Function(ufl.Coefficient):
         # Make sure input coordinates are a NumPy array
         x = np.asarray(x, dtype=np.float64)
         assert x.ndim < 3
-        num_points = x.shape[0] if x.ndim == 2 else 1
-        x = np.reshape(x, (num_points, -1))
+        if len(x) == 0:
+            x = np.zeros((0, 3))
+        else:
+            shape0 = x.shape[0] if x.ndim == 2 else 1
+            x = np.reshape(x, (shape0, -1))
+        num_points = x.shape[0]
         if x.shape[1] != 3:
             raise ValueError("Coordinate(s) for Function evaluation must have length 3.")
 
@@ -307,7 +320,7 @@ class Function(ufl.Coefficient):
         return u
 
     def interpolate(self, u: typing.Union[typing.Callable, Expression, Function],
-                    cells: np.ndarray = None) -> None:
+                    cells: typing.Optional[np.ndarray] = None) -> None:
         """Interpolate an expression
 
         Args:
@@ -327,10 +340,16 @@ class Function(ufl.Coefficient):
         def _(u_ptr, cells):
             self._cpp_object.interpolate_ptr(u_ptr, cells)
 
+        @_interpolate.register(Expression)
+        def _(expr: Expression, cells: typing.Optional[np.ndarray] = None):
+            """Interpolate Expression for the set of cells"""
+            self._cpp_object.interpolate(expr._cpp_object, cells)
+
         if cells is None:
             mesh = self.function_space.mesh
             map = mesh.topology.index_map(mesh.topology.dim)
             cells = np.arange(map.size_local + map.num_ghosts, dtype=np.int32)
+
         _interpolate(u, cells)
 
     def copy(self) -> Function:
@@ -561,7 +580,7 @@ def VectorFunctionSpace(mesh: Mesh, element: ElementMetaData, dim=None,
 
 
 def TensorFunctionSpace(mesh: Mesh, element: ElementMetaData, shape=None,
-                        symmetry: bool = None, restriction=None) -> FunctionSpace:
+                        symmetry: typing.Optional[bool] = None, restriction=None) -> FunctionSpace:
     """Create tensor finite element (composition of scalar elements) function space."""
 
     e = ElementMetaData(*element)

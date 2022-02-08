@@ -12,11 +12,8 @@ import pytest
 
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import CellType, MeshTags, create_unit_cube, locate_entities
-from dolfinx_utils.test.fixtures import tempdir
 
 from mpi4py import MPI
-
-assert (tempdir)
 
 # Supported XDMF file encoding
 if MPI.COMM_WORLD.size > 1:

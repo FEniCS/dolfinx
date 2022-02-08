@@ -83,7 +83,6 @@ _extract_sub_element(const FiniteElement& finite_element,
 FiniteElement::FiniteElement(const ufcx_finite_element& e)
     : _signature(e.signature), _family(e.family),
       _tdim(e.topological_dimension), _space_dim(e.space_dimension),
-      _hash(std::hash<std::string>{}(_signature)),
       _value_shape(e.value_shape, e.value_shape + e.value_rank),
       _bs(e.block_size)
 {
@@ -171,8 +170,8 @@ FiniteElement::FiniteElement(const ufcx_finite_element& e)
 FiniteElement::FiniteElement(const basix::FiniteElement& element, int bs)
     : // _signature("Basix element " + std::to_string(bs)),
       _tdim(basix::cell::topological_dimension(element.cell_type())),
-      _space_dim(bs * element.dim()), _hash(0),
-      _value_shape(element.value_shape()), _bs(bs)
+      _space_dim(bs * element.dim()), _value_shape(element.value_shape()),
+      _bs(bs)
 {
   if (_value_shape.empty() and bs > 1)
     _value_shape = {1};
@@ -203,7 +202,21 @@ FiniteElement::FiniteElement(const basix::FiniteElement& element, int bs)
   }
 
   _signature = "Basix element " + _family + " " + std::to_string(bs);
-  _hash = std::hash<std::string>{}(_signature);
+}
+//-----------------------------------------------------------------------------
+bool FiniteElement::operator==(const FiniteElement& e) const
+{
+  if (!_element or !e._element)
+  {
+    throw std::runtime_error(
+        "Missing a Basix element. Cannot check for equivalence");
+  }
+  return *_element == *e._element;
+}
+//-----------------------------------------------------------------------------
+bool FiniteElement::operator!=(const FiniteElement& e) const
+{
+  return !(*this == e);
 }
 //-----------------------------------------------------------------------------
 std::string FiniteElement::signature() const noexcept { return _signature; }
@@ -260,8 +273,6 @@ FiniteElement::sub_elements() const noexcept
 {
   return _sub_elements;
 }
-//-----------------------------------------------------------------------------
-std::size_t FiniteElement::hash() const noexcept { return _hash; }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const FiniteElement>
 FiniteElement::extract_sub_element(const std::vector<int>& component) const
@@ -327,7 +338,7 @@ FiniteElement::create_interpolation_operator(const FiniteElement& from) const
 
   if (_bs == 1 or from._bs == 1)
   {
-    // If one of the elements have bs=1, Basix can figure out the size
+    // If one of the elements has bs=1, Basix can figure out the size
     // of the matrix
     return basix::compute_interpolation_operator(*from._element, *_element);
   }

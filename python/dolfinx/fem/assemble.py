@@ -36,7 +36,7 @@ def pack_constants(form: typing.Union[FormMetaClass, typing.Sequence[FormMetaCla
     def _pack(form):
         if form is None:
             return None
-        elif isinstance(form, (tuple, list)):
+        elif isinstance(form, collections.abc.Iterable):
             return list(map(lambda sub_form: _pack(sub_form), form))
         else:
             return _cpp.fem.pack_constants(form)
@@ -53,7 +53,7 @@ def pack_coefficients(form: typing.Union[FormMetaClass, typing.Sequence[FormMeta
     def _pack(form):
         if form is None:
             return {}
-        elif isinstance(form, (tuple, list)):
+        elif isinstance(form, collections.abc.Iterable):
             return list(map(lambda sub_form: _pack(sub_form), form))
         else:
             return _cpp.fem.pack_coefficients(form)

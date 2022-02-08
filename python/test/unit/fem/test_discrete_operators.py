@@ -11,13 +11,12 @@ import pytest
 from dolfinx.cpp.fem.petsc import create_discrete_gradient
 from dolfinx.fem import FunctionSpace
 from dolfinx.mesh import GhostMode, create_unit_cube, create_unit_square
-from dolfinx_utils.test.skips import skip_in_parallel
 
 from mpi4py import MPI
 from petsc4py import PETSc
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("mesh", [
     create_unit_square(MPI.COMM_WORLD, 11, 6, ghost_mode=GhostMode.none),
     create_unit_square(MPI.COMM_WORLD, 11, 6, ghost_mode=GhostMode.shared_facet),

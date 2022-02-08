@@ -1,16 +1,16 @@
 import numpy as np
+import pytest
 
 import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import geometry
 from dolfinx.geometry import BoundingBoxTree
 from dolfinx.mesh import create_mesh
-from dolfinx_utils.test.skips import skip_in_parallel
 
 from mpi4py import MPI
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 def test_manifold_point_search():
     # Simple two-triangle surface in 3d
     vertices = np.array([[0.0, 0.0, 1.0], [1.0, 1.0, 1.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0]])

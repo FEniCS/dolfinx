@@ -5,7 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "HDF5Interface.h"
-#include <boost/filesystem.hpp>
+#include <filesystem>
 
 #define HDF5_MAXSTRLEN 80
 
@@ -55,7 +55,8 @@ bool has_group(const hid_t handle, const std::string& group_name)
 } // namespace
 
 //-----------------------------------------------------------------------------
-hid_t HDF5Interface::open_file(MPI_Comm comm, const std::string& filename,
+hid_t HDF5Interface::open_file(MPI_Comm comm,
+                               const std::filesystem::path& filename,
                                const std::string& mode, const bool use_mpi_io)
 {
   // Set parallel access with communicator
@@ -81,20 +82,23 @@ hid_t HDF5Interface::open_file(MPI_Comm comm, const std::string& filename,
   }
   else if (mode == "a") // Open file to append, creating if does not exist
   {
-    if (boost::filesystem::exists(filename))
+    if (std::filesystem::exists(filename))
       file_id = H5Fopen(filename.c_str(), H5F_ACC_RDWR, plist_id);
     else
     {
       file_id
           = H5Fcreate(filename.c_str(), H5F_ACC_EXCL, H5P_DEFAULT, plist_id);
     }
+
     if (file_id < 0)
+    {
       throw std::runtime_error(
           "Failed to create/open HDF5 file (append mode).");
+    }
   }
   else if (mode == "r") // Open file to read
   {
-    if (boost::filesystem::exists(filename))
+    if (std::filesystem::exists(filename))
     {
       file_id = H5Fopen(filename.c_str(), H5F_ACC_RDONLY, plist_id);
       if (file_id < 0)
@@ -102,8 +106,8 @@ hid_t HDF5Interface::open_file(MPI_Comm comm, const std::string& filename,
     }
     else
     {
-      throw std::runtime_error("Unable to open HDF5 file. File " + filename
-                               + " does not exist.");
+      throw std::runtime_error("Unable to open HDF5 file. File "
+                               + filename.native() + " does not exist.");
     }
   }
 
@@ -125,7 +129,7 @@ void HDF5Interface::flush_file(const hid_t handle)
     throw std::runtime_error("Failed to flush HDF5 file.");
 }
 //-----------------------------------------------------------------------------
-std::string HDF5Interface::get_filename(hid_t handle)
+std::filesystem::path HDF5Interface::get_filename(hid_t handle)
 {
   // Get length of filename
   const ssize_t length = H5Fget_name(handle, nullptr, 0);
@@ -139,7 +143,7 @@ std::string HDF5Interface::get_filename(hid_t handle)
   if (H5Fget_name(handle, name.data(), length + 1) < 0)
     throw std::runtime_error("Failed to get HDF5 filename from handle.");
 
-  return std::string(name.begin(), name.end());
+  return std::filesystem::path(name.begin(), name.end());
 }
 //-----------------------------------------------------------------------------
 bool HDF5Interface::has_dataset(const hid_t handle,

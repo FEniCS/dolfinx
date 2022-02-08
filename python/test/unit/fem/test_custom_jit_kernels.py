@@ -8,12 +8,12 @@
 
 import numba
 import numpy as np
+import pytest
 
 import dolfinx
 from dolfinx import TimingType, cpp, list_timings
 from dolfinx.fem import Function, FunctionSpace, IntegralType
 from dolfinx.mesh import create_unit_square
-from dolfinx_utils.test.skips import skip_if_complex
 
 from mpi4py import MPI
 from petsc4py import PETSc
@@ -115,7 +115,8 @@ def test_coefficient():
     assert (np.isclose(bnorm, 2.0 * 0.0739710713711999))
 
 
-@skip_if_complex
+@pytest.mark.skipif(np.issubdtype(PETSc.ScalarType, np.complexfloating),
+                    reason="This test does not work in complex mode.")
 def test_cffi_assembly():
     mesh = create_unit_square(MPI.COMM_WORLD, 13, 13)
     V = FunctionSpace(mesh, ("Lagrange", 1))
