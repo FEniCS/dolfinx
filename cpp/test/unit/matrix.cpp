@@ -128,7 +128,7 @@ void test_matrix_apply()
 
   // Assemble matrix
   la::MatrixCSR<double> A(sp);
-  fem::assemble_matrix(la::MatrixCSR<double>::mat_add_values(A), *a, {});
+  fem::assemble_matrix(A.mat_add_values(), *a, {});
   A.finalize();
 
   CHECK((V->dofmap()->index_map->size_local() == A.num_owned_rows()));
