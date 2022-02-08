@@ -88,12 +88,14 @@
 # the equation:
 #
 # $$
+# \begin{align}
 # \int_{\Omega} \frac{c_{n+1} - c_{n}}{dt} q \, {\rm d} x
 # + \int_{\Omega} M \nabla \mu_{n+\theta} \cdot \nabla q \, {\rm d} x
 #        &= 0 \quad \forall \ q \in V  \\
 # \int_{\Omega} \mu_{n+1} v  \, {\rm d} x - \int_{\Omega} \frac{d f_{n+1}}{d c} v  \, {\rm d} x
 # - \int_{\Omega} \lambda \nabla c_{n+1} \cdot \nabla v \, {\rm d} x
 #        &= 0 \quad \forall \ v \in V
+# \end{align}
 # $$
 #
 # where $dt = t_{n+1} - t_{n}$ and $\mu_{n+\theta} =
