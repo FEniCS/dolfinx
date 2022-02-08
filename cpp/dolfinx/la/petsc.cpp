@@ -553,7 +553,7 @@ petsc::Matrix::set_fn(Mat A, InsertMode mode)
     std::copy(rows.begin(), rows.end(), cache.begin());
     std::copy(cols.begin(), cols.end(), std::next(cache.begin(), rows.size()));
     const PetscInt* _rows = cache.data();
-    const PetscInt* _cols = _rows + rows.size();
+    const PetscInt* _cols = cache.data() + rows.size();
     ierr = MatSetValuesLocal(A, rows.size(), _rows, cols.size(), _cols,
                              vals.data(), mode);
 #else
@@ -585,7 +585,7 @@ petsc::Matrix::set_block_fn(Mat A, InsertMode mode)
     std::copy(rows.begin(), rows.end(), cache.begin());
     std::copy(cols.begin(), cols.end(), std::next(cache.begin(), rows.size()));
     const PetscInt* _rows = cache.data();
-    const PetscInt* _cols = _rows + rows.size();
+    const PetscInt* _cols = cache.data() + rows.size();
     ierr = MatSetValuesBlockedLocal(A, rows.size(), _rows, cols.size(), _cols,
                                     vals.data(), mode);
 #else
@@ -621,6 +621,7 @@ petsc::Matrix::set_block_expand_fn(Mat A, int bs0, int bs1, InsertMode mode)
     for (std::size_t i = 0; i < rows.size(); ++i)
       for (int k = 0; k < bs0; ++k)
         cache0[bs0 * i + k] = bs0 * rows[i] + k;
+
     for (std::size_t i = 0; i < cols.size(); ++i)
       for (int k = 0; k < bs1; ++k)
         cache1[bs1 * i + k] = bs1 * cols[i] + k;

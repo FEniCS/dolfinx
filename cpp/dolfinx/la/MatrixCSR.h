@@ -89,37 +89,10 @@ public:
                const xtl::span<const std::int32_t>& cols,
                const xtl::span<const T>& data) -> int
     {
-      // std::cout << "test: " << nr << ", " << nc << std::endl;
-      // for (int r = 0; r < nr; ++r)
-      //   for (int c = 0; c < nc; ++c)
-      //     std::cout << "r, c: " << r << ", " << c << ", "
-      //               << *(data + r * nc + c) << std::endl;
-      // std::cout << "rows: " << std::endl;
-      // for (int r = 0; r < nr; ++r)
-      //   std::cout << rows[r] << std::endl;
-      // std::cout << "cols: " << std::endl;
-      // for (int c = 0; c < nc; ++c)
-      //   std::cout << cols[c] << std::endl;
-
       this->add(data, rows, cols);
       return 0;
     };
   }
-
-  // std::function<
-  //     std::function<int(const xtl::span<const std::int32_t>&,
-  //                       const xtl::span<const std::int32_t>&, const T*)>()>
-  // mat_add_values_foo()
-  // {
-  //   return [&](const xtl::span<const std::int32_t>& rows,
-  //              const xtl::span<const std::int32_t>& cols, const T* data) ->
-  //              int
-  //   {
-  //     this->add(xtl::span<const T>(data, rows.size() * cols.size()), rows,
-  //               cols);
-  //     return 0;
-  //   };
-  // }
 
   /// Create a distributed matrix
   /// @param[in] p The sparsty pattern the describes the parallel
@@ -329,20 +302,12 @@ public:
            const xtl::span<const std::int32_t>& rows,
            const xtl::span<const std::int32_t>& cols)
   {
-    // std::cout << "Data size: " << _data.size() << std::endl;
-    // std::cout << "Rows ptr: " << std::endl;
-    // for (auto r : _row_ptr)
-    //   std::cout << r << std::endl;
-    // for (auto c : _cols)
-    //   std::cout << c << std::endl;
-
     assert(x.size() == rows.size() * cols.size());
     const std::int32_t max_row
         = _index_maps[0]->size_local() + _index_maps[0]->num_ghosts() - 1;
     for (std::size_t r = 0; r < rows.size(); ++r)
     {
       std::int32_t row = rows[r];
-      // std::cout << "Adding row: " << r << ", " << row << std::endl;
       if (row > max_row)
         throw std::runtime_error("Local row out of range");
 
@@ -354,15 +319,11 @@ public:
       auto cit1 = std::next(_cols.begin(), _row_ptr[row + 1]);
       for (std::size_t c = 0; c < cols.size(); ++c)
       {
-        // std::cout << "row, col: " << rows[r] << ", " << cols[c] << std::endl;
-
         // Find position of column index
         auto it = std::lower_bound(cit0, cit1, cols[c]);
         assert(it != cit1);
         assert(*it == cols[c]);
         std::size_t d = std::distance(_cols.begin(), it);
-        // std::cout << "  colsd: " << d << ", " << xr[c] << std::endl;
-        // std::cout << "  pos: " << d << ", " << xr[c] << std::endl;
         assert(d < _data.size());
         _data[d] += xr[c];
       }
@@ -451,8 +412,9 @@ public:
 
   /// End transfer of ghost row data to owning ranks
   /// @note Must be preceded by MatrixCSR::finalize_begin()
-  /// @note Matrix data received from other processes will be accumulated into
-  /// locally owned rows, and ghost rows will be zeroed.
+  /// @note Matrix data received from other processes will be
+  /// accumulated into locally owned rows, and ghost rows will be
+  /// zeroed.
   void finalize_end()
   {
     int status = MPI_Wait(&_request, MPI_STATUS_IGNORE);
@@ -508,11 +470,11 @@ public:
   /// @note Includes columns in ghost rows
   const std::vector<std::int32_t>& cols() const { return _cols; }
 
-  /// Get the start of off-diagonal (unowned columns) on each row, allowing the
-  /// matrix to be split (virtually) into two parts.
-  /// Operations (such as matrix-vector multiply) between the owned parts of the
-  /// matrix and vector can then be performed separately from operations on the
-  /// unowned parts.
+  /// Get the start of off-diagonal (unowned columns) on each row,
+  /// allowing the matrix to be split (virtually) into two parts.
+  /// Operations (such as matrix-vector multiply) between the owned
+  /// parts of the matrix and vector can then be performed separately
+  /// from operations on the unowned parts.
   /// @note Includes ghost rows, which should be truncated manually if not
   /// required.
   const std::vector<std::int32_t>& off_diag_offset() const
@@ -545,8 +507,8 @@ private:
   // Position in _data to add received data
   std::vector<int> _unpack_pos;
 
-  // Displacements for alltoall for each neighbor when sending and receiving
-
+  // Displacements for alltoall for each neighbor when sending and
+  // receiving
   std::vector<int> _val_send_disp, _val_recv_disp;
 
   // Ownership of each row, by neighbor

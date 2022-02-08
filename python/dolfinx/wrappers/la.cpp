@@ -23,8 +23,8 @@
 #include <pybind11/stl.h>
 #include <xtl/xspan.hpp>
 
-PYBIND11_MAKE_OPAQUE(xtl::span<const std::int32_t>);
-PYBIND11_MAKE_OPAQUE(xtl::span<const double>);
+// PYBIND11_MAKE_OPAQUE(xtl::span<const std::int32_t>);
+// PYBIND11_MAKE_OPAQUE(xtl::span<const double>);
 
 namespace py = pybind11;
 
@@ -34,9 +34,9 @@ namespace
 template <typename T>
 void declare_objects(py::module& m, const std::string& type)
 {
-  std::string pyclass_span_const_name = std::string("xltSpanConst_") + type;
-  py::class_<xtl::span<const T>, std::shared_ptr<xtl::span<const T>>>(
-      m, pyclass_span_const_name.c_str());
+  // std::string pyclass_span_const_name = std::string("xltSpanConst_") + type;
+  // py::class_<xtl::span<const T>, std::shared_ptr<xtl::span<const T>>>(
+  //     m, pyclass_span_const_name.c_str());
 
   // dolfinx::la::Vector
   std::string pyclass_vector_name = std::string("Vector_") + type;
@@ -174,10 +174,10 @@ void la(py::module& m)
       = m.def_submodule("petsc", "PETSc-specific linear algebra");
   petsc_module(petsc_mod);
 
-  std::string pyclass_span_const_name = std::string("xltSpanConst_") + "int32";
-  py::class_<xtl::span<const std::int32_t>,
-             std::shared_ptr<xtl::span<const std::int32_t>>>(
-      m, pyclass_span_const_name.c_str());
+  // std::string pyclass_span_const_name = std::string("xltSpanConst_") + "int32";
+  // py::class_<xtl::span<const std::int32_t>,
+  //            std::shared_ptr<xtl::span<const std::int32_t>>>(
+  //     m, pyclass_span_const_name.c_str());
 
   // dolfinx::la::SparsityPattern
   py::class_<dolfinx::la::SparsityPattern,
