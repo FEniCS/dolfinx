@@ -19,10 +19,6 @@ flake8-python-code: &flake8-python-code
     python3 -m flake8 demo
     python3 -m flake8 test
 
-build-documentation-cpp: &build-documentation-cpp
-  name: Build documentation (C++)
-  command: cd cpp/doc && doxygen
-
 configure-cpp: &configure-cpp
   name: Configure (C++)
   command: mkdir -p build && cd build && cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer ../cpp/
@@ -61,12 +57,6 @@ build-python-interface: &build-python-interface
   command: |
     cd python
     pip3 -v install --global-option build --global-option --debug . --user
-
-build-documentation-python: &build-documentation-python
-  name: Build documentation (Python)
-  command: |
-    cd python/demo && python3 ./generate-demo-files.py
-    cd ../doc && make html
 
 demos-python: &demos-python
   name: Run demos (Python, serial)
@@ -113,7 +103,6 @@ jobs:
       - checkout
       - run: *install-python-components
       - run: *flake8-python-code
-      - run: *build-documentation-cpp
       - run: *configure-cpp
       - run: *build-install-cpp
 
@@ -122,7 +111,6 @@ jobs:
       - run: *regression-tests-cpp-mpi
 
       - run: *build-python-interface
-      - run: *build-documentation-python
 
       - run: *demos-python
       - run: *demos-python-mpi
