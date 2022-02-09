@@ -153,7 +153,8 @@ void add_data_item(pugi::xml_node& xml_node, const hid_t h5_id,
     const std::filesystem::path filename = p.filename().c_str();
 
     // Add HDF5 filename and HDF5 internal path to XML file
-    const std::string xdmf_path = filename.string() + std::string(":") + h5_path;
+    const std::string xdmf_path
+        = filename.string() + std::string(":") + h5_path;
     data_item_node.append_child(pugi::node_pcdata).set_value(xdmf_path.c_str());
 
     // Compute data offset and range of values

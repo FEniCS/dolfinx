@@ -831,8 +831,8 @@ fem::Expression<T> create_expression(
     }
   }
 
-  return create_expression(expression, coeff_map, const_map,
-                           mesh, argument_function_space);
+  return create_expression(expression, coeff_map, const_map, mesh,
+                           argument_function_space);
 }
 
 // NOTE: This is subject to change
