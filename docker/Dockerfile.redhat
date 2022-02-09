@@ -30,7 +30,6 @@ RUN sed -i 's/enabled=0/enabled=1/' /etc/yum.repos.d/Rocky-PowerTools.repo && \
       gcc-toolset-11 \
       # Utility
       git \
-      catch2-devel \
       # Only in PowerTools repo
       ninja-build \
       openblas-devel \
