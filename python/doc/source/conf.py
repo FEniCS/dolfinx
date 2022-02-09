@@ -11,7 +11,7 @@ import shutil
 
 import dolfinx
 
-# Copy demo files into doc source tree and process with pylit
+# Copy demo files into doc source tree and process
 shutil.rmtree("demos", True)
 shutil.copytree("../../demo", "demos")
 
