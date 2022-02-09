@@ -47,7 +47,7 @@ void subsystem::init_logging(int argc, char* argv[])
 {
   loguru::g_stderr_verbosity = loguru::Verbosity_WARNING;
 
-#ifdef DEBUG
+#ifndef NDEBUG
   loguru::SignalOptions signals;
 #else
   loguru::SignalOptions signals = loguru::SignalOptions::none();
