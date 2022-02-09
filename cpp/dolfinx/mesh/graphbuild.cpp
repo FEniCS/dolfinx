@@ -275,7 +275,7 @@ compute_nonlocal_dual_graph(
   {
     const std::size_t node = cell_list[i] - cell_offset;
     auto edges = graph.links(node);
-#ifdef DEBUG
+#ifndef NDEBUG
     if (auto it_end = std::next(edges.begin(), pos[node]);
         std::find(edges.begin(), it_end, cell_list[i + 1]) != it_end)
     {
