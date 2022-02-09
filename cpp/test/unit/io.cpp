@@ -6,7 +6,7 @@
 
 #ifdef HAS_ADIOS2
 
-#include <catch.hpp>
+#include <catch2/catch.hpp>
 #include <dolfinx/io/ADIOS2Writers.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/generation.h>
