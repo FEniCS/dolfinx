@@ -28,7 +28,7 @@ set(TEST_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/common/CIFailure.cpp
   )
 
-find_package(Catch2 2 REQUIRED)
+find_package(Catch2 2)
 if (NOT Catch2_FOUND)
   Include(FetchContent)
   FetchContent_Declare(
