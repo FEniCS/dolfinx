@@ -7,14 +7,12 @@
 // Unit tests for Distributed la::MatrixCSR
 
 #include "poisson.h"
-
-#include <catch.hpp>
+#include <catch2/catch.hpp>
 #include <dolfinx.h>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/la/Vector.h>
-
 #include <xtensor/xio.hpp>
 #include <xtensor/xtensor.hpp>
 

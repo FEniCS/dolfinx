@@ -28,15 +28,20 @@ set(TEST_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/common/CIFailure.cpp
   )
 
-# Prepare "Catch" library for other executables
-set(CATCH_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/catch)
-
-add_library(Catch INTERFACE)
-target_include_directories(Catch INTERFACE ${CATCH_INCLUDE_DIR})
+find_package(Catch2 2)
+if (NOT Catch2_FOUND)
+  message(STATUS "Catch2 not found. Downloading.")
+  Include(FetchContent)
+  FetchContent_Declare(
+    Catch2
+    GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+    GIT_TAG        v2.13.8
+  )
+  FetchContent_MakeAvailable(Catch2)
+endif()
 
 add_executable(unittests ${TEST_SOURCES})
-target_link_libraries(unittests PRIVATE Catch dolfinx)
-# target_compile_options(unittests PRIVATE -Wall -Werror -Wextra -pedantic)
+target_link_libraries(unittests PRIVATE Catch2::Catch2 dolfinx)
 target_compile_options(unittests PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-Wall -Werror -Wextra -pedantic>)
 
 # Enable testing
