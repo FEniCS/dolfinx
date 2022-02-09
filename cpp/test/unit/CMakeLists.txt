@@ -29,7 +29,7 @@ set(TEST_SOURCES
   )
 
 find_package(Catch2 2 REQUIRED)
-if (NOT CATCH2_FOUND)
+if (NOT Catch2_FOUND)
   Include(FetchContent)
   FetchContent_Declare(
     Catch2
