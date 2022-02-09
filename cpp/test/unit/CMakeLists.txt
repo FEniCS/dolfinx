@@ -30,6 +30,7 @@ set(TEST_SOURCES
 
 find_package(Catch2 2)
 if (NOT Catch2_FOUND)
+  message(STATUS "Catch2 not found. Downloading.")
   Include(FetchContent)
   FetchContent_Declare(
     Catch2
