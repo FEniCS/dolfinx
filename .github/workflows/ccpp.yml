@@ -106,8 +106,7 @@ jobs:
       - name: Build Python interface documentation
         run: |
           python3 -m pip install jupytext myst-parser
-          cd python/demo && python3 ./generate-demo-files.py
-          cd ../doc && make html
+          cd python/doc && make html
 
       - name: Set default DOLFINx JIT parameters
         run: |
