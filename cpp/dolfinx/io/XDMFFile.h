@@ -11,7 +11,6 @@
 #include <dolfinx/mesh/cell_types.h>
 #include <filesystem>
 #include <memory>
-#include <filesystem>
 #include <string>
 
 namespace pugi
