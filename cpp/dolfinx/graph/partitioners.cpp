@@ -314,7 +314,7 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
     timer1.stop();
 
 // Check graph data for consistency
-#ifdef DEBUG
+#ifndef NDEBUG
     err = SCOTCH_dgraphCheck(&dgrafdat);
     if (err != 0)
       throw std::runtime_error("Consistency error in SCOTCH graph");
