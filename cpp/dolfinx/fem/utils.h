@@ -18,10 +18,13 @@
 #include <functional>
 #include <memory>
 #include <set>
+#include <stdexcept>
 #include <string>
 #include <ufcx.h>
 #include <utility>
 #include <vector>
+#include <xtensor/xadapt.hpp>
+#include <xtensor/xtensor.hpp>
 #include <xtl/xspan.hpp>
 
 namespace basix
@@ -723,6 +726,116 @@ void pack_coefficients(const Form<T>& form, IntegralType integral_type, int id,
   }
 }
 
+/// Create Expression from UFC
+template <typename T>
+fem::Expression<T> create_expression(
+    const ufcx_expression& expression,
+    const std::vector<std::shared_ptr<const fem::Function<T>>>& coefficients,
+    const std::vector<std::shared_ptr<const fem::Constant<T>>>& constants,
+    const std::shared_ptr<const mesh::Mesh>& mesh = nullptr,
+    const std::shared_ptr<const fem::FunctionSpace>& argument_function_space
+    = nullptr)
+{
+  if (expression.rank > 0 and !argument_function_space)
+  {
+    throw std::runtime_error(
+        "Expression has Argument but no Argument function space was provided.");
+  }
+
+  const int size = expression.num_points * expression.topological_dimension;
+  const xt::xtensor<double, 2> points = xt::adapt(
+      expression.points, size, xt::no_ownership(),
+      std::vector<std::size_t>(
+          {static_cast<std::size_t>(expression.num_points),
+           static_cast<std::size_t>(expression.topological_dimension)}));
+
+  std::vector<int> value_shape;
+  for (int i = 0; i < expression.num_components; ++i)
+    value_shape.push_back(expression.value_shape[i]);
+
+  std::function<void(T*, const T*, const T*, const double*, const int*,
+                     const std::uint8_t*)>
+      tabulate_tensor = nullptr;
+  if constexpr (std::is_same<T, float>::value)
+    tabulate_tensor = expression.tabulate_tensor_float32;
+  else if constexpr (std::is_same<T, std::complex<float>>::value)
+  {
+    tabulate_tensor
+        = reinterpret_cast<void (*)(T*, const T*, const T*, const double*,
+                                    const int*, const unsigned char*)>(
+            expression.tabulate_tensor_complex64);
+  }
+  else if constexpr (std::is_same<T, double>::value)
+    tabulate_tensor = expression.tabulate_tensor_float64;
+  else if constexpr (std::is_same<T, std::complex<double>>::value)
+  {
+    tabulate_tensor
+        = reinterpret_cast<void (*)(T*, const T*, const T*, const double*,
+                                    const int*, const unsigned char*)>(
+            expression.tabulate_tensor_complex128);
+  }
+  else
+  {
+    throw std::runtime_error("Type not supported.");
+  }
+  assert(tabulate_tensor);
+
+  return fem::Expression(coefficients, constants, points, tabulate_tensor,
+                         value_shape, mesh, argument_function_space);
+}
+
+/// Create Expression from UFC input
+/// (with named coefficients and constants)
+template <typename T>
+fem::Expression<T> create_expression(
+    const ufcx_expression& expression,
+    const std::map<std::string, std::shared_ptr<const fem::Function<T>>>&
+        coefficients,
+    const std::map<std::string, std::shared_ptr<const fem::Constant<T>>>&
+        constants,
+    const std::shared_ptr<const mesh::Mesh>& mesh = nullptr,
+    const std::shared_ptr<const fem::FunctionSpace>& argument_function_space
+    = nullptr)
+{
+  // Place coefficients in appropriate order
+  std::vector<std::shared_ptr<const fem::Function<T>>> coeff_map;
+  std::vector<std::string> coefficient_names;
+  for (int i = 0; i < expression.num_coefficients; ++i)
+    coefficient_names.push_back(expression.coefficient_names[i]);
+
+  for (const std::string& name : coefficient_names)
+  {
+    if (auto it = coefficients.find(name); it != coefficients.end())
+      coeff_map.push_back(it->second);
+    else
+    {
+      throw std::runtime_error("Expression coefficient \"" + name
+                               + "\" not provided.");
+    }
+  }
+
+  // Place constants in appropriate order
+  std::vector<std::shared_ptr<const fem::Constant<T>>> const_map;
+  std::vector<std::string> constant_names;
+  for (int i = 0; i < expression.num_constants; ++i)
+    constant_names.push_back(expression.constant_names[i]);
+
+  for (const std::string& name : constant_names)
+  {
+    if (auto it = constants.find(name); it != constants.end())
+      const_map.push_back(it->second);
+    else
+    {
+      throw std::runtime_error("Expression constant \"" + name
+                               + "\" not provided.");
+    }
+  }
+
+  return create_expression(expression, coeff_map, const_map,
+                           mesh, argument_function_space);
+}
+
+// NOTE: This is subject to change
 /// Pack coefficients of a Form
 ///
 /// @param[in] form The Form

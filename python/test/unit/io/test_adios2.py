@@ -14,11 +14,8 @@ from dolfinx.common import has_adios2
 from dolfinx.fem import Function, FunctionSpace, VectorFunctionSpace
 from dolfinx.mesh import (CellType, create_mesh, create_unit_cube,
                           create_unit_square)
-from dolfinx_utils.test.fixtures import tempdir
 
 from mpi4py import MPI
-
-assert (tempdir)
 
 
 @pytest.mark.skipif(MPI.COMM_WORLD.size > 1, reason="This test should only be run in serial.")
@@ -237,3 +234,22 @@ def test_vtx_functions(tempdir, dim, simplex):
         f.write(t)
 
     f.close()
+
+
+@pytest.mark.skipif(not has_adios2, reason="Requires ADIOS2.")
+def test_save_vtkx_cell_point(tempdir):
+    """Test writing point-wise data"""
+    from dolfinx.cpp.io import VTXWriter
+    mesh = create_unit_square(MPI.COMM_WORLD, 8, 5)
+    P = ufl.FiniteElement("Discontinuous Lagrange", mesh.ufl_cell(), 0)
+
+    V = FunctionSpace(mesh, P)
+    u = Function(V)
+    u.interpolate(lambda x: 0.5 * x[0])
+    u.name = "A"
+
+    filename = os.path.join(tempdir, "v.bp")
+    with pytest.raises(RuntimeError):
+        f = VTXWriter(mesh.comm, filename, [u._cpp_object])
+        f.write(0)
+        f.close()

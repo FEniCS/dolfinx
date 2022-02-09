@@ -16,7 +16,6 @@ from dolfinx.cpp.io import perm_gmsh, perm_vtk
 from dolfinx.fem import assemble_scalar, form
 from dolfinx.io import XDMFFile, ufl_mesh_from_gmsh
 from dolfinx.mesh import CellType, create_mesh
-from dolfinx_utils.test.skips import skip_in_parallel
 from ufl import dx
 
 from mpi4py import MPI
@@ -41,7 +40,7 @@ def check_cell_volume(points, cell, domain, volume):
         assert np.isclose(area, volume)
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 @pytest.mark.parametrize('order', range(1, 5))
 def test_triangle_mesh(order):
     points = []
@@ -73,7 +72,7 @@ def test_triangle_mesh(order):
     check_cell_volume(points, cell, domain, 0.5)
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 @pytest.mark.parametrize('order', range(1, 5))
 def test_tetrahedron_mesh(order):
     points = []
@@ -132,7 +131,7 @@ def test_tetrahedron_mesh(order):
     check_cell_volume(points, cell, domain, 1 / 6)
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 @pytest.mark.parametrize('order', [1, 2, 3, 4])
 def test_quadrilateral_mesh(order):
     random.seed(13)
@@ -169,7 +168,7 @@ def test_quadrilateral_mesh(order):
     check_cell_volume(points, cell, domain, 1)
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 @pytest.mark.parametrize('order', [1, 2, 3, 4])
 def test_hexahedron_mesh(order):
     random.seed(13)
@@ -247,7 +246,7 @@ def test_hexahedron_mesh(order):
     check_cell_volume(points, cell, domain, 1)
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 @pytest.mark.parametrize('order', range(1, 5))
 def test_triangle_mesh_vtk(order):
     points = []
@@ -287,7 +286,7 @@ def test_triangle_mesh_vtk(order):
     check_cell_volume(points, cell, domain, 0.5)
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 @pytest.mark.parametrize('order', range(1, 5))
 def test_tetrahedron_mesh_vtk(order):
     if order > 3:
@@ -382,7 +381,7 @@ def test_tetrahedron_mesh_vtk(order):
     check_cell_volume(points, cell, domain, 1 / 6)
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 @pytest.mark.parametrize('order', [1, 2, 3, 4])
 def test_quadrilateral_mesh_vtk(order):
     random.seed(13)
@@ -422,7 +421,7 @@ def test_quadrilateral_mesh_vtk(order):
     check_cell_volume(points, cell, domain, 1)
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 @pytest.mark.parametrize('order', [1, 2, 3, 4])
 def test_hexahedron_mesh_vtk(order):
     if order > 2:
@@ -509,7 +508,7 @@ def test_hexahedron_mesh_vtk(order):
     check_cell_volume(points, cell, domain, 1)
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("vtk,dolfin,cell_type", [
     ([0, 1, 2, 3, 4, 5], [0, 1, 2, 4, 5, 3], CellType.triangle),
     ([0, 1, 2, 3], [0, 1, 3, 2], CellType.quadrilateral),
@@ -525,7 +524,7 @@ def test_map_vtk_to_dolfin(vtk, dolfin, cell_type):
     assert (cell_p == vtk).all()
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 def test_xdmf_input_tri(datadir):
     with XDMFFile(MPI.COMM_WORLD, os.path.join(datadir, "mesh.xdmf"), "r", encoding=XDMFFile.Encoding.ASCII) as xdmf:
         mesh = xdmf.read_mesh(name="Grid")
@@ -533,7 +532,7 @@ def test_xdmf_input_tri(datadir):
     assert mesh.comm.allreduce(surface, op=MPI.SUM) == pytest.approx(4 * np.pi, rel=1e-4)
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 @pytest.mark.parametrize('order', range(1, 4))
 @pytest.mark.parametrize('cell_type', [CellType.triangle, CellType.quadrilateral])
 def test_gmsh_input_2d(order, cell_type):
@@ -596,7 +595,7 @@ def test_gmsh_input_2d(order, cell_type):
     # print(assemble_scalar(u*dx(mesh)))
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 @pytest.mark.parametrize('order', range(1, 4))
 @pytest.mark.parametrize('cell_type', [CellType.tetrahedron, CellType.hexahedron])
 def test_gmsh_input_3d(order, cell_type):
@@ -656,7 +655,7 @@ def test_gmsh_input_3d(order, cell_type):
     assert mesh.comm.allreduce(volume, op=MPI.SUM) == pytest.approx(np.pi, rel=10 ** (-1 - order))
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 def test_quadrilateral_cell_order_3():
     points = [
         [0., 0.], [1., 0.], [0., 1.], [1., 1.],
