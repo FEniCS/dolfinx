@@ -73,7 +73,7 @@ def left(x):
 
 # Locate all facets at the free end and assign them value 1
 free_end_facets = locate_entities_boundary(mesh, 1, free_end)
-mt = MeshTags(mesh, 1, free_end_facets, 1)
+mt = MeshTags(mesh, 1, np.sort(free_end_facets), 1)
 
 ds = ufl.Measure("ds", subdomain_data=mt)
 
