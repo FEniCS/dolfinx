@@ -11,11 +11,6 @@
 #include <vector>
 #include <xtensor/xtensor.hpp>
 
-namespace dolfinx::mesh
-{
-class Mesh;
-}
-
 /// Functions for the re-ordering of input mesh topology to the DOLFINx
 /// ordering, and transpose orderings for file output.
 namespace dolfinx::io::cells
@@ -121,9 +116,9 @@ compute_permutation(const xt::xtensor<std::int64_t, 2>& cells,
                     const std::vector<std::uint8_t>& p);
 
 /// Get VTK cell identifier
-/// @param[in] mesh The Mesh
+/// @param[in] cell The cell type
 /// @param[in] dim The topological dimension of the cell
 /// @return The VTK cell identifier
-std::int8_t get_vtk_cell_type(const dolfinx::mesh::Mesh& mesh, int dim);
+std::int8_t get_vtk_cell_type(mesh::CellType cell, int dim);
 
 } // namespace dolfinx::io::cells

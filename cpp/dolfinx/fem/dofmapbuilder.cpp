@@ -578,9 +578,13 @@ fem::build_dofmap_data(
     }
   }
 
-  assert(dofmap.size() % node_graph0.num_nodes() == 0);
+  int dofs_per_cell
+      = dofmap.empty() ? 0 : dofmap.size() / node_graph0.num_nodes();
+  graph::AdjacencyList<std::int32_t> dmap
+      = graph::build_adjacency_list<std::int32_t>(std::move(dofmap),
+                                                  dofs_per_cell);
+
   return {std::move(index_map), element_dof_layout.block_size(),
-          graph::build_adjacency_list<std::int32_t>(
-              std::move(dofmap), dofmap.size() / node_graph0.num_nodes())};
+          std::move(dmap)};
 }
 //-----------------------------------------------------------------------------

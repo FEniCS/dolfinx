@@ -32,12 +32,12 @@ All documented demos
 .. toctree::
    :maxdepth: 1
 
-   demos/poisson/demo_poisson.py.rst
-   demos/cahn-hilliard/demo_cahn-hilliard.py.rst
-   demos/stokes-taylor-hood/demo_stokes-taylor-hood.py.rst
-   demos/elasticity/demo_elasticity.py.rst
-   demos/gmsh/demo_gmsh.py.rst
-   demos/helmholtz2D/demo_helmholtz_2d.py.rst
-   demos/mixed-elasticity-sc/static-condensation-elasticity.py.rst
-   demos/pyvista/demo_pyvista.py.rst
-   demos/interpolation-io/demo_interpolation-io.py.rst
+   demos/poisson/demo_poisson.md
+   demos/cahn-hilliard/demo_cahn-hilliard.md
+   demos/stokes-taylor-hood/demo_stokes-taylor-hood.md
+   demos/elasticity/demo_elasticity.md
+   demos/gmsh/demo_gmsh.md
+   demos/helmholtz2D/demo_helmholtz_2d.md
+   demos/mixed-elasticity-sc/static-condensation-elasticity.md
+   demos/pyvista/demo_pyvista.md
+   demos/interpolation-io/demo_interpolation-io.md
