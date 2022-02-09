@@ -340,10 +340,8 @@ void set_diagonal(const std::function<int(const xtl::span<const std::int32_t>&,
 {
   for (std::size_t i = 0; i < rows.size(); ++i)
   {
-    const std::int32_t row = rows[i];
-    xtl::span row_span(&row, 1);
     xtl::span diag_span(&diagonal, 1);
-    set_fn(row_span, row_span, diag_span);
+    set_fn(rows.subspan(i, 1), rows.subspan(i, 1), diag_span);
   }
 }
 

@@ -60,19 +60,9 @@ Usize = U.element.space_dimension
 sigma, tau = ufl.TrialFunction(S), ufl.TestFunction(S)
 u, v = ufl.TrialFunction(U), ufl.TestFunction(U)
 
-
-def free_end(x):
-    """Marks the leftmost points of the cantilever"""
-    return np.isclose(x[0], 48.0)
-
-
-def left(x):
-    """Marks left part of boundary, where cantilever is attached to wall"""
-    return np.isclose(x[0], 0.0)
-
-
-# Locate all facets at the free end and assign them value 1
-free_end_facets = locate_entities_boundary(mesh, 1, free_end)
+# Locate all facets at the free end and assign them value 1. Sort the
+# facet indices (requirement for constructing MeshTags)
+free_end_facets = np.sort(locate_entities_boundary(mesh, 1, lambda x: np.isclose(x[0], 48.0)))
 mt = MeshTags(mesh, 1, free_end_facets, 1)
 
 ds = ufl.Measure("ds", subdomain_data=mt)
@@ -82,7 +72,7 @@ u_bc = Function(U)
 u_bc.x.array[:] = 0.0
 
 # Displacement BC is applied to the left side
-left_facets = locate_entities_boundary(mesh, 1, left)
+left_facets = locate_entities_boundary(mesh, 1, lambda x: np.isclose(x[0], 0.0))
 bdofs = locate_dofs_topological(U, 1, left_facets)
 bc = dirichletbc(u_bc, bdofs)
 

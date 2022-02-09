@@ -164,7 +164,6 @@ void assemble_discrete_gradient(
     xtl::span<const std::int32_t> dofs0 = dofmap0->cell_dofs(cell);
     std::vector<std::int32_t>& local_dofs = local_edge_dofs[local_edge];
     assert(local_dofs.size() == 1);
-    const std::array<std::int32_t, 1> row = {dofs0[local_dofs[0]]};
 
     xtl::span<const std::int32_t> vertices = e_to_v->links(e);
     assert(vertices.size() == 2);
@@ -190,6 +189,7 @@ void assemble_discrete_gradient(
     else
       Ae = {-1, 1};
 
+    auto row = dofs0.subspan(local_dofs[0], 1);
     mat_set(row, cols, Ae);
   }
 }
