@@ -18,8 +18,6 @@
 namespace dolfinx::la
 {
 
-// add_csr()
-
 /// Distributed sparse matrix
 ///
 /// The matrix storage format is compressed sparse row. The matrix is
@@ -48,33 +46,20 @@ public:
   /// used in finite element assembly functions.
   /// @param A Matrix to insert into
   /// @return Function for inserting values into `A`
-  // static std::function<int(int nr, const int* r, int nc, const int* c,
-  //                          const T* data)>
-  // mat_set_values(MatrixCSR& A)
-  // {
-  //   return [&A](int nr, const int* r, int nc, const int* c, const T* data)
-  //   {
-  //     A.set(tcb::span<const T>(data, nr * nc), tcb::span<const int>(r, nr),
-  //           tcb::span<const int>(c, nc));
-  //     return 0;
-  //   };
-  // }
-
-  // /// Insertion functor for accumulating values in matrix. It is
-  // /// typically used in finite element assembly functions.
-  // /// @param A Matrix to insert into
-  // /// @return Function for inserting values into `A`
-  // static std::function<int(int nr, const int* r, int nc, const int* c,
-  //                          const T* data)>
-  // mat_add_values(MatrixCSR& A)
-  // {
-  //   return [&A](int nr, const int* r, int nc, const int* c, const T* data)
-  //   {
-  //     A.add(tcb::span<const T>(data, nr * nc), tcb::span<const int>(r, nr),
-  //           tcb::span<const int>(c, nc));
-  //     return 0;
-  //   };
-  // }
+  /// @todo clarify setting on non-owned enrties
+  std::function<int(const xtl::span<const std::int32_t>&,
+                    const xtl::span<const std::int32_t>&,
+                    const xtl::span<const T>&)>
+  mat_set_values()
+  {
+    return [&](const xtl::span<const std::int32_t>& rows,
+               const xtl::span<const std::int32_t>& cols,
+               const xtl::span<const T>& data) -> int
+    {
+      this->set(data, rows, cols);
+      return 0;
+    };
+  }
 
   /// Insertion functor for accumulating values in matrix. It is
   /// typically used in finite element assembly functions.
@@ -270,7 +255,7 @@ public:
       const T* xr = x.data() + r * cols.size();
 
 #ifndef NDEBUG
-      if (!(row + 1 < (int)_row_ptr.size()))
+      if (row + 1 >= _index_maps[0]->size_local())
         throw std::runtime_error("Local row out of range");
 #endif
       auto cit0 = std::next(_cols.begin(), _row_ptr[row]);
@@ -303,15 +288,10 @@ public:
            const xtl::span<const std::int32_t>& cols)
   {
     assert(x.size() == rows.size() * cols.size());
-    const std::int32_t max_row
-        = _index_maps[0]->size_local() + _index_maps[0]->num_ghosts() - 1;
     for (std::size_t r = 0; r < rows.size(); ++r)
     {
+      // Row index and current data row
       std::int32_t row = rows[r];
-      if (row > max_row)
-        throw std::runtime_error("Local row out of range");
-
-      // Current data row
       const T* xr = x.data() + r * cols.size();
 
 #ifndef NDEBUG

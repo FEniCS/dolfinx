@@ -71,7 +71,8 @@ void declare_objects(py::module& m, const std::string& type)
                     { return dolfinx::la::MatrixCSR<T>(p); }))
       .def("norm_squared", &dolfinx::la::MatrixCSR<T>::norm_squared)
       .def("mat_add_values", &dolfinx::la::MatrixCSR<T>::mat_add_values)
-      // .def("set", &dolfinx::la::MatrixCSR<T>::set<T>)
+      .def("set", static_cast<void (dolfinx::la::MatrixCSR<T>::*)(T)>(
+                      &dolfinx::la::MatrixCSR<T>::set))
       .def("finalize", &dolfinx::la::MatrixCSR<T>::finalize)
       .def("to_dense",
            [](const dolfinx::la::MatrixCSR<T>& self)
@@ -174,8 +175,8 @@ void la(py::module& m)
       = m.def_submodule("petsc", "PETSc-specific linear algebra");
   petsc_module(petsc_mod);
 
-  // std::string pyclass_span_const_name = std::string("xltSpanConst_") + "int32";
-  // py::class_<xtl::span<const std::int32_t>,
+  // std::string pyclass_span_const_name = std::string("xltSpanConst_") +
+  // "int32"; py::class_<xtl::span<const std::int32_t>,
   //            std::shared_ptr<xtl::span<const std::int32_t>>>(
   //     m, pyclass_span_const_name.c_str());
 
