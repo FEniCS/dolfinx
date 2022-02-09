@@ -175,7 +175,7 @@ Form<T> create_form(
   }
 
   // Check argument function spaces
-#ifdef DEBUG
+#ifndef NDEBUG
   for (std::size_t i = 0; i < spaces.size(); ++i)
   {
     assert(spaces[i]->element());

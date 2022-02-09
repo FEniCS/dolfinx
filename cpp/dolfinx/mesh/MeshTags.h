@@ -53,7 +53,7 @@ public:
       throw std::runtime_error(
           "Indices and values arrays must have same size.");
     }
-#ifdef DEBUG
+#ifndef NDEBUG
     if (!std::is_sorted(_indices.begin(), _indices.end()))
       throw std::runtime_error("MeshTag data is not sorted");
     if (std::adjacent_find(_indices.begin(), _indices.end()) != _indices.end())
