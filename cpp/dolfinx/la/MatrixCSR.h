@@ -265,17 +265,14 @@ public:
     {
       // Columns indices for row
       std::int32_t row = rows[r];
-#ifdef DEBUG
-      if (std::int32_t max_row = _index_maps[0]->size_local() - 1;
-          row > max_row)
-      {
-        throw std::runtime_error("Local row out of range");
-      }
-#endif
 
       // Current data row
       const T* xr = x.data() + r * cols.size();
 
+#ifndef NDEBUG
+      if (!(row + 1 < (int)_row_ptr.size()))
+        throw std::runtime_error("Local row out of range");
+#endif
       auto cit0 = std::next(_cols.begin(), _row_ptr[row]);
       auto cit1 = std::next(_cols.begin(), _row_ptr[row + 1]);
       for (std::size_t c = 0; c < cols.size(); ++c)
@@ -283,7 +280,6 @@ public:
         // Find position of column index
         auto it = std::lower_bound(cit0, cit1, cols[c]);
         assert(it != cit1);
-        assert(*it == cols[c]);
         std::size_t d = std::distance(_cols.begin(), it);
         _data[d] = xr[c];
       }
@@ -318,6 +314,11 @@ public:
       // Current data row
       const T* xr = x.data() + r * cols.size();
 
+#ifndef NDEBUG
+      if (!(row + 1 < (int)_row_ptr.size()))
+        throw std::runtime_error("Local row out of range");
+#endif
+
       // Columns indices for row
       auto cit0 = std::next(_cols.begin(), _row_ptr[row]);
       auto cit1 = std::next(_cols.begin(), _row_ptr[row + 1]);
@@ -326,7 +327,6 @@ public:
         // Find position of column index
         auto it = std::lower_bound(cit0, cit1, cols[c]);
         assert(it != cit1);
-        assert(*it == cols[c]);
         std::size_t d = std::distance(_cols.begin(), it);
         assert(d < _data.size());
         _data[d] += xr[c];
