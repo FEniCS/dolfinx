@@ -59,6 +59,9 @@ void _lift_bc_cells(
   assert(_bs0 < 0 or _bs0 == bs0);
   assert(_bs1 < 0 or _bs1 == bs1);
 
+  if (cells.empty())
+    return;
+
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
 
@@ -213,6 +216,9 @@ void _lift_bc_exterior_facets(
     const xtl::span<const std::int8_t>& bc_markers1,
     const xtl::span<const T>& x0, double scale)
 {
+  if (facets.empty())
+    return;
+
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
 
@@ -324,6 +330,9 @@ void _lift_bc_interior_facets(
     const xtl::span<const std::int8_t>& bc_markers1,
     const xtl::span<const T>& x0, double scale)
 {
+  if (facets.empty())
+    return;
+
   const int tdim = mesh.topology().dim();
 
   // Prepare cell geometry
@@ -508,6 +517,9 @@ void assemble_cells(
 {
   assert(_bs < 0 or _bs == bs);
 
+  if (cells.empty())
+    return;
+
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
 
@@ -578,6 +590,9 @@ void assemble_exterior_facets(
     int cstride, const xtl::span<const std::uint32_t>& cell_info)
 {
   assert(_bs < 0 or _bs == bs);
+
+  if (facets.empty())
+    return;
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();

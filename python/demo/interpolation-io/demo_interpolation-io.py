@@ -1,20 +1,27 @@
+# ---
+# jupyter:
+#   jupytext:
+#     text_representation:
+#       extension: .py
+#       format_name: light
+#       format_version: '1.5'
+#       jupytext_version: 1.13.6
+# ---
 
 # Copyright (C) 2022 Garth N. Wells
 #
-# This file is part of DOLFINx (https://www.fenicsproject.org)
+# This file is part of DOLFINx (<https://www.fenicsproject.org>)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 #
-# ====================
-# Interpolation and IO
-# ====================
+# # Interpolation and IO
 #
 # This demo show the interpolation of functions into vector-element
 # (H(curl)) finite element spaces, and the interpolation of these
 # special finite elements in discontinuous Lagrange spaces for
 # artifact-free visualisation.
 
-
+# +
 import numpy as np
 
 from dolfinx import plot

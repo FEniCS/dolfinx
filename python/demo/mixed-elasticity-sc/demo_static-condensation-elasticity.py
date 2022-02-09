@@ -1,15 +1,25 @@
+# ---
+# jupyter:
+#   jupytext:
+#     text_representation:
+#       extension: .py
+#       format_name: light
+#       format_version: '1.5'
+#       jupytext_version: 1.13.6
+# ---
+
+# (demo-static-condensation)=
 #
-# .. _demo_static_condensation:
+# # Static condensation of linear elasticity
 #
-# Static condensation of linear elasticity
-# ========================================
 # Copyright (C) 2020  Michal Habera and Andreas Zilian
 #
 # This demo solves a Cook's plane stress elasticity test in a mixed
 # space formulation. The test is a sloped cantilever under upward
 # traction force at free end. Static condensation of internal (stress)
-# degrees-of-freedom is demonstrated. ::
+# degrees-of-freedom is demonstrated.
 
+# +
 import os
 
 import cffi
