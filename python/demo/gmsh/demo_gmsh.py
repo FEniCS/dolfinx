@@ -1,10 +1,21 @@
-#
-# .. _demo_gmsh:
-#
-# Mesh generation using GMSH python API
-# =====================================
-# Copyright (C) 2020 Garth N. Wells and Jørgen S. Dokken ::
+# -*- coding: utf-8 -*-
+# ---
+# jupyter:
+#   jupytext:
+#     text_representation:
+#       extension: .py
+#       format_name: light
+#       format_version: '1.5'
+#       jupytext_version: 1.13.6
+# ---
 
+# (demo-gmsh)=
+#
+# # Mesh generation using GMSH python API
+#
+# Copyright (C) 2020 Garth N. Wells and Jørgen S. Dokken
+
+# +
 import sys
 
 try:
@@ -22,10 +33,12 @@ from dolfinx.io import (XDMFFile, cell_perm_gmsh, distribute_entity_data,
 from dolfinx.mesh import CellType, create_mesh, create_meshtags
 
 from mpi4py import MPI
+# -
 
 # Generate a mesh on each rank with the gmsh API, and create a DOLFINx
-# mesh on each rank. ::
+# mesh on each rank.
 
+# +
 gmsh.initialize()
 gmsh.option.setNumber("General.Terminal", 0)
 model = gmsh.model()
@@ -51,10 +64,12 @@ mesh = create_mesh(MPI.COMM_SELF, cells, x, ufl_mesh_from_gmsh(element_types[0],
 
 with XDMFFile(MPI.COMM_SELF, "mesh_rank_{}.xdmf".format(MPI.COMM_WORLD.rank), "w") as file:
     file.write_mesh(mesh)
+# -
 
 # Create a distributed (parallel) mesh with affine geometry. Generate
-# mesh on rank 0, then build a distributed mesh ::
+# mesh on rank 0, then build a distributed mesh
 
+# +
 if MPI.COMM_WORLD.rank == 0:
     # Generate a mesh
 
@@ -112,10 +127,12 @@ with XDMFFile(MPI.COMM_WORLD, "mesh.xdmf", "w") as file:
     file.write_mesh(mesh)
     mesh.topology.create_connectivity(2, 3)
     file.write_meshtags(mt, geometry_xpath="/Xdmf/Domain/Grid[@Name='ball_d1']/Geometry")
+# -
 
 # Create a distributed (parallel) mesh with quadratic geometry. Generate
-# mesh on rank 0, then build a distributed mesh. ::
+# mesh on rank 0, then build a distributed mesh.
 
+# +
 if MPI.COMM_WORLD.rank == 0:
     # Using model.setCurrent(model_name) lets you change between models
     model.setCurrent("Sphere minus box")
