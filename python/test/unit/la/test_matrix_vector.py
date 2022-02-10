@@ -46,3 +46,23 @@ def test_create_matrix_csr():
     num_rows = bs * (map.size_local + map.num_ghosts)
     zero = np.zeros((num_rows, bs * num_cols), dtype=np.complex128)
     assert np.allclose(A.to_dense(), zero)
+
+
+def test_create_vector():
+    """Test creation of a distributed vector"""
+    mesh = create_unit_square(MPI.COMM_WORLD, 10, 11)
+    V = FunctionSpace(mesh, ("Lagrange", 1))
+    map = V.dofmap.index_map
+    bs = V.dofmap.index_map_bs
+
+    x = la.vector(map)
+    assert x.array.dtype == np.float64
+    x = la.vector(map, dtype=np.float64)
+    assert x.array.dtype == np.float64
+
+    x = la.vector(map, dtype=np.float32)
+    assert x.array.dtype == np.float32
+    x = la.vector(map, dtype=np.complex64)
+    assert x.array.dtype == np.complex64
+    x = la.vector(map, dtype=np.complex128)
+    assert x.array.dtype == np.complex128

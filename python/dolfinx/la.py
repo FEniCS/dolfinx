@@ -37,7 +37,7 @@ def is_orthonormal(basis, eps: float = 1.0e-12) -> bool:
 
 class MatrixCSRCMetaClass:
     def __init__(self, sp):
-        """A sparse matrix that uses compressed sparse row storage.
+        """A distributed sparse matrix that uses compressed sparse row storage.
 
         Args:
             sp: The sparsity pattern that defines the nonzero structure
@@ -47,7 +47,7 @@ class MatrixCSRCMetaClass:
 
 
 def matrix_csr(sp, dtype=np.float64) -> MatrixCSRCMetaClass:
-    """Create a sparse matrix.
+    """Create a distributed sparse matrix.
 
     The matrix uses compressed sparse row storage.
 
@@ -69,3 +69,39 @@ def matrix_csr(sp, dtype=np.float64) -> MatrixCSRCMetaClass:
 
     matrixcls = type("MatrixCSR", (MatrixCSRCMetaClass, ftype), {})
     return matrixcls(sp)
+
+
+class VectorMetaClass:
+    def __init__(self, map, bs):
+        """A distributed vector object.
+
+        Args:
+            map: Index map the describes the size and distribution of the vector
+            bs: Block size
+        """
+        super().__init__(map, bs)
+
+
+def vector(map, bs=1, dtype=np.float64) -> VectorMetaClass:
+    """Create a distributed vector.
+
+    Args:
+        map: Index map the describes the size and distribution of the vector
+        bs: Block size
+
+    Returns:
+        A distributed vector
+    """
+    if dtype == np.float32:
+        vtype = _cpp.la.Vector_float32
+    elif dtype == np.float64:
+        vtype = _cpp.la.Vector_float64
+    elif dtype == np.complex64:
+        vtype = _cpp.la.Vector_complex64
+    elif dtype == np.complex128:
+        vtype = _cpp.la.Vector_complex128
+    else:
+        raise NotImplementedError(f"Type {dtype} not supported.")
+
+    vectorcls = type("Vector", (VectorMetaClass, vtype), {})
+    return vectorcls(map, bs)
