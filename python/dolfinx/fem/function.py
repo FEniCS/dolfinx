@@ -232,6 +232,8 @@ class Function(ufl.Coefficient):
         def functiontype(dtype):
             if dtype is np.float64:
                 return _cpp.fem.Function_float64
+            elif dtype is np.float32:
+                return _cpp.fem.Function_float32
             elif dtype is np.complex128:
                 return _cpp.fem.Function_complex128
             else:

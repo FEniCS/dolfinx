@@ -41,3 +41,5 @@ All documented demos
    demos/mixed-elasticity-sc/static-condensation-elasticity.md
    demos/pyvista/demo_pyvista.md
    demos/interpolation-io/demo_interpolation-io.md
+   demos/demo_types.md
+
