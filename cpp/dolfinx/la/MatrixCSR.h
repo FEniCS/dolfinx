@@ -9,6 +9,8 @@
 #include "SparsityPattern.h"
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <mpi.h>
+#include <numeric>
 #include <vector>
 #include <xtensor/xtensor.hpp>
 #include <xtl/xspan.hpp>
@@ -44,14 +46,17 @@ public:
   /// used in finite element assembly functions.
   /// @param A Matrix to insert into
   /// @return Function for inserting values into `A`
-  static std::function<int(int nr, const int* r, int nc, const int* c,
-                           const T* data)>
-  mat_set_values(MatrixCSR& A)
+  /// @todo clarify setting on non-owned enrties
+  std::function<int(const xtl::span<const std::int32_t>&,
+                    const xtl::span<const std::int32_t>&,
+                    const xtl::span<const T>&)>
+  mat_set_values()
   {
-    return [&A](int nr, const int* r, int nc, const int* c, const T* data)
+    return [&](const xtl::span<const std::int32_t>& rows,
+               const xtl::span<const std::int32_t>& cols,
+               const xtl::span<const T>& data) -> int
     {
-      A.set(tcb::span<const T>(data, nr * nc), tcb::span<const int>(r, nr),
-            tcb::span<const int>(c, nc));
+      this->set(data, rows, cols);
       return 0;
     };
   }
@@ -60,14 +65,16 @@ public:
   /// typically used in finite element assembly functions.
   /// @param A Matrix to insert into
   /// @return Function for inserting values into `A`
-  static std::function<int(int nr, const int* r, int nc, const int* c,
-                           const T* data)>
-  mat_add_values(MatrixCSR& A)
+  std::function<int(const xtl::span<const std::int32_t>&,
+                    const xtl::span<const std::int32_t>&,
+                    const xtl::span<const T>&)>
+  mat_add_values()
   {
-    return [&A](int nr, const int* r, int nc, const int* c, const T* data)
+    return [&](const xtl::span<const std::int32_t>& rows,
+               const xtl::span<const std::int32_t>& cols,
+               const xtl::span<const T>& data) -> int
     {
-      A.add(tcb::span<const T>(data, nr * nc), tcb::span<const int>(r, nr),
-            tcb::span<const int>(c, nc));
+      this->add(data, rows, cols);
       return 0;
     };
   }
@@ -224,14 +231,14 @@ public:
 
   /// Set values in the matrix
   /// @note Only entries included in the sparsity pattern used to
-  ///       initialize the matrix can be set
-  /// @note All indices are local to the calling MPI rank
-  ///       and entries cannot be set in ghost rows.
-  /// @note This should be called after `finalize`. Using before `finalize` will
-  ///       set the values correctly, but incoming values may get added to them
-  ///       during a subsequent finalize operation.
+  /// initialize the matrix can be set
+  /// @note All indices are local to the calling MPI rank and entries
+  /// cannot be set in ghost rows.
+  /// @note This should be called after `finalize`. Using before
+  /// `finalize` will set the values correctly, but incoming values may
+  /// get added to them during a subsequent finalize operation.
   /// @param[in] x The `m` by `n` dense block of values (row-major) to
-  ///       set in the matrix
+  /// set in the matrix
   /// @param[in] rows The row indices of `x`
   /// @param[in] cols The column indices of `x`
   void set(const xtl::span<const T>& x,
@@ -239,17 +246,18 @@ public:
            const xtl::span<const std::int32_t>& cols)
   {
     assert(x.size() == rows.size() * cols.size());
-    const std::int32_t max_row = _index_maps[0]->size_local() - 1;
     for (std::size_t r = 0; r < rows.size(); ++r)
     {
       // Columns indices for row
       std::int32_t row = rows[r];
-      if (row > max_row)
-        throw std::runtime_error("Local row out of range");
 
       // Current data row
       const T* xr = x.data() + r * cols.size();
 
+#ifndef NDEBUG
+      if (row >= _index_maps[0]->size_local())
+        throw std::runtime_error("Local row out of range");
+#endif
       auto cit0 = std::next(_cols.begin(), _row_ptr[row]);
       auto cit1 = std::next(_cols.begin(), _row_ptr[row + 1]);
       for (std::size_t c = 0; c < cols.size(); ++c)
@@ -257,7 +265,6 @@ public:
         // Find position of column index
         auto it = std::lower_bound(cit0, cit1, cols[c]);
         assert(it != cit1);
-        assert(*it == cols[c]);
         std::size_t d = std::distance(_cols.begin(), it);
         _data[d] = xr[c];
       }
@@ -266,14 +273,14 @@ public:
 
   /// Accumulate values in the matrix
   /// @note Only entries included in the sparsity pattern used to
-  ///       initialize the matrix can be accumulated in to
-  /// @note All indices are local to the calling MPI rank and entries may go
-  ///       into ghost rows.
-  /// @note Use `finalize` after all entries have been added to send ghost rows
-  ///       to owners. Adding more entries after `finalize` is allowed, but
-  ///       another call to `finalize` will then be required.
+  /// initialize the matrix can be accumulated in to
+  /// @note All indices are local to the calling MPI rank and entries
+  /// may go into ghost rows.
+  /// @note Use `finalize` after all entries have been added to send
+  /// ghost rows to owners. Adding more entries after `finalize` is
+  /// allowed, but another call to `finalize` will then be required.
   /// @param[in] x The `m` by `n` dense block of values (row-major) to
-  ///       add to the matrix
+  /// add to the matrix
   /// @param[in] rows The row indices of `x`
   /// @param[in] cols The column indices of `x`
   void add(const xtl::span<const T>& x,
@@ -281,16 +288,16 @@ public:
            const xtl::span<const std::int32_t>& cols)
   {
     assert(x.size() == rows.size() * cols.size());
-    const std::int32_t max_row
-        = _index_maps[0]->size_local() + _index_maps[0]->num_ghosts() - 1;
     for (std::size_t r = 0; r < rows.size(); ++r)
     {
+      // Row index and current data row
       std::int32_t row = rows[r];
-      if (row > max_row)
-        throw std::runtime_error("Local row out of range");
-
-      // Current data row
       const T* xr = x.data() + r * cols.size();
+
+#ifndef NDEBUG
+      if (row >= (int)_row_ptr.size())
+        throw std::runtime_error("Local row out of range");
+#endif
 
       // Columns indices for row
       auto cit0 = std::next(_cols.begin(), _row_ptr[row]);
@@ -300,8 +307,8 @@ public:
         // Find position of column index
         auto it = std::lower_bound(cit0, cit1, cols[c]);
         assert(it != cit1);
-        assert(*it == cols[c]);
         std::size_t d = std::distance(_cols.begin(), it);
+        assert(d < _data.size());
         _data[d] += xr[c];
       }
     }
@@ -389,8 +396,9 @@ public:
 
   /// End transfer of ghost row data to owning ranks
   /// @note Must be preceded by MatrixCSR::finalize_begin()
-  /// @note Matrix data received from other processes will be accumulated into
-  /// locally owned rows, and ghost rows will be zeroed.
+  /// @note Matrix data received from other processes will be
+  /// accumulated into locally owned rows, and ghost rows will be
+  /// zeroed.
   void finalize_end()
   {
     int status = MPI_Wait(&_request, MPI_STATUS_IGNORE);
@@ -404,6 +412,21 @@ public:
     // Set ghost row data to zero
     const std::int32_t local_size0 = _index_maps[0]->size_local();
     std::fill(std::next(_data.begin(), _row_ptr[local_size0]), _data.end(), 0);
+  }
+
+  /// Compute the Frobenius norm squared
+  double norm_squared() const
+  {
+    const std::size_t num_owned_rows = _index_maps[0]->size_local();
+    assert(num_owned_rows < _row_ptr.size());
+
+    const double norm_sq_local = std::accumulate(
+        _data.cbegin(), std::next(_data.cbegin(), _row_ptr[num_owned_rows]),
+        double(0), [](double norm, T y) { return norm + std::norm(y); });
+    double norm_sq;
+    MPI_Allreduce(&norm_sq_local, &norm_sq, 1, MPI_DOUBLE, MPI_SUM,
+                  _comm.comm());
+    return norm_sq;
   }
 
   /// Index maps for the row and column space. The row IndexMap contains
@@ -434,11 +457,11 @@ public:
   /// @note Includes columns in ghost rows
   const std::vector<std::int32_t>& cols() const { return _cols; }
 
-  /// Get the start of off-diagonal (unowned columns) on each row, allowing the
-  /// matrix to be split (virtually) into two parts.
-  /// Operations (such as matrix-vector multiply) between the owned parts of the
-  /// matrix and vector can then be performed separately from operations on the
-  /// unowned parts.
+  /// Get the start of off-diagonal (unowned columns) on each row,
+  /// allowing the matrix to be split (virtually) into two parts.
+  /// Operations (such as matrix-vector multiply) between the owned
+  /// parts of the matrix and vector can then be performed separately
+  /// from operations on the unowned parts.
   /// @note Includes ghost rows, which should be truncated manually if not
   /// required.
   const std::vector<std::int32_t>& off_diag_offset() const
@@ -471,8 +494,8 @@ private:
   // Position in _data to add received data
   std::vector<int> _unpack_pos;
 
-  // Displacements for alltoall for each neighbor when sending and receiving
-
+  // Displacements for alltoall for each neighbor when sending and
+  // receiving
   std::vector<int> _val_send_disp, _val_recv_disp;
 
   // Ownership of each row, by neighbor
