@@ -147,17 +147,6 @@ void declare_functions(py::module& m)
              bcs)
       { dolfinx::fem::assemble_matrix<T>(A.mat_add_values(), form, bcs); },
       "Experimental.");
-  // NOTE: This is relative slow. Need to investigate reasons
-  // m.def(
-  //     "assemble_matrix",
-  //     [](const std::function<int(const xtl::span<const std::int32_t>&,
-  //                                const xtl::span<const std::int32_t>&,
-  //                                const xtl::span<const T>&)>& fn,
-  //        const dolfinx::fem::Form<T>& form,
-  //        const std::vector<std::shared_ptr<const
-  //        dolfinx::fem::DirichletBC<T>>>&
-  //            bcs) { dolfinx::fem::assemble_matrix<T>(fn, form, bcs); },
-  //     "Experimental.");
   m.def(
       "assemble_matrix",
       [](const std::function<int(const py::array_t<std::int32_t>&,
