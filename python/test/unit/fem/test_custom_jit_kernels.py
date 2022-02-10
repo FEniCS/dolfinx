@@ -8,10 +8,10 @@
 
 import numba
 import numpy as np
-import pytest
 
 import dolfinx
-from dolfinx import TimingType, cpp, list_timings
+from dolfinx import TimingType, list_timings
+from dolfinx import cpp as _cpp
 from dolfinx.fem import Function, FunctionSpace, IntegralType
 from dolfinx.mesh import create_unit_square
 
@@ -75,7 +75,7 @@ def tabulate_tensor_b_coeff(b_, w_, c_, coords_, local_index, orientation):
 def test_numba_assembly():
     mesh = create_unit_square(MPI.COMM_WORLD, 13, 13)
     V = FunctionSpace(mesh, ("Lagrange", 1))
-    Form = dolfinx.cpp.fem.Form_float64 if PETSc.ScalarType == np.float64 else dolfinx.cpp.fem.Form_complex128
+    Form = _cpp.fem.Form_float64 if PETSc.ScalarType == np.float64 else _cpp.fem.Form_complex128
 
     integrals = {IntegralType.cell: ([(-1, tabulate_tensor_A.address),
                                       (12, tabulate_tensor_A.address),
@@ -105,7 +105,7 @@ def test_coefficient():
     vals = Function(DG0)
     vals.vector.set(2.0)
 
-    Form = dolfinx.cpp.fem.Form_float64 if PETSc.ScalarType == np.float64 else dolfinx.cpp.fem.Form_complex128
+    Form = _cpp.fem.Form_float64 if PETSc.ScalarType == np.float64 else _cpp.fem.Form_complex128
     integrals = {IntegralType.cell: ([(-1, tabulate_tensor_b_coeff.address)], None)}
     L = Form([V._cpp_object], integrals, [vals._cpp_object], [], False)
 
@@ -115,8 +115,6 @@ def test_coefficient():
     assert (np.isclose(bnorm, 2.0 * 0.0739710713711999))
 
 
-@pytest.mark.skipif(np.issubdtype(PETSc.ScalarType, np.complexfloating),
-                    reason="This test does not work in complex mode.")
 def test_cffi_assembly():
     mesh = create_unit_square(MPI.COMM_WORLD, 13, 13)
     V = FunctionSpace(mesh, ("Lagrange", 1))
@@ -223,20 +221,24 @@ def test_cffi_assembly():
 
     ptrA = ffi.cast("intptr_t", ffi.addressof(lib, "tabulate_tensor_poissonA"))
     integrals = {IntegralType.cell: ([(-1, ptrA)], None)}
-    a = cpp.fem.Form_float64([V._cpp_object, V._cpp_object], integrals, [], [], False)
+    a = _cpp.fem.Form_float64([V._cpp_object, V._cpp_object], integrals, [], [], False)
 
     ptrL = ffi.cast("intptr_t", ffi.addressof(lib, "tabulate_tensor_poissonL"))
     integrals = {IntegralType.cell: ([(-1, ptrL)], None)}
-    L = cpp.fem.Form_float64([V._cpp_object], integrals, [], [], False)
+    L = _cpp.fem.Form_float64([V._cpp_object], integrals, [], [], False)
 
-    A = dolfinx.fem.assemble_matrix(a)
-    A.assemble()
-    b = dolfinx.fem.assemble_vector(L)
-    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+    sp = dolfinx.fem.create_sparsity_pattern(a)
+    sp.assemble()
 
-    Anorm = A.norm(PETSc.NormType.FROBENIUS)
-    bnorm = b.norm(PETSc.NormType.N2)
-    assert (np.isclose(Anorm, 56.124860801609124))
-    assert (np.isclose(bnorm, 0.0739710713711999))
+    A = _cpp.la.MatrixCSR_float64(sp)
+    _cpp.fem.assemble_matrix(A, a, [])
+    A.finalize()
+    assert np.isclose(np.sqrt(A.norm_squared()), 56.124860801609124)
 
-    list_timings(MPI.COMM_WORLD, [TimingType.wall])
+    b = _cpp.la.Vector_float64(L.function_spaces[0].dofmap.index_map,
+                               L.function_spaces[0].dofmap.index_map_bs)
+    b.array[:] = 0.0
+    _cpp.fem.assemble_vector(b.array, L, dolfinx.fem.pack_constants(L),
+                             dolfinx.fem.pack_coefficients(L))
+    b.scatter_reverse(_cpp.common.ScatterMode.add)
+    assert np.isclose(b.norm(), 0.0739710713711999)
