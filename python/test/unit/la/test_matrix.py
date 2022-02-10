@@ -8,24 +8,17 @@
 
 
 import numpy as np
-# import pytest
 
-# import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import la
-from dolfinx.fem import (Function, FunctionSpace, VectorFunctionSpace,
-                         apply_lifting, assemble_matrix, assemble_vector,
-                         dirichletbc, form, locate_dofs_topological, set_bc)
-from dolfinx.mesh import create_unit_square, locate_entities_boundary
-# from ufl import (Identity, TestFunction, TrialFunction, dot, dx, grad, inner,
-#                  sym, tr)
+from dolfinx.fem import FunctionSpace
+from dolfinx.mesh import create_unit_square
 
 from mpi4py import MPI
-from petsc4py import PETSc
 
 
 def test_create_matrix_csr():
-    """Test creation of CSR matrix with specified type"""
+    """Test creation of CSR matrix with specified types"""
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 11)
     V = FunctionSpace(mesh, ("Lagrange", 1))
     map = V.dofmap.index_map
