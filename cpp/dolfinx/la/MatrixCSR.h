@@ -295,7 +295,7 @@ public:
       const T* xr = x.data() + r * cols.size();
 
 #ifndef NDEBUG
-      if (!(row + 1 < (int)_row_ptr.size()))
+      if (row >= (int)_row_ptr.size())
         throw std::runtime_error("Local row out of range");
 #endif
 
