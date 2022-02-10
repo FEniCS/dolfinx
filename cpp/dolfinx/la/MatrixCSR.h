@@ -255,7 +255,7 @@ public:
       const T* xr = x.data() + r * cols.size();
 
 #ifndef NDEBUG
-      if (row + 1 >= _index_maps[0]->size_local())
+      if (row >= _index_maps[0]->size_local())
         throw std::runtime_error("Local row out of range");
 #endif
       auto cit0 = std::next(_cols.begin(), _row_ptr[row]);
