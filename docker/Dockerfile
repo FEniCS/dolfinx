@@ -91,7 +91,7 @@ ARG PETSC_SLEPC_DEBUGGING="no"
 
 # MPI variant. "mpich" or "openmpi".
 ARG MPI="mpich"
-ARG MPICH_CONFIGURE_OPTIONS="--with-device=ch3"
+ARG MPICH_CONFIGURE_OPTIONS="FCFLAGS=-fallow-argument-mismatch FFLAGS=-fallow-argument-mismatch --with-device=ch4:ofi"  # See https://github.com/pmodels/mpich/issues/5811
 
 # Number of build threads to use with make
 ARG BUILD_NP=2
@@ -155,7 +155,6 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
 
 # Install MPI
 RUN if [ "$MPI" = "mpich" ]; then \
-    export FFLAGS=-fallow-argument-mismatch && \
     wget http://www.mpich.org/static/downloads/${MPICH_VERSION}/mpich-${MPICH_VERSION}.tar.gz && \
     tar xfz mpich-${MPICH_VERSION}.tar.gz  && \
     cd mpich-${MPICH_VERSION}  && \
