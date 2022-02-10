@@ -10,8 +10,9 @@ import numba
 import numpy as np
 
 import dolfinx
-from dolfinx import TimingType, list_timings
+from dolfinx import TimingType
 from dolfinx import cpp as _cpp
+from dolfinx import la, list_timings
 from dolfinx.fem import Function, FunctionSpace, IntegralType
 from dolfinx.mesh import create_unit_square
 
@@ -229,8 +230,7 @@ def test_cffi_assembly():
 
     sp = dolfinx.fem.create_sparsity_pattern(a)
     sp.assemble()
-
-    A = _cpp.la.MatrixCSR_float64(sp)
+    A = la.matrix_csr(sp, dtype=np.float64)
     _cpp.fem.assemble_matrix(A, a, [])
     A.finalize()
     assert np.isclose(np.sqrt(A.norm_squared()), 56.124860801609124)

@@ -1,0 +1,55 @@
+# -*- coding: utf-8 -*-
+# Copyright (C) 20222 Garth N. Wells
+#
+# This file is part of DOLFINx (https://www.fenicsproject.org)
+#
+# SPDX-License-Identifier:    LGPL-3.0-or-later
+"""Unit tests for MatrixCSR"""
+
+
+import numpy as np
+# import pytest
+
+# import ufl
+from dolfinx import cpp as _cpp
+from dolfinx import la
+from dolfinx.fem import (Function, FunctionSpace, VectorFunctionSpace,
+                         apply_lifting, assemble_matrix, assemble_vector,
+                         dirichletbc, form, locate_dofs_topological, set_bc)
+from dolfinx.mesh import create_unit_square, locate_entities_boundary
+# from ufl import (Identity, TestFunction, TrialFunction, dot, dx, grad, inner,
+#                  sym, tr)
+
+from mpi4py import MPI
+from petsc4py import PETSc
+
+
+def test_create_matrix_csr():
+    """Test creation of CSR matrix with specified type"""
+    mesh = create_unit_square(MPI.COMM_WORLD, 10, 11)
+    V = FunctionSpace(mesh, ("Lagrange", 1))
+    map = V.dofmap.index_map
+    bs = V.dofmap.index_map_bs
+
+    pattern = _cpp.la.SparsityPattern(mesh.comm, [map, map], [bs, bs])
+    rows = range(0, bs * map.size_local)
+    cols = range(0, bs * map.size_local)
+    pattern.insert(rows, cols)
+    pattern.assemble()
+
+    A = la.matrix_csr(pattern)
+    assert A.data.dtype == np.float64
+    A = la.matrix_csr(pattern, dtype=np.float64)
+    assert A.data.dtype == np.float64
+
+    A = la.matrix_csr(pattern, dtype=np.float32)
+    assert A.data.dtype == np.float32
+
+    A = la.matrix_csr(pattern, dtype=np.complex128)
+    assert A.data.dtype == np.complex128
+
+    cmap = pattern.column_index_map()
+    num_cols = cmap.size_local + cmap.num_ghosts
+    num_rows = bs * (map.size_local + map.num_ghosts)
+    zero = np.zeros((num_rows, bs * num_cols), dtype=np.complex128)
+    assert np.allclose(A.to_dense(), zero)
