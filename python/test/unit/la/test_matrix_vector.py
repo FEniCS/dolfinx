@@ -57,7 +57,7 @@ def test_create_vector():
 
     x = la.vector(map)
     assert x.array.dtype == np.float64
-    x = la.vector(map, dtype=np.float64)
+    x = la.vector(map, bs=bs, dtype=np.float64)
     assert x.array.dtype == np.float64
 
     x = la.vector(map, dtype=np.float32)
@@ -66,3 +66,8 @@ def test_create_vector():
     assert x.array.dtype == np.complex64
     x = la.vector(map, dtype=np.complex128)
     assert x.array.dtype == np.complex128
+
+    x0 = la.vector(map, dtype=np.complex128)
+    x1 = la.vector(map, bs=1, dtype=np.complex128)
+    x2 = la.vector(map, bs=4, dtype=np.complex128)
+    assert 4 * x0.array.shape[0] == 4 * x1.array.shape[0] == x2.array.shape[0]
