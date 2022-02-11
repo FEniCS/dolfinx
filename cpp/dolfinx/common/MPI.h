@@ -234,9 +234,10 @@ neighbor_all_to_all(MPI_Comm neighbor_comm,
   std::adjacent_difference(std::next(send_data.offsets().begin()),
                            send_data.offsets().end(), send_sizes.begin());
   // Get receive sizes
-  const int num_recv = (indegree > 0) ? 1 : 0;
-  MPI_Neighbor_alltoall(send_sizes.data(), 1, MPI::mpi_type<int>(),
-                        recv_sizes.data(), num_recv, MPI::mpi_type<int>(),
+  const int sendcount = send_sizes.empty() ? 0 : 1;
+  const int recvcount = recv_sizes.empty() ? 0 : 1;
+  MPI_Neighbor_alltoall(send_sizes.data(), sendcount, MPI::mpi_type<int>(),
+                        recv_sizes.data(), recvcount, MPI::mpi_type<int>(),
                         neighbor_comm);
 
   // Work out recv offsets. Note use of std::prev to handle OpenMPI

@@ -439,9 +439,9 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
       // Number and values to send and receive
       const int num_indices = global[d].size();
       std::vector<int> size_recv(indegree);
-      const int num_recv = (indegree > 0) ? 1 : 0;
+      const int recvcount = size_recv.empty() ? 0 : 1;
       MPI_Neighbor_allgather(&num_indices, 1, MPI_INT, size_recv.data(),
-                             num_recv, MPI_INT, comm[d]);
+                             recvcount, MPI_INT, comm[d]);
 
       // Compute displacements for data to receive. Last entry has total
       // number of received items.
