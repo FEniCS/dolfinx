@@ -710,8 +710,10 @@ std::map<std::int32_t, std::set<int>> IndexMap::compute_shared_indices() const
   std::vector<int> recv_sizes(indegree);
   std::adjacent_difference(fwd_sharing_offsets.begin() + 1,
                            fwd_sharing_offsets.end(), send_sizes.begin());
-  MPI_Neighbor_alltoall(send_sizes.data(), send_sizes.size(), MPI_INT,
-                        recv_sizes.data(), recv_sizes.size(), MPI_INT,
+  int sendcount = send_sizes.empty() ? 0 : 1;
+  int recvcount = recv_sizes.empty() ? 0 : 1;
+  MPI_Neighbor_alltoall(send_sizes.data(), sendcount, MPI_INT,
+                        recv_sizes.data(), recvcount, MPI_INT,
                         _comm_owner_to_ghost.comm());
 
   // Work out recv offsets and send/receive
