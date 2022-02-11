@@ -72,7 +72,7 @@ void SLEPcEigenSolver::solve()
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::solve(std::int64_t n)
 {
-#ifdef DEBUG
+#ifndef NDEBUG
   // Get operators
   Mat A, B;
   assert(_eps);

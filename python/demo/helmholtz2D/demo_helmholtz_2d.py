@@ -1,17 +1,25 @@
+# ---
+# jupyter:
+#   jupytext:
+#     text_representation:
+#       extension: .py
+#       format_name: light
+#       format_version: '1.5'
+#       jupytext_version: 1.13.6
+# ---
+
+# # Helmholtz equation
 #
-# .. _demo_hemlholtz_2d:
-#
-# Helmholtz equation
-# ==================
 # Copyright (C) 2018 Samuel Groth
 #
 # Helmholtz problem in both complex and real modes
 # In the complex mode, the exact solution is a plane wave propagating at
 # an angle theta to the positive x-axis. Chosen for comparison with
-# results from Ihlenburg\'s book \"Finite Element Analysis of Acoustic
-# Scattering\" p138-139. In real mode, the Method of Manufactured
-# Solutions is used to produce the exact solution and source term. ::
+# results from Ihlenburg's book "Finite Element Analysis of Acoustic
+# Scattering" p138-139. In real mode, the Method of Manufactured
+# Solutions is used to produce the exact solution and source term.
 
+# +
 import numpy as np
 
 from dolfinx.fem import Function, FunctionSpace, LinearProblem, form
@@ -62,12 +70,13 @@ problem.solve()
 with XDMFFile(MPI.COMM_WORLD, "plane_wave.xdmf", "w", encoding=XDMFFile.Encoding.HDF5) as file:
     file.write_mesh(mesh)
     file.write_function(uh)
+# -
 
 # Calculate L2 and H1 errors of FEM solution and best approximation.
 # This demonstrates the error bounds given in Ihlenburg. Pollution errors
-# are evident for high wavenumbers. ::
+# are evident for high wavenumbers.
 
-
+# +
 # Function space for exact solution - need it to be higher than deg
 V_exact = FunctionSpace(mesh, ("Lagrange", deg + 3))
 u_exact = Function(V_exact)

@@ -1,14 +1,23 @@
+# -*- coding: utf-8 -*-
+# ---
+# jupyter:
+#   jupytext:
+#     text_representation:
+#       extension: .py
+#       format_name: light
+#       format_version: '1.5'
+#       jupytext_version: 1.13.6
+# ---
+
 # Copyright (C) 2021-2022 Jørgen S. Dokken and Garth N. Wells
 #
-# This file is part of DOLFINx (https://www.fenicsproject.org)
+# This file is part of DOLFINx (<https://www.fenicsproject.org>)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 #
-# ===============================
-# Using pyvista for visualization
-# ===============================
+# # Using pyvista for visualization
 
-
+# +
 import numpy as np
 
 import dolfinx.plot as plot

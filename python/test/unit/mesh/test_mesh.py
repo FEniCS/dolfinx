@@ -11,7 +11,10 @@ import numpy as np
 import pytest
 
 import basix
+import ufl
 from dolfinx import cpp as _cpp
+from dolfinx import graph
+from dolfinx import mesh as _mesh
 from dolfinx.cpp.mesh import (create_cell_partitioner, entities_to_geometry,
                               is_simplex)
 from dolfinx.fem import assemble_scalar, form
@@ -22,6 +25,51 @@ from dolfinx.mesh import (CellType, DiagonalType, GhostMode, create_box,
 from ufl import dx
 
 from mpi4py import MPI
+
+
+def submesh_topology_test(mesh, submesh, vertex_map, entity_dim, entities):
+    # Check that creating facets / creating connectivity doesn't cause
+    # a segmentation fault
+    mesh_tdim = mesh.topology.dim
+    if entity_dim == mesh_tdim:
+        submesh.topology.create_entities(mesh_tdim - 1)
+        submesh.topology.create_connectivity(mesh_tdim - 1, 0)
+
+    # Some processes might not own or ghost entities
+    if len(entities) > 0:
+        mesh.topology.create_connectivity(entity_dim, 0)
+        mesh_e_to_v = mesh.topology.connectivity(entity_dim, 0)
+        submesh.topology.create_connectivity(entity_dim, 0)
+        submesh_e_to_v = submesh.topology.connectivity(entity_dim, 0)
+        for submesh_entity in range(len(entities)):
+            submesh_entity_vertices = submesh_e_to_v.links(submesh_entity)
+            # The submesh is created such that entities is the map from the
+            # submesh entity to the mesh entity
+            mesh_entity = entities[submesh_entity]
+            mesh_entity_vertices = mesh_e_to_v.links(mesh_entity)
+            for i in range(len(submesh_entity_vertices)):
+                assert vertex_map[submesh_entity_vertices[i]] == mesh_entity_vertices[i]
+    else:
+        assert submesh.topology.index_map(entity_dim).size_local == 0
+
+
+def submesh_geometry_test(mesh, submesh, geom_map, entity_dim, entities):
+    submesh_geom_index_map = submesh.geometry.index_map()
+    assert submesh_geom_index_map.size_local + submesh_geom_index_map.num_ghosts == submesh.geometry.x.shape[0]
+
+    # Some processes might not own or ghost entities
+    if len(entities) > 0:
+        assert mesh.geometry.dim == submesh.geometry.dim
+
+        e_to_g = entities_to_geometry(mesh, entity_dim, entities, False)
+        for submesh_entity in range(len(entities)):
+            submesh_x_dofs = submesh.geometry.dofmap.links(submesh_entity)
+            # e_to_g[i] gets the mesh x_dofs of entities[i], which should
+            # correspond to the x_dofs of cell i in the submesh
+            mesh_x_dofs = e_to_g[submesh_entity]
+            for i in range(len(submesh_x_dofs)):
+                assert mesh_x_dofs[i] == geom_map[submesh_x_dofs[i]]
+                assert np.allclose(mesh.geometry.x[mesh_x_dofs[i]], submesh.geometry.x[submesh_x_dofs[i]])
 
 
 @pytest.fixture
@@ -463,46 +511,45 @@ def test_submesh_boundary(d, n, boundary, ghost_mode):
     submesh_geometry_test(mesh, submesh, geom_map, edim, entities)
 
 
-def submesh_topology_test(mesh, submesh, vertex_map, entity_dim, entities):
-    # Check that creating facets / creating connectivity doesn't cause
-    # a segmentation fault
-    mesh_tdim = mesh.topology.dim
-    if entity_dim == mesh_tdim:
-        submesh.topology.create_entities(mesh_tdim - 1)
-        submesh.topology.create_connectivity(mesh_tdim - 1, 0)
+def test_empty_rank_mesh():
+    """Construction of mesh where some ranks are empty"""
+    comm = MPI.COMM_WORLD
+    cell_type = CellType.triangle
+    tdim = 2
+    domain = ufl.Mesh(ufl.VectorElement("Lagrange", ufl.Cell(cell_type.name), 1))
 
-    # Some processes might not own or ghost entities
-    if len(entities) > 0:
-        mesh.topology.create_connectivity(entity_dim, 0)
-        mesh_e_to_v = mesh.topology.connectivity(entity_dim, 0)
-        submesh.topology.create_connectivity(entity_dim, 0)
-        submesh_e_to_v = submesh.topology.connectivity(entity_dim, 0)
-        for submesh_entity in range(len(entities)):
-            submesh_entity_vertices = submesh_e_to_v.links(submesh_entity)
-            # The submesh is created such that entities is the map from the
-            # submesh entity to the mesh entity
-            mesh_entity = entities[submesh_entity]
-            mesh_entity_vertices = mesh_e_to_v.links(mesh_entity)
-            for i in range(len(submesh_entity_vertices)):
-                assert vertex_map[submesh_entity_vertices[i]] == mesh_entity_vertices[i]
+    def partitioner(comm, nparts, local_graph, num_ghost_nodes, ghosting):
+        """Leave cells on the curent rank"""
+        dest = np.full(len(cells), comm.rank, dtype=np.int32)
+        return graph.create_adjacencylist(dest)
+
+    if comm.rank == 0:
+        cells = np.array([[0, 1, 2], [0, 2, 3]], dtype=np.int64)
+        cells = graph.create_adjacencylist(cells)
+        x = np.array([[0., 0.], [1., 0.], [1., 1.], [0., 1.]])
     else:
-        assert submesh.topology.index_map(entity_dim).size_local == 0
+        cells = graph.create_adjacencylist(np.empty((0, 3), dtype=np.int64))
+        x = np.empty((0, 2), dtype=np.float64)
 
+    mesh = _mesh.create_mesh(comm, cells, x, domain, GhostMode.none, partitioner)
 
-def submesh_geometry_test(mesh, submesh, geom_map, entity_dim, entities):
-    submesh_geom_index_map = submesh.geometry.index_map()
-    assert submesh_geom_index_map.size_local + submesh_geom_index_map.num_ghosts == submesh.geometry.x.shape[0]
+    topology = mesh.topology
 
-    # Some processes might not own or ghost entities
-    if len(entities) > 0:
-        assert mesh.geometry.dim == submesh.geometry.dim
+    # Check number of vertices
+    vmap = topology.index_map(0)
+    assert vmap.size_local == x.shape[0]
+    assert vmap.num_ghosts == 0
 
-        e_to_g = entities_to_geometry(mesh, entity_dim, entities, False)
-        for submesh_entity in range(len(entities)):
-            submesh_x_dofs = submesh.geometry.dofmap.links(submesh_entity)
-            # e_to_g[i] gets the mesh x_dofs of entities[i], which should
-            # correspond to the x_dofs of cell i in the submesh
-            mesh_x_dofs = e_to_g[submesh_entity]
-            for i in range(len(submesh_x_dofs)):
-                assert mesh_x_dofs[i] == geom_map[submesh_x_dofs[i]]
-                assert np.allclose(mesh.geometry.x[mesh_x_dofs[i]], submesh.geometry.x[submesh_x_dofs[i]])
+    # Check number of cells
+    cmap = topology.index_map(tdim)
+    assert cmap.size_local == cells.num_nodes
+    assert cmap.num_ghosts == 0
+
+    # Check number of edges
+    topology.create_entities(1)
+    emap = topology.index_map(1)
+    assert emap.num_ghosts == 0
+    if comm.rank == 0:
+        assert emap.size_local == 5
+    else:
+        assert emap.size_local == 0

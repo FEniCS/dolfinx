@@ -45,9 +45,9 @@
 ARG GMSH_VERSION=4_9_3
 ARG HDF5_SERIES=1.12
 ARG HDF5_PATCH=1
-ARG PYBIND11_VERSION=2.9.0
-ARG PETSC_VERSION=3.16.3
-ARG SLEPC_VERSION=3.16.1
+ARG PYBIND11_VERSION=2.9.1
+ARG PETSC_VERSION=3.16.4
+ARG SLEPC_VERSION=3.16.2
 ARG ADIOS2_VERSION=2.7.1
 ARG PYVISTA_VERSION=0.33.2
 ARG NUMPY_VERSION=1.21.5
@@ -55,7 +55,7 @@ ARG KAHIP_VERSION=3.14
 ARG XTENSOR_VERSION=0.24.0
 ARG XTL_VERSION=0.7.4
 
-ARG MPICH_VERSION=3.4.3
+ARG MPICH_VERSION=4.0
 ARG OPENMPI_SERIES=4.1
 ARG OPENMPI_PATCH=2
 
@@ -91,7 +91,7 @@ ARG PETSC_SLEPC_DEBUGGING="no"
 
 # MPI variant. "mpich" or "openmpi".
 ARG MPI="mpich"
-ARG MPICH_CONFIGURE_OPTIONS="--with-device=ch3"
+ARG MPICH_CONFIGURE_OPTIONS="FCFLAGS=-fallow-argument-mismatch FFLAGS=-fallow-argument-mismatch --with-device=ch4:ofi"  # See https://github.com/pmodels/mpich/issues/5811
 
 # Number of build threads to use with make
 ARG BUILD_NP=2
@@ -131,6 +131,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     python3-setuptools && \
     #
     apt-get -y install \
+    catch2 \
     clang-format \
     doxygen \
     git \
@@ -154,7 +155,6 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
 
 # Install MPI
 RUN if [ "$MPI" = "mpich" ]; then \
-    export FFLAGS=-fallow-argument-mismatch && \
     wget http://www.mpich.org/static/downloads/${MPICH_VERSION}/mpich-${MPICH_VERSION}.tar.gz && \
     tar xfz mpich-${MPICH_VERSION}.tar.gz  && \
     cd mpich-${MPICH_VERSION}  && \
@@ -176,7 +176,7 @@ RUN if [ "$MPI" = "mpich" ]; then \
 #   documentation or run tests.
 # LLVM_CONFIG required on aarch64, should be removed long-term.
 RUN LLVM_CONFIG=/usr/bin/llvm-config-9 pip3 install --no-cache-dir cffi mpi4py numba && \
-    pip3 install --no-cache-dir cppimport flake8 isort pybind11==${PYBIND11_VERSION} pytest pytest-xdist sphinx sphinx_rtd_theme
+    pip3 install --no-cache-dir cppimport flake8 isort jupytext myst-parser pybind11==${PYBIND11_VERSION} pytest pytest-xdist sphinx sphinx_rtd_theme
 
 # Upgrade numpy via pip. Exclude binaries to avoid conflicts with libblas
 # (See issue #126 and #1305)

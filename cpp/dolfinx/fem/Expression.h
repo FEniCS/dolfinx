@@ -66,7 +66,8 @@ public:
     if (argument_function_space and _mesh != argument_function_space->mesh())
       throw std::runtime_error("Incompatible mesh");
     if (!_mesh)
-      throw std::runtime_error("No mesh could be associated with the Expression.");
+      throw std::runtime_error(
+          "No mesh could be associated with the Expression.");
   }
 
   /// Move constructor

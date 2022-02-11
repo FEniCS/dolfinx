@@ -30,6 +30,10 @@ T assemble_cells(const mesh::Geometry& geometry,
                  const xtl::span<const T>& constants,
                  const xtl::span<const T>& coeffs, int cstride)
 {
+  T value(0);
+  if (cells.empty())
+    return value;
+
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
 
@@ -41,7 +45,6 @@ T assemble_cells(const mesh::Geometry& geometry,
   std::vector<double> coordinate_dofs(3 * num_dofs_g);
 
   // Iterate over all cells
-  T value(0);
   for (std::size_t index = 0; index < cells.size(); ++index)
   {
     std::int32_t c = cells[index];
@@ -72,6 +75,10 @@ T assemble_exterior_facets(
     const xtl::span<const T>& constants, const xtl::span<const T>& coeffs,
     int cstride)
 {
+  T value(0);
+  if (facets.empty())
+    return value;
+
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
 
@@ -83,7 +90,6 @@ T assemble_exterior_facets(
   std::vector<double> coordinate_dofs(3 * num_dofs_g);
 
   // Iterate over all facets
-  T value(0);
   for (std::size_t index = 0; index < facets.size(); ++index)
   {
     std::int32_t cell = facets[index].first;
@@ -117,6 +123,10 @@ T assemble_interior_facets(
     int cstride, const xtl::span<const int>& offsets,
     const xtl::span<const std::uint8_t>& perms)
 {
+  T value(0);
+  if (facets.empty())
+    return value;
+
   const int tdim = mesh.topology().dim();
 
   // Prepare cell geometry
@@ -135,7 +145,6 @@ T assemble_interior_facets(
       = mesh::cell_num_entities(mesh.topology().cell_type(), tdim - 1);
 
   // Iterate over all facets
-  T value = 0;
   for (std::size_t index = 0; index < facets.size(); ++index)
   {
     const std::array<std::int32_t, 2> cells
@@ -178,7 +187,7 @@ T assemble_scalar(
   std::shared_ptr<const mesh::Mesh> mesh = M.mesh();
   assert(mesh);
 
-  T value(0);
+  T value = 0;
   for (int i : M.integral_ids(IntegralType::cell))
   {
     const auto& fn = M.kernel(IntegralType::cell, i);

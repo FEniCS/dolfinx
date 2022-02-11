@@ -199,8 +199,9 @@ void apply_lifting(
 ///  dofs the row and column are zeroed. The diagonal  entry is not set.
 template <typename T>
 void assemble_matrix(
-    const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
-                            const std::int32_t*, const T*)>& mat_add,
+    const std::function<int(const xtl::span<const std::int32_t>&,
+                            const xtl::span<const std::int32_t>&,
+                            const xtl::span<const T>&)>& mat_add,
     const Form<T>& a, const xtl::span<const T>& constants,
     const std::map<std::pair<IntegralType, int>,
                    std::pair<xtl::span<const T>, int>>& coefficients,
@@ -247,8 +248,9 @@ void assemble_matrix(
 ///  dofs the row and column are zeroed. The diagonal  entry is not set.
 template <typename T>
 void assemble_matrix(
-    const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
-                            const std::int32_t*, const T*)>& mat_add,
+    const std::function<int(const xtl::span<const std::int32_t>&,
+                            const xtl::span<const std::int32_t>&,
+                            const xtl::span<const T>&)>& mat_add,
     const Form<T>& a,
     const std::vector<std::shared_ptr<const DirichletBC<T>>>& bcs)
 {
@@ -276,8 +278,9 @@ void assemble_matrix(
 /// local index.
 template <typename T>
 void assemble_matrix(
-    const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
-                            const std::int32_t*, const T*)>& mat_add,
+    const std::function<int(const xtl::span<const std::int32_t>&,
+                            const xtl::span<const std::int32_t>&,
+                            const xtl::span<const T>&)>& mat_add,
     const Form<T>& a, const xtl::span<const T>& constants,
     const std::map<std::pair<IntegralType, int>,
                    std::pair<xtl::span<const T>, int>>& coefficients,
@@ -301,8 +304,9 @@ void assemble_matrix(
 ///   local index.
 template <typename T>
 void assemble_matrix(
-    const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
-                            const std::int32_t*, const T*)>& mat_add,
+    const std::function<int(const xtl::span<const std::int32_t>&,
+                            const xtl::span<const std::int32_t>&,
+                            const xtl::span<const T>&)>& mat_add,
     const Form<T>& a, const xtl::span<const std::int8_t>& dof_marker0,
     const xtl::span<const std::int8_t>& dof_marker1)
 
@@ -329,15 +333,15 @@ void assemble_matrix(
 /// @param[in] diagonal The value to add to the diagonal for the
 ///   specified rows
 template <typename T>
-void set_diagonal(
-    const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
-                            const std::int32_t*, const T*)>& set_fn,
-    const xtl::span<const std::int32_t>& rows, T diagonal = 1.0)
+void set_diagonal(const std::function<int(const xtl::span<const std::int32_t>&,
+                                          const xtl::span<const std::int32_t>&,
+                                          const xtl::span<const T>&)>& set_fn,
+                  const xtl::span<const std::int32_t>& rows, T diagonal = 1.0)
 {
   for (std::size_t i = 0; i < rows.size(); ++i)
   {
-    const std::int32_t row = rows[i];
-    set_fn(1, &row, 1, &row, &diagonal);
+    xtl::span diag_span(&diagonal, 1);
+    set_fn(rows.subspan(i, 1), rows.subspan(i, 1), diag_span);
   }
 }
 
@@ -357,12 +361,12 @@ void set_diagonal(
 /// @param[in] diagonal The value to add to the diagonal for rows with a
 ///   boundary condition applied
 template <typename T>
-void set_diagonal(
-    const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
-                            const std::int32_t*, const T*)>& set_fn,
-    const fem::FunctionSpace& V,
-    const std::vector<std::shared_ptr<const DirichletBC<T>>>& bcs,
-    T diagonal = 1.0)
+void set_diagonal(const std::function<int(const xtl::span<const std::int32_t>&,
+                                          const xtl::span<const std::int32_t>&,
+                                          const xtl::span<const T>&)>& set_fn,
+                  const fem::FunctionSpace& V,
+                  const std::vector<std::shared_ptr<const DirichletBC<T>>>& bcs,
+                  T diagonal = 1.0)
 {
   for (const auto& bc : bcs)
   {

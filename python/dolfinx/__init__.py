@@ -36,6 +36,7 @@ from dolfinx.common import (TimingType, git_commit_hash, has_debug, has_kahip,
                             has_parmetis, list_timings, timing)
 # Import cpp modules
 from dolfinx.cpp import __version__
+from dolfinx import fem, common, geometry, graph, io, jit, la, log, mesh, nls, plot
 
 _cpp.common.init_logging(sys.argv)
 del sys
@@ -49,3 +50,10 @@ def get_include(user=False):
     else:
         # Package is from a source directory
         return os.path.join(os.path.dirname(d), "src")
+
+
+__all__ = [
+    "fem", "common", "geometry", "graph", "io", "jit", "la", "log", "mesh", "nls", "plot",
+    "TimingType", "git_commit_hash", "has_debug", "has_kahip", "has_parmetis", "list_timings",
+    "timing"
+]
