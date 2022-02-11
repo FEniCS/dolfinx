@@ -21,9 +21,9 @@ given order.
 Advanced demos
 --------------
 
-These examples typically demonstrate how to solve a certain PDE using
-more advanced techniques. We recommend that you take a look at these
-demos for tips and tricks on how to use more advanced or lower-level
+These examples demonstrate how to solve a certain PDE using more
+advanced techniques. We recommend that you take a look at these demos
+for tips and tricks on how to use more advanced or lower-level
 functionality and optimizations.
 
 

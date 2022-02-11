@@ -21,10 +21,7 @@ def process():
     for subdir in subdirs:
 
         # Build list of demo files
-        demos = []
-        for p in subdir.rglob("*"):
-            if p.suffix == ".py" and p.name[:4] == "demo":
-                demos.append(p)
+        demos= list(subdir.glob('**/demo*.py'))
 
         # Make demo doc directory
         demo_dir = pathlib.Path('./demos')
