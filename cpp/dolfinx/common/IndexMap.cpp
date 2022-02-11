@@ -309,8 +309,9 @@ common::stack_index_maps(
   // Figure out how much data to receive from each neighbor
   const int num_my_rows = indices.size();
   std::vector<int> num_rows_recv(indegree);
-  MPI_Neighbor_allgather(&num_my_rows, 1, MPI_INT, num_rows_recv.data(), 1,
-                         MPI_INT, comm);
+  const int num_recv = (indegree > 0) ? 1 : 0;
+  MPI_Neighbor_allgather(&num_my_rows, 1, MPI_INT, num_rows_recv.data(),
+                         num_recv, MPI_INT, comm);
 
   // Compute displacements for data to receive
   std::vector<int> disp(indegree + 1, 0);
@@ -707,10 +708,11 @@ std::map<std::int32_t, std::set<int>> IndexMap::compute_shared_indices() const
   // Send data size to send, and get to-receive sizes
   std::vector<int> send_sizes(outdegree, 0);
   std::vector<int> recv_sizes(indegree);
+  const int num_recv = (indegree > 0) ? 1 : 0;
   std::adjacent_difference(fwd_sharing_offsets.begin() + 1,
                            fwd_sharing_offsets.end(), send_sizes.begin());
-  MPI_Neighbor_alltoall(send_sizes.data(), 1, MPI_INT, recv_sizes.data(), 1,
-                        MPI_INT, _comm_owner_to_ghost.comm());
+  MPI_Neighbor_alltoall(send_sizes.data(), 1, MPI_INT, recv_sizes.data(),
+                        num_recv, MPI_INT, _comm_owner_to_ghost.comm());
 
   // Work out recv offsets and send/receive
   std::vector<int> recv_offsets(recv_sizes.size() + 1, 0);
