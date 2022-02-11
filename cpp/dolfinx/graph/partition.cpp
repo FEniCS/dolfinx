@@ -243,7 +243,7 @@ std::vector<std::int64_t> graph::build::compute_ghost_indices(
   }
 
   std::vector<int> recv_sizes(neighbors.size());
-  const int num_recv = (recv_sizes.size() > 0) ? 1 ? 0;
+  const int num_recv = (recv_sizes.size() > 0) ? 1 : 0;
   MPI_Neighbor_alltoall(ghost_index_count.data(), 1, MPI_INT, recv_sizes.data(),
                         num_recv, MPI_INT, neighbor_comm);
   std::vector<int> recv_offsets = {0};
