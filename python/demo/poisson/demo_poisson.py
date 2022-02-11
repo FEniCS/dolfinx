@@ -17,21 +17,14 @@
 # This demo illustrates how to:
 #
 # - Solve a linear partial differential equation
-# - Create and apply Dirichlet boundary conditions
 # - Define a FunctionSpace
-#
-# The solution for $u$ in this demo will look as follows:
-#
-# ```{image} poisson_u.png
-# :scale: 75 %
-# ```
+# - Create and apply Dirichlet boundary conditions
 #
 # ## Equation and problem definition
 #
-# The Poisson equation is the canonical elliptic partial differential
-# equation.  For a domain $\Omega \subset \mathbb{R}^n$ with
-# boundary $\partial \Omega = \Gamma_{D} \cup \Gamma_{N}$, the
-# Poisson equation with particular boundary conditions reads:
+# For a domain $\Omega \subset \mathbb{R}^n$ with boundary $\partial
+# \Omega = \Gamma_{D} \cup \Gamma_{N}$, the Poisson equation with
+# particular boundary conditions reads:
 #
 # $$
 # \begin{align}
@@ -41,9 +34,9 @@
 # \end{align}
 # $$
 #
-# Here, $f$ and $g$ are input data and $n$ denotes the
-# outward directed boundary normal. The most standard variational form
-# of Poisson equation reads: find $u \in V$ such that
+# where $f$ and $g$ are input data and $n$ denotes the outward directed
+# boundary normal. The variational problem reads: find $u \in V$ such
+# that
 #
 # $$
 # a(u, v) = L(v) \quad \forall \ v \in V,
@@ -53,8 +46,8 @@
 #
 # $$
 # \begin{align}
-# a(u, v) &= \int_{\Omega} \nabla u \cdot \nabla v \, {\rm d} x, \\
-# L(v)    &= \int_{\Omega} f v \, {\rm d} x + \int_{\Gamma_{N}} g v \, {\rm d} s.
+# a(u, v) &:= \int_{\Omega} \nabla u \cdot \nabla v \, {\rm d} x, \\
+# L(v)    &:= \int_{\Omega} f v \, {\rm d} x + \int_{\Gamma_{N}} g v \, {\rm d} s.
 # \end{align}
 # $$
 #
@@ -63,8 +56,7 @@
 # satisfy the Dirichlet boundary conditions ($u = 0 \ {\rm on} \
 # \Gamma_{D}$).
 #
-# In this demo, we shall consider the following definitions of the input
-# functions, the domain, and the boundaries:
+# In this demo we consider:
 #
 # - $\Omega = [0,2] \times [0,1]$ (a rectangle)
 # - $\Gamma_{D} = \{(0, y) \cup (1, y) \subset \partial \Omega\}$
@@ -77,11 +69,7 @@
 #
 # ## Implementation
 #
-# This description goes through the implementation (in
-# {download}`demo_poisson.py`) of a solver for the above described
-# Poisson equation step-by-step.
-#
-# First, the {py:mod}`dolfinx` module is imported:
+# The modules that will be used are imported:
 
 # +
 import numpy as np
@@ -94,32 +82,24 @@ from mpi4py import MPI
 from petsc4py.PETSc import ScalarType
 # -
 
-# We begin by defining a mesh of the domain and a finite element
-# function space $V$ relative to this mesh. We create a rectangular mesh
-# using built-in function provided by class
-# {py:class}`create_rectangle<dolfinx.mesh.create_rectangle>`. In order
-# to create a mesh consisting of 32 x 16 squares with each square
-# divided into two triangles, we do as follows
+# We begin by creating a rectangular Mesh of the domain and a finite
+# element function space $V$ on the mesh.
 
 # +
 # Create mesh
-rect_mesh = mesh.create_rectangle(
-    comm=MPI.COMM_WORLD,
-    points=((0.0, 0.0), (2.0, 1.0)),
-    n=(32, 16),
-    cell_type=mesh.CellType.triangle,
-)
+msh = mesh.create_rectangle(comm=MPI.COMM_WORLD,
+                            points=((0.0, 0.0), (2.0, 1.0)), n=(32, 16),
+                            cell_type=mesh.CellType.triangle,)
 
 # Define function space
-V = fem.FunctionSpace(rect_mesh, ("Lagrange", 1))
+V = fem.FunctionSpace(msh, ("Lagrange", 1))
 # -
 
 # The second argument to {py:class}`FunctionSpace
 # <dolfinx.fem.FunctionSpace>` is a tuple consisting of `(family,
 # degree)`, where `family` is the finite element family, and `degree`
 # specifies the polynomial degree. Thus, in this case, our space `V`
-# consists of first-order, continuous Lagrange finite element functions
-# (or in order words, continuous piecewise linear polynomials).
+# consists of first-order, continuous Lagrange finite element functions.
 #
 # Next, we want to consider the Dirichlet boundary condition. A simple
 # Python function, returning a boolean, can be used to define the
@@ -153,15 +133,14 @@ V = fem.FunctionSpace(rect_mesh, ("Lagrange", 1))
 
 # Locate the facets on the boundary matching the provided marker
 # function
-facets = mesh.locate_entities_boundary(
-    rect_mesh,
-    dim=1,
-    marker=lambda x: np.logical_or(np.isclose(x[0], 0.0), np.isclose(x[0], 2.0)),
-)
+facets = mesh.locate_entities_boundary(msh, dim=1,
+                                       marker=lambda x: np.logical_or(np.isclose(x[0], 0.0),
+                                                                      np.isclose(x[0], 2.0)))
 
 # Locate the degrees of freedom for the relevant function space that
 # intersects the facets where we what to impose the boundary condition
 dofs = fem.locate_dofs_topological(V=V, entity_dim=1, entities=facets)
+
 # Define the boundary condition
 bc = fem.dirichletbc(value=ScalarType(0), dofs=dofs, V=V)
 
@@ -182,7 +161,7 @@ bc = fem.dirichletbc(value=ScalarType(0), dofs=dofs, V=V)
 # Define variational problem
 u = ufl.TrialFunction(V)
 v = ufl.TestFunction(V)
-x = ufl.SpatialCoordinate(rect_mesh)
+x = ufl.SpatialCoordinate(msh)
 f = 10 * exp(-((x[0] - 0.5) ** 2 + (x[1] - 0.5) ** 2) / 0.02)
 g = sin(5 * x[0])
 a = inner(grad(u), grad(v)) * dx
@@ -202,9 +181,7 @@ L = inner(f, v) * dx + inner(g, v) * ds
 # +
 # In this problem, we use a direct LU solver, which is defined through
 # the dictionary `petsc_options`.
-problem = fem.LinearProblem(
-    a, L, bcs=[bc], petsc_options={"ksp_type": "preonly", "pc_type": "lu"}
-)
+problem = fem.LinearProblem(a, L, bcs=[bc], petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
 
 # When we want to compute the solution to the problem, we can specify
 # what kind of solver we want to use.
@@ -230,17 +207,14 @@ with io.XDMFFile(MPI.COMM_WORLD, "poisson.xdmf", "w") as file:
 # Plot solution
 try:
     import pyvista
-
     cells, types, x = plot.create_vtk_mesh(V)
     grid = pyvista.UnstructuredGrid(cells, types, x)
     grid.point_data["u"] = uh.x.array.real
     grid.set_active_scalars("u")
-
     plotter = pyvista.Plotter()
     plotter.add_mesh(grid, show_edges=True)
     warped = grid.warp_by_scalar()
     plotter.add_mesh(warped)
-
     plotter.show()
 except ModuleNotFoundError:
     print("'pyvista' is required to visualise the solution")
