@@ -113,7 +113,7 @@ graph::build::distribute(MPI_Comm comm,
   std::vector<std::int64_t>().swap(data_send);
 
   // Unpack receive buffer
-  int mpi_rank = MPI::rank(comm);
+  int mpi_rank = dolfinx::MPI::rank(comm);
   std::vector<std::int64_t> array;
   std::vector<std::int64_t> ghost_array;
   std::vector<std::int64_t> global_indices;
@@ -198,7 +198,7 @@ std::vector<std::int64_t> graph::build::compute_ghost_indices(
   std::vector<int> neighbors;
   std::map<int, int> proc_to_neighbor;
   int np = 0;
-  [[maybe_unused]] int mpi_rank = MPI::rank(comm);
+  [[maybe_unused]] int mpi_rank = dolfinx::MPI::rank(comm);
   for (int p : ghost_owners)
   {
     assert(p != mpi_rank);
