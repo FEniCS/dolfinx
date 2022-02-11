@@ -201,7 +201,7 @@ uh = problem.solve()
 # +
 # Save solution in XDMF format
 with io.XDMFFile(MPI.COMM_WORLD, "poisson.xdmf", "w") as file:
-    file.write_mesh(rect_mesh)
+    file.write_mesh(msh)
     file.write_function(uh)
 
 # Plot solution
