@@ -171,15 +171,11 @@ compute_nonlocal_dual_graph(
   // Get permutation that takes facets into sorted order
   std::vector<int> perm(num_facets_rcvd);
   std::iota(perm.begin(), perm.end(), 0);
-  std::sort(perm.begin(), perm.end(),
-            [&recvd_buffer](int a, int b)
-            {
-              return std::lexicographical_compare(
-                  recvd_buffer.links(a).begin(),
-                  std::prev(recvd_buffer.links(a).end()),
-                  recvd_buffer.links(b).begin(),
-                  std::prev(recvd_buffer.links(b).end()));
-            });
+  std::sort(perm.begin(), perm.end(), [&recvd_buffer](int a, int b) {
+    return std::lexicographical_compare(
+        recvd_buffer.links(a).begin(), std::prev(recvd_buffer.links(a).end()),
+        recvd_buffer.links(b).begin(), std::prev(recvd_buffer.links(b).end()));
+  });
 
   // Count data items to send to each rank
   p_count.assign(num_ranks, 0);
@@ -436,8 +432,9 @@ mesh::build_local_dual_graph(const xtl::span<const std::int64_t>& cell_vertices,
       assert(facet_vertices.size() <= std::size_t(max_num_facet_vertices));
       std::transform(facet_vertices.cbegin(), facet_vertices.cend(),
                      facet.begin(),
-                     [&cell_vertices_local, offset = cell_offsets[c]](auto fv)
-                     { return cell_vertices_local[offset + fv]; });
+                     [&cell_vertices_local, offset = cell_offsets[c]](auto fv) {
+                       return cell_vertices_local[offset + fv];
+                     });
 
       // Sort facet "indices"
       std::sort(facet.begin(), facet.end());
@@ -565,3 +562,123 @@ mesh::build_dual_graph(const MPI_Comm comm,
   return {std::move(graph), num_ghost_edges};
 }
 //-----------------------------------------------------------------------------
+void mesh::vertex_ownership(MPI_Comm comm,
+                            const graph::AdjacencyList<std::int64_t>& cells,
+                            const graph::AdjacencyList<std::int64_t>&,
+                            const graph::AdjacencyList<int>& cell_destinations)
+{
+
+  // Global-to-local map for vertices
+  std::map<std::int64_t, int> global_to_local;
+  int c = 0;
+  for (std::int64_t v : cells.array())
+  {
+    if (global_to_local.insert({v, c}).second)
+      ++c;
+  }
+  // Reverse map, local to global
+  std::vector<std::int64_t> global_index(global_to_local.size());
+  for (auto q : global_to_local)
+    global_index[q.second] = q.first;
+
+  // Count number of occurrences of each vertex
+  std::vector<int> count(global_to_local.size(), 0);
+  for (std::int64_t vglobal : cells.array())
+    count[global_to_local[vglobal]]++;
+  std::vector<int> offset(count.size() + 1, 0);
+  std::partial_sum(count.begin(), count.end(), std::next(offset.begin()));
+  std::vector<std::int32_t> owners(offset.back());
+
+  // Get set of known cell owners for each vertex
+  for (int i = 0; i < cells.num_nodes(); ++i)
+  {
+    // Get owner of this cell
+    const int owner = cell_destinations.links(i)[0];
+    for (std::int64_t vglobal : cells.links(i))
+    {
+      const int v = global_to_local[vglobal];
+      owners[offset[v]] = owner;
+      ++offset[v];
+    }
+  }
+  // Reset offsets
+  offset[0] = 0;
+  std::partial_sum(count.begin(), count.end(), std::next(offset.begin()));
+
+  // Get unique set of owners for each vertex
+  for (std::size_t j = 0; j < offset.size() - 1; ++j)
+  {
+    auto it_start = std::next(owners.begin(), offset[j]);
+    auto it_end = std::next(owners.begin(), offset[j + 1]);
+    std::sort(it_start, it_end);
+    count[j] = std::distance(it_start, std::unique(it_start, it_end));
+  }
+  // Compress
+  int new_offset_j = 0;
+  for (std::size_t j = 0; j < offset.size() - 1; ++j)
+  {
+    std::copy(std::next(owners.begin(), offset[j]),
+              std::next(owners.begin(), offset[j] + count[j]),
+              std::next(owners.begin(), new_offset_j));
+    offset[j] = new_offset_j;
+    new_offset_j += count[j];
+  }
+  offset.back() = new_offset_j;
+  owners.resize(offset.back());
+
+  // We now have a map from local vertices to cell 'owners'. If in the interior
+  // of our domain, we can decide the ownership of the vertex and send to
+  // sharing processes. If it is just one value, there is no need to send, as
+  // the owning process will know (because it owns all adjacent cells).
+  // If there is a -1, then a further decision must be made after distribution.
+  const graph::AdjacencyList<int> vprocs(std::move(owners), std::move(offset));
+
+  // Iterate over vprocs
+  //
+  // if num_links(i) == 1 - ignore
+  // otherwise decide an owner (random...) and send to all sharing processes
+  //
+  // What about ghost cells?
+  //
+
+  const int mpi_size = MPI::size(comm);
+  std::vector<std::vector<std::int64_t>> vertex_ownership_send(mpi_size);
+
+  for (int i = 0; i < vprocs.num_nodes(); ++i)
+  {
+    const std::int64_t gi = global_index[i];
+    auto p = vprocs.links(i);
+    if (p.size() > 1)
+    {
+      for (int q : p)
+      {
+        vertex_ownership_send[q].push_back(gi);
+        vertex_ownership_send[q].push_back(p.size());
+        for (int r : p)
+          vertex_ownership_send[q].push_back(r);
+      }
+    }
+  }
+
+  // Send to owners
+  std::vector<std::int64_t> vertex_owner_recv
+      = MPI::all_to_all(
+            comm, graph::AdjacencyList<std::int64_t>(vertex_ownership_send))
+            .array();
+
+  std::stringstream s;
+  s << MPI::rank(comm) << " ///////\n";
+  std::size_t p = 0;
+  while (p < vertex_owner_recv.size())
+  {
+    s << vertex_owner_recv[p++] << ": [";
+    int np = vertex_owner_recv[p++];
+    for (int i = 0; i < np; ++i)
+      s << vertex_owner_recv[p++] << " ";
+    s << "]\n";
+  }
+
+  std::cout << s.str();
+
+  // Unpack
+}

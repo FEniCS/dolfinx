@@ -48,4 +48,13 @@ std::pair<graph::AdjacencyList<std::int64_t>, std::int32_t>
 build_dual_graph(const MPI_Comm comm,
                  const graph::AdjacencyList<std::int64_t>& cells, int tdim);
 
+/// Compute vertex ownership, where possible, before cell distribution
+/// @param cells Cells before distribution
+/// @param dual_graph Cell-cell connections used by partitioner
+/// @param cell_destinations Output from partitioner
+void vertex_ownership(MPI_Comm comm,
+                      const graph::AdjacencyList<std::int64_t>& cells,
+                      const graph::AdjacencyList<std::int64_t>& dual_graph,
+                      const graph::AdjacencyList<int>& cell_destinations);
+
 } // namespace dolfinx::mesh

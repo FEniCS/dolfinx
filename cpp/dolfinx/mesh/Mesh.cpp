@@ -13,6 +13,7 @@
 #include "topologycomputation.h"
 #include "utils.h"
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/log.h>
 #include <dolfinx/common/utils.h>
 #include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/graph/AdjacencyList.h>
@@ -66,7 +67,7 @@ Mesh mesh::create_mesh(MPI_Comm comm,
                        mesh::GhostMode ghost_mode)
 {
   return create_mesh(comm, cells, element, x, ghost_mode,
-                     create_cell_partitioner());
+                     graph::partition_graph);
 }
 //-----------------------------------------------------------------------------
 Mesh mesh::create_mesh(MPI_Comm comm,
@@ -74,7 +75,7 @@ Mesh mesh::create_mesh(MPI_Comm comm,
                        const fem::CoordinateElement& element,
                        const xt::xtensor<double, 2>& x,
                        mesh::GhostMode ghost_mode,
-                       const mesh::CellPartitionFunction& cell_partitioner)
+                       const graph::partition_fn& partfn)
 {
   if (ghost_mode == GhostMode::shared_vertex)
     throw std::runtime_error("Ghost mode via vertex currently disabled.");
@@ -82,9 +83,8 @@ Mesh mesh::create_mesh(MPI_Comm comm,
   const fem::ElementDofLayout dof_layout = element.create_dof_layout();
 
   // Function top build geometry. Used to scope memory operations.
-  auto build_topology = [](auto comm, auto& element, auto& dof_layout,
-                           auto& cells, auto ghost_mode, auto& cell_partitioner)
-  {
+  auto build_topology = [&partfn](auto comm, auto& element, auto& dof_layout,
+                                  auto& cells, auto ghost_mode) {
     // -- Partition topology
 
     // Note: the function extract_topology (returns an
@@ -103,10 +103,22 @@ Mesh mesh::create_mesh(MPI_Comm comm,
     // may be discarded later.
     const int size = dolfinx::MPI::size(comm);
     const int tdim = cell_dim(element.cell_shape());
-    const graph::AdjacencyList<std::int32_t> dest = cell_partitioner(
-        comm, size, tdim,
-        extract_topology(element.cell_shape(), dof_layout, cells),
-        GhostMode::shared_facet);
+
+    LOG(INFO) << "Compute partition of cells across ranks";
+
+    graph::AdjacencyList<std::int64_t> cells_extracted
+        = extract_topology(element.cell_shape(), dof_layout, cells);
+
+    // Compute distributed dual graph (for the cells on this process)
+    const auto [dual_graph, num_ghost_edges]
+        = build_dual_graph(comm, cells_extracted, tdim);
+
+    // Compute partition (calls SCOTCH, ParMETIS or KaHIP)
+    const graph::AdjacencyList<std::int32_t> dest
+        = partfn(comm, size, dual_graph, num_ghost_edges, true);
+
+    // Compute some vertex ownership
+    mesh::vertex_ownership(comm, cells, dual_graph, dest);
 
     // -- Distribute cells (topology, includes higher-order 'nodes')
 
@@ -120,7 +132,7 @@ Mesh mesh::create_mesh(MPI_Comm comm,
     // -- Extra cell topology
 
     // Extract cell 'topology', i.e. the vertices for each cell
-    graph::AdjacencyList<std::int64_t> cells_extracted
+    cells_extracted
         = extract_topology(element.cell_shape(), dof_layout, cell_nodes);
 
     // -- Re-order cells
@@ -159,8 +171,8 @@ Mesh mesh::create_mesh(MPI_Comm comm,
                      std::move(cell_nodes)};
   };
 
-  auto [topology, cell_nodes] = build_topology(comm, element, dof_layout, cells,
-                                               ghost_mode, cell_partitioner);
+  auto [topology, cell_nodes]
+      = build_topology(comm, element, dof_layout, cells, ghost_mode);
 
   // Create connectivity required to compute the Geometry (extra
   // connectivities for higher-order geometries)
@@ -181,9 +193,8 @@ Mesh mesh::create_mesh(MPI_Comm comm,
   }
 
   // Function top build geometry. Used to scope memory operations.
-  auto build_geometry
-      = [](auto comm, auto& cell_nodes, auto& topology, auto& element, auto& x)
-  {
+  auto build_geometry = [](auto comm, auto& cell_nodes, auto& topology,
+                           auto& element, auto& x) {
     int tdim = topology.dim();
     int num_cells = topology.index_map(tdim)->size_local()
                     + topology.index_map(tdim)->num_ghosts();
@@ -245,8 +256,9 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   std::vector<std::int32_t> submesh_owned_entities;
   std::copy_if(entities.begin(), entities.end(),
                std::back_inserter(submesh_owned_entities),
-               [mesh_entity_index_map](std::int32_t e)
-               { return e < mesh_entity_index_map->size_local(); });
+               [mesh_entity_index_map](std::int32_t e) {
+                 return e < mesh_entity_index_map->size_local();
+               });
 
   // Create submesh entity index map
   // TODO Call dolfinx::common::get_owned_indices here? Do we want to
@@ -324,12 +336,13 @@ mesh::create_submesh(const Mesh& mesh, int dim,
                                                  submesh_owned_x_dofs.end());
   submesh_to_mesh_x_dof_map.reserve(submesh_x_dof_index_map->size_local()
                                     + submesh_x_dof_index_map->num_ghosts());
-  std::transform(
-      submesh_x_dof_index_map_pair.second.begin(),
-      submesh_x_dof_index_map_pair.second.end(),
-      std::back_inserter(submesh_to_mesh_x_dof_map),
-      [mesh_geometry_dof_index_map](std::int32_t x_dof_index)
-      { return mesh_geometry_dof_index_map->size_local() + x_dof_index; });
+  std::transform(submesh_x_dof_index_map_pair.second.begin(),
+                 submesh_x_dof_index_map_pair.second.end(),
+                 std::back_inserter(submesh_to_mesh_x_dof_map),
+                 [mesh_geometry_dof_index_map](std::int32_t x_dof_index) {
+                   return mesh_geometry_dof_index_map->size_local()
+                          + x_dof_index;
+                 });
 
   // Create submesh geometry coordinates
   xtl::span<const double> mesh_x = mesh.geometry().x();
@@ -378,11 +391,11 @@ mesh::create_submesh(const Mesh& mesh, int dim,
       = mesh.geometry().input_global_indices();
   std::vector<std::int64_t> submesh_igi;
   submesh_igi.reserve(submesh_to_mesh_x_dof_map.size());
-  std::transform(submesh_to_mesh_x_dof_map.begin(),
-                 submesh_to_mesh_x_dof_map.end(),
-                 std::back_inserter(submesh_igi),
-                 [&mesh_igi](std::int32_t submesh_x_dof)
-                 { return mesh_igi[submesh_x_dof]; });
+  std::transform(
+      submesh_to_mesh_x_dof_map.begin(), submesh_to_mesh_x_dof_map.end(),
+      std::back_inserter(submesh_igi), [&mesh_igi](std::int32_t submesh_x_dof) {
+        return mesh_igi[submesh_x_dof];
+      });
 
   // Create geometry
   Geometry submesh_geometry(

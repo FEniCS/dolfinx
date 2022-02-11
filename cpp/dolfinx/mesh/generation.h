@@ -35,8 +35,8 @@ namespace dolfinx::mesh
 Mesh create_box(MPI_Comm comm, const std::array<std::array<double, 3>, 2>& p,
                 std::array<std::size_t, 3> n, CellType celltype,
                 GhostMode ghost_mode,
-                const mesh::CellPartitionFunction& partitioner
-                = create_cell_partitioner());
+                const graph::partition_fn& partitioner
+                = graph::partition_graph);
 
 /// Interval mesh of the 1D line `[a, b]`.  Given @p n cells in the
 /// axial direction, the total number of intervals will be `n` and the
@@ -51,8 +51,8 @@ Mesh create_box(MPI_Comm comm, const std::array<std::array<double, 3>, 2>& p,
 /// @return A mesh
 Mesh create_interval(MPI_Comm comm, std::size_t n, std::array<double, 2> x,
                      GhostMode ghost_mode,
-                     const CellPartitionFunction& partitioner
-                     = create_cell_partitioner());
+                     const graph::partition_fn& partitioner
+                     = graph::partition_graph);
 
 /// Enum for different diagonal types
 enum class DiagonalType
@@ -105,6 +105,6 @@ Mesh create_rectangle(MPI_Comm comm,
                       const std::array<std::array<double, 2>, 2>& p,
                       std::array<std::size_t, 2> n, CellType celltype,
                       GhostMode ghost_mode,
-                      const CellPartitionFunction& partitioner,
+                      const graph::partition_fn& partitioner,
                       DiagonalType diagonal = DiagonalType::right);
 } // namespace dolfinx::mesh

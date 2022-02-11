@@ -139,7 +139,7 @@ Mesh create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
 Mesh create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
                  const fem::CoordinateElement& element,
                  const xt::xtensor<double, 2>& x, GhostMode ghost_mode,
-                 const CellPartitionFunction& cell_partitioner);
+                 const graph::partition_fn& partfn);
 
 /// Create a new mesh consisting of a subset of entities in a mesh.
 /// Entity `i` in the new mesh corresponds to `entities[i]` in the input

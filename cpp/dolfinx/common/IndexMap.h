@@ -192,7 +192,7 @@ public:
   ///
   /// Entries are ordered such that `scatter_fwd_indices.offsets()` is
   /// the send displacement array for a forward scatter and
-  /// `scatter_fwd_indices.array()[i]` in the index of the owned index
+  /// `scatter_fwd_indices.array()[i]` is the index of the owned index
   /// that should be placed at position `i` in the send buffer for a
   /// forward scatter.
   /// @return List of indices that are ghosted on other processes

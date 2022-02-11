@@ -90,7 +90,7 @@ create_geom(MPI_Comm comm, const std::array<std::array<double, 3>, 2>& p,
 mesh::Mesh build_tet(MPI_Comm comm,
                      const std::array<std::array<double, 3>, 2>& p,
                      std::array<std::size_t, 3> n, GhostMode ghost_mode,
-                     const CellPartitionFunction& partitioner)
+                     const graph::partition_fn& partitioner)
 {
   common::Timer timer("Build BoxMesh");
 
@@ -146,7 +146,7 @@ mesh::Mesh build_tet(MPI_Comm comm,
 mesh::Mesh build_hex(MPI_Comm comm,
                      const std::array<std::array<double, 3>, 2>& p,
                      std::array<std::size_t, 3> n, GhostMode ghost_mode,
-                     const CellPartitionFunction& partitioner)
+                     const graph::partition_fn& partitioner)
 {
   xt::xtensor<double, 2> geom = create_geom(comm, p, n);
 
@@ -196,7 +196,7 @@ mesh::Mesh build_hex(MPI_Comm comm,
 mesh::Mesh build_prism(MPI_Comm comm,
                        const std::array<std::array<double, 3>, 2>& p,
                        std::array<std::size_t, 3> n, GhostMode ghost_mode,
-                       const CellPartitionFunction& partitioner)
+                       const graph::partition_fn& partitioner)
 {
   xt::xtensor<double, 2> geom = create_geom(comm, p, n);
 
@@ -251,7 +251,7 @@ mesh::Mesh mesh::create_box(MPI_Comm comm,
                             const std::array<std::array<double, 3>, 2>& p,
                             std::array<std::size_t, 3> n, CellType celltype,
                             GhostMode ghost_mode,
-                            const CellPartitionFunction& partitioner)
+                            const graph::partition_fn& partitioner)
 {
   switch (celltype)
   {
@@ -269,7 +269,7 @@ mesh::Mesh mesh::create_box(MPI_Comm comm,
 namespace
 {
 mesh::Mesh build(MPI_Comm comm, std::size_t nx, std::array<double, 2> x,
-                 GhostMode ghost_mode, const CellPartitionFunction& partitioner)
+                 GhostMode ghost_mode, const graph::partition_fn& partitioner)
 {
   fem::CoordinateElement element(CellType::interval, 1);
 
@@ -326,7 +326,7 @@ mesh::Mesh build(MPI_Comm comm, std::size_t nx, std::array<double, 2> x,
 //-----------------------------------------------------------------------------
 mesh::Mesh mesh::create_interval(MPI_Comm comm, std::size_t n,
                                  std::array<double, 2> x, GhostMode ghost_mode,
-                                 const CellPartitionFunction& partitioner)
+                                 const graph::partition_fn& partitioner)
 {
   return build(comm, n, x, ghost_mode, partitioner);
 }
@@ -337,7 +337,7 @@ namespace
 mesh::Mesh build_tri(MPI_Comm comm,
                      const std::array<std::array<double, 2>, 2>& p,
                      std::array<std::size_t, 2> n, GhostMode ghost_mode,
-                     const CellPartitionFunction& partitioner,
+                     const graph::partition_fn& partitioner,
                      DiagonalType diagonal)
 {
   fem::CoordinateElement element(CellType::triangle, 1);
@@ -551,7 +551,7 @@ mesh::Mesh build_tri(MPI_Comm comm,
 mesh::Mesh build_quad(MPI_Comm comm,
                       const std::array<std::array<double, 2>, 2> p,
                       std::array<std::size_t, 2> n, GhostMode ghost_mode,
-                      const CellPartitionFunction& partitioner)
+                      const graph::partition_fn& partitioner)
 {
   fem::CoordinateElement element(CellType::quadrilateral, 1);
 
@@ -626,14 +626,14 @@ mesh::Mesh mesh::create_rectangle(MPI_Comm comm,
                                   DiagonalType diagonal)
 {
   return create_rectangle(comm, p, n, celltype, ghost_mode,
-                          create_cell_partitioner(), diagonal);
+                          graph::partition_graph, diagonal);
 }
 //-----------------------------------------------------------------------------
 mesh::Mesh mesh::create_rectangle(MPI_Comm comm,
                                   const std::array<std::array<double, 2>, 2>& p,
                                   std::array<std::size_t, 2> n,
                                   CellType celltype, GhostMode ghost_mode,
-                                  const CellPartitionFunction& partitioner,
+                                  const graph::partition_fn& partitioner,
                                   DiagonalType diagonal)
 {
   switch (celltype)
