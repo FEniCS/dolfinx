@@ -109,10 +109,13 @@ compute_owned_shared(MPI_Comm comm, const xtl::span<const std::int64_t>& ghosts,
   // Send number of my 'ghost indices' to each owner, and receive number
   // of my 'owned indices' that are ghosted on other ranks
   std::vector<int> in_edges_num(src_ranks.size());
-  int sendcount = out_edges_num.empty() ? 0 : 1;
-  int recvcount = in_edges_num.empty() ? 0 : 1;
-  MPI_Neighbor_alltoall(out_edges_num.data(), sendcount, MPI_INT,
-                        in_edges_num.data(), recvcount, MPI_INT, comm);
+  // int sendcount = out_edges_num.empty() ? 0 : 1;
+  // int recvcount = in_edges_num.empty() ? 0 : 1;
+  if (in_edges_num.empty())
+    std::cout << "In edges empty 0: " << std::endl;
+  MPI_Neighbor_alltoall(out_edges_num.data(), 1, MPI_INT, in_edges_num.data(),
+                        1, MPI_INT, comm);
+  std::cout << "post-all-to-all " << std::endl;
 
   // Prepare communication displacements
   std::vector<int> send_disp(dest_ranks.size() + 1, 0);
@@ -711,11 +714,12 @@ std::map<std::int32_t, std::set<int>> IndexMap::compute_shared_indices() const
   std::vector<int> recv_sizes(indegree);
   std::adjacent_difference(fwd_sharing_offsets.begin() + 1,
                            fwd_sharing_offsets.end(), send_sizes.begin());
-  int sendcount = send_sizes.empty() ? 0 : 1;
-  int recvcount = recv_sizes.empty() ? 0 : 1;
-  MPI_Neighbor_alltoall(send_sizes.data(), sendcount, MPI_INT,
-                        recv_sizes.data(), recvcount, MPI_INT,
-                        _comm_owner_to_ghost.comm());
+  // int sendcount = send_sizes.empty() ? 0 : 1;
+  // int recvcount = recv_sizes.empty() ? 0 : 1;
+  if (recv_sizes.empty())
+    std::cout << "In edges empty 1" << std::endl;
+  MPI_Neighbor_alltoall(send_sizes.data(), 1, MPI_INT, recv_sizes.data(), 1,
+                        MPI_INT, _comm_owner_to_ghost.comm());
 
   // Work out recv offsets and send/receive
   std::vector<int> recv_offsets(recv_sizes.size() + 1, 0);
