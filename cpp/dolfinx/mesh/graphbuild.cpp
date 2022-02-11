@@ -241,14 +241,16 @@ compute_nonlocal_dual_graph(
   // Ghost nodes: insert connected cells into local map
 
   // Count number of adjacency list edges
-  std::vector<int> edge_count(local_graph.num_nodes(), 0);
+  std::vector<int> edge_count(local_graph.num_nodes());
   for (int i = 0; i < local_graph.num_nodes(); ++i)
-    edge_count[i] += local_graph.num_links(i);
+    edge_count[i] = local_graph.num_links(i);
+
+  // Count received edges
   for (std::size_t i = 0; i < cell_list.size(); i += 2)
   {
-    assert(cell_list[i] - cell_offset >= 0);
-    assert(cell_list[i] - cell_offset < std::int64_t(edge_count.size()));
-    edge_count[cell_list[i] - cell_offset] += 1;
+    const std::int64_t j = cell_list[i] - cell_offset;
+    assert(j >= 0 and j < std::int64_t(edge_count.size()));
+    ++edge_count[j];
   }
 
   // Build adjacency list
@@ -257,16 +259,17 @@ compute_nonlocal_dual_graph(
                    std::next(offsets.begin()));
   graph::AdjacencyList<std::int64_t> graph(
       std::vector<std::int64_t>(offsets.back()), std::move(offsets));
+  // Copy existing local graph, adding cell_offset
   pos.assign(graph.num_nodes(), 0);
-  std::vector<std::int64_t> ghost_edges;
   for (int i = 0; i < local_graph.num_nodes(); ++i)
   {
-    auto local_graph_i = local_graph.links(i);
-    auto graph_i = graph.links(i);
-    for (std::size_t j = 0; j < local_graph_i.size(); ++j)
-      graph_i[pos[i]++] = local_graph_i[j] + cell_offset;
+    std::transform(local_graph.links(i).begin(), local_graph.links(i).end(),
+                   graph.links(i).begin(),
+                   [&cell_offset](std::int64_t j) { return cell_offset + j; });
+    pos[i] = local_graph.num_links(i);
   }
 
+  std::vector<std::int64_t> ghost_edges;
   for (std::size_t i = 0; i < cell_list.size(); i += 2)
   {
     const std::size_t node = cell_list[i] - cell_offset;
@@ -284,6 +287,7 @@ compute_nonlocal_dual_graph(
     ghost_edges.push_back(cell_list[i + 1]);
   }
 
+  // Remove any duplicates
   std::sort(ghost_edges.begin(), ghost_edges.end());
   const std::int32_t num_ghost_edges = std::distance(
       ghost_edges.begin(), std::unique(ghost_edges.begin(), ghost_edges.end()));
@@ -562,15 +566,45 @@ mesh::build_dual_graph(const MPI_Comm comm,
   return {std::move(graph), num_ghost_edges};
 }
 //-----------------------------------------------------------------------------
-void mesh::vertex_ownership(MPI_Comm comm,
-                            const graph::AdjacencyList<std::int64_t>& cells,
-                            const graph::AdjacencyList<std::int64_t>&,
-                            const graph::AdjacencyList<int>& cell_destinations)
+void mesh::vertex_ownership(
+    MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
+    const graph::AdjacencyList<std::int64_t>& dual_graph,
+    const graph::AdjacencyList<int>& cell_destinations)
 {
+  // Find any entries in dual-graph which are off-process
+  const std::int64_t num_local_cells = cells.num_nodes();
+  std::int64_t global_cell_offset = 0;
+  MPI_Exscan(&num_local_cells, &global_cell_offset, 1, MPI_INT64_T, MPI_SUM,
+             comm);
+
+  std::cout << "nl = " << num_local_cells << "off = " << global_cell_offset
+            << "\n";
 
   // Global-to-local map for vertices
   std::map<std::int64_t, int> global_to_local;
   int c = 0;
+
+  // Start by inserting vertices which are in cells connected to off-process
+  // cells. These vertices may be shared by multiple as yet unknown processes.
+  // Note: this is overkill, because some vertices in boundary cells will
+  // not be on the boundary.
+  for (int i = 0; i < cells.num_nodes(); ++i)
+  {
+    for (std::int64_t q : dual_graph.links(i))
+    {
+      if (q < global_cell_offset or q >= global_cell_offset + num_local_cells)
+      {
+        for (std::int64_t v : cells.links(i))
+        {
+          if (global_to_local.insert({v, c}).second)
+            ++c;
+        }
+      }
+    }
+  }
+  const int nv_boundary = c;
+  std::cout << "nv_boundary = " << nv_boundary << " \n";
+
   for (std::int64_t v : cells.array())
   {
     if (global_to_local.insert({v, c}).second)
@@ -582,12 +616,18 @@ void mesh::vertex_ownership(MPI_Comm comm,
     global_index[q.second] = q.first;
 
   // Count number of occurrences of each vertex
-  std::vector<int> count(global_to_local.size(), 0);
+  std::vector<int> count(global_index.size(), 0);
+  for (int v = 0; v < nv_boundary; ++v)
+    count[v] = 1;
   for (std::int64_t vglobal : cells.array())
     count[global_to_local[vglobal]]++;
   std::vector<int> offset(count.size() + 1, 0);
   std::partial_sum(count.begin(), count.end(), std::next(offset.begin()));
   std::vector<std::int32_t> owners(offset.back());
+
+  // Add -1 as owner for boundary vertices
+  for (int v = 0; v < nv_boundary; ++v)
+    owners[offset[v]++] = -1;
 
   // Get set of known cell owners for each vertex
   for (int i = 0; i < cells.num_nodes(); ++i)
@@ -597,8 +637,7 @@ void mesh::vertex_ownership(MPI_Comm comm,
     for (std::int64_t vglobal : cells.links(i))
     {
       const int v = global_to_local[vglobal];
-      owners[offset[v]] = owner;
-      ++offset[v];
+      owners[offset[v]++] = owner;
     }
   }
   // Reset offsets
@@ -648,7 +687,18 @@ void mesh::vertex_ownership(MPI_Comm comm,
   {
     const std::int64_t gi = global_index[i];
     auto p = vprocs.links(i);
-    if (p.size() > 1)
+    if (p.size() > 1 and p[0] == -1)
+    {
+      for (std::size_t j = 1; j < p.size(); ++j)
+      {
+        int q = p[j];
+        vertex_ownership_send[q].push_back(gi);
+        vertex_ownership_send[q].push_back(p.size());
+        for (int r : p)
+          vertex_ownership_send[q].push_back(r);
+      }
+    }
+    else if (p.size() > 1)
     {
       for (int q : p)
       {
@@ -667,11 +717,12 @@ void mesh::vertex_ownership(MPI_Comm comm,
             .array();
 
   std::stringstream s;
-  s << MPI::rank(comm) << " ///////\n";
+  s << MPI::rank(comm) << " /////// " << vertex_owner_recv.size() << "\n";
   std::size_t p = 0;
   while (p < vertex_owner_recv.size())
   {
-    s << vertex_owner_recv[p++] << ": [";
+    s << p;
+    s << "> " << vertex_owner_recv[p++] << ": [";
     int np = vertex_owner_recv[p++];
     for (int i = 0; i < np; ++i)
       s << vertex_owner_recv[p++] << " ";
