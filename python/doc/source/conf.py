@@ -5,17 +5,14 @@
 #
 import os
 import sys
+
 sys.path.insert(0, os.path.abspath('.'))
 import datetime
-import shutil
+
+import jupytext_process
 
 import dolfinx
 
-# Copy demo files into doc source tree and process
-shutil.rmtree("demos", True)
-shutil.copytree("../../demo", "demos")
-
-import jupytext_process
 jupytext_process.process()
 
 # -- General configuration ------------------------------------------------

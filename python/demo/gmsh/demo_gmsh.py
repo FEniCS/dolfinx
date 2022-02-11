@@ -11,7 +11,7 @@
 
 # (demo-gmsh)=
 #
-# # Mesh generation using GMSH python API
+# # Mesh generation with Gmsh
 #
 # Copyright (C) 2020 Garth N. Wells and Jørgen S. Dokken
 
