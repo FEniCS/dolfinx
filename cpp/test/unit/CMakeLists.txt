@@ -1,9 +1,13 @@
 cmake_minimum_required(VERSION 3.16)
 project(dolfinx-tests)
 
+project(${PROJECT_NAME} LANGUAGES C CXX)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
 # Find DOLFINx config file
 find_package(DOLFINX REQUIRED)
-
 
 add_custom_command(
   OUTPUT poisson.c
@@ -24,16 +28,21 @@ set(TEST_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/common/CIFailure.cpp
   )
 
-# Prepare "Catch" library for other executables
-set(CATCH_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/catch)
-
-
-add_library(Catch INTERFACE)
-target_include_directories(Catch INTERFACE ${CATCH_INCLUDE_DIR})
+find_package(Catch2 2)
+if (NOT Catch2_FOUND)
+  message(STATUS "Catch2 not found. Downloading.")
+  Include(FetchContent)
+  FetchContent_Declare(
+    Catch2
+    GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+    GIT_TAG        v2.13.8
+  )
+  FetchContent_MakeAvailable(Catch2)
+endif()
 
 add_executable(unittests ${TEST_SOURCES})
-target_link_libraries(unittests PRIVATE Catch dolfinx)
-target_compile_features(unittests PRIVATE cxx_std_17)
+target_link_libraries(unittests PRIVATE Catch2::Catch2 dolfinx)
+target_compile_options(unittests PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-Wall -Werror -Wextra -pedantic>)
 
 # Enable testing
 enable_testing()
