@@ -15,7 +15,7 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 #
-# # Using pyvista for visualization
+# # Visualization with pyvista
 
 # +
 import numpy as np
