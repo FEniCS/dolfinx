@@ -21,7 +21,7 @@ import ufl
 import ufl.algorithms
 import ufl.algorithms.analysis
 from dolfinx import cpp as _cpp
-from dolfinx import jit
+from dolfinx import jit, la
 from dolfinx.fem import dofmap
 
 from petsc4py import PETSc
@@ -223,7 +223,7 @@ class Function(ufl.Coefficient):
 
     def __init__(self,
                  V: FunctionSpace,
-                 x: typing.Optional[typing.Union[_cpp.la.Vector_float64, _cpp.la.Vector_complex128]] = None,
+                 x: typing.Optional[la.VectorMetaClass] = None,
                  name: typing.Optional[str] = None,
                  dtype=PETSc.ScalarType):
         """Initialize finite element Function."""

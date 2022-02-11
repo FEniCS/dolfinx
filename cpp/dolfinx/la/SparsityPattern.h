@@ -104,7 +104,7 @@ public:
   /// SparsityPattern?
   common::IndexMap column_index_map() const;
 
-  /// Return index map bs  lock size for dimension dim
+  /// Return index map block size for dimension dim
   int block_size(int dim) const;
 
   /// Number of nonzeros on this rank after assembly, including ghost

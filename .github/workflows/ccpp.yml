@@ -30,7 +30,6 @@ jobs:
       OMPI_MCA_hwloc_base_binding_policy: none
 
     strategy:
-      fail-fast: false
       matrix:
         petsc_arch: [real, complex]
         petsc_int_type: [32, 64]
