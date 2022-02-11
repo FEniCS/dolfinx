@@ -109,9 +109,10 @@ compute_owned_shared(MPI_Comm comm, const xtl::span<const std::int64_t>& ghosts,
   // Send number of my 'ghost indices' to each owner, and receive number
   // of my 'owned indices' that are ghosted on other ranks
   std::vector<int> in_edges_num(src_ranks.size());
-  MPI_Neighbor_alltoall(out_edges_num.data(), out_edges_num.size(), MPI_INT,
-                        in_edges_num.data(), in_edges_num.size(), MPI_INT,
-                        comm);
+  int sendcount = out_edges_num.empty() ? 0 : 1;
+  int recvcount = in_edges_num.empty() ? 0 : 1;
+  MPI_Neighbor_alltoall(out_edges_num.data(), sendcount, MPI_INT,
+                        in_edges_num.data(), recvcount, MPI_INT, comm);
 
   // Prepare communication displacements
   std::vector<int> send_disp(dest_ranks.size() + 1, 0);
