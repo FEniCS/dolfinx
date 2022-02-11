@@ -917,7 +917,8 @@ void fem(py::module& m)
       .def(py::init<int, const std::vector<std::vector<std::vector<int>>>&,
                     const std::vector<std::vector<std::vector<int>>>&,
                     const std::vector<int>&,
-                    const std::vector<dolfinx::fem::ElementDofLayout>&>())
+                    const std::vector<dolfinx::fem::ElementDofLayout>&,
+                    const int>())
       .def_property_readonly("num_dofs",
                              &dolfinx::fem::ElementDofLayout::num_dofs)
       .def("num_entity_dofs", &dolfinx::fem::ElementDofLayout::num_entity_dofs)

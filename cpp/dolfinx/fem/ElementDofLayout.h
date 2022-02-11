@@ -39,12 +39,14 @@ public:
   ///   entity_closure_dofs[entity_dim][entity_number] = [dof0, dof1, ...]
   /// @param[in] parent_map TODO
   /// @param[in] sub_layouts (`std::vector<ElementDofLayout>`)TODO
+  /// @param[in] num_global_support_dofs The number of globally supported DOFs
   ElementDofLayout(
       int block_size,
       const std::vector<std::vector<std::vector<int>>>& entity_dofs,
       const std::vector<std::vector<std::vector<int>>>& entity_closure_dofs,
       const std::vector<int>& parent_map,
-      const std::vector<ElementDofLayout>& sub_layouts);
+      const std::vector<ElementDofLayout>& sub_layouts,
+      const int num_global_support_dofs);
 
   /// Copy the DOF layout, discarding any parent information
   ElementDofLayout copy() const;
@@ -74,6 +76,10 @@ public:
   /// a cell (number of dofs on element)
   /// @return Dimension of the local finite element function space.
   int num_dofs() const;
+
+  /// Return the number of DOFs that are globally supported
+  /// @return Number of global support dofs
+  int num_global_support_dofs() const;
 
   /// Return the number of dofs for a given entity dimension
   /// @param[in] dim Entity dimension
@@ -153,6 +159,9 @@ private:
   // List of sub dofmaps
   // std::vector<std::shared_ptr<const ElementDofLayout>> _sub_dofmaps;
   std::vector<ElementDofLayout> _sub_dofmaps;
+
+  // Number of global support DOFs
+  int _num_global_support_dofs;
 };
 
 } // namespace dolfinx::fem

@@ -20,13 +20,13 @@ ElementDofLayout::ElementDofLayout(
     const std::vector<std::vector<std::vector<int>>>& entity_dofs,
     const std::vector<std::vector<std::vector<int>>>& entity_closure_dofs,
     const std::vector<int>& parent_map,
-    const std::vector<ElementDofLayout>& sub_layouts)
+    const std::vector<ElementDofLayout>& sub_layouts,
+    const int num_global_support_dofs)
     : _block_size(block_size), _parent_map(parent_map), _num_dofs(0),
       _entity_dofs(entity_dofs), _entity_closure_dofs(entity_closure_dofs),
-      _sub_dofmaps(sub_layouts)
+      _sub_dofmaps(sub_layouts),
+      _num_global_support_dofs(num_global_support_dofs)
 {
-  // TODO: Handle global support dofs
-
   _num_entity_dofs.fill(0);
   _num_entity_closure_dofs.fill(0);
   assert(entity_dofs.size() == _entity_closure_dofs.size());
@@ -136,6 +136,11 @@ ElementDofLayout::sub_view(const xtl::span<const int>& component) const
 }
 //-----------------------------------------------------------------------------
 int ElementDofLayout::block_size() const { return _block_size; }
+//-----------------------------------------------------------------------------
+int ElementDofLayout::num_global_support_dofs() const
+{
+  return _num_global_support_dofs;
+}
 //-----------------------------------------------------------------------------
 bool ElementDofLayout::is_view() const { return !_parent_map.empty(); }
 //-----------------------------------------------------------------------------

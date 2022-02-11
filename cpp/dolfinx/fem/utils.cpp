@@ -134,7 +134,8 @@ fem::create_element_dof_layout(const ufcx_dofmap& dofmap,
   // Check for "block structure". This should ultimately be replaced,
   // but keep for now to mimic existing code
   return ElementDofLayout(element_block_size, entity_dofs, entity_closure_dofs,
-                          parent_map, sub_dofmaps);
+                          parent_map, sub_dofmaps,
+                          dofmap.num_global_support_dofs);
 }
 //-----------------------------------------------------------------------------
 fem::DofMap
@@ -144,6 +145,7 @@ fem::create_dofmap(MPI_Comm comm, const ElementDofLayout& layout,
                        const graph::AdjacencyList<std::int32_t>&)>& reorder_fn,
                    const FiniteElement& element)
 {
+  std::cout << "aaa\n";
   // Create required mesh entities
   const int D = topology.dim();
   for (int d = 0; d < D; ++d)
@@ -162,9 +164,14 @@ fem::create_dofmap(MPI_Comm comm, const ElementDofLayout& layout,
     }
   }
 
+  std::cout << "bbb\n";
+
   auto [_index_map, bs, dofmap]
       = build_dofmap_data(comm, topology, layout, reorder_fn);
+  std::cout << "ccc\n";
   auto index_map = std::make_shared<common::IndexMap>(std::move(_index_map));
+
+  std::cout << "ddd\n";
 
   // If the element's DOF transformations are permutations, permute the
   // DOF numbering on each cell
@@ -181,6 +188,8 @@ fem::create_dofmap(MPI_Comm comm, const ElementDofLayout& layout,
     for (std::int32_t cell = 0; cell < num_cells; ++cell)
       unpermute_dofs(dofmap.links(cell), cell_info[cell]);
   }
+
+  std::cout << "zzz\n";
 
   return DofMap(layout, index_map, bs, std::move(dofmap), bs);
 }
@@ -215,7 +224,8 @@ fem::FunctionSpace fem::create_functionspace(
   auto _e = std::make_shared<FiniteElement>(e, bs);
 
   // Create a dofmap
-  ElementDofLayout layout(bs, e.entity_dofs(), e.entity_closure_dofs(), {}, {});
+  ElementDofLayout layout(bs, e.entity_dofs(), e.entity_closure_dofs(), {}, {},
+                          0);
   auto dofmap = std::make_shared<DofMap>(
       create_dofmap(mesh->comm(), layout, mesh->topology(), reorder_fn, *_e));
 

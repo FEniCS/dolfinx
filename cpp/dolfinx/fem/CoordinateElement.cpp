@@ -67,7 +67,7 @@ ElementDofLayout CoordinateElement::create_dof_layout() const
 {
   assert(_element);
   return ElementDofLayout(1, _element->entity_dofs(),
-                          _element->entity_closure_dofs(), {}, {});
+                          _element->entity_closure_dofs(), {}, {}, 0);
 }
 //-----------------------------------------------------------------------------
 void CoordinateElement::push_forward(

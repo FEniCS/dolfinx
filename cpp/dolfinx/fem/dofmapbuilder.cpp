@@ -295,6 +295,9 @@ build_basic_dofmap(const mesh::Topology& topology,
 /// @param [in] topology The mesh topology
 /// @param [in] reorder_fn Graph reordering function that is applied for
 /// dof re-ordering
+/// @param [in] num_global_support_dofs The number of global support DOFs
+/// @param [in] owns_global_support_dofs Indicates whether current process owns
+/// the global support DOFs
 /// @return The pair (old-to-new local index map, M), where M is the
 /// number of dofs owned by this process
 std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
@@ -302,7 +305,8 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
     const std::vector<std::pair<std::int8_t, std::int32_t>>& dof_entity,
     const mesh::Topology& topology,
     const std::function<std::vector<int>(
-        const graph::AdjacencyList<std::int32_t>&)>& reorder_fn)
+        const graph::AdjacencyList<std::int32_t>&)>& reorder_fn,
+    const int num_global_support_dofs, const bool owns_global_support_dofs)
 {
   common::Timer t0("Compute dof reordering map");
 
@@ -317,29 +321,44 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
   }
 
   // Compute the number of dofs 'owned' by this process
-  const std::int32_t owned_size = std::accumulate(
-      dof_entity.begin(), dof_entity.end(), std::int32_t(0),
-      [&offset = std::as_const(offset)](std::int32_t a, auto b)
-      { return b.second < offset[b.first] ? a + 1 : a; });
+  const std::int32_t owned_size
+      = std::accumulate(
+            dof_entity.begin(), dof_entity.end(), std::int32_t(0),
+            [&offset = std::as_const(offset)](std::int32_t a, auto b) {
+              return b.second < offset[b.first] ? a + 1 : a;
+            })
+        + (owns_global_support_dofs ? num_global_support_dofs : 0);
 
   // Re-order dofs, increasing local dof index by iterating over cells
 
   // Create map from old index to new contiguous numbering for locally
   // owned dofs. Set to -1 for unowned dofs.
-  std::vector<int> original_to_contiguous(dof_entity.size(), -1);
+  std::vector<int> original_to_contiguous(
+      dof_entity.size() + num_global_support_dofs, -1);
   std::int32_t counter_owned(0), counter_unowned(owned_size);
+  for (std::int32_t global_support_dof = 0;
+       global_support_dof < num_global_support_dofs; ++global_support_dof)
+  {
+    if (owns_global_support_dofs)
+      original_to_contiguous[global_support_dof] = counter_owned++;
+    else
+      original_to_contiguous[global_support_dof] = counter_unowned++;
+  }
+
   for (std::int32_t cell = 0; cell < dofmap.num_nodes(); ++cell)
   {
     auto dofs = dofmap.links(cell);
     for (std::size_t i = 0; i < dofs.size(); ++i)
     {
-      if (original_to_contiguous[dofs[i]] == -1)
+      if (original_to_contiguous[num_global_support_dofs + dofs[i]] == -1)
       {
         const std::pair<std::int8_t, std::int32_t>& e = dof_entity[dofs[i]];
         if (e.second < offset[e.first])
-          original_to_contiguous[dofs[i]] = counter_owned++;
+          original_to_contiguous[num_global_support_dofs + dofs[i]]
+              = counter_owned++;
         else
-          original_to_contiguous[dofs[i]] = counter_unowned++;
+          original_to_contiguous[num_global_support_dofs + dofs[i]]
+              = counter_unowned++;
       }
     }
   }
@@ -478,6 +497,7 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
 
   std::vector<std::int64_t> local_to_global_new(old_to_new.size() - num_owned);
   std::vector<int> local_to_global_new_owner(old_to_new.size() - num_owned);
+
   for (std::size_t i = 0; i < requests_dim.size(); ++i)
   {
     int idx, d;
@@ -547,7 +567,9 @@ fem::build_dofmap_data(
   // Build re-ordering map for data locality and get number of owned
   // nodes
   const auto [old_to_new, num_owned]
-      = compute_reordering_map(node_graph0, dof_entity0, topology, reorder_fn);
+      = compute_reordering_map(node_graph0, dof_entity0, topology, reorder_fn,
+                               element_dof_layout.num_global_support_dofs(),
+                               dolfinx::MPI::rank(comm) == 0);
 
   // Get global indices for unowned dofs
   const auto [local_to_global_unowned, local_to_global_owner]
@@ -576,6 +598,12 @@ fem::build_dofmap_data(
       const std::int32_t new_node = old_to_new[old_node];
       dofmap[local_dim0 * cell + j] = new_node;
     }
+  }
+
+  for (int dof = 0; dof < element_dof_layout.num_global_support_dofs(); ++dof)
+  {
+    for (int i = 0; i < node_graph0.num_nodes(); ++i)
+      dofmap.push_back(dof);
   }
 
   assert(dofmap.size() % node_graph0.num_nodes() == 0);
