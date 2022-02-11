@@ -10,8 +10,13 @@
 
 # # Solving PDEs with different scalar (float) types
 #
-# This demo . . .
+# This demo shows
+# - How to solve problems using different scalar types, .e.g. single or
+#   double precision, or complex numbers
+# - Interfacing with [SciPy](https://scipy.org/) sparse linear algebra
+#   functionality
 
+# +
 import numpy as np
 import scipy.sparse
 import scipy.sparse.linalg
@@ -22,31 +27,39 @@ from dolfinx import fem, la, mesh, plot
 from dolfinx.fem.assemble import pack_coefficients, pack_constants
 
 from mpi4py import MPI
+# -
+
+# SciPy solvers do no support MPI, so all computation will be performed
+# on a single MPI rank
+
+# +
+comm = MPI.COMM_SELF
+# -
 
 # Create a mesh and function space
-msh = mesh.create_rectangle(comm=MPI.COMM_SELF,
-                            points=((0.0, 0.0), (2.0, 1.0)), n=(32, 16),
+
+msh = mesh.create_rectangle(comm=comm, points=((0.0, 0.0), (2.0, 1.0)), n=(32, 16),
                             cell_type=mesh.CellType.triangle)
 V = fem.FunctionSpace(msh, ("Lagrange", 1))
 
-
-# Define L2 projection problem
+# Define an L2 projection problem
 u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 x = ufl.SpatialCoordinate(msh)
-f = ufl.sin(2 * np.pi * x[0])
-fc = f + ufl.sin(2 * np.pi * x[0]) + ufl.sin(4 * np.pi * x[1]) * 1j
+fr = ufl.sin(2 * np.pi * x[0])
+fc = ufl.sin(2 * np.pi * x[0]) + ufl.sin(4 * np.pi * x[1]) * 1j
 a = ufl.inner(u, v) * ufl.dx
-L = ufl.inner(f, v) * ufl.dx
+L = ufl.inner(fr + fc, v) * ufl.dx
 
 
 def project(dtype=np.float32):
     """Solve the simple L2 projection problem"""
 
+    # Process forms. This will compiler the forms for the requested type,
     a0 = fem.form(a, dtype=dtype)
     if np.issubdtype(dtype, np.complexfloating):
-        L0 = fem.form(ufl.replace(L, {f: fc}), dtype=dtype)
-    else:
         L0 = fem.form(L, dtype=dtype)
+    else:
+        L0 = fem.form(ufl.replace(L, {fc: 0}), dtype=dtype)
 
     # Create a sparsity pattern for initialising the sparse matrix
     # NOTE: the sparsity pattern does not depend of the dtype and could
@@ -73,7 +86,7 @@ def project(dtype=np.float32):
 
 
 def display(u, filter=np.real):
-    """PLot the solution using pyvista"""
+    """Plot the solution using pyvista"""
     try:
         import pyvista
         cells, types, x = plot.create_vtk_mesh(V)
@@ -93,7 +106,6 @@ def display(u, filter=np.real):
 uh = project(dtype=np.float32)
 uh = project(dtype=np.float64)
 uh = project(dtype=np.complex128)
-
 
 # Display the last computed solution
 display(uh, np.real)
