@@ -29,7 +29,6 @@ All demos
 
 .. toctree::
    :maxdepth: 1
-   :numbered:
 
    demos/demo_poisson.md
    demos/demo_cahn-hilliard.md

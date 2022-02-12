@@ -46,6 +46,7 @@ pyvista.rcParams["background"] = [0.5, 0.5, 0.5]
 
 # ## Plotting a Function using warp by scalar
 
+
 def plot_scalar():
 
     # We start by creating a unit square mesh and interpolating a function
@@ -268,8 +269,8 @@ def plot_nedelec():
 #
 # In this section we illustrate how to visualize streamlines in 3D
 
-def plot_streamlines():
 
+def plot_streamlines():
 
     mesh = create_unit_cube(MPI.COMM_WORLD, 4, 4, 4, CellType.hexahedron)
     V = VectorFunctionSpace(mesh, ("Discontinuous Lagrange", 2))

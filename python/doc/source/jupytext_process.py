@@ -21,7 +21,7 @@ def process():
     for subdir in subdirs:
 
         # Build list of demo files
-        demos= list(subdir.glob('**/demo*.py'))
+        demos = list(subdir.glob('**/demo*.py'))
 
         # Make demo doc directory
         demo_dir = pathlib.Path('./demos')
@@ -44,6 +44,7 @@ def process():
             # Copy python demo files into documentation demo directory
             for f in demos:
                 shutil.copy(f, demo_dir)
+
 
 if __name__ == "__main__":
     process()
