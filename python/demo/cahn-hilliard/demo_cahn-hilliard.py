@@ -189,9 +189,9 @@ c, mu = ufl.split(u)
 c0, mu0 = ufl.split(u0)
 # -
 
-# The line `c, mu = split(u)` permits direct access to the components of
-# a mixed function. Note that `c` and `mu` are references for
-# components of `u`, and not copies.
+# The line `c, mu = ufl.split(u)` permits direct access to the
+# components of a mixed function. Note that `c` and `mu` are references
+# for components of `u`, and not copies.
 #
 # ```{index} single: interpolating functions; (in Cahn-Hilliard demo)
 # ```

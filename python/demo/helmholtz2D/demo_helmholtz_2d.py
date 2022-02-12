@@ -22,11 +22,12 @@
 # +
 import numpy as np
 
+import ufl
 from dolfinx.fem import Function, FunctionSpace, LinearProblem, form
 from dolfinx.fem.assemble import assemble_scalar
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import create_unit_square
-from ufl import FacetNormal, TestFunction, TrialFunction, dx, grad, inner
+from ufl import dx, grad, inner
 
 from mpi4py import MPI
 from petsc4py import PETSc
@@ -41,7 +42,7 @@ deg = 1
 n_elem = 128
 
 msh = create_unit_square(MPI.COMM_WORLD, n_elem, n_elem)
-n = FacetNormal(msh)
+n = ufl.FacetNormal(msh)
 
 # Source amplitude
 if np.issubdtype(PETSc.ScalarType, np.complexfloating):
@@ -53,8 +54,8 @@ else:
 V = FunctionSpace(msh, ("Lagrange", deg))
 
 # Define variational problem
-u = TrialFunction(V)
-v = TestFunction(V)
+u = ufl.TrialFunction(V)
+v = ufl.TestFunction(V)
 f = Function(V)
 f.interpolate(lambda x: A * k0**2 * np.cos(k0 * x[0]) * np.cos(k0 * x[1]))
 a = inner(grad(u), grad(v)) * dx - k0**2 * inner(u, v) * dx
