@@ -37,11 +37,11 @@ k0 = 4 * np.pi
 # approximation space polynomial degree
 deg = 1
 
-# number of elements in each direction of mesh
+# number of elements in each direction of msh
 n_elem = 128
 
-mesh = create_unit_square(MPI.COMM_WORLD, n_elem, n_elem)
-n = FacetNormal(mesh)
+msh = create_unit_square(MPI.COMM_WORLD, n_elem, n_elem)
+n = FacetNormal(msh)
 
 # Source amplitude
 if np.issubdtype(PETSc.ScalarType, np.complexfloating):
@@ -50,7 +50,7 @@ else:
     A = 1
 
 # Test and trial function space
-V = FunctionSpace(mesh, ("Lagrange", deg))
+V = FunctionSpace(msh, ("Lagrange", deg))
 
 # Define variational problem
 u = TrialFunction(V)
@@ -68,7 +68,7 @@ problem.solve()
 
 # Save solution in XDMF format (to be viewed in Paraview, for example)
 with XDMFFile(MPI.COMM_WORLD, "plane_wave.xdmf", "w", encoding=XDMFFile.Encoding.HDF5) as file:
-    file.write_mesh(mesh)
+    file.write_mesh(msh)
     file.write_function(uh)
 # -
 
@@ -78,17 +78,17 @@ with XDMFFile(MPI.COMM_WORLD, "plane_wave.xdmf", "w", encoding=XDMFFile.Encoding
 
 # +
 # Function space for exact solution - need it to be higher than deg
-V_exact = FunctionSpace(mesh, ("Lagrange", deg + 3))
+V_exact = FunctionSpace(msh, ("Lagrange", deg + 3))
 u_exact = Function(V_exact)
 u_exact.interpolate(lambda x: A * np.cos(k0 * x[0]) * np.cos(k0 * x[1]))
 
 # H1 errors
 diff = uh - u_exact
-H1_diff = mesh.comm.allreduce(assemble_scalar(form(inner(grad(diff), grad(diff)) * dx)), op=MPI.SUM)
-H1_exact = mesh.comm.allreduce(assemble_scalar(form(inner(grad(u_exact), grad(u_exact)) * dx)), op=MPI.SUM)
+H1_diff = msh.comm.allreduce(assemble_scalar(form(inner(grad(diff), grad(diff)) * dx)), op=MPI.SUM)
+H1_exact = msh.comm.allreduce(assemble_scalar(form(inner(grad(u_exact), grad(u_exact)) * dx)), op=MPI.SUM)
 print("Relative H1 error of FEM solution:", abs(np.sqrt(H1_diff) / np.sqrt(H1_exact)))
 
 # L2 errors
-L2_diff = mesh.comm.allreduce(assemble_scalar(form(inner(diff, diff) * dx)), op=MPI.SUM)
-L2_exact = mesh.comm.allreduce(assemble_scalar(form(inner(u_exact, u_exact) * dx)), op=MPI.SUM)
+L2_diff = msh.comm.allreduce(assemble_scalar(form(inner(diff, diff) * dx)), op=MPI.SUM)
+L2_exact = msh.comm.allreduce(assemble_scalar(form(inner(u_exact, u_exact) * dx)), op=MPI.SUM)
 print("Relative L2 error of FEM solution:", abs(np.sqrt(L2_diff) / np.sqrt(L2_exact)))
