@@ -208,6 +208,8 @@ compute_nonlocal_dual_graph(
   graph::AdjacencyList<std::int64_t> returned_list
       = dolfinx::MPI::all_to_all(comm, return_cells);
   assert(returned_list.num_nodes() == send_buffer.num_nodes());
+  assert(returned_list.array().size() * (max_num_vertices_per_facet + 1)
+         == send_buffer.array().size());
 
   // Count number of adjacency list edges in local graph
   std::vector<int> edge_count(local_graph.num_nodes());
@@ -215,18 +217,19 @@ compute_nonlocal_dual_graph(
     edge_count[i] = local_graph.num_links(i);
 
   // Count new received entries
-  for (int p = 0; p < send_buffer.num_nodes(); ++p)
+  const auto send_c = send_buffer.array();
+  const auto recv_c = returned_list.array();
+  int num_ghost_edges = 0;
+  for (std::size_t i = 0; i < recv_c.size(); ++i)
   {
-    const auto send_p = send_buffer.links(p);
-    const auto recv_p = returned_list.links(p);
-    for (std::size_t i = 0; i < recv_p.size(); ++i)
+    const std::int64_t cell1 = recv_c[i];
+    if (cell1 != -1)
     {
-      const std::int64_t cell0 = send_p[i * (max_num_vertices_per_facet + 1)
+      const std::int64_t cell0 = send_c[i * (max_num_vertices_per_facet + 1)
                                         + max_num_vertices_per_facet]
                                  - cell_offset;
-      const std::int64_t cell1 = recv_p[i];
-      if (cell1 != -1)
-        ++edge_count[cell0];
+      ++edge_count[cell0];
+      ++num_ghost_edges;
     }
   }
 
@@ -246,31 +249,19 @@ compute_nonlocal_dual_graph(
     pos[i] = local_graph.num_links(i);
   }
 
-  std::vector<std::int64_t> ghost_edges;
   // Insert new entries
-  for (int p = 0; p < send_buffer.num_nodes(); ++p)
+  for (std::size_t i = 0; i < recv_c.size(); ++i)
   {
-    const auto send_p = send_buffer.links(p);
-    const auto recv_p = returned_list.links(p);
-    for (std::size_t i = 0; i < recv_p.size(); ++i)
+    const std::int64_t cell1 = recv_c[i];
+    if (cell1 != -1)
     {
-      const std::int64_t cell0 = send_p[i * (max_num_vertices_per_facet + 1)
+      const std::int64_t cell0 = send_c[i * (max_num_vertices_per_facet + 1)
                                         + max_num_vertices_per_facet]
                                  - cell_offset;
-      const std::int64_t cell1 = recv_p[i];
-      if (cell1 != -1)
-      {
-        auto links0 = graph.links(cell0);
-        links0[pos[cell0]++] = cell1;
-        ghost_edges.push_back(cell1);
-      }
+      auto links0 = graph.links(cell0);
+      links0[pos[cell0]++] = cell1;
     }
   }
-
-  // Remove any duplicates
-  std::sort(ghost_edges.begin(), ghost_edges.end());
-  const std::int32_t num_ghost_edges = std::distance(
-      ghost_edges.begin(), std::unique(ghost_edges.begin(), ghost_edges.end()));
 
   return {std::move(graph), num_ghost_edges};
 }
