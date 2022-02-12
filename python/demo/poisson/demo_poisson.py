@@ -15,7 +15,7 @@
 # and the solver. It illustrates how to:
 #
 # - Solve a linear partial differential equation
-# - Define a FunctionSpace
+# - Define a {py:class}`FunctionSpace <dolfinx.fem.FunctionSpace>`
 # - Create and apply Dirichlet boundary conditions
 #
 # ## Equation and problem definition
@@ -77,9 +77,10 @@ from mpi4py import MPI
 from petsc4py.PETSc import ScalarType
 # -
 
-# We begin by creating a rectangular {py:class}`Mesh
-# <dolfinx.mesh.Mesh>` of the domain using {py:func}`create_rectangle
-# <dolfinx.mesh.create_rectangle>` and a finite element function space
+# We begin by using {py:func}`create_rectangle
+# <dolfinx.mesh.create_rectangle>` to create a rectangular
+# {py:class}`Mesh <dolfinx.mesh.Mesh>` of the domain, and creating a
+# finite element {py:class}`FunctionSpace <dolfinx.fem.FunctionSpace>`
 # $V$ on the mesh.
 
 # +

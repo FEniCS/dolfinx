@@ -6,13 +6,11 @@
 import datetime
 import os
 import sys
+sys.path.insert(0, os.path.abspath('.'))
 
 import jupytext_process
 
 import dolfinx
-
-sys.path.insert(0, os.path.abspath('.'))
-
 
 jupytext_process.process()
 
