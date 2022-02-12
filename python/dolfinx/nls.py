@@ -3,7 +3,7 @@
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Methods for solving nonlinear equations."""
+"""Methods for solving nonlinear equations"""
 
 from __future__ import annotations
 
@@ -18,6 +18,8 @@ import types
 
 from dolfinx import cpp as _cpp
 from dolfinx import fem
+
+__all__ = ["NewtonSolver"]
 
 
 class NewtonSolver(_cpp.nls.NewtonSolver):
