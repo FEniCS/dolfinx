@@ -52,9 +52,16 @@ build_dual_graph(const MPI_Comm comm,
 /// @param cells Cells before distribution
 /// @param dual_graph Cell-cell connections used by partitioner
 /// @param cell_destinations Output from partitioner
-void vertex_ownership(MPI_Comm comm,
-                      const graph::AdjacencyList<std::int64_t>& cells,
-                      const graph::AdjacencyList<std::int64_t>& dual_graph,
-                      const graph::AdjacencyList<int>& cell_destinations);
+/// @return list of vertices with potential sharing processes
+graph::AdjacencyList<std::int64_t>
+vertex_ownership(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
+                 const graph::AdjacencyList<std::int64_t>& dual_graph,
+                 const graph::AdjacencyList<int>& cell_destinations);
+
+// Stuff
+graph::AdjacencyList<std::int64_t> vertex_ownership_part2(
+    const graph::AdjacencyList<std::int64_t>& vertex_ownership,
+    const graph::AdjacencyList<std::int32_t>& local_dual_graph,
+    const xt::xtensor<std::int64_t, 2>& unmatched_facets);
 
 } // namespace dolfinx::mesh
