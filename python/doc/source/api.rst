@@ -19,16 +19,17 @@ Public user interface
    dolfinx.jit
    dolfinx.la
    dolfinx.mesh
+   dolfinx.nls
    dolfinx.pkgconfig
    dolfinx.plot
 
 
-pybind11 wrapped interface
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+pybind11/C++interface
+^^^^^^^^^^^^^^^^^^^^^
 
-These are interfaces to the C++ component of DOLFINx, and are low-level
-and subject to change. They are not intended for application-level
-use.
+These are low-level interfaces to the C++ component of DOLFINx. These
+interfaces are subject to change and not generally intended for
+application-level use.
 
 .. autosummary::
    :toctree: generated
@@ -40,6 +41,7 @@ use.
    dolfinx.cpp.io
    dolfinx.cpp.log
    dolfinx.cpp.mesh
+   dolfinx.nls
    dolfinx.cpp.refinement
 
 

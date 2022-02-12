@@ -10,21 +10,21 @@
 
 # # Cahn-Hilliard equation
 #
-# This demo is implemented in a single Python file,
-# {download}`demo_cahn-hilliard.py`, which contains both the variational
-# forms and the solver.
-#
 # This example demonstrates the solution of the Cahn-Hilliard equation,
-# a nonlinear time-dependent fourth-order PDE.
+# a nonlinear, time-dependent fourth-order PDE.
 #
-# - The built-in Newton solver
-# - Use of the base class `NonlinearProblem`
-# - Automatic linearisation
 # - A mixed finite element method
 # - The $\theta$-method for time-dependent equations
-# - User-defined Expressions as Python classes
+# - Automatic linearisation
+# - Use of the class
+#   {py:class}`NonlinearProblem<dolfinx.fem.NonlinearProblem>`
+# - The built-in Newton solver
+#   ({py:class}`NewtonSolver<dolfinx.nls.NewtonSolver>`)
 # - Form compiler options
 # - Interpolation of functions
+# - Visualisation of a running simulation with pyvista
+#
+# This demo is implemented in {download}`demo_cahn-hilliard.py`.
 #
 # ## Equation and problem definition
 #
@@ -50,7 +50,7 @@
 # $n$ is the outward directed boundary normal, and $M$ is a
 # scalar parameter.
 #
-# ### Mixed form
+# ### Operator split form
 #
 # The Cahn-Hilliard equation is a fourth-order equation, so casting it in
 # a weak form would result in the presence of second-order spatial
@@ -125,13 +125,13 @@ import os
 
 import numpy as np
 
+import ufl
 from dolfinx import log, plot
 from dolfinx.fem import Function, FunctionSpace, NonlinearProblem
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import CellType, create_unit_square
 from dolfinx.nls import NewtonSolver
-from ufl import (FiniteElement, TestFunctions, diff, dx, grad, inner, split,
-                 variable)
+from ufl import dx, grad, inner
 
 from mpi4py import MPI
 from petsc4py import PETSc
@@ -152,25 +152,22 @@ log.set_output_file("log.txt")
 
 # Next, various model parameters are defined:
 
-# Model parameters
 lmbda = 1.0e-02  # surface parameter
 dt = 5.0e-06  # time step
 theta = 0.5      # time stepping family, e.g. theta=1 -> backward Euler, theta=0.5 -> Crank-Nicolson
 
-# A unit square mesh with 97 (= 96 + 1) vertices in each direction is
-# created, and on this mesh a
+# A unit square mesh with 96 cells edges in each direction is created,
+# and on this mesh a
 # {py:class}`FunctionSpace<dolfinx.fem.FunctionSpace>` `ME` is built
-# using a pair of linear Lagrangian elements.
+# using a pair of linear Lagrange elements.
 
-# Create mesh and build function space
-mesh = create_unit_square(MPI.COMM_WORLD, 96, 96, CellType.triangle)
-P1 = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
-ME = FunctionSpace(mesh, P1 * P1)
+msh = create_unit_square(MPI.COMM_WORLD, 96, 96, CellType.triangle)
+P1 = ufl.FiniteElement("Lagrange", msh.ufl_cell(), 1)
+ME = FunctionSpace(msh, P1 * P1)
 
 # Trial and test functions of the space `ME` are now defined:
 
-# Define test functions
-q, v = TestFunctions(ME)
+q, v = ufl.TestFunctions(ME)
 
 # ```{index} split functions
 # ```
@@ -184,18 +181,17 @@ q, v = TestFunctions(ME)
 # sub-functions:
 
 # +
-# Define functions
 u = Function(ME)  # current solution
 u0 = Function(ME)  # solution from previous converged step
 
 # Split mixed functions
-c, mu = split(u)
-c0, mu0 = split(u0)
+c, mu = ufl.split(u)
+c0, mu0 = ufl.split(u0)
 # -
 
-# The line `c, mu = split(u)` permits direct access to the components of
-# a mixed function. Note that `c` and `mu` are references for
-# components of `u`, and not copies.
+# The line `c, mu = ufl.split(u)` permits direct access to the
+# components of a mixed function. Note that `c` and `mu` are references
+# for components of `u`, and not copies.
 #
 # ```{index} single: interpolating functions; (in Cahn-Hilliard demo)
 # ```
@@ -220,13 +216,13 @@ u.x.scatter_forward()
 # ```{index} automatic differentiation
 # ```
 #
-# The chemical potential $df/dc$ is computed using automated
+# The chemical potential $df/dc$ is computed using UFL automatic
 # differentiation:
 
 # Compute the chemical potential df/dc
-c = variable(c)
+c = ufl.variable(c)
 f = 100 * c**2 * (1 - c)**2
-dfdc = diff(f, c)
+dfdc = ufl.diff(f, c)
 
 # The first line declares that `c` is a variable that some function can
 # be differentiated with respect to. The next line is the function
@@ -251,7 +247,7 @@ F = F0 + F1
 # ```{index} single: Newton solver; (in Cahn-Hilliard demo)
 # ```
 #
-# The DOLFINX Newton solver requires a
+# The DOLFINx Newton solver requires a
 # {py:class}`NonlinearProblem<dolfinx.fem.NonlinearProblem>` object to
 # solve a system of nonlinear equations
 
@@ -262,8 +258,8 @@ solver = NewtonSolver(MPI.COMM_WORLD, problem)
 solver.convergence_criterion = "incremental"
 solver.rtol = 1e-6
 
-# We can customize the linear solver used inside the NewtonSolver by modifying the
-# PETSc options
+# We can customize the linear solver used inside the NewtonSolver by
+# modifying the PETSc options
 ksp = solver.krylov_solver
 opts = PETSc.Options()
 option_prefix = ksp.getOptionsPrefix()
@@ -286,7 +282,7 @@ ksp.setFromOptions()
 # +
 # Output file
 file = XDMFFile(MPI.COMM_WORLD, "output.xdmf", "w")
-file.write_mesh(mesh)
+file.write_mesh(msh)
 
 # Step in time
 t = 0.0

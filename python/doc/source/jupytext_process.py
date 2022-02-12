@@ -21,7 +21,7 @@ def process():
     for subdir in subdirs:
 
         # Build list of demo files
-        demos= list(subdir.glob('**/demo*.py'))
+        demos = list(subdir.glob('**/demo*.py'))
 
         # Make demo doc directory
         demo_dir = pathlib.Path('./demos')
@@ -33,7 +33,7 @@ def process():
             myst_text = jupytext.writes(python_demo, fmt="myst")
 
             # myst-parser does not process blocks with {code-cell}
-            myst_text = myst_text.replace("{code-cell}", "")
+            myst_text = myst_text.replace("{code-cell}", "python")
             myst_file = (demo_dir / demo.name).with_suffix(".md")
             with open(myst_file, "w") as fw:
                 fw.write(myst_text)
@@ -44,6 +44,7 @@ def process():
             # Copy python demo files into documentation demo directory
             for f in demos:
                 shutil.copy(f, demo_dir)
+
 
 if __name__ == "__main__":
     process()
