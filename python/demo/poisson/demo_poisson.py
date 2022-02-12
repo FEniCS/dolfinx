@@ -12,9 +12,7 @@
 #
 # This demo is implemented in a single Python file,
 # {download}`demo_poisson.py`, which contains both the variational forms
-# and the solver.
-#
-# This demo illustrates how to:
+# and the solver. It illustrates how to:
 #
 # - Solve a linear partial differential equation
 # - Define a FunctionSpace
@@ -60,12 +58,9 @@
 #
 # - $\Omega = [0,2] \times [0,1]$ (a rectangle)
 # - $\Gamma_{D} = \{(0, y) \cup (1, y) \subset \partial \Omega\}$
-#   (Dirichlet boundary)
 # - $\Gamma_{N} = \{(x, 0) \cup (x, 1) \subset \partial \Omega\}$
-#   (Neumann boundary)
-# - $g = \sin(5x)$ (normal derivative)
-# - $f = 10\exp(-((x - 0.5)^2 + (y - 0.5)^2) / 0.02)$ (source
-#   term)
+# - $g = \sin(5x)$
+# - $f = 10\exp(-((x - 0.5)^2 + (y - 0.5)^2) / 0.02)$
 #
 # ## Implementation
 #
@@ -76,135 +71,87 @@ import numpy as np
 
 import ufl
 from dolfinx import fem, io, mesh, plot
-from ufl import ds, dx, exp, grad, inner, sin
+from ufl import ds, dx, grad, inner
 
 from mpi4py import MPI
 from petsc4py.PETSc import ScalarType
 # -
 
-# We begin by creating a rectangular Mesh of the domain and a finite
-# element function space $V$ on the mesh.
+# We begin by creating a rectangular {py:class}`Mesh
+# <dolfinx.mesh.Mesh>` of the domain using {py:func}`create_rectangle
+# <dolfinx.mesh.create_rectangle>` and a finite element function space
+# $V$ on the mesh.
 
 # +
-# Create mesh
 msh = mesh.create_rectangle(comm=MPI.COMM_WORLD,
                             points=((0.0, 0.0), (2.0, 1.0)), n=(32, 16),
                             cell_type=mesh.CellType.triangle,)
-
-# Define function space
 V = fem.FunctionSpace(msh, ("Lagrange", 1))
 # -
 
 # The second argument to {py:class}`FunctionSpace
 # <dolfinx.fem.FunctionSpace>` is a tuple consisting of `(family,
 # degree)`, where `family` is the finite element family, and `degree`
-# specifies the polynomial degree. Thus, in this case, our space `V`
-# consists of first-order, continuous Lagrange finite element functions.
+# specifies the polynomial degree. in this case `V` consists of
+# first-order, continuous Lagrange finite element functions.
 #
-# Next, we want to consider the Dirichlet boundary condition. A simple
-# Python function, returning a boolean, can be used to define the
-# boundary for the Dirichlet boundary condition ($\Gamma_D$). The
-# function should return `True` for those points inside the boundary and
-# `False` for the points outside. In our case, we want to say that the
-# points $(x, y)$ such that $x = 0$ or $x = 1$ are inside on the inside
-# of $\Gamma_D$. (Note that because of rounding-off errors, it is often
-# wise to instead specify $x < \epsilon$ or $x > 1 - \epsilon$ where
-# $\epsilon$ is a small number (such as machine precision).)
-#
-# Now, the Dirichlet boundary condition can be created using the class
-# {py:class}`DirichletBC <dolfinx.fem.DirichletBC>`. A
-# {py:class}`DirichletBC <dolfinx.fem.DirichletBC>` takes three
-# arguments: the value of the boundary condition, the part of the
-# boundary which the condition apply to, and the function space. This
-# boundary part is identified with degrees of freedom in the function
-# space to which we apply the boundary conditions.
-#
-# To identify the degrees of freedom, we first find the facets (entities
-# of dimension 1) that likes on the boundary of the mesh, and satisfies
-# our criteria for $\Gamma_D$. Then, we use the function
-# `locate_dofs_topological` to identify all degrees of freedom that is
-# located on the facet (including the vertices). In our example, the
-# function space is `V`, the value of the boundary condition (0.0) can
-# represented using a {py:class}`Constant <dolfinx.fem.Constant>` and
-# the Dirichlet boundary is defined immediately above. The definition of
-# the Dirichlet boundary condition then looks as follows:
-#
-# Define boundary condition on x = 0 or x = 1
+# Next, we locate the mesh facets that lie on the boundary $\Gamma_D$.
+# We do this using using {py:func}`locate_entities_boundary
+# <dolfinx.mesh.locate_entities_boundary>` and providing  a marker
+# function that returns `True` for points `x` on the boundary and
+# `False` otherwise.
 
-# Locate the facets on the boundary matching the provided marker
-# function
 facets = mesh.locate_entities_boundary(msh, dim=1,
                                        marker=lambda x: np.logical_or(np.isclose(x[0], 0.0),
                                                                       np.isclose(x[0], 2.0)))
 
-# Locate the degrees of freedom for the relevant function space that
-# intersects the facets where we what to impose the boundary condition
+# We now find the degrees-of-freedom that are associated with the
+# boundary facets using {py:func}`locate_dofs_topological
+# <dolfinx.fem.locate_dofs_topological>`
+
 dofs = fem.locate_dofs_topological(V=V, entity_dim=1, entities=facets)
 
-# Define the boundary condition
+# and use {py:func}`dirichletbc <dolfinx.fem.dirichletbc>` to create a
+# {py:class}`DirichletBCMetaClass <dolfinx.fem.DirichletBCMetaClass>`
+# class that represents the boundary condition
+
 bc = fem.dirichletbc(value=ScalarType(0), dofs=dofs, V=V)
 
-# Next, we want to express the variational problem.  First, we need to
-# specify the trial function $u$ and the test function $v$, both living
-# in the function space $V$. We do this by defining a
-# {py:class}`TrialFunction <ufl.TrialFunction>` and a
-# {py:class}`TestFunction <ufl.TrialFunction>` on the previously defined
-# {py:class}`FunctionSpace <dolfinx.fem.FunctionSpace>` `V`.
-#
-# Further, the source $f$ and the boundary normal derivative $g$ are
-# involved in the variational forms, and hence we must specify these.
-#
-# With these ingredients, we can write down the bilinear form `a` and
-# the linear form `L` (using UFL operators). In summary, this reads
+# Next, we express the variational problem using UFL.
 
 # +
-# Define variational problem
 u = ufl.TrialFunction(V)
 v = ufl.TestFunction(V)
 x = ufl.SpatialCoordinate(msh)
-f = 10 * exp(-((x[0] - 0.5) ** 2 + (x[1] - 0.5) ** 2) / 0.02)
-g = sin(5 * x[0])
+f = 10 * ufl.exp(-((x[0] - 0.5) ** 2 + (x[1] - 0.5) ** 2) / 0.02)
+g = ufl.sin(5 * x[0])
 a = inner(grad(u), grad(v)) * dx
 L = inner(f, v) * dx + inner(g, v) * ds
 # -
 
-# Now, we have specified the variational forms and can consider the
-# solution of the variational problem. First, we need to define a
-#  {py:class}`Function <dolfinx.fem.Function>` `u` to represent the
-# solution. (Upon initialization, it is simply set to the zero
-# function.) A  {py:class}`Function <dolfinx.fem.Function>` represents a
-# function living in a finite element function space. Next, we
-# initialize a solver using the {py:class}`LinearProblem
-#  <dolfinx.fem.LinearProblem>`. This class is initialized with the
-# arguments `a`, `L`, and `bc` as follows:
+# We create a {py:class}`LinearProblem <dolfinx.fem.LinearProblem>`
+# object that brings together the variational problem, the Dirichlet
+# boundary condition, and which specifies the linear solver. In this
+# case we use a direct (LU) solver. The {py:func}`solve
+# <dolfinx.fem.LinearProblem.solve>` will compute a solution.
 
 # +
-# In this problem, we use a direct LU solver, which is defined through
-# the dictionary `petsc_options`.
 problem = fem.LinearProblem(a, L, bcs=[bc], petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
-
-# When we want to compute the solution to the problem, we can specify
-# what kind of solver we want to use.
 uh = problem.solve()
 # -
 
-# The function `u` will be modified during the call to solve. The
-# default settings for solving a variational problem have been used.
-# However, the solution process can be controlled in much more detail if
-# desired.
-#
-# A {py:class}`Function <dolfinx.fem.Function>` can be manipulated in
-# various ways, in particular, it can be plotted and saved to file.
-# Here, we output the solution to an XDMF file for later visualization
-# and also plot it using pyvista.
+# The solution can be written to a  {py:class}`XDMFFile
+# <dolfinx.io.XDMFFile>` file visualization with ParaView ot VisIt
 
 # +
-# Save solution in XDMF format
-with io.XDMFFile(MPI.COMM_WORLD, "poisson.xdmf", "w") as file:
+with io.XDMFFile(msh.comm, "poisson.xdmf", "w") as file:
     file.write_mesh(msh)
     file.write_function(uh)
+# -
 
-# Plot solution
+# and displayed using [pyvista](https://docs.pyvista.org/).
+
+# +
 try:
     import pyvista
     cells, types, x = plot.create_vtk_mesh(V)
@@ -219,3 +166,4 @@ try:
 except ModuleNotFoundError:
     print("'pyvista' is required to visualise the solution")
     print("Install 'pyvista' with pip: 'python3 -m pip install pyvista'")
+# -

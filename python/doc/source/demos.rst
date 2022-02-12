@@ -11,11 +11,8 @@ These demos illustrate DOLFINx/FEniCSx usage and are a good way to begin
 learning FEniCS. We recommend that you go through these examples in the
 given order.
 
-1. Getting started: :doc:`Poisson equation
-   <demos/demo_poisson.py>`.
-
-2. Using mixed, Taylor-Hood element: :doc:`Stokes equation
-   <demos/demo_stokes-taylor-hood.py>`
+1. Getting started: :doc:`Poisson equation <demos/demo_poisson>`.
+2. Using mixed, Taylor-Hood element: :doc:`Stokes equation <demos/demo_stokes-taylor-hood>`
 
 
 Advanced demos
@@ -32,6 +29,7 @@ All demos
 
 .. toctree::
    :maxdepth: 1
+   :numbered:
 
    demos/demo_poisson.md
    demos/demo_cahn-hilliard.md

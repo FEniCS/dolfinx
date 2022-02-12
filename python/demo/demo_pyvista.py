@@ -42,11 +42,11 @@ if pyvista.OFF_SCREEN:
 transparent = False
 figsize = 800
 pyvista.rcParams["background"] = [0.5, 0.5, 0.5]
+# -
 
+# ## Plotting a Function using warp by scalar
 
 def plot_scalar():
-    # Plotting a Function using warp by scalar
-    # ========================================
 
     # We start by creating a unit square mesh and interpolating a function
     # into a first order Lagrange space
@@ -90,9 +90,9 @@ def plot_scalar():
         subplotter.show()
 
 
+# ## MeshTags and using subplots
+
 def plot_meshtags():
-    # MeshTags and using subplots
-    # ===========================
 
     mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, cell_type=CellType.quadrilateral)
 
@@ -144,12 +144,12 @@ def plot_meshtags():
         subplotter.show()
 
 
-def plot_higher_order():
-    # Plotting higher order Functions
-    # ===============================
+# ## Higher-order Functions
+#
+# In the previous sections we have considered degree 1 Lagrange spaces.
+# We can also plot higher degree functions.
 
-    # In the previous sections we have considered degree 1 Lagrange spaces.
-    # We can also plot higher degree functions.
+def plot_higher_order():
 
     mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, cell_type=CellType.quadrilateral)
 
@@ -210,13 +210,12 @@ def plot_higher_order():
         plotter.show()
 
 
+# ## Vector-element functions
+#
+# In this section we will consider how to plot vector-element functions,
+# e.g. Raviart-Thomas or Nédélec elements.
+
 def plot_nedelec():
-
-    # Plotting vector-element functions
-    # =================================
-
-    # In this section we will consider how to plot vector-element functions,
-    # e.g. Raviart-Thomas or Nédélec elements
 
     mesh = create_unit_cube(MPI.COMM_WORLD, 4, 3, 5, cell_type=CellType.tetrahedron)
 
@@ -265,12 +264,12 @@ def plot_nedelec():
     else:
         plotter.show()
 
+# ## Plotting streamlines
+#
+# In this section we illustrate how to visualize streamlines in 3D
 
 def plot_streamlines():
-    # Plotting streamlines
-    # ====================
 
-    # In this section we illustrate how to visualize streamlines in 3D
 
     mesh = create_unit_cube(MPI.COMM_WORLD, 4, 4, 4, CellType.hexahedron)
     V = VectorFunctionSpace(mesh, ("Discontinuous Lagrange", 2))

@@ -33,7 +33,7 @@ def process():
             myst_text = jupytext.writes(python_demo, fmt="myst")
 
             # myst-parser does not process blocks with {code-cell}
-            myst_text = myst_text.replace("{code-cell}", "")
+            myst_text = myst_text.replace("{code-cell}", "python")
             myst_file = (demo_dir / demo.name).with_suffix(".md")
             with open(myst_file, "w") as fw:
                 fw.write(myst_text)
