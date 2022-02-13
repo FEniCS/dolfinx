@@ -725,6 +725,8 @@ void declare_form(py::module& m, const std::string& type)
                      *p, spaces, coefficients, constants, subdomains, mesh);
                }),
            "Create a Form from a pointer to a ufcx_form")
+      .def_property_readonly("dtype", [](const dolfinx::fem::Form<T>& self)
+                             { return py::dtype::of<T>(); })
       .def_property_readonly("coefficients",
                              &dolfinx::fem::Form<T>::coefficients)
       .def_property_readonly("rank", &dolfinx::fem::Form<T>::rank)
