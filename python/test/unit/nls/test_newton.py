@@ -9,7 +9,7 @@ import numpy as np
 
 import ufl
 from dolfinx import cpp as _cpp
-from dolfinx import fem, la
+from dolfinx import la
 from dolfinx.fem import (Function, FunctionSpace, dirichletbc, form,
                          locate_dofs_geometrical)
 from dolfinx.fem.petsc import (apply_lifting, assemble_matrix, assemble_vector,
