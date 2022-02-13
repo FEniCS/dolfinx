@@ -15,11 +15,10 @@ if typing.TYPE_CHECKING:
 
 import ufl
 from dolfinx import cpp as _cpp
-from dolfinx.fem.assemble import (apply_lifting, assemble_matrix,
-                                  assemble_vector, create_matrix,
-                                  create_vector, set_bc)
 from dolfinx.fem.forms import form as create_form
 from dolfinx.fem.function import Function
+from dolfinx.fem.petsc import (apply_lifting, assemble_matrix, assemble_vector,
+                               create_matrix, create_vector, set_bc)
 
 from petsc4py import PETSc
 

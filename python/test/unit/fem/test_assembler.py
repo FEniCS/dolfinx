@@ -15,15 +15,16 @@ import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import graph, la
 from dolfinx.fem import (Constant, Function, FunctionSpace,
-                         VectorFunctionSpace, apply_lifting,
-                         apply_lifting_nest, assemble_matrix,
-                         assemble_matrix_block, assemble_matrix_nest,
-                         assemble_scalar, assemble_vector,
-                         assemble_vector_block, assemble_vector_nest,
-                         bcs_by_block, dirichletbc, extract_function_spaces,
-                         form, locate_dofs_geometrical,
-                         locate_dofs_topological, set_bc, set_bc_nest)
-from dolfinx.fem.assemble import pack_coefficients, pack_constants
+                         VectorFunctionSpace, assemble_scalar, bcs_by_block,
+                         dirichletbc, extract_function_spaces, form,
+                         locate_dofs_geometrical, locate_dofs_topological)
+from dolfinx.fem.assemble import (assemble_scalar, pack_coefficients,
+                                  pack_constants)
+from dolfinx.fem.petsc import (apply_lifting, apply_lifting_nest,
+                               assemble_matrix, assemble_matrix_block,
+                               assemble_matrix_nest, assemble_vector,
+                               assemble_vector_block, assemble_vector_nest,
+                               bcs_by_block, set_bc, set_bc_nest)
 from dolfinx.mesh import (CellType, GhostMode, create_mesh, create_rectangle,
                           create_unit_cube, create_unit_square,
                           locate_entities_boundary)

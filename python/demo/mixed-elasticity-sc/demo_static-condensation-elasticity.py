@@ -30,9 +30,10 @@ import numpy as np
 import ufl
 from dolfinx import geometry
 from dolfinx.cpp.fem import Form_complex128, Form_float64
-from dolfinx.fem import (Function, FunctionSpace, IntegralType, apply_lifting,
-                         assemble_matrix, assemble_vector, dirichletbc, form,
-                         locate_dofs_topological, set_bc)
+from dolfinx.fem import (Function, FunctionSpace, IntegralType, dirichletbc,
+                         form, locate_dofs_topological)
+from dolfinx.fem.petsc import (apply_lifting, assemble_matrix, assemble_vector,
+                               set_bc)
 from dolfinx.io import XDMFFile
 from dolfinx.jit import ffcx_jit
 from dolfinx.mesh import MeshTags, locate_entities_boundary
