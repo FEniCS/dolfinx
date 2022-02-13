@@ -105,7 +105,6 @@ jobs:
         run: python3 -m pip -v install --global-option build --global-option --debug python/
       - name: Build Python interface documentation
         run: |
-          python3 -m pip install jupytext myst-parser
           cd python/doc && make html
 
       - name: Set default DOLFINx JIT parameters
