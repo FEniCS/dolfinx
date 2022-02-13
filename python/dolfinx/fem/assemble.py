@@ -13,9 +13,13 @@ if typing.TYPE_CHECKING:
     from dolfinx.fem.forms import FormMetaClass
 
 import collections
+import functools
 
+import numpy as np
+
+import dolfinx
 from dolfinx import cpp as _cpp
-
+from dolfinx import la
 
 # -- Packing constants and coefficients --------------------------------------
 
@@ -59,17 +63,17 @@ Coefficients = collections.namedtuple('Coefficients', ['constants', 'coeffs'])
 
 # -- Vector instantiation ----------------------------------------------------
 
-# def create_vector(L: FormMetaClass) -> PETSc.Vec:
-#     dofmap = L.function_spaces[0].dofmap
-#     return la.create_petsc_vector(dofmap.index_map, dofmap.index_map_bs)
+def create_vector(L: FormMetaClass, dtype=np.float64) -> la.VectorMetaClass:
+    dofmap = L.function_spaces[0].dofmap
+    return la.vector(dofmap.index_map, dofmap.index_map_bs, dtype)
 
 # -- Matrix instantiation ----------------------------------------------------
 
-# def create_matrix(a: FormMetaClass, mat_type=None) -> PETSc.Mat:
-#     if mat_type is None:
-#         return _cpp.fem.petsc.create_matrix(a)
-#     else:
-#         return _cpp.fem.petsc.create_matrix(a, mat_type)
+
+def create_matrix(a: FormMetaClass, dtype=np.float64) -> la.MatrixCSRMetaClass:
+    sp = dolfinx.fem.create_sparsity_pattern(a)
+    sp.assemble()
+    return la.matrix_csr(sp, dtype)
 
 
 # -- Scalar assembly ---------------------------------------------------------
@@ -87,35 +91,33 @@ def assemble_scalar(M: FormMetaClass, coeffs=Coefficients(None, None)):
 
 # -- Vector assembly ---------------------------------------------------------
 
-# @functools.singledispatch
-# def assemble_vector(L: FormMetaClass, coeffs=Coefficients(None, None)) -> PETSc.Vec:
-#     """Assemble linear form into a new PETSc vector. The returned vector
-#     is not finalised, i.e. ghost values are not accumulated on the
-#     owning processes.
+@functools.singledispatch
+def assemble_vector(L: FormMetaClass, coeffs=Coefficients(None, None)) -> la.VectorMetaClass:
+    """Assemble linear form into a new Vector. The returned vector
+    is not finalised, i.e. ghost values are not accumulated on the
+    owning processes.
 
-#     """
-#     b = la.create_petsc_vector(L.function_spaces[0].dofmap.index_map,
-#                                L.function_spaces[0].dofmap.index_map_bs)
-#     c = (coeffs[0] if coeffs[0] is not None else pack_constants(L),
-#          coeffs[1] if coeffs[1] is not None else pack_coefficients(L))
-#     with b.localForm() as b_local:
-#         b_local.set(0.0)
-#         _cpp.fem.assemble_vector(b_local.array_w, L, c[0], c[1])
-#     return b
+    """
+    # TODO: get dtype from L
+    b = la.vector(L.function_spaces[0].dofmap.index_map,
+                  L.function_spaces[0].dofmap.index_map_bs)
+    c = (coeffs[0] if coeffs[0] is not None else pack_constants(L),
+         coeffs[1] if coeffs[1] is not None else pack_coefficients(L))
+    b.array[:] = 0
+    _cpp.fem.assemble_vector(b.array, L, c[0], c[1])
+    return b
 
 
-# @assemble_vector.register(PETSc.Vec)
-# def _(b: PETSc.Vec, L: FormMetaClass, coeffs=Coefficients(None, None)) -> PETSc.Vec:
-#     """Assemble linear form into an existing PETSc vector. The vector is
-#     not zeroed before assembly and it is not finalised, i.e. ghost
-#     values are not accumulated on the owning processes.
+@assemble_vector.register(np.ndarray)
+def _(b: np.ndarray, L: FormMetaClass, coeffs=Coefficients(None, None)):
+    """Assemble linear form into an existing PETSc vector. The vector is
+    not zeroed before assembly and it is not finalised, i.e. ghost
+    values are not accumulated on the owning processes.
 
-#     """
-#     c = (coeffs[0] if coeffs[0] is not None else pack_constants(L),
-#          coeffs[1] if coeffs[1] is not None else pack_coefficients(L))
-#     with b.localForm() as b_local:
-#         _cpp.fem.assemble_vector(b_local.array_w, L, c[0], c[1])
-#     return b
+    """
+    c = (coeffs[0] if coeffs[0] is not None else pack_constants(L),
+         coeffs[1] if coeffs[1] is not None else pack_coefficients(L))
+    _cpp.fem.assemble_vector(b, L, c[0], c[1])
 
 
 # -- Matrix assembly ---------------------------------------------------------

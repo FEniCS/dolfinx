@@ -18,6 +18,7 @@ import functools
 
 from dolfinx import cpp as _cpp
 from dolfinx import la
+from dolfinx.fem import assemble
 from dolfinx.fem.assemble import (Coefficients, _extract_function_spaces,
                                   pack_coefficients, pack_constants)
 from dolfinx.fem.bcs import bcs_by_block
@@ -73,11 +74,8 @@ def assemble_vector(L: FormMetaClass, coeffs=Coefficients(None, None)) -> PETSc.
     """
     b = la.create_petsc_vector(L.function_spaces[0].dofmap.index_map,
                                L.function_spaces[0].dofmap.index_map_bs)
-    c = (coeffs[0] if coeffs[0] is not None else pack_constants(L),
-         coeffs[1] if coeffs[1] is not None else pack_coefficients(L))
     with b.localForm() as b_local:
-        b_local.set(0.0)
-        _cpp.fem.assemble_vector(b_local.array_w, L, c[0], c[1])
+        assemble.assemble_vector(b_local.array_w, L, coeffs)
     return b
 
 
@@ -88,10 +86,8 @@ def _(b: PETSc.Vec, L: FormMetaClass, coeffs=Coefficients(None, None)) -> PETSc.
     values are not accumulated on the owning processes.
 
     """
-    c = (coeffs[0] if coeffs[0] is not None else pack_constants(L),
-         coeffs[1] if coeffs[1] is not None else pack_coefficients(L))
     with b.localForm() as b_local:
-        _cpp.fem.assemble_vector(b_local.array_w, L, c[0], c[1])
+        assemble.assemble_vector(b_local.array_w, L, coeffs)
     return b
 
 

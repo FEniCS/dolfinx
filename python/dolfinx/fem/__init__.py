@@ -49,10 +49,12 @@ __all__ = [
     "Constant", "Expression", "Function",
     "FunctionSpace", "TensorFunctionSpace",
     "VectorFunctionSpace",
-    # "create_vector", "create_vector_block", "create_vector_nest",
-    # "create_matrix", "create_matrix_block", "create_matrix_nest",
-    # "apply_lifting", "apply_lifting_nest", "assemble_scalar", "assemble_vector",
-    # "assemble_matrix", "set_bc", "set_bc_nest",
+    "assemble_scalar",
     "DirichletBCMetaClass", "dirichletbc", "bcs_by_block", "DofMap", "FormMetaClass", "form", "IntegralType",
     "adjoint", "LinearProblem", "locate_dofs_geometrical", "locate_dofs_topological",
     "NonlinearProblem", "pack_coefficients", "pack_constants", "extract_function_spaces", "petsc"]
+
+# "create_vector", "create_vector_block", "create_vector_nest",
+# "create_matrix", "create_matrix_block", "create_matrix_nest",
+# "apply_lifting", "apply_lifting_nest", "assemble_scalar", "assemble_vector",
+# "assemble_matrix", "set_bc", "set_bc_nest",
