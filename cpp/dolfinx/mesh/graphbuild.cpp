@@ -146,6 +146,10 @@ compute_nonlocal_dual_graph(
       = dolfinx::MPI::all_to_all(comm, send_buffer);
   assert(recvd_buffer.array().size() % (max_num_vertices_per_facet + 1) == 0);
 
+  // Number of received facets
+  const int num_facets_rcvd
+      = recvd_buffer.array().size() / (max_num_vertices_per_facet + 1);
+
   // Create a return buffer with one entry per received facet
   // set to -1 for facets that do not get a match.
   std::vector<std::int64_t> return_buffer(num_facets_rcvd, -1);
@@ -154,10 +158,6 @@ compute_nonlocal_dual_graph(
                  return_offsets.begin(), [&max_num_vertices_per_facet](int k) {
                    return k / (max_num_vertices_per_facet + 1);
                  });
-
-  // Number of received facets
-  const int num_facets_rcvd
-      = recvd_buffer.array().size() / (max_num_vertices_per_facet + 1);
 
   // Reshape the received buffer
   {
@@ -205,13 +205,12 @@ compute_nonlocal_dual_graph(
     last_equal = this_equal;
   }
 
-  const graph::AdjacencyList<std::int64_t> return_cells(
-      std::move(return_buffer), std::move(return_offsets));
-
-  graph::AdjacencyList<std::int64_t> returned_list
-      = dolfinx::MPI::all_to_all(comm, return_cells);
-  assert(returned_list.num_nodes() == send_buffer.num_nodes());
-  assert(returned_list.array().size() * (max_num_vertices_per_facet + 1)
+  std::vector<std::int64_t> returned_list
+      = dolfinx::MPI::all_to_all(
+            comm, graph::AdjacencyList<std::int64_t>(std::move(return_buffer),
+                                                     std::move(return_offsets)))
+            .array();
+  assert(returned_list.size() * (max_num_vertices_per_facet + 1)
          == send_buffer.array().size());
 
   // Count number of adjacency list edges in local graph
@@ -220,23 +219,22 @@ compute_nonlocal_dual_graph(
     edge_count[i] = local_graph.num_links(i);
 
   // Count new received entries
-  const std::vector<std::int64_t>& send_c = send_buffer.array();
-  const std::vector<std::int64_t>& recv_c = returned_list.array();
+  const std::vector<std::int64_t>& send_list = send_buffer.array();
   int num_ghost_edges = 0;
   std::vector<std::int64_t> boundary_vertices;
-  for (std::size_t i = 0; i < recv_c.size(); ++i)
+  for (std::size_t i = 0; i < returned_list.size(); ++i)
   {
-    const std::int64_t cell1 = recv_c[i];
+    const std::int64_t cell1 = returned_list[i];
     if (cell1 != -1)
     {
-      const std::int64_t cell0 = send_c[i * (max_num_vertices_per_facet + 1)
-                                        + max_num_vertices_per_facet]
+      const std::int64_t cell0 = send_list[i * (max_num_vertices_per_facet + 1)
+                                           + max_num_vertices_per_facet]
                                  - cell_offset;
       boundary_vertices.insert(
           boundary_vertices.end(),
-          std::next(send_c.begin(), i * (max_num_vertices_per_facet + 1)),
-          std::next(send_c.begin(), i * (max_num_vertices_per_facet + 1)
-                                        + max_num_vertices_per_facet));
+          std::next(send_list.begin(), i * (max_num_vertices_per_facet + 1)),
+          std::next(send_list.begin(), i * (max_num_vertices_per_facet + 1)
+                                           + max_num_vertices_per_facet));
       ++edge_count[cell0];
       ++num_ghost_edges;
     }
@@ -265,13 +263,13 @@ compute_nonlocal_dual_graph(
   }
 
   // Insert new entries
-  for (std::size_t i = 0; i < recv_c.size(); ++i)
+  for (std::size_t i = 0; i < returned_list.size(); ++i)
   {
-    const std::int64_t cell1 = recv_c[i];
+    const std::int64_t cell1 = returned_list[i];
     if (cell1 != -1)
     {
-      const std::int64_t cell0 = send_c[i * (max_num_vertices_per_facet + 1)
-                                        + max_num_vertices_per_facet]
+      const std::int64_t cell0 = send_list[i * (max_num_vertices_per_facet + 1)
+                                           + max_num_vertices_per_facet]
                                  - cell_offset;
       auto links0 = graph.links(cell0);
       links0[pos[cell0]++] = cell1;
