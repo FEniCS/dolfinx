@@ -146,6 +146,15 @@ compute_nonlocal_dual_graph(
       = dolfinx::MPI::all_to_all(comm, send_buffer);
   assert(recvd_buffer.array().size() % (max_num_vertices_per_facet + 1) == 0);
 
+  // Create a return buffer with one entry per received facet
+  // set to -1 for facets that do not get a match.
+  std::vector<std::int64_t> return_buffer(num_facets_rcvd, -1);
+  std::vector<int> return_offsets(recvd_buffer.offsets().size());
+  std::transform(recvd_buffer.offsets().begin(), recvd_buffer.offsets().end(),
+                 return_offsets.begin(), [&max_num_vertices_per_facet](int k) {
+                   return k / (max_num_vertices_per_facet + 1);
+                 });
+
   // Number of received facets
   const int num_facets_rcvd
       = recvd_buffer.array().size() / (max_num_vertices_per_facet + 1);
@@ -167,15 +176,6 @@ compute_nonlocal_dual_graph(
         recvd_buffer.links(a).begin(), std::prev(recvd_buffer.links(a).end()),
         recvd_buffer.links(b).begin(), std::prev(recvd_buffer.links(b).end()));
   });
-
-  // Create a return buffer with one entry per received facet
-  // set to -1 for facets that do not get a match.
-  std::vector<std::int64_t> return_buffer(num_facets_rcvd, -1);
-  std::vector<int> return_offsets(recvd_buffer.offsets().size());
-  std::transform(recvd_buffer.offsets().begin(), recvd_buffer.offsets().end(),
-                 return_offsets.begin(), [&max_num_vertices_per_facet](int k) {
-                   return k / (max_num_vertices_per_facet + 1);
-                 });
 
   // Find matching facets
   bool this_equal, last_equal = false;
@@ -220,8 +220,8 @@ compute_nonlocal_dual_graph(
     edge_count[i] = local_graph.num_links(i);
 
   // Count new received entries
-  const auto send_c = send_buffer.array();
-  const auto recv_c = returned_list.array();
+  const std::vector<std::int64_t>& send_c = send_buffer.array();
+  const std::vector<std::int64_t>& recv_c = returned_list.array();
   int num_ghost_edges = 0;
   std::vector<std::int64_t> boundary_vertices;
   for (std::size_t i = 0; i < recv_c.size(); ++i)
