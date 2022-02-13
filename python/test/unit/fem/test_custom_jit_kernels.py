@@ -86,9 +86,9 @@ def test_numba_assembly():
     integrals = {IntegralType.cell: ([(-1, tabulate_tensor_b.address)], None)}
     L = Form([V._cpp_object], integrals, [], [], False)
 
-    A = dolfinx.fem.assemble_matrix(a)
+    A = dolfinx.fem.petsc.assemble_matrix(a)
     A.assemble()
-    b = dolfinx.fem.assemble_vector(L)
+    b = dolfinx.fem.petsc.assemble_vector(L)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
     Anorm = A.norm(PETSc.NormType.FROBENIUS)
@@ -110,7 +110,7 @@ def test_coefficient():
     integrals = {IntegralType.cell: ([(-1, tabulate_tensor_b_coeff.address)], None)}
     L = Form([V._cpp_object], integrals, [vals._cpp_object], [], False)
 
-    b = dolfinx.fem.assemble_vector(L)
+    b = dolfinx.fem.petsc.assemble_vector(L)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     bnorm = b.norm(PETSc.NormType.N2)
     assert (np.isclose(bnorm, 2.0 * 0.0739710713711999))
