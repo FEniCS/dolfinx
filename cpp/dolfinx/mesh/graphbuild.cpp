@@ -39,7 +39,8 @@ namespace
 /// @param[in] local_graph The dual graph for cells on this MPI rank
 /// @return (0) Extended dual graph to include ghost edges (edges to
 /// off-rank cells) and (1) the number of ghost edges
-std::pair<graph::AdjacencyList<std::int64_t>, std::int32_t>
+std::tuple<graph::AdjacencyList<std::int64_t>, std::int32_t,
+           std::vector<std::int64_t>>
 compute_nonlocal_dual_graph(
     const MPI_Comm comm, const xt::xtensor<std::int64_t, 2>& unmatched_facets,
     const graph::AdjacencyList<std::int32_t>& local_graph)
@@ -56,7 +57,8 @@ compute_nonlocal_dual_graph(
                 std::vector<std::int64_t>(local_graph.array().begin(),
                                           local_graph.array().end()),
                 local_graph.offsets()),
-            0};
+            0,
+            {}};
   }
 
   // Get cell offset for this process to create global numbering for
@@ -102,7 +104,7 @@ compute_nonlocal_dual_graph(
 
   // Send facet-to-cell data to intermediary match-making ranks
 
-  // Count number of item to send to each rank
+  // Count number of items to send to each rank
   std::vector<int> p_count(num_ranks, 0);
   for (std::size_t i = 0; i < unmatched_facets.shape(0); ++i)
   {
@@ -151,9 +153,8 @@ compute_nonlocal_dual_graph(
   std::vector<std::int64_t> return_buffer(num_facets_rcvd, -1);
   std::vector<int> return_offsets(recvd_buffer.offsets().size());
   std::transform(recvd_buffer.offsets().begin(), recvd_buffer.offsets().end(),
-                 return_offsets.begin(),
-                 [&max_num_vertices_per_facet](int off) {
-                   return off / (max_num_vertices_per_facet + 1);
+                 return_offsets.begin(), [&max_num_vertices_per_facet](int k) {
+                   return k / (max_num_vertices_per_facet + 1);
                  });
 
   // Reshape the received buffer
@@ -220,6 +221,7 @@ compute_nonlocal_dual_graph(
   const auto send_c = send_buffer.array();
   const auto recv_c = returned_list.array();
   int num_ghost_edges = 0;
+  std::vector<std::int64_t> boundary_vertices;
   for (std::size_t i = 0; i < recv_c.size(); ++i)
   {
     const std::int64_t cell1 = recv_c[i];
@@ -228,10 +230,28 @@ compute_nonlocal_dual_graph(
       const std::int64_t cell0 = send_c[i * (max_num_vertices_per_facet + 1)
                                         + max_num_vertices_per_facet]
                                  - cell_offset;
+      boundary_vertices.insert(
+          boundary_vertices.end(),
+          std::next(send_c.begin(), i * (max_num_vertices_per_facet + 1)),
+          std::next(send_c.begin(), i * (max_num_vertices_per_facet + 1)
+                                        + max_num_vertices_per_facet));
       ++edge_count[cell0];
       ++num_ghost_edges;
     }
   }
+  // Get unique set of vertices
+  std::sort(boundary_vertices.begin(), boundary_vertices.end());
+  boundary_vertices.erase(
+      std::unique(boundary_vertices.begin(), boundary_vertices.end()),
+      boundary_vertices.end());
+
+  std::stringstream s;
+  int mpi_rank = dolfinx::MPI::rank(comm);
+  s << "On proc " << mpi_rank << " bv(" << boundary_vertices.size() << ") = [";
+  for (auto q : boundary_vertices)
+    s << q << " ";
+  s << "]\n";
+  std::cout << s.str();
 
   // Build adjacency list
   offsets.assign(edge_count.size() + 1, 0);
@@ -239,6 +259,7 @@ compute_nonlocal_dual_graph(
                    std::next(offsets.begin()));
   graph::AdjacencyList<std::int64_t> graph(
       std::vector<std::int64_t>(offsets.back()), std::move(offsets));
+
   // Copy existing local graph, adding cell_offset
   pos.assign(graph.num_nodes(), 0);
   for (int i = 0; i < local_graph.num_nodes(); ++i)
@@ -263,7 +284,7 @@ compute_nonlocal_dual_graph(
     }
   }
 
-  return {std::move(graph), num_ghost_edges};
+  return {std::move(graph), num_ghost_edges, std::move(boundary_vertices)};
 }
 //-----------------------------------------------------------------------------
 
@@ -513,7 +534,8 @@ mesh::build_local_dual_graph(const xtl::span<const std::int64_t>& cell_vertices,
           std::move(unmatched_facet_data)};
 }
 //-----------------------------------------------------------------------------
-std::pair<graph::AdjacencyList<std::int64_t>, std::int32_t>
+std::tuple<graph::AdjacencyList<std::int64_t>, std::int32_t,
+           std::vector<std::int64_t>>
 mesh::build_dual_graph(const MPI_Comm comm,
                        const graph::AdjacencyList<std::int64_t>& cells,
                        int tdim)
@@ -526,7 +548,7 @@ mesh::build_dual_graph(const MPI_Comm comm,
       = mesh::build_local_dual_graph(cells.array(), cells.offsets(), tdim);
 
   // Extend with nonlocal edges and convert to global indices
-  auto [graph, num_ghost_edges]
+  auto [graph, num_ghost_edges, boundary_vertices]
       = compute_nonlocal_dual_graph(comm, facet_cell_map, local_graph);
   assert(local_graph.num_nodes() == cells.num_nodes());
 
@@ -534,49 +556,28 @@ mesh::build_dual_graph(const MPI_Comm comm,
             << ", non-local:"
             << graph.offsets().back() - local_graph.offsets().back() << ")";
 
-  return {std::move(graph), num_ghost_edges};
+  return {std::move(graph), num_ghost_edges, boundary_vertices};
 }
 //-----------------------------------------------------------------------------
 graph::AdjacencyList<std::int64_t>
 mesh::vertex_ownership(MPI_Comm comm,
                        const graph::AdjacencyList<std::int64_t>& cells,
-                       const graph::AdjacencyList<std::int64_t>& dual_graph,
+                       const std::vector<std::int64_t>& boundary_vertices,
                        const graph::AdjacencyList<int>& cell_destinations)
 {
-  // Find any entries in dual-graph which are off-process
-  const std::int64_t num_local_cells = cells.num_nodes();
-  std::int64_t global_cell_offset = 0;
-  MPI_Exscan(&num_local_cells, &global_cell_offset, 1, MPI_INT64_T, MPI_SUM,
-             comm);
-
-  std::cout << "nl = " << num_local_cells << "off = " << global_cell_offset
-            << "\n";
-
   // Global-to-local map for vertices
   std::map<std::int64_t, int> global_to_local;
   int c = 0;
 
   // Start by inserting vertices which are in cells connected to off-process
-  // cells. These vertices may be shared by multiple as yet unknown processes.
-  // Note: this is overkill, because some vertices in boundary cells will
-  // not be on the boundary.
-  for (int i = 0; i < cells.num_nodes(); ++i)
+  // cells.
+  for (std::int64_t v : boundary_vertices)
   {
-    for (std::int64_t q : dual_graph.links(i))
-    {
-      if (q < global_cell_offset or q >= global_cell_offset + num_local_cells)
-      {
-        for (std::int64_t v : cells.links(i))
-        {
-          if (global_to_local.insert({v, c}).second)
-            ++c;
-        }
-      }
-    }
+    if (global_to_local.insert({v, c}).second)
+      ++c;
   }
   const int nv_boundary = c;
   std::cout << "nv_boundary = " << nv_boundary << " \n";
-
   for (std::int64_t v : cells.array())
   {
     if (global_to_local.insert({v, c}).second)
@@ -657,27 +658,31 @@ mesh::vertex_ownership(MPI_Comm comm,
 
   for (int i = 0; i < vprocs.num_nodes(); ++i)
   {
-    const std::int64_t gi = global_index[i];
     auto p = vprocs.links(i);
-    if (p.size() > 1 and p[0] == -1)
+    if (p.size() > 1)
     {
-      for (std::size_t j = 1; j < p.size(); ++j)
+      const std::int64_t gi = global_index[i];
+      if (p[0] == -1)
       {
-        int q = p[j];
-        vertex_ownership_send[q].push_back(gi);
-        vertex_ownership_send[q].push_back(p.size());
-        for (int r : p)
-          vertex_ownership_send[q].push_back(r);
+        for (std::size_t j = 1; j < p.size(); ++j)
+        {
+          int q = p[j];
+          vertex_ownership_send[q].push_back(gi);
+          vertex_ownership_send[q].push_back(p.size());
+          for (int r : p)
+            vertex_ownership_send[q].push_back(r);
+        }
       }
-    }
-    else if (p.size() > 1)
-    {
-      for (int q : p)
+      else
       {
-        vertex_ownership_send[q].push_back(gi);
-        vertex_ownership_send[q].push_back(p.size());
-        for (int r : p)
-          vertex_ownership_send[q].push_back(r);
+        for (int q : p)
+        {
+          vertex_ownership_send[q].push_back(gi);
+          vertex_ownership_send[q].push_back(p.size());
+          // TODO: randomise ownership (order)
+          for (int r : p)
+            vertex_ownership_send[q].push_back(r);
+        }
       }
     }
   }
@@ -688,6 +693,7 @@ mesh::vertex_ownership(MPI_Comm comm,
             comm, graph::AdjacencyList<std::int64_t>(vertex_ownership_send))
             .array();
 
+  // TODO: consolidate multiple replies on same vertex
   std::size_t p = 0;
   std::vector<int> voffset = {0};
   std::vector<std::int64_t> varr;
@@ -704,47 +710,49 @@ mesh::vertex_ownership(MPI_Comm comm,
                                             std::move(voffset));
 }
 
+//-----------------------------------------------------------------------
 graph::AdjacencyList<std::int64_t> mesh::vertex_ownership_part2(
-    const graph::AdjacencyList<std::int64_t>& vertex_ownership,
-    const graph::AdjacencyList<std::int32_t>&,
+    MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& vertex_ownership,
     const xt::xtensor<std::int64_t, 2>& unmatched_facets)
 {
   std::set<std::int64_t> edge_verts(unmatched_facets.begin(),
                                     unmatched_facets.end());
 
+  int mpi_rank = MPI::rank(comm);
   std::stringstream s;
+  s << mpi_rank << "] edge_verts.size = " << edge_verts.size() << "\n[";
+  for (auto q : edge_verts)
+    s << q << " ";
+  s << "]\n";
 
+  std::vector<std::int64_t> problem_nodes;
   for (int i = 0; i < vertex_ownership.num_nodes(); ++i)
   {
     auto vi = vertex_ownership.links(i);
     std::int64_t v = vi[0];
     if (vi[1] == -1)
     {
-      if (edge_verts.find(v) == edge_verts.end())
-      {
-        // Not on boundary here, so ownership should be clear
-        s << "Resolved: ";
-        for (auto q : vi)
-          s << q << " ";
-        s << "\n";
-      }
+      if (edge_verts.find(v) != edge_verts.end())
+        problem_nodes.push_back(v);
       else
       {
-        // Problem node...
-        s << "Problem: ";
-        for (auto q : vi)
-          s << q << " ";
-        s << "\n";
+        // Not now on boundary, so resolved as local.
+        assert(vi.size() == 3);
+        assert(vi[2] == mpi_rank);
+        s << "Resolved " << v << " on " << vi[2] << "\n";
+        // This node can be removed from the graph.
       }
     }
-    else
-    {
-      s << "Local: ";
-      for (auto q : vi)
-        s << q << " ";
-      s << "\n";
-    }
   }
+
+  std::sort(problem_nodes.begin(), problem_nodes.end());
+  problem_nodes.erase(std::unique(problem_nodes.begin(), problem_nodes.end()),
+                      problem_nodes.end());
+
+  s << "Problems(" << problem_nodes.size() << ") = [";
+  for (std::int64_t q : problem_nodes)
+    s << q << " ";
+  s << "]\n";
 
   std::cout << s.str();
 

@@ -42,26 +42,28 @@ build_local_dual_graph(const xtl::span<const std::int64_t>& cells,
 /// @param[in] cells Collection of cells, defined by the cell vertices
 /// from which to build the dual graph
 /// @param[in] tdim The topological dimension of the cells
-/// @return The (0) dual graph and (1) number of  ghost edges
+/// @return The (0) dual graph, (1) number of  ghost edges, and (2) vertices on
+/// inter-process boundary
 /// @note Collective function
-std::pair<graph::AdjacencyList<std::int64_t>, std::int32_t>
+std::tuple<graph::AdjacencyList<std::int64_t>, std::int32_t,
+           std::vector<std::int64_t>>
 build_dual_graph(const MPI_Comm comm,
                  const graph::AdjacencyList<std::int64_t>& cells, int tdim);
 
 /// Compute vertex ownership, where possible, before cell distribution
 /// @param cells Cells before distribution
-/// @param dual_graph Cell-cell connections used by partitioner
+/// @param boundary_vertices Vertices lying on interprocess boundary before
+/// distribution
 /// @param cell_destinations Output from partitioner
 /// @return list of vertices with potential sharing processes
 graph::AdjacencyList<std::int64_t>
 vertex_ownership(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
-                 const graph::AdjacencyList<std::int64_t>& dual_graph,
+                 const std::vector<std::int64_t>& boundary_vertices,
                  const graph::AdjacencyList<int>& cell_destinations);
 
 // Stuff
 graph::AdjacencyList<std::int64_t> vertex_ownership_part2(
-    const graph::AdjacencyList<std::int64_t>& vertex_ownership,
-    const graph::AdjacencyList<std::int32_t>& local_dual_graph,
+    MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& vertex_ownership,
     const xt::xtensor<std::int64_t, 2>& unmatched_facets);
 
 } // namespace dolfinx::mesh

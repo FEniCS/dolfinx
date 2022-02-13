@@ -121,7 +121,7 @@ int main(int argc, char* argv[])
   {
     // Create mesh and function space
     auto mesh = std::make_shared<mesh::Mesh>(mesh::create_box(
-        MPI_COMM_WORLD, {{{0.0, 0.0, 0.0}, {2.0, 1.0, 1.0}}}, {10, 10, 10},
+        MPI_COMM_WORLD, {{{0.0, 0.0, 0.0}, {2.0, 1.0, 1.0}}}, {14, 10, 10},
         mesh::CellType::tetrahedron, mesh::GhostMode::shared_facet));
 
     auto V = std::make_shared<fem::FunctionSpace>(

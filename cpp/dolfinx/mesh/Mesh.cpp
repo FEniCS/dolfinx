@@ -110,7 +110,7 @@ Mesh mesh::create_mesh(MPI_Comm comm,
         = extract_topology(element.cell_shape(), dof_layout, cells);
 
     // Compute distributed dual graph (for the cells on this process)
-    const auto [dual_graph, num_ghost_edges]
+    const auto [dual_graph, num_ghost_edges, boundary_vertices]
         = build_dual_graph(comm, cells_extracted, tdim);
 
     // Compute partition (calls SCOTCH, ParMETIS or KaHIP)
@@ -119,7 +119,7 @@ Mesh mesh::create_mesh(MPI_Comm comm,
 
     // Compute some vertex ownership
     auto prelim_vertex_ownership
-        = mesh::vertex_ownership(comm, cells, dual_graph, dest);
+        = mesh::vertex_ownership(comm, cells, boundary_vertices, dest);
 
     std::stringstream s;
     s << "RANK " << MPI::rank(comm) << ": "
@@ -155,9 +155,9 @@ Mesh mesh::create_mesh(MPI_Comm comm,
                                       num_owned_cells + 1),
         tdim);
 
-    // Use local_dual_graph to determine any more local vertices
+    // Use unmatched_facets to determine any more local vertices
     auto new_vertex_ownership = mesh::vertex_ownership_part2(
-        prelim_vertex_ownership, local_dual_graph, unmatched_facets);
+        comm, prelim_vertex_ownership, unmatched_facets);
     s << new_vertex_ownership.str();
     std::cout << s.str();
 
