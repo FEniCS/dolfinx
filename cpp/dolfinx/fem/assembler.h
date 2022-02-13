@@ -24,8 +24,7 @@ class FunctionSpace;
 
 // -- Helper functions -----------------------------------------------------
 
-/// Makes the std::vectors of coefficients in the coefficient map into
-/// xtl::spans
+/// @brief Create a map xtl::span from a map of std::vector
 template <typename T>
 std::map<std::pair<dolfinx::fem::IntegralType, int>,
          std::pair<xtl::span<const T>, int>>

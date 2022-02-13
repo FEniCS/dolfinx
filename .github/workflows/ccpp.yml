@@ -76,10 +76,12 @@ jobs:
 
       - name: Build C++ interface documentation
         run: |
+          python3 -m pip install breathe
           export DOLFINX_VERSION=`cmake -L build | grep DOXYGEN_DOLFINX_VERSION | cut -f2 -d "="`
           echo $DOLFINX_VERSION
           cd cpp/doc
           doxygen
+          make html
 
       - name: Build C++ unit tests
         run: |

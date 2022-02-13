@@ -57,7 +57,6 @@ create_sparsity_discrete_gradient(const fem::FunctionSpace& V0,
 /// @param[in] mat_set A function (or lambda capture) to set values in a matrix
 /// @param[in] V0 A H(curl) space
 /// @param[in] V1 A P1 Lagrange space
-/// @return The sparsity pattern
 template <typename T>
 void assemble_discrete_gradient(
     const std::function<int(const xtl::span<const std::int32_t>&,

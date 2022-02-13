@@ -82,8 +82,8 @@ public:
   /// W.sub(1).sub(0) == [1, 0]
   std::vector<int> component() const;
 
+  /// @brief Tabulate the physical coordinates of all dofs on this process.
   /// @todo Remove - see function in interpolate.h
-  /// Tabulate the physical coordinates of all dofs on this process.
   /// @param[in] transpose If false the returned data has shape
   /// (num_points, gdim), otherwise it is transposed and has shape
   /// (gdim, num_points)
