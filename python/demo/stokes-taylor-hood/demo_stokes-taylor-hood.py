@@ -99,10 +99,10 @@ from petsc4py import PETSc
 
 # +
 # Create mesh
-mesh = create_rectangle(MPI.COMM_WORLD,
-                        [np.array([0, 0]), np.array([1, 1])],
-                        [32, 32],
-                        CellType.triangle, GhostMode.none)
+msh = create_rectangle(MPI.COMM_WORLD,
+                       [np.array([0, 0]), np.array([1, 1])],
+                       [32, 32],
+                       CellType.triangle, GhostMode.none)
 
 
 # Function to mark x = 0, x = 1 and y = 0
@@ -130,23 +130,23 @@ def lid_velocity_expression(x):
 # field and `P1` to continuous piecewise linears for the pressure
 # field:
 
-P2 = ufl.VectorElement("Lagrange", mesh.ufl_cell(), 2)
-P1 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
-V, Q = FunctionSpace(mesh, P2), FunctionSpace(mesh, P1)
+P2 = ufl.VectorElement("Lagrange", msh.ufl_cell(), 2)
+P1 = ufl.FiniteElement("Lagrange", msh.ufl_cell(), 1)
+V, Q = FunctionSpace(msh, P2), FunctionSpace(msh, P1)
 
 # We can define boundary conditions:
 
 # +
 # No-slip boundary condition for velocity field (`V`) on boundaries
 # where x = 0, x = 1, and y = 0
-noslip = np.zeros(mesh.geometry.dim, dtype=PETSc.ScalarType)
-facets = locate_entities_boundary(mesh, 1, noslip_boundary)
+noslip = np.zeros(msh.geometry.dim, dtype=PETSc.ScalarType)
+facets = locate_entities_boundary(msh, 1, noslip_boundary)
 bc0 = dirichletbc(noslip, locate_dofs_topological(V, 1, facets), V)
 
 # Driving velocity condition u = (1, 0) on top boundary (y = 1)
 lid_velocity = Function(V)
 lid_velocity.interpolate(lid_velocity_expression)
-facets = locate_entities_boundary(mesh, 1, lid)
+facets = locate_entities_boundary(msh, 1, lid)
 bc1 = dirichletbc(lid_velocity, locate_dofs_topological(V, 1, facets))
 
 # Collect Dirichlet boundary conditions
@@ -160,11 +160,11 @@ bcs = [bc0, bc1]
 # Define variational problem
 (u, p) = ufl.TrialFunction(V), ufl.TrialFunction(Q)
 (v, q) = ufl.TestFunction(V), ufl.TestFunction(Q)
-f = Constant(mesh, (PETSc.ScalarType(0), PETSc.ScalarType(0)))
+f = Constant(msh, (PETSc.ScalarType(0), PETSc.ScalarType(0)))
 
 a = form([[inner(grad(u), grad(v)) * dx, inner(p, div(v)) * dx],
           [inner(div(u), q) * dx, None]])
-L = form([inner(f, v) * dx, inner(Constant(mesh, PETSc.ScalarType(0)), q) * dx])
+L = form([inner(f, v) * dx, inner(Constant(msh, PETSc.ScalarType(0)), q) * dx])
 # -
 
 # We will use a block-diagonal preconditioner to solve this problem:
@@ -236,7 +236,7 @@ A.setNullSpace(nsp)
 # additive fieldsplit type preconditioner:
 
 # +
-ksp = PETSc.KSP().create(mesh.comm)
+ksp = PETSc.KSP().create(msh.comm)
 ksp.setOperators(A, P)
 ksp.setType("minres")
 ksp.setTolerances(rtol=1e-9)
@@ -285,12 +285,12 @@ if MPI.COMM_WORLD.rank == 0:
 # +
 with XDMFFile(MPI.COMM_WORLD, "velocity.xdmf", "w") as ufile_xdmf:
     u.x.scatter_forward()
-    ufile_xdmf.write_mesh(mesh)
+    ufile_xdmf.write_mesh(msh)
     ufile_xdmf.write_function(u)
 
 with XDMFFile(MPI.COMM_WORLD, "pressure.xdmf", "w") as pfile_xdmf:
     p.x.scatter_forward()
-    pfile_xdmf.write_mesh(mesh)
+    pfile_xdmf.write_mesh(msh)
     pfile_xdmf.write_function(p)
 # -
 
@@ -324,7 +324,7 @@ is_u = PETSc.IS().createStride(V_map.size_local * V.dofmap.index_map_bs, offset_
 is_p = PETSc.IS().createStride(Q_map.size_local, offset_p, 1, comm=PETSc.COMM_SELF)
 
 # Create Krylov solver
-ksp = PETSc.KSP().create(mesh.comm)
+ksp = PETSc.KSP().create(msh.comm)
 ksp.setOperators(A, P)
 ksp.setTolerances(rtol=1e-9)
 ksp.setType("minres")
@@ -378,7 +378,7 @@ assert np.isclose(norm_p_1, norm_p_0)
 # Solve same problem, but now with monolithic matrices and a direct solver
 
 # Create LU solver
-ksp = PETSc.KSP().create(mesh.comm)
+ksp = PETSc.KSP().create(msh.comm)
 ksp.setOperators(A)
 ksp.setType("preonly")
 ksp.getPC().setType("lu")
@@ -417,12 +417,12 @@ assert np.isclose(norm_p_2, norm_p_0)
 # +
 # Create the function space
 TH = P2 * P1
-W = FunctionSpace(mesh, TH)
+W = FunctionSpace(msh, TH)
 W0, _ = W.sub(0).collapse()
 
 # No slip boundary condition
 noslip = Function(V)
-facets = locate_entities_boundary(mesh, 1, noslip_boundary)
+facets = locate_entities_boundary(msh, 1, noslip_boundary)
 dofs = locate_dofs_topological((W.sub(0), V), 1, facets)
 bc0 = dirichletbc(noslip, dofs, W.sub(0))
 
@@ -430,7 +430,7 @@ bc0 = dirichletbc(noslip, dofs, W.sub(0))
 # Driving velocity condition u = (1, 0) on top boundary (y = 1)
 lid_velocity = Function(W0)
 lid_velocity.interpolate(lid_velocity_expression)
-facets = locate_entities_boundary(mesh, 1, lid)
+facets = locate_entities_boundary(msh, 1, lid)
 dofs = locate_dofs_topological((W.sub(0), V), 1, facets)
 bc1 = dirichletbc(lid_velocity, dofs, W.sub(0))
 
@@ -465,7 +465,7 @@ b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 dolfinx.fem.assemble.set_bc(b, bcs)
 
 # Create and configure solver
-ksp = PETSc.KSP().create(mesh.comm)
+ksp = PETSc.KSP().create(msh.comm)
 ksp.setOperators(A)
 ksp.setType("preonly")
 ksp.getPC().setType("lu")
@@ -490,10 +490,10 @@ assert np.isclose(norm_u_3, norm_u_0)
 # Write the solution to file
 with XDMFFile(MPI.COMM_WORLD, "new_velocity.xdmf", "w") as ufile_xdmf:
     u.x.scatter_forward()
-    ufile_xdmf.write_mesh(mesh)
+    ufile_xdmf.write_mesh(msh)
     ufile_xdmf.write_function(u)
 
 with XDMFFile(MPI.COMM_WORLD, "my.xdmf", "w") as pfile_xdmf:
     p.x.scatter_forward()
-    pfile_xdmf.write_mesh(mesh)
+    pfile_xdmf.write_mesh(msh)
     pfile_xdmf.write_function(p)
