@@ -334,14 +334,14 @@ def test_custom_mesh_loop_rank1():
     L = inner(1.0, v) * dx
     Lf = form(L)
     start = time.time()
-    b1 = dolfinx.fem.assemble_vector(Lf)
+    b1 = dolfinx.fem.petsc.assemble_vector(Lf)
     end = time.time()
     print("Time (C++, pass 0):", end - start)
 
     with b1.localForm() as b_local:
         b_local.set(0.0)
     start = time.time()
-    dolfinx.fem.assemble_vector(b1, Lf)
+    dolfinx.fem.petsc.assemble_vector(b1, Lf)
     end = time.time()
     print("Time (C++, pass 1):", end - start)
     b1.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
@@ -390,7 +390,7 @@ def test_custom_mesh_loop_ctypes_rank2():
     A0.zeroEntries()
 
     start = time.time()
-    dolfinx.fem.assemble_matrix(A0, a)
+    dolfinx.fem.petsc.assemble_matrix(A0, a)
     end = time.time()
     print("Time (C++, pass 2):", end - start)
     A0.assemble()
