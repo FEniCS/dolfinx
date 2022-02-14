@@ -18,18 +18,54 @@ if typing.TYPE_CHECKING:
     from dolfinx.fem.forms import FormMetaClass
     from dolfinx.fem.bcs import DirichletBCMetaClass
 
+import collections
 import contextlib
 import functools
 
 from dolfinx import cpp as _cpp
 from dolfinx import la
 from dolfinx.fem import assemble
-from dolfinx.fem.assemble import (Coefficients, _extract_function_spaces,
-                                  pack_coefficients, pack_constants)
+from dolfinx.fem.assemble import _extract_function_spaces
 from dolfinx.fem.bcs import bcs_by_block
 from dolfinx.fem.forms import extract_function_spaces
 
 from petsc4py import PETSc
+
+Coefficients = collections.namedtuple('Coefficients', ['constants', 'coeffs'])
+
+
+def pack_constants(form: typing.Union[FormMetaClass, typing.Sequence[FormMetaClass]]):
+    """Compute form constants. If form is an array of forms, this
+    function returns an array of form constants with the same shape as
+    form.
+
+    """
+    def _pack(form):
+        if form is None:
+            return None
+        elif isinstance(form, collections.abc.Iterable):
+            return list(map(lambda sub_form: _pack(sub_form), form))
+        else:
+            return _cpp.fem.pack_constants(form)
+
+    return _pack(form)
+
+
+def pack_coefficients(form: typing.Union[FormMetaClass, typing.Sequence[FormMetaClass]]):
+    """Compute form coefficients. If form is an array of forms, this
+    function returns an array of form coefficients with the same shape
+    as form.
+
+    """
+    def _pack(form):
+        if form is None:
+            return {}
+        elif isinstance(form, collections.abc.Iterable):
+            return list(map(lambda sub_form: _pack(sub_form), form))
+        else:
+            return _cpp.fem.pack_coefficients(form)
+
+    return _pack(form)
 
 # -- Vector instantiation ----------------------------------------------------
 

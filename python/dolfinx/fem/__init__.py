@@ -25,7 +25,7 @@ from dolfinx.fem import petsc
 #                                   pack_constants, set_bc, set_bc_nest)
 from dolfinx.fem.assemble import (apply_lifting, assemble_matrix,
                                   assemble_scalar, assemble_vector,
-                                  pack_coefficients, pack_constants, set_bc)
+                                  set_bc)
 from dolfinx.fem.bcs import (DirichletBCMetaClass, bcs_by_block, dirichletbc,
                              locate_dofs_geometrical, locate_dofs_topological)
 from dolfinx.fem.dofmap import DofMap
@@ -51,7 +51,6 @@ __all__ = [
     "FunctionSpace", "TensorFunctionSpace",
     "VectorFunctionSpace",
     "assemble_scalar", "assemble_matrix", "assemble_vector", "apply_lifting", "set_bc",
-    "pack_constants", "pack_coefficients",
     "DirichletBCMetaClass", "dirichletbc", "bcs_by_block", "DofMap", "FormMetaClass", "form", "IntegralType",
     "adjoint", "LinearProblem", "locate_dofs_geometrical", "locate_dofs_topological",
     "NonlinearProblem", "extract_function_spaces", "petsc"]
