@@ -522,7 +522,8 @@ mesh::build_local_dual_graph(const xtl::span<const std::int64_t>& cell_vertices,
           std::move(unmatched_facet_data)};
 }
 //-----------------------------------------------------------------------------
-std::pair<graph::AdjacencyList<std::int64_t>, std::int32_t>
+std::tuple<graph::AdjacencyList<std::int64_t>, std::int32_t,
+           std::vector<std::int64_t>>
 mesh::build_dual_graph(const MPI_Comm comm,
                        const graph::AdjacencyList<std::int64_t>& cells,
                        int tdim)
@@ -543,6 +544,6 @@ mesh::build_dual_graph(const MPI_Comm comm,
             << ", non-local:"
             << graph.offsets().back() - local_graph.offsets().back() << ")";
 
-  return {std::move(graph), num_ghost_edges};
+  return {std::move(graph), num_ghost_edges, std::move(boundary_vertices)};
 }
 //-----------------------------------------------------------------------------

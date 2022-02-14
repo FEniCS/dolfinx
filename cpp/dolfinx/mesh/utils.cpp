@@ -528,7 +528,7 @@ mesh::create_cell_partitioner(const graph::partition_fn& partfn)
     LOG(INFO) << "Compute partition of cells across ranks";
 
     // Compute distributed dual graph (for the cells on this process)
-    const auto [dual_graph, num_ghost_edges]
+    const auto [dual_graph, num_ghost_edges, boundary_vertices]
         = build_dual_graph(comm, cells, tdim);
 
     // Just flag any kind of ghosting for now

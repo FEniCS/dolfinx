@@ -311,7 +311,8 @@ refinement::partition(const mesh::Mesh& old_mesh,
                         mesh::GhostMode)
   {
     // Find out the ghosting information
-    auto [graph, _] = mesh::build_dual_graph(comm, cell_topology, tdim);
+    auto [graph, num_ghosts_edges, boundary_vertices] =
+      mesh::build_dual_graph(comm, cell_topology, tdim);
 
     // FIXME: much of this is reverse engineering of data that is already
     // known in the GraphBuilder
