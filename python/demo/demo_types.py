@@ -22,11 +22,10 @@ import scipy.sparse
 import scipy.sparse.linalg
 
 import ufl
-from dolfinx import cpp as _cpp
-from dolfinx import fem, la, mesh, plot, fem
-from dolfinx.fem.assemble import pack_coefficients, pack_constants
+from dolfinx import fem, mesh, plot
 
 from mpi4py import MPI
+
 # -
 
 # SciPy solvers do no support MPI, so all computation will be performed
