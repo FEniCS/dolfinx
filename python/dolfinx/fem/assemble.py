@@ -22,10 +22,6 @@ import dolfinx
 from dolfinx import cpp as _cpp
 from dolfinx import la
 
-# -- Packing constants and coefficients --------------------------------------
-
-
-
 
 # -- Vector and matrix instantiation -----------------------------------------
 
