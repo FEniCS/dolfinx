@@ -440,7 +440,8 @@ def apply_lifting_nest(b: PETSc.Vec, a: typing.List[typing.List[FormMetaClass]],
     bcs1 = bcs_by_block(extract_function_spaces(a, 1), bcs)
 
     constants = constants or [[form and _cpp.fem.pack_constants(form) for form in forms] for forms in a]
-    coefficients = coefficients or [[{} if form is None else _cpp.fem.pack_coefficients(form) for form in forms] for forms in a]
+    coefficients = coefficients or [
+        [{} if form is None else _cpp.fem.pack_coefficients(form) for form in forms] for forms in a]
     for b_sub, a_sub, const, coeff in zip(b.getNestSubVecs(), a, constants, coefficients):
         apply_lifting(b_sub, a_sub, bcs1, x0, scale, const, coeff)
     return b
