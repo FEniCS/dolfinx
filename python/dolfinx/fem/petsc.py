@@ -197,7 +197,7 @@ def _(b: PETSc.Vec, L: typing.List[FormMetaClass], coeffs=Coefficients(None, Non
          coeffs[1] if coeffs[1] is not None else pack_coefficients(L))
     for b_sub, L_sub, constant, coeff in zip(b.getNestSubVecs(), L, c[0], c[1]):
         with b_sub.localForm() as b_local:
-            assemble.fem.assemble_vector(b_local.array_w, L_sub, constant, coeff)
+            assemble.assemble_vector(b_local.array_w, L_sub, (constant, coeff))
     return b
 
 

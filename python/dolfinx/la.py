@@ -44,6 +44,11 @@ class MatrixCSRMetaClass:
             sp: The sparsity pattern that defines the nonzero structure
             of the matrix the parallel distribution of the matrix
 
+        Note:
+            Objects of this type should be created using
+            :func:`matrix_csr` and not created using the class
+            initialiser.
+
         """
         super().__init__(sp)
 
@@ -81,6 +86,11 @@ class VectorMetaClass:
         Args:
             map: Index map the describes the size and distribution of the vector
             bs: Block size
+
+        Note:
+            Objects of this type should be created using :func:`vector`
+            and not created using the class initialiser.
+
         """
         super().__init__(map, bs)
 
