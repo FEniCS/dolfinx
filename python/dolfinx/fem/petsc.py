@@ -3,7 +3,12 @@
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Assembly functions into PETSc objects for variational forms."""
+"""Assembly functions into PETSc objects for variational forms.
+
+Functions in this module generally apply functions in :mod:`dolfinx.fem`
+to PETSc linear algebra objects and handle any PETSc-specific
+preparation."""
+
 
 from __future__ import annotations
 
@@ -30,17 +35,45 @@ from petsc4py import PETSc
 
 
 def create_vector(L: FormMetaClass) -> PETSc.Vec:
+    """Create a PETSc vector that is compaible with a linear form.
+
+    Args:
+        L: A linear form.
+
+    Returns:
+        A PETSc vector with a layout that is compatible with `L`.
+
+    """
     dofmap = L.function_spaces[0].dofmap
     return la.create_petsc_vector(dofmap.index_map, dofmap.index_map_bs)
 
 
 def create_vector_block(L: typing.List[FormMetaClass]) -> PETSc.Vec:
+    """Create a PETSc vector (blocked) that is compaible with a list of linear forms.
+
+    Args:
+        L: List of linear forms.
+
+    Returns:
+        A PETSc vector with a layout that is compatible with `L`.
+
+    """
     maps = [(form.function_spaces[0].dofmap.index_map,
              form.function_spaces[0].dofmap.index_map_bs) for form in L]
     return _cpp.fem.petsc.create_vector_block(maps)
 
 
 def create_vector_nest(L: typing.List[FormMetaClass]) -> PETSc.Vec:
+    """Create a PETSc netsted vector (``VecNest``) that is compaible with a list of linear forms.
+
+    Args:
+        L: List of linear forms.
+
+    Returns:
+        A PETSc nested vector (``VecNest``) with a layout that is
+        compatible with `L`.
+
+    """
     maps = [(form.function_spaces[0].dofmap.index_map,
              form.function_spaces[0].dofmap.index_map_bs) for form in L]
     return _cpp.fem.petsc.create_vector_nest(maps)
@@ -49,6 +82,16 @@ def create_vector_nest(L: typing.List[FormMetaClass]) -> PETSc.Vec:
 # -- Matrix instantiation ----------------------------------------------------
 
 def create_matrix(a: FormMetaClass, mat_type=None) -> PETSc.Mat:
+    """Create a PETSc matrix that is compaible with a bilinear form.
+
+    Args:
+        a: A bilinear form.
+        mat_type: The PETSc vector (``Vec``) type.
+
+    Returns:
+        A PETSc matrix with a layout that is compatible with `a`.
+
+    """
     if mat_type is None:
         return _cpp.fem.petsc.create_matrix(a)
     else:
@@ -56,10 +99,28 @@ def create_matrix(a: FormMetaClass, mat_type=None) -> PETSc.Mat:
 
 
 def create_matrix_block(a: typing.List[typing.List[FormMetaClass]]) -> PETSc.Mat:
+    """Create a PETSc matrix that is compaible with a rectangular array of bilinear forms.
+
+    Args:
+        a: A rectangular array of bilinear forms.
+
+    Returns:
+        A PETSc matrix with a blocked layout that is compatible with `a`.
+
+    """
     return _cpp.fem.petsc.create_matrix_block(a)
 
 
 def create_matrix_nest(a: typing.List[typing.List[FormMetaClass]]) -> PETSc.Mat:
+    """Create a PETSc matrix (``MatNest``) that is compaible with a rectangular array of bilinear forms.
+
+    Args:
+        a: A rectangular array of bilinear forms.
+
+    Returns:
+        A PETSc matrix ('MatNest``) that is compatible with `a`.
+
+    """
     return _cpp.fem.petsc.create_matrix_nest(a)
 
 
@@ -67,9 +128,17 @@ def create_matrix_nest(a: typing.List[typing.List[FormMetaClass]]) -> PETSc.Mat:
 
 @functools.singledispatch
 def assemble_vector(L: FormMetaClass, coeffs=Coefficients(None, None)) -> PETSc.Vec:
-    """Assemble linear form into a new PETSc vector. The returned vector
-    is not finalised, i.e. ghost values are not accumulated on the
-    owning processes.
+    """Assemble linear form into a new PETSc vector.
+
+    Note:
+        The returned vector is not finalised, i.e. ghost values are not
+        accumulated on the owning processes.
+
+    Args:
+        L: A linear form.
+
+    Returns:
+        An assembled vector.
 
     """
     b = la.create_petsc_vector(L.function_spaces[0].dofmap.index_map,
@@ -81,9 +150,19 @@ def assemble_vector(L: FormMetaClass, coeffs=Coefficients(None, None)) -> PETSc.
 
 @assemble_vector.register(PETSc.Vec)
 def _(b: PETSc.Vec, L: FormMetaClass, coeffs=Coefficients(None, None)) -> PETSc.Vec:
-    """Assemble linear form into an existing PETSc vector. The vector is
-    not zeroed before assembly and it is not finalised, i.e. ghost
-    values are not accumulated on the owning processes.
+    """Assemble linear form into an existing PETSc vector.
+
+    Note:
+        The vector is not zeroed before assembly and it is not
+        finalised, i.e. ghost values are not accumulated on the owning
+        processes.
+
+    Args:
+        b: Vector to assemble the contribution of the linear form into.
+        L: A linear form to assemble into `b`.
+
+    Returns:
+        An assembled vector.
 
     """
     with b.localForm() as b_local:
@@ -118,7 +197,7 @@ def _(b: PETSc.Vec, L: typing.List[FormMetaClass], coeffs=Coefficients(None, Non
          coeffs[1] if coeffs[1] is not None else pack_coefficients(L))
     for b_sub, L_sub, constant, coeff in zip(b.getNestSubVecs(), L, c[0], c[1]):
         with b_sub.localForm() as b_local:
-            _cpp.fem.assemble_vector(b_local.array_w, L_sub, constant, coeff)
+            assemble.fem.assemble_vector(b_local.array_w, L_sub, constant, coeff)
     return b
 
 
@@ -305,21 +384,7 @@ def apply_lifting(b: PETSc.Vec, a: typing.List[FormMetaClass],
                   bcs: typing.List[typing.List[DirichletBCMetaClass]],
                   x0: typing.Optional[typing.List[PETSc.Vec]] = [],
                   scale: float = 1.0, coeffs=Coefficients(None, None)) -> None:
-    """Modify RHS vector b for lifting of Dirichlet boundary conditions.
-    It modifies b such that:
-
-        b <- b - scale * A_j (g_j - x0_j)
-
-    where j is a block (nest) index. For a non-blocked problem j = 0.
-    The boundary conditions bcs are on the trial spaces V_j. The forms
-    in [a] must have the same test space as L (from which b was built),
-    but the trial space may differ. If x0 is not supplied, then it is
-    treated as zero.
-
-    Ghost contributions are not accumulated (not sent to owner). Caller
-    is responsible for calling VecGhostUpdateBegin/End.
-
-    """
+    """Apply the function :func:`dolfinx.fem.apply_lifting` to a PETSc Vector."""
     with contextlib.ExitStack() as stack:
         x0 = [stack.enter_context(x.localForm()) for x in x0]
         x0_r = [x.array_r for x in x0]
@@ -331,9 +396,8 @@ def apply_lifting_nest(b: PETSc.Vec, a: typing.List[typing.List[FormMetaClass]],
                        bcs: typing.List[DirichletBCMetaClass],
                        x0: typing.Optional[PETSc.Vec] = None,
                        scale: float = 1.0, coeffs=Coefficients(None, None)) -> PETSc.Vec:
-    """Modify nested vector for lifting of Dirichlet boundary conditions.
+    """Apply the function :func:`dolfinx.fem.apply_lifting` to each sub-vector in a nested PETSc Vector."""
 
-    """
     x0 = [] if x0 is None else x0.getNestSubVecs()
     c = (coeffs[0] if coeffs[0] is not None else pack_constants(a),
          coeffs[1] if coeffs[1] is not None else pack_coefficients(a))
@@ -345,25 +409,15 @@ def apply_lifting_nest(b: PETSc.Vec, a: typing.List[typing.List[FormMetaClass]],
 
 def set_bc(b: PETSc.Vec, bcs: typing.List[DirichletBCMetaClass],
            x0: typing.Optional[PETSc.Vec] = None, scale: float = 1.0) -> None:
-    """Insert boundary condition values into vector. Only local (owned)
-    entries are set, hence communication after calling this function is
-    not required unless ghost entries need to be updated to the boundary
-    condition value.
-
-    """
+    """Apply the function :func:`dolfinx.fem.set_bc` to a PETSc Vector."""
     if x0 is not None:
         x0 = x0.array_r
-    _cpp.fem.set_bc(b.array_w, bcs, x0, scale)
+    assemble.set_bc(b.array_w, bcs, x0, scale)
 
 
 def set_bc_nest(b: PETSc.Vec, bcs: typing.List[typing.List[DirichletBCMetaClass]],
                 x0: typing.Optional[PETSc.Vec] = None, scale: float = 1.0) -> None:
-    """Insert boundary condition values into nested vector. Only local (owned)
-    entries are set, hence communication after calling this function is
-    not required unless the ghost entries need to be updated to the
-    boundary condition value.
-
-    """
+    """Apply the function :func:`dolfinx.fem.set_bc` to each sub-vector of a nested PETSc Vector."""
     _b = b.getNestSubVecs()
     x0 = len(_b) * [None] if x0 is None else x0.getNestSubVecs()
     for b_sub, bc, x_sub in zip(_b, bcs, x0):

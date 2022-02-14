@@ -11,7 +11,8 @@ import numpy as np
 from dolfinx import cpp as _cpp
 from dolfinx.cpp.la.petsc import create_vector as create_petsc_vector
 
-__all__ = ["orthonormalize", "is_orthonormal", "create_petsc_vector"]
+__all__ = ["orthonormalize", "is_orthonormal", "create_petsc_vector",
+           "MatrixCSRMetaClass", "VectorMetaClass", "matrix_csr", "vector"]
 
 
 def orthonormalize(basis):
@@ -42,6 +43,7 @@ class MatrixCSRMetaClass:
         Args:
             sp: The sparsity pattern that defines the nonzero structure
             of the matrix the parallel distribution of the matrix
+
         """
         super().__init__(sp)
 
@@ -54,6 +56,7 @@ def matrix_csr(sp, dtype=np.float64) -> MatrixCSRMetaClass:
     Args:
         sp: The sparsity pattern that defines the nonzero structure of
         the matrix the parallel distribution of the matrix.
+        dtype: The scalar type.
 
     Returns:
         A sparse matrix.
@@ -86,11 +89,12 @@ def vector(map, bs=1, dtype=np.float64) -> VectorMetaClass:
     """Create a distributed vector.
 
     Args:
-        map: Index map the describes the size and distribution of the vector
-        bs: Block size
+        map: Index map the describes the size and distribution of the vector.
+        bs: Block size.
+        dtype: The scalar type.
 
     Returns:
-        A distributed vector
+        A distributed vector.
     """
     if dtype == np.float32:
         vtype = _cpp.la.Vector_float32
