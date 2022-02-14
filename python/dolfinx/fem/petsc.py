@@ -223,17 +223,19 @@ def assemble_vector_nest(L: FormMetaClass, coeffs=Coefficients(None, None)) -> P
 
 
 @assemble_vector_nest.register(PETSc.Vec)
-def _(b: PETSc.Vec, L: typing.List[FormMetaClass], coeffs=Coefficients(None, None)) -> PETSc.Vec:
+def _(b: PETSc.Vec, L: typing.List[FormMetaClass], constants=None, coefficients=None) -> PETSc.Vec:
     """Assemble linear forms into a nested PETSc (VecNest) vector. The
     vector is not zeroed before assembly and it is not finalised, i.e.
     ghost values are not accumulated on the owning processes.
 
     """
-    c = (coeffs[0] if coeffs[0] is not None else pack_constants(L),
-         coeffs[1] if coeffs[1] is not None else pack_coefficients(L))
-    for b_sub, L_sub, constant, coeff in zip(b.getNestSubVecs(), L, c[0], c[1]):
+    # c = (coeffs[0] if coeffs[0] is not None else pack_constants(L),
+    #      coeffs[1] if coeffs[1] is not None else pack_coefficients(L))
+    constants = constants or [_cpp.fem.pack_constants(form) for form in L]
+    coefficients = coefficients or [_cpp.fem.pack_coefficients(form) for form in L]
+    for b_sub, L_sub, const, coeff in zip(b.getNestSubVecs(), L, constants, coefficients):
         with b_sub.localForm() as b_local:
-            assemble.assemble_vector(b_local.array_w, L_sub, (constant, coeff))
+            assemble.assemble_vector(b_local.array_w, L_sub, const, coeff)
     return b
 
 
@@ -419,27 +421,28 @@ def _(A: PETSc.Mat, a: typing.List[typing.List[FormMetaClass]],
 def apply_lifting(b: PETSc.Vec, a: typing.List[FormMetaClass],
                   bcs: typing.List[typing.List[DirichletBCMetaClass]],
                   x0: typing.Optional[typing.List[PETSc.Vec]] = [],
-                  scale: float = 1.0, coeffs=Coefficients(None, None)) -> None:
+                  scale: float = 1.0, constants=None, coefficients=None) -> None:
     """Apply the function :func:`dolfinx.fem.apply_lifting` to a PETSc Vector."""
     with contextlib.ExitStack() as stack:
         x0 = [stack.enter_context(x.localForm()) for x in x0]
         x0_r = [x.array_r for x in x0]
         b_local = stack.enter_context(b.localForm())
-        assemble.apply_lifting(b_local.array_w, a, bcs, x0_r, scale, coeffs)
+        assemble.apply_lifting(b_local.array_w, a, bcs, x0_r, scale, constants, coefficients)
 
 
 def apply_lifting_nest(b: PETSc.Vec, a: typing.List[typing.List[FormMetaClass]],
                        bcs: typing.List[DirichletBCMetaClass],
                        x0: typing.Optional[PETSc.Vec] = None,
-                       scale: float = 1.0, coeffs=Coefficients(None, None)) -> PETSc.Vec:
+                       scale: float = 1.0, constants=None, coefficients=None) -> PETSc.Vec:
     """Apply the function :func:`dolfinx.fem.apply_lifting` to each sub-vector in a nested PETSc Vector."""
 
     x0 = [] if x0 is None else x0.getNestSubVecs()
-    c = (coeffs[0] if coeffs[0] is not None else pack_constants(a),
-         coeffs[1] if coeffs[1] is not None else pack_coefficients(a))
     bcs1 = bcs_by_block(extract_function_spaces(a, 1), bcs)
-    for b_sub, a_sub, constants, coeffs in zip(b.getNestSubVecs(), a, c[0], c[1]):
-        apply_lifting(b_sub, a_sub, bcs1, x0, scale, (constants, coeffs))
+
+    constants = [[form and _cpp.fem.pack_constants(form) for form in forms] for forms in a]
+    coefficients = [[form and _cpp.fem.pack_coefficients(form) for form in forms] for forms in a]
+    for b_sub, a_sub, const, coeff in zip(b.getNestSubVecs(), a, constants, coefficients):
+        apply_lifting(b_sub, a_sub, bcs1, x0, scale, None, None)
     return b
 
 

@@ -18,7 +18,6 @@ from dolfinx.fem import (Constant, Function, FunctionSpace,
                          VectorFunctionSpace, assemble_scalar, bcs_by_block,
                          dirichletbc, extract_function_spaces, form,
                          locate_dofs_geometrical, locate_dofs_topological)
-from dolfinx.fem.assemble import pack_coefficients, pack_constants
 from dolfinx.fem.petsc import (apply_lifting, apply_lifting_nest,
                                assemble_matrix, assemble_matrix_block,
                                assemble_matrix_nest, assemble_vector,
@@ -708,8 +707,8 @@ def test_pack_coefficients():
     # -- Test vector
     b0 = assemble_vector(_F)
     b0.assemble()
-    constants = pack_constants(_F)
-    coeffs = pack_coefficients(_F)
+    constants = _cpp.fem.pack_constants(_F)
+    coeffs = _cpp.fem.pack_coefficients(_F)
     with b0.localForm() as _b0:
         for c in [(None, None), (None, coeffs), (constants, None), (constants, coeffs)]:
             b = assemble_vector(_F, coeffs=c)
@@ -736,8 +735,8 @@ def test_pack_coefficients():
     A0 = assemble_matrix(J)
     A0.assemble()
 
-    constants = pack_constants(J)
-    coeffs = pack_coefficients(J)
+    constants = _cpp.fem.pack_constants(J)
+    coeffs = _cpp.fem.pack_coefficients(J)
     for c in [(None, None), (None, coeffs), (constants, None), (constants, coeffs)]:
         A = assemble_matrix(J, coeffs=c)
         A.assemble()
@@ -804,8 +803,8 @@ def test_vector_types():
     L = inner(c, v) * ufl.dx
     x0 = la.vector(V.dofmap.index_map, V.dofmap.index_map_bs, dtype=np.float64)
     L = form(L, dtype=x0.array.dtype)
-    c0 = pack_constants(L)
-    c1 = pack_coefficients(L)
+    c0 = _cpp.fem.pack_constants(L)
+    c1 = _cpp.fem.pack_coefficients(L)
     _cpp.fem.assemble_vector(x0.array, L, c0, c1)
     x0.scatter_reverse(_cpp.common.ScatterMode.add)
 
@@ -813,8 +812,8 @@ def test_vector_types():
     L = inner(c, v) * ufl.dx
     x1 = la.vector(V.dofmap.index_map, V.dofmap.index_map_bs, dtype=np.complex128)
     L = form(L, dtype=x1.array.dtype)
-    c0 = pack_constants(L)
-    c1 = pack_coefficients(L)
+    c0 = _cpp.fem.pack_constants(L)
+    c1 = _cpp.fem.pack_coefficients(L)
     _cpp.fem.assemble_vector(x1.array, L, c0, c1)
     x1.scatter_reverse(_cpp.common.ScatterMode.add)
 
@@ -822,8 +821,8 @@ def test_vector_types():
     L = inner(c, v) * ufl.dx
     x2 = la.vector(V.dofmap.index_map, V.dofmap.index_map_bs, dtype=np.float32)
     L = form(L, dtype=x2.array.dtype)
-    c0 = pack_constants(L)
-    c1 = pack_coefficients(L)
+    c0 = _cpp.fem.pack_constants(L)
+    c1 = _cpp.fem.pack_coefficients(L)
     _cpp.fem.assemble_vector(x2.array, L, c0, c1)
     x2.scatter_reverse(_cpp.common.ScatterMode.add)
 

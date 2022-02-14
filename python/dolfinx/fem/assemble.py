@@ -189,6 +189,43 @@ def _extract_function_spaces(a: typing.List[typing.List[FormMetaClass]]):
 
 # -- Modifiers for Dirichlet conditions ---------------------------------------
 
+import collections
+
+
+def pack_constants(form: typing.Union[FormMetaClass, typing.Sequence[FormMetaClass]]):
+    """Compute form constants. If form is an array of forms, this
+    function returns an array of form constants with the same shape as
+    form.
+
+    """
+    def _pack(form):
+        if form is None:
+            return None
+        elif isinstance(form, collections.abc.Iterable):
+            return list(map(lambda sub_form: _pack(sub_form), form))
+        else:
+            return _cpp.fem.pack_constants(form)
+
+    return _pack(form)
+
+
+def pack_coefficients(form: typing.Union[FormMetaClass, typing.Sequence[FormMetaClass]]):
+    """Compute form coefficients. If form is an array of forms, this
+    function returns an array of form coefficients with the same shape
+    as form.
+
+    """
+    def _pack(form):
+        if form is None:
+            return {}
+        elif isinstance(form, collections.abc.Iterable):
+            return list(map(lambda sub_form: _pack(sub_form), form))
+        else:
+            return _cpp.fem.pack_coefficients(form)
+
+    return _pack(form)
+
+
 def apply_lifting(b: np.ndarray, a: typing.List[FormMetaClass],
                   bcs: typing.List[typing.List[DirichletBCMetaClass]],
                   x0: typing.Optional[typing.List[np.ndarray]] = [],
@@ -207,9 +244,17 @@ def apply_lifting(b: np.ndarray, a: typing.List[FormMetaClass],
     Ghost contributions are not accumulated (not sent to owner). Caller
     is responsible for calling VecGhostUpdateBegin/End.
     """
-    constants = constants or _cpp.fem.pack_constants(a)
-    coefficients = coefficients or _cpp.fem.pack_coefficients(a)
+    print("---------------------------")
+    print("1PPPPP", constants)
+    print("2PPPPP", pack_constants(constants))
+    constants = constants or [form and _cpp.fem.pack_constants(form) for form in a]
+    coefficients = coefficients or [form and _cpp.fem.pack_coefficients(form) for form in a]
+    print("3CCCCC", constants)
+    print("4CCCCC", coefficients)
+    print("---------------------------")
+
     _cpp.fem.apply_lifting(b, a, constants, coefficients, bcs, x0, scale)
+    # _cpp.fem.apply_lifting(b, a, constants, coefficients, bcs, x0, scale)
 
 
 def set_bc(b: np.ndarray, bcs: typing.List[DirichletBCMetaClass],
