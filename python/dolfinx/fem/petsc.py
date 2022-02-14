@@ -205,15 +205,13 @@ def assemble_matrix(a: FormMetaClass, bcs: typing.List[DirichletBCMetaClass] = [
 
     """
     A = _cpp.fem.petsc.create_matrix(a)
-    return assemble_matrix(A, a, bcs, diagonal, coeffs)
+    assemble_matrix(A, a, bcs, diagonal, coeffs)
+    return A
 
 
 @assemble_matrix.register(PETSc.Mat)
-def _(A: PETSc.Mat,
-      a: FormMetaClass,
-      bcs: typing.List[DirichletBCMetaClass] = [],
-      diagonal: float = 1.0,
-      coeffs=Coefficients(None, None)) -> PETSc.Mat:
+def _(A: PETSc.Mat, a: FormMetaClass, bcs: typing.List[DirichletBCMetaClass] = [],
+      diagonal: float = 1.0, coeffs=Coefficients(None, None)) -> PETSc.Mat:
     """Assemble bilinear form into a matrix. The returned matrix is not
     finalised, i.e. ghost values are not accumulated.
 
@@ -320,14 +318,13 @@ def apply_lifting(b: PETSc.Vec, a: typing.List[FormMetaClass],
 
     Ghost contributions are not accumulated (not sent to owner). Caller
     is responsible for calling VecGhostUpdateBegin/End.
+
     """
-    c = (coeffs[0] if coeffs[0] is not None else pack_constants(a),
-         coeffs[1] if coeffs[1] is not None else pack_coefficients(a))
     with contextlib.ExitStack() as stack:
         x0 = [stack.enter_context(x.localForm()) for x in x0]
         x0_r = [x.array_r for x in x0]
         b_local = stack.enter_context(b.localForm())
-        _cpp.fem.apply_lifting(b_local.array_w, a, c[0], c[1], bcs, x0_r, scale)
+        assemble.apply_lifting(b_local.array_w, a, coeffs, bcs, x0_r, scale)
 
 
 def apply_lifting_nest(b: PETSc.Vec, a: typing.List[typing.List[FormMetaClass]],

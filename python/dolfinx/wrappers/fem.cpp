@@ -143,9 +143,16 @@ void declare_functions(py::module& m)
   m.def(
       "assemble_matrix",
       [](dolfinx::la::MatrixCSR<T>& A, const dolfinx::fem::Form<T>& form,
+         const py::array_t<T, py::array::c_style>& constants,
+         const std::map<std::pair<dolfinx::fem::IntegralType, int>,
+                        py::array_t<T, py::array::c_style>>& coefficients,
          const std::vector<std::shared_ptr<const dolfinx::fem::DirichletBC<T>>>&
              bcs)
-      { dolfinx::fem::assemble_matrix<T>(A.mat_add_values(), form, bcs); },
+      {
+        dolfinx::fem::assemble_matrix<T>(A.mat_add_values(), form,
+                                         xtl::span(constants),
+                                         py_to_cpp_coeffs(coefficients), bcs);
+      },
       "Experimental.");
   m.def(
       "assemble_matrix",

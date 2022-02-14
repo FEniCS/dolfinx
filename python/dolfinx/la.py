@@ -35,7 +35,7 @@ def is_orthonormal(basis, eps: float = 1.0e-12) -> bool:
     return True
 
 
-class MatrixCSRCMetaClass:
+class MatrixCSRMetaClass:
     def __init__(self, sp):
         """A distributed sparse matrix that uses compressed sparse row storage.
 
@@ -46,7 +46,7 @@ class MatrixCSRCMetaClass:
         super().__init__(sp)
 
 
-def matrix_csr(sp, dtype=np.float64) -> MatrixCSRCMetaClass:
+def matrix_csr(sp, dtype=np.float64) -> MatrixCSRMetaClass:
     """Create a distributed sparse matrix.
 
     The matrix uses compressed sparse row storage.
@@ -67,7 +67,7 @@ def matrix_csr(sp, dtype=np.float64) -> MatrixCSRCMetaClass:
     else:
         raise NotImplementedError(f"Type {dtype} not supported.")
 
-    matrixcls = type("MatrixCSR", (MatrixCSRCMetaClass, ftype), {})
+    matrixcls = type("MatrixCSR", (MatrixCSRMetaClass, ftype), {})
     return matrixcls(sp)
 
 

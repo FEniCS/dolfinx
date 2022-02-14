@@ -23,7 +23,7 @@ from dolfinx.cpp.fem import create_sparsity_pattern as _create_sparsity_pattern
 #                                   create_vector_nest, pack_coefficients,
 #                                   pack_constants, set_bc, set_bc_nest)
 from dolfinx.fem.assemble import (assemble_scalar, pack_coefficients,
-                                  pack_constants)
+                                  pack_constants, assemble_matrix, assemble_vector)
 from dolfinx.fem.bcs import (DirichletBCMetaClass, bcs_by_block, dirichletbc,
                              locate_dofs_geometrical, locate_dofs_topological)
 from dolfinx.fem.dofmap import DofMap
@@ -49,7 +49,7 @@ __all__ = [
     "Constant", "Expression", "Function",
     "FunctionSpace", "TensorFunctionSpace",
     "VectorFunctionSpace",
-    "assemble_scalar",
+    "assemble_scalar", "assemble_matrix", "assemble_vector",
     "DirichletBCMetaClass", "dirichletbc", "bcs_by_block", "DofMap", "FormMetaClass", "form", "IntegralType",
     "adjoint", "LinearProblem", "locate_dofs_geometrical", "locate_dofs_topological",
     "NonlinearProblem", "pack_coefficients", "pack_constants", "extract_function_spaces", "petsc"]

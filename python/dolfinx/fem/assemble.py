@@ -11,9 +11,11 @@ import typing
 
 if typing.TYPE_CHECKING:
     from dolfinx.fem.forms import FormMetaClass
+    from dolfinx.fem.bcs import DirichletBCMetaClass
 
 import collections
 import functools
+import warnings
 
 import numpy as np
 
@@ -61,19 +63,19 @@ def pack_coefficients(form: typing.Union[FormMetaClass, typing.Sequence[FormMeta
 Coefficients = collections.namedtuple('Coefficients', ['constants', 'coeffs'])
 
 
-# -- Vector instantiation ----------------------------------------------------
+# -- Vector and matrix instantiation -----------------------------------------
 
-def create_vector(L: FormMetaClass, dtype=np.float64) -> la.VectorMetaClass:
+def create_vector(L: FormMetaClass) -> la.VectorMetaClass:
+    """Create a Vector that is compatible with a given linear form"""
     dofmap = L.function_spaces[0].dofmap
-    return la.vector(dofmap.index_map, dofmap.index_map_bs, dtype)
-
-# -- Matrix instantiation ----------------------------------------------------
+    return la.vector(dofmap.index_map, dofmap.index_map_bs, dtype=L.dtype)
 
 
-def create_matrix(a: FormMetaClass, dtype=np.float64) -> la.MatrixCSRMetaClass:
+def create_matrix(a: FormMetaClass) -> la.MatrixCSRMetaClass:
+    """Create a sparse matrix that is compatible with a given bilinear form"""
     sp = dolfinx.fem.create_sparsity_pattern(a)
     sp.assemble()
-    return la.matrix_csr(sp, dtype)
+    return la.matrix_csr(sp, dtype=a.dtype)
 
 
 # -- Scalar assembly ---------------------------------------------------------
@@ -98,12 +100,10 @@ def assemble_vector(L: FormMetaClass, coeffs=Coefficients(None, None)) -> la.Vec
     owning processes.
 
     """
-    # TODO: get dtype from L
-    b = la.vector(L.function_spaces[0].dofmap.index_map,
-                  L.function_spaces[0].dofmap.index_map_bs)
+    b = create_vector(L)
+    b.array[:] = 0
     c = (coeffs[0] if coeffs[0] is not None else pack_constants(L),
          coeffs[1] if coeffs[1] is not None else pack_coefficients(L))
-    b.array[:] = 0
     _cpp.fem.assemble_vector(b.array, L, c[0], c[1])
     return b
 
@@ -118,41 +118,46 @@ def _(b: np.ndarray, L: FormMetaClass, coeffs=Coefficients(None, None)):
     c = (coeffs[0] if coeffs[0] is not None else pack_constants(L),
          coeffs[1] if coeffs[1] is not None else pack_coefficients(L))
     _cpp.fem.assemble_vector(b, L, c[0], c[1])
-
+    return b
 
 # -- Matrix assembly ---------------------------------------------------------
 
 
-# @functools.singledispatch
-# def assemble_matrix(a: FormMetaClass, bcs: typing.List[DirichletBCMetaClass] = [],
-#                     diagonal: float = 1.0,
-#                     coeffs=Coefficients(None, None)):
-#     """Assemble bilinear form into a matrix. The returned matrix is not
-#     finalised, i.e. ghost values are not accumulated.
+@functools.singledispatch
+def assemble_matrix(a: FormMetaClass, bcs: typing.List[DirichletBCMetaClass] = [],
+                    diagonal: float = 1.0,
+                    coeffs=Coefficients(None, None)) -> la.MatrixCSRMetaClass:
+    """Assemble bilinear form into a matrix. The returned matrix is not
+    finalised, i.e. ghost values are not accumulated.
 
-#     """
-#     A = _cpp.fem.petsc.create_matrix(a)
-#     return assemble_matrix(A, a, bcs, diagonal, coeffs)
+    """
+    A = create_matrix(a)
+    assemble_matrix(A, a, bcs, diagonal, coeffs)
+    return A
 
 
-# @assemble_matrix.register(PETSc.Mat)
-# def _(A: PETSc.Mat,
-#       a: FormMetaClass,
-#       bcs: typing.List[DirichletBCMetaClass] = [],
-#       diagonal: float = 1.0,
-#       coeffs=Coefficients(None, None)) -> PETSc.Mat:
-#     """Assemble bilinear form into a matrix. The returned matrix is not
-#     finalised, i.e. ghost values are not accumulated.
+@assemble_matrix.register(la.MatrixCSRMetaClass)
+def _(A: la.MatrixCSRMetaClass, a: FormMetaClass,
+      bcs: typing.List[DirichletBCMetaClass] = [],
+      diagonal: float = 1.0, coeffs=Coefficients(None, None)) -> la.MatrixCSRMetaClass:
+    """Assemble bilinear form into a matrix. The returned matrix is not
+    finalised, i.e. ghost values are not accumulated.
 
-#     """
-#     c = (coeffs[0] if coeffs[0] is not None else pack_constants(a),
-#          coeffs[1] if coeffs[1] is not None else pack_coefficients(a))
-#     _cpp.fem.petsc.assemble_matrix(A, a, c[0], c[1], bcs)
-#     if a.function_spaces[0].id == a.function_spaces[1].id:
-#         A.assemblyBegin(PETSc.Mat.AssemblyType.FLUSH)
-#         A.assemblyEnd(PETSc.Mat.AssemblyType.FLUSH)
-#         _cpp.fem.petsc.insert_diagonal(A, a.function_spaces[0], bcs, diagonal)
-#     return A
+    """
+    c = (coeffs[0] if coeffs[0] is not None else pack_constants(a),
+         coeffs[1] if coeffs[1] is not None else pack_coefficients(a))
+    # _cpp.fem.assemble_matrix(A, a, c[0], c[1], bcs)
+    _cpp.fem.assemble_matrix(A, a, c[0], c[1], bcs)
+
+    # If matrix is a 'diagonal'block, set diagonal entry for constrained
+    # dofs
+    if a.function_spaces[0].id == a.function_spaces[1].id:
+        if bcs is not []:
+            warnings.warn("Setting of matrix bc diagonals not yet implemented.")
+    #     A.assemblyBegin(PETSc.Mat.AssemblyType.FLUSH)
+    #     A.assemblyEnd(PETSc.Mat.AssemblyType.FLUSH)
+    #     _cpp.fem.petsc.insert_diagonal(A, a.function_spaces[0], bcs, diagonal)
+    return A
 
 
 def _extract_function_spaces(a: typing.List[typing.List[FormMetaClass]]):
@@ -187,57 +192,35 @@ def _extract_function_spaces(a: typing.List[typing.List[FormMetaClass]]):
 
 # -- Modifiers for Dirichlet conditions ---------------------------------------
 
-# def apply_lifting(b: PETSc.Vec, a: typing.List[FormMetaClass],
-#                   bcs: typing.List[typing.List[DirichletBCMetaClass]],
-#                   x0: typing.Optional[typing.List[PETSc.Vec]] = [],
-#                   scale: float = 1.0, coeffs=Coefficients(None, None)) -> None:
-#     """Modify RHS vector b for lifting of Dirichlet boundary conditions.
-#     It modifies b such that:
+def apply_lifting(b: np.ndarray, a: typing.List[FormMetaClass],
+                  bcs: typing.List[typing.List[DirichletBCMetaClass]],
+                  x0: typing.Optional[typing.List[np.ndarray]] = [],
+                  scale: float = 1.0, coeffs=Coefficients(None, None)) -> None:
+    """Modify RHS vector b for lifting of Dirichlet boundary conditions.
+    It modifies b such that:
 
-#         b <- b - scale * A_j (g_j - x0_j)
+        b <- b - scale * A_j (g_j - x0_j)
 
-#     where j is a block (nest) index. For a non-blocked problem j = 0.
-#     The boundary conditions bcs are on the trial spaces V_j. The forms
-#     in [a] must have the same test space as L (from which b was built),
-#     but the trial space may differ. If x0 is not supplied, then it is
-#     treated as zero.
+    where j is a block (nest) index. For a non-blocked problem j = 0.
+    The boundary conditions bcs are on the trial spaces V_j. The forms
+    in [a] must have the same test space as L (from which b was built),
+    but the trial space may differ. If x0 is not supplied, then it is
+    treated as zero.
 
-#     Ghost contributions are not accumulated (not sent to owner). Caller
-#     is responsible for calling VecGhostUpdateBegin/End.
-#     """
-#     c = (coeffs[0] if coeffs[0] is not None else pack_constants(a),
-#          coeffs[1] if coeffs[1] is not None else pack_coefficients(a))
-#     with contextlib.ExitStack() as stack:
-#         x0 = [stack.enter_context(x.localForm()) for x in x0]
-#         x0_r = [x.array_r for x in x0]
-#         b_local = stack.enter_context(b.localForm())
-#         _cpp.fem.apply_lifting(b_local.array_w, a, c[0], c[1], bcs, x0_r, scale)
+    Ghost contributions are not accumulated (not sent to owner). Caller
+    is responsible for calling VecGhostUpdateBegin/End.
+    """
+    c = (coeffs[0] if coeffs[0] is not None else pack_constants(a),
+         coeffs[1] if coeffs[1] is not None else pack_coefficients(a))
+    _cpp.fem.apply_lifting(b, a, c[0], c[1], bcs, x0, scale)
 
 
-# def apply_lifting_nest(b: PETSc.Vec, a: typing.List[typing.List[FormMetaClass]],
-#                        bcs: typing.List[DirichletBCMetaClass],
-#                        x0: typing.Optional[PETSc.Vec] = None,
-#                        scale: float = 1.0, coeffs=Coefficients(None, None)) -> PETSc.Vec:
-#     """Modify nested vector for lifting of Dirichlet boundary conditions.
+def set_bc(b: np.ndarray, bcs: typing.List[DirichletBCMetaClass],
+           x0: typing.Optional[np.ndarray] = None, scale: float = 1.0) -> None:
+    """Insert boundary condition values into vector. Only local (owned)
+    entries are set, hence communication after calling this function is
+    not required unless ghost entries need to be updated to the boundary
+    condition value.
 
-#     """
-#     x0 = [] if x0 is None else x0.getNestSubVecs()
-#     c = (coeffs[0] if coeffs[0] is not None else pack_constants(a),
-#          coeffs[1] if coeffs[1] is not None else pack_coefficients(a))
-#     bcs1 = bcs_by_block(extract_function_spaces(a, 1), bcs)
-#     for b_sub, a_sub, constants, coeffs in zip(b.getNestSubVecs(), a, c[0], c[1]):
-#         apply_lifting(b_sub, a_sub, bcs1, x0, scale, (constants, coeffs))
-#     return b
-
-
-# def set_bc(b: PETSc.Vec, bcs: typing.List[DirichletBCMetaClass],
-#            x0: typing.Optional[PETSc.Vec] = None, scale: float = 1.0) -> None:
-#     """Insert boundary condition values into vector. Only local (owned)
-#     entries are set, hence communication after calling this function is
-#     not required unless ghost entries need to be updated to the boundary
-#     condition value.
-
-#     """
-#     if x0 is not None:
-#         x0 = x0.array_r
-#     _cpp.fem.set_bc(b.array_w, bcs, x0, scale)
+    """
+    _cpp.fem.set_bc(b, bcs, x0, scale)
