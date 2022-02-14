@@ -34,7 +34,7 @@ class BoundingBoxTree(_cpp.geometry.BoundingBoxTree):
             mesh: The mesh
             dim: The dimension of the mesh entities
             entities: List of entity indices (local to process). If not supplied,
-            all owned and ghosted entities are used.
+                all owned and ghosted entities are used.
             padding: Padding for each bounding box
 
         """

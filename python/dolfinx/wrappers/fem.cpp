@@ -122,6 +122,7 @@ void declare_functions(py::module& m)
         return dolfinx::fem::assemble_scalar<T>(M, constants,
                                                 py_to_cpp_coeffs(coefficients));
       },
+      py::arg("M"), py::arg("constants"), py::arg("coefficients"),
       "Assemble functional over mesh with provided constants and "
       "coefficients");
   // Vector
