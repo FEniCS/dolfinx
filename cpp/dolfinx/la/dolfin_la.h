@@ -11,6 +11,6 @@ namespace dolfinx
 
 // DOLFINx la interface
 
-#include <dolfinx/la/SLEPcEigenSolver.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/la/petsc.h>
+#include <dolfinx/la/slepc.h>
