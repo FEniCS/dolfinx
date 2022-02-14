@@ -152,7 +152,7 @@ def _(A: la.MatrixCSRMetaClass, a: FormMetaClass,
     # If matrix is a 'diagonal'block, set diagonal entry for constrained
     # dofs
     if a.function_spaces[0].id == a.function_spaces[1].id:
-        if bcs is not []:
+        if len(bcs) > 0:
             warnings.warn("Setting of matrix bc diagonals not yet implemented.")
     #     A.assemblyBegin(PETSc.Mat.AssemblyType.FLUSH)
     #     A.assemblyEnd(PETSc.Mat.AssemblyType.FLUSH)

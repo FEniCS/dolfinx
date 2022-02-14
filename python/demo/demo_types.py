@@ -23,7 +23,7 @@ import scipy.sparse.linalg
 
 import ufl
 from dolfinx import cpp as _cpp
-from dolfinx import fem, la, mesh, plot
+from dolfinx import fem, la, mesh, plot, fem
 from dolfinx.fem.assemble import pack_coefficients, pack_constants
 
 from mpi4py import MPI
@@ -61,20 +61,10 @@ def project(dtype=np.float32):
     else:
         L0 = fem.form(ufl.replace(L, {fc: 0}), dtype=dtype)
 
-    # Create a sparsity pattern for initialising the sparse matrix
-    # NOTE: the sparsity pattern does not depend of the dtype and could
-    # be re-used
-    sp = fem.create_sparsity_pattern(a0)
-    sp.assemble()
-
-    # Create a sparse matrix and assemble
-    A = la.matrix_csr(sp, dtype=dtype)
-    _cpp.fem.assemble_matrix(A, a0, [])
+    # Assemble forms
+    A = fem.assemble_matrix(a0)
     A.finalize()
-
-    # Create a vector and assemble
-    b = la.vector(L0.function_spaces[0].dofmap.index_map, dtype=dtype)
-    _cpp.fem.assemble_vector(b.array, L0, pack_constants(L0), pack_coefficients(L0))
+    b = fem.assemble_vector(L0)
 
     # Create a Scipy sparse matrix that shares data with A
     As = scipy.sparse.csr_matrix((A.data, A.indices, A.indptr))
