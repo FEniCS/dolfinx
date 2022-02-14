@@ -12,7 +12,7 @@ import numpy as np
 import dolfinx
 from dolfinx import TimingType
 from dolfinx import cpp as _cpp
-from dolfinx import fem, la, list_timings
+from dolfinx import fem, list_timings
 from dolfinx.fem import Function, FunctionSpace, IntegralType
 from dolfinx.mesh import create_unit_square
 
