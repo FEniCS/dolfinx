@@ -6,6 +6,7 @@
 """Assembly functions for variational forms."""
 
 from __future__ import annotations
+import collections
 
 import typing
 
@@ -189,8 +190,6 @@ def _extract_function_spaces(a: typing.List[typing.List[FormMetaClass]]):
 
 # -- Modifiers for Dirichlet conditions ---------------------------------------
 
-import collections
-
 
 def pack_constants(form: typing.Union[FormMetaClass, typing.Sequence[FormMetaClass]]):
     """Compute form constants. If form is an array of forms, this
@@ -243,18 +242,11 @@ def apply_lifting(b: np.ndarray, a: typing.List[FormMetaClass],
 
     Ghost contributions are not accumulated (not sent to owner). Caller
     is responsible for calling VecGhostUpdateBegin/End.
-    """
-    print("---------------------------")
-    print("1PPPPP", constants)
-    print("2PPPPP", pack_constants(constants))
-    constants = constants or [form and _cpp.fem.pack_constants(form) for form in a]
-    coefficients = coefficients or [form and _cpp.fem.pack_coefficients(form) for form in a]
-    print("3CCCCC", constants)
-    print("4CCCCC", coefficients)
-    print("---------------------------")
 
+    """
+    constants = constants or [form and _cpp.fem.pack_constants(form) for form in a]
+    coefficients = coefficients or [{} if form is None else _cpp.fem.pack_coefficients(form) for form in a]
     _cpp.fem.apply_lifting(b, a, constants, coefficients, bcs, x0, scale)
-    # _cpp.fem.apply_lifting(b, a, constants, coefficients, bcs, x0, scale)
 
 
 def set_bc(b: np.ndarray, bcs: typing.List[DirichletBCMetaClass],

@@ -180,7 +180,7 @@ def assemble_vector(L: FormMetaClass, coeffs=Coefficients(None, None)) -> PETSc.
     b = la.create_petsc_vector(L.function_spaces[0].dofmap.index_map,
                                L.function_spaces[0].dofmap.index_map_bs)
     with b.localForm() as b_local:
-        assemble.assemble_vector(b_local.array_w, L, coeffs)
+        assemble.assemble_vector(b_local.array_w, L, coeffs[0], coeffs[1])
     return b
 
 
@@ -439,10 +439,10 @@ def apply_lifting_nest(b: PETSc.Vec, a: typing.List[typing.List[FormMetaClass]],
     x0 = [] if x0 is None else x0.getNestSubVecs()
     bcs1 = bcs_by_block(extract_function_spaces(a, 1), bcs)
 
-    constants = [[form and _cpp.fem.pack_constants(form) for form in forms] for forms in a]
-    coefficients = [[form and _cpp.fem.pack_coefficients(form) for form in forms] for forms in a]
+    constants = constants or [[form and _cpp.fem.pack_constants(form) for form in forms] for forms in a]
+    coefficients = coefficients or [[{} if form is None else _cpp.fem.pack_coefficients(form) for form in forms] for forms in a]
     for b_sub, a_sub, const, coeff in zip(b.getNestSubVecs(), a, constants, coefficients):
-        apply_lifting(b_sub, a_sub, bcs1, x0, scale, None, None)
+        apply_lifting(b_sub, a_sub, bcs1, x0, scale, const, coeff)
     return b
 
 
