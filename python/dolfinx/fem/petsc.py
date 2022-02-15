@@ -328,14 +328,14 @@ def assemble_matrix(a: FormMetaClass, bcs: typing.List[DirichletBCMetaClass] = [
 
 @assemble_matrix.register(PETSc.Mat)
 def _(A: PETSc.Mat, a: FormMetaClass, bcs: typing.List[DirichletBCMetaClass] = [],
-      diagonal: float = 1.0, coeffs=Coefficients(None, None)) -> PETSc.Mat:
+      diagonal: float = 1.0, constants=None, coefficients=None) -> PETSc.Mat:
     """Assemble bilinear form into a matrix. The returned matrix is not
     finalised, i.e. ghost values are not accumulated.
 
     """
-    c = (coeffs[0] if coeffs[0] is not None else pack_constants(a),
-         coeffs[1] if coeffs[1] is not None else pack_coefficients(a))
-    _cpp.fem.petsc.assemble_matrix(A, a, c[0], c[1], bcs)
+    constants = constants or _cpp.fem.pack_constants(a)
+    coefficients = coefficients or _cpp.fem.pack_coefficients(a)
+    _cpp.fem.petsc.assemble_matrix(A, a, constants, coefficients, bcs)
     if a.function_spaces[0].id == a.function_spaces[1].id:
         A.assemblyBegin(PETSc.Mat.AssemblyType.FLUSH)
         A.assemblyEnd(PETSc.Mat.AssemblyType.FLUSH)
@@ -348,25 +348,26 @@ def _(A: PETSc.Mat, a: FormMetaClass, bcs: typing.List[DirichletBCMetaClass] = [
 def assemble_matrix_nest(a: typing.List[typing.List[FormMetaClass]],
                          bcs: typing.List[DirichletBCMetaClass] = [], mat_types=[],
                          diagonal: float = 1.0,
-                         coeffs=Coefficients(None, None)) -> PETSc.Mat:
+                         constants=None, coefficients=None) -> PETSc.Mat:
     """Assemble bilinear forms into matrix"""
     A = _cpp.fem.petsc.create_matrix_nest(a, mat_types)
-    assemble_matrix_nest(A, a, bcs, diagonal, coeffs)
+    assemble_matrix_nest(A, a, bcs, diagonal, constants, coefficients)
     return A
 
 
 @assemble_matrix_nest.register(PETSc.Mat)
 def _(A: PETSc.Mat, a: typing.List[typing.List[FormMetaClass]],
       bcs: typing.List[DirichletBCMetaClass] = [], diagonal: float = 1.0,
-      coeffs=Coefficients(None, None)) -> PETSc.Mat:
+      constants=None, coefficients=None) -> PETSc.Mat:
     """Assemble bilinear forms into matrix"""
-    c = (coeffs[0] if coeffs[0] is not None else pack_constants(a),
-         coeffs[1] if coeffs[1] is not None else pack_coefficients(a))
-    for i, (a_row, const_row, coeff_row) in enumerate(zip(a, c[0], c[1])):
+    constants = constants or [[form and _cpp.fem.pack_constants(form) for form in forms] for forms in a]
+    coefficients = coefficients or [
+        [{} if form is None else _cpp.fem.pack_coefficients(form) for form in forms] for forms in a]
+    for i, (a_row, const_row, coeff_row) in enumerate(zip(a, constants, coefficients)):
         for j, (a_block, const, coeff) in enumerate(zip(a_row, const_row, coeff_row)):
             if a_block is not None:
                 Asub = A.getNestSubMatrix(i, j)
-                assemble_matrix(Asub, a_block, bcs, diagonal, (const, coeff))
+                assemble_matrix(Asub, a_block, bcs, diagonal, const, coeff)
     return A
 
 
@@ -375,19 +376,21 @@ def _(A: PETSc.Mat, a: typing.List[typing.List[FormMetaClass]],
 def assemble_matrix_block(a: typing.List[typing.List[FormMetaClass]],
                           bcs: typing.List[DirichletBCMetaClass] = [],
                           diagonal: float = 1.0,
-                          coeffs=Coefficients(None, None)) -> PETSc.Mat:
+                          constants=None, coefficients=None) -> PETSc.Mat:
     """Assemble bilinear forms into matrix"""
     A = _cpp.fem.petsc.create_matrix_block(a)
-    return assemble_matrix_block(A, a, bcs, diagonal, coeffs)
+    return assemble_matrix_block(A, a, bcs, diagonal, constants, coefficients)
 
 
 @assemble_matrix_block.register(PETSc.Mat)
 def _(A: PETSc.Mat, a: typing.List[typing.List[FormMetaClass]],
       bcs: typing.List[DirichletBCMetaClass] = [], diagonal: float = 1.0,
-      coeffs=Coefficients(None, None)) -> PETSc.Mat:
+      constants=None, coefficients=None) -> PETSc.Mat:
     """Assemble bilinear forms into matrix"""
-    c = (coeffs[0] if coeffs[0] is not None else pack_constants(a),
-         coeffs[1] if coeffs[1] is not None else pack_coefficients(a))
+
+    constants = constants or [[form and _cpp.fem.pack_constants(form) for form in forms] for forms in a]
+    coefficients = coefficients or [
+        [{} if form is None else _cpp.fem.pack_coefficients(form) for form in forms] for forms in a]
 
     V = _extract_function_spaces(a)
     is_rows = _cpp.la.petsc.create_index_sets([(Vsub.dofmap.index_map, Vsub.dofmap.index_map_bs) for Vsub in V[0]])
@@ -398,7 +401,7 @@ def _(A: PETSc.Mat, a: typing.List[typing.List[FormMetaClass]],
         for j, a_sub in enumerate(a_row):
             if a_sub is not None:
                 Asub = A.getLocalSubMatrix(is_rows[i], is_cols[j])
-                _cpp.fem.petsc.assemble_matrix(Asub, a_sub, c[0][i][j], c[1][i][j], bcs, True)
+                _cpp.fem.petsc.assemble_matrix(Asub, a_sub, constants[i][j], coefficients[i][j], bcs, True)
                 A.restoreLocalSubMatrix(is_rows[i], is_cols[j], Asub)
 
     # Flush to enable switch from add to set in the matrix
