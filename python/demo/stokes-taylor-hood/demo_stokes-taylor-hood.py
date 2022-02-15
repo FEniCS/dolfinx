@@ -126,6 +126,7 @@ def lid_velocity_expression(x):
 # piecewise quadratics for the velocity field and `P1` to continuous
 # piecewise linears for the pressure field:
 
+
 P2 = ufl.VectorElement("Lagrange", msh.ufl_cell(), 2)
 P1 = ufl.FiniteElement("Lagrange", msh.ufl_cell(), 1)
 V, Q = FunctionSpace(msh, P2), FunctionSpace(msh, P1)
