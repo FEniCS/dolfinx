@@ -196,7 +196,6 @@ P.assemble()
 
 # +
 b = fem.petsc.assemble_vector_nest(L)
-exit(0)
 
 # Modify ('lift') the RHS for Dirichlet boundary conditions
 fem.petsc.apply_lifting_nest(b, a, bcs=bcs)

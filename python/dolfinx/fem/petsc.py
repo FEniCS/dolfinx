@@ -18,54 +18,81 @@ if typing.TYPE_CHECKING:
     from dolfinx.fem.forms import FormMetaClass
     from dolfinx.fem.bcs import DirichletBCMetaClass
 
-import collections
 import contextlib
 import functools
 
 from dolfinx import cpp as _cpp
 from dolfinx import la
 from dolfinx.fem import assemble
-from dolfinx.fem.assemble import _extract_function_spaces
+# from dolfinx.fem.assemble import _extract_function_spaces
 from dolfinx.fem.bcs import bcs_by_block
 from dolfinx.fem.forms import extract_function_spaces
 
 from petsc4py import PETSc
 
-# Coefficients = collections.namedtuple('Coefficients', ['constants', 'coeffs'])
 
-
-def pack_constants(form: typing.Union[FormMetaClass, typing.Sequence[FormMetaClass]]):
-    """Compute form constants. If form is an array of forms, this
-    function returns an array of form constants with the same shape as
-    form.
+def _extract_function_spaces(a: typing.List[typing.List[FormMetaClass]]):
+    """From a rectangular array of bilinear forms, extract the function
+    spaces for each block row and block column.
 
     """
-    def _pack(form):
-        if form is None:
-            return None
-        elif isinstance(form, collections.abc.Iterable):
-            return list(map(lambda sub_form: _pack(sub_form), form))
-        else:
-            return _cpp.fem.pack_constants(form)
 
-    return _pack(form)
+    assert len({len(cols) for cols in a}) == 1, "Array of function spaces is not rectangular"
+
+    # Extract (V0, V1) pair for each block in 'a'
+    def fn(form):
+        return form.function_spaces if form is not None else None
+    from functools import partial
+    Vblock = map(partial(map, fn), a)
+
+    # Compute spaces for each row/column block
+    rows = [set() for i in range(len(a))]
+    cols = [set() for i in range(len(a[0]))]
+    for i, Vrow in enumerate(Vblock):
+        for j, V in enumerate(Vrow):
+            if V is not None:
+                rows[i].add(V[0])
+                cols[j].add(V[1])
+
+    rows = [e for row in rows for e in row]
+    cols = [e for col in cols for e in col]
+    assert len(rows) == len(a)
+    assert len(cols) == len(a[0])
+    return rows, cols
 
 
-def pack_coefficients(form: typing.Union[FormMetaClass, typing.Sequence[FormMetaClass]]):
-    """Compute form coefficients. If form is an array of forms, this
-    function returns an array of form coefficients with the same shape
-    as form.
+# def pack_constants(form: typing.Union[FormMetaClass, typing.Sequence[FormMetaClass]]):
+#     """Compute form constants. If form is an array of forms, this
+#     function returns an array of form constants with the same shape as
+#     form.
 
-    """
-    def _pack(form):
-        if form is None:
-            return {}
-        elif isinstance(form, collections.abc.Iterable):
-            return list(map(lambda sub_form: _pack(sub_form), form))
-        else:
-            return _cpp.fem.pack_coefficients(form)
+#     """
+#     def _pack(form):
+#         if form is None:
+#             return None
+#         elif isinstance(form, collections.abc.Iterable):
+#             return list(map(lambda sub_form: _pack(sub_form), form))
+#         else:
+#             return _cpp.fem.pack_constants(form)
 
-    return _pack(form)
+#     return _pack(form)
+
+
+# def pack_coefficients(form: typing.Union[FormMetaClass, typing.Sequence[FormMetaClass]]):
+#     """Compute form coefficients. If form is an array of forms, this
+#     function returns an array of form coefficients with the same shape
+#     as form.
+
+#     """
+#     def _pack(form):
+#         if form is None:
+#             return {}
+#         elif isinstance(form, collections.abc.Iterable):
+#             return list(map(lambda sub_form: _pack(sub_form), form))
+#         else:
+#             return _cpp.fem.pack_coefficients(form)
+
+#     return _pack(form)
 
 # -- Vector instantiation ----------------------------------------------------
 
@@ -282,11 +309,13 @@ def _(b: PETSc.Vec,
         x0_local = []
         x0_sub = [None] * len(maps)
 
-    constants_L = constants_L or [form and _cpp.fem.pack_constants(form) for form in L]
-    coefficients_L = coefficients_L or [{} if form is None else _cpp.fem.pack_coefficients(form) for form in L]
-    constants_a = constants_a or [[form and _cpp.fem.pack_constants(form) for form in forms] for forms in a]
-    coefficients_a = coefficients_a or [
-        [{} if form is None else _cpp.fem.pack_coefficients(form) for form in forms] for forms in a]
+    constants_L = [form and _cpp.fem.pack_constants(form) for form in L] if constants_L is None else constants_L
+    coefficients_L = [{} if form is None else _cpp.fem.pack_coefficients(
+        form) for form in L] if coefficients_L is None else coefficients_L
+    constants_a = [[form and _cpp.fem.pack_constants(form) for form in forms]
+                   for forms in a] if constants_a is None else constants_a
+    coefficients_a = [[{} if form is None else _cpp.fem.pack_coefficients(
+        form) for form in forms] for forms in a] if coefficients_a is None else coefficients_a
 
     bcs1 = bcs_by_block(extract_function_spaces(a, 1), bcs)
     b_local = _cpp.la.petsc.get_local_vectors(b, maps)
@@ -333,8 +362,8 @@ def _(A: PETSc.Mat, a: FormMetaClass, bcs: typing.List[DirichletBCMetaClass] = [
     finalised, i.e. ghost values are not accumulated.
 
     """
-    constants = constants or _cpp.fem.pack_constants(a)
-    coefficients = coefficients or _cpp.fem.pack_coefficients(a)
+    constants = _cpp.fem.pack_constants(a) if constants is None else constants
+    coefficients = _cpp.fem.pack_coefficients(a) if coefficients is None else coefficients
     _cpp.fem.petsc.assemble_matrix(A, a, constants, coefficients, bcs)
     if a.function_spaces[0].id == a.function_spaces[1].id:
         A.assemblyBegin(PETSc.Mat.AssemblyType.FLUSH)
@@ -360,9 +389,10 @@ def _(A: PETSc.Mat, a: typing.List[typing.List[FormMetaClass]],
       bcs: typing.List[DirichletBCMetaClass] = [], diagonal: float = 1.0,
       constants=None, coefficients=None) -> PETSc.Mat:
     """Assemble bilinear forms into matrix"""
-    constants = constants or [[form and _cpp.fem.pack_constants(form) for form in forms] for forms in a]
-    coefficients = coefficients or [
-        [{} if form is None else _cpp.fem.pack_coefficients(form) for form in forms] for forms in a]
+    constants = [[form and _cpp.fem.pack_constants(form) for form in forms]
+                 for forms in a] if constants is None else constants
+    coefficients = [[{} if form is None else _cpp.fem.pack_coefficients(
+        form) for form in forms] for forms in a] if coefficients is None else coefficients
     for i, (a_row, const_row, coeff_row) in enumerate(zip(a, constants, coefficients)):
         for j, (a_block, const, coeff) in enumerate(zip(a_row, const_row, coeff_row)):
             if a_block is not None:
@@ -388,9 +418,10 @@ def _(A: PETSc.Mat, a: typing.List[typing.List[FormMetaClass]],
       constants=None, coefficients=None) -> PETSc.Mat:
     """Assemble bilinear forms into matrix"""
 
-    constants = constants or [[form and _cpp.fem.pack_constants(form) for form in forms] for forms in a]
-    coefficients = coefficients or [
-        [{} if form is None else _cpp.fem.pack_coefficients(form) for form in forms] for forms in a]
+    constants = [[form and _cpp.fem.pack_constants(form) for form in forms]
+                 for forms in a] if constants is None else constants
+    coefficients = [[{} if form is None else _cpp.fem.pack_coefficients(
+        form) for form in forms] for forms in a] if coefficients is None else coefficients
 
     V = _extract_function_spaces(a)
     is_rows = _cpp.la.petsc.create_index_sets([(Vsub.dofmap.index_map, Vsub.dofmap.index_map_bs) for Vsub in V[0]])
@@ -442,9 +473,10 @@ def apply_lifting_nest(b: PETSc.Vec, a: typing.List[typing.List[FormMetaClass]],
     x0 = [] if x0 is None else x0.getNestSubVecs()
     bcs1 = bcs_by_block(extract_function_spaces(a, 1), bcs)
 
-    constants = constants or [[form and _cpp.fem.pack_constants(form) for form in forms] for forms in a]
-    coefficients = coefficients or [
-        [{} if form is None else _cpp.fem.pack_coefficients(form) for form in forms] for forms in a]
+    constants = [[form and _cpp.fem.pack_constants(form) for form in forms]
+                 for forms in a] if constants is None else constants
+    coefficients = [[{} if form is None else _cpp.fem.pack_coefficients(
+        form) for form in forms] for forms in a] if coefficients is None else coefficients
     for b_sub, a_sub, const, coeff in zip(b.getNestSubVecs(), a, constants, coefficients):
         apply_lifting(b_sub, a_sub, bcs1, x0, scale, const, coeff)
     return b

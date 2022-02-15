@@ -114,9 +114,8 @@ def _(b: np.ndarray, L: FormMetaClass, constants=None, coefficients=None):
     values are not accumulated on the owning processes.
 
     """
-    constants =  _cpp.fem.pack_constants(L) if constants is None else constants
-    coefficients =  _cpp.fem.pack_coefficients(L) if coefficients is None else coefficients
-    print("cc:", constants)
+    constants = _cpp.fem.pack_constants(L) if constants is None else constants
+    coefficients = _cpp.fem.pack_coefficients(L) if coefficients is None else coefficients
     _cpp.fem.assemble_vector(b, L, constants, coefficients)
     return b
 
@@ -157,36 +156,6 @@ def _(A: la.MatrixCSRMetaClass, a: FormMetaClass,
     #     A.assemblyEnd(PETSc.Mat.AssemblyType.FLUSH)
     #     _cpp.fem.petsc.insert_diagonal(A, a.function_spaces[0], bcs, diagonal)
     return A
-
-
-def _extract_function_spaces(a: typing.List[typing.List[FormMetaClass]]):
-    """From a rectangular array of bilinear forms, extraction the function spaces
-    for each block row and block column
-
-    """
-
-    assert len({len(cols) for cols in a}) == 1, "Array of function spaces is not rectangular"
-
-    # Extract (V0, V1) pair for each block in 'a'
-    def fn(form):
-        return form.function_spaces if form is not None else None
-    from functools import partial
-    Vblock = map(partial(map, fn), a)
-
-    # Compute spaces for each row/column block
-    rows = [set() for i in range(len(a))]
-    cols = [set() for i in range(len(a[0]))]
-    for i, Vrow in enumerate(Vblock):
-        for j, V in enumerate(Vrow):
-            if V is not None:
-                rows[i].add(V[0])
-                cols[j].add(V[1])
-
-    rows = [e for row in rows for e in row]
-    cols = [e for col in cols for e in col]
-    assert len(rows) == len(a)
-    assert len(cols) == len(a[0])
-    return rows, cols
 
 
 # -- Modifiers for Dirichlet conditions ---------------------------------------
@@ -245,8 +214,9 @@ def apply_lifting(b: np.ndarray, a: typing.List[FormMetaClass],
     is responsible for calling VecGhostUpdateBegin/End.
 
     """
-    constants = constants or [form and _cpp.fem.pack_constants(form) for form in a]
-    coefficients = coefficients or [{} if form is None else _cpp.fem.pack_coefficients(form) for form in a]
+    constants = [form and _cpp.fem.pack_constants(form) for form in a] if constants is None else constants
+    coefficients = [{} if form is None else _cpp.fem.pack_coefficients(
+        form) for form in a] if coefficients is None else coefficients
     _cpp.fem.apply_lifting(b, a, constants, coefficients, bcs, x0, scale)
 
 
