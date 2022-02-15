@@ -213,12 +213,12 @@ jobs:
         with:
           repository: "FEniCS/ffcx"
           path: "ffcx"
-          ref: "main"
+          ref: "mscroggs/serendipity-variants2"
       - uses: actions/checkout@v2
         with:
           repository: "FEniCS/basix"
           path: "basix"
-          ref: "main"
+          ref: "mscroggs/serendipity-variants2"
       - uses: actions/checkout@v2
         with:
           repository: "FEniCS/ufl"
