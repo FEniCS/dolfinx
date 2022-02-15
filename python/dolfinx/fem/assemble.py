@@ -25,8 +25,41 @@ from dolfinx import la
 from dolfinx.cpp.fem import pack_coefficients as _pack_coefficients
 from dolfinx.cpp.fem import pack_constants as _pack_constants
 
-# -- Vector and matrix instantiation -----------------------------------------
 
+def pack_constants(form: typing.Union[FormMetaClass, typing.Sequence[FormMetaClass]]):
+    """Compute form constants. If form is an array of forms, this
+    function returns an array of form constants with the same shape as
+    form.
+
+    """
+    def _pack(form):
+        if form is None:
+            return None
+        elif isinstance(form, collections.abc.Iterable):
+            return list(map(lambda sub_form: _pack(sub_form), form))
+        else:
+            return _pack_constants(form)
+
+    return _pack(form)
+
+
+def pack_coefficients(form: typing.Union[FormMetaClass, typing.Sequence[FormMetaClass]]):
+    """Compute form coefficients. If form is an array of forms, this
+    function returns an array of form coefficients with the same shape
+    as form.
+
+    """
+    def _pack(form):
+        if form is None:
+            return {}
+        elif isinstance(form, collections.abc.Iterable):
+            return list(map(lambda sub_form: _pack(sub_form), form))
+        else:
+            return _pack_coefficients(form)
+
+    return _pack(form)
+
+# -- Vector and matrix instantiation -----------------------------------------
 
 def create_vector(L: FormMetaClass) -> la.VectorMetaClass:
     """Create a Vector that is compatible with a given linear form"""
@@ -42,7 +75,6 @@ def create_matrix(a: FormMetaClass) -> la.MatrixCSRMetaClass:
 
 
 # -- Scalar assembly ---------------------------------------------------------
-
 
 def assemble_scalar(M: FormMetaClass, constants=None, coeffs=None):
     """Assemble functional. The returned value is local and not
@@ -63,7 +95,6 @@ def assemble_scalar(M: FormMetaClass, constants=None, coeffs=None):
         optimisation for when a form is assembled multiple times and
         when (some) constants and coefficients are unchanged.
 
-    Note:
         To compute the functional value on the whole domain, the output
         of this function is typically summed across all MPI ranks.
 
@@ -111,11 +142,30 @@ def assemble_vector(L: FormMetaClass, constants=None, coeffs=None) -> la.VectorM
 
 @assemble_vector.register(np.ndarray)
 def _(b: np.ndarray, L: FormMetaClass, constants=None, coeffs=None):
-    """Assemble linear form into an existing PETSc vector. The vector is
-    not zeroed before assembly and it is not finalised, i.e. ghost
-    values are not accumulated on the owning processes.
+    """Assemble linear form into a new Vector.
+
+    Args:
+        b: The array to assemble the contribution from the calling MPI
+            rank into. It must have the required size.
+        L: The linear form assemble.
+        constants: Constants that appear in the form. If not provided,
+            any required constants will be computed.
+        coeffs: Coefficients that appear in the form. If not provided,
+            any required coefficients will be computed.
+
+    Note:
+        Passing `constants` and `coefficients` is a performance
+        optimisation for when a form is assembled multiple times and
+        when (some) constants and coefficients are unchanged.
+
+    Note:
+        The returned vector is not finalised, i.e. ghost values are not
+        accumulated on the owning processes. Calling
+        :func:`dolfinx.la.VectorMetaClass.scatter_reverse` on the
+        return vector can accumulate ghost contributions.
 
     """
+
     constants = _pack_constants(L) if constants is None else constants
     coeffs = _pack_coefficients(L) if coeffs is None else coeffs
     _cpp.fem.assemble_vector(b, L, constants, coeffs)
@@ -163,40 +213,6 @@ def _(A: la.MatrixCSRMetaClass, a: FormMetaClass,
 # -- Modifiers for Dirichlet conditions ---------------------------------------
 
 
-def pack_constants(form: typing.Union[FormMetaClass, typing.Sequence[FormMetaClass]]):
-    """Compute form constants. If form is an array of forms, this
-    function returns an array of form constants with the same shape as
-    form.
-
-    """
-    def _pack(form):
-        if form is None:
-            return None
-        elif isinstance(form, collections.abc.Iterable):
-            return list(map(lambda sub_form: _pack(sub_form), form))
-        else:
-            return _pack_constants(form)
-
-    return _pack(form)
-
-
-def pack_coefficients(form: typing.Union[FormMetaClass, typing.Sequence[FormMetaClass]]):
-    """Compute form coefficients. If form is an array of forms, this
-    function returns an array of form coefficients with the same shape
-    as form.
-
-    """
-    def _pack(form):
-        if form is None:
-            return {}
-        elif isinstance(form, collections.abc.Iterable):
-            return list(map(lambda sub_form: _pack(sub_form), form))
-        else:
-            return _pack_coefficients(form)
-
-    return _pack(form)
-
-
 def apply_lifting(b: np.ndarray, a: typing.List[FormMetaClass],
                   bcs: typing.List[typing.List[DirichletBCMetaClass]],
                   x0: typing.Optional[typing.List[np.ndarray]] = [],
@@ -204,7 +220,8 @@ def apply_lifting(b: np.ndarray, a: typing.List[FormMetaClass],
     """Modify RHS vector b for lifting of Dirichlet boundary conditions.
     It modifies b such that:
 
-        b <- b - scale * A_j (g_j - x0_j)
+    .. math::
+        b \leftarrow  b - \\text{scale} * A_j (g_j - x0_j)
 
     where j is a block (nest) index. For a non-blocked problem j = 0.
     The boundary conditions bcs are on the trial spaces V_j. The forms

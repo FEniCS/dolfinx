@@ -26,7 +26,6 @@ from dolfinx import la
 from dolfinx.cpp.fem import pack_coefficients as _pack_coefficients
 from dolfinx.cpp.fem import pack_constants as _pack_constants
 from dolfinx.fem import assemble
-# from dolfinx.fem.assemble import _extract_function_spaces
 from dolfinx.fem.bcs import bcs_by_block
 from dolfinx.fem.forms import extract_function_spaces
 
@@ -62,39 +61,6 @@ def _extract_function_spaces(a: typing.List[typing.List[FormMetaClass]]):
     assert len(cols) == len(a[0])
     return rows, cols
 
-
-# def pack_constants(form: typing.Union[FormMetaClass, typing.Sequence[FormMetaClass]]):
-#     """Compute form constants. If form is an array of forms, this
-#     function returns an array of form constants with the same shape as
-#     form.
-
-#     """
-#     def _pack(form):
-#         if form is None:
-#             return None
-#         elif isinstance(form, collections.abc.Iterable):
-#             return list(map(lambda sub_form: _pack(sub_form), form))
-#         else:
-#             return _pack_constants(form)
-
-#     return _pack(form)
-
-
-# def pack_coefficients(form: typing.Union[FormMetaClass, typing.Sequence[FormMetaClass]]):
-#     """Compute form coefficients. If form is an array of forms, this
-#     function returns an array of form coefficients with the same shape
-#     as form.
-
-#     """
-#     def _pack(form):
-#         if form is None:
-#             return {}
-#         elif isinstance(form, collections.abc.Iterable):
-#             return list(map(lambda sub_form: _pack(sub_form), form))
-#         else:
-#             return _pack_coefficients(form)
-
-#     return _pack(form)
 
 # -- Vector instantiation ----------------------------------------------------
 
@@ -151,7 +117,7 @@ def create_matrix(a: FormMetaClass, mat_type=None) -> PETSc.Mat:
 
     Args:
         a: A bilinear form.
-        mat_type: The PETSc vector (``Vec``) type.
+        mat_type: The PETSc matrix type (``MatType``).
 
     Returns:
         A PETSc matrix with a layout that is compatible with `a`.

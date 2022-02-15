@@ -8,24 +8,12 @@
 
 import typing
 
-from dolfinx.cpp.fem import Form_complex128 as _FormComplex
-from dolfinx.cpp.fem import Form_float64 as _FormReal
 from dolfinx.cpp.fem import transpose_dofmap  # noqa
 from dolfinx.cpp.fem import IntegralType
 from dolfinx.cpp.fem import create_sparsity_pattern as _create_sparsity_pattern
 from dolfinx.fem import petsc
-# from dolfinx.fem.assemble import (apply_lifting, apply_lifting_nest,
-#                                   assemble_matrix, assemble_matrix_block,
-#                                   assemble_matrix_nest, assemble_scalar,
-#                                   assemble_vector, assemble_vector_block,
-#                                   assemble_vector_nest, create_matrix,
-#                                   create_matrix_block, create_matrix_nest,
-#                                   create_vector, create_vector_block,
-#                                   create_vector_nest, pack_coefficients,
-#                                   pack_constants, set_bc, set_bc_nest)
 from dolfinx.fem.assemble import (apply_lifting, assemble_matrix,
-                                  assemble_scalar, assemble_vector,
-                                  set_bc)
+                                  assemble_scalar, assemble_vector, set_bc)
 from dolfinx.fem.bcs import (DirichletBCMetaClass, bcs_by_block, dirichletbc,
                              locate_dofs_geometrical, locate_dofs_topological)
 from dolfinx.fem.dofmap import DofMap
@@ -37,7 +25,7 @@ from dolfinx.fem.function import (Constant, Expression, Function,
 from dolfinx.fem.problem import LinearProblem, NonlinearProblem
 
 
-def create_sparsity_pattern(a: typing.Union[_FormComplex, _FormReal]):
+def create_sparsity_pattern(a: FormMetaClass):
     """Create a sparsity pattern from a bilinear form"""
     topology = a.mesh.topology
     dofmap0 = a.function_spaces[0].dofmap
@@ -54,8 +42,3 @@ __all__ = [
     "DirichletBCMetaClass", "dirichletbc", "bcs_by_block", "DofMap", "FormMetaClass", "form", "IntegralType",
     "adjoint", "LinearProblem", "locate_dofs_geometrical", "locate_dofs_topological",
     "NonlinearProblem", "extract_function_spaces", "petsc"]
-
-# "create_vector", "create_vector_block", "create_vector_nest",
-# "create_matrix", "create_matrix_block", "create_matrix_nest",
-# "apply_lifting", "apply_lifting_nest", "assemble_scalar", "assemble_vector",
-# "assemble_matrix", "set_bc", "set_bc_nest",
