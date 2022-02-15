@@ -114,8 +114,9 @@ def _(b: np.ndarray, L: FormMetaClass, constants=None, coefficients=None):
     values are not accumulated on the owning processes.
 
     """
-    constants = constants or _cpp.fem.pack_constants(L)
-    coefficients = coefficients or _cpp.fem.pack_coefficients(L)
+    constants =  _cpp.fem.pack_constants(L) if constants is None else constants
+    coefficients =  _cpp.fem.pack_coefficients(L) if coefficients is None else coefficients
+    print("cc:", constants)
     _cpp.fem.assemble_vector(b, L, constants, coefficients)
     return b
 

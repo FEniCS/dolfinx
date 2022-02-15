@@ -711,7 +711,7 @@ def test_pack_coefficients():
     coeffs = _cpp.fem.pack_coefficients(_F)
     with b0.localForm() as _b0:
         for c in [(None, None), (None, coeffs), (constants, None), (constants, coeffs)]:
-            b = assemble_vector(_F, coeffs=c)
+            b = assemble_vector(_F, c[0], c[1])
             b.assemble()
             with b.localForm() as _b:
                 assert (_b0.array_r == _b.array_r).all()
@@ -722,7 +722,7 @@ def test_pack_coefficients():
         coeff *= 5.0
     with b0.localForm() as _b0:
         for c in [(None, coeffs), (constants, None), (constants, coeffs)]:
-            b = assemble_vector(_F, coeffs=c)
+            b = assemble_vector(_F, c[0], c[1])
             b.assemble()
             with b.localForm() as _b:
                 assert (_b0 - _b).norm() > 1.0e-5
