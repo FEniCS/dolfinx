@@ -316,13 +316,13 @@ def _(b: PETSc.Vec,
 @functools.singledispatch
 def assemble_matrix(a: FormMetaClass, bcs: typing.List[DirichletBCMetaClass] = [],
                     diagonal: float = 1.0,
-                    coeffs=Coefficients(None, None)) -> PETSc.Mat:
+                    constants=None, coefficients=None) -> PETSc.Mat:
     """Assemble bilinear form into a matrix. The returned matrix is not
     finalised, i.e. ghost values are not accumulated.
 
     """
     A = _cpp.fem.petsc.create_matrix(a)
-    assemble_matrix(A, a, bcs, diagonal, coeffs)
+    assemble_matrix(A, a, bcs, diagonal, constants, coefficients)
     return A
 
 
