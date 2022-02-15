@@ -6,8 +6,8 @@
 """Assembly functions for variational forms."""
 
 from __future__ import annotations
-import collections
 
+import collections
 import typing
 
 if typing.TYPE_CHECKING:
@@ -22,9 +22,11 @@ import numpy as np
 import dolfinx
 from dolfinx import cpp as _cpp
 from dolfinx import la
-
+from dolfinx.cpp.fem import pack_coefficients as _pack_coefficients
+from dolfinx.cpp.fem import pack_constants as _pack_constants
 
 # -- Vector and matrix instantiation -----------------------------------------
+
 
 def create_vector(L: FormMetaClass) -> la.VectorMetaClass:
     """Create a Vector that is compatible with a given linear form"""
@@ -42,7 +44,7 @@ def create_matrix(a: FormMetaClass) -> la.MatrixCSRMetaClass:
 # -- Scalar assembly ---------------------------------------------------------
 
 
-def assemble_scalar(M: FormMetaClass, constants=None, coefficients=None):
+def assemble_scalar(M: FormMetaClass, constants=None, coeffs=None):
     """Assemble functional. The returned value is local and not
     accumulated across processes.
 
@@ -50,7 +52,7 @@ def assemble_scalar(M: FormMetaClass, constants=None, coefficients=None):
         M: The functional to compute.
         constants: Constants that appear in the form. If not provided,
             any required constants will be computed.
-        coefficients: Coefficients that appear in the form. If not provided,
+        coeffs: Coefficients that appear in the form. If not provided,
             any required coefficients will be computed.
 
     Return:
@@ -66,22 +68,22 @@ def assemble_scalar(M: FormMetaClass, constants=None, coefficients=None):
         of this function is typically summed across all MPI ranks.
 
     """
-    constants = constants or _cpp.fem.pack_constants(M)
-    coefficients = coefficients or _cpp.fem.pack_coefficients(M)
-    return _cpp.fem.assemble_scalar(M, constants, coefficients)
+    constants = constants or _pack_constants(M)
+    coeffs = coeffs or _pack_coefficients(M)
+    return _cpp.fem.assemble_scalar(M, constants, coeffs)
 
 
 # -- Vector assembly ---------------------------------------------------------
 
 @functools.singledispatch
-def assemble_vector(L: FormMetaClass, constants=None, coefficients=None) -> la.VectorMetaClass:
+def assemble_vector(L: FormMetaClass, constants=None, coeffs=None) -> la.VectorMetaClass:
     """Assemble linear form into a new Vector.
 
     Args:
         L: The linear form assemble.
         constants: Constants that appear in the form. If not provided,
             any required constants will be computed.
-        coefficients: Coefficients that appear in the form. If not provided,
+        coeffs: Coefficients that appear in the form. If not provided,
             any required coefficients will be computed.
 
     Return:
@@ -101,22 +103,22 @@ def assemble_vector(L: FormMetaClass, constants=None, coefficients=None) -> la.V
     """
     b = create_vector(L)
     b.array[:] = 0
-    constants = constants or _cpp.fem.pack_constants(L)
-    coefficients = coefficients or _cpp.fem.pack_coefficients(L)
-    _cpp.fem.assemble_vector(b.array, L, constants, coefficients)
+    constants = constants or _pack_constants(L)
+    coeffs = coeffs or _pack_coefficients(L)
+    _cpp.fem.assemble_vector(b.array, L, constants, coeffs)
     return b
 
 
 @assemble_vector.register(np.ndarray)
-def _(b: np.ndarray, L: FormMetaClass, constants=None, coefficients=None):
+def _(b: np.ndarray, L: FormMetaClass, constants=None, coeffs=None):
     """Assemble linear form into an existing PETSc vector. The vector is
     not zeroed before assembly and it is not finalised, i.e. ghost
     values are not accumulated on the owning processes.
 
     """
-    constants = _cpp.fem.pack_constants(L) if constants is None else constants
-    coefficients = _cpp.fem.pack_coefficients(L) if coefficients is None else coefficients
-    _cpp.fem.assemble_vector(b, L, constants, coefficients)
+    constants = _pack_constants(L) if constants is None else constants
+    coeffs = _pack_coefficients(L) if coeffs is None else coeffs
+    _cpp.fem.assemble_vector(b, L, constants, coeffs)
     return b
 
 # -- Matrix assembly ---------------------------------------------------------
@@ -125,27 +127,27 @@ def _(b: np.ndarray, L: FormMetaClass, constants=None, coefficients=None):
 @functools.singledispatch
 def assemble_matrix(a: FormMetaClass, bcs: typing.List[DirichletBCMetaClass] = [],
                     diagonal: float = 1.0,
-                    constants=None, coefficients=None) -> la.MatrixCSRMetaClass:
+                    constants=None, coeffs=None) -> la.MatrixCSRMetaClass:
     """Assemble bilinear form into a matrix. The returned matrix is not
     finalised, i.e. ghost values are not accumulated.
 
     """
     A = create_matrix(a)
-    assemble_matrix(A, a, bcs, diagonal, constants, coefficients)
+    assemble_matrix(A, a, bcs, diagonal, constants, coeffs)
     return A
 
 
 @assemble_matrix.register(la.MatrixCSRMetaClass)
 def _(A: la.MatrixCSRMetaClass, a: FormMetaClass,
       bcs: typing.List[DirichletBCMetaClass] = [],
-      diagonal: float = 1.0, constants=None, coefficients=None) -> la.MatrixCSRMetaClass:
+      diagonal: float = 1.0, constants=None, coeffs=None) -> la.MatrixCSRMetaClass:
     """Assemble bilinear form into a matrix. The returned matrix is not
     finalised, i.e. ghost values are not accumulated.
 
     """
-    constants = constants or _cpp.fem.pack_constants(a)
-    coefficients = coefficients or _cpp.fem.pack_coefficients(a)
-    _cpp.fem.assemble_matrix(A, a, constants, coefficients, bcs)
+    constants = constants or _pack_constants(a)
+    coeffs = coeffs or _pack_coefficients(a)
+    _cpp.fem.assemble_matrix(A, a, constants, coeffs, bcs)
 
     # If matrix is a 'diagonal'block, set diagonal entry for constrained
     # dofs
@@ -173,7 +175,7 @@ def pack_constants(form: typing.Union[FormMetaClass, typing.Sequence[FormMetaCla
         elif isinstance(form, collections.abc.Iterable):
             return list(map(lambda sub_form: _pack(sub_form), form))
         else:
-            return _cpp.fem.pack_constants(form)
+            return _pack_constants(form)
 
     return _pack(form)
 
@@ -190,7 +192,7 @@ def pack_coefficients(form: typing.Union[FormMetaClass, typing.Sequence[FormMeta
         elif isinstance(form, collections.abc.Iterable):
             return list(map(lambda sub_form: _pack(sub_form), form))
         else:
-            return _cpp.fem.pack_coefficients(form)
+            return _pack_coefficients(form)
 
     return _pack(form)
 
@@ -198,7 +200,7 @@ def pack_coefficients(form: typing.Union[FormMetaClass, typing.Sequence[FormMeta
 def apply_lifting(b: np.ndarray, a: typing.List[FormMetaClass],
                   bcs: typing.List[typing.List[DirichletBCMetaClass]],
                   x0: typing.Optional[typing.List[np.ndarray]] = [],
-                  scale: float = 1.0, constants=None, coefficients=None) -> None:
+                  scale: float = 1.0, constants=None, coeffs=None) -> None:
     """Modify RHS vector b for lifting of Dirichlet boundary conditions.
     It modifies b such that:
 
@@ -214,10 +216,9 @@ def apply_lifting(b: np.ndarray, a: typing.List[FormMetaClass],
     is responsible for calling VecGhostUpdateBegin/End.
 
     """
-    constants = [form and _cpp.fem.pack_constants(form) for form in a] if constants is None else constants
-    coefficients = [{} if form is None else _cpp.fem.pack_coefficients(
-        form) for form in a] if coefficients is None else coefficients
-    _cpp.fem.apply_lifting(b, a, constants, coefficients, bcs, x0, scale)
+    constants = [form and _pack_constants(form) for form in a] if constants is None else constants
+    coeffs = [{} if form is None else _pack_coefficients(form) for form in a] if coeffs is None else coeffs
+    _cpp.fem.apply_lifting(b, a, constants, coeffs, bcs, x0, scale)
 
 
 def set_bc(b: np.ndarray, bcs: typing.List[DirichletBCMetaClass],

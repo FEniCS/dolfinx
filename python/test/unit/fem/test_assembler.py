@@ -738,7 +738,7 @@ def test_pack_coefficients():
     constants = _cpp.fem.pack_constants(J)
     coeffs = _cpp.fem.pack_coefficients(J)
     for c in [(None, None), (None, coeffs), (constants, None), (constants, coeffs)]:
-        A = assemble_matrix(J, constants=c[0], coefficients=c[1])
+        A = assemble_matrix(J, constants=c[0], coeffs=c[1])
         A.assemble()
         assert pytest.approx((A - A0).norm(), 1.0e-12) == 0.0
 
@@ -747,7 +747,7 @@ def test_pack_coefficients():
     for coeff in coeffs.values():
         coeff *= 5.0
     for c in [(None, coeffs), (constants, None), (constants, coeffs)]:
-        A = assemble_matrix(J, constants=c[0], coefficients=c[1])
+        A = assemble_matrix(J, constants=c[0], coeffs=c[1])
         A.assemble()
         assert (A - A0).norm() > 1.0e-5
 
