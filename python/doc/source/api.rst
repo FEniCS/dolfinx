@@ -8,9 +8,6 @@ Python
 Public user interface
 ^^^^^^^^^^^^^^^^^^^^^
 
-.. toctree::
-   generated/dolfinx.fembar
-
 .. autosummary::
    :toctree: generated
 

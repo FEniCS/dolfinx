@@ -119,15 +119,12 @@ def lid(x):
 # Lid velocity
 def lid_velocity_expression(x):
     return np.stack((np.ones(x.shape[1]), np.zeros(x.shape[1])))
-
-
 # -
 
-# We define two {py:class}`FunctionSpace
-# <fem.FunctionSpace>` instances with different finite
-# elements. `P2` corresponds to piecewise quadratics for the velocity
-# field and `P1` to continuous piecewise linears for the pressure
-# field:
+# We define two {py:class}`FunctionSpace <dolfinx.fem.FunctionSpace>`
+# instances with different finite elements. `P2` corresponds to
+# piecewise quadratics for the velocity field and `P1` to continuous
+# piecewise linears for the pressure field:
 
 P2 = ufl.VectorElement("Lagrange", msh.ufl_cell(), 2)
 P1 = ufl.FiniteElement("Lagrange", msh.ufl_cell(), 1)
