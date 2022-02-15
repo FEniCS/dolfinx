@@ -6,8 +6,6 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Tools for assembling and manipulating finite element forms."""
 
-import typing
-
 from dolfinx.cpp.fem import transpose_dofmap  # noqa
 from dolfinx.cpp.fem import IntegralType
 from dolfinx.cpp.fem import create_sparsity_pattern as _create_sparsity_pattern

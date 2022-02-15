@@ -61,6 +61,7 @@ def pack_coefficients(form: typing.Union[FormMetaClass, typing.Sequence[FormMeta
 
 # -- Vector and matrix instantiation -----------------------------------------
 
+
 def create_vector(L: FormMetaClass) -> la.VectorMetaClass:
     """Create a Vector that is compatible with a given linear form"""
     dofmap = L.function_spaces[0].dofmap
@@ -221,7 +222,8 @@ def apply_lifting(b: np.ndarray, a: typing.List[FormMetaClass],
     It modifies b such that:
 
     .. math::
-        b \leftarrow  b - \\text{scale} * A_j (g_j - x0_j)
+
+        b \\leftarrow  b - \\text{scale} * A_j (g_j - x0_j)
 
     where j is a block (nest) index. For a non-blocked problem j = 0.
     The boundary conditions bcs are on the trial spaces V_j. The forms

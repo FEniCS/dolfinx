@@ -31,11 +31,10 @@ class Constant(ufl.Constant):
     def __init__(self, domain, c: typing.Union[np.ndarray, typing.Sequence, float]):
         """A constant with respect to a domain.
 
-        Parameters
-        ----------
-        domain : DOLFINx or UFL mesh
-        c
-            Value of the constant.
+        Args:
+            domain: DOLFINx or UFL mesh
+            c: Value of the constant.
+
         """
         c_np = np.asarray(c)
         super().__init__(domain, c_np.shape)
