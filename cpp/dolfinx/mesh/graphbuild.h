@@ -42,8 +42,8 @@ build_local_dual_graph(const xtl::span<const std::int64_t>& cells,
 /// @param[in] cells Collection of cells, defined by the cell vertices
 /// from which to build the dual graph
 /// @param[in] tdim The topological dimension of the cells
-/// @return The (0) dual graph, (1) number of  ghost edges, and (2) vertices on
-/// inter-process boundary
+/// @return The (0) dual graph, (1) number of  ghost edges, and (2)
+/// the inter-process boundary vertices
 /// @note Collective function
 std::tuple<graph::AdjacencyList<std::int64_t>, std::int32_t,
            std::vector<std::int64_t>>

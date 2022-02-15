@@ -187,7 +187,7 @@ void refinement::update_logical_edgefunction(
   // Send all shared edges marked for update and receive from other
   // processes
   const std::vector<std::int64_t> data_to_recv
-      = MPI::neighbor_all_to_all(
+      = dolfinx::MPI::neighbor_all_to_all(
             neighbor_comm,
             graph::AdjacencyList<std::int64_t>(data_to_send, send_offsets))
             .array();
@@ -268,7 +268,7 @@ refinement::create_new_vertices(
   }
 
   const std::vector<std::int64_t> received_values
-      = MPI::neighbor_all_to_all(
+      = dolfinx::MPI::neighbor_all_to_all(
             neighbor_comm, graph::AdjacencyList<std::int64_t>(values_to_send))
             .array();
 

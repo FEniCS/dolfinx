@@ -324,7 +324,7 @@ void SparsityPattern::assemble()
   const graph::AdjacencyList<std::int64_t> ghost_data_out(std::move(ghost_data),
                                                           std::move(send_disp));
   const graph::AdjacencyList<std::int64_t> ghost_data_in
-      = MPI::neighbor_all_to_all(comm, ghost_data_out);
+      = dolfinx::MPI::neighbor_all_to_all(comm, ghost_data_out);
 
   // Add data received from the neighborhood
   const std::vector<std::int64_t>& in_ghost_data = ghost_data_in.array();

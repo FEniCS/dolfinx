@@ -426,7 +426,7 @@ public:
   {
     MPI_Datatype data_type;
     if (n == 1)
-      data_type = MPI::mpi_type<T>();
+      data_type = dolfinx::MPI::mpi_type<T>();
     else
     {
       MPI_Type_contiguous(n, dolfinx::MPI::mpi_type<T>(), &data_type);
