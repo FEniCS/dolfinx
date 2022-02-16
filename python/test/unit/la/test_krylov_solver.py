@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright (C) 2014 Garth N. Wells
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)

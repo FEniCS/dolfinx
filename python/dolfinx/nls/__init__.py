@@ -3,13 +3,9 @@
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Tools for solving nonlinear problems"""
+"""Tools for solving nonlinear problems."""
 
 from dolfinx.nls import petsc
-
-
-def foo():
-    pass
 
 
 __all__ = ["foo", "petsc"]
