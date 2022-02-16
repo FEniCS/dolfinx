@@ -41,14 +41,14 @@ jobs:
       - name: Install Basix
         run: |
           . /opt/intel/oneapi/setvars.sh
-          python3 -m pip install git+https://github.com/FEniCS/basix.git@mscroggs/serendipity-variants3
+          python3 -m pip install git+https://github.com/FEniCS/basix.git
 
       - name: Clone FFCx
         uses: actions/checkout@v2
         with:
           path: ./ffcx
           repository: FEniCS/ffcx
-          ref: mscroggs/serendipity-variants3
+          ref: main
 
       - name: Install FFCx C interface
         run: |
