@@ -7,7 +7,9 @@
 
 from dolfinx.nls import petsc
 
+
 def foo():
     pass
+
 
 __all__ = ["foo", "petsc"]

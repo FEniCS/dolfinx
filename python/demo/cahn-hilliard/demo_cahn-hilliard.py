@@ -17,9 +17,9 @@
 # - The $\theta$-method for time-dependent equations
 # - Automatic linearisation
 # - Use of the class
-#   {py:class}`NonlinearProblem<dolfinx.fem.NonlinearProblem>`
+#   {py:class}`NonlinearProblem<dolfinx.fem.petsc.NonlinearProblem>`
 # - The built-in Newton solver
-#   ({py:class}`NewtonSolver<dolfinx.nls.NewtonSolver>`)
+#   ({py:class}`NewtonSolver<dolfinx.nls.petsc.NewtonSolver>`)
 # - Form compiler options
 # - Interpolation of functions
 # - Visualisation of a running simulation with pyvista
