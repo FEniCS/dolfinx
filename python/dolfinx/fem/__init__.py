@@ -20,11 +20,18 @@ from dolfinx.fem.forms import FormMetaClass, extract_function_spaces, form
 from dolfinx.fem.function import (Constant, Expression, Function,
                                   FunctionSpace, TensorFunctionSpace,
                                   VectorFunctionSpace)
-from dolfinx.fem.problem import LinearProblem, NonlinearProblem
 
 
 def create_sparsity_pattern(a: FormMetaClass):
-    """Create a sparsity pattern from a bilinear form"""
+    """Create a sparsity pattern from a bilinear form.
+
+    Args:
+        a: The bilinear form to build a sparsity pattern for.
+
+    Returns:
+        Sparsity pattern for the form ``a``.
+
+    """
     topology = a.mesh.topology
     dofmap0 = a.function_spaces[0].dofmap
     dofmap1 = a.function_spaces[1].dofmap
@@ -38,5 +45,5 @@ __all__ = [
     "VectorFunctionSpace",
     "assemble_scalar", "assemble_matrix", "assemble_vector", "apply_lifting", "set_bc",
     "DirichletBCMetaClass", "dirichletbc", "bcs_by_block", "DofMap", "FormMetaClass", "form", "IntegralType",
-    "adjoint", "LinearProblem", "locate_dofs_geometrical", "locate_dofs_topological",
-    "NonlinearProblem", "extract_function_spaces", "petsc"]
+    "adjoint", "locate_dofs_geometrical", "locate_dofs_topological",
+    "extract_function_spaces", "petsc"]

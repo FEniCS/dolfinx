@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2021 Garth N. Wells
+# Copyright (C) 2018-2022 Garth N. Wells
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
