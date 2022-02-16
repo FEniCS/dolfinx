@@ -103,7 +103,7 @@ def test_linear_pde():
     problem = NonlinearPDEProblem(F, u, bc)
 
     # Create Newton solver and solve
-    solver = _cpp.nls.NewtonSolver(MPI.COMM_WORLD)
+    solver = _cpp.nls.petsc.NewtonSolver(MPI.COMM_WORLD)
     solver.setF(problem.F, problem.vector())
     solver.setJ(problem.J, problem.matrix())
     solver.set_form(problem.form)
@@ -137,7 +137,7 @@ def test_nonlinear_pde():
 
     # Create Newton solver and solve
     u.x.array[:] = 0.9
-    solver = _cpp.nls.NewtonSolver(MPI.COMM_WORLD)
+    solver = _cpp.nls.petsc.NewtonSolver(MPI.COMM_WORLD)
     solver.setF(problem.F, problem.vector())
     solver.setJ(problem.J, problem.matrix())
     solver.set_form(problem.form)
