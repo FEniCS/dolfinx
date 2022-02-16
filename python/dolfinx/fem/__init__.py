@@ -42,7 +42,7 @@ def create_sparsity_pattern(a: FormMetaClass):
 __all__ = [
     "Constant", "Expression", "Function",
     "FunctionSpace", "TensorFunctionSpace",
-    "VectorFunctionSpace",
+    "VectorFunctionSpace", "create_sparsity_pattern",
     "assemble_scalar", "assemble_matrix", "assemble_vector", "apply_lifting", "set_bc",
     "DirichletBCMetaClass", "dirichletbc", "bcs_by_block", "DofMap", "FormMetaClass", "form", "IntegralType",
     "adjoint", "locate_dofs_geometrical", "locate_dofs_topological",
