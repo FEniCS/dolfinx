@@ -22,7 +22,7 @@ from dolfinx import fem
 __all__ = ["NewtonSolver"]
 
 
-class NewtonSolver(_cpp.nls.NewtonSolver):
+class NewtonSolver(_cpp.nls.petsc.NewtonSolver):
     def __init__(self, comm: MPI.Intracomm, problem: NonlinearProblem):
         """A Newton solver for non-linear problems."""
         super().__init__(comm)
