@@ -130,7 +130,7 @@ from dolfinx import log, plot
 from dolfinx.fem import Function, FunctionSpace, NonlinearProblem
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import CellType, create_unit_square
-from dolfinx.nls import NewtonSolver
+from dolfinx.nls.petsc import NewtonSolver
 from ufl import dx, grad, inner
 
 from mpi4py import MPI

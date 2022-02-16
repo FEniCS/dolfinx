@@ -60,14 +60,14 @@ class FormMetaClass:
 
 
 def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtype = PETSc.ScalarType,
-         form_compiler_params: dict = {}, jit_parameters: dict = {}) -> FormMetaClass:
+         form_compiler_params: dict = {}, jit_params: dict = {}) -> FormMetaClass:
     """Create a DOLFINx Form or an array of Forms
 
     Args:
         form: A UFL form or list(s) of UFL forms
         dtype: Scalar type to use for the compiled form
         form_compiler_params: See :func:`ffcx_jit <dolfinx.jit.ffcx_jit>`
-        jit_parameters:See :func:`ffcx_jit <dolfinx.jit.ffcx_jit>`
+        jit_params:See :func:`ffcx_jit <dolfinx.jit.ffcx_jit>`
 
     Returns:
         Compiled finite element Form
@@ -107,7 +107,7 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtyp
 
         ufcx_form, module, code = jit.ffcx_jit(mesh.comm, form,
                                                form_compiler_params=form_compiler_params,
-                                               jit_parameters=jit_parameters)
+                                               jit_params=jit_params)
 
         # For each argument in form extract its function space
         V = [arg.ufl_function_space()._cpp_object for arg in form.arguments()]
