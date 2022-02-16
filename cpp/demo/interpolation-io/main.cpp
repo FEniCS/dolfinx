@@ -42,7 +42,7 @@ void interpolate_scalar(const std::shared_ptr<mesh::Mesh>& mesh,
   // Interpolate sin(2 \pi x[0]) in the scalar Lagrange finite element
   // space
   constexpr double PI = xt::numeric_constants<double>::PI;
-  u->interpolate([PI](auto& x) { return xt::sin(2 * PI * xt::row(x, 0)); });
+  u->interpolate([PI](auto&& x) { return xt::sin(2 * PI * xt::row(x, 0)); });
 
   // Write the function to a VTK file for visualisation, e.g. using
   // ParaView
@@ -80,16 +80,16 @@ void interpolate_nedelec(const std::shared_ptr<mesh::Mesh>& mesh,
 
   // Find cells with all vertices satisfying (0) x0 <= 0.5 and (1) x0 >= 0.5
   auto cells0 = mesh::locate_entities(
-      *mesh, 2, [](auto& x) { return xt::row(x, 0) <= 0.5; });
+      *mesh, 2, [](auto&& x) { return xt::row(x, 0) <= 0.5; });
   auto cells1 = mesh::locate_entities(
-      *mesh, 2, [](auto& x) { return xt::row(x, 0) >= 0.5; });
+      *mesh, 2, [](auto&& x) { return xt::row(x, 0) >= 0.5; });
 
   // Interpolation on the two sets of cells
-  u->interpolate([](auto& x) -> xt::xtensor<T, 2>
+  u->interpolate([](auto&& x) -> xt::xtensor<T, 2>
                  { return xt::view(x, xt::range(0, 2), xt::all()); },
                  cells0);
   u->interpolate(
-      [](auto& x) -> xt::xtensor<T, 2>
+      [](auto&& x) -> xt::xtensor<T, 2>
       {
         xt::xtensor<T, 2> v = xt::view(x, xt::range(0, 2), xt::all());
         xt::row(v, 0) += T(1);
