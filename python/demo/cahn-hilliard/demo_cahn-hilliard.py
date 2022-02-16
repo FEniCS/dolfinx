@@ -127,7 +127,8 @@ import numpy as np
 
 import ufl
 from dolfinx import log, plot
-from dolfinx.fem import Function, FunctionSpace, NonlinearProblem
+from dolfinx.fem import Function, FunctionSpace
+from dolfinx.fem.petsc import NonlinearProblem
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import CellType, create_unit_square
 from dolfinx.nls.petsc import NewtonSolver

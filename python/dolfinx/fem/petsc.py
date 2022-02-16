@@ -664,7 +664,7 @@ class NonlinearProblem:
         b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
         set_bc(b, self.bcs, x, -1.0)
 
-    def J(self, A: PETSc.Mat):
+    def J(self, x: PETSc.Vec, A: PETSc.Mat):
         """Assemble the Jacobian matrix.
 
         Args:
