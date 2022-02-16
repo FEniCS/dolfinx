@@ -9,6 +9,7 @@
 #include <dolfinx/la/Vector.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/cell_types.h>
+#include <dolfinx/nls/NewtonSolver.h>
 #include <xtensor/xarray.hpp>
 #include <xtensor/xview.hpp>
 
@@ -190,7 +191,7 @@ int main(int argc, char* argv[])
         std::make_shared<const fem::DirichletBC<T>>(u_rotation, bdofs_right)};
 
     HyperElasticProblem problem(L, a, bcs);
-    nls:petsc::NewtonSolver newton_solver(mesh->comm());
+    nls::petsc::NewtonSolver newton_solver(mesh->comm());
     newton_solver.setF(problem.F(), problem.vector());
     newton_solver.setJ(problem.J(), problem.matrix());
     newton_solver.set_form(problem.form());
