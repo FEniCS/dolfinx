@@ -85,5 +85,3 @@ TEST_CASE("Interpolation between different meshes",
 {
   CHECK_NOTHROW(test_interpolation_different_meshes());
 }
-
-#endif
