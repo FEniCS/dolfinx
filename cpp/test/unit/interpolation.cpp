@@ -20,7 +20,6 @@ using namespace dolfinx;
 
 namespace
 {
-
 void test_interpolation_different_meshes()
 {
   const std::array<std::size_t, 3> subdivisions = {5, 5, 5};
@@ -40,7 +39,6 @@ void test_interpolation_different_meshes()
 
   auto uL = std::make_shared<fem::Function<PetscScalar>>(VL);
   auto uR = std::make_shared<fem::Function<PetscScalar>>(VR);
-  auto uR_ex = std::make_shared<fem::Function<PetscScalar>>(VR);
 
   uL->interpolate(
       [](auto& x)
@@ -55,6 +53,9 @@ void test_interpolation_different_meshes()
         return r;
       });
 
+  uR->interpolate(*uL);
+
+  auto uR_ex = std::make_shared<fem::Function<PetscScalar>>(VR);
   uR_ex->interpolate(
       [](auto& x)
       {
@@ -68,14 +69,14 @@ void test_interpolation_different_meshes()
         return r;
       });
 
-  uR->interpolate(*uL);
-
   la::petsc::Vector _uR(la::petsc::create_vector_wrap(*uR->x()), false);
   la::petsc::Vector _uR_ex(la::petsc::create_vector_wrap(*uR_ex->x()), false);
 
   VecAXPY(_uR.vec(), -1, _uR_ex.vec());
   PetscReal diffNorm;
   VecNorm(_uR.vec(), NORM_2, &diffNorm);
+
+  LOG(ERROR) << "diffNorm = " << diffNorm;
 
   if (diffNorm > 1e-13)
   {
