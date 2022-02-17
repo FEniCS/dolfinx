@@ -66,14 +66,14 @@
 // containing the actual solver.
 //
 // Running this demo requires the files: :download:`main.cpp`,
-// :download:`Poisson.ufl` and :download:`CMakeLists.txt`.
+// :download:`poisson.py` and :download:`CMakeLists.txt`.
 //
 //
 // UFL form file
 // ^^^^^^^^^^^^^
 //
-// The UFL file is implemented in :download:`Poisson.ufl`, and the
-// explanation of the UFL file can be found at :doc:`here <Poisson.ufl>`.
+// The UFL file is implemented in :download:`poisson.py`, and the
+// explanation of the UFL file can be found at :doc:`here <poisson.py>`.
 //
 //
 // C++ program
