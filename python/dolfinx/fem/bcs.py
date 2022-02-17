@@ -152,7 +152,7 @@ def dirichletbc(value: typing.Union[Function, Constant],
 
     Args:
         value: Lifted boundary values function. It must have a ``dtype``
-            property.
+        property.
         dofs: Local indices of degrees of freedom in function space to
             which boundary condition applies. Expects array of size
             (number of dofs, 2) if function space of the problem, ``V``,
@@ -175,7 +175,7 @@ def dirichletbc(value: typing.Union[Function, Constant],
     elif value.dtype == np.complex128:
         bctype = _cpp.fem.DirichletBC_complex128
     else:
-        raise NotImplementedError(f"Type {dtype} not supported.")
+        raise NotImplementedError(f"Type {value.dtype} not supported.")
 
     formcls = type("DirichletBC", (DirichletBCMetaClass, bctype), {})
     return formcls(value, dofs, V)
