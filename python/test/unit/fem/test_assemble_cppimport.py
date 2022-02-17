@@ -16,8 +16,9 @@ import scipy.sparse.linalg
 import dolfinx
 import dolfinx.pkgconfig
 import ufl
-from dolfinx.fem import (FunctionSpace, assemble_matrix, dirichletbc, form,
+from dolfinx.fem import (FunctionSpace, dirichletbc, form,
                          locate_dofs_geometrical)
+from dolfinx.fem.petsc import assemble_matrix
 from dolfinx.mesh import create_unit_square
 from dolfinx.wrappers import get_include_path as pybind_inc
 

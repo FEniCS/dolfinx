@@ -23,8 +23,8 @@
 import numpy as np
 
 import ufl
-from dolfinx.fem import Function, FunctionSpace, LinearProblem, form
-from dolfinx.fem.assemble import assemble_scalar
+from dolfinx.fem import Function, FunctionSpace, assemble_scalar, form
+from dolfinx.fem.petsc import LinearProblem
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import create_unit_square
 from ufl import dx, grad, inner

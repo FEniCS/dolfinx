@@ -79,7 +79,6 @@
 # +
 import numpy as np
 
-import dolfinx
 import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import fem
@@ -120,15 +119,13 @@ def lid(x):
 # Lid velocity
 def lid_velocity_expression(x):
     return np.stack((np.ones(x.shape[1]), np.zeros(x.shape[1])))
-
-
 # -
 
-# We define two {py:class}`FunctionSpace
-# <dolfinx.fem.FunctionSpace>` instances with different finite
-# elements. `P2` corresponds to piecewise quadratics for the velocity
-# field and `P1` to continuous piecewise linears for the pressure
-# field:
+# We define two {py:class}`FunctionSpace <dolfinx.fem.FunctionSpace>`
+# instances with different finite elements. `P2` corresponds to
+# piecewise quadratics for the velocity field and `P1` to continuous
+# piecewise linears for the pressure field:
+
 
 P2 = ufl.VectorElement("Lagrange", msh.ufl_cell(), 2)
 P1 = ufl.FiniteElement("Lagrange", msh.ufl_cell(), 1)
@@ -181,14 +178,14 @@ a_p = [[a[0][0], None],
 # Dirichlet boundary conditions are zeroed and a value of 1 is set on
 # the diagonal.
 
-A = dolfinx.fem.assemble_matrix_nest(a, bcs=bcs)
+A = fem.petsc.assemble_matrix_nest(a, bcs=bcs)
 A.assemble()
 
 # We create a nested matrix `P` to use as the preconditioner. The
 # top-left block of `P` is shared with the top-left block of `A`. The
 # bottom-right diagonal entry is assembled from the form `a_p11`:
 
-P11 = dolfinx.fem.assemble_matrix(a_p11, [])
+P11 = fem.petsc.assemble_matrix(a_p11, [])
 P = PETSc.Mat().createNest([[A.getNestSubMatrix(0, 0), None], [None, P11]])
 P.assemble()
 
@@ -196,10 +193,10 @@ P.assemble()
 # account for non-homogeneous Dirichlet boundary conditions:
 
 # +
-b = dolfinx.fem.assemble.assemble_vector_nest(L)
+b = fem.petsc.assemble_vector_nest(L)
 
 # Modify ('lift') the RHS for Dirichlet boundary conditions
-dolfinx.fem.assemble.apply_lifting_nest(b, a, bcs=bcs)
+fem.petsc.apply_lifting_nest(b, a, bcs=bcs)
 
 # Sum contributions from ghost entries on the owner
 for b_sub in b.getNestSubVecs():
@@ -207,7 +204,7 @@ for b_sub in b.getNestSubVecs():
 
 # Set Dirichlet boundary condition values in the RHS
 bcs0 = fem.bcs_by_block(extract_function_spaces(L), bcs)
-dolfinx.fem.assemble.set_bc_nest(b, bcs0)
+fem.petsc.set_bc_nest(b, bcs0)
 # -
 
 # Ths pressure field for this problem is determined only up to a
@@ -217,7 +214,7 @@ dolfinx.fem.assemble.set_bc_nest(b, bcs0)
 
 # +
 # Create nullspace vector
-null_vec = dolfinx.fem.create_vector_nest(L)
+null_vec = fem.petsc.create_vector_nest(L)
 
 # Set velocity part to zero and the pressure part to a non-zero constant
 null_vecs = null_vec.getNestSubVecs()
@@ -262,7 +259,7 @@ ksp.setFromOptions()
 # -
 
 # To compute the solution, we create finite element {py:class}`Function
-# <dolfinx.fem.Function>` for the velocity (on the space `V`) and
+# <fem.Function>` for the velocity (on the space `V`) and
 # for the pressure (on the space `Q`). The vectors for `u` and `p` are
 # combined to form a nested vector and the system is solved:
 
@@ -300,11 +297,11 @@ with XDMFFile(MPI.COMM_WORLD, "pressure.xdmf", "w") as pfile_xdmf:
 # matrices and iterative solvers.
 
 # +
-A = dolfinx.fem.assemble_matrix_block(a, bcs=bcs)
+A = fem.petsc.assemble_matrix_block(a, bcs=bcs)
 A.assemble()
-P = dolfinx.fem.assemble_matrix_block(a_p, bcs=bcs)
+P = fem.petsc.assemble_matrix_block(a_p, bcs=bcs)
 P.assemble()
-b = dolfinx.fem.assemble.assemble_vector_block(L, a, bcs=bcs)
+b = fem.petsc.assemble_vector_block(L, a, bcs=bcs)
 
 # Set near null space for pressure
 null_vec = A.createVecLeft()
@@ -454,15 +451,15 @@ L = form(inner(f, v) * dx)
 
 
 # Assemble LHS matrix and RHS vector
-A = dolfinx.fem.assemble_matrix(a, bcs=bcs)
+A = fem.petsc.assemble_matrix(a, bcs=bcs)
 A.assemble()
-b = dolfinx.fem.assemble.assemble_vector(L)
+b = fem.petsc.assemble_vector(L)
 
-dolfinx.fem.assemble.apply_lifting(b, [a], bcs=[bcs])
+fem.petsc.apply_lifting(b, [a], bcs=[bcs])
 b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
 # Set Dirichlet boundary condition values in the RHS
-dolfinx.fem.assemble.set_bc(b, bcs)
+fem.petsc.set_bc(b, bcs)
 
 # Create and configure solver
 ksp = PETSc.KSP().create(msh.comm)
