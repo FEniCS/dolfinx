@@ -7,7 +7,7 @@
 #pragma once
 
 #include <dolfinx/common/MPI.h>
-#include <dolfinx/la/PETScKrylovSolver.h>
+#include <dolfinx/la/petsc.h>
 #include <functional>
 #include <memory>
 #include <petscmat.h>
@@ -17,12 +17,12 @@
 namespace dolfinx
 {
 
-namespace la
+namespace la::petsc
 {
-class PETScKrylovSolver;
-} // namespace la
+class KrylovSolver;
+} // namespace la::petsc
 
-namespace nls
+namespace nls::petsc
 {
 
 /// This class defines a Newton solver for nonlinear systems of
@@ -71,13 +71,13 @@ public:
   /// const version
   /// The Krylov solver prefix is nls_solve_
   /// @return The Krylov solver
-  const la::PETScKrylovSolver& get_krylov_solver() const;
+  const la::petsc::KrylovSolver& get_krylov_solver() const;
 
   /// Get the internal Krylov solver used to solve for the Newton updates
   /// non-const version
   /// The Krylov solver prefix is nls_solve_
   /// @return The Krylov solver
-  la::PETScKrylovSolver& get_krylov_solver();
+  la::petsc::KrylovSolver& get_krylov_solver();
 
   /// Set the function that is called before the residual or Jacobian
   /// are computed. It is commonly used to update ghost values.
@@ -88,14 +88,13 @@ public:
   /// Set function that is called at the end of each Newton iteration to
   /// test for convergence.
   /// @param[in] c The function that tests for convergence
-  void
-  set_convergence_check(const std::function<std::pair<double, bool>(
-                            const nls::NewtonSolver& solver, const Vec r)>& c);
+  void set_convergence_check(const std::function<std::pair<double, bool>(
+                                 const NewtonSolver& solver, const Vec r)>& c);
 
   /// Set function that is called after each Newton iteration to update
   /// the solution
   /// @param[in] update The function that updates the solution
-  void set_update(const std::function<void(const nls::NewtonSolver& solver,
+  void set_update(const std::function<void(const NewtonSolver& solver,
                                            const Vec dx, Vec x)>& update);
 
   /// Solve the nonlinear problem \f$`F(x) = 0\f$ for given \f$F\f$ and
@@ -124,7 +123,7 @@ public:
   double residual0() const;
 
   /// Return MPI communicator
-  MPI_Comm mpi_comm() const;
+  MPI_Comm comm() const;
 
   /// Maximum number of iterations
   int max_it = 50;
@@ -175,12 +174,12 @@ private:
   Mat _matJ = nullptr, _matP = nullptr;
 
   // Function to check for convergence
-  std::function<std::pair<double, bool>(const nls::NewtonSolver& solver,
+  std::function<std::pair<double, bool>(const NewtonSolver& solver,
                                         const Vec r)>
       _converged;
 
   // Function to update the solution once convergence is reached
-  std::function<void(const nls::NewtonSolver& solver, const Vec dx, Vec x)>
+  std::function<void(const NewtonSolver& solver, const Vec dx, Vec x)>
       _update_solution;
 
   // Accumulated number of Krylov iterations since solve began
@@ -193,13 +192,13 @@ private:
   double _residual, _residual0;
 
   // Linear solver
-  la::PETScKrylovSolver _solver;
+  la::petsc::KrylovSolver _solver;
 
   // Solution vector
   Vec _dx = nullptr;
 
   // MPI communicator
-  dolfinx::MPI::Comm _mpi_comm;
+  dolfinx::MPI::Comm _comm;
 };
-} // namespace nls
+} // namespace nls::petsc
 } // namespace dolfinx

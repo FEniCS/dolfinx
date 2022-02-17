@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "Topology.h"
+#include "cell_types.h"
 #include "permutationcomputation.h"
 #include "topologycomputation.h"
 #include "utils.h"
@@ -13,14 +14,11 @@
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/sort.h>
 #include <dolfinx/common/utils.h>
-#include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/partition.h>
-#include <dolfinx/mesh/Mesh.h>
 #include <numeric>
 #include <random>
 #include <unordered_map>
-#include <xtl/xspan.hpp>
 
 using namespace dolfinx;
 using namespace dolfinx::mesh;
@@ -46,20 +44,39 @@ determine_sharing_ranks(MPI_Comm comm,
   std::int64_t max_index = 0;
   if (!unknown_idx.empty())
     max_index = *std::max_element(unknown_idx.begin(), unknown_idx.end());
-  MPI_Allreduce(&max_index, &global_space, 1, MPI_INT64_T, MPI_SUM, comm);
+  MPI_Allreduce(&max_index, &global_space, 1, MPI_INT64_T, MPI_MAX, comm);
   global_space += 1;
 
-  std::vector<std::vector<std::int64_t>> send_indices(mpi_size);
+  std::vector<std::int32_t> send_sizes(mpi_size);
+  std::vector<std::int32_t> send_offsets(mpi_size + 1, 0);
   for (std::int64_t global_i : unknown_idx)
   {
     const int index_owner
         = dolfinx::MPI::index_owner(mpi_size, global_i, global_space);
-    send_indices[index_owner].push_back(global_i);
+    send_sizes[index_owner]++;
   }
+  std::partial_sum(send_sizes.begin(), send_sizes.end(),
+                   std::next(send_offsets.begin()));
+
+  std::vector<std::int64_t> send_indices(send_offsets.back());
+  for (std::int64_t global_i : unknown_idx)
+  {
+    const int index_owner
+        = dolfinx::MPI::index_owner(mpi_size, global_i, global_space);
+    send_indices[send_offsets[index_owner]] = global_i;
+    send_offsets[index_owner]++;
+  }
+  // Reset offsets
+  send_offsets[0] = 0;
+  std::partial_sum(send_sizes.begin(), send_sizes.end(),
+                   std::next(send_offsets.begin()));
+
+  LOG(INFO) << "Sending " << send_indices.size() << " indices";
+  const graph::AdjacencyList<std::int64_t> send_index_adj(
+      std::move(send_indices), std::move(send_offsets));
 
   const graph::AdjacencyList<std::int64_t> recv_indices
-      = dolfinx::MPI::all_to_all(
-          comm, graph::AdjacencyList<std::int64_t>(send_indices));
+      = dolfinx::MPI::all_to_all(comm, send_index_adj);
 
   // Get index sharing - ownership will be first entry (randomised later)
   std::unordered_map<std::int64_t, std::vector<int>> index_to_owner;
@@ -103,7 +120,7 @@ determine_sharing_ranks(MPI_Comm comm,
   index_to_owner.clear();
   for (int p = 0; p < mpi_size; ++p)
   {
-    const std::vector<std::int64_t>& send_v = send_indices[p];
+    xtl::span<const std::int64_t> send_v = send_index_adj.links(p);
     auto r_owner = recv_owner.links(p);
     std::size_t c(0), i(0);
     while (c < r_owner.size())
@@ -178,7 +195,8 @@ compute_vertex_markers(const graph::AdjacencyList<std::int64_t>& cells,
     else
     {
       // This vertex is not shared: set to -2
-      auto [it_ignore, insert] = global_to_local_v.insert({global_index, -2});
+      [[maybe_unused]] auto [it_ignore, insert]
+          = global_to_local_v.insert({global_index, -2});
       assert(insert);
     }
   }
@@ -389,7 +407,7 @@ graph::AdjacencyList<std::int32_t> convert_cells_to_local_indexing(
         global_to_local_vertices)
 {
   std::vector<std::int32_t> local_offsets;
-  if (ghost_mode == mesh::GhostMode::none)
+  if (ghost_mode == GhostMode::none)
   {
     // Discard ghost cells
     local_offsets.assign(
@@ -412,7 +430,7 @@ graph::AdjacencyList<std::int32_t> convert_cells_to_local_indexing(
 } // namespace
 
 //-----------------------------------------------------------------------------
-std::vector<bool> mesh::compute_boundary_facets(const Topology& topology)
+std::vector<std::int8_t> mesh::compute_boundary_facets(const Topology& topology)
 {
   const int tdim = topology.dim();
   auto facets = topology.index_map(tdim - 1);
@@ -430,7 +448,7 @@ std::vector<bool> mesh::compute_boundary_facets(const Topology& topology)
   auto fc = topology.connectivity(tdim - 1, tdim);
   if (!fc)
     throw std::runtime_error("Facet-cell connectivity missing.");
-  std::vector<bool> _boundary_facet(facets->size_local(), false);
+  std::vector<std::int8_t> _boundary_facet(facets->size_local(), false);
   for (std::size_t f = 0; f < _boundary_facet.size(); ++f)
   {
     if (fc->num_links(f) == 1
@@ -444,11 +462,11 @@ std::vector<bool> mesh::compute_boundary_facets(const Topology& topology)
 }
 //-----------------------------------------------------------------------------
 Topology::Topology(MPI_Comm comm, mesh::CellType type)
-    : _mpi_comm(comm), _cell_type(type),
+    : _comm(comm), _cell_type(type),
       _connectivity(
-          mesh::cell_dim(type) + 1,
+          cell_dim(type) + 1,
           std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>>(
-              mesh::cell_dim(type) + 1))
+              cell_dim(type) + 1))
 {
   // Do nothing
 }
@@ -479,7 +497,7 @@ std::int32_t Topology::create_entities(int dim)
 
   // Create local entities
   const auto [cell_entity, entity_vertex, index_map]
-      = mesh::compute_entities(_mpi_comm.comm(), *this, dim);
+      = compute_entities(_comm.comm(), *this, dim);
 
   if (cell_entity)
     set_connectivity(cell_entity, this->dim(), dim);
@@ -501,7 +519,7 @@ void Topology::create_connectivity(int d0, int d1)
   create_entities(d1);
 
   // Compute connectivity
-  const auto [c_d0_d1, c_d1_d0] = mesh::compute_connectivity(*this, d0, d1);
+  const auto [c_d0_d1, c_d1_d0] = compute_connectivity(*this, d0, d1);
 
   // NOTE: that to compute the (d0, d1) connections is it sometimes
   // necessary to compute the (d1, d0) connections. We store the (d1,
@@ -537,7 +555,7 @@ void Topology::create_entity_permutations()
     create_entities(d);
 
   auto [facet_permutations, cell_permutations]
-      = mesh::compute_entity_permutations(*this);
+      = compute_entity_permutations(*this);
   _facet_permutations = std::move(facet_permutations);
   _cell_permutations = std::move(cell_permutations);
 }
@@ -580,7 +598,7 @@ const std::vector<std::uint8_t>& Topology::get_facet_permutations() const
 //-----------------------------------------------------------------------------
 mesh::CellType Topology::cell_type() const noexcept { return _cell_type; }
 //-----------------------------------------------------------------------------
-MPI_Comm Topology::mpi_comm() const { return _mpi_comm.comm(); }
+MPI_Comm Topology::comm() const { return _comm.comm(); }
 //-----------------------------------------------------------------------------
 Topology
 mesh::create_topology(MPI_Comm comm,
@@ -591,18 +609,18 @@ mesh::create_topology(MPI_Comm comm,
 {
   LOG(INFO) << "Create topology";
   if (cells.num_nodes() > 0
-      and cells.num_links(0) != mesh::num_cell_vertices(cell_type))
+      and cells.num_links(0) != num_cell_vertices(cell_type))
   {
     throw std::runtime_error(
         "Inconsistent number of cell vertices. Got "
         + std::to_string(cells.num_links(0)) + ", expected "
-        + std::to_string(mesh::num_cell_vertices(cell_type)) + ".");
+        + std::to_string(num_cell_vertices(cell_type)) + ".");
   }
 
   // Create index map for cells
   const std::int32_t num_local_cells = cells.num_nodes() - ghost_owners.size();
   std::shared_ptr<common::IndexMap> index_map_c;
-  if (ghost_mode == mesh::GhostMode::none)
+  if (ghost_mode == GhostMode::none)
     index_map_c = std::make_shared<common::IndexMap>(comm, num_local_cells);
   else
   {
@@ -702,7 +720,7 @@ mesh::create_topology(MPI_Comm comm,
     ghost_vertex_owners.push_back(recv_triplets[i + 2]);
   }
 
-  if (ghost_mode != mesh::GhostMode::none)
+  if (ghost_mode != GhostMode::none)
   {
     // Send and receive global (from the ghost cell owner) indices for
     // ghost vertices that are not on the process boundary

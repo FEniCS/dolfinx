@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include "cell_types.h"
 #include <array>
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
@@ -17,11 +16,6 @@
 namespace dolfinx::common
 {
 class IndexMap;
-}
-
-namespace dolfinx::fem
-{
-class ElementDofLayout;
 }
 
 namespace dolfinx::graph
@@ -44,7 +38,7 @@ class Topology;
 /// @return Vector with length equal to the number of owned facets on
 ///   this this process. True if the ith facet (local index) is on the
 ///   exterior of the domain.
-std::vector<bool> compute_boundary_facets(const Topology& topology);
+std::vector<std::int8_t> compute_boundary_facets(const Topology& topology);
 
 /// Topology stores the topology of a mesh, consisting of mesh entities
 /// and connectivity (incidence relations for the mesh entities).
@@ -56,7 +50,7 @@ class Topology
 {
 public:
   /// Create empty mesh topology
-  Topology(MPI_Comm comm, mesh::CellType type);
+  Topology(MPI_Comm comm, CellType type);
 
   /// Copy constructor
   Topology(const Topology& topology) = default;
@@ -123,7 +117,7 @@ public:
 
   /// Cell type
   /// @return Cell type that the topology is for
-  mesh::CellType cell_type() const noexcept;
+  CellType cell_type() const noexcept;
 
   // TODO: Rework memory management and associated API
   // Currently, there is no clear caching policy implemented and no way of
@@ -145,14 +139,14 @@ public:
 
   /// Mesh MPI communicator
   /// @return The communicator on which the topology is distributed
-  MPI_Comm mpi_comm() const;
+  MPI_Comm comm() const;
 
 private:
   // MPI communicator
-  dolfinx::MPI::Comm _mpi_comm;
+  dolfinx::MPI::Comm _comm;
 
   // Cell type
-  mesh::CellType _cell_type;
+  CellType _cell_type;
 
   // Parallel layout of entities for each dimension
   std::array<std::shared_ptr<const common::IndexMap>, 4> _index_map;
@@ -192,5 +186,5 @@ Topology
 create_topology(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
                 const xtl::span<const std::int64_t>& original_cell_index,
                 const xtl::span<const int>& ghost_owners,
-                const CellType& cell_type, mesh::GhostMode ghost_mode);
+                const CellType& cell_type, GhostMode ghost_mode);
 } // namespace dolfinx::mesh

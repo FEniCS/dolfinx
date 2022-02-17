@@ -6,11 +6,10 @@
 
 #include "utils.h"
 #include "Geometry.h"
-#include "MeshTags.h"
+#include "Mesh.h"
 #include "cell_types.h"
 #include "graphbuild.h"
 #include <algorithm>
-#include <cfloat>
 #include <cstdlib>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/log.h>
@@ -64,18 +63,19 @@ std::vector<double> mesh::h(const Mesh& mesh,
   if (dim != mesh.topology().dim())
     throw std::runtime_error("Cell size when dim ne tdim  requires updating.");
 
-  if (mesh.topology().cell_type() == mesh::CellType::prism and dim == 2)
+  if (mesh.topology().cell_type() == CellType::prism and dim == 2)
     throw std::runtime_error("More work needed for prism cell");
 
   // Get number of cell vertices
-  const mesh::CellType type
-      = cell_entity_type(mesh.topology().cell_type(), dim, 0);
+  const CellType type = cell_entity_type(mesh.topology().cell_type(), dim, 0);
   const int num_vertices = num_cell_vertices(type);
 
   // Get geometry dofmap and dofs
-  const mesh::Geometry& geometry = mesh.geometry();
+  const Geometry& geometry = mesh.geometry();
   const graph::AdjacencyList<std::int32_t>& x_dofs = geometry.dofmap();
-  const xt::xtensor<double, 2>& geom_dofs = geometry.x();
+  auto geom_dofs
+      = xt::adapt(geometry.x().data(), geometry.x().size(), xt::no_ownership(),
+                  std::vector({geometry.x().size() / 3, std::size_t(3)}));
   std::vector<double> h_cells(entities.size(), 0);
   assert(num_vertices <= 8);
   xt::xtensor_fixed<double, xt::xshape<8, 3>> points;
@@ -109,19 +109,21 @@ xt::xtensor<double, 2>
 mesh::cell_normals(const mesh::Mesh& mesh, int dim,
                    const xtl::span<const std::int32_t>& entities)
 {
-  if (mesh.topology().cell_type() == mesh::CellType::prism and dim == 2)
+  if (mesh.topology().cell_type() == CellType::prism and dim == 2)
     throw std::runtime_error("More work needed for prism cell");
 
   const int gdim = mesh.geometry().dim();
-  const mesh::CellType type
-      = mesh::cell_entity_type(mesh.topology().cell_type(), dim, 0);
+  const CellType type = cell_entity_type(mesh.topology().cell_type(), dim, 0);
 
   // Find geometry nodes for topology entities
-  const xt::xtensor<double, 2>& xg = mesh.geometry().x();
+  auto xg = xt::adapt(
+      mesh.geometry().x().data(), mesh.geometry().x().size(),
+      xt::no_ownership(),
+      std::vector({mesh.geometry().x().size() / 3, std::size_t(3)}));
 
   // Orient cells if they are tetrahedron
   bool orient = false;
-  if (mesh.topology().cell_type() == mesh::CellType::tetrahedron)
+  if (mesh.topology().cell_type() == CellType::tetrahedron)
     orient = true;
   xt::xtensor<std::int32_t, 2> geometry_entities
       = entities_to_geometry(mesh, dim, entities, orient);
@@ -130,7 +132,7 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
   xt::xtensor<double, 2> n({num_entities, 3});
   switch (type)
   {
-  case mesh::CellType::interval:
+  case CellType::interval:
   {
     if (gdim > 2)
       throw std::invalid_argument("Interval cell normal undefined in 3D");
@@ -151,7 +153,7 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
     }
     return n;
   }
-  case mesh::CellType::triangle:
+  case CellType::triangle:
   {
     for (std::size_t i = 0; i < num_entities; ++i)
     {
@@ -168,7 +170,7 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
     }
     return n;
   }
-  case mesh::CellType::quadrilateral:
+  case CellType::quadrilateral:
   {
     // TODO: check
     for (std::size_t i = 0; i < num_entities; ++i)
@@ -193,10 +195,13 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
 }
 //-----------------------------------------------------------------------------
 xt::xtensor<double, 2>
-mesh::midpoints(const mesh::Mesh& mesh, int dim,
-                const xtl::span<const std::int32_t>& entities)
+mesh::compute_midpoints(const Mesh& mesh, int dim,
+                        const xtl::span<const std::int32_t>& entities)
 {
-  const xt::xtensor<double, 2>& x = mesh.geometry().x();
+  auto x = xt::adapt(
+      mesh.geometry().x().data(), mesh.geometry().x().size(),
+      xt::no_ownership(),
+      std::vector({mesh.geometry().x().size() / 3, std::size_t(3)}));
 
   // Build map from entity -> geometry dof
   // FIXME: This assumes a linear geometry.
@@ -217,11 +222,11 @@ mesh::midpoints(const mesh::Mesh& mesh, int dim,
 }
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t> mesh::locate_entities(
-    const mesh::Mesh& mesh, int dim,
+    const Mesh& mesh, int dim,
     const std::function<xt::xtensor<bool, 1>(const xt::xtensor<double, 2>&)>&
         marker)
 {
-  const mesh::Topology& topology = mesh.topology();
+  const Topology& topology = mesh.topology();
   const int tdim = topology.dim();
 
   // Create entities and connectivities
@@ -246,11 +251,14 @@ std::vector<std::int32_t> mesh::locate_entities(
   }
 
   // Pack coordinates of vertices
-  const xt::xtensor<double, 2>& x_nodes = mesh.geometry().x();
+  xtl::span<const double> x_nodes = mesh.geometry().x();
   xt::xtensor<double, 2> x_vertices({3, vertex_to_node.size()});
   for (std::size_t i = 0; i < vertex_to_node.size(); ++i)
+  {
+    const int pos = 3 * vertex_to_node[i];
     for (std::size_t j = 0; j < 3; ++j)
-      x_vertices(j, i) = x_nodes(vertex_to_node[i], j);
+      x_vertices(j, i) = x_nodes[pos + j];
+  }
 
   // Run marker function on vertex coordinates
   const xt::xtensor<bool, 1> marked = marker(x_vertices);
@@ -282,11 +290,11 @@ std::vector<std::int32_t> mesh::locate_entities(
 }
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t> mesh::locate_entities_boundary(
-    const mesh::Mesh& mesh, int dim,
+    const Mesh& mesh, int dim,
     const std::function<xt::xtensor<bool, 1>(const xt::xtensor<double, 2>&)>&
         marker)
 {
-  const mesh::Topology& topology = mesh.topology();
+  const Topology& topology = mesh.topology();
   const int tdim = topology.dim();
   if (dim == tdim)
   {
@@ -297,7 +305,7 @@ std::vector<std::int32_t> mesh::locate_entities_boundary(
   // Compute marker for boundary facets
   mesh.topology_mutable().create_entities(tdim - 1);
   mesh.topology_mutable().create_connectivity(tdim - 1, tdim);
-  const std::vector boundary_facet = mesh::compute_boundary_facets(topology);
+  const std::vector boundary_facet = compute_boundary_facets(topology);
 
   // Create entities and connectivities
   mesh.topology_mutable().create_entities(dim);
@@ -327,7 +335,7 @@ std::vector<std::int32_t> mesh::locate_entities_boundary(
 
   // Get geometry data
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
-  const xt::xtensor<double, 2>& x_nodes = mesh.geometry().x();
+  xtl::span<const double> x_nodes = mesh.geometry().x();
 
   // Build vector of boundary vertices
   const std::vector<std::int32_t> vertices(boundary_vertices.begin(),
@@ -353,7 +361,7 @@ std::vector<std::int32_t> mesh::locate_entities_boundary(
 
     auto dofs = x_dofmap.links(c);
     for (int j = 0; j < 3; ++j)
-      x_vertices(j, i) = x_nodes(dofs[local_pos], j);
+      x_vertices(j, i) = x_nodes[3 * dofs[local_pos] + j];
 
     vertex_to_pos[v] = i;
   }
@@ -392,29 +400,27 @@ std::vector<std::int32_t> mesh::locate_entities_boundary(
 }
 //-----------------------------------------------------------------------------
 xt::xtensor<std::int32_t, 2>
-mesh::entities_to_geometry(const mesh::Mesh& mesh, int dim,
+mesh::entities_to_geometry(const Mesh& mesh, int dim,
                            const xtl::span<const std::int32_t>& entity_list,
                            bool orient)
 {
-  mesh::CellType cell_type = mesh.topology().cell_type();
-
-  if (cell_type == mesh::CellType::prism and dim == 2)
+  CellType cell_type = mesh.topology().cell_type();
+  if (cell_type == CellType::prism and dim == 2)
     throw std::runtime_error("More work needed for prism cells");
 
   const std::size_t num_entity_vertices
-      = mesh::num_cell_vertices(mesh::cell_entity_type(cell_type, dim, 0));
+      = num_cell_vertices(cell_entity_type(cell_type, dim, 0));
   xt::xtensor<std::int32_t, 2> entity_geometry(
       {entity_list.size(), num_entity_vertices});
 
-  if (orient
-      and (cell_type != dolfinx::mesh::CellType::tetrahedron or dim != 2))
-  {
+  if (orient and (cell_type != CellType::tetrahedron or dim != 2))
     throw std::runtime_error("Can only orient facets of a tetrahedral mesh");
-  }
 
-  const mesh::Geometry& geometry = mesh.geometry();
-  const xt::xtensor<double, 2>& geom_dofs = geometry.x();
-  const mesh::Topology& topology = mesh.topology();
+  const Geometry& geometry = mesh.geometry();
+  auto geom_dofs
+      = xt::adapt(geometry.x().data(), geometry.x().size(), xt::no_ownership(),
+                  std::vector({geometry.x().size() / 3, std::size_t(3)}));
+  const Topology& topology = mesh.topology();
 
   const int tdim = topology.dim();
   mesh.topology_mutable().create_entities(dim);
@@ -477,7 +483,7 @@ std::vector<std::int32_t> mesh::exterior_facet_indices(const Mesh& mesh)
 {
   // Note: Possible duplication of mesh::Topology::compute_boundary_facets
 
-  const mesh::Topology& topology = mesh.topology();
+  const Topology& topology = mesh.topology();
   std::vector<std::int32_t> surface_facets;
 
   // Get number of facets owned by this process
@@ -510,31 +516,65 @@ std::vector<std::int32_t> mesh::exterior_facet_indices(const Mesh& mesh)
   return surface_facets;
 }
 //------------------------------------------------------------------------------
-graph::AdjacencyList<std::int32_t>
-mesh::partition_cells_graph(MPI_Comm comm, int n, int tdim,
-                            const graph::AdjacencyList<std::int64_t>& cells,
-                            mesh::GhostMode ghost_mode)
+mesh::CellPartitionFunction
+mesh::create_cell_partitioner(const graph::partition_fn& partfn)
 {
-  return partition_cells_graph(comm, n, tdim, cells, ghost_mode,
-                               &graph::partition_graph);
+  return
+      [partfn](
+          MPI_Comm comm, int nparts, int tdim,
+          const graph::AdjacencyList<std::int64_t>& cells,
+          GhostMode ghost_mode) -> dolfinx::graph::AdjacencyList<std::int32_t>
+  {
+    LOG(INFO) << "Compute partition of cells across ranks";
+
+    // Compute distributed dual graph (for the cells on this process)
+    const auto [dual_graph, num_ghost_edges]
+        = build_dual_graph(comm, cells, tdim);
+
+    // Just flag any kind of ghosting for now
+    bool ghosting = (ghost_mode != GhostMode::none);
+
+    // Compute partition
+    return partfn(comm, nparts, dual_graph, num_ghost_edges, ghosting);
+  };
 }
 //-----------------------------------------------------------------------------
-graph::AdjacencyList<std::int32_t>
-mesh::partition_cells_graph(MPI_Comm comm, int n, int tdim,
-                            const graph::AdjacencyList<std::int64_t>& cells,
-                            mesh::GhostMode ghost_mode,
-                            const graph::partition_fn& partfn)
+std::vector<std::int32_t>
+mesh::compute_incident_entities(const Mesh& mesh,
+                                const xtl::span<const std::int32_t>& entities,
+                                int d0, int d1)
 {
-  LOG(INFO) << "Compute partition of cells across ranks";
+  auto map0 = mesh.topology().index_map(d0);
+  if (!map0)
+  {
+    throw std::runtime_error("Mesh entities of dimension " + std::to_string(d0)
+                             + " have not been created.");
+  }
 
-  // Compute distributed dual graph (for the cells on this process)
-  const auto [dual_graph, num_ghost_edges]
-      = mesh::build_dual_graph(comm, cells, tdim);
+  auto map1 = mesh.topology().index_map(d1);
+  if (!map1)
+  {
+    throw std::runtime_error("Mesh entities of dimension " + std::to_string(d1)
+                             + " have not been created.");
+  }
 
-  // Just flag any kind of ghosting for now
-  bool ghosting = (ghost_mode != mesh::GhostMode::none);
+  auto e0_to_e1 = mesh.topology().connectivity(d0, d1);
+  if (!e0_to_e1)
+  {
+    throw std::runtime_error("Connectivity missing: (" + std::to_string(d0)
+                             + ", " + std::to_string(d1) + ")");
+  }
 
-  // Compute partition
-  return partfn(comm, n, dual_graph, num_ghost_edges, ghosting);
+  std::vector<std::int32_t> entities1;
+  for (std::int32_t entity : entities)
+  {
+    auto e = e0_to_e1->links(entity);
+    entities1.insert(entities1.end(), e.begin(), e.end());
+  }
+
+  std::sort(entities1.begin(), entities1.end());
+  entities1.erase(std::unique(entities1.begin(), entities1.end()),
+                  entities1.end());
+  return entities1;
 }
 //-----------------------------------------------------------------------------

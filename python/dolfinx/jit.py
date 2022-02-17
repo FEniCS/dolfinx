@@ -3,7 +3,7 @@
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Just-in-time (JIT) compilation using FFCx."""
+"""Just-in-time (JIT) compilation using FFCx"""
 
 import functools
 import json
@@ -14,14 +14,16 @@ from typing import Optional
 import ffcx
 import ffcx.codegeneration.jit
 import ufl
-from mpi4py import MPI
 
+from mpi4py import MPI
 
 __all__ = ["ffcx_jit", "get_parameters"]
 
 DOLFINX_DEFAULT_JIT_PARAMETERS = {
     "cache_dir":
-        (Path.joinpath(Path.home(), ".cache", "fenics"), "Path for storing DOLFINx JIT cache"),
+        (os.getenv("XDG_CACHE_HOME", default=Path.home().joinpath(".cache")) / Path("fenics"),
+         "Path for storing DOLFINx JIT cache. "
+         "Default prefix ~/.cache/ can be changed using XDG_CACHE_HOME environment variable."),
     "cffi_debug":
         (False, "CFFI debug mode"),
     "cffi_extra_compile_args":
@@ -72,9 +74,9 @@ def mpi_jit_decorator(local_jit, *args, **kwargs):
         # a sketch in dijitso of how to make only one process per
         # physical cache directory do the compilation.
 
-        # Wait for the compiling process to finish and get status TODO:
-        # Would be better to broadcast the status from root but this
-        # works.
+        # Wait for the compiling process to finish and get status
+        # TODO: Would be better to broadcast the status from root but
+        # this works.
         global_status = comm.allreduce(status, op=MPI.MAX)
         if global_status == 0:
             # Success, call jit on all other processes (this should just
@@ -87,6 +89,7 @@ def mpi_jit_decorator(local_jit, *args, **kwargs):
             if not root:
                 error_msg = "Compilation failed on root node."
             raise RuntimeError("Failed just-in-time compilation of form: {}".format(error_msg))
+
         return output
 
     # Return the decorated jit function
@@ -96,14 +99,15 @@ def mpi_jit_decorator(local_jit, *args, **kwargs):
 @functools.lru_cache(maxsize=None)
 def _load_parameters():
     """Loads parameters from JSON files."""
-    user_config_file = os.path.join(Path.home(), ".config", "dolfinx", "dolfinx_jit_parameters.json")
+    user_config_file = os.getenv("XDG_CONFIG_HOME", default=Path.home().joinpath(".config")) \
+        / Path("dolfinx", "dolfinx_jit_parameters.json")
     try:
         with open(user_config_file) as f:
             user_parameters = json.load(f)
     except FileNotFoundError:
         user_parameters = {}
 
-    pwd_config_file = os.path.join(os.getcwd(), "dolfinx_jit_parameters.json")
+    pwd_config_file = Path.cwd().joinpath("dolfinx_jit_parameters.json")
     try:
         with open(pwd_config_file) as f:
             pwd_parameters = json.load(f)
@@ -114,7 +118,7 @@ def _load_parameters():
 
 
 def get_parameters(priority_parameters: Optional[dict] = None) -> dict:
-    """Return (a copy of) the merged JIT parameter values for DOLFINx.
+    """Return a copy of the merged JIT parameter values for DOLFINx.
 
     Parameters
     ----------
@@ -128,6 +132,7 @@ def get_parameters(priority_parameters: Optional[dict] = None) -> dict:
     Notes
     -----
     See ffcx_jit for user facing documentation.
+
     """
     parameters = {}
 
@@ -172,28 +177,31 @@ def ffcx_jit(ufl_object, form_compiler_parameters={}, jit_parameters={}):
 
     Notes
     -----
-      Priority ordering of parameters controlling DOLFINx JIT \
+      Priority ordering of parameters controlling DOLFINx JIT
       compilation from highest to lowest is:
 
       -  **jit_parameters** (API)
-      -  **$(pwd)/dolfinx_jit_parameters.json** (local parameters)
-      -  **~/.config/dolfinx/dolfinx_jit_parameters.json** (user parameters)
+      -  **$PWD/dolfinx_jit_parameters.json** (local parameters)
+      -  **$XDG_CONFIG_HOME/dolfinx/dolfinx_jit_parameters.json** (user parameters)
       -  **DOLFINX_DEFAULT_JIT_PARAMETERS** in `dolfinx.jit`
 
-      Priority ordering of parameters controlling FFCx from highest to \
+      Priority ordering of parameters controlling FFCx from highest to
       lowest is:
 
       -  **form_compiler_parameters** (API)
-      -  **$(pwd)/ffcx_parameters.json** (local parameters)
-      -  **~/.config/ffcx/ffcx_parameters.json** (user parameters)
+      -  **$PWD/ffcx_parameters.json** (local parameters)
+      -  **$XDG_CONFIG_HOME/ffcx/ffcx_parameters.json** (user parameters)
       -  **FFCX_DEFAULT_PARAMETERS** in `ffcx.parameters`
 
-      The contents of the `dolfinx_parameters.json` files are cached \
-      on the first call. Subsequent calls to this function use this cache.
+      `$XDG_CONFIG_HOME` is `~/.config/` if the environment variable is not set.
+
+      The contents of the `dolfinx_parameters.json` files are cached on
+      the first call. Subsequent calls to this function use this cache.
 
       Example `dolfinx_jit_parameters.json` file:
 
           **{ "cffi_extra_compile_args": ["-O2", "-march=native" ],  "cffi_verbose": True }**
+
     """
     # Prepare form compiler parameters with priority parameters
     p_ffcx = ffcx.get_parameters(form_compiler_parameters)

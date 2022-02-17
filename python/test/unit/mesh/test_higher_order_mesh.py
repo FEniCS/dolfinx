@@ -10,15 +10,15 @@ import random
 
 import numpy as np
 import pytest
+
 import ufl
 from dolfinx.cpp.io import perm_gmsh, perm_vtk
-from dolfinx.cpp.mesh import CellType
-from dolfinx.fem import assemble_scalar
+from dolfinx.fem import assemble_scalar, form
 from dolfinx.io import XDMFFile, ufl_mesh_from_gmsh
-from dolfinx.mesh import create_mesh
-from dolfinx_utils.test.skips import skip_in_parallel
-from mpi4py import MPI
+from dolfinx.mesh import CellType, create_mesh
 from ufl import dx
+
+from mpi4py import MPI
 
 
 def check_cell_volume(points, cell, domain, volume):
@@ -35,12 +35,12 @@ def check_cell_volume(points, cell, domain, volume):
         ordered_cell = [point_order[i] for i in cell]
 
         mesh = create_mesh(MPI.COMM_WORLD, [ordered_cell], ordered_points, domain)
-        area = assemble_scalar(1 * dx(mesh))
+        area = assemble_scalar(form(1 * dx(mesh)))
 
         assert np.isclose(area, volume)
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 @pytest.mark.parametrize('order', range(1, 5))
 def test_triangle_mesh(order):
     points = []
@@ -72,7 +72,7 @@ def test_triangle_mesh(order):
     check_cell_volume(points, cell, domain, 0.5)
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 @pytest.mark.parametrize('order', range(1, 5))
 def test_tetrahedron_mesh(order):
     points = []
@@ -131,7 +131,7 @@ def test_tetrahedron_mesh(order):
     check_cell_volume(points, cell, domain, 1 / 6)
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 @pytest.mark.parametrize('order', [1, 2, 3, 4])
 def test_quadrilateral_mesh(order):
     random.seed(13)
@@ -168,7 +168,7 @@ def test_quadrilateral_mesh(order):
     check_cell_volume(points, cell, domain, 1)
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 @pytest.mark.parametrize('order', [1, 2, 3, 4])
 def test_hexahedron_mesh(order):
     random.seed(13)
@@ -246,7 +246,7 @@ def test_hexahedron_mesh(order):
     check_cell_volume(points, cell, domain, 1)
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 @pytest.mark.parametrize('order', range(1, 5))
 def test_triangle_mesh_vtk(order):
     points = []
@@ -286,7 +286,7 @@ def test_triangle_mesh_vtk(order):
     check_cell_volume(points, cell, domain, 0.5)
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 @pytest.mark.parametrize('order', range(1, 5))
 def test_tetrahedron_mesh_vtk(order):
     if order > 3:
@@ -381,7 +381,7 @@ def test_tetrahedron_mesh_vtk(order):
     check_cell_volume(points, cell, domain, 1 / 6)
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 @pytest.mark.parametrize('order', [1, 2, 3, 4])
 def test_quadrilateral_mesh_vtk(order):
     random.seed(13)
@@ -421,7 +421,7 @@ def test_quadrilateral_mesh_vtk(order):
     check_cell_volume(points, cell, domain, 1)
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 @pytest.mark.parametrize('order', [1, 2, 3, 4])
 def test_hexahedron_mesh_vtk(order):
     if order > 2:
@@ -508,7 +508,7 @@ def test_hexahedron_mesh_vtk(order):
     check_cell_volume(points, cell, domain, 1)
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("vtk,dolfin,cell_type", [
     ([0, 1, 2, 3, 4, 5], [0, 1, 2, 4, 5, 3], CellType.triangle),
     ([0, 1, 2, 3], [0, 1, 3, 2], CellType.quadrilateral),
@@ -524,15 +524,15 @@ def test_map_vtk_to_dolfin(vtk, dolfin, cell_type):
     assert (cell_p == vtk).all()
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 def test_xdmf_input_tri(datadir):
     with XDMFFile(MPI.COMM_WORLD, os.path.join(datadir, "mesh.xdmf"), "r", encoding=XDMFFile.Encoding.ASCII) as xdmf:
         mesh = xdmf.read_mesh(name="Grid")
-    surface = assemble_scalar(1 * dx(mesh))
-    assert mesh.mpi_comm().allreduce(surface, op=MPI.SUM) == pytest.approx(4 * np.pi, rel=1e-4)
+    surface = assemble_scalar(form(1 * dx(mesh)))
+    assert mesh.comm.allreduce(surface, op=MPI.SUM) == pytest.approx(4 * np.pi, rel=1e-4)
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 @pytest.mark.parametrize('order', range(1, 4))
 @pytest.mark.parametrize('cell_type', [CellType.triangle, CellType.quadrilateral])
 def test_gmsh_input_2d(order, cell_type):
@@ -575,16 +575,16 @@ def test_gmsh_input_2d(order, cell_type):
 
     cells = cells[:, perm_gmsh(cell_type, cells.shape[1])]
     mesh = create_mesh(MPI.COMM_WORLD, cells, x, ufl_mesh_from_gmsh(gmsh_cell_id, x.shape[1]))
-    surface = assemble_scalar(1 * dx(mesh))
+    surface = assemble_scalar(form(1 * dx(mesh)))
 
-    assert mesh.mpi_comm().allreduce(surface, op=MPI.SUM) == pytest.approx(4 * np.pi, rel=10 ** (-1 - order))
+    assert mesh.comm.allreduce(surface, op=MPI.SUM) == pytest.approx(4 * np.pi, rel=10 ** (-1 - order))
 
     # Bug related to VTK output writing
     # def e2(x):
     #     values = np.empty((x.shape[0], 1))
     #     values[:, 0] = x[:, 0]
     #     return values
-    # cmap = fem.create_coordinate_map(mesh.mpi_comm(), mesh.ufl_domain())
+    # cmap = fem.create_coordinate_map(mesh.comm, mesh.ufl_domain())
     # mesh.geometry.coord_mapping = cmap
     # V = FunctionSpace(mesh, ("Lagrange", order))
     # u = Function(V)
@@ -595,7 +595,7 @@ def test_gmsh_input_2d(order, cell_type):
     # print(assemble_scalar(u*dx(mesh)))
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 @pytest.mark.parametrize('order', range(1, 4))
 @pytest.mark.parametrize('cell_type', [CellType.tetrahedron, CellType.hexahedron])
 def test_gmsh_input_3d(order, cell_type):
@@ -650,12 +650,12 @@ def test_gmsh_input_3d(order, cell_type):
 
     mesh = create_mesh(MPI.COMM_WORLD, cells, x, domain)
 
-    volume = assemble_scalar(1 * dx(mesh))
+    volume = assemble_scalar(form(1 * dx(mesh)))
 
-    assert mesh.mpi_comm().allreduce(volume, op=MPI.SUM) == pytest.approx(np.pi, rel=10 ** (-1 - order))
+    assert mesh.comm.allreduce(volume, op=MPI.SUM) == pytest.approx(np.pi, rel=10 ** (-1 - order))
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 def test_quadrilateral_cell_order_3():
     points = [
         [0., 0.], [1., 0.], [0., 1.], [1., 1.],

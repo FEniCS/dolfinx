@@ -10,7 +10,7 @@
 //-------------------------------------------------------------------------
 std::string dolfinx::version() { return std::string(DOLFINX_VERSION); }
 //-------------------------------------------------------------------------
-std::string dolfinx::ufc_signature() { return std::string(UFC_SIGNATURE); }
+std::string dolfinx::ufcx_signature() { return std::string(UFCX_SIGNATURE); }
 //-------------------------------------------------------------------------
 std::string dolfinx::git_commit_hash()
 {
@@ -19,7 +19,7 @@ std::string dolfinx::git_commit_hash()
 //-------------------------------------------------------------------------
 bool dolfinx::has_debug()
 {
-#ifdef DEBUG
+#ifndef NDEBUG
   return true;
 #else
   return false;

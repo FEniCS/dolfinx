@@ -8,11 +8,12 @@
 #include "BoundingBoxTree.h"
 #include "utils.h"
 #include <dolfinx/common/IndexMap.h>
-#include <dolfinx/common/MPI.h>
 #include <dolfinx/common/log.h>
+#include <dolfinx/common/utils.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/utils.h>
+#include <xtensor/xview.hpp>
 
 using namespace dolfinx;
 using namespace dolfinx::geometry;
@@ -39,7 +40,7 @@ compute_bbox_of_entity(const mesh::Mesh& mesh, int dim, std::int32_t index)
 {
   // Get the geometrical indices for the mesh entity
   const int tdim = mesh.topology().dim();
-  const xt::xtensor<double, 2>& xg = mesh.geometry().x();
+  xtl::span<const double> xg = mesh.geometry().x();
 
   mesh.topology_mutable().create_connectivity(dim, tdim);
 
@@ -50,8 +51,8 @@ compute_bbox_of_entity(const mesh::Mesh& mesh, int dim, std::int32_t index)
   auto entity_vertices = xt::row(vertex_indices, 0);
 
   std::array<std::array<double, 3>, 2> b;
-  b[0] = {xg(entity_vertices[0], 0), xg(entity_vertices[0], 1),
-          xg(entity_vertices[0], 2)};
+  b[0] = {xg[3 * entity_vertices[0]], xg[3 * entity_vertices[0] + 1],
+          xg[3 * entity_vertices[0] + 2]};
   b[1] = b[0];
 
   // Compute min and max over vertices
@@ -59,8 +60,8 @@ compute_bbox_of_entity(const mesh::Mesh& mesh, int dim, std::int32_t index)
   {
     for (int j = 0; j < 3; ++j)
     {
-      b[0][j] = std::min(b[0][j], xg(local_vertex, j));
-      b[1][j] = std::max(b[1][j], xg(local_vertex, j));
+      b[0][j] = std::min(b[0][j], xg[3 * local_vertex + j]);
+      b[1][j] = std::max(b[1][j], xg[3 * local_vertex + j]);
     }
   }
 
@@ -128,7 +129,8 @@ int _build_from_leaf(
     auto middle = std::next(leaf_bboxes.begin(), leaf_bboxes.size() / 2);
 
     std::nth_element(leaf_bboxes.begin(), middle, leaf_bboxes.end(),
-                     [axis](const auto& p0, const auto& p1) -> bool {
+                     [axis](const auto& p0, const auto& p1) -> bool
+                     {
                        const double x0 = p0.first[0][axis] + p0.first[1][axis];
                        const double x1 = p1.first[0][axis] + p1.first[1][axis];
                        return x0 < x1;
@@ -201,9 +203,8 @@ int _build_from_point(
   std::nth_element(
       points.begin(), middle, points.end(),
       [axis](const std::pair<std::array<double, 3>, std::int32_t>& p0,
-             const std::pair<std::array<double, 3>, std::int32_t>& p1) -> bool {
-        return p0.first[axis] < p1.first[axis];
-      });
+             const std::pair<std::array<double, 3>, std::int32_t>& p1) -> bool
+      { return p0.first[axis] < p1.first[axis]; });
 
   // Split bounding boxes into two groups and call recursively
   std::array bbox{_build_from_point(xtl::span(points.begin(), middle), bboxes,
@@ -312,10 +313,10 @@ BoundingBoxTree BoundingBoxTree::create_global_tree(const MPI_Comm& comm) const
       _recv_bbox(mpi_size);
   for (std::size_t i = 0; i < _recv_bbox.size(); ++i)
   {
-    std::copy_n(std::next(recv_bbox.begin(), 6 * i), 3,
-                _recv_bbox[i].first[0].begin());
-    std::copy_n(std::next(recv_bbox.begin(), 6 * i + 3), 3,
-                _recv_bbox[i].first[1].begin());
+    common::impl::copy_N<3>(std::next(recv_bbox.begin(), 6 * i),
+                            _recv_bbox[i].first[0].begin());
+    common::impl::copy_N<3>(std::next(recv_bbox.begin(), 6 * i + 3),
+                            _recv_bbox[i].first[1].begin());
     _recv_bbox[i].second = i;
   }
 
@@ -365,13 +366,14 @@ void BoundingBoxTree::tree_print(std::stringstream& s, int i) const
   }
 }
 //-----------------------------------------------------------------------------
-std::array<std::array<double, 3>, 2>
+xt::xtensor_fixed<double, xt::xshape<2, 3>>
 BoundingBoxTree::get_bbox(std::size_t node) const
 {
-  std::array<std::array<double, 3>, 2> x;
-  std::copy_n(std::next(_bbox_coordinates.begin(), 6 * node), 3, x[0].begin());
-  std::copy_n(std::next(_bbox_coordinates.begin(), 6 * node + 3), 3,
-              x[1].begin());
+  xt::xtensor_fixed<double, xt::xshape<2, 3>> x;
+  common::impl::copy_N<3>(std::next(_bbox_coordinates.begin(), 6 * node),
+                          x.begin());
+  common::impl::copy_N<3>(std::next(_bbox_coordinates.begin(), 6 * node + 3),
+                          std::next(x.begin(), 3));
   return x;
 }
 //-----------------------------------------------------------------------------

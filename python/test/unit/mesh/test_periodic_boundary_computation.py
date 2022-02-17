@@ -6,9 +6,8 @@
 
 # import numpy as np
 
-# from dolfinx import UnitSquareMesh
+# from dolfinx import create_unit_square
 # from dolfinx.cpp.mesh import PeriodicBoundaryComputation
-# from dolfinx_utils.test.skips import skip_in_parallel
 
 
 # def periodic_boundary(x):
@@ -17,10 +16,10 @@
 
 # @pytest.fixture
 # def mesh():
-#     return UnitSquareMesh(MPI.COMM_WORLD, 4, 4)
+#     return create_unit_square(MPI.COMM_WORLD, 4, 4)
 
 
-# @skip_in_parallel
+# @pytest.mark.skip_in_parallel
 # def test_ComputePeriodicPairs(mesh):
 #     # Verify that correct number of periodic pairs are computed
 #     vertices = PeriodicBoundaryComputation.compute_periodic_pairs(
@@ -31,7 +30,7 @@
 #     assert len(edges) == 4
 
 
-# @skip_in_parallel
+# @pytest.mark.skip_in_parallel
 # def test_MastersSlaves(mesh):
 #     # Verify that correct number of masters and slaves are marked
 #     mf = PeriodicBoundaryComputation.masters_slaves(mesh, periodic_boundary, 0, np.finfo(float).eps)

@@ -6,11 +6,10 @@
 
 #pragma once
 
-#include "cell_types.h"
 #include <array>
 #include <cstdint>
-#include <dolfinx/common/MPI.h>
 #include <memory>
+#include <mpi.h>
 #include <tuple>
 
 namespace dolfinx::common

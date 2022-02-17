@@ -35,7 +35,7 @@ void common(py::module& m)
   m.attr("has_parmetis") = dolfinx::has_parmetis();
   m.attr("has_kahip") = dolfinx::has_kahip();
   m.attr("has_slepc") = dolfinx::has_slepc();
-  m.def("has_adios2", &dolfinx::has_adios2);
+  m.attr("has_adios2") = dolfinx::has_adios2();
 
 #ifdef HAS_PYBIND11_SLEPC4PY
   m.attr("has_slepc4py") = true;
@@ -48,6 +48,11 @@ void common(py::module& m)
   py::enum_<dolfinx::common::IndexMap::Mode>(m, "ScatterMode")
       .value("add", dolfinx::common::IndexMap::Mode::add)
       .value("insert", dolfinx::common::IndexMap::Mode::insert);
+
+  py::enum_<dolfinx::Table::Reduction>(m, "Reduction")
+      .value("max", dolfinx::Table::Reduction::max)
+      .value("min", dolfinx::Table::Reduction::min)
+      .value("average", dolfinx::Table::Reduction::average);
 
   // dolfinx::common::IndexMap
   py::class_<dolfinx::common::IndexMap,
@@ -124,10 +129,11 @@ void common(py::module& m)
   m.def("timing", &dolfinx::timing);
 
   m.def("list_timings",
-        [](const MPICommWrapper comm, std::vector<dolfinx::TimingType> type)
+        [](const MPICommWrapper comm, std::vector<dolfinx::TimingType> type,
+           dolfinx::Table::Reduction reduction)
         {
           std::set<dolfinx::TimingType> _type(type.begin(), type.end());
-          dolfinx::list_timings(comm.get(), _type);
+          dolfinx::list_timings(comm.get(), _type, reduction);
         });
 
   m.def("init_logging",

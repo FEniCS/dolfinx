@@ -3,19 +3,28 @@
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Methods for solving nonlinear equations."""
+"""Methods for solving nonlinear equations"""
+
+from __future__ import annotations
+
+import typing
+
+if typing.TYPE_CHECKING:
+    from dolfinx.fem.problem import NonlinearProblem
+    from mpi4py import MPI
+    from petsc4py import PETSc
 
 import types
-from petsc4py import PETSc
-from dolfinx import fem, cpp
-import mpi4py
+
+from dolfinx import cpp as _cpp
+from dolfinx import fem
+
+__all__ = ["NewtonSolver"]
 
 
-class NewtonSolver(cpp.nls.NewtonSolver):
-    def __init__(self, comm: mpi4py.MPI.Intracomm, problem: fem.NonlinearProblem):
-        """
-        Create a Newton solver for a given MPI communicator and non-linear problem.
-        """
+class NewtonSolver(_cpp.nls.petsc.NewtonSolver):
+    def __init__(self, comm: MPI.Intracomm, problem: NonlinearProblem):
+        """A Newton solver for non-linear problems."""
         super().__init__(comm)
 
         # Create matrix and vector to be used for assembly
@@ -27,32 +36,28 @@ class NewtonSolver(cpp.nls.NewtonSolver):
         self.set_form(problem.form)
 
     def solve(self, u: fem.Function):
-        """
-        Solve non-linear problem into function u.
-        Returns the number of iterations and if the solver converged
-        """
+        """Solve non-linear problem into function u. Returns the number
+        of iterations and if the solver converged."""
         n, converged = super().solve(u.vector)
         u.x.scatter_forward()
         return n, converged
 
     @property
     def A(self) -> PETSc.Mat:
-        """Get the Jacobian matrix"""
+        """Jacobian matrix"""
         return self._A
 
     @property
     def b(self) -> PETSc.Vec:
-        """Get the residual vector"""
+        """Residual vector"""
         return self._b
 
     def setP(self, P: types.FunctionType, Pmat: PETSc.Mat):
         """
         Set the function for computing the preconditioner matrix
-        Parameters
-        -----------
-        P
-          Function to compute the preconditioner matrix b (x, P)
-        Pmat
-          The matrix to assemble the preconditioner into
+
+        Args:
+            P: Function to compute the preconditioner matrix
+            Pmat: Matrix to assemble the preconditioner into
         """
         super().setP(P, Pmat)

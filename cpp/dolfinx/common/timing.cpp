@@ -5,15 +5,10 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "timing.h"
+#include "TimeLogger.h"
 #include "Timer.h"
 #include <dolfinx/common/Table.h>
 #include <dolfinx/common/TimeLogManager.h>
-
-namespace
-{
-dolfinx::common::Timer __global_timer;
-dolfinx::common::Timer __tic_timer;
-} // namespace
 
 using namespace dolfinx;
 using namespace dolfinx::common;
@@ -24,9 +19,10 @@ Table dolfinx::timings(std::set<TimingType> type)
   return TimeLogManager::logger().timings(type);
 }
 //-----------------------------------------------------------------------------
-void dolfinx::list_timings(MPI_Comm comm, std::set<TimingType> type)
+void dolfinx::list_timings(MPI_Comm comm, std::set<TimingType> type,
+                           Table::Reduction reduction)
 {
-  TimeLogManager::logger().list_timings(comm, type);
+  TimeLogManager::logger().list_timings(comm, type, reduction);
 }
 //-----------------------------------------------------------------------------
 std::tuple<std::size_t, double, double, double>

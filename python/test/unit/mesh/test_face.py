@@ -4,28 +4,29 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-import dolfinx
+import numpy as np
 import pytest
-import numpy
-from dolfinx import UnitCubeMesh, UnitSquareMesh
-from dolfinx.mesh import locate_entities_boundary
+
+from dolfinx import cpp as _cpp
 from dolfinx.cpp.mesh import cell_normals
-from dolfinx_utils.test.skips import skip_in_parallel
+from dolfinx.mesh import (create_unit_cube, create_unit_square,
+                          locate_entities_boundary)
+
 from mpi4py import MPI
 
 
 @pytest.fixture
 def cube():
-    return UnitCubeMesh(MPI.COMM_WORLD, 5, 5, 5)
+    return create_unit_cube(MPI.COMM_WORLD, 5, 5, 5)
 
 
 @pytest.fixture
 def square():
-    return UnitSquareMesh(MPI.COMM_WORLD, 5, 5)
+    return create_unit_square(MPI.COMM_WORLD, 5, 5)
 
 
 @pytest.mark.skip("volume_entities needs fixing")
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 def test_area(cube, square):
     """Iterate over faces and sum area."""
 
@@ -38,20 +39,20 @@ def test_area(cube, square):
     num_faces = map.size_local + map.num_ghosts
 
     cube.topology.create_entities(1)
-    area = dolfinx.cpp.mesh.volume_entities(square, range(num_faces), 2).sum()
+    area = _cpp.mesh.volume_entities(square, range(num_faces), 2).sum()
     assert area == pytest.approx(1.0)
 
 
 def test_normals(cube, square):
     """ Test cell normals for a subset of facets """
     def left_side(x):
-        return numpy.isclose(x[0], 0)
+        return np.isclose(x[0], 0)
     fdim = cube.topology.dim - 1
     facets = locate_entities_boundary(cube, fdim, left_side)
     normals = cell_normals(cube, fdim, facets)
-    assert numpy.allclose(normals, [-1, 0, 0])
+    assert np.allclose(normals, [-1, 0, 0])
 
     fdim = square.topology.dim - 1
     facets = locate_entities_boundary(square, fdim, left_side)
     normals = cell_normals(square, fdim, facets)
-    assert numpy.allclose(normals, [-1, 0, 0])
+    assert np.allclose(normals, [-1, 0, 0])

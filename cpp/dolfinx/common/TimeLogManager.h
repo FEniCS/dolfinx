@@ -6,13 +6,12 @@
 
 #pragma once
 
-#include "TimeLogger.h"
-
 namespace dolfinx::common
 {
 
-/// Logger initialisation
+class TimeLogger;
 
+/// Logger initialisation
 class TimeLogManager
 {
 public:

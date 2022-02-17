@@ -63,15 +63,11 @@ void CoordinateElement::tabulate(int n, const xt::xtensor<double, 2>& X,
   _element->tabulate(n, X, basis);
 }
 //--------------------------------------------------------------------------------
-ElementDofLayout CoordinateElement::dof_layout() const
+ElementDofLayout CoordinateElement::create_dof_layout() const
 {
   assert(_element);
-  std::vector<std::vector<std::vector<int>>> entity_dofs
-      = _element->entity_dofs();
-  std::vector<std::vector<std::vector<int>>> entity_closure_dofs
-      = _element->entity_closure_dofs();
-
-  return ElementDofLayout(1, entity_dofs, entity_closure_dofs, {}, {});
+  return ElementDofLayout(1, _element->entity_dofs(),
+                          _element->entity_closure_dofs(), {}, {});
 }
 //-----------------------------------------------------------------------------
 void CoordinateElement::push_forward(
@@ -193,5 +189,17 @@ bool CoordinateElement::needs_dof_permutations() const
   assert(_element);
   assert(_element->dof_transformations_are_permutations());
   return !_element->dof_transformations_are_identity();
+}
+//-----------------------------------------------------------------------------
+int CoordinateElement::degree() const
+{
+  assert(_element);
+  return _element->degree();
+}
+//-----------------------------------------------------------------------------
+basix::element::lagrange_variant CoordinateElement::variant() const
+{
+  assert(_element);
+  return _element->lagrange_variant();
 }
 //-----------------------------------------------------------------------------

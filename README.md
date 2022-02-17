@@ -2,14 +2,15 @@
 
 [![DOLFINx CI](https://github.com/FEniCS/dolfinx/actions/workflows/ccpp.yml/badge.svg)](https://github.com/FEniCS/dolfinx/actions/workflows/ccpp.yml)
 [![CircleCI](https://circleci.com/gh/FEniCS/dolfinx.svg?style=shield)](https://circleci.com/gh/FEniCS/dolfinx)
-[![Actions Docker images](https://github.com/FEniCS/dolfinx/workflows/Docker%20images/badge.svg)](https://github.com/FEniCS/dolfinx/actions?query=workflow%3A%22Docker+images%22)
-[![Actions Spack build](https://github.com/FEniCS/dolfinx/workflows/Spack%20build/badge.svg)](https://github.com/FEniCS/dolfinx/actions?query=workflow%3A%22Spack+build%22)
+[![Actions Docker images](https://github.com/FEniCS/dolfinx/actions/workflows/docker.yml/badge.svg)](https://github.com/FEniCS/dolfinx/actions/workflows/docker.yml)
+[![Actions Spack build](https://github.com/FEniCS/dolfinx/actions/workflows/spack.yml/badge.svg)](https://github.com/FEniCS/dolfinx/actions/workflows/spack.yml)
+
 
 DOLFINx is a new version of DOLFIN. It is being actively developed and
 features may come and go as development proceeds.
 
 DOLFINx is the computational environment of
-[FEniCS](https://fenicsproject.org) and implements the FEniCS Problem
+[FEniCSx](https://fenicsproject.org) and implements the FEniCS Problem
 Solving Environment in Python and C++.
 
 ## Documentation
@@ -112,15 +113,12 @@ For questions about using DOLFINx, visit the FEniCS Discourse page:
 
 https://fenicsproject.discourse.group/
 
-For bug reports, visit the DOLFINx GitHub page:
+or use the FEniCS Slack channel:
+
+https://fenicsproject.slack.com/
+
+(use https://fenicsproject-slack-invite.herokuapp.com/ to sign up)
+
+For bug reports visit:
 
 https://github.com/FEniCS/dolfinx
-
-For comments and requests, send an email to the FEniCS mailing list:
-
-fenics-dev@googlegroups.com
-
-For questions related to obtaining, building or installing DOLFINx,
-send an email to the FEniCS support mailing list:
-
-fenics-support@googlegroups.com

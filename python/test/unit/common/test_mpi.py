@@ -6,24 +6,26 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-import pytest
 import pathlib
+
+import cppimport
+import pytest
 
 import dolfinx
 import dolfinx.pkgconfig
 from dolfinx import wrappers
 from dolfinx.jit import mpi_jit_decorator
-from dolfinx_utils.test.fixtures import tempdir  # noqa: F401
+from dolfinx.mesh import create_unit_square
+
 import mpi4py
 from mpi4py import MPI
-import cppimport
 
 
 def test_mpi_comm_wrapper():
     """Test MPICommWrapper <-> mpi4py.MPI.Comm conversion"""
     w1 = MPI.COMM_WORLD
-    m = dolfinx.UnitSquareMesh(w1, 4, 4)
-    w2 = m.mpi_comm()
+    m = create_unit_square(w1, 4, 4)
+    w2 = m.comm
     assert isinstance(w1, MPI.Comm)
     assert isinstance(w2, MPI.Comm)
 

@@ -5,16 +5,15 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "graphbuild.h"
+#include "cell_types.h"
 #include <algorithm>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/sort.h>
 #include <dolfinx/graph/AdjacencyList.h>
-#include <dolfinx/mesh/cell_types.h>
 #include <utility>
 #include <vector>
-#include <xtensor/xadapt.hpp>
 #include <xtensor/xview.hpp>
 
 using namespace dolfinx;
@@ -185,7 +184,7 @@ compute_nonlocal_dual_graph(
   // Count data items to send to each rank
   p_count.assign(num_ranks, 0);
   bool this_equal, last_equal = false;
-  std::vector<bool> facet_match(num_facets_rcvd, false);
+  std::vector<std::int8_t> facet_match(num_facets_rcvd, false);
   for (int i = 1; i < num_facets_rcvd; ++i)
   {
     const int i0 = perm[i - 1];
@@ -276,7 +275,7 @@ compute_nonlocal_dual_graph(
   {
     const std::size_t node = cell_list[i] - cell_offset;
     auto edges = graph.links(node);
-#ifdef DEBUG
+#ifndef NDEBUG
     if (auto it_end = std::next(edges.begin(), pos[node]);
         std::find(edges.begin(), it_end, cell_list[i + 1]) != it_end)
     {
@@ -337,7 +336,7 @@ mesh::build_local_dual_graph(const xtl::span<const std::int64_t>& cell_vertices,
   const std::int32_t num_vertices = vcounter + 1;
 
   // Build local-to-global map for vertices
-  std::vector<int32_t> local_to_global_v(num_vertices);
+  std::vector<std::int64_t> local_to_global_v(num_vertices);
   for (std::size_t i = 0; i < cell_vertices_local.size(); i++)
     local_to_global_v[cell_vertices_local[i]] = cell_vertices[i];
 

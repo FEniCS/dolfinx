@@ -5,21 +5,21 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-from dolfinx import cpp
+from dolfinx import cpp as _cpp
 
 
 class DofMap:
     """Degree-of-freedom map
 
     This class handles the mapping of degrees of freedom. It builds
-    a dof map based on a ufc_dofmap on a specific mesh.
+    a dof map based on a ufcx_dofmap on a specific mesh.
     """
 
-    def __init__(self, dofmap: cpp.fem.DofMap):
+    def __init__(self, dofmap: _cpp.fem.DofMap):
         self._cpp_object = dofmap
 
     def cell_dofs(self, cell_index: int):
-        """ Returns the Local-global dof map for the cell (using process-local indices)
+        """ Returns the local-global dof map for the cell (using process-local indices)
 
         Parameters
         ----------

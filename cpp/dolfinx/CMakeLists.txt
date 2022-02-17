@@ -16,7 +16,7 @@ add_library(dolfinx)
 #------------------------------------------------------------------------------
 # Add source files to the target
 
-set(DOLFINX_DIRS common fem generation geometry graph io la mesh nls refinement)
+set(DOLFINX_DIRS common fem geometry graph io la mesh nls refinement)
 
 install(FILES dolfinx.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} COMPONENT Development)
 
@@ -39,7 +39,7 @@ set_target_properties(dolfinx PROPERTIES
 
 # Add git revision flag to the one affected file
 set_source_files_properties(common/defines.cpp PROPERTIES
-  COMPILE_DEFINITIONS "UFC_SIGNATURE=\"${UFC_SIGNATURE}\";DOLFINX_GIT_COMMIT_HASH=\"${GIT_COMMIT_HASH}\"")
+  COMPILE_DEFINITIONS "UFCX_SIGNATURE=\"${UFCX_SIGNATURE}\";DOLFINX_GIT_COMMIT_HASH=\"${GIT_COMMIT_HASH}\"")
 
 #------------------------------------------------------------------------------
 # Set compiler options and defintions
@@ -47,17 +47,18 @@ set_source_files_properties(common/defines.cpp PROPERTIES
 # Set 'Developer' build type flags
 target_compile_options(dolfinx PRIVATE $<$<CONFIG:Developer>:${DOLFINX_CXX_DEVELOPER_FLAGS}>)
 
-# Set debug definitions (private)
-target_compile_definitions(dolfinx PRIVATE $<$<OR:$<CONFIG:Debug>,$<CONFIG:Developer>>:DEBUG>)
-
 # Add version to definitions (public)
 target_compile_definitions(dolfinx PUBLIC DOLFINX_VERSION="${DOLFINX_VERSION}")
 
 #------------------------------------------------------------------------------
 # Add include directories and libraries of required packages
 
-# UFC
-target_include_directories(dolfinx SYSTEM PUBLIC ${UFC_INCLUDE_DIRS})
+# UFCx
+if (TARGET ufcx::ufcx)
+  target_link_libraries(dolfinx PUBLIC ufcx::ufcx)
+else()
+  target_include_directories(dolfinx SYSTEM PUBLIC ${UFCX_INCLUDE_DIRS})
+endif()
 
 # Basix
 target_link_libraries(dolfinx PUBLIC Basix::basix)
@@ -75,14 +76,12 @@ endif()
 # Boost
 target_link_libraries(dolfinx PUBLIC Boost::headers)
 target_link_libraries(dolfinx PUBLIC Boost::timer)
-target_link_libraries(dolfinx PRIVATE Boost::filesystem)
 
 # MPI
 target_link_libraries(dolfinx PUBLIC MPI::MPI_CXX)
 
 # PETSc
-target_link_libraries(dolfinx PUBLIC PETSC::petsc)
-target_link_libraries(dolfinx PRIVATE PETSC::petsc_static)
+target_link_libraries(dolfinx PUBLIC PkgConfig::PETSC)
 
 # HDF5
 if (TARGET hdf5::hdf5)
@@ -95,10 +94,6 @@ else()
   target_include_directories(dolfinx SYSTEM PUBLIC ${HDF5_INCLUDE_DIRS})
 endif()
 
-# SCOTCH
-target_link_libraries(dolfinx PRIVATE ${SCOTCH_LIBRARIES})
-target_include_directories(dolfinx SYSTEM PRIVATE ${SCOTCH_INCLUDE_DIRS})
-
 #------------------------------------------------------------------------------
 # Optional packages
 
@@ -110,9 +105,15 @@ endif()
 
 # SLEPC
 if (DOLFINX_ENABLE_SLEPC AND SLEPC_FOUND)
+  target_link_libraries(dolfinx PUBLIC PkgConfig::SLEPC)
   target_compile_definitions(dolfinx PUBLIC HAS_SLEPC)
-  target_link_libraries(dolfinx PUBLIC SLEPC::slepc)
-  target_link_libraries(dolfinx PRIVATE SLEPC::slepc_static)
+endif()
+
+# SCOTCH
+if (DOLFINX_ENABLE_SCOTCH AND SCOTCH_FOUND)
+  target_compile_definitions(dolfinx PUBLIC HAS_PTSCOTCH)
+  target_link_libraries(dolfinx PRIVATE ${SCOTCH_LIBRARIES})
+  target_include_directories(dolfinx SYSTEM PRIVATE ${SCOTCH_INCLUDE_DIRS})
 endif()
 
 # ParMETIS
@@ -157,14 +158,12 @@ write_basic_package_version_file(${CMAKE_BINARY_DIR}/dolfinx/DOLFINXConfigVersio
   COMPATIBILITY ExactVersion)
 
 configure_package_config_file(${DOLFINX_SOURCE_DIR}/cmake/templates/DOLFINXConfig.cmake.in
-${CMAKE_BINARY_DIR}/dolfinx/DOLFINXConfig.cmake
-INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/dolfinx)
+  ${CMAKE_BINARY_DIR}/dolfinx/DOLFINXConfig.cmake
+  INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/dolfinx)
 
 # Install CMake helper files
 install(
   FILES
-  ${CMAKE_SOURCE_DIR}/cmake/modules/FindPETSc.cmake
-  ${CMAKE_SOURCE_DIR}/cmake/modules/FindSLEPc.cmake
   ${CMAKE_BINARY_DIR}/dolfinx/DOLFINXConfig.cmake
   ${CMAKE_BINARY_DIR}/dolfinx/DOLFINXConfigVersion.cmake
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/dolfinx

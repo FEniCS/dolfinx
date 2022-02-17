@@ -14,14 +14,16 @@
 #include <dolfinx/io/VTKFile.h>
 #include <dolfinx/io/XDMFFile.h>
 #include <dolfinx/io/cells.h>
+#include <dolfinx/io/vtk_utils.h>
 #include <dolfinx/io/xdmf_utils.h>
-#include <dolfinx/la/PETScVector.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshTags.h>
+#include <filesystem>
 #include <memory>
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
+#include <pybind11/stl/filesystem.h>
 #include <string>
 #include <vector>
 #include <xtensor/xadapt.hpp>
@@ -34,37 +36,44 @@ namespace dolfinx_wrappers
 void io(py::module& m)
 {
   // dolfinx::io::cell vtk cell type converter
-  m.def("get_vtk_cell_type", &dolfinx::io::cells::get_vtk_cell_type);
+  m.def("get_vtk_cell_type", &dolfinx::io::cells::get_vtk_cell_type,
+        "Get VTK cell identifier");
+
+  m.def(
+      "extract_vtk_connectivity",
+      [](const dolfinx::mesh::Mesh& mesh)
+      { return xt_as_pyarray(dolfinx::io::extract_vtk_connectivity(mesh)); },
+      "Extract the mesh topology with VTK ordering using geometry indices");
 
   // dolfinx::io::cell permutation functions
-  m.def("perm_vtk", &dolfinx::io::cells::perm_vtk);
-  m.def("perm_gmsh", &dolfinx::io::cells::perm_gmsh);
+  m.def("perm_vtk", &dolfinx::io::cells::perm_vtk,
+        "Permutation array to map from VTK to DOLFINx node ordering");
+  m.def("perm_gmsh", &dolfinx::io::cells::perm_gmsh,
+        "Permutation array to map from Gmsh to DOLFINx node ordering");
 
   // TODO: Template for different values dtypes
-  m.def("extract_local_entities",
-        [](const dolfinx::mesh::Mesh& mesh, int entity_dim,
-           const py::array_t<std::int64_t, py::array::c_style>& entities,
-           const py::array_t<std::int32_t, py::array::c_style>& values)
-        {
-          assert(entities.ndim() == 2);
-          std::array<std::size_t, 2> shape
-              = {static_cast<std::size_t>(entities.shape(0)),
-                 static_cast<std::size_t>(entities.shape(1))};
+  m.def(
+      "distribute_entity_data",
+      [](const dolfinx::mesh::Mesh& mesh, int entity_dim,
+         const py::array_t<std::int64_t, py::array::c_style>& entities,
+         const py::array_t<std::int32_t, py::array::c_style>& values)
+      {
+        assert(entities.ndim() == 2);
+        std::array shape
+            = {std::size_t(entities.shape(0)), std::size_t(entities.shape(1))};
 
-          // The below should work, but misbehaves with the Intel icpx
-          // compiler
-          // auto _entities = xt::adapt(entities.data(), entities.size(),
-          //                            xt::no_ownership(), shape);
-          xt::xtensor<std::int64_t, 2> _entities(shape);
-          std::copy_n(entities.data(), entities.size(), _entities.data());
+        // The below should work, but misbehaves with the Intel icpx
+        // compiler
+        // auto _entities = xt::adapt(entities.data(), entities.size(),
+        //                            xt::no_ownership(), shape);
+        xt::xtensor<std::int64_t, 2> _entities(shape);
+        std::copy_n(entities.data(), entities.size(), _entities.data());
+        auto [e, v] = dolfinx::io::xdmf_utils::distribute_entity_data(
+            mesh, entity_dim, _entities,
+            xtl::span(values.data(), values.size()));
 
-          auto [e, v] = dolfinx::io::xdmf_utils::extract_local_entities(
-              mesh, entity_dim, _entities,
-              xtl::span(values.data(), values.size()));
-
-          return std::pair(xt_as_pyarray(std::move(e)),
-                           as_pyarray(std::move(v)));
-        });
+        return std::pair(xt_as_pyarray(std::move(e)), as_pyarray(std::move(v)));
+      });
 
   // dolfinx::io::XDMFFile
   py::class_<dolfinx::io::XDMFFile, std::shared_ptr<dolfinx::io::XDMFFile>>
@@ -77,8 +86,9 @@ void io(py::module& m)
 
   xdmf_file
       .def(py::init(
-               [](const MPICommWrapper comm, const std::string filename,
-                  const std::string file_mode,
+               [](const MPICommWrapper comm,
+                  const std::filesystem::path& filename,
+                  const std::string& file_mode,
                   dolfinx::io::XDMFFile::Encoding encoding)
                {
                  return std::make_unique<dolfinx::io::XDMFFile>(
@@ -141,7 +151,8 @@ void io(py::module& m)
   py::class_<dolfinx::io::VTKFile, std::shared_ptr<dolfinx::io::VTKFile>>(
       m, "VTKFile")
       .def(py::init(
-               [](const MPICommWrapper comm, const std::string& filename,
+               [](const MPICommWrapper comm,
+                  const std::filesystem::path& filename,
                   const std::string& mode) {
                  return std::make_unique<dolfinx::io::VTKFile>(comm.get(),
                                                                filename, mode);
@@ -153,25 +164,15 @@ void io(py::module& m)
            [](dolfinx::io::VTKFile& self, py::object exc_type,
               py::object exc_value, py::object traceback) { self.close(); })
       .def("close", &dolfinx::io::VTKFile::close)
-      .def("write",
-           py::overload_cast<const std::vector<std::reference_wrapper<
-                                 const dolfinx::fem::Function<double>>>&,
-                             double>(&dolfinx::io::VTKFile::write),
+      .def("write", &dolfinx::io::VTKFile::write<double>, py::arg("u"),
+           py::arg("t") = 0.0)
+      .def("write", &dolfinx::io::VTKFile::write<std::complex<double>>,
            py::arg("u"), py::arg("t") = 0.0)
       .def("write",
-           py::overload_cast<
-               const std::vector<std::reference_wrapper<
-                   const dolfinx::fem::Function<std::complex<double>>>>&,
-               double>(&dolfinx::io::VTKFile::write),
-           py::arg("u"), py::arg("t") = 0.0)
-
-      .def("write",
-           py::overload_cast<const dolfinx::mesh::Mesh&, double>(
+           static_cast<void (dolfinx::io::VTKFile::*)(
+               const dolfinx::mesh::Mesh&, double)>(
                &dolfinx::io::VTKFile::write),
            py::arg("mesh"), py::arg("t") = 0.0);
-
-  // Flag for ADIOS2 installation
-  m.def("has_adios2", &dolfinx::has_adios2);
 
 #ifdef HAS_ADIOS2
   // dolfinx::io::FidesWriter
@@ -180,14 +181,14 @@ void io(py::module& m)
              std::shared_ptr<dolfinx::io::FidesWriter>>(m, pyclass_name.c_str(),
                                                         "FidesWriter object")
       .def(py::init(
-          [](const MPICommWrapper comm, const std::string& filename,
+          [](const MPICommWrapper comm, const std::filesystem::path& filename,
              std::shared_ptr<const dolfinx::mesh::Mesh> mesh)
           {
             return std::make_unique<dolfinx::io::FidesWriter>(comm.get(),
                                                               filename, mesh);
           }))
       .def(py::init(
-          [](const MPICommWrapper comm, const std::string& filename,
+          [](const MPICommWrapper comm, const std::filesystem::path& filename,
              const std::vector<std::variant<
                  std::shared_ptr<const dolfinx::fem::Function<double>>,
                  std::shared_ptr<
@@ -210,14 +211,14 @@ void io(py::module& m)
   py::class_<dolfinx::io::VTXWriter, std::shared_ptr<dolfinx::io::VTXWriter>>(
       m, pyclass_name.c_str(), "VTXWriter object")
       .def(py::init(
-          [](const MPICommWrapper comm, const std::string& filename,
+          [](const MPICommWrapper comm, const std::filesystem::path& filename,
              std::shared_ptr<const dolfinx::mesh::Mesh> mesh)
           {
             return std::make_unique<dolfinx::io::VTXWriter>(comm.get(),
                                                             filename, mesh);
           }))
       .def(py::init(
-          [](const MPICommWrapper comm, const std::string& filename,
+          [](const MPICommWrapper comm, const std::filesystem::path& filename,
              const std::vector<std::variant<
                  std::shared_ptr<const dolfinx::fem::Function<double>>,
                  std::shared_ptr<

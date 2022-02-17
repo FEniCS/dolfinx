@@ -1,9 +1,10 @@
-import numpy
+import numpy as np
 import pytest
-from dolfinx import cpp
-from dolfinx.cpp.mesh import CellType
-from dolfinx.generation import UnitCubeMesh
-from dolfinx.mesh import create_meshtags, locate_entities
+
+from dolfinx.graph import create_adjacencylist
+from dolfinx.mesh import (CellType, create_meshtags, create_unit_cube,
+                          locate_entities)
+
 from mpi4py import MPI
 
 celltypes_3D = [CellType.tetrahedron, CellType.hexahedron]
@@ -13,13 +14,13 @@ celltypes_3D = [CellType.tetrahedron, CellType.hexahedron]
 def test_create(cell_type):
     comm = MPI.COMM_WORLD
 
-    mesh = UnitCubeMesh(comm, 6, 6, 6, cell_type)
+    mesh = create_unit_cube(comm, 6, 6, 6, cell_type)
 
-    marked_lines = locate_entities(mesh, 1, lambda x: numpy.isclose(x[1], 0.5))
+    marked_lines = locate_entities(mesh, 1, lambda x: np.isclose(x[1], 0.5))
     f_v = mesh.topology.connectivity(1, 0).array.reshape(-1, 2)
 
-    entities = cpp.graph.AdjacencyList_int32(f_v[marked_lines])
-    values = numpy.full(marked_lines.shape[0], 2, dtype=numpy.int32)
+    entities = create_adjacencylist(f_v[marked_lines])
+    values = np.full(marked_lines.shape[0], 2, dtype=np.int32)
 
     mt = create_meshtags(mesh, 1, entities, values)
     assert mt.indices.shape == marked_lines.shape

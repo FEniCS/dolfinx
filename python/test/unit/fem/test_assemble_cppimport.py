@@ -8,22 +8,25 @@
 import pathlib
 
 import cppimport
-import dolfinx
-import dolfinx.pkgconfig
-import numpy
-import petsc4py
+import numpy as np
+import pybind11
 import pytest
 import scipy.sparse.linalg
+
+import dolfinx
+import dolfinx.pkgconfig
 import ufl
-from dolfinx.fem import Form
-from dolfinx.generation import UnitSquareMesh
+from dolfinx.fem import (FunctionSpace, assemble_matrix, dirichletbc, form,
+                         locate_dofs_geometrical)
+from dolfinx.mesh import create_unit_square
 from dolfinx.wrappers import get_include_path as pybind_inc
-from dolfinx_utils.test.fixtures import tempdir  # noqa: F401
-from dolfinx_utils.test.skips import skip_in_parallel
+
+import petsc4py
 from mpi4py import MPI
+from petsc4py import PETSc
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 @pytest.mark.skipif(not dolfinx.pkgconfig.exists("eigen3"),
                     reason="This test needs eigen3 pkg-config.")
 @pytest.mark.skipif(not dolfinx.pkgconfig.exists("dolfinx"),
@@ -36,9 +39,9 @@ def test_eigen_assembly(tempdir):  # noqa: F811
         cpp_code_header = f"""
 <%
 setup_pybind11(cfg)
-cfg['include_dirs'] = {dolfinx_pc["include_dirs"] + [petsc4py.get_include()] + [str(pybind_inc())] + eigen_dir}
-cfg['compiler_args'] = {["-D" + dm for dm in dolfinx_pc["define_macros"]]}
-cfg['compiler_args'] = ['-std=c++17']
+cfg['include_dirs'] = {dolfinx_pc["include_dirs"] + [petsc4py.get_include()]
+  + [pybind11.get_include()] + [str(pybind_inc())] + eigen_dir}
+cfg['compiler_args'] = ["-std=c++17", "-Wno-comment"]
 cfg['libraries'] = {dolfinx_pc["libraries"]}
 cfg['library_dirs'] = {dolfinx_pc["library_dirs"]}
 %>
@@ -62,12 +65,13 @@ assemble_csr(const dolfinx::fem::Form<T>& a,
 {
   std::vector<Eigen::Triplet<T>> triplets;
   const auto mat_add
-      = [&triplets](std::int32_t nrow, const std::int32_t* rows,
-                    std::int32_t ncol, const std::int32_t* cols, const T* v)
+      = [&triplets](const xtl::span<const std::int32_t>& rows,
+                    const xtl::span<const std::int32_t>& cols,
+                    const xtl::span<const T>& v)
     {
-      for (int i = 0; i < nrow; ++i)
-        for (int j = 0; j < ncol; ++j)
-          triplets.emplace_back(rows[i], cols[j], v[i * ncol + j]);
+      for (std::size_t i = 0; i < rows.size(); ++i)
+        for (std::size_t j = 0; j < cols.size(); ++j)
+          triplets.emplace_back(rows[i], cols[j], v[i * cols.size() + j]);
       return 0;
     };
 
@@ -110,19 +114,16 @@ PYBIND11_MODULE(eigen_csr, m)
                     A[dofs, dofs] = 1.0
         return A
 
-    mesh = UnitSquareMesh(MPI.COMM_SELF, 12, 12)
-    Q = dolfinx.FunctionSpace(mesh, ("Lagrange", 1))
+    mesh = create_unit_square(MPI.COMM_SELF, 12, 12)
+    Q = FunctionSpace(mesh, ("Lagrange", 1))
     u = ufl.TrialFunction(Q)
     v = ufl.TestFunction(Q)
-    a = Form(ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx)
+    a = form(ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx)
 
-    bdofsQ = dolfinx.fem.locate_dofs_geometrical(Q, lambda x: numpy.logical_or(x[0] < 1.0e-6, x[0] > 1.0 - 1.0e-6))
-    u_bc = dolfinx.fem.Function(Q)
-    with u_bc.vector.localForm() as u_local:
-        u_local.set(1.0)
-    bc = dolfinx.fem.dirichletbc.DirichletBC(u_bc, bdofsQ)
+    bdofsQ = locate_dofs_geometrical(Q, lambda x: np.logical_or(np.isclose(x[0], 0.0), np.isclose(x[0], 1.0)))
+    bc = dirichletbc(PETSc.ScalarType(1), bdofsQ, Q)
 
-    A1 = dolfinx.fem.assemble_matrix(a, [bc])
+    A1 = assemble_matrix(a, [bc])
     A1.assemble()
     A2 = assemble_csr_matrix(a, [bc])
-    assert numpy.isclose(A1.norm(), scipy.sparse.linalg.norm(A2))
+    assert np.isclose(A1.norm(), scipy.sparse.linalg.norm(A2))

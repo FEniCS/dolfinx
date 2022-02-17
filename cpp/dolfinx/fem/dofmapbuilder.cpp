@@ -7,6 +7,7 @@
 #include "dofmapbuilder.h"
 #include "ElementDofLayout.h"
 #include <algorithm>
+#include <cstdint>
 #include <cstdlib>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
@@ -14,6 +15,7 @@
 #include <dolfinx/common/utils.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Topology.h>
+#include <dolfinx/mesh/cell_types.h>
 #include <iterator>
 #include <memory>
 #include <numeric>
@@ -138,7 +140,7 @@ build_basic_dofmap(const mesh::Topology& topology,
   const int D = topology.dim();
 
   // Generate and number required mesh entities
-  std::vector<bool> needs_entities(D + 1, false);
+  std::vector<std::int8_t> needs_entities(D + 1, false);
   std::vector<std::int32_t> num_mesh_entities_local(D + 1, 0),
       num_mesh_entities_global(D + 1, 0);
   for (int d = 0; d <= D; ++d)
@@ -384,13 +386,13 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
 
   // Build list flag for owned mesh entities that are shared, i.e. are a
   // ghost on a neighbor
-  std::vector<std::vector<bool>> shared_entity(D + 1);
+  std::vector<std::vector<std::int8_t>> shared_entity(D + 1);
   for (std::size_t d = 0; d < shared_entity.size(); ++d)
   {
     auto map = topology.index_map(d);
     if (map)
     {
-      shared_entity[d] = std::vector<bool>(map->size_local(), false);
+      shared_entity[d] = std::vector<std::int8_t>(map->size_local(), false);
       const std::vector<std::int32_t>& forward_indices
           = map->scatter_fwd_indices().array();
       for (auto entity : forward_indices)
@@ -576,9 +578,13 @@ fem::build_dofmap_data(
     }
   }
 
-  assert(dofmap.size() % node_graph0.num_nodes() == 0);
+  int dofs_per_cell
+      = dofmap.empty() ? 0 : dofmap.size() / node_graph0.num_nodes();
+  graph::AdjacencyList<std::int32_t> dmap
+      = graph::build_adjacency_list<std::int32_t>(std::move(dofmap),
+                                                  dofs_per_cell);
+
   return {std::move(index_map), element_dof_layout.block_size(),
-          graph::build_adjacency_list<std::int32_t>(
-              std::move(dofmap), dofmap.size() / node_graph0.num_nodes())};
+          std::move(dmap)};
 }
 //-----------------------------------------------------------------------------

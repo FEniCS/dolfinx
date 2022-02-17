@@ -10,17 +10,17 @@
 #include "xdmf_read.h"
 #include "xdmf_utils.h"
 #include <dolfinx/fem/ElementDofLayout.h>
-#include <xtensor/xadapt.hpp>
 
 using namespace dolfinx;
 using namespace dolfinx::io;
 
 //-----------------------------------------------------------------------------
-void xdmf_mesh::add_topology_data(
-    MPI_Comm comm, pugi::xml_node& xml_node, const hid_t h5_id,
-    const std::string path_prefix, const mesh::Topology& topology,
-    const mesh::Geometry& geometry, const int dim,
-    const xtl::span<const std::int32_t>& active_entities)
+void xdmf_mesh::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
+                                  const hid_t h5_id,
+                                  const std::string path_prefix,
+                                  const mesh::Topology& topology,
+                                  const mesh::Geometry& geometry, int dim,
+                                  const xtl::span<const std::int32_t>& entities)
 {
   LOG(INFO) << "Adding topology data to node \"" << xml_node.path('/') << "\"";
 
@@ -33,9 +33,11 @@ void xdmf_mesh::add_topology_data(
   const mesh::CellType entity_cell_type
       = mesh::cell_entity_type(topology.cell_type(), dim, 0);
 
+  const fem::ElementDofLayout cmap_dof_layout
+      = geometry.cmap().create_dof_layout();
+
   // Get number of nodes per entity
-  const int num_nodes_per_entity
-      = geometry.cmap().dof_layout().num_entity_closure_dofs(dim);
+  const int num_nodes_per_entity = cmap_dof_layout.num_entity_closure_dofs(dim);
 
   // FIXME: sort out degree/cell type
   // Get VTK string for cell type
@@ -61,7 +63,7 @@ void xdmf_mesh::add_topology_data(
   assert(map_e);
   if (dim == tdim)
   {
-    for (std::int32_t c : active_entities)
+    for (std::int32_t c : entities)
     {
       assert(c < cells_g.num_nodes());
       auto nodes = cells_g.links(c);
@@ -88,12 +90,9 @@ void xdmf_mesh::add_topology_data(
     // Tabulate geometry dofs for local entities
     std::vector<std::vector<int>> entity_dofs;
     for (int e = 0; e < mesh::cell_num_entities(topology.cell_type(), dim); ++e)
-    {
-      entity_dofs.push_back(
-          geometry.cmap().dof_layout().entity_closure_dofs(dim, e));
-    }
+      entity_dofs.push_back(cmap_dof_layout.entity_closure_dofs(dim, e));
 
-    for (std::int32_t e : active_entities)
+    for (std::int32_t e : entities)
     {
       // Get first attached cell
       std::int32_t c = e_to_c->links(e)[0];
@@ -151,9 +150,7 @@ void xdmf_mesh::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
                                   const std::string path_prefix,
                                   const mesh::Geometry& geometry)
 {
-
   LOG(INFO) << "Adding geometry data to node \"" << xml_node.path('/') << "\"";
-
   auto map = geometry.index_map();
   assert(map);
 
@@ -173,17 +170,20 @@ void xdmf_mesh::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
   // Increase 1D to 2D because XDMF has no "X" geometry, use "XY"
   const int width = (gdim == 1) ? 2 : gdim;
 
-  const xt::xtensor<double, 2>& _x = geometry.x();
+  xtl::span<const double> _x = geometry.x();
 
   int num_values = num_points_local * width;
   std::vector<double> x(num_values, 0.0);
+
   if (width == 3)
     std::copy_n(_x.data(), num_values, x.begin());
   else
   {
     for (int i = 0; i < num_points_local; ++i)
-      for (int j = 0; j < gdim; ++j)
-        x[width * i + j] = _x(i, j);
+    {
+      std::copy_n(std::next(_x.begin(), 3 * i), gdim,
+                  std::next(x.begin(), width * i));
+    }
   }
 
   // Add geometry DataItem node
@@ -220,12 +220,12 @@ void xdmf_mesh::add_mesh(MPI_Comm comm, pugi::xml_node& xml_node,
   auto map = mesh.topology().index_map(tdim);
   assert(map);
   const int num_cells = map->size_local();
-  std::vector<std::int32_t> active_cells(num_cells);
-  std::iota(active_cells.begin(), active_cells.end(), 0);
+  std::vector<std::int32_t> cells(num_cells);
+  std::iota(cells.begin(), cells.end(), 0);
 
   add_topology_data(comm, grid_node, h5_id, path_prefix, mesh.topology(),
                     mesh.geometry(), tdim,
-                    xtl::span<std::int32_t>(active_cells.data(), num_cells));
+                    xtl::span<std::int32_t>(cells.data(), num_cells));
 
   // Add geometry node and attributes (including writing data)
   add_geometry_data(comm, grid_node, h5_id, path_prefix, mesh.geometry());

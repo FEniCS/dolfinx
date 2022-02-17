@@ -16,13 +16,8 @@ flake8-python-code: &flake8-python-code
   command: |
     cd python/
     python3 -m flake8 dolfinx
-    python3 -m flake8 dolfinx_utils
     python3 -m flake8 demo
     python3 -m flake8 test
-
-build-documentation-cpp: &build-documentation-cpp
-  name: Build documentation (C++)
-  command: cd cpp/doc && doxygen
 
 configure-cpp: &configure-cpp
   name: Configure (C++)
@@ -63,25 +58,17 @@ build-python-interface: &build-python-interface
     cd python
     pip3 -v install --global-option build --global-option --debug . --user
 
-build-documentation-python: &build-documentation-python
-  name: Build documentation (Python)
-  command: |
-    cd python/demo && python3 ./generate-demo-files.py
-    cd ../doc && make html
-
 demos-python: &demos-python
   name: Run demos (Python, serial)
   command: |
     mkdir -p ~/junit
     cd python/demo
-    python3 ./generate-demo-files.py
     python3 -m pytest -n=4 -v -m serial --durations=10 --junitxml=~/junit/demo-results.xml test.py
 
 demos-python-mpi: &demos-python-mpi
   name: Run demos (Python, MPI)
   command: |
     cd python/demo
-    python3 ./generate-demo-files.py
     python3 -m pytest -n=2 -v -m mpi test.py --num-proc=3
 
 set-jit-defaults: &set-jit-defaults
@@ -114,7 +101,6 @@ jobs:
       - checkout
       - run: *install-python-components
       - run: *flake8-python-code
-      - run: *build-documentation-cpp
       - run: *configure-cpp
       - run: *build-install-cpp
 
@@ -123,18 +109,12 @@ jobs:
       - run: *regression-tests-cpp-mpi
 
       - run: *build-python-interface
-      - run: *build-documentation-python
 
       - run: *demos-python
       - run: *demos-python-mpi
       - run: *set-jit-defaults
       - run: *unit-tests-python
       - run: *unit-tests-python-mpi
-      - persist_to_workspace:
-          root: .
-          paths:
-            - python/doc/build/html/
-            - cpp/doc/html/
       - store_test_results:
           path: ~/junit
       - store_artifacts:
@@ -150,7 +130,6 @@ jobs:
       - checkout
       - run: *install-python-components
       - run: *flake8-python-code
-      - run: *build-documentation-cpp
       - run: *configure-cpp
       - run: *build-install-cpp
 
@@ -159,7 +138,6 @@ jobs:
       - run: *regression-tests-cpp-mpi
 
       - run: *build-python-interface
-      - run: *build-documentation-python
 
       - run: *demos-python
       - run: *demos-python-mpi

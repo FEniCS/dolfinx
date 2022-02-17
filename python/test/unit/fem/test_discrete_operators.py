@@ -5,22 +5,23 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for the DiscreteOperator class"""
 
-import numpy
+import numpy as np
 import pytest
-from dolfinx import FunctionSpace, UnitCubeMesh, UnitSquareMesh
-from dolfinx.cpp.fem import create_discrete_gradient
-from dolfinx.cpp.mesh import GhostMode
-from dolfinx_utils.test.skips import skip_in_parallel
+
+from dolfinx.cpp.fem.petsc import create_discrete_gradient
+from dolfinx.fem import FunctionSpace
+from dolfinx.mesh import GhostMode, create_unit_cube, create_unit_square
+
 from mpi4py import MPI
 from petsc4py import PETSc
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("mesh", [
-    UnitSquareMesh(MPI.COMM_WORLD, 11, 6, ghost_mode=GhostMode.none),
-    UnitSquareMesh(MPI.COMM_WORLD, 11, 6, ghost_mode=GhostMode.shared_facet),
-    UnitCubeMesh(MPI.COMM_WORLD, 4, 3, 7, ghost_mode=GhostMode.none),
-    UnitCubeMesh(MPI.COMM_WORLD, 4, 3, 7, ghost_mode=GhostMode.shared_facet)
+    create_unit_square(MPI.COMM_WORLD, 11, 6, ghost_mode=GhostMode.none),
+    create_unit_square(MPI.COMM_WORLD, 11, 6, ghost_mode=GhostMode.shared_facet),
+    create_unit_cube(MPI.COMM_WORLD, 4, 3, 7, ghost_mode=GhostMode.none),
+    create_unit_cube(MPI.COMM_WORLD, 4, 3, 7, ghost_mode=GhostMode.shared_facet)
 ])
 def test_gradient(mesh):
     """Test discrete gradient computation (typically used for curl-curl
@@ -34,13 +35,13 @@ def test_gradient(mesh):
     m, n = G.getSize()
     assert m == num_edges
     assert n == mesh.topology.index_map(0).size_global
-    assert numpy.isclose(G.norm(PETSc.NormType.FROBENIUS), numpy.sqrt(2.0 * num_edges))
+    assert np.isclose(G.norm(PETSc.NormType.FROBENIUS), np.sqrt(2.0 * num_edges))
 
 
 def test_incompatible_spaces():
     """Test that error is thrown when function spaces are not compatible"""
 
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 13, 7)
+    mesh = create_unit_square(MPI.COMM_WORLD, 13, 7)
     V = FunctionSpace(mesh, ("Lagrange", 1))
     W = FunctionSpace(mesh, ("Nedelec 1st kind H(curl)", 1))
     with pytest.raises(RuntimeError):

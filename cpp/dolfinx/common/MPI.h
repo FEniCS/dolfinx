@@ -11,10 +11,8 @@
 #include <complex>
 #include <cstdint>
 #include <dolfinx/graph/AdjacencyList.h>
-#include <iostream>
 #include <numeric>
 #include <set>
-#include <tuple>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -157,7 +155,9 @@ constexpr MPI_Datatype mpi_type()
   else if constexpr (std::is_same<T, double>::value)
     return MPI_DOUBLE;
   else if constexpr (std::is_same<T, std::complex<double>>::value)
-    return MPI_DOUBLE_COMPLEX;
+    return MPI_C_DOUBLE_COMPLEX;
+  else if constexpr (std::is_same<T, std::complex<float>>::value)
+    return MPI_C_FLOAT_COMPLEX;
   else if constexpr (std::is_same<T, short int>::value)
     return MPI_SHORT;
   else if constexpr (std::is_same<T, int>::value)
@@ -174,6 +174,11 @@ constexpr MPI_Datatype mpi_type()
     return MPI_UNSIGNED_LONG_LONG;
   else if constexpr (std::is_same<T, bool>::value)
     return MPI_C_BOOL;
+  else if constexpr (std::is_same<T, std::int8_t>::value)
+    return MPI_INT8_T;
+  else
+    // Issue compile time error
+    static_assert(!std::is_same<T, T>::value);
 }
 
 //---------------------------------------------------------------------------
@@ -184,7 +189,7 @@ graph::AdjacencyList<T> all_to_all(MPI_Comm comm,
   const std::vector<std::int32_t>& send_offsets = send_data.offsets();
   const std::vector<T>& values_in = send_data.array();
 
-  const int comm_size = MPI::size(comm);
+  const int comm_size = dolfinx::MPI::size(comm);
   assert(send_data.num_nodes() == comm_size);
 
   // Data size per destination rank
@@ -229,22 +234,23 @@ neighbor_all_to_all(MPI_Comm neighbor_comm,
   std::adjacent_difference(std::next(send_data.offsets().begin()),
                            send_data.offsets().end(), send_sizes.begin());
   // Get receive sizes
-  MPI_Neighbor_alltoall(send_sizes.data(), 1, MPI::mpi_type<int>(),
-                        recv_sizes.data(), 1, MPI::mpi_type<int>(),
+  MPI_Neighbor_alltoall(send_sizes.data(), 1, dolfinx::MPI::mpi_type<int>(),
+                        recv_sizes.data(), 1, dolfinx::MPI::mpi_type<int>(),
                         neighbor_comm);
+  send_sizes.pop_back();
+  recv_sizes.pop_back();
 
-  // Work out recv offsets. Note use of std::prev to handle OpenMPI
-  // issue mentioned above
+  // Work out recv offsets
   std::vector<int> recv_offsets(indegree + 1);
   recv_offsets[0] = 0;
-  std::partial_sum(recv_sizes.begin(), std::prev(recv_sizes.end()),
+  std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
                    std::next(recv_offsets.begin(), 1));
 
   std::vector<T> recv_data(recv_offsets[recv_offsets.size() - 1]);
   MPI_Neighbor_alltoallv(
       send_data.array().data(), send_sizes.data(), send_data.offsets().data(),
-      MPI::mpi_type<T>(), recv_data.data(), recv_sizes.data(),
-      recv_offsets.data(), MPI::mpi_type<T>(), neighbor_comm);
+      dolfinx::MPI::mpi_type<T>(), recv_data.data(), recv_sizes.data(),
+      recv_offsets.data(), dolfinx::MPI::mpi_type<T>(), neighbor_comm);
 
   return graph::AdjacencyList<T>(std::move(recv_data), std::move(recv_offsets));
 }
