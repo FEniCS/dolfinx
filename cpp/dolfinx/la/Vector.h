@@ -38,8 +38,8 @@ public:
         _buffer_recv_fwd(bs * map->num_ghosts()),
         _x(bs * (map->size_local() + map->num_ghosts()), alloc)
   {
-    if (bs == 1)
-      _datatype = MPI::mpi_type<T>();
+    if (_bs == 1)
+      _datatype = dolfinx::MPI::mpi_type<T>();
     else
     {
       MPI_Type_contiguous(bs, dolfinx::MPI::mpi_type<T>(), &_datatype);
@@ -53,7 +53,10 @@ public:
         _buffer_send_fwd(x._buffer_send_fwd),
         _buffer_recv_fwd(x._buffer_recv_fwd), _x(x._x)
   {
-    MPI_Type_dup(x._datatype, &_datatype);
+    if (_bs == 1)
+      _datatype = dolfinx::MPI::mpi_type<T>();
+    else
+      MPI_Type_dup(x._datatype, &_datatype);
   }
 
   /// Move constructor
@@ -69,7 +72,7 @@ public:
   /// Destructor
   ~Vector()
   {
-    if (_bs != 1)
+    if (_datatype != MPI_DATATYPE_NULL and _bs != 1)
       MPI_Type_free(&_datatype);
   }
 
