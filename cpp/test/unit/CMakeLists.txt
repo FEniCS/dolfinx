@@ -14,6 +14,11 @@ add_custom_command(
   COMMAND ffcx ${CMAKE_CURRENT_SOURCE_DIR}/poisson.ufl -o ${CMAKE_CURRENT_SOURCE_DIR}
   VERBATIM DEPENDS poisson.ufl COMMENT "Compile poisson.ufl using FFCx")
 
+add_custom_command(
+  OUTPUT interpolation.c
+  COMMAND ffcx ${CMAKE_CURRENT_SOURCE_DIR}/interpolation.ufl -o ${CMAKE_CURRENT_SOURCE_DIR}
+  VERBATIM DEPENDS interpolation.ufl COMMENT "Compile interpolation.ufl using FFCx")
+
 # Make test executable
 set(TEST_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
@@ -21,6 +26,8 @@ set(TEST_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/vector.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/matrix.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/io.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/interpolation.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/interpolation.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/common/sub_systems_manager.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/common/index_map.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/common/sort.cpp
