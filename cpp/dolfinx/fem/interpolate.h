@@ -629,8 +629,14 @@ void interpolate(Function<T>& u, const Function<T>& v,
     // Get mesh and check that functions share the same mesh
     if (mesh != v.function_space()->mesh())
     {
-      const int nProcs = dolfinx::MPI::size(MPI_COMM_WORLD);
-      const auto mpi_rank = dolfinx::MPI::rank(MPI_COMM_WORLD);
+      if (mesh->comm() != v.function_space()->mesh()->comm())
+      {
+        throw std::runtime_error("Interpolation on different meshes is only "
+                                 "supported with the same communicator.");
+      }
+
+      const int nProcs = dolfinx::MPI::size(mesh->comm());
+      const auto mpi_rank = dolfinx::MPI::rank(mesh->comm());
 
       const int tdim = u.function_space()->mesh()->topology().dim();
       const auto cell_map
@@ -680,8 +686,7 @@ void interpolate(Function<T>& u, const Function<T>& v,
       // process i sends to process j
       std::vector<std::int32_t> allPointsToSend(nProcs * nProcs);
       MPI_Allgather(nPointsToSend.data(), nProcs, MPI_INT32_T,
-                    allPointsToSend.data(), nProcs, MPI_INT32_T,
-                    MPI_COMM_WORLD);
+                    allPointsToSend.data(), nProcs, MPI_INT32_T, mesh->comm());
 
       std::size_t nPointsToReceive = 0;
       for (int i = 0; i < nProcs; ++i)
@@ -708,7 +713,7 @@ void interpolate(Function<T>& u, const Function<T>& v,
       // Open a window for other processes to write into, then sync
       MPI_Win window;
       MPI_Win_create(pointsToReceive.data(), sizeof(double) * nPointsToReceive,
-                     sizeof(double), MPI_INFO_NULL, MPI_COMM_WORLD, &window);
+                     sizeof(double), MPI_INFO_NULL, mesh->comm(), &window);
       MPI_Win_fence(0, window);
 
       // Send data to each process. It is intended that sending to itself is the
@@ -788,7 +793,7 @@ void interpolate(Function<T>& u, const Function<T>& v,
       MPI_Win_create(values.data(),
                      sizeof(dolfinx::MPI::mpi_type<T>()) * values.size(),
                      sizeof(dolfinx::MPI::mpi_type<T>()), MPI_INFO_NULL,
-                     MPI_COMM_WORLD, &window);
+                     mesh->comm(), &window);
       MPI_Win_fence(0, window);
 
       // Get data from each process. It is intended that fetching from itself is
