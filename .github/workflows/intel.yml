@@ -48,7 +48,7 @@ jobs:
         with:
           path: ./ffcx
           repository: FEniCS/ffcx
-          ref: main
+          ref: michal/py-form-files
 
       - name: Install FFCx C interface
         run: |
@@ -70,7 +70,7 @@ jobs:
 
       - name: Install UFL and FFCx modules
         run: |
-          python3 -m pip install git+https://github.com/FEniCS/ufl.git
+          python3 -m pip install git+https://github.com/FEniCS/ufl.git@michal/py-form-files
           python3 -m pip install ffcx/
 
       - name: Build and run DOLFINx C++ unit tests (serial and MPI)

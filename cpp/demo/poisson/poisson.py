@@ -3,7 +3,10 @@
 #
 # The first step is to define the variational problem at hand. We define
 # the variational problem in UFL terms in a separate form file
-# :download:`Poisson.ufl`.  We begin by defining the finite element::
+# :download:`poisson.py`.  We begin by defining the finite element::
+from ufl import (Coefficient, Constant, FiniteElement, FunctionSpace, Mesh,
+                 TestFunction, TrialFunction, VectorElement, ds, dx, grad,
+                 inner, triangle)
 
 element = FiniteElement("Lagrange", triangle, 1)
 
@@ -34,10 +37,3 @@ kappa = Constant(mesh)
 
 a = kappa * inner(grad(u), grad(v)) * dx
 L = inner(f, v) * dx + inner(g, v) * ds
-
-# Before the form file can be used in the C++ program, it must be
-# compiled using FFCx by running (on the command-line):
-#
-# .. code-block:: sh
-#
-#    ffcx Poisson.ufl
