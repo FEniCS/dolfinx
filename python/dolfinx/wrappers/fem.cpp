@@ -461,7 +461,7 @@ void declare_objects(py::module& m, const std::string& type)
                      xt::adapt(c.data(), c.size(), xt::no_ownership(), s));
                }),
            py::arg("c").noconvert(), "Create a constant from a value array")
-      .def_property_readonly("dtype", [](const dolfinx::fem::Form<T>& self)
+      .def_property_readonly("dtype", [](const dolfinx::fem::Constant<T>& self)
                              { return py::dtype::of<T>(); })
       .def_property_readonly(
           "value",

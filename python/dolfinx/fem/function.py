@@ -60,7 +60,7 @@ class Constant(ufl.Constant):
 
     @property
     def dtype(self) -> np.dtype:
-        return self.dtype
+        return self._cpp_object.dtype
 
 
 class Expression:
