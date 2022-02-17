@@ -4,7 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <catch.hpp>
+#include <catch2/catch.hpp>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
 #include <numeric>
@@ -45,7 +45,7 @@ void test_scatter_fwd(int n)
   // Scatter values to ghost and check value is correctly received
   idx_map.scatter_fwd(xtl::span<const std::int64_t>(data_local),
                       xtl::span<std::int64_t>(data_ghost), n);
-  CHECK(data_ghost.size() == n * num_ghosts);
+  CHECK((int)data_ghost.size() == n * num_ghosts);
   CHECK(std::all_of(data_ghost.begin(), data_ghost.end(),
                     [=](auto i)
                     { return i == val * ((mpi_rank + 1) % mpi_size); }));
@@ -85,7 +85,7 @@ void test_scatter_rev()
                       common::IndexMap::Mode::add);
 
   std::int64_t sum;
-  CHECK(data_local.size() == n * size_local);
+  CHECK((int)data_local.size() == n * size_local);
   sum = std::reduce(data_local.begin(), data_local.end(), 0);
   CHECK(sum == n * value * num_ghosts);
 

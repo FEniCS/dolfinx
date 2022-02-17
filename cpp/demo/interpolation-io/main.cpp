@@ -16,6 +16,7 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <dolfinx/mesh/generation.h>
+#include <filesystem>
 
 using namespace dolfinx;
 
@@ -24,7 +25,7 @@ using namespace dolfinx;
 // It also shows how to create a finite element using Basix.
 template <typename T>
 void interpolate_scalar(const std::shared_ptr<mesh::Mesh>& mesh,
-                        const std::string& filename)
+                        std::filesystem::path filename)
 {
   // Create a Basix continuous Lagrange element of degree 1
   basix::FiniteElement e = basix::element::create_lagrange(
@@ -41,12 +42,12 @@ void interpolate_scalar(const std::shared_ptr<mesh::Mesh>& mesh,
   // Interpolate sin(2 \pi x[0]) in the scalar Lagrange finite element
   // space
   constexpr double PI = xt::numeric_constants<double>::PI;
-  u->interpolate([PI](auto& x) { return xt::sin(2 * PI * xt::row(x, 0)); });
+  u->interpolate([PI](auto&& x) { return xt::sin(2 * PI * xt::row(x, 0)); });
 
   // Write the function to a VTK file for visualisation, e.g. using
   // ParaView
-  io::VTKFile file(mesh->comm(), filename, "w");
-  file.write({*u}, 0.0);
+  io::VTKFile file(mesh->comm(), filename.replace_extension("pvd"), "w");
+  file.write<T>({*u}, 0.0);
 }
 
 // This function interpolations a function is a H(curl) finite element
@@ -55,7 +56,7 @@ void interpolate_scalar(const std::shared_ptr<mesh::Mesh>& mesh,
 // Lagrange finite element function to a VTX file for visualisation.
 template <typename T>
 void interpolate_nedelec(const std::shared_ptr<mesh::Mesh>& mesh,
-                         [[maybe_unused]] const std::string& filename)
+                         [[maybe_unused]] std::filesystem::path filename)
 {
   // Create a Basix Nedelec (first kind) element of degree 2 (dim=6 on triangle)
   basix::FiniteElement e = basix::element::create_nedelec(
@@ -79,16 +80,16 @@ void interpolate_nedelec(const std::shared_ptr<mesh::Mesh>& mesh,
 
   // Find cells with all vertices satisfying (0) x0 <= 0.5 and (1) x0 >= 0.5
   auto cells0 = mesh::locate_entities(
-      *mesh, 2, [](auto& x) { return xt::row(x, 0) <= 0.5; });
+      *mesh, 2, [](auto&& x) { return xt::row(x, 0) <= 0.5; });
   auto cells1 = mesh::locate_entities(
-      *mesh, 2, [](auto& x) { return xt::row(x, 0) >= 0.5; });
+      *mesh, 2, [](auto&& x) { return xt::row(x, 0) >= 0.5; });
 
   // Interpolation on the two sets of cells
-  u->interpolate([](auto& x) -> xt::xtensor<T, 2>
+  u->interpolate([](auto&& x) -> xt::xtensor<T, 2>
                  { return xt::view(x, xt::range(0, 2), xt::all()); },
                  cells0);
   u->interpolate(
-      [](auto& x) -> xt::xtensor<T, 2>
+      [](auto&& x) -> xt::xtensor<T, 2>
       {
         xt::xtensor<T, 2> v = xt::view(x, xt::range(0, 2), xt::all());
         xt::row(v, 0) += T(1);
@@ -123,7 +124,7 @@ void interpolate_nedelec(const std::shared_ptr<mesh::Mesh>& mesh,
   // component will appear continuous (continuous tangent component
   // between cells).
 #ifdef HAS_ADIOS2
-  io::VTXWriter outfile(mesh->comm(), filename, {u_l});
+  io::VTXWriter outfile(mesh->comm(), filename.replace_extension("bp"), {u_l});
   outfile.write(0.0);
   outfile.close();
 #endif
@@ -148,14 +149,14 @@ int main(int argc, char* argv[])
 
     // Interpolate a function in a scalar Lagrange space and output the
     // result to file for visualisation
-    interpolate_scalar<double>(mesh, "u.pvd");
-    interpolate_scalar<std::complex<double>>(mesh, "u_complex.pvd");
+    interpolate_scalar<double>(mesh, "u");
+    interpolate_scalar<std::complex<double>>(mesh, "u_complex");
 
     // Interpolate a function in a H(curl) finite element space, and
     // then interpolate the H(curl) function in a discontinuous Lagrange
     // space for visualisation
-    interpolate_nedelec<double>(mesh, "u_nedelec.pvd");
-    interpolate_nedelec<std::complex<double>>(mesh, "u_nedelec_complex.pvd");
+    interpolate_nedelec<double>(mesh, "u_nedelec");
+    interpolate_nedelec<std::complex<double>>(mesh, "u_nedelec_complex");
   }
 
   common::subsystem::finalize_mpi();

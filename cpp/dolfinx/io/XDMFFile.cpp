@@ -102,8 +102,9 @@ XDMFFile::XDMFFile(MPI_Comm comm, const std::filesystem::path& filename,
     // _hdf5_file_id(0)
 
     // Open HDF5 file
-    const std::filesystem::path hdf5_filename = xdmf_utils::get_hdf5_filename(_filename);
-    const bool mpi_io = MPI::size(_comm.comm()) > 1 ? true : false;
+    const std::filesystem::path hdf5_filename
+        = xdmf_utils::get_hdf5_filename(_filename);
+    const bool mpi_io = dolfinx::MPI::size(_comm.comm()) > 1 ? true : false;
     _h5_id = HDF5Interface::open_file(_comm.comm(), hdf5_filename, file_mode,
                                       mpi_io);
     assert(_h5_id > 0);

@@ -1,4 +1,4 @@
-# Copyright (C) 2021 Jørgen S. Dokken and Garth N. Wells
+# Copyright (C) 2021-2022 Jørgen S. Dokken and Garth N. Wells
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -12,63 +12,63 @@ import numpy as np
 
 from dolfinx import cpp as _cpp
 from dolfinx import fem, mesh
-from dolfinx.mesh import CellType
 
-# NOTE: Edge visualization of higher order elements are sketchy, see:
-# https://github.com/pyvista/pyvista/issues/947
-
-
-# NOTE: These dictionaries and following function should be replaced by
-# cpp.io.get_vtk_cell_type when plotting module has better support for
-# arbitrary lagrangian elements
-_first_order_vtk = {CellType.interval: 3,
-                    CellType.triangle: 5,
-                    CellType.quadrilateral: 9,
-                    CellType.tetrahedron: 10,
-                    CellType.hexahedron: 12}
-_cell_degree_triangle = {3: 1, 6: 2, 10: 3, 15: 4, 21: 5, 28: 6, 36: 7, 45: 8, 55: 9}
-_cell_degree_tetrahedron = {4: 1, 10: 2, 20: 3}
-_cell_degree_hexahedron = {8: 1, 27: 2}
+# NOTE: This dictionary and the below function that uses it should be
+# revised when pyvista improves rendering of 'arbitrary' Lagrange
+# elements, i.e. for the VTK cell types that define a shape but allow
+# arbitrary degree geometry. See
+# https://github.com/pyvista/pyvista/issues/947.
+#
+# Cell types can be found at
+# https://vtk.org/doc/nightly/html/vtkCellType_8h_source.html
+_first_order_vtk = {mesh.CellType.interval: 3,
+                    mesh.CellType.triangle: 5,
+                    mesh.CellType.quadrilateral: 9,
+                    mesh.CellType.tetrahedron: 10,
+                    mesh.CellType.hexahedron: 12}
 
 
 @functools.singledispatch
-def create_vtk_mesh(mesh: mesh.Mesh, dim: int, entities=None):
+def create_vtk_mesh(msh: mesh.Mesh, dim: int, entities=None):
     """Create vtk mesh topology data for mesh entities of a given
     dimension. The vertex indices in the returned topology array are the
     indices for the associated entry in the mesh geometry.
 
     """
-    if entities is None:
-        num_cells = mesh.topology.index_map(dim).size_local
-        entities = np.arange(num_cells, dtype=np.int32)
-    else:
-        num_cells = len(entities)
-
-    # Get the indices in the geometry array that correspong to the
-    # topology vertices
-    geometry_entities = _cpp.mesh.entities_to_geometry(mesh, dim, entities, False)
-
-    # Array holding the cell type (shape) for each cell
-    if mesh.topology.cell_type == CellType.prism:
+    tdim = msh.topology.dim
+    cell_type = _cpp.mesh.cell_entity_type(msh.topology.cell_type, dim, 0)
+    degree = msh.geometry.cmap.degree
+    if cell_type == mesh.CellType.prism:
         raise RuntimeError("Plotting of prism meshes not supported")
-    e_type = _cpp.mesh.cell_entity_type(mesh.topology.cell_type, dim, 0)
-    degree = mesh.geometry.cmap.degree
-    if degree == 1:
-        cell_types = np.full(num_cells, _first_order_vtk[e_type])
-    else:
-        warnings.warn("Plotting of higher order mesh topologies is experimental.")
-        cell_types = np.full(num_cells, _cpp.io.get_vtk_cell_type(mesh, dim))
 
-    # Get cell data and the DOLFINx -> VTK permutation array
-    num_vertices_per_cell = geometry_entities.shape[1]
-    map_vtk = np.argsort(_cpp.io.perm_vtk(e_type, num_vertices_per_cell))
+    # Use all local cells if not supplied
+    if entities is None:
+        entities = range(msh.topology.index_map(dim).size_local)
+
+    if dim == tdim:
+        vtk_topology = _cpp.io.extract_vtk_connectivity(msh)[entities]
+        num_nodes_per_cell = vtk_topology.shape[1]
+    else:
+        # NOTE: This linearizes higher order geometries
+        geometry_entities = _cpp.mesh.entities_to_geometry(msh, dim, entities, False)
+        if degree > 1:
+            warnings.warn("Linearizing topology for higher order sub entities.")
+
+        # Get cell data and the DOLFINx -> VTK permutation array
+        num_nodes_per_cell = geometry_entities.shape[1]
+        map_vtk = np.argsort(_cpp.io.perm_vtk(cell_type, num_nodes_per_cell))
+        vtk_topology = geometry_entities[:, map_vtk]
 
     # Create mesh topology
-    topology = np.zeros((num_cells, num_vertices_per_cell + 1), dtype=np.int32)
-    topology[:, 0] = num_vertices_per_cell
-    topology[:, 1:] = geometry_entities[:, map_vtk]
+    topology = np.empty((len(entities), num_nodes_per_cell + 1), dtype=np.int32)
+    topology[:, 0] = num_nodes_per_cell
+    topology[:, 1:] = vtk_topology
 
-    return topology.reshape(1, -1)[0], cell_types, mesh.geometry.x
+    # Array holding the cell type (shape) for each cell
+    vtk_type = _first_order_vtk[cell_type] if degree == 1 else _cpp.io.get_vtk_cell_type(cell_type, tdim)
+    cell_types = np.full(len(entities), vtk_type)
+
+    return topology.reshape(-1), cell_types, msh.geometry.x
 
 
 @create_vtk_mesh.register(fem.FunctionSpace)
@@ -79,34 +79,30 @@ def _(V: fem.FunctionSpace, entities=None):
     discontinuous) only.
 
     """
-    family = V.ufl_element().family()
-    if not (family in ['Discontinuous Lagrange', "Lagrange", "DQ", "Q"]):
-        raise RuntimeError("Can only create meshes from Continuous or Discontinuous function-spaces")
-    if V.ufl_element().degree() == 0:
+    if not (V.ufl_element().family() in ['Discontinuous Lagrange', "Lagrange", "DQ", "Q"]):
+        raise RuntimeError("Can only create meshes from continuous or discontinuous Lagrange spaces")
+
+    degree = V.ufl_element().degree()
+    if degree == 0:
         raise RuntimeError("Cannot create topology from cellwise constants.")
 
-    mesh = V.mesh
+    # Use all local cells if not supplied
+    msh = V.mesh
+    tdim = msh.topology.dim
     if entities is None:
-        num_cells = mesh.topology.index_map(mesh.topology.dim).size_local
-        entities = np.arange(num_cells, dtype=np.int32)
-    else:
-        num_cells = entities.size
+        entities = range(msh.topology.index_map(tdim).size_local)
 
     dofmap = V.dofmap
     num_dofs_per_cell = V.dofmap.dof_layout.num_dofs
-    degree = V.ufl_element().degree()
-    cell_type = mesh.topology.cell_type
+    cell_type = msh.topology.cell_type
     perm = np.argsort(_cpp.io.perm_vtk(cell_type, num_dofs_per_cell))
 
-    if degree == 1:
-        cell_types = np.full(num_cells, _first_order_vtk[mesh.topology.cell_type])
-    else:
-        warnings.warn("Plotting of higher order functions is experimental.")
-        cell_types = np.full(num_cells, _cpp.io.get_vtk_cell_type(mesh, mesh.topology.dim))
+    vtk_type = _first_order_vtk[cell_type] if degree == 1 else _cpp.io.get_vtk_cell_type(cell_type, tdim)
+    cell_types = np.full(len(entities), vtk_type)
 
-    topology = np.zeros((num_cells, num_dofs_per_cell + 1), dtype=np.int32)
+    topology = np.zeros((len(entities), num_dofs_per_cell + 1), dtype=np.int32)
     topology[:, 0] = num_dofs_per_cell
     dofmap_ = dofmap.list.array.reshape(dofmap.list.num_nodes, num_dofs_per_cell)
 
-    topology[:, 1:] = dofmap_[:num_cells, perm]
+    topology[:, 1:] = dofmap_[:len(entities), perm]
     return topology.reshape(1, -1)[0], cell_types, V.tabulate_dof_coordinates()
