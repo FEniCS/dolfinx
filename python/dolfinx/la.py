@@ -65,6 +65,7 @@ def matrix_csr(sp, dtype=np.float64) -> MatrixCSRMetaClass:
 
     Returns:
         A sparse matrix.
+
     """
     if dtype == np.float32:
         ftype = _cpp.la.MatrixCSR_float32
@@ -84,7 +85,8 @@ class VectorMetaClass:
         """A distributed vector object.
 
         Args:
-            map: Index map the describes the size and distribution of the vector
+            map: Index map the describes the size and distribution of
+                the vector
             bs: Block size
 
         Note:
@@ -99,12 +101,14 @@ def vector(map, bs=1, dtype=np.float64) -> VectorMetaClass:
     """Create a distributed vector.
 
     Args:
-        map: Index map the describes the size and distribution of the vector.
+        map: Index map the describes the size and distribution of the
+            vector.
         bs: Block size.
         dtype: The scalar type.
 
     Returns:
         A distributed vector.
+
     """
     if dtype == np.float32:
         vtype = _cpp.la.Vector_float32

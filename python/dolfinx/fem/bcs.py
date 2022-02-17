@@ -145,13 +145,14 @@ class DirichletBCMetaClass:
         return self.value
 
 
-def dirichletbc(value: typing.Union[ufl.Coefficient, Function, Constant],
+def dirichletbc(value: typing.Union[Function, Constant],
                 dofs: typing.List[int], V: FunctionSpace = None) -> DirichletBCMetaClass:
     """Create a representation of Dirichlet boundary condition which
     is imposed on a linear system.
 
     Args:
-        value: Lifted boundary values function.
+        value: Lifted boundary values function. It must have a ``dtype``
+            property.
         dofs: Local indices of degrees of freedom in function space to
             which boundary condition applies. Expects array of size
             (number of dofs, 2) if function space of the problem, ``V``,
