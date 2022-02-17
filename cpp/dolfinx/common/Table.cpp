@@ -92,7 +92,7 @@ Table Table::reduce(MPI_Comm comm, Table::Reduction reduction) const
   }
   new_title += name;
 
-  const int mpi_size = MPI::size(comm);
+  const int mpi_size = dolfinx::MPI::size(comm);
 
   // Handle trivial reduction
   if (mpi_size == 1)
@@ -149,7 +149,7 @@ Table Table::reduce(MPI_Comm comm, Table::Reduction reduction) const
   std::map<std::array<std::string, 2>, double> dvalues_all;
   std::array<std::string, 2> key;
   const double* values_ptr = values_all.data();
-  for (int i = 0; i < MPI::size(comm); ++i)
+  for (int i = 0; i < dolfinx::MPI::size(comm); ++i)
   {
     std::stringstream keys_stream(keys_all[i]);
     while (std::getline(keys_stream, key[0], '\0'),

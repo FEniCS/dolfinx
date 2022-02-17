@@ -13,7 +13,7 @@ import scipy.sparse
 
 import ufl
 from dolfinx import cpp as _cpp
-from dolfinx import graph
+from dolfinx import graph, la
 from dolfinx.fem import (Constant, Function, FunctionSpace,
                          VectorFunctionSpace, apply_lifting,
                          apply_lifting_nest, assemble_matrix,
@@ -802,7 +802,7 @@ def test_vector_types():
 
     c = Constant(mesh, np.float64(1))
     L = inner(c, v) * ufl.dx
-    x0 = _cpp.la.Vector_float64(V.dofmap.index_map, V.dofmap.index_map_bs)
+    x0 = la.vector(V.dofmap.index_map, V.dofmap.index_map_bs, dtype=np.float64)
     L = form(L, dtype=x0.array.dtype)
     c0 = pack_constants(L)
     c1 = pack_coefficients(L)
@@ -811,7 +811,7 @@ def test_vector_types():
 
     c = Constant(mesh, np.complex128(1))
     L = inner(c, v) * ufl.dx
-    x1 = _cpp.la.Vector_complex128(V.dofmap.index_map, V.dofmap.index_map_bs)
+    x1 = la.vector(V.dofmap.index_map, V.dofmap.index_map_bs, dtype=np.complex128)
     L = form(L, dtype=x1.array.dtype)
     c0 = pack_constants(L)
     c1 = pack_coefficients(L)
@@ -820,7 +820,7 @@ def test_vector_types():
 
     c = Constant(mesh, np.float32(1))
     L = inner(c, v) * ufl.dx
-    x2 = _cpp.la.Vector_float32(V.dofmap.index_map, V.dofmap.index_map_bs)
+    x2 = la.vector(V.dofmap.index_map, V.dofmap.index_map_bs, dtype=np.float32)
     L = form(L, dtype=x2.array.dtype)
     c0 = pack_constants(L)
     c1 = pack_coefficients(L)

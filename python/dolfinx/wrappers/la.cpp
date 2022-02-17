@@ -190,6 +190,7 @@ void la(py::module& m)
             return dolfinx::la::SparsityPattern(comm.get(), patterns, maps, bs);
           }))
       .def("index_map", &dolfinx::la::SparsityPattern::index_map)
+      .def("column_index_map", &dolfinx::la::SparsityPattern::column_index_map)
       .def("assemble", &dolfinx::la::SparsityPattern::assemble)
       .def_property_readonly("num_nonzeros",
                              &dolfinx::la::SparsityPattern::num_nonzeros)

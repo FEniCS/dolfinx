@@ -6,7 +6,7 @@
 
 #ifdef HAS_SLEPC
 
-#include "SLEPcEigenSolver.h"
+#include "slepc.h"
 #include "petsc.h"
 #include "utils.h"
 #include <dolfinx/common/MPI.h>
