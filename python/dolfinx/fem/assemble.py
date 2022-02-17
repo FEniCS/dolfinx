@@ -26,10 +26,24 @@ from dolfinx.cpp.fem import pack_coefficients as _pack_coefficients
 from dolfinx.cpp.fem import pack_constants as _pack_constants
 
 
-def pack_constants(form: typing.Union[FormMetaClass, typing.Sequence[FormMetaClass]]):
-    """Compute form constants. If form is an array of forms, this
-    function returns an array of form constants with the same shape as
-    form.
+def pack_constants(form: typing.Union[FormMetaClass,
+                                      typing.Sequence[FormMetaClass]]) -> typing.Union[np.ndarray,
+                                                                                       typing.Sequence[np.ndarray]]:
+    """Compute form constants.
+
+    Pack the `constants` that appear in forms. The packed constants can
+    be passed to an assembler. This is a performance optimisation for
+    cases where a form is assembled multiple times and (some) constants
+    do not change.
+
+    If ``form`` is an array of forms, this function returns an array of
+    form constants with the same shape as form.
+
+    Args:
+        form: A single form or array of forms to pack the constants for.
+
+    Returns:
+        A `constant` array for each form.
 
     """
     def _pack(form):
@@ -44,9 +58,21 @@ def pack_constants(form: typing.Union[FormMetaClass, typing.Sequence[FormMetaCla
 
 
 def pack_coefficients(form: typing.Union[FormMetaClass, typing.Sequence[FormMetaClass]]):
-    """Compute form coefficients. If form is an array of forms, this
-    function returns an array of form coefficients with the same shape
-    as form.
+    """Compute form coefficients.
+
+    Pack the `coefficients` that appear in forms. The packed
+    coefficients can be passed to an assembler. This is a
+    performance optimisation for cases where a form is assembled
+    multiple times and (some) coefficients do not change.
+
+    If ``form`` is an array of forms, this function returns an array of
+    form coefficients with the same shape as form.
+
+    Args:
+        form: A single form or array of forms to pack the constants for.
+
+    Returns:
+        Coefficients for each form.
 
     """
     def _pack(form):
