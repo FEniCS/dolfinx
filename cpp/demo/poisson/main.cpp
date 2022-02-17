@@ -163,7 +163,7 @@ int main(int argc, char* argv[])
 
     auto facets = mesh::locate_entities_boundary(
         *mesh, 1,
-        [](auto& x) -> xt::xtensor<bool, 1>
+        [](auto&& x) -> xt::xtensor<bool, 1>
         {
           auto x0 = xt::row(x, 0);
           return xt::isclose(x0, 0.0) or xt::isclose(x0, 2.0);
@@ -172,14 +172,14 @@ int main(int argc, char* argv[])
     auto bc = std::make_shared<const fem::DirichletBC<T>>(0.0, bdofs, V);
 
     f->interpolate(
-        [](auto& x) -> xt::xarray<T>
+        [](auto&& x) -> xt::xarray<T>
         {
           auto dx = xt::square(xt::row(x, 0) - 0.5)
                     + xt::square(xt::row(x, 1) - 0.5);
           return 10 * xt::exp(-(dx) / 0.02);
         });
 
-    g->interpolate([](auto& x) -> xt::xarray<T>
+    g->interpolate([](auto&& x) -> xt::xarray<T>
                    { return xt::sin(5 * xt::row(x, 0)); });
 
     // Now, we have specified the variational forms and can consider the

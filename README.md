@@ -10,7 +10,7 @@ DOLFINx is a new version of DOLFIN. It is being actively developed and
 features may come and go as development proceeds.
 
 DOLFINx is the computational environment of
-[FEniCS](https://fenicsproject.org) and implements the FEniCS Problem
+[FEniCSx](https://fenicsproject.org) and implements the FEniCS Problem
 Solving Environment in Python and C++.
 
 ## Documentation

@@ -20,39 +20,46 @@ namespace dolfinx_wrappers
 {
 void nls(py::module& m)
 {
+  py::module m_petsc
+      = m.def_submodule("petsc", "PETSc-specific nonlinear solvers");
+
   // dolfinx::NewtonSolver
-  py::class_<dolfinx::nls::NewtonSolver,
-             std::shared_ptr<dolfinx::nls::NewtonSolver>>(m, "NewtonSolver")
+  py::class_<dolfinx::nls::petsc::NewtonSolver,
+             std::shared_ptr<dolfinx::nls::petsc::NewtonSolver>>(m_petsc,
+                                                                 "NewtonSolver")
       .def(py::init(
-          [](const MPICommWrapper comm)
-          { return std::make_unique<dolfinx::nls::NewtonSolver>(comm.get()); }))
+          [](const MPICommWrapper comm) {
+            return std::make_unique<dolfinx::nls::petsc::NewtonSolver>(
+                comm.get());
+          }))
       .def_property_readonly("krylov_solver",
-                             [](const dolfinx::nls::NewtonSolver& self)
+                             [](const dolfinx::nls::petsc::NewtonSolver& self)
                              {
                                const dolfinx::la::petsc::KrylovSolver& solver
                                    = self.get_krylov_solver();
                                return solver.ksp();
                              })
-      .def("setF", &dolfinx::nls::NewtonSolver::setF)
-      .def("setJ", &dolfinx::nls::NewtonSolver::setJ)
-      .def("setP", &dolfinx::nls::NewtonSolver::setP)
-      .def("set_update", &dolfinx::nls::NewtonSolver::set_update)
-      .def("set_form", &dolfinx::nls::NewtonSolver::set_form)
-      .def("solve", &dolfinx::nls::NewtonSolver::solve)
-      .def_readwrite("atol", &dolfinx::nls::NewtonSolver::atol,
+      .def("setF", &dolfinx::nls::petsc::NewtonSolver::setF)
+      .def("setJ", &dolfinx::nls::petsc::NewtonSolver::setJ)
+      .def("setP", &dolfinx::nls::petsc::NewtonSolver::setP)
+      .def("set_update", &dolfinx::nls::petsc::NewtonSolver::set_update)
+      .def("set_form", &dolfinx::nls::petsc::NewtonSolver::set_form)
+      .def("solve", &dolfinx::nls::petsc::NewtonSolver::solve)
+      .def_readwrite("atol", &dolfinx::nls::petsc::NewtonSolver::atol,
                      "Absolute tolerance")
-      .def_readwrite("rtol", &dolfinx::nls::NewtonSolver::rtol,
+      .def_readwrite("rtol", &dolfinx::nls::petsc::NewtonSolver::rtol,
                      "Relative tolerance")
-      .def_readwrite("error_on_nonconvergence",
-                     &dolfinx::nls::NewtonSolver::error_on_nonconvergence)
-      .def_readwrite("report", &dolfinx::nls::NewtonSolver::report)
+      .def_readwrite(
+          "error_on_nonconvergence",
+          &dolfinx::nls::petsc::NewtonSolver::error_on_nonconvergence)
+      .def_readwrite("report", &dolfinx::nls::petsc::NewtonSolver::report)
       .def_readwrite("relaxation_parameter",
-                     &dolfinx::nls::NewtonSolver::relaxation_parameter,
+                     &dolfinx::nls::petsc::NewtonSolver::relaxation_parameter,
                      "Relaxation parameter")
-      .def_readwrite("max_it", &dolfinx::nls::NewtonSolver::max_it,
+      .def_readwrite("max_it", &dolfinx::nls::petsc::NewtonSolver::max_it,
                      "Maximum number of iterations")
       .def_readwrite("convergence_criterion",
-                     &dolfinx::nls::NewtonSolver::convergence_criterion,
+                     &dolfinx::nls::petsc::NewtonSolver::convergence_criterion,
                      "Convergence criterion, either 'residual' (default) or "
                      "'incremental'");
 }
