@@ -7,15 +7,15 @@ FROM rockylinux/rockylinux:8
 
 ARG BUILD_NP=16
 
-ARG MPICH_VERSION=3.4.2
-ARG PETSC_VERSION=3.16.2
+ARG MPICH_VERSION=3.4.3
+ARG PETSC_VERSION=3.16.4
 ARG BOOST_VERSION=1.77.0
 ARG BOOST_VERSION_UNDERSCORES=1_77_0
 ARG HDF5_SERIES=1.12
 ARG HDF5_PATCH=1
-ARG PYBIND11_VERSION=2.8.1
+ARG PYBIND11_VERSION=2.9.1
 ARG XTENSOR_VERSION=0.24.0
-ARG XTL_VERSION=0.7.3
+ARG XTL_VERSION=0.7.4
 
 WORKDIR /tmp
 
@@ -46,11 +46,11 @@ ENV DEVTOOLSET_ROOTPATH="/opt/rh/gcc-toolset-11/root"
 ENV PATH="${DEVTOOLSET_ROOTPATH}/usr/bin:${PATH}"
 ENV LD_LIBRARY_PATH="${DEVTOOLSET_ROOTPATH}/usr/lib64:${DEVTOOLSET_ROOTPATH}/usr/lib:${DEVTOOLSET_ROOTPATH}/usr/lib64/dyninst:${DEVTOOLSET_ROOTPATH}/usr/lib/dyninst:/usr/local/lib64:${LD_LIBRARY_PATH}"
 
-# Build MPICH
+# Build MPICH (see https://github.com/pmodels/mpich/issues/5811)
 RUN curl -L -O http://www.mpich.org/static/downloads/${MPICH_VERSION}/mpich-${MPICH_VERSION}.tar.gz && \
     tar -xf mpich-${MPICH_VERSION}.tar.gz && \
     cd mpich-${MPICH_VERSION} && \
-    FFLAGS=-fallow-argument-mismatch ./configure --with-device=ch4:ofi --enable-shared --prefix=/usr/local && \
+    FCFLAGS=-fallow-argument-mismatch FFLAGS=-fallow-argument-mismatch ./configure --with-device=ch4:ofi --enable-shared --prefix=/usr/local && \
     make -j${BUILD_NP} install && \
     rm -rf /tmp/*
 

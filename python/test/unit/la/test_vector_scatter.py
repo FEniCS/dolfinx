@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-# Copyright (C) 2021 Chris Richardson, Igor Baratta
+# Copyright (C) 2021 Chris Richardson and Igor Baratta
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #

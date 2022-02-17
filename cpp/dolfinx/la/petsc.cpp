@@ -537,26 +537,31 @@ Vec petsc::Operator::create_vector(std::size_t dim) const
 Mat petsc::Operator::mat() const { return _matA; }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
-                  const std::int32_t*, const PetscScalar*)>
+std::function<int(const xtl::span<const std::int32_t>&,
+                  const xtl::span<const std::int32_t>&,
+                  const xtl::span<const PetscScalar>&)>
 petsc::Matrix::set_fn(Mat A, InsertMode mode)
 {
   return [A, mode, cache = std::vector<PetscInt>()](
-             std::int32_t m, const std::int32_t* rows, std::int32_t n,
-             const std::int32_t* cols, const PetscScalar* vals) mutable -> int
+             const xtl::span<const std::int32_t>& rows,
+             const xtl::span<const std::int32_t>& cols,
+             const xtl::span<const PetscScalar>& vals) mutable -> int
   {
     PetscErrorCode ierr;
 #ifdef PETSC_USE_64BIT_INDICES
-    cache.resize(m + n);
-    std::copy_n(rows, m, cache.begin());
-    std::copy_n(cols, n, std::next(cache.begin(), m));
-    const PetscInt *_rows = cache.data(), *_cols = _rows + m;
-    ierr = MatSetValuesLocal(A, m, _rows, n, _cols, vals, mode);
+    cache.resize(rows.size() + cols.size());
+    std::copy(rows.begin(), rows.end(), cache.begin());
+    std::copy(cols.begin(), cols.end(), std::next(cache.begin(), rows.size()));
+    const PetscInt* _rows = cache.data();
+    const PetscInt* _cols = cache.data() + rows.size();
+    ierr = MatSetValuesLocal(A, rows.size(), _rows, cols.size(), _cols,
+                             vals.data(), mode);
 #else
-    ierr = MatSetValuesLocal(A, m, rows, n, cols, vals, mode);
+    ierr = MatSetValuesLocal(A, rows.size(), rows.data(), cols.size(),
+                             cols.data(), vals.data(), mode);
 #endif
 
-#ifdef DEBUG
+#ifndef NDEBUG
     if (ierr != 0)
       petsc::error(ierr, __FILE__, "MatSetValuesLocal");
 #endif
@@ -564,26 +569,31 @@ petsc::Matrix::set_fn(Mat A, InsertMode mode)
   };
 }
 //-----------------------------------------------------------------------------
-std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
-                  const std::int32_t*, const PetscScalar*)>
+std::function<int(const xtl::span<const std::int32_t>&,
+                  const xtl::span<const std::int32_t>&,
+                  const xtl::span<const PetscScalar>&)>
 petsc::Matrix::set_block_fn(Mat A, InsertMode mode)
 {
   return [A, mode, cache = std::vector<PetscInt>()](
-             std::int32_t m, const std::int32_t* rows, std::int32_t n,
-             const std::int32_t* cols, const PetscScalar* vals) mutable -> int
+             const xtl::span<const std::int32_t>& rows,
+             const xtl::span<const std::int32_t>& cols,
+             const xtl::span<const PetscScalar>& vals) mutable -> int
   {
     PetscErrorCode ierr;
 #ifdef PETSC_USE_64BIT_INDICES
-    cache.resize(m + n);
-    std::copy_n(rows, m, cache.begin());
-    std::copy_n(cols, n, std::next(cache.begin(), m));
-    const PetscInt *_rows = cache.data(), *_cols = _rows + m;
-    ierr = MatSetValuesBlockedLocal(A, m, _rows, n, _cols, vals, mode);
+    cache.resize(rows.size() + cols.size());
+    std::copy(rows.begin(), rows.end(), cache.begin());
+    std::copy(cols.begin(), cols.end(), std::next(cache.begin(), rows.size()));
+    const PetscInt* _rows = cache.data();
+    const PetscInt* _cols = cache.data() + rows.size();
+    ierr = MatSetValuesBlockedLocal(A, rows.size(), _rows, cols.size(), _cols,
+                                    vals.data(), mode);
 #else
-    ierr = MatSetValuesBlockedLocal(A, m, rows, n, cols, vals, mode);
+    ierr = MatSetValuesBlockedLocal(A, rows.size(), rows.data(), cols.size(),
+                                    cols.data(), vals.data(), mode);
 #endif
 
-#ifdef DEBUG
+#ifndef NDEBUG
     if (ierr != 0)
       petsc::error(ierr, __FILE__, "MatSetValuesBlockedLocal");
 #endif
@@ -591,8 +601,9 @@ petsc::Matrix::set_block_fn(Mat A, InsertMode mode)
   };
 }
 //-----------------------------------------------------------------------------
-std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
-                  const std::int32_t*, const PetscScalar*)>
+std::function<int(const xtl::span<const std::int32_t>&,
+                  const xtl::span<const std::int32_t>&,
+                  const xtl::span<const PetscScalar>&)>
 petsc::Matrix::set_block_expand_fn(Mat A, int bs0, int bs1, InsertMode mode)
 {
   if (bs0 == 1 and bs1 == 1)
@@ -600,22 +611,24 @@ petsc::Matrix::set_block_expand_fn(Mat A, int bs0, int bs1, InsertMode mode)
 
   return [A, bs0, bs1, mode, cache0 = std::vector<PetscInt>(),
           cache1 = std::vector<PetscInt>()](
-             std::int32_t m, const std::int32_t* rows, std::int32_t n,
-             const std::int32_t* cols, const PetscScalar* vals) mutable -> int
+             const xtl::span<const std::int32_t>& rows,
+             const xtl::span<const std::int32_t>& cols,
+             const xtl::span<const PetscScalar>& vals) mutable -> int
   {
     PetscErrorCode ierr;
-    cache0.resize(bs0 * m);
-    cache1.resize(bs1 * n);
-    for (std::int32_t i = 0; i < m; ++i)
+    cache0.resize(bs0 * rows.size());
+    cache1.resize(bs1 * cols.size());
+    for (std::size_t i = 0; i < rows.size(); ++i)
       for (int k = 0; k < bs0; ++k)
         cache0[bs0 * i + k] = bs0 * rows[i] + k;
-    for (std::int32_t i = 0; i < n; ++i)
+
+    for (std::size_t i = 0; i < cols.size(); ++i)
       for (int k = 0; k < bs1; ++k)
         cache1[bs1 * i + k] = bs1 * cols[i] + k;
 
     ierr = MatSetValuesLocal(A, cache0.size(), cache0.data(), cache1.size(),
-                             cache1.data(), vals, mode);
-#ifdef DEBUG
+                             cache1.data(), vals.data(), mode);
+#ifndef NDEBUG
     if (ierr != 0)
       petsc::error(ierr, __FILE__, "MatSetValuesLocal");
 #endif

@@ -6,7 +6,7 @@
 
 #ifdef HAS_SLEPC
 
-#include "SLEPcEigenSolver.h"
+#include "slepc.h"
 #include "petsc.h"
 #include "utils.h"
 #include <dolfinx/common/MPI.h>
@@ -72,7 +72,7 @@ void SLEPcEigenSolver::solve()
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::solve(std::int64_t n)
 {
-#ifdef DEBUG
+#ifndef NDEBUG
   // Get operators
   Mat A, B;
   assert(_eps);

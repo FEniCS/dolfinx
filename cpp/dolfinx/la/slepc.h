@@ -18,9 +18,8 @@
 namespace dolfinx::la
 {
 
-/// This class provides an eigenvalue solver for PETSc matrices. It is a
-/// wrapper for the SLEPc eigenvalue solver.
-
+/// @brief This class provides an eigenvalue solver for PETSc matrices.
+/// It is a wrapper for the SLEPc eigenvalue solver.
 class SLEPcEigenSolver
 {
 public:

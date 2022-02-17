@@ -9,15 +9,11 @@
 #include <dolfinx/la/Vector.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/cell_types.h>
+#include <dolfinx/nls/NewtonSolver.h>
 #include <xtensor/xarray.hpp>
 #include <xtensor/xview.hpp>
 
 using namespace dolfinx;
-
-// Next:
-//
-// .. code-block:: cpp
-
 using T = PetscScalar;
 
 class HyperElasticProblem
@@ -149,7 +145,7 @@ int main(int argc, char* argv[])
 
     auto u_rotation = std::make_shared<fem::Function<T>>(V);
     u_rotation->interpolate(
-        [](auto& x)
+        [](auto&& x)
         {
           constexpr double scale = 0.005;
 
@@ -176,12 +172,12 @@ int main(int argc, char* argv[])
     // Create Dirichlet boundary conditions
     auto bdofs_left
         = fem::locate_dofs_geometrical({*V},
-                                       [](auto& x) -> xt::xtensor<bool, 1> {
+                                       [](auto&& x) -> xt::xtensor<bool, 1> {
                                          return xt::isclose(xt::row(x, 0), 0.0);
                                        });
     auto bdofs_right
         = fem::locate_dofs_geometrical({*V},
-                                       [](auto& x) -> xt::xtensor<bool, 1> {
+                                       [](auto&& x) -> xt::xtensor<bool, 1> {
                                          return xt::isclose(xt::row(x, 0), 1.0);
                                        });
     auto bcs = std::vector{
@@ -190,7 +186,7 @@ int main(int argc, char* argv[])
         std::make_shared<const fem::DirichletBC<T>>(u_rotation, bdofs_right)};
 
     HyperElasticProblem problem(L, a, bcs);
-    nls::NewtonSolver newton_solver(mesh->comm());
+    nls::petsc::NewtonSolver newton_solver(mesh->comm());
     newton_solver.setF(problem.F(), problem.vector());
     newton_solver.setJ(problem.J(), problem.matrix());
     newton_solver.set_form(problem.form());

@@ -481,7 +481,7 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh& mesh, int entity_dim,
   // global index value
   const std::int64_t num_nodes_g = mesh.geometry().index_map()->size_global();
   const MPI_Comm comm = mesh.comm();
-  const int comm_size = MPI::size(comm);
+  const int comm_size = dolfinx::MPI::size(comm);
   // NOTE: could make this int32_t be sending: index <- index - dest_rank_offset
   std::vector<std::vector<std::int64_t>> nodes_g_send(comm_size);
   for (std::int64_t node : nodes_g)
@@ -496,7 +496,8 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh& mesh, int entity_dim,
 
   // Send/receive
   const graph::AdjacencyList<std::int64_t> nodes_g_recv
-      = MPI::all_to_all(comm, graph::AdjacencyList<std::int64_t>(nodes_g_send));
+      = dolfinx::MPI::all_to_all(
+          comm, graph::AdjacencyList<std::int64_t>(nodes_g_send));
 
   // -------------------
   // 2. Send the entity key (nodes list) and tag to the postmaster based
@@ -525,10 +526,11 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh& mesh, int entity_dim,
   }
 
   // TODO: Pack into one MPI call
-  const graph::AdjacencyList<std::int64_t> entities_recv = MPI::all_to_all(
-      comm, graph::AdjacencyList<std::int64_t>(entities_send));
-  const graph::AdjacencyList<std::int32_t> data_recv
-      = MPI::all_to_all(comm, graph::AdjacencyList<std::int32_t>(data_send));
+  const graph::AdjacencyList<std::int64_t> entities_recv
+      = dolfinx::MPI::all_to_all(
+          comm, graph::AdjacencyList<std::int64_t>(entities_send));
+  const graph::AdjacencyList<std::int32_t> data_recv = dolfinx::MPI::all_to_all(
+      comm, graph::AdjacencyList<std::int32_t>(data_send));
 
   // -------------------
   // 3. As 'postmaster', send back the entity key (vertex list) and tag
@@ -577,9 +579,9 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh& mesh, int entity_dim,
   }
 
   // TODO: Pack into one MPI call
-  const graph::AdjacencyList<std::int64_t> recv_ents = MPI::all_to_all(
+  const graph::AdjacencyList<std::int64_t> recv_ents = dolfinx::MPI::all_to_all(
       comm, graph::AdjacencyList<std::int64_t>(send_nodes_owned));
-  const graph::AdjacencyList<std::int32_t> recv_vals = MPI::all_to_all(
+  const graph::AdjacencyList<std::int32_t> recv_vals = dolfinx::MPI::all_to_all(
       comm, graph::AdjacencyList<std::int32_t>(send_vals_owned));
 
   // -------------------

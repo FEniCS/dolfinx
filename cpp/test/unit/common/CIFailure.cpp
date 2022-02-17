@@ -6,7 +6,7 @@
 //
 // Unit tests for Distributed Meshes
 
-#include <catch.hpp>
+#include <catch2/catch.hpp>
 #include <dolfinx.h>
 
 using namespace dolfinx;

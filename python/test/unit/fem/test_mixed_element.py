@@ -39,7 +39,7 @@ def test_mixed_element(ElementType, space, cell, order):
         v = ufl.TestFunction(U)
         a = form(ufl.inner(u, v) * ufl.dx)
 
-        A = dolfinx.fem.assemble_matrix(a)
+        A = dolfinx.fem.petsc.assemble_matrix(a)
         A.assemble()
         norms.append(A.norm())
 
@@ -57,7 +57,7 @@ def test_vector_element():
     u = ufl.TrialFunction(U)
     v = ufl.TestFunction(U)
     a = form(ufl.inner(u, v) * ufl.dx)
-    A = dolfinx.fem.assemble_matrix(a)
+    A = dolfinx.fem.petsc.assemble_matrix(a)
     A.assemble()
 
     with pytest.raises(ValueError):
@@ -66,7 +66,7 @@ def test_vector_element():
         u = ufl.TrialFunction(U)
         v = ufl.TestFunction(U)
         a = form(ufl.inner(u, v) * ufl.dx)
-        A = dolfinx.fem.assemble_matrix(a)
+        A = dolfinx.fem.petsc.assemble_matrix(a)
         A.assemble()
 
 
@@ -83,14 +83,14 @@ def test_element_product(d1, d2):
     u = ufl.TrialFunction(W)
     v = ufl.TestFunction(W)
     a = form(ufl.inner(u[0], v[0]) * ufl.dx)
-    A = dolfinx.fem.assemble_matrix(a)
+    A = dolfinx.fem.petsc.assemble_matrix(a)
     A.assemble()
 
     W = FunctionSpace(mesh, P3)
     u = ufl.TrialFunction(W)
     v = ufl.TestFunction(W)
     a = form(ufl.inner(u[0], v[0]) * ufl.dx)
-    B = dolfinx.fem.assemble_matrix(a)
+    B = dolfinx.fem.petsc.assemble_matrix(a)
     B.assemble()
 
     assert np.isclose(A.norm(), B.norm())

@@ -7,14 +7,12 @@
 // Unit tests for Distributed la::MatrixCSR
 
 #include "poisson.h"
-
-#include <catch.hpp>
+#include <catch2/catch.hpp>
 #include <dolfinx.h>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/la/Vector.h>
-
 #include <xtensor/xio.hpp>
 #include <xtensor/xtensor.hpp>
 
@@ -128,7 +126,7 @@ void test_matrix_apply()
 
   // Assemble matrix
   la::MatrixCSR<double> A(sp);
-  fem::assemble_matrix(la::MatrixCSR<double>::mat_add_values(A), *a, {});
+  fem::assemble_matrix(A.mat_add_values(), *a, {});
   A.finalize();
 
   CHECK((V->dofmap()->index_map->size_local() == A.num_owned_rows()));

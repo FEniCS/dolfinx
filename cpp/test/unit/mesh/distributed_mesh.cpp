@@ -7,7 +7,7 @@
 // Unit tests for Distributed Meshes
 
 #include <basix/finite-element.h>
-#include <catch.hpp>
+#include <catch2/catch.hpp>
 #include <dolfinx.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/partitioners.h>
@@ -104,7 +104,7 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
   CHECK(mesh->topology().index_map(0)->size_global() == (N + 1) * (N + 1));
   CHECK(mesh->topology().index_map(0)->size_local() > 0);
 
-  CHECK(mesh->geometry().x().size() / 3
+  CHECK((int)mesh->geometry().x().size() / 3
         == mesh->topology().index_map(0)->size_local()
                + mesh->topology().index_map(0)->num_ghosts());
 

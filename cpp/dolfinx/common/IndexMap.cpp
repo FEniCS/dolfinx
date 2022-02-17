@@ -102,15 +102,17 @@ compute_owned_shared(MPI_Comm comm, const xtl::span<const std::int64_t>& ghosts,
   const auto [src_ranks, dest_ranks] = dolfinx::MPI::neighbors(comm);
 
   // Compute number of ghost indices to send to each owning rank
-  std::vector<int> out_edges_num(dest_ranks.size(), 0);
+  std::vector<int> out_edges_num(dest_ranks.size() + 1, 0);
   std::for_each(ghost_src_ranks.cbegin(), ghost_src_ranks.cend(),
                 [&out_edges_num](auto src_rank) { out_edges_num[src_rank]++; });
 
   // Send number of my 'ghost indices' to each owner, and receive number
   // of my 'owned indices' that are ghosted on other ranks
-  std::vector<int> in_edges_num(src_ranks.size());
+  std::vector<int> in_edges_num(src_ranks.size() + 1);
   MPI_Neighbor_alltoall(out_edges_num.data(), 1, MPI_INT, in_edges_num.data(),
                         1, MPI_INT, comm);
+  out_edges_num.pop_back();
+  in_edges_num.pop_back();
 
   // Prepare communication displacements
   std::vector<int> send_disp(dest_ranks.size() + 1, 0);
@@ -705,12 +707,13 @@ std::map<std::int32_t, std::set<int>> IndexMap::compute_shared_indices() const
   // Send sharing rank data from owner to ghosts
 
   // Send data size to send, and get to-receive sizes
-  std::vector<int> send_sizes(outdegree, 0);
-  std::vector<int> recv_sizes(indegree);
+  std::vector<int> send_sizes(outdegree + 1, 0), recv_sizes(indegree + 1);
   std::adjacent_difference(fwd_sharing_offsets.begin() + 1,
                            fwd_sharing_offsets.end(), send_sizes.begin());
   MPI_Neighbor_alltoall(send_sizes.data(), 1, MPI_INT, recv_sizes.data(), 1,
                         MPI_INT, _comm_owner_to_ghost.comm());
+  send_sizes.pop_back();
+  recv_sizes.pop_back();
 
   // Work out recv offsets and send/receive
   std::vector<int> recv_offsets(recv_sizes.size() + 1, 0);
