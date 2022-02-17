@@ -59,8 +59,8 @@ class Constant(ufl.Constant):
         np.copyto(self._cpp_object.value, np.asarray(v))
 
     @property
-    def dtype(self):
-        return self.value.dtype
+    def dtype(self) -> np.dtype:
+        return self.dtype
 
 
 class Expression:
@@ -78,23 +78,19 @@ class Expression:
         used as input to a non-FEniCS function that calculates a material
         constitutive model.
 
-        Parameters
-        ----------
-        ufl_expression
-            Pure UFL expression
-        X
-            Array of points of shape (num_points, tdim) on the reference
-            element.
-        form_compiler_params
-            Parameters used in FFCx compilation of this Expression. Run `ffcx
-            --help` in the commandline to see all available options.
-        jit_params
-            Parameters controlling JIT compilation of C code.
+        Args:
+            ufl_expression: Pure UFL expression
+            X: Array of points of shape `(num_points, tdim)` on the
+                reference element.
+            form_compiler_params: Parameters used in FFCx compilation of
+                this Expression. Run ``ffcx --help`` in the commandline
+                to see all available options.
+            jit_params: Parameters controlling JIT compilation of C code.
 
-        Notes
-        -----
-        This wrapper is responsible for the FFCx compilation of the UFL Expr
-        and attaching the correct data to the underlying C++ Expression.
+        Notes:
+            This wrapper is responsible for the FFCx compilation of the
+            UFL Expr and attaching the correct data to the underlying
+            C++ Expression.
 
         """
 
@@ -103,8 +99,6 @@ class Expression:
         _X = np.reshape(X, (num_points, -1))
 
         mesh = ufl_expression.ufl_domain().ufl_cargo()
-
-        self._dtype = dtype
 
         # Compile UFL expression with JIT
         if dtype == np.float32:
@@ -209,8 +203,8 @@ class Expression:
         return self._code
 
     @property
-    def dtype(self):
-        return self._dtype
+    def dtype(self) -> np.dtype:
+        return self._cpp_object.dtype
 
 
 class Function(ufl.Coefficient):
@@ -387,7 +381,7 @@ class Function(ufl.Coefficient):
 
     @property
     def id(self) -> int:
-        """Pbject id index."""
+        """Object id index."""
         return self._cpp_object.id
 
     def __str__(self):
