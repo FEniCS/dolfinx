@@ -23,12 +23,14 @@ namespace
 
 void test_interpolation_different_meshes()
 {
+  const std::array<std::size_t, 3> subdivisions = {5, 5, 5};
+
   auto meshL = std::make_shared<mesh::Mesh>(mesh::create_box(
-      MPI_COMM_WORLD, {{{0, 0, 0}, {1, 1, 1}}}, {11, 11, 11},
+      MPI_COMM_WORLD, {{{0, 0, 0}, {1, 1, 1}}}, subdivisions,
       mesh::CellType::tetrahedron, mesh::GhostMode::shared_facet));
 
   auto meshR = std::make_shared<mesh::Mesh>(mesh::create_box(
-      MPI_COMM_WORLD, {{{0.1, 0.1, 0.1}, {0.9, 0.9, 0.9}}}, {9, 9, 9},
+      MPI_COMM_WORLD, {{{0, 0, 0}, {1, 1, 1}}}, subdivisions,
       mesh::CellType::tetrahedron, mesh::GhostMode::shared_facet));
 
   auto VL = std::make_shared<fem::FunctionSpace>(fem::create_functionspace(
@@ -75,7 +77,10 @@ void test_interpolation_different_meshes()
   PetscReal diffNorm;
   VecNorm(_uR.vec(), NORM_2, &diffNorm);
 
-  LOG(ERROR) << "diffNorm = " << diffNorm;
+  if (diffNorm > 1e-13)
+  {
+    throw std::runtime_error("Interpolation on different meshes failed.");
+  }
 }
 
 } // namespace

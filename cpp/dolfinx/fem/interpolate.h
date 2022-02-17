@@ -629,7 +629,12 @@ void interpolate(Function<T>& u, const Function<T>& v,
     // Get mesh and check that functions share the same mesh
     if (mesh != v.function_space()->mesh())
     {
-      if (mesh->comm() != v.function_space()->mesh()->comm())
+      int communicatorComparison;
+      MPI_Comm_compare(mesh->comm(), v.function_space()->mesh()->comm(),
+                       &communicatorComparison);
+
+      if (communicatorComparison != MPI_IDENT
+          and communicatorComparison != MPI_CONGRUENT)
       {
         throw std::runtime_error("Interpolation on different meshes is only "
                                  "supported with the same communicator.");
