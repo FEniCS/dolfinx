@@ -124,7 +124,6 @@ Mesh mesh::create_mesh(MPI_Comm comm,
     std::stringstream s;
     s << "RANK " << MPI::rank(comm) << ": "
       << prelim_vertex_ownership.num_nodes() << "\n";
-    s << prelim_vertex_ownership.str();
 
     // -- Distribute cells (topology, includes higher-order 'nodes')
 
@@ -140,7 +139,6 @@ Mesh mesh::create_mesh(MPI_Comm comm,
     // Extract cell 'topology', i.e. the vertices for each cell
     cells_extracted
         = extract_topology(element.cell_shape(), dof_layout, cell_nodes);
-
     // -- Re-order cells
 
     // Build local dual graph for owned cells to apply re-ordering to
@@ -158,7 +156,6 @@ Mesh mesh::create_mesh(MPI_Comm comm,
     // Use unmatched_facets to determine any more local vertices
     auto new_vertex_ownership = mesh::vertex_ownership_part2(
         comm, prelim_vertex_ownership, unmatched_facets);
-    s << new_vertex_ownership.str();
     std::cout << s.str();
 
     const std::vector<int> remap = graph::reorder_gps(local_dual_graph);

@@ -564,7 +564,6 @@ mesh::vertex_ownership(MPI_Comm comm,
       ++c;
   }
   const int nv_boundary = c;
-  std::cout << "nv_boundary = " << nv_boundary << " \n";
   for (std::int64_t v : cells.array())
   {
     if (global_to_local.insert({v, c}).second)
@@ -574,6 +573,8 @@ mesh::vertex_ownership(MPI_Comm comm,
   std::vector<std::int64_t> global_index(global_to_local.size());
   for (auto q : global_to_local)
     global_index[q.second] = q.first;
+
+  std::cout << "nv = " << global_index.size() << "/" << nv_boundary << "\n";
 
   // Count number of occurrences of each vertex
   std::vector<int> count(global_index.size(), 0);
@@ -702,17 +703,16 @@ graph::AdjacencyList<std::int64_t> mesh::vertex_ownership_part2(
     MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& vertex_ownership,
     const xt::xtensor<std::int64_t, 2>& unmatched_facets)
 {
-  std::set<std::int64_t> edge_verts(unmatched_facets.begin(),
-                                    unmatched_facets.end());
+  std::set<std::int64_t> edge_verts;
+  for (std::size_t i = 0; i < unmatched_facets.shape(0); ++i)
+  {
+    for (std::size_t j = 0; j < unmatched_facets.shape(1) - 1; ++j)
+      edge_verts.insert(unmatched_facets(i, j));
+  }
 
-  int mpi_rank = MPI::rank(comm);
-  std::stringstream s;
-  s << mpi_rank << "] edge_verts.size = " << edge_verts.size() << "\n[";
-  for (auto q : edge_verts)
-    s << q << " ";
-  s << "]\n";
-
+  const int mpi_rank = dolfinx::MPI::rank(comm);
   std::vector<std::int64_t> problem_nodes;
+  int resolved = 0;
   for (int i = 0; i < vertex_ownership.num_nodes(); ++i)
   {
     auto vi = vertex_ownership.links(i);
@@ -720,14 +720,19 @@ graph::AdjacencyList<std::int64_t> mesh::vertex_ownership_part2(
     if (vi[1] == -1)
     {
       if (edge_verts.find(v) != edge_verts.end())
+      {
+        // This node lies on the external or inter-process boundary and has
+        // incomplete information about sharing.
         problem_nodes.push_back(v);
+      }
       else
       {
-        // Not now on boundary, so resolved as local.
+        // Not on inter-process boundary, so resolved as local.
+        // Therefore should only have one 'owner', i.e. 'mpi_rank'.
+        // This node can be removed from the graph.
         assert(vi.size() == 3);
         assert(vi[2] == mpi_rank);
-        s << "Resolved " << v << " on " << vi[2] << "\n";
-        // This node can be removed from the graph.
+        ++resolved;
       }
     }
   }
@@ -735,13 +740,6 @@ graph::AdjacencyList<std::int64_t> mesh::vertex_ownership_part2(
   std::sort(problem_nodes.begin(), problem_nodes.end());
   problem_nodes.erase(std::unique(problem_nodes.begin(), problem_nodes.end()),
                       problem_nodes.end());
-
-  s << "Problems(" << problem_nodes.size() << ") = [";
-  for (std::int64_t q : problem_nodes)
-    s << q << " ";
-  s << "]\n";
-
-  std::cout << s.str();
 
   graph::AdjacencyList<std::int64_t> new_vertex_ownership = vertex_ownership;
 
