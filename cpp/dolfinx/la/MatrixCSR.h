@@ -47,10 +47,7 @@ public:
   /// @param A Matrix to insert into
   /// @return Function for inserting values into `A`
   /// @todo clarify setting on non-owned enrties
-  std::function<int(const xtl::span<const std::int32_t>&,
-                    const xtl::span<const std::int32_t>&,
-                    const xtl::span<const T>&)>
-  mat_set_values()
+  auto mat_set_values()
   {
     return [&](const xtl::span<const std::int32_t>& rows,
                const xtl::span<const std::int32_t>& cols,
@@ -65,10 +62,7 @@ public:
   /// typically used in finite element assembly functions.
   /// @param A Matrix to insert into
   /// @return Function for inserting values into `A`
-  std::function<int(const xtl::span<const std::int32_t>&,
-                    const xtl::span<const std::int32_t>&,
-                    const xtl::span<const T>&)>
-  mat_add_values()
+  auto mat_add_values()
   {
     return [&](const xtl::span<const std::int32_t>& rows,
                const xtl::span<const std::int32_t>& cols,

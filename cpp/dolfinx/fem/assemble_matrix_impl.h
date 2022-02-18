@@ -28,8 +28,7 @@ namespace dolfinx::fem::impl
 /// local indices. Rows (bc0) and columns (bc1) with Dirichlet
 /// conditions are zeroed. Markers (bc0 and bc1) can be empty if not bcs
 /// are applied. Matrix is not finalised.
-
-template <typename U, typename T>
+template <typename T, typename U>
 void assemble_matrix(
     U mat_set_values, const Form<T>& a, const xtl::span<const T>& constants,
     const std::map<std::pair<IntegralType, int>,
@@ -38,7 +37,7 @@ void assemble_matrix(
     const xtl::span<const std::int8_t>& bc1);
 
 /// Execute kernel over cells and accumulate result in matrix
-template <typename U, typename T>
+template <typename T, typename U>
 void assemble_cells(
     U mat_set, const mesh::Geometry& geometry,
     const xtl::span<const std::int32_t>& cells,
@@ -139,7 +138,7 @@ void assemble_cells(
 }
 
 /// Execute kernel over exterior facets and  accumulate result in Mat
-template <typename U, typename T>
+template <typename T, typename U>
 void assemble_exterior_facets(
     U mat_set, const mesh::Mesh& mesh,
     const xtl::span<const std::pair<std::int32_t, int>>& facets,
@@ -239,7 +238,7 @@ void assemble_exterior_facets(
 }
 
 /// Execute kernel over interior facets and  accumulate result in Mat
-template <typename U, typename T>
+template <typename T, typename U>
 void assemble_interior_facets(
     U mat_set, const mesh::Mesh& mesh,
     const xtl::span<const std::tuple<std::int32_t, int, std::int32_t, int>>&
@@ -390,7 +389,7 @@ void assemble_interior_facets(
   }
 }
 
-template <typename U, typename T>
+template <typename T, typename U>
 void assemble_matrix(
     U mat_set, const Form<T>& a, const xtl::span<const T>& constants,
     const std::map<std::pair<IntegralType, int>,

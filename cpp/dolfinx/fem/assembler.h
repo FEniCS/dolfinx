@@ -197,7 +197,7 @@ void apply_lifting(
 /// @param[in] coefficients Coefficients that appear in `a`
 /// @param[in] bcs Boundary conditions to apply. For boundary condition
 ///  dofs the row and column are zeroed. The diagonal  entry is not set.
-template <typename U, typename T>
+template <typename T, typename U>
 void assemble_matrix(
     U mat_add, const Form<T>& a, const xtl::span<const T>& constants,
     const std::map<std::pair<IntegralType, int>,
@@ -243,7 +243,7 @@ void assemble_matrix(
 /// @param[in] a The bilinear from to assemble
 /// @param[in] bcs Boundary conditions to apply. For boundary condition
 ///  dofs the row and column are zeroed. The diagonal  entry is not set.
-template <typename U, typename T>
+template <typename T, typename U>
 void assemble_matrix(
     U mat_add, const Form<T>& a,
     const std::vector<std::shared_ptr<const DirichletBC<T>>>& bcs)
@@ -270,7 +270,7 @@ void assemble_matrix(
 /// @param[in] dof_marker1 Boundary condition markers for the columns.
 /// If bc[i] is true then rows i in A will be zeroed. The index i is a
 /// local index.
-template <typename U, typename T>
+template <typename T, typename U>
 void assemble_matrix(
     U mat_add, const Form<T>& a, const xtl::span<const T>& constants,
     const std::map<std::pair<IntegralType, int>,
@@ -293,7 +293,7 @@ void assemble_matrix(
 /// @param[in] dof_marker1 Boundary condition markers for the columns.
 ///   If bc[i] is true then rows i in A will be zeroed. The index i is a
 ///   local index.
-template <typename U, typename T>
+template <typename T, typename U>
 void assemble_matrix(U mat_add, const Form<T>& a,
                      const xtl::span<const std::int8_t>& dof_marker0,
                      const xtl::span<const std::int8_t>& dof_marker1)

@@ -65,7 +65,7 @@ assemble_csr(const dolfinx::fem::Form<T>& a,
              const std::vector<std::shared_ptr<const dolfinx::fem::DirichletBC<T>>>& bcs)
 {
   std::vector<Eigen::Triplet<T>> triplets;
-  const auto mat_add
+  auto mat_add
       = [&triplets](const xtl::span<const std::int32_t>& rows,
                     const xtl::span<const std::int32_t>& cols,
                     const xtl::span<const T>& v)
