@@ -14,8 +14,8 @@ import pytest
 import dolfinx
 import ufl
 from dolfinx.fem import (Constant, Function, FunctionSpace,
-                         VectorFunctionSpace, assemble_matrix, assemble_scalar,
-                         assemble_vector, form)
+                         VectorFunctionSpace, assemble_scalar, form)
+from dolfinx.fem.petsc import assemble_matrix, assemble_vector
 from dolfinx.mesh import CellType, MeshTags, create_mesh
 
 from mpi4py import MPI

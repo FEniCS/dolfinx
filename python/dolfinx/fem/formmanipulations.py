@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright (C) 2010-2012 Marie E. Rognes
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)

@@ -36,7 +36,7 @@ def create_vtk_mesh(msh: mesh.Mesh, dim: int, entities=None):
 
     """
     tdim = msh.topology.dim
-    cell_type = msh.topology.cell_type
+    cell_type = _cpp.mesh.cell_entity_type(msh.topology.cell_type, dim, 0)
     degree = msh.geometry.cmap.degree
     if cell_type == mesh.CellType.prism:
         raise RuntimeError("Plotting of prism meshes not supported")
@@ -56,8 +56,7 @@ def create_vtk_mesh(msh: mesh.Mesh, dim: int, entities=None):
 
         # Get cell data and the DOLFINx -> VTK permutation array
         num_nodes_per_cell = geometry_entities.shape[1]
-        map_vtk = np.argsort(_cpp.io.perm_vtk(_cpp.mesh.cell_entity_type(cell_type, dim, 0),
-                                              num_nodes_per_cell))
+        map_vtk = np.argsort(_cpp.io.perm_vtk(cell_type, num_nodes_per_cell))
         vtk_topology = geometry_entities[:, map_vtk]
 
     # Create mesh topology

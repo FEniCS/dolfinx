@@ -67,6 +67,7 @@ py_to_cpp_coeffs(const std::map<std::pair<dolfinx::fem::IntegralType, int>,
                  });
   return c;
 }
+
 // Declare assembler function that have multiple scalar types
 template <typename T>
 void declare_functions(py::module& m)
@@ -96,6 +97,7 @@ void declare_functions(py::module& m)
                                    std::move(e.second.first),
                                    std::array{num_ents, e.second.second})};
             });
+
         return c;
       },
       "Pack coefficients for a Form.");
@@ -122,6 +124,7 @@ void declare_functions(py::module& m)
         return dolfinx::fem::assemble_scalar<T>(M, constants,
                                                 py_to_cpp_coeffs(coefficients));
       },
+      py::arg("M"), py::arg("constants"), py::arg("coefficients"),
       "Assemble functional over mesh with provided constants and "
       "coefficients");
   // Vector
@@ -143,9 +146,16 @@ void declare_functions(py::module& m)
   m.def(
       "assemble_matrix",
       [](dolfinx::la::MatrixCSR<T>& A, const dolfinx::fem::Form<T>& form,
+         const py::array_t<T, py::array::c_style>& constants,
+         const std::map<std::pair<dolfinx::fem::IntegralType, int>,
+                        py::array_t<T, py::array::c_style>>& coefficients,
          const std::vector<std::shared_ptr<const dolfinx::fem::DirichletBC<T>>>&
              bcs)
-      { dolfinx::fem::assemble_matrix<T>(A.mat_add_values(), form, bcs); },
+      {
+        dolfinx::fem::assemble_matrix<T>(A.mat_add_values(), form,
+                                         xtl::span(constants),
+                                         py_to_cpp_coeffs(coefficients), bcs);
+      },
       "Experimental.");
   m.def(
       "assemble_matrix",
@@ -310,6 +320,8 @@ void declare_objects(py::module& m, const std::string& type)
               }),
           py::arg("g").noconvert(), py::arg("dofs").noconvert(),
           py::arg("V").noconvert())
+      .def_property_readonly("dtype", [](const dolfinx::fem::Form<T>& self)
+                             { return py::dtype::of<T>(); })
       .def("dof_indices",
            [](const dolfinx::fem::DirichletBC<T>& self)
            {
@@ -418,9 +430,9 @@ void declare_objects(py::module& m, const std::string& type)
             std::copy_n(u.shape(), 2, shape_u.begin());
 
             // The below should work, but misbehaves with the Intel
-            // icpx compiler xt::xtensor<T, 2> _u = xt::adapt(
-            //     u.mutable_data(), u.size(), xt::no_ownership(),
-            //     shape_u);
+            // icpx compiler
+            // xt::xtensor<T, 2> _u = xt::adapt(u.mutable_data(), u.size(),
+            //                                  xt::no_ownership(), shape_u);
             xt::xtensor<T, 2> _u(shape_u);
             std::copy_n(u.data(), u.size(), _u.data());
 
@@ -449,6 +461,8 @@ void declare_objects(py::module& m, const std::string& type)
                      xt::adapt(c.data(), c.size(), xt::no_ownership(), s));
                }),
            py::arg("c").noconvert(), "Create a constant from a value array")
+      .def_property_readonly("dtype", [](const dolfinx::fem::Constant<T>& self)
+                             { return py::dtype::of<T>(); })
       .def_property_readonly(
           "value",
           [](dolfinx::fem::Constant<T>& self)
@@ -501,6 +515,8 @@ void declare_objects(py::module& m, const std::string& type)
                 self.eval(xtl::span(active_cells.data(), active_cells.size()),
                           _values);
               })
+          .def_property_readonly("dtype", [](const dolfinx::fem::Expression<T>& self)
+                                 { return py::dtype::of<T>(); })
           .def_property_readonly("mesh", &dolfinx::fem::Expression<T>::mesh)
           .def_property_readonly("value_size",
                                  &dolfinx::fem::Expression<T>::value_size)
@@ -725,6 +741,8 @@ void declare_form(py::module& m, const std::string& type)
                      *p, spaces, coefficients, constants, subdomains, mesh);
                }),
            "Create a Form from a pointer to a ufcx_form")
+      .def_property_readonly("dtype", [](const dolfinx::fem::Form<T>& self)
+                             { return py::dtype::of<T>(); })
       .def_property_readonly("coefficients",
                              &dolfinx::fem::Form<T>::coefficients)
       .def_property_readonly("rank", &dolfinx::fem::Form<T>::rank)
