@@ -13,15 +13,16 @@ import pytest
 import ufl
 from dolfinx.cpp.la.petsc import scatter_local_vectors
 from dolfinx.fem import (Function, FunctionSpace, VectorFunctionSpace,
-                         apply_lifting, apply_lifting_nest, assemble_matrix,
-                         assemble_matrix_block, assemble_matrix_nest,
-                         assemble_vector, assemble_vector_block,
-                         assemble_vector_nest, bcs_by_block, create_matrix,
-                         create_matrix_block, create_matrix_nest,
-                         create_vector, create_vector_block,
-                         create_vector_nest, dirichletbc,
-                         extract_function_spaces, form,
-                         locate_dofs_topological, set_bc, set_bc_nest)
+                         bcs_by_block, dirichletbc, extract_function_spaces,
+                         form, locate_dofs_topological)
+from dolfinx.fem.petsc import (apply_lifting, apply_lifting_nest,
+                               assemble_matrix, assemble_matrix_block,
+                               assemble_matrix_nest, assemble_vector,
+                               assemble_vector_block, assemble_vector_nest,
+                               create_matrix, create_matrix_block,
+                               create_matrix_nest, create_vector,
+                               create_vector_block, create_vector_nest, set_bc,
+                               set_bc_nest)
 from dolfinx.mesh import (GhostMode, create_unit_cube, create_unit_square,
                           locate_entities_boundary)
 from ufl import derivative, dx, inner

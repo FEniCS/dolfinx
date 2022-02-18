@@ -24,11 +24,13 @@ import numpy as np
 import ufl
 from dolfinx import la
 from dolfinx.fem import (Expression, Function, FunctionSpace,
-                         VectorFunctionSpace, apply_lifting, assemble_matrix,
-                         assemble_vector, dirichletbc, form,
-                         locate_dofs_topological, set_bc)
+                         VectorFunctionSpace, dirichletbc, form,
+                         locate_dofs_topological)
+from dolfinx.fem.petsc import (apply_lifting, assemble_matrix, assemble_vector,
+                               set_bc)
 from dolfinx.io import XDMFFile
-from dolfinx.mesh import CellType, GhostMode, create_box, locate_entities_boundary
+from dolfinx.mesh import (CellType, GhostMode, create_box,
+                          locate_entities_boundary)
 from ufl import dx, grad, inner
 
 from mpi4py import MPI
