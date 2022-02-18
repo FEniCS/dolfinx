@@ -58,10 +58,11 @@ void interpolation_different_meshes()
         return r;
       });
 
-  PetscReal diffNorm = std::sqrt(std::transform_reduce(
+  const PetscReal diffNorm = std::sqrt(std::transform_reduce(
       uR->x()->array().cbegin(), uR->x()->array().cend(),
-      uR_ex->x()->array().cbegin(), static_cast<PetscScalar>(0), std::plus<>(),
-      [](const auto& a, const auto& b) { return (a - b) * (a - b); }));
+      uR_ex->x()->array().cbegin(), static_cast<PetscReal>(0), std::plus<>(),
+      [](const auto& a, const auto& b)
+      { return std::real((a - b) * std::conj(a - b)); }));
 
   if (diffNorm > 1e-13)
   {
