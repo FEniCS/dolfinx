@@ -48,10 +48,10 @@ def test_ghost_mesh_assembly(mode, dx, ds):
     L = form(inner(f, v) * dx + inner(2.0, v) * ds)
 
     # Initial assembly
-    A = fem.assemble_matrix(a)
+    A = fem.petsc.assemble_matrix(a)
     A.assemble()
     assert isinstance(A, PETSc.Mat)
-    b = fem.assemble_vector(L)
+    b = fem.petsc.assemble_vector(L)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     assert isinstance(b, PETSc.Vec)
 
@@ -80,7 +80,7 @@ def test_ghost_mesh_dS_assembly(mode, dS):
     a = form(inner(avg(u), avg(v)) * dS)
 
     # Initial assembly
-    A = fem.assemble_matrix(a)
+    A = fem.petsc.assemble_matrix(a)
     A.assemble()
     assert isinstance(A, PETSc.Mat)
 
