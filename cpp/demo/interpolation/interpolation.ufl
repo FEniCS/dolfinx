@@ -13,4 +13,3 @@ a = inner(grad(u), grad(v)) * dx
 L = inner(f, v) * dx
 
 forms = [a, L]
-

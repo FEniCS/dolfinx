@@ -12,8 +12,6 @@
 #include <dolfinx/mesh/generation.h>
 #include <mpi.h>
 
-#include <dolfinx/common/log.h>
-
 #include "interpolation.h"
 
 using namespace dolfinx;
@@ -69,14 +67,10 @@ void test_interpolation_different_meshes()
         return r;
       });
 
-  la::petsc::Vector _uR(la::petsc::create_vector_wrap(*uR->x()), false);
-  la::petsc::Vector _uR_ex(la::petsc::create_vector_wrap(*uR_ex->x()), false);
-
-  VecAXPY(_uR.vec(), -1, _uR_ex.vec());
-  PetscReal diffNorm;
-  VecNorm(_uR.vec(), NORM_2, &diffNorm);
-
-  LOG(ERROR) << "diffNorm = " << diffNorm;
+  PetscReal diffNorm = std::sqrt(std::transform_reduce(
+      uR->x()->array().cbegin(), uR->x()->array().cend(),
+      uR_ex->x()->array().cbegin(), static_cast<PetscScalar>(0), std::plus<>(),
+      [](const auto& a, const auto& b) { return (a - b) * (a - b); }));
 
   if (diffNorm > 1e-13)
   {
