@@ -21,7 +21,6 @@
 #include <vector>
 #include <xtl/xspan.hpp>
 
-
 namespace dolfinx::common
 {
 class IndexMap;

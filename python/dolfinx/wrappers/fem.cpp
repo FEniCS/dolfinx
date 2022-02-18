@@ -515,7 +515,8 @@ void declare_objects(py::module& m, const std::string& type)
                 self.eval(xtl::span(active_cells.data(), active_cells.size()),
                           _values);
               })
-          .def_property_readonly("dtype", [](const dolfinx::fem::Expression<T>& self)
+          .def_property_readonly("dtype",
+                                 [](const dolfinx::fem::Expression<T>& self)
                                  { return py::dtype::of<T>(); })
           .def_property_readonly("mesh", &dolfinx::fem::Expression<T>::mesh)
           .def_property_readonly("value_size",

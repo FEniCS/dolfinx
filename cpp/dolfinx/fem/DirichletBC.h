@@ -394,7 +394,7 @@ public:
   ///
   /// Set boundary condition value for entries with an applied boundary
   /// condition. Other entries are not modified.
-  /// @param[in,out] values The array in which to set the dof values.
+  /// @param[out] values The array in which to set the dof values.
   /// The array must be at least as long as the array associated with V1
   /// (the space of the function that provides the dof values)
   void dof_values(xtl::span<T> values) const
