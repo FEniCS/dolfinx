@@ -197,12 +197,9 @@ void apply_lifting(
 /// @param[in] coefficients Coefficients that appear in `a`
 /// @param[in] bcs Boundary conditions to apply. For boundary condition
 ///  dofs the row and column are zeroed. The diagonal  entry is not set.
-template <typename T>
+template <typename U, typename T>
 void assemble_matrix(
-    const std::function<int(const xtl::span<const std::int32_t>&,
-                            const xtl::span<const std::int32_t>&,
-                            const xtl::span<const T>&)>& mat_add,
-    const Form<T>& a, const xtl::span<const T>& constants,
+    U mat_add, const Form<T>& a, const xtl::span<const T>& constants,
     const std::map<std::pair<IntegralType, int>,
                    std::pair<xtl::span<const T>, int>>& coefficients,
     const std::vector<std::shared_ptr<const DirichletBC<T>>>& bcs)
@@ -246,12 +243,9 @@ void assemble_matrix(
 /// @param[in] a The bilinear from to assemble
 /// @param[in] bcs Boundary conditions to apply. For boundary condition
 ///  dofs the row and column are zeroed. The diagonal  entry is not set.
-template <typename T>
+template <typename U, typename T>
 void assemble_matrix(
-    const std::function<int(const xtl::span<const std::int32_t>&,
-                            const xtl::span<const std::int32_t>&,
-                            const xtl::span<const T>&)>& mat_add,
-    const Form<T>& a,
+    U mat_add, const Form<T>& a,
     const std::vector<std::shared_ptr<const DirichletBC<T>>>& bcs)
 {
   // Prepare constants and coefficients
@@ -276,12 +270,9 @@ void assemble_matrix(
 /// @param[in] dof_marker1 Boundary condition markers for the columns.
 /// If bc[i] is true then rows i in A will be zeroed. The index i is a
 /// local index.
-template <typename T>
+template <typename U, typename T>
 void assemble_matrix(
-    const std::function<int(const xtl::span<const std::int32_t>&,
-                            const xtl::span<const std::int32_t>&,
-                            const xtl::span<const T>&)>& mat_add,
-    const Form<T>& a, const xtl::span<const T>& constants,
+    U mat_add, const Form<T>& a, const xtl::span<const T>& constants,
     const std::map<std::pair<IntegralType, int>,
                    std::pair<xtl::span<const T>, int>>& coefficients,
     const xtl::span<const std::int8_t>& dof_marker0,
@@ -302,13 +293,10 @@ void assemble_matrix(
 /// @param[in] dof_marker1 Boundary condition markers for the columns.
 ///   If bc[i] is true then rows i in A will be zeroed. The index i is a
 ///   local index.
-template <typename T>
-void assemble_matrix(
-    const std::function<int(const xtl::span<const std::int32_t>&,
-                            const xtl::span<const std::int32_t>&,
-                            const xtl::span<const T>&)>& mat_add,
-    const Form<T>& a, const xtl::span<const std::int8_t>& dof_marker0,
-    const xtl::span<const std::int8_t>& dof_marker1)
+template <typename U, typename T>
+void assemble_matrix(U mat_add, const Form<T>& a,
+                     const xtl::span<const std::int8_t>& dof_marker0,
+                     const xtl::span<const std::int8_t>& dof_marker1)
 
 {
   // Prepare constants and coefficients
@@ -332,11 +320,9 @@ void assemble_matrix(
 /// value to the diagonal
 /// @param[in] diagonal The value to add to the diagonal for the
 ///   specified rows
-template <typename T>
-void set_diagonal(const std::function<int(const xtl::span<const std::int32_t>&,
-                                          const xtl::span<const std::int32_t>&,
-                                          const xtl::span<const T>&)>& set_fn,
-                  const xtl::span<const std::int32_t>& rows, T diagonal = 1.0)
+template <typename T, typename U>
+void set_diagonal(U set_fn, const xtl::span<const std::int32_t>& rows,
+                  T diagonal = 1.0)
 {
   for (std::size_t i = 0; i < rows.size(); ++i)
   {
@@ -360,11 +346,8 @@ void set_diagonal(const std::function<int(const xtl::span<const std::int32_t>&,
 /// @param[in] bcs The Dirichlet boundary condtions
 /// @param[in] diagonal The value to add to the diagonal for rows with a
 ///   boundary condition applied
-template <typename T>
-void set_diagonal(const std::function<int(const xtl::span<const std::int32_t>&,
-                                          const xtl::span<const std::int32_t>&,
-                                          const xtl::span<const T>&)>& set_fn,
-                  const fem::FunctionSpace& V,
+template <typename T, typename U>
+void set_diagonal(U set_fn, const fem::FunctionSpace& V,
                   const std::vector<std::shared_ptr<const DirichletBC<T>>>& bcs,
                   T diagonal = 1.0)
 {
@@ -374,7 +357,7 @@ void set_diagonal(const std::function<int(const xtl::span<const std::int32_t>&,
     if (V.contains(*bc->function_space()))
     {
       const auto [dofs, range] = bc->dof_indices();
-      set_diagonal<T>(set_fn, dofs.first(range), diagonal);
+      set_diagonal(set_fn, dofs.first(range), diagonal);
     }
   }
 }

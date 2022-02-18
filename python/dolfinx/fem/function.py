@@ -415,6 +415,9 @@ class Function(ufl.Coefficient):
         is in a mixed, vector, or tensor FunctionSpace. The sub
         function resides in the subspace of the mixed space.
 
+        Args:
+            Function space subspaces.
+
         """
         num_sub_spaces = self.function_space.num_sub_spaces
         if num_sub_spaces == 1:

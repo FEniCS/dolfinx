@@ -152,9 +152,9 @@ void declare_functions(py::module& m)
          const std::vector<std::shared_ptr<const dolfinx::fem::DirichletBC<T>>>&
              bcs)
       {
-        dolfinx::fem::assemble_matrix<T>(A.mat_add_values(), form,
-                                         xtl::span(constants),
-                                         py_to_cpp_coeffs(coefficients), bcs);
+        dolfinx::fem::assemble_matrix(A.mat_add_values(), form,
+                                      xtl::span(constants),
+                                      py_to_cpp_coeffs(coefficients), bcs);
       },
       "Experimental.");
   m.def(
@@ -166,18 +166,15 @@ void declare_functions(py::module& m)
          const std::vector<std::shared_ptr<const dolfinx::fem::DirichletBC<T>>>&
              bcs)
       {
-        std::function<int(const xtl::span<const std::int32_t>&,
-                          const xtl::span<const std::int32_t>&,
-                          const xtl::span<const T>&)>
-            f = [&fin](const xtl::span<const std::int32_t>& rows,
-                       const xtl::span<const std::int32_t>& cols,
-                       const xtl::span<const T>& data)
+        auto f = [&fin](const xtl::span<const std::int32_t>& rows,
+                        const xtl::span<const std::int32_t>& cols,
+                        const xtl::span<const T>& data)
         {
           return fin(py::array(rows.size(), rows.data()),
                      py::array(cols.size(), cols.data()),
                      py::array(data.size(), data.data()));
         };
-        dolfinx::fem::assemble_matrix<T>(f, form, bcs);
+        dolfinx::fem::assemble_matrix(f, form, bcs);
       },
       "Experimental assembly with Python insertion function. This will be "
       "slow. Use for testing only.");
@@ -515,7 +512,8 @@ void declare_objects(py::module& m, const std::string& type)
                 self.eval(xtl::span(active_cells.data(), active_cells.size()),
                           _values);
               })
-          .def_property_readonly("dtype", [](const dolfinx::fem::Expression<T>& self)
+          .def_property_readonly("dtype",
+                                 [](const dolfinx::fem::Expression<T>& self)
                                  { return py::dtype::of<T>(); })
           .def_property_readonly("mesh", &dolfinx::fem::Expression<T>::mesh)
           .def_property_readonly("value_size",

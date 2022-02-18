@@ -202,7 +202,7 @@ int main(int argc, char* argv[])
                          *a, {bc});
     MatAssemblyBegin(A.mat(), MAT_FLUSH_ASSEMBLY);
     MatAssemblyEnd(A.mat(), MAT_FLUSH_ASSEMBLY);
-    fem::set_diagonal(la::petsc::Matrix::set_fn(A.mat(), INSERT_VALUES), *V,
+    fem::set_diagonal<T>(la::petsc::Matrix::set_fn(A.mat(), INSERT_VALUES), *V,
                       {bc});
     MatAssemblyBegin(A.mat(), MAT_FINAL_ASSEMBLY);
     MatAssemblyEnd(A.mat(), MAT_FINAL_ASSEMBLY);
