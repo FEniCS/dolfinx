@@ -28,10 +28,10 @@ class Function;
 /// @brief Type of integral
 enum class IntegralType : std::int8_t
 {
-  cell = 0, ///< Cell
+  cell = 0,           ///< Cell
   exterior_facet = 1, ///< Exterior facet
   interior_facet = 2, ///< Interior facet
-  vertex = 3  ///< Vertex
+  vertex = 3          ///< Vertex
 };
 
 /// @brief A representation of finite element variational forms.
