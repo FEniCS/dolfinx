@@ -9,9 +9,9 @@ import functools
 
 from dolfinx import cpp as _cpp
 from dolfinx.cpp.common import (IndexMap, git_commit_hash, has_adios2,  # noqa
-                                has_debug, has_kahip, has_parmetis)
+                                has_debug, has_kahip, has_parmetis, ScatterMode)
 
-__all__ = ["IndexMap", "Timer", "timed"]
+__all__ = ["IndexMap", "Timer", "timed", "ScatterMode"]
 
 TimingType = _cpp.common.TimingType
 Reduction = _cpp.common.Reduction
