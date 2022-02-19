@@ -142,17 +142,23 @@ void declare_functions(py::module& m)
       py::arg("b"), py::arg("L"), py::arg("constants"), py::arg("coeffs"),
       "Assemble linear form into an existing vector with pre-packed constants "
       "and coefficients");
-  // Matrix
+  // MatrixCSR
   m.def(
       "assemble_matrix",
-      [](dolfinx::la::MatrixCSR<T>& A, const dolfinx::fem::Form<T>& form,
+      [](dolfinx::la::MatrixCSR<T>& A, const dolfinx::fem::Form<T>& a,
          const py::array_t<T, py::array::c_style>& constants,
          const std::map<std::pair<dolfinx::fem::IntegralType, int>,
                         py::array_t<T, py::array::c_style>>& coefficients,
          const std::vector<std::shared_ptr<const dolfinx::fem::DirichletBC<T>>>&
              bcs)
       {
-        dolfinx::fem::assemble_matrix(A.mat_add_values(), form,
+        if (a.function_spaces()[0]->dofmap()->bs() != 1
+            or a.function_spaces()[0]->dofmap()->bs() != 1)
+        {
+          throw std::runtime_error("Assembly with block size > 1 not yet "
+                                   "supported with la::MatrixCSR.");
+        }
+        dolfinx::fem::assemble_matrix(A.mat_add_values(), a,
                                       xtl::span(constants),
                                       py_to_cpp_coeffs(coefficients), bcs);
       },
@@ -163,7 +169,7 @@ void declare_functions(py::module& m)
          const std::vector<std::shared_ptr<const dolfinx::fem::DirichletBC<T>>>&
              bcs,
          T diagonal)
-      { dolfinx::fem::set_diagonal(A.mat_add_values(), V, bcs, diagonal); });
+      { dolfinx::fem::set_diagonal(A.mat_set_values(), V, bcs, diagonal); });
   m.def(
       "assemble_matrix",
       [](const std::function<int(const py::array_t<std::int32_t>&,
