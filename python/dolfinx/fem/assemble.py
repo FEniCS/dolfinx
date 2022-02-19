@@ -15,7 +15,6 @@ if typing.TYPE_CHECKING:
     from dolfinx.fem.bcs import DirichletBCMetaClass
 
 import functools
-import warnings
 
 import numpy as np
 
@@ -229,11 +228,7 @@ def _(A: la.MatrixCSRMetaClass, a: FormMetaClass,
     # If matrix is a 'diagonal'block, set diagonal entry for constrained
     # dofs
     if a.function_spaces[0].id == a.function_spaces[1].id:
-        if len(bcs) > 0:
-            warnings.warn("Setting of matrix bc diagonals not yet implemented.")
-    #     A.assemblyBegin(PETSc.Mat.AssemblyType.FLUSH)
-    #     A.assemblyEnd(PETSc.Mat.AssemblyType.FLUSH)
-    #     _cpp.fem.petsc.insert_diagonal(A, a.function_spaces[0], bcs, diagonal)
+        _cpp.fem.insert_diagonal(A, a.function_spaces[0], bcs, diagonal)
     return A
 
 

@@ -158,6 +158,13 @@ void declare_functions(py::module& m)
       },
       "Experimental.");
   m.def(
+      "insert_diagonal",
+      [](dolfinx::la::MatrixCSR<T>& A, const dolfinx::fem::FunctionSpace& V,
+         const std::vector<std::shared_ptr<const dolfinx::fem::DirichletBC<T>>>&
+             bcs,
+         T diagonal)
+      { dolfinx::fem::set_diagonal(A.mat_add_values(), V, bcs, diagonal); });
+  m.def(
       "assemble_matrix",
       [](const std::function<int(const py::array_t<std::int32_t>&,
                                  const py::array_t<std::int32_t>&,
@@ -258,7 +265,7 @@ void declare_objects(py::module& m, const std::string& type)
                 return dolfinx::fem::DirichletBC<T>(
                     g, std::vector(dofs.data(), dofs.data() + dofs.size()), V);
               }),
-          py::arg("g").noconvert(), py::arg("dofs").noconvert(), py::arg("V"))
+          py::arg("g"), py::arg("dofs").noconvert(), py::arg("V"))
       .def(
           py::init(
               [](const py::array_t<T>& g,
@@ -584,21 +591,20 @@ void petsc_module(py::module& m)
              const dolfinx::fem::DirichletBC<PetscScalar>>>& bcs,
          bool unrolled)
       {
-        std::function<int(const xtl::span<const std::int32_t>&,
-                          const xtl::span<const std::int32_t>&,
-                          const xtl::span<const PetscScalar>&)>
-            set_fn;
         if (unrolled)
         {
-          set_fn = dolfinx::la::petsc::Matrix::set_block_expand_fn(
+          auto set_fn = dolfinx::la::petsc::Matrix::set_block_expand_fn(
               A, a.function_spaces()[0]->dofmap()->bs(),
               a.function_spaces()[1]->dofmap()->bs(), ADD_VALUES);
+          dolfinx::fem::assemble_matrix(set_fn, a, xtl::span(constants),
+                                        py_to_cpp_coeffs(coefficients), bcs);
         }
         else
-          set_fn = dolfinx::la::petsc::Matrix::set_block_fn(A, ADD_VALUES);
-
-        dolfinx::fem::assemble_matrix(set_fn, a, xtl::span(constants),
-                                      py_to_cpp_coeffs(coefficients), bcs);
+        {
+          dolfinx::fem::assemble_matrix(
+              dolfinx::la::petsc::Matrix::set_block_fn(A, ADD_VALUES), a,
+              xtl::span(constants), py_to_cpp_coeffs(coefficients), bcs);
+        }
       },
       py::arg("A"), py::arg("a"), py::arg("constants"), py::arg("coeffs"),
       py::arg("bcs"), py::arg("unrolled") = false,
@@ -841,10 +847,10 @@ void fem(py::module& m)
   // support multiplication of std::complex<float> and double.
   // declare_functions<std::complex<float>>(m);
 
-  declare_objects<double>(m, "float64");
   declare_objects<float>(m, "float32");
-  declare_objects<std::complex<double>>(m, "complex128");
+  declare_objects<double>(m, "float64");
   declare_objects<std::complex<float>>(m, "complex64");
+  declare_objects<std::complex<double>>(m, "complex128");
 
   declare_form<double>(m, "float64");
   declare_form<float>(m, "float32");
