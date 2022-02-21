@@ -18,6 +18,95 @@
 namespace dolfinx::la
 {
 
+namespace impl
+{
+/// @brief Set data in a CSR matrix
+///
+/// @param[out] data The CSR matrix data
+/// @param[in] cols The CSR column indices
+/// @param[in] row_ptr The pointer to the ith row in the CSR data
+/// @param[in] x The `m` by `n` dense block of values (row-major) to set
+/// in the matrix
+/// @param[in] xrows The row indices of `x`
+/// @param[in] xcols The column indices of `x`
+/// @param[in] local_size The maximum row index that can be set. Used
+/// when debugging is own to check that rows beyond a permitted range
+/// are not being set.
+template <typename U, typename V, typename W, typename X>
+void set_csr(U&& data, const V& cols, const V& row_ptr, const W& x,
+             const X& xrows, const X& xcols,
+             [[maybe_unused]] typename X::value_type local_size)
+{
+  assert(x.size() == xrows.size() * xcols.size());
+  for (std::size_t r = 0; r < xrows.size(); ++r)
+  {
+    // Row index and current data row
+    auto row = xrows[r];
+    using T = typename W::value_type;
+    const T* xr = x.data() + r * xcols.size();
+
+#ifndef NDEBUG
+    if (row >= local_size)
+      throw std::runtime_error("Local row out of range");
+#endif
+
+    // Columns indices for row
+    auto cit0 = std::next(cols.begin(), row_ptr[row]);
+    auto cit1 = std::next(cols.begin(), row_ptr[row + 1]);
+    for (std::size_t c = 0; c < xcols.size(); ++c)
+    {
+      // Find position of column index
+      auto it = std::lower_bound(cit0, cit1, xcols[c]);
+      assert(it != cit1);
+      std::size_t d = std::distance(cols.begin(), it);
+      assert(d < data.size());
+      data[d] = xr[c];
+    }
+  }
+}
+
+/// @brief Add data to a CSR matrix
+///
+/// @param[out] data The CSR matrix data
+/// @param[in] cols The CSR column indices
+/// @param[in] row_ptr The pointer to the ith row in the CSR data
+/// @param[in] x The `m` by `n` dense block of values (row-major) to add
+/// to the matrix
+/// @param[in] xrows The row indices of `x`
+/// @param[in] xcols The column indices of `x`
+template <typename U, typename V, typename W, typename X>
+void add_csr(U&& data, const V& cols, const V& row_ptr, const W& x,
+             const X& xrows, const X& xcols)
+{
+  assert(x.size() == xrows.size() * xcols.size());
+  for (std::size_t r = 0; r < xrows.size(); ++r)
+  {
+    // Row index and current data row
+    auto row = xrows[r];
+    using T = typename W::value_type;
+    const T* xr = x.data() + r * xcols.size();
+
+#ifndef NDEBUG
+    if (row >= (int)row_ptr.size())
+      throw std::runtime_error("Local row out of range");
+#endif
+
+    // Columns indices for row
+    auto cit0 = std::next(cols.begin(), row_ptr[row]);
+    auto cit1 = std::next(cols.begin(), row_ptr[row + 1]);
+    for (std::size_t c = 0; c < xcols.size(); ++c)
+    {
+      // Find position of column index
+      auto it = std::lower_bound(cit0, cit1, xcols[c]);
+      assert(it != cit1);
+      std::size_t d = std::distance(cols.begin(), it);
+      assert(d < data.size());
+      data[d] += xr[c];
+    }
+  }
+}
+} // namespace impl
+
 /// Distributed sparse matrix
 ///
 /// The matrix storage format is compressed sparse row. The matrix is
@@ -47,10 +136,7 @@ public:
   /// @param A Matrix to insert into
   /// @return Function for inserting values into `A`
   /// @todo clarify setting on non-owned enrties
-  std::function<int(const xtl::span<const std::int32_t>&,
-                    const xtl::span<const std::int32_t>&,
-                    const xtl::span<const T>&)>
-  mat_set_values()
+  auto mat_set_values()
   {
     return [&](const xtl::span<const std::int32_t>& rows,
                const xtl::span<const std::int32_t>& cols,
@@ -65,10 +151,7 @@ public:
   /// typically used in finite element assembly functions.
   /// @param A Matrix to insert into
   /// @return Function for inserting values into `A`
-  std::function<int(const xtl::span<const std::int32_t>&,
-                    const xtl::span<const std::int32_t>&,
-                    const xtl::span<const T>&)>
-  mat_add_values()
+  auto mat_add_values()
   {
     return [&](const xtl::span<const std::int32_t>& rows,
                const xtl::span<const std::int32_t>& cols,
@@ -245,30 +328,8 @@ public:
            const xtl::span<const std::int32_t>& rows,
            const xtl::span<const std::int32_t>& cols)
   {
-    assert(x.size() == rows.size() * cols.size());
-    for (std::size_t r = 0; r < rows.size(); ++r)
-    {
-      // Columns indices for row
-      std::int32_t row = rows[r];
-
-      // Current data row
-      const T* xr = x.data() + r * cols.size();
-
-#ifndef NDEBUG
-      if (row >= _index_maps[0]->size_local())
-        throw std::runtime_error("Local row out of range");
-#endif
-      auto cit0 = std::next(_cols.begin(), _row_ptr[row]);
-      auto cit1 = std::next(_cols.begin(), _row_ptr[row + 1]);
-      for (std::size_t c = 0; c < cols.size(); ++c)
-      {
-        // Find position of column index
-        auto it = std::lower_bound(cit0, cit1, cols[c]);
-        assert(it != cit1);
-        std::size_t d = std::distance(_cols.begin(), it);
-        _data[d] = xr[c];
-      }
-    }
+    impl::set_csr(_data, _cols, _row_ptr, x, rows, cols,
+                  _index_maps[0]->size_local());
   }
 
   /// Accumulate values in the matrix
@@ -287,31 +348,7 @@ public:
            const xtl::span<const std::int32_t>& rows,
            const xtl::span<const std::int32_t>& cols)
   {
-    assert(x.size() == rows.size() * cols.size());
-    for (std::size_t r = 0; r < rows.size(); ++r)
-    {
-      // Row index and current data row
-      std::int32_t row = rows[r];
-      const T* xr = x.data() + r * cols.size();
-
-#ifndef NDEBUG
-      if (row >= (int)_row_ptr.size())
-        throw std::runtime_error("Local row out of range");
-#endif
-
-      // Columns indices for row
-      auto cit0 = std::next(_cols.begin(), _row_ptr[row]);
-      auto cit1 = std::next(_cols.begin(), _row_ptr[row + 1]);
-      for (std::size_t c = 0; c < cols.size(); ++c)
-      {
-        // Find position of column index
-        auto it = std::lower_bound(cit0, cit1, cols[c]);
-        assert(it != cit1);
-        std::size_t d = std::distance(_cols.begin(), it);
-        assert(d < _data.size());
-        _data[d] += xr[c];
-      }
-    }
+    impl::add_csr(_data, _cols, _row_ptr, x, rows, cols);
   }
 
   /// Number of local rows excluding ghost rows
