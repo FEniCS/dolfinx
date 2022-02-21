@@ -3,11 +3,14 @@
 #
 # The first step is to define the variational problem at hand. We define
 # the variational problem in UFL terms in a separate form file
-# :download:`HyperElasticity.ufl`.
+# :download:`hyperElasticity.py`.
 #
 # We are interested in solving for a discrete vector field in three
 # dimensions, so first we need the appropriate finite element space and
 # trial and test functions on this space::
+from ufl import (Coefficient, Identity, TestFunction, TrialFunction,
+                 VectorElement, derivative, det, diff, dx, grad, ln,
+                 tetrahedron, tr, variable)
 
 # Function spaces
 element = VectorElement("Lagrange", tetrahedron, 1)
@@ -73,15 +76,3 @@ sigma = (1/J)*diff(psi, F)*F.T
 forms = [F_form, J_form]
 elements = [(element)]
 expressions = [(sigma, [[0.25, 0.25, 0.25]])]
-
-# Note that ``derivative`` is here used with three arguments: the form
-# to be differentiated, the variable (function) we are supposed to
-# differentiate with respect too, and the direction the derivative is
-# taken in.
-#
-# Before the form file can be used in the C++ program, it must be
-# compiled using FFCx by running (on the command-line):
-#
-# .. code-block:: sh
-#
-#     ffcx HyperElasticity.ufl
