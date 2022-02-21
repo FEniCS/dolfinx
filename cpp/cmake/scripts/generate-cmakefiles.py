@@ -185,9 +185,9 @@ def generate_cmake_files(subdirectory, generated_files):
                 filename, extension = os.path.splitext(f)
                 if extension == ".cpp":
                     cpp_files.add(f)
-                elif extension == ".ufl":
+                elif extension == ".py":
                     ufl_files.add(f)
-                    ufl_c_files.add(f.replace(".ufl", ".c"))
+                    ufl_c_files.add(f.replace(".py", ".c"))
                 if ".cpp.rst" in f:
                     cpp_files.add(filename)
 
