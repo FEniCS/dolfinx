@@ -78,41 +78,41 @@ jobs:
         run: python -m pip install cibuildwheel simple503 wheel
 
       - name: Checkout Basix
-        if: ${{ github.events.inputs.build_fenicsx_stack }}
+        if: ${{ github.event.inputs.build_fenicsx_stack }}
         uses: actions/checkout@v2
         with:
           repository: FEniCS/basix
           path: basix
-          ref: ${{ github.events.inputs.basix_ref }}
+          ref: ${{ github.event.inputs.basix_ref }}
 
       - name: Build Basix wheel
-        if: ${{ github.events.inputs.build_fenicsx_stack }}
+        if: ${{ github.event.inputs.build_fenicsx_stack }}
         run: |
           cd basix
           python -m cibuildwheel --output-dir ../wheelhouse .
 
       - name: Checkout UFL
-        if: ${{ github.events.inputs.build_fenicsx_stack }}
+        if: ${{ github.event.inputs.build_fenicsx_stack }}
         uses: actions/checkout@v2
         with:
           repository: FEniCS/ufl
           path: ufl
-          ref: ${{ github.events.inputs.ufl_ref }}
+          ref: ${{ github.event.inputs.ufl_ref }}
 
       - name: Build UFL wheel
-        if: ${{ github.events.inputs.build_fenicsx_stack }}
+        if: ${{ github.event.inputs.build_fenicsx_stack }}
         run: python -m pip wheel --no-deps -w wheelhouse ./ufl
 
       - name: Checkout FFCx
-        if: ${{ github.events.inputs.build_fenicsx_stack }}
+        if: ${{ github.event.inputs.build_fenicsx_stack }}
         uses: actions/checkout@v2
         with:
           repository: FEniCS/ffcx
           path: ffcx
-          ref: ${{ github.events.inputs.ffcx_ref }}
+          ref: ${{ github.event.inputs.ffcx_ref }}
 
       - name: Build FFCx wheel
-        if: ${{ github.events.inputs.build_fenicsx_stack }}
+        if: ${{ github.event.inputs.build_fenicsx_stack }}
         run: python -m pip wheel --no-deps -w wheelhouse ./ffcx
 
       - name: Download mpi4py
@@ -150,7 +150,7 @@ jobs:
         uses: actions/checkout@v2
         with:
           path: dolfinx
-          ref: ${{ github.events.inputs.dolfinx_ref }}
+          ref: ${{ github.event.inputs.dolfinx_ref }}
 
       # fenics-ffcx and fenics-basix are required by DOLFINx C++ build
       # mpi4py and petsc4py are build_requirements of DOLFINx Python
