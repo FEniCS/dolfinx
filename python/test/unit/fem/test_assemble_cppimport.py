@@ -16,8 +16,9 @@ import scipy.sparse.linalg
 import dolfinx
 import dolfinx.pkgconfig
 import ufl
-from dolfinx.fem import (FunctionSpace, assemble_matrix, dirichletbc, form,
+from dolfinx.fem import (FunctionSpace, dirichletbc, form,
                          locate_dofs_geometrical)
+from dolfinx.fem.petsc import assemble_matrix
 from dolfinx.mesh import create_unit_square
 from dolfinx.wrappers import get_include_path as pybind_inc
 
@@ -64,7 +65,7 @@ assemble_csr(const dolfinx::fem::Form<T>& a,
              const std::vector<std::shared_ptr<const dolfinx::fem::DirichletBC<T>>>& bcs)
 {
   std::vector<Eigen::Triplet<T>> triplets;
-  const auto mat_add
+  auto mat_add
       = [&triplets](const xtl::span<const std::int32_t>& rows,
                     const xtl::span<const std::int32_t>& cols,
                     const xtl::span<const T>& v)
@@ -75,7 +76,7 @@ assemble_csr(const dolfinx::fem::Form<T>& a,
       return 0;
     };
 
-  dolfinx::fem::assemble_matrix<T>(mat_add, a, bcs);
+  dolfinx::fem::assemble_matrix(mat_add, a, bcs);
 
   auto map0 = a.function_spaces().at(0)->dofmap()->index_map;
   int bs0 = a.function_spaces().at(0)->dofmap()->index_map_bs();
