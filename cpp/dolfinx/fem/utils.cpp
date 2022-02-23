@@ -211,11 +211,30 @@ fem::FunctionSpace fem::create_functionspace(
 {
   assert(mesh);
 
-  // Create a DOLFINx selement
+  // Create a DOLFINx element
   auto _e = std::make_shared<FiniteElement>(e, bs);
 
+  // Create UFC subdofmaps and compute offset
+  assert(_e);
+  const int num_sub_elements = _e->num_sub_elements();
+  // As the input element is a Basix element, we know it has a block size of 1
+  std::vector<int> offsets(num_sub_elements + 1);
+  std::iota(offsets.begin(), offsets.end(), 0);
+  std::vector<ElementDofLayout> sub_dofmaps;
+  sub_dofmaps.reserve(num_sub_elements);
+  for (int i = 0; i < num_sub_elements; ++i)
+  {
+    auto sub_element = _e->extract_sub_element({i});
+    std::vector<int> parent_map_sub(sub_element->space_dimension());
+    for (std::size_t j = 0; j < parent_map_sub.size(); ++j)
+      parent_map_sub[j] = offsets[i] + bs * j;
+    sub_dofmaps.push_back(ElementDofLayout(
+        1, e.entity_dofs(), e.entity_closure_dofs(), parent_map_sub, {}));
+  }
+
   // Create a dofmap
-  ElementDofLayout layout(bs, e.entity_dofs(), e.entity_closure_dofs(), {}, {});
+  ElementDofLayout layout(bs, e.entity_dofs(), e.entity_closure_dofs(), {},
+                          sub_dofmaps);
   auto dofmap = std::make_shared<DofMap>(
       create_dofmap(mesh->comm(), layout, mesh->topology(), reorder_fn, *_e));
 
