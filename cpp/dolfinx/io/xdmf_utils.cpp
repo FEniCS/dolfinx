@@ -412,6 +412,7 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh& mesh, int entity_dim,
                                    const xt::xtensor<std::int64_t, 2>& entities,
                                    const xtl::span<const std::int32_t>& data)
 {
+  LOG(INFO) << "XDMF distribute entity data";
   if (entities.shape(0) != data.size())
     throw std::runtime_error("Number of entities and data size must match");
 
@@ -484,6 +485,7 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh& mesh, int entity_dim,
   const int comm_size = dolfinx::MPI::size(comm);
   // NOTE: could make this int32_t be sending: index <- index - dest_rank_offset
   std::vector<std::vector<std::int64_t>> nodes_g_send(comm_size);
+  int total_size = 0;
   for (std::int64_t node : nodes_g)
   {
     // TODO: Optimise this call by adding 'vectorised verion of
@@ -492,9 +494,11 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh& mesh, int entity_dim,
     const std::int32_t p
         = dolfinx::MPI::index_owner(comm_size, node, num_nodes_g);
     nodes_g_send[p].push_back(node);
+    ++total_size;
   }
 
   // Send/receive
+  LOG(INFO) << "XDMF send entity nodes (" << total_size << ")";
   const graph::AdjacencyList<std::int64_t> nodes_g_recv
       = dolfinx::MPI::all_to_all(
           comm, graph::AdjacencyList<std::int64_t>(nodes_g_send));
@@ -510,6 +514,7 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh& mesh, int entity_dim,
   std::vector<std::vector<std::int64_t>> entities_send(comm_size);
   std::vector<std::vector<std::int32_t>> data_send(comm_size);
   std::vector<std::int64_t> entity(num_vertices_per_entity);
+  total_size = 0;
   for (std::size_t e = 0; e < entities_vertices.shape(0); ++e)
   {
     // Copy vertices for entity and sort
@@ -523,8 +528,10 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh& mesh, int entity_dim,
     entities_send[p].insert(entities_send[p].end(), entity.begin(),
                             entity.end());
     data_send[p].push_back(data[e]);
+    ++total_size;
   }
 
+  LOG(INFO) << "XDMF send entity keys (" << total_size << ")";
   // TODO: Pack into one MPI call
   const graph::AdjacencyList<std::int64_t> entities_recv
       = dolfinx::MPI::all_to_all(
@@ -563,6 +570,7 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh& mesh, int entity_dim,
 
   const std::vector<std::int32_t>& _data_recv = data_recv.array();
   assert(_data_recv.size() == _entities_recv.shape(0));
+  total_size = 0;
   for (std::size_t e = 0; e < _entities_recv.shape(0); ++e)
   {
     auto e_recv = xt::row(_entities_recv, e);
@@ -575,10 +583,12 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh& mesh, int entity_dim,
       send_nodes_owned[p1].insert(send_nodes_owned[p1].end(), e_recv.begin(),
                                   e_recv.end());
       send_vals_owned[p1].push_back(_data_recv[e]);
+      ++total_size;
     }
   }
 
   // TODO: Pack into one MPI call
+  LOG(INFO) << "XDMF return entity and value data (" << total_size << ")";
   const graph::AdjacencyList<std::int64_t> recv_ents = dolfinx::MPI::all_to_all(
       comm, graph::AdjacencyList<std::int64_t>(send_nodes_owned));
   const graph::AdjacencyList<std::int32_t> recv_vals = dolfinx::MPI::all_to_all(
@@ -599,6 +609,7 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh& mesh, int entity_dim,
   //       entities.
 
   // Build map from input global indices to local vertex numbers
+  LOG(INFO) << "XDMF build map";
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
   std::map<std::int64_t, std::int32_t> igi_to_vertex;
 
