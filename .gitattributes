@@ -2,6 +2,7 @@
 .gitattributes export-ignore
 .circleci export-ignore
 .clang-format export-ignore
+.github export-ignore
 .dockerignore export-ignore
 .mailmap export-ignore
 docker export-ignore
