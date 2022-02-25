@@ -11,8 +11,8 @@ find_package(DOLFINX REQUIRED)
 
 add_custom_command(
   OUTPUT poisson.c
-  COMMAND ffcx ${CMAKE_CURRENT_SOURCE_DIR}/poisson.ufl -o ${CMAKE_CURRENT_SOURCE_DIR}
-  VERBATIM DEPENDS poisson.ufl COMMENT "Compile poisson.ufl using FFCx")
+  COMMAND ffcx ${CMAKE_CURRENT_SOURCE_DIR}/poisson.py -o ${CMAKE_CURRENT_SOURCE_DIR}
+  VERBATIM DEPENDS poisson.py COMMENT "Compile poisson.py using FFCx")
 
 add_custom_command(
   OUTPUT interpolation.c

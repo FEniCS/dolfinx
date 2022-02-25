@@ -15,7 +15,6 @@ if typing.TYPE_CHECKING:
     from dolfinx.fem.bcs import DirichletBCMetaClass
 
 import functools
-import warnings
 
 import numpy as np
 
@@ -205,8 +204,25 @@ def _(b: np.ndarray, L: FormMetaClass, constants=None, coeffs=None):
 def assemble_matrix(a: FormMetaClass, bcs: typing.List[DirichletBCMetaClass] = [],
                     diagonal: float = 1.0,
                     constants=None, coeffs=None) -> la.MatrixCSRMetaClass:
-    """Assemble bilinear form into a matrix. The returned matrix is not
-    finalised, i.e. ghost values are not accumulated.
+    """Assemble bilinear form into a matrix.
+
+    Args:
+        a: The bilinear form assemble.
+        bcs: Boundary conditions that affect the assembled matrix.
+            Degrees-of-freedom constrained by a boundary condition will
+            have their rows/columns zeroed and the value ``diagonal``
+            set on on the matrix diagonal.
+        constants: Constants that appear in the form. If not provided,
+            any required constants will be computed.
+        coeffs: Coefficients that appear in the form. If not provided,
+            any required coefficients will be computed.
+
+    Returns:
+        Matrix representation of the bilinear form ``a``.
+
+    Note:
+        The returned matrix is not finalised, i.e. ghost values are not
+        accumulated.
 
     """
     A = create_matrix(a)
@@ -218,22 +234,32 @@ def assemble_matrix(a: FormMetaClass, bcs: typing.List[DirichletBCMetaClass] = [
 def _(A: la.MatrixCSRMetaClass, a: FormMetaClass,
       bcs: typing.List[DirichletBCMetaClass] = [],
       diagonal: float = 1.0, constants=None, coeffs=None) -> la.MatrixCSRMetaClass:
-    """Assemble bilinear form into a matrix. The returned matrix is not
-    finalised, i.e. ghost values are not accumulated.
+    """Assemble bilinear form into a matrix.
+
+        Args:
+        a: The bilinear form assemble.
+        bcs: Boundary conditions that affect the assembled matrix.
+            Degrees-of-freedom constrained by a boundary condition will
+            have their rows/columns zeroed and the value ``diagonal`` set
+            on on the matrix diagonal.
+        constants: Constants that appear in the form. If not provided,
+            any required constants will be computed.
+        coeffs: Coefficients that appear in the form. If not provided,
+            any required coefficients will be computed.
+
+    Note:
+        The returned matrix is not finalised, i.e. ghost values are not
+        accumulated.
 
     """
-    constants = constants or _pack_constants(a)
-    coeffs = coeffs or _pack_coefficients(a)
+    constants = _pack_constants(a) if constants is None else constants
+    coeffs = _pack_coefficients(a) if coeffs is None else coeffs
     _cpp.fem.assemble_matrix(A, a, constants, coeffs, bcs)
 
     # If matrix is a 'diagonal'block, set diagonal entry for constrained
     # dofs
     if a.function_spaces[0].id == a.function_spaces[1].id:
-        if len(bcs) > 0:
-            warnings.warn("Setting of matrix bc diagonals not yet implemented.")
-    #     A.assemblyBegin(PETSc.Mat.AssemblyType.FLUSH)
-    #     A.assemblyEnd(PETSc.Mat.AssemblyType.FLUSH)
-    #     _cpp.fem.petsc.insert_diagonal(A, a.function_spaces[0], bcs, diagonal)
+        _cpp.fem.insert_diagonal(A, a.function_spaces[0], bcs, diagonal)
     return A
 
 
@@ -245,6 +271,7 @@ def apply_lifting(b: np.ndarray, a: typing.List[FormMetaClass],
                   x0: typing.Optional[typing.List[np.ndarray]] = [],
                   scale: float = 1.0, constants=None, coeffs=None) -> None:
     """Modify RHS vector b for lifting of Dirichlet boundary conditions.
+
     It modifies b such that:
 
     .. math::
@@ -257,8 +284,9 @@ def apply_lifting(b: np.ndarray, a: typing.List[FormMetaClass],
     but the trial space may differ. If x0 is not supplied, then it is
     treated as zero.
 
-    Ghost contributions are not accumulated (not sent to owner). Caller
-    is responsible for calling VecGhostUpdateBegin/End.
+    Note:
+        Ghost contributions are not accumulated (not sent to owner).
+        Caller is responsible for calling VecGhostUpdateBegin/End.
 
     """
     constants = [form and _pack_constants(form) for form in a] if constants is None else constants

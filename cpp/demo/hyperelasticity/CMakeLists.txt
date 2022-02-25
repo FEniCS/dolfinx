@@ -22,8 +22,8 @@ else()
   # Add target to compile UFL files
   add_custom_command(
     OUTPUT hyperelasticity.c
-    COMMAND ffcx ${CMAKE_CURRENT_SOURCE_DIR}/hyperelasticity.ufl
-    VERBATIM DEPENDS hyperelasticity.ufl COMMENT "Compile hyperelasticity.ufl using FFCx")
+    COMMAND ffcx ${CMAKE_CURRENT_SOURCE_DIR}/hyperelasticity.py
+    VERBATIM DEPENDS hyperelasticity.py COMMENT "Compile hyperelasticity.py using FFCx")
 
   set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
