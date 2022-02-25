@@ -26,7 +26,7 @@ function(preprocess_ufl out_var)
       COMMAND ffcx ${FFCFLAGS} ${in_f_name} > /dev/null
       DEPENDS ${in_f}
       WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-      COMMENT "Compiling ufl file to ${out_f}"
+      COMMENT "Compiling py file to ${out_f}"
       VERBATIM
       )
     list(APPEND result ${out_f})
@@ -35,7 +35,7 @@ function(preprocess_ufl out_var)
 endfunction()
 
 preprocess_ufl(ufl2cpp_files
-    ${CMAKE_CURRENT_SOURCE_DIR}/interpolation.ufl
+    ${CMAKE_CURRENT_SOURCE_DIR}/interpolation.py
     )
 
 # Executable

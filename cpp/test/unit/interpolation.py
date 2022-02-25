@@ -1,3 +1,8 @@
+from ufl import (FunctionSpace, Mesh, VectorConstant,
+                 TestFunction, TrialFunction, VectorElement, dx, grad,
+                 inner, tetrahedron)
+
+
 element = VectorElement("Lagrange", tetrahedron, 1)
 coord_element = VectorElement("Lagrange", tetrahedron, 1)
 mesh = Mesh(coord_element)
