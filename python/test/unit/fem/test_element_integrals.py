@@ -14,10 +14,9 @@ import pytest
 import dolfinx
 import ufl
 from dolfinx.fem import (Constant, Function, FunctionSpace,
-                         VectorFunctionSpace, assemble_matrix, assemble_scalar,
-                         assemble_vector, form)
+                         VectorFunctionSpace, assemble_scalar, form)
+from dolfinx.fem.petsc import assemble_matrix, assemble_vector
 from dolfinx.mesh import CellType, MeshTags, create_mesh
-from dolfinx_utils.test.skips import skip_in_parallel
 
 from mpi4py import MPI
 from petsc4py import PETSc
@@ -131,7 +130,7 @@ def two_unit_cells(cell_type, agree=False, random_order=True, return_order=False
     return mesh
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 @parametrize_cell_types
 def test_facet_integral(cell_type):
     """Test that the integral of a function over a facet is correct"""
@@ -172,7 +171,7 @@ def test_facet_integral(cell_type):
             assert np.isclose(result, out[0])
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 @parametrize_cell_types
 def test_facet_normals(cell_type):
     """Test that FacetNormal is outward facing"""
@@ -235,7 +234,7 @@ def test_facet_normals(cell_type):
             assert ones == 1
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 @pytest.mark.parametrize('space_type', ["Lagrange", "DG"])
 @parametrize_cell_types
 def test_plus_minus(cell_type, space_type):
@@ -255,7 +254,7 @@ def test_plus_minus(cell_type, space_type):
         assert np.isclose(i, j)
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 @pytest.mark.parametrize('pm', ["+", "-"])
 @parametrize_cell_types
 def test_plus_minus_simple_vector(cell_type, pm):
@@ -305,7 +304,7 @@ def test_plus_minus_simple_vector(cell_type, pm):
                 assert np.isclose(results[0][dof0], result[dof1])
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 @pytest.mark.parametrize('pm1', ["+", "-"])
 @pytest.mark.parametrize('pm2', ["+", "-"])
 @parametrize_cell_types
@@ -359,7 +358,7 @@ def test_plus_minus_vector(cell_type, pm1, pm2):
                 assert np.isclose(results[0][dof0], result[dof1])
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 @pytest.mark.parametrize('pm1', ["+", "-"])
 @pytest.mark.parametrize('pm2', ["+", "-"])
 @parametrize_cell_types
@@ -416,7 +415,7 @@ def test_plus_minus_matrix(cell_type, pm1, pm2):
 
 
 @pytest.mark.skip(reason="This test relies on the mesh constructor not re-ordering the mesh points. Needs replacing.")
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 @pytest.mark.parametrize('order', [1, 2])
 @pytest.mark.parametrize('space_type', ["N1curl", "N2curl"])
 def test_curl(space_type, order):
@@ -509,7 +508,7 @@ def assemble_div_vector(k, offset):
     return b[:]
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("k", [0, 1, 2])
 def test_div_general_quads_mat(k):
     """Tests that assembling inner(u, div(w)) * dx, where u is from a
@@ -527,7 +526,7 @@ def test_div_general_quads_mat(k):
     assert np.allclose(A_square, A_trap, atol=1e-8)
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("k", [0, 1, 2])
 def test_div_general_quads_vec(k):
     """Tests that assembling inner(1, div(w)) * dx, where w is from an

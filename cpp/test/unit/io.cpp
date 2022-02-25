@@ -6,12 +6,13 @@
 
 #ifdef HAS_ADIOS2
 
-#include <catch.hpp>
+#include <catch2/catch.hpp>
 #include <dolfinx/io/ADIOS2Writers.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/generation.h>
 #include <mpi.h>
 #include <xtensor/xadapt.hpp>
+#include <xtensor/xview.hpp>
 
 using namespace dolfinx;
 
@@ -32,6 +33,7 @@ void test_fides_mesh()
   // Move all coordinates of the mesh geometry
   points += 1;
   writer.write(0.2);
+
   // Only move x coordinate
   auto x_coords = xt::view(points, xt::all(), 0);
   x_coords -= 0.5;

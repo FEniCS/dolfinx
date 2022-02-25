@@ -8,6 +8,7 @@
 #include "caster_mpi.h"
 #include "caster_petsc.h"
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/la/Vector.h>
 #include <dolfinx/la/petsc.h>
@@ -38,6 +39,8 @@ void declare_objects(py::module& m, const std::string& type)
              int bs) { return dolfinx::la::Vector<T>(map, bs); }))
       .def(py::init([](const dolfinx::la::Vector<T>& vec)
                     { return dolfinx::la::Vector<T>(vec); }))
+      .def_property_readonly("dtype", [](const dolfinx::la::Vector<T>& self)
+                             { return py::dtype::of<T>(); })
       .def("set", &dolfinx::la::Vector<T>::set)
       .def("norm", &dolfinx::la::Vector<T>::norm,
            py::arg("type") = dolfinx::la::Norm::l2)
@@ -52,6 +55,52 @@ void declare_objects(py::module& m, const std::string& type)
                              })
       .def("scatter_forward", &dolfinx::la::Vector<T>::scatter_fwd)
       .def("scatter_reverse", &dolfinx::la::Vector<T>::scatter_rev);
+
+  // dolfinx::la::MatrixCSR
+  std::string pyclass_matrix_name = std::string("MatrixCSR_") + type;
+  py::class_<dolfinx::la::MatrixCSR<T>,
+             std::shared_ptr<dolfinx::la::MatrixCSR<T>>>(
+      m, pyclass_matrix_name.c_str())
+      .def(py::init([](const dolfinx::la::SparsityPattern& p)
+                    { return dolfinx::la::MatrixCSR<T>(p); }))
+      .def_property_readonly("dtype", [](const dolfinx::la::MatrixCSR<T>& self)
+                             { return py::dtype::of<T>(); })
+      .def("norm_squared", &dolfinx::la::MatrixCSR<T>::norm_squared)
+      .def("mat_add_values", &dolfinx::la::MatrixCSR<T>::mat_add_values)
+      .def("set", static_cast<void (dolfinx::la::MatrixCSR<T>::*)(T)>(
+                      &dolfinx::la::MatrixCSR<T>::set))
+      .def("finalize", &dolfinx::la::MatrixCSR<T>::finalize)
+      .def("to_dense",
+           [](const dolfinx::la::MatrixCSR<T>& self)
+           {
+             xt::xtensor<T, 2> mat = self.to_dense();
+             return py::array_t<T>(mat.shape(), mat.data());
+           })
+      .def_property_readonly("data",
+                             [](dolfinx::la::MatrixCSR<T>& self)
+                             {
+                               xtl::span<T> array = self.values();
+                               return py::array_t<T>(array.size(), array.data(),
+                                                     py::cast(self));
+                             })
+      .def_property_readonly("indices",
+                             [](dolfinx::la::MatrixCSR<T>& self)
+                             {
+                               xtl::span<const std::int32_t> array
+                                   = self.cols();
+                               return py::array_t<const std::int32_t>(
+                                   array.size(), array.data(), py::cast(self));
+                             })
+      .def_property_readonly("indptr",
+                             [](dolfinx::la::MatrixCSR<T>& self)
+                             {
+                               xtl::span<const std::int32_t> array
+                                   = self.row_ptr();
+                               return py::array_t<const std::int32_t>(
+                                   array.size(), array.data(), py::cast(self));
+                             })
+      .def("finalize_begin", &dolfinx::la::MatrixCSR<T>::finalize_begin)
+      .def("finalize_end", &dolfinx::la::MatrixCSR<T>::finalize_end);
 }
 
 void petsc_module(py::module& m)
@@ -145,8 +194,10 @@ void la(py::module& m)
             return dolfinx::la::SparsityPattern(comm.get(), patterns, maps, bs);
           }))
       .def("index_map", &dolfinx::la::SparsityPattern::index_map)
+      .def("column_index_map", &dolfinx::la::SparsityPattern::column_index_map)
       .def("assemble", &dolfinx::la::SparsityPattern::assemble)
-      .def("num_nonzeros", &dolfinx::la::SparsityPattern::num_nonzeros)
+      .def_property_readonly("num_nonzeros",
+                             &dolfinx::la::SparsityPattern::num_nonzeros)
       .def("insert",
            [](dolfinx::la::SparsityPattern& self,
               const py::array_t<std::int32_t, py::array::c_style>& rows,
@@ -155,14 +206,12 @@ void la(py::module& m)
              self.insert(xtl::span(rows.data(), rows.size()),
                          xtl::span(cols.data(), cols.size()));
            })
-      .def("insert_diagonal", &dolfinx::la::SparsityPattern::insert_diagonal)
-      .def_property_readonly("diagonal_pattern",
-                             &dolfinx::la::SparsityPattern::diagonal_pattern,
-                             py::return_value_policy::reference_internal)
-      .def_property_readonly(
-          "off_diagonal_pattern",
-          &dolfinx::la::SparsityPattern::off_diagonal_pattern,
-          py::return_value_policy::reference_internal);
+      .def("insert_diagonal",
+           [](dolfinx::la::SparsityPattern& self,
+              const py::array_t<std::int32_t, py::array::c_style>& rows)
+           { self.insert_diagonal(rows); })
+      .def_property_readonly("graph", &dolfinx::la::SparsityPattern::graph,
+                             py::return_value_policy::reference_internal);
 
   py::enum_<dolfinx::la::Norm>(m, "Norm")
       .value("l1", dolfinx::la::Norm::l1)

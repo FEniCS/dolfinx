@@ -66,14 +66,14 @@
 // containing the actual solver.
 //
 // Running this demo requires the files: :download:`main.cpp`,
-// :download:`Poisson.ufl` and :download:`CMakeLists.txt`.
+// :download:`poisson.py` and :download:`CMakeLists.txt`.
 //
 //
 // UFL form file
 // ^^^^^^^^^^^^^
 //
-// The UFL file is implemented in :download:`Poisson.ufl`, and the
-// explanation of the UFL file can be found at :doc:`here <Poisson.ufl>`.
+// The UFL file is implemented in :download:`poisson.py`, and the
+// explanation of the UFL file can be found at :doc:`here <poisson.py>`.
 //
 //
 // C++ program
@@ -122,7 +122,7 @@ int main(int argc, char* argv[])
     // Create mesh and function space
     auto mesh = std::make_shared<mesh::Mesh>(mesh::create_rectangle(
         MPI_COMM_WORLD, {{{0.0, 0.0}, {2.0, 1.0}}}, {32, 16},
-        mesh::CellType::triangle, mesh::GhostMode::none));
+        mesh::CellType::triangle, mesh::GhostMode::shared_facet));
 
     auto V = std::make_shared<fem::FunctionSpace>(
         fem::create_functionspace(functionspace_form_poisson_a, "u", mesh));
@@ -163,7 +163,7 @@ int main(int argc, char* argv[])
 
     auto facets = mesh::locate_entities_boundary(
         *mesh, 1,
-        [](auto& x) -> xt::xtensor<bool, 1>
+        [](auto&& x) -> xt::xtensor<bool, 1>
         {
           auto x0 = xt::row(x, 0);
           return xt::isclose(x0, 0.0) or xt::isclose(x0, 2.0);
@@ -172,14 +172,14 @@ int main(int argc, char* argv[])
     auto bc = std::make_shared<const fem::DirichletBC<T>>(0.0, bdofs, V);
 
     f->interpolate(
-        [](auto& x) -> xt::xarray<T>
+        [](auto&& x) -> xt::xarray<T>
         {
           auto dx = xt::square(xt::row(x, 0) - 0.5)
                     + xt::square(xt::row(x, 1) - 0.5);
           return 10 * xt::exp(-(dx) / 0.02);
         });
 
-    g->interpolate([](auto& x) -> xt::xarray<T>
+    g->interpolate([](auto&& x) -> xt::xarray<T>
                    { return xt::sin(5 * xt::row(x, 0)); });
 
     // Now, we have specified the variational forms and can consider the
@@ -202,7 +202,7 @@ int main(int argc, char* argv[])
                          *a, {bc});
     MatAssemblyBegin(A.mat(), MAT_FLUSH_ASSEMBLY);
     MatAssemblyEnd(A.mat(), MAT_FLUSH_ASSEMBLY);
-    fem::set_diagonal(la::petsc::Matrix::set_fn(A.mat(), INSERT_VALUES), *V,
+    fem::set_diagonal<T>(la::petsc::Matrix::set_fn(A.mat(), INSERT_VALUES), *V,
                       {bc});
     MatAssemblyBegin(A.mat(), MAT_FINAL_ASSEMBLY);
     MatAssemblyEnd(A.mat(), MAT_FINAL_ASSEMBLY);
@@ -232,7 +232,7 @@ int main(int argc, char* argv[])
 
     // Save solution in VTK format
     io::VTKFile file(MPI_COMM_WORLD, "u.pvd", "w");
-    file.write({u}, 0.0);
+    file.write<T>({u}, 0.0);
   }
 
   common::subsystem::finalize_petsc();

@@ -300,7 +300,7 @@ public:
   }
 
   /// Access coefficients
-  const std::vector<std::shared_ptr<const fem::Function<T>>>
+  const std::vector<std::shared_ptr<const fem::Function<T>>>&
   coefficients() const
   {
     return _coefficients;

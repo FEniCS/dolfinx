@@ -5,13 +5,13 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "graphbuild.h"
+#include "cell_types.h"
 #include <algorithm>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/sort.h>
 #include <dolfinx/graph/AdjacencyList.h>
-#include <dolfinx/mesh/cell_types.h>
 #include <utility>
 #include <vector>
 #include <xtensor/xview.hpp>
@@ -275,7 +275,7 @@ compute_nonlocal_dual_graph(
   {
     const std::size_t node = cell_list[i] - cell_offset;
     auto edges = graph.links(node);
-#ifdef DEBUG
+#ifndef NDEBUG
     if (auto it_end = std::next(edges.begin(), pos[node]);
         std::find(edges.begin(), it_end, cell_list[i + 1]) != it_end)
     {
@@ -336,7 +336,7 @@ mesh::build_local_dual_graph(const xtl::span<const std::int64_t>& cell_vertices,
   const std::int32_t num_vertices = vcounter + 1;
 
   // Build local-to-global map for vertices
-  std::vector<int32_t> local_to_global_v(num_vertices);
+  std::vector<std::int64_t> local_to_global_v(num_vertices);
   for (std::size_t i = 0; i < cell_vertices_local.size(); i++)
     local_to_global_v[cell_vertices_local[i]] = cell_vertices[i];
 

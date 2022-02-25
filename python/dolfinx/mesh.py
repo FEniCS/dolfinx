@@ -18,7 +18,8 @@ from dolfinx.cpp.mesh import (CellType, DiagonalType, GhostMode,
                               build_dual_graph, cell_dim,
                               compute_boundary_facets,
                               compute_incident_entities, compute_midpoints,
-                              create_cell_partitioner, create_meshtags)
+                              create_cell_partitioner, create_meshtags,
+                              to_string, to_type)
 
 from mpi4py import MPI as _MPI
 
@@ -27,7 +28,7 @@ __all__ = ["create_meshtags", "locate_entities", "locate_entities_boundary",
            "GhostMode", "build_dual_graph", "cell_dim", "compute_midpoints",
            "compute_boundary_facets", "compute_incident_entities", "create_cell_partitioner",
            "create_interval", "create_unit_interval", "create_rectangle", "create_unit_square",
-           "create_box", "create_unit_cube"]
+           "create_box", "create_unit_cube", "to_type", "to_string"]
 
 
 class Mesh(_cpp.mesh.Mesh):
@@ -112,8 +113,12 @@ def locate_entities_boundary(mesh: Mesh, dim: int, marker: types.FunctionType) -
 
 _uflcell_to_dolfinxcell = {
     "interval": CellType.interval,
+    "interval2D": CellType.interval,
+    "interval3D": CellType.interval,
     "triangle": CellType.triangle,
+    "triangle3D": CellType.triangle,
     "quadrilateral": CellType.quadrilateral,
+    "quadrilateral3D": CellType.quadrilateral,
     "tetrahedron": CellType.tetrahedron,
     "hexahedron": CellType.hexahedron
 }

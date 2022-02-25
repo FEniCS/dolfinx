@@ -1,19 +1,19 @@
 #include "hyperelasticity.h"
+#include <basix/finite-element.h>
 #include <cmath>
 #include <dolfinx.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/fem/assembler.h>
 #include <dolfinx/fem/petsc.h>
+#include <dolfinx/io/XDMFFile.h>
 #include <dolfinx/la/Vector.h>
+#include <dolfinx/mesh/Mesh.h>
+#include <dolfinx/mesh/cell_types.h>
+#include <dolfinx/nls/NewtonSolver.h>
 #include <xtensor/xarray.hpp>
 #include <xtensor/xview.hpp>
 
 using namespace dolfinx;
-
-// Next:
-//
-// .. code-block:: cpp
-
 using T = PetscScalar;
 
 class HyperElasticProblem
@@ -134,18 +134,18 @@ int main(int argc, char* argv[])
         mesh::CellType::tetrahedron, mesh::GhostMode::none));
 
     auto V = std::make_shared<fem::FunctionSpace>(fem::create_functionspace(
-        functionspace_form_hyperelasticity_F, "u", mesh));
+        functionspace_form_hyperelasticity_F_form, "u", mesh));
 
     // Define solution function
     auto u = std::make_shared<fem::Function<T>>(V);
     auto a = std::make_shared<fem::Form<T>>(fem::create_form<T>(
-        *form_hyperelasticity_J, {V, V}, {{"u", u}}, {}, {}));
-    auto L = std::make_shared<fem::Form<T>>(
-        fem::create_form<T>(*form_hyperelasticity_F, {V}, {{"u", u}}, {}, {}));
+        *form_hyperelasticity_J_form, {V, V}, {{"u", u}}, {}, {}));
+    auto L = std::make_shared<fem::Form<T>>(fem::create_form<T>(
+        *form_hyperelasticity_F_form, {V}, {{"u", u}}, {}, {}));
 
     auto u_rotation = std::make_shared<fem::Function<T>>(V);
     u_rotation->interpolate(
-        [](auto& x)
+        [](auto&& x)
         {
           constexpr double scale = 0.005;
 
@@ -172,12 +172,12 @@ int main(int argc, char* argv[])
     // Create Dirichlet boundary conditions
     auto bdofs_left
         = fem::locate_dofs_geometrical({*V},
-                                       [](auto& x) -> xt::xtensor<bool, 1> {
+                                       [](auto&& x) -> xt::xtensor<bool, 1> {
                                          return xt::isclose(xt::row(x, 0), 0.0);
                                        });
     auto bdofs_right
         = fem::locate_dofs_geometrical({*V},
-                                       [](auto& x) -> xt::xtensor<bool, 1> {
+                                       [](auto&& x) -> xt::xtensor<bool, 1> {
                                          return xt::isclose(xt::row(x, 0), 1.0);
                                        });
     auto bcs = std::vector{
@@ -186,7 +186,7 @@ int main(int argc, char* argv[])
         std::make_shared<const fem::DirichletBC<T>>(u_rotation, bdofs_right)};
 
     HyperElasticProblem problem(L, a, bcs);
-    nls::NewtonSolver newton_solver(MPI_COMM_WORLD);
+    nls::petsc::NewtonSolver newton_solver(mesh->comm());
     newton_solver.setF(problem.F(), problem.vector());
     newton_solver.setJ(problem.J(), problem.matrix());
     newton_solver.set_form(problem.form());
@@ -194,9 +194,35 @@ int main(int argc, char* argv[])
     la::petsc::Vector _u(la::petsc::create_vector_wrap(*u->x()), false);
     newton_solver.solve(_u.vec());
 
+    // Compute Cauchy stress
+    // Construct appropriate Basix element for stress
+    constexpr auto family = basix::element::family::P;
+    const auto cell_type
+        = mesh::cell_type_to_basix_type(mesh->topology().cell_type());
+    constexpr auto variant = basix::element::lagrange_variant::equispaced;
+    constexpr int k = 0;
+    constexpr bool discontinuous = true;
+
+    const basix::FiniteElement S_element
+        = basix::create_element(family, cell_type, k, variant, discontinuous);
+    auto S = std::make_shared<fem::FunctionSpace>(fem::create_functionspace(
+        mesh, S_element, pow(mesh->geometry().dim(), 2)));
+
+    const auto sigma_expression = fem::create_expression<T>(
+        *expression_hyperelasticity_sigma, {{"u", u}}, {}, mesh);
+
+    auto sigma = fem::Function<T>(S);
+    sigma.name = "cauchy_stress";
+    sigma.interpolate(sigma_expression);
+
     // Save solution in VTK format
-    io::VTKFile file(MPI_COMM_WORLD, "u.pvd", "w");
-    file.write({*u}, 0.0);
+    io::VTKFile file_u(mesh->comm(), "u.pvd", "w");
+    file_u.write<T>({*u}, 0.0);
+
+    // Save Cauchy stress in XDMF format
+    io::XDMFFile file_sigma(mesh->comm(), "sigma.xdmf", "w");
+    file_sigma.write_mesh(*mesh);
+    file_sigma.write_function(sigma, 0.0);
   }
 
   common::subsystem::finalize_petsc();

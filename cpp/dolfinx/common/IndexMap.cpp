@@ -102,15 +102,17 @@ compute_owned_shared(MPI_Comm comm, const xtl::span<const std::int64_t>& ghosts,
   const auto [src_ranks, dest_ranks] = dolfinx::MPI::neighbors(comm);
 
   // Compute number of ghost indices to send to each owning rank
-  std::vector<int> out_edges_num(dest_ranks.size(), 0);
+  std::vector<int> out_edges_num(dest_ranks.size() + 1, 0);
   std::for_each(ghost_src_ranks.cbegin(), ghost_src_ranks.cend(),
                 [&out_edges_num](auto src_rank) { out_edges_num[src_rank]++; });
 
   // Send number of my 'ghost indices' to each owner, and receive number
   // of my 'owned indices' that are ghosted on other ranks
-  std::vector<int> in_edges_num(src_ranks.size());
+  std::vector<int> in_edges_num(src_ranks.size() + 1);
   MPI_Neighbor_alltoall(out_edges_num.data(), 1, MPI_INT, in_edges_num.data(),
                         1, MPI_INT, comm);
+  out_edges_num.pop_back();
+  in_edges_num.pop_back();
 
   // Prepare communication displacements
   std::vector<int> send_disp(dest_ranks.size() + 1, 0);
@@ -384,12 +386,15 @@ IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size)
   // Create communicators with empty neighborhoods
   MPI_Comm comm0, comm1;
   std::vector<int> ranks(0);
+  // NOTE: create uniform weights as a workaround to issue
+  // https://github.com/pmodels/mpich/issues/5764
+  std::vector<int> weights(0);
   MPI_Dist_graph_create_adjacent(comm, ranks.size(), ranks.data(),
-                                 MPI_UNWEIGHTED, ranks.size(), ranks.data(),
-                                 MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm0);
+                                 weights.data(), ranks.size(), ranks.data(),
+                                 weights.data(), MPI_INFO_NULL, false, &comm0);
   MPI_Dist_graph_create_adjacent(comm, ranks.size(), ranks.data(),
-                                 MPI_UNWEIGHTED, ranks.size(), ranks.data(),
-                                 MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm1);
+                                 weights.data(), ranks.size(), ranks.data(),
+                                 weights.data(), MPI_INFO_NULL, false, &comm1);
   _comm_owner_to_ghost = dolfinx::MPI::Comm(comm0, false);
   _comm_ghost_to_owner = dolfinx::MPI::Comm(comm1, false);
   _shared_indices = std::make_unique<graph::AdjacencyList<std::int32_t>>(0);
@@ -429,17 +434,22 @@ IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size,
   // Create communicators with directed edges: (0) owner -> ghost,
   // (1) ghost -> owner
   {
+    // NOTE: create uniform weights as a workaround to issue
+    // https://github.com/pmodels/mpich/issues/5764
+    std::vector<int> src_weights(halo_src_ranks.size(), 1);
+    std::vector<int> dest_weights(dest_ranks.size(), 1);
+
     MPI_Comm comm0;
     MPI_Dist_graph_create_adjacent(
-        comm, halo_src_ranks.size(), halo_src_ranks.data(), MPI_UNWEIGHTED,
-        dest_ranks.size(), dest_ranks.data(), MPI_UNWEIGHTED, MPI_INFO_NULL,
-        false, &comm0);
+        comm, halo_src_ranks.size(), halo_src_ranks.data(), src_weights.data(),
+        dest_ranks.size(), dest_ranks.data(), dest_weights.data(),
+        MPI_INFO_NULL, false, &comm0);
     _comm_owner_to_ghost = dolfinx::MPI::Comm(comm0, false);
 
     MPI_Comm comm1;
     MPI_Dist_graph_create_adjacent(comm, dest_ranks.size(), dest_ranks.data(),
-                                   MPI_UNWEIGHTED, halo_src_ranks.size(),
-                                   halo_src_ranks.data(), MPI_UNWEIGHTED,
+                                   dest_weights.data(), halo_src_ranks.size(),
+                                   halo_src_ranks.data(), src_weights.data(),
                                    MPI_INFO_NULL, false, &comm1);
     _comm_ghost_to_owner = dolfinx::MPI::Comm(comm1, false);
   }
@@ -697,12 +707,13 @@ std::map<std::int32_t, std::set<int>> IndexMap::compute_shared_indices() const
   // Send sharing rank data from owner to ghosts
 
   // Send data size to send, and get to-receive sizes
-  std::vector<int> send_sizes(outdegree, 0);
-  std::vector<int> recv_sizes(indegree);
+  std::vector<int> send_sizes(outdegree + 1, 0), recv_sizes(indegree + 1);
   std::adjacent_difference(fwd_sharing_offsets.begin() + 1,
                            fwd_sharing_offsets.end(), send_sizes.begin());
   MPI_Neighbor_alltoall(send_sizes.data(), 1, MPI_INT, recv_sizes.data(), 1,
                         MPI_INT, _comm_owner_to_ghost.comm());
+  send_sizes.pop_back();
+  recv_sizes.pop_back();
 
   // Work out recv offsets and send/receive
   std::vector<int> recv_offsets(recv_sizes.size() + 1, 0);
@@ -915,13 +926,20 @@ IndexMap::create_submap(const xtl::span<const std::int32_t>& indices) const
     if (ranks_old_to_new_send[r] >= 0)
       out_ranks.push_back(dest_ranks[r]);
 
+  // NOTE: create uniform weights as a workaround to issue
+  // https://github.com/pmodels/mpich/issues/5764
+  std::vector<int> in_weights(in_ranks.size(), 1);
+  std::vector<int> out_weights(out_ranks.size(), 1);
+
   MPI_Comm comm0, comm1;
-  MPI_Dist_graph_create_adjacent(
-      comm, in_ranks.size(), in_ranks.data(), MPI_UNWEIGHTED, out_ranks.size(),
-      out_ranks.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm0);
-  MPI_Dist_graph_create_adjacent(
-      comm, out_ranks.size(), out_ranks.data(), MPI_UNWEIGHTED, in_ranks.size(),
-      in_ranks.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm1);
+  MPI_Dist_graph_create_adjacent(comm, in_ranks.size(), in_ranks.data(),
+                                 in_weights.data(), out_ranks.size(),
+                                 out_ranks.data(), out_weights.data(),
+                                 MPI_INFO_NULL, false, &comm0);
+  MPI_Dist_graph_create_adjacent(comm, out_ranks.size(), out_ranks.data(),
+                                 out_weights.data(), in_ranks.size(),
+                                 in_ranks.data(), in_weights.data(),
+                                 MPI_INFO_NULL, false, &comm1);
 
   // Wait for the MPI_Iallreduce to complete
   MPI_Wait(&request_size, MPI_STATUS_IGNORE);

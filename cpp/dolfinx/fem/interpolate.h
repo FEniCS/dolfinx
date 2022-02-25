@@ -14,6 +14,8 @@
 #include "DofMap.h"
 #include "FiniteElement.h"
 #include "FunctionSpace.h"
+#include <dolfinx/common/IndexMap.h>
+#include <dolfinx/mesh/Mesh.h>
 #include <functional>
 #include <numeric>
 #include <vector>
@@ -22,25 +24,14 @@
 #include <xtensor/xview.hpp>
 #include <xtl/xspan.hpp>
 
-namespace dolfinx::mesh
-{
-class Mesh;
-} // namespace dolfinx::mesh
-
 namespace dolfinx::fem
 {
 template <typename T>
 class Function;
-template <typename T>
-class Expression;
-
-/// This should be hidden somewhere
-template <typename T>
-const MPI_Datatype MPI_TYPE = MPI_DOUBLE;
 
 namespace impl
 {
-/// Apply interpolation operator Pi to data to evaluate the dos
+/// Apply interpolation operator Pi to data to evaluate the dof
 /// coefficients
 /// @param[in] Pi The interpolation matrix (shape = (num dofs,
 /// num_points * value_size))
@@ -88,22 +79,25 @@ void interpolation_apply(const U& Pi, const V& data, std::vector<T>& coeffs,
 /// map.
 /// @param[out] u1 The function to interpolate to
 /// @param[in] u0 The function to interpolate from
+/// @param[in] cells The cells to interpolate on
 /// @pre The functions `u1` and `u0` must share the same mesh and the
 /// elements must share the same basis function map. Neither is checked
 /// by the function.
 template <typename T>
-void interpolate_same_map(Function<T>& u1, const Function<T>& u0)
+void interpolate_same_map(Function<T>& u1, const Function<T>& u0,
+                          const xtl::span<const std::int32_t>& cells)
 {
-  assert(u0.function_space());
-  auto mesh = u0.function_space()->mesh();
+  auto V0 = u0.function_space();
+  assert(V0);
+  auto V1 = u1.function_space();
+  assert(V1);
+  auto mesh = V0->mesh();
   assert(mesh);
 
-  std::shared_ptr<const FiniteElement> element1
-      = u1.function_space()->element();
-  assert(element1);
-  std::shared_ptr<const FiniteElement> element0
-      = u0.function_space()->element();
+  std::shared_ptr<const FiniteElement> element0 = V0->element();
   assert(element0);
+  std::shared_ptr<const FiniteElement> element1 = V1->element();
+  assert(element1);
 
   const int tdim = mesh->topology().dim();
   auto map = mesh->topology().index_map(tdim);
@@ -120,19 +114,19 @@ void interpolate_same_map(Function<T>& u1, const Function<T>& u0)
   }
 
   // Get dofmaps
-  auto dofmap1 = u1.function_space()->dofmap();
-  auto dofmap0 = u0.function_space()->dofmap();
+  auto dofmap1 = V1->dofmap();
+  auto dofmap0 = V0->dofmap();
 
   // Create interpolation operator
   const xt::xtensor<double, 2> i_m
       = element1->create_interpolation_operator(*element0);
 
   // Get block sizes and dof transformation operators
-  const int bs1 = element1->block_size();
-  const int bs0 = element0->block_size();
-  const auto apply_dof_transformation
+  const int bs1 = dofmap1->bs();
+  const int bs0 = dofmap0->bs();
+  auto apply_dof_transformation
       = element0->get_dof_transformation_function<T>(false, true, false);
-  const auto apply_inverse_dof_transform
+  auto apply_inverse_dof_transform
       = element1->get_dof_transformation_function<T>(true, true, false);
 
   // Creat working array
@@ -140,11 +134,10 @@ void interpolate_same_map(Function<T>& u1, const Function<T>& u0)
   std::vector<T> local1(element1->space_dimension());
 
   // Iterate over mesh and interpolate on each cell
-  const int num_cells = map->size_local() + map->num_ghosts();
-  for (int c = 0; c < num_cells; ++c)
+  for (auto c : cells)
   {
     xtl::span<const std::int32_t> dofs0 = dofmap0->cell_dofs(c);
-    for (std::size_t i = 0; i < dofs0.size(); i++)
+    for (std::size_t i = 0; i < dofs0.size(); ++i)
       for (int k = 0; k < bs0; ++k)
         local0[bs0 * i + k] = u0_array[bs0 * dofs0[i] + k];
 
@@ -172,14 +165,17 @@ void interpolate_same_map(Function<T>& u1, const Function<T>& u0)
 /// be Piola mapped and the other with a standard isoparametric map.
 /// @param[out] u1 The function to interpolate to
 /// @param[in] u0 The function to interpolate from
+/// @param[in] cells The cells to interpolate on
 /// @pre The functions `u1` and `u0` must share the same mesh. This is
 /// not checked by the function.
 template <typename T>
-void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0)
+void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0,
+                                  const xtl::span<const std::int32_t>& cells)
 {
   // Get mesh
-  assert(u0.function_space());
-  auto mesh = u0.function_space()->mesh();
+  auto V0 = u0.function_space();
+  assert(V0);
+  auto mesh = V0->mesh();
   assert(mesh);
 
   // Mesh dims
@@ -187,11 +183,11 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0)
   const int gdim = mesh->geometry().dim();
 
   // Get elements
-  std::shared_ptr<const FiniteElement> element0
-      = u0.function_space()->element();
+  auto V1 = u1.function_space();
+  assert(V1);
+  std::shared_ptr<const FiniteElement> element0 = V0->element();
   assert(element0);
-  std::shared_ptr<const FiniteElement> element1
-      = u1.function_space()->element();
+  std::shared_ptr<const FiniteElement> element1 = V1->element();
   assert(element1);
 
   xtl::span<const std::uint32_t> cell_info;
@@ -203,8 +199,8 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0)
   }
 
   // Get dofmaps
-  auto dofmap0 = u0.function_space()->dofmap();
-  auto dofmap1 = u1.function_space()->dofmap();
+  auto dofmap0 = V0->dofmap();
+  auto dofmap1 = V1->dofmap();
 
   const xt::xtensor<double, 2> X = element1->interpolation_points();
 
@@ -274,10 +270,7 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0)
   // Iterate over mesh and interpolate on each cell
   xtl::span<const T> array0 = u0.x()->array();
   xtl::span<T> array1 = u1.x()->mutable_array();
-  auto cell_map = mesh->topology().index_map(tdim);
-  assert(cell_map);
-  const int num_cells = cell_map->size_local() + cell_map->num_ghosts();
-  for (int c = 0; c < num_cells; ++c)
+  for (auto c : cells)
   {
     // Get cell geometry (coordinate dofs)
     auto x_dofs = x_dofmap.links(c);
@@ -320,10 +313,11 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0)
     }
 
     // Copy expansion coefficients for v into local array
+    const int dof_bs0 = dofmap0->bs();
     xtl::span<const std::int32_t> dofs0 = dofmap0->cell_dofs(c);
     for (std::size_t i = 0; i < dofs0.size(); ++i)
-      for (int k = 0; k < bs0; ++k)
-        coeffs0[bs0 * i + k] = array0[bs0 * dofs0[i] + k];
+      for (int k = 0; k < dof_bs0; ++k)
+        coeffs0[dof_bs0 * i + k] = array0[dof_bs0 * dofs0[i] + k];
 
     // Evaluate v at the interpolation points (physical space values)
     for (std::size_t p = 0; p < X.shape(0); ++p)
@@ -355,10 +349,11 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0)
     apply_inverse_dof_transform1(local1, cell_info, c, 1);
 
     // Copy local coefficients to the correct position in u dof array
+    const int dof_bs1 = dofmap1->bs();
     xtl::span<const std::int32_t> dofs1 = dofmap1->cell_dofs(c);
     for (std::size_t i = 0; i < dofs1.size(); ++i)
-      for (int k = 0; k < bs1; ++k)
-        array1[bs1 * dofs1[i] + k] = local1[bs1 * i + k];
+      for (int k = 0; k < dof_bs1; ++k)
+        array1[dof_bs1 * dofs1[i] + k] = local1[dof_bs1 * i + k];
   }
 }
 } // namespace impl
@@ -520,7 +515,6 @@ void interpolate(Function<T>& u, xt::xarray<T>& f,
     using J_t = xt::xview<decltype(J)&, std::size_t, xt::xall<std::size_t>,
                           xt::xall<std::size_t>>;
     auto pull_back_fn = element->map_fn<U_t, U_t, J_t, J_t>();
-
     for (std::size_t c = 0; c < cells.size(); ++c)
     {
       const std::int32_t cell = cells[c];
@@ -610,14 +604,22 @@ void interpolate(
 /// Interpolate from one finite element Function to another one
 /// @param[out] u The function to interpolate into
 /// @param[in] v The function to be interpolated
+/// @param[in] cells List of cell indices to interpolate on
 template <typename T>
-void interpolate(Function<T>& u, const Function<T>& v)
+void interpolate(Function<T>& u, const Function<T>& v,
+                 const xtl::span<const std::int32_t>& cells)
 {
   assert(u.function_space());
   assert(v.function_space());
-  if (u.function_space() == v.function_space())
+  std::shared_ptr<const mesh::Mesh> mesh = u.function_space()->mesh();
+  assert(mesh);
+
+  auto cell_map0 = mesh->topology().index_map(mesh->topology().dim());
+  assert(cell_map0);
+  std::size_t num_cells0 = cell_map0->size_local() + cell_map0->num_ghosts();
+  if (u.function_space() == v.function_space() and cells.size() == num_cells0)
   {
-    // Same function spaces
+    // Same function spaces and on whole mesh
     xtl::span<T> u1_array = u.x()->mutable_array();
     xtl::span<const T> u0_array = v.x()->array();
     std::copy(u0_array.begin(), u0_array.end(), u1_array.begin());
@@ -625,12 +627,21 @@ void interpolate(Function<T>& u, const Function<T>& v)
   else
   {
     // Get mesh and check that functions share the same mesh
-    const auto mesh = u.function_space()->mesh();
-    assert(mesh);
     if (mesh != v.function_space()->mesh())
     {
-      const int nProcs = dolfinx::MPI::size(MPI_COMM_WORLD);
-      const auto mpi_rank = dolfinx::MPI::rank(MPI_COMM_WORLD);
+      int communicatorComparison;
+      MPI_Comm_compare(mesh->comm(), v.function_space()->mesh()->comm(),
+                       &communicatorComparison);
+
+      if (communicatorComparison != MPI_IDENT
+          and communicatorComparison != MPI_CONGRUENT)
+      {
+        throw std::runtime_error("Interpolation on different meshes is only "
+                                 "supported with the same communicator.");
+      }
+
+      const int nProcs = dolfinx::MPI::size(mesh->comm());
+      const auto mpi_rank = dolfinx::MPI::rank(mesh->comm());
 
       const int tdim = u.function_space()->mesh()->topology().dim();
       const auto cell_map
@@ -644,47 +655,28 @@ void interpolate(Function<T>& u, const Function<T>& v)
       const xt::xtensor<double, 2> x = fem::interpolation_coords(
           *u.function_space()->element(), *u.function_space()->mesh(), cells);
 
-      // This transposition is a quick and dirty solution and should be avoided
-      auto x_t = xt::zeros_like(xt::transpose(x));
-      for (decltype(x.shape(1)) i = 0; i < x.shape(1); ++i)
-      {
-        for (decltype(x.shape(0)) j = 0; j < x.shape(0); ++j)
-        {
-          x_t(i, j) = x(j, i);
-        }
-      }
-
       // Create a global bounding-box tree to quickly look for processes that
       // might be able to evaluate the interpolating function at a given point
       dolfinx::geometry::BoundingBoxTree bb(*v.function_space()->mesh(), tdim,
                                             0.0001);
-      auto globalBB = bb.create_global_tree(MPI_COMM_WORLD);
+      auto globalBB = bb.create_global_tree(v.function_space()->mesh()->comm());
 
-      // For each point that needs to be evaluated, store a list of processes
-      // that might be able to do it
-      std::vector<std::vector<std::int32_t>> candidates(x_t.shape(0));
-      for (decltype(x_t.shape(0)) i = 0; i < x_t.shape(0); ++i)
-      {
-        const auto collisions = dolfinx::geometry::compute_collisions(
-            globalBB,
-            xt::xtensor<double, 2>({{x_t(i, 0), x_t(i, 1), x_t(i, 2)}}));
-        candidates[i] = std::vector<std::int32_t>(collisions.links(0).cbegin(),
-                                                  collisions.links(0).cend());
-      }
+      // Get the list of processes that might be able to evaluate each point
+      const auto collisions
+          = dolfinx::geometry::compute_collisions(globalBB, xt::transpose(x));
 
       // Compute which points need to be sent to which process
       std::vector<std::vector<double>> pointsToSend(nProcs);
       // Reserve enough space to avoid the need for reallocating
       std::for_each(pointsToSend.begin(), pointsToSend.end(),
-                    [&candidates](auto& el)
-                    { el.reserve(3 * candidates.size()); });
+                    [&x](auto& el) { el.reserve(3 * x.shape(1)); });
       // The coordinates of the points that need to be sent to process p go into
       // pointsToSend[p]
-      for (decltype(candidates.size()) i = 0; i < candidates.size(); ++i)
+      for (decltype(x.shape(1)) i = 0; i < x.shape(1); ++i)
       {
-        for (const auto& p : candidates[i])
+        for (const auto& p : collisions.links(i))
         {
-          const auto point = xt::row(x_t, i);
+          const auto point = xt::col(x, i);
           pointsToSend[p].insert(pointsToSend[p].end(), point.cbegin(),
                                  point.cend());
         }
@@ -699,8 +691,7 @@ void interpolate(Function<T>& u, const Function<T>& v)
       // process i sends to process j
       std::vector<std::int32_t> allPointsToSend(nProcs * nProcs);
       MPI_Allgather(nPointsToSend.data(), nProcs, MPI_INT32_T,
-                    allPointsToSend.data(), nProcs, MPI_INT32_T,
-                    MPI_COMM_WORLD);
+                    allPointsToSend.data(), nProcs, MPI_INT32_T, mesh->comm());
 
       std::size_t nPointsToReceive = 0;
       for (int i = 0; i < nProcs; ++i)
@@ -727,7 +718,7 @@ void interpolate(Function<T>& u, const Function<T>& v)
       // Open a window for other processes to write into, then sync
       MPI_Win window;
       MPI_Win_create(pointsToReceive.data(), sizeof(double) * nPointsToReceive,
-                     sizeof(double), MPI_INFO_NULL, MPI_COMM_WORLD, &window);
+                     sizeof(double), MPI_INFO_NULL, mesh->comm(), &window);
       MPI_Win_fence(0, window);
 
       // Send data to each process. It is intended that sending to itself is the
@@ -756,28 +747,21 @@ void interpolate(Function<T>& u, const Function<T>& v)
 
       const auto xv = v.function_space()->mesh()->geometry().x();
 
-      // For each point at which the source function needs to be evaluated
+      // Collect adjacency list of all cells that collide with a given point
+      const auto collidingCells = dolfinx::geometry::compute_colliding_cells(
+          *v.function_space()->mesh(),
+          // For each point at which the source function needs to be evaluated
+          dolfinx::geometry::compute_collisions(bbt, pointsToReceive),
+          pointsToReceive);
+
       for (decltype(pointsToReceive.shape(0)) i = 0;
            i < pointsToReceive.shape(0); ++i)
       {
-        // Get its coordinates
-        const double xp = pointsToReceive(i, 0);
-        const double yp = pointsToReceive(i, 1);
-        const double zp = pointsToReceive(i, 2);
-
-        // Check if any cells actually contain that point
-        const auto collidingCells = dolfinx::geometry::compute_colliding_cells(
-            *v.function_space()->mesh(),
-            dolfinx::geometry::compute_collisions(
-                bbt, xt::xtensor<double, 2>({{xp, yp, zp}})),
-            xt::xtensor<double, 2>({{xp, yp, zp}}));
-        const std::vector<std::int32_t> intersectingCells(
-            collidingCells.links(0).cbegin(), collidingCells.links(0).cend());
-
-        // If there is any -- there should be at most one -- note it down
-        if (not intersectingCells.empty())
+        // If any cell was found at all -- there should be at most one -- note
+        // it down
+        if (not collidingCells.links(i).empty())
         {
-          evaluationCells[i] = intersectingCells[0];
+          evaluationCells[i] = collidingCells.links(i)[0];
         }
       }
 
@@ -811,9 +795,10 @@ void interpolate(Function<T>& u, const Function<T>& v)
                      { return el / 3 * value_size; });
 
       // Open a window for other processes to read data from, then sync
-      MPI_Win_create(values.data(), sizeof(MPI_TYPE<T>) * values.size(),
-                     sizeof(MPI_TYPE<T>), MPI_INFO_NULL, MPI_COMM_WORLD,
-                     &window);
+      MPI_Win_create(values.data(),
+                     sizeof(dolfinx::MPI::mpi_type<T>()) * values.size(),
+                     sizeof(dolfinx::MPI::mpi_type<T>()), MPI_INFO_NULL,
+                     mesh->comm(), &window);
       MPI_Win_fence(0, window);
 
       // Get data from each process. It is intended that fetching from itself is
@@ -822,10 +807,11 @@ void interpolate(Function<T>& u, const Function<T>& v)
       {
         const auto dest = i % nProcs;
         MPI_Get(valuesToRetrieve.data() + retrievingOffsets[dest],
-                pointsToSend[dest].size() / 3 * value_size, MPI_TYPE<T>, dest,
+                pointsToSend[dest].size() / 3 * value_size,
+                dolfinx::MPI::mpi_type<T>(), dest,
                 sendingOffsets[dest] / 3 * value_size,
-                pointsToSend[dest].size() / 3 * value_size, MPI_TYPE<T>,
-                window);
+                pointsToSend[dest].size() / 3 * value_size,
+                dolfinx::MPI::mpi_type<T>(), window);
       }
 
       // Sync, then close the window
@@ -833,7 +819,7 @@ void interpolate(Function<T>& u, const Function<T>& v)
       MPI_Win_free(&window);
 
       xt::xarray<T> myVals(
-          {x_t.shape(0), static_cast<decltype(x_t.shape(0))>(value_size)},
+          {x.shape(1), static_cast<decltype(x.shape(1))>(value_size)},
           static_cast<T>(0));
 
       // Auxiliary counters to keep track of which values correspond to which
@@ -841,10 +827,10 @@ void interpolate(Function<T>& u, const Function<T>& v)
       std::vector<std::size_t> scanningProgress(nProcs, 0);
 
       // For every point for which we need a value
-      for (decltype(candidates.size()) i = 0; i < candidates.size(); ++i)
+      for (decltype(x.shape(1)) i = 0; i < x.shape(1); ++i)
       {
         // For every candidate that might have provided that value
-        for (const auto& p : candidates[i])
+        for (const auto& p : collisions.links(i))
         {
           // For every component of the value space
           for (int j = 0; j < value_size; ++j)
@@ -861,34 +847,33 @@ void interpolate(Function<T>& u, const Function<T>& v)
         }
       }
 
-      // This transposition is a quick and dirty solution and should be avoided
-      xt::xarray<T> myVals_t = xt::zeros_like(xt::transpose(myVals));
-      for (decltype(myVals.shape(1)) i = 0; i < myVals.shape(1); ++i)
-      {
-        for (decltype(myVals.shape(0)) j = 0; j < myVals.shape(0); ++j)
-        {
-          myVals_t(i, j) = myVals(j, i);
-        }
-      }
-
       // Finally, interpolate using the computed values
+      xt::xarray<T> myVals_t = xt::transpose(myVals);
       fem::interpolate(u, myVals_t, cells);
 
       return;
     }
 
-    // Get elements
+    // Get elements and check value shape
     auto element0 = v.function_space()->element();
     assert(element0);
     auto element1 = u.function_space()->element();
     assert(element1);
-    if (element1->hash() == element0->hash())
+    if (element0->value_shape() != element1->value_shape())
     {
-      // Same element, different dofmaps
+      throw std::runtime_error(
+          "Interpolation: elements have different value dimensions");
+    }
+
+    if (*element1 == *element0)
+    {
+      // Same element, different dofmaps (or just a subset of cells)
 
       const int tdim = mesh->topology().dim();
       auto cell_map = mesh->topology().index_map(tdim);
       assert(cell_map);
+
+      assert(element1->block_size() == element0->block_size());
 
       // Get dofmaps
       std::shared_ptr<const fem::DofMap> dofmap0 = v.function_space()->dofmap();
@@ -900,70 +885,36 @@ void interpolate(Function<T>& u, const Function<T>& v)
       xtl::span<const T> u0_array = v.x()->array();
 
       // Iterate over mesh and interpolate on each cell
-      const int num_cells = cell_map->size_local() + cell_map->num_ghosts();
-      const int bs = dofmap0->bs();
-      assert(bs == dofmap1->bs());
-      for (int c = 0; c < num_cells; ++c)
+      const int bs0 = dofmap0->bs();
+      const int bs1 = dofmap1->bs();
+      for (auto c : cells)
       {
         xtl::span<const std::int32_t> dofs0 = dofmap0->cell_dofs(c);
         xtl::span<const std::int32_t> dofs1 = dofmap1->cell_dofs(c);
-        assert(dofs0.size() == dofs1.size());
+        assert(bs0 * dofs0.size() == bs1 * dofs1.size());
         for (std::size_t i = 0; i < dofs0.size(); ++i)
-          for (int k = 0; k < bs; ++k)
-            u1_array[bs * dofs1[i] + k] = u0_array[bs * dofs0[i] + k];
+        {
+          for (int k = 0; k < bs0; ++k)
+          {
+            int index = bs0 * i + k;
+            std::div_t dv1 = std::div(index, bs1);
+            u1_array[bs1 * dofs1[dv1.quot] + dv1.rem]
+                = u0_array[bs0 * dofs0[i] + k];
+          }
+        }
       }
     }
     else if (element1->map_type() == element0->map_type())
     {
       // Different elements, same basis function map type
-      impl::interpolate_same_map(u, v);
+      impl::interpolate_same_map(u, v, cells);
     }
     else
     {
       //  Different elements with different maps for basis functions
-      impl::interpolate_nonmatching_maps(u, v);
+      impl::interpolate_nonmatching_maps(u, v, cells);
     }
   }
 }
 
-/// Interpolate from an Expression into a compatible Function on the
-/// same mesh
-/// @param[out] u The function to interpolate into
-/// @param[in] expr The Expression to be interpolated. The Expression
-/// must have been created using the reference coordinates
-/// `FiniteElement::interpolation_points()` for the element associated
-/// with `u`.
-/// @param[in] cells List of cell indices to interpolate on
-template <typename T>
-void interpolate(Function<T>& u, const Expression<T>& expr,
-                 const xtl::span<const std::int32_t>& cells)
-{
-  // Check that spaces are compatible
-  std::size_t value_size = expr.value_size();
-  assert(u.function_space());
-  assert(u.function_space()->element());
-  assert(value_size == u.function_space()->element()->value_size());
-  assert(expr.x().shape()
-         == u.function_space()->element()->interpolation_points().shape());
-
-  // Array to hold evaluted Expression
-  std::size_t num_cells = cells.size();
-  std::size_t num_points = expr.x().shape(0);
-  xt::xtensor<T, 3> f({num_cells, num_points, value_size});
-
-  // Evaluate Expression at points
-  auto f_view = xt::reshape_view(f, {num_cells, num_points * value_size});
-  expr.eval(cells, f_view);
-
-  // Reshape evaluated data to fit interpolate
-  // Expression returns matrix of shape (num_cells, num_points *
-  // value_size), i.e. xyzxyz ordering of dof values per cell per point.
-  // The interpolation uses xxyyzz input, ordered for all points of each
-  // cell, i.e. (value_size, num_cells*num_points)
-  xt::xarray<T> _f = xt::reshape_view(xt::transpose(f, {2, 0, 1}),
-                                      {value_size, num_cells * num_points});
-
-  // Interpolate values into appropriate space
-  interpolate(u, _f, cells);
-}
 } // namespace dolfinx::fem

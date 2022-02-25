@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright (C) 2017-2021 Chris N. Richardson, Garth N. Wells and Michal Habera
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
@@ -7,6 +6,7 @@
 
 from __future__ import annotations
 
+import collections
 import typing
 
 if typing.TYPE_CHECKING:
@@ -43,15 +43,15 @@ class FormMetaClass:
 
         """
         self._code = code
-        self._ufc_form = form
+        self._ufcx_form = form
         ffi = cffi.FFI()
-        super().__init__(ffi.cast("uintptr_t", ffi.addressof(self._ufc_form)),
+        super().__init__(ffi.cast("uintptr_t", ffi.addressof(self._ufcx_form)),
                          V, coeffs, constants, subdomains, mesh)
 
     @property
-    def ufc_form(self):
-        """The compiled ufc_form object"""
-        return self._ufc_form
+    def ufcx_form(self):
+        """The compiled ufcx_form object"""
+        return self._ufcx_form
 
     @property
     def code(self) -> str:
@@ -60,14 +60,14 @@ class FormMetaClass:
 
 
 def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtype = PETSc.ScalarType,
-         form_compiler_parameters: dict = {}, jit_parameters: dict = {}) -> FormMetaClass:
+         form_compiler_params: dict = {}, jit_params: dict = {}) -> FormMetaClass:
     """Create a DOLFINx Form or an array of Forms
 
     Args:
         form: A UFL form or list(s) of UFL forms
         dtype: Scalar type to use for the compiled form
-        form_compiler_parameters: See :func:`ffcx_jit <dolfinx.jit.ffcx_jit>`
-        jit_parameters:See :func:`ffcx_jit <dolfinx.jit.ffcx_jit>`
+        form_compiler_params: See :func:`ffcx_jit <dolfinx.jit.ffcx_jit>`
+        jit_params:See :func:`ffcx_jit <dolfinx.jit.ffcx_jit>`
 
     Returns:
         Compiled finite element Form
@@ -83,13 +83,13 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtyp
     """
     if dtype == np.float32:
         ftype = _cpp.fem.Form_float32
-        form_compiler_parameters["scalar_type"] = "float"
+        form_compiler_params["scalar_type"] = "float"
     elif dtype == np.float64:
         ftype = _cpp.fem.Form_float64
-        form_compiler_parameters["scalar_type"] = "double"
+        form_compiler_params["scalar_type"] = "double"
     elif dtype == np.complex128:
         ftype = _cpp.fem.Form_complex128
-        form_compiler_parameters["scalar_type"] = "double _Complex"
+        form_compiler_params["scalar_type"] = "double _Complex"
     else:
         raise NotImplementedError(f"Type {dtype} not supported.")
 
@@ -105,9 +105,9 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtyp
         if mesh is None:
             raise RuntimeError("Expecting to find a Mesh in the form.")
 
-        ufc_form, module, code = jit.ffcx_jit(mesh.comm, form,
-                                              form_compiler_parameters=form_compiler_parameters,
-                                              jit_parameters=jit_parameters)
+        ufcx_form, module, code = jit.ffcx_jit(mesh.comm, form,
+                                               form_compiler_params=form_compiler_params,
+                                               jit_params=jit_params)
 
         # For each argument in form extract its function space
         V = [arg.ufl_function_space()._cpp_object for arg in form.arguments()]
@@ -115,8 +115,8 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtyp
         # Prepare coefficients data. For every coefficient in form take its
         # C++ object.
         original_coefficients = form.coefficients()
-        coeffs = [original_coefficients[ufc_form.original_coefficient_position[i]
-                                        ]._cpp_object for i in range(ufc_form.num_coefficients)]
+        coeffs = [original_coefficients[ufcx_form.original_coefficient_position[i]
+                                        ]._cpp_object for i in range(ufcx_form.num_coefficients)]
         constants = [c._cpp_object for c in form.constants()]
 
         # Subdomain markers (possibly None for some dimensions)
@@ -125,14 +125,14 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtyp
                       _cpp.fem.IntegralType.interior_facet: subdomains.get("interior_facet"),
                       _cpp.fem.IntegralType.vertex: subdomains.get("vertex")}
 
-        return formcls(ufc_form, V, coeffs, constants, subdomains, mesh, code)
+        return formcls(ufcx_form, V, coeffs, constants, subdomains, mesh, code)
 
     def _create_form(form):
         """Recursively convert ufl.Forms to dolfinx.fem.Form, otherwise
         return form argument"""
         if isinstance(form, ufl.Form):
             return _form(form)
-        elif isinstance(form, (tuple, list)):
+        elif isinstance(form, collections.abc.Iterable):
             return list(map(lambda sub_form: _create_form(sub_form), form))
         return form
 

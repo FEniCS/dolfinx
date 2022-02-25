@@ -27,13 +27,6 @@ class AdjacencyList;
 
 namespace dolfinx::mesh
 {
-/// Enum for different partitioning ghost modes
-enum class GhostMode : int
-{
-  none,
-  shared_facet,
-  shared_vertex
-};
 
 /// A Mesh consists of a set of connected and numbered mesh topological
 /// entities, and geometry data

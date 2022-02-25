@@ -7,7 +7,6 @@
 #include "xdmf_utils.h"
 #include "pugixml.hpp"
 #include <boost/algorithm/string.hpp>
-#include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/CoordinateElement.h>
@@ -21,6 +20,7 @@
 #include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <dolfinx/mesh/utils.h>
+#include <filesystem>
 #include <map>
 #include <xtensor/xadapt.hpp>
 #include <xtensor/xtensor.hpp>
@@ -31,6 +31,58 @@ using namespace dolfinx::io;
 
 namespace
 {
+/// Compute values at all mesh 'nodes'
+/// @return The values at all geometric points
+/// @warning This function will be removed soon. Use interpolation
+/// instead.
+template <typename T>
+xt::xtensor<T, 2> compute_point_values(const fem::Function<T>& u)
+{
+  auto V = u.function_space();
+  assert(V);
+  std::shared_ptr<const mesh::Mesh> mesh = V->mesh();
+  assert(mesh);
+  const int tdim = mesh->topology().dim();
+
+  // Compute in tensor (one for scalar function, . . .)
+  const std::size_t value_size_loc = V->element()->value_size();
+
+  // Resize Array for holding point values
+  xt::xtensor<T, 2> point_values(
+      {mesh->geometry().x().size() / 3, value_size_loc});
+
+  // Prepare cell geometry
+  const graph::AdjacencyList<std::int32_t>& x_dofmap
+      = mesh->geometry().dofmap();
+
+  // FIXME: Add proper interface for num coordinate dofs
+  const int num_dofs_g = x_dofmap.num_links(0);
+
+  const auto x_g
+      = xt::adapt(mesh->geometry().x().data(), mesh->geometry().x().size(),
+                  xt::no_ownership(),
+                  std::vector{mesh->geometry().x().size() / 3, std::size_t(3)});
+
+  // Interpolate point values on each cell (using last computed value if
+  // not continuous, e.g. discontinuous Galerkin methods)
+  auto map = mesh->topology().index_map(tdim);
+  assert(map);
+  const std::int32_t num_cells = map->size_local() + map->num_ghosts();
+
+  std::vector<std::int32_t> cells(x_g.shape(0));
+  for (std::int32_t c = 0; c < num_cells; ++c)
+  {
+    // Get coordinates for all points in cell
+    xtl::span<const std::int32_t> dofs = x_dofmap.links(c);
+    for (int i = 0; i < num_dofs_g; ++i)
+      cells[dofs[i]] = c;
+  }
+
+  u.eval(x_g, cells, point_values);
+
+  return point_values;
+}
+
 //-----------------------------------------------------------------------------
 // Get data width - normally the same as u.value_size(), but expand for
 // 2D vector/tensor because XDMF presents everything as 3D
@@ -51,7 +103,7 @@ std::vector<Scalar> _get_point_data_values(const fem::Function<Scalar>& u)
 {
   std::shared_ptr<const mesh::Mesh> mesh = u.function_space()->mesh();
   assert(mesh);
-  const xt::xtensor<Scalar, 2> data_values = u.compute_point_values();
+  const xt::xtensor<Scalar, 2> data_values = compute_point_values(u);
 
   const int width = get_padded_width(*u.function_space()->element());
   assert(mesh->geometry().index_map());
@@ -105,8 +157,7 @@ std::vector<Scalar> _get_cell_data_values(const fem::Function<Scalar>& u)
   std::vector<std::int32_t> dof_set;
   dof_set.reserve(local_size);
   const auto dofmap = u.function_space()->dofmap();
-  assert(dofmap->element_dof_layout);
-  const int ndofs = dofmap->element_dof_layout->num_dofs();
+  const int ndofs = dofmap->element_dof_layout().num_dofs();
   const int bs = dofmap->bs();
   assert(ndofs * bs == value_size);
 
@@ -233,17 +284,18 @@ xdmf_utils::get_hdf5_paths(const pugi::xml_node& dataitem_node)
   return {{paths[0], paths[1]}};
 }
 //-----------------------------------------------------------------------------
-std::string xdmf_utils::get_hdf5_filename(std::string xdmf_filename)
+std::filesystem::path
+xdmf_utils::get_hdf5_filename(const std::filesystem::path& xdmf_filename)
 {
-  boost::filesystem::path p(xdmf_filename);
-  p.replace_extension(".h5");
+  std::filesystem::path p = xdmf_filename;
+  p.replace_extension("h5");
   if (p.string() == xdmf_filename)
   {
     throw std::runtime_error("Cannot deduce name of HDF5 file from XDMF "
                              "filename. Filename clash. Check XDMF filename");
   }
 
-  return p.string();
+  return p;
 }
 //-----------------------------------------------------------------------------
 std::vector<std::int64_t>
@@ -360,6 +412,7 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh& mesh, int entity_dim,
                                    const xt::xtensor<std::int64_t, 2>& entities,
                                    const xtl::span<const std::int32_t>& data)
 {
+  LOG(INFO) << "XDMF distribute entity data";
   if (entities.shape(0) != data.size())
     throw std::runtime_error("Number of entities and data size must match");
 
@@ -429,7 +482,7 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh& mesh, int entity_dim,
   // global index value
   const std::int64_t num_nodes_g = mesh.geometry().index_map()->size_global();
   const MPI_Comm comm = mesh.comm();
-  const int comm_size = MPI::size(comm);
+  const int comm_size = dolfinx::MPI::size(comm);
   // NOTE: could make this int32_t be sending: index <- index - dest_rank_offset
   std::vector<std::vector<std::int64_t>> nodes_g_send(comm_size);
   for (std::int64_t node : nodes_g)
@@ -443,8 +496,10 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh& mesh, int entity_dim,
   }
 
   // Send/receive
+  LOG(INFO) << "XDMF send entity nodes size:(" << num_nodes_g << ")";
   const graph::AdjacencyList<std::int64_t> nodes_g_recv
-      = MPI::all_to_all(comm, graph::AdjacencyList<std::int64_t>(nodes_g_send));
+      = dolfinx::MPI::all_to_all(
+          comm, graph::AdjacencyList<std::int64_t>(nodes_g_send));
 
   // -------------------
   // 2. Send the entity key (nodes list) and tag to the postmaster based
@@ -472,11 +527,14 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh& mesh, int entity_dim,
     data_send[p].push_back(data[e]);
   }
 
+  LOG(INFO) << "XDMF send entity keys size:(" << entities_vertices.shape(0)
+            << ")";
   // TODO: Pack into one MPI call
-  const graph::AdjacencyList<std::int64_t> entities_recv = MPI::all_to_all(
-      comm, graph::AdjacencyList<std::int64_t>(entities_send));
-  const graph::AdjacencyList<std::int32_t> data_recv
-      = MPI::all_to_all(comm, graph::AdjacencyList<std::int32_t>(data_send));
+  const graph::AdjacencyList<std::int64_t> entities_recv
+      = dolfinx::MPI::all_to_all(
+          comm, graph::AdjacencyList<std::int64_t>(entities_send));
+  const graph::AdjacencyList<std::int32_t> data_recv = dolfinx::MPI::all_to_all(
+      comm, graph::AdjacencyList<std::int32_t>(data_send));
 
   // -------------------
   // 3. As 'postmaster', send back the entity key (vertex list) and tag
@@ -525,9 +583,14 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh& mesh, int entity_dim,
   }
 
   // TODO: Pack into one MPI call
-  const graph::AdjacencyList<std::int64_t> recv_ents = MPI::all_to_all(
+  const int send_val_size = std::transform_reduce(
+      send_vals_owned.begin(), send_vals_owned.end(), 0, std::plus<int>(),
+      [](const std::vector<std::int32_t>& v) { return v.size(); });
+  LOG(INFO) << "XDMF return entity and value data size:(" << send_val_size
+            << ")";
+  const graph::AdjacencyList<std::int64_t> recv_ents = dolfinx::MPI::all_to_all(
       comm, graph::AdjacencyList<std::int64_t>(send_nodes_owned));
-  const graph::AdjacencyList<std::int32_t> recv_vals = MPI::all_to_all(
+  const graph::AdjacencyList<std::int32_t> recv_vals = dolfinx::MPI::all_to_all(
       comm, graph::AdjacencyList<std::int32_t>(send_vals_owned));
 
   // -------------------
@@ -545,6 +608,7 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh& mesh, int entity_dim,
   //       entities.
 
   // Build map from input global indices to local vertex numbers
+  LOG(INFO) << "XDMF build map";
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
   std::map<std::int64_t, std::int32_t> igi_to_vertex;
 

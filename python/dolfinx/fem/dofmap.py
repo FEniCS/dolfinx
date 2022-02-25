@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright (C) 2018 Michal Habera
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
@@ -12,7 +11,7 @@ class DofMap:
     """Degree-of-freedom map
 
     This class handles the mapping of degrees of freedom. It builds
-    a dof map based on a ufc_dofmap on a specific mesh.
+    a dof map based on a ufcx_dofmap on a specific mesh.
     """
 
     def __init__(self, dofmap: _cpp.fem.DofMap):

@@ -63,9 +63,3 @@ fem::interpolation_coords(const fem::FiniteElement& element,
   return x;
 }
 //-----------------------------------------------------------------------------
-/// This should be hidden somewhere
-template <>
-const MPI_Datatype fem::MPI_TYPE<double> = MPI_DOUBLE;
-template <>
-const MPI_Datatype fem::MPI_TYPE<std::complex<double>> = MPI_DOUBLE_COMPLEX;
-//-----------------------------------------------------------------------------

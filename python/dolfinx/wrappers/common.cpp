@@ -49,6 +49,11 @@ void common(py::module& m)
       .value("add", dolfinx::common::IndexMap::Mode::add)
       .value("insert", dolfinx::common::IndexMap::Mode::insert);
 
+  py::enum_<dolfinx::Table::Reduction>(m, "Reduction")
+      .value("max", dolfinx::Table::Reduction::max)
+      .value("min", dolfinx::Table::Reduction::min)
+      .value("average", dolfinx::Table::Reduction::average);
+
   // dolfinx::common::IndexMap
   py::class_<dolfinx::common::IndexMap,
              std::shared_ptr<dolfinx::common::IndexMap>>(m, "IndexMap")
@@ -124,10 +129,11 @@ void common(py::module& m)
   m.def("timing", &dolfinx::timing);
 
   m.def("list_timings",
-        [](const MPICommWrapper comm, std::vector<dolfinx::TimingType> type)
+        [](const MPICommWrapper comm, std::vector<dolfinx::TimingType> type,
+           dolfinx::Table::Reduction reduction)
         {
           std::set<dolfinx::TimingType> _type(type.begin(), type.end());
-          dolfinx::list_timings(comm.get(), _type);
+          dolfinx::list_timings(comm.get(), _type, reduction);
         });
 
   m.def("init_logging",

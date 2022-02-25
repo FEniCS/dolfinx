@@ -59,6 +59,9 @@ void _lift_bc_cells(
   assert(_bs0 < 0 or _bs0 == bs0);
   assert(_bs1 < 0 or _bs1 == bs1);
 
+  if (cells.empty())
+    return;
+
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
 
@@ -213,6 +216,9 @@ void _lift_bc_exterior_facets(
     const xtl::span<const std::int8_t>& bc_markers1,
     const xtl::span<const T>& x0, double scale)
 {
+  if (facets.empty())
+    return;
+
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
 
@@ -324,6 +330,9 @@ void _lift_bc_interior_facets(
     const xtl::span<const std::int8_t>& bc_markers1,
     const xtl::span<const T>& x0, double scale)
 {
+  if (facets.empty())
+    return;
+
   const int tdim = mesh.topology().dim();
 
   // Prepare cell geometry
@@ -482,9 +491,10 @@ void _lift_bc_interior_facets(
       for (int k = 0; k < bs0; ++k)
         b[bs0 * dmap0_cell0[i] + k] += be[bs0 * i + k];
 
+    const int offset_be = bs0 * dmap0_cell0.size();
     for (std::size_t i = 0; i < dmap0_cell1.size(); ++i)
       for (int k = 0; k < bs0; ++k)
-        b[bs0 * dmap0_cell1[i] + k] += be[offset + bs0 * i + k];
+        b[bs0 * dmap0_cell1[i] + k] += be[offset_be + bs0 * i + k];
   }
 }
 /// Execute kernel over cells and accumulate result in vector
@@ -507,6 +517,9 @@ void assemble_cells(
     int cstride, const xtl::span<const std::uint32_t>& cell_info)
 {
   assert(_bs < 0 or _bs == bs);
+
+  if (cells.empty())
+    return;
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
@@ -578,6 +591,9 @@ void assemble_exterior_facets(
     int cstride, const xtl::span<const std::uint32_t>& cell_info)
 {
   assert(_bs < 0 or _bs == bs);
+
+  if (facets.empty())
+    return;
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();

@@ -9,11 +9,13 @@ on:
 jobs:
   build:
     name: Build
+    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     container: fenicsproject/test-env:latest-mpich
     env:
-      SONAR_SCANNER_VERSION: 4.6.1.2450 # Find the latest version in the "Linux" link on this page:
-                                        # https://sonarcloud.io/documentation/analysis/scan/sonarscanner/
+      SONAR_SCANNER_VERSION:
+        4.6.2.2472 # Find the latest version at:
+        # https://github.com/SonarSource/sonar-scanner-cli/tags
       SONAR_SERVER_URL: "https://sonarcloud.io"
       BUILD_WRAPPER_OUT_DIR: build_wrapper_output_directory # Directory where build-wrapper output will be placed
       PETSC_ARCH: linux-gnu-real-32

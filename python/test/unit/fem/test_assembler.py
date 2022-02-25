@@ -13,20 +13,19 @@ import scipy.sparse
 
 import ufl
 from dolfinx import cpp as _cpp
-from dolfinx.fem import (Constant, dirichletbc, Function, FunctionSpace,
-                         VectorFunctionSpace, apply_lifting,
-                         apply_lifting_nest, assemble_matrix,
-                         assemble_matrix_block, assemble_matrix_nest,
-                         assemble_scalar, assemble_vector,
-                         assemble_vector_block, assemble_vector_nest,
-                         bcs_by_block, extract_function_spaces, form,
-                         locate_dofs_geometrical, locate_dofs_topological,
-                         set_bc, set_bc_nest)
-from dolfinx.fem.assemble import pack_coefficients, pack_constants
+from dolfinx import fem, graph, la
+from dolfinx.fem import (Constant, Function, FunctionSpace,
+                         VectorFunctionSpace, assemble_scalar, bcs_by_block,
+                         dirichletbc, extract_function_spaces, form,
+                         locate_dofs_geometrical, locate_dofs_topological)
+from dolfinx.fem.petsc import (apply_lifting, apply_lifting_nest,
+                               assemble_matrix, assemble_matrix_block,
+                               assemble_matrix_nest, assemble_vector,
+                               assemble_vector_block, assemble_vector_nest,
+                               set_bc, set_bc_nest)
 from dolfinx.mesh import (CellType, GhostMode, create_mesh, create_rectangle,
                           create_unit_cube, create_unit_square,
                           locate_entities_boundary)
-from dolfinx_utils.test.skips import skip_in_parallel
 from ufl import derivative, ds, dx, inner
 from ufl.geometry import SpatialCoordinate
 
@@ -147,6 +146,29 @@ def test_basic_assembly(mode):
 
 
 @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
+def test_basic_assembly_petsc_matrixcsr(mode):
+    mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
+    V = FunctionSpace(mesh, ("Lagrange", 1))
+    u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
+    a = inner(u, v) * dx + inner(u, v) * ds
+    a = form(a)
+
+    A0 = fem.assemble_matrix(a)
+    A0.finalize()
+    assert isinstance(A0, la.MatrixCSRMetaClass)
+    A1 = fem.petsc.assemble_matrix(a)
+    A1.assemble()
+    assert isinstance(A1, PETSc.Mat)
+    assert np.sqrt(A0.norm_squared()) == pytest.approx(A1.norm())
+
+    V = VectorFunctionSpace(mesh, ("Lagrange", 1))
+    u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
+    a = form(inner(u, v) * dx + inner(u, v) * ds)
+    with pytest.raises(RuntimeError):
+        A0 = fem.assemble_matrix(a)
+
+
+@pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
 def test_assembly_bcs(mode):
     mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
     V = FunctionSpace(mesh, ("Lagrange", 1))
@@ -179,7 +201,7 @@ def test_assembly_bcs(mode):
     assert (f - b_bc).norm() == pytest.approx(0.0, rel=1e-12, abs=1e-12)
 
 
-@ skip_in_parallel
+@pytest.mark.skip_in_parallel
 def test_assemble_manifold():
     """Test assembly of poisson problem on a mesh with topological
     dimension 1 but embedded in 2D (gdim=2)"""
@@ -547,8 +569,8 @@ def test_assembly_solve_taylor_hood(mesh):
         p11 = ufl.inner(p, q) * dx
         p_form = p00 + p11
 
-        f = Function(W.sub(0).collapse())
-        p_zero = Function(W.sub(1).collapse())
+        f = Function(W.sub(0).collapse()[0])
+        p_zero = Function(W.sub(1).collapse()[0])
         L0 = inner(f, v) * dx
         L1 = inner(p_zero, q) * dx
         L = L0 + L1
@@ -708,11 +730,11 @@ def test_pack_coefficients():
     # -- Test vector
     b0 = assemble_vector(_F)
     b0.assemble()
-    constants = pack_constants(_F)
-    coeffs = pack_coefficients(_F)
+    constants = _cpp.fem.pack_constants(_F)
+    coeffs = _cpp.fem.pack_coefficients(_F)
     with b0.localForm() as _b0:
         for c in [(None, None), (None, coeffs), (constants, None), (constants, coeffs)]:
-            b = assemble_vector(_F, coeffs=c)
+            b = assemble_vector(_F, c[0], c[1])
             b.assemble()
             with b.localForm() as _b:
                 assert (_b0.array_r == _b.array_r).all()
@@ -723,7 +745,7 @@ def test_pack_coefficients():
         coeff *= 5.0
     with b0.localForm() as _b0:
         for c in [(None, coeffs), (constants, None), (constants, coeffs)]:
-            b = assemble_vector(_F, coeffs=c)
+            b = assemble_vector(_F, c[0], c[1])
             b.assemble()
             with b.localForm() as _b:
                 assert (_b0 - _b).norm() > 1.0e-5
@@ -736,10 +758,10 @@ def test_pack_coefficients():
     A0 = assemble_matrix(J)
     A0.assemble()
 
-    constants = pack_constants(J)
-    coeffs = pack_coefficients(J)
+    constants = _cpp.fem.pack_constants(J)
+    coeffs = _cpp.fem.pack_coefficients(J)
     for c in [(None, None), (None, coeffs), (constants, None), (constants, coeffs)]:
-        A = assemble_matrix(J, coeffs=c)
+        A = assemble_matrix(J, constants=c[0], coeffs=c[1])
         A.assemble()
         assert pytest.approx((A - A0).norm(), 1.0e-12) == 0.0
 
@@ -748,7 +770,7 @@ def test_pack_coefficients():
     for coeff in coeffs.values():
         coeff *= 5.0
     for c in [(None, coeffs), (constants, None), (constants, coeffs)]:
-        A = assemble_matrix(J, coeffs=c)
+        A = assemble_matrix(J, constants=c[0], coeffs=c[1])
         A.assemble()
         assert (A - A0).norm() > 1.0e-5
 
@@ -768,13 +790,13 @@ def test_coefficents_non_constant():
     F = form((ufl.inner(u, v) - ufl.inner(x[0] * x[1]**2, v)) * dx)
     b0 = assemble_vector(F)
     b0.assemble()
-    assert(np.linalg.norm(b0.array) == pytest.approx(0.0))
+    assert np.linalg.norm(b0.array) == pytest.approx(0.0)
 
     # -- Exterior facet integral vector
     F = form((ufl.inner(u, v) - ufl.inner(x[0] * x[1]**2, v)) * ds)
     b0 = assemble_vector(F)
     b0.assemble()
-    assert(np.linalg.norm(b0.array) == pytest.approx(0.0))
+    assert np.linalg.norm(b0.array) == pytest.approx(0.0)
 
     # -- Interior facet integral vector
     V = FunctionSpace(mesh, ("DG", 3))  # degree 3 so that interpolation is exact
@@ -791,7 +813,7 @@ def test_coefficents_non_constant():
     F = form(F)
     b0 = assemble_vector(F)
     b0.assemble()
-    assert(np.linalg.norm(b0.array) == pytest.approx(0.0))
+    assert np.linalg.norm(b0.array) == pytest.approx(0.0)
 
 
 def test_vector_types():
@@ -802,30 +824,85 @@ def test_vector_types():
 
     c = Constant(mesh, np.float64(1))
     L = inner(c, v) * ufl.dx
-    x0 = _cpp.la.Vector_float64(V.dofmap.index_map, V.dofmap.index_map_bs)
+    x0 = la.vector(V.dofmap.index_map, V.dofmap.index_map_bs, dtype=np.float64)
     L = form(L, dtype=x0.array.dtype)
-    c0 = pack_constants(L)
-    c1 = pack_coefficients(L)
+    c0 = _cpp.fem.pack_constants(L)
+    c1 = _cpp.fem.pack_coefficients(L)
     _cpp.fem.assemble_vector(x0.array, L, c0, c1)
     x0.scatter_reverse(_cpp.common.ScatterMode.add)
 
     c = Constant(mesh, np.complex128(1))
     L = inner(c, v) * ufl.dx
-    x1 = _cpp.la.Vector_complex128(V.dofmap.index_map, V.dofmap.index_map_bs)
+    x1 = la.vector(V.dofmap.index_map, V.dofmap.index_map_bs, dtype=np.complex128)
     L = form(L, dtype=x1.array.dtype)
-    c0 = pack_constants(L)
-    c1 = pack_coefficients(L)
+    c0 = _cpp.fem.pack_constants(L)
+    c1 = _cpp.fem.pack_coefficients(L)
     _cpp.fem.assemble_vector(x1.array, L, c0, c1)
     x1.scatter_reverse(_cpp.common.ScatterMode.add)
 
     c = Constant(mesh, np.float32(1))
     L = inner(c, v) * ufl.dx
-    x2 = _cpp.la.Vector_float32(V.dofmap.index_map, V.dofmap.index_map_bs)
+    x2 = la.vector(V.dofmap.index_map, V.dofmap.index_map_bs, dtype=np.float32)
     L = form(L, dtype=x2.array.dtype)
-    c0 = pack_constants(L)
-    c1 = pack_coefficients(L)
+    c0 = _cpp.fem.pack_constants(L)
+    c1 = _cpp.fem.pack_coefficients(L)
     _cpp.fem.assemble_vector(x2.array, L, c0, c1)
     x2.scatter_reverse(_cpp.common.ScatterMode.add)
 
     assert np.linalg.norm(x0.array - x1.array) == pytest.approx(0.0)
     assert np.linalg.norm(x0.array - x2.array) == pytest.approx(0.0, abs=1e-8)
+
+
+def test_assemble_empty_rank_mesh():
+    """Assembly on mesh where some ranks are empty"""
+    comm = MPI.COMM_WORLD
+    cell_type = CellType.triangle
+    domain = ufl.Mesh(ufl.VectorElement("Lagrange", ufl.Cell(cell_type.name), 1))
+
+    def partitioner(comm, nparts, local_graph, num_ghost_nodes, ghosting):
+        """Leave cells on the curent rank"""
+        dest = np.full(len(cells), comm.rank, dtype=np.int32)
+        return graph.create_adjacencylist(dest)
+
+    if comm.rank == 0:
+        # Put cells on rank 0
+        cells = np.array([[0, 1, 2], [0, 2, 3]], dtype=np.int64)
+        cells = graph.create_adjacencylist(cells)
+        x = np.array([[0., 0.], [1., 0.], [1., 1.], [0., 1.]])
+    else:
+        # No cells onm other ranks
+        cells = graph.create_adjacencylist(np.empty((0, 3), dtype=np.int64))
+        x = np.empty((0, 2), dtype=np.float64)
+
+    mesh = create_mesh(comm, cells, x, domain, GhostMode.none, partitioner)
+
+    V = FunctionSpace(mesh, ("Lagrange", 2))
+    u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
+
+    f, k, zero = Function(V), Function(V), Function(V)
+    f.x.array[:] = 10.0
+    k.x.array[:] = 1.0
+    zero.x.array[:] = 0.0
+    a = form(inner(k * u, v) * dx + inner(zero * u, v) * ds)
+    L = form(inner(f, v) * dx + inner(zero, v) * ds)
+    M = form(2 * k * dx + k * ds)
+
+    sum = comm.allreduce(assemble_scalar(M), op=MPI.SUM)
+    assert sum == pytest.approx(6.0)
+
+    # Assemble
+    A = assemble_matrix(a)
+    A.assemble()
+    b = assemble_vector(L)
+    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+
+    # Solve
+    ksp = PETSc.KSP()
+    ksp.create(mesh.comm)
+    ksp.setOperators(A)
+    ksp.setTolerances(rtol=1.0e-9, max_it=50)
+    ksp.setFromOptions()
+    x = b.copy()
+    ksp.solve(b, x)
+
+    assert np.allclose(x.array, 10.0)

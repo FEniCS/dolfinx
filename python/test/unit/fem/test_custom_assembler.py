@@ -22,8 +22,8 @@ import pytest
 import dolfinx
 import dolfinx.pkgconfig
 import ufl
-from dolfinx.fem import (Function, FunctionSpace, assemble_matrix, form,
-                         transpose_dofmap)
+from dolfinx.fem import Function, FunctionSpace, form, transpose_dofmap
+from dolfinx.fem.petsc import assemble_matrix
 from dolfinx.mesh import create_unit_square
 from ufl import dx, inner
 
@@ -334,14 +334,14 @@ def test_custom_mesh_loop_rank1():
     L = inner(1.0, v) * dx
     Lf = form(L)
     start = time.time()
-    b1 = dolfinx.fem.assemble_vector(Lf)
+    b1 = dolfinx.fem.petsc.assemble_vector(Lf)
     end = time.time()
     print("Time (C++, pass 0):", end - start)
 
     with b1.localForm() as b_local:
         b_local.set(0.0)
     start = time.time()
-    dolfinx.fem.assemble_vector(b1, Lf)
+    dolfinx.fem.petsc.assemble_vector(b1, Lf)
     end = time.time()
     print("Time (C++, pass 1):", end - start)
     b1.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
@@ -350,12 +350,12 @@ def test_custom_mesh_loop_rank1():
     # Assemble using generated tabulate_tensor kernel and Numba assembler
     ffcxtype = "double _Complex" if np.issubdtype(PETSc.ScalarType, np.complexfloating) else "double"
     b3 = Function(V)
-    ufc_form, module, code = dolfinx.jit.ffcx_jit(
-        mesh.comm, L, form_compiler_parameters={"scalar_type": ffcxtype})
+    ufcx_form, module, code = dolfinx.jit.ffcx_jit(
+        mesh.comm, L, form_compiler_params={"scalar_type": ffcxtype})
 
     nptype = "complex128" if np.issubdtype(PETSc.ScalarType, np.complexfloating) else "float64"
     # First 0 for "cell" integrals, second 0 for the first one, i.e. default domain
-    kernel = getattr(ufc_form.integrals(0)[0], f"tabulate_tensor_{nptype}")
+    kernel = getattr(ufcx_form.integrals(0)[0], f"tabulate_tensor_{nptype}")
 
     for i in range(2):
         b = b3.x.array
@@ -390,7 +390,7 @@ def test_custom_mesh_loop_ctypes_rank2():
     A0.zeroEntries()
 
     start = time.time()
-    dolfinx.fem.assemble_matrix(A0, a)
+    dolfinx.fem.petsc.assemble_matrix(A0, a)
     end = time.time()
     print("Time (C++, pass 2):", end - start)
     A0.assemble()

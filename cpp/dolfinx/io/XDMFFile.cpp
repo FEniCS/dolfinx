@@ -12,7 +12,6 @@
 #include "xdmf_meshtags.h"
 #include "xdmf_read.h"
 #include "xdmf_utils.h"
-#include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/utils.h>
@@ -22,6 +21,7 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshTags.h>
 #include <dolfinx/mesh/utils.h>
+#include <filesystem>
 
 using namespace dolfinx;
 using namespace dolfinx::io;
@@ -32,7 +32,7 @@ template <typename Scalar>
 void _write_function(dolfinx::MPI::Comm& comm,
                      const fem::Function<Scalar>& function, const double t,
                      const std::string& mesh_xpath, pugi::xml_document& xml_doc,
-                     hid_t h5_id, const std::string& filename)
+                     hid_t h5_id, const std::filesystem::path& filename)
 {
   const std::string timegrid_xpath
       = "/Xdmf/Domain/Grid[@GridType='Collection'][@Name='" + function.name
@@ -87,7 +87,7 @@ void _write_function(dolfinx::MPI::Comm& comm,
 } // namespace
 
 //-----------------------------------------------------------------------------
-XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename,
+XDMFFile::XDMFFile(MPI_Comm comm, const std::filesystem::path& filename,
                    const std::string file_mode, const Encoding encoding)
     : _comm(comm), _filename(filename), _file_mode(file_mode),
       _xml_doc(new pugi::xml_document), _encoding(encoding)
@@ -102,8 +102,9 @@ XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename,
     // _hdf5_file_id(0)
 
     // Open HDF5 file
-    const std::string hdf5_filename = xdmf_utils::get_hdf5_filename(_filename);
-    const bool mpi_io = MPI::size(_comm.comm()) > 1 ? true : false;
+    const std::filesystem::path hdf5_filename
+        = xdmf_utils::get_hdf5_filename(_filename);
+    const bool mpi_io = dolfinx::MPI::size(_comm.comm()) > 1 ? true : false;
     _h5_id = HDF5Interface::open_file(_comm.comm(), hdf5_filename, file_mode,
                                       mpi_io);
     assert(_h5_id > 0);
@@ -146,7 +147,7 @@ XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename,
   }
   else if (_file_mode == "a")
   {
-    if (boost::filesystem::exists(_filename))
+    if (std::filesystem::exists(_filename))
     {
       // Load XML doc from file
       [[maybe_unused]] pugi::xml_parse_result result
@@ -320,6 +321,7 @@ mesh::MeshTags<std::int32_t>
 XDMFFile::read_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh,
                         const std::string name, const std::string xpath)
 {
+  LOG(INFO) << "XDMF read meshtags (" << name << ")";
   pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
   if (!node)
     throw std::runtime_error("XML node '" + xpath + "' not found.");
@@ -347,6 +349,7 @@ XDMFFile::read_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh,
       = xdmf_utils::distribute_entity_data(*mesh, mesh::cell_dim(cell_type),
                                            entities1, values);
 
+  LOG(INFO) << "XDMF create meshtags";
   auto [data, offset] = graph::create_adjacency_data(entities_local);
   graph::AdjacencyList<std::int32_t> entities_adj(std::move(data),
                                                   std::move(offset));

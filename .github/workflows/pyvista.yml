@@ -23,10 +23,8 @@ jobs:
       # For pyvista/pyvistaqt
       DISPLAY: ":99.0"
       PYVISTA_OFF_SCREEN: true
-      PYVISTA_VERSION: 0.32.1
-      # Version pinned to commit due to https://github.com/pyvista/pyvistaqt/pull/127
-      # Should be fixed in a future 0.6.0 release
-      PYVISTA_QT_VERSION: 3ab85370a67d0613b9488272f935442b6e29ef61
+      PYVISTA_VERSION: 0.33.2
+      PYVISTA_QT_VERSION: 0.7.0
 
       PETSC_ARCH: linux-gnu-${{ matrix.petsc_arch }}-32
       OMPI_ALLOW_RUN_AS_ROOT: 1
@@ -50,10 +48,10 @@ jobs:
           python3 -m pip install git+https://github.com/FEniCS/basix.git
           python3 -m pip install git+https://github.com/FEniCS/ffcx.git
           apt-get update
-          apt-get install -y --no-install-recommends libgl1-mesa-dev xvfb # pyvista
+          apt-get install -y --no-install-recommends libgl1-mesa-dev xvfb  # pyvista
           apt-get install -y --no-install-recommends python3-pyqt5 libgl1-mesa-glx  # pyvistaqt
           pip3 install pyvista==${PYVISTA_VERSION}
-          python3 -m pip install git+https://github.com/pyvista/pyvistaqt.git@${PYVISTA_QT_VERSION}
+          pip3 install pyvistaqt==${PYVISTA_QT_VERSION}
 
       - name: Configure C++
         run: cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build -S cpp/
