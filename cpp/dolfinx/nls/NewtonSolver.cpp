@@ -160,7 +160,7 @@ std::pair<int, bool> nls::petsc::NewtonSolver::solve(Vec x)
 
   if (!_fnJ)
   {
-    throw std::runtime_error("Function for computing Jacobianhas not "
+    throw std::runtime_error("Function for computing Jacobian has not "
                              "been provided to the NewtonSolver.");
   }
 

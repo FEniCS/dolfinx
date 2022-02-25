@@ -16,8 +16,8 @@ add_custom_command(
 
 add_custom_command(
   OUTPUT interpolation.c
-  COMMAND ffcx ${CMAKE_CURRENT_SOURCE_DIR}/interpolation.ufl -o ${CMAKE_CURRENT_SOURCE_DIR}
-  VERBATIM DEPENDS interpolation.ufl COMMENT "Compile interpolation.ufl using FFCx")
+  COMMAND ffcx ${CMAKE_CURRENT_SOURCE_DIR}/interpolation.py -o ${CMAKE_CURRENT_SOURCE_DIR}
+  VERBATIM DEPENDS interpolation.py COMMENT "Compile interpolation.py using FFCx")
 
 # Make test executable
 set(TEST_SOURCES
