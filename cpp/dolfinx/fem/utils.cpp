@@ -225,8 +225,8 @@ fem::FunctionSpace fem::create_functionspace(
     std::vector<int> parent_map_sub(sub_element->space_dimension());
     for (std::size_t j = 0; j < parent_map_sub.size(); ++j)
       parent_map_sub[j] = i + bs * j;
-    sub_doflayout.emplace_back(ElementDofLayout(
-        1, e.entity_dofs(), e.entity_closure_dofs(), parent_map_sub, {}));
+    sub_doflayout.emplace_back(1, e.entity_dofs(), e.entity_closure_dofs(),
+                               parent_map_sub, std::vector<ElementDofLayout>());
   }
 
   // Create a dofmap
