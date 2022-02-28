@@ -110,7 +110,7 @@ fem::create_element_dof_layout(const ufcx_dofmap& dofmap,
 
   // Create UFC subdofmaps and compute offset
   std::vector<int> offsets(1, 0);
-  std::vector<ElementDofLayout> sub_dofmaps;
+  std::vector<ElementDofLayout> sub_doflayout;
   for (int i = 0; i < dofmap.num_sub_dofmaps; ++i)
   {
     ufcx_dofmap* ufcx_sub_dofmap = dofmap.sub_dofmaps[i];
@@ -127,14 +127,14 @@ fem::create_element_dof_layout(const ufcx_dofmap& dofmap,
                                     * ufcx_sub_dofmap->block_size);
     for (std::size_t j = 0; j < parent_map_sub.size(); ++j)
       parent_map_sub[j] = offsets[i] + element_block_size * j;
-    sub_dofmaps.push_back(
+    sub_doflayout.push_back(
         create_element_dof_layout(*ufcx_sub_dofmap, cell_type, parent_map_sub));
   }
 
   // Check for "block structure". This should ultimately be replaced,
   // but keep for now to mimic existing code
   return ElementDofLayout(element_block_size, entity_dofs, entity_closure_dofs,
-                          parent_map, sub_dofmaps);
+                          parent_map, sub_doflayout);
 }
 //-----------------------------------------------------------------------------
 fem::DofMap
@@ -211,11 +211,27 @@ fem::FunctionSpace fem::create_functionspace(
 {
   assert(mesh);
 
-  // Create a DOLFINx selement
+  // Create a DOLFINx element
   auto _e = std::make_shared<FiniteElement>(e, bs);
 
+  // Create UFC subdofmaps and compute offset
+  assert(_e);
+  const int num_sub_elements = _e->num_sub_elements();
+  std::vector<ElementDofLayout> sub_doflayout;
+  sub_doflayout.reserve(num_sub_elements);
+  for (int i = 0; i < num_sub_elements; ++i)
+  {
+    auto sub_element = _e->extract_sub_element({i});
+    std::vector<int> parent_map_sub(sub_element->space_dimension());
+    for (std::size_t j = 0; j < parent_map_sub.size(); ++j)
+      parent_map_sub[j] = i + bs * j;
+    sub_doflayout.emplace_back(1, e.entity_dofs(), e.entity_closure_dofs(),
+                               parent_map_sub, std::vector<ElementDofLayout>());
+  }
+
   // Create a dofmap
-  ElementDofLayout layout(bs, e.entity_dofs(), e.entity_closure_dofs(), {}, {});
+  ElementDofLayout layout(bs, e.entity_dofs(), e.entity_closure_dofs(), {},
+                          sub_doflayout);
   auto dofmap = std::make_shared<DofMap>(
       create_dofmap(mesh->comm(), layout, mesh->topology(), reorder_fn, *_e));
 
