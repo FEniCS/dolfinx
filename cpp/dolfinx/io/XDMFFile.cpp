@@ -321,6 +321,7 @@ mesh::MeshTags<std::int32_t>
 XDMFFile::read_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh,
                         const std::string name, const std::string xpath)
 {
+  LOG(INFO) << "XDMF read meshtags (" << name << ")";
   pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
   if (!node)
     throw std::runtime_error("XML node '" + xpath + "' not found.");
@@ -348,6 +349,7 @@ XDMFFile::read_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh,
       = xdmf_utils::distribute_entity_data(*mesh, mesh::cell_dim(cell_type),
                                            entities1, values);
 
+  LOG(INFO) << "XDMF create meshtags";
   auto [data, offset] = graph::create_adjacency_data(entities_local);
   graph::AdjacencyList<std::int32_t> entities_adj(std::move(data),
                                                   std::move(offset));

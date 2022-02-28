@@ -9,8 +9,8 @@ import numpy as np
 import pytest
 
 import ufl
-from dolfinx.fem import (Function, FunctionSpace, assemble_matrix,
-                         assemble_vector, form)
+from dolfinx.fem import Function, FunctionSpace, form
+from dolfinx.fem.petsc import assemble_matrix, assemble_vector
 from dolfinx.mesh import create_unit_square
 from ufl import dx, grad, inner
 

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright (C) 2017-2021 Chris N. Richardson, Garth N. Wells and Jørgen S. Dokken
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
@@ -123,6 +122,7 @@ class DirichletBCMetaClass:
                 Otherwise assumes function space of the problem is the same
                 of function space of boundary values function. V: Function
                 space of a problem to which boundary conditions are applied.
+
         """
 
         # Unwrap value object, if required
@@ -145,46 +145,37 @@ class DirichletBCMetaClass:
         return self.value
 
 
-def dirichletbc(value: typing.Union[ufl.Coefficient, Function, Constant],
+def dirichletbc(value: typing.Union[Function, Constant],
                 dofs: typing.List[int], V: FunctionSpace = None) -> DirichletBCMetaClass:
     """Create a representation of Dirichlet boundary condition which
     is imposed on a linear system.
 
-    Parameters
-    ----------
-    value
-        Lifted boundary values function.
-    dofs
-        Local indices of degrees of freedom in function space to which
-        boundary condition applies.
-        Expects array of size (number of dofs, 2) if function space of the
-        problem, ``V``, is passed. Otherwise assumes function space of the
-        problem is the same of function space of boundary values function.
-    V : optional
-        Function space of a problem to which boundary conditions are applied.
-
+    Args:
+        value: Lifted boundary values function. It must have a ``dtype``
+        property.
+        dofs: Local indices of degrees of freedom in function space to
+            which boundary condition applies. Expects array of size
+            (number of dofs, 2) if function space of the problem, ``V``,
+            is passed. Otherwise assumes function space of the problem
+            is the same of function space of boundary values function.
+        V: Function space of a problem to which boundary conditions are applied.
 
     Returns:
-        A representation of the boundary condition for modifying linear systems.
+        A representation of the boundary condition for modifying linear
+        systems.
 
     """
 
-    # Determine the dtype
-    try:
-        dtype = value.x.array.dtype
-    except AttributeError:
-        dtype = value.dtype
-
-    if dtype == np.float32:
+    if value.dtype == np.float32:
         bctype = _cpp.fem.DirichletBC_float32
-    elif dtype == np.float64:
+    elif value.dtype == np.float64:
         bctype = _cpp.fem.DirichletBC_float64
-    elif dtype == np.complex64:
+    elif value.dtype == np.complex64:
         bctype = _cpp.fem.DirichletBC_complex64
-    elif dtype == np.complex128:
+    elif value.dtype == np.complex128:
         bctype = _cpp.fem.DirichletBC_complex128
     else:
-        raise NotImplementedError(f"Type {dtype} not supported.")
+        raise NotImplementedError(f"Type {value.dtype} not supported.")
 
     formcls = type("DirichletBC", (DirichletBCMetaClass, bctype), {})
     return formcls(value, dofs, V)

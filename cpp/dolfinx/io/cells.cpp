@@ -368,6 +368,7 @@ xt::xtensor<std::int64_t, 2>
 io::cells::compute_permutation(const xt::xtensor<std::int64_t, 2>& cells,
                                const std::vector<std::uint8_t>& p)
 {
+  LOG(INFO) << "IO permuting cells";
   xt::xtensor<std::int64_t, 2> cells_new(cells.shape());
   for (std::size_t c = 0; c < cells_new.shape(0); ++c)
   {

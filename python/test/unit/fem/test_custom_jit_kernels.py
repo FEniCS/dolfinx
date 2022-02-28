@@ -12,7 +12,7 @@ import numpy as np
 import dolfinx
 from dolfinx import TimingType
 from dolfinx import cpp as _cpp
-from dolfinx import la, list_timings
+from dolfinx import fem, list_timings
 from dolfinx.fem import Function, FunctionSpace, IntegralType
 from dolfinx.mesh import create_unit_square
 
@@ -86,9 +86,9 @@ def test_numba_assembly():
     integrals = {IntegralType.cell: ([(-1, tabulate_tensor_b.address)], None)}
     L = Form([V._cpp_object], integrals, [], [], False)
 
-    A = dolfinx.fem.assemble_matrix(a)
+    A = dolfinx.fem.petsc.assemble_matrix(a)
     A.assemble()
-    b = dolfinx.fem.assemble_vector(L)
+    b = dolfinx.fem.petsc.assemble_vector(L)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
     Anorm = A.norm(PETSc.NormType.FROBENIUS)
@@ -110,7 +110,7 @@ def test_coefficient():
     integrals = {IntegralType.cell: ([(-1, tabulate_tensor_b_coeff.address)], None)}
     L = Form([V._cpp_object], integrals, [vals._cpp_object], [], False)
 
-    b = dolfinx.fem.assemble_vector(L)
+    b = dolfinx.fem.petsc.assemble_vector(L)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     bnorm = b.norm(PETSc.NormType.N2)
     assert (np.isclose(bnorm, 2.0 * 0.0739710713711999))
@@ -228,17 +228,10 @@ def test_cffi_assembly():
     integrals = {IntegralType.cell: ([(-1, ptrL)], None)}
     L = _cpp.fem.Form_float64([V._cpp_object], integrals, [], [], False)
 
-    sp = dolfinx.fem.create_sparsity_pattern(a)
-    sp.assemble()
-    A = la.matrix_csr(sp, dtype=np.float64)
-    _cpp.fem.assemble_matrix(A, a, [])
+    A = fem.assemble_matrix(a)
     A.finalize()
     assert np.isclose(np.sqrt(A.norm_squared()), 56.124860801609124)
 
-    b = la.vector(L.function_spaces[0].dofmap.index_map,
-                  L.function_spaces[0].dofmap.index_map_bs, dtype=np.float64)
-    b.array[:] = 0.0
-    _cpp.fem.assemble_vector(b.array, L, dolfinx.fem.pack_constants(L),
-                             dolfinx.fem.pack_coefficients(L))
+    b = fem.assemble_vector(L)
     b.scatter_reverse(_cpp.common.ScatterMode.add)
     assert np.isclose(b.norm(), 0.0739710713711999)

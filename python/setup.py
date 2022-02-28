@@ -19,7 +19,7 @@ REQUIREMENTS = [
     "mpi4py",
     "petsc4py",
     "fenics-ffcx>=0.3.1.dev0,<0.4.0",
-    "fenics-ufl>=2021.1.0,<2021.2.99"
+    "fenics-ufl>=2021.2.0.dev0,<2021.3.0"
 ]
 
 
@@ -71,6 +71,7 @@ setup(name='fenics-dolfinx',
       long_description='',
       packages=["dolfinx",
                 "dolfinx.fem",
+                "dolfinx.nls",
                 "dolfinx.wrappers"],
       package_data={'dolfinx.wrappers': ['*.h']},
       ext_modules=[CMakeExtension('dolfinx.cpp')],
