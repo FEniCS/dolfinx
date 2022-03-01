@@ -98,8 +98,8 @@ Mat fem::petsc::create_matrix_block(
   {
     for (auto space : V[d])
     {
-      maps[d].push_back(
-          {*space->dofmap()->index_map.get(), space->dofmap()->index_map_bs()});
+      maps[d].emplace_back(*space->dofmap()->index_map,
+                           space->dofmap()->index_map_bs());
     }
   }
 

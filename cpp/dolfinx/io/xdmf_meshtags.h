@@ -10,6 +10,7 @@
 #include "xdmf_mesh.h"
 #include "xdmf_utils.h"
 #include <dolfinx/common/MPI.h>
+#include <dolfinx/common/log.h>
 #include <dolfinx/mesh/MeshTags.h>
 #include <hdf5.h>
 #include <string>
@@ -29,6 +30,7 @@ void add_meshtags(MPI_Comm comm, const mesh::MeshTags<T>& meshtags,
                   pugi::xml_node& xml_node, const hid_t h5_id,
                   const std::string name)
 {
+  LOG(INFO) << "XDMF: add meshtags (" << name << ")";
   // Get mesh
   assert(meshtags.mesh());
   std::shared_ptr<const mesh::Mesh> mesh = meshtags.mesh();

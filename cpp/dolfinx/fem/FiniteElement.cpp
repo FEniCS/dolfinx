@@ -195,7 +195,15 @@ FiniteElement::FiniteElement(const basix::FiniteElement& element, int bs)
   std::transform(_value_shape.cbegin(), _value_shape.cend(),
                  _value_shape.begin(), [bs](auto s) { return bs * s; });
 
+  if (bs > 1)
+  {
+    // Create all sub-elements
+    for (int i = 0; i < bs; ++i)
+      _sub_elements.push_back(std::make_shared<FiniteElement>(element, 1));
+  }
+
   _element = std::make_unique<basix::FiniteElement>(element);
+  assert(_element);
   _needs_dof_transformations
       = !_element->dof_transformations_are_identity()
         and !_element->dof_transformations_are_permutations();
@@ -203,8 +211,6 @@ FiniteElement::FiniteElement(const basix::FiniteElement& element, int bs)
   _needs_dof_permutations
       = !_element->dof_transformations_are_identity()
         and _element->dof_transformations_are_permutations();
-
-  assert(_element);
   switch (_element->family())
   {
   case basix::element::family::P:

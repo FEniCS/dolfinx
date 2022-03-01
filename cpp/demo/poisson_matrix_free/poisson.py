@@ -1,5 +1,8 @@
 # UFL input for the Matrix-free Poisson Demo
 # ==================================
+from ufl import (Coefficient, Constant, FiniteElement, FunctionSpace, Mesh,
+                 TestFunction, TrialFunction, VectorElement, action, dx, grad,
+                 inner, triangle)
 
 coord_element = VectorElement("Lagrange", triangle, 1)
 mesh = Mesh(coord_element)
@@ -30,12 +33,4 @@ usol = Coefficient(V)
 uexact = Coefficient(V)
 E = inner(usol - uexact, usol - uexact) * dx
 
-
 forms = [M, L, E]
-
-# Before the form file can be used in the C++ program, it must be
-# compiled using FFCx by running (on the command-line):
-#
-# .. code-block:: sh
-#
-#    ffcx Poisson.ufl
