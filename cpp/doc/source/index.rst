@@ -4,7 +4,7 @@ DOLFINx C++ API documentation
 
 The is experimental documentation for the C++ API. The Doxygen generated
 documentation is `here
-<https://docs.fenicsproject.org/dolfinx/main/cpp/>`_.
+<https://docs.fenicsproject.org/dolfinx/main/cpp/doxygen>`_.
 
 Installation
 ============
