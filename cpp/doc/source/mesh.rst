@@ -1,21 +1,7 @@
-Mesh
-====
+Mesh (``dolfinx::mesh``)
+========================
 
-.. doxygenclass:: dolfinx::mesh::Mesh
+*Under development*
+
+.. doxygennamespace:: dolfinx::mesh
    :project: DOLFINx
-   :members:
-
-Topology
---------
-
-.. doxygenclass:: dolfinx::mesh::Topology
-   :project: DOLFINx
-   :members:
-
-
-Geometry
---------
-
-.. doxygenclass:: dolfinx::mesh::Geometry
-   :project: DOLFINx
-   :members:

@@ -48,25 +48,3 @@ application-level use.
    dolfinx.cpp.nls
    dolfinx.cpp.nls.petsc
    dolfinx.cpp.refinement
-
-
-C++
-===
-
-The C++ API is documented `here
-<https://docs.fenicsproject.org/dolfinx/main/cpp/>`_.
-
-.. toctree::
-   :maxdepth: 1
-
-   cpp/common
-   cpp/geometry
-   cpp/graph
-   cpp/fem
-   cpp/io
-   cpp/la
-   cpp/mesh
-   cpp/refinement
-
-
-* :ref:`genindex`

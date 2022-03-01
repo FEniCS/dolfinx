@@ -80,7 +80,7 @@ jobs:
           export DOLFINX_VERSION=`cmake -L build | grep DOXYGEN_DOLFINX_VERSION | cut -f2 -d "="`
           echo $DOLFINX_VERSION
           cd cpp/doc
-          doxygen
+          doxygen Doxyfile
           make html
 
       - name: Build C++ unit tests
@@ -107,7 +107,8 @@ jobs:
         run: python3 -m pip -v install --global-option build --global-option --debug python/
       - name: Build Python interface documentation
         run: |
-          cd python/doc && make html
+          cd python/doc
+          make html
 
       - name: Set default DOLFINx JIT parameters
         run: |

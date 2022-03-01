@@ -1,7 +1,5 @@
 Common (``dolfinx::common``)
 ============================
 
-.. .. doxygennamespace:: dolfinx::common
-..    :project: DOLFINx
-..    :members:
-
+.. doxygennamespace:: dolfinx::common
+   :project: DOLFINx
