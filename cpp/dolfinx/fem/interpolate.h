@@ -735,23 +735,22 @@ void interpolate(Function<T>& u, const Function<T>& v,
       MPI_Win_fence(0, window);
       MPI_Win_free(&window);
 
+      //      std::ofstream out("put" + std::to_string(mpi_rank) + ".out");
+      //      std::copy(pointsToReceive.cbegin(), pointsToReceive.cend(),
+      //                std::ostream_iterator<double>(out, "\n"));
+
       // Each process will now check at which points it can evaluate
       // the interpolating function, and note that down in evaluationCells
       std::vector<std::int32_t> evaluationCells(pointsToReceive.shape(0), -1);
 
       const auto connectivity = v.function_space()->mesh()->geometry().dofmap();
-
-      // This BBT is useful for fast lookup of which cell contains a given point
-      dolfinx::geometry::BoundingBoxTree bbt(*v.function_space()->mesh(), tdim,
-                                             0.0001);
-
       const auto xv = v.function_space()->mesh()->geometry().x();
 
       // Collect adjacency list of all cells that collide with a given point
       const auto collidingCells = dolfinx::geometry::compute_colliding_cells(
           *v.function_space()->mesh(),
           // For each point at which the source function needs to be evaluated
-          dolfinx::geometry::compute_collisions(bbt, pointsToReceive),
+          dolfinx::geometry::compute_collisions(bb, pointsToReceive),
           pointsToReceive);
 
       for (decltype(pointsToReceive.shape(0)) i = 0;
