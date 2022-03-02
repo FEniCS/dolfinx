@@ -348,8 +348,8 @@ RUN apt-get -qq update && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Install SLEPc
-RUN wget -nc --quiet https://slepc.upv.es/download/distrib/slepc-${SLEPC_VERSION}.tar.gz -O slepc-${SLEPC_VERSION}.tar.gz && \
-    mkdir -p ${SLEPC_DIR} && tar -xf slepc-${SLEPC_VERSION}.tar.gz -C ${SLEPC_DIR} --strip-components 1 && \
+RUN wget -nc --quiet https://gitlab.com/slepc/slepc/-/archive/v${SLEPC_VERSION}/slepc-v${SLEPC_VERSION}.tar.gz && \
+    mkdir -p ${SLEPC_DIR} && tar -xf slepc-v${SLEPC_VERSION}.tar.gz -C ${SLEPC_DIR} --strip-components 1 && \
     cd ${SLEPC_DIR} && \
     export PETSC_ARCH=linux-gnu-real-32 && \
     python3 ./configure && \
