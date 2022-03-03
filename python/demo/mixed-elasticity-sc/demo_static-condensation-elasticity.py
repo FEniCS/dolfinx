@@ -1,15 +1,25 @@
+# ---
+# jupyter:
+#   jupytext:
+#     text_representation:
+#       extension: .py
+#       format_name: light
+#       format_version: '1.5'
+#       jupytext_version: 1.13.6
+# ---
+
+# (demo-static-condensation)=
 #
-# .. _demo_static_condensation:
+# # Static condensation of linear elasticity
 #
-# Static condensation of linear elasticity
-# ========================================
 # Copyright (C) 2020  Michal Habera and Andreas Zilian
 #
 # This demo solves a Cook's plane stress elasticity test in a mixed
 # space formulation. The test is a sloped cantilever under upward
 # traction force at free end. Static condensation of internal (stress)
-# degrees-of-freedom is demonstrated. ::
+# degrees-of-freedom is demonstrated.
 
+# +
 import os
 
 import cffi
@@ -20,9 +30,10 @@ import numpy as np
 import ufl
 from dolfinx import geometry
 from dolfinx.cpp.fem import Form_complex128, Form_float64
-from dolfinx.fem import (Function, FunctionSpace, IntegralType, apply_lifting,
-                         assemble_matrix, assemble_vector, dirichletbc, form,
-                         locate_dofs_topological, set_bc)
+from dolfinx.fem import (Function, FunctionSpace, IntegralType, dirichletbc,
+                         form, locate_dofs_topological)
+from dolfinx.fem.petsc import (apply_lifting, assemble_matrix, assemble_vector,
+                               set_bc)
 from dolfinx.io import XDMFFile
 from dolfinx.jit import ffcx_jit
 from dolfinx.mesh import MeshTags, locate_entities_boundary
@@ -33,15 +44,15 @@ from petsc4py import PETSc
 filedir = os.path.dirname(__file__)
 infile = XDMFFile(MPI.COMM_WORLD, os.path.join(filedir, "cooks_tri_mesh.xdmf"),
                   "r", encoding=XDMFFile.Encoding.ASCII)
-mesh = infile.read_mesh(name="Grid")
+msh = infile.read_mesh(name="Grid")
 infile.close()
 
 # Stress (Se) and displacement (Ue) elements
-Se = ufl.TensorElement("DG", mesh.ufl_cell(), 1, symmetry=True)
-Ue = ufl.VectorElement("Lagrange", mesh.ufl_cell(), 2)
+Se = ufl.TensorElement("DG", msh.ufl_cell(), 1, symmetry=True)
+Ue = ufl.VectorElement("Lagrange", msh.ufl_cell(), 2)
 
-S = FunctionSpace(mesh, Se)
-U = FunctionSpace(mesh, Ue)
+S = FunctionSpace(msh, Se)
+U = FunctionSpace(msh, Ue)
 
 # Get local dofmap sizes for later local tensor tabulations
 Ssize = S.element.space_dimension
@@ -50,20 +61,10 @@ Usize = U.element.space_dimension
 sigma, tau = ufl.TrialFunction(S), ufl.TestFunction(S)
 u, v = ufl.TrialFunction(U), ufl.TestFunction(U)
 
-
-def free_end(x):
-    """Marks the leftmost points of the cantilever"""
-    return np.isclose(x[0], 48.0)
-
-
-def left(x):
-    """Marks left part of boundary, where cantilever is attached to wall"""
-    return np.isclose(x[0], 0.0)
-
-
-# Locate all facets at the free end and assign them value 1
-free_end_facets = locate_entities_boundary(mesh, 1, free_end)
-mt = MeshTags(mesh, 1, free_end_facets, 1)
+# Locate all facets at the free end and assign them value 1. Sort the
+# facet indices (requirement for constructing MeshTags)
+free_end_facets = np.sort(locate_entities_boundary(msh, 1, lambda x: np.isclose(x[0], 48.0)))
+mt = MeshTags(msh, 1, free_end_facets, 1)
 
 ds = ufl.Measure("ds", subdomain_data=mt)
 
@@ -72,7 +73,7 @@ u_bc = Function(U)
 u_bc.x.array[:] = 0.0
 
 # Displacement BC is applied to the left side
-left_facets = locate_entities_boundary(mesh, 1, left)
+left_facets = locate_entities_boundary(msh, 1, lambda x: np.isclose(x[0], 0.0))
 bdofs = locate_dofs_topological(U, 1, left_facets)
 bc = dirichletbc(u_bc, bdofs)
 
@@ -97,11 +98,11 @@ b1 = form(- ufl.inner(f, v) * ds(1))
 # JIT compile individual blocks tabulation kernels
 nptype = "complex128" if np.issubdtype(PETSc.ScalarType, np.complexfloating) else "float64"
 ffcxtype = "double _Complex" if np.issubdtype(PETSc.ScalarType, np.complexfloating) else "double"
-ufcx_form00, _, _ = ffcx_jit(mesh.comm, a00, form_compiler_parameters={"scalar_type": ffcxtype})
+ufcx_form00, _, _ = ffcx_jit(msh.comm, a00, form_compiler_params={"scalar_type": ffcxtype})
 kernel00 = getattr(ufcx_form00.integrals(0)[0], f"tabulate_tensor_{nptype}")
-ufcx_form01, _, _ = ffcx_jit(mesh.comm, a01, form_compiler_parameters={"scalar_type": ffcxtype})
+ufcx_form01, _, _ = ffcx_jit(msh.comm, a01, form_compiler_params={"scalar_type": ffcxtype})
 kernel01 = getattr(ufcx_form01.integrals(0)[0], f"tabulate_tensor_{nptype}")
-ufcx_form10, _, _ = ffcx_jit(mesh.comm, a10, form_compiler_parameters={"scalar_type": ffcxtype})
+ufcx_form10, _, _ = ffcx_jit(msh.comm, a10, form_compiler_params={"scalar_type": ffcxtype})
 kernel10 = getattr(ufcx_form10.integrals(0)[0], f"tabulate_tensor_{nptype}")
 
 ffi = cffi.FFI()
@@ -159,12 +160,12 @@ A = assemble_matrix(a, bcs=[bc])
 A.assemble()
 
 # Create bounding box for function evaluation
-bb_tree = geometry.BoundingBoxTree(mesh, 2)
+bb_tree = geometry.BoundingBoxTree(msh, 2)
 
 # Check against standard table value
 p = np.array([48.0, 52.0, 0.0], dtype=np.float64)
 cell_candidates = geometry.compute_collisions(bb_tree, p)
-cells = geometry.compute_colliding_cells(mesh, cell_candidates, p)
+cells = geometry.compute_colliding_cells(msh, cell_candidates, p)
 
 uc.x.scatter_forward()
 if len(cells) > 0:

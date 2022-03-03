@@ -102,8 +102,9 @@ XDMFFile::XDMFFile(MPI_Comm comm, const std::filesystem::path& filename,
     // _hdf5_file_id(0)
 
     // Open HDF5 file
-    const std::filesystem::path hdf5_filename = xdmf_utils::get_hdf5_filename(_filename);
-    const bool mpi_io = MPI::size(_comm.comm()) > 1 ? true : false;
+    const std::filesystem::path hdf5_filename
+        = xdmf_utils::get_hdf5_filename(_filename);
+    const bool mpi_io = dolfinx::MPI::size(_comm.comm()) > 1 ? true : false;
     _h5_id = HDF5Interface::open_file(_comm.comm(), hdf5_filename, file_mode,
                                       mpi_io);
     assert(_h5_id > 0);
@@ -320,6 +321,7 @@ mesh::MeshTags<std::int32_t>
 XDMFFile::read_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh,
                         const std::string name, const std::string xpath)
 {
+  LOG(INFO) << "XDMF read meshtags (" << name << ")";
   pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
   if (!node)
     throw std::runtime_error("XML node '" + xpath + "' not found.");
@@ -347,6 +349,7 @@ XDMFFile::read_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh,
       = xdmf_utils::distribute_entity_data(*mesh, mesh::cell_dim(cell_type),
                                            entities1, values);
 
+  LOG(INFO) << "XDMF create meshtags";
   auto [data, offset] = graph::create_adjacency_data(entities_local);
   graph::AdjacencyList<std::int32_t> entities_adj(std::move(data),
                                                   std::move(offset));

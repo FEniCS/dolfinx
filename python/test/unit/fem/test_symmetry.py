@@ -31,7 +31,7 @@ def run_symmetry_test(cell_type, element, form_f):
     v = ufl.TestFunction(space)
     f = form(form_f(u, v))
 
-    A = dolfinx.fem.assemble_matrix(f)
+    A = dolfinx.fem.petsc.assemble_matrix(f)
     A.assemble()
     check_symmetry(A)
 
@@ -129,7 +129,7 @@ def test_mixed_element_form(cell_type, sign, order):
     v, q = ufl.TestFunctions(U)
     f = form(inner(u, v) * ufl.dx + inner(p, q)(sign) * ufl.dS)
 
-    A = dolfinx.fem.assemble_matrix(f)
+    A = dolfinx.fem.petsc.assemble_matrix(f)
     A.assemble()
     check_symmetry(A)
 
@@ -162,7 +162,7 @@ def test_mixed_element_vector_element_form(cell_type, sign, order):
     v, q = ufl.TestFunctions(U)
     f = form(inner(u, v) * ufl.dx + inner(p, q)(sign) * ufl.dS)
 
-    A = dolfinx.fem.assemble_matrix(f)
+    A = dolfinx.fem.petsc.assemble_matrix(f)
     A.assemble()
 
     check_symmetry(A)

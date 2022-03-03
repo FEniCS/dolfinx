@@ -6,7 +6,7 @@
 //
 // Unit tests for Distributed la::Vector
 
-#include <catch.hpp>
+#include <catch2/catch.hpp>
 #include <dolfinx.h>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/la/MatrixCSR.h>

@@ -491,9 +491,10 @@ void _lift_bc_interior_facets(
       for (int k = 0; k < bs0; ++k)
         b[bs0 * dmap0_cell0[i] + k] += be[bs0 * i + k];
 
+    const int offset_be = bs0 * dmap0_cell0.size();
     for (std::size_t i = 0; i < dmap0_cell1.size(); ++i)
       for (int k = 0; k < bs0; ++k)
-        b[bs0 * dmap0_cell1[i] + k] += be[offset + bs0 * i + k];
+        b[bs0 * dmap0_cell1[i] + k] += be[offset_be + bs0 * i + k];
   }
 }
 /// Execute kernel over cells and accumulate result in vector

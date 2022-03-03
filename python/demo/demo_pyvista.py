@@ -1,14 +1,22 @@
+# ---
+# jupyter:
+#   jupytext:
+#     text_representation:
+#       extension: .py
+#       format_name: light
+#       format_version: '1.5'
+#       jupytext_version: 1.13.6
+# ---
+
 # Copyright (C) 2021-2022 Jørgen S. Dokken and Garth N. Wells
 #
-# This file is part of DOLFINx (https://www.fenicsproject.org)
+# This file is part of DOLFINx (<https://www.fenicsproject.org>)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 #
-# ===============================
-# Using pyvista for visualization
-# ===============================
+# # Visualization with pyvista
 
-
+# +
 import numpy as np
 
 import dolfinx.plot as plot
@@ -33,16 +41,17 @@ if pyvista.OFF_SCREEN:
 transparent = False
 figsize = 800
 pyvista.rcParams["background"] = [0.5, 0.5, 0.5]
+# -
+
+# ## Plotting a Function using warp by scalar
 
 
 def plot_scalar():
-    # Plotting a Function using warp by scalar
-    # ========================================
 
     # We start by creating a unit square mesh and interpolating a function
     # into a first order Lagrange space
-    mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, cell_type=CellType.quadrilateral)
-    V = FunctionSpace(mesh, ("Lagrange", 1))
+    msh = create_unit_square(MPI.COMM_WORLD, 12, 12, cell_type=CellType.quadrilateral)
+    V = FunctionSpace(msh, ("Lagrange", 1))
     u = Function(V, dtype=np.float64)
     u.interpolate(lambda x: np.sin(np.pi * x[0]) * np.sin(2 * x[1] * np.pi))
 
@@ -81,11 +90,11 @@ def plot_scalar():
         subplotter.show()
 
 
-def plot_meshtags():
-    # MeshTags and using subplots
-    # ===========================
+# ## MeshTags and using subplots
 
-    mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, cell_type=CellType.quadrilateral)
+def plot_meshtags():
+
+    msh = create_unit_square(MPI.COMM_WORLD, 12, 12, cell_type=CellType.quadrilateral)
 
     # We continue using the mesh from the previous section, and find all
     # cells satisfying the condition below
@@ -96,11 +105,11 @@ def plot_meshtags():
 
     # Create a dolfinx.MeshTag for all cells. If midpoint is inside the
     # circle, it gets value 1, otherwise 0.
-    num_cells = mesh.topology.index_map(mesh.topology.dim).size_local
-    midpoints = compute_midpoints(mesh, mesh.topology.dim, list(np.arange(num_cells, dtype=np.int32)))
-    cell_tags = MeshTags(mesh, mesh.topology.dim, np.arange(num_cells), in_circle(midpoints))
+    num_cells = msh.topology.index_map(msh.topology.dim).size_local
+    midpoints = compute_midpoints(msh, msh.topology.dim, list(np.arange(num_cells, dtype=np.int32)))
+    cell_tags = MeshTags(msh, msh.topology.dim, np.arange(num_cells), in_circle(midpoints))
 
-    cells, types, x = plot.create_vtk_mesh(mesh, mesh.topology.dim)
+    cells, types, x = plot.create_vtk_mesh(msh, msh.topology.dim)
     grid = pyvista.UnstructuredGrid(cells, types, x)
 
     # As the dolfinx.MeshTag contains a value for every cell in the
@@ -120,7 +129,7 @@ def plot_meshtags():
     # only consisting of those entities that has value one in the
     # dolfinx.MeshTag
     cells, types, x = plot.create_vtk_mesh(
-        mesh, mesh.topology.dim, cell_tags.indices[cell_tags.values == 1])
+        msh, msh.topology.dim, cell_tags.indices[cell_tags.values == 1])
 
     # We add this grid to the second plotter
     sub_grid = pyvista.UnstructuredGrid(cells, types, x)
@@ -135,14 +144,14 @@ def plot_meshtags():
         subplotter.show()
 
 
+# ## Higher-order Functions
+#
+# In the previous sections we have considered degree 1 Lagrange spaces.
+# We can also plot higher degree functions.
+
 def plot_higher_order():
-    # Plotting higher order Functions
-    # ===============================
 
-    # In the previous sections we have considered degree 1 Lagrange spaces.
-    # We can also plot higher degree functions.
-
-    mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, cell_type=CellType.quadrilateral)
+    msh = create_unit_square(MPI.COMM_WORLD, 12, 12, cell_type=CellType.quadrilateral)
 
     # We continue using the mesh from the previous section, and find all
     # cells satisfying the condition below
@@ -153,16 +162,16 @@ def plot_higher_order():
 
     # Create a dolfinx.MeshTag for all cells. If midpoint is inside the
     # circle, it gets value 1, otherwise 0.
-    num_cells = mesh.topology.index_map(mesh.topology.dim).size_local
-    midpoints = compute_midpoints(mesh, mesh.topology.dim, list(np.arange(num_cells, dtype=np.int32)))
-    cell_tags = MeshTags(mesh, mesh.topology.dim, np.arange(num_cells), in_circle(midpoints))
+    num_cells = msh.topology.index_map(msh.topology.dim).size_local
+    midpoints = compute_midpoints(msh, msh.topology.dim, list(np.arange(num_cells, dtype=np.int32)))
+    cell_tags = MeshTags(msh, msh.topology.dim, np.arange(num_cells), in_circle(midpoints))
 
     # We start by interpolating a discontinuous function into a second order
     # discontinuous Lagrange  space Note that we use the `cell_tags` from
     # the previous section to get the cells for each of the regions
     cells0 = cell_tags.indices[cell_tags.values == 0]
     cells1 = cell_tags.indices[cell_tags.values == 1]
-    V = FunctionSpace(mesh, ("Discontinuous Lagrange", 2))
+    V = FunctionSpace(msh, ("Discontinuous Lagrange", 2))
     u = Function(V, dtype=np.float64)
     u.interpolate(lambda x: x[0], cells0)
     u.interpolate(lambda x: x[1] + 1, cells1)
@@ -180,9 +189,9 @@ def plot_higher_order():
 
     # We would also like to visualize the underlying mesh and obtain
     # that as we have done previously
-    num_cells = mesh.topology.index_map(mesh.topology.dim).size_local
+    num_cells = msh.topology.index_map(msh.topology.dim).size_local
     cell_entities = np.arange(num_cells, dtype=np.int32)
-    cells, types, x = plot.create_vtk_mesh(mesh, mesh.topology.dim, cell_entities)
+    cells, types, x = plot.create_vtk_mesh(msh, msh.topology.dim, cell_entities)
     org_grid = pyvista.UnstructuredGrid(cells, types, x)
 
     # We visualize the data
@@ -201,15 +210,14 @@ def plot_higher_order():
         plotter.show()
 
 
+# ## Vector-element functions
+#
+# In this section we will consider how to plot vector-element functions,
+# e.g. Raviart-Thomas or Nédélec elements.
+
 def plot_nedelec():
 
-    # Plotting vector-element functions
-    # =================================
-
-    # In this section we will consider how to plot vector-element functions,
-    # e.g. Raviart-Thomas or Nédélec elements
-
-    mesh = create_unit_cube(MPI.COMM_WORLD, 4, 3, 5, cell_type=CellType.tetrahedron)
+    msh = create_unit_cube(MPI.COMM_WORLD, 4, 3, 5, cell_type=CellType.tetrahedron)
 
     # We create a pyvista plotter
     plotter = pyvista.Plotter()
@@ -217,7 +225,7 @@ def plot_nedelec():
                      position="upper_edge", font_size=14, color="black")
 
     # Next, we create a pyvista.UnstructuredGrid based on the mesh
-    pyvista_cells, cell_types, x = plot.create_vtk_mesh(mesh, mesh.topology.dim)
+    pyvista_cells, cell_types, x = plot.create_vtk_mesh(msh, msh.topology.dim)
     grid = pyvista.UnstructuredGrid(pyvista_cells, cell_types, x)
 
     # Add this grid (as a wireframe) to the plotter
@@ -225,7 +233,7 @@ def plot_nedelec():
 
     # Create a function space consisting of first order Nédélec (first kind)
     # elements and interpolate a vector-valued expression
-    V = FunctionSpace(mesh, ("N1curl", 2))
+    V = FunctionSpace(msh, ("N1curl", 2))
     u = Function(V, dtype=np.float64)
     u.interpolate(lambda x: (x[2]**2, np.zeros(x.shape[1]), -x[0] * x[2]))
 
@@ -233,7 +241,7 @@ def plot_nedelec():
     # discontinuous Lagrange finite element functions. Therefore, we
     # interpolate the Nédélec function into a first-order discontinuous
     # Lagrange space.
-    V0 = VectorFunctionSpace(mesh, ("Discontinuous Lagrange", 2))
+    V0 = VectorFunctionSpace(msh, ("Discontinuous Lagrange", 2))
     u0 = Function(V0, dtype=np.float64)
     u0.interpolate(u)
 
@@ -256,22 +264,22 @@ def plot_nedelec():
     else:
         plotter.show()
 
+# ## Plotting streamlines
+#
+# In this section we illustrate how to visualize streamlines in 3D
+
 
 def plot_streamlines():
-    # Plotting streamlines
-    # ====================
 
-    # In this section we illustrate how to visualize streamlines in 3D
-
-    mesh = create_unit_cube(MPI.COMM_WORLD, 4, 4, 4, CellType.hexahedron)
-    V = VectorFunctionSpace(mesh, ("Discontinuous Lagrange", 2))
+    msh = create_unit_cube(MPI.COMM_WORLD, 4, 4, 4, CellType.hexahedron)
+    V = VectorFunctionSpace(msh, ("Discontinuous Lagrange", 2))
     u = Function(V, dtype=np.float64)
     u.interpolate(lambda x: np.vstack((-(x[1] - 0.5), x[0] - 0.5, np.zeros(x.shape[1]))))
 
     cells, types, x = plot.create_vtk_mesh(V)
     num_dofs = x.shape[0]
     values = np.zeros((num_dofs, 3), dtype=np.float64)
-    values[:, :mesh.geometry.dim] = u.x.array.reshape(num_dofs, V.dofmap.index_map_bs)
+    values[:, :msh.geometry.dim] = u.x.array.reshape(num_dofs, V.dofmap.index_map_bs)
 
     # Create a point cloud of glyphs
     grid = pyvista.UnstructuredGrid(cells, types, x)

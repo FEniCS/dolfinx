@@ -96,28 +96,34 @@ public:
   /// including ghosts
   std::vector<std::int64_t> column_indices() const;
 
-  /// Compute IndexMap for columns in this SparsityPattern after assembly
-  /// @return IndexMap for all non-zero columns on this process,
-  /// including ghosts
+  /// Builds the index map for columns after assembly of the sparsity
+  /// pattern
+  /// @return Map for all non-zero columns on this process, including
+  /// ghosts
+  /// @todo Should this be compted and stored when finalising the
+  /// SparsityPattern?
   common::IndexMap column_index_map() const;
 
   /// Return index map block size for dimension dim
   int block_size(int dim) const;
 
-  /// Return total number of local nonzeros in the graph after assembly,
-  /// including ghost rows.
+  /// Number of nonzeros on this rank after assembly, including ghost
+  /// rows.
   std::int64_t num_nonzeros() const;
 
   /// Number of non-zeros in owned columns (diagonal block) on a given row
   /// @note Can also be used on ghost rows
   std::int32_t nnz_diag(std::int32_t row) const;
 
-  /// Number of non-zeros in unowned columns (off-diagonal block) on a given row
+  /// Number of non-zeros in unowned columns (off-diagonal block) on a
+  /// given row
   /// @note Can also be used on ghost rows
   std::int32_t nnz_off_diag(std::int32_t row) const;
 
-  /// Sparsity pattern graph after assembly. Uses local indices for the columns.
-  /// @note Column global indices can be obtained from column_index_map()
+  /// Sparsity pattern graph after assembly. Uses local indices for the
+  /// columns.
+  /// @note Column global indices can be obtained from
+  /// SparsityPattern::column_index_map()
   /// @note Includes ghost rows
   const graph::AdjacencyList<std::int32_t>& graph() const;
 

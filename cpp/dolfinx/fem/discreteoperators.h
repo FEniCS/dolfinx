@@ -60,16 +60,9 @@ create_sparsity_discrete_gradient(const fem::FunctionSpace& V0,
 /// @return The sparsity pattern
 template <typename T>
 void assemble_discrete_gradient(
-    const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
-                            const std::int32_t*, const T*)>& mat_set,
-    const fem::FunctionSpace& V0, const fem::FunctionSpace& V1);
-} // namespace dolfinx::fem
-
-using namespace dolfinx;
-template <typename T>
-void fem::assemble_discrete_gradient(
-    const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
-                            const std::int32_t*, const T*)>& mat_set,
+    const std::function<int(const xtl::span<const std::int32_t>&,
+                            const xtl::span<const std::int32_t>&,
+                            const xtl::span<const T>&)>& mat_set,
     const fem::FunctionSpace& V0, const fem::FunctionSpace& V1)
 {
   // Get mesh
@@ -171,7 +164,6 @@ void fem::assemble_discrete_gradient(
     xtl::span<const std::int32_t> dofs0 = dofmap0->cell_dofs(cell);
     std::vector<std::int32_t>& local_dofs = local_edge_dofs[local_edge];
     assert(local_dofs.size() == 1);
-    const std::int32_t row = dofs0[local_dofs[0]];
 
     xtl::span<const std::int32_t> vertices = e_to_v->links(e);
     assert(vertices.size() == 2);
@@ -197,7 +189,8 @@ void fem::assemble_discrete_gradient(
     else
       Ae = {-1, 1};
 
-    mat_set(1, &row, 2, cols.data(), Ae.data());
+    auto row = dofs0.subspan(local_dofs[0], 1);
+    mat_set(row, cols, Ae);
   }
 }
-//-----------------------------------------------------------------------------
+} // namespace dolfinx::fem

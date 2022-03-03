@@ -105,8 +105,7 @@ jobs:
         run: python3 -m pip -v install --global-option build --global-option --debug python/
       - name: Build Python interface documentation
         run: |
-          cd python/demo && python3 ./generate-demo-files.py
-          cd ../doc && make html
+          cd python/doc && make html
 
       - name: Set default DOLFINx JIT parameters
         run: |

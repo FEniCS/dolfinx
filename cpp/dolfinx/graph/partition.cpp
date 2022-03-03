@@ -113,7 +113,7 @@ graph::build::distribute(MPI_Comm comm,
   std::vector<std::int64_t>().swap(data_send);
 
   // Unpack receive buffer
-  int mpi_rank = MPI::rank(comm);
+  int mpi_rank = dolfinx::MPI::rank(comm);
   std::vector<std::int64_t> array;
   std::vector<std::int64_t> ghost_array;
   std::vector<std::int64_t> global_indices;
@@ -198,7 +198,7 @@ std::vector<std::int64_t> graph::build::compute_ghost_indices(
   std::vector<int> neighbors;
   std::map<int, int> proc_to_neighbor;
   int np = 0;
-  [[maybe_unused]] int mpi_rank = MPI::rank(comm);
+  [[maybe_unused]] int mpi_rank = dolfinx::MPI::rank(comm);
   for (int p : ghost_owners)
   {
     assert(p != mpi_rank);
@@ -234,17 +234,22 @@ std::vector<std::int64_t> graph::build::compute_ghost_indices(
   {
     // Owning process
     int p = ghost_owners[i];
+
     // Owning neighbor
     int np = proc_to_neighbor[p];
+
     // Send data location
     int pos = ghost_index_offset[np];
     send_data[pos] = global_indices[num_local + i];
     ++ghost_index_offset[np];
   }
 
-  std::vector<int> recv_sizes(neighbors.size());
+  std::vector<int> recv_sizes(neighbors.size() + 1);
+  ghost_index_count.push_back(0);
   MPI_Neighbor_alltoall(ghost_index_count.data(), 1, MPI_INT, recv_sizes.data(),
                         1, MPI_INT, neighbor_comm);
+  ghost_index_count.pop_back();
+  recv_sizes.pop_back();
   std::vector<int> recv_offsets = {0};
   for (int q : recv_sizes)
     recv_offsets.push_back(recv_offsets.back() + q);

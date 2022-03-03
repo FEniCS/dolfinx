@@ -1,10 +1,20 @@
-#
-# .. _demo_gmsh:
-#
-# Mesh generation using GMSH python API
-# =====================================
-# Copyright (C) 2020 Garth N. Wells and Jørgen S. Dokken ::
+# ---
+# jupyter:
+#   jupytext:
+#     text_representation:
+#       extension: .py
+#       format_name: light
+#       format_version: '1.5'
+#       jupytext_version: 1.13.6
+# ---
 
+# (demo-gmsh)=
+#
+# # Mesh generation with Gmsh
+#
+# Copyright (C) 2020 Garth N. Wells and Jørgen S. Dokken
+
+# +
 import sys
 
 try:
@@ -22,10 +32,12 @@ from dolfinx.io import (XDMFFile, cell_perm_gmsh, distribute_entity_data,
 from dolfinx.mesh import CellType, create_mesh, create_meshtags
 
 from mpi4py import MPI
+# -
 
 # Generate a mesh on each rank with the gmsh API, and create a DOLFINx
-# mesh on each rank. ::
+# mesh on each rank.
 
+# +
 gmsh.initialize()
 gmsh.option.setNumber("General.Terminal", 0)
 model = gmsh.model()
@@ -47,14 +59,16 @@ assert len(element_types) == 1
 name, dim, order, num_nodes, local_coords, num_first_order_nodes = model.mesh.getElementProperties(element_types[0])
 cells = node_tags[0].reshape(-1, num_nodes) - 1
 
-mesh = create_mesh(MPI.COMM_SELF, cells, x, ufl_mesh_from_gmsh(element_types[0], x.shape[1]))
+msh = create_mesh(MPI.COMM_SELF, cells, x, ufl_mesh_from_gmsh(element_types[0], x.shape[1]))
 
 with XDMFFile(MPI.COMM_SELF, "mesh_rank_{}.xdmf".format(MPI.COMM_WORLD.rank), "w") as file:
-    file.write_mesh(mesh)
+    file.write_mesh(msh)
+# -
 
 # Create a distributed (parallel) mesh with affine geometry. Generate
-# mesh on rank 0, then build a distributed mesh ::
+# mesh on rank 0, then build a distributed mesh
 
+# +
 if MPI.COMM_WORLD.rank == 0:
     # Generate a mesh
 
@@ -100,22 +114,24 @@ else:
     marked_facets, facet_values = np.empty((0, 3), dtype=np.int64), np.empty((0,), dtype=np.int32)
 
 
-mesh = create_mesh(MPI.COMM_WORLD, cells, x, ufl_mesh_from_gmsh(gmsh_cell_id, 3))
-mesh.name = "ball_d1"
-entities, values = distribute_entity_data(mesh, 2, marked_facets, facet_values)
+msh = create_mesh(MPI.COMM_WORLD, cells, x, ufl_mesh_from_gmsh(gmsh_cell_id, 3))
+msh.name = "ball_d1"
+entities, values = distribute_entity_data(msh, 2, marked_facets, facet_values)
 
-mesh.topology.create_connectivity(2, 0)
-mt = create_meshtags(mesh, 2, create_adjacencylist(entities), np.int32(values))
+msh.topology.create_connectivity(2, 0)
+mt = create_meshtags(msh, 2, create_adjacencylist(entities), np.int32(values))
 mt.name = "ball_d1_surface"
 
 with XDMFFile(MPI.COMM_WORLD, "mesh.xdmf", "w") as file:
-    file.write_mesh(mesh)
-    mesh.topology.create_connectivity(2, 3)
+    file.write_mesh(msh)
+    msh.topology.create_connectivity(2, 3)
     file.write_meshtags(mt, geometry_xpath="/Xdmf/Domain/Grid[@Name='ball_d1']/Geometry")
+# -
 
 # Create a distributed (parallel) mesh with quadratic geometry. Generate
-# mesh on rank 0, then build a distributed mesh. ::
+# mesh on rank 0, then build a distributed mesh.
 
+# +
 if MPI.COMM_WORLD.rank == 0:
     # Using model.setCurrent(model_name) lets you change between models
     model.setCurrent("Sphere minus box")
@@ -154,20 +170,20 @@ domain = ufl_mesh_from_gmsh(gmsh_cell_id, 3)
 gmsh_tetra10 = cell_perm_gmsh(CellType.tetrahedron, 10)
 cells = cells[:, gmsh_tetra10]
 
-mesh = create_mesh(MPI.COMM_WORLD, cells, x, domain)
-mesh.name = "ball_d2"
+msh = create_mesh(MPI.COMM_WORLD, cells, x, domain)
+msh.name = "ball_d2"
 
 # Permute also entities which are tagged
 gmsh_triangle6 = cell_perm_gmsh(CellType.triangle, 6)
 marked_facets = marked_facets[:, gmsh_triangle6]
 
-entities, values = distribute_entity_data(mesh, 2, marked_facets, facet_values)
-mesh.topology.create_connectivity(2, 0)
-mt = create_meshtags(mesh, 2, create_adjacencylist(entities), np.int32(values))
+entities, values = distribute_entity_data(msh, 2, marked_facets, facet_values)
+msh.topology.create_connectivity(2, 0)
+mt = create_meshtags(msh, 2, create_adjacencylist(entities), np.int32(values))
 mt.name = "ball_d2_surface"
 with XDMFFile(MPI.COMM_WORLD, "mesh.xdmf", "a") as file:
-    file.write_mesh(mesh)
-    mesh.topology.create_connectivity(2, 3)
+    file.write_mesh(msh)
+    msh.topology.create_connectivity(2, 3)
     file.write_meshtags(mt, geometry_xpath="/Xdmf/Domain/Grid[@Name='ball_d2']/Geometry")
 
 if MPI.COMM_WORLD.rank == 0:
@@ -232,19 +248,19 @@ domain = ufl_mesh_from_gmsh(gmsh_cell_id, 3)
 gmsh_hex27 = cell_perm_gmsh(CellType.hexahedron, 27)
 cells = cells[:, gmsh_hex27]
 
-mesh = create_mesh(MPI.COMM_WORLD, cells, x, domain)
-mesh.name = "hex_d2"
+msh = create_mesh(MPI.COMM_WORLD, cells, x, domain)
+msh.name = "hex_d2"
 
 # Permute also entities which are tagged
 gmsh_quad9 = cell_perm_gmsh(CellType.quadrilateral, 9)
 marked_facets = marked_facets[:, gmsh_quad9]
 
-entities, values = distribute_entity_data(mesh, 2, marked_facets, facet_values)
-mesh.topology.create_connectivity(2, 0)
-mt = create_meshtags(mesh, 2, create_adjacencylist(entities), np.int32(values))
+entities, values = distribute_entity_data(msh, 2, marked_facets, facet_values)
+msh.topology.create_connectivity(2, 0)
+mt = create_meshtags(msh, 2, create_adjacencylist(entities), np.int32(values))
 mt.name = "hex_d2_surface"
 
 with XDMFFile(MPI.COMM_WORLD, "mesh.xdmf", "a") as file:
-    file.write_mesh(mesh)
-    mesh.topology.create_connectivity(2, 3)
+    file.write_mesh(msh)
+    msh.topology.create_connectivity(2, 3)
     file.write_meshtags(mt, geometry_xpath="/Xdmf/Domain/Grid[@Name='hex_d2']/Geometry")

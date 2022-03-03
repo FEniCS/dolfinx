@@ -39,6 +39,8 @@ void declare_objects(py::module& m, const std::string& type)
              int bs) { return dolfinx::la::Vector<T>(map, bs); }))
       .def(py::init([](const dolfinx::la::Vector<T>& vec)
                     { return dolfinx::la::Vector<T>(vec); }))
+      .def_property_readonly("dtype", [](const dolfinx::la::Vector<T>& self)
+                             { return py::dtype::of<T>(); })
       .def("set", &dolfinx::la::Vector<T>::set)
       .def("norm", &dolfinx::la::Vector<T>::norm,
            py::arg("type") = dolfinx::la::Norm::l2)
@@ -61,6 +63,19 @@ void declare_objects(py::module& m, const std::string& type)
       m, pyclass_matrix_name.c_str())
       .def(py::init([](const dolfinx::la::SparsityPattern& p)
                     { return dolfinx::la::MatrixCSR<T>(p); }))
+      .def_property_readonly("dtype", [](const dolfinx::la::MatrixCSR<T>& self)
+                             { return py::dtype::of<T>(); })
+      .def("norm_squared", &dolfinx::la::MatrixCSR<T>::norm_squared)
+      .def("mat_add_values", &dolfinx::la::MatrixCSR<T>::mat_add_values)
+      .def("set", static_cast<void (dolfinx::la::MatrixCSR<T>::*)(T)>(
+                      &dolfinx::la::MatrixCSR<T>::set))
+      .def("finalize", &dolfinx::la::MatrixCSR<T>::finalize)
+      .def("to_dense",
+           [](const dolfinx::la::MatrixCSR<T>& self)
+           {
+             xt::xtensor<T, 2> mat = self.to_dense();
+             return py::array_t<T>(mat.shape(), mat.data());
+           })
       .def_property_readonly("data",
                              [](dolfinx::la::MatrixCSR<T>& self)
                              {
@@ -179,6 +194,7 @@ void la(py::module& m)
             return dolfinx::la::SparsityPattern(comm.get(), patterns, maps, bs);
           }))
       .def("index_map", &dolfinx::la::SparsityPattern::index_map)
+      .def("column_index_map", &dolfinx::la::SparsityPattern::column_index_map)
       .def("assemble", &dolfinx::la::SparsityPattern::assemble)
       .def_property_readonly("num_nonzeros",
                              &dolfinx::la::SparsityPattern::num_nonzeros)

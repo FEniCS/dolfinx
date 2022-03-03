@@ -809,7 +809,7 @@ void io::VTKFile::write(const mesh::Mesh& mesh, double time)
     add_pvtu_mesh(grid_node);
 
     // Add data for each process to the PVTU object
-    const int mpi_size = MPI::size(_comm.comm());
+    const int mpi_size = dolfinx::MPI::size(_comm.comm());
     for (int r = 0; r < mpi_size; ++r)
     {
       std::filesystem::path vtu = create_vtu_path(r);
