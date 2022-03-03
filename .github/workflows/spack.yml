@@ -90,17 +90,13 @@ jobs:
           spack add py-fenics-dolfinx
           spack install
 
-      # NOTE: numba is installed via pip because the spack package takes
-      # an extremely long time to compile
       - name: Run DOLFINx (Python, development) test
         run: |
           . ./spack/share/spack/setup-env.sh
           spack env activate py-main
-          pip install numba
-          mpirun -np 2 python3 ./dolfinx-main/python/demo/stokes-taylor-hood/demo_stokes-taylor-hood.py
+          mpirun -np 2 python3 ./dolfinx-main/python/demo/demo_elasticity.py
       - name: Run DOLFINx (Python, release) test
         run: |
           . ./spack/share/spack/setup-env.sh
           spack env activate py-release
-          pip install numba
-          mpirun -np 2 python3 ./dolfinx-release/python/demo/stokes-taylor-hood/demo_stokes-taylor-hood.py
+          mpirun -np 2 python3 ./dolfinx-release/python/demo/elasticity/demo_elasticity.py
