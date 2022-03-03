@@ -2,18 +2,18 @@
 DOLFINx C++ API documentation
 =============================
 
-The is experimental documentation for the C++ API. The Doxygen generated
-documentation is `here
+The is experimental documentation for the C++ API. The full Doxygen
+generated documentation is `here
 <https://docs.fenicsproject.org/dolfinx/main/cpp/doxygen>`_.
 
 Installation
 ============
 
-See https://docs.fenicsproject.org/dolfinx/main/python/ for instructions
-on installing DOLFINx.
+See https://docs.fenicsproject.org/dolfinx/main/python/ for installation
+instructions.
 
-API
-===
+API documentation
+=================
 
 .. toctree::
    :maxdepth: 1

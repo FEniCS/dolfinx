@@ -3,13 +3,13 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
+import jupytext_process
 import dolfinx
 import datetime
 import os
 import sys
 
 sys.path.insert(0, os.path.abspath('.'))
-import jupytext_process
 
 
 jupytext_process.process()
@@ -29,8 +29,7 @@ extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.napoleon',
               'sphinx.ext.todo',
               'sphinx.ext.viewcode',
-              'myst_parser',
-              'breathe']
+              'myst_parser', ]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -146,12 +145,3 @@ autoclass_content = "both"
 
 napoleon_google_docstring = True
 napoleon_use_admonition_for_notes = False
-
-
-breathe_projects = {"DOLFINx": "../../../cpp/doc/xml/"}
-# breathe_projects_source = {"DOLFINx" : ( "../examples/specific", ["auto_class.h"] )}
-breathe_default_project = "DOLFINx"
-breathe_default_function_domain = "cpp"
-breathe_implementation_filename_extensions = ['.c', '.cc', '.cpp']
-# breathe_domain_by_extension = {"h": "cpp",}
-# breathe_implementation_filename_extensions = ['.c', '.cc', '.cpp']

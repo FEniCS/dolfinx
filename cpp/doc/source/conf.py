@@ -30,9 +30,9 @@ release = '0.3.1'
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = [
-    'breathe',
-]
+extensions = ['sphinx.ext.mathjax',
+              'breathe',
+              ]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -61,6 +61,7 @@ html_static_path = []
 
 breathe_projects = {"DOLFINx": "../xml/"}
 breathe_default_project = "DOLFINx"
+breathe_implementation_filename_extensions = ['.c', '.cc', '.cpp']
 
 # Tell sphinx what the primary language being documented is.
 primary_domain = 'cpp'
