@@ -558,12 +558,6 @@ fem::build_dofmap_data(
     const std::function<std::vector<int>(
         const graph::AdjacencyList<std::int32_t>&)>& reorder_fn)
 {
-  const int rank = dolfinx::MPI::rank(comm);
-
-  // std::cout << "rank = " << rank << ": build_dofmap_data\n";
-
-  std::stringstream ss;
-
   common::Timer t0("Build dofmap data");
 
   const int D = topology.dim();
@@ -593,24 +587,11 @@ fem::build_dofmap_data(
       = compute_reordering_map(node_graph0, dof_entity0, topology, reorder_fn);
 
   // Get global indices for unowned dofs
-  auto [local_to_global_unowned, local_to_global_owner]
+  const auto [local_to_global_unowned, local_to_global_owner]
       = get_global_indices(topology, num_owned, offset, local_to_global0,
                            old_to_new, dof_entity0);
   assert(local_to_global_unowned.size() == local_to_global_owner.size());
 
-  ss << "rank = " << rank << ": build_dofmap_data\n";
-
-  ss << "num_owned = " << num_owned << "\n";
-
-  ss << "comp_graph_edges = "
-     << xt::adapt(dolfinx::MPI::compute_graph_edges(
-          comm, std::set<int>(local_to_global_owner.begin(),
-                              local_to_global_owner.end())))
-     << "\n";
-  ss << "local_to_global_unowned = " << xt::adapt(local_to_global_unowned) << "\n";
-  ss << "local_to_global_owner = " << xt::adapt(local_to_global_owner) << "\n";
-
-  std::cout << ss.str() << "\n";
   // Create IndexMap for dofs range on this process
   common::IndexMap index_map(
       comm, num_owned,
@@ -618,8 +599,6 @@ fem::build_dofmap_data(
           comm, std::set<int>(local_to_global_owner.begin(),
                               local_to_global_owner.end())),
       local_to_global_unowned, local_to_global_owner);
-
-  ss << "Index map created\n";
 
   // Build re-ordered dofmap
   std::vector<std::int32_t> dofmap(node_graph0.array().size());
@@ -636,15 +615,11 @@ fem::build_dofmap_data(
     }
   }
 
-  ss << "Re-ordered dofmap\n";
-
   int dofs_per_cell
       = dofmap.empty() ? 0 : dofmap.size() / node_graph0.num_nodes();
   graph::AdjacencyList<std::int32_t> dmap
       = graph::build_adjacency_list<std::int32_t>(std::move(dofmap),
                                                   dofs_per_cell);
-
-  ss << "After dofs per cell\n";
 
   return {std::move(index_map), element_dof_layout.block_size(),
           std::move(dmap)};

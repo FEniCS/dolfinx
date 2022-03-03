@@ -410,27 +410,6 @@ IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size,
     : _comm(comm), _comm_owner_to_ghost(MPI_COMM_NULL),
       _comm_ghost_to_owner(MPI_COMM_NULL), _ghosts(ghosts.begin(), ghosts.end())
 {
-  const int rank = dolfinx::MPI::rank(comm);
-  std::stringstream ss;
-  ss << "rank = " << rank << ": IndexMap\n";
-  ss << "ghosts = \n";
-  for (auto ghost : ghosts)
-  {
-    ss << ghost << "\n";
-  }
-  ss << "\n";
-
-  ss << "src_ranks = \n";
-  for (auto sr : src_ranks)
-  {
-    ss << sr << "\n";
-  }
-  ss << "\n";
-
-  ss << "get_ghost_ranks = " << xt::adapt(get_ghost_ranks(comm, local_size, _ghosts)) << "\n";
-
-  // std::cout << ss.str() << "\n";
-
   assert(size_t(ghosts.size()) == src_ranks.size());
   assert(std::equal(src_ranks.begin(), src_ranks.end(),
                     get_ghost_ranks(comm, local_size, _ghosts).begin()));
