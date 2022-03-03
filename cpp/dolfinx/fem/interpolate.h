@@ -726,9 +726,12 @@ void interpolate(Function<T>& u, const Function<T>& v,
       for (int i = mpi_rank; i < nProcs + mpi_rank; ++i)
       {
         const auto dest = i % nProcs;
-        MPI_Put(pointsToSend[dest].data(), pointsToSend[dest].size(),
-                MPI_DOUBLE, dest, sendingOffsets[dest],
-                pointsToSend[dest].size(), MPI_DOUBLE, window);
+        if (pointsToSend[dest].size() > 0)
+        {
+          MPI_Put(pointsToSend[dest].data(), pointsToSend[dest].size(),
+                  MPI_DOUBLE, dest, sendingOffsets[dest],
+                  pointsToSend[dest].size(), MPI_DOUBLE, window);
+        }
       }
 
       // Sync, then close window
@@ -788,10 +791,12 @@ void interpolate(Function<T>& u, const Function<T>& v,
       std::vector<std::size_t> retrievingOffsets(nProcs, 0);
       std::partial_sum(nPointsToSend.cbegin(), std::prev(nPointsToSend.cend()),
                        std::next(retrievingOffsets.begin()));
-      std::transform(retrievingOffsets.cbegin(), retrievingOffsets.cend(),
-                     retrievingOffsets.begin(),
-                     [&value_size](const auto& el)
-                     { return el / 3 * value_size; });
+      std::for_each(retrievingOffsets.begin(), retrievingOffsets.end(),
+                    [&value_size](auto& el)
+                    {
+                      el /= 3;
+                      el *= value_size;
+                    });
 
       // Open a window for other processes to read data from, then sync
       MPI_Win_create(values.data(),
@@ -805,12 +810,15 @@ void interpolate(Function<T>& u, const Function<T>& v,
       for (int i = mpi_rank; i < nProcs + mpi_rank; ++i)
       {
         const auto dest = i % nProcs;
-        MPI_Get(valuesToRetrieve.data() + retrievingOffsets[dest],
-                pointsToSend[dest].size() / 3 * value_size,
-                dolfinx::MPI::mpi_type<T>(), dest,
-                sendingOffsets[dest] / 3 * value_size,
-                pointsToSend[dest].size() / 3 * value_size,
-                dolfinx::MPI::mpi_type<T>(), window);
+        if (pointsToSend[dest].size() > 0)
+        {
+          MPI_Get(valuesToRetrieve.data() + retrievingOffsets[dest],
+                  pointsToSend[dest].size() / 3 * value_size,
+                  dolfinx::MPI::mpi_type<T>(), dest,
+                  sendingOffsets[dest] / 3 * value_size,
+                  pointsToSend[dest].size() / 3 * value_size,
+                  dolfinx::MPI::mpi_type<T>(), window);
+        }
       }
 
       // Sync, then close the window
