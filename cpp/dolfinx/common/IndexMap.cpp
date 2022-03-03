@@ -11,9 +11,6 @@
 #include <numeric>
 #include <unordered_map>
 
-#include <xtensor/xio.hpp>
-#include <xtensor/xadapt.hpp>
-
 using namespace dolfinx;
 using namespace dolfinx::common;
 
