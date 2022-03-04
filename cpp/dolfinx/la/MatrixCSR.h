@@ -223,14 +223,16 @@ public:
           += _row_ptr[local_size[0] + i + 1] - _row_ptr[local_size[0] + i];
     }
 
-    // Compute send displacements for values and indices (x2)
+    // Compute send displacements for values (x bs0*bs1) and indices (x2)
     _val_send_disp.resize(num_neighbors + 1, 0);
     std::partial_sum(data_per_proc.begin(), data_per_proc.end(),
                      std::next(_val_send_disp.begin()));
-
     std::vector<int> index_send_disp(num_neighbors + 1);
     std::transform(_val_send_disp.begin(), _val_send_disp.end(),
                    index_send_disp.begin(), [](int d) { return d * 2; });
+    int nbs = bs[0] * bs[1];
+    std::transform(_val_send_disp.begin(), _val_send_disp.end(),
+                   _val_send_disp.begin(), [&nbs](int d) { return d * nbs; });
 
     // For each ghost row, pack and send indices to neighborhood
     std::vector<int> insert_pos(index_send_disp);
@@ -265,7 +267,7 @@ public:
     _val_recv_disp.resize(ghost_index_data_in.offsets().size());
     std::transform(ghost_index_data_in.offsets().begin(),
                    ghost_index_data_in.offsets().end(), _val_recv_disp.begin(),
-                   [](int d) { return d / 2; });
+                   [&nbs](int d) { return nbs * d / 2; });
 
     // Global to local map for ghost columns
     std::map<std::int64_t, std::int32_t> global_to_local;
@@ -368,10 +370,17 @@ public:
     const std::int32_t nrows = num_all_rows();
     const std::int32_t ncols
         = _index_maps[1]->size_local() + _index_maps[1]->num_ghosts();
-    xt::xtensor<T, 2> A = xt::zeros<T>({nrows, ncols});
+    xt::xtensor<T, 2> A = xt::zeros<T>({nrows*bs[0], ncols*bs[1]});
     for (std::size_t r = 0; r < nrows; ++r)
       for (int j = _row_ptr[r]; j < _row_ptr[r + 1]; ++j)
-        A(r, _cols[j]) = _data[j];
+      {
+        int row = r * bs[0];
+        int col = _cols[j] * bs[1];
+        for (int k = 0; k < bs[0]; ++k)
+          for (int m = 0; m < bs[1]; ++m)
+            A(row + k, col + m) = _data[j*bs[0]*bs[1] + k*bs[1] + m];
+      }
+    
     return A;
   }
 
@@ -395,21 +404,22 @@ public:
   {
     const std::int32_t local_size0 = _index_maps[0]->size_local();
     const std::int32_t num_ghosts0 = _index_maps[0]->num_ghosts();
+    int nbs = bs[0] * bs[1];
 
     // For each ghost row, pack and send values to send to neighborhood
     std::vector<int> insert_pos(_val_send_disp);
-    std::vector<T> ghost_value_data(_val_send_disp.back());
+    std::vector<T> ghost_value_data(insert_pos.back());
     for (int i = 0; i < num_ghosts0; ++i)
     {
       const int neighbor_rank = _ghost_row_to_neighbor_rank[i];
 
       // Get position in send buffer to place data to send to this neighbour
       const std::int32_t val_pos = insert_pos[neighbor_rank];
-      std::copy(std::next(_data.data(), _row_ptr[local_size0 + i]),
-                std::next(_data.data(), _row_ptr[local_size0 + i + 1]),
+      std::copy(std::next(_data.data(), nbs * _row_ptr[local_size0 + i]),
+                std::next(_data.data(), nbs * _row_ptr[local_size0 + i + 1]),
                 std::next(ghost_value_data.begin(), val_pos));
       insert_pos[neighbor_rank]
-          += _row_ptr[local_size0 + i + 1] - _row_ptr[local_size0 + i];
+          += nbs * (_row_ptr[local_size0 + i + 1] - _row_ptr[local_size0 + i]);
     }
 
     _ghost_value_data_in.resize(_val_recv_disp.back());
@@ -442,13 +452,15 @@ public:
     assert(status == MPI_SUCCESS);
 
     // Add to local rows
-    assert(_ghost_value_data_in.size() == _unpack_pos.size());
-    for (std::size_t i = 0; i < _ghost_value_data_in.size(); ++i)
-      _data[_unpack_pos[i]] += _ghost_value_data_in[i];
+    int nbs = bs[0] * bs[1];
+    assert(_ghost_value_data_in.size() == nbs * _unpack_pos.size());
+    for (std::size_t i = 0; i < _unpack_pos.size(); ++i)
+      for (int j = 0; j < nbs; ++j)
+        _data[_unpack_pos[i] * nbs + j] += _ghost_value_data_in[i * nbs + j];
 
     // Set ghost row data to zero
     const std::int32_t local_size0 = _index_maps[0]->size_local();
-    std::fill(std::next(_data.begin(), _row_ptr[local_size0]), _data.end(), 0);
+    std::fill(std::next(_data.begin(), nbs * _row_ptr[local_size0]), _data.end(), 0);
   }
 
   /// Compute the Frobenius norm squared
