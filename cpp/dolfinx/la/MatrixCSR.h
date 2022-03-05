@@ -144,8 +144,7 @@ public:
   {
     return [&](const xtl::span<const std::int32_t>& rows,
                const xtl::span<const std::int32_t>& cols,
-               const xtl::span<const T>& data) -> int
-    {
+               const xtl::span<const T>& data) -> int {
       this->set(data, rows, cols);
       return 0;
     };
@@ -159,8 +158,7 @@ public:
   {
     return [&](const xtl::span<const std::int32_t>& rows,
                const xtl::span<const std::int32_t>& cols,
-               const xtl::span<const T>& data) -> int
-    {
+               const xtl::span<const T>& data) -> int {
       this->add(data, rows, cols);
       return 0;
     };
@@ -174,7 +172,7 @@ public:
       : _index_maps({p.index_map(0),
                      std::make_shared<common::IndexMap>(p.column_index_map())}),
         _bs({p.block_size(0), p.block_size(1)}),
-        _data(p.num_nonzeros(), 0, alloc),
+        _data(_bs[0] * _bs[1] * p.num_nonzeros(), 0, alloc),
         _cols(p.graph().array().begin(), p.graph().array().end()),
         _row_ptr(p.graph().offsets().begin(), p.graph().offsets().end()),
         _comm(p.index_map(0)->comm(common::IndexMap::Direction::reverse))
@@ -370,6 +368,7 @@ public:
   /// @return Dense copy of the matrix
   xt::xtensor<T, 2> to_dense() const
   {
+    std::cout << "bs = " << _bs[0] << "," << _bs[1] << "\n";
     const std::int32_t nrows = num_all_rows();
     const std::int32_t ncols
         = _index_maps[1]->size_local() + _index_maps[1]->num_ghosts();
@@ -383,7 +382,7 @@ public:
           for (int m = 0; m < _bs[1]; ++m)
             A(row + k, col + m) = _data[j * _bs[0] * _bs[1] + k * _bs[1] + m];
       }
-    
+
     return A;
   }
 
@@ -463,7 +462,8 @@ public:
 
     // Set ghost row data to zero
     const std::int32_t local_size0 = _index_maps[0]->size_local();
-    std::fill(std::next(_data.begin(), nbs * _row_ptr[local_size0]), _data.end(), 0);
+    std::fill(std::next(_data.begin(), nbs * _row_ptr[local_size0]),
+              _data.end(), 0);
   }
 
   /// Compute the Frobenius norm squared
