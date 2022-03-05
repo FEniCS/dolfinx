@@ -10,7 +10,7 @@ import numpy as np
 
 from dolfinx import cpp as _cpp
 from dolfinx import la
-from dolfinx.fem import FunctionSpace
+from dolfinx.fem import FunctionSpace, VectorFunctionSpace
 from dolfinx.mesh import create_unit_square
 
 from mpi4py import MPI
@@ -22,10 +22,42 @@ def test_create_matrix_csr():
     V = FunctionSpace(mesh, ("Lagrange", 1))
     map = V.dofmap.index_map
     bs = V.dofmap.index_map_bs
+    assert bs == 1
 
     pattern = _cpp.la.SparsityPattern(mesh.comm, [map, map], [bs, bs])
-    rows = range(0, bs * map.size_local)
-    cols = range(0, bs * map.size_local)
+    rows = range(0, map.size_local)
+    cols = range(0, map.size_local)
+    pattern.insert(rows, cols)
+    pattern.assemble()
+
+    A = la.matrix_csr(pattern)
+    assert A.data.dtype == np.float64
+    A = la.matrix_csr(pattern, dtype=np.float64)
+    assert A.data.dtype == np.float64
+
+    A = la.matrix_csr(pattern, dtype=np.float32)
+    assert A.data.dtype == np.float32
+
+    A = la.matrix_csr(pattern, dtype=np.complex128)
+    assert A.data.dtype == np.complex128
+
+    cmap = pattern.column_index_map()
+    num_cols = cmap.size_local + cmap.num_ghosts
+    num_rows = map.size_local + map.num_ghosts
+    zero = np.zeros((num_rows, num_cols), dtype=np.complex128)
+    assert np.allclose(A.to_dense(), zero)
+
+
+def test_create_matrix_bs():
+    """Test creation of CSR matrix with block size and specified types"""
+    mesh = create_unit_square(MPI.COMM_WORLD, 10, 11)
+    V = VectorFunctionSpace(mesh, ("Lagrange", 1))
+    map = V.dofmap.index_map
+    bs = V.dofmap.index_map_bs
+
+    pattern = _cpp.la.SparsityPattern(mesh.comm, [map, map], [bs, bs])
+    rows = range(0, map.size_local)
+    cols = range(0, map.size_local)
     pattern.insert(rows, cols)
     pattern.assemble()
 
