@@ -153,6 +153,7 @@ def test_basic_assembly_petsc_matrixcsr(mode):
     a = inner(u, v) * dx + inner(u, v) * ds
     a = form(a)
 
+    np.set_printoptions(precision=2)
     A0 = fem.assemble_matrix(a)
     A0.finalize()
     assert isinstance(A0, la.MatrixCSRMetaClass)
@@ -166,6 +167,10 @@ def test_basic_assembly_petsc_matrixcsr(mode):
     a = form(inner(u, v) * dx + inner(u, v) * ds)
     A0 = fem.assemble_matrix(a)
     A0.finalize()
+    A1 = fem.petsc.assemble_matrix(a)
+    A1.assemble()
+    assert isinstance(A1, PETSc.Mat)
+    assert np.sqrt(A0.norm_squared()) == pytest.approx(A1.norm())
 
 
 @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])

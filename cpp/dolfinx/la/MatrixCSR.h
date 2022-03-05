@@ -35,16 +35,18 @@ namespace impl
 /// are not being set.
 template <typename U, typename V, typename W, typename X>
 void set_csr(U&& data, const V& cols, const V& row_ptr, const W& x,
-             const X& xrows, const X& xcols, int nbs,
+             const X& xrows, const X& xcols, std::array<int, 2> bs,
              [[maybe_unused]] typename X::value_type local_size)
 {
+  const int nbs = bs[0] * bs[1];
   assert(x.size() == nbs * xrows.size() * xcols.size());
   for (std::size_t r = 0; r < xrows.size(); ++r)
   {
     // Row index and current data row
     auto row = xrows[r];
     using T = typename W::value_type;
-    const T* xr = x.data() + r * nbs * xcols.size();
+    const int nc = xcols.size();
+    const T* xr = x.data() + r * nbs * nc;
 
 #ifndef NDEBUG
     if (row >= local_size)
@@ -54,15 +56,16 @@ void set_csr(U&& data, const V& cols, const V& row_ptr, const W& x,
     // Columns indices for row
     auto cit0 = std::next(cols.begin(), row_ptr[row]);
     auto cit1 = std::next(cols.begin(), row_ptr[row + 1]);
-    for (std::size_t c = 0; c < xcols.size(); ++c)
+    for (std::size_t c = 0; c < nc; ++c)
     {
       // Find position of column index
       auto it = std::lower_bound(cit0, cit1, xcols[c]);
       assert(it != cit1);
       std::size_t d = std::distance(cols.begin(), it);
       assert(d < data.size());
-      for (int k = 0; k < nbs; ++k)
-        data[d * nbs + k] = xr[c * nbs + k];
+      for (int i = 0; i < bs[0]; ++i)
+        for (int j = 0; j < bs[1]; ++j)
+          data[d * nbs + i * bs[1] + j] = xr[(i * nc + c) * bs[1] + j];
     }
   }
 }
@@ -79,15 +82,17 @@ void set_csr(U&& data, const V& cols, const V& row_ptr, const W& x,
 /// @param[in] nbs Number of entries in each block
 template <typename U, typename V, typename W, typename X>
 void add_csr(U&& data, const V& cols, const V& row_ptr, const W& x,
-             const X& xrows, const X& xcols, int nbs)
+             const X& xrows, const X& xcols, std::array<int, 2> bs)
 {
+  const int nbs = bs[0] * bs[1];
   assert(x.size() == nbs * xrows.size() * xcols.size());
   for (std::size_t r = 0; r < xrows.size(); ++r)
   {
     // Row index and current data row
     auto row = xrows[r];
     using T = typename W::value_type;
-    const T* xr = x.data() + nbs * r * xcols.size();
+    const int nc = xcols.size();
+    const T* xr = x.data() + nbs * r * nc;
 
 #ifndef NDEBUG
     if (row >= (int)row_ptr.size())
@@ -97,15 +102,16 @@ void add_csr(U&& data, const V& cols, const V& row_ptr, const W& x,
     // Columns indices for row
     auto cit0 = std::next(cols.begin(), row_ptr[row]);
     auto cit1 = std::next(cols.begin(), row_ptr[row + 1]);
-    for (std::size_t c = 0; c < xcols.size(); ++c)
+    for (std::size_t c = 0; c < nc; ++c)
     {
       // Find position of column index
       auto it = std::lower_bound(cit0, cit1, xcols[c]);
       assert(it != cit1);
       std::size_t d = std::distance(cols.begin(), it);
       assert(d < data.size());
-      for (int k = 0; k < nbs; ++k)
-        data[d * nbs + k] += xr[c * nbs + k];
+      for (int i = 0; i < bs[0]; ++i)
+        for (int j = 0; j < bs[1]; ++j)
+          data[d * nbs + i * bs[1] + j] += xr[(i * nc + c) * bs[1] + j];
     }
   }
 }
@@ -328,7 +334,7 @@ public:
            const xtl::span<const std::int32_t>& rows,
            const xtl::span<const std::int32_t>& cols)
   {
-    impl::set_csr(_data, _cols, _row_ptr, x, rows, cols, _bs[0] * _bs[1],
+    impl::set_csr(_data, _cols, _row_ptr, x, rows, cols, _bs,
                   _index_maps[0]->size_local());
   }
 
@@ -348,7 +354,7 @@ public:
            const xtl::span<const std::int32_t>& rows,
            const xtl::span<const std::int32_t>& cols)
   {
-    impl::add_csr(_data, _cols, _row_ptr, x, rows, cols, _bs[0] * _bs[1]);
+    impl::add_csr(_data, _cols, _row_ptr, x, rows, cols, _bs);
   }
 
   /// Number of local rows excluding ghost rows
@@ -468,9 +474,11 @@ public:
     const std::size_t num_owned_rows = _index_maps[0]->size_local();
     assert(num_owned_rows < _row_ptr.size());
 
+    const int nbs = _bs[0] * _bs[1];
     const double norm_sq_local = std::accumulate(
-        _data.cbegin(), std::next(_data.cbegin(), _row_ptr[num_owned_rows]),
-        double(0), [](double norm, T y) { return norm + std::norm(y); });
+        _data.cbegin(),
+        std::next(_data.cbegin(), nbs * _row_ptr[num_owned_rows]), double(0),
+        [](double norm, T y) { return norm + std::norm(y); });
     double norm_sq;
     MPI_Allreduce(&norm_sq_local, &norm_sq, 1, MPI_DOUBLE, MPI_SUM,
                   _comm.comm());
