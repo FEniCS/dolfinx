@@ -324,8 +324,8 @@ void mesh(py::module& m)
 
   declare_meshtags<std::int8_t>(m, "int8");
   declare_meshtags<std::int32_t>(m, "int32");
-  declare_meshtags<double>(m, "double");
   declare_meshtags<std::int64_t>(m, "int64");
+  declare_meshtags<double>(m, "float64");
 
   // Partitioning interface using
   using PythonCellPartitionFunction

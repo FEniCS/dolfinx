@@ -127,7 +127,7 @@ _meshtags_types = {
     np.int8: _cpp.mesh.MeshTags_int8,
     np.int32: _cpp.mesh.MeshTags_int32,
     np.int64: _cpp.mesh.MeshTags_int64,
-    np.double: _cpp.mesh.MeshTags_double
+    np.double: _cpp.mesh.MeshTags_float64
 }
 
 
@@ -196,7 +196,7 @@ def create_submesh(mesh, dim, entities):
 
 
 def MeshTags(mesh: Mesh, dim: int, indices: np.ndarray, values: np.ndarray) -> typing.Union[
-        _cpp.mesh.MeshTags_double, _cpp.mesh.MeshTags_int32]:
+        _cpp.mesh.MeshTags_float64, _cpp.mesh.MeshTags_int32]:
     """Create a MeshTag for a set of mesh entities.
 
     Parameters
@@ -223,6 +223,54 @@ def MeshTags(mesh: Mesh, dim: int, indices: np.ndarray, values: np.ndarray) -> t
 
     fn = _meshtags_types[dtype]
     return fn(mesh, dim, indices.astype(np.int32), values)
+
+
+class MeshTagsMetaClass:
+    def __init__(self, mesh: Mesh, dim: int, indices: np.ndarray, values: np.ndarray):
+        """A distributed sparse matrix that uses compressed sparse row storage.
+
+        Args:
+            mesh:
+            dim:
+            indices:
+            values:
+
+        Note:
+            Objects of this type should be created using
+            :func:`meshtags` and not created using the class
+            initialiser.
+
+        """
+        super().__init__(mesh, dim, indices.astype(np.int32), values)
+
+
+def meshtags(mesh: Mesh, dim: int, indices: np.ndarray, values: np.ndarray) -> MeshTagsMetaClass:
+    """Create a MeshTags object that associates data with a subset of mesh entities.
+
+    Args:
+        mesh:
+        dim:
+        indices:
+        values:
+
+    Returns:
+        A MeshTags object
+
+    """
+    values = np.asarray(values)
+    if values.dtype == np.int8:
+        ftype = _cpp.mesh.MeshTags_int8
+    elif values.dtype == np.int32:
+        ftype = _cpp.mesh.MeshTags_int32
+    elif values.dtype == np.int64:
+        ftype = _cpp.la.MeshTags_int64
+    elif values.dtype == np.float64:
+        ftype = _cpp.la.MeshTags_float64
+    else:
+        raise NotImplementedError(f"Type {dtype} not supported.")
+
+    tags = type("MeshTagsMetaClass", (MeshTagsMetaClass, ftype), {})
+    return tags(mesh, dim, indices, values)
 
 
 def create_interval(comm: _MPI.Comm, nx: int, points: list, ghost_mode=GhostMode.shared_facet,
