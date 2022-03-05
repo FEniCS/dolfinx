@@ -7,6 +7,7 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 #include <map>
 #include <memory>
 #include <vector>
@@ -52,14 +53,14 @@ public:
   /// Move assignment operator
   FunctionSpace& operator=(FunctionSpace&& V) = default;
 
-  /// Equality operator
+  /// Test for equality of two function spaces
   /// @param[in] V Another function space
-  /// @return True is the function spaces are the same
+  /// @return True is the function spaces are equal
   bool operator==(const FunctionSpace& V) const;
 
-  /// Inequality operator
+  /// Test for inequality of two function spaces
   /// @param[in] V Another function space.
-  /// @return True is the function spaces are not the same
+  /// @return True is the function spaces are not equal
   bool operator!=(const FunctionSpace& V) const;
 
   /// Extract subspace for component
@@ -117,11 +118,8 @@ private:
   // The component w.r.t. to root space
   std::vector<int> _component;
 
-  // Unique identifier
-  std::size_t _id;
-
   // The identifier of root space
-  std::size_t _root_space_id;
+  std::uintptr_t _root_space_id;
 
   // Cache of subspaces
   mutable std::map<std::vector<int>, std::weak_ptr<FunctionSpace>> _subspaces;

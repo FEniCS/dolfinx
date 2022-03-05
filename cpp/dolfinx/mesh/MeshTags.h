@@ -11,7 +11,6 @@
 #include "Topology.h"
 #include <algorithm>
 #include <dolfinx/common/IndexMap.h>
-#include <dolfinx/common/UniqueIdGenerator.h>
 #include <dolfinx/common/utils.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/partition.h>
@@ -35,13 +34,14 @@ template <typename T>
 class MeshTags
 {
 public:
-  /// Create from entities of given dimension on a mesh
+  /// @brief Create from entities of given dimension on a mesh.
+  ///
   /// @param[in] mesh The mesh on which the tags are associated
   /// @param[in] dim Topological dimension of mesh entities to tag
   /// @param[in] indices std::vector<std::int32> of sorted and unique
-  ///   entity indices (indices local to the process)
+  /// entity indices (indices local to the process)
   /// @param[in] values std::vector<T> of values for each index in
-  ///   indices. The size must be equal to the size of @p indices.
+  /// indices. The size must be equal to the size of @p indices.
   template <typename U, typename V>
   MeshTags(const std::shared_ptr<const Mesh>& mesh, int dim, U&& indices,
            V&& values)
@@ -108,13 +108,7 @@ public:
   /// Name
   std::string name = "mesh_tags";
 
-  /// Unique ID of the object
-  std::size_t id() const { return _unique_id; }
-
 private:
-  // Unique identifier
-  std::size_t _unique_id = common::UniqueIdGenerator::id();
-
   // Associated mesh
   std::shared_ptr<const Mesh> _mesh;
 

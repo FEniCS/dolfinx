@@ -107,7 +107,9 @@ void declare_meshtags(py::module& m, std::string type)
       .def_readwrite("name", &dolfinx::mesh::MeshTags<T>::name)
       .def_property_readonly("dim", &dolfinx::mesh::MeshTags<T>::dim)
       .def_property_readonly("mesh", &dolfinx::mesh::MeshTags<T>::mesh)
-      .def("ufl_id", &dolfinx::mesh::MeshTags<T>::id)
+      // .def("ufl_id", &dolfinx::mesh::MeshTags<T>::id)
+      .def("ufl_id", [](const dolfinx::mesh::MeshTags<T>& self)
+           { return reinterpret_cast<std::uintptr_t>(std::addressof(self)); })
       .def_property_readonly("values",
                              [](dolfinx::mesh::MeshTags<T>& self)
                              {
@@ -317,7 +319,7 @@ void mesh(py::module& m)
           "Mesh topology", py::return_value_policy::reference_internal)
       .def_property_readonly("comm", [](dolfinx::mesh::Mesh& self)
                              { return MPICommWrapper(self.comm()); })
-      .def_property_readonly("id", &dolfinx::mesh::Mesh::id)
+      // .def_property_readonly("id", &dolfinx::mesh::Mesh::id)
       .def_readwrite("name", &dolfinx::mesh::Mesh::name);
 
   // dolfinx::mesh::MeshTags
